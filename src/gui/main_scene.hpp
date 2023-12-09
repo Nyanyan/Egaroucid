@@ -43,6 +43,7 @@ private:
     bool changing_scene;
     bool taking_screen_shot;
     bool pausing_in_pass;
+    bool putting_1_move_by_ai;
 
 public:
     Main_scene(const InitData& init) : IScene{ init } {
@@ -64,6 +65,7 @@ public:
         changing_scene = false;
         taking_screen_shot = false;
         pausing_in_pass = false;
+        putting_1_move_by_ai = false;
         std::cerr << "main scene loaded" << std::endl;
     }
 
@@ -136,6 +138,9 @@ public:
             ((getData().history_elem.player == BLACK && getData().menu_elements.ai_put_black) || (getData().history_elem.player == WHITE && getData().menu_elements.ai_put_white)) &&
             getData().history_elem.board.n_discs() == getData().graph_resources.nodes[GRAPH_MODE_NORMAL][getData().graph_resources.nodes[GRAPH_MODE_NORMAL].size() - 1].board.n_discs() && 
             !pausing_in_pass;
+        ai_should_move |= 
+            !getData().history_elem.board.is_end() && 
+            putting_1_move_by_ai;
         bool ignore_move = (getData().book_information.changing != BOOK_CHANGE_NO_CELL) || 
             ai_status.analyzing;
         if (need_start_game_button) {
@@ -435,6 +440,10 @@ private:
             resume_calculating();
         }
         if (!ai_status.analyzing) {
+            if ((getData().menu_elements.put_1_move_by_ai || KeyG.down()) && !ai_status.ai_thinking) {
+                putting_1_move_by_ai = true;
+                ai_move();
+            }
             if (getData().menu_elements.backward) {
                 --getData().graph_resources.n_discs;
                 getData().graph_resources.delta = -1;
@@ -860,6 +869,7 @@ private:
                             pausing_in_pass = true;
                     }
                     ai_status.ai_thinking = false;
+                    putting_1_move_by_ai = false;
                 }
             }
         }
@@ -971,6 +981,8 @@ private:
 
         title.init(language.get("operation", "operation"));
 
+        menu_e.init_button(language.get("operation", "put_1_move_by_ai"), &menu_elements->put_1_move_by_ai);
+        title.push(menu_e);
         menu_e.init_button(language.get("operation", "forward"), &menu_elements->forward);
         title.push(menu_e);
         menu_e.init_button(language.get("operation", "backward"), &menu_elements->backward);
