@@ -475,7 +475,7 @@ private:
                 }
                 need_start_game_button_calculation();
             }
-            if (getData().menu_elements.save_this_branch) {
+            if (getData().menu_elements.save_this_branch || KeyL.down()) {
                 if (getData().graph_resources.branch == GRAPH_MODE_INSPECT) {
                     std::vector<History_elem> new_branch;
                     int fork_start_idx = getData().graph_resources.node_find(0, getData().graph_resources.nodes[1].front().board.n_discs());
