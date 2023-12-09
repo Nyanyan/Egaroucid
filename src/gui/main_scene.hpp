@@ -1589,7 +1589,7 @@ private:
                 calc_flip(&flip, &board, cell);
                 board.move_board(&flip);
                 if (book.contain(board)){
-                    int n_lines = book.get(board).n_lines;
+                    uint32_t n_lines = book.get(board).n_lines;
                     String n_lines_str = Format(n_lines);
                     if (n_lines >= 1000000000){
                         n_lines_str = Format(n_lines / 1000000000) + U"G";
