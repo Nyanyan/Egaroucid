@@ -550,7 +550,7 @@ Search_result ai_hint(Board board, int level, bool use_book, bool use_multi_thre
         }
     }
     Book_elem book_elem = book.get(&board);
-    if (book_elem.value != SCORE_UNDEFINED){
+    if (book_elem.value != SCORE_UNDEFINED && use_book){
         if (show_log)
             std::cerr << "book " << book_elem.value << std::endl;
         res.policy = MOVE_UNDEFINED;
