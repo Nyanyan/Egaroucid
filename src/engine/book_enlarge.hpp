@@ -268,7 +268,7 @@ inline void book_recalculate_leaf(Board root_board, int level, int book_depth, i
     std::unordered_set<Book_deviate_todo_elem, Book_deviate_hash> book_recalculate_leaf_todo;
     get_book_recalculate_leaf_todo(root_elem, book_depth, max_error_per_move, lower, upper, book_recalculate_leaf_todo, all_strt, book_learning, board_copy, player);
     book_recalculate_leaves(level, book_recalculate_leaf_todo, all_strt, book_learning, board_copy, player);
-    book.add_leaf_all_search(level, &stop);
+    book.check_add_leaf_all_search(level, &stop);
     root_board.copy(board_copy);
     *player = before_player;
     std::cerr << "recalculate leaf finished value " << book.get(root_board).value << " time " << ms_to_time_short(tim() - all_strt) << std::endl;
