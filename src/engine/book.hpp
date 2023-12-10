@@ -420,7 +420,7 @@ class Book{
             add_leaf(&board, new_leaf_value, new_leaf_move);
         }
 
-        void add_leaf_all_undefined(){
+        void check_add_leaf_all_undefined(){
             std::vector<Board> boards;
             for (auto itr = book.begin(); itr != book.end(); ++itr)
                 boards.emplace_back(itr->first);
@@ -441,7 +441,7 @@ class Book{
             }
         }
 
-        void add_leaf_all_search(int level, bool *stop){
+        void check_add_leaf_all_search(int level, bool *stop){
             std::vector<Board> boards;
             for (auto itr = book.begin(); itr != book.end(); ++itr)
                 boards.emplace_back(itr->first);
@@ -645,9 +645,9 @@ class Book{
                     }
                 #endif
             }
-            //add_leaf_all_undefined();
+            //check_add_leaf_all_undefined();
             bool stop = false;
-            add_leaf_all_search(ADD_LEAF_SPECIAL_LEVEL, &stop);
+            check_add_leaf_all_search(ADD_LEAF_SPECIAL_LEVEL, &stop);
             if (*stop_loading){
                 std::cerr << "stop loading book" << std::endl;
                 fclose(fp);
@@ -740,9 +740,9 @@ class Book{
                     }
                 #endif
             }
-            //add_leaf_all_undefined();
+            //check_add_leaf_all_undefined();
             bool stop = false;
-            add_leaf_all_search(ADD_LEAF_SPECIAL_LEVEL, &stop);
+            check_add_leaf_all_search(ADD_LEAF_SPECIAL_LEVEL, &stop);
             if (*stop_loading){
                 std::cerr << "stop loading book" << std::endl;
                 fclose(fp);
@@ -964,7 +964,7 @@ class Book{
         */
         inline void save_bin_edax(std::string file, int level){
             bool stop = false;
-            add_leaf_all_search(ADD_LEAF_SPECIAL_LEVEL, &stop);
+            check_add_leaf_all_search(ADD_LEAF_SPECIAL_LEVEL, &stop);
             std::ofstream fout;
             fout.open(file.c_str(), std::ios::out|std::ios::binary|std::ios::trunc);
             if (!fout){
@@ -1365,7 +1365,7 @@ class Book{
         */
         inline void fix(bool *stop){
             negamax_book(stop);
-            add_leaf_all_search(ADD_LEAF_SPECIAL_LEVEL, stop);
+            check_add_leaf_all_search(ADD_LEAF_SPECIAL_LEVEL, stop);
         }
 
         /*
