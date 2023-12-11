@@ -87,10 +87,12 @@ struct Book_elem{
     int8_t value;
     Leaf leaf;
     uint32_t n_lines;
+    bool seen; // used in various situation
 
     Book_elem(){
         value = SCORE_UNDEFINED;
         n_lines = 0;
+        seen = false;
     }
 };
 
@@ -459,9 +461,9 @@ class Book{
                 ++t;
                 book_elem = book[board];
                 int leaf_move = book_elem.leaf.move;
-                calc_flip(&flip, &board, leaf_move);
-                bool need_to_rewrite_leaf = leaf_move < 0 || MOVE_UNDEFINED <= leaf_move;
+                bool need_to_rewrite_leaf = leaf_move < 0 || MOVE_UNDEFINED <= leaf_move || (board.get_legal() & (1ULL << leaf_move)) == 0;
                 if (!need_to_rewrite_leaf){
+                    calc_flip(&flip, &board, leaf_move);
                     board.move_board(&flip);
                         if (board.get_legal() == 0){
                             board.pass();
@@ -1376,101 +1378,64 @@ class Book{
             fix(&stop);
         }
 
-        void get_need_to_change_tasks(std::vector<std::pair<Board, Book_elem>> &root_boards, int *root_board_n_discs){
-            Board b;
-            for (auto itr = book.begin(); itr != book.end() && global_searching; ++itr){
-                b = itr->first;
-                std::vector<Book_value> links = get_all_moves_with_value(&b);
-                if (itr->first.n_discs() >= *root_board_n_discs && links.size()){
-                    int max_value = -INF;
-                    Board b;
-                    b.player = itr->first.player;
-                    b.opponent = itr->first.opponent;
-                    Flip flip;
-                    std::vector<Book_value> new_moves;
-                    int32_t n_lines = 1;
-                    Book_elem child;
-                    for (const Book_value &link: links){
-                        calc_flip(&flip, &b, link.policy);
-                        int child_value = SCORE_UNDEFINED;
-                        b.move_board(&flip);
-                            if (b.get_legal()){
-                                if (contain(b)){
-                                    child = get(b);
-                                    if (child.value != SCORE_UNDEFINED)
-                                        child_value = -child.value;
-                                    if (n_lines + child.n_lines < n_lines)
-                                        n_lines = MAX_N_LINES;
-                                    else
-                                        n_lines += child.n_lines;
-                                }
-                            } else{
-                                b.pass();
-                                    if (contain(b)){
-                                        child = get(b);
-                                        if (child.value != SCORE_UNDEFINED)
-                                            child_value = child.value;
-                                        if (n_lines + child.n_lines < n_lines)
-                                            n_lines = MAX_N_LINES;
-                                        else
-                                            n_lines += child.n_lines;
-                                    }
-                                b.pass();
-                            }
-                        b.undo_board(&flip);
-                        if (child_value != SCORE_UNDEFINED)
-                            max_value = std::max(max_value, child_value);
-                    }
-                    bool update_parent_value = max_value != itr->second.value && max_value != -INF;
-                    bool update_n_lines = n_lines != itr->second.n_lines;
-                    if (update_parent_value || update_n_lines){
-                        Board root_board;
-                        root_board.player = itr->first.player;
-                        root_board.opponent = itr->first.opponent;
-                        int n_discs = root_board.n_discs();
-                        if (n_discs > *root_board_n_discs){
-                            *root_board_n_discs = n_discs;
-                            root_boards.clear();
-                        }
-                        Book_elem new_elem;
-                        if (update_parent_value)
-                            new_elem.value = max_value;
-                        else
-                            new_elem.value = itr->second.value;
-                        if (update_n_lines)
-                            new_elem.n_lines = n_lines;
-                        else
-                            new_elem.n_lines = itr->second.n_lines;
-                        root_boards.emplace_back(std::make_pair(root_board, new_elem));
-                    }
-                }
+        Book_elem negamax_book_p(Board board, int64_t *n_seen, int64_t *n_fix, int *percent, bool *stop){
+            if (*stop){
+                Book_elem stop_res;
+                stop_res.value = SCORE_UNDEFINED;
+                stop_res.n_lines = 0;
+                return stop_res;
             }
+            board = get_representative_board(&board);
+            Book_elem res = book[board];
+            if (res.seen)
+                return res;
+            res.seen = true;
+            book[board].seen = true;
+            ++(*n_seen);
+            int n_percent = 100LL * (*n_seen) / book.size();
+            if (n_percent > (*percent)){
+                *percent = n_percent;
+                std::cerr << "negamaxing book... " << (*percent) << "%" << " fixed " << (*n_fix) << std::endl;
+            }
+            std::vector<Book_value> links = get_all_moves_with_value(&board);
+            uint32_t n_lines = 1;
+            Flip flip;
+            int v = -INF;
+            Book_elem child_res;
+            for (Book_value &link: links){
+                calc_flip(&flip, &board, link.policy);
+                board.move_board(&flip);
+                    child_res = negamax_book_p(board, n_seen, n_fix, percent, stop);
+                    if (child_res.value == SCORE_UNDEFINED){
+                        Book_elem stop_res;
+                        stop_res.value = SCORE_UNDEFINED;
+                        stop_res.n_lines = 0;
+                        return stop_res;
+                    }
+                    v = std::max(v, -child_res.value);
+                    if (n_lines + child_res.n_lines < n_lines)
+                        n_lines = MAX_N_LINES;
+                    else
+                        n_lines += child_res.n_lines;
+                board.undo_board(&flip);
+            }
+            if (v != -INF && v != res.value){
+                res.value = v;
+                ++(*n_fix);
+            }
+            res.n_lines = n_lines;
+            book[board] = res;
+            return res;
         }
 
         void negamax_book(bool *stop){
-            std::cerr << "negamaxing book..." << std::endl;
-            std::vector<std::pair<Board, Book_elem>> root_boards;
-            uint64_t n_fixed = 0;
-            bool looped = true;
-            while (looped && global_searching){
-                looped = false;
-                int root_board_n_discs = 1;
-                while (root_board_n_discs && !(*stop)){
-                    root_boards.clear();
-                    root_board_n_discs = 0;
-                    get_need_to_change_tasks(root_boards, &root_board_n_discs);
-                    if (root_board_n_discs){
-                        for (std::pair<Board, Book_elem> &elem: root_boards){
-                            Board bb = get_representative_board(elem.first);
-                            book.insert_or_assign(bb, elem.second);
-                        }
-                        n_fixed += root_boards.size();
-                        looped = true;
-                    }
-                    std::cerr << "negamaxing book... fixed " << n_fixed << " boards" << std::endl;
-                }
-            }
-            std::cerr << "negamaxed book with " << n_fixed << " fix" << std::endl;
+            Board root_board;
+            root_board.reset();
+            int64_t n_seen = 0, n_fix = 0;
+            int percent = -1;
+            negamax_book_p(root_board, &n_seen, &n_fix, &percent, stop);
+            reset_seen();
+            std::cerr << "negamaxed book fixed " << n_fix << " boards seen " << n_seen << " boards size " << book.size() << std::endl;
         }
 
         void depth_align(int max_depth, bool *stop){
@@ -1736,6 +1701,15 @@ class Book{
                 book_elem.leaf.move = elem.leaf.move;
             }
             return register_symmetric_book(b, book_elem);
+        }
+
+        void reset_seen(){
+            std::vector<Board> boards;
+            for (auto itr = book.begin(); itr != book.end(); ++itr)
+                boards.emplace_back(itr->first);
+            Flip flip;
+            for (Board &board: boards)
+                book[board].seen = false;
         }
 };
 
