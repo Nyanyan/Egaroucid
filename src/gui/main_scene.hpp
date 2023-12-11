@@ -1076,9 +1076,9 @@ private:
         menu_e.push(side_menu);
         side_menu.init_button(language.get("book", "book_deviate"), &menu_elements->book_start_deviate);
         menu_e.push(side_menu);
-        side_menu.init_button(language.get("book", "book_fix"), &menu_elements->book_start_fix);
-        menu_e.push(side_menu);
         side_menu.init_button(language.get("book", "book_reduce"), &menu_elements->book_start_aligning);
+        menu_e.push(side_menu);
+        side_menu.init_button(language.get("book", "book_fix"), &menu_elements->book_start_fix);
         menu_e.push(side_menu);
         side_menu.init_button(language.get("book", "book_recalculate_leaf"), &menu_elements->book_start_recalculate_leaf);
         menu_e.push(side_menu);
