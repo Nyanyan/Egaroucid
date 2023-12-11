@@ -54,7 +54,7 @@
         "force_stop": "強制停止",
         "stopping": "終了中...",
         "complete": "完了",
-        "settings": "学習の設定",
+        "settings": "bookの設定",
         "depth": "深さ",
         "error_per_move": "1手あたりの誤差",
         "error_sum": "手筋の合計誤差",
