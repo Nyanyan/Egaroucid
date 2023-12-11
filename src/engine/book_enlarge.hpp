@@ -120,7 +120,7 @@ void expand_leaf(int level, Board board){
     board.undo_board(&flip);
 }
 
-void expand_leaves(int level, std::unordered_set<Book_deviate_todo_elem, Book_deviate_hash> &book_deviate_todo, uint64_t all_strt, bool *book_learning, Board *board_copy, int *player){
+void expand_leaves(int level, std::unordered_set<Book_deviate_todo_elem, Book_deviate_hash> &book_deviate_todo, uint64_t all_strt, uint64_t strt, bool *book_learning, Board *board_copy, int *player){
     int n_all = book_deviate_todo.size();
     int i = 0;
     for (Book_deviate_todo_elem elem: book_deviate_todo){
@@ -131,7 +131,8 @@ void expand_leaves(int level, std::unordered_set<Book_deviate_todo_elem, Book_de
         expand_leaf(level, elem.board);
         ++i;
         int percent = 100ULL * i / n_all;
-        std::cerr << "book deviating " << percent << "% " <<  i << "/" << n_all << " time " << ms_to_time_short(tim() - all_strt) << std::endl;
+        uint64_t eta = (tim() - strt) * n_all / i;
+        std::cerr << "book deviating " << percent << "% " <<  i << "/" << n_all << " time " << ms_to_time_short(tim() - all_strt) << " ETA " << ms_to_time_short(eta) << std::endl;
     }
 }
 
@@ -180,7 +181,8 @@ inline void book_deviate(Board root_board, int level, int book_depth, int max_er
         std::cerr << "book deviate todo " << book_deviate_todo.size() << " calculated time " << ms_to_time_short(tim() - all_strt) << std::endl;
         if (book_deviate_todo.size() == 0)
             break;
-        expand_leaves(level, book_deviate_todo, all_strt, book_learning, board_copy, player);
+        uint64_t strt = tim();
+        expand_leaves(level, book_deviate_todo, all_strt, strt, book_learning, board_copy, player);
         std::cerr << "book deviated size " << book.size() << std::endl;
     }
     root_board.copy(board_copy);
@@ -235,7 +237,7 @@ void get_book_recalculate_leaf_todo(Book_deviate_todo_elem todo_elem, int book_d
     }
 }
 
-void book_recalculate_leaves(int level, std::unordered_set<Book_deviate_todo_elem, Book_deviate_hash> &todo_list, uint64_t all_strt, bool *book_learning, Board *board_copy, int *player){
+void book_recalculate_leaves(int level, std::unordered_set<Book_deviate_todo_elem, Book_deviate_hash> &todo_list, uint64_t all_strt, uint64_t strt, bool *book_learning, Board *board_copy, int *player){
     int n_all = todo_list.size();
     int i = 0;
     for (Book_deviate_todo_elem elem: todo_list){
@@ -246,7 +248,8 @@ void book_recalculate_leaves(int level, std::unordered_set<Book_deviate_todo_ele
         book.search_leaf(elem.board, level);
         ++i;
         int percent = 100ULL * i / n_all;
-        std::cerr << "book recalculating leaves " << percent << "% " <<  i << "/" << n_all << " time " << ms_to_time_short(tim() - all_strt) << std::endl;
+        uint64_t eta = (tim() - strt) * n_all / i;
+        std::cerr << "book recalculating leaves " << percent << "% " <<  i << "/" << n_all << " time " << ms_to_time_short(tim() - all_strt) << " ETA " << ms_to_time_short(eta) << std::endl;
     }
 }
 
@@ -270,7 +273,8 @@ inline void book_recalculate_leaf(Board root_board, int level, int book_depth, i
     bool stop = false;
     std::unordered_set<Book_deviate_todo_elem, Book_deviate_hash> book_recalculate_leaf_todo;
     get_book_recalculate_leaf_todo(root_elem, book_depth, max_error_per_move, lower, upper, book_recalculate_leaf_todo, all_strt, book_learning, board_copy, player);
-    book_recalculate_leaves(level, book_recalculate_leaf_todo, all_strt, book_learning, board_copy, player);
+    uint64_t strt = tim();
+    book_recalculate_leaves(level, book_recalculate_leaf_todo, all_strt, strt, book_learning, board_copy, player);
     book.check_add_leaf_all_search(level, &stop);
     root_board.copy(board_copy);
     *player = before_player;
