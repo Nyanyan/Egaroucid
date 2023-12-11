@@ -72,7 +72,8 @@
         "use_default": "Default",
         "ignore": "Overwrite Existing Values",
         "save_as_edax_book": "Save as Edax book",
-        "book_align_depth": "Depth Align",
+        "book_reduce": "Book Reduce",
+        "reducing": "Reducing",
         "book_recalculate_leaf": "Recalculate Leaves",
         "start": "Start"
     },
