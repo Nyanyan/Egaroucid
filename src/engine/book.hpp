@@ -305,8 +305,9 @@ class Book{
             for (int i = 0; i < n_boards; ++i) {
                 if (*stop_loading)
                     break;
-                if (100LL * i / n_boards > percent && show_log){
-                    percent = 100LL * i / n_boards;
+                int n_percent = (double)i / n_boards * 100;
+                if (n_percent > percent && show_log){
+                    percent = n_percent;
                     std::cerr << "loading book " << percent << "%" << std::endl;
                 }
                 // read board, player
@@ -454,8 +455,9 @@ class Book{
             for (Board &board: boards){
                 if (!global_searching || *stop)
                     break;
-                if (100LL * t / n_boards > percent){
-                    percent = 100LL * t / n_boards;
+                int n_percent = (double)t / n_boards * 100;
+                if (n_percent > percent){
+                    percent = n_percent;
                     std::cerr << "adding leaf " << percent << "%" << std::endl;
                 }
                 ++t;
@@ -511,8 +513,9 @@ class Book{
             for (Board &board: boards){
                 if (!global_searching || *stop)
                     break;
-                if (100LL * t / n_boards > percent){
-                    percent = 100LL * t / n_boards;
+                int n_percent = (double)t / n_boards * 100;
+                if (n_percent > percent){
+                    percent = n_percent;
                     std::cerr << "adding leaf " << percent << "%" << std::endl;
                 }
                 ++t;
@@ -579,8 +582,9 @@ class Book{
             for (int i = 0; i < n_boards; ++i) {
                 if (*stop_loading)
                     break;
-                if (100LL * i / n_boards > percent && show_log){
-                    percent = 100LL * i / n_boards;
+                int n_percent = (double)i / n_boards * 100;
+                if (n_percent > percent && show_log){
+                    percent = n_percent;
                     std::cerr << "loading book " << percent << "%" << std::endl;
                 }
                 // read board player
@@ -701,8 +705,9 @@ class Book{
             for (int i = 0; i < n_boards; ++i) {
                 if (*stop_loading)
                     break;
-                if (100LL * i / n_boards > percent && show_log){
-                    percent = 100LL * i / n_boards;
+                int n_percent = (double)i / n_boards * 100;
+                if (n_percent > percent && show_log){
+                    percent = n_percent;
                     std::cerr << "loading book " << percent << "%" << std::endl;
                 }
                 // read board player
@@ -805,8 +810,9 @@ class Book{
             for (int i = 0; i < n_boards; ++i){
                 if (*stop)
                     return false;
-                if (100LL * i / n_boards > percent && show_log){
-                    percent = 100LL * i / n_boards;
+                int n_percent = (double)i / n_boards * 100;
+                if (n_percent > percent && show_log){
+                    percent = n_percent;
                     std::cerr << "loading book " << percent << "%" << std::endl;
                 }
                 // read board player
@@ -939,8 +945,9 @@ class Book{
             int t = 0, percent = -1, n_boards = (int)book.size();
             for (auto itr = book.begin(); itr != book.end(); ++itr){
                 ++t;
-                if (100LL * t / n_boards > percent){
-                    percent = 100LL * t / n_boards;
+                int n_percent = (double)t / n_boards * 100;
+                if (n_percent > percent){
+                    percent = n_percent;
                     std::cerr << "saving book " << percent << "%" << std::endl;
                 }
                 fout.write((char*)&itr->first.player, 8);
@@ -1021,8 +1028,9 @@ class Book{
             int t = 0;
             for (auto itr = book.begin(); itr != book.end(); ++itr){
                 book_elem = itr->second;
-                if (100LL * t / n_boards > percent){
-                    percent = 100LL * t / n_boards;
+                int n_percent = (double)t / n_boards * 100;
+                if (n_percent > percent){
+                    percent = n_percent;
                     std::cerr << "converting book " << percent << "%" << std::endl;
                 }
                 ++t;
@@ -1391,8 +1399,16 @@ class Book{
                 return res;
             res.seen = true;
             book[board].seen = true;
+            if (res.value < -HW2 || HW2 < res.value){
+                std::cerr << "value error found " << (int)res.value << std::endl;
+                //board.print();
+                Book_elem stop_res;
+                stop_res.value = SCORE_UNDEFINED;
+                stop_res.n_lines = 0;
+                return stop_res;
+            }
             ++(*n_seen);
-            int n_percent = 100LL * (*n_seen) / book.size();
+            int n_percent = (double)(*n_seen) / book.size() * 100;
             if (n_percent > (*percent)){
                 *percent = n_percent;
                 std::cerr << "negamaxing book... " << (*percent) << "%" << " fixed " << (*n_fix) << std::endl;
@@ -1406,17 +1422,13 @@ class Book{
                 calc_flip(&flip, &board, link.policy);
                 board.move_board(&flip);
                     child_res = negamax_book_p(board, n_seen, n_fix, percent, stop);
-                    if (child_res.value == SCORE_UNDEFINED){
-                        Book_elem stop_res;
-                        stop_res.value = SCORE_UNDEFINED;
-                        stop_res.n_lines = 0;
-                        return stop_res;
+                    if (child_res.value != SCORE_UNDEFINED){
+                        v = std::max(v, -child_res.value);
+                        if (n_lines + child_res.n_lines < n_lines)
+                            n_lines = MAX_N_LINES;
+                        else
+                            n_lines += child_res.n_lines;
                     }
-                    v = std::max(v, -child_res.value);
-                    if (n_lines + child_res.n_lines < n_lines)
-                        n_lines = MAX_N_LINES;
-                    else
-                        n_lines += child_res.n_lines;
                 board.undo_board(&flip);
             }
             if (v != -INF && v != res.value){
@@ -1444,11 +1456,13 @@ class Book{
                 boards.emplace_back(itr->first);
             uint64_t t = 0;
             int percent = -1;
+            int n_boards = (int)boards.size();
             for (Board &board: boards){
                 if (*stop)
                     break;
-                if (100LL * t / boards.size() > percent){
-                    percent = 100LL * t / boards.size();
+                int n_percent = (double)t / n_boards * 100;
+                if (n_percent > percent){
+                    percent = n_percent;
                     std::cerr << "converting book " << percent << "%" << std::endl;
                 }
                 ++t;
