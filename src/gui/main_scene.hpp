@@ -646,7 +646,7 @@ private:
             changeScene(U"Fix_book", SCENE_FADE_TIME);
             return;
         }
-        if (getData().menu_elements.book_start_aligning) {
+        if (getData().menu_elements.book_start_reducing) {
             stop_calculating();
             resume_calculating();
             changing_scene = true;
@@ -1076,7 +1076,7 @@ private:
         menu_e.push(side_menu);
         side_menu.init_button(language.get("book", "book_deviate"), &menu_elements->book_start_deviate);
         menu_e.push(side_menu);
-        side_menu.init_button(language.get("book", "book_reduce"), &menu_elements->book_start_aligning);
+        side_menu.init_button(language.get("book", "book_reduce"), &menu_elements->book_start_reducing);
         menu_e.push(side_menu);
         side_menu.init_button(language.get("book", "book_fix"), &menu_elements->book_start_fix);
         menu_e.push(side_menu);
