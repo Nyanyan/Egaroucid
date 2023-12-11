@@ -111,9 +111,11 @@ void expand_leaf(int level, Board board){
     board.move_board(&flip);
         if (!book.contain(&board)){ 
             Search_result search_result = ai(board, level, true, 0, true, false);
-            book.change(board, search_result.value);
-            if (0 <= search_result.policy && search_result.policy < HW2 && (board.get_legal() & (1ULL << search_result.policy)))
-                book.add_leaf(&board, search_result.value, search_result.policy);
+            if (-HW2 <= search_result.value && search_result.value <= HW2){
+                book.change(board, search_result.value);
+                if (0 <= search_result.policy && search_result.policy < HW2 && (board.get_legal() & (1ULL << search_result.policy)))
+                    book.add_leaf(&board, search_result.value, search_result.policy);
+            }
         }
     board.undo_board(&flip);
 }

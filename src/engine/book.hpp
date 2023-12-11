@@ -334,13 +334,13 @@ class Book{
                     fclose(fp);
                     return false;
                 }
-                if (value < -HW2 || HW2 < value) {
-                    std::cerr << "[ERROR] book NOT FULLY imported 4 got value " << (int)value << " " << book.size() << " boards" << std::endl;
-                    fclose(fp);
-                    return false;
-                    //std::cerr << "[WARNING] value error found " << (int)value << " " << book.size() << " boards" << std::endl;
-                    //value = SCORE_UNDEFINED;
-                }
+                //if (value < -HW2 || HW2 < value) {
+                //    std::cerr << "[ERROR] book NOT FULLY imported 4 got value " << (int)value << " " << book.size() << " boards" << std::endl;
+                //    fclose(fp);
+                //    return false;
+                //    //std::cerr << "[WARNING] value error found " << (int)value << " " << book.size() << " boards" << std::endl;
+                //    //value = SCORE_UNDEFINED;
+                //}
                 // read n_lines
                 if (fread(&n_lines, 4, 1, fp) < 1) {
                     std::cerr << "[ERROR] book NOT FULLY imported 5 " << book.size() << " boards" << std::endl;
@@ -360,19 +360,21 @@ class Book{
                     return false;
                 }
                 // push elem
-                board.player = p;
-                board.opponent = o;
-                #if FORCE_BOOK_DEPTH
-                    if (board.n_discs() <= 4 + 30){
-                #endif
-                        book_elem.value = value;
-                        book_elem.leaf.value = leaf_value;
-                        book_elem.leaf.move = leaf_move;
-                        book_elem.n_lines = n_lines;
-                        merge(board, book_elem);
-                #if FORCE_BOOK_DEPTH
-                    }
-                #endif
+                if (-HW2 <= value && value <= HW2) {
+                    board.player = p;
+                    board.opponent = o;
+                    #if FORCE_BOOK_DEPTH
+                        if (board.n_discs() <= 4 + 30){
+                    #endif
+                            book_elem.value = value;
+                            book_elem.leaf.value = leaf_value;
+                            book_elem.leaf.move = leaf_move;
+                            book_elem.n_lines = n_lines;
+                            merge(board, book_elem);
+                    #if FORCE_BOOK_DEPTH
+                        }
+                    #endif
+                }
             }
             if (*stop_loading){
                 std::cerr << "stop loading book" << std::endl;
