@@ -1447,32 +1447,79 @@ class Book{
             root_board.reset();
             int64_t n_seen = 0, n_fix = 0;
             int percent = -1;
+            reset_seen();
             negamax_book_p(root_board, &n_seen, &n_fix, &percent, stop);
             reset_seen();
             std::cerr << "negamaxed book fixed " << n_fix << " boards seen " << n_seen << " boards size " << book.size() << std::endl;
         }
 
-        void depth_align(int max_depth, bool *stop){
-            std::vector<Board> boards;
-            for (auto itr = book.begin(); itr != book.end(); ++itr)
-                boards.emplace_back(itr->first);
-            uint64_t t = 0;
-            int percent = -1;
-            int n_boards = (int)boards.size();
-            for (Board &board: boards){
-                if (*stop)
-                    break;
-                int n_percent = (double)t / n_boards * 100;
-                if (n_percent > percent){
-                    percent = n_percent;
-                    std::cerr << "converting book " << percent << "%" << std::endl;
-                }
-                ++t;
-                if (board.n_discs() > 4 + max_depth){
-                    book.erase(board);
+        void reduce_book_flag_moves(Board board, int max_depth, int max_error_per_move, int lower, int upper, bool *doing){
+            if (!*(doing))
+                return;
+            if (board.n_discs() > 4 + max_depth)
+                return;
+            if (board.get_legal() == 0){
+                board.pass();
+                int tmp = lower;
+                lower = -upper;
+                upper = -tmp;
+                if (board.get_legal() == 0){
+                    flag_book_elem(board);
+                    return;
                 }
             }
-            //fix(stop);
+            Book_elem book_elem = get(board);
+            if (book_elem.value < lower || upper < book_elem.value)
+                return;
+            flag_book_elem(board);
+            std::vector<Book_value> links = get_all_moves_with_value(&board);
+            Flip flip;
+            for (Book_value &link: links){
+                if (link.value < book_elem.value - max_error_per_move)
+                    continue;
+                calc_flip(&flip, &board, link.policy);
+                board.move_board(&flip);
+                    reduce_book_flag_moves(board, max_depth, max_error_per_move, -upper, -lower, doing);
+                board.undo_board(&flip);
+            }
+        }
+
+        void delete_unflagged_moves(Board board, bool *doing){
+            if (!(*doing))
+                return;
+            if (!contain(board))
+                return;
+            if (board.get_legal() == 0){
+                board.pass();
+                if (board.get_legal() == 0)
+                    return;
+            }
+            std::vector<Book_value> links = get_all_moves_with_value(&board);
+            Flip flip;
+            for (Book_value &link: links){
+                calc_flip(&flip, &board, link.policy);
+                board.move_board(&flip);
+                    delete_unflagged_moves(board, doing);
+                board.undo_board(&flip);
+            }
+            if (!get(board).seen)
+                delete_elem(board);
+        }
+
+        void reduce_book(Board root_board, int max_depth, int max_error_per_move, int max_error_sum, bool *doing){
+            reset_seen();
+            Book_elem book_elem = get(root_board);
+            if (book_elem.value == SCORE_UNDEFINED)
+                return;
+            int lower = book_elem.value - max_error_sum;
+            int upper = book_elem.value + max_error_sum;
+            if (lower < -SCORE_MAX)
+                lower = -SCORE_MAX;
+            if (upper > SCORE_MAX)
+                upper = SCORE_MAX;
+            reduce_book_flag_moves(root_board, max_depth, max_error_per_move, lower, upper, doing);
+            delete_unflagged_moves(root_board, doing);
+            reset_seen();
         }
 
         uint64_t size(){
@@ -1727,6 +1774,10 @@ class Book{
             for (Board &board: boards)
                 book[board].seen = false;
         }
+
+        void flag_book_elem(Board board){
+            book[get_representative_board(board)].seen = true;
+        }
 };
 
 
@@ -1759,8 +1810,8 @@ void book_fix(bool *stop){
     book.fix(stop);
 }
 
-void book_depth_align(int depth, bool *stop){
-    book.depth_align(depth, stop);
+void book_reduce(Board board, int depth, int max_error_per_move, int max_error_sum, bool *doing){
+    book.reduce_book(board, depth, max_error_per_move, max_error_sum, doing);
 }
 
 void book_recalculate_leaf_all(int level, bool *stop){

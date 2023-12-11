@@ -46,7 +46,7 @@ void Main() {
     scene_manager.add <Refer_book>(U"Refer_book");
     scene_manager.add <Widen_book>(U"Widen_book");
     scene_manager.add <Fix_book>(U"Fix_book");
-    scene_manager.add <Depth_align_book>(U"Depth_align_book");
+    scene_manager.add <Reduce_book>(U"Reduce_book");
     scene_manager.add <Leaf_recalculate_book>(U"Leaf_recalculate_book");
     scene_manager.add <Save_book_Edax>(U"Save_book_Edax");
     scene_manager.add <Import_transcript>(U"Import_transcript");
