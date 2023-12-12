@@ -1538,7 +1538,12 @@ private:
                 for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)) {
                     calc_flip(&flip, &board, cell);
                     board.move_board(&flip);
-                    umigame_status.umigame_future[cell] = std::async(std::launch::async, get_umigame, board, n_player);
+                        if (board.get_legal() == 0ULL){
+                            board.pass();
+                                umigame_status.umigame_future[cell] = std::async(std::launch::async, get_umigame, board, n_player);
+                            board.pass();
+                        } else
+                            umigame_status.umigame_future[cell] = std::async(std::launch::async, get_umigame, board, n_player);
                     board.undo_board(&flip);
                 }
                 umigame_status.umigame_calculating = true;
