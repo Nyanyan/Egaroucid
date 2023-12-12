@@ -967,7 +967,7 @@ class Book{
             std::cerr << "saved " << t << " boards , book_size " << book_size << std::endl;
         }
 
-        void get_pass_boards(Board board, std::vector<std::pair<Board, Book_elem>> &pass_boards){
+        void get_pass_boards(Board board, std::unordered_set<Board, Book_hash> &pass_boards){
             if (contain(board)){
                 if (get(board).seen)
                     return;
@@ -979,15 +979,9 @@ class Book{
                 passed_board.pass();
                 if (!contain(board) && contain(passed_board)){
                     Board unique_board = get_representative_board(board);
-                    Book_elem book_elem;
-                    board.pass();
-                        Book_elem passed_book_elem = get(passed_board);
-                    board.pass();
-                    book_elem.value = -passed_book_elem.value;
-                    book_elem.n_lines = passed_book_elem.n_lines;
-                    book_elem.leaf.move = MOVE_NOMOVE;
-                    book_elem.leaf.value = SCORE_UNDEFINED;
-                    pass_boards.emplace_back(std::make_pair(unique_board, book_elem));
+                    if (pass_boards.find(unique_board) != pass_boards.end())
+                        return;
+                    pass_boards.emplace(unique_board);
                 }
                 board.pass();
                     get_pass_boards(board, pass_boards);
@@ -1013,9 +1007,10 @@ class Book{
         inline void save_bin_edax(std::string file, int level){
             bool stop = false;
             check_add_leaf_all_search(ADD_LEAF_SPECIAL_LEVEL, &stop);
-            std::vector<std::pair<Board, Book_elem>> pass_boards;
+            std::unordered_set<Board, Book_hash> pass_boards;
             Board root_board;
             root_board.reset();
+            std::cerr << "pass board calculating..." << std::endl;
             reset_seen();
             get_pass_boards(root_board, pass_boards);
             reset_seen();
@@ -1072,16 +1067,19 @@ class Book{
             int percent = -1;
             int n_boards = (int)book.size();
             int t = 0;
-            for (std::pair<Board, Book_elem> &pass_node: pass_boards){
-                n_lines = pass_node.second.n_lines;
-                short_val = (short)pass_node.second.value;
+            for (Board pass_board: pass_boards){
+                Board passed_board = pass_board.copy();
+                passed_board.pass();
+                Book_elem passed_elem = get(passed_board);
+                n_lines = passed_elem.n_lines;
+                short_val = (short)passed_elem.value;
                 n_link = 1;
-                link_value = (char)pass_node.second.value;
+                link_value = (char)passed_elem.value;
                 link_move = MOVE_PASS;
                 leaf_val = SCORE_UNDEFINED;
                 leaf_move = MOVE_NOMOVE;
-                fout.write((char*)&pass_node.first.player, 8);
-                fout.write((char*)&pass_node.first.opponent, 8);
+                fout.write((char*)&pass_board.player, 8);
+                fout.write((char*)&pass_board.opponent, 8);
                 fout.write((char*)&n_win, 4);
                 fout.write((char*)&n_draw, 4);
                 fout.write((char*)&n_lose, 4);
@@ -1117,34 +1115,6 @@ class Book{
                     leaf_move = MOVE_NOMOVE;
                 }
                 n_lines = itr->second.n_lines;
-                // if (itr->first.player == 72340173040197631ULL && itr->first.opponent == 1141422221877248ULL){
-                //     itr->first.print();
-                //     std::cerr << "n_link " << (int)n_link << std::endl;
-                //     for (Book_value &book_value: links){
-                //         std::cerr << idx_to_coord(book_value.policy) << " " << (int)book_value.policy << " " << (int)book_value.value << std::endl;
-                //     }
-                //     std::cerr << "leaf" << std::endl;
-                //     std::cerr << idx_to_coord(leaf_move) << " " << (int)leaf_move << " " << (int)leaf_val << std::endl;
-                //     Board debug_board = itr->first;
-                //     Flip flip;
-                //     uint64_t legal = debug_board.get_legal();
-                //     for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)){
-                //         calc_flip(&flip, &debug_board, cell);
-                //         debug_board.move_board(&flip);
-                //             int sgn = -1;
-                //             if (debug_board.get_legal() == 0ULL){
-                //                 sgn = 1;
-                //                 debug_board.pass();
-                //             }
-                //             if (contain(&debug_board)){
-                //                 std::cerr << idx_to_coord(cell) << std::endl;
-                //                 debug_board.print();
-                //             }
-                //             if (sgn == 1)
-                //                 debug_board.pass();
-                //         debug_board.undo_board(&flip);
-                //     }
-                // }
                 fout.write((char*)&itr->first.player, 8);
                 fout.write((char*)&itr->first.opponent, 8);
                 fout.write((char*)&n_win, 4);
