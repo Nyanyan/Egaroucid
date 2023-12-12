@@ -61,7 +61,7 @@ struct Book_deviate_hash {
     }
 };
 
-void get_book_deviate_todo(Book_deviate_todo_elem todo_elem, int book_depth, int max_error_per_move, int lower, int upper, std::unordered_set<Book_deviate_todo_elem, Book_deviate_hash> &book_deviate_todo, uint64_t all_strt, bool *book_learning, Board *board_copy, int *player){
+void get_book_deviate_todo(Book_deviate_todo_elem todo_elem, int book_depth, int max_error_per_move, int lower, int upper, std::unordered_set<Book_deviate_todo_elem, Book_deviate_hash> &book_deviate_todo, uint64_t all_strt, bool *book_learning, Board *board_copy, int *player, int n_loop){
     if (!global_searching || !(*book_learning))
         return;
     todo_elem.board = book.get_representative_board(todo_elem.board);
@@ -72,7 +72,7 @@ void get_book_deviate_todo(Book_deviate_todo_elem todo_elem, int book_depth, int
         todo_elem.pass();
         if (todo_elem.board.get_legal() == 0)
             return; // game over
-            get_book_deviate_todo(todo_elem, book_depth, max_error_per_move, -upper, -lower, book_deviate_todo, all_strt, book_learning, board_copy, player);
+            get_book_deviate_todo(todo_elem, book_depth, max_error_per_move, -upper, -lower, book_deviate_todo, all_strt, book_learning, board_copy, player, n_loop);
         todo_elem.pass();
         return;
     }
@@ -91,7 +91,7 @@ void get_book_deviate_todo(Book_deviate_todo_elem todo_elem, int book_depth, int
             if (link.value >= book_elem.value - max_error_per_move){
                 calc_flip(&flip, &todo_elem.board, link.policy);
                 todo_elem.move(&flip);
-                    get_book_deviate_todo(todo_elem, book_depth, max_error_per_move, -upper, -lower, book_deviate_todo, all_strt, book_learning, board_copy, player);
+                    get_book_deviate_todo(todo_elem, book_depth, max_error_per_move, -upper, -lower, book_deviate_todo, all_strt, book_learning, board_copy, player, n_loop);
                 todo_elem.undo(&flip);
             }
         }
@@ -100,7 +100,7 @@ void get_book_deviate_todo(Book_deviate_todo_elem todo_elem, int book_depth, int
     if (book_elem.leaf.value >= book_elem.value - max_error_per_move && is_valid_policy(book_elem.leaf.move) && lower <= book_elem.leaf.value){
         book_deviate_todo.emplace(todo_elem);
         if (book_deviate_todo.size() % 10 == 0)
-            std::cerr << "book deviate todo " << book_deviate_todo.size() << " calculating... time " << ms_to_time_short(tim() - all_strt) << std::endl;
+            std::cerr << n_loop << " book deviate todo " << book_deviate_todo.size() << " calculating... time " << ms_to_time_short(tim() - all_strt) << std::endl;
     }
 }
 
@@ -120,7 +120,7 @@ void expand_leaf(int level, Board board){
     board.undo_board(&flip);
 }
 
-void expand_leaves(int level, std::unordered_set<Book_deviate_todo_elem, Book_deviate_hash> &book_deviate_todo, uint64_t all_strt, uint64_t strt, bool *book_learning, Board *board_copy, int *player){
+void expand_leaves(int level, std::unordered_set<Book_deviate_todo_elem, Book_deviate_hash> &book_deviate_todo, uint64_t all_strt, uint64_t strt, bool *book_learning, Board *board_copy, int *player, int n_loop){
     int n_all = book_deviate_todo.size();
     int i = 0;
     for (Book_deviate_todo_elem elem: book_deviate_todo){
@@ -132,7 +132,7 @@ void expand_leaves(int level, std::unordered_set<Book_deviate_todo_elem, Book_de
         ++i;
         int percent = 100ULL * i / n_all;
         uint64_t eta = (tim() - strt) * n_all / i;
-        std::cerr << "book deviating " << percent << "% " <<  i << "/" << n_all << " time " << ms_to_time_short(tim() - all_strt) << " ETA " << ms_to_time_short(eta) << std::endl;
+        std::cerr << n_loop << " book deviating " << percent << "% " <<  i << "/" << n_all << " time " << ms_to_time_short(tim() - all_strt) << " ETA " << ms_to_time_short(eta) << std::endl;
     }
 }
 
@@ -160,7 +160,9 @@ inline void book_deviate(Board root_board, int level, int book_depth, int max_er
     root_elem.board = root_board;
     root_elem.player = *player;
     int n_saved = 1;
+    int n_loop = 0;
     while (true){
+        ++n_loop;
         if (tim() - all_strt > AUTO_BOOK_SAVE_TIME * n_saved){
             ++n_saved;
             book.save_egbk3(book_file, book_bak);
@@ -177,18 +179,18 @@ inline void book_deviate(Board root_board, int level, int book_depth, int max_er
         bool stop = false;
         book.check_add_leaf_all_search(level / 2, &stop);
         std::unordered_set<Book_deviate_todo_elem, Book_deviate_hash> book_deviate_todo;
-        get_book_deviate_todo(root_elem, book_depth, max_error_per_move, lower, upper, book_deviate_todo, all_strt, book_learning, board_copy, player);
-        std::cerr << "book deviate todo " << book_deviate_todo.size() << " calculated time " << ms_to_time_short(tim() - all_strt) << std::endl;
+        get_book_deviate_todo(root_elem, book_depth, max_error_per_move, lower, upper, book_deviate_todo, all_strt, book_learning, board_copy, player, n_loop);
+        std::cerr << n_loop << " book deviate todo " << book_deviate_todo.size() << " calculated time " << ms_to_time_short(tim() - all_strt) << std::endl;
         if (book_deviate_todo.size() == 0)
             break;
         uint64_t strt = tim();
-        expand_leaves(level, book_deviate_todo, all_strt, strt, book_learning, board_copy, player);
-        std::cerr << "book deviated size " << book.size() << std::endl;
+        expand_leaves(level, book_deviate_todo, all_strt, strt, book_learning, board_copy, player, n_loop);
+        std::cerr << n_loop << " book deviated size " << book.size() << std::endl;
     }
     root_board.copy(board_copy);
     *player = before_player;
     transposition_table.reset_date();
-    book.fix();
+    //book.fix();
     book.save_egbk3(book_file, book_bak);
     std::cerr << "book deviate finished value " << (int)book.get(root_board).value << " time " << ms_to_time_short(tim() - all_strt) << std::endl;
     *book_learning = false;
