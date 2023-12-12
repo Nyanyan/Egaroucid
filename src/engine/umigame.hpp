@@ -69,40 +69,8 @@ class Umigame{
         */
         Umigame_result get_umigame(Board *b){
             std::lock_guard<std::mutex> lock(mtx);
-            Board nb = b->copy();
-            Umigame_result res;
-            res = get_oneumigame(nb);
-            if (res.b != UMIGAME_UNDEFINED)
-                return res;
-            nb.board_black_line_mirror();
-            res = get_oneumigame(nb);
-            if (res.b != UMIGAME_UNDEFINED)
-                return res;
-            nb.board_rotate_180();
-            res = get_oneumigame(nb);
-            if (res.b != UMIGAME_UNDEFINED)
-                return res;
-            nb.board_black_line_mirror();
-            res = get_oneumigame(nb);
-            if (res.b != UMIGAME_UNDEFINED)
-                return res;
-            nb.board_horizontal_mirror();
-            res = get_oneumigame(nb);
-            if (res.b != UMIGAME_UNDEFINED)
-                return res;
-            nb.board_black_line_mirror();
-            res = get_oneumigame(nb);
-            if (res.b != UMIGAME_UNDEFINED)
-                return res;
-            nb.board_rotate_180();
-            res = get_oneumigame(nb);
-            if (res.b != UMIGAME_UNDEFINED)
-                return res;
-            nb.board_black_line_mirror();
-            res = get_oneumigame(nb);
-            if (res.b != UMIGAME_UNDEFINED)
-                return res;
-            return res;
+            Board unique_board = get_representative_board(b->copy());
+            return get_oneumigame(unique_board);
         }
 
     private:
@@ -180,8 +148,9 @@ class Umigame{
         }
 
         inline void reg(Board *b, Umigame_result val){
+            Board unique_board = get_representative_board(b->copy());
             std::lock_guard<std::mutex> lock(mtx);
-            umigame[b->copy()] = val;
+            umigame[unique_board] = val;
         }
 
         /*
@@ -196,6 +165,43 @@ class Umigame{
             res.w = UMIGAME_UNDEFINED;
             if (umigame.find(b) != umigame.end())
                 res = umigame[b];
+            return res;
+        }
+
+        inline bool contain(Board b){
+            Board unique_board = get_representative_board(b);
+            return umigame.find(unique_board) != umigame.end();
+        }
+
+        inline void first_update_representative_board(Board *res, Board *sym){
+            uint64_t vp = vertical_mirror(sym->player);
+            uint64_t vo = vertical_mirror(sym->opponent);
+            if (res->player > vp || (res->player == vp && res->opponent > vo)){
+                res->player = vp;
+                res->opponent = vo;
+            }
+        }
+
+        inline void update_representative_board(Board *res, Board *sym){
+            if (res->player > sym->player || (res->player == sym->player && res->opponent > sym->opponent))
+                sym->copy(res);
+            uint64_t vp = vertical_mirror(sym->player);
+            uint64_t vo = vertical_mirror(sym->opponent);
+            if (res->player > vp || (res->player == vp && res->opponent > vo)){
+                res->player = vp;
+                res->opponent = vo;
+            }
+        }
+
+        inline Board get_representative_board(Board b){
+            Board res = b;
+            first_update_representative_board(&res, &b);
+            b.board_black_line_mirror();
+            update_representative_board(&res, &b);
+            b.board_horizontal_mirror();
+            update_representative_board(&res, &b);
+            b.board_white_line_mirror();
+            update_representative_board(&res, &b);
             return res;
         }
 };
