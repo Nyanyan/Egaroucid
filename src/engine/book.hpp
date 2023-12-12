@@ -1468,7 +1468,7 @@ class Book{
             res.seen = true;
             book[board].seen = true;
             if (res.value < -HW2 || HW2 < res.value){
-                std::cerr << "value error found " << (int)res.value << std::endl;
+                //std::cerr << "value error found " << (int)res.value << std::endl;
                 //board.print();
                 Book_elem stop_res;
                 stop_res.value = SCORE_UNDEFINED;

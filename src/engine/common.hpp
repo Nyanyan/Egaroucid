@@ -227,5 +227,5 @@ void calc_date(int *year, int *month, int *day, int *hour, int *minute, int *sec
 }
 
 bool is_valid_policy(int policy){
-    return 0<= policy && policy < HW2;
+    return 0 <= policy && policy < HW2;
 }
