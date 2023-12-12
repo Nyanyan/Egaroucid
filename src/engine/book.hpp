@@ -968,24 +968,22 @@ class Book{
         }
 
         void get_pass_boards(Board board, std::unordered_set<Board, Book_hash> &pass_boards){
-            if (contain(board)){
-                if (get(board).seen)
+            board = get_representative_board(board);
+            if (contain_representative(board)){
+                if (book[board].seen)
                     return;
-                flag_book_elem(board);
+                book[board].seen = true;
             }
             uint64_t legal = board.get_legal();
             if (legal == 0ULL){
+                if (pass_boards.find(board) != pass_boards.end())
+                    return;
                 Board passed_board = board.copy();
                 passed_board.pass();
-                if (!contain(board) && contain(passed_board)){
-                    Board unique_board = get_representative_board(board);
-                    if (pass_boards.find(unique_board) != pass_boards.end())
-                        return;
-                    pass_boards.emplace(unique_board);
+                if (!contain_representative(board) && contain(passed_board)){
+                    pass_boards.emplace(board);
+                    get_pass_boards(passed_board, pass_boards);
                 }
-                board.pass();
-                    get_pass_boards(board, pass_boards);
-                board.pass();
             } else{
                 std::vector<Book_value> links = get_all_moves_with_value(&board);
                 Flip flip;
