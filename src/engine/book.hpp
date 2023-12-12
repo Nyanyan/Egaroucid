@@ -905,7 +905,7 @@ class Book{
                     leaf_value = SCORE_UNDEFINED;
                     leaf_move = MOVE_UNDEFINED;
                 }
-                if (value != SCORE_UNDEFINED && (player & opponent) == 0ULL){
+                if (value != SCORE_UNDEFINED && (player & opponent) == 0ULL && calc_legal(player, opponent)){
                     board.player = player;
                     board.opponent = opponent;
                     book_elem.value = value;
@@ -967,6 +967,43 @@ class Book{
             std::cerr << "saved " << t << " boards , book_size " << book_size << std::endl;
         }
 
+        void get_pass_boards(Board board, std::vector<std::pair<Board, Book_elem>> &pass_boards){
+            if (contain(board)){
+                if (get(board).seen)
+                    return;
+                flag_book_elem(board);
+            }
+            uint64_t legal = board.get_legal();
+            if (legal == 0ULL){
+                Board passed_board = board.copy();
+                passed_board.pass();
+                if (!contain(board) && contain(passed_board)){
+                    Board unique_board = get_representative_board(board);
+                    Book_elem book_elem;
+                    board.pass();
+                        Book_elem passed_book_elem = get(passed_board);
+                    board.pass();
+                    book_elem.value = -passed_book_elem.value;
+                    book_elem.n_lines = passed_book_elem.n_lines;
+                    book_elem.leaf.move = MOVE_NOMOVE;
+                    book_elem.leaf.value = SCORE_UNDEFINED;
+                    pass_boards.emplace_back(std::make_pair(unique_board, book_elem));
+                }
+                board.pass();
+                    get_pass_boards(board, pass_boards);
+                board.pass();
+            } else{
+                std::vector<Book_value> links = get_all_moves_with_value(&board);
+                Flip flip;
+                for (Book_value &link: links){
+                    calc_flip(&flip, &board, link.policy);
+                    board.move_board(&flip);
+                        get_pass_boards(board, pass_boards);
+                    board.undo_board(&flip);
+                }
+            }
+        }
+
         /*
             @brief save as Edax-formatted book (.dat)
 
@@ -976,6 +1013,13 @@ class Book{
         inline void save_bin_edax(std::string file, int level){
             bool stop = false;
             check_add_leaf_all_search(ADD_LEAF_SPECIAL_LEVEL, &stop);
+            std::vector<std::pair<Board, Book_elem>> pass_boards;
+            Board root_board;
+            root_board.reset();
+            reset_seen();
+            get_pass_boards(root_board, pass_boards);
+            reset_seen();
+            std::cerr << "pass board calculated " << pass_boards.size() << std::endl;
             std::ofstream fout;
             fout.open(file.c_str(), std::ios::out|std::ios::binary|std::ios::trunc);
             if (!fout){
@@ -1011,12 +1055,12 @@ class Book{
             fout.write((char*)&err_end, 4);
             int verb = 0;
             fout.write((char*)&verb, 4);
-            int n_position = book.size();
+            int n_position = book.size() + pass_boards.size();
             fout.write((char*)&n_position, 4);
             int n_win = 0, n_draw = 0, n_lose = 0;
             uint32_t n_lines;
             short short_val, short_val_min = -HW2, short_val_max = HW2;
-            char char_level;
+            char char_level = (char)level;
             Book_elem book_elem;
             char link_value, link_move;
             int max_link_value, min_link_value;
@@ -1028,6 +1072,30 @@ class Book{
             int percent = -1;
             int n_boards = (int)book.size();
             int t = 0;
+            for (std::pair<Board, Book_elem> &pass_node: pass_boards){
+                n_lines = pass_node.second.n_lines;
+                short_val = (short)pass_node.second.value;
+                n_link = 1;
+                link_value = (char)pass_node.second.value;
+                link_move = MOVE_PASS;
+                leaf_val = SCORE_UNDEFINED;
+                leaf_move = MOVE_NOMOVE;
+                fout.write((char*)&pass_node.first.player, 8);
+                fout.write((char*)&pass_node.first.opponent, 8);
+                fout.write((char*)&n_win, 4);
+                fout.write((char*)&n_draw, 4);
+                fout.write((char*)&n_lose, 4);
+                fout.write((char*)&n_lines, 4);
+                fout.write((char*)&short_val, 2);
+                fout.write((char*)&short_val_min, 2);
+                fout.write((char*)&short_val_max, 2);
+                fout.write((char*)&n_link, 1);
+                fout.write((char*)&char_level, 1);
+                fout.write((char*)&link_value, 1);
+                fout.write((char*)&link_move, 1);
+                fout.write((char*)&leaf_val, 1);
+                fout.write((char*)&leaf_move, 1);
+            }
             for (auto itr = book.begin(); itr != book.end(); ++itr){
                 book_elem = itr->second;
                 int n_percent = (double)t / n_boards * 100;
@@ -1037,17 +1105,46 @@ class Book{
                 }
                 ++t;
                 short_val = book_elem.value;
-                char_level = level; // fixed
+                //short_val_min = book_elem.value;
+                //short_val_max = book_elem.value;
                 b = itr->first;
                 std::vector<Book_value> links = get_all_moves_with_value(&b);
                 n_link = (char)links.size();
                 leaf_val = itr->second.leaf.value;
                 leaf_move = itr->second.leaf.move;
-                if (leaf_val == SCORE_UNDEFINED){
-                    leaf_val = 0;
-                    leaf_move = 65;
+                if (leaf_val < -HW2 || HW2 < leaf_val || leaf_move < 0 || HW2 <= leaf_move){
+                    leaf_val = SCORE_UNDEFINED;
+                    leaf_move = MOVE_NOMOVE;
                 }
-                n_lines = itr->second.n_lines; //count_n_line(itr->first);
+                n_lines = itr->second.n_lines;
+                // if (itr->first.player == 72340173040197631ULL && itr->first.opponent == 1141422221877248ULL){
+                //     itr->first.print();
+                //     std::cerr << "n_link " << (int)n_link << std::endl;
+                //     for (Book_value &book_value: links){
+                //         std::cerr << idx_to_coord(book_value.policy) << " " << (int)book_value.policy << " " << (int)book_value.value << std::endl;
+                //     }
+                //     std::cerr << "leaf" << std::endl;
+                //     std::cerr << idx_to_coord(leaf_move) << " " << (int)leaf_move << " " << (int)leaf_val << std::endl;
+                //     Board debug_board = itr->first;
+                //     Flip flip;
+                //     uint64_t legal = debug_board.get_legal();
+                //     for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)){
+                //         calc_flip(&flip, &debug_board, cell);
+                //         debug_board.move_board(&flip);
+                //             int sgn = -1;
+                //             if (debug_board.get_legal() == 0ULL){
+                //                 sgn = 1;
+                //                 debug_board.pass();
+                //             }
+                //             if (contain(&debug_board)){
+                //                 std::cerr << idx_to_coord(cell) << std::endl;
+                //                 debug_board.print();
+                //             }
+                //             if (sgn == 1)
+                //                 debug_board.pass();
+                //         debug_board.undo_board(&flip);
+                //     }
+                // }
                 fout.write((char*)&itr->first.player, 8);
                 fout.write((char*)&itr->first.opponent, 8);
                 fout.write((char*)&n_win, 4);

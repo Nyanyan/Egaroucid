@@ -97,11 +97,9 @@ class Umigame{
             int max_val = -INF;
             std::vector<Board> boards;
             std::vector<uint_fast8_t> best_moves;
-            uint64_t legal = b->get_legal();
-            if (legal == 0ULL){
+            if (b->get_legal() == 0ULL){
                 player ^= 1;
                 b->pass();
-                legal = b->get_legal();
             }
             Flip flip;
             Book_elem book_elem = book.get(b);
