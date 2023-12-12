@@ -374,23 +374,23 @@ void init_settings(const Directories* directories, const Resources* resources, S
 
 int init_resources(Resources* resources, Settings* settings, Fonts *fonts) {
     // language names
-    std::ifstream ifs_lang("resources/languages/languages.txt");
-    if (ifs_lang.fail()) {
-        return ERR_LANG_LIST_NOT_LOADED;
-    }
-    std::string lang_line;
-    while (getline(ifs_lang, lang_line)) {
-        while (lang_line.back() == '\n' || lang_line.back() == '\r') {
-            lang_line.pop_back();
-        }
-        resources->language_names.emplace_back(lang_line);
-    }
-    if (resources->language_names.size() == 0) {
-        return ERR_LANG_LIST_NOT_LOADED;
-    }
+    // std::ifstream ifs_lang("resources/languages/languages.txt");
+    // if (ifs_lang.fail()) {
+    //     return ERR_LANG_LIST_NOT_LOADED;
+    // }
+    // std::string lang_line;
+    // while (getline(ifs_lang, lang_line)) {
+    //     while (lang_line.back() == '\n' || lang_line.back() == '\r') {
+    //         lang_line.pop_back();
+    //     }
+    //     resources->language_names.emplace_back(lang_line);
+    // }
+    // if (resources->language_names.size() == 0) {
+    //     return ERR_LANG_LIST_NOT_LOADED;
+    // }
 
     // language json
-    if (!language_name.init()) {
+    if (!language_name.init(resources->language_names)) {
         return ERR_LANG_JSON_NOT_LOADED;
     }
 
