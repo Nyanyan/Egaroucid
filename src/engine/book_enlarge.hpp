@@ -83,24 +83,26 @@ void get_book_deviate_todo(Book_deviate_todo_elem todo_elem, int book_depth, int
     if (todo_elem.board.n_discs() > book_depth + 4)
         return;
     Book_elem book_elem = book.get(todo_elem.board);
-    // expand links
     if (lower <= book_elem.value){
-        std::vector<Book_value> links = book.get_all_moves_with_value(&todo_elem.board);
-        Flip flip;
-        for (Book_value &link: links){
-            if (link.value >= book_elem.value - max_error_per_move){
-                calc_flip(&flip, &todo_elem.board, link.policy);
-                todo_elem.move(&flip);
-                    get_book_deviate_todo(todo_elem, book_depth, max_error_per_move, -upper, -lower, book_deviate_todo, all_strt, book_learning, board_copy, player, n_loop);
-                todo_elem.undo(&flip);
+        // expand links
+        if (todo_elem.board.n_discs() < book_depth + 4){
+            std::vector<Book_value> links = book.get_all_moves_with_value(&todo_elem.board);
+            Flip flip;
+            for (Book_value &link: links){
+                if (link.value >= book_elem.value - max_error_per_move){
+                    calc_flip(&flip, &todo_elem.board, link.policy);
+                    todo_elem.move(&flip);
+                        get_book_deviate_todo(todo_elem, book_depth, max_error_per_move, -upper, -lower, book_deviate_todo, all_strt, book_learning, board_copy, player, n_loop);
+                    todo_elem.undo(&flip);
+                }
             }
         }
-    }
-    // check leaf
-    if (book_elem.leaf.value >= book_elem.value - max_error_per_move && is_valid_policy(book_elem.leaf.move) && lower <= book_elem.leaf.value){
-        book_deviate_todo.emplace(todo_elem);
-        if (book_deviate_todo.size() % 10 == 0)
-            std::cerr << n_loop << " book deviate todo " << book_deviate_todo.size() << " calculating... time " << ms_to_time_short(tim() - all_strt) << std::endl;
+        // check leaf
+        if (book_elem.leaf.value >= book_elem.value - max_error_per_move && is_valid_policy(book_elem.leaf.move) && lower <= book_elem.leaf.value){
+            book_deviate_todo.emplace(todo_elem);
+            if (book_deviate_todo.size() % 10 == 0)
+                std::cerr << "loop " << n_loop << " book deviate todo " << book_deviate_todo.size() << " calculating... time " << ms_to_time_short(tim() - all_strt) << std::endl;
+        }
     }
 }
 
@@ -132,7 +134,7 @@ void expand_leaves(int level, std::unordered_set<Book_deviate_todo_elem, Book_de
         ++i;
         int percent = 100ULL * i / n_all;
         uint64_t eta = (tim() - strt) * ((double)n_all / i - 1.0);
-        std::cerr << n_loop << " book deviating " << percent << "% " <<  i << "/" << n_all << " time " << ms_to_time_short(tim() - all_strt) << " ETA " << ms_to_time_short(eta) << std::endl;
+        std::cerr << "loop " << n_loop << " book deviating " << percent << "% " <<  i << "/" << n_all << " time " << ms_to_time_short(tim() - all_strt) << " ETA " << ms_to_time_short(eta) << std::endl;
     }
 }
 
@@ -180,12 +182,12 @@ inline void book_deviate(Board root_board, int level, int book_depth, int max_er
         book.check_add_leaf_all_search(level / 2, &stop);
         std::unordered_set<Book_deviate_todo_elem, Book_deviate_hash> book_deviate_todo;
         get_book_deviate_todo(root_elem, book_depth, max_error_per_move, lower, upper, book_deviate_todo, all_strt, book_learning, board_copy, player, n_loop);
-        std::cerr << n_loop << " book deviate todo " << book_deviate_todo.size() << " calculated time " << ms_to_time_short(tim() - all_strt) << std::endl;
+        std::cerr << "loop " << n_loop << " book deviate todo " << book_deviate_todo.size() << " calculated time " << ms_to_time_short(tim() - all_strt) << std::endl;
         if (book_deviate_todo.size() == 0)
             break;
         uint64_t strt = tim();
         expand_leaves(level, book_deviate_todo, all_strt, strt, book_learning, board_copy, player, n_loop);
-        std::cerr << n_loop << " book deviated size " << book.size() << std::endl;
+        std::cerr << "loop " << n_loop << " book deviated size " << book.size() << std::endl;
     }
     root_board.copy(board_copy);
     *player = before_player;
