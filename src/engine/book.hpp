@@ -408,7 +408,7 @@ class Book{
         }
 
         void search_leaf(Board board, int level, bool use_multi_thread){
-            Book_elem book_elem = book[board];
+            Book_elem book_elem = get(board);
             int8_t new_leaf_value = SCORE_UNDEFINED, new_leaf_move = MOVE_UNDEFINED;
             std::vector<Book_value> links = get_all_moves_with_value(&board);
             uint64_t legal = board.get_legal();
@@ -1211,6 +1211,7 @@ class Book{
             @return registered value (if not registered, returns -INF)
         */
         inline Book_elem get_representative(Board b, int idx){
+            std::lock_guard<std::mutex> lock(mtx);
             Book_elem res;
             if (!contain_representative(b))
                 return res;
