@@ -394,6 +394,7 @@ class Book{
 
 
         void add_leaf(Board *board, int8_t value, int8_t policy){
+            std::lock_guard<std::mutex> lock(mtx);
             int rotate_idx;
             Board representive_board = get_representative_board(board, &rotate_idx);
             int8_t rotated_policy = policy;
@@ -1392,6 +1393,7 @@ class Book{
             @param value                a value to change or register
         */
         inline void change(Board b, int value){
+            std::lock_guard<std::mutex> lock(mtx);
             if (-HW2 <= value && value <= HW2){
                 if (contain(b)){
                     Board bb = get_representative_board(b);
