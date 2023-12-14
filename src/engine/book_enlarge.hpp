@@ -296,8 +296,10 @@ inline void book_deviate(Board root_board, int level, int book_depth, int max_er
         if (upper > SCORE_MAX)
             upper = SCORE_MAX;
         std::cerr << "search [" << lower << ", " << (int)book_elem.value << ", " << upper << "]" << std::endl;
-        bool book_recalculating = true;
-        book_recalculate_leaf(root_board, std::max(1, level * 2 / 3), book_depth, max_error_per_move, max_error_sum, board_copy, player, &book_recalculating);
+        //bool book_recalculating = true;
+        //book_recalculate_leaf(root_board, std::max(1, level * 2 / 3), book_depth, max_error_per_move, max_error_sum, board_copy, player, &book_recalculating);
+        bool stop = false;
+        book.check_add_leaf_all_search(std::max(1, level * 2 / 3), &stop);
         std::unordered_set<Book_deviate_todo_elem, Book_deviate_hash> book_deviate_todo;
         book.reset_seen();
         get_book_deviate_todo(root_elem, book_depth, max_error_per_move, lower, upper, book_deviate_todo, all_strt, book_learning, board_copy, player, n_loop);
