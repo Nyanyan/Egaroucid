@@ -102,7 +102,9 @@ void get_book_deviate_todo(Book_deviate_todo_elem todo_elem, int book_depth, int
             }
         }
         // check leaf
-        if (book_elem.leaf.value >= book_elem.value - max_error_per_move && is_valid_policy(book_elem.leaf.move) && lower <= book_elem.leaf.value){
+        if (book_elem.leaf.value >= book_elem.value - max_error_per_move&& lower <= book_elem.leaf.value && is_valid_policy(book_elem.leaf.move) ){
+            std::cerr << (int)book_elem.leaf.value << " " << (int)book_elem.value << " " << lower << std::endl;
+            todo_elem.board.print();
             book_deviate_todo.emplace(todo_elem);
             if (book_deviate_todo.size() % 10 == 0)
                 std::cerr << "loop " << n_loop << " book deviate todo " << book_deviate_todo.size() << " calculating... time " << ms_to_time_short(tim() - all_strt) << std::endl;
@@ -126,8 +128,8 @@ void expand_leaf(int book_depth, int level, Board board){
                     while (board_copy.n_discs() <= book_depth + 4 && transposition_table.get_if_perfect(&board_copy, board_copy.hash(), &val, &best_move)){
                         if (board_copy != board)
                             book.change(&board_copy, val);
-                        if (board_copy.n_discs() == book_depth + 4)
-                            book.add_leaf(&board_copy, val, best_move);
+                        // if (board_copy.n_discs() == book_depth + 4)
+                        book.add_leaf(&board_copy, val, best_move);
                         calc_flip(&flip, &board_copy, best_move);
                         board_copy.move_board(&flip);
                     }
