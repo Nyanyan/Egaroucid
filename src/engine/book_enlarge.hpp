@@ -234,10 +234,15 @@ void expand_leaf(int book_depth, int level, Board board){
     board.undo_board(&flip);
 }
 
-void expand_leaves(int book_depth, int level, std::unordered_set<Book_deviate_todo_elem, Book_deviate_hash> &book_deviate_todo, uint64_t all_strt, uint64_t strt, bool *book_learning, Board *board_copy, int *player, int n_loop){
+void expand_leaves(int book_depth, int level, std::unordered_set<Book_deviate_todo_elem, Book_deviate_hash> &book_deviate_todo, uint64_t all_strt, uint64_t strt, bool *book_learning, Board *board_copy, int *player, int n_loop, std::string file, std::string bak_file){
     int n_all = book_deviate_todo.size();
     int i = 0;
+    uint64_t s = all_strt;
     for (Book_deviate_todo_elem elem: book_deviate_todo){
+        if (tim() - s >= AUTO_BOOK_SAVE_TIME){
+            book.save_egbk3(file, bak_file);
+            s = tim();
+        }
         if (!global_searching || !(*book_learning))
             break;
         *board_copy = elem.board;
@@ -291,8 +296,6 @@ inline void book_deviate(Board root_board, int level, int book_depth, int max_er
         if (upper > SCORE_MAX)
             upper = SCORE_MAX;
         std::cerr << "search [" << lower << ", " << (int)book_elem.value << ", " << upper << "]" << std::endl;
-        bool stop = false;
-        //book.check_add_leaf_all_search(std::max(1, level * 2 / 3), &stop);
         bool book_recalculating = true;
         book_recalculate_leaf(root_board, std::max(1, level * 2 / 3), book_depth, max_error_per_move, max_error_sum, board_copy, player, &book_recalculating);
         std::unordered_set<Book_deviate_todo_elem, Book_deviate_hash> book_deviate_todo;
@@ -303,9 +306,10 @@ inline void book_deviate(Board root_board, int level, int book_depth, int max_er
         if (book_deviate_todo.size() == 0)
             break;
         uint64_t strt = tim();
-        expand_leaves(book_depth, level, book_deviate_todo, all_strt, strt, book_learning, board_copy, player, n_loop);
+        expand_leaves(book_depth, level, book_deviate_todo, all_strt, strt, book_learning, board_copy, player, n_loop, book_file, book_bak);
         std::cerr << "loop " << n_loop << " book deviated size " << book.size() << std::endl;
     }
+    bool stop = false;
     book.check_add_leaf_all_search(std::max(1, level / 2), &stop);
     root_board.copy(board_copy);
     *player = before_player;
