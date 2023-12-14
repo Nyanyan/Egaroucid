@@ -163,9 +163,11 @@ void book_recalculate_leaves(int level, std::unordered_set<Book_deviate_todo_ele
         if (tasks[i].valid()){
             tasks[i].get();
             ++n_done;
-            int percent = 100ULL * n_done / n_all;
-            uint64_t eta = (tim() - strt) * ((double)n_all / n_done - 1.0);
-            std::cerr << "book recalculating leaves " << percent << "% " <<  n_done << "/" << n_all << " time " << ms_to_time_short(tim() - all_strt) << " ETA " << ms_to_time_short(eta) << std::endl;
+            if (n_done % 10 == 0){
+                int percent = 100ULL * n_done / n_all;
+                uint64_t eta = (tim() - strt) * ((double)n_all / n_done - 1.0);
+                std::cerr << "book recalculating leaves " << percent << "% " <<  n_done << "/" << n_all << " time " << ms_to_time_short(tim() - all_strt) << " ETA " << ms_to_time_short(eta) << std::endl;
+            }
         }
     }
     int percent = 100ULL * n_done / n_all;
