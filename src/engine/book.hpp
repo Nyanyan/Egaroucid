@@ -21,6 +21,7 @@
 inline Search_result tree_search(Board board, int depth, uint_fast8_t mpc_level, bool show_log, bool use_multi_thread);
 Search_result ai(Board board, int level, bool use_book, int book_acc_level, bool use_multi_thread, bool show_log);
 Search_result ai_specified_moves(Board board, int level, bool use_book, int book_acc_level, bool use_multi_thread, bool show_log, uint64_t use_legal);
+void search_new_leaf(Board board, int level, int book_elem_value, bool use_multi_thread);
 
 #define BOOK_N_ACCEPT_LEVEL 11
 #define BOOK_ACCURACY_LEVEL_INF 10
@@ -455,15 +456,16 @@ class Book{
             std::cerr << "add leaf to book" << std::endl;
             int percent = -1, t = 0, n_boards = (int)boards.size();
             Book_elem book_elem;
+            std::vector<std::future<void>> tasks;
+            int n_doing = 0, n_done = 0;
             for (Board &board: boards){
                 if (!global_searching || *stop)
                     break;
-                int n_percent = (double)t / n_boards * 100;
+                int n_percent = (double)t++ / n_boards * 100;
                 if (n_percent > percent){
                     percent = n_percent;
-                    std::cerr << "adding leaf " << percent << "%" << std::endl;
+                    std::cerr << "adding leaf " << percent << "%" << " n_recalculated " << n_done << std::endl;
                 }
-                ++t;
                 book_elem = book[board];
                 int leaf_move = book_elem.leaf.move;
                 bool need_to_rewrite_leaf = leaf_move < 0 || MOVE_UNDEFINED <= leaf_move || (board.get_legal() & (1ULL << leaf_move)) == 0;
@@ -479,29 +481,38 @@ class Book{
                     board.undo_board(&flip);
                 }
                 if (need_to_rewrite_leaf){
-                    int8_t new_leaf_value = SCORE_UNDEFINED, new_leaf_move = MOVE_UNDEFINED;
-                    std::vector<Book_value> links = get_all_moves_with_value(&board);
-                    uint64_t legal = board.get_legal();
-                    for (Book_value &link: links)
-                        legal ^= 1ULL << link.policy;
-                    if (legal){
-                        int use_level = level;
-                        if (level == ADD_LEAF_SPECIAL_LEVEL)
-                            use_level = 1;
-                        Search_result ai_result = ai_specified_moves(board, use_level, false, 0, true, false, legal);
-                        if (ai_result.value != SCORE_UNDEFINED){
-                            new_leaf_value = ai_result.value;
-                            if (level == ADD_LEAF_SPECIAL_LEVEL)
-                                new_leaf_value = book_elem.value;
-                            new_leaf_move = ai_result.policy;
-                            //std::cerr << "recalc leaf " << (int)new_leaf_value << " " << (int)new_leaf_move << " " << idx_to_coord(new_leaf_move) << std::endl;
-                            //for (Book_value &link: links)
-                            //    std::cerr << "link " << idx_to_coord(link.policy) << std::endl;
-                            //board.print();
+                    bool use_multi_thread = (n_boards - n_doing) < thread_pool.get_n_idle();
+                    bool pushed;
+                    ++n_doing;
+                    tasks.emplace_back(thread_pool.push(&pushed, std::bind(&search_new_leaf, board, level, book_elem.value, use_multi_thread)));
+                    if (!pushed){
+                        search_new_leaf(board, level, book_elem.value, true);
+                        ++n_done;
+                    }
+                }
+                int tasks_size = tasks.size();
+                for (int i = 0; i < tasks_size; ++i){
+                    if (tasks[i].valid()){
+                        if (tasks[i].wait_for(std::chrono::seconds(0)) == std::future_status::ready){
+                            tasks[i].get();
+                            ++n_done;
                         }
-                    } else
-                        new_leaf_move = MOVE_NOMOVE;
-                    add_leaf(&board, new_leaf_value, new_leaf_move);
+                    }
+                }
+                for (int i = 0; i < tasks_size; ++i){
+                    if (i >= tasks.size())
+                        break;
+                    if (!tasks[i].valid()){
+                        tasks.erase(tasks.begin() + i);
+                        --i;
+                    }
+                }
+            }
+            int tasks_size = tasks.size();
+            for (int i = 0; i < tasks_size; ++i){
+                if (tasks[i].valid()){
+                    tasks[i].get();
+                    ++n_done;
                 }
             }
         }
@@ -1898,4 +1909,30 @@ void book_reduce(Board board, int depth, int max_error_per_move, int max_error_s
 
 void book_recalculate_leaf_all(int level, bool *stop){
     book.recalculate_leaf_all(level, stop);
+}
+
+void search_new_leaf(Board board, int level, int book_elem_value, bool use_multi_thread){
+    int8_t new_leaf_value = SCORE_UNDEFINED, new_leaf_move = MOVE_UNDEFINED;
+    std::vector<Book_value> links = book.get_all_moves_with_value(&board);
+    uint64_t legal = board.get_legal();
+    for (Book_value &link: links)
+        legal ^= 1ULL << link.policy;
+    if (legal){
+        int use_level = level;
+        if (level == ADD_LEAF_SPECIAL_LEVEL)
+            use_level = 1;
+        Search_result ai_result = ai_specified_moves(board, use_level, false, 0, use_multi_thread, false, legal);
+        if (ai_result.value != SCORE_UNDEFINED){
+            new_leaf_value = ai_result.value;
+            if (level == ADD_LEAF_SPECIAL_LEVEL)
+                new_leaf_value = book_elem_value;
+            new_leaf_move = ai_result.policy;
+            //std::cerr << "recalc leaf " << (int)new_leaf_value << " " << (int)new_leaf_move << " " << idx_to_coord(new_leaf_move) << std::endl;
+            //for (Book_value &link: links)
+            //    std::cerr << "link " << idx_to_coord(link.policy) << std::endl;
+            //board.print();
+        }
+    } else
+        new_leaf_move = MOVE_NOMOVE;
+    book.add_leaf(&board, new_leaf_value, new_leaf_move);
 }
