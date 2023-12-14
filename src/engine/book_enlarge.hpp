@@ -61,6 +61,102 @@ struct Book_deviate_hash {
     }
 };
 
+
+
+void get_book_recalculate_leaf_todo(Book_deviate_todo_elem todo_elem, int book_depth, int max_error_per_move, int lower, int upper, std::unordered_set<Book_deviate_todo_elem, Book_deviate_hash> &todo_list, uint64_t all_strt, bool *book_learning, Board *board_copy, int *player){
+    if (!global_searching || !(*book_learning))
+        return;
+    todo_elem.board = book.get_representative_board(todo_elem.board);
+    *board_copy = todo_elem.board;
+    *player = todo_elem.player;
+    // pass?
+    if (todo_elem.board.get_legal() == 0){
+        todo_elem.pass();
+        if (todo_elem.board.get_legal() == 0)
+            return; // game over
+            get_book_recalculate_leaf_todo(todo_elem, book_depth, max_error_per_move, -upper, -lower, todo_list, all_strt, book_learning, board_copy, player);
+        todo_elem.pass();
+        return;
+    }
+    // already searched?
+    if (todo_list.find(todo_elem) != todo_list.end())
+        return;
+    // check depth
+    if (todo_elem.board.n_discs() > book_depth + 4)
+        return;
+    Book_elem book_elem = book.get(todo_elem.board);
+    // already searched?
+    if (book_elem.seen)
+        return;
+    book.flag_book_elem(todo_elem.board);
+    // add to list
+    todo_list.emplace(todo_elem);
+    if (todo_list.size() % 10 == 0)
+        std::cerr << "book recalculate leaf todo " << todo_list.size() << " calculating... time " << ms_to_time_short(tim() - all_strt) << std::endl;
+    // expand links
+    if (lower <= book_elem.value){
+        std::vector<Book_value> links = book.get_all_moves_with_value(&todo_elem.board);
+        Flip flip;
+        for (Book_value &link: links){
+            if (link.value >= book_elem.value - max_error_per_move){
+                calc_flip(&flip, &todo_elem.board, link.policy);
+                todo_elem.move(&flip);
+                    get_book_recalculate_leaf_todo(todo_elem, book_depth, max_error_per_move, -upper, -lower, todo_list, all_strt, book_learning, board_copy, player);
+                todo_elem.undo(&flip);
+            }
+        }
+    }
+}
+
+void book_recalculate_leaves(int level, std::unordered_set<Book_deviate_todo_elem, Book_deviate_hash> &todo_list, uint64_t all_strt, uint64_t strt, bool *book_learning, Board *board_copy, int *player){
+    int n_all = todo_list.size();
+    int i = 0;
+    for (Book_deviate_todo_elem elem: todo_list){
+        if (!global_searching || !(*book_learning))
+            break;
+        *board_copy = elem.board;
+        *player = elem.player;
+        book.search_leaf(elem.board, level);
+        ++i;
+        int percent = 100ULL * i / n_all;
+        uint64_t eta = (tim() - strt) * ((double)n_all / i - 1.0);
+        std::cerr << "book recalculating leaves " << percent << "% " <<  i << "/" << n_all << " time " << ms_to_time_short(tim() - all_strt) << " ETA " << ms_to_time_short(eta) << std::endl;
+    }
+}
+
+inline void book_recalculate_leaf(Board root_board, int level, int book_depth, int max_error_per_move, int max_error_sum, Board *board_copy, int *player, bool *book_learning){
+    uint64_t strt_tim = tim();
+    uint64_t all_strt = strt_tim;
+    int before_player = *player;
+    Book_deviate_todo_elem root_elem;
+    root_elem.board = root_board;
+    root_elem.player = *player;
+    int n_saved = 1;
+    Book_elem book_elem = book.get(root_board);
+    if (book_elem.value == SCORE_UNDEFINED)
+        book_elem.value = ai(root_board, level, true, 0, true, true).value;
+    int lower = book_elem.value - max_error_sum;
+    int upper = book_elem.value + max_error_sum;
+    if (lower < -SCORE_MAX)
+        lower = -SCORE_MAX;
+    if (upper > SCORE_MAX)
+        upper = SCORE_MAX;
+    bool stop = false;
+    book.reset_seen();
+    std::unordered_set<Book_deviate_todo_elem, Book_deviate_hash> book_recalculate_leaf_todo;
+    get_book_recalculate_leaf_todo(root_elem, book_depth, max_error_per_move, lower, upper, book_recalculate_leaf_todo, all_strt, book_learning, board_copy, player);
+    std::cerr << "book recalculate leaf todo " << book_recalculate_leaf_todo.size() << " calculated time " << ms_to_time_short(tim() - all_strt) << std::endl;
+    uint64_t strt = tim();
+    book_recalculate_leaves(level, book_recalculate_leaf_todo, all_strt, strt, book_learning, board_copy, player);
+    book.reset_seen();
+    root_board.copy(board_copy);
+    *player = before_player;
+    std::cerr << "recalculate leaf finished value " << book.get(root_board).value << " time " << ms_to_time_short(tim() - all_strt) << std::endl;
+    *book_learning = false;
+}
+
+
+
 void get_book_deviate_todo(Book_deviate_todo_elem todo_elem, int book_depth, int max_error_per_move, int lower, int upper, std::unordered_set<Book_deviate_todo_elem, Book_deviate_hash> &book_deviate_todo, uint64_t all_strt, bool *book_learning, Board *board_copy, int *player, int n_loop){
     if (!global_searching || !(*book_learning))
         return;
@@ -103,8 +199,6 @@ void get_book_deviate_todo(Book_deviate_todo_elem todo_elem, int book_depth, int
         }
         // check leaf
         if (book_elem.leaf.value >= book_elem.value - max_error_per_move&& lower <= book_elem.leaf.value && is_valid_policy(book_elem.leaf.move) ){
-            std::cerr << (int)book_elem.leaf.value << " " << (int)book_elem.value << " " << lower << std::endl;
-            todo_elem.board.print();
             book_deviate_todo.emplace(todo_elem);
             if (book_deviate_todo.size() % 10 == 0)
                 std::cerr << "loop " << n_loop << " book deviate todo " << book_deviate_todo.size() << " calculating... time " << ms_to_time_short(tim() - all_strt) << std::endl;
@@ -198,7 +292,9 @@ inline void book_deviate(Board root_board, int level, int book_depth, int max_er
             upper = SCORE_MAX;
         std::cerr << "search [" << lower << ", " << (int)book_elem.value << ", " << upper << "]" << std::endl;
         bool stop = false;
-        book.check_add_leaf_all_search(level / 2, &stop);
+        //book.check_add_leaf_all_search(std::max(1, level * 2 / 3), &stop);
+        bool book_recalculating = true;
+        book_recalculate_leaf(root_board, std::max(1, level * 2 / 3), book_depth, max_error_per_move, max_error_sum, board_copy, player, &book_recalculating);
         std::unordered_set<Book_deviate_todo_elem, Book_deviate_hash> book_deviate_todo;
         book.reset_seen();
         get_book_deviate_todo(root_elem, book_depth, max_error_per_move, lower, upper, book_deviate_todo, all_strt, book_learning, board_copy, player, n_loop);
@@ -210,99 +306,12 @@ inline void book_deviate(Board root_board, int level, int book_depth, int max_er
         expand_leaves(book_depth, level, book_deviate_todo, all_strt, strt, book_learning, board_copy, player, n_loop);
         std::cerr << "loop " << n_loop << " book deviated size " << book.size() << std::endl;
     }
+    book.check_add_leaf_all_search(std::max(1, level / 2), &stop);
     root_board.copy(board_copy);
     *player = before_player;
     transposition_table.reset_date();
     //book.fix();
     book.save_egbk3(book_file, book_bak);
     std::cerr << "book deviate finished value " << (int)book.get(root_board).value << " time " << ms_to_time_short(tim() - all_strt) << std::endl;
-    *book_learning = false;
-}
-
-
-
-void get_book_recalculate_leaf_todo(Book_deviate_todo_elem todo_elem, int book_depth, int max_error_per_move, int lower, int upper, std::unordered_set<Book_deviate_todo_elem, Book_deviate_hash> &todo_list, uint64_t all_strt, bool *book_learning, Board *board_copy, int *player){
-    if (!global_searching || !(*book_learning))
-        return;
-    todo_elem.board = book.get_representative_board(todo_elem.board);
-    *board_copy = todo_elem.board;
-    *player = todo_elem.player;
-    // pass?
-    if (todo_elem.board.get_legal() == 0){
-        todo_elem.pass();
-        if (todo_elem.board.get_legal() == 0)
-            return; // game over
-            get_book_recalculate_leaf_todo(todo_elem, book_depth, max_error_per_move, -upper, -lower, todo_list, all_strt, book_learning, board_copy, player);
-        todo_elem.pass();
-        return;
-    }
-    // already searched?
-    if (todo_list.find(todo_elem) != todo_list.end())
-        return;
-    // check depth
-    if (todo_elem.board.n_discs() > book_depth + 4)
-        return;
-    Book_elem book_elem = book.get(todo_elem.board);
-    // add to list
-    todo_list.emplace(todo_elem);
-    if (todo_list.size() % 10 == 0)
-        std::cerr << "book recalculate leaf todo " << todo_list.size() << " calculating... time " << ms_to_time_short(tim() - all_strt) << std::endl;
-    // expand links
-    if (lower <= book_elem.value){
-        std::vector<Book_value> links = book.get_all_moves_with_value(&todo_elem.board);
-        Flip flip;
-        for (Book_value &link: links){
-            if (link.value >= book_elem.value - max_error_per_move){
-                calc_flip(&flip, &todo_elem.board, link.policy);
-                todo_elem.move(&flip);
-                    get_book_recalculate_leaf_todo(todo_elem, book_depth, max_error_per_move, -upper, -lower, todo_list, all_strt, book_learning, board_copy, player);
-                todo_elem.undo(&flip);
-            }
-        }
-    }
-}
-
-void book_recalculate_leaves(int level, std::unordered_set<Book_deviate_todo_elem, Book_deviate_hash> &todo_list, uint64_t all_strt, uint64_t strt, bool *book_learning, Board *board_copy, int *player){
-    int n_all = todo_list.size();
-    int i = 0;
-    for (Book_deviate_todo_elem elem: todo_list){
-        if (!global_searching || !(*book_learning))
-            break;
-        *board_copy = elem.board;
-        *player = elem.player;
-        book.search_leaf(elem.board, level);
-        ++i;
-        int percent = 100ULL * i / n_all;
-        uint64_t eta = (tim() - strt) * ((double)n_all / i - 1.0);
-        std::cerr << "book recalculating leaves " << percent << "% " <<  i << "/" << n_all << " time " << ms_to_time_short(tim() - all_strt) << " ETA " << ms_to_time_short(eta) << std::endl;
-    }
-}
-
-inline void book_recalculate_leaf(Board root_board, int level, int book_depth, int max_error_per_move, int max_error_sum, Board *board_copy, int *player, bool *book_learning){
-    uint64_t strt_tim = tim();
-    uint64_t all_strt = strt_tim;
-    int before_player = *player;
-    Book_deviate_todo_elem root_elem;
-    root_elem.board = root_board;
-    root_elem.player = *player;
-    int n_saved = 1;
-    Book_elem book_elem = book.get(root_board);
-    if (book_elem.value == SCORE_UNDEFINED)
-        book_elem.value = ai(root_board, level, true, 0, true, true).value;
-    int lower = book_elem.value - max_error_sum;
-    int upper = book_elem.value + max_error_sum;
-    if (lower < -SCORE_MAX)
-        lower = -SCORE_MAX;
-    if (upper > SCORE_MAX)
-        upper = SCORE_MAX;
-    bool stop = false;
-    std::unordered_set<Book_deviate_todo_elem, Book_deviate_hash> book_recalculate_leaf_todo;
-    get_book_recalculate_leaf_todo(root_elem, book_depth, max_error_per_move, lower, upper, book_recalculate_leaf_todo, all_strt, book_learning, board_copy, player);
-    uint64_t strt = tim();
-    book_recalculate_leaves(level, book_recalculate_leaf_todo, all_strt, strt, book_learning, board_copy, player);
-    book.check_add_leaf_all_search(level, &stop);
-    root_board.copy(board_copy);
-    *player = before_player;
-    std::cerr << "recalculate leaf finished value " << book.get(root_board).value << " time " << ms_to_time_short(tim() - all_strt) << std::endl;
     *book_learning = false;
 }
