@@ -80,7 +80,7 @@ void get_book_deviate_todo(Book_deviate_todo_elem todo_elem, int book_depth, int
     if (book_deviate_todo.find(todo_elem) != book_deviate_todo.end())
         return;
     // check depth
-    if (todo_elem.board.n_discs() > book_depth + 4)
+    if (todo_elem.board.n_discs() >= book_depth + 4)
         return;
     Book_elem book_elem = book.get(todo_elem.board);
     // already seen
@@ -110,7 +110,7 @@ void get_book_deviate_todo(Book_deviate_todo_elem todo_elem, int book_depth, int
     }
 }
 
-void expand_leaf(int level, Board board){
+void expand_leaf(int book_depth, int level, Board board){
     Book_elem book_elem = book.get(board);
     Flip flip;
     calc_flip(&flip, &board, book_elem.leaf.move);
@@ -119,14 +119,26 @@ void expand_leaf(int level, Board board){
             Search_result search_result = ai(board, level, true, 0, true, false);
             if (-HW2 <= search_result.value && search_result.value <= HW2){
                 book.change(board, search_result.value);
-                if (0 <= search_result.policy && search_result.policy < HW2 && (board.get_legal() & (1ULL << search_result.policy)))
+                if (search_result.depth >= HW2 - board.n_discs() && search_result.probability == 100){ // perfect serach
+                    Board board_copy = board.copy();
+                    Flip flip;
+                    int val, best_move;
+                    while (board_copy.n_discs() <= book_depth + 4 && transposition_table.get_if_perfect(&board_copy, board_copy.hash(), &val, &best_move)){
+                        if (board_copy != board)
+                            book.change(&board_copy, val);
+                        if (board_copy.n_discs() == book_depth + 4)
+                            book.add_leaf(&board_copy, val, best_move);
+                        calc_flip(&flip, &board_copy, best_move);
+                        board_copy.move_board(&flip);
+                    }
+                } else if (0 <= search_result.policy && search_result.policy < HW2 && (board.get_legal() & (1ULL << search_result.policy)))
                     book.add_leaf(&board, search_result.value, search_result.policy);
             }
         }
     board.undo_board(&flip);
 }
 
-void expand_leaves(int level, std::unordered_set<Book_deviate_todo_elem, Book_deviate_hash> &book_deviate_todo, uint64_t all_strt, uint64_t strt, bool *book_learning, Board *board_copy, int *player, int n_loop){
+void expand_leaves(int book_depth, int level, std::unordered_set<Book_deviate_todo_elem, Book_deviate_hash> &book_deviate_todo, uint64_t all_strt, uint64_t strt, bool *book_learning, Board *board_copy, int *player, int n_loop){
     int n_all = book_deviate_todo.size();
     int i = 0;
     for (Book_deviate_todo_elem elem: book_deviate_todo){
@@ -134,7 +146,7 @@ void expand_leaves(int level, std::unordered_set<Book_deviate_todo_elem, Book_de
             break;
         *board_copy = elem.board;
         *player = elem.player;
-        expand_leaf(level, elem.board);
+        expand_leaf(book_depth, level, elem.board);
         ++i;
         int percent = 100ULL * i / n_all;
         uint64_t eta = (tim() - strt) * ((double)n_all / i - 1.0);
@@ -182,6 +194,7 @@ inline void book_deviate(Board root_board, int level, int book_depth, int max_er
             lower = -SCORE_MAX;
         if (upper > SCORE_MAX)
             upper = SCORE_MAX;
+        std::cerr << "search [" << lower << ", " << (int)book_elem.value << ", " << upper << "]" << std::endl;
         bool stop = false;
         book.check_add_leaf_all_search(level / 2, &stop);
         std::unordered_set<Book_deviate_todo_elem, Book_deviate_hash> book_deviate_todo;
@@ -192,7 +205,7 @@ inline void book_deviate(Board root_board, int level, int book_depth, int max_er
         if (book_deviate_todo.size() == 0)
             break;
         uint64_t strt = tim();
-        expand_leaves(level, book_deviate_todo, all_strt, strt, book_learning, board_copy, player, n_loop);
+        expand_leaves(book_depth, level, book_deviate_todo, all_strt, strt, book_learning, board_copy, player, n_loop);
         std::cerr << "loop " << n_loop << " book deviated size " << book.size() << std::endl;
     }
     root_board.copy(board_copy);

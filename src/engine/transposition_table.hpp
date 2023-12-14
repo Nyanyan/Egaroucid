@@ -207,6 +207,10 @@ class Hash_data{
         inline void reset_date(){
             date = 0;
         }
+
+        inline uint8_t get_mpc_level(){
+            return mpc_level;
+        }
 };
 
 struct Hash_node{
@@ -597,6 +601,39 @@ class Transposition_table{
                 node = get_node(hash);
             }
             return TRANSPOSITION_TABLE_UNDEFINED;
+        }
+
+        /*
+            @brief get best move from transposition table
+
+            @param board                board
+            @param hash                 hash code
+            @return best move
+        */
+        inline bool get_if_perfect(const Board *board, uint32_t hash, int *val, int *best_move){
+            Hash_node *node = get_node(hash);
+            for (uint_fast8_t i = 0; i < TRANSPOSITION_TABLE_N_LOOP; ++i){
+                if (node->board.player == board->player && node->board.opponent == board->opponent){
+                    node->lock.lock();
+                        if (node->board.player == board->player && node->board.opponent == board->opponent && node->data.get_mpc_level() == MPC_100_LEVEL){
+                            uint_fast8_t moves[N_TRANSPOSITION_MOVES];
+                            node->data.get_moves(moves);
+                            int l, u;
+                            node->data.get_bounds(&l, &u);
+                            node->lock.unlock();
+                            bool is_perfect = l == u;
+                            if (is_perfect){
+                                *val = l;
+                                *best_move = moves[0];
+                            }
+                            return is_perfect;
+                        }
+                    node->lock.unlock();
+                }
+                ++hash;
+                node = get_node(hash);
+            }
+            return false;
         }
 
     private:
