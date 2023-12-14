@@ -91,7 +91,7 @@ void get_book_recalculate_leaf_todo(Book_deviate_todo_elem todo_elem, int book_d
     book.flag_book_elem(todo_elem.board);
     // add to list
     todo_list.emplace(todo_elem);
-    if (todo_list.size() % 10 == 0)
+    if (todo_list.size() % 100 == 0)
         std::cerr << "book recalculate leaf todo " << todo_list.size() << " calculating... time " << ms_to_time_short(tim() - all_strt) << std::endl;
     // expand links
     if (lower <= book_elem.value){
@@ -108,20 +108,69 @@ void get_book_recalculate_leaf_todo(Book_deviate_todo_elem todo_elem, int book_d
     }
 }
 
+void book_search_leaf(Board board, int level, bool use_multi_thread){
+    book.search_leaf(board, level, use_multi_thread);
+}
+
 void book_recalculate_leaves(int level, std::unordered_set<Book_deviate_todo_elem, Book_deviate_hash> &todo_list, uint64_t all_strt, uint64_t strt, bool *book_learning, Board *board_copy, int *player){
     int n_all = todo_list.size();
-    int i = 0;
+    int n_done = 0, n_doing = 0;
+    std::vector<std::future<void>> tasks;
     for (Book_deviate_todo_elem elem: todo_list){
         if (!global_searching || !(*book_learning))
             break;
         *board_copy = elem.board;
         *player = elem.player;
-        book.search_leaf(elem.board, level);
-        ++i;
-        int percent = 100ULL * i / n_all;
-        uint64_t eta = (tim() - strt) * ((double)n_all / i - 1.0);
-        std::cerr << "book recalculating leaves " << percent << "% " <<  i << "/" << n_all << " time " << ms_to_time_short(tim() - all_strt) << " ETA " << ms_to_time_short(eta) << std::endl;
+        bool use_multi_thread = (n_all - n_doing) < thread_pool.get_n_idle();
+        bool pushed;
+        ++n_doing;
+        tasks.emplace_back(thread_pool.push(&pushed, std::bind(&book_search_leaf, elem.board, level, use_multi_thread)));
+        if (!pushed){
+            tasks.pop_back();
+            book_search_leaf(elem.board, level, true);
+            ++n_done;
+            if (n_done % 10 == 0){
+                int percent = 100ULL * n_done / n_all;
+                uint64_t eta = (tim() - strt) * ((double)n_all / n_done - 1.0);
+                std::cerr << "book recalculating leaves " << percent << "% " <<  n_done << "/" << n_all << " time " << ms_to_time_short(tim() - all_strt) << " ETA " << ms_to_time_short(eta) << std::endl;
+            }
+        }
+        int tasks_size = tasks.size();
+        for (int i = 0; i < tasks_size; ++i){
+            if (tasks[i].valid()){
+                if (tasks[i].wait_for(std::chrono::seconds(0)) == std::future_status::ready){
+                    tasks[i].get();
+                    ++n_done;
+                    if (n_done % 10 == 0){
+                        int percent = 100ULL * n_done / n_all;
+                        uint64_t eta = (tim() - strt) * ((double)n_all / n_done - 1.0);
+                        std::cerr << "book recalculating leaves " << percent << "% " <<  n_done << "/" << n_all << " time " << ms_to_time_short(tim() - all_strt) << " ETA " << ms_to_time_short(eta) << std::endl;
+                    }
+                }
+            }
+        }
+        for (int i = 0; i < tasks_size; ++i){
+            if (i >= tasks.size())
+                break;
+            if (!tasks[i].valid()){
+                tasks.erase(tasks.begin() + i);
+                --i;
+            }
+        }
     }
+    int tasks_size = tasks.size();
+    for (int i = 0; i < tasks_size; ++i){
+        if (tasks[i].valid()){
+            tasks[i].get();
+            ++n_done;
+            int percent = 100ULL * n_done / n_all;
+            uint64_t eta = (tim() - strt) * ((double)n_all / n_done - 1.0);
+            std::cerr << "book recalculating leaves " << percent << "% " <<  n_done << "/" << n_all << " time " << ms_to_time_short(tim() - all_strt) << " ETA " << ms_to_time_short(eta) << std::endl;
+        }
+    }
+    int percent = 100ULL * n_done / n_all;
+    uint64_t eta = (tim() - strt) * ((double)n_all / n_done - 1.0);
+    std::cerr << "book recalculating leaves finished " << percent << "% " <<  n_done << "/" << n_all << " time " << ms_to_time_short(tim() - all_strt) << " ETA " << ms_to_time_short(eta) << std::endl;
 }
 
 inline void book_recalculate_leaf(Board root_board, int level, int book_depth, int max_error_per_move, int max_error_sum, Board *board_copy, int *player, bool *book_learning){
@@ -260,7 +309,7 @@ void expand_leaves(int book_depth, int level, std::unordered_set<Book_deviate_to
             ++n_done;
             int percent = 100ULL * n_done / n_all;
             uint64_t eta = (tim() - strt) * ((double)n_all / n_done - 1.0);
-            std::cerr << "loop " << n_loop << " n_tasks " << tasks.size() << " book deviating " << percent << "% " <<  n_done << "/" << n_all << " time " << ms_to_time_short(tim() - all_strt) << " ETA " << ms_to_time_short(eta) << std::endl;
+            std::cerr << "loop " << n_loop << " book deviating " << percent << "% " <<  n_done << "/" << n_all << " time " << ms_to_time_short(tim() - all_strt) << " ETA " << ms_to_time_short(eta) << std::endl;
         }
         int tasks_size = tasks.size();
         for (int i = 0; i < tasks_size; ++i){
@@ -270,7 +319,7 @@ void expand_leaves(int book_depth, int level, std::unordered_set<Book_deviate_to
                     ++n_done;
                     int percent = 100ULL * n_done / n_all;
                     uint64_t eta = (tim() - strt) * ((double)n_all / n_done - 1.0);
-                    std::cerr << "loop " << n_loop << " n_tasks " << tasks.size() << " book deviating " << percent << "% " <<  n_done << "/" << n_all << " time " << ms_to_time_short(tim() - all_strt) << " ETA " << ms_to_time_short(eta) << std::endl;
+                    std::cerr << "loop " << n_loop << " book deviating " << percent << "% " <<  n_done << "/" << n_all << " time " << ms_to_time_short(tim() - all_strt) << " ETA " << ms_to_time_short(eta) << std::endl;
                 }
             }
         }
@@ -290,7 +339,7 @@ void expand_leaves(int book_depth, int level, std::unordered_set<Book_deviate_to
             ++n_done;
             int percent = 100ULL * n_done / n_all;
             uint64_t eta = (tim() - strt) * ((double)n_all / n_done - 1.0);
-            std::cerr << "loop " << n_loop << " n_tasks " << tasks.size() << " book deviating " << percent << "% " <<  n_done << "/" << n_all << " time " << ms_to_time_short(tim() - all_strt) << " ETA " << ms_to_time_short(eta) << std::endl;
+            std::cerr << "loop " << n_loop << " book deviating " << percent << "% " <<  n_done << "/" << n_all << " time " << ms_to_time_short(tim() - all_strt) << " ETA " << ms_to_time_short(eta) << std::endl;
         }
     }
 }

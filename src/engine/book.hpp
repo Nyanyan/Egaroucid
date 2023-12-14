@@ -407,7 +407,7 @@ class Book{
             book[representive_board].leaf = leaf;
         }
 
-        void search_leaf(Board board, int level){
+        void search_leaf(Board board, int level, bool use_multi_thread){
             Book_elem book_elem = book[board];
             int8_t new_leaf_value = SCORE_UNDEFINED, new_leaf_move = MOVE_UNDEFINED;
             std::vector<Book_value> links = get_all_moves_with_value(&board);
@@ -415,7 +415,7 @@ class Book{
             for (Book_value &link: links)
                 legal ^= 1ULL << link.policy;
             if (legal){
-                Search_result ai_result = ai_specified_moves(board, level, false, 0, true, false, legal);
+                Search_result ai_result = ai_specified_moves(board, level, false, 0, use_multi_thread, false, legal);
                 if (ai_result.value != SCORE_UNDEFINED){
                     new_leaf_value = ai_result.value;
                     if (level == ADD_LEAF_SPECIAL_LEVEL)
@@ -424,7 +424,12 @@ class Book{
                 }
             } else
                 new_leaf_move = MOVE_NOMOVE;
+            //std::cerr << (int)new_leaf_value << " " << idx_to_coord(new_leaf_move) << std::endl;
             add_leaf(&board, new_leaf_value, new_leaf_move);
+        }
+
+        void search_leaf(Board board, int level){
+            search_leaf(board, level, true);
         }
 
         void check_add_leaf_all_undefined(){
