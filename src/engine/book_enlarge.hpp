@@ -237,7 +237,7 @@ void expand_leaf(int book_depth, int level, Board board){
 void expand_leaves(int book_depth, int level, std::unordered_set<Book_deviate_todo_elem, Book_deviate_hash> &book_deviate_todo, uint64_t all_strt, uint64_t strt, bool *book_learning, Board *board_copy, int *player, int n_loop, std::string file, std::string bak_file){
     int n_all = book_deviate_todo.size();
     int i = 0;
-    uint64_t s = all_strt;
+    uint64_t s = tim();
     for (Book_deviate_todo_elem elem: book_deviate_todo){
         if (tim() - s >= AUTO_BOOK_SAVE_TIME){
             book.save_egbk3(file, bak_file);
