@@ -1622,6 +1622,19 @@ class Book{
             return get_representative_board(b->copy(), idx);
         }
 
+        void reset_seen(){
+            std::vector<Board> boards;
+            for (auto itr = book.begin(); itr != book.end(); ++itr)
+                boards.emplace_back(itr->first);
+            Flip flip;
+            for (Board &board: boards)
+                book[board].seen = false;
+        }
+
+        void flag_book_elem(Board board){
+            book[get_representative_board(board)].seen = true;
+        }
+
     private:
         void reg_first_board(){
             Board board;
@@ -1844,19 +1857,6 @@ class Book{
                 book_elem.leaf.move = elem.leaf.move;
             }
             return register_symmetric_book(b, book_elem);
-        }
-
-        void reset_seen(){
-            std::vector<Board> boards;
-            for (auto itr = book.begin(); itr != book.end(); ++itr)
-                boards.emplace_back(itr->first);
-            Flip flip;
-            for (Board &board: boards)
-                book[board].seen = false;
-        }
-
-        void flag_book_elem(Board board){
-            book[get_representative_board(board)].seen = true;
         }
 };
 

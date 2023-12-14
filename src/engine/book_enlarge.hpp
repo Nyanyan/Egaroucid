@@ -83,6 +83,10 @@ void get_book_deviate_todo(Book_deviate_todo_elem todo_elem, int book_depth, int
     if (todo_elem.board.n_discs() > book_depth + 4)
         return;
     Book_elem book_elem = book.get(todo_elem.board);
+    // already seen
+    if (book_elem.seen)
+        return;
+    book.flag_book_elem(todo_elem.board);
     if (lower <= book_elem.value){
         // expand links
         if (todo_elem.board.n_discs() < book_depth + 4){
@@ -181,7 +185,9 @@ inline void book_deviate(Board root_board, int level, int book_depth, int max_er
         bool stop = false;
         book.check_add_leaf_all_search(level / 2, &stop);
         std::unordered_set<Book_deviate_todo_elem, Book_deviate_hash> book_deviate_todo;
+        book.reset_seen();
         get_book_deviate_todo(root_elem, book_depth, max_error_per_move, lower, upper, book_deviate_todo, all_strt, book_learning, board_copy, player, n_loop);
+        book.reset_seen();
         std::cerr << "loop " << n_loop << " book deviate todo " << book_deviate_todo.size() << " calculated time " << ms_to_time_short(tim() - all_strt) << std::endl;
         if (book_deviate_todo.size() == 0)
             break;
