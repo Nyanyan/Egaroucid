@@ -466,7 +466,7 @@ class Book{
                     percent = n_percent;
                     std::cerr << "adding leaf " << percent << "%" << " n_recalculated " << n_done << std::endl;
                 }
-                book_elem = book[board];
+                book_elem = get(board);
                 int leaf_move = book_elem.leaf.move;
                 bool need_to_rewrite_leaf = leaf_move < 0 || MOVE_UNDEFINED <= leaf_move || (board.get_legal() & (1ULL << leaf_move)) == 0;
                 if (!need_to_rewrite_leaf){
@@ -486,6 +486,7 @@ class Book{
                     ++n_doing;
                     tasks.emplace_back(thread_pool.push(&pushed, std::bind(&search_new_leaf, board, level, book_elem.value, use_multi_thread)));
                     if (!pushed){
+                        tasks.pop_back();
                         search_new_leaf(board, level, book_elem.value, true);
                         ++n_done;
                     }
@@ -515,6 +516,7 @@ class Book{
                     ++n_done;
                 }
             }
+            std::cerr << "leaf search finished" << std::endl;
         }
 
         void recalculate_leaf_all(int level, bool *stop){
@@ -1279,6 +1281,7 @@ class Book{
             @return vector of moves
         */
         inline std::vector<Book_value> get_all_moves_with_value(Board *b){
+            std::lock_guard<std::mutex> lock(mtx);
             std::vector<Book_value> policies;
             uint64_t legal = b->get_legal();
             Flip flip;
