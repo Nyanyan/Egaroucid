@@ -1387,7 +1387,10 @@ class Book{
                 board.move_board(&flip);
                     child_res = negamax_book_p(board, n_seen, n_fix, percent, stop);
                     if (child_res.value != SCORE_UNDEFINED){
-                        v = std::max(v, -child_res.value);
+                        if (child_res.level >= res.level && v < -child_res.level){ // update parent value
+                            res.level = child_res.level;
+                            v = -child_res.value;
+                        }
                         if (n_lines + child_res.n_lines < n_lines)
                             n_lines = MAX_N_LINES;
                         else
