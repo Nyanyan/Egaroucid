@@ -393,159 +393,6 @@ class Book{
             return import_file_egbk3(file, show_log, &stop_loading);
         }
 
-
-        void add_leaf(Board *board, int8_t value, int8_t policy){
-            std::lock_guard<std::mutex> lock(mtx);
-            int rotate_idx;
-            Board representive_board = get_representative_board(board, &rotate_idx);
-            int8_t rotated_policy = policy;
-            if (is_valid_policy(policy))
-                rotated_policy = convert_coord_from_representative_board((int)policy, rotate_idx);
-            Leaf leaf;
-            leaf.value = value;
-            leaf.move = rotated_policy;
-            book[representive_board].leaf = leaf;
-        }
-
-        void search_leaf(Board board, int level, bool use_multi_thread){
-            mtx.lock();
-                Book_elem book_elem = book[board];
-            mtx.unlock();
-            int8_t new_leaf_value = SCORE_UNDEFINED, new_leaf_move = MOVE_UNDEFINED;
-            std::vector<Book_value> links = get_all_moves_with_value(&board);
-            uint64_t legal = board.get_legal();
-            for (Book_value &link: links)
-                legal ^= 1ULL << link.policy;
-            if (legal){
-                Search_result ai_result = ai_specified_moves(board, level, false, 0, use_multi_thread, false, legal);
-                if (ai_result.value != SCORE_UNDEFINED){
-                    new_leaf_value = ai_result.value;
-                    if (level == ADD_LEAF_SPECIAL_LEVEL)
-                        new_leaf_value = book_elem.value;
-                    new_leaf_move = ai_result.policy;
-                }
-            } else
-                new_leaf_move = MOVE_NOMOVE;
-            //std::cerr << (int)new_leaf_value << " " << idx_to_coord(new_leaf_move) << std::endl;
-            add_leaf(&board, new_leaf_value, new_leaf_move);
-        }
-
-        void search_leaf(Board board, int level){
-            search_leaf(board, level, true);
-        }
-
-        void check_add_leaf_all_undefined(){
-            std::vector<Board> boards;
-            for (auto itr = book.begin(); itr != book.end(); ++itr)
-                boards.emplace_back(itr->first);
-            Flip flip;
-            for (Board &board: boards){
-                int leaf_move = book[board].leaf.move;
-                bool need_to_rewrite_leaf = leaf_move < 0 || MOVE_UNDEFINED <= leaf_move;
-                if (!need_to_rewrite_leaf){
-                    calc_flip(&flip, &board, leaf_move);
-                    board.move_board(&flip);
-                        need_to_rewrite_leaf = contain(&board);
-                    board.undo_board(&flip);
-                }
-                if (need_to_rewrite_leaf){
-                    int8_t new_leaf_value = SCORE_UNDEFINED, new_leaf_move = MOVE_UNDEFINED;
-                    add_leaf(&board, new_leaf_value, new_leaf_move);
-                }
-            }
-        }
-
-        void check_add_leaf_all_search(int level, bool *stop){
-            std::vector<Board> boards;
-            for (auto itr = book.begin(); itr != book.end(); ++itr)
-                boards.emplace_back(itr->first);
-            Flip flip;
-            std::cerr << "add leaf to book" << std::endl;
-            int percent = -1, t = 0, n_boards = (int)boards.size();
-            Book_elem book_elem;
-            std::vector<std::future<void>> tasks;
-            int n_doing = 0, n_done = 0;
-            for (Board &board: boards){
-                if (!global_searching || *stop)
-                    break;
-                int n_percent = (double)t++ / n_boards * 100;
-                if (n_percent > percent){
-                    percent = n_percent;
-                    std::cerr << "adding leaf " << percent << "%" << " n_recalculated " << n_done << std::endl;
-                }
-                book_elem = get(board);
-                int leaf_move = book_elem.leaf.move;
-                bool need_to_rewrite_leaf = leaf_move < 0 || MOVE_UNDEFINED <= leaf_move || (board.get_legal() & (1ULL << leaf_move)) == 0;
-                if (!need_to_rewrite_leaf){
-                    calc_flip(&flip, &board, leaf_move);
-                    board.move_board(&flip);
-                        if (board.get_legal() == 0){
-                            board.pass();
-                                need_to_rewrite_leaf = contain(&board);
-                            board.pass();
-                        } else
-                            need_to_rewrite_leaf = contain(&board);
-                    board.undo_board(&flip);
-                }
-                if (need_to_rewrite_leaf){
-                    bool use_multi_thread = (n_boards - n_doing) < thread_pool.get_n_idle();
-                    bool pushed;
-                    ++n_doing;
-                    tasks.emplace_back(thread_pool.push(&pushed, std::bind(&search_new_leaf, board, level, book_elem.value, use_multi_thread)));
-                    if (!pushed){
-                        tasks.pop_back();
-                        search_new_leaf(board, level, book_elem.value, true);
-                        ++n_done;
-                    }
-                }
-                int tasks_size = tasks.size();
-                for (int i = 0; i < tasks_size; ++i){
-                    if (tasks[i].valid()){
-                        if (tasks[i].wait_for(std::chrono::seconds(0)) == std::future_status::ready){
-                            tasks[i].get();
-                            ++n_done;
-                        }
-                    }
-                }
-                for (int i = 0; i < tasks_size; ++i){
-                    if (i >= tasks.size())
-                        break;
-                    if (!tasks[i].valid()){
-                        tasks.erase(tasks.begin() + i);
-                        --i;
-                    }
-                }
-            }
-            int tasks_size = tasks.size();
-            for (int i = 0; i < tasks_size; ++i){
-                if (tasks[i].valid()){
-                    tasks[i].get();
-                    ++n_done;
-                }
-            }
-            std::cerr << "leaf search finished" << std::endl;
-        }
-
-        void recalculate_leaf_all(int level, bool *stop){
-            std::vector<Board> boards;
-            for (auto itr = book.begin(); itr != book.end(); ++itr)
-                boards.emplace_back(itr->first);
-            Flip flip;
-            std::cerr << "add leaf to book" << std::endl;
-            int percent = -1, t = 0, n_boards = (int)boards.size();
-            for (Board &board: boards){
-                if (!global_searching || *stop)
-                    break;
-                int n_percent = (double)t / n_boards * 100;
-                if (n_percent > percent){
-                    percent = n_percent;
-                    std::cerr << "adding leaf " << percent << "%" << std::endl;
-                }
-                ++t;
-                search_leaf(board, level);
-            }
-        }
-
         /*
             @brief import Egaroucid-formatted book (old)
 
@@ -1656,6 +1503,158 @@ class Book{
 
         void flag_book_elem(Board board){
             book[get_representative_board(board)].seen = true;
+        }
+
+        void add_leaf(Board *board, int8_t value, int8_t policy){
+            std::lock_guard<std::mutex> lock(mtx);
+            int rotate_idx;
+            Board representive_board = get_representative_board(board, &rotate_idx);
+            int8_t rotated_policy = policy;
+            if (is_valid_policy(policy))
+                rotated_policy = convert_coord_from_representative_board((int)policy, rotate_idx);
+            Leaf leaf;
+            leaf.value = value;
+            leaf.move = rotated_policy;
+            book[representive_board].leaf = leaf;
+        }
+
+        void search_leaf(Board board, int level, bool use_multi_thread){
+            mtx.lock();
+                Book_elem book_elem = book[board];
+            mtx.unlock();
+            int8_t new_leaf_value = SCORE_UNDEFINED, new_leaf_move = MOVE_UNDEFINED;
+            std::vector<Book_value> links = get_all_moves_with_value(&board);
+            uint64_t legal = board.get_legal();
+            for (Book_value &link: links)
+                legal ^= 1ULL << link.policy;
+            if (legal){
+                Search_result ai_result = ai_specified_moves(board, level, false, 0, use_multi_thread, false, legal);
+                if (ai_result.value != SCORE_UNDEFINED){
+                    new_leaf_value = ai_result.value;
+                    if (level == ADD_LEAF_SPECIAL_LEVEL)
+                        new_leaf_value = book_elem.value;
+                    new_leaf_move = ai_result.policy;
+                }
+            } else
+                new_leaf_move = MOVE_NOMOVE;
+            //std::cerr << (int)new_leaf_value << " " << idx_to_coord(new_leaf_move) << std::endl;
+            add_leaf(&board, new_leaf_value, new_leaf_move);
+        }
+
+        void search_leaf(Board board, int level){
+            search_leaf(board, level, true);
+        }
+
+        void check_add_leaf_all_undefined(){
+            std::vector<Board> boards;
+            for (auto itr = book.begin(); itr != book.end(); ++itr)
+                boards.emplace_back(itr->first);
+            Flip flip;
+            for (Board &board: boards){
+                int leaf_move = book[board].leaf.move;
+                bool need_to_rewrite_leaf = leaf_move < 0 || MOVE_UNDEFINED <= leaf_move;
+                if (!need_to_rewrite_leaf){
+                    calc_flip(&flip, &board, leaf_move);
+                    board.move_board(&flip);
+                        need_to_rewrite_leaf = contain(&board);
+                    board.undo_board(&flip);
+                }
+                if (need_to_rewrite_leaf){
+                    int8_t new_leaf_value = SCORE_UNDEFINED, new_leaf_move = MOVE_UNDEFINED;
+                    add_leaf(&board, new_leaf_value, new_leaf_move);
+                }
+            }
+        }
+
+        void check_add_leaf_all_search(int level, bool *stop){
+            std::vector<Board> boards;
+            for (auto itr = book.begin(); itr != book.end(); ++itr)
+                boards.emplace_back(itr->first);
+            Flip flip;
+            std::cerr << "add leaf to book" << std::endl;
+            int percent = -1, t = 0, n_boards = (int)boards.size();
+            Book_elem book_elem;
+            std::vector<std::future<void>> tasks;
+            int n_doing = 0, n_done = 0;
+            for (Board &board: boards){
+                if (!global_searching || *stop)
+                    break;
+                int n_percent = (double)t++ / n_boards * 100;
+                if (n_percent > percent){
+                    percent = n_percent;
+                    std::cerr << "adding leaf " << percent << "%" << " n_recalculated " << n_done << std::endl;
+                }
+                book_elem = get(board);
+                int leaf_move = book_elem.leaf.move;
+                bool need_to_rewrite_leaf = leaf_move < 0 || MOVE_UNDEFINED <= leaf_move || (board.get_legal() & (1ULL << leaf_move)) == 0;
+                if (!need_to_rewrite_leaf){
+                    calc_flip(&flip, &board, leaf_move);
+                    board.move_board(&flip);
+                        if (board.get_legal() == 0){
+                            board.pass();
+                                need_to_rewrite_leaf = contain(&board);
+                            board.pass();
+                        } else
+                            need_to_rewrite_leaf = contain(&board);
+                    board.undo_board(&flip);
+                }
+                if (need_to_rewrite_leaf){
+                    bool use_multi_thread = (n_boards - n_doing) < thread_pool.get_n_idle();
+                    bool pushed;
+                    ++n_doing;
+                    tasks.emplace_back(thread_pool.push(&pushed, std::bind(&search_new_leaf, board, level, book_elem.value, use_multi_thread)));
+                    if (!pushed){
+                        tasks.pop_back();
+                        search_new_leaf(board, level, book_elem.value, true);
+                        ++n_done;
+                    }
+                }
+                int tasks_size = tasks.size();
+                for (int i = 0; i < tasks_size; ++i){
+                    if (tasks[i].valid()){
+                        if (tasks[i].wait_for(std::chrono::seconds(0)) == std::future_status::ready){
+                            tasks[i].get();
+                            ++n_done;
+                        }
+                    }
+                }
+                for (int i = 0; i < tasks_size; ++i){
+                    if (i >= tasks.size())
+                        break;
+                    if (!tasks[i].valid()){
+                        tasks.erase(tasks.begin() + i);
+                        --i;
+                    }
+                }
+            }
+            int tasks_size = tasks.size();
+            for (int i = 0; i < tasks_size; ++i){
+                if (tasks[i].valid()){
+                    tasks[i].get();
+                    ++n_done;
+                }
+            }
+            std::cerr << "leaf search finished" << std::endl;
+        }
+
+        void recalculate_leaf_all(int level, bool *stop){
+            std::vector<Board> boards;
+            for (auto itr = book.begin(); itr != book.end(); ++itr)
+                boards.emplace_back(itr->first);
+            Flip flip;
+            std::cerr << "add leaf to book" << std::endl;
+            int percent = -1, t = 0, n_boards = (int)boards.size();
+            for (Board &board: boards){
+                if (!global_searching || *stop)
+                    break;
+                int n_percent = (double)t / n_boards * 100;
+                if (n_percent > percent){
+                    percent = n_percent;
+                    std::cerr << "adding leaf " << percent << "%" << std::endl;
+                }
+                ++t;
+                search_leaf(board, level);
+            }
         }
 
     private:
