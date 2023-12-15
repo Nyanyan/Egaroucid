@@ -521,14 +521,14 @@ class Book{
                     }
                 #endif
             }
-            //check_add_leaf_all_undefined();
-            bool stop = false;
-            check_add_leaf_all_search(ADD_LEAF_SPECIAL_LEVEL, &stop);
-            if (*stop_loading){
-                std::cerr << "stop loading book" << std::endl;
-                fclose(fp);
-                return false;
-            }
+            // check_add_leaf_all_undefined();
+            // bool stop = false;
+            // check_add_leaf_all_search(ADD_LEAF_SPECIAL_LEVEL, &stop);
+            // if (*stop_loading){
+            //     std::cerr << "stop loading book" << std::endl;
+            //     fclose(fp);
+            //     return false;
+            // }
             if (show_log)
                 std::cerr << "imported " << book.size() << " boards to book" << std::endl;
             fclose(fp);
@@ -617,14 +617,14 @@ class Book{
                     }
                 #endif
             }
-            //check_add_leaf_all_undefined();
-            bool stop = false;
-            check_add_leaf_all_search(ADD_LEAF_SPECIAL_LEVEL, &stop);
-            if (*stop_loading){
-                std::cerr << "stop loading book" << std::endl;
-                fclose(fp);
-                return false;
-            }
+            // check_add_leaf_all_undefined();
+            // bool stop = false;
+            // check_add_leaf_all_search(ADD_LEAF_SPECIAL_LEVEL, &stop);
+            // if (*stop_loading){
+            //     std::cerr << "stop loading book" << std::endl;
+            //     fclose(fp);
+            //     return false;
+            // }
             if (show_log)
                 std::cerr << "imported " << book.size() << " boards to book" << std::endl;
             fclose(fp);
