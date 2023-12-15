@@ -63,7 +63,7 @@ struct Book_deviate_hash {
 
 
 
-void get_book_recalculate_leaf_todo(Book_deviate_todo_elem todo_elem, int book_depth, int max_error_per_move, int lower, int upper, std::unordered_set<Book_deviate_todo_elem, Book_deviate_hash> &todo_list, uint64_t all_strt, bool *book_learning, Board *board_copy, int *player){
+void get_book_recalculate_leaf_todo(Book_deviate_todo_elem todo_elem, int book_depth, int max_error_per_move, int lower, int upper, int level, std::unordered_set<Book_deviate_todo_elem, Book_deviate_hash> &todo_list, uint64_t all_strt, bool *book_learning, Board *board_copy, int *player){
     if (!global_searching || !(*book_learning))
         return;
     todo_elem.board = book.get_representative_board(todo_elem.board);
@@ -74,7 +74,7 @@ void get_book_recalculate_leaf_todo(Book_deviate_todo_elem todo_elem, int book_d
         todo_elem.pass();
         if (todo_elem.board.get_legal() == 0)
             return; // game over
-            get_book_recalculate_leaf_todo(todo_elem, book_depth, max_error_per_move, -upper, -lower, todo_list, all_strt, book_learning, board_copy, player);
+            get_book_recalculate_leaf_todo(todo_elem, book_depth, max_error_per_move, -upper, -lower, level, todo_list, all_strt, book_learning, board_copy, player);
         todo_elem.pass();
         return;
     }
@@ -90,9 +90,11 @@ void get_book_recalculate_leaf_todo(Book_deviate_todo_elem todo_elem, int book_d
         return;
     book.flag_book_elem(todo_elem.board);
     // add to list
-    todo_list.emplace(todo_elem);
-    if (todo_list.size() % 100 == 0)
-        std::cerr << "book recalculate leaf todo " << todo_list.size() << " calculating... time " << ms_to_time_short(tim() - all_strt) << std::endl;
+    if (book_elem.leaf.level < level){
+        todo_list.emplace(todo_elem);
+        if (todo_list.size() % 100 == 0)
+            std::cerr << "book recalculate leaf todo " << todo_list.size() << " calculating... time " << ms_to_time_short(tim() - all_strt) << std::endl;
+    }
     // expand links
     if (lower <= book_elem.value){
         std::vector<Book_value> links = book.get_all_moves_with_value(&todo_elem.board);
@@ -101,7 +103,7 @@ void get_book_recalculate_leaf_todo(Book_deviate_todo_elem todo_elem, int book_d
             if (link.value >= book_elem.value - max_error_per_move){
                 calc_flip(&flip, &todo_elem.board, link.policy);
                 todo_elem.move(&flip);
-                    get_book_recalculate_leaf_todo(todo_elem, book_depth, max_error_per_move, -upper, -lower, todo_list, all_strt, book_learning, board_copy, player);
+                    get_book_recalculate_leaf_todo(todo_elem, book_depth, max_error_per_move, -upper, -lower, level, todo_list, all_strt, book_learning, board_copy, player);
                 todo_elem.undo(&flip);
             }
         }
@@ -195,7 +197,7 @@ inline void book_recalculate_leaf(Board root_board, int level, int book_depth, i
     bool stop = false;
     book.reset_seen();
     std::unordered_set<Book_deviate_todo_elem, Book_deviate_hash> book_recalculate_leaf_todo;
-    get_book_recalculate_leaf_todo(root_elem, book_depth, max_error_per_move, lower, upper, book_recalculate_leaf_todo, all_strt, book_learning, board_copy, player);
+    get_book_recalculate_leaf_todo(root_elem, book_depth, max_error_per_move, lower, upper, level, book_recalculate_leaf_todo, all_strt, book_learning, board_copy, player);
     std::cerr << "book recalculate leaf todo " << book_recalculate_leaf_todo.size() << " calculated time " << ms_to_time_short(tim() - all_strt) << std::endl;
     uint64_t strt = tim();
     book_recalculate_leaves(level, book_recalculate_leaf_todo, all_strt, strt, book_learning, board_copy, player);
@@ -274,12 +276,12 @@ void expand_leaf(int book_depth, int level, Board board, bool use_multi_thread){
                         if (board_copy != board)
                             book.change(&board_copy, val, level);
                         // if (board_copy.n_discs() == book_depth + 4)
-                        book.add_leaf(&board_copy, val, best_move);
+                        book.add_leaf(&board_copy, val, best_move, level);
                         calc_flip(&flip, &board_copy, best_move);
                         board_copy.move_board(&flip);
                     }
                 } else if (0 <= search_result.policy && search_result.policy < HW2 && (board.get_legal() & (1ULL << search_result.policy)))
-                    book.add_leaf(&board, search_result.value, search_result.policy);
+                    book.add_leaf(&board, search_result.value, search_result.policy, level);
             }
         }
     board.undo_board(&flip);

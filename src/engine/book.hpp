@@ -1531,7 +1531,7 @@ class Book{
             book[get_representative_board(board)].seen = true;
         }
 
-        void add_leaf(Board *board, int8_t value, int8_t policy){
+        void add_leaf(Board *board, int8_t value, int8_t policy, int8_t level){
             std::lock_guard<std::mutex> lock(mtx);
             int rotate_idx;
             Board representive_board = get_representative_board(board, &rotate_idx);
@@ -1541,6 +1541,7 @@ class Book{
             Leaf leaf;
             leaf.value = value;
             leaf.move = rotated_policy;
+            leaf.level = level;
             book[representive_board].leaf = leaf;
         }
 
@@ -1564,7 +1565,7 @@ class Book{
             } else
                 new_leaf_move = MOVE_NOMOVE;
             //std::cerr << (int)new_leaf_value << " " << idx_to_coord(new_leaf_move) << std::endl;
-            add_leaf(&board, new_leaf_value, new_leaf_move);
+            add_leaf(&board, new_leaf_value, new_leaf_move, level);
         }
 
         void search_leaf(Board board, int level){
@@ -1587,7 +1588,7 @@ class Book{
                 }
                 if (need_to_rewrite_leaf){
                     int8_t new_leaf_value = SCORE_UNDEFINED, new_leaf_move = MOVE_UNDEFINED;
-                    add_leaf(&board, new_leaf_value, new_leaf_move);
+                    add_leaf(&board, new_leaf_value, new_leaf_move, LEVEL_UNDEFINED);
                 }
             }
         }
@@ -1972,5 +1973,5 @@ void search_new_leaf(Board board, int level, int book_elem_value, bool use_multi
         }
     } else
         new_leaf_move = MOVE_NOMOVE;
-    book.add_leaf(&board, new_leaf_value, new_leaf_move);
+    book.add_leaf(&board, new_leaf_value, new_leaf_move, level);
 }
