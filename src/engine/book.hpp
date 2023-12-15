@@ -756,7 +756,7 @@ class Book{
                     fclose(fp);
                     return false;
                 }
-                // read level (ignore)
+                // read level
                 if (fread(&level, 1, 1, fp) < 1) {
                     std::cerr << "[ERROR] file broken" << std::endl;
                     fclose(fp);
@@ -795,8 +795,10 @@ class Book{
                     board.player = player;
                     board.opponent = opponent;
                     book_elem.value = value;
+                    book_elem.level = level;
                     book_elem.leaf.value = leaf_value;
                     book_elem.leaf.move = leaf_move;
+                    book_elem.leaf.level = level;
                     book_elem.n_lines = n_lines;
                     merge(board, book_elem);
                 }
@@ -950,6 +952,8 @@ class Book{
             int percent = -1;
             int n_boards = (int)book.size();
             int t = 0;
+            if (level == LEVEL_UNDEFINED)
+                char_level = 1;
             for (Board pass_board: pass_boards){
                 Board passed_board = pass_board.copy();
                 passed_board.pass();
@@ -998,6 +1002,8 @@ class Book{
                     leaf_move = MOVE_NOMOVE;
                 }
                 n_lines = itr->second.n_lines;
+                if (level == LEVEL_UNDEFINED)
+                    char_level = itr->second.level;
                 fout.write((char*)&itr->first.player, 8);
                 fout.write((char*)&itr->first.opponent, 8);
                 fout.write((char*)&n_win, 4);
@@ -1277,17 +1283,20 @@ class Book{
             @param b                    a board to change or register
             @param value                a value to change or register
         */
-        inline void change(Board b, int value){
+        inline void change(Board b, int value, int level){
             std::lock_guard<std::mutex> lock(mtx);
             if (-HW2 <= value && value <= HW2){
                 if (contain(b)){
                     Board bb = get_representative_board(b);
                     book[bb].value = value;
+                    book[bb].level = level;
                 } else{
                     Book_elem elem;
                     elem.value = value;
+                    elem.level = level;
                     elem.leaf.move = MOVE_UNDEFINED;
                     elem.leaf.value = SCORE_UNDEFINED;
+                    elem.leaf.level = LEVEL_UNDEFINED;
                     register_symmetric_book(b, elem);
                 }
             }
@@ -1299,9 +1308,9 @@ class Book{
             @param b                    a board pointer to change or register
             @param value                a value to change or register
         */
-        inline void change(Board *b, int value){
+        inline void change(Board *b, int value, int level){
             Board nb = b->copy();
-            change(nb, value);
+            change(nb, value, level);
         }
 
         /*
@@ -1889,11 +1898,14 @@ class Book{
             if (!contain(b))
                 return register_symmetric_book(b, elem);
             Book_elem book_elem = get(b);
-            if (elem.value != SCORE_UNDEFINED)
+            if (elem.value != SCORE_UNDEFINED){
                 book_elem.value = elem.value;
+                book_elem.level = elem.level;
+            }
             if (elem.leaf.value != SCORE_UNDEFINED){
                 book_elem.leaf.value = elem.leaf.value;
                 book_elem.leaf.move = elem.leaf.move;
+                book_elem.leaf.level = elem.leaf.level;
             }
             return register_symmetric_book(b, book_elem);
         }
