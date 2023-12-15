@@ -70,10 +70,12 @@ struct Book_value{
 struct Leaf{
     int8_t value;
     int8_t move;
+    int8_t level;
 
     Leaf(){
         value = SCORE_UNDEFINED;
-        move = -1;
+        move = MOVE_UNDEFINED;
+        level = LEVEL_UNDEFINED;
     }
 };
 
@@ -86,12 +88,14 @@ struct Leaf{
 */
 struct Book_elem{
     int8_t value;
+    int8_t level;
     Leaf leaf;
     uint32_t n_lines;
     bool seen; // used in various situation
 
     Book_elem(){
         value = SCORE_UNDEFINED;
+        level = LEVEL_UNDEFINED;
         n_lines = 0;
         seen = false;
     }
@@ -263,7 +267,7 @@ class Book{
             Board board;
             Book_elem book_elem;
             int n_boards;
-            char value, leaf_value, leaf_move;
+            char value, level, leaf_value, leaf_move, leaf_level;
             uint32_t n_lines;
             uint64_t p, o;
             char egaroucid_str[10];
@@ -335,6 +339,12 @@ class Book{
                     fclose(fp);
                     return false;
                 }
+                // read level
+                if (fread(&level, 1, 1, fp) < 1) {
+                    std::cerr << "[ERROR] book NOT FULLY imported 3 " << book.size() << " boards" << std::endl;
+                    fclose(fp);
+                    return false;
+                }
                 //if (value < -HW2 || HW2 < value) {
                 //    std::cerr << "[ERROR] book NOT FULLY imported 4 got value " << (int)value << " " << book.size() << " boards" << std::endl;
                 //    fclose(fp);
@@ -360,6 +370,12 @@ class Book{
                     fclose(fp);
                     return false;
                 }
+                // read leaf level
+                if (fread(&leaf_level, 1, 1, fp) < 1) {
+                    std::cerr << "[ERROR] book NOT FULLY imported 3 " << book.size() << " boards" << std::endl;
+                    fclose(fp);
+                    return false;
+                }
                 // push elem
                 if (-HW2 <= value && value <= HW2) {
                     board.player = p;
@@ -368,9 +384,11 @@ class Book{
                         if (board.n_discs() <= 4 + 30){
                     #endif
                             book_elem.value = value;
+                            book_elem.level = level;
+                            book_elem.n_lines = n_lines;
                             book_elem.leaf.value = leaf_value;
                             book_elem.leaf.move = leaf_move;
-                            book_elem.n_lines = n_lines;
+                            book_elem.leaf.level = leaf_level;
                             merge(board, book_elem);
                     #if FORCE_BOOK_DEPTH
                         }
@@ -822,13 +840,12 @@ class Book{
                 }
                 fout.write((char*)&itr->first.player, 8);
                 fout.write((char*)&itr->first.opponent, 8);
-                elem = (char)itr->second.value;
-                fout.write((char*)&elem, 1);
+                fout.write((char*)&itr->second.value, 1);
+                fout.write((char*)&itr->second.level, 1);
                 fout.write((char*)&itr->second.n_lines, 4);
-                elem = (char)itr->second.leaf.value;
-                fout.write((char*)&elem, 1);
-                elem = (char)itr->second.leaf.move;
-                fout.write((char*)&elem, 1);
+                fout.write((char*)&itr->second.leaf.value, 1);
+                fout.write((char*)&itr->second.leaf.move, 1);
+                fout.write((char*)&itr->second.leaf.level, 1);
             }
             fout.close();
             int book_size = (int)book.size();
