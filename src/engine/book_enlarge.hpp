@@ -265,14 +265,14 @@ void expand_leaf(int book_depth, int level, Board board, bool use_multi_thread){
         if (!book.contain(&board)){ 
             Search_result search_result = ai(board, level, true, 0, use_multi_thread, false);
             if (-HW2 <= search_result.value && search_result.value <= HW2){
-                book.change(board, search_result.value);
+                book.change(board, search_result.value, level);
                 if (search_result.depth >= HW2 - board.n_discs() && search_result.probability == 100){ // perfect serach
                     Board board_copy = board.copy();
                     Flip flip;
                     int val, best_move;
                     while (board_copy.n_discs() <= book_depth + 4 && transposition_table.get_if_perfect(&board_copy, board_copy.hash(), &val, &best_move)){
                         if (board_copy != board)
-                            book.change(&board_copy, val);
+                            book.change(&board_copy, val, level);
                         // if (board_copy.n_discs() == book_depth + 4)
                         book.add_leaf(&board_copy, val, best_move);
                         calc_flip(&flip, &board_copy, best_move);
