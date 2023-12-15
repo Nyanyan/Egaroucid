@@ -1380,17 +1380,22 @@ class Book{
             std::vector<Book_value> links = get_all_moves_with_value(&board);
             uint32_t n_lines = 1;
             Flip flip;
-            int v = -INF, child_level = res.level;
+            int v = -INF, child_level = LEVEL_UNDEFINED;
+            //if (res.leaf.value != SCORE_UNDEFINED){
+            //    v = -res.leaf.value;
+            //    child_level = res.leaf.level;
+            //}
             Book_elem child_res;
             for (Book_value &link: links){
                 calc_flip(&flip, &board, link.policy);
                 board.move_board(&flip);
                     child_res = negamax_book_p(board, n_seen, n_fix, percent, stop);
                     if (child_res.value != SCORE_UNDEFINED){
-                        if (child_res.level >= child_level && v <= -child_res.value){ // update parent value
-                            child_level = child_res.level;
+                        if (v < -child_res.value){ // update parent value
                             v = -child_res.value;
-                        }
+                            child_level = child_res.level;
+                        } else if (v == -child_res.value && child_level < child_res.level)
+                            child_level = child_res.level;
                         if (n_lines + child_res.n_lines < n_lines)
                             n_lines = MAX_N_LINES;
                         else
