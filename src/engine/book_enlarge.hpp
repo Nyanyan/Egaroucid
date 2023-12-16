@@ -287,7 +287,8 @@ void expand_leaf(int book_depth, int level, Board board, bool use_multi_thread){
                     while (board_copy.n_discs() <= book_depth + 4 && transposition_table.get_if_perfect(&board_copy, board_copy.hash(), &val, &best_move)){
                         if (board_copy != board)
                             book.change(&board_copy, val, level);
-                        // if (board_copy.n_discs() == book_depth + 4)
+                        if ((board_copy.get_legal() & (1ULL << best_move)) == 0)
+                            break;
                         book.add_leaf(&board_copy, val, best_move, level);
                         calc_flip(&flip, &board_copy, best_move);
                         board_copy.move_board(&flip);
