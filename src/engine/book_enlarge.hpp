@@ -119,6 +119,8 @@ void book_search_leaf(Board board, int level, bool use_multi_thread){
 
 void book_recalculate_leaves(int level, std::unordered_set<Book_deviate_todo_elem, Book_deviate_hash> &todo_list, uint64_t all_strt, uint64_t strt, bool *book_learning, Board *board_copy, int *player){
     int n_all = todo_list.size();
+    if (n_all == 0)
+        return;
     int n_done = 0, n_doing = 0;
     std::vector<std::future<void>> tasks;
     for (Book_deviate_todo_elem elem: todo_list){
@@ -294,6 +296,8 @@ void expand_leaf(int book_depth, int level, Board board, bool use_multi_thread){
 
 void expand_leaves(int book_depth, int level, std::unordered_set<Book_deviate_todo_elem, Book_deviate_hash> &book_deviate_todo, uint64_t all_strt, uint64_t strt, bool *book_learning, Board *board_copy, int *player, int n_loop, std::string file, std::string bak_file){
     int n_all = book_deviate_todo.size();
+    if (n_all == 0)
+        return;
     int n_done = 0;
     int n_doing = 0;
     const int n_threads = thread_pool.size();
