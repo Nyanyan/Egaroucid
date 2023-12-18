@@ -46,6 +46,7 @@ void save_settings(Menu_elements menu_elements, Settings settings, Directories d
     setting_json[U"show_play_ordering"] = menu_elements.show_play_ordering;
     setting_json[U"generate_random_board_moves"] = menu_elements.generate_random_board_moves;
     setting_json[U"show_book_n_lines"] = menu_elements.show_book_n_lines;
+    setting_json[U"show_book_accuracy"] = menu_elements.show_book_accuracy;
     setting_json.save(U"{}setting.json"_fmt(Unicode::Widen(directories.appdata_dir)));
 }
 

@@ -234,6 +234,11 @@ public:
             draw_legal(legal_ignore);
         }
 
+        // book n_lines drawing
+        if (getData().menu_elements.show_book_n_lines && !hint_ignore){
+            draw_book_n_lines(legal_ignore);
+        }
+
         // umigame calculating / drawing
         if (KeyU.down())
             getData().menu_elements.use_umigame_value = !getData().menu_elements.use_umigame_value;
@@ -244,11 +249,6 @@ public:
             else {
                 calculate_umigame();
             }
-        }
-
-        // book n_lines drawing
-        if (getData().menu_elements.show_book_n_lines && !hint_ignore){
-            draw_book_n_lines(legal_ignore);
         }
 
         // graph drawing
@@ -968,13 +968,15 @@ private:
         menu_e.push(side_menu);
         side_menu.init_check(language.get("display", "cell", "umigame_value"), &menu_elements->use_umigame_value, menu_elements->use_umigame_value);
         menu_e.push(side_menu);
-        side_menu.init_check(language.get("display", "cell", "show_book_n_lines"), &menu_elements->show_book_n_lines, menu_elements->show_book_n_lines);
-        menu_e.push(side_menu);
         side_menu.init_check(language.get("display", "cell", "opening"), &menu_elements->show_opening_on_cell, menu_elements->show_opening_on_cell);
         menu_e.push(side_menu);
         side_menu.init_check(language.get("display", "cell", "next_move"), &menu_elements->show_next_move, menu_elements->show_next_move);
         side_side_menu.init_check(language.get("display", "cell", "next_move_change_view"), &menu_elements->show_next_move_change_view, menu_elements->show_next_move_change_view);
         side_menu.push(side_side_menu);
+        menu_e.push(side_menu);
+        side_menu.init_check(language.get("display", "cell", "show_book_accuracy"), &menu_elements->show_book_accuracy, menu_elements->show_book_accuracy);
+        menu_e.push(side_menu);
+        side_menu.init_check(language.get("display", "cell", "show_book_n_lines"), &menu_elements->show_book_n_lines, menu_elements->show_book_n_lines);
         menu_e.push(side_menu);
         title.push(menu_e);
 
@@ -1598,6 +1600,7 @@ private:
             if (1 & (legal_ignore >> cell)) {
                 int sx = BOARD_SX + ((HW2_M1 - cell) % HW) * BOARD_CELL_SIZE;
                 int sy = BOARD_SY + ((HW2_M1 - cell) / HW) * BOARD_CELL_SIZE;
+                Rect(sx + 1, sy + 18, 11, 20).draw(getData().colors.green);
                 Board board = getData().history_elem.board;
                 Flip flip;
                 calc_flip(&flip, &board, cell);
@@ -1612,7 +1615,7 @@ private:
                     } else if (n_lines >= 1000){
                         n_lines_str = Format(n_lines / 1000) + U"K";
                     }
-                    getData().fonts.font_heavy(n_lines_str).draw(10, sx + 3, sy + BOARD_CELL_SIZE - 15, getData().colors.white);
+                    getData().fonts.font_heavy(n_lines_str).draw(10, sx + 2, sy + 19, getData().colors.white);
                 }
             }
         }

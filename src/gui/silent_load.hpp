@@ -370,6 +370,9 @@ void init_settings(const Directories* directories, const Resources* resources, S
     if (init_settings_import_bool(setting_json, U"show_book_n_lines", &settings->show_book_n_lines) != ERR_OK) {
         std::cerr << "err30" << std::endl;
     }
+    if (init_settings_import_bool(setting_json, U"show_book_accuracy", &settings->show_book_accuracy) != ERR_OK) {
+        std::cerr << "err31" << std::endl;
+    }
 }
 
 int init_resources(Resources* resources, Settings* settings, Fonts *fonts) {
