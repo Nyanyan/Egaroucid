@@ -17,9 +17,13 @@
 #include "book.hpp"
 
 #define BOOK_ACCURACY_LEVEL_UNDEFINED -1
-#define BOOK_ACCURACY_LEVEL_GOOD 0
-#define BOOK_ACCURACY_LEVEL_MID 1
-#define BOOK_ACCURACY_LEVEL_BAD 2
+#define BOOK_ACCURACY_LEVEL_A 0 // A: all lines calculated with perfect search line
+#define BOOK_ACCURACY_LEVEL_B 1 // B: at least one perfect search line found and other all lines calculated with endgame search line
+#define BOOK_ACCURACY_LEVEL_C 2 // C: all lines calculated with endgame search
+#define BOOK_ACCURACY_LEVEL_D 3 // D: at least one perfect search line found
+#define BOOK_ACCURACY_LEVEL_E 4 // E: at least one endgame search line found
+#define BOOK_ACCURACY_LEVEL_F 5 // F: other
+#define N_BOOK_ACCURACY_LEVEL 6
 
 class Book_accuracy{
     private:
@@ -56,9 +60,12 @@ class Book_accuracy{
             std::vector<Book_value> links = book.get_all_moves_with_value(&board);
             if (links.size() == 0){
                 int complete_depth = get_level_complete_depth(book_elem.level);
-                int res = BOOK_ACCURACY_LEVEL_BAD;
+                int endgame_depth = get_level_endgame_depth(book_elem.level);
+                int res = BOOK_ACCURACY_LEVEL_F;
                 if (complete_depth >= HW2 - board.n_discs())
-                    res = BOOK_ACCURACY_LEVEL_GOOD;
+                    res = BOOK_ACCURACY_LEVEL_A;
+                else if (endgame_depth >= HW2 - board.n_discs())
+                    res = BOOK_ACCURACY_LEVEL_C;
                 reg(board, res);
                 return res;
             }
@@ -66,9 +73,7 @@ class Book_accuracy{
             for (Book_value &link: links)
                 best_score = std::max(best_score, link.value);
             bool is_end = true;
-            bool book_acc_good_found = false;
-            bool book_acc_mid_found = false;
-            bool book_acc_bad_found = false;
+            int identifier = 0;
             Flip flip;
             for (Book_value &link: links){
                 if (link.value >= best_score - 1){
@@ -78,16 +83,38 @@ class Book_accuracy{
                     board.undo_board(&flip);
                     if (child_book_acc == BOOK_ACCURACY_LEVEL_UNDEFINED)
                         return BOOK_ACCURACY_LEVEL_UNDEFINED;
-                    book_acc_good_found |= child_book_acc == BOOK_ACCURACY_LEVEL_GOOD;
-                    book_acc_mid_found |= child_book_acc == BOOK_ACCURACY_LEVEL_MID;
-                    book_acc_bad_found |= child_book_acc == BOOK_ACCURACY_LEVEL_BAD;
+                    for (int i = 0; i < N_BOOK_ACCURACY_LEVEL; ++i)
+                        identifier |= (child_book_acc == i) << i;
                 }
             }
-            res = BOOK_ACCURACY_LEVEL_BAD;
-            if (book_acc_good_found && !book_acc_mid_found && !book_acc_bad_found)
-                res = BOOK_ACCURACY_LEVEL_GOOD;
-            else if (book_acc_good_found && !book_acc_bad_found)
-                res = BOOK_ACCURACY_LEVEL_MID;
+            // identifier : FEDCBA
+            // if A:      RES = A or B or D
+            // else if B: RES = B or D
+            // else if C: RES = C or D
+            // else: RES = best_level
+            res = BOOK_ACCURACY_LEVEL_F;
+            if (identifier & (1 << BOOK_ACCURACY_LEVEL_A)){ // A found
+                if ((identifier & ~((1 << BOOK_ACCURACY_LEVEL_B) - 1)) == 0) // B-F not found
+                    res = BOOK_ACCURACY_LEVEL_A;
+                else if ((identifier & ~((1 << BOOK_ACCURACY_LEVEL_D) - 1)) == 0) // D-F not found
+                    res = BOOK_ACCURACY_LEVEL_B;
+                else
+                    res = BOOK_ACCURACY_LEVEL_D;
+            } else if (identifier & (1 << BOOK_ACCURACY_LEVEL_B)){ // B found
+                if ((identifier & ~((1 << BOOK_ACCURACY_LEVEL_C) - 1)) == 0) // C-F not found
+                    res = BOOK_ACCURACY_LEVEL_B;
+                else 
+                    res = BOOK_ACCURACY_LEVEL_D;
+            } else if (identifier & (1 << BOOK_ACCURACY_LEVEL_C)){ // C found
+                if ((identifier & ~((1 << BOOK_ACCURACY_LEVEL_D) - 1)) == 0) // D-F not found
+                    res = BOOK_ACCURACY_LEVEL_C;
+                else 
+                    res = BOOK_ACCURACY_LEVEL_D;
+            } else{
+                int lsb = (identifier >> 3);
+                lsb = pop_count_uint(~lsb & (lsb - 1));
+                res = BOOK_ACCURACY_LEVEL_D + lsb; // best level
+            }
             reg(board, res);
             return res;
         }

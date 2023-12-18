@@ -1684,7 +1684,7 @@ private:
                 int sy = BOARD_SY + ((HW2_M1 - cell) / HW) * BOARD_CELL_SIZE;
                 if (book_accuracy_status.book_accuracy[cell] != BOOK_ACCURACY_LEVEL_UNDEFINED){
                     std::string judge = {(char)book_accuracy_status.book_accuracy[cell] + 'A'};
-                    getData().fonts.font_heavy(Unicode::Widen(judge)).draw(10, sx + 2, sy + 33, getData().colors.white);
+                    getData().fonts.font_heavy(Unicode::Widen(judge)).draw(10, sx + 4, sy + 33, getData().colors.white);
                 }
             }
         }
