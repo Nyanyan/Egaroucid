@@ -91,7 +91,7 @@ class Book_accuracy{
             // if A:      RES = A or B or D
             // else if B: RES = B or D
             // else if C: RES = C or D
-            // else: RES = best_level
+            // else:      RES = best_level
             res = BOOK_ACCURACY_LEVEL_F;
             if (identifier & (1 << BOOK_ACCURACY_LEVEL_A)){ // A found
                 if ((identifier & ~((1 << BOOK_ACCURACY_LEVEL_B) - 1)) == 0) // B-F not found
