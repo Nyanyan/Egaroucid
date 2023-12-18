@@ -349,7 +349,7 @@ public:
             }
             go_button.draw();
             if (formatted_file && (go_button.clicked() || KeyEnter.pressed() || file_dragged)) {
-                import_book_future = std::async(std::launch::async, import_book, DragDrop::GetDroppedFilePaths()[0].path.narrow());
+                import_book_future = std::async(std::launch::async, import_book, book_file);
                 importing = true;
             }
         }
