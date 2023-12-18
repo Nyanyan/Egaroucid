@@ -27,7 +27,7 @@ bool import_book(std::string file) {
     return result;
 }
 
-class Import_book : public App::Scene {
+class Merge_book : public App::Scene {
 private:
     std::future<bool> import_book_future;
     Button back_button;
@@ -36,7 +36,7 @@ private:
     bool failed;
 
 public:
-    Import_book(const InitData& init) : IScene{ init } {
+    Merge_book(const InitData& init) : IScene{ init } {
         back_button.init(BACK_BUTTON_SX, BACK_BUTTON_SY, BACK_BUTTON_WIDTH, BACK_BUTTON_HEIGHT, BACK_BUTTON_RADIUS, language.get("common", "back"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
         importing = false;
         imported = false;

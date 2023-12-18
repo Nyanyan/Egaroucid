@@ -417,9 +417,10 @@ struct Menu_elements {
     int book_learn_depth;
     int book_learn_error_per_move;
     int book_learn_error_sum;
-    bool book_import;
+    bool book_merge;
     bool book_reference;
     bool change_book_by_right_click;
+    bool import_book;
 	bool export_book;
     bool book_start_reducing;
     bool book_start_recalculate_leaf;
@@ -500,11 +501,13 @@ struct Menu_elements {
         book_learn_depth = settings->book_learn_depth;
         book_learn_error_per_move = settings->book_learn_error_per_move;
         book_learn_error_sum = settings->book_learn_error_sum;
-        book_import = false;
+        book_merge = false;
         book_reference = false;
         change_book_by_right_click = settings->change_book_by_right_click;
         book_start_reducing = false;
         book_start_recalculate_leaf = false;
+        import_book = false;
+        export_book = false;
 
         input_transcript = false;
         input_board = false;

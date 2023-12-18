@@ -42,7 +42,7 @@ void Main() {
     scene_manager.add <Silent_load> (U"Silent_load");
     scene_manager.add <Load>(U"Load");
     scene_manager.add <Main_scene>(U"Main_scene");
-    scene_manager.add <Import_book>(U"Import_book");
+    scene_manager.add <Merge_book>(U"Merge_book");
     scene_manager.add <Refer_book>(U"Refer_book");
     scene_manager.add <Widen_book>(U"Widen_book");
     scene_manager.add <Fix_book>(U"Fix_book");

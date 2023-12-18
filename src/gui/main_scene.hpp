@@ -660,11 +660,11 @@ private:
             changeScene(U"Leaf_recalculate_book", SCENE_FADE_TIME);
             return;
         }
-        if (getData().menu_elements.book_import) {
+        if (getData().menu_elements.book_merge) {
             stop_calculating();
             resume_calculating();
             changing_scene = true;
-            changeScene(U"Import_book", SCENE_FADE_TIME);
+            changeScene(U"Merge_book", SCENE_FADE_TIME);
             return;
         }
         if (getData().menu_elements.book_reference) {
@@ -672,6 +672,13 @@ private:
             resume_calculating();
             changing_scene = true;
             changeScene(U"Refer_book", SCENE_FADE_TIME);
+            return;
+        }
+        if (getData().menu_elements.import_book) {
+            stop_calculating();
+            resume_calculating();
+            changing_scene = true;
+            //changeScene(U"Import_book", SCENE_FADE_TIME);
             return;
         }
         if (getData().menu_elements.export_book) {
@@ -1085,9 +1092,11 @@ private:
         title.push(menu_e);
 
         menu_e.init_button(language.get("book", "file_operation"), &menu_elements->dummy);
-        side_menu.init_button(language.get("book", "merge"), &menu_elements->book_import);
+        side_menu.init_button(language.get("book", "merge"), &menu_elements->book_merge);
         menu_e.push(side_menu);
         side_menu.init_button(language.get("book", "book_reference"), &menu_elements->book_reference);
+        menu_e.push(side_menu);
+        side_menu.init_button(language.get("book", "import_book"), &menu_elements->import_book);
         menu_e.push(side_menu);
         side_menu.init_button(language.get("book", "export_book"), &menu_elements->export_book);
         menu_e.push(side_menu);
