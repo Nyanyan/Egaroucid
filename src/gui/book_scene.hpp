@@ -223,6 +223,7 @@ public:
 class Export_book: public App::Scene {
 private:
     Button back_button;
+    Button go_with_level_button;
     Button go_button;
     std::string book_file;
     int level;
@@ -232,8 +233,9 @@ private:
 
 public:
     Export_book(const InitData& init) : IScene{ init } {
-        back_button.init(GO_BACK_BUTTON_BACK_SX, GO_BACK_BUTTON_SY, GO_BACK_BUTTON_WIDTH, GO_BACK_BUTTON_HEIGHT, GO_BACK_BUTTON_RADIUS, language.get("common", "back"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
-        go_button.init(GO_BACK_BUTTON_GO_SX, GO_BACK_BUTTON_SY, GO_BACK_BUTTON_WIDTH, GO_BACK_BUTTON_HEIGHT, GO_BACK_BUTTON_RADIUS, language.get("book", "export"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
+        back_button.init(BUTTON3_1_SX, GO_BACK_BUTTON_SY, BUTTON3_WIDTH, BUTTON3_HEIGHT, BUTTON3_RADIUS, language.get("common", "back"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
+        go_with_level_button.init(BUTTON3_2_SX, GO_BACK_BUTTON_SY, BUTTON3_WIDTH, BUTTON3_HEIGHT, BUTTON3_RADIUS, language.get("book", "export_with_specified_level"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
+        go_button.init(BUTTON3_3_SX, GO_BACK_BUTTON_SY, BUTTON3_WIDTH, BUTTON3_HEIGHT, BUTTON3_RADIUS, language.get("book", "export"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
         book_file = getData().directories.document_dir + "edax_book.dat";
         level = 21;
         book_saving_edax = false;
@@ -270,8 +272,27 @@ public:
             }
             book_file = book_file_str.narrow();
             getData().fonts.font(book_file_str + U'|' + editingText).draw(15, text_area.stretched(-4), getData().colors.black);
+            std::string ext = get_extension(book_file);
+            bool button_enabled = false;
+            String book_format_str;
+            if (ext == "egbk3"){
+                book_format_str = language.get("book", "egaroucid_format");
+                go_button.enable();
+                go_with_level_button.enable();
+                button_enabled = true;
+            } else if (ext == "dat"){
+                book_format_str = language.get("book", "edax_format");
+                go_button.enable();
+                go_with_level_button.enable();
+                button_enabled = true;
+            } else{
+                book_format_str = language.get("book", "undefined_format");
+                go_button.disable();
+                go_with_level_button.disable();
+            }
+            getData().fonts.font(book_format_str).draw(20, Arg::topCenter(X_CENTER, sy + 130), getData().colors.white);
 
-            Rect bar_rect{X_CENTER - 220, sy + 130, 440, 20};
+            Rect bar_rect{X_CENTER - 220, sy + 150, 440, 20};
             bar_rect.draw(bar_color); // Palette::Lightskyblue
             if (bar_rect.leftPressed()){
                 int min_error = INF;
@@ -284,8 +305,8 @@ public:
                     }
                 }
             }
-            Circle bar_circle{X_CENTER - 200 + 400 * level / 61, sy + 140, 12};
-            getData().fonts.font(language.get("ai_settings", "level") + Format(level)).draw(20, Arg::rightCenter(X_CENTER - 230, sy + 140), getData().colors.white);
+            Circle bar_circle{X_CENTER - 200 + 400 * level / 61, sy + 160, 12};
+            getData().fonts.font(language.get("ai_settings", "level") + Format(level)).draw(20, Arg::rightCenter(X_CENTER - 230, sy + 160), getData().colors.white);
             bar_circle.draw(bar_circle_color);
 
             back_button.draw();
@@ -294,8 +315,16 @@ public:
                 changeScene(U"Main_scene", SCENE_FADE_TIME);
             }
             go_button.draw();
-            if (go_button.clicked() || return_pressed) {
-                save_book_edax_future = std::async(std::launch::async, book_save_as_edax, book_file, level);
+            if (go_with_level_button.clicked()){
+                if (ext == "egbk3")
+                    save_book_edax_future = std::async(std::launch::async, book_save_as_egaroucid, book_file, level);
+                else if (ext == "dat")
+                    save_book_edax_future = std::async(std::launch::async, book_save_as_edax, book_file, level);
+            } else if (go_button.clicked() || (return_pressed && button_enabled)) {
+                if (ext == "egbk3")
+                    save_book_edax_future = std::async(std::launch::async, book_save_as_egaroucid, book_file, LEVEL_UNDEFINED);
+                else if (ext == "dat")
+                    save_book_edax_future = std::async(std::launch::async, book_save_as_edax, book_file, LEVEL_UNDEFINED);
                 book_saving_edax = true;
             }
         }

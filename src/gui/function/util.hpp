@@ -11,16 +11,11 @@
 #include <vector>
 
 std::string get_extension(std::string file){
-    std::vector<std::string> lst;
-    auto offset = std::string::size_type(0);
-    while (1) {
-        auto pos = file.find(".", offset);
-        if (pos == std::string::npos) {
-            lst.push_back(file.substr(offset));
+    std::string res;
+    for (int i = (int)file.size() - 1; i >= 0; --i){
+        if (file[i] == '.')
             break;
-        }
-        lst.push_back(file.substr(offset, pos - offset));
-        offset = pos + 1;
+        res.insert(0, {file[i]});
     }
-    return lst[lst.size() - 1];
+    return res;
 }

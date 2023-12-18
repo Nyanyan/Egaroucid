@@ -814,10 +814,12 @@ class Book{
             @param file                 file name to save
             @param bak_file             backup file name
         */
-        inline void save_egbk3(std::string file, std::string bak_file){
-            if (remove(bak_file.c_str()) == -1)
-                std::cerr << "cannot delete backup. you can ignore this error." << std::endl;
-            rename(file.c_str(), bak_file.c_str());
+        inline void save_egbk3(std::string file, std::string bak_file, bool use_backup, int level){
+            if (use_backup){
+                if (remove(bak_file.c_str()) == -1)
+                    std::cerr << "cannot delete backup. you can ignore this error." << std::endl;
+                rename(file.c_str(), bak_file.c_str());
+            }
             std::ofstream fout;
             fout.open(file.c_str(), std::ios::out|std::ios::binary|std::ios::trunc);
             if (!fout){
@@ -840,18 +842,31 @@ class Book{
                     percent = n_percent;
                     std::cerr << "saving book " << percent << "%" << std::endl;
                 }
+                char char_level = itr->second.level, char_leaf_level = itr->second.leaf.level;
+                if (level != LEVEL_UNDEFINED){
+                    char_level = level;
+                    char_leaf_level = level;
+                }
                 fout.write((char*)&itr->first.player, 8);
                 fout.write((char*)&itr->first.opponent, 8);
                 fout.write((char*)&itr->second.value, 1);
-                fout.write((char*)&itr->second.level, 1);
+                fout.write((char*)&char_level, 1);
                 fout.write((char*)&itr->second.n_lines, 4);
                 fout.write((char*)&itr->second.leaf.value, 1);
                 fout.write((char*)&itr->second.leaf.move, 1);
-                fout.write((char*)&itr->second.leaf.level, 1);
+                fout.write((char*)&char_leaf_level, 1);
             }
             fout.close();
             int book_size = (int)book.size();
             std::cerr << "saved " << t << " boards , book_size " << book_size << std::endl;
+        }
+
+        inline void save_egbk3(std::string file, std::string bak_file){
+            save_egbk3(file, bak_file, true, LEVEL_UNDEFINED);
+        }
+
+        inline void save_egbk3(std::string file, int level){
+            save_egbk3(file, "", false, level);
         }
 
         void get_pass_boards(Board board, std::unordered_set<Board, Book_hash> &pass_boards){
@@ -1953,6 +1968,10 @@ bool book_init(std::string file, bool show_log, bool *stop_loading){
     //book_hash_init(show_log);
     book_hash_init_rand();
     return book.init(file, show_log, stop_loading);
+}
+
+void book_save_as_egaroucid(std::string file, int level){
+    book.save_egbk3(file, level);
 }
 
 void book_save_as_edax(std::string file, int level){

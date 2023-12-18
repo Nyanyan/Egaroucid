@@ -20,6 +20,8 @@ public:
     int font_size;
     Color button_color;
     Color font_color;
+    bool enabled;
+
 public:
     void init(int x, int y, int w, int h, int r, String s, int fs, Font f, Color c1, Color c2) {
         rect.x = x;
@@ -32,13 +34,21 @@ public:
         font = f;
         button_color = c1;
         font_color = c2;
+        enabled = true;
     }
 
     void draw() {
-        rect.draw(button_color);
-        font(str).drawAt(font_size, rect.x + rect.w / 2, rect.y + rect.h / 2, font_color);
-        if (rect.mouseOver())
-            Cursor::RequestStyle(CursorStyle::Hand);
+        if (enabled){
+            rect.draw(button_color);
+            font(str).drawAt(font_size, rect.x + rect.w / 2, rect.y + rect.h / 2, font_color);
+            if (rect.mouseOver())
+                Cursor::RequestStyle(CursorStyle::Hand);
+        } else{
+            rect.draw(button_color, 0.7);
+            font(str).drawAt(font_size, rect.x + rect.w / 2, rect.y + rect.h / 2, font_color);
+            //if (rect.mouseOver())
+            //    Cursor::RequestStyle(CursorStyle::Hand);
+        }
     }
 
     void draw(double transparency) {
@@ -49,7 +59,15 @@ public:
     }
 
     bool clicked() {
-        return rect.leftClicked();
+        return rect.leftClicked() && enabled;
+    }
+
+    void enable(){
+        enabled = true;
+    }
+
+    void disable(){
+        enabled = false;
     }
 };
 
