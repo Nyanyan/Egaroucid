@@ -96,22 +96,13 @@ class Umigame{
                 return umigame_res;
             int max_val = -INF;
             std::vector<Board> boards;
-            std::vector<uint_fast8_t> best_moves;
             if (b->get_legal() == 0ULL){
                 player ^= 1;
                 b->pass();
             }
             Flip flip;
             Book_elem book_elem = book.get(b);
-            std::vector<Book_value> links = book.get_all_moves_with_value(b);
-            for (Book_value &move: links){
-                if (max_val < move.value){
-                    best_moves.clear();
-                    max_val = move.value;
-                }
-                if (max_val == move.value)
-                    best_moves.emplace_back(move.policy);
-            }
+            std::vector<int> best_moves = book.get_all_best_moves(b);
             //b->print();
             if (best_moves.size() == 0){
                 umigame_res.b = 1;
