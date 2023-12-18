@@ -220,7 +220,7 @@ public:
     }
 };
 
-class Save_book_Edax: public App::Scene {
+class Export_book: public App::Scene {
 private:
     Button back_button;
     Button go_button;
@@ -231,7 +231,7 @@ private:
     bool done;
 
 public:
-    Save_book_Edax(const InitData& init) : IScene{ init } {
+    Export_book(const InitData& init) : IScene{ init } {
         back_button.init(GO_BACK_BUTTON_BACK_SX, GO_BACK_BUTTON_SY, GO_BACK_BUTTON_WIDTH, GO_BACK_BUTTON_HEIGHT, GO_BACK_BUTTON_RADIUS, language.get("common", "back"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
         go_button.init(GO_BACK_BUTTON_GO_SX, GO_BACK_BUTTON_SY, GO_BACK_BUTTON_WIDTH, GO_BACK_BUTTON_HEIGHT, GO_BACK_BUTTON_RADIUS, language.get("book", "export"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
         book_file = getData().directories.document_dir + "edax_book.dat";
@@ -250,7 +250,7 @@ public:
         getData().resources.logo.scaled((double)icon_width / getData().resources.logo.width()).draw(X_CENTER - icon_width / 2, 20 + icon_width);
         int sy = 20 + icon_width + 50;
         if (!book_saving_edax) {
-            getData().fonts.font(language.get("book", "export_book_as_edax")).draw(25, Arg::topCenter(X_CENTER, sy), getData().colors.white);
+            getData().fonts.font(language.get("book", "export_book")).draw(25, Arg::topCenter(X_CENTER, sy), getData().colors.white);
             Rect text_area{ X_CENTER - 300, sy + 40, 600, 80 };
             text_area.draw(getData().colors.light_cyan).drawFrame(2, getData().colors.black);
             String book_file_str = Unicode::Widen(book_file);

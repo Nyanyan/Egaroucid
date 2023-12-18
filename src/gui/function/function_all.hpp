@@ -16,4 +16,5 @@
 #include "radio_button.hpp"
 #include "gui_common.hpp"
 #include "url.hpp"
+#include "util.hpp"
 #include "version.hpp"

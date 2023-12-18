@@ -420,7 +420,7 @@ struct Menu_elements {
     bool book_import;
     bool book_reference;
     bool change_book_by_right_click;
-	bool save_as_edax_book;
+	bool export_book;
     bool book_start_reducing;
     bool book_start_recalculate_leaf;
 

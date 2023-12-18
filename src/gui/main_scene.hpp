@@ -674,11 +674,11 @@ private:
             changeScene(U"Refer_book", SCENE_FADE_TIME);
             return;
         }
-        if (getData().menu_elements.save_as_edax_book) {
+        if (getData().menu_elements.export_book) {
             stop_calculating();
             resume_calculating();
             changing_scene = true;
-            changeScene(U"Save_book_Edax", SCENE_FADE_TIME);
+            changeScene(U"Export_book", SCENE_FADE_TIME);
             return;
         }
     }
@@ -1089,7 +1089,7 @@ private:
         menu_e.push(side_menu);
         side_menu.init_button(language.get("book", "book_reference"), &menu_elements->book_reference);
         menu_e.push(side_menu);
-        side_menu.init_button(language.get("book", "save_as_edax_book"), &menu_elements->save_as_edax_book);
+        side_menu.init_button(language.get("book", "export_book"), &menu_elements->export_book);
         menu_e.push(side_menu);
         title.push(menu_e);
 
