@@ -1251,16 +1251,16 @@ private:
                     color = getData().colors.cyan;
                     font = getData().fonts.font_heavy;
                 }
-                font((int)round(hint_infos[i].value)).draw(18, sx + 2, sy, color);
+                font((int)round(hint_infos[i].value)).draw(18, sx + 3, sy, color);
                 if (hint_infos[i].type == HINT_TYPE_BOOK) {
                     if (!ignore_book_info)
-                        getData().fonts.font(U"book").draw(10, sx + 2, sy + 19, color);
+                        getData().fonts.font(U"book").draw(10, sx + 3, sy + 19, color);
                 }
                 else if (hint_infos[i].type > HINT_MAX_LEVEL) {
-                    getData().fonts.font(Format(hint_infos[i].type) + U"%").draw(10, sx + 2, sy + 19, color);
+                    getData().fonts.font(Format(hint_infos[i].type) + U"%").draw(10, sx + 3, sy + 19, color);
                 }
                 else {
-                    getData().fonts.font(U"Lv." + Format(hint_infos[i].type)).draw(10, sx + 2, sy + 19, color);
+                    getData().fonts.font(U"Lv." + Format(hint_infos[i].type)).draw(10, sx + 3, sy + 19, color);
                 }
                 res |= 1ULL << (HW2_M1 - hint_infos[i].cell);
             }
@@ -1630,7 +1630,7 @@ private:
                     } else if (n_lines >= 1000){
                         n_lines_str = Format(n_lines / 1000) + U"K";
                     }
-                    getData().fonts.font_heavy(n_lines_str).draw(10, sx + 2, sy + 20, getData().colors.white);
+                    getData().fonts.font_heavy(n_lines_str).draw(9, sx + 4, sy + 21, getData().colors.white);
                 }
             }
         }
@@ -1684,7 +1684,15 @@ private:
                 int sy = BOARD_SY + ((HW2_M1 - cell) / HW) * BOARD_CELL_SIZE;
                 if (book_accuracy_status.book_accuracy[cell] != BOOK_ACCURACY_LEVEL_UNDEFINED){
                     std::string judge = {(char)book_accuracy_status.book_accuracy[cell] + 'A'};
-                    getData().fonts.font_heavy(Unicode::Widen(judge)).draw(10, sx + 4, sy + 33, getData().colors.white);
+                    Board board = getData().history_elem.board;
+                    Flip flip;
+                    calc_flip(&flip, &board, cell);
+                    board.move_board(&flip);
+                    int book_level = book.get(board).level;
+                    String book_level_info = Format(book_level);
+                    if (book_level == LEVEL_HUMAN)
+                        book_level_info = U"S";
+                    getData().fonts.font_heavy(Unicode::Widen(judge) + U" " + book_level_info).draw(9, sx + 4, sy + 33, getData().colors.white);
                 }
             }
         }
