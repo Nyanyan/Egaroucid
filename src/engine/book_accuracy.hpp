@@ -28,7 +28,7 @@ class Book_accuracy{
     
     public:
         void calculate(Board *board){
-            book_accuracy_search(board);
+            book_accuracy_search(board->copy());
         }
 
         void delete_all(){
@@ -38,7 +38,7 @@ class Book_accuracy{
 
         int get(Board *board){
             std::lock_guard<std::mutex> lock(mtx);
-            Board unique_board = get_representative_board(b->copy());
+            Board unique_board = get_representative_board(board->copy());
             return get_representive(unique_board);
         }
 
@@ -49,10 +49,10 @@ class Book_accuracy{
             int res = get(&board);
             if (res != BOOK_ACCURACY_UNDEFINED)
                 return res;
-            if (b.get_legal() == 0ULL)
-                b.pass();
+            if (board.get_legal() == 0ULL)
+                board.pass();
             Book_elem book_elem = book.get(board);
-            std::vector<Book_value> links = book.get_all_moves_with_value(board);
+            std::vector<Book_value> links = book.get_all_moves_with_value(&board);
             if (links.size() == 0){
                 int complete_depth = get_level_complete_depth(book_elem.level);
                 int res = BOOK_ACCURACY_LEVEL_BAD;
@@ -80,13 +80,13 @@ class Book_accuracy{
                     book_acc_bad_found |= child_book_acc == BOOK_ACCURACY_LEVEL_BAD;
                 }
             }
-            int res = BOOK_ACCURACY_LEVEL_BAD;
+            res = BOOK_ACCURACY_LEVEL_BAD;
             if (book_acc_good_found && !book_acc_mid_found && !book_acc_bad_found)
                 res = BOOK_ACCURACY_LEVEL_GOOD;
             else if (book_acc_good_found && !book_acc_bad_found)
                 res = BOOK_ACCURACY_LEVEL_MID;
             reg(board, res);
-            returnn res;
+            return res;
         }
 
         inline void reg(Board b, int val){
