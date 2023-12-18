@@ -17,6 +17,9 @@
 
 #define BOOK_SCENE_ICON_WIDTH 140
 
+#define BOOK_DEPTH_INF 80
+#define BOOK_ERROR_INF 130
+
 void delete_book() {
     book.delete_all();
     umigame.delete_all();
@@ -533,6 +536,9 @@ private:
     bool before_start;
     std::future<void> book_learn_future;
     Board root_board;
+    int depth;
+    int error_per_move;
+    int error_sum;
 
 public:
     Widen_book(const InitData& init) : IScene{ init } {
@@ -545,6 +551,15 @@ public:
         book_learning = false;
         done = false;
         before_start = true;
+        depth = getData().menu_elements.book_learn_depth;
+        if (!getData().menu_elements.use_book_learn_depth)
+            depth = BOOK_DEPTH_INF;
+        error_per_move = getData().menu_elements.book_learn_error_per_move;
+        if (!getData().menu_elements.use_book_learn_error_per_move)
+            error_per_move = BOOK_ERROR_INF;
+        error_sum = getData().menu_elements.book_learn_error_sum;
+        if (!getData().menu_elements.use_book_learn_error_sum)
+            error_sum = BOOK_ERROR_INF;
     }
 
     void update() override {
@@ -555,9 +570,18 @@ public:
         draw_board(getData().fonts, getData().colors, history_elem);
         draw_info(getData().colors, history_elem, getData().fonts, getData().menu_elements, false);
         getData().fonts.font(language.get("book", "book_deviate")).draw(25, 480, 190, getData().colors.white);
-        getData().fonts.font(language.get("book", "depth") + U": " + Format(getData().menu_elements.book_learn_depth)).draw(15, 480, 280, getData().colors.white);
-        getData().fonts.font(language.get("book", "error_per_move") + U": " + Format(getData().menu_elements.book_learn_error_per_move)).draw(15, 480, 300, getData().colors.white);
-        getData().fonts.font(language.get("book", "error_sum") + U": " + Format(getData().menu_elements.book_learn_error_sum)).draw(15, 480, 320, getData().colors.white);
+        String depth_str = Format(depth);
+        if (depth == BOOK_DEPTH_INF)
+            depth_str = language.get("book", "unlimited");
+        getData().fonts.font(language.get("book", "depth") + U": " + depth_str).draw(15, 480, 280, getData().colors.white);
+        String error_per_move_str = Format(error_per_move);
+        if (error_per_move == BOOK_ERROR_INF)
+            error_per_move_str = language.get("book", "unlimited");
+        getData().fonts.font(language.get("book", "error_per_move") + U": " + error_per_move_str).draw(15, 480, 300, getData().colors.white);
+        String error_sum_str = Format(error_sum);
+        if (error_sum == BOOK_ERROR_INF)
+            error_sum_str = language.get("book", "unlimited");
+        getData().fonts.font(language.get("book", "error_sum") + U": " + error_sum_str).draw(15, 480, 320, getData().colors.white);
         if (book_learning) {
             getData().fonts.font(language.get("book", "learning")).draw(20, 480, 230, getData().colors.white);
             stop_button.draw();
@@ -570,7 +594,7 @@ public:
             if (start_button.clicked()){
                 before_start = false;
                 book_learning = true;
-                book_learn_future = std::async(std::launch::async, book_deviate, root_board, getData().menu_elements.level, getData().menu_elements.book_learn_depth, getData().menu_elements.book_learn_error_per_move, getData().menu_elements.book_learn_error_sum, &history_elem.board, &history_elem.player, getData().settings.book_file, getData().settings.book_file + ".bak", &book_learning);
+                book_learn_future = std::async(std::launch::async, book_deviate, root_board, getData().menu_elements.level, depth, error_per_move, error_sum, &history_elem.board, &history_elem.player, getData().settings.book_file, getData().settings.book_file + ".bak", &book_learning);
             }
             back_button.draw();
             if (back_button.clicked() || KeyEscape.pressed()){
@@ -674,6 +698,9 @@ private:
     bool before_start;
     std::future<void> book_learn_future;
     Board root_board;
+    int depth;
+    int error_per_move;
+    int error_sum;
 
 public:
     Reduce_book(const InitData& init) : IScene{ init } {
@@ -686,6 +713,15 @@ public:
         book_learning = false;
         done = false;
         before_start = true;
+        depth = getData().menu_elements.book_learn_depth;
+        if (!getData().menu_elements.use_book_learn_depth)
+            depth = BOOK_DEPTH_INF;
+        error_per_move = getData().menu_elements.book_learn_error_per_move;
+        if (!getData().menu_elements.use_book_learn_error_per_move)
+            error_per_move = BOOK_ERROR_INF;
+        error_sum = getData().menu_elements.book_learn_error_sum;
+        if (!getData().menu_elements.use_book_learn_error_sum)
+            error_sum = BOOK_ERROR_INF;
     }
 
     void update() override {
@@ -696,9 +732,18 @@ public:
         draw_board(getData().fonts, getData().colors, history_elem);
         draw_info(getData().colors, history_elem, getData().fonts, getData().menu_elements, false);
         getData().fonts.font(language.get("book", "book_reduce")).draw(25, 480, 190, getData().colors.white);
-        getData().fonts.font(language.get("book", "depth") + U": " + Format(getData().menu_elements.book_learn_depth)).draw(15, 480, 280, getData().colors.white);
-        getData().fonts.font(language.get("book", "error_per_move") + U": " + Format(getData().menu_elements.book_learn_error_per_move)).draw(15, 480, 300, getData().colors.white);
-        getData().fonts.font(language.get("book", "error_sum") + U": " + Format(getData().menu_elements.book_learn_error_sum)).draw(15, 480, 320, getData().colors.white);
+        String depth_str = Format(depth);
+        if (depth == BOOK_DEPTH_INF)
+            depth_str = language.get("book", "unlimited");
+        getData().fonts.font(language.get("book", "depth") + U": " + depth_str).draw(15, 480, 280, getData().colors.white);
+        String error_per_move_str = Format(error_per_move);
+        if (error_per_move == BOOK_ERROR_INF)
+            error_per_move_str = language.get("book", "unlimited");
+        getData().fonts.font(language.get("book", "error_per_move") + U": " + error_per_move_str).draw(15, 480, 300, getData().colors.white);
+        String error_sum_str = Format(error_sum);
+        if (error_sum == BOOK_ERROR_INF)
+            error_sum_str = language.get("book", "unlimited");
+        getData().fonts.font(language.get("book", "error_sum") + U": " + error_sum_str).draw(15, 480, 320, getData().colors.white);
         if (book_learning) {
             getData().fonts.font(language.get("book", "reducing")).draw(20, 480, 230, getData().colors.white);
             stop_button.draw();
@@ -711,7 +756,7 @@ public:
             if (start_button.clicked()){
                 before_start = false;
                 book_learning = true;
-                book_learn_future = std::async(std::launch::async, book_reduce, root_board, getData().menu_elements.book_learn_depth, getData().menu_elements.book_learn_error_per_move, getData().menu_elements.book_learn_error_sum, &book_learning);
+                book_learn_future = std::async(std::launch::async, book_reduce, root_board, depth, error_per_move, error_sum, &book_learning);
             }
             back_button.draw();
             if (back_button.clicked() || KeyEscape.pressed()){
@@ -754,6 +799,9 @@ private:
     bool before_start;
     std::future<void> book_learn_future;
     Board root_board;
+    int depth;
+    int error_per_move;
+    int error_sum;
 
 public:
     Leaf_recalculate_book(const InitData& init) : IScene{ init } {
@@ -766,6 +814,15 @@ public:
         book_learning = false;
         done = false;
         before_start = true;
+        depth = getData().menu_elements.book_learn_depth;
+        if (!getData().menu_elements.use_book_learn_depth)
+            depth = BOOK_DEPTH_INF;
+        error_per_move = getData().menu_elements.book_learn_error_per_move;
+        if (!getData().menu_elements.use_book_learn_error_per_move)
+            error_per_move = BOOK_ERROR_INF;
+        error_sum = getData().menu_elements.book_learn_error_sum;
+        if (!getData().menu_elements.use_book_learn_error_sum)
+            error_sum = BOOK_ERROR_INF;
     }
 
     void update() override {
@@ -776,9 +833,18 @@ public:
         draw_board(getData().fonts, getData().colors, history_elem);
         draw_info(getData().colors, history_elem, getData().fonts, getData().menu_elements, false);
         getData().fonts.font(language.get("book", "book_recalculate_leaf")).draw(25, 480, 190, getData().colors.white);
-        getData().fonts.font(language.get("book", "depth") + U": " + Format(getData().menu_elements.book_learn_depth)).draw(15, 480, 280, getData().colors.white);
-        getData().fonts.font(language.get("book", "error_per_move") + U": " + Format(getData().menu_elements.book_learn_error_per_move)).draw(15, 480, 300, getData().colors.white);
-        getData().fonts.font(language.get("book", "error_sum") + U": " + Format(getData().menu_elements.book_learn_error_sum)).draw(15, 480, 320, getData().colors.white);
+        String depth_str = Format(depth);
+        if (depth == BOOK_DEPTH_INF)
+            depth_str = language.get("book", "unlimited");
+        getData().fonts.font(language.get("book", "depth") + U": " + depth_str).draw(15, 480, 280, getData().colors.white);
+        String error_per_move_str = Format(error_per_move);
+        if (error_per_move == BOOK_ERROR_INF)
+            error_per_move_str = language.get("book", "unlimited");
+        getData().fonts.font(language.get("book", "error_per_move") + U": " + error_per_move_str).draw(15, 480, 300, getData().colors.white);
+        String error_sum_str = Format(error_sum);
+        if (error_sum == BOOK_ERROR_INF)
+            error_sum_str = language.get("book", "unlimited");
+        getData().fonts.font(language.get("book", "error_sum") + U": " + error_sum_str).draw(15, 480, 320, getData().colors.white);
         if (book_learning) {
             getData().fonts.font(language.get("book", "learning")).draw(20, 480, 230, getData().colors.white);
             stop_button.draw();
@@ -791,7 +857,7 @@ public:
             if (start_button.clicked()){
                 before_start = false;
                 book_learning = true;
-                book_learn_future = std::async(std::launch::async, book_recalculate_leaf, root_board, getData().menu_elements.level, getData().menu_elements.book_learn_depth, getData().menu_elements.book_learn_error_per_move, getData().menu_elements.book_learn_error_sum, &history_elem.board, &history_elem.player, &book_learning, false);
+                book_learn_future = std::async(std::launch::async, book_recalculate_leaf, root_board, getData().menu_elements.level, depth, error_per_move, error_sum, &history_elem.board, &history_elem.player, &book_learning, false);
             }
             back_button.draw();
             if (back_button.clicked() || KeyEscape.pressed()){
