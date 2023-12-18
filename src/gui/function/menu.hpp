@@ -30,6 +30,7 @@ constexpr double radio_ratio = 0.2;
 #define bar_mode 1
 #define check_mode 2
 #define radio_mode 3
+#define bar_check_mode 4
 #define bar_size 140
 #define bar_height 14
 #define bar_radius 6
@@ -110,6 +111,22 @@ public:
 		is_clicked = false;
 	}
 
+	void init_bar_check(String s, int *c, int d, int mn, int mx, bool *e, bool f){
+		clear();
+		mode = bar_check_mode;
+		has_child = false;
+		is_active = false;
+		was_active = false;
+		str = s;
+		bar_elem = c;
+		*bar_elem = d;
+		min_elem = mn;
+		max_elem = mx;
+		is_checked = e;
+		*is_checked = f;
+		is_clicked = false;
+	}
+
 	void push(menu_elem ch) {
 		has_child = true;
 		children.emplace_back(ch);
@@ -145,7 +162,7 @@ public:
 				yy += height;
 			}
 		}
-		if (mode == bar_mode) {
+		if (mode == bar_mode || mode == bar_check_mode) {
 			bar_sx = rect.x + rect.w - bar_size - bar_additional_offset;
 			bar_center_y = rect.y + rect.h / 2;
 			bar_rect.x = bar_sx;
@@ -165,8 +182,11 @@ public:
 			elem.update();
 			is_active = is_active || (elem.active() && last_active());
 		}
-		is_clicked = rect.leftClicked();
-		if (mode == bar_mode && bar_rect.leftPressed()) {
+		if (mode == bar_check_mode){
+			is_clicked = Rect(rect.x, rect.y, bar_sx - bar_value_offset - rect.x, rect.h).leftClicked();
+		} else
+			is_clicked = rect.leftClicked();
+		if ((mode == bar_mode || (mode == bar_check_mode && (*is_checked))) && bar_rect.leftPressed()) {
 			int min_error = INF;
 			int cursor_x = Cursor::Pos().x;
 			for (int i = min_elem; i <= max_elem; ++i) {
@@ -189,7 +209,7 @@ public:
 		if (mode == button_mode) {
 			*is_clicked_p = is_clicked;
 		}
-		if (is_clicked && mode == check_mode) {
+		if (is_clicked && (mode == check_mode || mode == bar_check_mode)) {
 			*is_checked = !(*is_checked);
 		}
 		if (is_active) {
@@ -199,11 +219,17 @@ public:
 			rect.draw(menu_select_color);
 		}
 		font(str).draw(font_size, rect.x + rect.h - menu_offset_y, rect.y + menu_offset_y, menu_font_color);
-		if (mode == bar_mode) {
+		if (mode == bar_mode || mode == bar_check_mode) {
 			font(*bar_elem).draw(font_size, bar_sx - menu_offset_x - menu_child_offset - bar_value_offset, rect.y + menu_offset_y, menu_font_color);
-			bar_rect.draw(bar_color);
+			if (mode == bar_check_mode && !(*is_checked))
+				bar_rect.draw(ColorF(bar_color, 0.5));
+			else
+				bar_rect.draw(bar_color);
 			bar_circle.x = round((double)bar_sx + 10.0 + (double)(bar_size - 20) * (double)(*bar_elem - min_elem) / (double)(max_elem - min_elem));
-			bar_circle.draw(bar_circle_color);
+			if (mode == bar_check_mode && !(*is_checked))
+				Shape2D::Cross(1.5 * bar_circle.r, 6, Vec2{bar_circle.x, bar_circle.y}).draw(ColorF(bar_circle_color, 0.5));
+			else
+				bar_circle.draw(bar_circle_color);
 		}
 		if (has_child) {
 			font(U">").draw(font_size, rect.x + rect.w - menu_offset_x - menu_child_offset, rect.y + menu_offset_y, menu_font_color);
@@ -236,7 +262,7 @@ public:
 			}
 			*/
 		}
-		if (mode == check_mode) {
+		if (mode == check_mode || mode == bar_check_mode) {
 			if (*is_checked) {
 				checkbox.scaled((double)(rect.h - 2 * menu_offset_y) / checkbox.width()).draw(rect.x + menu_offset_y, rect.y + menu_offset_y);
 			}
@@ -271,7 +297,7 @@ public:
 	RectF size() {
 		RectF res = font(str).region(font_size, Point{ 0, 0 });
 		res.w += res.h;
-		if (mode == bar_mode) {
+		if (mode == bar_mode || mode == bar_check_mode) {
 			res.w += bar_size + bar_value_offset + bar_additional_offset;
 		}
 		return res;

@@ -72,6 +72,9 @@ void init_default_settings(const Directories* directories, const Resources* reso
     settings->generate_random_board_moves = 20;
     settings->show_book_n_lines = false;
     settings->show_book_accuracy = false;
+    settings->use_book_learn_depth = true;
+    settings->use_book_learn_error_per_move = true;
+    settings->use_book_learn_error_sum = true;
 }
 
 int init_settings_import_int(JSON &json, String key, int* res) {
@@ -373,6 +376,15 @@ void init_settings(const Directories* directories, const Resources* resources, S
     }
     if (init_settings_import_bool(setting_json, U"show_book_accuracy", &settings->show_book_accuracy) != ERR_OK) {
         std::cerr << "err31" << std::endl;
+    }
+    if (init_settings_import_bool(setting_json, U"use_book_learn_depth", &settings->use_book_learn_depth) != ERR_OK) {
+        std::cerr << "err32" << std::endl;
+    }
+    if (init_settings_import_bool(setting_json, U"use_book_learn_error_per_move", &settings->use_book_learn_error_per_move) != ERR_OK) {
+        std::cerr << "err33" << std::endl;
+    }
+    if (init_settings_import_bool(setting_json, U"use_book_learn_error_sum", &settings->use_book_learn_error_sum) != ERR_OK) {
+        std::cerr << "err34" << std::endl;
     }
 }
 

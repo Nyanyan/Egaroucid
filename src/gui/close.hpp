@@ -47,6 +47,9 @@ void save_settings(Menu_elements menu_elements, Settings settings, Directories d
     setting_json[U"generate_random_board_moves"] = menu_elements.generate_random_board_moves;
     setting_json[U"show_book_n_lines"] = menu_elements.show_book_n_lines;
     setting_json[U"show_book_accuracy"] = menu_elements.show_book_accuracy;
+    setting_json[U"use_book_learn_depth"] = menu_elements.use_book_learn_depth;
+    setting_json[U"use_book_learn_error_per_move"] = menu_elements.use_book_learn_error_per_move;
+    setting_json[U"use_book_learn_error_sum"] = menu_elements.use_book_learn_error_sum;
     setting_json.save(U"{}setting.json"_fmt(Unicode::Widen(directories.appdata_dir)));
 }
 

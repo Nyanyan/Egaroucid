@@ -1087,11 +1087,11 @@ private:
         title.init(language.get("book", "book"));
 
         menu_e.init_button(language.get("book", "settings"), &menu_elements->dummy);
-        side_menu.init_bar(language.get("book", "depth"), &menu_elements->book_learn_depth, menu_elements->book_learn_depth, 0, 60);
+        side_menu.init_bar_check(language.get("book", "depth"), &menu_elements->book_learn_depth, menu_elements->book_learn_depth, 0, 60, &menu_elements->use_book_learn_depth, menu_elements->use_book_learn_depth);
         menu_e.push(side_menu);
-        side_menu.init_bar(language.get("book", "error_per_move"), &menu_elements->book_learn_error_per_move, menu_elements->book_learn_error_per_move, 0, 24);
+        side_menu.init_bar_check(language.get("book", "error_per_move"), &menu_elements->book_learn_error_per_move, menu_elements->book_learn_error_per_move, 0, 24, &menu_elements->use_book_learn_error_per_move, menu_elements->use_book_learn_error_per_move);
         menu_e.push(side_menu);
-        side_menu.init_bar(language.get("book", "error_sum"), &menu_elements->book_learn_error_sum, menu_elements->book_learn_error_sum, 0, 32);
+        side_menu.init_bar_check(language.get("book", "error_sum"), &menu_elements->book_learn_error_sum, menu_elements->book_learn_error_sum, 0, 32, &menu_elements->use_book_learn_error_sum, menu_elements->use_book_learn_error_sum);
         menu_e.push(side_menu);
         title.push(menu_e);
 
