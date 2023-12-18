@@ -234,9 +234,9 @@ private:
 public:
     Export_book(const InitData& init) : IScene{ init } {
         back_button.init(BUTTON3_1_SX, GO_BACK_BUTTON_SY, BUTTON3_WIDTH, BUTTON3_HEIGHT, BUTTON3_RADIUS, language.get("common", "back"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
-        go_with_level_button.init(BUTTON3_2_SX, GO_BACK_BUTTON_SY, BUTTON3_WIDTH, BUTTON3_HEIGHT, BUTTON3_RADIUS, language.get("book", "export_with_specified_level"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
+        go_with_level_button.init(BUTTON3_2_SX, GO_BACK_BUTTON_SY, BUTTON3_WIDTH, BUTTON3_HEIGHT, BUTTON3_RADIUS, language.get("book", "export_with_specified_level"), 18, getData().fonts.font, getData().colors.white, getData().colors.black);
         go_button.init(BUTTON3_3_SX, GO_BACK_BUTTON_SY, BUTTON3_WIDTH, BUTTON3_HEIGHT, BUTTON3_RADIUS, language.get("book", "export"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
-        book_file = getData().directories.document_dir + "edax_book.dat";
+        book_file = getData().directories.document_dir + "book_copy.egbk3";
         level = 21;
         book_saving_edax = false;
         done = false;
@@ -252,7 +252,6 @@ public:
         getData().resources.logo.scaled((double)icon_width / getData().resources.logo.width()).draw(X_CENTER - icon_width / 2, 20 + icon_width);
         int sy = 20 + icon_width + 50;
         if (!book_saving_edax) {
-            getData().fonts.font(language.get("book", "export_book")).draw(25, Arg::topCenter(X_CENTER, sy), getData().colors.white);
             Rect text_area{ X_CENTER - 300, sy + 40, 600, 80 };
             text_area.draw(getData().colors.light_cyan).drawFrame(2, getData().colors.black);
             String book_file_str = Unicode::Widen(book_file);
@@ -290,9 +289,9 @@ public:
                 go_button.disable();
                 go_with_level_button.disable();
             }
-            getData().fonts.font(book_format_str).draw(20, Arg::topCenter(X_CENTER, sy + 130), getData().colors.white);
+            getData().fonts.font(language.get("book", "export_book") + U" (" + book_format_str +  U")").draw(25, Arg::topCenter(X_CENTER, sy), getData().colors.white);
 
-            Rect bar_rect{X_CENTER - 220, sy + 150, 440, 20};
+            Rect bar_rect{X_CENTER - 220, sy + 130, 440, 20};
             bar_rect.draw(bar_color); // Palette::Lightskyblue
             if (bar_rect.leftPressed()){
                 int min_error = INF;
@@ -305,16 +304,17 @@ public:
                     }
                 }
             }
-            Circle bar_circle{X_CENTER - 200 + 400 * level / 61, sy + 160, 12};
-            getData().fonts.font(language.get("ai_settings", "level") + Format(level)).draw(20, Arg::rightCenter(X_CENTER - 230, sy + 160), getData().colors.white);
+            Circle bar_circle{X_CENTER - 200 + 400 * level / 61, sy + 140, 12};
+            getData().fonts.font(language.get("ai_settings", "level") + Format(level)).draw(20, Arg::rightCenter(X_CENTER - 230, sy + 140), getData().colors.white);
             bar_circle.draw(bar_circle_color);
 
             back_button.draw();
+            go_with_level_button.draw();
+            go_button.draw();
             if (back_button.clicked() || KeyEscape.pressed()) {
                 getData().graph_resources.need_init = false;
                 changeScene(U"Main_scene", SCENE_FADE_TIME);
             }
-            go_button.draw();
             if (go_with_level_button.clicked()){
                 if (ext == "egbk3")
                     save_book_edax_future = std::async(std::launch::async, book_save_as_egaroucid, book_file, level);

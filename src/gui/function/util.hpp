@@ -7,6 +7,8 @@
     @author Takuto Yamana
     @license GPL-3.0 license
 */
+
+#pragma once
 #include <string>
 #include <vector>
 

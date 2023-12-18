@@ -44,7 +44,7 @@ public:
             if (rect.mouseOver())
                 Cursor::RequestStyle(CursorStyle::Hand);
         } else{
-            rect.draw(button_color, 0.7);
+            rect.draw(ColorF(button_color, 0.7));
             font(str).drawAt(font_size, rect.x + rect.w / 2, rect.y + rect.h / 2, font_color);
             //if (rect.mouseOver())
             //    Cursor::RequestStyle(CursorStyle::Hand);
