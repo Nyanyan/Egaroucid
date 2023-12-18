@@ -1092,13 +1092,13 @@ private:
         title.push(menu_e);
 
         menu_e.init_button(language.get("book", "file_operation"), &menu_elements->dummy);
-        side_menu.init_button(language.get("book", "merge"), &menu_elements->book_merge);
-        menu_e.push(side_menu);
-        side_menu.init_button(language.get("book", "book_reference"), &menu_elements->book_reference);
-        menu_e.push(side_menu);
         side_menu.init_button(language.get("book", "import_book"), &menu_elements->import_book);
         menu_e.push(side_menu);
         side_menu.init_button(language.get("book", "export_book"), &menu_elements->export_book);
+        menu_e.push(side_menu);
+        side_menu.init_button(language.get("book", "book_merge"), &menu_elements->book_merge);
+        menu_e.push(side_menu);
+        side_menu.init_button(language.get("book", "book_reference"), &menu_elements->book_reference);
         menu_e.push(side_menu);
         title.push(menu_e);
 

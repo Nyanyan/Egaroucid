@@ -15,6 +15,8 @@
 #include "function/function_all.hpp"
 #include "draw.hpp"
 
+#define BOOK_SCENE_ICON_WIDTH 140
+
 void delete_book() {
     book.delete_all();
     umigame.delete_all();
@@ -31,13 +33,16 @@ class Merge_book : public App::Scene {
 private:
     std::future<bool> import_book_future;
     Button back_button;
+    Button go_button;
+    std::string book_file;
     bool importing;
     bool imported;
     bool failed;
 
 public:
     Merge_book(const InitData& init) : IScene{ init } {
-        back_button.init(BACK_BUTTON_SX, BACK_BUTTON_SY, BACK_BUTTON_WIDTH, BACK_BUTTON_HEIGHT, BACK_BUTTON_RADIUS, language.get("common", "back"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
+        back_button.init(GO_BACK_BUTTON_BACK_SX, GO_BACK_BUTTON_SY, GO_BACK_BUTTON_WIDTH, GO_BACK_BUTTON_HEIGHT, GO_BACK_BUTTON_RADIUS, language.get("common", "back"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
+        go_button.init(GO_BACK_BUTTON_GO_SX, GO_BACK_BUTTON_SY, GO_BACK_BUTTON_WIDTH, GO_BACK_BUTTON_HEIGHT, GO_BACK_BUTTON_RADIUS, language.get("book", "merge"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
         importing = false;
         imported = false;
         failed = false;
@@ -48,19 +53,52 @@ public:
             changeScene(U"Close", SCENE_FADE_TIME);
         }
         Scene::SetBackground(getData().colors.green);
-        const int icon_width = (LEFT_RIGHT - LEFT_LEFT) / 2;
+        const int icon_width = BOOK_SCENE_ICON_WIDTH;
         getData().resources.icon.scaled((double)icon_width / getData().resources.icon.width()).draw(X_CENTER - icon_width / 2, 20);
         getData().resources.logo.scaled((double)icon_width / getData().resources.logo.width()).draw(X_CENTER - icon_width / 2, 20 + icon_width);
-        int sy = 20 + icon_width + 50;
+        int sy = 20 + icon_width + 30;
         if (!importing) {
-            getData().fonts.font(language.get("book", "merge_explanation")).draw(25, Arg::topCenter(X_CENTER, sy), getData().colors.white);
+            getData().fonts.font(language.get("book", "book_merge")).draw(25, Arg::topCenter(X_CENTER, sy), getData().colors.white);
+            getData().fonts.font(language.get("book", "input_book_path")).draw(15, Arg::topCenter(X_CENTER, sy + 35), getData().colors.white);
+            Rect text_area{ X_CENTER - 300, sy + 60, 600, 70 };
+            text_area.draw(getData().colors.light_cyan).drawFrame(2, getData().colors.black);
+            String book_file_str = Unicode::Widen(book_file);
+            TextInput::UpdateText(book_file_str);
+            const String editingText = TextInput::GetEditingText();
+            bool return_pressed = false;
+            if (KeyControl.pressed() && KeyV.down()) {
+                String clip_text;
+                Clipboard::GetText(clip_text);
+                book_file_str += clip_text;
+            }
+            if (book_file_str.size()) {
+                if (book_file_str[book_file_str.size() - 1] == '\n') {
+                    book_file_str.replace(U"\n", U"");
+                    return_pressed = true;
+                }
+            }
+            bool file_dragged = false;
+            if (DragDrop::HasNewFilePaths()) {
+                book_file_str = DragDrop::GetDroppedFilePaths()[0].path;
+                file_dragged = true;
+            }
+            getData().fonts.font(book_file_str + U'|' + editingText).draw(15, text_area.stretched(-4), getData().colors.black);
+            book_file = book_file_str.narrow();
+            std::string ext = get_extension(book_file);
+            if (ext == BOOK_EXTENSION_NODOT)
+                go_button.enable();
+            else{
+                go_button.disable();
+                getData().fonts.font(language.get("book", "wrong_extension")).draw(20, Arg::topCenter(X_CENTER, sy + 140), getData().colors.white);
+            }
             back_button.draw();
             if (back_button.clicked() || KeyEscape.pressed()) {
                 umigame.delete_all();
                 getData().graph_resources.need_init = false;
                 changeScene(U"Main_scene", SCENE_FADE_TIME);
             }
-            if (DragDrop::HasNewFilePaths()) {
+            go_button.draw();
+            if (ext == BOOK_EXTENSION_NODOT && (go_button.clicked() || KeyEnter.pressed() || file_dragged)) {
                 import_book_future = std::async(std::launch::async, import_book, DragDrop::GetDroppedFilePaths()[0].path.narrow());
                 importing = true;
             }
@@ -254,7 +292,7 @@ public:
             changeScene(U"Close", SCENE_FADE_TIME);
         }
         Scene::SetBackground(getData().colors.green);
-        const int icon_width = 140; //(LEFT_RIGHT - LEFT_LEFT) / 2;
+        const int icon_width = BOOK_SCENE_ICON_WIDTH;
         getData().resources.icon.scaled((double)icon_width / getData().resources.icon.width()).draw(X_CENTER - icon_width / 2, 20);
         getData().resources.logo.scaled((double)icon_width / getData().resources.logo.width()).draw(X_CENTER - icon_width / 2, 20 + icon_width);
         int sy = 20 + icon_width + 30;
