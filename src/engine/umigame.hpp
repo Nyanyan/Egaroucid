@@ -93,7 +93,6 @@ class Umigame{
             if (umigame_res.b != UMIGAME_UNDEFINED)
                 return umigame_res;
             int max_val = -INF;
-            std::vector<Board> boards;
             if (b->get_legal() == 0ULL){
                 player ^= 1;
                 b->pass();
@@ -108,6 +107,7 @@ class Umigame{
 				reg(b, umigame_res);
                 return umigame_res;
             }
+            std::vector<Board> boards;
             for (uint_fast8_t cell: best_moves){
                 calc_flip(&flip, b, cell);
                 boards.emplace_back(b->move_copy(&flip));
