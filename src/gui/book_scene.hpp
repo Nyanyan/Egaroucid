@@ -156,8 +156,15 @@ public:
                 book_file_str = DragDrop::GetDroppedFilePaths()[0].path;
                 file_dragged = true;
             }
-            book_file = book_file_str.narrow();
             getData().fonts.font(book_file_str + U'|' + editingText).draw(15, text_area.stretched(-4), getData().colors.black);
+            book_file = book_file_str.narrow();
+            std::string ext = get_extension(book_file);
+            if (ext == BOOK_EXTENSION_NODOT)
+                go_button.enable();
+            else{
+                go_button.disable();
+                getData().fonts.font(language.get("book", "wrong_extension")).draw(20, Arg::topCenter(X_CENTER, sy + 120), getData().colors.white);
+            }
             back_button.draw();
             if (back_button.clicked() || KeyEscape.pressed()) {
                 umigame.delete_all();
@@ -169,7 +176,7 @@ public:
                 book_file = getData().directories.document_dir + "book" + BOOK_EXTENSION;
             }
             go_button.draw();
-            if (go_button.clicked() || return_pressed || file_dragged) {
+            if (ext == BOOK_EXTENSION_NODOT && (go_button.clicked() || return_pressed || file_dragged)) {
                 getData().book_information.changed = true;
                 getData().settings.book_file = book_file;
                 std::cerr << "book reference changed to " << book_file << std::endl;
@@ -190,8 +197,8 @@ public:
             else if (book_importing) {
                 if (import_book_future.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
                     failed = !import_book_future.get();
-                    if (getData().settings.book_file.size() < 6 || getData().settings.book_file.substr(getData().settings.book_file.size() - 6, 6) != BOOK_EXTENSION)
-                        getData().settings.book_file += BOOK_EXTENSION;
+                    //if (getData().settings.book_file.size() < 6 || getData().settings.book_file.substr(getData().settings.book_file.size() - 6, 6) != BOOK_EXTENSION)
+                    //    getData().settings.book_file += BOOK_EXTENSION;
                     book_importing = false;
                     done = true;
                 }
@@ -275,7 +282,7 @@ public:
             std::string ext = get_extension(book_file);
             bool button_enabled = false;
             String book_format_str;
-            if (ext == "egbk3"){
+            if (ext == BOOK_EXTENSION_NODOT){
                 book_format_str = language.get("book", "egaroucid_format");
                 go_button.enable();
                 go_with_level_button.enable();
@@ -317,12 +324,12 @@ public:
                 changeScene(U"Main_scene", SCENE_FADE_TIME);
             }
             if (go_with_level_button.clicked()){
-                if (ext == "egbk3")
+                if (ext == BOOK_EXTENSION_NODOT)
                     save_book_edax_future = std::async(std::launch::async, book_save_as_egaroucid, book_file, level);
                 else if (ext == "dat")
                     save_book_edax_future = std::async(std::launch::async, book_save_as_edax, book_file, level);
             } else if (go_button.clicked() || (return_pressed && button_enabled)) {
-                if (ext == "egbk3")
+                if (ext == BOOK_EXTENSION_NODOT)
                     save_book_edax_future = std::async(std::launch::async, book_save_as_egaroucid, book_file, LEVEL_UNDEFINED);
                 else if (ext == "dat")
                     save_book_edax_future = std::async(std::launch::async, book_save_as_edax, book_file, LEVEL_UNDEFINED);

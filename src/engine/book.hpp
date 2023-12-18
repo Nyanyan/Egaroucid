@@ -36,6 +36,7 @@ void search_new_leaf(Board board, int level, int book_elem_value, bool use_multi
 #define FORCE_BOOK_DEPTH false
 
 #define BOOK_EXTENSION ".egbk3"
+#define BOOK_EXTENSION_NODOT "egbk3"
 
 #define ADD_LEAF_SPECIAL_LEVEL -1
 
