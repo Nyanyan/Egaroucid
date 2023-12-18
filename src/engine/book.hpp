@@ -1489,7 +1489,7 @@ class Book{
             }
         }
 
-        void delete_unflagged_moves(Board board, uint64_t *n_delete, bool *doing){
+        void delete_unflagged_moves(Board board, uint64_t *n_keep, bool *doing){
             if (!(*doing))
                 return;
             if (!contain(board))
@@ -1501,16 +1501,17 @@ class Book{
             }
             std::vector<Book_value> links = get_all_moves_with_value(&board);
             if (!get(board).seen){
-                ++(*n_delete);
                 delete_elem(board);
-                if ((*n_delete) % 100 == 0)
-                    std::cerr << "deleting " << (*n_delete) << " boards" << std::endl;
+            } else{
+                ++(*n_keep);
+                if ((*n_keep) % 100 == 0)
+                    std::cerr << "keeping " << (*n_keep) << " boards" << std::endl;
             }
             Flip flip;
             for (Book_value &link: links){
                 calc_flip(&flip, &board, link.policy);
                 board.move_board(&flip);
-                    delete_unflagged_moves(board, n_delete, doing);
+                    delete_unflagged_moves(board, n_keep, doing);
                 board.undo_board(&flip);
             }
         }
@@ -1526,10 +1527,10 @@ class Book{
                 lower = -SCORE_MAX;
             if (upper > SCORE_MAX)
                 upper = SCORE_MAX;
-            uint64_t n_flags = 0, n_delete = 0;
+            uint64_t n_flags = 0, n_keep = 0;
             uint64_t book_size = book.size();
             reduce_book_flag_moves(root_board, max_depth, max_error_per_move, lower, upper, &n_flags, doing);
-            delete_unflagged_moves(root_board, &n_delete, doing);
+            delete_unflagged_moves(root_board, &n_keep, doing);
             reset_seen();
             std::cerr << "book reduced size before " << book_size << " after " << book.size();
             *doing = false;
