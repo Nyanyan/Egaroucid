@@ -19,7 +19,6 @@
 /*
     @brief Constants for Umigame's value
 */
-#define UMIGAME_SEARCH_DEPTH 100
 #define UMIGAME_UNDEFINED -1
 
 
@@ -53,7 +52,7 @@ class Umigame{
 
     public:
         void calculate(Board *board, int player){
-            umigame_search(board, UMIGAME_SEARCH_DEPTH, player);
+            umigame_search(board, player);
         }
 
         void delete_all(){
@@ -78,11 +77,10 @@ class Umigame{
             @brief Result of umigame value search 
 
             @param b                            board to solve
-            @param depth                        remaining depth
             @param player                       the player of this board
             @return Umigame's value
         */
-        Umigame_result umigame_search(Board *b, int depth, int player){
+        Umigame_result umigame_search(Board *b, int player){
             Umigame_result umigame_res;
 			if (!global_searching)
                 return umigame_res;
@@ -118,7 +116,7 @@ class Umigame{
                 umigame_res.b = INF;
                 umigame_res.w = 0;
                 for (Board &nnb : boards){
-                    Umigame_result nres = umigame_search(&nnb, depth - 1, player ^ 1);
+                    Umigame_result nres = umigame_search(&nnb, player ^ 1);
                     umigame_res.b = std::min(umigame_res.b, nres.b);
                     umigame_res.w += nres.w;
                 }
@@ -126,7 +124,7 @@ class Umigame{
                 umigame_res.b = 0;
                 umigame_res.w = INF;
                 for (Board &nnb : boards){
-                    Umigame_result nres = umigame_search(&nnb, depth - 1, player ^ 1);
+                    Umigame_result nres = umigame_search(&nnb, player ^ 1);
                     umigame_res.w = std::min(umigame_res.w, nres.w);
                     umigame_res.b += nres.b;
                 }
