@@ -311,9 +311,11 @@ private:
         ai_status.analyze_task_stack.clear();
     }
 
-    void reset_umigame() {
+    void reset_book_additional_features(){
         umigame_status.umigame_calculated = false;
         umigame_status.umigame_calculating = false;
+        book_accuracy_status.book_accuracy_calculated = false;
+        book_accuracy_status.book_accuracy_calculating = false;
     }
 
     void stop_calculating() {
@@ -341,7 +343,7 @@ private:
         reset_ai();
         reset_hint();
         reset_analyze();
-        reset_umigame();
+        reset_book_additional_features();
         std::cerr << "reset all calculations" << std::endl;
     }
 
@@ -846,7 +848,7 @@ private:
             getData().graph_resources.nodes[getData().graph_resources.branch].back().level = N_LEVEL - 1;
         }
         reset_hint();
-        reset_umigame();
+        reset_book_additional_features();
     }
 
     void interact_move() {
@@ -1667,7 +1669,7 @@ private:
                     }
                 }
                 if (all_done) {
-                    book_accuracy_status.book_accuracy_calculated = all_done;
+                    book_accuracy_status.book_accuracy_calculated = true;
                     std::cerr << "finish book accuracy calculation" << std::endl;
                 }
             }
@@ -1680,7 +1682,8 @@ private:
             if (1 & (legal_ignore >> cell)) {
                 int sx = BOARD_SX + ((HW2_M1 - cell) % HW) * BOARD_CELL_SIZE;
                 int sy = BOARD_SY + ((HW2_M1 - cell) / HW) * BOARD_CELL_SIZE;
-                getData().fonts.font_heavy(book_accuracy_status.book_accuracy[cell]).draw(10, sx + 2, sy + 32, getData().colors.white);
+                if (book_accuracy_status.book_accuracy[cell] != BOOK_ACCURACY_LEVEL_UNDEFINED)
+                    getData().fonts.font_heavy(book_accuracy_status.book_accuracy[cell]).draw(10, sx + 2, sy + 33, getData().colors.white);
             }
         }
     }

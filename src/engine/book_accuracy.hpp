@@ -28,7 +28,8 @@ class Book_accuracy{
     
     public:
         void calculate(Board *board){
-            book_accuracy_search(board->copy());
+            if (book.contain(board))
+                book_accuracy_search(board->copy());
         }
 
         void delete_all(){
