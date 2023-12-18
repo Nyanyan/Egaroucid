@@ -166,7 +166,7 @@ public:
             }
             default_button.draw();
             if (default_button.clicked()) {
-                book_file = getData().directories.document_dir + "book.egbk2";
+                book_file = getData().directories.document_dir + "book" + BOOK_EXTENSION;
             }
             go_button.draw();
             if (go_button.clicked() || return_pressed || file_dragged) {
@@ -190,8 +190,8 @@ public:
             else if (book_importing) {
                 if (import_book_future.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
                     failed = !import_book_future.get();
-                    if (getData().settings.book_file.size() < 6 || getData().settings.book_file.substr(getData().settings.book_file.size() - 6, 6) != ".egbk2")
-                        getData().settings.book_file += ".egbk2";
+                    if (getData().settings.book_file.size() < 6 || getData().settings.book_file.substr(getData().settings.book_file.size() - 6, 6) != BOOK_EXTENSION)
+                        getData().settings.book_file += BOOK_EXTENSION;
                     book_importing = false;
                     done = true;
                 }
