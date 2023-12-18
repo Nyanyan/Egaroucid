@@ -71,6 +71,7 @@ void init_default_settings(const Directories* directories, const Resources* reso
     settings->show_play_ordering = false;
     settings->generate_random_board_moves = 20;
     settings->show_book_n_lines = false;
+    settings->show_book_accuracy = false;
 }
 
 int init_settings_import_int(JSON &json, String key, int* res) {
