@@ -1600,7 +1600,6 @@ private:
             if (1 & (legal_ignore >> cell)) {
                 int sx = BOARD_SX + ((HW2_M1 - cell) % HW) * BOARD_CELL_SIZE;
                 int sy = BOARD_SY + ((HW2_M1 - cell) / HW) * BOARD_CELL_SIZE;
-                Rect(sx + 1, sy + 18, 11, 20).draw(getData().colors.green);
                 Board board = getData().history_elem.board;
                 Flip flip;
                 calc_flip(&flip, &board, cell);
@@ -1615,7 +1614,8 @@ private:
                     } else if (n_lines >= 1000){
                         n_lines_str = Format(n_lines / 1000) + U"K";
                     }
-                    getData().fonts.font_heavy(n_lines_str).draw(10, sx + 2, sy + 19, getData().colors.white);
+                    Rect(sx + 1, sy + 21, 25, 20).draw(getData().colors.green);
+                    getData().fonts.font_heavy(n_lines_str).draw(10, sx + 2, sy + 20, getData().colors.white);
                 }
             }
         }
