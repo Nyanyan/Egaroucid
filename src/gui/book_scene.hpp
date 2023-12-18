@@ -96,7 +96,7 @@ public:
                 formatted_file = true;
             } else{
                 go_button.disable();
-                getData().fonts.font(language.get("book", "wrong_extension")).draw(20, Arg::topCenter(X_CENTER, sy + 160), getData().colors.white);
+                getData().fonts.font(language.get("book", "wrong_extension") + language.get("book", "legal_extension3")).draw(20, Arg::topCenter(X_CENTER, sy + 160), getData().colors.white);
             }
             back_button.draw();
             if (back_button.clicked() || KeyEscape.pressed()) {
@@ -332,12 +332,12 @@ public:
             book_file = book_file_str.narrow();
             std::string ext = get_extension(book_file);
             bool formatted_file = false;
-            if (ext == BOOK_EXTENSION_NODOT){
+            if (ext == BOOK_EXTENSION_NODOT || ext == "dat"){
                 go_button.enable();
                 formatted_file = true;
             } else{
                 go_button.disable();
-                getData().fonts.font(language.get("book", "wrong_extension")).draw(20, Arg::topCenter(X_CENTER, sy + 160), getData().colors.white);
+                getData().fonts.font(language.get("book", "wrong_extension") + language.get("book", "legal_extension2")).draw(20, Arg::topCenter(X_CENTER, sy + 160), getData().colors.white);
             }
             back_button.draw();
             if (back_button.clicked() || KeyEscape.pressed()) {
@@ -452,7 +452,7 @@ public:
                 formatted_book = true;
             } else{
                 go_button.disable();
-                getData().fonts.font(language.get("book", "wrong_extension")).draw(20, Arg::topCenter(X_CENTER, sy + 160), getData().colors.white);
+                getData().fonts.font(language.get("book", "wrong_extension") + language.get("book", "legal_extension1")).draw(20, Arg::topCenter(X_CENTER, sy + 160), getData().colors.white);
             }
             back_button.draw();
             if (back_button.clicked() || KeyEscape.pressed()) {
