@@ -228,7 +228,7 @@ private:
     std::string book_file;
     int level;
     std::future<void> save_book_edax_future;
-    bool book_saving_edax;
+    bool book_exporting;
     bool done;
 
 public:
@@ -238,7 +238,7 @@ public:
         go_button.init(BUTTON3_3_SX, GO_BACK_BUTTON_SY, BUTTON3_WIDTH, BUTTON3_HEIGHT, BUTTON3_RADIUS, language.get("book", "export"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
         book_file = getData().directories.document_dir + "book_copy.egbk3";
         level = 21;
-        book_saving_edax = false;
+        book_exporting = false;
         done = false;
     }
 
@@ -247,11 +247,12 @@ public:
             changeScene(U"Close", SCENE_FADE_TIME);
         }
         Scene::SetBackground(getData().colors.green);
-        const int icon_width = (LEFT_RIGHT - LEFT_LEFT) / 2;
+        const int icon_width = 140; //(LEFT_RIGHT - LEFT_LEFT) / 2;
         getData().resources.icon.scaled((double)icon_width / getData().resources.icon.width()).draw(X_CENTER - icon_width / 2, 20);
         getData().resources.logo.scaled((double)icon_width / getData().resources.logo.width()).draw(X_CENTER - icon_width / 2, 20 + icon_width);
-        int sy = 20 + icon_width + 50;
-        if (!book_saving_edax) {
+        int sy = 20 + icon_width + 30;
+        if (!book_exporting) {
+            getData().fonts.font(language.get("book", "export_book")).draw(25, Arg::topCenter(X_CENTER, sy), getData().colors.white);
             Rect text_area{ X_CENTER - 300, sy + 40, 600, 80 };
             text_area.draw(getData().colors.light_cyan).drawFrame(2, getData().colors.black);
             String book_file_str = Unicode::Widen(book_file);
@@ -289,9 +290,9 @@ public:
                 go_button.disable();
                 go_with_level_button.disable();
             }
-            getData().fonts.font(language.get("book", "export_book") + U" (" + book_format_str +  U")").draw(25, Arg::topCenter(X_CENTER, sy), getData().colors.white);
+            getData().fonts.font(book_format_str).draw(18, Arg::topCenter(X_CENTER, sy + 122), getData().colors.white);
 
-            Rect bar_rect{X_CENTER - 220, sy + 130, 440, 20};
+            Rect bar_rect{X_CENTER - 220, sy + 150, 440, 20};
             bar_rect.draw(bar_color); // Palette::Lightskyblue
             if (bar_rect.leftPressed()){
                 int min_error = INF;
@@ -304,8 +305,8 @@ public:
                     }
                 }
             }
-            Circle bar_circle{X_CENTER - 200 + 400 * level / 61, sy + 140, 12};
-            getData().fonts.font(language.get("ai_settings", "level") + Format(level)).draw(20, Arg::rightCenter(X_CENTER - 230, sy + 140), getData().colors.white);
+            Circle bar_circle{X_CENTER - 200 + 400 * level / 61, sy + 160, 12};
+            getData().fonts.font(language.get("ai_settings", "level") + Format(level)).draw(20, Arg::rightCenter(X_CENTER - 230, sy + 160), getData().colors.white);
             bar_circle.draw(bar_circle_color);
 
             back_button.draw();
@@ -325,7 +326,7 @@ public:
                     save_book_edax_future = std::async(std::launch::async, book_save_as_egaroucid, book_file, LEVEL_UNDEFINED);
                 else if (ext == "dat")
                     save_book_edax_future = std::async(std::launch::async, book_save_as_edax, book_file, LEVEL_UNDEFINED);
-                book_saving_edax = true;
+                book_exporting = true;
             }
         }
         else {
