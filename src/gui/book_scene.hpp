@@ -264,6 +264,8 @@ public:
         else {
             getData().fonts.font(language.get("book", "exporting")).draw(25, Arg::topCenter(X_CENTER, sy), getData().colors.white);
 			if (save_book_edax_future.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
+                save_book_edax_future.get();
+                done = true;
                 getData().graph_resources.need_init = false;
 				changeScene(U"Main_scene", SCENE_FADE_TIME);
 			}
