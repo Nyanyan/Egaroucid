@@ -30,6 +30,10 @@ Umigame_result get_umigame(Board board, int player) {
     return calculate_umigame(&board, player);
 }
 
+int get_book_accuracy(Board board){
+    return calculate_book_accuracy(&board);
+}
+
 class Main_scene : public App::Scene {
 private:
     Graph graph;
@@ -40,6 +44,7 @@ private:
     Button pass_button;
     bool need_start_game_button;
     Umigame_status umigame_status;
+    Book_accuracy_status book_accuracy_status;
     bool changing_scene;
     bool taking_screen_shot;
     bool pausing_in_pass;
@@ -225,7 +230,7 @@ public:
                     hint_init_calculating();
                 }
                 hint_do_task();
-                legal_ignore = draw_hint();
+                legal_ignore = draw_hint(getData().menu_elements.show_book_n_lines && !hint_ignore);
             }
         }
 
@@ -237,6 +242,14 @@ public:
         // book n_lines drawing
         if (getData().menu_elements.show_book_n_lines && !hint_ignore){
             draw_book_n_lines(legal_ignore);
+        }
+
+        // book accuracy drawing
+        if (getData().menu_elements.show_book_accuracy && !hint_ignore){
+            if (book_accuracy_status.book_accuracy_calculated){
+                draw_book_accuracy(legal_ignore);
+            } else
+                calculate_book_accuracy();
         }
 
         // umigame calculating / drawing
@@ -974,9 +987,9 @@ private:
         side_side_menu.init_check(language.get("display", "cell", "next_move_change_view"), &menu_elements->show_next_move_change_view, menu_elements->show_next_move_change_view);
         side_menu.push(side_side_menu);
         menu_e.push(side_menu);
-        side_menu.init_check(language.get("display", "cell", "show_book_accuracy"), &menu_elements->show_book_accuracy, menu_elements->show_book_accuracy);
-        menu_e.push(side_menu);
         side_menu.init_check(language.get("display", "cell", "show_book_n_lines"), &menu_elements->show_book_n_lines, menu_elements->show_book_n_lines);
+        menu_e.push(side_menu);
+        side_menu.init_check(language.get("display", "cell", "show_book_accuracy"), &menu_elements->show_book_accuracy, menu_elements->show_book_accuracy);
         menu_e.push(side_menu);
         title.push(menu_e);
 
@@ -1199,7 +1212,7 @@ private:
         }
     }
 
-    uint64_t draw_hint() {
+    uint64_t draw_hint(bool ignore_book_info) {
         uint64_t res = 0ULL;
         if (ai_status.hint_available) {
             std::vector<Hint_info> hint_infos;
@@ -1238,7 +1251,8 @@ private:
                 }
                 font((int)round(hint_infos[i].value)).draw(18, sx + 2, sy, color);
                 if (hint_infos[i].type == HINT_TYPE_BOOK) {
-                    getData().fonts.font(U"book").draw(10, sx + 2, sy + 19, color);
+                    if (!ignore_book_info)
+                        getData().fonts.font(U"book").draw(10, sx + 2, sy + 19, color);
                 }
                 else if (hint_infos[i].type > HINT_MAX_LEVEL) {
                     getData().fonts.font(Format(hint_infos[i].type) + U"%").draw(10, sx + 2, sy + 19, color);
@@ -1551,7 +1565,7 @@ private:
                     board.move_board(&flip);
                         if (board.get_legal() == 0ULL){
                             board.pass();
-                                umigame_status.umigame_future[cell] = std::async(std::launch::async, get_umigame, board, n_player);
+                                umigame_status.umigame_future[cell] = std::async(std::launch::async, get_umigame, board, n_player ^ 1);
                             board.pass();
                         } else
                             umigame_status.umigame_future[cell] = std::async(std::launch::async, get_umigame, board, n_player);
@@ -1614,9 +1628,59 @@ private:
                     } else if (n_lines >= 1000){
                         n_lines_str = Format(n_lines / 1000) + U"K";
                     }
-                    Rect(sx + 1, sy + 21, 25, 20).draw(getData().colors.green);
                     getData().fonts.font_heavy(n_lines_str).draw(10, sx + 2, sy + 20, getData().colors.white);
                 }
+            }
+        }
+    }
+
+    void calculate_book_accuracy() {
+        if (!changing_scene) {
+            uint64_t legal = getData().history_elem.board.get_legal();
+            if (!book_accuracy_status.book_accuracy_calculating) {
+                Board board = getData().history_elem.board;
+                Flip flip;
+                for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)) {
+                    calc_flip(&flip, &board, cell);
+                    board.move_board(&flip);
+                        if (board.get_legal() == 0ULL){
+                            board.pass();
+                                book_accuracy_status.book_accuracy_future[cell] = std::async(std::launch::async, get_book_accuracy, board);
+                            board.pass();
+                        } else
+                            book_accuracy_status.book_accuracy_future[cell] = std::async(std::launch::async, get_book_accuracy, board);
+                    board.undo_board(&flip);
+                }
+                book_accuracy_status.book_accuracy_calculating = true;
+                std::cerr << "start book accuracy calculation" << std::endl;
+            }
+            else {
+                bool all_done = true;
+                for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)) {
+                    if (book_accuracy_status.book_accuracy_future[cell].valid()) {
+                        if (book_accuracy_status.book_accuracy_future[cell].wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
+                            book_accuracy_status.book_accuracy[cell] = book_accuracy_status.book_accuracy_future[cell].get();
+                        }
+                        else {
+                            all_done = false;
+                        }
+                    }
+                }
+                if (all_done) {
+                    book_accuracy_status.book_accuracy_calculated = all_done;
+                    std::cerr << "finish book accuracy calculation" << std::endl;
+                }
+            }
+        }
+    }
+
+    void draw_book_accuracy(uint64_t legal_ignore) {
+        uint64_t legal = getData().history_elem.board.get_legal();
+        for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)) {
+            if (1 & (legal_ignore >> cell)) {
+                int sx = BOARD_SX + ((HW2_M1 - cell) % HW) * BOARD_CELL_SIZE;
+                int sy = BOARD_SY + ((HW2_M1 - cell) / HW) * BOARD_CELL_SIZE;
+                getData().fonts.font_heavy(book_accuracy_status.book_accuracy[cell]).draw(10, sx + 2, sy + 32, getData().colors.white);
             }
         }
     }

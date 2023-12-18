@@ -16,7 +16,7 @@
 #include "board.hpp"
 #include "book.hpp"
 
-#define BOOK_ACCURACY_UNDEFINED INF
+#define BOOK_ACCURACY_LEVEL_UNDEFINED -1
 #define BOOK_ACCURACY_LEVEL_BAD 1
 #define BOOK_ACCURACY_LEVEL_MID 2
 #define BOOK_ACCURACY_LEVEL_GOOD 3
@@ -45,9 +45,9 @@ class Book_accuracy{
     private:
         int book_accuracy_search(Board board){
             if (!global_searching)
-                return BOOK_ACCURACY_UNDEFINED;
+                return BOOK_ACCURACY_LEVEL_UNDEFINED;
             int res = get(&board);
-            if (res != BOOK_ACCURACY_UNDEFINED)
+            if (res != BOOK_ACCURACY_LEVEL_UNDEFINED)
                 return res;
             if (board.get_legal() == 0ULL)
                 board.pass();
@@ -75,6 +75,8 @@ class Book_accuracy{
                     board.move_board(&flip);
                         int child_book_acc = book_accuracy_search(board);
                     board.undo_board(&flip);
+                    if (child_book_acc == BOOK_ACCURACY_LEVEL_UNDEFINED)
+                        return BOOK_ACCURACY_LEVEL_UNDEFINED;
                     book_acc_good_found |= child_book_acc == BOOK_ACCURACY_LEVEL_GOOD;
                     book_acc_mid_found |= child_book_acc == BOOK_ACCURACY_LEVEL_MID;
                     book_acc_bad_found |= child_book_acc == BOOK_ACCURACY_LEVEL_BAD;
@@ -96,7 +98,7 @@ class Book_accuracy{
         }
 
         inline int get_representive(Board b){
-            int res = BOOK_ACCURACY_UNDEFINED;
+            int res = BOOK_ACCURACY_LEVEL_UNDEFINED;
             if (book_accuracy.find(b) != book_accuracy.end())
                 res = book_accuracy[b];
             return res;
@@ -141,3 +143,12 @@ class Book_accuracy{
 };
 
 Book_accuracy book_accuracy;
+
+int calculate_book_accuracy(Board *b) {
+    int res = book_accuracy.get(b);
+    if (res == BOOK_ACCURACY_LEVEL_UNDEFINED){
+        book_accuracy.calculate(b);
+        res = book_accuracy.get(b);
+    }
+    return res;
+}

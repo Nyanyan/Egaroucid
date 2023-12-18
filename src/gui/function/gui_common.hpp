@@ -689,4 +689,11 @@ struct Umigame_status {
     Umigame_result umigame[HW2];
 };
 
+struct Book_accuracy_status {
+    bool book_accuracy_calculating{ false };
+    bool book_accuracy_calculated{ false };
+    std::future<int> book_accuracy_future[HW2];
+    int book_accuracy[HW2];
+};
+
 using App = SceneManager<String, Common_resources>;
