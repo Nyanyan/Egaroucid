@@ -29,6 +29,129 @@ bool import_book(std::string file) {
     return result;
 }
 
+class Import_book : public App::Scene {
+private:
+    std::future<bool> import_book_future;
+    std::future<void> delete_book_future;
+    Button single_back_button;
+    Button back_button;
+    Button go_button;
+    std::string book_file;
+    bool book_deleting;
+    bool book_importing;
+    bool failed;
+    bool done;
+
+public:
+    Import_book(const InitData& init) : IScene{ init } {
+        single_back_button.init(BACK_BUTTON_SX, BACK_BUTTON_SY, BACK_BUTTON_WIDTH, BACK_BUTTON_HEIGHT, BACK_BUTTON_RADIUS, language.get("common", "back"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
+        back_button.init(GO_BACK_BUTTON_BACK_SX, GO_BACK_BUTTON_SY, GO_BACK_BUTTON_WIDTH, GO_BACK_BUTTON_HEIGHT, GO_BACK_BUTTON_RADIUS, language.get("common", "back"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
+        go_button.init(GO_BACK_BUTTON_GO_SX, GO_BACK_BUTTON_SY, GO_BACK_BUTTON_WIDTH, GO_BACK_BUTTON_HEIGHT, GO_BACK_BUTTON_RADIUS, language.get("book", "merge"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
+        book_deleting = false;
+        book_importing = false;
+        failed = false;
+        done = false;
+    }
+
+    void update() override {
+        if (System::GetUserActions() & UserAction::CloseButtonClicked) {
+            changeScene(U"Close", SCENE_FADE_TIME);
+        }
+        Scene::SetBackground(getData().colors.green);
+        const int icon_width = BOOK_SCENE_ICON_WIDTH;
+        getData().resources.icon.scaled((double)icon_width / getData().resources.icon.width()).draw(X_CENTER - icon_width / 2, 20);
+        getData().resources.logo.scaled((double)icon_width / getData().resources.logo.width()).draw(X_CENTER - icon_width / 2, 20 + icon_width);
+        int sy = 20 + icon_width + 40;
+        if (!book_deleting && !book_importing && !failed && !done) {
+            getData().fonts.font(language.get("book", "import_book")).draw(25, Arg::topCenter(X_CENTER, sy), getData().colors.white);
+            getData().fonts.font(language.get("book", "input_book_path")).draw(15, Arg::topCenter(X_CENTER, sy + 50), getData().colors.white);
+            Rect text_area{ X_CENTER - 300, sy + 80, 600, 70 };
+            text_area.draw(getData().colors.light_cyan).drawFrame(2, getData().colors.black);
+            String book_file_str = Unicode::Widen(book_file);
+            TextInput::UpdateText(book_file_str);
+            const String editingText = TextInput::GetEditingText();
+            bool return_pressed = false;
+            if (KeyControl.pressed() && KeyV.down()) {
+                String clip_text;
+                Clipboard::GetText(clip_text);
+                book_file_str += clip_text;
+            }
+            if (book_file_str.size()) {
+                if (book_file_str[book_file_str.size() - 1] == '\n') {
+                    book_file_str.replace(U"\n", U"");
+                    return_pressed = true;
+                }
+            }
+            bool file_dragged = false;
+            if (DragDrop::HasNewFilePaths()) {
+                book_file_str = DragDrop::GetDroppedFilePaths()[0].path;
+                file_dragged = true;
+            }
+            getData().fonts.font(book_file_str + U'|' + editingText).draw(15, text_area.stretched(-4), getData().colors.black);
+            book_file = book_file_str.narrow();
+            std::string ext = get_extension(book_file);
+            bool formatted_file = false;
+            if (ext == BOOK_EXTENSION_NODOT || ext == "egbk2" || ext == "egbk" || ext == "dat"){
+                go_button.enable();
+                formatted_file = true;
+            } else{
+                go_button.disable();
+                getData().fonts.font(language.get("book", "wrong_extension")).draw(20, Arg::topCenter(X_CENTER, sy + 160), getData().colors.white);
+            }
+            back_button.draw();
+            if (back_button.clicked() || KeyEscape.pressed()) {
+                umigame.delete_all();
+                getData().graph_resources.need_init = false;
+                changeScene(U"Main_scene", SCENE_FADE_TIME);
+            }
+            go_button.draw();
+            if (formatted_file && (go_button.clicked() || return_pressed || file_dragged)) {
+                getData().book_information.changed = true;
+                delete_book_future = std::async(std::launch::async, delete_book);
+                book_deleting = true;
+            }
+        }
+        else if (book_deleting || book_importing) {
+            getData().fonts.font(language.get("book", "loading")).draw(25, Arg::topCenter(X_CENTER, sy), getData().colors.white);
+            if (book_deleting) {
+                if (delete_book_future.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
+                    delete_book_future.get();
+                    book_deleting = false;
+                    import_book_future = std::async(std::launch::async, import_book, book_file);
+                    book_importing = true;
+                }
+            }
+            else if (book_importing) {
+                if (import_book_future.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
+                    failed = !import_book_future.get();
+                    book_importing = false;
+                    done = true;
+                }
+            }
+        }
+        else if (done) {
+            if (failed) {
+                getData().fonts.font(language.get("book", "import_failed")).draw(25, Arg::topCenter(X_CENTER, sy), getData().colors.white);
+                single_back_button.draw();
+                if (single_back_button.clicked() || KeyEscape.pressed()) {
+                    umigame.delete_all();
+                    getData().graph_resources.need_init = false;
+                    changeScene(U"Main_scene", SCENE_FADE_TIME);
+                }
+            }
+            else {
+                umigame.delete_all();
+                getData().graph_resources.need_init = false;
+                changeScene(U"Main_scene", SCENE_FADE_TIME);
+            }
+        }
+    }
+
+    void draw() const override {
+
+    }
+};
+
 class Export_book: public App::Scene {
 private:
     Button back_button;
@@ -208,9 +331,11 @@ public:
             getData().fonts.font(book_file_str + U'|' + editingText).draw(15, text_area.stretched(-4), getData().colors.black);
             book_file = book_file_str.narrow();
             std::string ext = get_extension(book_file);
-            if (ext == BOOK_EXTENSION_NODOT)
+            bool formatted_file = false;
+            if (ext == BOOK_EXTENSION_NODOT){
                 go_button.enable();
-            else{
+                formatted_file = true;
+            } else{
                 go_button.disable();
                 getData().fonts.font(language.get("book", "wrong_extension")).draw(20, Arg::topCenter(X_CENTER, sy + 160), getData().colors.white);
             }
@@ -221,7 +346,7 @@ public:
                 changeScene(U"Main_scene", SCENE_FADE_TIME);
             }
             go_button.draw();
-            if (ext == BOOK_EXTENSION_NODOT && (go_button.clicked() || KeyEnter.pressed() || file_dragged)) {
+            if (formatted_file && (go_button.clicked() || KeyEnter.pressed() || file_dragged)) {
                 import_book_future = std::async(std::launch::async, import_book, DragDrop::GetDroppedFilePaths()[0].path.narrow());
                 importing = true;
             }
@@ -321,9 +446,11 @@ public:
             getData().fonts.font(book_file_str + U'|' + editingText).draw(15, text_area.stretched(-4), getData().colors.black);
             book_file = book_file_str.narrow();
             std::string ext = get_extension(book_file);
-            if (ext == BOOK_EXTENSION_NODOT)
+            bool formatted_book = false;
+            if (ext == BOOK_EXTENSION_NODOT){
                 go_button.enable();
-            else{
+                formatted_book = true;
+            } else{
                 go_button.disable();
                 getData().fonts.font(language.get("book", "wrong_extension")).draw(20, Arg::topCenter(X_CENTER, sy + 160), getData().colors.white);
             }
@@ -338,7 +465,7 @@ public:
                 book_file = getData().directories.document_dir + "book" + BOOK_EXTENSION;
             }
             go_button.draw();
-            if (ext == BOOK_EXTENSION_NODOT && (go_button.clicked() || return_pressed || file_dragged)) {
+            if (formatted_book && (go_button.clicked() || return_pressed || file_dragged)) {
                 getData().book_information.changed = true;
                 getData().settings.book_file = book_file;
                 std::cerr << "book reference changed to " << book_file << std::endl;

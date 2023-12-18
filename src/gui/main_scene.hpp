@@ -678,7 +678,7 @@ private:
             stop_calculating();
             resume_calculating();
             changing_scene = true;
-            //changeScene(U"Import_book", SCENE_FADE_TIME);
+            changeScene(U"Import_book", SCENE_FADE_TIME);
             return;
         }
         if (getData().menu_elements.export_book) {
