@@ -56,7 +56,7 @@ public:
         const int icon_width = BOOK_SCENE_ICON_WIDTH;
         getData().resources.icon.scaled((double)icon_width / getData().resources.icon.width()).draw(X_CENTER - icon_width / 2, 20);
         getData().resources.logo.scaled((double)icon_width / getData().resources.logo.width()).draw(X_CENTER - icon_width / 2, 20 + icon_width);
-        int sy = 20 + icon_width + 30;
+        int sy = 20 + icon_width + 40;
         if (!importing) {
             getData().fonts.font(language.get("book", "book_merge")).draw(25, Arg::topCenter(X_CENTER, sy), getData().colors.white);
             getData().fonts.font(language.get("book", "input_book_path")).draw(15, Arg::topCenter(X_CENTER, sy + 35), getData().colors.white);
@@ -295,7 +295,7 @@ public:
         const int icon_width = BOOK_SCENE_ICON_WIDTH;
         getData().resources.icon.scaled((double)icon_width / getData().resources.icon.width()).draw(X_CENTER - icon_width / 2, 20);
         getData().resources.logo.scaled((double)icon_width / getData().resources.logo.width()).draw(X_CENTER - icon_width / 2, 20 + icon_width);
-        int sy = 20 + icon_width + 30;
+        int sy = 20 + icon_width + 40;
         if (!book_exporting) {
             getData().fonts.font(language.get("book", "export_book")).draw(25, Arg::topCenter(X_CENTER, sy), getData().colors.white);
             Rect text_area{ X_CENTER - 300, sy + 40, 600, 80 };
@@ -337,7 +337,7 @@ public:
             }
             getData().fonts.font(book_format_str).draw(18, Arg::topCenter(X_CENTER, sy + 122), getData().colors.white);
 
-            Rect bar_rect{X_CENTER - 220, sy + 150, 440, 20};
+            Rect bar_rect{X_CENTER - 220, sy + 160, 440, 20};
             bar_rect.draw(bar_color); // Palette::Lightskyblue
             if (bar_rect.leftPressed()){
                 int min_error = INF;
@@ -350,8 +350,8 @@ public:
                     }
                 }
             }
-            Circle bar_circle{X_CENTER - 200 + 400 * level / 61, sy + 160, 12};
-            getData().fonts.font(language.get("ai_settings", "level") + Format(level)).draw(20, Arg::rightCenter(X_CENTER - 230, sy + 160), getData().colors.white);
+            Circle bar_circle{X_CENTER - 200 + 400 * level / 61, sy + 170, 12};
+            getData().fonts.font(language.get("ai_settings", "level") + Format(level)).draw(20, Arg::rightCenter(X_CENTER - 230, sy + 170), getData().colors.white);
             bar_circle.draw(bar_circle_color);
 
             back_button.draw();
