@@ -1920,11 +1920,11 @@ class Book{
             if (!contain(b))
                 return register_symmetric_book(b, elem);
             Book_elem book_elem = get(b);
-            if (elem.value != SCORE_UNDEFINED || book_elem.level <= elem.level){
+            if (elem.value != SCORE_UNDEFINED && book_elem.level <= elem.level){
                 book_elem.value = elem.value;
                 book_elem.level = elem.level;
             }
-            if (elem.leaf.value != SCORE_UNDEFINED || book_elem.leaf.level <= elem.leaf.level){
+            if (elem.leaf.value != SCORE_UNDEFINED && book_elem.leaf.level <= elem.leaf.level){
                 book_elem.leaf.value = elem.leaf.value;
                 book_elem.leaf.move = elem.leaf.move;
                 book_elem.leaf.level = elem.leaf.level;
