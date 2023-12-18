@@ -17,9 +17,9 @@
 #include "book.hpp"
 
 #define BOOK_ACCURACY_LEVEL_UNDEFINED -1
-#define BOOK_ACCURACY_LEVEL_BAD 1
-#define BOOK_ACCURACY_LEVEL_MID 2
-#define BOOK_ACCURACY_LEVEL_GOOD 3
+#define BOOK_ACCURACY_LEVEL_GOOD 0
+#define BOOK_ACCURACY_LEVEL_MID 1
+#define BOOK_ACCURACY_LEVEL_BAD 2
 
 class Book_accuracy{
     private:
