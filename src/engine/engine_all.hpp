@@ -11,4 +11,5 @@
 #pragma once
 #include "ai.hpp"
 #include "book_enlarge.hpp"
+#include "book_accuracy.hpp"
 #include "umigame.hpp"
