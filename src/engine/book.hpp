@@ -952,14 +952,22 @@ class Book{
             int percent = -1;
             int n_boards = (int)book.size();
             int t = 0;
-            if (level == LEVEL_UNDEFINED)
-                char_level = 1;
             for (Board pass_board: pass_boards){
                 Board passed_board = pass_board.copy();
                 passed_board.pass();
                 Book_elem passed_elem = get(passed_board);
                 n_lines = passed_elem.n_lines;
                 short_val = (short)passed_elem.value;
+                if (level == LEVEL_UNDEFINED){
+                    Board b = pass_board.copy();
+                    b.pass();
+                    if (contain(b))
+                        char_level = get(b).level;
+                    else
+                        char_level = 1;
+                }
+                if (char_level > 60)
+                    char_level = 60;
                 n_link = 1;
                 link_value = (char)passed_elem.value;
                 link_move = MOVE_PASS;
@@ -1004,6 +1012,8 @@ class Book{
                 n_lines = itr->second.n_lines;
                 if (level == LEVEL_UNDEFINED)
                     char_level = itr->second.level;
+                if (char_level > 60)
+                    char_level = 60;
                 fout.write((char*)&itr->first.player, 8);
                 fout.write((char*)&itr->first.opponent, 8);
                 fout.write((char*)&n_win, 4);
