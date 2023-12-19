@@ -20,23 +20,27 @@
 #define BOOK_DEPTH_INF 80
 #define BOOK_ERROR_INF 130
 
-void delete_book() {
-    book.delete_all();
+void reset_book_additional_information(){
     umigame.delete_all();
     book_accuracy.delete_all();
+}
+
+void delete_book() {
+    book.delete_all();
+    reset_book_additional_information();
 }
 
 bool import_book(std::string file) {
     std::cerr << "book import" << std::endl;
     bool result = book.import_book_extension_determination(file);
-    umigame.delete_all();
+    reset_book_additional_information();
     return result;
 }
 
 bool import_book_with_level(std::string file, int level) {
     std::cerr << "book import with level " << level << std::endl;
     bool result = book.import_book_extension_determination(file, level);
-    umigame.delete_all();
+    reset_book_additional_information();
     return result;
 }
 
@@ -134,7 +138,7 @@ public:
             }
             back_button.draw();
             if (back_button.clicked() || KeyEscape.pressed()) {
-                umigame.delete_all();
+                reset_book_additional_information();
                 getData().graph_resources.need_init = false;
                 changeScene(U"Main_scene", SCENE_FADE_TIME);
             }
@@ -172,13 +176,13 @@ public:
                 getData().fonts.font(language.get("book", "import_failed")).draw(25, Arg::topCenter(X_CENTER, sy), getData().colors.white);
                 single_back_button.draw();
                 if (single_back_button.clicked() || KeyEscape.pressed()) {
-                    umigame.delete_all();
+                    reset_book_additional_information();
                     getData().graph_resources.need_init = false;
                     changeScene(U"Main_scene", SCENE_FADE_TIME);
                 }
             }
             else {
-                umigame.delete_all();
+                reset_book_additional_information();
                 getData().graph_resources.need_init = false;
                 changeScene(U"Main_scene", SCENE_FADE_TIME);
             }
@@ -381,7 +385,7 @@ public:
             }
             back_button.draw();
             if (back_button.clicked() || KeyEscape.pressed()) {
-                umigame.delete_all();
+                reset_book_additional_information();
                 getData().graph_resources.need_init = false;
                 changeScene(U"Main_scene", SCENE_FADE_TIME);
             }
@@ -403,13 +407,13 @@ public:
                 getData().fonts.font(language.get("book", "import_failed")).draw(25, Arg::topCenter(X_CENTER, sy), getData().colors.white);
                 back_button.draw();
                 if (back_button.clicked() || KeyEscape.pressed()) {
-                    umigame.delete_all();
+                    reset_book_additional_information();
                     getData().graph_resources.need_init = false;
                     changeScene(U"Main_scene", SCENE_FADE_TIME);
                 }
             }
             else {
-                umigame.delete_all();
+                reset_book_additional_information();
                 getData().book_information.changed = true;
                 getData().graph_resources.need_init = false;
                 changeScene(U"Main_scene", SCENE_FADE_TIME);
@@ -496,7 +500,7 @@ public:
             }
             back_button.draw();
             if (back_button.clicked() || KeyEscape.pressed()) {
-                umigame.delete_all();
+                reset_book_additional_information();
                 getData().graph_resources.need_init = false;
                 changeScene(U"Main_scene", SCENE_FADE_TIME);
             }
@@ -538,13 +542,13 @@ public:
                 getData().fonts.font(language.get("book", "import_failed")).draw(25, Arg::topCenter(X_CENTER, sy), getData().colors.white);
                 single_back_button.draw();
                 if (single_back_button.clicked() || KeyEscape.pressed()) {
-                    umigame.delete_all();
+                    reset_book_additional_information();
                     getData().graph_resources.need_init = false;
                     changeScene(U"Main_scene", SCENE_FADE_TIME);
                 }
             }
             else {
-                umigame.delete_all();
+                reset_book_additional_information();
                 getData().graph_resources.need_init = false;
                 changeScene(U"Main_scene", SCENE_FADE_TIME);
             }
@@ -648,7 +652,7 @@ public:
             getData().fonts.font(language.get("book", "complete")).draw(20, 480, 230, getData().colors.white);
             back_button.draw();
             if (back_button.clicked()) {
-                umigame.delete_all();
+                reset_book_additional_information();
                 getData().book_information.changed = true;
                 getData().graph_resources.need_init = false;
                 changeScene(U"Main_scene", SCENE_FADE_TIME);
@@ -708,7 +712,7 @@ public:
                 global_searching = true;
             }
         } else{
-            umigame.delete_all();
+            reset_book_additional_information();
             getData().book_information.changed = true;
             getData().graph_resources.need_init = false;
             changeScene(U"Main_scene", SCENE_FADE_TIME);
@@ -810,7 +814,7 @@ public:
             getData().fonts.font(language.get("book", "complete")).draw(20, 480, 230, getData().colors.white);
             back_button.draw();
             if (back_button.clicked()) {
-                umigame.delete_all();
+                reset_book_additional_information();
                 getData().book_information.changed = true;
                 getData().graph_resources.need_init = false;
                 changeScene(U"Main_scene", SCENE_FADE_TIME);
@@ -911,7 +915,7 @@ public:
             getData().fonts.font(language.get("book", "complete")).draw(20, 480, 230, getData().colors.white);
             back_button.draw();
             if (back_button.clicked()) {
-                umigame.delete_all();
+                reset_book_additional_information();
                 getData().book_information.changed = true;
                 getData().graph_resources.need_init = false;
                 changeScene(U"Main_scene", SCENE_FADE_TIME);
