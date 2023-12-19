@@ -112,7 +112,7 @@ public:
                 go_button.disable();
                 getData().fonts.font(language.get("book", "wrong_extension") + U" " + language.get("book", "legal_extension3")).draw(15, Arg::topCenter(X_CENTER, sy + 140), getData().colors.white);
             }
-            need_level_setting = (ext == "egbk2" || ext == "egbk");
+            need_level_setting = ext == "egbk";
             if (need_level_setting){
                 Rect bar_rect{X_CENTER - 220, sy + 160, 440, 20};
                 bar_rect.draw(bar_color); // Palette::Lightskyblue
