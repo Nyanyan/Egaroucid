@@ -128,12 +128,13 @@ void book_recalculate_leaves(int level, std::unordered_set<Book_deviate_todo_ele
         return;
     int n_done = 0, n_doing = 0;
     std::vector<std::future<void>> tasks;
+    int n_threads = thread_pool.n_threads();
     for (Book_deviate_todo_elem elem: todo_list){
         if (!global_searching || !(*book_learning))
             break;
         *board_copy = elem.board;
         *player = elem.player;
-        bool use_multi_thread = (n_all - n_doing) < thread_pool.size() * 2 / 3;
+        bool use_multi_thread = (n_all - n_doing) < n_threads * 2;
         bool pushed;
         ++n_doing;
         if (use_multi_thread){
@@ -333,7 +334,7 @@ void expand_leaves(int book_depth, int level, std::unordered_set<Book_deviate_to
             break;
         *board_copy = elem.board;
         *player = elem.player;
-        bool use_multi_thread = (n_all - n_doing) < thread_pool.size() * 2 / 3;
+        bool use_multi_thread = (n_all - n_doing) < n_threads * 2;
         bool pushed;
         ++n_doing;
         //std::cerr << use_multi_thread << std::endl;
