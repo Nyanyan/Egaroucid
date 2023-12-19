@@ -4,6 +4,8 @@
 
 このページは日本語のみです。
 
+INSERT_TABLE_OF_CONTENTS_HERE
+
 ## Bookとは？
 
 Egaroucidにおいて、Bookとは「予め高い精度で計算しておいた評価値集」のことです。
