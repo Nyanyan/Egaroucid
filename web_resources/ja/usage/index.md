@@ -412,7 +412,7 @@ Bookの内部情報である、ライン数を表示できます。チェック�
     <img class="pic2" src="img/book_n_lines.png">
 </div>
 
-### Book精度
+### 合法手への表示 > Book精度
 
 Book精度をABCDEFの6段階で表し、表示します。また、Bookの内部情報にある、Book値を登録したAIのレベルを表示します。Book精度はAが一番信頼性が高く、Fが一番不完全です。Book値の登録レベルは値が大きい方が信頼性が高いです。
 
@@ -442,17 +442,17 @@ Book精度の評価の詳細は以下の表を参照してください。
 </tr>
 <tr>
 <td>C</td>
-<td>高信頼だが2石程度の誤差はあるかも</td>
+<td>正確</td>
 <td>2石損未満のBook進行の末端が全て終局まで読み切り</td>
 </tr>
 <tr>
 <td>D</td>
-<td>そこそこ正確</td>
+<td>それなりに正確</td>
 <td>2石損未満のBook進行の末端の1つ以上が完全読み</td>
 </tr>
 <tr>
 <td>E</td>
-<td>ある程度正確</td>
+<td>まあ正確</td>
 <td>2石損未満のBook進行の末端の1つ以上が終局まで読み切り</td>
 </tr>
 <td>F</td>
@@ -752,19 +752,17 @@ Egaroucidは<a href="#入出力_出力 > 対局保存">対局を独自形式で�
 
 ## Book
 
-玄人向け機能です。メニューのここから辿れます。
+玄人向け機能です。Book関連機能は<a href="./book">こちら</a>に使い方の例やフォーマットの詳細などを書きましたので、併せてお読みください。メニューのここから辿れます。
 
 <div class="centering_box">
     <img class="pic2" src="img/book.png">
 </div>
 
-### Bookの設定 (深さ、1手あたりの誤差、手筋の誤差)
+### Book操作設定
 
-Egaroucidでは自動でbookを拡張(学習)する機能があります。これは簡単に言うと、指定した局面からの最善進行、および最善に近い進行を見つけて自動で登録する機能です。
+Egaroucidでは自動でbookを操作する機能(自動学習、自動削減など)があります。Egaroucidでは深さ、1手あたりの誤差、手筋の誤差という3つの項目で操作の設定を行います。
 
-Egaroucidでは深さ、1手あたりの誤差、手筋の誤差という3つの項目で学習の設定を行います。
-
-深さ$D$は、単にbookの深さを表します。初手から数えて最大で$D$手目までの局面を登録します。
+深さ$D$は、単にbookの深さを表します。初手から数えて最大で$D$手目までの局面を操作します。
 
 1手あたりの誤差$E_1$は、その局面の最善手から$E_1$石損した手までを探索するという意味です。
 
@@ -834,129 +832,45 @@ bookの自動学習と同様に、1手あたりの誤差、および手筋の合
     <img class="pic2" src="img/recalculate_leaves.png">
 </div>
 
-### ファイル操作 > 統合
+### ファイル操作 > Book読み込み
 
-2つのbookを統合できます。統合したいbookをドラッグ&ドロップしてください。
+### ファイル操作 > Book書き出し
 
-Egaroucid起動時に読み込んだbookに新たなbookを統合し、競合する場合は新たなbookで上書きします。
+現在使用しているBookをEgaroucid形式またはEdax形式でファイルに書き出すことができます。なお、EgaroucidはBookの変更があった場合には終了時に自動でBookを保存しますが、これはその機能とは別に、任意の場所にBookを書き出す機能です。
 
-Egaroucid形式のbook(egbk3、egbk2、egbk形式)の他、Edax形式のbookも使えます。そのため、空のbook(ドキュメントフォルダ内のEgaroucid/empty_book.egbk3)を読み込ませて起動してから、Edaxのbookを統合すればEdaxのbookをEgaroucid形式に変換できます。
+Bookの内部情報として、局面ごとに、その局面をレベルいくつのAIで探索したかという情報が含まれています。「書き出し」ボタンを押すと現在アプリ内で保持しているレベルで書き出されますが、「指定レベルで書き出し」を押すと、下部のバーで設定したレベルで書き出されます。Enterキーを押すと「書き出し」ボタンが押されたことと同じ挙動をします。
 
-### ファイル操作 > bookの参照
+Egaroucid形式は```.egbk3```、Edax形式は```.dat```という拡張子でパスを入力してください。それ以外の拡張子だと書き出せないようになっています。
+
+Edax形式への変換は完璧な互換性を保証するものではありません。また、Edax形式への変換によって生じたいかなる問題にも責任は負いません。
+
+<div class="centering_box">
+    <img class="pic2" src="img/book_export_1.png">
+</div>
+
+<div class="centering_box">
+    <img class="pic2" src="img/book_export_2.png">
+</div>
+
+<div class="centering_box">
+    <img class="pic2" src="img/book_export_3.png">
+</div>
+
+### ファイル操作 > Book統合
+
+2つのbookを統合できます。統合したいbookについて、パスを入力するかドラッグ&ドロップしてください。
+
+Egaroucid起動時に読み込んだbookに新たなbookを統合し、競合する場合はBook値を計算したAIのレベルが高い方で上書きします。レベルが同じ場合は新しい方で上書きします。
+
+Egaroucid形式のbook(```.egbk3```)とEdax形式のbook(```.dat```)も使えます。Egaroucid形式の古いbookはBookの読み込み機能を使って```.egbk3```形式に変換してからこの機能をお使いください。
+
+Edax形式からの変換は完璧な互換性を保証するものではありません。また、Edax形式からの変換によって生じたいかなる問題にも責任は負いません。
+
+### ファイル操作 > Bookの参照
 
 起動時に読み込むbookを変更できます。パスを入力するか、ドラッグ&ドロップしてください。
 
 デフォルトはドキュメントフォルダ内のEgaroucid/book.egbk3です。
-
-### ファイル操作 > Edax形式で保存
-
-Egaroucid形式のbookをEdax形式で保存できます。完璧な互換性を保証するものではありません。
-
-Egaroucid形式ではbookのレベルという概念がありませんが、Edaxにはあるため、Edax形式で出力するときにはbookのレベルをユーザが設定できるようにしてあります。下部のバーで好きなレベルに設定してから書き出せば、そのレベルのbookとして保存されます。
-
-<div class="centering_box">
-    <img class="pic2" src="img/export_as_edax_book.png">
-</div>
-
-### Bookファイルの構造
-
-Egaroucidのbookは独自フォーマットのバイナリファイル(リトルエンディアン)で保存されています。過去のフォーマットも含めて構造を説明します。一般ユーザにとって有益な情報ではないと思います。
-
-#### egbk3フォーマット
-
-拡張子は<code>.egbk3</code>です。
-
-最新のフォーマットです。
-
-<div class="table_wrapper"><table>
-    <tr>
-    	<th>項目</th>
-       	<th>データ量(バイト)</th>
-       	<th>内容</th>
-    </tr>
-    <tr>
-    	<td>"EGAROUCID"</td>
-        <td>9</td>
-        <td>固定の文字列"EGAROUCID"</td>
-    </tr>
-    <tr>
-    	<td>Bookのバージョン</td>
-        <td>1</td>
-        <td>egbk3フォーマットの場合は3で固定</td>
-    </tr>
-    <tr>
-    	<td>登録局面数</td>
-        <td>4</td>
-        <td>bookに登録された局面の数</td>
-    </tr>
-    <tr>
-    	<td>局面情報</td>
-        <td>25*登録局面数</td>
-        <td>登録されている局面のデータ(下記参照)</td>
-    </tr>
-    </table></div>
-
-登録局面ごとに、以下のデータが保存されています。
-
-<div class="table_wrapper"><table>
-    <tr>
-    	<th>項目</th>
-       	<th>データ量(バイト)</th>
-       	<th>内容</th>
-    </tr>
-    <tr>
-    	<td>手番の石の配置</td>
-        <td>8</td>
-        <td>64bitを使って64マスのそれぞれに手番の石があるかを格納します(MSBがa1)</td>
-    </tr>
-    <tr>
-    	<td>相手の石の配置</td>
-        <td>8</td>
-        <td>64bitを使って64マスのそれぞれに手番の石があるかを格納します(MSBがa1)</td>
-    </tr>
-    <tr>
-    	<td>評価値</td>
-        <td>1</td>
-        <td>その局面の評価値</td>
-    </tr>
-    <tr>
-    	<td>レベル</td>
-        <td>1</td>
-        <td>局面の評価値を計算したAIのレベル</td>
-    </tr>
-    <tr>
-    	<td>ライン数</td>
-        <td>4</td>
-        <td>その局面の先にいくつの局面がbookに登録されているかを示す値</td>
-    </tr>
-    <tr>
-    	<td>リーフの評価値</td>
-        <td>1</td>
-        <td>bookに未登録の手のうち、一番良さそうな手の評価値</td>
-    </tr>
-    <tr>
-    	<td>リーフの手</td>
-        <td>1</td>
-        <td>bookに未登録の手のうち、一番良さそうな手</td>
-    </tr>
-    <tr>
-    	<td>リーフのレベル</td>
-        <td>1</td>
-        <td>リーフ計算に用いたAIのレベル</td>
-    </tr>
-    </table></div>
-
-#### egbk2フォーマット
-
-拡張子は<code>.egbk2</code>です。
-
-TBD
-
-#### egbkフォーマット
-
-拡張子は<code>.egbk</code>です。
-
-TBD
 
 
 
