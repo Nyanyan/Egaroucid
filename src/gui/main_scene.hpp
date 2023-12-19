@@ -654,7 +654,7 @@ private:
             stop_calculating();
             resume_calculating();
             changing_scene = true;
-            changeScene(U"Widen_book", SCENE_FADE_TIME);
+            changeScene(U"Enhance_book", SCENE_FADE_TIME);
             return;
         }
         if (getData().menu_elements.book_start_fix) {
