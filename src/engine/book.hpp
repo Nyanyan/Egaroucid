@@ -251,6 +251,11 @@ class Book{
             return import_book_extension_determination(file, level, &stop);
         }
 
+        inline bool import_book_extension_determination(std::string file){
+            bool stop = false;
+            return import_book_extension_determination(file, LEVEL_UNDEFINED, &stop);
+        }
+
         /*
             @brief import Egaroucid-formatted book
 
@@ -636,6 +641,8 @@ class Book{
                         book_elem.value = value;
                         if (level != LEVEL_UNDEFINED)
                             book_elem.level = level;
+                        else
+                            book_elem.level = 1;
                         book_elem.leaf.value = SCORE_UNDEFINED;
                         book_elem.leaf.move = MOVE_UNDEFINED;
                         merge(board, book_elem);
@@ -1363,6 +1370,7 @@ class Book{
             @brief delete all board in this book
         */
         inline void delete_all(){
+            std::cerr << "delete book" << std::endl;
             book.clear();
             reg_first_board();
         }
@@ -1372,7 +1380,7 @@ class Book{
         */
         inline void fix(bool *stop){
             negamax_book(stop);
-            check_add_leaf_all_search(ADD_LEAF_SPECIAL_LEVEL, stop);
+            check_add_leaf_all_undefined();
         }
 
         /*

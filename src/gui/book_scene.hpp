@@ -23,6 +23,7 @@
 void delete_book() {
     book.delete_all();
     umigame.delete_all();
+    book_accuracy.delete_all();
 }
 
 bool import_book(std::string file) {
@@ -32,8 +33,8 @@ bool import_book(std::string file) {
     return result;
 }
 
-bool import_book(std::string file, int level) {
-    std::cerr << "book import" << std::endl;
+bool import_book_with_level(std::string file, int level) {
+    std::cerr << "book import with level " << level << std::endl;
     bool result = book.import_book_extension_determination(file, level);
     umigame.delete_all();
     return result;
@@ -52,7 +53,7 @@ private:
     bool failed;
     bool done;
     int level;
-    bool need_level_setting;
+    bool need_level;
 
 public:
     Import_book(const InitData& init) : IScene{ init } {
@@ -64,7 +65,7 @@ public:
         failed = false;
         done = false;
         level = getData().menu_elements.level;
-        need_level_setting = false;
+        need_level = false;
     }
 
     void update() override {
@@ -112,7 +113,7 @@ public:
                 go_button.disable();
                 getData().fonts.font(language.get("book", "wrong_extension") + U" " + language.get("book", "legal_extension3")).draw(15, Arg::topCenter(X_CENTER, sy + 140), getData().colors.white);
             }
-            need_level_setting = ext == "egbk";
+            bool need_level_setting = ext == "egbk";
             if (need_level_setting){
                 Rect bar_rect{X_CENTER - 220, sy + 160, 440, 20};
                 bar_rect.draw(bar_color); // Palette::Lightskyblue
@@ -140,6 +141,7 @@ public:
             go_button.draw();
             if (formatted_file && (go_button.clicked() || return_pressed || (file_dragged && !need_level_setting))) {
                 getData().book_information.changed = true;
+                need_level = need_level_setting;
                 delete_book_future = std::async(std::launch::async, delete_book);
                 book_deleting = true;
             }
@@ -150,10 +152,10 @@ public:
                 if (delete_book_future.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
                     delete_book_future.get();
                     book_deleting = false;
-                    if (need_level_setting)
-                        import_book_future = std::async(std::launch::async, import_book, book_file);
+                    if (need_level)
+                        import_book_future = std::async(std::launch::async, import_book_with_level, book_file, level);
                     else
-                        import_book_future = std::async(std::launch::async, import_book, book_file, level);
+                        import_book_future = std::async(std::launch::async, import_book, book_file);
                     book_importing = true;
                 }
             }
