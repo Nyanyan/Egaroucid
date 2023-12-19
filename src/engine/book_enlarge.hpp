@@ -128,7 +128,7 @@ void book_recalculate_leaves(int level, std::unordered_set<Book_deviate_todo_ele
         return;
     int n_done = 0, n_doing = 0;
     std::vector<std::future<void>> tasks;
-    int n_threads = thread_pool.n_threads();
+    int n_threads = thread_pool.size();
     for (Book_deviate_todo_elem elem: todo_list){
         if (!global_searching || !(*book_learning))
             break;
