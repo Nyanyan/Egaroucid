@@ -104,12 +104,139 @@ Egaroucidのbookは独自フォーマットのバイナリファイル(リトル
 
 #### egbk2フォーマット
 
-拡張子は<code>.egbk2</code>です。
+拡張子は<code>.egbk2</code>です。Egaroucid 6.5.0まで使われていたものです。
 
-TBD
+<div class="table_wrapper"><table>
+    <tr>
+    	<th>項目</th>
+       	<th>データ量(バイト)</th>
+       	<th>内容</th>
+    </tr>
+    <tr>
+    	<td>"EGAROUCID"</td>
+        <td>9</td>
+        <td>固定の文字列"EGAROUCID"</td>
+    </tr>
+    <tr>
+    	<td>Bookのバージョン</td>
+        <td>1</td>
+        <td>egbk2フォーマットの場合は2で固定</td>
+    </tr>
+    <tr>
+    	<td>登録局面数</td>
+        <td>4</td>
+        <td>bookに登録された局面の数</td>
+    </tr>
+    <tr>
+    	<td>局面情報</td>
+        <td>(22+2*リンク数)*登録局面数</td>
+        <td>登録されている局面のデータ(下記参照)</td>
+    </tr>
+</table></div>
+
+登録局面ごとに、以下のデータが保存されています。
+
+<div class="table_wrapper"><table>
+    <tr>
+    	<th>項目</th>
+       	<th>データ量(バイト)</th>
+       	<th>内容</th>
+    </tr>
+    <tr>
+    	<td>手番の石の配置</td>
+        <td>8</td>
+        <td>64bitを使って64マスのそれぞれに手番の石があるかを格納します(MSBがa1)</td>
+    </tr>
+    <tr>
+    	<td>相手の石の配置</td>
+        <td>8</td>
+        <td>64bitを使って64マスのそれぞれに手番の石があるかを格納します(MSBがa1)</td>
+    </tr>
+    <tr>
+    	<td>評価値</td>
+        <td>1</td>
+        <td>その局面の評価値</td>
+    </tr>
+    <tr>
+    	<td>レベル</td>
+        <td>1</td>
+        <td>局面の評価値を計算したAIのレベル</td>
+    </tr>
+    <tr>
+    	<td>リンク数</td>
+        <td>4</td>
+        <td>その局面の合法手のうちbookに登録されている局面の数</td>
+    </tr>
+    <tr>
+    	<td>リーフ情報</td>
+        <td>2*リンク数</td>
+        <td>登録されているリンクのデータ</td>
+    </tr>
+</table></div>
+
+リンクごとに、以下のデータが保存されています。
+
+<div class="table_wrapper"><table>
+    <tr>
+    	<th>項目</th>
+       	<th>データ量(バイト)</th>
+       	<th>内容</th>
+    </tr>
+    <tr>
+    	<td>リンクの評価値</td>
+        <td>1</td>
+        <td>合法手の評価値</td>
+    </tr>
+    <tr>
+    	<td>リンクの手</td>
+        <td>1</td>
+        <td>登録されている合法手</td>
+    </tr>
+</table></div>
 
 #### egbkフォーマット
 
-拡張子は<code>.egbk</code>です。
+拡張子は<code>.egbk</code>です。Egaroucid 6.2.0まで使われていたものです。
 
-TBD
+<div class="table_wrapper"><table>
+    <tr>
+    	<th>項目</th>
+       	<th>データ量(バイト)</th>
+       	<th>内容</th>
+    </tr>
+    <tr>
+    	<td>登録局面数</td>
+        <td>4</td>
+        <td>bookに登録された局面の数</td>
+    </tr>
+    <tr>
+    	<td>局面情報</td>
+        <td>17*登録局面数</td>
+        <td>登録されている局面のデータ(下記参照)</td>
+    </tr>
+</table></div>
+
+登録局面ごとに、以下のデータが保存されています。
+
+<div class="table_wrapper"><table>
+    <tr>
+    	<th>項目</th>
+       	<th>データ量(バイト)</th>
+       	<th>内容</th>
+    </tr>
+    <tr>
+    	<td>手番の石の配置</td>
+        <td>8</td>
+        <td>64bitを使って64マスのそれぞれに手番の石があるかを格納します(MSBがa1)</td>
+    </tr>
+    <tr>
+    	<td>相手の石の配置</td>
+        <td>8</td>
+        <td>64bitを使って64マスのそれぞれに手番の石があるかを格納します(MSBがa1)</td>
+    </tr>
+    <tr>
+    	<td>評価値</td>
+        <td>1</td>
+        <td>その局面の評価値に64を足したもの</td>
+    </tr>
+</table></div>
