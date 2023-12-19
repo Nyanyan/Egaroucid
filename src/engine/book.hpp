@@ -205,13 +205,13 @@ class Book{
                 std::cerr << "failed egbk3 formatted book. trying egbk2 format." << std::endl;
                 if (!import_file_egbk2(file, show_log, stop_loading)){ // try egbk2 format
                 std::cerr << "failed egbk2 formatted book. trying egbk format." << std::endl;
-                    return import_file_egbk(file, show_log, stop_loading); // try egbk format
+                    return import_file_egbk(file, 1, show_log, stop_loading); // try egbk format
                 }
             }
             return true;
         }
 
-        inline bool import_book_extension_determination(std::string file, bool *stop){
+        inline bool import_book_extension_determination(std::string file, int level, bool *stop){
             bool result = false;
             std::vector<std::string> lst;
             auto offset = std::string::size_type(0);
@@ -234,7 +234,7 @@ class Book{
             }
             else if (lst[lst.size() - 1] == "egbk") {
                 std::cerr << "importing Egaroucid legacy book (.egbk)" << std::endl;
-                result = import_file_egbk(file, true, stop);
+                result = import_file_egbk(file, level, true, stop);
             }
             else if (lst[lst.size() - 1] == "dat") {
                 std::cerr << "importing Edax book" << std::endl;
@@ -246,9 +246,9 @@ class Book{
             return result;
         }
 
-        inline bool import_book_extension_determination(std::string file){
+        inline bool import_book_extension_determination(std::string file, int level){
             bool stop = false;
-            return import_book_extension_determination(file, &stop);
+            return import_book_extension_determination(file, level, &stop);
         }
 
         /*
@@ -503,7 +503,7 @@ class Book{
                     fclose(fp);
                     return false;
                 }
-                // read level (ignore this in egbk3)
+                // read level
                 if (fread(&level, 1, 1, fp) < 1) {
                     std::cerr << "[ERROR] book NOT FULLY imported " << book.size() << " boards" << std::endl;
                     fclose(fp);
@@ -537,6 +537,7 @@ class Book{
                     if (b.n_discs() <= 4 + 30){
                 #endif
                         book_elem.value = value;
+                        book_elem.level = level;
                         book_elem.leaf.value = SCORE_UNDEFINED;
                         book_elem.leaf.move = MOVE_UNDEFINED;
                         merge(board, book_elem);
@@ -571,7 +572,7 @@ class Book{
             @param file                 book file (.egbk file)
             @return book completely imported?
         */
-        inline bool import_file_egbk(std::string file, bool show_log, bool *stop_loading){
+        inline bool import_file_egbk(std::string file, int level, bool show_log, bool *stop_loading){
             if (show_log)
                 std::cerr << "importing " << file << std::endl;
             FILE* fp;
@@ -633,6 +634,8 @@ class Book{
                     if (b.n_discs() <= 4 + 30){
                 #endif
                         book_elem.value = value;
+                        if (level != LEVEL_UNDEFINED)
+                            book_elem.level = level;
                         book_elem.leaf.value = SCORE_UNDEFINED;
                         book_elem.leaf.move = MOVE_UNDEFINED;
                         merge(board, book_elem);
@@ -654,9 +657,9 @@ class Book{
             return true;
         }
 
-        inline bool import_file_egbk(std::string file, bool show_log){
+        inline bool import_file_egbk(std::string file, int level, bool show_log){
             bool stop_loading = false;
-            return import_file_egbk(file, show_log, &stop_loading);
+            return import_file_egbk(file, level, show_log, &stop_loading);
         }
 
         /*

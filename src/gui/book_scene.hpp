@@ -32,6 +32,13 @@ bool import_book(std::string file) {
     return result;
 }
 
+bool import_book(std::string file, int level) {
+    std::cerr << "book import" << std::endl;
+    bool result = book.import_book_extension_determination(file, level);
+    umigame.delete_all();
+    return result;
+}
+
 class Import_book : public App::Scene {
 private:
     std::future<bool> import_book_future;
@@ -44,6 +51,8 @@ private:
     bool book_importing;
     bool failed;
     bool done;
+    int level;
+    bool need_level_setting;
 
 public:
     Import_book(const InitData& init) : IScene{ init } {
@@ -54,6 +63,8 @@ public:
         book_importing = false;
         failed = false;
         done = false;
+        level = getData().menu_elements.level;
+        need_level_setting = false;
     }
 
     void update() override {
@@ -67,8 +78,8 @@ public:
         int sy = 20 + icon_width + 40;
         if (!book_deleting && !book_importing && !failed && !done) {
             getData().fonts.font(language.get("book", "import_book")).draw(25, Arg::topCenter(X_CENTER, sy), getData().colors.white);
-            getData().fonts.font(language.get("book", "input_book_path")).draw(15, Arg::topCenter(X_CENTER, sy + 50), getData().colors.white);
-            Rect text_area{ X_CENTER - 300, sy + 80, 600, 70 };
+            getData().fonts.font(language.get("book", "input_book_path")).draw(14, Arg::topCenter(X_CENTER, sy + 40), getData().colors.white);
+            Rect text_area{ X_CENTER - 300, sy + 60, 600, 70 };
             text_area.draw(getData().colors.light_cyan).drawFrame(2, getData().colors.black);
             String book_file_str = Unicode::Widen(book_file);
             TextInput::UpdateText(book_file_str);
@@ -90,7 +101,7 @@ public:
                 book_file_str = DragDrop::GetDroppedFilePaths()[0].path;
                 file_dragged = true;
             }
-            getData().fonts.font(book_file_str + U'|' + editingText).draw(15, text_area.stretched(-4), getData().colors.black);
+            getData().fonts.font(book_file_str + U'|' + editingText).draw(14, text_area.stretched(-4), getData().colors.black);
             book_file = book_file_str.narrow();
             std::string ext = get_extension(book_file);
             bool formatted_file = false;
@@ -99,7 +110,26 @@ public:
                 formatted_file = true;
             } else{
                 go_button.disable();
-                getData().fonts.font(language.get("book", "wrong_extension") + U" " + language.get("book", "legal_extension3")).draw(15, Arg::topCenter(X_CENTER, sy + 160), getData().colors.white);
+                getData().fonts.font(language.get("book", "wrong_extension") + U" " + language.get("book", "legal_extension3")).draw(15, Arg::topCenter(X_CENTER, sy + 140), getData().colors.white);
+            }
+            need_level_setting = (ext == "egbk2" || ext == "egbk");
+            if (need_level_setting){
+                Rect bar_rect{X_CENTER - 220, sy + 160, 440, 20};
+                bar_rect.draw(bar_color); // Palette::Lightskyblue
+                if (bar_rect.leftPressed()){
+                    int min_error = INF;
+                    int cursor_x = Cursor::Pos().x;
+                    for (int i = 0; i <= 60; ++i) {
+                        int x = round((double)X_CENTER - 200.0 + 400.0 * (double)i / 61.0);
+                        if (abs(cursor_x - x) < min_error) {
+                            min_error = abs(cursor_x - x);
+                            level = i;
+                        }
+                    }
+                }
+                Circle bar_circle{X_CENTER - 200 + 400 * level / 61, sy + 170, 12};
+                getData().fonts.font(language.get("ai_settings", "level") + Format(level)).draw(20, Arg::rightCenter(X_CENTER - 230, sy + 170), getData().colors.white);
+                bar_circle.draw(bar_circle_color);
             }
             back_button.draw();
             if (back_button.clicked() || KeyEscape.pressed()) {
@@ -108,7 +138,7 @@ public:
                 changeScene(U"Main_scene", SCENE_FADE_TIME);
             }
             go_button.draw();
-            if (formatted_file && (go_button.clicked() || return_pressed || file_dragged)) {
+            if (formatted_file && (go_button.clicked() || return_pressed || (file_dragged && !need_level_setting))) {
                 getData().book_information.changed = true;
                 delete_book_future = std::async(std::launch::async, delete_book);
                 book_deleting = true;
@@ -120,7 +150,10 @@ public:
                 if (delete_book_future.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
                     delete_book_future.get();
                     book_deleting = false;
-                    import_book_future = std::async(std::launch::async, import_book, book_file);
+                    if (need_level_setting)
+                        import_book_future = std::async(std::launch::async, import_book, book_file);
+                    else
+                        import_book_future = std::async(std::launch::async, import_book, book_file, level);
                     book_importing = true;
                 }
             }
@@ -172,7 +205,7 @@ public:
         go_with_level_button.init(BUTTON3_2_SX, GO_BACK_BUTTON_SY, BUTTON3_WIDTH, BUTTON3_HEIGHT, BUTTON3_RADIUS, language.get("book", "export_with_specified_level"), 18, getData().fonts.font, getData().colors.white, getData().colors.black);
         go_button.init(BUTTON3_3_SX, GO_BACK_BUTTON_SY, BUTTON3_WIDTH, BUTTON3_HEIGHT, BUTTON3_RADIUS, language.get("book", "export"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
         book_file = getData().directories.document_dir + "book_copy.egbk3";
-        level = 21;
+        level = getData().menu_elements.level;
         book_exporting = false;
         done = false;
     }
