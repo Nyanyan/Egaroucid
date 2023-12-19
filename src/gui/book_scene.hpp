@@ -79,7 +79,7 @@ public:
         int sy = 20 + icon_width + 40;
         if (!book_deleting && !book_importing && !failed && !done) {
             getData().fonts.font(language.get("book", "import_book")).draw(25, Arg::topCenter(X_CENTER, sy), getData().colors.white);
-            getData().fonts.font(language.get("book", "input_book_path")).draw(14, Arg::topCenter(X_CENTER, sy + 40), getData().colors.white);
+            getData().fonts.font(language.get("book", "input_book_path")).draw(14, Arg::topCenter(X_CENTER, sy + 38), getData().colors.white);
             Rect text_area{ X_CENTER - 300, sy + 60, 600, 70 };
             text_area.draw(getData().colors.light_cyan).drawFrame(2, getData().colors.black);
             String book_file_str = Unicode::Widen(book_file);
