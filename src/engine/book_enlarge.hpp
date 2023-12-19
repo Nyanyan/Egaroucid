@@ -229,7 +229,7 @@ inline void book_recalculate_leaf(Board root_board, int level, int book_depth, i
     book.reset_seen();
     root_board.copy(board_copy);
     *player = before_player;
-    std::cerr << "recalculate leaf finished value " << (int)book.get(root_board).value << " time " << ms_to_time_short(tim() - all_strt) << std::endl;
+    std::cerr << "recalculate leaf finished " << book_recalculate_leaf_todo.size() << " boards time " << ms_to_time_short(tim() - all_strt) << std::endl;
     *book_learning = false;
 }
 
@@ -416,6 +416,7 @@ inline void book_deviate(Board root_board, int level, int book_depth, int max_er
     root_elem.player = *player;
     int n_saved = 1;
     int n_loop = 0;
+    uint64_t n_registered = 0;
     while (true){
         ++n_loop;
         if (tim() - all_strt > AUTO_BOOK_SAVE_TIME * n_saved){
@@ -447,7 +448,8 @@ inline void book_deviate(Board root_board, int level, int book_depth, int max_er
             break;
         uint64_t strt = tim();
         expand_leaves(book_depth, level, book_deviate_todo, all_strt, strt, book_learning, board_copy, player, n_loop, book_file, book_bak);
-        std::cerr << "loop " << n_loop << " book deviated size " << book.size() << std::endl;
+        n_registered += book_deviate_todo.size();
+        std::cerr << "loop " << n_loop << " book deviated registered " << n_registered << "board size " << book.size() << std::endl;
     }
     //bool stop = false;
     //book.check_add_leaf_all_search(std::max(1, level / 2), &stop);
@@ -456,6 +458,6 @@ inline void book_deviate(Board root_board, int level, int book_depth, int max_er
     transposition_table.reset_date();
     //book.fix();
     book.save_egbk3(book_file, book_bak);
-    std::cerr << "book deviate finished value " << (int)book.get(root_board).value << " time " << ms_to_time_short(tim() - all_strt) << std::endl;
+    std::cerr << "book deviate finished registered " << n_registered << " time " << ms_to_time_short(tim() - all_strt) << std::endl;
     *book_learning = false;
 }
