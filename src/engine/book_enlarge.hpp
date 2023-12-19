@@ -92,9 +92,13 @@ void get_book_recalculate_leaf_todo(Book_deviate_todo_elem todo_elem, int book_d
     // add to list
     std::vector<Book_value> links = book.get_all_moves_with_value(&todo_elem.board);
     bool illegal_leaf = false;
+    uint64_t remaining_legal = todo_elem.board.get_legal();
     for (Book_value &link: links)
-        illegal_leaf |= book_elem.leaf.move == link.policy;
-    illegal_leaf |= (todo_elem.board.get_legal() & (1ULL << book_elem.leaf.move)) == 0;
+        remaining_legal ^= 1ULL << link.policy;
+    if (remaining_legal)
+        illegal_leaf = (remaining_legal & (1ULL << book_elem.leaf.move)) == 0;
+    else
+        illegal_leaf = book_elem.leaf.move != MOVE_NOMOVE;
     if ((!only_illegal && book_elem.leaf.level < level) || illegal_leaf){
         todo_list.emplace(todo_elem);
         if (todo_list.size() % 100 == 0)
