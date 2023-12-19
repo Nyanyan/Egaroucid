@@ -230,7 +230,7 @@ public:
                     hint_init_calculating();
                 }
                 hint_do_task();
-                legal_ignore = draw_hint(getData().menu_elements.show_book_n_lines && !hint_ignore);
+                legal_ignore = draw_hint(getData().menu_elements.use_book && getData().menu_elements.show_book_n_lines && !hint_ignore);
             }
         }
 
@@ -239,28 +239,31 @@ public:
             draw_legal(legal_ignore);
         }
 
-        // book n_lines drawing
-        if (getData().menu_elements.show_book_n_lines && !hint_ignore){
-            draw_book_n_lines(legal_ignore);
-        }
-
-        // book accuracy drawing
-        if (getData().menu_elements.show_book_accuracy && !hint_ignore){
-            if (book_accuracy_status.book_accuracy_calculated){
-                draw_book_accuracy(legal_ignore);
-            } else
-                calculate_book_accuracy();
-        }
-
-        // umigame calculating / drawing
-        if (KeyU.down())
-            getData().menu_elements.use_umigame_value = !getData().menu_elements.use_umigame_value;
-        if (getData().menu_elements.use_umigame_value && !hint_ignore) {
-            if (umigame_status.umigame_calculated) {
-                draw_umigame(legal_ignore);
+        // book information drawing
+        if (getData().menu_elements.use_book){
+            // book n_lines drawing
+            if (getData().menu_elements.show_book_n_lines && !hint_ignore){
+                draw_book_n_lines(legal_ignore);
             }
-            else {
-                calculate_umigame();
+
+            // book accuracy drawing
+            if (getData().menu_elements.show_book_accuracy && !hint_ignore){
+                if (book_accuracy_status.book_accuracy_calculated){
+                    draw_book_accuracy(legal_ignore);
+                } else
+                    calculate_book_accuracy();
+            }
+
+            // umigame calculating / drawing
+            if (KeyU.down())
+                getData().menu_elements.use_umigame_value = !getData().menu_elements.use_umigame_value;
+            if (getData().menu_elements.use_umigame_value && !hint_ignore) {
+                if (umigame_status.umigame_calculated) {
+                    draw_umigame(legal_ignore);
+                }
+                else {
+                    calculate_umigame();
+                }
             }
         }
 
