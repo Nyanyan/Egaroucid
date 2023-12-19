@@ -136,15 +136,25 @@ void book_recalculate_leaves(int level, std::unordered_set<Book_deviate_todo_ele
         bool use_multi_thread = (n_all - n_doing) < thread_pool.size() * 2 / 3;
         bool pushed;
         ++n_doing;
-        tasks.emplace_back(thread_pool.push(&pushed, std::bind(&book_search_leaf, elem.board, level, use_multi_thread)));
-        if (!pushed){
-            tasks.pop_back();
+        if (use_multi_thread){
             book_search_leaf(elem.board, level, true);
             ++n_done;
             if (n_done % 10 == 0){
                 int percent = 100ULL * n_done / n_all;
                 uint64_t eta = (tim() - strt) * ((double)n_all / n_done - 1.0);
                 std::cerr << "book recalculating leaves " << percent << "% " <<  n_done << "/" << n_all << " time " << ms_to_time_short(tim() - all_strt) << " ETA " << ms_to_time_short(eta) << std::endl;
+            }
+        } else{
+            tasks.emplace_back(thread_pool.push(&pushed, std::bind(&book_search_leaf, elem.board, level, use_multi_thread)));
+            if (!pushed){
+                tasks.pop_back();
+                book_search_leaf(elem.board, level, true);
+                ++n_done;
+                if (n_done % 10 == 0){
+                    int percent = 100ULL * n_done / n_all;
+                    uint64_t eta = (tim() - strt) * ((double)n_all / n_done - 1.0);
+                    std::cerr << "book recalculating leaves " << percent << "% " <<  n_done << "/" << n_all << " time " << ms_to_time_short(tim() - all_strt) << " ETA " << ms_to_time_short(eta) << std::endl;
+                }
             }
         }
         int tasks_size = tasks.size();
