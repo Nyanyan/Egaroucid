@@ -133,7 +133,7 @@ void book_recalculate_leaves(int level, std::unordered_set<Book_deviate_todo_ele
             break;
         *board_copy = elem.board;
         *player = elem.player;
-        bool use_multi_thread = (n_all - n_doing) < thread_pool.get_n_idle() * 2;
+        bool use_multi_thread = (n_all - n_doing) < thread_pool.size() * 2;
         bool pushed;
         ++n_doing;
         tasks.emplace_back(thread_pool.push(&pushed, std::bind(&book_search_leaf, elem.board, level, use_multi_thread)));
@@ -323,7 +323,7 @@ void expand_leaves(int book_depth, int level, std::unordered_set<Book_deviate_to
             break;
         *board_copy = elem.board;
         *player = elem.player;
-        bool use_multi_thread = (n_all - n_doing) < thread_pool.get_n_idle() * 2;
+        bool use_multi_thread = (n_all - n_doing) < thread_pool.size() * 2;
         bool pushed;
         ++n_doing;
         //std::cerr << use_multi_thread << std::endl;
