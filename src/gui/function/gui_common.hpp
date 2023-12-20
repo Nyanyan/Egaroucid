@@ -328,7 +328,6 @@ struct Settings {
     bool change_color_type;
     bool show_play_ordering;
     int generate_random_board_moves;
-    bool show_book_n_lines;
     bool show_book_accuracy;
 };
 
@@ -413,7 +412,6 @@ struct Menu_elements {
     bool show_next_move;
     bool show_next_move_change_view;
     bool change_color_type;
-    bool show_book_n_lines;
     bool show_book_accuracy;
 
     // book
@@ -502,7 +500,6 @@ struct Menu_elements {
         show_next_move = settings->show_next_move;
         show_next_move_change_view = settings->show_next_move_change_view;
         change_color_type = settings->change_color_type;
-        show_book_n_lines = settings->show_book_n_lines;
         show_book_accuracy = settings->show_book_accuracy;
 
         book_start_deviate = false;

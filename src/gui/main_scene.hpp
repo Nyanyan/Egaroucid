@@ -230,7 +230,7 @@ public:
                     hint_init_calculating();
                 }
                 hint_do_task();
-                legal_ignore = draw_hint(getData().menu_elements.use_book && getData().menu_elements.show_book_n_lines && !hint_ignore);
+                legal_ignore = draw_hint(getData().menu_elements.use_book && getData().menu_elements.show_book_accuracy && !hint_ignore);
             }
         }
 
@@ -241,13 +241,9 @@ public:
 
         // book information drawing
         if (getData().menu_elements.use_book){
-            // book n_lines drawing
-            if (getData().menu_elements.show_book_n_lines && !hint_ignore){
-                draw_book_n_lines(legal_ignore);
-            }
-
             // book accuracy drawing
             if (getData().menu_elements.show_book_accuracy && !hint_ignore){
+                draw_book_n_lines(legal_ignore);
                 if (book_accuracy_status.book_accuracy_calculated){
                     draw_book_accuracy(legal_ignore);
                 } else
@@ -991,8 +987,6 @@ private:
         side_menu.init_check(language.get("display", "cell", "next_move"), &menu_elements->show_next_move, menu_elements->show_next_move);
         side_side_menu.init_check(language.get("display", "cell", "next_move_change_view"), &menu_elements->show_next_move_change_view, menu_elements->show_next_move_change_view);
         side_menu.push(side_side_menu);
-        menu_e.push(side_menu);
-        side_menu.init_check(language.get("display", "cell", "show_book_n_lines"), &menu_elements->show_book_n_lines, menu_elements->show_book_n_lines);
         menu_e.push(side_menu);
         side_menu.init_check(language.get("display", "cell", "show_book_accuracy"), &menu_elements->show_book_accuracy, menu_elements->show_book_accuracy);
         menu_e.push(side_menu);

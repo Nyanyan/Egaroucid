@@ -45,7 +45,6 @@ void save_settings(Menu_elements menu_elements, Settings settings, Directories d
     setting_json[U"change_color_type"] = menu_elements.change_color_type;
     setting_json[U"show_play_ordering"] = menu_elements.show_play_ordering;
     setting_json[U"generate_random_board_moves"] = menu_elements.generate_random_board_moves;
-    setting_json[U"show_book_n_lines"] = menu_elements.show_book_n_lines;
     setting_json[U"show_book_accuracy"] = menu_elements.show_book_accuracy;
     setting_json[U"use_book_learn_depth"] = menu_elements.use_book_learn_depth;
     setting_json[U"use_book_learn_error_per_move"] = menu_elements.use_book_learn_error_per_move;
