@@ -5,6 +5,7 @@ html, body {
 table{
     border-collapse:  collapse;
     margin: auto;
+    border: 1px solid #ddd;
 }
 
 tr:nth-child(odd){
@@ -50,6 +51,7 @@ h1{
 h2{
     text-align: center;
     background-color:  #8dc5ac;
+    margin-top: 5%;
     
 }
 
