@@ -263,9 +263,18 @@ void get_book_deviate_todo(Book_deviate_todo_elem todo_elem, int book_depth, int
         return;
     book.flag_book_elem(todo_elem.board);
     if (lower <= book_elem.value){
+        // check leaf
+        std::vector<Book_value> links = book.get_all_moves_with_value(&todo_elem.board);
+        // (book_elem.leaf.value >= book_elem.value - max_error_per_move && lower <= book_elem.leaf.value && is_valid_policy(book_elem.leaf.move))
+        if (((book_elem.leaf.value >= book_elem.value - max_error_per_move && lower <= book_elem.leaf.value) || links.size() == 0) && is_valid_policy(book_elem.leaf.move)){
+            if (todo_elem.board.get_legal() & (1ULL << book_elem.leaf.move)){ // is leaf legal?
+                book_deviate_todo.emplace(todo_elem);
+                if (book_deviate_todo.size() % 10 == 0)
+                    std::cerr << "loop " << n_loop << " book deviate todo " << book_deviate_todo.size() << " calculating... time " << ms_to_time_short(tim() - all_strt) << std::endl;
+            }
+        }
         // expand links
         if (todo_elem.board.n_discs() < book_depth + 4){
-            std::vector<Book_value> links = book.get_all_moves_with_value(&todo_elem.board);
             Flip flip;
             for (Book_value &link: links){
                 if (link.value >= book_elem.value - max_error_per_move){
@@ -274,14 +283,6 @@ void get_book_deviate_todo(Book_deviate_todo_elem todo_elem, int book_depth, int
                         get_book_deviate_todo(todo_elem, book_depth, max_error_per_move, -upper, -lower, book_deviate_todo, all_strt, book_learning, board_copy, player, n_loop);
                     todo_elem.undo(&flip);
                 }
-            }
-        }
-        // check leaf
-        if (book_elem.leaf.value >= book_elem.value - max_error_per_move && lower <= book_elem.leaf.value && is_valid_policy(book_elem.leaf.move)){
-            if (todo_elem.board.get_legal() & (1ULL << book_elem.leaf.move)){ // is leaf legal?
-                book_deviate_todo.emplace(todo_elem);
-                if (book_deviate_todo.size() % 10 == 0)
-                    std::cerr << "loop " << n_loop << " book deviate todo " << book_deviate_todo.size() << " calculating... time " << ms_to_time_short(tim() - all_strt) << std::endl;
             }
         }
     }
