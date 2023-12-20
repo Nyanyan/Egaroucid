@@ -266,7 +266,8 @@ void get_book_deviate_todo(Book_deviate_todo_elem todo_elem, int book_depth, int
         // check leaf
         std::vector<Book_value> links = book.get_all_moves_with_value(&todo_elem.board);
         // (book_elem.leaf.value >= book_elem.value - max_error_per_move && lower <= book_elem.leaf.value && is_valid_policy(book_elem.leaf.move))
-        if (((book_elem.leaf.value >= book_elem.value - max_error_per_move && lower <= book_elem.leaf.value) || links.size() == 0) && is_valid_policy(book_elem.leaf.move)){
+        // (((book_elem.leaf.value >= book_elem.value - max_error_per_move && lower <= book_elem.leaf.value) || links.size() == 0) && is_valid_policy(book_elem.leaf.move))
+        if (((book_elem.leaf.value >= book_elem.value - 2 * max_error_per_move && lower - (upper - lower) / 2 <= book_elem.leaf.value) || links.size() == 0) && is_valid_policy(book_elem.leaf.move)){
             if (todo_elem.board.get_legal() & (1ULL << book_elem.leaf.move)){ // is leaf legal?
                 book_deviate_todo.emplace(todo_elem);
                 if (book_deviate_todo.size() % 10 == 0)
