@@ -59,8 +59,11 @@ class Book_accuracy{
             Book_elem book_elem = book.get(board);
             std::vector<Book_value> links = book.get_all_moves_with_value(&board);
             if (links.size() == 0){
-                int complete_depth = get_level_complete_depth(book_elem.level);
-                int endgame_depth = get_level_endgame_depth(book_elem.level);
+                int complete_depth = 60, endgame_depth = 60;
+                if (book_elem.level < N_LEVEL){
+                    complete_depth = get_level_complete_depth(book_elem.level);
+                    endgame_depth = get_level_endgame_depth(book_elem.level);
+                }
                 int res = BOOK_ACCURACY_LEVEL_F;
                 if (complete_depth >= HW2 - board.n_discs())
                     res = BOOK_ACCURACY_LEVEL_A;
