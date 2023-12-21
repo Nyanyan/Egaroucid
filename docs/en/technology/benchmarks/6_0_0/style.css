@@ -4,6 +4,8 @@ html, body {
 
 table{
     border-collapse:  collapse;
+    margin: auto;
+    border: 1px solid #ddd;
 }
 
 tr:nth-child(odd){
@@ -20,8 +22,8 @@ td{
     padding: 5px 10px;
 }
 
-table{
-    margin: auto;
+.table_wrapper{
+    overflow-x: scroll;
 }
 
 .pic{
@@ -32,7 +34,7 @@ table{
 }
 
 .pic2{
-    width: max(30%, min(90vw, 300px));
+    width: max(45%, min(90vw, 300px));
     height: auto;
 }
 
@@ -49,6 +51,8 @@ h1{
 h2{
     text-align: center;
     background-color:  #8dc5ac;
+    margin-top: 5%;
+    
 }
 
 h3{

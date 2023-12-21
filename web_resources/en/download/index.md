@@ -35,17 +35,17 @@ Egaroucid is optimized to SIMD version, which requires AVX2 instructions, but ol
         <td>Windows</td>
         <td>x64</td>
         <td>AVX2 (Standard)</td>
-        <td>2023/10/25</td>
-        <td>[Egaroucid 6.5.0 SIMD Installer](https://github.com/Nyanyan/Egaroucid/releases/download/v6.5.0/Egaroucid_6_5_0_SIMD_installer.exe)</td>
-        <td>[Egaroucid 6.5.0 SIMD Zip](https://github.com/Nyanyan/Egaroucid/releases/download/v6.5.0/Egaroucid_6_5_0_Windows_x64_SIMD_Portable.zip)</td>
+        <td>2023/12/21</td>
+        <td>[Egaroucid 6.5.1 SIMD Installer](https://github.com/Nyanyan/Egaroucid/releases/download/v6.5.1/Egaroucid_6_5_1_SIMD_installer.exe)</td>
+        <td>[Egaroucid 6.5.1 SIMD Zip](https://github.com/Nyanyan/Egaroucid/releases/download/v6.5.1/Egaroucid_6_5_1_Windows_x64_SIMD_Portable.zip)</td>
     </tr>
     <tr>
         <td>Windows</td>
         <td>x64</td>
         <td>-</td>
-        <td>2023/10/25</td>
-        <td>[Egaroucid 6.5.0 Generic Installer](https://github.com/Nyanyan/Egaroucid/releases/download/v6.5.0/Egaroucid_6_5_0_Generic_installer.exe)</td>
-        <td>[Egaroucid 6.5.0 Generic Zip](https://github.com/Nyanyan/Egaroucid/releases/download/v6.5.0/Egaroucid_6_5_0_Windows_x64_Generic_Portable.zip)</td>
+        <td>2023/12/21</td>
+        <td>[Egaroucid 6.5.1 Generic Installer](https://github.com/Nyanyan/Egaroucid/releases/download/v6.5.1/Egaroucid_6_5_1_Generic_installer.exe)</td>
+        <td>[Egaroucid 6.5.1 Generic Zip](https://github.com/Nyanyan/Egaroucid/releases/download/v6.5.1/Egaroucid_6_5_1_Windows_x64_Generic_Portable.zip)</td>
     </tr>
     </table></div>
 
@@ -85,5 +85,11 @@ Please execute <code>Egaroucid_[version].exe</code> to run Egaroucid!
 
 ## About Changing Book Format
 
-Book format is changed in Egaroucid 6.3.0. The new book's filename extension is ```.egbk2```. If you used version 6.2.0 or older and install 6.3.0, Egaroucid automatically translate book format in first execution. Also, you can use old ```.egbk``` book in "Book Reference" and "Book merge", but the save format is only new ```.egbk2```.
+### to egbk3 Format
+
+Book format is changed in Egaroucid 6.5.1 to ```.egbk3``` extension. If you used older version and install 6.5.1, Egaroucid automatically convert book format in first execution. Also, you can use old ```.egbk2``` and ```.egbk``` book in "Book Import" function.
+
+### to egbk2 Format
+
+Book format is changed in Egaroucid 6.3.0. The new book's filename extension is ```.egbk2```. If you used version 6.2.0 or older and install 6.3.0, Egaroucid automatically convert book format in first execution. Also, you can use old ```.egbk``` book in "Book Reference" and "Book merge", but the save format is only new ```.egbk2```.
 

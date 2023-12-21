@@ -35,17 +35,17 @@ Zip版はZipファイルを解凍し、中の```Egaroucid_[バージョン情報
         <td>Windows</td>
         <td>x64</td>
         <td>AVX2(標準)</td>
-        <td>2023/10/25</td>
-        <td>[Egaroucid 6.5.0 SIMD インストーラ](https://github.com/Nyanyan/Egaroucid/releases/download/v6.5.0/Egaroucid_6_5_0_SIMD_installer.exe)</td>
-        <td>[Egaroucid 6.5.0 SIMD Zip](https://github.com/Nyanyan/Egaroucid/releases/download/v6.5.0/Egaroucid_6_5_0_Windows_x64_SIMD_Portable.zip)</td>
+        <td>2023/12/21</td>
+        <td>[Egaroucid 6.5.1 SIMD インストーラ](https://github.com/Nyanyan/Egaroucid/releases/download/v6.5.1/Egaroucid_6_5_1_SIMD_installer.exe)</td>
+        <td>[Egaroucid 6.5.1 SIMD Zip](https://github.com/Nyanyan/Egaroucid/releases/download/v6.5.1/Egaroucid_6_5_1_Windows_x64_SIMD_Portable.zip)</td>
     </tr>
     <tr>
         <td>Windows</td>
         <td>x64</td>
         <td>-</td>
-        <td>2023/10/25</td>
-        <td>[Egaroucid 6.5.0 Generic インストーラ](https://github.com/Nyanyan/Egaroucid/releases/download/v6.5.0/Egaroucid_6_5_0_Generic_installer.exe)</td>
-        <td>[Egaroucid 6.5.0 Generic Zip](https://github.com/Nyanyan/Egaroucid/releases/download/v6.5.0/Egaroucid_6_5_0_Windows_x64_Generic_Portable.zip)</td>
+        <td>2023/12/21</td>
+        <td>[Egaroucid 6.5.1 Generic インストーラ](https://github.com/Nyanyan/Egaroucid/releases/download/v6.5.1/Egaroucid_6_5_1_Generic_installer.exe)</td>
+        <td>[Egaroucid 6.5.1 Generic Zip](https://github.com/Nyanyan/Egaroucid/releases/download/v6.5.1/Egaroucid_6_5_1_Windows_x64_Generic_Portable.zip)</td>
     </tr>
     </table></div>
 
@@ -83,5 +83,11 @@ Zip版はZipファイルを解凍し、中の```Egaroucid_[バージョン情報
 
 
 ## book形式の変更について
+
+### egbk3形式への変更
+
+Egaroucidはバージョン6.5.1からbook形式を変更し、拡張子が```.egbk3```のものを使うようになりました。以前のバージョンをお使いで新しく6.5.1をインストールした場合、初回起動時に古い```.egbk2```形式および```.egbk```形式のbookを自動で変換します。また、古い形式もbookの読み込みなど各種機能が使えます。ただし、保存形式は新しい```.egbk3```形式になります。
+
+### egbk2形式への変更
 
 Egaroucidはバージョン6.3.0からbook形式を変更しました。新しいbookの拡張子は```.egbk2```です。6.2.0以前のバージョンをお使いで新しく6.3.0をインストールした場合、初回起動時に古い```.egbk```形式のbookを自動で変換します。また、古い形式もbookの参照および統合機能が使えます。ただし、保存形式は新しい```.egbk2```形式になります。
