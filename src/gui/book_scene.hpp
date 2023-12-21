@@ -295,6 +295,7 @@ public:
                     save_book_edax_future = std::async(std::launch::async, book_save_as_egaroucid, book_file, level);
                 else if (ext == "dat")
                     save_book_edax_future = std::async(std::launch::async, book_save_as_edax, book_file, level);
+                book_exporting = true;
             } else if (go_button.clicked() || (return_pressed && button_enabled)) {
                 if (ext == BOOK_EXTENSION_NODOT)
                     save_book_edax_future = std::async(std::launch::async, book_save_as_egaroucid, book_file, LEVEL_UNDEFINED);
