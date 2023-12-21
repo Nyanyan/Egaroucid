@@ -20,7 +20,8 @@ Egaroucidにおいて、Bookとは「予め高い精度で計算しておいた�
 
 EgaroucidのBookでは、各ボードについて以下の情報が記録されています。
 
-<div class="table_wrapper"><table>
+<div class="table_wrapper">
+<table>
     <tr>
     	<th>名前</th>
        	<th>内容</th>
@@ -53,7 +54,8 @@ EgaroucidのBookでは、各ボードについて以下の情報が記録され�
     	<td>リーフのレベル</td>
         <td>リーフの評価値と手を計算したAIのレベル</td>
     </tr>
-</table></div>
+</table>
+</div>
 Bookはボード情報に紐付ける形で、評価値などを保存しています。これらの情報の中でユーザが目にする機会が一番多いのが評価値です。これは単純にその局面がどちらにどれだけ有利かを表す値で、一番大事な情報です。この値を正確に効率的に計算(Book学習)するために、他の色々な情報が保存されています。
 
 リーフに関する情報は後述のBook学習で使います。
@@ -79,42 +81,45 @@ AIのレベルが高ければ、深くまで手を先読みしているので値
 
 これら2つの指標はわかりやすいのですが、Egaroucidは[うえのんEDAX](https://uenon1.com/archives/11111964.html)というソフトの機能に着想を得て、Bookの精度を6段階で表示する仕組みを導入しました。AからFまでの6段階で評価値の精度を評価します。詳細は以下です。
 
+<div class="table_wrapper">
 <table>
-<tr>
-<th>精度</th>
-<th>状態</th>
-<th>判定基準</th>
-</tr>
-<tr>
-<td>A</td>
-<td>値に狂いはほぼない</td>
-<td>2石損未満のbook進行の末端が全て完全読み</td>
-</tr>
-<tr>
-<td>B</td>
-<td>高信頼</td>
-<td>2石損未満のBook進行のうち、1つ以上の末端が完全読みで、その他の末端は終局まで読み切り</td>
-</tr>
-<tr>
-<td>C</td>
-<td>正確</td>
-<td>2石損未満のBook進行の末端が全て終局まで読み切り</td>
-</tr>
-<tr>
-<td>D</td>
-<td>それなりに正確</td>
-<td>2石損未満のBook進行の末端の1つ以上が完全読み</td>
-</tr>
-<tr>
-<td>E</td>
-<td>まあ正確</td>
-<td>2石損未満のBook進行の末端の1つ以上が終局まで読み切り</td>
-</tr>
-<td>F</td>
-<td>値が怪しい</td>
-<td>2石損未満のBook進行の末端に終局まで読み切った局面がない</td>
-</tr>
+    <tr>
+        <th>精度</th>
+        <th>状態</th>
+        <th>判定基準</th>
+    </tr>
+    <tr>
+        <td>A</td>
+        <td>値に狂いはほぼない</td>
+        <td>2石損未満のbook進行の末端が全て完全読み</td>
+    </tr>
+    <tr>
+        <td>B</td>
+        <td>高信頼</td>
+        <td>2石損未満のBook進行のうち、1つ以上の末端が完全読みで、その他の末端は終局まで読み切り</td>
+    </tr>
+    <tr>
+        <td>C</td>
+        <td>正確</td>
+        <td>2石損未満のBook進行の末端が全て終局まで読み切り</td>
+    </tr>
+    <tr>
+        <td>D</td>
+        <td>それなりに正確</td>
+        <td>2石損未満のBook進行の末端の1つ以上が完全読み</td>
+    </tr>
+    <tr>
+        <td>E</td>
+        <td>まあ正確</td>
+        <td>2石損未満のBook進行の末端の1つ以上が終局まで読み切り</td>
+    </tr>
+    <tr>
+        <td>F</td>
+        <td>値が怪しい</td>
+        <td>2石損未満のBook進行の末端に終局まで読み切った局面がない</td>
+    </tr>
 </table>
+</div>
 
 ここで紹介した3つのBookの精度情報は画面に表示することができます。「表示 > 合法手への表示 > Book精度」をチェックしてみてください。
 
@@ -130,6 +135,7 @@ Egaroucidはインストールした時点で作者が作ったBookが付属し�
 
 標準付属Bookの仕様をざっくりとまとめます。
 
+<div class="table_wrapper">
 <table>
 <tr>
 <th>項目</th>
@@ -157,6 +163,7 @@ Egaroucidはインストールした時点で作者が作ったBookが付属し�
 <td>Bookの容量</td>
 </tr>
 </table>
+</div>
 
 レベルが混在しているのは、Book制作上の都合です。
 
@@ -190,7 +197,8 @@ Egaroucidでは、Book学習を開始する局面を自由に設定できます�
 
 28手完全読みが簡単にできるくらいのPCであれば、以下の設定あたりが良いと思います。作者はCore i9 13900Kでレベル17と32を使って学習させています。この設定だと、うまくやればBook精度の評価がAのBookが作れます。
 
-<div class="table_wrapper"><table>
+<div class="table_wrapper">
+<table>
     <tr>
     	<th>レベル</th>
        	<th>深さ</th>
@@ -219,11 +227,13 @@ Egaroucidでは、Book学習を開始する局面を自由に設定できます�
         <td>2</td>
         <td>深さ32で完全読みを使って評価値を正確にする</td>
     </tr>
-</table></div>
+</table>
+</div>
 
 28手を完全読みさせず、98%の読み切りを使うので良ければ、以下の設定でも良いと思います。この設定だとBook精度の評価は最大でCとなります。
 
-<div class="table_wrapper"><table>
+<div class="table_wrapper">
+<table>
     <tr>
     	<th>レベル</th>
        	<th>深さ</th>
@@ -245,7 +255,8 @@ Egaroucidでは、Book学習を開始する局面を自由に設定できます�
         <td>2</td>
         <td>深さ32までレベル23で読み切ってしまう (深さ32だと精度98%で読み切り)</td>
     </tr>
-</table></div>
+</table>
+</div>
 
 #### 深さ40のBookを作る場合
 
@@ -253,7 +264,8 @@ Egaroucidでは、Book学習を開始する局面を自由に設定できます�
 
 終盤20手程度であれば多くのパソコンで非常に高速に完全読みができてしまうと思いますので、以下の設定で良いかと思います。
 
-<div class="table_wrapper"><table>
+<div class="table_wrapper">
+<table>
     <tr>
     	<th>レベル</th>
        	<th>深さ</th>
@@ -282,11 +294,13 @@ Egaroucidでは、Book学習を開始する局面を自由に設定できます�
         <td>2</td>
         <td>深さ40で完全読みを使って評価値を正確にする</td>
     </tr>
-</table></div>
+</table>
+</div>
 
 さらに、例えば終盤24手を完全読みにしてしまうなどして以下の設定を使えば高速にBookを学習できるかもしれません。
 
-<div class="table_wrapper"><table>
+<div class="table_wrapper">
+<table>
     <tr>
     	<th>レベル</th>
        	<th>深さ</th>
@@ -315,7 +329,8 @@ Egaroucidでは、Book学習を開始する局面を自由に設定できます�
         <td>0</td>
         <td>完全読みで最善進行だけ深さ40まで値を追加する</td>
     </tr>
-</table></div>
+</table>
+</div>
 
 ### Book修正を使う
 
@@ -325,7 +340,7 @@ Bookの構造の中でレベルの情報が含まれていましたが、Book修
 
 Book修正を行うと、Bookの評価値を変更するため、前回完璧に終了した学習と同じ設定でBook学習をかけてもいくらかの局面を計算すると思います。基本的に、Book学習とBook修正を繰り返してBookの精度を高め、登録局面数を増やすことを想定しています。
 
-なお、EdaxのBookを取り込んでからそのままBook修正を使うと、EdaxとEgaroucidの仕様の違いにより、評価値がおかしくなる場合があります。ご注意ください。
+なお、EdaxのBookを取り込んでからそのままBook修正を使うと、EdaxとEgaroucidの仕様の違いにより、評価値がおかしくなる場合があります。ご注意ください。EdaxのBookを取り込んだら、Book学習設定を全て解除してからしばらく低いレベルで学習をかけるとこの問題が緩和されると思います。
 
 ### リーフ再計算を使う
 
@@ -359,7 +374,8 @@ Egaroucidのbookは独自フォーマットのバイナリファイル(リトル
 
 最新のフォーマットです。
 
-<div class="table_wrapper"><table>
+<div class="table_wrapper">
+<table>
     <tr>
     	<th>項目</th>
        	<th>データ量(バイト)</th>
@@ -385,11 +401,13 @@ Egaroucidのbookは独自フォーマットのバイナリファイル(リトル
         <td>25*登録局面数</td>
         <td>登録されている局面のデータ(下記参照)</td>
     </tr>
-    </table></div>
+    </table>
+</div>
 
 登録局面ごとに、以下のデータが保存されています。
 
-<div class="table_wrapper"><table>
+<div class="table_wrapper">
+<table>
     <tr>
     	<th>項目</th>
        	<th>データ量(バイト)</th>
@@ -435,13 +453,15 @@ Egaroucidのbookは独自フォーマットのバイナリファイル(リトル
         <td>1</td>
         <td>リーフ計算に用いたAIのレベル</td>
     </tr>
-    </table></div>
+    </table>
+</div>
 
 ### egbk2フォーマット
 
 拡張子は<code>.egbk2</code>です。Egaroucid 6.5.0まで使われていたものです。
 
-<div class="table_wrapper"><table>
+<div class="table_wrapper">
+<table>
     <tr>
     	<th>項目</th>
        	<th>データ量(バイト)</th>
@@ -467,11 +487,13 @@ Egaroucidのbookは独自フォーマットのバイナリファイル(リトル
         <td>(22+2*リンク数)*登録局面数</td>
         <td>登録されている局面のデータ(下記参照)</td>
     </tr>
-</table></div>
+</table>
+</div>
 
 登録局面ごとに、以下のデータが保存されています。
 
-<div class="table_wrapper"><table>
+<div class="table_wrapper">
+<table>
     <tr>
     	<th>項目</th>
        	<th>データ量(バイト)</th>
@@ -507,11 +529,13 @@ Egaroucidのbookは独自フォーマットのバイナリファイル(リトル
         <td>2*リンク数</td>
         <td>登録されているリンクのデータ</td>
     </tr>
-</table></div>
+</table>
+</div>
 
 リンクごとに、以下のデータが保存されています。
 
-<div class="table_wrapper"><table>
+<div class="table_wrapper">
+<table>
     <tr>
     	<th>項目</th>
        	<th>データ量(バイト)</th>
@@ -527,13 +551,15 @@ Egaroucidのbookは独自フォーマットのバイナリファイル(リトル
         <td>1</td>
         <td>登録されている合法手</td>
     </tr>
-</table></div>
+</table>
+</div>
 
 ### egbkフォーマット
 
 拡張子は<code>.egbk</code>です。Egaroucid 6.2.0まで使われていたものです。
 
-<div class="table_wrapper"><table>
+<div class="table_wrapper">
+<table>
     <tr>
     	<th>項目</th>
        	<th>データ量(バイト)</th>
@@ -549,11 +575,13 @@ Egaroucidのbookは独自フォーマットのバイナリファイル(リトル
         <td>17*登録局面数</td>
         <td>登録されている局面のデータ(下記参照)</td>
     </tr>
-</table></div>
+</table>
+</div>
 
 登録局面ごとに、以下のデータが保存されています。
 
-<div class="table_wrapper"><table>
+<div class="table_wrapper">
+<table>
     <tr>
     	<th>項目</th>
        	<th>データ量(バイト)</th>
@@ -574,4 +602,5 @@ Egaroucidのbookは独自フォーマットのバイナリファイル(リトル
         <td>1</td>
         <td>その局面の評価値に64を足したもの</td>
     </tr>
-</table></div>
+</table>
+</div>

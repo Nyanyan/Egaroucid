@@ -125,15 +125,16 @@ tex_js = '''
 '''
 
 def judge_raw_html(html_elem):
-    if html_elem[:2] == '</':
-        return -1
     html_tags = ['table', 'tr', 'td', 'th', 'a', 'div', 'ul', 'li', 'p', 'span', 'canvas', 'details', 'summary', 'code', 'label', 'script']
+    count = 0
     for tag in html_tags:
-        if html_elem[:1 + len(tag)] == '<' + tag:
-            return 1
+        if '<' + tag in html_elem:
+            count += 1
+        elif '</' + tag in html_elem:
+            count -= 1
     #print(html_elem)
     # ignore img, input, br
-    return 0
+    return count
 
 def create_html(dr):
     noenglish = False
@@ -177,6 +178,7 @@ def create_html(dr):
         html_elems = re.findall('\<.+?\>', elem)
         for html_elem in html_elems:
             raw_html += judge_raw_html(html_elem)
+            #print(html_elem, raw_html)
             #print(dr, raw_html)
             '''
             if html_elem[:4] == '<img':
