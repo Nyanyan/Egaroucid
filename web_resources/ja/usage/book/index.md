@@ -126,7 +126,7 @@ Book精度の表示は、後述のBook学習にて役に立つと思います。
 
 ### 標準付属Bookの仕様
 
-Egaroucidはインストールした時点で作者が作ったBookが付属しています。標準Bookは[Zebra](http://radagast.se/Othello/download.html)のBookをもとに(Zebra作者の許可の上で)値を再計算、追加学習して制作しました。Zebraのbook自体は精度が微妙なところも多いですが、Egaroucidでは再計算と追加学習の結果、とりあえず最善進行についてはかなり正確な値になっていると思います。
+Egaroucidはインストールした時点で作者が作ったBookが付属しています。標準Bookは[Zebra](http://radagast.se/Othello/download.html)のBookをもとに(Zebra作者の許可の上で)値を再計算、追加学習して制作しました。Zebraのbook自体は精度が微妙なところも多いですが、Egaroucidでは再計算と追加学習の結果、とりあえず最善進行についてはそこそこ正確な値になっていると思います。
 
 標準付属Bookの仕様をざっくりとまとめます。
 
@@ -202,10 +202,10 @@ Egaroucidでは、Book学習を開始する局面を自由に設定できます�
     </tr>
     <tr>
     	<td>17</td>
-        <td>29</td>
+        <td>28</td>
         <td>2</td>
         <td>2</td>
-        <td>深さ29まで中盤読みで浅く広くBookを作ってしまう(不正確)</td>
+        <td>深さ28まで中盤読みで浅く広くBookを作ってしまう(不正確)</td>
     </tr>
     <tr>
     	<td>23</td>
@@ -235,10 +235,10 @@ Egaroucidでは、Book学習を開始する局面を自由に設定できます�
     </tr>
     <tr>
     	<td>17</td>
-        <td>29</td>
+        <td>28</td>
         <td>2</td>
         <td>2</td>
-        <td>深さ29まで中盤読みで浅く広くBookを作ってしまう(不正確)</td>
+        <td>深さ28まで中盤読みで浅く広くBookを作ってしまう(不正確)</td>
     </tr>
     <tr>
     	<td>23</td>
