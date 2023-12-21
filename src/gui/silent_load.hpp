@@ -57,8 +57,8 @@ void init_default_settings(const Directories* directories, const Resources* reso
     settings->show_opening_on_cell = true;
     settings->show_log = true;
     settings->book_learn_depth = 30;
-    settings->book_learn_error_per_move = 2;
-    settings->book_learn_error_sum = 4;
+    settings->book_learn_error_per_move = 1;
+    settings->book_learn_error_sum = 2;
     settings->show_stable_discs = false;
     settings->change_book_by_right_click = false;
     settings->show_last_move = true;
