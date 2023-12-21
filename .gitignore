@@ -21,7 +21,7 @@ src/tools/statistics/data
 src/tools/statistics/statistics
 src/tools/probcut/data
 src/tools/opening/data
-src/tools/opening/learned_data
+src/tools/opening/output
 src/tools/hash/data
 src/tools/hash/learned_data
 src/tools/evaluation/*.txt
