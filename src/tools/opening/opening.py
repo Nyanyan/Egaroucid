@@ -3,14 +3,14 @@ from othello_py import *
 data = []
 with open('data/openings_japanese.txt', 'r', encoding='utf-8') as f:
     for datum in f.read().splitlines():
-        if datum.replace(' ', '')[:2] == '//':
+        if datum.replace(' ', '').replace('　', '')[:2] == '//':
             continue
         n_spaces = 0
         for i in range(100):
-            if datum[i] != ' ':
+            if datum[i] != ' ' and datum[i] != '　':
                 n_spaces = i
                 break
-        datum = datum.replace(' ', '')
+        datum = datum.replace(' ', '').replace('　', '')
         name, record = datum.split('=')
         print(n_spaces, name, record)
         data.append([n_spaces, name, record])
@@ -51,9 +51,9 @@ for n_spaces, name, record in data:
 
 print(len(joseki))
 print(len(joseki_many))
-with open('learned_data/openings.txt', 'w', encoding='utf-8') as f:
+with open('output/openings.txt', 'w', encoding='utf-8') as f:
     for board in joseki.keys():
         f.write(board + ' ' + joseki[board] + '\n')
-with open('learned_data/openings_fork.txt', 'w', encoding='utf-8') as f:
+with open('output/openings_fork.txt', 'w', encoding='utf-8') as f:
     for board in joseki_many.keys():
         f.write(board + ' ' + '|'.join(joseki_many[board][1:]) + '\n')
