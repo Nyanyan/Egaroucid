@@ -784,6 +784,10 @@ Egaroucidでは自動でbookを操作する機能(自動学習、自動削減な
 
 デフォルトの保存場所はドキュメントフォルダ内のEgaroucid/book.egbk3です。
 
+<div class="centering_box">
+    <img class="pic2" src="img/fix_book_by_right_click.png">
+</div>
+
 ### Book操作 > Book学習
 
 これがbookの自動学習ボタンです。
