@@ -16,6 +16,6 @@
 
 void close(State *state, Options *options){
     if (state->book_changed)
-        book.save_bin(options->book_file, options->book_file + ".bak");
+        book.save_egbk3(options->book_file, options->book_file + ".bak");
     std::exit(0);
 }
