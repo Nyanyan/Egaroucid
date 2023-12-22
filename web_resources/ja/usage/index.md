@@ -849,9 +849,6 @@ bookの自動学習と同様に、1手あたりの誤差、および手筋の合
 
 <div class="centering_box">
     <img class="pic2" src="img/book_import1.png">
-</div>
-
-<div class="centering_box">
     <img class="pic2" src="img/book_import2.png">
 </div>
 
@@ -867,13 +864,7 @@ Edax形式への変換は完璧な互換性を保証するものではありま�
 
 <div class="centering_box">
     <img class="pic2" src="img/book_export_1.png">
-</div>
-
-<div class="centering_box">
     <img class="pic2" src="img/book_export_2.png">
-</div>
-
-<div class="centering_box">
     <img class="pic2" src="img/book_export_3.png">
 </div>
 
