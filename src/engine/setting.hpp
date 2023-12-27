@@ -12,7 +12,7 @@
     @brief version settings
 */
 #define EGAROUCID_ENGINE_VERSION "6.5"
-#define USE_BETA_VERSION false
+#define USE_BETA_VERSION true
 
 /*
     @brief Major settings
