@@ -289,22 +289,23 @@ void get_book_deviate_todo(Book_deviate_todo_elem todo_elem, int book_depth, int
     }
 }
 
-void expand_leaf(int book_depth, int level, Board board, bool use_multi_thread){
+void expand_leaf(int book_depth, int level, Board board, bool use_multi_thread, bool *book_learning){
     Book_elem book_elem = book.get(board);
     Flip flip;
     calc_flip(&flip, &board, book_elem.leaf.move);
     board.move_board(&flip);
-    while (board.n_discs() <= book_depth + 4 && !book.contain(&board)){
+    while (board.n_discs() <= book_depth + 4 && !book.contain(&board) && (*book_learning)){
         Search_result search_result = ai(board, level, true, 0, use_multi_thread, false);
         if (-HW2 <= search_result.value && search_result.value <= HW2){
             book.change(board, search_result.value, level);
             if (is_valid_policy(search_result.policy) && (board.get_legal() & (1ULL << search_result.policy))){
-                calc_flip(&flip, &board, search_result.policy);
-                board.move_board(&flip);
-                //if (board.n_discs() > book_depth + 4){
-                //    book.add_leaf(&board, search_result.value, search_result.policy, level);
-                //    break;
-                //}
+                if (board.n_discs() == book_depth + 4){
+                    book.add_leaf(&board, search_result.value, search_result.policy, level);
+                    break;
+                } else{
+                    calc_flip(&flip, &board, search_result.policy);
+                    board.move_board(&flip);
+                }
             } else
                 break;
         }
@@ -335,18 +336,18 @@ void expand_leaves(int book_depth, int level, std::unordered_set<Book_deviate_to
         //std::cerr << use_multi_thread << std::endl;
         //elem.board.print();
         if (use_multi_thread){
-            expand_leaf(book_depth, level, elem.board, true);
+            expand_leaf(book_depth, level, elem.board, true, book_learning);
             ++n_done;
             int percent = 100ULL * n_done / n_all;
             uint64_t eta = (tim() - strt) * ((double)n_all / n_done - 1.0);
             std::cerr << "loop " << n_loop << " book deviating " << percent << "% " <<  n_done << "/" << n_all << " time " << ms_to_time_short(tim() - all_strt) << " ETA " << ms_to_time_short(eta) << std::endl;
         } else{
-            tasks.emplace_back(thread_pool.push(&pushed, std::bind(&expand_leaf, book_depth, level, elem.board, use_multi_thread)));
+            tasks.emplace_back(thread_pool.push(&pushed, std::bind(&expand_leaf, book_depth, level, elem.board, use_multi_thread, book_learning)));
             if (!pushed){
                 //std::cerr << "deleted " << true << std::endl;
                 //elem.board.print();
                 tasks.pop_back();
-                expand_leaf(book_depth, level, elem.board, true);
+                expand_leaf(book_depth, level, elem.board, true, book_learning);
                 ++n_done;
                 int percent = 100ULL * n_done / n_all;
                 uint64_t eta = (tim() - strt) * ((double)n_all / n_done - 1.0);
