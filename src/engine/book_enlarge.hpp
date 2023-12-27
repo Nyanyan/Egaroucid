@@ -294,28 +294,21 @@ void expand_leaf(int book_depth, int level, Board board, bool use_multi_thread){
     Flip flip;
     calc_flip(&flip, &board, book_elem.leaf.move);
     board.move_board(&flip);
-        if (!book.contain(&board)){ 
-            Search_result search_result = ai(board, level, true, 0, use_multi_thread, false);
-            if (-HW2 <= search_result.value && search_result.value <= HW2){
-                book.change(board, search_result.value, level);
-                if (search_result.depth >= HW2 - board.n_discs() && search_result.probability == 100){ // perfect serach
-                    Board board_copy = board.copy();
-                    Flip flip;
-                    int val, best_move;
-                    while (board_copy.n_discs() <= book_depth + 4 && transposition_table.get_if_perfect(&board_copy, board_copy.hash(), &val, &best_move)){
-                        if (board_copy != board)
-                            book.change(&board_copy, val, level);
-                        if ((board_copy.get_legal() & (1ULL << best_move)) == 0)
-                            break;
-                        book.add_leaf(&board_copy, val, best_move, level);
-                        calc_flip(&flip, &board_copy, best_move);
-                        board_copy.move_board(&flip);
-                    }
-                } else if (0 <= search_result.policy && search_result.policy < HW2 && (board.get_legal() & (1ULL << search_result.policy)))
-                    book.add_leaf(&board, search_result.value, search_result.policy, level);
-            }
+    while (board.n_discs() <= book_depth + 4 && !book.contain(&board)){
+        Search_result search_result = ai(board, level, true, 0, use_multi_thread, false);
+        if (-HW2 <= search_result.value && search_result.value <= HW2){
+            book.change(board, search_result.value, level);
+            if (is_valid_policy(search_result.policy) && (board.get_legal() & (1ULL << search_result.policy))){
+                calc_flip(&flip, &board, search_result.policy);
+                board.move_board(&flip);
+                //if (board.n_discs() > book_depth + 4){
+                //    book.add_leaf(&board, search_result.value, search_result.policy, level);
+                //    break;
+                //}
+            } else
+                break;
         }
-    board.undo_board(&flip);
+    }
 }
 
 void expand_leaves(int book_depth, int level, std::unordered_set<Book_deviate_todo_elem, Book_deviate_hash> &book_deviate_todo, uint64_t all_strt, uint64_t strt, bool *book_learning, Board *board_copy, int *player, int n_loop, std::string file, std::string bak_file){
