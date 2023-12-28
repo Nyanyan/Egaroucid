@@ -295,6 +295,14 @@ void expand_leaf(int book_depth, int level, Board board, bool use_multi_thread, 
     calc_flip(&flip, &board, book_elem.leaf.move);
     board.move_board(&flip);
     while (board.n_discs() <= book_depth + 4 && !book.contain(&board) && (*book_learning)){
+        if (board.get_legal() == 0){
+            board.pass();
+            if (board.get_legal() == 0){
+                board.pass();
+                book.change(board, board.score_player(), 60);
+                break;
+            }
+        }
         Search_result search_result = ai(board, level, true, 0, use_multi_thread, false);
         if (-HW2 <= search_result.value && search_result.value <= HW2){
             book.change(board, search_result.value, level);
