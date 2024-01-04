@@ -23,14 +23,14 @@
         "new_selfplay": "新建对局 (电脑自弈)",
         "analyze": "分析对局",
         "start_game": "开始",
-        "pass": "pass"
+        "pass": "停一手"
     },
     "settings": {
         "settings": "设置",
         "play": {
             "ai_put_black": "电脑执黑 (B)",
             "ai_put_white": "电脑执白 (W)",
-            "pause_when_pass": "当pass时暂停"
+            "pause_when_pass": "当停一手(pass)时暂停"
         },
         "thread": {
             "thread": "线程"
@@ -39,7 +39,7 @@
     },
     "ai_settings": {
         "use_book": "开局库使用",
-        "book_accuracy_level": "开局库丢失等级",
+        "book_accuracy_level": "随机步等级",
         "level": "级别"
     },
     "book": {
@@ -47,7 +47,7 @@
         "book_operation": "开局库操作",
         "file_operation": "文件操作",
         "right_click_to_modify": "右键以更改",
-        "book_deviate": "Book提高",
+        "book_deviate": "开局库自学",
         "book_fix": "开局库修正",
         "learning": "计算中...",
         "stop_learn": "停止",
@@ -59,7 +59,7 @@
         "error_per_move": "落子的误差",
         "error_sum": "误差之和",
         "changed_value": "数值",
-        "book_merge": "Book合并",
+        "book_merge": "开局库合并",
         "merge": "合并",
         "merge_explanation": "通过拖放添加Egaroucid/Edax的开局库",
         "import_failed": "导入失败",
@@ -76,17 +76,17 @@
         "exporting": "导出中...",
         "use_default": "默认",
         "ignore": "覆盖现有的数值",
-        "import_book": "进口Book",
-        "export_book": "导出Book",
+        "import_book": "导入开局库",
+        "export_book": "导出开局库",
         "export_with_specified_level": "以指定级别导出",
         "egaroucid_format": "Egaroucid格式",
         "edax_format": "Edax格式",
-        "undefined_format": "请输入egbk3（Egaroucid）或dat（Edax）格式",
-        "book_reduce": "Book减少",
-        "reducing": "减少...",
-        "book_recalculate_leaf": "重新计算叶子",
+        "undefined_format": "请输入egbk3(Egaroucid)或dat(Edax)格式",
+        "book_reduce": "开局库精简",
+        "reducing": "精简中...",
+        "book_recalculate_leaf": "重新计算叶子(分支)",
         "start": "开始",
-        "unlimited": "无限"
+        "unlimited": "无限制"
     },
     "in_out": {
         "in_out": "输入/输出",
@@ -123,7 +123,7 @@
             "opening": "定式",
             "next_move": "落点提示",
             "next_move_change_view": "改变视图",
-            "show_book_accuracy": "Book准确性"
+            "show_book_accuracy": "Book准确度"
         },
         "disc": {
             "display_on_disc": "棋盘显示",
@@ -137,15 +137,15 @@
     },
     "operation": {
         "operation": "操作",
-        "put_1_move_by_ai": "Put 1 Move by AI (G)",
+        "put_1_move_by_ai": "AI落一子(G)",
         "forward": "前进 (->/D)",
         "backward": "后退 (<-/A)",
         "undo": "撤销 (BackSpace)",
         "save_this_branch": "保存此变化 (L)",
         "generate_random_board": {
-            "generate_random_board": "生成随机情况",
-            "generate": "产生 (R)",
-            "generate_n_moves": "生成的移动次数"
+            "generate_random_board": "生成随机局面",
+            "generate": "生成 (R)",
+            "generate_n_moves": "生成的步数"
         },
         "convert": {
             "convert": "转换视角",
