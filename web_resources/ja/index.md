@@ -74,7 +74,9 @@ Egaroucidは世界最強クラスのオセロAIを搭載した無料のオセロ
     <li>bookを自動/手動で作成/修正</li>
     <li>Egaroucid/Edax形式bookの追加・統合</li>
     <li>定石名の表示</li>
+    <li>[Siv3D](https://siv3d.github.io/)による綺麗なGUI</li>
 </ul>
+
 
 
 
@@ -193,6 +195,7 @@ GPL-3.0ライセンスの下で自由に使っていただいて構いません�
     <li>[作者Webサイト](https://nyanyan.dev/ja/)</li>
     <li>[作者Twitter](https://twitter.com/takuto_yamana)</li>
 </ul>
+
 
 
 ## 他のオセロAI

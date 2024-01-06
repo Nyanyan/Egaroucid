@@ -73,7 +73,9 @@ Completely free software. Egaroucid and Egaroucid for Console use the same (stro
     <li>Create / Modify book automatically / manually</li>
     <li>Add Egaroucid's / Edax's book</li>
     <li>Show opening name</li>
+    <li>Beautiful GUI powered by [Siv3D](https://siv3d.github.io/)</li>
 </ul>
+
 
 
 
