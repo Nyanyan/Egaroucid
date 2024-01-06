@@ -3,7 +3,7 @@
 
     @file move_ordering_tune_end.hpp
         Move ordering tuning (endsearch)
-    @date 2021-2023
+    @date 2021-2024
     @author Takuto Yamana
     @license GPL-3.0 license
 */

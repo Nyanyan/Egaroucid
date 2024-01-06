@@ -4,7 +4,7 @@
     @file book_accuracy.hpp
         Calculate book accuracy level
         This function is inspired by Uenon Edax: https://uenon1.com/archives/14099254.html
-    @date 2021-2023
+    @date 2021-2024
     @author Takuto Yamana
     @license GPL-3.0 license
 */

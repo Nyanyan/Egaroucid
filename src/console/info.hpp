@@ -3,7 +3,7 @@
 
     @file info.hpp
         Egaroucid's software information
-    @date 2021-2023
+    @date 2021-2024
     @author Takuto Yamana
     @license GPL-3.0 license
 */
@@ -19,7 +19,7 @@
     const std::string EGAROUCID_VERSION = EGAROUCID_ENGINE_VERSION + (std::string)"." + EGAROUCID_CONSOLE_VERSION + (std::string)" " + EGAROUCID_ENGINE_ENV_VERSION;
 #endif
 
-#define EGAROUCID_DATE "2021-2023"
+#define EGAROUCID_DATE "2021-2024"
 #define EGAROUCID_URL "https://www.egaroucid.nyanyan.dev/"
 #define EGAROUCID_AUTHOR "Takuto Yamana"
 #define EGAROUCID_LICENSE "GPL-3.0 license"

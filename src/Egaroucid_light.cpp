@@ -4,7 +4,7 @@
     @file Egaroucid_light.cpp
         Main file for Egaroucid Light
 
-    @date 2021-2023
+    @date 2021-2024
     @author Takuto Yamana
     @license GPL-3.0 license
 */

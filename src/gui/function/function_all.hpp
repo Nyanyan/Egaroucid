@@ -3,7 +3,7 @@
 
     @file function_all.hpp
         Include all things about Egaroucid's GUI functions
-    @date 2021-2023
+    @date 2021-2024
     @author Takuto Yamana
     @license GPL-3.0 license
 */
