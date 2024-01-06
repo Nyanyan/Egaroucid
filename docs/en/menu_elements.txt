@@ -1,0 +1,6 @@
+Home /
+Download /download/
+Usage (Japanese) https://www.egaroucid.nyanyan.dev/ja/usage/
+Console Version /console/
+Web Version /web/
+Technology /technology/
