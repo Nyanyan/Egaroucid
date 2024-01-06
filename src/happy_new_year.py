@@ -11,19 +11,23 @@ files = glob.glob('./**/*.cpp', recursive=True)
 files.extend(glob.glob('./**/*.hpp', recursive=True))
 
 for file in files:
+    print(file)
     with open(file, 'r', encoding='utf-8') as f:
         lines = f.read().splitlines()
     for i, line in enumerate(lines):
+        # special case
         if '#define EGAROUCID_DATE ' in line:
             spl = line.split()
             n_line = ''
             for j in range(len(spl)):
                 if '-' in spl[j] :
                     sspl = spl[j].split('-')
-                    n_line += sspl[0] + '-' + new_year
+                    n_line += sspl[0] + '-' + new_year + '"'
                 else:
-                    n_line += spl[j]
+                    n_line += spl[j] + ' '
             line = n_line
+            lines[i] = n_line
+        # general case
         if '@date' in line and '-' in line:
             lines[i] = lines[i][:lines[i].find('-') + 1] + new_year
     new_code = '\n'.join(lines)
