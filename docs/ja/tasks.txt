@@ -1,6 +1,0 @@
-download
-usage
-web
-console
-benchmarks
-technology

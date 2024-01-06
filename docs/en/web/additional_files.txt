@@ -1,4 +1,0 @@
-ai.js
-ai.wasm
-script.js
-style_web.css
