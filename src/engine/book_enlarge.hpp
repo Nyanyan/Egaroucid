@@ -457,8 +457,8 @@ inline void book_deviate(Board root_board, int level, int book_depth, int max_er
     }
     //bool stop = false;
     //book.check_add_leaf_all_search(std::max(1, level / 2), &stop);
-    root_board.copy(board_copy);
     *player = before_player;
+    root_board.copy(board_copy);
     transposition_table.reset_date();
     //book.fix();
     book.save_egbk3(book_file, book_bak);
