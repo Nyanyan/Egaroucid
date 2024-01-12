@@ -30,8 +30,8 @@ void mobility_init(){
 // original code from http://www.amy.hi-ho.ne.jp/okuhara/bitboard.htm
 // modified by Nyanyan
 inline uint64_t calc_legal(const uint64_t P, const uint64_t O){
-    unsigned long long moves, mO;
-    unsigned long long flip1, flip7, flip9, flip8, pre1, pre7, pre9, pre8;
+    uint64_t moves, mO;
+    uint64_t flip1, flip7, flip9, flip8, pre1, pre7, pre9, pre8;
     mO = O & 0x7e7e7e7e7e7e7e7eULL;
     flip1 = mO & (P << 1);         flip7  = mO & (P << 7);        flip9  = mO & (P << 9);        flip8  = O & (P << 8);
     flip1 |= mO & (flip1 << 1);    flip7 |= mO & (flip7 << 7);    flip9 |= mO & (flip9 << 9);    flip8 |= O & (flip8 << 8);
