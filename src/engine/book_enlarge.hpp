@@ -442,10 +442,10 @@ inline void book_deviate(Board root_board, int level, int book_depth, int max_er
     uint64_t n_registered = 0;
     while (true){
         ++n_loop;
-        // if (tim() - s > AUTO_BOOK_SAVE_TIME){
-        //     book.save_egbk3(book_file, book_bak);
-        //     s = tim();
-        // }
+        if (tim() - s > AUTO_BOOK_SAVE_TIME && *book_learning){
+            book.save_egbk3(book_file, book_bak);
+            s = tim();
+        }
         Book_elem book_elem = book.get(root_board);
         if (book_elem.value == SCORE_UNDEFINED){
             std::cerr << "board not registered, searching..." << std::endl;
