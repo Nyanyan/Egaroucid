@@ -431,21 +431,20 @@ void expand_leaves(int book_depth, int level, int max_error_per_move, std::unord
     @param book_learning        a flag for screen drawing
 */
 inline void book_deviate(Board root_board, int level, int book_depth, int max_error_per_move, int max_error_sum, Board *board_copy, int *player, std::string book_file, std::string book_bak, bool *book_learning){
-    uint64_t strt_tim = tim();
-    uint64_t all_strt = strt_tim;
+    uint64_t all_strt = tim();
+    uint64_t s = all_strt;
     std::cerr << "book deviate started" << std::endl;
     int before_player = *player;
     Book_deviate_todo_elem root_elem;
     root_elem.board = root_board;
     root_elem.player = *player;
-    int n_saved = 1;
     int n_loop = 0;
     uint64_t n_registered = 0;
     while (true){
         ++n_loop;
-        if (tim() - all_strt > AUTO_BOOK_SAVE_TIME * n_saved){
-            ++n_saved;
+        if (tim() - s > AUTO_BOOK_SAVE_TIME){
             book.save_egbk3(book_file, book_bak);
+            s = tim();
         }
         Book_elem book_elem = book.get(root_board);
         if (book_elem.value == SCORE_UNDEFINED){
