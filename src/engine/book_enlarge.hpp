@@ -442,10 +442,10 @@ inline void book_deviate(Board root_board, int level, int book_depth, int max_er
     uint64_t n_registered = 0;
     while (true){
         ++n_loop;
-        if (tim() - s > AUTO_BOOK_SAVE_TIME){
-            book.save_egbk3(book_file, book_bak);
-            s = tim();
-        }
+        // if (tim() - s > AUTO_BOOK_SAVE_TIME){
+        //     book.save_egbk3(book_file, book_bak);
+        //     s = tim();
+        // }
         Book_elem book_elem = book.get(root_board);
         if (book_elem.value == SCORE_UNDEFINED){
             std::cerr << "board not registered, searching..." << std::endl;
@@ -474,6 +474,7 @@ inline void book_deviate(Board root_board, int level, int book_depth, int max_er
         uint64_t strt = tim();
         expand_leaves(book_depth, level, max_error_per_move, book_deviate_todo, all_strt, strt, book_learning, board_copy, player, n_loop, book_file, book_bak);
         n_registered += book_deviate_todo.size();
+
         std::cerr << "loop " << n_loop << " book deviated registered " << n_registered << "board size " << book.size() << std::endl;
     }
     //bool stop = false;
