@@ -12,6 +12,7 @@ while True:
                 player_got = True
             else:
                 opponent = elem_int
+                break
         except:
             pass
     print('player', player, 'opponent', opponent)
