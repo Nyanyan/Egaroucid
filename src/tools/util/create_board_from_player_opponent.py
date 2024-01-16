@@ -14,6 +14,7 @@ while True:
                 opponent = elem_int
         except:
             pass
+    print('player', player, 'opponent', opponent)
     #player = int(input())
     #opponent = int(input())
     black_or_white = int(input()) # 0: X for black 1: X for white
