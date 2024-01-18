@@ -328,6 +328,24 @@ inline void analyze(Board_info *board, Options *options, State *state){
     print_analyze_foot(summary);
 }
 
+void generate_problem(Options *options, std::string arg){
+    int pos = arg.find(' ');
+    if (pos == std::string::npos){
+        std::cerr << "[ERROR] please input <n_empties> <n_problems>" << std::endl;
+    }
+    std::string n_empties_str = arg.substr(0, pos);
+    std::string n_problems_str = arg.substr(pos + 1);
+    try{
+        int n_empties = std::stoi(n_empties_str);
+        int n_problems = std::stoi(n_problems_str);
+        problem_generator(n_empties, n_problems, options->level);
+    } catch (const std::invalid_argument& e) {
+        std::cerr << "[ERROR] invalid argument" << std::endl;
+    } catch (const std::out_of_range& e) {
+        std::cerr << "[ERROR] out of range" << std::endl;
+    }
+}
+
 void check_command(Board_info *board, State *state, Options *options){
     std::string cmd_line = get_command_line();
     std::string cmd, arg;
@@ -384,6 +402,9 @@ void check_command(Board_info *board, State *state, Options *options){
             break;
         case CMD_ID_CLEARCACHE:
             transposition_table.init();
+            break;
+        case CMD_ID_GENPROBLEM:
+            generate_problems(options, arg);
             break;
         default:
             break;

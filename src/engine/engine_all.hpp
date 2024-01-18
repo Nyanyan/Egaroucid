@@ -13,3 +13,4 @@
 #include "book_enlarge.hpp"
 #include "book_accuracy.hpp"
 #include "umigame.hpp"
+#include "problem_generator.hpp"
