@@ -38,7 +38,7 @@
     <input type="submit" class="setting" value="Pass" onclick="pass()" id="pass" disabled>
 </div>
 <div id="main">
-    <table align="center">
+    <table class="table_board" align="center">
         <tr>
             <td class="white_element"></td>
             <td class="white_element">
@@ -58,9 +58,31 @@
             <td class="white_element"></td>
         </tr>
         <tr>
-            <td class="white_element"><table class="coords" id="coord_left" align="center"></table></td>
+            <td class="white_element">
+                <table class="coords" id="coord_left">
+                    <tr><td class="coord_cell"><span class="coord">1</span></td></tr>
+                    <tr><td class="coord_cell"><span class="coord">2</span></td></tr>
+                    <tr><td class="coord_cell"><span class="coord">3</span></td></tr>
+                    <tr><td class="coord_cell"><span class="coord">4</span></td></tr>
+                    <tr><td class="coord_cell"><span class="coord">5</span></td></tr>
+                    <tr><td class="coord_cell"><span class="coord">6</span></td></tr>
+                    <tr><td class="coord_cell"><span class="coord">7</span></td></tr>
+                    <tr><td class="coord_cell"><span class="coord">8</span></td></tr>
+                </table>
+            </td>
             <td class="white_element"><table class="board" id="board" align="center"></table></td>
-            <td class="white_element"><table class="coords" id="coord_right" align="center"></table></td>
+            <td class="white_element">
+                <table class="coords" id="coord_right">
+                    <tr><td class="coord_cell"><span class="coord"></span></td></tr>
+                    <tr><td class="coord_cell"><span class="coord"></span></td></tr>
+                    <tr><td class="coord_cell"><span class="coord"></span></td></tr>
+                    <tr><td class="coord_cell"><span class="coord"></span></td></tr>
+                    <tr><td class="coord_cell"><span class="coord"></span></td></tr>
+                    <tr><td class="coord_cell"><span class="coord"></span></td></tr>
+                    <tr><td class="coord_cell"><span class="coord"></span></td></tr>
+                    <tr><td class="coord_cell"><span class="coord"></span></td></tr>
+                </table>
+            </td>
         </tr>
     </table>
     <table class="status" id="status" align="center">

@@ -28,6 +28,9 @@
     width: x-large;
     height: x-large;
 }
+.table_board {
+    border: 0px solid #333;
+}
 .coords {
     border-collapse: collapse;
     background-color: white;
