@@ -198,13 +198,16 @@ private:
     std::future<void> save_book_edax_future;
     bool book_exporting;
     bool done;
+    TextAreaEditState text_area;
 
 public:
     Export_book(const InitData& init) : IScene{ init } {
         back_button.init(BUTTON3_1_SX, GO_BACK_BUTTON_SY, BUTTON3_WIDTH, BUTTON3_HEIGHT, BUTTON3_RADIUS, language.get("common", "back"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
         go_with_level_button.init(BUTTON3_2_SX, GO_BACK_BUTTON_SY, BUTTON3_WIDTH, BUTTON3_HEIGHT, BUTTON3_RADIUS, language.get("book", "export_with_specified_level"), 18, getData().fonts.font, getData().colors.white, getData().colors.black);
         go_button.init(BUTTON3_3_SX, GO_BACK_BUTTON_SY, BUTTON3_WIDTH, BUTTON3_HEIGHT, BUTTON3_RADIUS, language.get("book", "export"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
-        book_file = getData().directories.document_dir + "book_copy.egbk3";
+        text_area.text = Unicode::Widen(getData().directories.document_dir + "book_copy.egbk3");
+        text_area.cursorPos = text_area.text.size();
+        text_area.rebuildGlyphs();
         level = getData().menu_elements.level;
         book_exporting = false;
         done = false;
@@ -221,25 +224,15 @@ public:
         int sy = 20 + icon_width + 40;
         if (!book_exporting) {
             getData().fonts.font(language.get("book", "export_book")).draw(25, Arg::topCenter(X_CENTER, sy), getData().colors.white);
-            Rect text_area{ X_CENTER - 300, sy + 40, 600, 80 };
-            text_area.draw(getData().colors.light_cyan).drawFrame(2, getData().colors.black);
-            String book_file_str = Unicode::Widen(book_file);
-            TextInput::UpdateText(book_file_str);
-            const String editingText = TextInput::GetEditingText();
+            text_area.active = true;
+            SimpleGUI::TextArea(text_area, Vec2{X_CENTER - 300, sy + 40}, SizeF{600, 80}, SimpleGUI::PreferredTextAreaMaxChars);
             bool return_pressed = false;
-            if (KeyControl.pressed() && KeyV.down()) {
-                String clip_text;
-                Clipboard::GetText(clip_text);
-                book_file_str += clip_text;
-            }
-            if (book_file_str.size()) {
-                if (book_file_str[book_file_str.size() - 1] == '\n') {
-                    book_file_str.replace(U"\n", U"");
+            if (text_area.text.size()) {
+                if (text_area.text[text_area.text.size() - 1] == '\n') {
                     return_pressed = true;
                 }
             }
-            book_file = book_file_str.narrow();
-            getData().fonts.font(book_file_str + U'|' + editingText).draw(15, text_area.stretched(-4), getData().colors.black);
+            book_file = text_area.text.replaced(U"\r\n", U"").replaced(U"\n", U"").narrow();
             std::string ext = get_extension(book_file);
             bool button_enabled = false;
             String book_format_str;
