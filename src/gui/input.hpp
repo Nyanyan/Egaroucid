@@ -51,8 +51,8 @@ public:
         if (!done) {
             getData().fonts.font(language.get("in_out", "input_transcript")).draw(25, Arg::topCenter(X_CENTER, sy), getData().colors.white);
             text_area.active = true;
-            SimpleGUI::TextArea(text_area, Vec2{X_CENTER - 300, sy + 40}, SizeF{600, 105}, SimpleGUI::PreferredTextAreaMaxChars);
-            getData().fonts.font(language.get("in_out", "you_can_paste_with_ctrl_v")).draw(13, Arg::topCenter(X_CENTER, sy + 150), getData().colors.white);
+            SimpleGUI::TextArea(text_area, Vec2{X_CENTER - 300, sy + 40}, SizeF{600, 130}, SimpleGUI::PreferredTextAreaMaxChars);
+            getData().fonts.font(language.get("in_out", "you_can_paste_with_ctrl_v")).draw(13, Arg::topCenter(X_CENTER, sy + 175), getData().colors.white);
             bool return_pressed = false;
             if (text_area.text.size()) {
                 if (text_area.text[text_area.text.size() - 1] == '\n') {
@@ -222,8 +222,8 @@ public:
         if (!done) {
             getData().fonts.font(language.get("in_out", "input_board")).draw(25, Arg::topCenter(X_CENTER, sy), getData().colors.white);
             text_area.active = true;
-            SimpleGUI::TextArea(text_area, Vec2{X_CENTER - 300, sy + 40}, SizeF{600, 105}, SimpleGUI::PreferredTextAreaMaxChars);
-            getData().fonts.font(language.get("in_out", "you_can_paste_with_ctrl_v")).draw(13, Arg::topCenter(X_CENTER, sy + 150), getData().colors.white);
+            SimpleGUI::TextArea(text_area, Vec2{X_CENTER - 300, sy + 40}, SizeF{600, 130}, SimpleGUI::PreferredTextAreaMaxChars);
+            getData().fonts.font(language.get("in_out", "you_can_paste_with_ctrl_v")).draw(13, Arg::topCenter(X_CENTER, sy + 175), getData().colors.white);
             bool return_pressed = false;
             if (text_area.text.size()) {
                 if (text_area.text[text_area.text.size() - 1] == '\n') {
