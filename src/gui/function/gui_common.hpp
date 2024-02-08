@@ -35,6 +35,9 @@ constexpr int RIGHT_CENTER = (RIGHT_LEFT + RIGHT_RIGHT) / 2;
 constexpr int X_CENTER = WINDOW_SIZE_X / 2;
 constexpr int Y_CENTER = WINDOW_SIZE_Y / 2;
 
+// icon width
+#define SCENE_ICON_WIDTH 120
+
 // error definition
 #define ERR_OK 0
 #define ERR_LANG_LIST_NOT_LOADED 1

@@ -44,7 +44,7 @@ public:
             changeScene(U"Close", SCENE_FADE_TIME);
         }
         Scene::SetBackground(getData().colors.green);
-        const int icon_width = (LEFT_RIGHT - LEFT_LEFT) / 3;
+        const int icon_width = SCENE_ICON_WIDTH;
         getData().resources.icon.scaled((double)icon_width / getData().resources.icon.width()).draw(X_CENTER - icon_width / 2, 20);
         getData().resources.logo.scaled((double)icon_width / getData().resources.logo.width()).draw(X_CENTER - icon_width / 2, 20 + icon_width);
         int sy = 20 + icon_width + 50;
@@ -215,7 +215,7 @@ public:
             changeScene(U"Close", SCENE_FADE_TIME);
         }
         Scene::SetBackground(getData().colors.green);
-        const int icon_width = (LEFT_RIGHT - LEFT_LEFT) / 3;
+        const int icon_width = SCENE_ICON_WIDTH;
         getData().resources.icon.scaled((double)icon_width / getData().resources.icon.width()).draw(X_CENTER - icon_width / 2, 20);
         getData().resources.logo.scaled((double)icon_width / getData().resources.logo.width()).draw(X_CENTER - icon_width / 2, 20 + icon_width);
         int sy = 20 + icon_width + 50;
