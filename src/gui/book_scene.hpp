@@ -58,6 +58,7 @@ private:
     bool done;
     int level;
     bool need_level;
+    TextAreaEditState text_area;
 
 public:
     Import_book(const InitData& init) : IScene{ init } {
@@ -84,30 +85,23 @@ public:
         if (!book_deleting && !book_importing && !failed && !done) {
             getData().fonts.font(language.get("book", "import_book")).draw(25, Arg::topCenter(X_CENTER, sy), getData().colors.white);
             getData().fonts.font(language.get("book", "input_book_path")).draw(14, Arg::topCenter(X_CENTER, sy + 38), getData().colors.white);
-            Rect text_area{ X_CENTER - 300, sy + 60, 600, 70 };
-            text_area.draw(getData().colors.light_cyan).drawFrame(2, getData().colors.black);
-            String book_file_str = Unicode::Widen(book_file);
-            TextInput::UpdateText(book_file_str);
-            const String editingText = TextInput::GetEditingText();
+            text_area.active = true;
+            SimpleGUI::TextArea(text_area, Vec2{X_CENTER - 300, sy + 60}, SizeF{600, 70}, SimpleGUI::PreferredTextAreaMaxChars);
             bool return_pressed = false;
-            if (KeyControl.pressed() && KeyV.down()) {
-                String clip_text;
-                Clipboard::GetText(clip_text);
-                book_file_str += clip_text;
-            }
-            if (book_file_str.size()) {
-                if (book_file_str[book_file_str.size() - 1] == '\n') {
-                    book_file_str.replace(U"\n", U"");
+            if (text_area.text.size()) {
+                if (text_area.text[text_area.text.size() - 1] == '\n') {
                     return_pressed = true;
                 }
             }
             bool file_dragged = false;
             if (DragDrop::HasNewFilePaths()) {
-                book_file_str = DragDrop::GetDroppedFilePaths()[0].path;
+                text_area.text = DragDrop::GetDroppedFilePaths()[0].path;
+                text_area.cursorPos = 0;
+                text_area.scrollY = 0.0;
+                text_area.textChanged = true;
                 file_dragged = true;
             }
-            getData().fonts.font(book_file_str + U'|' + editingText).draw(14, text_area.stretched(-4), getData().colors.black);
-            book_file = book_file_str.narrow();
+            book_file = text_area.text.replaced(U"\r", U"").replaced(U"\n", U"").narrow();
             std::string ext = get_extension(book_file);
             bool formatted_file = false;
             if (ext == BOOK_EXTENSION_NODOT || ext == "egbk2" || ext == "egbk" || ext == "dat"){
