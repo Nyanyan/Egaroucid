@@ -22,7 +22,10 @@ private:
     Button back_button;
     Button export_main_button;
     Button export_this_board_button;
-    bool active_cells[3];
+    TextAreaEditState text_area[3]; // black player, white player, memo
+    static constexpr int BLACK_PLAYER_IDX = 0;
+    static constexpr int WHITE_PLAYER_IDX = 1;
+    static constexpr int MEMO_IDX = 2;
 
 
 public:
@@ -30,10 +33,7 @@ public:
         back_button.init(BUTTON3_1_SX, BUTTON3_SY, BUTTON3_WIDTH, BUTTON3_HEIGHT, BUTTON3_RADIUS, language.get("common", "back"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
         export_main_button.init(BUTTON3_2_SX, BUTTON3_SY, BUTTON3_WIDTH, BUTTON3_HEIGHT, BUTTON3_RADIUS, language.get("in_out", "export_main"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
         export_this_board_button.init(BUTTON3_3_SX, BUTTON3_SY, BUTTON3_WIDTH, BUTTON3_HEIGHT, BUTTON3_RADIUS, language.get("in_out", "export_until_this_board"), 15, getData().fonts.font, getData().colors.white, getData().colors.black);
-        for (int i = 0; i < 3; ++i) {
-            active_cells[i] = false;
-        }
-        active_cells[0] = true;
+        text_area[BLACK_PLAYER_IDX].active = true;
     }
 
     void update() override {
@@ -42,105 +42,15 @@ public:
         }
         getData().fonts.font(language.get("in_out", "output_game")).draw(25, Arg::topCenter(X_CENTER, 10), getData().colors.white);
         getData().fonts.font(language.get("in_out", "player_name")).draw(20, Arg::topCenter(X_CENTER, 50), getData().colors.white);
-        Rect black_area{ X_CENTER - EXPORT_GAME_PLAYER_WIDTH, 80, EXPORT_GAME_PLAYER_WIDTH, EXPORT_GAME_PLAYER_HEIGHT };
-        Rect white_area{ X_CENTER, 80, EXPORT_GAME_PLAYER_WIDTH, EXPORT_GAME_PLAYER_HEIGHT };
+        SimpleGUI::TextArea(text_area[BLACK_PLAYER_IDX], Vec2{X_CENTER - EXPORT_GAME_PLAYER_WIDTH, 80}, SizeF{EXPORT_GAME_PLAYER_WIDTH, EXPORT_GAME_PLAYER_HEIGHT}, SimpleGUI::PreferredTextAreaMaxChars);
+        SimpleGUI::TextArea(text_area[WHITE_PLAYER_IDX], Vec2{X_CENTER, 80}, SizeF{EXPORT_GAME_PLAYER_WIDTH, EXPORT_GAME_PLAYER_HEIGHT}, SimpleGUI::PreferredTextAreaMaxChars);
         Circle(X_CENTER - EXPORT_GAME_PLAYER_WIDTH - EXPORT_GAME_RADIUS - 20, 80 + EXPORT_GAME_RADIUS, EXPORT_GAME_RADIUS).draw(getData().colors.black);
         Circle(X_CENTER + EXPORT_GAME_PLAYER_WIDTH + EXPORT_GAME_RADIUS + 20, 80 + EXPORT_GAME_RADIUS, EXPORT_GAME_RADIUS).draw(getData().colors.white);
         getData().fonts.font(language.get("in_out", "memo")).draw(20, Arg::topCenter(X_CENTER, 110), getData().colors.white);
-        Rect memo_area{ X_CENTER - EXPORT_GAME_MEMO_WIDTH / 2, 140, EXPORT_GAME_MEMO_WIDTH, EXPORT_GAME_MEMO_HEIGHT };
-        const String editingText = TextInput::GetEditingText();
-        bool active_draw = false;
-        if (black_area.leftClicked()) {
-            active_cells[0] = true;
-            active_cells[1] = false;
-            active_cells[2] = false;
-        }
-        else if (white_area.leftClicked()) {
-            active_cells[0] = false;
-            active_cells[1] = true;
-            active_cells[2] = false;
-        }
-        else if (memo_area.leftClicked()) {
-            active_cells[0] = false;
-            active_cells[1] = false;
-            active_cells[2] = true;
-        }
-        if (!active_draw && active_cells[0]) {
-            active_draw = true;
-            black_area.draw(getData().colors.light_cyan).drawFrame(2, getData().colors.black);
-            TextInput::UpdateText(getData().game_information.black_player_name);
-            if (KeyControl.pressed() && KeyV.down()) {
-                String clip_text;
-                Clipboard::GetText(clip_text);
-                getData().game_information.black_player_name += clip_text;
-            }
-            if (getData().game_information.black_player_name.narrow().find('\t') != std::string::npos) {
-                for (int i = 0; i < 3; ++i) {
-                    if (active_cells[i]) {
-                        active_cells[i] = false;
-                        active_cells[(i + 1) % 3] = true;
-                        break;
-                    }
-                }
-            }
-            getData().game_information.black_player_name = getData().game_information.black_player_name.replaced(U"\r", U"").replaced(U"\n", U" ").replaced(U"\t", U"");
-            getData().fonts.font(getData().game_information.black_player_name + U'|' + editingText).draw(15, black_area.stretched(-4), getData().colors.black);
-        }
-        else {
-            black_area.draw(getData().colors.white).drawFrame(2, getData().colors.black);
-            getData().fonts.font(getData().game_information.black_player_name).draw(15, black_area.stretched(-4), getData().colors.black);
-        }
-        if (!active_draw && active_cells[1]) {
-            active_draw = true;
-            white_area.draw(getData().colors.light_cyan).drawFrame(2, getData().colors.black);
-            TextInput::UpdateText(getData().game_information.white_player_name);
-            if (KeyControl.pressed() && KeyV.down()) {
-                String clip_text;
-                Clipboard::GetText(clip_text);
-                getData().game_information.white_player_name += clip_text;
-            }
-            if (getData().game_information.white_player_name.narrow().find('\t') != std::string::npos) {
-                for (int i = 0; i < 3; ++i) {
-                    if (active_cells[i]) {
-                        active_cells[i] = false;
-                        active_cells[(i + 1) % 3] = true;
-                        break;
-                    }
-                }
-            }
-            getData().game_information.white_player_name = getData().game_information.white_player_name.replaced(U"\r", U"").replaced(U"\n", U" ").replaced(U"\t", U"");
-            getData().fonts.font(getData().game_information.white_player_name + U'|' + editingText).draw(15, white_area.stretched(-4), getData().colors.black);
-        }
-        else {
-            white_area.draw(getData().colors.white).drawFrame(2, getData().colors.black);
-            getData().fonts.font(getData().game_information.white_player_name).draw(15, white_area.stretched(-4), getData().colors.black);
-        }
-        if (!active_draw && active_cells[2]) {
-            active_draw = true;
-            memo_area.draw(getData().colors.light_cyan).drawFrame(2, getData().colors.black);
-            TextInput::UpdateText(getData().game_information.memo);
-            if (KeyControl.pressed() && KeyV.down()) {
-                String clip_text;
-                Clipboard::GetText(clip_text);
-                getData().game_information.memo += clip_text;
-            }
-            if (getData().game_information.memo.narrow().find('\t') != std::string::npos) {
-                for (int i = 0; i < 3; ++i) {
-                    if (active_cells[i]) {
-                        active_cells[i] = false;
-                        active_cells[(i + 1) % 3] = true;
-                        break;
-                    }
-                }
-            }
-            getData().game_information.memo = getData().game_information.memo.replaced(U"\t", U"");
-            getData().fonts.font(getData().game_information.memo + U'|' + editingText).draw(15, memo_area.stretched(-4), getData().colors.black);
-            
-        }
-        else {
-            memo_area.draw(getData().colors.white).drawFrame(2, getData().colors.black);
-            getData().fonts.font(getData().game_information.memo).draw(15, memo_area.stretched(-4), getData().colors.black);
-        }
+        SimpleGUI::TextArea(text_area[MEMO_IDX], Vec2{X_CENTER - EXPORT_GAME_MEMO_WIDTH / 2, 140}, SizeF{EXPORT_GAME_MEMO_WIDTH, EXPORT_GAME_MEMO_HEIGHT}, SimpleGUI::PreferredTextAreaMaxChars);
+        getData().game_information.black_player_name = text_area[BLACK_PLAYER_IDX].text.replaced(U"\r", U"").replaced(U"\n", U" ");
+        getData().game_information.white_player_name = text_area[WHITE_PLAYER_IDX].text.replaced(U"\r", U"").replaced(U"\n", U" ");
+        getData().game_information.memo = text_area[MEMO_IDX].text;
         back_button.draw();
         export_main_button.draw();
         export_this_board_button.draw();

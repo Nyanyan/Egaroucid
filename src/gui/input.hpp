@@ -56,12 +56,10 @@ public:
             bool return_pressed = false;
             if (text_area.text.size()) {
                 if (text_area.text[text_area.text.size() - 1] == '\n') {
-                    text_area.text.replace(U"\n", U"");
                     return_pressed = true;
                 }
             }
-            text_area.text = text_area.text.replace(U"\r\n", U"").replace(U"\n", U"").replace(U" ", U"");
-            transcript = text_area.text.narrow();
+            transcript = text_area.text.replace(U"\r\n", U"").replace(U"\n", U"").replace(U" ", U"").narrow();
             back_button.draw();
             import_button.draw();
             import_from_position_button.draw();
@@ -229,12 +227,10 @@ public:
             bool return_pressed = false;
             if (text_area.text.size()) {
                 if (text_area.text[text_area.text.size() - 1] == '\n') {
-                    text_area.text.replace(U"\n", U"");
                     return_pressed = true;
                 }
             }
-            text_area.text = text_area.text.replace(U"\r\n", U"").replace(U"\n", U"").replace(U" ", U"");
-            board_str = text_area.text.narrow();
+            board_str = text_area.text.replace(U"\r\n", U"").replace(U"\n", U"").replace(U" ", U"").narrow();
             back_button.draw();
             import_button.draw();
             if (back_button.clicked() || KeyEscape.pressed()) {
