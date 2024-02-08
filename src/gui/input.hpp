@@ -230,7 +230,7 @@ public:
                     return_pressed = true;
                 }
             }
-            board_str = text_area.text.replaced(U"\r\n", U"").replaced(U"\n", U"").replaced(U" ", U"").narrow();
+            board_str = text_area.text.replaced(U"\r", U"").replaced(U"\n", U"").replaced(U" ", U"").narrow();
             back_button.draw();
             import_button.draw();
             if (back_button.clicked() || KeyEscape.pressed()) {
