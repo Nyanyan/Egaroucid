@@ -48,8 +48,23 @@ public:
         Circle(X_CENTER + EXPORT_GAME_PLAYER_WIDTH + EXPORT_GAME_RADIUS + 20, 80 + EXPORT_GAME_RADIUS, EXPORT_GAME_RADIUS).draw(getData().colors.white);
         getData().fonts.font(language.get("in_out", "memo")).draw(20, Arg::topCenter(X_CENTER, 110), getData().colors.white);
         SimpleGUI::TextArea(text_area[MEMO_IDX], Vec2{X_CENTER - EXPORT_GAME_MEMO_WIDTH / 2, 140}, SizeF{EXPORT_GAME_MEMO_WIDTH, EXPORT_GAME_MEMO_HEIGHT}, SimpleGUI::PreferredTextAreaMaxChars);
-        getData().game_information.black_player_name = text_area[BLACK_PLAYER_IDX].text.replaced(U"\r", U"").replaced(U"\n", U" ");
-        getData().game_information.white_player_name = text_area[WHITE_PLAYER_IDX].text.replaced(U"\r", U"").replaced(U"\n", U" ");
+        for (int i = 0; i < 3; ++i){
+            std::string str = text_area[i].text.narrow();
+            if (str.find("\t") != std::string::npos){
+                text_area[i].active = false;
+                text_area[(i + 1) % 3].active = true;
+                text_area[i].text.replace(U"\t", U"");
+                text_area[i].cursorPos = text_area[i].text.size();
+                text_area[i].rebuildGlyphs();
+            }
+            if ((str.find("\n") != std::string::npos || str.find("\r") != std::string::npos) && i != MEMO_IDX){
+                text_area[i].text.replace(U"\r", U"").replace(U"\n", U" ");
+                text_area[i].cursorPos = text_area[i].text.size();
+                text_area[i].rebuildGlyphs();
+            }
+        }
+        getData().game_information.black_player_name = text_area[BLACK_PLAYER_IDX].text;
+        getData().game_information.white_player_name = text_area[WHITE_PLAYER_IDX].text;
         getData().game_information.memo = text_area[MEMO_IDX].text;
         back_button.draw();
         export_main_button.draw();
