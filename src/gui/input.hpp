@@ -25,6 +25,7 @@ private:
     std::string transcript;
     std::vector<History_elem> n_history;
     bool imported_from_position;
+    TextAreaEditState text_area;
 
 public:
     Import_transcript(const InitData& init) : IScene{ init } {
@@ -36,6 +37,7 @@ public:
         failed = false;
         imported_from_position = false;
         transcript.clear();
+        text_area.active = true;
     }
 
     void update() override {
@@ -49,27 +51,17 @@ public:
         int sy = 20 + icon_width + 50;
         if (!done) {
             getData().fonts.font(language.get("in_out", "input_transcript")).draw(25, Arg::topCenter(X_CENTER, sy), getData().colors.white);
-            Rect text_area{ X_CENTER - 300, sy + 40, 600, 70 };
+            SimpleGUI::TextArea(text_area, Vec2{X_CENTER - 300, sy + 40}, SizeF{600, 70}, SimpleGUI::PreferredTextAreaMaxChars);
             getData().fonts.font(language.get("in_out", "you_can_paste_with_ctrl_v")).draw(13, Arg::topCenter(X_CENTER, sy + 120), getData().colors.white);
-            text_area.draw(getData().colors.light_cyan).drawFrame(2, getData().colors.black);
-            String str = Unicode::Widen(transcript);
-            TextInput::UpdateText(str);
-            const String editingText = TextInput::GetEditingText();
             bool return_pressed = false;
-            if (KeyControl.pressed() && KeyV.down()) {
-                String clip_text;
-                Clipboard::GetText(clip_text);
-                str += clip_text;
-            }
-            if (str.size()) {
-                if (str[str.size() - 1] == '\n') {
-                    str.replace(U"\n", U"");
+            if (text_area.text.size()) {
+                if (text_area.text[text_area.text.size() - 1] == '\n') {
+                    text_area.text.replace(U"\n", U"");
                     return_pressed = true;
                 }
             }
-            str = str.replace(U"\r\n", U"").replace(U"\n", U"").replace(U" ", U"");
-            transcript = str.narrow();
-            getData().fonts.font(str + U'|' + editingText).draw(15, text_area.stretched(-4), getData().colors.black);
+            text_area.text = text_area.text.replace(U"\r\n", U"").replace(U"\n", U"").replace(U" ", U"");
+            transcript = text_area.text.narrow();
             back_button.draw();
             import_button.draw();
             import_from_position_button.draw();
