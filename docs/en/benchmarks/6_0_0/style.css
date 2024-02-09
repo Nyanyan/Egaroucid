@@ -73,7 +73,7 @@ h4{
 
 .menu_bar{
     width: 100%;
-    height: min(8vw, 60px);
+    height: min(9vw, 60px);
     background-color:  #2a7253;
     display: flex;
     align-items: center;
@@ -89,13 +89,14 @@ h4{
 
 .menu_button{
     width: min(20vw, 130px);
-    height: min(8vw, 50px);
+    height: min(9vw, 60px);
     background-color:  #2a7253;
     display: inline-block; 
     text-align: center;
     display: table;
     vertical-align: middle;
     font-size: min(2.5vw, 12pt);
+    line-height: 1.0em;
 }
 
 .centering_box{
