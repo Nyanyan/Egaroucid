@@ -84,7 +84,7 @@ public:
             getData().fonts.font(language.get("book", "import_book")).draw(25, Arg::topCenter(X_CENTER, sy), getData().colors.white);
             getData().fonts.font(language.get("book", "input_book_path")).draw(14, Arg::topCenter(X_CENTER, sy + 38), getData().colors.white);
             text_area.active = true;
-            SimpleGUI::TextArea(text_area, Vec2{X_CENTER - 300, sy + 60}, SizeF{600, 70}, SimpleGUI::PreferredTextAreaMaxChars);
+            SimpleGUI::TextArea(text_area, Vec2{X_CENTER - 300, sy + 60}, SizeF{600, 100}, SimpleGUI::PreferredTextAreaMaxChars);
             bool return_pressed = false;
             if (text_area.text.size()) {
                 if (text_area.text[text_area.text.size() - 1] == '\n') {
@@ -107,11 +107,11 @@ public:
                 formatted_file = true;
             } else{
                 go_button.disable();
-                getData().fonts.font(language.get("book", "wrong_extension") + U" " + language.get("book", "legal_extension3")).draw(15, Arg::topCenter(X_CENTER, sy + 140), getData().colors.white);
+                getData().fonts.font(language.get("book", "wrong_extension") + U" " + language.get("book", "legal_extension3")).draw(15, Arg::topCenter(X_CENTER, sy + 170), getData().colors.white);
             }
             bool need_level_setting = ext == "egbk";
             if (need_level_setting){
-                Rect bar_rect{X_CENTER - 220, sy + 160, 440, 20};
+                Rect bar_rect{X_CENTER - 220, sy + 180, 440, 20};
                 bar_rect.draw(bar_color); // Palette::Lightskyblue
                 if (bar_rect.leftPressed()){
                     int min_error = INF;
@@ -124,8 +124,8 @@ public:
                         }
                     }
                 }
-                Circle bar_circle{X_CENTER - 200 + 400 * level / 61, sy + 170, 12};
-                getData().fonts.font(language.get("ai_settings", "level") + Format(level)).draw(20, Arg::rightCenter(X_CENTER - 230, sy + 170), getData().colors.white);
+                Circle bar_circle{X_CENTER - 200 + 400 * level / 61, sy + 190, 12};
+                getData().fonts.font(language.get("ai_settings", "level") + Format(level)).draw(20, Arg::rightCenter(X_CENTER - 230, sy + 190), getData().colors.white);
                 bar_circle.draw(bar_circle_color);
             }
             back_button.draw();
@@ -223,7 +223,7 @@ public:
         if (!book_exporting) {
             getData().fonts.font(language.get("book", "export_book")).draw(25, Arg::topCenter(X_CENTER, sy), getData().colors.white);
             text_area.active = true;
-            SimpleGUI::TextArea(text_area, Vec2{X_CENTER - 300, sy + 40}, SizeF{600, 80}, SimpleGUI::PreferredTextAreaMaxChars);
+            SimpleGUI::TextArea(text_area, Vec2{X_CENTER - 300, sy + 40}, SizeF{600, 100}, SimpleGUI::PreferredTextAreaMaxChars);
             bool return_pressed = false;
             if (text_area.text.size()) {
                 if (text_area.text[text_area.text.size() - 1] == '\n') {
@@ -249,9 +249,9 @@ public:
                 go_button.disable();
                 go_with_level_button.disable();
             }
-            getData().fonts.font(book_format_str).draw(18, Arg::topCenter(X_CENTER, sy + 122), getData().colors.white);
+            getData().fonts.font(book_format_str).draw(18, Arg::topCenter(X_CENTER, sy + 142), getData().colors.white);
 
-            Rect bar_rect{X_CENTER - 220, sy + 160, 440, 20};
+            Rect bar_rect{X_CENTER - 220, sy + 180, 440, 20};
             bar_rect.draw(bar_color); // Palette::Lightskyblue
             if (bar_rect.leftPressed()){
                 int min_error = INF;
@@ -264,8 +264,8 @@ public:
                     }
                 }
             }
-            Circle bar_circle{X_CENTER - 200 + 400 * level / 61, sy + 170, 12};
-            getData().fonts.font(language.get("ai_settings", "level") + Format(level)).draw(20, Arg::rightCenter(X_CENTER - 230, sy + 170), getData().colors.white);
+            Circle bar_circle{X_CENTER - 200 + 400 * level / 61, sy + 190, 12};
+            getData().fonts.font(language.get("ai_settings", "level") + Format(level)).draw(20, Arg::rightCenter(X_CENTER - 230, sy + 190), getData().colors.white);
             bar_circle.draw(bar_circle_color);
 
             back_button.draw();
@@ -338,7 +338,7 @@ public:
             getData().fonts.font(language.get("book", "book_merge")).draw(25, Arg::topCenter(X_CENTER, sy), getData().colors.white);
             getData().fonts.font(language.get("book", "input_book_path")).draw(15, Arg::topCenter(X_CENTER, sy + 50), getData().colors.white);
             text_area.active = true;
-            SimpleGUI::TextArea(text_area, Vec2{X_CENTER - 300, sy + 80}, SizeF{600, 70}, SimpleGUI::PreferredTextAreaMaxChars);
+            SimpleGUI::TextArea(text_area, Vec2{X_CENTER - 300, sy + 80}, SizeF{600, 100}, SimpleGUI::PreferredTextAreaMaxChars);
             bool return_pressed = false;
             if (text_area.text.size()) {
                 if (text_area.text[text_area.text.size() - 1] == '\n') {
@@ -361,7 +361,7 @@ public:
                 formatted_file = true;
             } else{
                 go_button.disable();
-                getData().fonts.font(language.get("book", "wrong_extension") + U" " + language.get("book", "legal_extension2")).draw(15, Arg::topCenter(X_CENTER, sy + 160), getData().colors.white);
+                getData().fonts.font(language.get("book", "wrong_extension") + U" " + language.get("book", "legal_extension2")).draw(15, Arg::topCenter(X_CENTER, sy + 190), getData().colors.white);
             }
             back_button.draw();
             if (back_button.clicked() || KeyEscape.pressed()) {
@@ -449,7 +449,7 @@ public:
             getData().fonts.font(language.get("book", "book_reference")).draw(25, Arg::topCenter(X_CENTER, sy), getData().colors.white);
             getData().fonts.font(language.get("book", "input_book_path")).draw(15, Arg::topCenter(X_CENTER, sy + 50), getData().colors.white);
             text_area.active = true;
-            SimpleGUI::TextArea(text_area, Vec2{X_CENTER - 300, sy + 80}, SizeF{600, 70}, SimpleGUI::PreferredTextAreaMaxChars);
+            SimpleGUI::TextArea(text_area, Vec2{X_CENTER - 300, sy + 80}, SizeF{600, 100}, SimpleGUI::PreferredTextAreaMaxChars);
             bool return_pressed = false;
             if (text_area.text.size()) {
                 if (text_area.text[text_area.text.size() - 1] == '\n') {
@@ -472,7 +472,7 @@ public:
                 formatted_book = true;
             } else{
                 go_button.disable();
-                getData().fonts.font(language.get("book", "wrong_extension") + U" " + language.get("book", "legal_extension1")).draw(15, Arg::topCenter(X_CENTER, sy + 160), getData().colors.white);
+                getData().fonts.font(language.get("book", "wrong_extension") + U" " + language.get("book", "legal_extension1")).draw(15, Arg::topCenter(X_CENTER, sy + 190), getData().colors.white);
             }
             back_button.draw();
             if (back_button.clicked() || KeyEscape.pressed()) {
@@ -482,7 +482,10 @@ public:
             }
             default_button.draw();
             if (default_button.clicked()) {
-                book_file = getData().directories.document_dir + "book" + BOOK_EXTENSION;
+                text_area.text = Unicode::Widen(getData().directories.document_dir + "book" + BOOK_EXTENSION);
+                text_area.cursorPos = text_area.text.size();
+                text_area.scrollY = 0.0;
+                text_area.rebuildGlyphs();
             }
             go_button.draw();
             if (formatted_book && (go_button.clicked() || return_pressed || file_dragged)) {
