@@ -1,5 +1,6 @@
 html, body {
     font-family: "Arial", "メイリオ";
+    line-height: 1.7em;
 }
 
 table{
@@ -72,7 +73,7 @@ h4{
 
 .menu_bar{
     width: 100%;
-    height: min(8vw, 50px);
+    height: min(8vw, 60px);
     background-color:  #2a7253;
     display: flex;
     align-items: center;
