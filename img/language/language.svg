@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   width="210mm"
+   height="297mm"
+   viewBox="0 0 210 297"
+   version="1.1"
+   id="svg5"
+   inkscape:version="1.2.2 (732a01da63, 2022-12-09)"
+   sodipodi:docname="language.svg"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:xlink="http://www.w3.org/1999/xlink"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <sodipodi:namedview
+     id="namedview7"
+     pagecolor="#ffffff"
+     bordercolor="#000000"
+     borderopacity="0.25"
+     inkscape:showpageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1"
+     inkscape:document-units="mm"
+     showgrid="false"
+     inkscape:zoom="0.93806818"
+     inkscape:cx="213.73713"
+     inkscape:cy="917.31072"
+     inkscape:window-width="3840"
+     inkscape:window-height="2059"
+     inkscape:window-x="9"
+     inkscape:window-y="2151"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="layer1" />
+  <defs
+     id="defs2">
+    <linearGradient
+       inkscape:collect="always"
+       id="linearGradient976">
+      <stop
+         style="stop-color:#000000;stop-opacity:1;"
+         offset="0"
+         id="stop972" />
+      <stop
+         style="stop-color:#000000;stop-opacity:0;"
+         offset="1"
+         id="stop974" />
+    </linearGradient>
+    <linearGradient
+       inkscape:collect="always"
+       xlink:href="#linearGradient976"
+       id="linearGradient978"
+       x1="17.537587"
+       y1="155.43956"
+       x2="186.02869"
+       y2="155.43956"
+       gradientUnits="userSpaceOnUse"
+       gradientTransform="translate(-4.5128205,-58.467598)" />
+  </defs>
+  <g
+     inkscape:label="Layer 1"
+     inkscape:groupmode="layer"
+     id="layer1">
+    <text
+       xml:space="preserve"
+       style="font-weight:500;font-size:52.9167px;font-family:'Yu Gothic';-inkscape-font-specification:'Yu Gothic Medium';fill:#d7d7d7;stroke:#ff0303;stroke-width:5;stroke-dasharray:none"
+       x="-3.8025336"
+       y="65.726929"
+       id="text236"
+       inkscape:export-filename="japanese.png"
+       inkscape:export-xdpi="54.25"
+       inkscape:export-ydpi="54.25"><tspan
+         sodipodi:role="line"
+         id="tspan234"
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-family:IPAexGothic;-inkscape-font-specification:IPAexGothic;fill:#000000;fill-opacity:1;stroke:none;stroke-width:5;stroke-dasharray:none"
+         x="-3.8025336"
+         y="65.726929">日本語</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:52.9167px;line-height:0;font-family:'MS Gothic';-inkscape-font-specification:'MS Gothic';fill:#000000;fill-opacity:1;stroke:none;stroke-width:5;stroke-dasharray:none"
+       x="92.231865"
+       y="111.60932"
+       id="text6136"
+       inkscape:export-filename=".\english.png"
+       inkscape:export-xdpi="46.18"
+       inkscape:export-ydpi="46.18"><tspan
+         sodipodi:role="line"
+         id="tspan6134"
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;line-height:0px;font-family:IPAexGothic;-inkscape-font-specification:IPAexGothic;text-align:center;direction:ltr;text-anchor:middle;fill:#000000;fill-opacity:1;stroke:#ff0303;stroke-width:5;stroke-dasharray:none;stroke-opacity:0"
+         x="92.231865"
+         y="111.60932">English</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:52.9167px;font-family:'Yu Gothic UI';-inkscape-font-specification:'Yu Gothic UI';fill:#000000;fill-opacity:1;stroke:none;stroke-width:4.99999"
+       x="3.6905506"
+       y="168.783"
+       id="text6248"
+       inkscape:export-filename=".\chinese.png"
+       inkscape:export-xdpi="52.849998"
+       inkscape:export-ydpi="52.849998"><tspan
+         sodipodi:role="line"
+         id="tspan6246"
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-family:'LXGW Neo XiHei';-inkscape-font-specification:'LXGW Neo XiHei';stroke-width:5"
+         x="3.6905506"
+         y="168.783">简体中文</tspan></text>
+  </g>
+</svg>
