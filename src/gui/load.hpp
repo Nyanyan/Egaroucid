@@ -119,10 +119,10 @@ public:
             getData().fonts.font(language.get("help", "download?")).draw(25, Arg::topCenter(X_CENTER, sy), getData().colors.white);
             skip_button.draw();
             update_button.draw();
-            if (skip_button.clicked() || KeyEscape.pressed()) {
+            if (skip_button.clicked() || KeyEscape.down()) {
                 update_found = false;
             }
-            if (update_button.clicked() || KeyEnter.pressed()) {
+            if (update_button.clicked() || KeyEnter.down()) {
                 if (language.get("lang_name") == U"日本語") {
                     System::LaunchBrowser(U"https://www.egaroucid.nyanyan.dev/ja/download/");
                 }
