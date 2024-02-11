@@ -438,6 +438,9 @@ private:
         if (getData().menu_elements.copy_transcript) {
             copy_transcript();
         }
+        if (getData().menu_elements.copy_board) {
+            copy_board();
+        }
         if (getData().menu_elements.save_game) {
             stop_calculating();
             resume_calculating();
@@ -1068,6 +1071,8 @@ private:
         menu_e.init_button(language.get("in_out", "out"), &menu_elements->dummy);
         side_menu.init_button(language.get("in_out", "output_transcript"), &menu_elements->copy_transcript);
         menu_e.push(side_menu);
+        side_menu.init_button(language.get("in_out", "output_board"), &menu_elements->copy_board);
+        menu_e.push(side_menu);
         side_menu.init_button(language.get("in_out", "output_game"), &menu_elements->save_game);
         menu_e.push(side_menu);
         side_menu.init_button(language.get("in_out", "screen_shot"), &menu_elements->screen_shot);
@@ -1542,6 +1547,37 @@ private:
         }
         std::cerr << transcript << std::endl;
         Clipboard::SetText(Unicode::Widen(transcript));
+    }
+
+    void copy_board() {
+        std::string board_str;
+        for (int i = 0; i < HW2; ++i){
+            if (getData().history_elem.player == BLACK){
+                if (getData().history_elem.board.player & (1ULL << (HW2_M1 - i))){
+                    board_str += "X";
+                } else if (getData().history_elem.board.opponent & (1ULL << (HW2_M1 - i))){
+                    board_str += "O";
+                } else{
+                    board_str += "-";
+                }
+            } else{
+                if (getData().history_elem.board.player & (1ULL << (HW2_M1 - i))){
+                    board_str += "O";
+                } else if (getData().history_elem.board.opponent & (1ULL << (HW2_M1 - i))){
+                    board_str += "X";
+                } else{
+                    board_str += "-";
+                }
+            }
+        }
+        board_str += " ";
+        if (getData().history_elem.player == BLACK){
+            board_str += "X";
+        } else{
+            board_str += "O";
+        }
+        std::cerr << board_str << std::endl;
+        Clipboard::SetText(Unicode::Widen(board_str));
     }
 
     void need_start_game_button_calculation() {

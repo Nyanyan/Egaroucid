@@ -250,7 +250,7 @@ struct History_elem {
 
     void reset() {
         board.reset();
-        player = 0;
+        player = BLACK;
         v = GRAPH_IGNORE_VALUE;
         policy = -1;
         next_policy = -1;
@@ -443,6 +443,7 @@ struct Menu_elements {
     bool input_game;
     // output
     bool copy_transcript;
+    bool copy_board;
     bool save_game;
     bool screen_shot;
     bool board_image;
@@ -527,6 +528,7 @@ struct Menu_elements {
         edit_board = false;
         input_game = false;
         copy_transcript = false;
+        copy_board = false;
         save_game = false;
         screen_shot = false;
         board_image = false;
