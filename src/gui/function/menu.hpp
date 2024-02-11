@@ -60,8 +60,14 @@ private:
 	Rect bar_rect;
 	int bar_sx;
 	int bar_center_y;
+	Texture image;
+	bool use_image;
 
 public:
+	menu_elem(){
+		use_image = false;
+	}
+
 	void init_button(String s, bool *c) {
 		clear();
 		mode = button_mode;
@@ -109,6 +115,18 @@ public:
 		is_checked = c;
 		*is_checked = d;
 		is_clicked = false;
+	}
+
+	void init_radio(Texture t, bool* c, bool d) {
+		clear();
+		mode = radio_mode;
+		has_child = false;
+		is_active = false;
+		is_checked = c;
+		*is_checked = d;
+		is_clicked = false;
+		use_image = true;
+		image = t;
 	}
 
 	void init_bar_check(String s, int *c, int d, int mn, int mx, bool *e, bool f){
@@ -218,7 +236,11 @@ public:
 		else {
 			rect.draw(menu_select_color);
 		}
-		font(str).draw(font_size, rect.x + rect.h - menu_offset_y, rect.y + menu_offset_y, menu_font_color);
+		if (use_image){
+			image.scaled((double)(rect.h - 2 * menu_offset_y) / image.width()).draw(rect.x + rect.h - menu_offset_y, rect.y + menu_offset_y);
+		} else{
+			font(str).draw(font_size, rect.x + rect.h - menu_offset_y, rect.y + menu_offset_y, menu_font_color);
+		}
 		if (mode == bar_mode || mode == bar_check_mode) {
 			font(*bar_elem).draw(font_size, bar_sx - menu_offset_x - menu_child_offset - bar_value_offset, rect.y + menu_offset_y, menu_font_color);
 			if (mode == bar_check_mode && !(*is_checked))
@@ -295,7 +317,16 @@ public:
 	}
 
 	RectF size() {
-		RectF res = font(str).region(font_size, Point{ 0, 0 });
+		RectF res;
+		if (use_image){
+			Size size = image.scaled((double)(rect.h - 2 * menu_offset_y) / image.width()).size();
+			res.x = 0;
+			res.y = 0;
+			res.h = size.h;
+			res.w = size.w;
+		} else{
+			res = font(str).region(font_size, Point{ 0, 0 });
+		}
 		res.w += res.h;
 		if (mode == bar_mode || mode == bar_check_mode) {
 			res.w += bar_size + bar_value_offset + bar_additional_offset;
