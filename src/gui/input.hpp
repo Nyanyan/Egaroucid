@@ -746,8 +746,6 @@ public:
             if (!failed) {
                 getData().graph_resources.init();
                 History_elem history_elem;
-                history_elem.reset();
-                getData().graph_resources.nodes[0].emplace_back(history_elem);
                 history_elem.player = player_radio.checked;
                 history_elem.board = board;
                 getData().graph_resources.nodes[0].emplace_back(history_elem);
@@ -791,14 +789,17 @@ private:
             player_string[i] |= 0x20; // lower case
             opponent_string[i] |= 0x20; // lower case
             if (player_string[i] < '0' || ('9' < player_string[i] && player_string[i] < 'a') || 'f' < player_string[i]){ // out of range
+                std::cerr << "player out of range" << std::endl;
                 return true;
             }
             if (opponent_string[i] < '0' || ('9' < opponent_string[i] && opponent_string[i] < 'a') || 'f' < opponent_string[i]){ // out of range
+                std::cerr << "opponent out of range" << std::endl;
                 return true;
             }
             int p_int = player_string[i] % 87 % 48; // 0-9, a-f hex to decimal
             int o_int = opponent_string[i] % 87 % 48; // 0-9, a-f hex to decimal
             if (p_int & o_int){ // 2 discs on same square
+                std::cerr << "both discs on same square" << std::endl;
                 return true;
             }
             for (int j = 0; j < 4; ++j){
