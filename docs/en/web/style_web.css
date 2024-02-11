@@ -28,6 +28,9 @@
     width: x-large;
     height: x-large;
 }
+.div_main {
+    line-height: 0.0em;
+}
 .table_board {
     border: 0px solid #333;
 }

@@ -8,7 +8,6 @@
     <input type="radio" class="radio_size" name="ai_player" value="1" id="white" checked><label for="white" class="setting">Black(First): You White(Second): AI</label>
     <input type="radio" class="radio_size" name="ai_player" value="0" id="black"><label for="black" class="setting">Black(First): AI White(Second): You</label>
 </p>
-
 <p align="center">
     <span class="setting">Strength</span>
     <input type="range" id="ai_level" min="0" max="15" step="1" value="7">
@@ -37,7 +36,7 @@
 <div align="center">
     <input type="submit" class="setting" value="Pass" onclick="pass()" id="pass" disabled>
 </div>
-<div id="main">
+<div class="div_main">
     <table class="table_board" align="center">
         <tr>
             <td class="white_element"></td>
