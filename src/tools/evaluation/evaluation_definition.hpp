@@ -23,19 +23,10 @@
 #define ADJ_N_SYMMETRY_PATTERNS 62
 #define ADJ_MAX_PATTERN_CELLS 10
 
-// additional features
-#define ADJ_N_ADDITIONAL_EVALS 3
-#define ADJ_MAX_SURROUND 64
-#define ADJ_MAX_CANPUT 35
-#define ADJ_MAX_STONE_NUM 65
-
-// legal pattern
-#define ADJ_N_CANPUT_PATTERNS 4
-
 // overall
-#define ADJ_MAX_EVALUATE_IDX 65536
-#define ADJ_N_EVAL (16 + 3 + 4)
-#define ADJ_N_FEATURES (62 + 3 + 16)
+#define ADJ_MAX_EVALUATE_IDX 59049
+#define ADJ_N_EVAL 16
+#define ADJ_N_FEATURES 62
 #define N_FLOOR_UNIQUE_FEATURES 16 // floorpow2(ADJ_N_EVAL)
 
 // phase
@@ -297,11 +288,7 @@ constexpr int adj_rev_patterns[ADJ_N_PATTERNS][ADJ_MAX_PATTERN_CELLS] = {
 
 constexpr int adj_eval_sizes[ADJ_N_EVAL] = {
     P38, P38, P38, P35, P36, P37, P38, P39, 
-    P310, P310, P310, P310, P310, P310, P310, P310, 
-    ADJ_MAX_SURROUND * ADJ_MAX_SURROUND, 
-    ADJ_MAX_CANPUT * ADJ_MAX_CANPUT, 
-    ADJ_MAX_STONE_NUM * ADJ_MAX_STONE_NUM, 
-    P44 * P44, P44 * P44, P44 * P44, P44 * P44
+    P310, P310, P310, P310, P310, P310, P310, P310
 };
 
 constexpr int adj_feature_to_eval_idx[ADJ_N_FEATURES] = {
@@ -321,13 +308,6 @@ constexpr int adj_feature_to_eval_idx[ADJ_N_FEATURES] = {
     13, 13, 13, 13, 
     14, 14, 14, 14, 
     15, 15, 15, 15, 
-    16, 
-    17, 
-    18, 
-    19, 19, 19, 19, 
-    20, 20, 20, 20, 
-    21, 21, 21, 21, 
-    22, 22, 22, 22
 };
 
 int adj_pick_digit3(int num, int d, int n_digit){
@@ -341,62 +321,13 @@ int adj_pick_digit2(int num, int d){
 
 uint16_t adj_calc_rev_idx(int feature, int idx){
     uint16_t res = 0;
-    if (feature < ADJ_N_PATTERNS){
-        for (int i = 0; i < adj_pattern_n_cells[feature]; ++i){
-            res += adj_pick_digit3(idx, adj_rev_patterns[feature][i], adj_pattern_n_cells[feature]) * adj_pow3[adj_pattern_n_cells[feature] - 1 - i];
-        }
-    } else if (feature < ADJ_N_PATTERNS + ADJ_N_ADDITIONAL_EVALS) {
-        res = idx;
-    } else{
-        for (int i = 0; i < 8; ++i){
-            res |= adj_pick_digit2(idx, i) << (7 - i);
-            res |= adj_pick_digit2(idx, i + 8) << (15 - i);
-        }
+    for (int i = 0; i < adj_pattern_n_cells[feature]; ++i){
+        res += adj_pick_digit3(idx, adj_rev_patterns[feature][i], adj_pattern_n_cells[feature]) * adj_pow3[adj_pattern_n_cells[feature] - 1 - i];
     }
     return res;
 }
 
 #ifndef OPTIMIZER_INCLUDE
-
-/*
-    @brief calculate surround value used in evaluation function
-
-    @param player               a bitboard representing player
-    @param empties              a bitboard representing empties
-    @return surround value
-*/
-inline uint64_t calc_surround_part(const uint64_t player, const int dr){
-    return (player << dr) | (player >> dr);
-}
-
-inline int calc_surround(const uint64_t player, const uint64_t empties){
-    return pop_count_ull(empties & (
-        calc_surround_part(player & 0b0111111001111110011111100111111001111110011111100111111001111110ULL, 1) | 
-        calc_surround_part(player & 0b0000000011111111111111111111111111111111111111111111111100000000ULL, HW) | 
-        calc_surround_part(player & 0b0000000001111110011111100111111001111110011111100111111000000000ULL, HW_M1) | 
-        calc_surround_part(player & 0b0000000001111110011111100111111001111110011111100111111000000000ULL, HW_P1)
-    ));
-}
-
-int adj_calc_surround_feature(Board *board){
-    return calc_surround(board->player, ~(board->player | board->opponent)) * ADJ_MAX_SURROUND + calc_surround(board->opponent, ~(board->player | board->opponent));
-}
-
-int adj_calc_legal_feature(Board *board){
-    return pop_count_ull(calc_legal(board->player, board->opponent)) * ADJ_MAX_CANPUT + pop_count_ull(calc_legal(board->opponent, board->player));
-}
-
-int adj_calc_num_feature(Board *board){
-    return pop_count_ull(board->player) * ADJ_MAX_STONE_NUM + pop_count_ull(board->opponent);
-}
-
-inline int adj_create_canput_line_h(uint64_t b, uint64_t w, int t){
-    return (((w >> (HW * t)) & 0b11111111) << HW) | ((b >> (HW * t)) & 0b11111111);
-}
-
-inline int adj_create_canput_line_v(uint64_t b, uint64_t w, int t){
-    return (join_v_line(w, t) << HW) | join_v_line(b, t);
-}
 
 inline int adj_pick_pattern(const uint_fast8_t b_arr[], int pattern_idx){
     int res = 0;
@@ -407,44 +338,12 @@ inline int adj_pick_pattern(const uint_fast8_t b_arr[], int pattern_idx){
     return res;
 }
 
-void adj_calc_legal_features(Board *board, uint16_t res[], int *idx){
-    uint64_t p, o;
-    p = calc_legal(board->player, board->opponent);
-    o = calc_legal(board->opponent, board->player);
-    uint8_t *ph = (uint8_t*)&p;
-    uint8_t *oh = (uint8_t*)&o;
-    uint64_t p90 = black_line_mirror(p);
-    uint64_t o90 = black_line_mirror(o);
-    uint8_t *pv = (uint8_t*)&p90;
-    uint8_t *ov = (uint8_t*)&o90;
-    res[(*idx)++] = ((int)oh[0]) * P44 + ph[0];
-    res[(*idx)++] = ((int)oh[7]) * P44 + ph[7];
-    res[(*idx)++] = ((int)ov[0]) * P44 + pv[0];
-    res[(*idx)++] = ((int)ov[7]) * P44 + pv[7];
-    res[(*idx)++] = ((int)oh[1]) * P44 + ph[1];
-    res[(*idx)++] = ((int)oh[6]) * P44 + ph[6];
-    res[(*idx)++] = ((int)ov[1]) * P44 + pv[1];
-    res[(*idx)++] = ((int)ov[6]) * P44 + pv[6];
-    res[(*idx)++] = ((int)oh[2]) * P44 + ph[2];
-    res[(*idx)++] = ((int)oh[5]) * P44 + ph[5];
-    res[(*idx)++] = ((int)ov[2]) * P44 + pv[2];
-    res[(*idx)++] = ((int)ov[5]) * P44 + pv[5];
-    res[(*idx)++] = ((int)oh[3]) * P44 + ph[3];
-    res[(*idx)++] = ((int)oh[4]) * P44 + ph[4];
-    res[(*idx)++] = ((int)ov[3]) * P44 + pv[3];
-    res[(*idx)++] = ((int)ov[4]) * P44 + pv[4];
-}
-
 void adj_calc_features(Board *board, uint16_t res[]){
     uint_fast8_t b_arr[HW2];
     board->translate_to_arr_player(b_arr);
     int idx = 0;
     for (int i = 0; i < ADJ_N_SYMMETRY_PATTERNS; ++i)
         res[idx++] = adj_pick_pattern(b_arr, i);
-    res[idx++] = adj_calc_surround_feature(board);
-    res[idx++] = adj_calc_legal_feature(board);
-    res[idx++] = adj_calc_num_feature(board);
-    adj_calc_legal_features(board, res, &idx);
 }
 
 int calc_phase(Board *board, int16_t player){
