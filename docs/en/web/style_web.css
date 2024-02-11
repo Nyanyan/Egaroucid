@@ -140,8 +140,9 @@
 .empty_stone {
     text-align: center;
     margin: 0px;
-    width: 7vmin;
-    height: 7vmin;
+    padding: 0px;
+    width: 6vmin;
+    height: 6vmin;
     background: rgb(36, 153, 114);
     display: inline-block;
 }
