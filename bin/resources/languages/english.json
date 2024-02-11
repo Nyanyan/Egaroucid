@@ -126,6 +126,7 @@
             "disc_value": "Evaluation (V)",
             "disc_value_number": "Number",
             "umigame_value": "Umigame Number (U)",
+            "depth": "Depth",
             "opening": "Opening",
             "next_move": "Next Move",
             "next_move_change_view": "Change View",
