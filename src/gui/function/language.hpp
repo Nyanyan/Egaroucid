@@ -101,6 +101,10 @@ public:
             return U"?";
         return lang[v0s].getString();
     }
+
+    int size(){
+        return lang.size();
+    }
 };
 
 Language_name language_name;

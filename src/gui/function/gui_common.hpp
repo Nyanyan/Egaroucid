@@ -296,6 +296,7 @@ struct Resources {
     Texture logo;
     Texture checkbox;
     Texture unchecked;
+    std::vector<Texture> lang_img;
 };
 
 struct Settings {

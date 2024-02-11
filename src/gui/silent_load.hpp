@@ -407,6 +407,15 @@ int init_resources(Resources* resources, Settings* settings, Fonts *fonts) {
     Texture logo(U"resources/img/logo.png", TextureDesc::Mipped);
     Texture checkbox(U"resources/img/checked.png", TextureDesc::Mipped);
     Texture unchecked(U"resources/img/unchecked.png", TextureDesc::Mipped);
+    std::vector<Texture> lang_img;
+    for (int i = 0; i < (int)resources->language_names.size(); ++i) {
+        Texture limg(U"resources/img/language/" +  Unicode::Widen(resources->language_names[i]) + U".png");
+        if (limg.isEmpty()) {
+            return ERR_TEXTURE_NOT_LOADED;
+        }
+        lang_img.emplace_back(limg);
+    }
+
     if (icon.isEmpty() || logo.isEmpty() || checkbox.isEmpty() || unchecked.isEmpty()) {
         return ERR_TEXTURE_NOT_LOADED;
     }
@@ -414,6 +423,7 @@ int init_resources(Resources* resources, Settings* settings, Fonts *fonts) {
     resources->logo = logo;
     resources->checkbox = checkbox;
     resources->unchecked = unchecked;
+    resources->lang_img = lang_img;
 
     // opening
     if (!opening_init(settings->lang_name)) {
