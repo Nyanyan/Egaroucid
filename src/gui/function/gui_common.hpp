@@ -444,6 +444,7 @@ struct Menu_elements {
     // output
     bool copy_transcript;
     bool copy_board;
+    bool input_bitboard;
     bool save_game;
     bool screen_shot;
     bool board_image;
@@ -531,6 +532,7 @@ struct Menu_elements {
         input_game = false;
         copy_transcript = false;
         copy_board = false;
+        input_bitboard = false;
         save_game = false;
         screen_shot = false;
         board_image = false;

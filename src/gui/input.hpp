@@ -642,3 +642,169 @@ private:
         changeScene(U"Main_scene", SCENE_FADE_TIME);
     }
 };
+
+
+class Import_bitboard : public App::Scene {
+private:
+    Button single_back_button;
+    Button back_button;
+    Button import_button;
+    TextAreaEditState text_area[2];
+    std::string player_string;
+    std::string opponent_string;
+    int black_idx;
+    Board board;
+    bool done;
+    bool failed;
+
+public:
+    Import_bitboard(const InitData& init) : IScene{ init } {
+        single_back_button.init(BACK_BUTTON_SX, BACK_BUTTON_SY, BACK_BUTTON_WIDTH, BACK_BUTTON_HEIGHT, BACK_BUTTON_RADIUS, language.get("common", "back"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
+        back_button.init(GO_BACK_BUTTON_BACK_SX, GO_BACK_BUTTON_SY, GO_BACK_BUTTON_WIDTH, GO_BACK_BUTTON_HEIGHT, GO_BACK_BUTTON_RADIUS, language.get("common", "back"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
+        import_button.init(GO_BACK_BUTTON_GO_SX, GO_BACK_BUTTON_SY, GO_BACK_BUTTON_WIDTH, GO_BACK_BUTTON_HEIGHT, GO_BACK_BUTTON_RADIUS, language.get("in_out", "import"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
+        done = false;
+        failed = false;
+        text_area[0].active = true;
+        black_idx = 0;
+    }
+
+    void update() override {
+        if (System::GetUserActions() & UserAction::CloseButtonClicked) {
+            changeScene(U"Close", SCENE_FADE_TIME);
+        }
+        Scene::SetBackground(getData().colors.green);
+        const int icon_width = SCENE_ICON_WIDTH;
+        getData().resources.icon.scaled((double)icon_width / getData().resources.icon.width()).draw(X_CENTER - icon_width / 2, 20);
+        getData().resources.logo.scaled((double)icon_width / getData().resources.logo.width()).draw(X_CENTER - icon_width / 2, 20 + icon_width);
+        int sy = 20 + icon_width + 50;
+        if (!done) {
+            getData().fonts.font(language.get("in_out", "input_bitboard")).draw(25, Arg::topCenter(X_CENTER, sy), getData().colors.white);
+            const int text_area_y[2] = {sy + 40, sy + 100};
+            constexpr int text_area_h = 40;
+            constexpr int circle_radius = 15;
+            for (int i = 0; i < 2; ++i){
+                SimpleGUI::TextArea(text_area[i], Vec2{X_CENTER - 300, text_area_y[i]}, SizeF{600, text_area_h}, SimpleGUI::PreferredTextAreaMaxChars);
+                if (black_idx == i){
+                    Circle(X_CENTER + 330, text_area_y[i] + text_area_h / 2, circle_radius).draw(getData().colors.black);
+                } else{
+                    Circle(X_CENTER + 330, text_area_y[i] + text_area_h / 2, circle_radius).draw(getData().colors.white);
+                }
+            }
+            getData().fonts.font(language.get("in_out", "player")).draw(15, Arg::rightCenter(X_CENTER - 310, text_area_y[0] + text_area_h / 2), getData().colors.white);
+            getData().fonts.font(language.get("in_out", "opponent")).draw(15, Arg::rightCenter(X_CENTER - 310, text_area_y[1] + text_area_h / 2), getData().colors.white);
+            getData().fonts.font(language.get("in_out", "you_can_paste_with_ctrl_v")).draw(13, Arg::topCenter(X_CENTER, sy + 175), getData().colors.white);
+            for (int i = 0; i < 2; ++i){
+                std::string str = text_area[i].text.narrow();
+                if (str.find("\t") != std::string::npos){
+                    text_area[i].active = false;
+                    text_area[(i + 1) % 2].active = true;
+                    int tab_place = str.find("\t");
+                    std::string txt0;
+                    for (int j = 0; j < tab_place; ++j){
+                        txt0 += str[j];
+                    }
+                    std::string txt1;
+                    for (int j = tab_place + 1; j < (int)str.size(); ++j){
+                        txt1 += str[j];
+                    }
+                    text_area[i].text = Unicode::Widen(txt0);
+                    text_area[i].cursorPos = text_area[i].text.size();
+                    text_area[i].rebuildGlyphs();
+                    text_area[(i + 1) % 2].text += Unicode::Widen(txt1);
+                    text_area[(i + 1) % 2].cursorPos = text_area[(i + 1) % 2].text.size();
+                    text_area[(i + 1) % 2].rebuildGlyphs();
+                }
+            }
+            bool return_pressed = false;
+            for (int i = 0; i < 2; ++i){
+                if (text_area[i].text.size()) {
+                    if (text_area[i].text[text_area[i].text.size() - 1] == '\n') {
+                        return_pressed = true;
+                    }
+                }
+            }
+            player_string = text_area[0].text.replaced(U"\r", U"").replaced(U"\n", U"").replaced(U" ", U"").narrow();
+            opponent_string = text_area[1].text.replaced(U"\r", U"").replaced(U"\n", U"").replaced(U" ", U"").narrow();
+            back_button.draw();
+            import_button.draw();
+            if (back_button.clicked() || KeyEscape.pressed()) {
+                changeScene(U"Main_scene", SCENE_FADE_TIME);
+            }
+            if (import_button.clicked() || KeyEnter.pressed()) {
+                failed = import_bitboard_processing();
+                done = true;
+            }
+        }
+        else {
+            if (!failed) {
+                getData().graph_resources.init();
+                History_elem history_elem;
+                history_elem.reset();
+                getData().graph_resources.nodes[0].emplace_back(history_elem);
+                history_elem.player = black_idx;
+                history_elem.board = board;
+                getData().graph_resources.nodes[0].emplace_back(history_elem);
+                getData().graph_resources.n_discs = board.n_discs();
+                getData().game_information.init();
+                getData().graph_resources.need_init = false;
+                getData().history_elem = getData().graph_resources.nodes[0].back();
+                changeScene(U"Main_scene", SCENE_FADE_TIME);
+            }
+            else {
+                getData().fonts.font(language.get("in_out", "import_failed")).draw(25, Arg::topCenter(X_CENTER, sy), getData().colors.white);
+                single_back_button.draw();
+                if (single_back_button.clicked() || KeyEscape.pressed()) {
+                    changeScene(U"Main_scene", SCENE_FADE_TIME);
+                }
+            }
+        }
+    }
+
+    void draw() const override {
+
+    }
+
+private:
+    bool import_bitboard_processing() {
+        if (player_string[0] == '0' && player_string[1] == 'x'){
+            player_string = player_string.substr(2);
+        }
+        if (opponent_string[0] == '0' && opponent_string[1] == 'x'){
+            opponent_string = opponent_string.substr(2);
+        }
+        while (player_string.size() < 16){
+            player_string = "0" + player_string;
+        }
+        while (opponent_string.size() < 16){
+            opponent_string = "0" + opponent_string;
+        }
+        board.player = 0;
+        board.opponent = 0;
+        for (int i = 0; i < 16; ++i){
+            player_string[i] |= 0x20; // lower case
+            opponent_string[i] |= 0x20; // lower case
+            if (player_string[i] < '0' || ('9' < player_string[i] && player_string[i] < 'a') || 'f' < player_string[i]){ // out of range
+                return true;
+            }
+            if (opponent_string[i] < '0' || ('9' < opponent_string[i] && opponent_string[i] < 'a') || 'f' < opponent_string[i]){ // out of range
+                return true;
+            }
+            int p_int = player_string[i] % 87 % 48; // 0-9, a-f hex to decimal
+            int o_int = opponent_string[i] % 87 % 48; // 0-9, a-f hex to decimal
+            if (p_int & o_int){ // 2 discs on same square
+                return true;
+            }
+            for (int j = 0; j < 4; ++j){
+                int idx = HW2_M1 - (i * 4 + 3 - j);
+                board.player |= (uint64_t)(p_int & 1) << idx;
+                board.opponent |= (uint64_t)(o_int & 1) << idx;
+                p_int /= 2;
+                o_int /= 2;
+            }
+        }
+        if (!board.is_end() && board.get_legal() == 0){
+            board.pass();
+        }
+        return false;
+    }
+};

@@ -441,6 +441,13 @@ private:
         if (getData().menu_elements.copy_board) {
             copy_board();
         }
+        if (getData().menu_elements.input_bitboard) {
+            stop_calculating();
+            resume_calculating();
+            changing_scene = true;
+            changeScene(U"Import_bitboard", SCENE_FADE_TIME);
+            return;
+        }
         if (getData().menu_elements.save_game) {
             stop_calculating();
             resume_calculating();
@@ -1074,6 +1081,8 @@ private:
         menu_e.push(side_menu);
         side_menu.init_button(language.get("in_out", "input_game"), &menu_elements->input_game);
         menu_e.push(side_menu);
+        side_menu.init_button(language.get("in_out", "input_bitboard"), &menu_elements->input_bitboard);
+        menu_e.push(side_menu);
         title.push(menu_e);
 
         menu_e.init_button(language.get("in_out", "out"), &menu_elements->dummy);
@@ -1597,7 +1606,7 @@ private:
     void copy_bitboard_player_opponent() {
         std::ostringstream ss;
         ss << "0x" << std::setfill('0') << std::setw(16) << std::hex << getData().history_elem.board.player;
-        ss << " ";
+        ss << "\t";
         ss << "0x" << std::setfill('0') << std::setw(16) << std::hex << getData().history_elem.board.opponent;
         std::string res = ss.str();
         std::cerr << res << std::endl;
@@ -1608,11 +1617,11 @@ private:
         std::ostringstream ss;
         if (getData().history_elem.player == BLACK){
             ss << "0x" << std::setfill('0') << std::setw(16) << std::hex << getData().history_elem.board.player;
-            ss << " ";
+            ss << "\t";
             ss << "0x" << std::setfill('0') << std::setw(16) << std::hex << getData().history_elem.board.opponent;
         } else{
             ss << "0x" << std::setfill('0') << std::setw(16) << std::hex << getData().history_elem.board.opponent;
-            ss << " ";
+            ss << "\t";
             ss << "0x" << std::setfill('0') << std::setw(16) << std::hex << getData().history_elem.board.player;
         }
         std::string res = ss.str();
