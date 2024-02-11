@@ -301,6 +301,9 @@ private:
         }
         if (!failed_res) {
             board.translate_from_arr(bd_arr, player);
+            if (!board.is_end() && board.get_legal() == 0){
+                board.pass();
+            }
         }
         return failed_res;
     }
