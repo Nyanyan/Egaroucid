@@ -652,7 +652,7 @@ private:
     TextAreaEditState text_area[2];
     std::string player_string;
     std::string opponent_string;
-    int black_idx;
+    Radio_button player_radio;
     Board board;
     bool done;
     bool failed;
@@ -662,10 +662,15 @@ public:
         single_back_button.init(BACK_BUTTON_SX, BACK_BUTTON_SY, BACK_BUTTON_WIDTH, BACK_BUTTON_HEIGHT, BACK_BUTTON_RADIUS, language.get("common", "back"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
         back_button.init(GO_BACK_BUTTON_BACK_SX, GO_BACK_BUTTON_SY, GO_BACK_BUTTON_WIDTH, GO_BACK_BUTTON_HEIGHT, GO_BACK_BUTTON_RADIUS, language.get("common", "back"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
         import_button.init(GO_BACK_BUTTON_GO_SX, GO_BACK_BUTTON_SY, GO_BACK_BUTTON_WIDTH, GO_BACK_BUTTON_HEIGHT, GO_BACK_BUTTON_RADIUS, language.get("in_out", "import"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
+        Radio_button_element radio_button_elem;
+        player_radio.init();
+        radio_button_elem.init(X_CENTER, 70 + SCENE_ICON_WIDTH + 175, getData().fonts.font, 20, language.get("common", "black"), true);
+        player_radio.push(radio_button_elem);
+        radio_button_elem.init(X_CENTER, 70 + SCENE_ICON_WIDTH + 201, getData().fonts.font, 20, language.get("common", "white"), false);
+        player_radio.push(radio_button_elem);
         done = false;
         failed = false;
         text_area[0].active = true;
-        black_idx = 0;
     }
 
     void update() override {
@@ -679,20 +684,22 @@ public:
         int sy = 20 + icon_width + 50;
         if (!done) {
             getData().fonts.font(language.get("in_out", "input_bitboard")).draw(25, Arg::topCenter(X_CENTER, sy), getData().colors.white);
-            const int text_area_y[2] = {sy + 40, sy + 100};
+            const int text_area_y[2] = {sy + 40, sy + 90};
             constexpr int text_area_h = 40;
             constexpr int circle_radius = 15;
             for (int i = 0; i < 2; ++i){
                 SimpleGUI::TextArea(text_area[i], Vec2{X_CENTER - 300, text_area_y[i]}, SizeF{600, text_area_h}, SimpleGUI::PreferredTextAreaMaxChars);
-                if (black_idx == i){
+                if (player_radio.checked == i){
                     Circle(X_CENTER + 330, text_area_y[i] + text_area_h / 2, circle_radius).draw(getData().colors.black);
                 } else{
                     Circle(X_CENTER + 330, text_area_y[i] + text_area_h / 2, circle_radius).draw(getData().colors.white);
                 }
             }
-            getData().fonts.font(language.get("in_out", "player")).draw(15, Arg::rightCenter(X_CENTER - 310, text_area_y[0] + text_area_h / 2), getData().colors.white);
-            getData().fonts.font(language.get("in_out", "opponent")).draw(15, Arg::rightCenter(X_CENTER - 310, text_area_y[1] + text_area_h / 2), getData().colors.white);
-            getData().fonts.font(language.get("in_out", "you_can_paste_with_ctrl_v")).draw(13, Arg::topCenter(X_CENTER, sy + 175), getData().colors.white);
+            getData().fonts.font(language.get("in_out", "player")).draw(20, Arg::rightCenter(X_CENTER - 310, text_area_y[0] + text_area_h / 2), getData().colors.white);
+            getData().fonts.font(language.get("in_out", "opponent")).draw(20, Arg::rightCenter(X_CENTER - 310, text_area_y[1] + text_area_h / 2), getData().colors.white);
+            getData().fonts.font(language.get("in_out", "you_can_paste_with_ctrl_v")).draw(13, Arg::topCenter(X_CENTER, sy + 140), getData().colors.white);
+            getData().fonts.font(language.get("in_out", "player")).draw(25, Arg::rightCenter(X_CENTER - 5, 70 + SCENE_ICON_WIDTH + 188), getData().colors.white);
+            player_radio.draw();
             for (int i = 0; i < 2; ++i){
                 std::string str = text_area[i].text.narrow();
                 if (str.find("\t") != std::string::npos){
@@ -741,7 +748,7 @@ public:
                 History_elem history_elem;
                 history_elem.reset();
                 getData().graph_resources.nodes[0].emplace_back(history_elem);
-                history_elem.player = black_idx;
+                history_elem.player = player_radio.checked;
                 history_elem.board = board;
                 getData().graph_resources.nodes[0].emplace_back(history_elem);
                 getData().graph_resources.n_discs = board.n_discs();
