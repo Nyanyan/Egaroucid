@@ -354,7 +354,6 @@ int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, uin
     uint32_t hash_code = search->board.hash();
     int lower = -SCORE_MAX, upper = SCORE_MAX;
     uint_fast8_t moves[N_TRANSPOSITION_MOVES] = {TRANSPOSITION_TABLE_UNDEFINED, TRANSPOSITION_TABLE_UNDEFINED};
-    /*
     #if MID_TO_END_DEPTH < USE_TT_DEPTH_THRESHOLD
         if (search->n_discs <= HW2 - USE_TT_DEPTH_THRESHOLD)
             transposition_table.get(search, hash_code, depth, &lower, &upper, moves);
@@ -371,7 +370,10 @@ int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, uin
         alpha = lower;
     if (upper < beta)
         beta = upper;
-    */
+    if (alpha < -64 || 64 < alpha){
+        std::cerr << "something wrong with alpha " << depth << " " << alpha << " " << beta << " nega_scout" << std::endl;
+        search->board.print();
+    }
     #if USE_MID_MPC
         if (depth >= USE_MPC_DEPTH){
             if (mpc(search, alpha, beta, depth, legal, is_end_search, &v, searching))
@@ -381,15 +383,15 @@ int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, uin
     int g;
     #if USE_ASPIRATION_NEGASCOUT
         if (search->mpc_level){
+            int l = -HW2, u = HW2;
             --search->mpc_level;
-                int l, u;
                 transposition_table.get(search, hash_code, std::max(0, depth - 2), &l, &u);
             ++search->mpc_level;
             if (l == u){
                 g = nega_alpha_ordering_nws(search, l - 1, depth, false, legal, is_end_search, searching);
-                if (g >= l){
+                if (g == l){
                     g = nega_alpha_ordering_nws(search, l, depth, false, legal, is_end_search, searching);
-                    if (l >= g)
+                    if (l == g)
                         return l;
                 }
             }
@@ -573,10 +575,9 @@ int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, uin
     #if USE_YBWC_NEGASCOUT
         }
     #endif
-    /*
-    if (*searching && global_searching)
+    if (*searching && global_searching){
         transposition_table.reg(search, hash_code, depth, first_alpha, beta, v, best_move);
-    */
+    }
     return v;
 }
 
@@ -634,15 +635,18 @@ int nega_scout_lazy_smp(Search *search, int alpha, int beta, int depth, bool ski
     @return pair of value and best move
 */
 int pv_aspiration_search(Search *search, int alpha, int beta, int predicted_value, int depth, bool skipped, uint64_t legal, bool is_end_search, const bool *searching){
+    return nega_scout(search, alpha, beta, depth, false, LEGAL_UNDEFINED, is_end_search, searching);
+    /*
     if (predicted_value < alpha || beta <= predicted_value)
         return nega_scout(search, alpha, beta, depth, false, LEGAL_UNDEFINED, is_end_search, searching);
-    int g1 = nega_alpha_ordering_nws(search, predicted_value - 1, depth, false, LEGAL_UNDEFINED, is_end_search, searching);
+    int g1 = nega_alpha_ordering_nws(search, predicted_value - 1, depth, false, LEGAL_UNDEFINED, is_end_search, searching); // search in [pred - 1, pred]
     if (g1 < predicted_value) // when exact value < predicted value, exact value <= g1
         return nega_scout(search, alpha, g1, depth, false, LEGAL_UNDEFINED, is_end_search, searching);
-    int g2 = nega_alpha_ordering_nws(search, predicted_value, depth, false, LEGAL_UNDEFINED, is_end_search, searching);
+    int g2 = nega_alpha_ordering_nws(search, predicted_value, depth, false, LEGAL_UNDEFINED, is_end_search, searching); // search in [pred, pred + 1]
     if (predicted_value < g2) // when predicted value < exact value, g2 <= exact value
         return nega_scout(search, g2, beta, depth, false, LEGAL_UNDEFINED, is_end_search, searching);
     return predicted_value;
+    */
 }
 
 /*
