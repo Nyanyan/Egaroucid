@@ -94,6 +94,7 @@
         "out": "Output",
         "import_failed": "Import Failed",
         "output_transcript": "Copy Transcript",
+        "output_board": "Copy Board as String",
         "output_game": "Save Game",
         "input_transcript": "Input Transcript",
         "input_board": "Input Board",

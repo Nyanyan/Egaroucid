@@ -94,6 +94,7 @@
         "out": "出力",
         "import_failed": "取り込み失敗",
         "output_transcript": "現局面までの棋譜をコピー",
+        "output_board": "局面を文字列でコピー",
         "output_game": "対局保存",
         "input_transcript": "棋譜入力",
         "input_board": "盤面入力",
