@@ -488,6 +488,7 @@ class Transposition_table{
             @param policy               best move
             @param cost                 search cost (log2(nodes))
         */
+        /*
         inline void reg_nompc(const Search *search, uint32_t hash, const int depth, int alpha, int beta, int value, int policy){
             Hash_node *node = get_node(hash);
             const uint32_t level = get_level_write_common(date, depth, MPC_100_LEVEL);
@@ -518,6 +519,7 @@ class Transposition_table{
                 node = get_node(hash);
             }
         }
+        */
 
         /*
             @brief get best move from transposition table
@@ -566,8 +568,9 @@ class Transposition_table{
                 if (node->board.player == search->board.player && node->board.opponent == search->board.opponent){
                     node->lock.lock();
                         if (node->board.player == search->board.player && node->board.opponent == search->board.opponent){
-                            if (node->data.get_level_read() >= level)
+                            if (node->data.get_level_read() >= level){
                                 node->data.get_bounds(lower, upper);
+                            }
                             node->lock.unlock();
                             return;
                         }

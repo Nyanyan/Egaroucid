@@ -602,11 +602,7 @@ int nega_alpha_end_nws(Search *search, int alpha, bool skipped, uint64_t legal, 
         }
     #endif
     if (*searching && global_searching){
-        #if USE_END_MPC
-            transposition_table.reg(search, hash_code, HW2 - search->n_discs, alpha, alpha + 1, v, best_move);
-        #else
-            transposition_table.reg_nompc(search, hash_code, HW2 - search->n_discs, alpha, alpha + 1, v, best_move);
-        #endif
+        transposition_table.reg(search, hash_code, HW2 - search->n_discs, alpha, alpha + 1, v, best_move);
     }
     return v;
 }
