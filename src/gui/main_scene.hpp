@@ -1073,11 +1073,11 @@ private:
         menu_e.push(side_menu);
         side_menu.init_button(language.get("in_out", "output_board"), &menu_elements->copy_board);
         menu_e.push(side_menu);
-        side_menu.init_button(language.get("in_out", "output_game"), &menu_elements->save_game);
-        menu_e.push(side_menu);
         side_menu.init_button(language.get("in_out", "screen_shot"), &menu_elements->screen_shot);
         menu_e.push(side_menu);
         side_menu.init_button(language.get("in_out", "board_image"), &menu_elements->board_image);
+        menu_e.push(side_menu);
+        side_menu.init_button(language.get("in_out", "output_game"), &menu_elements->save_game);
         menu_e.push(side_menu);
         title.push(menu_e);
 
