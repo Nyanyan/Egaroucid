@@ -22,6 +22,7 @@ constexpr Color bar_color = Palette::Lightskyblue;
 constexpr Color bar_circle_color = Palette::Deepskyblue;
 constexpr int menu_offset_x = 10;
 constexpr int menu_offset_y = 1;
+constexpr int menu_image_offset_y = 3;
 constexpr int menu_child_offset = 2;
 constexpr int bar_additional_offset = 20;
 constexpr double radio_ratio = 0.2;
@@ -150,12 +151,13 @@ public:
 		children.emplace_back(ch);
 	}
 
-	void pre_init(int fs, Font f, Texture c, Texture u) {
+	void pre_init(int fs, Font f, Texture c, Texture u, int h) {
 		font_size = fs;
 		font = f;
 		checkbox = c;
 		unchecked = u;
 		bar_value_offset = font(U"88").region(font_size, Point{ 0, 0 }).w;
+		rect.h = h;
 	}
 
 	void init_inside(int x, int y, int w, int h) {
@@ -166,7 +168,7 @@ public:
 		if (has_child) {
 			int height = h - menu_offset_y * 2, width = 0;
 			for (menu_elem& elem : children) {
-				elem.pre_init(font_size, font, checkbox, unchecked);
+				elem.pre_init(font_size, font, checkbox, unchecked, height);
 				RectF r = elem.size();
 				height = std::max(height, (int)r.h);
 				width = std::max(width, (int)r.w);
@@ -237,7 +239,7 @@ public:
 			rect.draw(menu_select_color);
 		}
 		if (use_image){
-			image.scaled((double)(rect.h - 2 * menu_offset_y) / image.height()).draw(rect.x + rect.h - menu_offset_y, rect.y + menu_offset_y);
+			image.scaled((double)(rect.h - 2 * menu_image_offset_y) / image.height()).draw(rect.x + rect.h - menu_offset_y, rect.y + menu_image_offset_y);
 		} else{
 			font(str).draw(font_size, rect.x + rect.h - menu_offset_y, rect.y + menu_offset_y, menu_font_color);
 		}
@@ -321,8 +323,8 @@ public:
 		if (use_image){
 			res.x = 0;
 			res.y = 0;
-			res.h = rect.h - 2 * menu_offset_y;
-			res.w = (float)(rect.h - 2 * menu_offset_y) * image.width() / image.height();
+			res.h = rect.h - 2 * menu_image_offset_y;
+			res.w = (double)res.h * image.width() / image.height();
 		} else{
 			res = font(str).region(font_size, Point{ 0, 0 });
 		}
@@ -393,7 +395,7 @@ public:
 		rect.h = h;
 		int height = h - menu_offset_y * 2, width = w - menu_offset_x * 2;
 		for (menu_elem &elem : elems) {
-			elem.pre_init(font_size, font, checkbox, unchecked);
+			elem.pre_init(font_size, font, checkbox, unchecked, height);
 			RectF r = elem.size();
 			height = std::max(height, (int)r.h);
 			width = std::max(width, (int)r.w);
