@@ -36,6 +36,8 @@ constexpr double radio_ratio = 0.2;
 #define bar_height 14
 #define bar_radius 6
 
+#define MENU_TRIANGLE_ACTIVE_TIME 100
+
 class menu_elem {
 private:
 	String str;
@@ -46,6 +48,7 @@ private:
 	bool has_child;
 	std::vector<menu_elem> children;
 	bool is_active;
+	uint64_t last_active_on_cell;
 	bool was_active;
 	int *bar_elem;
 	bool *is_clicked_p;
@@ -201,6 +204,16 @@ public:
 		for (menu_elem& elem : children) {
 			elem.update();
 			is_active = is_active || (elem.active() && last_active());
+		}
+		if (is_active){
+			last_active_on_cell = tim();
+		} else if (tim() - last_active_on_cell < MENU_TRIANGLE_ACTIVE_TIME){
+			int x0 = rect.x + rect.w / 2;
+			int x1 = rect.x + rect.w;
+			int y0 = rect.y + rect.h;
+			int y1 = rect.y + rect.h + rect.h * children.size() / 2;
+			Point mouse_pos = Cursor::Pos();
+			is_active = x0 <= mouse_pos.x && mouse_pos.x <= x1 && y0 <= mouse_pos.y && mouse_pos.y <= y1;
 		}
 		if (mode == bar_check_mode){
 			is_clicked = Rect(rect.x, rect.y, bar_sx - bar_value_offset - rect.x, rect.h).leftClicked();
@@ -423,8 +436,14 @@ public:
 		if (is_open) {
 			int radio_checked = -1;
 			int idx = 0;
+			bool active_found = false;
 			for (menu_elem& elem : elems) {
-				elem.update();
+				if (active_found){
+					elem.draw_noupdate();
+				} else{
+					elem.update();
+					active_found |= elem.active();
+				}
 				if (elem.clicked() && elem.menu_mode() == radio_mode && !elem.checked()) {
 					radio_checked = idx;
 				}
