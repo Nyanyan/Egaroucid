@@ -150,10 +150,12 @@ public:
 			draw_graph_not_calculated(nodes1, graph_history_not_calculated_color);
 			draw_graph_not_calculated(nodes2, graph_fork_not_calculated_color);
 		}
-		int place_x = sx + dx * (n_discs - 4);
-		Circle(sx, sy, 7).draw(Palette::Black);
-		Circle(sx, sy + size_y, 7).draw(Palette::White);
-		Line(place_x, sy, place_x, sy + size_y).draw(3, graph_place_color);
+		if (n_discs >= 4){
+			int place_x = sx + dx * (n_discs - 4);
+			Circle(sx, sy, 7).draw(Palette::Black);
+			Circle(sx, sy + size_y, 7).draw(Palette::White);
+			Line(place_x, sy, place_x, sy + size_y).draw(3, graph_place_color);
+		}
 		if (fix_resolution_flag) {
 			resolution /= 2;
 		}
@@ -216,15 +218,17 @@ private:
 	void draw_graph(std::vector<History_elem> nodes, Color color, Color color2) {
 		std::vector<std::pair<int, int>> values;
 		for (const History_elem& b : nodes) {
-			if (abs(b.v) <= HW2) {
-				int xx = sx + dx * (b.board.n_discs() - 4);
-				int yy = sy + dy * (y_max - b.v);
-				values.emplace_back(std::make_pair(xx, yy));
-				Circle{ xx, yy, 3 }.draw(color);
-			}
-			else {
-				int yy = sy + dy * y_max;
-				Circle{ sx + dx * (b.board.n_discs() - 4), yy, 2.5 }.draw(color2);
+			if (b.board.n_discs() >= 4){
+				if (abs(b.v) <= HW2) {
+					int xx = sx + dx * (b.board.n_discs() - 4);
+					int yy = sy + dy * (y_max - b.v);
+					values.emplace_back(std::make_pair(xx, yy));
+					Circle{ xx, yy, 3 }.draw(color);
+				}
+				else {
+					int yy = sy + dy * y_max;
+					Circle{ sx + dx * (b.board.n_discs() - 4), yy, 2.5 }.draw(color2);
+				}
 			}
 		}
 		for (int i = 0; i < (int)values.size() - 1; ++i) {
@@ -235,8 +239,10 @@ private:
 	void draw_graph_not_calculated(std::vector<History_elem> nodes, Color color) {
 		std::vector<std::pair<int, int>> values;
 		for (const History_elem& b : nodes) {
-			int yy = sy + dy * y_max;
-			Circle{ sx + dx * (b.board.n_discs() - 4), yy, 2.5 }.draw(color);
+			if (b.board.n_discs() >= 4){
+				int yy = sy + dy * y_max;
+				Circle{ sx + dx * (b.board.n_discs() - 4), yy, 2.5 }.draw(color);
+			}
 		}
 	}
 };
