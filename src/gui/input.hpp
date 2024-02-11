@@ -386,6 +386,9 @@ public:
             history_elem.v = GRAPH_IGNORE_VALUE;
             history_elem.level = -1;
             getData().history_elem = history_elem;
+            if (!history_elem.board.is_end() && history_elem.board.get_legal() == 0){
+                history_elem.board.pass();
+            }
             int n_discs = history_elem.board.n_discs();
             int insert_place = (int)getData().graph_resources.nodes[getData().graph_resources.branch].size();
             int replace_place = -1;
