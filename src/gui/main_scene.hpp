@@ -1142,7 +1142,7 @@ private:
 
         title.init(U"Language");
         for (int i = 0; i < (int)getData().resources.language_names.size(); ++i) {
-            menu_e.init_radio(language_name.get(getData().resources.language_names[i]), &menu_elements->languages[i], menu_elements->languages[i]);
+            menu_e.init_radio(getData().resources.lang_img[i], &menu_elements->languages[i], menu_elements->languages[i]);
             title.push(menu_e);
         }
         menu.push(title);
