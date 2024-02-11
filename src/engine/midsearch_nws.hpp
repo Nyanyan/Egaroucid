@@ -193,8 +193,9 @@ inline int nega_alpha_eval1_nws(Search *search, int alpha, bool skipped, const b
 int nega_alpha_ordering_nws(Search *search, int alpha, int depth, bool skipped, uint64_t legal, bool is_end_search, const bool *searching){
     if (!global_searching || !(*searching))
         return SCORE_UNDEFINED;
-    if (is_end_search && depth <= MID_TO_END_DEPTH)
+    if (is_end_search && depth <= MID_TO_END_DEPTH){
         return nega_alpha_end_nws(search, alpha, skipped, legal, false, searching);
+    }
     if (!is_end_search){
         #if MID_FAST_NWS_DEPTH > 1
             if (depth <= MID_FAST_NWS_DEPTH)

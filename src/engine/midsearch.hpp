@@ -284,6 +284,19 @@ inline int nega_alpha_eval1(Search *search, int alpha, int beta, bool skipped, c
     }
 #endif
 
+//#define WATCH_C0_P 
+//#define WATCH_C0_O 
+
+// --OX-OO---OOOO-X-OOOO-OX-OOOOOXXXOOXXOXX-OOOOXXXXOXX-OXXO--XXXXX O -32
+#define WATCH_C0_P 0x263c7a7c64784480ULL
+#define WATCH_C0_O 0x100101039b07b31fULL
+
+// --OOOOO---OOOO-X-OOOO-OX-OOOOOXXXOOXXOXXOOOOXXXXOOXXXXXXO--XXXXX X maybe
+//#define WATCH_C0_P 0x3e3c787c64f0c080ULL
+//#define WATCH_C0_O 0x000303039b0f3f1fULL
+
+
+
 /*
     @brief Get a value with given depth with Negascout algorithm
 
@@ -300,6 +313,9 @@ inline int nega_alpha_eval1(Search *search, int alpha, int beta, bool skipped, c
     @return the value
 */
 int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, uint64_t legal, bool is_end_search, const bool *searching){
+    if (search->board.player == WATCH_C0_P && search->board.opponent == WATCH_C0_O){
+        std::cerr << "c0 nega_scout " << depth << " " << alpha << " " << beta << std::endl;
+    }
     if (!global_searching || !(*searching))
         return SCORE_UNDEFINED;
     if (alpha + 1 == beta)
@@ -370,10 +386,6 @@ int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, uin
         alpha = lower;
     if (upper < beta)
         beta = upper;
-    if (alpha < -64 || 64 < alpha){
-        std::cerr << "something wrong with alpha " << depth << " " << alpha << " " << beta << " nega_scout" << std::endl;
-        search->board.print();
-    }
     #if USE_MID_MPC
         if (depth >= USE_MPC_DEPTH){
             if (mpc(search, alpha, beta, depth, legal, is_end_search, &v, searching))
@@ -397,6 +409,9 @@ int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, uin
             }
         }
     #endif
+    if (search->board.player == WATCH_C0_P && search->board.opponent == WATCH_C0_O){
+        std::cerr << "c0 nega_scout aft asp " << depth << " " << alpha << " " << beta << std::endl;
+    }
     int best_move = TRANSPOSITION_TABLE_UNDEFINED;
     const int canput = pop_count_ull(legal);
     std::vector<Flip_value> move_list(canput);
@@ -443,24 +458,38 @@ int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, uin
                     if (move_list[move_idx].flip.flip == 0ULL)
                         break;
                 #endif
+                bool is_c0 = search->board.player == WATCH_C0_P && search->board.opponent == WATCH_C0_O;
                 eval_move(search, &move_list[move_idx].flip);
                 search->move(&move_list[move_idx].flip);
-                    if (v == -SCORE_INF)
+                    if (v == -SCORE_INF){
+                        if (is_c0){
+                            std::cerr << move_idx << " child negascout " << alpha << " " << beta << std::endl;
+                        }
                         g = -nega_scout(search, -beta, -alpha, depth - 1, false, move_list[move_idx].n_legal, is_end_search, searching);
-                    else{
+                    } else{
                         if (ybwc_split_nws(search, -alpha - 1, depth - 1, move_list[move_idx].n_legal, is_end_search, &n_searching, move_list[move_idx].flip.pos, move_idx, canput - etc_done_idx, running_count, false, parallel_tasks)){
                             ++running_count;
                             parallel_alphas.emplace_back(alpha);
                             parallel_idxes.emplace_back(move_idx);
                             additional_search_windows.emplace_back(SCORE_UNDEFINED);
                         } else{
+                            if (is_c0){
+                                std::cerr << move_idx << " child nega_alpha_ordering_nws " << alpha << " " << alpha + 1 << std::endl;
+                            }
                             g = -nega_alpha_ordering_nws(search, -alpha - 1, depth - 1, false, move_list[move_idx].n_legal, is_end_search, searching);
-                            if (alpha < g && g < beta)
+                            if (alpha < g && g < beta){
+                                if (is_c0){
+                                    std::cerr << move_idx << " child nega_scout again with " << g << "  " << g << " " << beta << std::endl;
+                                }
                                 g = -nega_scout(search, -beta, -g, depth - 1, false, move_list[move_idx].n_legal, is_end_search, searching);
+                            }
                         }
                     }
                 search->undo(&move_list[move_idx].flip);
                 eval_undo(search, &move_list[move_idx].flip);
+                if (search->board.player == WATCH_C0_P && search->board.opponent == WATCH_C0_O){
+                    std::cerr << move_idx << " nega_scout child " << idx_to_coord(move_list[move_idx].flip.pos) << " " << alpha << " " << beta << "  " << g << std::endl;
+                }
                 if (v < g){
                     v = g;
                     best_move = move_list[move_idx].flip.pos;
@@ -576,6 +605,9 @@ int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, uin
         }
     #endif
     if (*searching && global_searching){
+        if (search->board.player == WATCH_C0_P && search->board.opponent == WATCH_C0_O){
+            std::cerr << "c0 regging " << depth << " " << (int)search->mpc_level << " " << alpha << " " << first_alpha << " " << beta << " " << v << std::endl;
+        }
         transposition_table.reg(search, hash_code, depth, first_alpha, beta, v, best_move);
     }
     return v;

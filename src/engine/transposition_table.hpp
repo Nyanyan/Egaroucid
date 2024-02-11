@@ -537,8 +537,9 @@ class Transposition_table{
                     node->lock.lock();
                         if (node->board.player == search->board.player && node->board.opponent == search->board.opponent){
                             node->data.get_moves(moves);
-                            if (node->data.get_level_read() >= level)
+                            if (node->data.get_level_read() >= level){
                                 node->data.get_bounds(lower, upper);
+                            }
                             node->lock.unlock();
                             return;
                         }
