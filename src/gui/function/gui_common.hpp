@@ -447,6 +447,8 @@ struct Menu_elements {
     bool save_game;
     bool screen_shot;
     bool board_image;
+    bool output_bitboard_player_opponent;
+    bool output_bitboard_black_white;
 
     // manipulation
     bool stop_calculating;
@@ -532,6 +534,8 @@ struct Menu_elements {
         save_game = false;
         screen_shot = false;
         board_image = false;
+        output_bitboard_player_opponent = false;
+        output_bitboard_black_white = false;
 
         stop_calculating = false;
         put_1_move_by_ai = false;

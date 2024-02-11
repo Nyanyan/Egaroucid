@@ -459,6 +459,14 @@ private:
             changeScene(U"Board_image", SCENE_FADE_TIME);
             return;
         }
+        if (getData().menu_elements.output_bitboard_player_opponent) {
+            copy_bitboard_player_opponent();
+            return;
+        }
+        if (getData().menu_elements.output_bitboard_black_white) {
+            copy_bitboard_black_white();
+            return;
+        }
     }
 
     void menu_manipulate() {
@@ -1079,6 +1087,12 @@ private:
         menu_e.push(side_menu);
         side_menu.init_button(language.get("in_out", "output_game"), &menu_elements->save_game);
         menu_e.push(side_menu);
+        side_menu.init_button(language.get("in_out", "output_bitboard"), &menu_elements->dummy);
+        side_side_menu.init_button(language.get("in_out", "player_opponent"), &menu_elements->output_bitboard_player_opponent);
+        side_menu.push(side_side_menu);
+        side_side_menu.init_button(language.get("in_out", "black_white"), &menu_elements->output_bitboard_black_white);
+        side_menu.push(side_side_menu);
+        menu_e.push(side_menu);
         title.push(menu_e);
 
         menu.push(title);
@@ -1578,6 +1592,32 @@ private:
         }
         std::cerr << board_str << std::endl;
         Clipboard::SetText(Unicode::Widen(board_str));
+    }
+
+    void copy_bitboard_player_opponent() {
+        std::ostringstream ss;
+        ss << "0x" << std::setfill('0') << std::setw(16) << std::hex << getData().history_elem.board.player;
+        ss << " ";
+        ss << "0x" << std::setfill('0') << std::setw(16) << std::hex << getData().history_elem.board.opponent;
+        std::string res = ss.str();
+        std::cerr << res << std::endl;
+        Clipboard::SetText(Unicode::Widen(res));
+    }
+
+    void copy_bitboard_black_white() {
+        std::ostringstream ss;
+        if (getData().history_elem.player == BLACK){
+            ss << "0x" << std::setfill('0') << std::setw(16) << std::hex << getData().history_elem.board.player;
+            ss << " ";
+            ss << "0x" << std::setfill('0') << std::setw(16) << std::hex << getData().history_elem.board.opponent;
+        } else{
+            ss << "0x" << std::setfill('0') << std::setw(16) << std::hex << getData().history_elem.board.opponent;
+            ss << " ";
+            ss << "0x" << std::setfill('0') << std::setw(16) << std::hex << getData().history_elem.board.player;
+        }
+        std::string res = ss.str();
+        std::cerr << res << std::endl;
+        Clipboard::SetText(Unicode::Widen(res));
     }
 
     void need_start_game_button_calculation() {
