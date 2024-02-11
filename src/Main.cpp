@@ -19,6 +19,30 @@ double CalculateScale(const Vec2& baseSize, const Vec2& currentSize) {
     return Min((currentSize.x / baseSize.x), (currentSize.y / baseSize.y));
 }
 
+#if !GUI_OPEN_CONSOLE
+    class Logger_cerr{
+        private:
+            std::stringstream logger_stream;
+            std::mutex logger_mtx;
+            String logger_String;
+
+        public:
+            Logger_cerr(){
+                std::cerr.rdbuf(logger_stream.rdbuf());
+            }
+
+            String get_last_line(){
+                std::unique_lock{logger_mtx};
+                std::string log_line;
+                while (getline(logger_stream, log_line)){
+                    logger_String = Unicode::Widen(log_line);
+                }
+                logger_stream.clear(std::stringstream::goodbit);
+                return logger_String;
+            }
+    };
+#endif 
+
 /*
     @brief main function
 */
@@ -32,9 +56,7 @@ void Main() {
     #if GUI_OPEN_CONSOLE
         Console.open();
     #else
-        std::stringstream logger_stream;
-        std::cerr.rdbuf(logger_stream.rdbuf());
-        std::string log_line;
+        Logger_cerr logger;
         String logger_String;
     #endif
     
@@ -73,9 +95,7 @@ void Main() {
 
         // log
         #if !GUI_OPEN_CONSOLE
-            while (getline(logger_stream, log_line))
-                logger_String = Unicode::Widen(log_line);
-            logger_stream.clear(std::stringstream::goodbit);
+            logger_String = logger.get_last_line();
             if (scene_manager.get()->menu_elements.show_log || scene_manager.get()->window_state.loading) {
                 scene_manager.get()->fonts.font(logger_String).draw(12, Arg::bottomLeft(8, WINDOW_SIZE_Y - 5), scene_manager.get()->colors.white);
             }
