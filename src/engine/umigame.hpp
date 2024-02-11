@@ -51,8 +51,8 @@ class Umigame{
         std::unordered_map<Board, Umigame_result, Book_hash> umigame;
 
     public:
-        void calculate(Board *board, int player){
-            umigame_search(board, player);
+        void calculate(Board *board, int player, int depth){
+            umigame_search(board, player, depth);
         }
 
         void delete_all(){
@@ -80,11 +80,11 @@ class Umigame{
             @param player                       the player of this board
             @return Umigame's value
         */
-        Umigame_result umigame_search(Board *b, int player){
+        Umigame_result umigame_search(Board *b, int player, int depth){
             Umigame_result umigame_res;
 			if (!global_searching)
                 return umigame_res;
-			if (!book.contain(b)){
+			if (!book.contain(b) || b->n_discs() >= depth + 4){
 				umigame_res.b = 1;
                 umigame_res.w = 1;
                 return umigame_res;
@@ -116,7 +116,7 @@ class Umigame{
                 umigame_res.b = INF;
                 umigame_res.w = 0;
                 for (Board &nnb : boards){
-                    Umigame_result nres = umigame_search(&nnb, player ^ 1);
+                    Umigame_result nres = umigame_search(&nnb, player ^ 1, depth);
                     umigame_res.b = std::min(umigame_res.b, nres.b);
                     umigame_res.w += nres.w;
                 }
@@ -124,7 +124,7 @@ class Umigame{
                 umigame_res.b = 0;
                 umigame_res.w = INF;
                 for (Board &nnb : boards){
-                    Umigame_result nres = umigame_search(&nnb, player ^ 1);
+                    Umigame_result nres = umigame_search(&nnb, player ^ 1, depth);
                     umigame_res.w = std::min(umigame_res.w, nres.w);
                     umigame_res.b += nres.b;
                 }
@@ -202,10 +202,10 @@ Umigame umigame;
     @param player                       the player of this board
     @return Umigame's value in Umigame_result structure
 */
-Umigame_result calculate_umigame(Board *b, int player) {
+Umigame_result calculate_umigame(Board *b, int player, int depth) {
     Umigame_result res = umigame.get_umigame(b);
     if (res.b == UMIGAME_UNDEFINED){
-        umigame.calculate(b, player);
+        umigame.calculate(b, player, depth);
         res = umigame.get_umigame(b);
     }
     return res;

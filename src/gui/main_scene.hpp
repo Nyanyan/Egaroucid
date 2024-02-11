@@ -26,8 +26,8 @@ bool compare_hint_info(Hint_info& a, Hint_info& b) {
     return a.value > b.value;
 }
 
-Umigame_result get_umigame(Board board, int player) {
-    return calculate_umigame(&board, player);
+Umigame_result get_umigame(Board board, int player, int depth) {
+    return calculate_umigame(&board, player, depth);
 }
 
 int get_book_accuracy(Board board){
@@ -49,6 +49,7 @@ private:
     bool taking_screen_shot;
     bool pausing_in_pass;
     bool putting_1_move_by_ai;
+    int umigame_value_depth_before;
 
 public:
     Main_scene(const InitData& init) : IScene{ init } {
@@ -71,6 +72,7 @@ public:
         taking_screen_shot = false;
         pausing_in_pass = false;
         putting_1_move_by_ai = false;
+        umigame_value_depth_before = 0;
         std::cerr << "main scene loaded" << std::endl;
     }
 
@@ -254,6 +256,12 @@ public:
             if (KeyU.down())
                 getData().menu_elements.use_umigame_value = !getData().menu_elements.use_umigame_value;
             if (getData().menu_elements.use_umigame_value && !hint_ignore) {
+                if (umigame_value_depth_before != getData().menu_elements.umigame_value_depth){
+                    umigame_status.umigame_calculated = false;
+                    umigame_status.umigame_calculating = false;
+                    umigame.delete_all();
+                    umigame_value_depth_before = getData().menu_elements.umigame_value_depth;
+                }
                 if (umigame_status.umigame_calculated) {
                     draw_umigame(legal_ignore);
                 }
@@ -999,6 +1007,8 @@ private:
         side_menu.push(side_side_menu);
         menu_e.push(side_menu);
         side_menu.init_check(language.get("display", "cell", "umigame_value"), &menu_elements->use_umigame_value, menu_elements->use_umigame_value);
+        side_side_menu.init_bar(language.get("display", "cell", "depth"), &menu_elements->umigame_value_depth, menu_elements->umigame_value_depth, 1, 60);
+        side_menu.push(side_side_menu);
         menu_e.push(side_menu);
         side_menu.init_check(language.get("display", "cell", "opening"), &menu_elements->show_opening_on_cell, menu_elements->show_opening_on_cell);
         menu_e.push(side_menu);
@@ -1649,10 +1659,11 @@ private:
                     board.move_board(&flip);
                         if (board.get_legal() == 0ULL){
                             board.pass();
-                                umigame_status.umigame_future[cell] = std::async(std::launch::async, get_umigame, board, n_player ^ 1);
+                                umigame_status.umigame_future[cell] = std::async(std::launch::async, get_umigame, board, n_player ^ 1, getData().menu_elements.umigame_value_depth);
                             board.pass();
-                        } else
-                            umigame_status.umigame_future[cell] = std::async(std::launch::async, get_umigame, board, n_player);
+                        } else{
+                            umigame_status.umigame_future[cell] = std::async(std::launch::async, get_umigame, board, n_player, getData().menu_elements.umigame_value_depth);
+                        }
                     board.undo_board(&flip);
                 }
                 umigame_status.umigame_calculating = true;

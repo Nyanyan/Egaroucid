@@ -310,6 +310,7 @@ struct Settings {
     bool ai_put_white;
     bool use_disc_hint;
     bool use_umigame_value;
+    int umigame_value_depth;
     int n_disc_hint;
     bool show_legal;
     bool show_graph;
@@ -406,6 +407,7 @@ struct Menu_elements {
     bool use_disc_hint;
     int n_disc_hint;
     bool use_umigame_value;
+    int umigame_value_depth;
     bool show_legal;
     bool show_graph;
     bool show_opening_on_cell;
@@ -498,6 +500,7 @@ struct Menu_elements {
         use_disc_hint = settings->use_disc_hint;
         n_disc_hint = settings->n_disc_hint;
         use_umigame_value = settings->use_umigame_value;
+        umigame_value_depth = settings->umigame_value_depth;
         show_legal = settings->show_legal;
         show_graph = settings->show_graph;
         show_opening_on_cell = settings->show_opening_on_cell;
