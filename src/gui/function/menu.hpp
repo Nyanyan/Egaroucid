@@ -237,7 +237,7 @@ public:
 			rect.draw(menu_select_color);
 		}
 		if (use_image){
-			image.scaled((double)(rect.h - 2 * menu_offset_y) / image.width()).draw(rect.x + rect.h - menu_offset_y, rect.y + menu_offset_y);
+			image.scaled((double)(rect.h - 2 * menu_offset_y) / image.height()).draw(rect.x + rect.h - menu_offset_y, rect.y + menu_offset_y);
 		} else{
 			font(str).draw(font_size, rect.x + rect.h - menu_offset_y, rect.y + menu_offset_y, menu_font_color);
 		}
@@ -319,11 +319,10 @@ public:
 	RectF size() {
 		RectF res;
 		if (use_image){
-			Size size = image.scaled((double)(rect.h - 2 * menu_offset_y) / image.width()).size();
 			res.x = 0;
 			res.y = 0;
-			res.h = size.h;
-			res.w = size.w;
+			res.h = rect.h - 2 * menu_offset_y;
+			res.w = (float)(rect.h - 2 * menu_offset_y) * image.width() / image.height();
 		} else{
 			res = font(str).region(font_size, Point{ 0, 0 });
 		}
