@@ -41,12 +41,12 @@ public:
             changeScene(U"Close", SCENE_FADE_TIME);
         }
         getData().fonts.font(language.get("in_out", "output_game")).draw(25, Arg::topCenter(X_CENTER, 10), getData().colors.white);
-        getData().fonts.font(language.get("in_out", "player_name")).draw(20, Arg::topCenter(X_CENTER, 50), getData().colors.white);
+        getData().fonts.font(language.get("in_out", "player_name")).draw(15, Arg::topCenter(X_CENTER, 57), getData().colors.white);
         SimpleGUI::TextArea(text_area[BLACK_PLAYER_IDX], Vec2{X_CENTER - EXPORT_GAME_PLAYER_WIDTH, 80}, SizeF{EXPORT_GAME_PLAYER_WIDTH, EXPORT_GAME_PLAYER_HEIGHT}, SimpleGUI::PreferredTextAreaMaxChars);
         SimpleGUI::TextArea(text_area[WHITE_PLAYER_IDX], Vec2{X_CENTER, 80}, SizeF{EXPORT_GAME_PLAYER_WIDTH, EXPORT_GAME_PLAYER_HEIGHT}, SimpleGUI::PreferredTextAreaMaxChars);
         Circle(X_CENTER - EXPORT_GAME_PLAYER_WIDTH - EXPORT_GAME_RADIUS - 20, 80 + EXPORT_GAME_RADIUS, EXPORT_GAME_RADIUS).draw(getData().colors.black);
         Circle(X_CENTER + EXPORT_GAME_PLAYER_WIDTH + EXPORT_GAME_RADIUS + 20, 80 + EXPORT_GAME_RADIUS, EXPORT_GAME_RADIUS).draw(getData().colors.white);
-        getData().fonts.font(language.get("in_out", "memo")).draw(20, Arg::topCenter(X_CENTER, 110), getData().colors.white);
+        getData().fonts.font(language.get("in_out", "memo")).draw(15, Arg::topCenter(X_CENTER, 117), getData().colors.white);
         SimpleGUI::TextArea(text_area[MEMO_IDX], Vec2{X_CENTER - EXPORT_GAME_MEMO_WIDTH / 2, 140}, SizeF{EXPORT_GAME_MEMO_WIDTH, EXPORT_GAME_MEMO_HEIGHT}, SimpleGUI::PreferredTextAreaMaxChars);
         for (int i = 0; i < 3; ++i){
             std::string str = text_area[i].text.narrow();
