@@ -22,36 +22,7 @@ Zip版はZipファイルを解凍し、中の```Egaroucid_[バージョン情報
 
 
 
-
-<div class="table_wrapper">
-<table>
-<tr>
-    <th>OS</th>
-    <th>CPU</th>
-    <th>追加要件</th>
-    <th>リリース日</th>
-    <th>インストール版</th>
-    <th>Zip版</th>
-</tr>
-<tr>
-    <td>Windows</td>
-    <td>x64</td>
-    <td>AVX2(標準)</td>
-    <td>2024/02/12</td>
-    <td>[Egaroucid 6.5.2 SIMD インストーラ](https://github.com/Nyanyan/Egaroucid/releases/download/v6.5.2/Egaroucid_6_5_2_SIMD_installer.exe)</td>
-    <td>[Egaroucid 6.5.2 SIMD Zip](https://github.com/Nyanyan/Egaroucid/releases/download/v6.5.2/Egaroucid_6_5_2_Windows_x64_SIMD_Portable.zip)</td>
-</tr>
-<tr>
-    <td>Windows</td>
-    <td>x64</td>
-    <td>-</td>
-    <td>2024/02/12</td>
-    <td>[Egaroucid 6.5.2 Generic インストーラ](https://github.com/Nyanyan/Egaroucid/releases/download/v6.5.2/Egaroucid_6_5_2_Generic_installer.exe)</td>
-    <td>[Egaroucid 6.5.2 Generic Zip](https://github.com/Nyanyan/Egaroucid/releases/download/v6.5.2/Egaroucid_6_5_2_Windows_x64_Generic_Portable.zip)</td>
-</tr>
-</table>
-</div>
-
+DOWNLOAD_TABLE_HERE
 
 
 
