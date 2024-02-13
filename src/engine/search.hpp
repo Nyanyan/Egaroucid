@@ -24,7 +24,7 @@
 */
 #define N_SYMMETRY_PATTERNS 62
 #if USE_SIMD_EVALUATION
-    #define N_SIMD_EVAL_FEATURES 4
+    #define N_SIMD_EVAL_FEATURES 4 // 16 (elems per 256 bit vector) * N_SIMD_EVAL_FEATURES >= N_SYMMETRY_PATTERNS
 #endif
 
 /*
