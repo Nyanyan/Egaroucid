@@ -10,7 +10,7 @@ N_SET_GAMES = 100
 
 # name, cmd, cacheclear?
 player_info = [
-    #['beta ', 'versions/Egaroucid_for_Console_beta/Egaroucid_for_Console.exe -quiet -nobook', True],
+    ['6.6.0', 'versions/Egaroucid_for_Console_beta/Egaroucid_for_Console.exe -quiet -nobook', True],
     ['6.5.0', 'versions/Egaroucid_for_Console_6_5_0_Windows_x64_SIMD/Egaroucid_for_Console_6_5_0_x64_SIMD.exe -quiet -nobook', False],
     ['6.4.0', 'versions/Egaroucid_for_Console_6_4_0_Windows_x64_SIMD/Egaroucid_for_Console_6_4_0_x64_SIMD.exe -quiet -nobook', False],
     ['6.3.0', 'versions/Egaroucid_for_Console_6_3_0_Windows_x64_SIMD/Egaroucid_for_Console_6_3_0_x64_SIMD.exe -quiet -nobook', False],
