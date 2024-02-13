@@ -22,6 +22,10 @@ Zip版はZipファイルを解凍し、中の```Egaroucid_[バージョン情報
 
 
 
+Egaroucid 6.5.2は2024/02/13にリリースされましたが、間違って低速バージョンを公開してしまいました。2024/02/14 0:00頃にこれを修正しました。もし2024/02/13中にダウンロードした方はアップデートしていただけると幸いです。
+
+
+
 
 <div class="table_wrapper">
 <table>
@@ -37,7 +41,7 @@ Zip版はZipファイルを解凍し、中の```Egaroucid_[バージョン情報
     <td>Windows</td>
     <td>x64</td>
     <td>AVX2(標準)</td>
-    <td>2024/02/13</td>
+    <td>2024/02/14</td>
     <td>[Egaroucid 6.5.2 SIMD インストーラ](https://github.com/Nyanyan/Egaroucid/releases/download/v6.5.2/Egaroucid_6_5_2_SIMD_installer.exe)</td>
     <td>[Egaroucid 6.5.2 SIMD Zip](https://github.com/Nyanyan/Egaroucid/releases/download/v6.5.2/Egaroucid_6_5_2_Windows_x64_SIMD_Portable.zip)</td>
 </tr>
@@ -45,14 +49,12 @@ Zip版はZipファイルを解凍し、中の```Egaroucid_[バージョン情報
     <td>Windows</td>
     <td>x64</td>
     <td>-</td>
-    <td>2024/02/13</td>
+    <td>2024/02/14</td>
     <td>[Egaroucid 6.5.2 Generic インストーラ](https://github.com/Nyanyan/Egaroucid/releases/download/v6.5.2/Egaroucid_6_5_2_Generic_installer.exe)</td>
     <td>[Egaroucid 6.5.2 Generic Zip](https://github.com/Nyanyan/Egaroucid/releases/download/v6.5.2/Egaroucid_6_5_2_Windows_x64_Generic_Portable.zip)</td>
 </tr>
 </table>
 </div>
-
-
 
 
 
