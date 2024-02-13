@@ -40,10 +40,6 @@ Egaroucidは世界最強クラスのオセロAIを搭載した無料のオセロ
     </table></div>
 
 
-
-
-
-
 <div class="centering_box">
 	<img class="pic2" src="img/egaroucid.png" alt="Egaroucid">
     <img class="pic2" src="img/egaroucid_for_console.png" alt="Egaroucid for Console">
@@ -78,10 +74,6 @@ Egaroucidは世界最強クラスのオセロAIを搭載した無料のオセロ
 </ul>
 
 
-
-
-
-
 ## 導入する
 
 ### Egaroucid
@@ -95,6 +87,33 @@ Egaroucidは世界最強クラスのオセロAIを搭載した無料のオセロ
 ### Egaroucid for Web
 
 ダウンロードやインストールの必要はありません。[Web版ページ](./web/)で今すぐ遊べます。
+
+
+
+## 公式ドキュメント
+
+Egaroucid公式として公開している色々な資料です。日本語のみで書いてあります。
+
+<ul>
+    <li>[使い方](./usage/): ソフトの使い方を機能一つ一つ解説しています</li>
+    <li>[Book詳説](./usage/book/): Bookの使い方を詳しく解説しています</li>
+    <li>[技術解説](./technology/explanation/): オセロAI制作の役に立ちそうな専門的な話を解説しています</li>
+</ul>
+
+
+
+## その他のドキュメント
+
+Egaroucidに関連する資料/読み物です。日本語のみです。
+
+<ul>
+    <li>[オセロAI世界1位になってオセロAIをｶﾝｾﾞﾝﾆﾘｶｲｼﾀ話](https://qiita.com/Nyanyan_Cube/items/195bdc47bb1d7c6f8b24): オセロAI制作の初期にコンテストで1位になった話です</li>
+    <li>[みんな、とにかくオセロAIを作るんだ](https://qiita.com/Nyanyan_Cube/items/1839732d7bdf74caff21): オセロAIを作ると何が良いのかを解説しています</li>
+    <li>[オセロAIの教科書](https://note.com/nyanyan_cubetech/m/m54104c8d2f12): オセロAI制作を初歩から解説したマガジンです。全編無料です。サンプルコードもあります。ちょっと古い記事なので、近々更新したいです…</li>
+	<li>[オセロAI世界1位が最弱オセロAIを作った話(読み物編)](https://note.com/nyanyan_cubetech/n/n2674dd6f5973): 負けオセロAI [Egaroucen](https://www.egaroucen.nyanyan.dev/)(自分調べで世界最弱)制作の物語です</li>
+    <li>[オセロAI世界1位が最弱オセロAIを作った話(技術編)](https://qiita.com/Nyanyan_Cube/items/43d8627539c73459635c): 負けオセロAI [Egaroucen](https://www.egaroucen.nyanyan.dev/)(自分調べで世界最弱)の技術解説です</li>
+    <li>[世界1位のオセロAIをSiv3Dで人生初アプリ化した話](https://qiita.com/Nyanyan_Cube/items/bfb2bc3ba7a93c83f2d1): オセロAIを実際に画面上で動くソフトウェアとして公開した話です</li>
+</ul>
 
 
 
@@ -187,7 +206,7 @@ GPL-3.0ライセンスの下で自由に使っていただいて構いません�
 
 
 
-## 関連リンク
+## Egaroucid関連リンク
 
 <ul>
     <li>[Egaroucid GitHub レポジトリ](https://github.com/Nyanyan/Egaroucid)</li>

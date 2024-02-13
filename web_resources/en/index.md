@@ -41,8 +41,6 @@ Completely free software. Egaroucid and Egaroucid for Console use the same (stro
 
 
 
-
-
 <div class="centering_box">
 	<img class="pic2" src="img/egaroucid.png" alt="Egaroucid">
     <img class="pic2" src="img/egaroucid_for_console.png" alt="Egaroucid for Console">
@@ -92,6 +90,20 @@ Please read [how to install Egaroucid for Console](./console/) and download or b
 ### Egaroucid for Web
 
 You don't need to do anything special. Please just visit [Egaroucid for Web page](./web/) and play now.
+
+
+
+## Official Documents
+
+There are some official documents. I am very sorry, but they are only written in Japanese, so please translate it before reading.
+
+<ul>
+    <li>[How to Use Egaroucid](https://www.egaroucid.nyanyan.dev/ja/usage/)</li>
+    <li>[How to use Book](https://www.egaroucid.nyanyan.dev/ja/usage/book/)</li>
+    <li>[Technical Explanation](https://www.egaroucid.nyanyan.dev/ja/technology/explanation/)</li>
+</ul>
+
+
 
 
 
