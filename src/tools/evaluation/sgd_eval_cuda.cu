@@ -326,8 +326,8 @@ void adj_stochastic_gradient_descent(uint64_t tl, int phase, double beta) {
             }
             else {
                 ++no_better_mse_count;
-                if (no_better_mse_count >= 4) {
-                    additional_learn_rate *= 0.5;
+                if (no_better_mse_count >= 2) {
+                    additional_learn_rate *= 0.75;
                     no_better_mse_count = 0;
                 }
             }
