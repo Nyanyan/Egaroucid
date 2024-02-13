@@ -243,16 +243,16 @@ def create_html(dr):
         # modify data
         md_split[i] = elem
     if need_table_of_contents:
-        table_of_contents_html = '<div><ol class="table_of_contents_ol">'
+        table_of_contents_html = '<details><summary>目次</summary><ol class="table_of_contents_ol">'
         for name1, id1, children1 in table_of_contents:
-            table_of_contents_html += '<li class="table_of_contents_li"><a href="#' + id1 + '">' + name1 + '</a>'
+            table_of_contents_html += '<span class="table_of_contents_li"><li><a href="#' + id1 + '">' + name1 + '</a>'
             if children1:
-                table_of_contents_html += '<ol>'
+                table_of_contents_html += '<ul>'
                 for name2, id2, _ in children1:
                     table_of_contents_html += '<li><a href="#' + id2 + '">' + name2 + '</a></li>'
-                table_of_contents_html += '</ol>'
-            table_of_contents_html += '</li>'
-        table_of_contents_html += '</li></div>'
+                table_of_contents_html += '</ul>'
+            table_of_contents_html += '</li></span>'
+        table_of_contents_html += '</ol></details>'
         for i in range(len(md_split)):
             if 'INSERT_TABLE_OF_CONTENTS_HERE' in md_split[i]:
                 md_split[i] = md_split[i].replace('INSERT_TABLE_OF_CONTENTS_HERE', table_of_contents_html)

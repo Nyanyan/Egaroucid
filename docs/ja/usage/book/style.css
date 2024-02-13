@@ -53,12 +53,13 @@ h2{
     text-align: center;
     background-color:  #8dc5ac;
     margin-top: 5%;
-    
+    padding: 0.2em;
 }
 
 h3{
     text-align: center;
     background-color:  #cbc5de;
+    padding: 0.1em;
 }
 
 h4{
@@ -121,17 +122,39 @@ code {
     padding: 1%;
 }
 
-.table_of_contents_ol {
-    list-style-type: none;
-    padding: 0;
+details {
+    border: 1px solid #aaa;
+    border-radius: 4px;
+    width: 100%;
+    padding: 0.2em;
+    display: inline-block;
+    vertical-align: middle;
+    text-align: center;
+}
+
+summary {
+    font-weight: bold;
     margin: 0;
+    padding: 0.5em;
+    font-size: x-large;
+}
+
+.table_of_contents_ol {
+    width: 100%;
+    margin: auto;
+    padding: 0;
+    display: -webkit-flex;
     display: flex;
+    -webkit-justify-content: center;
+    justify-content: center;
     flex-wrap: wrap;
-    text-align: left;
 }
 
 .table_of_contents_li {
-    margin: 5px;
-    width: max(320px, 32%);
+    padding: 1.0em 1.0em 1.0em 2.0em;
+    margin: 0.5em;
+    width: max(min(90%, 15em), 25%);
     text-align: left;
+    border: 1px solid #aaa;
+    border-radius: 4px;
 }
