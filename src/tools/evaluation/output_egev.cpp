@@ -10,11 +10,14 @@
 
 int main(int argc, char* argv[]){
     if (argc < 3){
-        std::cerr << "input [model_dir] [n_phases]" << std::endl;
+        // std::cerr << "input [model_dir] [n_phases]" << std::endl;
+        std::cerr << "input [n_phases]" << std::endl;
         return 1;
     }
-    std::string model_dir = std::string(argv[1]);
-    int n_phases = atoi(argv[2]);
+    // std::string model_dir = std::string(argv[1]);
+    // int n_phases = atoi(argv[2]);
+    std::string model_dir = "./trained";
+    int n_phases = atoi(argv[1]);
     std::ofstream fout;
     fout.open("trained/eval.egev", std::ios::out|std::ios::binary|std::ios::trunc);
     if (!fout){
