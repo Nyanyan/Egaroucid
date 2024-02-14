@@ -313,23 +313,26 @@ void adj_stochastic_gradient_descent(uint64_t tl, int phase, double beta) {
     bool mae_mse_calc;
     double min_mse = 10000000.0;
     double min_mae = 10000000.0;
+    double pre_mse = 10000000.0;
     double additional_learn_rate = 1.0;
     int no_better_mse_count = 0;
     while (tim() - strt < tl) {
         mae_mse_calc = (t & (ADJ_PRINT_INTERVAL - 1)) == 0;
         adj_next_step(additional_learn_rate, mae_mse_calc, device_batch_random_idx, device_n_same_idx_in_feature, device_feature_first_idx, device_rev_idxes, device_eval_arr, device_alpha, device_eval_strts, device_test_data, device_feature_to_eval_idx, batch_random_idx, engine, &mae, &mse);
         if (mae_mse_calc) {
-            if (mse < min_mse) {
-                min_mse = mse;
-                min_mae = mae;
+            if (mse < pre_mse) {
                 no_better_mse_count = 0;
-            }
-            else {
+            } else{
                 ++no_better_mse_count;
                 if (no_better_mse_count >= 2) {
                     additional_learn_rate *= 0.75;
                     no_better_mse_count = 0;
                 }
+            }
+            pre_mse = mse;
+            if (mse < min_mse) {
+                min_mse = mse;
+                min_mae = mae;
             }
             std::cerr << '\r' << t << " " << (tim() - strt) * 1000 / tl << " mse " << mse << " (" << min_mse << ") " << " mae " << mae << " (" << min_mae << ")  no_better " << no_better_mse_count << " a_lr " << additional_learn_rate << "  ";
         }
