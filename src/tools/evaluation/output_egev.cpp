@@ -9,8 +9,11 @@
 //#define SIMD_EVAL_OFFSET 4092
 
 int main(int argc, char* argv[]){
-    if (argc < 3){
-        // std::cerr << "input [model_dir] [n_phases]" << std::endl;
+    // if (argc < 3){
+    //     std::cerr << "input [model_dir] [n_phases]" << std::endl;
+    //     return 1;
+    // }
+    if (argc < 2){
         std::cerr << "input [n_phases]" << std::endl;
         return 1;
     }
