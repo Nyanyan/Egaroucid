@@ -6,7 +6,7 @@ from othello_py import *
 
 LEVEL = 1
 
-N_SET_GAMES = 100
+N_SET_GAMES = 25 #100
 
 # name, cmd, cacheclear?
 player_info = [
