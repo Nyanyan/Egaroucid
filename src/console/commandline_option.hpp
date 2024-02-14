@@ -16,16 +16,13 @@
 #include <iomanip>
 #include "commandline_option_definition.hpp"
 
-#define OPTION_FOUND "1"
-#define OPTION_NOT_FOUND ""
-
 struct Commandline_option{
     int id;
-    std::string value;
+    std::vector<std::string> arg;
 
-    Commandline_option(int id_in, std::string value_in){
+    Commandline_option(int id_in, std::vector<std::string> arg_in){
         id = id_in;
-        value = value_in;
+        arg = arg_in;
     }
 };
 
@@ -41,16 +38,15 @@ std::vector<Commandline_option> get_commandline_options(int argc, char* argv[]){
     while (idx < argc){
         for (i = 0; i < N_COMMANDLINE_OPTIONS; ++i){
             if (std::find(commandline_option_data[i].names.begin(), commandline_option_data[i].names.end(), argv_string[idx]) != commandline_option_data[i].names.end()){
-                if (commandline_option_data[i].arg != ""){
+                std::vector<std::string> args;
+                for (int j = 0; j < commandline_option_data[i].n_args; ++j){
                     ++idx;
                     if (idx >= argc)
                         break;
-                    res.emplace_back(Commandline_option(commandline_option_data[i].id, argv_string[idx]));
-                    break;
-                } else{
-                    res.emplace_back(Commandline_option(commandline_option_data[i].id, OPTION_FOUND));
-                    break;
+                    args.emplace_back(argv_string[idx]);
                 }
+                res.emplace_back(Commandline_option(commandline_option_data[i].id, args));
+                break;
             }
         }
         ++idx;
@@ -58,10 +54,19 @@ std::vector<Commandline_option> get_commandline_options(int argc, char* argv[]){
     return res;
 }
 
-std::string find_commandline_option(std::vector<Commandline_option> commandline_options, int id){
+bool find_commandline_option(std::vector<Commandline_option> commandline_options, int id){
     for (Commandline_option option: commandline_options){
         if (option.id == id)
-            return option.value;
+            return true;
     }
-    return OPTION_NOT_FOUND;
+    return false;
+}
+
+std::vector<std::string> get_commandline_option_arg(std::vector<Commandline_option> commandline_options, int id){
+    for (Commandline_option option: commandline_options){
+        if (option.id == id)
+            return option.arg;
+    }
+    std::vector<std::string> nores;
+    return nores;
 }

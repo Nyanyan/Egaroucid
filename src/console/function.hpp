@@ -28,7 +28,12 @@ void print_search_result_head();
 void print_search_result_body(Search_result result, int level);
 void go(Board_info *board, Options *options, State *state);
 
-void solve_problems(std::string file, Options *options, State *state){
+void solve_problems(std::vector<std::string> arg, Options *options, State *state){
+    if (arg.size() < 1){
+        std::cerr << "[ERROR] [FATAL] please input problem file" << std::endl;
+        return;
+    }
+    std::string file = arg[0];
     std::ifstream ifs(file);
     if (ifs.fail()){
         std::cerr << "[ERROR] [FATAL] no problem file found" << std::endl;
@@ -80,8 +85,7 @@ bool execute_special_tasks_loop(Board_info *board, State *state, Options *option
 }
 
 
-std::string self_play_task(Options *options, bool use_multi_thread){
-    int n_random_moves = myrandrange(10, 20);
+std::string self_play_task(Options *options, bool use_multi_thread, int n_random_moves){
     Board board;
     Flip flip;
     Search_result result;
@@ -111,21 +115,29 @@ std::string self_play_task(Options *options, bool use_multi_thread){
     return res;
 }
 
-void self_play(std::string str_n_games, Options *options, State *state){
-    int n_games;
-    try{
-        n_games = std::stoi(str_n_games);
-    } catch (const std::invalid_argument& e) {
-        std::cout << str_n_games << " invalid argument" << std::endl;
-        std::exit(1);
-    } catch (const std::out_of_range& e) {
-        std::cout << str_n_games << " out of range" << std::endl;
+void self_play(std::vector<std::string> arg, Options *options, State *state){
+    int n_games, n_random_moves;
+    if (arg.size() < 2){
+        std::cerr << "[ERROR] [FATAL] please input arguments" << std::endl;
         std::exit(1);
     }
+    std::string str_n_games = arg[0];
+    std::string str_n_random_moves = arg[1];
+    try{
+        n_games = std::stoi(str_n_games);
+        n_random_moves = std::stoi(str_n_random_moves);
+    } catch (const std::invalid_argument& e) {
+        std::cout << str_n_games << " " << str_n_random_moves << " invalid argument" << std::endl;
+        std::exit(1);
+    } catch (const std::out_of_range& e) {
+        std::cout << str_n_games << " " << str_n_random_moves << " out of range" << std::endl;
+        std::exit(1);
+    }
+    std::cerr << n_games << " games with " << n_random_moves << " random moves" << std::endl;
     uint64_t strt = tim();
     if (thread_pool.size() == 0){
         for (int i = 0; i < n_games; ++i){
-            std::string transcript = self_play_task(options, false);
+            std::string transcript = self_play_task(options, false, n_random_moves);
             std::cout << transcript << std::endl;
         }
     } else{
@@ -138,7 +150,7 @@ void self_play(std::string str_n_games, Options *options, State *state){
             }
             if (thread_pool.get_n_idle() && (int)tasks.size() < n_games){
                 bool pushed = false;
-                tasks.emplace_back(thread_pool.push(&pushed, std::bind(&self_play_task, options, true)));
+                tasks.emplace_back(thread_pool.push(&pushed, std::bind(&self_play_task, options, true, n_random_moves)));
                 if (!pushed)
                     tasks.pop_back();
             }

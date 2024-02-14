@@ -418,26 +418,26 @@ void print_transcript(std::vector<Board> boards){
 }
 
 void print_special_commandline_options(std::vector<Commandline_option> commandline_options){
-    if (find_commandline_option(commandline_options, ID_VERSION) == OPTION_FOUND){
+    if (find_commandline_option(commandline_options, ID_VERSION)){
         print_version();
         std::exit(0);
     }
-    if (find_commandline_option(commandline_options, ID_HELP) == OPTION_FOUND){
+    if (find_commandline_option(commandline_options, ID_HELP)){
         print_help();
         std::exit(0);
     }
-    if (find_commandline_option(commandline_options, ID_LEVEL_INFO) == OPTION_FOUND){
+    if (find_commandline_option(commandline_options, ID_LEVEL_INFO)){
         print_level_info();
         std::exit(0);
     }
 }
 
 void execute_special_commandline_tasks(std::vector<Commandline_option> commandline_options, Options *options, State *state){
-    if (find_commandline_option(commandline_options, ID_SOLVE) != OPTION_NOT_FOUND){
-        solve_problems(find_commandline_option(commandline_options, ID_SOLVE), options, state);
+    if (find_commandline_option(commandline_options, ID_SOLVE)){
+        solve_problems(get_commandline_option_arg(commandline_options, ID_SOLVE), options, state);
         std::exit(0);
-    } else if (find_commandline_option(commandline_options, ID_SELF_PLAY) != OPTION_NOT_FOUND){
-        self_play(find_commandline_option(commandline_options, ID_SELF_PLAY), options, state);
+    } else if (find_commandline_option(commandline_options, ID_SELF_PLAY)){
+        self_play(get_commandline_option_arg(commandline_options, ID_SELF_PLAY), options, state);
         std::exit(0);
     }
 }

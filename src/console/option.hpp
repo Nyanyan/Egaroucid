@@ -31,12 +31,11 @@ struct Options{
 Options get_options(std::vector<Commandline_option> commandline_options, std::string binary_path){
     Options res;
     res.binary_path = binary_path;
-    std::string str;
     res.level = DEFAULT_LEVEL;
-    str = find_commandline_option(commandline_options, ID_LEVEL);
-    if (str != OPTION_NOT_FOUND){
+    if (find_commandline_option(commandline_options, ID_LEVEL)){
+        std::vector<std::string> arg = get_commandline_option_arg(commandline_options, ID_LEVEL);
         try {
-            res.level = std::stoi(str);
+            res.level = std::stoi(arg[0]);
             if (res.level < 0 || N_LEVEL <= res.level){
                 res.level = DEFAULT_LEVEL;
                 std::cerr << "[ERROR] level argument out of range" << std::endl;
@@ -48,22 +47,22 @@ Options get_options(std::vector<Commandline_option> commandline_options, std::st
         }
     }
     res.n_threads = std::min(48, (int)std::thread::hardware_concurrency());
-    str = find_commandline_option(commandline_options, ID_THREAD);
-    if (str != OPTION_NOT_FOUND){
+    if (find_commandline_option(commandline_options, ID_THREAD)){
+        std::vector<std::string> arg = get_commandline_option_arg(commandline_options, ID_THREAD);
         try {
-            res.n_threads = std::stoi(str);
+            res.n_threads = std::stoi(arg[0]);
         } catch (const std::invalid_argument& e){
             std::cerr << "[ERROR] thread argument invalid" << std::endl;
         } catch (const std::out_of_range& e) {
             std::cerr << "[ERROR] thread argument out of range" << std::endl;
         }
     }
-    res.show_log = find_commandline_option(commandline_options, ID_LOG) == OPTION_FOUND;
+    res.show_log = find_commandline_option(commandline_options, ID_LOG);
     res.hash_level = DEFAULT_HASH_LEVEL;
-    str = find_commandline_option(commandline_options, ID_HASH);
-    if (str != OPTION_NOT_FOUND){
+    if (find_commandline_option(commandline_options, ID_HASH)){
+        std::vector<std::string> arg = get_commandline_option_arg(commandline_options, ID_HASH);
         try {
-            res.hash_level = std::stoi(str);
+            res.hash_level = std::stoi(arg[0]);
             if (res.hash_level < 0 || N_HASH_LEVEL <= res.hash_level){
                 res.hash_level = DEFAULT_HASH_LEVEL;
                 std::cerr << "[ERROR] hash argument out of range" << std::endl;
@@ -75,19 +74,33 @@ Options get_options(std::vector<Commandline_option> commandline_options, std::st
         }
     }
     res.book_file = binary_path + "resources/book.egbk3";
-    str = find_commandline_option(commandline_options, ID_BOOK_FILE);
-    if (str != OPTION_NOT_FOUND)
-        res.book_file = str;
-    res.eval_file = binary_path + "resources/eval.egev";
-    str = find_commandline_option(commandline_options, ID_EVAL_FILE);
-    if (str != OPTION_NOT_FOUND)
-        res.eval_file = str;
-    res.nobook = find_commandline_option(commandline_options, ID_NOBOOK) == OPTION_FOUND;
-    res.mode = MODE_HUMAN_HUMAN;
-    str = find_commandline_option(commandline_options, ID_MODE);
-    if (str != OPTION_NOT_FOUND){
+    if (find_commandline_option(commandline_options, ID_BOOK_FILE)){
+        std::vector<std::string> arg = get_commandline_option_arg(commandline_options, ID_BOOK_FILE);
         try {
-            res.mode = std::stoi(str);
+            res.book_file = arg[0];
+        } catch (const std::invalid_argument& e){
+            std::cerr << "[ERROR] hash argument invalid" << std::endl;
+        } catch (const std::out_of_range& e) {
+            std::cerr << "[ERROR] hash argument out of range" << std::endl;
+        }
+    }
+    res.eval_file = binary_path + "resources/eval.egev";
+    if (find_commandline_option(commandline_options, ID_EVAL_FILE)){
+        std::vector<std::string> arg = get_commandline_option_arg(commandline_options, ID_EVAL_FILE);
+        try {
+            res.eval_file = arg[0];
+        } catch (const std::invalid_argument& e){
+            std::cerr << "[ERROR] hash argument invalid" << std::endl;
+        } catch (const std::out_of_range& e) {
+            std::cerr << "[ERROR] hash argument out of range" << std::endl;
+        }
+    }
+    res.nobook = find_commandline_option(commandline_options, ID_NOBOOK);
+    res.mode = MODE_HUMAN_HUMAN;
+    if (find_commandline_option(commandline_options, ID_MODE)){
+        std::vector<std::string> arg = get_commandline_option_arg(commandline_options, ID_MODE);
+        try {
+            res.mode = std::stoi(arg[0]);
             if (res.mode < 0 || 4 <= res.mode){
                 res.mode = 0;
                 std::cerr << "[ERROR] mode argument out of range" << std::endl;
@@ -98,7 +111,7 @@ Options get_options(std::vector<Commandline_option> commandline_options, std::st
             std::cerr << "[ERROR] mode argument out of range" << std::endl;
         }
     }
-    res.gtp = find_commandline_option(commandline_options, ID_GTP) == OPTION_FOUND;
-    res.quiet = find_commandline_option(commandline_options, ID_QUIET) == OPTION_FOUND;
+    res.gtp = find_commandline_option(commandline_options, ID_GTP);
+    res.quiet = find_commandline_option(commandline_options, ID_QUIET);
     return res;
 }
