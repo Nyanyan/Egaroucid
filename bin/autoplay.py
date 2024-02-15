@@ -5,12 +5,12 @@ import os
 
 n_random_moves = int(sys.argv[1])
 
-IDX_START = 1
+IDX_START = 2
 IDX_END = 10
 
 LEVEL = 11
 N_GAMES_PER_FILE = 10000
-N_THREAD = 4
+N_THREAD = 25
 
 def fill0(n, r):
     res = str(n)
