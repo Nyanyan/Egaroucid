@@ -413,7 +413,7 @@ int init_resources(Resources* resources, Settings* settings, Fonts *fonts) {
     Texture unchecked(U"resources/img/unchecked.png", TextureDesc::Mipped);
     std::vector<Texture> lang_img;
     for (int i = 0; i < (int)resources->language_names.size(); ++i) {
-        Texture limg(U"resources/languages/" +  Unicode::Widen(resources->language_names[i]) + U".png");
+        Texture limg(U"resources/languages/" +  Unicode::Widen(resources->language_names[i]) + U".png", TextureDesc::Mipped);
         if (limg.isEmpty()) {
             return ERR_TEXTURE_NOT_LOADED;
         }
