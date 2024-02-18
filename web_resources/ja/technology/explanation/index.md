@@ -50,7 +50,7 @@ Egaroucidでは終盤の決められた手数で完全読みをしてしまい�
 
 ## 評価関数
 
-既存の強豪オセロAIに広く使われているパターン評価は、Logistelloで提案され、今日のEdaxまでほとんど形を変えずに受け継がれています。Egaroucidもこのパターン評価をベースにしていますが、少し特徴量を追加しました。
+既存の強豪オセロAIに広く使われているパターン評価は、[Logistelloで提案](https://skatgame.net/mburo/ps/improve.pdf)され、今日のEdaxまでほとんど形を変えずに受け継がれています。Egaroucidもこのパターン評価をベースにしていますが、少し特徴量を追加しました。
 
 Egaroucidでは石自体をパターンとして評価する既存手法に加え、合法手をパターン化したもの、追加の特徴量の全ての得点の和を評価値としました。
 
@@ -92,6 +92,35 @@ Egaroucid制作において評価関数を簡素なものから複雑なもの�
 いくら大規模化しようと、評価関数を線形に作っている以上、なかなか高精度な評価関数を作ることは難しいです。そうなれば、評価関数の規模を大きくするよりも、高速な評価関数を使って深くまで探索した方が良い気がしています。
 
 現在(バージョン6.6.0制作中)、Egaroucidでは評価関数を簡素化してみる試みをしています。Egaroucid 6.5台の評価関数が結構完成度の高いものなので、どうなるかわかりませんが…
+
+
+
+## 評価関数の最適化
+
+評価関数は、どんなモデルを使おうとも、何らかの形でそのモデルに含まれるパラメータを最適化(学習)する必要があります。
+
+### 最急降下法
+
+評価関数、特にパターン評価の最適化には、古くから最急降下法が使われてきました。これは[Logistelloで考案](https://skatgame.net/mburo/ps/improve.pdf)されたものです。
+
+最急降下法による最適化については、オセロAI Thellの作者による[文書](https://sealsoft.jp/thell/learning.pdf)が詳しいです。
+
+なお、Egaroucidでは主に確率的勾配降下法(SGD)(最急降下法と大体同じ)をCUDAで実装したものを使っています。
+
+### 深層学習
+
+評価関数の最適化を深層学習によって行うこともできます。これは探索中に推論を回すということではなく、少ないデータで効果的に学習を行うための工夫です。また、深層学習によって生まれたパラメータは、往々にして元の評価関数モデルよりもデータ量を小さくできるため、圧縮として活用することもできます。
+
+元々Egaroucidは[CodinGame Othello](https://www.codingame.com/multiplayer/bot-programming/othello-1)というプログラミングコンテストに参加する目的で制作していました。そのため、このコンテスト特有の「10万文字以内でコードを記述しなければいけない」という制限を守りつつ強い評価関数を作るため、評価関数の圧縮として考案しました。
+
+現在のEgaroucidでは、非常に大量の棋譜データ(8億局面以上！)を作ることに成功したため、深層学習ではなく確率的勾配降下法を使っています。
+
+深層学習による学習は、以下の資料にまとめてあります。
+
+<ul>
+    <li>[オセロAIの教科書 7 【評価】 パターン評価など](https://note.com/nyanyan_cubetech/n/nb6067ce73ccd)</li>
+    <li>[深層学習による圧縮を利用した強力なオセロAIの制作 (2024/06/25から無料ダウンロード可能)](http://id.nii.ac.jp/1001/00218627/)</li>
+</ul>
 
 
 
@@ -145,7 +174,7 @@ Negascoutについては、[note](https://note.com/nyanyan_cubetech/n/nf810b043f
 
 ### Multi-ProbCut
 
-これは古くからある手法で、Logistelloで採用されたものです。Logistello以降も現在まで様々なオセロAIで採用されています。この手法は特殊な枝刈りで、探索結果が真の値であるという保証がなくなります。
+これは古くからある手法で、[Logistelloで採用](https://skatgame.net/mburo/ps/improve.pdf)されたものです。Logistello以降も現在まで様々なオセロAIで採用されています。この手法は特殊な枝刈りで、探索結果が真の値であるという保証がなくなります。
 
 こちらについてはすでに論文や解説が多いため、ここでの解説は省略します。
 
@@ -339,3 +368,76 @@ Egaroucidは序盤で中盤探索を行います。これは終局まで読み�
 
 
 こういった特殊な終局(有利だが一手だけ大悪手があるなど)の回避のため、Egaroucidではある程度の深さの考えうる全部の手を高速に列挙し、こういった特殊な終局が発見されないかを確認してから中盤探索を行っています。純粋にビットボードの処理だけしかしないため、非常に高速に実装できます。
+
+
+
+## 参考となる資料
+
+私自身がオセロAI初心者から今に至るまでに参考とした資料(など)の紹介です。
+
+### オセロAI Edax
+
+Edaxは広く使われている強豪オセロAIです。すべての方面で非常にバランス良くできており、コードを読むととても勉強になります。GitHubでバイナリの他、全部のコードが公開されており、私は全部印刷してたまに読んでいます。
+
+<ul>
+    <li>[edax-reversi (GitHub)](https://github.com/abulmo/edax-reversi)</li>
+</ul>
+
+### オセロAI Edax-AVX
+
+EdaxをSIMD化し、高速化したものです。EdaxはCPUレベルの命令などを使っておりませんが、これは様々なSIMD化によってEdaxを定数倍高速化しています。私が知る中では最速のオセロAIです。ちなみに[オセロを弱解決したという論文](https://doi.org/10.48550/arXiv.2310.19387)では、このオセロAIで探索を行ったと書いてあります。また、SIMD化を行った奥原氏によるオセロAIのSIMD化に関する様々なテクニックの(日本語の！)解説は大変参考になります。Edax-AVXのコードも公開されており、こちらも私は印刷してたまに読んでいます。
+
+<ul>
+    <li>[edax-reversi-AVX (GitHub)](https://github.com/okuhara/edax-reversi-AVX)</li>
+    <li>[リバーシのビットボードテクニック](http://www.amy.hi-ho.ne.jp/okuhara/bitboard.htm)</li>
+    <li>[Edax AVX - bitboard 以外の最適化](http://www.amy.hi-ho.ne.jp/okuhara/edaxopt.htm)</li>
+</ul>
+
+### オセロAI Thell
+
+2005年頃まで開発されていたオセロAIです。技術情報を(日本語で！)独自で公開しています。特に評価関数に関する資料が非常に有用です。なお、Thellはボードの実装方法が独特で、私自身も試してみたのですが、結局Thellの方法ではなくビットボードが速いという結論に至りました。
+
+<ul>
+    <li>[Thell](https://sealsoft.jp/thell/index.html)</li>
+    <li>[Thell アルゴリズム解説](https://sealsoft.jp/thell/algorithm.html)</li>
+    <li>[リバーシ評価関数の最適化](https://sealsoft.jp/thell/learning.pdf)</li>
+</ul>
+
+### オセロAI Zebra
+
+少し古いオセロAIですが、Edax以前にはオセラーに「これ一択」として使われていたというオセロAIです。独自で技術解説を(英語で)公開している他、あまり精度が良いとは言えませんがBookも無償公開しています。Egaroucidでは許可を得てZebraのBookをもとに独自Bookを作りました(もう原型はほぼないのですが…)。なお、技術解説については日本語に翻訳してくださった方がいらっしゃるため、そのリンクも載せます。
+
+<ul>
+    <li>[Zebra](http://radagast.se/Othello/)</li>
+    <li>[Writing an Othello Program](http://radagast.se/Othello/howto.html)</li>
+    <li>[強いオセロプログラムの内部動作](http://www.amy.hi-ho.ne.jp/okuhara/howtoj.htm)</li>
+</ul>
+
+### オセロAI Logistello
+
+1997年に人間の世界チャンピオン(村上健七段(当時))と戦い、勝利したオセロAIです。非常に古いオセロAIですが、作者による論文はオセロAI開発ならびにオセロAIの歴史を知る上で非常に役に立ちます。
+
+<ul>
+    <li>[LOGISTELLO](https://skatgame.net/mburo/log.html)</li>
+    <li>[Experiments with Multi-ProbCut and a New High-Quality Evaluation Function for Othello](https://skatgame.net/mburo/ps/improve.pdf)</li>
+    <li>[Takeshi Murakami vs. Logistello](https://skatgame.net/mburo/ps/match-report.pdf)</li>
+</ul>
+
+### オセロAI FOREST
+
+ここまでのオセロAIとは少し毛色の違うオセロAIとして、FORESTがあります。これは深層学習をαβ法に取り入れたオセロAIで、探索中に推論しているという特徴があります。評価関数の精度に振り切った設計だと思われます。また、FORESTは1994年から2023年現在までずっと開発が継続されており、歴史があります。英語の技術文書と、それを日本語に翻訳して公開されているものがあります。
+
+<ul>
+    <li>[FOREST, my Othello™ AI program](https://lapagedolivier.fr/forest.htm)</li>
+    <li>[Developing an Artificial Intelligence for Othello/Reversi](https://lapagedolivier.fr/neurone.htm)</li>
+    <li>[[翻訳] Developing an Artificial Intelligence for Othello/Reversi](https://qiita.com/sensuikan1973/items/2fda85acc0411698ee8c)</li>
+</ul>
+
+### オセロAIの教科書
+
+私が以前書いたものです。このサイトとは違い、基礎的なところから丁寧にサンプルコードをつけて書いてあるので、学習しやすいと思います。ただ、少し内容が古いです…いつか更新します。
+
+<ul>
+    <li>[オセロAIの教科書](https://note.com/nyanyan_cubetech/m/m54104c8d2f12)</li>
+</ul>
+
