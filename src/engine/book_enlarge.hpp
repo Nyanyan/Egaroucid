@@ -93,7 +93,7 @@ void get_book_recalculate_leaf_todo(Book_deviate_todo_elem todo_elem, int book_d
     if (todo_list.find(todo_elem) != todo_list.end())
         return;
     // check depth
-    if (todo_elem.board.n_discs() > book_depth + 4)
+    if (todo_elem.board.n_discs() >= book_depth + 4)
         return;
     Book_elem book_elem = book.get(todo_elem.board);
     // already searched?
