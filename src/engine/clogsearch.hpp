@@ -25,86 +25,89 @@
 #define CLOG_NOT_FOUND -127
 
 // Do clog search in depth CLOG_SEARCH_DEPTH
-#define CLOG_SEARCH_DEPTH 13
+#define CLOG_SEARCH_DEPTH 6 //13
 
-// Do parallel clog search until depth CLOG_SEARCH_SPLIT_DEPTH
-#define CLOG_SEARCH_SPLIT_DEPTH 6
+#if USE_PARALLEL_CLOG_SEARCH
 
-/*
-    @brief Structure for parallel clog search
+    // Do parallel clog search until depth CLOG_SEARCH_SPLIT_DEPTH
+    #define CLOG_SEARCH_SPLIT_DEPTH 6
 
-    @param n_nodes              number of nodes seen
-    @param val                  the score
-*/
-struct Parallel_clog_task{
-    uint64_t n_nodes;
-    int val;
-};
+    /*
+        @brief Structure for parallel clog search
 
-int clog_search(Clog_search *search, bool is_enduring, int depth);
+        @param n_nodes              number of nodes seen
+        @param val                  the score
+    */
+    struct Parallel_clog_task{
+        uint64_t n_nodes;
+        int val;
+    };
 
-/*
-    @brief Wrapper for parallel clog search
+    int clog_search(Clog_search *search, bool is_enduring, int depth);
 
-    @param player               a bitboard representing the player
-    @param opponent             a bitboard representing the opponent
-    @param is_enduring          true if player is enduring from opponent's atack, else false
-    @param depth                remaining depth
-    @return search result in Parallel_clog_task structure
-*/
-Parallel_clog_task clog_do_task(uint64_t player, uint64_t opponent, bool is_enduring, int depth){
-    Clog_search search;
-    search.board.player = player;
-    search.board.opponent = opponent;
-    search.n_nodes = 0ULL;
-    Parallel_clog_task task;
-    task.val = clog_search(&search, is_enduring, depth);
-    task.n_nodes = search.n_nodes;
-    return task;
-}
+    /*
+        @brief Wrapper for parallel clog search
 
-/*
-    @brief Try to do parallel clog search
-
-    @param search               searching information
-    @param canput               number of legal moves of parent node
-    @param pv_idx               number of searched child nodes
-    @param is_enduring          true if player is enduring from opponent's atack, else false
-    @param depth                remaining depth
-    @param parallel_tasks       if task splitted, push the task in this vector
-    @return task splitted?
-*/
-inline bool clog_split(const Clog_search *search, const int canput, const int pv_idx, bool is_enduring, int depth, std::vector<std::future<Parallel_clog_task>> &parallel_tasks){
-    if (thread_pool.get_n_idle() &&
-        pv_idx < canput - 1 && 
-        depth >= CLOG_SEARCH_SPLIT_DEPTH){
-            bool pushed;
-            parallel_tasks.emplace_back(thread_pool.push(&pushed, std::bind(&clog_do_task, search->board.player, search->board.opponent, is_enduring, depth)));
-            if (!pushed)
-                parallel_tasks.pop_back();
-            return pushed;
+        @param player               a bitboard representing the player
+        @param opponent             a bitboard representing the opponent
+        @param is_enduring          true if player is enduring from opponent's atack, else false
+        @param depth                remaining depth
+        @return search result in Parallel_clog_task structure
+    */
+    Parallel_clog_task clog_do_task(uint64_t player, uint64_t opponent, bool is_enduring, int depth){
+        Clog_search search;
+        search.board.player = player;
+        search.board.opponent = opponent;
+        search.n_nodes = 0ULL;
+        Parallel_clog_task task;
+        task.val = clog_search(&search, is_enduring, depth);
+        task.n_nodes = search.n_nodes;
+        return task;
     }
-    return false;
-}
 
-/*
-    @brief Wait all splitted parallel tasks
+    /*
+        @brief Try to do parallel clog search
 
-    @param search               searching information
-    @param parallel_tasks       vector of splitted tasks
-    @return best score
-*/
-inline int clog_wait_all(Clog_search *search, std::vector<std::future<Parallel_clog_task>> &parallel_tasks){
-    int res = CLOG_NOT_FOUND;
-    Parallel_clog_task got_task;
-    for (std::future<Parallel_clog_task> &task: parallel_tasks){
-        got_task = task.get();
-        if (got_task.val != CLOG_NOT_FOUND)
-            res = std::max(res, -got_task.val);
-        search->n_nodes += got_task.n_nodes;
+        @param search               searching information
+        @param canput               number of legal moves of parent node
+        @param pv_idx               number of searched child nodes
+        @param is_enduring          true if player is enduring from opponent's atack, else false
+        @param depth                remaining depth
+        @param parallel_tasks       if task splitted, push the task in this vector
+        @return task splitted?
+    */
+    inline bool clog_split(const Clog_search *search, const int canput, const int pv_idx, bool is_enduring, int depth, std::vector<std::future<Parallel_clog_task>> &parallel_tasks){
+        if (thread_pool.get_n_idle() &&
+            pv_idx < canput - 1 && 
+            depth >= CLOG_SEARCH_SPLIT_DEPTH){
+                bool pushed;
+                parallel_tasks.emplace_back(thread_pool.push(&pushed, std::bind(&clog_do_task, search->board.player, search->board.opponent, is_enduring, depth)));
+                if (!pushed)
+                    parallel_tasks.pop_back();
+                return pushed;
+        }
+        return false;
     }
-    return res;
-}
+
+    /*
+        @brief Wait all splitted parallel tasks
+
+        @param search               searching information
+        @param parallel_tasks       vector of splitted tasks
+        @return best score
+    */
+    inline int clog_wait_all(Clog_search *search, std::vector<std::future<Parallel_clog_task>> &parallel_tasks){
+        int res = CLOG_NOT_FOUND;
+        Parallel_clog_task got_task;
+        for (std::future<Parallel_clog_task> &task: parallel_tasks){
+            got_task = task.get();
+            if (got_task.val != CLOG_NOT_FOUND)
+                res = std::max(res, -got_task.val);
+            search->n_nodes += got_task.n_nodes;
+        }
+        return res;
+    }
+#endif
 
 /*
     @brief Main algorithm for clog search
