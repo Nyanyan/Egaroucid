@@ -258,7 +258,7 @@ void get_book_deviate_todo(Book_deviate_todo_elem todo_elem, int book_depth, int
         todo_elem.pass();
         if (todo_elem.board.get_legal() == 0)
             return; // game over
-            get_book_deviate_todo(todo_elem, book_depth, max_error_per_move, book_deviate_todo, all_strt, book_learning, board_copy, player, n_loop);
+        get_book_deviate_todo(todo_elem, book_depth, max_error_per_move, book_deviate_todo, all_strt, book_learning, board_copy, player, n_loop);
         todo_elem.pass();
         return;
     }
@@ -286,7 +286,7 @@ void get_book_deviate_todo(Book_deviate_todo_elem todo_elem, int book_depth, int
             }
         }
         // expand links
-        if (todo_elem.board.n_discs() < book_depth + 4){
+        if (todo_elem.board.n_discs() + 1 < book_depth + 4){
             Flip flip;
             for (Book_value &link: links){
                 if (link.value >= book_elem.value - max_error_per_move){
