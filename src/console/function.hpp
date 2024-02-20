@@ -233,14 +233,14 @@ void self_play_line(std::vector<std::string> arg, Options *options, State *state
     Search_result result;
     while (std::getline(ifs, line)){
         board.reset();
-        for (int i = 0; i < (int)line.size(); i += 2){
+        for (int i = 0; i < (int)line.size() - 1; i += 2){
             int x = line[i] - 'a';
             int y = line[i + 1] - '1';
             int coord = HW2_M1 - (y * HW + x);
             calc_flip(&flip, &board, coord);
+            std::cout << idx_to_coord(flip.pos);
             board.move_board(&flip);
         }
-        std::cout << line;
         while (board.check_pass()){
             result = ai(board, options->level, true, 0, true, options->show_log);
             calc_flip(&flip, &board, result.policy);
