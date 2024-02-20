@@ -19,25 +19,22 @@ Completely free software. Egaroucid and Egaroucid for Console use the same (stro
 <div class="table_wrapper"><table>
     <tr>
         <th>Name</th>
-        <th>OS</th>
-        <th>Details</th>
+        <th>Platforms</th>
     </tr>
     <tr>
-        <td>Egaroucid</td>
+        <td>[Egaroucid](./download/)</td>
         <td>Windows</td>
-        <td>[Download](./download/)</td>
     </tr>
     <tr>
-        <td>Egaroucid for Console</td>
+        <td>[Egaroucid for Console](./console/)</td>
         <td>Windows MacOS Linux</td>
-        <td>[Download](./console/)</td>
     </tr>
     <tr>
-        <td>Egaroucid for Web</td>
+        <td>[Egaroucid for Web](./web/)</td>
         <td>Any Web Browser</td>
-        <td>[Play Now](./web/)</td>
     </tr>
     </table></div>
+
 
 
 
