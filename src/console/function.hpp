@@ -221,6 +221,7 @@ void self_play_line(std::vector<std::string> arg, Options *options, State *state
         std::exit(1);
     }
     std::string opening_file = arg[0];
+    std::cerr << "selfplay with opening file " << opening_file << std::endl;
     std::ifstream ifs(opening_file);
     if (!ifs){
         std::cerr << "can't open file " << opening_file << std::endl;

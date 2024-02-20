@@ -28,8 +28,8 @@ inline Search_result tree_search_level1(Board board, uint64_t legal){
     search.init_board(&board);
     search.n_nodes = 0ULL;
     calc_features(&search);
-    std::cerr << mid_evaluate_diff(&search) << std::endl;
-    board.print();
+    //std::cerr << mid_evaluate_diff(&search) << std::endl;
+    //board.print();
     int v = SCORE_UNDEFINED;
     int policy = MOVE_UNDEFINED;
     for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)){
