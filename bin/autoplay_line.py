@@ -1,13 +1,19 @@
 import subprocess
 from tqdm import trange
 import os
+import sys
 
-IDX_START = 10
-IDX_END = 100
+IDX_START = int(sys.argv[1])
+IDX_END = int(sys.argv[2])
+
+print(IDX_START, IDX_END)
+
+# IDX_START = 10
+# IDX_END = 100
 
 LEVEL = 11
 N_GAMES_PER_FILE = 10000
-N_THREAD = 31
+N_THREAD = 1
 
 def fill0(n, r):
     res = str(n)
