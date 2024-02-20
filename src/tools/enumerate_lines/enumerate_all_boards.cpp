@@ -3,6 +3,10 @@
 #include <sstream>
 #include <iomanip>
 #include <unordered_map>
+#include <random>
+#include <algorithm>
+#include <ios>
+#include <iomanip>
 #include "./../../engine/board.hpp"
 #include "./../../engine/util.hpp"
 
@@ -117,6 +121,14 @@ void enumerate(Board board, const int n_moves){
     }
 }
 
+std::string fill0(int n, int d){
+    std::stringstream ss;
+    ss << std::setfill('0') << std::right << std::setw(d) << n;
+    return ss.str();
+}
+
+#define N_LINES_PER_FILE 10000
+
 int main(int argc, char *argv[]){
     if (argc < 2){
         std::cerr << "input [n_moves]" << std::endl;
@@ -132,8 +144,9 @@ int main(int argc, char *argv[]){
     Board board;
     board.reset();
     uint64_t strt = tim();
+    std::cerr << "start!" << std::endl;
     enumerate(board, n_moves);
-    std::cerr << "finish in " << tim() - strt << "msec" << std::endl;
+    std::cerr << "finish in " << tim() - strt << " ms" << std::endl;
     std::cerr << all_boards.size() << " boards found at depth 0 to " << n_moves << std::endl;
     std::vector<int> n_boards_in_depth;
     for (int i = 0; i < n_moves + 1; ++i){
@@ -141,15 +154,38 @@ int main(int argc, char *argv[]){
     }
     for (auto itr = all_boards.begin(); itr != all_boards.end(); ++itr){
         ++n_boards_in_depth[itr->first.n_discs() - 4];
-        /*
-        for (int &cell: itr->second.line){
-            std::cout << idx_to_coord(cell);
-        }
-        std::cout << std::endl;
-        */
     }
     for (int i = 0; i < n_moves + 1; ++i){
         std::cerr << "n_moves " << i << " n_boards " << n_boards_in_depth[i] << std::endl;
     }
+    std::vector<std::string> n_moves_lines;
+    for (auto itr = all_boards.begin(); itr != all_boards.end(); ++itr){
+        if (itr->first.n_discs() - 4 == n_moves){
+            std::string line_str;
+            for (int &cell: itr->second.line){
+                line_str += idx_to_coord(cell);
+            }
+            n_moves_lines.emplace_back(line_str);
+        }
+    }
+    all_boards.clear();
+    std::cerr << n_moves_lines.size() << "boards extracted in " << tim() - strt << " ms" << std::endl;
+    std::shuffle(std::begin(n_moves_lines), std::end(n_moves_lines), std::default_random_engine());
+    std::cerr << "shuffled in " << tim() - strt << " ms" << std::endl;
+    int n_files = (n_moves_lines.size() + N_LINES_PER_FILE - 1) / N_LINES_PER_FILE;
+    for (int i = 0; i < n_files; ++i){
+        std::string file = std::to_string(n_moves) + "/" + fill0(i, 7) + ".txt";
+        std::cerr << "output " << i + 1 << " / " << n_files << " file " << file << std::endl;
+        std::ofstream ofs(file);
+        for (int j = 0; j < N_LINES_PER_FILE; ++j){
+            int idx = i * N_LINES_PER_FILE + j;
+            if (idx >= n_moves_lines.size())
+                break;
+            ofs << n_moves_lines[idx] << std::endl;
+        }
+        ofs.close();
+    }
+    std::cerr << "all done in " << tim() - strt << " ms" << std::endl;
+
     return 0;
 }
