@@ -214,3 +214,39 @@ void self_play(std::string str_n_games, Options *options, State *state){
     std::cerr << "done in " << tim() - strt << " ms" << std::endl;
 }
 */
+
+void self_play_line(std::vector<std::string> arg, Options *options, State *state){
+    if (arg.size() < 1){
+        std::cerr << "please input opening file" << std::endl;
+        std::exit(1);
+    }
+    std::string opening_file = arg[0];
+    std::ifstream ifs(opening_file);
+    if (!ifs){
+        std::cerr << "can't open file " << opening_file << std::endl;
+    }
+    uint64_t strt = tim();
+    std::string line;
+    Board board;
+    Flip flip;
+    Search_result result;
+    while (std::getline(ifs, line)){
+        board.reset();
+        for (int i = 0; i < (int)line.size(); i += 2){
+            int x = line[i] - 'a';
+            int y = line[i + 1] - '1';
+            int coord = HW2_M1 - (y * HW + x);
+            calc_flip(&flip, &board, coord);
+            board.move_board(&flip);
+        }
+        std::cout << line;
+        while (board.check_pass()){
+            result = ai(board, options->level, true, 0, true, options->show_log);
+            calc_flip(&flip, &board, result.policy);
+            std::cout << idx_to_coord(flip.pos);
+            board.move_board(&flip);
+        }
+        std::cout << std::endl;
+    }
+    std::cerr << "done in " << tim() - strt << " ms" << std::endl;
+}
