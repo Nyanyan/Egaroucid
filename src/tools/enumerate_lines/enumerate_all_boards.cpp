@@ -55,7 +55,7 @@ struct Enumerate_elem{
     std::vector<int> line;
 };
 
-std::unordered_map<Board, Enumerate_elem, Book_hash> all_lines;
+std::unordered_map<Board, Enumerate_elem, Book_hash> all_boards;
 Enumerate_elem global_elem;
 
 inline void first_update_representative_board(Board *res, Board *sym){
@@ -92,10 +92,10 @@ inline Board get_representative_board(Board b){
 
 void enumerate(Board board, const int n_moves){
     Board rboard = get_representative_board(board);
-    if (all_lines.find(rboard) != all_lines.end()){
+    if (all_boards.find(rboard) != all_boards.end()){
         return;
     }
-    all_lines[rboard] = global_elem;
+    all_boards[rboard] = global_elem;
     if (board.n_discs() < n_moves + 4){
         uint64_t legal = board.get_legal();
         if (legal == 0){
@@ -131,14 +131,16 @@ int main(int argc, char *argv[]){
 
     Board board;
     board.reset();
+    uint64_t strt = tim();
     enumerate(board, n_moves);
-    std::cerr << all_lines.size() << " lines found at depth 0 to " << n_moves << std::endl;
-    std::vector<int> n_lines_in_depth;
+    std::cerr << "finish in " << tim() - strt << "msec" << std::endl;
+    std::cerr << all_boards.size() << " boards found at depth 0 to " << n_moves << std::endl;
+    std::vector<int> n_boards_in_depth;
     for (int i = 0; i < n_moves + 1; ++i){
-        n_lines_in_depth.emplace_back(0);
+        n_boards_in_depth.emplace_back(0);
     }
-    for (auto itr = all_lines.begin(); itr != all_lines.end(); ++itr){
-        ++n_lines_in_depth[itr->first.n_discs() - 4];
+    for (auto itr = all_boards.begin(); itr != all_boards.end(); ++itr){
+        ++n_boards_in_depth[itr->first.n_discs() - 4];
         /*
         for (int &cell: itr->second.line){
             std::cout << idx_to_coord(cell);
@@ -147,7 +149,7 @@ int main(int argc, char *argv[]){
         */
     }
     for (int i = 0; i < n_moves + 1; ++i){
-        std::cerr << "n_moves " << i << " n_lines " << n_lines_in_depth[i] << std::endl;
+        std::cerr << "n_moves " << i << " n_boards " << n_boards_in_depth[i] << std::endl;
     }
     return 0;
 }
