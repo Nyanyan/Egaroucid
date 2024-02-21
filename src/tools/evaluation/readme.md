@@ -4,7 +4,7 @@
   * 連番で収録する
 * ```tools/transcript_expansion```の```all_expand_transcript.py```あたりを実行して棋譜をボードデータに変換する
 * ```data_translate.py```で```Egaroucid/train_data/board_data/recordsX```から```Egaroucid/train_data/bin_data/日付/フェーズ```内にデータを変換する
-  * コマンドライン引数はないが、30フェーズに固定してある。
+  * コマンドライン引数はないが、60フェーズに固定してある。
   * すべてのデータを一気に変換するようになっている
   * ```data_board_to_idx.cpp```をラップしてある
     * ```evaluation_definition.hpp```でインデックスの定義をしてある

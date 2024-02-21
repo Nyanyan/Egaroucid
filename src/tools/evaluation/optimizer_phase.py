@@ -13,10 +13,12 @@ else:
     second = '0'
     beta = '0.025'
 
-if int(phase) < 20:
-    train_data_nums = [1, 2, 3, 4, 6, 7, 8, 9, 11, 15, 16, 17, 18, 19, 99]
+if int(phase) <= 10:
+    train_data_nums = [23] # book data
+elif int(phase) <= 18:
+    train_data_nums = [20, 21, 22] # begins with all first11
 else:
-    train_data_nums = [3, 4, 6, 7, 8, 9, 10, 11, 15, 16, 17, 18, 19, 99]
+    train_data_nums = [3, 4, 6, 7, 8, 9, 10, 11, 15, 16, 17, 18, 19, 20, 21, 22, 99] # no random moves!
 
 train_data = [str(elem) + '.dat' for elem in train_data_nums]
 

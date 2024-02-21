@@ -74,8 +74,8 @@ void trs_convert_transcript(std::string transcript, std::ofstream *fout){
 }
 
 int main(int argc, char* argv[]){
-    if (argc < 5){
-        std::cerr << "input [in_dir] [start_file_num] [end_file_num] [out_file]" << std::endl;
+    if (argc < 3){
+        std::cerr << "input [book_file] [out_file]" << std::endl;
         return 1;
     }
     trs_init();
