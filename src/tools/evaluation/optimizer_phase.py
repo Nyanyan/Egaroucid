@@ -9,16 +9,19 @@ if len(sys.argv) > 3:
     beta = str(sys.argv[5])
 else:
     hour = '0'
-    minute = '1'
+    minute = '15'
     second = '0'
-    beta = '0.5'
+    beta = '0.25'
 
 if int(phase) <= 10:
     train_data_nums = [23] # book data
+    n_patience = '100'
 elif int(phase) <= 18:
     train_data_nums = [20, 21, 22] # begins with all first11
+    n_patience = '5'
 else:
     train_data_nums = [3, 4, 6, 7, 8, 9, 10, 11, 15, 16, 17, 18, 19, 20, 21, 22, 99] # no random moves!
+    n_patience = '3'
 
 train_data = [str(elem) + '.dat' for elem in train_data_nums]
 
@@ -29,6 +32,7 @@ train_dirs = [train_root_dir + str(int(phase)) + '/']
 
 #model_dir = './../../../model/20240214_5/'
 model_dir = './../../../model/nomodel/'
+#model_dir = './trained/'
 
 additional_params = ''
 for tfile in train_data:
@@ -37,7 +41,7 @@ for tfile in train_data:
 
 executable = 'sgd_cuda_12_2_0.exe'
 
-cmd = executable + ' ' + phase + ' ' + hour + ' ' + minute + ' ' + second + ' ' + beta + ' ' + model_dir + phase + '.txt' + additional_params
+cmd = executable + ' ' + phase + ' ' + hour + ' ' + minute + ' ' + second + ' ' + beta + ' ' + n_patience + ' ' + model_dir + phase + '.txt' + additional_params
 print(cmd, file=sys.stderr)
 p = subprocess.Popen(cmd.split(), stdout=subprocess.PIPE)
 result = p.stdout.readline().decode().replace('\r\n', '\n').replace('\n', '')

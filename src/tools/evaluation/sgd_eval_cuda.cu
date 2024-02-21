@@ -276,7 +276,7 @@ void adj_eval_round() {
     }
 }
 
-void adj_stochastic_gradient_descent(uint64_t tl, int phase, double beta) {
+void adj_stochastic_gradient_descent(uint64_t tl, int phase, double beta, int n_patience) {
     int n_eval_params = 0;
     for (int i = 0; i < ADJ_N_EVAL; ++i) {
         n_eval_params += adj_eval_sizes[i];
@@ -316,15 +316,15 @@ void adj_stochastic_gradient_descent(uint64_t tl, int phase, double beta) {
     double pre_mse = 10000000.0;
     double additional_learn_rate = 1.0;
     int no_better_mse_count = 0;
-    while (tim() - strt < tl) {
+    while (tim() - strt < tl && additional_learn_rate > 0.0001) {
         mae_mse_calc = (t & (ADJ_PRINT_INTERVAL - 1)) == 0;
         adj_next_step(additional_learn_rate, mae_mse_calc, device_batch_random_idx, device_n_same_idx_in_feature, device_feature_first_idx, device_rev_idxes, device_eval_arr, device_alpha, device_eval_strts, device_test_data, device_feature_to_eval_idx, batch_random_idx, engine, &mae, &mse);
         if (mae_mse_calc) {
-            if (mse < pre_mse) {
+            if (mse < min_mse) {
                 no_better_mse_count = 0;
             } else{
                 ++no_better_mse_count;
-                if (no_better_mse_count >= 2) {
+                if (no_better_mse_count >= n_patience && n_patience > 0) {
                     additional_learn_rate *= 0.75;
                     no_better_mse_count = 0;
                 }
@@ -450,10 +450,10 @@ void adj_output_param() {
 
 int main(int argc, char* argv[]) {
     if (argc < 7) {
-        std::cerr << "input [phase] [hour] [minute] [second] [beta] [in_file] [test_data]" << std::endl;
+        std::cerr << "input [phase] [hour] [minute] [second] [beta] [n_patience] [in_file] [test_data]" << std::endl;
         return 1;
     }
-    if (argc - 7 >= ADJ_MAX_N_FILES) {
+    if (argc - 8 >= ADJ_MAX_N_FILES) {
         std::cerr << "too many train files" << std::endl;
         return 1;
     }
@@ -462,15 +462,16 @@ int main(int argc, char* argv[]) {
     uint64_t minute = atoi(argv[3]);
     uint64_t second = atoi(argv[4]);
     double beta = atof(argv[5]);
-    std::string in_file = (std::string)argv[6];
+    int n_patience = atoi(argv[6]);
+    std::string in_file = (std::string)argv[7];
     char* test_files[ADJ_MAX_N_FILES];
-    for (int i = 7; i < argc; ++i)
-        test_files[i - 7] = argv[i];
+    for (int i = 8; i < argc; ++i)
+        test_files[i - 8] = argv[i];
     second += minute * 60 + hour * 3600;
     adj_init_arr();
     adj_import_eval(in_file);
-    adj_import_test_data(argc - 7, test_files, phase, beta);
-    adj_stochastic_gradient_descent(second * 1000, phase, beta);
+    adj_import_test_data(argc - 8, test_files, phase, beta);
+    adj_stochastic_gradient_descent(second * 1000, phase, beta, n_patience);
     adj_output_param();
     return 0;
 }
