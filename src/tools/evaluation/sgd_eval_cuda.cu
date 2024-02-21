@@ -395,6 +395,7 @@ void adj_import_test_data(int n_files, char* files[], int use_phase, double beta
         for (j = 0; j < adj_eval_sizes[i]; ++j)
             adj_alpha_occurance[i][j] = 0;
     }
+    double score_avg = 0.0;
     for (int file_idx = 0; file_idx < n_files; ++file_idx) {
         std::cerr << files[file_idx] << std::endl;
         if (fopen_s(&fp, files[file_idx], "rb") != 0) {
@@ -415,6 +416,7 @@ void adj_import_test_data(int n_files, char* files[], int use_phase, double beta
                 ++adj_alpha_occurance[adj_feature_to_eval_idx[i]][data.features[i]];
             }
             data.score = (double)score;
+            score_avg += score;
             adj_preds.emplace_back(0);
             adj_test_data.emplace_back(data);
             ++t;
@@ -422,8 +424,10 @@ void adj_import_test_data(int n_files, char* files[], int use_phase, double beta
         }
         std::cerr << '\r' << t << std::endl;
     }
+    score_avg /= t;
     std::cerr << std::endl;
     std::cerr << t << " data loaded" << std::endl;
+    std::cerr << "score avg " << score_avg << std::endl;
     for (i = 0; i < ADJ_N_EVAL; ++i) {
         for (j = 0; j < adj_eval_sizes[i]; ++j) {
             int n_data_feature = adj_alpha_occurance[i][j];
