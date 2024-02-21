@@ -117,112 +117,114 @@
     <div class="text">
         AIの強さは中盤の先読み手数、終盤の読み切り手数、及び完全読み手数で調整されます。
         レベルが上がると計算時間が増えるので、様子を見つつ設定してください。<br>
-        各強さの詳細は以下です。
+        各強さの詳細は以下の通りです。
     </div>
-    <table>
-        <tr>
-            <td class="text">レベル</td>
-            <td class="text">中盤読み</td>
-            <td class="text">終盤読み切り</td>
-            <td class="text">完全読み</td>
-        </tr>
-        <tr>
-            <td class="text">0</td>
-            <td class="text">0手</td>
-            <td class="text">0手</td>
-            <td class="text">0手</td>
-        </tr>
-        <tr>
-            <td class="text">1</td>
-            <td class="text">1手</td>
-            <td class="text">2手</td>
-            <td class="text">2手</td>
-        </tr>
-        <tr>
-            <td class="text">2</td>
-            <td class="text">2手</td>
-            <td class="text">4手</td>
-            <td class="text">4手</td>
-        </tr>
-        <tr>
-            <td class="text">3</td>
-            <td class="text">3手</td>
-            <td class="text">6手</td>
-            <td class="text">6手</td>
-        </tr>
-        <tr>
-            <td class="text">4</td>
-            <td class="text">4手</td>
-            <td class="text">8手</td>
-            <td class="text">8手</td>
-        </tr>
-        <tr>
-            <td class="text">5</td>
-            <td class="text">5手</td>
-            <td class="text">10手</td>
-            <td class="text">10手</td>
-        </tr>
-        <tr>
-            <td class="text">6</td>
-            <td class="text">6手</td>
-            <td class="text">12手</td>
-            <td class="text">12手</td>
-        </tr>
-        <tr>
-            <td class="text">7</td>
-            <td class="text">7手</td>
-            <td class="text">14手</td>
-            <td class="text">14手</td>
-        </tr>
-        <tr>
-            <td class="text">8</td>
-            <td class="text">8手</td>
-            <td class="text">16手</td>
-            <td class="text">16手</td>
-        </tr>
-        <tr>
-            <td class="text">9</td>
-            <td class="text">9手</td>
-            <td class="text">18手</td>
-            <td class="text">18手</td>
-        </tr>
-        <tr>
-            <td class="text">10</td>
-            <td class="text">10手</td>
-            <td class="text">20手</td>
-            <td class="text">20手</td>
-        </tr>
-        <tr>
-            <td class="text">11</td>
-            <td class="text">11手</td>
-            <td class="text">20手</td>
-            <td class="text">20手</td>
-        </tr>
-        <tr>
-            <td class="text">12</td>
-            <td class="text">12手</td>
-            <td class="text">22手</td>
-            <td class="text">20手</td>
-        </tr>
-        <tr>
-            <td class="text">13</td>
-            <td class="text">13手</td>
-            <td class="text">22手</td>
-            <td class="text">20手</td>
-        </tr>
-        <tr>
-            <td class="text">14</td>
-            <td class="text">14手</td>
-            <td class="text">24手</td>
-            <td class="text">22手</td>
-        </tr>
-        <tr>
-            <td class="text">15</td>
-            <td class="text">15手</td>
-            <td class="text">24手</td>
-            <td class="text">22手</td>
-        </tr>
-    </table>
+    <div class="table_wrapper">
+        <table>
+            <tr>
+                <td class="text">レベル</td>
+                <td class="text">中盤読み</td>
+                <td class="text">終盤読み切り</td>
+                <td class="text">完全読み</td>
+            </tr>
+            <tr>
+                <td class="text">0</td>
+                <td class="text">0手</td>
+                <td class="text">0手</td>
+                <td class="text">0手</td>
+            </tr>
+            <tr>
+                <td class="text">1</td>
+                <td class="text">1手</td>
+                <td class="text">2手</td>
+                <td class="text">2手</td>
+            </tr>
+            <tr>
+                <td class="text">2</td>
+                <td class="text">2手</td>
+                <td class="text">4手</td>
+                <td class="text">4手</td>
+            </tr>
+            <tr>
+                <td class="text">3</td>
+                <td class="text">3手</td>
+                <td class="text">6手</td>
+                <td class="text">6手</td>
+            </tr>
+            <tr>
+                <td class="text">4</td>
+                <td class="text">4手</td>
+                <td class="text">8手</td>
+                <td class="text">8手</td>
+            </tr>
+            <tr>
+                <td class="text">5</td>
+                <td class="text">5手</td>
+                <td class="text">10手</td>
+                <td class="text">10手</td>
+            </tr>
+            <tr>
+                <td class="text">6</td>
+                <td class="text">6手</td>
+                <td class="text">12手</td>
+                <td class="text">12手</td>
+            </tr>
+            <tr>
+                <td class="text">7</td>
+                <td class="text">7手</td>
+                <td class="text">14手</td>
+                <td class="text">14手</td>
+            </tr>
+            <tr>
+                <td class="text">8</td>
+                <td class="text">8手</td>
+                <td class="text">16手</td>
+                <td class="text">16手</td>
+            </tr>
+            <tr>
+                <td class="text">9</td>
+                <td class="text">9手</td>
+                <td class="text">18手</td>
+                <td class="text">18手</td>
+            </tr>
+            <tr>
+                <td class="text">10</td>
+                <td class="text">10手</td>
+                <td class="text">20手</td>
+                <td class="text">20手</td>
+            </tr>
+            <tr>
+                <td class="text">11</td>
+                <td class="text">11手</td>
+                <td class="text">20手</td>
+                <td class="text">20手</td>
+            </tr>
+            <tr>
+                <td class="text">12</td>
+                <td class="text">12手</td>
+                <td class="text">22手</td>
+                <td class="text">20手</td>
+            </tr>
+            <tr>
+                <td class="text">13</td>
+                <td class="text">13手</td>
+                <td class="text">22手</td>
+                <td class="text">20手</td>
+            </tr>
+            <tr>
+                <td class="text">14</td>
+                <td class="text">14手</td>
+                <td class="text">24手</td>
+                <td class="text">22手</td>
+            </tr>
+            <tr>
+                <td class="text">15</td>
+                <td class="text">15手</td>
+                <td class="text">24手</td>
+                <td class="text">22手</td>
+            </tr>
+        </table>
+    </div>
 </div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.7.2/Chart.bundle.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/0.4.1/html2canvas.js"></script>

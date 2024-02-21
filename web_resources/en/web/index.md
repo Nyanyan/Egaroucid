@@ -119,110 +119,112 @@
         Strength is adjusted by midgame lookahead, endgame lookahead, and depth of perfect searching. 
         If you use high level, the calculation time will be long.
     </div>
-    <table>
-        <tr>
-            <td class="text">Level</td>
-            <td class="text">midgame depth</td>
-            <td class="text">endgame depth</td>
-            <td class="text">perfect search</td>
-        </tr>
-        <tr>
-            <td class="text">0</td>
-            <td class="text">0 moves</td>
-            <td class="text">0 moves</td>
-            <td class="text">0 moves</td>
-        </tr>
-        <tr>
-            <td class="text">1</td>
-            <td class="text">1 moves</td>
-            <td class="text">2 moves</td>
-            <td class="text">2 moves</td>
-        </tr>
-        <tr>
-            <td class="text">2</td>
-            <td class="text">2 moves</td>
-            <td class="text">4 moves</td>
-            <td class="text">4 moves</td>
-        </tr>
-        <tr>
-            <td class="text">3</td>
-            <td class="text">3 moves</td>
-            <td class="text">6 moves</td>
-            <td class="text">6 moves</td>
-        </tr>
-        <tr>
-            <td class="text">4</td>
-            <td class="text">4 moves</td>
-            <td class="text">8 moves</td>
-            <td class="text">8 moves</td>
-        </tr>
-        <tr>
-            <td class="text">5</td>
-            <td class="text">5 moves</td>
-            <td class="text">10 moves</td>
-            <td class="text">10 moves</td>
-        </tr>
-        <tr>
-            <td class="text">6</td>
-            <td class="text">6 moves</td>
-            <td class="text">12 moves</td>
-            <td class="text">12 moves</td>
-        </tr>
-        <tr>
-            <td class="text">7</td>
-            <td class="text">7 moves</td>
-            <td class="text">14 moves</td>
-            <td class="text">14 moves</td>
-        </tr>
-        <tr>
-            <td class="text">8</td>
-            <td class="text">8 moves</td>
-            <td class="text">16 moves</td>
-            <td class="text">16 moves</td>
-        </tr>
-        <tr>
-            <td class="text">9</td>
-            <td class="text">9 moves</td>
-            <td class="text">18 moves</td>
-            <td class="text">18 moves</td>
-        </tr>
-        <tr>
-            <td class="text">10</td>
-            <td class="text">10 moves</td>
-            <td class="text">20 moves</td>
-            <td class="text">20 moves</td>
-        </tr>
-        <tr>
-            <td class="text">11</td>
-            <td class="text">11 moves</td>
-            <td class="text">20 moves</td>
-            <td class="text">20 moves</td>
-        </tr>
-        <tr>
-            <td class="text">12</td>
-            <td class="text">12 moves</td>
-            <td class="text">22 moves</td>
-            <td class="text">20 moves</td>
-        </tr>
-        <tr>
-            <td class="text">13</td>
-            <td class="text">13 moves</td>
-            <td class="text">22 moves</td>
-            <td class="text">20 moves</td>
-        </tr>
-        <tr>
-            <td class="text">14</td>
-            <td class="text">14 moves</td>
-            <td class="text">24 moves</td>
-            <td class="text">22 moves</td>
-        </tr>
-        <tr>
-            <td class="text">15</td>
-            <td class="text">15 moves</td>
-            <td class="text">24 moves</td>
-            <td class="text">22 moves</td>
-        </tr>
-    </table>
+    <div class="table_wrapper">
+        <table>
+            <tr>
+                <td class="text">Level</td>
+                <td class="text">midgame depth</td>
+                <td class="text">endgame depth</td>
+                <td class="text">perfect search</td>
+            </tr>
+            <tr>
+                <td class="text">0</td>
+                <td class="text">0 moves</td>
+                <td class="text">0 moves</td>
+                <td class="text">0 moves</td>
+            </tr>
+            <tr>
+                <td class="text">1</td>
+                <td class="text">1 moves</td>
+                <td class="text">2 moves</td>
+                <td class="text">2 moves</td>
+            </tr>
+            <tr>
+                <td class="text">2</td>
+                <td class="text">2 moves</td>
+                <td class="text">4 moves</td>
+                <td class="text">4 moves</td>
+            </tr>
+            <tr>
+                <td class="text">3</td>
+                <td class="text">3 moves</td>
+                <td class="text">6 moves</td>
+                <td class="text">6 moves</td>
+            </tr>
+            <tr>
+                <td class="text">4</td>
+                <td class="text">4 moves</td>
+                <td class="text">8 moves</td>
+                <td class="text">8 moves</td>
+            </tr>
+            <tr>
+                <td class="text">5</td>
+                <td class="text">5 moves</td>
+                <td class="text">10 moves</td>
+                <td class="text">10 moves</td>
+            </tr>
+            <tr>
+                <td class="text">6</td>
+                <td class="text">6 moves</td>
+                <td class="text">12 moves</td>
+                <td class="text">12 moves</td>
+            </tr>
+            <tr>
+                <td class="text">7</td>
+                <td class="text">7 moves</td>
+                <td class="text">14 moves</td>
+                <td class="text">14 moves</td>
+            </tr>
+            <tr>
+                <td class="text">8</td>
+                <td class="text">8 moves</td>
+                <td class="text">16 moves</td>
+                <td class="text">16 moves</td>
+            </tr>
+            <tr>
+                <td class="text">9</td>
+                <td class="text">9 moves</td>
+                <td class="text">18 moves</td>
+                <td class="text">18 moves</td>
+            </tr>
+            <tr>
+                <td class="text">10</td>
+                <td class="text">10 moves</td>
+                <td class="text">20 moves</td>
+                <td class="text">20 moves</td>
+            </tr>
+            <tr>
+                <td class="text">11</td>
+                <td class="text">11 moves</td>
+                <td class="text">20 moves</td>
+                <td class="text">20 moves</td>
+            </tr>
+            <tr>
+                <td class="text">12</td>
+                <td class="text">12 moves</td>
+                <td class="text">22 moves</td>
+                <td class="text">20 moves</td>
+            </tr>
+            <tr>
+                <td class="text">13</td>
+                <td class="text">13 moves</td>
+                <td class="text">22 moves</td>
+                <td class="text">20 moves</td>
+            </tr>
+            <tr>
+                <td class="text">14</td>
+                <td class="text">14 moves</td>
+                <td class="text">24 moves</td>
+                <td class="text">22 moves</td>
+            </tr>
+            <tr>
+                <td class="text">15</td>
+                <td class="text">15 moves</td>
+                <td class="text">24 moves</td>
+                <td class="text">22 moves</td>
+            </tr>
+        </table>
+    </div>
 </div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.7.2/Chart.bundle.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/0.4.1/html2canvas.js"></script>
