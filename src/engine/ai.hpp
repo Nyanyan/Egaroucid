@@ -71,8 +71,7 @@ inline Search_result tree_search_level1(Board board, uint64_t legal){
     @return the result in Search_result structure
 */
 inline Search_result tree_search(Board board, int depth, uint_fast8_t mpc_level, bool show_log, bool use_multi_thread){
-    // special optimization for level 1
-    if (depth == 1 && mpc_level == MPC_100_LEVEL){
+    if (depth == 1 && mpc_level == MPC_100_LEVEL){ // special optimization for level 1
         return tree_search_level1(board, board.get_legal());
     }
     Search_result res;

@@ -275,7 +275,7 @@ void hint(Board_info *board, Options *options, State *state, std::string arg){
         int idx = 0;
         for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal))
             calc_flip(&move_list[idx++].flip, &board->board, cell);
-        int presearch_level = options->level / 2;
+        int presearch_level = std::max(1, options->level / 2);
         Board n_board = board->board.copy();
         for (Flip_value &flip_value: move_list){
             n_board.move_board(&flip_value.flip);
