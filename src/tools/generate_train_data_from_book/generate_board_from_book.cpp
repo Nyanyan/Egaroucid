@@ -69,10 +69,10 @@ bool translate_data(std::string book_file, std::string out_file){
     char policy_fixed = 99;
     for (int i = 0; i < n_boards; ++i) {
         int n_percent = (double)i / n_boards * 100;
-        if (n_percent > percent){
-            percent = n_percent;
-            std::cerr << "loading book " << percent << "%" << std::endl;
-        }
+        // if (n_percent > percent){
+        //     percent = n_percent;
+        //     std::cerr << "loading book " << percent << "%" << std::endl;
+        // }
         // read board, player
         if (fread(&p, 8, 1, fp) < 1) {
             std::cerr << "ERR" << std::endl;
@@ -127,15 +127,27 @@ bool translate_data(std::string book_file, std::string out_file){
             fclose(fp);
             return false;
         }
+        if (std::popcount(p | o) == 8){
+            std::cerr << (int)value << std::endl;
+            for (int j = 0; j < 64; ++j){
+                if (1 & (p >> (63 - j))){
+                    std::cerr << "X ";
+                } else if (1 & (o >> (63 - j))){
+                    std::cerr << "O ";
+                } else{
+                    std::cerr << ". ";
+                }
+                if (j % 8 == 7){
+                    std::cerr << std::endl;
+                }
+            }
+        }
         // push elem
         fout.write((char*)&p, 8);
         fout.write((char*)&o, 8);
         fout.write((char*)&player_fixed, 1);
         fout.write((char*)&policy_fixed, 1);
         fout.write((char*)&value, 1);
-        // if (p == 0x000000001c000000ULL && o == 0x0000001c00000000ULL){
-        //     std::cerr << "parallel oprning " << (int)value << std::endl;
-        // }
     }
     return true;
 }
