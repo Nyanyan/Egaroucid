@@ -1,76 +1,143 @@
-#include "./../../engine/board.hpp"
 #include <iostream>
 #include <iomanip>
 #include <string>
 #include <sstream>
 #include <fstream>
 #include <vector>
+#include <cstdint>
 
-void trs_init(){
-    bit_init();
-    mobility_init();
-    flip_init();
+inline bool file_open(FILE **fp, const char *file, const char *mode){
+    #ifdef _WIN64
+        return fopen_s(fp, file, mode) == 0;
+    #elif _WIN32
+        return fopen_s(fp, file, mode) == 0;
+    #else
+        *fp = fopen(file, mode);
+        return *fp != NULL;
+    #endif
 }
 
-std::string trs_fill0(int n, int d){
-    std::ostringstream ss;
-	ss << std::setw(d) << std::setfill('0') << n;
-	return ss.str();
-}
-
-struct Trs_Convert_transcript_info{
-    Board board;
-    int8_t player;
-    int8_t policy;
-};
-
-void trs_convert_transcript(std::string transcript, std::ofstream *fout){
-    int8_t y, x;
-    std::vector<Trs_Convert_transcript_info> boards;
-    Trs_Convert_transcript_info board;
-    Flip flip;
-    board.board.reset();
-    board.player = BLACK;
-    for (int i = 0; i < (int)transcript.size(); i += 2){
-        if (board.board.get_legal() == 0){
-            board.board.pass();
-            board.player ^= 1;
-        }
-        x = (int)(transcript[i] - 'a');
-        if (x < 0 || x >= HW)
-            x = (int)(transcript[i] - 'A');
-        y = (int)(transcript[i + 1] - '1');
-        board.policy = HW2_M1 - (y * HW + x);
-        boards.emplace_back(board);
-        calc_flip(&flip, &board.board, board.policy);
-        if (flip.flip == 0ULL){
-            std::cerr << "illegal move found in move " << i / 2 << " in " << transcript << std::endl;
-            return;
-        }
-        board.board.move_board(&flip);
-        board.player ^= 1;
+bool translate_data(std::string book_file, std::string out_file){
+    FILE* fp;
+    if (!file_open(&fp, book_file.c_str(), "rb")){
+        std::cerr << "[ERROR] can't open Egaroucid book " << book_file << std::endl;
+        return false;
     }
-    if (board.board.get_legal()){
-        return;
+    std::ofstream fout;
+    fout.open(out_file, std::ios::out|std::ios::binary|std::ios::trunc);
+    int n_boards;
+    char value, level, leaf_value, leaf_move, leaf_level;
+    uint32_t n_lines;
+    uint64_t p, o;
+    char egaroucid_str[10];
+    char egaroucid_str_ans[] = "DICUORAGE";
+    char elem_char;
+    char book_version;
+    // Header
+    if (fread(egaroucid_str, 1, 9, fp) < 9) {
+        std::cerr << "[ERROR] file broken" << std::endl;
+        fclose(fp);
+        return false;
     }
-    board.board.pass();
-    board.player ^= 1;
-    if (board.board.get_legal()){
-        return;
-    }
-    int8_t score = board.board.score_player();
-    int8_t rev_score = -score;
-    for (Trs_Convert_transcript_info &datum: boards){
-        fout->write((char*)&(datum.board.player), 8);
-        fout->write((char*)&(datum.board.opponent), 8);
-        fout->write((char*)&(datum.player), 1);
-        fout->write((char*)&(datum.policy), 1);
-        if (datum.player == board.player){
-            fout->write((char*)&score, 1);
-        } else{
-            fout->write((char*)&rev_score, 1);
+    for (int i = 0; i < 9; ++i){
+        if (egaroucid_str[i] != egaroucid_str_ans[i]){
+            std::cerr << "[ERROR] This is not Egarocuid book, found " << egaroucid_str[i] << ", " << (int)egaroucid_str[i] << " at char " << i << ", expected " << egaroucid_str_ans[i] << " , " << (int)egaroucid_str_ans[i] << std::endl;
+            fclose(fp);
+            return false;
         }
     }
+    if (fread(&book_version, 1, 1, fp) < 1) {
+        std::cerr << "[ERROR] file broken" << std::endl;
+        fclose(fp);
+        return false;
+    }
+    if (book_version != 3){
+        std::cerr << "[ERROR] This is not Egarocuid book version 3, found version " << (int)book_version << std::endl;
+        fclose(fp);
+        return false;
+    }
+    // Book Information
+    if (fread(&n_boards, 4, 1, fp) < 1){
+        std::cerr << "[ERROR] book broken at n_book data" << std::endl;
+        fclose(fp);
+        return false;
+    }
+    std::cerr << n_boards << " boards to read" << std::endl;
+    // for each board
+    int percent = -1;
+    char player_fixed = 0; // BLACK
+    char policy_fixed = 99;
+    for (int i = 0; i < n_boards; ++i) {
+        int n_percent = (double)i / n_boards * 100;
+        if (n_percent > percent){
+            percent = n_percent;
+            std::cerr << "loading book " << percent << "%" << std::endl;
+        }
+        // read board, player
+        if (fread(&p, 8, 1, fp) < 1) {
+            std::cerr << "ERR" << std::endl;
+            fclose(fp);
+            return false;
+        }
+        // read board, opponent
+        if (fread(&o, 8, 1, fp) < 1) {
+            std::cerr << "ERR" << std::endl;
+            fclose(fp);
+            return false;
+        }
+        // board error check
+        if (p & o){
+            std::cerr << "ERR" << std::endl;
+            fclose(fp);
+            return false;
+        }
+        // read value
+        if (fread(&value, 1, 1, fp) < 1) {
+            std::cerr << "ERR" << std::endl;
+            fclose(fp);
+            return false;
+        }
+        // read level
+        if (fread(&level, 1, 1, fp) < 1) {
+            std::cerr << "ERR" << std::endl;
+            fclose(fp);
+            return false;
+        }
+        // read n_lines
+        if (fread(&n_lines, 4, 1, fp) < 1) {
+            std::cerr << "ERR" << std::endl;
+            fclose(fp);
+            return false;
+        }
+        // read leaf value
+        if (fread(&leaf_value, 1, 1, fp) < 1) {
+            std::cerr << "ERR" << std::endl;
+            fclose(fp);
+            return false;
+        }
+        // read leaf move
+        if (fread(&leaf_move, 1, 1, fp) < 1) {
+            std::cerr << "ERR" << std::endl;
+            fclose(fp);
+            return false;
+        }
+        // read leaf level
+        if (fread(&leaf_level, 1, 1, fp) < 1) {
+            std::cerr << "ERR" << std::endl;
+            fclose(fp);
+            return false;
+        }
+        // push elem
+        fout.write((char*)&p, 8);
+        fout.write((char*)&o, 8);
+        fout.write((char*)&player_fixed, 1);
+        fout.write((char*)&policy_fixed, 1);
+        fout.write((char*)&value, 1);
+        // if (p == 0x000000001c000000ULL && o == 0x0000001c00000000ULL){
+        //     std::cerr << "parallel oprning " << (int)value << std::endl;
+        // }
+    }
+    return true;
 }
 
 int main(int argc, char* argv[]){
@@ -78,33 +145,10 @@ int main(int argc, char* argv[]){
         std::cerr << "input [book_file] [out_file]" << std::endl;
         return 1;
     }
-    trs_init();
-    std::string in_dir = std::string(argv[1]);
-    int strt_file_num = atoi(argv[2]);
-    int end_file_num = atoi(argv[3]);
-    std::string out_file = std::string(argv[4]);
-    std::ofstream fout;
-    fout.open(out_file, std::ios::out|std::ios::binary|std::ios::trunc);
-    if (!fout){
-        std::cerr << "can't open" << std::endl;
-        return 1;
+    std::string book_file = std::string(argv[1]);
+    std::string out_file = std::string(argv[2]);
+    if (translate_data(book_file, out_file)){
+        std::cerr << "completed!" << std::endl;
     }
-    int t = 0;
-    for (int file_num = strt_file_num; file_num < end_file_num; ++file_num){
-        std::cerr << "=";
-        std::string file = in_dir + "/" + trs_fill0(file_num, 7) + ".txt";
-        std::ifstream ifs(file);
-        if (!ifs) {
-            std::cerr << "can't open " << file << std::endl;
-            return 1;
-        }
-        std::string line;
-        while (std::getline(ifs, line)){
-            trs_convert_transcript(line, &fout);
-            ++t;
-        }
-    }
-    std::cerr << std::endl;
-    std::cout << t << " games found" << std::endl;
     return 0;
 }

@@ -5,7 +5,8 @@ import glob
 bin_root_dir = './../../../train_data/bin_data/20240214_1/'
 input_root_dir = './../../../train_data/board_data/'
 #board_sub_dir_nums = [1, 2, 3, 4, 6, 7, 8, 9, 10, 11, 15, 16, 17, 18, 19, 99]
-board_sub_dir_nums = [20, 21, 22]
+#board_sub_dir_nums = [20, 21, 22]
+board_sub_dir_nums = [23]
 
 N_PHASES = 60
 
