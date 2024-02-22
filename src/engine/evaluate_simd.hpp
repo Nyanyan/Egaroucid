@@ -359,6 +359,8 @@ __m256i coord_to_feature_simd[HW2][N_SIMD_EVAL_FEATURES];
 __m256i coord_to_feature_simd2[HW2][N_SIMD_EVAL_FEATURES];
 __m256i eval_simd_offsets_bef[N_SIMD_EVAL_OFFSET_BEF]; // 16bit * 16
 __m256i eval_simd_offsets_aft[N_SIMD_EVAL_OFFSET_AFT * 2]; // 32bit * 8
+
+// used in move ordering
 __m256i eval_surround_mask;
 __m128i eval_surround_shift1879;
 
@@ -663,13 +665,11 @@ inline int mid_evaluate(Board *board){
     Search search;
     search.init_board(board);
     calc_features(&search);
-
-    uint64_t player_mobility, opponent_mobility;
-    player_mobility = calc_legal(search.board.player, search.board.opponent);
-    opponent_mobility = calc_legal(search.board.opponent, search.board.player);
-    if ((player_mobility | opponent_mobility) == 0ULL)
-        return end_evaluate(&search.board);
-
+    // uint64_t player_mobility, opponent_mobility;
+    // player_mobility = calc_legal(search.board.player, search.board.opponent);
+    // opponent_mobility = calc_legal(search.board.opponent, search.board.player);
+    // if ((player_mobility | opponent_mobility) == 0ULL)
+    //     return end_evaluate(&search.board);
     int phase_idx = search.phase();
     int res = calc_pattern_diff(phase_idx, search.eval_feature_reversed, &search.eval_features[search.eval_feature_idx]);
     res += res >= 0 ? STEP_2 : -STEP_2;
@@ -688,13 +688,11 @@ inline int mid_evaluate(Board *board){
     @return evaluation value
 */
 inline int mid_evaluate_diff(Search *search){
-
-    uint64_t player_mobility, opponent_mobility;
-    player_mobility = calc_legal(search->board.player, search->board.opponent);
-    opponent_mobility = calc_legal(search->board.opponent, search->board.player);
-    if ((player_mobility | opponent_mobility) == 0ULL)
-        return end_evaluate(&search->board);
-
+    // uint64_t player_mobility, opponent_mobility;
+    // player_mobility = calc_legal(search->board.player, search->board.opponent);
+    // opponent_mobility = calc_legal(search->board.opponent, search->board.player);
+    // if ((player_mobility | opponent_mobility) == 0ULL)
+    //     return end_evaluate(&search->board);
     int phase_idx = search->phase();
     int res = calc_pattern_diff(phase_idx, search->eval_feature_reversed, &search->eval_features[search->eval_feature_idx]);
     res += res >= 0 ? STEP_2 : -STEP_2;
