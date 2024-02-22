@@ -43,3 +43,4 @@ bin/versions
 src/tools/evaluation/trained
 src/tools/enumerate_lines/11
 src/tools/generate_train_data_from_book/book
+src/tools/cut_transcript/result
