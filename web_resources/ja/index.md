@@ -101,7 +101,7 @@ Egaroucid公式として公開している色々な資料です。日本語の�
 
 ## その他のドキュメント
 
-Egaroucidに関連する資料/読み物です。日本語のみです。
+Egaroucidに関連するその他の資料です。読み物が多めです。
 
 <ul>
     <li>[オセロAI世界1位になってオセロAIをｶﾝｾﾞﾝﾆﾘｶｲｼﾀ話](https://qiita.com/Nyanyan_Cube/items/195bdc47bb1d7c6f8b24): オセロAI制作の初期にコンテストで1位になった話です</li>
@@ -111,6 +111,16 @@ Egaroucidに関連する資料/読み物です。日本語のみです。
     <li>[オセロAI世界1位が最弱オセロAIを作った話(技術編)](https://qiita.com/Nyanyan_Cube/items/43d8627539c73459635c): 負けオセロAI [Egaroucen](https://www.egaroucen.nyanyan.dev/)(自分調べで世界最弱)の技術解説です</li>
     <li>[世界1位のオセロAIをSiv3Dで人生初アプリ化した話](https://qiita.com/Nyanyan_Cube/items/bfb2bc3ba7a93c83f2d1): オセロAIを実際に画面上で動くソフトウェアとして公開した話です</li>
 </ul>
+### Othello is Solvedに関する資料
+
+2023年10月30日付で、[Othello is Solved](https://doi.org/10.48550/arXiv.2310.19387)という論文がarXivに投稿されました。私はこの論文の著者ではありませんが、専門ど真ん中なこともあり、この論文を読んで勝手に解説を書きました。Egaroucidに直接関係するものではありませんが、論文の読解にはEgaroucid開発の経験が役立ちましたのでここで紹介します。おそらく日本語でアクセスできる解説の中では一番正確かつ詳しいと思います。
+
+<ul>
+    <li>[Othello is Solved (Hiroki Takizawa)](https://doi.org/10.48550/arXiv.2310.19387): 原文(英語)です。</li>
+    <li>[「オセロが解けた」を白黒ハッキリさせようじゃないか](https://note.com/ipsj/n/n86f6dbfbfc7a): 情報処理学会の学会誌に特別解説として執筆した記事です。論文解説として短くまとめました。</li>
+    <li>[Othello is Solved 論文解説 (私見)](https://qiita.com/Nyanyan_Cube/items/a373da3157cdd117afcc): 1万7千字という長大な文章ですが、論文について詳しく解説しています。</li>
+</ul>
+
 
 
 
