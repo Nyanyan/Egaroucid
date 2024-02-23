@@ -23,11 +23,16 @@
 #define ADJ_N_SYMMETRY_PATTERNS 62
 #define ADJ_MAX_PATTERN_CELLS 10
 
+// additional features
+#define ADJ_N_ADDITIONAL_EVALS 2
+#define ADJ_MAX_SURROUND 64
+#define ADJ_MAX_STONE_NUM 65
+
 // overall
 #define ADJ_MAX_EVALUATE_IDX 59049
-#define ADJ_N_EVAL 16
-#define ADJ_N_FEATURES 62
-#define N_FLOOR_UNIQUE_FEATURES 16 // floorpow2(ADJ_N_EVAL)
+#define ADJ_N_EVAL (16 + 2)
+#define ADJ_N_FEATURES (62 + 2)
+#define N_FLOOR_UNIQUE_FEATURES 16 // floorpow2(ADJ_N_EVAL): 16-31->16 32-63->32
 
 // phase
 #define ADJ_N_PHASES 60
@@ -60,19 +65,6 @@
     #define P38 6561
     #define P39 19683
     #define P310 59049
-
-    /*
-        @brief 4 ^ N definition
-    */
-    #define P40 1
-    #define P41 4
-    #define P42 16
-    #define P43 64
-    #define P44 256
-    #define P45 1024
-    #define P46 4096
-    #define P47 16384
-    #define P48 65536
 #endif
 
 #ifndef COORD_NO
@@ -288,7 +280,9 @@ constexpr int adj_rev_patterns[ADJ_N_PATTERNS][ADJ_MAX_PATTERN_CELLS] = {
 
 constexpr int adj_eval_sizes[ADJ_N_EVAL] = {
     P38, P38, P38, P35, P36, P37, P38, P39, 
-    P310, P310, P310, P310, P310, P310, P310, P310
+    P310, P310, P310, P310, P310, P310, P310, P310, 
+    ADJ_MAX_STONE_NUM, 
+    ADJ_MAX_SURROUND * ADJ_MAX_SURROUND
 };
 
 constexpr int adj_feature_to_eval_idx[ADJ_N_FEATURES] = {
@@ -308,6 +302,8 @@ constexpr int adj_feature_to_eval_idx[ADJ_N_FEATURES] = {
     13, 13, 13, 13, 
     14, 14, 14, 14, 
     15, 15, 15, 15, 
+    16, 
+    17
 };
 
 int adj_pick_digit3(int num, int d, int n_digit){
@@ -321,13 +317,50 @@ int adj_pick_digit2(int num, int d){
 
 uint16_t adj_calc_rev_idx(int feature, int idx){
     uint16_t res = 0;
-    for (int i = 0; i < adj_pattern_n_cells[feature]; ++i){
-        res += adj_pick_digit3(idx, adj_rev_patterns[feature][i], adj_pattern_n_cells[feature]) * adj_pow3[adj_pattern_n_cells[feature] - 1 - i];
+    if (feature < ADJ_N_PATTERNS){
+        for (int i = 0; i < adj_pattern_n_cells[feature]; ++i){
+            res += adj_pick_digit3(idx, adj_rev_patterns[feature][i], adj_pattern_n_cells[feature]) * adj_pow3[adj_pattern_n_cells[feature] - 1 - i];
+        }
+    } else if (feature < ADJ_N_PATTERNS + ADJ_N_ADDITIONAL_EVALS) {
+        res = idx;
+    } else{
+        for (int i = 0; i < 8; ++i){
+            res |= adj_pick_digit2(idx, i) << (7 - i);
+            res |= adj_pick_digit2(idx, i + 8) << (15 - i);
+        }
     }
     return res;
 }
 
 #ifndef OPTIMIZER_INCLUDE
+
+int adj_calc_num_feature(Board *board){
+    return pop_count_ull(board->player) * ADJ_MAX_STONE_NUM; // board->opponent is unnecessary because of the 60 phases
+}
+
+/*
+    @brief calculate surround value used in evaluation function
+
+    @param player               a bitboard representing player
+    @param empties              a bitboard representing empties
+    @return surround value
+*/
+inline uint64_t calc_surround_part(const uint64_t player, const int dr){
+    return (player << dr) | (player >> dr);
+}
+
+inline int calc_surround(const uint64_t player, const uint64_t empties){
+    return pop_count_ull(empties & (
+        calc_surround_part(player & 0b0111111001111110011111100111111001111110011111100111111001111110ULL, 1) | 
+        calc_surround_part(player & 0b0000000011111111111111111111111111111111111111111111111100000000ULL, HW) | 
+        calc_surround_part(player & 0b0000000001111110011111100111111001111110011111100111111000000000ULL, HW_M1) | 
+        calc_surround_part(player & 0b0000000001111110011111100111111001111110011111100111111000000000ULL, HW_P1)
+    ));
+}
+
+int adj_calc_surround_feature(Board *board){
+    return calc_surround(board->player, ~(board->player | board->opponent)) * ADJ_MAX_SURROUND + calc_surround(board->opponent, ~(board->player | board->opponent));
+}
 
 inline int adj_pick_pattern(const uint_fast8_t b_arr[], int pattern_idx){
     int res = 0;
@@ -344,6 +377,8 @@ void adj_calc_features(Board *board, uint16_t res[]){
     int idx = 0;
     for (int i = 0; i < ADJ_N_SYMMETRY_PATTERNS; ++i)
         res[idx++] = adj_pick_pattern(b_arr, i);
+    res[idx++] = adj_calc_num_feature(board);
+    res[idx++] = adj_calc_surround_feature(board);
 }
 
 int calc_phase(Board *board, int16_t player){
