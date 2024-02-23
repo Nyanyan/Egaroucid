@@ -143,39 +143,7 @@ inline int get_weighted_n_moves(uint64_t legal){
     @param empties              a bitboard representing empty squares
     @return potential mobility
 */
-#if USE_SIMD
-    /*
-        @brief calculate surround value used in evaluation function
-
-        @param player               a bitboard representing player
-        @param empties              a bitboard representing empties
-        @return surround value
-    */
-    inline int calc_surround(const uint64_t player, const uint64_t empties){
-        __m256i pl = _mm256_set1_epi64x(player);
-        pl = _mm256_and_si256(pl, eval_surround_mask);
-        pl = _mm256_or_si256(_mm256_sll_epi64(pl, eval_surround_shift1879), _mm256_srl_epi64(pl, eval_surround_shift1879));
-        __m128i res = _mm_or_si128(_mm256_castsi256_si128(pl), _mm256_extracti128_si256(pl, 1));
-        res = _mm_or_si128(res, _mm_shuffle_epi32(res, 0x4e));
-        return pop_count_ull(_mm_cvtsi128_si64(res));
-    }
-
-    inline int get_potential_mobility(uint64_t opponent, uint64_t empties){
-        return calc_surround(opponent, empties);
-    }
-#else
-    inline int get_potential_mobility(uint64_t opponent, uint64_t empties){
-        uint64_t hmask = opponent & 0x7E7E7E7E7E7E7E7EULL;
-        uint64_t vmask = opponent & 0x00FFFFFFFFFFFF00ULL;
-        uint64_t hvmask = opponent & 0x007E7E7E7E7E7E00ULL;
-        uint64_t res = 
-            (hmask << 1) | (hmask >> 1) | 
-            (vmask << HW) | (vmask >> HW) | 
-            (hvmask << HW_M1) | (hvmask >> HW_M1) | 
-            (hvmask << HW_P1) | (hvmask >> HW_P1);
-        return pop_count_ull(empties & res);
-    }
-#endif
+// reuse from evaluation function
 
 /*
     @brief Evaluate a move in midgame
@@ -195,7 +163,7 @@ inline void move_evaluate(Search *search, Flip_value *flip_value, int alpha, int
         flip_value->n_legal = search->board.get_legal();
         flip_value->value += get_weighted_n_moves(flip_value->n_legal) * W_MOBILITY;
         uint64_t empties = ~(search->board.player | search->board.opponent);
-        flip_value->value += get_potential_mobility(search->board.player, empties) * W_POTENTIAL_MOBILITY;
+        flip_value->value += calc_surround(search->board.player, empties) * W_POTENTIAL_MOBILITY;
         switch (depth){
             case 0:
                 flip_value->value += mid_evaluate_diff(search) * W_VALUE;
@@ -257,7 +225,7 @@ inline void move_evaluate_end_nws(Search *search, Flip_value *flip_value){
         flip_value->n_legal = search->board.get_legal();
         flip_value->value -= pop_count_ull(flip_value->n_legal) * W_END_MOBILITY;
         //uint64_t empties = ~(search->board.player | search->board.opponent);
-        //flip_value->value += get_potential_mobility(search->board.player, empties) * W_END_POTENTIAL_MOBILITY;
+        //flip_value->value += calc_surround(search->board.player, empties) * W_END_POTENTIAL_MOBILITY;
     search->undo(&flip_value->flip);
 }
 
@@ -277,7 +245,7 @@ inline void move_evaluate_end_nws_eval(Search *search, Flip_value *flip_value){
         flip_value->n_legal = search->board.get_legal();
         flip_value->value -= pop_count_ull(flip_value->n_legal) * W_END_MOBILITY;
         //uint64_t empties = ~(search->board.player | search->board.opponent);
-        //flip_value->value += get_potential_mobility(search->board.player, empties) * W_END_POTENTIAL_MOBILITY;
+        //flip_value->value += calc_surround(search->board.player, empties) * W_END_POTENTIAL_MOBILITY;
         flip_value->value -= mid_evaluate_diff(search) * W_END_VALUE;
     search->undo(&flip_value->flip);
     eval_undo(search, &flip_value->flip);
@@ -318,7 +286,7 @@ inline void move_evaluate_nws(Search *search, Flip_value *flip_value, int alpha,
         flip_value->n_legal = search->board.get_legal();
         flip_value->value += get_weighted_n_moves(flip_value->n_legal) * W_NWS_MOBILITY;
         uint64_t empties = ~(search->board.player | search->board.opponent);
-        flip_value->value += get_potential_mobility(search->board.player, empties) * W_NWS_POTENTIAL_MOBILITY;
+        flip_value->value += calc_surround(search->board.player, empties) * W_NWS_POTENTIAL_MOBILITY;
         if (depth == 0)
             flip_value->value += mid_evaluate_diff(search) * W_NWS_VALUE_SHALLOW;
         else

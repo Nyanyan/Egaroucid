@@ -27,10 +27,6 @@
 #define MAX_CELL_PATTERNS 13
 #define MAX_EVALUATE_IDX 59049
 
-// additional features
-#define MAX_SURROUND 64
-#define MAX_STONE_NUM 65
-
 /*
     @brief value definition
 
@@ -343,8 +339,6 @@ constexpr uint_fast16_t pow3[11] = {1, P31, P32, P33, P34, P35, P36, P37, P38, P
     @brief evaluation parameters
 */
 int16_t pattern_arr[2][N_PHASES][N_PATTERNS][MAX_EVALUATE_IDX];
-int16_t eval_sur0_sur1_arr[N_PHASES][MAX_SURROUND][MAX_SURROUND];
-int16_t eval_num_arr[N_PHASES][MAX_STONE_NUM];
 
 /*
     @brief used for unzipping the evaluation function
@@ -404,16 +398,6 @@ inline bool init_evaluation_calc(const char* file, bool show_log){
                 fclose(fp);
                 return false;
             }
-        }
-        if (fread(eval_num_arr[phase_idx], 2, MAX_STONE_NUM, fp) < MAX_STONE_NUM){
-            std::cerr << "[ERROR] [FATAL] evaluation file broken" << std::endl;
-            fclose(fp);
-            return false;
-        }
-        if (fread(eval_sur0_sur1_arr[phase_idx], 2, MAX_SURROUND * MAX_SURROUND, fp) < MAX_SURROUND * MAX_SURROUND){
-            std::cerr << "[ERROR] [FATAL] evaluation file broken" << std::endl;
-            fclose(fp);
-            return false;
         }
     }
     if (thread_pool.size() >= 2){
@@ -493,7 +477,7 @@ inline int end_evaluate(Board *b, int e){
 }
 
 /*
-    @brief evaluation function for game over (odd empties)
+    @brief evaluation function for game over (odd empties) There is no Draw!
 
     @param b                    board
     @param e                    number of empty squares
@@ -503,25 +487,6 @@ inline int end_evaluate_odd(Board *b, int e){
     int score = b->count_player() * 2 + e;
     score += (((score >> 5) & 2) - 1) * e;
     return score - HW2;
-}
-
-/*
-    @brief calculate surround value used in evaluation function
-
-    @param discs                a bitboard representing discs
-    @param empties              a bitboard representing empties
-    @return surround value
-*/
-inline int calc_surround(uint64_t discs, uint64_t empties){
-    uint64_t hmask = discs & 0x7E7E7E7E7E7E7E7EULL;
-    uint64_t vmask = discs & 0x00FFFFFFFFFFFF00ULL;
-    uint64_t hvmask = discs & 0x007E7E7E7E7E7E00ULL;
-    uint64_t res = 
-        (hmask << 1) | (hmask >> 1) | 
-        (vmask << HW) | (vmask >> HW) | 
-        (hvmask << HW_M1) | (hvmask >> HW_M1) | 
-        (hvmask << HW_P1) | (hvmask >> HW_P1);
-    return pop_count_ull(empties & res);
 }
 
 /*
@@ -563,23 +528,13 @@ inline int mid_evaluate(Board *board){
     Search search;
     search.init_board(board);
     calc_features(&search);
-    /*
-    uint64_t player_mobility, opponent_mobility;
-    player_mobility = calc_legal(search.board.player, search.board.opponent);
-    opponent_mobility = calc_legal(search.board.opponent, search.board.player);
-    if ((player_mobility | opponent_mobility) == 0ULL)
-        return end_evaluate(&search.board);
-    */
-    int phase_idx, sur0, sur1, num0;
-    uint64_t empties;
-    phase_idx = search.phase();
-    empties = ~(search.board.player | search.board.opponent);
-    sur0 = calc_surround(search.board.player, empties);
-    sur1 = calc_surround(search.board.opponent, empties);
-    num0 = pop_count_ull(search.board.player);
-    int res = calc_pattern_diff(phase_idx, &search) + 
-        eval_num_arr[phase_idx][num0] + 
-        eval_sur0_sur1_arr[phase_idx][sur0][sur1];
+    // uint64_t player_mobility, opponent_mobility;
+    // player_mobility = calc_legal(search.board.player, search.board.opponent);
+    // opponent_mobility = calc_legal(search.board.opponent, search.board.player);
+    // if ((player_mobility | opponent_mobility) == 0ULL)
+    //     return end_evaluate(&search.board);
+    int phase_idx = search.phase();
+    int res = calc_pattern_diff(phase_idx, &search);
     res += res >= 0 ? STEP_2 : -STEP_2;
     res /= STEP;
     if (res > SCORE_MAX)
@@ -596,23 +551,13 @@ inline int mid_evaluate(Board *board){
     @return evaluation value
 */
 inline int mid_evaluate_diff(Search *search){
-    /*
-    uint64_t player_mobility, opponent_mobility;
-    player_mobility = calc_legal(search->board.player, search->board.opponent);
-    opponent_mobility = calc_legal(search->board.opponent, search->board.player);
-    if ((player_mobility | opponent_mobility) == 0ULL)
-        return end_evaluate(&search->board);
-    */
-    int phase_idx, sur0, sur1, num0;
-    uint64_t empties;
-    phase_idx = search->phase();
-    empties = ~(search->board.player | search->board.opponent);
-    sur0 = calc_surround(search->board.player, empties);
-    sur1 = calc_surround(search->board.opponent, empties);
-    num0 = pop_count_ull(search->board.player);
-    int res = calc_pattern_diff(phase_idx, search) + 
-        eval_num_arr[phase_idx][num0] + 
-        eval_sur0_sur1_arr[phase_idx][sur0][sur1];
+    // uint64_t player_mobility, opponent_mobility;
+    // player_mobility = calc_legal(search->board.player, search->board.opponent);
+    // opponent_mobility = calc_legal(search->board.opponent, search->board.player);
+    // if ((player_mobility | opponent_mobility) == 0ULL)
+    //     return end_evaluate(&search->board);
+    int phase_idx = search->phase();
+    int res = calc_pattern_diff(phase_idx, search);
     res += res >= 0 ? STEP_2 : -STEP_2;
     res /= STEP;
     if (res > SCORE_MAX)
