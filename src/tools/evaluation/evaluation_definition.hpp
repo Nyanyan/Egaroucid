@@ -321,13 +321,8 @@ uint16_t adj_calc_rev_idx(int feature, int idx){
         for (int i = 0; i < adj_pattern_n_cells[feature]; ++i){
             res += adj_pick_digit3(idx, adj_rev_patterns[feature][i], adj_pattern_n_cells[feature]) * adj_pow3[adj_pattern_n_cells[feature] - 1 - i];
         }
-    } else if (feature < ADJ_N_PATTERNS + ADJ_N_ADDITIONAL_EVALS) {
-        res = idx;
     } else{
-        for (int i = 0; i < 8; ++i){
-            res |= adj_pick_digit2(idx, i) << (7 - i);
-            res |= adj_pick_digit2(idx, i + 8) << (15 - i);
-        }
+        res = idx;
     }
     return res;
 }
@@ -335,7 +330,7 @@ uint16_t adj_calc_rev_idx(int feature, int idx){
 #ifndef OPTIMIZER_INCLUDE
 
 int adj_calc_num_feature(Board *board){
-    return pop_count_ull(board->player) * ADJ_MAX_STONE_NUM; // board->opponent is unnecessary because of the 60 phases
+    return pop_count_ull(board->player); // board->opponent is unnecessary because of the 60 phases
 }
 
 /*
@@ -345,17 +340,16 @@ int adj_calc_num_feature(Board *board){
     @param empties              a bitboard representing empties
     @return surround value
 */
-inline uint64_t calc_surround_part(const uint64_t player, const int dr){
-    return (player << dr) | (player >> dr);
-}
-
-inline int calc_surround(const uint64_t player, const uint64_t empties){
-    return pop_count_ull(empties & (
-        calc_surround_part(player & 0b0111111001111110011111100111111001111110011111100111111001111110ULL, 1) | 
-        calc_surround_part(player & 0b0000000011111111111111111111111111111111111111111111111100000000ULL, HW) | 
-        calc_surround_part(player & 0b0000000001111110011111100111111001111110011111100111111000000000ULL, HW_M1) | 
-        calc_surround_part(player & 0b0000000001111110011111100111111001111110011111100111111000000000ULL, HW_P1)
-    ));
+inline int calc_surround(uint64_t discs, uint64_t empties){
+    uint64_t hmask = discs & 0x7E7E7E7E7E7E7E7EULL;
+    uint64_t vmask = discs & 0x00FFFFFFFFFFFF00ULL;
+    uint64_t hvmask = discs & 0x007E7E7E7E7E7E00ULL;
+    uint64_t res = 
+        (hmask << 1) | (hmask >> 1) | 
+        (vmask << HW) | (vmask >> HW) | 
+        (hvmask << HW_M1) | (hvmask >> HW_M1) | 
+        (hvmask << HW_P1) | (hvmask >> HW_P1);
+    return pop_count_ull(empties & res);
 }
 
 int adj_calc_surround_feature(Board *board){

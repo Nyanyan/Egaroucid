@@ -9,9 +9,9 @@ if len(sys.argv) > 3:
     beta = str(sys.argv[5])
 else:
     hour = '0'
-    minute = '15'
+    minute = '1'
     second = '0'
-    beta = '0.25'
+    beta = '0.5'
 
 if int(phase) <= 10:
     train_data_nums = [23] # book data
@@ -25,7 +25,7 @@ else:
 
 train_data = [str(elem) + '.dat' for elem in train_data_nums]
 
-train_root_dir = './../../../train_data/bin_data/20240214_1/'
+train_root_dir = './../../../train_data/bin_data/20240223_1/'
 
 #train_dirs = [train_root_dir + str(elem) + '/' for elem in range(int(phase) * 2, int(phase) * 2 + 2)]
 train_dirs = [train_root_dir + str(int(phase)) + '/']
