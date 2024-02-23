@@ -9,13 +9,13 @@ if len(sys.argv) > 3:
     beta = str(sys.argv[5])
 else:
     hour = '0'
-    minute = '1'
-    second = '0'
-    beta = '0.5'
+    minute = '6'
+    second = '40'
+    beta = '0.25'
 
 if int(phase) <= 10:
     train_data_nums = [23] # book data
-    n_patience = '100'
+    n_patience = '10'
 elif int(phase) <= 18:
     train_data_nums = [20, 21, 22] # begins with all first11
     n_patience = '5'
