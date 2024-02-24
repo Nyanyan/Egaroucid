@@ -1,3 +1,13 @@
+/*
+    Egaroucid Project
+
+    @file eval_optimizer_cuda.cu
+        Evaluation Function Optimizer in CUDA
+    @date 2021-2024
+    @author Takuto Yamana
+    @license GPL-3.0 license
+*/
+
 #include "cuda_runtime.h"
 #include "device_launch_parameters.h"
 
@@ -45,6 +55,9 @@ inline uint64_t tim(){
     return std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now().time_since_epoch()).count();
 }
 
+/*
+    @brief initialize some arrays
+*/
 void adj_init_arr(int eval_size, float *host_eval_arr, int *host_rev_idx_arr) {
     for (int i = 0; i < eval_size; ++i) {
         host_eval_arr[i] = 0.0;
@@ -58,6 +71,9 @@ void adj_init_arr(int eval_size, float *host_eval_arr, int *host_rev_idx_arr) {
     }
 }
 
+/*
+    @brief import pre-calculated evaluation function
+*/
 void adj_import_eval(std::string file, int eval_size, float *host_eval_arr) {
     std::ifstream ifs(file);
     if (ifs.fail()) {
@@ -75,6 +91,9 @@ void adj_import_eval(std::string file, int eval_size, float *host_eval_arr) {
     }
 }
 
+/*
+    @brief import train data
+*/
 int adj_import_train_data(int n_files, char* files[], Adj_Data* host_train_data, int *host_rev_idx_arr, int *host_n_appear_arr) {
     int n_data = 0;
     FILE* fp;
@@ -125,6 +144,9 @@ int adj_import_train_data(int n_files, char* files[], Adj_Data* host_train_data,
     return n_data;
 }
 
+/*
+    @brief calculate residual error
+*/
 __global__ void adj_calculate_residual(const float *device_eval_arr, const int n_data, const Adj_Data *device_train_data, int *device_rev_idx_arr, float *device_residual_arr, float *device_error_monitor_arr){
     const int data_idx = blockIdx.x * blockDim.x + threadIdx.x;
     if (data_idx >= n_data){
@@ -149,9 +171,9 @@ __global__ void adj_calculate_residual(const float *device_eval_arr, const int n
 }
 
 /*
-    @brief GD
+    @brief Gradient Descent Optimizer
 */
-__global__ void adj_next_step_gd(const int eval_size, float *device_eval_arr, int *device_n_appear_arr, float *device_residual_arr, float alpha_stab){
+__global__ void gradient_descent(const int eval_size, float *device_eval_arr, int *device_n_appear_arr, float *device_residual_arr, float alpha_stab){
     const int eval_idx = blockIdx.x * blockDim.x + threadIdx.x;
     if (eval_idx >= eval_size){
         return;
@@ -165,9 +187,9 @@ __global__ void adj_next_step_gd(const int eval_size, float *device_eval_arr, in
 }
 
 /*
-    @brief Momentum
+    @brief Momentum Optimizer
 */
-__global__ void adj_next_step_momentum(const int eval_size, float *device_eval_arr, int *device_n_appear_arr, float *device_residual_arr, float alpha_stab, float *device_m_arr, const int n_loop){
+__global__ void momentum(const int eval_size, float *device_eval_arr, int *device_n_appear_arr, float *device_residual_arr, float alpha_stab, float *device_m_arr, const int n_loop){
     const int eval_idx = blockIdx.x * blockDim.x + threadIdx.x;
     if (eval_idx >= eval_size){
         return;
@@ -183,9 +205,9 @@ __global__ void adj_next_step_momentum(const int eval_size, float *device_eval_a
 }
 
 /*
-    @brief AdaGrad
+    @brief AdaGrad Optimizer
 */
-__global__ void adj_next_step_adagrad(const int eval_size, float *device_eval_arr, int *device_n_appear_arr, float *device_residual_arr, float alpha_stab, float *device_v_arr, const int n_loop){
+__global__ void adagrad(const int eval_size, float *device_eval_arr, int *device_n_appear_arr, float *device_residual_arr, float alpha_stab, float *device_v_arr, const int n_loop){
     const int eval_idx = blockIdx.x * blockDim.x + threadIdx.x;
     if (eval_idx >= eval_size){
         return;
@@ -202,9 +224,9 @@ __global__ void adj_next_step_adagrad(const int eval_size, float *device_eval_ar
 }
 
 /*
-    @brief Adam
+    @brief Adam Optimizer
 */
-__global__ void adj_next_step_adam(const int eval_size, float *device_eval_arr, int *device_n_appear_arr, float *device_residual_arr, float alpha_stab, float *device_m_arr, float *device_v_arr, const int n_loop){
+__global__ void adam(const int eval_size, float *device_eval_arr, int *device_n_appear_arr, float *device_residual_arr, float alpha_stab, float *device_m_arr, float *device_v_arr, const int n_loop){
     const int eval_idx = blockIdx.x * blockDim.x + threadIdx.x;
     if (eval_idx >= eval_size){
         return;
@@ -223,6 +245,9 @@ __global__ void adj_next_step_adam(const int eval_size, float *device_eval_arr, 
     device_residual_arr[eval_idx] = 0.0;
 }
 
+/*
+    @brief Output Parameters as integer
+*/
 void adj_output_param(int eval_size, float *host_eval_arr) {
     for (int i = 0; i < eval_size; ++i) {
         std::cout << (int)round(host_eval_arr[i]) << std::endl;
@@ -316,10 +341,10 @@ int main(int argc, char* argv[]) {
         cudaMemcpy(host_error_monitor_arr, device_error_monitor_arr, sizeof(float) * N_ERROR_MONITOR, cudaMemcpyDeviceToHost);
         std::cerr << "\rn_loop " << n_loop << " progress " << (tim() - strt) * 100 / msecond << "% MSE " << host_error_monitor_arr[0] << " MAE " << host_error_monitor_arr[1] << "               ";
         
-        // adj_next_step_gd <<<n_blocks_next_step, N_THREADS_PER_BLOCK_NEXT_STEP>>> (eval_size, device_eval_arr, device_n_appear_arr, device_residual_arr, alpha_stab);
-        // adj_next_step_momentum <<<n_blocks_next_step, N_THREADS_PER_BLOCK_NEXT_STEP>>> (eval_size, device_eval_arr, device_n_appear_arr, device_residual_arr, alpha_stab, device_m_arr, n_loop);
-        // adj_next_step_adagrad <<<n_blocks_next_step, N_THREADS_PER_BLOCK_NEXT_STEP>>> (eval_size, device_eval_arr, device_n_appear_arr, device_residual_arr, alpha_stab, device_v_arr, n_loop);
-        adj_next_step_adam <<<n_blocks_next_step, N_THREADS_PER_BLOCK_NEXT_STEP>>> (eval_size, device_eval_arr, device_n_appear_arr, device_residual_arr, alpha_stab, device_m_arr, device_v_arr, n_loop);
+        // gradient_descent <<<n_blocks_next_step, N_THREADS_PER_BLOCK_NEXT_STEP>>> (eval_size, device_eval_arr, device_n_appear_arr, device_residual_arr, alpha_stab);
+        // momentum <<<n_blocks_next_step, N_THREADS_PER_BLOCK_NEXT_STEP>>> (eval_size, device_eval_arr, device_n_appear_arr, device_residual_arr, alpha_stab, device_m_arr, n_loop);
+        // adagrad <<<n_blocks_next_step, N_THREADS_PER_BLOCK_NEXT_STEP>>> (eval_size, device_eval_arr, device_n_appear_arr, device_residual_arr, alpha_stab, device_v_arr, n_loop);
+        adam <<<n_blocks_next_step, N_THREADS_PER_BLOCK_NEXT_STEP>>> (eval_size, device_eval_arr, device_n_appear_arr, device_residual_arr, alpha_stab, device_m_arr, device_v_arr, n_loop);
     }
     std::cerr << std::endl;
 
