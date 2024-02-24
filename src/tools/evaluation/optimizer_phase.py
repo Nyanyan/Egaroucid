@@ -9,8 +9,8 @@ if len(sys.argv) > 3:
     beta = str(sys.argv[5])
 else:
     hour = '0'
-    minute = '3'
-    second = '0'
+    minute = '0'
+    second = '10'
     beta = '0.1'
 
 if int(phase) <= 10:
@@ -32,14 +32,14 @@ train_dirs = [train_root_dir + str(int(phase)) + '/']
 
 model_dir = './../../../model/nomodel/'
 
-model_dir = './../../../model/20240223_1/'
+model_dir = './../../../model/20240223_2/'
 
 additional_params = ''
 for tfile in train_data:
     for train_dir in train_dirs:
         additional_params += ' ' + train_dir + tfile
 
-executable = 'sgd_cuda_12_2_0.exe'
+executable = 'eval_optimizer_cuda_12_2_0.exe'
 
 cmd = executable + ' ' + phase + ' ' + hour + ' ' + minute + ' ' + second + ' ' + beta + ' ' + n_patience + ' ' + model_dir + phase + '.txt' + additional_params
 print(cmd, file=sys.stderr)

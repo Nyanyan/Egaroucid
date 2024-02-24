@@ -3,6 +3,9 @@
     #include "./../../engine/board.hpp"
 #endif
 
+#define EVAL_DEFINITION_NAME "20240223_1"
+#define EVAL_DEFINITION_DESCRIPTION "6.5's pattern + n_discs_of_player + n_surround_of_both"
+
 #ifndef HW
     #define HW 8
 #endif
@@ -47,7 +50,6 @@
 */
 #define ADJ_STEP 128
 #define ADJ_STEP_2 64
-//#define ADJ_STEP_SHIFT 7
 
 #ifndef PNO
     /*
