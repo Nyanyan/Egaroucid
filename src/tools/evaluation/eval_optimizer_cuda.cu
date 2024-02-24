@@ -158,7 +158,9 @@ __global__ void adj_next_step_gd(const int eval_size, float *device_eval_arr, in
     }
     float lr = alpha_stab / device_n_appear_arr[eval_idx];
     float grad = 2.0 * device_residual_arr[eval_idx];
-    device_eval_arr[eval_idx] += lr * grad;
+    if (grad != 0.0){
+        device_eval_arr[eval_idx] += lr * grad;
+    }
     device_residual_arr[eval_idx] = 0.0;
 }
 
@@ -172,9 +174,11 @@ __global__ void adj_next_step_momentum(const int eval_size, float *device_eval_a
     }
     float lr = alpha_stab / device_n_appear_arr[eval_idx];
     float grad = 2.0 * device_residual_arr[eval_idx];
-    constexpr float beta1 = 0.9;
-    device_m_arr[eval_idx] = beta1 * device_m_arr[eval_idx] + lr * grad;
-    device_eval_arr[eval_idx] += device_m_arr[eval_idx];
+    if (grad != 0.0){
+        constexpr float beta1 = 0.9;
+        device_m_arr[eval_idx] = beta1 * device_m_arr[eval_idx] + lr * grad;
+        device_eval_arr[eval_idx] += device_m_arr[eval_idx];
+    }
     device_residual_arr[eval_idx] = 0.0;
 }
 
@@ -188,10 +192,12 @@ __global__ void adj_next_step_adagrad(const int eval_size, float *device_eval_ar
     }
     float lr = alpha_stab / device_n_appear_arr[eval_idx];
     float grad = 2.0 * device_residual_arr[eval_idx];
-    constexpr float beta2 = 0.999;
-    constexpr float epsilon = 1e-7;
-    device_v_arr[eval_idx] += grad * grad;
-    device_eval_arr[eval_idx] += lr * grad / (sqrt(device_v_arr[eval_idx]) + epsilon);
+    if (grad != 0.0){
+        constexpr float beta2 = 0.999;
+        constexpr float epsilon = 1e-7;
+        device_v_arr[eval_idx] += grad * grad;
+        device_eval_arr[eval_idx] += lr * grad / (sqrt(device_v_arr[eval_idx]) + epsilon);
+    }
     device_residual_arr[eval_idx] = 0.0;
 }
 
@@ -205,13 +211,15 @@ __global__ void adj_next_step_adam(const int eval_size, float *device_eval_arr, 
     }
     float lr = alpha_stab / device_n_appear_arr[eval_idx];
     float grad = 2.0 * device_residual_arr[eval_idx];
-    constexpr float beta1 = 0.9;
-    constexpr float beta2 = 0.999;
-    constexpr float epsilon = 1e-7;
-    float lrt = lr * sqrt(1.0 - pow(beta2, n_loop)) / (1.0 - pow(beta1, n_loop));
-    device_m_arr[eval_idx] += (1.0 - beta1) * (grad - device_m_arr[eval_idx]);
-    device_v_arr[eval_idx] += (1.0 - beta2) * (grad * grad - device_v_arr[eval_idx]);
-    device_eval_arr[eval_idx] += lrt * device_m_arr[eval_idx] / (sqrt(device_v_arr[eval_idx]) + epsilon);
+    if (grad != 0.0){
+        constexpr float beta1 = 0.9;
+        constexpr float beta2 = 0.999;
+        constexpr float epsilon = 1e-7;
+        float lrt = lr * sqrt(1.0 - pow(beta2, n_loop)) / (1.0 - pow(beta1, n_loop));
+        device_m_arr[eval_idx] += (1.0 - beta1) * (grad - device_m_arr[eval_idx]);
+        device_v_arr[eval_idx] += (1.0 - beta2) * (grad * grad - device_v_arr[eval_idx]);
+        device_eval_arr[eval_idx] += lrt * device_m_arr[eval_idx] / (sqrt(device_v_arr[eval_idx]) + epsilon);
+    }
     device_residual_arr[eval_idx] = 0.0;
 }
 
