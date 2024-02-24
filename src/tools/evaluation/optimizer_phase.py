@@ -10,9 +10,8 @@ if len(sys.argv) > 3:
 else:
     hour = '0'
     minute = '0'
-    second = '10'
-    #alpha = '0.1'
-    alpha = '1000000'
+    second = '30'
+    alpha = '100'
 
 if int(phase) <= 10:
     train_data_nums = [23] # book data
