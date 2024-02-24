@@ -11,7 +11,8 @@ else:
     hour = '0'
     minute = '1'
     second = '0'
-    alpha = '1000000'
+    #alpha = '1000000'
+    alpha = '0.1'
 
 if int(phase) <= 10:
     train_data_nums = [23] # book data
