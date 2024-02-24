@@ -6,12 +6,12 @@ if len(sys.argv) > 3:
     hour = str(sys.argv[2])
     minute = str(sys.argv[3])
     second = str(sys.argv[4])
-    beta = str(sys.argv[5])
+    alpha = str(sys.argv[5])
 else:
     hour = '0'
-    minute = '0'
-    second = '10'
-    beta = '0.1'
+    minute = '1'
+    second = '0'
+    alpha = '1000000'
 
 if int(phase) <= 10:
     train_data_nums = [23] # book data
@@ -32,7 +32,7 @@ train_dirs = [train_root_dir + str(int(phase)) + '/']
 
 model_dir = './../../../model/nomodel/'
 
-model_dir = './../../../model/20240223_2/'
+#model_dir = './../../../model/20240223_2/'
 
 additional_params = ''
 for tfile in train_data:
@@ -41,7 +41,7 @@ for tfile in train_data:
 
 executable = 'eval_optimizer_cuda_12_2_0.exe'
 
-cmd = executable + ' ' + phase + ' ' + hour + ' ' + minute + ' ' + second + ' ' + beta + ' ' + n_patience + ' ' + model_dir + phase + '.txt' + additional_params
+cmd = executable + ' ' + phase + ' ' + hour + ' ' + minute + ' ' + second + ' ' + alpha + ' ' + n_patience + ' ' + model_dir + phase + '.txt' + additional_params
 print(cmd, file=sys.stderr)
 p = subprocess.Popen(cmd.split(), stdout=subprocess.PIPE)
 result = p.stdout.readline().decode().replace('\r\n', '\n').replace('\n', '')
