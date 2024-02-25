@@ -25,13 +25,13 @@
 /*
     @brief constants for ProbCut error calculation
 */
-#define probcut_a 0.3751721838248846
-#define probcut_b -1.8352941535241047
-#define probcut_c 1.8368724462489843
-#define probcut_d 0.8431454514755922
-#define probcut_e -3.013459627561517
-#define probcut_f 8.3298545018757
-#define probcut_g 2.539773029643781
+#define probcut_a 0.27884360933516533
+#define probcut_b -1.9584834396898425
+#define probcut_c 1.8584837858502157
+#define probcut_d 2.110314938451053
+#define probcut_e -7.3614300833976145
+#define probcut_f 12.618839768959495
+#define probcut_g 1.6463959980396292
 
 #define probcut_end_a 1.908798448361043
 #define probcut_end_b 1.6468299594064413
@@ -55,10 +55,10 @@ constexpr int mpc_search_depth_arr[2][61] = {
         24, 25, 26, 27, 26, 27, 28, 29, 28, 29, 
         30
     }, { // endgame
-         0,  1,  0,  1,  0,  1,  0,  1,  2,  3, 
-         2,  3,  2,  3,  2,  3,  4,  5,  4,  5, 
-         4,  5,  4,  5,  6,  7,  6,  7,  6,  7, 
-         6,  7,  8,  9,  8,  9,  8,  9,  8,  9, 
+         0,  0,  0,  1,  0,  1,  2,  3,  2,  3, 
+         4,  5,  4,  5,  4,  5,  4,  5,  4,  5, 
+         6,  7,  6,  7,  8,  9,  8,  9,  8,  9, 
+         8,  9,  8,  9,  8,  9,  8,  9,  8,  9, 
         10, 11, 10, 11, 10, 11, 10, 11, 12, 13, 
         12, 13, 12, 13, 12, 13, 14, 15, 14, 15, 
         14
