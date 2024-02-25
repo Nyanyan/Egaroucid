@@ -7,6 +7,9 @@ from scipy.optimize import curve_fit
 from matplotlib import animation
 import math
 
+#depth1: short
+#depth2: long
+
 #data_file = 'data/mid.txt'
 
 #with open(data_file, 'r') as f:
@@ -66,7 +69,7 @@ for n_discs in range(61):
         w_n_discs.append(n_discs)
         x_depth1.append(depth1)
         y_depth2.append(depth2)
-        z_error.append(3.5)
+        z_error.append(2.0)
         weight.append(0.002)
 
 def f(wxy, probcut_a, probcut_b, probcut_c, probcut_d, probcut_e, probcut_f, probcut_g, probcut_h, probcut_i, probcut_j):
@@ -99,8 +102,8 @@ def plot_fit_result_onephase(n_discs, params):
     ax.plot(x_depth1_phase, y_depth2_phase, z_error_phase, ms=3, marker="o",linestyle='None')
     mx, my = np.meshgrid(range(61), range(61))
     ax.plot_wireframe(mx, my, f_max((n_discs, mx, my), *params), rstride=10, cstride=10)
-    ax.set_xlabel('depth1')
-    ax.set_ylabel('depth2')
+    ax.set_xlabel('depth1_short')
+    ax.set_ylabel('depth2_long')
     ax.set_zlabel('error')
     ax.set_zlim((0, 18))
     plt.show()

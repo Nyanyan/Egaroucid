@@ -7,25 +7,23 @@ from scipy.optimize import curve_fit
 from matplotlib import animation
 import math
 
-#data_file = 'data/end.txt'
-
-#with open(data_file, 'r') as f:
-#    raw_data = f.read().splitlines()
+data_files = ['data/probcut_end.txt', 'data/probcut_end2.txt']
 
 data = [[[] for _ in range(61)] for _ in range(65)] # n_discs, depth
-
-#for datum in raw_data:
-#    n_discs, depth, error = [int(elem) for elem in datum.split()]
-#    data[n_discs][depth].append(error)
+for data_file in data_files:
+    with open(data_file, 'r') as f:
+        raw_data = f.read().splitlines()
+    for datum in raw_data:
+        n_discs, depth, error = [int(elem) for elem in datum.split()]
+        data[n_discs][depth].append(error)
 x_n_discs = []
 y_depth = []
 z_error = []
 weight = []
 
-'''
 
 for n_discs in range(len(data)):
-    if n_discs >= 64 - 13:
+    if n_discs > 60:
         continue
     for depth in range(len(data[n_discs])):
         if len(data[n_discs][depth]) >= 3:
@@ -33,31 +31,32 @@ for n_discs in range(len(data)):
             sigma = statistics.stdev(data[n_discs][depth])
             x_n_discs.append(n_discs)
             y_depth.append(depth)
-            z_error.append(sigma + const_weight)
+            z_error.append(sigma)
             weight.append(1 / len(data[n_discs][depth]))
-'''
 
 for n_discs in range(80):
     depth = 64 - n_discs + 5
     x_n_discs.append(n_discs)
     y_depth.append(depth)
-    z_error.append(2.0)
-    weight.append(0.001)
+    z_error.append(0.0)
+    weight.append(0.1)
+
 
 for n_discs in range(60):
     depth = 0
     x_n_discs.append(n_discs)
     y_depth.append(depth)
-    z_error.append(11.0 - (n_discs - 4 - depth) / 60 * 10.0)
+    z_error.append(6.0 - (n_discs - 4 - depth) / 60 * 2.0)
     weight.append(0.008)
 
+'''
 for n_discs in range(60):
     depth = (64 - n_discs) / 2
     x_n_discs.append(n_discs)
     y_depth.append(depth)
-    z_error.append(5.0 - (n_discs - 4 - depth) / 60 * 4.0)
+    z_error.append(3.0 - (n_discs - 4 - depth) / 60 * 0.5)
     weight.append(0.008)
-
+'''
 
 def f(xy, probcut_a, probcut_b, probcut_c, probcut_d, probcut_e, probcut_f, probcut_g, probcut_h, probcut_i, probcut_j):
     x, y = xy
@@ -80,8 +79,10 @@ def plot_fit_result(params):
     mx, my = np.meshgrid(range(65), range(61))
     ax.plot_wireframe(mx, my, f_max((mx, my), *params), rstride=10, cstride=10)
     ax.set_xlabel('n_discs')
-    ax.set_ylabel('depth')
+    ax.set_ylabel('search_depth')
     ax.set_zlabel('error')
+    ax.set_xlim(0, 64)
+    ax.set_ylim(0, 15)
     plt.show()
 
 probcut_params_before = [1.0 for _ in range(10)]
