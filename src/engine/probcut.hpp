@@ -33,12 +33,12 @@
 #define probcut_f 12.618839768959495
 #define probcut_g 1.6463959980396292
 
-#define probcut_end_a 1.908798448361043
-#define probcut_end_b 1.6468299594064413
-#define probcut_end_c 2.0530449406091082
-#define probcut_end_d -5.961374118848742
-#define probcut_end_e -0.7753956186749736
-#define probcut_end_f 10.95261264952042
+#define probcut_end_a 1.8232515920394263
+#define probcut_end_b 1.7100443454535517
+#define probcut_end_c -2.6269786115919933
+#define probcut_end_d 6.926275012647698
+#define probcut_end_e -7.0410163578217615
+#define probcut_end_f 7.035713544954932
 
 #if USE_MPC_PRE_CALCULATION
     int mpc_error[N_SELECTIVITY_LEVEL][HW2 + 1][HW2 - 3][HW2 - 3];
@@ -55,18 +55,14 @@ constexpr int mpc_search_depth_arr[2][61] = {
         24, 25, 26, 27, 26, 27, 28, 29, 28, 29, 
         30
     }, { // endgame
-         0,  0,  0,  1,  0,  1,  2,  3,  2,  3, 
-         4,  5,  4,  5,  4,  5,  4,  5,  4,  5, 
+         0,  0,  0,  1,  2,  1,  2,  3,  2,  3, 
+         4,  5,  4,  5,  4,  5,  4,  5,  6,  7, 
          6,  7,  6,  7,  8,  9,  8,  9,  8,  9, 
          8,  9,  8,  9,  8,  9,  8,  9,  8,  9, 
         10, 11, 10, 11, 10, 11, 10, 11, 12, 13, 
         12, 13, 12, 13, 12, 13, 14, 15, 14, 15, 
         14
     }
-};
-
-int mpc_search_depth_mid_arr[61] = {
-    
 };
 
 /*
