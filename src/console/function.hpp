@@ -67,7 +67,7 @@ void tune_probcut_mid(){
     Flip flip;
     Search_result short_ans, long_ans;
     for (int i = 0; i < 100; ++i){
-        for (int depth = 1; depth < 15; ++depth){
+        for (int depth = 1; depth < 20; ++depth){
             for (int n_discs = 4; n_discs < HW2 - depth; ++n_discs){
                 board.reset();
                 for (int j = 4; j < n_discs && board.check_pass(); ++j){ // random move
@@ -93,7 +93,7 @@ void tune_probcut_mid(){
                     long_ans = tree_search(board, depth, MPC_100_LEVEL, false, true);
                     // n_discs short_depth long_depth error
                     std::cerr << n_discs << " " << short_depth << " " << depth << " " << long_ans.value - short_ans.value << std::endl;
-                    std::cerr << n_discs << " " << short_depth << " " << depth << " " << long_ans.value - short_ans.value << std::endl;
+                    ofs << n_discs << " " << short_depth << " " << depth << " " << long_ans.value - short_ans.value << std::endl;
                 }
             }
         }
@@ -106,7 +106,7 @@ void tune_probcut_end(){
     Flip flip;
     Search_result short_ans, long_ans;
     for (int i = 0; i < 100; ++i){
-        for (int depth = 1; depth < 28; ++depth){
+        for (int depth = 1; depth < 29; ++depth){
             board.reset();
             for (int j = 0; j < HW2 - 4 - depth && board.check_pass(); ++j){ // random move
                 uint64_t legal = board.get_legal();
