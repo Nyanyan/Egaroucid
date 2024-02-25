@@ -7,7 +7,7 @@ from scipy.optimize import curve_fit
 from matplotlib import animation
 import math
 
-data_files = ['data/probcut_end.txt', 'data/probcut_end2.txt', 'data/probcut_end3.txt']
+data_files = ['data/probcut_end1.txt', 'data/probcut_end2.txt', 'data/probcut_end3.txt']
 
 data = [[[] for _ in range(61)] for _ in range(65)] # n_discs, depth
 for data_file in data_files:
@@ -35,7 +35,7 @@ for n_discs in range(len(data)):
             print('n_discs', n_discs, 'depth', depth, 'mean', mean, 'sd', sigma, 'n_data', len(data[n_discs][depth]))
             x_n_discs.append(n_discs)
             y_depth.append(depth)
-            z_error.append(mean + sigma)
+            z_error.append(sigma)
             weight.append(1 / len(data[n_discs][depth]))
 
 for n_discs in range(80):
@@ -50,8 +50,8 @@ for n_discs in range(60):
     depth = 0
     x_n_discs.append(n_discs)
     y_depth.append(depth)
-    z_error.append(6.0 - (n_discs - 4 - depth) / 60 * 2.0)
-    weight.append(0.008)
+    z_error.append(4.5 + (n_discs - 4 - depth) / 60 * 2.0)
+    weight.append(0.01)
 
 '''
 for n_discs in range(60):

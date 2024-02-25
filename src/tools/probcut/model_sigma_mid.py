@@ -10,16 +10,19 @@ import math
 #depth1: short
 #depth2: long
 
-#data_file = 'data/mid.txt'
-
-#with open(data_file, 'r') as f:
-#    raw_data = f.read().splitlines()
+data_files = ['data/probcut_mid1.txt', 'data/probcut_mid2.txt', 'data/probcut_mid3.txt', 'data/probcut_mid4.txt']
 
 data = [[[[] for _ in range(61)] for _ in range(61)] for _ in range(65)] # n_discs, depth1, depth2 (depth1 < depth2)
 
-#for datum in raw_data:
-#    n_discs, depth1, depth2, error = [int(elem) for elem in datum.split()]
-#    data[n_discs][depth1][depth2].append(error)
+for data_file in data_files:
+    try:
+        with open(data_file, 'r') as f:
+            raw_data = f.read().splitlines()
+        for datum in raw_data:
+            n_discs, depth1, depth2, error = [int(elem) for elem in datum.split()]
+            data[n_discs][depth1][depth2].append(error)
+    except:
+        print('cannot open', data_file)
 
 w_n_discs = []
 x_depth1 = []
@@ -27,41 +30,34 @@ y_depth2 = []
 z_error = []
 weight = []
 
-'''
+
 for n_discs in range(len(data)):
     for depth1 in range(len(data[n_discs])):
         for depth2 in range(len(data[n_discs][depth1])):
             if len(data[n_discs][depth1][depth2]) >= 3:
                 mean = statistics.mean(data[n_discs][depth1][depth2])
                 sigma = statistics.stdev(data[n_discs][depth1][depth2])
+                print('n_discs', n_discs, 'depth1', depth1, 'depth2', depth2, 'mean', mean, 'sd', sigma, 'n_data', len(data[n_discs][depth1][depth2]))
                 w_n_discs.append(n_discs)
                 x_depth1.append(depth1)
                 y_depth2.append(depth2)
-                z_error.append(sigma + const_weight)
-                weight.append(1 / len(data[n_discs][depth1][depth2]))
-'''
+                z_error.append(sigma)
+                weight.append(0.001)
+
 
 for n_discs in range(61):
+    s = 3.0 + 8.0 * (((n_discs - 3) / 60) ** 2)
+    e = 1.0 + 1.0 * (((n_discs - 3) / 60) ** 2)
     for depth2 in range(10, 60):
         depth1 = 0
         w_n_discs.append(n_discs)
         x_depth1.append(depth1)
         y_depth2.append(depth2)
-        s = 10.0 + 5.0 * (-1 / 1600 * ((n_discs - 40) ** 2) + 1)
-        e = 2.0 + 3.0 * (-1 / 1600 * ((n_discs - 40) ** 2) + 1)
-        z_error.append(e + (s - e) * depth2 / 60)
-        weight.append(0.001)
-
-for n_discs in range(61):
-    for depth2 in range(10, 60):
-        depth1 = depth2 / 2
-        w_n_discs.append(n_discs)
-        x_depth1.append(depth1)
-        y_depth2.append(depth2)
-        s = 8.0 + 2.0 * (-1 / 1600 * ((n_discs - 40) ** 2) + 1)
-        e = 3.0 + 2.0 * (-1 / 1600 * ((n_discs - 40) ** 2) + 1)
-        z_error.append(e + (s - e) * depth2 / 60)
-        weight.append(0.001)
+        base = 1.0 + (n_discs + 1) / 64 * 3.0
+        power = -depth2 / 60 * 4
+        beta = 1.0 - base ** power
+        z_error.append(beta * e + (1 - beta) * s)
+        weight.append(0.01)
 
 for n_discs in range(61):
     for depth2 in range(15, 60):
@@ -69,8 +65,8 @@ for n_discs in range(61):
         w_n_discs.append(n_discs)
         x_depth1.append(depth1)
         y_depth2.append(depth2)
-        z_error.append(2.0)
-        weight.append(0.002)
+        z_error.append(0.0)
+        weight.append(0.05)
 
 def f(wxy, probcut_a, probcut_b, probcut_c, probcut_d, probcut_e, probcut_f, probcut_g, probcut_h, probcut_i, probcut_j):
     w, x, y = wxy
@@ -105,7 +101,9 @@ def plot_fit_result_onephase(n_discs, params):
     ax.set_xlabel('depth1_short')
     ax.set_ylabel('depth2_long')
     ax.set_zlabel('error')
-    ax.set_zlim((0, 18))
+    ax.set_xlim((0, 10))
+    ax.set_ylim((0, 20))
+    ax.set_zlim((0, 6))
     plt.show()
 
 probcut_params_before = [1.0 for _ in range(10)]
