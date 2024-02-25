@@ -106,7 +106,7 @@ void tune_probcut_end(){
     Flip flip;
     Search_result short_ans, long_ans;
     for (int i = 0; i < 100; ++i){
-        for (int depth = 1; depth < 29; ++depth){
+        for (int depth = 1; depth < 28; ++depth){
             board.reset();
             for (int j = 0; j < HW2 - 4 - depth && board.check_pass(); ++j){ // random move
                 uint64_t legal = board.get_legal();
