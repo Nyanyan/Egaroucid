@@ -7,15 +7,18 @@ from scipy.optimize import curve_fit
 from matplotlib import animation
 import math
 
-data_files = ['data/probcut_end.txt', 'data/probcut_end2.txt']
+data_files = ['data/probcut_end.txt', 'data/probcut_end2.txt', 'data/probcut_end3.txt']
 
 data = [[[] for _ in range(61)] for _ in range(65)] # n_discs, depth
 for data_file in data_files:
-    with open(data_file, 'r') as f:
-        raw_data = f.read().splitlines()
-    for datum in raw_data:
-        n_discs, depth, error = [int(elem) for elem in datum.split()]
-        data[n_discs][depth].append(error)
+    try:
+        with open(data_file, 'r') as f:
+            raw_data = f.read().splitlines()
+        for datum in raw_data:
+            n_discs, depth, error = [int(elem) for elem in datum.split()]
+            data[n_discs][depth].append(error)
+    except:
+        print('cannot open', data_file)
 x_n_discs = []
 y_depth = []
 z_error = []
@@ -29,9 +32,10 @@ for n_discs in range(len(data)):
         if len(data[n_discs][depth]) >= 3:
             mean = statistics.mean(data[n_discs][depth])
             sigma = statistics.stdev(data[n_discs][depth])
+            print('n_discs', n_discs, 'depth', depth, 'mean', mean, 'sd', sigma, 'n_data', len(data[n_discs][depth]))
             x_n_discs.append(n_discs)
             y_depth.append(depth)
-            z_error.append(sigma)
+            z_error.append(mean + sigma)
             weight.append(1 / len(data[n_discs][depth]))
 
 for n_discs in range(80):
