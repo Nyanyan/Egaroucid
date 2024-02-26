@@ -356,8 +356,8 @@ inline void move_list_evaluate(Search *search, std::vector<Flip_value> &move_lis
     int eval_alpha = -std::min(SCORE_MAX, beta + MOVE_ORDERING_VALUE_OFFSET_BETA);
     int eval_beta = -std::max(-SCORE_MAX, alpha - MOVE_ORDERING_VALUE_OFFSET_ALPHA);
     int eval_depth = depth >> 3;
-    if (depth >= 14)
-        eval_depth += (depth - 12) >> 1;
+    if (depth >= 15)
+        eval_depth += (depth - 13) >> 1;
     for (Flip_value &flip_value: move_list){
         #if USE_MID_ETC
             if (flip_value.flip.flip){
