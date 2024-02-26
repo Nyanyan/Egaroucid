@@ -5,8 +5,8 @@
 #include "evaluation_definition.hpp"
 
 int main(int argc, char *argv[]){
-    if (argc < 6){
-        std::cerr << "input [input dir] [start file no] [n files] [output file] [phase]" << std::endl;
+    if (argc < 8){
+        std::cerr << "input [input dir] [start file no] [n files] [output file] [phase] [use_n_moves_min] [use_n_moves_max]" << std::endl;
         return 1;
     }
 
@@ -17,12 +17,22 @@ int main(int argc, char *argv[]){
     int start_file = atoi(argv[2]);
     int n_files = atoi(argv[3]);
     int phase = atoi(argv[5]);
+    int use_n_moves_min = atoi(argv[6]);
+    int use_n_moves_max = atoi(argv[7]);
 
     std::ofstream fout;
     fout.open(argv[4], std::ios::out|std::ios::binary|std::ios::trunc);
     if (!fout){
         std::cerr << "can't open" << std::endl;
         return 1;
+    }
+
+    bool data_not_available = 
+        phase * ADJ_N_PHASE_DISCS > use_n_moves_max || 
+        (phase + 1) * ADJ_N_PHASE_DISCS <= use_n_moves_min;
+    if (data_not_available){
+        std::cerr << "data not available" << std::endl;
+        return 0;
     }
 
     Board board;
@@ -45,7 +55,7 @@ int main(int argc, char *argv[]){
             fread(&player, 1, 1, fp);
             fread(&policy, 1, 1, fp);
             fread(&score, 1, 1, fp);
-            if (calc_phase(&board, player) == phase){
+            if (calc_phase(&board, player) == phase && board.n_discs() - 4 >= use_n_moves_min && board.n_discs() - 4 <= use_n_moves_max){
                 player_short = player;
                 score_short = score;
                 n = pop_count_ull(board.player | board.opponent);
