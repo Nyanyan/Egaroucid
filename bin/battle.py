@@ -4,18 +4,18 @@ from random import shuffle
 import matplotlib.pyplot as plt
 from othello_py import *
 
-LEVEL = 10
+LEVEL = 1
 
-N_SET_GAMES = 25 #100
+N_SET_GAMES = 100
 
 # name, cmd, cacheclear?
 player_info = [
     ['6.6.0', 'versions/Egaroucid_for_Console_beta/Egaroucid_for_Console.exe -quiet -nobook', True],
     ['6.5.0', 'versions/Egaroucid_for_Console_6_5_0_Windows_x64_SIMD/Egaroucid_for_Console_6_5_0_x64_SIMD.exe -quiet -nobook', False],
-    #['6.4.0', 'versions/Egaroucid_for_Console_6_4_0_Windows_x64_SIMD/Egaroucid_for_Console_6_4_0_x64_SIMD.exe -quiet -nobook', False],
-    #['6.3.0', 'versions/Egaroucid_for_Console_6_3_0_Windows_x64_SIMD/Egaroucid_for_Console_6_3_0_x64_SIMD.exe -quiet -nobook', False],
+    ['6.4.0', 'versions/Egaroucid_for_Console_6_4_0_Windows_x64_SIMD/Egaroucid_for_Console_6_4_0_x64_SIMD.exe -quiet -nobook', False],
+    ['6.3.0', 'versions/Egaroucid_for_Console_6_3_0_Windows_x64_SIMD/Egaroucid_for_Console_6_3_0_x64_SIMD.exe -quiet -nobook', False],
     #['6.2.0', 'versions/Egaroucid_for_Console_6_2_0_Windows_x64_SIMD/Egaroucid_for_Console.exe -quiet -nobook', False], # same as 6.3.0
-    #['6.1.0', 'versions/Egaroucid_for_Console_6_1_0_Windows_x64_SIMD/Egaroucid_for_Console.exe -quiet -nobook', False],
+    ['6.1.0', 'versions/Egaroucid_for_Console_6_1_0_Windows_x64_SIMD/Egaroucid_for_Console.exe -quiet -nobook', False],
     ['Edax ', 'versions/edax_4_4/edax-4.4 -q', False],
 ]
 
