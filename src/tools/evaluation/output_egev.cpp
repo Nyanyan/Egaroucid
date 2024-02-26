@@ -33,7 +33,9 @@ int main(int argc, char* argv[]){
         std::ifstream ifs(model_dir + "/" + std::to_string(phase) + ".txt");
         if (ifs.fail()){
             std::cerr << (model_dir + "/" + std::to_string(phase) + ".txt") << " not exist" << std::endl;
-            return 0;
+            std::cerr << "max " << max_elem << " min " << min_elem << std::endl;
+            std::cerr << "n_over " << n_over << " n_under " << n_under << std::endl;
+            return 1;
         }
         std::string line;
         int t = 0;
@@ -57,7 +59,7 @@ int main(int argc, char* argv[]){
         std::cerr << phase << " " << t << std::endl;
     }
     std::cerr << "EVAL_MAX " << EVAL_MAX << std::endl;
-    std::cerr << "min " << min_elem << " max " << max_elem << std::endl;
+    std::cerr << "max " << max_elem << " min " << min_elem << std::endl;
     std::cerr << "n_over " << n_over << " n_under " << n_under << std::endl;
     std::cerr << "done" << std::endl;
 
