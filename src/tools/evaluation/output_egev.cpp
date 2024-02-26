@@ -6,7 +6,6 @@
 #include <iomanip>
 
 #define EVAL_MAX 4091
-//#define SIMD_EVAL_OFFSET 4092
 
 int main(int argc, char* argv[]){
     // if (argc < 3){
@@ -28,7 +27,8 @@ int main(int argc, char* argv[]){
         return 1;
     }
     short elem;
-    short max_elem = -10000, min_elem = 10000;
+    int max_elem = -10000000, min_elem = 10000000;
+    int n_over = 0, n_under = 0;
     for (int phase = 0; phase < n_phases; ++phase){
         std::ifstream ifs(model_dir + "/" + std::to_string(phase) + ".txt");
         if (ifs.fail()){
@@ -39,22 +39,26 @@ int main(int argc, char* argv[]){
         int t = 0;
         while (std::getline(ifs, line)){
             int elem_int = stoi(line);
-            if (elem_int > EVAL_MAX)
+            max_elem = std::max((int)max_elem, elem_int);
+            min_elem = std::min((int)min_elem, elem_int);
+            if (elem_int > EVAL_MAX){
                 elem_int = EVAL_MAX;
-            else if (elem_int < -EVAL_MAX)
+                ++n_over;
+            } else if (elem_int < -EVAL_MAX){
                 elem_int = -EVAL_MAX;
+                ++n_under;
+            }
             elem = (short)elem_int;
-            max_elem = std::max(max_elem, elem);
-            min_elem = std::min(min_elem, elem);
-            //elem += SIMD_EVAL_OFFSET;
+            //max_elem = std::max(max_elem, elem);
+            //min_elem = std::min(min_elem, elem);
             fout.write((char*)&elem, 2);
             ++t;
         }
         std::cerr << phase << " " << t << std::endl;
     }
     std::cerr << "EVAL_MAX " << EVAL_MAX << std::endl;
-    std::cerr << "min " << min_elem << std::endl;
-    std::cerr << "max " << max_elem << std::endl;
+    std::cerr << "min " << min_elem << " max " << max_elem << std::endl;
+    std::cerr << "n_over " << n_over << " n_under " << n_under << std::endl;
     std::cerr << "done" << std::endl;
 
     return 0;

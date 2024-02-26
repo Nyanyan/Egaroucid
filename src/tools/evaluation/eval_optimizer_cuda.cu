@@ -161,6 +161,11 @@ __global__ void adj_calculate_residual(const float *device_eval_arr, const int n
     for (int i = 0; i < ADJ_N_FEATURES; ++i){
         predicted_value += device_eval_arr[device_train_data[data_idx].features[i]];
     }
+    if (predicted_value > HW2 * ADJ_STEP){
+        predicted_value = HW2 * ADJ_STEP;
+    } else if (predicted_value < -HW2 * ADJ_STEP){
+        predicted_value = -HW2 * ADJ_STEP;
+    }
     float residual_error = device_train_data[data_idx].score - predicted_value;
     for (int i = 0; i < ADJ_N_FEATURES; ++i){
         atomicAdd(&device_residual_arr[device_train_data[data_idx].features[i]], residual_error);

@@ -3,9 +3,9 @@ import sys
 
 phase = str(sys.argv[1])
 hour = '0'
-minute = '5'
+minute = '2'
 second = '0'
-alpha = '700'
+alpha = '10'
 n_patience = '1'
 
 if int(phase) <= 10: # 0-10

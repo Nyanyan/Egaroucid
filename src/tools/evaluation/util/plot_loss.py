@@ -1,3 +1,5 @@
+import matplotlib.pyplot as plt
+
 s = '''
 phase 0 time 10002 ms data 1 n_loop 52822 MSE 0 MAE 0 (with int) alpha 200
 phase 1 time 10002 ms data 1 n_loop 54327 MSE 0 MAE 0 (with int) alpha 200
@@ -63,22 +65,44 @@ phase 57 time 300740 ms data 42800609 n_loop 561 MSE 13.9323 MAE 2.46604 (with i
 
 phase 58 time 600635 ms data 33242114 n_loop 1676 MSE 7.56473 MAE 1.85022 (with int) alpha 800
 phase 59 time 600316 ms data 32549899 n_loop 2141 MSE 1.54371e-06 MAE 0.000328547 (with int) alpha 800
-
 '''
 
-DATA_IDX = 6
 
 s = s.splitlines()
 
-n_data = 0
-n_count_phases = 0
+PHASE_IDX = 1
+MSE_IDX = 10
+MAE_IDX = 12
 
-for line in s:
+phase_arr = []
+mse_arr = []
+mae_arr = []
+
+for ss in s:
     try:
-        n = int(line.split()[DATA_IDX])
-        n_data += n
-        n_count_phases += 1
+        sss = ss.split()
+        phase = int(sss[PHASE_IDX])
+        mse = float(sss[MSE_IDX])
+        mae = float(sss[MAE_IDX])
+        phase_arr.append(phase)
+        mse_arr.append(mse)
+        mae_arr.append(mae)
     except:
-        continue
+        pass
 
-print(n_data, 'data used for optimization of', n_count_phases, 'phases')
+fig = plt.figure()
+ax1 = fig.add_subplot(111)
+ln1=ax1.plot(phase_arr, mae_arr, 'C0', label='MAE')
+ax2 = ax1.twinx()
+ln2=ax2.plot(phase_arr, mse_arr, 'C1', label='MSE')
+
+h1, l1 = ax1.get_legend_handles_labels()
+h2, l2 = ax2.get_legend_handles_labels()
+ax1.legend(h1+h2, l1+l2, loc='upper right')
+
+ax1.set_xlabel('phase')
+ax1.set_ylabel('MAE')
+ax2.set_ylabel('MSE')
+ax1.grid(True)
+
+plt.show()
