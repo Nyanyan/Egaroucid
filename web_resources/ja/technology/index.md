@@ -42,6 +42,7 @@ Egaroucidの性能の確認として2種類のベンチマークを使用して�
 <tr>
 <th>名称</th>
 <th>勝率</th>
+</tr>
 <tr>
 <td>6.5.0</td>
 <td>0.6338</td>
@@ -62,13 +63,14 @@ Egaroucidの性能の確認として2種類のベンチマークを使用して�
 <td>Edax</td>
 <td>0.3481</td>
 </tr>
-    </table></div>
+</table></div>
+
 
 対戦の詳細は[こちら](./battle.txt)
 
-
-
 Egaroucid 6.2.0はEgaroucid 6.3.0と同一の評価関数のため、省いています。
+
+
 
 ### バージョンごとの詳細
 

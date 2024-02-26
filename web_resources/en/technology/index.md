@@ -39,6 +39,7 @@ To avoid same lines, I used [XOT](https://berg.earthlingz.de/xot/aboutxot.php?la
 <tr>
 <th>Name</th>
 <th>Winning Rate</th>
+</tr>
 <tr>
 <td>6.5.0</td>
 <td>0.6338</td>
@@ -59,14 +60,13 @@ To avoid same lines, I used [XOT](https://berg.earthlingz.de/xot/aboutxot.php?la
 <td>Edax</td>
 <td>0.3481</td>
 </tr>
-    </table></div>
-
+</table></div>
 
 The further log is available [here](./battle.txt).
 
-
-
 Egaroucid 6.2.0 is omitted because it has the same evaluation function as 6.3.0.
+
+
 
 ### Details
 
@@ -125,7 +125,8 @@ There are detailed benchmarks for each version including older versions.
 		<td><a href="./benchmarks/5_4_1/">5.4.1</a></td>
 		<td>2022/03/02</td>
 	</tr>
-    </table></div>
+</table></div>
+
 
 
 
