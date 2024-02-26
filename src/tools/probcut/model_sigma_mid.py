@@ -10,7 +10,7 @@ import math
 #depth1: short
 #depth2: long
 
-data_files = ['data/probcut_mid1.txt', 'data/probcut_mid2.txt', 'data/probcut_mid3.txt', 'data/probcut_mid4.txt']
+data_files = ['data/probcut_mid1.txt', 'data/probcut_mid2.txt', 'data/probcut_mid3.txt', 'data/probcut_mid4.txt', 'data/probcut_mid5.txt']
 
 data = [[[[] for _ in range(61)] for _ in range(61)] for _ in range(65)] # n_discs, depth1, depth2 (depth1 < depth2)
 
@@ -66,7 +66,7 @@ for n_discs in range(61):
         x_depth1.append(depth1)
         y_depth2.append(depth2)
         z_error.append(0.0)
-        weight.append(0.05)
+        weight.append(0.1)
 
 def f(wxy, probcut_a, probcut_b, probcut_c, probcut_d, probcut_e, probcut_f, probcut_g, probcut_h, probcut_i, probcut_j):
     w, x, y = wxy
