@@ -84,7 +84,8 @@ void tune_probcut_mid(){
                     board.move_board(&flip);
                 }
                 if (board.check_pass()){
-                    int short_depth = mpc_search_depth_arr[0][depth];
+                    int short_depth = myrandrange(1, depth);
+                    // int short_depth = mpc_search_depth_arr[0][depth];
                     if (short_depth == 0){
                         short_ans.value = mid_evaluate(&board);
                     } else{
@@ -106,7 +107,7 @@ void tune_probcut_end(){
     Flip flip;
     Search_result short_ans, long_ans;
     for (int i = 0; i < 100; ++i){
-        for (int depth = 1; depth < 28; ++depth){
+        for (int depth = 6; depth < 25; ++depth){
             board.reset();
             for (int j = 0; j < HW2 - 4 - depth && board.check_pass(); ++j){ // random move
                 uint64_t legal = board.get_legal();
@@ -122,6 +123,7 @@ void tune_probcut_end(){
                 board.move_board(&flip);
             }
             if (board.check_pass()){
+                //int short_depth = myrandrange(1, depth);
                 int short_depth = mpc_search_depth_arr[1][depth];
                 if (short_depth == 0){
                     short_ans.value = mid_evaluate(&board);

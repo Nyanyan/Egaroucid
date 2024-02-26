@@ -8,7 +8,8 @@ from matplotlib import animation
 import math
 
 #data_files = ['data/probcut_end1.txt', 'data/probcut_end2.txt', 'data/probcut_end3.txt', 'data/probcut_end4.txt']
-data_files = ['data/probcut_end6.txt']
+#data_files = ['data/probcut_end6.txt']
+data_files = ['data/probcut_end8.txt', 'data/probcut_end9.txt', 'data/probcut_end10.txt', 'data/probcut_end11.txt', 'data/probcut_end12.txt']
 
 data = [[[] for _ in range(61)] for _ in range(65)] # n_discs, depth
 for data_file in data_files:
@@ -27,41 +28,47 @@ weight = []
 
 
 for n_discs in range(len(data)):
-    if n_discs > 60:
+    if n_discs >= 59:
         continue
-    for depth in range(len(data[n_discs])):
+    for depth in range(1, len(data[n_discs])):
         if len(data[n_discs][depth]) >= 3:
-            mean = statistics.mean(data[n_discs][depth])
-            sigma = statistics.stdev(data[n_discs][depth])
+            #mean = statistics.mean(data[n_discs][depth])
+            #sigma = statistics.stdev(data[n_discs][depth])
+            mean = 0.0
+            sigma = 0.0
+            for elem in data[n_discs][depth]:
+                sigma += elem ** 2
+            sigma /= len(data[n_discs][depth])
+            sigma = math.sqrt(sigma)
             print('n_discs', n_discs, 'depth', depth, 'mean', mean, 'sd', sigma, 'n_data', len(data[n_discs][depth]))
             x_n_discs.append(n_discs)
             y_depth.append(depth)
             z_error.append(sigma)
             weight.append(1 / len(data[n_discs][depth]))
+            #weight.append(0.01)
 
-for n_discs in range(80):
-    depth = 64 - n_discs + 5
-    x_n_discs.append(n_discs)
-    y_depth.append(depth)
-    z_error.append(0.0)
-    weight.append(0.1)
+for n_discs in range(64):
+        depth = 64 - n_discs + 5
+        x_n_discs.append(n_discs)
+        y_depth.append(depth)
+        z_error.append(2.0)
+        weight.append(0.001)
+
+for n_discs in range(64):
+        depth = 64 - n_discs + 5 + 10
+        x_n_discs.append(n_discs)
+        y_depth.append(depth)
+        z_error.append(3.0)
+        weight.append(0.001)
 
 
-for n_discs in range(60):
+for n_discs in range(64):
     depth = 0
     x_n_discs.append(n_discs)
     y_depth.append(depth)
-    z_error.append(4.0 - (n_discs - 4 - depth) / 60 * 2.5)
-    weight.append(0.01)
+    z_error.append(12.0 - n_discs / 60 * 10.0)
+    weight.append(0.001)
 
-'''
-for n_discs in range(60):
-    depth = (64 - n_discs) / 2
-    x_n_discs.append(n_discs)
-    y_depth.append(depth)
-    z_error.append(3.0 - (n_discs - 4 - depth) / 60 * 0.5)
-    weight.append(0.008)
-'''
 
 def f(xy, probcut_a, probcut_b, probcut_c, probcut_d, probcut_e, probcut_f, probcut_g, probcut_h, probcut_i, probcut_j):
     x, y = xy
@@ -72,7 +79,7 @@ def f(xy, probcut_a, probcut_b, probcut_c, probcut_d, probcut_e, probcut_f, prob
     return res
 
 def f_max(wxy, probcut_a, probcut_b, probcut_c, probcut_d, probcut_e, probcut_f, probcut_g, probcut_h, probcut_i, probcut_j):
-    return np.minimum(15.0, np.maximum(-2.0, f(wxy, probcut_a, probcut_b, probcut_c, probcut_d, probcut_e, probcut_f, probcut_g, probcut_h, probcut_i, probcut_j)))
+    return np.minimum(10.0, np.maximum(-0.5, f(wxy, probcut_a, probcut_b, probcut_c, probcut_d, probcut_e, probcut_f, probcut_g, probcut_h, probcut_i, probcut_j)))
 
 def plot_fit_result(params):
     fig = plt.figure()
@@ -87,12 +94,12 @@ def plot_fit_result(params):
     ax.set_ylabel('search_depth')
     ax.set_zlabel('error')
     ax.set_xlim(0, 64)
-    ax.set_ylim(0, 15)
+    ax.set_ylim(0, 30)
     plt.show()
 
 probcut_params_before = [1.0 for _ in range(10)]
 
-probcut_params_old = [1.7618824674282139, 1.6761979186286653, -1.5368514045644108, 5.649224423285564, -12.020118030448877, 14.261869478626625, 1.0, 1.0, 1.0, 1.0]
+probcut_params_old = [1.908798448361043, 1.6468299594064413, 2.0530449406091082, -5.961374118848742, -0.7753956186749736, 10.95261264952042, 1.0, 1.0, 1.0, 1.0]
 
 popt, pcov = curve_fit(f, (x_n_discs, y_depth), z_error, np.array(probcut_params_before), sigma=weight, absolute_sigma=True)
 #popt = probcut_params_before
@@ -101,4 +108,4 @@ for i in range(len(popt)):
     print('#define probcut_end_' + chr(ord('a') + i), popt[i])
 
 plot_fit_result(popt)
-#plot_fit_result(probcut_params_old)
+plot_fit_result(probcut_params_old)
