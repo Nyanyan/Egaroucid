@@ -5,7 +5,7 @@ phase = str(sys.argv[1])
 hour = '0'
 minute = '5'
 second = '0'
-alpha = '500'
+alpha = '100'
 n_patience = '1'
 
 if int(phase) <= 10: # 0-10

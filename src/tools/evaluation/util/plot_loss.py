@@ -1,70 +1,71 @@
 import matplotlib.pyplot as plt
 
 s = '''
-phase 0 time 10002 ms data 1 n_loop 52822 MSE 0 MAE 0 (with int) alpha 200
-phase 1 time 10002 ms data 1 n_loop 54327 MSE 0 MAE 0 (with int) alpha 200
-phase 2 time 10002 ms data 3 n_loop 28151 MSE 6.45564e-11 MAE 7.29164e-06 (with int) alpha 200
-phase 3 time 10002 ms data 14 n_loop 26762 MSE 0.00605833 MAE 0.0742466 (with int) alpha 200
-phase 4 time 10002 ms data 60 n_loop 25850 MSE 1.10696e-11 MAE 2.92206e-06 (with int) alpha 200
-phase 5 time 10003 ms data 322 n_loop 26326 MSE 1.48619 MAE 0.810424 (with int) alpha 200
-phase 6 time 10002 ms data 1773 n_loop 21759 MSE 5.3164 MAE 1.71936 (with int) alpha 200
-phase 7 time 10003 ms data 10623 n_loop 12002 MSE 11.0842 MAE 2.48211 (with int) alpha 200
-phase 8 time 60007 ms data 67153 n_loop 21141 MSE 13.0647 MAE 2.65214 (with int) alpha 200
-phase 9 time 60017 ms data 430613 n_loop 6207 MSE 16.6894 MAE 3.01924 (with int) alpha 200
-phase 10 time 60075 ms data 2915537 n_loop 1297 MSE 19.5783 MAE 3.10317 (with int) alpha 200
+phase 0 time 10002 ms data 1 n_loop 50018 MSE 0 MAE 0 (with int) alpha 100
+phase 1 time 10002 ms data 1 n_loop 49565 MSE 0 MAE 0 (with int) alpha 100
+phase 2 time 3029 ms data 3 n_loop 1691 MSE 1.82449e-12 MAE 9.61125e-07 (with int) alpha 1
+phase 3 time 5002 ms data 14 n_loop 4925 MSE 9.58856e-15 MAE 3.32615e-08 (with int) alpha 1
+phase 4 time 5012 ms data 60 n_loop 4491 MSE 4.64767e-05 MAE 0.00281484 (with int) alpha 1
+phase 5 time 20008 ms data 322 n_loop 13472 MSE 1.49798 MAE 0.804629 (with int) alpha 5
+phase 6 time 40003 ms data 1773 n_loop 43560 MSE 5.31641 MAE 1.71984 (with int) alpha 7
+phase 7 time 60003 ms data 10623 n_loop 46049 MSE 11.0842 MAE 2.48181 (with int) alpha 7
+phase 8 time 30010 ms data 67153 n_loop 7251 MSE 13.0721 MAE 2.65313 (with int) alpha 10
+phase 9 time 50019 ms data 430613 n_loop 4814 MSE 16.6862 MAE 3.01143 (with int) alpha 20
+phase 10 time 60102 ms data 2915537 n_loop 1155 MSE 19.5998 MAE 3.10401 (with int) alpha 60
 
-phase 11 time 600392 ms data 20009985 n_loop 1981 MSE 63.5789 MAE 5.85358 (with int) alpha 800
-phase 12 time 600449 ms data 20008232 n_loop 2318 MSE 57.2999 MAE 5.58322 (with int) alpha 800
-phase 13 time 600345 ms data 20007930 n_loop 2091 MSE 56.2149 MAE 5.54228 (with int) alpha 800
-phase 14 time 600486 ms data 20007126 n_loop 2191 MSE 54.5258 MAE 5.46612 (with int) alpha 800
-phase 15 time 600440 ms data 20007037 n_loop 2212 MSE 54.2555 MAE 5.46593 (with int) alpha 800
-phase 16 time 600424 ms data 20006931 n_loop 2227 MSE 53.2318 MAE 5.41946 (with int) alpha 800
-phase 17 time 600462 ms data 20006617 n_loop 2337 MSE 52.7032 MAE 5.41044 (with int) alpha 800
-phase 18 time 600389 ms data 20006578 n_loop 2208 MSE 51.338 MAE 5.34595 (with int) alpha 800
+phase 11 time 300344 ms data 20009985 n_loop 1020 MSE 63.5916 MAE 5.8545 (with int) alpha 300
+phase 12 time 300325 ms data 20008232 n_loop 1112 MSE 57.3268 MAE 5.58479 (with int) alpha 300
+phase 13 time 300345 ms data 20007930 n_loop 1078 MSE 56.2478 MAE 5.54393 (with int) alpha 300
+phase 14 time 300316 ms data 20007126 n_loop 1045 MSE 54.5567 MAE 5.4686 (with int) alpha 300
+phase 15 time 300497 ms data 20007037 n_loop 1009 MSE 54.2939 MAE 5.46873 (with int) alpha 300
+phase 16 time 300403 ms data 20006931 n_loop 1101 MSE 53.2707 MAE 5.42178 (with int) alpha 300
+phase 17 time 300336 ms data 20006617 n_loop 1189 MSE 52.7464 MAE 5.41275 (with int) alpha 300
+phase 18 time 300278 ms data 20006578 n_loop 1180 MSE 51.377 MAE 5.34828 (with int) alpha 300
 
-phase 19 time 600641 ms data 33710717 n_loop 1335 MSE 52.2118 MAE 5.06445 (with int) alpha 800
-phase 20 time 600776 ms data 33710558 n_loop 1385 MSE 48.793 MAE 4.94086 (with int) alpha 800
+phase 19 time 300621 ms data 33710717 n_loop 682 MSE 52.2452 MAE 5.06652 (with int) alpha 500
+phase 20 time 300619 ms data 33710558 n_loop 676 MSE 48.8278 MAE 4.94286 (with int) alpha 500
 
-phase 21 time 300709 ms data 38497871 n_loop 556 MSE 48.1555 MAE 4.82081 (with int) alpha 700
-phase 22 time 300686 ms data 38497672 n_loop 610 MSE 44.7042 MAE 4.65679 (with int) alpha 700
-phase 23 time 300990 ms data 38497431 n_loop 549 MSE 43.3414 MAE 4.59821 (with int) alpha 700
-phase 24 time 300967 ms data 38497356 n_loop 553 MSE 41.8011 MAE 4.52915 (with int) alpha 700
-phase 25 time 300968 ms data 38497206 n_loop 595 MSE 40.8518 MAE 4.48902 (with int) alpha 700
-phase 26 time 300902 ms data 38497153 n_loop 598 MSE 39.5977 MAE 4.43312 (with int) alpha 700
-phase 27 time 300662 ms data 38497034 n_loop 543 MSE 38.7278 MAE 4.39546 (with int) alpha 700
-phase 28 time 300817 ms data 38496934 n_loop 553 MSE 37.5781 MAE 4.34361 (with int) alpha 700
-phase 29 time 300520 ms data 38496732 n_loop 634 MSE 36.7116 MAE 4.30609 (with int) alpha 700
-phase 30 time 300633 ms data 43254138 n_loop 575 MSE 38.0475 MAE 4.32638 (with int) alpha 700
-phase 31 time 300988 ms data 43253752 n_loop 590 MSE 35.7607 MAE 4.21314 (with int) alpha 700
-phase 32 time 301032 ms data 43253161 n_loop 585 MSE 34.2759 MAE 4.14528 (with int) alpha 700
-phase 33 time 301001 ms data 43252362 n_loop 560 MSE 33.1094 MAE 4.09322 (with int) alpha 700
-phase 34 time 300954 ms data 43251295 n_loop 561 MSE 31.7559 MAE 4.03693 (with int) alpha 700
-phase 35 time 301007 ms data 43249598 n_loop 567 MSE 29.8567 MAE 3.93449 (with int) alpha 700
-phase 36 time 300794 ms data 43247535 n_loop 567 MSE 29.2181 MAE 3.88477 (with int) alpha 700
-phase 37 time 300724 ms data 43244973 n_loop 567 MSE 29.1959 MAE 3.88789 (with int) alpha 700
-phase 38 time 300949 ms data 43242146 n_loop 558 MSE 28.9657 MAE 3.88537 (with int) alpha 700
-phase 39 time 300599 ms data 43238662 n_loop 553 MSE 28.8807 MAE 3.89495 (with int) alpha 700
-phase 40 time 300777 ms data 43232878 n_loop 546 MSE 29.0375 MAE 3.92098 (with int) alpha 700
-phase 41 time 300871 ms data 43226687 n_loop 511 MSE 29.4791 MAE 3.9554 (with int) alpha 700
-phase 42 time 300954 ms data 43220020 n_loop 509 MSE 29.8972 MAE 3.99101 (with int) alpha 700
-phase 43 time 300908 ms data 43212227 n_loop 500 MSE 30.4945 MAE 4.01365 (with int) alpha 700
-phase 44 time 301180 ms data 43203427 n_loop 496 MSE 31.0431 MAE 4.0322 (with int) alpha 700
-phase 45 time 301088 ms data 43194315 n_loop 493 MSE 31.588 MAE 4.04574 (with int) alpha 700
-phase 46 time 301393 ms data 43184004 n_loop 431 MSE 32.221 MAE 4.06629 (with int) alpha 700
-phase 47 time 300674 ms data 43173401 n_loop 501 MSE 32.6546 MAE 4.08507 (with int) alpha 700
-phase 48 time 300941 ms data 43161554 n_loop 466 MSE 32.5382 MAE 4.07839 (with int) alpha 700
-phase 49 time 301118 ms data 43148217 n_loop 467 MSE 32.3529 MAE 4.06854 (with int) alpha 700
-phase 50 time 300869 ms data 43132152 n_loop 483 MSE 31.5918 MAE 4.03885 (with int) alpha 700
-phase 51 time 301129 ms data 43114888 n_loop 485 MSE 30.9852 MAE 4.01626 (with int) alpha 700
-phase 52 time 300990 ms data 43095248 n_loop 437 MSE 29.4007 MAE 3.91208 (with int) alpha 700
-phase 53 time 300667 ms data 43069790 n_loop 491 MSE 27.9464 MAE 3.7881 (with int) alpha 700
-phase 54 time 301225 ms data 43034578 n_loop 490 MSE 25.5655 MAE 3.58864 (with int) alpha 700
-phase 55 time 300696 ms data 42986887 n_loop 515 MSE 22.805 MAE 3.34023 (with int) alpha 700
-phase 56 time 300793 ms data 42914134 n_loop 533 MSE 18.4154 MAE 2.9072 (with int) alpha 700
-phase 57 time 300740 ms data 42800609 n_loop 561 MSE 13.9323 MAE 2.46604 (with int) alpha 700
+phase 21 time 300777 ms data 38497871 n_loop 591 MSE 48.2026 MAE 4.82303 (with int) alpha 500
+phase 22 time 300870 ms data 38497672 n_loop 541 MSE 44.7556 MAE 4.65934 (with int) alpha 500
+phase 23 time 300798 ms data 38497431 n_loop 532 MSE 43.3827 MAE 4.60047 (with int) alpha 500
+phase 24 time 300783 ms data 38497356 n_loop 611 MSE 41.8386 MAE 4.53057 (with int) alpha 500
+phase 25 time 300673 ms data 38497206 n_loop 621 MSE 40.8788 MAE 4.49037 (with int) alpha 500
+phase 26 time 300493 ms data 38497153 n_loop 623 MSE 39.628 MAE 4.43428 (with int) alpha 500
+phase 27 time 300817 ms data 38497034 n_loop 639 MSE 38.7503 MAE 4.39649 (with int) alpha 500
+phase 28 time 300963 ms data 38496934 n_loop 621 MSE 37.6027 MAE 4.34471 (with int) alpha 500
+phase 29 time 300968 ms data 38496732 n_loop 623 MSE 36.7293 MAE 4.3068 (with int) alpha 500
 
-phase 58 time 600635 ms data 33242114 n_loop 1676 MSE 7.56473 MAE 1.85022 (with int) alpha 800
-phase 59 time 600316 ms data 32549899 n_loop 2141 MSE 1.54371e-06 MAE 0.000328547 (with int) alpha 800
+phase 30 time 300961 ms data 43254138 n_loop 523 MSE 38.0588 MAE 4.32704 (with int) alpha 500
+phase 31 time 300928 ms data 43253752 n_loop 520 MSE 35.7722 MAE 4.21357 (with int) alpha 500
+phase 32 time 300612 ms data 43253161 n_loop 523 MSE 34.2847 MAE 4.14569 (with int) alpha 500
+phase 33 time 301035 ms data 43252362 n_loop 529 MSE 33.1135 MAE 4.09331 (with int) alpha 500
+phase 34 time 300882 ms data 43251295 n_loop 560 MSE 31.7611 MAE 4.03709 (with int) alpha 500
+phase 35 time 301148 ms data 43249598 n_loop 498 MSE 29.8584 MAE 3.9344 (with int) alpha 500
+phase 36 time 301046 ms data 43247535 n_loop 576 MSE 29.2208 MAE 3.88505 (with int) alpha 500
+phase 37 time 301046 ms data 43244973 n_loop 566 MSE 29.1958 MAE 3.88787 (with int) alpha 500
+phase 38 time 300968 ms data 43242146 n_loop 542 MSE 28.9652 MAE 3.88557 (with int) alpha 500
+phase 39 time 300570 ms data 43238662 n_loop 539 MSE 28.8805 MAE 3.89498 (with int) alpha 500
+phase 40 time 301182 ms data 43232878 n_loop 502 MSE 29.0409 MAE 3.92118 (with int) alpha 500
+phase 41 time 300603 ms data 43226687 n_loop 536 MSE 29.4826 MAE 3.95567 (with int) alpha 500
+phase 42 time 301029 ms data 43220020 n_loop 466 MSE 29.9002 MAE 3.99144 (with int) alpha 500
+phase 43 time 300962 ms data 43212227 n_loop 529 MSE 30.4994 MAE 4.0138 (with int) alpha 500
+phase 44 time 301235 ms data 43203427 n_loop 460 MSE 31.0474 MAE 4.03238 (with int) alpha 500
+phase 45 time 301118 ms data 43194315 n_loop 521 MSE 31.5949 MAE 4.04611 (with int) alpha 500
+phase 46 time 300855 ms data 43184004 n_loop 455 MSE 32.2253 MAE 4.06653 (with int) alpha 500
+phase 47 time 301090 ms data 43173401 n_loop 504 MSE 32.6596 MAE 4.0852 (with int) alpha 500
+phase 48 time 301292 ms data 43161554 n_loop 450 MSE 32.5376 MAE 4.07894 (with int) alpha 500
+phase 49 time 301175 ms data 43148217 n_loop 448 MSE 32.3565 MAE 4.06865 (with int) alpha 500
+phase 50 time 301057 ms data 43132152 n_loop 497 MSE 31.597 MAE 4.03902 (with int) alpha 500
+phase 51 time 301127 ms data 43114888 n_loop 514 MSE 30.9887 MAE 4.01637 (with int) alpha 500
+phase 52 time 300931 ms data 43095248 n_loop 503 MSE 29.4019 MAE 3.91233 (with int) alpha 500
+phase 53 time 301193 ms data 43069790 n_loop 480 MSE 27.9476 MAE 3.78812 (with int) alpha 500
+phase 54 time 300743 ms data 43034578 n_loop 529 MSE 25.5662 MAE 3.58871 (with int) alpha 500
+phase 55 time 300724 ms data 42986887 n_loop 545 MSE 22.8068 MAE 3.34003 (with int) alpha 500
+phase 56 time 300805 ms data 42914134 n_loop 557 MSE 18.4154 MAE 2.90719 (with int) alpha 500
+phase 57 time 300932 ms data 42800609 n_loop 580 MSE 13.9348 MAE 2.46603 (with int) alpha 500
+phase 58 time 300882 ms data 42594281 n_loop 634 MSE 7.39802 MAE 1.75771 (with int) alpha 500
+phase 59 time 300628 ms data 41632395 n_loop 805 MSE 0.00132541 MAE 0.01798 (with int) alpha 100
+
 '''
 
 
@@ -92,9 +93,9 @@ for ss in s:
 
 fig = plt.figure()
 ax1 = fig.add_subplot(111)
-ln1=ax1.plot(phase_arr, mae_arr, 'C0', label='MAE')
+ln1=ax1.plot(phase_arr, mae_arr, 'C0', marker='o', label='MAE')
 ax2 = ax1.twinx()
-ln2=ax2.plot(phase_arr, mse_arr, 'C1', label='MSE')
+ln2=ax2.plot(phase_arr, mse_arr, 'C1', marker='o', label='MSE')
 
 h1, l1 = ax1.get_legend_handles_labels()
 h2, l2 = ax2.get_legend_handles_labels()
@@ -105,4 +106,6 @@ ax1.set_ylabel('MAE')
 ax2.set_ylabel('MSE')
 ax1.grid(True)
 
+if input('save?: ') == 'y':
+    fig.savefig('./../trained/loss.png')
 plt.show()
