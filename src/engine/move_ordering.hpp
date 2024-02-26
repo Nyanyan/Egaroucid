@@ -46,9 +46,6 @@
 #define MAX_SAME_CELL_TYPE 8
 #define MOVE_ORDERING_CELL_SCORE_MAX 256
 
-// 5 -10 -20 -70 -25
-// 4 -8 -16 -48 -157
-// 7 -14 -28 -77 -218
 #define W_CELL_WEIGHT 7
 #define W_MOBILITY -14
 #define W_POTENTIAL_MOBILITY -28
