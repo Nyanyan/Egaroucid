@@ -2,17 +2,11 @@ import subprocess
 import sys
 
 phase = str(sys.argv[1])
-if len(sys.argv) > 3:
-    hour = str(sys.argv[2])
-    minute = str(sys.argv[3])
-    second = str(sys.argv[4])
-    alpha = str(sys.argv[5])
-else:
-    hour = '0'
-    minute = '5'
-    second = '0'
-    alpha = '700'
-    n_patience = '1'
+hour = '0'
+minute = '5'
+second = '0'
+alpha = '700'
+n_patience = '1'
 
 if int(phase) <= 10: # 0-10
     train_data_nums = [23] # book data
@@ -29,11 +23,9 @@ train_data = [str(elem) + '.dat' for elem in train_data_nums]
 
 train_root_dir = './../../../train_data/bin_data/20240223_1/'
 
-#train_dirs = [train_root_dir + str(elem) + '/' for elem in range(int(phase) * 2, int(phase) * 2 + 2)]
 train_dirs = [train_root_dir + str(int(phase)) + '/']
 
 model_dir = './../../../model/nomodel/'
-
 model_dir = './../../../model/20240225_1/'
 
 additional_params = ''
