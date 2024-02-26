@@ -276,18 +276,13 @@ void get_book_deviate_todo(Book_deviate_todo_elem todo_elem, int book_depth, int
     if (todo_elem.lower <= book_elem.value){
         // check leaf
         std::vector<Book_value> links = book.get_all_moves_with_value(&todo_elem.board);
+        // (book_elem.leaf.value >= book_elem.value - max_error_per_move && lower <= book_elem.leaf.value && is_valid_policy(book_elem.leaf.move))
+        // (((book_elem.leaf.value >= book_elem.value - max_error_per_move && lower <= book_elem.leaf.value) || links.size() == 0) && is_valid_policy(book_elem.leaf.move))
         if (((book_elem.leaf.value >= book_elem.value - max_error_per_move && todo_elem.lower <= book_elem.leaf.value) || links.size() == 0) && is_valid_policy(book_elem.leaf.move)){
             if (todo_elem.board.get_legal() & (1ULL << book_elem.leaf.move)){ // is leaf legal?
-                Flip flip;
-                calc_flip(&flip, &todo_elem.board, book_elem.leaf.move);
-                todo_elem.board.move_board(&flip);
-                    bool already_in_book = book.contain(todo_elem.board);
-                todo_elem.board.undo_board(&flip);
-                if (!already_in_book){
-                    book_deviate_todo.emplace(todo_elem);
-                    if (book_deviate_todo.size() % 10 == 0)
-                        std::cerr << "loop " << n_loop << " book deviate todo " << book_deviate_todo.size() << " calculating... time " << ms_to_time_short(tim() - all_strt) << std::endl;
-                }
+                book_deviate_todo.emplace(todo_elem);
+                if (book_deviate_todo.size() % 10 == 0)
+                    std::cerr << "loop " << n_loop << " book deviate todo " << book_deviate_todo.size() << " calculating... time " << ms_to_time_short(tim() - all_strt) << std::endl;
             }
         }
         // expand links

@@ -25,20 +25,20 @@
 /*
     @brief constants for ProbCut error calculation
 */
-#define probcut_a 0.3818033380802222
-#define probcut_b -1.0891060110298152
-#define probcut_c -0.07342910586582355
-#define probcut_d -1.252586880593907
-#define probcut_e 4.81484853537922
-#define probcut_f 4.95982520304867
-#define probcut_g 2.0155394298293788
+#define probcut_a 0.3751721838248846
+#define probcut_b -1.8352941535241047
+#define probcut_c 1.8368724462489843
+#define probcut_d 0.8431454514755922
+#define probcut_e -3.013459627561517
+#define probcut_f 8.3298545018757
+#define probcut_g 2.539773029643781
 
-#define probcut_end_a 1.4919886754284815
-#define probcut_end_b 1.43309435106869
-#define probcut_end_c 3.77005510042638
-#define probcut_end_d -8.071517634455052
-#define probcut_end_e -2.6613608401813305
-#define probcut_end_f 11.515037569837991
+#define probcut_end_a 1.908798448361043
+#define probcut_end_b 1.6468299594064413
+#define probcut_end_c 2.0530449406091082
+#define probcut_end_d -5.961374118848742
+#define probcut_end_e -0.7753956186749736
+#define probcut_end_f 10.95261264952042
 
 #if USE_MPC_PRE_CALCULATION
     int mpc_error[N_SELECTIVITY_LEVEL][HW2 + 1][HW2 - 3][HW2 - 3];
@@ -54,8 +54,7 @@ constexpr int mpc_search_depth_arr[2][61] = {
         20, 21, 20, 21, 22, 23, 22, 23, 24, 25, 
         24, 25, 26, 27, 26, 27, 28, 29, 28, 29, 
         30
-    },
-    { // endgame
+    }, { // endgame
          0,  1,  0,  1,  0,  1,  0,  1,  2,  3, 
          2,  3,  2,  3,  2,  3,  4,  5,  4,  5, 
          4,  5,  4,  5,  6,  7,  6,  7,  6,  7, 
@@ -64,6 +63,10 @@ constexpr int mpc_search_depth_arr[2][61] = {
         12, 13, 12, 13, 12, 13, 14, 15, 14, 15, 
         14
     }
+};
+
+int mpc_search_depth_mid_arr[61] = {
+    
 };
 
 /*

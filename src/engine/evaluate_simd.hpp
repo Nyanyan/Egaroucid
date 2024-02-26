@@ -43,15 +43,21 @@
 
 // additional features
 #define MAX_SURROUND 64
+#define MAX_CANPUT 35
 #define MAX_STONE_NUM 65
+
+// mobility patterns
+#define N_CANPUT_PATTERNS 4
+#define MOBILITY_PATTERN_SIZE 256
 
 /*
     @brief value definition
 
     Raw score is STEP times larger than the real score.
 */
-#define STEP 32
-#define STEP_2 16
+#define STEP 128
+#define STEP_2 64
+//#define STEP_SHIFT 8
 
 /*
     @brief 3 ^ N definition
@@ -68,6 +74,19 @@
 #define P38 6561
 #define P39 19683
 #define P310 59049
+
+/*
+    @brief 4 ^ N definition
+*/
+#define P40 1
+#define P41 4
+#define P42 16
+#define P43 64
+#define P44 256
+#define P45 1024
+#define P46 4096
+#define P47 16384
+#define P48 65536
 
 /*
     @brief coordinate definition
@@ -374,8 +393,10 @@ constexpr uint_fast16_t pow3[11] = {1, P31, P32, P33, P34, P35, P36, P37, P38, P
     @brief evaluation parameters
 */
 int16_t pattern_arr[2][N_PHASES][N_PATTERN_PARAMS + 2];
-int16_t eval_num_arr[N_PHASES][MAX_STONE_NUM];
 int16_t eval_sur0_sur1_arr[N_PHASES][MAX_SURROUND][MAX_SURROUND];
+int16_t eval_canput0_canput1_arr[N_PHASES][MAX_CANPUT][MAX_CANPUT];
+int16_t eval_num0_num1_arr[N_PHASES][MAX_STONE_NUM][MAX_STONE_NUM];
+int16_t eval_mobility_pattern[N_PHASES][N_CANPUT_PATTERNS][MOBILITY_PATTERN_SIZE][MOBILITY_PATTERN_SIZE];
 
 /*
     @brief used for unzipping the evaluation function
@@ -450,12 +471,22 @@ inline bool init_evaluation_calc(const char* file, bool show_log){
             fclose(fp);
             return false;
         }
-        if (fread(eval_num_arr[phase_idx], 2, MAX_STONE_NUM, fp) < MAX_STONE_NUM){
+        if (fread(eval_sur0_sur1_arr[phase_idx], 2, MAX_SURROUND * MAX_SURROUND, fp) < MAX_SURROUND * MAX_SURROUND){
             std::cerr << "[ERROR] [FATAL] evaluation file broken" << std::endl;
             fclose(fp);
             return false;
         }
-        if (fread(eval_sur0_sur1_arr[phase_idx], 2, MAX_SURROUND * MAX_SURROUND, fp) < MAX_SURROUND * MAX_SURROUND){
+        if (fread(eval_canput0_canput1_arr[phase_idx], 2, MAX_CANPUT * MAX_CANPUT, fp) < MAX_CANPUT * MAX_CANPUT){
+            std::cerr << "[ERROR] [FATAL] evaluation file broken" << std::endl;
+            fclose(fp);
+            return false;
+        }
+        if (fread(eval_num0_num1_arr[phase_idx], 2, MAX_STONE_NUM * MAX_STONE_NUM, fp) < MAX_STONE_NUM * MAX_STONE_NUM){
+            std::cerr << "[ERROR] [FATAL] evaluation file broken" << std::endl;
+            fclose(fp);
+            return false;
+        }
+        if (fread(eval_mobility_pattern[phase_idx], 2, N_CANPUT_PATTERNS * MOBILITY_PATTERN_SIZE * MOBILITY_PATTERN_SIZE, fp) < N_CANPUT_PATTERNS * MOBILITY_PATTERN_SIZE * MOBILITY_PATTERN_SIZE){
             std::cerr << "[ERROR] [FATAL] evaluation file broken" << std::endl;
             fclose(fp);
             return false;
@@ -627,12 +658,12 @@ inline int end_evaluate_odd(Board *b, int e){
 /*
     @brief calculate surround value used in evaluation function
 
-    @param discs                a bitboard representing discs
+    @param player               a bitboard representing player
     @param empties              a bitboard representing empties
     @return surround value
 */
-inline int calc_surround(const uint64_t discs, const uint64_t empties){
-    __m256i pl = _mm256_set1_epi64x(discs);
+inline int calc_surround(const uint64_t player, const uint64_t empties){
+    __m256i pl = _mm256_set1_epi64x(player);
     pl = _mm256_and_si256(pl, eval_surround_mask);
     pl = _mm256_or_si256(_mm256_sll_epi64(pl, eval_surround_shift1879), _mm256_srl_epi64(pl, eval_surround_shift1879));
     __m128i res = _mm_or_si128(_mm256_castsi256_si128(pl), _mm256_extracti128_si256(pl, 1));
@@ -679,6 +710,41 @@ inline int calc_pattern_diff(const int phase_idx, bool r, Eval_features *f){
 }
 
 /*
+    @brief mobility pattern evaluation
+
+    @param phase_idx            evaluation phase
+    @param player_mobility      player's legal moves in bitboard
+    @param opponent_mobility    opponent's legal moves in bitboard
+    @return mobility pattern evaluation value
+*/
+
+inline int calc_mobility_pattern(const int phase_idx, const uint64_t player_mobility, const uint64_t opponent_mobility){
+    uint8_t *ph = (uint8_t*)&player_mobility;
+    uint8_t *oh = (uint8_t*)&opponent_mobility;
+    uint64_t p90 = black_line_mirror(player_mobility);
+    uint64_t o90 = black_line_mirror(opponent_mobility);
+    uint8_t *pv = (uint8_t*)&p90;
+    uint8_t *ov = (uint8_t*)&o90;
+    return 
+        eval_mobility_pattern[phase_idx][0][oh[0]][ph[0]] + 
+        eval_mobility_pattern[phase_idx][0][oh[7]][ph[7]] + 
+        eval_mobility_pattern[phase_idx][0][ov[0]][pv[0]] + 
+        eval_mobility_pattern[phase_idx][0][ov[7]][pv[7]] + 
+        eval_mobility_pattern[phase_idx][1][oh[1]][ph[1]] + 
+        eval_mobility_pattern[phase_idx][1][oh[6]][ph[6]] + 
+        eval_mobility_pattern[phase_idx][1][ov[1]][pv[1]] + 
+        eval_mobility_pattern[phase_idx][1][ov[6]][pv[6]] + 
+        eval_mobility_pattern[phase_idx][2][oh[2]][ph[2]] + 
+        eval_mobility_pattern[phase_idx][2][oh[5]][ph[5]] + 
+        eval_mobility_pattern[phase_idx][2][ov[2]][pv[2]] + 
+        eval_mobility_pattern[phase_idx][2][ov[5]][pv[5]] + 
+        eval_mobility_pattern[phase_idx][3][oh[3]][ph[3]] + 
+        eval_mobility_pattern[phase_idx][3][oh[4]][ph[4]] + 
+        eval_mobility_pattern[phase_idx][3][ov[3]][pv[3]] + 
+        eval_mobility_pattern[phase_idx][3][ov[4]][pv[4]];
+}
+
+/*
     @brief midgame evaluation function
 
     @param b                    board
@@ -690,23 +756,26 @@ inline int mid_evaluate(Board *board){
     Search search;
     search.init_board(board);
     calc_features(&search);
-    /*
     uint64_t player_mobility, opponent_mobility;
     player_mobility = calc_legal(search.board.player, search.board.opponent);
     opponent_mobility = calc_legal(search.board.opponent, search.board.player);
     if ((player_mobility | opponent_mobility) == 0ULL)
         return end_evaluate(&search.board);
-    */
-    int phase_idx, sur0, sur1, num0;
+    int phase_idx, sur0, sur1, canput0, canput1, num0, num1;
     uint64_t empties;
     phase_idx = search.phase();
+    canput0 = pop_count_ull(player_mobility);
+    canput1 = pop_count_ull(opponent_mobility);
     empties = ~(search.board.player | search.board.opponent);
     sur0 = calc_surround(search.board.player, empties);
     sur1 = calc_surround(search.board.opponent, empties);
     num0 = pop_count_ull(search.board.player);
+    num1 = search.n_discs - num0;
     int res = calc_pattern_diff(phase_idx, search.eval_feature_reversed, &search.eval_features[search.eval_feature_idx]) + 
-        eval_num_arr[phase_idx][num0] + 
-        eval_sur0_sur1_arr[phase_idx][sur0][sur1];
+        eval_sur0_sur1_arr[phase_idx][sur0][sur1] + 
+        eval_canput0_canput1_arr[phase_idx][canput0][canput1] + 
+        eval_num0_num1_arr[phase_idx][num0][num1] + 
+        calc_mobility_pattern(phase_idx, player_mobility, opponent_mobility);
     res += res >= 0 ? STEP_2 : -STEP_2;
     res /= STEP;
     if (res > SCORE_MAX)
@@ -723,23 +792,26 @@ inline int mid_evaluate(Board *board){
     @return evaluation value
 */
 inline int mid_evaluate_diff(Search *search){
-    /*
     uint64_t player_mobility, opponent_mobility;
     player_mobility = calc_legal(search->board.player, search->board.opponent);
     opponent_mobility = calc_legal(search->board.opponent, search->board.player);
     if ((player_mobility | opponent_mobility) == 0ULL)
         return end_evaluate(&search->board);
-    */
-    int phase_idx, sur0, sur1, num0;
+    int phase_idx, sur0, sur1, canput0, canput1, num0, num1;
     uint64_t empties;
     phase_idx = search->phase();
+    canput0 = pop_count_ull(player_mobility);
+    canput1 = pop_count_ull(opponent_mobility);
     empties = ~(search->board.player | search->board.opponent);
     sur0 = calc_surround(search->board.player, empties);
     sur1 = calc_surround(search->board.opponent, empties);
     num0 = pop_count_ull(search->board.player);
+    num1 = search->n_discs - num0;
     int res = calc_pattern_diff(phase_idx, search->eval_feature_reversed, &search->eval_features[search->eval_feature_idx]) + 
-        eval_num_arr[phase_idx][num0] + 
-        eval_sur0_sur1_arr[phase_idx][sur0][sur1];
+        eval_sur0_sur1_arr[phase_idx][sur0][sur1] + 
+        eval_canput0_canput1_arr[phase_idx][canput0][canput1] + 
+        eval_num0_num1_arr[phase_idx][num0][num1] + 
+        calc_mobility_pattern(phase_idx, player_mobility, opponent_mobility);
     res += res >= 0 ? STEP_2 : -STEP_2;
     res /= STEP;
     if (res > SCORE_MAX)

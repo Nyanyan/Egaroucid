@@ -3,7 +3,7 @@
 
     @file move_ordering.hpp
         Move ordering for each search algorithm
-    @date 2021-2024
+    @date 2021-2023
     @author Takuto Yamana
     @license GPL-3.0 license
 */
@@ -46,11 +46,14 @@
 #define MAX_SAME_CELL_TYPE 8
 #define MOVE_ORDERING_CELL_SCORE_MAX 256
 
+// 5 -10 -20 -70 -25
+// 4 -8 -16 -48 -157
+// 7 -14 -28 -77 -218
 #define W_CELL_WEIGHT 7
 #define W_MOBILITY -14
 #define W_POTENTIAL_MOBILITY -28
 #define W_VALUE -77
-#define W_VALUE_DEEP_ADDITIONAL -180
+#define W_VALUE_DEEP_ADDITIONAL -218
 
 #define W_NWS_MOBILITY -14
 #define W_NWS_POTENTIAL_MOBILITY -8
@@ -140,7 +143,23 @@ inline int get_weighted_n_moves(uint64_t legal){
     @param empties              a bitboard representing empty squares
     @return potential mobility
 */
-// reuse from evaluation function
+#if USE_SIMD
+    inline int get_potential_mobility(uint64_t opponent, uint64_t empties){
+        return calc_surround(opponent, empties);
+    }
+#else
+    inline int get_potential_mobility(uint64_t opponent, uint64_t empties){
+        uint64_t hmask = opponent & 0x7E7E7E7E7E7E7E7EULL;
+        uint64_t vmask = opponent & 0x00FFFFFFFFFFFF00ULL;
+        uint64_t hvmask = opponent & 0x007E7E7E7E7E7E00ULL;
+        uint64_t res = 
+            (hmask << 1) | (hmask >> 1) | 
+            (vmask << HW) | (vmask >> HW) | 
+            (hvmask << HW_M1) | (hvmask >> HW_M1) | 
+            (hvmask << HW_P1) | (hvmask >> HW_P1);
+        return pop_count_ull(empties & res);
+    }
+#endif
 
 /*
     @brief Evaluate a move in midgame
@@ -160,7 +179,7 @@ inline void move_evaluate(Search *search, Flip_value *flip_value, int alpha, int
         flip_value->n_legal = search->board.get_legal();
         flip_value->value += get_weighted_n_moves(flip_value->n_legal) * W_MOBILITY;
         uint64_t empties = ~(search->board.player | search->board.opponent);
-        flip_value->value += calc_surround(search->board.player, empties) * W_POTENTIAL_MOBILITY;
+        flip_value->value += get_potential_mobility(search->board.player, empties) * W_POTENTIAL_MOBILITY;
         switch (depth){
             case 0:
                 flip_value->value += mid_evaluate_diff(search) * W_VALUE;
@@ -222,7 +241,7 @@ inline void move_evaluate_end_nws(Search *search, Flip_value *flip_value){
         flip_value->n_legal = search->board.get_legal();
         flip_value->value -= pop_count_ull(flip_value->n_legal) * W_END_MOBILITY;
         //uint64_t empties = ~(search->board.player | search->board.opponent);
-        //flip_value->value += calc_surround(search->board.player, empties) * W_END_POTENTIAL_MOBILITY;
+        //flip_value->value += get_potential_mobility(search->board.player, empties) * W_END_POTENTIAL_MOBILITY;
     search->undo(&flip_value->flip);
 }
 
@@ -242,7 +261,7 @@ inline void move_evaluate_end_nws_eval(Search *search, Flip_value *flip_value){
         flip_value->n_legal = search->board.get_legal();
         flip_value->value -= pop_count_ull(flip_value->n_legal) * W_END_MOBILITY;
         //uint64_t empties = ~(search->board.player | search->board.opponent);
-        //flip_value->value += calc_surround(search->board.player, empties) * W_END_POTENTIAL_MOBILITY;
+        //flip_value->value += get_potential_mobility(search->board.player, empties) * W_END_POTENTIAL_MOBILITY;
         flip_value->value -= mid_evaluate_diff(search) * W_END_VALUE;
     search->undo(&flip_value->flip);
     eval_undo(search, &flip_value->flip);
@@ -283,7 +302,7 @@ inline void move_evaluate_nws(Search *search, Flip_value *flip_value, int alpha,
         flip_value->n_legal = search->board.get_legal();
         flip_value->value += get_weighted_n_moves(flip_value->n_legal) * W_NWS_MOBILITY;
         uint64_t empties = ~(search->board.player | search->board.opponent);
-        flip_value->value += calc_surround(search->board.player, empties) * W_NWS_POTENTIAL_MOBILITY;
+        flip_value->value += get_potential_mobility(search->board.player, empties) * W_NWS_POTENTIAL_MOBILITY;
         if (depth == 0)
             flip_value->value += mid_evaluate_diff(search) * W_NWS_VALUE_SHALLOW;
         else
@@ -352,6 +371,7 @@ inline void move_list_evaluate(Search *search, std::vector<Flip_value> &move_lis
         return;
     int eval_alpha = -std::min(SCORE_MAX, beta + MOVE_ORDERING_VALUE_OFFSET_BETA);
     int eval_beta = -std::max(-SCORE_MAX, alpha - MOVE_ORDERING_VALUE_OFFSET_ALPHA);
+    //int phase = get_move_ordering_phase(search->n_discs);
     int eval_depth = depth >> 3;
     if (depth >= 16)
         eval_depth += (depth - 14) >> 1;
