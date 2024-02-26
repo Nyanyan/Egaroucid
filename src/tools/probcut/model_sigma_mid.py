@@ -10,8 +10,9 @@ import math
 #depth1: short
 #depth2: long
 
-#data_files = ['data/probcut_mid1.txt', 'data/probcut_mid2.txt', 'data/probcut_mid3.txt', 'data/probcut_mid4.txt', 'data/probcut_mid5.txt']
-data_files = ['data/probcut_mid6.txt', 'data/probcut_mid7.txt']
+data_files = []
+data_files.extend(['data/probcut_mid1.txt', 'data/probcut_mid2.txt', 'data/probcut_mid3.txt', 'data/probcut_mid4.txt', 'data/probcut_mid5.txt'])
+data_files.extend(['data/probcut_mid6.txt', 'data/probcut_mid7.txt'])
 
 data = [[[[] for _ in range(61)] for _ in range(61)] for _ in range(65)] # n_discs, depth1, depth2 (depth1 < depth2)
 
@@ -53,18 +54,15 @@ for n_discs in range(len(data)):
 
 
 for n_discs in range(61):
-    s = 3.0 + 8.0 * (((n_discs - 3) / 60) ** 2)
-    e = 1.0 + 1.0 * (((n_discs - 3) / 60) ** 2)
+    s = 2.0 + 2.0 * (((n_discs - 3) / 60) ** 2)
+    e = 0.0 + 1.0 * (((n_discs - 3) / 60) ** 2)
     for depth2 in range(10, 60):
         depth1 = 0
         w_n_discs.append(n_discs)
         x_depth1.append(depth1)
         y_depth2.append(depth2)
-        base = 1.0 + (n_discs + 1) / 64 * 3.0
-        power = -depth2 / 60 * 4
-        beta = 1.0 - base ** power
-        z_error.append(beta * e + (1 - beta) * s)
-        weight.append(0.01)
+        z_error.append(s + depth2 / 60 * (s - e))
+        weight.append(0.001)
 
 for n_discs in range(61):
     for depth2 in range(15, 60):

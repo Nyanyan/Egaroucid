@@ -67,7 +67,7 @@ void tune_probcut_mid(){
     Flip flip;
     Search_result short_ans, long_ans;
     for (int i = 0; i < 100; ++i){
-        for (int depth = 1; depth < 16; ++depth){
+        for (int depth = 1; depth < 14; ++depth){
             for (int n_discs = 4; n_discs < HW2 - depth - 5; ++n_discs){
                 board.reset();
                 for (int j = 4; j < n_discs && board.check_pass(); ++j){ // random move
