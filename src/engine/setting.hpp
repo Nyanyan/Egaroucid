@@ -226,4 +226,4 @@
 
 // probcut
 #define TUNE_PROBCUT_MID false
-#define TUNE_PROBCUT_END true
+#define TUNE_PROBCUT_END false
