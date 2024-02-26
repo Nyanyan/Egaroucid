@@ -16,19 +16,19 @@
 * ```eval_optimizer.py```で学習できる
   * コマンドライン引数は```[start_phase] [end_phase]```
   * ```opt_log.txt```に学習ログを出力する
-  * ```optimizer_phase.py```をラップしてある
+  * ```eval_optimizer_phase.py```をラップしてある
     * 学習時間や学習率、学習に使うデータはここで設定する
-    * ```sgd_eval_cuda.cu```をラップしてある
+    * ```eval_optimizer_cuda.cu```をラップしてある
       * ```evaluation_definition.hpp```でインデックスの定義をしてある
-* 学習済みモデルは```Egaroucid/model/日付```(```optimizer_phase.py```で指定)に保存される
+* 学習済みモデルは```trained```フォルダに保存される
 
 
 
 ## 出力
 
 * ```output_egev.cpp```で出力可能
-  * コマンドライン引数は```[model_dir] [n_phases]```
-  * ```model_dir/フェーズ.txt```を読んで、```model_dir/eval.egev```に出力する。
+  * コマンドライン引数は``` [n_phases]```
+  * ```trained/フェーズ.txt```を読んで、```trained/eval.egev```に出力する。
 
 
 
