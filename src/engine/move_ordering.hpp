@@ -53,7 +53,7 @@
 #define W_MOBILITY -14
 #define W_POTENTIAL_MOBILITY -28
 #define W_VALUE -77
-#define W_VALUE_DEEP_ADDITIONAL -218
+#define W_VALUE_DEEP_ADDITIONAL -180
 
 #define W_NWS_MOBILITY -14
 #define W_NWS_POTENTIAL_MOBILITY -8
@@ -356,8 +356,8 @@ inline void move_list_evaluate(Search *search, std::vector<Flip_value> &move_lis
     int eval_alpha = -std::min(SCORE_MAX, beta + MOVE_ORDERING_VALUE_OFFSET_BETA);
     int eval_beta = -std::max(-SCORE_MAX, alpha - MOVE_ORDERING_VALUE_OFFSET_ALPHA);
     int eval_depth = depth >> 3;
-    if (depth >= 15)
-        eval_depth += (depth - 13) >> 1;
+    if (depth >= 16)
+        eval_depth += (depth - 14) >> 1;
     for (Flip_value &flip_value: move_list){
         #if USE_MID_ETC
             if (flip_value.flip.flip){
