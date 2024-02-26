@@ -189,6 +189,7 @@ def output_plt():
     plt.clf()
 
 print('n_players', len(players))
+print('level', LEVEL)
 
 for i in range(N_SET_GAMES):
     for p0 in range(len(players)):
@@ -199,7 +200,7 @@ for i in range(N_SET_GAMES):
     print_all_result()
     #output_plt()
 
-print(N_SET_GAMES * 2, 'games played for each winning rate')
+print(N_SET_GAMES * 2, 'games played for each winning rate at level', LEVEL)
 print_all_result()
 
 
