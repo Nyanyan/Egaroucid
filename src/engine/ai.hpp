@@ -71,9 +71,9 @@ inline Search_result tree_search_level1(Board board, uint64_t legal){
     @return the result in Search_result structure
 */
 inline Search_result tree_search(Board board, int depth, uint_fast8_t mpc_level, bool show_log, bool use_multi_thread){
-    if (depth == 1 && mpc_level == MPC_100_LEVEL && board.n_discs() < HW2 - 1){ // special optimization for level 1
-        return tree_search_level1(board, board.get_legal());
-    }
+    // if (depth == 1 && mpc_level == MPC_100_LEVEL && board.n_discs() < HW2 - 1){ // special optimization for level 1
+    //     return tree_search_level1(board, board.get_legal());
+    // }
     Search_result res;
     uint64_t strt;
     depth = std::min(HW2 - board.n_discs(), depth);
