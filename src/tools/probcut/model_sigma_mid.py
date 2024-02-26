@@ -54,8 +54,8 @@ for n_discs in range(len(data)):
 
 
 for n_discs in range(61):
-    s = 2.0 + 2.0 * (((n_discs - 3) / 60) ** 2)
-    e = 0.0 + 1.0 * (((n_discs - 3) / 60) ** 2)
+    s = 1.0 + 2.0 * (((n_discs - 3) / 60) ** 2)
+    e = 0.0 + 0.7 * (((n_discs - 3) / 60) ** 2)
     for depth2 in range(10, 60):
         depth1 = 0
         w_n_discs.append(n_discs)
