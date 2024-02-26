@@ -5,7 +5,7 @@ phase = str(sys.argv[1])
 hour = '0'
 minute = '2'
 second = '0'
-alpha = '10'
+alpha = '400'
 n_patience = '1'
 
 if int(phase) <= 10: # 0-10
@@ -26,7 +26,7 @@ train_root_dir = './../../../train_data/bin_data/20240223_1/'
 train_dirs = [train_root_dir + str(int(phase)) + '/']
 
 model_dir = './../../../model/nomodel/'
-model_dir = './../../../model/20240225_1/'
+#model_dir = './../../../model/20240225_1/'
 
 additional_params = ''
 for tfile in train_data:
