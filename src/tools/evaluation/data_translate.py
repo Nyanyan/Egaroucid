@@ -2,7 +2,7 @@ import subprocess
 import os
 import glob
 
-bin_root_dir = './../../../train_data/bin_data/20230707/'
+bin_root_dir = './../../../train_data/bin_data/20230227/'
 input_root_dir = './../../../train_data/board_data/'
 board_sub_dir_nums = [6, 7, 8, 9, 11, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25]
 
@@ -26,7 +26,7 @@ board_n_moves['24'] = [21, 60]
 board_n_moves['25'] = [30, 60]
 
 
-N_PHASES = 30
+N_PHASES = 60
 
 for phase in range(N_PHASES):
     bin_dir = bin_root_dir + str(phase)
