@@ -25,7 +25,7 @@ else:                  #30-59
 
 train_data = [str(elem) + '.dat' for elem in train_data_nums]
 
-train_root_dir = './../../../train_data/bin_data/20230707/'
+train_root_dir = './../../../train_data/bin_data/20240227/'
 
 train_dirs = [train_root_dir + str(int(phase)) + '/']
 
