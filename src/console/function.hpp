@@ -66,7 +66,7 @@ void tune_probcut_mid(){
     Board board;
     Flip flip;
     Search_result short_ans, long_ans;
-    for (int i = 0; i < 100; ++i){
+    for (int i = 0; i < 1000; ++i){
         for (int depth = 1; depth < 14; ++depth){
             for (int n_discs = 4; n_discs < HW2 - depth - 5; ++n_discs){
                 board.reset();
@@ -85,7 +85,7 @@ void tune_probcut_mid(){
                 }
                 if (board.check_pass()){
                     int short_depth = myrandrange(1, depth);
-                    // int short_depth = mpc_search_depth_arr[0][depth];
+                    //int short_depth = mpc_search_depth_arr[0][depth];
                     if (short_depth == 0){
                         short_ans.value = mid_evaluate(&board);
                     } else{
@@ -123,8 +123,8 @@ void tune_probcut_end(){
                 board.move_board(&flip);
             }
             if (board.check_pass()){
-                //int short_depth = myrandrange(1, depth);
-                int short_depth = mpc_search_depth_arr[1][depth];
+                int short_depth = myrandrange(1, std::min(15, depth));
+                //int short_depth = mpc_search_depth_arr[1][depth];
                 if (short_depth == 0){
                     short_ans.value = mid_evaluate(&board);
                 } else{
