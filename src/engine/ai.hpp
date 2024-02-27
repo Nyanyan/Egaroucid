@@ -91,7 +91,7 @@ inline Search_result tree_search(Board board, int depth, uint_fast8_t mpc_level,
             }
         }
         */
-        if (mpc_level > MPC_93_LEVEL){
+        if (mpc_level >= MPC_93_LEVEL){
             uint_fast8_t mpc_level_presearch = MPC_74_LEVEL;
             int depth_presearch = depth;
             search.mpc_level = mpc_level_presearch;

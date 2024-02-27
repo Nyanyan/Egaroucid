@@ -46,7 +46,7 @@
 #define MAX_SAME_CELL_TYPE 8
 
 #define W_CELL_WEIGHT 7
-#define W_MOBILITY -20
+#define W_MOBILITY -32
 #define W_POTENTIAL_MOBILITY -28
 #define W_VALUE -256
 #define W_VALUE_DEEP_ADDITIONAL -64
