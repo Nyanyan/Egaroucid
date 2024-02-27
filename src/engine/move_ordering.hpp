@@ -371,9 +371,10 @@ inline void move_list_evaluate(Search *search, std::vector<Flip_value> &move_lis
         return;
     int eval_alpha = -std::min(SCORE_MAX, beta + MOVE_ORDERING_VALUE_OFFSET_BETA);
     int eval_beta = -std::max(-SCORE_MAX, alpha - MOVE_ORDERING_VALUE_OFFSET_ALPHA);
-    int eval_depth = depth >> 3;
-    if (depth >= 16)
-        eval_depth += (depth - 14) >> 1;
+    int eval_depth = ((depth >> 3) << 1) | (depth & 1);
+    //int eval_depth = depth >> 3;
+    //if (depth >= 16)
+    //    eval_depth += (depth - 14) >> 1;
     for (Flip_value &flip_value: move_list){
         #if USE_MID_ETC
             if (flip_value.flip.flip){
@@ -411,10 +412,10 @@ inline void move_list_evaluate(Search *search, std::vector<Flip_value> &move_lis
         return;
     int eval_alpha = -std::min(SCORE_MAX, beta + MOVE_ORDERING_VALUE_OFFSET_BETA);
     int eval_beta = -std::max(-SCORE_MAX, alpha - MOVE_ORDERING_VALUE_OFFSET_ALPHA);
-    //int phase = get_move_ordering_phase(search->n_discs);
-    int eval_depth = depth >> 3;
-    if (depth >= 16)
-        eval_depth += (depth - 14) >> 1;
+    int eval_depth = ((depth >> 3) << 1) | (depth & 1);
+    //int eval_depth = depth >> 3;
+    //if (depth >= 16)
+    //    eval_depth += (depth - 14) >> 1;
     for (Flip_value &flip_value: move_list){
         #if USE_MID_ETC
             if (flip_value.flip.flip)
@@ -500,7 +501,8 @@ inline void move_list_evaluate_nws(Search *search, std::vector<Flip_value> &move
         return;
     const int eval_alpha = -std::min(SCORE_MAX, alpha + MOVE_ORDERING_NWS_VALUE_OFFSET_BETA);
     const int eval_beta = -std::max(-SCORE_MAX, alpha - MOVE_ORDERING_NWS_VALUE_OFFSET_ALPHA);
-    int eval_depth = depth >> 4;
+    int eval_depth = ((depth >> 4) << 1) | (depth & 1);
+    //int eval_depth = depth >> 4;
     for (Flip_value &flip_value: move_list){
         #if USE_MID_ETC
             if (flip_value.flip.flip){
