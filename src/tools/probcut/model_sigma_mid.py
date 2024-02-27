@@ -50,7 +50,7 @@ for n_discs in range(len(data)):
                 z_error.append(sigma)
                 weight.append(0.001)
 
-
+'''
 for n_discs in range(61):
     s = 1.0 + 2.0 * (((n_discs - 3) / 60) ** 2)
     e = 0.0 + 0.7 * (((n_discs - 3) / 60) ** 2)
@@ -61,7 +61,7 @@ for n_discs in range(61):
         y_depth2.append(depth2)
         z_error.append(s + depth2 / 60 * (s - e))
         weight.append(0.001)
-
+'''
 for n_discs in range(61):
     for depth2 in range(15, 60):
         depth1 = depth2
