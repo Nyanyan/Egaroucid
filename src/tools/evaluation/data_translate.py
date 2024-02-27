@@ -2,7 +2,7 @@ import subprocess
 import os
 import glob
 
-bin_root_dir = './../../../train_data/bin_data/20240227/'
+bin_root_dir = './../../../train_data/bin_data/20240223_1/'
 input_root_dir = './../../../train_data/board_data/'
 board_sub_dir_nums = [6, 7, 8, 9, 11, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25]
 

@@ -25,12 +25,12 @@ else:                  #30-59
 
 train_data = [str(elem) + '.dat' for elem in train_data_nums]
 
-train_root_dir = './../../../train_data/bin_data/20240227/'
+train_root_dir = './../../../train_data/bin_data/20240223_1/'
 
 train_dirs = [train_root_dir + str(int(phase)) + '/']
 
 model_dir = './../../../model/nomodel/'
-#model_dir = './../../../model/20240226_2/'
+model_dir = './../../../model/20240226_3/'
 
 additional_params = ''
 for tfile in train_data:
