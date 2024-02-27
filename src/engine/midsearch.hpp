@@ -64,6 +64,7 @@ inline int nega_alpha_eval1(Search *search, int alpha, int beta, bool skipped, c
         calc_flip(&flip, &search->board, cell);
         eval_move(search, &flip);
         search->move(&flip);
+            ++search->n_nodes;
             g = -mid_evaluate_diff(search);
         search->undo(&flip);
         eval_undo(search, &flip);
@@ -170,8 +171,10 @@ inline int nega_alpha_eval1(Search *search, int alpha, int beta, bool skipped, c
             #else
                 if (depth == 1)
                     return nega_alpha_eval1(search, alpha, beta, skipped, searching);
-                if (depth == 0)
+                if (depth == 0){
+                    ++search->n_nodes;
                     return mid_evaluate_diff(search);
+                }
             #endif
         }
         ++search->n_nodes;
@@ -324,8 +327,10 @@ int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, uin
         #else
             if (depth == 1)
                 return nega_alpha_eval1(search, alpha, beta, skipped, searching);
-            if (depth == 0)
+            if (depth == 0){
+                ++search->n_nodes;
                 return mid_evaluate_diff(search);
+            }
         #endif
     }
     ++search->n_nodes;

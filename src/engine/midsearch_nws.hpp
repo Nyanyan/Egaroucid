@@ -67,6 +67,7 @@ inline int nega_alpha_eval1_nws(Search *search, int alpha, bool skipped, const b
         calc_flip(&flip, &search->board, cell);
         eval_move(search, &flip);
         search->move(&flip);
+            ++search->n_nodes;
             g = -mid_evaluate_diff(search);
         search->undo(&flip);
         eval_undo(search, &flip);
@@ -203,8 +204,10 @@ int nega_alpha_ordering_nws(Search *search, int alpha, int depth, bool skipped, 
         #else
             if (depth == 1)
                 return nega_alpha_eval1_nws(search, alpha, skipped, searching);
-            if (depth == 0)
+            if (depth == 0){
+                ++search->n_nodes;
                 return mid_evaluate_diff(search);
+            }
         #endif
     }
     ++search->n_nodes;

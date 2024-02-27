@@ -25,7 +25,7 @@
 #define CLOG_NOT_FOUND -127
 
 // Do clog search in depth CLOG_SEARCH_DEPTH
-#define CLOG_SEARCH_DEPTH 6 //13
+#define CLOG_SEARCH_MAX_DEPTH 13
 
 #if USE_PARALLEL_CLOG_SEARCH
 
@@ -191,7 +191,7 @@ int clog_search(Clog_search *search, bool is_enduring, int depth){
     @param n_nodes              number of nodes visited
     @return vector of all moves and scores that leads early game over
 */
-std::vector<Clog_result> first_clog_search(Board board, uint64_t *n_nodes){
+std::vector<Clog_result> first_clog_search(Board board, uint64_t *n_nodes, int depth){
     Clog_search search;
     search.board = board.copy();
     search.n_nodes = 0ULL;
@@ -204,14 +204,14 @@ std::vector<Clog_result> first_clog_search(Board board, uint64_t *n_nodes){
     for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)){
         calc_flip(&flip, &search.board, cell);
         search.board.move_board(&flip);
-            g = clog_search(&search, false, CLOG_SEARCH_DEPTH - 1);
+            g = clog_search(&search, false, depth - 1);
             if (g != CLOG_NOT_FOUND){
                 Clog_result result;
                 result.pos = cell;
                 result.val = -g;
                 res.emplace_back(result);
             } else{
-                g = clog_search(&search, true, CLOG_SEARCH_DEPTH - 1);
+                g = clog_search(&search, true, depth - 1);
                 if (g != CLOG_NOT_FOUND){
                     Clog_result result;
                     result.pos = cell;
@@ -232,13 +232,13 @@ std::vector<Clog_result> first_clog_search(Board board, uint64_t *n_nodes){
     @param n_nodes              number of nodes visited
     @return best score
 */
-int clog_search(Board board, uint64_t *n_nodes){
+int clog_search(Board board, uint64_t *n_nodes, int depth){
     Clog_search search;
     search.board = board.copy();
     search.n_nodes = 0ULL;
-    int res = clog_search(&search, true, CLOG_SEARCH_DEPTH - 1);
+    int res = clog_search(&search, true, depth - 1);
     if (res == CLOG_NOT_FOUND)
-        res = clog_search(&search, false, CLOG_SEARCH_DEPTH - 1);
+        res = clog_search(&search, false, depth - 1);
     *n_nodes = search.n_nodes;
     return res;
 }

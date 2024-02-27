@@ -23,7 +23,7 @@ int main(int argc, char *argv[]){
     std::ofstream fout;
     fout.open(argv[4], std::ios::out|std::ios::binary|std::ios::trunc);
     if (!fout){
-        std::cerr << "can't open" << std::endl;
+        std::cerr << "can't open output file " << argv[4] << std::endl;
         return 1;
     }
 
@@ -45,7 +45,7 @@ int main(int argc, char *argv[]){
         std::cerr << "=";
         file = std::string(argv[1]) + "/" + std::to_string(i) + ".dat";
         if (fopen_s(&fp, file.c_str(), "rb") != 0) {
-            std::cerr << "can't open " << file << std::endl;
+            std::cerr << "can't open data " << file << std::endl;
             continue;
         }
         while (true){
@@ -55,10 +55,10 @@ int main(int argc, char *argv[]){
             fread(&player, 1, 1, fp);
             fread(&policy, 1, 1, fp);
             fread(&score, 1, 1, fp);
-            if (calc_phase(&board, player) == phase && board.n_discs() - 4 >= use_n_moves_min && board.n_discs() - 4 <= use_n_moves_max){
+            n = pop_count_ull(board.player | board.opponent);
+            if (calc_phase(&board, player) == phase && n - 4 >= use_n_moves_min && n - 4 <= use_n_moves_max){
                 player_short = player;
                 score_short = score;
-                n = pop_count_ull(board.player | board.opponent);
                 adj_calc_features(&board, idxes);
                 fout.write((char*)&n, 2);
                 fout.write((char*)&player_short, 2);
@@ -70,6 +70,7 @@ int main(int argc, char *argv[]){
         if (i % 20 == 19)
             std::cerr << std::endl;
     }
+    fout.close();
     std::cerr << t << std::endl;
     return 0;
 

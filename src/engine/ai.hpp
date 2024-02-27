@@ -21,42 +21,6 @@
 
 #define SEARCH_BOOK -1
 
-inline Search_result tree_search_level1(Board board, uint64_t legal){
-    uint64_t strt = tim();
-    Flip flip;
-    Search search;
-    search.init_board(&board);
-    search.n_nodes = 0ULL;
-    calc_features(&search);
-    //std::cerr << mid_evaluate_diff(&search) << std::endl;
-    //board.print();
-    int v = SCORE_UNDEFINED;
-    int policy = MOVE_UNDEFINED;
-    for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)){
-        calc_flip(&flip, &board, cell);
-        search.move(&flip);
-        eval_move(&search, &flip);
-            int g = -mid_evaluate_diff(&search);
-            ++search.n_nodes;
-        eval_undo(&search, &flip);
-        search.undo(&flip);
-        if (g > v){
-            v = g;
-            policy = cell;
-        }
-    }
-    Search_result res;
-    res.depth = 1;
-    res.nodes = search.n_nodes;
-    res.time = tim() - strt;
-    res.nps = calc_nps(res.nodes, res.time);
-    res.policy = policy;
-    res.value = v;
-    res.is_end_search = board.n_discs() == HW2 - 1;
-    res.probability = SELECTIVITY_PERCENTAGE[MPC_100_LEVEL];
-    return res;
-}
-
 /*
     @brief Get a result of a search
 
@@ -71,18 +35,15 @@ inline Search_result tree_search_level1(Board board, uint64_t legal){
     @return the result in Search_result structure
 */
 inline Search_result tree_search(Board board, int depth, uint_fast8_t mpc_level, bool show_log, bool use_multi_thread){
-    // if (depth == 1 && mpc_level == MPC_100_LEVEL && board.n_discs() < HW2 - 1){ // special optimization for level 1
-    //     return tree_search_level1(board, board.get_legal());
-    // }
     Search_result res;
     uint64_t strt;
     depth = std::min(HW2 - board.n_discs(), depth);
     bool is_end_search = (HW2 - board.n_discs() == depth);
     std::vector<Clog_result> clogs;
     res.clog_nodes = 0ULL;
-    if (!is_end_search || mpc_level != MPC_100_LEVEL){
+    if (mpc_level != MPC_100_LEVEL){
         strt = tim();
-        clogs = first_clog_search(board, &res.clog_nodes);
+        clogs = first_clog_search(board, &res.clog_nodes, std::min(depth, CLOG_SEARCH_MAX_DEPTH));
         res.clog_time = tim() - strt;
         if (show_log){
             std::cerr << "clog search time " << res.clog_time << " nodes " << res.clog_nodes << " nps " << calc_nps(res.clog_nodes, res.clog_time) << std::endl;
@@ -194,10 +155,6 @@ inline Search_result tree_search(Board board, int depth, uint_fast8_t mpc_level,
 }
 
 inline Search_result tree_search_specified_moves(Board board, int depth, uint_fast8_t mpc_level, bool show_log, bool use_multi_thread, uint64_t use_legal){
-    // special optimization for level 1
-    if (depth == 1 && mpc_level == MPC_100_LEVEL){
-        return tree_search_level1(board, use_legal);
-    }
     uint64_t strt;
     Search_result res;
     depth = std::min(HW2 - board.n_discs(), depth);
@@ -386,9 +343,12 @@ inline int tree_search_window(Board board, int depth, int alpha, int beta, uint_
     calc_features(&search);
     bool searching = true;
     uint64_t clog_n_nodes = 0ULL;
-    int clog_res = clog_search(board, &clog_n_nodes);
-    if (clog_res != CLOG_NOT_FOUND)
-        return clog_res;
+    if (mpc_level != MPC_100_LEVEL){
+        int clog_depth = std::min(depth, CLOG_SEARCH_MAX_DEPTH);
+        int clog_res = clog_search(board, &clog_n_nodes, clog_depth);
+        if (clog_res != CLOG_NOT_FOUND)
+            return clog_res;
+    }
     int res = nega_scout(&search, alpha, beta, depth, false, LEGAL_UNDEFINED, is_end_search, &searching);
     transposition_table.update_date();
     return res;

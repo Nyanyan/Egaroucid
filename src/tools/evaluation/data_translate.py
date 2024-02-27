@@ -4,14 +4,14 @@ import glob
 
 bin_root_dir = './../../../train_data/bin_data/20230707/'
 input_root_dir = './../../../train_data/board_data/'
-board_sub_dir_nums = [6, 7, 8, 9, 10, 11, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25]
+board_sub_dir_nums = [6, 7, 8, 9, 11, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25]
 
 board_n_moves = {}
 board_n_moves['6'] = [20, 60]
 board_n_moves['7'] = [20, 60]
 board_n_moves['8'] = [20, 60]
 board_n_moves['9'] = [20, 60]
-board_n_moves['10'] = [40, 60]
+#board_n_moves['10'] = [40, 60]
 board_n_moves['11'] = [20, 60]
 board_n_moves['15'] = [20, 60]
 board_n_moves['16'] = [19, 60]
@@ -40,4 +40,4 @@ for phase in range(N_PHASES):
         out_file = bin_dir + '/' + str(board_sub_dir_num) + '.dat'
         cmd = 'data_board_to_idx.out ' + input_dir + ' 0 ' + n_files_str + ' ' + out_file + ' ' + str(phase) + ' ' + str(board_n_moves[str(board_sub_dir_num)][0]) + ' ' + str(board_n_moves[str(board_sub_dir_num)][1])
         print(phase, board_sub_dir_num, cmd)
-        subprocess.run(cmd.split(), stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL)
+        subprocess.run(cmd.split(), stderr=None, stdout=subprocess.DEVNULL)

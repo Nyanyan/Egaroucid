@@ -185,7 +185,7 @@
 #define LAST_PO_OPTIMIZE true
 
 // use parallel clog search
-#define USE_PARALLEL_CLOG_SEARCH false
+#define USE_PARALLEL_CLOG_SEARCH true
 
 // MPC pre calculation
 #define USE_MPC_PRE_CALCULATION true
@@ -223,3 +223,7 @@
 
 // move ordering
 #define TUNE_MOVE_ORDERING_END false
+
+// probcut
+#define TUNE_PROBCUT_MID false
+#define TUNE_PROBCUT_END false

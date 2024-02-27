@@ -3,12 +3,12 @@ import sys
 
 phase = str(sys.argv[1])
 hour = '0'
-minute = '5'
+minute = '20'
 second = '0'
 alpha = '500'
 n_patience = '1'
 
-train_data_nums = [6, 7, 8, 9, 10, 11, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25]
+train_data_nums = [6, 7, 8, 9, 11, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25]
 
 '''
 if int(phase) <= 4: # 0-10
