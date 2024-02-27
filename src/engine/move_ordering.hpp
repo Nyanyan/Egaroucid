@@ -371,7 +371,6 @@ inline void move_list_evaluate(Search *search, std::vector<Flip_value> &move_lis
         return;
     int eval_alpha = -std::min(SCORE_MAX, beta + MOVE_ORDERING_VALUE_OFFSET_BETA);
     int eval_beta = -std::max(-SCORE_MAX, alpha - MOVE_ORDERING_VALUE_OFFSET_ALPHA);
-    //int phase = get_move_ordering_phase(search->n_discs);
     int eval_depth = depth >> 3;
     if (depth >= 16)
         eval_depth += (depth - 14) >> 1;

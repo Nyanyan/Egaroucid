@@ -10,7 +10,8 @@ import math
 #data_files = ['data/probcut_end1.txt', 'data/probcut_end2.txt', 'data/probcut_end3.txt', 'data/probcut_end4.txt']
 #data_files = ['data/probcut_end6.txt']
 #data_files = ['data/probcut_end8.txt', 'data/probcut_end9.txt', 'data/probcut_end10.txt', 'data/probcut_end11.txt', 'data/probcut_end12.txt']
-data_files = ['data/probcut_end15.txt']
+#data_files = ['data/probcut_end15.txt']
+data_files = ['data/probcut_end16.txt']
 
 data = [[[] for _ in range(61)] for _ in range(65)] # n_discs, depth
 for data_file in data_files:
@@ -33,15 +34,15 @@ for n_discs in range(len(data)):
         continue
     for depth in range(2, len(data[n_discs])):
         if len(data[n_discs][depth]) >= 3:
-            #mean = statistics.mean(data[n_discs][depth])
-            #sigma = statistics.stdev(data[n_discs][depth])
+            mean_st = statistics.mean(data[n_discs][depth])
+            sigma_st = statistics.stdev(data[n_discs][depth])
             mean = 0.0
             sigma = 0.0
             for elem in data[n_discs][depth]:
                 sigma += elem ** 2
             sigma /= len(data[n_discs][depth])
             sigma = math.sqrt(sigma)
-            print('n_discs', n_discs, 'depth', depth, 'mean', mean, 'sd', sigma, 'n_data', len(data[n_discs][depth]))
+            print('n_discs', n_discs, 'depth', depth, 'mean_st', mean_st, 'sd_st', sigma_st, 'sd', sigma, 'n_data', len(data[n_discs][depth]))
             x_n_discs.append(n_discs)
             y_depth.append(depth)
             z_error.append(sigma)
@@ -75,8 +76,8 @@ for n_discs in range(45):
     depth = 0
     x_n_discs.append(n_discs)
     y_depth.append(depth)
-    z_error.append(8.0 - n_discs / 60 * 2.0)
-    weight.append(0.004)
+    z_error.append(13.0 - n_discs / 60 * 2.0)
+    weight.append(0.1)
 
 def f(xy, probcut_a, probcut_b, probcut_c, probcut_d, probcut_e, probcut_f, probcut_g, probcut_h, probcut_i, probcut_j):
     x, y = xy
@@ -87,7 +88,7 @@ def f(xy, probcut_a, probcut_b, probcut_c, probcut_d, probcut_e, probcut_f, prob
     return res
 
 def f_max(wxy, probcut_a, probcut_b, probcut_c, probcut_d, probcut_e, probcut_f, probcut_g, probcut_h, probcut_i, probcut_j):
-    return np.minimum(10.0, np.maximum(-0.5, f(wxy, probcut_a, probcut_b, probcut_c, probcut_d, probcut_e, probcut_f, probcut_g, probcut_h, probcut_i, probcut_j)))
+    return np.minimum(15.0, np.maximum(-0.5, f(wxy, probcut_a, probcut_b, probcut_c, probcut_d, probcut_e, probcut_f, probcut_g, probcut_h, probcut_i, probcut_j)))
 
 def plot_fit_result(params):
     fig = plt.figure()

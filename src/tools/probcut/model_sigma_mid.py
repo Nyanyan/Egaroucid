@@ -10,7 +10,8 @@ import math
 #depth1: short
 #depth2: long
 
-data_files = ['data/probcut_mid9.txt']
+#data_files = ['data/probcut_mid9.txt']
+data_files = ['data/probcut_mid10.txt', 'data/probcut_mid11.txt']
 
 data = [[[[] for _ in range(61)] for _ in range(61)] for _ in range(65)] # n_discs, depth1, depth2 (depth1 < depth2)
 
@@ -35,15 +36,15 @@ for n_discs in range(len(data)):
     for depth1 in range(len(data[n_discs])):
         for depth2 in range(len(data[n_discs][depth1])):
             if len(data[n_discs][depth1][depth2]) >= 3:
-                #mean = statistics.mean(data[n_discs][depth1][depth2])
-                #sigma = statistics.stdev(data[n_discs][depth1][depth2])
+                mean_st = statistics.mean(data[n_discs][depth1][depth2])
+                sigma_st = statistics.stdev(data[n_discs][depth1][depth2])
                 mean = 0.0
                 sigma = 0.0
                 for elem in data[n_discs][depth1][depth2]:
                     sigma += elem ** 2
                 sigma /= len(data[n_discs][depth1][depth2])
                 sigma = math.sqrt(sigma)
-                print('n_discs', n_discs, 'depth1', depth1, 'depth2', depth2, 'mean', mean, 'sd', sigma, 'n_data', len(data[n_discs][depth1][depth2]))
+                print('n_discs', n_discs, 'depth1', depth1, 'depth2', depth2, 'mean_st', mean_st, 'sd_st', sigma_st, 'sd', sigma, 'n_data', len(data[n_discs][depth1][depth2]))
                 w_n_discs.append(n_discs)
                 x_depth1.append(depth1)
                 y_depth2.append(depth2)
