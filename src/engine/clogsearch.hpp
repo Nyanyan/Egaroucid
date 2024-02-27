@@ -25,7 +25,7 @@
 #define CLOG_NOT_FOUND -127
 
 // Do clog search in depth CLOG_SEARCH_DEPTH
-#define CLOG_SEARCH_MAX_DEPTH 13
+#define CLOG_SEARCH_MAX_DEPTH 10
 
 #if USE_PARALLEL_CLOG_SEARCH
 

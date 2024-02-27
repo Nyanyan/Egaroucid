@@ -10,9 +10,7 @@ import math
 #depth1: short
 #depth2: long
 
-data_files = []
-data_files.extend(['data/probcut_mid1.txt', 'data/probcut_mid2.txt', 'data/probcut_mid3.txt', 'data/probcut_mid4.txt', 'data/probcut_mid5.txt'])
-data_files.extend(['data/probcut_mid6.txt', 'data/probcut_mid7.txt'])
+data_files = ['data/probcut_mid8.txt']
 
 data = [[[[] for _ in range(61)] for _ in range(61)] for _ in range(65)] # n_discs, depth1, depth2 (depth1 < depth2)
 
