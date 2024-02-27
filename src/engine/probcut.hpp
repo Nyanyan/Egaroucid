@@ -33,12 +33,12 @@
 #define probcut_f 8.3298545018757
 #define probcut_g 2.539773029643781
 
-#define probcut_end_a 1.908798448361043
-#define probcut_end_b 1.6468299594064413
-#define probcut_end_c 2.0530449406091082
-#define probcut_end_d -5.961374118848742
-#define probcut_end_e -0.7753956186749736
-#define probcut_end_f 10.95261264952042
+#define probcut_end_a -2.6348884154785304
+#define probcut_end_b -6.636726157595593
+#define probcut_end_c 0.4137286684373003
+#define probcut_end_d 1.6836916661675256
+#define probcut_end_e 2.8472634067502063
+#define probcut_end_f 7.288538645968066
 
 #if USE_MPC_PRE_CALCULATION
     int mpc_error[N_SELECTIVITY_LEVEL][HW2 + 1][HW2 - 3][HW2 - 3];
