@@ -31,7 +31,7 @@ weight = []
 for n_discs in range(len(data)):
     if n_discs >= 59:
         continue
-    for depth in range(1, len(data[n_discs])):
+    for depth in range(2, len(data[n_discs])):
         if len(data[n_discs][depth]) >= 3:
             #mean = statistics.mean(data[n_discs][depth])
             #sigma = statistics.stdev(data[n_discs][depth])
@@ -71,11 +71,11 @@ for n_discs in range(64):
     weight.append(0.001)
 '''
 
-for n_discs in range(50):
+for n_discs in range(45):
     depth = 0
     x_n_discs.append(n_discs)
     y_depth.append(depth)
-    z_error.append(8.0 - n_discs / 60 * 3.0)
+    z_error.append(8.0 - n_discs / 60 * 2.0)
     weight.append(0.004)
 
 def f(xy, probcut_a, probcut_b, probcut_c, probcut_d, probcut_e, probcut_f, probcut_g, probcut_h, probcut_i, probcut_j):
@@ -116,4 +116,4 @@ for i in range(len(popt)):
     print('#define probcut_end_' + chr(ord('a') + i), popt[i])
 
 plot_fit_result(popt)
-plot_fit_result(probcut_params_old)
+#plot_fit_result(probcut_params_old)
