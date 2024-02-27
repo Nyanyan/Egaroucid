@@ -35,7 +35,7 @@
 #define MOVE_ORDERING_VALUE_OFFSET_BETA 10
 #define MOVE_ORDERING_NWS_VALUE_OFFSET_ALPHA 10
 #define MOVE_ORDERING_NWS_VALUE_OFFSET_BETA 3
-#define MOVE_ORDERING_MPC_LEVEL MPC_88_LEVEL //MPC_93_LEVEL
+#define MOVE_ORDERING_MPC_LEVEL MPC_88_LEVEL
 
 #define W_END_MOBILITY 32
 #define W_END_PARITY 4
@@ -46,14 +46,11 @@
 #define MAX_SAME_CELL_TYPE 8
 #define MOVE_ORDERING_CELL_SCORE_MAX 256
 
-// 5 -10 -20 -70 -25
-// 4 -8 -16 -48 -157
-// 7 -14 -28 -77 -218
 #define W_CELL_WEIGHT 7
-#define W_MOBILITY -14
+#define W_MOBILITY -20
 #define W_POTENTIAL_MOBILITY -28
 #define W_VALUE -77
-#define W_VALUE_DEEP_ADDITIONAL -218
+#define W_VALUE_DEEP_ADDITIONAL -256
 
 #define W_NWS_MOBILITY -14
 #define W_NWS_POTENTIAL_MOBILITY -8
@@ -372,9 +369,6 @@ inline void move_list_evaluate(Search *search, std::vector<Flip_value> &move_lis
     int eval_alpha = -std::min(SCORE_MAX, beta + MOVE_ORDERING_VALUE_OFFSET_BETA);
     int eval_beta = -std::max(-SCORE_MAX, alpha - MOVE_ORDERING_VALUE_OFFSET_ALPHA);
     int eval_depth = ((depth >> 3) << 1) | (depth & 1);
-    //int eval_depth = depth >> 3;
-    //if (depth >= 16)
-    //    eval_depth += (depth - 14) >> 1;
     for (Flip_value &flip_value: move_list){
         #if USE_MID_ETC
             if (flip_value.flip.flip){
@@ -413,9 +407,6 @@ inline void move_list_evaluate(Search *search, std::vector<Flip_value> &move_lis
     int eval_alpha = -std::min(SCORE_MAX, beta + MOVE_ORDERING_VALUE_OFFSET_BETA);
     int eval_beta = -std::max(-SCORE_MAX, alpha - MOVE_ORDERING_VALUE_OFFSET_ALPHA);
     int eval_depth = ((depth >> 3) << 1) | (depth & 1);
-    //int eval_depth = depth >> 3;
-    //if (depth >= 16)
-    //    eval_depth += (depth - 14) >> 1;
     for (Flip_value &flip_value: move_list){
         #if USE_MID_ETC
             if (flip_value.flip.flip)
@@ -502,7 +493,6 @@ inline void move_list_evaluate_nws(Search *search, std::vector<Flip_value> &move
     const int eval_alpha = -std::min(SCORE_MAX, alpha + MOVE_ORDERING_NWS_VALUE_OFFSET_BETA);
     const int eval_beta = -std::max(-SCORE_MAX, alpha - MOVE_ORDERING_NWS_VALUE_OFFSET_ALPHA);
     int eval_depth = ((depth >> 4) << 1) | (depth & 1);
-    //int eval_depth = depth >> 4;
     for (Flip_value &flip_value: move_list){
         #if USE_MID_ETC
             if (flip_value.flip.flip){
