@@ -27,9 +27,6 @@
 #define YBWC_SPLIT_MIN_MOVES 2
 
 int nega_alpha_ordering_nws(Search *search, int alpha, int depth, bool skipped, uint64_t legal, bool is_end_search, const bool *searching);
-#if USE_NEGA_ALPHA_END
-    int nega_alpha_end(Search *search, int alpha, int beta, bool skipped, uint64_t legal, const bool *searching);
-#endif
 
 /*
     @brief Wrapper for parallel NWS (Null Window Search)
