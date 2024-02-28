@@ -21,12 +21,10 @@
 /*
     @brief YBWC splitting depth threshold
 */
-#define YBWC_MID_SPLIT_MIN_DEPTH 3
+#define YBWC_MID_SPLIT_MIN_DEPTH 6
 
 #define YBWC_MAX_RUNNING_COUNT 5
 #define YBWC_SPLIT_MIN_MOVES 2
-
-#define YBWC_WINDOW_SPLIT_BROTHER_THRESHOLD 2
 
 int nega_alpha_ordering_nws(Search *search, int alpha, int depth, bool skipped, uint64_t legal, bool is_end_search, const bool *searching);
 #if USE_NEGA_ALPHA_END
