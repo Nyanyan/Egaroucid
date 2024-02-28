@@ -217,7 +217,7 @@ inline void move_evaluate_nws(Search *search, Flip_value *flip_value, int alpha,
         flip_value->n_legal = search->board.get_legal();
         flip_value->value -= get_weighted_n_moves(flip_value->n_legal) * W_NWS_MOBILITY;
         flip_value->value -= get_potential_mobility(search->board.opponent, ~(search->board.player | search->board.opponent)) * W_NWS_POTENTIAL_MOBILITY;
-        /*
+        
         switch (depth){
             case 0:
                 flip_value->value -= mid_evaluate_diff(search) * W_NWS_VALUE;
@@ -232,11 +232,12 @@ inline void move_evaluate_nws(Search *search, Flip_value *flip_value, int alpha,
                 search->mpc_level = mpc_level;
                 break;
         }
-        */
+        /*
         if (depth == 0)
             flip_value->value -= mid_evaluate_diff(search) * W_NWS_VALUE;
         else
             flip_value->value -= nega_alpha_eval1(search, alpha, beta, false, searching) * (W_NWS_VALUE + W_NWS_VALUE_DEEP_ADDITIONAL);
+        */
     search->undo(&flip_value->flip);
     eval_undo(search, &flip_value->flip);
 }
@@ -429,7 +430,7 @@ inline void move_list_evaluate_nws(Search *search, std::vector<Flip_value> &move
         return;
     const int eval_alpha = -std::min(SCORE_MAX, alpha + MOVE_ORDERING_NWS_VALUE_OFFSET_BETA);
     const int eval_beta = -std::max(-SCORE_MAX, alpha - MOVE_ORDERING_NWS_VALUE_OFFSET_ALPHA);
-    int eval_depth = depth >> 3;
+    int eval_depth = depth >> 4;
     for (Flip_value &flip_value: move_list){
         #if USE_MID_ETC
             if (flip_value.flip.flip){
