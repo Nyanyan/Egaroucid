@@ -17,6 +17,13 @@
 #include "common.hpp"
 #include "board.hpp"
 #include "search.hpp"
+#if USE_SIMD
+    #ifdef _MSC_VER
+        #include <intrin.h>
+    #else
+        #include <x86intrin.h>
+    #endif
+#endif
 
 #if USE_END_PO
     const uint8_t parity_case[64] = {        /* p3p2p1p0 = */
@@ -105,60 +112,60 @@ inline int last1(Search *search, uint64_t player, int alpha, uint_fast8_t p0){
 }
 
 #if USE_SIMD
-// vector otpimized version imported from Edax AVX, (C) 1998 - 2018 Richard Delorme, 2014 - 23 Toshihiko Okuhara
+    // vector otpimized version imported from Edax AVX, (C) 1998 - 2018 Richard Delorme, 2014 - 23 Toshihiko Okuhara
 
-#if defined(_MSC_VER) || defined(__clang__)
-#define	vectorcall	__vectorcall
-#else
-#define	vectorcall
-#endif
+    #if defined(_MSC_VER) || defined(__clang__)
+        #define	vectorcall	__vectorcall
+    #else
+        #define	vectorcall
+    #endif
 
-#define	SWAP64	0x4e	// for _mm_shuffle_epi32
-#define	DUPHI	0xee
+    #define	SWAP64	0x4e	// for _mm_shuffle_epi32
+    #define	DUPHI	0xee
 
-/** coordinate to bit table converter */
-static uint64_t X_TO_BIT[64];
-/** last1 simd mask */
-union V4DI {
-    uint64_t u64[4];
-    __m256i v4;
-    __m128i v2[2];
-};
-static V4DI mask_dvhd[64];
+    /** coordinate to bit table converter */
+    static uint64_t X_TO_BIT[64];
+    /** last1 simd mask */
+    union V4DI {
+        uint64_t u64[4];
+        __m256i v4;
+        __m128i v2[2];
+    };
+    static V4DI mask_dvhd[64];
 
-static inline int vectorcall TESTZ_FLIP(__m128i X) { return _mm_testz_si128(X, X); }
+    static inline int vectorcall TESTZ_FLIP(__m128i X) { return _mm_testz_si128(X, X); }
 
-/*
-    @brief evaluation function for game over
+    /*
+        @brief evaluation function for game over
 
-    @param b                    board.player
-    @param e                    number of empty squares
-    @return final score
-*/
-static inline int end_evaluate(uint64_t b, int e) {
-    int score = pop_count_ull(b) * 2 - HW2;	// in case of opponents win
-    int diff = score + e;		// = n_discs_p - (64 - e - n_discs_p)
+        @param b                    board.player
+        @param e                    number of empty squares
+        @return final score
+    */
+    static inline int end_evaluate(uint64_t b, int e) {
+        int score = pop_count_ull(b) * 2 - HW2;	// in case of opponents win
+        int diff = score + e;		// = n_discs_p - (64 - e - n_discs_p)
 
-    if (diff == 0)
-        score = diff;
-    else if (diff > 0)
-        score = diff + e;
-    return score;
-}
+        if (diff == 0)
+            score = diff;
+        else if (diff > 0)
+            score = diff + e;
+        return score;
+    }
 
-/**
- * @brief Compute a board resulting of a move played on a previous board.
- *
- * @param OP board to play the move on.
- * @param x move to play.
- * @param flipped flipped returned from mm_Flip.
- * @return resulting board.
- */
-static inline __m128i vectorcall board_flip_next(__m128i OP, int x, __m128i flipped)
-{
-    OP = _mm_xor_si128(OP, _mm_or_si128(flipped, _mm_loadl_epi64((__m128i*) & X_TO_BIT[x])));
-    return _mm_shuffle_epi32(OP, SWAP64);
-}
+    /**
+     * @brief Compute a board resulting of a move played on a previous board.
+     *
+     * @param OP board to play the move on.
+     * @param x move to play.
+     * @param flipped flipped returned from mm_Flip.
+     * @return resulting board.
+     */
+    static inline __m128i vectorcall board_flip_next(__m128i OP, int x, __m128i flipped)
+    {
+        OP = _mm_xor_si128(OP, _mm_or_si128(flipped, _mm_loadl_epi64((__m128i*) & X_TO_BIT[x])));
+        return _mm_shuffle_epi32(OP, SWAP64);
+    }
 #endif
 
 void endsearch_init(){

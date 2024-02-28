@@ -1,8 +1,8 @@
 /*
     Egaroucid Project
 
-    @file endsearch_simd.hpp
-        Search near endgame
+    @file endsearch_last_simd.hpp
+        Last N Moves Optimization
         imported from Edax AVX, (C) 1998 - 2018 Richard Delorme, 2014 - 23 Toshihiko Okuhara
     @date 2021-2024
     @author Takuto Yamana
@@ -10,8 +10,14 @@
     @license GPL-3.0 license
 */
 #pragma once
+#ifdef _MSC_VER
+    #include <intrin.h>
+#else
+    #include <x86intrin.h>
+#endif
 #include "setting.hpp"
 #include "search.hpp"
+#include "endsearch_common.hpp"
 
 /*
     @brief Get a final score with last 1 empty
