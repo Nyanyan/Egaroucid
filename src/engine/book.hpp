@@ -1645,7 +1645,7 @@ class Book{
             std::vector<Book_value> links = get_all_moves_with_value(&board);
             uint64_t remaining_legal = board.get_legal();
             for (Book_value &link: links)
-                remaining_legal ^= 1ULL << link.policy;
+                remaining_legal &= ~(1ULL << link.policy);
             if (remaining_legal){
                 Search_result ai_result = ai_specified_moves(board, level, false, 0, use_multi_thread, false, remaining_legal);
                 if (ai_result.value != SCORE_UNDEFINED){
@@ -2051,7 +2051,7 @@ void search_new_leaf(Board board, int level, int book_elem_value, bool use_multi
     std::vector<Book_value> links = book.get_all_moves_with_value(&board);
     uint64_t legal = board.get_legal();
     for (Book_value &link: links)
-        legal ^= 1ULL << link.policy;
+        legal &= ~(1ULL << link.policy);
     if (legal){
         int use_level = level;
         if (level == ADD_LEAF_SPECIAL_LEVEL)

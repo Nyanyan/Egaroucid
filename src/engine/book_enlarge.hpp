@@ -104,15 +104,16 @@ void get_book_recalculate_leaf_todo(Book_deviate_todo_elem todo_elem, int book_d
     std::vector<Book_value> links = book.get_all_moves_with_value(&todo_elem.board);
     uint64_t remaining_legal = todo_elem.board.get_legal();
     for (Book_value &link: links)
-        remaining_legal ^= 1ULL << link.policy;
+        remaining_legal &= ~(1ULL << link.policy);
     bool illegal_leaf = false;
     if (remaining_legal){
-        if (is_valid_policy(book_elem.leaf.move))
-            illegal_leaf = ((remaining_legal & (1ULL << book_elem.leaf.move)) == 0);
-        else
+        if (is_valid_policy(book_elem.leaf.move)){
+            if ((1 & (remaining_legal >> book_elem.leaf.move)) == 0)
+                illegal_leaf = true;
+        } else
             illegal_leaf = true;
-    } else{
-        illegal_leaf = (book_elem.leaf.move != MOVE_NOMOVE);
+    } else if (book_elem.leaf.move != MOVE_NOMOVE){
+        illegal_leaf = true;
     }
     // add to list
     if (illegal_leaf || (!only_illegal && book_elem.leaf.level < level)){
@@ -284,9 +285,15 @@ void get_book_deviate_todo(Book_deviate_todo_elem todo_elem, int book_depth, int
         std::vector<Book_value> links = book.get_all_moves_with_value(&todo_elem.board);
         if (((book_elem.leaf.value >= book_elem.value - max_error_per_move && todo_elem.lower <= book_elem.leaf.value) || links.size() == 0) && is_valid_policy(book_elem.leaf.move)){
             if (todo_elem.board.get_legal() & (1ULL << book_elem.leaf.move)){ // is leaf legal?
-                book_deviate_todo.emplace(todo_elem);
-                if (book_deviate_todo.size() % 100 == 0)
-                    std::cerr << "loop " << n_loop << " book deviate todo " << book_deviate_todo.size() << " calculating... time " << ms_to_time_short(tim() - all_strt) << std::endl;
+                bool leaf_in_link = false;
+                for (Book_value &link: links){
+                    leaf_in_link |= link.policy == book_elem.leaf.move;
+                }
+                if (!leaf_in_link){
+                    book_deviate_todo.emplace(todo_elem);
+                    if (book_deviate_todo.size() % 100 == 0)
+                        std::cerr << "loop " << n_loop << " book deviate todo " << book_deviate_todo.size() << " calculating... time " << ms_to_time_short(tim() - all_strt) << std::endl;
+                }
             }
         }
         // expand links
@@ -309,7 +316,19 @@ uint64_t expand_leaf(int book_depth, int level, int max_error_per_move, int lowe
     Flip flip;
     calc_flip(&flip, &board, book_elem.leaf.move);
     board.move_board(&flip);
+    if (board.get_legal() == 0){ // check pass
+        board.pass();
+        int tmp2 = lower;
+        lower = -upper;
+        upper = -tmp2;
+        if (board.get_legal() == 0){
+            board.pass();
+            book.change(board, board.score_player(), 60);
+            return 1;
+        }
+    }
     uint64_t n_add = 0;
+    //std::cerr << (board.n_discs() <= book_depth + 4) << !book.contain(&board) << (*book_learning) << std::endl;
     while (board.n_discs() <= book_depth + 4 && !book.contain(&board) && (*book_learning)){
         Search_result search_result = ai(board, level, true, 0, use_multi_thread, false);
         if (-HW2 <= search_result.value && search_result.value <= HW2){
@@ -333,6 +352,7 @@ uint64_t expand_leaf(int book_depth, int level, int max_error_per_move, int lowe
                         if (board.get_legal() == 0){
                             board.pass();
                             book.change(board, board.score_player(), 60);
+                            ++n_add;
                             break;
                         }
                     }
