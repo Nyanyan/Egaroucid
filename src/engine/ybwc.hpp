@@ -172,38 +172,6 @@ inline void ybwc_wait_all_nws(Search *search, std::vector<std::future<Parallel_t
         }
     }
 }
-/*
-inline void ybwc_wait_all_nws(Search *search, std::vector<std::future<Parallel_task>> &parallel_tasks, int *v, int *best_move, int *running_count, int alpha, const bool *searching, bool *n_searching){
-    ybwc_get_end_tasks(search, parallel_tasks, v, best_move, running_count);
-    *n_searching &= alpha >= (*v);
-    Parallel_task got_task;
-    bool task_running = true;
-    int t = 0;
-    while (*running_count){
-        ++t;
-        //if (t >= 10000000)
-        //    std::cerr << (*n_searching) << task_running + 2 << (*running_count) + 4;
-        task_running = false;
-        *n_searching &= (*searching) & global_searching;
-        for (std::future<Parallel_task> &task: parallel_tasks){
-            if (task.valid()){
-                if (task.wait_for(std::chrono::seconds(0)) == std::future_status::ready){
-                    got_task = task.get();
-                    --(*running_count);
-                    search->n_nodes += got_task.n_nodes;
-                    if ((*v) < got_task.value && (*n_searching)){
-                        *best_move = got_task.cell;
-                        *v = got_task.value;
-                        if (alpha < (*v))
-                            *n_searching = false;
-                    }
-                } else
-                    task_running = true;
-            }
-        }
-    }
-}
-*/
 
 /*
     @brief Get end tasks of YBWC
