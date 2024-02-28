@@ -401,7 +401,9 @@ uint64_t expand_leaves(int book_depth, int level, int max_error_per_move, std::u
                 ++n_done;
                 int percent = 100ULL * n_done / n_all;
                 uint64_t eta = (tim() - strt) * ((double)n_all / n_done - 1.0);
-                std::cerr << "loop " << n_loop << " book deviating " << percent << "% " <<  n_done << "/" << n_all << " time " << ms_to_time_short(tim() - all_strt) << " ETA " << ms_to_time_short(eta) << std::endl;
+                std::string time_short = ms_to_time_short(tim() - all_strt);
+                std::string eta_short = ms_to_time_short(eta);
+                std::cerr << "loop " << n_loop << " book deviating " << percent << "% " <<  n_done << "/" << n_all << " registered " << n_add << " time " << time_short << " ETA " << eta_short << std::endl;
             }
         }
         int tasks_size = tasks.size();
@@ -412,7 +414,9 @@ uint64_t expand_leaves(int book_depth, int level, int max_error_per_move, std::u
                     ++n_done;
                     int percent = 100ULL * n_done / n_all;
                     uint64_t eta = (tim() - strt) * ((double)n_all / n_done - 1.0);
-                    std::cerr << "loop " << n_loop << " book deviating " << percent << "% " <<  n_done << "/" << n_all << " time " << ms_to_time_short(tim() - all_strt) << " ETA " << ms_to_time_short(eta) << std::endl;
+                    std::string time_short = ms_to_time_short(tim() - all_strt);
+                    std::string eta_short = ms_to_time_short(eta);
+                    std::cerr << "loop " << n_loop << " book deviating " << percent << "% " <<  n_done << "/" << n_all << " registered " << n_add << " time " << time_short << " ETA " << eta_short << std::endl;
                 }
             }
         }
@@ -432,7 +436,9 @@ uint64_t expand_leaves(int book_depth, int level, int max_error_per_move, std::u
             ++n_done;
             int percent = 100ULL * n_done / n_all;
             uint64_t eta = (tim() - strt) * ((double)n_all / n_done - 1.0);
-            std::cerr << "loop " << n_loop << " book deviating " << percent << "% " <<  n_done << "/" << n_all << " time " << ms_to_time_short(tim() - all_strt) << " ETA " << ms_to_time_short(eta) << std::endl;
+            std::string time_short = ms_to_time_short(tim() - all_strt);
+            std::string eta_short = ms_to_time_short(eta);
+            std::cerr << "loop " << n_loop << " book deviating " << percent << "% " <<  n_done << "/" << n_all << " registered " << n_add << " time " << time_short << " ETA " << eta_short << std::endl;
         }
     }
     return n_add;
