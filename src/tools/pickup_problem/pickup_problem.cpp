@@ -33,15 +33,16 @@ std::string board_to_str(Board board, int8_t p){
 }
 
 int main(int argc, char* argv[]){
-    if (argc < 3){
-        std::cerr << "input [in_file] [n_discs] [n_problems]" << std::endl;
+    if (argc < 4){
+        std::cerr << "input [in_file] [n_discs_start] [n_discs_end] [n_problems]" << std::endl;
         return 1;
     }
     pck_init();
     std::string in_file = std::string(argv[1]);
-    int n_discs = atoi(argv[2]);
-    int n_problems = atoi(argv[3]);
-    std::cerr << in_file << " " << n_discs << " " << n_problems << std::endl;
+    int n_discs_start = atoi(argv[2]);
+    int n_discs_end = atoi(argv[3]);
+    int n_problems = atoi(argv[4]);
+    std::cerr << in_file << " " << n_discs_start << " " << n_discs_end << " " << n_problems << std::endl;
     FILE* fp;
     if (fopen_s(&fp, in_file.c_str(), "rb") != 0) {
         std::cerr << "can't open " << in_file << std::endl;
@@ -57,7 +58,8 @@ int main(int argc, char* argv[]){
         fread(&player, 1, 1, fp);
         fread(&policy, 1, 1, fp);
         fread(&score, 1, 1, fp);
-        if (board.n_discs() == n_discs){
+        int n_discs = board.n_discs();
+        if (n_discs >= n_discs_start && n_discs <= n_discs_end && myrandom() < 0.01){
             std::cout << board_to_str(board, player) << std::endl;
             ++n;
         }
