@@ -86,9 +86,6 @@ void get_book_recalculate_leaf_todo(Book_deviate_todo_elem todo_elem, int book_d
         lower = -upper;
         upper = -tmp;
     }
-    todo_elem.board = book.get_representative_board(todo_elem.board);
-    *board_copy = todo_elem.board;
-    *player = todo_elem.player;
     // check depth
     if (todo_elem.board.n_discs() >= book_depth + 4)
         return;
@@ -100,6 +97,9 @@ void get_book_recalculate_leaf_todo(Book_deviate_todo_elem todo_elem, int book_d
     if (book_elem.seen)
         return;
     book.flag_book_elem(todo_elem.board);
+    todo_elem.board = book.get_representative_board(todo_elem.board);
+    *board_copy = todo_elem.board;
+    *player = todo_elem.player;
     // check leaf recalculation necessity
     std::vector<Book_value> links = book.get_all_moves_with_value(&todo_elem.board);
     uint64_t remaining_legal = todo_elem.board.get_legal();
@@ -261,15 +261,15 @@ void get_book_deviate_todo(Book_deviate_todo_elem todo_elem, int book_depth, int
         if (todo_elem.board.get_legal() == 0)
             return; // game over
     }
-    todo_elem.board = book.get_representative_board(todo_elem.board);
-    *board_copy = todo_elem.board;
-    *player = todo_elem.player;
     // check depth
     if (todo_elem.board.n_discs() >= book_depth + 4)
         return;
     // already searched?
     if (book_deviate_todo.find(todo_elem) != book_deviate_todo.end())
         return;
+    todo_elem.board = book.get_representative_board(todo_elem.board);
+    *board_copy = todo_elem.board;
+    *player = todo_elem.player;
     Book_elem book_elem = book.get(todo_elem.board);
     // already seen
     if (book_elem.seen)
