@@ -39,7 +39,7 @@ int main(int argc, char* argv[]){
     Options options = get_options(commandline_options, binary_path);
     print_special_commandline_options(commandline_options);
     init_console(options);
-    execute_special_tasks();
+    execute_special_tasks(options);
     execute_special_commandline_tasks(commandline_options, &options, &state);
     Board_info board;
     board.reset();

@@ -61,6 +61,73 @@ void solve_problems(std::vector<std::string> arg, Options *options, State *state
     std::cout << "total " << total.nodes << " nodes in " << ((double)total.time / 1000) << "s NPS " << (total.nodes * 1000 / total.time) << std::endl;
 }
 
+#if TUNE_MOVE_ORDERING
+    uint64_t n_nodes_test(Options *options, std::vector<Board> testcase_arr){
+        uint64_t n_nodes = 0;
+        for (Board &board: testcase_arr){
+            int depth;
+            bool is_mid_search;
+            uint_fast8_t mpc_level;
+            get_level(options->level, board.n_discs() - 4, &is_mid_search, &depth, &mpc_level);
+            Search search;
+            search.init_board(&board);
+            search.n_nodes = 0ULL;
+            search.use_multi_thread = true;
+            search.mpc_level = mpc_level;
+            std::vector<Clog_result> clogs;
+            std::pair<int, int> result = first_nega_scout(&search, -SCORE_MAX, SCORE_MAX, SCORE_UNDEFINED, depth, !is_mid_search, true, clogs, tim());
+            n_nodes += search.n_nodes;
+        }
+        return n_nodes;
+    }
+
+    void tune_move_ordering(std::string file, Options *options){
+        std::ifstream ifs(file);
+        if (ifs.fail()){
+            std::cerr << "[ERROR] [FATAL] problem file " << file << " not found" << std::endl;
+            return;
+        }
+        std::vector<Board> testcase_arr;
+        std::string line;
+        while (std::getline(ifs, line)){
+            Board board;
+            board.player = 0ULL;
+            board.opponent = 0ULL;
+            for (int i = 0; i < HW2; ++i){
+                if (line[i] == 'p')
+                    board.player |= 1ULL << i;
+                else if (line[i] == 'o')
+                    board.opponent |= 1ULL << i;
+            }
+            testcase_arr.emplace_back(board);
+        }
+        uint64_t min_n_nodes = n_nodes_test(options, testcase_arr);
+        std::cerr << "min_n_nodes " << min_n_nodes << std::endl;
+        int n_updated = 0;
+        int n_try = 0;
+        while (true){ // hillclimb
+            int idx = myrandrange(0, N_MOVE_ORDERING_PARAM);
+            int delta = myrandrange(-2, 3);
+            while (delta == 0)
+                delta = myrandrange(-2, 3);
+            move_ordering_param_array[idx] += delta;
+            uint64_t n_nodes = n_nodes_test(options, testcase_arr);
+            if (n_nodes <= min_n_nodes){
+                min_n_nodes = n_nodes;
+                ++n_updated;
+            } else{
+                move_ordering_param_array[idx] -= delta;
+            }
+            ++n_try;
+            std::cerr << "try " << n_try << " updated " << n_updated << " min_n_nodes " << min_n_nodes;
+            for (int i = 0; i < N_MOVE_ORDERING_PARAM; ++i){
+                std::cerr << " " << move_ordering_param_array[i];
+            }
+            std::cerr << std::endl;
+        }
+    }
+#endif
+
 void tune_probcut_mid(){
     std::ofstream ofs("probcut_mid.txt");
     Board board;
@@ -143,11 +210,13 @@ void tune_probcut_end(){
     }
 }
 
-void execute_special_tasks(){
+void execute_special_tasks(Options options){
     // move ordering tuning (endsearch)
-    #if TUNE_MOVE_ORDERING_END
-        std::cout << "tune move ordering (endsearch)" << std::endl;
-        tune_move_ordering_end("problem/13_13.txt");
+    #if TUNE_MOVE_ORDERING
+        std::cout << "tune move ordering" << std::endl;
+        std::string file;
+        std::cin >> file;
+        tune_move_ordering(file, &options);
         std::exit(0);
     #endif
 

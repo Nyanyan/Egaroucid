@@ -30,7 +30,23 @@
 */
 #if TUNE_MOVE_ORDERING
     #define N_MOVE_ORDERING_PARAM 13
-    int move_ordering_param_array[N_MOVE_ORDERING_PARAM];
+    int move_ordering_param_array[N_MOVE_ORDERING_PARAM] = {
+        32,
+        4,
+        -32,
+        4,
+
+        7,
+        -32,
+        -28,
+        -256,
+        -64,
+
+        -16,
+        -8,
+        -14,
+        -2
+    };
 
     #define W_END_MOBILITY              move_ordering_param_array[0]
     #define W_END_PARITY                move_ordering_param_array[1]
