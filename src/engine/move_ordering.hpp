@@ -414,53 +414,6 @@ inline void move_list_evaluate(Search *search, std::vector<Flip_value> &move_lis
     }
 }
 
-#if USE_NEGA_ALPHA_END
-    /*
-        @brief Evaluate all legal moves for endgame
-
-        @param search               search information
-        @param move_list            list of moves
-    */
-    inline void move_list_evaluate_end(Search *search, std::vector<Flip_value> &move_list, const int canput){
-        if (canput == 1)
-            return;
-        for (Flip_value &flip_value: move_list)
-            move_evaluate_end(search, &flip_value);
-    }
-#endif
-
-/*
-    @brief Evaluate all legal moves for endgame
-
-    @param search               search information
-    @param move_list            list of moves
-*/
-inline void move_list_evaluate_end_simple_nws(Search *search, Flip_value move_list[], const int canput){
-    if (canput == 1)
-        return;
-    for (int i = 0; i < canput; ++i)
-        move_evaluate_end_nws(search, &move_list[i]);
-}
-
-/*
-    @brief Evaluate all legal moves for endgame
-
-    @param search               search information
-    @param move_list            list of moves
-*/
-inline void move_list_evaluate_end_nws(Search *search, std::vector<Flip_value> &move_list, const int canput, uint_fast8_t moves[], bool use_eval){
-    if (canput == 1)
-        return;
-    for (Flip_value &flip_value: move_list){
-        if (flip_value.flip.pos == moves[0])
-            flip_value.value = W_1ST_MOVE;
-        else if (flip_value.flip.pos == moves[1])
-            flip_value.value = W_2ND_MOVE;
-        else
-            move_evaluate_end_nws(search, &flip_value);
-    }
-}
-
 /*
     @brief Evaluate all legal moves for midgame NWS
 
@@ -496,6 +449,38 @@ inline void move_list_evaluate_nws(Search *search, std::vector<Flip_value> &move
             else
                 move_evaluate_nws(search, &flip_value, eval_alpha, eval_beta, eval_depth, searching);
         #endif
+    }
+}
+
+/*
+    @brief Evaluate all legal moves for endgame
+
+    @param search               search information
+    @param move_list            list of moves
+*/
+inline void move_list_evaluate_end_nws(Search *search, Flip_value move_list[], const int canput){
+    if (canput == 1)
+        return;
+    for (int i = 0; i < canput; ++i)
+        move_evaluate_end_nws(search, &move_list[i]);
+}
+
+/*
+    @brief Evaluate all legal moves for endgame
+
+    @param search               search information
+    @param move_list            list of moves
+*/
+inline void move_list_evaluate_end_nws(Search *search, std::vector<Flip_value> &move_list, const int canput, uint_fast8_t moves[], bool use_eval){
+    if (canput == 1)
+        return;
+    for (Flip_value &flip_value: move_list){
+        if (flip_value.flip.pos == moves[0])
+            flip_value.value = W_1ST_MOVE;
+        else if (flip_value.flip.pos == moves[1])
+            flip_value.value = W_2ND_MOVE;
+        else
+            move_evaluate_end_nws(search, &flip_value);
     }
 }
 

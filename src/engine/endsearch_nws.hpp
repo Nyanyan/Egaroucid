@@ -441,7 +441,7 @@ int nega_alpha_end_simple_nws(Search *search, int alpha, bool skipped, uint64_t 
             return SCORE_MAX;
         ++idx;
     }
-    move_list_evaluate_end_simple_nws(search, move_list, canput);
+    move_list_evaluate_end_nws(search, move_list, canput);
     int g;
     for (int move_idx = 0; move_idx < canput; ++move_idx){
         if (move_idx < 4)
