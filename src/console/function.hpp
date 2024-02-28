@@ -99,6 +99,7 @@ void solve_problems(std::vector<std::string> arg, Options *options, State *state
             testcase_arr.emplace_back(board_info.board);
         }
         uint64_t min_n_nodes = n_nodes_test(options, testcase_arr);
+        uint64_t first_n_nodes = min_n_nodes;
         std::cerr << "min_n_nodes " << min_n_nodes << std::endl;
         int n_updated = 0;
         int n_try = 0;
@@ -116,7 +117,7 @@ void solve_problems(std::vector<std::string> arg, Options *options, State *state
                 move_ordering_param_array[idx] -= delta;
             }
             ++n_try;
-            std::cerr << "try " << n_try << " updated " << n_updated << " min_n_nodes " << min_n_nodes << " n_nodes " << n_nodes;
+            std::cerr << "try " << n_try << " updated " << n_updated << " min_n_nodes " << min_n_nodes << " n_nodes " << n_nodes << " " << (100.0 * min_n_nodes / first_n_nodes) << "% ";
             for (int i = 0; i < N_MOVE_ORDERING_PARAM; ++i){
                 std::cerr << " " << move_ordering_param_array[i];
             }
