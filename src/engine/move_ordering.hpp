@@ -28,60 +28,52 @@
 /*
     @brief constants for move ordering
 */
-#if TUNE_MOVE_ORDERING
-    #define N_MOVE_ORDERING_PARAM 13
+#if TUNE_MOVE_ORDERING_MID || TUNE_MOVE_ORDERING_END
+    #define N_MOVE_ORDERING_PARAM 12
     int move_ordering_param_array[N_MOVE_ORDERING_PARAM] = {
-        32,
-        4,
-        -32,
-        4,
-
-        7,
-        -32,
-        -28,
-        -256,
-        -64,
-
-        -16,
-        -8,
-        -14,
-        -2
+        32, 28, 256, 64, 
+        16, 8, 14, 2, 
+        32, 4, 32, 4
     };
 
-    #define W_END_MOBILITY              move_ordering_param_array[0]  // +
-    #define W_END_PARITY                move_ordering_param_array[1]  // +
-    #define W_END_POTENTIAL_MOBILITY    move_ordering_param_array[2]  // -
-    #define W_END_VALUE                 move_ordering_param_array[3]  // +
+    #define W_MOBILITY                  move_ordering_param_array[0]
+    #define W_POTENTIAL_MOBILITY        move_ordering_param_array[1]
+    #define W_VALUE                     move_ordering_param_array[2]
+    #define W_VALUE_DEEP_ADDITIONAL     move_ordering_param_array[3]
 
-    #define W_CELL_WEIGHT               move_ordering_param_array[4]  // +
-    #define W_MOBILITY                  move_ordering_param_array[5]  // -
-    #define W_POTENTIAL_MOBILITY        move_ordering_param_array[6]  // -
-    #define W_VALUE                     move_ordering_param_array[7]  // -
-    #define W_VALUE_DEEP_ADDITIONAL     move_ordering_param_array[8]  // -
+    #define W_NWS_MOBILITY              move_ordering_param_array[4]
+    #define W_NWS_POTENTIAL_MOBILITY    move_ordering_param_array[5]
+    #define W_NWS_VALUE                 move_ordering_param_array[6]
+    #define W_NWS_VALUE_DEEP_ADDITIONAL move_ordering_param_array[7]
 
-    #define W_NWS_MOBILITY              move_ordering_param_array[9]  // -
-    #define W_NWS_POTENTIAL_MOBILITY    move_ordering_param_array[10] // -
-    #define W_NWS_VALUE                 move_ordering_param_array[11] // -
-    #define W_NWS_VALUE_DEEP_ADDITIONAL move_ordering_param_array[12] // -
+    #define W_END_MOBILITY              move_ordering_param_array[8]
+    #define W_END_PARITY                move_ordering_param_array[9]
+    #define W_END_POTENTIAL_MOBILITY    move_ordering_param_array[10]
+    #define W_END_VALUE                 move_ordering_param_array[11]
+
+    #define MOVE_ORDERING_MID_PARAM_START 0
+    #define MOVE_ORDERING_MID_PARAM_END 7
+    #define MOVE_ORDERING_END_PARAM_START 8
+    #define MOVE_ORDERING_END_PARAM_END 11
 #else
+    // midgame search
+    //#define W_CELL_WEIGHT 7
+    #define W_MOBILITY 32
+    #define W_POTENTIAL_MOBILITY 28
+    #define W_VALUE 256
+    #define W_VALUE_DEEP_ADDITIONAL 64
+
+    // midgame null window search
+    #define W_NWS_MOBILITY 16
+    #define W_NWS_POTENTIAL_MOBILITY 8
+    #define W_NWS_VALUE 14
+    #define W_NWS_VALUE_DEEP_ADDITIONAL 2
+
     // endgame search
     #define W_END_MOBILITY 32
     #define W_END_PARITY 4
-    #define W_END_POTENTIAL_MOBILITY -32
+    #define W_END_POTENTIAL_MOBILITY 32
     #define W_END_VALUE 4
-
-    // midgame search
-    #define W_CELL_WEIGHT 7
-    #define W_MOBILITY -32
-    #define W_POTENTIAL_MOBILITY -28
-    #define W_VALUE -256
-    #define W_VALUE_DEEP_ADDITIONAL -64
-
-    // midgame null window search
-    #define W_NWS_MOBILITY -16
-    #define W_NWS_POTENTIAL_MOBILITY -8
-    #define W_NWS_VALUE -14
-    #define W_NWS_VALUE_DEEP_ADDITIONAL -2
 #endif
 
 #define MOVE_ORDERING_VALUE_OFFSET_ALPHA 10
@@ -204,115 +196,41 @@ inline int get_weighted_n_moves(uint64_t legal){
     @return true if wipeout found else false
 */
 inline void move_evaluate(Search *search, Flip_value *flip_value, int alpha, int beta, int depth, const bool *searching){
-    flip_value->value = cell_weight[flip_value->flip.pos] * W_CELL_WEIGHT;
+    flip_value->value = 0;
+    //flip_value->value = cell_weight[flip_value->flip.pos] * W_CELL_WEIGHT;
     eval_move(search, &flip_value->flip);
     search->move(&flip_value->flip);
         flip_value->n_legal = search->board.get_legal();
-        flip_value->value += get_weighted_n_moves(flip_value->n_legal) * W_MOBILITY;
+        flip_value->value -= get_weighted_n_moves(flip_value->n_legal) * W_MOBILITY;
         uint64_t empties = ~(search->board.player | search->board.opponent);
-        flip_value->value += get_potential_mobility(search->board.player, empties) * W_POTENTIAL_MOBILITY;
+        flip_value->value -= get_potential_mobility(search->board.player, empties) * W_POTENTIAL_MOBILITY;
         switch (depth){
             case 0:
-                flip_value->value += mid_evaluate_diff(search) * W_NWS_VALUE;
+                flip_value->value -= mid_evaluate_diff(search) * W_VALUE;
                 break;
             case 1:
-                flip_value->value += nega_alpha_eval1(search, alpha, beta, false, searching) * (W_NWS_VALUE + W_NWS_VALUE_DEEP_ADDITIONAL);
+                flip_value->value -= nega_alpha_eval1(search, alpha, beta, false, searching) * (W_VALUE + W_VALUE_DEEP_ADDITIONAL);
                 break;
             default:
                 #if MID_FAST_DEPTH > 1
                     if (depth <= MID_FAST_DEPTH)
-                        flip_value->value += nega_alpha(search, alpha, beta, depth, false, searching) * (W_NWS_VALUE + depth * W_NWS_VALUE_DEEP_ADDITIONAL);
+                        flip_value->value -= nega_alpha(search, alpha, beta, depth, false, searching) * (W_VALUE + depth * W_VALUE_DEEP_ADDITIONAL);
                     else{
                         uint_fast8_t mpc_level = search->mpc_level;
                         search->mpc_level = MOVE_ORDERING_MPC_LEVEL;
-                        flip_value->value += nega_scout(search, alpha, beta, depth, false, flip_value->n_legal, false, searching) * (W_NWS_VALUE + depth * W_NWS_VALUE_DEEP_ADDITIONAL);
+                        flip_value->value -= nega_scout(search, alpha, beta, depth, false, flip_value->n_legal, false, searching) * (W_VALUE + depth * W_VALUE_DEEP_ADDITIONAL);
                         search->mpc_level = mpc_level;
                     }
                 #else
                     uint_fast8_t mpc_level = search->mpc_level;
                     search->mpc_level = MOVE_ORDERING_MPC_LEVEL;
-                    flip_value->value += nega_scout(search, alpha, beta, depth, false, flip_value->n_legal, false, searching) * (W_NWS_VALUE + depth * W_NWS_VALUE_DEEP_ADDITIONAL);
+                    flip_value->value -= nega_scout(search, alpha, beta, depth, false, flip_value->n_legal, false, searching) * (W_VALUE + depth * W_VALUE_DEEP_ADDITIONAL);
                     search->mpc_level = mpc_level;
                 #endif
                 break;
         }
     search->undo(&flip_value->flip);
     eval_undo(search, &flip_value->flip);
-}
-
-/*
-    @brief Evaluate a move in endgame
-
-    @param search               search information
-    @param flip_value           flip with value
-    @return true if wipeout found else false
-*/
-inline void move_evaluate_end(Search *search, Flip_value *flip_value){
-    flip_value->value = cell_weight[flip_value->flip.pos];
-    if (search->parity & cell_div4[flip_value->flip.pos])
-        flip_value->value += W_END_PARITY;
-    search->move(&flip_value->flip);
-        flip_value->n_legal = search->board.get_legal();
-        flip_value->value -= pop_count_ull(flip_value->n_legal) * W_END_MOBILITY;
-    search->undo(&flip_value->flip);
-}
-
-/*
-    @brief Evaluate a move in endgame
-
-    @param search               search information
-    @param flip_value           flip with value
-    @return true if wipeout found else false
-*/
-inline void move_evaluate_end_nws(Search *search, Flip_value *flip_value){
-    flip_value->value = cell_weight[flip_value->flip.pos];
-    if (search->parity & cell_div4[flip_value->flip.pos])
-        flip_value->value += W_END_PARITY;
-    search->move(&flip_value->flip);
-        flip_value->n_legal = search->board.get_legal();
-        flip_value->value -= pop_count_ull(flip_value->n_legal) * W_END_MOBILITY;
-        //uint64_t empties = ~(search->board.player | search->board.opponent);
-        //flip_value->value += get_potential_mobility(search->board.player, empties) * W_END_POTENTIAL_MOBILITY;
-    search->undo(&flip_value->flip);
-}
-
-/*
-    @brief Evaluate a move in endgame with eval
-
-    @param search               search information
-    @param flip_value           flip with value
-    @return true if wipeout found else false
-*/
-inline void move_evaluate_end_nws_eval(Search *search, Flip_value *flip_value){
-    flip_value->value = cell_weight[flip_value->flip.pos];
-    if (search->parity & cell_div4[flip_value->flip.pos])
-        flip_value->value += W_END_PARITY;
-    eval_move(search, &flip_value->flip);
-    search->move(&flip_value->flip);
-        flip_value->n_legal = search->board.get_legal();
-        flip_value->value -= pop_count_ull(flip_value->n_legal) * W_END_MOBILITY;
-        //uint64_t empties = ~(search->board.player | search->board.opponent);
-        //flip_value->value += get_potential_mobility(search->board.player, empties) * W_END_POTENTIAL_MOBILITY;
-        flip_value->value -= mid_evaluate_diff(search) * W_END_VALUE;
-    search->undo(&flip_value->flip);
-    eval_undo(search, &flip_value->flip);
-}
-
-/*
-    @brief Evaluate a move in endgame
-
-    @param search               search information
-    @param flip_value           flip with value
-    @return true if wipeout found else false
-*/
-inline void move_evaluate_end_simple_nws(Search *search, Flip_value *flip_value){
-    flip_value->value = cell_weight[flip_value->flip.pos];
-    if (search->parity & cell_div4[flip_value->flip.pos])
-        flip_value->value += W_END_PARITY;
-    search->move(&flip_value->flip);
-        flip_value->n_legal = search->board.get_legal();
-        flip_value->value -= pop_count_ull(flip_value->n_legal) * W_END_MOBILITY;
-    search->undo(&flip_value->flip);
 }
 
 /*
@@ -331,43 +249,105 @@ inline void move_evaluate_nws(Search *search, Flip_value *flip_value, int alpha,
     eval_move(search, &flip_value->flip);
     search->move(&flip_value->flip);
         flip_value->n_legal = search->board.get_legal();
-        flip_value->value += get_weighted_n_moves(flip_value->n_legal) * W_NWS_MOBILITY;
-        uint64_t empties = ~(search->board.player | search->board.opponent);
-        flip_value->value += get_potential_mobility(search->board.player, empties) * W_NWS_POTENTIAL_MOBILITY;
+        flip_value->value -= get_weighted_n_moves(flip_value->n_legal) * W_NWS_MOBILITY;
+        flip_value->value -= get_potential_mobility(search->board.opponent, ~(search->board.player | search->board.opponent)) * W_NWS_POTENTIAL_MOBILITY;
         /*
         switch (depth){
             case 0:
-                flip_value->value += mid_evaluate_diff(search) * W_NWS_VALUE;
+                flip_value->value -= mid_evaluate_diff(search) * W_NWS_VALUE;
                 break;
             case 1:
-                flip_value->value += nega_alpha_eval1(search, alpha, beta, false, searching) * (W_NWS_VALUE + W_NWS_VALUE_DEEP_ADDITIONAL);
+                flip_value->value -= nega_alpha_eval1(search, alpha, beta, false, searching) * (W_NWS_VALUE + W_NWS_VALUE_DEEP_ADDITIONAL);
                 break;
             default:
                 #if MID_FAST_DEPTH > 1
                     if (depth <= MID_FAST_DEPTH)
-                        flip_value->value += nega_alpha(search, alpha, beta, depth, false, searching) * (W_NWS_VALUE + depth * W_NWS_VALUE_DEEP_ADDITIONAL);
+                        flip_value->value -= nega_alpha(search, alpha, beta, depth, false, searching) * (W_NWS_VALUE + depth * W_NWS_VALUE_DEEP_ADDITIONAL);
                     else{
                         uint_fast8_t mpc_level = search->mpc_level;
                         search->mpc_level = MOVE_ORDERING_MPC_LEVEL;
-                        flip_value->value += nega_scout(search, alpha, beta, depth, false, flip_value->n_legal, false, searching) * (W_NWS_VALUE + depth * W_NWS_VALUE_DEEP_ADDITIONAL);
+                        flip_value->value -= nega_scout(search, alpha, beta, depth, false, flip_value->n_legal, false, searching) * (W_NWS_VALUE + depth * W_NWS_VALUE_DEEP_ADDITIONAL);
                         search->mpc_level = mpc_level;
                     }
                 #else
                     uint_fast8_t mpc_level = search->mpc_level;
                     search->mpc_level = MOVE_ORDERING_MPC_LEVEL;
-                    flip_value->value += nega_scout(search, alpha, beta, depth, false, flip_value->n_legal, false, searching) * (W_NWS_VALUE + depth * W_NWS_VALUE_DEEP_ADDITIONAL);
+                    flip_value->value -= nega_scout(search, alpha, beta, depth, false, flip_value->n_legal, false, searching) * (W_NWS_VALUE + depth * W_NWS_VALUE_DEEP_ADDITIONAL);
                     search->mpc_level = mpc_level;
                 #endif
                 break;
         }
         */
         if (depth == 0)
-            flip_value->value += mid_evaluate_diff(search) * W_NWS_VALUE;
+            flip_value->value -= mid_evaluate_diff(search) * W_NWS_VALUE;
         else
-            flip_value->value += nega_alpha_eval1(search, alpha, beta, false, searching) * (W_NWS_VALUE + W_NWS_VALUE_DEEP_ADDITIONAL);
+            flip_value->value -= nega_alpha_eval1(search, alpha, beta, false, searching) * (W_NWS_VALUE + W_NWS_VALUE_DEEP_ADDITIONAL);
     search->undo(&flip_value->flip);
     eval_undo(search, &flip_value->flip);
 }
+
+
+
+
+#if USE_NEGA_ALPHA_END
+    /*
+        @brief Evaluate a move in endgame
+
+        @param search               search information
+        @param flip_value           flip with value
+        @return true if wipeout found else false
+    */
+    inline void move_evaluate_end(Search *search, Flip_value *flip_value){
+        flip_value->value = 0; //cell_weight[flip_value->flip.pos];
+        if (search->parity & cell_div4[flip_value->flip.pos])
+            flip_value->value += W_END_PARITY;
+        search->move(&flip_value->flip);
+            flip_value->n_legal = search->board.get_legal();
+            flip_value->value -= pop_count_ull(flip_value->n_legal) * W_END_MOBILITY;
+        search->undo(&flip_value->flip);
+    }
+#endif
+
+/*
+    @brief Evaluate a move in endgame
+
+    @param search               search information
+    @param flip_value           flip with value
+    @return true if wipeout found else false
+*/
+inline void move_evaluate_end_nws(Search *search, Flip_value *flip_value){
+    flip_value->value = 0; //cell_weight[flip_value->flip.pos];
+    if (search->parity & cell_div4[flip_value->flip.pos])
+        flip_value->value += W_END_PARITY;
+    search->move(&flip_value->flip);
+        flip_value->n_legal = search->board.get_legal();
+        flip_value->value -= pop_count_ull(flip_value->n_legal) * W_END_MOBILITY;
+    search->undo(&flip_value->flip);
+}
+
+/*
+    @brief Evaluate a move in endgame with eval
+
+    @param search               search information
+    @param flip_value           flip with value
+    @return true if wipeout found else false
+*/
+inline void move_evaluate_end_nws_eval(Search *search, Flip_value *flip_value){
+    flip_value->value = 0; //cell_weight[flip_value->flip.pos];
+    if (search->parity & cell_div4[flip_value->flip.pos])
+        flip_value->value += W_END_PARITY;
+    eval_move(search, &flip_value->flip);
+    search->move(&flip_value->flip);
+        flip_value->n_legal = search->board.get_legal();
+        flip_value->value -= pop_count_ull(flip_value->n_legal) * W_END_MOBILITY;
+        flip_value->value -= mid_evaluate_diff(search) * W_END_VALUE;
+    search->undo(&flip_value->flip);
+    eval_undo(search, &flip_value->flip);
+}
+
+
+
+
 
 /*
     @brief Set the best move to the first element
@@ -505,7 +485,7 @@ inline void move_list_evaluate_end_simple_nws(Search *search, Flip_value move_li
     if (canput == 1)
         return;
     for (int i = 0; i < canput; ++i)
-        move_evaluate_end_simple_nws(search, &move_list[i]);
+        move_evaluate_end_nws(search, &move_list[i]);
 }
 
 /*
@@ -604,7 +584,7 @@ inline void move_list_evaluate_nws(Search *search, std::vector<Flip_value> &move
     }
 #endif
 
-#if TUNE_MOVE_ORDERING
+#if TUNE_MOVE_ORDERING_MID || TUNE_MOVE_ORDERING_END
     std::pair<int, int> first_nega_scout(Search *search, int alpha, int beta, int predicted_value, int depth, bool is_end_search, const bool is_main_search, const std::vector<Clog_result> clogs, uint64_t strt);
 
     Board get_board(std::string board_str){
@@ -684,11 +664,14 @@ inline void move_list_evaluate_nws(Search *search, std::vector<Flip_value> &move
         uint64_t strt = tim();
         while (tim() - strt < tl){
             // update parameter randomly
-            int idx = myrandrange(4, N_MOVE_ORDERING_PARAM); // midgame search
-            // int idx = myrandrange(0, 4); // endgame search
-            int delta = myrandrange(-6, 7);
+            #if TUNE_MOVE_ORDERING_MID
+                int idx = myrandrange(MOVE_ORDERING_MID_PARAM_START, MOVE_ORDERING_MID_PARAM_END + 1); // midgame search
+            #else
+                int idx = myrandrange(MOVE_ORDERING_END_PARAM_START, MOVE_ORDERING_END_PARAM_END + 1); // endgame search
+            #endif
+            int delta = myrandrange(-4, 5);
             while (delta == 0)
-                delta = myrandrange(-6, 7);
+                delta = myrandrange(-4, 5);
             move_ordering_param_array[idx] += delta;
             uint64_t n_nodes = n_nodes_test(level, testcase_arr);
             double percentage = 100.0 * n_nodes / first_n_nodes;

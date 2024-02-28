@@ -62,9 +62,14 @@ void solve_problems(std::vector<std::string> arg, Options *options, State *state
 }
 
 void execute_special_tasks(Options options){
-    // move ordering tuning (endsearch)
-    #if TUNE_MOVE_ORDERING
-        std::cout << "tune move ordering" << std::endl;
+    // move ordering tuning
+    #if TUNE_MOVE_ORDERING_MID || TUNE_MOVE_ORDERING_END
+        std::cout << "tune move ordering ";
+        #if TUNE_MOVE_ORDERING_MID
+            std::cout << "(midgame)" << std::endl;
+        #elif TUNE_MOVE_ORDERING_END
+            std::cout << "(midgame)" << std::endl;
+        #endif
         tune_move_ordering(options.level);
         std::exit(0);
     #endif
@@ -77,7 +82,7 @@ void execute_special_tasks(Options options){
     #endif
 
     // probcut (endsearch)
-    #if TUNE_PROBCUT_END
+    #if TUNE_PROBCUT_MID
         std::cout << "tune probcut (endsearch)" << std::endl;
         get_data_probcut_end();
         std::exit(0);
