@@ -27,13 +27,6 @@
 #include "parallel.hpp"
 #include "ybwc.hpp"
 
-#if MID_TO_END_DEPTH > YBWC_END_SPLIT_MIN_DEPTH
-    inline bool ybwc_split_end_nws(const Search *search, int alpha, uint64_t legal, const bool *searching, uint_fast8_t policy, const int canput, const int pv_idx, const int split_count, std::vector<std::future<Parallel_task>> &parallel_tasks);
-    inline void ybwc_get_end_tasks(Search *search, std::vector<std::future<Parallel_task>> &parallel_tasks, int *v, int *best_move, int *running_count);
-    inline void ybwc_wait_all(Search *search, std::vector<std::future<Parallel_task>> &parallel_tasks);
-    inline void ybwc_wait_all_nws(Search *search, std::vector<std::future<Parallel_task>> &parallel_tasks, int *v, int *best_move, int *running_count, int alpha, const bool *searching, bool *n_searching);
-#endif
-
 #if USE_SIMD
     #include "endsearch_nws_last_simd.hpp"
 #else
@@ -262,76 +255,18 @@ int nega_alpha_end_nws(Search *search, int alpha, bool skipped, uint64_t legal, 
         ++idx;
     }
     move_list_evaluate_end_nws(search, move_list, canput, moves);
-    #if MID_TO_END_DEPTH > YBWC_END_SPLIT_MIN_DEPTH
-        #if USE_ALL_NODE_PREDICTION
-            const bool seems_to_be_all_node = predict_all_node(search, alpha, HW2 - search->n_discs, LEGAL_UNDEFINED, true, searching);
-        #else
-            constexpr bool seems_to_be_all_node = false;
-        #endif
-        if (search->use_multi_thread && search->n_discs <= HW2 - YBWC_END_SPLIT_MIN_DEPTH){
-            int running_count = 0;
-            std::vector<std::future<Parallel_task>> parallel_tasks;
-            bool n_searching = true;
-            for (int move_idx = 0; move_idx < canput; ++move_idx){
-                swap_next_best_move(move_list, move_idx, canput);
-                search->move(&move_list[move_idx].flip);
-                    if (ybwc_split_end_nws(search, -alpha - 1, move_list[move_idx].n_legal, &n_searching, move_list[move_idx].flip.pos, canput, move_idx, seems_to_be_all_node, running_count, parallel_tasks)){
-                        ++running_count;
-                    } else{
-                        g = -nega_alpha_end_nws(search, -alpha - 1, false, move_list[move_idx].n_legal, move_idx > FAIL_HIGH_WISH_THRESHOLD_END_NWS, searching);
-                        if (v < g){
-                            v = g;
-                            if (alpha < v){
-                                best_move = move_list[move_idx].flip.pos;
-                                search->undo(&move_list[move_idx].flip);
-                                break;
-                            }
-                        }
-                        if (running_count){
-                            ybwc_get_end_tasks(search, parallel_tasks, &v, &best_move, &running_count);
-                            if (alpha < v){
-                                search->undo(&move_list[move_idx].flip);
-                                break;
-                            }
-                        }
-                    }
-                search->undo(&move_list[move_idx].flip);
-            }
-            if (running_count){
-                if (alpha < v || !(*searching)){
-                    n_searching = false;
-                    ybwc_wait_all(search, parallel_tasks);
-                } else
-                    ybwc_wait_all_nws(search, parallel_tasks, &v, &best_move, &running_count, alpha, searching, &n_searching);
-            }
-        } else{
-            for (int move_idx = 0; move_idx < canput; ++move_idx){
-                swap_next_best_move(move_list, move_idx, canput);
-                search->move(&move_list[move_idx].flip);
-                    g = -nega_alpha_end_nws(search, -alpha - 1, false, move_list[move_idx].n_legal, move_idx > FAIL_HIGH_WISH_THRESHOLD_END_NWS, searching);
-                search->undo(&move_list[move_idx].flip);
-                if (v < g){
-                    v = g;
-                    best_move = move_list[move_idx].flip.pos;
-                    if (alpha < v)
-                        break;
-                }
-            }
+    for (int move_idx = 0; move_idx < canput; ++move_idx){
+        swap_next_best_move(move_list, move_idx, canput);
+        search->move(&move_list[move_idx].flip);
+            g = -nega_alpha_end_nws(search, -alpha - 1, false, move_list[move_idx].n_legal, searching);
+        search->undo(&move_list[move_idx].flip);
+        if (v < g){
+            v = g;
+            best_move = move_list[move_idx].flip.pos;
+            if (alpha < v)
+                break;
         }
-    #else
-        for (int move_idx = 0; move_idx < canput; ++move_idx){
-            swap_next_best_move(move_list, move_idx, canput);
-            search->move(&move_list[move_idx].flip);
-                g = -nega_alpha_end_nws(search, -alpha - 1, false, move_list[move_idx].n_legal, searching);
-            search->undo(&move_list[move_idx].flip);
-            if (v < g){
-                v = g;
-                best_move = move_list[move_idx].flip.pos;
-                if (alpha < v)
-                    break;
-            }
-        }
-    #endif
+    }
     if (*searching && global_searching){
         transposition_table.reg(search, hash_code, HW2 - search->n_discs, alpha, alpha + 1, v, best_move);
     }
