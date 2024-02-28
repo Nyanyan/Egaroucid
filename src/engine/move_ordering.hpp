@@ -109,9 +109,6 @@ struct Flip_value{
 };
 
 int nega_alpha_eval1(Search *search, int alpha, int beta, bool skipped, const bool *searching);
-#if MID_FAST_DEPTH > 1
-    int nega_alpha(Search *search, int alpha, int beta, int depth, bool skipped, const bool *searching);
-#endif
 int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, uint64_t legal, bool is_end_search, const bool *searching);
 
 
@@ -192,21 +189,10 @@ inline void move_evaluate(Search *search, Flip_value *flip_value, int alpha, int
                 flip_value->value -= nega_alpha_eval1(search, alpha, beta, false, searching) * (W_VALUE + W_VALUE_DEEP_ADDITIONAL);
                 break;
             default:
-                #if MID_FAST_DEPTH > 1
-                    if (depth <= MID_FAST_DEPTH)
-                        flip_value->value -= nega_alpha(search, alpha, beta, depth, false, searching) * (W_VALUE + depth * W_VALUE_DEEP_ADDITIONAL);
-                    else{
-                        uint_fast8_t mpc_level = search->mpc_level;
-                        search->mpc_level = MOVE_ORDERING_MPC_LEVEL;
-                        flip_value->value -= nega_scout(search, alpha, beta, depth, false, flip_value->n_legal, false, searching) * (W_VALUE + depth * W_VALUE_DEEP_ADDITIONAL);
-                        search->mpc_level = mpc_level;
-                    }
-                #else
-                    uint_fast8_t mpc_level = search->mpc_level;
-                    search->mpc_level = MOVE_ORDERING_MPC_LEVEL;
-                    flip_value->value -= nega_scout(search, alpha, beta, depth, false, flip_value->n_legal, false, searching) * (W_VALUE + depth * W_VALUE_DEEP_ADDITIONAL);
-                    search->mpc_level = mpc_level;
-                #endif
+                uint_fast8_t mpc_level = search->mpc_level;
+                search->mpc_level = MOVE_ORDERING_MPC_LEVEL;
+                flip_value->value -= nega_scout(search, alpha, beta, depth, false, flip_value->n_legal, false, searching) * (W_VALUE + depth * W_VALUE_DEEP_ADDITIONAL);
+                search->mpc_level = mpc_level;
                 break;
         }
     search->undo(&flip_value->flip);
@@ -240,21 +226,10 @@ inline void move_evaluate_nws(Search *search, Flip_value *flip_value, int alpha,
                 flip_value->value -= nega_alpha_eval1(search, alpha, beta, false, searching) * (W_NWS_VALUE + W_NWS_VALUE_DEEP_ADDITIONAL);
                 break;
             default:
-                #if MID_FAST_DEPTH > 1
-                    if (depth <= MID_FAST_DEPTH)
-                        flip_value->value -= nega_alpha(search, alpha, beta, depth, false, searching) * (W_NWS_VALUE + depth * W_NWS_VALUE_DEEP_ADDITIONAL);
-                    else{
-                        uint_fast8_t mpc_level = search->mpc_level;
-                        search->mpc_level = MOVE_ORDERING_MPC_LEVEL;
-                        flip_value->value -= nega_scout(search, alpha, beta, depth, false, flip_value->n_legal, false, searching) * (W_NWS_VALUE + depth * W_NWS_VALUE_DEEP_ADDITIONAL);
-                        search->mpc_level = mpc_level;
-                    }
-                #else
-                    uint_fast8_t mpc_level = search->mpc_level;
-                    search->mpc_level = MOVE_ORDERING_MPC_LEVEL;
-                    flip_value->value -= nega_scout(search, alpha, beta, depth, false, flip_value->n_legal, false, searching) * (W_NWS_VALUE + depth * W_NWS_VALUE_DEEP_ADDITIONAL);
-                    search->mpc_level = mpc_level;
-                #endif
+                uint_fast8_t mpc_level = search->mpc_level;
+                search->mpc_level = MOVE_ORDERING_MPC_LEVEL;
+                flip_value->value -= nega_scout(search, alpha, beta, depth, false, flip_value->n_legal, false, searching) * (W_NWS_VALUE + depth * W_NWS_VALUE_DEEP_ADDITIONAL);
+                search->mpc_level = mpc_level;
                 break;
         }
         */
@@ -523,34 +498,6 @@ inline void move_list_evaluate_nws(Search *search, std::vector<Flip_value> &move
         #endif
     }
 }
-
-#if MID_FAST_NWS_DEPTH > 1
-    /*
-        @brief Evaluate all legal moves for midgame NWS
-
-        @param search               search information
-        @param move_list            list of moves
-        @param moves                list of moves in transposition table
-        @param depth                remaining depth
-        @param alpha                alpha value (beta = alpha + 1)
-        @param searching            flag for terminating this search
-    */
-    inline void move_list_evaluate_nws_fast(Search *search, std::vector<Flip_value> &move_list, uint_fast8_t moves[], int depth, int alpha, const bool *searching){
-        if (move_list.size() == 1)
-            return;
-        const int eval_alpha = -std::min(SCORE_MAX, alpha + MOVE_ORDERING_NWS_VALUE_OFFSET_BETA);
-        const int eval_beta = -std::max(-SCORE_MAX, alpha - MOVE_ORDERING_NWS_VALUE_OFFSET_ALPHA);
-        int eval_depth = depth >> 4;
-        for (Flip_value &flip_value: move_list){
-            if (flip_value.flip.pos == moves[0])
-                flip_value.value = W_1ST_MOVE;
-            else if (flip_value.flip.pos == moves[1])
-                flip_value.value = W_2ND_MOVE;
-            else
-                move_evaluate_nws(search, &flip_value, eval_alpha, eval_beta, eval_depth, searching);
-        }
-    }
-#endif
 
 #if TUNE_MOVE_ORDERING_MID || TUNE_MOVE_ORDERING_END
     std::pair<int, int> first_nega_scout(Search *search, int alpha, int beta, int predicted_value, int depth, bool is_end_search, const bool is_main_search, const std::vector<Clog_result> clogs, uint64_t strt);

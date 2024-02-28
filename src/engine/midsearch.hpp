@@ -81,214 +81,6 @@ inline int nega_alpha_eval1(Search *search, int alpha, int beta, bool skipped, c
     return v;
 }
 
-#if MID_FAST_DEPTH > 1
-    /*
-        @brief Get a value with last few moves with Nega-Alpha algorithm
-
-        No move ordering. Just search it.
-
-        @param search               search information
-        @param alpha                alpha value
-        @param beta                 beta value
-        @param depth                remaining depth
-        @param skipped              already passed?
-        @param searching            flag for terminating this search
-        @return the value
-    */
-    int nega_alpha(Search *search, int alpha, int beta, int depth, bool skipped, const bool *searching){
-        if (!global_searching || !(*searching))
-            return SCORE_UNDEFINED;
-        if (alpha + 1 == beta)
-            return nega_alpha_nws(search, alpha, depth, skipped, searching);
-        if (depth == 1)
-            return nega_alpha_eval1(search, alpha, beta, skipped, searching);
-        ++search->n_nodes;
-        #if USE_SEARCH_STATISTICS
-            ++search->n_nodes_discs[search->n_discs];
-        #endif
-        if (depth == 0)
-            return mid_evaluate_diff(search);
-        int g, v = -SCORE_INF;
-        uint64_t legal = search->board.get_legal();
-        if (legal == 0ULL){
-            if (skipped)
-                return end_evaluate(&search->board);
-            search->eval_feature_reversed ^= 1;
-            search->board.pass();
-                v = -nega_alpha(search, -beta, -alpha, depth, true, searching);
-            search->board.pass();
-            search->eval_feature_reversed ^= 1;
-            return v;
-        }
-        Flip flip;
-        for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)){
-            calc_flip(&flip, &search->board, cell);
-            eval_move(search, &flip);
-            search->move(&flip);
-                g = -nega_alpha(search, -beta, -alpha, depth - 1, false, searching);
-            search->undo(&flip);
-            eval_undo(search, &flip);
-            if (v < g){
-                v = g;
-                if (alpha < v){
-                    if (beta <= v)
-                        break;
-                    alpha = v;
-                }
-            }
-        }
-        return v;
-    }
-#endif
-
-#if USE_NEGA_ALPHA_ORDERING
-    /*
-        @brief Get a value with given depth with Nega-Alpha algorithm
-
-        Search with move ordering for midgame
-
-        @param search               search information
-        @param alpha                alpha value
-        @param beta                 beta value
-        @param depth                remaining depth
-        @param skipped              already passed?
-        @param legal                for use of previously calculated legal bitboard
-        @param is_end_search        search till the end?
-        @param searching            flag for terminating this search
-        @return the value
-    */
-    int nega_alpha_ordering(Search *search, int alpha, int beta, int depth, bool skipped, uint64_t legal, bool is_end_search, const bool *searching){
-        if (!global_searching || !(*searching))
-            return SCORE_UNDEFINED;
-        if (alpha + 1 == beta)
-            return nega_alpha_ordering_nws(search, alpha, depth, skipped, legal, is_end_search, searching);
-        if (is_end_search && depth <= MID_TO_END_DEPTH)
-            return nega_alpha_end(search, alpha, beta, skipped, legal, searching);
-        if (!is_end_search){
-            #if MID_FAST_DEPTH > 1
-                if (depth <= MID_FAST_DEPTH)
-                    return nega_alpha(search, alpha, beta, depth, skipped, searching);
-            #else
-                if (depth == 1)
-                    return nega_alpha_eval1(search, alpha, beta, skipped, searching);
-                if (depth == 0){
-                    ++search->n_nodes;
-                    return mid_evaluate_diff(search);
-                }
-            #endif
-        }
-        ++search->n_nodes;
-        #if USE_SEARCH_STATISTICS
-            ++search->n_nodes_discs[search->n_discs];
-        #endif
-        #if USE_END_SC
-            if (is_end_search){
-                int stab_res = stability_cut(search, &alpha, &beta);
-                if (stab_res != SCORE_UNDEFINED)
-                    return stab_res;
-            }
-        #endif
-        if (legal == LEGAL_UNDEFINED)
-            legal = search->board.get_legal();
-        int v = -SCORE_INF;
-        if (legal == 0ULL){
-            if (skipped)
-                return end_evaluate(&search->board);
-            search->eval_feature_reversed ^= 1;
-            search->board.pass();
-                v = -nega_alpha_ordering(search, -beta, -alpha, depth, true, LEGAL_UNDEFINED, is_end_search, searching);
-            search->board.pass();
-            search->eval_feature_reversed ^= 1;
-            return v;
-        }
-        uint32_t hash_code = search->board.hash();
-        int lower = -SCORE_MAX, upper = SCORE_MAX;
-        uint_fast8_t moves[N_TRANSPOSITION_MOVES] = {TRANSPOSITION_TABLE_UNDEFINED, TRANSPOSITION_TABLE_UNDEFINED};
-        #if MID_TO_END_DEPTH < USE_TT_DEPTH_THRESHOLD
-            if (search->n_discs <= HW2 - USE_TT_DEPTH_THRESHOLD)
-                transposition_table.get(search, hash_code, depth, &lower, &upper, moves);
-        #else
-            transposition_table.get(search, hash_code, depth, &lower, &upper, moves);
-        #endif
-        if (upper == lower)
-            return upper;
-        if (beta <= lower)
-            return lower;
-        if (upper <= alpha)
-            return upper;
-        if (alpha < lower)
-            alpha = lower;
-        if (upper < beta)
-            beta = upper;
-        #if USE_MID_MPC
-            if (depth >= USE_MPC_DEPTH){
-                if (mpc(search, alpha, beta, depth, legal, is_end_search, &v, searching))
-                    return v;
-            }
-        #endif
-        Flip flip_best;
-        int best_move = TRANSPOSITION_TABLE_UNDEFINED;
-        int first_alpha = alpha;
-        int g;
-        for (uint_fast8_t i = 0; i < N_TRANSPOSITION_MOVES; ++i){
-            if (moves[i] == TRANSPOSITION_TABLE_UNDEFINED)
-                break;
-            if (1 & (legal >> moves[i])){
-                calc_flip(&flip_best, &search->board, moves[i]);
-                eval_move(search, &flip_best);
-                search->move(&flip_best);
-                    g = -nega_alpha_ordering(search, -beta, -alpha, depth - 1, false, move_list[move_idx].n_legal, is_end_search, searching);
-                search->undo(&flip_best);
-                eval_undo(search, &flip_best);
-                if (v < g){
-                    v = g;
-                    best_move = moves[i];
-                    if (alpha < v){
-                        alpha = v;
-                        if (beta <= v)
-                            break;
-                    }
-                }
-                legal ^= 1ULL << moves[i];
-            }
-        }
-        if (alpha < beta && legal){
-            const int canput = pop_count_ull(legal);
-            std::vector<Flip_value> move_list(canput);
-            int idx = 0;
-            for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)){
-                calc_flip(&move_list[idx].flip, &search->board, cell);
-                if (move_list[idx].flip.flip == search->board.opponent)
-                    return SCORE_MAX;
-                ++idx;
-            }
-            move_list_evaluate(search, move_list, depth, alpha, beta, searching);
-            for (int move_idx = 0; move_idx < canput; ++move_idx){
-                swap_next_best_move(move_list, move_idx, canput);
-                eval_move(search, &move_list[move_idx].flip);
-                search->move(&move_list[move_idx].flip);
-                    g = -nega_alpha_ordering(search, -beta, -alpha, depth - 1, false, move_list[move_idx].n_legal, is_end_search, searching);
-                search->undo(&move_list[move_idx].flip);
-                eval_undo(search, &move_list[move_idx].flip);
-                if (v < g){
-                    v = g;
-                    best_move = move_list[move_idx].flip.pos;
-                    if (alpha < v){
-                        if (beta <= v)
-                            break;
-                        alpha = v;
-                    }
-                }
-            }
-        }
-        if (*searching && global_searching)
-            transposition_table.reg(search, hash_code, depth, first_alpha, beta, v, best_move);
-        return v;
-    }
-#endif
-
-
-
 /*
     @brief Get a value with given depth with Negascout algorithm
 
@@ -309,29 +101,16 @@ int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, uin
         return SCORE_UNDEFINED;
     if (alpha + 1 == beta)
         return nega_alpha_ordering_nws(search, alpha, depth, skipped, legal, is_end_search, searching);
-    #if USE_NEGA_ALPHA_END
-        if (is_end_search && depth <= MID_TO_END_DEPTH)
-            return nega_alpha_end(search, alpha, beta, skipped, legal, searching);
-    #elif USE_NEGA_ALPHA_END_FAST
-        if (is_end_search && search->n_discs >= HW2 - END_FAST_DEPTH)
-            return nega_alpha_end_fast(search, alpha, beta, skipped, false, searching);
-    #else
-        if (is_end_search && search->n_discs == 60){
-            return -last4(search, -beta, -alpha);
-        }
-    #endif
+    if (is_end_search && search->n_discs == 60){
+        return -last4(search, -beta, -alpha);
+    }
     if (!is_end_search){
-        #if MID_FAST_DEPTH > 1
-            if (depth <= MID_FAST_DEPTH)
-                return nega_alpha(search, alpha, beta, depth, skipped, searching);
-        #else
-            if (depth == 1)
-                return nega_alpha_eval1(search, alpha, beta, skipped, searching);
-            if (depth == 0){
-                ++search->n_nodes;
-                return mid_evaluate_diff(search);
-            }
-        #endif
+        if (depth == 1)
+            return nega_alpha_eval1(search, alpha, beta, skipped, searching);
+        if (depth == 0){
+            ++search->n_nodes;
+            return mid_evaluate_diff(search);
+        }
     }
     ++search->n_nodes;
     int first_alpha = alpha;
@@ -417,12 +196,6 @@ int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, uin
                 return v;
         }
     #endif
-    #if USE_MID_MPC && false
-        if (depth >= USE_MPC_DEPTH + 1){
-            if (enhanced_mpc(search, move_list, depth, alpha, beta, is_end_search, searching, &v))
-                return v;
-        }
-    #endif
     move_list_evaluate(search, move_list, moves, depth, alpha, beta, searching);
     #if USE_YBWC_NEGASCOUT
         if (
@@ -451,7 +224,7 @@ int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, uin
                     if (v == -SCORE_INF){
                         g = -nega_scout(search, -beta, -alpha, depth - 1, false, move_list[move_idx].n_legal, is_end_search, searching);
                     } else{
-                        if (ybwc_split_nws(search, -alpha - 1, depth - 1, move_list[move_idx].n_legal, is_end_search, &n_searching, move_list[move_idx].flip.pos, move_idx, canput - etc_done_idx, running_count, false, parallel_tasks)){
+                        if (ybwc_split_nws(search, -alpha - 1, depth - 1, move_list[move_idx].n_legal, is_end_search, &n_searching, move_list[move_idx].flip.pos, move_idx, canput - etc_done_idx, running_count, parallel_tasks)){
                             ++running_count;
                             parallel_alphas.emplace_back(alpha);
                             parallel_idxes.emplace_back(move_idx);

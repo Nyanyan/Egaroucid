@@ -87,10 +87,10 @@ Parallel_task ybwc_do_task_nws(uint64_t player, uint64_t opponent, int_fast8_t n
     @param parallel_tasks       vector of splitted tasks
     @return task splitted?
 */
-inline bool ybwc_split_nws(const Search *search, int alpha, int depth, uint64_t legal, bool is_end_search, const bool *searching, uint_fast8_t policy, const int move_idx, const int canput, const int running_count, const bool seems_to_be_all_node, std::vector<std::future<Parallel_task>> &parallel_tasks){
+inline bool ybwc_split_nws(const Search *search, int alpha, int depth, uint64_t legal, bool is_end_search, const bool *searching, uint_fast8_t policy, const int move_idx, const int canput, const int running_count, std::vector<std::future<Parallel_task>> &parallel_tasks){
     if (
             thread_pool.get_n_idle() &&                 // There is an idle thread
-            (move_idx || seems_to_be_all_node) &&       // The elderest brother is already searched or this node seems to be an ALL node
+            move_idx &&                                 // The elderest brother is already searched
             move_idx < canput - YBWC_SPLIT_MIN_MOVES    // This node is not the (some) youngest brother
             //running_count < YBWC_MAX_RUNNING_COUNT      // Do not split too many nodes
     ){
