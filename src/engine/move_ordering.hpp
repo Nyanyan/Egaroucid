@@ -48,21 +48,21 @@
         -2
     };
 
-    #define W_END_MOBILITY              move_ordering_param_array[0]
-    #define W_END_PARITY                move_ordering_param_array[1]
-    #define W_END_POTENTIAL_MOBILITY    move_ordering_param_array[2]
-    #define W_END_VALUE                 move_ordering_param_array[3]
+    #define W_END_MOBILITY              move_ordering_param_array[0]  // +
+    #define W_END_PARITY                move_ordering_param_array[1]  // +
+    #define W_END_POTENTIAL_MOBILITY    move_ordering_param_array[2]  // -
+    #define W_END_VALUE                 move_ordering_param_array[3]  // +
 
-    #define W_CELL_WEIGHT               move_ordering_param_array[4]
-    #define W_MOBILITY                  move_ordering_param_array[5]
-    #define W_POTENTIAL_MOBILITY        move_ordering_param_array[6]
-    #define W_VALUE                     move_ordering_param_array[7]
-    #define W_VALUE_DEEP_ADDITIONAL     move_ordering_param_array[8]
+    #define W_CELL_WEIGHT               move_ordering_param_array[4]  // +
+    #define W_MOBILITY                  move_ordering_param_array[5]  // -
+    #define W_POTENTIAL_MOBILITY        move_ordering_param_array[6]  // -
+    #define W_VALUE                     move_ordering_param_array[7]  // -
+    #define W_VALUE_DEEP_ADDITIONAL     move_ordering_param_array[8]  // -
 
-    #define W_NWS_MOBILITY              move_ordering_param_array[9]
-    #define W_NWS_POTENTIAL_MOBILITY    move_ordering_param_array[10]
-    #define W_NWS_VALUE                 move_ordering_param_array[11]
-    #define W_NWS_VALUE_DEEP_ADDITIONAL move_ordering_param_array[12]
+    #define W_NWS_MOBILITY              move_ordering_param_array[9]  // -
+    #define W_NWS_POTENTIAL_MOBILITY    move_ordering_param_array[10] // -
+    #define W_NWS_VALUE                 move_ordering_param_array[11] // -
+    #define W_NWS_VALUE_DEEP_ADDITIONAL move_ordering_param_array[12] // -
 #else
     // endgame search
     #define W_END_MOBILITY 32
@@ -686,9 +686,9 @@ inline void move_list_evaluate_nws(Search *search, std::vector<Flip_value> &move
             // update parameter randomly
             int idx = myrandrange(4, N_MOVE_ORDERING_PARAM); // midgame search
             // int idx = myrandrange(0, 4); // endgame search
-            int delta = myrandrange(-4, 5);
+            int delta = myrandrange(-6, 7);
             while (delta == 0)
-                delta = myrandrange(-4, 5);
+                delta = myrandrange(-6, 7);
             move_ordering_param_array[idx] += delta;
             uint64_t n_nodes = n_nodes_test(level, testcase_arr);
             double percentage = 100.0 * n_nodes / first_n_nodes;
