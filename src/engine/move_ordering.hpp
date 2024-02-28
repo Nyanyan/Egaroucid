@@ -605,13 +605,44 @@ inline void move_list_evaluate_nws(Search *search, std::vector<Flip_value> &move
 #endif
 
 #if TUNE_MOVE_ORDERING
-    uint64_t n_nodes_test(Options *options, std::vector<Board> testcase_arr){
+    std::pair<int, int> first_nega_scout(Search *search, int alpha, int beta, int predicted_value, int depth, bool is_end_search, const bool is_main_search, const std::vector<Clog_result> clogs, uint64_t strt);
+
+    Board get_board(std::string board_str){
+        board_str.erase(std::remove_if(board_str.begin(), board_str.end(), ::isspace), board_str.end());
+        Board new_board;
+        int player = BLACK;
+        new_board.player = 0ULL;
+        new_board.opponent = 0ULL;
+        if (board_str.length() != HW2 + 1){
+            std::cerr << "[ERROR] invalid argument" << std::endl;
+            return new_board;
+        }
+        for (int i = 0; i < HW2; ++i){
+            if (board_str[i] == 'B' || board_str[i] == 'b' || board_str[i] == 'X' || board_str[i] == 'x' || board_str[i] == '0' || board_str[i] == '*')
+                new_board.player |= 1ULL << (HW2_M1 - i);
+            else if (board_str[i] == 'W' || board_str[i] == 'w' || board_str[i] == 'O' || board_str[i] == 'o' || board_str[i] == '1')
+                new_board.opponent |= 1ULL << (HW2_M1 - i);
+        }
+        if (board_str[HW2] == 'B' || board_str[HW2] == 'b' || board_str[HW2] == 'X' || board_str[HW2] == 'x' || board_str[HW2] == '0' || board_str[HW2] == '*')
+            player = BLACK;
+        else if (board_str[HW2] == 'W' || board_str[HW2] == 'w' || board_str[HW2] == 'O' || board_str[HW2] == 'o' || board_str[HW2] == '1')
+            player = WHITE;
+        else{
+            std::cerr << "[ERROR] invalid player argument" << std::endl;
+            return new_board;
+        }
+        if (player == WHITE)
+            std::swap(new_board.player, new_board.opponent);
+        return new_board;
+    }
+
+    uint64_t n_nodes_test(int level, std::vector<Board> testcase_arr){
         uint64_t n_nodes = 0;
         for (Board &board: testcase_arr){
             int depth;
             bool is_mid_search;
             uint_fast8_t mpc_level;
-            get_level(options->level, board.n_discs() - 4, &is_mid_search, &depth, &mpc_level);
+            get_level(level, board.n_discs() - 4, &is_mid_search, &depth, &mpc_level);
             Search search;
             search.init_board(&board);
             calc_features(&search);
@@ -628,7 +659,7 @@ inline void move_list_evaluate_nws(Search *search, std::vector<Flip_value> &move
         return n_nodes;
     }
 
-    void tune_move_ordering(Options *options){
+    void tune_move_ordering(int level){
         std::cout << "please input testcase file" << std::endl;
         std::string file;
         std::cin >> file;
@@ -639,13 +670,11 @@ inline void move_list_evaluate_nws(Search *search, std::vector<Flip_value> &move
         }
         std::vector<Board> testcase_arr;
         std::string line;
-        Board_info board_info;
         while (std::getline(ifs, line)){
-            setboard(&board_info, line);
-            testcase_arr.emplace_back(board_info.board);
+            testcase_arr.emplace_back(get_board(line));
         }
         std::cerr << testcase_arr.size() << " testcases loaded" << std::endl;
-        uint64_t min_n_nodes = n_nodes_test(options, testcase_arr);
+        uint64_t min_n_nodes = n_nodes_test(level, testcase_arr);
         double min_percentage = 100.0;
         uint64_t first_n_nodes = min_n_nodes;
         std::cerr << "min_n_nodes " << min_n_nodes << std::endl;
@@ -661,7 +690,7 @@ inline void move_list_evaluate_nws(Search *search, std::vector<Flip_value> &move
             while (delta == 0)
                 delta = myrandrange(-4, 5);
             move_ordering_param_array[idx] += delta;
-            uint64_t n_nodes = n_nodes_test(options, testcase_arr);
+            uint64_t n_nodes = n_nodes_test(level, testcase_arr);
             double percentage = 100.0 * n_nodes / first_n_nodes;
 
             // simulated annealing
@@ -676,17 +705,8 @@ inline void move_list_evaluate_nws(Search *search, std::vector<Flip_value> &move
             } else{
                 move_ordering_param_array[idx] -= delta;
             }
-            /*
-            // hillclimb
-            if (n_nodes <= min_n_nodes){
-                min_n_nodes = n_nodes;
-                min_percentage = percentage;
-                ++n_updated;
-            } else{
-                move_ordering_param_array[idx] -= delta;
-            }
-            */
             ++n_try;
+
             std::cerr << "try " << n_try << " updated " << n_updated << " min_n_nodes " << min_n_nodes << " n_nodes " << n_nodes << " " << min_percentage << "% " << tim() - strt << " ms ";
             for (int i = 0; i < N_MOVE_ORDERING_PARAM; ++i){
                 std::cerr << ", " << move_ordering_param_array[i];

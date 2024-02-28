@@ -65,7 +65,7 @@ void execute_special_tasks(Options options){
     // move ordering tuning (endsearch)
     #if TUNE_MOVE_ORDERING
         std::cout << "tune move ordering" << std::endl;
-        tune_move_ordering(&options);
+        tune_move_ordering(options.level);
         std::exit(0);
     #endif
 
