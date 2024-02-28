@@ -29,11 +29,11 @@
     @brief constants for move ordering
 */
 #if TUNE_MOVE_ORDERING_MID || TUNE_MOVE_ORDERING_END
-    #define N_MOVE_ORDERING_PARAM 12
+    #define N_MOVE_ORDERING_PARAM 10
     int move_ordering_param_array[N_MOVE_ORDERING_PARAM] = {
         32, 28, 256, 64, 
         16, 8, 14, 2, 
-        32, 4, 32, 4
+        32, 4
     };
 
     #define W_MOBILITY                  move_ordering_param_array[0]
@@ -429,7 +429,7 @@ inline void move_list_evaluate_nws(Search *search, std::vector<Flip_value> &move
         return;
     const int eval_alpha = -std::min(SCORE_MAX, alpha + MOVE_ORDERING_NWS_VALUE_OFFSET_BETA);
     const int eval_beta = -std::max(-SCORE_MAX, alpha - MOVE_ORDERING_NWS_VALUE_OFFSET_ALPHA);
-    int eval_depth = depth >> 4;
+    int eval_depth = depth >> 3;
     for (Flip_value &flip_value: move_list){
         #if USE_MID_ETC
             if (flip_value.flip.flip){
@@ -484,6 +484,9 @@ inline void move_list_evaluate_end_nws(Search *search, std::vector<Flip_value> &
     }
 }
 
+/*
+    @brief Parameter tuning for move ordering
+*/
 #if TUNE_MOVE_ORDERING_MID || TUNE_MOVE_ORDERING_END
     std::pair<int, int> first_nega_scout(Search *search, int alpha, int beta, int predicted_value, int depth, bool is_end_search, const bool is_main_search, const std::vector<Clog_result> clogs, uint64_t strt);
 
