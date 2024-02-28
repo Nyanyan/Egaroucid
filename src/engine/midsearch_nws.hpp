@@ -20,7 +20,6 @@
 #include "search.hpp"
 #include "transposition_table.hpp"
 #include "endsearch.hpp"
-#include "endsearch_nws.hpp"
 #include "move_ordering.hpp"
 #include "probcut.hpp"
 #include "thread_pool.hpp"
