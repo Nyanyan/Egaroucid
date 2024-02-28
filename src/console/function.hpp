@@ -99,25 +99,46 @@ void solve_problems(std::vector<std::string> arg, Options *options, State *state
             testcase_arr.emplace_back(board_info.board);
         }
         uint64_t min_n_nodes = n_nodes_test(options, testcase_arr);
+        double min_percentage = 100.0;
         uint64_t first_n_nodes = min_n_nodes;
         std::cerr << "min_n_nodes " << min_n_nodes << std::endl;
         int n_updated = 0;
         int n_try = 0;
-        while (true){ // hillclimb
+        uint64_t tl = 10ULL * 60ULL * 1000ULL; // 10 min
+        uint64_t strt = tim();
+        while (tim() - strt < tl){
             int idx = myrandrange(0, N_MOVE_ORDERING_PARAM);
             int delta = myrandrange(-2, 3);
             while (delta == 0)
                 delta = myrandrange(-2, 3);
             move_ordering_param_array[idx] += delta;
             uint64_t n_nodes = n_nodes_test(options, testcase_arr);
-            if (n_nodes <= min_n_nodes){
+            double percentage = 100.0 * n_nodes / first_n_nodes;
+
+            // simulated annealing
+            constexpr double start_temp = 1.0;
+            constexpr double end_temp = 0.001;
+            double temp = start_temp + (end_temp - start_temp) * (tim() - strt) / tl;
+            double prob = exp((min_percentage - percentage) / temp);
+            if (prob > myrandom()){
                 min_n_nodes = n_nodes;
+                min_percentage = percentage;
                 ++n_updated;
             } else{
                 move_ordering_param_array[idx] -= delta;
             }
+            /*
+            // hillclimb
+            if (n_nodes <= min_n_nodes){
+                min_n_nodes = n_nodes;
+                min_percentage = percentage;
+                ++n_updated;
+            } else{
+                move_ordering_param_array[idx] -= delta;
+            }
+            */
             ++n_try;
-            std::cerr << "try " << n_try << " updated " << n_updated << " min_n_nodes " << min_n_nodes << " n_nodes " << n_nodes << " " << (100.0 * min_n_nodes / first_n_nodes) << "% ";
+            std::cerr << "try " << n_try << " updated " << n_updated << " min_n_nodes " << min_n_nodes << " n_nodes " << n_nodes << " " << min_percentage << "% " << tim() - strt << " ms ";
             for (int i = 0; i < N_MOVE_ORDERING_PARAM; ++i){
                 std::cerr << " " << move_ordering_param_array[i];
             }
