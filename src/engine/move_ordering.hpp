@@ -64,17 +64,20 @@
     #define W_NWS_VALUE                 move_ordering_param_array[11]
     #define W_NWS_VALUE_DEEP_ADDITIONAL move_ordering_param_array[12]
 #else
+    // endgame search
     #define W_END_MOBILITY 32
     #define W_END_PARITY 4
     #define W_END_POTENTIAL_MOBILITY -32
     #define W_END_VALUE 4
 
+    // midgame search
     #define W_CELL_WEIGHT 7
     #define W_MOBILITY -32
     #define W_POTENTIAL_MOBILITY -28
     #define W_VALUE -256
     #define W_VALUE_DEEP_ADDITIONAL -64
 
+    // midgame null window search
     #define W_NWS_MOBILITY -16
     #define W_NWS_POTENTIAL_MOBILITY -8
     #define W_NWS_VALUE -14
