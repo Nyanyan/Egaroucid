@@ -77,9 +77,6 @@ struct Book_deviate_hash {
 void get_book_recalculate_leaf_todo(Book_deviate_todo_elem todo_elem, int book_depth, int max_error_per_move, int lower, int upper, int level, std::unordered_set<Book_deviate_todo_elem, Book_deviate_hash> &todo_list, uint64_t all_strt, bool *book_learning, Board *board_copy, int *player, bool only_illegal){
     if (!global_searching || !(*book_learning))
         return;
-    todo_elem.board = book.get_representative_board(todo_elem.board);
-    *board_copy = todo_elem.board;
-    *player = todo_elem.player;
     // pass?
     if (todo_elem.board.get_legal() == 0){
         todo_elem.pass();
@@ -89,6 +86,9 @@ void get_book_recalculate_leaf_todo(Book_deviate_todo_elem todo_elem, int book_d
         lower = -upper;
         upper = -tmp;
     }
+    todo_elem.board = book.get_representative_board(todo_elem.board);
+    *board_copy = todo_elem.board;
+    *player = todo_elem.player;
     // check depth
     if (todo_elem.board.n_discs() >= book_depth + 4)
         return;
@@ -100,17 +100,22 @@ void get_book_recalculate_leaf_todo(Book_deviate_todo_elem todo_elem, int book_d
     if (book_elem.seen)
         return;
     book.flag_book_elem(todo_elem.board);
-    // add to list
+    // check leaf recalculation necessity
     std::vector<Book_value> links = book.get_all_moves_with_value(&todo_elem.board);
-    bool illegal_leaf = false;
     uint64_t remaining_legal = todo_elem.board.get_legal();
     for (Book_value &link: links)
         remaining_legal ^= 1ULL << link.policy;
-    if (remaining_legal)
-        illegal_leaf = (remaining_legal & (1ULL << book_elem.leaf.move)) == 0;
-    else
-        illegal_leaf = book_elem.leaf.move != MOVE_NOMOVE;
-    if ((!only_illegal && book_elem.leaf.level < level) || illegal_leaf){
+    bool illegal_leaf = false;
+    if (remaining_legal){
+        if (is_valid_policy(book_elem.leaf.move))
+            illegal_leaf = ((remaining_legal & (1ULL << book_elem.leaf.move)) == 0);
+        else
+            illegal_leaf = true;
+    } else{
+        illegal_leaf = (book_elem.leaf.move != MOVE_NOMOVE);
+    }
+    // add to list
+    if (illegal_leaf || (!only_illegal && book_elem.leaf.level < level)){
         todo_list.emplace(todo_elem);
         if (todo_list.size() % 100 == 0)
             std::cerr << "book recalculate leaf todo " << todo_list.size() << " calculating... time " << ms_to_time_short(tim() - all_strt) << std::endl;
@@ -151,7 +156,7 @@ void book_recalculate_leaves(int level, std::unordered_set<Book_deviate_todo_ele
         //if (use_multi_thread){
         book_search_leaf(elem.board, level, true);
         ++n_done;
-        if (n_done % 100 == 0){
+        if (n_done % 10 == 0){
             int percent = 100ULL * n_done / n_all;
             uint64_t eta = (tim() - strt) * ((double)n_all / n_done - 1.0);
             std::cerr << "book recalculating leaves " << percent << "% " <<  n_done << "/" << n_all << " time " << ms_to_time_short(tim() - all_strt) << " ETA " << ms_to_time_short(eta) << std::endl;
@@ -254,23 +259,20 @@ inline void book_recalculate_leaf(Board root_board, int level, int book_depth, i
 void get_book_deviate_todo(Book_deviate_todo_elem todo_elem, int book_depth, int max_error_per_move, std::unordered_set<Book_deviate_todo_elem, Book_deviate_hash> &book_deviate_todo, uint64_t all_strt, bool *book_learning, Board *board_copy, int *player, int n_loop){
     if (!global_searching || !(*book_learning))
         return;
-    todo_elem.board = book.get_representative_board(todo_elem.board);
-    *board_copy = todo_elem.board;
-    *player = todo_elem.player;
     // pass?
     if (todo_elem.board.get_legal() == 0){
         todo_elem.pass();
         if (todo_elem.board.get_legal() == 0)
             return; // game over
-        get_book_deviate_todo(todo_elem, book_depth, max_error_per_move, book_deviate_todo, all_strt, book_learning, board_copy, player, n_loop);
-        todo_elem.pass();
-        return;
     }
-    // already searched?
-    if (book_deviate_todo.find(todo_elem) != book_deviate_todo.end())
-        return;
+    todo_elem.board = book.get_representative_board(todo_elem.board);
+    *board_copy = todo_elem.board;
+    *player = todo_elem.player;
     // check depth
     if (todo_elem.board.n_discs() >= book_depth + 4)
+        return;
+    // already searched?
+    if (book_deviate_todo.find(todo_elem) != book_deviate_todo.end())
         return;
     Book_elem book_elem = book.get(todo_elem.board);
     // already seen
@@ -309,17 +311,6 @@ uint64_t expand_leaf(int book_depth, int level, int max_error_per_move, int lowe
     board.move_board(&flip);
     uint64_t n_add = 0;
     while (board.n_discs() <= book_depth + 4 && !book.contain(&board) && (*book_learning)){
-        if (board.get_legal() == 0){
-            board.pass();
-            int tmp = lower;
-            lower = -upper;
-            upper = -tmp;
-            if (board.get_legal() == 0){
-                board.pass();
-                book.change(board, board.score_player(), 60);
-                break;
-            }
-        }
         Search_result search_result = ai(board, level, true, 0, use_multi_thread, false);
         if (-HW2 <= search_result.value && search_result.value <= HW2){
             book.change(board, search_result.value, level);
@@ -334,6 +325,17 @@ uint64_t expand_leaf(int book_depth, int level, int max_error_per_move, int lowe
                     int tmp = lower;
                     lower = -upper;
                     upper = -tmp;
+                    if (board.get_legal() == 0){ // check pass
+                        board.pass();
+                        int tmp2 = lower;
+                        lower = -upper;
+                        upper = -tmp2;
+                        if (board.get_legal() == 0){
+                            board.pass();
+                            book.change(board, board.score_player(), 60);
+                            break;
+                        }
+                    }
                 } else{
                     book.add_leaf(&board, search_result.value, search_result.policy, level);
                     break;

@@ -1205,19 +1205,39 @@ class Book{
             for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)){
                 calc_flip(&flip, b, cell);
                 b->move_board(&flip);
-                    int sgn = -1;
-                    if (b->get_legal() == 0ULL){
-                        sgn = 1;
+                    if (b->is_end()){
+                        if (contain(b)){
+                            Book_value book_value;
+                            book_value.policy = cell;
+                            book_value.value = -get(b).value;
+                            policies.emplace_back(book_value);
+                        } else{
+                            b->pass();
+                                if (contain(b)){
+                                    Book_value book_value;
+                                    book_value.policy = cell;
+                                    book_value.value = get(b).value;
+                                    policies.emplace_back(book_value);
+                                }
+                            b->pass();
+                        }
+                    } else if (b->get_legal() == 0){
                         b->pass();
-                    }
-                    if (contain(b)){
-                        Book_value book_value;
-                        book_value.policy = cell;
-                        book_value.value = sgn * get(b).value;
-                        policies.emplace_back(book_value);
-                    }
-                    if (sgn == 1)
+                            if (contain(b)){
+                                Book_value book_value;
+                                book_value.policy = cell;
+                                book_value.value = get(b).value;
+                                policies.emplace_back(book_value);
+                            }
                         b->pass();
+                    } else{
+                        if (contain(b)){
+                            Book_value book_value;
+                            book_value.policy = cell;
+                            book_value.value = -get(b).value;
+                            policies.emplace_back(book_value);
+                        }
+                    }
                 b->undo_board(&flip);
             }
             return policies;
@@ -1623,18 +1643,18 @@ class Book{
             mtx.unlock();
             int8_t new_leaf_value = SCORE_UNDEFINED, new_leaf_move = MOVE_UNDEFINED;
             std::vector<Book_value> links = get_all_moves_with_value(&board);
-            uint64_t legal = board.get_legal();
+            uint64_t remaining_legal = board.get_legal();
             for (Book_value &link: links)
-                legal ^= 1ULL << link.policy;
-            if (legal){
-                Search_result ai_result = ai_specified_moves(board, level, false, 0, use_multi_thread, false, legal);
+                remaining_legal ^= 1ULL << link.policy;
+            if (remaining_legal){
+                Search_result ai_result = ai_specified_moves(board, level, false, 0, use_multi_thread, false, remaining_legal);
                 if (ai_result.value != SCORE_UNDEFINED){
                     new_leaf_value = ai_result.value;
                     if (level == ADD_LEAF_SPECIAL_LEVEL)
                         new_leaf_value = book_elem.value;
                     new_leaf_move = ai_result.policy;
                 }
-            } else
+            } else // all move seen
                 new_leaf_move = MOVE_NOMOVE;
             //std::cerr << (int)new_leaf_value << " " << idx_to_coord(new_leaf_move) << std::endl;
             add_leaf(&board, new_leaf_value, new_leaf_move, level);
