@@ -146,13 +146,13 @@ void solve_problems(std::vector<std::string> arg, Options *options, State *state
             ++n_try;
             std::cerr << "try " << n_try << " updated " << n_updated << " min_n_nodes " << min_n_nodes << " n_nodes " << n_nodes << " " << min_percentage << "% " << tim() - strt << " ms ";
             for (int i = 0; i < N_MOVE_ORDERING_PARAM; ++i){
-                std::cerr << " " << move_ordering_param_array[i];
+                std::cerr << ", " << move_ordering_param_array[i];
             }
             std::cerr << std::endl;
         }
         std::cout << "done " << min_percentage << "% ";
         for (int i = 0; i < N_MOVE_ORDERING_PARAM; ++i){
-            std::cout << " " << move_ordering_param_array[i];
+            std::cout << ", " << move_ordering_param_array[i];
         }
         std::cout << std::endl;
     }
