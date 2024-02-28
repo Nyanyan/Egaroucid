@@ -1,3 +1,9 @@
+# Evaluation
+
+評価関数を作る
+
+
+
 ## データの変換
 
 * ```Egaroucid/train_data/transcript/recordsX```内にf5d6形式の棋譜を収録する
