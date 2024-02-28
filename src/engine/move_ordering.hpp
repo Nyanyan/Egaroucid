@@ -471,7 +471,7 @@ inline void move_list_evaluate_end_nws(Search *search, Flip_value move_list[], c
     @param search               search information
     @param move_list            list of moves
 */
-inline void move_list_evaluate_end_nws(Search *search, std::vector<Flip_value> &move_list, const int canput, uint_fast8_t moves[], bool use_eval){
+inline void move_list_evaluate_end_nws(Search *search, std::vector<Flip_value> &move_list, const int canput, uint_fast8_t moves[]){
     if (canput == 1)
         return;
     for (Flip_value &flip_value: move_list){
