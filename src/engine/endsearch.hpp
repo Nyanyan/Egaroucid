@@ -17,3 +17,4 @@
 #else
     #include "endsearch_last_generic.hpp"
 #endif
+#include "endsearch_nws.hpp"
