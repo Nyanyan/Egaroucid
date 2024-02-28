@@ -76,7 +76,7 @@ void solve_problems(std::vector<std::string> arg, Options *options, State *state
             search.use_multi_thread = true;
             search.mpc_level = mpc_level;
             std::vector<Clog_result> clogs;
-            transposition_table.init();
+            //transposition_table.init();
             //board.print();
             std::pair<int, int> result = first_nega_scout(&search, -SCORE_MAX, SCORE_MAX, SCORE_UNDEFINED, depth, !is_mid_search, false, clogs, tim());
             //std::cerr << result.first << " " << result.second << std::endl;
@@ -101,6 +101,7 @@ void solve_problems(std::vector<std::string> arg, Options *options, State *state
             setboard(&board_info, line);
             testcase_arr.emplace_back(board_info.board);
         }
+        std::cerr << testcase_arr.size() << " testcases loaded" << std::endl;
         uint64_t min_n_nodes = n_nodes_test(options, testcase_arr);
         double min_percentage = 100.0;
         uint64_t first_n_nodes = min_n_nodes;

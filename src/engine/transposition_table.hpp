@@ -258,6 +258,7 @@ void reset_date_transposition_table(Hash_node table[], size_t s, size_t e){
     @param table_heap           transposition table on heap
     @param table_size           total table size
 */
+#if !TUNE_MOVE_ORDERING
 class Transposition_table{
     private:
         Hash_node table_stack[TRANSPOSITION_TABLE_STACK_SIZE];
@@ -647,6 +648,37 @@ class Transposition_table{
             return &table_heap[hash - TRANSPOSITION_TABLE_STACK_SIZE];
         }
 };
+#else
+class Transposition_table{
+    public:
+        inline void update_date(){
+        }
+        inline uint8_t get_date(){
+            return 0;
+        }
+        inline bool resize(int hash_level){
+            return true;
+        }
+        inline void init(){
+        }
+        inline void reset_date(){
+        }
+        inline void reset_date_new_thread(int thread_size){
+        }
+        inline void reg(const Search *search, uint32_t hash, const int depth, int alpha, int beta, int value, int policy){
+        }
+        inline void get(const Search *search, uint32_t hash, const int depth, int *lower, int *upper, uint_fast8_t moves[]){
+        }
+        inline void get(const Search *search, uint32_t hash, const int depth, int *lower, int *upper){
+        }
+        inline int get_best_move(const Board *board, uint32_t hash){
+            return TRANSPOSITION_TABLE_UNDEFINED;
+        }
+        inline bool get_if_perfect(const Board *board, uint32_t hash, int *val, int *best_move){
+            return false;
+        }
+};
+#endif
 
 Transposition_table transposition_table;
 
