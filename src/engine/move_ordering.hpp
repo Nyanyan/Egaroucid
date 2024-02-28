@@ -46,15 +46,15 @@
     #define W_NWS_VALUE                 move_ordering_param_array[6]
     #define W_NWS_VALUE_DEEP_ADDITIONAL move_ordering_param_array[7]
 
-    #define W_END_MOBILITY              move_ordering_param_array[8]
-    #define W_END_PARITY                move_ordering_param_array[9]
-    #define W_END_POTENTIAL_MOBILITY    move_ordering_param_array[10]
-    #define W_END_VALUE                 move_ordering_param_array[11]
+    #define W_END_NWS_MOBILITY              move_ordering_param_array[8]
+    #define W_END_NWS_PARITY                move_ordering_param_array[9]
+    //#define W_END_NWS_POTENTIAL_MOBILITY    move_ordering_param_array[10]
+    //#define W_END_NWS_VALUE                 move_ordering_param_array[11]
 
     #define MOVE_ORDERING_MID_PARAM_START 0
     #define MOVE_ORDERING_MID_PARAM_END 7
     #define MOVE_ORDERING_END_PARAM_START 8
-    #define MOVE_ORDERING_END_PARAM_END 11
+    #define MOVE_ORDERING_END_PARAM_END 9
 #else
     // midgame search
     //#define W_CELL_WEIGHT 7
@@ -70,10 +70,10 @@
     #define W_NWS_VALUE_DEEP_ADDITIONAL 2
 
     // endgame search
-    #define W_END_MOBILITY 32
-    #define W_END_PARITY 4
-    #define W_END_POTENTIAL_MOBILITY 32
-    #define W_END_VALUE 4
+    #define W_END_NWS_MOBILITY 32
+    #define W_END_NWS_PARITY 4
+    //#define W_END_NWS_POTENTIAL_MOBILITY 32
+    //#define W_END_NWS_VALUE 4
 #endif
 
 #define MOVE_ORDERING_VALUE_OFFSET_ALPHA 10
@@ -317,14 +317,11 @@ inline void move_evaluate_end_nws(Search *search, Flip_value *flip_value){
 inline void move_evaluate_end_nws(Search *search, Flip_value *flip_value){
     flip_value->value = 0;
     if (search->parity & cell_div4[flip_value->flip.pos])
-        flip_value->value += W_END_PARITY;
-    eval_move(search, &flip_value->flip);
+        flip_value->value += W_END_NWS_PARITY;
     search->move(&flip_value->flip);
         flip_value->n_legal = search->board.get_legal();
-        flip_value->value -= pop_count_ull(flip_value->n_legal) * W_END_MOBILITY;
-        flip_value->value -= mid_evaluate_diff(search) * W_END_VALUE;
+        flip_value->value -= pop_count_ull(flip_value->n_legal) * W_END_NWS_MOBILITY;
     search->undo(&flip_value->flip);
-    eval_undo(search, &flip_value->flip);
 }
 
 
