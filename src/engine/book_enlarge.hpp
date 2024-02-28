@@ -87,12 +87,15 @@ void get_book_recalculate_leaf_todo(Book_deviate_todo_elem todo_elem, int book_d
         upper = -tmp;
     }
     // check depth
-    if (todo_elem.board.n_discs() >= book_depth + 4)
+    if (todo_elem.board.n_discs() > book_depth + 4)
         return;
     // already searched?
     if (todo_list.find(todo_elem) != todo_list.end())
         return;
     Book_elem book_elem = book.get(todo_elem.board);
+    // not registered?
+    if (book_elem.value == SCORE_UNDEFINED)
+        return;
     // already registered?
     if (book_elem.seen)
         return;
@@ -271,6 +274,9 @@ void get_book_deviate_todo(Book_deviate_todo_elem todo_elem, int book_depth, int
     *board_copy = todo_elem.board;
     *player = todo_elem.player;
     Book_elem book_elem = book.get(todo_elem.board);
+    // not registered?
+    if (book_elem.value == SCORE_UNDEFINED)
+        return;
     // already seen
     if (book_elem.seen)
         return;
