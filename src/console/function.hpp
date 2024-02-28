@@ -85,7 +85,10 @@ void solve_problems(std::vector<std::string> arg, Options *options, State *state
         return n_nodes;
     }
 
-    void tune_move_ordering(std::string file, Options *options){
+    void tune_move_ordering(Options *options){
+        std::cout << "please input testcase file" << std::endl;
+        std::string file;
+        std::cin >> file;
         std::ifstream ifs(file);
         if (ifs.fail()){
             std::cerr << "[ERROR] [FATAL] problem file " << file << " not found" << std::endl;
@@ -107,17 +110,19 @@ void solve_problems(std::vector<std::string> arg, Options *options, State *state
         uint64_t tl = 10ULL * 60ULL * 1000ULL; // 10 min
         uint64_t strt = tim();
         while (tim() - strt < tl){
-            int idx = myrandrange(0, N_MOVE_ORDERING_PARAM);
-            int delta = myrandrange(-2, 3);
+            // update parameter randomly
+            int idx = myrandrange(4, N_MOVE_ORDERING_PARAM); // midgame search
+            // int idx = myrandrange(0, 4); // endgame search
+            int delta = myrandrange(-4, 5);
             while (delta == 0)
-                delta = myrandrange(-2, 3);
+                delta = myrandrange(-4, 5);
             move_ordering_param_array[idx] += delta;
             uint64_t n_nodes = n_nodes_test(options, testcase_arr);
             double percentage = 100.0 * n_nodes / first_n_nodes;
 
             // simulated annealing
-            constexpr double start_temp = 1.0;
-            constexpr double end_temp = 0.001;
+            constexpr double start_temp = 0.1; // percent
+            constexpr double end_temp = 0.001; // percent
             double temp = start_temp + (end_temp - start_temp) * (tim() - strt) / tl;
             double prob = exp((min_percentage - percentage) / temp);
             if (prob > myrandom()){
@@ -144,6 +149,11 @@ void solve_problems(std::vector<std::string> arg, Options *options, State *state
             }
             std::cerr << std::endl;
         }
+        std::cout << "done " << min_percentage << "% ";
+        for (int i = 0; i < N_MOVE_ORDERING_PARAM; ++i){
+            std::cout << " " << move_ordering_param_array[i];
+        }
+        std::cout << std::endl;
     }
 #endif
 
@@ -236,10 +246,8 @@ void solve_problems(std::vector<std::string> arg, Options *options, State *state
 void execute_special_tasks(Options options){
     // move ordering tuning (endsearch)
     #if TUNE_MOVE_ORDERING
-        std::cout << "tune move ordering, please input testcase file" << std::endl;
-        std::string file;
-        std::cin >> file;
-        tune_move_ordering(file, &options);
+        std::cout << "tune move ordering" << std::endl;
+        tune_move_ordering(&options);
         std::exit(0);
     #endif
 
