@@ -33,7 +33,7 @@
     int move_ordering_param_array[N_MOVE_ORDERING_PARAM] = {
         32, 28, 256, 64, 
         16, 8, 14, 2, 
-        32, 4
+        14, 4
     };
 
     #define W_MOBILITY                  move_ordering_param_array[0]
@@ -70,7 +70,7 @@
     #define W_NWS_VALUE_DEEP_ADDITIONAL 2
 
     // endgame search
-    #define W_END_NWS_MOBILITY 32
+    #define W_END_NWS_MOBILITY 14
     #define W_END_NWS_PARITY 4
     //#define W_END_NWS_POTENTIAL_MOBILITY 32
     //#define W_END_NWS_VALUE 4
