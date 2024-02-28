@@ -28,7 +28,7 @@ board_n_moves['25'] = [30, 60]
 
 N_PHASES = 60
 
-for phase in range(40, N_PHASES):
+for phase in range(N_PHASES):
     bin_dir = bin_root_dir + str(phase)
     try:
         os.mkdir(bin_dir)
