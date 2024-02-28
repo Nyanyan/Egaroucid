@@ -314,3 +314,89 @@ bool enhanced_mpc(Search *search, std::vector<Flip_value> &move_list, int depth,
     }
     return false;
 }
+
+#if TUNE_PROBCUT_MID
+    void get_data_probcut_mid(){
+        std::ofstream ofs("probcut_mid.txt");
+        Board board;
+        Flip flip;
+        Search_result short_ans, long_ans;
+        for (int i = 0; i < 1000; ++i){
+            for (int depth = 2; depth < 14; ++depth){
+                for (int n_discs = 4; n_discs < HW2 - depth - 5; ++n_discs){
+                    board.reset();
+                    for (int j = 4; j < n_discs && board.check_pass(); ++j){ // random move
+                        uint64_t legal = board.get_legal();
+                        int random_idx = myrandrange(0, pop_count_ull(legal));
+                        int t = 0;
+                        for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)){
+                            if (t == random_idx){
+                                calc_flip(&flip, &board, cell);
+                                break;
+                            }
+                            ++t;
+                        }
+                        board.move_board(&flip);
+                    }
+                    if (board.check_pass()){
+                        int short_depth = myrandrange(1, depth - 1);
+                        short_depth &= 0xfffffffe;
+                        short_depth |= depth & 1;
+                        //int short_depth = mpc_search_depth_arr[0][depth];
+                        if (short_depth == 0){
+                            short_ans.value = mid_evaluate(&board);
+                        } else{
+                            short_ans = tree_search(board, short_depth, MPC_100_LEVEL, false, true);
+                        }
+                        long_ans = tree_search(board, depth, MPC_100_LEVEL, false, true);
+                        // n_discs short_depth long_depth error
+                        std::cerr << i << " " << n_discs << " " << short_depth << " " << depth << " " << long_ans.value - short_ans.value << std::endl;
+                        ofs << n_discs << " " << short_depth << " " << depth << " " << long_ans.value - short_ans.value << std::endl;
+                    }
+                }
+            }
+        }
+    }
+#endif
+
+#if TUNE_PROBCUT_END
+    void get_data_probcut_end(){
+        std::ofstream ofs("probcut_end.txt");
+        Board board;
+        Flip flip;
+        Search_result short_ans, long_ans;
+        for (int i = 0; i < 1000; ++i){
+            for (int depth = 6; depth < 24; ++depth){
+                board.reset();
+                for (int j = 0; j < HW2 - 4 - depth && board.check_pass(); ++j){ // random move
+                    uint64_t legal = board.get_legal();
+                    int random_idx = myrandrange(0, pop_count_ull(legal));
+                    int t = 0;
+                    for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)){
+                        if (t == random_idx){
+                            calc_flip(&flip, &board, cell);
+                            break;
+                        }
+                        ++t;
+                    }
+                    board.move_board(&flip);
+                }
+                if (board.check_pass()){
+                    int short_depth = myrandrange(1, std::min(15, depth - 1));
+                    short_depth &= 0xfffffffe;
+                    short_depth |= depth & 1;
+                    //int short_depth = mpc_search_depth_arr[1][depth];
+                    if (short_depth == 0){
+                        short_ans.value = mid_evaluate(&board);
+                    } else{
+                        short_ans = tree_search(board, short_depth, MPC_100_LEVEL, false, true);
+                    }
+                    long_ans = tree_search(board, depth, MPC_100_LEVEL, false, true);
+                    // n_discs short_depth error
+                    std::cerr << i << " " << HW2 - depth << " " << short_depth << " " << long_ans.value - short_ans.value << std::endl;
+                    ofs << HW2 - depth << " " << short_depth << " " << long_ans.value - short_ans.value << std::endl;
+                }
+            }
+        }
+    }
+#endif

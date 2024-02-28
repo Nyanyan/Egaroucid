@@ -603,3 +603,100 @@ inline void move_list_evaluate_nws(Search *search, std::vector<Flip_value> &move
         }
     }
 #endif
+
+#if TUNE_MOVE_ORDERING
+    uint64_t n_nodes_test(Options *options, std::vector<Board> testcase_arr){
+        uint64_t n_nodes = 0;
+        for (Board &board: testcase_arr){
+            int depth;
+            bool is_mid_search;
+            uint_fast8_t mpc_level;
+            get_level(options->level, board.n_discs() - 4, &is_mid_search, &depth, &mpc_level);
+            Search search;
+            search.init_board(&board);
+            calc_features(&search);
+            search.n_nodes = 0ULL;
+            search.use_multi_thread = true;
+            search.mpc_level = mpc_level;
+            std::vector<Clog_result> clogs;
+            //transposition_table.init();
+            //board.print();
+            std::pair<int, int> result = first_nega_scout(&search, -SCORE_MAX, SCORE_MAX, SCORE_UNDEFINED, depth, !is_mid_search, false, clogs, tim());
+            //std::cerr << result.first << " " << result.second << std::endl;
+            n_nodes += search.n_nodes;
+        }
+        return n_nodes;
+    }
+
+    void tune_move_ordering(Options *options){
+        std::cout << "please input testcase file" << std::endl;
+        std::string file;
+        std::cin >> file;
+        std::ifstream ifs(file);
+        if (ifs.fail()){
+            std::cerr << "[ERROR] [FATAL] problem file " << file << " not found" << std::endl;
+            return;
+        }
+        std::vector<Board> testcase_arr;
+        std::string line;
+        Board_info board_info;
+        while (std::getline(ifs, line)){
+            setboard(&board_info, line);
+            testcase_arr.emplace_back(board_info.board);
+        }
+        std::cerr << testcase_arr.size() << " testcases loaded" << std::endl;
+        uint64_t min_n_nodes = n_nodes_test(options, testcase_arr);
+        double min_percentage = 100.0;
+        uint64_t first_n_nodes = min_n_nodes;
+        std::cerr << "min_n_nodes " << min_n_nodes << std::endl;
+        int n_updated = 0;
+        int n_try = 0;
+        uint64_t tl = 10ULL * 60ULL * 1000ULL; // 10 min
+        uint64_t strt = tim();
+        while (tim() - strt < tl){
+            // update parameter randomly
+            int idx = myrandrange(4, N_MOVE_ORDERING_PARAM); // midgame search
+            // int idx = myrandrange(0, 4); // endgame search
+            int delta = myrandrange(-4, 5);
+            while (delta == 0)
+                delta = myrandrange(-4, 5);
+            move_ordering_param_array[idx] += delta;
+            uint64_t n_nodes = n_nodes_test(options, testcase_arr);
+            double percentage = 100.0 * n_nodes / first_n_nodes;
+
+            // simulated annealing
+            constexpr double start_temp = 0.1; // percent
+            constexpr double end_temp = 0.001; // percent
+            double temp = start_temp + (end_temp - start_temp) * (tim() - strt) / tl;
+            double prob = exp((min_percentage - percentage) / temp);
+            if (prob > myrandom()){
+                min_n_nodes = n_nodes;
+                min_percentage = percentage;
+                ++n_updated;
+            } else{
+                move_ordering_param_array[idx] -= delta;
+            }
+            /*
+            // hillclimb
+            if (n_nodes <= min_n_nodes){
+                min_n_nodes = n_nodes;
+                min_percentage = percentage;
+                ++n_updated;
+            } else{
+                move_ordering_param_array[idx] -= delta;
+            }
+            */
+            ++n_try;
+            std::cerr << "try " << n_try << " updated " << n_updated << " min_n_nodes " << min_n_nodes << " n_nodes " << n_nodes << " " << min_percentage << "% " << tim() - strt << " ms ";
+            for (int i = 0; i < N_MOVE_ORDERING_PARAM; ++i){
+                std::cerr << ", " << move_ordering_param_array[i];
+            }
+            std::cerr << std::endl;
+        }
+        std::cout << "done " << min_percentage << "% ";
+        for (int i = 0; i < N_MOVE_ORDERING_PARAM; ++i){
+            std::cout << ", " << move_ordering_param_array[i];
+        }
+        std::cout << std::endl;
+    }
+#endif
