@@ -71,12 +71,15 @@ void solve_problems(std::vector<std::string> arg, Options *options, State *state
             get_level(options->level, board.n_discs() - 4, &is_mid_search, &depth, &mpc_level);
             Search search;
             search.init_board(&board);
+            calc_features(&search);
             search.n_nodes = 0ULL;
             search.use_multi_thread = true;
             search.mpc_level = mpc_level;
             std::vector<Clog_result> clogs;
             transposition_table.init();
-            std::pair<int, int> result = first_nega_scout(&search, -SCORE_MAX, SCORE_MAX, SCORE_UNDEFINED, depth, !is_mid_search, true, clogs, tim());
+            //board.print();
+            std::pair<int, int> result = first_nega_scout(&search, -SCORE_MAX, SCORE_MAX, SCORE_UNDEFINED, depth, !is_mid_search, false, clogs, tim());
+            //std::cerr << result.first << " " << result.second << std::endl;
             n_nodes += search.n_nodes;
         }
         return n_nodes;
@@ -113,7 +116,7 @@ void solve_problems(std::vector<std::string> arg, Options *options, State *state
                 move_ordering_param_array[idx] -= delta;
             }
             ++n_try;
-            std::cerr << "try " << n_try << " updated " << n_updated << " min_n_nodes " << min_n_nodes;
+            std::cerr << "try " << n_try << " updated " << n_updated << " min_n_nodes " << min_n_nodes << " n_nodes " << n_nodes;
             for (int i = 0; i < N_MOVE_ORDERING_PARAM; ++i){
                 std::cerr << " " << move_ordering_param_array[i];
             }
