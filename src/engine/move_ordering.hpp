@@ -17,44 +17,60 @@
 #include "midsearch.hpp"
 #include "stability.hpp"
 #include "level.hpp"
-#if TUNE_MOVE_ORDERING_END
-    #include "move_ordering_tune_end.hpp"
-#endif
 
 /*
     @brief if wipeout found, it must be searched first.
 */
-#define W_WIPEOUT INF
+#define W_WIPEOUT 100000000
 #define W_1ST_MOVE 10000000
 #define W_2ND_MOVE 1000000
 
 /*
     @brief constants for move ordering
 */
+#if TUNE_MOVE_ORDERING
+    #define N_MOVE_ORDERING_PARAM 13
+    int move_ordering_param_array[N_MOVE_ORDERING_PARAM];
+
+    #define W_END_MOBILITY              move_ordering_param_array[0]
+    #define W_END_PARITY                move_ordering_param_array[1]
+    #define W_END_POTENTIAL_MOBILITY    move_ordering_param_array[2]
+    #define W_END_VALUE                 move_ordering_param_array[3]
+
+    #define W_CELL_WEIGHT               move_ordering_param_array[4]
+    #define W_MOBILITY                  move_ordering_param_array[5]
+    #define W_POTENTIAL_MOBILITY        move_ordering_param_array[6]
+    #define W_VALUE                     move_ordering_param_array[7]
+    #define W_VALUE_DEEP_ADDITIONAL     move_ordering_param_array[8]
+
+    #define W_NWS_MOBILITY              move_ordering_param_array[9]
+    #define W_NWS_POTENTIAL_MOBILITY    move_ordering_param_array[10]
+    #define W_NWS_VALUE                 move_ordering_param_array[11]
+    #define W_NWS_VALUE_DEEP_ADDITIONAL move_ordering_param_array[12]
+#else
+    #define W_END_MOBILITY 32
+    #define W_END_PARITY 4
+    #define W_END_POTENTIAL_MOBILITY -32
+    #define W_END_VALUE 4
+
+    #define W_CELL_WEIGHT 7
+    #define W_MOBILITY -32
+    #define W_POTENTIAL_MOBILITY -28
+    #define W_VALUE -256
+    #define W_VALUE_DEEP_ADDITIONAL -64
+
+    #define W_NWS_MOBILITY -16
+    #define W_NWS_POTENTIAL_MOBILITY -8
+    #define W_NWS_VALUE -14
+    #define W_NWS_VALUE_DEEP_ADDITIONAL -2
+#endif
+
 #define MOVE_ORDERING_VALUE_OFFSET_ALPHA 10
 #define MOVE_ORDERING_VALUE_OFFSET_BETA 10
 #define MOVE_ORDERING_NWS_VALUE_OFFSET_ALPHA 10
 #define MOVE_ORDERING_NWS_VALUE_OFFSET_BETA 3
+
 #define MOVE_ORDERING_MPC_LEVEL MPC_88_LEVEL
-
-#define W_END_MOBILITY 32
-#define W_END_PARITY 4
-#define W_END_POTENTIAL_MOBILITY -32
-#define W_END_VALUE 4
-
-#define N_CELL_TYPES 10
-#define MAX_SAME_CELL_TYPE 8
-
-#define W_CELL_WEIGHT 7
-#define W_MOBILITY -32
-#define W_POTENTIAL_MOBILITY -28
-#define W_VALUE -256
-#define W_VALUE_DEEP_ADDITIONAL -64
-
-#define W_NWS_MOBILITY -16
-#define W_NWS_POTENTIAL_MOBILITY -8
-#define W_NWS_VALUE -14
-#define W_NWS_VALUE_DEEP_ADDITIONAL -2
 
 /*
     @brief Flip structure with more information
