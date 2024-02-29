@@ -209,7 +209,7 @@ __m256i eval_lower_mask;
 __m256i feature_to_coord_simd_mul[N_SIMD_EVAL_FEATURES][MAX_PATTERN_CELLS - 1];
 __m256i feature_to_coord_simd_cell[N_SIMD_EVAL_FEATURES][MAX_PATTERN_CELLS][2];
 __m256i coord_to_feature_simd[HW2][N_SIMD_EVAL_FEATURES];
-__m256i coord_to_feature_simd2[HW2][N_SIMD_EVAL_FEATURES];
+__m256i coord_to_feature_simd2[HW2][N_SIMD_EVAL_FEATURES]; // coord_to_feature_simd * 2
 __m256i eval_simd_offsets_simple[N_SIMD_EVAL_FEATURES_SIMPLE]; // 16bit * 16 * N
 __m256i eval_simd_offsets_comp[N_SIMD_EVAL_FEATURES_COMP * 2]; // 32bit * 8 * N
 __m256i eval_surround_mask;
@@ -598,7 +598,7 @@ inline void calc_features(Search *search){
 */
 inline void eval_move(Search *search, const Flip *flip){
     uint_fast8_t cell;
-    uint64_t f;
+    uint64_t flipped;
     __m256i f0, f1, f2, f3;
     f0 = search->eval_features[search->eval_feature_idx].f256[0];
     f1 = search->eval_features[search->eval_feature_idx].f256[1];
@@ -609,8 +609,8 @@ inline void eval_move(Search *search, const Flip *flip){
         f1 = _mm256_subs_epu16(f1, coord_to_feature_simd[flip->pos][1]);
         f2 = _mm256_subs_epu16(f2, coord_to_feature_simd[flip->pos][2]);
         f3 = _mm256_subs_epu16(f3, coord_to_feature_simd[flip->pos][3]);
-        f = flip->flip;
-        for (cell = first_bit(&f); f; cell = next_bit(&f)){
+        flipped = flip->flip;
+        for (cell = first_bit(&flipped); flipped; cell = next_bit(&flipped)){
             f0 = _mm256_adds_epu16(f0, coord_to_feature_simd[cell][0]);
             f1 = _mm256_adds_epu16(f1, coord_to_feature_simd[cell][1]);
             f2 = _mm256_adds_epu16(f2, coord_to_feature_simd[cell][2]);
@@ -621,8 +621,8 @@ inline void eval_move(Search *search, const Flip *flip){
         f1 = _mm256_subs_epu16(f1, coord_to_feature_simd2[flip->pos][1]);
         f2 = _mm256_subs_epu16(f2, coord_to_feature_simd2[flip->pos][2]);
         f3 = _mm256_subs_epu16(f3, coord_to_feature_simd2[flip->pos][3]);
-        f = flip->flip;
-        for (cell = first_bit(&f); f; cell = next_bit(&f)){
+        flipped = flip->flip;
+        for (cell = first_bit(&flipped); flipped; cell = next_bit(&flipped)){
             f0 = _mm256_subs_epu16(f0, coord_to_feature_simd[cell][0]);
             f1 = _mm256_subs_epu16(f1, coord_to_feature_simd[cell][1]);
             f2 = _mm256_subs_epu16(f2, coord_to_feature_simd[cell][2]);
