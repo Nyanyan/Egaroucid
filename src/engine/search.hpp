@@ -17,16 +17,9 @@
 #include "common.hpp"
 #include "board.hpp"
 #include "thread_pool.hpp"
+#include "evaluate_common.hpp"
 #include "evaluate.hpp"
 #include "flip.hpp"
-
-/*
-    @brief Evaluation constant
-*/
-#define N_SYMMETRY_PATTERNS 62
-#if USE_SIMD_EVALUATION
-    #define N_SIMD_EVAL_FEATURES 4 // 16 (elems per 256 bit vector) * N_SIMD_EVAL_FEATURES >= N_SYMMETRY_PATTERNS
-#endif
 
 /*
     @brief Search switch parameters
@@ -38,7 +31,6 @@
 /*
     @brief Search hyperparameters
 */
-#define FAIL_HIGH_WISH_THRESHOLD_END_NWS 4
 #define MID_ETC_DEPTH 14
 
 
@@ -52,24 +44,6 @@
 #define MOVE_PASS 64
 #ifndef SEARCH_BOOK
     #define SEARCH_BOOK -1
-#endif
-
-#if USE_SIMD
-    union Eval_features{
-        __m256i f256[N_SIMD_EVAL_FEATURES];
-        __m128i f128[N_SIMD_EVAL_FEATURES * 2];
-    };
-
-    struct Eval_search{
-        Eval_features features[HW2 - 4];
-        uint_fast8_t feature_idx;
-        bool reversed;
-    };
-#else
-    struct Eval_search{
-        uint_fast16_t features[N_SYMMETRY_PATTERNS];
-        bool reversed;
-    };
 #endif
 
 inline void eval_move(Eval_search *eval, const Flip *flip);
