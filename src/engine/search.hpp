@@ -48,9 +48,9 @@
 
 inline void calc_eval_features(Board *board, Eval_search *eval);
 #if USE_SIMD
-    inline void eval_move(Eval_search *eval, const Flip *flip, Board *board);
+    inline void eval_move(Eval_search *eval, const Flip *flip, const Board *board);
     inline void eval_undo(Eval_search *eval);
-    inline void eval_pass(Eval_search *eval, Board *board);
+    inline void eval_pass(Eval_search *eval, const Board *board);
 #else
     inline void eval_move(Eval_search *eval, const Flip *flip);
     inline void eval_undo(Eval_search *eval, const Flip *flip);
@@ -244,14 +244,14 @@ class Search{
             @param flip                 Flip information
         */
         inline void move(const Flip *flip) {
-            board.move_board(flip);
-            ++n_discs;
-            parity ^= cell_div4[flip->pos];
             #if USE_SIMD
                 eval_move(&eval, flip, &board);
             #else
                 eval_move(&eval, flip);
             #endif
+            board.move_board(flip);
+            ++n_discs;
+            parity ^= cell_div4[flip->pos];
         }
 
         /*
@@ -260,14 +260,14 @@ class Search{
             @param flip                 Flip information
         */
         inline void undo(const Flip *flip) {
-            board.undo_board(flip);
-            --n_discs;
-            parity ^= cell_div4[flip->pos];
             #if USE_SIMD
                 eval_undo(&eval);
             #else
                 eval_undo(&eval, flip);
             #endif
+            board.undo_board(flip);
+            --n_discs;
+            parity ^= cell_div4[flip->pos];
         }
 
         /*
@@ -296,12 +296,12 @@ class Search{
             @brief pass board
         */
         inline void pass(){
-            board.pass();
             #if USE_SIMD
                 eval_pass(&eval, &board);
             #else
                 eval_pass(&eval);
             #endif
+            board.pass();
         }
 
         /*

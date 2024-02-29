@@ -210,8 +210,7 @@ constexpr Coord_to_feature coord_to_feature[HW2] = {
 __m256i eval_lower_mask;
 __m256i feature_to_coord_simd_mul[N_SIMD_EVAL_FEATURES][MAX_PATTERN_CELLS - 1];
 __m256i feature_to_coord_simd_cell[N_SIMD_EVAL_FEATURES][MAX_PATTERN_CELLS][2];
-__m256i coord_to_feature_simd_1[HW2][N_SIMD_EVAL_FEATURES];
-__m256i coord_to_feature_simd_2[HW2][N_SIMD_EVAL_FEATURES]; // coord_to_feature_simd_1 * 2
+__m256i coord_to_feature_simd[HW2][N_SIMD_EVAL_FEATURES];
 __m256i eval_move_unflipped_16bit[N_16BIT][N_SIMD_EVAL_FEATURE_GROUP][N_SIMD_EVAL_FEATURES];
 __m256i eval_simd_offsets_simple[N_SIMD_EVAL_FEATURES_SIMPLE]; // 16bit * 16 * N
 __m256i eval_simd_offsets_comp[N_SIMD_EVAL_FEATURES_COMP * 2]; // 32bit * 8 * N
@@ -340,13 +339,12 @@ inline bool init_evaluation(const char* file, bool show_log){
                 c2f[coord_to_feature[cell].features[i].feature] = coord_to_feature[cell].features[i].x;
             for (int i = 0; i < N_SIMD_EVAL_FEATURES; ++i){
                 int idx = i * 16;
-                coord_to_feature_simd_1[cell][i] = _mm256_set_epi16(
+                coord_to_feature_simd[cell][i] = _mm256_set_epi16(
                     c2f[idx], c2f[idx + 1], c2f[idx + 2], c2f[idx + 3], 
                     c2f[idx + 4], c2f[idx + 5], c2f[idx + 6], c2f[idx + 7], 
                     c2f[idx + 8], c2f[idx + 9], c2f[idx + 10], c2f[idx + 11], 
                     c2f[idx + 12], c2f[idx + 13], c2f[idx + 14], c2f[idx + 15]
                 );
-                coord_to_feature_simd_2[cell][i] = _mm256_slli_epi16(coord_to_feature_simd_1[cell][i], 1);
             }
         }
         for (int bits = 0; bits < N_16BIT; ++bits){ // 1: unflipped discs, 0: others
@@ -357,7 +355,7 @@ inline bool init_evaluation(const char* file, bool show_log){
                     if (1 & (bits >> cell)){
                         int global_cell = group * N_SIMD_EVAL_FEATURE_CELLS + cell;
                         for (int i = 0; i < coord_to_feature[global_cell].n_features; ++i)
-                            c2f[coord_to_feature[global_cell].features[i].feature] = coord_to_feature[global_cell].features[i].x;
+                            c2f[coord_to_feature[global_cell].features[i].feature] += coord_to_feature[global_cell].features[i].x;
                     }
                 }
                 for (int simd_feature_idx = 0; simd_feature_idx < N_SIMD_EVAL_FEATURES; ++simd_feature_idx){
@@ -574,7 +572,7 @@ inline void calc_eval_features(Board *board, Eval_search *eval){
     @param eval                 evaluation features
     @param flip                 flip information
 */
-inline void eval_move(Eval_search *eval, const Flip *flip, Board *board){
+inline void eval_move(Eval_search *eval, const Flip *flip, const Board *board){
     const uint16_t *flipped_group = (uint16_t*)&(flip->flip);
     const uint16_t *player_group = (uint16_t*)&(board->player);
     const uint16_t *opponent_group = (uint16_t*)&(board->opponent);
@@ -582,10 +580,10 @@ inline void eval_move(Eval_search *eval, const Flip *flip, Board *board){
     uint16_t unflipped_p;
     uint16_t unflipped_o;
     // put cell 2 -> 1
-    f0 = _mm256_sub_epi16(eval->features[eval->feature_idx].f256[0], coord_to_feature_simd_1[flip->pos][0]);
-    f1 = _mm256_sub_epi16(eval->features[eval->feature_idx].f256[1], coord_to_feature_simd_1[flip->pos][1]);
-    f2 = _mm256_sub_epi16(eval->features[eval->feature_idx].f256[2], coord_to_feature_simd_1[flip->pos][2]);
-    f3 = _mm256_sub_epi16(eval->features[eval->feature_idx].f256[3], coord_to_feature_simd_1[flip->pos][3]);
+    f0 = _mm256_sub_epi16(eval->features[eval->feature_idx].f256[0], coord_to_feature_simd[flip->pos][0]);
+    f1 = _mm256_sub_epi16(eval->features[eval->feature_idx].f256[1], coord_to_feature_simd[flip->pos][1]);
+    f2 = _mm256_sub_epi16(eval->features[eval->feature_idx].f256[2], coord_to_feature_simd[flip->pos][2]);
+    f3 = _mm256_sub_epi16(eval->features[eval->feature_idx].f256[3], coord_to_feature_simd[flip->pos][3]);
     for (int i = 0; i < N_SIMD_EVAL_FEATURE_GROUP; ++i){
         // player discs 0 -> 1
         unflipped_p = ~flipped_group[i] & player_group[i];
@@ -624,7 +622,7 @@ inline void eval_undo(Eval_search *eval){
 
     @param eval                 evaluation features
 */
-inline void eval_pass(Eval_search *eval, Board *board){
+inline void eval_pass(Eval_search *eval, const Board *board){
     const uint16_t *player_group = (uint16_t*)&(board->player);
     const uint16_t *opponent_group = (uint16_t*)&(board->opponent);
     __m256i f0, f1, f2, f3;
