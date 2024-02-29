@@ -31,8 +31,8 @@
 #if TUNE_MOVE_ORDERING_MID || TUNE_MOVE_ORDERING_END
     #define N_MOVE_ORDERING_PARAM 10
     int move_ordering_param_array[N_MOVE_ORDERING_PARAM] = {
-        32, 28, 256, 64, 
-        16, 8, 14, 2, 
+        37, 11, 289, 92, 
+        17, 19, 14, 11, 
         14, 4
     };
 
@@ -57,23 +57,20 @@
     #define MOVE_ORDERING_END_PARAM_END 9
 #else
     // midgame search
-    //#define W_CELL_WEIGHT 7
-    #define W_MOBILITY 32
-    #define W_POTENTIAL_MOBILITY 28
-    #define W_VALUE 256
-    #define W_VALUE_DEEP_ADDITIONAL 64
+    #define W_MOBILITY 37
+    #define W_POTENTIAL_MOBILITY 11
+    #define W_VALUE 289
+    #define W_VALUE_DEEP_ADDITIONAL 92
 
     // midgame null window search
-    #define W_NWS_MOBILITY 16
-    #define W_NWS_POTENTIAL_MOBILITY 8
+    #define W_NWS_MOBILITY 17
+    #define W_NWS_POTENTIAL_MOBILITY 19
     #define W_NWS_VALUE 14
-    #define W_NWS_VALUE_DEEP_ADDITIONAL 2
+    #define W_NWS_VALUE_DEEP_ADDITIONAL 11
 
     // endgame search
     #define W_END_NWS_MOBILITY 14
     #define W_END_NWS_PARITY 4
-    //#define W_END_NWS_POTENTIAL_MOBILITY 32
-    //#define W_END_NWS_VALUE 4
 #endif
 
 #define MOVE_ORDERING_VALUE_OFFSET_ALPHA 10
@@ -82,6 +79,9 @@
 #define MOVE_ORDERING_NWS_VALUE_OFFSET_BETA 3
 
 #define MOVE_ORDERING_MPC_LEVEL MPC_88_LEVEL
+
+int nega_alpha_eval1(Search *search, int alpha, int beta, bool skipped, const bool *searching);
+int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, uint64_t legal, bool is_end_search, const bool *searching);
 
 /*
     @brief Flip structure with more information
@@ -108,10 +108,6 @@ struct Flip_value{
     }
 };
 
-int nega_alpha_eval1(Search *search, int alpha, int beta, bool skipped, const bool *searching);
-int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, uint64_t legal, bool is_end_search, const bool *searching);
-
-
 /*
     @brief Get number of corner mobility
 
@@ -120,10 +116,16 @@ int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, uin
     @param legal                legal moves as a bitboard
     @return number of legal moves on corners
 */
-inline int get_corner_mobility(uint64_t legal){
-    int res = (int)((legal & 0b10000001ULL) + ((legal >> 56) & 0b10000001ULL));
-    return (res & 0b11) + (res >> 7);
-}
+#if USE_BUILTIN_POPCOUNT
+    inline int get_corner_n_moves(uint64_t legal){
+        return pop_count_ull(legal & 0x8100000000000081ULL);
+    }
+#else
+    inline int get_corner_n_moves(uint64_t legal){
+        int res = (int)((legal & 0b10000001ULL) + ((legal >> 56) & 0b10000001ULL));
+        return (res & 0b11) + (res >> 7);
+    }
+#endif
 
 /*
     @brief Get a weighted mobility
@@ -132,7 +134,7 @@ inline int get_corner_mobility(uint64_t legal){
     @return weighted mobility
 */
 inline int get_weighted_n_moves(uint64_t legal){
-    return pop_count_ull(legal) * 2 + get_corner_mobility(legal);
+    return pop_count_ull(legal) * 2 + get_corner_n_moves(legal);
 }
 
 /*
@@ -145,7 +147,7 @@ inline int get_weighted_n_moves(uint64_t legal){
     @return potential mobility
 */
 #ifdef CALC_SURROUND_FUNCTION
-    #define get_potential_mobility(a, b) calc_surround(a, b)
+    #define get_potential_mobility(discs, empties) calc_surround(discs, empties)
 #elif USE_SIMD
     inline int get_potential_mobility(uint64_t discs, uint64_t empties){
         __m256i pl = _mm256_set1_epi64x(discs);
@@ -247,49 +249,8 @@ inline void move_evaluate_nws(Search *search, Flip_value *flip_value, int alpha,
     eval_undo(search, &flip_value->flip);
 }
 
-
-
-
-#if USE_NEGA_ALPHA_END
-    /*
-        @brief Evaluate a move in endgame
-
-        @param search               search information
-        @param flip_value           flip with value
-        @return true if wipeout found else false
-    */
-    inline void move_evaluate_end(Search *search, Flip_value *flip_value){
-        flip_value->value = 0;
-        if (search->parity & cell_div4[flip_value->flip.pos])
-            flip_value->value += W_END_PARITY;
-        search->move(&flip_value->flip);
-            flip_value->n_legal = search->board.get_legal();
-            flip_value->value -= pop_count_ull(flip_value->n_legal) * W_END_MOBILITY;
-        search->undo(&flip_value->flip);
-    }
-#endif
-
 /*
-    @brief Evaluate a move in endgame
-
-    @param search               search information
-    @param flip_value           flip with value
-    @return true if wipeout found else false
-*/
-/*
-inline void move_evaluate_end_nws(Search *search, Flip_value *flip_value){
-    flip_value->value = 0;
-    if (search->parity & cell_div4[flip_value->flip.pos])
-        flip_value->value += W_END_PARITY;
-    search->move(&flip_value->flip);
-        flip_value->n_legal = search->board.get_legal();
-        flip_value->value -= pop_count_ull(flip_value->n_legal) * W_END_MOBILITY;
-    search->undo(&flip_value->flip);
-}
-*/
-
-/*
-    @brief Evaluate a move in endgame with eval
+    @brief Evaluate a move in endgame NWS
 
     @param search               search information
     @param flip_value           flip with value
@@ -304,10 +265,6 @@ inline void move_evaluate_end_nws(Search *search, Flip_value *flip_value){
         flip_value->value -= pop_count_ull(flip_value->n_legal) * W_END_NWS_MOBILITY;
     search->undo(&flip_value->flip);
 }
-
-
-
-
 
 /*
     @brief Set the best move to the first element
@@ -587,7 +544,7 @@ inline void move_list_evaluate_end_nws(Search *search, std::vector<Flip_value> &
 
             // simulated annealing
             constexpr double start_temp = 0.1; // percent
-            constexpr double end_temp = 0.001; // percent
+            constexpr double end_temp = 0.0001; // percent
             double temp = start_temp + (end_temp - start_temp) * (tim() - strt) / tl;
             double prob = exp((min_percentage - percentage) / temp);
             if (prob > myrandom()){
