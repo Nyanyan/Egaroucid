@@ -157,6 +157,8 @@ inline int get_weighted_n_moves(uint64_t legal){
     #define get_potential_mobility(discs, empties) calc_surround(discs, empties)
 #elif USE_SIMD
     inline int get_potential_mobility(uint64_t discs, uint64_t empties){
+        __m256i eval_surround_mask = _mm256_set_epi64x(0x7E7E7E7E7E7E7E7EULL, 0x00FFFFFFFFFFFF00ULL, 0x007E7E7E7E7E7E00ULL, 0x007E7E7E7E7E7E00ULL);
+        __m128i eval_surround_shift1879 = _mm_set_epi32(1, HW, HW_M1, HW_P1);
         __m256i pl = _mm256_set1_epi64x(discs);
         pl = _mm256_and_si256(pl, eval_surround_mask);
         pl = _mm256_or_si256(_mm256_sll_epi64(pl, eval_surround_shift1879), _mm256_srl_epi64(pl, eval_surround_shift1879));
