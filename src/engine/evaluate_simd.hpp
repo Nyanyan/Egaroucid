@@ -341,72 +341,69 @@ inline bool init_evaluation_calc(const char* file, bool show_log){
                 init_pattern_arr_rev(phase_idx, pattern_sizes[pattern_idx], pattern_starts[pattern_idx]);
         }
     }
-    int16_t f2c[16];
-    for (int i = 0; i < N_SIMD_EVAL_FEATURES; ++i){
-        for (int j = 0; j < MAX_PATTERN_CELLS - 1; ++j){
-            for (int k = 0; k < 16; ++k)
-                f2c[k] = (j < feature_to_coord[i * 16 + k].n_cells - 1) ? 3 : 1;
-            feature_to_coord_simd_mul[i][j] = _mm256_set_epi16(
-                f2c[0], f2c[1], f2c[2], f2c[3], 
-                f2c[4], f2c[5], f2c[6], f2c[7], 
-                f2c[8], f2c[9], f2c[10], f2c[11], 
-                f2c[12], f2c[13], f2c[14], f2c[15]
-            );
-        }
-    }
-    int32_t f2c32[8];
-    for (int i = 0; i < N_SIMD_EVAL_FEATURES; ++i){
-        for (int j = 0; j < MAX_PATTERN_CELLS; ++j){
-            for (int k = 0; k < 8; ++k)
-                f2c32[k] = feature_to_coord[i * 16 + k * 2 + 1].cells[j];
-            feature_to_coord_simd_cell[i][j][0] = _mm256_set_epi32(
-                f2c32[0], f2c32[1], f2c32[2], f2c32[3], 
-                f2c32[4], f2c32[5], f2c32[6], f2c32[7]
-            );
-            for (int k = 0; k < 8; ++k)
-                f2c32[k] = feature_to_coord[i * 16 + k * 2].cells[j];
-            feature_to_coord_simd_cell[i][j][1] = _mm256_set_epi32(
-                f2c32[0], f2c32[1], f2c32[2], f2c32[3], 
-                f2c32[4], f2c32[5], f2c32[6], f2c32[7]
-            );
-        }
-    }
-    int16_t c2f[CEIL_N_SYMMETRY_PATTERNS];
-    for (int cell = 0; cell < HW2; ++cell){ // 0 for h8, 63 for a1
-        for (int i = 0; i < CEIL_N_SYMMETRY_PATTERNS; ++i)
-            c2f[i] = 0;
-        for (int i = 0; i < coord_to_feature[cell].n_features; ++i)
-            c2f[coord_to_feature[cell].features[i].feature] = coord_to_feature[cell].features[i].x;
+    {
+        int16_t f2c[16];
         for (int i = 0; i < N_SIMD_EVAL_FEATURES; ++i){
-            int idx = i * 16;
-            coord_to_feature_simd_1[cell][i] = _mm256_set_epi16(
-                c2f[idx], c2f[idx + 1], c2f[idx + 2], c2f[idx + 3], 
-                c2f[idx + 4], c2f[idx + 5], c2f[idx + 6], c2f[idx + 7], 
-                c2f[idx + 8], c2f[idx + 9], c2f[idx + 10], c2f[idx + 11], 
-                c2f[idx + 12], c2f[idx + 13], c2f[idx + 14], c2f[idx + 15]
-            );
-            coord_to_feature_simd_2[cell][i] = _mm256_slli_epi16(coord_to_feature_simd_1[cell][i], 1);
+            for (int j = 0; j < MAX_PATTERN_CELLS - 1; ++j){
+                for (int k = 0; k < 16; ++k)
+                    f2c[k] = (j < feature_to_coord[i * 16 + k].n_cells - 1) ? 3 : 1;
+                feature_to_coord_simd_mul[i][j] = _mm256_set_epi16(
+                    f2c[0], f2c[1], f2c[2], f2c[3], 
+                    f2c[4], f2c[5], f2c[6], f2c[7], 
+                    f2c[8], f2c[9], f2c[10], f2c[11], 
+                    f2c[12], f2c[13], f2c[14], f2c[15]
+                );
+            }
         }
     }
-    for (int i = 0; i < 8; ++i){ // a1-h1, a2-h2, ...
-        for (int j = 0; j < CEIL_N_SYMMETRY_PATTERNS; ++j)
-            c2f[j] = 0;
-        int cell_start = HW2_M1 - i * 8; // 0 for h8, 63 for a1
-        for (int bits = 0; bits < N_8BIT; ++bits){
-            for (int cell_in_group = 0; cell_in_group < 8; ++cell_in_group){
-                if (1 & (bits >> cell_in_group)){
-                    for (int k = 0; k < coord_to_feature[cell_start - cell_in_group].n_features; ++k)
-                        c2f[coord_to_feature[cell_start - cell_in_group].features[k].feature] += coord_to_feature[cell_start - cell_in_group].features[k].x;
-                }
+    {
+        int32_t f2c32[8];
+        for (int i = 0; i < N_SIMD_EVAL_FEATURES; ++i){
+            for (int j = 0; j < MAX_PATTERN_CELLS; ++j){
+                for (int k = 0; k < 8; ++k)
+                    f2c32[k] = feature_to_coord[i * 16 + k * 2 + 1].cells[j];
+                feature_to_coord_simd_cell[i][j][0] = _mm256_set_epi32(
+                    f2c32[0], f2c32[1], f2c32[2], f2c32[3], 
+                    f2c32[4], f2c32[5], f2c32[6], f2c32[7]
+                );
+                for (int k = 0; k < 8; ++k)
+                    f2c32[k] = feature_to_coord[i * 16 + k * 2].cells[j];
+                feature_to_coord_simd_cell[i][j][1] = _mm256_set_epi32(
+                    f2c32[0], f2c32[1], f2c32[2], f2c32[3], 
+                    f2c32[4], f2c32[5], f2c32[6], f2c32[7]
+                );
             }
-            for (int simd_group = 0; simd_group < N_SIMD_EVAL_FEATURES; ++simd_group){
-                int idx = simd_group * 16;
-                coord_to_feature_simd_8bit_1[bits][i][simd_group] = _mm256_set_epi16(
+        }
+    }
+    {
+        int16_t c2f[CEIL_N_SYMMETRY_PATTERNS];
+        for (int cell = 0; cell < HW2; ++cell){ // 0 for h8, 63 for a1
+            for (int i = 0; i < CEIL_N_SYMMETRY_PATTERNS; ++i)
+                c2f[i] = 0;
+            for (int i = 0; i < coord_to_feature[cell].n_features; ++i)
+                c2f[coord_to_feature[cell].features[i].feature] = coord_to_feature[cell].features[i].x;
+            for (int i = 0; i < N_SIMD_EVAL_FEATURES; ++i){
+                int idx = i * 16;
+                coord_to_feature_simd_1[cell][i] = _mm256_set_epi16(
                     c2f[idx], c2f[idx + 1], c2f[idx + 2], c2f[idx + 3], 
                     c2f[idx + 4], c2f[idx + 5], c2f[idx + 6], c2f[idx + 7], 
                     c2f[idx + 8], c2f[idx + 9], c2f[idx + 10], c2f[idx + 11], 
                     c2f[idx + 12], c2f[idx + 13], c2f[idx + 14], c2f[idx + 15]
                 );
+                coord_to_feature_simd_2[cell][i] = _mm256_slli_epi16(coord_to_feature_simd_1[cell][i], 1);
+            }
+        }
+        for (int bits = 0; bits < N_8BIT; ++bits){ // 00000000 00000001 00000010 00000011 ...
+            for (int group = 0; group < 8; ++group){ // a1-h1, a2-h2, ..., a8-h8
+                for (int simd_feature_idx = 0; simd_feature_idx < N_SIMD_EVAL_FEATURES; ++simd_feature_idx){
+                    coord_to_feature_simd_8bit_1[bits][group][simd_feature_idx] = _mm256_set1_epi16(0);
+                    for (int cell = 0; cell < 8; ++cell){
+                        if (1 & (bits >> cell)){
+                            int global_cell = group * 8 + cell;
+                            coord_to_feature_simd_8bit_1[bits][group][simd_feature_idx] = _mm256_adds_epu16(coord_to_feature_simd_8bit_1[bits][group][simd_feature_idx], coord_to_feature_simd_1[global_cell][simd_feature_idx]);
+                        }
+                    }
+                }
             }
         }
     }
@@ -624,7 +621,7 @@ inline void eval_move(Search *search, const Flip *flip){
     f3 = search->eval_features[search->eval_feature_idx].f256[3];
     //uint_fast8_t cell;
     //uint64_t flipped;
-    const uint8_t *flipped_8bit = (uint8_t*)&(flip->flip); // a1-h1, a2-h2, ...
+    const uint8_t *flipped_8bit = (uint8_t*)&(flip->flip); // a1-h1, a2-h2, ..., a8-h8
     if (search->eval_feature_reversed){
         f0 = _mm256_subs_epu16(f0, coord_to_feature_simd_1[flip->pos][0]);
         f1 = _mm256_subs_epu16(f1, coord_to_feature_simd_1[flip->pos][1]);
