@@ -89,7 +89,7 @@ constexpr Feature_to_coord feature_to_coord[N_SYMMETRY_PATTERNS] = {
     {10, {COORD_A8, COORD_B7, COORD_C6, COORD_D5, COORD_B8, COORD_C7, COORD_D6, COORD_A7, COORD_B6, COORD_C5}}, // 44
     {10, {COORD_H8, COORD_G7, COORD_F6, COORD_E5, COORD_G8, COORD_F7, COORD_E6, COORD_H7, COORD_G6, COORD_F5}}, // 45
 
-    // 12 edge + y
+    // 12 edge + 2y
     {10, {COORD_C2, COORD_A1, COORD_B1, COORD_C1, COORD_D1, COORD_E1, COORD_F1, COORD_G1, COORD_H1, COORD_F2}}, // 46
     {10, {COORD_B3, COORD_A1, COORD_A2, COORD_A3, COORD_A4, COORD_A5, COORD_A6, COORD_A7, COORD_A8, COORD_B6}}, // 47
     {10, {COORD_C7, COORD_A8, COORD_B8, COORD_C8, COORD_D8, COORD_E8, COORD_F8, COORD_G8, COORD_H8, COORD_F7}}, // 48
@@ -185,22 +185,22 @@ constexpr Coord_to_feature coord_to_feature[HW2] = {
     @brief feature to pattern
 */
 constexpr int feature_to_pattern[N_SYMMETRY_PATTERNS] = {
-    0, 0, 0, 0, 
-    1, 1, 1, 1, 
-    2, 2, 2, 2, 
-    3, 3, 3, 3, 
-    4, 4, 4, 4, 
-    5, 5, 5, 5, 
-    6, 6, 
-    7, 7, 7, 7, 
-    8, 8, 8, 8, 
-    9, 9, 9, 9, 
-    10, 10, 10, 10, 
-    11, 11, 11, 11, 
-    12, 12, 12, 12, 
-    13, 13, 13, 13, 
-    14, 14, 14, 14, 
-    15, 15, 15, 15
+    0, 0, 0, 0,     // hv2
+    1, 1, 1, 1,     // hv3
+    2, 2, 2, 2,     // hv4
+    3, 3, 3, 3,     // d5
+    4, 4, 4, 4,     // d6
+    5, 5, 5, 5,     // d7
+    6, 6,           // d8
+    7, 7, 7, 7,     // corner9
+    8, 8, 8, 8,     // edge+2X
+    9, 9, 9, 9,     // triangle
+    10, 10, 10, 10, // corner+block
+    11, 11, 11, 11, // cross
+    12, 12, 12, 12, // edge+2Y
+    13, 13, 13, 13, // narrow triangle
+    14, 14, 14, 14, // fish
+    15, 15, 15, 15  // kite
 };
 
 /*
@@ -379,13 +379,6 @@ inline int mid_evaluate(Board *board){
     Search search;
     search.init_board(board);
     calc_features(&search);
-    /*
-    uint64_t player_mobility, opponent_mobility;
-    player_mobility = calc_legal(search.board.player, search.board.opponent);
-    opponent_mobility = calc_legal(search.board.opponent, search.board.player);
-    if ((player_mobility | opponent_mobility) == 0ULL)
-        return end_evaluate(&search.board);
-    */
     int phase_idx, sur0, sur1, num0;
     uint64_t empties;
     phase_idx = search.phase();
@@ -412,13 +405,6 @@ inline int mid_evaluate(Board *board){
     @return evaluation value
 */
 inline int mid_evaluate_diff(Search *search){
-    /*
-    uint64_t player_mobility, opponent_mobility;
-    player_mobility = calc_legal(search->board.player, search->board.opponent);
-    opponent_mobility = calc_legal(search->board.opponent, search->board.player);
-    if ((player_mobility | opponent_mobility) == 0ULL)
-        return end_evaluate(&search->board);
-    */
     int phase_idx, sur0, sur1, num0;
     uint64_t empties;
     phase_idx = search->phase();

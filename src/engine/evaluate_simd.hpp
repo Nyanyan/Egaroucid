@@ -504,13 +504,6 @@ inline int mid_evaluate(Board *board){
     Search search;
     search.init_board(board);
     calc_features(&search);
-    /*
-    uint64_t player_mobility, opponent_mobility;
-    player_mobility = calc_legal(search.board.player, search.board.opponent);
-    opponent_mobility = calc_legal(search.board.opponent, search.board.player);
-    if ((player_mobility | opponent_mobility) == 0ULL)
-        return end_evaluate(&search.board);
-    */
     int phase_idx, sur0, sur1, num0;
     uint64_t empties;
     phase_idx = search.phase();
@@ -537,13 +530,6 @@ inline int mid_evaluate(Board *board){
     @return evaluation value
 */
 inline int mid_evaluate_diff(Search *search){
-    /*
-    uint64_t player_mobility, opponent_mobility;
-    player_mobility = calc_legal(search->board.player, search->board.opponent);
-    opponent_mobility = calc_legal(search->board.opponent, search->board.player);
-    if ((player_mobility | opponent_mobility) == 0ULL)
-        return end_evaluate(&search->board);
-    */
     int phase_idx, sur0, sur1, num0;
     uint64_t empties;
     phase_idx = search->phase();
