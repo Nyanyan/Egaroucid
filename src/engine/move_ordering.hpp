@@ -11,6 +11,13 @@
 #pragma once
 #include <iostream>
 #include <vector>
+#if USE_SIMD
+    #ifdef _MSC_VER
+        #include <intrin.h>
+    #else
+        #include <x86intrin.h>
+    #endif
+#endif
 #include "common.hpp"
 #include "board.hpp"
 #include "search.hpp"
