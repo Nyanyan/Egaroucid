@@ -449,7 +449,7 @@ inline __m256i calc_idx8_comp(const __m128i feature, const int i){
 }
 
 inline __m256i gather_eval(const int *start_addr, const __m256i idx8){
-    #if SIMD_EVAL_MAX_VALUE * 16 < 65535  // HACK: if (SIMD_EVAL_MAX_VALUE * 2) * 8 < 2 ^ 16, AND is unnecessary
+    #if SIMD_EVAL_MAX_VALUE * 2 * 8 < 65535  // HACK: if (SIMD_EVAL_MAX_VALUE * 2) * 8 < 2 ^ 16, AND is unnecessary
         return _mm256_i32gather_epi32(start_addr, idx8, 2); // stride is 2 byte
     #else
         return _mm256_and_si256(_mm256_i32gather_epi32(start_addr, idx8, 2), eval_lower_mask);
@@ -466,7 +466,7 @@ inline int calc_pattern(const int phase_idx, Eval_features *features){
     res256 = _mm256_add_epi32(res256, gather_eval(start_addr, calc_idx8_comp(features->f128[5], 1)));       // edge+2X triangle
     res256 = _mm256_add_epi32(res256, gather_eval(start_addr, calc_idx8_comp(features->f128[6], 2)));       // fish kite
     res256 = _mm256_add_epi32(res256, gather_eval(start_addr, calc_idx8_comp(features->f128[7], 3)));       // edge+2Y narrow_triangle
-    #if SIMD_EVAL_MAX_VALUE * 16 < 65535
+    #if SIMD_EVAL_MAX_VALUE * 2 * 8 < 65535
         res256 = _mm256_and_si256(res256, eval_lower_mask);
     #endif
     __m128i res128 = _mm_add_epi32(_mm256_castsi256_si128(res256), _mm256_extracti128_si256(res256, 1));
@@ -478,7 +478,7 @@ inline int calc_pattern_light(const int phase_idx, Eval_features *features){
     const int *start_addr = (int*)pattern_arr[phase_idx];
     __m256i res256 =                  gather_eval(start_addr, calc_idx8_comp(features->f128[4], 0));        // corner+block cross
     res256 = _mm256_add_epi32(res256, gather_eval(start_addr, calc_idx8_comp(features->f128[5], 1)));       // edge+2X triangle
-    #if SIMD_EVAL_MAX_VALUE * 16 < 65535
+    #if SIMD_EVAL_MAX_VALUE * 2 * 8 < 65535
         res256 = _mm256_and_si256(res256, eval_lower_mask);
     #endif
     __m128i res128 = _mm_add_epi32(_mm256_castsi256_si128(res256), _mm256_extracti128_si256(res256, 1));
@@ -553,12 +553,14 @@ inline int mid_evaluate_move_ordering(Search *search){
     int phase_idx;
     phase_idx = search->phase();
     int res = calc_pattern_light(phase_idx, &search->eval.features[search->eval.feature_idx]);
+    /*
     res += res >= 0 ? STEP_2 : -STEP_2;
     res /= STEP;
     if (res > SCORE_MAX)
         return SCORE_MAX;
     if (res < -SCORE_MAX)
         return -SCORE_MAX;
+    */
     return res;
 }
 
