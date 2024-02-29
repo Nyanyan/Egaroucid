@@ -144,9 +144,16 @@ inline int get_weighted_n_moves(uint64_t legal){
     @param empties              a bitboard representing empty squares
     @return potential mobility
 */
-#if USE_SIMD
+#ifdef CALC_SURROUND_FUNCTION
+    #define get_potential_mobility(a, b) calc_surround(a, b)
+#elif USE_SIMD
     inline int get_potential_mobility(uint64_t opponent, uint64_t empties){
-        return calc_surround(opponent, empties);
+        __m256i pl = _mm256_set1_epi64x(opponent);
+        pl = _mm256_and_si256(pl, eval_surround_mask);
+        pl = _mm256_or_si256(_mm256_sll_epi64(pl, eval_surround_shift1879), _mm256_srl_epi64(pl, eval_surround_shift1879));
+        __m128i res = _mm_or_si128(_mm256_castsi256_si128(pl), _mm256_extracti128_si256(pl, 1));
+        res = _mm_or_si128(res, _mm_shuffle_epi32(res, 0x4e));
+        return pop_count_ull(_mm_cvtsi128_si64(res));
     }
 #else
     inline int get_potential_mobility(uint64_t opponent, uint64_t empties){

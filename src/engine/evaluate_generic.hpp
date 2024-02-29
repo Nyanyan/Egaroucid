@@ -523,6 +523,7 @@ inline int calc_surround(uint64_t discs, uint64_t empties){
         (hvmask << HW_P1) | (hvmask >> HW_P1);
     return pop_count_ull(empties & res);
 }
+#define CALC_SURROUND_FUNCTION
 
 /*
     @brief pattern evaluation

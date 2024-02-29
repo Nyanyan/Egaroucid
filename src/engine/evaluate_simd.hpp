@@ -639,6 +639,7 @@ inline int calc_surround(const uint64_t discs, const uint64_t empties){
     res = _mm_or_si128(res, _mm_shuffle_epi32(res, 0x4e));
     return pop_count_ull(_mm_cvtsi128_si64(res));
 }
+#define CALC_SURROUND_FUNCTION
 
 /*
     @brief pattern evaluation

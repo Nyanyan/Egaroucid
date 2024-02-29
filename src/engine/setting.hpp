@@ -160,7 +160,7 @@
 #define USE_END_SC true
 #define USE_LAST4_SC false
 
-// enhanced enhanced transposition cutoff
+// enhanced transposition cutoff
 #define USE_MID_ETC true
 
 // Multi-ProbCut
