@@ -458,14 +458,26 @@ inline __m256i gather_eval(const int *start_addr, const __m256i idx8){
 
 inline int calc_pattern(const int phase_idx, Eval_features *features){
     const int *start_addr = (int*)pattern_arr[phase_idx];
-    __m256i res256 =                  gather_eval(start_addr, _mm256_cvtepu16_epi32(features->f128[0]));
-    res256 = _mm256_add_epi32(res256, gather_eval(start_addr, _mm256_cvtepu16_epi32(features->f128[1])));
-    res256 = _mm256_add_epi32(res256, gather_eval(start_addr, _mm256_cvtepu16_epi32(features->f128[2])));
-    res256 = _mm256_add_epi32(res256, gather_eval(start_addr, _mm256_cvtepu16_epi32(features->f128[3])));
-    res256 = _mm256_add_epi32(res256, gather_eval(start_addr, calc_idx8_comp(features->f128[4], 0)));
-    res256 = _mm256_add_epi32(res256, gather_eval(start_addr, calc_idx8_comp(features->f128[5], 1)));
-    res256 = _mm256_add_epi32(res256, gather_eval(start_addr, calc_idx8_comp(features->f128[6], 2)));
-    res256 = _mm256_add_epi32(res256, gather_eval(start_addr, calc_idx8_comp(features->f128[7], 3)));
+    __m256i res256 =                  gather_eval(start_addr, _mm256_cvtepu16_epi32(features->f128[0]));    // hv4 d5
+    res256 = _mm256_add_epi32(res256, gather_eval(start_addr, _mm256_cvtepu16_epi32(features->f128[1])));   // hv2 hv3
+    res256 = _mm256_add_epi32(res256, gather_eval(start_addr, _mm256_cvtepu16_epi32(features->f128[2])));   // d8 corner9
+    res256 = _mm256_add_epi32(res256, gather_eval(start_addr, _mm256_cvtepu16_epi32(features->f128[3])));   // d6 d7
+    res256 = _mm256_add_epi32(res256, gather_eval(start_addr, calc_idx8_comp(features->f128[4], 0)));       // corner+block cross
+    res256 = _mm256_add_epi32(res256, gather_eval(start_addr, calc_idx8_comp(features->f128[5], 1)));       // edge+2X triangle
+    res256 = _mm256_add_epi32(res256, gather_eval(start_addr, calc_idx8_comp(features->f128[6], 2)));       // fish kite
+    res256 = _mm256_add_epi32(res256, gather_eval(start_addr, calc_idx8_comp(features->f128[7], 3)));       // edge+2Y narrow_triangle
+    #if SIMD_EVAL_MAX_VALUE * 16 < 65535
+        res256 = _mm256_and_si256(res256, eval_lower_mask);
+    #endif
+    __m128i res128 = _mm_add_epi32(_mm256_castsi256_si128(res256), _mm256_extracti128_si256(res256, 1));
+    res128 = _mm_hadd_epi32(res128, res128);
+    return _mm_cvtsi128_si32(res128) + _mm_extract_epi32(res128, 1) - SIMD_EVAL_MAX_VALUE * N_SYMMETRY_PATTERNS;
+}
+
+inline int calc_pattern_light(const int phase_idx, Eval_features *features){
+    const int *start_addr = (int*)pattern_arr[phase_idx];
+    __m256i res256 =                  gather_eval(start_addr, calc_idx8_comp(features->f128[4], 0));        // corner+block cross
+    res256 = _mm256_add_epi32(res256, gather_eval(start_addr, calc_idx8_comp(features->f128[5], 1)));       // edge+2X triangle
     #if SIMD_EVAL_MAX_VALUE * 16 < 65535
         res256 = _mm256_and_si256(res256, eval_lower_mask);
     #endif
@@ -522,6 +534,25 @@ inline int mid_evaluate_diff(Search *search){
     int res = calc_pattern(phase_idx, &search->eval.features[search->eval.feature_idx]) + 
         eval_num_arr[phase_idx][num0] + 
         eval_sur0_sur1_arr[phase_idx][sur0][sur1];
+    res += res >= 0 ? STEP_2 : -STEP_2;
+    res /= STEP;
+    if (res > SCORE_MAX)
+        return SCORE_MAX;
+    if (res < -SCORE_MAX)
+        return -SCORE_MAX;
+    return res;
+}
+
+/*
+    @brief midgame evaluation function
+
+    @param search               search information
+    @return evaluation value
+*/
+inline int mid_evaluate_move_ordering(Search *search){
+    int phase_idx;
+    phase_idx = search->phase();
+    int res = calc_pattern_light(phase_idx, &search->eval.features[search->eval.feature_idx]);
     res += res >= 0 ? STEP_2 : -STEP_2;
     res /= STEP;
     if (res > SCORE_MAX)

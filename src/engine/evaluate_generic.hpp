@@ -377,7 +377,7 @@ inline void calc_eval_features(Board *board, Eval_search *eval);
 inline int mid_evaluate(Board *board){
     Search search;
     search.init_board(board);
-    calc_eval_features(&search);
+    calc_eval_features(board, &search.eval);
     int phase_idx, sur0, sur1, num0;
     uint64_t empties;
     phase_idx = search.phase();
