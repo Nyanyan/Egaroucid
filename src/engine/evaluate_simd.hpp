@@ -541,7 +541,7 @@ inline int mid_evaluate(Board *board){
     sur0 = calc_surround(search.board.player, empties);
     sur1 = calc_surround(search.board.opponent, empties);
     num0 = pop_count_ull(search.board.player);
-    int res = calc_pattern_diff(phase_idx, search.eval_feature_reversed, &search.eval_features[search.eval_feature_idx]) + 
+    int res = calc_pattern_diff(phase_idx, search.eval.reversed, &search.eval.features[search.eval.feature_idx]) + 
         eval_num_arr[phase_idx][num0] + 
         eval_sur0_sur1_arr[phase_idx][sur0][sur1];
     res += res >= 0 ? STEP_2 : -STEP_2;
@@ -567,7 +567,7 @@ inline int mid_evaluate_diff(Search *search){
     sur0 = calc_surround(search->board.player, empties);
     sur1 = calc_surround(search->board.opponent, empties);
     num0 = pop_count_ull(search->board.player);
-    int res = calc_pattern_diff(phase_idx, search->eval_feature_reversed, &search->eval_features[search->eval_feature_idx]) + 
+    int res = calc_pattern_diff(phase_idx, search->eval.reversed, &search->eval.features[search->eval.feature_idx]) + 
         eval_num_arr[phase_idx][num0] + 
         eval_sur0_sur1_arr[phase_idx][sur0][sur1];
     res += res >= 0 ? STEP_2 : -STEP_2;
@@ -599,14 +599,14 @@ inline void calc_features(Search *search){
     int b_arr_int[HW2 + 1];
     search->board.translate_to_arr_player_rev(b_arr_int);
     b_arr_int[COORD_NO] = 0;
-    calc_feature_vector(search->eval_features[0].f256[0], b_arr_int, 0, 7);
-    calc_feature_vector(search->eval_features[0].f256[1], b_arr_int, 1, 8);
-    calc_feature_vector(search->eval_features[0].f256[2], b_arr_int, 2, 9);
-    calc_feature_vector(search->eval_features[0].f256[3], b_arr_int, 3, 9);
-    search->eval_features[0].f256[0] = _mm256_adds_epu16(search->eval_features[0].f256[0], eval_simd_offsets_simple[0]);
-    search->eval_features[0].f256[1] = _mm256_adds_epu16(search->eval_features[0].f256[1], eval_simd_offsets_simple[1]);
-    search->eval_feature_reversed = false;
-    search->eval_feature_idx = 0;
+    calc_feature_vector(search->eval.features[0].f256[0], b_arr_int, 0, 7);
+    calc_feature_vector(search->eval.features[0].f256[1], b_arr_int, 1, 8);
+    calc_feature_vector(search->eval.features[0].f256[2], b_arr_int, 2, 9);
+    calc_feature_vector(search->eval.features[0].f256[3], b_arr_int, 3, 9);
+    search->eval.features[0].f256[0] = _mm256_adds_epu16(search->eval.features[0].f256[0], eval_simd_offsets_simple[0]);
+    search->eval.features[0].f256[1] = _mm256_adds_epu16(search->eval.features[0].f256[1], eval_simd_offsets_simple[1]);
+    search->eval.reversed = false;
+    search->eval.feature_idx = 0;
 }
 
 /*
@@ -615,16 +615,16 @@ inline void calc_features(Search *search){
     @param search               search information
     @param flip                 flip information
 */
-inline void eval_move(Search *search, const Flip *flip){
+inline void eval_move(Eval_search *eval, const Flip *flip){
     __m256i f0, f1, f2, f3;
-    f0 = search->eval_features[search->eval_feature_idx].f256[0];
-    f1 = search->eval_features[search->eval_feature_idx].f256[1];
-    f2 = search->eval_features[search->eval_feature_idx].f256[2];
-    f3 = search->eval_features[search->eval_feature_idx].f256[3];
+    f0 = eval->features[eval->feature_idx].f256[0];
+    f1 = eval->features[eval->feature_idx].f256[1];
+    f2 = eval->features[eval->feature_idx].f256[2];
+    f3 = eval->features[eval->feature_idx].f256[3];
     //uint_fast8_t cell;
     //uint64_t flipped;
     const uint16_t *flipped_group = (uint16_t*)&(flip->flip); // a1-h1, a2-h2, ..., a8-h8
-    if (search->eval_feature_reversed){
+    if (eval->reversed){
         f0 = _mm256_subs_epu16(f0, coord_to_feature_simd_1[flip->pos][0]);
         f1 = _mm256_subs_epu16(f1, coord_to_feature_simd_1[flip->pos][1]);
         f2 = _mm256_subs_epu16(f2, coord_to_feature_simd_1[flip->pos][2]);
@@ -665,12 +665,12 @@ inline void eval_move(Search *search, const Flip *flip){
         }
         */
     }
-    ++search->eval_feature_idx;
-    search->eval_features[search->eval_feature_idx].f256[0] = f0;
-    search->eval_features[search->eval_feature_idx].f256[1] = f1;
-    search->eval_features[search->eval_feature_idx].f256[2] = f2;
-    search->eval_features[search->eval_feature_idx].f256[3] = f3;
-    search->eval_feature_reversed ^= 1;
+    ++eval->feature_idx;
+    eval->features[eval->feature_idx].f256[0] = f0;
+    eval->features[eval->feature_idx].f256[1] = f1;
+    eval->features[eval->feature_idx].f256[2] = f2;
+    eval->features[eval->feature_idx].f256[3] = f3;
+    eval->reversed ^= 1;
 }
 
 /*
@@ -679,7 +679,7 @@ inline void eval_move(Search *search, const Flip *flip){
     @param search               search information
     @param flip                 flip information
 */
-inline void eval_undo(Search *search, const Flip *flip){
-    search->eval_feature_reversed ^= 1;
-    --search->eval_feature_idx;
+inline void eval_undo(Eval_search *eval, const Flip *flip){
+    eval->reversed ^= 1;
+    --eval->feature_idx;
 }

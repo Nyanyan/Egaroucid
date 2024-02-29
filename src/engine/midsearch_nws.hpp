@@ -54,23 +54,19 @@ inline int nega_alpha_eval1_nws(Search *search, int alpha, bool skipped, const b
     if (legal == 0ULL){
         if (skipped)
             return end_evaluate(&search->board);
-        search->eval_feature_reversed ^= 1;
-        search->board.pass();
+        search->pass();
             v = -nega_alpha_eval1_nws(search, -alpha - 1, true, searching);
-        search->board.pass();
-        search->eval_feature_reversed ^= 1;
+        search->pass();
         return v;
     }
     int g;
     Flip flip;
     for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)){
         calc_flip(&flip, &search->board, cell);
-        eval_move(search, &flip);
         search->move(&flip);
             ++search->n_nodes;
             g = -mid_evaluate_diff(search);
         search->undo(&flip);
-        eval_undo(search, &flip);
         ++search->n_nodes;
         if (v < g){
             if (alpha < g){
@@ -122,11 +118,9 @@ int nega_alpha_ordering_nws(Search *search, int alpha, int depth, bool skipped, 
     if (legal == 0ULL){
         if (skipped)
             return end_evaluate(&search->board);
-        search->eval_feature_reversed ^= 1;
-        search->board.pass();
+        search->pass();
             v = -nega_alpha_ordering_nws(search, -alpha - 1, depth, true, LEGAL_UNDEFINED, is_end_search, searching);
-        search->board.pass();
-        search->eval_feature_reversed ^= 1;
+        search->pass();
         return v;
     }
     uint32_t hash_code = search->board.hash();
@@ -184,7 +178,6 @@ int nega_alpha_ordering_nws(Search *search, int alpha, int depth, bool skipped, 
                 if (move_list[move_idx].flip.flip == 0ULL)
                     break;
             #endif
-            eval_move(search, &move_list[move_idx].flip);
             search->move(&move_list[move_idx].flip);
                 if (ybwc_split_nws(search, -alpha - 1, depth - 1, move_list[move_idx].n_legal, is_end_search, &n_searching, move_list[move_idx].flip.pos, move_idx, canput - etc_done_idx, running_count, parallel_tasks)){
                     ++running_count;
@@ -203,7 +196,6 @@ int nega_alpha_ordering_nws(Search *search, int alpha, int depth, bool skipped, 
                     }
                 }
             search->undo(&move_list[move_idx].flip);
-            eval_undo(search, &move_list[move_idx].flip);
         }
         if (running_count){
             if (!n_searching || !(*searching))
@@ -218,11 +210,9 @@ int nega_alpha_ordering_nws(Search *search, int alpha, int depth, bool skipped, 
                 if (move_list[move_idx].flip.flip == 0ULL)
                     break;
             #endif
-            eval_move(search, &move_list[move_idx].flip);
             search->move(&move_list[move_idx].flip);
                 g = -nega_alpha_ordering_nws(search, -alpha - 1, depth - 1, false, move_list[move_idx].n_legal, is_end_search, searching);
             search->undo(&move_list[move_idx].flip);
-            eval_undo(search, &move_list[move_idx].flip);
             if (v < g){
                 v = g;
                 best_move = move_list[move_idx].flip.pos;

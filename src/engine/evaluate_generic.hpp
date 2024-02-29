@@ -238,9 +238,8 @@ inline int swap_player_idx(int i, int pattern_size){
     @param siz                  size of the pattern
 */
 void init_pattern_arr_rev(int phase_idx, int pattern_idx, int siz){
-    int ri;
     for (int i = 0; i < (int)pow3[siz]; ++i){
-        ri = swap_player_idx(i, siz);
+        int ri = swap_player_idx(i, siz);
         pattern_arr[1][phase_idx][pattern_idx][ri] = pattern_arr[0][phase_idx][pattern_idx][i];
     }
 }
@@ -360,10 +359,10 @@ inline int calc_surround(uint64_t discs, uint64_t empties){
     @param search               search information
     @return pattern evaluation value
 */
-inline int calc_pattern_diff(const int phase_idx, Search *search){
+inline int calc_pattern_diff(const int phase_idx, Eval_search *eval){
     int res = 0;
     for (int i = 0; i < N_SYMMETRY_PATTERNS; ++i)
-        res += pattern_arr[search->eval_feature_reversed][phase_idx][feature_to_pattern[i]][search->eval_features[i]];
+        res += pattern_arr[eval->reversed][phase_idx][feature_to_pattern[i]][eval->features[i]];
     return res;
 }
 
@@ -386,7 +385,7 @@ inline int mid_evaluate(Board *board){
     sur0 = calc_surround(search.board.player, empties);
     sur1 = calc_surround(search.board.opponent, empties);
     num0 = pop_count_ull(search.board.player);
-    int res = calc_pattern_diff(phase_idx, &search) + 
+    int res = calc_pattern_diff(phase_idx, &search.eval) + 
         eval_num_arr[phase_idx][num0] + 
         eval_sur0_sur1_arr[phase_idx][sur0][sur1];
     res += res >= 0 ? STEP_2 : -STEP_2;
@@ -412,7 +411,7 @@ inline int mid_evaluate_diff(Search *search){
     sur0 = calc_surround(search->board.player, empties);
     sur1 = calc_surround(search->board.opponent, empties);
     num0 = pop_count_ull(search->board.player);
-    int res = calc_pattern_diff(phase_idx, search) + 
+    int res = calc_pattern_diff(phase_idx, &search->eval) + 
         eval_num_arr[phase_idx][num0] + 
         eval_sur0_sur1_arr[phase_idx][sur0][sur1];
     res += res >= 0 ? STEP_2 : -STEP_2;
@@ -437,64 +436,52 @@ inline void calc_features(Search *search){
     uint_fast8_t b_arr[HW2];
     search->board.translate_to_arr_player(b_arr);
     for (int i = 0; i < N_SYMMETRY_PATTERNS; ++i)
-        search->eval_features[i] = pick_pattern_idx(b_arr, &feature_to_coord[i]);
-    search->eval_feature_reversed = 0;
+        search->eval.features[i] = pick_pattern_idx(b_arr, &feature_to_coord[i]);
+    search->eval.reversed = 0;
 }
 
-inline bool check_features(Search *search){
-    uint_fast8_t b_arr[HW2];
-    search->board.translate_to_arr_player(b_arr);
-    for (int i = 0; i < N_SYMMETRY_PATTERNS; ++i){
-        if (search->eval_features[i] != pick_pattern_idx(b_arr, &feature_to_coord[i])){
-            std::cerr << i << " " << search->eval_features[i] << " " << pick_pattern_idx(b_arr, &feature_to_coord[i]) << std::endl;
-            return true;
-        }
-    }
-    return false;
-}
-
-inline void eval_move(Search *search, const Flip *flip){
+inline void eval_move(Eval_search *eval, const Flip *flip){
     uint_fast8_t i, cell;
     uint64_t f;
-    if (search->eval_feature_reversed){
+    if (eval->reversed){
         for (i = 0; i < MAX_CELL_PATTERNS && coord_to_feature[flip->pos].features[i].x; ++i)
-            search->eval_features[coord_to_feature[flip->pos].features[i].feature] -= coord_to_feature[flip->pos].features[i].x;
+            eval->features[coord_to_feature[flip->pos].features[i].feature] -= coord_to_feature[flip->pos].features[i].x;
         f = flip->flip;
         for (cell = first_bit(&f); f; cell = next_bit(&f)){
             for (i = 0; i < MAX_CELL_PATTERNS && coord_to_feature[cell].features[i].x; ++i)
-                search->eval_features[coord_to_feature[cell].features[i].feature] += coord_to_feature[cell].features[i].x;
+                eval->features[coord_to_feature[cell].features[i].feature] += coord_to_feature[cell].features[i].x;
         }
     } else{
         for (i = 0; i < MAX_CELL_PATTERNS && coord_to_feature[flip->pos].features[i].x; ++i)
-            search->eval_features[coord_to_feature[flip->pos].features[i].feature] -= 2 * coord_to_feature[flip->pos].features[i].x;
+            eval->features[coord_to_feature[flip->pos].features[i].feature] -= 2 * coord_to_feature[flip->pos].features[i].x;
         f = flip->flip;
         for (cell = first_bit(&f); f; cell = next_bit(&f)){
             for (i = 0; i < MAX_CELL_PATTERNS && coord_to_feature[cell].features[i].x; ++i)
-                search->eval_features[coord_to_feature[cell].features[i].feature] -= coord_to_feature[cell].features[i].x;
+                eval->features[coord_to_feature[cell].features[i].feature] -= coord_to_feature[cell].features[i].x;
         }
     }
-    search->eval_feature_reversed ^= 1;
+    eval->reversed ^= 1;
 }
 
-inline void eval_undo(Search *search, const Flip *flip){
-    search->eval_feature_reversed ^= 1;
+inline void eval_undo(Eval_search *eval, const Flip *flip){
+    eval->reversed ^= 1;
     uint_fast8_t i, cell;
     uint64_t f;
-    if (search->eval_feature_reversed){
+    if (eval->reversed){
         for (i = 0; i < MAX_CELL_PATTERNS && coord_to_feature[flip->pos].features[i].x; ++i)
-            search->eval_features[coord_to_feature[flip->pos].features[i].feature] += coord_to_feature[flip->pos].features[i].x;
+            eval->features[coord_to_feature[flip->pos].features[i].feature] += coord_to_feature[flip->pos].features[i].x;
         f = flip->flip;
         for (cell = first_bit(&f); f; cell = next_bit(&f)){
             for (i = 0; i < MAX_CELL_PATTERNS && coord_to_feature[cell].features[i].x; ++i)
-                search->eval_features[coord_to_feature[cell].features[i].feature] -= coord_to_feature[cell].features[i].x;
+                eval->features[coord_to_feature[cell].features[i].feature] -= coord_to_feature[cell].features[i].x;
         }
     } else{
         for (i = 0; i < MAX_CELL_PATTERNS && coord_to_feature[flip->pos].features[i].x; ++i)
-            search->eval_features[coord_to_feature[flip->pos].features[i].feature] += 2 * coord_to_feature[flip->pos].features[i].x;
+            eval->features[coord_to_feature[flip->pos].features[i].feature] += 2 * coord_to_feature[flip->pos].features[i].x;
         f = flip->flip;
         for (cell = first_bit(&f); f; cell = next_bit(&f)){
             for (i = 0; i < MAX_CELL_PATTERNS && coord_to_feature[cell].features[i].x; ++i)
-                search->eval_features[coord_to_feature[cell].features[i].feature] += coord_to_feature[cell].features[i].x;
+                eval->features[coord_to_feature[cell].features[i].feature] += coord_to_feature[cell].features[i].x;
         }
     }
 }

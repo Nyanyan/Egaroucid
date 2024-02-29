@@ -193,7 +193,6 @@ inline int get_weighted_n_moves(uint64_t legal){
 */
 inline void move_evaluate(Search *search, Flip_value *flip_value, int alpha, int beta, int depth, const bool *searching){
     flip_value->value = 0;
-    eval_move(search, &flip_value->flip);
     search->move(&flip_value->flip);
         flip_value->n_legal = search->board.get_legal();
         flip_value->value -= get_weighted_n_moves(flip_value->n_legal) * W_MOBILITY;
@@ -213,7 +212,6 @@ inline void move_evaluate(Search *search, Flip_value *flip_value, int alpha, int
                 break;
         }
     search->undo(&flip_value->flip);
-    eval_undo(search, &flip_value->flip);
 }
 
 /*
@@ -229,7 +227,6 @@ inline void move_evaluate(Search *search, Flip_value *flip_value, int alpha, int
 */
 inline void move_evaluate_nws(Search *search, Flip_value *flip_value, int alpha, int beta, int depth, const bool *searching){
     flip_value->value = 0;
-    eval_move(search, &flip_value->flip);
     search->move(&flip_value->flip);
         flip_value->n_legal = search->board.get_legal();
         flip_value->value -= get_weighted_n_moves(flip_value->n_legal) * W_NWS_MOBILITY;
@@ -255,7 +252,6 @@ inline void move_evaluate_nws(Search *search, Flip_value *flip_value, int alpha,
             flip_value->value -= nega_alpha_eval1(search, alpha, beta, false, searching) * (W_NWS_VALUE + W_NWS_VALUE_DEEP_ADDITIONAL);
         */
     search->undo(&flip_value->flip);
-    eval_undo(search, &flip_value->flip);
 }
 
 /*
@@ -269,10 +265,10 @@ inline void move_evaluate_end_nws(Search *search, Flip_value *flip_value){
     flip_value->value = 0;
     if (search->parity & cell_div4[flip_value->flip.pos])
         flip_value->value += W_END_NWS_PARITY;
-    search->move(&flip_value->flip);
+    search->move_noeval(&flip_value->flip);
         flip_value->n_legal = search->board.get_legal();
         flip_value->value -= pop_count_ull(flip_value->n_legal) * W_END_NWS_MOBILITY;
-    search->undo(&flip_value->flip);
+    search->undo_noeval(&flip_value->flip);
 }
 
 /*

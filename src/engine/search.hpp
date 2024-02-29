@@ -18,6 +18,7 @@
 #include "board.hpp"
 #include "thread_pool.hpp"
 #include "evaluate.hpp"
+#include "flip.hpp"
 
 /*
     @brief Evaluation constant
@@ -53,6 +54,26 @@
     #define SEARCH_BOOK -1
 #endif
 
+#if USE_SIMD
+    union Eval_features{
+        __m256i f256[N_SIMD_EVAL_FEATURES];
+        __m128i f128[N_SIMD_EVAL_FEATURES * 2];
+    };
+
+    struct Eval_search{
+        Eval_features features[HW2 - 4];
+        uint_fast8_t feature_idx;
+        bool reversed;
+    };
+#else
+    struct Eval_search{
+        uint_fast16_t features[N_SYMMETRY_PATTERNS];
+        bool reversed;
+    };
+#endif
+
+inline void eval_move(Eval_search *eval, const Flip *flip);
+inline void eval_undo(Eval_search *eval, const Flip *flip);
 
 /*
     @brief Weights of each cell
@@ -219,13 +240,6 @@ struct Analyze_result{
     int alt_probability;
 };
 
-#if USE_SIMD_EVALUATION
-    union Eval_features{
-        __m256i f256[N_SIMD_EVAL_FEATURES];
-        __m128i f128[N_SIMD_EVAL_FEATURES * 2];
-    };
-#endif
-
 /*
     @brief Search structure
 
@@ -248,13 +262,7 @@ class Search{
         uint_fast8_t parity;
         uint_fast8_t mpc_level;
         uint64_t n_nodes;
-        #if USE_SIMD_EVALUATION
-            Eval_features eval_features[HW2 - 4];
-            uint_fast8_t eval_feature_idx;
-        #else
-            uint_fast16_t eval_features[N_SYMMETRY_PATTERNS];
-        #endif
-        bool eval_feature_reversed;
+        Eval_search eval;
         bool use_multi_thread;
         #if USE_SEARCH_STATISTICS
             uint64_t n_nodes_discs[HW2];
@@ -291,11 +299,35 @@ class Search{
         }
 
         /*
-            @brief Move board and other variables except eval_features
+            @brief Move board and other variables
 
             @param flip                 Flip information
         */
         inline void move(const Flip *flip) {
+            board.move_board(flip);
+            ++n_discs;
+            parity ^= cell_div4[flip->pos];
+            eval_move(&eval, flip);
+        }
+
+        /*
+            @brief Undo board and other variables
+
+            @param flip                 Flip information
+        */
+        inline void undo(const Flip *flip) {
+            board.undo_board(flip);
+            --n_discs;
+            parity ^= cell_div4[flip->pos];
+            eval_undo(&eval, flip);
+        }
+
+        /*
+            @brief Move board and other variables except eval_features
+
+            @param flip                 Flip information
+        */
+        inline void move_noeval(const Flip *flip) {
             board.move_board(flip);
             ++n_discs;
             parity ^= cell_div4[flip->pos];
@@ -306,10 +338,25 @@ class Search{
 
             @param flip                 Flip information
         */
-        inline void undo(const Flip *flip) {
+        inline void undo_noeval(const Flip *flip) {
             board.undo_board(flip);
             --n_discs;
             parity ^= cell_div4[flip->pos];
+        }
+
+        /*
+            @brief pass board
+        */
+        inline void pass(){
+            board.pass();
+            eval.reversed ^= 1;
+        }
+
+        /*
+            @brief pass board except eval_features
+        */
+        inline void pass_noeval(){
+            board.pass();
         }
 
         /*

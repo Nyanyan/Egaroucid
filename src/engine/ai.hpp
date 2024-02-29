@@ -626,7 +626,6 @@ Analyze_result ai_analyze(Board board, int level, bool use_multi_thread, uint_fa
     calc_features(&search);
     Flip flip;
     calc_flip(&flip, &search.board, played_move);
-    eval_move(&search, &flip);
     search.move(&flip);
         res.played_score = book_elem.value;
         if (res.played_score != SCORE_UNDEFINED){
@@ -638,7 +637,6 @@ Analyze_result ai_analyze(Board board, int level, bool use_multi_thread, uint_fa
             res.played_probability = SELECTIVITY_PERCENTAGE[mpc_level];
         }
     search.undo(&flip);
-    eval_undo(&search, &flip);
     uint64_t legal = search.board.get_legal() ^ (1ULL << played_move);
     if (legal){
         uint64_t legal_copy = legal;
