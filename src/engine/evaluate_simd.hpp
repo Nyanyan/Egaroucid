@@ -267,7 +267,7 @@ void init_pattern_arr_rev(int phase_idx, int siz, int strt){
     @param file                 evaluation file name
     @return evaluation function conpletely initialized?
 */
-inline bool init_evaluation_calc(const char* file, bool show_log){
+inline bool init_evaluation(const char* file, bool show_log){
     if (show_log)
         std::cerr << "evaluation file " << file << std::endl;
     FILE* fp;
@@ -446,7 +446,7 @@ inline bool init_evaluation_calc(const char* file, bool show_log){
     @return evaluation function conpletely initialized?
 */
 bool evaluate_init(const char* file, bool show_log){
-    return init_evaluation_calc(file, show_log);
+    return init_evaluation(file, show_log);
 }
 
 /*
@@ -456,7 +456,7 @@ bool evaluate_init(const char* file, bool show_log){
     @return evaluation function conpletely initialized?
 */
 bool evaluate_init(const std::string file, bool show_log){
-    return init_evaluation_calc(file.c_str(), show_log);
+    return init_evaluation(file.c_str(), show_log);
 }
 
 /*
@@ -465,7 +465,7 @@ bool evaluate_init(const std::string file, bool show_log){
     @return evaluation function conpletely initialized?
 */
 bool evaluate_init(bool show_log){
-    return init_evaluation_calc("resources/eval.egev", show_log);
+    return init_evaluation("resources/eval.egev", show_log);
 }
 
 /*
