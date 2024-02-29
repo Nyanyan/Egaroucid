@@ -46,22 +46,9 @@
     #define SEARCH_BOOK -1
 #endif
 
+inline void calc_eval_features(Board *board, Eval_search *eval);
 inline void eval_move(Eval_search *eval, const Flip *flip);
 inline void eval_undo(Eval_search *eval, const Flip *flip);
-
-/*
-    @brief Weights of each cell
-*/
-constexpr int cell_weight[HW2] = {
-    18,  4,  16, 12, 12, 16,  4, 18,
-     4,  2,   6,  8,  8,  6,  2,  4,
-    16,  6,  14, 10, 10, 14,  6, 16,
-    12,  8,  10,  0,  0, 10,  8, 12,
-    12,  8,  10,  0,  0, 10,  8, 12,
-    16,  6,  14, 10, 10, 14,  6, 16,
-     4,  2,   6,  8,  8,  6,  2,  4,
-    18,  4,  16, 12, 12, 16,  4, 18
-};
 
 /*
     @brief Stability cutoff threshold
@@ -103,22 +90,6 @@ constexpr uint_fast8_t cell_div4[HW2] = {
     4, 4, 4, 4, 8, 8, 8, 8, 
     4, 4, 4, 4, 8, 8, 8, 8, 
     4, 4, 4, 4, 8, 8, 8, 8
-};
-
-/*
-    @brief board division
-
-    used for parity calculation
-*/
-constexpr uint_fast8_t cell_div4_log[HW2] = {
-    0, 0, 0, 0, 1, 1, 1, 1, 
-    0, 0, 0, 0, 1, 1, 1, 1, 
-    0, 0, 0, 0, 1, 1, 1, 1, 
-    0, 0, 0, 0, 1, 1, 1, 1, 
-    2, 2, 2, 2, 3, 3, 3, 3, 
-    2, 2, 2, 2, 3, 3, 3, 3, 
-    2, 2, 2, 2, 3, 3, 3, 3, 
-    2, 2, 2, 2, 3, 3, 3, 3
 };
 
 /*
@@ -257,19 +228,7 @@ class Search{
             parity |= (1 & pop_count_ull(empty & 0x00000000F0F0F0F0ULL)) << 1;
             parity |= (1 & pop_count_ull(empty & 0x0F0F0F0F00000000ULL)) << 2;
             parity |= (1 & pop_count_ull(empty & 0xF0F0F0F000000000ULL)) << 3;
-        }
-
-        /*
-            @brief Initialize Search menber variables
-        */
-        inline void init_search(){
-            n_discs = board.n_discs();
-            strt_n_discs = n_discs;
-            uint64_t empty = ~(board.player | board.opponent);
-            parity = 1 & pop_count_ull(empty & 0x000000000F0F0F0FULL);
-            parity |= (1 & pop_count_ull(empty & 0x00000000F0F0F0F0ULL)) << 1;
-            parity |= (1 & pop_count_ull(empty & 0x0F0F0F0F00000000ULL)) << 2;
-            parity |= (1 & pop_count_ull(empty & 0xF0F0F0F000000000ULL)) << 3;
+            calc_eval_features(&board, &eval);
         }
 
         /*

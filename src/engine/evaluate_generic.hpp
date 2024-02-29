@@ -366,18 +366,18 @@ inline int calc_pattern_diff(const int phase_idx, Eval_search *eval){
     return res;
 }
 
+inline void calc_eval_features(Board *board, Eval_search *eval);
+
 /*
     @brief midgame evaluation function
 
     @param b                    board
     @return evaluation value
 */
-inline void calc_features(Search *search);
-
 inline int mid_evaluate(Board *board){
     Search search;
     search.init_board(board);
-    calc_features(&search);
+    calc_eval_features(&search);
     int phase_idx, sur0, sur1, num0;
     uint64_t empties;
     phase_idx = search.phase();
@@ -432,12 +432,12 @@ inline uint_fast16_t pick_pattern_idx(const uint_fast8_t b_arr[], const Feature_
     return res;
 }
 
-inline void calc_features(Search *search){
+inline void calc_eval_features(Board *board, Eval_search *eval){
     uint_fast8_t b_arr[HW2];
-    search->board.translate_to_arr_player(b_arr);
+    board->translate_to_arr_player(b_arr);
     for (int i = 0; i < N_SYMMETRY_PATTERNS; ++i)
-        search->eval.features[i] = pick_pattern_idx(b_arr, &feature_to_coord[i]);
-    search->eval.reversed = 0;
+        eval->features[i] = pick_pattern_idx(b_arr, &feature_to_coord[i]);
+    eval->reversed = 0;
 }
 
 inline void eval_move(Eval_search *eval, const Flip *flip){

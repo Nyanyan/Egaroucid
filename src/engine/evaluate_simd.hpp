@@ -342,7 +342,7 @@ inline bool init_evaluation(const char* file, bool show_log){
                 init_pattern_arr_rev(phase_idx, pattern_sizes[pattern_idx], pattern_starts[pattern_idx]);
         }
     }
-    { // calc_features initialization
+    { // calc_eval_features initialization
         int16_t f2c[16];
         for (int i = 0; i < N_SIMD_EVAL_FEATURES; ++i){
             for (int j = 0; j < MAX_PATTERN_CELLS - 1; ++j){
@@ -522,18 +522,19 @@ inline int calc_pattern_diff(const int phase_idx, bool reversed, Eval_features *
     return _mm_cvtsi128_si32(res128) + _mm_extract_epi32(res128, 1) - SIMD_EVAL_MAX_VALUE * N_SYMMETRY_PATTERNS;
 }
 
+
+inline void calc_eval_features(Board *board, Eval_search *eval);
+
 /*
     @brief midgame evaluation function
 
     @param b                    board
     @return evaluation value
 */
-inline void calc_features(Search *search);
-
 inline int mid_evaluate(Board *board){
     Search search;
     search.init_board(board);
-    calc_features(&search);
+    calc_eval_features(&(search.board), &(search.eval));
     int phase_idx, sur0, sur1, num0;
     uint64_t empties;
     phase_idx = search.phase();
@@ -595,18 +596,18 @@ inline void calc_feature_vector(__m256i &f, const int *b_arr_int, const int i, c
 
     @param search               search information
 */
-inline void calc_features(Search *search){
+inline void calc_eval_features(Board *board, Eval_search *eval){
     int b_arr_int[HW2 + 1];
-    search->board.translate_to_arr_player_rev(b_arr_int);
+    board->translate_to_arr_player_rev(b_arr_int);
     b_arr_int[COORD_NO] = 0;
-    calc_feature_vector(search->eval.features[0].f256[0], b_arr_int, 0, 7);
-    calc_feature_vector(search->eval.features[0].f256[1], b_arr_int, 1, 8);
-    calc_feature_vector(search->eval.features[0].f256[2], b_arr_int, 2, 9);
-    calc_feature_vector(search->eval.features[0].f256[3], b_arr_int, 3, 9);
-    search->eval.features[0].f256[0] = _mm256_adds_epu16(search->eval.features[0].f256[0], eval_simd_offsets_simple[0]);
-    search->eval.features[0].f256[1] = _mm256_adds_epu16(search->eval.features[0].f256[1], eval_simd_offsets_simple[1]);
-    search->eval.reversed = false;
-    search->eval.feature_idx = 0;
+    calc_feature_vector(eval->features[0].f256[0], b_arr_int, 0, 7);
+    calc_feature_vector(eval->features[0].f256[1], b_arr_int, 1, 8);
+    calc_feature_vector(eval->features[0].f256[2], b_arr_int, 2, 9);
+    calc_feature_vector(eval->features[0].f256[3], b_arr_int, 3, 9);
+    eval->features[0].f256[0] = _mm256_adds_epu16(eval->features[0].f256[0], eval_simd_offsets_simple[0]);
+    eval->features[0].f256[1] = _mm256_adds_epu16(eval->features[0].f256[1], eval_simd_offsets_simple[1]);
+    eval->reversed = false;
+    eval->feature_idx = 0;
 }
 
 /*

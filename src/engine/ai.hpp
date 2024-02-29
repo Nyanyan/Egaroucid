@@ -63,7 +63,6 @@ inline Search_result tree_search(Board board, int depth, uint_fast8_t mpc_level,
     #endif
     search.use_multi_thread = use_multi_thread;
     search.mpc_level = 0;
-    calc_features(&search);
     if (is_end_search){
         strt = tim();
         if (show_log)
@@ -193,7 +192,6 @@ inline Search_result tree_search_specified_moves(Board board, int depth, uint_fa
     #endif
     search.use_multi_thread = use_multi_thread;
     search.mpc_level = 0;
-    calc_features(&search);
     if (is_end_search){
         strt = tim();
         if (show_log)
@@ -307,7 +305,6 @@ inline Search_result tree_search_iterative_deepening(Board board, int depth, uin
     search.n_nodes = 0ULL;
     search.mpc_level = mpc_level;
     search.use_multi_thread = use_multi_thread;
-    calc_features(&search);
     std::vector<Clog_result> clogs;
     uint64_t strt = tim();
     result = first_nega_scout(&search, -SCORE_MAX, SCORE_MAX, SCORE_UNDEFINED, depth, is_end_search, show_log, clogs, strt);
@@ -353,7 +350,6 @@ inline int tree_search_window(Board board, int depth, int alpha, int beta, uint_
     search.n_nodes = 0ULL;
     search.mpc_level = mpc_level;
     search.use_multi_thread = use_multi_thread;
-    calc_features(&search);
     bool searching = true;
     uint64_t clog_n_nodes = 0ULL;
     if (mpc_level != MPC_100_LEVEL){
@@ -623,7 +619,6 @@ Analyze_result ai_analyze(Board board, int level, bool use_multi_thread, uint_fa
     search.use_multi_thread = use_multi_thread;
     Book_elem book_elem = book.get(&search.board);
     std::vector<Book_value> links = book.get_all_moves_with_value(&search.board);
-    calc_features(&search);
     Flip flip;
     calc_flip(&flip, &search.board, played_move);
     search.move(&flip);
