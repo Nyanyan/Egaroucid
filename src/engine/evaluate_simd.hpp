@@ -27,6 +27,7 @@
     @brief evaluation pattern definition for SIMD
 */
 #define CEIL_N_SYMMETRY_PATTERNS 64         // N_SYMMETRY_PATTRENS + dummy
+#define N_PATTERN_PARAMS (521478 + 2)       // +2 for byte bound & dummy
 #define SIMD_EVAL_OFFSET 4092               // evaluate range
 #define N_SIMD_EVAL_FEATURES_SIMPLE 2
 #define N_SIMD_EVAL_FEATURES_COMP 2
@@ -218,7 +219,7 @@ __m128i eval_surround_shift1879;
 /*
     @brief evaluation parameters
 */
-int16_t pattern_arr[2][N_PHASES][N_PATTERN_PARAMS + 2];
+int16_t pattern_arr[2][N_PHASES][N_PATTERN_PARAMS];
 int16_t eval_num_arr[N_PHASES][MAX_STONE_NUM];
 int16_t eval_sur0_sur1_arr[N_PHASES][MAX_SURROUND][MAX_SURROUND];
 
@@ -309,7 +310,7 @@ inline bool init_evaluation_calc(const char* file, bool show_log){
     int i, j, k, idx, cell;
     eval_lower_mask = _mm256_set1_epi32(0x0000FFFF);
     for (phase_idx = 0; phase_idx < N_PHASES; ++phase_idx){
-        for (i = 1; i < N_PATTERN_PARAMS + 2; ++i){
+        for (i = 1; i < N_PATTERN_PARAMS; ++i){
             if (i == SIMD_EVAL_DUMMY_ADDR) // dummy
                 continue;
             if (pattern_arr[0][phase_idx][i] < -SIMD_EVAL_OFFSET){
