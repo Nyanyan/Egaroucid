@@ -10,6 +10,7 @@
 #pragma once
 #include "setting.hpp"
 #include "search.hpp"
+#include "endsearch_common.hpp"
 
 /*
     @brief Get a final min score with last 2 empties
