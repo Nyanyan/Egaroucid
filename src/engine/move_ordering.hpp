@@ -267,13 +267,15 @@ inline void move_evaluate_nws(Search *search, Flip_value *flip_value, int alpha,
     @param flip_value           flip with value
     @return true if wipeout found else false
 */
-inline void move_evaluate_end_nws(Search *search, Flip_value *flip_value, int alpha, int beta, int depth, const bool *searching){
+inline void move_evaluate_end_nws(Search *search, Flip_value *flip_value){
     flip_value->value = 0;
     if (search->parity & cell_div4[flip_value->flip.pos])
         flip_value->value += W_END_NWS_PARITY;
     search->move(&flip_value->flip);
         flip_value->n_legal = search->board.get_legal();
         flip_value->value -= pop_count_ull(flip_value->n_legal) * W_END_NWS_MOBILITY;
+        flip_value->value -= mid_evaluate_diff(search) * W_END_NWS_VALUE;
+        /*
         switch (depth){
             case 0:
                 flip_value->value -= mid_evaluate_diff(search) * W_END_NWS_VALUE;
@@ -288,6 +290,7 @@ inline void move_evaluate_end_nws(Search *search, Flip_value *flip_value, int al
                 search->mpc_level = mpc_level;
                 break;
         }
+        */
     search->undo(&flip_value->flip);
 }
 
@@ -466,16 +469,13 @@ inline void move_list_evaluate_nws(Search *search, std::vector<Flip_value> &move
 inline void move_list_evaluate_end_nws(Search *search, std::vector<Flip_value> &move_list, uint_fast8_t moves[], int alpha, const bool *searching){
     if (move_list.size() <= 1)
         return;
-    int eval_depth = (HW2 - search->n_discs) >> 4;
-    const int eval_alpha = -std::min(SCORE_MAX, alpha + MOVE_ORDERING_NWS_VALUE_OFFSET_BETA);
-    const int eval_beta = -std::max(-SCORE_MAX, alpha - MOVE_ORDERING_NWS_VALUE_OFFSET_ALPHA);
     for (Flip_value &flip_value: move_list){
         if (flip_value.flip.pos == moves[0])
             flip_value.value = W_1ST_MOVE;
         else if (flip_value.flip.pos == moves[1])
             flip_value.value = W_2ND_MOVE;
         else
-            move_evaluate_end_nws(search, &flip_value, eval_alpha, eval_beta, eval_depth, searching);
+            move_evaluate_end_nws(search, &flip_value);
     }
 }
 
