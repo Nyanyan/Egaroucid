@@ -359,7 +359,7 @@ inline int calc_surround(uint64_t discs, uint64_t empties){
     @param search               search information
     @return pattern evaluation value
 */
-inline int calc_pattern_diff(const int phase_idx, Eval_search *eval){
+inline int calc_pattern(const int phase_idx, Eval_search *eval){
     int res = 0;
     for (int i = 0; i < N_SYMMETRY_PATTERNS; ++i)
         res += pattern_arr[eval->reversed][phase_idx][feature_to_pattern[i]][eval->features[i]];
@@ -385,7 +385,7 @@ inline int mid_evaluate(Board *board){
     sur0 = calc_surround(search.board.player, empties);
     sur1 = calc_surround(search.board.opponent, empties);
     num0 = pop_count_ull(search.board.player);
-    int res = calc_pattern_diff(phase_idx, &search.eval) + 
+    int res = calc_pattern(phase_idx, &search.eval) + 
         eval_num_arr[phase_idx][num0] + 
         eval_sur0_sur1_arr[phase_idx][sur0][sur1];
     res += res >= 0 ? STEP_2 : -STEP_2;
@@ -411,7 +411,7 @@ inline int mid_evaluate_diff(Search *search){
     sur0 = calc_surround(search->board.player, empties);
     sur1 = calc_surround(search->board.opponent, empties);
     num0 = pop_count_ull(search->board.player);
-    int res = calc_pattern_diff(phase_idx, &search->eval) + 
+    int res = calc_pattern(phase_idx, &search->eval) + 
         eval_num_arr[phase_idx][num0] + 
         eval_sur0_sur1_arr[phase_idx][sur0][sur1];
     res += res >= 0 ? STEP_2 : -STEP_2;

@@ -504,7 +504,7 @@ inline __m256i gather_eval(const int *start_addr, const __m256i idx8){
     #endif
 }
 
-inline int calc_pattern_diff(const int phase_idx, bool reversed, Eval_features *features){
+inline int calc_pattern(const int phase_idx, bool reversed, Eval_features *features){
     const int *start_addr = (int*)pattern_arr[reversed][phase_idx];
     __m256i res256 =                  gather_eval(start_addr, _mm256_cvtepu16_epi32(features->f128[0]));
     res256 = _mm256_add_epi32(res256, gather_eval(start_addr, _mm256_cvtepu16_epi32(features->f128[1])));
@@ -541,7 +541,7 @@ inline int mid_evaluate(Board *board){
     sur0 = calc_surround(search.board.player, empties);
     sur1 = calc_surround(search.board.opponent, empties);
     num0 = pop_count_ull(search.board.player);
-    int res = calc_pattern_diff(phase_idx, search.eval.reversed, &search.eval.features[search.eval.feature_idx]) + 
+    int res = calc_pattern(phase_idx, search.eval.reversed, &search.eval.features[search.eval.feature_idx]) + 
         eval_num_arr[phase_idx][num0] + 
         eval_sur0_sur1_arr[phase_idx][sur0][sur1];
     res += res >= 0 ? STEP_2 : -STEP_2;
@@ -567,7 +567,7 @@ inline int mid_evaluate_diff(Search *search){
     sur0 = calc_surround(search->board.player, empties);
     sur1 = calc_surround(search->board.opponent, empties);
     num0 = pop_count_ull(search->board.player);
-    int res = calc_pattern_diff(phase_idx, search->eval.reversed, &search->eval.features[search->eval.feature_idx]) + 
+    int res = calc_pattern(phase_idx, search->eval.reversed, &search->eval.features[search->eval.feature_idx]) + 
         eval_num_arr[phase_idx][num0] + 
         eval_sur0_sur1_arr[phase_idx][sur0][sur1];
     res += res >= 0 ? STEP_2 : -STEP_2;
