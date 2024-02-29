@@ -36,11 +36,11 @@
     @brief constants for move ordering
 */
 #if TUNE_MOVE_ORDERING_MID || TUNE_MOVE_ORDERING_END
-    #define N_MOVE_ORDERING_PARAM 14
+    #define N_MOVE_ORDERING_PARAM 13
     int move_ordering_param_array[N_MOVE_ORDERING_PARAM] = {
         37, 11, 289, 92, 
         17, 19, 14, 11, 
-        14, 4, 16, 8
+        20, 4, 10, 
         14, 4
     };
 
@@ -57,17 +57,14 @@
     #define W_END_NWS_MOBILITY          move_ordering_param_array[8]
     #define W_END_NWS_PARITY            move_ordering_param_array[9]
     #define W_END_NWS_VALUE             move_ordering_param_array[10]
-    #define W_END_NWS_VALUE_DEEP_ADDITIONAL move_ordering_param_array[11]
 
-    #define W_END_NWS_SIMPLE_MOBILITY              move_ordering_param_array[12]
-    #define W_END_NWS_SIMPLE_PARITY                move_ordering_param_array[13]
-    //#define W_END_NWS_POTENTIAL_MOBILITY    move_ordering_param_array[10]
-    //#define W_END_NWS_VALUE                 move_ordering_param_array[11]
+    #define W_END_NWS_SIMPLE_MOBILITY   move_ordering_param_array[11]
+    #define W_END_NWS_SIMPLE_PARITY     move_ordering_param_array[12]
 
     #define MOVE_ORDERING_MID_PARAM_START 0
     #define MOVE_ORDERING_MID_PARAM_END 7
     #define MOVE_ORDERING_END_PARAM_START 8
-    #define MOVE_ORDERING_END_PARAM_END 13
+    #define MOVE_ORDERING_END_PARAM_END 12
 #else
     // midgame search
     #define W_MOBILITY 37
@@ -85,7 +82,6 @@
     #define W_END_NWS_MOBILITY 20
     #define W_END_NWS_PARITY 4
     #define W_END_NWS_VALUE 10
-    #define W_END_NWS_VALUE_DEEP_ADDITIONAL 8
 
     // endgame simple null window search
     #define W_END_NWS_SIMPLE_MOBILITY 14
