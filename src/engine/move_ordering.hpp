@@ -82,9 +82,9 @@
     #define W_NWS_VALUE_DEEP_ADDITIONAL 11
 
     // endgame null window search
-    #define W_END_NWS_MOBILITY 14
+    #define W_END_NWS_MOBILITY 20
     #define W_END_NWS_PARITY 4
-    #define W_END_NWS_VALUE 16
+    #define W_END_NWS_VALUE 10
     #define W_END_NWS_VALUE_DEEP_ADDITIONAL 8
 
     // endgame simple null window search
@@ -275,22 +275,6 @@ inline void move_evaluate_end_nws(Search *search, Flip_value *flip_value){
         flip_value->n_legal = search->board.get_legal();
         flip_value->value -= pop_count_ull(flip_value->n_legal) * W_END_NWS_MOBILITY;
         flip_value->value -= mid_evaluate_diff(search) * W_END_NWS_VALUE;
-        /*
-        switch (depth){
-            case 0:
-                flip_value->value -= mid_evaluate_diff(search) * W_END_NWS_VALUE;
-                break;
-            case 1:
-                flip_value->value -= nega_alpha_eval1(search, alpha, beta, false, searching) * (W_END_NWS_VALUE + W_END_NWS_VALUE_DEEP_ADDITIONAL);
-                break;
-            default:
-                uint_fast8_t mpc_level = search->mpc_level;
-                search->mpc_level = MOVE_ORDERING_MPC_LEVEL;
-                    flip_value->value -= nega_scout(search, alpha, beta, depth, false, flip_value->n_legal, false, searching) * (W_END_NWS_VALUE + depth * W_END_NWS_VALUE_DEEP_ADDITIONAL);
-                search->mpc_level = mpc_level;
-                break;
-        }
-        */
     search->undo(&flip_value->flip);
 }
 
