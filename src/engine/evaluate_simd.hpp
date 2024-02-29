@@ -470,17 +470,17 @@ inline __m256i gather_eval(const int *pat_com, const __m256i idx8){
     #endif
 }
 
-inline int calc_pattern_diff(const int phase_idx, bool r, Eval_features *f){
-    const int *pat_com = (int*)pattern_arr[r][phase_idx];
-    const int *pat_com1 = (int*)(&pattern_arr[r][phase_idx][SIMD_EVAL_F1_OFFSET]);
-    __m256i res256 =                  gather_eval(pat_com, _mm256_cvtepu16_epi32(f->f128[0]));
-    res256 = _mm256_add_epi32(res256, gather_eval(pat_com, _mm256_cvtepu16_epi32(f->f128[1])));
-    res256 = _mm256_add_epi32(res256, gather_eval(pat_com1, _mm256_cvtepu16_epi32(f->f128[2])));
-    res256 = _mm256_add_epi32(res256, gather_eval(pat_com1, _mm256_cvtepu16_epi32(f->f128[3])));
-    res256 = _mm256_add_epi32(res256, gather_eval(pat_com, calc_idx8_aft(f->f128[4], 0)));
-    res256 = _mm256_add_epi32(res256, gather_eval(pat_com, calc_idx8_aft(f->f128[5], 1)));
-    res256 = _mm256_add_epi32(res256, gather_eval(pat_com, calc_idx8_aft(f->f128[6], 2)));
-    res256 = _mm256_add_epi32(res256, gather_eval(pat_com, calc_idx8_aft(f->f128[7], 3)));
+inline int calc_pattern_diff(const int phase_idx, bool reversed, Eval_features *features){
+    const int *pat_com = (int*)pattern_arr[reversed][phase_idx];
+    const int *pat_com1 = (int*)(&pattern_arr[reversed][phase_idx][SIMD_EVAL_F1_OFFSET]);
+    __m256i res256 =                  gather_eval(pat_com, _mm256_cvtepu16_epi32(features->f128[0]));
+    res256 = _mm256_add_epi32(res256, gather_eval(pat_com, _mm256_cvtepu16_epi32(features->f128[1])));
+    res256 = _mm256_add_epi32(res256, gather_eval(pat_com1, _mm256_cvtepu16_epi32(features->f128[2])));
+    res256 = _mm256_add_epi32(res256, gather_eval(pat_com1, _mm256_cvtepu16_epi32(features->f128[3])));
+    res256 = _mm256_add_epi32(res256, gather_eval(pat_com, calc_idx8_aft(features->f128[4], 0)));
+    res256 = _mm256_add_epi32(res256, gather_eval(pat_com, calc_idx8_aft(features->f128[5], 1)));
+    res256 = _mm256_add_epi32(res256, gather_eval(pat_com, calc_idx8_aft(features->f128[6], 2)));
+    res256 = _mm256_add_epi32(res256, gather_eval(pat_com, calc_idx8_aft(features->f128[7], 3)));
     #if SIMD_EVAL_OFFSET * 16 < 65535
         res256 = _mm256_and_si256(res256, eval_lower_mask);
     #endif
