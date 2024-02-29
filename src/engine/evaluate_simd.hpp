@@ -474,7 +474,7 @@ inline int calc_pattern(const int phase_idx, Eval_features *features){
     return _mm_cvtsi128_si32(res128) + _mm_extract_epi32(res128, 1) - SIMD_EVAL_MAX_VALUE * N_SYMMETRY_PATTERNS;
 }
 
-inline int calc_pattern_light(const int phase_idx, Eval_features *features){
+inline int calc_pattern_move_ordering_end(const int phase_idx, Eval_features *features){
     const int *start_addr = (int*)pattern_arr[phase_idx];
     __m256i res256 =                  gather_eval(start_addr, calc_idx8_comp(features->f128[4], 0));        // corner+block cross
     res256 = _mm256_add_epi32(res256, gather_eval(start_addr, calc_idx8_comp(features->f128[5], 1)));       // edge+2X triangle
@@ -549,10 +549,10 @@ inline int mid_evaluate_diff(Search *search){
     @param search               search information
     @return evaluation value
 */
-inline int mid_evaluate_move_ordering(Search *search){
+inline int mid_evaluate_move_ordering_end(Search *search){
     int phase_idx;
     phase_idx = search->phase();
-    int res = calc_pattern_light(phase_idx, &search->eval.features[search->eval.feature_idx]);
+    int res = calc_pattern_move_ordering_end(phase_idx, &search->eval.features[search->eval.feature_idx]);
     /*
     res += res >= 0 ? STEP_2 : -STEP_2;
     res /= STEP;

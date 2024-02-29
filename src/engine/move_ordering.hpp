@@ -270,7 +270,7 @@ inline void move_evaluate_end_nws(Search *search, Flip_value *flip_value){
     search->move(&flip_value->flip);
         flip_value->n_legal = search->board.get_legal();
         flip_value->value -= pop_count_ull(flip_value->n_legal) * W_END_NWS_MOBILITY;
-        flip_value->value -= mid_evaluate_move_ordering(search) * W_END_NWS_VALUE;
+        flip_value->value -= mid_evaluate_move_ordering_end(search) * W_END_NWS_VALUE;
     search->undo(&flip_value->flip);
 }
 
