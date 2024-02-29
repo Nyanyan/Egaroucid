@@ -37,7 +37,8 @@
 #define PHASE_N_STONES 1
 
 // constant
-#define N_8BIT 256
+#define N_8BIT 256 // 2 ^ 8
+#define N_16BIT 65536 // 2 ^ 16
 #define INF 100000000
 #define SCORE_INF 127
 #define SCORE_MAX 64
