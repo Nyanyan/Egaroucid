@@ -177,7 +177,6 @@ struct Coord_to_feature{
     struct Eval_search{
         Eval_features features[HW2 - 4];
         uint_fast8_t feature_idx;
-        bool reversed;
     };
 #else
     struct Eval_search{

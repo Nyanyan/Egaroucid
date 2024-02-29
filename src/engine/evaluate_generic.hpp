@@ -485,3 +485,12 @@ inline void eval_undo(Eval_search *eval, const Flip *flip){
         }
     }
 }
+
+/*
+    @brief pass evaluation features
+
+    @param search               search information
+*/
+inline void eval_pass(Eval_search *eval){
+    eval->reversed ^= 1;
+}

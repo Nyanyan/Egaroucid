@@ -212,7 +212,7 @@ __m256i feature_to_coord_simd_mul[N_SIMD_EVAL_FEATURES][MAX_PATTERN_CELLS - 1];
 __m256i feature_to_coord_simd_cell[N_SIMD_EVAL_FEATURES][MAX_PATTERN_CELLS][2];
 __m256i coord_to_feature_simd_1[HW2][N_SIMD_EVAL_FEATURES];
 __m256i coord_to_feature_simd_2[HW2][N_SIMD_EVAL_FEATURES]; // coord_to_feature_simd_1 * 2
-__m256i coord_to_feature_simd_16bit_1[N_16BIT][N_SIMD_EVAL_FEATURE_GROUP][N_SIMD_EVAL_FEATURES];
+__m256i eval_move_unflipped_16bit[N_16BIT][N_SIMD_EVAL_FEATURE_GROUP][N_SIMD_EVAL_FEATURES];
 __m256i eval_simd_offsets_simple[N_SIMD_EVAL_FEATURES_SIMPLE]; // 16bit * 16 * N
 __m256i eval_simd_offsets_comp[N_SIMD_EVAL_FEATURES_COMP * 2]; // 32bit * 8 * N
 __m256i eval_surround_mask;
@@ -221,45 +221,9 @@ __m128i eval_surround_shift1879;
 /*
     @brief evaluation parameters
 */
-int16_t pattern_arr[2][N_PHASES][N_PATTERN_PARAMS];
+int16_t pattern_arr[N_PHASES][N_PATTERN_PARAMS];
 int16_t eval_num_arr[N_PHASES][MAX_STONE_NUM];
 int16_t eval_sur0_sur1_arr[N_PHASES][MAX_SURROUND][MAX_SURROUND];
-
-/*
-    @brief used for unzipping the evaluation function
-
-    This function swaps the player in the index
-
-    @param i                    index representing the discs in a pattern
-    @param pattern_size         size of the pattern
-    @return swapped index
-*/
-inline int swap_player_idx(int i, int pattern_size){
-    int j, ri = i;
-    for (j = 0; j < pattern_size; ++j){
-        if ((i / pow3[j]) % 3 == 0)
-            ri += pow3[j];
-        else if ((i / pow3[j]) % 3 == 1)
-            ri -= pow3[j];
-    }
-    return ri;
-}
-
-/*
-    @brief used for unzipping the evaluation function
-
-    @param phase_idx            evaluation phase
-    @param pattern_idx          evaluation pattern's index
-    @param siz                  size of the pattern
-    @param strt                 start position of the pattern
-*/
-void init_pattern_arr_rev(int phase_idx, int siz, int strt){
-    int ri;
-    for (int i = 0; i < (int)pow3[siz]; ++i){
-        ri = swap_player_idx(i, siz);
-        pattern_arr[1][phase_idx][strt + ri] = pattern_arr[0][phase_idx][strt + i];
-    }
-}
 
 /*
     @brief initialize the evaluation function
@@ -283,16 +247,15 @@ inline bool init_evaluation(const char* file, bool show_log){
         285284, 344333, 403382, 462431  // features[3]
     };
     for (int phase_idx = 0; phase_idx < N_PHASES; ++phase_idx){
-        pattern_arr[0][phase_idx][0] = 0; // memory bound
-        pattern_arr[1][phase_idx][0] = 0; // memory bound
-        if (fread(pattern_arr[0][phase_idx] + pattern_starts[0], 2, N_PATTERN_PARAMS_BEFORE_DUMMY, fp) < N_PATTERN_PARAMS_BEFORE_DUMMY){
+        pattern_arr[phase_idx][0] = 0; // memory bound
+        if (fread(pattern_arr[phase_idx] + pattern_starts[0], 2, N_PATTERN_PARAMS_BEFORE_DUMMY, fp) < N_PATTERN_PARAMS_BEFORE_DUMMY){
             std::cerr << "[ERROR] [FATAL] evaluation file broken" << std::endl;
             fclose(fp);
             return false;
         }
-        pattern_arr[0][phase_idx][SIMD_EVAL_DUMMY_ADDR] = 0; // dummy
-        pattern_arr[1][phase_idx][SIMD_EVAL_DUMMY_ADDR] = 0; // dummy
-        if (fread(pattern_arr[0][phase_idx] + pattern_starts[7], 2, N_PATTERN_PARAMS_AFTER_DUMMY, fp) < N_PATTERN_PARAMS_AFTER_DUMMY){
+        pattern_arr[phase_idx][SIMD_EVAL_DUMMY_ADDR] = 0; // dummy
+        pattern_arr[phase_idx][SIMD_EVAL_DUMMY_ADDR] = 0; // dummy
+        if (fread(pattern_arr[phase_idx] + SIMD_EVAL_DUMMY_ADDR + 1, 2, N_PATTERN_PARAMS_AFTER_DUMMY, fp) < N_PATTERN_PARAMS_AFTER_DUMMY){
             std::cerr << "[ERROR] [FATAL] evaluation file broken" << std::endl;
             fclose(fp);
             return false;
@@ -308,38 +271,20 @@ inline bool init_evaluation(const char* file, bool show_log){
             return false;
         }
     }
+    // check max value
     for (int phase_idx = 0; phase_idx < N_PHASES; ++phase_idx){
         for (int i = 1; i < N_PATTERN_PARAMS; ++i){
             if (i == SIMD_EVAL_DUMMY_ADDR) // dummy
                 continue;
-            if (pattern_arr[0][phase_idx][i] < -SIMD_EVAL_MAX_VALUE){
-                std::cerr << "[ERROR] evaluation value too low. you can ignore this error. phase " << phase_idx << " index " << i << " found " << pattern_arr[0][phase_idx][i] << std::endl;
-                pattern_arr[0][phase_idx][i] = -SIMD_EVAL_MAX_VALUE;
+            if (pattern_arr[phase_idx][i] < -SIMD_EVAL_MAX_VALUE){
+                std::cerr << "[ERROR] evaluation value too low. you can ignore this error. phase " << phase_idx << " index " << i << " found " << pattern_arr[phase_idx][i] << std::endl;
+                pattern_arr[phase_idx][i] = -SIMD_EVAL_MAX_VALUE;
             }
-            if (pattern_arr[0][phase_idx][i] > SIMD_EVAL_MAX_VALUE){
-                std::cerr << "[ERROR] evaluation value too high. you can ignore this error. phase " << phase_idx << " index " << i << " found " << pattern_arr[0][phase_idx][i] << std::endl;
-                pattern_arr[0][phase_idx][i] = SIMD_EVAL_MAX_VALUE;
+            if (pattern_arr[phase_idx][i] > SIMD_EVAL_MAX_VALUE){
+                std::cerr << "[ERROR] evaluation value too high. you can ignore this error. phase " << phase_idx << " index " << i << " found " << pattern_arr[phase_idx][i] << std::endl;
+                pattern_arr[phase_idx][i] = SIMD_EVAL_MAX_VALUE;
             }
-            pattern_arr[0][phase_idx][i] += SIMD_EVAL_MAX_VALUE;
-        }
-    }
-    if (thread_pool.size() >= 2){
-        std::future<void> tasks[N_PHASES * N_PATTERNS];
-        int i = 0;
-        for (int phase_idx = 0; phase_idx < N_PHASES; ++phase_idx){
-            for (int pattern_idx = 0; pattern_idx < N_PATTERNS; ++pattern_idx){
-                bool pushed = false;
-                while (!pushed)
-                    tasks[i] = thread_pool.push(&pushed, std::bind(init_pattern_arr_rev, phase_idx, pattern_sizes[pattern_idx], pattern_starts[pattern_idx]));
-                ++i;
-            }
-        }
-        for (std::future<void> &task: tasks)
-            task.get();
-    } else{
-        for (int phase_idx = 0; phase_idx < N_PHASES; ++phase_idx){
-            for (int pattern_idx = 0; pattern_idx < N_PATTERNS; ++pattern_idx)
-                init_pattern_arr_rev(phase_idx, pattern_sizes[pattern_idx], pattern_starts[pattern_idx]);
+            pattern_arr[phase_idx][i] += SIMD_EVAL_MAX_VALUE;
         }
     }
     { // calc_eval_features initialization
@@ -387,7 +332,7 @@ inline bool init_evaluation(const char* file, bool show_log){
         );
     }
     { // eval_move initialization
-        int16_t c2f[CEIL_N_SYMMETRY_PATTERNS];
+        uint16_t c2f[CEIL_N_SYMMETRY_PATTERNS];
         for (int cell = 0; cell < HW2; ++cell){ // 0 for h8, 63 for a1
             for (int i = 0; i < CEIL_N_SYMMETRY_PATTERNS; ++i)
                 c2f[i] = 0;
@@ -404,16 +349,25 @@ inline bool init_evaluation(const char* file, bool show_log){
                 coord_to_feature_simd_2[cell][i] = _mm256_slli_epi16(coord_to_feature_simd_1[cell][i], 1);
             }
         }
-        for (int bits = 0; bits < N_16BIT; ++bits){
-            for (int group = 0; group < N_SIMD_EVAL_FEATURE_GROUP; ++group){ // a1-h1, a2-h2, ..., a8-h8
-                for (int simd_feature_idx = 0; simd_feature_idx < N_SIMD_EVAL_FEATURES; ++simd_feature_idx){
-                    coord_to_feature_simd_16bit_1[bits][group][simd_feature_idx] = _mm256_set1_epi16(0);
-                    for (int cell = 0; cell < N_SIMD_EVAL_FEATURE_CELLS; ++cell){
-                        if (1 & (bits >> cell)){
-                            int global_cell = group * N_SIMD_EVAL_FEATURE_CELLS + cell;
-                            coord_to_feature_simd_16bit_1[bits][group][simd_feature_idx] = _mm256_adds_epu16(coord_to_feature_simd_16bit_1[bits][group][simd_feature_idx], coord_to_feature_simd_1[global_cell][simd_feature_idx]);
-                        }
+        for (int bits = 0; bits < N_16BIT; ++bits){ // 1: unflipped discs, 0: others
+            for (int group = 0; group < N_SIMD_EVAL_FEATURE_GROUP; ++group){ // a1-h2, a3-h4, ..., a7-h8
+                for (int i = 0; i < CEIL_N_SYMMETRY_PATTERNS; ++i)
+                    c2f[i] = 0;
+                for (int cell = 0; cell < N_SIMD_EVAL_FEATURE_CELLS; ++cell){
+                    if (1 & (bits >> cell)){
+                        int global_cell = group * N_SIMD_EVAL_FEATURE_CELLS + cell;
+                        for (int i = 0; i < coord_to_feature[global_cell].n_features; ++i)
+                            c2f[coord_to_feature[global_cell].features[i].feature] = coord_to_feature[global_cell].features[i].x;
                     }
+                }
+                for (int simd_feature_idx = 0; simd_feature_idx < N_SIMD_EVAL_FEATURES; ++simd_feature_idx){
+                    int idx = simd_feature_idx * 16;
+                    eval_move_unflipped_16bit[bits][group][simd_feature_idx] = _mm256_set_epi16(
+                        c2f[idx], c2f[idx + 1], c2f[idx + 2], c2f[idx + 3], 
+                        c2f[idx + 4], c2f[idx + 5], c2f[idx + 6], c2f[idx + 7], 
+                        c2f[idx + 8], c2f[idx + 9], c2f[idx + 10], c2f[idx + 11], 
+                        c2f[idx + 12], c2f[idx + 13], c2f[idx + 14], c2f[idx + 15]
+                    );
                 }
             }
         }
@@ -504,8 +458,8 @@ inline __m256i gather_eval(const int *start_addr, const __m256i idx8){
     #endif
 }
 
-inline int calc_pattern(const int phase_idx, bool reversed, Eval_features *features){
-    const int *start_addr = (int*)pattern_arr[reversed][phase_idx];
+inline int calc_pattern(const int phase_idx, Eval_features *features){
+    const int *start_addr = (int*)pattern_arr[phase_idx];
     __m256i res256 =                  gather_eval(start_addr, _mm256_cvtepu16_epi32(features->f128[0]));
     res256 = _mm256_add_epi32(res256, gather_eval(start_addr, _mm256_cvtepu16_epi32(features->f128[1])));
     res256 = _mm256_add_epi32(res256, gather_eval(start_addr, _mm256_cvtepu16_epi32(features->f128[2])));
@@ -541,7 +495,7 @@ inline int mid_evaluate(Board *board){
     sur0 = calc_surround(search.board.player, empties);
     sur1 = calc_surround(search.board.opponent, empties);
     num0 = pop_count_ull(search.board.player);
-    int res = calc_pattern(phase_idx, search.eval.reversed, &search.eval.features[search.eval.feature_idx]) + 
+    int res = calc_pattern(phase_idx, &search.eval.features[search.eval.feature_idx]) + 
         eval_num_arr[phase_idx][num0] + 
         eval_sur0_sur1_arr[phase_idx][sur0][sur1];
     res += res >= 0 ? STEP_2 : -STEP_2;
@@ -567,7 +521,7 @@ inline int mid_evaluate_diff(Search *search){
     sur0 = calc_surround(search->board.player, empties);
     sur1 = calc_surround(search->board.opponent, empties);
     num0 = pop_count_ull(search->board.player);
-    int res = calc_pattern(phase_idx, search->eval.reversed, &search->eval.features[search->eval.feature_idx]) + 
+    int res = calc_pattern(phase_idx, &search->eval.features[search->eval.feature_idx]) + 
         eval_num_arr[phase_idx][num0] + 
         eval_sur0_sur1_arr[phase_idx][sur0][sur1];
     res += res >= 0 ? STEP_2 : -STEP_2;
@@ -582,12 +536,12 @@ inline int mid_evaluate_diff(Search *search){
 inline void calc_feature_vector(__m256i &f, const int *b_arr_int, const int i, const int n){
     f = _mm256_set1_epi16(0);
     for (int j = 0; j < n; ++j){ // n: max n_cells in pattern - 1
-        f = _mm256_adds_epu16(f, _mm256_i32gather_epi32(b_arr_int, feature_to_coord_simd_cell[i][j][0], 4));
-        f = _mm256_adds_epu16(f, _mm256_slli_epi32(_mm256_i32gather_epi32(b_arr_int, feature_to_coord_simd_cell[i][j][1], 4), 16));
+        f = _mm256_add_epi16(f, _mm256_i32gather_epi32(b_arr_int, feature_to_coord_simd_cell[i][j][0], 4));
+        f = _mm256_add_epi16(f, _mm256_slli_epi32(_mm256_i32gather_epi32(b_arr_int, feature_to_coord_simd_cell[i][j][1], 4), 16));
         f = _mm256_mullo_epi16(f, feature_to_coord_simd_mul[i][j]);
     }
-    f = _mm256_adds_epu16(f, _mm256_i32gather_epi32(b_arr_int, feature_to_coord_simd_cell[i][n][0], 4));
-    f = _mm256_adds_epu16(f, _mm256_slli_epi32(_mm256_i32gather_epi32(b_arr_int, feature_to_coord_simd_cell[i][n][1], 4), 16));
+    f = _mm256_add_epi16(f, _mm256_i32gather_epi32(b_arr_int, feature_to_coord_simd_cell[i][n][0], 4));
+    f = _mm256_add_epi16(f, _mm256_slli_epi32(_mm256_i32gather_epi32(b_arr_int, feature_to_coord_simd_cell[i][n][1], 4), 16));
 }
 
 /*
@@ -603,83 +557,93 @@ inline void calc_eval_features(Board *board, Eval_search *eval){
     calc_feature_vector(eval->features[0].f256[1], b_arr_int, 1, 8);
     calc_feature_vector(eval->features[0].f256[2], b_arr_int, 2, 9);
     calc_feature_vector(eval->features[0].f256[3], b_arr_int, 3, 9);
-    eval->features[0].f256[0] = _mm256_adds_epu16(eval->features[0].f256[0], eval_simd_offsets_simple[0]);
-    eval->features[0].f256[1] = _mm256_adds_epu16(eval->features[0].f256[1], eval_simd_offsets_simple[1]);
-    eval->reversed = false;
+    eval->features[0].f256[0] = _mm256_add_epi16(eval->features[0].f256[0], eval_simd_offsets_simple[0]);
+    eval->features[0].f256[1] = _mm256_add_epi16(eval->features[0].f256[1], eval_simd_offsets_simple[1]);
     eval->feature_idx = 0;
 }
 
 /*
     @brief move evaluation features
 
-    @param search               search information
+        put cell        2 -> 1 (empty -> opponent)  sub
+        player discs    0 -> 1 (player -> opponent) add
+        opponent discs  1 -> 0 (player -> opponent) sub
+        flipped discs   1 -> 1 (opponent -> opponent)
+        empty cells     2 -> 2 (empty -> empty)
+    
+    @param eval                 evaluation features
     @param flip                 flip information
 */
-inline void eval_move(Eval_search *eval, const Flip *flip){
+inline void eval_move(Eval_search *eval, const Flip *flip, Board *board){
+    const uint16_t *flipped_group = (uint16_t*)&(flip->flip);
+    const uint16_t *player_group = (uint16_t*)&(board->player);
+    const uint16_t *opponent_group = (uint16_t*)&(board->opponent);
     __m256i f0, f1, f2, f3;
-    f0 = eval->features[eval->feature_idx].f256[0];
-    f1 = eval->features[eval->feature_idx].f256[1];
-    f2 = eval->features[eval->feature_idx].f256[2];
-    f3 = eval->features[eval->feature_idx].f256[3];
-    //uint_fast8_t cell;
-    //uint64_t flipped;
-    const uint16_t *flipped_group = (uint16_t*)&(flip->flip); // a1-h1, a2-h2, ..., a8-h8
-    if (eval->reversed){
-        f0 = _mm256_subs_epu16(f0, coord_to_feature_simd_1[flip->pos][0]);
-        f1 = _mm256_subs_epu16(f1, coord_to_feature_simd_1[flip->pos][1]);
-        f2 = _mm256_subs_epu16(f2, coord_to_feature_simd_1[flip->pos][2]);
-        f3 = _mm256_subs_epu16(f3, coord_to_feature_simd_1[flip->pos][3]);
-        for (int i = 0; i < N_SIMD_EVAL_FEATURE_GROUP; ++i){
-            f0 = _mm256_adds_epu16(f0, coord_to_feature_simd_16bit_1[flipped_group[i]][i][0]);
-            f1 = _mm256_adds_epu16(f1, coord_to_feature_simd_16bit_1[flipped_group[i]][i][1]);
-            f2 = _mm256_adds_epu16(f2, coord_to_feature_simd_16bit_1[flipped_group[i]][i][2]);
-            f3 = _mm256_adds_epu16(f3, coord_to_feature_simd_16bit_1[flipped_group[i]][i][3]);
-        }
-        /*
-        flipped = flip->flip;
-        for (cell = first_bit(&flipped); flipped; cell = next_bit(&flipped)){
-            f0 = _mm256_adds_epu16(f0, coord_to_feature_simd_1[cell][0]);
-            f1 = _mm256_adds_epu16(f1, coord_to_feature_simd_1[cell][1]);
-            f2 = _mm256_adds_epu16(f2, coord_to_feature_simd_1[cell][2]);
-            f3 = _mm256_adds_epu16(f3, coord_to_feature_simd_1[cell][3]);
-        }
-        */
-    } else{
-        f0 = _mm256_subs_epu16(f0, coord_to_feature_simd_2[flip->pos][0]);
-        f1 = _mm256_subs_epu16(f1, coord_to_feature_simd_2[flip->pos][1]);
-        f2 = _mm256_subs_epu16(f2, coord_to_feature_simd_2[flip->pos][2]);
-        f3 = _mm256_subs_epu16(f3, coord_to_feature_simd_2[flip->pos][3]);
-        for (int i = 0; i < N_SIMD_EVAL_FEATURE_GROUP; ++i){
-            f0 = _mm256_subs_epu16(f0, coord_to_feature_simd_16bit_1[flipped_group[i]][i][0]);
-            f1 = _mm256_subs_epu16(f1, coord_to_feature_simd_16bit_1[flipped_group[i]][i][1]);
-            f2 = _mm256_subs_epu16(f2, coord_to_feature_simd_16bit_1[flipped_group[i]][i][2]);
-            f3 = _mm256_subs_epu16(f3, coord_to_feature_simd_16bit_1[flipped_group[i]][i][3]);
-        }
-        /*
-        flipped = flip->flip;
-        for (cell = first_bit(&flipped); flipped; cell = next_bit(&flipped)){
-            f0 = _mm256_subs_epu16(f0, coord_to_feature_simd_1[cell][0]);
-            f1 = _mm256_subs_epu16(f1, coord_to_feature_simd_1[cell][1]);
-            f2 = _mm256_subs_epu16(f2, coord_to_feature_simd_1[cell][2]);
-            f3 = _mm256_subs_epu16(f3, coord_to_feature_simd_1[cell][3]);
-        }
-        */
+    uint16_t unflipped_p;
+    uint16_t unflipped_o;
+    // put cell 2 -> 1
+    f0 = _mm256_sub_epi16(eval->features[eval->feature_idx].f256[0], coord_to_feature_simd_1[flip->pos][0]);
+    f1 = _mm256_sub_epi16(eval->features[eval->feature_idx].f256[1], coord_to_feature_simd_1[flip->pos][1]);
+    f2 = _mm256_sub_epi16(eval->features[eval->feature_idx].f256[2], coord_to_feature_simd_1[flip->pos][2]);
+    f3 = _mm256_sub_epi16(eval->features[eval->feature_idx].f256[3], coord_to_feature_simd_1[flip->pos][3]);
+    for (int i = 0; i < N_SIMD_EVAL_FEATURE_GROUP; ++i){
+        // player discs 0 -> 1
+        unflipped_p = ~flipped_group[i] & player_group[i];
+        f0 = _mm256_add_epi16(f0, eval_move_unflipped_16bit[unflipped_p][i][0]);
+        f1 = _mm256_add_epi16(f1, eval_move_unflipped_16bit[unflipped_p][i][1]);
+        f2 = _mm256_add_epi16(f2, eval_move_unflipped_16bit[unflipped_p][i][2]);
+        f3 = _mm256_add_epi16(f3, eval_move_unflipped_16bit[unflipped_p][i][3]);
+        // opponent discs 1 -> 0
+        unflipped_o = ~flipped_group[i] & opponent_group[i];
+        f0 = _mm256_sub_epi16(f0, eval_move_unflipped_16bit[unflipped_o][i][0]);
+        f1 = _mm256_sub_epi16(f1, eval_move_unflipped_16bit[unflipped_o][i][1]);
+        f2 = _mm256_sub_epi16(f2, eval_move_unflipped_16bit[unflipped_o][i][2]);
+        f3 = _mm256_sub_epi16(f3, eval_move_unflipped_16bit[unflipped_o][i][3]);
     }
     ++eval->feature_idx;
     eval->features[eval->feature_idx].f256[0] = f0;
     eval->features[eval->feature_idx].f256[1] = f1;
     eval->features[eval->feature_idx].f256[2] = f2;
     eval->features[eval->feature_idx].f256[3] = f3;
-    eval->reversed ^= 1;
 }
 
 /*
     @brief undo evaluation features
 
-    @param search               search information
-    @param flip                 flip information
+    @param eval                 evaluation features
 */
-inline void eval_undo(Eval_search *eval, const Flip *flip){
-    eval->reversed ^= 1;
+inline void eval_undo(Eval_search *eval){
     --eval->feature_idx;
+}
+
+/*
+    @brief pass evaluation features
+
+        player discs    0 -> 1 (player -> opponent) add
+        opponent discs  1 -> 0 (player -> opponent) sub
+
+    @param eval                 evaluation features
+*/
+inline void eval_pass(Eval_search *eval, Board *board){
+    const uint16_t *player_group = (uint16_t*)&(board->player);
+    const uint16_t *opponent_group = (uint16_t*)&(board->opponent);
+    __m256i f0, f1, f2, f3;
+    f0 = eval->features[eval->feature_idx].f256[0];
+    f1 = eval->features[eval->feature_idx].f256[1];
+    f2 = eval->features[eval->feature_idx].f256[2];
+    f3 = eval->features[eval->feature_idx].f256[3];
+    for (int i = 0; i < N_SIMD_EVAL_FEATURE_GROUP; ++i){
+        f0 = _mm256_add_epi16(f0, eval_move_unflipped_16bit[player_group[i]][i][0]);
+        f1 = _mm256_add_epi16(f1, eval_move_unflipped_16bit[player_group[i]][i][1]);
+        f2 = _mm256_add_epi16(f2, eval_move_unflipped_16bit[player_group[i]][i][2]);
+        f3 = _mm256_add_epi16(f3, eval_move_unflipped_16bit[player_group[i]][i][3]);
+        f0 = _mm256_sub_epi16(f0, eval_move_unflipped_16bit[opponent_group[i]][i][0]);
+        f1 = _mm256_sub_epi16(f1, eval_move_unflipped_16bit[opponent_group[i]][i][1]);
+        f2 = _mm256_sub_epi16(f2, eval_move_unflipped_16bit[opponent_group[i]][i][2]);
+        f3 = _mm256_sub_epi16(f3, eval_move_unflipped_16bit[opponent_group[i]][i][3]);
+    }
+    eval->features[eval->feature_idx].f256[0] = f0;
+    eval->features[eval->feature_idx].f256[1] = f1;
+    eval->features[eval->feature_idx].f256[2] = f2;
+    eval->features[eval->feature_idx].f256[3] = f3;
 }

@@ -47,8 +47,15 @@
 #endif
 
 inline void calc_eval_features(Board *board, Eval_search *eval);
-inline void eval_move(Eval_search *eval, const Flip *flip);
-inline void eval_undo(Eval_search *eval, const Flip *flip);
+#if USE_SIMD
+    inline void eval_move(Eval_search *eval, const Flip *flip, Board *board);
+    inline void eval_undo(Eval_search *eval);
+    inline void eval_pass(Eval_search *eval, Board *board);
+#else
+    inline void eval_move(Eval_search *eval, const Flip *flip);
+    inline void eval_undo(Eval_search *eval, const Flip *flip);
+    inline void eval_pass(Eval_search *eval);
+#endif
 
 /*
     @brief Stability cutoff threshold
@@ -240,7 +247,11 @@ class Search{
             board.move_board(flip);
             ++n_discs;
             parity ^= cell_div4[flip->pos];
-            eval_move(&eval, flip);
+            #if USE_SIMD
+                eval_move(&eval, flip, &board);
+            #else
+                eval_move(&eval, flip);
+            #endif
         }
 
         /*
@@ -252,7 +263,11 @@ class Search{
             board.undo_board(flip);
             --n_discs;
             parity ^= cell_div4[flip->pos];
-            eval_undo(&eval, flip);
+            #if USE_SIMD
+                eval_undo(&eval);
+            #else
+                eval_undo(&eval, flip);
+            #endif
         }
 
         /*
@@ -282,7 +297,11 @@ class Search{
         */
         inline void pass(){
             board.pass();
-            eval.reversed ^= 1;
+            #if USE_SIMD
+                eval_pass(&eval, &board);
+            #else
+                eval_pass(&eval);
+            #endif
         }
 
         /*
