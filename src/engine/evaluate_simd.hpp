@@ -522,7 +522,6 @@ inline int calc_pattern_diff(const int phase_idx, bool reversed, Eval_features *
     return _mm_cvtsi128_si32(res128) + _mm_extract_epi32(res128, 1) - SIMD_EVAL_MAX_VALUE * N_SYMMETRY_PATTERNS;
 }
 
-
 inline void calc_eval_features(Board *board, Eval_search *eval);
 
 /*

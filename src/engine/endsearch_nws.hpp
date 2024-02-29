@@ -175,7 +175,7 @@ int nega_alpha_end_simple_nws(Search *search, int alpha, bool skipped, uint64_t 
             return SCORE_MAX;
         ++idx;
     }
-    move_list_evaluate_end_nws(search, move_list, canput);
+    move_list_evaluate_end_simple_nws(search, move_list, canput);
     int g;
     for (int move_idx = 0; move_idx < canput; ++move_idx){
         if (move_idx < 4)
@@ -227,9 +227,11 @@ int nega_alpha_end_nws(Search *search, int alpha, bool skipped, uint64_t legal, 
     if (legal == 0ULL){
         if (skipped)
             return end_evaluate(&search->board);
-        search->pass_noeval();
+        //search->pass_noeval();
+        search->pass();
             v = -nega_alpha_end_nws(search, -alpha - 1, true, LEGAL_UNDEFINED, searching);
-        search->pass_noeval();
+        search->pass();
+        //search->pass_noeval();
         return v;
     }
     uint32_t hash_code = search->board.hash();
@@ -254,12 +256,14 @@ int nega_alpha_end_nws(Search *search, int alpha, bool skipped, uint64_t legal, 
             return SCORE_MAX;
         ++idx;
     }
-    move_list_evaluate_end_nws(search, move_list, canput, moves);
+    move_list_evaluate_end_nws(search, move_list, moves, alpha, searching);
     for (int move_idx = 0; move_idx < canput; ++move_idx){
         swap_next_best_move(move_list, move_idx, canput);
-        search->move_noeval(&move_list[move_idx].flip);
+        //search->move_noeval(&move_list[move_idx].flip);
+        search->move(&move_list[move_idx].flip);
             g = -nega_alpha_end_nws(search, -alpha - 1, false, move_list[move_idx].n_legal, searching);
-        search->undo_noeval(&move_list[move_idx].flip);
+        search->undo(&move_list[move_idx].flip);
+        //search->undo_noeval(&move_list[move_idx].flip);
         if (v < g){
             v = g;
             best_move = move_list[move_idx].flip.pos;
