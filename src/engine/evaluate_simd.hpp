@@ -28,13 +28,12 @@
 */
 #define CEIL_N_SYMMETRY_PATTERNS 64         // N_SYMMETRY_PATTRENS + dummy
 #define N_PATTERN_PARAMS (521478 + 2)       // +2 for byte bound & dummy
-#define SIMD_EVAL_OFFSET 4092               // evaluate range
+#define SIMD_EVAL_MAX_VALUE 4092            // evaluate range [-4092, 4092]
 #define N_SIMD_EVAL_FEATURES_SIMPLE 2
 #define N_SIMD_EVAL_FEATURES_COMP 2
 #define N_PATTERN_PARAMS_BEFORE_DUMMY 29403
 #define SIMD_EVAL_DUMMY_ADDR 29404
 #define N_PATTERN_PARAMS_AFTER_DUMMY 492075
-#define SIMD_EVAL_F1_OFFSET 19927           // pattern_starts[4]
 
 constexpr Feature_to_coord feature_to_coord[CEIL_N_SYMMETRY_PATTERNS] = {
     // 0 hv2
@@ -211,8 +210,8 @@ __m256i feature_to_coord_simd_mul[N_SIMD_EVAL_FEATURES][MAX_PATTERN_CELLS - 1];
 __m256i feature_to_coord_simd_cell[N_SIMD_EVAL_FEATURES][MAX_PATTERN_CELLS][2];
 __m256i coord_to_feature_simd[HW2][N_SIMD_EVAL_FEATURES];
 __m256i coord_to_feature_simd2[HW2][N_SIMD_EVAL_FEATURES];
-__m256i eval_simd_offsets_bef[N_SIMD_EVAL_FEATURES_SIMPLE]; // 16bit * 16
-__m256i eval_simd_offsets_aft[N_SIMD_EVAL_FEATURES_COMP * 2]; // 32bit * 8
+__m256i eval_simd_offsets_simple[N_SIMD_EVAL_FEATURES_SIMPLE]; // 16bit * 16 * N
+__m256i eval_simd_offsets_comp[N_SIMD_EVAL_FEATURES_COMP * 2]; // 32bit * 8 * N
 __m256i eval_surround_mask;
 __m128i eval_surround_shift1879;
 
@@ -313,15 +312,15 @@ inline bool init_evaluation_calc(const char* file, bool show_log){
         for (i = 1; i < N_PATTERN_PARAMS; ++i){
             if (i == SIMD_EVAL_DUMMY_ADDR) // dummy
                 continue;
-            if (pattern_arr[0][phase_idx][i] < -SIMD_EVAL_OFFSET){
+            if (pattern_arr[0][phase_idx][i] < -SIMD_EVAL_MAX_VALUE){
                 std::cerr << "[ERROR] evaluation value too low. you can ignore this error. phase " << phase_idx << " index " << i << " found " << pattern_arr[0][phase_idx][i] << std::endl;
-                pattern_arr[0][phase_idx][i] = -SIMD_EVAL_OFFSET;
+                pattern_arr[0][phase_idx][i] = -SIMD_EVAL_MAX_VALUE;
             }
-            if (pattern_arr[0][phase_idx][i] > SIMD_EVAL_OFFSET){
+            if (pattern_arr[0][phase_idx][i] > SIMD_EVAL_MAX_VALUE){
                 std::cerr << "[ERROR] evaluation value too high. you can ignore this error. phase " << phase_idx << " index " << i << " found " << pattern_arr[0][phase_idx][i] << std::endl;
-                pattern_arr[0][phase_idx][i] = SIMD_EVAL_OFFSET;
+                pattern_arr[0][phase_idx][i] = SIMD_EVAL_MAX_VALUE;
             }
-            pattern_arr[0][phase_idx][i] += SIMD_EVAL_OFFSET;
+            pattern_arr[0][phase_idx][i] += SIMD_EVAL_MAX_VALUE;
         }
     }
     if (thread_pool.size() >= 2){
@@ -348,7 +347,12 @@ inline bool init_evaluation_calc(const char* file, bool show_log){
         for (j = 0; j < MAX_PATTERN_CELLS - 1; ++j){
             for (k = 0; k < 16; ++k)
                 f2c[k] = (j < feature_to_coord[i * 16 + k].n_cells - 1) ? 3 : 1;
-            feature_to_coord_simd_mul[i][j] = _mm256_set_epi16(f2c[0], f2c[1], f2c[2], f2c[3], f2c[4], f2c[5], f2c[6], f2c[7], f2c[8], f2c[9], f2c[10], f2c[11], f2c[12], f2c[13], f2c[14], f2c[15]);
+            feature_to_coord_simd_mul[i][j] = _mm256_set_epi16(
+                f2c[0], f2c[1], f2c[2], f2c[3], 
+                f2c[4], f2c[5], f2c[6], f2c[7], 
+                f2c[8], f2c[9], f2c[10], f2c[11], 
+                f2c[12], f2c[13], f2c[14], f2c[15]
+            );
         }
     }
     int32_t f2c32[8];
@@ -356,10 +360,16 @@ inline bool init_evaluation_calc(const char* file, bool show_log){
         for (j = 0; j < MAX_PATTERN_CELLS; ++j){
             for (k = 0; k < 8; ++k)
                 f2c32[k] = feature_to_coord[i * 16 + k * 2 + 1].cells[j];
-            feature_to_coord_simd_cell[i][j][0] = _mm256_set_epi32(f2c32[0], f2c32[1], f2c32[2], f2c32[3], f2c32[4], f2c32[5], f2c32[6], f2c32[7]);
+            feature_to_coord_simd_cell[i][j][0] = _mm256_set_epi32(
+                f2c32[0], f2c32[1], f2c32[2], f2c32[3], 
+                f2c32[4], f2c32[5], f2c32[6], f2c32[7]
+            );
             for (k = 0; k < 8; ++k)
                 f2c32[k] = feature_to_coord[i * 16 + k * 2].cells[j];
-            feature_to_coord_simd_cell[i][j][1] = _mm256_set_epi32(f2c32[0], f2c32[1], f2c32[2], f2c32[3], f2c32[4], f2c32[5], f2c32[6], f2c32[7]);
+            feature_to_coord_simd_cell[i][j][1] = _mm256_set_epi32(
+                f2c32[0], f2c32[1], f2c32[2], f2c32[3], 
+                f2c32[4], f2c32[5], f2c32[6], f2c32[7]
+            );
         }
     }
     int16_t c2f[CEIL_N_SYMMETRY_PATTERNS];
@@ -371,29 +381,34 @@ inline bool init_evaluation_calc(const char* file, bool show_log){
         for (i = 0; i < N_SIMD_EVAL_FEATURES; ++i){
             idx = i * 16;
             coord_to_feature_simd[cell][i] = _mm256_set_epi16(
-                c2f[idx], c2f[idx + 1], c2f[idx + 2], c2f[idx + 3], c2f[idx + 4], c2f[idx + 5], c2f[idx + 6], c2f[idx + 7], 
-                c2f[idx + 8], c2f[idx + 9], c2f[idx + 10], c2f[idx + 11], c2f[idx + 12], c2f[idx + 13], c2f[idx + 14], c2f[idx + 15]
+                c2f[idx], c2f[idx + 1], c2f[idx + 2], c2f[idx + 3], 
+                c2f[idx + 4], c2f[idx + 5], c2f[idx + 6], c2f[idx + 7], 
+                c2f[idx + 8], c2f[idx + 9], c2f[idx + 10], c2f[idx + 11], 
+                c2f[idx + 12], c2f[idx + 13], c2f[idx + 14], c2f[idx + 15]
             );
             coord_to_feature_simd2[cell][i] = _mm256_slli_epi16(coord_to_feature_simd[cell][i], 1);
         }
     }
-    eval_simd_offsets_bef[0] = _mm256_set_epi16(
-        (int16_t)pattern_starts[0], (int16_t)pattern_starts[0], (int16_t)pattern_starts[0], (int16_t)pattern_starts[0], (int16_t)pattern_starts[1], (int16_t)pattern_starts[1], (int16_t)pattern_starts[1], (int16_t)pattern_starts[1], 
-        (int16_t)pattern_starts[2], (int16_t)pattern_starts[2], (int16_t)pattern_starts[2], (int16_t)pattern_starts[2], (int16_t)pattern_starts[3], (int16_t)pattern_starts[3], (int16_t)pattern_starts[3], (int16_t)pattern_starts[3]
+    eval_simd_offsets_simple[0] = _mm256_set_epi16(
+        (int16_t)pattern_starts[0], (int16_t)pattern_starts[0], (int16_t)pattern_starts[0], (int16_t)pattern_starts[0], 
+        (int16_t)pattern_starts[1], (int16_t)pattern_starts[1], (int16_t)pattern_starts[1], (int16_t)pattern_starts[1], 
+        (int16_t)pattern_starts[2], (int16_t)pattern_starts[2], (int16_t)pattern_starts[2], (int16_t)pattern_starts[2], 
+        (int16_t)pattern_starts[3], (int16_t)pattern_starts[3], (int16_t)pattern_starts[3], (int16_t)pattern_starts[3]
     );
-    eval_simd_offsets_bef[1] = _mm256_set_epi16(
-        (int16_t)pattern_starts[4], (int16_t)pattern_starts[4], (int16_t)pattern_starts[4], (int16_t)pattern_starts[4], (int16_t)pattern_starts[5], (int16_t)pattern_starts[5], (int16_t)pattern_starts[5], (int16_t)pattern_starts[5], 
-        (int16_t)pattern_starts[6], (int16_t)pattern_starts[6],       SIMD_EVAL_DUMMY_ADDR,       SIMD_EVAL_DUMMY_ADDR, (int16_t)pattern_starts[7], (int16_t)pattern_starts[7], (int16_t)pattern_starts[7], (int16_t)pattern_starts[7]
+    eval_simd_offsets_simple[1] = _mm256_set_epi16(
+        (int16_t)pattern_starts[4], (int16_t)pattern_starts[4], (int16_t)pattern_starts[4], (int16_t)pattern_starts[4], 
+        (int16_t)pattern_starts[5], (int16_t)pattern_starts[5], (int16_t)pattern_starts[5], (int16_t)pattern_starts[5], 
+        (int16_t)pattern_starts[6], (int16_t)pattern_starts[6],       SIMD_EVAL_DUMMY_ADDR,       SIMD_EVAL_DUMMY_ADDR, 
+        (int16_t)pattern_starts[7], (int16_t)pattern_starts[7], (int16_t)pattern_starts[7], (int16_t)pattern_starts[7]
     );
-    eval_simd_offsets_bef[1] = _mm256_sub_epi16(eval_simd_offsets_bef[1], _mm256_set1_epi16(SIMD_EVAL_F1_OFFSET));
     int i4;
     for (i = 0; i < N_SIMD_EVAL_FEATURES_COMP; ++i){
         i4 = i * 4;
-        eval_simd_offsets_aft[i * 2] = _mm256_set_epi32(
+        eval_simd_offsets_comp[i * 2] = _mm256_set_epi32(
             pattern_starts[10 + i4], pattern_starts[10 + i4], pattern_starts[10 + i4], pattern_starts[10 + i4], 
             pattern_starts[11 + i4], pattern_starts[11 + i4], pattern_starts[11 + i4], pattern_starts[11 + i4]
         );
-        eval_simd_offsets_aft[i * 2 + 1] = _mm256_set_epi32(
+        eval_simd_offsets_comp[i * 2 + 1] = _mm256_set_epi32(
             pattern_starts[8 + i4], pattern_starts[8 + i4], pattern_starts[8 + i4], pattern_starts[8 + i4], 
             pattern_starts[9 + i4], pattern_starts[9 + i4], pattern_starts[9 + i4], pattern_starts[9 + i4]
         );
@@ -458,35 +473,34 @@ inline int calc_surround(const uint64_t discs, const uint64_t empties){
     @param search               search information
     @return pattern evaluation value
 */
-inline __m256i calc_idx8_aft(const __m128i feature, const int i){
-    return _mm256_add_epi32(_mm256_cvtepu16_epi32(feature), eval_simd_offsets_aft[i]);
+inline __m256i calc_idx8_comp(const __m128i feature, const int i){
+    return _mm256_add_epi32(_mm256_cvtepu16_epi32(feature), eval_simd_offsets_comp[i]);
 }
 
-inline __m256i gather_eval(const int *pat_com, const __m256i idx8){
-    #if SIMD_EVAL_OFFSET * 16 < 65535  // HACK: if (SIMD_EVAL_OFFSET * 2) * 8 < 2 ^ 16, AND is unnecessary
-        return _mm256_i32gather_epi32(pat_com, idx8, 2);
+inline __m256i gather_eval(const int *start_addr, const __m256i idx8){
+    #if SIMD_EVAL_MAX_VALUE * 16 < 65535  // HACK: if (SIMD_EVAL_MAX_VALUE * 2) * 8 < 2 ^ 16, AND is unnecessary
+        return _mm256_i32gather_epi32(start_addr, idx8, 2); // stride is 2 byte
     #else
-        return _mm256_and_si256(_mm256_i32gather_epi32(pat_com, idx8, 2), eval_lower_mask);
+        return _mm256_and_si256(_mm256_i32gather_epi32(start_addr, idx8, 2), eval_lower_mask);
     #endif
 }
 
 inline int calc_pattern_diff(const int phase_idx, bool reversed, Eval_features *features){
-    const int *pat_com = (int*)pattern_arr[reversed][phase_idx];
-    const int *pat_com1 = (int*)(&pattern_arr[reversed][phase_idx][SIMD_EVAL_F1_OFFSET]);
-    __m256i res256 =                  gather_eval(pat_com, _mm256_cvtepu16_epi32(features->f128[0]));
-    res256 = _mm256_add_epi32(res256, gather_eval(pat_com, _mm256_cvtepu16_epi32(features->f128[1])));
-    res256 = _mm256_add_epi32(res256, gather_eval(pat_com1, _mm256_cvtepu16_epi32(features->f128[2])));
-    res256 = _mm256_add_epi32(res256, gather_eval(pat_com1, _mm256_cvtepu16_epi32(features->f128[3])));
-    res256 = _mm256_add_epi32(res256, gather_eval(pat_com, calc_idx8_aft(features->f128[4], 0)));
-    res256 = _mm256_add_epi32(res256, gather_eval(pat_com, calc_idx8_aft(features->f128[5], 1)));
-    res256 = _mm256_add_epi32(res256, gather_eval(pat_com, calc_idx8_aft(features->f128[6], 2)));
-    res256 = _mm256_add_epi32(res256, gather_eval(pat_com, calc_idx8_aft(features->f128[7], 3)));
-    #if SIMD_EVAL_OFFSET * 16 < 65535
+    const int *start_addr = (int*)pattern_arr[reversed][phase_idx];
+    __m256i res256 =                  gather_eval(start_addr, _mm256_cvtepu16_epi32(features->f128[0]));
+    res256 = _mm256_add_epi32(res256, gather_eval(start_addr, _mm256_cvtepu16_epi32(features->f128[1])));
+    res256 = _mm256_add_epi32(res256, gather_eval(start_addr, _mm256_cvtepu16_epi32(features->f128[2])));
+    res256 = _mm256_add_epi32(res256, gather_eval(start_addr, _mm256_cvtepu16_epi32(features->f128[3])));
+    res256 = _mm256_add_epi32(res256, gather_eval(start_addr, calc_idx8_comp(features->f128[4], 0)));
+    res256 = _mm256_add_epi32(res256, gather_eval(start_addr, calc_idx8_comp(features->f128[5], 1)));
+    res256 = _mm256_add_epi32(res256, gather_eval(start_addr, calc_idx8_comp(features->f128[6], 2)));
+    res256 = _mm256_add_epi32(res256, gather_eval(start_addr, calc_idx8_comp(features->f128[7], 3)));
+    #if SIMD_EVAL_MAX_VALUE * 16 < 65535
         res256 = _mm256_and_si256(res256, eval_lower_mask);
     #endif
     __m128i res128 = _mm_add_epi32(_mm256_castsi256_si128(res256), _mm256_extracti128_si256(res256, 1));
     res128 = _mm_hadd_epi32(res128, res128);
-    return _mm_cvtsi128_si32(res128) + _mm_extract_epi32(res128, 1) - SIMD_EVAL_OFFSET * N_SYMMETRY_PATTERNS;
+    return _mm_cvtsi128_si32(res128) + _mm_extract_epi32(res128, 1) - SIMD_EVAL_MAX_VALUE * N_SYMMETRY_PATTERNS;
 }
 
 /*
@@ -548,7 +562,7 @@ inline int mid_evaluate_diff(Search *search){
 
 inline void calc_feature_vector(__m256i &f, const int *b_arr_int, const int i, const int n){
     f = _mm256_set1_epi16(0);
-    for (int j = 0; j < n; ++j){
+    for (int j = 0; j < n; ++j){ // n: max n_cells in pattern - 1
         f = _mm256_adds_epu16(f, _mm256_i32gather_epi32(b_arr_int, feature_to_coord_simd_cell[i][j][0], 4));
         f = _mm256_adds_epu16(f, _mm256_slli_epi32(_mm256_i32gather_epi32(b_arr_int, feature_to_coord_simd_cell[i][j][1], 4), 16));
         f = _mm256_mullo_epi16(f, feature_to_coord_simd_mul[i][j]);
@@ -570,8 +584,8 @@ inline void calc_features(Search *search){
     calc_feature_vector(search->eval_features[0].f256[1], b_arr_int, 1, 8);
     calc_feature_vector(search->eval_features[0].f256[2], b_arr_int, 2, 9);
     calc_feature_vector(search->eval_features[0].f256[3], b_arr_int, 3, 9);
-    search->eval_features[0].f256[0] = _mm256_adds_epu16(search->eval_features[0].f256[0], eval_simd_offsets_bef[0]);
-    search->eval_features[0].f256[1] = _mm256_adds_epu16(search->eval_features[0].f256[1], eval_simd_offsets_bef[1]);
+    search->eval_features[0].f256[0] = _mm256_adds_epu16(search->eval_features[0].f256[0], eval_simd_offsets_simple[0]);
+    search->eval_features[0].f256[1] = _mm256_adds_epu16(search->eval_features[0].f256[1], eval_simd_offsets_simple[1]);
     search->eval_feature_reversed = false;
     search->eval_feature_idx = 0;
 }
