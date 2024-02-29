@@ -26,18 +26,14 @@
 /*
     @brief evaluation pattern definition for SIMD
 */
-#define CEIL_N_SYMMETRY_PATTERNS 64
-#define MAX_PATTERN_CELLS 10
-#define MAX_CELL_PATTERNS 13
-#define MAX_EVALUATE_IDX 59049
-#define SIMD_EVAL_OFFSET 4092
-#define N_SIMD_EVAL_OFFSET_BEF 2
-#define N_SIMD_EVAL_OFFSET_AFT 2
-#define N_PATTERN_PARAMS 521478
-#define N_PATTERN_PARAMS_FIRST 29403
+#define CEIL_N_SYMMETRY_PATTERNS 64         // N_SYMMETRY_PATTRENS + dummy
+#define SIMD_EVAL_OFFSET 4092               // evaluate range
+#define N_SIMD_EVAL_FEATURES_SIMPLE 2
+#define N_SIMD_EVAL_FEATURES_COMP 2
+#define N_PATTERN_PARAMS_BEFORE_DUMMY 29403
 #define SIMD_EVAL_DUMMY_ADDR 29404
-#define N_PATTERN_PARAMS_SECOND 492075
-#define SIMD_EVAL_F1_OFFSET 19927 // pattern_starts[4]
+#define N_PATTERN_PARAMS_AFTER_DUMMY 492075
+#define SIMD_EVAL_F1_OFFSET 19927           // pattern_starts[4]
 
 constexpr Feature_to_coord feature_to_coord[CEIL_N_SYMMETRY_PATTERNS] = {
     // 0 hv2
@@ -214,8 +210,8 @@ __m256i feature_to_coord_simd_mul[N_SIMD_EVAL_FEATURES][MAX_PATTERN_CELLS - 1];
 __m256i feature_to_coord_simd_cell[N_SIMD_EVAL_FEATURES][MAX_PATTERN_CELLS][2];
 __m256i coord_to_feature_simd[HW2][N_SIMD_EVAL_FEATURES];
 __m256i coord_to_feature_simd2[HW2][N_SIMD_EVAL_FEATURES];
-__m256i eval_simd_offsets_bef[N_SIMD_EVAL_OFFSET_BEF]; // 16bit * 16
-__m256i eval_simd_offsets_aft[N_SIMD_EVAL_OFFSET_AFT * 2]; // 32bit * 8
+__m256i eval_simd_offsets_bef[N_SIMD_EVAL_FEATURES_SIMPLE]; // 16bit * 16
+__m256i eval_simd_offsets_aft[N_SIMD_EVAL_FEATURES_COMP * 2]; // 32bit * 8
 __m256i eval_surround_mask;
 __m128i eval_surround_shift1879;
 
@@ -287,14 +283,14 @@ inline bool init_evaluation_calc(const char* file, bool show_log){
     for (phase_idx = 0; phase_idx < N_PHASES; ++phase_idx){
         pattern_arr[0][phase_idx][0] = 0; // memory bound
         pattern_arr[1][phase_idx][0] = 0; // memory bound
-        if (fread(pattern_arr[0][phase_idx] + pattern_starts[0], 2, N_PATTERN_PARAMS_FIRST, fp) < N_PATTERN_PARAMS_FIRST){
+        if (fread(pattern_arr[0][phase_idx] + pattern_starts[0], 2, N_PATTERN_PARAMS_BEFORE_DUMMY, fp) < N_PATTERN_PARAMS_BEFORE_DUMMY){
             std::cerr << "[ERROR] [FATAL] evaluation file broken" << std::endl;
             fclose(fp);
             return false;
         }
         pattern_arr[0][phase_idx][SIMD_EVAL_DUMMY_ADDR] = 0; // dummy
         pattern_arr[1][phase_idx][SIMD_EVAL_DUMMY_ADDR] = 0; // dummy
-        if (fread(pattern_arr[0][phase_idx] + pattern_starts[7], 2, N_PATTERN_PARAMS_SECOND, fp) < N_PATTERN_PARAMS_SECOND){
+        if (fread(pattern_arr[0][phase_idx] + pattern_starts[7], 2, N_PATTERN_PARAMS_AFTER_DUMMY, fp) < N_PATTERN_PARAMS_AFTER_DUMMY){
             std::cerr << "[ERROR] [FATAL] evaluation file broken" << std::endl;
             fclose(fp);
             return false;
@@ -390,7 +386,7 @@ inline bool init_evaluation_calc(const char* file, bool show_log){
     );
     eval_simd_offsets_bef[1] = _mm256_sub_epi16(eval_simd_offsets_bef[1], _mm256_set1_epi16(SIMD_EVAL_F1_OFFSET));
     int i4;
-    for (i = 0; i < N_SIMD_EVAL_OFFSET_AFT; ++i){
+    for (i = 0; i < N_SIMD_EVAL_FEATURES_COMP; ++i){
         i4 = i * 4;
         eval_simd_offsets_aft[i * 2] = _mm256_set_epi32(
             pattern_starts[10 + i4], pattern_starts[10 + i4], pattern_starts[10 + i4], pattern_starts[10 + i4], 
