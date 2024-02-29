@@ -308,7 +308,6 @@ inline bool init_evaluation_calc(const char* file, bool show_log){
             return false;
         }
     }
-    eval_lower_mask = _mm256_set1_epi32(0x0000FFFF);
     for (int phase_idx = 0; phase_idx < N_PHASES; ++phase_idx){
         for (int i = 1; i < N_PATTERN_PARAMS; ++i){
             if (i == SIMD_EVAL_DUMMY_ADDR) // dummy
@@ -343,7 +342,7 @@ inline bool init_evaluation_calc(const char* file, bool show_log){
                 init_pattern_arr_rev(phase_idx, pattern_sizes[pattern_idx], pattern_starts[pattern_idx]);
         }
     }
-    {
+    { // calc_features initialization
         int16_t f2c[16];
         for (int i = 0; i < N_SIMD_EVAL_FEATURES; ++i){
             for (int j = 0; j < MAX_PATTERN_CELLS - 1; ++j){
@@ -357,8 +356,6 @@ inline bool init_evaluation_calc(const char* file, bool show_log){
                 );
             }
         }
-    }
-    {
         int32_t f2c32[8];
         for (int i = 0; i < N_SIMD_EVAL_FEATURES; ++i){
             for (int j = 0; j < MAX_PATTERN_CELLS; ++j){
@@ -376,8 +373,20 @@ inline bool init_evaluation_calc(const char* file, bool show_log){
                 );
             }
         }
+        eval_simd_offsets_simple[0] = _mm256_set_epi16(
+            (int16_t)pattern_starts[0], (int16_t)pattern_starts[0], (int16_t)pattern_starts[0], (int16_t)pattern_starts[0], 
+            (int16_t)pattern_starts[1], (int16_t)pattern_starts[1], (int16_t)pattern_starts[1], (int16_t)pattern_starts[1], 
+            (int16_t)pattern_starts[2], (int16_t)pattern_starts[2], (int16_t)pattern_starts[2], (int16_t)pattern_starts[2], 
+            (int16_t)pattern_starts[3], (int16_t)pattern_starts[3], (int16_t)pattern_starts[3], (int16_t)pattern_starts[3]
+        );
+        eval_simd_offsets_simple[1] = _mm256_set_epi16(
+            (int16_t)pattern_starts[4], (int16_t)pattern_starts[4], (int16_t)pattern_starts[4], (int16_t)pattern_starts[4], 
+            (int16_t)pattern_starts[5], (int16_t)pattern_starts[5], (int16_t)pattern_starts[5], (int16_t)pattern_starts[5], 
+            (int16_t)pattern_starts[6], (int16_t)pattern_starts[6],       SIMD_EVAL_DUMMY_ADDR,       SIMD_EVAL_DUMMY_ADDR, 
+            (int16_t)pattern_starts[7], (int16_t)pattern_starts[7], (int16_t)pattern_starts[7], (int16_t)pattern_starts[7]
+        );
     }
-    {
+    { // eval_move initialization
         int16_t c2f[CEIL_N_SYMMETRY_PATTERNS];
         for (int cell = 0; cell < HW2; ++cell){ // 0 for h8, 63 for a1
             for (int i = 0; i < CEIL_N_SYMMETRY_PATTERNS; ++i)
@@ -408,32 +417,23 @@ inline bool init_evaluation_calc(const char* file, bool show_log){
                 }
             }
         }
+        for (int i = 0; i < N_SIMD_EVAL_FEATURES_COMP; ++i){
+            int i4 = i * 4;
+            eval_simd_offsets_comp[i * 2] = _mm256_set_epi32(
+                pattern_starts[10 + i4], pattern_starts[10 + i4], pattern_starts[10 + i4], pattern_starts[10 + i4], 
+                pattern_starts[11 + i4], pattern_starts[11 + i4], pattern_starts[11 + i4], pattern_starts[11 + i4]
+            );
+            eval_simd_offsets_comp[i * 2 + 1] = _mm256_set_epi32(
+                pattern_starts[8 + i4], pattern_starts[8 + i4], pattern_starts[8 + i4], pattern_starts[8 + i4], 
+                pattern_starts[9 + i4], pattern_starts[9 + i4], pattern_starts[9 + i4], pattern_starts[9 + i4]
+            );
+        }
+        eval_lower_mask = _mm256_set1_epi32(0x0000FFFF);
     }
-    eval_simd_offsets_simple[0] = _mm256_set_epi16(
-        (int16_t)pattern_starts[0], (int16_t)pattern_starts[0], (int16_t)pattern_starts[0], (int16_t)pattern_starts[0], 
-        (int16_t)pattern_starts[1], (int16_t)pattern_starts[1], (int16_t)pattern_starts[1], (int16_t)pattern_starts[1], 
-        (int16_t)pattern_starts[2], (int16_t)pattern_starts[2], (int16_t)pattern_starts[2], (int16_t)pattern_starts[2], 
-        (int16_t)pattern_starts[3], (int16_t)pattern_starts[3], (int16_t)pattern_starts[3], (int16_t)pattern_starts[3]
-    );
-    eval_simd_offsets_simple[1] = _mm256_set_epi16(
-        (int16_t)pattern_starts[4], (int16_t)pattern_starts[4], (int16_t)pattern_starts[4], (int16_t)pattern_starts[4], 
-        (int16_t)pattern_starts[5], (int16_t)pattern_starts[5], (int16_t)pattern_starts[5], (int16_t)pattern_starts[5], 
-        (int16_t)pattern_starts[6], (int16_t)pattern_starts[6],       SIMD_EVAL_DUMMY_ADDR,       SIMD_EVAL_DUMMY_ADDR, 
-        (int16_t)pattern_starts[7], (int16_t)pattern_starts[7], (int16_t)pattern_starts[7], (int16_t)pattern_starts[7]
-    );
-    for (int i = 0; i < N_SIMD_EVAL_FEATURES_COMP; ++i){
-        int i4 = i * 4;
-        eval_simd_offsets_comp[i * 2] = _mm256_set_epi32(
-            pattern_starts[10 + i4], pattern_starts[10 + i4], pattern_starts[10 + i4], pattern_starts[10 + i4], 
-            pattern_starts[11 + i4], pattern_starts[11 + i4], pattern_starts[11 + i4], pattern_starts[11 + i4]
-        );
-        eval_simd_offsets_comp[i * 2 + 1] = _mm256_set_epi32(
-            pattern_starts[8 + i4], pattern_starts[8 + i4], pattern_starts[8 + i4], pattern_starts[8 + i4], 
-            pattern_starts[9 + i4], pattern_starts[9 + i4], pattern_starts[9 + i4], pattern_starts[9 + i4]
-        );
+    { // calc_surround initialization
+        eval_surround_mask = _mm256_set_epi64x(0x7E7E7E7E7E7E7E7EULL, 0x00FFFFFFFFFFFF00ULL, 0x007E7E7E7E7E7E00ULL, 0x007E7E7E7E7E7E00ULL);
+        eval_surround_shift1879 = _mm_set_epi32(1, HW, HW_M1, HW_P1);
     }
-    eval_surround_mask = _mm256_set_epi64x(0x7E7E7E7E7E7E7E7EULL, 0x00FFFFFFFFFFFF00ULL, 0x007E7E7E7E7E7E00ULL, 0x007E7E7E7E7E7E00ULL);
-    eval_surround_shift1879 = _mm_set_epi32(1, HW, HW_M1, HW_P1);
     if (show_log)
         std::cerr << "evaluation function initialized" << std::endl;
     return true;
