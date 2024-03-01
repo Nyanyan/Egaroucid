@@ -16,7 +16,7 @@ for line in s:
     except:
         continue
 
-result = str(n_data) + ' data used for optimization of ' + str(n_count_phases), ' phases'
+result = str(n_data) + ' data used for optimization of ' + str(n_count_phases) + ' phases'
 print(result)
 
 if input('write to info.txt?: ') == 'y':
