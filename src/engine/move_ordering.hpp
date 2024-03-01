@@ -41,8 +41,8 @@
     int move_ordering_param_array[N_MOVE_ORDERING_PARAM] = {
         37, 11, 289, 92, 
         17, 19, 14, 11, 
-        32, 4, 4, 
-        14, 4
+        38, 0, 6, 
+        9, 8
     };
 
     #define W_MOBILITY                  move_ordering_param_array[0]
@@ -80,13 +80,13 @@
     #define W_NWS_VALUE_DEEP_ADDITIONAL 11
 
     // endgame null window search
-    #define W_END_NWS_MOBILITY 32
-    #define W_END_NWS_PARITY 4
-    #define W_END_NWS_VALUE 4
+    #define W_END_NWS_MOBILITY 38
+    #define W_END_NWS_PARITY 0
+    #define W_END_NWS_VALUE 6
 
     // endgame simple null window search
-    #define W_END_NWS_SIMPLE_MOBILITY 14
-    #define W_END_NWS_SIMPLE_PARITY 4
+    #define W_END_NWS_SIMPLE_MOBILITY 9
+    #define W_END_NWS_SIMPLE_PARITY 8
 #endif
 
 #define MOVE_ORDERING_VALUE_OFFSET_ALPHA 12
