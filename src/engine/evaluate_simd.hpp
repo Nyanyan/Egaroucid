@@ -607,12 +607,6 @@ inline int mid_evaluate_move_ordering_end(Search *search){
     int res = calc_pattern_move_ordering_end(&search->eval.features[search->eval.feature_idx]);
     res += res >= 0 ? STEP_2 : -STEP_2;
     res /= STEP;
-    // if (res > SCORE_MAX)
-    //     return SCORE_MAX;
-    // if (res < -SCORE_MAX)
-    //     return -SCORE_MAX;
-    //std::cerr << res << std::endl;
-    //search->board.print();
     return res;
 }
 
