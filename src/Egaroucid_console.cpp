@@ -12,7 +12,7 @@
 #include "engine/engine_all.hpp"
 #include "console/console_all.hpp"
 
-void init_console(Options options){
+void init_console(Options options, std::string binary_path){
     thread_pool.resize(std::max(0, options.n_threads - 1));
     bit_init();
     mobility_init();
@@ -24,7 +24,8 @@ void init_console(Options options){
     #endif
     hash_resize(DEFAULT_HASH_LEVEL, options.hash_level, options.binary_path, options.show_log);
     stability_init();
-    if (!evaluate_init(options.eval_file, options.show_log))
+    std::string mo_end_nws_eval_file = binary_path + "resources/eval_mo_end_nws.egev"; // filename fixed
+    if (!evaluate_init(options.eval_file, mo_end_nws_eval_file, options.show_log))
         std::exit(0);
     if (!options.nobook)
         book_init(options.book_file, options.show_log);
@@ -38,7 +39,7 @@ int main(int argc, char* argv[]){
     std::vector<Commandline_option> commandline_options = get_commandline_options(argc, argv);
     Options options = get_options(commandline_options, binary_path);
     print_special_commandline_options(commandline_options);
-    init_console(options);
+    init_console(options, binary_path);
     execute_special_tasks(options);
     execute_special_commandline_tasks(commandline_options, &options, &state);
     Board_info board;

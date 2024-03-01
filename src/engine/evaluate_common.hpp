@@ -28,6 +28,10 @@
 #define MAX_SURROUND 64
 #define MAX_STONE_NUM 65
 
+
+#define N_PATTERNS_MOVE_ORDERING_END_NWS 4
+#define MAX_EVALUATE_IDX_MOVE_ORDERING_END_NWS 59049
+
 /*
     @brief value definition
 

@@ -81,7 +81,7 @@
     // endgame null window search
     #define W_END_NWS_MOBILITY 64
     #define W_END_NWS_PARITY 8
-    #define W_END_NWS_VALUE 1
+    #define W_END_NWS_VALUE 2
 
     // endgame simple null window search
     #define W_END_NWS_SIMPLE_MOBILITY 14
@@ -267,11 +267,11 @@ inline void move_evaluate_end_nws(Search *search, Flip_value *flip_value){
     flip_value->value = 0;
     if (search->parity & cell_div4[flip_value->flip.pos])
         flip_value->value += W_END_NWS_PARITY;
-    search->move(&flip_value->flip);
+    search->move_endsearch(&flip_value->flip);
         flip_value->n_legal = search->board.get_legal();
         flip_value->value -= pop_count_ull(flip_value->n_legal) * W_END_NWS_MOBILITY;
         flip_value->value -= mid_evaluate_move_ordering_end(search) * W_END_NWS_VALUE;
-    search->undo(&flip_value->flip);
+    search->undo_endsearch(&flip_value->flip);
 }
 
 /*
