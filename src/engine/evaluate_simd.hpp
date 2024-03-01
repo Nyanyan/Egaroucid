@@ -38,6 +38,7 @@
 #define N_SIMD_EVAL_FEATURE_GROUP 4
 
 #define N_PATTERN_PARAMS_MOVE_ORDERING_END_NWS (236196 + 1) // +1 for byte bound
+#define SIMD_EVAL_MAX_VALUE_MOVE_ORDERING_END_NWS 16380
 
 constexpr Feature_to_coord feature_to_coord[CEIL_N_SYMMETRY_PATTERNS] = {
     // 0 hv2
@@ -267,7 +268,6 @@ inline bool load_eval_file(const char* file, bool show_log){
             return false;
         }
     }
-    /*
     // check max value
     for (int phase_idx = 0; phase_idx < N_PHASES; ++phase_idx){
         for (int i = 1; i < N_PATTERN_PARAMS; ++i){
@@ -284,7 +284,6 @@ inline bool load_eval_file(const char* file, bool show_log){
             pattern_arr[phase_idx][i] += SIMD_EVAL_MAX_VALUE;
         }
     }
-    */
     return true;
 }
 
@@ -306,6 +305,18 @@ inline bool load_eval_move_ordering_end_nws_file(const char* file, bool show_log
         std::cerr << "[ERROR] [FATAL] evaluation file for move ordering end nws broken" << std::endl;
         fclose(fp);
         return false;
+    }
+    // check max value
+    for (int i = 1; i < N_PATTERN_PARAMS_MOVE_ORDERING_END_NWS; ++i){
+        if (pattern_arr_move_ordering_end_nws[i] < -SIMD_EVAL_MAX_VALUE_MOVE_ORDERING_END_NWS){
+            std::cerr << "[ERROR] evaluation value too low. you can ignore this error. index " << i << " found " << pattern_arr_move_ordering_end_nws[i] << std::endl;
+            pattern_arr_move_ordering_end_nws[i] = -SIMD_EVAL_MAX_VALUE_MOVE_ORDERING_END_NWS;
+        }
+        if (pattern_arr_move_ordering_end_nws[i] > SIMD_EVAL_MAX_VALUE_MOVE_ORDERING_END_NWS){
+            std::cerr << "[ERROR] evaluation value too high. you can ignore this error. index " << i << " found " << pattern_arr_move_ordering_end_nws[i] << std::endl;
+            pattern_arr_move_ordering_end_nws[i] = SIMD_EVAL_MAX_VALUE_MOVE_ORDERING_END_NWS;
+        }
+        pattern_arr_move_ordering_end_nws[i] += SIMD_EVAL_MAX_VALUE_MOVE_ORDERING_END_NWS;
     }
     return true;
 }
@@ -512,8 +523,7 @@ inline int calc_pattern(const int phase_idx, Eval_features *features){
 }
 
 inline int calc_pattern_move_ordering_end(const int phase_idx, Eval_features *features){
-    //const int *start_addr = (int*)pattern_arr_move_ordering_end_nws;
-    const int *start_addr = (int*)pattern_arr[phase_idx];
+    const int *start_addr = (int*)pattern_arr_move_ordering_end_nws;
     __m256i res256 =                  gather_eval(start_addr, calc_idx8_comp(features->f128[4], 0));        // corner+block cross
     res256 = _mm256_add_epi32(res256, gather_eval(start_addr, calc_idx8_comp(features->f128[5], 1)));       // edge+2X triangle
     res256 = _mm256_and_si256(res256, eval_lower_mask);
