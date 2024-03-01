@@ -8,12 +8,20 @@ second = '0'
 alpha = '500'
 n_patience = '1'
 
-train_data_nums = [6, 7, 8, 9, 10, 11, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25]
-
-train_root_dir = './../../../train_data/bin_data/20240223_1/'
-
 model_dir = './../../../model/nomodel/'
+
+'''
+# 6.6
+train_data_nums = [6, 7, 8, 9, 10, 11, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25]
+train_root_dir = './../../../train_data/bin_data/20240223_1/'
 model_dir = './../../../model/20240226_3/'
+executable = 'eval_optimizer_cuda_12_2_0.exe'
+'''
+# 6.6 move ordering end nws
+train_data_nums = [24, 25]
+train_root_dir = './../../../train_data/bin_data/20240301_1_move_ordering_end_nws/'
+executable = 'eval_optimizer_cuda_12_2_0_move_ordering_end_nws.exe'
+#model_dir = './../../../model/20240226_3/'
 
 train_data = [str(elem) + '.dat' for elem in train_data_nums]
 
@@ -23,8 +31,6 @@ additional_params = ''
 for tfile in train_data:
     for train_dir in train_dirs:
         additional_params += ' ' + train_dir + tfile
-
-executable = 'eval_optimizer_cuda_12_2_0.exe'
 
 cmd = executable + ' ' + phase + ' ' + hour + ' ' + minute + ' ' + second + ' ' + alpha + ' ' + n_patience + ' ' + model_dir + phase + '.txt' + additional_params
 print(cmd, file=sys.stderr)
