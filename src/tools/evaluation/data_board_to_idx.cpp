@@ -57,14 +57,20 @@ int main(int argc, char *argv[]){
             fread(&score, 1, 1, fp);
             n = pop_count_ull(board.player | board.opponent);
             if (calc_phase(&board, player) == phase && n - 4 >= use_n_moves_min && n - 4 <= use_n_moves_max){
-                player_short = player;
-                score_short = score;
-                adj_calc_features(&board, idxes);
-                fout.write((char*)&n, 2);
-                fout.write((char*)&player_short, 2);
-                fout.write((char*)idxes, 2 * ADJ_N_FEATURES);
-                fout.write((char*)&score_short, 2);
-                ++t;
+                #ifdef ADJ_MIN_N_DISCS
+                if (ADJ_MIN_N_DISCS <= n && n <= ADJ_MAX_N_DISCS){
+                #endif
+                    player_short = player;
+                    score_short = score;
+                    adj_calc_features(&board, idxes);
+                    fout.write((char*)&n, 2);
+                    fout.write((char*)&player_short, 2);
+                    fout.write((char*)idxes, 2 * ADJ_N_FEATURES);
+                    fout.write((char*)&score_short, 2);
+                    ++t;
+                #ifdef ADJ_MIN_N_DISCS
+                }
+                #endif
             }
         }
         if (i % 20 == 19)
