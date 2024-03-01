@@ -18,6 +18,7 @@
         #include <x86intrin.h>
     #endif
 #endif
+#include "setting.hpp"
 #include "common.hpp"
 #include "board.hpp"
 #include "search.hpp"
@@ -40,7 +41,7 @@
     int move_ordering_param_array[N_MOVE_ORDERING_PARAM] = {
         37, 11, 289, 92, 
         17, 19, 14, 11, 
-        20, 4, 10, 
+        32, 4, 4, 
         14, 4
     };
 
@@ -476,7 +477,10 @@ inline void move_list_evaluate_end_simple_nws(Search *search, Flip_value move_li
     @brief Parameter tuning for move ordering
 */
 #if TUNE_MOVE_ORDERING_MID || TUNE_MOVE_ORDERING_END
-    std::pair<int, int> first_nega_scout(Search *search, int alpha, int beta, int predicted_value, int depth, bool is_end_search, const bool is_main_search, const std::vector<Clog_result> clogs, uint64_t strt);
+    #include "ai.hpp"
+    //std::pair<int, int> first_nega_scout(Search *search, int alpha, int beta, int predicted_value, int depth, bool is_end_search, const bool is_main_search, const std::vector<Clog_result> clogs, uint64_t strt);
+    inline Search_result tree_search(Board board, int depth, uint_fast8_t mpc_level, bool show_log, bool use_multi_thread);
+    void transposition_table_init();
 
     Board get_board(std::string board_str){
         board_str.erase(std::remove_if(board_str.begin(), board_str.end(), ::isspace), board_str.end());
@@ -514,18 +518,22 @@ inline void move_list_evaluate_end_simple_nws(Search *search, Flip_value move_li
             bool is_mid_search;
             uint_fast8_t mpc_level;
             get_level(level, board.n_discs() - 4, &is_mid_search, &depth, &mpc_level);
+            /*
             Search search;
             search.init_board(&board);
-            calc_features(&search);
             search.n_nodes = 0ULL;
             search.use_multi_thread = true;
             search.mpc_level = mpc_level;
             std::vector<Clog_result> clogs;
-            //transposition_table.init();
+            */
             //board.print();
-            std::pair<int, int> result = first_nega_scout(&search, -SCORE_MAX, SCORE_MAX, SCORE_UNDEFINED, depth, !is_mid_search, false, clogs, tim());
+            //transposition_table.init();
+            //std::pair<int, int> result = first_nega_scout(&search, -SCORE_MAX, SCORE_MAX, SCORE_UNDEFINED, depth, !is_mid_search, false, clogs, tim());
             //std::cerr << result.first << " " << result.second << std::endl;
-            n_nodes += search.n_nodes;
+            //n_nodes += search.n_nodes;
+            transposition_table_init();
+            Search_result result = tree_search(board, depth, mpc_level, false, true);
+            n_nodes += result.nodes;
         }
         return n_nodes;
     }
@@ -545,13 +553,16 @@ inline void move_list_evaluate_end_simple_nws(Search *search, Flip_value move_li
             testcase_arr.emplace_back(get_board(line));
         }
         std::cerr << testcase_arr.size() << " testcases loaded" << std::endl;
+        int minute = 10;
+        std::cout << "please input timelimit (minute)" << std::endl;
+        std::cin >> minute;
+        uint64_t tl = 60ULL * 1000ULL * minute; // 10 min
         uint64_t min_n_nodes = n_nodes_test(level, testcase_arr);
         double min_percentage = 100.0;
         uint64_t first_n_nodes = min_n_nodes;
         std::cerr << "min_n_nodes " << min_n_nodes << std::endl;
         int n_updated = 0;
         int n_try = 0;
-        uint64_t tl = 10ULL * 60ULL * 1000ULL; // 10 min
         uint64_t strt = tim();
         while (tim() - strt < tl){
             // update parameter randomly

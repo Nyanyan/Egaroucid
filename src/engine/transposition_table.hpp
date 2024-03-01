@@ -250,7 +250,7 @@ void reset_date_transposition_table(Hash_node table[], size_t s, size_t e){
         table[i].data.reset_date();
     }
 }
-
+/*
 #if TUNE_MOVE_ORDERING_MID || TUNE_MOVE_ORDERING_END
 class Transposition_table{
     public:
@@ -282,6 +282,7 @@ class Transposition_table{
         }
 };
 #else
+*/
 /*
     @brief Best move transposition table structure
 
@@ -678,7 +679,7 @@ class Transposition_table{
             return &table_heap[hash - TRANSPOSITION_TABLE_STACK_SIZE];
         }
 };
-#endif
+//#endif
 
 Transposition_table transposition_table;
 
@@ -807,4 +808,8 @@ inline bool etc_nws(Search *search, std::vector<Flip_value> &move_list, int dept
         }
     }
     return false;
+}
+
+void transposition_table_init(){
+    transposition_table.init();
 }
