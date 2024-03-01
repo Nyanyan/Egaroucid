@@ -31,7 +31,7 @@ int main(int argc, char *argv[]){
         phase * ADJ_N_PHASE_DISCS > use_n_moves_max || 
         (phase + 1) * ADJ_N_PHASE_DISCS <= use_n_moves_min;
     if (data_not_available){
-        std::cerr << "data not available" << std::endl;
+        std::cerr << "data not available at phase " << phase << std::endl;
         return 0;
     }
 
