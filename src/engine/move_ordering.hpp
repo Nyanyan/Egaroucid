@@ -79,9 +79,9 @@
     #define W_NWS_VALUE_DEEP_ADDITIONAL 11
 
     // endgame null window search
-    #define W_END_NWS_MOBILITY 64
-    #define W_END_NWS_PARITY 8
-    #define W_END_NWS_VALUE 2
+    #define W_END_NWS_MOBILITY 32
+    #define W_END_NWS_PARITY 4
+    #define W_END_NWS_VALUE 4
 
     // endgame simple null window search
     #define W_END_NWS_SIMPLE_MOBILITY 14
