@@ -98,6 +98,14 @@ void print_board(uint64_t p, uint64_t o){
     }
 }
 
+void mm256_print_epi32(__m256i v){
+    int* varray = (int*)&v;
+    for (int i = 0; i < 8; ++i){
+        std::cerr << varray[i] << " ";
+    }
+    std::cerr << std::endl;
+}
+
 /*
     @brief popcount algorithm
 

@@ -39,6 +39,7 @@
 
 #define N_PATTERN_PARAMS_MOVE_ORDERING_END_NWS (236196 + 1) // +1 for byte bound
 #define SIMD_EVAL_MAX_VALUE_MOVE_ORDERING_END_NWS 16380
+#define N_SIMD_EVAL_FEATURES_COMP_MOVE_ORDERING_END_NWS 1
 
 constexpr Feature_to_coord feature_to_coord[CEIL_N_SYMMETRY_PATTERNS] = {
     // 0 hv2
@@ -217,6 +218,7 @@ __m256i coord_to_feature_simd[HW2][N_SIMD_EVAL_FEATURES];
 __m256i eval_move_unflipped_16bit[N_16BIT][N_SIMD_EVAL_FEATURE_GROUP][N_SIMD_EVAL_FEATURES];
 __m256i eval_simd_offsets_simple[N_SIMD_EVAL_FEATURES_SIMPLE]; // 16bit * 16 * N
 __m256i eval_simd_offsets_comp[N_SIMD_EVAL_FEATURES_COMP * 2]; // 32bit * 8 * N
+__m256i eval_simd_offsets_comp_move_ordering_end_nws[N_SIMD_EVAL_FEATURES_COMP_MOVE_ORDERING_END_NWS * 2]; // 32bit * 8 * N
 __m256i eval_surround_mask;
 __m128i eval_surround_shift1879;
 
@@ -422,6 +424,8 @@ inline void pre_calculate_eval_constant(){
                 pattern_starts[9 + i4], pattern_starts[9 + i4], pattern_starts[9 + i4], pattern_starts[9 + i4]
             );
         }
+        eval_simd_offsets_comp_move_ordering_end_nws[0] = _mm256_sub_epi32(eval_simd_offsets_comp[0], _mm256_set1_epi32(pattern_starts[8] - pattern_starts[0])); // move ordering uses 8, 9, 10, 11 features
+        eval_simd_offsets_comp_move_ordering_end_nws[1] = _mm256_sub_epi32(eval_simd_offsets_comp[1], _mm256_set1_epi32(pattern_starts[8] - pattern_starts[0])); // move ordering uses 8, 9, 10, 11 features
         eval_lower_mask = _mm256_set1_epi32(0x0000FFFF);
     }
     { // calc_surround initialization
@@ -501,8 +505,12 @@ inline __m256i calc_idx8_comp(const __m128i feature, const int i){
     return _mm256_add_epi32(_mm256_cvtepu16_epi32(feature), eval_simd_offsets_comp[i]);
 }
 
+inline __m256i calc_idx8_comp_move_ordering_end_nws(const __m128i feature, const int i){
+    return _mm256_add_epi32(_mm256_cvtepu16_epi32(feature), eval_simd_offsets_comp_move_ordering_end_nws[i]);
+}
+
 inline __m256i gather_eval(const int *start_addr, const __m256i idx8){
-    return _mm256_i32gather_epi32(start_addr, idx8, 2); // stride is 2 byte HACK: if (SIMD_EVAL_MAX_VALUE * 2) * 8 < 2 ^ 16, AND is unnecessary
+    return _mm256_i32gather_epi32(start_addr, idx8, 2); // stride is 2 byte, because 16 bit array used, HACK: if (SIMD_EVAL_MAX_VALUE * 2) * (N_ADD=8) < 2 ^ 16, AND is unnecessary
     // return _mm256_and_si256(_mm256_i32gather_epi32(start_addr, idx8, 2), eval_lower_mask);
 }
 
@@ -522,14 +530,14 @@ inline int calc_pattern(const int phase_idx, Eval_features *features){
     return _mm_cvtsi128_si32(res128) + _mm_extract_epi32(res128, 1) - SIMD_EVAL_MAX_VALUE * N_SYMMETRY_PATTERNS;
 }
 
-inline int calc_pattern_move_ordering_end(const int phase_idx, Eval_features *features){
+inline int calc_pattern_move_ordering_end(Eval_features *features){
     const int *start_addr = (int*)pattern_arr_move_ordering_end_nws;
-    __m256i res256 =                  gather_eval(start_addr, calc_idx8_comp(features->f128[4], 0));        // corner+block cross
-    res256 = _mm256_add_epi32(res256, gather_eval(start_addr, calc_idx8_comp(features->f128[5], 1)));       // edge+2X triangle
+    __m256i res256 =                  gather_eval(start_addr, calc_idx8_comp_move_ordering_end_nws(features->f128[4], 0));        // corner+block cross
+    res256 = _mm256_add_epi32(res256, gather_eval(start_addr, calc_idx8_comp_move_ordering_end_nws(features->f128[5], 1)));       // edge+2X triangle
     res256 = _mm256_and_si256(res256, eval_lower_mask);
     __m128i res128 = _mm_add_epi32(_mm256_castsi256_si128(res256), _mm256_extracti128_si256(res256, 1));
     res128 = _mm_hadd_epi32(res128, res128);
-    return _mm_cvtsi128_si32(res128) + _mm_extract_epi32(res128, 1) - SIMD_EVAL_MAX_VALUE * N_SYMMETRY_PATTERNS;
+    return _mm_cvtsi128_si32(res128) + _mm_extract_epi32(res128, 1) - SIMD_EVAL_MAX_VALUE_MOVE_ORDERING_END_NWS * N_SYMMETRY_PATTERNS_MOVE_ORDERING_END_NWS;
 }
 
 inline void calc_eval_features(Board *board, Eval_search *eval);
@@ -596,15 +604,15 @@ inline int mid_evaluate_diff(Search *search){
     @return evaluation value
 */
 inline int mid_evaluate_move_ordering_end(Search *search){
-    int phase_idx;
-    phase_idx = search->phase();
-    int res = calc_pattern_move_ordering_end(phase_idx, &search->eval.features[search->eval.feature_idx]);
+    int res = calc_pattern_move_ordering_end(&search->eval.features[search->eval.feature_idx]);
     res += res >= 0 ? STEP_2 : -STEP_2;
     res /= STEP;
     if (res > SCORE_MAX)
         return SCORE_MAX;
     if (res < -SCORE_MAX)
         return -SCORE_MAX;
+    //std::cerr << res << std::endl;
+    //search->board.print();
     return res;
 }
 
@@ -632,9 +640,9 @@ inline void calc_eval_features(Board *board, Eval_search *eval){
     calc_feature_vector(eval->features[0].f256[1], b_arr_int, 1, 8);
     calc_feature_vector(eval->features[0].f256[2], b_arr_int, 2, 9);
     calc_feature_vector(eval->features[0].f256[3], b_arr_int, 3, 9);
-    eval->features[0].f256[0] = _mm256_add_epi16(eval->features[0].f256[0], eval_simd_offsets_simple[0]);
-    eval->features[0].f256[1] = _mm256_add_epi16(eval->features[0].f256[1], eval_simd_offsets_simple[1]);
     eval->feature_idx = 0;
+    eval->features[eval->feature_idx].f256[0] = _mm256_add_epi16(eval->features[eval->feature_idx].f256[0], eval_simd_offsets_simple[0]); // global index
+    eval->features[eval->feature_idx].f256[1] = _mm256_add_epi16(eval->features[eval->feature_idx].f256[1], eval_simd_offsets_simple[1]); // global index
 }
 
 /*
