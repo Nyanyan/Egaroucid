@@ -12,12 +12,13 @@ model_dir = './../../../model/nomodel/'
 
 
 # 6.6
-train_data_nums = [6, 7, 8, 9, 10, 11, 15, 16, 17, 18, 19, 20, 21, 24, 25, 26, 27]
+#train_data_nums = [6, 7, 8, 9, 10, 11, 15, 16, 17, 18, 19, 20, 21, 24, 25, 26, 27]
+train_data_nums = [26, 27, 28, 29, 30, 31]
 if phase == '11':
-    train_data_nums.remove(20)
-    train_data_nums.remove(21)
-    train_data_nums.remove(22)
-    train_data_nums.remove(27)
+    #train_data_nums.remove(20)
+    #train_data_nums.remove(21)
+    #train_data_nums.remove(22)
+    train_data_nums.remove(27) # use book only
 train_root_dir = './../../../train_data/bin_data/20240223_1/'
 #model_dir = './../../../model/20240226_3/'
 executable = 'eval_optimizer_cuda_12_2_0.exe'

@@ -48,5 +48,5 @@ ax1.grid(True)
 plt.show()
 
 if input('save?: ') == 'y':
-    fig.savefig('./../trained/loss.png')
+    fig.savefig('./trained/loss.png')
     print('saved')
