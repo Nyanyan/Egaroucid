@@ -3,20 +3,21 @@ import sys
 
 phase = str(sys.argv[1])
 hour = '0'
-minute = '3'
+minute = '10'
 second = '0'
-alpha = '20'
+alpha = '300'
 n_patience = '1'
 
 model_dir = './../../../model/nomodel/'
 
 
 # 6.6
-train_data_nums = [6, 7, 8, 9, 10, 11, 15, 16, 17, 18, 19, 20, 21, 22, 24, 25, 26]
+train_data_nums = [6, 7, 8, 9, 10, 11, 15, 16, 17, 18, 19, 20, 21, 24, 25, 26, 27]
 if phase == '11':
     train_data_nums.remove(20)
     train_data_nums.remove(21)
     train_data_nums.remove(22)
+    train_data_nums.remove(27)
 train_root_dir = './../../../train_data/bin_data/20240223_1/'
 #model_dir = './../../../model/20240226_3/'
 executable = 'eval_optimizer_cuda_12_2_0.exe'
