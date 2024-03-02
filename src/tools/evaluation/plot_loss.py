@@ -1,6 +1,8 @@
 import matplotlib.pyplot as plt
 
-with open('trained/opt_log.txt', 'r') as f:
+opt_log_file = 'trained/opt_log.txt'
+
+with open(opt_log_file, 'r') as f:
     s = f.read()
 
 s = s.splitlines()
@@ -34,6 +36,9 @@ ln2=ax2.plot(phase_arr, mse_arr, 'C1', marker='o', label='MSE')
 h1, l1 = ax1.get_legend_handles_labels()
 h2, l2 = ax2.get_legend_handles_labels()
 ax1.legend(h1+h2, l1+l2, loc='upper right')
+
+ax1.set_ylim(-0.5, 7)
+ax2.set_ylim(-5, 70)
 
 ax1.set_xlabel('phase')
 ax1.set_ylabel('MAE')
