@@ -2,16 +2,20 @@ import subprocess
 import os
 import glob
 
-'''
+
 # 6.6
 bin_root_dir = './../../../train_data/bin_data/20240223_1/' # 6.6
-board_sub_dir_nums = [6, 7, 8, 9, 10, 11, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25] # 6.6
+#board_sub_dir_nums = [6, 7, 8, 9, 10, 11, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26] # 6.6
+board_sub_dir_nums = [26]
 exe = 'data_board_to_idx.out' # 6.6
+N_PHASES = 60
 '''
 # 6.6 move ordering_end_nws
 bin_root_dir = './../../../train_data/bin_data/20240301_1_move_ordering_end_nws/'
 board_sub_dir_nums = [24, 25]
 exe = 'data_board_to_idx_move_ordering_end_nws.out'
+N_PHASES = 1
+'''
 
 input_root_dir = './../../../train_data/board_data/'
 
@@ -33,8 +37,9 @@ board_n_moves['22'] = [11, 60]
 board_n_moves['23'] = [0, 10]
 board_n_moves['24'] = [21, 60]
 board_n_moves['25'] = [30, 60]
+board_n_moves['26'] = [0, 60]
 
-for phase in range(1):
+for phase in range(N_PHASES):
     bin_dir = bin_root_dir + str(phase)
     try:
         os.mkdir(bin_dir)
