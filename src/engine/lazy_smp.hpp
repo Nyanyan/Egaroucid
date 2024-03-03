@@ -20,7 +20,8 @@
 #define N_PARALLEL_MAX 128
 #define MAIN_THREAD_IDX 0
 
-std::pair<int, int> first_nega_scout(Search *search, int alpha, int beta, int predicted_value, int depth, bool is_end_search, const bool is_main_search, const std::vector<Clog_result> clogs, uint64_t strt);
+//std::pair<int, int> first_nega_scout(Search *search, int alpha, int beta, int predicted_value, int depth, bool is_end_search, const bool is_main_search, const std::vector<Clog_result> clogs, uint64_t strt);
+//int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, uint64_t legal, bool is_end_search, const bool *searching);
 
 Search_result lazy_smp_midsearch(Board board, int depth, uint_fast8_t mpc_level, bool show_log, std::vector<Clog_result> clogs){
     Search searches[N_PARALLEL_MAX];
@@ -35,17 +36,21 @@ Search_result lazy_smp_midsearch(Board board, int depth, uint_fast8_t mpc_level,
     uint64_t strt = tim();
     for (int main_thread_depth = 1; main_thread_depth <= depth; ++main_thread_depth){
         bool sub_thread_searching = true;
-        std::vector<std::future<std::pair<int, int>>> parallel_tasks;
+        std::vector<std::future<int>> parallel_tasks;
         for (int thread_idx = MAIN_THREAD_IDX + 1; thread_idx < N_PARALLEL_MAX && (int)parallel_tasks.size() < thread_pool.size() && thread_pool.get_n_idle(); ++thread_idx){
             int sub_thread_depth = main_thread_depth + (int)(3.0 * log(1.0 + thread_idx));
+            //std::cerr << thread_idx << " " << sub_thread_depth << std::endl;
             bool pushed;
-            parallel_tasks.emplace_back(thread_pool.push(&pushed, std::bind(&first_nega_scout, &searches[thread_idx], -SCORE_MAX, SCORE_MAX, SCORE_UNDEFINED, sub_thread_depth, false, false, clogs, strt)));
+            parallel_tasks.emplace_back(thread_pool.push(&pushed, std::bind(&nega_scout, &searches[thread_idx], -SCORE_MAX, SCORE_MAX, sub_thread_depth, false, LEGAL_UNDEFINED, false, &sub_thread_searching)));
             if (!pushed){
                 parallel_tasks.pop_back();
                 break;
             }
         }
         bool is_main_search = main_thread_depth == depth;
+        if (is_main_search && show_log){
+            std::cerr << "start main search" << std::endl;
+        }
         std::pair<int, int> id_result = first_nega_scout(&searches[MAIN_THREAD_IDX], -SCORE_MAX, SCORE_MAX, SCORE_UNDEFINED, main_thread_depth, false, is_main_search, clogs, strt);
         if (main_thread_depth >= depth - 1){
             if (result.value == SCORE_UNDEFINED){
@@ -58,7 +63,7 @@ Search_result lazy_smp_midsearch(Board board, int depth, uint_fast8_t mpc_level,
             result.policy = id_result.second;
         }
         sub_thread_searching = false;
-        for (std::future<std::pair<int, int>> &task: parallel_tasks)
+        for (std::future<int> &task: parallel_tasks)
             task.get();
         result.depth = main_thread_depth;
         result.nodes = 0;
@@ -68,6 +73,11 @@ Search_result lazy_smp_midsearch(Board board, int depth, uint_fast8_t mpc_level,
         result.time = tim() - strt;
         result.nps = calc_nps(result.nodes, result.time);
         if (show_log){
+            if (main_thread_depth == depth){
+                std::cerr << "main ";
+            } else{
+                std::cerr << "pre  ";
+            }
             std::cerr << "depth " << result.depth << "@" << SELECTIVITY_PERCENTAGE[searches[MAIN_THREAD_IDX].mpc_level] << "%" << " value " << id_result.first << " policy " << idx_to_coord(id_result.second) << " n_worker " << parallel_tasks.size() << " n_nodes " << result.nodes << " time " << result.time << " NPS " << result.nps << std::endl;
         }
     }
