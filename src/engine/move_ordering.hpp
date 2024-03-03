@@ -41,7 +41,7 @@
     int move_ordering_param_array[N_MOVE_ORDERING_PARAM] = {
         37, 11, 289, 92, 
         17, 19, 14, 11, 
-        38, 0, 6, 
+        41, -2, 6, 
         9, 8
     };
 
@@ -80,8 +80,8 @@
     #define W_NWS_VALUE_DEEP_ADDITIONAL 11
 
     // endgame null window search
-    #define W_END_NWS_MOBILITY 38
-    #define W_END_NWS_PARITY 0
+    #define W_END_NWS_MOBILITY 41
+    //#define W_END_NWS_PARITY 0
     #define W_END_NWS_VALUE 6
 
     // endgame simple null window search
@@ -266,8 +266,8 @@ inline void move_evaluate_nws(Search *search, Flip_value *flip_value, int alpha,
 */
 inline void move_evaluate_end_nws(Search *search, Flip_value *flip_value){
     flip_value->value = 0;
-    if (search->parity & cell_div4[flip_value->flip.pos])
-        flip_value->value += W_END_NWS_PARITY;
+    //if (search->parity & cell_div4[flip_value->flip.pos])
+    //    flip_value->value += W_END_NWS_PARITY;
     search->move_endsearch(&flip_value->flip);
         flip_value->n_legal = search->board.get_legal();
         flip_value->value -= pop_count_ull(flip_value->n_legal) * W_END_NWS_MOBILITY;
