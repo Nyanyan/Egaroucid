@@ -20,7 +20,8 @@
 #define N_PARALLEL_MAX 128
 #define MAIN_THREAD_IDX 0
 
-#define MID_TO_END_THRESHOLD_COE 0.5
+#define LAZYSMP_DEPTH_COE 3.0
+#define LAZYSMP_MPC_COE 0.25
 
 Search_result lazy_smp_midsearch(Board board, int depth, uint_fast8_t mpc_level, bool show_log, std::vector<Clog_result> clogs){
     Search searches[N_PARALLEL_MAX];
@@ -36,12 +37,12 @@ Search_result lazy_smp_midsearch(Board board, int depth, uint_fast8_t mpc_level,
     for (int main_thread_depth = 1; main_thread_depth <= depth; ++main_thread_depth){
         bool sub_thread_searching = true;
         std::vector<std::future<int>> parallel_tasks;
-        for (int thread_idx = MAIN_THREAD_IDX + 1; thread_idx < N_PARALLEL_MAX && (int)parallel_tasks.size() < thread_pool.size() && thread_pool.get_n_idle(); ++thread_idx){
-            int sub_thread_depth = main_thread_depth + (int)(3.0 * log(1.0 + thread_idx));
+        for (int thread_idx = MAIN_THREAD_IDX + 1; thread_idx < N_PARALLEL_MAX && (int)parallel_tasks.size() < thread_pool.size(); ++thread_idx){
+            int sub_thread_depth = main_thread_depth + (int)(LAZYSMP_DEPTH_COE * log(1.0 + thread_idx));
             bool sub_thread_is_end_search = false;
             int max_depth = HW2 - searches[thread_idx].n_discs;
             if (sub_thread_depth >= max_depth){
-                searches[thread_idx].mpc_level = std::min(MPC_100_LEVEL, MPC_74_LEVEL + (sub_thread_depth - max_depth) / 4);
+                searches[thread_idx].mpc_level = std::min(MPC_100_LEVEL, MPC_74_LEVEL + (int)((sub_thread_depth - max_depth) * LAZYSMP_MPC_COE));
                 sub_thread_depth = max_depth;
                 sub_thread_is_end_search = true;
             }

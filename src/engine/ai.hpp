@@ -65,8 +65,8 @@ inline Search_result tree_search(Board board, int depth, uint_fast8_t mpc_level,
     search.use_multi_thread = use_multi_thread;
     search.mpc_level = 0;
     if (is_end_search){
-        Search_result lazy_smp_result = lazy_smp_midsearch(board, depth * 0.75, MPC_74_LEVEL, show_log, clogs);
         strt = tim();
+        Search_result lazy_smp_result = lazy_smp_midsearch(board, round(depth * 0.6), MPC_88_LEVEL, show_log, clogs);
         if (show_log)
             std::cerr << "start!" << std::endl;
         if (mpc_level >= MPC_93_LEVEL){
