@@ -54,6 +54,7 @@ inline Search_result tree_search(Board board, int depth, uint_fast8_t mpc_level,
         }
     }
     Search_result res;
+    /*
     if (is_end_search){
         strt = tim();
         res = lazy_smp_midsearch(board, round(depth * 0.5), MPC_74_LEVEL, show_log, clogs);
@@ -89,8 +90,9 @@ inline Search_result tree_search(Board board, int depth, uint_fast8_t mpc_level,
         if (show_log)
             std::cerr << "mainsearch depth " << depth << "@" << SELECTIVITY_PERCENTAGE[search.mpc_level] << "%" << " value " << res.value << " policy " << idx_to_coord(res.policy) << " nodes " << res.nodes << " time " << res.time << " nps " << res.nps << std::endl;
     } else{
-        res = lazy_smp_midsearch(board, depth, mpc_level, show_log, clogs);
-    }
+    */
+    res = lazy_smp(board, depth, mpc_level, show_log, clogs);
+    //}
     res.clog_nodes = clog_nodes;
     res.clog_time = clog_time;
     transposition_table.update_date();
