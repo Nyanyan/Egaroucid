@@ -97,6 +97,7 @@
 #define MOVE_ORDERING_MPC_LEVEL MPC_88_LEVEL
 
 int nega_alpha_eval1(Search *search, int alpha, int beta, bool skipped, const bool *searching);
+inline int nega_alpha_eval1_move_ordering(Search *search, int alpha, int beta, bool skipped, const bool *searching);
 int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, uint64_t legal, bool is_end_search, const bool *searching);
 
 /*
@@ -236,10 +237,12 @@ inline void move_evaluate(Search *search, Flip_value *flip_value, int alpha, int
 */
 inline void move_evaluate_nws(Search *search, Flip_value *flip_value, int alpha, int beta, int depth, const bool *searching){
     flip_value->value = 0;
-    search->move(&flip_value->flip);
+    //search->move(&flip_value->flip);
+    search->move_endsearch(&flip_value->flip);
         flip_value->n_legal = search->board.get_legal();
         flip_value->value -= get_weighted_n_moves(flip_value->n_legal) * W_NWS_MOBILITY;
         flip_value->value -= get_potential_mobility(search->board.opponent, ~(search->board.player | search->board.opponent)) * W_NWS_POTENTIAL_MOBILITY;
+        /*
         switch (depth){
             case 0:
                 flip_value->value -= mid_evaluate_diff(search) * W_NWS_VALUE;
@@ -254,7 +257,13 @@ inline void move_evaluate_nws(Search *search, Flip_value *flip_value, int alpha,
                 search->mpc_level = mpc_level;
                 break;
         }
-    search->undo(&flip_value->flip);
+        */
+        if (depth == 0)
+            flip_value->value -= mid_evaluate_move_ordering_mid(search) * W_NWS_VALUE;
+        else
+            flip_value->value -= nega_alpha_eval1_move_ordering(search, alpha, beta, false, searching) * (W_NWS_VALUE + W_NWS_VALUE_DEEP_ADDITIONAL);
+    search->undo_endsearch(&flip_value->flip);
+    //search->undo(&flip_value->flip);
 }
 
 /*

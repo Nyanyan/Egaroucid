@@ -4,7 +4,7 @@ from random import shuffle
 import matplotlib.pyplot as plt
 from othello_py import *
 
-LEVEL = 10
+LEVEL = 11
 
 N_SET_GAMES = 100
 
