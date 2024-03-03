@@ -457,6 +457,9 @@ std::pair<int, int> first_nega_scout_legal(Search *search, int alpha, int beta, 
         #endif
         int pv_idx = 1;
         Flip flip_best;
+        if (is_main_search){
+            std::cerr << "depth " << depth << "@" << SELECTIVITY_PERCENTAGE[search->mpc_level] << "% " << pv_idx << "/" << canput_all << " best " << "??" << " [" << alpha << "," << beta << "] " << std::endl;
+        }
         for (uint_fast8_t i = 0; i < N_TRANSPOSITION_MOVES; ++i){
             if (moves[i] == TRANSPOSITION_TABLE_UNDEFINED)
                 break;
@@ -487,9 +490,9 @@ std::pair<int, int> first_nega_scout_legal(Search *search, int alpha, int beta, 
                     uint64_t elapsed = tim() - strt;
                     uint64_t nps = calc_nps(search->n_nodes, elapsed);
                     if (best_move != moves[i])
-                        std::cerr << "depth " << depth << "@" << SELECTIVITY_PERCENTAGE[search->mpc_level] << "% " << pv_idx << "/" << canput_all << " best " << idx_to_coord(best_move) << " [" << alpha << "," << beta << "] " << idx_to_coord(moves[i]) << " value <= " << g << " time " << elapsed << " nps " << nps << std::endl;
+                        std::cerr << "depth " << depth << "@" << SELECTIVITY_PERCENTAGE[search->mpc_level] << "% " << pv_idx << "/" << canput_all << " best " << idx_to_coord(best_move) << " [" << alpha << "," << beta << "] " << idx_to_coord(moves[i]) << " value <= " << g << " time " << elapsed << std::endl;
                     else
-                        std::cerr << "depth " << depth << "@" << SELECTIVITY_PERCENTAGE[search->mpc_level] << "% " << pv_idx << "/" << canput_all << " best " << idx_to_coord(best_move) << " [" << alpha << "," << beta << "] " << idx_to_coord(moves[i]) << " value = " << g << " time " << elapsed << " nps " << nps << std::endl;
+                        std::cerr << "depth " << depth << "@" << SELECTIVITY_PERCENTAGE[search->mpc_level] << "% " << pv_idx << "/" << canput_all << " best " << idx_to_coord(best_move) << " [" << alpha << "," << beta << "] " << idx_to_coord(moves[i]) << " value = " << g << " time " << elapsed << std::endl;
                 }
                 legal ^= 1ULL << moves[i];
                 ++pv_idx;
@@ -533,9 +536,9 @@ std::pair<int, int> first_nega_scout_legal(Search *search, int alpha, int beta, 
                     uint64_t elapsed = tim() - strt;
                     uint64_t nps = calc_nps(search->n_nodes, elapsed);
                     if (best_move != move_list[move_idx].flip.pos)
-                        std::cerr << "depth " << depth << "@" << SELECTIVITY_PERCENTAGE[search->mpc_level] << "% " << pv_idx << "/" << canput_all << " best " << idx_to_coord(best_move) << " [" << alpha << "," << beta << "] " << idx_to_coord(move_list[move_idx].flip.pos) << " value <= " << g << " time " << elapsed << " nps " << nps << std::endl;
+                        std::cerr << "depth " << depth << "@" << SELECTIVITY_PERCENTAGE[search->mpc_level] << "% " << pv_idx << "/" << canput_all << " best " << idx_to_coord(best_move) << " [" << alpha << "," << beta << "] " << idx_to_coord(move_list[move_idx].flip.pos) << " value <= " << g << " time " << elapsed << std::endl;
                     else
-                        std::cerr << "depth " << depth << "@" << SELECTIVITY_PERCENTAGE[search->mpc_level] << "% " << pv_idx << "/" << canput_all << " best " << idx_to_coord(best_move) << " [" << alpha << "," << beta << "] " << idx_to_coord(move_list[move_idx].flip.pos) << " value = " << g << " time " << elapsed << " nps " << nps << std::endl;
+                        std::cerr << "depth " << depth << "@" << SELECTIVITY_PERCENTAGE[search->mpc_level] << "% " << pv_idx << "/" << canput_all << " best " << idx_to_coord(best_move) << " [" << alpha << "," << beta << "] " << idx_to_coord(move_list[move_idx].flip.pos) << " value = " << g << " time " << elapsed << std::endl;
                 }
                 ++pv_idx;
             }
