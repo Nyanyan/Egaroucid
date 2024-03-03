@@ -65,32 +65,14 @@ inline Search_result tree_search(Board board, int depth, uint_fast8_t mpc_level,
     search.use_multi_thread = use_multi_thread;
     search.mpc_level = 0;
     if (is_end_search){
+        Search_result lazy_smp_result = lazy_smp_endsearch(board, depth, mpc_level, show_log, clogs);
+        lazy_smp_result.clog_nodes = res.clog_nodes;
+        lazy_smp_result.clog_time = res.clog_time;
+        return lazy_smp_result;
+        /*
         strt = tim();
         if (show_log)
             std::cerr << "start!" << std::endl;
-        /*
-        if (mpc_level > 0){
-            uint_fast8_t mpc_level_presearch = std::min((int)mpc_level - 1, MPC_74_LEVEL);
-            //int depth_presearch = std::min(22, depth);
-            int depth_presearch = depth;
-            while ((depth - depth_presearch) + (mpc_level - mpc_level_presearch) >= 1){
-                search.mpc_level = mpc_level_presearch;
-                result = first_nega_scout(&search, -SCORE_MAX, SCORE_MAX, SCORE_UNDEFINED, depth_presearch, true, false, clogs, strt);
-                g = result.first;
-                if (show_log)
-                    std::cerr << "presearch depth " << depth_presearch << "@" << SELECTIVITY_PERCENTAGE[search.mpc_level] << "% value " << g << " policy " << idx_to_coord(result.second) << " nodes " << search.n_nodes << " time " << (tim() - strt) << " nps " << calc_nps(search.n_nodes, tim() - strt) << std::endl;
-                if (depth_presearch < depth){
-                    depth_presearch += 8;
-                    if (depth < depth_presearch)
-                        depth_presearch = depth;
-                } else{
-                    mpc_level_presearch += 2;
-                    if (mpc_level < mpc_level_presearch)
-                        mpc_level_presearch = mpc_level;
-                }
-            }
-        }
-        */
         if (mpc_level >= MPC_93_LEVEL){
             uint_fast8_t mpc_level_presearch = MPC_74_LEVEL;
             int depth_presearch = depth;
@@ -106,6 +88,7 @@ inline Search_result tree_search(Board board, int depth, uint_fast8_t mpc_level,
         policy = result.second;
         if (show_log)
             std::cerr << "mainsearch depth " << depth << "@" << SELECTIVITY_PERCENTAGE[search.mpc_level] << "% value " << g << " policy " << idx_to_coord(policy) << " nodes " << search.n_nodes << " time " << (tim() - strt) << " nps " << calc_nps(search.n_nodes, tim() - strt) << std::endl;
+        */
     } else{
         Search_result lazy_smp_result = lazy_smp_midsearch(board, depth, mpc_level, show_log, clogs);
         lazy_smp_result.clog_nodes = res.clog_nodes;
