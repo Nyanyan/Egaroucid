@@ -124,7 +124,11 @@ Search_result lazy_smp(Board board, int depth, uint_fast8_t mpc_level, bool show
                 main_depth = depth;
                 main_mpc_level = MPC_74_LEVEL;
             } else{
-                ++main_mpc_level;
+                if (main_mpc_level == MPC_74_LEVEL){
+                    main_mpc_level = mpc_level;
+                } else{
+                    ++main_mpc_level;
+                }
             }
         }
     }

@@ -53,46 +53,7 @@ inline Search_result tree_search(Board board, int depth, uint_fast8_t mpc_level,
             }
         }
     }
-    Search_result res;
-    /*
-    if (is_end_search){
-        strt = tim();
-        res = lazy_smp_midsearch(board, round(depth * 0.5), MPC_74_LEVEL, show_log, clogs);
-        Search search;
-        std::pair<int, int> result;
-        int predicted_value = SCORE_UNDEFINED;
-        search.init_board(&board);
-        search.n_nodes = 0ULL;
-        search.use_multi_thread = use_multi_thread;
-        search.mpc_level = 0;
-        if (show_log)
-            std::cerr << "start!" << std::endl;
-        if (mpc_level >= MPC_93_LEVEL){
-            uint_fast8_t mpc_level_presearch = MPC_74_LEVEL;
-            int depth_presearch = depth;
-            search.mpc_level = mpc_level_presearch;
-            result = first_nega_scout(&search, -SCORE_MAX, SCORE_MAX, SCORE_UNDEFINED, depth_presearch, true, false, clogs, strt);
-            predicted_value = result.first;
-            if (show_log)
-                std::cerr << "presearch depth " << depth_presearch << "@" << SELECTIVITY_PERCENTAGE[search.mpc_level] << "%" << " value " << result.first << " policy " << idx_to_coord(result.second) << " nodes " << search.n_nodes << " time " << (tim() - strt) << " nps " << calc_nps(search.n_nodes, tim() - strt) << std::endl;
-        }
-        search.mpc_level = mpc_level;
-        result = first_nega_scout(&search, -SCORE_MAX, SCORE_MAX, predicted_value, depth, true, show_log, clogs, strt);
-        uint64_t elapsed = tim() - strt;
-        res.value = result.first;
-        res.policy = result.second;
-        res.depth = depth;
-        res.nodes += search.n_nodes;
-        res.time = elapsed;
-        res.nps = calc_nps(res.nodes, res.time);
-        res.is_end_search = true;
-        res.probability = SELECTIVITY_PERCENTAGE[mpc_level];
-        if (show_log)
-            std::cerr << "mainsearch depth " << depth << "@" << SELECTIVITY_PERCENTAGE[search.mpc_level] << "%" << " value " << res.value << " policy " << idx_to_coord(res.policy) << " nodes " << res.nodes << " time " << res.time << " nps " << res.nps << std::endl;
-    } else{
-    */
-    res = lazy_smp(board, depth, mpc_level, show_log, clogs);
-    //}
+    Search_result res = lazy_smp(board, depth, mpc_level, show_log, clogs);
     res.clog_nodes = clog_nodes;
     res.clog_time = clog_time;
     transposition_table.update_date();
