@@ -6,7 +6,7 @@ import glob
 # 6.6
 bin_root_dir = './../../../train_data/bin_data/20240223_1/' # 6.6
 #board_sub_dir_nums = [6, 7, 8, 9, 10, 11, 15, 16, 17, 18, 19, 20, 21, 23, 24, 25, 26, 27] # 6.6
-board_sub_dir_nums = [29]
+board_sub_dir_nums = [30]
 exe = 'data_board_to_idx.out' # 6.6
 N_PHASES = 60
 '''
@@ -42,6 +42,7 @@ board_n_moves['27'] = [11, 60]
 board_n_moves['28'] = [40, 60]
 board_n_moves['29'] = [12, 60]
 board_n_moves['30'] = [18, 60]
+board_n_moves['31'] = [24, 60]
 
 for phase in range(N_PHASES):
     bin_dir = bin_root_dir + str(phase)
