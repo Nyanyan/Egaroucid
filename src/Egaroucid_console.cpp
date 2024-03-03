@@ -25,8 +25,7 @@ void init_console(Options options, std::string binary_path){
     hash_resize(DEFAULT_HASH_LEVEL, options.hash_level, options.binary_path, options.show_log);
     stability_init();
     std::string mo_end_nws_eval_file = binary_path + "resources/eval_mo_end_nws.egev"; // filename fixed
-    std::string mo_mid_nws_eval_file = binary_path + "resources/eval_mo_mid_nws.egev"; // filename fixed
-    if (!evaluate_init(options.eval_file, mo_end_nws_eval_file, mo_mid_nws_eval_file, options.show_log))
+    if (!evaluate_init(options.eval_file, mo_end_nws_eval_file, options.show_log))
         std::exit(0);
     if (!options.nobook)
         book_init(options.book_file, options.show_log);

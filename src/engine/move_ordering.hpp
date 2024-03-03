@@ -23,7 +23,6 @@
 #include "board.hpp"
 #include "search.hpp"
 #include "midsearch.hpp"
-#include "midsearch_move_ordering.hpp"
 #include "stability.hpp"
 #include "level.hpp"
 
@@ -68,16 +67,16 @@
     #define MOVE_ORDERING_END_PARAM_END 11
 #else
     // midgame search
-    #define W_MOBILITY 33
+    #define W_MOBILITY 37
     #define W_POTENTIAL_MOBILITY 11
     #define W_VALUE 289
-    #define W_VALUE_DEEP_ADDITIONAL 96
+    #define W_VALUE_DEEP_ADDITIONAL 92
 
     // midgame null window search
-    #define W_NWS_MOBILITY 21
+    #define W_NWS_MOBILITY 17
     #define W_NWS_POTENTIAL_MOBILITY 19
-    #define W_NWS_VALUE 12
-    #define W_NWS_VALUE_DEEP_ADDITIONAL 10
+    #define W_NWS_VALUE 14
+    #define W_NWS_VALUE_DEEP_ADDITIONAL 11
 
     // endgame null window search
     #define W_END_NWS_MOBILITY 41
@@ -238,12 +237,10 @@ inline void move_evaluate(Search *search, Flip_value *flip_value, int alpha, int
 */
 inline void move_evaluate_nws(Search *search, Flip_value *flip_value, int alpha, int beta, int depth, const bool *searching){
     flip_value->value = 0;
-    //search->move(&flip_value->flip);
-    search->move_endsearch(&flip_value->flip);
+    search->move(&flip_value->flip);
         flip_value->n_legal = search->board.get_legal();
         flip_value->value -= get_weighted_n_moves(flip_value->n_legal) * W_NWS_MOBILITY;
         flip_value->value -= get_potential_mobility(search->board.opponent, ~(search->board.player | search->board.opponent)) * W_NWS_POTENTIAL_MOBILITY;
-        /*
         switch (depth){
             case 0:
                 flip_value->value -= mid_evaluate_diff(search) * W_NWS_VALUE;
@@ -258,20 +255,7 @@ inline void move_evaluate_nws(Search *search, Flip_value *flip_value, int alpha,
                 search->mpc_level = mpc_level;
                 break;
         }
-        */
-        switch (depth){
-            case 0:
-                flip_value->value -= mid_evaluate_move_ordering_mid(search) * W_NWS_VALUE;
-                break;
-            case 1:
-                flip_value->value -= nega_alpha_eval1_move_ordering(search, alpha, beta, false, searching) * (W_NWS_VALUE + W_NWS_VALUE_DEEP_ADDITIONAL);
-                break;
-            default:
-                flip_value->value -= nega_alpha_eval2_move_ordering(search, alpha, beta, false, searching) * (W_NWS_VALUE + 2 * W_NWS_VALUE_DEEP_ADDITIONAL);
-                break;
-        }
-    search->undo_endsearch(&flip_value->flip);
-    //search->undo(&flip_value->flip);
+    search->undo(&flip_value->flip);
 }
 
 /*
