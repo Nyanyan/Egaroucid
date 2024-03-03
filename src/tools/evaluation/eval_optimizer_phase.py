@@ -5,13 +5,14 @@ phase = str(sys.argv[1])
 hour = '0'
 minute = '10'
 second = '0'
-alpha = '500'
+alpha = '1000'
 n_patience = '1'
 
 model_dir = './../../../model/nomodel/'
 
 
-# 6.6
+'''
+# 7.0
 #train_data_nums = [6, 7, 8, 9, 10, 11, 15, 16, 17, 18, 19, 20, 21, 24, 25, 26, 27]
 train_data_nums = [26, 27, 28, 29, 30, 31]
 if phase == '11':
@@ -23,14 +24,23 @@ train_root_dir = './../../../train_data/bin_data/20240223_1/'
 #model_dir = './../../../model/20240226_3/'
 executable = 'eval_optimizer_cuda_12_2_0.exe'
 '''
-# 6.6 move ordering end nws
-train_data_nums = [28]
-train_root_dir = './../../../train_data/bin_data/20240301_1_move_ordering_end_nws/'
-executable = 'eval_optimizer_cuda_12_2_0_move_ordering_end_nws.exe'
 '''
+# 7.0 move ordering end nws
+train_data_nums = [24, 25]
+train_root_dir = './../../../train_data/bin_data/20240301_1_move_ordering_end_nws/'
+executable = 'eval_optimizer_cuda_12_2_0_move_ordering.exe'
+'''
+#'''
+# 7.0 move ordering mid nws
+train_data_nums = [29]
+train_root_dir = './../../../train_data/bin_data/20240303_1_move_ordering_mid_nws/'
+executable = 'eval_optimizer_cuda_12_2_0_move_ordering.exe'
+#'''
+
+
+
 
 train_data = [str(elem) + '.dat' for elem in train_data_nums]
-
 train_dirs = [train_root_dir + str(int(phase)) + '/']
 
 additional_params = ''
