@@ -12,7 +12,7 @@ N_PHASES = 60
 '''
 # 6.6 move ordering_end_nws
 bin_root_dir = './../../../train_data/bin_data/20240301_1_move_ordering_end_nws/'
-board_sub_dir_nums = [24, 25]
+board_sub_dir_nums = [28]
 exe = 'data_board_to_idx_move_ordering_end_nws.out'
 N_PHASES = 1
 '''
