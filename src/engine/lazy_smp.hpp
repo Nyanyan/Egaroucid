@@ -36,7 +36,7 @@ Search_result lazy_smp(Board board, int depth, uint_fast8_t mpc_level, bool show
     for (int i = 0; i < N_PARALLEL_MAX; ++i){
         searches[i].init_board(&board);
         searches[i].n_nodes = 0ULL;
-        searches[i].use_multi_thread = true; // combine with YBWC
+        searches[i].use_multi_thread = i == MAIN_THREAD_IDX; // combine with YBWC in main thread
     }
     Search_result result;
     result.value = SCORE_UNDEFINED;
