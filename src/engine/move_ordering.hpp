@@ -23,6 +23,7 @@
 #include "board.hpp"
 #include "search.hpp"
 #include "midsearch.hpp"
+#include "midsearch_move_ordering.hpp"
 #include "stability.hpp"
 #include "level.hpp"
 
@@ -37,11 +38,11 @@
     @brief constants for move ordering
 */
 #if TUNE_MOVE_ORDERING_MID || TUNE_MOVE_ORDERING_END
-    #define N_MOVE_ORDERING_PARAM 13
+    #define N_MOVE_ORDERING_PARAM 12
     int move_ordering_param_array[N_MOVE_ORDERING_PARAM] = {
-        37, 11, 289, 92, 
-        17, 19, 14, 11, 
-        41, -2, 6, 
+        33, 11, 289, 96, 
+        21, 19, 12, 10, 
+        41, 6, 
         9, 8
     };
 
@@ -56,28 +57,27 @@
     #define W_NWS_VALUE_DEEP_ADDITIONAL move_ordering_param_array[7]
 
     #define W_END_NWS_MOBILITY          move_ordering_param_array[8]
-    #define W_END_NWS_PARITY            move_ordering_param_array[9]
-    #define W_END_NWS_VALUE             move_ordering_param_array[10]
+    #define W_END_NWS_VALUE             move_ordering_param_array[9]
 
-    #define W_END_NWS_SIMPLE_MOBILITY   move_ordering_param_array[11]
-    #define W_END_NWS_SIMPLE_PARITY     move_ordering_param_array[12]
+    #define W_END_NWS_SIMPLE_MOBILITY   move_ordering_param_array[10]
+    #define W_END_NWS_SIMPLE_PARITY     move_ordering_param_array[11]
 
     #define MOVE_ORDERING_MID_PARAM_START 0
     #define MOVE_ORDERING_MID_PARAM_END 7
     #define MOVE_ORDERING_END_PARAM_START 8
-    #define MOVE_ORDERING_END_PARAM_END 12
+    #define MOVE_ORDERING_END_PARAM_END 11
 #else
     // midgame search
-    #define W_MOBILITY 37
+    #define W_MOBILITY 33
     #define W_POTENTIAL_MOBILITY 11
     #define W_VALUE 289
-    #define W_VALUE_DEEP_ADDITIONAL 92
+    #define W_VALUE_DEEP_ADDITIONAL 96
 
     // midgame null window search
-    #define W_NWS_MOBILITY 17
+    #define W_NWS_MOBILITY 21
     #define W_NWS_POTENTIAL_MOBILITY 19
-    #define W_NWS_VALUE 14
-    #define W_NWS_VALUE_DEEP_ADDITIONAL 11
+    #define W_NWS_VALUE 12
+    #define W_NWS_VALUE_DEEP_ADDITIONAL 10
 
     // endgame null window search
     #define W_END_NWS_MOBILITY 41
@@ -92,12 +92,13 @@
 #define MOVE_ORDERING_VALUE_OFFSET_ALPHA 12
 #define MOVE_ORDERING_VALUE_OFFSET_BETA 12
 #define MOVE_ORDERING_NWS_VALUE_OFFSET_ALPHA 12
-#define MOVE_ORDERING_NWS_VALUE_OFFSET_BETA 3
+#define MOVE_ORDERING_NWS_VALUE_OFFSET_BETA 6
 
 #define MOVE_ORDERING_MPC_LEVEL MPC_88_LEVEL
 
 int nega_alpha_eval1(Search *search, int alpha, int beta, bool skipped, const bool *searching);
 inline int nega_alpha_eval1_move_ordering(Search *search, int alpha, int beta, bool skipped, const bool *searching);
+inline int nega_alpha_eval2_move_ordering(Search *search, int alpha, int beta, bool skipped, const bool *searching);
 int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, uint64_t legal, bool is_end_search, const bool *searching);
 
 /*
@@ -258,10 +259,17 @@ inline void move_evaluate_nws(Search *search, Flip_value *flip_value, int alpha,
                 break;
         }
         */
-        if (depth == 0)
-            flip_value->value -= mid_evaluate_move_ordering_mid(search) * W_NWS_VALUE;
-        else
-            flip_value->value -= nega_alpha_eval1_move_ordering(search, alpha, beta, false, searching) * (W_NWS_VALUE + W_NWS_VALUE_DEEP_ADDITIONAL);
+        switch (depth){
+            case 0:
+                flip_value->value -= mid_evaluate_move_ordering_mid(search) * W_NWS_VALUE;
+                break;
+            case 1:
+                flip_value->value -= nega_alpha_eval1_move_ordering(search, alpha, beta, false, searching) * (W_NWS_VALUE + W_NWS_VALUE_DEEP_ADDITIONAL);
+                break;
+            default:
+                flip_value->value -= nega_alpha_eval2_move_ordering(search, alpha, beta, false, searching) * (W_NWS_VALUE + 2 * W_NWS_VALUE_DEEP_ADDITIONAL);
+                break;
+        }
     search->undo_endsearch(&flip_value->flip);
     //search->undo(&flip_value->flip);
 }
