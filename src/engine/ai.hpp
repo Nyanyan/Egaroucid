@@ -18,6 +18,7 @@
 #include "book.hpp"
 #include "util.hpp"
 #include "clogsearch.hpp"
+#include "lazy_smp.hpp"
 
 #define SEARCH_BOOK -1
 
@@ -106,6 +107,11 @@ inline Search_result tree_search(Board board, int depth, uint_fast8_t mpc_level,
         if (show_log)
             std::cerr << "mainsearch depth " << depth << "@" << SELECTIVITY_PERCENTAGE[search.mpc_level] << "% value " << g << " policy " << idx_to_coord(policy) << " nodes " << search.n_nodes << " time " << (tim() - strt) << " nps " << calc_nps(search.n_nodes, tim() - strt) << std::endl;
     } else{
+        Search_result lazy_smp_result = lazy_smp_midsearch(board, depth, mpc_level, show_log, clogs);
+        lazy_smp_result.clog_nodes = res.clog_nodes;
+        lazy_smp_result.clog_time = res.clog_time;
+        return lazy_smp_result;
+        /*
         int search_depth;
         strt = tim();
         result.second = TRANSPOSITION_TABLE_UNDEFINED;
@@ -147,6 +153,7 @@ inline Search_result tree_search(Board board, int depth, uint_fast8_t mpc_level,
         policy = result.second;
         if (show_log)
             std::cerr << "mainsearch depth " << search_depth << "@" << SELECTIVITY_PERCENTAGE[search.mpc_level] << "% value " << g << " policy " << idx_to_coord(policy) << " nodes " << search.n_nodes << " time " << (tim() - strt) << " nps " << calc_nps(search.n_nodes, tim() - strt) << std::endl;
+        */
     }
     res.depth = depth;
     res.nodes = search.n_nodes;
@@ -665,7 +672,7 @@ Analyze_result ai_analyze(Board board, int level, bool use_multi_thread, uint_fa
         } else{
             std::vector<Clog_result> clogs;
             uint64_t strt = tim();
-            std::pair<int, int> nega_scout_res = first_nega_scout(&search, -SCORE_MAX, SCORE_MAX, SCORE_UNDEFINED, got_depth, !is_mid_search, false, clogs, legal_copy, strt);
+            std::pair<int, int> nega_scout_res = first_nega_scout_legal(&search, -SCORE_MAX, SCORE_MAX, SCORE_UNDEFINED, got_depth, !is_mid_search, false, clogs, legal_copy, strt);
             res.alt_move = nega_scout_res.second;
             res.alt_score = nega_scout_res.first;
             res.alt_depth = got_depth;
