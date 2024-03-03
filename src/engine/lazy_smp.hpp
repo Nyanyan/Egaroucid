@@ -22,7 +22,7 @@
 
 #define LAZYSMP_DEPTH_COE 3.0
 #define LAZYSMP_MPC_COE 0.25
-#define LAZYSMP_ENDSEARCH_PRESEARCH_COE 0.6
+#define LAZYSMP_ENDSEARCH_PRESEARCH_COE 0.65
 
 
 void lazy_smp_sub_thread(Search *search, int depth, bool is_end_search, const bool *searching){
