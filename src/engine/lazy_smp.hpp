@@ -54,11 +54,11 @@ Search_result lazy_smp_midsearch(Board board, int depth, uint_fast8_t mpc_level,
                 }
             }
         }
-        bool is_main_search = (main_thread_depth == depth);
-        if (is_main_search && show_log){
+        bool is_main_search_show_log = (main_thread_depth == depth) && show_log;
+        if (is_main_search_show_log){
             std::cerr << "start main search" << std::endl;
         }
-        std::pair<int, int> id_result = first_nega_scout(&searches[MAIN_THREAD_IDX], -SCORE_MAX, SCORE_MAX, SCORE_UNDEFINED, main_thread_depth, false, is_main_search, clogs, strt);
+        std::pair<int, int> id_result = first_nega_scout(&searches[MAIN_THREAD_IDX], -SCORE_MAX, SCORE_MAX, SCORE_UNDEFINED, main_thread_depth, false, is_main_search_show_log, clogs, strt);
         sub_thread_searching = false;
         if (main_thread_depth >= depth - 1){
             if (result.value == SCORE_UNDEFINED){
@@ -80,7 +80,7 @@ Search_result lazy_smp_midsearch(Board board, int depth, uint_fast8_t mpc_level,
         result.time = tim() - strt;
         result.nps = calc_nps(result.nodes, result.time);
         if (show_log){
-            if (is_main_search){
+            if (is_main_search_show_log){
                 std::cerr << "main ";
             } else{
                 std::cerr << "pre ";

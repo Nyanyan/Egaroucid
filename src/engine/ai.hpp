@@ -36,37 +36,34 @@
     @return the result in Search_result structure
 */
 inline Search_result tree_search(Board board, int depth, uint_fast8_t mpc_level, bool show_log, bool use_multi_thread){
-    Search_result res;
     uint64_t strt;
     depth = std::min(HW2 - board.n_discs(), depth);
     bool is_end_search = (HW2 - board.n_discs() == depth);
     std::vector<Clog_result> clogs;
-    res.clog_nodes = 0ULL;
+    uint64_t clog_nodes = 0;
+    uint64_t clog_time = 0;
     if (mpc_level != MPC_100_LEVEL){
         strt = tim();
-        clogs = first_clog_search(board, &res.clog_nodes, std::min(depth, CLOG_SEARCH_MAX_DEPTH));
-        res.clog_time = tim() - strt;
+        clogs = first_clog_search(board, &clog_nodes, std::min(depth, CLOG_SEARCH_MAX_DEPTH));
+        clog_time = tim() - strt;
         if (show_log){
-            std::cerr << "clog search time " << res.clog_time << " nodes " << res.clog_nodes << " nps " << calc_nps(res.clog_nodes, res.clog_time) << std::endl;
+            std::cerr << "clog search time " << clog_time << " nodes " << clog_nodes << " nps " << calc_nps(clog_nodes, clog_time) << std::endl;
             for (int i = 0; i < (int)clogs.size(); ++i){
                 std::cerr << "clogsearch " << i + 1 << "/" << clogs.size() << " " << idx_to_coord(clogs[i].pos) << " value " << clogs[i].val << std::endl;
             }
         }
     }
-    Search search;
-    int g = SCORE_UNDEFINED, policy = -1;
-    std::pair<int, int> result;
-    search.init_board(&board);
-    search.n_nodes = 0ULL;
-    #if USE_SEARCH_STATISTICS
-        for (int i = 0; i < HW2; ++i)
-            search.n_nodes_discs[i] = 0;
-    #endif
-    search.use_multi_thread = use_multi_thread;
-    search.mpc_level = 0;
+    Search_result res;
     if (is_end_search){
         strt = tim();
-        Search_result lazy_smp_result = lazy_smp_midsearch(board, round(depth * 0.6), MPC_88_LEVEL, show_log, clogs);
+        res = lazy_smp_midsearch(board, round(depth * 0.5), MPC_74_LEVEL, show_log, clogs);
+        Search search;
+        std::pair<int, int> result;
+        int predicted_value = SCORE_UNDEFINED;
+        search.init_board(&board);
+        search.n_nodes = 0ULL;
+        search.use_multi_thread = use_multi_thread;
+        search.mpc_level = 0;
         if (show_log)
             std::cerr << "start!" << std::endl;
         if (mpc_level >= MPC_93_LEVEL){
@@ -74,79 +71,28 @@ inline Search_result tree_search(Board board, int depth, uint_fast8_t mpc_level,
             int depth_presearch = depth;
             search.mpc_level = mpc_level_presearch;
             result = first_nega_scout(&search, -SCORE_MAX, SCORE_MAX, SCORE_UNDEFINED, depth_presearch, true, false, clogs, strt);
-            g = result.first;
+            predicted_value = result.first;
             if (show_log)
-                std::cerr << "presearch depth " << depth_presearch << "@" << SELECTIVITY_PERCENTAGE[search.mpc_level] << "% value " << g << " policy " << idx_to_coord(result.second) << " nodes " << search.n_nodes << " time " << (tim() - strt) << " nps " << calc_nps(search.n_nodes, tim() - strt) << std::endl;
+                std::cerr << "presearch depth " << depth_presearch << "@" << SELECTIVITY_PERCENTAGE[search.mpc_level] << "%" << " value " << result.first << " policy " << idx_to_coord(result.second) << " nodes " << search.n_nodes << " time " << (tim() - strt) << " nps " << calc_nps(search.n_nodes, tim() - strt) << std::endl;
         }
         search.mpc_level = mpc_level;
-        result = first_nega_scout(&search, -SCORE_MAX, SCORE_MAX, g, depth, true, show_log, clogs, strt);
-        g = result.first;
-        policy = result.second;
+        result = first_nega_scout(&search, -SCORE_MAX, SCORE_MAX, predicted_value, depth, true, show_log, clogs, strt);
+        uint64_t elapsed = tim() - strt;
+        res.value = result.first;
+        res.policy = result.second;
+        res.depth = depth;
+        res.nodes += search.n_nodes;
+        res.time = elapsed;
+        res.nps = calc_nps(res.nodes, res.time);
+        res.is_end_search = true;
+        res.probability = SELECTIVITY_PERCENTAGE[mpc_level];
         if (show_log)
-            std::cerr << "mainsearch depth " << depth << "@" << SELECTIVITY_PERCENTAGE[search.mpc_level] << "% value " << g << " policy " << idx_to_coord(policy) << " nodes " << search.n_nodes << " time " << (tim() - strt) << " nps " << calc_nps(search.n_nodes, tim() - strt) << std::endl;
+            std::cerr << "mainsearch depth " << depth << "@" << SELECTIVITY_PERCENTAGE[search.mpc_level] << "%" << " value " << res.value << " policy " << idx_to_coord(res.policy) << " nodes " << res.nodes << " time " << res.time << " nps " << res.nps << std::endl;
     } else{
-        Search_result lazy_smp_result = lazy_smp_midsearch(board, depth, mpc_level, show_log, clogs);
-        lazy_smp_result.clog_nodes = res.clog_nodes;
-        lazy_smp_result.clog_time = res.clog_time;
-        return lazy_smp_result;
-        /*
-        int search_depth;
-        strt = tim();
-        result.second = TRANSPOSITION_TABLE_UNDEFINED;
-        g = -INF;
-        if (depth >= 22){
-            search_depth = depth - 6;
-            search.mpc_level = std::max(0, mpc_level - 2);
-            result = first_nega_scout(&search, -SCORE_MAX, SCORE_MAX, SCORE_UNDEFINED, search_depth, false, false, clogs, strt);
-            g = result.first;
-            policy = result.second;
-            if (show_log)
-                std::cerr << "presearch depth " << search_depth << "@" << SELECTIVITY_PERCENTAGE[search.mpc_level] << "% value " << g << " policy " << idx_to_coord(policy) << " nodes " << search.n_nodes << " time " << (tim() - strt) << " nps " << calc_nps(search.n_nodes, tim() - strt) << std::endl;
-        }
-        if (depth >= 17){
-            search_depth = depth - 4;
-            search.mpc_level = std::max(0, mpc_level - 2);
-            result = first_nega_scout(&search, -SCORE_MAX, SCORE_MAX, SCORE_UNDEFINED, search_depth, false, false, clogs, strt);
-            g = result.first;
-            policy = result.second;
-            if (show_log)
-                std::cerr << "presearch depth " << search_depth << "@" << SELECTIVITY_PERCENTAGE[search.mpc_level] << "% value " << g << " policy " << idx_to_coord(policy) << " nodes " << search.n_nodes << " time " << (tim() - strt) << " nps " << calc_nps(search.n_nodes, tim() - strt) << std::endl;
-        }
-        if (depth - 1 >= 1){
-            search_depth = depth - 1;
-            search.mpc_level = std::max(0, mpc_level - 2);
-            result = first_nega_scout(&search, -SCORE_MAX, SCORE_MAX, SCORE_UNDEFINED, search_depth, false, false, clogs, strt);
-            g = result.first;
-            policy = result.second;
-            if (show_log)
-                std::cerr << "presearch depth " << search_depth << "@" << SELECTIVITY_PERCENTAGE[search.mpc_level] << "% value " << g << " policy " << idx_to_coord(policy) << " nodes " << search.n_nodes << " time " << (tim() - strt) << " nps " << calc_nps(search.n_nodes, tim() - strt) << std::endl;
-        }
-        search_depth = depth;
-        search.mpc_level = mpc_level;
-        result = first_nega_scout(&search, -SCORE_MAX, SCORE_MAX, SCORE_UNDEFINED, search_depth, false, show_log, clogs, strt);
-        if (g == -INF)
-            g = result.first;
-        else
-            g = round((0.8 * g + 1.2 * result.first) / 2.0);
-        policy = result.second;
-        if (show_log)
-            std::cerr << "mainsearch depth " << search_depth << "@" << SELECTIVITY_PERCENTAGE[search.mpc_level] << "% value " << g << " policy " << idx_to_coord(policy) << " nodes " << search.n_nodes << " time " << (tim() - strt) << " nps " << calc_nps(search.n_nodes, tim() - strt) << std::endl;
-        */
+        res = lazy_smp_midsearch(board, depth, mpc_level, show_log, clogs);
     }
-    res.depth = depth;
-    res.nodes = search.n_nodes;
-    res.time = tim() - strt;
-    res.nps = calc_nps(res.nodes, res.time);
-    res.policy = policy;
-    res.value = g;
-    res.is_end_search = is_end_search;
-    res.probability = SELECTIVITY_PERCENTAGE[mpc_level];
-    #if USE_SEARCH_STATISTICS
-        std::cerr << "statistics:" << std::endl;
-        for (int i = 0; i < HW2; ++i)
-            std::cerr << search.n_nodes_discs[i] << " ";
-        std::cerr << std::endl;
-    #endif
+    res.clog_nodes = clog_nodes;
+    res.clog_time = clog_time;
     transposition_table.update_date();
     return res;
 }
