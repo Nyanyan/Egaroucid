@@ -10,5 +10,5 @@
 
 #pragma once
 //#include "evaluation_definition_7_0.hpp"
-#include "evaluation_definition_move_ordering_end_nws.hpp"
-//#include "evaluation_definition_move_ordering_mid_nws.hpp"
+//#include "evaluation_definition_move_ordering_end_nws.hpp"
+#include "evaluation_definition_move_ordering_mid_nws.hpp"

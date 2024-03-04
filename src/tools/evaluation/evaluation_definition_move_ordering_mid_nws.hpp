@@ -13,7 +13,7 @@
     #include "./../../engine/board.hpp"
 #endif
 
-#define EVAL_DEFINITION_NAME "20240304_1_move_ordering_mid_nws"
+#define EVAL_DEFINITION_NAME "20240304_2_move_ordering_mid_nws"
 #define EVAL_DEFINITION_DESCRIPTION "evaluation function for move ordering (midsearch)"
 
 #ifndef HW
