@@ -215,3 +215,6 @@ print_all_result()
 for i in range(len(players)):
     players[i][SUBPROCESS_IDX].stdin.write('quit\n'.encode('utf-8'))
     players[i][SUBPROCESS_IDX].stdin.flush()
+
+for i in range(len(players)):
+    players[i][SUBPROCESS_IDX].kill()
