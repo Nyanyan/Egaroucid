@@ -37,9 +37,9 @@
 #define N_SIMD_EVAL_FEATURE_CELLS 16
 #define N_SIMD_EVAL_FEATURE_GROUP 4
 
-#define N_PATTERN_PARAMS_MOVE_ORDERING_END_NWS (236196 + 1) // +1 for byte bound
-#define SIMD_EVAL_MAX_VALUE_MOVE_ORDERING_NWS 16380
-#define N_SIMD_EVAL_FEATURES_COMP_MOVE_ORDERING_END_NWS 1
+#define N_PATTERN_PARAMS_MOVE_ORDERING (236196 + 1) // +1 for byte bound
+#define SIMD_EVAL_MAX_VALUE_MOVE_ORDERING 16380
+#define N_SIMD_EVAL_FEATURES_COMP_MOVE_ORDERING 1
 
 constexpr Feature_to_coord feature_to_coord[CEIL_N_SYMMETRY_PATTERNS] = {
     // 0 hv2
@@ -218,7 +218,7 @@ __m256i coord_to_feature_simd[HW2][N_SIMD_EVAL_FEATURES];
 __m256i eval_move_unflipped_16bit[N_16BIT][N_SIMD_EVAL_FEATURE_GROUP][N_SIMD_EVAL_FEATURES];
 __m256i eval_simd_offsets_simple[N_SIMD_EVAL_FEATURES_SIMPLE]; // 16bit * 16 * N
 __m256i eval_simd_offsets_comp[N_SIMD_EVAL_FEATURES_COMP * 2]; // 32bit * 8 * N
-__m256i eval_simd_offsets_comp_move_ordering[N_SIMD_EVAL_FEATURES_COMP_MOVE_ORDERING_END_NWS * 2]; // 32bit * 8 * N
+__m256i eval_simd_offsets_comp_move_ordering[N_SIMD_EVAL_FEATURES_COMP_MOVE_ORDERING * 2]; // 32bit * 8 * N
 __m256i eval_surround_mask;
 __m128i eval_surround_shift1879;
 
@@ -228,7 +228,7 @@ __m128i eval_surround_shift1879;
 int16_t pattern_arr[N_PHASES][N_PATTERN_PARAMS];
 int16_t eval_num_arr[N_PHASES][MAX_STONE_NUM];
 int16_t eval_sur0_sur1_arr[N_PHASES][MAX_SURROUND][MAX_SURROUND];
-int16_t pattern_arr_move_ordering_end_nws[N_PATTERN_PARAMS_MOVE_ORDERING_END_NWS];
+int16_t pattern_arr_move_ordering_end_nws[N_PATTERN_PARAMS_MOVE_ORDERING];
 
 inline bool load_eval_file(const char* file, bool show_log){
     if (show_log)
@@ -296,27 +296,27 @@ inline bool load_eval_move_ordering_end_nws_file(const char* file, bool show_log
         std::cerr << "[ERROR] [FATAL] can't open eval " << file << std::endl;
         return false;
     }
-    constexpr int pattern_sizes[N_PATTERNS_MOVE_ORDERING_END_NWS] = {10, 10, 10, 10}; // 8, 9, 10, 11: edge + 2x, triangle, corner + block, cross
-    constexpr int pattern_starts[N_PATTERNS_MOVE_ORDERING_END_NWS] = {
+    constexpr int pattern_sizes[N_PATTERNS_MOVE_ORDERING] = {10, 10, 10, 10}; // 8, 9, 10, 11: edge + 2x, triangle, corner + block, cross
+    constexpr int pattern_starts[N_PATTERNS_MOVE_ORDERING] = {
         1, 59050, 118099, 177148
     };
     pattern_arr_move_ordering_end_nws[0] = 0; // memory bound
-    if (fread(pattern_arr_move_ordering_end_nws + pattern_starts[0], 2, N_PATTERN_PARAMS_MOVE_ORDERING_END_NWS - 1, fp) < N_PATTERN_PARAMS_MOVE_ORDERING_END_NWS - 1){
+    if (fread(pattern_arr_move_ordering_end_nws + pattern_starts[0], 2, N_PATTERN_PARAMS_MOVE_ORDERING - 1, fp) < N_PATTERN_PARAMS_MOVE_ORDERING - 1){
         std::cerr << "[ERROR] [FATAL] evaluation file for move ordering end nws broken" << std::endl;
         fclose(fp);
         return false;
     }
     // check max value
-    for (int i = 1; i < N_PATTERN_PARAMS_MOVE_ORDERING_END_NWS; ++i){
-        if (pattern_arr_move_ordering_end_nws[i] < -SIMD_EVAL_MAX_VALUE_MOVE_ORDERING_NWS){
+    for (int i = 1; i < N_PATTERN_PARAMS_MOVE_ORDERING; ++i){
+        if (pattern_arr_move_ordering_end_nws[i] < -SIMD_EVAL_MAX_VALUE_MOVE_ORDERING){
             std::cerr << "[ERROR] evaluation value too low. you can ignore this error. index " << i << " found " << pattern_arr_move_ordering_end_nws[i] << std::endl;
-            pattern_arr_move_ordering_end_nws[i] = -SIMD_EVAL_MAX_VALUE_MOVE_ORDERING_NWS;
+            pattern_arr_move_ordering_end_nws[i] = -SIMD_EVAL_MAX_VALUE_MOVE_ORDERING;
         }
-        if (pattern_arr_move_ordering_end_nws[i] > SIMD_EVAL_MAX_VALUE_MOVE_ORDERING_NWS){
+        if (pattern_arr_move_ordering_end_nws[i] > SIMD_EVAL_MAX_VALUE_MOVE_ORDERING){
             std::cerr << "[ERROR] evaluation value too high. you can ignore this error. index " << i << " found " << pattern_arr_move_ordering_end_nws[i] << std::endl;
-            pattern_arr_move_ordering_end_nws[i] = SIMD_EVAL_MAX_VALUE_MOVE_ORDERING_NWS;
+            pattern_arr_move_ordering_end_nws[i] = SIMD_EVAL_MAX_VALUE_MOVE_ORDERING;
         }
-        pattern_arr_move_ordering_end_nws[i] += SIMD_EVAL_MAX_VALUE_MOVE_ORDERING_NWS;
+        pattern_arr_move_ordering_end_nws[i] += SIMD_EVAL_MAX_VALUE_MOVE_ORDERING;
     }
     return true;
 }
@@ -535,7 +535,7 @@ inline int calc_pattern_move_ordering_end(Eval_features *features){
     res256 = _mm256_and_si256(res256, eval_lower_mask);
     __m128i res128 = _mm_add_epi32(_mm256_castsi256_si128(res256), _mm256_extracti128_si256(res256, 1));
     res128 = _mm_hadd_epi32(res128, res128);
-    return _mm_cvtsi128_si32(res128) + _mm_extract_epi32(res128, 1) - SIMD_EVAL_MAX_VALUE_MOVE_ORDERING_NWS * N_SYMMETRY_PATTERNS_MOVE_ORDERING_END_NWS;
+    return _mm_cvtsi128_si32(res128) + _mm_extract_epi32(res128, 1) - SIMD_EVAL_MAX_VALUE_MOVE_ORDERING * N_SYMMETRY_PATTERNS_MOVE_ORDERING;
 }
 
 inline void calc_eval_features(Board *board, Eval_search *eval);

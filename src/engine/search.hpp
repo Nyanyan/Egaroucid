@@ -386,8 +386,8 @@ class Search{
             @brief Get evaluation phase
         */
         inline int phase(){
-            return (n_discs - 4) / PHASE_N_STONES;
-            //return std::min(N_PHASES - 1, (n_discs - 4) / PHASE_N_STONES);
+            return (n_discs - 4) / PHASE_N_DISCS;
+            //return std::min(N_PHASES - 1, (n_discs - 4) / PHASE_N_DISCS);
         }
 };
 

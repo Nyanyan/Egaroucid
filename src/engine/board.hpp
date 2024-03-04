@@ -431,10 +431,12 @@ class Board {
 
             @return the phase of the board
         */
+        /*
         inline int phase_slow(){
             int n_discs = pop_count_ull(player | opponent);
             return std::min(N_PHASES - 1, (n_discs - 4) / PHASE_N_STONES);
         }
+        */
 };
 
 bool operator==(const Board& a, const Board& b){

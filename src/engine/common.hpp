@@ -32,10 +32,6 @@
 #define WHITE 1
 #define VACANT 2
 
-// evaluation phase definition
-#define N_PHASES 60
-#define PHASE_N_STONES 1
-
 // constant
 #define N_8BIT 256 // 2 ^ 8
 #define N_16BIT 65536 // 2 ^ 16
