@@ -4,10 +4,10 @@ import glob
 
 #'''
 # 7.0
-bin_root_dir = './../../../train_data/bin_data/20240223_1/' # 7.0
-exe = 'data_board_to_idx.out' # 7.0
+bin_root_dir = './../../../train_data/bin_data/20240223_1/'
+exe = 'data_board_to_idx.out'
 N_PHASES = 60
-#board_sub_dir_nums = [6, 7, 8, 9, 10, 11, 15, 16, 17, 18, 19, 20, 21, 23, 24, 25, 26, 27] # 6.6
+#board_sub_dir_nums = [6, 7, 8, 9, 10, 11, 15, 16, 17, 18, 19, 20, 21, 23, 24, 25, 26, 27]
 board_sub_dir_nums = [31]
 #'''
 '''
