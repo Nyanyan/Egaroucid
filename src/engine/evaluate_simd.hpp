@@ -229,6 +229,7 @@ int16_t pattern_arr[N_PHASES][N_PATTERN_PARAMS];
 int16_t eval_num_arr[N_PHASES][MAX_STONE_NUM];
 int16_t eval_sur0_sur1_arr[N_PHASES][MAX_SURROUND][MAX_SURROUND];
 int16_t pattern_arr_move_ordering_end_nws[N_PATTERN_PARAMS_MOVE_ORDERING];
+int16_t pattern_arr_move_ordering_mid_nws[N_PHASES][N_PATTERN_PARAMS_MOVE_ORDERING];
 
 inline bool load_eval_file(const char* file, bool show_log){
     if (show_log)
@@ -317,6 +318,43 @@ inline bool load_eval_move_ordering_end_nws_file(const char* file, bool show_log
             pattern_arr_move_ordering_end_nws[i] = SIMD_EVAL_MAX_VALUE_MOVE_ORDERING;
         }
         pattern_arr_move_ordering_end_nws[i] += SIMD_EVAL_MAX_VALUE_MOVE_ORDERING;
+    }
+    return true;
+}
+
+inline bool load_eval_move_ordering_mid_nws_file(const char* file, bool show_log){
+    if (show_log)
+        std::cerr << "evaluation for move ordering mid nws file " << file << std::endl;
+    FILE* fp;
+    if (!file_open(&fp, file, "rb")){
+        std::cerr << "[ERROR] [FATAL] can't open eval " << file << std::endl;
+        return false;
+    }
+    constexpr int pattern_sizes[N_PATTERNS_MOVE_ORDERING] = {10, 10, 10, 10}; // 8, 9, 10, 11: edge + 2x, triangle, corner + block, cross
+    constexpr int pattern_starts[N_PATTERNS_MOVE_ORDERING] = {
+        1, 59050, 118099, 177148
+    };
+    for (int phase = 0; phase < N_PHASES; ++phase){
+        pattern_arr_move_ordering_mid_nws[phase][0] = 0; // memory bound
+        if (fread(pattern_arr_move_ordering_mid_nws[phase] + pattern_starts[0], 2, N_PATTERN_PARAMS_MOVE_ORDERING - 1, fp) < N_PATTERN_PARAMS_MOVE_ORDERING - 1){
+            std::cerr << "[ERROR] [FATAL] evaluation file for move ordering mid nws broken" << std::endl;
+            fclose(fp);
+            return false;
+        }
+    }
+    // check max value
+    for (int phase = 0; phase < N_PHASES; ++phase){
+        for (int i = 1; i < N_PATTERN_PARAMS_MOVE_ORDERING; ++i){
+            if (pattern_arr_move_ordering_mid_nws[phase][i] < -SIMD_EVAL_MAX_VALUE_MOVE_ORDERING){
+                std::cerr << "[ERROR] evaluation value too low. you can ignore this error. index " << i << " found " << pattern_arr_move_ordering_mid_nws[phase][i] << std::endl;
+                pattern_arr_move_ordering_mid_nws[phase][i] = -SIMD_EVAL_MAX_VALUE_MOVE_ORDERING;
+            }
+            if (pattern_arr_move_ordering_mid_nws[phase][i] > SIMD_EVAL_MAX_VALUE_MOVE_ORDERING){
+                std::cerr << "[ERROR] evaluation value too high. you can ignore this error. index " << i << " found " << pattern_arr_move_ordering_mid_nws[phase][i] << std::endl;
+                pattern_arr_move_ordering_mid_nws[phase][i] = SIMD_EVAL_MAX_VALUE_MOVE_ORDERING;
+            }
+            pattern_arr_move_ordering_mid_nws[phase][i] += SIMD_EVAL_MAX_VALUE_MOVE_ORDERING;
+        }
     }
     return true;
 }
@@ -439,7 +477,7 @@ inline void pre_calculate_eval_constant(){
     @param show_log             debug information?
     @return evaluation function conpletely initialized?
 */
-inline bool evaluate_init(const char* file, const char* mo_end_nws_file, bool show_log){
+inline bool evaluate_init(const char* file, const char* mo_end_nws_file, const char* mo_mid_nws_file, bool show_log){
     bool eval_loaded = load_eval_file(file, show_log);
     if (!eval_loaded){
         std::cerr << "[ERROR] [FATAL] evaluation file not loaded" << std::endl;
@@ -448,6 +486,11 @@ inline bool evaluate_init(const char* file, const char* mo_end_nws_file, bool sh
     bool eval_move_ordering_end_nws_loaded = load_eval_move_ordering_end_nws_file(mo_end_nws_file, show_log);
     if (!eval_move_ordering_end_nws_loaded){
         std::cerr << "[ERROR] [FATAL] evaluation file for move ordering end nws not loaded" << std::endl;
+        return false;
+    }
+    bool eval_move_ordering_mid_nws_loaded = load_eval_move_ordering_mid_nws_file(mo_mid_nws_file, show_log);
+    if (!eval_move_ordering_mid_nws_loaded){
+        std::cerr << "[ERROR] [FATAL] evaluation file for move ordering mid nws not loaded" << std::endl;
         return false;
     }
     pre_calculate_eval_constant();
@@ -462,8 +505,8 @@ inline bool evaluate_init(const char* file, const char* mo_end_nws_file, bool sh
     @param file                 evaluation file name
     @return evaluation function conpletely initialized?
 */
-bool evaluate_init(const std::string file, std::string mo_end_nws_file, bool show_log){
-    return evaluate_init(file.c_str(), mo_end_nws_file.c_str(), show_log);
+bool evaluate_init(const std::string file, std::string mo_end_nws_file, std::string mo_mid_nws_file, bool show_log){
+    return evaluate_init(file.c_str(), mo_end_nws_file.c_str(), mo_mid_nws_file.c_str(), show_log);
 }
 
 /*
@@ -472,7 +515,7 @@ bool evaluate_init(const std::string file, std::string mo_end_nws_file, bool sho
     @return evaluation function conpletely initialized?
 */
 bool evaluate_init(bool show_log){
-    return evaluate_init("resources/eval.egev", "resources/eval_mo_end_nws.egev", show_log);
+    return evaluate_init("resources/eval.egev", "resources/eval_mo_end_nws.egev", "resources/eval_mo_mid_nws.egev", show_log);
 }
 
 /*
@@ -530,6 +573,16 @@ inline int calc_pattern(const int phase_idx, Eval_features *features){
 
 inline int calc_pattern_move_ordering_end(Eval_features *features){
     const int *start_addr = (int*)pattern_arr_move_ordering_end_nws;
+    __m256i res256 =                  gather_eval(start_addr, calc_idx8_comp_move_ordering(features->f128[4], 0));        // corner+block cross
+    res256 = _mm256_add_epi32(res256, gather_eval(start_addr, calc_idx8_comp_move_ordering(features->f128[5], 1)));       // edge+2X triangle
+    res256 = _mm256_and_si256(res256, eval_lower_mask);
+    __m128i res128 = _mm_add_epi32(_mm256_castsi256_si128(res256), _mm256_extracti128_si256(res256, 1));
+    res128 = _mm_hadd_epi32(res128, res128);
+    return _mm_cvtsi128_si32(res128) + _mm_extract_epi32(res128, 1) - SIMD_EVAL_MAX_VALUE_MOVE_ORDERING * N_SYMMETRY_PATTERNS_MOVE_ORDERING;
+}
+
+inline int calc_pattern_move_ordering_mid(const int phase_idx, Eval_features *features){
+    const int *start_addr = (int*)pattern_arr_move_ordering_mid_nws[phase_idx];
     __m256i res256 =                  gather_eval(start_addr, calc_idx8_comp_move_ordering(features->f128[4], 0));        // corner+block cross
     res256 = _mm256_add_epi32(res256, gather_eval(start_addr, calc_idx8_comp_move_ordering(features->f128[5], 1)));       // edge+2X triangle
     res256 = _mm256_and_si256(res256, eval_lower_mask);
@@ -603,6 +656,20 @@ inline int mid_evaluate_diff(Search *search){
 */
 inline int mid_evaluate_move_ordering_end(Search *search){
     int res = calc_pattern_move_ordering_end(&search->eval.features[search->eval.feature_idx]);
+    res += res >= 0 ? STEP_2 : -STEP_2;
+    res /= STEP;
+    return res;
+}
+
+/*
+    @brief midgame evaluation function
+
+    @param search               search information
+    @return evaluation value
+*/
+inline int mid_evaluate_move_ordering_mid(Search *search){
+    int phase_idx = search->phase();
+    int res = calc_pattern_move_ordering_mid(phase_idx, &search->eval.features[search->eval.feature_idx]);
     res += res >= 0 ? STEP_2 : -STEP_2;
     res /= STEP;
     return res;
