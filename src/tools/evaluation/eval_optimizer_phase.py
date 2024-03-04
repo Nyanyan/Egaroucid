@@ -3,15 +3,15 @@ import sys
 
 phase = str(sys.argv[1])
 hour = '0'
-minute = '10'
+minute = '3'
 second = '0'
-alpha = '400'
+alpha = '300'
 n_patience = '1'
 
 model_dir = './../../../model/nomodel/'
 
 
-
+'''
 # 7.0
 #train_data_nums = [6, 7, 8, 9, 10, 11, 15, 16, 17, 18, 19, 20, 21, 24, 25, 26, 27]
 train_data_nums = [26, 27, 28, 29, 30, 31]
@@ -22,13 +22,13 @@ if 30 <= int(phase) and int(phase) <= 39:
 train_root_dir = './../../../train_data/bin_data/20240223_1/'
 #model_dir = './../../../model/20240226_3/'
 executable = 'eval_optimizer_cuda_12_2_0.exe'
-
 '''
+#'''
 # 7.0 move ordering end nws
-train_data_nums = [24, 25]
-train_root_dir = './../../../train_data/bin_data/20240301_1_move_ordering_end_nws/'
-executable = 'eval_optimizer_cuda_12_2_0_move_ordering.exe'
-'''
+train_data_nums = [24, 28]
+train_root_dir = './../../../train_data/bin_data/20240304_1_move_ordering_end_nws/'
+executable = 'eval_optimizer_cuda_12_2_0_move_ordering_end_nws.exe'
+#'''
 '''
 # 7.0 move ordering mid nws
 train_data_nums = [29]

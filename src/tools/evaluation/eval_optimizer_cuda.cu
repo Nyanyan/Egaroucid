@@ -28,7 +28,7 @@
 
 // train data constant
 #define ADJ_MAX_N_FILES 64
-#define ADJ_MAX_N_DATA 70000000
+#define ADJ_MAX_N_DATA 75000000
 
 // GPU constant
 #define N_THREADS_PER_BLOCK_RESIDUAL 1024

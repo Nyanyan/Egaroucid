@@ -5,6 +5,8 @@
 #include "evaluation_definition.hpp"
 
 int main(int argc, char *argv[]){
+    std::cerr << EVAL_DEFINITION_NAME << std::endl;
+    std::cerr << EVAL_DEFINITION_DESCRIPTION << std::endl;
     if (argc < 8){
         std::cerr << "input [input dir] [start file no] [n files] [output file] [phase] [use_n_moves_min] [use_n_moves_max]" << std::endl;
         return 1;

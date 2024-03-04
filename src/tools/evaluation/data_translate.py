@@ -2,27 +2,27 @@ import subprocess
 import os
 import glob
 
-#'''
+'''
 # 7.0
 bin_root_dir = './../../../train_data/bin_data/20240223_1/'
 exe = 'data_board_to_idx.out'
 N_PHASES = 60
 #board_sub_dir_nums = [6, 7, 8, 9, 10, 11, 15, 16, 17, 18, 19, 20, 21, 23, 24, 25, 26, 27]
 board_sub_dir_nums = [31]
-#'''
 '''
+#'''
 # 7.0 move ordering_end_nws
-bin_root_dir = './../../../train_data/bin_data/20240301_1_move_ordering_end_nws/'
+bin_root_dir = './../../../train_data/bin_data/20240304_1_move_ordering_end_nws/'
 exe = 'data_board_to_idx_move_ordering_end_nws.out'
 N_PHASES = 1
-board_sub_dir_nums = [24, 25]
-'''
+board_sub_dir_nums = [24, 28]
+#'''
 '''
 # 7.0 move ordering_mid_nws
-bin_root_dir = './../../../train_data/bin_data/20240303_1_move_ordering_mid_nws/'
+bin_root_dir = './../../../train_data/bin_data/20240304_1_move_ordering_mid_nws/'
 exe = 'data_board_to_idx_move_ordering_mid_nws.out'
-N_PHASES = 1
-board_sub_dir_nums = [26, 29, 30, 31]
+N_PHASES = 60
+board_sub_dir_nums = [26, 27, 29, 30, 31]
 '''
 
 

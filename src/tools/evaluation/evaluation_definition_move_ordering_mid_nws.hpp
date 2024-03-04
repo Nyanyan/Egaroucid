@@ -13,7 +13,7 @@
     #include "./../../engine/board.hpp"
 #endif
 
-#define EVAL_DEFINITION_NAME "20240303_1_move_ordering_mid_nws"
+#define EVAL_DEFINITION_NAME "20240304_1_move_ordering_mid_nws"
 #define EVAL_DEFINITION_DESCRIPTION "evaluation function for move ordering (midsearch)"
 
 #ifndef HW
@@ -36,26 +36,19 @@
 #define ADJ_N_SYMMETRY_PATTERNS 16
 #define ADJ_MAX_PATTERN_CELLS 10
 
-// additional features
-#define ADJ_N_ADDITIONAL_EVALS 2
-#define ADJ_MAX_SURROUND 64
-#define ADJ_MAX_STONE_NUM 65
-
 // overall
 #define ADJ_MAX_EVALUATE_IDX 59049
-#define ADJ_N_EVAL (16 + 2)
-#define ADJ_N_FEATURES (62 + 2)
-#define N_FLOOR_UNIQUE_FEATURES 16 // floorpow2(ADJ_N_EVAL): 16-31->16 32-63->32
+#define ADJ_N_EVAL 4
+#define ADJ_N_FEATURES 16
+//#define N_FLOOR_UNIQUE_FEATURES 4 // floorpow2(ADJ_N_EVAL): 16-31->16 32-63->32
 
 // phase
-#define ADJ_N_PHASES 1
-#define ADJ_N_PHASE_DISCS 60 // 60 / ADJ_N_PHASES
+#define ADJ_N_PHASES 60
+#define ADJ_N_PHASE_DISCS 1 // 60 / ADJ_N_PHASES
 
 // for end nws
 //#define ADJ_MIN_N_DISCS (64 - 12)
 //#define ADJ_MAX_N_DISCS (64 - 10)
-
-//#define ADJ_SCORE_MAX HW2
 
 /*
     @brief value definition
