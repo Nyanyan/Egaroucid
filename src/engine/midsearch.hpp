@@ -62,7 +62,7 @@ inline int nega_alpha_eval1_move_ordering(Search *search, int alpha, int beta, b
         calc_flip(&flip, &search->board, cell);
         search->move(&flip);
             ++search->n_nodes;
-            g = -mid_evaluate_move_ordering_mid(search);
+            g = -mid_evaluate_move_ordering(search);
         search->undo(&flip);
         ++search->n_nodes;
         if (v < g){
