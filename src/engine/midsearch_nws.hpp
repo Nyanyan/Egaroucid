@@ -166,8 +166,7 @@ int nega_alpha_ordering_nws(Search *search, int alpha, int depth, bool skipped, 
         depth - 1 >= YBWC_MID_SPLIT_MIN_DEPTH
     ){
         int running_count = 0;
-        std::vector<std::future<Parallel_task>> parallel_tasks;
-        std::atomic<int> atomic_running_count = 0;
+        YBWC_result ybwc_result;
         bool n_searching = true;
         for (int move_idx = 0; move_idx < canput - etc_done_idx && *searching && n_searching; ++move_idx){
             swap_next_best_move(move_list, move_idx, canput);
@@ -176,9 +175,9 @@ int nega_alpha_ordering_nws(Search *search, int alpha, int depth, bool skipped, 
                     break;
             #endif
             search->move(&move_list[move_idx].flip);
-                if (ybwc_split_nws(search, -alpha - 1, depth - 1, move_list[move_idx].n_legal, is_end_search, &n_searching, move_list[move_idx].flip.pos, move_idx, canput - etc_done_idx, running_count, parallel_tasks, &atomic_running_count)){
+                if (ybwc_split_nws(search, -alpha - 1, depth - 1, move_list[move_idx].n_legal, is_end_search, &n_searching, move_list[move_idx].flip.pos, move_idx, canput - etc_done_idx, running_count, &ybwc_result)){
                     ++running_count;
-                    atomic_running_count.fetch_add(1);
+                    ybwc_result.running_count.fetch_add(1);
                 } else{
                     g = -nega_alpha_ordering_nws(search, -alpha - 1, depth - 1, false, move_list[move_idx].n_legal, is_end_search, searching);
                     if (v < g){
@@ -188,7 +187,7 @@ int nega_alpha_ordering_nws(Search *search, int alpha, int depth, bool skipped, 
                             n_searching = false;
                     }
                     if (running_count){
-                        ybwc_get_end_tasks(search, parallel_tasks, &v, &best_move, &running_count);
+                        ybwc_get_end_tasks(search, &v, &best_move, &running_count, &ybwc_result);
                         if (alpha < v)
                             n_searching = false;
                     }
@@ -197,10 +196,11 @@ int nega_alpha_ordering_nws(Search *search, int alpha, int depth, bool skipped, 
         }
         if (running_count){
             if (!n_searching || !(*searching))
-                ybwc_wait_all_stopped(search, parallel_tasks);
+                ybwc_wait_all_stopped(search, &running_count, &ybwc_result);
             else
-                ybwc_wait_all_nws(search, parallel_tasks, &running_count, &atomic_running_count, &v, &best_move, alpha, searching, &n_searching);
+                ybwc_wait_all_nws(search, &running_count, &v, &best_move, alpha, searching, &n_searching, &ybwc_result);
         }
+        search->n_nodes += ybwc_result.n_nodes;
     } else{
         for (int move_idx = 0; move_idx < canput - etc_done_idx && *searching; ++move_idx){
             swap_next_best_move(move_list, move_idx, canput);

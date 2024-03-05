@@ -180,7 +180,7 @@
 #define USE_MPC_PRE_CALCULATION true
 
 // YBWC in negascout
-#define USE_YBWC_NEGASCOUT true
+#define USE_YBWC_NEGASCOUT false
 
 // aspiration search in negascout
 #define USE_ASPIRATION_NEGASCOUT true
