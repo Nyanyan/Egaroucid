@@ -31,7 +31,7 @@
 /*
     @brief Search hyperparameters
 */
-#define MID_ETC_DEPTH 14
+#define MID_ETC_DEPTH 16
 
 
 
