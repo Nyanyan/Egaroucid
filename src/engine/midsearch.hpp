@@ -30,54 +30,6 @@
 
 
 /*
-    @brief Get a value with last move with Nega-Alpha algorithm this function uses light evaluation function for move ordering
-    No move ordering. Just search it.
-    @param search               search information
-    @param alpha                alpha value
-    @param beta                 beta value
-    @param skipped              already passed?
-    @param searching            flag for terminating this search
-    @return the value
-*/
-inline int nega_alpha_eval1_move_ordering_mid(Search *search, int alpha, int beta, bool skipped){
-    ++search->n_nodes;
-    #if USE_SEARCH_STATISTICS
-        ++search->n_nodes_discs[search->n_discs];
-    #endif
-    int v = -SCORE_INF;
-    uint64_t legal = search->board.get_legal();
-    if (legal == 0ULL){
-        if (skipped)
-            return end_evaluate(&search->board);
-        search->pass_move_ordering();
-            v = -nega_alpha_eval1_move_ordering_mid(search, -beta, -alpha, true);
-        search->pass_move_ordering();
-        return v;
-    }
-    int g;
-    Flip flip;
-    for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)){
-        calc_flip(&flip, &search->board, cell);
-        search->move_move_ordering(&flip);
-            ++search->n_nodes;
-            g = -mid_evaluate_move_ordering_mid(search);
-        search->undo_move_ordering(&flip);
-        ++search->n_nodes;
-        if (v < g){
-            if (alpha < g){
-                if (beta <= g)
-                    return g;
-                alpha = g;
-            }
-            v = g;
-        }
-    }
-    return v;
-}
-
-
-
-/*
     @brief Get a value with last move with Nega-Alpha algorithm
 
     No move ordering. Just search it.

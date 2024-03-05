@@ -54,9 +54,6 @@ inline void calc_eval_features(Board *board, Eval_search *eval);
     inline void eval_move_endsearch(Eval_search *eval, const Flip *flip, const Board *board);
     inline void eval_undo_endsearch(Eval_search *eval);
     inline void eval_pass_endsearch(Eval_search *eval, const Board *board);
-    inline void eval_move_move_ordering(Eval_search *eval, const Flip *flip, const Board *board);
-    inline void eval_undo_move_ordering(Eval_search *eval);
-    inline void eval_pass_move_ordering(Eval_search *eval, const Board *board);
 #else
     inline void eval_move(Eval_search *eval, const Flip *flip);
     inline void eval_undo(Eval_search *eval, const Flip *flip);
@@ -328,50 +325,6 @@ class Search{
                 eval_pass_endsearch(&eval, &board);
             #else
                 eval_pass_endsearch(&eval);
-            #endif
-            board.pass();
-        }
-
-        /*
-            @brief Move board and other variables
-
-            @param flip                 Flip information
-        */
-        inline void move_move_ordering(const Flip *flip) {
-            #if USE_SIMD
-                eval_move_move_ordering(&eval, flip, &board);
-            #else
-                eval_move_move_ordering(&eval, flip);
-            #endif
-            board.move_board(flip);
-            ++n_discs;
-            parity ^= cell_div4[flip->pos];
-        }
-
-        /*
-            @brief Undo board and other variables
-
-            @param flip                 Flip information
-        */
-        inline void undo_move_ordering(const Flip *flip) {
-            #if USE_SIMD
-                eval_undo_move_ordering(&eval);
-            #else
-                eval_undo_move_ordering(&eval, flip);
-            #endif
-            board.undo_board(flip);
-            --n_discs;
-            parity ^= cell_div4[flip->pos];
-        }
-
-        /*
-            @brief pass board
-        */
-        inline void pass_move_ordering(){
-            #if USE_SIMD
-                eval_pass_move_ordering(&eval, &board);
-            #else
-                eval_pass_move_ordering(&eval);
             #endif
             board.pass();
         }

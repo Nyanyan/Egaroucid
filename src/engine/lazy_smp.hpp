@@ -20,7 +20,7 @@
 #define N_PARALLEL_MAX 128
 #define MAIN_THREAD_IDX 0
 
-#define LAZYSMP_ENDSEARCH_PRESEARCH_COE 0.65
+#define LAZYSMP_ENDSEARCH_PRESEARCH_COE 0.7
 
 Search_result lazy_smp(Board board, int depth, uint_fast8_t mpc_level, bool show_log, std::vector<Clog_result> clogs){
     Search searches[N_PARALLEL_MAX];

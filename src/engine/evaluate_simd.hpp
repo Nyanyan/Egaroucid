@@ -44,16 +44,6 @@
 #define SIMD_EVAL_MAX_VALUE_MO_END 16380
 #define SHIFT_EVAL_MO_END 49087 // pattern_starts[8]
 
-/*
-    @brief evaluation pattern definition for SIMD move ordering mid
-*/
-#define N_PATTERN_PARAMS_MO_MID (265356 + 2) // +2 for byte bound & dummy for d8
-#define SIMD_EVAL_MAX_VALUE_MO_MID 8190
-#define SHIFT_EVAL_MO_MID 19926 // pattern_starts[4]
-#define N_PATTERN_PARAMS_BEFORE_DUMMY_MO_MID 9477
-#define SIMD_EVAL_DUMMY_ADDR_MO_MID 9478
-#define N_PATTERN_PARAMS_AFTER_DUMMY_MO_MID 255879
-
 constexpr Feature_to_coord feature_to_coord[CEIL_N_SYMMETRY_PATTERNS] = {
     // 0 hv2
     {8, {COORD_A2, COORD_B2, COORD_C2, COORD_D2, COORD_E2, COORD_F2, COORD_G2, COORD_H2, COORD_NO, COORD_NO}}, // 0
@@ -241,7 +231,6 @@ int16_t pattern_arr[N_PHASES][N_PATTERN_PARAMS];
 int16_t eval_num_arr[N_PHASES][MAX_STONE_NUM];
 int16_t eval_sur0_sur1_arr[N_PHASES][MAX_SURROUND][MAX_SURROUND];
 int16_t pattern_arr_move_ordering_end[N_PATTERN_PARAMS_MO_END];
-int16_t pattern_arr_move_ordering_mid[N_PHASES][N_PATTERN_PARAMS_MO_MID];
 
 inline bool load_eval_file(const char* file, bool show_log){
     if (show_log)
@@ -319,47 +308,6 @@ inline bool load_eval_move_ordering_end_file(const char* file, bool show_log){
             pattern_arr_move_ordering_end[i] = SIMD_EVAL_MAX_VALUE_MO_END;
         }
         pattern_arr_move_ordering_end[i] += SIMD_EVAL_MAX_VALUE_MO_END;
-    }
-    return true;
-}
-
-inline bool load_eval_move_ordering_mid_file(const char* file, bool show_log){
-    if (show_log)
-        std::cerr << "evaluation for move ordering mid file " << file << std::endl;
-    FILE* fp;
-    if (!file_open(&fp, file, "rb")){
-        std::cerr << "[ERROR] [FATAL] can't open eval " << file << std::endl;
-        return false;
-    }
-    for (int phase = 0; phase < N_PHASES; ++phase){
-        pattern_arr_move_ordering_mid[phase][0] = 0; // memory bound
-        if (fread(pattern_arr_move_ordering_mid[phase] + 1, 2, N_PATTERN_PARAMS_BEFORE_DUMMY_MO_MID, fp) < N_PATTERN_PARAMS_BEFORE_DUMMY_MO_MID){
-            std::cerr << "[ERROR] [FATAL] evaluation file for move ordering mid broken" << std::endl;
-            fclose(fp);
-            return false;
-        }
-        pattern_arr_move_ordering_mid[phase][SIMD_EVAL_DUMMY_ADDR_MO_MID] = 0; // dummy for d8
-        if (fread(pattern_arr_move_ordering_mid[phase] + SIMD_EVAL_DUMMY_ADDR_MO_MID + 1, 2, N_PATTERN_PARAMS_AFTER_DUMMY_MO_MID, fp) < N_PATTERN_PARAMS_AFTER_DUMMY_MO_MID){
-            std::cerr << "[ERROR] [FATAL] evaluation file for move ordering mid broken" << std::endl;
-            fclose(fp);
-            return false;
-        }
-    }
-    // check max value
-    for (int phase = 0; phase < N_PHASES; ++phase){
-        for (int i = 1; i < N_PATTERN_PARAMS_MO_MID; ++i){
-            if (i == SIMD_EVAL_DUMMY_ADDR_MO_MID) // dummy
-                continue;
-            if (pattern_arr_move_ordering_mid[phase][i] < -SIMD_EVAL_MAX_VALUE_MO_MID){
-                std::cerr << "[ERROR] evaluation value too low. you can ignore this error. index " << i << " found " << pattern_arr_move_ordering_mid[phase][i] << std::endl;
-                pattern_arr_move_ordering_mid[phase][i] = -SIMD_EVAL_MAX_VALUE_MO_MID;
-            }
-            if (pattern_arr_move_ordering_mid[phase][i] > SIMD_EVAL_MAX_VALUE_MO_MID){
-                std::cerr << "[ERROR] evaluation value too high. you can ignore this error. index " << i << " found " << pattern_arr_move_ordering_mid[phase][i] << std::endl;
-                pattern_arr_move_ordering_mid[phase][i] = SIMD_EVAL_MAX_VALUE_MO_MID;
-            }
-            pattern_arr_move_ordering_mid[phase][i] += SIMD_EVAL_MAX_VALUE_MO_MID;
-        }
     }
     return true;
 }
@@ -480,7 +428,7 @@ inline void pre_calculate_eval_constant(){
     @param show_log             debug information?
     @return evaluation function conpletely initialized?
 */
-inline bool evaluate_init(const char* file, const char* mo_end_nws_file, const char* mo_mid_nws_file, bool show_log){
+inline bool evaluate_init(const char* file, const char* mo_end_nws_file, bool show_log){
     bool eval_loaded = load_eval_file(file, show_log);
     if (!eval_loaded){
         std::cerr << "[ERROR] [FATAL] evaluation file not loaded" << std::endl;
@@ -488,12 +436,7 @@ inline bool evaluate_init(const char* file, const char* mo_end_nws_file, const c
     }
     bool eval_move_ordering_end_nws_loaded = load_eval_move_ordering_end_file(mo_end_nws_file, show_log);
     if (!eval_move_ordering_end_nws_loaded){
-        std::cerr << "[ERROR] [FATAL] evaluation file for move ordering end nws not loaded" << std::endl;
-        return false;
-    }
-    bool eval_move_ordering_mid_nws_loaded = load_eval_move_ordering_mid_file(mo_mid_nws_file, show_log);
-    if (!eval_move_ordering_mid_nws_loaded){
-        std::cerr << "[ERROR] [FATAL] evaluation file for move ordering mid nws not loaded" << std::endl;
+        std::cerr << "[ERROR] [FATAL] evaluation file for move ordering end not loaded" << std::endl;
         return false;
     }
     pre_calculate_eval_constant();
@@ -508,8 +451,8 @@ inline bool evaluate_init(const char* file, const char* mo_end_nws_file, const c
     @param file                 evaluation file name
     @return evaluation function conpletely initialized?
 */
-bool evaluate_init(const std::string file, std::string mo_end_nws_file, std::string mo_mid_nws_file, bool show_log){
-    return evaluate_init(file.c_str(), mo_end_nws_file.c_str(), mo_mid_nws_file.c_str(), show_log);
+bool evaluate_init(const std::string file, std::string mo_end_nws_file, bool show_log){
+    return evaluate_init(file.c_str(), mo_end_nws_file.c_str(), show_log);
 }
 
 /*
@@ -518,7 +461,7 @@ bool evaluate_init(const std::string file, std::string mo_end_nws_file, std::str
     @return evaluation function conpletely initialized?
 */
 bool evaluate_init(bool show_log){
-    return evaluate_init("resources/eval.egev", "resources/eval_mo_end_nws.egev", "resources/eval_mo_mid_nws.egev", show_log);
+    return evaluate_init("resources/eval.egev", "resources/eval_mo_end_nws.egev", show_log);
 }
 
 /*
@@ -578,18 +521,6 @@ inline int calc_pattern_move_ordering_end(Eval_features *features){
     __m128i res128 = _mm_add_epi32(_mm256_castsi256_si128(res256), _mm256_extracti128_si256(res256, 1));
     res128 = _mm_hadd_epi32(res128, res128);
     return _mm_cvtsi128_si32(res128) + _mm_extract_epi32(res128, 1) - SIMD_EVAL_MAX_VALUE_MO_END * N_SYMMETRY_PATTERNS_MO_END;
-}
-
-inline int calc_pattern_move_ordering_mid(const int phase_idx, Eval_features *features){
-    const int *start_addr = (int*)(pattern_arr_move_ordering_mid[phase_idx] - SHIFT_EVAL_MO_MID);
-    __m256i res256 =                  gather_eval(start_addr, _mm256_cvtepu16_epi32(features->f128[2]));    // d8 corner9
-    res256 = _mm256_add_epi32(res256, gather_eval(start_addr, _mm256_cvtepu16_epi32(features->f128[3])));   // d6 d7
-    res256 = _mm256_add_epi32(res256, gather_eval(start_addr, calc_idx8_comp(features->f128[4], 0)));       // corner+block cross
-    res256 = _mm256_add_epi32(res256, gather_eval(start_addr, calc_idx8_comp(features->f128[5], 1)));       // edge+2X triangle
-    res256 = _mm256_and_si256(res256, eval_lower_mask);
-    __m128i res128 = _mm_add_epi32(_mm256_castsi256_si128(res256), _mm256_extracti128_si256(res256, 1));
-    res128 = _mm_hadd_epi32(res128, res128);
-    return _mm_cvtsi128_si32(res128) + _mm_extract_epi32(res128, 1) - SIMD_EVAL_MAX_VALUE_MO_MID * N_SYMMETRY_PATTERNS_MO_MID;
 }
 
 inline void calc_eval_features(Board *board, Eval_search *eval);
@@ -657,20 +588,6 @@ inline int mid_evaluate_diff(Search *search){
 */
 inline int mid_evaluate_move_ordering_end(Search *search){
     int res = calc_pattern_move_ordering_end(&search->eval.features[search->eval.feature_idx]);
-    res += res >= 0 ? STEP_2 : -STEP_2;
-    res /= STEP;
-    return res;
-}
-
-/*
-    @brief midgame evaluation function
-
-    @param search               search information
-    @return evaluation value
-*/
-inline int mid_evaluate_move_ordering_mid(Search *search){
-    int phase_idx = search->phase();
-    int res = calc_pattern_move_ordering_mid(phase_idx, &search->eval.features[search->eval.feature_idx]);
     res += res >= 0 ? STEP_2 : -STEP_2;
     res /= STEP;
     return res;
@@ -825,70 +742,5 @@ inline void eval_pass_endsearch(Eval_search *eval, const Board *board){
         f2 = _mm256_add_epi16(f2, eval_move_unflipped_16bit[player_group[i]][i][2]);
         f2 = _mm256_sub_epi16(f2, eval_move_unflipped_16bit[opponent_group[i]][i][2]);
     }
-    eval->features[eval->feature_idx].f256[2] = f2;
-}
-
-
-
-
-
-
-
-
-inline void eval_move_move_ordering(Eval_search *eval, const Flip *flip, const Board *board){
-    const uint16_t *flipped_group = (uint16_t*)&(flip->flip);
-    const uint16_t *player_group = (uint16_t*)&(board->player);
-    const uint16_t *opponent_group = (uint16_t*)&(board->opponent);
-    __m256i f1, f2;
-    uint16_t unflipped_p;
-    uint16_t unflipped_o;
-    // put cell 2 -> 1
-    f1 = _mm256_sub_epi16(eval->features[eval->feature_idx].f256[1], coord_to_feature_simd[flip->pos][1]);
-    f2 = _mm256_sub_epi16(eval->features[eval->feature_idx].f256[2], coord_to_feature_simd[flip->pos][2]);
-    for (int i = 0; i < N_SIMD_EVAL_FEATURE_GROUP; ++i){
-        // player discs 0 -> 1
-        unflipped_p = ~flipped_group[i] & player_group[i];
-        f1 = _mm256_add_epi16(f1, eval_move_unflipped_16bit[unflipped_p][i][1]);
-        f2 = _mm256_add_epi16(f2, eval_move_unflipped_16bit[unflipped_p][i][2]);
-        // opponent discs 1 -> 0
-        unflipped_o = ~flipped_group[i] & opponent_group[i];
-        f1 = _mm256_sub_epi16(f1, eval_move_unflipped_16bit[unflipped_o][i][1]);
-        f2 = _mm256_sub_epi16(f2, eval_move_unflipped_16bit[unflipped_o][i][2]);
-    }
-    ++eval->feature_idx;
-    eval->features[eval->feature_idx].f256[1] = f1;
-    eval->features[eval->feature_idx].f256[2] = f2;
-}
-
-/*
-    @brief undo evaluation features
-
-    @param eval                 evaluation features
-*/
-inline void eval_undo_move_ordering(Eval_search *eval){
-    --eval->feature_idx;
-}
-
-/*
-    @brief pass evaluation features
-
-        player discs    0 -> 1 (player -> opponent) add
-        opponent discs  1 -> 0 (player -> opponent) sub
-
-    @param eval                 evaluation features
-*/
-inline void eval_pass_move_ordering(Eval_search *eval, const Board *board){
-    const uint16_t *player_group = (uint16_t*)&(board->player);
-    const uint16_t *opponent_group = (uint16_t*)&(board->opponent);
-    __m256i f1, f2;
-    f1 = eval->features[eval->feature_idx].f256[1];
-    f2 = eval->features[eval->feature_idx].f256[2];
-    for (int i = 0; i < N_SIMD_EVAL_FEATURE_GROUP; ++i){
-        f1 = _mm256_add_epi16(f1, eval_move_unflipped_16bit[player_group[i]][i][1]);
-        f2 = _mm256_add_epi16(f2, eval_move_unflipped_16bit[player_group[i]][i][2]);
-        f1 = _mm256_sub_epi16(f1, eval_move_unflipped_16bit[opponent_group[i]][i][1]);
-        f2 = _mm256_sub_epi16(f2, eval_move_unflipped_16bit[opponent_group[i]][i][2]);
-    }
-    eval->features[eval->feature_idx].f256[1] = f1;
     eval->features[eval->feature_idx].f256[2] = f2;
 }
