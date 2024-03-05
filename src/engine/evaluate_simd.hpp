@@ -38,13 +38,16 @@
 #define N_SIMD_EVAL_FEATURE_GROUP 4
 
 #define N_PATTERN_PARAMS_MOVE_ORDERING_END (236196 + 1) // +1 for byte bound
-#define N_PATTERN_PARAMS_MOVE_ORDERING_MID (265356 + 1) // +1 for byte bound
+#define N_PATTERN_PARAMS_MOVE_ORDERING_MID (265356 + 2) // +2 for byte bound & dummy for d8
 #define SIMD_EVAL_MAX_VALUE_MOVE_ORDERING_END 16380
 #define SIMD_EVAL_MAX_VALUE_MOVE_ORDERING_MID 8190
 #define N_SIMD_EVAL_FEATURES_COMP_MOVE_ORDERING_END 1
 #define N_SIMD_EVAL_FEATURES_COMP_MOVE_ORDERING_MID 1
 #define SHIFT_EVAL_MOVE_ORDERING_END 49087 // pattern_starts[8]
 #define SHIFT_EVAL_MOVE_ORDERING_MID 19927 // pattern_starts[4]
+#define N_PATTERN_PARAMS_BEFORE_DUMMY_MOVE_ORDERING_MID 9477
+#define SIMD_EVAL_DUMMY_ADDR_MOVE_ORDERING_MID 9478
+#define N_PATTERN_PARAMS_AFTER_DUMMY_MOVE_ORDERING_MID 255879
 
 constexpr Feature_to_coord feature_to_coord[CEIL_N_SYMMETRY_PATTERNS] = {
     // 0 hv2
@@ -245,7 +248,6 @@ inline bool load_eval_file(const char* file, bool show_log){
         std::cerr << "[ERROR] [FATAL] can't open eval " << file << std::endl;
         return false;
     }
-    constexpr int pattern_sizes[N_PATTERNS] = {8, 8, 8, 5, 6, 7, 8, 9, 10, 10, 10, 10, 10, 10, 10, 10};
     for (int phase_idx = 0; phase_idx < N_PHASES; ++phase_idx){
         pattern_arr[phase_idx][0] = 0; // memory bound
         if (fread(pattern_arr[phase_idx] + 1, 2, N_PATTERN_PARAMS_BEFORE_DUMMY, fp) < N_PATTERN_PARAMS_BEFORE_DUMMY){
@@ -297,7 +299,6 @@ inline bool load_eval_move_ordering_end_file(const char* file, bool show_log){
         std::cerr << "[ERROR] [FATAL] can't open eval " << file << std::endl;
         return false;
     }
-    constexpr int pattern_sizes[N_PATTERNS_MOVE_ORDERING_END] = {10, 10, 10, 10}; // 8, 9, 10, 11: edge + 2x, triangle, corner + block, cross
     pattern_arr_move_ordering_end_nws[0] = 0; // memory bound
     if (fread(pattern_arr_move_ordering_end_nws + 1, 2, N_PATTERN_PARAMS_MOVE_ORDERING_END - 1, fp) < N_PATTERN_PARAMS_MOVE_ORDERING_END - 1){
         std::cerr << "[ERROR] [FATAL] evaluation file for move ordering end broken" << std::endl;
@@ -327,10 +328,15 @@ inline bool load_eval_move_ordering_mid_file(const char* file, bool show_log){
         std::cerr << "[ERROR] [FATAL] can't open eval " << file << std::endl;
         return false;
     }
-    constexpr int pattern_sizes[N_PATTERNS_MOVE_ORDERING_MID] = {6, 7, 8, 9, 10, 10, 10, 10}; // 8, 9, 10, 11: edge + 2x, triangle, corner + block, cross
     for (int phase = 0; phase < N_PHASES; ++phase){
         pattern_arr_move_ordering_mid_nws[phase][0] = 0; // memory bound
-        if (fread(pattern_arr_move_ordering_mid_nws[phase] + 1, 2, N_PATTERN_PARAMS_MOVE_ORDERING_MID - 1, fp) < N_PATTERN_PARAMS_MOVE_ORDERING_MID - 1){
+        if (fread(pattern_arr_move_ordering_mid_nws[phase] + 1, 2, N_PATTERN_PARAMS_BEFORE_DUMMY_MOVE_ORDERING_MID - 1, fp) < N_PATTERN_PARAMS_BEFORE_DUMMY_MOVE_ORDERING_MID - 1){
+            std::cerr << "[ERROR] [FATAL] evaluation file for move ordering mid broken" << std::endl;
+            fclose(fp);
+            return false;
+        }
+        pattern_arr_move_ordering_mid_nws[phase][SIMD_EVAL_DUMMY_ADDR_MOVE_ORDERING_MID] = 0; // dummy for d8
+        if (fread(pattern_arr_move_ordering_mid_nws[phase] + SIMD_EVAL_DUMMY_ADDR_MOVE_ORDERING_MID + 1, 2, N_PATTERN_PARAMS_AFTER_DUMMY_MOVE_ORDERING_MID - 1, fp) < N_PATTERN_PARAMS_AFTER_DUMMY_MOVE_ORDERING_MID - 1){
             std::cerr << "[ERROR] [FATAL] evaluation file for move ordering mid broken" << std::endl;
             fclose(fp);
             return false;
@@ -338,7 +344,9 @@ inline bool load_eval_move_ordering_mid_file(const char* file, bool show_log){
     }
     // check max value
     for (int phase = 0; phase < N_PHASES; ++phase){
-        for (int i = 1; i < N_PATTERN_PARAMS_MOVE_ORDERING_END; ++i){
+        for (int i = 1; i < N_PATTERN_PARAMS_MOVE_ORDERING_MID; ++i){
+            if (i == SIMD_EVAL_DUMMY_ADDR_MOVE_ORDERING_MID) // dummy
+                continue;
             if (pattern_arr_move_ordering_mid_nws[phase][i] < -SIMD_EVAL_MAX_VALUE_MOVE_ORDERING_MID){
                 std::cerr << "[ERROR] evaluation value too low. you can ignore this error. index " << i << " found " << pattern_arr_move_ordering_mid_nws[phase][i] << std::endl;
                 pattern_arr_move_ordering_mid_nws[phase][i] = -SIMD_EVAL_MAX_VALUE_MOVE_ORDERING_MID;
