@@ -39,7 +39,7 @@
     @param searching            flag for terminating this search
     @return the value
 */
-inline int nega_alpha_eval1_move_ordering(Search *search, int alpha, int beta, bool skipped, const bool *searching){
+inline int nega_alpha_eval1_move_ordering_mid(Search *search, int alpha, int beta, bool skipped, const bool *searching){
     if (!global_searching || !(*searching))
         return SCORE_UNDEFINED;
     ++search->n_nodes;
@@ -52,7 +52,7 @@ inline int nega_alpha_eval1_move_ordering(Search *search, int alpha, int beta, b
         if (skipped)
             return end_evaluate(&search->board);
         search->pass();
-            v = -nega_alpha_eval1_move_ordering(search, -beta, -alpha, true, searching);
+            v = -nega_alpha_eval1_move_ordering_mid(search, -beta, -alpha, true, searching);
         search->pass();
         return v;
     }
@@ -62,7 +62,7 @@ inline int nega_alpha_eval1_move_ordering(Search *search, int alpha, int beta, b
         calc_flip(&flip, &search->board, cell);
         search->move(&flip);
             ++search->n_nodes;
-            g = -mid_evaluate_move_ordering(search);
+            g = -mid_evaluate_move_ordering_mid(search);
         search->undo(&flip);
         ++search->n_nodes;
         if (v < g){

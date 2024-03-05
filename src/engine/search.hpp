@@ -51,9 +51,9 @@ inline void calc_eval_features(Board *board, Eval_search *eval);
     inline void eval_move(Eval_search *eval, const Flip *flip, const Board *board);
     inline void eval_undo(Eval_search *eval);
     inline void eval_pass(Eval_search *eval, const Board *board);
-    inline void eval_move_move_ordering(Eval_search *eval, const Flip *flip, const Board *board);
-    inline void eval_undo_move_ordering(Eval_search *eval);
-    inline void eval_pass_move_ordering(Eval_search *eval, const Board *board);
+    inline void eval_move_endsearch(Eval_search *eval, const Flip *flip, const Board *board);
+    inline void eval_undo_endsearch(Eval_search *eval);
+    inline void eval_pass_endsearch(Eval_search *eval, const Board *board);
 #else
     inline void eval_move(Eval_search *eval, const Flip *flip);
     inline void eval_undo(Eval_search *eval, const Flip *flip);
@@ -290,11 +290,11 @@ class Search{
 
             @param flip                 Flip information
         */
-        inline void move_move_ordering(const Flip *flip) {
+        inline void move_endsearch(const Flip *flip) {
             #if USE_SIMD
-                eval_move_move_ordering(&eval, flip, &board);
+                eval_move_endsearch(&eval, flip, &board);
             #else
-                eval_move_move_ordering(&eval, flip);
+                eval_move_endsearch(&eval, flip);
             #endif
             board.move_board(flip);
             ++n_discs;
@@ -306,11 +306,11 @@ class Search{
 
             @param flip                 Flip information
         */
-        inline void undo_move_ordering(const Flip *flip) {
+        inline void undo_endsearch(const Flip *flip) {
             #if USE_SIMD
-                eval_undo_move_ordering(&eval);
+                eval_undo_endsearch(&eval);
             #else
-                eval_undo_move_ordering(&eval, flip);
+                eval_undo_endsearch(&eval, flip);
             #endif
             board.undo_board(flip);
             --n_discs;
@@ -320,11 +320,11 @@ class Search{
         /*
             @brief pass board
         */
-        inline void pass_move_ordering(){
+        inline void pass_endsearch(){
             #if USE_SIMD
-                eval_pass_move_ordering(&eval, &board);
+                eval_pass_endsearch(&eval, &board);
             #else
-                eval_pass_move_ordering(&eval);
+                eval_pass_endsearch(&eval);
             #endif
             board.pass();
         }
