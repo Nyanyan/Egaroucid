@@ -241,16 +241,11 @@ inline void move_evaluate_nws(Search *search, Flip_value *flip_value, int alpha,
         flip_value->n_legal = search->board.get_legal();
         flip_value->value -= get_weighted_n_moves(flip_value->n_legal) * W_NWS_MOBILITY;
         flip_value->value -= get_potential_mobility(search->board.opponent, ~(search->board.player | search->board.opponent)) * W_NWS_POTENTIAL_MOBILITY;
-        
-        flip_value->value -= mid_evaluate_move_ordering_mid(search) * W_NWS_VALUE;
-        
-        /*
         if (depth == 0){
             flip_value->value -= mid_evaluate_move_ordering_mid(search) * W_NWS_VALUE;
         } else{
             flip_value->value -= nega_alpha_eval1_move_ordering_mid(search, alpha, beta, false, searching) * (W_NWS_VALUE + W_NWS_VALUE_DEEP_ADDITIONAL);
         }
-        */
         /*
         switch (depth){
             case 0:
