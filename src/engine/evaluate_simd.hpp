@@ -827,3 +827,68 @@ inline void eval_pass_endsearch(Eval_search *eval, const Board *board){
     }
     eval->features[eval->feature_idx].f256[2] = f2;
 }
+
+
+
+
+
+
+
+
+inline void eval_move_move_ordering(Eval_search *eval, const Flip *flip, const Board *board){
+    const uint16_t *flipped_group = (uint16_t*)&(flip->flip);
+    const uint16_t *player_group = (uint16_t*)&(board->player);
+    const uint16_t *opponent_group = (uint16_t*)&(board->opponent);
+    __m256i f1, f2;
+    uint16_t unflipped_p;
+    uint16_t unflipped_o;
+    // put cell 2 -> 1
+    f1 = _mm256_sub_epi16(eval->features[eval->feature_idx].f256[1], coord_to_feature_simd[flip->pos][1]);
+    f2 = _mm256_sub_epi16(eval->features[eval->feature_idx].f256[2], coord_to_feature_simd[flip->pos][2]);
+    for (int i = 0; i < N_SIMD_EVAL_FEATURE_GROUP; ++i){
+        // player discs 0 -> 1
+        unflipped_p = ~flipped_group[i] & player_group[i];
+        f1 = _mm256_add_epi16(f1, eval_move_unflipped_16bit[unflipped_p][i][1]);
+        f2 = _mm256_add_epi16(f2, eval_move_unflipped_16bit[unflipped_p][i][2]);
+        // opponent discs 1 -> 0
+        unflipped_o = ~flipped_group[i] & opponent_group[i];
+        f1 = _mm256_sub_epi16(f1, eval_move_unflipped_16bit[unflipped_o][i][1]);
+        f2 = _mm256_sub_epi16(f2, eval_move_unflipped_16bit[unflipped_o][i][2]);
+    }
+    ++eval->feature_idx;
+    eval->features[eval->feature_idx].f256[1] = f1;
+    eval->features[eval->feature_idx].f256[2] = f2;
+}
+
+/*
+    @brief undo evaluation features
+
+    @param eval                 evaluation features
+*/
+inline void eval_undo_move_ordering(Eval_search *eval){
+    --eval->feature_idx;
+}
+
+/*
+    @brief pass evaluation features
+
+        player discs    0 -> 1 (player -> opponent) add
+        opponent discs  1 -> 0 (player -> opponent) sub
+
+    @param eval                 evaluation features
+*/
+inline void eval_pass_move_ordering(Eval_search *eval, const Board *board){
+    const uint16_t *player_group = (uint16_t*)&(board->player);
+    const uint16_t *opponent_group = (uint16_t*)&(board->opponent);
+    __m256i f1, f2;
+    f1 = eval->features[eval->feature_idx].f256[1];
+    f2 = eval->features[eval->feature_idx].f256[2];
+    for (int i = 0; i < N_SIMD_EVAL_FEATURE_GROUP; ++i){
+        f1 = _mm256_add_epi16(f1, eval_move_unflipped_16bit[player_group[i]][i][1]);
+        f2 = _mm256_add_epi16(f2, eval_move_unflipped_16bit[player_group[i]][i][2]);
+        f1 = _mm256_sub_epi16(f1, eval_move_unflipped_16bit[opponent_group[i]][i][1]);
+        f2 = _mm256_sub_epi16(f2, eval_move_unflipped_16bit[opponent_group[i]][i][2]);
+    }
+    eval->features[eval->feature_idx].f256[1] = f1;
+    eval->features[eval->feature_idx].f256[2] = f2;
+}
