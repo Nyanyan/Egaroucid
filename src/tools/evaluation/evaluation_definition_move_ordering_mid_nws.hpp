@@ -13,7 +13,7 @@
     #include "./../../engine/board.hpp"
 #endif
 
-#define EVAL_DEFINITION_NAME "20240304_2_move_ordering_mid_nws"
+#define EVAL_DEFINITION_NAME "20240305_1_move_ordering_mid_nws"
 #define EVAL_DEFINITION_DESCRIPTION "evaluation function for move ordering (midsearch)"
 
 #ifndef HW
@@ -32,14 +32,14 @@
     @brief evaluation pattern definition
 */
 // disc pattern
-#define ADJ_N_PATTERNS 4
-#define ADJ_N_SYMMETRY_PATTERNS 16
+#define ADJ_N_PATTERNS 8
+#define ADJ_N_SYMMETRY_PATTERNS 30
 #define ADJ_MAX_PATTERN_CELLS 10
 
 // overall
 #define ADJ_MAX_EVALUATE_IDX 59049
-#define ADJ_N_EVAL 4
-#define ADJ_N_FEATURES 16
+#define ADJ_N_EVAL 8
+#define ADJ_N_FEATURES 30
 //#define N_FLOOR_UNIQUE_FEATURES 4 // floorpow2(ADJ_N_EVAL): 16-31->16 32-63->32
 
 // phase
@@ -171,6 +171,28 @@ struct Adj_Feature_to_coord{
 };
 
 constexpr Adj_Feature_to_coord adj_feature_to_coord[ADJ_N_SYMMETRY_PATTERNS] = {
+    // 4 d6
+    {6, {COORD_C1, COORD_D2, COORD_E3, COORD_F4, COORD_G5, COORD_H6, COORD_NO, COORD_NO, COORD_NO, COORD_NO}}, // 16
+    {6, {COORD_F1, COORD_E2, COORD_D3, COORD_C4, COORD_B5, COORD_A6, COORD_NO, COORD_NO, COORD_NO, COORD_NO}}, // 17
+    {6, {COORD_A3, COORD_B4, COORD_C5, COORD_D6, COORD_E7, COORD_F8, COORD_NO, COORD_NO, COORD_NO, COORD_NO}}, // 18
+    {6, {COORD_H3, COORD_G4, COORD_F5, COORD_E6, COORD_D7, COORD_C8, COORD_NO, COORD_NO, COORD_NO, COORD_NO}}, // 19
+
+    // 5 d7
+    {7, {COORD_B1, COORD_C2, COORD_D3, COORD_E4, COORD_F5, COORD_G6, COORD_H7, COORD_NO, COORD_NO, COORD_NO}}, // 20
+    {7, {COORD_G1, COORD_F2, COORD_E3, COORD_D4, COORD_C5, COORD_B6, COORD_A7, COORD_NO, COORD_NO, COORD_NO}}, // 21
+    {7, {COORD_A2, COORD_B3, COORD_C4, COORD_D5, COORD_E6, COORD_F7, COORD_G8, COORD_NO, COORD_NO, COORD_NO}}, // 22
+    {7, {COORD_H2, COORD_G3, COORD_F4, COORD_E5, COORD_D6, COORD_C7, COORD_B8, COORD_NO, COORD_NO, COORD_NO}}, // 23
+
+    // 6 d8
+    {8, {COORD_A1, COORD_B2, COORD_C3, COORD_D4, COORD_E5, COORD_F6, COORD_G7, COORD_H8, COORD_NO, COORD_NO}}, // 24
+    {8, {COORD_H1, COORD_G2, COORD_F3, COORD_E4, COORD_D5, COORD_C6, COORD_B7, COORD_A8, COORD_NO, COORD_NO}}, // 25
+
+    // 7 corner9
+    {9, {COORD_A1, COORD_B1, COORD_C1, COORD_A2, COORD_B2, COORD_C2, COORD_A3, COORD_B3, COORD_C3, COORD_NO}}, // 26
+    {9, {COORD_H1, COORD_G1, COORD_F1, COORD_H2, COORD_G2, COORD_F2, COORD_H3, COORD_G3, COORD_F3, COORD_NO}}, // 27
+    {9, {COORD_A8, COORD_B8, COORD_C8, COORD_A7, COORD_B7, COORD_C7, COORD_A6, COORD_B6, COORD_C6, COORD_NO}}, // 28
+    {9, {COORD_H8, COORD_G8, COORD_F8, COORD_H7, COORD_G7, COORD_F7, COORD_H6, COORD_G6, COORD_F6, COORD_NO}}, // 29
+
     // 8 edge + 2x
     {10, {COORD_B2, COORD_A1, COORD_B1, COORD_C1, COORD_D1, COORD_E1, COORD_F1, COORD_G1, COORD_H1, COORD_G2}}, // 30
     {10, {COORD_B2, COORD_A1, COORD_A2, COORD_A3, COORD_A4, COORD_A5, COORD_A6, COORD_A7, COORD_A8, COORD_B7}}, // 31
@@ -196,9 +218,13 @@ constexpr Adj_Feature_to_coord adj_feature_to_coord[ADJ_N_SYMMETRY_PATTERNS] = {
     {10, {COORD_H8, COORD_G7, COORD_F6, COORD_E5, COORD_G8, COORD_F7, COORD_E6, COORD_H7, COORD_G6, COORD_F5}}  // 45
 };
 
-constexpr int adj_pattern_n_cells[ADJ_N_PATTERNS] = {10, 10, 10, 10};
+constexpr int adj_pattern_n_cells[ADJ_N_PATTERNS] = {6, 7, 8, 9, 10, 10, 10, 10};
 
 constexpr int adj_rev_patterns[ADJ_N_PATTERNS][ADJ_MAX_PATTERN_CELLS] = {
+    {5, 4, 3, 2, 1, 0}, // 4 d6
+    {6, 5, 4, 3, 2, 1, 0}, // 5 d7
+    {7, 6, 5, 4, 3, 2, 1, 0}, // 6 d8
+    {0, 3, 6, 1, 4, 7, 2, 5, 8}, // 7 corner9
     {9, 8, 7, 6, 5, 4, 3, 2, 1, 0}, // 8 edge + 2x
     {0, 4, 7, 9, 1, 5, 8, 2, 6, 3}, // 9 triangle
     {5, 4, 3, 2, 1, 0, 9, 8, 7, 6}, // 10 corner + block
@@ -206,6 +232,7 @@ constexpr int adj_rev_patterns[ADJ_N_PATTERNS][ADJ_MAX_PATTERN_CELLS] = {
 };
 
 constexpr int adj_eval_sizes[ADJ_N_EVAL] = {
+    P36, P37, P38, P39, 
     P310, P310, P310, P310
 };
 
@@ -213,7 +240,11 @@ constexpr int adj_feature_to_eval_idx[ADJ_N_FEATURES] = {
     0, 0, 0, 0, 
     1, 1, 1, 1, 
     2, 2, 2, 2, 
-    3, 3, 3, 3
+    3, 3, 
+    4, 4, 4, 4, 
+    5, 5, 5, 5, 
+    6, 6, 6, 6, 
+    7, 7, 7, 7
 };
 
 int adj_pick_digit3(int num, int d, int n_digit){

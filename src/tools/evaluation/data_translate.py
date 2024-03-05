@@ -19,7 +19,7 @@ board_sub_dir_nums = [24, 28]
 '''
 #'''
 # 7.0 move ordering_mid_nws
-bin_root_dir = './../../../train_data/bin_data/20240304_2_move_ordering_mid_nws/'
+bin_root_dir = './../../../train_data/bin_data/20240305_1_move_ordering_mid_nws/'
 exe = 'data_board_to_idx_move_ordering_mid_nws.out'
 N_PHASES = 60
 board_sub_dir_nums = [26, 27, 29, 30, 31]

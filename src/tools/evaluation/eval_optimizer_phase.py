@@ -3,9 +3,9 @@ import sys
 
 phase = str(sys.argv[1])
 hour = '0'
-minute = '0'
-second = '20'
-alpha = '70'
+minute = '3'
+second = '0'
+alpha = '80'
 n_patience = '1'
 
 model_dir = './../../../model/nomodel/'
@@ -34,7 +34,7 @@ executable = 'eval_optimizer_cuda_12_2_0_move_ordering_end_nws.exe'
 train_data_nums = [26, 27, 29, 30, 31]
 if phase == '11':
     train_data_nums.remove(27) # use book only
-train_root_dir = './../../../train_data/bin_data/20240304_2_move_ordering_mid_nws/'
+train_root_dir = './../../../train_data/bin_data/20240305_1_move_ordering_mid_nws/'
 executable = 'eval_optimizer_cuda_12_2_0_move_ordering_mid_nws.exe'
 #'''
 
