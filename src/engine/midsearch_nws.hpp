@@ -164,7 +164,7 @@ int nega_alpha_ordering_nws(Search *search, int alpha, int depth, bool skipped, 
         if (enhanced_mpc(search, move_list, depth, alpha, alpha + 1, is_end_search, searching, &v))
             return v;
     #endif
-    move_list_evaluate_nws(search, move_list, moves, depth, alpha, searching);
+    move_list_evaluate_nws(search, move_list, moves, depth, alpha);
     if (
         search->use_multi_thread && 
         depth - 1 >= YBWC_MID_SPLIT_MIN_DEPTH

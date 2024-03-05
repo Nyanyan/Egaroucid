@@ -76,11 +76,10 @@
     #define W_NWS_MOBILITY 17
     #define W_NWS_POTENTIAL_MOBILITY 19
     #define W_NWS_VALUE 14
-    #define W_NWS_VALUE_DEEP_ADDITIONAL 11
+    #define W_NWS_VALUE_DEEP_ADDITIONAL 12
 
     // endgame null window search
     #define W_END_NWS_MOBILITY 41
-    //#define W_END_NWS_PARITY 0
     #define W_END_NWS_VALUE 6
 
     // endgame simple null window search
@@ -95,8 +94,8 @@
 
 #define MOVE_ORDERING_MPC_LEVEL MPC_88_LEVEL
 
-int nega_alpha_eval1(Search *search, int alpha, int beta, bool skipped, const bool *searching);
-inline int nega_alpha_eval1_move_ordering_mid(Search *search, int alpha, int beta, bool skipped, const bool *searching);
+int nega_alpha_eval1(Search *search, int alpha, int beta, bool skipped);
+inline int nega_alpha_eval1_move_ordering_mid(Search *search, int alpha, int beta, bool skipped);
 int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, uint64_t legal, bool is_end_search, const bool *searching);
 
 /*
@@ -211,7 +210,7 @@ inline void move_evaluate(Search *search, Flip_value *flip_value, int alpha, int
                 flip_value->value -= mid_evaluate_diff(search) * W_VALUE;
                 break;
             case 1:
-                flip_value->value -= nega_alpha_eval1(search, alpha, beta, false, searching) * (W_VALUE + W_VALUE_DEEP_ADDITIONAL);
+                flip_value->value -= nega_alpha_eval1(search, alpha, beta, false) * (W_VALUE + W_VALUE_DEEP_ADDITIONAL);
                 break;
             default:
                 uint_fast8_t mpc_level = search->mpc_level;
@@ -234,36 +233,27 @@ inline void move_evaluate(Search *search, Flip_value *flip_value, int alpha, int
     @param searching            flag for terminating this search
     @return true if wipeout found else false
 */
-inline void move_evaluate_nws(Search *search, Flip_value *flip_value, int alpha, int beta, int depth, const bool *searching){
+inline void move_evaluate_nws(Search *search, Flip_value *flip_value, int alpha, int beta, int depth){
     flip_value->value = 0;
-    //search->move(&flip_value->flip);
-    search->move_move_ordering(&flip_value->flip);
+    search->move(&flip_value->flip);
+    //search->move_move_ordering(&flip_value->flip);
         flip_value->n_legal = search->board.get_legal();
         flip_value->value -= get_weighted_n_moves(flip_value->n_legal) * W_NWS_MOBILITY;
         flip_value->value -= get_potential_mobility(search->board.opponent, ~(search->board.player | search->board.opponent)) * W_NWS_POTENTIAL_MOBILITY;
+        /*
         if (depth == 0){
             flip_value->value -= mid_evaluate_move_ordering_mid(search) * W_NWS_VALUE;
         } else{
-            flip_value->value -= nega_alpha_eval1_move_ordering_mid(search, alpha, beta, false, searching) * (W_NWS_VALUE + W_NWS_VALUE_DEEP_ADDITIONAL);
-        }
-        /*
-        switch (depth){
-            case 0:
-                flip_value->value -= mid_evaluate_diff(search) * W_NWS_VALUE;
-                break;
-            case 1:
-                flip_value->value -= nega_alpha_eval1(search, alpha, beta, false, searching) * (W_NWS_VALUE + W_NWS_VALUE_DEEP_ADDITIONAL);
-                break;
-            default:
-                uint_fast8_t mpc_level = search->mpc_level;
-                search->mpc_level = MOVE_ORDERING_MPC_LEVEL;
-                    flip_value->value -= nega_scout(search, alpha, beta, depth, false, flip_value->n_legal, false, searching) * (W_NWS_VALUE + depth * W_NWS_VALUE_DEEP_ADDITIONAL);
-                search->mpc_level = mpc_level;
-                break;
+            flip_value->value -= nega_alpha_eval1_move_ordering_mid(search, alpha, beta, false) * (W_NWS_VALUE + W_NWS_VALUE_DEEP_ADDITIONAL);
         }
         */
-    search->undo_move_ordering(&flip_value->flip);
-    //search->undo(&flip_value->flip);
+        if (depth == 0){
+            flip_value->value -= mid_evaluate_diff(search) * W_NWS_VALUE;
+        } else{
+            flip_value->value -= nega_alpha_eval1(search, alpha, beta, false) * (W_NWS_VALUE + W_NWS_VALUE_DEEP_ADDITIONAL);
+        }
+    //search->undo_move_ordering(&flip_value->flip);
+    search->undo(&flip_value->flip);
 }
 
 /*
@@ -275,8 +265,6 @@ inline void move_evaluate_nws(Search *search, Flip_value *flip_value, int alpha,
 */
 inline void move_evaluate_end_nws(Search *search, Flip_value *flip_value){
     flip_value->value = 0;
-    //if (search->parity & cell_div4[flip_value->flip.pos])
-    //    flip_value->value += W_END_NWS_PARITY;
     search->move_endsearch(&flip_value->flip);
         flip_value->n_legal = search->board.get_legal();
         flip_value->value -= pop_count_ull(flip_value->n_legal) * W_END_NWS_MOBILITY;
@@ -422,7 +410,7 @@ inline void move_list_evaluate(Search *search, std::vector<Flip_value> &move_lis
     @param alpha                alpha value (beta = alpha + 1)
     @param searching            flag for terminating this search
 */
-inline void move_list_evaluate_nws(Search *search, std::vector<Flip_value> &move_list, uint_fast8_t moves[], int depth, int alpha, const bool *searching){
+inline void move_list_evaluate_nws(Search *search, std::vector<Flip_value> &move_list, uint_fast8_t moves[], int depth, int alpha){
     if (move_list.size() <= 1)
         return;
     const int eval_alpha = -std::min(SCORE_MAX, alpha + MOVE_ORDERING_NWS_VALUE_OFFSET_BETA);
@@ -436,7 +424,7 @@ inline void move_list_evaluate_nws(Search *search, std::vector<Flip_value> &move
                 else if (flip_value.flip.pos == moves[1])
                     flip_value.value = W_2ND_MOVE;
                 else
-                    move_evaluate_nws(search, &flip_value, eval_alpha, eval_beta, eval_depth, searching);
+                    move_evaluate_nws(search, &flip_value, eval_alpha, eval_beta, eval_depth);
             } else
                 flip_value.value = -INF;
         #else
@@ -445,7 +433,7 @@ inline void move_list_evaluate_nws(Search *search, std::vector<Flip_value> &move
             else if (flip_value.flip.pos == moves[1])
                 flip_value.value = W_2ND_MOVE;
             else
-                move_evaluate_nws(search, &flip_value, eval_alpha, eval_beta, eval_depth, searching);
+                move_evaluate_nws(search, &flip_value, eval_alpha, eval_beta, eval_depth);
         #endif
     }
 }

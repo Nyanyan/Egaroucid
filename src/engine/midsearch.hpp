@@ -39,9 +39,7 @@
     @param searching            flag for terminating this search
     @return the value
 */
-inline int nega_alpha_eval1_move_ordering_mid(Search *search, int alpha, int beta, bool skipped, const bool *searching){
-    if (!global_searching || !(*searching))
-        return SCORE_UNDEFINED;
+inline int nega_alpha_eval1_move_ordering_mid(Search *search, int alpha, int beta, bool skipped){
     ++search->n_nodes;
     #if USE_SEARCH_STATISTICS
         ++search->n_nodes_discs[search->n_discs];
@@ -52,7 +50,7 @@ inline int nega_alpha_eval1_move_ordering_mid(Search *search, int alpha, int bet
         if (skipped)
             return end_evaluate(&search->board);
         search->pass_move_ordering();
-            v = -nega_alpha_eval1_move_ordering_mid(search, -beta, -alpha, true, searching);
+            v = -nega_alpha_eval1_move_ordering_mid(search, -beta, -alpha, true);
         search->pass_move_ordering();
         return v;
     }
@@ -91,9 +89,7 @@ inline int nega_alpha_eval1_move_ordering_mid(Search *search, int alpha, int bet
     @param searching            flag for terminating this search
     @return the value
 */
-inline int nega_alpha_eval1(Search *search, int alpha, int beta, bool skipped, const bool *searching){
-    if (!global_searching || !(*searching))
-        return SCORE_UNDEFINED;
+inline int nega_alpha_eval1(Search *search, int alpha, int beta, bool skipped){
     ++search->n_nodes;
     #if USE_SEARCH_STATISTICS
         ++search->n_nodes_discs[search->n_discs];
@@ -104,7 +100,7 @@ inline int nega_alpha_eval1(Search *search, int alpha, int beta, bool skipped, c
         if (skipped)
             return end_evaluate(&search->board);
         search->pass();
-            v = -nega_alpha_eval1(search, -beta, -alpha, true, searching);
+            v = -nega_alpha_eval1(search, -beta, -alpha, true);
         search->pass();
         return v;
     }
@@ -154,7 +150,7 @@ int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, uin
     }
     if (!is_end_search){
         if (depth == 1)
-            return nega_alpha_eval1(search, alpha, beta, skipped, searching);
+            return nega_alpha_eval1(search, alpha, beta, skipped);
         if (depth == 0){
             ++search->n_nodes;
             return mid_evaluate_diff(search);
