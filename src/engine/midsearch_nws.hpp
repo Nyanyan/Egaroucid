@@ -167,7 +167,7 @@ int nega_alpha_ordering_nws(Search *search, int alpha, int depth, bool skipped, 
     ){
         int running_count = 0;
         std::vector<std::future<Parallel_task>> parallel_tasks;
-        std::atomic<bool> need_to_wait = true;
+        std::atomic<int> atomic_running_count = 0;
         bool n_searching = true;
         for (int move_idx = 0; move_idx < canput - etc_done_idx && *searching && n_searching; ++move_idx){
             swap_next_best_move(move_list, move_idx, canput);
@@ -176,8 +176,9 @@ int nega_alpha_ordering_nws(Search *search, int alpha, int depth, bool skipped, 
                     break;
             #endif
             search->move(&move_list[move_idx].flip);
-                if (ybwc_split_nws(search, -alpha - 1, depth - 1, move_list[move_idx].n_legal, is_end_search, &n_searching, move_list[move_idx].flip.pos, move_idx, canput - etc_done_idx, running_count, parallel_tasks, &need_to_wait)){
+                if (ybwc_split_nws(search, -alpha - 1, depth - 1, move_list[move_idx].n_legal, is_end_search, &n_searching, move_list[move_idx].flip.pos, move_idx, canput - etc_done_idx, running_count, parallel_tasks, &atomic_running_count)){
                     ++running_count;
+                    atomic_running_count.fetch_add(1);
                 } else{
                     g = -nega_alpha_ordering_nws(search, -alpha - 1, depth - 1, false, move_list[move_idx].n_legal, is_end_search, searching);
                     if (v < g){
@@ -198,7 +199,7 @@ int nega_alpha_ordering_nws(Search *search, int alpha, int depth, bool skipped, 
             if (!n_searching || !(*searching))
                 ybwc_wait_all_stopped(search, parallel_tasks);
             else
-                ybwc_wait_all_nws(search, parallel_tasks, &v, &best_move, &running_count, alpha, searching, &n_searching, &need_to_wait);
+                ybwc_wait_all_nws(search, parallel_tasks, &running_count, &atomic_running_count, &v, &best_move, alpha, searching, &n_searching);
         }
     } else{
         for (int move_idx = 0; move_idx < canput - etc_done_idx && *searching; ++move_idx){
