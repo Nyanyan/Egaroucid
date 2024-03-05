@@ -195,6 +195,16 @@ struct Analyze_result{
     int alt_probability;
 };
 
+struct YBWC_task{
+    Board board;
+    uint_fast8_t mpc_level;
+    int depth;
+    int alpha;
+    int beta;
+    bool *searching;
+    int value;
+};
+
 /*
     @brief Search structure
 
@@ -222,6 +232,9 @@ class Search{
         #if USE_SEARCH_STATISTICS
             uint64_t n_nodes_discs[HW2];
         #endif
+        bool waiting;
+        bool helping;
+        YBWC_task task;
 
     public:
         /*
@@ -239,6 +252,8 @@ class Search{
             parity |= (1 & pop_count_ull(empty & 0x0F0F0F0F00000000ULL)) << 2;
             parity |= (1 & pop_count_ull(empty & 0xF0F0F0F000000000ULL)) << 3;
             calc_eval_features(&board, &eval);
+            waiting = false;
+            helping = false;
         }
 
         /*
