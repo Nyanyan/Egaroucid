@@ -37,17 +37,22 @@
 #define N_SIMD_EVAL_FEATURE_CELLS 16
 #define N_SIMD_EVAL_FEATURE_GROUP 4
 
-#define N_PATTERN_PARAMS_MOVE_ORDERING_END (236196 + 1) // +1 for byte bound
-#define N_PATTERN_PARAMS_MOVE_ORDERING_MID (265356 + 2) // +2 for byte bound & dummy for d8
-#define SIMD_EVAL_MAX_VALUE_MOVE_ORDERING_END 16380
-#define SIMD_EVAL_MAX_VALUE_MOVE_ORDERING_MID 8190
-#define N_SIMD_EVAL_FEATURES_COMP_MOVE_ORDERING_END 1
-#define N_SIMD_EVAL_FEATURES_COMP_MOVE_ORDERING_MID 1
-#define SHIFT_EVAL_MOVE_ORDERING_END 49087 // pattern_starts[8]
-#define SHIFT_EVAL_MOVE_ORDERING_MID 19927 // pattern_starts[4]
-#define N_PATTERN_PARAMS_BEFORE_DUMMY_MOVE_ORDERING_MID 9477
-#define SIMD_EVAL_DUMMY_ADDR_MOVE_ORDERING_MID 9478
-#define N_PATTERN_PARAMS_AFTER_DUMMY_MOVE_ORDERING_MID 255879
+/*
+    @brief evaluation pattern definition for SIMD move ordering end
+*/
+#define N_PATTERN_PARAMS_MO_END (236196 + 1) // +1 for byte bound
+#define SIMD_EVAL_MAX_VALUE_MO_END 16380
+#define SHIFT_EVAL_MO_END 49087 // pattern_starts[8]
+
+/*
+    @brief evaluation pattern definition for SIMD move ordering mid
+*/
+#define N_PATTERN_PARAMS_MO_MID (265356 + 2) // +2 for byte bound & dummy for d8
+#define SIMD_EVAL_MAX_VALUE_MO_MID 8190
+#define SHIFT_EVAL_MO_MID 19926 // pattern_starts[4]
+#define N_PATTERN_PARAMS_BEFORE_DUMMY_MO_MID 9477
+#define SIMD_EVAL_DUMMY_ADDR_MO_MID 9478
+#define N_PATTERN_PARAMS_AFTER_DUMMY_MO_MID 255879
 
 constexpr Feature_to_coord feature_to_coord[CEIL_N_SYMMETRY_PATTERNS] = {
     // 0 hv2
@@ -226,8 +231,6 @@ __m256i coord_to_feature_simd[HW2][N_SIMD_EVAL_FEATURES];
 __m256i eval_move_unflipped_16bit[N_16BIT][N_SIMD_EVAL_FEATURE_GROUP][N_SIMD_EVAL_FEATURES];
 __m256i eval_simd_offsets_simple[N_SIMD_EVAL_FEATURES_SIMPLE]; // 16bit * 16 * N
 __m256i eval_simd_offsets_comp[N_SIMD_EVAL_FEATURES_COMP * 2]; // 32bit * 8 * N
-__m256i eval_simd_offsets_comp_move_ordering_end[N_SIMD_EVAL_FEATURES_COMP_MOVE_ORDERING_END * 2]; // 32bit * 8 * N
-__m256i eval_simd_offsets_comp_move_ordering_mid[N_SIMD_EVAL_FEATURES_COMP_MOVE_ORDERING_MID * 2]; // 32bit * 8 * N
 __m256i eval_surround_mask;
 __m128i eval_surround_shift1879;
 
@@ -237,8 +240,8 @@ __m128i eval_surround_shift1879;
 int16_t pattern_arr[N_PHASES][N_PATTERN_PARAMS];
 int16_t eval_num_arr[N_PHASES][MAX_STONE_NUM];
 int16_t eval_sur0_sur1_arr[N_PHASES][MAX_SURROUND][MAX_SURROUND];
-int16_t pattern_arr_move_ordering_end_nws[N_PATTERN_PARAMS_MOVE_ORDERING_END];
-int16_t pattern_arr_move_ordering_mid_nws[N_PHASES][N_PATTERN_PARAMS_MOVE_ORDERING_MID];
+int16_t pattern_arr_move_ordering_end[N_PATTERN_PARAMS_MO_END];
+int16_t pattern_arr_move_ordering_mid[N_PHASES][N_PATTERN_PARAMS_MO_MID];
 
 inline bool load_eval_file(const char* file, bool show_log){
     if (show_log)
@@ -299,23 +302,23 @@ inline bool load_eval_move_ordering_end_file(const char* file, bool show_log){
         std::cerr << "[ERROR] [FATAL] can't open eval " << file << std::endl;
         return false;
     }
-    pattern_arr_move_ordering_end_nws[0] = 0; // memory bound
-    if (fread(pattern_arr_move_ordering_end_nws + 1, 2, N_PATTERN_PARAMS_MOVE_ORDERING_END - 1, fp) < N_PATTERN_PARAMS_MOVE_ORDERING_END - 1){
+    pattern_arr_move_ordering_end[0] = 0; // memory bound
+    if (fread(pattern_arr_move_ordering_end + 1, 2, N_PATTERN_PARAMS_MO_END - 1, fp) < N_PATTERN_PARAMS_MO_END - 1){
         std::cerr << "[ERROR] [FATAL] evaluation file for move ordering end broken" << std::endl;
         fclose(fp);
         return false;
     }
     // check max value
-    for (int i = 1; i < N_PATTERN_PARAMS_MOVE_ORDERING_END; ++i){
-        if (pattern_arr_move_ordering_end_nws[i] < -SIMD_EVAL_MAX_VALUE_MOVE_ORDERING_END){
-            std::cerr << "[ERROR] evaluation value too low. you can ignore this error. index " << i << " found " << pattern_arr_move_ordering_end_nws[i] << std::endl;
-            pattern_arr_move_ordering_end_nws[i] = -SIMD_EVAL_MAX_VALUE_MOVE_ORDERING_END;
+    for (int i = 1; i < N_PATTERN_PARAMS_MO_END; ++i){
+        if (pattern_arr_move_ordering_end[i] < -SIMD_EVAL_MAX_VALUE_MO_END){
+            std::cerr << "[ERROR] evaluation value too low. you can ignore this error. index " << i << " found " << pattern_arr_move_ordering_end[i] << std::endl;
+            pattern_arr_move_ordering_end[i] = -SIMD_EVAL_MAX_VALUE_MO_END;
         }
-        if (pattern_arr_move_ordering_end_nws[i] > SIMD_EVAL_MAX_VALUE_MOVE_ORDERING_END){
-            std::cerr << "[ERROR] evaluation value too high. you can ignore this error. index " << i << " found " << pattern_arr_move_ordering_end_nws[i] << std::endl;
-            pattern_arr_move_ordering_end_nws[i] = SIMD_EVAL_MAX_VALUE_MOVE_ORDERING_END;
+        if (pattern_arr_move_ordering_end[i] > SIMD_EVAL_MAX_VALUE_MO_END){
+            std::cerr << "[ERROR] evaluation value too high. you can ignore this error. index " << i << " found " << pattern_arr_move_ordering_end[i] << std::endl;
+            pattern_arr_move_ordering_end[i] = SIMD_EVAL_MAX_VALUE_MO_END;
         }
-        pattern_arr_move_ordering_end_nws[i] += SIMD_EVAL_MAX_VALUE_MOVE_ORDERING_END;
+        pattern_arr_move_ordering_end[i] += SIMD_EVAL_MAX_VALUE_MO_END;
     }
     return true;
 }
@@ -329,14 +332,14 @@ inline bool load_eval_move_ordering_mid_file(const char* file, bool show_log){
         return false;
     }
     for (int phase = 0; phase < N_PHASES; ++phase){
-        pattern_arr_move_ordering_mid_nws[phase][0] = 0; // memory bound
-        if (fread(pattern_arr_move_ordering_mid_nws[phase] + 1, 2, N_PATTERN_PARAMS_BEFORE_DUMMY_MOVE_ORDERING_MID - 1, fp) < N_PATTERN_PARAMS_BEFORE_DUMMY_MOVE_ORDERING_MID - 1){
+        pattern_arr_move_ordering_mid[phase][0] = 0; // memory bound
+        if (fread(pattern_arr_move_ordering_mid[phase] + 1, 2, N_PATTERN_PARAMS_BEFORE_DUMMY_MO_MID, fp) < N_PATTERN_PARAMS_BEFORE_DUMMY_MO_MID){
             std::cerr << "[ERROR] [FATAL] evaluation file for move ordering mid broken" << std::endl;
             fclose(fp);
             return false;
         }
-        pattern_arr_move_ordering_mid_nws[phase][SIMD_EVAL_DUMMY_ADDR_MOVE_ORDERING_MID] = 0; // dummy for d8
-        if (fread(pattern_arr_move_ordering_mid_nws[phase] + SIMD_EVAL_DUMMY_ADDR_MOVE_ORDERING_MID + 1, 2, N_PATTERN_PARAMS_AFTER_DUMMY_MOVE_ORDERING_MID - 1, fp) < N_PATTERN_PARAMS_AFTER_DUMMY_MOVE_ORDERING_MID - 1){
+        pattern_arr_move_ordering_mid[phase][SIMD_EVAL_DUMMY_ADDR_MO_MID] = 0; // dummy for d8
+        if (fread(pattern_arr_move_ordering_mid[phase] + SIMD_EVAL_DUMMY_ADDR_MO_MID + 1, 2, N_PATTERN_PARAMS_AFTER_DUMMY_MO_MID, fp) < N_PATTERN_PARAMS_AFTER_DUMMY_MO_MID){
             std::cerr << "[ERROR] [FATAL] evaluation file for move ordering mid broken" << std::endl;
             fclose(fp);
             return false;
@@ -344,18 +347,18 @@ inline bool load_eval_move_ordering_mid_file(const char* file, bool show_log){
     }
     // check max value
     for (int phase = 0; phase < N_PHASES; ++phase){
-        for (int i = 1; i < N_PATTERN_PARAMS_MOVE_ORDERING_MID; ++i){
-            if (i == SIMD_EVAL_DUMMY_ADDR_MOVE_ORDERING_MID) // dummy
+        for (int i = 1; i < N_PATTERN_PARAMS_MO_MID; ++i){
+            if (i == SIMD_EVAL_DUMMY_ADDR_MO_MID) // dummy
                 continue;
-            if (pattern_arr_move_ordering_mid_nws[phase][i] < -SIMD_EVAL_MAX_VALUE_MOVE_ORDERING_MID){
-                std::cerr << "[ERROR] evaluation value too low. you can ignore this error. index " << i << " found " << pattern_arr_move_ordering_mid_nws[phase][i] << std::endl;
-                pattern_arr_move_ordering_mid_nws[phase][i] = -SIMD_EVAL_MAX_VALUE_MOVE_ORDERING_MID;
+            if (pattern_arr_move_ordering_mid[phase][i] < -SIMD_EVAL_MAX_VALUE_MO_MID){
+                std::cerr << "[ERROR] evaluation value too low. you can ignore this error. index " << i << " found " << pattern_arr_move_ordering_mid[phase][i] << std::endl;
+                pattern_arr_move_ordering_mid[phase][i] = -SIMD_EVAL_MAX_VALUE_MO_MID;
             }
-            if (pattern_arr_move_ordering_mid_nws[phase][i] > SIMD_EVAL_MAX_VALUE_MOVE_ORDERING_MID){
-                std::cerr << "[ERROR] evaluation value too high. you can ignore this error. index " << i << " found " << pattern_arr_move_ordering_mid_nws[phase][i] << std::endl;
-                pattern_arr_move_ordering_mid_nws[phase][i] = SIMD_EVAL_MAX_VALUE_MOVE_ORDERING_MID;
+            if (pattern_arr_move_ordering_mid[phase][i] > SIMD_EVAL_MAX_VALUE_MO_MID){
+                std::cerr << "[ERROR] evaluation value too high. you can ignore this error. index " << i << " found " << pattern_arr_move_ordering_mid[phase][i] << std::endl;
+                pattern_arr_move_ordering_mid[phase][i] = SIMD_EVAL_MAX_VALUE_MO_MID;
             }
-            pattern_arr_move_ordering_mid_nws[phase][i] += SIMD_EVAL_MAX_VALUE_MOVE_ORDERING_MID;
+            pattern_arr_move_ordering_mid[phase][i] += SIMD_EVAL_MAX_VALUE_MO_MID;
         }
     }
     return true;
@@ -462,10 +465,6 @@ inline void pre_calculate_eval_constant(){
                 pattern_starts[9 + i4], pattern_starts[9 + i4], pattern_starts[9 + i4], pattern_starts[9 + i4]
             );
         }
-        eval_simd_offsets_comp_move_ordering_end[0] = _mm256_sub_epi32(eval_simd_offsets_comp[0], _mm256_set1_epi32(pattern_starts[8] - pattern_starts[0])); // move ordering end uses 8, 9, 10, 11 features
-        eval_simd_offsets_comp_move_ordering_end[1] = _mm256_sub_epi32(eval_simd_offsets_comp[1], _mm256_set1_epi32(pattern_starts[8] - pattern_starts[0])); // move ordering end uses 8, 9, 10, 11 features
-        eval_simd_offsets_comp_move_ordering_end[0] = _mm256_sub_epi32(eval_simd_offsets_comp[0], _mm256_set1_epi32(pattern_starts[4] - pattern_starts[0])); // move ordering mid uses 4, 5, 6, 7, 8, 9, 10, 11 features
-        eval_simd_offsets_comp_move_ordering_end[1] = _mm256_sub_epi32(eval_simd_offsets_comp[1], _mm256_set1_epi32(pattern_starts[4] - pattern_starts[0])); // move ordering mid uses 4, 5, 6, 7, 8, 9, 10, 11 features
         eval_lower_mask = _mm256_set1_epi32(0x0000FFFF);
     }
     { // calc_surround initialization
@@ -572,24 +571,25 @@ inline int calc_pattern(const int phase_idx, Eval_features *features){
 }
 
 inline int calc_pattern_move_ordering_end(Eval_features *features){
-    const int *start_addr = (int*)(pattern_arr_move_ordering_end_nws - SHIFT_EVAL_MOVE_ORDERING_END);
+    const int *start_addr = (int*)(pattern_arr_move_ordering_end - SHIFT_EVAL_MO_END);
     __m256i res256 =                  gather_eval(start_addr, calc_idx8_comp(features->f128[4], 0));        // corner+block cross
     res256 = _mm256_add_epi32(res256, gather_eval(start_addr, calc_idx8_comp(features->f128[5], 1)));       // edge+2X triangle
     res256 = _mm256_and_si256(res256, eval_lower_mask);
     __m128i res128 = _mm_add_epi32(_mm256_castsi256_si128(res256), _mm256_extracti128_si256(res256, 1));
     res128 = _mm_hadd_epi32(res128, res128);
-    return _mm_cvtsi128_si32(res128) + _mm_extract_epi32(res128, 1) - SIMD_EVAL_MAX_VALUE_MOVE_ORDERING_END * N_SYMMETRY_PATTERNS_MOVE_ORDERING_END;
+    return _mm_cvtsi128_si32(res128) + _mm_extract_epi32(res128, 1) - SIMD_EVAL_MAX_VALUE_MO_END * N_SYMMETRY_PATTERNS_MO_END;
 }
 
 inline int calc_pattern_move_ordering_mid(const int phase_idx, Eval_features *features){
-    const int *start_addr = (int*)(pattern_arr_move_ordering_mid_nws[phase_idx] - SHIFT_EVAL_MOVE_ORDERING_MID);
+    const int *start_addr = (int*)(pattern_arr_move_ordering_mid[phase_idx] - SHIFT_EVAL_MO_MID);
     __m256i res256 =                  gather_eval(start_addr, _mm256_cvtepu16_epi32(features->f128[2]));    // d8 corner9
     res256 = _mm256_add_epi32(res256, gather_eval(start_addr, _mm256_cvtepu16_epi32(features->f128[3])));   // d6 d7
     res256 = _mm256_add_epi32(res256, gather_eval(start_addr, calc_idx8_comp(features->f128[4], 0)));       // corner+block cross
     res256 = _mm256_add_epi32(res256, gather_eval(start_addr, calc_idx8_comp(features->f128[5], 1)));       // edge+2X triangle
     __m128i res128 = _mm_add_epi32(_mm256_castsi256_si128(res256), _mm256_extracti128_si256(res256, 1));
     res128 = _mm_hadd_epi32(res128, res128);
-    return _mm_cvtsi128_si32(res128) + _mm_extract_epi32(res128, 1) - SIMD_EVAL_MAX_VALUE_MOVE_ORDERING_MID * N_SYMMETRY_PATTERNS_MOVE_ORDERING_MID;
+    std::cerr << _mm_cvtsi128_si32(res128) + _mm_extract_epi32(res128, 1) << std::endl;
+    return _mm_cvtsi128_si32(res128) + _mm_extract_epi32(res128, 1) - SIMD_EVAL_MAX_VALUE_MO_MID * N_SYMMETRY_PATTERNS_MO_MID;
 }
 
 inline void calc_eval_features(Board *board, Eval_search *eval);
@@ -671,6 +671,7 @@ inline int mid_evaluate_move_ordering_end(Search *search){
 inline int mid_evaluate_move_ordering_mid(Search *search){
     int phase_idx = search->phase();
     int res = calc_pattern_move_ordering_mid(phase_idx, &search->eval.features[search->eval.feature_idx]);
+    //std::cerr << res << std::endl;
     res += res >= 0 ? STEP_2 : -STEP_2;
     res /= STEP;
     return res;
