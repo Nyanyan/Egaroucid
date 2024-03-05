@@ -734,7 +734,7 @@ inline void eval_pass(Eval_search *eval, const Board *board){
 
 
 // only corner+block cross edge+2X triangle
-inline void eval_move_endsearch(Eval_search *eval, const Flip *flip, const Board *board){
+inline void eval_move_move_ordering(Eval_search *eval, const Flip *flip, const Board *board){
     const uint16_t *flipped_group = (uint16_t*)&(flip->flip);
     const uint16_t *player_group = (uint16_t*)&(board->player);
     const uint16_t *opponent_group = (uint16_t*)&(board->opponent);
@@ -750,11 +750,11 @@ inline void eval_move_endsearch(Eval_search *eval, const Flip *flip, const Board
     eval->features[eval->feature_idx].f256[2] = f2;
 }
 
-inline void eval_undo_endsearch(Eval_search *eval){
+inline void eval_undo_move_ordering(Eval_search *eval){
     --eval->feature_idx;
 }
 
-inline void eval_pass_endsearch(Eval_search *eval, const Board *board){
+inline void eval_pass_move_ordering(Eval_search *eval, const Board *board){
     const uint16_t *player_group = (uint16_t*)&(board->player);
     const uint16_t *opponent_group = (uint16_t*)&(board->opponent);
     __m256i f2 = eval->features[eval->feature_idx].f256[2];
