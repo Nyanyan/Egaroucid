@@ -19,10 +19,9 @@
 #include "thread_pool.hpp"
 
 /*
-    @brief YBWC splitting depth threshold
+    @brief YBWC parameters
 */
 #define YBWC_MID_SPLIT_MIN_DEPTH 6
-
 #define YBWC_N_ELDER_CHILD 1
 #define YBWC_N_YOUNGER_CHILD 2
 // #define YBWC_MAX_RUNNING_COUNT 5
