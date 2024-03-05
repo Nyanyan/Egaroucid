@@ -39,8 +39,8 @@
 #if TUNE_MOVE_ORDERING_MID || TUNE_MOVE_ORDERING_END
     #define N_MOVE_ORDERING_PARAM 12
     int move_ordering_param_array[N_MOVE_ORDERING_PARAM] = {
-        33, 11, 289, 96, 
-        21, 19, 12, 10, 
+        37, 11, 289, 92, 
+        19, 21, 9, 17, 
         41, 6, 
         9, 8
     };
@@ -76,7 +76,7 @@
     #define W_NWS_MOBILITY 17
     #define W_NWS_POTENTIAL_MOBILITY 19
     #define W_NWS_VALUE 14
-    #define W_NWS_VALUE_DEEP_ADDITIONAL 12
+    #define W_NWS_VALUE_DEEP_ADDITIONAL 11
 
     // endgame null window search
     #define W_END_NWS_MOBILITY 41

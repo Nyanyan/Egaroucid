@@ -50,7 +50,6 @@ Search_result lazy_smp(Board board, int depth, uint_fast8_t mpc_level, bool show
         }
 
         bool sub_searching = true;
-        global_searching = true;
         std::vector<std::future<int>> parallel_tasks;
         for (int thread_idx = MAIN_THREAD_IDX + 1; thread_idx < N_PARALLEL_MAX && thread_idx - MAIN_THREAD_IDX - 1 < thread_pool.size(); ++thread_idx){
             int sub_depth = main_depth + thread_idx - MAIN_THREAD_IDX;
@@ -77,7 +76,6 @@ Search_result lazy_smp(Board board, int depth, uint_fast8_t mpc_level, bool show
             }
         }
         std::pair<int, int> id_result = first_nega_scout(&searches[MAIN_THREAD_IDX], -SCORE_MAX, SCORE_MAX, SCORE_UNDEFINED, main_depth, main_is_end_search, is_last_search_show_log, clogs, strt);
-        global_searching = false;
         sub_searching = false;
         if (result.value != SCORE_UNDEFINED && !main_is_end_search){
             double n_value = (0.9 * result.value + 1.1 * id_result.first) / 2.0;
