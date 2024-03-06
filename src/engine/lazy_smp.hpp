@@ -75,7 +75,7 @@ Search_result lazy_smp(Board board, int depth, uint_fast8_t mpc_level, bool show
         std::vector<Search> searches(sub_tasks.size());
         for (int i = 0; i < (int)sub_tasks.size(); ++i){
             bool pushed = false;
-            searches[i].init(&board, sub_tasks[i].mpc_level, false, nullptr);
+            searches[i].init(&board, sub_tasks[i].mpc_level, false);
             while (!pushed){
                 parallel_tasks.emplace_back(thread_pool.push(&pushed, std::bind(&nega_scout, &searches[i], -SCORE_MAX, SCORE_MAX, sub_tasks[i].depth, false, LEGAL_UNDEFINED, sub_tasks[i].is_end_search, &sub_searching)));
                 if (!pushed){
@@ -84,7 +84,7 @@ Search_result lazy_smp(Board board, int depth, uint_fast8_t mpc_level, bool show
             }
         }
         Search main_search;
-        main_search.init(&board, main_mpc_level, true, nullptr);
+        main_search.init(&board, main_mpc_level, true);
         std::pair<int, int> id_result = first_nega_scout(&main_search, -SCORE_MAX, SCORE_MAX, SCORE_UNDEFINED, main_depth, main_is_end_search, is_last_search_show_log, clogs, strt);
         sub_searching = false;
         if (result.value != SCORE_UNDEFINED && !main_is_end_search){

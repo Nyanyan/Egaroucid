@@ -20,7 +20,6 @@
 #include "evaluate_common.hpp"
 #include "evaluate.hpp"
 #include "flip.hpp"
-#include "spinlock.hpp"
 
 /*
     @brief Search switch parameters
@@ -196,44 +195,6 @@ struct Analyze_result{
     int alt_probability;
 };
 
-struct YBWC_result{
-    std::mutex mtx;
-    int value;
-    int best_move;
-    uint64_t n_nodes;
-    std::atomic<int> running_count;
-
-    YBWC_result(){
-        value = -SCORE_INF;
-        n_nodes = 0;
-        running_count = 0;
-    }
-};
-
-struct YBWC_task{
-    std::mutex mtx;
-    Board board;
-    uint_fast8_t mpc_level;
-    int depth;
-    int alpha;
-    int policy;
-    bool *searching;
-    YBWC_result *ybwc_result;
-};
-
-struct YBWC_state{
-    std::mutex mtx;
-    bool waiting;
-    bool helping;
-    YBWC_result *ybwc_result;
-
-    YBWC_state(){
-        waiting = false;
-        helping = false;
-        ybwc_result = nullptr;
-    }
-};
-
 /*
     @brief Search structure
 
@@ -261,17 +222,10 @@ class Search{
         #if USE_SEARCH_STATISTICS
             uint64_t n_nodes_discs[HW2];
         #endif
-        Search *parent;
-        YBWC_task ybwc_task;
-        YBWC_state ybwc_state;
 
     public:
-        /*
-            @brief Initialize with board
 
-            @param init_board           a board to set
-        */
-        inline void init(Board *init_board, uint_fast8_t init_mpc_level, bool init_use_multi_thread, Search *init_parent){
+        inline void init(Board *init_board, uint_fast8_t init_mpc_level, bool init_use_multi_thread){
             board = init_board->copy();
             n_discs = board.n_discs();
             strt_n_discs = n_discs;
@@ -284,7 +238,6 @@ class Search{
             mpc_level = init_mpc_level;
             use_multi_thread = init_use_multi_thread;
             n_nodes = 0;
-            parent = init_parent;
         }
 
         /*
@@ -302,7 +255,6 @@ class Search{
             parity |= (1 & pop_count_ull(empty & 0x0F0F0F0F00000000ULL)) << 2;
             parity |= (1 & pop_count_ull(empty & 0xF0F0F0F000000000ULL)) << 3;
             calc_eval_features(&board, &eval);
-            parent = nullptr;
         }
 
         /*

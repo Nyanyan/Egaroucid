@@ -27,6 +27,10 @@
 #include "util.hpp"
 #include "stability.hpp"
 
+inline bool ybwc_split_nws(const Search *search, int alpha, int depth, uint64_t legal, bool is_end_search, const bool *searching, uint_fast8_t policy, const int pv_idx, const int move_idx, const int canput, const int running_count, std::vector<std::future<Parallel_task>> &parallel_tasks);
+inline void ybwc_get_end_tasks(Search *search, std::vector<std::future<Parallel_task>> &parallel_tasks, int *v, int *best_move, int *running_count);
+inline void ybwc_wait_all_nws(Search *search, std::vector<std::future<Parallel_task>> &parallel_tasks, int *v, int *best_move, int *running_count, int alpha, const bool *searching, bool *n_searching);
+
 /*
     @brief Get a value with last move with Nega-Alpha algorithm (NWS)
 
@@ -166,7 +170,7 @@ int nega_alpha_ordering_nws(Search *search, int alpha, int depth, bool skipped, 
         depth - 1 >= YBWC_MID_SPLIT_MIN_DEPTH
     ){
         int running_count = 0;
-        YBWC_result ybwc_result;
+        std::vector<std::future<Parallel_task>> parallel_tasks;
         bool n_searching = true;
         for (int move_idx = 0; move_idx < canput - etc_done_idx && *searching && n_searching; ++move_idx){
             swap_next_best_move(move_list, move_idx, canput);
@@ -175,9 +179,8 @@ int nega_alpha_ordering_nws(Search *search, int alpha, int depth, bool skipped, 
                     break;
             #endif
             search->move(&move_list[move_idx].flip);
-                if (ybwc_split_nws(search, -alpha - 1, depth - 1, move_list[move_idx].n_legal, is_end_search, &n_searching, move_list[move_idx].flip.pos, move_idx, canput - etc_done_idx, running_count, &ybwc_result)){
+                if (ybwc_split_nws(search, -alpha - 1, depth - 1, move_list[move_idx].n_legal, is_end_search, &n_searching, move_list[move_idx].flip.pos, move_idx, canput - etc_done_idx, running_count, parallel_tasks)){
                     ++running_count;
-                    ybwc_result.running_count.fetch_add(1);
                 } else{
                     g = -nega_alpha_ordering_nws(search, -alpha - 1, depth - 1, false, move_list[move_idx].n_legal, is_end_search, searching);
                     if (v < g){
@@ -187,7 +190,7 @@ int nega_alpha_ordering_nws(Search *search, int alpha, int depth, bool skipped, 
                             n_searching = false;
                     }
                     if (running_count){
-                        ybwc_get_end_tasks(search, &v, &best_move, &running_count, &ybwc_result);
+                        ybwc_get_end_tasks(search, parallel_tasks, &v, &best_move, &running_count);
                         if (alpha < v)
                             n_searching = false;
                     }
@@ -196,11 +199,10 @@ int nega_alpha_ordering_nws(Search *search, int alpha, int depth, bool skipped, 
         }
         if (running_count){
             if (!n_searching || !(*searching))
-                ybwc_wait_all_stopped(search, &running_count, &ybwc_result);
+                ybwc_wait_all_stopped(search, parallel_tasks);
             else
-                ybwc_wait_all_nws(search, &running_count, &v, &best_move, alpha, searching, &n_searching, &ybwc_result);
+                ybwc_wait_all_nws(search, parallel_tasks, &v, &best_move, &running_count, alpha, searching, &n_searching);
         }
-        search->n_nodes += ybwc_result.n_nodes;
     } else{
         for (int move_idx = 0; move_idx < canput - etc_done_idx && *searching; ++move_idx){
             swap_next_best_move(move_list, move_idx, canput);
@@ -223,38 +225,3 @@ int nega_alpha_ordering_nws(Search *search, int alpha, int depth, bool skipped, 
         transposition_table.reg(search, hash_code, depth, alpha, alpha + 1, v, best_move);
     return v;
 }
-
-/*
-int nega_alpha_ordering_nws_lazy_smp(Search *search, int alpha, int depth, bool skipped, uint64_t legal, bool is_end_search, const bool *searching){
-    std::vector<std::future<int>> parallel_tasks;
-    std::vector<Search> searches;
-    int n_idle = thread_pool.get_n_idle();
-    for (int i = 0; i < n_idle; ++i){
-        Search n_search;
-        n_search.init_board(&search->board);
-        n_search.mpc_level = search->mpc_level;
-        n_search.n_nodes = 0ULL;
-        n_search.use_multi_thread = false;
-        calc_features(&n_search);
-        searches.emplace_back(n_search);
-    }
-    for (int i = 0; i < n_idle; ++i){
-        bool pushed;
-        parallel_tasks.emplace_back(thread_pool.push(&pushed, std::bind(&nega_alpha_ordering_nws, &searches[i], alpha, depth, skipped, legal, is_end_search, searching)));
-        if (!pushed){
-            parallel_tasks.pop_back();
-            break;
-        }
-        if (n_idle <= thread_pool.get_n_idle())
-            break;
-    }
-    std::cerr << parallel_tasks.size() + 1 << " parallel" << std::endl;
-    int res = nega_alpha_ordering_nws(search, alpha, depth, skipped, legal, is_end_search, searching);
-    uint64_t s = tim();
-    for (std::future<int> &task: parallel_tasks)
-        task.get();
-    for (int i = 0; i < n_idle; ++i)
-        search->n_nodes += searches[i].n_nodes;
-    return res;
-}
-*/
