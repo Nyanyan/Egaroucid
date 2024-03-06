@@ -279,8 +279,8 @@ class Search{
             n_nodes = 0;
             ybwc.waiting = false;
             ybwc.helping = false;
-            parent = init_parent;
             ybwc.parent_ybwc_result = init_parent_ybwc_result;
+            parent = init_parent;
         }
 
         /*
@@ -300,8 +300,8 @@ class Search{
             calc_eval_features(&board, &eval);
             ybwc.waiting = false;
             ybwc.helping = false;
-            parent = nullptr;
             ybwc.parent_ybwc_result = nullptr;
+            parent = nullptr;
         }
 
         /*
