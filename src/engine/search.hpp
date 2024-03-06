@@ -20,6 +20,7 @@
 #include "evaluate_common.hpp"
 #include "evaluate.hpp"
 #include "flip.hpp"
+#include "spinlock.hpp"
 
 /*
     @brief Search switch parameters
@@ -219,6 +220,14 @@ struct YBWC_task{
     YBWC_result *ybwc_result;
 };
 
+struct YBWC_search{
+    std::mutex mtx;
+    bool waiting;
+    bool helping;
+    YBWC_task task;
+    YBWC_result *parent_ybwc_result;
+};
+
 /*
     @brief Search structure
 
@@ -235,7 +244,6 @@ struct YBWC_task{
 */
 class Search{
     public:
-        std::mutex mtx;
         Board board;
         int_fast8_t strt_n_discs;
         int_fast8_t n_discs;
@@ -247,11 +255,8 @@ class Search{
         #if USE_SEARCH_STATISTICS
             uint64_t n_nodes_discs[HW2];
         #endif
-        bool waiting;
-        bool helping;
-        YBWC_task task;
+        YBWC_search ybwc;
         Search *parent;
-        //YBWC_result *parent_ybwc_result;
 
     public:
         /*
@@ -272,10 +277,10 @@ class Search{
             mpc_level = init_mpc_level;
             use_multi_thread = init_use_multi_thread;
             n_nodes = 0;
-            waiting = false;
-            helping = false;
+            ybwc.waiting = false;
+            ybwc.helping = false;
             parent = init_parent;
-            //parent_ybwc_result = init_parent_ybwc_result;
+            ybwc.parent_ybwc_result = init_parent_ybwc_result;
         }
 
         /*
@@ -293,10 +298,10 @@ class Search{
             parity |= (1 & pop_count_ull(empty & 0x0F0F0F0F00000000ULL)) << 2;
             parity |= (1 & pop_count_ull(empty & 0xF0F0F0F000000000ULL)) << 3;
             calc_eval_features(&board, &eval);
-            waiting = false;
-            helping = false;
+            ybwc.waiting = false;
+            ybwc.helping = false;
             parent = nullptr;
-            //parent_ybwc_result = nullptr;
+            ybwc.parent_ybwc_result = nullptr;
         }
 
         /*
