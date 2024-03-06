@@ -27,8 +27,6 @@
 #include "endsearch.hpp"
 #include "midsearch_nws.hpp"
 
-
-
 /*
     @brief Get a value with last move with Nega-Alpha algorithm
 
