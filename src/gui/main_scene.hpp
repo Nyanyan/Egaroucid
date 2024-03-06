@@ -230,7 +230,7 @@ public:
             if (getData().menu_elements.use_disc_hint) {
                 if (!ai_status.hint_calculating && !ai_status.hint_calculated) {
                     hint_calculate();
-                } else if (ai_status.hint_level != HINT_NOT_CALCULATING){
+                } else{
                     try_hint_get();
                     legal_ignore = draw_hint(getData().menu_elements.use_book && getData().menu_elements.show_book_accuracy && !hint_ignore);
                 }
@@ -304,7 +304,6 @@ public:
 
 private:
     void reset_hint() {
-        ai_status.hint_level = HINT_NOT_CALCULATING;
         ai_status.hint_calculating = false;
         ai_status.hint_calculated = false;
     }
@@ -487,7 +486,7 @@ private:
     void menu_manipulate() {
         if (getData().menu_elements.stop_calculating) {
             stop_calculating();
-            ai_status.hint_level = HINT_INF_LEVEL;
+            reset_hint();
             resume_calculating();
         }
         if (!ai_status.analyzing) {
@@ -1352,7 +1351,6 @@ private:
     }
 
     void hint_calculate(){
-        ai_status.hint_level = HINT_NOT_CALCULATING;
         ai_status.hint_calculating = true;
         ai_status.hint_calculated = false;
         for (int i = 0; i < HW2; ++i){
@@ -1364,7 +1362,7 @@ private:
             ai_status.hint_use[cell] = true;
             ai_status.hint_values[cell] = 0;
         }
-        ai_status.hint_future = std::async(std::launch::async, std::bind(ai_hint, getData().history_elem.board, getData().menu_elements.level, getData().menu_elements.use_book, 0, true, true, 100, ai_status.hint_values, &ai_status.hint_level));
+        ai_status.hint_future = std::async(std::launch::async, std::bind(ai_hint, getData().history_elem.board, getData().menu_elements.level, getData().menu_elements.use_book, 0, true, true, 100, ai_status.hint_values, ai_status.hint_types));
     }
 
     void try_hint_get(){

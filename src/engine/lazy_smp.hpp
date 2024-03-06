@@ -141,7 +141,7 @@ Search_result lazy_smp(Board board, int depth, uint_fast8_t mpc_level, bool show
 }
 
 
-void lazy_smp_hint(Board board, int max_level, int depth, uint_fast8_t mpc_level, bool show_log, std::vector<Clog_result> clogs, uint64_t use_legal, bool use_multi_thread, int n_display, double values[], int *now_level){
+void lazy_smp_hint(Board board, int depth, uint_fast8_t mpc_level, bool show_log, uint64_t use_legal, bool use_multi_thread, int n_display, double values[], int hint_types[]){
     uint64_t strt = tim();
     int main_depth = 1;
     int main_mpc_level = mpc_level;
@@ -190,7 +190,7 @@ void lazy_smp_hint(Board board, int max_level, int depth, uint_fast8_t mpc_level
             bool pushed = false;
             searches[i].init(&board, sub_tasks[i].mpc_level, false);
             while (!pushed){
-                parallel_tasks.emplace_back(thread_pool.push(&pushed, std::bind(&first_nega_scout_hint, &searches[i], sub_tasks[i].depth, sub_tasks[i].is_end_search, clogs, use_legal, &sub_searching, false, values)));
+                parallel_tasks.emplace_back(thread_pool.push(&pushed, std::bind(&first_nega_scout_hint, &searches[i], sub_tasks[i].depth, sub_tasks[i].is_end_search, use_legal, &sub_searching, false, values)));
                 if (!pushed){
                     parallel_tasks.pop_back();
                 }
@@ -199,23 +199,15 @@ void lazy_smp_hint(Board board, int max_level, int depth, uint_fast8_t mpc_level
         Search main_search;
         main_search.init(&board, main_mpc_level, use_multi_thread);
         bool searching = true;
-        first_nega_scout_hint(&main_search, main_depth, main_is_end_search, clogs, use_legal, &searching, true, values);
+        first_nega_scout_hint(&main_search, main_depth, main_is_end_search, use_legal, &searching, true, values);
         sub_searching = false;
-        if (!main_is_end_search){ // midgame
-            *now_level = main_depth;
-        } else if (main_mpc_level == mpc_level){ // endgame & this is last search
-            *now_level = max_level;
-        } else{
-            for (int i = 60; i >= 1; --i){
-                bool test_is_mid;
-                int test_depth;
-                uint_fast8_t test_mpc_level;
-                get_level(i, board.n_discs() - 4, &test_is_mid, &test_depth, &test_mpc_level);
-                if (!test_is_mid && main_mpc_level == test_mpc_level){
-                    *now_level = i;
-                    break;
-                }
-            }
+        int now_level = main_depth;
+        if (main_is_end_search){ // endgame & this is last search
+            now_level = SELECTIVITY_PERCENTAGE[main_mpc_level];
+        }
+        uint64_t use_legal_copy = use_legal;
+        for (uint_fast8_t cell = first_bit(&use_legal_copy); use_legal_copy; cell = next_bit(&use_legal_copy)){
+            hint_types[cell] = now_level;
         }
         for (std::future<void> &task: parallel_tasks){
             task.get();

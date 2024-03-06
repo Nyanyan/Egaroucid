@@ -22,6 +22,10 @@
 
 #define SEARCH_BOOK -1
 
+#ifndef HINT_TYPE_BOOK
+#define HINT_TYPE_BOOK 1000
+#endif
+
 /*
     @brief Get a result of a search
 
@@ -59,7 +63,7 @@ inline Search_result tree_search_legal(Board board, int depth, uint_fast8_t mpc_
     return res;
 }
 
-inline void tree_search_hint(Board board, int max_level, int depth, uint_fast8_t mpc_level, bool use_multi_thread, bool show_log, uint64_t use_legal, int n_display, double values[], int *now_level){
+inline void tree_search_hint(Board board, int depth, uint_fast8_t mpc_level, bool use_multi_thread, bool show_log, uint64_t use_legal, int n_display, double values[], int hint_types[]){
     depth = std::min(HW2 - board.n_discs(), depth);
     bool is_end_search = (HW2 - board.n_discs() == depth);
     std::vector<Clog_result> clogs;
@@ -69,6 +73,13 @@ inline void tree_search_hint(Board board, int max_level, int depth, uint_fast8_t
         uint64_t strt = tim();
         clogs = first_clog_search(board, &clog_nodes, std::min(depth, CLOG_SEARCH_MAX_DEPTH));
         clog_time = tim() - strt;
+        for (Clog_result &clog: clogs){
+            if (1 & (use_legal >> clog.pos)){
+                values[clog.pos] = clog.val;
+                hint_types[clog.pos] = 100;
+                use_legal ^= 1ULL << clog.pos;
+            }
+        }
         if (show_log){
             std::cerr << "clog search time " << clog_time << " nodes " << clog_nodes << " nps " << calc_nps(clog_nodes, clog_time) << std::endl;
             for (int i = 0; i < (int)clogs.size(); ++i){
@@ -80,7 +91,7 @@ inline void tree_search_hint(Board board, int max_level, int depth, uint_fast8_t
     Search search;
     search.init(&board, mpc_level, use_multi_thread);
     uint64_t strt = tim();
-    lazy_smp_hint(board, max_level, depth, mpc_level, show_log, clogs, use_legal, use_multi_thread, n_display, values, now_level);
+    lazy_smp_hint(board, depth, mpc_level, show_log, use_legal, use_multi_thread, n_display, values, hint_types);
 }
 
 /*
@@ -224,12 +235,15 @@ Search_result ai_accept_loss(Board board, int level, int acceptable_loss){
     return res;
 }
 
-void ai_hint(Board board, int level, bool use_book, int book_acc_level, bool use_multi_thread, bool show_log, int n_display, double values[], int *now_level){
+void ai_hint(Board board, int level, bool use_book, int book_acc_level, bool use_multi_thread, bool show_log, int n_display, double values[], int hint_types[]){
     uint64_t legal = board.get_legal();
-    std::vector<Book_value> links = book.get_all_moves_with_value(&board);
-    for (Book_value &link: links){
-        values[link.policy] = link.value;
-        legal ^= 1ULL << link.policy;
+    if (use_book){
+        std::vector<Book_value> links = book.get_all_moves_with_value(&board);
+        for (Book_value &link: links){
+            values[link.policy] = link.value;
+            hint_types[link.policy] = HINT_TYPE_BOOK;
+            legal ^= 1ULL << link.policy;
+        }
     }
     int depth;
     bool is_mid_search;
@@ -237,5 +251,5 @@ void ai_hint(Board board, int level, bool use_book, int book_acc_level, bool use
     get_level(level, board.n_discs() - 4, &is_mid_search, &depth, &mpc_level);
     if (show_log)
         std::cerr << "level status " << level << " " << board.n_discs() - 4 << " discs depth " << depth << "@" << SELECTIVITY_PERCENTAGE[mpc_level] << "%" << std::endl;
-    tree_search_hint(board, level, depth, mpc_level, use_multi_thread, show_log, legal, n_display, values, now_level);
+    tree_search_hint(board, depth, mpc_level, use_multi_thread, show_log, legal, n_display, values, hint_types);
 }

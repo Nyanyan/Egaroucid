@@ -673,7 +673,6 @@ struct AI_status {
 
     bool hint_calculating{ false };
     bool hint_calculated{ false };
-    int hint_level{ HINT_NOT_CALCULATING };
     std::future<void> hint_future;
     bool hint_use[HW2];
     double hint_values[HW2];
