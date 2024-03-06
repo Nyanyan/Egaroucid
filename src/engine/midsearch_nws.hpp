@@ -169,6 +169,12 @@ int nega_alpha_ordering_nws(Search *search, int alpha, int depth, bool skipped, 
         search->use_multi_thread && 
         depth - 1 >= YBWC_MID_SPLIT_MIN_DEPTH
     ){
+        int move_idx_offset = 0;
+        #if USE_ALL_NODE_PREDICTION_NWS
+            if (predict_all_node(search, alpha, depth, legal, is_end_search, searching)){
+                move_idx_offset = YBWC_N_ELDER_CHILD;
+            }
+        #endif
         int running_count = 0;
         std::vector<std::future<Parallel_task>> parallel_tasks;
         bool n_searching = true;
@@ -179,7 +185,7 @@ int nega_alpha_ordering_nws(Search *search, int alpha, int depth, bool skipped, 
                     break;
             #endif
             search->move(&move_list[move_idx].flip);
-                if (ybwc_split_nws(search, -alpha - 1, depth - 1, move_list[move_idx].n_legal, is_end_search, &n_searching, move_list[move_idx].flip.pos, move_idx, canput - etc_done_idx, running_count, parallel_tasks)){
+                if (ybwc_split_nws(search, -alpha - 1, depth - 1, move_list[move_idx].n_legal, is_end_search, &n_searching, move_list[move_idx].flip.pos, move_idx + move_idx_offset, canput - etc_done_idx, running_count, parallel_tasks)){
                     ++running_count;
                 } else{
                     g = -nega_alpha_ordering_nws(search, -alpha - 1, depth - 1, false, move_list[move_idx].n_legal, is_end_search, searching);

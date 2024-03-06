@@ -181,21 +181,44 @@ inline bool mpc(Search* search, int alpha, int beta, int depth, uint64_t legal, 
     return false;
 }
 
-/*
-    @brief Multi-ProbCut for NWS (Null Window Search)
 
-    @param search               search information
-    @param alpha                alpha value (beta = alpha + 1)
-    @param depth                depth of deep search
-    @param legal                for use of previously calculated legal bitboard
-    @param is_end_search        search till the end?
-    @param v                    an integer to store result
-    @param searching            flag for terminating this search
-    @return cutoff occurred?
-*/
-inline bool mpc_nws(Search *search, int alpha, int depth, uint64_t legal, bool is_end_search, int *v, const bool *searching){
-    return mpc(search, alpha, alpha + 1, depth, legal, is_end_search, v, searching);
-}
+#if USE_ALL_NODE_PREDICTION_NWS
+    inline bool predict_all_node(Search* search, int alpha, int depth, uint64_t legal, bool is_end_search, const bool* searching){
+        uint_fast8_t mpc_level = MPC_93_LEVEL;
+        int search_depth = mpc_search_depth_arr[is_end_search][depth];
+        int error_search, error_0;
+        #if USE_MPC_PRE_CALCULATION
+            if (is_end_search){
+                error_search = mpc_error_end[mpc_level][search->n_discs][search_depth];
+                error_0 = mpc_error_end[mpc_level][search->n_discs][0];
+            } else{
+                error_search = mpc_error[mpc_level][search->n_discs][search_depth][depth];
+                error_0 = mpc_error[mpc_level][search->n_discs][0][depth];
+            }
+        #else
+            double mpct = SELECTIVITY_MPCT[mpc_level];
+            if (is_end_search){
+                error_search = ceil(mpct * probcut_sigma_end(search->n_discs, search_depth));
+                error_0 = ceil(mpct * probcut_sigma_end(search->n_discs, 0));
+            }else{
+                error_search = ceil(mpct * probcut_sigma(search->n_discs, search_depth, depth));
+                error_0 = ceil(mpct * probcut_sigma(search->n_discs, 0, depth));
+            }
+        #endif
+        int d0value = mid_evaluate_diff(search);
+        if (d0value <= alpha - (error_search + error_0) / 2){
+            int pc_alpha = alpha - error_search;
+            if (pc_alpha > -SCORE_MAX){
+                if (nega_alpha_ordering_nws(search, pc_alpha, search_depth, false, legal, false, searching) <= pc_alpha){
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+#endif
+
+
 
 #if USE_MPC_PRE_CALCULATION
     void mpc_init(){
