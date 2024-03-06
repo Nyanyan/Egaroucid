@@ -81,10 +81,18 @@ Search_result lazy_smp(Board board, int depth, uint_fast8_t mpc_level, bool show
                 }
             }
         }
+        std::pair<int, int> id_result;
         Search main_search;
         main_search.init(&board, main_mpc_level, true);
-        std::pair<int, int> id_result = first_nega_scout(&main_search, -SCORE_MAX, SCORE_MAX, SCORE_UNDEFINED, main_depth, main_is_end_search, is_last_search_show_log, clogs, strt);
+        id_result = first_nega_scout(&main_search, -SCORE_MAX, SCORE_MAX, result.value, main_depth, main_is_end_search, is_last_search_show_log, clogs, strt);
         sub_searching = false;
+        for (std::future<int> &task: parallel_tasks){
+            task.get();
+        }
+        for (Search &search: searches){
+            result.nodes += search.n_nodes;
+        }
+        result.nodes += main_search.n_nodes;
         if (result.value != SCORE_UNDEFINED && !main_is_end_search){
             double n_value = (0.9 * result.value + 1.1 * id_result.first) / 2.0;
             result.value = round(n_value);
@@ -93,13 +101,7 @@ Search_result lazy_smp(Board board, int depth, uint_fast8_t mpc_level, bool show
             result.value = id_result.first;
         }
         result.policy = id_result.second;
-        for (std::future<int> &task: parallel_tasks)
-            task.get();
         result.depth = main_depth;
-        for (Search &search: searches){
-            result.nodes += search.n_nodes;
-        }
-        result.nodes += main_search.n_nodes;
         result.time = tim() - strt;
         result.nps = calc_nps(result.nodes, result.time);
         if (show_log){
@@ -113,7 +115,7 @@ Search_result lazy_smp(Board board, int depth, uint_fast8_t mpc_level, bool show
             } else{
                 std::cerr << "mid ";
             }
-            std::cerr << "depth " << result.depth << "@" << SELECTIVITY_PERCENTAGE[main_mpc_level] << "%" << " value " << id_result.first << " policy " << idx_to_coord(id_result.second) << " n_worker " << parallel_tasks.size() << " n_nodes " << result.nodes << " time " << result.time << " NPS " << result.nps << std::endl;
+            std::cerr << "depth " << result.depth << "@" << SELECTIVITY_PERCENTAGE[main_mpc_level] << "%" << " value " << id_result.first << " policy " << idx_to_coord(id_result.second) << " n_worker " << sub_tasks.size() << " n_nodes " << result.nodes << " time " << result.time << " NPS " << result.nps << std::endl;
         }
         if (!is_end_search || main_depth < round(LAZYSMP_ENDSEARCH_PRESEARCH_COE * depth)){
             ++main_depth;
