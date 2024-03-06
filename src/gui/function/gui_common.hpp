@@ -288,6 +288,7 @@ struct Directories {
     std::string document_dir;
     std::string appdata_dir;
     std::string eval_file;
+    std::string eval_mo_end_file;
 };
 
 struct Resources {

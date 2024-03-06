@@ -31,7 +31,7 @@ int init_ai(Settings* settings, const Directories* directories, bool *stop_loadi
         settings->hash_level = DEFAULT_HASH_LEVEL;
     }
     stability_init();
-    if (!evaluate_init(directories->eval_file, true)) {
+    if (!evaluate_init(directories->eval_file, directories->eval_mo_end_file, true)) {
         return ERR_EVAL_FILE_NOT_IMPORTED;
     }
     if (!book_init(settings->book_file, true, stop_loading)) {

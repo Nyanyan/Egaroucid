@@ -27,6 +27,7 @@ void init_directories(Directories* directories) {
 
     // file directories
     directories->eval_file = "resources/eval.egev";
+    directories->eval_mo_end_file = "resources/eval_move_ordering_end.egev";
 }
 
 std::string get_default_language(){
