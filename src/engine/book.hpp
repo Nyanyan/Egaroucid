@@ -20,7 +20,7 @@
 
 inline Search_result tree_search(Board board, int depth, uint_fast8_t mpc_level, bool show_log, bool use_multi_thread);
 Search_result ai(Board board, int level, bool use_book, int book_acc_level, bool use_multi_thread, bool show_log);
-Search_result ai_specified_moves(Board board, int level, bool use_book, int book_acc_level, bool use_multi_thread, bool show_log, uint64_t use_legal);
+Search_result ai_legal(Board board, int level, bool use_book, int book_acc_level, bool use_multi_thread, bool show_log, uint64_t use_legal);
 void search_new_leaf(Board board, int level, int book_elem_value, bool use_multi_thread);
 
 #define BOOK_N_ACCEPT_LEVEL 11
@@ -1647,7 +1647,7 @@ class Book{
             for (Book_value &link: links)
                 remaining_legal &= ~(1ULL << link.policy);
             if (remaining_legal){
-                Search_result ai_result = ai_specified_moves(board, level, false, 0, use_multi_thread, false, remaining_legal);
+                Search_result ai_result = ai_legal(board, level, false, 0, use_multi_thread, false, remaining_legal);
                 if (ai_result.value != SCORE_UNDEFINED){
                     new_leaf_value = ai_result.value;
                     if (level == ADD_LEAF_SPECIAL_LEVEL)
@@ -2056,7 +2056,7 @@ void search_new_leaf(Board board, int level, int book_elem_value, bool use_multi
         int use_level = level;
         if (level == ADD_LEAF_SPECIAL_LEVEL)
             use_level = 1;
-        Search_result ai_result = ai_specified_moves(board, use_level, false, 0, use_multi_thread, false, legal);
+        Search_result ai_result = ai_legal(board, use_level, false, 0, use_multi_thread, false, legal);
         if (ai_result.value != SCORE_UNDEFINED){
             new_leaf_value = ai_result.value;
             if (level == ADD_LEAF_SPECIAL_LEVEL)

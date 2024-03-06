@@ -101,17 +101,6 @@ Search_result ai_legal(Board board, int level, bool use_book, int book_acc_level
         res.nps = 0;
         res.is_end_search = false;
         res.probability = 100;
-    } else if (level == 0){
-        uint64_t legal = use_legal;
-        std::vector<int> move_lst;
-        for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal))
-            move_lst.emplace_back(cell);
-        res.policy = move_lst[myrandrange(0, (int)move_lst.size())];
-        res.value = value_sign * mid_evaluate(&board);
-        res.depth = 0;
-        res.nps = 0;
-        res.is_end_search = false;
-        res.probability = 0;
     } else{
         int depth;
         bool is_mid_search;
@@ -158,13 +147,21 @@ Analyze_result ai_analyze(Board board, int level, bool use_multi_thread, uint_fa
     res.played_move = played_move;
     res.played_score = played_result.value;
     res.played_depth = played_result.depth;
-    res.played_probability = SELECTIVITY_PERCENTAGE[played_result.probability];
+    res.played_probability = played_result.probability;
 
-    Search_result alt_result = ai_legal(board, level, true, 0, true, false, board.get_legal() ^ (1ULL << played_move));
-    res.alt_move = alt_result.policy;
-    res.alt_score = alt_result.value;
-    res.alt_depth = alt_result.depth;
-    res.alt_probability = SELECTIVITY_PERCENTAGE[alt_result.probability];
+    uint64_t alt_legal = board.get_legal() ^ (1ULL << played_move);
+    if (alt_legal){
+        Search_result alt_result = ai_legal(board, level, true, 0, true, false, alt_legal);
+        res.alt_move = alt_result.policy;
+        res.alt_score = alt_result.value;
+        res.alt_depth = alt_result.depth;
+        res.alt_probability = alt_result.probability;
+    } else{
+        res.alt_move = -1;
+        res.alt_score = -SCORE_INF;
+        res.alt_depth = -1;
+        res.alt_probability = 0;
+    }
     return res;
 }
 

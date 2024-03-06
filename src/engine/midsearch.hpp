@@ -503,7 +503,7 @@ std::pair<int, int> first_nega_scout_legal(Search *search, int alpha, int beta, 
             }
         }
     }
-    if (global_searching)
+    if (*searching && global_searching)
         transposition_table.reg(search, hash_code, depth, first_alpha, beta, v, best_move);
     return std::make_pair(v, best_move);
 }
