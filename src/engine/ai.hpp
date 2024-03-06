@@ -53,7 +53,8 @@ inline Search_result tree_search(Board board, int depth, uint_fast8_t mpc_level,
             }
         }
     }
-    Search_result res = lazy_smp(board, depth, mpc_level, show_log, clogs);
+    Search_result res;
+    res = lazy_smp(board, depth, mpc_level, show_log, clogs, use_multi_thread);
     res.clog_nodes = clog_nodes;
     res.clog_time = clog_time;
     transposition_table.update_date();

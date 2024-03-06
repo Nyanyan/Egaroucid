@@ -25,7 +25,7 @@ struct Lazy_SMP_task{
     bool is_end_search;
 };
 
-Search_result lazy_smp(Board board, int depth, uint_fast8_t mpc_level, bool show_log, std::vector<Clog_result> clogs){
+Search_result lazy_smp(Board board, int depth, uint_fast8_t mpc_level, bool show_log, std::vector<Clog_result> clogs, bool use_multi_thread){
     Search_result result;
     result.value = SCORE_UNDEFINED;
     result.nodes = 0;
@@ -47,25 +47,27 @@ Search_result lazy_smp(Board board, int depth, uint_fast8_t mpc_level, bool show
         }
         std::vector<Lazy_SMP_task> sub_tasks;
         int sub_depth = main_depth;
-        for (int i = 1; i < thread_pool.size(); ++i){
-            int sub_depth = main_depth + i;
-            int sub_mpc_level = main_mpc_level;
-            bool sub_is_end_search = false;
-            if (sub_depth >= max_depth){
-                if (main_is_end_search){
-                    sub_mpc_level = main_mpc_level + sub_depth - max_depth;
-                } else{
-                    sub_mpc_level = sub_depth - max_depth;
+        if (use_multi_thread){
+            for (int i = 1; i < thread_pool.size(); ++i){
+                int sub_depth = main_depth + i;
+                int sub_mpc_level = main_mpc_level;
+                bool sub_is_end_search = false;
+                if (sub_depth >= max_depth){
+                    if (main_is_end_search){
+                        sub_mpc_level = main_mpc_level + sub_depth - max_depth;
+                    } else{
+                        sub_mpc_level = sub_depth - max_depth;
+                    }
+                    sub_depth = max_depth;
+                    sub_is_end_search = true;
                 }
-                sub_depth = max_depth;
-                sub_is_end_search = true;
-            }
-            if (sub_mpc_level <= MPC_100_LEVEL){
-                Lazy_SMP_task sub_task;
-                sub_task.mpc_level = sub_mpc_level;
-                sub_task.depth = sub_depth;
-                sub_task.is_end_search = sub_is_end_search;
-                sub_tasks.emplace_back(sub_task);
+                if (sub_mpc_level <= MPC_100_LEVEL){
+                    Lazy_SMP_task sub_task;
+                    sub_task.mpc_level = sub_mpc_level;
+                    sub_task.depth = sub_depth;
+                    sub_task.is_end_search = sub_is_end_search;
+                    sub_tasks.emplace_back(sub_task);
+                }
             }
         }
         std::vector<std::future<int>> parallel_tasks;
@@ -83,7 +85,7 @@ Search_result lazy_smp(Board board, int depth, uint_fast8_t mpc_level, bool show
         }
         std::pair<int, int> id_result;
         Search main_search;
-        main_search.init(&board, main_mpc_level, true);
+        main_search.init(&board, main_mpc_level, use_multi_thread);
         id_result = first_nega_scout(&main_search, -SCORE_MAX, SCORE_MAX, result.value, main_depth, main_is_end_search, is_last_search_show_log, clogs, strt);
         sub_searching = false;
         for (std::future<int> &task: parallel_tasks){

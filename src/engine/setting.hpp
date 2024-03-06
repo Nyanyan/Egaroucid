@@ -168,7 +168,7 @@
 //#define USE_END_MPC false
 
 // All Node Prediction
-#define USE_ALL_NODE_PREDICTION_NWS true
+#define USE_ALL_NODE_PREDICTION_NWS false
 
 // transposition table
 #define USE_TRANSPOSITION_TABLE true
