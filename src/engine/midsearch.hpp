@@ -342,41 +342,6 @@ int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, uin
 }
 
 /*
-int nega_scout_lazy_smp(Search *search, int alpha, int beta, int depth, bool skipped, uint64_t legal, bool is_end_search, const bool *searching){
-    std::vector<std::future<int>> parallel_tasks;
-    std::vector<Search> searches;
-    int n_idle = thread_pool.get_n_idle();
-    for (int i = 0; i < n_idle; ++i){
-        Search n_search;
-        n_search.init_board(&search->board);
-        n_search.mpc_level = search->mpc_level;
-        n_search.n_nodes = 0ULL;
-        n_search.use_multi_thread = false;
-        calc_features(&n_search);
-        searches.emplace_back(n_search);
-    }
-    for (int i = 0; i < n_idle; ++i){
-        bool pushed;
-        parallel_tasks.emplace_back(thread_pool.push(&pushed, std::bind(&nega_scout, &searches[i], alpha, beta, depth, skipped, legal, is_end_search, searching)));
-        if (!pushed){
-            parallel_tasks.pop_back();
-            break;
-        }
-        if (n_idle <= thread_pool.get_n_idle())
-            break;
-    }
-    std::cerr << parallel_tasks.size() + 1 << " parallel" << std::endl;
-    int res = nega_scout(search, alpha, beta, depth, skipped, legal, is_end_search, searching);
-    uint64_t s = tim();
-    for (std::future<int> &task: parallel_tasks)
-        task.get();
-    for (int i = 0; i < n_idle; ++i)
-        search->n_nodes += searches[i].n_nodes;
-    return res;
-}
-*/
-
-/*
     @brief aspiration search used in endgame search
 
     Used in PV node, if predicted value is available
@@ -420,8 +385,7 @@ int pv_aspiration_search(Search *search, int alpha, int beta, int predicted_valu
     @param legal                legal moves in bitboard
     @return pair of value and best move
 */
-std::pair<int, int> first_nega_scout_legal(Search *search, int alpha, int beta, int predicted_value, int depth, bool is_end_search, const bool is_main_search, const std::vector<Clog_result> clogs, uint64_t legal, uint64_t strt){
-    bool searching = true;
+std::pair<int, int> first_nega_scout_legal(Search *search, int alpha, int beta, int predicted_value, int depth, bool is_end_search, const bool is_main_search, const std::vector<Clog_result> clogs, uint64_t legal, uint64_t strt, bool *searching){
     ++search->n_nodes;
     #if USE_SEARCH_STATISTICS
         ++search->n_nodes_discs[search->n_discs];
@@ -463,13 +427,13 @@ std::pair<int, int> first_nega_scout_legal(Search *search, int alpha, int beta, 
                 search->move(&flip_best);
                     if (v == -SCORE_INF){
                         if (predicted_value == SCORE_UNDEFINED || !is_end_search)
-                            g = -nega_scout(search, -beta, -alpha, depth - 1, false, LEGAL_UNDEFINED, is_end_search, &searching);
+                            g = -nega_scout(search, -beta, -alpha, depth - 1, false, LEGAL_UNDEFINED, is_end_search, searching);
                         else
-                            g = -pv_aspiration_search(search, -beta, -alpha, -predicted_value, depth - 1, false, LEGAL_UNDEFINED, is_end_search, &searching);
+                            g = -pv_aspiration_search(search, -beta, -alpha, -predicted_value, depth - 1, false, LEGAL_UNDEFINED, is_end_search, searching);
                     } else{
-                        g = -nega_alpha_ordering_nws(search, -alpha - 1, depth - 1, false, LEGAL_UNDEFINED, is_end_search, &searching);
+                        g = -nega_alpha_ordering_nws(search, -alpha - 1, depth - 1, false, LEGAL_UNDEFINED, is_end_search, searching);
                         if (alpha <= g && g < beta)
-                            g = -nega_scout(search, -beta, -g, depth - 1, false, LEGAL_UNDEFINED, is_end_search, &searching);
+                            g = -nega_scout(search, -beta, -g, depth - 1, false, LEGAL_UNDEFINED, is_end_search, searching);
                     }
                 search->undo(&flip_best);
                 if (v < g){
@@ -503,19 +467,19 @@ std::pair<int, int> first_nega_scout_legal(Search *search, int alpha, int beta, 
                     return std::make_pair(SCORE_MAX, (int)cell);
                 ++idx;
             }
-            move_list_evaluate(search, move_list, depth, alpha, beta, &searching);
+            move_list_evaluate(search, move_list, depth, alpha, beta, searching);
             for (int move_idx = 0; move_idx < canput; ++move_idx){
                 swap_next_best_move(move_list, move_idx, canput);
                 search->move(&move_list[move_idx].flip);
                     if (v == -SCORE_INF){
                         if (predicted_value == SCORE_UNDEFINED || !is_end_search)
-                            g = -nega_scout(search, -beta, -alpha, depth - 1, false, move_list[move_idx].n_legal, is_end_search, &searching);
+                            g = -nega_scout(search, -beta, -alpha, depth - 1, false, move_list[move_idx].n_legal, is_end_search, searching);
                         else
-                            g = -pv_aspiration_search(search, -beta, -alpha, -predicted_value, depth - 1, false, move_list[move_idx].n_legal, is_end_search, &searching);
+                            g = -pv_aspiration_search(search, -beta, -alpha, -predicted_value, depth - 1, false, move_list[move_idx].n_legal, is_end_search, searching);
                     } else{
-                        g = -nega_alpha_ordering_nws(search, -alpha - 1, depth - 1, false, move_list[move_idx].n_legal, is_end_search, &searching);
+                        g = -nega_alpha_ordering_nws(search, -alpha - 1, depth - 1, false, move_list[move_idx].n_legal, is_end_search, searching);
                         if (alpha <= g && g < beta)
-                            g = -nega_scout(search, -beta, -g, depth - 1, false, move_list[move_idx].n_legal, is_end_search, &searching);
+                            g = -nega_scout(search, -beta, -g, depth - 1, false, move_list[move_idx].n_legal, is_end_search, searching);
                     }
                 search->undo(&move_list[move_idx].flip);
                 if (v < g){
@@ -559,26 +523,7 @@ std::pair<int, int> first_nega_scout_legal(Search *search, int alpha, int beta, 
     @param clogs                previously found clog moves
     @return pair of value and best move
 */
-std::pair<int, int> first_nega_scout(Search *search, int alpha, int beta, int predicted_value, int depth, bool is_end_search, const bool is_main_search, const std::vector<Clog_result> clogs, uint64_t strt){
-    return first_nega_scout_legal(search, alpha, beta, predicted_value, depth, is_end_search, is_main_search, clogs, search->board.get_legal(), strt);
+std::pair<int, int> first_nega_scout(Search *search, int alpha, int beta, int predicted_value, int depth, bool is_end_search, const bool is_main_search, const std::vector<Clog_result> clogs, uint64_t strt, bool *searching){
+    return first_nega_scout_legal(search, alpha, beta, predicted_value, depth, is_end_search, is_main_search, clogs, search->board.get_legal(), strt, searching);
 }
 
-/*
-    @brief Wrapper of nega_scout
-
-    This function is used in root node
-
-    @param search               search information
-    @param alpha                alpha value
-    @param beta                 beta value
-    @param depth                remaining depth
-    @param is_end_search        search till the end?
-    @param is_main_search       is this main search? (used for logging)
-    @param best_move            previously calculated best move
-    @param legal                legal moves in bitboard
-    @return value
-*/
-int first_nega_scout_value(Search *search, int alpha, int beta, int depth, bool is_end_search, const bool is_main_search, bool passed, uint64_t legal){
-    std::vector<Clog_result> clogs;
-    return first_nega_scout(search, alpha, beta, SCORE_UNDEFINED, depth, is_end_search, is_main_search, clogs, tim()).first;
-}

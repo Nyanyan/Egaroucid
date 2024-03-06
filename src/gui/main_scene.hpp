@@ -1418,7 +1418,7 @@ private:
                     board = getData().history_elem.board;
                     calc_flip(&flip, &board, (uint_fast8_t)(HW2_M1 - value_cell.second));
                     board.move_board(&flip);
-                    ai_status.hint_task_stack.emplace_back(std::make_pair(value_cell.second, std::bind(ai_hint, board, ai_status.hint_level, getData().menu_elements.use_book, ai_status.hint_use_multi_thread, false)));
+                    ai_status.hint_task_stack.emplace_back(std::make_pair(value_cell.second, std::bind(ai, board, ai_status.hint_level, getData().menu_elements.use_book, 0, ai_status.hint_use_multi_thread, false)));
                 }
             }
             ai_status.hint_n_doing_tasks = 0;

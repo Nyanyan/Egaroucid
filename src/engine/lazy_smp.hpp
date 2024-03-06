@@ -25,7 +25,7 @@ struct Lazy_SMP_task{
     bool is_end_search;
 };
 
-Search_result lazy_smp(Board board, int depth, uint_fast8_t mpc_level, bool show_log, std::vector<Clog_result> clogs, bool use_multi_thread){
+Search_result lazy_smp(Board board, int depth, uint_fast8_t mpc_level, bool show_log, std::vector<Clog_result> clogs, uint64_t use_legal, bool use_multi_thread){
     Search_result result;
     result.value = SCORE_UNDEFINED;
     result.nodes = 0;
@@ -70,14 +70,14 @@ Search_result lazy_smp(Board board, int depth, uint_fast8_t mpc_level, bool show
                 }
             }
         }
-        std::vector<std::future<int>> parallel_tasks;
+        std::vector<std::future<std::pair<int, int>>> parallel_tasks;
         bool sub_searching = true;
         std::vector<Search> searches(sub_tasks.size());
         for (int i = 0; i < (int)sub_tasks.size(); ++i){
             bool pushed = false;
             searches[i].init(&board, sub_tasks[i].mpc_level, false);
             while (!pushed){
-                parallel_tasks.emplace_back(thread_pool.push(&pushed, std::bind(&nega_scout, &searches[i], -SCORE_MAX, SCORE_MAX, sub_tasks[i].depth, false, LEGAL_UNDEFINED, sub_tasks[i].is_end_search, &sub_searching)));
+                parallel_tasks.emplace_back(thread_pool.push(&pushed, std::bind(&first_nega_scout_legal, &searches[i], -SCORE_MAX, SCORE_MAX, result.value, sub_tasks[i].depth, sub_tasks[i].is_end_search, false, clogs, use_legal, strt, &sub_searching)));
                 if (!pushed){
                     parallel_tasks.pop_back();
                 }
@@ -86,9 +86,10 @@ Search_result lazy_smp(Board board, int depth, uint_fast8_t mpc_level, bool show
         std::pair<int, int> id_result;
         Search main_search;
         main_search.init(&board, main_mpc_level, use_multi_thread);
-        id_result = first_nega_scout(&main_search, -SCORE_MAX, SCORE_MAX, result.value, main_depth, main_is_end_search, is_last_search_show_log, clogs, strt);
+        bool searching = true;
+        id_result = first_nega_scout_legal(&main_search, -SCORE_MAX, SCORE_MAX, result.value, main_depth, main_is_end_search, is_last_search_show_log, clogs, use_legal, strt, &searching);
         sub_searching = false;
-        for (std::future<int> &task: parallel_tasks){
+        for (std::future<std::pair<int, int>> &task: parallel_tasks){
             task.get();
         }
         for (Search &search: searches){
