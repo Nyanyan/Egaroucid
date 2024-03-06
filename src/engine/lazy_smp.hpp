@@ -160,6 +160,7 @@ void lazy_smp_hint(Board board, int depth, uint_fast8_t mpc_level, bool show_log
         }
         std::vector<Lazy_SMP_task> sub_tasks;
         int sub_depth = main_depth;
+        /*
         if (use_multi_thread){
             for (int i = 1; i < thread_pool.get_n_idle() / 2; ++i){
                 int sub_depth = main_depth + i;
@@ -183,6 +184,7 @@ void lazy_smp_hint(Board board, int depth, uint_fast8_t mpc_level, bool show_log
                 }
             }
         }
+        */
         std::vector<std::future<void>> parallel_tasks;
         bool sub_searching = true;
         std::vector<Search> searches(sub_tasks.size());

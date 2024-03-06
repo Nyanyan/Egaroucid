@@ -1253,7 +1253,7 @@ private:
         if (ai_status.hint_calculating || ai_status.hint_calculated) {
             std::vector<Hint_info> hint_infos;
             for (int cell = 0; cell < HW2; ++cell) {
-                if (ai_status.hint_use[HW2_M1 - cell]) {
+                if (ai_status.hint_use[HW2_M1 - cell] && -HW2 <= ai_status.hint_values[HW2_M1 - cell] && ai_status.hint_values[HW2_M1 - cell] <= HW2) {
                     Hint_info hint_info;
                     hint_info.value = ai_status.hint_values[HW2_M1 - cell];
                     hint_info.cell = cell;

@@ -546,7 +546,7 @@ void first_nega_scout_hint(Search *search, int depth, int max_depth, bool is_end
         value_policies.emplace_back(elem);
     }
     std::sort(value_policies.begin(), value_policies.end());
-    int n_threshold = n_display + ((int)value_policies.size() - n_display) * std::max(0, max_depth - depth - 3) / max_depth;
+    int n_threshold = n_display + 1 + ((int)value_policies.size() - n_display) * std::max(0, max_depth - depth) / max_depth;
     if (n_threshold > (int)value_policies.size()){
         n_threshold = (int)value_policies.size();
     }
