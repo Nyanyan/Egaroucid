@@ -78,7 +78,6 @@ public:
         getData().resources.logo.scaled((double)icon_width * 0.8 / getData().resources.logo.width()).draw(RIGHT_LEFT, Y_CENTER - 40);
         if (close_future.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
             close_future.get();
-            //thread_pool.terminate();
             System::Exit();
         }
         getData().fonts.font(language.get("closing")).draw(50, RIGHT_LEFT, Y_CENTER + 40, getData().colors.white);

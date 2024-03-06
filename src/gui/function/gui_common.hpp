@@ -358,7 +358,6 @@ struct Fonts {
             font = font_SC;
             font_bold = font_bold_SC;
             font_heavy = font_heavy_SC;
-            std::cerr << "changed font for your language" << std::endl;
         } else{ // japanese / english
             font = font_default;
             font_bold = font_bold_default;
@@ -368,7 +367,6 @@ struct Fonts {
     }
 
     void add_fallback(){
-        std::cerr << "adding fallback for your font" << std::endl;
 
         // japanese / english
         font.addFallback(font_default);
