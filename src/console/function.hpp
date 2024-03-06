@@ -53,6 +53,7 @@ void solve_problems(std::vector<std::string> arg, Options *options, State *state
             start_thread_monitor();
         #endif
         Search_result res = go_noprint(&board, options, state);
+        transposition_table.reset_importance();
         print_search_result_body(res, options->level);
         transposition_table.init();
         total.nodes += res.nodes;
@@ -125,7 +126,6 @@ std::string self_play_task(Options *options, bool use_multi_thread, int n_random
         board.move_board(&flip);
     }
     while (board.check_pass()){
-        while (use_multi_thread && transposition_table.get_date() >= MAX_DATE - thread_pool.size() - SELFPLAY_TT_DATE_MARGIN);
         result = ai(board, options->level, true, 0, false, options->show_log); // search in single thread
         calc_flip(&flip, &board, result.policy);
         res += idx_to_coord(flip.pos);
@@ -163,10 +163,6 @@ void self_play(std::vector<std::string> arg, Options *options, State *state){
         int n_games_done = 0;
         std::vector<std::future<std::string>> tasks;
         while (n_games_done < n_games){
-            if (transposition_table.get_date() >= MAX_DATE - thread_pool.size() - SELFPLAY_TT_DATE_MARGIN){
-                //transposition_table.reset_date_new_thread(thread_pool.size());
-                transposition_table.reset_date();
-            }
             if (thread_pool.get_n_idle() && (int)tasks.size() < n_games){
                 bool pushed = false;
                 tasks.emplace_back(thread_pool.push(&pushed, std::bind(&self_play_task, options, true, n_random_moves)));
