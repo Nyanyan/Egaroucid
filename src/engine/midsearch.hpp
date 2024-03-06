@@ -538,7 +538,10 @@ void first_nega_scout_hint(Search *search, int depth, bool is_end_search, uint64
         search->move(&flip);
             int g = -nega_scout(search, -SCORE_MAX, SCORE_MAX, depth - 1, false, LEGAL_UNDEFINED, is_end_search, searching);
             if (is_main_thread){
-                values[cell] = g;
+                if (values[cell] == SCORE_UNDEFINED)
+                    values[cell] = g;
+                else
+                    values[cell] = (0.9 * values[cell] + 1.1 * g) / 2.0;
             }
         search->undo(&flip);
     }
