@@ -17,9 +17,6 @@
 #include "endsearch.hpp"
 #include "thread_pool.hpp"
 
-#define N_PARALLEL_MAX 128
-#define MAIN_THREAD_IDX 0
-
 #define LAZYSMP_ENDSEARCH_PRESEARCH_COE 0.7
 
 struct Lazy_SMP_task{
@@ -49,8 +46,9 @@ Search_result lazy_smp(Board board, int depth, uint_fast8_t mpc_level, bool show
             main_depth = max_depth;
         }
         std::vector<Lazy_SMP_task> sub_tasks;
-        for (int thread_idx = MAIN_THREAD_IDX + 1; thread_idx < N_PARALLEL_MAX && (int)sub_tasks.size() < thread_pool.size() - 1; ++thread_idx){
-            int sub_depth = main_depth + thread_idx - MAIN_THREAD_IDX;
+        int sub_depth = main_depth;
+        for (int i = 1; i < thread_pool.size(); ++i){
+            int sub_depth = main_depth + i;
             int sub_mpc_level = main_mpc_level;
             bool sub_is_end_search = false;
             if (sub_depth >= max_depth){
