@@ -242,7 +242,6 @@ int nega_alpha_end_nws(Search *search, int alpha, bool skipped, uint64_t legal, 
         return lower;
     if (upper <= alpha)
         return upper;
-    Flip flip_best;
     int best_move = TRANSPOSITION_TABLE_UNDEFINED;
     int g;
     const int canput = pop_count_ull(legal);
