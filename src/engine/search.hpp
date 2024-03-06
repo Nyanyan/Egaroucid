@@ -211,6 +211,7 @@ struct YBWC_result{
 };
 
 struct YBWC_task{
+    std::mutex mtx;
     Board board;
     uint_fast8_t mpc_level;
     int depth;
@@ -220,12 +221,17 @@ struct YBWC_task{
     YBWC_result *ybwc_result;
 };
 
-struct YBWC_search{
+struct YBWC_state{
     std::mutex mtx;
     bool waiting;
     bool helping;
-    YBWC_task task;
-    YBWC_result *parent_ybwc_result;
+    std::atomic<int> *atomic_running_count;
+
+    YBWC_state(){
+        waiting = false;
+        helping = false;
+        atomic_running_count = nullptr;
+    }
 };
 
 /*
@@ -255,8 +261,9 @@ class Search{
         #if USE_SEARCH_STATISTICS
             uint64_t n_nodes_discs[HW2];
         #endif
-        YBWC_search ybwc;
         Search *parent;
+        YBWC_task ybwc_task;
+        YBWC_state ybwc_state;
 
     public:
         /*
@@ -264,7 +271,7 @@ class Search{
 
             @param init_board           a board to set
         */
-        inline void init(Board *init_board, uint_fast8_t init_mpc_level, bool init_use_multi_thread, Search *init_parent, YBWC_result *init_parent_ybwc_result){
+        inline void init(Board *init_board, uint_fast8_t init_mpc_level, bool init_use_multi_thread, Search *init_parent){
             board = init_board->copy();
             n_discs = board.n_discs();
             strt_n_discs = n_discs;
@@ -277,9 +284,6 @@ class Search{
             mpc_level = init_mpc_level;
             use_multi_thread = init_use_multi_thread;
             n_nodes = 0;
-            ybwc.waiting = false;
-            ybwc.helping = false;
-            ybwc.parent_ybwc_result = init_parent_ybwc_result;
             parent = init_parent;
         }
 
@@ -298,9 +302,6 @@ class Search{
             parity |= (1 & pop_count_ull(empty & 0x0F0F0F0F00000000ULL)) << 2;
             parity |= (1 & pop_count_ull(empty & 0xF0F0F0F000000000ULL)) << 3;
             calc_eval_features(&board, &eval);
-            ybwc.waiting = false;
-            ybwc.helping = false;
-            ybwc.parent_ybwc_result = nullptr;
             parent = nullptr;
         }
 

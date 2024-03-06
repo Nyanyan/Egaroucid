@@ -47,7 +47,7 @@ int nega_alpha_ordering_nws(Search *search, int alpha, int depth, bool skipped, 
 */
 void ybwc_do_task_nws(Board board, int_fast8_t n_discs, uint_fast8_t parity, uint_fast8_t mpc_level, int alpha, int depth, uint64_t legal, bool is_end_search, uint_fast8_t policy, const bool *searching, YBWC_result *ybwc_result, Search *parent){
     Search search;
-    search.init(&board, mpc_level, depth > YBWC_MID_SPLIT_MIN_DEPTH, parent, ybwc_result);
+    search.init(&board, mpc_level, depth > YBWC_MID_SPLIT_MIN_DEPTH, parent);
     int value = -nega_alpha_ordering_nws(&search, alpha, depth, false, legal, is_end_search, searching);
     if (!(*searching))
         value = SCORE_UNDEFINED;
@@ -64,26 +64,23 @@ void ybwc_do_task_nws(Board board, int_fast8_t n_discs, uint_fast8_t parity, uin
 }
 
 bool ybwc_ask_help(Search *search, int depth, int alpha, uint_fast8_t policy, bool *searching, YBWC_result *ybwc_result){
-    if (!search->ybwc.helping && search->parent != nullptr){
+    if (!search->ybwc_state.helping && search->parent != nullptr){
         bool pushed = false;
         {
-            std::lock_guard lock(search->parent->ybwc.mtx);
-            std::lock_guard lock2(search->ybwc.parent_ybwc_result->mtx);
-            if (search->parent->ybwc.waiting && !search->parent->ybwc.helping){
-                if (search->ybwc.parent_ybwc_result->running_count < YBWC_HELP_RUNNING_COUNT_DIFF && search->ybwc.parent_ybwc_result->running_count > 0){
-                    search->parent->ybwc.task.board = search->board.copy();
-                    search->parent->ybwc.task.depth = depth;
-                    search->parent->ybwc.task.alpha = alpha;
-                    search->parent->ybwc.task.mpc_level = search->mpc_level;
-                    search->parent->ybwc.task.policy = policy;
-                    search->parent->ybwc.task.searching = searching;
-                    search->parent->ybwc.task.ybwc_result = ybwc_result;
-                    //search->parent->ybwc.helping = true;
-                    pushed = true;
-                    search->ybwc.parent_ybwc_result->running_count.fetch_add(YBWC_HELP_RUNNING_COUNT_DIFF);
-                    std::cerr << "call " << search->ybwc.parent_ybwc_result->running_count << " " << &(search->ybwc.parent_ybwc_result->running_count) << std::endl;
-                    search->ybwc.parent_ybwc_result->running_count.notify_all();
-                }
+            std::lock_guard lock(search->parent->ybwc_state.mtx);
+            std::lock_guard lock2(search->parent->ybwc_task.mtx);
+            if (search->parent->ybwc_state.waiting && !search->parent->ybwc_state.helping && *search->parent->ybwc_state.atomic_running_count < YBWC_HELP_RUNNING_COUNT_DIFF && *search->parent->ybwc_state.atomic_running_count > 0){
+                search->parent->ybwc_task.board = search->board.copy();
+                search->parent->ybwc_task.depth = depth;
+                search->parent->ybwc_task.alpha = alpha;
+                search->parent->ybwc_task.mpc_level = search->mpc_level;
+                search->parent->ybwc_task.policy = policy;
+                search->parent->ybwc_task.searching = searching;
+                search->parent->ybwc_task.ybwc_result = ybwc_result;
+                search->parent->ybwc_state.atomic_running_count->fetch_add(YBWC_HELP_RUNNING_COUNT_DIFF);
+                search->parent->ybwc_state.atomic_running_count->notify_all();
+                //std::cerr << "call " << (*search->parent->ybwc_state.atomic_running_count) << " " << search->parent->ybwc_state.atomic_running_count << std::endl;
+                pushed = true;
             }
         }
         return pushed;
@@ -169,10 +166,8 @@ inline void ybwc_wait_all_stopped(Search *search, int *running_count, YBWC_resul
     @param searching            flag for terminating this search
 */
 inline void ybwc_wait_all_nws(Search *search, int *running_count, int *v, int *best_move, int alpha, const bool *searching, bool *n_searching, YBWC_result *ybwc_result){
-    {
-        std::lock_guard lock(search->ybwc.mtx);
-        search->ybwc.waiting = true;
-    }
+    search->ybwc_state.atomic_running_count = &ybwc_result->running_count;
+    search->ybwc_state.waiting = true;
     while (*running_count){
         *n_searching &= (*searching);
         ybwc_result->running_count.wait(*running_count);
@@ -188,37 +183,39 @@ inline void ybwc_wait_all_nws(Search *search, int *running_count, int *v, int *b
         }
         *n_searching &= (alpha >= (*v));
         {
-            std::lock_guard lock(search->ybwc.mtx);
-            std::lock_guard lock2(ybwc_result->mtx);
+            std::lock_guard lock(search->ybwc_state.mtx);
             if (ybwc_result->running_count >= YBWC_HELP_RUNNING_COUNT_DIFF){
-                search->ybwc.helping = true;
-                //std::cerr << "w";
-                std::cerr << "wake " << ybwc_result->running_count << " " << &(ybwc_result->running_count) << " " << *running_count << " " << search->ybwc.helping << std::endl;
+                search->ybwc_state.helping = true;
                 Search help_search;
-                help_search.init(&search->ybwc.task.board, search->ybwc.task.mpc_level, search->ybwc.task.depth > YBWC_MID_SPLIT_MIN_DEPTH, nullptr, nullptr);
-                help_search.ybwc.helping = true;
-                bool ybwc_is_end_search = help_search.n_discs + search->ybwc.task.depth >= HW2;
-                int value = -nega_alpha_ordering_nws(&help_search, search->ybwc.task.alpha, search->ybwc.task.depth, false, LEGAL_UNDEFINED, ybwc_is_end_search, search->ybwc.task.searching);
+                int ybwc_alpha, ybwc_depth;
+                bool ybwc_is_end_search;
+                bool *ybwc_searching;
+                std::cerr << "wake " << ybwc_result->running_count << " " << &(ybwc_result->running_count) << " " << *running_count << " " << search->ybwc_state.helping << std::endl;
+                help_search.init(&search->ybwc_task.board, search->ybwc_task.mpc_level, search->ybwc_task.depth > YBWC_MID_SPLIT_MIN_DEPTH, nullptr);
+                help_search.ybwc_state.helping = true;
+                ybwc_alpha = search->ybwc_task.alpha;
+                ybwc_depth = search->ybwc_task.depth;
+                ybwc_is_end_search = help_search.n_discs + search->ybwc_task.depth >= HW2;
+                ybwc_searching = search->ybwc_task.searching;
+                int value = -nega_alpha_ordering_nws(&help_search, ybwc_alpha, ybwc_depth, false, LEGAL_UNDEFINED, ybwc_is_end_search, ybwc_searching);
                 {
-                    std::lock_guard lock(search->ybwc.task.ybwc_result->mtx);
-                    if (value > search->ybwc.task.ybwc_result->value && *search->ybwc.task.searching){
-                        search->ybwc.task.ybwc_result->value = value;
-                        search->ybwc.task.ybwc_result->best_move = search->ybwc.task.policy;
+                    std::lock_guard lock(search->ybwc_task.ybwc_result->mtx);
+                    if (value > search->ybwc_task.ybwc_result->value && *search->ybwc_task.searching){
+                        search->ybwc_task.ybwc_result->value = value;
+                        search->ybwc_task.ybwc_result->best_move = search->ybwc_task.policy;
                     }
-                    search->ybwc.task.ybwc_result->n_nodes += help_search.n_nodes;
+                    search->ybwc_task.ybwc_result->n_nodes += help_search.n_nodes;
+                    search->ybwc_state.helping = false;
+                    search->ybwc_task.ybwc_result->running_count.fetch_sub(1);
+                    search->ybwc_task.ybwc_result->running_count.notify_all();
+                    //std::cerr << "END " << ybwc_result->running_count << " " << &(ybwc_result->running_count) << " " << *running_count << " " << search->ybwc_state.helping << std::endl;
                 }
-                search->ybwc.task.ybwc_result->running_count.fetch_sub(1);
-                search->ybwc.task.ybwc_result->running_count.notify_all();
-                search->ybwc.helping = false;
                 ybwc_result->running_count.fetch_sub(YBWC_HELP_RUNNING_COUNT_DIFF);
-                std::cerr << "END " << ybwc_result->running_count << " " << *running_count << " " << search->ybwc.helping << std::endl;
             }
         }
     }
-    {
-        std::lock_guard lock(search->ybwc.mtx);
-        search->ybwc.waiting = false;
-    }
+    search->ybwc_state.waiting = false;
+    search->ybwc_state.atomic_running_count = nullptr;
     /*
     ybwc_get_end_tasks(search, parallel_tasks, v, best_move, running_count);
     *n_searching &= (alpha >= (*v));
