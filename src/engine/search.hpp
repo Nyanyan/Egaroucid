@@ -225,12 +225,12 @@ struct YBWC_state{
     std::mutex mtx;
     bool waiting;
     bool helping;
-    std::atomic<int> *atomic_running_count;
+    YBWC_result *ybwc_result;
 
     YBWC_state(){
         waiting = false;
         helping = false;
-        atomic_running_count = nullptr;
+        ybwc_result = nullptr;
     }
 };
 
