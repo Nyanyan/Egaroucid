@@ -151,90 +151,22 @@ Search_result ai(Board board, int level, bool use_book, int book_acc_level, bool
     @param use_multi_thread     search in multi thread?
     @return the result in Search_result structure
 */
-/*
+
 Analyze_result ai_analyze(Board board, int level, bool use_multi_thread, uint_fast8_t played_move){
     Analyze_result res;
+    Search_result played_result = ai_legal(board, level, true, 0, true, false, 1ULL << played_move);
     res.played_move = played_move;
-    int got_depth, depth;
-    bool is_mid_search;
-    uint_fast8_t mpc_level;
-    get_level(level, board.n_discs() - 4, &is_mid_search, &got_depth, &mpc_level);
-    if (got_depth - 1 >= 0)
-        depth = got_depth - 1;
-    else
-        depth = got_depth;
-    Search search;
-    search.init_board(&board);
-    search.n_nodes = 0ULL;
-    search.mpc_level = mpc_level;
-    #if USE_SEARCH_STATISTICS
-        for (int i = 0; i < HW2; ++i)
-            search.n_nodes_discs[i] = 0;
-    #endif
-    search.use_multi_thread = use_multi_thread;
-    Book_elem book_elem = book.get(&search.board);
-    std::vector<Book_value> links = book.get_all_moves_with_value(&search.board);
-    Flip flip;
-    calc_flip(&flip, &search.board, played_move);
-    search.move(&flip);
-        res.played_score = book_elem.value;
-        if (res.played_score != SCORE_UNDEFINED){
-            res.played_depth = SEARCH_BOOK;
-            res.played_probability = SELECTIVITY_PERCENTAGE[MPC_100_LEVEL];
-        } else{
-            res.played_score = -first_nega_scout_value(&search, -SCORE_MAX, SCORE_MAX, depth, !is_mid_search, false, false, search.board.get_legal());
-            res.played_depth = got_depth;
-            res.played_probability = SELECTIVITY_PERCENTAGE[mpc_level];
-        }
-    search.undo(&flip);
-    uint64_t legal = search.board.get_legal() ^ (1ULL << played_move);
-    if (legal){
-        uint64_t legal_copy = legal;
-        bool book_found = false;
-        Flip flip;
-        int g, v = -INF, best_move = -1;
-        for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)){
-            calc_flip(&flip, &search.board, cell);
-            search.board.move_board(&flip);
-                g = SCORE_UNDEFINED;
-                for (Book_value book_value: links){
-                    if (book_value.policy == cell){
-                        g = book_value.value;
-                        break;
-                    }
-                }
-                if (g != SCORE_UNDEFINED){
-                    book_found = true;
-                    if (v < g){
-                        v = g;
-                        best_move = flip.pos;
-                    }
-                }
-            search.board.undo_board(&flip);
-        }
-        if (book_found){
-            res.alt_move = best_move;
-            res.alt_score = v;
-            res.alt_depth = SEARCH_BOOK;
-            res.alt_probability = SELECTIVITY_PERCENTAGE[MPC_100_LEVEL];
-        } else{
-            std::vector<Clog_result> clogs;
-            uint64_t strt = tim();
-            std::pair<int, int> nega_scout_res = first_nega_scout_legal(&search, -SCORE_MAX, SCORE_MAX, SCORE_UNDEFINED, got_depth, !is_mid_search, false, clogs, legal_copy, strt);
-            res.alt_move = nega_scout_res.second;
-            res.alt_score = nega_scout_res.first;
-            res.alt_depth = got_depth;
-            res.alt_probability = SELECTIVITY_PERCENTAGE[mpc_level];
-        }
-    } else{
-        res.alt_move = -1;
-        res.alt_score = SCORE_UNDEFINED;
-        res.alt_depth = -1;
-        res.alt_probability = -1;
-    }
+    res.played_score = played_result.value;
+    res.played_depth = played_result.depth;
+    res.played_probability = SELECTIVITY_PERCENTAGE[played_result.probability];
+
+    Search_result alt_result = ai_legal(board, level, true, 0, true, false, board.get_legal() ^ (1ULL << played_move));
+    res.alt_move = alt_result.policy;
+    res.alt_score = alt_result.value;
+    res.alt_depth = alt_result.depth;
+    res.alt_probability = SELECTIVITY_PERCENTAGE[alt_result.probability];
     return res;
 }
-*/
 
 Search_result ai_accept_loss(Board board, int level, int acceptable_loss){
     uint64_t strt = tim();
