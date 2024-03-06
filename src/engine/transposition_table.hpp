@@ -25,7 +25,7 @@
 #define TRANSPOSITION_TABLE_N_LOOP 3
 constexpr size_t TRANSPOSITION_TABLE_STACK_SIZE = hash_sizes[DEFAULT_HASH_LEVEL] + TRANSPOSITION_TABLE_N_LOOP - 1;
 #define N_TRANSPOSITION_MOVES 2
-#define TT_REGISTER_THRESHOLD_RATE 3.0
+#define TT_REGISTER_THRESHOLD_RATE 4.0
 
 inline uint32_t get_level_common(uint8_t depth, uint8_t mpc_level){
     return ((uint32_t)depth << 8) | mpc_level;
@@ -586,7 +586,7 @@ class Transposition_table{
         }
 
         inline void reset_importance_proc(){
-            std::cerr << "importance reset n_registered " << n_registered << " threshold " << n_registered_threshold << " table_size " << table_size << std::endl;
+            //std::cerr << "importance reset n_registered " << n_registered << " threshold " << n_registered_threshold << " table_size " << table_size << std::endl;
             for (size_t i = 0; i < std::min(table_size, (size_t)TRANSPOSITION_TABLE_STACK_SIZE); ++i)
                 table_stack[i].data.set_importance_zero();
             if (table_size > TRANSPOSITION_TABLE_STACK_SIZE){
