@@ -195,14 +195,28 @@ struct Analyze_result{
     int alt_probability;
 };
 
+struct YBWC_result{
+    std::mutex mtx;
+    int value;
+    int best_move;
+    uint64_t n_nodes;
+    std::atomic<int> running_count;
+
+    YBWC_result(){
+        value = -SCORE_INF;
+        n_nodes = 0;
+        running_count = 0;
+    }
+};
+
 struct YBWC_task{
     Board board;
     uint_fast8_t mpc_level;
     int depth;
     int alpha;
-    int beta;
+    int policy;
     bool *searching;
-    int value;
+    YBWC_result *ybwc_result;
 };
 
 /*
@@ -221,6 +235,7 @@ struct YBWC_task{
 */
 class Search{
     public:
+        std::mutex mtx;
         Board board;
         int_fast8_t strt_n_discs;
         int_fast8_t n_discs;
@@ -235,8 +250,34 @@ class Search{
         bool waiting;
         bool helping;
         YBWC_task task;
+        Search *parent;
+        //YBWC_result *parent_ybwc_result;
 
     public:
+        /*
+            @brief Initialize with board
+
+            @param init_board           a board to set
+        */
+        inline void init(Board *init_board, uint_fast8_t init_mpc_level, bool init_use_multi_thread, Search *init_parent, YBWC_result *init_parent_ybwc_result){
+            board = init_board->copy();
+            n_discs = board.n_discs();
+            strt_n_discs = n_discs;
+            uint64_t empty = ~(board.player | board.opponent);
+            parity = 1 & pop_count_ull(empty & 0x000000000F0F0F0FULL);
+            parity |= (1 & pop_count_ull(empty & 0x00000000F0F0F0F0ULL)) << 1;
+            parity |= (1 & pop_count_ull(empty & 0x0F0F0F0F00000000ULL)) << 2;
+            parity |= (1 & pop_count_ull(empty & 0xF0F0F0F000000000ULL)) << 3;
+            calc_eval_features(&board, &eval);
+            mpc_level = init_mpc_level;
+            use_multi_thread = init_use_multi_thread;
+            n_nodes = 0;
+            waiting = false;
+            helping = false;
+            parent = init_parent;
+            //parent_ybwc_result = init_parent_ybwc_result;
+        }
+
         /*
             @brief Initialize with board
 
@@ -254,6 +295,8 @@ class Search{
             calc_eval_features(&board, &eval);
             waiting = false;
             helping = false;
+            parent = nullptr;
+            //parent_ybwc_result = nullptr;
         }
 
         /*
