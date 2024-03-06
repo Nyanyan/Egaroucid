@@ -42,6 +42,14 @@
 // undefined legal bitboard: set bit on d4, d5, e4, and e5
 #define LEGAL_UNDEFINED 0x0000001818000000ULL
 
+struct Value_policy{
+    int value;
+    int policy;
+    bool operator<( const Value_policy other ) const {
+        return value > other.value;
+    }
+};
+
 /*
     @brief timing function
 

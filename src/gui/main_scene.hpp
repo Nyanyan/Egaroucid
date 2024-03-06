@@ -1361,7 +1361,7 @@ private:
         for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)){
             ai_status.hint_use[cell] = true;
         }
-        ai_status.hint_future = std::async(std::launch::async, std::bind(ai_hint, getData().history_elem.board, getData().menu_elements.level, getData().menu_elements.use_book, 0, true, true, 100, ai_status.hint_values, ai_status.hint_types));
+        ai_status.hint_future = std::async(std::launch::async, std::bind(ai_hint, getData().history_elem.board, getData().menu_elements.level, getData().menu_elements.use_book, 0, true, false, getData().menu_elements.n_disc_hint, ai_status.hint_values, ai_status.hint_types));
     }
 
     void try_hint_get(){

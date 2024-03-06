@@ -161,7 +161,7 @@ void lazy_smp_hint(Board board, int depth, uint_fast8_t mpc_level, bool show_log
         std::vector<Lazy_SMP_task> sub_tasks;
         int sub_depth = main_depth;
         if (use_multi_thread){
-            for (int i = 1; i < thread_pool.get_n_idle(); ++i){
+            for (int i = 1; i < thread_pool.get_n_idle() / 2; ++i){
                 int sub_depth = main_depth + i;
                 int sub_mpc_level = main_mpc_level;
                 bool sub_is_end_search = false;
@@ -190,7 +190,7 @@ void lazy_smp_hint(Board board, int depth, uint_fast8_t mpc_level, bool show_log
             bool pushed = false;
             searches[i].init(&board, sub_tasks[i].mpc_level, false);
             while (!pushed){
-                parallel_tasks.emplace_back(thread_pool.push(&pushed, std::bind(&first_nega_scout_hint, &searches[i], sub_tasks[i].depth, sub_tasks[i].is_end_search, use_legal, &sub_searching, false, values)));
+                parallel_tasks.emplace_back(thread_pool.push(&pushed, std::bind(&first_nega_scout_hint_sub_thread, &searches[i], sub_tasks[i].depth, sub_tasks[i].is_end_search, use_legal, &sub_searching)));
                 if (!pushed){
                     parallel_tasks.pop_back();
                 }
@@ -199,31 +199,28 @@ void lazy_smp_hint(Board board, int depth, uint_fast8_t mpc_level, bool show_log
         Search main_search;
         main_search.init(&board, main_mpc_level, use_multi_thread);
         bool searching = true;
-        first_nega_scout_hint(&main_search, main_depth, main_is_end_search, use_legal, &searching, true, values);
-        sub_searching = false;
-        int now_level = main_depth;
+        int hint_type = main_depth;
         if (main_is_end_search){ // endgame & this is last search
-            now_level = SELECTIVITY_PERCENTAGE[main_mpc_level];
+            hint_type = SELECTIVITY_PERCENTAGE[main_mpc_level];
         }
         uint64_t use_legal_copy = use_legal;
-        for (uint_fast8_t cell = first_bit(&use_legal_copy); use_legal_copy; cell = next_bit(&use_legal_copy)){
-            hint_types[cell] = now_level;
-        }
+        first_nega_scout_hint(&main_search, main_depth, depth, main_is_end_search, use_legal, &searching, values, hint_types, hint_type, n_display);
+        sub_searching = false;
         for (std::future<void> &task: parallel_tasks){
             task.get();
         }
+        if (is_last_search_show_log){
+            std::cerr << "main ";
+        } else{
+            std::cerr << "pre ";
+        }
+        if (main_is_end_search){
+            std::cerr << "end ";
+        } else{
+            std::cerr << "mid ";
+        }
+        std::cerr << "depth " << main_depth << "@" << SELECTIVITY_PERCENTAGE[main_mpc_level] << "%" << " n_worker " << sub_tasks.size() << std::endl;
         if (show_log){
-            if (is_last_search_show_log){
-                std::cerr << "main ";
-            } else{
-                std::cerr << "pre ";
-            }
-            if (main_is_end_search){
-                std::cerr << "end ";
-            } else{
-                std::cerr << "mid ";
-            }
-            std::cerr << "depth " << main_depth << "@" << SELECTIVITY_PERCENTAGE[main_mpc_level] << "%" << std::endl;
             for (int y = 0; y < HW; ++y){
                 for (int x = 0; x < HW; ++x){
                     int cell = HW2_M1 - y * 8 - x;
