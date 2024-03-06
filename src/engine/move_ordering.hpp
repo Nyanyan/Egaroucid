@@ -40,7 +40,7 @@
     #define N_MOVE_ORDERING_PARAM 12
     int move_ordering_param_array[N_MOVE_ORDERING_PARAM] = {
         37, 11, 289, 92, 
-        19, 21, 9, 17, 
+        21, 23, 9, 24, 
         41, 6, 
         9, 8
     };
@@ -73,10 +73,10 @@
     #define W_VALUE_DEEP_ADDITIONAL 92
 
     // midgame null window search
-    #define W_NWS_MOBILITY 17
-    #define W_NWS_POTENTIAL_MOBILITY 19
-    #define W_NWS_VALUE 14
-    #define W_NWS_VALUE_DEEP_ADDITIONAL 11
+    #define W_NWS_MOBILITY 21
+    #define W_NWS_POTENTIAL_MOBILITY 23
+    #define W_NWS_VALUE 9
+    #define W_NWS_VALUE_DEEP_ADDITIONAL 24
 
     // endgame null window search
     #define W_END_NWS_MOBILITY 41
@@ -247,11 +247,29 @@ inline void move_evaluate_nws(Search *search, Flip_value *flip_value, int alpha,
             flip_value->value -= nega_alpha_eval1_move_ordering_mid(search, alpha, beta, false) * (W_NWS_VALUE + W_NWS_VALUE_DEEP_ADDITIONAL);
         }
         */
+        
         if (depth == 0){
             flip_value->value -= mid_evaluate_diff(search) * W_NWS_VALUE;
         } else{
             flip_value->value -= nega_alpha_eval1(search, alpha, beta, false) * (W_NWS_VALUE + W_NWS_VALUE_DEEP_ADDITIONAL);
         }
+        /*
+        switch (depth){
+            case 0:
+                flip_value->value -= mid_evaluate_diff(search) * W_NWS_VALUE;
+                break;
+            case 1:
+                flip_value->value -= nega_alpha_eval1(search, alpha, beta, false) * (W_NWS_VALUE + W_NWS_VALUE_DEEP_ADDITIONAL);
+                break;
+            default:
+                uint_fast8_t mpc_level = search->mpc_level;
+                bool searching = true;
+                search->mpc_level = MOVE_ORDERING_MPC_LEVEL;
+                    flip_value->value -= nega_scout(search, alpha, beta, depth, false, flip_value->n_legal, false, &searching) * (W_NWS_VALUE + depth * W_NWS_VALUE_DEEP_ADDITIONAL);
+                search->mpc_level = mpc_level;
+                break;
+        }
+        */
     //search->undo_move_ordering(&flip_value->flip);
     search->undo(&flip_value->flip);
 }
