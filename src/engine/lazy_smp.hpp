@@ -30,7 +30,7 @@ Search_result lazy_smp(Board board, int depth, uint_fast8_t mpc_level, bool show
     result.value = SCORE_UNDEFINED;
     result.nodes = 0;
     uint64_t strt = tim();
-    int main_depth = 5;
+    int main_depth = 1;
     int main_mpc_level = mpc_level;
     const int max_depth = HW2 - board.n_discs();
     depth = std::min(depth, max_depth);
