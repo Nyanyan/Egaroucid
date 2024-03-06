@@ -672,18 +672,12 @@ struct AI_status {
     std::future<Search_result> ai_future;
 
     bool hint_calculating{ false };
+    bool hint_calculated{ false };
     int hint_level{ HINT_NOT_CALCULATING };
-    std::future<Search_result> hint_future[HW2];
-    std::vector<std::pair<int, std::function<Search_result()>>> hint_task_stack;
+    std::future<void> hint_future;
     bool hint_use[HW2];
     double hint_values[HW2];
     int hint_types[HW2];
-    bool hint_available{ false };
-    bool hint_use_stable[HW2];
-    double hint_values_stable[HW2];
-    int hint_types_stable[HW2];
-    bool hint_use_multi_thread;
-    int hint_n_doing_tasks;
 
     bool analyzing{ false };
     std::future<Search_result> analyze_future[ANALYZE_SIZE];

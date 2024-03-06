@@ -525,3 +525,29 @@ std::pair<int, int> first_nega_scout(Search *search, int alpha, int beta, int pr
     return first_nega_scout_legal(search, alpha, beta, predicted_value, depth, is_end_search, is_main_search, clogs, search->board.get_legal(), strt, searching);
 }
 
+void first_nega_scout_hint(Search *search, int depth, bool is_end_search, const std::vector<Clog_result> clogs, uint64_t legal, bool *searching, bool is_main_thread, double values[]){
+    ++search->n_nodes;
+    #if USE_SEARCH_STATISTICS
+        ++search->n_nodes_discs[search->n_discs];
+    #endif
+    const int canput_all = pop_count_ull(legal);
+    for (const Clog_result clog: clogs){
+        if (is_main_thread){
+            values[clog.pos] = clog.val;
+        }
+        if (legal & (1ULL << clog.pos)){
+            legal ^= 1ULL << clog.pos;
+        }
+    }
+    uint32_t hash_code = search->board.hash();
+    Flip flip;
+    for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)){
+        calc_flip(&flip, &search->board, cell);
+        search->move(&flip);
+            int g = -nega_scout(search, -SCORE_MAX, SCORE_MAX, depth - 1, false, LEGAL_UNDEFINED, is_end_search, searching);
+            if (is_main_thread){
+                values[cell] = g;
+            }
+        search->undo(&flip);
+    }
+}

@@ -228,11 +228,12 @@ public:
             getData().menu_elements.use_disc_hint = !getData().menu_elements.use_disc_hint;
         if (!hint_ignore) {
             if (getData().menu_elements.use_disc_hint) {
-                if (!ai_status.hint_calculating && ai_status.hint_level < getData().menu_elements.level) {
-                    hint_init_calculating();
+                if (!ai_status.hint_calculating && !ai_status.hint_calculated) {
+                    hint_calculate();
+                } else if (ai_status.hint_level != HINT_NOT_CALCULATING){
+                    try_hint_get();
+                    legal_ignore = draw_hint(getData().menu_elements.use_book && getData().menu_elements.show_book_accuracy && !hint_ignore);
                 }
-                hint_do_task();
-                legal_ignore = draw_hint(getData().menu_elements.use_book && getData().menu_elements.show_book_accuracy && !hint_ignore);
             }
         }
 
@@ -304,9 +305,8 @@ public:
 private:
     void reset_hint() {
         ai_status.hint_level = HINT_NOT_CALCULATING;
-        ai_status.hint_available = false;
         ai_status.hint_calculating = false;
-        ai_status.hint_task_stack.clear();
+        ai_status.hint_calculated = false;
     }
 
     void reset_ai() {
@@ -332,8 +332,8 @@ private:
             ai_status.ai_future.get();
         }
         for (int i = 0; i < HW2; ++i) {
-            if (ai_status.hint_future[i].valid()) {
-                ai_status.hint_future[i].get();
+            if (ai_status.hint_future.valid()) {
+                ai_status.hint_future.get();
             }
         }
         for (int i = 0; i < ANALYZE_SIZE; ++i) {
@@ -1251,14 +1251,14 @@ private:
 
     uint64_t draw_hint(bool ignore_book_info) {
         uint64_t res = 0ULL;
-        if (ai_status.hint_available) {
+        if (ai_status.hint_calculating || ai_status.hint_calculated) {
             std::vector<Hint_info> hint_infos;
             for (int cell = 0; cell < HW2; ++cell) {
-                if (ai_status.hint_use_stable[cell]) {
+                if (ai_status.hint_use[HW2_M1 - cell]) {
                     Hint_info hint_info;
-                    hint_info.value = ai_status.hint_values_stable[cell];
+                    hint_info.value = ai_status.hint_values[HW2_M1 - cell];
                     hint_info.cell = cell;
-                    hint_info.type = ai_status.hint_types_stable[cell];
+                    hint_info.type = ai_status.hint_types[HW2_M1 - cell];
                     hint_infos.emplace_back(hint_info);
                 }
             }
@@ -1351,142 +1351,28 @@ private:
         return m1 == m2 && d1 == d2 && ml1 == ml2;
     }
 
-    void hint_init_calculating() {
+    void hint_calculate(){
+        ai_status.hint_level = HINT_NOT_CALCULATING;
+        ai_status.hint_calculating = true;
+        ai_status.hint_calculated = false;
+        for (int i = 0; i < HW2; ++i){
+            ai_status.hint_use[i] = false;
+            ai_status.hint_values[i] = 0;
+        }
         uint64_t legal = getData().history_elem.board.get_legal();
-        if (ai_status.hint_level == HINT_NOT_CALCULATING) {
-            stop_calculating();
-            resume_calculating();
-            for (int cell = 0; cell < HW2; ++cell) {
-                ai_status.hint_values[cell] = HINT_INIT_VALUE;
-                ai_status.hint_use[cell] = (bool)(1 & (legal >> (HW2_M1 - cell)));
-                ai_status.hint_types[cell] = HINT_NOT_CALCULATING;
-            }
-            for (int cell = 0; cell < HW2; ++cell) {
-                ai_status.hint_values_stable[cell] = ai_status.hint_values[cell];
-                ai_status.hint_use_stable[cell] = ai_status.hint_use[cell];
-                ai_status.hint_types_stable[cell] = ai_status.hint_types[cell];
-            }
+        for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)){
+            ai_status.hint_use[cell] = true;
+            ai_status.hint_values[cell] = 0;
         }
-        else {
-            ai_status.hint_available = true;
-        }
-        int before_level = ai_status.hint_level;
-        int n_moves = getData().history_elem.board.n_discs() - 4;
-        ++ai_status.hint_level;
-        if (ai_status.hint_level > 1) {
-            while (same_level(before_level, ai_status.hint_level, n_moves) && ai_status.hint_level <= getData().menu_elements.level) {
-                ++ai_status.hint_level;
-            }
-        }
-        if (ai_status.hint_level <= getData().menu_elements.level) {
-            std::vector<std::pair<int, int>> value_cells;
-            for (int cell = 0; cell < HW2; ++cell) {
-                if (ai_status.hint_use[cell]) {
-                    value_cells.emplace_back(std::make_pair(ai_status.hint_values[cell], cell));
-                }
-            }
-            sort(value_cells.begin(), value_cells.end(), compare_value_cell);
-            int n_legal = pop_count_ull(legal);
-            int hint_adoption_threshold = getData().menu_elements.n_disc_hint + std::max(1, n_legal * (getData().menu_elements.level - ai_status.hint_level) / getData().menu_elements.level);
-            hint_adoption_threshold = std::min(hint_adoption_threshold, (int)value_cells.size());
-            ai_status.hint_task_stack.clear();
-            Board board;
-            Flip flip;
-            int next_task_size = 0;
-            int idx = 0;
-            for (std::pair<int, int>& value_cell : value_cells) {
-                if (idx++ >= hint_adoption_threshold) {
-                    break;
-                }
-                if (ai_status.hint_types[value_cell.second] != HINT_TYPE_BOOK) {
-                    ++next_task_size;
-                }
-            }
-            ai_status.hint_use_multi_thread = next_task_size < getData().menu_elements.n_threads;
-            
-            if (ai_status.hint_level <= 6) {
-                ai_status.hint_use_multi_thread = false;
-            }
-
-            idx = 0;
-            for (std::pair<int, int>& value_cell : value_cells) {
-                if (idx++ >= hint_adoption_threshold) {
-                    break;
-                }
-                if (ai_status.hint_types[value_cell.second] != HINT_TYPE_BOOK) {
-                    board = getData().history_elem.board;
-                    calc_flip(&flip, &board, (uint_fast8_t)(HW2_M1 - value_cell.second));
-                    board.move_board(&flip);
-                    ai_status.hint_task_stack.emplace_back(std::make_pair(value_cell.second, std::bind(ai_hint, board, ai_status.hint_level, getData().menu_elements.use_book, 0, ai_status.hint_use_multi_thread, false)));
-                }
-            }
-            ai_status.hint_n_doing_tasks = 0;
-            ai_status.hint_calculating = true;
-            std::cerr << "hint search level " << ai_status.hint_level << " n_tasks " << ai_status.hint_task_stack.size() << " multi_threading " << ai_status.hint_use_multi_thread << std::endl;
-        }
+        ai_status.hint_future = std::async(std::launch::async, std::bind(ai_hint, getData().history_elem.board, getData().menu_elements.level, getData().menu_elements.use_book, 0, true, true, 100, ai_status.hint_values, &ai_status.hint_level));
     }
 
-    void hint_do_task() {
-        if (!changing_scene) {
-            if (ai_status.hint_n_doing_tasks > 0) {
-                for (int cell = 0; cell < HW2; ++cell) {
-                    if (ai_status.hint_future[cell].valid()) {
-                        if (ai_status.hint_future[cell].wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
-                            Search_result search_result = ai_status.hint_future[cell].get();
-                            if (ai_status.hint_values[cell] == HINT_INIT_VALUE || search_result.is_end_search || search_result.depth == SEARCH_BOOK) {
-                                ai_status.hint_values[cell] = -search_result.value;
-                                if (search_result.depth == SEARCH_BOOK)
-                                    ai_status.hint_values[cell] += 0.49999999; // to give priority for book values
-                            }
-                            else {
-                                ai_status.hint_values[cell] -= 1.2 * search_result.value;
-                                ai_status.hint_values[cell] /= 2.2;
-                            }
-                            if (search_result.depth == SEARCH_BOOK) {
-                                ai_status.hint_types[cell] = HINT_TYPE_BOOK;
-                            }
-                            else if (search_result.is_end_search) {
-                                ai_status.hint_types[cell] = search_result.probability;
-                            }
-                            else {
-                                ai_status.hint_types[cell] = ai_status.hint_level;
-                            }
-                            --ai_status.hint_n_doing_tasks;
-                        }
-                    }
-                }
-            }
-            if (ai_status.hint_task_stack.size() == 0 && ai_status.hint_n_doing_tasks == 0) {
-                for (int cell = 0; cell < HW2; ++cell) {
-                    ai_status.hint_use_stable[cell] = ai_status.hint_use[cell];
-                    ai_status.hint_values_stable[cell] = ai_status.hint_values[cell];
-                    ai_status.hint_types_stable[cell] = ai_status.hint_types[cell];
-                }
+    void try_hint_get(){
+        if (ai_status.hint_future.valid()){
+            if (ai_status.hint_future.wait_for(std::chrono::seconds(0)) == std::future_status::ready){
+                ai_status.hint_future.get();
                 ai_status.hint_calculating = false;
-            }
-            else if (ai_status.hint_task_stack.size()) {
-                int loop_time = std::min((int)ai_status.hint_task_stack.size(), getData().menu_elements.n_threads - ai_status.hint_n_doing_tasks);
-                
-                if (ai_status.hint_use_multi_thread) {
-                    if (std::max(1, getData().menu_elements.n_threads / HINT_SINGLE_TASK_N_THREAD) - ai_status.hint_n_doing_tasks > 0) {
-                        loop_time = std::min((int)ai_status.hint_task_stack.size(), std::max(1, getData().menu_elements.n_threads / HINT_SINGLE_TASK_N_THREAD) - ai_status.hint_n_doing_tasks);
-                    }
-                    else {
-                        loop_time = 0;
-                    }
-                }
-                else {
-                    loop_time = std::min((int)ai_status.hint_task_stack.size(), getData().menu_elements.n_threads - ai_status.hint_n_doing_tasks);
-                }
-                
-                if (loop_time > 0) {
-                    for (int i = 0; i < loop_time; ++i) {
-                        std::pair<int, std::function<Search_result()>> task = ai_status.hint_task_stack.back();
-                        ai_status.hint_task_stack.pop_back();
-                        ai_status.hint_future[task.first] = std::async(std::launch::async, task.second);
-                    }
-                    ai_status.hint_n_doing_tasks += loop_time;
-                }
+                ai_status.hint_calculated = true;
             }
         }
     }
