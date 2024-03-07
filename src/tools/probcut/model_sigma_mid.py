@@ -72,6 +72,16 @@ for n_discs in range(61):
         z_error.append(0.0)
         weight.append(0.1)
 
+for n_discs in range(61):
+    for depth2 in range(60):
+        depth1 = 0
+        z = 2.0 + 1.5 * depth2 / 20 + 1.5 * (n_discs - 4) / 60
+        w_n_discs.append(n_discs)
+        x_depth1.append(depth1)
+        y_depth2.append(depth2)
+        z_error.append(z)
+        weight.append(0.002)
+
 def f(wxy, probcut_a, probcut_b, probcut_c, probcut_d, probcut_e, probcut_f, probcut_g, probcut_h, probcut_i, probcut_j):
     w, x, y = wxy
     w = w / 64
@@ -107,7 +117,7 @@ def plot_fit_result_onephase(n_discs, params):
     ax.set_zlabel('error')
     ax.set_xlim((0, 10))
     ax.set_ylim((0, 20))
-    ax.set_zlim((0, 6))
+    ax.set_zlim((0, 15))
     plt.show()
 
 probcut_params_before = [1.0 for _ in range(10)]
