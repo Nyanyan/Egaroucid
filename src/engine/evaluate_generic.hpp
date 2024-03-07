@@ -20,6 +20,7 @@
 
 #define EVAL_IDX_START_MOVE_ORDERING_END 30
 #define EVAL_IDX_END_MOVE_ORDERING_END 46
+#define EVAL_FEATURE_START_MOVE_ORDERING_END 8
 
 constexpr Feature_to_coord feature_to_coord[N_SYMMETRY_PATTERNS] = {
     // 0 hv2
@@ -415,7 +416,7 @@ inline int calc_pattern(const int phase_idx, Eval_search *eval){
 inline int calc_pattern_move_ordering_end(Eval_search *eval){
     int res = 0;
     for (int i = EVAL_IDX_START_MOVE_ORDERING_END; i < EVAL_IDX_END_MOVE_ORDERING_END; ++i)
-        res += pattern_arr_move_ordering_end[eval->reversed][feature_to_pattern[i] - EVAL_IDX_START_MOVE_ORDERING_END][eval->features[i]];
+        res += pattern_arr_move_ordering_end[eval->reversed][feature_to_pattern[i] - EVAL_FEATURE_START_MOVE_ORDERING_END][eval->features[i]];
     return res;
 }
 
