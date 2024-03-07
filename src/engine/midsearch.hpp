@@ -564,7 +564,7 @@ void first_nega_scout_hint(Search *search, int depth, int max_depth, bool is_end
         calc_flip(&flip, &search->board, value_policies[i].policy);
         search->move(&flip);
             int g = -nega_scout(search, -SCORE_MAX, SCORE_MAX, depth - 1, false, LEGAL_UNDEFINED, is_end_search, searching);
-            if (values[value_policies[i].policy] == SCORE_UNDEFINED)
+            if (values[value_policies[i].policy] == SCORE_UNDEFINED || is_end_search)
                 values[value_policies[i].policy] = g;
             else
                 values[value_policies[i].policy] = (0.9 * values[value_policies[i].policy] + 1.1 * g) / 2.0;
