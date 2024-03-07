@@ -17,7 +17,7 @@
 #include "endsearch.hpp"
 #include "thread_pool.hpp"
 
-#define LAZYSMP_ENDSEARCH_PRESEARCH_COE 0.7
+#define LAZYSMP_ENDSEARCH_PRESEARCH_COE 0.75
 
 struct Lazy_SMP_task{
     uint_fast8_t mpc_level;
@@ -38,6 +38,9 @@ Search_result lazy_smp(Board board, int depth, uint_fast8_t mpc_level, bool show
     if (is_end_search){
         main_mpc_level = MPC_74_LEVEL;
     }
+    if (show_log){
+        std::cerr << "thread pool size " << thread_pool.size() << " n_idle " << thread_pool.get_n_idle() << std::endl;
+    }
     while (main_depth <= depth && main_mpc_level <= mpc_level){
         bool is_last_search_show_log = (main_depth == depth) && (main_mpc_level == mpc_level) && show_log;
         bool main_is_end_search = false;
@@ -45,10 +48,12 @@ Search_result lazy_smp(Board board, int depth, uint_fast8_t mpc_level, bool show
             main_is_end_search = true;
             main_depth = max_depth;
         }
-        std::vector<Lazy_SMP_task> sub_tasks;
+        std::vector<Search> searches(thread_pool.size() + 2);
+        std::vector<std::future<std::pair<int, int>>> parallel_tasks;
+        bool sub_searching = true;
         int sub_depth = main_depth;
         if (use_multi_thread && (main_depth < depth || main_mpc_level < mpc_level)){
-            for (int i = 1; i < thread_pool.get_n_idle(); ++i){
+            for (int i = 1; i < thread_pool.size() + 1 && i <= searches.size(); ++i){
                 int sub_depth = main_depth + i;
                 int sub_mpc_level = main_mpc_level;
                 bool sub_is_end_search = false;
@@ -62,26 +67,16 @@ Search_result lazy_smp(Board board, int depth, uint_fast8_t mpc_level, bool show
                     sub_is_end_search = true;
                 }
                 if (sub_mpc_level <= MPC_100_LEVEL){
-                    Lazy_SMP_task sub_task;
-                    sub_task.mpc_level = sub_mpc_level;
-                    sub_task.depth = sub_depth;
-                    sub_task.is_end_search = sub_is_end_search;
-                    sub_tasks.emplace_back(sub_task);
+                    searches[i - 1].init(&board, sub_mpc_level, false);
+                    bool pushed = false;
+                    //while (!pushed){
+                        parallel_tasks.emplace_back(thread_pool.push(&pushed, std::bind(&first_nega_scout_legal, &searches[i - 1], -SCORE_MAX, SCORE_MAX, result.value, sub_depth, sub_is_end_search, false, clogs, use_legal, strt, &sub_searching)));
+                        if (!pushed){
+                            parallel_tasks.pop_back();
+                        }
+                    //}
                 }
             }
-        }
-        std::vector<std::future<std::pair<int, int>>> parallel_tasks;
-        bool sub_searching = true;
-        std::vector<Search> searches(sub_tasks.size());
-        for (int i = 0; i < (int)sub_tasks.size(); ++i){
-            bool pushed = false;
-            searches[i].init(&board, sub_tasks[i].mpc_level, false);
-            //while (!pushed){
-                parallel_tasks.emplace_back(thread_pool.push(&pushed, std::bind(&first_nega_scout_legal, &searches[i], -SCORE_MAX, SCORE_MAX, result.value, sub_tasks[i].depth, sub_tasks[i].is_end_search, false, clogs, use_legal, strt, &sub_searching)));
-                if (!pushed){
-                    parallel_tasks.pop_back();
-                }
-            //}
         }
         std::pair<int, int> id_result;
         Search main_search;
@@ -118,7 +113,7 @@ Search_result lazy_smp(Board board, int depth, uint_fast8_t mpc_level, bool show
             } else{
                 std::cerr << "mid ";
             }
-            std::cerr << "depth " << result.depth << "@" << SELECTIVITY_PERCENTAGE[main_mpc_level] << "%" << " value " << id_result.first << " policy " << idx_to_coord(id_result.second) << " n_worker " << sub_tasks.size() << " n_nodes " << result.nodes << " time " << result.time << " NPS " << result.nps << std::endl;
+            std::cerr << "depth " << result.depth << "@" << SELECTIVITY_PERCENTAGE[main_mpc_level] << "%" << " value " << id_result.first << " policy " << idx_to_coord(id_result.second) << " n_worker " << parallel_tasks.size() << " n_nodes " << result.nodes << " time " << result.time << " NPS " << result.nps << std::endl;
         }
         if (!is_end_search || main_depth < round(LAZYSMP_ENDSEARCH_PRESEARCH_COE * depth)){
             ++main_depth;

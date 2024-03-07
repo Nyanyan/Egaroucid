@@ -414,9 +414,9 @@ std::pair<int, int> first_nega_scout_legal(Search *search, int alpha, int beta, 
         #endif
         int pv_idx = 1;
         Flip flip_best;
-        if (is_main_search){
-            std::cerr << "depth " << depth << "@" << SELECTIVITY_PERCENTAGE[search->mpc_level] << "% " << 0 << "/" << canput_all << " best " << "??" << " [" << alpha << "," << beta << "] " << std::endl;
-        }
+        //if (is_main_search){
+        //    std::cerr << "depth " << depth << "@" << SELECTIVITY_PERCENTAGE[search->mpc_level] << "% " << 0 << "/" << canput_all << " best " << "??" << " [" << alpha << "," << beta << "] " << std::endl;
+        //}
         for (uint_fast8_t i = 0; i < N_TRANSPOSITION_MOVES; ++i){
             if (moves[i] == TRANSPOSITION_TABLE_UNDEFINED)
                 break;
