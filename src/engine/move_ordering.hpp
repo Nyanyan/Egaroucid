@@ -68,8 +68,8 @@
     #define MOVE_ORDERING_END_PARAM_END 11
 #else
     // midgame search
-    #define W_MOBILITY 37
-    #define W_POTENTIAL_MOBILITY 11
+    #define W_MOBILITY 40
+    #define W_POTENTIAL_MOBILITY 16
     #define W_TT 300
     #define W_TT_BONUS 100
     #define W_VALUE 289
@@ -209,26 +209,34 @@ inline void move_evaluate(Search *search, Flip_value *flip_value, int alpha, int
         flip_value->n_legal = search->board.get_legal();
         flip_value->value += (40 - get_weighted_n_moves(flip_value->n_legal)) * W_MOBILITY;
         flip_value->value += (40 - get_potential_mobility(search->board.opponent, ~(search->board.player | search->board.opponent))) * W_POTENTIAL_MOBILITY;
+        bool need_to_search = true;
         int l = -SCORE_INF, u = SCORE_INF;
         if (transposition_table_get_value(search, search->board.hash(), &l, &u)){
             if (u != SCORE_INF){
-                flip_value->value += (SCORE_MAX - u) * W_TT;
+                if (l != -SCORE_INF){
+                    flip_value->value += (SCORE_MAX - (u + l) / 2) * W_TT;
+                } else{
+                    flip_value->value += (SCORE_MAX - u) * W_TT;
+                }
                 flip_value->value += W_TT_BONUS;
+                need_to_search = false;
             }
         }
-        switch (depth){
-            case 0:
-                flip_value->value += (SCORE_MAX - mid_evaluate_diff(search)) * W_VALUE;
-                break;
-            case 1:
-                flip_value->value += (SCORE_MAX - nega_alpha_eval1(search, alpha, beta, false)) * (W_VALUE + W_VALUE_DEEP_ADDITIONAL);
-                break;
-            default:
-                uint_fast8_t mpc_level = search->mpc_level;
-                search->mpc_level = MOVE_ORDERING_MPC_LEVEL;
-                    flip_value->value += (SCORE_MAX - nega_scout(search, alpha, beta, depth, false, flip_value->n_legal, false, searching)) * (W_VALUE + depth * W_VALUE_DEEP_ADDITIONAL);
-                search->mpc_level = mpc_level;
-                break;
+        if (need_to_search){
+            switch (depth){
+                case 0:
+                    flip_value->value += (SCORE_MAX - mid_evaluate_diff(search)) * W_VALUE;
+                    break;
+                case 1:
+                    flip_value->value += (SCORE_MAX - nega_alpha_eval1(search, alpha, beta, false)) * (W_VALUE + W_VALUE_DEEP_ADDITIONAL);
+                    break;
+                default:
+                    uint_fast8_t mpc_level = search->mpc_level;
+                    search->mpc_level = MOVE_ORDERING_MPC_LEVEL;
+                        flip_value->value += (SCORE_MAX - nega_scout(search, alpha, beta, depth, false, flip_value->n_legal, false, searching)) * (W_VALUE + depth * W_VALUE_DEEP_ADDITIONAL);
+                    search->mpc_level = mpc_level;
+                    break;
+            }
         }
     search->undo(&flip_value->flip);
 }
