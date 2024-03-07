@@ -33,6 +33,7 @@
 #define W_WIPEOUT 100000000
 #define W_1ST_MOVE 10000000
 #define W_2ND_MOVE 1000000
+#define MO_OFFSET_L_PM 38
 
 /*
     @brief constants for move ordering
@@ -68,9 +69,8 @@
     #define MOVE_ORDERING_END_PARAM_END 11
 #else
     // midgame search
-    #define W_MOBILITY 40
-    #define W_POTENTIAL_MOBILITY 16
-    #define W_TT 300
+    #define W_MOBILITY 37
+    #define W_POTENTIAL_MOBILITY 11
     #define W_TT_BONUS 100
     #define W_VALUE 289
     #define W_VALUE_DEEP_ADDITIONAL 92
@@ -207,36 +207,25 @@ inline void move_evaluate(Search *search, Flip_value *flip_value, int alpha, int
     flip_value->value = 0;
     search->move(&flip_value->flip);
         flip_value->n_legal = search->board.get_legal();
-        flip_value->value += (40 - get_weighted_n_moves(flip_value->n_legal)) * W_MOBILITY;
-        flip_value->value += (40 - get_potential_mobility(search->board.opponent, ~(search->board.player | search->board.opponent))) * W_POTENTIAL_MOBILITY;
-        bool need_to_search = true;
+        flip_value->value += (MO_OFFSET_L_PM - get_weighted_n_moves(flip_value->n_legal)) * W_MOBILITY;
+        flip_value->value += (MO_OFFSET_L_PM - get_potential_mobility(search->board.opponent, ~(search->board.player | search->board.opponent))) * W_POTENTIAL_MOBILITY;
         int l = -SCORE_INF, u = SCORE_INF;
         if (transposition_table_get_value(search, search->board.hash(), &l, &u)){
-            if (u != SCORE_INF){
-                if (l != -SCORE_INF){
-                    flip_value->value += (SCORE_MAX - (u + l) / 2) * W_TT;
-                } else{
-                    flip_value->value += (SCORE_MAX - u) * W_TT;
-                }
-                flip_value->value += W_TT_BONUS;
-                need_to_search = false;
-            }
+            flip_value->value += W_TT_BONUS;
         }
-        if (need_to_search){
-            switch (depth){
-                case 0:
-                    flip_value->value += (SCORE_MAX - mid_evaluate_diff(search)) * W_VALUE;
-                    break;
-                case 1:
-                    flip_value->value += (SCORE_MAX - nega_alpha_eval1(search, alpha, beta, false)) * (W_VALUE + W_VALUE_DEEP_ADDITIONAL);
-                    break;
-                default:
-                    uint_fast8_t mpc_level = search->mpc_level;
-                    search->mpc_level = MOVE_ORDERING_MPC_LEVEL;
-                        flip_value->value += (SCORE_MAX - nega_scout(search, alpha, beta, depth, false, flip_value->n_legal, false, searching)) * (W_VALUE + depth * W_VALUE_DEEP_ADDITIONAL);
-                    search->mpc_level = mpc_level;
-                    break;
-            }
+        switch (depth){
+            case 0:
+                flip_value->value += (SCORE_MAX - mid_evaluate_diff(search)) * W_VALUE;
+                break;
+            case 1:
+                flip_value->value += (SCORE_MAX - nega_alpha_eval1(search, alpha, beta, false)) * (W_VALUE + W_VALUE_DEEP_ADDITIONAL);
+                break;
+            default:
+                uint_fast8_t mpc_level = search->mpc_level;
+                search->mpc_level = MOVE_ORDERING_MPC_LEVEL;
+                    flip_value->value += (SCORE_MAX - nega_scout(search, alpha, beta, depth, false, flip_value->n_legal, false, searching)) * (W_VALUE + depth * W_VALUE_DEEP_ADDITIONAL);
+                search->mpc_level = mpc_level;
+                break;
         }
     search->undo(&flip_value->flip);
 }
@@ -256,8 +245,8 @@ inline void move_evaluate_nws(Search *search, Flip_value *flip_value, int alpha,
     flip_value->value = 0;
     search->move(&flip_value->flip);
         flip_value->n_legal = search->board.get_legal();
-        flip_value->value += (40 - get_weighted_n_moves(flip_value->n_legal)) * W_NWS_MOBILITY;
-        flip_value->value += (40 - get_potential_mobility(search->board.opponent, ~(search->board.player | search->board.opponent))) * W_NWS_POTENTIAL_MOBILITY;
+        flip_value->value += (MO_OFFSET_L_PM - get_weighted_n_moves(flip_value->n_legal)) * W_NWS_MOBILITY;
+        flip_value->value += (MO_OFFSET_L_PM - get_potential_mobility(search->board.opponent, ~(search->board.player | search->board.opponent))) * W_NWS_POTENTIAL_MOBILITY;
         if (depth == 0){
             flip_value->value += (SCORE_MAX - mid_evaluate_diff(search)) * W_NWS_VALUE;
         } else{
@@ -277,8 +266,8 @@ inline void move_evaluate_end_nws(Search *search, Flip_value *flip_value){
     flip_value->value = 0;
     search->move_endsearch(&flip_value->flip);
         flip_value->n_legal = search->board.get_legal();
-        flip_value->value += (40 - pop_count_ull(flip_value->n_legal)) * W_END_NWS_MOBILITY;
-        flip_value->value += (40 - mid_evaluate_move_ordering_end(search)) * W_END_NWS_VALUE;
+        flip_value->value += (MO_OFFSET_L_PM - pop_count_ull(flip_value->n_legal)) * W_END_NWS_MOBILITY;
+        flip_value->value += (MO_OFFSET_L_PM - mid_evaluate_move_ordering_end(search)) * W_END_NWS_VALUE;
     search->undo_endsearch(&flip_value->flip);
 }
 
@@ -295,7 +284,7 @@ inline void move_evaluate_end_simple_nws(Search *search, Flip_value *flip_value)
         flip_value->value += W_END_NWS_SIMPLE_PARITY;
     search->move_noeval(&flip_value->flip);
         flip_value->n_legal = search->board.get_legal();
-        flip_value->value += (40 - pop_count_ull(flip_value->n_legal)) * W_END_NWS_SIMPLE_MOBILITY;
+        flip_value->value += (MO_OFFSET_L_PM - pop_count_ull(flip_value->n_legal)) * W_END_NWS_SIMPLE_MOBILITY;
     search->undo_noeval(&flip_value->flip);
 }
 
