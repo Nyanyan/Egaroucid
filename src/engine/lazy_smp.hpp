@@ -42,13 +42,13 @@ Search_result lazy_smp(Board board, int depth, uint_fast8_t mpc_level, bool show
         std::cerr << "thread pool size " << thread_pool.size() << " n_idle " << thread_pool.get_n_idle() << std::endl;
     }
     while (main_depth <= depth && main_mpc_level <= mpc_level){
-        bool is_last_search_show_log = (main_depth == depth) && (main_mpc_level == mpc_level) && show_log;
         bool main_is_end_search = false;
         if (main_depth >= max_depth){
             main_is_end_search = true;
             main_depth = max_depth;
         }
-        std::vector<Search> searches(thread_pool.size() + 2);
+        bool is_last_search_show_log = (main_depth == depth) && (main_mpc_level == mpc_level) && show_log;
+        std::vector<Search> searches(thread_pool.size() + 1);
         std::vector<std::future<std::pair<int, int>>> parallel_tasks;
         bool sub_searching = true;
         int sub_depth = main_depth;
@@ -70,10 +70,10 @@ Search_result lazy_smp(Board board, int depth, uint_fast8_t mpc_level, bool show
                     searches[i - 1].init(&board, sub_mpc_level, false);
                     bool pushed = false;
                     //while (!pushed){
-                        parallel_tasks.emplace_back(thread_pool.push(&pushed, std::bind(&first_nega_scout_legal, &searches[i - 1], -SCORE_MAX, SCORE_MAX, result.value, sub_depth, sub_is_end_search, false, clogs, use_legal, strt, &sub_searching)));
-                        if (!pushed){
-                            parallel_tasks.pop_back();
-                        }
+                    parallel_tasks.emplace_back(thread_pool.push(&pushed, std::bind(&first_nega_scout_legal, &searches[i - 1], -SCORE_MAX, SCORE_MAX, result.value, sub_depth, sub_is_end_search, false, clogs, use_legal, strt, &sub_searching)));
+                    if (!pushed){
+                        parallel_tasks.pop_back();
+                    }
                     //}
                 }
             }
