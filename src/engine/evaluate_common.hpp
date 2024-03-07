@@ -36,8 +36,6 @@
 #define MAX_EVALUATE_IDX_MO 59049
 #define N_PATTERNS_MO_END 4
 #define N_SYMMETRY_PATTERNS_MO_END 16
-#define N_PATTERNS_MO_MID 8
-#define N_SYMMETRY_PATTERNS_MO_MID 30
 
 /*
     @brief value definition
