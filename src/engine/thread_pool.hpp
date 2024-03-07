@@ -35,14 +35,17 @@ class Thread_pool {
 
     public:
         void set_thread(int new_n_thread){
-            if (new_n_thread < 0)
-                new_n_thread = 0;
-            n_thread = new_n_thread;
-            threads.reset(new std::thread[n_thread]);
-            for (int i = 0; i < n_thread; ++i)
-                threads[i] = std::thread(&Thread_pool::worker, this);
-            running = true;
-            n_idle = 0;
+            {
+                std::lock_guard<std::mutex> lock(mtx);
+                if (new_n_thread < 0)
+                    new_n_thread = 0;
+                n_thread = new_n_thread;
+                threads.reset(new std::thread[n_thread]);
+                for (int i = 0; i < n_thread; ++i)
+                    threads[i] = std::thread(&Thread_pool::worker, this);
+                running = true;
+                n_idle = 0;
+            }
         }
 
         void exit_thread(){
@@ -104,14 +107,15 @@ class Thread_pool {
                 throw std::runtime_error("Cannot schedule new task after shutdown.");
             bool pushed = false;
             if (n_idle > 0){
-                mtx.lock();
+                {
+                    std::unique_lock<std::mutex> lock(mtx);
                     if (n_idle > 0){
                         pushed = true;
                         tasks.push(std::function<void()>(task));
                         --n_idle;
                         condition.notify_one();
                     }
-                mtx.unlock();
+                }
             }
             return pushed;
         }
