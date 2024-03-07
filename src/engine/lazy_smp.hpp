@@ -17,7 +17,8 @@
 #include "endsearch.hpp"
 #include "thread_pool.hpp"
 
-#define LAZYSMP_ENDSEARCH_PRESEARCH_COE 0.75
+//#define LAZYSMP_ENDSEARCH_PRESEARCH_COE 0.75
+#define LAZYSMP_ENDSEARCH_PRESEARCH_OFFSET 5
 
 struct Lazy_SMP_task{
     uint_fast8_t mpc_level;
@@ -115,7 +116,7 @@ Search_result lazy_smp(Board board, int depth, uint_fast8_t mpc_level, bool show
             }
             std::cerr << "depth " << result.depth << "@" << SELECTIVITY_PERCENTAGE[main_mpc_level] << "%" << " value " << id_result.first << " policy " << idx_to_coord(id_result.second) << " n_worker " << parallel_tasks.size() << " n_nodes " << result.nodes << " time " << result.time << " NPS " << result.nps << std::endl;
         }
-        if (!is_end_search || main_depth < round(LAZYSMP_ENDSEARCH_PRESEARCH_COE * depth)){
+        if (!is_end_search || main_depth < depth - LAZYSMP_ENDSEARCH_PRESEARCH_OFFSET){
             ++main_depth;
         } else{
             if (main_depth < depth){
@@ -229,7 +230,7 @@ void lazy_smp_hint(Board board, int depth, uint_fast8_t mpc_level, bool show_log
                 std::cerr << std::endl;
             }
         }
-        if (!is_end_search || main_depth < round(LAZYSMP_ENDSEARCH_PRESEARCH_COE * depth)){
+        if (!is_end_search || main_depth < depth - LAZYSMP_ENDSEARCH_PRESEARCH_OFFSET){
             ++main_depth;
         } else{
             if (main_depth < depth){
