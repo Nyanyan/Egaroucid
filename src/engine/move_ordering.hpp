@@ -70,14 +70,14 @@
     // midgame search
     #define W_MOBILITY 37
     #define W_POTENTIAL_MOBILITY 11
+    #define W_TT 300
+    #define W_TT_BONUS 100
     #define W_VALUE 289
     #define W_VALUE_DEEP_ADDITIONAL 92
 
     // midgame null window search
     #define W_NWS_MOBILITY 21
     #define W_NWS_POTENTIAL_MOBILITY 23
-    #define W_NWS_TT 64
-    #define W_NWS_BONUS 128
     #define W_NWS_VALUE 9
     #define W_NWS_VALUE_DEEP_ADDITIONAL 24
 
@@ -100,6 +100,7 @@
 int nega_alpha_eval1(Search *search, int alpha, int beta, bool skipped);
 inline int nega_alpha_eval1_move_ordering_mid(Search *search, int alpha, int beta, bool skipped);
 int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, uint64_t legal, bool is_end_search, const bool *searching);
+inline bool transposition_table_get_value(Search *search, uint32_t hash, int *l, int *u);
 
 /*
     @brief Flip structure with more information
@@ -208,6 +209,13 @@ inline void move_evaluate(Search *search, Flip_value *flip_value, int alpha, int
         flip_value->n_legal = search->board.get_legal();
         flip_value->value += (40 - get_weighted_n_moves(flip_value->n_legal)) * W_MOBILITY;
         flip_value->value += (40 - get_potential_mobility(search->board.opponent, ~(search->board.player | search->board.opponent))) * W_POTENTIAL_MOBILITY;
+        int l = -SCORE_INF, u = SCORE_INF;
+        if (transposition_table_get_value(search, search->board.hash(), &l, &u)){
+            if (u != SCORE_INF){
+                flip_value->value += (SCORE_MAX - u) * W_TT;
+                flip_value->value += W_TT_BONUS;
+            }
+        }
         switch (depth){
             case 0:
                 flip_value->value += (SCORE_MAX - mid_evaluate_diff(search)) * W_VALUE;
@@ -225,7 +233,6 @@ inline void move_evaluate(Search *search, Flip_value *flip_value, int alpha, int
     search->undo(&flip_value->flip);
 }
 
-inline bool transposition_table_get_value(Search *search, uint32_t hash, int *l, int *u);
 /*
     @brief Evaluate a move in midgame for NWS
 
