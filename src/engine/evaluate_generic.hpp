@@ -21,6 +21,7 @@
 #define EVAL_IDX_START_MOVE_ORDERING_END 30
 #define EVAL_IDX_END_MOVE_ORDERING_END 46
 #define EVAL_FEATURE_START_MOVE_ORDERING_END 8
+#define MAX_CELL_PATTERNS_MOVE_ORDERING_END 6
 
 constexpr Feature_to_coord feature_to_coord[N_SYMMETRY_PATTERNS] = {
     // 0 hv2
@@ -183,6 +184,73 @@ constexpr Coord_to_feature coord_to_feature[HW2] = {
     { 8, {{ 5, P37}, {16, P35}, {26, P36}, {30, P36}, {34, P37}, {38, P38}, {46, P36}, {50, P37}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_C1
     {10, {{ 1, P37}, {20, P36}, {26, P37}, {30, P37}, {34, P38}, {42, P35}, {46, P37}, {50, P38}, {54, P38}, {58, P38}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_B1
     {13, {{24, P37}, {26, P38}, {30, P38}, {31, P38}, {34, P39}, {38, P39}, {39, P39}, {42, P39}, {46, P38}, {47, P38}, {50, P39}, {54, P39}, {58, P39}}}  // COORD_A1
+};
+
+constexpr Coord_to_feature coord_to_feature_move_ordering_end[HW2] = {
+    { 6, {{ 2, P31}, { 3, P31}, { 7, P39}, {10, P34}, {11, P34}, {15, P39}}}, // COORD_H8
+    { 3, {{ 2, P32}, { 7, P38}, {15, P35}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_G8
+    { 3, {{ 2, P33}, { 7, P37}, {10, P35}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_F8
+    { 3, {{ 2, P34}, { 7, P36}, {10, P36}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_E8
+    { 3, {{ 2, P35}, { 6, P36}, {10, P37}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_D8
+    { 3, {{ 2, P36}, { 6, P37}, {10, P38}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_C8
+    { 3, {{ 2, P37}, { 6, P38}, {14, P35}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_B8
+    { 6, {{ 1, P31}, { 2, P38}, { 6, P39}, { 9, P34}, {10, P39}, {14, P39}}}, // COORD_A8
+    { 3, {{ 3, P32}, { 7, P35}, {15, P32}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_H7
+    { 4, {{ 2, P30}, { 3, P30}, { 7, P34}, {15, P38}, { 0, PNO}, { 0, PNO}}}, // COORD_G7
+    { 3, {{ 7, P33}, {10, P30}, {15, P34}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_F7
+    { 1, {{10, P31}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_E7
+    { 1, {{10, P32}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_D7
+    { 3, {{ 6, P33}, {10, P33}, {14, P34}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_C7
+    { 4, {{ 1, P30}, { 2, P39}, { 6, P34}, {14, P38}, { 0, PNO}, { 0, PNO}}}, // COORD_B7
+    { 3, {{ 1, P32}, { 6, P35}, {14, P32}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_A7
+    { 3, {{ 3, P33}, { 7, P32}, {11, P35}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_H6
+    { 3, {{ 7, P31}, {11, P30}, {15, P31}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_G6
+    { 1, {{15, P37}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_F6
+    { 1, {{15, P33}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_E6
+    { 1, {{14, P33}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_D6
+    { 1, {{14, P37}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_C6
+    { 3, {{ 6, P31}, { 9, P30}, {14, P31}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_B6
+    { 3, {{ 1, P33}, { 6, P32}, { 9, P35}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_A6
+    { 3, {{ 3, P34}, { 7, P30}, {11, P36}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_H5
+    { 1, {{11, P31}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_G5
+    { 1, {{15, P30}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_F5
+    { 1, {{15, P36}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_E5
+    { 1, {{14, P36}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_D5
+    { 1, {{14, P30}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_C5
+    { 1, {{ 9, P31}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_B5
+    { 3, {{ 1, P34}, { 6, P30}, { 9, P36}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_A5
+    { 3, {{ 3, P35}, { 5, P30}, {11, P37}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_H4
+    { 1, {{11, P32}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_G4
+    { 1, {{13, P30}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_F4
+    { 1, {{13, P36}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_E4
+    { 1, {{12, P36}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_D4
+    { 1, {{12, P30}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_C4
+    { 1, {{ 9, P32}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_B4
+    { 3, {{ 1, P35}, { 4, P30}, { 9, P37}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_A4
+    { 3, {{ 3, P36}, { 5, P32}, {11, P38}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_H3
+    { 3, {{ 5, P31}, {11, P33}, {13, P31}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_G3
+    { 1, {{13, P37}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_F3
+    { 1, {{13, P33}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_E3
+    { 1, {{12, P33}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_D3
+    { 1, {{12, P37}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_C3
+    { 3, {{ 4, P31}, { 9, P33}, {12, P31}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_B3
+    { 3, {{ 1, P36}, { 4, P32}, { 9, P38}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_A3
+    { 3, {{ 3, P37}, { 5, P35}, {13, P32}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_H2
+    { 4, {{ 0, P30}, { 3, P39}, { 5, P34}, {13, P38}, { 0, PNO}, { 0, PNO}}}, // COORD_G2
+    { 3, {{ 5, P33}, { 8, P30}, {13, P34}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_F2
+    { 1, {{ 8, P31}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_E2
+    { 1, {{ 8, P32}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_D2
+    { 3, {{ 4, P33}, { 8, P33}, {12, P34}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_C2
+    { 4, {{ 0, P39}, { 1, P39}, { 4, P34}, {12, P38}, { 0, PNO}, { 0, PNO}}}, // COORD_B2
+    { 3, {{ 1, P37}, { 4, P35}, {12, P32}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_A2
+    { 6, {{ 0, P31}, { 3, P38}, { 5, P39}, { 8, P34}, {11, P39}, {13, P39}}}, // COORD_H1
+    { 3, {{ 0, P32}, { 5, P38}, {13, P35}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_G1
+    { 3, {{ 0, P33}, { 5, P37}, { 8, P35}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_F1
+    { 3, {{ 0, P34}, { 5, P36}, { 8, P36}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_E1
+    { 3, {{ 0, P35}, { 4, P36}, { 8, P37}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_D1
+    { 3, {{ 0, P36}, { 4, P37}, { 8, P38}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_C1
+    { 3, {{ 0, P37}, { 4, P38}, {12, P35}, { 0, PNO}, { 0, PNO}, { 0, PNO}}}, // COORD_B1
+    { 6, {{ 0, P38}, { 1, P38}, { 4, P39}, { 8, P39}, { 9, P39}, {12, P39}}}  // COORD_A1
 };
 
 /*
@@ -568,20 +636,20 @@ inline void eval_move_endsearch(Eval_search *eval, const Flip *flip){
     uint_fast8_t i, cell;
     uint64_t f;
     if (eval->reversed){
-        for (i = 0; i < MAX_CELL_PATTERNS && coord_to_feature[flip->pos].features[i].x; ++i)
-            eval->features[coord_to_feature[flip->pos].features[i].feature] -= coord_to_feature[flip->pos].features[i].x;
+        for (i = 0; i < MAX_CELL_PATTERNS_MOVE_ORDERING_END && coord_to_feature_move_ordering_end[flip->pos].features[i].x; ++i)
+            eval->features[coord_to_feature_move_ordering_end[flip->pos].features[i].feature + EVAL_IDX_START_MOVE_ORDERING_END] -= coord_to_feature_move_ordering_end[flip->pos].features[i].x;
         f = flip->flip;
         for (cell = first_bit(&f); f; cell = next_bit(&f)){
-            for (i = 0; i < MAX_CELL_PATTERNS && coord_to_feature[cell].features[i].x; ++i)
-                eval->features[coord_to_feature[cell].features[i].feature] += coord_to_feature[cell].features[i].x;
+            for (i = 0; i < MAX_CELL_PATTERNS_MOVE_ORDERING_END && coord_to_feature_move_ordering_end[cell].features[i].x; ++i)
+                eval->features[coord_to_feature_move_ordering_end[cell].features[i].feature + EVAL_IDX_START_MOVE_ORDERING_END] += coord_to_feature_move_ordering_end[cell].features[i].x;
         }
     } else{
-        for (i = 0; i < MAX_CELL_PATTERNS && coord_to_feature[flip->pos].features[i].x; ++i)
-            eval->features[coord_to_feature[flip->pos].features[i].feature] -= 2 * coord_to_feature[flip->pos].features[i].x;
+        for (i = 0; i < MAX_CELL_PATTERNS_MOVE_ORDERING_END && coord_to_feature_move_ordering_end[flip->pos].features[i].x; ++i)
+            eval->features[coord_to_feature_move_ordering_end[flip->pos].features[i].feature + EVAL_IDX_START_MOVE_ORDERING_END] -= 2 * coord_to_feature_move_ordering_end[flip->pos].features[i].x;
         f = flip->flip;
         for (cell = first_bit(&f); f; cell = next_bit(&f)){
-            for (i = 0; i < MAX_CELL_PATTERNS && coord_to_feature[cell].features[i].x; ++i)
-                eval->features[coord_to_feature[cell].features[i].feature] -= coord_to_feature[cell].features[i].x;
+            for (i = 0; i < MAX_CELL_PATTERNS_MOVE_ORDERING_END && coord_to_feature_move_ordering_end[cell].features[i].x; ++i)
+                eval->features[coord_to_feature_move_ordering_end[cell].features[i].feature + EVAL_IDX_START_MOVE_ORDERING_END] -= coord_to_feature_move_ordering_end[cell].features[i].x;
         }
     }
     eval->reversed ^= 1;
@@ -592,20 +660,20 @@ inline void eval_undo_endsearch(Eval_search *eval, const Flip *flip){
     uint_fast8_t i, cell;
     uint64_t f;
     if (eval->reversed){
-        for (i = 0; i < MAX_CELL_PATTERNS && coord_to_feature[flip->pos].features[i].x; ++i)
-            eval->features[coord_to_feature[flip->pos].features[i].feature] += coord_to_feature[flip->pos].features[i].x;
+        for (i = 0; i < MAX_CELL_PATTERNS_MOVE_ORDERING_END && coord_to_feature_move_ordering_end[flip->pos].features[i].x; ++i)
+            eval->features[coord_to_feature_move_ordering_end[flip->pos].features[i].feature + EVAL_IDX_START_MOVE_ORDERING_END] += coord_to_feature_move_ordering_end[flip->pos].features[i].x;
         f = flip->flip;
         for (cell = first_bit(&f); f; cell = next_bit(&f)){
-            for (i = 0; i < MAX_CELL_PATTERNS && coord_to_feature[cell].features[i].x; ++i)
-                eval->features[coord_to_feature[cell].features[i].feature] -= coord_to_feature[cell].features[i].x;
+            for (i = 0; i < MAX_CELL_PATTERNS_MOVE_ORDERING_END && coord_to_feature_move_ordering_end[cell].features[i].x; ++i)
+                eval->features[coord_to_feature_move_ordering_end[cell].features[i].feature + EVAL_IDX_START_MOVE_ORDERING_END] -= coord_to_feature_move_ordering_end[cell].features[i].x;
         }
     } else{
-        for (i = 0; i < MAX_CELL_PATTERNS && coord_to_feature[flip->pos].features[i].x; ++i)
-            eval->features[coord_to_feature[flip->pos].features[i].feature] += 2 * coord_to_feature[flip->pos].features[i].x;
+        for (i = 0; i < MAX_CELL_PATTERNS_MOVE_ORDERING_END && coord_to_feature_move_ordering_end[flip->pos].features[i].x; ++i)
+            eval->features[coord_to_feature_move_ordering_end[flip->pos].features[i].feature + EVAL_IDX_START_MOVE_ORDERING_END] += 2 * coord_to_feature_move_ordering_end[flip->pos].features[i].x;
         f = flip->flip;
         for (cell = first_bit(&f); f; cell = next_bit(&f)){
-            for (i = 0; i < MAX_CELL_PATTERNS && coord_to_feature[cell].features[i].x; ++i)
-                eval->features[coord_to_feature[cell].features[i].feature] += coord_to_feature[cell].features[i].x;
+            for (i = 0; i < MAX_CELL_PATTERNS_MOVE_ORDERING_END && coord_to_feature_move_ordering_end[cell].features[i].x; ++i)
+                eval->features[coord_to_feature_move_ordering_end[cell].features[i].feature + EVAL_IDX_START_MOVE_ORDERING_END] += coord_to_feature_move_ordering_end[cell].features[i].x;
         }
     }
 }
