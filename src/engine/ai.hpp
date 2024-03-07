@@ -78,6 +78,7 @@ inline void tree_search_hint(Board board, int depth, uint_fast8_t mpc_level, boo
                 values[clog.pos] = clog.val;
                 hint_types[clog.pos] = 100;
                 use_legal ^= 1ULL << clog.pos;
+                --n_display;
             }
         }
         if (show_log){
@@ -90,6 +91,9 @@ inline void tree_search_hint(Board board, int depth, uint_fast8_t mpc_level, boo
     bool searching = true;
     Search search;
     search.init(&board, mpc_level, use_multi_thread);
+    if (n_display < 0){
+        return;
+    }
     uint64_t strt = tim();
     lazy_smp_hint(board, depth, mpc_level, show_log, use_legal, use_multi_thread, n_display, values, hint_types);
 }
@@ -243,6 +247,7 @@ void ai_hint(Board board, int level, bool use_book, int book_acc_level, bool use
             values[link.policy] = link.value;
             hint_types[link.policy] = HINT_TYPE_BOOK;
             legal ^= 1ULL << link.policy;
+            --n_display;
         }
     }
     int depth;
