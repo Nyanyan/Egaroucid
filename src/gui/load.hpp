@@ -129,6 +129,8 @@ public:
                 else {
                     System::LaunchBrowser(U"https://www.egaroucid.nyanyan.dev/en/download/");
                 }
+                changeScene(U"Close", SCENE_FADE_TIME);
+                return;
             }
         }
         else {
