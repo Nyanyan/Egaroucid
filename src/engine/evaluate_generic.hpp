@@ -369,7 +369,7 @@ bool evaluate_init(const std::string file, std::string mo_end_nws_file, bool sho
     @return evaluation function conpletely initialized?
 */
 bool evaluate_init(bool show_log){
-    return evaluate_init("resources/eval.egev", "resources/eval_mo_end_nws.egev", show_log);
+    return evaluate_init("resources/eval.egev", "resources/eval_move_ordering_end.egev", show_log);
 }
 
 /*
