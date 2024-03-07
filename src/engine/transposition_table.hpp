@@ -522,6 +522,33 @@ class Transposition_table{
         /*
             @brief get best move from transposition table
 
+            @param search               Search information
+            @param hash                 hash code
+            @param depth                depth
+            @param lower                lower bound to store
+            @param upper                upper bound to store
+        */
+        inline bool get_value(const Search *search, uint32_t hash, int *lower, int *upper){
+            Hash_node *node = get_node(hash);
+            for (uint_fast8_t i = 0; i < TRANSPOSITION_TABLE_N_LOOP; ++i){
+                if (node->board.player == search->board.player && node->board.opponent == search->board.opponent){
+                    node->lock.lock();
+                        if (node->board.player == search->board.player && node->board.opponent == search->board.opponent){
+                            node->data.get_bounds(lower, upper);
+                            node->lock.unlock();
+                            return true;
+                        }
+                    node->lock.unlock();
+                }
+                ++hash;
+                node = get_node(hash);
+            }
+            return false;
+        }
+
+        /*
+            @brief get best move from transposition table
+
             @param board                board
             @param hash                 hash code
             @return best move
@@ -729,4 +756,8 @@ inline bool etc_nws(Search *search, std::vector<Flip_value> &move_list, int dept
 
 void transposition_table_init(){
     transposition_table.init();
+}
+
+inline bool transposition_table_get_value(Search *search, uint32_t hash, int *l, int *u){
+    return transposition_table.get_value(search, hash, l, u);
 }

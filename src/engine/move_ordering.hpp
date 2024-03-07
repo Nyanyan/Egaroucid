@@ -25,6 +25,7 @@
 #include "midsearch.hpp"
 #include "stability.hpp"
 #include "level.hpp"
+#include "transposition_table.hpp"
 
 /*
     @brief if wipeout found, it must be searched first.
@@ -75,6 +76,8 @@
     // midgame null window search
     #define W_NWS_MOBILITY 21
     #define W_NWS_POTENTIAL_MOBILITY 23
+    #define W_NWS_TT 64
+    #define W_NWS_BONUS 128
     #define W_NWS_VALUE 9
     #define W_NWS_VALUE_DEEP_ADDITIONAL 24
 
@@ -203,25 +206,26 @@ inline void move_evaluate(Search *search, Flip_value *flip_value, int alpha, int
     flip_value->value = 0;
     search->move(&flip_value->flip);
         flip_value->n_legal = search->board.get_legal();
-        flip_value->value -= get_weighted_n_moves(flip_value->n_legal) * W_MOBILITY;
-        flip_value->value -= get_potential_mobility(search->board.opponent, ~(search->board.player | search->board.opponent)) * W_POTENTIAL_MOBILITY;
+        flip_value->value += (40 - get_weighted_n_moves(flip_value->n_legal)) * W_MOBILITY;
+        flip_value->value += (40 - get_potential_mobility(search->board.opponent, ~(search->board.player | search->board.opponent))) * W_POTENTIAL_MOBILITY;
         switch (depth){
             case 0:
-                flip_value->value -= mid_evaluate_diff(search) * W_VALUE;
+                flip_value->value += (SCORE_MAX - mid_evaluate_diff(search)) * W_VALUE;
                 break;
             case 1:
-                flip_value->value -= nega_alpha_eval1(search, alpha, beta, false) * (W_VALUE + W_VALUE_DEEP_ADDITIONAL);
+                flip_value->value += (SCORE_MAX - nega_alpha_eval1(search, alpha, beta, false)) * (W_VALUE + W_VALUE_DEEP_ADDITIONAL);
                 break;
             default:
                 uint_fast8_t mpc_level = search->mpc_level;
                 search->mpc_level = MOVE_ORDERING_MPC_LEVEL;
-                    flip_value->value -= nega_scout(search, alpha, beta, depth, false, flip_value->n_legal, false, searching) * (W_VALUE + depth * W_VALUE_DEEP_ADDITIONAL);
+                    flip_value->value += (SCORE_MAX - nega_scout(search, alpha, beta, depth, false, flip_value->n_legal, false, searching)) * (W_VALUE + depth * W_VALUE_DEEP_ADDITIONAL);
                 search->mpc_level = mpc_level;
                 break;
         }
     search->undo(&flip_value->flip);
 }
 
+inline bool transposition_table_get_value(Search *search, uint32_t hash, int *l, int *u);
 /*
     @brief Evaluate a move in midgame for NWS
 
@@ -238,8 +242,8 @@ inline void move_evaluate_nws(Search *search, Flip_value *flip_value, int alpha,
     search->move(&flip_value->flip);
     //search->move_move_ordering(&flip_value->flip);
         flip_value->n_legal = search->board.get_legal();
-        flip_value->value -= get_weighted_n_moves(flip_value->n_legal) * W_NWS_MOBILITY;
-        flip_value->value -= get_potential_mobility(search->board.opponent, ~(search->board.player | search->board.opponent)) * W_NWS_POTENTIAL_MOBILITY;
+        flip_value->value += (40 - get_weighted_n_moves(flip_value->n_legal)) * W_NWS_MOBILITY;
+        flip_value->value += (40 - get_potential_mobility(search->board.opponent, ~(search->board.player | search->board.opponent))) * W_NWS_POTENTIAL_MOBILITY;
         /*
         if (depth == 0){
             flip_value->value -= mid_evaluate_move_ordering_mid(search) * W_NWS_VALUE;
@@ -247,11 +251,11 @@ inline void move_evaluate_nws(Search *search, Flip_value *flip_value, int alpha,
             flip_value->value -= nega_alpha_eval1_move_ordering_mid(search, alpha, beta, false) * (W_NWS_VALUE + W_NWS_VALUE_DEEP_ADDITIONAL);
         }
         */
-        
+    
         if (depth == 0){
-            flip_value->value -= mid_evaluate_diff(search) * W_NWS_VALUE;
+            flip_value->value += (SCORE_MAX - mid_evaluate_diff(search)) * W_NWS_VALUE;
         } else{
-            flip_value->value -= nega_alpha_eval1(search, alpha, beta, false) * (W_NWS_VALUE + W_NWS_VALUE_DEEP_ADDITIONAL);
+            flip_value->value += (SCORE_MAX - nega_alpha_eval1(search, alpha, beta, false)) * (W_NWS_VALUE + W_NWS_VALUE_DEEP_ADDITIONAL);
         }
         /*
         switch (depth){
@@ -285,8 +289,8 @@ inline void move_evaluate_end_nws(Search *search, Flip_value *flip_value){
     flip_value->value = 0;
     search->move_endsearch(&flip_value->flip);
         flip_value->n_legal = search->board.get_legal();
-        flip_value->value -= pop_count_ull(flip_value->n_legal) * W_END_NWS_MOBILITY;
-        flip_value->value -= mid_evaluate_move_ordering_end(search) * W_END_NWS_VALUE;
+        flip_value->value += (40 - pop_count_ull(flip_value->n_legal)) * W_END_NWS_MOBILITY;
+        flip_value->value += (40 - mid_evaluate_move_ordering_end(search)) * W_END_NWS_VALUE;
     search->undo_endsearch(&flip_value->flip);
 }
 
@@ -303,7 +307,7 @@ inline void move_evaluate_end_simple_nws(Search *search, Flip_value *flip_value)
         flip_value->value += W_END_NWS_SIMPLE_PARITY;
     search->move_noeval(&flip_value->flip);
         flip_value->n_legal = search->board.get_legal();
-        flip_value->value -= pop_count_ull(flip_value->n_legal) * W_END_NWS_SIMPLE_MOBILITY;
+        flip_value->value += (40 - pop_count_ull(flip_value->n_legal)) * W_END_NWS_SIMPLE_MOBILITY;
     search->undo_noeval(&flip_value->flip);
 }
 
