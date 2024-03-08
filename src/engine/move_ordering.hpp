@@ -71,7 +71,7 @@
     // midgame search
     #define W_MOBILITY 37
     #define W_POTENTIAL_MOBILITY 11
-    #define W_TT_BONUS 100
+    //#define W_TT_BONUS 100
     #define W_VALUE 289
     #define W_VALUE_DEEP_ADDITIONAL 92
 
@@ -209,10 +209,12 @@ inline void move_evaluate(Search *search, Flip_value *flip_value, int alpha, int
         flip_value->n_legal = search->board.get_legal();
         flip_value->value += (MO_OFFSET_L_PM - get_weighted_n_moves(flip_value->n_legal)) * W_MOBILITY;
         flip_value->value += (MO_OFFSET_L_PM - get_potential_mobility(search->board.opponent, ~(search->board.player | search->board.opponent))) * W_POTENTIAL_MOBILITY;
+        /*
         int l = -SCORE_INF, u = SCORE_INF;
         if (transposition_table_get_value(search, search->board.hash(), &l, &u)){
             flip_value->value += W_TT_BONUS;
         }
+        */
         switch (depth){
             case 0:
                 flip_value->value += (SCORE_MAX - mid_evaluate_diff(search)) * W_VALUE;
