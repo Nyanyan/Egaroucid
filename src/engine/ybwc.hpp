@@ -86,13 +86,11 @@ inline bool ybwc_split_nws(Search *search, int alpha, int depth, uint64_t legal,
             move_idx < canput - YBWC_N_YOUNGER_CHILD    // This node is not the (some) youngest brother
             //running_count < YBWC_MAX_RUNNING_COUNT     // Do not split too many nodes
     ){
-        if (!transposition_table.has_node(search, search->board.hash(), depth)){
-            bool pushed;
-            parallel_tasks.emplace_back(thread_pool.push(&pushed, std::bind(&ybwc_do_task_nws, search->board.player, search->board.opponent, search->n_discs, search->parity, search->mpc_level, alpha, depth, legal, is_end_search, policy, searching)));
-            if (!pushed)
-                parallel_tasks.pop_back();
-            return pushed;
-        }
+        bool pushed;
+        parallel_tasks.emplace_back(thread_pool.push(&pushed, std::bind(&ybwc_do_task_nws, search->board.player, search->board.opponent, search->n_discs, search->parity, search->mpc_level, alpha, depth, legal, is_end_search, policy, searching)));
+        if (!pushed)
+            parallel_tasks.pop_back();
+        return pushed;
     }
     return false;
 }

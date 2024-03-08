@@ -211,7 +211,12 @@ inline void move_evaluate(Search *search, Flip_value *flip_value, int alpha, int
         flip_value->value += (MO_OFFSET_L_PM - get_potential_mobility(search->board.opponent, ~(search->board.player | search->board.opponent))) * W_POTENTIAL_MOBILITY;
         /*
         int l = -SCORE_INF, u = SCORE_INF;
-        if (transposition_table_get_value(search, search->board.hash(), &l, &u)){
+        if (transposition_table.get_value(search, search->board.hash(), &l, &u)){
+            flip_value->value += W_TT_BONUS;
+        }
+        */
+        /*
+        if (transposition_table.has_node_any_level(search, search->board.hash())){
             flip_value->value += W_TT_BONUS;
         }
         */
