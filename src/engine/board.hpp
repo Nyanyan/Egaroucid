@@ -60,7 +60,7 @@ class Board {
 
             @return hash code of this board
         */
-        inline uint32_t hash(){
+        inline uint32_t hash() const{
             const uint16_t *p = (uint16_t*)&player;
             const uint16_t *o = (uint16_t*)&opponent;
             return 

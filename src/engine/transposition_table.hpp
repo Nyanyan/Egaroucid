@@ -605,6 +605,38 @@ class Transposition_table{
             return false;
         }
 
+        inline bool has_node(const Search *search, uint32_t hash, int depth){
+            Hash_node *node = get_node(hash);
+            const uint32_t level = get_level_common(depth, search->mpc_level);
+            for (uint_fast8_t i = 0; i < TRANSPOSITION_TABLE_N_LOOP; ++i){
+                if (node->board.player == search->board.player && node->board.opponent == search->board.opponent){
+                    node->lock.lock();
+                        if (node->board.player == search->board.player && node->board.opponent == search->board.opponent){
+                            if (node->data.get_level_no_importance() >= level){
+                                node->lock.unlock();
+                                return true;
+                            }
+                        }
+                    node->lock.unlock();
+                }
+                ++hash;
+                node = get_node(hash);
+            }
+            return false;
+        }
+
+        inline bool has_node_any_level(const Search *search, uint32_t hash){
+            Hash_node *node = get_node(hash);
+            for (uint_fast8_t i = 0; i < TRANSPOSITION_TABLE_N_LOOP; ++i){
+                if (node->board.player == search->board.player && node->board.opponent == search->board.opponent){
+                    return true;
+                }
+                ++hash;
+                node = get_node(hash);
+            }
+            return false;
+        }
+
     private:
         inline Hash_node* get_node(uint32_t hash){
             if (hash < TRANSPOSITION_TABLE_STACK_SIZE)
