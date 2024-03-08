@@ -250,6 +250,10 @@ inline uint64_t rotate_180(uint64_t x){
     inline uint_fast8_t ntz(uint64_t x){
         return _tzcnt_u64(x);
     }
+
+    inline uint_fast8_t ntz_uint32(uint32_t x){
+        return _tzcnt_u32(x);
+    }
 #elif USE_MINUS_NTZ
     inline uint_fast8_t ntz(uint64_t *x){
         return pop_count_ull((*x & (-(*x))) - 1);
@@ -257,6 +261,10 @@ inline uint64_t rotate_180(uint64_t x){
 
     inline uint_fast8_t ntz(uint64_t x){
         return pop_count_ull((x & (-x)) - 1);
+    }
+
+    inline uint_fast8_t ntz_uint32(uint32_t x){
+        return pop_count_uint((x & (-x)) - 1);
     }
 #else
     inline uint_fast8_t ntz(uint64_t *x){
@@ -267,6 +275,10 @@ inline uint64_t rotate_180(uint64_t x){
 
     inline uint_fast8_t ntz(uint64_t x){
         return pop_count_ull((~x) & (x - 1));
+    }
+
+    inline uint_fast8_t ntz_uint32(uint32_t x){
+        return pop_count_uint((~x) & (x - 1));
     }
 #endif
 

@@ -53,25 +53,25 @@ Search_result lazy_smp(Board board, int depth, uint_fast8_t mpc_level, bool show
         std::vector<std::future<std::pair<int, int>>> parallel_tasks;
         bool sub_searching = true;
         int sub_depth = main_depth;
-        if (use_multi_thread && (main_depth < depth || main_mpc_level < mpc_level)){
-            for (int i = 1; i < thread_pool.size() + 1 && i <= searches.size(); ++i){
-                int sub_depth = main_depth + i;
+        if (use_multi_thread){
+            for (int sub_thread_idx = 0; sub_thread_idx < thread_pool.size() && sub_thread_idx < searches.size(); ++sub_thread_idx){
+                int sub_depth = main_depth + 1 + ntz_uint32(sub_thread_idx + 1);
                 int sub_mpc_level = main_mpc_level;
                 bool sub_is_end_search = false;
                 if (sub_depth >= max_depth){
-                    if (main_is_end_search){
-                        sub_mpc_level = main_mpc_level + sub_depth - max_depth;
-                    } else{
-                        sub_mpc_level = sub_depth - max_depth;
+                    sub_mpc_level = sub_depth - max_depth;
+                    if (sub_mpc_level <= main_mpc_level){
+                        sub_mpc_level = main_mpc_level + 1;
                     }
                     sub_depth = max_depth;
                     sub_is_end_search = true;
                 }
                 if (sub_mpc_level <= MPC_100_LEVEL){
-                    searches[i - 1].init(&board, sub_mpc_level, false);
+                    std::cerr << main_depth << "  " << sub_thread_idx << " " << sub_depth << " " << (int)sub_mpc_level << std::endl;
+                    searches[sub_thread_idx].init(&board, sub_mpc_level, false);
                     bool pushed = false;
                     //while (!pushed){
-                    parallel_tasks.emplace_back(thread_pool.push(&pushed, std::bind(&first_nega_scout_legal, &searches[i - 1], -SCORE_MAX, SCORE_MAX, result.value, sub_depth, sub_is_end_search, false, clogs, use_legal, strt, &sub_searching)));
+                    parallel_tasks.emplace_back(thread_pool.push(&pushed, std::bind(&first_nega_scout_legal, &searches[sub_thread_idx], -SCORE_MAX, SCORE_MAX, result.value, sub_depth, sub_is_end_search, false, clogs, use_legal, strt, &sub_searching)));
                     if (!pushed){
                         parallel_tasks.pop_back();
                     }
