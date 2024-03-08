@@ -17,6 +17,8 @@
 #include "search.hpp"
 #include <future>
 
+#define USE_TT_DEPTH_THRESHOLD 10
+
 /*
     @brief constants
 */
@@ -723,21 +725,40 @@ bool hash_resize(int hash_level_failed, int hash_level, std::string binary_path,
     return true;
 }
 
-bool transposition_cutoff_nws(Search *search, uint32_t hash_code, int depth, int alpha, int *v, uint_fast8_t moves[]){
-    int lower = -SCORE_MAX, upper = SCORE_MAX;
-    #if MID_TO_END_DEPTH < USE_TT_DEPTH_THRESHOLD
-        if (search->n_discs <= HW2 - USE_TT_DEPTH_THRESHOLD)
-            transposition_table.get(search, hash_code, depth, &lower, &upper, moves);
-    #else
+bool transposition_cutoff(Search *search, uint32_t hash_code, int depth, int *alpha, int *beta, int *v, uint_fast8_t moves[]){
+    if (depth >= USE_TT_DEPTH_THRESHOLD){
+        int lower = -SCORE_MAX, upper = SCORE_MAX;
         transposition_table.get(search, hash_code, depth, &lower, &upper, moves);
-    #endif
-    if (upper == lower || upper <= alpha){
-        *v = upper;
-        return true;
+        if (upper == lower || upper <= *alpha){
+            *v = upper;
+            return true;
+        }
+        if (*beta <= lower){
+            *v = lower;
+            return true;
+        }
+        if (*alpha < lower){
+            *alpha = lower;
+        }
+        if(upper < *beta){
+            *beta = upper;
+        }
     }
-    if (alpha < lower){
-        *v = lower;
-        return true;
+    return false;
+}
+
+bool transposition_cutoff_nws(Search *search, uint32_t hash_code, int depth, int alpha, int *v, uint_fast8_t moves[]){
+    if (depth >= USE_TT_DEPTH_THRESHOLD){
+        int lower = -SCORE_MAX, upper = SCORE_MAX;
+        transposition_table.get(search, hash_code, depth, &lower, &upper, moves);
+        if (upper == lower || upper <= alpha){
+            *v = upper;
+            return true;
+        }
+        if (alpha < lower){
+            *v = lower;
+            return true;
+        }
     }
     return false;
 }
