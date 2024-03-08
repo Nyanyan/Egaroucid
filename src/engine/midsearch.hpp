@@ -136,13 +136,6 @@ int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, uin
     if (transposition_cutoff(search, hash_code, depth, &alpha, &beta, &v, moves)){
         return v;
     }
-    #if USE_MID_MPC
-        if (depth >= USE_MPC_DEPTH){
-            if (mpc(search, alpha, beta, depth, legal, is_end_search, &v, searching)){
-                return v;
-            }
-        }
-    #endif
     int best_move = TRANSPOSITION_TABLE_UNDEFINED;
     const int canput = pop_count_ull(legal);
     std::vector<Flip_value> move_list(canput);
@@ -158,6 +151,13 @@ int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, uin
         if (depth >= MID_ETC_DEPTH){
             if (etc(search, move_list, depth, &alpha, &beta, &v, &etc_done_idx))
                 return v;
+        }
+    #endif
+    #if USE_MID_MPC
+        if (depth >= USE_MPC_DEPTH){
+            if (mpc(search, alpha, beta, depth, legal, is_end_search, &v, searching)){
+                return v;
+            }
         }
     #endif
     int g;
