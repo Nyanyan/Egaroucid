@@ -725,7 +725,7 @@ bool hash_resize(int hash_level_failed, int hash_level, std::string binary_path,
     return true;
 }
 
-bool transposition_cutoff(Search *search, uint32_t hash_code, int depth, int *alpha, int *beta, int *v, uint_fast8_t moves[]){
+inline bool transposition_cutoff(Search *search, uint32_t hash_code, int depth, int *alpha, int *beta, int *v, uint_fast8_t moves[]){
     if (depth >= USE_TT_DEPTH_THRESHOLD){
         int lower = -SCORE_MAX, upper = SCORE_MAX;
         transposition_table.get(search, hash_code, depth, &lower, &upper, moves);
@@ -747,7 +747,7 @@ bool transposition_cutoff(Search *search, uint32_t hash_code, int depth, int *al
     return false;
 }
 
-bool transposition_cutoff_nws(Search *search, uint32_t hash_code, int depth, int alpha, int *v, uint_fast8_t moves[]){
+inline bool transposition_cutoff_nws(Search *search, uint32_t hash_code, int depth, int alpha, int *v, uint_fast8_t moves[]){
     if (depth >= USE_TT_DEPTH_THRESHOLD){
         int lower = -SCORE_MAX, upper = SCORE_MAX;
         transposition_table.get(search, hash_code, depth, &lower, &upper, moves);

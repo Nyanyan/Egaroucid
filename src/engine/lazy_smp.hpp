@@ -53,7 +53,7 @@ Search_result lazy_smp(Board board, int depth, uint_fast8_t mpc_level, bool show
         std::vector<std::future<std::pair<int, int>>> parallel_tasks;
         bool sub_searching = true;
         int sub_depth = main_depth;
-        if (use_multi_thread){
+        if (use_multi_thread && main_depth < depth){
             for (int sub_thread_idx = 0; sub_thread_idx < thread_pool.size() && sub_thread_idx < searches.size(); ++sub_thread_idx){
                 int sub_depth = main_depth + 1 + ntz_uint32(sub_thread_idx + 1);
                 int sub_mpc_level = main_mpc_level;
@@ -80,7 +80,7 @@ Search_result lazy_smp(Board board, int depth, uint_fast8_t mpc_level, bool show
         }
         std::pair<int, int> id_result;
         Search main_search;
-        main_search.init(&board, main_mpc_level, use_multi_thread, main_depth != depth || main_mpc_level != mpc_level);
+        main_search.init(&board, main_mpc_level, use_multi_thread, parallel_tasks.size() != 0);
         bool searching = true;
         id_result = first_nega_scout_legal(&main_search, -SCORE_MAX, SCORE_MAX, result.value, main_depth, main_is_end_search, is_last_search_show_log, clogs, use_legal, strt, &searching);
         sub_searching = false;
@@ -194,7 +194,7 @@ void lazy_smp_hint(Board board, int depth, uint_fast8_t mpc_level, bool show_log
             }
         }
         Search main_search;
-        main_search.init(&board, main_mpc_level, use_multi_thread, main_depth != depth || main_mpc_level != mpc_level);
+        main_search.init(&board, main_mpc_level, use_multi_thread, parallel_tasks.size() != 0);
         bool searching = true;
         int hint_type = main_depth;
         if (main_is_end_search){ // endgame & this is last search
