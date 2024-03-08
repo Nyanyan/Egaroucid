@@ -109,6 +109,7 @@ int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, uin
     }
     ++search->n_nodes;
     int first_alpha = alpha;
+    int first_beta = beta;
     #if USE_SEARCH_STATISTICS
         ++search->n_nodes_discs[search->n_discs];
     #endif
@@ -137,22 +138,8 @@ int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, uin
     }
     #if USE_MID_MPC
         if (depth >= USE_MPC_DEPTH){
-            if (mpc(search, alpha, beta, depth, legal, is_end_search, &v, searching))
+            if (mpc(search, alpha, beta, depth, legal, is_end_search, &v, searching)){
                 return v;
-        }
-    #endif
-    int g;
-    #if USE_ASPIRATION_NEGASCOUT
-        if (beta - alpha > 2){
-            int l = -HW2, u = HW2;
-            transposition_table.get_value_any_level(search, hash_code, &l, &u);
-            if (l == u){
-                g = nega_scout(search, l - 1, l + 1, depth, skipped, legal, is_end_search, searching);
-                if (g == l){
-                    if (*searching && global_searching)
-                        transposition_table.reg(search, hash_code, depth, -SCORE_MAX, SCORE_MAX, v, TRANSPOSITION_TABLE_UNDEFINED);
-                    return g;
-                }
             }
         }
     #endif
@@ -171,6 +158,21 @@ int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, uin
         if (depth >= MID_ETC_DEPTH){
             if (etc(search, move_list, depth, &alpha, &beta, &v, &etc_done_idx))
                 return v;
+        }
+    #endif
+    int g;
+    #if USE_ASPIRATION_NEGASCOUT
+        if (beta - alpha > 2 && depth > 5){
+            int l = -HW2, u = HW2;
+            transposition_table.get_value(search, depth - 5, hash_code, &l, &u);
+            if (l == u && alpha < l && l < beta){
+                g = nega_scout(search, l - 1, l + 1, depth, skipped, legal, is_end_search, searching);
+                if (g == l){
+                    if (*searching && global_searching)
+                        transposition_table.reg(search, hash_code, depth, l - 1, l + 1, v, TRANSPOSITION_TABLE_UNDEFINED);
+                    return g;
+                }
+            }
         }
     #endif
     move_list_evaluate(search, move_list, moves, depth, alpha, beta, searching);
@@ -329,7 +331,7 @@ int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, uin
         }
     #endif
     if (*searching && global_searching)
-        transposition_table.reg(search, hash_code, depth, first_alpha, beta, v, best_move);
+        transposition_table.reg(search, hash_code, depth, first_alpha, first_beta, v, best_move);
     return v;
 }
 

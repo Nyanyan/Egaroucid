@@ -529,6 +529,36 @@ class Transposition_table{
             @param lower                lower bound to store
             @param upper                upper bound to store
         */
+        inline bool get_value(const Search *search, uint32_t hash, int depth, int *lower, int *upper){
+            Hash_node *node = get_node(hash);
+            const uint32_t level = get_level_common(depth, search->mpc_level);
+            for (uint_fast8_t i = 0; i < TRANSPOSITION_TABLE_N_LOOP; ++i){
+                if (node->board.player == search->board.player && node->board.opponent == search->board.opponent){
+                    node->lock.lock();
+                        if (node->board.player == search->board.player && node->board.opponent == search->board.opponent){
+                            if (node->data.get_level_no_importance() >= level){
+                                node->data.get_bounds(lower, upper);
+                                node->lock.unlock();
+                                return true;
+                            }
+                        }
+                    node->lock.unlock();
+                }
+                ++hash;
+                node = get_node(hash);
+            }
+            return false;
+        }
+
+        /*
+            @brief get best move from transposition table
+
+            @param search               Search information
+            @param hash                 hash code
+            @param depth                depth
+            @param lower                lower bound to store
+            @param upper                upper bound to store
+        */
         inline bool get_value_any_level(const Search *search, uint32_t hash, int *lower, int *upper){
             Hash_node *node = get_node(hash);
             for (uint_fast8_t i = 0; i < TRANSPOSITION_TABLE_N_LOOP; ++i){
