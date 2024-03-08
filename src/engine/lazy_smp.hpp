@@ -18,7 +18,7 @@
 #include "thread_pool.hpp"
 
 //#define LAZYSMP_ENDSEARCH_PRESEARCH_COE 0.75
-#define LAZYSMP_ENDSEARCH_PRESEARCH_OFFSET 5
+#define LAZYSMP_ENDSEARCH_PRESEARCH_OFFSET 0
 
 struct Lazy_SMP_task{
     uint_fast8_t mpc_level;
@@ -67,8 +67,7 @@ Search_result lazy_smp(Board board, int depth, uint_fast8_t mpc_level, bool show
                     sub_is_end_search = true;
                 }
                 if (sub_mpc_level <= MPC_100_LEVEL){
-                    std::cerr << main_depth << "  " << sub_thread_idx << " " << sub_depth << " " << (int)sub_mpc_level << std::endl;
-                    searches[sub_thread_idx].init(&board, sub_mpc_level, false);
+                    searches[sub_thread_idx].init(&board, sub_mpc_level, false, true); // LAZY IMPLEMENTATION
                     bool pushed = false;
                     //while (!pushed){
                     parallel_tasks.emplace_back(thread_pool.push(&pushed, std::bind(&first_nega_scout_legal, &searches[sub_thread_idx], -SCORE_MAX, SCORE_MAX, result.value, sub_depth, sub_is_end_search, false, clogs, use_legal, strt, &sub_searching)));
@@ -81,7 +80,7 @@ Search_result lazy_smp(Board board, int depth, uint_fast8_t mpc_level, bool show
         }
         std::pair<int, int> id_result;
         Search main_search;
-        main_search.init(&board, main_mpc_level, use_multi_thread);
+        main_search.init(&board, main_mpc_level, use_multi_thread, main_depth != depth || main_mpc_level != mpc_level);
         bool searching = true;
         id_result = first_nega_scout_legal(&main_search, -SCORE_MAX, SCORE_MAX, result.value, main_depth, main_is_end_search, is_last_search_show_log, clogs, use_legal, strt, &searching);
         sub_searching = false;
@@ -186,7 +185,7 @@ void lazy_smp_hint(Board board, int depth, uint_fast8_t mpc_level, bool show_log
         std::vector<Search> searches(sub_tasks.size());
         for (int i = 0; i < (int)sub_tasks.size(); ++i){
             bool pushed = false;
-            searches[i].init(&board, sub_tasks[i].mpc_level, false);
+            searches[i].init(&board, sub_tasks[i].mpc_level, false, true);
             while (!pushed){
                 parallel_tasks.emplace_back(thread_pool.push(&pushed, std::bind(&first_nega_scout_hint_sub_thread, &searches[i], sub_tasks[i].depth, sub_tasks[i].is_end_search, use_legal, &sub_searching)));
                 if (!pushed){
@@ -195,7 +194,7 @@ void lazy_smp_hint(Board board, int depth, uint_fast8_t mpc_level, bool show_log
             }
         }
         Search main_search;
-        main_search.init(&board, main_mpc_level, use_multi_thread);
+        main_search.init(&board, main_mpc_level, use_multi_thread, main_depth != depth || main_mpc_level != mpc_level);
         bool searching = true;
         int hint_type = main_depth;
         if (main_is_end_search){ // endgame & this is last search

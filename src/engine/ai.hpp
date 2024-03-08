@@ -90,7 +90,7 @@ inline void tree_search_hint(Board board, int depth, uint_fast8_t mpc_level, boo
     }
     bool searching = true;
     Search search;
-    search.init(&board, mpc_level, use_multi_thread);
+    search.init(&board, mpc_level, use_multi_thread, false);
     if (n_display < 0){
         return;
     }

@@ -125,20 +125,10 @@ int nega_alpha_ordering_nws(Search *search, int alpha, int depth, bool skipped, 
         return v;
     }
     uint32_t hash_code = search->board.hash();
-    int lower = -SCORE_MAX, upper = SCORE_MAX;
     uint_fast8_t moves[N_TRANSPOSITION_MOVES] = {TRANSPOSITION_TABLE_UNDEFINED, TRANSPOSITION_TABLE_UNDEFINED};
-    #if MID_TO_END_DEPTH < USE_TT_DEPTH_THRESHOLD
-        if (search->n_discs <= HW2 - USE_TT_DEPTH_THRESHOLD)
-            transposition_table.get(search, hash_code, depth, &lower, &upper, moves);
-    #else
-        transposition_table.get(search, hash_code, depth, &lower, &upper, moves);
-    #endif
-    if (upper == lower)
-        return upper;
-    if (alpha < lower)
-        return lower;
-    if (upper <= alpha)
-        return upper;
+    if (transposition_cutoff_nws(search, hash_code, depth, alpha, &v, moves)){
+        return v;
+    }
     #if USE_MID_MPC
         if (mpc(search, alpha, alpha + 1, depth, legal, is_end_search, &v, searching))
             return v;
@@ -173,6 +163,11 @@ int nega_alpha_ordering_nws(Search *search, int alpha, int depth, bool skipped, 
         std::vector<std::future<Parallel_task>> parallel_tasks;
         bool n_searching = true;
         for (int move_idx = 0; move_idx < canput - etc_done_idx && *searching && n_searching; ++move_idx){
+            if (search->need_to_see_tt_loop){
+                if (transposition_cutoff_nws(search, hash_code, depth, alpha, &v, moves)){
+                    return v;
+                }
+            }
             swap_next_best_move(move_list, move_idx, canput);
             #if USE_MID_ETC
                 if (move_list[move_idx].flip.flip == 0ULL)
@@ -205,6 +200,11 @@ int nega_alpha_ordering_nws(Search *search, int alpha, int depth, bool skipped, 
         }
     } else{
         for (int move_idx = 0; move_idx < canput - etc_done_idx && *searching; ++move_idx){
+            if (search->need_to_see_tt_loop){
+                if (transposition_cutoff_nws(search, hash_code, depth, alpha, &v, moves)){
+                    return v;
+                }
+            }
             swap_next_best_move(move_list, move_idx, canput);
             #if USE_MID_ETC
                 if (move_list[move_idx].flip.flip == 0ULL)
