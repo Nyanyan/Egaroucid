@@ -143,7 +143,7 @@ int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, uin
     #endif
     int g;
     #if USE_ASPIRATION_NEGASCOUT
-        if (beta - alpha > 2 && (search->mpc_level || depth > 2)){
+        if (beta - alpha > 2){
             int l = -HW2, u = HW2;
             transposition_table.get_value_any_level(search, hash_code, &l, &u);
             if (l == u){
