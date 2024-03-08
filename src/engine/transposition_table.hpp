@@ -83,7 +83,7 @@ class Hash_data{
                 upper = (int8_t)value;
             if (alpha < value && lower < value)
                 lower = (int8_t)value;
-            if ((alpha < value || value == -SCORE_MAX) && moves[0] != policy){
+            if ((alpha < value || value == -SCORE_MAX) && moves[0] != policy && policy != TRANSPOSITION_TABLE_UNDEFINED){
                 moves[1] = moves[0];
                 moves[0] = (uint8_t)policy;
             }
@@ -112,7 +112,7 @@ class Hash_data{
                 lower = (int8_t)value;
             else
                 lower = -SCORE_MAX;
-            if ((alpha < value || value == -SCORE_MAX) && moves[0] != policy){
+            if ((alpha < value || value == -SCORE_MAX) && moves[0] != policy && policy != TRANSPOSITION_TABLE_UNDEFINED){
                 moves[1] = moves[0];
                 moves[0] = policy;
             }
@@ -529,7 +529,7 @@ class Transposition_table{
             @param lower                lower bound to store
             @param upper                upper bound to store
         */
-        inline bool get_value(const Search *search, uint32_t hash, int *lower, int *upper){
+        inline bool get_value_any_level(const Search *search, uint32_t hash, int *lower, int *upper){
             Hash_node *node = get_node(hash);
             for (uint_fast8_t i = 0; i < TRANSPOSITION_TABLE_N_LOOP; ++i){
                 if (node->board.player == search->board.player && node->board.opponent == search->board.opponent){

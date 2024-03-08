@@ -143,17 +143,15 @@ int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, uin
     #endif
     int g;
     #if USE_ASPIRATION_NEGASCOUT
-        if (search->mpc_level){
+        if (beta - alpha > 2 && (search->mpc_level || depth > 2)){
             int l = -HW2, u = HW2;
-            --search->mpc_level;
-                transposition_table.get(search, hash_code, std::max(0, depth - 2), &l, &u);
-            ++search->mpc_level;
+            transposition_table.get_value_any_level(search, hash_code, &l, &u);
             if (l == u){
-                g = nega_alpha_ordering_nws(search, l - 1, depth, false, legal, is_end_search, searching);
+                g = nega_scout(search, l - 1, l + 1, depth, skipped, legal, is_end_search, searching);
                 if (g == l){
-                    g = nega_alpha_ordering_nws(search, l, depth, false, legal, is_end_search, searching);
-                    if (l == g)
-                        return l;
+                    if (*searching && global_searching)
+                        transposition_table.reg(search, hash_code, depth, -SCORE_MAX, SCORE_MAX, v, TRANSPOSITION_TABLE_UNDEFINED);
+                    return g;
                 }
             }
         }
