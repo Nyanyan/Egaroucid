@@ -42,10 +42,9 @@
 #if TUNE_MOVE_ORDERING_MID || TUNE_MOVE_ORDERING_END
     #define N_MOVE_ORDERING_PARAM 12
     int move_ordering_param_array[N_MOVE_ORDERING_PARAM] = {
-        37, 11, 289, 92, 
-        21, 23, 9, 24, 
-        41, 6, 
-        9, 8
+        16, 5, 15, 11, 15, 13, 
+        10, 7, 
+        10, 9
     };
 
     #define W_MOBILITY                  move_ordering_param_array[0]
@@ -87,6 +86,7 @@
 
     // endgame null window search
     #define W_END_NWS_MOBILITY (1 << 10)
+    #define W_END_NWS_POTENTIAL_MOBILITY (1 << 3)
     #define W_END_NWS_VALUE (1 << 7)
 
     // endgame simple null window search
@@ -274,7 +274,8 @@ inline void move_evaluate_end_nws(Search *search, Flip_value *flip_value){
     search->move_endsearch(&flip_value->flip);
         flip_value->n_legal = search->board.get_legal();
         flip_value->value += (MO_OFFSET_L_PM - pop_count_ull(flip_value->n_legal)) * W_END_NWS_MOBILITY;
-        flip_value->value += (MO_OFFSET_L_PM - mid_evaluate_move_ordering_end(search)) * W_END_NWS_VALUE;
+        flip_value->value += (MO_OFFSET_L_PM - get_potential_mobility(search->board.opponent, ~(search->board.player | search->board.opponent))) * W_END_NWS_POTENTIAL_MOBILITY;
+        flip_value->value += (SCORE_MAX - mid_evaluate_move_ordering_end(search)) * W_END_NWS_VALUE;
     search->undo_endsearch(&flip_value->flip);
 }
 
