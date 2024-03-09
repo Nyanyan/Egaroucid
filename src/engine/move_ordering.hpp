@@ -93,7 +93,7 @@
 #define MOVE_ORDERING_NWS_VALUE_OFFSET_ALPHA 12
 #define MOVE_ORDERING_NWS_VALUE_OFFSET_BETA 6
 
-#define MOVE_ORDERING_MPC_LEVEL MPC_88_LEVEL
+#define MOVE_ORDERING_MPC_LEVEL MPC_74_LEVEL
 
 int nega_alpha_eval1(Search *search, int alpha, int beta, bool skipped);
 inline int nega_alpha_eval1_move_ordering_mid(Search *search, int alpha, int beta, bool skipped);
