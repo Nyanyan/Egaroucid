@@ -86,12 +86,12 @@
     */
 
     // endgame null window search
-    #define W_END_NWS_MOBILITY 41
-    #define W_END_NWS_VALUE 6
+    #define W_END_NWS_MOBILITY (1 << 10)
+    #define W_END_NWS_VALUE (1 << 7)
 
     // endgame simple null window search
-    #define W_END_NWS_SIMPLE_MOBILITY 9
-    #define W_END_NWS_SIMPLE_PARITY 8
+    #define W_END_NWS_SIMPLE_MOBILITY (1 << 10)
+    #define W_END_NWS_SIMPLE_PARITY (1 << 9)
 #endif
 
 #define MOVE_ORDERING_VALUE_OFFSET_ALPHA 12
