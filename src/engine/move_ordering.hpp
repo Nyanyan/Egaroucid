@@ -25,6 +25,7 @@
 #include "midsearch.hpp"
 #include "stability.hpp"
 #include "level.hpp"
+#include "evaluate.hpp"
 #include "transposition_table.hpp"
 
 /*
@@ -71,7 +72,8 @@
     // midgame search
     #define W_MOBILITY 37
     #define W_POTENTIAL_MOBILITY 11
-    //#define W_TT_BONUS 100
+    #define W_TT_BONUS 100
+    #define W_STABILITY 10
     #define W_VALUE 289
     #define W_VALUE_DEEP_ADDITIONAL 92
 
@@ -209,17 +211,10 @@ inline void move_evaluate(Search *search, Flip_value *flip_value, int alpha, int
         flip_value->n_legal = search->board.get_legal();
         flip_value->value += (MO_OFFSET_L_PM - get_weighted_n_moves(flip_value->n_legal)) * W_MOBILITY;
         flip_value->value += (MO_OFFSET_L_PM - get_potential_mobility(search->board.opponent, ~(search->board.player | search->board.opponent))) * W_POTENTIAL_MOBILITY;
-        /*
-        int l = -SCORE_INF, u = SCORE_INF;
-        if (transposition_table.get_value(search, search->board.hash(), &l, &u)){
-            flip_value->value += W_TT_BONUS;
-        }
-        */
-        /*
         if (transposition_table.has_node_any_level(search, search->board.hash())){
             flip_value->value += W_TT_BONUS;
         }
-        */
+        flip_value->value += calc_stability(search->board.opponent, search->board.player) * W_STABILITY;
         switch (depth){
             case 0:
                 flip_value->value += (SCORE_MAX - mid_evaluate_diff(search)) * W_VALUE;
@@ -248,7 +243,9 @@ inline void move_evaluate(Search *search, Flip_value *flip_value, int alpha, int
     @param searching            flag for terminating this search
     @return true if wipeout found else false
 */
-inline void move_evaluate_nws(Search *search, Flip_value *flip_value, int alpha, int beta, int depth){
+inline void move_evaluate_nws(Search *search, Flip_value *flip_value, int alpha, int beta, int depth, const bool *searching){
+    move_evaluate(search, flip_value, alpha, beta, depth, searching);
+    /*
     flip_value->value = 0;
     search->move(&flip_value->flip);
         flip_value->n_legal = search->board.get_legal();
@@ -260,6 +257,7 @@ inline void move_evaluate_nws(Search *search, Flip_value *flip_value, int alpha,
             flip_value->value += (SCORE_MAX - nega_alpha_eval1(search, alpha, beta, false)) * (W_NWS_VALUE + W_NWS_VALUE_DEEP_ADDITIONAL);
         }
     search->undo(&flip_value->flip);
+    */
 }
 
 /*
@@ -419,7 +417,7 @@ inline void move_list_evaluate(Search *search, std::vector<Flip_value> &move_lis
     @param alpha                alpha value (beta = alpha + 1)
     @param searching            flag for terminating this search
 */
-inline void move_list_evaluate_nws(Search *search, std::vector<Flip_value> &move_list, uint_fast8_t moves[], int depth, int alpha){
+inline void move_list_evaluate_nws(Search *search, std::vector<Flip_value> &move_list, uint_fast8_t moves[], int depth, int alpha, const bool *searching){
     if (move_list.size() <= 1)
         return;
     const int eval_alpha = -std::min(SCORE_MAX, alpha + MOVE_ORDERING_NWS_VALUE_OFFSET_BETA);
@@ -433,7 +431,7 @@ inline void move_list_evaluate_nws(Search *search, std::vector<Flip_value> &move
                 else if (flip_value.flip.pos == moves[1])
                     flip_value.value = W_2ND_MOVE;
                 else
-                    move_evaluate_nws(search, &flip_value, eval_alpha, eval_beta, eval_depth);
+                    move_evaluate_nws(search, &flip_value, eval_alpha, eval_beta, eval_depth, searching);
             } else
                 flip_value.value = -INF;
         #else
@@ -442,7 +440,7 @@ inline void move_list_evaluate_nws(Search *search, std::vector<Flip_value> &move
             else if (flip_value.flip.pos == moves[1])
                 flip_value.value = W_2ND_MOVE;
             else
-                move_evaluate_nws(search, &flip_value, eval_alpha, eval_beta, eval_depth);
+                move_evaluate_nws(search, &flip_value, eval_alpha, eval_beta, eval_depth, searching);
         #endif
     }
 }

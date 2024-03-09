@@ -155,7 +155,7 @@ int nega_alpha_ordering_nws(Search *search, int alpha, int depth, bool skipped, 
             return v;
         }
     #endif
-    move_list_evaluate_nws(search, move_list, moves, depth, alpha);
+    move_list_evaluate_nws(search, move_list, moves, depth, alpha, searching);
     if (search->use_multi_thread && depth - 1 >= YBWC_MID_SPLIT_MIN_DEPTH){
         int move_idx_offset = 0;
         #if USE_ALL_NODE_PREDICTION_NWS
