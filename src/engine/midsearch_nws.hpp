@@ -129,12 +129,6 @@ int nega_alpha_ordering_nws(Search *search, int alpha, int depth, bool skipped, 
     if (transposition_cutoff_nws(search, hash_code, depth, alpha, &v, moves)){
         return v;
     }
-    #if USE_MID_MPC
-        if (mpc(search, alpha, alpha + 1, depth, legal, is_end_search, &v, searching)){
-            //transposition_table.reg(search, hash_code, depth, alpha, alpha + 1, v, TRANSPOSITION_TABLE_UNDEFINED);
-            return v;
-        }
-    #endif
     int best_move = TRANSPOSITION_TABLE_UNDEFINED;
     int g;
     const int canput = pop_count_ull(legal);
@@ -153,6 +147,12 @@ int nega_alpha_ordering_nws(Search *search, int alpha, int depth, bool skipped, 
                 //transposition_table.reg(search, hash_code, depth, alpha, alpha + 1, v, TRANSPOSITION_TABLE_UNDEFINED);
                 return v;
             }
+        }
+    #endif
+    #if USE_MID_MPC
+        if (mpc(search, alpha, alpha + 1, depth, legal, is_end_search, &v, searching)){
+            //transposition_table.reg(search, hash_code, depth, alpha, alpha + 1, v, TRANSPOSITION_TABLE_UNDEFINED);
+            return v;
         }
     #endif
     move_list_evaluate_nws(search, move_list, moves, depth, alpha);

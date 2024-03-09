@@ -352,24 +352,17 @@ int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, uin
     @return pair of value and best move
 */
 inline int aspiration_search(Search *search, int alpha, int beta, int predicted_value, int depth, bool skipped, uint64_t legal, bool is_end_search, const bool *searching){
-    // if (predicted_value < alpha || beta <= predicted_value)
-    //     return nega_scout(search, alpha, beta, depth, false, LEGAL_UNDEFINED, is_end_search, searching);
-    // int g1 = nega_alpha_ordering_nws(search, predicted_value - 1, depth, false, LEGAL_UNDEFINED, is_end_search, searching); // search in [pred - 1, pred]
-    // if (g1 < predicted_value) // when exact value < predicted value, exact value <= g1
-    //     return nega_scout(search, alpha, g1, depth, false, LEGAL_UNDEFINED, is_end_search, searching);
-    // int g2 = nega_alpha_ordering_nws(search, predicted_value, depth, false, LEGAL_UNDEFINED, is_end_search, searching); // search in [pred, pred + 1]
-    // if (predicted_value < g2) // when predicted value < exact value, g2 <= exact value
-    //     return nega_scout(search, g2, beta, depth, false, LEGAL_UNDEFINED, is_end_search, searching);
-    // return predicted_value;
     if (predicted_value < alpha || beta <= predicted_value)
         return nega_scout(search, alpha, beta, depth, false, LEGAL_UNDEFINED, is_end_search, searching);
     int pred_alpha = predicted_value - 1;
     int pred_beta = predicted_value + 1;
-    if (predicted_value % 2){
+    if ((predicted_value % 2) && is_end_search){
         --pred_alpha;
         ++pred_beta;
     }
-    if (alpha <= pred_alpha && pred_beta <= beta){
+    pred_alpha = std::max(pred_alpha, alpha);
+    pred_beta = std::min(pred_beta, beta);
+    if (pred_beta - pred_alpha > 0){
         int g = nega_scout(search, pred_alpha, pred_beta, depth, false, LEGAL_UNDEFINED, is_end_search, searching);
         if (pred_alpha < g && g < pred_beta)
             return g;
@@ -435,10 +428,10 @@ std::pair<int, int> first_nega_scout_legal(Search *search, int alpha, int beta, 
                 calc_flip(&flip_best, &search->board, moves[i]);
                 search->move(&flip_best);
                     if (v == -SCORE_INF){
-                        if (predicted_value == SCORE_UNDEFINED || !is_end_search)
-                            g = -nega_scout(search, -beta, -alpha, depth - 1, false, LEGAL_UNDEFINED, is_end_search, searching);
-                        else
+                        if (predicted_value != SCORE_UNDEFINED && is_end_search)
                             g = -aspiration_search(search, -beta, -alpha, -predicted_value, depth - 1, false, LEGAL_UNDEFINED, is_end_search, searching);
+                        else
+                            g = -nega_scout(search, -beta, -alpha, depth - 1, false, LEGAL_UNDEFINED, is_end_search, searching);
                     } else{
                         g = -nega_alpha_ordering_nws(search, -alpha - 1, depth - 1, false, LEGAL_UNDEFINED, is_end_search, searching);
                         if (alpha <= g && g < beta)
@@ -481,10 +474,10 @@ std::pair<int, int> first_nega_scout_legal(Search *search, int alpha, int beta, 
                 swap_next_best_move(move_list, move_idx, canput);
                 search->move(&move_list[move_idx].flip);
                     if (v == -SCORE_INF){
-                        if (predicted_value == SCORE_UNDEFINED || !is_end_search)
-                            g = -nega_scout(search, -beta, -alpha, depth - 1, false, move_list[move_idx].n_legal, is_end_search, searching);
-                        else
+                        if (predicted_value != SCORE_UNDEFINED && is_end_search)
                             g = -aspiration_search(search, -beta, -alpha, -predicted_value, depth - 1, false, move_list[move_idx].n_legal, is_end_search, searching);
+                        else
+                            g = -nega_scout(search, -beta, -alpha, depth - 1, false, move_list[move_idx].n_legal, is_end_search, searching);
                     } else{
                         g = -nega_alpha_ordering_nws(search, -alpha - 1, depth - 1, false, move_list[move_idx].n_legal, is_end_search, searching);
                         if (alpha <= g && g < beta)
