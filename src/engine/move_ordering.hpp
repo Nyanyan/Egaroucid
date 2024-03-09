@@ -71,8 +71,7 @@
 #else
     // midgame search
     #define W_MOBILITY (1 << 17)
-    #define W_POTENTIAL_MOBILITY (1 << 6)
-    #define W_STABILITY (1 << 11)
+    #define W_POTENTIAL_MOBILITY (1 << 10)
     #define W_TT_BONUS (1 << 15)
     #define W_VALUE (1 << 15)
     #define W_VALUE_DEEP_ADDITIONAL (1 << 14)
@@ -207,7 +206,6 @@ inline void move_evaluate(Search *search, Flip_value *flip_value, int alpha, int
         flip_value->n_legal = search->board.get_legal();
         flip_value->value += (MO_OFFSET_WEIGHTED_MOVES - get_weighted_n_moves(flip_value->n_legal)) * W_MOBILITY;
         flip_value->value += (MO_OFFSET_POTENTIAL_MOBILITY - get_potential_mobility(search->board.opponent, ~(search->board.player | search->board.opponent))) * W_POTENTIAL_MOBILITY;
-        flip_value->value += pop_count_ull(calc_stability(search->board.opponent, search->board.player)) * W_STABILITY;
         if (transposition_table.has_node_any_level(search, search->board.hash())){
             flip_value->value += W_TT_BONUS;
         }
