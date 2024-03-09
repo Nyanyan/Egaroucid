@@ -34,7 +34,8 @@
 #define W_WIPEOUT (1 << 30)
 #define W_1ST_MOVE (1 << 29)
 #define W_2ND_MOVE (1 << 28)
-#define MO_OFFSET_L_PM 38 // 34 legal + 4 corner legal
+#define MO_OFFSET_POTENTIAL_MOBILITY 40
+#define MO_OFFSET_WEIGHTED_MOVES 38 // 34 legal + 4 corner legal
 
 /*
     @brief constants for move ordering
@@ -69,12 +70,12 @@
     #define MOVE_ORDERING_END_PARAM_END 11
 #else
     // midgame search
-    #define W_MOBILITY (1 << 16)
-    #define W_POTENTIAL_MOBILITY (1 << 5)
+    #define W_MOBILITY (1 << 17)
+    #define W_POTENTIAL_MOBILITY (1 << 6)
     #define W_STABILITY (1 << 11)
     #define W_TT_BONUS (1 << 15)
     #define W_VALUE (1 << 15)
-    #define W_VALUE_DEEP_ADDITIONAL (1 << 13)
+    #define W_VALUE_DEEP_ADDITIONAL (1 << 14)
 
     // endgame null window search
     #define W_END_NWS_MOBILITY (1 << 10)
@@ -150,7 +151,7 @@ struct Flip_value{
     @return weighted mobility
 */
 inline int get_weighted_n_moves(uint64_t legal){
-    return pop_count_ull(legal) * 2 + get_corner_n_moves(legal);
+    return pop_count_ull(legal) + get_corner_n_moves(legal);
 }
 
 /*
@@ -204,8 +205,8 @@ inline void move_evaluate(Search *search, Flip_value *flip_value, int alpha, int
     flip_value->value = 0;
     search->move(&flip_value->flip);
         flip_value->n_legal = search->board.get_legal();
-        flip_value->value += (MO_OFFSET_L_PM - get_weighted_n_moves(flip_value->n_legal)) * W_MOBILITY;
-        flip_value->value += (MO_OFFSET_L_PM - get_potential_mobility(search->board.opponent, ~(search->board.player | search->board.opponent))) * W_POTENTIAL_MOBILITY;
+        flip_value->value += (MO_OFFSET_WEIGHTED_MOVES - get_weighted_n_moves(flip_value->n_legal)) * W_MOBILITY;
+        flip_value->value += (MO_OFFSET_POTENTIAL_MOBILITY - get_potential_mobility(search->board.opponent, ~(search->board.player | search->board.opponent))) * W_POTENTIAL_MOBILITY;
         flip_value->value += pop_count_ull(calc_stability(search->board.opponent, search->board.player)) * W_STABILITY;
         if (transposition_table.has_node_any_level(search, search->board.hash())){
             flip_value->value += W_TT_BONUS;
@@ -238,8 +239,8 @@ inline void move_evaluate_end_nws(Search *search, Flip_value *flip_value){
     flip_value->value = 0;
     search->move_endsearch(&flip_value->flip);
         flip_value->n_legal = search->board.get_legal();
-        flip_value->value += (MO_OFFSET_L_PM - pop_count_ull(flip_value->n_legal)) * W_END_NWS_MOBILITY;
-        flip_value->value += (MO_OFFSET_L_PM - get_potential_mobility(search->board.opponent, ~(search->board.player | search->board.opponent))) * W_END_NWS_POTENTIAL_MOBILITY;
+        flip_value->value += (MO_OFFSET_WEIGHTED_MOVES - get_weighted_n_moves(flip_value->n_legal)) * W_END_NWS_MOBILITY;
+        flip_value->value += (MO_OFFSET_POTENTIAL_MOBILITY - get_potential_mobility(search->board.opponent, ~(search->board.player | search->board.opponent))) * W_END_NWS_POTENTIAL_MOBILITY;
         if (transposition_table.has_node_any_level(search, search->board.hash())){
             flip_value->value += W_END_NWS_TT_BONUS;
         }
@@ -260,7 +261,7 @@ inline void move_evaluate_end_simple_nws(Search *search, Flip_value *flip_value)
         flip_value->value += W_END_NWS_SIMPLE_PARITY;
     search->move_noeval(&flip_value->flip);
         flip_value->n_legal = search->board.get_legal();
-        flip_value->value += (MO_OFFSET_L_PM - pop_count_ull(flip_value->n_legal)) * W_END_NWS_SIMPLE_MOBILITY;
+        flip_value->value += (MO_OFFSET_WEIGHTED_MOVES - get_weighted_n_moves(flip_value->n_legal)) * W_END_NWS_SIMPLE_MOBILITY;
     search->undo_noeval(&flip_value->flip);
 }
 
