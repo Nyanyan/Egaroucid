@@ -130,8 +130,10 @@ int nega_alpha_ordering_nws(Search *search, int alpha, int depth, bool skipped, 
         return v;
     }
     #if USE_MID_MPC
-        if (mpc(search, alpha, alpha + 1, depth, legal, is_end_search, &v, searching))
+        if (mpc(search, alpha, alpha + 1, depth, legal, is_end_search, &v, searching)){
+            transposition_table.reg(search, hash_code, depth, alpha, alpha + 1, v, TRANSPOSITION_TABLE_UNDEFINED);
             return v;
+        }
     #endif
     int best_move = TRANSPOSITION_TABLE_UNDEFINED;
     int g;
@@ -147,8 +149,10 @@ int nega_alpha_ordering_nws(Search *search, int alpha, int depth, bool skipped, 
     int etc_done_idx = 0;
     #if USE_MID_ETC
         if (depth >= MID_ETC_DEPTH){
-            if (etc_nws(search, move_list, depth, alpha, &v, &etc_done_idx))
+            if (etc_nws(search, move_list, depth, alpha, &v, &etc_done_idx)){
+                transposition_table.reg(search, hash_code, depth, alpha, alpha + 1, v, TRANSPOSITION_TABLE_UNDEFINED);
                 return v;
+            }
         }
     #endif
     move_list_evaluate_nws(search, move_list, moves, depth, alpha);

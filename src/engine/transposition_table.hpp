@@ -455,6 +455,7 @@ class Transposition_table{
             if (n_registered >= n_registered_threshold){
                 std::lock_guard lock(mtx);
                 if (n_registered >= n_registered_threshold){
+                    std::cerr << "resetting transposition importance" << std::endl;
                     reset_importance_proc();
                 }
             }
