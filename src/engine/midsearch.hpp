@@ -28,6 +28,8 @@
 #include "midsearch_nws.hpp"
 #include "etc.hpp"
 
+inline int pv_aspiration_search(Search *search, int alpha, int beta, int predicted_value, int depth, bool skipped, uint64_t legal, bool is_end_search, const bool *searching);
+
 /*
     @brief Get a value with last move with Nega-Alpha algorithm
 
@@ -167,12 +169,15 @@ int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, uin
             int l = -HW2, u = HW2;
             transposition_table.get_value(search, depth - 5, hash_code, &l, &u);
             if (l == u && alpha < l && l < beta){
+                return pv_aspiration_search(search, alpha, beta, l, depth, skipped, legal, is_end_search, searching);
+                /*
                 g = nega_scout(search, l - 1, l + 1, depth, skipped, legal, is_end_search, searching);
                 if (g == l){
                     if (*searching && global_searching)
                         transposition_table.reg(search, hash_code, depth, l - 1, l + 1, v, TRANSPOSITION_TABLE_UNDEFINED);
                     return g;
                 }
+                */
             }
         }
     #endif
@@ -354,7 +359,7 @@ int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, uin
     @param legal                legal moves in bitboard
     @return pair of value and best move
 */
-int pv_aspiration_search(Search *search, int alpha, int beta, int predicted_value, int depth, bool skipped, uint64_t legal, bool is_end_search, const bool *searching){
+inline int pv_aspiration_search(Search *search, int alpha, int beta, int predicted_value, int depth, bool skipped, uint64_t legal, bool is_end_search, const bool *searching){
     // if (predicted_value < alpha || beta <= predicted_value)
     //     return nega_scout(search, alpha, beta, depth, false, LEGAL_UNDEFINED, is_end_search, searching);
     // int g1 = nega_alpha_ordering_nws(search, predicted_value - 1, depth, false, LEGAL_UNDEFINED, is_end_search, searching); // search in [pred - 1, pred]
@@ -364,11 +369,19 @@ int pv_aspiration_search(Search *search, int alpha, int beta, int predicted_valu
     // if (predicted_value < g2) // when predicted value < exact value, g2 <= exact value
     //     return nega_scout(search, g2, beta, depth, false, LEGAL_UNDEFINED, is_end_search, searching);
     // return predicted_value;
-    if (predicted_value < alpha || beta <= predicted_value || (predicted_value % 2 == 1 && is_end_search))
+    if (predicted_value < alpha || beta <= predicted_value)
         return nega_scout(search, alpha, beta, depth, false, LEGAL_UNDEFINED, is_end_search, searching);
-    int g = nega_scout(search, predicted_value - 1, predicted_value + 1, depth, false, LEGAL_UNDEFINED, is_end_search, searching);
-    if (predicted_value - 1 < g && g < predicted_value + 1)
-        return g;
+    int pred_alpha = predicted_value - 1;
+    int pred_beta = predicted_value + 1;
+    if (predicted_value % 2){
+        --pred_alpha;
+        ++pred_beta;
+    }
+    if (alpha <= pred_alpha && pred_beta <= beta){
+        int g = nega_scout(search, pred_alpha, pred_beta, depth, false, LEGAL_UNDEFINED, is_end_search, searching);
+        if (pred_alpha < g && g < pred_beta)
+            return g;
+    }
     return nega_scout(search, alpha, beta, depth, false, LEGAL_UNDEFINED, is_end_search, searching);
 }
 
