@@ -31,10 +31,10 @@
 /*
     @brief if wipeout found, it must be searched first.
 */
-#define W_WIPEOUT 100000000
-#define W_1ST_MOVE 10000000
-#define W_2ND_MOVE 1000000
-#define MO_OFFSET_L_PM 38
+#define W_WIPEOUT (1 << 30)
+#define W_1ST_MOVE (1 << 29)
+#define W_2ND_MOVE (1 << 28)
+#define MO_OFFSET_L_PM 38 // 34 legal + 4 corner legal
 
 /*
     @brief constants for move ordering
@@ -70,18 +70,20 @@
     #define MOVE_ORDERING_END_PARAM_END 11
 #else
     // midgame search
-    #define W_MOBILITY 37
-    #define W_POTENTIAL_MOBILITY 11
-    #define W_TT_BONUS 100
-    #define W_STABILITY 10
-    #define W_VALUE 289
-    #define W_VALUE_DEEP_ADDITIONAL 92
+    #define W_MOBILITY (1 << 16)
+    #define W_POTENTIAL_MOBILITY (1 << 5)
+    #define W_TT_BONUS (1 << 15)
+    #define W_STABILITY (1 << 11)
+    #define W_VALUE (1 << 15)
+    #define W_VALUE_DEEP_ADDITIONAL (1 << 15)
 
     // midgame null window search
+    /*
     #define W_NWS_MOBILITY 21
     #define W_NWS_POTENTIAL_MOBILITY 23
     #define W_NWS_VALUE 9
     #define W_NWS_VALUE_DEEP_ADDITIONAL 24
+    */
 
     // endgame null window search
     #define W_END_NWS_MOBILITY 41
@@ -392,9 +394,17 @@ inline void move_list_evaluate(Search *search, std::vector<Flip_value> &move_lis
     int eval_alpha = -std::min(SCORE_MAX, beta + MOVE_ORDERING_VALUE_OFFSET_BETA);
     int eval_beta = -std::max(-SCORE_MAX, alpha - MOVE_ORDERING_VALUE_OFFSET_ALPHA);
     int eval_depth = depth >> 2;
-    //if (eval_depth < depth - 1 && depth % 2 != eval_depth % 2){
-    //    ++eval_depth;
-    //}
+
+    int l, u;
+    transposition_table.get_value_any_level(search, search->board.hash(), &l, &u);
+    if (u <= alpha)
+        eval_depth -= 2;
+    
+    if (eval_depth < 0)
+        eval_depth = 0;
+    else if (eval_depth > 6)
+        eval_depth = 6;
+    
     for (Flip_value &flip_value: move_list){
         #if USE_MID_ETC
             if (flip_value.flip.flip)
