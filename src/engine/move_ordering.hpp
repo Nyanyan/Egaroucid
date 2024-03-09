@@ -332,7 +332,7 @@ inline void move_list_evaluate(Search *search, std::vector<Flip_value> &move_lis
     if (u <= alpha)
         eval_depth -= 2;
     if (beta - alpha == 1) // nws
-        eval_depth /= 8;
+        eval_depth /= 9;
 
     if (eval_depth < 0)
         eval_depth = 0;
