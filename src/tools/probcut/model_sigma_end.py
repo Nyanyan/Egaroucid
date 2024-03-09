@@ -76,7 +76,7 @@ for n_discs in range(45):
     depth = 0
     x_n_discs.append(n_discs)
     y_depth.append(depth)
-    z_error.append(10.0 - n_discs / 60 * 3.0)
+    z_error.append(9.0 - n_discs / 60 * 3.0)
     weight.append(0.01)
 
 def f(xy, probcut_a, probcut_b, probcut_c, probcut_d, probcut_e, probcut_f, probcut_g, probcut_h, probcut_i, probcut_j):
