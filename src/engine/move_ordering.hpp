@@ -75,7 +75,7 @@
     #define W_TT_BONUS (1 << 15)
     #define W_STABILITY (1 << 11)
     #define W_VALUE (1 << 15)
-    #define W_VALUE_DEEP_ADDITIONAL (1 << 14)
+    #define W_VALUE_DEEP_ADDITIONAL (1 << 13)
 
     // midgame null window search
     /*
