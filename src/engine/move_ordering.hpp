@@ -86,7 +86,7 @@
 
     // endgame null window search
     #define W_END_NWS_MOBILITY (1 << 10)
-    #define W_END_NWS_POTENTIAL_MOBILITY (1 << 3)
+    #define W_END_NWS_POTENTIAL_MOBILITY (1 << 5)
     #define W_END_NWS_VALUE (1 << 7)
 
     // endgame simple null window search
@@ -216,7 +216,7 @@ inline void move_evaluate(Search *search, Flip_value *flip_value, int alpha, int
         if (transposition_table.has_node_any_level(search, search->board.hash())){
             flip_value->value += W_TT_BONUS;
         }
-        flip_value->value += calc_stability(search->board.opponent, search->board.player) * W_STABILITY;
+        flip_value->value += pop_count_ull(calc_stability(search->board.opponent, search->board.player)) * W_STABILITY;
         switch (depth){
             case 0:
                 flip_value->value += (SCORE_MAX - mid_evaluate_diff(search)) * W_VALUE;
