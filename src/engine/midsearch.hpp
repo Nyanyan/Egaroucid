@@ -469,7 +469,7 @@ std::pair<int, int> first_nega_scout_legal(Search *search, int alpha, int beta, 
                     return std::make_pair(SCORE_MAX, (int)cell);
                 ++idx;
             }
-            move_list_evaluate(search, move_list, depth, alpha, beta, searching);
+            move_list_evaluate(search, move_list, moves, depth, alpha, beta, searching);
             for (int move_idx = 0; move_idx < canput; ++move_idx){
                 swap_next_best_move(move_list, move_idx, canput);
                 search->move(&move_list[move_idx].flip);

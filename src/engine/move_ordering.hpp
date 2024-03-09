@@ -76,14 +76,6 @@
     #define W_VALUE (1 << 15)
     #define W_VALUE_DEEP_ADDITIONAL (1 << 13)
 
-    // midgame null window search
-    /*
-    #define W_NWS_MOBILITY 21
-    #define W_NWS_POTENTIAL_MOBILITY 23
-    #define W_NWS_VALUE 9
-    #define W_NWS_VALUE_DEEP_ADDITIONAL 24
-    */
-
     // endgame null window search
     #define W_END_NWS_MOBILITY (1 << 10)
     #define W_END_NWS_POTENTIAL_MOBILITY (1 << 5)
@@ -236,34 +228,6 @@ inline void move_evaluate(Search *search, Flip_value *flip_value, int alpha, int
 }
 
 /*
-    @brief Evaluate a move in midgame for NWS
-
-    @param search               search information
-    @param flip_value           flip with value
-    @param alpha                alpha value to search
-    @param beta                 beta value to search
-    @param depth                depth to search
-    @param searching            flag for terminating this search
-    @return true if wipeout found else false
-*/
-inline void move_evaluate_nws(Search *search, Flip_value *flip_value, int alpha, int beta, int depth, const bool *searching){
-    move_evaluate(search, flip_value, alpha, beta, depth, searching);
-    /*
-    flip_value->value = 0;
-    search->move(&flip_value->flip);
-        flip_value->n_legal = search->board.get_legal();
-        flip_value->value += (MO_OFFSET_L_PM - get_weighted_n_moves(flip_value->n_legal)) * W_NWS_MOBILITY;
-        flip_value->value += (MO_OFFSET_L_PM - get_potential_mobility(search->board.opponent, ~(search->board.player | search->board.opponent))) * W_NWS_POTENTIAL_MOBILITY;
-        if (depth == 0){
-            flip_value->value += (SCORE_MAX - mid_evaluate_diff(search)) * W_NWS_VALUE;
-        } else{
-            flip_value->value += (SCORE_MAX - nega_alpha_eval1(search, alpha, beta, false)) * (W_NWS_VALUE + W_NWS_VALUE_DEEP_ADDITIONAL);
-        }
-    search->undo(&flip_value->flip);
-    */
-}
-
-/*
     @brief Evaluate a move in endgame NWS
 
     @param search               search information
@@ -360,7 +324,21 @@ inline void move_list_evaluate(Search *search, std::vector<Flip_value> &move_lis
         return;
     int eval_alpha = -std::min(SCORE_MAX, beta + MOVE_ORDERING_VALUE_OFFSET_BETA);
     int eval_beta = -std::max(-SCORE_MAX, alpha - MOVE_ORDERING_VALUE_OFFSET_ALPHA);
-    int eval_depth = depth >> 2;
+    
+    int eval_depth = depth / 2;
+
+    int l, u;
+    transposition_table.get_value_any_level(search, search->board.hash(), &l, &u);
+    if (u <= alpha)
+        eval_depth -= 2;
+    if (beta - alpha == 1) // nws
+        eval_depth /= 8;
+
+    if (eval_depth < 0)
+        eval_depth = 0;
+    else if (eval_depth > 5)
+        eval_depth = 5;
+
     for (Flip_value &flip_value: move_list){
         #if USE_MID_ETC
             if (flip_value.flip.flip){
@@ -379,85 +357,6 @@ inline void move_list_evaluate(Search *search, std::vector<Flip_value> &move_lis
                 flip_value.value = W_2ND_MOVE;
             else
                 move_evaluate(search, &flip_value, eval_alpha, eval_beta, eval_depth, searching);
-        #endif
-    }
-}
-
-/*
-    @brief Evaluate all legal moves for midgame
-
-    @param search               search information
-    @param move_list            list of moves
-    @param depth                remaining depth
-    @param alpha                alpha value
-    @param beta                 beta value
-    @param searching            flag for terminating this search
-*/
-inline void move_list_evaluate(Search *search, std::vector<Flip_value> &move_list, int depth, int alpha, int beta, const bool *searching){
-    if (move_list.size() <= 1)
-        return;
-    int eval_alpha = -std::min(SCORE_MAX, beta + MOVE_ORDERING_VALUE_OFFSET_BETA);
-    int eval_beta = -std::max(-SCORE_MAX, alpha - MOVE_ORDERING_VALUE_OFFSET_ALPHA);
-    int eval_depth = depth / 2;
-
-    int l, u;
-    transposition_table.get_value_any_level(search, search->board.hash(), &l, &u);
-    if (u <= alpha)
-        eval_depth -= 2;
-    if (beta - alpha == 1) // nws
-        eval_depth -= 4;
-
-    if (eval_depth < 0)
-        eval_depth = 0;
-    else if (eval_depth > 5)
-        eval_depth = 5;
-    
-    for (Flip_value &flip_value: move_list){
-        #if USE_MID_ETC
-            if (flip_value.flip.flip)
-                move_evaluate(search, &flip_value, eval_alpha, eval_beta, eval_depth, searching);
-            else
-                flip_value.value = -INF;
-        #else
-            move_evaluate(search, &flip_value, eval_alpha, eval_beta, eval_depth, searching);
-        #endif
-    }
-}
-
-/*
-    @brief Evaluate all legal moves for midgame NWS
-
-    @param search               search information
-    @param move_list            list of moves
-    @param moves                list of moves in transposition table
-    @param depth                remaining depth
-    @param alpha                alpha value (beta = alpha + 1)
-    @param searching            flag for terminating this search
-*/
-inline void move_list_evaluate_nws(Search *search, std::vector<Flip_value> &move_list, uint_fast8_t moves[], int depth, int alpha, const bool *searching){
-    if (move_list.size() <= 1)
-        return;
-    const int eval_alpha = -std::min(SCORE_MAX, alpha + MOVE_ORDERING_NWS_VALUE_OFFSET_BETA);
-    const int eval_beta = -std::max(-SCORE_MAX, alpha - MOVE_ORDERING_NWS_VALUE_OFFSET_ALPHA);
-    int eval_depth = depth >> 4;
-    for (Flip_value &flip_value: move_list){
-        #if USE_MID_ETC
-            if (flip_value.flip.flip){
-                if (flip_value.flip.pos == moves[0])
-                    flip_value.value = W_1ST_MOVE;
-                else if (flip_value.flip.pos == moves[1])
-                    flip_value.value = W_2ND_MOVE;
-                else
-                    move_evaluate_nws(search, &flip_value, eval_alpha, eval_beta, eval_depth, searching);
-            } else
-                flip_value.value = -INF;
-        #else
-            if (flip_value.flip.pos == moves[0])
-                flip_value.value = W_1ST_MOVE;
-            else if (flip_value.flip.pos == moves[1])
-                flip_value.value = W_2ND_MOVE;
-            else
-                move_evaluate_nws(search, &flip_value, eval_alpha, eval_beta, eval_depth, searching);
         #endif
     }
 }
