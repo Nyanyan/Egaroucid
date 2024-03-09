@@ -156,6 +156,7 @@ int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, uin
     #if USE_MID_MPC
         if (depth >= USE_MPC_DEPTH){
             if (mpc(search, alpha, beta, depth, legal, is_end_search, &v, searching)){
+                //transposition_table.reg(search, hash_code, depth, alpha, beta, v, TRANSPOSITION_TABLE_UNDEFINED);
                 return v;
             }
         }
