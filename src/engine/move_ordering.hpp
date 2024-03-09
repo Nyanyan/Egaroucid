@@ -401,11 +401,11 @@ inline void move_list_evaluate(Search *search, std::vector<Flip_value> &move_lis
         eval_depth -= 2;
     if (beta - alpha == 1) // nws
         eval_depth -= 4;
-    
+
     if (eval_depth < 0)
         eval_depth = 0;
-    else if (eval_depth > 6)
-        eval_depth = 6;
+    else if (eval_depth > 5)
+        eval_depth = 5;
     
     for (Flip_value &flip_value: move_list){
         #if USE_MID_ETC
