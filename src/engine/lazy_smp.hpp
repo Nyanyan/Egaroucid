@@ -71,7 +71,11 @@ Search_result lazy_smp(Board board, int depth, uint_fast8_t mpc_level, bool show
                     searches[sub_thread_idx].init(&board, sub_mpc_level, false, true);
                     bool pushed = false;
                     //while (!pushed){
-                    parallel_tasks.emplace_back(thread_pool.push(&pushed, std::bind(&first_nega_scout_legal, &searches[sub_thread_idx], -SCORE_MAX, SCORE_MAX, result.value, sub_depth, sub_is_end_search, false, clogs, use_legal, strt, &sub_searching)));
+                    if (result.value != SCORE_UNDEFINED){
+                        parallel_tasks.emplace_back(thread_pool.push(&pushed, std::bind(&first_nega_scout_legal, &searches[sub_thread_idx], result.value - 3, result.value + 3, result.value, sub_depth, sub_is_end_search, false, clogs, use_legal, strt, &sub_searching)));
+                    } else{
+                        parallel_tasks.emplace_back(thread_pool.push(&pushed, std::bind(&first_nega_scout_legal, &searches[sub_thread_idx], -SCORE_MAX, SCORE_MAX, result.value, sub_depth, sub_is_end_search, false, clogs, use_legal, strt, &sub_searching)));
+                    }
                     sub_depth_arr.emplace_back(sub_depth);
                     if (!pushed){
                         parallel_tasks.pop_back();
