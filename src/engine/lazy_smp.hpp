@@ -54,6 +54,7 @@ Search_result lazy_smp(Board board, int depth, uint_fast8_t mpc_level, bool show
         std::vector<int> sub_depth_arr;
         bool sub_searching = true;
         int sub_depth = main_depth;
+        std::unordered_map<int, int> n_sub_search_types;
         if (use_multi_thread && main_depth < depth){
             for (int sub_thread_idx = 0; sub_thread_idx < thread_pool.size() && sub_thread_idx < searches.size(); ++sub_thread_idx){
                 int sub_depth = main_depth + 1 + ntz_uint32(sub_thread_idx + 1);
@@ -68,11 +69,18 @@ Search_result lazy_smp(Board board, int depth, uint_fast8_t mpc_level, bool show
                     sub_is_end_search = true;
                 }
                 if (sub_mpc_level <= MPC_100_LEVEL){
+                    int key = (sub_depth << 8) | sub_mpc_level;
+                    if (n_sub_search_types.find(key) == n_sub_search_types.end()){
+                        n_sub_search_types[key] = 1;
+                    } else{
+                        ++n_sub_search_types[key];
+                    }
+                    int n_same_depth = n_sub_search_types[key];
                     searches[sub_thread_idx].init(&board, sub_mpc_level, false, true);
                     bool pushed = false;
                     //while (!pushed){
                     if (result.value != SCORE_UNDEFINED){
-                        parallel_tasks.emplace_back(thread_pool.push(&pushed, std::bind(&first_nega_scout_legal, &searches[sub_thread_idx], result.value - 3, result.value + 3, result.value, sub_depth, sub_is_end_search, false, clogs, use_legal, strt, &sub_searching)));
+                        parallel_tasks.emplace_back(thread_pool.push(&pushed, std::bind(&first_nega_scout_legal, &searches[sub_thread_idx], result.value - n_same_depth, result.value + n_same_depth, result.value, sub_depth, sub_is_end_search, false, clogs, use_legal, strt, &sub_searching)));
                     } else{
                         parallel_tasks.emplace_back(thread_pool.push(&pushed, std::bind(&first_nega_scout_legal, &searches[sub_thread_idx], -SCORE_MAX, SCORE_MAX, result.value, sub_depth, sub_is_end_search, false, clogs, use_legal, strt, &sub_searching)));
                     }
