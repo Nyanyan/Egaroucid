@@ -71,8 +71,8 @@
     // midgame search
     #define W_MOBILITY (1 << 16)
     #define W_POTENTIAL_MOBILITY (1 << 5)
-    #define W_TT_BONUS (1 << 15)
     #define W_STABILITY (1 << 11)
+    #define W_TT_BONUS (1 << 15)
     #define W_VALUE (1 << 15)
     #define W_VALUE_DEEP_ADDITIONAL (1 << 13)
 
@@ -87,11 +87,12 @@
     // endgame null window search
     #define W_END_NWS_MOBILITY (1 << 10)
     #define W_END_NWS_POTENTIAL_MOBILITY (1 << 5)
+    #define W_END_NWS_TT_BONUS (1 << 15)
     #define W_END_NWS_VALUE (1 << 7)
 
     // endgame simple null window search
+    #define W_END_NWS_SIMPLE_PARITY (1 << 7)
     #define W_END_NWS_SIMPLE_MOBILITY (1 << 10)
-    #define W_END_NWS_SIMPLE_PARITY (1 << 9)
 #endif
 
 #define MOVE_ORDERING_VALUE_OFFSET_ALPHA 12
@@ -213,10 +214,10 @@ inline void move_evaluate(Search *search, Flip_value *flip_value, int alpha, int
         flip_value->n_legal = search->board.get_legal();
         flip_value->value += (MO_OFFSET_L_PM - get_weighted_n_moves(flip_value->n_legal)) * W_MOBILITY;
         flip_value->value += (MO_OFFSET_L_PM - get_potential_mobility(search->board.opponent, ~(search->board.player | search->board.opponent))) * W_POTENTIAL_MOBILITY;
+        flip_value->value += pop_count_ull(calc_stability(search->board.opponent, search->board.player)) * W_STABILITY;
         if (transposition_table.has_node_any_level(search, search->board.hash())){
             flip_value->value += W_TT_BONUS;
         }
-        flip_value->value += pop_count_ull(calc_stability(search->board.opponent, search->board.player)) * W_STABILITY;
         switch (depth){
             case 0:
                 flip_value->value += (SCORE_MAX - mid_evaluate_diff(search)) * W_VALUE;
@@ -275,6 +276,9 @@ inline void move_evaluate_end_nws(Search *search, Flip_value *flip_value){
         flip_value->n_legal = search->board.get_legal();
         flip_value->value += (MO_OFFSET_L_PM - pop_count_ull(flip_value->n_legal)) * W_END_NWS_MOBILITY;
         flip_value->value += (MO_OFFSET_L_PM - get_potential_mobility(search->board.opponent, ~(search->board.player | search->board.opponent))) * W_END_NWS_POTENTIAL_MOBILITY;
+        if (transposition_table.has_node_any_level(search, search->board.hash())){
+            flip_value->value += W_END_NWS_TT_BONUS;
+        }
         flip_value->value += (SCORE_MAX - mid_evaluate_move_ordering_end(search)) * W_END_NWS_VALUE;
     search->undo_endsearch(&flip_value->flip);
 }
