@@ -333,12 +333,12 @@ inline void move_list_evaluate(Search *search, std::vector<Flip_value> &move_lis
     int l, u;
     transposition_table.get_value_any_level(search, search->board.hash(), &l, &u);
     if (u <= alpha)
-        eval_depth -= 2;
+        eval_depth -= 4;
 
     if (eval_depth < 0)
         eval_depth = 0;
-    else if (eval_depth > 5)
-        eval_depth = 5;
+    else if (eval_depth > 6)
+        eval_depth = 6;
 
     for (Flip_value &flip_value: move_list){
         #if USE_MID_ETC
