@@ -77,6 +77,7 @@
     #define W_VALUE_DEEP_ADDITIONAL (1 << 14)
 
     // endgame null window search
+    #define W_END_NWS_PARITY (1 << 5)
     #define W_END_NWS_MOBILITY (1 << 10)
     #define W_END_NWS_POTENTIAL_MOBILITY (1 << 5)
     #define W_END_NWS_TT_BONUS (1 << 15)
@@ -235,6 +236,8 @@ inline void move_evaluate(Search *search, Flip_value *flip_value, int alpha, int
 */
 inline void move_evaluate_end_nws(Search *search, Flip_value *flip_value){
     flip_value->value = 0;
+    if (search->parity & cell_div4[flip_value->flip.pos])
+        flip_value->value += W_END_NWS_PARITY;
     search->move_endsearch(&flip_value->flip);
         flip_value->n_legal = search->board.get_legal();
         flip_value->value += (MO_OFFSET_WEIGHTED_MOVES - get_weighted_n_moves(flip_value->n_legal)) * W_END_NWS_MOBILITY;
