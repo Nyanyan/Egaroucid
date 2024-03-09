@@ -70,11 +70,11 @@
     #define MOVE_ORDERING_END_PARAM_END 11
 #else
     // midgame search
-    #define W_MOBILITY (1 << 17)
-    #define W_POTENTIAL_MOBILITY (1 << 10)
-    #define W_TT_BONUS (1 << 15)
-    #define W_VALUE (1 << 15)
-    #define W_VALUE_DEEP_ADDITIONAL (1 << 14)
+    #define W_MOBILITY (1 << 12)
+    #define W_POTENTIAL_MOBILITY (1 << 5)
+    #define W_TT_BONUS (1 << 10)
+    #define W_VALUE (1 << 10)
+    #define W_VALUE_DEEP_ADDITIONAL (1 << 9)
 
     // endgame null window search
     #define W_END_NWS_PARITY (1 << 5)
