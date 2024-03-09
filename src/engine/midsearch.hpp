@@ -191,16 +191,16 @@ int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, uin
             bool n_searching = true;
             int ybwc_idx;
             for (int move_idx = 0; move_idx < canput - etc_done_idx && *searching; ++move_idx){
-                if (search->need_to_see_tt_loop){
-                    if (transposition_cutoff(search, hash_code, depth, &alpha, &beta, &v, moves)){
-                        return v;
-                    }
-                }
                 swap_next_best_move(move_list, move_idx, canput);
                 #if USE_MID_ETC
                     if (move_list[move_idx].flip.flip == 0ULL)
                         break;
                 #endif
+                if (search->need_to_see_tt_loop){
+                    if (transposition_cutoff(search, hash_code, depth, &alpha, &beta, &v, moves)){
+                        return v;
+                    }
+                }
                 search->move(&move_list[move_idx].flip);
                     if (v == -SCORE_INF){
                         g = -nega_scout(search, -beta, -alpha, depth - 1, false, move_list[move_idx].n_legal, is_end_search, searching);
@@ -299,16 +299,16 @@ int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, uin
         } else{
     #endif
             for (int move_idx = 0; move_idx < canput - etc_done_idx && *searching; ++move_idx){
-                if (search->need_to_see_tt_loop){
-                    if (transposition_cutoff(search, hash_code, depth, &alpha, &beta, &v, moves)){
-                        return v;
-                    }
-                }
                 swap_next_best_move(move_list, move_idx, canput);
                 #if USE_MID_ETC
                     if (move_list[move_idx].flip.flip == 0ULL)
                         break;
                 #endif
+                if (search->need_to_see_tt_loop){
+                    if (transposition_cutoff(search, hash_code, depth, &alpha, &beta, &v, moves)){
+                        return v;
+                    }
+                }
                 search->move(&move_list[move_idx].flip);
                     if (v == -SCORE_INF)
                         g = -nega_scout(search, -beta, -alpha, depth - 1, false, move_list[move_idx].n_legal, is_end_search, searching);

@@ -167,16 +167,16 @@ int nega_alpha_ordering_nws(Search *search, int alpha, int depth, bool skipped, 
         std::vector<std::future<Parallel_task>> parallel_tasks;
         bool n_searching = true;
         for (int move_idx = 0; move_idx < canput - etc_done_idx && *searching && n_searching; ++move_idx){
-            if (search->need_to_see_tt_loop){
-                if (transposition_cutoff_nws(search, hash_code, depth, alpha, &v, moves)){
-                    return v;
-                }
-            }
             swap_next_best_move(move_list, move_idx, canput);
             #if USE_MID_ETC
                 if (move_list[move_idx].flip.flip == 0ULL)
                     break;
             #endif
+            if (search->need_to_see_tt_loop){
+                if (transposition_cutoff_nws(search, hash_code, depth, alpha, &v, moves)){
+                    return v;
+                }
+            }
             search->move(&move_list[move_idx].flip);
                 if (ybwc_split_nws(search, -alpha - 1, depth - 1, move_list[move_idx].n_legal, is_end_search, &n_searching, move_list[move_idx].flip.pos, move_idx + move_idx_offset, canput - etc_done_idx, running_count, parallel_tasks)){
                     ++running_count;
@@ -204,16 +204,16 @@ int nega_alpha_ordering_nws(Search *search, int alpha, int depth, bool skipped, 
         }
     } else{
         for (int move_idx = 0; move_idx < canput - etc_done_idx && *searching; ++move_idx){
-            if (search->need_to_see_tt_loop){
-                if (transposition_cutoff_nws(search, hash_code, depth, alpha, &v, moves)){
-                    return v;
-                }
-            }
             swap_next_best_move(move_list, move_idx, canput);
             #if USE_MID_ETC
                 if (move_list[move_idx].flip.flip == 0ULL)
                     break;
             #endif
+            if (search->need_to_see_tt_loop){
+                if (transposition_cutoff_nws(search, hash_code, depth, alpha, &v, moves)){
+                    return v;
+                }
+            }
             search->move(&move_list[move_idx].flip);
                 g = -nega_alpha_ordering_nws(search, -alpha - 1, depth - 1, false, move_list[move_idx].n_legal, is_end_search, searching);
             search->undo(&move_list[move_idx].flip);
