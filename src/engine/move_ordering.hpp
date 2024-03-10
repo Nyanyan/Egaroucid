@@ -41,11 +41,11 @@
     @brief constants for move ordering
 */
 #if TUNE_MOVE_ORDERING
-    #define N_MOVE_ORDERING_PARAM 12
+    #define N_MOVE_ORDERING_PARAM 11
     int move_ordering_param_array[N_MOVE_ORDERING_PARAM] = {
-        12, 3, 13, 10, 10, 
-        3, 7, 8, 24, 5, 
-        3, 6
+        10, 8, 18, 10, 16, 
+        2, 7, 16, 5, 
+        2, 7
     };
 
     // midgame search
@@ -58,16 +58,15 @@
     // endgame null window search
     #define W_END_NWS_PARITY                (1 << move_ordering_param_array[5])
     #define W_END_NWS_MOBILITY              (1 << move_ordering_param_array[6])
-    #define W_END_NWS_POTENTIAL_MOBILITY    (1 << move_ordering_param_array[7])
-    #define W_END_NWS_TT_BONUS              (1 << move_ordering_param_array[8])
-    #define W_END_NWS_VALUE                 (1 << move_ordering_param_array[9])
+    #define W_END_NWS_TT_BONUS              (1 << move_ordering_param_array[7])
+    #define W_END_NWS_VALUE                 (1 << move_ordering_param_array[8])
 
     // endgame simple null window search
-    #define W_END_NWS_SIMPLE_PARITY         (1 << move_ordering_param_array[10])
-    #define W_END_NWS_SIMPLE_MOBILITY       (1 << move_ordering_param_array[11])
+    #define W_END_NWS_SIMPLE_PARITY         (1 << move_ordering_param_array[9])
+    #define W_END_NWS_SIMPLE_MOBILITY       (1 << move_ordering_param_array[10])
 
     #define MOVE_ORDERING_PARAM_START 0
-    #define MOVE_ORDERING_PARAM_END 11
+    #define MOVE_ORDERING_PARAM_END N_MOVE_ORDERING_PARAM
 #else
     // midgame search
     #define W_MOBILITY                      (1 << 12)
@@ -79,7 +78,6 @@
     // endgame null window search
     #define W_END_NWS_PARITY                (1 << 3)
     #define W_END_NWS_MOBILITY              (1 << 7)
-    #define W_END_NWS_POTENTIAL_MOBILITY    (1 << 8)
     #define W_END_NWS_TT_BONUS              (1 << 24)
     #define W_END_NWS_VALUE                 (1 << 5)
 
@@ -241,7 +239,7 @@ inline void move_evaluate_end_nws(Search *search, Flip_value *flip_value){
     search->move_endsearch(&flip_value->flip);
         flip_value->n_legal = search->board.get_legal();
         flip_value->value += (MO_OFFSET_WEIGHTED_MOVES - get_weighted_n_moves(flip_value->n_legal)) * W_END_NWS_MOBILITY;
-        flip_value->value += (MO_OFFSET_POTENTIAL_MOBILITY - get_potential_mobility(search->board.opponent, ~(search->board.player | search->board.opponent))) * W_END_NWS_POTENTIAL_MOBILITY;
+        //flip_value->value += (MO_OFFSET_POTENTIAL_MOBILITY - get_potential_mobility(search->board.opponent, ~(search->board.player | search->board.opponent))) * W_END_NWS_POTENTIAL_MOBILITY;
         if (transposition_table.has_node_any_level(search, search->board.hash())){
             flip_value->value += W_END_NWS_TT_BONUS;
         }
