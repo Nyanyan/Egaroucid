@@ -78,6 +78,34 @@ inline int nega_alpha_eval1(Search *search, int alpha, int beta, bool skipped){
     return v;
 }
 
+#if USE_YBWC_NEGASCOUT
+    int search_younger_brothers(Search *search, int *alpha, int *beta, int depth, bool is_end_search, uint32_t hash_code, std::vector<Flip_value> &move_list, const bool *searching){
+        std::vector<std::future<Parallel_task>> parallel_tasks;
+        bool move_found = false;
+        int nws_alpha = *alpha;
+        int v = -SCORE_INF;
+        uint_fast8_t moves[N_TRANSPOSITION_MOVES];
+        for (Flip_value &move: move_list){
+            if (move.flip.flip){ // move is valid
+                move_found = true;
+                if (search->need_to_see_tt_loop){
+                    if (transposition_cutoff(search, hash_code, depth, alpha, beta, &v, moves)){
+                        return v;
+                    }
+                }
+
+                // just split moves
+            }
+        }
+        // search other moves in this thread
+        // check fail-high
+        // update window
+        // if window updated, search non-ignored moves recursively
+        //v = std::max(v, search_younger_brothers(search, alpha, beta, depth, is_end_search, hash_code, move_list, searching));
+        return v;
+    }
+#endif
+
 /*
     @brief Get a value with given depth with Negascout algorithm
 
