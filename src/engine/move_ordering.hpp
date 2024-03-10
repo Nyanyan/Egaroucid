@@ -355,7 +355,7 @@ inline void move_list_evaluate(Search *search, std::vector<Flip_value> &move_lis
     int l, u = SCORE_MAX;
     transposition_table.get_value_any_level(search, search->board.hash(), &l, &u);
     if (u <= alpha){
-        eval_depth = std::max(0, eval_depth - 6);
+        eval_depth = std::max(0, eval_depth - 4);
     }
     
     for (Flip_value &flip_value: move_list){
