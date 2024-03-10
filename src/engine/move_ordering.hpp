@@ -43,17 +43,17 @@
 #if TUNE_MOVE_ORDERING
     #define N_MOVE_ORDERING_PARAM 12
     int move_ordering_param_array[N_MOVE_ORDERING_PARAM] = {
-        11, 4, 14, 10, 9, 
-        6, 7, 5, 25, 5, 
-        3, 7
+        12, 3, 13, 10, 10, 
+        3, 7, 8, 24, 5, 
+        3, 6
     };
 
     // midgame search
-    #define W_MOBILITY                  (1 << move_ordering_param_array[0])
-    #define W_POTENTIAL_MOBILITY        (1 << move_ordering_param_array[1])
-    #define W_TT_BONUS                  (1 << move_ordering_param_array[2])
-    #define W_VALUE                     (1 << move_ordering_param_array[3])
-    #define W_VALUE_DEEP_ADDITIONAL     (1 << move_ordering_param_array[4])
+    #define W_MOBILITY                      (1 << move_ordering_param_array[0])
+    #define W_POTENTIAL_MOBILITY            (1 << move_ordering_param_array[1])
+    #define W_TT_BONUS                      (1 << move_ordering_param_array[2])
+    #define W_VALUE                         (1 << move_ordering_param_array[3])
+    #define W_VALUE_DEEP_ADDITIONAL         (1 << move_ordering_param_array[4])
 
     // endgame null window search
     #define W_END_NWS_PARITY                (1 << move_ordering_param_array[5])
@@ -70,22 +70,22 @@
     #define MOVE_ORDERING_PARAM_END 11
 #else
     // midgame search
-    #define W_MOBILITY (1 << 12)
-    #define W_POTENTIAL_MOBILITY (1 << 5)
-    #define W_TT_BONUS (1 << 10)
-    #define W_VALUE (1 << 10)
-    #define W_VALUE_DEEP_ADDITIONAL (1 << 9)
+    #define W_MOBILITY                      (1 << 12)
+    #define W_POTENTIAL_MOBILITY            (1 << 3)
+    #define W_TT_BONUS                      (1 << 13)
+    #define W_VALUE                         (1 << 10)
+    #define W_VALUE_DEEP_ADDITIONAL         (1 << 10)
 
     // endgame null window search
-    #define W_END_NWS_PARITY (1 << 5)
-    #define W_END_NWS_MOBILITY (1 << 10)
-    #define W_END_NWS_POTENTIAL_MOBILITY (1 << 5)
-    #define W_END_NWS_TT_BONUS (1 << 15)
-    #define W_END_NWS_VALUE (1 << 7)
+    #define W_END_NWS_PARITY                (1 << 3)
+    #define W_END_NWS_MOBILITY              (1 << 7)
+    #define W_END_NWS_POTENTIAL_MOBILITY    (1 << 8)
+    #define W_END_NWS_TT_BONUS              (1 << 24)
+    #define W_END_NWS_VALUE                 (1 << 5)
 
     // endgame simple null window search
-    #define W_END_NWS_SIMPLE_PARITY (1 << 7)
-    #define W_END_NWS_SIMPLE_MOBILITY (1 << 10)
+    #define W_END_NWS_SIMPLE_PARITY         (1 << 3)
+    #define W_END_NWS_SIMPLE_MOBILITY       (1 << 6)
 #endif
 
 #define MOVE_ORDERING_VALUE_OFFSET_ALPHA 12

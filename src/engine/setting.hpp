@@ -214,7 +214,7 @@
 */
 
 // move ordering
-#define TUNE_MOVE_ORDERING true
+#define TUNE_MOVE_ORDERING false
 
 // probcut
 #define TUNE_PROBCUT_MID false
