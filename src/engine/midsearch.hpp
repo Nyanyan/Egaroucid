@@ -201,17 +201,15 @@ int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, uin
                 search->move(&move_list[move_idx].flip);
                     if (v == -SCORE_INF){
                         g = -nega_scout(search, -beta, -alpha, depth - 1, false, move_list[move_idx].n_legal, is_end_search, searching);
+                    } else if (ybwc_split_nws(search, -alpha - 1, depth - 1, move_list[move_idx].n_legal, is_end_search, &n_searching, move_list[move_idx].flip.pos, move_idx, canput - etc_done_idx, running_count, parallel_tasks)){
+                        ++running_count;
+                        parallel_alphas.emplace_back(alpha);
+                        parallel_idxes.emplace_back(move_idx);
+                        additional_search_windows.emplace_back(SCORE_UNDEFINED);
                     } else{
-                        if (ybwc_split_nws(search, -alpha - 1, depth - 1, move_list[move_idx].n_legal, is_end_search, &n_searching, move_list[move_idx].flip.pos, move_idx, canput - etc_done_idx, running_count, parallel_tasks)){
-                            ++running_count;
-                            parallel_alphas.emplace_back(alpha);
-                            parallel_idxes.emplace_back(move_idx);
-                            additional_search_windows.emplace_back(SCORE_UNDEFINED);
-                        } else{
-                            g = -nega_alpha_ordering_nws(search, -alpha - 1, depth - 1, false, move_list[move_idx].n_legal, is_end_search, searching);
-                            if (alpha < g && g < beta){
-                                g = -nega_scout(search, -beta, -g, depth - 1, false, move_list[move_idx].n_legal, is_end_search, searching);
-                            }
+                        g = -nega_alpha_ordering_nws(search, -alpha - 1, depth - 1, false, move_list[move_idx].n_legal, is_end_search, searching);
+                        if (alpha < g && g < beta){
+                            g = -nega_scout(search, -beta, -g, depth - 1, false, move_list[move_idx].n_legal, is_end_search, searching);
                         }
                     }
                 search->undo(&move_list[move_idx].flip);
@@ -446,17 +444,15 @@ std::pair<int, int> first_nega_scout_legal(Search *search, int alpha, int beta, 
                     search->move(&move_list[move_idx].flip);
                         if (v == -SCORE_INF){
                             g = -nega_scout(search, -beta, -alpha, depth - 1, false, move_list[move_idx].n_legal, is_end_search, searching);
+                        } else if (ybwc_split_nws(search, -alpha - 1, depth - 1, move_list[move_idx].n_legal, is_end_search, &n_searching, move_list[move_idx].flip.pos, move_idx, canput, running_count, parallel_tasks)){
+                            ++running_count;
+                            parallel_alphas.emplace_back(alpha);
+                            parallel_idxes.emplace_back(move_idx);
+                            additional_search_windows.emplace_back(SCORE_UNDEFINED);
                         } else{
-                            if (ybwc_split_nws(search, -alpha - 1, depth - 1, move_list[move_idx].n_legal, is_end_search, &n_searching, move_list[move_idx].flip.pos, move_idx, canput, running_count, parallel_tasks)){
-                                ++running_count;
-                                parallel_alphas.emplace_back(alpha);
-                                parallel_idxes.emplace_back(move_idx);
-                                additional_search_windows.emplace_back(SCORE_UNDEFINED);
-                            } else{
-                                g = -nega_alpha_ordering_nws(search, -alpha - 1, depth - 1, false, move_list[move_idx].n_legal, is_end_search, searching);
-                                if (alpha < g && g < beta){
-                                    g = -nega_scout(search, -beta, -g, depth - 1, false, move_list[move_idx].n_legal, is_end_search, searching);
-                                }
+                            g = -nega_alpha_ordering_nws(search, -alpha - 1, depth - 1, false, move_list[move_idx].n_legal, is_end_search, searching);
+                            if (alpha < g && g < beta){
+                                g = -nega_scout(search, -beta, -g, depth - 1, false, move_list[move_idx].n_legal, is_end_search, searching);
                             }
                         }
                     search->undo(&move_list[move_idx].flip);
