@@ -64,13 +64,8 @@ void solve_problems(std::vector<std::string> arg, Options *options, State *state
 
 void execute_special_tasks(Options options){
     // move ordering tuning
-    #if TUNE_MOVE_ORDERING_MID || TUNE_MOVE_ORDERING_END
+    #if TUNE_MOVE_ORDERING
         std::cout << "tune move ordering ";
-        #if TUNE_MOVE_ORDERING_MID
-            std::cout << "(midgame)" << std::endl;
-        #elif TUNE_MOVE_ORDERING_END
-            std::cout << "(midgame)" << std::endl;
-        #endif
         tune_move_ordering(options.level);
         std::exit(0);
     #endif

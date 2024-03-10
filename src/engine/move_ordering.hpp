@@ -40,34 +40,34 @@
 /*
     @brief constants for move ordering
 */
-#if TUNE_MOVE_ORDERING_MID || TUNE_MOVE_ORDERING_END
+#if TUNE_MOVE_ORDERING
     #define N_MOVE_ORDERING_PARAM 12
     int move_ordering_param_array[N_MOVE_ORDERING_PARAM] = {
-        16, 5, 15, 11, 15, 13, 
-        10, 7, 
-        10, 9
+        11, 4, 14, 10, 9, 
+        6, 7, 5, 25, 5, 
+        3, 7
     };
 
-    #define W_MOBILITY                  move_ordering_param_array[0]
-    #define W_POTENTIAL_MOBILITY        move_ordering_param_array[1]
-    #define W_VALUE                     move_ordering_param_array[2]
-    #define W_VALUE_DEEP_ADDITIONAL     move_ordering_param_array[3]
+    // midgame search
+    #define W_MOBILITY                  (1 << move_ordering_param_array[0])
+    #define W_POTENTIAL_MOBILITY        (1 << move_ordering_param_array[1])
+    #define W_TT_BONUS                  (1 << move_ordering_param_array[2])
+    #define W_VALUE                     (1 << move_ordering_param_array[3])
+    #define W_VALUE_DEEP_ADDITIONAL     (1 << move_ordering_param_array[4])
 
-    #define W_NWS_MOBILITY              move_ordering_param_array[4]
-    #define W_NWS_POTENTIAL_MOBILITY    move_ordering_param_array[5]
-    #define W_NWS_VALUE                 move_ordering_param_array[6]
-    #define W_NWS_VALUE_DEEP_ADDITIONAL move_ordering_param_array[7]
+    // endgame null window search
+    #define W_END_NWS_PARITY                (1 << move_ordering_param_array[5])
+    #define W_END_NWS_MOBILITY              (1 << move_ordering_param_array[6])
+    #define W_END_NWS_POTENTIAL_MOBILITY    (1 << move_ordering_param_array[7])
+    #define W_END_NWS_TT_BONUS              (1 << move_ordering_param_array[8])
+    #define W_END_NWS_VALUE                 (1 << move_ordering_param_array[9])
 
-    #define W_END_NWS_MOBILITY          move_ordering_param_array[8]
-    #define W_END_NWS_VALUE             move_ordering_param_array[9]
+    // endgame simple null window search
+    #define W_END_NWS_SIMPLE_PARITY         (1 << move_ordering_param_array[10])
+    #define W_END_NWS_SIMPLE_MOBILITY       (1 << move_ordering_param_array[11])
 
-    #define W_END_NWS_SIMPLE_MOBILITY   move_ordering_param_array[10]
-    #define W_END_NWS_SIMPLE_PARITY     move_ordering_param_array[11]
-
-    #define MOVE_ORDERING_MID_PARAM_START 0
-    #define MOVE_ORDERING_MID_PARAM_END 7
-    #define MOVE_ORDERING_END_PARAM_START 8
-    #define MOVE_ORDERING_END_PARAM_END 11
+    #define MOVE_ORDERING_PARAM_START 0
+    #define MOVE_ORDERING_PARAM_END 11
 #else
     // midgame search
     #define W_MOBILITY (1 << 12)
@@ -399,11 +399,9 @@ inline void move_list_evaluate_end_simple_nws(Search *search, Flip_value move_li
 /*
     @brief Parameter tuning for move ordering
 */
-#if TUNE_MOVE_ORDERING_MID || TUNE_MOVE_ORDERING_END
+#if TUNE_MOVE_ORDERING
     #include "ai.hpp"
-    //std::pair<int, int> first_nega_scout(Search *search, int alpha, int beta, int predicted_value, int depth, bool is_end_search, const bool is_main_search, const std::vector<Clog_result> clogs, uint64_t strt);
-    inline Search_result tree_search(Board board, int depth, uint_fast8_t mpc_level, bool show_log, bool use_multi_thread);
-    void transposition_table_init();
+    inline Search_result tree_search_legal(Board board, int depth, uint_fast8_t mpc_level, bool show_log, uint64_t use_legal, bool use_multi_thread);
 
     Board get_board(std::string board_str){
         board_str.erase(std::remove_if(board_str.begin(), board_str.end(), ::isspace), board_str.end());
@@ -441,21 +439,8 @@ inline void move_list_evaluate_end_simple_nws(Search *search, Flip_value move_li
             bool is_mid_search;
             uint_fast8_t mpc_level;
             get_level(level, board.n_discs() - 4, &is_mid_search, &depth, &mpc_level);
-            /*
-            Search search;
-            search.init_board(&board);
-            search.n_nodes = 0ULL;
-            search.use_multi_thread = true;
-            search.mpc_level = mpc_level;
-            std::vector<Clog_result> clogs;
-            */
-            //board.print();
-            //transposition_table.init();
-            //std::pair<int, int> result = first_nega_scout(&search, -SCORE_MAX, SCORE_MAX, SCORE_UNDEFINED, depth, !is_mid_search, false, clogs, tim());
-            //std::cerr << result.first << " " << result.second << std::endl;
-            //n_nodes += search.n_nodes;
-            transposition_table_init();
-            Search_result result = tree_search(board, depth, mpc_level, false, true);
+            transposition_table.init();
+            Search_result result = tree_search_legal(board, depth, mpc_level, false, board.get_legal(), true);
             n_nodes += result.nodes;
         }
         return n_nodes;
@@ -489,14 +474,12 @@ inline void move_list_evaluate_end_simple_nws(Search *search, Flip_value move_li
         uint64_t strt = tim();
         while (tim() - strt < tl){
             // update parameter randomly
-            #if TUNE_MOVE_ORDERING_MID
-                int idx = myrandrange(MOVE_ORDERING_MID_PARAM_START, MOVE_ORDERING_MID_PARAM_END + 1); // midgame search
-            #else
-                int idx = myrandrange(MOVE_ORDERING_END_PARAM_START, MOVE_ORDERING_END_PARAM_END + 1); // endgame search
-            #endif
-            int delta = myrandrange(-4, 5);
+            int idx = myrandrange(MOVE_ORDERING_PARAM_START, MOVE_ORDERING_PARAM_END + 1);
+            int delta = myrandrange(-2, 3);
             while (delta == 0)
-                delta = myrandrange(-4, 5);
+                delta = myrandrange(-2, 3);
+            if (move_ordering_param_array[idx] + delta < 0 || move_ordering_param_array[idx] + delta > 25)
+                continue;
             move_ordering_param_array[idx] += delta;
             uint64_t n_nodes = n_nodes_test(level, testcase_arr);
             double percentage = 100.0 * n_nodes / first_n_nodes;
