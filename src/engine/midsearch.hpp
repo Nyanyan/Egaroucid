@@ -385,7 +385,7 @@ inline int aspiration_search(Search *search, int alpha, int beta, int predicted_
     @param legal                legal moves in bitboard
     @return pair of value and best move
 */
-std::pair<int, int> first_nega_scout_legal(Search *search, int alpha, int beta, int predicted_value, int depth, bool is_end_search, const bool is_main_search, const std::vector<Clog_result> clogs, uint64_t legal, uint64_t strt, bool *searching){
+std::pair<int, int> first_nega_scout_legal(Search *search, int alpha, int beta, int predicted_value, int depth, bool is_end_search, const std::vector<Clog_result> clogs, uint64_t legal, uint64_t strt, bool *searching){
     ++search->n_nodes;
     #if USE_SEARCH_STATISTICS
         ++search->n_nodes_discs[search->n_discs];
@@ -617,8 +617,8 @@ std::pair<int, int> first_nega_scout_legal(Search *search, int alpha, int beta, 
     @param clogs                previously found clog moves
     @return pair of value and best move
 */
-std::pair<int, int> first_nega_scout(Search *search, int alpha, int beta, int predicted_value, int depth, bool is_end_search, const bool is_main_search, const std::vector<Clog_result> clogs, uint64_t strt, bool *searching){
-    return first_nega_scout_legal(search, alpha, beta, predicted_value, depth, is_end_search, is_main_search, clogs, search->board.get_legal(), strt, searching);
+std::pair<int, int> first_nega_scout(Search *search, int alpha, int beta, int predicted_value, int depth, bool is_end_search, const std::vector<Clog_result> clogs, uint64_t strt, bool *searching){
+    return first_nega_scout_legal(search, alpha, beta, predicted_value, depth, is_end_search, clogs, search->board.get_legal(), strt, searching);
 }
 
 void first_nega_scout_hint_sub_thread(Search *search, int depth, bool is_end_search, uint64_t legal, bool *searching){

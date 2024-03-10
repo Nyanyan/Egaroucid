@@ -109,7 +109,7 @@ Search_result lazy_smp(Board board, int depth, uint_fast8_t mpc_level, bool show
         Search main_search;
         main_search.init(&board, main_mpc_level, use_multi_thread, parallel_tasks.size() != 0);
         bool searching = true;
-        std::pair<int, int> id_result = first_nega_scout_legal(&main_search, -SCORE_MAX, SCORE_MAX, result.value, main_depth, main_is_end_search, is_last_search && show_log, clogs, use_legal, strt, &searching);
+        std::pair<int, int> id_result = first_nega_scout_legal(&main_search, -SCORE_MAX, SCORE_MAX, result.value, main_depth, main_is_end_search, clogs, use_legal, strt, &searching);
         sub_searching = false;
         for (std::future<int> &task: parallel_tasks){
             task.get();
