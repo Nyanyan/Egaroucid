@@ -77,6 +77,7 @@
     // midgame null window search
     #define W_NWS_MOBILITY 21
     #define W_NWS_POTENTIAL_MOBILITY 13
+    #define W_NWS_TT_BONUS 200
     #define W_NWS_VALUE 10
     #define W_NWS_VALUE_DEEP_ADDITIONAL 16
 
@@ -248,6 +249,9 @@ inline void move_evaluate_nws(Search *search, Flip_value *flip_value, int alpha,
         if (depth == 0){
             flip_value->value += (SCORE_MAX - mid_evaluate_diff(search)) * W_NWS_VALUE;
         } else{
+            if (transposition_table.has_node_any_level(search, search->board.hash())){
+                flip_value->value += W_NWS_TT_BONUS;
+            }
             flip_value->value += (SCORE_MAX - nega_alpha_eval1(search, alpha, beta, false)) * (W_NWS_VALUE + W_NWS_VALUE_DEEP_ADDITIONAL);
         }
     search->undo(&flip_value->flip);
@@ -371,37 +375,6 @@ inline void move_list_evaluate(Search *search, std::vector<Flip_value> &move_lis
                 flip_value.value = W_2ND_MOVE;
             else
                 move_evaluate(search, &flip_value, eval_alpha, eval_beta, eval_depth, searching);
-        #endif
-    }
-}
-
-/*
-    @brief Evaluate all legal moves for midgame
-
-    @param search               search information
-    @param move_list            list of moves
-    @param depth                remaining depth
-    @param alpha                alpha value
-    @param beta                 beta value
-    @param searching            flag for terminating this search
-*/
-inline void move_list_evaluate(Search *search, std::vector<Flip_value> &move_list, int depth, int alpha, int beta, const bool *searching){
-    if (move_list.size() <= 1)
-        return;
-    int eval_alpha = -std::min(SCORE_MAX, beta + MOVE_ORDERING_VALUE_OFFSET_BETA);
-    int eval_beta = -std::max(-SCORE_MAX, alpha - MOVE_ORDERING_VALUE_OFFSET_ALPHA);
-    int eval_depth = depth >> 2;
-    //if (eval_depth < depth - 1 && depth % 2 != eval_depth % 2){
-    //    ++eval_depth;
-    //}
-    for (Flip_value &flip_value: move_list){
-        #if USE_MID_ETC
-            if (flip_value.flip.flip)
-                move_evaluate(search, &flip_value, eval_alpha, eval_beta, eval_depth, searching);
-            else
-                flip_value.value = -INF;
-        #else
-            move_evaluate(search, &flip_value, eval_alpha, eval_beta, eval_depth, searching);
         #endif
     }
 }
