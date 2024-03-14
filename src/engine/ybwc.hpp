@@ -108,12 +108,13 @@ inline bool ybwc_split_nws(Search *search, int alpha, int depth, uint64_t legal,
         for (int move_idx = 0; move_idx < canput && n_searching; ++move_idx){
             n_searching &= *searching;
             if (move_list[move_idx].flip.flip){
-                bool move_done = false;
+                bool move_done = false, serial_searched = false;
                 search->move(&move_list[move_idx].flip);
                     if (ybwc_split_nws(search, -(*alpha) - 1, depth - 1, move_list[move_idx].n_legal, is_end_search, &n_searching, move_list[move_idx].flip.pos, move_idx, canput, running_count, parallel_tasks)){
                         ++running_count;
                     } else{
                         g = -nega_alpha_ordering_nws(search, -(*alpha) - 1, depth - 1, false, move_list[move_idx].n_legal, is_end_search, searching);
+                        serial_searched = true;
                         if (*searching){
                             if (*alpha < g){
                                 *alpha = g;
@@ -131,6 +132,9 @@ inline bool ybwc_split_nws(Search *search, int alpha, int depth, uint64_t legal,
                         }
                     }
                 search->undo(&move_list[move_idx].flip);
+                if (move_done){
+                    move_list[move_idx].flip.flip = 0;
+                }
                 if (search->need_to_see_tt_loop){
                     if (transposition_cutoff_nomove(search, hash_code, depth, alpha, beta, v)){
                         *best_move = TRANSPOSITION_TABLE_UNDEFINED;
@@ -138,8 +142,31 @@ inline bool ybwc_split_nws(Search *search, int alpha, int depth, uint64_t legal,
                         fail_high_idx = -1;
                     }
                 }
-                if (move_done){
-                    move_list[move_idx].flip.flip = 0;
+                if (running_count && serial_searched){
+                    Parallel_task got_task;
+                    for (std::future<Parallel_task> &task: parallel_tasks){
+                        if (task.valid()){
+                            if (task.wait_for(std::chrono::seconds(0)) == std::future_status::ready){
+                                got_task = task.get();
+                                if (n_searching){
+                                    if (*alpha < got_task.value){
+                                        *alpha = got_task.value;
+                                        *v = got_task.value;
+                                        *best_move = move_list[got_task.move_idx].flip.pos;
+                                        fail_high_idx = got_task.move_idx;
+                                        n_searching = false;
+                                    } else {
+                                        if (*v < got_task.value){
+                                            *v = got_task.value;
+                                            *best_move = move_list[got_task.move_idx].flip.pos;
+                                        }
+                                        move_list[got_task.move_idx].flip.flip = 0;
+                                    }
+                                }
+                                search->n_nodes += got_task.n_nodes;
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -169,11 +196,9 @@ inline bool ybwc_split_nws(Search *search, int alpha, int depth, uint64_t legal,
         }
         if (*searching && fail_high_idx != -1){
             if (*alpha < *beta){
-                //std::cerr << "start fh search " << depth << "  " << idx_to_coord(move_list[fail_high_idx].flip.pos) << std::endl;
                 search->move(&move_list[fail_high_idx].flip);
                     g = -nega_scout(search, -(*beta), -(*alpha), depth - 1, false, move_list[fail_high_idx].n_legal, is_end_search, searching);
                 search->undo(&move_list[fail_high_idx].flip);
-                //std::cerr << "fh ns " << depth << "  " << idx_to_coord(move_list[fail_high_idx].flip.pos) << " " << g << "  " << *alpha << " " << *beta << std::endl;
                 *alpha = g;
                 *v = g;
                 *best_move = move_list[fail_high_idx].flip.pos;
