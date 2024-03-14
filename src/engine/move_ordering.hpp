@@ -450,6 +450,12 @@ inline void move_list_evaluate_end_simple_nws(Search *search, Flip_value move_li
         move_evaluate_end_simple_nws(search, &move_list[i]);
 }
 
+inline void move_list_sort(std::vector<Flip_value> &move_list){
+    std::sort(move_list.begin(), move_list.end(), [](Flip_value &a, Flip_value &b) {
+    return a.value > b.value;
+  });
+}
+
 /*
     @brief Parameter tuning for move ordering
 */

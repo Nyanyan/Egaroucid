@@ -120,16 +120,11 @@ inline bool ybwc_split_nws(Search *search, int alpha, int depth, uint64_t legal,
                             }
                         }
                         g = -nega_alpha_ordering_nws(search, -*alpha - 1, depth - 1, false, move_list[move_idx].n_legal, is_end_search, searching);
-                        if (*v < g){
-                            *v = g;
-                            *best_move = move_list[move_idx].flip.pos;
-                            if (*alpha < *v){
-                                *alpha = g;
-                                n_searching = false;
-                                fail_high_idx = move_idx;
-                            }
-                        }
-                        if (n_searching){
+                        if (*alpha < g){
+                            *alpha = g;
+                            n_searching = false;
+                            fail_high_idx = move_idx;
+                        } else{
                             move_list[move_idx].flip.flip = 0;
                         }
                     }
@@ -147,10 +142,6 @@ inline bool ybwc_split_nws(Search *search, int alpha, int depth, uint64_t legal,
                         n_searching = false;
                     } else {
                         move_list[got_task.move_idx].flip.flip = 0;
-                        if (*v < got_task.value){
-                            *v = got_task.value;
-                            *best_move = got_task.cell;
-                        }
                     }
                 }
                 search->n_nodes += got_task.n_nodes;
