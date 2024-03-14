@@ -108,8 +108,7 @@ inline bool ybwc_split_nws(Search *search, int alpha, int depth, uint64_t legal,
             n_searching &= *searching;
             if (move_list[move_idx].flip.flip){
                 if (search->need_to_see_tt_loop){
-                    if (transposition_cutoff_nws_nomove(search, hash_code, depth, alpha, v)){
-                        *best_move = TRANSPOSITION_TABLE_UNDEFINED;
+                    if (transposition_cutoff_nws_bestmove(search, hash_code, depth, alpha, v, best_move)){
                         n_searching = false;
                         break;
                     }
@@ -186,8 +185,7 @@ inline bool ybwc_split_nws(Search *search, int alpha, int depth, uint64_t legal,
             n_searching &= *searching;
             if (move_list[move_idx].flip.flip){
                 if (search->need_to_see_tt_loop){
-                    if (transposition_cutoff_nomove(search, hash_code, depth, alpha, beta, v)){
-                        *best_move = TRANSPOSITION_TABLE_UNDEFINED;
+                    if (transposition_cutoff_bestmove(search, hash_code, depth, alpha, beta, v, best_move)){
                         n_searching = false;
                         fail_high_idx = -1;
                         break;

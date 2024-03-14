@@ -199,8 +199,7 @@ int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, uin
                         break;
                 #endif
                 if (search->need_to_see_tt_loop){
-                    if (transposition_cutoff_nomove(search, hash_code, depth, &alpha, &beta, &v)){
-                        best_move = TRANSPOSITION_TABLE_UNDEFINED;
+                    if (transposition_cutoff_bestmove(search, hash_code, depth, &alpha, &beta, &v, &best_move)){
                         break;
                     }
                 }
