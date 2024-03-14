@@ -25,12 +25,5 @@ struct Parallel_task{
     int value;
     uint64_t n_nodes;
     uint_fast8_t cell;
-
-    Parallel_task copy(){
-        Parallel_task res;
-        res.value = value;
-        res.n_nodes = n_nodes;
-        res.cell = cell;
-        return res;
-    }
+    int move_idx;
 };
