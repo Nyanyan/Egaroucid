@@ -174,7 +174,7 @@ int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, uin
         }
     #endif
     move_list_evaluate(search, move_list, moves, depth, alpha, beta, searching);
-    #if USE_YBWC_NEGASCOUT
+    #if USE_YBWC_NEGASCOUT && false
         if (
             search->use_multi_thread && 
             depth - 1 >= YBWC_MID_SPLIT_MIN_DEPTH
@@ -228,7 +228,7 @@ int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, uin
                     }
                 }
             }
-    #if USE_YBWC_NEGASCOUT
+    #if USE_YBWC_NEGASCOUT && false
         }
     #endif
     if (*searching && global_searching)
@@ -349,6 +349,7 @@ std::pair<int, int> first_nega_scout_legal(Search *search, int alpha, int beta, 
                     }
                 }
                 if (alpha < beta){
+                    std::cerr << alpha << " " << v << " " << beta << " " << idx_to_coord(best_move) << std::endl;
                     ybwc_search_young_brothers(search, &alpha, &beta, &v, &best_move, hash_code, depth, is_end_search, move_list, searching);
                 }
             } else{

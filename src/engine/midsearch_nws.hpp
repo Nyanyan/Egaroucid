@@ -175,6 +175,7 @@ int nega_alpha_ordering_nws(Search *search, int alpha, int depth, bool skipped, 
             if (search->need_to_see_tt_loop){
                 if (transposition_cutoff_nws(search, hash_code, depth, alpha, &v, moves)){
                     n_searching = false;
+                    //best_move = TRANSPOSITION_TABLE_UNDEFINED;
                     break;
                 }
             }
@@ -212,6 +213,7 @@ int nega_alpha_ordering_nws(Search *search, int alpha, int depth, bool skipped, 
             #endif
             if (search->need_to_see_tt_loop){
                 if (transposition_cutoff_nws(search, hash_code, depth, alpha, &v, moves)){
+                    //best_move = TRANSPOSITION_TABLE_UNDEFINED;
                     break;
                 }
             }

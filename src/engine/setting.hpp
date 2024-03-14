@@ -165,13 +165,6 @@
 
 // Multi-ProbCut
 #define USE_MID_MPC true
-//#define USE_END_MPC false
-
-// All Node Prediction
-#define USE_ALL_NODE_PREDICTION_NWS false
-
-// transposition table
-#define USE_TRANSPOSITION_TABLE true
 
 // last parity ordering optimization
 #define LAST_PO_OPTIMIZE true

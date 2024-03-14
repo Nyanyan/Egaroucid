@@ -43,6 +43,10 @@ Search_result lazy_smp(Board board, int depth, uint_fast8_t mpc_level, bool show
         std::cerr << "thread pool size " << thread_pool.size() << " n_idle " << thread_pool.get_n_idle() << std::endl;
     }
     std::vector<Search> searches(thread_pool.size() + 1);
+
+    main_depth = depth;
+    main_mpc_level = mpc_level;
+
     while (main_depth <= depth && main_mpc_level <= mpc_level){
         for (Search &search: searches){
             search.n_nodes = 0;
