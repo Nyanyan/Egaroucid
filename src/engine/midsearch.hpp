@@ -179,15 +179,12 @@ int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, uin
             move_list_sort(move_list);
             if (move_list[0].flip.flip){
                 search->move(&move_list[0].flip);
-                    g = -nega_scout(search, -beta, -alpha, depth - 1, false, move_list[0].n_legal, is_end_search, searching);
+                    v = -nega_scout(search, -beta, -alpha, depth - 1, false, move_list[0].n_legal, is_end_search, searching);
                 search->undo(&move_list[0].flip);
                 move_list[0].flip.flip = 0;
-                if (v < g){
-                    v = g;
-                    best_move = move_list[0].flip.pos;
-                    if (alpha < v){
-                        alpha = v;
-                    }
+                best_move = move_list[0].flip.pos;
+                if (alpha < v){
+                    alpha = v;
                 }
                 if (alpha < beta){
                     ybwc_search_young_brothers(search, &alpha, &beta, &v, &best_move, hash_code, depth, is_end_search, move_list, searching);
@@ -202,7 +199,8 @@ int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, uin
                         break;
                 #endif
                 if (search->need_to_see_tt_loop){
-                    if (transposition_cutoff(search, hash_code, depth, &alpha, &beta, &v, moves)){
+                    if (transposition_cutoff_nomove(search, hash_code, depth, &alpha, &beta, &v)){
+                        best_move = TRANSPOSITION_TABLE_UNDEFINED;
                         break;
                     }
                 }
