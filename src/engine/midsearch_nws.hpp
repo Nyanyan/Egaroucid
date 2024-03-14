@@ -163,11 +163,8 @@ int nega_alpha_ordering_nws(Search *search, int alpha, int depth, bool skipped, 
                 search->move(&move_list[0].flip);
                     v = -nega_alpha_ordering_nws(search, -alpha - 1, depth - 1, false, move_list[0].n_legal, is_end_search, searching);
                 search->undo(&move_list[0].flip);
-                move_list[0].flip.flip = 0;
                 best_move = move_list[0].flip.pos;
-                if (alpha < v){
-                    alpha = v;
-                } else{
+                if (v <= alpha){
                     ybwc_search_young_brothers_nws(search, alpha, &v, &best_move, hash_code, depth, is_end_search, move_list, searching);
                 }
             }
