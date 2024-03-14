@@ -174,11 +174,8 @@ int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, uin
         }
     #endif
     move_list_evaluate(search, move_list, moves, depth, alpha, beta, searching);
-    #if USE_YBWC_NEGASCOUT && false
-        if (
-            search->use_multi_thread && 
-            depth - 1 >= YBWC_MID_SPLIT_MIN_DEPTH
-        ){
+    #if USE_YBWC_NEGASCOUT
+        if (search->use_multi_thread && depth - 1 >= YBWC_MID_SPLIT_MIN_DEPTH){
             move_list_sort(move_list);
             if (move_list[0].flip.flip){
                 search->move(&move_list[0].flip);
@@ -228,7 +225,7 @@ int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, uin
                     }
                 }
             }
-    #if USE_YBWC_NEGASCOUT && false
+    #if USE_YBWC_NEGASCOUT
         }
     #endif
     if (*searching && global_searching)
@@ -332,10 +329,7 @@ std::pair<int, int> first_nega_scout_legal(Search *search, int alpha, int beta, 
         move_list_evaluate(search, move_list, moves, depth, alpha, beta, searching);
 
         #if USE_YBWC_NEGASCOUT
-            if (
-                search->use_multi_thread && 
-                depth - 1 >= YBWC_MID_SPLIT_MIN_DEPTH
-            ){
+            if (search->use_multi_thread && depth - 1 >= YBWC_MID_SPLIT_MIN_DEPTH){
                 move_list_sort(move_list);
                 search->move(&move_list[0].flip);
                     g = -nega_scout(search, -beta, -alpha, depth - 1, false, move_list[0].n_legal, is_end_search, searching);
@@ -349,7 +343,6 @@ std::pair<int, int> first_nega_scout_legal(Search *search, int alpha, int beta, 
                     }
                 }
                 if (alpha < beta){
-                    std::cerr << alpha << " " << v << " " << beta << " " << idx_to_coord(best_move) << std::endl;
                     ybwc_search_young_brothers(search, &alpha, &beta, &v, &best_move, hash_code, depth, is_end_search, move_list, searching);
                 }
             } else{
@@ -378,42 +371,6 @@ std::pair<int, int> first_nega_scout_legal(Search *search, int alpha, int beta, 
         #if USE_YBWC_NEGASCOUT
             }
         #endif
-
-        /*
-        for (int move_idx = 0; move_idx < canput; ++move_idx){
-            swap_next_best_move(move_list, move_idx, canput);
-            search->move(&move_list[move_idx].flip);
-                if (v == -SCORE_INF){
-                    if (predicted_value != SCORE_UNDEFINED && is_end_search)
-                        g = -aspiration_search(search, -beta, -alpha, -predicted_value, depth - 1, false, move_list[move_idx].n_legal, is_end_search, searching);
-                    else
-                        g = -nega_scout(search, -beta, -alpha, depth - 1, false, move_list[move_idx].n_legal, is_end_search, searching);
-                } else{
-                    g = -nega_alpha_ordering_nws(search, -alpha - 1, depth - 1, false, move_list[move_idx].n_legal, is_end_search, searching);
-                    if (alpha <= g && g < beta)
-                        g = -nega_scout(search, -beta, -g, depth - 1, false, move_list[move_idx].n_legal, is_end_search, searching);
-                }
-            search->undo(&move_list[move_idx].flip);
-            if (v < g){
-                v = g;
-                best_move = move_list[move_idx].flip.pos;
-                if (alpha < v){
-                    if (beta <= v)
-                        break;
-                    alpha = v;
-                }
-            }
-            if (is_main_search){
-                uint64_t elapsed = tim() - strt;
-                uint64_t nps = calc_nps(search->n_nodes, elapsed);
-                if (best_move != move_list[move_idx].flip.pos)
-                    std::cerr << "depth " << depth << "@" << SELECTIVITY_PERCENTAGE[search->mpc_level] << "% " << pv_idx << "/" << canput_all << " best " << idx_to_coord(best_move) << " [" << alpha << "," << beta << "] " << idx_to_coord(move_list[move_idx].flip.pos) << " value <= " << g << " time " << elapsed << std::endl;
-                else
-                    std::cerr << "depth " << depth << "@" << SELECTIVITY_PERCENTAGE[search->mpc_level] << "% " << pv_idx << "/" << canput_all << " best " << idx_to_coord(best_move) << " [" << alpha << "," << beta << "] " << idx_to_coord(move_list[move_idx].flip.pos) << " value = " << g << " time " << elapsed << std::endl;
-            }
-            ++pv_idx;
-        }
-        */
     }
     if (*searching && global_searching)
         transposition_table.reg(search, hash_code, depth, first_alpha, beta, v, best_move);

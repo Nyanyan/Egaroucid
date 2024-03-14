@@ -99,7 +99,7 @@ inline bool ybwc_split_nws(Search *search, int alpha, int depth, uint64_t legal,
 
 
 #if USE_YBWC_NEGASCOUT
-    inline void ybwc_search_young_brothers(Search *search, int *alpha, int *beta, int *v, int *best_move, uint32_t hash_code, int depth, bool is_end_search, std::vector<Flip_value> &move_list, const bool *searching){
+    void ybwc_search_young_brothers(Search *search, int *alpha, int *beta, int *v, int *best_move, uint32_t hash_code, int depth, bool is_end_search, std::vector<Flip_value> &move_list, const bool *searching){
         std::vector<std::future<Parallel_task>> parallel_tasks;
         bool n_searching = true;
         int canput = (int)move_list.size();
@@ -107,27 +107,30 @@ inline bool ybwc_split_nws(Search *search, int alpha, int depth, uint64_t legal,
         int g, fail_high_idx = -1;
         for (int move_idx = 0; move_idx < canput && n_searching; ++move_idx){
             n_searching &= *searching;
-            if (move_list[move_idx].flip.flip){ // move is valid
-                // just split moves
+            if (move_list[move_idx].flip.flip){
+                bool move_done = false;
                 search->move(&move_list[move_idx].flip);
                     if (ybwc_split_nws(search, -(*alpha) - 1, depth - 1, move_list[move_idx].n_legal, is_end_search, &n_searching, move_list[move_idx].flip.pos, move_idx, canput, running_count, parallel_tasks)){
                         ++running_count;
                     } else{
-                        std::cerr << (-(*alpha) - 1) << " " << (-(*alpha)) << std::endl;
                         g = -nega_alpha_ordering_nws(search, -(*alpha) - 1, depth - 1, false, move_list[move_idx].n_legal, is_end_search, searching);
                         if (*searching){
-                            std::cerr << move_idx  << " " << idx_to_coord(move_list[move_idx].flip.pos) << "  " << *alpha << " " << *beta << "  " << g << std::endl;
                             if (*alpha < g){
                                 *alpha = g;
+                                *v = g;
+                                *best_move = move_list[move_idx].flip.pos;
                                 n_searching = false;
                                 fail_high_idx = move_idx;
                             } else{
-                                move_list[move_idx].flip.flip = 0;
+                                move_done = true;
+                                if (*v < g){
+                                    *v = g;
+                                    *best_move = move_list[move_idx].flip.pos;
+                                }
                             }
                         }
                     }
                 search->undo(&move_list[move_idx].flip);
-                /*
                 if (search->need_to_see_tt_loop){
                     if (transposition_cutoff_nomove(search, hash_code, depth, alpha, beta, v)){
                         *best_move = TRANSPOSITION_TABLE_UNDEFINED;
@@ -135,7 +138,9 @@ inline bool ybwc_split_nws(Search *search, int alpha, int depth, uint64_t legal,
                         fail_high_idx = -1;
                     }
                 }
-                */
+                if (move_done){
+                    move_list[move_idx].flip.flip = 0;
+                }
             }
         }
         if (running_count){
@@ -146,9 +151,15 @@ inline bool ybwc_split_nws(Search *search, int alpha, int depth, uint64_t legal,
                     if (n_searching){
                         if (*alpha < got_task.value){
                             *alpha = got_task.value;
+                            *v = got_task.value;
+                            *best_move = move_list[got_task.move_idx].flip.pos;
                             fail_high_idx = got_task.move_idx;
                             n_searching = false;
                         } else {
+                            if (*v < got_task.value){
+                                *v = got_task.value;
+                                *best_move = move_list[got_task.move_idx].flip.pos;
+                            }
                             move_list[got_task.move_idx].flip.flip = 0;
                         }
                     }
@@ -158,10 +169,11 @@ inline bool ybwc_split_nws(Search *search, int alpha, int depth, uint64_t legal,
         }
         if (*searching && fail_high_idx != -1){
             if (*alpha < *beta){
+                //std::cerr << "start fh search " << depth << "  " << idx_to_coord(move_list[fail_high_idx].flip.pos) << std::endl;
                 search->move(&move_list[fail_high_idx].flip);
                     g = -nega_scout(search, -(*beta), -(*alpha), depth - 1, false, move_list[fail_high_idx].n_legal, is_end_search, searching);
                 search->undo(&move_list[fail_high_idx].flip);
-                std::cerr << "fh ns " << fail_high_idx  << " " << idx_to_coord(move_list[fail_high_idx].flip.pos) << "  " << *alpha << " " << *beta << std::endl;
+                //std::cerr << "fh ns " << depth << "  " << idx_to_coord(move_list[fail_high_idx].flip.pos) << " " << g << "  " << *alpha << " " << *beta << std::endl;
                 *alpha = g;
                 *v = g;
                 *best_move = move_list[fail_high_idx].flip.pos;
