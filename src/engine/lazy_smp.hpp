@@ -17,7 +17,7 @@
 #include "endsearch.hpp"
 #include "thread_pool.hpp"
 
-#define LAZYSMP_ENDSEARCH_PRESEARCH_OFFSET 11
+#define LAZYSMP_ENDSEARCH_PRESEARCH_OFFSET 8
 
 struct Lazy_SMP_task{
     uint_fast8_t mpc_level;
