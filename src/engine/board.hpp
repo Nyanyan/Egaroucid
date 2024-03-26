@@ -61,10 +61,9 @@ class Board {
             @return hash code of this board
         */
         inline uint32_t hash() const{
-            #if USE_SIMD && USE_INTEL
+            #if USE_SIMD && USE_INTEL && false // not faster ?
                 uint32_t res = _mm_crc32_u64(0, player);
                 res ^= _mm_crc32_u64(res, opponent);
-                //res ^= _mm_crc32_u64(res, player);
                 return res & ((1 << global_hash_level) - 1);
             #else
                 const uint16_t *p = (uint16_t*)&player;
