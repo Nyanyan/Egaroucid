@@ -6,7 +6,7 @@
 
 ## ダウンロード
 
-Egaroucidはx64のCPUに対応しています。ARMのCPUを使っている場合は動きません。
+Egaroucidはx64のCPU(Intel製かAMD製)に対応しています。ARMのCPUを使っている場合は動きません。
 
 EgaroucidはSIMDバージョン(AVX2が必要)に最適化して作っていますが、こちらは概ね2013年以降のCPUでないと動作しません。その場合にはGenericバージョンを使用してください。
 
