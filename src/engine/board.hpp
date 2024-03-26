@@ -61,17 +61,24 @@ class Board {
             @return hash code of this board
         */
         inline uint32_t hash() const{
-            const uint16_t *p = (uint16_t*)&player;
-            const uint16_t *o = (uint16_t*)&opponent;
-            return 
-                hash_rand_player[0][p[0]] ^ 
-                hash_rand_player[1][p[1]] ^ 
-                hash_rand_player[2][p[2]] ^ 
-                hash_rand_player[3][p[3]] ^ 
-                hash_rand_opponent[0][o[0]] ^ 
-                hash_rand_opponent[1][o[1]] ^ 
-                hash_rand_opponent[2][o[2]] ^ 
-                hash_rand_opponent[3][o[3]];
+            #if USE_SIMD && USE_INTEL
+                uint32_t res = _mm_crc32_u64(0, player);
+                res ^= _mm_crc32_u64(res, opponent);
+                //res ^= _mm_crc32_u64(res, player);
+                return res & ((1 << global_hash_level) - 1);
+            #else
+                const uint16_t *p = (uint16_t*)&player;
+                const uint16_t *o = (uint16_t*)&opponent;
+                return 
+                    hash_rand_player[0][p[0]] ^ 
+                    hash_rand_player[1][p[1]] ^ 
+                    hash_rand_player[2][p[2]] ^ 
+                    hash_rand_player[3][p[3]] ^ 
+                    hash_rand_opponent[0][o[0]] ^ 
+                    hash_rand_opponent[1][o[1]] ^ 
+                    hash_rand_opponent[2][o[2]] ^ 
+                    hash_rand_opponent[3][o[3]];
+            #endif
         }
 
         /*

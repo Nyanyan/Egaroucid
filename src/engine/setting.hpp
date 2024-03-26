@@ -23,6 +23,8 @@
     #define USE_SIMD true
 #endif
 
+#define USE_INTEL true
+
 // GUI portable mode
 #define GUI_PORTABLE_MODE true
 
