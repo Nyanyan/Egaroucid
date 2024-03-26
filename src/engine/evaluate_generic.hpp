@@ -512,10 +512,7 @@ inline int mid_evaluate(Board *board){
         eval_sur0_sur1_arr[phase_idx][sur0][sur1];
     res += res >= 0 ? STEP_2 : -STEP_2;
     res /= STEP;
-    if (res > SCORE_MAX)
-        return SCORE_MAX;
-    if (res < -SCORE_MAX)
-        return -SCORE_MAX;
+    res = std::clamp(res, -SCORE_MAX, SCORE_MAX);
     return res;
 }
 
@@ -538,10 +535,7 @@ inline int mid_evaluate_diff(Search *search){
         eval_sur0_sur1_arr[phase_idx][sur0][sur1];
     res += res >= 0 ? STEP_2 : -STEP_2;
     res /= STEP;
-    if (res > SCORE_MAX)
-        return SCORE_MAX;
-    if (res < -SCORE_MAX)
-        return -SCORE_MAX;
+    res = std::clamp(res, -SCORE_MAX, SCORE_MAX);
     return res;
 }
 
