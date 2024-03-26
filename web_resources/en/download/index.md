@@ -6,13 +6,11 @@ There are Install version and Zip version.
 
 ## Download
 
-Please download the one which is suitable to your environment.
-
-<b>With Microsoft Edge, you might not be able to download Egaroucid. Please use Firefox, Chrome, etc.</b>
+Egaroucid GUI version is for only Windows on x64 CPUs. If you are using windows with ARM CPU, you cannot use Egaroucid.
 
 Egaroucid is optimized to SIMD version, which requires AVX2 instructions, but old CPUs (created in 2013 or older) might not be able to run it. If so, please install Generic version.
 
-Egaroucid 6.5.2 was first released 2024/02/13, but I accidentally published a slower version. I fixed this problem at 2024/02/14 0:00 (UTC+9). If you downloaded it in 2024/02/13, please re-install it.
+Please download the one which is suitable to your environment.
 
 
 
@@ -30,7 +28,7 @@ Egaroucid 6.5.2 was first released 2024/02/13, but I accidentally published a sl
     <td>Windows</td>
     <td>x64</td>
     <td>AVX2 (Standard)</td>
-    <td>2024/03/05</td>
+    <td>2024/02/13</td>
     <td>[Egaroucid 6.5.2 SIMD Installer](https://github.com/Nyanyan/Egaroucid/releases/download/v6.5.2/Egaroucid_6_5_2_SIMD_installer.exe)</td>
     <td>[Egaroucid 6.5.2 SIMD Zip](https://github.com/Nyanyan/Egaroucid/releases/download/v6.5.2/Egaroucid_6_5_2_Windows_x64_SIMD_Portable.zip)</td>
 </tr>
@@ -38,7 +36,7 @@ Egaroucid 6.5.2 was first released 2024/02/13, but I accidentally published a sl
     <td>Windows</td>
     <td>x64</td>
     <td>-</td>
-    <td>2024/03/05</td>
+    <td>2024/02/13</td>
     <td>[Egaroucid 6.5.2 Generic Installer](https://github.com/Nyanyan/Egaroucid/releases/download/v6.5.2/Egaroucid_6_5_2_Generic_installer.exe)</td>
     <td>[Egaroucid 6.5.2 Generic Zip](https://github.com/Nyanyan/Egaroucid/releases/download/v6.5.2/Egaroucid_6_5_2_Windows_x64_Generic_Portable.zip)</td>
 </tr>
