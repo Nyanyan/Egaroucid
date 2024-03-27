@@ -29,6 +29,7 @@ model = tf.keras.models.Sequential()
 model.add(Input(shape=128, name='in'))
 model.add(Dense(16, activation='relu', name='layer_A'))
 model.add(Dense(16, activation='relu', name='layer_B'))
+model.add(Dense(16, activation='relu', name='layer_C'))
 model.add(Dense(1, name='output_layer'))
 
 print('model', 'param', model.count_params())
@@ -38,11 +39,12 @@ model.compile(loss='mse', metrics='mae', optimizer='adam')
 
 train_data = []
 train_labels = []
-for num in range(4):
+for num in range(1): # 4
     strt = len(train_data)
     print(num, strt)
     with open('E:/github/othello/Egaroucid/train_data/board_data/records29/' + str(num) + '.dat', 'br') as f:
-        while len(train_data) - strt < 80000:
+        #while len(train_data) - strt < 80000:
+        for _ in trange(1000000):
             bits = int.from_bytes(f.read(8), sys.byteorder) << 64
             bits |= int.from_bytes(f.read(8), sys.byteorder)
             if bits == 0:
@@ -55,11 +57,12 @@ for num in range(4):
                     n_discs += 1
             f.read(2)
             score = int.from_bytes(f.read(1), sys.byteorder, signed=True)
-            if n_discs == 4 + 30:
+            #if n_discs == 4 + 30:
+            if n_discs >= 4 + 12:
                 train_data.append(in_data)
                 train_labels.append(score)
-                if len(train_data) % 10000 == 0:
-                    print(num, len(train_data))
+                #if len(train_data) % 10000 == 0:
+                #    print(num, len(train_data))
             '''
             for i in range(2):
                 for j in range(8):
@@ -70,7 +73,7 @@ for num in range(4):
             print(score)
             print('')
             '''
-'''
+
 with open('E:/github/othello/Egaroucid/train_data/board_data/records26/0.dat', 'br') as f:
     for _ in trange(1000000 // 4):
         bits = int.from_bytes(f.read(8), sys.byteorder) << 64
@@ -88,7 +91,7 @@ with open('E:/github/othello/Egaroucid/train_data/board_data/records26/0.dat', '
         #if n_discs >= 4 + 12:
         train_data.append(in_data)
         train_labels.append(score)
-'''
+
 train_data = np.array(train_data)
 train_labels = np.array(train_labels)
 print('data loaded', len(train_data), len(train_labels))
