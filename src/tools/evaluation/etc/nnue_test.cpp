@@ -141,7 +141,7 @@ inline int mid_evaluate(int16_t layer_A[]){
     }
     for (int i = 0; i < EVAL_NNUE_N_NODES_LAYER; ++i){
         for (int j = 0; j < EVAL_NNUE_N_NODES_LAYER; ++j){
-            layer_B_out[i] += layer_B_in_arr[j] * generic_eval_nnue_layer_B_weight[i][j];
+            layer_B_out[i] += layer_B_in_arr[j] * generic_eval_nnue_layer_B_weight[j][i];
         }
     }
     clipped_ReLU(layer_B_out, layer_B_out);
@@ -183,7 +183,7 @@ int main(){
     eval_nnue_layer_out_bias = generic_eval_nnue_layer_out_bias;
     eval_nnue_layer_out_weight = _mm256_load_si256((__m256i*)generic_eval_nnue_layer_out_weight);
 
-    for (int ii = 0; ii < 1; ++ii){
+    for (int ii = 0; ii < 1000; ++ii){
         int16_t generic_test_data[EVAL_NNUE_N_NODES_LAYER];
         for (int i = 0; i < EVAL_NNUE_N_NODES_LAYER; ++i){
             generic_test_data[i] = myrandrange(-127, 128);
