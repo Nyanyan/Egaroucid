@@ -59,8 +59,6 @@ inline uint64_t myrand_ull(){
 
 
 
-
-
 #define N 10000000ULL
 
 #define STEP 32
@@ -160,35 +158,21 @@ inline int mid_evaluate(int16_t layer_A[]){
     */
 }
 
-
-void mm256_print_epi32(__m256i v){
-    int* varray = (int*)&v;
-    for (int i = 0; i < 8; ++i){
-        std::cerr << varray[i] << " ";
-    }
-    std::cerr << std::endl;
-}
-
-void mm256_print_epi16(__m256i v){
-    int16_t* varray = (int16_t*)&v;
-    for (int i = 0; i < 16; ++i){
-        std::cerr << varray[i] << " ";
-    }
-    std::cerr << std::endl;
-}
-
 int main(){
     for (int i = 0; i < EVAL_NNUE_N_NODES_LAYER; ++i){
-        generic_eval_nnue_layer_B_bias[i] = i % 16 - 7;
+        //generic_eval_nnue_layer_B_bias[i] = i % 16 - 7;
+        generic_eval_nnue_layer_B_bias[i] = myrandrange(-7, 8);
     }
     for (int i = 0; i < EVAL_NNUE_N_NODES_LAYER; ++i){
         for (int j = 0; j < EVAL_NNUE_N_NODES_LAYER; ++j){
-            generic_eval_nnue_layer_B_weight[i][j] = (i + j) % 16 - 7;
+            //generic_eval_nnue_layer_B_weight[i][j] = (i + j) % 16 - 7;
+            generic_eval_nnue_layer_B_weight[i][j] = myrandrange(-7, 8);
         }
     }
     generic_eval_nnue_layer_out_bias = 1;
     for (int i = 0; i < EVAL_NNUE_N_NODES_LAYER; ++i){
-        generic_eval_nnue_layer_out_weight[i] = i % 256 - 127;
+        //generic_eval_nnue_layer_out_weight[i] = i % 256 - 127;
+        generic_eval_nnue_layer_out_weight[i] = myrandrange(-127, 128);
     }
 
 
@@ -199,13 +183,24 @@ int main(){
     eval_nnue_layer_out_bias = generic_eval_nnue_layer_out_bias;
     eval_nnue_layer_out_weight = _mm256_load_si256((__m256i*)generic_eval_nnue_layer_out_weight);
 
-    int16_t generic_test_data[EVAL_NNUE_N_NODES_LAYER];
-    for (int i = 0; i < EVAL_NNUE_N_NODES_LAYER; ++i){
-        generic_test_data[i] = i % 256 - 127;
+    for (int ii = 0; ii < 1; ++ii){
+        int16_t generic_test_data[EVAL_NNUE_N_NODES_LAYER];
+        for (int i = 0; i < EVAL_NNUE_N_NODES_LAYER; ++i){
+            generic_test_data[i] = myrandrange(-127, 128);
+        }
+        __m256i test_data = _mm256_load_si256((__m256i*)generic_test_data);
+        int res = mid_evaluate(test_data);
+        int res_generic = mid_evaluate(generic_test_data);
+        if (res != res_generic){
+            std::cerr << "err" << std::endl;
+            std::cerr << res << " " << res_generic << std::endl;
+            for (int i = 0; i < EVAL_NNUE_N_NODES_LAYER; ++i){
+                std::cerr << generic_test_data[i] << " ";
+            }
+            std::cerr << std::endl;
+        }
     }
-    __m256i test_data = _mm256_load_si256((__m256i*)generic_test_data);
-
-    std::cerr << mid_evaluate(generic_test_data) << " " << mid_evaluate(test_data) << std::endl;
+    std::cerr << "done" << std::endl;
 
 
     /*
