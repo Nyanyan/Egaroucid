@@ -3,7 +3,7 @@ import sys
 
 phase = str(sys.argv[1])
 hour = '0'
-minute = '2'
+minute = '10'
 second = '0'
 alpha = '400'
 n_patience = '1'

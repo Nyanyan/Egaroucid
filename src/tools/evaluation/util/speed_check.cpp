@@ -14,63 +14,6 @@
 #define STEP_2 16
 #define SCORE_MAX 64
 
-#define EVAL_NNUE_N_INPUT 128
-#define EVAL_NNUE_N_NODES_LAYER 16
-
-__m256i eval_nnue_layer_A_bias;
-__m256i eval_nnue_layer_A_weight[EVAL_NNUE_N_INPUT];
-__m256i eval_nnue_layer_B_bias;
-__m256i eval_nnue_layer_B_weight[EVAL_NNUE_N_NODES_LAYER];
-int eval_nnue_layer_out_bias;
-__m256i eval_nnue_layer_out_weight;
-
-inline __m256i clipped_ReLU(__m256i a){
-    a = _mm256_max_epi16(a, _mm256_set1_epi16(-127));
-    a = _mm256_min_epi16(a, _mm256_set1_epi16(127));
-    return a;
-}
-
-/*
-    @brief midgame evaluation function
-
-    @param search               search information
-    @return evaluation value
-*/
-inline int mid_evaluate(__m256i layer_A){
-    int16_t layer_B_in_arr[EVAL_NNUE_N_NODES_LAYER];
-    _mm256_storeu_si256((__m256i*)layer_B_in_arr, clipped_ReLU(layer_A));
-    __m256i layer_B_out = eval_nnue_layer_B_bias;
-    // layer B
-    for (int i = 0; i < EVAL_NNUE_N_NODES_LAYER; ++i){
-        layer_B_out = _mm256_add_epi16(layer_B_out, _mm256_mullo_epi16(eval_nnue_layer_B_weight[i], _mm256_set1_epi16(layer_B_in_arr[i])));
-    }
-    layer_B_out = clipped_ReLU(layer_B_out);
-    // output layer
-    __m256i out = _mm256_mullo_epi16(layer_B_out, eval_nnue_layer_out_weight);
-    int16_t out_arr[EVAL_NNUE_N_NODES_LAYER];
-    _mm256_storeu_si256((__m256i*)out_arr, out);
-    int res = eval_nnue_layer_out_bias;
-    for (int i = 0; i < EVAL_NNUE_N_NODES_LAYER; ++i){
-        res += out_arr[i];
-    }
-    res += res >= 0 ? STEP_2 : -STEP_2;
-    res /= STEP;
-    //res = std::clamp(res, -SCORE_MAX, SCORE_MAX);
-    return res;
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 /*
     @brief timing function
@@ -118,52 +61,17 @@ inline uint64_t myrand_ull(){
 
 
 
-void nnue_speed(){
-    eval_nnue_layer_A_bias = _mm256_set_epi64x(myrand_ull(), myrand_ull(), myrand_ull(), myrand_ull());
-    for (int i = 0; i < EVAL_NNUE_N_INPUT; ++i){
-        eval_nnue_layer_A_weight[i] = _mm256_set_epi64x(myrand_ull(), myrand_ull(), myrand_ull(), myrand_ull());
-    }
-    eval_nnue_layer_B_bias = _mm256_set_epi64x(myrand_ull(), myrand_ull(), myrand_ull(), myrand_ull());
-    for (int i = 0; i < EVAL_NNUE_N_NODES_LAYER; ++i){
-        eval_nnue_layer_B_weight[i] = _mm256_set_epi64x(myrand_ull(), myrand_ull(), myrand_ull(), myrand_ull());
-    }
-    eval_nnue_layer_out_bias = 1;
-    eval_nnue_layer_out_weight = _mm256_set_epi64x(myrand_ull(), myrand_ull(), myrand_ull(), myrand_ull());
-
-    __m256i *data = (__m256i*)malloc(sizeof(__m256i) * N);
-    for (uint64_t i = 0; i < N; ++i){
-        data[i] = _mm256_set_epi64x(myrand_ull(), myrand_ull(), myrand_ull(), myrand_ull());
-    }
-    
-    std::cerr << "start!" << std::endl;
-    uint64_t res = 0;
-    uint64_t strt = tim();
-    for (uint64_t i = 0; i < N; ++i){
-        res += mid_evaluate(data[i]);
-        //std::cerr << i << std::endl;
-    }
-    uint64_t elapsed = tim() - strt;
-    uint64_t nps = N * 1000ULL / (elapsed + 1);
-    std::cerr << res << std::endl;
-    std::cerr << "NNUE " << elapsed << " ms NPS=" << nps << std::endl;
-    free(data);
-}
-
-
-
-
-
 
 #define N_PATTERNS 16
-#define MAX_PATTERN_CELLS 10
-#define MAX_CELL_PATTERNS 13
-#define MAX_EVALUATE_IDX 59049
+#define MAX_PATTERN_CELLS 9
+#define MAX_CELL_PATTERNS 16
+#define MAX_EVALUATE_IDX 19683
 #define N_SYMMETRY_PATTERNS 62
 #define N_SIMD_EVAL_FEATURES 4 // 16 (elems per 256 bit vector) * N_SIMD_EVAL_FEATURES >= N_SYMMETRY_PATTERNS
 #define HW2 64
 #define N_16BIT 65536 // 2 ^ 16
 #define CEIL_N_SYMMETRY_PATTERNS 64         // N_SYMMETRY_PATTRENS + dummy
-#define N_PATTERN_PARAMS (521478 + 2)       // +2 for byte bound & dummy for d8
+#define N_PATTERN_PARAMS (112053 + 2)       // +2 for byte bound & dummy for d8
 #define SIMD_EVAL_MAX_VALUE 4092            // evaluate range [-4092, 4092]
 #define N_SIMD_EVAL_FEATURES_SIMPLE 2
 #define N_SIMD_EVAL_FEATURES_COMP 2
@@ -315,5 +223,4 @@ void pattern_speed(){
 
 int main(){
     pattern_speed();
-    nnue_speed();
 }
