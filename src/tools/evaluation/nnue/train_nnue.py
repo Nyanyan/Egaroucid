@@ -45,7 +45,7 @@ for num in range(1): # 4
     print(num, strt)
     with open('E:/github/othello/Egaroucid/train_data/board_data/records29/' + str(num) + '.dat', 'br') as f:
         #while len(train_data) - strt < 80000:
-        for _ in trange(1000000):
+        for _ in trange(2000000):
             bits = int.from_bytes(f.read(8), sys.byteorder) << 64
             bits |= int.from_bytes(f.read(8), sys.byteorder)
             if bits == 0:
@@ -76,7 +76,7 @@ for num in range(1): # 4
             '''
 
 with open('E:/github/othello/Egaroucid/train_data/board_data/records26/0.dat', 'br') as f:
-    for _ in trange(1000000 // 4):
+    for _ in trange(2000000 // 4):
         bits = int.from_bytes(f.read(8), sys.byteorder) << 64
         bits |= int.from_bytes(f.read(8), sys.byteorder)
         if bits == 0:
