@@ -68,14 +68,15 @@ inline uint64_t myrand_ull(){
 
 #define EVAL_NNUE_N_INPUT 128
 #define EVAL_NNUE_N_NODES_LAYER 16
+#define EVAL_NNUE_N_MID_LAYER 3
 #define EVAL_NNUE_N_SHIFT_CRELU 6
 
-__m256i eval_nnue_layer_A_bias;
-__m256i eval_nnue_layer_A_weight[EVAL_NNUE_N_INPUT];
-__m256i eval_nnue_layer_B_bias;
-__m256i eval_nnue_layer_B_weight[EVAL_NNUE_N_NODES_LAYER];
-int eval_nnue_layer_out_bias;
-__m256i eval_nnue_layer_out_weight;
+__m256i eval_nnue_first_layer_bias;
+__m256i eval_nnue_first_layer_weight[EVAL_NNUE_N_INPUT];
+__m256i eval_nnue_layer_bias[EVAL_NNUE_N_MID_LAYER];
+__m256i eval_nnue_layer_weight[EVAL_NNUE_N_MID_LAYER][EVAL_NNUE_N_NODES_LAYER];
+int eval_nnue_out_layer_bias;
+__m256i eval_nnue_out_layer_weight;
 
 inline __m256i clipped_ReLU(__m256i a){
     a = _mm256_srai_epi16(a, EVAL_NNUE_N_SHIFT_CRELU);
@@ -91,19 +92,22 @@ inline __m256i clipped_ReLU(__m256i a){
     @return evaluation value
 */
 inline int mid_evaluate(__m256i layer_A){
-    int16_t layer_B_in_arr[EVAL_NNUE_N_NODES_LAYER];
-    _mm256_storeu_si256((__m256i*)layer_B_in_arr, clipped_ReLU(layer_A));
-    __m256i layer_B_out = eval_nnue_layer_B_bias;
-    // layer B
-    for (int i = 0; i < EVAL_NNUE_N_NODES_LAYER; ++i){
-        layer_B_out = _mm256_add_epi16(layer_B_out, _mm256_mullo_epi16(eval_nnue_layer_B_weight[i], _mm256_set1_epi16(layer_B_in_arr[i])));
+    int16_t layer_in_arr[EVAL_NNUE_N_NODES_LAYER];
+    __m256i layer_out = layer_A;
+    // mid layer
+    for (int i = 0; i < EVAL_NNUE_N_MID_LAYER; ++i){
+        _mm256_storeu_si256((__m256i*)layer_in_arr, clipped_ReLU(layer_out));
+        layer_out = eval_nnue_layer_bias[i];
+        for (int j = 0; j < EVAL_NNUE_N_NODES_LAYER; ++j){
+            layer_out = _mm256_add_epi16(layer_out, _mm256_mullo_epi16(eval_nnue_layer_weight[i][j], _mm256_set1_epi16(layer_in_arr[j])));
+        }
+        layer_out = clipped_ReLU(layer_out);
     }
-    layer_B_out = clipped_ReLU(layer_B_out);
     // output layer
-    __m256i out = _mm256_mullo_epi16(layer_B_out, eval_nnue_layer_out_weight);
+    __m256i out = _mm256_mullo_epi16(layer_out, eval_nnue_out_layer_weight);
     int16_t out_arr[EVAL_NNUE_N_NODES_LAYER];
     _mm256_storeu_si256((__m256i*)out_arr, out);
-    int res = eval_nnue_layer_out_bias;
+    int res = eval_nnue_out_layer_bias;
     for (int i = 0; i < EVAL_NNUE_N_NODES_LAYER; ++i){
         res += out_arr[i];
     }
@@ -118,12 +122,12 @@ inline int mid_evaluate(__m256i layer_A){
 
 
 
-int16_t generic_eval_nnue_layer_A_bias[EVAL_NNUE_N_NODES_LAYER];
-int16_t generic_eval_nnue_layer_A_weight[EVAL_NNUE_N_INPUT][EVAL_NNUE_N_NODES_LAYER];
-int16_t generic_eval_nnue_layer_B_bias[EVAL_NNUE_N_NODES_LAYER];
-int16_t generic_eval_nnue_layer_B_weight[EVAL_NNUE_N_NODES_LAYER][EVAL_NNUE_N_NODES_LAYER];
-int generic_eval_nnue_layer_out_bias;
-int16_t generic_eval_nnue_layer_out_weight[EVAL_NNUE_N_NODES_LAYER];
+int16_t generic_eval_nnue_first_layer_bias[EVAL_NNUE_N_NODES_LAYER];
+int16_t generic_eval_nnue_first_layer_weight[EVAL_NNUE_N_INPUT][EVAL_NNUE_N_NODES_LAYER];
+int16_t generic_eval_nnue_layer_bias[EVAL_NNUE_N_MID_LAYER][EVAL_NNUE_N_NODES_LAYER];
+int16_t generic_eval_nnue_layer_weight[EVAL_NNUE_N_MID_LAYER][EVAL_NNUE_N_NODES_LAYER][EVAL_NNUE_N_NODES_LAYER];
+int generic_eval_nnue_out_layer_bias;
+int16_t generic_eval_nnue_out_layer_weight[EVAL_NNUE_N_NODES_LAYER];
 
 inline void clipped_ReLU(int16_t a[], int16_t dst[]){
     for (int i = 0; i < EVAL_NNUE_N_NODES_LAYER; ++i){
@@ -132,12 +136,12 @@ inline void clipped_ReLU(int16_t a[], int16_t dst[]){
 }
 
 
-inline int mid_evaluate(int16_t layer_A[]){
+inline int mid_evaluate(int16_t layer_A[]){ // TBD
     int16_t layer_B_in_arr[EVAL_NNUE_N_NODES_LAYER];
     clipped_ReLU(layer_A, layer_B_in_arr);
     int16_t layer_B_out[EVAL_NNUE_N_NODES_LAYER];
-    for (int i = 0; i < EVAL_NNUE_N_NODES_LAYER; ++i){
-        layer_B_out[i] = generic_eval_nnue_layer_B_bias[i];
+    for (int j = 0; j < EVAL_NNUE_N_NODES_LAYER; ++j){
+        layer_B_out[j] = generic_eval_nnue_layer_bias[i][j];
     }
     for (int i = 0; i < EVAL_NNUE_N_NODES_LAYER; ++i){
         for (int j = 0; j < EVAL_NNUE_N_NODES_LAYER; ++j){
