@@ -25,7 +25,6 @@
 
 #define EVAL_NNUE_N_INPUT 128
 #define EVAL_NNUE_N_NODES_LAYER 16
-#define N_SHIFT_PER_LAYER 
 
 // Input: 64 x 2 (0 or 1)
 // LayerA: 16 nodes
