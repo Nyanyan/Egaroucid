@@ -38,46 +38,81 @@ model.compile(loss='mse', metrics='mae', optimizer='adam')
 
 train_data = []
 train_labels = []
-with open('E:/github/othello/Egaroucid/train_data/board_data/records29/0.dat', 'br') as f:
-    for _ in trange(100000):
+for num in range(4):
+    strt = len(train_data)
+    print(num, strt)
+    with open('E:/github/othello/Egaroucid/train_data/board_data/records29/' + str(num) + '.dat', 'br') as f:
+        while len(train_data) - strt < 80000:
+            bits = int.from_bytes(f.read(8), sys.byteorder) << 64
+            bits |= int.from_bytes(f.read(8), sys.byteorder)
+            if bits == 0:
+                break
+            in_data = np.zeros(128)
+            n_discs = 0
+            for i in range(128):
+                in_data[i] = (1 & (bits >> (127 - i)))
+                if in_data[i]:
+                    n_discs += 1
+            f.read(2)
+            score = int.from_bytes(f.read(1), sys.byteorder, signed=True)
+            if n_discs == 4 + 30:
+                train_data.append(in_data)
+                train_labels.append(score)
+                if len(train_data) % 10000 == 0:
+                    print(num, len(train_data))
+            '''
+            for i in range(2):
+                for j in range(8):
+                    s = i * 64 + j * 8
+                    print(in_data[s:s+8])
+                if i == 0:
+                    print('')
+            print(score)
+            print('')
+            '''
+'''
+with open('E:/github/othello/Egaroucid/train_data/board_data/records26/0.dat', 'br') as f:
+    for _ in trange(1000000 // 4):
         bits = int.from_bytes(f.read(8), sys.byteorder) << 64
         bits |= int.from_bytes(f.read(8), sys.byteorder)
+        if bits == 0:
+            break
         in_data = np.zeros(128)
+        n_discs = 0
         for i in range(128):
             in_data[i] = (1 & (bits >> (127 - i)))
+            if in_data[i]:
+                n_discs += 1
         f.read(2)
         score = int.from_bytes(f.read(1), sys.byteorder, signed=True)
-        train_data.append(np.array(in_data))
+        #if n_discs >= 4 + 12:
+        train_data.append(in_data)
         train_labels.append(score)
-        '''
-        for i in range(2):
-            for j in range(8):
-                s = i * 64 + j * 8
-                print(in_data[s:s+8])
-            if i == 0:
-                print('')
-        print(score)
-        print('')
-        '''
+'''
 train_data = np.array(train_data)
 train_labels = np.array(train_labels)
-print('data loaded')
+print('data loaded', len(train_data), len(train_labels))
 
 
 
 test_data = []
 test_labels = []
-with open('E:/github/othello/Egaroucid/train_data/board_data/records29/0.dat', 'br') as f:
-    for _ in trange(10000):
+with open('E:/github/othello/Egaroucid/train_data/board_data/records29/4.dat', 'br') as f:
+    for _ in trange(100000):
         bits = int.from_bytes(f.read(8), sys.byteorder) << 64
         bits |= int.from_bytes(f.read(8), sys.byteorder)
         in_data = np.zeros(128)
+        n_discs = 0
         for i in range(128):
             in_data[i] = (1 & (bits >> (127 - i)))
+            if in_data[i]:
+                n_discs += 1
         f.read(2)
         score = int.from_bytes(f.read(1), sys.byteorder, signed=True)
-        test_data.append(np.array(in_data))
-        test_labels.append(score)
+        #if n_discs >= 4 + 12:
+        if n_discs == 4 + 30:
+            test_data.append(in_data)
+            test_labels.append(score)
         '''
         for i in range(2):
             for j in range(8):
@@ -90,15 +125,15 @@ with open('E:/github/othello/Egaroucid/train_data/board_data/records29/0.dat', '
         '''
 test_data = np.array(test_data)
 test_labels = np.array(test_labels)
-print('data loaded')
+print('data loaded', len(test_data), len(test_labels))
 
 
 
 
 
 N_EPOCHS = 500
-BATCH_SIZE = 128
-EARLY_STOP_PATIENCE = 20
+BATCH_SIZE = 2048
+EARLY_STOP_PATIENCE = 100
 
 # train
 early_stop = EarlyStopping(monitor='val_loss', patience=EARLY_STOP_PATIENCE)
