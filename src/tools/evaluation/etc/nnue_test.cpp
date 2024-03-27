@@ -61,12 +61,14 @@ inline uint64_t myrand_ull(){
 
 
 
-#define STEP 32
-#define STEP_2 16
+#define STEP 64
+#define STEP_2 32
+
 #define SCORE_MAX 64
 
 #define EVAL_NNUE_N_INPUT 128
 #define EVAL_NNUE_N_NODES_LAYER 16
+#define EVAL_NNUE_N_SHIFT_CRELU 6
 
 __m256i eval_nnue_layer_A_bias;
 __m256i eval_nnue_layer_A_weight[EVAL_NNUE_N_INPUT];
@@ -76,6 +78,7 @@ int eval_nnue_layer_out_bias;
 __m256i eval_nnue_layer_out_weight;
 
 inline __m256i clipped_ReLU(__m256i a){
+    a = _mm256_srai_epi16(a, EVAL_NNUE_N_SHIFT_CRELU);
     a = _mm256_max_epi16(a, _mm256_set1_epi16(-127));
     a = _mm256_min_epi16(a, _mm256_set1_epi16(127));
     return a;
@@ -104,13 +107,10 @@ inline int mid_evaluate(__m256i layer_A){
     for (int i = 0; i < EVAL_NNUE_N_NODES_LAYER; ++i){
         res += out_arr[i];
     }
-    return res;
-    /*
     res += res >= 0 ? STEP_2 : -STEP_2;
     res /= STEP;
     //res = std::clamp(res, -SCORE_MAX, SCORE_MAX);
     return res;
-    */
 }
 
 
@@ -127,7 +127,7 @@ int16_t generic_eval_nnue_layer_out_weight[EVAL_NNUE_N_NODES_LAYER];
 
 inline void clipped_ReLU(int16_t a[], int16_t dst[]){
     for (int i = 0; i < EVAL_NNUE_N_NODES_LAYER; ++i){
-        dst[i] = std::min(std::max((int)a[i], -127), 127);
+        dst[i] = std::min(std::max((int)a[i] >> EVAL_NNUE_N_SHIFT_CRELU, -127), 127);
     }
 }
 
@@ -149,18 +149,17 @@ inline int mid_evaluate(int16_t layer_A[]){
     for (int i = 0; i < EVAL_NNUE_N_NODES_LAYER; ++i){
         res += layer_B_out[i] * generic_eval_nnue_layer_out_weight[i];
     }
-    return res;
-    /*
     res += res >= 0 ? STEP_2 : -STEP_2;
     res /= STEP;
     //res = std::clamp(res, -SCORE_MAX, SCORE_MAX);
     return res;
-    */
 }
 
+/*
 #define N 10000000ULL
 __m256i data[N];
 int16_t data_generic[N][EVAL_NNUE_N_NODES_LAYER];
+*/
 
 int main(){
     for (int i = 0; i < EVAL_NNUE_N_NODES_LAYER; ++i){
@@ -191,15 +190,16 @@ int main(){
 
 
 
-    /*
-    for (int ii = 0; ii < 1000; ++ii){
+    
+    for (int ii = 0; ii < 100000; ++ii){
         int16_t generic_test_data[EVAL_NNUE_N_NODES_LAYER];
         for (int i = 0; i < EVAL_NNUE_N_NODES_LAYER; ++i){
-            generic_test_data[i] = myrandrange(-127, 128);
+            generic_test_data[i] = myrandrange(-9000, 9000);
         }
         __m256i test_data = _mm256_load_si256((__m256i*)generic_test_data);
         int res = mid_evaluate(test_data);
         int res_generic = mid_evaluate(generic_test_data);
+        //std::cerr << res << std::endl;
         if (res != res_generic){
             std::cerr << "err" << std::endl;
             std::cerr << res << " " << res_generic << std::endl;
@@ -210,13 +210,13 @@ int main(){
         }
     }
     std::cerr << "done" << std::endl;
-    */
+    
 
 
 
 
 
-
+    /*
     for (uint64_t i = 0; i < N; ++i){
         for (int j = 0; j < EVAL_NNUE_N_NODES_LAYER; ++j){
             data_generic[i][j] = myrandrange(-127, 128);
@@ -247,7 +247,7 @@ int main(){
     uint64_t nps_generic = N * 1000ULL / (elapsed_generic + 1);
     std::cerr << res_generic << std::endl;
     std::cerr << "NNUE Generic " << elapsed_generic << " ms NPS=" << nps_generic << std::endl;
-    
+    */
 
     /*
     int16_t layer_B_in_arr[EVAL_NNUE_N_NODES_LAYER];
