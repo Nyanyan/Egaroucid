@@ -1,7 +1,7 @@
 /*
     Egaroucid Project
 
-    @file evaluate_generic.hpp
+    @file evaluate_simd.hpp
         Evaluation function with AVX2
     @date 2021-2024
     @author Takuto Yamana
