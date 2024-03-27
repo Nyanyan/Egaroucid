@@ -59,7 +59,7 @@ inline uint64_t myrand_ull(){
 
 
 
-#define N 10000000ULL
+
 
 #define STEP 32
 #define STEP_2 16
@@ -158,6 +158,10 @@ inline int mid_evaluate(int16_t layer_A[]){
     */
 }
 
+#define N 10000000ULL
+__m256i data[N];
+int16_t data_generic[N][EVAL_NNUE_N_NODES_LAYER];
+
 int main(){
     for (int i = 0; i < EVAL_NNUE_N_NODES_LAYER; ++i){
         //generic_eval_nnue_layer_B_bias[i] = i % 16 - 7;
@@ -183,6 +187,11 @@ int main(){
     eval_nnue_layer_out_bias = generic_eval_nnue_layer_out_bias;
     eval_nnue_layer_out_weight = _mm256_load_si256((__m256i*)generic_eval_nnue_layer_out_weight);
 
+
+
+
+
+    /*
     for (int ii = 0; ii < 1000; ++ii){
         int16_t generic_test_data[EVAL_NNUE_N_NODES_LAYER];
         for (int i = 0; i < EVAL_NNUE_N_NODES_LAYER; ++i){
@@ -201,7 +210,44 @@ int main(){
         }
     }
     std::cerr << "done" << std::endl;
+    */
 
+
+
+
+
+
+    for (uint64_t i = 0; i < N; ++i){
+        for (int j = 0; j < EVAL_NNUE_N_NODES_LAYER; ++j){
+            data_generic[i][j] = myrandrange(-127, 128);
+        }
+        data[i] = _mm256_load_si256((__m256i*)data_generic[i]);
+    }
+    
+    std::cerr << "start!" << std::endl;
+    uint64_t res = 0;
+    uint64_t strt = tim();
+    for (uint64_t i = 0; i < N; ++i){
+        res += mid_evaluate(data[i]);
+        //std::cerr << i << std::endl;
+    }
+    uint64_t elapsed = tim() - strt;
+    uint64_t nps = N * 1000ULL / (elapsed + 1);
+    std::cerr << res << std::endl;
+    std::cerr << "NNUE SIMD " << elapsed << " ms NPS=" << nps << std::endl;
+
+    std::cerr << "start!" << std::endl;
+    uint64_t res_generic = 0;
+    uint64_t strt_generic = tim();
+    for (uint64_t i = 0; i < N; ++i){
+        res_generic += mid_evaluate(data_generic[i]);
+        //std::cerr << i << std::endl;
+    }
+    uint64_t elapsed_generic = tim() - strt_generic;
+    uint64_t nps_generic = N * 1000ULL / (elapsed_generic + 1);
+    std::cerr << res_generic << std::endl;
+    std::cerr << "NNUE Generic " << elapsed_generic << " ms NPS=" << nps_generic << std::endl;
+    
 
     /*
     int16_t layer_B_in_arr[EVAL_NNUE_N_NODES_LAYER];
