@@ -61,8 +61,8 @@ inline uint64_t myrand_ull(){
 
 
 
-#define STEP 64
-#define STEP_2 32
+#define STEP 8
+#define STEP_2 4
 
 #define SCORE_MAX 64
 
@@ -175,7 +175,7 @@ int main(){
     generic_eval_nnue_layer_out_bias = 1;
     for (int i = 0; i < EVAL_NNUE_N_NODES_LAYER; ++i){
         //generic_eval_nnue_layer_out_weight[i] = i % 256 - 127;
-        generic_eval_nnue_layer_out_weight[i] = myrandrange(-127, 128);
+        generic_eval_nnue_layer_out_weight[i] = myrandrange(-7, 8);
     }
 
 
