@@ -25,6 +25,7 @@
 #include "midsearch.hpp"
 #include "stability.hpp"
 #include "level.hpp"
+#include "evaluate.hpp"
 #include "transposition_table.hpp"
 
 /*
@@ -266,11 +267,11 @@ inline void move_evaluate_nws(Search *search, Flip_value *flip_value, int alpha,
 */
 inline void move_evaluate_end_nws(Search *search, Flip_value *flip_value){
     flip_value->value = 0;
-    search->move_endsearch(&flip_value->flip);
+    search->move(&flip_value->flip);
         flip_value->n_legal = search->board.get_legal();
         flip_value->value += (MO_OFFSET_L_PM - pop_count_ull(flip_value->n_legal)) * W_END_NWS_MOBILITY;
-        flip_value->value += (MO_OFFSET_L_PM - mid_evaluate_move_ordering_end(search)) * W_END_NWS_VALUE;
-    search->undo_endsearch(&flip_value->flip);
+        flip_value->value += (MO_OFFSET_L_PM - mid_evaluate_diff(search)) * W_END_NWS_VALUE;
+    search->undo(&flip_value->flip);
 }
 
 /*

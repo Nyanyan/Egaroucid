@@ -307,50 +307,6 @@ class Search{
         }
 
         /*
-            @brief Move board and other variables
-
-            @param flip                 Flip information
-        */
-        inline void move_endsearch(const Flip *flip) {
-            #if USE_SIMD
-                eval_move_endsearch(&eval, flip, &board);
-            #else
-                eval_move_endsearch(&eval, flip);
-            #endif
-            board.move_board(flip);
-            ++n_discs;
-            parity ^= cell_div4[flip->pos];
-        }
-
-        /*
-            @brief Undo board and other variables
-
-            @param flip                 Flip information
-        */
-        inline void undo_endsearch(const Flip *flip) {
-            #if USE_SIMD
-                eval_undo_endsearch(&eval);
-            #else
-                eval_undo_endsearch(&eval, flip);
-            #endif
-            board.undo_board(flip);
-            --n_discs;
-            parity ^= cell_div4[flip->pos];
-        }
-
-        /*
-            @brief pass board
-        */
-        inline void pass_endsearch(){
-            #if USE_SIMD
-                eval_pass_endsearch(&eval, &board);
-            #else
-                eval_pass_endsearch(&eval);
-            #endif
-            board.pass();
-        }
-
-        /*
             @brief Move board and other variables except eval_features
 
             @param flip                 Flip information

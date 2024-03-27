@@ -27,121 +27,122 @@
     @brief evaluation pattern definition for SIMD
 */
 #define CEIL_N_SYMMETRY_PATTERNS 64         // N_SYMMETRY_PATTRENS + dummy
-#define N_PATTERN_PARAMS (521478 + 2)       // +2 for byte bound & dummy for d8
+#define N_PATTERN_PARAMS (112053 + 2)       // +2 for byte bound & dummy for d8
 #define SIMD_EVAL_MAX_VALUE 4092            // evaluate range [-4092, 4092]
-#define N_SIMD_EVAL_FEATURES_SIMPLE 2
-#define N_SIMD_EVAL_FEATURES_COMP 2
-#define N_PATTERN_PARAMS_BEFORE_DUMMY 29403
-#define SIMD_EVAL_DUMMY_ADDR 29404
-#define N_PATTERN_PARAMS_AFTER_DUMMY 492075
+#define N_PATTERN_PARAMS_BEFORE_DUMMY 48843
+#define SIMD_EVAL_DUMMY_ADDR 48844
+#define START_ADDR2_PLUS (55406 / 2) // divided by 2 because of 16bit->32bit conversion
+#define N_PATTERN_PARAMS_AFTER_DUMMY 59049
 #define N_SIMD_EVAL_FEATURE_CELLS 16
 #define N_SIMD_EVAL_FEATURE_GROUP 4
 
 /*
     @brief evaluation pattern definition for SIMD move ordering end
 */
+/*
 #define N_PATTERN_PARAMS_MO_END (236196 + 1) // +1 for byte bound
 #define SIMD_EVAL_MAX_VALUE_MO_END 16380
 #define SHIFT_EVAL_MO_END 49087 // pattern_starts[8]
+*/
 
 constexpr Feature_to_coord feature_to_coord[CEIL_N_SYMMETRY_PATTERNS] = {
     // 0 hv2
-    {8, {COORD_A2, COORD_B2, COORD_C2, COORD_D2, COORD_E2, COORD_F2, COORD_G2, COORD_H2, COORD_NO, COORD_NO}}, // 0
-    {8, {COORD_B1, COORD_B2, COORD_B3, COORD_B4, COORD_B5, COORD_B6, COORD_B7, COORD_B8, COORD_NO, COORD_NO}}, // 1
-    {8, {COORD_A7, COORD_B7, COORD_C7, COORD_D7, COORD_E7, COORD_F7, COORD_G7, COORD_H7, COORD_NO, COORD_NO}}, // 2
-    {8, {COORD_G1, COORD_G2, COORD_G3, COORD_G4, COORD_G5, COORD_G6, COORD_G7, COORD_G8, COORD_NO, COORD_NO}}, // 3
+    {8, {COORD_A2, COORD_B2, COORD_C2, COORD_D2, COORD_E2, COORD_F2, COORD_G2, COORD_H2, COORD_NO}}, // 0
+    {8, {COORD_B1, COORD_B2, COORD_B3, COORD_B4, COORD_B5, COORD_B6, COORD_B7, COORD_B8, COORD_NO}}, // 1
+    {8, {COORD_A7, COORD_B7, COORD_C7, COORD_D7, COORD_E7, COORD_F7, COORD_G7, COORD_H7, COORD_NO}}, // 2
+    {8, {COORD_G1, COORD_G2, COORD_G3, COORD_G4, COORD_G5, COORD_G6, COORD_G7, COORD_G8, COORD_NO}}, // 3
 
     // 1 hv3
-    {8, {COORD_A3, COORD_B3, COORD_C3, COORD_D3, COORD_E3, COORD_F3, COORD_G3, COORD_H3, COORD_NO, COORD_NO}}, // 4
-    {8, {COORD_C1, COORD_C2, COORD_C3, COORD_C4, COORD_C5, COORD_C6, COORD_C7, COORD_C8, COORD_NO, COORD_NO}}, // 5
-    {8, {COORD_A6, COORD_B6, COORD_C6, COORD_D6, COORD_E6, COORD_F6, COORD_G6, COORD_H6, COORD_NO, COORD_NO}}, // 6
-    {8, {COORD_F1, COORD_F2, COORD_F3, COORD_F4, COORD_F5, COORD_F6, COORD_F7, COORD_F8, COORD_NO, COORD_NO}}, // 7
+    {8, {COORD_A3, COORD_B3, COORD_C3, COORD_D3, COORD_E3, COORD_F3, COORD_G3, COORD_H3, COORD_NO}}, // 4
+    {8, {COORD_C1, COORD_C2, COORD_C3, COORD_C4, COORD_C5, COORD_C6, COORD_C7, COORD_C8, COORD_NO}}, // 5
+    {8, {COORD_A6, COORD_B6, COORD_C6, COORD_D6, COORD_E6, COORD_F6, COORD_G6, COORD_H6, COORD_NO}}, // 6
+    {8, {COORD_F1, COORD_F2, COORD_F3, COORD_F4, COORD_F5, COORD_F6, COORD_F7, COORD_F8, COORD_NO}}, // 7
 
     // 2 hv4
-    {8, {COORD_A4, COORD_B4, COORD_C4, COORD_D4, COORD_E4, COORD_F4, COORD_G4, COORD_H4, COORD_NO, COORD_NO}}, // 8
-    {8, {COORD_D1, COORD_D2, COORD_D3, COORD_D4, COORD_D5, COORD_D6, COORD_D7, COORD_D8, COORD_NO, COORD_NO}}, // 9
-    {8, {COORD_A5, COORD_B5, COORD_C5, COORD_D5, COORD_E5, COORD_F5, COORD_G5, COORD_H5, COORD_NO, COORD_NO}}, // 10
-    {8, {COORD_E1, COORD_E2, COORD_E3, COORD_E4, COORD_E5, COORD_E6, COORD_E7, COORD_E8, COORD_NO, COORD_NO}}, // 11
+    {8, {COORD_A4, COORD_B4, COORD_C4, COORD_D4, COORD_E4, COORD_F4, COORD_G4, COORD_H4, COORD_NO}}, // 8
+    {8, {COORD_D1, COORD_D2, COORD_D3, COORD_D4, COORD_D5, COORD_D6, COORD_D7, COORD_D8, COORD_NO}}, // 9
+    {8, {COORD_A5, COORD_B5, COORD_C5, COORD_D5, COORD_E5, COORD_F5, COORD_G5, COORD_H5, COORD_NO}}, // 10
+    {8, {COORD_E1, COORD_E2, COORD_E3, COORD_E4, COORD_E5, COORD_E6, COORD_E7, COORD_E8, COORD_NO}}, // 11
 
-    // 3 d5
-    {5, {COORD_D1, COORD_E2, COORD_F3, COORD_G4, COORD_H5, COORD_NO, COORD_NO, COORD_NO, COORD_NO, COORD_NO}}, // 12
-    {5, {COORD_E1, COORD_D2, COORD_C3, COORD_B4, COORD_A5, COORD_NO, COORD_NO, COORD_NO, COORD_NO, COORD_NO}}, // 13
-    {5, {COORD_A4, COORD_B5, COORD_C6, COORD_D7, COORD_E8, COORD_NO, COORD_NO, COORD_NO, COORD_NO, COORD_NO}}, // 14
-    {5, {COORD_H4, COORD_G5, COORD_F6, COORD_E7, COORD_D8, COORD_NO, COORD_NO, COORD_NO, COORD_NO, COORD_NO}}, // 15
+    // 3 d5 + corner + X
+    {7, {COORD_D1, COORD_E2, COORD_F3, COORD_G4, COORD_H5, COORD_H1, COORD_G2, COORD_NO, COORD_NO}}, // 12
+    {7, {COORD_E1, COORD_D2, COORD_C3, COORD_B4, COORD_A5, COORD_A1, COORD_B2, COORD_NO, COORD_NO}}, // 13
+    {7, {COORD_A4, COORD_B5, COORD_C6, COORD_D7, COORD_E8, COORD_A8, COORD_B7, COORD_NO, COORD_NO}}, // 14
+    {7, {COORD_H4, COORD_G5, COORD_F6, COORD_E7, COORD_D8, COORD_H8, COORD_G7, COORD_NO, COORD_NO}}, // 15
 
     // 4 d6
-    {6, {COORD_C1, COORD_D2, COORD_E3, COORD_F4, COORD_G5, COORD_H6, COORD_NO, COORD_NO, COORD_NO, COORD_NO}}, // 16
-    {6, {COORD_F1, COORD_E2, COORD_D3, COORD_C4, COORD_B5, COORD_A6, COORD_NO, COORD_NO, COORD_NO, COORD_NO}}, // 17
-    {6, {COORD_A3, COORD_B4, COORD_C5, COORD_D6, COORD_E7, COORD_F8, COORD_NO, COORD_NO, COORD_NO, COORD_NO}}, // 18
-    {6, {COORD_H3, COORD_G4, COORD_F5, COORD_E6, COORD_D7, COORD_C8, COORD_NO, COORD_NO, COORD_NO, COORD_NO}}, // 19
+    {6, {COORD_C1, COORD_D2, COORD_E3, COORD_F4, COORD_G5, COORD_H6, COORD_NO, COORD_NO, COORD_NO}}, // 16
+    {6, {COORD_F1, COORD_E2, COORD_D3, COORD_C4, COORD_B5, COORD_A6, COORD_NO, COORD_NO, COORD_NO}}, // 17
+    {6, {COORD_A3, COORD_B4, COORD_C5, COORD_D6, COORD_E7, COORD_F8, COORD_NO, COORD_NO, COORD_NO}}, // 18
+    {6, {COORD_H3, COORD_G4, COORD_F5, COORD_E6, COORD_D7, COORD_C8, COORD_NO, COORD_NO, COORD_NO}}, // 19
 
-    // 5 d7
-    {7, {COORD_B1, COORD_C2, COORD_D3, COORD_E4, COORD_F5, COORD_G6, COORD_H7, COORD_NO, COORD_NO, COORD_NO}}, // 20
-    {7, {COORD_G1, COORD_F2, COORD_E3, COORD_D4, COORD_C5, COORD_B6, COORD_A7, COORD_NO, COORD_NO, COORD_NO}}, // 21
-    {7, {COORD_A2, COORD_B3, COORD_C4, COORD_D5, COORD_E6, COORD_F7, COORD_G8, COORD_NO, COORD_NO, COORD_NO}}, // 22
-    {7, {COORD_H2, COORD_G3, COORD_F4, COORD_E5, COORD_D6, COORD_C7, COORD_B8, COORD_NO, COORD_NO, COORD_NO}}, // 23
+    // 5 d7 + corner
+    {9, {COORD_A1, COORD_B1, COORD_C2, COORD_D3, COORD_E4, COORD_F5, COORD_G6, COORD_H7, COORD_H8}}, // 20
+    {9, {COORD_H1, COORD_G1, COORD_F2, COORD_E3, COORD_D4, COORD_C5, COORD_B6, COORD_A7, COORD_A8}}, // 21
+    {9, {COORD_A1, COORD_A2, COORD_B3, COORD_C4, COORD_D5, COORD_E6, COORD_F7, COORD_G8, COORD_H8}}, // 22
+    {9, {COORD_H1, COORD_H2, COORD_G3, COORD_F4, COORD_E5, COORD_D6, COORD_C7, COORD_B8, COORD_A8}}, // 23
 
     // 6 d8
-    {8, {COORD_A1, COORD_B2, COORD_C3, COORD_D4, COORD_E5, COORD_F6, COORD_G7, COORD_H8, COORD_NO, COORD_NO}}, // 24
-    {8, {COORD_H1, COORD_G2, COORD_F3, COORD_E4, COORD_D5, COORD_C6, COORD_B7, COORD_A8, COORD_NO, COORD_NO}}, // 25
+    {8, {COORD_A1, COORD_B2, COORD_C3, COORD_D4, COORD_E5, COORD_F6, COORD_G7, COORD_H8, COORD_NO}}, // 24
+    {8, {COORD_H1, COORD_G2, COORD_F3, COORD_E4, COORD_D5, COORD_C6, COORD_B7, COORD_A8, COORD_NO}}, // 25
 
     // dummy
-    {0, {COORD_NO, COORD_NO, COORD_NO, COORD_NO, COORD_NO, COORD_NO, COORD_NO, COORD_NO, COORD_NO, COORD_NO}}, // 26
-    {0, {COORD_NO, COORD_NO, COORD_NO, COORD_NO, COORD_NO, COORD_NO, COORD_NO, COORD_NO, COORD_NO, COORD_NO}}, // 27
+    {0, {COORD_NO, COORD_NO, COORD_NO, COORD_NO, COORD_NO, COORD_NO, COORD_NO, COORD_NO, COORD_NO}}, // 26
+    {0, {COORD_NO, COORD_NO, COORD_NO, COORD_NO, COORD_NO, COORD_NO, COORD_NO, COORD_NO, COORD_NO}}, // 27
 
-    // 7 corner9
-    {9, {COORD_A1, COORD_B1, COORD_C1, COORD_A2, COORD_B2, COORD_C2, COORD_A3, COORD_B3, COORD_C3, COORD_NO}}, // 28
-    {9, {COORD_H1, COORD_G1, COORD_F1, COORD_H2, COORD_G2, COORD_F2, COORD_H3, COORD_G3, COORD_F3, COORD_NO}}, // 29
-    {9, {COORD_A8, COORD_B8, COORD_C8, COORD_A7, COORD_B7, COORD_C7, COORD_A6, COORD_B6, COORD_C6, COORD_NO}}, // 30
-    {9, {COORD_H8, COORD_G8, COORD_F8, COORD_H7, COORD_G7, COORD_F7, COORD_H6, COORD_G6, COORD_F6, COORD_NO}}, // 31
+    // 7 corner-edge + 2x
+    {8, {COORD_B2, COORD_A1, COORD_B1, COORD_C1, COORD_F1, COORD_G1, COORD_H1, COORD_G2, COORD_NO}}, // 26
+    {8, {COORD_B2, COORD_A1, COORD_A2, COORD_A3, COORD_A6, COORD_A7, COORD_A8, COORD_B7, COORD_NO}}, // 27
+    {8, {COORD_B7, COORD_A8, COORD_B8, COORD_C8, COORD_F8, COORD_G8, COORD_H8, COORD_G7, COORD_NO}}, // 28
+    {8, {COORD_G2, COORD_H1, COORD_H2, COORD_H3, COORD_H6, COORD_H7, COORD_H8, COORD_G7, COORD_NO}}, // 29
 
-    // 8 edge + 2x
-    {10, {COORD_B2, COORD_A1, COORD_B1, COORD_C1, COORD_D1, COORD_E1, COORD_F1, COORD_G1, COORD_H1, COORD_G2}}, // 32
-    {10, {COORD_B2, COORD_A1, COORD_A2, COORD_A3, COORD_A4, COORD_A5, COORD_A6, COORD_A7, COORD_A8, COORD_B7}}, // 33
-    {10, {COORD_B7, COORD_A8, COORD_B8, COORD_C8, COORD_D8, COORD_E8, COORD_F8, COORD_G8, COORD_H8, COORD_G7}}, // 34
-    {10, {COORD_G2, COORD_H1, COORD_H2, COORD_H3, COORD_H4, COORD_H5, COORD_H6, COORD_H7, COORD_H8, COORD_G7}}, // 35
+    // 8 small triangle
+    {8, {COORD_A1, COORD_B1, COORD_C1, COORD_D1, COORD_A2, COORD_B2, COORD_A3, COORD_A4, COORD_NO}}, // 30
+    {8, {COORD_H1, COORD_G1, COORD_F1, COORD_E1, COORD_H2, COORD_G2, COORD_H3, COORD_H4, COORD_NO}}, // 31
+    {8, {COORD_A8, COORD_B8, COORD_C8, COORD_D8, COORD_A7, COORD_B7, COORD_A6, COORD_A5, COORD_NO}}, // 32
+    {8, {COORD_H8, COORD_G8, COORD_F8, COORD_E8, COORD_H7, COORD_G7, COORD_H6, COORD_H5, COORD_NO}}, // 33
 
-    // 9 triangle
-    {10, {COORD_A1, COORD_B1, COORD_C1, COORD_D1, COORD_A2, COORD_B2, COORD_C2, COORD_A3, COORD_B3, COORD_A4}}, // 36
-    {10, {COORD_H1, COORD_G1, COORD_F1, COORD_E1, COORD_H2, COORD_G2, COORD_F2, COORD_H3, COORD_G3, COORD_H4}}, // 37
-    {10, {COORD_A8, COORD_B8, COORD_C8, COORD_D8, COORD_A7, COORD_B7, COORD_C7, COORD_A6, COORD_B6, COORD_A5}}, // 38
-    {10, {COORD_H8, COORD_G8, COORD_F8, COORD_E8, COORD_H7, COORD_G7, COORD_F7, COORD_H6, COORD_G6, COORD_H5}}, // 39
+    // 9 corner + small-block
+    {8, {COORD_A1, COORD_C1, COORD_D1, COORD_E1, COORD_F1, COORD_H1, COORD_C2, COORD_F2, COORD_NO}}, // 34
+    {8, {COORD_A1, COORD_A3, COORD_A4, COORD_A5, COORD_A6, COORD_A8, COORD_B3, COORD_B6, COORD_NO}}, // 35
+    {8, {COORD_A8, COORD_C8, COORD_D8, COORD_E8, COORD_F8, COORD_H8, COORD_C7, COORD_F7, COORD_NO}}, // 36
+    {8, {COORD_H1, COORD_H3, COORD_H4, COORD_H5, COORD_H6, COORD_H8, COORD_G3, COORD_G6, COORD_NO}}, // 37
 
-    // 10 corner + block
-    {10, {COORD_A1, COORD_C1, COORD_D1, COORD_E1, COORD_F1, COORD_H1, COORD_C2, COORD_D2, COORD_E2, COORD_F2}}, // 40
-    {10, {COORD_A1, COORD_A3, COORD_A4, COORD_A5, COORD_A6, COORD_A8, COORD_B3, COORD_B4, COORD_B5, COORD_B6}}, // 41
-    {10, {COORD_A8, COORD_C8, COORD_D8, COORD_E8, COORD_F8, COORD_H8, COORD_C7, COORD_D7, COORD_E7, COORD_F7}}, // 42
-    {10, {COORD_H1, COORD_H3, COORD_H4, COORD_H5, COORD_H6, COORD_H8, COORD_G3, COORD_G4, COORD_G5, COORD_G6}}, // 43
+    // 10 corner8
+    {8, {COORD_A1, COORD_B1, COORD_C1, COORD_A2, COORD_B2, COORD_C2, COORD_A3, COORD_B3, COORD_NO}}, // 38
+    {8, {COORD_H1, COORD_G1, COORD_F1, COORD_H2, COORD_G2, COORD_F2, COORD_H3, COORD_G3, COORD_NO}}, // 39
+    {8, {COORD_A8, COORD_B8, COORD_C8, COORD_A7, COORD_B7, COORD_C7, COORD_A6, COORD_B6, COORD_NO}}, // 40
+    {8, {COORD_H8, COORD_G8, COORD_F8, COORD_H7, COORD_G7, COORD_F7, COORD_H6, COORD_G6, COORD_NO}}, // 41
 
-    // 11 cross
-    {10, {COORD_A1, COORD_B2, COORD_C3, COORD_D4, COORD_B1, COORD_C2, COORD_D3, COORD_A2, COORD_B3, COORD_C4}}, // 44
-    {10, {COORD_H1, COORD_G2, COORD_F3, COORD_E4, COORD_G1, COORD_F2, COORD_E3, COORD_H2, COORD_G3, COORD_F4}}, // 45
-    {10, {COORD_A8, COORD_B7, COORD_C6, COORD_D5, COORD_B8, COORD_C7, COORD_D6, COORD_A7, COORD_B6, COORD_C5}}, // 46
-    {10, {COORD_H8, COORD_G7, COORD_F6, COORD_E5, COORD_G8, COORD_F7, COORD_E6, COORD_H7, COORD_G6, COORD_F5}}, // 47
+    // 11 corner-stability + 2 corner
+    {8, {COORD_A1, COORD_A6, COORD_A7, COORD_A8, COORD_B7, COORD_B8, COORD_C8, COORD_H8, COORD_NO}}, // 42
+    {8, {COORD_H8, COORD_H3, COORD_H2, COORD_H1, COORD_G2, COORD_G1, COORD_F1, COORD_A1, COORD_NO}}, // 43
+    {8, {COORD_H1, COORD_H6, COORD_H7, COORD_H8, COORD_G7, COORD_G8, COORD_F8, COORD_A8, COORD_NO}}, // 44
+    {8, {COORD_A8, COORD_A3, COORD_A2, COORD_A1, COORD_B2, COORD_B1, COORD_C1, COORD_H1, COORD_NO}}, // 45
 
-    // 12 edge + y
-    {10, {COORD_C2, COORD_A1, COORD_B1, COORD_C1, COORD_D1, COORD_E1, COORD_F1, COORD_G1, COORD_H1, COORD_F2}}, // 48
-    {10, {COORD_B3, COORD_A1, COORD_A2, COORD_A3, COORD_A4, COORD_A5, COORD_A6, COORD_A7, COORD_A8, COORD_B6}}, // 49
-    {10, {COORD_C7, COORD_A8, COORD_B8, COORD_C8, COORD_D8, COORD_E8, COORD_F8, COORD_G8, COORD_H8, COORD_F7}}, // 50
-    {10, {COORD_G3, COORD_H1, COORD_H2, COORD_H3, COORD_H4, COORD_H5, COORD_H6, COORD_H7, COORD_H8, COORD_G6}}, // 51
+    // 12 half center-block
+    {8, {COORD_C3, COORD_D3, COORD_C4, COORD_D4, COORD_D5, COORD_C5, COORD_D6, COORD_C6, COORD_NO}}, // 46
+    {8, {COORD_F6, COORD_E6, COORD_F5, COORD_E5, COORD_E4, COORD_F4, COORD_E3, COORD_F3, COORD_NO}}, // 47
+    {8, {COORD_C3, COORD_C4, COORD_D3, COORD_D4, COORD_E4, COORD_E3, COORD_F4, COORD_F3, COORD_NO}}, // 48
+    {8, {COORD_F6, COORD_F5, COORD_E6, COORD_E5, COORD_D5, COORD_D6, COORD_C5, COORD_C6, COORD_NO}}, // 49
 
-    // 13 narrow triangle
-    {10, {COORD_A1, COORD_B1, COORD_C1, COORD_D1, COORD_E1, COORD_A2, COORD_B2, COORD_A3, COORD_A4, COORD_A5}}, // 52
-    {10, {COORD_H1, COORD_G1, COORD_F1, COORD_E1, COORD_D1, COORD_H2, COORD_G2, COORD_H3, COORD_H4, COORD_H5}}, // 53
-    {10, {COORD_A8, COORD_B8, COORD_C8, COORD_D8, COORD_E8, COORD_A7, COORD_B7, COORD_A6, COORD_A5, COORD_A4}}, // 54
-    {10, {COORD_H8, COORD_G8, COORD_F8, COORD_E8, COORD_D8, COORD_H7, COORD_G7, COORD_H6, COORD_H5, COORD_H4}}, // 55
+    // 13 4x2-A
+    {8, {COORD_A1, COORD_B1, COORD_A2, COORD_B2, COORD_C3, COORD_D3, COORD_C4, COORD_D4, COORD_NO}}, // 50
+    {8, {COORD_H1, COORD_H2, COORD_G1, COORD_G2, COORD_F3, COORD_F4, COORD_E3, COORD_E4, COORD_NO}}, // 51
+    {8, {COORD_H8, COORD_G8, COORD_H7, COORD_G7, COORD_F6, COORD_E6, COORD_F5, COORD_E5, COORD_NO}}, // 52
+    {8, {COORD_A8, COORD_A7, COORD_B8, COORD_B7, COORD_C6, COORD_C5, COORD_D6, COORD_D5, COORD_NO}}, // 53
 
-    // 14 fish
-    {10, {COORD_A1, COORD_B1, COORD_A2, COORD_B2, COORD_C2, COORD_D2, COORD_B3, COORD_C3, COORD_B4, COORD_D4}}, // 56
-    {10, {COORD_H1, COORD_G1, COORD_H2, COORD_G2, COORD_F2, COORD_E2, COORD_G3, COORD_F3, COORD_G4, COORD_E4}}, // 57
-    {10, {COORD_A8, COORD_B8, COORD_A7, COORD_B7, COORD_C7, COORD_D7, COORD_B6, COORD_C6, COORD_B5, COORD_D5}}, // 58
-    {10, {COORD_H8, COORD_G8, COORD_H7, COORD_G7, COORD_F7, COORD_E7, COORD_G6, COORD_F6, COORD_G5, COORD_E5}}, // 59
+    // 14 4x2-B
+    {8, {COORD_C1, COORD_D1, COORD_C2, COORD_D2, COORD_A3, COORD_B3, COORD_A4, COORD_B4, COORD_NO}}, // 54
+    {8, {COORD_H3, COORD_H4, COORD_G3, COORD_G4, COORD_F1, COORD_F2, COORD_E1, COORD_E2, COORD_NO}}, // 55
+    {8, {COORD_F8, COORD_E8, COORD_F7, COORD_E7, COORD_H6, COORD_G6, COORD_H5, COORD_G5, COORD_NO}}, // 56
+    {8, {COORD_A6, COORD_A5, COORD_B6, COORD_B5, COORD_C8, COORD_C7, COORD_D8, COORD_D7, COORD_NO}}, // 57
 
-    // 15 kite
-    {10, {COORD_A1, COORD_B1, COORD_A2, COORD_B2, COORD_C2, COORD_D2, COORD_E2, COORD_B3, COORD_B4, COORD_B5}}, // 60
-    {10, {COORD_H1, COORD_G1, COORD_H2, COORD_G2, COORD_F2, COORD_E2, COORD_D2, COORD_G3, COORD_G4, COORD_G5}}, // 61
-    {10, {COORD_A8, COORD_B8, COORD_A7, COORD_B7, COORD_C7, COORD_D7, COORD_E7, COORD_B6, COORD_B5, COORD_B4}}, // 62
-    {10, {COORD_H8, COORD_G8, COORD_H7, COORD_G7, COORD_F7, COORD_E7, COORD_D7, COORD_G6, COORD_G5, COORD_G4}}  // 63
+    // 15 4x2-C
+    {8, {COORD_A1, COORD_B1, COORD_A2, COORD_B2, COORD_B7, COORD_A7, COORD_B8, COORD_A8, COORD_NO}}, // 58
+    {8, {COORD_H1, COORD_H2, COORD_G1, COORD_G2, COORD_B2, COORD_B1, COORD_A2, COORD_A1, COORD_NO}}, // 59
+    {8, {COORD_H8, COORD_G8, COORD_H7, COORD_G7, COORD_G2, COORD_H2, COORD_G1, COORD_H1, COORD_NO}}, // 60
+    {8, {COORD_A8, COORD_A7, COORD_B8, COORD_B7, COORD_G7, COORD_G8, COORD_H7, COORD_H8, COORD_NO}}  // 61
 };
 
 constexpr Coord_to_feature coord_to_feature[HW2] = {
@@ -219,8 +220,7 @@ __m256i feature_to_coord_simd_mul[N_SIMD_EVAL_FEATURES][MAX_PATTERN_CELLS - 1];
 __m256i feature_to_coord_simd_cell[N_SIMD_EVAL_FEATURES][MAX_PATTERN_CELLS][2];
 __m256i coord_to_feature_simd[HW2][N_SIMD_EVAL_FEATURES];
 __m256i eval_move_unflipped_16bit[N_16BIT][N_SIMD_EVAL_FEATURE_GROUP][N_SIMD_EVAL_FEATURES];
-__m256i eval_simd_offsets_simple[N_SIMD_EVAL_FEATURES_SIMPLE]; // 16bit * 16 * N
-__m256i eval_simd_offsets_comp[N_SIMD_EVAL_FEATURES_COMP * 2]; // 32bit * 8 * N
+__m256i eval_simd_offsets[N_SIMD_EVAL_FEATURES]; // 16bit * 16 * N
 __m256i eval_surround_mask;
 __m128i eval_surround_shift1879;
 
@@ -230,7 +230,7 @@ __m128i eval_surround_shift1879;
 int16_t pattern_arr[N_PHASES][N_PATTERN_PARAMS];
 int16_t eval_num_arr[N_PHASES][MAX_STONE_NUM];
 int16_t eval_sur0_sur1_arr[N_PHASES][MAX_SURROUND][MAX_SURROUND];
-int16_t pattern_arr_move_ordering_end[N_PATTERN_PARAMS_MO_END];
+//int16_t pattern_arr_move_ordering_end[N_PATTERN_PARAMS_MO_END];
 
 inline bool load_eval_file(const char* file, bool show_log){
     if (show_log)
@@ -282,7 +282,7 @@ inline bool load_eval_file(const char* file, bool show_log){
     }
     return true;
 }
-
+/*
 inline bool load_eval_move_ordering_end_file(const char* file, bool show_log){
     if (show_log)
         std::cerr << "evaluation for move ordering end file " << file << std::endl;
@@ -311,13 +311,14 @@ inline bool load_eval_move_ordering_end_file(const char* file, bool show_log){
     }
     return true;
 }
+*/
 
 inline void pre_calculate_eval_constant(){
     constexpr int pattern_starts[N_PATTERNS] = {
         1, 6562, 13123, 19684, // features[0]
-        19927, 20656, 22843, /*dummy 29404*/ 29405, // features[1]
-        49088, 108137, 167186, 226235, // features[2]
-        285284, 344333, 403382, 462431  // features[3]
+        21871, 22600, 42283, /*dummy 48844*/ 48845, // features[1]
+        55406, 61967, 68528, 75089, // features[2]
+        81650, 88211, 94772, 101333 // features[3]
     };
     { // calc_eval_features initialization
         int16_t f2c[16];
@@ -350,17 +351,29 @@ inline void pre_calculate_eval_constant(){
                 );
             }
         }
-        eval_simd_offsets_simple[0] = _mm256_set_epi16(
+        eval_simd_offsets[0] = _mm256_set_epi16(
             (int16_t)pattern_starts[0], (int16_t)pattern_starts[0], (int16_t)pattern_starts[0], (int16_t)pattern_starts[0], 
             (int16_t)pattern_starts[1], (int16_t)pattern_starts[1], (int16_t)pattern_starts[1], (int16_t)pattern_starts[1], 
             (int16_t)pattern_starts[2], (int16_t)pattern_starts[2], (int16_t)pattern_starts[2], (int16_t)pattern_starts[2], 
             (int16_t)pattern_starts[3], (int16_t)pattern_starts[3], (int16_t)pattern_starts[3], (int16_t)pattern_starts[3]
         );
-        eval_simd_offsets_simple[1] = _mm256_set_epi16(
+        eval_simd_offsets[1] = _mm256_set_epi16(
             (int16_t)pattern_starts[4], (int16_t)pattern_starts[4], (int16_t)pattern_starts[4], (int16_t)pattern_starts[4], 
             (int16_t)pattern_starts[5], (int16_t)pattern_starts[5], (int16_t)pattern_starts[5], (int16_t)pattern_starts[5], 
             (int16_t)pattern_starts[6], (int16_t)pattern_starts[6],       SIMD_EVAL_DUMMY_ADDR,       SIMD_EVAL_DUMMY_ADDR, 
             (int16_t)pattern_starts[7], (int16_t)pattern_starts[7], (int16_t)pattern_starts[7], (int16_t)pattern_starts[7]
+        );
+        eval_simd_offsets[2] = _mm256_set_epi16(
+            (int16_t)(pattern_starts[8] - pattern_starts[8]), (int16_t)(pattern_starts[8] - pattern_starts[8]), (int16_t)(pattern_starts[8] - pattern_starts[8]), (int16_t)(pattern_starts[8] - pattern_starts[8]), 
+            (int16_t)(pattern_starts[9] - pattern_starts[8]), (int16_t)(pattern_starts[9] - pattern_starts[8]), (int16_t)(pattern_starts[9] - pattern_starts[8]), (int16_t)(pattern_starts[9] - pattern_starts[8]), 
+            (int16_t)(pattern_starts[10] - pattern_starts[8]), (int16_t)(pattern_starts[10] - pattern_starts[8]), (int16_t)(pattern_starts[10] - pattern_starts[8]), (int16_t)(pattern_starts[10] - pattern_starts[8]), 
+            (int16_t)(pattern_starts[11] - pattern_starts[8]), (int16_t)(pattern_starts[11] - pattern_starts[8]), (int16_t)(pattern_starts[11] - pattern_starts[8]), (int16_t)(pattern_starts[11] - pattern_starts[8])
+        );
+        eval_simd_offsets[3] = _mm256_set_epi16(
+            (int16_t)(pattern_starts[12] - pattern_starts[8]), (int16_t)(pattern_starts[12] - pattern_starts[8]), (int16_t)(pattern_starts[12] - pattern_starts[8]), (int16_t)(pattern_starts[12] - pattern_starts[8]), 
+            (int16_t)(pattern_starts[13] - pattern_starts[8]), (int16_t)(pattern_starts[13] - pattern_starts[8]), (int16_t)(pattern_starts[13] - pattern_starts[8]), (int16_t)(pattern_starts[13] - pattern_starts[8]), 
+            (int16_t)(pattern_starts[14] - pattern_starts[8]), (int16_t)(pattern_starts[14] - pattern_starts[8]), (int16_t)(pattern_starts[14] - pattern_starts[8]), (int16_t)(pattern_starts[14] - pattern_starts[8]), 
+            (int16_t)(pattern_starts[15] - pattern_starts[8]), (int16_t)(pattern_starts[15] - pattern_starts[8]), (int16_t)(pattern_starts[15] - pattern_starts[8]), (int16_t)(pattern_starts[15] - pattern_starts[8])
         );
     }
     { // eval_move initialization
@@ -402,17 +415,6 @@ inline void pre_calculate_eval_constant(){
                 }
             }
         }
-        for (int i = 0; i < N_SIMD_EVAL_FEATURES_COMP; ++i){
-            int i4 = i * 4;
-            eval_simd_offsets_comp[i * 2] = _mm256_set_epi32(
-                pattern_starts[10 + i4], pattern_starts[10 + i4], pattern_starts[10 + i4], pattern_starts[10 + i4], 
-                pattern_starts[11 + i4], pattern_starts[11 + i4], pattern_starts[11 + i4], pattern_starts[11 + i4]
-            );
-            eval_simd_offsets_comp[i * 2 + 1] = _mm256_set_epi32(
-                pattern_starts[8 + i4], pattern_starts[8 + i4], pattern_starts[8 + i4], pattern_starts[8 + i4], 
-                pattern_starts[9 + i4], pattern_starts[9 + i4], pattern_starts[9 + i4], pattern_starts[9 + i4]
-            );
-        }
         eval_lower_mask = _mm256_set1_epi32(0x0000FFFF);
     }
     { // calc_surround initialization
@@ -434,11 +436,13 @@ inline bool evaluate_init(const char* file, const char* mo_end_nws_file, bool sh
         std::cerr << "[ERROR] [FATAL] evaluation file not loaded" << std::endl;
         return false;
     }
+    /*
     bool eval_move_ordering_end_nws_loaded = load_eval_move_ordering_end_file(mo_end_nws_file, show_log);
     if (!eval_move_ordering_end_nws_loaded){
         std::cerr << "[ERROR] [FATAL] evaluation file for move ordering end not loaded" << std::endl;
         return false;
     }
+    */
     pre_calculate_eval_constant();
     if (show_log)
         std::cerr << "evaluation function initialized" << std::endl;
@@ -481,17 +485,6 @@ inline int calc_surround(const uint64_t discs, const uint64_t empties){
 }
 #define CALC_SURROUND_FUNCTION
 
-/*
-    @brief pattern evaluation
-
-    @param phase_idx            evaluation phase
-    @param search               search information
-    @return pattern evaluation value
-*/
-inline __m256i calc_idx8_comp(const __m128i feature, const int i){
-    return _mm256_add_epi32(_mm256_cvtepu16_epi32(feature), eval_simd_offsets_comp[i]);
-}
-
 inline __m256i gather_eval(const int *start_addr, const __m256i idx8){
     return _mm256_i32gather_epi32(start_addr, idx8, 2); // stride is 2 byte, because 16 bit array used, HACK: if (SIMD_EVAL_MAX_VALUE * 2) * (N_ADD=8) < 2 ^ 16, AND is unnecessary
     // return _mm256_and_si256(_mm256_i32gather_epi32(start_addr, idx8, 2), eval_lower_mask);
@@ -499,20 +492,21 @@ inline __m256i gather_eval(const int *start_addr, const __m256i idx8){
 
 inline int calc_pattern(const int phase_idx, Eval_features *features){
     const int *start_addr = (int*)pattern_arr[phase_idx];
+    const int *start_addr2 = (int*)pattern_arr[phase_idx] + START_ADDR2_PLUS;
     __m256i res256 =                  gather_eval(start_addr, _mm256_cvtepu16_epi32(features->f128[0]));    // hv4 d5
     res256 = _mm256_add_epi32(res256, gather_eval(start_addr, _mm256_cvtepu16_epi32(features->f128[1])));   // hv2 hv3
     res256 = _mm256_add_epi32(res256, gather_eval(start_addr, _mm256_cvtepu16_epi32(features->f128[2])));   // d8 corner9
     res256 = _mm256_add_epi32(res256, gather_eval(start_addr, _mm256_cvtepu16_epi32(features->f128[3])));   // d6 d7
-    res256 = _mm256_add_epi32(res256, gather_eval(start_addr, calc_idx8_comp(features->f128[4], 0)));       // corner+block cross
-    res256 = _mm256_add_epi32(res256, gather_eval(start_addr, calc_idx8_comp(features->f128[5], 1)));       // edge+2X triangle
-    res256 = _mm256_add_epi32(res256, gather_eval(start_addr, calc_idx8_comp(features->f128[6], 2)));       // fish kite
-    res256 = _mm256_add_epi32(res256, gather_eval(start_addr, calc_idx8_comp(features->f128[7], 3)));       // edge+2Y narrow_triangle
+    res256 = _mm256_add_epi32(res256, gather_eval(start_addr2, _mm256_cvtepu16_epi32(features->f128[4])));       // corner+block cross
+    res256 = _mm256_add_epi32(res256, gather_eval(start_addr2, _mm256_cvtepu16_epi32(features->f128[5])));       // edge+2X triangle
+    res256 = _mm256_add_epi32(res256, gather_eval(start_addr2, _mm256_cvtepu16_epi32(features->f128[6])));       // fish kite
+    res256 = _mm256_add_epi32(res256, gather_eval(start_addr2, _mm256_cvtepu16_epi32(features->f128[7])));       // edge+2Y narrow_triangle
     res256 = _mm256_and_si256(res256, eval_lower_mask);
     __m128i res128 = _mm_add_epi32(_mm256_castsi256_si128(res256), _mm256_extracti128_si256(res256, 1));
     res128 = _mm_hadd_epi32(res128, res128);
     return _mm_cvtsi128_si32(res128) + _mm_extract_epi32(res128, 1) - SIMD_EVAL_MAX_VALUE * N_SYMMETRY_PATTERNS;
 }
-
+/*
 inline int calc_pattern_move_ordering_end(Eval_features *features){
     const int *start_addr = (int*)(pattern_arr_move_ordering_end - SHIFT_EVAL_MO_END);
     __m256i res256 =                  gather_eval(start_addr, calc_idx8_comp(features->f128[4], 0));        // corner+block cross
@@ -522,7 +516,7 @@ inline int calc_pattern_move_ordering_end(Eval_features *features){
     res128 = _mm_hadd_epi32(res128, res128);
     return _mm_cvtsi128_si32(res128) + _mm_extract_epi32(res128, 1) - SIMD_EVAL_MAX_VALUE_MO_END * N_SYMMETRY_PATTERNS_MO_END;
 }
-
+*/
 inline void calc_eval_features(Board *board, Eval_search *eval);
 
 /*
@@ -580,12 +574,14 @@ inline int mid_evaluate_diff(Search *search){
     @param search               search information
     @return evaluation value
 */
+/*
 inline int mid_evaluate_move_ordering_end(Search *search){
     int res = calc_pattern_move_ordering_end(&search->eval.features[search->eval.feature_idx]);
     res += res >= 0 ? STEP_2 : -STEP_2;
     res /= STEP;
     return res;
 }
+*/
 
 inline void calc_feature_vector(__m256i &f, const int *b_arr_int, const int i, const int n){
     f = _mm256_set1_epi16(0);
@@ -609,11 +605,12 @@ inline void calc_eval_features(Board *board, Eval_search *eval){
     b_arr_int[COORD_NO] = 0;
     calc_feature_vector(eval->features[0].f256[0], b_arr_int, 0, 7);
     calc_feature_vector(eval->features[0].f256[1], b_arr_int, 1, 8);
-    calc_feature_vector(eval->features[0].f256[2], b_arr_int, 2, 9);
-    calc_feature_vector(eval->features[0].f256[3], b_arr_int, 3, 9);
+    calc_feature_vector(eval->features[0].f256[2], b_arr_int, 2, 7);
+    calc_feature_vector(eval->features[0].f256[3], b_arr_int, 3, 7);
     eval->feature_idx = 0;
-    eval->features[eval->feature_idx].f256[0] = _mm256_add_epi16(eval->features[eval->feature_idx].f256[0], eval_simd_offsets_simple[0]); // global index
-    eval->features[eval->feature_idx].f256[1] = _mm256_add_epi16(eval->features[eval->feature_idx].f256[1], eval_simd_offsets_simple[1]); // global index
+    for (int i = 0; i < N_SIMD_EVAL_FEATURES; ++i){
+        eval->features[eval->feature_idx].f256[i] = _mm256_add_epi16(eval->features[eval->feature_idx].f256[i], eval_simd_offsets[i]);
+    }
 }
 
 /*
@@ -706,7 +703,7 @@ inline void eval_pass(Eval_search *eval, const Board *board){
 
 
 
-
+/*
 // only corner+block cross edge+2X triangle
 inline void eval_move_endsearch(Eval_search *eval, const Flip *flip, const Board *board){
     const uint16_t *flipped_group = (uint16_t*)&(flip->flip);
@@ -738,3 +735,4 @@ inline void eval_pass_endsearch(Eval_search *eval, const Board *board){
     }
     eval->features[eval->feature_idx].f256[2] = f2;
 }
+*/
