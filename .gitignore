@@ -44,3 +44,4 @@ src/tools/evaluation/trained
 src/tools/enumerate_lines/11
 src/tools/convert_board_data/book
 src/tools/cut_transcript/result
+src/tools/evaluation/nnue/trained
