@@ -80,7 +80,7 @@
     #define W_NWS_MOBILITY 21
     #define W_NWS_POTENTIAL_MOBILITY 17
     #define W_NWS_TT_BONUS 201
-    #define W_NWS_VALUE 10
+    #define W_NWS_VALUE 16
     #define W_NWS_VALUE_DEEP_ADDITIONAL 16
 
     // endgame null window search

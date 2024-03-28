@@ -74,12 +74,12 @@ for n_discs in range(64):
     weight.append(0.001)
 '''
 
-for n_discs in range(45):
+for n_discs in range(60):
     depth = 0
     x_n_discs.append(n_discs)
     y_depth.append(depth)
-    z_error.append(7.0 - n_discs / 60 * 1.0)
-    weight.append(0.01)
+    z_error.append(13.0 - n_discs / 60 * 5.0)
+    weight.append(0.03)
 
 def f(xy, probcut_a, probcut_b, probcut_c, probcut_d, probcut_e, probcut_f, probcut_g, probcut_h, probcut_i, probcut_j):
     x, y = xy
