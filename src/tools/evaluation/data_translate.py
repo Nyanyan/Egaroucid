@@ -10,12 +10,18 @@ N_PHASES = 60
 #board_sub_dir_nums = [6, 7, 8, 9, 10, 11, 15, 16, 17, 18, 19, 20, 21, 23, 24, 25, 26, 27]
 board_sub_dir_nums = [31]
 '''
-#'''
+'''
 # 7.0 light
 bin_root_dir = './../../../train_data/bin_data/20240327/'
 exe = 'data_board_to_idx_7_0_light.out'
 N_PHASES = 60
-#board_sub_dir_nums = [6, 7, 8, 9, 10, 11, 15, 16, 17, 18, 19, 20, 21, 23, 24, 25, 26, 27, 28, 29, 30, 31]
+board_sub_dir_nums = [25, 26, 27, 28, 29, 30, 31]
+'''
+#'''
+# 7.0 light2
+bin_root_dir = './../../../train_data/bin_data/20240328_1/'
+exe = 'data_board_to_idx_7_0_light2.out'
+N_PHASES = 60
 board_sub_dir_nums = [25, 26, 27, 28, 29, 30, 31]
 #'''
 '''
