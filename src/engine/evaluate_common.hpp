@@ -15,13 +15,13 @@
     @brief evaluation pattern definition
 */
 // disc patterns
-#define N_PATTERNS 16
-#define MAX_PATTERN_CELLS 9
+#define N_PATTERNS 20
+#define MAX_PATTERN_CELLS 8
 #define MAX_CELL_PATTERNS 16
-#define MAX_EVALUATE_IDX 19683
-#define N_SYMMETRY_PATTERNS 62
+#define MAX_EVALUATE_IDX 6561
+#define N_SYMMETRY_PATTERNS 78
 #if USE_SIMD_EVALUATION
-    #define N_SIMD_EVAL_FEATURES 4 // 16 (elems per 256 bit vector) * N_SIMD_EVAL_FEATURES >= N_SYMMETRY_PATTERNS
+    #define N_SIMD_EVAL_FEATURES 5 // 16 (elems per 256 bit vector) * N_SIMD_EVAL_FEATURES >= N_SYMMETRY_PATTERNS
 #endif
 
 // additional features
@@ -33,9 +33,11 @@
 #define PHASE_N_DISCS 1
 
 // move ordering evaluation function
+/*
 #define MAX_EVALUATE_IDX_MO 19683
 #define N_PATTERNS_MO_END 4
 #define N_SYMMETRY_PATTERNS_MO_END 16
+*/
 
 /*
     @brief value definition
