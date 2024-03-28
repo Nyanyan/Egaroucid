@@ -187,7 +187,7 @@ int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, uin
                     alpha = v;
                 }
                 if (alpha < beta){
-                    ybwc_search_young_brothers(search, &alpha, &beta, &v, &best_move, hash_code, depth, is_end_search, move_list, searching);
+                    ybwc_search_young_brothers(search, &alpha, &beta, &v, &best_move, hash_code, depth, is_end_search, move_list, true, searching);
                 }
             }
         } else{
@@ -299,20 +299,14 @@ std::pair<int, int> first_nega_scout_legal(Search *search, int alpha, int beta, 
         if (v < clog.val){
             v = clog.val;
             best_move = clog.pos;
+            if (alpha < v){
+                alpha = v;
+            }
         }
         legal ^= 1ULL << clog.pos;
     }
-    alpha = std::max(alpha, v);
     uint32_t hash_code = search->board.hash();
     if (alpha < beta && legal){
-        int lower = -SCORE_MAX, upper = SCORE_MAX;
-        uint_fast8_t moves[N_TRANSPOSITION_MOVES] = {TRANSPOSITION_TABLE_UNDEFINED, TRANSPOSITION_TABLE_UNDEFINED};
-        #if MID_TO_END_DEPTH < USE_TT_DEPTH_THRESHOLD
-            if (search->n_discs <= HW2 - USE_TT_DEPTH_THRESHOLD)
-                transposition_table.get(search, hash_code, depth, &lower, &upper, moves);
-        #else
-            transposition_table.get(search, hash_code, depth, &lower, &upper, moves);
-        #endif
         int pv_idx = 1;
         const int canput = pop_count_ull(legal);
         std::vector<Flip_value> move_list(canput);
@@ -323,6 +317,8 @@ std::pair<int, int> first_nega_scout_legal(Search *search, int alpha, int beta, 
                 return std::make_pair(SCORE_MAX, (int)cell);
             ++idx;
         }
+        uint_fast8_t moves[N_TRANSPOSITION_MOVES] = {TRANSPOSITION_TABLE_UNDEFINED, TRANSPOSITION_TABLE_UNDEFINED};
+        transposition_table.get_moves_any_level(&search->board, hash_code, moves);
         move_list_evaluate(search, move_list, moves, depth, alpha, beta, searching);
 
         #if USE_YBWC_NEGASCOUT
@@ -340,7 +336,7 @@ std::pair<int, int> first_nega_scout_legal(Search *search, int alpha, int beta, 
                     }
                 }
                 if (alpha < beta){
-                    ybwc_search_young_brothers(search, &alpha, &beta, &v, &best_move, hash_code, depth, is_end_search, move_list, searching);
+                    ybwc_search_young_brothers(search, &alpha, &beta, &v, &best_move, hash_code, depth, is_end_search, move_list, false, searching);
                 }
             } else{
         #endif
@@ -368,6 +364,9 @@ std::pair<int, int> first_nega_scout_legal(Search *search, int alpha, int beta, 
         #if USE_YBWC_NEGASCOUT
             }
         #endif
+    }
+    if (!is_valid_policy(best_move) && *searching && global_searching){
+        std::cerr << best_move << " " << alpha << " " << beta << "  " << first_alpha << " " << v << " " << legal << std::endl;
     }
     if (*searching && global_searching)
         transposition_table.reg(search, hash_code, depth, first_alpha, beta, v, best_move);

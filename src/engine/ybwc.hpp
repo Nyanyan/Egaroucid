@@ -175,7 +175,7 @@ inline bool ybwc_split_nws(Search *search, int alpha, int depth, uint64_t legal,
 #endif
 
 #if USE_YBWC_NEGASCOUT
-    void ybwc_search_young_brothers(Search *search, int *alpha, int *beta, int *v, int *best_move, uint32_t hash_code, int depth, bool is_end_search, std::vector<Flip_value> &move_list, const bool *searching){
+    void ybwc_search_young_brothers(Search *search, int *alpha, int *beta, int *v, int *best_move, uint32_t hash_code, int depth, bool is_end_search, std::vector<Flip_value> &move_list, bool see_tt_loop, const bool *searching){
         std::vector<std::future<Parallel_task>> parallel_tasks;
         bool n_searching = true;
         int canput = (int)move_list.size();
@@ -184,7 +184,7 @@ inline bool ybwc_split_nws(Search *search, int alpha, int depth, uint64_t legal,
         for (int move_idx = 1; move_idx < canput && n_searching; ++move_idx){
             n_searching &= *searching;
             if (move_list[move_idx].flip.flip){
-                if (search->need_to_see_tt_loop){
+                if (search->need_to_see_tt_loop && see_tt_loop){
                     if (transposition_cutoff_bestmove(search, hash_code, depth, alpha, beta, v, best_move)){
                         n_searching = false;
                         fail_high_idx = -1;
@@ -280,7 +280,7 @@ inline bool ybwc_split_nws(Search *search, int alpha, int depth, uint64_t legal,
                 *best_move = move_list[fail_high_idx].flip.pos;
                 move_list[fail_high_idx].flip.flip = 0;
                 if (*alpha < *beta){
-                    ybwc_search_young_brothers(search, alpha, beta, v, best_move, hash_code, depth, is_end_search, move_list, searching);
+                    ybwc_search_young_brothers(search, alpha, beta, v, best_move, hash_code, depth, is_end_search, move_list, see_tt_loop, searching);
                 }
             }
         }

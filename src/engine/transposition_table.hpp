@@ -605,6 +605,31 @@ class Transposition_table{
         }
 
         /*
+            @brief get best moves from transposition table with any level
+
+            @param board                board
+            @param hash                 hash code
+            @return best move
+        */
+        inline bool get_moves_any_level(const Board *board, uint32_t hash, uint_fast8_t moves[]){
+            Hash_node *node = get_node(hash);
+            for (uint_fast8_t i = 0; i < TRANSPOSITION_TABLE_N_LOOP; ++i){
+                if (node->board.player == board->player && node->board.opponent == board->opponent){
+                    node->lock.lock();
+                        if (node->board.player == board->player && node->board.opponent == board->opponent){
+                            node->data.get_moves(moves);
+                            node->lock.unlock();
+                            return true;
+                        }
+                    node->lock.unlock();
+                }
+                ++hash;
+                node = get_node(hash);
+            }
+            return false;
+        }
+
+        /*
             @brief get best move from transposition table
 
             @param board                board

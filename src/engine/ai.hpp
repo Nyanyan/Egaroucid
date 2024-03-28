@@ -60,6 +60,15 @@ inline Search_result tree_search_legal(Board board, int depth, uint_fast8_t mpc_
     res = lazy_smp(board, depth, mpc_level, show_log, clogs, use_legal, use_multi_thread);
     res.clog_nodes = clog_nodes;
     res.clog_time = clog_time;
+    if (res.policy < 0 || HW2 <= res.policy){
+        std::cerr << "[ERROR] no move found" << std::endl;
+        std::cerr << "policy " << (int)res.policy << std::endl;
+        std::cerr << "value " << res.value << std::endl;
+        std::cerr << "legal: " << pop_count_ull(board.get_legal()) << std::endl;
+        std::cerr << "use_legal " << use_legal << std::endl;
+        std::cerr << "clog: " << clogs.size() << std::endl;
+        board.print();
+    }
     return res;
 }
 
