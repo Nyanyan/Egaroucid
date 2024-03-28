@@ -25,20 +25,20 @@
 /*
     @brief constants for ProbCut error calculation
 */
-#define probcut_a 0.713575486585895
-#define probcut_b -4.819020323988586
-#define probcut_c 0.11824444834703247
-#define probcut_d 0.7518942653941896
-#define probcut_e 4.225039333099924
-#define probcut_f 5.263162189947396
-#define probcut_g 2.5351306243638794
+#define probcut_a 0.42228791831085244
+#define probcut_b -3.129145356427601
+#define probcut_c 1.1972519990903088
+#define probcut_d 2.026972082709406
+#define probcut_e -4.10920760805638
+#define probcut_f 6.063617380206173
+#define probcut_g 2.117808334104262
 
-#define probcut_end_a -1.3080394720816486
-#define probcut_end_b -23.228211621461362
-#define probcut_end_c 0.08350793828540819
-#define probcut_end_d 1.1472526657677178
-#define probcut_end_e 5.6622333838530485
-#define probcut_end_f 13.374185131825373
+#define probcut_end_a -2.1545861246368383
+#define probcut_end_b -5.227169693157927
+#define probcut_end_c 0.6751858297229165
+#define probcut_end_d 1.680597473398011
+#define probcut_end_e 1.4883149166012901
+#define probcut_end_f 7.097351603734277
 
 #if USE_MPC_PRE_CALCULATION
     int mpc_error[N_SELECTIVITY_LEVEL][HW2 + 1][HW2 - 3][HW2 - 3];
@@ -240,7 +240,6 @@ inline bool mpc(Search* search, int alpha, int beta, int depth, uint64_t legal, 
 #endif
 
 #if TUNE_PROBCUT_MID
-    inline Search_result tree_search_legal(Board board, int depth, uint_fast8_t mpc_level, bool show_log, uint64_t use_legal, bool use_multi_thread);
     void get_data_probcut_mid(){
         std::ofstream ofs("probcut_mid.txt");
         Board board;
@@ -271,9 +270,9 @@ inline bool mpc(Search* search, int alpha, int beta, int depth, uint64_t legal, 
                         if (short_depth == 0){
                             short_ans.value = mid_evaluate(&board);
                         } else{
-                            short_ans = tree_search_legal(board, short_depth, MPC_100_LEVEL, false, board.get_legal(), true);
+                            short_ans = tree_search(board, short_depth, MPC_100_LEVEL, false, true);
                         }
-                        long_ans = tree_search_legal(board, depth, MPC_100_LEVEL, false, board.get_legal(), true);
+                        long_ans = tree_search(board, depth, MPC_100_LEVEL, false, true);
                         // n_discs short_depth long_depth error
                         std::cerr << i << " " << n_discs << " " << short_depth << " " << depth << " " << long_ans.value - short_ans.value << std::endl;
                         ofs << n_discs << " " << short_depth << " " << depth << " " << long_ans.value - short_ans.value << std::endl;
@@ -285,7 +284,6 @@ inline bool mpc(Search* search, int alpha, int beta, int depth, uint64_t legal, 
 #endif
 
 #if TUNE_PROBCUT_END
-    inline Search_result tree_search_legal(Board board, int depth, uint_fast8_t mpc_level, bool show_log, uint64_t use_legal, bool use_multi_thread);
     void get_data_probcut_end(){
         std::ofstream ofs("probcut_end.txt");
         Board board;
@@ -315,9 +313,9 @@ inline bool mpc(Search* search, int alpha, int beta, int depth, uint64_t legal, 
                     if (short_depth == 0){
                         short_ans.value = mid_evaluate(&board);
                     } else{
-                        short_ans = tree_search_legal(board, short_depth, MPC_100_LEVEL, false, board.get_legal(), true);
+                        short_ans = tree_search(board, short_depth, MPC_100_LEVEL, false, true);
                     }
-                    long_ans = tree_search_legal(board, depth, MPC_100_LEVEL, false, board.get_legal(), true);
+                    long_ans = tree_search(board, depth, MPC_100_LEVEL, false, true);
                     // n_discs short_depth error
                     std::cerr << i << " " << HW2 - depth << " " << short_depth << " " << long_ans.value - short_ans.value << std::endl;
                     ofs << HW2 - depth << " " << short_depth << " " << long_ans.value - short_ans.value << std::endl;
