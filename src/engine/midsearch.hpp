@@ -365,9 +365,6 @@ std::pair<int, int> first_nega_scout_legal(Search *search, int alpha, int beta, 
             }
         #endif
     }
-    if (!is_valid_policy(best_move) && *searching && global_searching){
-        std::cerr << best_move << " " << alpha << " " << beta << "  " << first_alpha << " " << v << " " << legal << std::endl;
-    }
     if (*searching && global_searching)
         transposition_table.reg(search, hash_code, depth, first_alpha, beta, v, best_move);
     return std::make_pair(v, best_move);
