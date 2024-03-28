@@ -4,9 +4,9 @@ from random import shuffle
 import matplotlib.pyplot as plt
 from othello_py import *
 
-LEVEL = 1
+LEVEL = 5
 
-N_SET_GAMES = 250
+N_SET_GAMES = 100
 
 # name, cmd, cacheclear?
 player_info = [

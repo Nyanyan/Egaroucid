@@ -12,7 +12,8 @@ import math
 #data_files = ['data/probcut_end8.txt', 'data/probcut_end9.txt', 'data/probcut_end10.txt', 'data/probcut_end11.txt', 'data/probcut_end12.txt']
 #data_files = ['data/probcut_end15.txt']
 #data_files = ['data/probcut_end16.txt']
-data_files = ['data/probcut_end17.txt']
+#data_files = ['data/probcut_end17.txt']
+data_files = ['data/probcut_end18.txt']
 
 data = [[[] for _ in range(61)] for _ in range(65)] # n_discs, depth
 for data_file in data_files:
@@ -31,8 +32,8 @@ weight = []
 
 
 for n_discs in range(len(data)):
-    if n_discs >= 59:
-        continue
+    #if n_discs >= 59:
+    #    continue
     for depth in range(2, len(data[n_discs])):
         if len(data[n_discs][depth]) >= 3:
             mean_st = statistics.mean(data[n_discs][depth])
@@ -77,7 +78,7 @@ for n_discs in range(45):
     depth = 0
     x_n_discs.append(n_discs)
     y_depth.append(depth)
-    z_error.append(8.0 - n_discs / 60 * 2.0)
+    z_error.append(7.0 - n_discs / 60 * 1.0)
     weight.append(0.01)
 
 def f(xy, probcut_a, probcut_b, probcut_c, probcut_d, probcut_e, probcut_f, probcut_g, probcut_h, probcut_i, probcut_j):

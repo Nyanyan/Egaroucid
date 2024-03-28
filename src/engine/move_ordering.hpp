@@ -40,10 +40,10 @@
     @brief constants for move ordering
 */
 #if TUNE_MOVE_ORDERING
-    #define N_MOVE_ORDERING_PARAM 13
+    #define N_MOVE_ORDERING_PARAM 14
     int move_ordering_param_array[N_MOVE_ORDERING_PARAM] = {
-        39, 13, 487, 273, 86, 
-        21, 13, 10, 16, 
+        39, 13, 486, 275, 86, 
+        21, 17, 201, 10, 16, 
         43, 10, 
         18, 15
     };
@@ -56,35 +56,36 @@
 
     #define W_NWS_MOBILITY              move_ordering_param_array[5]
     #define W_NWS_POTENTIAL_MOBILITY    move_ordering_param_array[6]
-    #define W_NWS_VALUE                 move_ordering_param_array[7]
-    #define W_NWS_VALUE_DEEP_ADDITIONAL move_ordering_param_array[8]
+    #define W_NWS_TT_BONUS              move_ordering_param_array[7]
+    #define W_NWS_VALUE                 move_ordering_param_array[8]
+    #define W_NWS_VALUE_DEEP_ADDITIONAL move_ordering_param_array[9]
 
-    #define W_END_NWS_MOBILITY          move_ordering_param_array[9]
-    #define W_END_NWS_VALUE             move_ordering_param_array[10]
+    #define W_END_NWS_MOBILITY          move_ordering_param_array[10]
+    #define W_END_NWS_VALUE             move_ordering_param_array[11]
 
-    #define W_END_NWS_SIMPLE_MOBILITY   move_ordering_param_array[11]
-    #define W_END_NWS_SIMPLE_PARITY     move_ordering_param_array[12]
+    #define W_END_NWS_SIMPLE_MOBILITY   move_ordering_param_array[12]
+    #define W_END_NWS_SIMPLE_PARITY     move_ordering_param_array[13]
 
-    #define MOVE_ORDERING_PARAM_START 0
-    #define MOVE_ORDERING_PARAM_END (N_MOVE_ORDERING_PARAM - 1)
+    #define MOVE_ORDERING_PARAM_START 10
+    #define MOVE_ORDERING_PARAM_END 13
 #else
     // midgame search
     #define W_MOBILITY 39
     #define W_POTENTIAL_MOBILITY 13
-    #define W_TT_BONUS 487
-    #define W_VALUE 273
+    #define W_TT_BONUS 486
+    #define W_VALUE 275
     #define W_VALUE_DEEP_ADDITIONAL 86
 
     // midgame null window search
     #define W_NWS_MOBILITY 21
-    #define W_NWS_POTENTIAL_MOBILITY 13
-    #define W_NWS_TT_BONUS 200
+    #define W_NWS_POTENTIAL_MOBILITY 17
+    #define W_NWS_TT_BONUS 201
     #define W_NWS_VALUE 10
     #define W_NWS_VALUE_DEEP_ADDITIONAL 16
 
     // endgame null window search
     #define W_END_NWS_MOBILITY 43
-    #define W_END_NWS_VALUE 10
+    #define W_END_NWS_VALUE 16
 
     // endgame simple null window search
     #define W_END_NWS_SIMPLE_MOBILITY 18

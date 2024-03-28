@@ -25,20 +25,20 @@
 /*
     @brief constants for ProbCut error calculation
 */
-#define probcut_a 0.6312862607336712
-#define probcut_b -2.957761470708744
-#define probcut_c 0.7513691257296633
-#define probcut_d -0.5624279287015275
-#define probcut_e 0.9000330883835035
-#define probcut_f 6.632622643111857
-#define probcut_g 1.737735759611145
+#define probcut_a 0.6008604193093717
+#define probcut_b -3.1750261102994495
+#define probcut_c 0.4572535121188459
+#define probcut_d -0.3906791785716423
+#define probcut_e 4.27564695804154
+#define probcut_f 6.485756568543406
+#define probcut_g 1.8772255940537708
 
-#define probcut_end_a -0.7789291859615788
-#define probcut_end_b -2.911454685555316
-#define probcut_end_c 5.315510381948173
-#define probcut_end_d 5.619408001594082
-#define probcut_end_e 4.189207280265965
-#define probcut_end_f 8.06742478515924
+#define probcut_end_a -1.8281708950461437
+#define probcut_end_b -5.404647937258688
+#define probcut_end_c 0.5769945149888704
+#define probcut_end_d 1.0584325352135282
+#define probcut_end_e 1.0256450234242238
+#define probcut_end_f 7.022792767037081
 
 #if USE_MPC_PRE_CALCULATION
     int mpc_error[N_SELECTIVITY_LEVEL][HW2 + 1][HW2 - 3][HW2 - 3];
