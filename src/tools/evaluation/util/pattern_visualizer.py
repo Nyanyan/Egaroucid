@@ -35,6 +35,7 @@ while True:
             ax.text(x + 0.5, 7 - y + 0.5, num, color='w')
             num += 1
             duplication[y][x] += 1
+            '''
             duplication[7 - y][x] += 1
             duplication[y][7 - x] += 1
             duplication[7 - y][7 - x] += 1
@@ -42,6 +43,7 @@ while True:
             duplication[7 - x][y] += 1
             duplication[x][7 - y] += 1
             duplication[7 - x][7 - y] += 1
+            '''
         except:
             pass
     plt.xlim((0, 8))

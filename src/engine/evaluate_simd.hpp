@@ -656,11 +656,11 @@ inline void calc_eval_features(Board *board, Eval_search *eval){
     int b_arr_int[HW2 + 1];
     board->translate_to_arr_player_rev(b_arr_int);
     b_arr_int[COORD_NO] = 0;
+    eval->feature_idx = 0;
     for (int i = 0; i < N_SIMD_EVAL_FEATURES; ++i){
-        calc_feature_vector(eval->features[0].f256[i], b_arr_int, i, 7);
+        calc_feature_vector(eval->features[eval->feature_idx].f256[i], b_arr_int, i, 7);
         eval->features[eval->feature_idx].f256[i] = _mm256_add_epi16(eval->features[eval->feature_idx].f256[i], eval_simd_offsets[i]);
     }
-    eval->feature_idx = 0;
 }
 
 /*

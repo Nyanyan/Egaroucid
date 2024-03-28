@@ -79,7 +79,7 @@ for phase in range(N_PHASES):
         n_files_str = str(len(glob.glob(input_dir + '/*.dat')))
         out_file = bin_dir + '/' + str(board_sub_dir_num) + '.dat'
         cmd = exe + ' ' + input_dir + ' 0 ' + n_files_str + ' ' + out_file + ' ' + str(phase) + ' ' + str(board_n_moves[str(board_sub_dir_num)][0]) + ' ' + str(board_n_moves[str(board_sub_dir_num)][1])
-        print(phase, board_sub_dir_num, cmd)
+        #print(phase, board_sub_dir_num, cmd)
         #subprocess.run(cmd.split(), stderr=None, stdout=subprocess.DEVNULL)
         procs.append(subprocess.Popen(cmd.split(), stderr=None, stdout=subprocess.DEVNULL))
         if len(procs) >= 32:
