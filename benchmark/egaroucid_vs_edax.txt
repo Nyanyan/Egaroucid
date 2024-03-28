@@ -732,3 +732,12 @@ Edax    0.2625  0.3000  0.4575  0.3725  -       0.3481
 level: 1 Egaroucid plays black WDL: 580-27-393 0.5935 Egaroucid plays white WDL: 601-29-370 0.6155 Egaroucid win rate: 0.6045
 level: 5 Egaroucid plays black WDL: 593-45-362 0.6155 Egaroucid plays white WDL: 528-67-405 0.5615 Egaroucid win rate: 0.5885
 level: 10 Egaroucid plays black WDL: 491-120-389 0.551 Egaroucid plays white WDL: 397-110-493 0.452 Egaroucid win rate: 0.5015
+
+
+
+2024/03/28 probcut and other things updated
+level: 1 Egaroucid plays black WDL: 570-26-404 0.583 Egaroucid plays white WDL: 607-24-369 0.619 Egaroucid win rate: 0.601
+level: 5 Egaroucid plays black WDL: 654-55-291 0.6815 Egaroucid plays white WDL: 600-41-359 0.6205 Egaroucid win rate: 0.651
+level: 10 Egaroucid plays black WDL: 502-110-388 0.557 Egaroucid plays white WDL: 412-115-473 0.4695 Egaroucid win rate: 0.51325
+
+

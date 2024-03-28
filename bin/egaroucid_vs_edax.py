@@ -22,7 +22,7 @@ if len(sys.argv) == 4:
 #    cmd += ' -t 1'
 
 print(cmd)
-egaroucid = subprocess.Popen(cmd.split(), stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
+egaroucid = subprocess.Popen(cmd.split(), stdin=subprocess.PIPE, stdout=subprocess.PIPE)
 egaroucid_win = [0, 0]
 edax_win = [0, 0]
 draw = [0, 0]
