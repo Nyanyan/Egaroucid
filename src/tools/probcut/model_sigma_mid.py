@@ -76,7 +76,7 @@ for n_discs in range(61):
 for n_discs in range(61):
     for depth2 in range(60):
         depth1 = 0
-        z = 1.5 + 2.0 * depth2 / 20 + 1.5 * (n_discs - 4) / 60
+        z = 1.5 + 2.0 * depth2 / 20 + 3.0 * (n_discs - 4) / 60
         w_n_discs.append(n_discs)
         x_depth1.append(depth1)
         y_depth2.append(depth2)

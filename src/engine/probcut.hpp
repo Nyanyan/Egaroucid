@@ -25,13 +25,13 @@
 /*
     @brief constants for ProbCut error calculation
 */
-#define probcut_a 0.42228791831085244
-#define probcut_b -3.129145356427601
-#define probcut_c 1.1972519990903088
-#define probcut_d 2.026972082709406
-#define probcut_e -4.10920760805638
-#define probcut_f 6.063617380206173
-#define probcut_g 2.117808334104262
+#define probcut_a 0.6009286315583542
+#define probcut_b -4.135242513500912
+#define probcut_c 0.9019280650347384
+#define probcut_d -0.021424417730197053
+#define probcut_e 0.6078600545330523
+#define probcut_f 4.513676877957629
+#define probcut_g 2.3842314866933703
 
 #define probcut_end_a -2.1545861246368383
 #define probcut_end_b -5.227169693157927
