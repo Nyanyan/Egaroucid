@@ -78,7 +78,7 @@ void execute_special_tasks(Options options){
     #endif
 
     // probcut (endsearch)
-    #if TUNE_PROBCUT_MID
+    #if TUNE_PROBCUT_END
         std::cout << "tune probcut (endsearch)" << std::endl;
         get_data_probcut_end();
         std::exit(0);
