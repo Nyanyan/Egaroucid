@@ -626,14 +626,14 @@ inline void calc_eval_features(Board *board, Eval_search *eval){
     int b_arr_int[HW2 + 1];
     board->translate_to_arr_player_rev(b_arr_int);
     b_arr_int[COORD_NO] = 0;
-    calc_feature_vector(eval->features[0].f256[0], b_arr_int, 0, 8);
-    calc_feature_vector(eval->features[0].f256[1], b_arr_int, 1, 7);
-    calc_feature_vector(eval->features[0].f256[2], b_arr_int, 2, 7);
-    calc_feature_vector(eval->features[0].f256[3], b_arr_int, 3, 9);
-    eval->features[0].f256[0] = _mm256_add_epi16(eval->features[0].f256[0], eval_simd_offsets_simple[0]); // global index <= 39366 < 65536
-    eval->features[0].f256[1] = _mm256_add_epi16(eval->features[0].f256[1], eval_simd_offsets_simple[1]); // global index <= 49086 < 65536
-    eval->features[0].f256[2] = _mm256_add_epi16(eval->features[0].f256[2], eval_simd_offsets_simple[2]); // global index <= 26244 < 65536
     eval->feature_idx = 0;
+    calc_feature_vector(eval->features[eval->feature_idx].f256[0], b_arr_int, 0, 8);
+    calc_feature_vector(eval->features[eval->feature_idx].f256[1], b_arr_int, 1, 7);
+    calc_feature_vector(eval->features[eval->feature_idx].f256[2], b_arr_int, 2, 7);
+    calc_feature_vector(eval->features[eval->feature_idx].f256[3], b_arr_int, 3, 9);
+    eval->features[eval->feature_idx].f256[0] = _mm256_add_epi16(eval->features[eval->feature_idx].f256[0], eval_simd_offsets_simple[0]); // global index <= 39366 < 65536
+    eval->features[eval->feature_idx].f256[1] = _mm256_add_epi16(eval->features[eval->feature_idx].f256[1], eval_simd_offsets_simple[1]); // global index <= 49086 < 65536
+    eval->features[eval->feature_idx].f256[2] = _mm256_add_epi16(eval->features[eval->feature_idx].f256[2], eval_simd_offsets_simple[2]); // global index <= 26244 < 65536
 }
 
 /*
