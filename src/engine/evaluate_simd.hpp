@@ -29,8 +29,8 @@
 #define CEIL_N_SYMMETRY_PATTERNS 64         // N_SYMMETRY_PATTRENS + dummy
 #define N_PATTERN_PARAMS1_LOAD 49086
 #define N_PATTERN_PARAMS2_LOAD 262440
-#define N_PATTERN_PARAMS1 (N_PATTERN_PARAMS1_LOAD + 2)       // +2 for byte bound & dummy for d8
-#define N_PATTERN_PARAMS2 (N_PATTERN_PARAMS2_LOAD + 1)       // +1 for byte bound
+#define N_PATTERN_PARAMS1 (N_PATTERN_PARAMS1_LOAD + 2)   // +2 for byte bound & dummy for d8
+#define N_PATTERN_PARAMS2 (N_PATTERN_PARAMS2_LOAD + 1)   // +1 for byte bound
 #define SIMD_EVAL_MAX_VALUE 4092            // evaluate range [-4092, 4092]
 #define N_SIMD_EVAL_FEATURES_SIMPLE 3
 #define N_SIMD_EVAL_FEATURES_COMP 1
@@ -325,10 +325,10 @@ inline bool load_eval_move_ordering_end_file(const char* file, bool show_log){
 
 inline void pre_calculate_eval_constant(){
     constexpr int pattern_starts[N_PATTERNS] = {
-        1, 6562, 13123, 19684,                      // features[0]
-        39367, 39610, 40339, 42526, /*dummy 49087*/ // features[1]
-        1, 6562, 13123, 19684,                      // features[2]
-        26245, 85294, 144343, 203392                // features[3]
+        1, 6562, 13123, 19684,                      // param1 features[0]
+        39367, 39610, 40339, 42526, /*dummy 49087*/ // param1 features[1]
+        1, 6562, 13123, 19684,                      // param2 features[2]
+        26245, 85294, 144343, 203392                // param2 features[3]
     };
     { // calc_eval_features initialization
         int16_t f2c[16];
@@ -626,14 +626,14 @@ inline void calc_eval_features(Board *board, Eval_search *eval){
     int b_arr_int[HW2 + 1];
     board->translate_to_arr_player_rev(b_arr_int);
     b_arr_int[COORD_NO] = 0;
-    calc_feature_vector(eval->features[0].f256[0], b_arr_int, 0, 7);
-    calc_feature_vector(eval->features[0].f256[1], b_arr_int, 1, 8);
-    calc_feature_vector(eval->features[0].f256[2], b_arr_int, 2, 9);
+    calc_feature_vector(eval->features[0].f256[0], b_arr_int, 0, 8);
+    calc_feature_vector(eval->features[0].f256[1], b_arr_int, 1, 7);
+    calc_feature_vector(eval->features[0].f256[2], b_arr_int, 2, 7);
     calc_feature_vector(eval->features[0].f256[3], b_arr_int, 3, 9);
+    eval->features[0].f256[0] = _mm256_add_epi16(eval->features[0].f256[0], eval_simd_offsets_simple[0]); // global index < 39366
+    eval->features[0].f256[1] = _mm256_add_epi16(eval->features[0].f256[1], eval_simd_offsets_simple[1]); // global index < 49086
+    eval->features[0].f256[2] = _mm256_add_epi16(eval->features[0].f256[2], eval_simd_offsets_simple[2]); // global index < 26244
     eval->feature_idx = 0;
-    eval->features[eval->feature_idx].f256[0] = _mm256_add_epi16(eval->features[eval->feature_idx].f256[0], eval_simd_offsets_simple[0]); // global index < 39366
-    eval->features[eval->feature_idx].f256[1] = _mm256_add_epi16(eval->features[eval->feature_idx].f256[1], eval_simd_offsets_simple[1]); // global index < 49086
-    eval->features[eval->feature_idx].f256[2] = _mm256_add_epi16(eval->features[eval->feature_idx].f256[2], eval_simd_offsets_simple[2]); // global index < 26244
 }
 
 /*

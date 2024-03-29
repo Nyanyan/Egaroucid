@@ -106,6 +106,15 @@ void mm256_print_epi32(__m256i v){
     std::cerr << std::endl;
 }
 
+void mm256_print_epu16(__m256i v){
+    uint16_t* varray = (uint16_t*)&v;
+    for (int i = 0; i < 16; ++i){
+        std::cerr << varray[i] << " ";
+    }
+    std::cerr << std::endl;
+}
+
+
 /*
     @brief popcount algorithm
 
