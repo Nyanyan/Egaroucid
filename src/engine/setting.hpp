@@ -20,7 +20,7 @@
 
 // use SIMD
 #ifndef HAS_NO_AVX2
-    #define USE_SIMD true
+    #define USE_SIMD false
 #endif
 
 // GUI portable mode
