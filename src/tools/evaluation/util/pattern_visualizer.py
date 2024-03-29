@@ -5,7 +5,7 @@ from matplotlib.patches import Rectangle
 duplication = [[0 for _ in range(8)] for _ in range(8)]
 while True:
     s = input()
-    for i in range(10):
+    for i in range(30):
         s = s.replace('{' + str(i) + ',', '')
     s = s.replace('{', '')
     s = s.replace('},', '')

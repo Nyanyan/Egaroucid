@@ -9,8 +9,9 @@
 */
 
 #pragma once
-#include "evaluation_definition_7_0.hpp"
+//#include "evaluation_definition_7_0.hpp"
 //#include "evaluation_definition_7_0_light.hpp"
 //#include "evaluation_definition_7_0_light2.hpp"
+#include "evaluation_definition_7_0_light3.hpp"
 //#include "evaluation_definition_move_ordering_end_nws.hpp"
 //#include "evaluation_definition_move_ordering_mid_nws.hpp"
