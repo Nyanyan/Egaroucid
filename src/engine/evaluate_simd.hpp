@@ -363,24 +363,24 @@ inline void pre_calculate_eval_constant(){
         }
         // features[0]
         eval_simd_offsets_simple[0] = _mm256_set_epi16(
-            (int16_t)pattern_starts[0], (int16_t)pattern_starts[0], (int16_t)pattern_starts[0], (int16_t)pattern_starts[0], 
-            (int16_t)pattern_starts[1], (int16_t)pattern_starts[1], (int16_t)pattern_starts[1], (int16_t)pattern_starts[1], 
-            (int16_t)pattern_starts[2], (int16_t)pattern_starts[2], (int16_t)pattern_starts[2], (int16_t)pattern_starts[2], 
-            (int16_t)pattern_starts[3], (int16_t)pattern_starts[3], (int16_t)pattern_starts[3], (int16_t)pattern_starts[3]
+            (uint16_t)pattern_starts[0], (uint16_t)pattern_starts[0], (uint16_t)pattern_starts[0], (uint16_t)pattern_starts[0], 
+            (uint16_t)pattern_starts[1], (uint16_t)pattern_starts[1], (uint16_t)pattern_starts[1], (uint16_t)pattern_starts[1], 
+            (uint16_t)pattern_starts[2], (uint16_t)pattern_starts[2], (uint16_t)pattern_starts[2], (uint16_t)pattern_starts[2], 
+            (uint16_t)pattern_starts[3], (uint16_t)pattern_starts[3], (uint16_t)pattern_starts[3], (uint16_t)pattern_starts[3]
         );
         // features[1]
         eval_simd_offsets_simple[1] = _mm256_set_epi16(
-            (int16_t)pattern_starts[4], (int16_t)pattern_starts[4], (int16_t)pattern_starts[4], (int16_t)pattern_starts[4], 
-            (int16_t)pattern_starts[5], (int16_t)pattern_starts[5], (int16_t)pattern_starts[5], (int16_t)pattern_starts[5], 
-            (int16_t)pattern_starts[6], (int16_t)pattern_starts[6], (int16_t)pattern_starts[6], (int16_t)pattern_starts[6], 
-            (int16_t)pattern_starts[7], (int16_t)pattern_starts[7],      N_PATTERN_PARAMS1 - 1,      N_PATTERN_PARAMS1 - 1
+            (uint16_t)pattern_starts[4], (uint16_t)pattern_starts[4], (uint16_t)pattern_starts[4], (uint16_t)pattern_starts[4], 
+            (uint16_t)pattern_starts[5], (uint16_t)pattern_starts[5], (uint16_t)pattern_starts[5], (uint16_t)pattern_starts[5], 
+            (uint16_t)pattern_starts[6], (uint16_t)pattern_starts[6], (uint16_t)pattern_starts[6], (uint16_t)pattern_starts[6], 
+            (uint16_t)pattern_starts[7], (uint16_t)pattern_starts[7],      N_PATTERN_PARAMS1 - 1,      N_PATTERN_PARAMS1 - 1
         );
         // features[2]
         eval_simd_offsets_simple[2] = _mm256_set_epi16(
-            (int16_t)pattern_starts[8], (int16_t)pattern_starts[8], (int16_t)pattern_starts[8], (int16_t)pattern_starts[8], 
-            (int16_t)pattern_starts[9], (int16_t)pattern_starts[9], (int16_t)pattern_starts[9], (int16_t)pattern_starts[9], 
-            (int16_t)pattern_starts[10], (int16_t)pattern_starts[10], (int16_t)pattern_starts[10], (int16_t)pattern_starts[10], 
-            (int16_t)pattern_starts[11], (int16_t)pattern_starts[11], (int16_t)pattern_starts[11], (int16_t)pattern_starts[11]
+            (uint16_t)pattern_starts[8], (uint16_t)pattern_starts[8], (uint16_t)pattern_starts[8], (uint16_t)pattern_starts[8], 
+            (uint16_t)pattern_starts[9], (uint16_t)pattern_starts[9], (uint16_t)pattern_starts[9], (uint16_t)pattern_starts[9], 
+            (uint16_t)pattern_starts[10], (uint16_t)pattern_starts[10], (uint16_t)pattern_starts[10], (uint16_t)pattern_starts[10], 
+            (uint16_t)pattern_starts[11], (uint16_t)pattern_starts[11], (uint16_t)pattern_starts[11], (uint16_t)pattern_starts[11]
         );
         // features[3]
         eval_simd_offsets_comp[0] = _mm256_set_epi32(

@@ -268,8 +268,6 @@ constexpr Adj_Feature_to_coord adj_feature_to_coord[ADJ_N_SYMMETRY_PATTERNS] = {
     {10, {COORD_H8, COORD_G8, COORD_F8, COORD_E8, COORD_D8, COORD_H7, COORD_G7, COORD_H6, COORD_H5, COORD_H4}}
 };
 
-constexpr int adj_pattern_n_cells[ADJ_N_PATTERNS] = {8, 8, 8, 9, 5, 6, 7, 8, 8, 8, 8, 8, 10, 10, 10, 10};
-
 constexpr int adj_rev_patterns[ADJ_N_PATTERNS][ADJ_MAX_PATTERN_CELLS] = {
     {7, 6, 5, 4, 3, 2, 1, 0}, // 0 hv2
     {7, 6, 5, 4, 3, 2, 1, 0}, // 1 hv3
@@ -287,6 +285,13 @@ constexpr int adj_rev_patterns[ADJ_N_PATTERNS][ADJ_MAX_PATTERN_CELLS] = {
     {5, 4, 3, 2, 1, 0, 9, 8, 7, 6}, // 13 corner + block
     {0, 4, 7, 9, 1, 5, 8, 2, 6, 3}, // 14 triangle
     {0, 5, 7, 8, 9, 1, 6, 2, 3, 4}  // 15 narrow triangle
+};
+
+constexpr int adj_pattern_n_cells[ADJ_N_PATTERNS] = {
+    8, 8, 8, 9, 
+    5, 6, 7, 8, 
+    8, 8, 8, 8, 
+    10, 10, 10, 10
 };
 
 constexpr int adj_eval_sizes[ADJ_N_EVAL] = {
