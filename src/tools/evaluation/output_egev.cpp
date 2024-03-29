@@ -5,8 +5,8 @@
 #include <ios>
 #include <iomanip>
 
-//#define EVAL_MAX 4091 // for 16 patterns
-#define EVAL_MAX 3270 // for 20 patterns
+#define EVAL_MAX 4091 // for 16 patterns
+//#define EVAL_MAX 3270 // for 20 patterns
 
 int main(int argc, char* argv[]){
     if (argc < 2){
