@@ -26,13 +26,13 @@
      inkscape:document-units="mm"
      showgrid="false"
      inkscape:zoom="0.93806818"
-     inkscape:cx="215.86917"
-     inkscape:cy="645.47547"
-     inkscape:window-width="3840"
-     inkscape:window-height="2059"
-     inkscape:window-x="9"
-     inkscape:window-y="2151"
-     inkscape:window-maximized="1"
+     inkscape:cx="538.3404"
+     inkscape:cy="647.60751"
+     inkscape:window-width="1651"
+     inkscape:window-height="1243"
+     inkscape:window-x="4724"
+     inkscape:window-y="2751"
+     inkscape:window-maximized="0"
      inkscape:current-layer="layer1"
      inkscape:pageshadow="2"
      inkscape:snap-object-midpoints="true"
@@ -85,7 +85,7 @@
        inkscape:export-ydpi="26.120001"><tspan
          sodipodi:role="line"
          id="tspan234"
-         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-family:'Noto Sans JP';-inkscape-font-specification:'Noto Sans JP';fill:#000000;fill-opacity:1;stroke:none;stroke-width:5;stroke-dasharray:none"
+         style="font-style:normal;font-variant:normal;font-weight:500;font-stretch:normal;font-family:'Noto Sans JP';-inkscape-font-specification:'Noto Sans JP Medium';fill:#000000;fill-opacity:1;stroke:none;stroke-width:5;stroke-dasharray:none"
          x="-7.3571"
          y="44.767529">日本語</tspan></text>
     <text
@@ -99,9 +99,10 @@
        inkscape:export-ydpi="21.93"><tspan
          sodipodi:role="line"
          id="tspan6134"
-         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;line-height:0px;font-family:'Noto Sans';-inkscape-font-specification:'Noto Sans';text-align:center;direction:ltr;text-anchor:middle;fill:#000000;fill-opacity:1;stroke:#ff0303;stroke-width:5;stroke-dasharray:none;stroke-opacity:0"
+         style="font-style:normal;font-variant:normal;font-weight:600;font-stretch:normal;line-height:0px;font-family:'Noto Sans';-inkscape-font-specification:'Noto Sans Semi-Bold';text-align:center;direction:ltr;text-anchor:middle;fill:#000000;fill-opacity:1;stroke:#ff0303;stroke-width:5;stroke-dasharray:none;stroke-opacity:0"
          x="91.949814"
-         y="94.942184">English</tspan></text>
+         y="94.942184"
+         dy="0 0 -4.5128207 4.5128207">English</tspan></text>
     <text
        xml:space="preserve"
        style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:52.9167px;font-family:'Yu Gothic UI';-inkscape-font-specification:'Yu Gothic UI';fill:#000000;fill-opacity:1;stroke:none;stroke-width:4.99999"
@@ -113,7 +114,7 @@
        inkscape:export-ydpi="25.92"><tspan
          sodipodi:role="line"
          id="tspan6246"
-         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-family:'Noto Sans SC';-inkscape-font-specification:'Noto Sans SC';fill:#000000;fill-opacity:1;stroke-width:5"
+         style="font-style:normal;font-variant:normal;font-weight:500;font-stretch:normal;font-family:'Noto Sans SC';-inkscape-font-specification:'Noto Sans SC Medium';fill:#000000;fill-opacity:1;stroke-width:5"
          x="1.0940897"
          y="158.09863">简体中文</tspan></text>
     <text
@@ -126,7 +127,7 @@
          id="tspan11293"
          style="stroke-width:0.264583"
          x="189.25122"
-         y="82.07692">Noto Sans</tspan></text>
+         y="82.07692">Noto Sans Semi-Bold</tspan></text>
     <text
        xml:space="preserve"
        style="font-style:normal;font-weight:normal;font-size:10.5833px;line-height:1.25;font-family:sans-serif;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.264583"
@@ -137,7 +138,7 @@
          id="tspan11293-0"
          style="stroke-width:0.264583"
          x="220.11308"
-         y="145.76901">Noto Sans SC</tspan></text>
+         y="145.76901">Noto Sans SC Medium</tspan></text>
     <text
        xml:space="preserve"
        style="font-style:normal;font-weight:normal;font-size:10.5833px;line-height:1.25;font-family:sans-serif;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.264583"
@@ -148,6 +149,6 @@
          id="tspan11293-2"
          style="stroke-width:0.264583"
          x="157.4977"
-         y="27.701881">Noto Sans JP</tspan></text>
+         y="27.701881">Noto Sans JP Medium</tspan></text>
   </g>
 </svg>
