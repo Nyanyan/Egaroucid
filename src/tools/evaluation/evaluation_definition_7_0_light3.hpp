@@ -45,7 +45,6 @@
 #define ADJ_MAX_EVALUATE_IDX 59049
 #define ADJ_N_EVAL (16 + 2)
 #define ADJ_N_FEATURES (62 + 2)
-#define N_FLOOR_UNIQUE_FEATURES 16 // floorpow2(ADJ_N_EVAL): 16-31->16 32-63->32
 
 // phase
 #define ADJ_N_PHASES 60
