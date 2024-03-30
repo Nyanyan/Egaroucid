@@ -10,8 +10,8 @@ import math
 #data_files = ['data/probcut_end1.txt', 'data/probcut_end2.txt', 'data/probcut_end3.txt', 'data/probcut_end4.txt']
 #data_files = ['data/probcut_end6.txt']
 #data_files = ['data/probcut_end8.txt', 'data/probcut_end9.txt', 'data/probcut_end10.txt', 'data/probcut_end11.txt', 'data/probcut_end12.txt']
-data_files = ['data/probcut_end16.txt']
-#data_files = ['data/probcut_end19.txt', 'data/probcut_end20.txt']
+#data_files = ['data/probcut_end16.txt']
+data_files = ['data/probcut_end19.txt']
 
 data = [[[] for _ in range(61)] for _ in range(65)] # n_discs, depth
 for data_file in data_files:
@@ -76,7 +76,7 @@ for n_discs in range(45):
     depth = 0
     x_n_discs.append(n_discs)
     y_depth.append(depth)
-    z_error.append(7.0 - n_discs / 60 * 1.0)
+    z_error.append(8.0 - n_discs / 60 * 2.0)
     weight.append(0.01)
 
 def f(xy, probcut_a, probcut_b, probcut_c, probcut_d, probcut_e, probcut_f, probcut_g, probcut_h, probcut_i, probcut_j):
@@ -88,7 +88,7 @@ def f(xy, probcut_a, probcut_b, probcut_c, probcut_d, probcut_e, probcut_f, prob
     return res
 
 def f_max(wxy, probcut_a, probcut_b, probcut_c, probcut_d, probcut_e, probcut_f, probcut_g, probcut_h, probcut_i, probcut_j):
-    return np.minimum(15.0, np.maximum(-0.5, f(wxy, probcut_a, probcut_b, probcut_c, probcut_d, probcut_e, probcut_f, probcut_g, probcut_h, probcut_i, probcut_j)))
+    return np.minimum(10.0, np.maximum(-0.5, f(wxy, probcut_a, probcut_b, probcut_c, probcut_d, probcut_e, probcut_f, probcut_g, probcut_h, probcut_i, probcut_j)))
 
 def plot_fit_result(params):
     fig = plt.figure()
@@ -97,13 +97,13 @@ def plot_fit_result(params):
     #ax.plot(xs, ys, zs, ms=3, marker="o",linestyle='None')
     #ax.plot(sdxs, sdys, sdzs, ms=3, marker="o",linestyle='None')
     ax.plot(x_n_discs, y_depth, z_error, ms=3, marker="o",linestyle='None')
-    mx, my = np.meshgrid(range(65), range(61))
-    ax.plot_wireframe(mx, my, f_max((mx, my), *params), rstride=10, cstride=10)
+    mx, my = np.meshgrid(range(65), range(16))
+    ax.plot_wireframe(mx, my, f_max((mx, my), *params), rstride=5, cstride=5)
     ax.set_xlabel('n_discs')
     ax.set_ylabel('search_depth')
     ax.set_zlabel('error')
     ax.set_xlim(0, 64)
-    ax.set_ylim(0, 30)
+    ax.set_ylim(0, 16)
     plt.show()
 
 probcut_params_before = [1.0 for _ in range(10)]

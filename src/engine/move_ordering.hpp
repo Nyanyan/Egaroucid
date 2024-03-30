@@ -65,6 +65,10 @@
     #define W_END_NWS_SIMPLE_MOBILITY   move_ordering_param_array[12]
     #define W_END_NWS_SIMPLE_PARITY     move_ordering_param_array[13]
 
+    // midgame
+    //#define MOVE_ORDERING_PARAM_START 0
+    //#define MOVE_ORDERING_PARAM_END 9
+    // endgame
     #define MOVE_ORDERING_PARAM_START 10
     #define MOVE_ORDERING_PARAM_END 13
 #else
