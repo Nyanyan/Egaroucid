@@ -69,26 +69,26 @@
     #define MOVE_ORDERING_PARAM_END 13
 #else
     // midgame search
-    #define W_MOBILITY 45
-    #define W_POTENTIAL_MOBILITY 22
-    #define W_TT_BONUS 485
-    #define W_VALUE 267
-    #define W_VALUE_DEEP_ADDITIONAL 93
+    #define W_MOBILITY 39
+    #define W_POTENTIAL_MOBILITY 13
+    #define W_TT_BONUS 487
+    #define W_VALUE 273
+    #define W_VALUE_DEEP_ADDITIONAL 86
 
     // midgame null window search
-    #define W_NWS_MOBILITY 27
-    #define W_NWS_POTENTIAL_MOBILITY 11
-    #define W_NWS_TT_BONUS 201
-    #define W_NWS_VALUE 8
-    #define W_NWS_VALUE_DEEP_ADDITIONAL 11
+    #define W_NWS_MOBILITY 21
+    #define W_NWS_POTENTIAL_MOBILITY 13
+    #define W_NWS_TT_BONUS 200
+    #define W_NWS_VALUE 10
+    #define W_NWS_VALUE_DEEP_ADDITIONAL 16
 
     // endgame null window search
-    #define W_END_NWS_MOBILITY 61
-    #define W_END_NWS_VALUE 4
+    #define W_END_NWS_MOBILITY 43
+    #define W_END_NWS_VALUE 10
 
     // endgame simple null window search
-    #define W_END_NWS_SIMPLE_MOBILITY 22
-    #define W_END_NWS_SIMPLE_PARITY 3
+    #define W_END_NWS_SIMPLE_MOBILITY 18
+    #define W_END_NWS_SIMPLE_PARITY 15
 #endif
 
 #define MOVE_ORDERING_VALUE_OFFSET_ALPHA 12

@@ -10,7 +10,8 @@ import math
 #data_files = ['data/probcut_end1.txt', 'data/probcut_end2.txt', 'data/probcut_end3.txt', 'data/probcut_end4.txt']
 #data_files = ['data/probcut_end6.txt']
 #data_files = ['data/probcut_end8.txt', 'data/probcut_end9.txt', 'data/probcut_end10.txt', 'data/probcut_end11.txt', 'data/probcut_end12.txt']
-#data_files = ['data/probcut_data_files = ['data/probcut_end16.txt']
+data_files = ['data/probcut_end16.txt']
+#data_files = ['data/probcut_end19.txt', 'data/probcut_end20.txt']
 
 data = [[[] for _ in range(61)] for _ in range(65)] # n_discs, depth
 for data_file in data_files:
