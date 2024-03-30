@@ -474,8 +474,9 @@ inline int calc_surround(uint64_t discs, uint64_t empties){
 */
 inline int calc_pattern(const int phase_idx, Eval_search *eval){
     int res = 0;
-    for (int i = 0; i < N_SYMMETRY_PATTERNS; ++i)
+    for (int i = 0; i < N_SYMMETRY_PATTERNS; ++i){
         res += pattern_arr[eval->reversed][phase_idx][feature_to_pattern[i]][eval->features[i]];
+    }
     return res;
 }
 

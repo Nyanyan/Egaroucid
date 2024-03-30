@@ -98,6 +98,23 @@ void print_board(uint64_t p, uint64_t o){
     }
 }
 
+void mm_print_epi32(__m128i v){
+    int* varray = (int*)&v;
+    for (int i = 0; i < 4; ++i){
+        std::cerr << varray[i] << " ";
+    }
+    std::cerr << std::endl;
+}
+
+
+void mm256_print_epu64(__m256i v){
+    uint64_t* varray = (uint64_t*)&v;
+    for (int i = 0; i < 4; ++i){
+        std::cerr << varray[i] << " ";
+    }
+    std::cerr << std::endl;
+}
+
 void mm256_print_epi32(__m256i v){
     int* varray = (int*)&v;
     for (int i = 0; i < 8; ++i){

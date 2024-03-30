@@ -222,7 +222,7 @@ __m256i eval_move_unflipped_16bit[N_16BIT][N_SIMD_EVAL_FEATURE_GROUP][N_SIMD_EVA
 __m256i eval_simd_offsets_simple[N_SIMD_EVAL_FEATURES_SIMPLE]; // 16bit * 16 * N
 __m256i eval_simd_offsets_comp[N_SIMD_EVAL_FEATURES_COMP * 2]; // 32bit * 8 * N
 __m256i eval_surround_mask;
-__m128i eval_surround_shift1879;
+__m256i eval_surround_shift1879;
 
 /*
     @brief evaluation parameters
@@ -435,7 +435,7 @@ inline void pre_calculate_eval_constant(){
     }
     { // calc_surround initialization
         eval_surround_mask = _mm256_set_epi64x(0x7E7E7E7E7E7E7E7EULL, 0x00FFFFFFFFFFFF00ULL, 0x007E7E7E7E7E7E00ULL, 0x007E7E7E7E7E7E00ULL);
-        eval_surround_shift1879 = _mm_set_epi32(1, HW, HW_M1, HW_P1);
+        eval_surround_shift1879 = _mm256_set_epi64x(1, HW, HW_M1, HW_P1);
     }
 }
 
@@ -492,10 +492,10 @@ bool evaluate_init(bool show_log){
 inline int calc_surround(const uint64_t discs, const uint64_t empties){
     __m256i pl = _mm256_set1_epi64x(discs);
     pl = _mm256_and_si256(pl, eval_surround_mask);
-    pl = _mm256_or_si256(_mm256_sll_epi64(pl, eval_surround_shift1879), _mm256_srl_epi64(pl, eval_surround_shift1879));
+    pl = _mm256_or_si256(_mm256_sllv_epi64(pl, eval_surround_shift1879), _mm256_srlv_epi64(pl, eval_surround_shift1879));
     __m128i res = _mm_or_si128(_mm256_castsi256_si128(pl), _mm256_extracti128_si256(pl, 1));
     res = _mm_or_si128(res, _mm_shuffle_epi32(res, 0x4e));
-    return pop_count_ull(_mm_cvtsi128_si64(res));
+    return pop_count_ull(_mm_cvtsi128_si64(res) & empties);
 }
 #define CALC_SURROUND_FUNCTION
 
