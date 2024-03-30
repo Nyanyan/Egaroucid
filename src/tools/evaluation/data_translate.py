@@ -24,13 +24,13 @@ exe = 'data_board_to_idx_7_0_light2.out'
 N_PHASES = 60
 board_sub_dir_nums = [25, 26, 27, 28, 29, 30, 31]
 '''
-#'''
+'''
 # 7.0 light3
 bin_root_dir = './../../../train_data/bin_data/20240329_1/'
 exe = 'data_board_to_idx_7_0_light3.out'
 N_PHASES = 60
 board_sub_dir_nums = [25, 26, 27, 28, 29, 30, 31]
-#'''
+'''
 '''
 # 7.0 move ordering_end_nws
 bin_root_dir = './../../../train_data/bin_data/20240304_1_move_ordering_end_nws/'
@@ -38,6 +38,13 @@ exe = 'data_board_to_idx_move_ordering_end_nws.out'
 N_PHASES = 1
 board_sub_dir_nums = [24, 28]
 '''
+#'''
+# 7.0 move ordering_end_nws for light 3
+bin_root_dir = './../../../train_data/bin_data/20240330_1_move_ordering_end_nws/'
+exe = 'data_board_to_idx_move_ordering_end_nws_for_light3.out'
+N_PHASES = 1
+board_sub_dir_nums = [24, 28]
+#'''
 '''
 # 7.0 move ordering_mid_nws
 bin_root_dir = './../../../train_data/bin_data/20240305_1_move_ordering_mid_nws/'

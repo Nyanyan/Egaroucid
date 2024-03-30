@@ -13,7 +13,7 @@
     #include "./../../engine/board.hpp"
 #endif
 
-#define EVAL_DEFINITION_NAME "20240329_2_move_ordering_end_nws"
+#define EVAL_DEFINITION_NAME "20240330_1_move_ordering_end_nws"
 #define EVAL_DEFINITION_DESCRIPTION "evaluation function for move ordering with 7.0 light3 (20240329_1) model"
 
 #ifndef HW
