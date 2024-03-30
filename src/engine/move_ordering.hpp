@@ -39,12 +39,12 @@
     @brief constants for move ordering
 */
 #if TUNE_MOVE_ORDERING
-    #define N_MOVE_ORDERING_PARAM 13
+    #define N_MOVE_ORDERING_PARAM 14
     int move_ordering_param_array[N_MOVE_ORDERING_PARAM] = {
-        39, 13, 487, 273, 86, 
-        21, 13, 10, 16, 
-        43, 10, 
-        18, 15
+        45, 22, 485, 267, 93, 
+        27, 11, 201, 8, 11, 
+        61, 4, 
+        22, 3
     };
 
     #define W_MOBILITY                  move_ordering_param_array[0]
@@ -55,39 +55,40 @@
 
     #define W_NWS_MOBILITY              move_ordering_param_array[5]
     #define W_NWS_POTENTIAL_MOBILITY    move_ordering_param_array[6]
-    #define W_NWS_VALUE                 move_ordering_param_array[7]
-    #define W_NWS_VALUE_DEEP_ADDITIONAL move_ordering_param_array[8]
+    #define W_NWS_TT_BONUS              move_ordering_param_array[7]
+    #define W_NWS_VALUE                 move_ordering_param_array[8]
+    #define W_NWS_VALUE_DEEP_ADDITIONAL move_ordering_param_array[9]
 
-    #define W_END_NWS_MOBILITY          move_ordering_param_array[9]
-    #define W_END_NWS_VALUE             move_ordering_param_array[10]
+    #define W_END_NWS_MOBILITY          move_ordering_param_array[10]
+    #define W_END_NWS_VALUE             move_ordering_param_array[11]
 
-    #define W_END_NWS_SIMPLE_MOBILITY   move_ordering_param_array[11]
-    #define W_END_NWS_SIMPLE_PARITY     move_ordering_param_array[12]
+    #define W_END_NWS_SIMPLE_MOBILITY   move_ordering_param_array[12]
+    #define W_END_NWS_SIMPLE_PARITY     move_ordering_param_array[13]
 
-    #define MOVE_ORDERING_PARAM_START 0
-    #define MOVE_ORDERING_PARAM_END (N_MOVE_ORDERING_PARAM - 1)
+    #define MOVE_ORDERING_PARAM_START 10
+    #define MOVE_ORDERING_PARAM_END 13
 #else
     // midgame search
-    #define W_MOBILITY 39
-    #define W_POTENTIAL_MOBILITY 13
-    #define W_TT_BONUS 487
-    #define W_VALUE 273
-    #define W_VALUE_DEEP_ADDITIONAL 86
+    #define W_MOBILITY 45
+    #define W_POTENTIAL_MOBILITY 22
+    #define W_TT_BONUS 485
+    #define W_VALUE 267
+    #define W_VALUE_DEEP_ADDITIONAL 93
 
     // midgame null window search
-    #define W_NWS_MOBILITY 21
-    #define W_NWS_POTENTIAL_MOBILITY 13
-    #define W_NWS_TT_BONUS 200
-    #define W_NWS_VALUE 10
-    #define W_NWS_VALUE_DEEP_ADDITIONAL 16
+    #define W_NWS_MOBILITY 27
+    #define W_NWS_POTENTIAL_MOBILITY 11
+    #define W_NWS_TT_BONUS 201
+    #define W_NWS_VALUE 8
+    #define W_NWS_VALUE_DEEP_ADDITIONAL 11
 
     // endgame null window search
-    #define W_END_NWS_MOBILITY 43
-    #define W_END_NWS_VALUE 10
+    #define W_END_NWS_MOBILITY 61
+    #define W_END_NWS_VALUE 4
 
     // endgame simple null window search
-    #define W_END_NWS_SIMPLE_MOBILITY 18
-    #define W_END_NWS_SIMPLE_PARITY 15
+    #define W_END_NWS_SIMPLE_MOBILITY 22
+    #define W_END_NWS_SIMPLE_PARITY 3
 #endif
 
 #define MOVE_ORDERING_VALUE_OFFSET_ALPHA 12
@@ -173,10 +174,10 @@ inline int get_weighted_n_moves(uint64_t legal){
         __m128i eval_surround_shift1879 = _mm_set_epi32(1, HW, HW_M1, HW_P1);
         __m256i pl = _mm256_set1_epi64x(discs);
         pl = _mm256_and_si256(pl, eval_surround_mask);
-        pl = _mm256_or_si256(_mm256_sll_epi64(pl, eval_surround_shift1879), _mm256_srl_epi64(pl, eval_surround_shift1879));
+        pl = _mm256_or_si256(_mm256_sllv_epi64(pl, eval_surround_shift1879), _mm256_srlv_epi64(pl, eval_surround_shift1879));
         __m128i res = _mm_or_si128(_mm256_castsi256_si128(pl), _mm256_extracti128_si256(pl, 1));
         res = _mm_or_si128(res, _mm_shuffle_epi32(res, 0x4e));
-        return pop_count_ull(_mm_cvtsi128_si64(res));
+        return pop_count_ull(_mm_cvtsi128_si64(res) & empties);
     }
 #else
     inline int get_potential_mobility(uint64_t discs, uint64_t empties){
