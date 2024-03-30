@@ -41,10 +41,10 @@
 #if TUNE_MOVE_ORDERING
     #define N_MOVE_ORDERING_PARAM 14
     int move_ordering_param_array[N_MOVE_ORDERING_PARAM] = {
-        45, 22, 485, 267, 93, 
-        27, 11, 201, 8, 11, 
-        61, 4, 
-        22, 3
+        35, 14, 485, 269, 94, 
+        21, 8, 204, 7, 24, 
+        36, 6, 
+        18, 17
     };
 
     #define W_MOBILITY                  move_ordering_param_array[0]
@@ -69,26 +69,26 @@
     #define MOVE_ORDERING_PARAM_END 13
 #else
     // midgame search
-    #define W_MOBILITY 39
-    #define W_POTENTIAL_MOBILITY 13
-    #define W_TT_BONUS 487
-    #define W_VALUE 273
-    #define W_VALUE_DEEP_ADDITIONAL 86
+    #define W_MOBILITY 35
+    #define W_POTENTIAL_MOBILITY 14
+    #define W_TT_BONUS 485
+    #define W_VALUE 269
+    #define W_VALUE_DEEP_ADDITIONAL 94
 
     // midgame null window search
     #define W_NWS_MOBILITY 21
-    #define W_NWS_POTENTIAL_MOBILITY 13
-    #define W_NWS_TT_BONUS 200
-    #define W_NWS_VALUE 10
-    #define W_NWS_VALUE_DEEP_ADDITIONAL 16
+    #define W_NWS_POTENTIAL_MOBILITY 8
+    #define W_NWS_TT_BONUS 204
+    #define W_NWS_VALUE 7
+    #define W_NWS_VALUE_DEEP_ADDITIONAL 24
 
     // endgame null window search
-    #define W_END_NWS_MOBILITY 43
-    #define W_END_NWS_VALUE 10
+    #define W_END_NWS_MOBILITY 36
+    #define W_END_NWS_VALUE 6
 
     // endgame simple null window search
     #define W_END_NWS_SIMPLE_MOBILITY 18
-    #define W_END_NWS_SIMPLE_PARITY 15
+    #define W_END_NWS_SIMPLE_PARITY 17
 #endif
 
 #define MOVE_ORDERING_VALUE_OFFSET_ALPHA 12
@@ -504,6 +504,7 @@ inline void move_list_sort(std::vector<Flip_value> &move_list){
             Search_result result = tree_search_legal(board, depth, mpc_level, false, board.get_legal(), true);
             n_nodes += result.nodes;
         }
+        transposition_table.reset_importance();
         return n_nodes;
     }
 
