@@ -11,7 +11,8 @@ import math
 #depth2: long
 
 #data_files = ['data/probcut_mid9.txt']
-data_files = ['data/probcut_mid10.txt', 'data/probcut_mid11.txt']
+#data_files = ['data/probcut_mid10.txt', 'data/probcut_mid11.txt']
+data_files = ['data/probcut_mid14.txt', 'data/probcut_mid15.txt', 'data/probcut_mid16.txt']
 
 data = [[[[] for _ in range(61)] for _ in range(61)] for _ in range(65)] # n_discs, depth1, depth2 (depth1 < depth2)
 
@@ -25,65 +26,67 @@ for data_file in data_files:
     except:
         print('cannot open', data_file)
 
-w_n_discs = []
-x_depth1 = []
-y_depth2 = []
-z_error = []
-weight = []
+w_n_discs_sd = []
+x_depth1_sd = []
+y_depth2_sd = []
+z_sd = []
+weight_sd = []
 
+w_n_discs_mean = []
+x_depth1_mean = []
+y_depth2_mean = []
+z_mean = []
+weight_mean = []
 
 for n_discs in range(len(data)):
     for depth1 in range(len(data[n_discs])):
         for depth2 in range(len(data[n_discs][depth1])):
             if len(data[n_discs][depth1][depth2]) >= 3:
-                mean_st = statistics.mean(data[n_discs][depth1][depth2])
-                sigma_st = statistics.stdev(data[n_discs][depth1][depth2])
+                #mean = statistics.mean(data[n_discs][depth1][depth2])
+                #sd = statistics.stdev(data[n_discs][depth1][depth2])
+                
                 mean = 0.0
-                sigma = 0.0
+                sd = 0.0
                 for elem in data[n_discs][depth1][depth2]:
-                    sigma += elem ** 2
-                sigma /= len(data[n_discs][depth1][depth2])
-                sigma = math.sqrt(sigma)
-                print('n_discs', n_discs, 'depth1', depth1, 'depth2', depth2, 'mean_st', mean_st, 'sd_st', sigma_st, 'sd', sigma, 'n_data', len(data[n_discs][depth1][depth2]))
-                w_n_discs.append(n_discs)
-                x_depth1.append(depth1)
-                y_depth2.append(depth2)
-                z_error.append(sigma)
-                weight.append(0.001)
+                    sd += elem ** 2
+                sd = math.sqrt(sd / len(data[n_discs][depth1][depth2]))
+                
+                print('n_discs', n_discs, 'depth1', depth1, 'depth2', depth2, 'mean', mean, 'sd', sd, 'n_data', len(data[n_discs][depth1][depth2]))
 
-'''
-for n_discs in range(61):
-    s = 1.0 + 2.0 * (((n_discs - 3) / 60) ** 2)
-    e = 0.0 + 0.7 * (((n_discs - 3) / 60) ** 2)
-    for depth2 in range(10, 60):
-        depth1 = 0
-        w_n_discs.append(n_discs)
-        x_depth1.append(depth1)
-        y_depth2.append(depth2)
-        z_error.append(s + depth2 / 60 * (s - e))
-        weight.append(0.001)
-'''
+                w_n_discs_sd.append(n_discs)
+                x_depth1_sd.append(depth1)
+                y_depth2_sd.append(depth2)
+                z_sd.append(sd)
+                weight_sd.append(0.001)
+
+                w_n_discs_mean.append(n_discs)
+                x_depth1_mean.append(depth1)
+                y_depth2_mean.append(depth2)
+                z_mean.append(mean)
+                weight_mean.append(0.001)
+
 for n_discs in range(61):
     for depth2 in range(15, 60):
         depth1 = depth2
-        w_n_discs.append(n_discs)
-        x_depth1.append(depth1)
-        y_depth2.append(depth2)
-        z_error.append(0.0)
-        weight.append(0.1)
+        w_n_discs_sd.append(n_discs)
+        x_depth1_sd.append(depth1)
+        y_depth2_sd.append(depth2)
+        z_sd.append(0.0)
+        weight_sd.append(0.1)
 
-
+'''
 for n_discs in range(61):
-    for depth2 in range(60):
+    for depth2 in range(30, 31):
         depth1 = 0
-        z = 1.5 + 2.0 * depth2 / 20 + 3.0 * (n_discs - 4) / 60
+        z = 7 + 4.0 * (n_discs - 4) / 60  #1.5 + 2.0 * depth2 / 20 + 3.0 * (n_discs - 4) / 60
         w_n_discs.append(n_discs)
         x_depth1.append(depth1)
         y_depth2.append(depth2)
         z_error.append(z)
         weight.append(0.001)
+'''
 
-def f(wxy, probcut_a, probcut_b, probcut_c, probcut_d, probcut_e, probcut_f, probcut_g, probcut_h, probcut_i, probcut_j):
+def f(wxy, probcut_a, probcut_b, probcut_c, probcut_d, probcut_e, probcut_f, probcut_g):
     w, x, y = wxy
     w = w / 64
     x = x / 60
@@ -92,10 +95,10 @@ def f(wxy, probcut_a, probcut_b, probcut_c, probcut_d, probcut_e, probcut_f, pro
     res = probcut_d * res * res * res + probcut_e * res * res + probcut_f * res + probcut_g
     return res
 
-def f_max(wxy, probcut_a, probcut_b, probcut_c, probcut_d, probcut_e, probcut_f, probcut_g, probcut_h, probcut_i, probcut_j):
-    return np.minimum(30.0, np.maximum(-2.0, f(wxy, probcut_a, probcut_b, probcut_c, probcut_d, probcut_e, probcut_f, probcut_g, probcut_h, probcut_i, probcut_j)))
+def f_max(wxy, probcut_a, probcut_b, probcut_c, probcut_d, probcut_e, probcut_f, probcut_g):
+    return np.minimum(30.0, np.maximum(-2.0, f(wxy, probcut_a, probcut_b, probcut_c, probcut_d, probcut_e, probcut_f, probcut_g)))
 
-def plot_fit_result_onephase(n_discs, params):
+def plot_fit_result_onephase(w, x, y, z, n_discs, params):
     fig = plt.figure()
     #ax = Axes3D(fig)
     ax = fig.add_subplot(111, projection='3d')
@@ -105,11 +108,11 @@ def plot_fit_result_onephase(n_discs, params):
     x_depth1_phase = []
     y_depth2_phase = []
     z_error_phase = []
-    for w, x, y, z in zip(w_n_discs, x_depth1, y_depth2, z_error):
-        if w == phase:
-            x_depth1_phase.append(x)
-            y_depth2_phase.append(y)
-            z_error_phase.append(z)
+    for ww, xx, yy, zz in zip(w, x, y, z):
+        if ww == phase:
+            x_depth1_phase.append(xx)
+            y_depth2_phase.append(yy)
+            z_error_phase.append(zz)
     ax.plot(x_depth1_phase, y_depth2_phase, z_error_phase, ms=3, marker="o",linestyle='None')
     mx, my = np.meshgrid(range(61), range(61))
     ax.plot_wireframe(mx, my, f_max((n_discs, mx, my), *params), rstride=10, cstride=10)
@@ -117,20 +120,25 @@ def plot_fit_result_onephase(n_discs, params):
     ax.set_ylabel('depth2_long')
     ax.set_zlabel('error')
     ax.set_xlim((0, 10))
-    ax.set_ylim((0, 20))
+    ax.set_ylim((0, 30))
     ax.set_zlim((0, 15))
     plt.show()
 
-probcut_params_before = [1.0 for _ in range(10)]
-
-probcut_params_old = [-0.001265116404528472, -1.758143972292579, 1.7566279520842052, -1.0938733019995888, 1.1290649413162603, 10.55327508419982, 3.106465908394277, 1, 1, 1]
-
-popt, pcov = curve_fit(f, (w_n_discs, x_depth1, y_depth2), z_error, np.array(probcut_params_before), sigma=weight, absolute_sigma=True)
-#popt = probcut_params_before
-print([float(elem) for elem in popt])
-for i in range(len(popt)):
-    print('#define probcut_' + chr(ord('a') + i), popt[i])
+popt_sd, pcov_sd = curve_fit(f, (w_n_discs_sd, x_depth1_sd, y_depth2_sd), z_sd, np.ones(7), sigma=weight_sd, absolute_sigma=True)
+print([float(elem) for elem in popt_sd])
+for i in range(len(popt_sd)):
+    print('#define probcut_' + chr(ord('a') + i), popt_sd[i])
 
 for i in [10, 20, 30, 40, 50]:
-    plot_fit_result_onephase(i, popt)
-    #plot_fit_result_onephase(i, probcut_params_old)
+    plot_fit_result_onephase(w_n_discs_sd, x_depth1_sd, y_depth2_sd, z_sd, i, popt_sd)
+
+'''
+#popt_mean, pcov_mean = curve_fit(f, (w_n_discs_mean, x_depth1_mean, y_depth2_mean), z_mean, np.ones(7), sigma=weight_mean, absolute_sigma=True)
+popt_mean = [0 for _ in range(7)]
+print([float(elem) for elem in popt_mean])
+for i in range(len(popt_mean)):
+    print('#define probcut_mean_' + chr(ord('a') + i), popt_mean[i])
+
+for i in [10, 20, 30, 40, 50]:
+    plot_fit_result_onephase(w_n_discs_mean, x_depth1_mean, y_depth2_mean, z_mean, i, popt_mean)
+'''

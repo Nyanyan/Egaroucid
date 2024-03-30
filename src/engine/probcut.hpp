@@ -25,13 +25,13 @@
 /*
     @brief constants for ProbCut error calculation
 */
-#define probcut_a 0.6009286315583542
-#define probcut_b -4.135242513500912
-#define probcut_c 0.9019280650347384
-#define probcut_d -0.021424417730197053
-#define probcut_e 0.6078600545330523
-#define probcut_f 4.513676877957629
-#define probcut_g 2.3842314866933703
+#define probcut_a 0.8490326151054672
+#define probcut_b -7.507029579152172
+#define probcut_c 0.9637496735041572
+#define probcut_d 0.43401925409548925
+#define probcut_e 3.020669867532369
+#define probcut_f 4.002841183912879
+#define probcut_g 2.4514749547765313
 
 #define probcut_end_a -1.2976540636746563
 #define probcut_end_b -7.878527078315404
@@ -247,7 +247,7 @@ inline bool mpc(Search* search, int alpha, int beta, int depth, uint64_t legal, 
         Flip flip;
         Search_result short_ans, long_ans;
         for (int i = 0; i < 1000; ++i){
-            for (int depth = 2; depth < 14; ++depth){
+            for (int depth = 2; depth < 15; ++depth){
                 for (int n_discs = 4; n_discs < HW2 - depth - 5; ++n_discs){
                     board.reset();
                     for (int j = 4; j < n_discs && board.check_pass(); ++j){ // random move
