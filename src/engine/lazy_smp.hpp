@@ -58,7 +58,7 @@ Search_result lazy_smp(Board board, int depth, uint_fast8_t mpc_level, bool show
         int sub_depth = main_depth;
         if (use_multi_thread && (!is_end_search || main_depth < depth)){
             int max_thread_size = thread_pool.size();
-            if (is_last_search){
+            if (main_depth >= 20){
                 max_thread_size *= 0.5;
             }
             for (int sub_thread_idx = 0; sub_thread_idx < max_thread_size && sub_thread_idx < searches.size(); ++sub_thread_idx){
@@ -86,26 +86,26 @@ Search_result lazy_smp(Board board, int depth, uint_fast8_t mpc_level, bool show
                     }
                 }
             }
-        }
-        int max_sub_search_depth = -1;
-        int max_sub_search_mpc_level = 0;
-        bool max_is_only_one = false;
-        for (int i = 0; i < (int)parallel_tasks.size(); ++i){
-            if (sub_depth_arr[i] > max_sub_search_depth){
-                max_sub_search_depth = sub_depth_arr[i];
-                max_sub_search_mpc_level = searches[i].mpc_level;
-                max_is_only_one = true;
-            } else if (sub_depth_arr[i] == max_sub_search_depth && max_sub_search_mpc_level < searches[i].mpc_level){
-                max_sub_search_mpc_level = searches[i].mpc_level;
-                max_is_only_one = true;
-            } else if (sub_depth_arr[i] == max_sub_search_depth && searches[i].mpc_level == max_sub_search_mpc_level){
-                max_is_only_one = false;
-            }
-        }
-        if (max_is_only_one){
+            int max_sub_search_depth = -1;
+            int max_sub_search_mpc_level = 0;
+            bool max_is_only_one = false;
             for (int i = 0; i < (int)parallel_tasks.size(); ++i){
-                if (sub_depth_arr[i] == max_sub_search_depth && searches[i].mpc_level == max_sub_search_mpc_level){
-                    searches[i].need_to_see_tt_loop = false; // off the inside-loop tt lookup in the max level thread
+                if (sub_depth_arr[i] > max_sub_search_depth){
+                    max_sub_search_depth = sub_depth_arr[i];
+                    max_sub_search_mpc_level = searches[i].mpc_level;
+                    max_is_only_one = true;
+                } else if (sub_depth_arr[i] == max_sub_search_depth && max_sub_search_mpc_level < searches[i].mpc_level){
+                    max_sub_search_mpc_level = searches[i].mpc_level;
+                    max_is_only_one = true;
+                } else if (sub_depth_arr[i] == max_sub_search_depth && searches[i].mpc_level == max_sub_search_mpc_level){
+                    max_is_only_one = false;
+                }
+            }
+            if (max_is_only_one){
+                for (int i = 0; i < (int)parallel_tasks.size(); ++i){
+                    if (sub_depth_arr[i] == max_sub_search_depth && searches[i].mpc_level == max_sub_search_mpc_level){
+                        searches[i].need_to_see_tt_loop = false; // off the inside-loop tt lookup in the max level thread
+                    }
                 }
             }
         }

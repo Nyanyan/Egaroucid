@@ -12,7 +12,7 @@ import math
 
 #data_files = ['data/probcut_mid9.txt']
 #data_files = ['data/probcut_mid10.txt', 'data/probcut_mid11.txt']
-data_files = ['data/probcut_mid14.txt', 'data/probcut_mid15.txt', 'data/probcut_mid16.txt']
+data_files = ['data/probcut_mid14.txt', 'data/probcut_mid15.txt', 'data/probcut_mid16.txt', 'data/probcut_mid17.txt', 'data/probcut_mid18.txt']
 
 data = [[[[] for _ in range(61)] for _ in range(61)] for _ in range(65)] # n_discs, depth1, depth2 (depth1 < depth2)
 
@@ -74,17 +74,17 @@ for n_discs in range(61):
         z_sd.append(0.0)
         weight_sd.append(0.1)
 
-'''
+
 for n_discs in range(61):
     for depth2 in range(30, 31):
         depth1 = 0
-        z = 7 + 4.0 * (n_discs - 4) / 60  #1.5 + 2.0 * depth2 / 20 + 3.0 * (n_discs - 4) / 60
-        w_n_discs.append(n_discs)
-        x_depth1.append(depth1)
-        y_depth2.append(depth2)
-        z_error.append(z)
-        weight.append(0.001)
-'''
+        z = 5.5 + 4.0 * (n_discs - 4) / 60  #1.5 + 2.0 * depth2 / 20 + 3.0 * (n_discs - 4) / 60
+        w_n_discs_sd.append(n_discs)
+        x_depth1_sd.append(depth1)
+        y_depth2_sd.append(depth2)
+        z_sd.append(z)
+        weight_sd.append(0.0005)
+
 
 def f(wxy, probcut_a, probcut_b, probcut_c, probcut_d, probcut_e, probcut_f, probcut_g):
     w, x, y = wxy

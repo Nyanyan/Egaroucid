@@ -23,6 +23,7 @@
 #include "board.hpp"
 #include "search.hpp"
 #include "midsearch.hpp"
+#include "evaluate.hpp"
 #include "stability.hpp"
 #include "level.hpp"
 #include "transposition_table.hpp"
@@ -43,7 +44,7 @@
     int move_ordering_param_array[N_MOVE_ORDERING_PARAM] = {
         35, 14, 485, 269, 94, 
         21, 8, 204, 7, 24, 
-        36, 6, 
+        40, 12, 
         18, 17
     };
 
@@ -65,10 +66,6 @@
     #define W_END_NWS_SIMPLE_MOBILITY   move_ordering_param_array[12]
     #define W_END_NWS_SIMPLE_PARITY     move_ordering_param_array[13]
 
-    // midgame
-    //#define MOVE_ORDERING_PARAM_START 0
-    //#define MOVE_ORDERING_PARAM_END 9
-    // endgame
     #define MOVE_ORDERING_PARAM_START 10
     #define MOVE_ORDERING_PARAM_END 13
 #else
@@ -87,8 +84,8 @@
     #define W_NWS_VALUE_DEEP_ADDITIONAL 24
 
     // endgame null window search
-    #define W_END_NWS_MOBILITY 36
-    #define W_END_NWS_VALUE 6
+    #define W_END_NWS_MOBILITY 40
+    #define W_END_NWS_VALUE 12
 
     // endgame simple null window search
     #define W_END_NWS_SIMPLE_MOBILITY 18

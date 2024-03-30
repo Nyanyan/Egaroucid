@@ -62,7 +62,7 @@ for n_discs in range(45):
     depth = 0
     x_n_discs_sd.append(n_discs)
     y_depth_sd.append(depth)
-    z_sd.append(8.0 - n_discs / 60 * 2.0)
+    z_sd.append(6.5 - n_discs / 60 * 1.0)
     weight_sd.append(0.01)
 
 for n_discs in range(45):
