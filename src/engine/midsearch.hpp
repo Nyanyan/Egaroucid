@@ -187,7 +187,7 @@ int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, uin
                     alpha = v;
                 }
                 if (alpha < beta){
-                    ybwc_search_young_brothers(search, &alpha, &beta, &v, &best_move, hash_code, depth, is_end_search, move_list, true, searching);
+                    ybwc_search_young_brothers(search, &alpha, &beta, &v, &best_move, hash_code, depth, is_end_search, move_list, false, searching);
                 }
             }
         } else{
@@ -336,11 +336,7 @@ std::pair<int, int> first_nega_scout_legal(Search *search, int alpha, int beta, 
                     }
                 }
                 if (alpha < beta){
-                    bool see_tt_loop = false;
-                    if (search->mpc_level == MPC_100_LEVEL){
-                        see_tt_loop = true;
-                    }
-                    ybwc_search_young_brothers(search, &alpha, &beta, &v, &best_move, hash_code, depth, is_end_search, move_list, see_tt_loop, searching);
+                    ybwc_search_young_brothers(search, &alpha, &beta, &v, &best_move, hash_code, depth, is_end_search, move_list, true, searching);
                 }
             } else{
         #endif

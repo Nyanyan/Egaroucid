@@ -26,6 +26,7 @@
 #define YBWC_N_ELDER_CHILD 1
 #define YBWC_N_YOUNGER_CHILD 2
 // #define YBWC_MAX_RUNNING_COUNT 5
+#define YBWC_FAIL_HIGH -1
 
 int nega_alpha_ordering_nws(Search *search, int alpha, int depth, bool skipped, uint64_t legal, bool is_end_search, const bool *searching);
 
@@ -88,11 +89,17 @@ inline bool ybwc_split_nws(Search *search, int alpha, int depth, uint64_t legal,
             move_idx < canput - YBWC_N_YOUNGER_CHILD    // This node is not the (some) youngest brother
             //running_count < YBWC_MAX_RUNNING_COUNT     // Do not split too many nodes
     ){
-        bool pushed;
-        parallel_tasks.emplace_back(thread_pool.push(&pushed, std::bind(&ybwc_do_task_nws, search->board.player, search->board.opponent, search->n_discs, search->parity, search->mpc_level, alpha, depth, legal, is_end_search, policy, move_idx, searching)));
-        if (!pushed)
-            parallel_tasks.pop_back();
-        return pushed;
+        int v;
+        uint_fast8_t moves[N_TRANSPOSITION_MOVES];
+        if (transposition_cutoff_nws(search, search->board.hash(), depth, alpha, &v, moves)){
+            
+        } else{
+            bool pushed;
+            parallel_tasks.emplace_back(thread_pool.push(&pushed, std::bind(&ybwc_do_task_nws, search->board.player, search->board.opponent, search->n_discs, search->parity, search->mpc_level, alpha, depth, legal, is_end_search, policy, move_idx, searching)));
+            if (!pushed)
+                parallel_tasks.pop_back();
+            return pushed;
+        }
     }
     return false;
 }
@@ -175,7 +182,7 @@ inline bool ybwc_split_nws(Search *search, int alpha, int depth, uint64_t legal,
 #endif
 
 #if USE_YBWC_NEGASCOUT
-    void ybwc_search_young_brothers(Search *search, int *alpha, int *beta, int *v, int *best_move, uint32_t hash_code, int depth, bool is_end_search, std::vector<Flip_value> &move_list, bool see_tt_loop, const bool *searching){
+    void ybwc_search_young_brothers(Search *search, int *alpha, int *beta, int *v, int *best_move, uint32_t hash_code, int depth, bool is_end_search, std::vector<Flip_value> &move_list, bool need_best_move, const bool *searching){
         std::vector<std::future<Parallel_task>> parallel_tasks;
         bool n_searching = true;
         int canput = (int)move_list.size();
@@ -184,10 +191,10 @@ inline bool ybwc_split_nws(Search *search, int alpha, int depth, uint64_t legal,
         for (int move_idx = 1; move_idx < canput && n_searching; ++move_idx){
             n_searching &= *searching;
             if (move_list[move_idx].flip.flip){
-                if (search->need_to_see_tt_loop && see_tt_loop){
+                if (search->need_to_see_tt_loop && !need_best_move){
                     if (transposition_cutoff_bestmove(search, hash_code, depth, alpha, beta, v, best_move)){
                         n_searching = false;
-                        fail_high_idx = -1;
+                        fail_high_idx = YBWC_FAIL_HIGH;
                         break;
                     }
                 }
@@ -270,7 +277,7 @@ inline bool ybwc_split_nws(Search *search, int alpha, int depth, uint64_t legal,
                 }
             }
         }
-        if (*searching && fail_high_idx != -1){
+        if (*searching && fail_high_idx != YBWC_FAIL_HIGH){
             if (*alpha < *beta){
                 search->move(&move_list[fail_high_idx].flip);
                     g = -nega_scout(search, -(*beta), -(*alpha), depth - 1, false, move_list[fail_high_idx].n_legal, is_end_search, searching);
@@ -280,7 +287,7 @@ inline bool ybwc_split_nws(Search *search, int alpha, int depth, uint64_t legal,
                 *best_move = move_list[fail_high_idx].flip.pos;
                 move_list[fail_high_idx].flip.flip = 0;
                 if (*alpha < *beta){
-                    ybwc_search_young_brothers(search, alpha, beta, v, best_move, hash_code, depth, is_end_search, move_list, see_tt_loop, searching);
+                    ybwc_search_young_brothers(search, alpha, beta, v, best_move, hash_code, depth, is_end_search, move_list, need_best_move, searching);
                 }
             }
         }
