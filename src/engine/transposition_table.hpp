@@ -844,6 +844,22 @@ inline bool transposition_cutoff_nws(Search *search, uint32_t hash_code, int dep
     return false;
 }
 
+inline bool transposition_cutoff_nws(Search *search, uint32_t hash_code, int depth, int alpha, int *v){
+    //if (depth >= USE_TT_DEPTH_THRESHOLD){
+    int lower = -SCORE_MAX, upper = SCORE_MAX;
+    transposition_table.get(search, hash_code, depth, &lower, &upper);
+    if (upper == lower || upper <= alpha){
+        *v = upper;
+        return true;
+    }
+    if (alpha < lower){
+        *v = lower;
+        return true;
+    }
+    //}
+    return false;
+}
+
 inline bool transposition_cutoff_nws_bestmove(Search *search, uint32_t hash_code, int depth, int alpha, int *v, int *best_move){
     //if (depth >= USE_TT_DEPTH_THRESHOLD){
     int lower = -SCORE_MAX, upper = SCORE_MAX;
