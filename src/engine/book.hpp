@@ -1507,7 +1507,7 @@ class Book{
             std::cerr << "negamaxed book fixed " << n_fix << " boards seen " << n_seen << " boards size " << book.size() << std::endl;
         }
 
-        void reduce_book_flag_moves(Board board, int max_depth, int max_error_per_move, int lower, int upper, int max_error_sum, int error_sum, uint64_t *n_flags, std::unordered_set<Board, Book_hash> &keep_list, bool *doing){
+        void reduce_book_flag_moves(Board board, int max_depth, int max_error_per_move, int remaining_error, uint64_t *n_flags, std::unordered_set<Board, Book_hash> &keep_list, bool *doing){
             if (!*(doing))
                 return;
             // depth threshold
@@ -1515,9 +1515,6 @@ class Book{
                 return;
             if (board.get_legal() == 0){
                 board.pass();
-                int tmp = lower;
-                lower = -upper;
-                upper = -tmp;
                 if (board.get_legal() == 0)
                     return;
             }
@@ -1530,28 +1527,20 @@ class Book{
             if (book_elem.seen)
                 return;
             flag_book_elem(board);
-            // lower / upper threshold
-            if (book_elem.value < lower || upper < book_elem.value)
-                return;
-            // error sum threshold
-            if (error_sum > max_error_sum)
-                return;
             keep_list.emplace(unique_board);
             ++(*n_flags);
             if ((*n_flags) % 100 == 0)
                 std::cerr << "keep " << (*n_flags) << " boards of " << book.size() << std::endl;
             std::vector<Book_value> links = get_all_moves_with_value(&board);
             Flip flip;
-            int n_error_sum;
             for (Book_value &link: links){
-                // error per move threshold
-                if (link.value < book_elem.value - max_error_per_move)
-                    continue;
-                n_error_sum = error_sum + std::max(0, book_elem.value - link.value);
-                calc_flip(&flip, &board, link.policy);
-                board.move_board(&flip);
-                    reduce_book_flag_moves(board, max_depth, max_error_per_move, -upper, -lower, max_error_sum, n_error_sum, n_flags, keep_list, doing);
-                board.undo_board(&flip);
+                int link_error = book_elem.value - link.value;
+                if (link_error <= max_error_per_move && link_error <= remaining_error){
+                    calc_flip(&flip, &board, link.policy);
+                    board.move_board(&flip);
+                        reduce_book_flag_moves(board, max_depth, max_error_per_move, remaining_error - link_error, n_flags, keep_list, doing);
+                    board.undo_board(&flip);
+                }
             }
         }
 
@@ -1590,19 +1579,13 @@ class Book{
             Book_elem book_elem = get(root_board);
             if (book_elem.value == SCORE_UNDEFINED)
                 return;
-            int lower = book_elem.value - max_line_error;
-            int upper = book_elem.value + max_line_error;
-            if (lower < -SCORE_MAX)
-                lower = -SCORE_MAX;
-            if (upper > SCORE_MAX)
-                upper = SCORE_MAX;
             uint64_t n_flags = 0, n_delete = 0;
             uint64_t book_size = book.size();
             std::unordered_set<Board, Book_hash> keep_list;
             reset_seen();
             int max_error_sum = INF;
             //int max_error_sum = 10;
-            reduce_book_flag_moves(root_board, max_depth, max_error_per_move, lower, upper, max_error_sum, 0, &n_flags, keep_list, doing);
+            reduce_book_flag_moves(root_board, max_depth, max_error_per_move, max_line_error, max_error_sum, &n_flags, keep_list, doing);
             reset_seen();
             delete_unflagged_moves(root_board, &n_delete, keep_list, doing);
             reset_seen();
