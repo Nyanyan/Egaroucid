@@ -21491,7 +21491,7 @@ Egaroucid_for_Console.exe -l 60 -nobook -thread 32 -hash 25 -solve problem/ffo40
 total 25054097764 nodes in 28.575s NPS 876783823
 
 
-2024/04/01
+2024/04/01 update probcut
 Egaroucid_for_Console.exe -l 60 -nobook -thread 32 -hash 25 -solve problem/ffo40-59.txt
 #   |          Level|          Depth|           Move|          Score|           Time|          Nodes|            NPS|
 #40 |             60|        20@100%|             a2|            +38|  000:00:00.017|       12960157|      762362176|
