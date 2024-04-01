@@ -304,7 +304,7 @@ uint64_t expand_leaf(Book_deviate_todo_elem todo_elem, int book_depth, int level
     Book_elem book_elem = book.get(todo_elem.board);
     Flip flip;
     calc_flip(&flip, &todo_elem.board, book_elem.leaf.move);
-    todo_elem.board.move_board(&flip);
+    todo_elem.move(&flip, 0);
     if (todo_elem.board.get_legal() == 0){ // check pass
         todo_elem.board.pass();
         if (todo_elem.board.get_legal() == 0){
@@ -314,7 +314,7 @@ uint64_t expand_leaf(Book_deviate_todo_elem todo_elem, int book_depth, int level
         }
     }
     uint64_t n_add = 0;
-    int prev_value = SCORE_UNDEFINED;
+    int prev_value = book_elem.value;
     while (todo_elem.board.n_discs() <= book_depth + 4 && !book.contain(&todo_elem.board) && (*book_learning) && todo_elem.remaining_error >= 0){
         Search_result search_result = ai(todo_elem.board, level, true, 0, use_multi_thread, false);
         if (-HW2 <= search_result.value && search_result.value <= HW2){

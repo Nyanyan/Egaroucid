@@ -16,7 +16,7 @@
 #include "draw.hpp"
 
 #define BOOK_DEPTH_INF 80
-#define BOOK_ERROR_INF 130
+#define BOOK_ERROR_INF 100000
 
 void reset_book_additional_information(){
     umigame.delete_all();
