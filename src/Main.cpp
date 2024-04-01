@@ -71,6 +71,7 @@ void Main() {
     scene_manager.add <Leaf_recalculate_book>(U"Leaf_recalculate_book");
     scene_manager.add <Import_book>(U"Import_book");
     scene_manager.add <Export_book>(U"Export_book");
+    scene_manager.add <Show_book_info>(U"Show_book_info");
     scene_manager.add <Import_transcript>(U"Import_transcript");
     scene_manager.add <Import_board>(U"Import_board");
     scene_manager.add <Edit_board>(U"Edit_board");

@@ -102,6 +102,22 @@ struct Book_elem{
     }
 };
 
+struct Book_info{
+    uint64_t n_boards;
+    uint64_t n_boards_in_level[LEVEL_HUMAN + 1];
+    uint64_t n_boards_in_ply[HW2 - 4 + 1];
+
+    Book_info(){
+        n_boards = 0;
+        for (int i = 0; i < LEVEL_HUMAN + 1; ++i){
+            n_boards_in_level[i] = 0;
+        }
+        for (int i = 0; i < HW2 - 4 + 1; ++i){
+            n_boards_in_ply[i] = 0;
+        }
+    }
+};
+
 /*
     @brief array for calculating hash code for book
 */
@@ -2070,4 +2086,9 @@ void search_new_leaf(Board board, int level, int book_elem_value, bool use_multi
     } else
         new_leaf_move = MOVE_NOMOVE;
     book.add_leaf(&board, new_leaf_value, new_leaf_move, level);
+}
+
+Book_info calculate_book_info(bool *calculating){
+    Book_info res;
+    return res;
 }

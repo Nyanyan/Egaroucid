@@ -727,6 +727,13 @@ private:
             changeScene(U"Export_book", SCENE_FADE_TIME);
             return;
         }
+        if (getData().menu_elements.show_book_info) {
+            stop_calculating();
+            resume_calculating();
+            changing_scene = true;
+            changeScene(U"Show_book_info", SCENE_FADE_TIME);
+            return;
+        }
     }
 
     void menu_help() {
@@ -1151,6 +1158,9 @@ private:
         menu_e.push(side_menu);
         side_menu.init_button(language.get("book", "book_reference"), &menu_elements->book_reference);
         menu_e.push(side_menu);
+        title.push(menu_e);
+
+        menu_e.init_button(language.get("book", "show_book_info"), &menu_elements->show_book_info);
         title.push(menu_e);
 
         menu.push(title);

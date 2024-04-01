@@ -906,3 +906,48 @@ public:
 
     }
 };
+
+
+
+class Show_book_info : public App::Scene {
+private:
+    Button back_button;
+    std::future<Book_info> book_info_future;
+    Book_info book_info;
+    bool book_info_calculating;
+
+public:
+    Show_book_info(const InitData& init) : IScene{ init } {
+        back_button.init(BACK_BUTTON_SX, BACK_BUTTON_SY, BACK_BUTTON_WIDTH, BACK_BUTTON_HEIGHT, BACK_BUTTON_RADIUS, language.get("common", "back"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
+        book_info_calculating = true;
+        book_info_future = std::async(std::launch::async, calculate_book_info, &book_info_calculating);
+    }
+
+    void update() override {
+        if (System::GetUserActions() & UserAction::CloseButtonClicked) {
+            changeScene(U"Close", SCENE_FADE_TIME);
+        }
+        Scene::SetBackground(getData().colors.green);
+        if (book_info_calculating){
+            if (book_info_future.wait_for(std::chrono::seconds(0)) == std::future_status::ready){
+                book_info = book_info_future.get();
+                book_info_calculating = false;
+            }
+        }
+        back_button.draw();
+        if (back_button.clicked()) {
+            if (book_info_calculating){
+                book_info_calculating = false;
+                book_info_future.get();
+            }
+            reset_book_additional_information();
+            getData().book_information.changed = true;
+            getData().graph_resources.need_init = false;
+            changeScene(U"Main_scene", SCENE_FADE_TIME);
+        }
+    }
+
+    void draw() const override {
+
+    }
+};
