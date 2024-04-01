@@ -12,7 +12,7 @@ import math
 
 #data_files = ['data/probcut_mid9.txt']
 #data_files = ['data/probcut_mid10.txt', 'data/probcut_mid11.txt']
-data_files = ['data/probcut_mid14.txt', 'data/probcut_mid15.txt', 'data/probcut_mid16.txt', 'data/probcut_mid17.txt', 'data/probcut_mid18.txt']
+data_files = ['data/probcut_mid14.txt', 'data/probcut_mid15.txt', 'data/probcut_mid16.txt', 'data/probcut_mid17.txt', 'data/probcut_mid18.txt', 'data/probcut_mid19.txt']
 
 data = [[[[] for _ in range(61)] for _ in range(61)] for _ in range(65)] # n_discs, depth1, depth2 (depth1 < depth2)
 
@@ -65,6 +65,7 @@ for n_discs in range(len(data)):
                 z_mean.append(mean)
                 weight_mean.append(0.001)
 
+'''
 for n_discs in range(61):
     for depth2 in range(15, 60):
         depth1 = depth2
@@ -73,17 +74,17 @@ for n_discs in range(61):
         y_depth2_sd.append(depth2)
         z_sd.append(0.0)
         weight_sd.append(0.1)
-
+'''
 
 for n_discs in range(61):
     for depth2 in range(30, 31):
         depth1 = 0
-        z = 5.0 + 5.0 * (n_discs - 4) / 60  #1.5 + 2.0 * depth2 / 20 + 3.0 * (n_discs - 4) / 60
+        z = 6.0 + 8.0 * ((n_discs - 4) / 60) ** 2
         w_n_discs_sd.append(n_discs)
         x_depth1_sd.append(depth1)
         y_depth2_sd.append(depth2)
         z_sd.append(z)
-        weight_sd.append(0.0005)
+        weight_sd.append(0.001)
 
 
 def f(wxy, probcut_a, probcut_b, probcut_c, probcut_d, probcut_e, probcut_f, probcut_g):
