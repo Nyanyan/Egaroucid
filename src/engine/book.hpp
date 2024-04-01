@@ -1513,6 +1513,7 @@ class Book{
             // depth threshold
             if (board.n_discs() > 4 + max_depth)
                 return;
+            // pass
             if (board.get_legal() == 0){
                 board.pass();
                 if (board.get_legal() == 0)
@@ -1523,7 +1524,7 @@ class Book{
             if (keep_list.find(unique_board) != keep_list.end())
                 return;
             Book_elem book_elem = get(board);
-            // already seen
+            // already seen?
             if (book_elem.seen)
                 return;
             flag_book_elem(board);
@@ -1538,7 +1539,7 @@ class Book{
                 if (link_error <= max_error_per_move && link_error <= remaining_error){
                     calc_flip(&flip, &board, link.policy);
                     board.move_board(&flip);
-                        reduce_book_flag_moves(board, max_depth, max_error_per_move, remaining_error - link_error, n_flags, keep_list, doing);
+                        reduce_book_flag_moves(board, max_depth, max_error_per_move, remaining_error - std::min(0, link_error), n_flags, keep_list, doing);
                     board.undo_board(&flip);
                 }
             }
@@ -1583,9 +1584,7 @@ class Book{
             uint64_t book_size = book.size();
             std::unordered_set<Board, Book_hash> keep_list;
             reset_seen();
-            int max_error_sum = INF;
-            //int max_error_sum = 10;
-            reduce_book_flag_moves(root_board, max_depth, max_error_per_move, max_line_error, max_error_sum, &n_flags, keep_list, doing);
+            reduce_book_flag_moves(root_board, max_depth, max_error_per_move, max_line_error, &n_flags, keep_list, doing);
             reset_seen();
             delete_unflagged_moves(root_board, &n_delete, keep_list, doing);
             reset_seen();
