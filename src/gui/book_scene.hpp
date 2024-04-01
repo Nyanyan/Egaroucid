@@ -977,7 +977,7 @@ public:
                 book_info_future.get();
             }
             reset_book_additional_information();
-            getData().book_information.changed = true;
+            getData().book_information.changed = false;
             getData().graph_resources.need_init = false;
             changeScene(U"Main_scene", SCENE_FADE_TIME);
         }
