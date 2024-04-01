@@ -106,14 +106,18 @@ struct Book_info{
     uint64_t n_boards;
     uint64_t n_boards_in_level[LEVEL_HUMAN + 1];
     uint64_t n_boards_in_ply[HW2 - 4 + 1];
+    uint64_t n_leaves_in_level[LEVEL_HUMAN + 1];
+    uint64_t n_leaves_in_ply[HW2 - 4 + 1];
 
     Book_info(){
         n_boards = 0;
         for (int i = 0; i < LEVEL_HUMAN + 1; ++i){
             n_boards_in_level[i] = 0;
+            n_leaves_in_level[i] = 0;
         }
         for (int i = 0; i < HW2 - 4 + 1; ++i){
             n_boards_in_ply[i] = 0;
+            n_leaves_in_ply[i] = 0;
         }
     }
 };
@@ -1792,6 +1796,25 @@ class Book{
             }
         }
 
+        Book_info calculate_book_info(bool *calculating){
+            Book_info res;
+            for (auto itr = book.begin(); itr != book.end() && *calculating; ++itr){
+                int level = itr->second.level;
+                int ply = itr->first.n_discs() - 4;
+                int leaf_level = itr->second.leaf.level;
+                int leaf_ply = ply + 1;
+                ++res.n_boards;
+                if (0 <= level && level <= LEVEL_HUMAN)
+                    ++res.n_boards_in_level[level];
+                ++res.n_boards_in_ply[ply];
+                if (0 <= leaf_level && leaf_level <= LEVEL_HUMAN){
+                    ++res.n_leaves_in_level[leaf_level];
+                    ++res.n_leaves_in_ply[leaf_ply];
+                }
+            }
+            return res;
+        }
+
     private:
         void reg_first_board(){
             Board board;
@@ -2089,6 +2112,6 @@ void search_new_leaf(Board board, int level, int book_elem_value, bool use_multi
 }
 
 Book_info calculate_book_info(bool *calculating){
-    Book_info res;
+    Book_info res = book.calculate_book_info(calculating);
     return res;
 }

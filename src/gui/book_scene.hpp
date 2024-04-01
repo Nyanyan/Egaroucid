@@ -928,14 +928,50 @@ public:
             changeScene(U"Close", SCENE_FADE_TIME);
         }
         Scene::SetBackground(getData().colors.green);
+        getData().fonts.font(language.get("book", "show_book_info")).draw(25, 40, 30, getData().colors.white);
         if (book_info_calculating){
+            getData().fonts.font(language.get("book", "calculating")).draw(25, 50, 67, getData().colors.white);
             if (book_info_future.wait_for(std::chrono::seconds(0)) == std::future_status::ready){
                 book_info = book_info_future.get();
                 book_info_calculating = false;
             }
+        } else{
+            getData().fonts.font(language.get("book", "n_registered") + U": " + Format(book_info.n_boards)).draw(15, 50, 67, getData().colors.white);
+            int sy = 90;
+            int sx = 50;
+            for (int level = 1; level < N_LEVEL; ++level){
+                String str = U"Lv.";
+                if (level < 10){
+                    str += U" ";
+                }
+                str += Format(level) + U": " + Format(book_info.n_boards_in_level[level]);
+                getData().fonts.font(str).draw(13, sx, sy, getData().colors.white);
+                sy += 15;
+                if (level % 20 == 0 && level != N_LEVEL - 1){
+                    sy = 90;
+                    sx += 120;
+                }
+            }
+            String str = U"Lv. S: " + Format(book_info.n_boards_in_level[LEVEL_HUMAN]);
+            getData().fonts.font(str).draw(13, sx, sy, getData().colors.white);
+            sx += 130;
+            sy = 90;
+            for (int ply = 0; ply <= HW2 - 4; ++ply){
+                String str = U"Ply.";
+                if (ply < 10){
+                    str += U" ";
+                }
+                str += Format(ply) + U": " + Format(book_info.n_boards_in_ply[ply]);
+                getData().fonts.font(str).draw(13, sx, sy, getData().colors.white);
+                sy += 15;
+                if (ply % 21 == 20){
+                    sy = 90;
+                    sx += 120;
+                }
+            }
         }
         back_button.draw();
-        if (back_button.clicked()) {
+        if (back_button.clicked() || KeyEscape.pressed()) {
             if (book_info_calculating){
                 book_info_calculating = false;
                 book_info_future.get();
