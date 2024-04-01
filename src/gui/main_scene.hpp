@@ -1288,13 +1288,15 @@ private:
                 font((int)round(hint_infos[i].value)).draw(18, sx + 3, sy, color);
                 if (hint_infos[i].type == HINT_TYPE_BOOK) {
                     if (!ignore_book_info)
-                        getData().fonts.font(U"book").draw(10, sx + 3, sy + 19, color);
+                        getData().fonts.font_bold(U"book").draw(10, sx + 3, sy + 19, color);
                 }
                 else if (hint_infos[i].type > HINT_MAX_LEVEL) {
-                    getData().fonts.font(Format(hint_infos[i].type) + U"%").draw(10, sx + 3, sy + 19, color);
+                    getData().fonts.font_bold(Format(hint_infos[i].type) + U"%").draw(10, sx + 3, sy + 19, color);
                 }
                 else {
-                    getData().fonts.font(U"Lv." + Format(hint_infos[i].type)).draw(10, sx + 3, sy + 19, color);
+                    RectF lv_rect = getData().fonts.font(U"Lv.").region(8, sx + 3, sy + 21);
+                    getData().fonts.font_bold(U"Lv").draw(8, sx + 3, sy + 21, color);
+                    getData().fonts.font_bold(Format(hint_infos[i].type)).draw(10, lv_rect.x + lv_rect.w, sy + 19, color);
                 }
                 res |= 1ULL << (HW2_M1 - hint_infos[i].cell);
             }
