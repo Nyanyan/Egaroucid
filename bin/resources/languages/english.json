@@ -86,7 +86,10 @@
         "reducing": "Reducing",
         "book_recalculate_leaf": "Recalculate Leaves",
         "start": "Start",
-        "unlimited": "Unlimited"
+        "unlimited": "Unlimited",
+        "show_book_info": "Book Info",
+        "calculating": "Calculating",
+        "n_registered": "Registered"
     },
     "in_out": {
         "in_out": "In/Out",

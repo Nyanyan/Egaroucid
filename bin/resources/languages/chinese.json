@@ -86,7 +86,10 @@
         "reducing": "精简中...",
         "book_recalculate_leaf": "重新计算叶子",
         "start": "开始",
-        "unlimited": "无限"
+        "unlimited": "无限",
+        "show_book_info": "开局库情报",
+        "calculating": "计算",
+        "n_registered": "挂号"
     },
     "in_out": {
         "in_out": "输入/输出",
