@@ -105,10 +105,10 @@ public:
         mark_radio.draw();
         color_radio.draw();
         if (color_radio.checked == BOARD_IMAGE_COLOR_MONOCHROME) {
-            const int clip_sx = BOARD_SX - BOARD_ROUND_FRAME_WIDTH - BOARD_COORD_SIZE;
-            const int clip_sy = BOARD_SY - BOARD_ROUND_FRAME_WIDTH - BOARD_COORD_SIZE;
-            const int clip_size_x = BOARD_CELL_SIZE * HW + BOARD_ROUND_FRAME_WIDTH * 2 + BOARD_COORD_SIZE + 7;
-            const int clip_size_y = BOARD_CELL_SIZE * HW + BOARD_ROUND_FRAME_WIDTH * 2 + BOARD_COORD_SIZE + 7;
+            const int clip_sx = BOARD_SX - BOARD_ROUND_FRAME_WIDTH - BOARD_COORD_SIZE - 1;
+            const int clip_sy = BOARD_SY - BOARD_ROUND_FRAME_WIDTH - BOARD_COORD_SIZE - 1;
+            const int clip_size_x = BOARD_CELL_SIZE * HW + BOARD_ROUND_FRAME_WIDTH * 2 + BOARD_COORD_SIZE + 7 + 2;
+            const int clip_size_y = BOARD_CELL_SIZE * HW + BOARD_ROUND_FRAME_WIDTH * 2 + BOARD_COORD_SIZE + 7 + 2;
             Rect(clip_sx, clip_sy, clip_size_x, clip_size_y).draw(getData().colors.white);
         }
         draw_board(getData().fonts, getData().colors, getData().history_elem, color_radio.checked == BOARD_IMAGE_COLOR_MONOCHROME);
