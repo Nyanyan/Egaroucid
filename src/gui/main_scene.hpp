@@ -1604,11 +1604,29 @@ private:
                     uint32_t n_lines = book_elem.n_lines;
                     String n_lines_str = Format(n_lines);
                     if (n_lines >= 1000000000){
-                        n_lines_str = Format(n_lines / 1000000000) + U"G";
+                        if (n_lines / 1000000000 < 10){
+                            uint32_t d1 = n_lines / 1000000000;
+                            uint32_t d2 = (n_lines - d1 * 1000000000) / 100000000;
+                            n_lines_str = Format(d1) + U"." + Format(d2) + U"G";
+                        } else{
+                            n_lines_str = Format(n_lines / 1000000000) + U"G";
+                        }
                     } else if (n_lines >= 1000000){
-                        n_lines_str = Format(n_lines / 1000000) + U"M";
+                        if (n_lines / 1000000 < 10){
+                            uint32_t d1 = n_lines / 1000000;
+                            uint32_t d2 = (n_lines - d1 * 1000000) / 100000;
+                            n_lines_str = Format(d1) + U"." + Format(d2) + U"M";
+                        } else{
+                            n_lines_str = Format(n_lines / 1000000) + U"M";
+                        }
                     } else if (n_lines >= 1000){
-                        n_lines_str = Format(n_lines / 1000) + U"K";
+                        if (n_lines / 1000 < 10){
+                            uint32_t d1 = n_lines / 1000;
+                            uint32_t d2 = (n_lines - d1 * 1000) / 100;
+                            n_lines_str = Format(d1) + U"." + Format(d2) + U"M";
+                        } else{
+                            n_lines_str = Format(n_lines / 1000) + U"K";
+                        }
                     }
                     getData().fonts.font_heavy(n_lines_str).draw(9, sx + 4, sy + 21, getData().colors.white);
                 }
