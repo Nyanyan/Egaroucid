@@ -201,7 +201,6 @@ struct Book_hash {
 
 
 
-
 /*
     @brief book data
 
@@ -333,6 +332,7 @@ class Book{
                 std::cerr << n_boards << " boards to read" << std::endl;
             // for each board
             int percent = -1;
+            char datum[25];
             for (int i = 0; i < n_boards; ++i) {
                 if (*stop_loading)
                     break;
@@ -342,6 +342,20 @@ class Book{
                     std::cerr << "loading book " << percent << "%" << std::endl;
                 }
                 // read board, player
+                if (fread(datum, 1, 25, fp) < 25){
+                    std::cerr << "[ERROR] book NOT FULLY imported " << book.size() << " boards" << std::endl;
+                    fclose(fp);
+                    return false;
+                }
+                p = ((uint64_t*)datum)[0];
+                o = ((uint64_t*)datum)[1];
+                value = datum[16];
+                level = datum[17];
+                n_lines = ((uint32_t*)(datum + 18))[0];
+                leaf_value = datum[22];
+                leaf_move = datum[23];
+                leaf_level = datum[24];
+                /*
                 if (fread(&p, 8, 1, fp) < 1) {
                     std::cerr << "[ERROR] book NOT FULLY imported 0 " << book.size() << " boards" << std::endl;
                     fclose(fp);
@@ -350,12 +364,6 @@ class Book{
                 // read board, opponent
                 if (fread(&o, 8, 1, fp) < 1) {
                     std::cerr << "[ERROR] book NOT FULLY imported 1 " << book.size() << " boards" << std::endl;
-                    fclose(fp);
-                    return false;
-                }
-                // board error check
-                if (p & o){
-                    std::cerr << "[ERROR] book NOT FULLY imported 2 " << book.size() << " boards" << std::endl;
                     fclose(fp);
                     return false;
                 }
@@ -402,8 +410,9 @@ class Book{
                     fclose(fp);
                     return false;
                 }
+                */
                 // push elem
-                if (-HW2 <= value && value <= HW2) {
+                if (-HW2 <= value && value <= HW2 && (p & o) == 0) {
                     board.player = p;
                     board.opponent = o;
                     #if FORCE_BOOK_DEPTH
