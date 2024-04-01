@@ -1610,7 +1610,7 @@ private:
                 if (book.contain(board)){
                     ai_status.hint_types[cell] = HINT_TYPE_BOOK;
                     Book_elem book_elem = book.get(board);
-                    ai_status.hint_values[cell] = book_elem.value;
+                    ai_status.hint_values[cell] = -book_elem.value;
                     uint32_t n_lines = book_elem.n_lines;
                     String n_lines_str = Format(n_lines);
                     if (n_lines >= 1000000000){
