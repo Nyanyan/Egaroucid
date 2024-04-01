@@ -1294,7 +1294,7 @@ private:
                     getData().fonts.font(Format(hint_infos[i].type) + U"%").draw(10, sx + 3, sy + 19, color);
                 }
                 else {
-                    getData().fonts.font(Format(hint_infos[i].type)).draw(10, sx + 3, sy + 19, color);
+                    getData().fonts.font(U"Lv." + Format(hint_infos[i].type)).draw(10, sx + 3, sy + 19, color);
                 }
                 res |= 1ULL << (HW2_M1 - hint_infos[i].cell);
             }
