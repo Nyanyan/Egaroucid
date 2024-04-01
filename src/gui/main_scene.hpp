@@ -1580,8 +1580,8 @@ private:
                 int sx = BOARD_SX + ((HW2_M1 - cell) % HW) * BOARD_CELL_SIZE;
                 int sy = BOARD_SY + ((HW2_M1 - cell) / HW) * BOARD_CELL_SIZE;
                 if (umigame_status.umigame[cell].b != UMIGAME_UNDEFINED) {
-                    getData().fonts.font_heavy(umigame_status.umigame[cell].b).draw(13, Arg::bottomRight(sx + BOARD_CELL_SIZE - 3, sy + BOARD_CELL_SIZE - 17), getData().colors.black);
-                    getData().fonts.font_heavy(umigame_status.umigame[cell].w).draw(13, Arg::bottomRight(sx + BOARD_CELL_SIZE - 3, sy + BOARD_CELL_SIZE - 1), getData().colors.white);
+                    getData().fonts.font_heavy(umigame_status.umigame[cell].b).draw(11, Arg::bottomRight(sx + BOARD_CELL_SIZE - 3, sy + BOARD_CELL_SIZE - 16), getData().colors.black);
+                    getData().fonts.font_heavy(umigame_status.umigame[cell].w).draw(11, Arg::bottomRight(sx + BOARD_CELL_SIZE - 3, sy + BOARD_CELL_SIZE - 2), getData().colors.white);
                 }
             }
         }
@@ -1598,7 +1598,10 @@ private:
                 calc_flip(&flip, &board, cell);
                 board.move_board(&flip);
                 if (book.contain(board)){
-                    uint32_t n_lines = book.get(board).n_lines;
+                    ai_status.hint_types[cell] = HINT_TYPE_BOOK;
+                    Book_elem book_elem = book.get(board);
+                    ai_status.hint_values[cell] = book_elem.value;
+                    uint32_t n_lines = book_elem.n_lines;
                     String n_lines_str = Format(n_lines);
                     if (n_lines >= 1000000000){
                         n_lines_str = Format(n_lines / 1000000000) + U"G";
