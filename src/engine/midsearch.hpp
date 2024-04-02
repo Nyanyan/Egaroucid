@@ -416,15 +416,18 @@ void first_nega_scout_hint(Search *search, int depth, int max_depth, bool is_end
     }
     //std::cerr << depth << " " << max_depth << " " << n_threshold << " " << n_display << " " << value_policies.size() << std::endl;
     Flip flip;
-    for (int i = 0; i < n_threshold; ++i){
+    for (int i = 0; i < n_threshold && *searching && global_searching; ++i){
+        std::cerr << idx_to_coord(value_policies[i].policy) << std::endl;
         calc_flip(&flip, &search->board, value_policies[i].policy);
         search->move(&flip);
             int g = -nega_scout(search, -SCORE_MAX, SCORE_MAX, depth - 1, false, LEGAL_UNDEFINED, is_end_search, searching);
-            if (values[value_policies[i].policy] == SCORE_UNDEFINED || is_end_search)
-                values[value_policies[i].policy] = g;
-            else
-                values[value_policies[i].policy] = (0.9 * values[value_policies[i].policy] + 1.1 * g) / 2.0;
-            types[value_policies[i].policy] = type;
+            if (-SCORE_MAX <= g && g <= SCORE_MAX && *searching && global_searching){
+                if (values[value_policies[i].policy] == SCORE_UNDEFINED || is_end_search)
+                    values[value_policies[i].policy] = g;
+                else
+                    values[value_policies[i].policy] = (0.9 * values[value_policies[i].policy] + 1.1 * g) / 2.0;
+                types[value_policies[i].policy] = type;
+            }
         search->undo(&flip);
     }
 }

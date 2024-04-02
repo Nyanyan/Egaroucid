@@ -94,7 +94,6 @@ inline void tree_search_hint(Board board, int depth, uint_fast8_t mpc_level, boo
     if (n_display < 0){
         return;
     }
-    uint64_t strt = tim();
     lazy_smp_hint(board, depth, mpc_level, show_log, use_legal, use_multi_thread, n_display, values, hint_types);
 }
 

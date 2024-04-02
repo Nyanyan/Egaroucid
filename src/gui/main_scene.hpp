@@ -223,7 +223,7 @@ public:
         uint64_t legal_ignore = 0ULL;
 
         // hint calculating & drawing
-        bool hint_ignore = ai_should_move || ai_status.analyzing || need_start_game_button || pausing_in_pass;
+        bool hint_ignore = ai_should_move || ai_status.analyzing || need_start_game_button || pausing_in_pass || changing_scene;
         if (KeyV.down())
             getData().menu_elements.use_disc_hint = !getData().menu_elements.use_disc_hint;
         if (!hint_ignore) {
@@ -330,10 +330,8 @@ private:
         if (ai_status.ai_future.valid()) {
             ai_status.ai_future.get();
         }
-        for (int i = 0; i < HW2; ++i) {
-            if (ai_status.hint_future.valid()) {
-                ai_status.hint_future.get();
-            }
+        if (ai_status.hint_future.valid()) {
+            ai_status.hint_future.get();
         }
         for (int i = 0; i < ANALYZE_SIZE; ++i) {
             if (ai_status.analyze_future[i].valid()) {
@@ -415,30 +413,30 @@ private:
 
     void menu_in_out() {
         if (getData().menu_elements.input_transcript) {
+            changing_scene = true;
             stop_calculating();
             resume_calculating();
-            changing_scene = true;
             changeScene(U"Import_transcript", SCENE_FADE_TIME);
             return;
         }
         if (getData().menu_elements.input_board) {
+            changing_scene = true;
             stop_calculating();
             resume_calculating();
-            changing_scene = true;
             changeScene(U"Import_board", SCENE_FADE_TIME);
             return;
         }
         if (getData().menu_elements.edit_board) {
+            changing_scene = true;
             stop_calculating();
             resume_calculating();
-            changing_scene = true;
             changeScene(U"Edit_board", SCENE_FADE_TIME);
             return;
         }
         if (getData().menu_elements.input_game) {
+            changing_scene = true;
             stop_calculating();
             resume_calculating();
-            changing_scene = true;
             changeScene(U"Import_game", SCENE_FADE_TIME);
             return;
         }
@@ -449,16 +447,16 @@ private:
             copy_board();
         }
         if (getData().menu_elements.input_bitboard) {
+            changing_scene = true;
             stop_calculating();
             resume_calculating();
-            changing_scene = true;
             changeScene(U"Import_bitboard", SCENE_FADE_TIME);
             return;
         }
         if (getData().menu_elements.save_game) {
+            changing_scene = true;
             stop_calculating();
             resume_calculating();
-            changing_scene = true;
             changeScene(U"Export_game", SCENE_FADE_TIME);
             return;
         }
@@ -467,9 +465,9 @@ private:
             getData().menu_elements.screen_shot = false; // because skip drawing menu in next frame
         }
         if (getData().menu_elements.board_image) {
+            changing_scene = true;
             stop_calculating();
             resume_calculating();
-            changing_scene = true;
             changeScene(U"Board_image", SCENE_FADE_TIME);
             return;
         }
@@ -672,65 +670,65 @@ private:
 
     void menu_book() {
         if (getData().menu_elements.book_start_deviate) {
+            changing_scene = true;
             stop_calculating();
             resume_calculating();
-            changing_scene = true;
             changeScene(U"Enhance_book", SCENE_FADE_TIME);
             return;
         }
         if (getData().menu_elements.book_start_fix) {
+            changing_scene = true;
             stop_calculating();
             resume_calculating();
-            changing_scene = true;
             changeScene(U"Fix_book", SCENE_FADE_TIME);
             return;
         }
         if (getData().menu_elements.book_start_reducing) {
+            changing_scene = true;
             stop_calculating();
             resume_calculating();
-            changing_scene = true;
             changeScene(U"Reduce_book", SCENE_FADE_TIME);
             return;
         }
         if (getData().menu_elements.book_start_recalculate_leaf) {
+            changing_scene = true;
             stop_calculating();
             resume_calculating();
-            changing_scene = true;
             changeScene(U"Leaf_recalculate_book", SCENE_FADE_TIME);
             return;
         }
         if (getData().menu_elements.book_merge) {
+            changing_scene = true;
             stop_calculating();
             resume_calculating();
-            changing_scene = true;
             changeScene(U"Merge_book", SCENE_FADE_TIME);
             return;
         }
         if (getData().menu_elements.book_reference) {
+            changing_scene = true;
             stop_calculating();
             resume_calculating();
-            changing_scene = true;
             changeScene(U"Refer_book", SCENE_FADE_TIME);
             return;
         }
         if (getData().menu_elements.import_book) {
+            changing_scene = true;
             stop_calculating();
             resume_calculating();
-            changing_scene = true;
             changeScene(U"Import_book", SCENE_FADE_TIME);
             return;
         }
         if (getData().menu_elements.export_book) {
+            changing_scene = true;
             stop_calculating();
             resume_calculating();
-            changing_scene = true;
             changeScene(U"Export_book", SCENE_FADE_TIME);
             return;
         }
         if (getData().menu_elements.show_book_info) {
+            changing_scene = true;
             stop_calculating();
             resume_calculating();
-            changing_scene = true;
             changeScene(U"Show_book_info", SCENE_FADE_TIME);
             return;
         }
