@@ -176,7 +176,7 @@ void lazy_smp_hint(Board board, int depth, uint_fast8_t mpc_level, bool show_log
     if (is_end_search){
         main_mpc_level = MPC_74_LEVEL;
     }
-    while (main_depth <= depth && main_mpc_level <= mpc_level){
+    while (main_depth <= depth && main_mpc_level <= mpc_level && global_searching){
         bool is_last_search_show_log = (main_depth == depth) && (main_mpc_level == mpc_level) && show_log;
         bool main_is_end_search = false;
         if (main_depth >= max_depth){
