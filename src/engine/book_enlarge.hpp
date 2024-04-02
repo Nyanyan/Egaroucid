@@ -475,7 +475,7 @@ inline void book_deviate(Board root_board, int level, int book_depth, int max_er
             book_elem.value = ai(root_board, level, true, 0, true, false).value;
         }
         bool book_recalculating = true;
-        book_recalculate_leaf(root_board, std::max(1, level * 2 / 3), std::max(1, book_depth - 1), max_error_per_move, max_error_sum, board_copy, player, &book_recalculating, true);
+        book_recalculate_leaf(root_board, std::min(20 + (level & 1), std::max(1, level - 2)), std::max(1, book_depth - 1), max_error_per_move, max_error_sum, board_copy, player, &book_recalculating, true);
         std::unordered_set<Book_deviate_todo_elem, Book_deviate_hash> book_deviate_todo;
         book.reset_seen();
         get_book_deviate_todo(root_elem, book_depth, book_deviate_todo, all_strt, book_learning, board_copy, player, n_loop);

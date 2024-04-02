@@ -417,7 +417,6 @@ void first_nega_scout_hint(Search *search, int depth, int max_depth, bool is_end
     //std::cerr << depth << " " << max_depth << " " << n_threshold << " " << n_display << " " << value_policies.size() << std::endl;
     Flip flip;
     for (int i = 0; i < n_threshold && *searching && global_searching; ++i){
-        std::cerr << idx_to_coord(value_policies[i].policy) << std::endl;
         calc_flip(&flip, &search->board, value_policies[i].policy);
         search->move(&flip);
             int g = -nega_scout(search, -SCORE_MAX, SCORE_MAX, depth - 1, false, LEGAL_UNDEFINED, is_end_search, searching);
