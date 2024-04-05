@@ -1468,7 +1468,7 @@ class Book{
                 std::cerr << "negamaxing book... " << (*percent) << "%" << " fixed " << (*n_fix) << std::endl;
             }
             std::vector<Book_value> links = get_all_moves_with_value(&board);
-            uint32_t n_lines = 1;
+            uint64_t n_lines = 1;
             Flip flip;
             //int v = -INF, child_level = -INF;
             int v = -INF;
@@ -1486,10 +1486,7 @@ class Book{
                             v = -child_res.value;
                             //child_level = child_res.level;
                         }
-                        if (n_lines + child_res.n_lines < n_lines)
-                            n_lines = MAX_N_LINES;
-                        else
-                            n_lines += child_res.n_lines;
+                        n_lines += child_res.n_lines;
                     }
                 board.undo_board(&flip);
             }
@@ -1500,7 +1497,7 @@ class Book{
                     ++(*n_fix);
                 }
             }
-            res.n_lines = n_lines;
+            res.n_lines = (uint32_t)std::min((uint64_t)MAX_N_LINES, n_lines);
             book[board] = res;
             return res;
         }

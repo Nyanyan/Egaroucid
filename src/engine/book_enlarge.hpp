@@ -119,9 +119,16 @@ void get_book_recalculate_leaf_todo(Book_deviate_todo_elem todo_elem, int book_d
     // expand links
     Flip flip;
     for (Book_value &link: links){
-        int link_error = book_elem.value - link.value;
+        calc_flip(&flip, &todo_elem.board, link.policy);
+        int link_value = link.value;
+        todo_elem.board.move_board(&flip);
+            Book_elem link_elem = book.get(todo_elem.board);
+            if (link_elem.value != SCORE_UNDEFINED && link_value < -link_elem.value){
+                link_value = link_elem.value;
+            }
+        todo_elem.board.undo_board(&flip);
+        int link_error = book_elem.value - link_value;
         if (link_error <= todo_elem.max_error_per_move && link_error <= todo_elem.remaining_error){
-            calc_flip(&flip, &todo_elem.board, link.policy);
             todo_elem.move(&flip, link_error);
                 get_book_recalculate_leaf_todo(todo_elem, book_depth, level, todo_list, all_strt, book_learning, board_copy, player, only_illegal);
             todo_elem.undo(&flip, link_error);

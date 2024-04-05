@@ -1631,7 +1631,7 @@ private:
                         if (n_lines / 1000 < 10){
                             uint32_t d1 = n_lines / 1000;
                             uint32_t d2 = (n_lines - d1 * 1000) / 100;
-                            n_lines_str = Format(d1) + U"." + Format(d2) + U"M";
+                            n_lines_str = Format(d1) + U"." + Format(d2) + U"K";
                         } else{
                             n_lines_str = Format(n_lines / 1000) + U"K";
                         }
