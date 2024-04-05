@@ -81,6 +81,7 @@ void get_book_recalculate_leaf_todo(Book_deviate_todo_elem todo_elem, int book_d
     // check depth
     if (todo_elem.board.n_discs() > book_depth + 4)
         return;
+    todo_elem.board = book.get_representative_board(todo_elem.board);
     // already searched?
     if (todo_list.find(todo_elem) != todo_list.end())
         return;
@@ -92,7 +93,6 @@ void get_book_recalculate_leaf_todo(Book_deviate_todo_elem todo_elem, int book_d
     if (book_elem.seen)
         return;
     book.flag_book_elem(todo_elem.board);
-    todo_elem.board = book.get_representative_board(todo_elem.board);
     *board_copy = todo_elem.board;
     *player = todo_elem.player;
     // check leaf recalculation necessity
@@ -103,10 +103,12 @@ void get_book_recalculate_leaf_todo(Book_deviate_todo_elem todo_elem, int book_d
     bool illegal_leaf = false;
     if (remaining_legal){
         if (is_valid_policy(book_elem.leaf.move)){
-            if ((remaining_legal & (1ULL << book_elem.leaf.move)) == 0)
+            if ((remaining_legal & (1ULL << book_elem.leaf.move)) == 0){
                 illegal_leaf = true;
-        } else
+            }
+        } else{
             illegal_leaf = true;
+        }
     } else if (book_elem.leaf.move != MOVE_NOMOVE){
         illegal_leaf = true;
     }
