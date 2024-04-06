@@ -39,12 +39,17 @@ inline bool etc(Search *search, std::vector<Flip_value> &move_list, int depth, i
             flip_value.flip.flip = 0ULL; // make this move invalid
             ++(*etc_done_idx);
         } else if (*alpha < -u && -u < *beta){ // child window is [-beta, u]
-            if (*v < -u)
-                *v = -u;
-            *alpha = -u;
-            if (u == l){
+            if (-l <= *v){ // the maximum (-minimum) score is lower than aother move
                 flip_value.flip.flip = 0ULL; // make this move invalid
                 ++(*etc_done_idx);
+            } else{
+                if (*v < -u)
+                    *v = -u;
+                *alpha = -u;
+                if (u == l){
+                    flip_value.flip.flip = 0ULL; // make this move invalid
+                    ++(*etc_done_idx);
+                }
             }
         }
     }
