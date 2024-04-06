@@ -335,6 +335,8 @@ struct Settings {
     bool show_play_ordering;
     int generate_random_board_moves;
     bool show_book_accuracy;
+    bool show_graph_value;
+    bool show_graph_sum_of_loss;
 };
 
 struct Fonts {
@@ -418,6 +420,8 @@ struct Menu_elements {
     bool show_next_move_change_view;
     bool change_color_type;
     bool show_book_accuracy;
+    bool show_graph_value;
+    bool show_graph_sum_of_loss;
 
     // book
     bool book_start_deviate;
@@ -512,6 +516,8 @@ struct Menu_elements {
         show_next_move_change_view = settings->show_next_move_change_view;
         change_color_type = settings->change_color_type;
         show_book_accuracy = settings->show_book_accuracy;
+        show_graph_value = settings->show_graph_value;
+        show_graph_sum_of_loss = settings->show_graph_sum_of_loss;
 
         book_start_deviate = false;
         book_start_fix = false;

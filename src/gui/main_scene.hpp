@@ -59,7 +59,6 @@ public:
         graph.sy = GRAPH_SY;
         graph.size_x = GRAPH_WIDTH;
         graph.size_y = GRAPH_HEIGHT;
-        graph.resolution = GRAPH_RESOLUTION;
         if (getData().graph_resources.need_init) {
             getData().game_information.init();
             getData().graph_resources.init();
@@ -273,7 +272,7 @@ public:
         }
 
         // graph drawing
-        graph.draw(getData().graph_resources.nodes[0], getData().graph_resources.nodes[1], getData().graph_resources.n_discs, getData().menu_elements.show_graph, getData().menu_elements.level, getData().fonts.font, getData().menu_elements.change_color_type);
+        graph.draw(getData().graph_resources.nodes[0], getData().graph_resources.nodes[1], getData().graph_resources.n_discs, getData().menu_elements.show_graph, getData().menu_elements.level, getData().fonts.font, getData().menu_elements.change_color_type, getData().menu_elements.show_graph_sum_of_loss);
 
         // level display drawing
         //level_display.draw(getData().menu_elements.level, getData().history_elem.board.n_discs());
@@ -1033,7 +1032,11 @@ private:
         menu_e.push(side_menu);
         title.push(menu_e);
 
-        menu_e.init_check(language.get("display", "graph"), &menu_elements->show_graph, menu_elements->show_graph);
+        menu_e.init_check(language.get("display", "graph", "graph"), &menu_elements->show_graph, menu_elements->show_graph);
+        side_menu.init_radio(language.get("display", "graph", "value"), &menu_elements->show_graph_value, menu_elements->show_graph_value);
+        menu_e.push(side_menu);
+        side_menu.init_radio(language.get("display", "graph", "sum_of_loss"), &menu_elements->show_graph_sum_of_loss, menu_elements->show_graph_sum_of_loss);
+        menu_e.push(side_menu);
         title.push(menu_e);
         menu_e.init_check(language.get("display", "log"), &menu_elements->show_log, menu_elements->show_log);
         title.push(menu_e);

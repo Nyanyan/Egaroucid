@@ -76,6 +76,8 @@ void init_default_settings(const Directories* directories, const Resources* reso
     settings->use_book_learn_error_per_move = true;
     settings->use_book_learn_error_sum = true;
     settings->umigame_value_depth = 60;
+    settings->show_graph_value = true;
+    settings->show_graph_sum_of_loss = false;
 }
 
 int init_settings_import_int(JSON &json, String key, int* res) {
@@ -386,6 +388,12 @@ void init_settings(const Directories* directories, const Resources* resources, S
     }
     if (init_settings_import_int(setting_json, U"umigame_value_depth", &settings->umigame_value_depth) != ERR_OK) {
         std::cerr << "err34" << std::endl;
+    }
+    if (init_settings_import_bool(setting_json, U"show_graph_value", &settings->show_graph_value) != ERR_OK) {
+        std::cerr << "err35" << std::endl;
+    }
+    if (init_settings_import_bool(setting_json, U"show_graph_sum_of_loss", &settings->show_graph_sum_of_loss) != ERR_OK) {
+        std::cerr << "err36" << std::endl;
     }
 }
 
