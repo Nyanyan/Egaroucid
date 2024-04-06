@@ -80,7 +80,7 @@ public:
 			sum_of_loss_nodes1[0].emplace_back(elem);
 			sum_of_loss_nodes1[1].emplace_back(elem);
 			int last_val_black = nodes1[0].v;
-			int last_val_white = nodes1[0].v;
+			int last_val_white = -nodes1[0].v;
 			for (int i = 1; i < (int)nodes1.size(); ++i){
 				int val_black = nodes1[i].v;
 				int val_white = -nodes1[i].v;
@@ -93,26 +93,60 @@ public:
 					}
 					last_val_black = val_black;
 					last_val_white = val_white;
+					elem.ply = nodes1[i].board.n_discs() - 4;
+					elem.v = loss_black;
+					sum_of_loss_nodes1[0].emplace_back(elem);
+					elem.v = -loss_white;
+					sum_of_loss_nodes1[1].emplace_back(elem);
 				}
-				elem.ply = nodes1[i].board.n_discs() - 4;
-				elem.v = loss_black;
-				sum_of_loss_nodes1[0].emplace_back(elem);
-				elem.v = -loss_white;
-				sum_of_loss_nodes1[1].emplace_back(elem);
 			}
 			if (nodes2.size()){
 				elem.ply = nodes2[0].board.n_discs() - 4;
+				elem.v = 0;
 				for (Graph_loss_elem &elem1: sum_of_loss_nodes1[0]){
-					if (elem1.ply == elem.ply)
+					if (elem1.ply <= elem.ply){
 						elem.v = elem1.v;
+					}
+				}
+				for (History_elem &elem2: nodes1){
+					if (elem2.board.n_discs() - 4 == elem.ply - 1 && -HW2 <= elem2.v && elem2.v <= HW2 && -HW2 <= nodes2[0].v && nodes2[0].v <= HW2){
+						elem.v += std::max(0, elem2.v - nodes2[0].v);
+					}
 				}
 				sum_of_loss_nodes2[0].emplace_back(elem);
+				elem.v = 0;
 				for (Graph_loss_elem &elem1: sum_of_loss_nodes1[1]){
-					if (elem1.ply == elem.ply)
+					if (elem1.ply <= elem.ply){
 						elem.v = elem1.v;
+					}
+				}
+				for (History_elem &elem2: nodes1){
+					if (elem2.board.n_discs() - 4 == elem.ply - 1 && -HW2 <= elem2.v && elem2.v <= HW2 && -HW2 <= nodes2[0].v && nodes2[0].v <= HW2){
+						elem.v -= std::max(0, (-elem2.v) - (-nodes2[0].v));
+					}
 				}
 				sum_of_loss_nodes2[1].emplace_back(elem);
-				
+				int last_val_black = nodes2[0].v;
+				int last_val_white = -nodes2[0].v;
+				for (int i = 1; i < (int)nodes2.size(); ++i){
+					int val_black = nodes2[i].v;
+					int val_white = -nodes2[i].v;
+					int loss_black = sum_of_loss_nodes2[0].back().v;
+					int loss_white = -sum_of_loss_nodes2[1].back().v;
+					if (-HW2 <= val_black && val_black <= HW2){
+						if (-HW2 <= last_val_black && last_val_black <= HW2){
+							loss_black += std::max(0, last_val_black - val_black);
+							loss_white += std::max(0, last_val_white - val_white);
+						}
+						last_val_black = val_black;
+						last_val_white = val_white;
+						elem.ply = nodes2[i].board.n_discs() - 4;
+						elem.v = loss_black;
+						sum_of_loss_nodes2[0].emplace_back(elem);
+						elem.v = -loss_white;
+						sum_of_loss_nodes2[1].emplace_back(elem);
+					}
+				}
 			}
 		}
 		if (show_graph) {
@@ -128,15 +162,13 @@ public:
 				y_min -= (resolution - (-y_min) % resolution) % resolution;
 				y_max += (resolution - y_max % resolution) % resolution;
 			}
-			dy = (double)size_y / (y_max - y_min);
-			dx = (double)size_x / 60;
 		}
 		else {
 			y_min = -resolution;
 			y_max = resolution;
-			dy = (double)size_y / (y_max - y_min);
-			dx = (double)size_x / 60;
 		}
+		dy = (double)size_y / (y_max - y_min);
+		dx = (double)size_x / 60;
 		RoundRect round_rect{ sx + GRAPH_RECT_DX, sy + GRAPH_RECT_DY, GRAPH_RECT_WIDTH, GRAPH_RECT_HEIGHT, GRAPH_RECT_RADIUS };
 		round_rect.drawFrame(GRAPH_RECT_THICKNESS, graph_rect_color);
 		int info_x = sx + LEVEL_INFO_DX + GRAPH_RECT_DX + GRAPH_RECT_WIDTH / 2 - (LEVEL_INFO_WIDTH * 5 + LEVEL_PROB_WIDTH) / 2;
@@ -270,8 +302,6 @@ private:
 		}
 		y_min -= (resolution - (-y_min) % resolution) % resolution;
 		y_max += (resolution - y_max % resolution) % resolution;
-		dy = (double)size_y / (y_max - y_min);
-		dx = (double)size_x / 60;
 	}
 
 	void calc_range_sum_of_loss(std::vector<std::vector<Graph_loss_elem>> sum_of_loss_nodes1, std::vector<std::vector<Graph_loss_elem>> sum_of_loss_nodes2) {
@@ -283,16 +313,12 @@ private:
 				y_max = std::max(y_max, b.v);
 			}
 			for (const Graph_loss_elem& b : sum_of_loss_nodes2[i]) {
-				if (-HW2 <= b.v && b.v <= HW2) {
-					y_min = std::min(y_min, b.v);
-					y_max = std::max(y_max, b.v);
-				}
+				y_min = std::min(y_min, b.v);
+				y_max = std::max(y_max, b.v);
 			}
 		}
 		y_min -= (resolution - (-y_min) % resolution) % resolution;
 		y_max += (resolution - y_max % resolution) % resolution;
-		dy = (double)size_y / (y_max - y_min);
-		dx = (double)size_x / 60;
 	}
 
 	void draw_graph(std::vector<History_elem> nodes, Color color, Color color2) {
