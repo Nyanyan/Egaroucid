@@ -49,5 +49,6 @@ void endgame_accuracy_test(){
             std::cerr << "[ERROR] endgame value wrong idx " << i << " got " << v << " expected " << v_ans << std::endl;
         }
     }
+    std::cerr << std::endl;
     std::cerr << n_error << " endgame error found" << std::endl;
 }
