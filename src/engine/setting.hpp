@@ -27,7 +27,7 @@
 #define GUI_PORTABLE_MODE true
 
 // Open Console?
-#define GUI_OPEN_CONSOLE true
+#define GUI_OPEN_CONSOLE false
 
 #ifdef _WIN64
     #if USE_SIMD
