@@ -60,6 +60,7 @@ inline Search_result tree_search_legal(Board board, int depth, uint_fast8_t mpc_
     res = lazy_smp(board, depth, mpc_level, show_log, clogs, use_legal, use_multi_thread);
     res.clog_nodes = clog_nodes;
     res.clog_time = clog_time;
+    thread_pool.reset_unavailable();
     return res;
 }
 
@@ -95,6 +96,7 @@ inline void tree_search_hint(Board board, int depth, uint_fast8_t mpc_level, boo
         return;
     }
     lazy_smp_hint(board, depth, mpc_level, show_log, use_legal, use_multi_thread, n_display, values, hint_types);
+    thread_pool.reset_unavailable();
 }
 
 /*

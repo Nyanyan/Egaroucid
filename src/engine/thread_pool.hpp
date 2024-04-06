@@ -22,6 +22,10 @@
 //  * <https://github.com/SandSnip3r/thread-pool>
 // Thank you! :)
 
+void reset_unavailable_task(bool *start_flag){
+    while (!*start_flag);
+}
+
 class Thread_pool {
     private:
         mutable std::mutex mtx;
@@ -83,6 +87,30 @@ class Thread_pool {
 
         int get_n_idle() const {
             return n_idle;
+        }
+
+        void reset_unavailable(){
+            if (n_idle == n_thread){
+                bool start_flag = false;
+                std::vector<std::future<void>> futures;
+                bool need_to_reset = false;
+                for (int i = 0; i < n_thread; ++i){
+                    bool pushed;
+                    futures.emplace_back(push(&pushed, std::bind(reset_unavailable_task, &start_flag)));
+                    if (!pushed){
+                        futures.pop_back();
+                        need_to_reset = true;
+                    }
+                }
+                start_flag = true;
+                for (std::future<void> &f: futures){
+                    f.get();
+                }
+                if (need_to_reset){
+                    std::cerr << "reset unavailable threads" << std::endl;
+                    resize(n_thread);
+                }
+            }
         }
 
         #if ((defined(_MSVC_LANG) && _MSVC_LANG >= 201703L) || __cplusplus >= 201703L)
