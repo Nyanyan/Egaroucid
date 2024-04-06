@@ -33,18 +33,20 @@ inline bool etc(Search *search, std::vector<Flip_value> &move_list, int depth, i
             *v = -u;
             return true;
         }
-        if (-(*alpha) <= l){ // fail high at child node
+        if (-l <= *alpha){ // fail high at child node
             if (*v < -l)
                 *v = -l;
             flip_value.flip.flip = 0ULL; // make this move invalid
             ++(*etc_done_idx);
-        } else if (-(*beta) < u && u < -(*alpha) && *v < -u){ // child window is [-beta, u]
-            *v = -u;
-            if (*alpha < -u)
-                *alpha = -u;
+        } else if (*alpha < -u && -u < *beta){ // child window is [-beta, u]
+            if (*v < -u)
+                *v = -u;
+            *alpha = -u;
+            if (u == l){
+                flip_value.flip.flip = 0ULL; // make this move invalid
+                ++(*etc_done_idx);
+            }
         }
-        if (*beta <= *alpha)
-            return true;
     }
     return false;
 }

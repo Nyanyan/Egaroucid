@@ -124,7 +124,6 @@ Search_result lazy_smp(Board board, int depth, uint_fast8_t mpc_level, bool show
         if (result.value != SCORE_UNDEFINED && !main_is_end_search){
             double n_value = (0.9 * result.value + 1.1 * id_result.first) / 2.0;
             result.value = round(n_value);
-            id_result.first = result.value;
         } else{
             result.value = id_result.first;
         }
@@ -143,7 +142,7 @@ Search_result lazy_smp(Board board, int depth, uint_fast8_t mpc_level, bool show
             } else{
                 std::cerr << "mid ";
             }
-            std::cerr << "depth " << result.depth << "@" << SELECTIVITY_PERCENTAGE[main_mpc_level] << "%" << " value " << id_result.first << " policy " << idx_to_coord(id_result.second) << " n_worker " << parallel_tasks.size() << " n_nodes " << result.nodes << " time " << result.time << " NPS " << result.nps << std::endl;
+            std::cerr << "depth " << result.depth << "@" << SELECTIVITY_PERCENTAGE[main_mpc_level] << "%" << " value " << result.value << " raw value " << id_result.first << " policy " << idx_to_coord(id_result.second) << " n_worker " << parallel_tasks.size() << " n_nodes " << result.nodes << " time " << result.time << " NPS " << result.nps << std::endl;
         }
         if (!is_end_search || main_depth < depth - LAZYSMP_ENDSEARCH_PRESEARCH_OFFSET){
             ++main_depth;

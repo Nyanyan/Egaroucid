@@ -151,8 +151,9 @@ int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, uin
     int etc_done_idx = 0;
     #if USE_MID_ETC
         if (depth >= MID_ETC_DEPTH){
-            if (etc(search, move_list, depth, &alpha, &beta, &v, &etc_done_idx))
+            if (etc(search, move_list, depth, &alpha, &beta, &v, &etc_done_idx)){
                 return v;
+            }
         }
     #endif
     #if USE_MID_MPC
@@ -164,7 +165,7 @@ int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, uin
         }
     #endif
     int g;
-    #if USE_ASPIRATION_NEGASCOUT
+    #if USE_ASPIRATION_NEGASCOUT && false
         if (beta - alpha >= 4 && depth >= 5){
             int l = -HW2, u = HW2;
             transposition_table.get_value(search, depth - 5, hash_code, &l, &u);
@@ -204,9 +205,9 @@ int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, uin
                     }
                 }
                 search->move(&move_list[move_idx].flip);
-                    if (v == -SCORE_INF)
+                    if (v == -SCORE_INF){
                         g = -nega_scout(search, -beta, -alpha, depth - 1, false, move_list[move_idx].n_legal, is_end_search, searching);
-                    else{
+                    } else{
                         g = -nega_alpha_ordering_nws(search, -alpha - 1, depth - 1, false, move_list[move_idx].n_legal, is_end_search, searching);
                         if (alpha < g && g < beta)
                             g = -nega_scout(search, -beta, -g, depth - 1, false, move_list[move_idx].n_legal, is_end_search, searching);
@@ -325,15 +326,12 @@ std::pair<int, int> first_nega_scout_legal(Search *search, int alpha, int beta, 
             if (search->use_multi_thread && depth - 1 >= YBWC_MID_SPLIT_MIN_DEPTH){
                 move_list_sort(move_list);
                 search->move(&move_list[0].flip);
-                    g = -nega_scout(search, -beta, -alpha, depth - 1, false, move_list[0].n_legal, is_end_search, searching);
+                    v = -nega_scout(search, -beta, -alpha, depth - 1, false, move_list[0].n_legal, is_end_search, searching);
                 search->undo(&move_list[0].flip);
                 move_list[0].flip.flip = 0;
-                if (v < g){
-                    v = g;
-                    best_move = move_list[0].flip.pos;
-                    if (alpha < v){
-                        alpha = v;
-                    }
+                best_move = move_list[0].flip.pos;
+                if (alpha < v){
+                    alpha = v;
                 }
                 if (alpha < beta){
                     ybwc_search_young_brothers(search, &alpha, &beta, &v, &best_move, hash_code, depth, is_end_search, move_list, true, searching);
@@ -343,12 +341,13 @@ std::pair<int, int> first_nega_scout_legal(Search *search, int alpha, int beta, 
                 for (int move_idx = 0; move_idx < canput && *searching; ++move_idx){
                     swap_next_best_move(move_list, move_idx, canput);
                     search->move(&move_list[move_idx].flip);
-                        if (v == -SCORE_INF)
+                        if (v == -SCORE_INF){
                             g = -nega_scout(search, -beta, -alpha, depth - 1, false, move_list[move_idx].n_legal, is_end_search, searching);
-                        else{
+                        } else{
                             g = -nega_alpha_ordering_nws(search, -alpha - 1, depth - 1, false, move_list[move_idx].n_legal, is_end_search, searching);
-                            if (alpha < g && g < beta)
+                            if (alpha < g && g < beta){
                                 g = -nega_scout(search, -beta, -g, depth - 1, false, move_list[move_idx].n_legal, is_end_search, searching);
+                            }
                         }
                     search->undo(&move_list[move_idx].flip);
                     if (v < g){
