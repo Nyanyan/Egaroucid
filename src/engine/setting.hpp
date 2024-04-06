@@ -213,3 +213,11 @@
 // probcut
 #define TUNE_PROBCUT_MID false
 #define TUNE_PROBCUT_END false
+
+
+/*
+    @brief test
+*/
+
+// endgame accuracy test
+#define TEST_ENDGAME_ACCURACY true

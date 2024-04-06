@@ -46,6 +46,79 @@ Board input_board(){
     return res;
 }
 
+// use Base81 from https://github.com/primenumber/issen/blob/f418af2c7decac8143dd699c7ee89579013987f7/README.md#base81
+/*
+    empty square:  0
+    player disc:   1
+    opponent disc: 2
+
+    board coordinate:
+        a  b  c  d  e  f  g  h
+        ------------------------
+    1| 0  1  2  3  4  5  6  7
+    2| 8  9 10 11 12 13 14 15
+    3|16 17 18 19 20 21 22 23
+    4|24 25 26 27 28 29 30 31
+    5|32 33 34 35 36 37 38 39
+    6|40 41 42 43 44 45 46 47
+    7|48 49 50 51 52 53 54 55
+    8|56 57 58 59 60 61 62 63
+
+    the 'i'th character of the string (length=16) is calculated as:
+    char c = 
+            '!' + 
+            board[i * 4] + 
+            board[i * 4 + 1] * 3 + 
+            board[i * 4 + 2] * 9 + 
+            board[i * 4 + 3] * 32
+    
+*/
+bool input_board_base81(std::string board_str, Board *board) {
+    if (board_str.length() != 16){
+        std::cerr << "[ERROR] invalid argument" << std::endl;
+        return true;
+    }
+    board->player = 0;
+    board->opponent = 0;
+    int idx, d;
+    char c;
+    for (int i = 0; i < 16; ++i){
+        idx = i * 4 + 3;
+        c = board_str[i] - '!';
+        d = c / 32;
+        if (d == 1){
+            board->player |= 1ULL << idx;
+        } else if (d == 2){
+            board->opponent |= 1ULL << idx;
+        }
+        --idx;
+        c %= 32;
+        d = c / 9;
+        if (d == 1){
+            board->player |= 1ULL << idx;
+        } else if (d == 2){
+            board->opponent |= 1ULL << idx;
+        }
+        --idx;
+        c %= 9;
+        d = c / 3;
+        if (d == 1){
+            board->player |= 1ULL << idx;
+        } else if (d == 2){
+            board->opponent |= 1ULL << idx;
+        }
+        --idx;
+        c %= 3;
+        d = c;
+        if (d == 1){
+            board->player |= 1ULL << idx;
+        } else if (d == 2){
+            board->opponent |= 1ULL << idx;
+        }
+    }
+    return false;
+}
+
 /*
     @brief Generate coordinate in string
 

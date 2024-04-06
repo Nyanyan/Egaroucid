@@ -13,7 +13,10 @@
 #include "console/console_all.hpp"
 
 void init_console(Options options, std::string binary_path){
-    thread_pool.resize(std::max(0, options.n_threads - 1));
+    int thread_size = std::max(0, options.n_threads - 1);
+    thread_pool.resize(thread_size);
+    if (options.show_log)
+        std::cerr << "thread size = " << thread_size + 1 << std::endl;
     bit_init();
     mobility_init();
     flip_init();
@@ -43,6 +46,10 @@ int main(int argc, char* argv[]){
     init_console(options, binary_path);
     execute_special_tasks(options);
     execute_special_commandline_tasks(commandline_options, &options, &state);
+    #if TEST_ENDGAME_ACCURACY
+        endgame_accuracy_test();
+        return 0;
+    #endif
     Board_info board;
     board.reset();
     while (true){
