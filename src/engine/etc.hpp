@@ -29,28 +29,20 @@ inline bool etc(Search *search, std::vector<Flip_value> &move_list, int depth, i
         search->move(&flip_value.flip);
             transposition_table.get(search, search->board.hash(), depth - 1, &l, &u);
         search->undo(&flip_value.flip);
-        if (*beta <= -u){ // fail high at parent node
+        if (*beta <= -u){ // alpha < beta <= -u <= -l
             *v = -u;
-            return true;
-        }
-        if (-l <= *alpha){ // fail high at child node
-            if (*v < -l)
-                *v = -l;
-            flip_value.flip.flip = 0ULL; // make this move invalid
-            ++(*etc_done_idx);
-        } else if (*alpha < -u && -u < *beta){ // child window is [-beta, u]
-            if (-l <= *v){ // the maximum (-minimum) score is lower than aother move
+            return true; // fail high
+        } else if (*alpha <= -u && -u < *beta){ // alpha <= -u <= beta <= -l or alpha <= -u <= -l <= beta
+            *alpha = -u; // update alpha (alpha <= -u)
+            *v = -u;
+            if (-l <= *v || u == l){ // better move already found or this move is already done
                 flip_value.flip.flip = 0ULL; // make this move invalid
                 ++(*etc_done_idx);
-            } else{
-                if (*v < -u)
-                    *v = -u;
-                *alpha = -u;
-                if (u == l){
-                    flip_value.flip.flip = 0ULL; // make this move invalid
-                    ++(*etc_done_idx);
-                }
             }
+        } else if (-l <= *alpha){ // -u <= -l <= alpha < beta
+            *v = std::max(*v, -l); // this move is worse than alpha
+            flip_value.flip.flip = 0ULL; // make this move invalid
+            ++(*etc_done_idx);
         }
     }
     return false;
