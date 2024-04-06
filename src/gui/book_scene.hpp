@@ -875,7 +875,7 @@ public:
             if (start_button.clicked()){
                 before_start = false;
                 book_learning = true;
-                book_learn_future = std::async(std::launch::async, book_recalculate_leaf, root_board, getData().menu_elements.level, depth, error_per_move, error_sum, &history_elem.board, &history_elem.player, &book_learning, false);
+                book_learn_future = std::async(std::launch::async, book_recalculate_leaf, root_board, getData().menu_elements.level, depth, error_per_move, error_sum, &history_elem.board, &history_elem.player, &book_learning, false, tim());
             }
             back_button.draw();
             if (back_button.clicked() || KeyEscape.pressed()){
