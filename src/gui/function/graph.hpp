@@ -230,10 +230,15 @@ public:
 		}
 		if (show_graph) {
 			if (show_graph_sum_of_loss){
-				draw_graph_sum_of_loss(sum_of_loss_nodes1[0], graph_history_color, graph_history_not_calculated_color);
-				draw_graph_sum_of_loss(sum_of_loss_nodes1[1], graph_history_color, graph_history_not_calculated_color);
-				draw_graph_sum_of_loss(sum_of_loss_nodes2[0], graph_fork_color, graph_fork_not_calculated_color);
-				draw_graph_sum_of_loss(sum_of_loss_nodes2[1], graph_fork_color, graph_fork_not_calculated_color);
+				int max_ply1 = nodes1.back().board.n_discs() - 4;
+				int max_ply2 = 0;
+				if (nodes2.size()){
+					max_ply2 = nodes2.back().board.n_discs() - 4;
+				}
+				draw_graph_sum_of_loss(sum_of_loss_nodes1[0], graph_history_color, graph_history_not_calculated_color, max_ply1);
+				draw_graph_sum_of_loss(sum_of_loss_nodes1[1], graph_history_color, graph_history_not_calculated_color, max_ply1);
+				draw_graph_sum_of_loss(sum_of_loss_nodes2[0], graph_fork_color, graph_fork_not_calculated_color, max_ply2);
+				draw_graph_sum_of_loss(sum_of_loss_nodes2[1], graph_fork_color, graph_fork_not_calculated_color, max_ply2);
 			} else{
 				draw_graph(nodes1, graph_history_color, graph_history_not_calculated_color);
 				draw_graph(nodes2, graph_fork_color, graph_fork_not_calculated_color);
@@ -332,8 +337,9 @@ private:
 					Circle{ xx, yy, 3 }.draw(color);
 				}
 				else {
+					int xx = sx + dx * (b.board.n_discs() - 4);
 					int yy = sy + dy * y_max;
-					Circle{ sx + dx * (b.board.n_discs() - 4), yy, 2.5 }.draw(color2);
+					Circle{ xx, yy, 2.5 }.draw(color2);
 				}
 			}
 		}
@@ -342,18 +348,32 @@ private:
 		}
 	}
 
-	void draw_graph_sum_of_loss(std::vector<Graph_loss_elem> nodes, Color color, Color color2) {
-		std::vector<std::pair<int, int>> values;
-		for (const Graph_loss_elem& b : nodes) {
-			if (b.ply >= 0){
-				int xx = sx + dx * b.ply;
-				int yy = sy + dy * (y_max - b.v);
-				values.emplace_back(std::make_pair(xx, yy));
-				Circle{ xx, yy, 3 }.draw(color);
+	void draw_graph_sum_of_loss(std::vector<Graph_loss_elem> nodes, Color color, Color color2, int max_ply) {
+		if (nodes.size()){
+			std::vector<std::pair<int, int>> values;
+			int last_ply = nodes[0].ply;
+			for (const Graph_loss_elem& b : nodes) {
+				if (b.ply >= 0){
+					for (int ply = last_ply + 1; ply < b.ply; ++ply){
+						int xx = sx + dx * ply;
+						int yy = sy + dy * y_max;
+						Circle{ xx, yy, 2.5 }.draw(color2);
+					}
+					int xx = sx + dx * b.ply;
+					int yy = sy + dy * (y_max - b.v);
+					values.emplace_back(std::make_pair(xx, yy));
+					Circle{ xx, yy, 3 }.draw(color);
+					last_ply = b.ply;
+				}
 			}
-		}
-		for (int i = 0; i < (int)values.size() - 1; ++i) {
-			Line(values[i].first, values[i].second, values[i + 1].first, values[i + 1].second).draw(2, ColorF(color, graph_transparency));
+			for (int ply = last_ply + 1; ply < max_ply; ++ply){
+				int xx = sx + dx * ply;
+				int yy = sy + dy * y_max;
+				Circle{ xx, yy, 2.5 }.draw(color2);
+			}
+			for (int i = 0; i < (int)values.size() - 1; ++i) {
+				Line(values[i].first, values[i].second, values[i + 1].first, values[i + 1].second).draw(2, ColorF(color, graph_transparency));
+			}
 		}
 	}
 
