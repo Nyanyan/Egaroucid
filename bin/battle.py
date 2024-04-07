@@ -8,21 +8,21 @@ LEVEL = 1
 
 N_SET_GAMES = 250
 
-# name, cmd, cacheclear?
+# name, cmd
 player_info = [
-    ['7.0.0', 'versions/Egaroucid_for_Console_beta/Egaroucid_for_Console.exe -quiet -nobook -t 32', True],
-    ['6.5.X', 'versions/Egaroucid_for_Console_6_5_X/Egaroucid_for_Console.exe -quiet -nobook -t 32', False],
-        #['6.5.0', 'versions/Egaroucid_for_Console_6_5_0_Windows_x64_SIMD/Egaroucid_for_Console_6_5_0_x64_SIMD.exe -quiet -nobook', False],
-    ['6.4.X', 'versions/Egaroucid_for_Console_6_4_X/Egaroucid_for_Console.exe -quiet -nobook -t 32', False],
-        #['6.4.0', 'versions/Egaroucid_for_Console_6_4_0_Windows_x64_SIMD/Egaroucid_for_Console_6_4_0_x64_SIMD.exe -quiet -nobook', False],
-    ['6.3.X', 'versions/Egaroucid_for_Console_6_3_X/Egaroucid_for_Console.exe -quiet -nobook -t 32', False],
-        #['6.3.0', 'versions/Egaroucid_for_Console_6_3_0_Windows_x64_SIMD/Egaroucid_for_Console_6_3_0_x64_SIMD.exe -quiet -nobook', False],
-        #['6.2.X', 'versions/Egaroucid_for_Console_6_2_X/Egaroucid_for_Console.exe -quiet -nobook', False],
-        #['6.2.0', 'versions/Egaroucid_for_Console_6_2_0_Windows_x64_SIMD/Egaroucid_for_Console.exe -quiet -nobook', False], # same as 6.3.0
-    ['6.1.X', 'versions/Egaroucid_for_Console_6_1_X/Egaroucid_for_Console.exe -quiet -nobook -t 32', False],
-        #['6.1.0', 'versions/Egaroucid_for_Console_6_1_0_Windows_x64_SIMD/Egaroucid_for_Console.exe -quiet -nobook', False],
-    ['6.0.X', 'versions/Egaroucid_for_Console_6_0_X/Egaroucid_for_Console_test.exe q', False],
-    ['Edax ', 'versions/edax_4_4/edax-4.4 -q -t 16', False],
+    ['7.0.0', 'versions/Egaroucid_for_Console_beta/Egaroucid_for_Console.exe -quiet -nobook -t 32'],
+    ['6.5.X', 'versions/Egaroucid_for_Console_6_5_X/Egaroucid_for_Console.exe -quiet -nobook -t 32'],
+        #['6.5.0', 'versions/Egaroucid_for_Console_6_5_0_Windows_x64_SIMD/Egaroucid_for_Console_6_5_0_x64_SIMD.exe -quiet -nobook'],
+    ['6.4.X', 'versions/Egaroucid_for_Console_6_4_X/Egaroucid_for_Console.exe -quiet -nobook -t 32'],
+        #['6.4.0', 'versions/Egaroucid_for_Console_6_4_0_Windows_x64_SIMD/Egaroucid_for_Console_6_4_0_x64_SIMD.exe -quiet -nobook'],
+    ['6.3.X', 'versions/Egaroucid_for_Console_6_3_X/Egaroucid_for_Console.exe -quiet -nobook -t 32'],
+        #['6.3.0', 'versions/Egaroucid_for_Console_6_3_0_Windows_x64_SIMD/Egaroucid_for_Console_6_3_0_x64_SIMD.exe -quiet -nobook'],
+        #['6.2.X', 'versions/Egaroucid_for_Console_6_2_X/Egaroucid_for_Console.exe -quiet -nobook'],
+        #['6.2.0', 'versions/Egaroucid_for_Console_6_2_0_Windows_x64_SIMD/Egaroucid_for_Console.exe -quiet -nobook'], # same as 6.3.0
+    ['6.1.X', 'versions/Egaroucid_for_Console_6_1_X/Egaroucid_for_Console.exe -quiet -nobook -t 32'],
+        #['6.1.0', 'versions/Egaroucid_for_Console_6_1_0_Windows_x64_SIMD/Egaroucid_for_Console.exe -quiet -nobook'],
+    ['6.0.X', 'versions/Egaroucid_for_Console_6_0_X/Egaroucid_for_Console_test.exe q'],
+    ['Edax ', 'versions/edax_4_4/edax-4.4 -q -t 16'],
 ]
 
 NAME_IDX = 0
@@ -30,19 +30,20 @@ SUBPROCESS_IDX = 1
 RESULT_IDX = 2
 
 players = []
-for name, cmd, _ in player_info:
+for name, cmd in player_info:
     cmd_with_level = cmd + ' -l ' + str(LEVEL)
     if name == '6.0.X':
         cmd_with_level = cmd + ' ' + str(LEVEL)
     print(name, cmd_with_level)
-    players.append(
+    players.append([
+        name,
         [
-            name, 
             subprocess.Popen(cmd_with_level.split(), stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL),
-            # W D L
-            [[0, 0, 0] for _ in range(len(player_info))]
-        ]
-    )
+            subprocess.Popen(cmd_with_level.split(), stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
+        ],
+        # W D L
+        [[0, 0, 0] for _ in range(len(player_info))]
+    ])
 
 with open('problem/xot_small_shuffled.txt', 'r') as f:
     openings = [elem for elem in f.read().splitlines()]
@@ -86,13 +87,13 @@ def play_battle(p0_idx, p1_idx, opening_idx):
             else:
                 grid_str += ' O\n'
             player_idx = player_idxes[o.player ^ player]
-            players[player_idx][SUBPROCESS_IDX].stdin.write(grid_str.encode('utf-8'))
-            players[player_idx][SUBPROCESS_IDX].stdin.flush()
-            players[player_idx][SUBPROCESS_IDX].stdin.write('go\n'.encode('utf-8'))
-            players[player_idx][SUBPROCESS_IDX].stdin.flush()
+            players[player_idx][SUBPROCESS_IDX][player].stdin.write(grid_str.encode('utf-8'))
+            players[player_idx][SUBPROCESS_IDX][player].stdin.flush()
+            players[player_idx][SUBPROCESS_IDX][player].stdin.write('go\n'.encode('utf-8'))
+            players[player_idx][SUBPROCESS_IDX][player].stdin.flush()
             line = ''
             while line == '' or line == '>':
-                line = players[player_idx][SUBPROCESS_IDX].stdout.readline().decode().replace('\r', '').replace('\n', '')
+                line = players[player_idx][SUBPROCESS_IDX][player].stdout.readline().decode().replace('\r', '').replace('\n', '')
             coord = line[-2:].lower()
             try:
                 y = int(coord[1]) - 1
@@ -102,9 +103,10 @@ def play_battle(p0_idx, p1_idx, opening_idx):
                 print(grid_str[:-1])
                 print(o.player, player)
                 print(coord)
-                for i in range(2):
-                    players[i][SUBPROCESS_IDX].stdin.write('quit\n'.encode('utf-8'))
-                    players[i][SUBPROCESS_IDX].stdin.flush()
+                for i in range(len(players)):
+                    for j in range(2):
+                        players[i][SUBPROCESS_IDX][j].stdin.write('quit\n'.encode('utf-8'))
+                        players[i][SUBPROCESS_IDX][j].stdin.flush()
                 exit()
             record += chr(ord('a') + x) + str(y + 1)
             if not o.move(y, x):
@@ -122,15 +124,6 @@ def play_battle(p0_idx, p1_idx, opening_idx):
         else:
             players[p0_idx][RESULT_IDX][p1_idx][1] += 1
             players[p1_idx][RESULT_IDX][p0_idx][1] += 1
-        
-        #for pidx in [p0_idx, p1_idx]:
-        #    if player_info[pidx][2]:
-        #        players[pidx][SUBPROCESS_IDX].stdin.write('clearcache\n'.encode('utf-8'))
-        #        players[pidx][SUBPROCESS_IDX].stdin.flush()
-        #    else:
-        #        players[pidx][SUBPROCESS_IDX].kill()
-        #        cmd_with_level = player_info[pidx][1] + ' -l ' + str(LEVEL)
-        #        players[pidx][SUBPROCESS_IDX] = subprocess.Popen(cmd_with_level.split(), stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
 
 
 def print_result():
@@ -213,8 +206,10 @@ print_all_result()
 
 
 for i in range(len(players)):
-    players[i][SUBPROCESS_IDX].stdin.write('quit\n'.encode('utf-8'))
-    players[i][SUBPROCESS_IDX].stdin.flush()
+    for j in range(2):
+        players[i][SUBPROCESS_IDX][j].stdin.write('quit\n'.encode('utf-8'))
+        players[i][SUBPROCESS_IDX][j].stdin.flush()
 
 for i in range(len(players)):
-    players[i][SUBPROCESS_IDX].kill()
+    for j in range(2):
+        players[i][SUBPROCESS_IDX][j].kill()
