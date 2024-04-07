@@ -122,7 +122,7 @@ public:
 				}
 				for (History_elem &elem2: nodes1){
 					if (elem2.board.n_discs() - 4 == elem.ply - 1 && -HW2 <= elem2.v && elem2.v <= HW2 && -HW2 <= nodes2[0].v && nodes2[0].v <= HW2){
-						elem.v -= std::max(0, elem2.v - nodes2[0].v);
+						elem.v -= std::max(0, (-elem2.v) - (-nodes2[0].v));
 					}
 				}
 				sum_of_loss_nodes2[1].emplace_back(elem);
