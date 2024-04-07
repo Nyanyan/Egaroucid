@@ -1,1 +1,1 @@
-Benchmarks Egaroucid 6.5.0
+Benchmarks Egaroucid 7.0.0
