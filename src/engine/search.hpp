@@ -222,13 +222,14 @@ class Search{
         uint64_t n_nodes;
         Eval_search eval;
         bool use_multi_thread;
+        bool need_to_see_tt_loop;
         #if USE_SEARCH_STATISTICS
             uint64_t n_nodes_discs[HW2];
         #endif
 
     public:
 
-        inline void init(Board *init_board, uint_fast8_t init_mpc_level, bool init_use_multi_thread){
+        inline void init(Board *init_board, uint_fast8_t init_mpc_level, bool init_use_multi_thread, bool init_need_to_see_tt_loop){
             board = init_board->copy();
             n_discs = board.n_discs();
             strt_n_discs = n_discs;
@@ -241,6 +242,7 @@ class Search{
             mpc_level = init_mpc_level;
             use_multi_thread = init_use_multi_thread;
             n_nodes = 0;
+            need_to_see_tt_loop = init_need_to_see_tt_loop;
         }
 
         /*

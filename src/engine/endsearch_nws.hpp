@@ -251,6 +251,11 @@ int nega_alpha_end_nws(Search *search, int alpha, bool skipped, uint64_t legal, 
     move_list_evaluate_end_nws(search, move_list, moves, searching);
     if (search->n_discs + 1 >= HW2 - END_SIMPLE_DEPTH){
         for (int move_idx = 0; move_idx < canput && *searching; ++move_idx){
+            if (search->need_to_see_tt_loop){
+                if (transposition_cutoff_nws(search, hash_code, HW2 - search->n_discs, alpha, &v, moves)){
+                    return v;
+                }
+            }
             swap_next_best_move(move_list, move_idx, canput);
             search->move_noeval(&move_list[move_idx].flip);
                 g = -nega_alpha_end_simple_nws(search, -alpha - 1, false, move_list[move_idx].n_legal, searching);
@@ -264,6 +269,11 @@ int nega_alpha_end_nws(Search *search, int alpha, bool skipped, uint64_t legal, 
         }
     } else{
         for (int move_idx = 0; move_idx < canput; ++move_idx){
+            if (search->need_to_see_tt_loop){
+                if (transposition_cutoff_nws(search, hash_code, HW2 - search->n_discs, alpha, &v, moves)){
+                    return v;
+                }
+            }
             swap_next_best_move(move_list, move_idx, canput);
             search->move_endsearch(&move_list[move_idx].flip);
                 g = -nega_alpha_end_nws(search, -alpha - 1, false, move_list[move_idx].n_legal, searching);

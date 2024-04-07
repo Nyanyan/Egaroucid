@@ -26,7 +26,7 @@
     #define HINT_TYPE_BOOK 1000
 #endif
 
-#define ENDSEARCH_PRESEARCH_OFFSET 8
+#define ENDSEARCH_PRESEARCH_OFFSET 10
 
 Search_result iterative_deepening_search(Board board, int depth, uint_fast8_t mpc_level, bool show_log, std::vector<Clog_result> clogs, uint64_t use_legal, bool use_multi_thread){
     Search_result result;
@@ -52,7 +52,7 @@ Search_result iterative_deepening_search(Board board, int depth, uint_fast8_t mp
         }
         bool is_last_search = (search_depth == depth) && (search_mpc_level == mpc_level);
         Search search;
-        search.init(&board, search_mpc_level, use_multi_thread);
+        search.init(&board, search_mpc_level, use_multi_thread, false);
         bool searching = true;
         std::pair<int, int> id_result = first_nega_scout_legal(&search, -SCORE_MAX, SCORE_MAX, result.value, search_depth, search_is_end_search, clogs, use_legal, strt, &searching);
         result.nodes += search.n_nodes;
@@ -118,7 +118,7 @@ void iterative_deepening_search_hint(Board board, int depth, uint_fast8_t mpc_le
             search_depth = max_depth;
         }
         Search search;
-        search.init(&board, search_mpc_level, use_multi_thread);
+        search.init(&board, search_mpc_level, use_multi_thread, false);
         bool searching = true;
         int hint_type = search_depth;
         if (search_is_end_search){ // endgame & this is last search
