@@ -776,3 +776,5 @@ level: 15 Egaroucid plays black WDL: 109-45-96 0.526 Egaroucid plays white WDL: 
 
 2024/04/07 no lazy smp
 
+
+

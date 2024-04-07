@@ -18,7 +18,7 @@
 #include "book.hpp"
 #include "util.hpp"
 #include "clogsearch.hpp"
-//#include "lazy_smp.hpp"
+#include "lazy_smp.hpp"
 
 #define SEARCH_BOOK -1
 
@@ -197,8 +197,8 @@ inline Search_result tree_search_legal(Board board, int depth, uint_fast8_t mpc_
         }
     }
     Search_result res;
-    //res = lazy_smp(board, depth, mpc_level, show_log, clogs, use_legal, use_multi_thread);
-    res = iterative_deepening_search(board, depth, mpc_level, show_log, clogs, use_legal, use_multi_thread);
+    res = lazy_smp(board, depth, mpc_level, show_log, clogs, use_legal, use_multi_thread);
+    //res = iterative_deepening_search(board, depth, mpc_level, show_log, clogs, use_legal, use_multi_thread);
     res.clog_nodes = clog_nodes;
     res.clog_time = clog_time;
     thread_pool.reset_unavailable();
@@ -233,8 +233,8 @@ inline void tree_search_hint(Board board, int depth, uint_fast8_t mpc_level, boo
     if (n_display < 0){
         return;
     }
-    //lazy_smp_hint(board, depth, mpc_level, show_log, use_legal, use_multi_thread, n_display, values, hint_types);
-    iterative_deepening_search_hint(board, depth, mpc_level, show_log, use_legal, use_multi_thread, n_display, values, hint_types);
+    lazy_smp_hint(board, depth, mpc_level, show_log, use_legal, use_multi_thread, n_display, values, hint_types);
+    //iterative_deepening_search_hint(board, depth, mpc_level, show_log, use_legal, use_multi_thread, n_display, values, hint_types);
     thread_pool.reset_unavailable();
 }
 

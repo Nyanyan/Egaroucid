@@ -56,8 +56,8 @@ Search_result lazy_smp(Board board, int depth, uint_fast8_t mpc_level, bool show
         std::vector<int> sub_depth_arr;
         bool sub_searching = true;
         int sub_depth = main_depth;
-        if (use_multi_thread && (!is_end_search || main_depth < depth)){
-            int max_thread_size = thread_pool.size();
+        if (use_multi_thread && !(is_end_search && main_depth == depth)){
+            int max_thread_size = thread_pool.size() * 0.8;
             for (int i = 0; i < main_depth - 19; ++i)
                 max_thread_size *= 0.9;
             for (int sub_thread_idx = 0; sub_thread_idx < max_thread_size && sub_thread_idx < searches.size() && global_searching; ++sub_thread_idx){
