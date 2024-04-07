@@ -78,6 +78,10 @@ There are detailed benchmarks for each version including older versions.
 		<th>Date</th>
 	</tr>
     <tr>
+		<td><a href="./benchmarks/7_0_0/">7.0.0</a></td>
+		<td>TBD</td>
+	</tr>
+    <tr>
 		<td><a href="./benchmarks/6_5_0/">6.5.0</a></td>
 		<td>2023/10/25</td>
 	</tr>
