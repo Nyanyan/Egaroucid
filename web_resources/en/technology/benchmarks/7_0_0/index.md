@@ -215,8 +215,6 @@
 
 
 
-
-
 ### Egaroucid for Console 7.0.0 Windows x64 Generic
 
 Without speedup by SIMD
@@ -425,10 +423,6 @@ Without speedup by SIMD
 </tr>
 </table>
 </div>
-
-
-
-
 
 
 
