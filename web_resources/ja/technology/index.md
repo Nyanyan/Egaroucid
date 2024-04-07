@@ -44,26 +44,35 @@ Egaroucidの性能の確認として2種類のベンチマークを使用して�
 <th>勝率</th>
 </tr>
 <tr>
+<td>7.0.0</td>
+<td>0.5643</td>
+</tr>
+<tr>
 <td>6.5.0</td>
-<td>0.6338</td>
+<td>0.5648</td>
 </tr>
 <tr>
 <td>6.4.0</td>
-<td>0.5306</td>
+<td>0.4980</td>
 </tr>
 <tr>
 <td>6.3.0</td>
-<td>0.4425</td>
+<td>0.4598</td>
 </tr>
 <tr>
 <td>6.1.0</td>
-<td>0.5450</td>
+<td>0.5113</td>
+</tr>
+<tr>
+<td>6.0.0</td>
+<td>0.4592</td>
 </tr>
 <tr>
 <td>Edax</td>
-<td>0.3481</td>
+<td>0.4425</td>
 </tr>
 </table></div>
+
 
 
 対戦の詳細は[こちら](./battle.txt)
@@ -136,6 +145,7 @@ Egaroucid 6.2.0はEgaroucid 6.3.0と同一の評価関数のため、省いて�
 		<td>2022/03/02</td>
 	</tr>
     </table></div>
+
 
 
 

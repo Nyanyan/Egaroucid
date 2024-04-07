@@ -1,6 +1,10 @@
 import datetime
 
-version_dot = input('version (X.Y.Z): ')
+#version_dot = input('version (X.Y.Z): ')
+version_dot = '7.0.0'
+date_str = 'TBD'
+
+
 version_underbar = version_dot.replace('.', '_')
 
 release_table_arr = [
@@ -65,8 +69,8 @@ release_table_arr = [
 '''
 ]
 
-dt_now = datetime.datetime.now()
-date_str = dt_now.strftime('%Y/%m/%d')
+#dt_now = datetime.datetime.now()
+#date_str = dt_now.strftime('%Y/%m/%d')
 print(date_str, version_dot, version_underbar)
 
 lang_arr = ['ja', 'en']
