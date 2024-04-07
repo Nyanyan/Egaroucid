@@ -85,8 +85,8 @@ constexpr int BOARD_CELL_SIZE = BOARD_SIZE / HW;
 #define PASS_BUTTON_RADIUS 10
 
 // graph drawing constants
-#define GRAPH_RESOLUTION 8
-constexpr int GRAPH_SX = BOARD_SX + BOARD_SIZE + 60;
+#define GRAPH_RESOLUTION 4
+constexpr int GRAPH_SX = BOARD_SX + BOARD_SIZE + 65;
 constexpr int GRAPH_SY = Y_CENTER + 20;
 constexpr int GRAPH_WIDTH = WINDOW_SIZE_X - GRAPH_SX - 35;
 constexpr int GRAPH_HEIGHT = WINDOW_SIZE_Y - GRAPH_SY - 60;
@@ -101,7 +101,7 @@ constexpr int GRAPH_HEIGHT = WINDOW_SIZE_Y - GRAPH_SY - 60;
 
 // level graph roundrect constants
 #define GRAPH_RECT_DY -80
-#define GRAPH_RECT_DX -40
+#define GRAPH_RECT_DX -45
 #define GRAPH_RECT_RADIUS 20
 #define GRAPH_RECT_THICKNESS 5
 constexpr int GRAPH_RECT_WIDTH = WINDOW_SIZE_X - (GRAPH_SX + GRAPH_RECT_DX) - 10;
