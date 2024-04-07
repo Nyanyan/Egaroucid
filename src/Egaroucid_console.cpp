@@ -11,6 +11,10 @@
 #include <iostream>
 #include "engine/engine_all.hpp"
 #include "console/console_all.hpp"
+#if TEST_ENDGAME_ACCURACY
+    #include "test.hpp"
+#endif
+
 
 void init_console(Options options, std::string binary_path){
     int thread_size = std::max(0, options.n_threads - 1);
