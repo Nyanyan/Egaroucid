@@ -57,7 +57,6 @@ Parallel_task ybwc_do_task_nws(uint64_t player, uint64_t opponent, int_fast8_t n
     search.mpc_level = mpc_level;
     search.n_nodes = 0ULL;
     search.use_multi_thread = depth > YBWC_MID_SPLIT_MIN_DEPTH;
-    search.need_to_see_tt_loop = false; // because lazy smp sub threads are done in only single thread
     calc_eval_features(&search.board, &search.eval);
     Parallel_task task;
     task.value = -nega_alpha_ordering_nws(&search, alpha, depth, false, legal, is_end_search, searching);
@@ -116,12 +115,6 @@ inline int ybwc_split_nws(Search *search, int alpha, int depth, uint64_t legal, 
         for (int move_idx = 1; move_idx < canput && n_searching; ++move_idx){
             n_searching &= *searching;
             if (move_list[move_idx].flip.flip){
-                if (search->need_to_see_tt_loop){
-                    if (transposition_cutoff_nws_bestmove(search, hash_code, depth, alpha, v, best_move)){
-                        n_searching = false;
-                        break;
-                    }
-                }
                 bool serial_searched = false;
                 search->move(&move_list[move_idx].flip);
                     int ybwc_split_state = ybwc_split_nws(search, -alpha - 1, depth - 1, move_list[move_idx].n_legal, is_end_search, &n_searching, move_list[move_idx].flip.pos, move_idx, canput, running_count, parallel_tasks);
@@ -199,20 +192,6 @@ inline int ybwc_split_nws(Search *search, int alpha, int depth, uint64_t legal, 
         for (int move_idx = 1; move_idx < canput && n_searching; ++move_idx){
             n_searching &= *searching;
             if (move_list[move_idx].flip.flip){
-                if (search->need_to_see_tt_loop){
-                    int alpha2 = *alpha;
-                    int beta2 = *beta;
-                    int v2, best_move2 = TRANSPOSITION_TABLE_UNDEFINED;
-                    if (transposition_cutoff_bestmove(search, hash_code, depth, alpha, beta, &v2, &best_move2)){
-                        if (!need_best_move || best_move2 != TRANSPOSITION_TABLE_UNDEFINED){
-                            *v = v2;
-                            *best_move = best_move2;
-                            n_searching = false;
-                            fail_high_idx = YBWC_FAIL_HIGH;
-                            break;
-                        }
-                    }
-                }
                 bool move_done = false, serial_searched = false;
                 search->move(&move_list[move_idx].flip);
                     int ybwc_split_state = ybwc_split_nws(search, -(*alpha) - 1, depth - 1, move_list[move_idx].n_legal, is_end_search, &n_searching, move_list[move_idx].flip.pos, move_idx, canput, running_count, parallel_tasks);

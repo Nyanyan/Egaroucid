@@ -199,11 +199,6 @@ int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, uin
                     if (move_list[move_idx].flip.flip == 0ULL)
                         break;
                 #endif
-                if (search->need_to_see_tt_loop){
-                    if (transposition_cutoff_bestmove(search, hash_code, depth, &alpha, &beta, &v, &best_move)){
-                        break;
-                    }
-                }
                 search->move(&move_list[move_idx].flip);
                     if (v == -SCORE_INF){
                         g = -nega_scout(search, -beta, -alpha, depth - 1, false, move_list[move_idx].n_legal, is_end_search, searching);

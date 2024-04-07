@@ -176,11 +176,6 @@ int nega_alpha_ordering_nws(Search *search, int alpha, int depth, bool skipped, 
                     if (move_list[move_idx].flip.flip == 0ULL)
                         break;
                 #endif
-                if (search->need_to_see_tt_loop){
-                    if (transposition_cutoff_nws_bestmove(search, hash_code, depth, alpha, &v, &best_move)){
-                        break;
-                    }
-                }
                 search->move(&move_list[move_idx].flip);
                     g = -nega_alpha_ordering_nws(search, -alpha - 1, depth - 1, false, move_list[move_idx].n_legal, is_end_search, searching);
                 search->undo(&move_list[move_idx].flip);
