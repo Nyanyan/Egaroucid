@@ -56,8 +56,8 @@
         "complete": "Done",
         "settings": "Book Settings",
         "depth": "Depth",
-        "error_per_move": "Error per Move",
-        "error_sum": "Sum of errors",
+        "error_per_move": "Errors per Move",
+        "error_sum": "Integration errors",
         "changed_value": "Value",
         "book_merge": "Merge Book",
         "merge": "Merge",
@@ -141,7 +141,11 @@
             "stable": "Stable",
             "play_ordering": "Play Ordering"
         },
-        "graph": "Graph",
+        "graph": {
+            "graph": "Graph",
+            "value": "Evaluation",
+            "sum_of_loss": "Sum of Loss"
+        },
         "log": "Log",
         "change_color_type": "Change Color Type"
     },

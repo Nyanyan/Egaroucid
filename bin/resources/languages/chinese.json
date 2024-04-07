@@ -57,7 +57,7 @@
         "settings": "设置",
         "depth": "深度",
         "error_per_move": "落子的误差",
-        "error_sum": "误差之和",
+        "error_sum": "积分误差",
         "changed_value": "数值",
         "book_merge": "Book合并",
         "merge": "合并",
@@ -141,7 +141,11 @@
             "stable": "稳定子",
             "play_ordering": "播放顺序"
         },
-        "graph": "图像",
+        "graph": {
+            "graph": "图像",
+            "value": "估值数量",
+            "sum_of_loss": "累计损失"
+        },
         "log": "记录",
         "change_color_type": "色调变化"
     },

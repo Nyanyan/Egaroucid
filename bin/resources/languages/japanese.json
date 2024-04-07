@@ -57,7 +57,7 @@
         "settings": "Book操作設定",
         "depth": "深さ",
         "error_per_move": "1手あたりの誤差",
-        "error_sum": "手筋の合計誤差",
+        "error_sum": "積算誤差",
         "changed_value": "評価値",
         "book_merge": "Book統合",
         "merge": "統合",
@@ -141,7 +141,11 @@
             "stable": "確定石",
             "play_ordering": "着手順"
         },
-        "graph": "グラフ",
+        "graph": {
+            "graph": "グラフ",
+            "value": "評価値",
+            "sum_of_loss": "累積石損"
+        },
         "log": "ログ",
         "change_color_type": "色調変更"
     },
