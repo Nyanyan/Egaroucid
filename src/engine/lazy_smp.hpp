@@ -17,7 +17,7 @@
 #include "endsearch.hpp"
 #include "thread_pool.hpp"
 
-#define LAZYSMP_ENDSEARCH_PRESEARCH_OFFSET 10
+#define LAZYSMP_ENDSEARCH_PRESEARCH_OFFSET 8
 
 struct Lazy_SMP_task{
     uint_fast8_t mpc_level;
@@ -54,13 +54,12 @@ Search_result lazy_smp(Board board, int depth, uint_fast8_t mpc_level, bool show
         bool is_last_search = (main_depth == depth) && (main_mpc_level == mpc_level);
         std::vector<std::future<int>> parallel_tasks;
         std::vector<int> sub_depth_arr;
-        bool sub_searching = true;
+        bool sub_searching = false;
         int sub_depth = main_depth;
         if (use_multi_thread && (!is_end_search || main_depth < depth)){
             int max_thread_size = thread_pool.size();
-            if (main_depth >= 20){
-                max_thread_size *= 0.5;
-            }
+            for (int i = 0; i < main_depth - 19; ++i)
+                max_thread_size *= 0.9;
             for (int sub_thread_idx = 0; sub_thread_idx < max_thread_size && sub_thread_idx < searches.size() && global_searching; ++sub_thread_idx){
                 int ntz = ntz_uint32(sub_thread_idx + 1);
                 int sub_depth = main_depth + 1 + ntz;
@@ -112,6 +111,7 @@ Search_result lazy_smp(Board board, int depth, uint_fast8_t mpc_level, bool show
         Search main_search;
         main_search.init(&board, main_mpc_level, use_multi_thread, parallel_tasks.size() != 0);
         bool searching = true;
+        sub_searching = true;
         std::pair<int, int> id_result = first_nega_scout_legal(&main_search, -SCORE_MAX, SCORE_MAX, result.value, main_depth, main_is_end_search, clogs, use_legal, strt, &searching);
         sub_searching = false;
         for (std::future<int> &task: parallel_tasks){
@@ -142,7 +142,7 @@ Search_result lazy_smp(Board board, int depth, uint_fast8_t mpc_level, bool show
             } else{
                 std::cerr << "mid ";
             }
-            std::cerr << "depth " << result.depth << "@" << SELECTIVITY_PERCENTAGE[main_mpc_level] << "%" << " value " << result.value << " raw value " << id_result.first << " policy " << idx_to_coord(id_result.second) << " n_worker " << parallel_tasks.size() << " n_nodes " << result.nodes << " time " << result.time << " NPS " << result.nps << std::endl;
+            std::cerr << "depth " << result.depth << "@" << SELECTIVITY_PERCENTAGE[main_mpc_level] << "%" << " value " << result.value << " (raw " << id_result.first << ") policy " << idx_to_coord(id_result.second) << " n_worker " << parallel_tasks.size() << " n_nodes " << result.nodes << " time " << result.time << " NPS " << result.nps << std::endl;
         }
         if (!is_end_search || main_depth < depth - LAZYSMP_ENDSEARCH_PRESEARCH_OFFSET){
             ++main_depth;

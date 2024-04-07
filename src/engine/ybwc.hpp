@@ -199,11 +199,18 @@ inline int ybwc_split_nws(Search *search, int alpha, int depth, uint64_t legal, 
         for (int move_idx = 1; move_idx < canput && n_searching; ++move_idx){
             n_searching &= *searching;
             if (move_list[move_idx].flip.flip){
-                if (search->need_to_see_tt_loop && !need_best_move){
-                    if (transposition_cutoff_bestmove(search, hash_code, depth, alpha, beta, v, best_move)){
-                        n_searching = false;
-                        fail_high_idx = YBWC_FAIL_HIGH;
-                        break;
+                if (search->need_to_see_tt_loop){
+                    int alpha2 = *alpha;
+                    int beta2 = *beta;
+                    int v2, best_move2 = TRANSPOSITION_TABLE_UNDEFINED;
+                    if (transposition_cutoff_bestmove(search, hash_code, depth, alpha, beta, &v2, &best_move2)){
+                        if (!need_best_move || best_move2 != TRANSPOSITION_TABLE_UNDEFINED){
+                            *v = v2;
+                            *best_move = best_move2;
+                            n_searching = false;
+                            fail_high_idx = YBWC_FAIL_HIGH;
+                            break;
+                        }
                     }
                 }
                 bool move_done = false, serial_searched = false;
