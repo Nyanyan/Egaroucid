@@ -27,10 +27,10 @@ def ClippedReLU(x):
 
 model = tf.keras.models.Sequential()
 model.add(Input(shape=128, name='in'))
-model.add(Dense(16, activation='relu', name='layer_A'))
-model.add(Dense(16, activation='relu', name='layer_B'))
-model.add(Dense(16, activation='relu', name='layer_C'))
-model.add(Dense(16, activation='relu', name='layer_D'))
+model.add(Dense(32, activation='relu', name='layer_A'))
+model.add(Dense(32, activation='relu', name='layer_B'))
+#model.add(Dense(16, activation='relu', name='layer_C'))
+#model.add(Dense(16, activation='relu', name='layer_D'))
 model.add(Dense(1, name='output_layer'))
 
 print('model', 'param', model.count_params())
