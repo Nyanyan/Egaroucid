@@ -189,8 +189,9 @@ struct Coord_to_feature{
     };
 #else
     struct Eval_search{
-        uint_fast16_t features[N_SYMMETRY_PATTERNS];
-        bool reversed;
+        uint_fast16_t features[HW2 - 4][N_SYMMETRY_PATTERNS];
+        bool reversed[HW2 - 4];
+        uint_fast8_t feature_idx;
     };
 #endif
 
