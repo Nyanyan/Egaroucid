@@ -1551,6 +1551,46 @@ class Book{
             }
         }
 
+        void update_flagged_leaves(Board board, std::unordered_set<Board, Book_hash> &keep_list, bool *doing){
+            if (!(*doing))
+                return;
+            if (!contain(board))
+                return;
+            if (board.get_legal() == 0){
+                board.pass();
+                if (board.get_legal() == 0)
+                    return;
+            }
+            Book_elem book_elem = get(board);
+            // already seen
+            if (book_elem.seen)
+                return;
+            flag_book_elem(board);
+            std::vector<Book_value> links = get_all_moves_with_value(&board);
+            Flip flip;
+            if (keep_list.find(get_representative_board(board)) != keep_list.end()){
+                bool leaf_updated = false;
+                for (Book_value &link: links){
+                    calc_flip(&flip, &board, link.policy);
+                    board.move_board(&flip);
+                        if (keep_list.find(get_representative_board(board)) == keep_list.end()){
+                            if (book_elem.leaf.value < link.value){
+                                book_elem.leaf.value = link.value;
+                                book_elem.leaf.move = link.policy;
+                                book_elem.leaf.level = get(board).level;
+                                leaf_updated = true;
+                            }
+                        } else{
+                            update_flagged_leaves(board, keep_list, doing);
+                        }
+                    board.undo_board(&flip);
+                }
+                if (leaf_updated){
+                    reg(&board, book_elem);
+                }
+            }
+        }
+
         void delete_unflagged_moves(Board board, uint64_t *n_delete, std::unordered_set<Board, Book_hash> &keep_list, bool *doing){
             if (!(*doing))
                 return;
@@ -1591,6 +1631,8 @@ class Book{
             std::unordered_set<Board, Book_hash> keep_list;
             reset_seen();
             reduce_book_flag_moves(root_board, max_depth, max_error_per_move, max_line_error, &n_flags, keep_list, doing);
+            reset_seen();
+            update_flagged_leaves(root_board, keep_list, doing);
             reset_seen();
             delete_unflagged_moves(root_board, &n_delete, keep_list, doing);
             reset_seen();
