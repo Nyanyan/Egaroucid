@@ -1632,6 +1632,7 @@ class Book{
             reset_seen();
             reduce_book_flag_moves(root_board, max_depth, max_error_per_move, max_line_error, &n_flags, keep_list, doing);
             reset_seen();
+            std::cerr << "updating leaves" << std::endl;
             update_flagged_leaves(root_board, keep_list, doing);
             reset_seen();
             delete_unflagged_moves(root_board, &n_delete, keep_list, doing);
