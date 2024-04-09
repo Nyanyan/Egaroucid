@@ -1,10 +1,8 @@
 *.out
 *.exe
 */__pycache__
-/*/data/
-/*/learned_data
-/*/legacy
-*.dat
+*/legacy
+bin/data
 release
 src/log.txt
 src/testcases
