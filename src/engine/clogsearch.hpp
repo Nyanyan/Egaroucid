@@ -25,7 +25,7 @@
 #define CLOG_NOT_FOUND -127
 
 // Do clog search in depth CLOG_SEARCH_DEPTH
-#define CLOG_SEARCH_MAX_DEPTH 10
+#define CLOG_SEARCH_MAX_DEPTH 11
 
 #if USE_PARALLEL_CLOG_SEARCH
 
@@ -191,12 +191,12 @@ int clog_search(Clog_search *search, bool is_enduring, int depth){
     @param n_nodes              number of nodes visited
     @return vector of all moves and scores that leads early game over
 */
-std::vector<Clog_result> first_clog_search(Board board, uint64_t *n_nodes, int depth){
+std::vector<Clog_result> first_clog_search(Board board, uint64_t *n_nodes, int depth, uint64_t legal){
     Clog_search search;
     search.board = board.copy();
     search.n_nodes = 0ULL;
     std::vector<Clog_result> res;
-    uint64_t legal = search.board.get_legal();
+    //uint64_t legal = search.board.get_legal();
     if (legal == 0ULL)
         return res;
     Flip flip;
