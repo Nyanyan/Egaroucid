@@ -1,8 +1,9 @@
 # Egaroucid for Web
 
 <div align="center">
-    This is simplified version and weaker than [download version](./../download/).
+    This is simplified version and weaker than [download version](./../download/). Also, this version has very few features. You can use full rich features with download version.
 </div>
+
 
 <p align="center">
     <input type="radio" class="radio_size" name="ai_player" value="1" id="white" checked><label for="white" class="setting">Black(First): You White(Second): AI</label>
