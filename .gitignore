@@ -23,10 +23,3 @@ src/ai.js
 src/ai.wasm
 
 web_resources/generated
-
-
-src/tools/evaluation/trained
-11
-src/tools/convert_board_data/book
-src/tools/cut_transcript/result
-src/tools/evaluation/nnue/trained
