@@ -1,13 +1,13 @@
-*.out
-*.exe
-*/__pycache__
-*/legacy
-*/data
-*/statistics
-*/output
-*/learned_data
-*/trained
-*/trained_data
+**/*.out
+**/*.exe
+**/__pycache__
+**/legacy
+**/data
+**/statistics
+**/output
+**/learned_data
+**/trained
+**/trained_data
 
 build
 model
@@ -23,7 +23,5 @@ img/demo
 
 src/ai.js
 src/ai.wasm
-src/tools/convert_board_data/data
-src/tools/cut_transcript/output
 
 web_resources/generated
