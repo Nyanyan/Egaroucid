@@ -19,6 +19,8 @@ bin/problem
 bin/versions
 bin/transcript
 
+img/demo
+
 src/ai.js
 src/ai.wasm
 
