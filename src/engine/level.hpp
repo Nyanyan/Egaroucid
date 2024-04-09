@@ -298,7 +298,3 @@ int get_level_complete_depth(int level){
         return level_definition[level].complete3;
     return level_definition[level].complete4;
 }
-
-int get_level_endgame_depth(int level){
-    return level_definition[level].complete0;
-}

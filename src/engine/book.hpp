@@ -1641,6 +1641,44 @@ class Book{
             *doing = false;
         }
 
+        void delete_terminal_midsearch_rec(Board board, bool *doing){
+            if (!(*doing))
+                return;
+            if (!contain(board))
+                return;
+            if (board.get_legal() == 0){
+                board.pass();
+                if (board.get_legal() == 0)
+                    return;
+            }
+            Book_elem book_elem = get(board);
+            // already seen
+            if (book_elem.seen)
+                return;
+            flag_book_elem(board);
+            std::vector<Book_value> links = get_all_moves_with_value(&board);
+            if (links.size() == 0){
+                int end_depth = get_level_endsearch_depth(book_elem.level);
+                if (HW2 - board.n_discs() > end_depth){
+                    delete_elem(board);
+                }
+            } else{
+                Flip flip;
+                for (Book_value &link: links){
+                    calc_flip(&flip, &board, link.policy);
+                    board.move_board(&flip);
+                        delete_terminal_midsearch_rec(board, doing);
+                    board.undo_board(&flip);
+                }
+            }
+        }
+
+        void delete_terminal_midsearch(Board root_board, bool *doing){
+            reset_seen();
+            delete_terminal_midsearch_rec(root_board, doing);
+            reset_seen();
+        }
+
         uint64_t size(){
             return book.size();
         }
