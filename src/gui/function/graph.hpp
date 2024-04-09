@@ -226,7 +226,11 @@ public:
 		}
 		for (int y = 0; y <= y_max - y_min; y += resolution) {
 			int yy = sy + dy * y;
-			font(y_max - y).draw(font_size, sx - font(y_max - y).region(font_size, Point{ 0, 0 }).w - 10, yy - font(y_max - y).region(font_size, Point{ 0, 0 }).h / 2, graph_color);
+			if (y_max - y >= 0){
+				font(y_max - y).draw(font_size, sx - font(y_max - y).region(font_size, Point{ 0, 0 }).w - 10, yy - font(y_max - y).region(font_size, Point{ 0, 0 }).h / 2, Color(51, 51, 51));
+			} else if (y_max - y < 0){
+				font(std::abs(y_max - y)).draw(font_size, sx - font(std::abs(y_max - y)).region(font_size, Point{ 0, 0 }).w - 10, yy - font(y_max - y).region(font_size, Point{ 0, 0 }).h / 2, Palette::White);
+			}
 			if (y_max - y == 0)
 				Line{ sx, yy, sx + size_x, yy }.draw(2, graph_color);
 			else
