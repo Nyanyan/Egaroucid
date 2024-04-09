@@ -1697,8 +1697,8 @@ class Book{
             reset_seen();
         }
 
-        uint32_t recalculate_n_lines_rec(Board board, bool *doing){
-            if (!(*doing)){
+        uint32_t recalculate_n_lines_rec(Board board, bool *stop){
+            if (*stop){
                 return 0;
             }
             if (board.get_legal() == 0){
@@ -1713,23 +1713,25 @@ class Book{
                 return book_elem.n_lines;
             flag_book_elem(board);
             std::vector<Book_value> links = get_all_moves_with_value(&board);
-            uint64_t n_lines = 0;
+            uint64_t n_lines = 1;
             Flip flip;
             for (Book_value &link: links){
                 calc_flip(&flip, &board, link.policy);
                 board.move_board(&flip);
-                    n_lines += recalculate_n_lines_rec(board, doing);
+                    n_lines += recalculate_n_lines_rec(board, stop);
                 board.undo_board(&flip);
             }
             n_lines = (uint32_t)std::min((uint64_t)MAX_N_LINES, n_lines);
-            book[board].n_lines = n_lines;
-            return n_lines;
+            book[board].n_lines = (uint32_t)n_lines;
+            return (uint32_t)n_lines;
         }
 
-        void recalculate_n_lines(Board root_board, bool *doing){
+        void recalculate_n_lines(Board root_board, bool *stop){
+            std::cerr << "recalculating n_lines..." << std::endl;
             reset_seen();
-            recalculate_n_lines_rec(root_board, doing);
+            recalculate_n_lines_rec(root_board, stop);
             reset_seen();
+            std::cerr << "n_lines recalculated" << std::endl;
         }
 
         uint64_t size(){
@@ -2205,6 +2207,12 @@ void book_reduce(Board board, int depth, int max_error_per_move, int max_error_s
 
 void book_recalculate_leaf_all(int level, bool *stop){
     book.recalculate_leaf_all(level, stop);
+}
+
+void book_recalculate_n_lines_all(bool *stop){
+    Board root_board;
+    root_board.reset();
+    book.recalculate_n_lines(root_board, stop);
 }
 
 void search_new_leaf(Board board, int level, int book_elem_value, bool use_multi_thread){

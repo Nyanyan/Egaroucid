@@ -909,6 +909,70 @@ public:
 
 
 
+
+
+class N_lines_recalculate_book : public App::Scene {
+private:
+    Button start_button;
+    Button back_button;
+    Button stop_button;
+    bool before_start;
+    bool done;
+    bool stop;
+    std::future<void> task_future;
+
+public:
+    N_lines_recalculate_book(const InitData& init) : IScene{ init } {
+        start_button.init(BACK_BUTTON_SX, BUTTON2_VERTICAL_1_SY, BUTTON2_VERTICAL_WIDTH, BUTTON2_VERTICAL_HEIGHT, BUTTON2_VERTICAL_RADIUS, language.get("book", "start"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
+        back_button.init(BACK_BUTTON_SX, BUTTON2_VERTICAL_2_SY, BUTTON2_VERTICAL_WIDTH, BUTTON2_VERTICAL_HEIGHT, BUTTON2_VERTICAL_RADIUS, language.get("common", "back"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
+        stop_button.init(BACK_BUTTON_SX, BACK_BUTTON_SY, BACK_BUTTON_WIDTH, BACK_BUTTON_HEIGHT, BACK_BUTTON_RADIUS, language.get("book", "force_stop"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
+        before_start = true;
+        done = false;
+        stop = false;
+    }
+
+    void update() override {
+        //if (System::GetUserActions() & UserAction::CloseButtonClicked) {
+        //    changeScene(U"Close", SCENE_FADE_TIME);
+        //}
+        Scene::SetBackground(getData().colors.green);
+        getData().fonts.font(language.get("book", "book_recalculate_n_lines")).draw(25, 50, 50, getData().colors.white);
+        if (before_start){
+            start_button.draw();
+            if (start_button.clicked()){
+                before_start = false;
+                task_future = std::async(std::launch::async, book_recalculate_n_lines_all, &stop);
+            }
+            back_button.draw();
+            if (back_button.clicked() || KeyEscape.pressed()){
+                getData().graph_resources.need_init = false;
+                changeScene(U"Main_scene", SCENE_FADE_TIME);
+            }
+        } else if (!done){
+            stop_button.draw();
+            if (stop_button.clicked())
+                stop = true;
+            if (task_future.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
+                task_future.get();
+                done = true;
+                global_searching = true;
+            }
+        } else{
+            reset_book_additional_information();
+            getData().book_information.changed = true;
+            getData().graph_resources.need_init = false;
+            changeScene(U"Main_scene", SCENE_FADE_TIME);
+        }
+    }
+
+    void draw() const override {
+
+    }
+};
+
+
+
+
 class Show_book_info : public App::Scene {
 private:
     Button back_button;

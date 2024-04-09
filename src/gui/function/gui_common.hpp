@@ -428,6 +428,7 @@ struct Menu_elements {
     bool book_start_reducing;
     bool book_start_recalculate_leaf;
     bool show_book_info;
+    bool book_start_recalculate_n_lines;
 
     // input / output
     // input
@@ -523,6 +524,7 @@ struct Menu_elements {
         import_book = false;
         export_book = false;
         show_book_info = false;
+        book_start_recalculate_n_lines = false;
 
         input_transcript = false;
         input_board = false;

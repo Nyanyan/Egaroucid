@@ -696,6 +696,13 @@ private:
             changeScene(U"Leaf_recalculate_book", SCENE_FADE_TIME);
             return;
         }
+        if (getData().menu_elements.book_start_recalculate_n_lines) {
+            changing_scene = true;
+            stop_calculating();
+            resume_calculating();
+            changeScene(U"N_lines_recalculate_book", SCENE_FADE_TIME);
+            return;
+        }
         if (getData().menu_elements.book_merge) {
             changing_scene = true;
             stop_calculating();
@@ -1147,6 +1154,8 @@ private:
         side_menu.init_button(language.get("book", "book_reduce"), &menu_elements->book_start_reducing);
         menu_e.push(side_menu);
         side_menu.init_button(language.get("book", "book_recalculate_leaf"), &menu_elements->book_start_recalculate_leaf);
+        menu_e.push(side_menu);
+        side_menu.init_button(language.get("book", "book_recalculate_n_lines"), &menu_elements->book_start_recalculate_n_lines);
         menu_e.push(side_menu);
         title.push(menu_e);
 
