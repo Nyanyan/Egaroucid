@@ -15,5 +15,5 @@ for file in files:
         if len(ss) >= N_MOVES * 2:
             ns += ss[:N_MOVES * 2] + '\n'
     
-    with open('result/' + filename, 'w') as f:
+    with open('output/' + filename, 'w') as f:
         f.write(ns)

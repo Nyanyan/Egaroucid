@@ -174,7 +174,7 @@ int main(int argc, char *argv[]){
     std::cerr << "shuffled in " << tim() - strt << " ms" << std::endl;
     int n_files = (n_moves_lines.size() + N_LINES_PER_FILE - 1) / N_LINES_PER_FILE;
     for (int i = 0; i < n_files; ++i){
-        std::string file = std::to_string(n_moves) + "/" + fill0(i, 7) + ".txt";
+        std::string file = "output/" + std::to_string(n_moves) + "/" + fill0(i, 7) + ".txt";
         std::cerr << "output " << i + 1 << " / " << n_files << " file " << file << std::endl;
         std::ofstream ofs(file);
         for (int j = 0; j < N_LINES_PER_FILE; ++j){
