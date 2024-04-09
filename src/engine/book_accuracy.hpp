@@ -90,6 +90,18 @@ class Book_accuracy{
                         identifier |= (child_book_acc == i) << i;
                 }
             }
+            if (book_elem.leaf.value >= best_score - 1){
+                int complete_depth = 60, endgame_depth = 60;
+                if (book_elem.leaf.level < N_LEVEL){
+                    complete_depth = get_level_complete_depth(book_elem.leaf.level);
+                    endgame_depth = get_level_endsearch_depth(book_elem.leaf.level);
+                }
+                if (HW2 - (board.n_discs() + 1) <= complete_depth){
+                    identifier |= 1;
+                } else if (HW2 - (board.n_discs() + 1) <= endgame_depth){
+                    identifier |= 1 << 2;
+                }
+            }
             // identifier : FEDCBA
             // if A:      RES = A or B or D
             // else if B: RES = B or D
