@@ -1447,6 +1447,24 @@ class Book{
                 stop_res.n_lines = 0;
                 return stop_res;
             }
+            if (board.get_legal() == 0){
+                board.pass();
+                if (board.get_legal() == 0){
+                    if (contain(&board)){
+                        return get(board);
+                    } else{
+                        board.pass();
+                        if (contain(&board)){
+                            return get(board);
+                        } else{
+                            Book_elem stop_res;
+                            stop_res.value = SCORE_UNDEFINED;
+                            stop_res.n_lines = 0;
+                            return stop_res;
+                        }
+                    }
+                }
+            }
             board = get_representative_board(&board);
             Book_elem res = book[board];
             if (res.seen)
@@ -1676,6 +1694,41 @@ class Book{
         void delete_terminal_midsearch(Board root_board, bool *doing){
             reset_seen();
             delete_terminal_midsearch_rec(root_board, doing);
+            reset_seen();
+        }
+
+        uint32_t recalculate_n_lines_rec(Board board, bool *doing){
+            if (!(*doing)){
+                return 0;
+            }
+            if (board.get_legal() == 0){
+                board.pass();
+                if (board.get_legal() == 0)
+                    return 1;
+            }
+            board = get_representative_board(&board);
+            Book_elem book_elem = get(board);
+            // already seen
+            if (book_elem.seen)
+                return book_elem.n_lines;
+            flag_book_elem(board);
+            std::vector<Book_value> links = get_all_moves_with_value(&board);
+            uint64_t n_lines = 0;
+            Flip flip;
+            for (Book_value &link: links){
+                calc_flip(&flip, &board, link.policy);
+                board.move_board(&flip);
+                    n_lines += recalculate_n_lines_rec(board, doing);
+                board.undo_board(&flip);
+            }
+            n_lines = (uint32_t)std::min((uint64_t)MAX_N_LINES, n_lines);
+            book[board].n_lines = n_lines;
+            return n_lines;
+        }
+
+        void recalculate_n_lines(Board root_board, bool *doing){
+            reset_seen();
+            recalculate_n_lines_rec(root_board, doing);
             reset_seen();
         }
 
