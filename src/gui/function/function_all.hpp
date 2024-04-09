@@ -12,6 +12,7 @@
 #include "graph.hpp"
 #include "language.hpp"
 #include "menu.hpp"
+#include "menu_definition.hpp"
 #include "opening_gui.hpp"
 #include "radio_button.hpp"
 #include "gui_common.hpp"
