@@ -187,10 +187,11 @@ inline Search_result tree_search_legal(Board board, int depth, uint_fast8_t mpc_
     uint64_t clog_time = 0;
     if (mpc_level != MPC_100_LEVEL){
         uint64_t strt = tim();
-        clogs = first_clog_search(board, &clog_nodes, std::min(depth, CLOG_SEARCH_MAX_DEPTH));
+        int clog_depth = std::min(depth, CLOG_SEARCH_MAX_DEPTH);
+        clogs = first_clog_search(board, &clog_nodes, clog_depth, use_legal);
         clog_time = tim() - strt;
         if (show_log){
-            std::cerr << "clog search time " << clog_time << " nodes " << clog_nodes << " nps " << calc_nps(clog_nodes, clog_time) << std::endl;
+            std::cerr << "clog search depth " << clog_depth << " time " << clog_time << " nodes " << clog_nodes << " nps " << calc_nps(clog_nodes, clog_time) << std::endl;
             for (int i = 0; i < (int)clogs.size(); ++i){
                 std::cerr << "clogsearch " << i + 1 << "/" << clogs.size() << " " << idx_to_coord(clogs[i].pos) << " value " << clogs[i].val << std::endl;
             }
@@ -213,7 +214,8 @@ inline void tree_search_hint(Board board, int depth, uint_fast8_t mpc_level, boo
     uint64_t clog_time = 0;
     if (mpc_level != MPC_100_LEVEL){
         uint64_t strt = tim();
-        clogs = first_clog_search(board, &clog_nodes, std::min(depth, CLOG_SEARCH_MAX_DEPTH));
+        int clog_depth = std::min(depth, CLOG_SEARCH_MAX_DEPTH);
+        clogs = first_clog_search(board, &clog_nodes, clog_depth, use_legal);
         clog_time = tim() - strt;
         for (Clog_result &clog: clogs){
             if (1 & (use_legal >> clog.pos)){
@@ -224,7 +226,7 @@ inline void tree_search_hint(Board board, int depth, uint_fast8_t mpc_level, boo
             }
         }
         if (show_log){
-            std::cerr << "clog search time " << clog_time << " nodes " << clog_nodes << " nps " << calc_nps(clog_nodes, clog_time) << std::endl;
+            std::cerr << "clog search depth " << clog_depth << " time " << clog_time << " nodes " << clog_nodes << " nps " << calc_nps(clog_nodes, clog_time) << std::endl;
             for (int i = 0; i < (int)clogs.size(); ++i){
                 std::cerr << "clogsearch " << i + 1 << "/" << clogs.size() << " " << idx_to_coord(clogs[i].pos) << " value " << clogs[i].val << std::endl;
             }
@@ -321,11 +323,28 @@ Search_result ai(Board board, int level, bool use_book, int book_acc_level, bool
 
 Analyze_result ai_analyze(Board board, int level, bool use_multi_thread, uint_fast8_t played_move){
     Analyze_result res;
-    Search_result played_result = ai_legal(board, level, true, 0, true, false, 1ULL << played_move);
+    Flip flip;
+    calc_flip(&flip, &board, played_move);
+    board.move_board(&flip);
+        if (board.is_end()){
+            res.played_score = -board.score_player();
+            res.played_depth = HW2 - board.n_discs();
+            res.played_probability = 100;
+        } else if (board.get_legal() == 0){
+            board.pass();
+                Search_result played_result = ai(board, level, true, 0, true, false);
+                res.played_score = played_result.value;
+                res.played_depth = played_result.depth;
+                res.played_probability = played_result.probability;
+            board.pass();
+        } else{
+            Search_result played_result = ai(board, level, true, 0, true, false);
+            res.played_score = -played_result.value;
+            res.played_depth = played_result.depth;
+            res.played_probability = played_result.probability;
+        }
+    board.undo_board(&flip);
     res.played_move = played_move;
-    res.played_score = played_result.value;
-    res.played_depth = played_result.depth;
-    res.played_probability = played_result.probability;
 
     uint64_t alt_legal = board.get_legal() ^ (1ULL << played_move);
     if (alt_legal){
