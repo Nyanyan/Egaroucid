@@ -85,6 +85,7 @@
         "book_reduce": "Book削減",
         "reducing": "削減中",
         "book_recalculate_leaf": "リーフ再計算",
+        "book_recalculate_n_lines": "ライン数再計算",
         "start": "開始",
         "unlimited": "無制限",
         "show_book_info": "Book情報",

@@ -85,6 +85,7 @@
         "book_reduce": "Book Reduce",
         "reducing": "Reducing",
         "book_recalculate_leaf": "Recalculate Leaves",
+        "book_recalculate_n_lines": "Recalculate #Lines",
         "start": "Start",
         "unlimited": "Unlimited",
         "show_book_info": "Book Info",

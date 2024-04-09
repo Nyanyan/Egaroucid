@@ -85,6 +85,7 @@
         "book_reduce": "Book精简",
         "reducing": "精简中...",
         "book_recalculate_leaf": "重新计算叶子",
+        "book_recalculate_n_lines": "重新计算行数",
         "start": "开始",
         "unlimited": "无限",
         "show_book_info": "开局库情报",
