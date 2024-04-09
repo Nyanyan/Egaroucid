@@ -1,6 +1,8 @@
 ﻿/*
     Egaroucid Project
 
+    @file version.hpp
+        Version name definition
     @date 2021-2024
     @author Takuto Yamana
     @license GPL-3.0 license
