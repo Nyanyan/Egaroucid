@@ -23,5 +23,7 @@ img/demo
 
 src/ai.js
 src/ai.wasm
+src/tools/convert_board_data/data
+src/tools/cut_transcript/output
 
 web_resources/generated
