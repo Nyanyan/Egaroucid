@@ -961,6 +961,14 @@ Edax形式からの変換は完璧な互換性を保証するものではあり�
 
 デフォルトはドキュメントフォルダ内のEgaroucid/book.egbk3です。
 
+### Book情報
+
+Bookに登録されている局面の情報を表示します。左半分にはAIのレベルごとに登録局面数を、右半分には打った手数ごとに登録局面数を表示します。この機能は簡易的な実装のため、少し見にくいです。
+
+<div class="centering_box">
+    <img class="pic2" src="img/book_information.png">
+</div>
+
 
 
 ## ヘルプ
