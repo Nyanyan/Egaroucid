@@ -337,27 +337,26 @@ Search_result ai(Board board, int level, bool use_book, int book_acc_level, bool
 */
 
 Analyze_result ai_analyze(Board board, int level, bool use_multi_thread, uint_fast8_t played_move){
-    Analyze_result res;
-    uint64_t played_legal = 1ULL << played_move;
-    Search_result played_result = ai_legal(board, level, true, 0, true, false, played_legal);
-    res.played_move = played_move;
-    res.played_score = played_result.value;
-    res.played_depth = played_result.depth;
-    res.played_probability = played_result.probability;
-    uint64_t alt_legal = board.get_legal() ^ played_legal;
-    if (alt_legal){
-        Search_result alt_result = ai_legal(board, level, true, 0, true, false, alt_legal);
-        res.alt_move = alt_result.policy;
-        res.alt_score = alt_result.value;
-        res.alt_depth = alt_result.depth;
-        res.alt_probability = alt_result.probability;
-    } else{
-        res.alt_move = -1;
-        res.alt_score = -SCORE_INF;
-        res.alt_depth = -1;
-        res.alt_probability = 0;
+    int depth;
+    bool is_mid_search;
+    uint_fast8_t mpc_level;
+    get_level(level, board.n_discs() - 4, &is_mid_search, &depth, &mpc_level);
+    depth = std::min(HW2 - board.n_discs(), depth);
+    bool is_end_search = (HW2 - board.n_discs() == depth);
+    std::vector<Clog_result> clogs;
+    uint64_t clog_nodes = 0;
+    uint64_t clog_time = 0;
+    int clog_depth = std::min(depth, CLOG_SEARCH_MAX_DEPTH);
+    if (mpc_level != MPC_100_LEVEL){
+        uint64_t clog_strt = tim();
+        clogs = first_clog_search(board, &clog_nodes, clog_depth, board.get_legal());
+        clog_time = tim() - clog_strt;
     }
-    return res;
+    Search search;
+    search.init(&board, mpc_level, use_multi_thread, false);
+    uint64_t strt = tim();
+    bool searching = true;
+    return first_nega_scout_analyze(&search, -SCORE_MAX, SCORE_MAX, depth, is_end_search, clogs, clog_depth, played_move, strt, &searching);
 }
 
 

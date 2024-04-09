@@ -433,3 +433,4 @@ struct Clog_result{
     uint_fast8_t pos;
     int val;
 };
+
