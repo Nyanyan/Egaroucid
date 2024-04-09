@@ -10,7 +10,7 @@
 
 #pragma once
 
-#include "gui_common.hpp"
+#include "const/gui_common.hpp"
 #include "menu.hpp"
 #include "language.hpp"
 

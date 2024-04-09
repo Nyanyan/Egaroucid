@@ -13,7 +13,7 @@
 #include <vector>
 #include "./../../engine/board.hpp"
 #include "language.hpp"
-#include "gui_common.hpp"
+#include "const/gui_common.hpp"
 
 constexpr Color graph_color = Color(51, 51, 51);
 constexpr Color graph_history_color = Palette::White;
