@@ -1,3 +1,4 @@
+# common
 **/*.out
 **/*.exe
 **/__pycache__
@@ -9,19 +10,24 @@
 **/trained
 **/trained_data
 
+# special directories
 build
 model
 release
 train_data
 
+# bin directory
 bin/data
 bin/problem
 bin/versions
 bin/transcript
 
+# img directory
 img/demo
 
+# src directory
 src/ai.js
 src/ai.wasm
 
+# web_resources directory
 web_resources/generated
