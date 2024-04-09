@@ -10,16 +10,12 @@ print(len(tactic), 'openings found')
 level = int(sys.argv[1])
 n_games = int(sys.argv[2])
 
-
 file = None
 cmd = 'versions/Egaroucid_for_Console_beta/Egaroucid_for_console.exe -quiet -nobook -level ' + str(level)
 if len(sys.argv) == 4:
     file = sys.argv[3]
     print('egaroucid eval ', file)
     cmd += ' -eval ' + file
-
-#if level <= 2:
-#    cmd += ' -t 1'
 
 print(cmd)
 egaroucid = [
@@ -38,8 +34,8 @@ smpl = range(len(tactic))
 print('play', max_num, 'games')
 
 edax = [
-    subprocess.Popen(('wEdax-x64-modern.exe -q -level ' + str(level)).split(), stdin=subprocess.PIPE, stdout=subprocess.PIPE),
-    subprocess.Popen(('wEdax-x64-modern.exe -q -level ' + str(level)).split(), stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+    subprocess.Popen(('versions/edax_4_4/edax-4.4 -q -level ' + str(level)).split(), stdin=subprocess.PIPE, stdout=subprocess.PIPE),
+    subprocess.Popen(('versions/edax_4_4/edax-4.4 -q -level ' + str(level)).split(), stdin=subprocess.PIPE, stdout=subprocess.PIPE)
 ]
 
 for num in range(max_num):
@@ -47,7 +43,6 @@ for num in range(max_num):
     shuffled_range2 = [0, 1]
     shuffle(shuffled_range2)
     for player in shuffled_range2:
-        #edax = subprocess.Popen(('wEdax-x64-modern.exe -q -level ' + str(level)).split(), stdin=subprocess.PIPE, stdout=subprocess.PIPE)
         record = ''
         boards = []
         o = othello()
