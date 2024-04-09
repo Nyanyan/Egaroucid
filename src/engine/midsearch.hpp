@@ -294,6 +294,7 @@ std::pair<int, int> first_nega_scout_legal(Search *search, int alpha, int beta, 
     int g, v = -SCORE_INF, first_alpha = alpha;
     if (legal == 0ULL)
         return std::make_pair(SCORE_UNDEFINED, -1);
+    bool is_all_legal = legal == search->board.get_legal();
     int best_move = TRANSPOSITION_TABLE_UNDEFINED;
     const int canput_all = pop_count_ull(legal);
     for (const Clog_result clog: clogs){
@@ -364,7 +365,7 @@ std::pair<int, int> first_nega_scout_legal(Search *search, int alpha, int beta, 
             }
         #endif
     }
-    if (*searching && global_searching)
+    if (*searching && global_searching && is_all_legal)
         transposition_table.reg(search, hash_code, depth, first_alpha, beta, v, best_move);
     return std::make_pair(v, best_move);
 }
@@ -386,17 +387,6 @@ std::pair<int, int> first_nega_scout_legal(Search *search, int alpha, int beta, 
 */
 std::pair<int, int> first_nega_scout(Search *search, int alpha, int beta, int predicted_value, int depth, bool is_end_search, const std::vector<Clog_result> clogs, uint64_t strt, bool *searching){
     return first_nega_scout_legal(search, alpha, beta, predicted_value, depth, is_end_search, clogs, search->board.get_legal(), strt, searching);
-}
-
-void first_nega_scout_hint_sub_thread(Search *search, int depth, bool is_end_search, uint64_t legal, bool *searching){
-    ++search->n_nodes;
-    Flip flip;
-    for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)){
-        calc_flip(&flip, &search->board, cell);
-        search->move(&flip);
-            nega_scout(search, -SCORE_MAX, SCORE_MAX, depth - 1, false, LEGAL_UNDEFINED, is_end_search, searching);
-        search->undo(&flip);
-    }
 }
 
 void first_nega_scout_hint(Search *search, int depth, int max_depth, bool is_end_search, uint64_t legal, bool *searching, double values[], int types[], int type, int n_display){

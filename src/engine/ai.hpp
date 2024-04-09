@@ -180,6 +180,7 @@ void iterative_deepening_search_hint(Board board, int depth, uint_fast8_t mpc_le
     @return the result in Search_result structure
 */
 inline Search_result tree_search_legal(Board board, int depth, uint_fast8_t mpc_level, bool show_log, uint64_t use_legal, bool use_multi_thread){
+    Search_result res;
     depth = std::min(HW2 - board.n_discs(), depth);
     bool is_end_search = (HW2 - board.n_discs() == depth);
     std::vector<Clog_result> clogs;
@@ -196,12 +197,26 @@ inline Search_result tree_search_legal(Board board, int depth, uint_fast8_t mpc_
                 std::cerr << "clogsearch " << i + 1 << "/" << clogs.size() << " " << idx_to_coord(clogs[i].pos) << " value " << clogs[i].val << std::endl;
             }
         }
+        res.clog_nodes = clog_nodes;
+        res.clog_time = clog_time;
+        res.depth = clog_depth;
+        res.is_end_search = clog_depth >= HW2 - board.n_discs();
+        res.nodes = 0;
+        res.nps = 0;
+        res.probability = 100;
+        res.time = clog_time;
+        res.value = SCORE_UNDEFINED;
+        for (int i = 0; i < (int)clogs.size(); ++i){
+            if (clogs[i].val > res.value){
+                res.value = clogs[i].val;
+                res.policy = clogs[i].pos;
+            }
+        }
     }
-    Search_result res;
-    res = lazy_smp(board, depth, mpc_level, show_log, clogs, use_legal, use_multi_thread);
-    //res = iterative_deepening_search(board, depth, mpc_level, show_log, clogs, use_legal, use_multi_thread);
-    res.clog_nodes = clog_nodes;
-    res.clog_time = clog_time;
+    if (use_legal){
+        res = lazy_smp(board, depth, mpc_level, show_log, clogs, use_legal, use_multi_thread);
+        //res = iterative_deepening_search(board, depth, mpc_level, show_log, clogs, use_legal, use_multi_thread);
+    }
     thread_pool.reset_unavailable();
     return res;
 }
@@ -235,8 +250,8 @@ inline void tree_search_hint(Board board, int depth, uint_fast8_t mpc_level, boo
     if (n_display < 0){
         return;
     }
-    lazy_smp_hint(board, depth, mpc_level, show_log, use_legal, use_multi_thread, n_display, values, hint_types);
-    //iterative_deepening_search_hint(board, depth, mpc_level, show_log, use_legal, use_multi_thread, n_display, values, hint_types);
+    //lazy_smp_hint(board, depth, mpc_level, show_log, use_legal, use_multi_thread, n_display, values, hint_types);
+    iterative_deepening_search_hint(board, depth, mpc_level, show_log, use_legal, use_multi_thread, n_display, values, hint_types);
     thread_pool.reset_unavailable();
 }
 
@@ -323,30 +338,13 @@ Search_result ai(Board board, int level, bool use_book, int book_acc_level, bool
 
 Analyze_result ai_analyze(Board board, int level, bool use_multi_thread, uint_fast8_t played_move){
     Analyze_result res;
-    Flip flip;
-    calc_flip(&flip, &board, played_move);
-    board.move_board(&flip);
-        if (board.is_end()){
-            res.played_score = -board.score_player();
-            res.played_depth = HW2 - board.n_discs();
-            res.played_probability = 100;
-        } else if (board.get_legal() == 0){
-            board.pass();
-                Search_result played_result = ai(board, level, true, 0, true, false);
-                res.played_score = played_result.value;
-                res.played_depth = played_result.depth;
-                res.played_probability = played_result.probability;
-            board.pass();
-        } else{
-            Search_result played_result = ai(board, level, true, 0, true, false);
-            res.played_score = -played_result.value;
-            res.played_depth = played_result.depth;
-            res.played_probability = played_result.probability;
-        }
-    board.undo_board(&flip);
+    uint64_t played_legal = 1ULL << played_move;
+    Search_result played_result = ai_legal(board, level, true, 0, true, false, played_legal);
     res.played_move = played_move;
-
-    uint64_t alt_legal = board.get_legal() ^ (1ULL << played_move);
+    res.played_score = played_result.value;
+    res.played_depth = played_result.depth;
+    res.played_probability = played_result.probability;
+    uint64_t alt_legal = board.get_legal() ^ played_legal;
     if (alt_legal){
         Search_result alt_result = ai_legal(board, level, true, 0, true, false, alt_legal);
         res.alt_move = alt_result.policy;
