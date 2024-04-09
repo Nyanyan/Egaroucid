@@ -1,7 +1,7 @@
 ﻿/*
     Egaroucid Project
 
-	@file opening_gui.hpp
+	@file opening_manager.hpp
 		Opening manager for GUI
     @date 2021-2024
     @author Takuto Yamana

@@ -16,6 +16,6 @@
 #include "language.hpp"
 #include "menu.hpp"
 #include "menu_definition.hpp"
-#include "opening_gui.hpp"
+#include "opening_manager.hpp"
 #include "radio_button.hpp"
 #include "util.hpp"
