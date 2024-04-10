@@ -557,6 +557,7 @@ private:
     int depth;
     int error_per_move;
     int error_sum;
+    int error_leaf;
 
 public:
     Enhance_book(const InitData& init) : IScene{ init } {
@@ -578,6 +579,9 @@ public:
         error_sum = getData().menu_elements.book_learn_error_sum;
         if (!getData().menu_elements.use_book_learn_error_sum)
             error_sum = BOOK_ERROR_INF;
+        error_leaf = getData().menu_elements.book_learn_error_leaf;
+        if (!getData().menu_elements.use_book_learn_error_leaf)
+        error_leaf = BOOK_ERROR_INF;
     }
 
     void update() override {
@@ -591,15 +595,19 @@ public:
         String depth_str = Format(depth);
         if (depth == BOOK_DEPTH_INF)
             depth_str = language.get("book", "unlimited");
-        getData().fonts.font(language.get("book", "depth") + U": " + depth_str).draw(15, 480, 280, getData().colors.white);
+        getData().fonts.font(language.get("book", "depth") + U": " + depth_str).draw(15, 480, 260, getData().colors.white);
         String error_per_move_str = Format(error_per_move);
         if (error_per_move == BOOK_ERROR_INF)
             error_per_move_str = language.get("book", "unlimited");
-        getData().fonts.font(language.get("book", "error_per_move") + U": " + error_per_move_str).draw(15, 480, 300, getData().colors.white);
+        getData().fonts.font(language.get("book", "error_per_move") + U": " + error_per_move_str).draw(15, 480, 280, getData().colors.white);
         String error_sum_str = Format(error_sum);
         if (error_sum == BOOK_ERROR_INF)
             error_sum_str = language.get("book", "unlimited");
-        getData().fonts.font(language.get("book", "error_sum") + U": " + error_sum_str).draw(15, 480, 320, getData().colors.white);
+        getData().fonts.font(language.get("book", "error_sum") + U": " + error_sum_str).draw(15, 480, 300, getData().colors.white);
+        String error_leaf_str = Format(error_leaf);
+        if (error_leaf == BOOK_ERROR_INF)
+            error_leaf_str = language.get("book", "unlimited");
+        getData().fonts.font(language.get("book", "error_leaf") + U": " + error_leaf_str).draw(15, 480, 320, getData().colors.white);
         if (book_learning) {
             getData().fonts.font(language.get("book", "learning")).draw(20, 480, 230, getData().colors.white);
             stop_button.draw();
@@ -612,7 +620,7 @@ public:
             if (start_button.clicked()){
                 before_start = false;
                 book_learning = true;
-                book_learn_future = std::async(std::launch::async, book_deviate, root_board, getData().menu_elements.level, depth, error_per_move, error_sum, &history_elem.board, &history_elem.player, getData().settings.book_file, getData().settings.book_file + ".bak", &book_learning);
+                book_learn_future = std::async(std::launch::async, book_deviate, root_board, getData().menu_elements.level, depth, error_per_move, error_sum, error_leaf, &history_elem.board, &history_elem.player, getData().settings.book_file, getData().settings.book_file + ".bak", &book_learning);
             }
             back_button.draw();
             if (back_button.clicked() || KeyEscape.pressed()){

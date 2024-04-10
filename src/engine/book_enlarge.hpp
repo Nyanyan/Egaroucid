@@ -25,6 +25,7 @@ struct Book_deviate_todo_elem{
     int player;
     int max_error_per_move;
     int remaining_error;
+    int max_leaf_error;
 
     void move(Flip *flip, int error){
         board.move_board(flip);
@@ -279,7 +280,7 @@ void get_book_deviate_todo(Book_deviate_todo_elem todo_elem, int book_depth, std
     // check leaf
     std::vector<Book_value> links = book.get_all_moves_with_value(&todo_elem.board);
     int leaf_error = book_elem.value - book_elem.leaf.value;
-    if ((leaf_error <= todo_elem.max_error_per_move && leaf_error <= todo_elem.remaining_error) && is_valid_policy(book_elem.leaf.move)){
+    if (leaf_error <= todo_elem.max_leaf_error && is_valid_policy(book_elem.leaf.move)){
         if (todo_elem.board.get_legal() & (1ULL << book_elem.leaf.move)){ // is leaf legal?
             bool leaf_in_link = false;
             for (Book_value &link: links){
@@ -465,7 +466,7 @@ uint64_t expand_leaves(int book_depth, int level, int max_error_per_move, std::u
     @param book_bak             book backup file name
     @param book_learning        a flag for screen drawing
 */
-inline void book_deviate(Board root_board, int level, int book_depth, int max_error_per_move, int max_error_sum, Board *board_copy, int *player, std::string book_file, std::string book_bak, bool *book_learning){
+inline void book_deviate(Board root_board, int level, int book_depth, int max_error_per_move, int max_error_sum, int max_leaf_error, Board *board_copy, int *player, std::string book_file, std::string book_bak, bool *book_learning){
     uint64_t all_strt = tim();
     uint64_t s = all_strt;
     std::cerr << "book deviate started" << std::endl;
@@ -475,6 +476,7 @@ inline void book_deviate(Board root_board, int level, int book_depth, int max_er
     root_elem.player = *player;
     root_elem.max_error_per_move = max_error_per_move;
     root_elem.remaining_error = max_error_sum;
+    root_elem.max_leaf_error = max_leaf_error;
     int n_loop = 0;
     uint64_t n_registered = 0;
     while (true){
