@@ -19,7 +19,6 @@
 #define AUTO_BOOK_SAVE_TIME 3600000ULL // 1 hour
 
 Search_result ai(Board board, int level, bool use_book, int book_acc_level, bool use_multi_thread, bool show_log);
-int ai_window(Board board, int level, int alpha, int beta, bool use_multi_thread);
 
 struct Book_deviate_todo_elem{
     Board board;
