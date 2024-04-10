@@ -58,7 +58,7 @@ void init_default_settings(const Directories* directories, const Resources* reso
     settings->show_opening_on_cell = true;
     settings->show_log = true;
     settings->book_learn_depth = 30;
-    settings->book_learn_error_per_move = 1;
+    settings->book_learn_error_per_move = 2;
     settings->book_learn_error_sum = 2;
     settings->show_stable_discs = false;
     settings->change_book_by_right_click = false;
@@ -78,6 +78,8 @@ void init_default_settings(const Directories* directories, const Resources* reso
     settings->umigame_value_depth = 60;
     settings->show_graph_value = true;
     settings->show_graph_sum_of_loss = false;
+    settings->book_learn_error_leaf = 2;
+    settings->use_book_learn_error_leaf = true;
 }
 
 int init_settings_import_int(JSON &json, String key, int* res) {
@@ -394,6 +396,12 @@ void init_settings(const Directories* directories, const Resources* resources, S
     }
     if (init_settings_import_bool(setting_json, U"show_graph_sum_of_loss", &settings->show_graph_sum_of_loss) != ERR_OK) {
         std::cerr << "err36" << std::endl;
+    }
+    if (init_settings_import_int(setting_json, U"book_learn_error_leaf", &settings->book_learn_error_leaf) != ERR_OK) {
+        std::cerr << "err37" << std::endl;
+    }
+    if (init_settings_import_bool(setting_json, U"use_book_learn_error_leaf", &settings->use_book_learn_error_leaf) != ERR_OK) {
+        std::cerr << "err38" << std::endl;
     }
 }
 

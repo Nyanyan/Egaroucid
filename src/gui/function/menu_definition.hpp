@@ -200,6 +200,8 @@ Menu create_menu(Menu_elements* menu_elements, Resources *resources, Font font) 
     menu_e.push(side_menu);
     side_menu.init_bar_check(language.get("book", "error_sum"), &menu_elements->book_learn_error_sum, menu_elements->book_learn_error_sum, 0, 32, &menu_elements->use_book_learn_error_sum, menu_elements->use_book_learn_error_sum);
     menu_e.push(side_menu);
+    side_menu.init_bar_check(language.get("book", "error_leaf"), &menu_elements->book_learn_error_leaf, menu_elements->book_learn_error_leaf, 0, 32, &menu_elements->use_book_learn_error_leaf, menu_elements->use_book_learn_error_leaf);
+    menu_e.push(side_menu);
     title.push(menu_e);
 
     menu_e.init_button(language.get("book", "book_operation"), &menu_elements->dummy);
