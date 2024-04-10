@@ -58,6 +58,7 @@
         "depth": "深さ",
         "error_per_move": "1手あたりの誤差",
         "error_sum": "積算誤差",
+        "error_leaf": "リーフ誤差",
         "changed_value": "評価値",
         "book_merge": "Book統合",
         "merge": "統合",

@@ -58,6 +58,7 @@
         "depth": "深度",
         "error_per_move": "落子的误差",
         "error_sum": "积分误差",
+        "error_leaf": "叶子误差",
         "changed_value": "数值",
         "book_merge": "Book合并",
         "merge": "合并",
