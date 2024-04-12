@@ -51,6 +51,7 @@ private:
 	bool *is_clicked_p;
 	bool is_clicked;
 	bool *is_checked;
+	String unchecked_str;
 	bool dammy_clicked;
 	Texture checkbox;
 	Texture unchecked;
@@ -130,7 +131,7 @@ public:
 		image = t;
 	}
 
-	void init_bar_check(String s, int *c, int d, int mn, int mx, bool *e, bool f){
+	void init_bar_check(String s, int *c, int d, int mn, int mx, bool *e, bool f, String u){
 		clear();
 		mode = bar_check_mode;
 		has_child = false;
@@ -143,6 +144,7 @@ public:
 		max_elem = mx;
 		is_checked = e;
 		*is_checked = f;
+		unchecked_str = u;
 		is_clicked = false;
 	}
 
@@ -244,7 +246,11 @@ public:
 			font(str).draw(font_size, rect.x + rect.h - menu_offset_y, rect.y + menu_offset_y, menu_font_color);
 		}
 		if (mode == bar_mode || mode == bar_check_mode) {
-			font(*bar_elem).draw(font_size, bar_sx - menu_offset_x - menu_child_offset - bar_value_offset, rect.y + menu_offset_y, menu_font_color);
+			if (mode == bar_check_mode && !(*is_checked)){
+				font(unchecked_str).draw(font_size, bar_sx - menu_offset_x - menu_child_offset - font(unchecked_str).region(font_size, Point{ 0, 0 }).w, rect.y + menu_offset_y, menu_font_color);
+			} else{
+				font(*bar_elem).draw(font_size, bar_sx - menu_offset_x - menu_child_offset - bar_value_offset, rect.y + menu_offset_y, menu_font_color);
+			}
 			if (mode == bar_check_mode && !(*is_checked))
 				bar_rect.draw(ColorF(bar_color, 0.5));
 			else

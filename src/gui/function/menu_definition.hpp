@@ -194,13 +194,13 @@ Menu create_menu(Menu_elements* menu_elements, Resources *resources, Font font) 
     title.init(language.get("book", "book"));
 
     menu_e.init_button(language.get("book", "settings"), &menu_elements->dummy);
-    side_menu.init_bar_check(language.get("book", "depth"), &menu_elements->book_learn_depth, menu_elements->book_learn_depth, 0, 60, &menu_elements->use_book_learn_depth, menu_elements->use_book_learn_depth);
+    side_menu.init_bar_check(language.get("book", "depth"), &menu_elements->book_learn_depth, menu_elements->book_learn_depth, 0, 60, &menu_elements->use_book_learn_depth, menu_elements->use_book_learn_depth, U"Inf");
     menu_e.push(side_menu);
-    side_menu.init_bar_check(language.get("book", "error_per_move"), &menu_elements->book_learn_error_per_move, menu_elements->book_learn_error_per_move, 0, 24, &menu_elements->use_book_learn_error_per_move, menu_elements->use_book_learn_error_per_move);
+    side_menu.init_bar_check(language.get("book", "error_per_move"), &menu_elements->book_learn_error_per_move, menu_elements->book_learn_error_per_move, 0, 24, &menu_elements->use_book_learn_error_per_move, menu_elements->use_book_learn_error_per_move, U"Inf");
     menu_e.push(side_menu);
-    side_menu.init_bar_check(language.get("book", "error_sum"), &menu_elements->book_learn_error_sum, menu_elements->book_learn_error_sum, 0, 24, &menu_elements->use_book_learn_error_sum, menu_elements->use_book_learn_error_sum);
+    side_menu.init_bar_check(language.get("book", "error_sum"), &menu_elements->book_learn_error_sum, menu_elements->book_learn_error_sum, 0, 24, &menu_elements->use_book_learn_error_sum, menu_elements->use_book_learn_error_sum, U"Inf");
     menu_e.push(side_menu);
-    side_menu.init_bar_check(language.get("book", "error_leaf"), &menu_elements->book_learn_error_leaf, menu_elements->book_learn_error_leaf, 0, 24, &menu_elements->use_book_learn_error_leaf, menu_elements->use_book_learn_error_leaf);
+    side_menu.init_bar_check(language.get("book", "error_leaf"), &menu_elements->book_learn_error_leaf, menu_elements->book_learn_error_leaf, 0, 24, &menu_elements->use_book_learn_error_leaf, menu_elements->use_book_learn_error_leaf, U"Inf");
     menu_e.push(side_menu);
     title.push(menu_e);
 
