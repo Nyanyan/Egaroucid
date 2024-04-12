@@ -8,7 +8,7 @@ n_random_moves = int(sys.argv[1])
 IDX_START = 0
 IDX_END = 0
 
-LEVEL = 11
+LEVEL = 25
 N_GAMES_PER_FILE = 1000
 N_THREAD = 32
 

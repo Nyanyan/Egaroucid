@@ -131,13 +131,15 @@ std::string self_play_task(Options *options, bool use_multi_thread, int n_random
             board.move_board(&flip);
         }
         bool break_flag = true;
-        if (prev_transcript.size() != transcript.size()){
-            break_flag = false;
-        } else{
-            for (int i = 0; i < transcript.size(); ++i){
-                if (transcript[i] != prev_transcript[i]){
-                    break_flag = false;
-                    break;
+        if (i < SELF_PLAY_N_TRY - 1){
+            if (prev_transcript.size() != transcript.size()){
+                break_flag = false;
+            } else{
+                for (int i = 0; i < transcript.size(); ++i){
+                    if (transcript[i] != prev_transcript[i]){
+                        break_flag = false;
+                        break;
+                    }
                 }
             }
         }
