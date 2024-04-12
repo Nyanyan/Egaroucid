@@ -8,7 +8,8 @@ data_nums = []
 for _ in range(12):
     data_nums.append([26])
 for _ in range(12, 61):
-    data_nums.append([32])
+    #data_nums.append([32])
+    data_nums.append([33])
 
 res = ''
 for phase in range(N_PHASES):
@@ -22,5 +23,5 @@ for phase in range(N_PHASES):
 print('')
 print('all done')
 print(res)
-with open('trained/loss.txt', 'a') as f:
+with open('trained/loss.txt', 'w') as f:
     f.write(res)
