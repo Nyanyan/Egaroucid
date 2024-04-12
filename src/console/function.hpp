@@ -20,7 +20,7 @@
     #include "./../engine/thread_monitor.hpp"
 #endif
 
-#define SELFPLAY_TT_DATE_MARGIN 5
+#define SELF_PLAY_N_TRY 1
 
 void setboard(Board_info *board, std::string board_str);
 Search_result go_noprint(Board_info *board, Options *options, State *state);
@@ -100,31 +100,57 @@ bool execute_special_tasks_loop(Board_info *board, State *state, Options *option
 }
 
 
-std::string self_play_task(Options *options, bool use_multi_thread, int n_random_moves){
-    Board board;
+std::string self_play_task(Options *options, bool use_multi_thread, int n_random_moves, int n_try){
+    Board board_start;
     Flip flip;
     Search_result result;
-    board.reset();
+    board_start.reset();
     std::string res;
-    for (int j = 0; j < n_random_moves && board.check_pass(); ++j){
-        uint64_t legal = board.get_legal();
+    for (int j = 0; j < n_random_moves && board_start.check_pass(); ++j){
+        uint64_t legal = board_start.get_legal();
         int random_idx = myrandrange(0, pop_count_ull(legal));
         int t = 0;
         for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)){
             if (t == random_idx){
-                calc_flip(&flip, &board, cell);
+                calc_flip(&flip, &board_start, cell);
                 break;
             }
             ++t;
         }
         res += idx_to_coord(flip.pos);
-        board.move_board(&flip);
+        board_start.move_board(&flip);
     }
-    while (board.check_pass()){
-        result = ai(board, options->level, true, 0, false, options->show_log); // search in single thread
-        calc_flip(&flip, &board, result.policy);
-        res += idx_to_coord(flip.pos);
-        board.move_board(&flip);
+    std::vector<int> prev_transcript;
+    for (int i = 0; i < n_try; ++i){
+        Board board = board_start.copy();
+        std::vector<int> transcript;
+        while (board.check_pass()){
+            result = ai(board, options->level, true, 0, false, options->show_log);
+            transcript.emplace_back(result.policy);
+            calc_flip(&flip, &board, result.policy);
+            board.move_board(&flip);
+        }
+        bool break_flag = true;
+        if (prev_transcript.size() != transcript.size()){
+            break_flag = false;
+        } else{
+            for (int i = 0; i < transcript.size(); ++i){
+                if (transcript[i] != prev_transcript[i]){
+                    break_flag = false;
+                    break;
+                }
+            }
+        }
+        prev_transcript.clear();
+        for (int &elem: transcript){
+            prev_transcript.emplace_back(elem);
+        }
+        if (break_flag){
+            break;
+        }
+    }
+    for (int &elem: prev_transcript){
+        res += idx_to_coord(elem);
     }
     return res;
 }
@@ -151,7 +177,7 @@ void self_play(std::vector<std::string> arg, Options *options, State *state){
     uint64_t strt = tim();
     if (thread_pool.size() == 0){
         for (int i = 0; i < n_games; ++i){
-            std::string transcript = self_play_task(options, false, n_random_moves);
+            std::string transcript = self_play_task(options, false, n_random_moves, SELF_PLAY_N_TRY);
             std::cout << transcript << std::endl;
         }
     } else{
@@ -160,7 +186,7 @@ void self_play(std::vector<std::string> arg, Options *options, State *state){
         while (n_games_done < n_games){
             if (thread_pool.get_n_idle() && (int)tasks.size() < n_games){
                 bool pushed = false;
-                tasks.emplace_back(thread_pool.push(&pushed, std::bind(&self_play_task, options, true, n_random_moves)));
+                tasks.emplace_back(thread_pool.push(&pushed, std::bind(&self_play_task, options, true, n_random_moves, SELF_PLAY_N_TRY)));
                 if (!pushed)
                     tasks.pop_back();
             }
