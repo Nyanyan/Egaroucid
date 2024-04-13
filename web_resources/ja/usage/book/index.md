@@ -4,7 +4,7 @@
 
 このページは日本語のみです。また、読者としてはオセラー(人力のオセロプレイヤー)を想定しています。
 
-最終更新: 2024/04/12 Egaroucid 7.0.0
+最終更新: 2024/04/13 Egaroucid 7.0.0
 
 INSERT_TABLE_OF_CONTENTS_HERE
 
@@ -135,43 +135,7 @@ Book精度の表示は、後述のBook学習にて役に立つと思います。
 
 Egaroucidはインストールした時点で作者が作ったBookが付属しています。標準Bookは自前で作りました(Egaroucid 6.5.2までは[Zebra](http://radagast.se/Othello/download.html)のBookをもとにZebra作者の許可の上で値を再計算、追加学習したものでした)。
 
-標準付属Bookの仕様をざっくりとまとめます。
-
-<div class="table_wrapper">
-<table>
-<tr>
-<th>項目</th>
-<th>値</th>
-<th>意味</th>
-</tr>
-<tr>
-<td>深さ</td>
-<td>32</td>
-<td>32手目までの手を登録</td>
-</tr>
-<tr>
-<td>レベル</td>
-<td>17から27まで色々</td>
-<td>計算したAIのレベル</td>
-</tr>
-<tr>
-<td>登録局面数</td>
-<td>494236</td>
-<td>Bookに登録されている局面の数</td>
-</tr>
-<tr>
-<td>大きさ</td>
-<td>12MB</td>
-<td>Bookの容量</td>
-</tr>
-</table>
-</div>
-
-レベルが混在しているのは、Book制作上の都合です。
-
-なお、標準付属Bookは手元で学習したBookを、適当に小さくまとめてから公開したものです。
-
-
+Bookの仕様は、Book>Book情報よりご覧ください。標準付属Bookは手元で学習したBookを、適当に小さくまとめてから公開したものです。
 
 ## Bookを学習してみる
 
