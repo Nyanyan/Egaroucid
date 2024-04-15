@@ -217,8 +217,6 @@ Egaroucid for Consoleはいくつかの外部ファイルを必要とします�
         <ul>
             <li>hash (ハッシュファイル なくても動きます)
                 <ul>
-                    <li>hash23.eghs</li>
-                    <li>hash24.eghs</li>
                     <li>hash25.eghs</li>
                     <li>hash26.eghs</li>
                     <li>hash27.eghs</li>
@@ -229,6 +227,7 @@ Egaroucid for Consoleはいくつかの外部ファイルを必要とします�
         </ul>
     </li>
 </ul>
+
 
 
 ## book形式の変更について

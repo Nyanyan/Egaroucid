@@ -224,8 +224,6 @@ Egaroucid for Console uses some external files. If you've got a trouble, please 
         <ul>
             <li>hash (Files for hash)
                 <ul>
-                    <li>hash23.eghs</li>
-                    <li>hash24.eghs</li>
                     <li>hash25.eghs</li>
                     <li>hash26.eghs</li>
                     <li>hash27.eghs</li>
@@ -236,6 +234,7 @@ Egaroucid for Console uses some external files. If you've got a trouble, please 
         </ul>
     </li>
 </ul>
+
 
 
 ## About Changing Book Format
