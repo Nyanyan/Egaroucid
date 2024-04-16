@@ -4,9 +4,11 @@ import sys
 import os
 
 n_random_moves = int(sys.argv[1])
+IDX_START = int(sys.argv[2])
+IDX_END = int(sys.argv[3])
 
-IDX_START = 110
-IDX_END = 200
+#IDX_START = 117
+#IDX_END = 200
 
 LEVEL = 11
 N_GAMES_PER_FILE = 10000
