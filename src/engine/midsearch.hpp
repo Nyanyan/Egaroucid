@@ -27,6 +27,7 @@
 #include "endsearch.hpp"
 #include "midsearch_nws.hpp"
 #include "etc.hpp"
+#include "book.hpp"
 
 inline int aspiration_search(Search *search, int alpha, int beta, int predicted_value, int depth, bool skipped, uint64_t legal, bool is_end_search, const bool *searching);
 
@@ -426,9 +427,14 @@ Analyze_result first_nega_scout_analyze(Search *search, int alpha, int beta, int
         Flip flip;
         calc_flip(&flip, &search->board, played_move);
         search->move(&flip);
-            res.played_depth = depth;
-            res.played_probability = SELECTIVITY_PERCENTAGE[search->mpc_level];
-            res.played_score = -nega_scout(search, -SCORE_MAX, SCORE_MAX, depth - 1, false, LEGAL_UNDEFINED, is_end_search, searching);
+            if (book.contain(&search->board)){
+                res.played_depth = SEARCH_BOOK;
+                res.played_score = -book.get(search->board).value;
+            } else{
+                res.played_depth = depth;
+                res.played_probability = SELECTIVITY_PERCENTAGE[search->mpc_level];
+                res.played_score = -nega_scout(search, -SCORE_MAX, SCORE_MAX, depth - 1, false, LEGAL_UNDEFINED, is_end_search, searching);
+            }
         search->undo(&flip);
         legal ^= 1ULL << played_move;
     }
@@ -445,18 +451,28 @@ Analyze_result first_nega_scout_analyze(Search *search, int alpha, int beta, int
         transposition_table.get_moves_any_level(&search->board, hash_code, moves);
         move_list_evaluate(search, move_list, moves, depth, alpha, beta, searching);
 
-        #if USE_YBWC_NEGASCOUT
+        #if USE_YBWC_NEGASCOUT && false
             if (search->use_multi_thread && depth - 1 >= YBWC_MID_SPLIT_MIN_DEPTH){
                 move_list_sort(move_list);
+                bool book_used = false;
                 search->move(&move_list[0].flip);
-                    g = -nega_scout(search, -beta, -alpha, depth - 1, false, move_list[0].n_legal, is_end_search, searching);
+                    if (book.contain(&search->board)){
+                        book_used = true;
+                        g = -book.get(search->board).value;
+                    } else{
+                        g = -nega_scout(search, -beta, -alpha, depth - 1, false, move_list[0].n_legal, is_end_search, searching);
+                    }
                 search->undo(&move_list[0].flip);
                 move_list[0].flip.flip = 0;
                 if (res.alt_score < g){
                     res.alt_score = g;
                     res.alt_move = move_list[0].flip.pos;
-                    res.alt_depth = depth;
-                    res.alt_probability = SELECTIVITY_PERCENTAGE[search->mpc_level];
+                    if (book_used){
+                        res.alt_depth = SEARCH_BOOK;
+                    } else{
+                        res.alt_depth = depth;
+                        res.alt_probability = SELECTIVITY_PERCENTAGE[search->mpc_level];
+                    }
                     if (alpha < res.alt_score){
                         alpha = res.alt_score;
                     }
@@ -468,21 +484,31 @@ Analyze_result first_nega_scout_analyze(Search *search, int alpha, int beta, int
         #endif
                 for (int move_idx = 0; move_idx < canput && *searching; ++move_idx){
                     swap_next_best_move(move_list, move_idx, canput);
+                    bool book_used = false;
                     search->move(&move_list[move_idx].flip);
-                        if (res.alt_score == -SCORE_INF){
-                            g = -nega_scout(search, -beta, -alpha, depth - 1, false, move_list[move_idx].n_legal, is_end_search, searching);
+                        if (book.contain(&search->board)){
+                            book_used = true;
+                            g = -book.get(search->board).value;
                         } else{
-                            g = -nega_alpha_ordering_nws(search, -alpha - 1, depth - 1, false, move_list[move_idx].n_legal, is_end_search, searching);
-                            if (alpha < g && g < beta){
-                                g = -nega_scout(search, -beta, -g, depth - 1, false, move_list[move_idx].n_legal, is_end_search, searching);
+                            if (res.alt_score == -SCORE_INF){
+                                g = -nega_scout(search, -beta, -alpha, depth - 1, false, move_list[move_idx].n_legal, is_end_search, searching);
+                            } else{
+                                g = -nega_alpha_ordering_nws(search, -alpha - 1, depth - 1, false, move_list[move_idx].n_legal, is_end_search, searching);
+                                if (alpha < g && g < beta){
+                                    g = -nega_scout(search, -beta, -g, depth - 1, false, move_list[move_idx].n_legal, is_end_search, searching);
+                                }
                             }
                         }
                     search->undo(&move_list[move_idx].flip);
                     if (res.alt_score < g){
                         res.alt_score = g;
                         res.alt_move = move_list[move_idx].flip.pos;
-                        res.alt_depth = depth;
-                        res.alt_probability = SELECTIVITY_PERCENTAGE[search->mpc_level];
+                        if (book_used){
+                            res.alt_depth = SEARCH_BOOK;
+                        } else{
+                            res.alt_depth = depth;
+                            res.alt_probability = SELECTIVITY_PERCENTAGE[search->mpc_level];
+                        }
                         if (alpha < res.alt_score){
                             if (beta <= res.alt_score)
                                 break;
@@ -490,7 +516,7 @@ Analyze_result first_nega_scout_analyze(Search *search, int alpha, int beta, int
                         }
                     }
                 }
-        #if USE_YBWC_NEGASCOUT
+        #if USE_YBWC_NEGASCOUT && false
             }
         #endif
     }

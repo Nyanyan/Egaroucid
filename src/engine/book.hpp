@@ -1419,7 +1419,7 @@ class Book{
             @brief delete all board in this book
         */
         inline void delete_all(){
-            std::cerr << "delete book" << std::endl;
+            //std::cerr << "delete book" << std::endl;
             book.clear();
             reg_first_board();
         }
