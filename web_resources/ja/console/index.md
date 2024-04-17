@@ -30,24 +30,25 @@ Egaroucidはx64のSIMDバージョン(AVX2を使用)に最適化して作って�
         <td>Windows</td>
         <td>x64 (標準)</td>
         <td>AVX2 (標準)</td>
-        <td>2023/10/25</td>
-        <td>[Egaroucid for Console 6.5.0 Windows x64 SIMD](https://github.com/Nyanyan/Egaroucid/releases/download/console_v6.5.0/Egaroucid_for_Console_6_5_0_Windows_x64_SIMD.zip)</td>
+        <td>2024/04/17</td>
+        <td>[Egaroucid for Console 7.0.0 Windows x64 SIMD](https://github.com/Nyanyan/Egaroucid/releases/download/console_v7.0.0/Egaroucid_for_Console_7_0_0_Windows_x64_SIMD.zip)</td>
     </tr>
     <tr>
         <td>Windows</td>
         <td>x64 (標準)</td>
         <td>-</td>
-        <td>2023/10/25</td>
-        <td>[Egaroucid for Console 6.5.0 Windows x64 Generic](https://github.com/Nyanyan/Egaroucid/releases/download/console_v6.5.0/Egaroucid_for_Console_6_5_0_Windows_x64_Generic.zip)</td>
+        <td>2024/04/17</td>
+        <td>[Egaroucid for Console 7.0.0 Windows x64 Generic](https://github.com/Nyanyan/Egaroucid/releases/download/console_v7.0.0/Egaroucid_for_Console_7_0_0_Windows_x64_Generic.zip)</td>
     </tr>
     <tr>
         <td>Windows</td>
         <td>x86</td>
         <td>-</td>
-        <td>2023/10/25</td>
-        <td>[Egaroucid for Console 6.5.0 Windows x86 Generic](https://github.com/Nyanyan/Egaroucid/releases/download/console_v6.5.0/Egaroucid_for_Console_6_5_0_Windows_x86_Generic.zip)</td>
+        <td>2024/04/17</td>
+        <td>[Egaroucid for Console 7.0.0 Windows x86 Generic](https://github.com/Nyanyan/Egaroucid/releases/download/console_v7.0.0/Egaroucid_for_Console_7_0_0_Windows_x86_Generic.zip)</td>
     </tr>
     </table></div>
+
 
 
 
@@ -62,7 +63,7 @@ cmakeでビルドするか、直接g++を使ってビルドすることができ
 
 ### cmakeでビルド
 
-GitHubのリリースから[コード](https://github.com/Nyanyan/Egaroucid/archive/refs/tags/console_v6.5.0.zip)を入手し、任意の場所に解凍します。
+GitHubのリリースから[コード](https://github.com/Nyanyan/Egaroucid/archive/refs/tags/console_v7.0.0.zip)を入手し、任意の場所に解凍します。
 
 
 
@@ -134,7 +135,7 @@ GitHubのリリースから[コード](https://github.com/Nyanyan/Egaroucid/arch
     </li>
     <li>C++17の機能が必要</li>
 </ul>
-GitHubのリリースから[コード](https://github.com/Nyanyan/Egaroucid/archive/refs/tags/console_v6.5.0.zip)を入手し、任意の場所に解凍します。
+GitHubのリリースから[コード](https://github.com/Nyanyan/Egaroucid/archive/refs/tags/console_v7.0.0.zip)を入手し、任意の場所に解凍します。
 
 
 
@@ -229,10 +230,9 @@ Egaroucid for Consoleはいくつかの外部ファイルを必要とします�
 </ul>
 
 
-
 ## book形式の変更について
 
-Egaroucid for Consoleはバージョン6.3.0からbook形式を変更しました。新しいbookの拡張子は```.egbk2```で、標準では```resources/book.egbk2```というbookを読み込みますが、古い```.egbk```形式のbookも読み込むことができます。標準以外のbookや古いbookを使いたい場合は```Egaroucid_for_Console.exe -book [bookファイル名]```として起動してください。
+Egaroucid for Consoleはバージョン7.0.0からbook形式を変更しました。新しいbookの拡張子は```.egbk3```で、標準では```resources/book.egbk3```というbookを読み込みますが、古い```.egbk```、```.egbk2```形式のbookも読み込むことができます。標準以外のbookや古いbookを使いたい場合は```Egaroucid_for_Console.exe -book [bookファイル名]```として起動してください。
 
 
 

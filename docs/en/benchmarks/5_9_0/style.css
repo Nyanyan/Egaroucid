@@ -40,6 +40,11 @@ td{
     height: auto;
 }
 
+.pic3{
+    width: max(30%, min(90vw, 250px));
+    height: auto;
+}
+
 .box{
     width: min(1000px, 95vw);
     text-align: start;

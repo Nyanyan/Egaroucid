@@ -28,17 +28,17 @@ Please download the one which is suitable to your environment.
     <td>Windows</td>
     <td>x64</td>
     <td>AVX2 (Standard)</td>
-    <td>2024/02/13</td>
-    <td>[Egaroucid 6.5.2 SIMD Installer](https://github.com/Nyanyan/Egaroucid/releases/download/v6.5.2/Egaroucid_6_5_2_SIMD_installer.exe)</td>
-    <td>[Egaroucid 6.5.2 SIMD Zip](https://github.com/Nyanyan/Egaroucid/releases/download/v6.5.2/Egaroucid_6_5_2_Windows_x64_SIMD_Portable.zip)</td>
+    <td>2024/04/17</td>
+    <td>[Egaroucid 7.0.0 SIMD Installer](https://github.com/Nyanyan/Egaroucid/releases/download/v7.0.0/Egaroucid_7_0_0_SIMD_installer.exe)</td>
+    <td>[Egaroucid 7.0.0 SIMD Zip](https://github.com/Nyanyan/Egaroucid/releases/download/v7.0.0/Egaroucid_7_0_0_Windows_x64_SIMD_Portable.zip)</td>
 </tr>
 <tr>
     <td>Windows</td>
     <td>x64</td>
     <td>-</td>
-    <td>2024/02/13</td>
-    <td>[Egaroucid 6.5.2 Generic Installer](https://github.com/Nyanyan/Egaroucid/releases/download/v6.5.2/Egaroucid_6_5_2_Generic_installer.exe)</td>
-    <td>[Egaroucid 6.5.2 Generic Zip](https://github.com/Nyanyan/Egaroucid/releases/download/v6.5.2/Egaroucid_6_5_2_Windows_x64_Generic_Portable.zip)</td>
+    <td>2024/04/17</td>
+    <td>[Egaroucid 7.0.0 Generic Installer](https://github.com/Nyanyan/Egaroucid/releases/download/v7.0.0/Egaroucid_7_0_0_Generic_installer.exe)</td>
+    <td>[Egaroucid 7.0.0 Generic Zip](https://github.com/Nyanyan/Egaroucid/releases/download/v7.0.0/Egaroucid_7_0_0_Windows_x64_Generic_Portable.zip)</td>
 </tr>
 </table>
 </div>

@@ -2,7 +2,7 @@ import datetime
 
 #version_dot = input('version (X.Y.Z): ')
 version_dot = '7.0.0'
-date_str = 'TBD'
+date_str = '2024/04/17'
 
 
 version_underbar = version_dot.replace('.', '_')

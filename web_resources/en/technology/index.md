@@ -88,7 +88,7 @@ There are detailed benchmarks for each version including older versions.
 	</tr>
     <tr>
 		<td><a href="./benchmarks/7_0_0/">7.0.0</a></td>
-		<td>TBD</td>
+		<td>2024/04/17</td>
 	</tr>
     <tr>
 		<td><a href="./benchmarks/6_5_0/">6.5.0</a></td>
@@ -139,6 +139,7 @@ There are detailed benchmarks for each version including older versions.
 		<td>2022/03/02</td>
 	</tr>
 </table></div>
+
 
 
 
