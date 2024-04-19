@@ -39,6 +39,8 @@
 #define ADJ_STEP 256
 #define ADJ_STEP_2 128
 
+#define ADJ_CELL_WEIGHT true
+
 constexpr int adj_eval_sizes[ADJ_N_EVAL] = {
     10
 };
@@ -77,8 +79,14 @@ void adj_calc_features(Board *board, uint16_t res[]){
     uint_fast8_t b_arr[HW2];
     board->translate_to_arr_player(b_arr);
     int idx = 0;
-    for (int i = 0; i < ADJ_N_FEATURES; ++i)
-        res[idx++] = adj_pattern_to_feature[i];
+    for (int i = 0; i < ADJ_N_FEATURES; ++i){
+        if (board->player & (1ULL << i))
+            res[idx++] = adj_pattern_to_feature[i];
+        else if (board->opponent & (1ULL << i))
+            res[idx++] = 10 + adj_pattern_to_feature[i];
+        else
+            res[idx++] = 20;
+    }
 }
 
 int calc_phase(Board *board, int16_t player){

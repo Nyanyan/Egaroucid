@@ -3,9 +3,9 @@ import sys
 
 phase = str(sys.argv[1])
 hour = '0'
-minute = '5'
+minute = '1'
 second = '0'
-alpha = '1000'
+alpha = '10000'
 n_patience = '1'
 
 model_dir = './../../../model/nomodel/'
@@ -31,7 +31,7 @@ executable = 'eval_optimizer_cuda_12_2_0_move_ordering_end_nws.exe'
 '''
 #'''
 # cell weight
-train_data_nums = [26, 29]
+train_data_nums = [29]
 train_root_dir = './../../../train_data/bin_data/20240419_1_cell_weight/'
 executable = 'eval_optimizer_cuda_12_2_0_cell_weight.exe'
 #'''

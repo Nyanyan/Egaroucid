@@ -28,7 +28,11 @@
 
 // train data constant
 #define ADJ_MAX_N_FILES 64
-#define ADJ_MAX_N_DATA 50000000
+#if ADJ_CELL_WEIGHT
+    #define ADJ_MAX_N_DATA 1000000
+#else
+    #define ADJ_MAX_N_DATA 75000000
+#endif
 
 // GPU constant
 #define N_THREADS_PER_BLOCK_RESIDUAL 1024
@@ -124,8 +128,18 @@ int adj_import_train_data(int n_files, char* files[], Adj_Data* host_train_data,
             fread(raw_features, 2, ADJ_N_FEATURES, fp);
             for (int i = 0; i < ADJ_N_FEATURES; ++i){
                 host_train_data[n_data].features[i] = start_idx_arr[i] + raw_features[i];
-                ++host_n_appear_arr[host_train_data[n_data].features[i]];
-                ++host_n_appear_arr[host_rev_idx_arr[host_train_data[n_data].features[i]]];
+                #if ADJ_CELL_WEIGHT
+                    if (host_train_data[n_data].features[i] < 10){
+                        ++host_n_appear_arr[host_train_data[n_data].features[i]];
+                        ++host_n_appear_arr[host_rev_idx_arr[host_train_data[n_data].features[i]]];
+                    } else if (host_train_data[n_data].features[i] < 20){
+                        ++host_n_appear_arr[host_train_data[n_data].features[i] - 10];
+                        ++host_n_appear_arr[host_rev_idx_arr[host_train_data[n_data].features[i] - 10]];
+                    }
+                #else
+                    ++host_n_appear_arr[host_train_data[n_data].features[i]];
+                    ++host_n_appear_arr[host_rev_idx_arr[host_train_data[n_data].features[i]]];
+                #endif
             }
             fread(&score, 2, 1, fp);
             host_train_data[n_data].score = (float)score * ADJ_STEP;
@@ -159,19 +173,30 @@ __global__ void adj_calculate_residual(const float *device_eval_arr, const int n
     }
     float predicted_value = 0.0;
     for (int i = 0; i < ADJ_N_FEATURES; ++i){
-        predicted_value += device_eval_arr[device_train_data[data_idx].features[i]];
+        #if ADJ_CELL_WEIGHT
+            if (device_train_data[data_idx].features[i] < 10){
+                predicted_value += device_eval_arr[device_train_data[data_idx].features[i]];
+            } else if (device_train_data[data_idx].features[i] < 20){
+                predicted_value -= device_eval_arr[device_train_data[data_idx].features[i] - 10];
+            }
+        #else
+            predicted_value += device_eval_arr[device_train_data[data_idx].features[i]];
+        #endif
     }
-    /*
-    if (predicted_value > HW2 * ADJ_STEP){
-        predicted_value = HW2 * ADJ_STEP;
-    } else if (predicted_value < -HW2 * ADJ_STEP){
-        predicted_value = -HW2 * ADJ_STEP;
-    }
-    */
     float residual_error = device_train_data[data_idx].score - predicted_value;
     for (int i = 0; i < ADJ_N_FEATURES; ++i){
-        atomicAdd(&device_residual_arr[device_train_data[data_idx].features[i]], residual_error);
-        atomicAdd(&device_residual_arr[device_rev_idx_arr[device_train_data[data_idx].features[i]]], residual_error);
+        #if ADJ_CELL_WEIGHT
+            if (device_train_data[data_idx].features[i] < 10){
+                atomicAdd(&device_residual_arr[device_train_data[data_idx].features[i]], residual_error);
+                atomicAdd(&device_residual_arr[device_rev_idx_arr[device_train_data[data_idx].features[i]]], residual_error);
+            } else if (device_train_data[data_idx].features[i] < 20){
+                atomicAdd(&device_residual_arr[device_train_data[data_idx].features[i] - 10], -residual_error);
+                atomicAdd(&device_residual_arr[device_rev_idx_arr[device_train_data[data_idx].features[i] - 10]], -residual_error);
+            }
+        #else
+            atomicAdd(&device_residual_arr[device_train_data[data_idx].features[i]], residual_error);
+            atomicAdd(&device_residual_arr[device_rev_idx_arr[device_train_data[data_idx].features[i]]], residual_error);
+        #endif
     }
     atomicAdd(&device_error_monitor_arr[0], (residual_error / ADJ_STEP) * (residual_error / ADJ_STEP) / n_data);
     atomicAdd(&device_error_monitor_arr[1], fabs(residual_error / ADJ_STEP) / n_data);
