@@ -98,6 +98,16 @@ Egaroucid公式として公開している色々な資料です。日本語の�
 </ul>
 
 
+## 紹介記事
+
+Egaroucidを紹介していただいた記事です
+
+<ul>
+    <li>[世界最強の「オセロAI」を作った大学生　創作の原点は「1冊の絵本」](https://web.quizknock.com/othello-ai): QuizKnock Webメディアで丁寧に紹介していただきました</li>
+    <li>[Egaroucid: An Othello app review](https://www.worldothello.org/news/354/egaroucid-an-othello-app-review): 世界オセロ連盟のニュースで紹介していただきました</li>
+</ul>
+
+
 
 ## その他のドキュメント
 

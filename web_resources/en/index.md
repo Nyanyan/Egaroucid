@@ -72,8 +72,6 @@ Completely free software. Egaroucid and Egaroucid for Console use the same (stro
 </ul>
 
 
-
-
 ## How to Install Egaroucid
 
 ### Egaroucid
@@ -92,14 +90,21 @@ You don't need to do anything special. Please just visit [Egaroucid for Web page
 
 ## Official Documents
 
-There are some official documents. I am very sorry, but they are only written in Japanese, so please translate it before reading.
+There are some official documents of Egaroucid written in Japanese. Please translate it by yourself.
 
 <ul>
-    <li>[How to Use Egaroucid](https://www.egaroucid.nyanyan.dev/ja/usage/)</li>
-    <li>[How to use Book](https://www.egaroucid.nyanyan.dev/ja/usage/book/)</li>
-    <li>[Technical Explanation](https://www.egaroucid.nyanyan.dev/ja/technology/explanation/)</li>
+    <li>[How to Use Egaroucid](./usage/): Explains how to use the software one by one</li>
+    <li>[Book Usage](./usage/book/): Explains how to use Egaroucid's book</li>
+    <li>[Technology Explanation](./technology/explanation/): Technical explanation for Othello AI programmers</li>
 </ul>
 
+
+
+## Articles that introduce Egaroucid
+
+<ul>
+    <li>[Egaroucid: An Othello app review](https://www.worldothello.org/news/354/egaroucid-an-othello-app-review): Review of Egaroucid by World Othello Federation</li>
+</ul>
 
 
 
