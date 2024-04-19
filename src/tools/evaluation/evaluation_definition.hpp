@@ -10,5 +10,6 @@
 
 #pragma once
 
-#include "evaluation_definition_20240223_1_7_0.hpp"
+//#include "evaluation_definition_20240223_1_7_0.hpp"
 //#include "evaluation_definition_20240301_4_move_ordering_end_nws.hpp"
+#include "evaluation_definition_20240419_1_cell_weight.hpp"
