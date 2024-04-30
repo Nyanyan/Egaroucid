@@ -7,8 +7,8 @@ except:
     print('please input new year')
     exit()
 
-files = glob.glob('./**/*.cpp', recursive=True)
-files.extend(glob.glob('./**/*.hpp', recursive=True))
+files = glob.glob('./../../**/*.cpp', recursive=True)
+files.extend(glob.glob('./../../**/*.hpp', recursive=True))
 
 for file in files:
     print(file)
