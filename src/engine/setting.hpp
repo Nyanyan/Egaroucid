@@ -40,19 +40,28 @@
 // Open Console?
 #define GUI_OPEN_CONSOLE false
 
-#ifdef _WIN64
+
+#ifdef _WIN64 // Windows 64bit
     #if USE_SIMD
-        #define EGAROUCID_ENGINE_ENV_VERSION "Windows x64 SIMD"
+        #if USE_AVX512
+            #define EGAROUCID_ENGINE_ENV_VERSION "Windows x64 AVX512"
+        #else
+            #define EGAROUCID_ENGINE_ENV_VERSION "Windows x64 SIMD"
+        #endif
     #else
         #define EGAROUCID_ENGINE_ENV_VERSION "Windows x64 Generic"
     #endif
-#elif _WIN32
+#elif _WIN32 // Windows 32bit
     #if USE_SIMD
-        #define EGAROUCID_ENGINE_ENV_VERSION "Windows x86 SIMD"
+        #if USE_AVX512
+            #define EGAROUCID_ENGINE_ENV_VERSION "Windows x86 AVX512"
+        #else
+            #define EGAROUCID_ENGINE_ENV_VERSION "Windows x86 SIMD"
+        #endif
     #else
         #define EGAROUCID_ENGINE_ENV_VERSION "Windows x86 Generic"
     #endif
-#elif __APPLE__
+#elif __APPLE__ // Mac OSX
     // use ARM
     #ifdef HAS_ARM_PROCESSOR
         #define USE_ARM true
@@ -61,7 +70,11 @@
     // use 64 bit exclusively on Mac as of MacOS Mojave
     #if USE_SIMD
         #if USE_ARM
-            #define EGAROUCID_ENGINE_ENV_VERSION "Mac OSX ARM64 SIMD"
+            #if USE_AVX512
+                #define EGAROUCID_ENGINE_ENV_VERSION "Mac OSX ARM64 AVX512"
+            #else
+                #define EGAROUCID_ENGINE_ENV_VERSION "Mac OSX ARM64 SIMD"
+            #endif
         #else
             #define EGAROUCID_ENGINE_ENV_VERSION "Mac OSX x64 SIMD"
         #endif
@@ -72,7 +85,7 @@
             #define EGAROUCID_ENGINE_ENV_VERSION "Mac OSX x64 Generic"
         #endif
     #endif
-#else
+#else // Linux
     // use ARM
     #ifdef HAS_ARM_PROCESSOR
         #define USE_ARM true
@@ -85,13 +98,21 @@
     #if USE_SIMD
         #if USE_ARM
             #if USE_64_BIT
-                #define EGAROUCID_ENGINE_ENV_VERSION "Linux ARM64 SIMD"
+                #if USE_AVX512
+                    #define EGAROUCID_ENGINE_ENV_VERSION "Linux ARM64 AVX512"
+                #else
+                    #define EGAROUCID_ENGINE_ENV_VERSION "Linux ARM64 SIMD"
+                #endif
             #else
                 #define EGAROUCID_ENGINE_ENV_VERSION "Linux ARM SIMD"
             #endif
         #else
             #if USE_64_BIT
-                #define EGAROUCID_ENGINE_ENV_VERSION "Linux x64 SIMD"
+                #if USE_AVX512
+                    #define EGAROUCID_ENGINE_ENV_VERSION "Linux x64 AVX512"
+                #else
+                    #define EGAROUCID_ENGINE_ENV_VERSION "Linux x64 SIMD"
+                #endif
             #else
                 #define EGAROUCID_ENGINE_ENV_VERSION "Linux x86 SIMD"
             #endif
@@ -112,6 +133,7 @@
         #endif
     #endif
 #endif
+
 
 /*
     @brief performance settings
