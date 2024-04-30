@@ -18,7 +18,7 @@
 union V8DI {
     uint64_t ull[8];
     __m256i v4[2];
-    #ifdef __AVX512F__
+    #ifdef USE_AVX512
         __m512i v8;
     #endif
 };
@@ -45,13 +45,13 @@ class Flip{
             __m256i OO = _mm256_permute4x64_epi64(_mm256_castsi128_si256(OP), 0x55);
             __m256i mask = lrmask[place].v4[1];
 
-    #ifdef __AVX512VL__
+    #ifdef USE_AVX512
               // right: look for non-opponent (or edge) bit with lzcnt
             __m256i outflank = _mm256_andnot_si256(OO, mask);
             outflank = _mm256_srlv_epi64(_mm256_set1_epi64x(0x8000000000000000), _mm256_lzcnt_epi64(outflank));
             outflank = _mm256_and_si256(outflank, PP);
               // set all bits higher than outflank
-	    __m256i flip4 = _mm256_andnot_si256(_mm256_or_si256(_mm256_add_epi64(outflank, _mm256_set1_epi64x(-1)), outflank), mask);
+            __m256i flip4 = _mm256_andnot_si256(_mm256_or_si256(_mm256_add_epi64(outflank, _mm256_set1_epi64x(-1)), outflank), mask);
     #else
               // right: isolate non-opponent MS1B by clearing lower bits
             __m256i eraser = _mm256_andnot_si256(OO, mask);
@@ -67,7 +67,7 @@ class Flip{
               // left: look for non-opponent LS1B
             mask = lrmask[place].v4[0];
             outflank = _mm256_andnot_si256(OO, mask);
-    #ifdef __AVX512VL__
+    #ifdef USE_AVX512
             outflank = _mm256_xor_si256(outflank, _mm256_add_epi64(outflank, _mm256_set1_epi64x(-1)));	// BLSMSK
             outflank = _mm256_and_si256(outflank, mask);	// non-opponent LS1B and opponent inbetween
               // apply flip if P is in BLSMSK, i.e. LS1B is P
