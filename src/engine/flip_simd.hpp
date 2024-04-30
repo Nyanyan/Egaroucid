@@ -39,34 +39,48 @@ class Flip{
     public:
         // original code from http://www.amy.hi-ho.ne.jp/okuhara/bitboard.htm
         // by Toshihiko Okuhara
+
         static inline __m128i calc_flip(__m128i OP, const uint_fast8_t place) {
-            __m256i  PP, OO, flip4, outflank, eraser, mask;
-            __m128i  flip2;
+            __m256i PP = _mm256_broadcastq_epi64(OP);
+            __m256i OO = _mm256_permute4x64_epi64(_mm256_castsi128_si256(OP), 0x55);
+            __m256i mask = lrmask[place].v4[1];
 
-            PP = _mm256_broadcastq_epi64(OP);
-            OO = _mm256_permute4x64_epi64(_mm256_castsi128_si256(OP), 0x55);
-
-            mask = lrmask[place].v4[1];
-              // isolate non-opponent MS1B by clearing lower bits
-            eraser = _mm256_andnot_si256(OO, mask);
-            outflank = _mm256_sllv_epi64(_mm256_and_si256(PP, mask), _mm256_set_epi64x(7, 9, 8, 1));
+    #ifdef __AVX512VL__
+              // right: look for non-opponent (or edge) bit with lzcnt
+            __m256i outflank = _mm256_andnot_si256(OO, mask);
+            outflank = _mm256_srlv_epi64(_mm256_set1_epi64x(0x8000000000000000), _mm256_lzcnt_epi64(outflank));
+            outflank = _mm256_and_si256(outflank, PP);
+              // set all bits higher than outflank
+	    __m256i flip4 = _mm256_andnot_si256(_mm256_or_si256(_mm256_add_epi64(outflank, _mm256_set1_epi64x(-1)), outflank), mask);
+    #else
+              // right: isolate non-opponent MS1B by clearing lower bits
+            __m256i eraser = _mm256_andnot_si256(OO, mask);
+            __m256i outflank = _mm256_sllv_epi64(_mm256_and_si256(PP, mask), _mm256_set_epi64x(7, 9, 8, 1));
             eraser = _mm256_or_si256(eraser, _mm256_srlv_epi64(eraser, _mm256_set_epi64x(7, 9, 8, 1)));
             outflank = _mm256_andnot_si256(eraser, outflank);
             outflank = _mm256_andnot_si256(_mm256_srlv_epi64(eraser, _mm256_set_epi64x(14, 18, 16, 2)), outflank);
             outflank = _mm256_andnot_si256(_mm256_srlv_epi64(eraser, _mm256_set_epi64x(28, 36, 32, 4)), outflank);
               // set mask bits higher than outflank
-            flip4 = _mm256_and_si256(mask, _mm256_sub_epi64(_mm256_setzero_si256(), outflank));
+            __m256i flip4 = _mm256_and_si256(mask, _mm256_sub_epi64(_mm256_setzero_si256(), outflank));
+    #endif
 
+              // left: look for non-opponent LS1B
             mask = lrmask[place].v4[0];
-              // look for non-opponent LS1B
             outflank = _mm256_andnot_si256(OO, mask);
+    #ifdef __AVX512VL__
+            outflank = _mm256_xor_si256(outflank, _mm256_add_epi64(outflank, _mm256_set1_epi64x(-1)));	// BLSMSK
+            outflank = _mm256_and_si256(outflank, mask);	// non-opponent LS1B and opponent inbetween
+              // apply flip if P is in BLSMSK, i.e. LS1B is P
+            flip4 = _mm256_mask_or_epi64(flip4, _mm256_test_epi64_mask(outflank, PP), flip4, _mm256_and_si256(outflank, OO));
+    #else
             outflank = _mm256_and_si256(outflank, _mm256_sub_epi64(_mm256_setzero_si256(), outflank));  // LS1B
             outflank = _mm256_and_si256(outflank, PP);
               // set all bits if outflank = 0, otherwise higher bits than outflank
             eraser = _mm256_sub_epi64(_mm256_cmpeq_epi64(outflank, _mm256_setzero_si256()), outflank);
             flip4 = _mm256_or_si256(flip4, _mm256_andnot_si256(eraser, mask));
+    #endif
 
-            flip2 = _mm_or_si128(_mm256_castsi256_si128(flip4), _mm256_extracti128_si256(flip4, 1));
+            __m128i flip2 = _mm_or_si128(_mm256_castsi256_si128(flip4), _mm256_extracti128_si256(flip4, 1));
             return _mm_or_si128(flip2, _mm_shuffle_epi32(flip2, 0x4e));	// SWAP64
         }
 

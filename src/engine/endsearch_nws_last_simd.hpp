@@ -35,8 +35,8 @@
 */
 static inline int vectorcall last1_nws(Search *search, __m128i PO, int alpha, int place) {
     uint_fast8_t n_flip;
-    unsigned int t;
-    unsigned long long P = _mm_extract_epi64(PO, 1);
+    uint32_t t;
+    uint64_t P = _mm_extract_epi64(PO, 1);
     __m256i PP = _mm256_permute4x64_epi64(_mm256_castsi128_si256(PO), 0x55);
     int score = 2 * pop_count_ull(P) - HW2 + 2;	// = (pop_count_ull(P) + 1) - (HW2 - 1 - pop_count_ull(P))
     	// if player can move, final score > score.
@@ -48,25 +48,36 @@ static inline int vectorcall last1_nws(Search *search, __m128i PO, int alpha, in
         ++search->n_nodes_discs[63];
     #endif
     if (score > alpha) {	// if player can move, high cut-off will occur regardress of n_flip.
-        __m256i M = lrmask[place].v4[0];
-        __m256i mO = _mm256_andnot_si256(PP, M);
-        __m256i F = _mm256_andnot_si256(_mm256_cmpeq_epi64(mO, M), mO); // clear if all O
-        M = lrmask[place].v4[1];
-        mO = _mm256_andnot_si256(PP, M);
-        F = _mm256_or_si256(F, _mm256_andnot_si256(_mm256_cmpeq_epi64(mO, M), mO));
+        __m256i lM = lrmask[place].v4[0];
+        __m256i rM = lrmask[place].v4[1];
+
+    #ifdef __AVX512VL__
+        __m256i F = _mm256_maskz_andnot_epi64(_mm256_test_epi64_mask(PP, lM), PP, lM);	// clear if all O
+        // F = _mm256_mask_or_epi64(F, _mm256_test_epi64_mask(PP, rM), F, _mm256_andnot_si256(PP, rM));
+        F = _mm256_mask_ternarylogic_epi64(F, _mm256_test_epi64_mask(PP, rM), PP, rM, 0xF2);
+    #else
+        __m256i lmO = _mm256_andnot_si256(PP, lM);
+        __m256i F = _mm256_andnot_si256(_mm256_cmpeq_epi64(lmO, lM), lmO); // clear if all O
+        __m256i rmO = _mm256_andnot_si256(PP, rM);
+        F = _mm256_or_si256(F, _mm256_andnot_si256(_mm256_cmpeq_epi64(rmO, rM), rmO));
+    #endif
 
         if (_mm256_testz_si256(F, _mm256_broadcastq_epi64(*(__m128i *) &bit_around[place]))) {	// pass
             ++search->n_nodes;
             #if USE_SEARCH_STATISTICS
                 ++search->n_nodes_discs[63];
             #endif
-            	// n_flip = count_last_flip(~P, place);
+                // n_flip = count_last_flip(~P, place);
+    #ifdef __AVX512VL__
+            t = _cvtmask32_u32(_mm256_test_epi8_mask(F, F));	// all O = all P = 0 flip
+    #else
+            t = ~_mm256_movemask_epi8(_mm256_cmpeq_epi8(lmO, rmO));	// eq only if l = r = 0
+    #endif
             const int y = place >> 3;
-            t = _mm256_movemask_epi8(_mm256_sub_epi8(_mm256_setzero_si256(), _mm256_andnot_si256(PP, mask_dvhd[place].v4)));
-            n_flip  = n_flip_pre_calc[(~P >> (y * 8)) & 0xFF][place & 7];
-            n_flip += n_flip_pre_calc[t & 0xFF][y];
-            n_flip += n_flip_pre_calc[(t >> 16) & 0xFF][y];
-            n_flip += n_flip_pre_calc[t >> 24][y];
+            n_flip  = n_flip_pre_calc[(~P >> (y * 8)) & 0xFF][place & 7];	// h
+            n_flip += n_flip_pre_calc[(t >> 8) & 0xFF][y];	// v
+            n_flip += n_flip_pre_calc[(t >> 16) & 0xFF][y];	// d
+            n_flip += n_flip_pre_calc[t >> 24][y];	// d
             score -= (n_flip + (int)((n_flip > 0) | (score <= 0))) * 2;
         } else  score += 2;	// min flip
 
@@ -74,10 +85,10 @@ static inline int vectorcall last1_nws(Search *search, __m128i PO, int alpha, in
         	// n_flip = count_last_flip(P, place);
         const int y = place >> 3;
         t = _mm256_movemask_epi8(_mm256_sub_epi8(_mm256_setzero_si256(), _mm256_and_si256(PP, mask_dvhd[place].v4)));
-        n_flip  = n_flip_pre_calc[(P >> (y * 8)) & 0xFF][place & 7];
-        n_flip += n_flip_pre_calc[t & 0xFF][y];
-        n_flip += n_flip_pre_calc[(t >> 16) & 0xFF][y];
-        n_flip += n_flip_pre_calc[t >> 24][y];
+        n_flip  = n_flip_pre_calc[(P >> (y * 8)) & 0xFF][place & 7];	// h
+        n_flip += n_flip_pre_calc[t & 0xFF][y];	// d
+        n_flip += n_flip_pre_calc[(t >> 16) & 0xFF][y];	// v
+        n_flip += n_flip_pre_calc[t >> 24][y];	// d
         score += n_flip * 2;
         	// if n_flip == 0, score <= alpha so lazy low cut-off
     }
