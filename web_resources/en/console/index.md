@@ -64,11 +64,20 @@ Please visit [GitHub Releases](https://github.com/Nyanyan/Egaroucid/releases) to
 
 Please build on your own. You can use cmake or g++.
 
+Please download source code here, then unzip it.
+
+<div class="table_wrapper"><table>
+    <tr>
+        <th>Date</th>
+        <th>Download</th>
+    </tr>
+    <tr>
+        <td>2024/04/17</td>
+        <td>[Egaroucid for Console 7.0.0 source code](https://github.com/Nyanyan/Egaroucid/archive/refs/tags/console_v7.0.0.zip)</td>
+    </tr>
+    </table></div>
+
 ### Build with cmake
-
-Please download [source codes](https://github.com/Nyanyan/Egaroucid/archive/refs/tags/console_v7.0.0.zip) from GitHub Release, then unzip it.
-
-
 
 Change directory.
 
@@ -142,11 +151,6 @@ Requirements are:
     </li>
     <li>C++17</li>
 </ul>
-
-Please download [source codes](https://github.com/Nyanyan/Egaroucid/archive/refs/tags/console_v7.0.0.zip) from GitHub Release, then unzip it.
-
-
-
 Change directory.
 
 
@@ -232,9 +236,11 @@ Egaroucid for Console uses some external files. If you've got a trouble, please 
             </li>
             <li>book.egbk (book file)</li>
             <li>eval.egev (evaluation file)</li>
+            <li>eval_move_ordering_end.egev (evaluation file for endgame)</li>
         </ul>
     </li>
 </ul>
+
 
 
 

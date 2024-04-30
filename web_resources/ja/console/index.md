@@ -61,11 +61,20 @@ Egaroucidはx64のSIMDバージョン(AVX2を使用)に最適化して作って�
 
 cmakeでビルドするか、直接g++を使ってビルドすることができます。
 
+下記リンクからコードをダウンロードし、任意の場所に解凍してください。
+
+<div class="table_wrapper"><table>
+    <tr>
+        <th>リリース日</th>
+        <th>ダウンロード</th>
+    </tr>
+    <tr>
+        <td>2024/04/17</td>
+        <td>[Egaroucid for Console 7.0.0 ソースコード](https://github.com/Nyanyan/Egaroucid/archive/refs/tags/console_v7.0.0.zip)</td>
+    </tr>
+    </table></div>
+
 ### cmakeでビルド
-
-GitHubのリリースから[コード](https://github.com/Nyanyan/Egaroucid/archive/refs/tags/console_v7.0.0.zip)を入手し、任意の場所に解凍します。
-
-
 
 ディレクトリを移動します。
 
@@ -135,10 +144,6 @@ GitHubのリリースから[コード](https://github.com/Nyanyan/Egaroucid/arch
     </li>
     <li>C++17の機能が必要</li>
 </ul>
-GitHubのリリースから[コード](https://github.com/Nyanyan/Egaroucid/archive/refs/tags/console_v7.0.0.zip)を入手し、任意の場所に解凍します。
-
-
-
 ディレクトリを移動します。
 
 
@@ -194,16 +199,6 @@ GitHubのリリースから[コード](https://github.com/Nyanyan/Egaroucid/arch
 
 <code>$ Egaroucid_for_Console.exe -help</code>
 
-
-
-または
-
-
-
-<code>$ ./Egaroucid_for_Console.out -help</code>
-
-
-
 を実行すると使えるオプションやコマンドが確認できます。
 
 
@@ -225,9 +220,11 @@ Egaroucid for Consoleはいくつかの外部ファイルを必要とします�
             </li>
             <li>book.egbk (bookファイル)</li>
             <li>eval.egev (評価ファイル)</li>
+            <li>eval_move_ordering_end.egev (終盤探索向け評価ファイル)</li>
         </ul>
     </li>
 </ul>
+
 
 
 ## book形式の変更について
