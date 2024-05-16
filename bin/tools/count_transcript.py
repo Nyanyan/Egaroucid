@@ -1,7 +1,7 @@
 import glob
 from tqdm import trange
 
-dr = './../../train_data/transcript/records22/*.txt'
+dr = './../../train_data/transcript/records34/*.txt'
 print(dr)
 files = glob.glob(dr)
 

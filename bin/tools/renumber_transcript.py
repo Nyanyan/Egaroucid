@@ -1,8 +1,10 @@
 import glob
 from tqdm import trange
 
-dr = './transcript/*.txt'
-out_dr = './transcript/renumbered/'
+number_dir = 31
+
+dr = './../transcript/' + str(number_dir) + '/*.txt'
+out_dr = './../transcript/' + str(number_dir) + '_renumbered/'
 
 files = glob.glob(dr)
 

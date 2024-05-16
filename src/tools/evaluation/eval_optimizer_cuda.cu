@@ -44,7 +44,7 @@
 
 
 struct Adj_Data {
-    int features[ADJ_N_FEATURES];
+    uint16_t features[ADJ_N_FEATURES];
     float score;
 };
 
@@ -102,7 +102,6 @@ int adj_import_train_data(int n_files, char* files[], Adj_Data* host_train_data,
     int n_data = 0;
     FILE* fp;
     int16_t n_discs, score, player;
-    uint16_t raw_features[ADJ_N_FEATURES];
     Adj_Data data;
     float score_avg = 0.0;
     int start_idx_arr[ADJ_N_FEATURES];
@@ -125,9 +124,8 @@ int adj_import_train_data(int n_files, char* files[], Adj_Data* host_train_data,
             if (fread(&n_discs, 2, 1, fp) < 1)
                 break;
             fread(&player, 2, 1, fp);
-            fread(raw_features, 2, ADJ_N_FEATURES, fp);
+            fread(host_train_data[n_data].features, 2, ADJ_N_FEATURES, fp);
             for (int i = 0; i < ADJ_N_FEATURES; ++i){
-                host_train_data[n_data].features[i] = start_idx_arr[i] + raw_features[i];
                 #if ADJ_CELL_WEIGHT
                     if (host_train_data[n_data].features[i] < 10){
                         ++host_n_appear_arr[host_train_data[n_data].features[i]];
@@ -137,8 +135,8 @@ int adj_import_train_data(int n_files, char* files[], Adj_Data* host_train_data,
                         ++host_n_appear_arr[host_rev_idx_arr[host_train_data[n_data].features[i] - 10]];
                     }
                 #else
-                    ++host_n_appear_arr[host_train_data[n_data].features[i]];
-                    ++host_n_appear_arr[host_rev_idx_arr[host_train_data[n_data].features[i]]];
+                    ++host_n_appear_arr[start_idx_arr[i] + (int)host_train_data[n_data].features[i]];
+                    ++host_n_appear_arr[host_rev_idx_arr[start_idx_arr[i] + (int)host_train_data[n_data].features[i]]];
                 #endif
             }
             fread(&score, 2, 1, fp);
@@ -161,7 +159,7 @@ int adj_import_train_data(int n_files, char* files[], Adj_Data* host_train_data,
 /*
     @brief calculate residual error
 */
-__global__ void adj_calculate_residual(const float *device_eval_arr, const int n_data, const Adj_Data *device_train_data, int *device_rev_idx_arr, float *device_residual_arr, float *device_error_monitor_arr){
+__global__ void adj_calculate_residual(const float *device_eval_arr, const int n_data, const int *device_start_idx_arr, const Adj_Data *device_train_data, int *device_rev_idx_arr, float *device_residual_arr, float *device_error_monitor_arr){
     const int data_idx = blockIdx.x * blockDim.x + threadIdx.x;
     if (data_idx >= n_data){
         return;
@@ -180,7 +178,7 @@ __global__ void adj_calculate_residual(const float *device_eval_arr, const int n
                 predicted_value -= device_eval_arr[device_train_data[data_idx].features[i] - 10];
             }
         #else
-            predicted_value += device_eval_arr[device_train_data[data_idx].features[i]];
+            predicted_value += device_eval_arr[device_start_idx_arr[i] + (int)device_train_data[data_idx].features[i]];
         #endif
     }
     float residual_error = device_train_data[data_idx].score - predicted_value;
@@ -194,8 +192,8 @@ __global__ void adj_calculate_residual(const float *device_eval_arr, const int n
                 atomicAdd(&device_residual_arr[device_rev_idx_arr[device_train_data[data_idx].features[i] - 10]], -residual_error);
             }
         #else
-            atomicAdd(&device_residual_arr[device_train_data[data_idx].features[i]], residual_error);
-            atomicAdd(&device_residual_arr[device_rev_idx_arr[device_train_data[data_idx].features[i]]], residual_error);
+            atomicAdd(&device_residual_arr[device_start_idx_arr[i] + (int)device_train_data[data_idx].features[i]], residual_error);
+            atomicAdd(&device_residual_arr[device_rev_idx_arr[device_start_idx_arr[i] + (int)device_train_data[data_idx].features[i]]], residual_error);
         #endif
     }
     atomicAdd(&device_error_monitor_arr[0], (residual_error / ADJ_STEP) * (residual_error / ADJ_STEP) / n_data);
@@ -331,6 +329,16 @@ int main(int argc, char* argv[]) {
     for (int i = 0; i < eval_size; ++i){
         host_n_appear_arr[i] = std::min(100, host_n_appear_arr[i]);
     }
+    int host_start_idx_arr[ADJ_N_FEATURES];
+    int start_idx = 0;
+    for (int i = 0; i < ADJ_N_FEATURES; ++i){
+        if (i > 0){
+            if (adj_feature_to_eval_idx[i] > adj_feature_to_eval_idx[i - 1]){
+                start_idx += adj_eval_sizes[adj_feature_to_eval_idx[i - 1]];
+            }
+        }
+        host_start_idx_arr[i] = start_idx;
+    }
 
     float *device_eval_arr; // device eval array
     int *device_rev_idx_arr; // device reversed index
@@ -338,17 +346,20 @@ int main(int argc, char* argv[]) {
     int *device_n_appear_arr;
     float *device_residual_arr;
     float *device_error_monitor_arr;
+    int *device_start_idx_arr;
     cudaMalloc(&device_eval_arr, sizeof(float) * eval_size);
     cudaMalloc(&device_rev_idx_arr, sizeof(int) * eval_size);
     cudaMalloc(&device_train_data, sizeof(Adj_Data) * n_data);
     cudaMalloc(&device_n_appear_arr, sizeof(int) * eval_size);
     cudaMalloc(&device_residual_arr, sizeof(float) * eval_size);
     cudaMalloc(&device_error_monitor_arr, sizeof(float) * N_ERROR_MONITOR);
+    cudaMalloc(&device_start_idx_arr, sizeof(int) * ADJ_N_FEATURES);
     cudaMemcpy(device_eval_arr, host_eval_arr, sizeof(float) * eval_size, cudaMemcpyHostToDevice);
     cudaMemcpy(device_rev_idx_arr, host_rev_idx_arr, sizeof(int) * eval_size, cudaMemcpyHostToDevice);
     cudaMemcpy(device_train_data, host_train_data, sizeof(Adj_Data) * n_data, cudaMemcpyHostToDevice);
     cudaMemcpy(device_n_appear_arr, host_n_appear_arr, sizeof(int) * eval_size, cudaMemcpyHostToDevice);
     cudaMemset(device_residual_arr, 0, sizeof(float) * eval_size);
+    cudaMemcpy(device_start_idx_arr, host_start_idx_arr, sizeof(int) * ADJ_N_FEATURES, cudaMemcpyHostToDevice);
 
     // for adam optimizer
     float *device_m_arr;
@@ -363,14 +374,14 @@ int main(int argc, char* argv[]) {
     std::cerr << "n_blocks_residual " << n_blocks_residual << " n_blocks_next_step " << n_blocks_next_step << std::endl;
     std::cerr << "phase " << phase << std::endl;
     float alpha_stab = alpha; // / n_data;
-    adj_calculate_residual <<<n_blocks_residual, N_THREADS_PER_BLOCK_RESIDUAL>>> (device_eval_arr, n_data, device_train_data, device_rev_idx_arr, device_residual_arr, device_error_monitor_arr);
+    adj_calculate_residual <<<n_blocks_residual, N_THREADS_PER_BLOCK_RESIDUAL>>> (device_eval_arr, n_data, device_start_idx_arr, device_train_data, device_rev_idx_arr, device_residual_arr, device_error_monitor_arr);
     cudaMemcpy(host_error_monitor_arr, device_error_monitor_arr, sizeof(float) * N_ERROR_MONITOR, cudaMemcpyDeviceToHost);
     std::cerr << "before MSE " << host_error_monitor_arr[0] << " MAE " << host_error_monitor_arr[1] << std::endl;
     uint64_t strt = tim();
     int n_loop = 0;
     while (tim() - strt < msecond){
         ++n_loop;
-        adj_calculate_residual <<<n_blocks_residual, N_THREADS_PER_BLOCK_RESIDUAL>>> (device_eval_arr, n_data, device_train_data, device_rev_idx_arr, device_residual_arr, device_error_monitor_arr);
+        adj_calculate_residual <<<n_blocks_residual, N_THREADS_PER_BLOCK_RESIDUAL>>> (device_eval_arr, n_data, device_start_idx_arr, device_train_data, device_rev_idx_arr, device_residual_arr, device_error_monitor_arr);
         cudaMemcpy(host_error_monitor_arr, device_error_monitor_arr, sizeof(float) * N_ERROR_MONITOR, cudaMemcpyDeviceToHost);
         std::cerr << "\rn_loop " << n_loop << " progress " << (tim() - strt) * 100 / msecond << "% MSE " << host_error_monitor_arr[0] << " MAE " << host_error_monitor_arr[1] << "               ";
         
@@ -386,7 +397,7 @@ int main(int argc, char* argv[]) {
         host_eval_arr[i] = round(host_eval_arr[i]);
     }
 
-    adj_calculate_residual <<<n_blocks_residual, N_THREADS_PER_BLOCK_RESIDUAL>>> (device_eval_arr, n_data, device_train_data, device_rev_idx_arr, device_residual_arr, device_error_monitor_arr);
+    adj_calculate_residual <<<n_blocks_residual, N_THREADS_PER_BLOCK_RESIDUAL>>> (device_eval_arr, n_data, device_start_idx_arr, device_train_data, device_rev_idx_arr, device_residual_arr, device_error_monitor_arr);
     cudaMemcpy(host_error_monitor_arr, device_error_monitor_arr, sizeof(float) * N_ERROR_MONITOR, cudaMemcpyDeviceToHost);
     std::cout << "phase " << phase << " time " << (tim() - strt) << " ms data " << n_data << " n_loop " << n_loop << " MSE " << host_error_monitor_arr[0] << " MAE " << host_error_monitor_arr[1] << " (with int) alpha " << alpha << std::endl;
 
