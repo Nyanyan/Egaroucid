@@ -1,7 +1,7 @@
 import glob
 from tqdm import trange
 
-number_dir = 31
+number_dir = 32
 
 dr = './../transcript/' + str(number_dir) + '/*.txt'
 out_dr = './../transcript/' + str(number_dir) + '_renumbered/'

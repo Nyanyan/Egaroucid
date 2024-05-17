@@ -31,7 +31,7 @@
 #if ADJ_CELL_WEIGHT
     #define ADJ_MAX_N_DATA 1000000
 #else
-    #define ADJ_MAX_N_DATA 75000000
+    #define ADJ_MAX_N_DATA 100000000
 #endif
 
 // GPU constant
