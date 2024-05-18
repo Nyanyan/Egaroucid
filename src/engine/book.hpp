@@ -1475,7 +1475,6 @@ class Book{
                 stop_res.n_lines = 0;
                 return stop_res;
             }
-            board.print();
             if (board.get_legal() == 0){
                 board.pass();
                 if (board.get_legal() == 0){ // game over
@@ -1493,8 +1492,6 @@ class Book{
                         }
                     }
                 } else{ // just pass
-                    std::cerr << "passed" << std::endl;
-                    board.print();
                     Book_elem res = negamax_book_p(board, n_seen, n_fix, percent, stop);
                     if (res.value != SCORE_UNDEFINED){
                         res.value *= -1;
@@ -1686,22 +1683,23 @@ class Book{
         void delete_unflagged_moves(Board board, uint64_t *n_delete, std::unordered_set<Board, Book_hash> &keep_list, bool *doing){
             if (!(*doing))
                 return;
-            if (!contain(board))
-                return;
             if (board.get_legal() == 0){
                 board.pass();
                 if (board.get_legal() == 0){ // game over
-                    bool delete_board = keep_list.find(get_representative_board(board)) == keep_list.end();
-                    if (!delete_board){
-                        board.pass();
-                        delete_board = keep_list.find(get_representative_board(board)) == keep_list.end();
-                    }
-                    if (delete_board){
+                    bool keep_board = keep_list.find(get_representative_board(board)) != keep_list.end();
+                    board.pass();
+                    keep_board |= keep_list.find(get_representative_board(board)) != keep_list.end();
+                    if (!keep_board){
                         delete_elem(board);
+                        board.pass();
+                        delete_elem(board);
+                        ++(*n_delete);
                     }
                     return;
                 }
             }
+            if (!contain(board))
+                return;
             Book_elem book_elem = get(board);
             // already seen
             if (book_elem.seen)
