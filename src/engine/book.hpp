@@ -1725,8 +1725,10 @@ class Book{
 
         void reduce_book(Board root_board, int max_depth, int max_error_per_move, int max_line_error, bool *doing){
             Book_elem book_elem = get(root_board);
-            if (book_elem.value == SCORE_UNDEFINED)
+            if (book_elem.value == SCORE_UNDEFINED){
+                *doing = false;
                 return;
+            }
             uint64_t n_flags = 0, n_delete = 0;
             uint64_t book_size = book.size();
             std::unordered_set<Board, Book_hash> keep_list;
