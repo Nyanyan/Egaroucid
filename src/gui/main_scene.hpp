@@ -1556,8 +1556,12 @@ private:
                         else {
                             Flip flip;
                             calc_flip(&flip, &getData().history_elem.board, getData().book_information.changing);
-                            Board b = getData().history_elem.board.move_copy(&flip);
-                            book.delete_elem(b);
+                            Board moved_board = getData().history_elem.board.move_copy(&flip);
+                            book.delete_elem(moved_board);
+                            if (moved_board.get_legal() == 0){
+                                moved_board.pass();
+                                book.delete_elem(moved_board);
+                            }
                             reset_book_additional_information();
                             getData().book_information.changed = true;
                             getData().book_information.changing = BOOK_CHANGE_NO_CELL;

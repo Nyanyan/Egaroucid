@@ -1575,14 +1575,34 @@ class Book{
             if (board.n_discs() > 4 + max_depth)
                 return;
             // pass
-            if (board.get_legal() == 0){
+            if (board.get_legal() == 0){ // just pass
                 board.pass();
-                if (board.get_legal() == 0)
+                if (board.get_legal() == 0){ // game over
+                    if (keep_list.find(get_representative_board(board)) != keep_list.end())
+                        return;
+                    if (contain(&board)){
+                        Book_elem book_elem = get(board);
+                        if (book_elem.seen)
+                            return;
+                    } else{
+                        board.pass();
+                        if (keep_list.find(get_representative_board(board)) != keep_list.end())
+                            return;
+                        Book_elem book_elem = get(board);
+                        if (book_elem.seen)
+                            return;
+                    }
+                    flag_book_elem(board);
+                    keep_list.emplace(get_representative_board(board));
+                    ++(*n_flags);
                     return;
+                }
             }
             Board unique_board = get_representative_board(board);
             // already seen
             if (keep_list.find(unique_board) != keep_list.end())
+                return;
+            if (!contain(&board))
                 return;
             Book_elem book_elem = get(board);
             // already seen?
@@ -1628,11 +1648,28 @@ class Book{
                 for (Book_value &link: links){
                     calc_flip(&flip, &board, link.policy);
                     board.move_board(&flip);
-                        if (keep_list.find(get_representative_board(board)) == keep_list.end()){
+                        bool is_end = board.is_end();
+                        bool passed = board.get_legal() == 0;
+                        bool will_be_deleted = false;
+                        if (is_end){
+                            will_be_deleted = keep_list.find(get_representative_board(board)) == keep_list.end();
+                            board.pass();
+                                will_be_deleted |= keep_list.find(get_representative_board(board)) == keep_list.end();
+                            board.pass();
+                        } else if (passed){
+                            board.pass();
+                                will_be_deleted = keep_list.find(get_representative_board(board)) == keep_list.end();
+                            board.pass();
+                        }
+                        if (will_be_deleted){
                             if (book_elem.leaf.value < link.value){
                                 book_elem.leaf.value = link.value;
                                 book_elem.leaf.move = link.policy;
+                                if (passed)
+                                    board.pass();
                                 book_elem.leaf.level = get(board).level;
+                                if (passed)
+                                    board.pass();
                                 leaf_updated = true;
                             }
                         } else{
@@ -1653,8 +1690,17 @@ class Book{
                 return;
             if (board.get_legal() == 0){
                 board.pass();
-                if (board.get_legal() == 0)
+                if (board.get_legal() == 0){ // game over
+                    bool delete_board = keep_list.find(get_representative_board(board)) == keep_list.end();
+                    if (!delete_board){
+                        board.pass();
+                        delete_board = keep_list.find(get_representative_board(board)) == keep_list.end();
+                    }
+                    if (delete_board){
+                        delete_elem(board);
+                    }
                     return;
+                }
             }
             Book_elem book_elem = get(board);
             // already seen
