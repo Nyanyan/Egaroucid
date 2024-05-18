@@ -1375,18 +1375,46 @@ class Book{
         inline void change(Board b, int value, int level){
             std::lock_guard<std::mutex> lock(mtx);
             if (-HW2 <= value && value <= HW2){
-                if (contain(b)){
-                    Board bb = get_representative_board(b);
-                    book[bb].value = value;
-                    book[bb].level = level;
+                if (b.is_end()){ // game over
+                    if (contain(b)){
+                        Board bb = get_representative_board(b);
+                        book[bb].value = value;
+                        book[bb].level = level;
+                    } else{
+                        b.pass();
+                        if (contain(b)){
+                            Board bb = get_representative_board(b);
+                            book[bb].value = -value;
+                            book[bb].level = level;
+                        } else{
+                            b.pass();
+                            Book_elem elem;
+                            elem.value = value;
+                            elem.level = level;
+                            elem.leaf.move = MOVE_UNDEFINED;
+                            elem.leaf.value = SCORE_UNDEFINED;
+                            elem.leaf.level = LEVEL_UNDEFINED;
+                            register_symmetric_book(b, elem);
+                        }
+                    }
                 } else{
-                    Book_elem elem;
-                    elem.value = value;
-                    elem.level = level;
-                    elem.leaf.move = MOVE_UNDEFINED;
-                    elem.leaf.value = SCORE_UNDEFINED;
-                    elem.leaf.level = LEVEL_UNDEFINED;
-                    register_symmetric_book(b, elem);
+                    if (b.get_legal() == 0){ // just pass
+                        b.pass();
+                        value *= -1;
+                    }
+                    if (contain(b)){
+                        Board bb = get_representative_board(b);
+                        book[bb].value = value;
+                        book[bb].level = level;
+                    } else{
+                        Book_elem elem;
+                        elem.value = value;
+                        elem.level = level;
+                        elem.leaf.move = MOVE_UNDEFINED;
+                        elem.leaf.value = SCORE_UNDEFINED;
+                        elem.leaf.level = LEVEL_UNDEFINED;
+                        register_symmetric_book(b, elem);
+                    }
                 }
             }
         }

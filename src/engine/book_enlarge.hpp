@@ -351,7 +351,7 @@ uint64_t expand_leaf(Book_deviate_todo_elem todo_elem, int book_depth, int level
                     if (todo_elem.board.get_legal() == 0){ // check pass
                         todo_elem.board.pass();
                         prev_value *= -1;
-                        if (todo_elem.board.get_legal() == 0){
+                        if (todo_elem.board.get_legal() == 0){ // game over
                             todo_elem.board.pass();
                             book.change(todo_elem.board, todo_elem.board.score_player(), 60);
                             ++n_add;
