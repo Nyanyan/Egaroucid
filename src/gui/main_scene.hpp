@@ -497,7 +497,7 @@ private:
                 ++getData().graph_resources.n_discs;
                 getData().graph_resources.delta = 1;
             }
-            if (getData().menu_elements.undo || (KeyBackspace.down() && getData().book_information.changing == BOOK_CHANGE_NO_CELL)) {
+            if ((getData().menu_elements.undo || KeyBackspace.down()) && getData().book_information.changing == BOOK_CHANGE_NO_CELL) {
                 int n_discs_before = getData().history_elem.board.n_discs();
                 while (getData().graph_resources.nodes[getData().graph_resources.branch].back().board.n_discs() >= n_discs_before && 
                     ((getData().graph_resources.branch == GRAPH_MODE_NORMAL && getData().graph_resources.nodes[GRAPH_MODE_NORMAL].size() > 1) || (getData().graph_resources.branch == GRAPH_MODE_INSPECT && getData().graph_resources.nodes[GRAPH_MODE_INSPECT].size() > 0))) {
