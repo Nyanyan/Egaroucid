@@ -1535,8 +1535,17 @@ private:
                             std::cerr << "new value " << changed_book_value << std::endl;
                             Flip flip;
                             calc_flip(&flip, &getData().history_elem.board, getData().book_information.changing);
-                            Board b = getData().history_elem.board.move_copy(&flip);
-                            book.change(getData().history_elem.board.move_copy(&flip), -changed_book_value, LEVEL_HUMAN);
+                            Board moved_board = getData().history_elem.board.move_copy(&flip);
+                            if (moved_board.get_legal() == 0){
+                                if (moved_board.is_end()){ // game over
+                                    book.change(moved_board, -changed_book_value, LEVEL_HUMAN);
+                                } else{ // just pass
+                                    moved_board.pass();
+                                    book.change(moved_board, changed_book_value, LEVEL_HUMAN);
+                                }
+                            } else{
+                                book.change(moved_board, -changed_book_value, LEVEL_HUMAN);
+                            }
                             reset_book_additional_information();
                             getData().book_information.changed = true;
                             getData().book_information.changing = BOOK_CHANGE_NO_CELL;

@@ -1447,9 +1447,10 @@ class Book{
                 stop_res.n_lines = 0;
                 return stop_res;
             }
+            board.print();
             if (board.get_legal() == 0){
                 board.pass();
-                if (board.get_legal() == 0){
+                if (board.get_legal() == 0){ // game over
                     if (contain(&board)){
                         return get(board);
                     } else{
@@ -1463,6 +1464,14 @@ class Book{
                             return stop_res;
                         }
                     }
+                } else{ // just pass
+                    std::cerr << "passed" << std::endl;
+                    board.print();
+                    Book_elem res = negamax_book_p(board, n_seen, n_fix, percent, stop);
+                    if (res.value != SCORE_UNDEFINED){
+                        res.value *= -1;
+                    }
+                    return res;
                 }
             }
             board = get_representative_board(&board);
