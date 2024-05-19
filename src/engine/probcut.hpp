@@ -139,6 +139,8 @@ int nega_alpha_ordering_nws(Search *search, int alpha, int depth, bool skipped, 
 inline bool mpc(Search* search, int alpha, int beta, int depth, uint64_t legal, bool is_end_search, int* v, const bool* searching){
     if (search->mpc_level == MPC_100_LEVEL)
         return false;
+    if (depth < 3)
+        return false;
     int search_depth = mpc_search_depth_arr[is_end_search][depth];
     int error_search, error_0;
     uint_fast8_t mpc_level = search->mpc_level;
@@ -162,7 +164,7 @@ inline bool mpc(Search* search, int alpha, int beta, int depth, uint64_t legal, 
     #endif
     int d0value = mid_evaluate_diff(search);
     search->mpc_level = MPC_100_LEVEL;
-    if (d0value >= beta + (error_search + error_0) / 2){
+    if (d0value >= beta + error_0){
         int pc_beta = beta + error_search;
         if (pc_beta < SCORE_MAX){
             if (nega_alpha_ordering_nws(search, pc_beta - 1, search_depth, false, legal, false, searching) >= pc_beta){
@@ -174,7 +176,7 @@ inline bool mpc(Search* search, int alpha, int beta, int depth, uint64_t legal, 
             }
         }
     }
-    if (d0value <= alpha - (error_search + error_0) / 2){
+    if (d0value <= alpha - error_0){
         int pc_alpha = alpha - error_search;
         if (pc_alpha > -SCORE_MAX){
             if (nega_alpha_ordering_nws(search, pc_alpha, search_depth, false, legal, false, searching) <= pc_alpha){

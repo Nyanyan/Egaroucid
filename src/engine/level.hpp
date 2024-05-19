@@ -43,7 +43,11 @@
 
 #define N_SELECTIVITY_LEVEL 6
 constexpr int SELECTIVITY_PERCENTAGE[N_SELECTIVITY_LEVEL] = {74, 88, 93, 98, 99, 100};
-constexpr double SELECTIVITY_MPCT[N_SELECTIVITY_LEVEL] = {1.13, 1.55, 1.81, 2.32, 2.57, 9.99};
+// constexpr double SELECTIVITY_MPCT[N_SELECTIVITY_LEVEL] = {1.13, 1.55, 1.81, 2.32, 2.57, 9.99};
+// two-sided test
+// these values must be selected with sqrt(percentage)
+//                                                        86.0   93.8  96.4  99.0  99.5
+constexpr double SELECTIVITY_MPCT[N_SELECTIVITY_LEVEL] = {1.47, 1.86, 2.10, 2.57, 2.81, 9.99};
 
 /*
     @brief structure of level definition
