@@ -581,7 +581,7 @@ public:
             error_sum = BOOK_ERROR_INF;
         error_leaf = getData().menu_elements.book_learn_error_leaf;
         if (!getData().menu_elements.use_book_learn_error_leaf)
-        error_leaf = BOOK_ERROR_INF;
+            error_leaf = BOOK_ERROR_INF;
     }
 
     void update() override {
@@ -1060,7 +1060,7 @@ public:
 };
 
 
-class Deviate_book_transcript_textarea : public App::Scene {
+class Deviate_book_transcript : public App::Scene {
 private:
     Button single_back_button;
     Button back_button;
@@ -1068,29 +1068,62 @@ private:
     bool done;
     bool failed;
     Board board;
+    TextAreaEditState text_area;
     std::vector<Board> board_list;
     std::vector<int> error_lines;
-    TextAreaEditState text_area;
+
+    Button stop_button;
+    Button back_button_deviating;
+    History_elem history_elem;
+    bool book_learning;
+    bool learning_done;
+    int board_idx = 0;
+    std::future<void> book_learn_future;
+    int depth;
+    int error_per_move;
+    int error_sum;
+    int error_leaf;
 
 public:
-    Deviate_book_transcript_textarea(const InitData& init) : IScene{ init } {
+    Deviate_book_transcript(const InitData& init) : IScene{ init } {
         single_back_button.init(BACK_BUTTON_SX, BACK_BUTTON_SY, BACK_BUTTON_WIDTH, BACK_BUTTON_HEIGHT, BACK_BUTTON_RADIUS, language.get("common", "back"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
         back_button.init(GO_BACK_BUTTON_BACK_SX, GO_BACK_BUTTON_SY, GO_BACK_BUTTON_WIDTH, GO_BACK_BUTTON_HEIGHT, GO_BACK_BUTTON_RADIUS, language.get("common", "back"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
         import_button.init(GO_BACK_BUTTON_GO_SX, GO_BACK_BUTTON_SY, GO_BACK_BUTTON_WIDTH, GO_BACK_BUTTON_HEIGHT, GO_BACK_BUTTON_RADIUS, language.get("book", "start"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
         done = false;
         failed = false;
+
+        stop_button.init(BUTTON2_VERTICAL_SX, BUTTON2_VERTICAL_2_SY, BUTTON2_VERTICAL_WIDTH, BUTTON2_VERTICAL_HEIGHT, BUTTON2_VERTICAL_RADIUS, language.get("book", "stop_learn"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
+        back_button_deviating.init(BUTTON2_VERTICAL_SX, BUTTON2_VERTICAL_2_SY, BUTTON2_VERTICAL_WIDTH, BUTTON2_VERTICAL_HEIGHT, BUTTON2_VERTICAL_RADIUS, language.get("common", "back"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
+        history_elem = getData().history_elem;
+        history_elem.policy = -1;
+        book_learning = false;
+        learning_done = false;
+        depth = getData().menu_elements.book_learn_depth;
+        if (!getData().menu_elements.use_book_learn_depth)
+            depth = BOOK_DEPTH_INF;
+        error_per_move = getData().menu_elements.book_learn_error_per_move;
+        if (!getData().menu_elements.use_book_learn_error_per_move)
+            error_per_move = BOOK_ERROR_INF;
+        error_sum = getData().menu_elements.book_learn_error_sum;
+        if (!getData().menu_elements.use_book_learn_error_sum)
+            error_sum = BOOK_ERROR_INF;
+        error_leaf = getData().menu_elements.book_learn_error_leaf;
+        if (!getData().menu_elements.use_book_learn_error_leaf)
+            error_leaf = BOOK_ERROR_INF;
     }
 
     void update() override {
-        if (System::GetUserActions() & UserAction::CloseButtonClicked) {
-            changeScene(U"Close", SCENE_FADE_TIME);
+        if (!done || failed){
+            if (System::GetUserActions() & UserAction::CloseButtonClicked) {
+                changeScene(U"Close", SCENE_FADE_TIME);
+            }
         }
         Scene::SetBackground(getData().colors.green);
-        const int icon_width = SCENE_ICON_WIDTH;
-        getData().resources.icon.scaled((double)icon_width / getData().resources.icon.width()).draw(X_CENTER - icon_width / 2, 20);
-        getData().resources.logo.scaled((double)icon_width / getData().resources.logo.width()).draw(X_CENTER - icon_width / 2, 20 + icon_width);
-        int sy = 20 + icon_width + 50;
-        if (!done) {
+        if (!done){ // transcript
+            const int icon_width = SCENE_ICON_WIDTH;
+            getData().resources.icon.scaled((double)icon_width / getData().resources.icon.width()).draw(X_CENTER - icon_width / 2, 20);
+            getData().resources.logo.scaled((double)icon_width / getData().resources.logo.width()).draw(X_CENTER - icon_width / 2, 20 + icon_width);
+            int sy = 20 + icon_width + 50;
             getData().fonts.font(language.get("book", "book_deviate_with_transcript")).draw(25, Arg::topCenter(X_CENTER, sy), getData().colors.white);
             text_area.active = true;
             SimpleGUI::TextArea(text_area, Vec2{X_CENTER - 300, sy + 40}, SizeF{600, 130}, SimpleGUI::PreferredTextAreaMaxChars);
@@ -1103,29 +1136,85 @@ public:
             }
             if (import_button.clicked()) {
                 failed = import_transcript_processing();
+                if (!failed){
+                    board_idx = 0;
+                    book_learn_future = std::async(std::launch::async, book_deviate, board_list[board_idx], getData().menu_elements.level, depth, error_per_move, error_sum, error_leaf, &history_elem.board, &history_elem.player, getData().settings.book_file, getData().settings.book_file + ".bak", &book_learning);
+                    book_learning = true;
+                }
                 done = true;
             }
         }
-        else {
-            if (!failed) {
-                // TBD
+        else if (failed){ // error in transcript list
+            const int icon_width = SCENE_ICON_WIDTH;
+            getData().resources.icon.scaled((double)icon_width / getData().resources.icon.width()).draw(X_CENTER - icon_width / 2, 20);
+            getData().resources.logo.scaled((double)icon_width / getData().resources.logo.width()).draw(X_CENTER - icon_width / 2, 20 + icon_width);
+            int sy = 20 + icon_width + 50;
+            getData().fonts.font(language.get("book", "transcript_error")).draw(25, Arg::topCenter(X_CENTER, sy), getData().colors.white);
+            String error_lines_str = U"Line: ";
+            for (int i = 0; i < std::min(150, (int)error_lines.size()); ++i){
+                error_lines_str += Format(error_lines[i]);
+                if (i != (int)error_lines.size() - 1){
+                    error_lines_str += U", ";
+                }
+                if ((i + 1) % 15 == 0){
+                    error_lines_str += U"\n";
+                }
+            }
+            getData().fonts.font(error_lines_str).draw(17, Arg::topCenter(X_CENTER, sy + 30), getData().colors.white);
+            single_back_button.draw();
+            if (single_back_button.clicked() || KeyEscape.pressed()) {
                 changeScene(U"Main_scene", SCENE_FADE_TIME);
             }
-            else {
-                getData().fonts.font(language.get("book", "transcript_error")).draw(25, Arg::topCenter(X_CENTER, sy), getData().colors.white);
-                String error_lines_str;
-                for (int i = 0; i < (int)error_lines.size(); ++i){
-                    error_lines_str += Format(error_lines[i]);
-                    if (i != (int)error_lines.size() - 1){
-                        error_lines_str += U", ";
-                    }
-                    if ((i + 1) % 20 == 0){
-                        error_lines_str += U"\n";
+        }
+        else { // training
+            draw_board(getData().fonts, getData().colors, history_elem);
+            draw_info(getData().colors, history_elem, getData().fonts, getData().menu_elements, false);
+            getData().fonts.font(language.get("book", "book_deviate_with_transcript")).draw(25, 480, 190, getData().colors.white);
+            String depth_str = Format(depth);
+            if (depth == BOOK_DEPTH_INF)
+                depth_str = language.get("book", "unlimited");
+            getData().fonts.font(language.get("book", "depth") + U": " + depth_str).draw(15, 480, 260, getData().colors.white);
+            String error_per_move_str = Format(error_per_move);
+            if (error_per_move == BOOK_ERROR_INF)
+                error_per_move_str = language.get("book", "unlimited");
+            getData().fonts.font(language.get("book", "error_per_move") + U": " + error_per_move_str).draw(15, 480, 280, getData().colors.white);
+            String error_sum_str = Format(error_sum);
+            if (error_sum == BOOK_ERROR_INF)
+                error_sum_str = language.get("book", "unlimited");
+            getData().fonts.font(language.get("book", "error_sum") + U": " + error_sum_str).draw(15, 480, 300, getData().colors.white);
+            String error_leaf_str = Format(error_leaf);
+            if (error_leaf == BOOK_ERROR_INF)
+                error_leaf_str = language.get("book", "unlimited");
+            getData().fonts.font(language.get("book", "error_leaf") + U": " + error_leaf_str).draw(15, 480, 320, getData().colors.white);
+            if (book_learning) { // learning
+                getData().fonts.font(language.get("book", "learning") + U"\nLine: " + Format(board_idx + 1)).draw(20, 480, 230, getData().colors.white);
+                stop_button.draw();
+                if (stop_button.clicked()) {
+                    global_searching = false;
+                    book_learning = false;
+                }
+            } else if (!learning_done) { // stop button pressed or completed
+                getData().fonts.font(language.get("book", "stopping")).draw(20, 480, 230, getData().colors.white);
+                if (book_learn_future.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
+                    book_learn_future.get();
+                    ++board_idx;
+                    global_searching = true;
+                    if (board_idx < (int)board_list.size()){ // next board
+                        book_learn_future = std::async(std::launch::async, book_deviate, board_list[board_idx], getData().menu_elements.level, depth, error_per_move, error_sum, error_leaf, &history_elem.board, &history_elem.player, getData().settings.book_file, getData().settings.book_file + ".bak", &book_learning);
+                        book_learning = true;
+                        learning_done = false;
+                    } else{ // all boards done
+                        book_learning = false;
+                        learning_done = true;
                     }
                 }
-                getData().fonts.font(error_lines_str).draw(17, Arg::topCenter(X_CENTER, sy + 30), getData().colors.white);
-                single_back_button.draw();
-                if (single_back_button.clicked() || KeyEscape.pressed()) {
+            } else {
+                getData().fonts.font(language.get("book", "complete")).draw(20, 480, 230, getData().colors.white);
+                back_button.draw();
+                if (back_button.clicked()) {
+                    reset_book_additional_information();
+                    getData().book_information.changed = true;
+                    getData().graph_resources.need_init = false;
                     changeScene(U"Main_scene", SCENE_FADE_TIME);
                 }
             }

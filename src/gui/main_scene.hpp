@@ -680,7 +680,7 @@ private:
             changing_scene = true;
             stop_calculating();
             resume_calculating();
-            changeScene(U"Deviate_book_transcript_textarea", SCENE_FADE_TIME);
+            changeScene(U"Deviate_book_transcript", SCENE_FADE_TIME);
             return;
         }
         if (getData().menu_elements.book_start_fix) {
