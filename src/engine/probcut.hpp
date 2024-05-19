@@ -141,16 +141,17 @@ inline bool mpc(Search* search, int alpha, int beta, int depth, uint64_t legal, 
         return false;
     int search_depth = mpc_search_depth_arr[is_end_search][depth];
     int error_search, error_0;
+    uint_fast8_t mpc_level = search->mpc_level;
     #if USE_MPC_PRE_CALCULATION
         if (is_end_search){
-            error_search = mpc_error_end[search->mpc_level][search->n_discs][search_depth];
-            error_0 = mpc_error_end[search->mpc_level][search->n_discs][0];
+            error_search = mpc_error_end[mpc_level][search->n_discs][search_depth];
+            error_0 = mpc_error_end[mpc_level][search->n_discs][0];
         } else{
-            error_search = mpc_error[search->mpc_level][search->n_discs][search_depth][depth];
-            error_0 = mpc_error[search->mpc_level][search->n_discs][0][depth];
+            error_search = mpc_error[mpc_level][search->n_discs][search_depth][depth];
+            error_0 = mpc_error[mpc_level][search->n_discs][0][depth];
         }
     #else
-        double mpct = SELECTIVITY_MPCT[search->mpc_level];
+        double mpct = SELECTIVITY_MPCT[mpc_level];
         if (is_end_search){
             error_search = ceil(mpct * probcut_sigma_end(search->n_discs, search_depth));
             error_0 = ceil(mpct * probcut_sigma_end(search->n_discs, 0));
@@ -160,8 +161,7 @@ inline bool mpc(Search* search, int alpha, int beta, int depth, uint64_t legal, 
         }
     #endif
     int d0value = mid_evaluate_diff(search);
-    //uint_fast8_t mpc_level = search->mpc_level;
-    //search->mpc_level = MPC_100_LEVEL;
+    search->mpc_level = MPC_100_LEVEL;
     if (d0value >= beta + (error_search + error_0) / 2){
         int pc_beta = beta + error_search;
         if (pc_beta < SCORE_MAX){
@@ -169,7 +169,7 @@ inline bool mpc(Search* search, int alpha, int beta, int depth, uint64_t legal, 
                 *v = beta;
                 if (is_end_search)
                     *v += beta & 1;
-                //search->mpc_level = mpc_level;
+                search->mpc_level = mpc_level;
                 return true;
             }
         }
@@ -181,12 +181,12 @@ inline bool mpc(Search* search, int alpha, int beta, int depth, uint64_t legal, 
                 *v = alpha;
                 if (is_end_search)
                     *v -= alpha & 1;
-                //search->mpc_level = mpc_level;
+                search->mpc_level = mpc_level;
                 return true;
             }
         }
     }
-    //search->mpc_level = mpc_level;
+    search->mpc_level = mpc_level;
     return false;
 }
 
