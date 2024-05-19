@@ -1187,7 +1187,8 @@ public:
                 error_leaf_str = language.get("book", "unlimited");
             getData().fonts.font(language.get("book", "error_leaf") + U": " + error_leaf_str).draw(15, 480, 320, getData().colors.white);
             if (book_learning) { // learning
-                getData().fonts.font(language.get("book", "learning") + U"\nLine: " + Format(board_idx + 1)).draw(20, 480, 230, getData().colors.white);
+                getData().fonts.font(language.get("book", "learning")).draw(20, 480, 230, getData().colors.white);
+                getData().fonts.font(U"Line: " + Format(board_idx + 1)).draw(15, 480, 340, getData().colors.white);
                 stop_button.draw();
                 if (stop_button.clicked()) {
                     global_searching = false;
@@ -1210,8 +1211,8 @@ public:
                 }
             } else {
                 getData().fonts.font(language.get("book", "complete")).draw(20, 480, 230, getData().colors.white);
-                back_button.draw();
-                if (back_button.clicked()) {
+                back_button_deviating.draw();
+                if (back_button_deviating.clicked()) {
                     reset_book_additional_information();
                     getData().book_information.changed = true;
                     getData().graph_resources.need_init = false;
@@ -1288,6 +1289,6 @@ private:
             }
             ++line_idx;
         }
-        return true;
+        return error_found;
     }
 };
