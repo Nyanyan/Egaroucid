@@ -1077,6 +1077,7 @@ private:
     History_elem history_elem;
     bool book_learning;
     bool learning_done;
+    bool stop_button_pressed;
     int board_idx = 0;
     std::future<void> book_learn_future;
     int depth;
@@ -1098,6 +1099,7 @@ public:
         history_elem.policy = -1;
         book_learning = false;
         learning_done = false;
+        stop_button_pressed = false;
         depth = getData().menu_elements.book_learn_depth;
         if (!getData().menu_elements.use_book_learn_depth)
             depth = BOOK_DEPTH_INF;
@@ -1169,7 +1171,7 @@ public:
         else { // training
             draw_board(getData().fonts, getData().colors, history_elem);
             draw_info(getData().colors, history_elem, getData().fonts, getData().menu_elements, false);
-            getData().fonts.font(language.get("book", "book_deviate_with_transcript")).draw(25, 480, 190, getData().colors.white);
+            getData().fonts.font(language.get("book", "book_deviate_with_transcript")).draw(20, 480, 200, getData().colors.white);
             String depth_str = Format(depth);
             if (depth == BOOK_DEPTH_INF)
                 depth_str = language.get("book", "unlimited");
@@ -1193,14 +1195,17 @@ public:
                 if (stop_button.clicked()) {
                     global_searching = false;
                     book_learning = false;
+                    stop_button_pressed = true;
                 }
             } else if (!learning_done) { // stop button pressed or completed
-                getData().fonts.font(language.get("book", "stopping")).draw(20, 480, 230, getData().colors.white);
+                if (stop_button_pressed){
+                    getData().fonts.font(language.get("book", "stopping")).draw(20, 480, 230, getData().colors.white);
+                }
                 if (book_learn_future.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
                     book_learn_future.get();
                     ++board_idx;
                     global_searching = true;
-                    if (board_idx < (int)board_list.size()){ // next board
+                    if (board_idx < (int)board_list.size() && !stop_button_pressed){ // next board
                         book_learn_future = std::async(std::launch::async, book_deviate, board_list[board_idx], getData().menu_elements.level, depth, error_per_move, error_sum, error_leaf, &history_elem.board, &history_elem.player, getData().settings.book_file, getData().settings.book_file + ".bak", &book_learning);
                         book_learning = true;
                         learning_done = false;
