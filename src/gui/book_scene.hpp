@@ -1119,7 +1119,7 @@ public:
                     if (i != (int)error_lines.size() - 1){
                         error_lines_str += U", ";
                     }
-                    if ((i + 1) % 25 == 0){
+                    if ((i + 1) % 20 == 0){
                         error_lines_str += U"\n";
                     }
                 }
