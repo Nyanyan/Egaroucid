@@ -1068,7 +1068,7 @@ private:
     bool done;
     bool failed;
     Board board;
-    std::vector<std::string> transcript;
+    std::vector<Board> board_list;
     std::vector<int> error_lines;
     TextAreaEditState text_area;
 
@@ -1108,21 +1108,22 @@ public:
         }
         else {
             if (!failed) {
+                // TBD
                 changeScene(U"Main_scene", SCENE_FADE_TIME);
             }
             else {
                 getData().fonts.font(language.get("book", "transcript_error")).draw(25, Arg::topCenter(X_CENTER, sy), getData().colors.white);
-                String error_lines;
+                String error_lines_str;
                 for (int i = 0; i < (int)error_lines.size(); ++i){
-                    error_lines += Format(error_lines[i]);
+                    error_lines_str += Format(error_lines[i]);
                     if (i != (int)error_lines.size() - 1){
-                        error_lines += U", ";
+                        error_lines_str += U", ";
                     }
-                    if ((i + 1) % 20 == 0){
-                        error_lines += U"\n";
+                    if ((i + 1) % 25 == 0){
+                        error_lines_str += U"\n";
                     }
                 }
-                getData().fonts.font(error_lines).draw(17, Arg::topCenter(X_CENTER, sy + 30), getData().colors.white);
+                getData().fonts.font(error_lines_str).draw(17, Arg::topCenter(X_CENTER, sy + 30), getData().colors.white);
                 single_back_button.draw();
                 if (single_back_button.clicked() || KeyEscape.pressed()) {
                     changeScene(U"Main_scene", SCENE_FADE_TIME);
@@ -1137,6 +1138,67 @@ public:
 
 private:
     bool import_transcript_processing() {
+        bool error_found = false;
+        std::string str = text_area.text.replaced(U"\r", U"").replaced(U" ", U"").narrow();
+        std::stringstream ss{str};
+        std::string transcript;
+        int line_idx = 1;
+        while (getline(ss, transcript)){
+            Board board;
+            Flip flip;
+            bool error_found_line = false;
+            board.reset();
+            for (int i = 0; i < transcript.size(); i += 2){
+                int x = (int)(transcript[i] - 'a');
+                if (x < 0 || HW <= x){
+                    x = (int)(transcript[i] - 'A');
+                }
+                if (transcript.size() <= i + 1){
+                    error_found = true;
+                    error_found_line = true;
+                    error_lines.emplace_back(line_idx);
+                    break;
+                }
+                int y = (int)(transcript[i + 1] - '1');
+                if (x < 0 || HW <= x || y < 0 || HW <= y){
+                    error_found = true;
+                    error_found_line = true;
+                    error_lines.emplace_back(line_idx);
+                    break;
+                }
+                int policy = HW2_M1 - (y * HW + x);
+                if ((1 & (board.get_legal() >> policy)) == 0){
+                    error_found = true;
+                    error_found_line = true;
+                    error_lines.emplace_back(line_idx);
+                    break;
+                }
+                calc_flip(&flip, &board, policy);
+                board.move_board(&flip);
+                if (board.get_legal() == 0){
+                    if (board.is_end()){
+                        error_found = true;
+                        error_found_line = true;
+                        error_lines.emplace_back(line_idx);
+                        break;
+                    }
+                    board.pass();
+                }
+            }
+            if (!error_found_line){
+                if (book.contain(board)){
+                    board_list.emplace_back(board);
+                } else{
+                    error_found = true;
+                    error_found_line = true;
+                    error_lines.emplace_back(line_idx);
+                }
+            }
+            if (error_found_line){
+                std::cerr << "error found in line " << line_idx << " " << transcript << std::endl;
+            }
+            ++line_idx;
+        }
         return true;
     }
 };
