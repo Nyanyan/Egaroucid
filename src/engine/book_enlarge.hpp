@@ -502,7 +502,7 @@ inline void book_deviate(Board root_board, int level, int book_depth, int max_er
         if (n_add == 0)
             break;
         n_registered += n_add;
-        std::cerr << "loop " << n_loop << " book deviated registered " << n_registered << "board size " << book.size() << std::endl;
+        std::cerr << "loop " << n_loop << " book deviated registered " << n_registered << " board size " << book.size() << std::endl;
     }
     *player = before_player;
     root_board.copy(board_copy);
