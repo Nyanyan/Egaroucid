@@ -353,7 +353,7 @@ private:
     }
 
     void menu_game() {
-        if (getData().menu_elements.start_game || (KeyCtrl.down() && KeyN.down())) {
+        if (getData().menu_elements.start_game || (KeyControl + KeyN).down() || (KeyCommand + KeyN).down()) {
             stop_calculating();
             getData().history_elem.reset();
             getData().graph_resources.init();
