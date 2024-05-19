@@ -415,6 +415,7 @@ struct Menu_elements {
 
     // book
     bool book_start_deviate;
+    bool book_start_deviate_with_transcript;
     bool book_start_fix;
     int book_learn_depth;
     int book_learn_error_per_move;
@@ -513,6 +514,7 @@ struct Menu_elements {
         show_graph_sum_of_loss = settings->show_graph_sum_of_loss;
 
         book_start_deviate = false;
+        book_start_deviate_with_transcript = false;
         book_start_fix = false;
         book_learn_depth = settings->book_learn_depth;
         book_learn_error_per_move = settings->book_learn_error_per_move;

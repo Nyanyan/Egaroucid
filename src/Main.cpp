@@ -66,6 +66,7 @@ void Main() {
     scene_manager.add <Merge_book>(U"Merge_book");
     scene_manager.add <Refer_book>(U"Refer_book");
     scene_manager.add <Enhance_book>(U"Enhance_book");
+    scene_manager.add <Deviate_book_transcript_textarea>(U"Deviate_book_transcript_textarea");
     scene_manager.add <Fix_book>(U"Fix_book");
     scene_manager.add <Reduce_book>(U"Reduce_book");
     scene_manager.add <Leaf_recalculate_book>(U"Leaf_recalculate_book");

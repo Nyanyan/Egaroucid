@@ -1058,3 +1058,85 @@ public:
 
     }
 };
+
+
+class Deviate_book_transcript_textarea : public App::Scene {
+private:
+    Button single_back_button;
+    Button back_button;
+    Button import_button;
+    bool done;
+    bool failed;
+    Board board;
+    std::vector<std::string> transcript;
+    std::vector<int> error_lines;
+    TextAreaEditState text_area;
+
+public:
+    Deviate_book_transcript_textarea(const InitData& init) : IScene{ init } {
+        single_back_button.init(BACK_BUTTON_SX, BACK_BUTTON_SY, BACK_BUTTON_WIDTH, BACK_BUTTON_HEIGHT, BACK_BUTTON_RADIUS, language.get("common", "back"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
+        back_button.init(GO_BACK_BUTTON_BACK_SX, GO_BACK_BUTTON_SY, GO_BACK_BUTTON_WIDTH, GO_BACK_BUTTON_HEIGHT, GO_BACK_BUTTON_RADIUS, language.get("common", "back"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
+        import_button.init(GO_BACK_BUTTON_GO_SX, GO_BACK_BUTTON_SY, GO_BACK_BUTTON_WIDTH, GO_BACK_BUTTON_HEIGHT, GO_BACK_BUTTON_RADIUS, language.get("in_out", "import"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
+        done = false;
+        failed = false;
+    }
+
+    void update() override {
+        if (System::GetUserActions() & UserAction::CloseButtonClicked) {
+            changeScene(U"Close", SCENE_FADE_TIME);
+        }
+        Scene::SetBackground(getData().colors.green);
+        const int icon_width = SCENE_ICON_WIDTH;
+        getData().resources.icon.scaled((double)icon_width / getData().resources.icon.width()).draw(X_CENTER - icon_width / 2, 20);
+        getData().resources.logo.scaled((double)icon_width / getData().resources.logo.width()).draw(X_CENTER - icon_width / 2, 20 + icon_width);
+        int sy = 20 + icon_width + 50;
+        if (!done) {
+            getData().fonts.font(language.get("book", "book_deviate_with_transcript")).draw(25, Arg::topCenter(X_CENTER, sy), getData().colors.white);
+            text_area.active = true;
+            SimpleGUI::TextArea(text_area, Vec2{X_CENTER - 300, sy + 40}, SizeF{600, 130}, SimpleGUI::PreferredTextAreaMaxChars);
+            getData().fonts.font(language.get("book", "input_transcripts_with_line_breaks")).draw(13, Arg::topCenter(X_CENTER, sy + 175), getData().colors.white);
+            getData().fonts.font(language.get("in_out", "you_can_paste_with_ctrl_v")).draw(13, Arg::topCenter(X_CENTER, sy + 195), getData().colors.white);
+            back_button.draw();
+            import_button.draw();
+            if (back_button.clicked() || KeyEscape.pressed()) {
+                changeScene(U"Main_scene", SCENE_FADE_TIME);
+            }
+            if (import_button.clicked()) {
+                failed = import_transcript_processing();
+                done = true;
+            }
+        }
+        else {
+            if (!failed) {
+                changeScene(U"Main_scene", SCENE_FADE_TIME);
+            }
+            else {
+                getData().fonts.font(language.get("book", "transcript_error")).draw(25, Arg::topCenter(X_CENTER, sy), getData().colors.white);
+                String error_lines;
+                for (int i = 0; i < (int)error_lines.size(); ++i){
+                    error_lines += Format(error_lines[i]);
+                    if (i != (int)error_lines.size() - 1){
+                        error_lines += U", ";
+                    }
+                    if ((i + 1) % 20 == 0){
+                        error_lines += U"\n";
+                    }
+                }
+                getData().fonts.font(error_lines).draw(17, Arg::topCenter(X_CENTER, sy + 30), getData().colors.white);
+                single_back_button.draw();
+                if (single_back_button.clicked() || KeyEscape.pressed()) {
+                    changeScene(U"Main_scene", SCENE_FADE_TIME);
+                }
+            }
+        }
+    }
+
+    void draw() const override {
+
+    }
+
+private:
+    bool import_transcript_processing() {
+        return true;
+    }
+};

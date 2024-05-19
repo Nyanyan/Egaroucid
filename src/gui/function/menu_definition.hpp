@@ -209,6 +209,8 @@ Menu create_menu(Menu_elements* menu_elements, Resources *resources, Font font) 
     menu_e.push(side_menu);
     side_menu.init_button(language.get("book", "book_deviate"), &menu_elements->book_start_deviate);
     menu_e.push(side_menu);
+    side_menu.init_button(language.get("book", "book_deviate_with_transcript"), &menu_elements->book_start_deviate_with_transcript);
+    menu_e.push(side_menu);
     side_menu.init_button(language.get("book", "book_fix"), &menu_elements->book_start_fix);
     menu_e.push(side_menu);
     side_menu.init_button(language.get("book", "book_reduce"), &menu_elements->book_start_reducing);
