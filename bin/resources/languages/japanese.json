@@ -98,7 +98,7 @@
         "in": "入力",
         "out": "出力",
         "import_failed": "取り込み失敗",
-        "output_transcript": "現局面までの棋譜をコピー",
+        "output_transcript": "現局面までの棋譜をコピー (Ctrl+C)",
         "output_board": "盤面を文字列でコピー",
         "output_game": "対局保存",
         "input_transcript": "棋譜入力",

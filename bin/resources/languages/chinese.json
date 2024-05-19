@@ -98,7 +98,7 @@
         "in": "导入棋谱",
         "out": "导出棋谱",
         "import_failed": "导入失败",
-        "output_transcript": "复制棋谱到剪切板",
+        "output_transcript": "复制棋谱到剪切板 (Ctrl+C)",
         "output_board": "复制棋盘为字符串",
         "output_game": "保存对局",
         "input_transcript": "从剪切板导入棋谱",

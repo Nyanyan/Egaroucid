@@ -437,7 +437,7 @@ private:
             changeScene(U"Import_game", SCENE_FADE_TIME);
             return;
         }
-        if (getData().menu_elements.copy_transcript) {
+        if (getData().menu_elements.copy_transcript || (KeyControl + KeyC).down() || (KeyCommand + KeyC).down()) {
             copy_transcript();
         }
         if (getData().menu_elements.copy_board) {
