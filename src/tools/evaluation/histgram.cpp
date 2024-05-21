@@ -108,7 +108,7 @@ int main(int argc, char* argv[]){
 
     std::cout << n_data << std::endl;
     for (int i = 0; i < 129; ++i){
-        std::cout << i - HW2 << " " << score_n_appear_arr[i] << std::endl;
+        std::cout << "score " << i - HW2 << " " << score_n_appear_arr[i] << std::endl;
     }
 
     int start_idx = 0;
@@ -121,13 +121,26 @@ int main(int argc, char* argv[]){
         for (int n_appear = 0; n_appear <= max_appear; ++n_appear){
             histgram_arr[n_appear] = 0;
         }
-        int max_appear_pattern = 0;
         for (int i = start_idx; i < start_idx + adj_eval_sizes[pattern]; ++i){
             ++histgram_arr[host_n_appear_arr[i]];
         }
+        /*
+        uint64_t sum_n_appear = 0;
+        for (int n_appear = 1; n_appear <= max_appear; ++n_appear){
+            sum_n_appear += histgram_arr[n_appear];
+        }
+        uint64_t sub_sum_n_appear = 0;
+        for (int n_appear = 1; n_appear <= max_appear; ++n_appear){
+            sub_sum_n_appear += histgram_arr[n_appear];
+            if (sub_sum_n_appear >= sum_n_appear * 0.5){
+                std::cout << "pattern(short) " << pattern << " " << n_appear << std::endl;
+                break;
+            }
+        }
+        */
         for (int n_appear = 0; n_appear <= max_appear; ++n_appear){
             if (histgram_arr[n_appear])
-                std::cout << pattern << " " << n_appear << " " << histgram_arr[n_appear] << std::endl;
+                std::cout << "pattern " << pattern << " " << n_appear << " " << histgram_arr[n_appear] << std::endl;
         }
         free(histgram_arr);
     }
