@@ -6,10 +6,9 @@ exe = 'test_loss.out'
 eval_file = 'trained/eval.egev'
 data_nums = []
 for _ in range(12):
-    data_nums.append([26])
+    data_nums.append([36])
 for _ in range(12, 61):
-    #data_nums.append([32])
-    data_nums.append([33])
+    data_nums.append([38])
 
 res = ''
 for phase in range(N_PHASES):

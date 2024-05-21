@@ -2,8 +2,8 @@
 #include <fstream>
 #include "evaluation_definition.hpp"
 
-#define ADJ_MAX_N_FILES 10
-#define ADJ_MAX_N_DATA 2000
+#define ADJ_MAX_N_FILES 64
+#define ADJ_MAX_N_DATA 5000
 
 struct Adj_Data {
     int features[ADJ_N_FEATURES];
@@ -78,7 +78,11 @@ void test_loss(int phase, int n_data, Adj_Data *data, float *mse, float *mae){
         }
         score += score >= 0 ? ADJ_STEP_2 : -ADJ_STEP_2;
         score /= ADJ_STEP;
-        score = std::clamp(score, -SCORE_MAX, SCORE_MAX);
+        //score = std::clamp(score, -SCORE_MAX, SCORE_MAX);
+        if (score < -SCORE_MAX)
+            score = -SCORE_MAX;
+        if (score > SCORE_MAX)
+            score = SCORE_MAX;
         float abs_error = fabs(data[i].score - score);
         *mse += abs_error * abs_error;
         *mae += abs_error;
