@@ -62,9 +62,10 @@ inline uint64_t tim(){
 /*
     @brief initialize some arrays
 */
-void adj_init_arr(int eval_size, float *host_eval_arr, int *host_rev_idx_arr) {
+void adj_init_arr(int eval_size, float *host_eval_arr, int *host_rev_idx_arr, int *host_n_appear_arr) {
     for (int i = 0; i < eval_size; ++i) {
         host_eval_arr[i] = 0.0;
+        host_n_appear_arr[i] = 0;
     }
     int strt_idx = 0;
     for (int i = 0; i < ADJ_N_EVAL; ++i) {
@@ -289,7 +290,7 @@ int main(int argc, char* argv[]) {
     std::cerr << EVAL_DEFINITION_NAME << std::endl;
     std::cerr << EVAL_DEFINITION_DESCRIPTION << std::endl;
     if (argc < 7) {
-        std::cerr << "input [phase] [hour] [minute] [second] [alpha] [n_patience] [in_file] [test_data]" << std::endl;
+        std::cerr << "input [phase] [hour] [minute] [second] [alpha] [n_patience] [in_file] [test_data...]" << std::endl;
         return 1;
     }
     if (argc - 8 >= ADJ_MAX_N_FILES) {
@@ -323,7 +324,7 @@ int main(int argc, char* argv[]) {
         std::cerr << "cannot allocate memory" << std::endl;
         return 1;
     }
-    adj_init_arr(eval_size, host_eval_arr, host_rev_idx_arr);
+    adj_init_arr(eval_size, host_eval_arr, host_rev_idx_arr, host_n_appear_arr);
     adj_import_eval(in_file, eval_size, host_eval_arr);
     int n_data = adj_import_train_data(argc - 8, test_files, host_train_data, host_rev_idx_arr, host_n_appear_arr);
     for (int i = 0; i < eval_size; ++i){
