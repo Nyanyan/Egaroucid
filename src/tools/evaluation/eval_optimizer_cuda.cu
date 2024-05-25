@@ -481,7 +481,7 @@ int main(int argc, char* argv[]) {
     adj_calculate_residual <<<n_blocks_residual, N_THREADS_PER_BLOCK_RESIDUAL>>> (device_eval_arr, n_data, device_start_idx_arr, device_train_data, device_rev_idx_arr, device_residual_arr, device_error_monitor_arr);
     cudaMemcpy(host_error_monitor_arr, device_error_monitor_arr, sizeof(float) * N_ERROR_MONITOR, cudaMemcpyDeviceToHost);
     test_loss(host_eval_arr, host_start_idx_arr, n_test_data, host_test_data, &test_mse, &test_mae);
-    std::cout << "phase " << phase << " time " << (tim() - strt) << " ms data " << n_data << " n_loop " << n_loop << " MSE " << host_error_monitor_arr[0] << " MAE " << host_error_monitor_arr[1] << " test_MSE " << test_mse << " test_MAE " << test_mae << " (with int) alpha " << alpha << std::endl;
+    std::cout << "phase " << phase << " time " << (tim() - strt) << " ms data " << n_data << " n_loop " << n_loop << " MSE " << host_error_monitor_arr[0] << " MAE " << host_error_monitor_arr[1] << " test_MSE " << test_mse << " test_MAE " << test_mae << " (with int) alpha " << alpha << " n_patience " << n_patience << std::endl;
 
     adj_output_param(eval_size, host_eval_arr);
     return 0;
