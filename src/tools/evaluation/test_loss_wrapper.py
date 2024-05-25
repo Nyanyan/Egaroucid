@@ -1,5 +1,6 @@
 import subprocess
 
+''' # 7.0
 N_PHASES = 60
 data_root_dir = './../../../train_data/bin_data/20240223_1/'
 exe = 'test_loss.out'
@@ -9,6 +10,19 @@ for _ in range(12):
     data_nums.append([36])
 for _ in range(12, 61):
     data_nums.append([38])
+'''
+#''' # 7.1
+N_PHASES = 60
+data_root_dir = './../../../train_data/bin_data/20240525_1/'
+exe = 'test_loss_20240525_1.out'
+eval_file = 'trained/eval.egev'
+data_nums = []
+for _ in range(12):
+    data_nums.append([36])
+for _ in range(12, 61):
+    data_nums.append([38])
+#'''
+
 
 res = ''
 for phase in range(N_PHASES):

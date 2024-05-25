@@ -39,14 +39,12 @@ int main(int argc, char* argv[]){
         if (ifs.fail()){
             std::cerr << (model_dir + "/" + std::to_string(phase) + ".txt") << " not exist" << std::endl;
             if (n_params == -1){
-                std::cerr << "max " << max_elem << " min " << min_elem << std::endl;
-                std::cerr << "n_over " << n_over << " n_under " << n_under << std::endl;
-                return 1;
-            } else{
-                elem = 0;
-                for (int i = 0; i < n_params; ++i){
-                    fout.write((char*)&elem, 2);
-                }
+                std::cerr << "please input n_params per phase: ";
+                std::cin >> n_params;
+            }
+            elem = 0;
+            for (int i = 0; i < n_params; ++i){
+                fout.write((char*)&elem, 2);
             }
         } else{
             int t = 0;
