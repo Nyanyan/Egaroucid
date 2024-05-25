@@ -11,17 +11,17 @@ n_patience = '30'
 model_dir = './../../../model/nomodel/'
 
 
-'''
+#'''
 # 7.0
-train_data_nums = [26, 27, 28, 29, 30, 31, 34, 35]
+train_data_nums = [27, 28, 29, 30, 31, 34, 35, 36, 37]
 if int(phase) <= 11:
-    train_data_nums = [26] # use book only
+    train_data_nums = [36, 37] # use book only
 #if 31 <= int(phase):
 #    train_data_nums.extend([15, 16, 17, 18, 19, 20, 21, 24, 25]) # use more data
 train_data_nums.sort()
 train_root_dir = './../../../train_data/bin_data/20240223_1/'
 executable = 'eval_optimizer_cuda_12_2_0.exe'
-'''
+#'''
 '''
 # 7.0 move ordering end nws
 train_data_nums = [24, 28]
@@ -34,7 +34,7 @@ train_data_nums = [29]
 train_root_dir = './../../../train_data/bin_data/20240419_1_cell_weight/'
 executable = 'eval_optimizer_cuda_12_2_0_cell_weight.exe'
 '''
-#'''
+'''
 # 7.1
 train_data_nums = [27, 28, 29, 30, 31, 34, 35, 36, 37]
 if int(phase) <= 11:
@@ -46,7 +46,7 @@ if int(phase) <= 11:
     test_data = './../../../train_data/bin_data/20240525_1/' + phase + '/36.dat'
 else:
     test_data = './../../../train_data/bin_data/20240525_1/' + phase + '/38.dat'
-#'''
+'''
 
 
 
