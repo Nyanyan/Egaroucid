@@ -137,7 +137,9 @@ int adj_import_train_data(int n_files, char* files[], Adj_Data* host_train_data,
                     }
                 #else
                     ++host_n_appear_arr[start_idx_arr[i] + (int)host_train_data[n_data].features[i]];
-                    ++host_n_appear_arr[host_rev_idx_arr[start_idx_arr[i] + (int)host_train_data[n_data].features[i]]];
+                    int rev_idx = host_rev_idx_arr[start_idx_arr[i] + (int)host_train_data[n_data].features[i]];
+                    //if (rev_idx != start_idx_arr[i] + (int)host_train_data[n_data].features[i])
+                    ++host_n_appear_arr[rev_idx];
                 #endif
             }
             fread(&score, 2, 1, fp);
@@ -194,7 +196,9 @@ __global__ void adj_calculate_residual(const float *device_eval_arr, const int n
             }
         #else
             atomicAdd(&device_residual_arr[device_start_idx_arr[i] + (int)device_train_data[data_idx].features[i]], residual_error);
-            atomicAdd(&device_residual_arr[device_rev_idx_arr[device_start_idx_arr[i] + (int)device_train_data[data_idx].features[i]]], residual_error);
+            int rev_idx = device_rev_idx_arr[device_start_idx_arr[i] + (int)device_train_data[data_idx].features[i]];
+            //if (rev_idx != device_start_idx_arr[i] + (int)device_train_data[data_idx].features[i])
+            atomicAdd(&device_residual_arr[rev_idx], residual_error);
         #endif
     }
     atomicAdd(&device_error_monitor_arr[0], (residual_error / ADJ_STEP) * (residual_error / ADJ_STEP) / n_data);
