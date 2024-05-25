@@ -33,6 +33,7 @@
 #else
     #define ADJ_MAX_N_DATA 100000000
 #endif
+#define ADJ_MAX_N_TEST_DATA 100000
 
 // GPU constant
 #define N_THREADS_PER_BLOCK_RESIDUAL 1024
@@ -157,6 +158,30 @@ int adj_import_train_data(int n_files, char* files[], Adj_Data* host_train_data,
     std::cerr << n_data << " data loaded" << std::endl;
     std::cerr << "score avg " << score_avg << std::endl;
     return n_data;
+}
+
+int adj_import_test_data(char* test_file, Adj_Data* host_test_data) {
+    FILE* fp;
+    int16_t n_discs, score, player;
+    Adj_Data data;
+    int n_test_data = 0;
+    std::cerr << test_file << std::endl;
+    if (fopen_s(&fp, test_file, "rb") != 0) {
+        std::cerr << "can't open " << test_file << std::endl;
+    } else{
+        while (n_test_data < ADJ_MAX_N_TEST_DATA) {
+            if (fread(&n_discs, 2, 1, fp) < 1)
+                break;
+            fread(&player, 2, 1, fp);
+            fread(host_test_data[n_test_data].features, 2, ADJ_N_FEATURES, fp);
+            fread(&score, 2, 1, fp);
+            host_test_data[n_test_data].score = (float)score;
+            ++n_test_data;
+        }
+        fclose(fp);
+    }
+    std::cerr << "n_test_data " << n_test_data << std::endl;
+    return n_test_data;
 }
 
 /*
@@ -290,14 +315,42 @@ void adj_output_param(int eval_size, float *host_eval_arr) {
     std::cerr << "output data fin" << std::endl;
 }
 
+/*
+    @brief calculate test loss with CPU
+*/
+void test_loss(float *eval_arr, int *host_start_idx_arr, int n_data, Adj_Data *data, float *mse, float *mae){
+    *mse = 0.0;
+    *mae = 0.0;
+    for (int i = 0; i < n_data; ++i){
+        int score = 0;
+        for (int j = 0; j < ADJ_N_FEATURES; ++j){
+            score += eval_arr[host_start_idx_arr[j] + data[i].features[j]];
+        }
+        /*
+        score += score >= 0 ? ADJ_STEP_2 : -ADJ_STEP_2;
+        score /= ADJ_STEP;
+        if (score < -SCORE_MAX)
+            score = -SCORE_MAX;
+        if (score > SCORE_MAX)
+            score = SCORE_MAX;
+        float abs_error = fabs(data[i].score - score);
+        */
+        float abs_error = fabs(data[i].score * ADJ_STEP - score) / ADJ_STEP;
+        *mse += abs_error * abs_error;
+        *mae += abs_error;
+    }
+    *mse /= n_data;
+    *mae /= n_data;
+}
+
 int main(int argc, char* argv[]) {
     std::cerr << EVAL_DEFINITION_NAME << std::endl;
     std::cerr << EVAL_DEFINITION_DESCRIPTION << std::endl;
-    if (argc < 7) {
-        std::cerr << "input [phase] [hour] [minute] [second] [alpha] [n_patience] [in_file] [test_data...]" << std::endl;
+    if (argc < 9) {
+        std::cerr << "input [phase] [hour] [minute] [second] [alpha] [n_patience] [in_file] [test_data] [train_data...]" << std::endl;
         return 1;
     }
-    if (argc - 8 >= ADJ_MAX_N_FILES) {
+    if (argc - 9 >= ADJ_MAX_N_FILES) {
         std::cerr << "too many train files" << std::endl;
         return 1;
     }
@@ -308,9 +361,11 @@ int main(int argc, char* argv[]) {
     float alpha = atof(argv[5]);
     int n_patience = atoi(argv[6]);
     std::string in_file = (std::string)argv[7];
-    char* test_files[ADJ_MAX_N_FILES];
-    for (int i = 8; i < argc; ++i)
-        test_files[i - 8] = argv[i];
+    char* test_file = argv[8];
+    char* train_files[ADJ_MAX_N_FILES];
+    int n_train_data = argc - 9;
+    for (int i = 0; i < n_train_data; ++i)
+        train_files[i] = argv[i + 9];
     second += minute * 60 + hour * 3600;
     uint64_t msecond = second * 1000;
 
@@ -322,15 +377,17 @@ int main(int argc, char* argv[]) {
     float *host_eval_arr = (float*)malloc(sizeof(float) * eval_size); // eval array
     int *host_rev_idx_arr = (int*)malloc(sizeof(int) * eval_size); // reversed index
     Adj_Data* host_train_data = (Adj_Data*)malloc(sizeof(Adj_Data) * ADJ_MAX_N_DATA); // train data
+    Adj_Data* host_test_data = (Adj_Data*)malloc(sizeof(Adj_Data) * ADJ_MAX_N_TEST_DATA); // train data
     int *host_n_appear_arr = (int*)malloc(sizeof(int) * eval_size);
     float *host_error_monitor_arr = (float*)malloc(sizeof(float) * N_ERROR_MONITOR);
-    if (host_eval_arr == nullptr || host_rev_idx_arr == nullptr || host_train_data == nullptr){
+    if (host_eval_arr == nullptr || host_rev_idx_arr == nullptr || host_train_data == nullptr || host_test_data == nullptr){
         std::cerr << "cannot allocate memory" << std::endl;
         return 1;
     }
     adj_init_arr(eval_size, host_eval_arr, host_rev_idx_arr, host_n_appear_arr);
     adj_import_eval(in_file, eval_size, host_eval_arr);
-    int n_data = adj_import_train_data(argc - 8, test_files, host_train_data, host_rev_idx_arr, host_n_appear_arr);
+    int n_data = adj_import_train_data(n_train_data, train_files, host_train_data, host_rev_idx_arr, host_n_appear_arr);
+    int n_test_data = adj_import_test_data(test_file, host_test_data);
     for (int i = 0; i < eval_size; ++i){
         host_n_appear_arr[i] = std::min(100, host_n_appear_arr[i]);
     }
@@ -384,11 +441,27 @@ int main(int argc, char* argv[]) {
     std::cerr << "before MSE " << host_error_monitor_arr[0] << " MAE " << host_error_monitor_arr[1] << std::endl;
     uint64_t strt = tim();
     int n_loop = 0;
+    float test_mse, test_mae, min_test_mse, min_test_mae;
+    int n_test_loss_increase = 0;
+    test_loss(host_eval_arr, host_start_idx_arr, n_test_data, host_test_data, &min_test_mse, &min_test_mae);
     while (tim() - strt < msecond){
         ++n_loop;
+        cudaMemcpy(host_eval_arr, device_eval_arr, sizeof(float) * eval_size, cudaMemcpyDeviceToHost);
+        test_loss(host_eval_arr, host_start_idx_arr, n_test_data, host_test_data, &test_mse, &test_mae);
+        if (test_mse <= min_test_mse){
+            min_test_mse = test_mse;
+            n_test_loss_increase = 0;
+        } else{
+            ++n_test_loss_increase;
+            if (n_test_loss_increase > n_patience){
+                break;
+            }
+        }
+
         adj_calculate_residual <<<n_blocks_residual, N_THREADS_PER_BLOCK_RESIDUAL>>> (device_eval_arr, n_data, device_start_idx_arr, device_train_data, device_rev_idx_arr, device_residual_arr, device_error_monitor_arr);
         cudaMemcpy(host_error_monitor_arr, device_error_monitor_arr, sizeof(float) * N_ERROR_MONITOR, cudaMemcpyDeviceToHost);
-        std::cerr << "\rn_loop " << n_loop << " progress " << (tim() - strt) * 100 / msecond << "% MSE " << host_error_monitor_arr[0] << " MAE " << host_error_monitor_arr[1] << "               ";
+
+        std::cerr << "\rn_loop " << n_loop << " progress " << (tim() - strt) * 100 / msecond << "% MSE " << host_error_monitor_arr[0] << " MAE " << host_error_monitor_arr[1] << "  test_MSE " << test_mse << " test_MAE " << test_mae << " loss_inc " << n_test_loss_increase << "                    ";
         
         // gradient_descent <<<n_blocks_next_step, N_THREADS_PER_BLOCK_NEXT_STEP>>> (eval_size, device_eval_arr, device_n_appear_arr, device_residual_arr, alpha_stab);
         // momentum <<<n_blocks_next_step, N_THREADS_PER_BLOCK_NEXT_STEP>>> (eval_size, device_eval_arr, device_n_appear_arr, device_residual_arr, alpha_stab, device_m_arr, n_loop);
@@ -397,14 +470,18 @@ int main(int argc, char* argv[]) {
     }
     std::cerr << std::endl;
 
+    // round eval
     cudaMemcpy(host_eval_arr, device_eval_arr, sizeof(float) * eval_size, cudaMemcpyDeviceToHost);
     for (int i = 0; i < eval_size; ++i){
         host_eval_arr[i] = round(host_eval_arr[i]);
     }
+    cudaMemcpy(device_eval_arr, host_eval_arr, sizeof(float) * eval_size, cudaMemcpyHostToDevice);
 
+    // calculate final loss
     adj_calculate_residual <<<n_blocks_residual, N_THREADS_PER_BLOCK_RESIDUAL>>> (device_eval_arr, n_data, device_start_idx_arr, device_train_data, device_rev_idx_arr, device_residual_arr, device_error_monitor_arr);
     cudaMemcpy(host_error_monitor_arr, device_error_monitor_arr, sizeof(float) * N_ERROR_MONITOR, cudaMemcpyDeviceToHost);
-    std::cout << "phase " << phase << " time " << (tim() - strt) << " ms data " << n_data << " n_loop " << n_loop << " MSE " << host_error_monitor_arr[0] << " MAE " << host_error_monitor_arr[1] << " (with int) alpha " << alpha << std::endl;
+    test_loss(host_eval_arr, host_start_idx_arr, n_test_data, host_test_data, &test_mse, &test_mae);
+    std::cout << "phase " << phase << " time " << (tim() - strt) << " ms data " << n_data << " n_loop " << n_loop << " MSE " << host_error_monitor_arr[0] << " MAE " << host_error_monitor_arr[1] << " test_MSE " << test_mse << " test_MAE " << test_mae << " (with int) alpha " << alpha << std::endl;
 
     adj_output_param(eval_size, host_eval_arr);
     return 0;

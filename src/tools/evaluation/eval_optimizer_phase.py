@@ -6,7 +6,7 @@ hour = '0'
 minute = '2'
 second = '0'
 alpha = '500'
-n_patience = '1' # not used
+n_patience = '20'
 
 model_dir = './../../../model/nomodel/'
 
@@ -42,6 +42,7 @@ if int(phase) <= 11:
 train_data_nums.sort()
 train_root_dir = './../../../train_data/bin_data/20240525_1/'
 executable = 'eval_optimizer_cuda_12_2_0_20240525_1.exe'
+test_data = './../../../train_data/bin_data/20240525_1/' + phase + '/38.dat'
 #'''
 
 
@@ -54,7 +55,7 @@ for tfile in train_data:
     for train_dir in train_dirs:
         additional_params += ' ' + train_dir + tfile
 
-cmd = executable + ' ' + phase + ' ' + hour + ' ' + minute + ' ' + second + ' ' + alpha + ' ' + n_patience + ' ' + model_dir + phase + '.txt' + additional_params
+cmd = executable + ' ' + phase + ' ' + hour + ' ' + minute + ' ' + second + ' ' + alpha + ' ' + n_patience + ' ' + model_dir + phase + '.txt' + ' ' + test_data + additional_params
 print(cmd, file=sys.stderr)
 p = subprocess.Popen(cmd.split(), stdout=subprocess.PIPE)
 result = p.stdout.readline().decode().replace('\r\n', '\n').replace('\n', '')
