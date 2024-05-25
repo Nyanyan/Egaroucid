@@ -7,7 +7,8 @@ import glob
 bin_root_dir = './../../../train_data/bin_data/20240223_1/'
 exe = 'data_board_to_idx.out'
 N_PHASES = 60
-board_sub_dir_nums = [27, 28, 29, 30, 31, 34, 35, 36, 37, 39, 40]
+#board_sub_dir_nums = [27, 28, 29, 30, 31, 34, 35, 36, 37]
+board_sub_dir_nums = [39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49]
 #'''
 '''
 # 7.0 move ordering_end_nws
@@ -71,6 +72,8 @@ board_n_moves['40'] = [49, 60]
 '''
 # 31手まではあるデータ全部使う
 # 32手以降はランダム打ち開始+10手くらいの範囲で使う
+
+### useful old data ###
 board_n_moves['27'] = [12, 31] # random11
 board_n_moves['28'] = [40, 50] # random40
 board_n_moves['29'] = [12, 32] # random12
@@ -78,13 +81,30 @@ board_n_moves['30'] = [18, 31] # random18
 board_n_moves['31'] = [24, 34] # random24
 #board_n_moves['32'] = [12, 60] # random11 or 12 test data
 #board_n_moves['33'] = [12, 60] # random12 test data
+
+### midgame data 1 ###
 board_n_moves['34'] = [31, 41] # random31
 board_n_moves['35'] = [32, 42] # random32
+
+### book data ###
 board_n_moves['36'] = [0, 11] # book first11
 board_n_moves['37'] = [0, 60] # book additional
+
+### test data ###
 board_n_moves['38'] = [12, 60] # random8,9,10,11 test data
-board_n_moves['39'] = [50, 60] # random50
-board_n_moves['40'] = [49, 59] # random49
+
+### endgame data ###
+board_n_moves['39'] = [54, 60] # random54
+board_n_moves['40'] = [53, 60] # random53
+board_n_moves['41'] = [52, 60] # random52
+board_n_moves['42'] = [51, 60] # random51
+board_n_moves['43'] = [50, 60] # random50
+board_n_moves['44'] = [49, 59] # random49
+board_n_moves['45'] = [48, 58] # random48
+board_n_moves['46'] = [47, 57] # random47
+board_n_moves['47'] = [46, 56] # random46
+board_n_moves['48'] = [45, 55] # random45
+board_n_moves['49'] = [44, 54] # random44
 
 
 procs = []
