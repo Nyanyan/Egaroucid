@@ -13,14 +13,13 @@ model_dir = './../../../model/nomodel/'
 
 #'''
 # 7.0
-train_data_nums = [27, 28, 29, 30, 31, 34, 35, 36, 37]
-if int(phase) <= 11:
-    train_data_nums = [36, 37] # use book only
-#if 31 <= int(phase):
-#    train_data_nums.extend([15, 16, 17, 18, 19, 20, 21, 24, 25]) # use more data
-train_data_nums.sort()
+train_data_nums = [27, 28, 29, 30, 31, 34, 35, 36, 37, 39, 40]
 train_root_dir = './../../../train_data/bin_data/20240223_1/'
 executable = 'eval_optimizer_cuda_12_2_0.exe'
+if int(phase) <= 11:
+    test_data = './../../../train_data/bin_data/20240223_1/' + phase + '/36.dat'
+else:
+    test_data = './../../../train_data/bin_data/20240223_1/' + phase + '/38.dat'
 #'''
 '''
 # 7.0 move ordering end nws

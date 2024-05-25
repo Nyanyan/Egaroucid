@@ -7,8 +7,7 @@ import glob
 bin_root_dir = './../../../train_data/bin_data/20240223_1/'
 exe = 'data_board_to_idx.out'
 N_PHASES = 60
-#board_sub_dir_nums = [6, 7, 8, 9, 10, 11, 15, 16, 17, 18, 19, 20, 21, 23, 24, 25, 26, 27]
-board_sub_dir_nums = [35]
+board_sub_dir_nums = [27, 28, 29, 30, 31, 34, 35, 36, 37, 39, 40]
 #'''
 '''
 # 7.0 move ordering_end_nws
@@ -36,6 +35,7 @@ board_sub_dir_nums = [27, 28, 29, 30, 31, 34, 35, 36, 37, 38]
 input_root_dir = './../../../train_data/board_data/'
 
 board_n_moves = {}
+'''
 board_n_moves['6'] = [20, 60]
 board_n_moves['7'] = [20, 60]
 board_n_moves['8'] = [20, 60]
@@ -54,7 +54,6 @@ board_n_moves['23'] = [0, 10]
 board_n_moves['24'] = [21, 60]
 board_n_moves['25'] = [30, 60]
 board_n_moves['26'] = [0, 60]
-#board_n_moves['26'] = [0, 10]
 board_n_moves['27'] = [11, 60]
 board_n_moves['28'] = [40, 60]
 board_n_moves['29'] = [12, 60]
@@ -67,6 +66,26 @@ board_n_moves['35'] = [32, 60]
 board_n_moves['36'] = [0, 11]
 board_n_moves['37'] = [0, 60]
 board_n_moves['38'] = [12, 60]
+board_n_moves['39'] = [50, 60]
+board_n_moves['40'] = [49, 60]
+'''
+# 31手まではあるデータ全部使う
+# 32手以降はランダム打ち開始+10手くらいの範囲で使う
+board_n_moves['27'] = [12, 31] # random11
+board_n_moves['28'] = [40, 50] # random40
+board_n_moves['29'] = [12, 32] # random12
+board_n_moves['30'] = [18, 31] # random18
+board_n_moves['31'] = [24, 34] # random24
+#board_n_moves['32'] = [12, 60] # random11 or 12 test data
+#board_n_moves['33'] = [12, 60] # random12 test data
+board_n_moves['34'] = [31, 41] # random31
+board_n_moves['35'] = [32, 42] # random32
+board_n_moves['36'] = [0, 11] # book first11
+board_n_moves['37'] = [0, 60] # book additional
+board_n_moves['38'] = [12, 60] # random8,9,10,11 test data
+board_n_moves['39'] = [50, 60] # random50
+board_n_moves['40'] = [49, 59] # random49
+
 
 procs = []
 for phase in range(N_PHASES):
