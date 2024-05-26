@@ -385,12 +385,20 @@ int main(int argc, char* argv[]) {
     std::shuffle(host_train_data, host_train_data + n_all_data, engine);
     std::cerr << "data shuffled" << std::endl;
     // divide data
-    int n_test_data = n_all_data * 0.05; // use 5% as test data
-    if (n_test_data <= 0){
-        n_test_data = 1;
+    int n_test_data, n_train_data;
+    Adj_Data* host_test_data;
+    if (phase > 11){ // to phase 11, the all data available
+        n_test_data = n_all_data * 0.05; // use 5% as test data
+        if (n_test_data <= 0){
+            n_test_data = 1;
+        }
+        n_train_data  = n_all_data - n_test_data;
+        host_test_data = host_train_data + n_train_data;
+    } else{
+        n_test_data = n_all_data; // use 100% train data
+        n_train_data  = n_all_data; // use 100% test data
+        host_test_data = host_train_data;
     }
-    int n_train_data = n_all_data - n_test_data;
-    Adj_Data* host_test_data = host_train_data + n_train_data;
     std::cerr << "n_train_data " << n_train_data << " n_test_data " << n_test_data << std::endl;
     // calculate n_appear of train data
     int host_start_idx_arr[ADJ_N_FEATURES];
