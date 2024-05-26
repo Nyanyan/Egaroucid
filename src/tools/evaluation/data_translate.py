@@ -138,6 +138,7 @@ for phase in range(N_PHASES):
         if board_n_moves[str(board_sub_dir_num)][0] <= phase and phase <= board_n_moves[str(board_sub_dir_num)][1]:
             n_doing_tasks += 1
         if n_doing_tasks >= 32:
+            print('waiting tasks...')
             for proc in procs:
                 proc.wait()
             procs = []
