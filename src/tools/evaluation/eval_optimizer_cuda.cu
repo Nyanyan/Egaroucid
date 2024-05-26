@@ -566,7 +566,8 @@ int main(int argc, char* argv[]) {
     std::uniform_int_distribution<int> randint_eval(0, eval_size - 1); // [0, eval_size - 1] (include last)
     uint64_t round_n_loop = 0, round_n_updated = 0, round_n_improve = 0;
     uint64_t round_strt = tim();
-    while ((double)round_n_improve * 100.0 / round_n_updated > 0.01 || round_n_loop < 100){ // improve percentage > 1% or loop_count < 100
+    uint64_t round_tl = 100000; // 100s
+    while (tim() - round_strt < round_tl && ((double)round_n_improve * 100.0 / round_n_loop > 0.01 || round_n_loop < 100)){ // improve percentage > 1% or loop_count < 100
         int change_idx = randint_eval(engine);
         if (host_eval_arr_roundup[change_idx] != host_eval_arr_rounddown[change_idx]){
             int rev_change_idx = host_rev_idx_arr[change_idx];
@@ -586,7 +587,8 @@ int main(int argc, char* argv[]) {
                 cudaMemcpy(device_round_arr, host_round_arr, sizeof(bool) * eval_size, cudaMemcpyHostToDevice); // copy less
             }
             ++round_n_loop;
-            std::cerr << '\r' << "rounding " << tim() - round_strt << " ms n_loop " << round_n_loop << " n_updated " << round_n_updated << " n_improve " << round_n_improve << " MSE " << min_mse << " MAE " << min_mae << "                         ";
+            int percent = (tim() - round_strt) * 100 / round_tl;
+            std::cerr << '\r' << "rounding " << percent << "%" << " n_loop " << round_n_loop << " n_updated " << round_n_updated << " n_improve " << round_n_improve << " MSE " << min_mse << " MAE " << min_mae << "                         ";
         }
     }
     std::cerr << std::endl;
