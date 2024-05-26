@@ -8,6 +8,7 @@ import psutil
 bin_root_dir = './../../../train_data/bin_data/20240223_1/'
 exe = 'data_board_to_idx.out'
 N_PHASES = 60
+'''
 board_sub_dir_nums = [
     18, 19, 20, 21, 24, 25, 27, 28, 29, 30, 31, # old data
     34, 35, # mid-endgame data 1
@@ -15,6 +16,8 @@ board_sub_dir_nums = [
     #38, # test data
     39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51 # mid-endgame data 2
 ]
+'''
+board_sub_dir_nums = [52, 60, 61, 62, 63]
 board_sub_dir_nums.sort()
 #'''
 '''
