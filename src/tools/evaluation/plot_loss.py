@@ -59,10 +59,10 @@ with open(opt_log_file, 'r') as f:
 s = s.splitlines()
 
 PHASE_IDX = 1
-MSE_IDX = 10
-MAE_IDX = 12
-TEST_MSE_IDX = 14
-TEST_MAE_IDX = 16
+MSE_IDX = 12
+MAE_IDX = 14
+TEST_MSE_IDX = 16
+TEST_MAE_IDX = 18
 
 phase_arr = []
 mse_arr = []

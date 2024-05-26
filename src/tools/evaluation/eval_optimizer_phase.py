@@ -16,10 +16,6 @@ model_dir = './../../../model/nomodel/'
 train_data_nums = [27, 28, 29, 30, 31, 34, 35, 36, 37, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49]
 train_root_dir = './../../../train_data/bin_data/20240223_1/'
 executable = 'eval_optimizer_cuda_12_2_0.exe'
-if int(phase) <= 11:
-    test_data = './../../../train_data/bin_data/20240223_1/' + phase + '/36.dat'
-else:
-    test_data = './../../../train_data/bin_data/20240223_1/' + phase + '/38.dat'
 #'''
 '''
 # 7.0 move ordering end nws
@@ -57,7 +53,7 @@ for tfile in train_data:
     for train_dir in train_dirs:
         additional_params += ' ' + train_dir + tfile
 
-cmd = executable + ' ' + phase + ' ' + hour + ' ' + minute + ' ' + second + ' ' + alpha + ' ' + n_patience + ' ' + model_dir + phase + '.txt' + ' ' + test_data + additional_params
+cmd = executable + ' ' + phase + ' ' + hour + ' ' + minute + ' ' + second + ' ' + alpha + ' ' + n_patience + ' ' + model_dir + phase + '.txt' + additional_params
 print(cmd, file=sys.stderr)
 p = subprocess.Popen(cmd.split(), stdout=subprocess.PIPE)
 result = p.stdout.readline().decode().replace('\r\n', '\n').replace('\n', '')
