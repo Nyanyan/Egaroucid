@@ -1,6 +1,7 @@
 import subprocess
 import os
 import glob
+import psutil
 
 #'''
 # 7.0
@@ -121,7 +122,6 @@ board_n_moves['51'] = [42, 59] # random42        3003097 games
 
 
 procs = []
-n_doing_tasks = 0
 for phase in range(N_PHASES):
     bin_dir = bin_root_dir + str(phase)
     try:
@@ -134,15 +134,11 @@ for phase in range(N_PHASES):
         out_file = bin_dir + '/' + str(board_sub_dir_num) + '.dat'
         cmd = exe + ' ' + input_dir + ' 0 ' + n_files_str + ' ' + out_file + ' ' + str(phase) + ' ' + str(board_n_moves[str(board_sub_dir_num)][0]) + ' ' + str(board_n_moves[str(board_sub_dir_num)][1])
         print(phase, board_sub_dir_num, cmd)
+        while True: # wait while cpu is busy
+            cpu_percent = psutil.cpu_percent(percpu=False)
+            if cpu_percent < 95.0:
+                break
         procs.append(subprocess.Popen(cmd.split(), stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL))
-        if board_n_moves[str(board_sub_dir_num)][0] <= phase and phase <= board_n_moves[str(board_sub_dir_num)][1]:
-            n_doing_tasks += 1
-        if n_doing_tasks >= 32:
-            print('waiting tasks...')
-            for proc in procs:
-                proc.wait()
-            procs = []
-            n_doing_tasks = 0
 
 for proc in procs:
     proc.wait()
