@@ -422,7 +422,7 @@ int main(int argc, char* argv[]) {
         }
     }
     for (int i = 0; i < eval_size; ++i){
-        host_n_appear_arr[i] = std::min(100, host_n_appear_arr[i]);
+        host_n_appear_arr[i] = std::min(1, host_n_appear_arr[i]);
     }
     std::cerr << "train data appearance calculated" << std::endl;
 
