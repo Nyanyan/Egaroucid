@@ -223,6 +223,43 @@ __global__ void adj_calculate_test_loss(const float *device_eval_arr, const int 
 }
 
 /*
+    @brief calculate loss for hillclimb
+*/
+__global__ void adj_calculate_loss_round(const int *device_eval_arr_roundup, const int *device_eval_arr_rounddown, const bool *device_round_arr, const int n_train_data, const int *device_start_idx_arr, const Adj_Data *device_train_data, float *device_error_monitor_arr){
+    const int data_idx = blockIdx.x * blockDim.x + threadIdx.x;
+    if (data_idx >= n_train_data){
+        return;
+    }
+    if (data_idx == 0){
+        for (int i = 0; i < N_ERROR_MONITOR; ++i){
+            device_error_monitor_arr[i] = 0.0;
+        }
+    }
+    int predicted_value = 0;
+    for (int i = 0; i < ADJ_N_FEATURES; ++i){
+        #if ADJ_CELL_WEIGHT /******************************************** UNDER CONSTRUCTION ********************************************/
+            if (device_test_data[data_idx].features[i] < 10){
+                predicted_value += device_eval_arr[device_test_data[data_idx].features[i]];
+            } else if (device_test_data[data_idx].features[i] < 20){
+                predicted_value -= device_eval_arr[device_test_data[data_idx].features[i] - 10];
+            }
+        #else
+            int idx = device_start_idx_arr[i] + (int)device_train_data[data_idx].features[i];
+            if (!device_round_arr[idx]){ // round-up
+                predicted_value += device_eval_arr_roundup[idx];
+            } else{ // round-down
+                predicted_value += device_eval_arr_rounddown[idx];
+            }
+        #endif
+    }
+    predicted_value += predicted_value >= 0 ? ADJ_STEP_2 : -ADJ_STEP_2;
+    predicted_value /= ADJ_STEP;
+    float residual_error = device_train_data[data_idx].score / ADJ_STEP - predicted_value;
+    atomicAdd(&device_error_monitor_arr[0], residual_error * residual_error / n_train_data);
+    atomicAdd(&device_error_monitor_arr[1], fabs(residual_error) / n_train_data);
+}
+
+/*
     @brief Gradient Descent Optimizer
 */
 __global__ void gradient_descent(const int eval_size, float *device_eval_arr, int *device_n_appear_arr, float *device_residual_arr, float alpha_stab){
@@ -307,33 +344,6 @@ void adj_output_param(int eval_size, float *host_eval_arr) {
     std::cerr << "output data fin" << std::endl;
 }
 
-/*
-    @brief calculate test loss with CPU
-*/
-void test_loss(float *eval_arr, int *host_start_idx_arr, int n_data, Adj_Data *data, float *mse, float *mae){
-    *mse = 0.0;
-    *mae = 0.0;
-    for (int i = 0; i < n_data; ++i){
-        int score = 0;
-        for (int j = 0; j < ADJ_N_FEATURES; ++j){
-            score += eval_arr[host_start_idx_arr[j] + data[i].features[j]];
-        }
-        /*
-        score += score >= 0 ? ADJ_STEP_2 : -ADJ_STEP_2;
-        score /= ADJ_STEP;
-        if (score < -SCORE_MAX)
-            score = -SCORE_MAX;
-        if (score > SCORE_MAX)
-            score = SCORE_MAX;
-        float abs_error = fabs(data[i].score - score);
-        */
-        float abs_error = fabs(data[i].score * ADJ_STEP - score) / ADJ_STEP;
-        *mse += abs_error * abs_error;
-        *mae += abs_error;
-    }
-    *mse /= n_data;
-    *mae /= n_data;
-}
 
 int main(int argc, char* argv[]) {
     std::cerr << EVAL_DEFINITION_NAME << std::endl;
@@ -430,7 +440,7 @@ int main(int argc, char* argv[]) {
         }
     }
     for (int i = 0; i < eval_size; ++i){
-        host_n_appear_arr[i] = std::min(1, host_n_appear_arr[i]);
+        host_n_appear_arr[i] = std::min(50, host_n_appear_arr[i]);
     }
     std::cerr << "train data appearance calculated" << std::endl;
 
@@ -479,9 +489,8 @@ int main(int argc, char* argv[]) {
     std::cerr << "before MSE " << host_error_monitor_arr[0] << " MAE " << host_error_monitor_arr[1] << std::endl;
     uint64_t strt = tim();
     int n_loop = 0;
-    float min_test_mse, min_test_mae;
+    float min_test_mse = 100000000.0, min_test_mae = 100000000.0;
     int n_test_loss_increase = 0;
-    test_loss(host_eval_arr, host_start_idx_arr, n_test_data, host_test_data, &min_test_mse, &min_test_mae);
     while (tim() - strt < msecond){
         ++n_loop;
 
@@ -512,17 +521,95 @@ int main(int argc, char* argv[]) {
     }
     std::cerr << std::endl;
 
-    // round eval
+    // init round eval with hillclimb
     cudaMemcpy(host_eval_arr, device_eval_arr, sizeof(float) * eval_size, cudaMemcpyDeviceToHost);
+    int *host_eval_arr_roundup = (int*)malloc(sizeof(int) * eval_size);
+    int *host_eval_arr_rounddown = (int*)malloc(sizeof(int) * eval_size);
+    bool *host_round_arr = (bool*)malloc(sizeof(bool) * eval_size);
+    int n_roundup = 0, n_rounddown = 0;
     for (int i = 0; i < eval_size; ++i){
-        host_eval_arr[i] = round(host_eval_arr[i]);
+        host_eval_arr_roundup[i] = ceilf(host_eval_arr[i]);
+        host_eval_arr_rounddown[i] = floorf(host_eval_arr[i]);
+        host_round_arr[i] = (round(host_eval_arr[i]) == host_eval_arr_rounddown[i]); // 0 for round-up, 1 for round-down
+        if (host_eval_arr_roundup[i] != host_eval_arr_rounddown[i]){
+            if (!host_round_arr[i]){
+                ++n_roundup;
+            } else{
+                ++n_rounddown;
+            }
+        }
     }
+    std::cerr << "n_roundup " << n_roundup << " n_rounddown " << n_rounddown << std::endl;
+    int *device_eval_arr_roundup;
+    int *device_eval_arr_rounddown;
+    bool *device_round_arr;
+    cudaMalloc(&device_eval_arr_roundup, sizeof(int) * eval_size);
+    cudaMalloc(&device_eval_arr_rounddown, sizeof(int) * eval_size);
+    cudaMalloc(&device_round_arr, sizeof(bool) * eval_size);
+    cudaMemcpy(device_eval_arr_roundup, host_eval_arr_roundup, sizeof(int) * eval_size, cudaMemcpyHostToDevice);
+    cudaMemcpy(device_eval_arr_rounddown, host_eval_arr_rounddown, sizeof(int) * eval_size, cudaMemcpyHostToDevice);
+    cudaMemcpy(device_round_arr, host_round_arr, sizeof(bool) * eval_size, cudaMemcpyHostToDevice);
+
+    // round eval with hillclimb
+    adj_calculate_loss_round <<<n_blocks_residual, N_THREADS_PER_BLOCK_RESIDUAL>>> (device_eval_arr_roundup, device_eval_arr_rounddown, device_round_arr, n_train_data, device_start_idx_arr, device_train_data, device_error_monitor_arr);
+    cudaMemcpy(host_error_monitor_arr, device_error_monitor_arr, sizeof(float) * N_ERROR_MONITOR, cudaMemcpyDeviceToHost);
+    float min_mse = host_error_monitor_arr[0], min_mae = host_error_monitor_arr[1];
+    std::cerr << "before rounding MSE " << min_mse << " MAE " << min_mae << std::endl;
+    uint64_t round_strt = tim();
+    uint64_t round_tl = 10000; // 10 seconds
+    std::uniform_int_distribution<int> randint_eval(0, eval_size - 1); // [0, eval_size - 1] (include last)
+    uint64_t round_n_loop = 0, round_n_updated = 0;
+    while (tim() - round_strt < round_tl){
+        int change_idx = randint_eval(engine);
+        if (host_eval_arr_roundup[change_idx] != host_eval_arr_rounddown[change_idx]){
+            host_round_arr[change_idx] ^= 1; // change round-up/down
+            if (change_idx != host_rev_idx_arr[change_idx]){
+                host_round_arr[host_rev_idx_arr[change_idx]] ^= 1; // change round-up/down
+            }
+            cudaMemcpy(device_round_arr, host_round_arr, sizeof(bool) * eval_size, cudaMemcpyHostToDevice);
+            adj_calculate_loss_round <<<n_blocks_residual, N_THREADS_PER_BLOCK_RESIDUAL>>> (device_eval_arr_roundup, device_eval_arr_rounddown, device_round_arr, n_train_data, device_start_idx_arr, device_train_data, device_error_monitor_arr);
+            cudaMemcpy(host_error_monitor_arr, device_error_monitor_arr, sizeof(float) * N_ERROR_MONITOR, cudaMemcpyDeviceToHost);
+            if (host_error_monitor_arr[0] <= min_mse){
+                min_mse = host_error_monitor_arr[0];
+                min_mae = host_error_monitor_arr[1];
+                ++round_n_updated;
+            } else{
+                host_round_arr[change_idx] ^= 1; // re-change round-up/down
+                if (change_idx != host_rev_idx_arr[change_idx]){
+                    host_round_arr[host_rev_idx_arr[change_idx]] ^= 1; // re-change round-up/down
+                }
+            }
+            ++round_n_loop;
+            int percent = (uint64_t)(tim() - round_strt) * 100ULL / round_tl;
+            std::cerr << '\r' << "rounding " << percent << "%" << " round_n_loop " << round_n_loop << " round_n_updated " << round_n_updated << " MSE " << min_mse << " MAE " << min_mae << "                         ";
+        }
+    }
+    std::cerr << std::endl;
+
+    // round eval arr with hillclimb result
+    n_roundup = 0;
+    n_rounddown = 0;
+    for (int i = 0; i < eval_size; ++i){
+        if (!host_round_arr[i]){ // round-up
+            host_eval_arr[i] = host_eval_arr_roundup[i];
+        } else{ // round_down
+            host_eval_arr[i] = host_eval_arr_rounddown[i];
+        }
+        if (host_eval_arr_roundup[i] != host_eval_arr_rounddown[i]){
+            if (!host_round_arr[i]){
+                ++n_roundup;
+            } else{
+                ++n_rounddown;
+            }
+        }
+    }
+    std::cerr << "n_roundup " << n_roundup << " n_rounddown " << n_rounddown << std::endl;
     cudaMemcpy(device_eval_arr, host_eval_arr, sizeof(float) * eval_size, cudaMemcpyHostToDevice);
 
     // calculate final loss
-    adj_calculate_residual <<<n_blocks_residual, N_THREADS_PER_BLOCK_RESIDUAL>>> (device_eval_arr, n_train_data, device_start_idx_arr, device_train_data, device_rev_idx_arr, device_residual_arr, device_error_monitor_arr);
+    adj_calculate_loss_round <<<n_blocks_residual, N_THREADS_PER_BLOCK_RESIDUAL>>> (device_eval_arr_roundup, device_eval_arr_rounddown, device_round_arr, n_train_data, device_start_idx_arr, device_train_data, device_error_monitor_arr);
     cudaMemcpy(host_error_monitor_arr, device_error_monitor_arr, sizeof(float) * N_ERROR_MONITOR, cudaMemcpyDeviceToHost);
-    adj_calculate_test_loss <<<n_blocks_test, N_THREADS_PER_BLOCK_TEST>>> (device_eval_arr, n_test_data, device_start_idx_arr, device_test_data, device_test_error_monitor_arr);
+    adj_calculate_loss_round <<<n_blocks_test, N_THREADS_PER_BLOCK_TEST>>> (device_eval_arr_roundup, device_eval_arr_rounddown, device_round_arr, n_test_data, device_start_idx_arr, device_test_data, device_test_error_monitor_arr);
     cudaMemcpy(host_test_error_monitor_arr, device_test_error_monitor_arr, sizeof(float) * N_ERROR_MONITOR, cudaMemcpyDeviceToHost);
     std::cerr << "phase " << phase << " time " << (tim() - strt) << " ms n_train_data " << n_train_data << " n_test_data " << n_test_data << " n_loop " << n_loop << " MSE " << host_error_monitor_arr[0] << " MAE " << host_error_monitor_arr[1] << " test_MSE " << host_test_error_monitor_arr[0] << " test_MAE " << host_test_error_monitor_arr[1] << " (with int) alpha " << alpha << " n_patience " << n_patience << std::endl;
     std::cout << "phase " << phase << " time " << (tim() - strt) << " ms n_train_data " << n_train_data << " n_test_data " << n_test_data << " n_loop " << n_loop << " MSE " << host_error_monitor_arr[0] << " MAE " << host_error_monitor_arr[1] << " test_MSE " << host_test_error_monitor_arr[0] << " test_MAE " << host_test_error_monitor_arr[1] << " (with int) alpha " << alpha << " n_patience " << n_patience << std::endl;
