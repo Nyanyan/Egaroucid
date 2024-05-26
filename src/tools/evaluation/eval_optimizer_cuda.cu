@@ -334,6 +334,68 @@ __global__ void adam(const int eval_size, double *device_eval_arr, int *device_n
     device_residual_arr[eval_idx] = 0.0;
 }
 
+void calc_round_difference(const int change_idx, const int rev_change_idx, const int *host_eval_arr_roundup, const int *host_eval_arr_rounddown, const bool *host_round_arr, const std::vector<std::unordered_set<int>> &train_data_appear_arr, const int *host_start_idx_arr, const Adj_Data *host_train_data, double *mse, double *mae){
+    double diff_mse = 0.0, diff_mae = 0.0;
+    for (const int &data_idx: train_data_appear_arr[change_idx]){
+        int before_predicted_value = 0;
+        for (int i = 0; i < ADJ_N_FEATURES; ++i){
+            #if ADJ_CELL_WEIGHT /******************************************** UNDER CONSTRUCTION ********************************************/
+                if (device_test_data[data_idx].features[i] < 10){
+                    predicted_value += device_eval_arr[device_test_data[data_idx].features[i]];
+                } else if (device_test_data[data_idx].features[i] < 20){
+                    predicted_value -= device_eval_arr[device_test_data[data_idx].features[i] - 10];
+                }
+            #else
+                int idx = host_start_idx_arr[i] + (int)host_train_data[data_idx].features[i];
+                if (!host_round_arr[idx]){ // round-up
+                    before_predicted_value += host_eval_arr_roundup[idx];
+                } else{ // round-down
+                    before_predicted_value += host_eval_arr_rounddown[idx];
+                }
+            #endif
+        }
+        before_predicted_value += before_predicted_value >= 0 ? ADJ_STEP_2 : -ADJ_STEP_2;
+        before_predicted_value /= ADJ_STEP;
+        double before_abs_error = fabs(host_train_data[data_idx].score / ADJ_STEP - before_predicted_value);
+        double before_squared_error = before_abs_error * before_abs_error;
+
+        int after_predicted_value = 0;
+        for (int i = 0; i < ADJ_N_FEATURES; ++i){
+            #if ADJ_CELL_WEIGHT /******************************************** UNDER CONSTRUCTION ********************************************/
+                if (device_test_data[data_idx].features[i] < 10){
+                    predicted_value += device_eval_arr[device_test_data[data_idx].features[i]];
+                } else if (device_test_data[data_idx].features[i] < 20){
+                    predicted_value -= device_eval_arr[device_test_data[data_idx].features[i] - 10];
+                }
+            #else
+                int idx = host_start_idx_arr[i] + (int)host_train_data[data_idx].features[i];
+                if (idx == change_idx || idx == rev_change_idx){
+                    if (host_round_arr[idx]){ // changed to round-up
+                        after_predicted_value += host_eval_arr_roundup[idx];
+                    } else{ // changed to round-down
+                        after_predicted_value += host_eval_arr_rounddown[idx];
+                    }
+                } else{
+                    if (!host_round_arr[idx]){ // round-up
+                        after_predicted_value += host_eval_arr_roundup[idx];
+                    } else{ // round-down
+                        after_predicted_value += host_eval_arr_rounddown[idx];
+                    }
+                }
+            #endif
+        }
+        after_predicted_value += after_predicted_value >= 0 ? ADJ_STEP_2 : -ADJ_STEP_2;
+        after_predicted_value /= ADJ_STEP;
+        double after_abs_error = fabs(host_train_data[data_idx].score / ADJ_STEP - after_predicted_value);
+        double after_squared_error = after_abs_error * after_abs_error;
+
+        diff_mse += after_squared_error - before_squared_error;
+        diff_mae += after_abs_error - before_abs_error;
+    }
+    *mse += diff_mse;
+    *mae += diff_mae;
+}
+
 /*
     @brief Output Parameters as integer
 */
@@ -549,6 +611,13 @@ int main(int argc, char* argv[]) {
     cudaMemcpy(device_eval_arr_roundup, host_eval_arr_roundup, sizeof(int) * eval_size, cudaMemcpyHostToDevice);
     cudaMemcpy(device_eval_arr_rounddown, host_eval_arr_rounddown, sizeof(int) * eval_size, cudaMemcpyHostToDevice);
     cudaMemcpy(device_round_arr, host_round_arr, sizeof(bool) * eval_size, cudaMemcpyHostToDevice);
+    std::vector<std::unordered_set<int>> train_data_appear_arr(eval_size);
+    for (int i = 0; i < n_train_data; ++i){
+        for (int j = 0; j < ADJ_N_FEATURES; ++j){
+            train_data_appear_arr[host_start_idx_arr[j] + host_train_data[i].features[j]].emplace(i);
+            train_data_appear_arr[host_rev_idx_arr[host_start_idx_arr[j] + host_train_data[i].features[j]]].emplace(i);
+        }
+    }
 
     // round eval with hillclimb
     adj_calculate_loss_round <<<n_blocks_residual, N_THREADS_PER_BLOCK_RESIDUAL>>> (device_eval_arr_roundup, device_eval_arr_rounddown, device_round_arr, n_train_data, device_start_idx_arr, device_train_data, device_error_monitor_arr);
@@ -561,23 +630,18 @@ int main(int argc, char* argv[]) {
     uint64_t round_n_loop = 0, round_n_updated = 0;
     while (tim() - round_strt < round_tl){
         int change_idx = randint_eval(engine);
-        if (host_eval_arr_roundup[change_idx] != host_eval_arr_rounddown[change_idx]){
-            host_round_arr[change_idx] ^= 1; // change round-up/down
-            if (change_idx != host_rev_idx_arr[change_idx]){
-                host_round_arr[host_rev_idx_arr[change_idx]] ^= 1; // change round-up/down
-            }
-            cudaMemcpy(device_round_arr, host_round_arr, sizeof(bool) * eval_size, cudaMemcpyHostToDevice);
-            adj_calculate_loss_round <<<n_blocks_residual, N_THREADS_PER_BLOCK_RESIDUAL>>> (device_eval_arr_roundup, device_eval_arr_rounddown, device_round_arr, n_train_data, device_start_idx_arr, device_train_data, device_error_monitor_arr);
-            cudaMemcpy(host_error_monitor_arr, device_error_monitor_arr, sizeof(double) * N_ERROR_MONITOR, cudaMemcpyDeviceToHost);
-            if (host_error_monitor_arr[0] <= min_mse){
-                min_mse = host_error_monitor_arr[0];
-                min_mae = host_error_monitor_arr[1];
-                ++round_n_updated;
-            } else{
-                host_round_arr[change_idx] ^= 1; // re-change round-up/down
-                if (change_idx != host_rev_idx_arr[change_idx]){
-                    host_round_arr[host_rev_idx_arr[change_idx]] ^= 1; // re-change round-up/down
+        if (host_eval_arr_roundup[change_idx] != host_eval_arr_rounddown[change_idx]){ // worth trying
+            double mse = min_mse, mae = min_mae;
+            int rev_change_idx = host_rev_idx_arr[change_idx];
+            calc_round_difference(change_idx, rev_change_idx, host_eval_arr_roundup, host_eval_arr_rounddown, host_round_arr, train_data_appear_arr, host_start_idx_arr, host_train_data, &mse, &mae);
+            if (mse <= min_mse){
+                min_mse = mse;
+                min_mae = mae;
+                host_round_arr[change_idx] ^= 1; // change round-up/down
+                if (change_idx != rev_change_idx){
+                    host_round_arr[rev_change_idx] ^= 1; // change round-up/down
                 }
+                ++round_n_updated;
             }
             ++round_n_loop;
             int percent = (uint64_t)(tim() - round_strt) * 100ULL / round_tl;
@@ -604,9 +668,10 @@ int main(int argc, char* argv[]) {
         }
     }
     std::cerr << "n_roundup " << n_roundup << " n_rounddown " << n_rounddown << std::endl;
-    cudaMemcpy(device_eval_arr, host_eval_arr, sizeof(double) * eval_size, cudaMemcpyHostToDevice);
+    
 
     // calculate final loss
+    cudaMemcpy(device_round_arr, host_round_arr, sizeof(bool) * eval_size, cudaMemcpyHostToDevice);
     adj_calculate_loss_round <<<n_blocks_residual, N_THREADS_PER_BLOCK_RESIDUAL>>> (device_eval_arr_roundup, device_eval_arr_rounddown, device_round_arr, n_train_data, device_start_idx_arr, device_train_data, device_error_monitor_arr);
     cudaMemcpy(host_error_monitor_arr, device_error_monitor_arr, sizeof(double) * N_ERROR_MONITOR, cudaMemcpyDeviceToHost);
     adj_calculate_loss_round <<<n_blocks_test, N_THREADS_PER_BLOCK_TEST>>> (device_eval_arr_roundup, device_eval_arr_rounddown, device_round_arr, n_test_data, device_start_idx_arr, device_test_data, device_test_error_monitor_arr);
