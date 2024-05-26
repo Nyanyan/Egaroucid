@@ -3,9 +3,9 @@ import sys
 
 phase = str(sys.argv[1])
 hour = '0'
-minute = '0'
-second = '30'
-alpha = '1.0'
+minute = '5'
+second = '0'
+alpha = '200.0'
 n_patience = '1000'
 
 model_dir = './../../../model/nomodel/'
@@ -14,6 +14,9 @@ model_dir = './../../../model/nomodel/'
 #'''
 # 7.0
 train_data_nums = [28, 29, 30, 31, 34, 35, 36, 37, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49] # no random11_all (records27)
+if int(phase) <= 18:
+    train_data_nums.append(27) # add random11
+train_data_nums.sort()
 train_root_dir = './../../../train_data/bin_data/20240223_1/'
 executable = 'eval_optimizer_cuda_12_2_0.exe'
 #'''
