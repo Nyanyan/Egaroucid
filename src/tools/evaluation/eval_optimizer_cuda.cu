@@ -141,7 +141,7 @@ int adj_import_data(int n_files, char* files[], Adj_Data* host_train_data, int *
     }
     score_avg /= n_data;
     std::cerr << std::endl;
-    std::cerr << n_data << " data loaded" << std::endl;
+    //std::cerr << n_data << " data loaded" << std::endl;
     std::cerr << "score avg " << score_avg << std::endl;
     return n_data;
 }
@@ -378,10 +378,12 @@ int main(int argc, char* argv[]) {
     adj_init_arr(eval_size, host_eval_arr, host_rev_idx_arr, host_n_appear_arr);
     adj_import_eval(in_file, eval_size, host_eval_arr);
     int n_all_data = adj_import_data(n_train_data_file, train_files, host_train_data, host_rev_idx_arr, host_n_appear_arr);
+    std::cerr << n_all_data << " data loaded" << std::endl;
     // shuffle data
     std::random_device seed_gen;
     std::mt19937 engine(seed_gen());
     std::shuffle(host_train_data, host_train_data + n_all_data, engine);
+    std::cerr << "data shuffled" << std::endl;
     // divide data
     int n_test_data = n_all_data * 0.05; // use 5% as test data
     int n_train_data = n_all_data - n_test_data;
@@ -419,6 +421,7 @@ int main(int argc, char* argv[]) {
     for (int i = 0; i < eval_size; ++i){
         host_n_appear_arr[i] = std::min(100, host_n_appear_arr[i]);
     }
+    std::cerr << "train data appearance calculated" << std::endl;
 
     float *device_eval_arr; // device eval array
     int *device_rev_idx_arr; // device reversed index
@@ -457,7 +460,7 @@ int main(int argc, char* argv[]) {
     const int n_blocks_test = (n_test_data + N_THREADS_PER_BLOCK_TEST - 1) / N_THREADS_PER_BLOCK_TEST;
     const int n_blocks_residual = (n_train_data + N_THREADS_PER_BLOCK_RESIDUAL - 1) / N_THREADS_PER_BLOCK_RESIDUAL;
     const int n_blocks_next_step = (eval_size + N_THREADS_PER_BLOCK_NEXT_STEP - 1) / N_THREADS_PER_BLOCK_NEXT_STEP;
-    std::cerr << "n_blocks_residual " << n_blocks_residual << " n_blocks_next_step " << n_blocks_next_step << std::endl;
+    std::cerr << "n_blocks_test " << n_blocks_test << " n_blocks_residual " << n_blocks_residual << " n_blocks_next_step " << n_blocks_next_step << std::endl;
     std::cerr << "phase " << phase << std::endl;
     float alpha_stab = alpha; // / n_data;
     adj_calculate_residual <<<n_blocks_residual, N_THREADS_PER_BLOCK_RESIDUAL>>> (device_eval_arr, n_train_data, device_start_idx_arr, device_train_data, device_rev_idx_arr, device_residual_arr, device_error_monitor_arr);
@@ -470,6 +473,7 @@ int main(int argc, char* argv[]) {
     test_loss(host_eval_arr, host_start_idx_arr, n_test_data, host_test_data, &min_test_mse, &min_test_mae);
     while (tim() - strt < msecond){
         ++n_loop;
+
         // test loss
         adj_calculate_test_loss <<<n_blocks_test, N_THREADS_PER_BLOCK_TEST>>> (device_eval_arr, n_test_data, device_start_idx_arr, device_test_data, device_test_error_monitor_arr);
         cudaMemcpy(host_test_error_monitor_arr, device_test_error_monitor_arr, sizeof(float) * N_ERROR_MONITOR, cudaMemcpyDeviceToHost);

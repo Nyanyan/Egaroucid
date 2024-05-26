@@ -75,7 +75,7 @@ board_n_moves['40'] = [49, 60]
 # 32手以降はランダム打ち開始+10手くらいの範囲で使う
 
 ### useful old data ###
-board_n_moves['27'] = [12, 31] # random11
+board_n_moves['27'] = [12, 31] # all random11
 board_n_moves['28'] = [40, 50] # random40
 board_n_moves['29'] = [12, 32] # random12
 board_n_moves['30'] = [18, 31] # random18
