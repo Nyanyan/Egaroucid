@@ -386,6 +386,9 @@ int main(int argc, char* argv[]) {
     std::cerr << "data shuffled" << std::endl;
     // divide data
     int n_test_data = n_all_data * 0.05; // use 5% as test data
+    if (n_test_data <= 0){
+        n_test_data = 1;
+    }
     int n_train_data = n_all_data - n_test_data;
     Adj_Data* host_test_data = host_train_data + n_train_data;
     std::cerr << "n_train_data " << n_train_data << " n_test_data " << n_test_data << std::endl;

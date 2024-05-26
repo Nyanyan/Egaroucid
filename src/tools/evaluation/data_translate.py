@@ -7,8 +7,14 @@ import glob
 bin_root_dir = './../../../train_data/bin_data/20240223_1/'
 exe = 'data_board_to_idx.out'
 N_PHASES = 60
-board_sub_dir_nums = [27, 28, 29, 30, 31, 34, 35, 36, 37, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49]
-#board_sub_dir_nums = [38]
+board_sub_dir_nums = [
+    18, 19, 20, 21, 24, 25, 27, 28, 29, 30, 31, # old data
+    34, 35, # mid-endgame data 1
+    36, 37, # book data
+    #38, # test data
+    39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51 # mid-endgame data 2
+]
+board_sub_dir_nums.sort()
 #'''
 '''
 # 7.0 move ordering_end_nws
@@ -71,44 +77,51 @@ board_n_moves['39'] = [50, 60]
 board_n_moves['40'] = [49, 60]
 '''
 
-# 31手まではあるデータ全部使う
-# 32手以降はランダム打ち開始+10手くらいの範囲で使う
+### old data ###
+board_n_moves['18'] = [19, 59] # random10-19     2000000 games
+board_n_moves['19'] = [19, 59] # random10-19    10000000 games
+board_n_moves['20'] = [11, 59] # random8           90741 games
+board_n_moves['21'] = [11, 59] # random10         134230 games
+board_n_moves['24'] = [21, 59] # random21        4790000 games
+board_n_moves['25'] = [30, 59] # random30        4760000 games
+board_n_moves['27'] = [12, 59] # random11 all   19786627 games
+board_n_moves['28'] = [40, 59] # random40       14210000 games
+board_n_moves['29'] = [12, 59] # random12        4770000 games
+board_n_moves['30'] = [18, 59] # random18        4490454 games
+board_n_moves['31'] = [24, 59] # random24
 
-### useful old data ###
-board_n_moves['27'] = [12, 31] # all random11
-board_n_moves['28'] = [40, 50] # random40
-board_n_moves['29'] = [12, 32] # random12
-board_n_moves['30'] = [18, 31] # random18
-board_n_moves['31'] = [24, 34] # random24
 #board_n_moves['32'] = [12, 60] # random11 or 12 test data
 #board_n_moves['33'] = [12, 60] # random12 test data
 
-### midgame data 1 ###
-board_n_moves['34'] = [31, 41] # random31
-board_n_moves['35'] = [32, 42] # random32
+### mid-endgame data 1 ###
+board_n_moves['34'] = [31, 59] # random31        4294350 games
+board_n_moves['35'] = [32, 59] # random32        3772331 games
 
 ### book data ###
 board_n_moves['36'] = [0, 11] # book first11
-board_n_moves['37'] = [0, 59] # book additional
+board_n_moves['37'] = [0, 40] # book additional
 
 ### test data ###
 board_n_moves['38'] = [12, 59] # random8,9,10,11 test data
 
-### mid-endgame data ###
-board_n_moves['39'] = [54, 59] # random54
-board_n_moves['40'] = [53, 59] # random53
-board_n_moves['41'] = [52, 59] # random52
-board_n_moves['42'] = [51, 59] # random51
-board_n_moves['43'] = [50, 59] # random50
-board_n_moves['44'] = [49, 59] # random49
-board_n_moves['45'] = [48, 58] # random48
-board_n_moves['46'] = [47, 57] # random47
-board_n_moves['47'] = [46, 56] # random46
-board_n_moves['48'] = [45, 55] # random45
-board_n_moves['49'] = [44, 54] # random44
+### mid-endgame data 2 ###
+board_n_moves['39'] = [54, 59] # random54        3000000 games
+board_n_moves['40'] = [53, 59] # random53        3000000 games
+board_n_moves['41'] = [52, 59] # random52        3000000 games
+board_n_moves['42'] = [51, 59] # random51        3000000 games
+board_n_moves['43'] = [50, 59] # random50        3000000 games
+board_n_moves['44'] = [49, 59] # random49        3000000 games
+board_n_moves['45'] = [48, 59] # random48        3000000 games
+board_n_moves['46'] = [47, 59] # random47        3000000 games
+board_n_moves['47'] = [46, 59] # random46        3000000 games
+board_n_moves['48'] = [45, 59] # random45        3226023 games
+board_n_moves['49'] = [44, 59] # random44        3000000 games
+board_n_moves['50'] = [43, 59] # random43        3038216 games
+board_n_moves['51'] = [42, 59] # random42        3003097 games
 
 
 procs = []
+n_doing_tasks = 0
 for phase in range(N_PHASES):
     bin_dir = bin_root_dir + str(phase)
     try:
@@ -120,13 +133,15 @@ for phase in range(N_PHASES):
         n_files_str = str(len(glob.glob(input_dir + '/*.dat')))
         out_file = bin_dir + '/' + str(board_sub_dir_num) + '.dat'
         cmd = exe + ' ' + input_dir + ' 0 ' + n_files_str + ' ' + out_file + ' ' + str(phase) + ' ' + str(board_n_moves[str(board_sub_dir_num)][0]) + ' ' + str(board_n_moves[str(board_sub_dir_num)][1])
-        #print(phase, board_sub_dir_num, cmd)
-        #subprocess.run(cmd.split(), stderr=None, stdout=subprocess.DEVNULL)
-        procs.append(subprocess.Popen(cmd.split(), stderr=None, stdout=subprocess.DEVNULL))
-        if len(procs) >= 32:
+        print(phase, board_sub_dir_num, cmd)
+        procs.append(subprocess.Popen(cmd.split(), stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL))
+        if board_n_moves[str(board_sub_dir_num)][0] <= phase and phase <= board_n_moves[str(board_sub_dir_num)][1]:
+            n_doing_tasks += 1
+        if n_doing_tasks >= 32:
             for proc in procs:
                 proc.wait()
             procs = []
+            n_doing_tasks = 0
 
 for proc in procs:
     proc.wait()
