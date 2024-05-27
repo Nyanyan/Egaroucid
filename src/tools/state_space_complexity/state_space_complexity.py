@@ -11,6 +11,14 @@ def f0_upper_const():
 def f1(p):
     return (2 ** 4) * nCr(60, p) * (2 ** p)
 
+def e(n):
+    embedded_values = [
+        0, 0, 0, 0, 1, 3, 5, 
+    ]
+    if n < len(embedded_values):
+        return embedded_values[n]
+    return 64 - n
+
 p_arr = list(range(61))
 
 n_state_arr_upper_const = [1 for _ in range(61)]

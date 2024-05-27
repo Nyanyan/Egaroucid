@@ -61,6 +61,9 @@ struct Book_hash {
 
 std::unordered_set<Board, Book_hash> all_boards;
 std::unordered_set<uint64_t> silhouette;
+std::unordered_set<uint64_t> connected_seen;
+int max_n_legal[4 + MAX_ENUMERATE_LINE + 1];
+Board max_n_legal_board[4 + MAX_ENUMERATE_LINE + 1];
 
 inline void first_update_representative_board(Board *res, Board *sym){
     uint64_t vp = vertical_mirror(sym->player);
@@ -106,9 +109,16 @@ inline uint64_t get_representative_discs(uint64_t discs){
 }
 
 void enumerate(Board board, const int n_moves){
-    if (board.n_discs() == n_moves + 4){
+    int n_discs = board.n_discs();
+    if (n_discs == n_moves + 4){
         uint64_t rdiscs = get_representative_discs(board.player | board.opponent);
         silhouette.emplace(rdiscs);
+        uint64_t legal = board.get_legal();
+        int n_legal = pop_count_ull(legal);
+        if (max_n_legal[n_discs] < n_legal){
+            max_n_legal[n_discs] = n_legal;
+            max_n_legal_board[n_discs] = board;
+        }
         return;
     }
     Board rboard = get_representative_board(board);
@@ -116,7 +126,7 @@ void enumerate(Board board, const int n_moves){
         return;
     }
     all_boards.emplace(rboard);
-    if (board.n_discs() < n_moves + 4){
+    if (n_discs < n_moves + 4){
         uint64_t legal = board.get_legal();
         if (legal == 0){
             board.pass();
@@ -124,6 +134,11 @@ void enumerate(Board board, const int n_moves){
             if (legal == 0){
                 return;
             }
+        }
+        int n_legal = pop_count_ull(legal);
+        if (max_n_legal[n_discs] < n_legal){
+            max_n_legal[n_discs] = n_legal;
+            max_n_legal_board[n_discs] = board;
         }
         Flip flip;
         for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)){
@@ -135,9 +150,7 @@ void enumerate(Board board, const int n_moves){
     }
 }
 
-void get_silhouette(int n_discs){
-    n_discs = std::min(n_discs, MAX_ENUMERATE_LINE + 4);
-    int n_moves = n_discs - 4;    
+void get_silhouette(int n_moves){
     Board board;
     board.reset();
     uint64_t strt = tim();
@@ -159,7 +172,7 @@ void get_silhouette(int n_discs){
 int max_n_connected = 0;
 uint64_t max_connected_bits;
 
-inline uint64_t calc_connected_discs(uint64_t discs){
+inline uint64_t calc_connected_cells(uint64_t discs){
     uint64_t hmask = discs & 0x7E7E7E7E7E7E7E7EULL;
     uint64_t vmask = discs & 0x00FFFFFFFFFFFF00ULL;
     uint64_t hvmask = discs & 0x007E7E7E7E7E7E00ULL;
@@ -171,17 +184,42 @@ inline uint64_t calc_connected_discs(uint64_t discs){
     return (~discs) & res;
 }
 
+inline uint64_t calc_puttable_cells(uint64_t discs){
+    uint64_t hmask = discs & 0x7E7E7E7E7E7E7E7EULL;
+    uint64_t vmask = discs & 0x00FFFFFFFFFFFF00ULL;
+    uint64_t hvmask = discs & 0x007E7E7E7E7E7E00ULL;
+    uint64_t hmask2 = discs & 0x3C3C3C3C3C3C3C3CULL;
+    uint64_t vmask2 = discs & 0x0000FFFFFFFF0000ULL;
+    uint64_t hvmask2 = discs & 0x00003C3C3C3C0000ULL;
+    uint64_t res = 
+        ((hmask << 1) & (hmask2 << 2)) | ((hmask >> 1) & (hmask2 >> 2)) | 
+        ((vmask << 8) & (vmask2 << 16)) | ((vmask >> 8) & (vmask2 >> 16)) | 
+        ((hvmask << 7) & (hvmask2 << 14)) | ((hvmask >> 7) & (hvmask2 >> 14)) | 
+        ((hvmask << 9) & (hvmask2 << 18)) | ((hvmask >> 9) & (hvmask2 >> 18));
+    return (~discs) & res;
+}
+
 void find_max_connected(uint64_t discs, int depth){
     if (depth == 0){
-        int n_connected = pop_count_ull(calc_connected_discs(discs));
+        int n_connected = pop_count_ull(calc_puttable_cells(discs));
         if (max_n_connected < n_connected){
             max_n_connected = n_connected;
             max_connected_bits = discs;
         }
         return;
     }
-    uint64_t connected = calc_connected_discs(discs);
-    for (int cell = first_bit(&connected); connected; cell = next_bit(&connected)){
+    uint64_t rdiscs = get_representative_discs(discs);
+    if (connected_seen.find(rdiscs) != connected_seen.end()){
+        return;
+    }
+    connected_seen.emplace(rdiscs);
+    //int n_connected = pop_count_ull(calc_connected_cells(discs));
+    //if (n_connected + 4 * depth <= max_n_connected){ // lazy cutoff
+    //    return;
+    //}
+    uint64_t puttable = calc_puttable_cells(discs);
+    //std::cerr << std::hex << discs << " " << puttable << std::endl;
+    for (int cell = first_bit(&puttable); puttable; cell = next_bit(&puttable)){
         discs ^= 1ULL << cell;
             find_max_connected(discs, depth - 1);
         discs ^= 1ULL << cell;
@@ -192,19 +230,23 @@ int main(){
     mobility_init();
     flip_init();
     book_hash_init_rand();
-
-    for (int n_discs = 4; n_discs < HW2; ++n_discs){
+    for (int i = 4; i <= 4 + MAX_ENUMERATE_LINE; ++i){
+        max_n_legal[i] = 0;
+    }
+    uint64_t strt_silhouette = tim();
+    get_silhouette(MAX_ENUMERATE_LINE);
+    std::cout << "silhouette done in " << tim() - strt_silhouette << " ms" << std::endl;
+    for (int n_discs = 4; n_discs <= 4 + MAX_ENUMERATE_LINE; ++n_discs){
+        std::cout << "n_discs " << std::dec << n_discs << " max_n_legal " << max_n_legal[n_discs] << " board " << std::hex << max_n_legal_board[n_discs].player << " " << max_n_legal_board[n_discs].opponent << std::endl;
+    }
+    for (int n_discs = 4 + MAX_ENUMERATE_LINE + 1; n_discs < HW2; ++n_discs){
         uint64_t strt = tim();
         max_n_connected = 0;
-        if (n_discs <= MAX_ENUMERATE_LINE + 4){
-            all_boards.clear();
-            silhouette.clear();
-            get_silhouette(n_discs);
-        }
+        connected_seen.clear();
         for (uint64_t discs: silhouette){
             find_max_connected(discs, n_discs - pop_count_ull(discs));
         }
-        std::cout << "n_discs " << n_discs << " max_n_connected " << max_n_connected << " bits " << std::hex << max_connected_bits << std::dec << " time " << tim() - strt << " ms silhouette size " << silhouette.size() << std::endl;
+        std::cout << "n_discs " << std::dec << n_discs << " max_n_connected " << max_n_connected << " bits " << std::hex << max_connected_bits << std::dec << " time " << tim() - strt << " ms" << std::endl;
     }
     std::cout << "finished" << std::endl;
 }
