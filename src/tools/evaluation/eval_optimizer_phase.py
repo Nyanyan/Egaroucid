@@ -5,7 +5,7 @@ phase = str(sys.argv[1])
 hour = '0'
 minute = '6'
 second = '0'
-alpha = '450.0'
+alpha = '800.0'
 n_patience = '1000'
 
 model_dir = './../../../model/nomodel/'
