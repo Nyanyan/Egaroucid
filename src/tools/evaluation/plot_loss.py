@@ -111,7 +111,7 @@ ax1.grid(True)
 '''
 
 plt.plot(phase_arr, mae_arr, 'C0', marker='o', label='train_MAE', linestyle="dashed", linewidth=5)
-plt.plot(test_phase_arr, test_mae_arr, 'C1', marker='o', label='test_MAE')
+plt.plot(test_phase_arr, test_mae_arr, 'C1', marker='o', label='val_MAE')
 plt.xlabel('phase')
 plt.ylabel('MAE')
 plt.xlim(-1, 60)
@@ -125,7 +125,7 @@ if input('save?: ') == 'y':
 
 plt.clf()
 plt.plot(phase_arr, mse_arr, 'C2', marker='o', label='train_MSE', linestyle="dashed", linewidth=5)
-plt.plot(test_phase_arr, test_mse_arr, 'C3', marker='o', label='test_MSE')
+plt.plot(test_phase_arr, test_mse_arr, 'C3', marker='o', label='val_MSE')
 plt.xlabel('phase')
 plt.ylabel('MSE')
 plt.xlim(-1, 60)
