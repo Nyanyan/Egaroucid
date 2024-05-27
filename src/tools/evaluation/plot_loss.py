@@ -60,9 +60,9 @@ for tt in t:
     except:
         pass
 
-plt.plot(phase_arr, mae_arr, color='red', marker='o', label='train_MAE', linestyle="dotted", linewidth=5)
-plt.plot(val_phase_arr, val_mae_arr, color='lightseagreen', marker='o', label='val_MAE')
-plt.plot(test_phase_arr, test_mae_arr, color='blue', marker='o', label='test_MAE')
+plt.plot(phase_arr, mae_arr, label='train_MAE', color='red', marker='o', linestyle="dotted", linewidth=5)
+plt.plot(val_phase_arr, val_mae_arr, label='val_MAE', color='lightseagreen', marker='o', linewidth=2)
+plt.plot(test_phase_arr, test_mae_arr, label='test_MAE', color='blue', marker='^', linestyle="dashed")
 plt.xlabel('phase')
 plt.ylabel('MAE')
 plt.xlim(-1, 60)
@@ -75,9 +75,9 @@ plt.savefig('./trained/loss_mae.png')
 print('saved')
 
 plt.clf()
-plt.plot(phase_arr, mse_arr, color='orange', marker='o', label='train_MSE', linestyle="dotted", linewidth=5)
-plt.plot(val_phase_arr, val_mse_arr, color='limegreen', marker='o', label='val_MSE')
-plt.plot(test_phase_arr, test_mse_arr, color='purple', marker='o', label='test_MSE')
+plt.plot(phase_arr, mse_arr, label='train_MSE', color='orange', marker='o', linestyle="dotted", linewidth=5)
+plt.plot(val_phase_arr, val_mse_arr, label='val_MSE', color='limegreen', marker='o', linewidth=2)
+plt.plot(test_phase_arr, test_mse_arr, label='test_MSE', color='purple', marker='^', linestyle="dashed")
 plt.xlabel('phase')
 plt.ylabel('MSE')
 plt.xlim(-1, 60)
