@@ -11,7 +11,8 @@ import math
 #data_files = ['data/probcut_end6.txt']
 #data_files = ['data/probcut_end8.txt', 'data/probcut_end9.txt', 'data/probcut_end10.txt', 'data/probcut_end11.txt', 'data/probcut_end12.txt']
 #data_files = ['data/probcut_end16.txt']
-data_files = ['data/probcut_end19.txt']
+#data_files = ['data/probcut_end19.txt']
+data_files = ['data/probcut_end0.txt']
 
 data = [[[] for _ in range(61)] for _ in range(65)] # n_discs, depth, error (exact - predict)
 for data_file in data_files:
@@ -58,11 +59,11 @@ for n_discs in range(len(data)):
             z_mean.append(mean)
             weight_mean.append(1 / len(data[n_discs][depth]))
 
-for n_discs in range(45):
+for n_discs in range(20):
     depth = 0
     x_n_discs_sd.append(n_discs)
     y_depth_sd.append(depth)
-    z_sd.append(6.5 - n_discs / 60 * 0.0)
+    z_sd.append(8.0 - n_discs / 60 * 0.0)
     weight_sd.append(0.01)
 
 for n_discs in range(45):
