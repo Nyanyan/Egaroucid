@@ -119,9 +119,9 @@ plt.ylim(-0.5, 5)
 plt.grid(True)
 plt.legend()
 #plt.show()
-if input('save?: ') == 'y':
-    plt.savefig('./trained/loss_mae.png')
-    print('saved')
+#if input('save?: ') == 'y':
+plt.savefig('./trained/loss_mae.png')
+print('saved')
 
 plt.clf()
 plt.plot(phase_arr, mse_arr, 'C2', marker='o', label='train_MSE', linestyle="dashed", linewidth=5)
@@ -133,6 +133,6 @@ plt.ylim(-5, 50)
 plt.grid(True)
 plt.legend()
 #plt.show()
-if input('save?: ') == 'y':
-    plt.savefig('./trained/loss_mse.png')
-    print('saved')
+#if input('save?: ') == 'y':
+plt.savefig('./trained/loss_mse.png')
+print('saved')

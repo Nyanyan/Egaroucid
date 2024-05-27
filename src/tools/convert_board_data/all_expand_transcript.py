@@ -6,7 +6,7 @@ transcript_root_dir = './../../../train_data/transcript/'
 board_root_dir = './../../../train_data/board_data/'
 #board_sub_dir_nums = [1, 2, 3, 4, 6, 7, 8, 9, 11, 15, 16, 17, 18, 99]
 #board_sub_dir_nums = [39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51]
-board_sub_dir_nums = [52, 60, 61, 62, 63]
+board_sub_dir_nums = [52, 53, 57, 60, 61, 62, 63]
 log_file = './../../../train_data/board_data/log.txt'
 
 FILE_INTERVAL = 100

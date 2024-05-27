@@ -13,11 +13,16 @@ model_dir = './../../../model/nomodel/'
 
 #'''
 # 7.0
-train_data_nums = [18, 19, 20, 21, 24, 25, 28, 29, 30, 31, 34, 35, 36, 37, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 64]
+train_data_nums = [
+    18, 19, 20, 21, 24, 25, 28, 29, 30, 31, # old data (no records27)
+    34, 35, # mid-endgame data 1
+    36, 37, # book data
+    #38, # test data
+    39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 57, 60, 61, 62, 63, # mid-endgame data 2
+    64 # cut records27
+]
 if int(phase) <= 11:
     train_data_nums = [36, 37] # use only book with phase <= 11
-#elif int(phase) <= 18:
-#    train_data_nums.append(27) # add random11
 train_data_nums.sort()
 train_root_dir = './../../../train_data/bin_data/20240223_1/'
 executable = 'eval_optimizer_cuda_12_2_0.exe'

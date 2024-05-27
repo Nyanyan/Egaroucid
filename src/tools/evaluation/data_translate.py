@@ -2,6 +2,7 @@ import subprocess
 import os
 import glob
 import psutil
+import time
 
 #'''
 # 7.0
@@ -14,10 +15,10 @@ board_sub_dir_nums = [
     34, 35, # mid-endgame data 1
     36, 37, # book data
     #38, # test data
-    39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51 # mid-endgame data 2
+    39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 57, 60, 61, 62, 63 # mid-endgame data 2
 ]
 '''
-board_sub_dir_nums = [52, 60, 61, 62, 63]
+board_sub_dir_nums = [52, 53, 57, 60, 61, 62, 63]
 board_sub_dir_nums.sort()
 #'''
 '''
@@ -122,6 +123,14 @@ board_n_moves['48'] = [45, 59] # random45        3226023 games
 board_n_moves['49'] = [44, 59] # random44        3000000 games
 board_n_moves['50'] = [43, 59] # random43        3038216 games
 board_n_moves['51'] = [42, 59] # random42        3003097 games
+board_n_moves['52'] = [41, 59] # random41        3004849 games
+board_n_moves['53'] = [39, 59] # random39        1687905 games
+board_n_moves['57'] = [35, 59] # random35         144181 games
+board_n_moves['60'] = [58, 59] # random58        3000000 games
+board_n_moves['61'] = [57, 59] # random57        3000000 games
+board_n_moves['62'] = [56, 59] # random56        3000000 games
+board_n_moves['63'] = [55, 59] # random55        3000000 games
+
 
 
 procs = []
@@ -136,12 +145,14 @@ for phase in range(N_PHASES):
         n_files_str = str(len(glob.glob(input_dir + '/*.dat')))
         out_file = bin_dir + '/' + str(board_sub_dir_num) + '.dat'
         cmd = exe + ' ' + input_dir + ' 0 ' + n_files_str + ' ' + out_file + ' ' + str(phase) + ' ' + str(board_n_moves[str(board_sub_dir_num)][0]) + ' ' + str(board_n_moves[str(board_sub_dir_num)][1])
-        print(phase, board_sub_dir_num, cmd)
         while True: # wait while cpu is busy
             cpu_percent = psutil.cpu_percent(percpu=False)
             if cpu_percent < 95.0:
                 break
+        print(phase, board_sub_dir_num, cmd)
         procs.append(subprocess.Popen(cmd.split(), stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL))
+        if board_n_moves[str(board_sub_dir_num)][0] <= phase <= board_n_moves[str(board_sub_dir_num)][1]:
+            time.sleep(0.5)
 
 for proc in procs:
     proc.wait()
