@@ -18,7 +18,7 @@ board_sub_dir_nums = [
     39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 57, 60, 61, 62, 63 # mid-endgame data 2
 ]
 '''
-board_sub_dir_nums = [52, 53, 57, 60, 61, 62, 63]
+board_sub_dir_nums = [38]
 board_sub_dir_nums.sort()
 #'''
 '''
