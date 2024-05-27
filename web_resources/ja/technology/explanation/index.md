@@ -71,6 +71,7 @@ Egaroucidでは石自体をパターンとして評価する既存手法に追�
 <div class="centering_box">
     <img class="pic2" src="img/pattern.png">
 </div>
+オセロでは着手可能数が形勢の評価に有効に使えるため、石のパターンから着手可能数について潜在的に情報が得られるよう、全ての3マス以上の直線的な連続パターンを網羅していると良いです。これはオセロAI Logistelloで[From Simple Features to Sophisticated Evaluation Functions](https://skatgame.net/mburo/ps/pattern.pdf)内に書かれている内容です。
 
 ### その他の特徴量
 
@@ -658,8 +659,10 @@ EdaxをSIMD化し、高速化したものです。EdaxはCPUレベルの命令�
 <ul>
     <li>[LOGISTELLO](https://skatgame.net/mburo/log.html)</li>
     <li>[Experiments with Multi-ProbCut and a New High-Quality Evaluation Function for Othello](https://skatgame.net/mburo/ps/improve.pdf)</li>
+    <li>[From Simple Features to Sophisticated Evaluation Functions](https://skatgame.net/mburo/ps/pattern.pdf)</li>
     <li>[Takeshi Murakami vs. Logistello](https://skatgame.net/mburo/ps/match-report.pdf)</li>
 </ul>
+
 
 #### FOREST
 
