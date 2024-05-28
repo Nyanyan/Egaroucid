@@ -54,31 +54,30 @@ Search_result lazy_smp(Board board, int depth, uint_fast8_t mpc_level, bool show
         bool is_last_search = (main_depth == depth) && (main_mpc_level == mpc_level);
         std::vector<std::future<int>> parallel_tasks;
         std::vector<int> sub_depth_arr;
+        int sub_max_mpc_level[61];
         bool sub_searching = true;
         int sub_depth = main_depth;
         if (use_multi_thread && !(is_end_search && main_depth == depth)){
             int max_thread_size = thread_pool.size() * 0.8;
-            for (int i = 0; i < main_depth - 19; ++i)
+            for (int i = 0; i < main_depth - 19; ++i){
                 max_thread_size *= 0.9;
+            }
+            sub_max_mpc_level[main_depth] = main_mpc_level + 1;
+            for (int i = main_depth + 1; i < 61; ++i){
+                sub_max_mpc_level[i] = MPC_74_LEVEL;
+            }
             for (int sub_thread_idx = 0; sub_thread_idx < max_thread_size && sub_thread_idx < searches.size() && global_searching; ++sub_thread_idx){
                 int ntz = ntz_uint32(sub_thread_idx + 1);
-                int sub_depth = main_depth + 1 + ntz;
-                int sub_mpc_level = std::min(MPC_100_LEVEL, main_mpc_level + pop_count_ull((sub_thread_idx + 1) >> (ntz + 1)));
-                bool sub_is_end_search = false;
-                if (sub_depth >= max_depth){
-                    sub_mpc_level = sub_depth - max_depth;
-                    if (sub_mpc_level <= main_mpc_level){
-                        sub_mpc_level = main_mpc_level + 1;
-                    }
-                    sub_depth = max_depth;
-                    sub_is_end_search = true;
-                }
+                int sub_depth = std::min(max_depth, main_depth + ntz);
+                int sub_mpc_level = sub_max_mpc_level[sub_depth];
+                bool sub_is_end_search = (sub_depth == max_depth);
                 if (sub_mpc_level <= MPC_100_LEVEL){
                     //std::cerr << sub_thread_idx << " " << sub_depth << " " << SELECTIVITY_PERCENTAGE[sub_mpc_level] << std::endl;
                     searches[sub_thread_idx].init(&board, sub_mpc_level, false, true);
                     bool pushed = false;
                     parallel_tasks.emplace_back(thread_pool.push(&pushed, std::bind(&nega_scout, &searches[sub_thread_idx], -SCORE_MAX, SCORE_MAX, sub_depth, false, LEGAL_UNDEFINED, sub_is_end_search, &sub_searching)));
                     sub_depth_arr.emplace_back(sub_depth);
+                    ++sub_max_mpc_level[sub_depth];
                     if (!pushed){
                         parallel_tasks.pop_back();
                         sub_depth_arr.pop_back();
