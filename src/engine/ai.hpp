@@ -69,7 +69,7 @@ std::string get_principal_variation_str(Board board, int best_move){
             } else{
                 pv_search_failed = true;
                 //std::cerr << "not found on tt" << std::endl;
-                board.print();
+                //board.print();
             }
         }
     }
