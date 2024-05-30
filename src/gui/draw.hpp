@@ -84,7 +84,11 @@ void draw_info(Colors colors, History_elem history_elem, Fonts fonts, Menu_eleme
     fonts.font(moves_line).draw(15, Arg::topCenter(INFO_SX + INFO_WIDTH / 2, INFO_SY + dy));
     dy += 23;
     // 2nd line
-    fonts.font(language.get("info", "opening_name") + U": " + Unicode::FromUTF8(history_elem.opening_name)).draw(12, Arg::topCenter(INFO_SX + INFO_WIDTH / 2, INFO_SY + dy));
+    String opening_info = language.get("info", "opening_name") + U": ";
+    if (menu_elements.show_opening_name) {
+        opening_info += Unicode::FromUTF8(history_elem.opening_name);
+    }
+    fonts.font(opening_info).draw(12, Arg::topCenter(INFO_SX + INFO_WIDTH / 2, INFO_SY + dy));
     dy += 27;
     // 3rd line
     int black_discs, white_discs;
@@ -123,6 +127,9 @@ void draw_info(Colors colors, History_elem history_elem, Fonts fonts, Menu_eleme
     fonts.font(level_info).draw(13, Arg::topCenter(INFO_SX + INFO_WIDTH / 2, INFO_SY + dy));
     dy += 19;
     // 5th line
-    String pv_info = language.get("info", "principal_variation") + U": " + Unicode::Widen(history_elem.principal_variation);
+    String pv_info = language.get("info", "principal_variation") + U": ";
+    if (menu_elements.show_principal_variation) {
+        pv_info += Unicode::Widen(history_elem.principal_variation);
+    }
     fonts.font(pv_info).draw(13, Arg::topCenter(INFO_SX + INFO_WIDTH / 2, INFO_SY + dy));
 }
