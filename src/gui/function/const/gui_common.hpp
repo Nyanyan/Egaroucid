@@ -25,6 +25,8 @@
 // coordinate definition
 #define WINDOW_SIZE_X 800
 #define WINDOW_SIZE_Y 500
+#define WINDOW_SIZE_X_MIN 8
+#define WINDOW_SIZE_Y_MIN 5
 #define PADDING 20
 constexpr int LEFT_LEFT = PADDING;
 constexpr int LEFT_RIGHT = WINDOW_SIZE_X / 2 - PADDING;

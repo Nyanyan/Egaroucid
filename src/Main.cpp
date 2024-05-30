@@ -47,7 +47,9 @@ double CalculateScale(const Vec2& baseSize, const Vec2& currentSize) {
 */
 void Main() {
     Size window_size = Size(WINDOW_SIZE_X, WINDOW_SIZE_Y);
+    Size min_window_size = Size(WINDOW_SIZE_X_MIN, WINDOW_SIZE_Y_MIN);
     Window::Resize(window_size);
+    Window::SetMinimumFrameBufferSize(min_window_size);
     Window::SetStyle(WindowStyle::Sizable);
     Scene::SetResizeMode(ResizeMode::Virtual);
     Window::SetTitle(U"Egaroucid {}"_fmt(EGAROUCID_VERSION));
