@@ -146,6 +146,11 @@
             "stable": "確定石",
             "play_ordering": "着手順"
         },
+        "info": {
+            "display_on_info_area": "情報エリアへの表示",
+            "opening_name": "定石",
+            "principal_variation": "最善筋"
+        },
         "graph": {
             "graph": "グラフ",
             "value": "評価値",
@@ -179,11 +184,13 @@
         }
     },
     "info": {
+        "info": "情報",
         "black": "黒番",
         "white": "白番",
         "moves": "手目",
         "game_end": "終局",
         "opening_name": "定石",
+        "principal_variation": "最善筋",
         "ai": "AI",
         "human": "人間",
         "lookahead": "手読み",

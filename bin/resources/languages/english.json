@@ -146,6 +146,11 @@
             "stable": "Stable",
             "play_ordering": "Play Ordering"
         },
+        "info": {
+            "display_on_info_area": "On Info Area",
+            "opening_name": "Opening",
+            "principal_variation": "Best Line"
+        },
         "graph": {
             "graph": "Graph",
             "value": "Evaluation",
@@ -179,11 +184,13 @@
         }
     },
     "info": {
+        "info": "Info",
         "black": "Black",
         "white": "White",
         "moves": " moves",
         "game_end": "Game Over",
         "opening_name": "Opening",
+        "principal_variation": "Best Line",
         "ai": "AI",
         "human": "Human",
         "lookahead": " moves",

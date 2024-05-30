@@ -146,6 +146,11 @@
             "stable": "稳定子",
             "play_ordering": "播放顺序"
         },
+        "info": {
+            "display_on_info_area": "情报显示",
+            "opening_name": "定式",
+            "principal_variation": "最好的棋谱"
+        },
         "graph": {
             "graph": "图像",
             "value": "估值数量",
@@ -179,11 +184,13 @@
         }
     },
     "info": {
+        "info": "情报",
         "black": "黑棋",
         "white": "白棋",
         "moves": " 步",
         "game_end": "对局结束",
         "opening_name": "定式",
+        "principal_variation": "最好的棋谱",
         "ai": "电脑AI",
         "human": "人类",
         "lookahead": " 步",
