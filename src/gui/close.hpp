@@ -54,6 +54,8 @@ void save_settings(Menu_elements menu_elements, Settings settings, Directories d
     setting_json[U"show_graph_sum_of_loss"] = menu_elements.show_graph_sum_of_loss;
     setting_json[U"book_learn_error_leaf"] = menu_elements.book_learn_error_leaf;
     setting_json[U"use_book_learn_error_leaf"] = menu_elements.use_book_learn_error_leaf;
+    setting_json[U"show_opening_name"] = menu_elements.show_opening_name;
+    setting_json[U"show_principal_variation"] = menu_elements.show_principal_variation;
     setting_json.save(U"{}setting.json"_fmt(Unicode::Widen(directories.appdata_dir)));
 }
 

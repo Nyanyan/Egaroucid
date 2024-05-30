@@ -97,6 +97,13 @@ Menu create_menu(Menu_elements* menu_elements, Resources *resources, Font font) 
     menu_e.push(side_menu);
     title.push(menu_e);
 
+    menu_e.init_button(language.get("display", "info", "display_on_info_area"), &menu_elements->dummy);
+    side_menu.init_check(language.get("display", "info", "opening_name"), &menu_elements->show_opening_name, menu_elements->show_opening_name);
+    menu_e.push(side_menu);
+    side_menu.init_check(language.get("display", "info", "principal_variation"), &menu_elements->show_principal_variation, menu_elements->show_principal_variation);
+    menu_e.push(side_menu);
+    title.push(menu_e);
+
     menu_e.init_check(language.get("display", "graph", "graph"), &menu_elements->show_graph, menu_elements->show_graph);
     side_menu.init_radio(language.get("display", "graph", "value"), &menu_elements->show_graph_value, menu_elements->show_graph_value);
     menu_e.push(side_menu);

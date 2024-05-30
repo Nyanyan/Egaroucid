@@ -80,6 +80,8 @@ void init_default_settings(const Directories* directories, const Resources* reso
     settings->show_graph_sum_of_loss = false;
     settings->book_learn_error_leaf = 2;
     settings->use_book_learn_error_leaf = true;
+    settings->show_opening_name = true;
+    settings->show_principal_variation = true;
 }
 
 int init_settings_import_int(JSON &json, String key, int* res) {
@@ -402,6 +404,12 @@ void init_settings(const Directories* directories, const Resources* resources, S
     }
     if (init_settings_import_bool(setting_json, U"use_book_learn_error_leaf", &settings->use_book_learn_error_leaf) != ERR_OK) {
         std::cerr << "err38" << std::endl;
+    }
+    if (init_settings_import_bool(setting_json, U"show_opening_name", &settings->show_opening_name) != ERR_OK) {
+        std::cerr << "err39" << std::endl;
+    }
+    if (init_settings_import_bool(setting_json, U"show_principal_variation", &settings->show_principal_variation) != ERR_OK) {
+        std::cerr << "err40" << std::endl;
     }
 }
 

@@ -330,6 +330,8 @@ struct Settings {
     bool show_book_accuracy;
     bool show_graph_value;
     bool show_graph_sum_of_loss;
+    bool show_opening_name;
+    bool show_principal_variation;
 };
 
 struct Fonts {
@@ -415,6 +417,8 @@ struct Menu_elements {
     bool show_book_accuracy;
     bool show_graph_value;
     bool show_graph_sum_of_loss;
+    bool show_opening_name;
+    bool show_principal_variation;
 
     // book
     bool book_start_deviate;
@@ -515,6 +519,8 @@ struct Menu_elements {
         show_book_accuracy = settings->show_book_accuracy;
         show_graph_value = settings->show_graph_value;
         show_graph_sum_of_loss = settings->show_graph_sum_of_loss;
+        show_opening_name = settings->show_opening_name;
+        show_principal_variation = settings->show_principal_variation;
 
         book_start_deviate = false;
         book_start_deviate_with_transcript = false;
