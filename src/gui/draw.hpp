@@ -61,7 +61,7 @@ void draw_info(Colors colors, History_elem history_elem, Fonts fonts, Menu_eleme
     RoundRect round_rect{ INFO_SX, INFO_SY, INFO_WIDTH, INFO_HEIGHT, INFO_RECT_RADIUS };
     round_rect.drawFrame(INFO_RECT_THICKNESS, colors.white);
     // 1st line
-    int dy = 5;
+    int dy = 6;
     String moves_line;
     if (history_elem.board.get_legal()) {
         moves_line = Format(history_elem.board.n_discs() - 3) + language.get("info", "moves");
@@ -85,7 +85,7 @@ void draw_info(Colors colors, History_elem history_elem, Fonts fonts, Menu_eleme
     dy += 23;
     // 2nd line
     fonts.font(language.get("info", "opening_name") + U": " + Unicode::FromUTF8(history_elem.opening_name)).draw(12, Arg::topCenter(INFO_SX + INFO_WIDTH / 2, INFO_SY + dy));
-    dy += 28;
+    dy += 27;
     // 3rd line
     int black_discs, white_discs;
     if (history_elem.player == BLACK) {
@@ -121,7 +121,8 @@ void draw_info(Colors colors, History_elem history_elem, Fonts fonts, Menu_eleme
     }
     level_info += U")";
     fonts.font(level_info).draw(13, Arg::topCenter(INFO_SX + INFO_WIDTH / 2, INFO_SY + dy));
+    dy += 19;
     // 5th line
     String pv_info = language.get("info", "principal_variation") + U": " + Unicode::Widen(history_elem.principal_variation);
-    // TBD (PV)
+    fonts.font(pv_info).draw(13, Arg::topCenter(INFO_SX + INFO_WIDTH / 2, INFO_SY + dy));
 }
