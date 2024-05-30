@@ -591,7 +591,7 @@ public:
         Scene::SetBackground(getData().colors.green);
         draw_board(getData().fonts, getData().colors, history_elem);
         draw_info(getData().colors, history_elem, getData().fonts, getData().menu_elements, false);
-        getData().fonts.font(language.get("book", "book_deviate")).draw(25, 480, 190, getData().colors.white);
+        getData().fonts.font(language.get("book", "book_deviate")).draw(25, 480, 200, getData().colors.white);
         String depth_str = Format(depth);
         if (depth == BOOK_DEPTH_INF)
             depth_str = language.get("book", "unlimited");
@@ -757,7 +757,7 @@ public:
         Scene::SetBackground(getData().colors.green);
         draw_board(getData().fonts, getData().colors, history_elem);
         draw_info(getData().colors, history_elem, getData().fonts, getData().menu_elements, false);
-        getData().fonts.font(language.get("book", "book_reduce")).draw(25, 480, 190, getData().colors.white);
+        getData().fonts.font(language.get("book", "book_reduce")).draw(25, 480, 200, getData().colors.white);
         String depth_str = Format(depth);
         if (depth == BOOK_DEPTH_INF)
             depth_str = language.get("book", "unlimited");
@@ -858,7 +858,7 @@ public:
         Scene::SetBackground(getData().colors.green);
         draw_board(getData().fonts, getData().colors, history_elem);
         draw_info(getData().colors, history_elem, getData().fonts, getData().menu_elements, false);
-        getData().fonts.font(language.get("book", "book_recalculate_leaf")).draw(25, 480, 190, getData().colors.white);
+        getData().fonts.font(language.get("book", "book_recalculate_leaf")).draw(25, 480, 200, getData().colors.white);
         String depth_str = Format(depth);
         if (depth == BOOK_DEPTH_INF)
             depth_str = language.get("book", "unlimited");
