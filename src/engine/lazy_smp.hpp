@@ -31,6 +31,14 @@ Search_result lazy_smp(Board board, int depth, uint_fast8_t mpc_level, bool show
     result.nodes = 0;
     uint64_t strt = tim();
     int main_depth = 1;
+    /*
+    int main_depth = depth - 5;
+    if (main_depth < 1){
+        main_depth = 1;
+    } else if (main_depth > 10){
+        main_depth = 10;
+    }
+    */
     int main_mpc_level = mpc_level;
     const int max_depth = HW2 - board.n_discs();
     depth = std::min(depth, max_depth);
@@ -59,7 +67,7 @@ Search_result lazy_smp(Board board, int depth, uint_fast8_t mpc_level, bool show
         int sub_depth = main_depth;
         if (use_multi_thread && !(is_end_search && main_depth == depth)){
             int max_thread_size = thread_pool.size();
-            for (int i = 0; i < main_depth - 19; ++i){
+            for (int i = 0; i < main_depth - 14; ++i){
                 max_thread_size *= 0.9;
             }
             sub_max_mpc_level[main_depth] = main_mpc_level + 1;
@@ -143,7 +151,14 @@ Search_result lazy_smp(Board board, int depth, uint_fast8_t mpc_level, bool show
             std::cerr << "depth " << result.depth << "@" << SELECTIVITY_PERCENTAGE[main_mpc_level] << "%" << " value " << result.value << " (raw " << id_result.first << ") policy " << idx_to_coord(id_result.second) << " n_worker " << parallel_tasks.size() << " n_nodes " << result.nodes << " time " << result.time << " NPS " << result.nps << std::endl;
         }
         if (!is_end_search || main_depth < depth - LAZYSMP_ENDSEARCH_PRESEARCH_OFFSET){
-            ++main_depth;
+            if (main_depth < 13){
+                main_depth += 3;
+                if (main_depth > depth){
+                    main_depth = depth;
+                }
+            } else{
+                ++main_depth;
+            }
         } else{
             if (main_depth < depth){
                 main_depth = depth;
