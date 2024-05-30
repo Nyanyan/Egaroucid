@@ -81,11 +81,11 @@ void draw_info(Colors colors, History_elem history_elem, Fonts fonts, Menu_eleme
     else {
         moves_line = language.get("info", "game_end");
     }
-    fonts.font(moves_line).draw(14, Arg::topCenter(INFO_SX + INFO_WIDTH / 2, INFO_SY + dy));
-    dy += 20;
+    fonts.font(moves_line).draw(15, Arg::topCenter(INFO_SX + INFO_WIDTH / 2, INFO_SY + dy));
+    dy += 23;
     // 2nd line
     fonts.font(language.get("info", "opening_name") + U": " + Unicode::FromUTF8(history_elem.opening_name)).draw(12, Arg::topCenter(INFO_SX + INFO_WIDTH / 2, INFO_SY + dy));
-    dy += 26;
+    dy += 28;
     // 3rd line
     int black_discs, white_discs;
     if (history_elem.player == BLACK) {
@@ -101,7 +101,7 @@ void draw_info(Colors colors, History_elem history_elem, Fonts fonts, Menu_eleme
     Line(INFO_SX + INFO_WIDTH / 2, INFO_SY + dy, INFO_SX + INFO_WIDTH / 2, INFO_SY + dy + INFO_DISC_RADIUS * 2).draw(2, colors.dark_gray);
     fonts.font(black_discs).draw(20, Arg::leftCenter(INFO_SX + 100, INFO_SY + dy + INFO_DISC_RADIUS));
     fonts.font(white_discs).draw(20, Arg::rightCenter(INFO_SX + INFO_WIDTH - 100, INFO_SY + dy + INFO_DISC_RADIUS));
-    dy += 30;
+    dy += 32;
     // 4th line
     String level_info = language.get("common", "level") + U" " + Format(menu_elements.level) + U" (";
     if (menu_elements.level <= LIGHT_LEVEL) {
@@ -121,4 +121,6 @@ void draw_info(Colors colors, History_elem history_elem, Fonts fonts, Menu_eleme
     }
     level_info += U")";
     fonts.font(level_info).draw(13, Arg::topCenter(INFO_SX + INFO_WIDTH / 2, INFO_SY + dy));
+    // 5th line
+    // TBD (PV)
 }
