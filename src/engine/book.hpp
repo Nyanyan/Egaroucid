@@ -1357,6 +1357,35 @@ class Book{
             return get_random_specified_moves(b, acc_level, b->get_legal());
         }
 
+        inline Book_value get_specified_best_move(Board *b){
+            Book_value res;
+            res.policy = MOVE_UNDEFINED;
+            res.value = -INF;
+            uint64_t legal = b->get_legal();
+            Flip flip;
+            for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)){
+                calc_flip(&flip, b, cell);
+                b->move_board(&flip);
+                    int sgn = -1;
+                    if (b->get_legal() == 0ULL){
+                        sgn = 1;
+                        b->pass();
+                    }
+                    if (contain(b)){
+                        Book_value book_value;
+                        book_value.policy = cell;
+                        book_value.value = sgn * get(b).value;
+                        if (book_value.value > res.value){
+                            res = book_value;
+                        }
+                    }
+                    if (sgn == 1)
+                        b->pass();
+                b->undo_board(&flip);
+            }
+            return res;
+        }
+
         /*
             @brief get how many boards registered in this book
 

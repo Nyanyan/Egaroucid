@@ -28,6 +28,47 @@
 
 #define ENDSEARCH_PRESEARCH_OFFSET 10
 
+std::string get_principal_variation_str(Board board, int max_len){
+    std::string res;
+    Flip flip;
+    /*
+    if (is_valid_policy(best_move) && (board.get_legal() & (1ULL << best_move))){
+        res += idx_to_coord(best_move);
+        calc_flip(&flip, &board, best_move);
+        board.move_board(&flip);
+    }
+    */
+    bool pv_search_failed = false;
+    int len = 0;
+    while (!pv_search_failed && len < max_len){
+        if (board.is_end()){
+            break; // game over
+        }
+        if (board.get_legal() == 0){
+            board.pass();
+        }
+        uint64_t legal = board.get_legal();
+        int best_move_book = book.get_specified_best_move(&board).policy;
+        if (is_valid_policy(best_move_book) && (legal & (1ULL << best_move_book))){
+            res += idx_to_coord(best_move_book);
+            ++len;
+            calc_flip(&flip, &board, best_move_book);
+            board.move_board(&flip);
+        } else{
+            int best_move_tt = transposition_table.get_best_move(&board, board.hash());
+            if (is_valid_policy(best_move_tt) && (legal & (1ULL << best_move_tt))){
+                res += idx_to_coord(best_move_tt);
+                ++len;
+                calc_flip(&flip, &board, best_move_tt);
+                board.move_board(&flip);
+            } else{
+                pv_search_failed = true;
+            }
+        }
+    }
+    return res;
+}
+
 Search_result iterative_deepening_search(Board board, int depth, uint_fast8_t mpc_level, bool show_log, std::vector<Clog_result> clogs, uint64_t use_legal, bool use_multi_thread){
     Search_result result;
     result.value = SCORE_UNDEFINED;

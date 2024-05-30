@@ -129,7 +129,8 @@ void draw_info(Colors colors, History_elem history_elem, Fonts fonts, Menu_eleme
     // 5th line
     String pv_info = language.get("info", "principal_variation") + U": ";
     if (menu_elements.show_principal_variation) {
-        pv_info += Unicode::Widen(history_elem.principal_variation);
+        std::string principal_variation = get_principal_variation_str(history_elem.board, 5);
+        pv_info += Unicode::Widen(principal_variation);
     }
     fonts.font(pv_info).draw(13, Arg::topCenter(INFO_SX + INFO_WIDTH / 2, INFO_SY + dy));
 }
