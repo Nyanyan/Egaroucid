@@ -19,7 +19,7 @@
     @brief version settings
 */
 #define EGAROUCID_ENGINE_VERSION "7.1"
-#define USE_BETA_VERSION true
+#define USE_BETA_VERSION false
 
 /*
     @brief Major settings
@@ -38,7 +38,7 @@
 #define GUI_PORTABLE_MODE true
 
 // Open Console?
-#define GUI_OPEN_CONSOLE true
+#define GUI_OPEN_CONSOLE false
 
 
 #ifdef _WIN64 // Windows 64bit
