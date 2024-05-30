@@ -23,11 +23,15 @@ AVX-512対応版です。対応しているCPU (Intel Core iシリーズの第7�
 
 
 
+
+
 ### Egaroucid for Console 7.1.0 Windows x64 Generic
 
 SIMDによる高速化をしていないバージョンです。AVX2に対応していないCPUでも動きます。
 
 #### Core i9 13900K @ 32並列
+
+
 
 
 
