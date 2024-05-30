@@ -122,5 +122,6 @@ void draw_info(Colors colors, History_elem history_elem, Fonts fonts, Menu_eleme
     level_info += U")";
     fonts.font(level_info).draw(13, Arg::topCenter(INFO_SX + INFO_WIDTH / 2, INFO_SY + dy));
     // 5th line
+    String pv_info = language.get("info", "principal_variation") + U": " + Unicode::Widen(history_elem.principal_variation);
     // TBD (PV)
 }
