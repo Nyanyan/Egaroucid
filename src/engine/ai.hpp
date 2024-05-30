@@ -28,19 +28,22 @@
 
 #define ENDSEARCH_PRESEARCH_OFFSET 10
 
-std::string get_principal_variation_str(Board board, int max_len){
+#define PRINCIPAL_VARIATION_MAX_LEN 5
+
+std::string get_principal_variation_str(Board board, int best_move){
     std::string res;
     Flip flip;
-    /*
+    int len = 0;
+    //std::cerr << "given move: " << best_move << std::endl;
     if (is_valid_policy(best_move) && (board.get_legal() & (1ULL << best_move))){
         res += idx_to_coord(best_move);
+        ++len;
         calc_flip(&flip, &board, best_move);
         board.move_board(&flip);
+        //std::cerr << "given " << idx_to_coord(best_move) << std::endl;
     }
-    */
     bool pv_search_failed = false;
-    int len = 0;
-    while (!pv_search_failed && len < max_len){
+    while (!pv_search_failed && len < PRINCIPAL_VARIATION_MAX_LEN){
         if (board.is_end()){
             break; // game over
         }
@@ -54,6 +57,7 @@ std::string get_principal_variation_str(Board board, int max_len){
             ++len;
             calc_flip(&flip, &board, best_move_book);
             board.move_board(&flip);
+            //std::cerr << "book " << idx_to_coord(best_move_book) << std::endl;
         } else{
             int best_move_tt = transposition_table.get_best_move(&board, board.hash());
             if (is_valid_policy(best_move_tt) && (legal & (1ULL << best_move_tt))){
@@ -61,8 +65,11 @@ std::string get_principal_variation_str(Board board, int max_len){
                 ++len;
                 calc_flip(&flip, &board, best_move_tt);
                 board.move_board(&flip);
+                //std::cerr << "tt " << idx_to_coord(best_move_tt) << std::endl;
             } else{
                 pv_search_failed = true;
+                //std::cerr << "not found on tt" << std::endl;
+                board.print();
             }
         }
     }

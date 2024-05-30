@@ -941,6 +941,7 @@ private:
                         getData().graph_resources.nodes[getData().graph_resources.branch].back().v = sgn * search_result.value;
                         getData().graph_resources.nodes[getData().graph_resources.branch].back().level = getData().menu_elements.level;
                         move_processing(HW2_M1 - search_result.policy);
+                        getData().history_elem.principal_variation = get_principal_variation_str(getData().history_elem.board, -1);
                         if (getData().history_elem.player == player_bef && (getData().menu_elements.ai_put_black ^ getData().menu_elements.ai_put_white) && getData().menu_elements.pause_when_pass && !getData().history_elem.board.is_end())
                             pausing_in_pass = true;
                     }
@@ -1047,6 +1048,7 @@ private:
                         getData().graph_resources.nodes[getData().graph_resources.branch][node_idx].level = min_hint_type;
                     }
                 }
+                getData().history_elem.principal_variation = get_principal_variation_str(getData().history_elem.board, HW2_M1 - hint_infos[0].cell);
             }
             int n_disc_hint = std::min((int)hint_infos.size(), getData().menu_elements.n_disc_hint);
             for (int i = 0; i < n_disc_hint; ++i) {
