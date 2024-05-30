@@ -60,6 +60,8 @@ void draw_board(Fonts fonts, Colors colors, History_elem history_elem){
 void draw_info(Colors colors, History_elem history_elem, Fonts fonts, Menu_elements menu_elements, bool pausing_in_pass) {
     RoundRect round_rect{ INFO_SX, INFO_SY, INFO_WIDTH, INFO_HEIGHT, INFO_RECT_RADIUS };
     round_rect.drawFrame(INFO_RECT_THICKNESS, colors.white);
+    // 1st line
+    int dy = 5;
     String moves_line;
     if (history_elem.board.get_legal()) {
         moves_line = Format(history_elem.board.n_discs() - 3) + language.get("info", "moves");
@@ -79,9 +81,12 @@ void draw_info(Colors colors, History_elem history_elem, Fonts fonts, Menu_eleme
     else {
         moves_line = language.get("info", "game_end");
     }
-    fonts.font(moves_line).draw(14, Arg::topCenter(INFO_SX + INFO_WIDTH / 2, INFO_SY + 5));
-    Circle(INFO_SX + 70, INFO_SY + 60 + INFO_DISC_RADIUS, INFO_DISC_RADIUS).draw(colors.black);
-    Circle(INFO_SX + INFO_WIDTH - 70, INFO_SY + 60 + INFO_DISC_RADIUS, INFO_DISC_RADIUS).draw(colors.white);
+    fonts.font(moves_line).draw(14, Arg::topCenter(INFO_SX + INFO_WIDTH / 2, INFO_SY + dy));
+    dy += 20;
+    // 2nd line
+    fonts.font(language.get("info", "opening_name") + U": " + Unicode::FromUTF8(history_elem.opening_name)).draw(12, Arg::topCenter(INFO_SX + INFO_WIDTH / 2, INFO_SY + dy));
+    dy += 26;
+    // 3rd line
     int black_discs, white_discs;
     if (history_elem.player == BLACK) {
         black_discs = history_elem.board.count_player();
@@ -91,10 +96,13 @@ void draw_info(Colors colors, History_elem history_elem, Fonts fonts, Menu_eleme
         black_discs = history_elem.board.count_opponent();
         white_discs = history_elem.board.count_player();
     }
-    fonts.font(black_discs).draw(20, Arg::leftCenter(INFO_SX + 100, INFO_SY + 60 + INFO_DISC_RADIUS));
-    fonts.font(white_discs).draw(20, Arg::rightCenter(INFO_SX + INFO_WIDTH - 100, INFO_SY + 60 + INFO_DISC_RADIUS));
-    Line(INFO_SX + INFO_WIDTH / 2, INFO_SY + 60, INFO_SX + INFO_WIDTH / 2, INFO_SY + 60 + INFO_DISC_RADIUS * 2).draw(2, colors.dark_gray);
-    fonts.font(language.get("info", "opening_name") + U": " + Unicode::FromUTF8(history_elem.opening_name)).draw(12, Arg::topCenter(INFO_SX + INFO_WIDTH / 2, INFO_SY + 95));
+    Circle(INFO_SX + 70, INFO_SY + dy + INFO_DISC_RADIUS, INFO_DISC_RADIUS).draw(colors.black);
+    Circle(INFO_SX + INFO_WIDTH - 70, INFO_SY + dy + INFO_DISC_RADIUS, INFO_DISC_RADIUS).draw(colors.white);
+    Line(INFO_SX + INFO_WIDTH / 2, INFO_SY + dy, INFO_SX + INFO_WIDTH / 2, INFO_SY + dy + INFO_DISC_RADIUS * 2).draw(2, colors.dark_gray);
+    fonts.font(black_discs).draw(20, Arg::leftCenter(INFO_SX + 100, INFO_SY + dy + INFO_DISC_RADIUS));
+    fonts.font(white_discs).draw(20, Arg::rightCenter(INFO_SX + INFO_WIDTH - 100, INFO_SY + dy + INFO_DISC_RADIUS));
+    dy += 30;
+    // 4th line
     String level_info = language.get("common", "level") + U" " + Format(menu_elements.level) + U" (";
     if (menu_elements.level <= LIGHT_LEVEL) {
         level_info += language.get("info", "light");
@@ -112,5 +120,5 @@ void draw_info(Colors colors, History_elem history_elem, Fonts fonts, Menu_eleme
         level_info += language.get("info", "danger");
     }
     level_info += U")";
-    fonts.font(level_info).draw(13, Arg::topCenter(INFO_SX + INFO_WIDTH / 2, INFO_SY + 115));
+    fonts.font(level_info).draw(13, Arg::topCenter(INFO_SX + INFO_WIDTH / 2, INFO_SY + dy));
 }

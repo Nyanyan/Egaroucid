@@ -94,13 +94,13 @@ constexpr int GRAPH_HEIGHT = WINDOW_SIZE_Y - GRAPH_SY - 60;
 // level drawing constants
 #define LEVEL_DEPTH_DY -15
 #define LEVEL_INFO_DX -14
-#define LEVEL_INFO_DY -60
+#define LEVEL_INFO_DY -56
 #define LEVEL_INFO_WIDTH 37
 #define LEVEL_INFO_HEIGHT 20
 #define LEVEL_PROB_WIDTH 80
 
 // level graph roundrect constants
-#define GRAPH_RECT_DY -80
+#define GRAPH_RECT_DY -70
 #define GRAPH_RECT_DX -45
 #define GRAPH_RECT_RADIUS 20
 #define GRAPH_RECT_THICKNESS 5
@@ -115,7 +115,7 @@ constexpr int GRAPH_RECT_HEIGHT = GRAPH_HEIGHT - GRAPH_RECT_DY + 27;
 #define INFO_RECT_RADIUS 20
 #define INFO_RECT_THICKNESS 5
 constexpr int INFO_WIDTH = WINDOW_SIZE_X - 10 - INFO_SX;
-constexpr int INFO_HEIGHT = 190 - INFO_SY - 12;
+constexpr int INFO_HEIGHT = 200 - INFO_SY - 12;
 
 // graph mode constants
 #define GRAPH_MODE_NORMAL 0
