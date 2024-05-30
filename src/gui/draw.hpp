@@ -60,25 +60,26 @@ void draw_board(Fonts fonts, Colors colors, History_elem history_elem){
 void draw_info(Colors colors, History_elem history_elem, Fonts fonts, Menu_elements menu_elements, bool pausing_in_pass) {
     RoundRect round_rect{ INFO_SX, INFO_SY, INFO_WIDTH, INFO_HEIGHT, INFO_RECT_RADIUS };
     round_rect.drawFrame(INFO_RECT_THICKNESS, colors.white);
+    String moves_line;
     if (history_elem.board.get_legal()) {
-        fonts.font(Format(history_elem.board.n_discs() - 3) + language.get("info", "moves")).draw(13, Arg::topCenter(INFO_SX + INFO_WIDTH / 2, INFO_SY + 5));
-        String ai_human_str;
-        bool ai_to_move = (menu_elements.ai_put_black && history_elem.player == BLACK) || (menu_elements.ai_put_white && history_elem.player == WHITE);
+        moves_line = Format(history_elem.board.n_discs() - 3) + language.get("info", "moves");
         bool black_to_move = history_elem.player == BLACK;
-        if (ai_to_move ^ pausing_in_pass)
-            ai_human_str = language.get("info", "ai");
-        else
-            ai_human_str = language.get("info", "human");
         if (black_to_move ^ pausing_in_pass) {
-            fonts.font(language.get("info", "black") + U" (" + ai_human_str + U")").draw(17, Arg::topCenter(INFO_SX + INFO_WIDTH / 2, INFO_SY + 22));
+            moves_line += U" " + language.get("info", "black");
+        } else {
+            moves_line += U" " + language.get("info", "white");
         }
-        else {
-            fonts.font(language.get("info", "white") + U" (" + ai_human_str + U")").draw(17, Arg::topCenter(INFO_SX + INFO_WIDTH / 2, INFO_SY + 22));
+        bool ai_to_move = (menu_elements.ai_put_black && history_elem.player == BLACK) || (menu_elements.ai_put_white && history_elem.player == WHITE);
+        if (ai_to_move ^ pausing_in_pass){
+            moves_line += U" (" + language.get("info", "ai") + U")";
+        } else {
+            moves_line += U" (" + language.get("info", "human") + U")";
         }
     }
     else {
-        fonts.font(language.get("info", "game_end")).draw(20, Arg::topCenter(INFO_SX + INFO_WIDTH / 2, INFO_SY + 22));
+        moves_line = language.get("info", "game_end");
     }
+    fonts.font(moves_line).draw(14, Arg::topCenter(INFO_SX + INFO_WIDTH / 2, INFO_SY + 5));
     Circle(INFO_SX + 70, INFO_SY + 60 + INFO_DISC_RADIUS, INFO_DISC_RADIUS).draw(colors.black);
     Circle(INFO_SX + INFO_WIDTH - 70, INFO_SY + 60 + INFO_DISC_RADIUS, INFO_DISC_RADIUS).draw(colors.white);
     int black_discs, white_discs;

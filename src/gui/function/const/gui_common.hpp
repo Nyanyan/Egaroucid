@@ -72,8 +72,8 @@ constexpr int BOARD_CELL_SIZE = BOARD_SIZE / HW;
 
 // main start game button constants
 #define START_GAME_BUTTON_SX 700
-#define START_GAME_BUTTON_SY 45
-#define START_GAME_BUTTON_WIDTH 80
+#define START_GAME_BUTTON_SY 11
+#define START_GAME_BUTTON_WIDTH 90
 #define START_GAME_BUTTON_HEIGHT 30
 #define START_GAME_BUTTON_RADIUS 10
 
@@ -109,7 +109,7 @@ constexpr int GRAPH_RECT_HEIGHT = GRAPH_HEIGHT - GRAPH_RECT_DY + 27;
 #define N_GRPAPH_COLOR_TYPES 2
 
 // info drawing constants
-#define INFO_SY 35
+#define INFO_SY 53
 #define INFO_DISC_RADIUS 12
 #define INFO_SX 460
 #define INFO_RECT_RADIUS 20
