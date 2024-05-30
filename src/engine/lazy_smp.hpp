@@ -151,11 +151,8 @@ Search_result lazy_smp(Board board, int depth, uint_fast8_t mpc_level, bool show
             std::cerr << "depth " << result.depth << "@" << SELECTIVITY_PERCENTAGE[main_mpc_level] << "%" << " value " << result.value << " (raw " << id_result.first << ") policy " << idx_to_coord(id_result.second) << " n_worker " << parallel_tasks.size() << " n_nodes " << result.nodes << " time " << result.time << " NPS " << result.nps << std::endl;
         }
         if (!is_end_search || main_depth < depth - LAZYSMP_ENDSEARCH_PRESEARCH_OFFSET){
-            if (main_depth < 13){
+            if (main_depth < 13 && main_depth < depth - 3){
                 main_depth += 3;
-                if (main_depth > depth){
-                    main_depth = depth;
-                }
             } else{
                 ++main_depth;
             }
