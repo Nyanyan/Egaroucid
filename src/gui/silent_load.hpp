@@ -26,7 +26,7 @@ void init_directories(Directories* directories) {
     std::cerr << "document_dir " << directories->document_dir << " appdata_dir " << directories->appdata_dir << std::endl;
 
     // file directories
-    directories->eval_file = "resources/eval.egev";
+    directories->eval_file = "resources/eval.egev2";
     directories->eval_mo_end_file = "resources/eval_move_ordering_end.egev";
 }
 
