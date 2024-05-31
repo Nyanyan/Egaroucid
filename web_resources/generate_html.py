@@ -315,7 +315,9 @@ def create_html(dr):
         additional_files = []
         additional_drs = []
         for line in additional_files_file_str:
-            additional_drs.append(line.replace('\\', '/').split('/')[0])
+            if len(line.replace('\\', '/').split('/')) >= 2:
+                additional_dr = line.replace('\\', '/').split('/')[0]
+                additional_drs.append(additional_dr)
             additional_files.extend(glob.glob(dr + '/' + line))
         for additional_dr in additional_drs:
             os.mkdir(out_dr + '/' + additional_dr)
