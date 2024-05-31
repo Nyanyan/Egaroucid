@@ -84,7 +84,7 @@ public:
             getData().fonts.font(language.get("book", "import_book")).draw(25, Arg::topCenter(X_CENTER, sy), getData().colors.white);
             getData().fonts.font(language.get("book", "input_book_path")).draw(14, Arg::topCenter(X_CENTER, sy + 38), getData().colors.white);
             text_area.active = true;
-            SimpleGUI::TextArea(text_area, Vec2{X_CENTER - 300, sy + 60}, SizeF{600, 100}, SimpleGUI::PreferredTextAreaMaxChars);
+            SimpleGUI::TextArea(text_area, Vec2{X_CENTER - 300, sy + 60}, SizeF{600, 100}, TEXTBOX_MAX_CHARS);
             bool return_pressed = false;
             if (text_area.text.size()) {
                 if (text_area.text[text_area.text.size() - 1] == '\n') {
@@ -223,7 +223,7 @@ public:
         if (!book_exporting) {
             getData().fonts.font(language.get("book", "export_book")).draw(25, Arg::topCenter(X_CENTER, sy), getData().colors.white);
             text_area.active = true;
-            SimpleGUI::TextArea(text_area, Vec2{X_CENTER - 300, sy + 40}, SizeF{600, 100}, SimpleGUI::PreferredTextAreaMaxChars);
+            SimpleGUI::TextArea(text_area, Vec2{X_CENTER - 300, sy + 40}, SizeF{600, 100}, TEXTBOX_MAX_CHARS);
             bool return_pressed = false;
             if (text_area.text.size()) {
                 if (text_area.text[text_area.text.size() - 1] == '\n') {
@@ -338,7 +338,7 @@ public:
             getData().fonts.font(language.get("book", "book_merge")).draw(25, Arg::topCenter(X_CENTER, sy), getData().colors.white);
             getData().fonts.font(language.get("book", "input_book_path")).draw(15, Arg::topCenter(X_CENTER, sy + 50), getData().colors.white);
             text_area.active = true;
-            SimpleGUI::TextArea(text_area, Vec2{X_CENTER - 300, sy + 80}, SizeF{600, 100}, SimpleGUI::PreferredTextAreaMaxChars);
+            SimpleGUI::TextArea(text_area, Vec2{X_CENTER - 300, sy + 80}, SizeF{600, 100}, TEXTBOX_MAX_CHARS);
             bool return_pressed = false;
             if (text_area.text.size()) {
                 if (text_area.text[text_area.text.size() - 1] == '\n') {
@@ -449,7 +449,7 @@ public:
             getData().fonts.font(language.get("book", "book_reference")).draw(25, Arg::topCenter(X_CENTER, sy), getData().colors.white);
             getData().fonts.font(language.get("book", "input_book_path")).draw(15, Arg::topCenter(X_CENTER, sy + 50), getData().colors.white);
             text_area.active = true;
-            SimpleGUI::TextArea(text_area, Vec2{X_CENTER - 300, sy + 80}, SizeF{600, 100}, SimpleGUI::PreferredTextAreaMaxChars);
+            SimpleGUI::TextArea(text_area, Vec2{X_CENTER - 300, sy + 80}, SizeF{600, 100}, TEXTBOX_MAX_CHARS);
             bool return_pressed = false;
             if (text_area.text.size()) {
                 if (text_area.text[text_area.text.size() - 1] == '\n') {
@@ -1128,7 +1128,7 @@ public:
             int sy = 20 + icon_width + 50;
             getData().fonts.font(language.get("book", "book_deviate_with_transcript")).draw(25, Arg::topCenter(X_CENTER, sy), getData().colors.white);
             text_area.active = true;
-            SimpleGUI::TextArea(text_area, Vec2{X_CENTER - 300, sy + 40}, SizeF{600, 130}, SimpleGUI::PreferredTextAreaMaxChars);
+            SimpleGUI::TextArea(text_area, Vec2{X_CENTER - 300, sy + 40}, SizeF{600, 130}, TEXTBOX_MAX_CHARS);
             getData().fonts.font(language.get("book", "input_transcripts_with_line_breaks")).draw(13, Arg::topCenter(X_CENTER, sy + 175), getData().colors.white);
             getData().fonts.font(language.get("in_out", "you_can_paste_with_ctrl_v")).draw(13, Arg::topCenter(X_CENTER, sy + 195), getData().colors.white);
             back_button.draw();
@@ -1255,7 +1255,7 @@ private:
                     error_found = true;
                     error_found_line = true;
                     error_lines.emplace_back(line_idx);
-                    std::cerr << "transcript size error at line " << line_idx << std::endl;
+                    std::cerr << "transcript size error at line " << line_idx << " " << transcript << std::endl;
                     break;
                 }
                 int y = (int)(transcript[i + 1] - '1');
@@ -1263,7 +1263,7 @@ private:
                     error_found = true;
                     error_found_line = true;
                     error_lines.emplace_back(line_idx);
-                    std::cerr << "coord out of range at line " << line_idx << std::endl;
+                    std::cerr << "coord out of range at line " << line_idx << " " << transcript << std::endl;
                     break;
                 }
                 int policy = HW2_M1 - (y * HW + x);
@@ -1271,7 +1271,7 @@ private:
                     error_found = true;
                     error_found_line = true;
                     error_lines.emplace_back(line_idx);
-                    std::cerr << "illegal move at line " << line_idx << std::endl;
+                    std::cerr << "illegal move at line " << line_idx << " " << transcript << std::endl;
                     break;
                 }
                 calc_flip(&flip, &board, policy);
@@ -1281,7 +1281,7 @@ private:
                         error_found = true;
                         error_found_line = true;
                         error_lines.emplace_back(line_idx);
-                        std::cerr << "game over at line " << line_idx << std::endl;
+                        std::cerr << "game over at line " << line_idx << " " << transcript << std::endl;
                         break;
                     }
                     board.pass();
@@ -1294,7 +1294,7 @@ private:
                     error_found = true;
                     error_found_line = true;
                     error_lines.emplace_back(line_idx);
-                    std::cerr << "book not contain error at line " << line_idx << std::endl;
+                    std::cerr << "book not contain error at line " << line_idx << " " << transcript << std::endl;
                 }
             }
             //if (error_found_line){
