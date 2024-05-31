@@ -311,9 +311,12 @@ def create_html(dr):
             resized_img.save(out_dr + '/img/' + file_name)
     try:
         with open(dr + '/additional_files.txt', 'r', encoding='utf-8') as f:
-            additional_files = f.read().splitlines()
+            additional_files_file_str = f.read().splitlines()
+        additional_files = []
+        for line in additional_files_file_str:
+            additional_files.extend(glob.glob(dr + '/' + line))
         for additional_file in additional_files:
-            shutil.copy(dr + '/' + additional_file, out_dr + '/' + additional_file)
+            shutil.copy(additional_file, out_dr + '/' + additional_file)
     except:
         pass
     tasks = []

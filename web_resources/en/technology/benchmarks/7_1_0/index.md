@@ -4,32 +4,29 @@
 
 <a href="http://radagast.se/othello/ffotest.html" target="_blank" el=”noopener noreferrer”>The FFO endgame test suite</a> is a common benchmark for endgame searching. Computer completely solves each testcase, and find the best move. This benchmark evaluates the exact time for searching and the speed (NPS: Nodes Per Second).
 
-### Egaroucid for Console 7.1.0 Windows x64 SIMD
+<div class="table_wrapper">
+<table>
+<tr>
+<th>CPU</th><th>Edition</th><th>Time (sec)</th><th>Nodes</th><th>NPS</th><th>File</th>
+</tr>
+<tr>
+<td>Core i9-13900K</td><td>SIMD</td><td>27.75</td><td>25746866156</td><td>927814996</td><td><a href="./files/0_Core_i9-13900K_SIMD.txt">0_Core_i9-13900K_SIMD.txt</a></td>
+</tr>
+<tr>
+<td>Core i9-13900K</td><td>Generic</td><td>50.639</td><td>28517711998</td><td>563157092</td><td><a href="./files/1_Core_i9-13900K_Generic.txt">1_Core_i9-13900K_Generic.txt</a></td>
+</tr>
+<tr>
+<td>Core i9-11900K</td><td>AVX512</td><td>54.842</td><td>23263286724</td><td>424187424</td><td><a href="./files/2_Core_i9-11900K_AVX512.txt">2_Core_i9-11900K_AVX512.txt</a></td>
+</tr>
+<tr>
+<td>Core i9-11900K</td><td>SIMD</td><td>55.464</td><td>23143759716</td><td>417275344</td><td><a href="./files/3_Core_i9-11900K_SIMD.txt">3_Core_i9-11900K_SIMD.txt</a></td>
+</tr>
+<tr>
+<td>Core i9-11900K</td><td>Generic</td><td>112.36</td><td>23298639098</td><td>207357058</td><td><a href="./files/4_Core_i9-11900K_Generic.txt">4_Core_i9-11900K_Generic.txt</a></td>
+</tr>
+</table>
+</div>
 
-This is the standard version. This version can be run on almost all CPUs. It requires AVX2, which for example Intel Core i series gen 3 or later have.
-
-#### Core i9 13900K @ 32 threads
-
-
-
-
-
-### Egaroucid for Console 7.1.0 Windows x64 AVX512
-
-Optimized with AVX-512. If you have CPUs that have AVX-512 (such as Core i series gen 7-11), this may be faster than SIMD version.
-
-
-#### Core i9 11900K @ 16 threads
-
-
-
-
-
-### Egaroucid for Console 7.1.0 Windows x64 Generic
-
-Without speedup by SIMD.
-
-#### Core i9 13900K @ 32 threads
 
 
 
@@ -92,6 +89,5 @@ If Egaroucid Win Ratio is over 0.5, then Egaroucid wins more than Edax do. "Blac
 <td>0.55</td>
 </tr>
 </table>
-
 
 

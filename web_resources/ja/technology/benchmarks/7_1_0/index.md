@@ -4,33 +4,28 @@
 
 <a href="http://radagast.se/othello/ffotest.html" target="_blank" el=”noopener noreferrer”>The FFO endgame test suite</a>はオセロAIの終盤探索力の指標として広く使われるベンチマークです。各テストケースを完全読みし、最善手を計算します。探索時間と訪問ノード数を指標に性能を評価します。NPSはNodes Per Secondの略で、1秒あたりの訪問ノード数を表します。
 
-### Egaroucid for Console 7.1.0 Windows x64 SIMD
-
-標準版です。最近のCPUであればほぼ確実に動きます。SIMD版はAVX2を必要とするため、AVX2に対応するCPU (Intel Core iシリーズの第3世代以降など) が必要です。
-
-#### Core i9 13900K @ 32並列
-
-
-
-
-
-### Egaroucid for Console 7.1.0 Windows x64 AVX512
-
-AVX-512対応版です。対応しているCPU (Intel Core iシリーズの第7から11世代など) ではSIMD版よりも高速になる可能性があります。
-
-#### Core i9 11900K @ 16並列
-
-
-
-
-
-
-### Egaroucid for Console 7.1.0 Windows x64 Generic
-
-SIMDによる高速化をしていないバージョンです。AVX2に対応していないCPUでも動きます。
-
-#### Core i9 13900K @ 32並列
-
+<div class="table_wrapper">
+<table>
+<tr>
+<th>CPU</th><th>版</th><th>時間(秒)</th><th>ノード数</th><th>NPS</th><th>ファイル</th>
+</tr>
+<tr>
+<td>Core i9-13900K</td><td>SIMD</td><td>27.75</td><td>25746866156</td><td>927814996</td><td><a href="./files/0_Core_i9-13900K_SIMD.txt">0_Core_i9-13900K_SIMD.txt</a></td>
+</tr>
+<tr>
+<td>Core i9-13900K</td><td>Generic</td><td>50.639</td><td>28517711998</td><td>563157092</td><td><a href="./files/1_Core_i9-13900K_Generic.txt">1_Core_i9-13900K_Generic.txt</a></td>
+</tr>
+<tr>
+<td>Core i9-11900K</td><td>AVX512</td><td>54.842</td><td>23263286724</td><td>424187424</td><td><a href="./files/2_Core_i9-11900K_AVX512.txt">2_Core_i9-11900K_AVX512.txt</a></td>
+</tr>
+<tr>
+<td>Core i9-11900K</td><td>SIMD</td><td>55.464</td><td>23143759716</td><td>417275344</td><td><a href="./files/3_Core_i9-11900K_SIMD.txt">3_Core_i9-11900K_SIMD.txt</a></td>
+</tr>
+<tr>
+<td>Core i9-11900K</td><td>Generic</td><td>112.36</td><td>23298639098</td><td>207357058</td><td><a href="./files/4_Core_i9-11900K_Generic.txt">4_Core_i9-11900K_Generic.txt</a></td>
+</tr>
+</table>
+</div>
 
 
 
@@ -96,6 +91,5 @@ Egaroucid勝率が0.5を上回っていればEgaroucidがEdaxに勝ち越して�
 <td>0.55</td>
 </tr>
 </table>
-
 
 
