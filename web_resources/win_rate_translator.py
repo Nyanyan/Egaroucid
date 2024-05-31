@@ -23,6 +23,6 @@ while True:
     except:
         break
 
-res += '</table></div>'
+res += '\n</table></div>'
 
 pyperclip.copy(res)
