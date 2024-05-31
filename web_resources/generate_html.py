@@ -313,10 +313,15 @@ def create_html(dr):
         with open(dr + '/additional_files.txt', 'r', encoding='utf-8') as f:
             additional_files_file_str = f.read().splitlines()
         additional_files = []
+        additional_drs = []
         for line in additional_files_file_str:
+            additional_drs.append(line.replace('\\', '/').split('/')[0])
             additional_files.extend(glob.glob(dr + '/' + line))
+        for additional_dr in additional_drs:
+            os.mkdir(out_dr + '/' + additional_dr)
         for additional_file in additional_files:
-            shutil.copy(additional_file, out_dr + '/' + additional_file)
+            additional_filename = additional_file[len(dr + '/'):]
+            shutil.copy(additional_file, out_dr + '/' + additional_filename)
     except:
         pass
     tasks = []
