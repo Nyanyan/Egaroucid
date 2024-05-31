@@ -2,13 +2,13 @@ import pyperclip
 import sys
 
 if sys.argv[1] == 'ja':
-    head = '''<table>
+    head = '''<div class="table_wrapper"><table>
 <tr>
 <th>名称</th>
 <th>勝率</th>
 '''
 else:
-    head = '''<table>
+    head = '''<div class="table_wrapper"><table>
 <tr>
 <th>Name</th>
 <th>Winning Rate</th>
@@ -27,6 +27,6 @@ while True:
     except:
         break
 
-res += '</table>'
+res += '</table></div>'
 
 pyperclip.copy(res)

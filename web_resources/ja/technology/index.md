@@ -22,7 +22,7 @@ Egaroucidの性能の確認として2種類のベンチマークを使用して�
 
 計算時間を短くするためのもう一つの観点は、1秒あたりのノード訪問回数を上げることです。これはNodes Per Secondの頭文字を取ってNPSと言われます。これは上がると嬉しい値です。
 
-以下はThe FFO endgame test suiteの40から59番をCore i9 13900Kで実行した結果を、バージョンを横軸に取ってグラフにしたものです。
+以下はThe FFO endgame test suiteの40から59番をCore i9 13900Kで実行した結果を、バージョンを横軸に取ってグラフにしたものです。SIMD版を使用しました。
 
 <div class="centering_box">
 	<img class="pic2" src="img/ffo_time.png">
@@ -42,36 +42,40 @@ Egaroucidの性能の確認として2種類のベンチマークを使用して�
 <tr>
 <th>名称</th>
 <th>勝率</th>
+<tr>
+<td>7.1.0</td>
+<td>0.5770</td>
 </tr>
 <tr>
 <td>7.0.0</td>
-<td>0.5643</td>
+<td>0.5537</td>
 </tr>
 <tr>
-<td>6.5.0</td>
-<td>0.5648</td>
+<td>6.5.X</td>
+<td>0.5434</td>
 </tr>
 <tr>
-<td>6.4.0</td>
-<td>0.4980</td>
+<td>6.4.X</td>
+<td>0.4904</td>
 </tr>
 <tr>
-<td>6.3.0</td>
-<td>0.4598</td>
+<td>6.3.X</td>
+<td>0.4561</td>
 </tr>
 <tr>
-<td>6.1.0</td>
-<td>0.5113</td>
+<td>6.1.X</td>
+<td>0.5020</td>
 </tr>
 <tr>
-<td>6.0.0</td>
-<td>0.4592</td>
+<td>6.0.X</td>
+<td>0.4451</td>
 </tr>
 <tr>
 <td>Edax</td>
-<td>0.4425</td>
+<td>0.4321</td>
 </tr>
 </table></div>
+
 
 
 
@@ -91,6 +95,10 @@ Egaroucid 6.2.0はEgaroucid 6.3.0と同一の評価関数のため、省いて�
 	<tr>
 		<th>バージョン</th>
 		<th>リリース時期</th>
+	</tr>
+    <tr>
+		<td><a href="./benchmarks/7_1_0/">7.1.0</a></td>
+		<td>TBD</td>
 	</tr>
     <tr>
 		<td><a href="./benchmarks/7_0_0/">7.0.0</a></td>
@@ -145,6 +153,7 @@ Egaroucid 6.2.0はEgaroucid 6.3.0と同一の評価関数のため、省いて�
 		<td>2022/03/02</td>
 	</tr>
     </table></div>
+
 
 
 

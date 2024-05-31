@@ -20,7 +20,7 @@ The most important feature for users is the search time. This feature is shown a
 
 To shorten the search time, we can do two things: decrease the number of nodes and increase the number of nodes visited in a unit time.
 
-There are some graphs of results of The FFO endgame test suite on Core i9 13900K.
+There are some graphs of results of The FFO endgame test suite on Core i9 13900K, SIMD version.
 
 <div class="centering_box">
 	<img class="pic2" src="img/ffo_time.png">
@@ -39,36 +39,40 @@ To avoid same lines, I used [XOT](https://berg.earthlingz.de/xot/aboutxot.php?la
 <tr>
 <th>Name</th>
 <th>Winning Rate</th>
+<tr>
+<td>7.1.0</td>
+<td>0.5770</td>
 </tr>
 <tr>
 <td>7.0.0</td>
-<td>0.5643</td>
+<td>0.5537</td>
 </tr>
 <tr>
-<td>6.5.0</td>
-<td>0.5648</td>
+<td>6.5.X</td>
+<td>0.5434</td>
 </tr>
 <tr>
-<td>6.4.0</td>
-<td>0.4980</td>
+<td>6.4.X</td>
+<td>0.4904</td>
 </tr>
 <tr>
-<td>6.3.0</td>
-<td>0.4598</td>
+<td>6.3.X</td>
+<td>0.4561</td>
 </tr>
 <tr>
-<td>6.1.0</td>
-<td>0.5113</td>
+<td>6.1.X</td>
+<td>0.5020</td>
 </tr>
 <tr>
-<td>6.0.0</td>
-<td>0.4592</td>
+<td>6.0.X</td>
+<td>0.4451</td>
 </tr>
 <tr>
 <td>Edax</td>
-<td>0.4425</td>
+<td>0.4321</td>
 </tr>
 </table></div>
+
 
 
 The further log is available [here](./battle.txt).
@@ -85,6 +89,10 @@ There are detailed benchmarks for each version including older versions.
 	<tr>
 		<th>Version</th>
 		<th>Date</th>
+	</tr>
+    <tr>
+		<td><a href="./benchmarks/7_1_0/">7.1.0</a></td>
+		<td>TBD</td>
 	</tr>
     <tr>
 		<td><a href="./benchmarks/7_0_0/">7.0.0</a></td>
@@ -139,6 +147,7 @@ There are detailed benchmarks for each version including older versions.
 		<td>2022/03/02</td>
 	</tr>
 </table></div>
+
 
 
 
