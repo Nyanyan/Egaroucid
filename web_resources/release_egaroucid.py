@@ -30,6 +30,14 @@ release_table_arr = [
 <tr>
     <td>Windows</td>
     <td>x64</td>
+    <td>AVX-512</td>
+    <td>DATE</td>
+    <td>[Egaroucid VERSION_DOT AVX512 インストーラ](https://github.com/Nyanyan/Egaroucid/releases/download/vVERSION_DOT/Egaroucid_VERSION_UNDERBAR_AVX512_installer.exe)</td>
+    <td>[Egaroucid VERSION_DOT AVX512 Zip](https://github.com/Nyanyan/Egaroucid/releases/download/vVERSION_DOT/Egaroucid_VERSION_UNDERBAR_Windows_x64_AVX512_Portable.zip)</td>
+</tr>
+<tr>
+    <td>Windows</td>
+    <td>x64</td>
     <td>-</td>
     <td>DATE</td>
     <td>[Egaroucid VERSION_DOT Generic インストーラ](https://github.com/Nyanyan/Egaroucid/releases/download/vVERSION_DOT/Egaroucid_VERSION_UNDERBAR_Generic_installer.exe)</td>
@@ -55,6 +63,14 @@ release_table_arr = [
     <td>DATE</td>
     <td>[Egaroucid VERSION_DOT SIMD Installer](https://github.com/Nyanyan/Egaroucid/releases/download/vVERSION_DOT/Egaroucid_VERSION_UNDERBAR_SIMD_installer.exe)</td>
     <td>[Egaroucid VERSION_DOT SIMD Zip](https://github.com/Nyanyan/Egaroucid/releases/download/vVERSION_DOT/Egaroucid_VERSION_UNDERBAR_Windows_x64_SIMD_Portable.zip)</td>
+</tr>
+<tr>
+    <td>Windows</td>
+    <td>x64</td>
+    <td>AVX-512</td>
+    <td>DATE</td>
+    <td>[Egaroucid VERSION_DOT AVX512 Installer](https://github.com/Nyanyan/Egaroucid/releases/download/vVERSION_DOT/Egaroucid_VERSION_UNDERBAR_AVX512_installer.exe)</td>
+    <td>[Egaroucid VERSION_DOT AVX512 Zip](https://github.com/Nyanyan/Egaroucid/releases/download/vVERSION_DOT/Egaroucid_VERSION_UNDERBAR_Windows_x64_AVX512_Portable.zip)</td>
 </tr>
 <tr>
     <td>Windows</td>
