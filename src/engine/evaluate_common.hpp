@@ -138,6 +138,8 @@
 
 #define COORD_NO 64
 
+#define N_ZEROS_PLUS (1 << 12) // for egev2 compression, 4096
+
 /*
     @brief definition of patterns in evaluation function
 
@@ -234,4 +236,47 @@ inline int end_evaluate_odd(Board *b, int e){
     int score = b->count_player() * 2 + e;
     score += (((score >> 5) & 2) - 1) * e;
     return score - HW2;
+}
+
+inline std::vector<int16_t> load_unzip_egev2(const char* file, bool show_log, bool *failed){
+    *failed = false;
+    std::vector<int16_t> res;
+    FILE* fp;
+    if (!file_open(&fp, file, "rb")){
+        std::cerr << "[ERROR] [FATAL] can't open eval " << file << std::endl;
+        *failed = true;
+        return res;
+    }
+    int n_unzipped_params = -1;
+    if (fread(&n_unzipped_params, 4, 1, fp) < 1){
+        std::cerr << "[ERROR] [FATAL] evaluation file broken" << std::endl;
+        fclose(fp);
+        *failed = true;
+        return res;
+    }
+    if (show_log){
+        std::cerr << n_unzipped_params << " elems found in " << file << std::endl;
+    }
+    short *unzipped_params = (short*)malloc(sizeof(short) * n_unzipped_params);
+    if (fread(unzipped_params, 2, n_unzipped_params, fp) < n_unzipped_params){
+        std::cerr << "[ERROR] [FATAL] evaluation file broken" << std::endl;
+        fclose(fp);
+        free(unzipped_params);
+        *failed = true;
+        return res;
+    }
+    for (int i = 0; i < n_unzipped_params; ++i){
+        if (unzipped_params[i] >= N_ZEROS_PLUS){
+            for (int j = 0; j < unzipped_params[i] - N_ZEROS_PLUS; ++j){
+                res.emplace_back(0);
+            }
+        } else{
+            res.emplace_back(unzipped_params[i]);
+        }
+    }
+    if (show_log){
+        std::cerr << res.size() << " elems found in unzipped " << file << std::endl;
+    }
+    free(unzipped_params);
+    return res;
 }

@@ -236,34 +236,23 @@ int16_t pattern_arr_move_ordering_end[N_PATTERN_PARAMS_MO_END];
 inline bool load_eval_file(const char* file, bool show_log){
     if (show_log)
         std::cerr << "evaluation file " << file << std::endl;
-    FILE* fp;
-    if (!file_open(&fp, file, "rb")){
-        std::cerr << "[ERROR] [FATAL] can't open eval " << file << std::endl;
+    bool failed = false;
+    std::vector<int16_t> unzipped_params = load_unzip_egev2(file, show_log, &failed);
+    if (failed){
         return false;
     }
+    size_t param_idx = 0;
     for (int phase_idx = 0; phase_idx < N_PHASES; ++phase_idx){
         pattern_arr[phase_idx][0] = 0; // memory bound
-        if (fread(pattern_arr[phase_idx] + 1, 2, N_PATTERN_PARAMS_BEFORE_DUMMY, fp) < N_PATTERN_PARAMS_BEFORE_DUMMY){
-            std::cerr << "[ERROR] [FATAL] evaluation file broken" << std::endl;
-            fclose(fp);
-            return false;
-        }
+        std::memcpy(pattern_arr[phase_idx] + 1, &(unzipped_params.begin() + param_idx), sizeof(short) * N_PATTERN_PARAMS_BEFORE_DUMMY);
+        param_idx += N_PATTERN_PARAMS_BEFORE_DUMMY;
         pattern_arr[phase_idx][SIMD_EVAL_DUMMY_ADDR] = 0; // dummy for d8
-        if (fread(pattern_arr[phase_idx] + SIMD_EVAL_DUMMY_ADDR + 1, 2, N_PATTERN_PARAMS_AFTER_DUMMY, fp) < N_PATTERN_PARAMS_AFTER_DUMMY){
-            std::cerr << "[ERROR] [FATAL] evaluation file broken" << std::endl;
-            fclose(fp);
-            return false;
-        }
-        if (fread(eval_num_arr[phase_idx], 2, MAX_STONE_NUM, fp) < MAX_STONE_NUM){
-            std::cerr << "[ERROR] [FATAL] evaluation file broken" << std::endl;
-            fclose(fp);
-            return false;
-        }
-        if (fread(eval_sur0_sur1_arr[phase_idx], 2, MAX_SURROUND * MAX_SURROUND, fp) < MAX_SURROUND * MAX_SURROUND){
-            std::cerr << "[ERROR] [FATAL] evaluation file broken" << std::endl;
-            fclose(fp);
-            return false;
-        }
+        std::memcpy(pattern_arr[phase_idx] + SIMD_EVAL_DUMMY_ADDR + 1, &(unzipped_params.begin() + param_idx), sizeof(short) * N_PATTERN_PARAMS_AFTER_DUMMY);
+        param_idx += N_PATTERN_PARAMS_AFTER_DUMMY;
+        std::memcpy(eval_num_arr[phase_idx], &(unzipped_params.begin() + param_idx), sizeof(short) * MAX_STONE_NUM);
+        param_idx += MAX_STONE_NUM;
+        std::memcpy(eval_sur0_sur1_arr[phase_idx], &(unzipped_params.begin() + param_idx), sizeof(short) * MAX_SURROUND * MAX_SURROUND);
+        param_idx += MAX_SURROUND * MAX_SURROUND;
     }
     // check max value
     for (int phase_idx = 0; phase_idx < N_PHASES; ++phase_idx){

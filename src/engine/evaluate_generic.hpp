@@ -326,9 +326,9 @@ void init_pattern_arr_rev(int phase_idx, int pattern_idx, int siz){
 inline bool load_eval_file(const char* file, bool show_log){
     if (show_log)
         std::cerr << "evaluation file " << file << std::endl;
-    FILE* fp;
-    if (!file_open(&fp, file, "rb")){
-        std::cerr << "[ERROR] [FATAL] can't open eval " << file << std::endl;
+    bool failed = false;
+    std::vector<int16_t> unzipped_params = load_unzip_egev2(file, show_log, &failed);
+    if (failed){
         return false;
     }
     constexpr int pattern_sizes[N_PATTERNS] = {
@@ -337,24 +337,15 @@ inline bool load_eval_file(const char* file, bool show_log){
         10, 10, 10, 10, 
         10, 10, 10, 10
     };
+    size_t param_idx = 0;
     for (int phase_idx = 0; phase_idx < N_PHASES; ++phase_idx){
         for (int pattern_idx = 0; pattern_idx < N_PATTERNS; ++pattern_idx){
-            if (fread(pattern_arr[0][phase_idx][pattern_idx], 2, pow3[pattern_sizes[pattern_idx]], fp) < pow3[pattern_sizes[pattern_idx]]){
-                std::cerr << "[ERROR] [FATAL] evaluation file broken" << std::endl;
-                fclose(fp);
-                return false;
-            }
+            std::memcpy((pattern_arr[0][phase_idx][pattern_idx], &(unzipped_params.begin() + param_idx), sizeof(short) * pow3[pattern_sizes[pattern_idx]]);
         }
-        if (fread(eval_num_arr[phase_idx], 2, MAX_STONE_NUM, fp) < MAX_STONE_NUM){
-            std::cerr << "[ERROR] [FATAL] evaluation file broken" << std::endl;
-            fclose(fp);
-            return false;
-        }
-        if (fread(eval_sur0_sur1_arr[phase_idx], 2, MAX_SURROUND * MAX_SURROUND, fp) < MAX_SURROUND * MAX_SURROUND){
-            std::cerr << "[ERROR] [FATAL] evaluation file broken" << std::endl;
-            fclose(fp);
-            return false;
-        }
+        std::memcpy(eval_num_arr[phase_idx], &(unzipped_params.begin() + param_idx), sizeof(short) * MAX_STONE_NUM);
+        param_idx += MAX_STONE_NUM;
+        std::memcpy(eval_sur0_sur1_arr[phase_idx], &(unzipped_params.begin() + param_idx), sizeof(short) * MAX_SURROUND * MAX_SURROUND);
+        param_idx += MAX_SURROUND * MAX_SURROUND;
     }
     if (thread_pool.size() >= 2){
         std::future<void> tasks[N_PHASES * N_PATTERNS];
