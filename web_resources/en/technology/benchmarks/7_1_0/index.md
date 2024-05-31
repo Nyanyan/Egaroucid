@@ -13,7 +13,7 @@
 <td>Core i9-13900K</td><td>SIMD</td><td>27.75</td><td>25746866156</td><td>927814996</td><td><a href="./files/0_Core_i9-13900K_SIMD.txt">0_Core_i9-13900K_SIMD.txt</a></td>
 </tr>
 <tr>
-<td>Core i9-13900K</td><td>Generic</td><td>50.639</td><td>28517711998</td><td>563157092</td><td><a href="./files/1_Core_i9-13900K_Generic.txt">1_Core_i9-13900K_Generic.txt</a></td>
+<td>Core i9-13900K</td><td>Generic</td><td>48.578</td><td>27178268841</td><td>559476899</td><td><a href="./files/1_Core_i9-13900K_Generic.txt">1_Core_i9-13900K_Generic.txt</a></td>
 </tr>
 <tr>
 <td>Core i9-11900K</td><td>AVX512</td><td>54.842</td><td>23263286724</td><td>424187424</td><td><a href="./files/2_Core_i9-11900K_AVX512.txt">2_Core_i9-11900K_AVX512.txt</a></td>
@@ -26,6 +26,7 @@
 </tr>
 </table>
 </div>
+
 
 
 
@@ -51,6 +52,5 @@ If Egaroucid Win Ratio is over 0.5, then Egaroucid wins more than Edax do. "Blac
 <tr><td>15</td><td>215(Black: 113 White: 102)</td><td>111(Black: 51 White: 60)</td><td>174(Black: 86 White: 88)</td><td>0.541</td></tr>
 <tr><td>21</td><td>85(Black: 57 White: 28)</td><td>50(Black: 19 White: 31)</td><td>65(Black: 24 White: 41)</td><td>0.55</td></tr>
 </table></div>
-
 
 

@@ -341,6 +341,7 @@ inline bool load_eval_file(const char* file, bool show_log){
     for (int phase_idx = 0; phase_idx < N_PHASES; ++phase_idx){
         for (int pattern_idx = 0; pattern_idx < N_PATTERNS; ++pattern_idx){
             std::memcpy(pattern_arr[0][phase_idx][pattern_idx], &unzipped_params[param_idx], sizeof(short) * pow3[pattern_sizes[pattern_idx]]);
+            param_idx += pow3[pattern_sizes[pattern_idx]];
         }
         std::memcpy(eval_num_arr[phase_idx], &unzipped_params[param_idx], sizeof(short) * MAX_STONE_NUM);
         param_idx += MAX_STONE_NUM;
