@@ -244,14 +244,14 @@ inline bool load_eval_file(const char* file, bool show_log){
     size_t param_idx = 0;
     for (int phase_idx = 0; phase_idx < N_PHASES; ++phase_idx){
         pattern_arr[phase_idx][0] = 0; // memory bound
-        std::memcpy(pattern_arr[phase_idx] + 1, &(unzipped_params.begin() + param_idx), sizeof(short) * N_PATTERN_PARAMS_BEFORE_DUMMY);
+        std::memcpy(pattern_arr[phase_idx] + 1, &unzipped_params[param_idx], sizeof(short) * N_PATTERN_PARAMS_BEFORE_DUMMY);
         param_idx += N_PATTERN_PARAMS_BEFORE_DUMMY;
         pattern_arr[phase_idx][SIMD_EVAL_DUMMY_ADDR] = 0; // dummy for d8
-        std::memcpy(pattern_arr[phase_idx] + SIMD_EVAL_DUMMY_ADDR + 1, &(unzipped_params.begin() + param_idx), sizeof(short) * N_PATTERN_PARAMS_AFTER_DUMMY);
+        std::memcpy(pattern_arr[phase_idx] + SIMD_EVAL_DUMMY_ADDR + 1, &unzipped_params[param_idx], sizeof(short) * N_PATTERN_PARAMS_AFTER_DUMMY);
         param_idx += N_PATTERN_PARAMS_AFTER_DUMMY;
-        std::memcpy(eval_num_arr[phase_idx], &(unzipped_params.begin() + param_idx), sizeof(short) * MAX_STONE_NUM);
+        std::memcpy(eval_num_arr[phase_idx], &unzipped_params[param_idx], sizeof(short) * MAX_STONE_NUM);
         param_idx += MAX_STONE_NUM;
-        std::memcpy(eval_sur0_sur1_arr[phase_idx], &(unzipped_params.begin() + param_idx), sizeof(short) * MAX_SURROUND * MAX_SURROUND);
+        std::memcpy(eval_sur0_sur1_arr[phase_idx], &unzipped_params[param_idx], sizeof(short) * MAX_SURROUND * MAX_SURROUND);
         param_idx += MAX_SURROUND * MAX_SURROUND;
     }
     // check max value
@@ -451,7 +451,7 @@ bool evaluate_init(const std::string file, std::string mo_end_nws_file, bool sho
     @return evaluation function conpletely initialized?
 */
 bool evaluate_init(bool show_log){
-    return evaluate_init("resources/eval.egev", "resources/eval_move_ordering_end.egev", show_log);
+    return evaluate_init("resources/eval.egev2", "resources/eval_move_ordering_end.egev", show_log);
 }
 
 /*

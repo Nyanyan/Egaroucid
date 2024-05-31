@@ -88,6 +88,10 @@ int main(int argc, char* argv[]){
             n_params = t;
         }
     }
+    if (n_continuous_zeros > 0){
+        egev2_compressed.emplace_back(n_continuous_zeros + N_ZEROS_PLUS);
+        n_continuous_zeros = 0;
+    }
     int egev2_size = egev2_compressed.size();
     fout.write((char*)&egev2_size, 4);
     for (short &output_elem: egev2_compressed){
