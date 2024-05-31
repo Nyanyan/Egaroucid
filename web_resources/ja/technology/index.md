@@ -39,43 +39,16 @@ Egaroucidの性能の確認として2種類のベンチマークを使用して�
 対戦にはそれぞれ[XOT](https://berg.earthlingz.de/xot/aboutxot.php?lang=en)の進行を初期盤面として使い、各進行では先手後手それぞれ1回ずつ対戦させています。
 
 <div class="table_wrapper"><table>
-<tr>
-<th>名称</th>
-<th>勝率</th>
-<tr>
-<td>7.1.0</td>
-<td>0.5770</td>
-</tr>
-<tr>
-<td>7.0.0</td>
-<td>0.5537</td>
-</tr>
-<tr>
-<td>6.5.X</td>
-<td>0.5434</td>
-</tr>
-<tr>
-<td>6.4.X</td>
-<td>0.4904</td>
-</tr>
-<tr>
-<td>6.3.X</td>
-<td>0.4561</td>
-</tr>
-<tr>
-<td>6.1.X</td>
-<td>0.5020</td>
-</tr>
-<tr>
-<td>6.0.X</td>
-<td>0.4451</td>
-</tr>
-<tr>
-<td>Edax</td>
-<td>0.4321</td>
-</tr>
+<tr><th>名称</th><th>勝率</th></tr>
+<tr><td>7.1.0</td><td>0.5770</td></tr>
+<tr><td>7.0.0</td><td>0.5537</td></tr>
+<tr><td>6.5.X</td><td>0.5434</td></tr>
+<tr><td>6.4.X</td><td>0.4904</td></tr>
+<tr><td>6.3.X</td><td>0.4561</td></tr>
+<tr><td>6.1.X</td><td>0.5020</td></tr>
+<tr><td>6.0.X</td><td>0.4451</td></tr>
+<tr><td>Edax</td><td>0.4321</td></tr>
 </table></div>
-
 
 
 

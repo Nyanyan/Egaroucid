@@ -36,42 +36,17 @@ It is the best way to evaluate the strength of Othello AI that we have battles w
 To avoid same lines, I used [XOT](https://berg.earthlingz.de/xot/aboutxot.php?lang=en) as the beginning board. Each battle is done in level 1 (lookahead depth is 1 for the midgame, 2 for the endgame).
 
 <div class="table_wrapper"><table>
-<tr>
-<th>Name</th>
-<th>Winning Rate</th>
-<tr>
-<td>7.1.0</td>
-<td>0.5770</td>
-</tr>
-<tr>
-<td>7.0.0</td>
-<td>0.5537</td>
-</tr>
-<tr>
-<td>6.5.X</td>
-<td>0.5434</td>
-</tr>
-<tr>
-<td>6.4.X</td>
-<td>0.4904</td>
-</tr>
-<tr>
-<td>6.3.X</td>
-<td>0.4561</td>
-</tr>
-<tr>
-<td>6.1.X</td>
-<td>0.5020</td>
-</tr>
-<tr>
-<td>6.0.X</td>
-<td>0.4451</td>
-</tr>
-<tr>
-<td>Edax</td>
-<td>0.4321</td>
-</tr>
+<tr><th>Name</th><th>Winning Rate</th></tr>
+<tr><td>7.1.0</td><td>0.5770</td></tr>
+<tr><td>7.0.0</td><td>0.5537</td></tr>
+<tr><td>6.5.X</td><td>0.5434</td></tr>
+<tr><td>6.4.X</td><td>0.4904</td></tr>
+<tr><td>6.3.X</td><td>0.4561</td></tr>
+<tr><td>6.1.X</td><td>0.5020</td></tr>
+<tr><td>6.0.X</td><td>0.4451</td></tr>
+<tr><td>Edax</td><td>0.4321</td></tr>
 </table></div>
+
 
 
 
