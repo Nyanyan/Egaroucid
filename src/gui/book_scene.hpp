@@ -1255,6 +1255,7 @@ private:
                     error_found = true;
                     error_found_line = true;
                     error_lines.emplace_back(line_idx);
+                    std::cerr << "transcript size error at line " << line_idx << std::endl;
                     break;
                 }
                 int y = (int)(transcript[i + 1] - '1');
@@ -1262,6 +1263,7 @@ private:
                     error_found = true;
                     error_found_line = true;
                     error_lines.emplace_back(line_idx);
+                    std::cerr << "coord out of range at line " << line_idx << std::endl;
                     break;
                 }
                 int policy = HW2_M1 - (y * HW + x);
@@ -1269,6 +1271,7 @@ private:
                     error_found = true;
                     error_found_line = true;
                     error_lines.emplace_back(line_idx);
+                    std::cerr << "illegal move at line " << line_idx << std::endl;
                     break;
                 }
                 calc_flip(&flip, &board, policy);
@@ -1278,6 +1281,7 @@ private:
                         error_found = true;
                         error_found_line = true;
                         error_lines.emplace_back(line_idx);
+                        std::cerr << "game over at line " << line_idx << std::endl;
                         break;
                     }
                     board.pass();
@@ -1290,11 +1294,12 @@ private:
                     error_found = true;
                     error_found_line = true;
                     error_lines.emplace_back(line_idx);
+                    std::cerr << "book not contain error at line " << line_idx << std::endl;
                 }
             }
-            if (error_found_line){
-                std::cerr << "error found in line " << line_idx << " " << transcript << std::endl;
-            }
+            //if (error_found_line){
+            //    std::cerr << "error found in line " << line_idx << " " << transcript << std::endl;
+            //}
             ++line_idx;
         }
         return error_found;
