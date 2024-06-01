@@ -1242,6 +1242,9 @@ private:
         std::string transcript;
         int line_idx = 1;
         while (getline(ss, transcript)){
+            if (transcript.size() == 0){
+                continue;
+            }
             Board board;
             Flip flip;
             bool error_found_line = false;
