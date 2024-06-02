@@ -7,7 +7,7 @@ void board_to_line_init(std::string book_file){
     bit_init();
     mobility_init();
     flip_init();
-    book_init(book_file, true);
+    book_init(book_file, false);
 }
 
 void board_to_line_print_transcript(std::vector<int> &transcript){
@@ -18,7 +18,7 @@ void board_to_line_print_transcript(std::vector<int> &transcript){
 }
 
 void board_to_line(Board board, const int depth, const int error_per_move, int remaining_error, std::vector<int> &transcript){
-    if (board.n_discs() >= depth){
+    if (board.n_discs() >= depth + 4){
         board_to_line_print_transcript(transcript);
         return;
     }
