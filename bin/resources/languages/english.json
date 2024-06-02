@@ -95,7 +95,9 @@
         "unlimited": "Unlimited",
         "show_book_info": "Book Info",
         "calculating": "Calculating",
-        "n_registered": "Registered"
+        "n_registered": "Registered",
+        "max_n_loops": "Max Loops",
+        "start_with_max_n_loops": "Start with n_loops"
     },
     "in_out": {
         "in_out": "In/Out",

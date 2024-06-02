@@ -95,7 +95,9 @@
         "unlimited": "无限",
         "show_book_info": "开局库情报",
         "calculating": "计算",
-        "n_registered": "挂号"
+        "n_registered": "挂号",
+        "max_n_loops": "最大循环次数",
+        "start_with_max_n_loops": "指定的循环次数开始"
     },
     "in_out": {
         "in_out": "输入/输出",

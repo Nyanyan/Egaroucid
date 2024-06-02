@@ -95,7 +95,9 @@
         "unlimited": "無制限",
         "show_book_info": "Book情報",
         "calculating": "計算中",
-        "n_registered": "登録局面数"
+        "n_registered": "登録局面数",
+        "max_n_loops": "最大ループ数",
+        "start_with_max_n_loops": "指定ループ数で開始"
     },
     "in_out": {
         "in_out": "入出力",
