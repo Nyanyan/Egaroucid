@@ -1070,6 +1070,7 @@ private:
     Board board;
     TextAreaEditState text_area;
     std::vector<Board> board_list;
+    std::vector<std::string> transcript_list;
     std::vector<int> error_lines;
 
     Button stop_button;
@@ -1195,6 +1196,7 @@ public:
             if (book_learning) { // learning
                 getData().fonts.font(language.get("book", "learning")).draw(20, 480, 230, getData().colors.white);
                 getData().fonts.font(U"Line: " + Format(board_idx + 1)).draw(15, 480, 340, getData().colors.white);
+                getData().fonts.font(Unicode::Widen(transcript_list[board_idx])).draw(15, 480, 360, getData().colors.white);
                 stop_button.draw();
                 if (stop_button.clicked()) {
                     global_searching = false;
@@ -1294,6 +1296,7 @@ private:
             if (!error_found_line){
                 if (book.contain(board)){
                     board_list.emplace_back(board);
+                    transcript_list.emplace_back(transcript);
                 } else{
                     error_found = true;
                     error_found_line = true;
