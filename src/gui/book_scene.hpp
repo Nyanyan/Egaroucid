@@ -1226,7 +1226,9 @@ public:
             bar_circle.draw(bar_circle_color);
             sy += 25;
             getData().fonts.font(language.get("in_out", "you_can_paste_with_ctrl_v")).draw(13, Arg::topCenter(X_CENTER, sy), getData().colors.white);
-            getData().fonts.font(Format(text_area.text.size()) + U"/" + Format(TEXTBOX_MAX_CHARS) + U" " + language.get("common", "characters")).draw(13, Arg::topRight(X_CENTER + 350, sy), getData().colors.white);
+            if (!file_dragged){
+                getData().fonts.font(Format(text_area.text.size()) + U"/" + Format(TEXTBOX_MAX_CHARS) + U" " + language.get("common", "characters")).draw(13, Arg::topRight(X_CENTER + 350, sy), getData().colors.white);
+            }
             sy += 20;
             getData().fonts.font(language.get("book", "input_transcripts_with_line_breaks")).draw(13, Arg::topCenter(X_CENTER, sy), getData().colors.white);
             back_button.draw();
