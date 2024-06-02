@@ -4,7 +4,7 @@
 
 This page is only in Japanese. Translation by Google Translator is [here](https://www-egaroucid-nyanyan-dev.translate.goog/ja/usage/?_x_tr_sl=ja&_x_tr_tl=en&_x_tr_hl=ja&_x_tr_pto=wapp).
 
-最終更新: 2024/05/31 Egaroucid 7.1.0
+最終更新: 2024/06/02 Egaroucid 7.1.0
 
 INSERT_TABLE_OF_CONTENTS_HERE
 
