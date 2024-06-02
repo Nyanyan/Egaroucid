@@ -1259,7 +1259,12 @@ private:
             Flip flip;
             bool error_found_line = false;
             board.reset();
+            std::vector<std::pair<Board, int>> boards_to_be_registered;
+            int registered_value = 0;
             for (int i = 0; i < transcript.size(); i += 2){
+                if (book.contain(&board)){
+                    registered_value = book.get(&board).value;
+                }
                 int x = (int)(transcript[i] - 'a');
                 if (x < 0 || HW <= x){
                     x = (int)(transcript[i] - 'A');
@@ -1289,6 +1294,7 @@ private:
                 }
                 calc_flip(&flip, &board, policy);
                 board.move_board(&flip);
+                registered_value *= -1;
                 if (board.get_legal() == 0){
                     if (board.is_end()){
                         error_found = true;
@@ -1298,18 +1304,18 @@ private:
                         break;
                     }
                     board.pass();
+                    registered_value *= -1;
+                }
+                if (!book.contain(&board)){
+                    boards_to_be_registered.emplace_back(std::make_pair(board, registered_value));
                 }
             }
             if (!error_found_line){
-                if (book.contain(board)){
-                    board_list.emplace_back(board);
-                    transcript_list.emplace_back(transcript);
-                } else{
-                    error_found = true;
-                    error_found_line = true;
-                    error_lines.emplace_back(line_idx);
-                    std::cerr << "book not contain error at line " << line_idx << " " << transcript << std::endl;
+                for (std::pair<Board, int> board_to_be_registered: boards_to_be_registered){
+                    book.change(&board_to_be_registered.first, board_to_be_registered.second, getData().menu_elements.level);
                 }
+                board_list.emplace_back(board);
+                transcript_list.emplace_back(transcript);
             }
             //if (error_found_line){
             //    std::cerr << "error found in line " << line_idx << " " << transcript << std::endl;
