@@ -226,7 +226,7 @@ constexpr int BUTTON3_3_SX = X_CENTER + BUTTON3_WIDTH / 2 + 10;
 #define DEFAULT_OPENING_LANG_NAME "english"
 
 // textbox constant
-#define TEXTBOX_MAX_CHARS 100000
+#define TEXTBOX_MAX_CHARS 10000
 
 struct History_elem {
     Board board;

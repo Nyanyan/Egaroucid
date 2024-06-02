@@ -1107,7 +1107,9 @@ private:
     bool done;
     bool failed;
     Board board;
+    bool file_dragged;
     TextAreaEditState text_area;
+    std::string raw_transcripts;
     std::vector<Board> board_list;
     std::vector<std::string> transcript_list;
     std::vector<int> error_lines;
@@ -1133,6 +1135,7 @@ public:
         back_button.init(BUTTON3_1_SX, BUTTON3_SY, BUTTON3_WIDTH, BUTTON3_HEIGHT, BUTTON3_RADIUS, language.get("common", "back"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
         start_button.init(BUTTON3_2_SX, BUTTON3_SY, BUTTON3_WIDTH, BUTTON3_HEIGHT, BUTTON3_RADIUS, language.get("book", "start"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
         start_with_max_n_loops_button.init(BUTTON3_3_SX, BUTTON3_SY, BUTTON3_WIDTH, BUTTON3_HEIGHT, BUTTON3_RADIUS, language.get("book", "start_with_max_n_loops"), 15, getData().fonts.font, getData().colors.white, getData().colors.black);
+        file_dragged = false;
         done = false;
         failed = false;
 
@@ -1169,8 +1172,41 @@ public:
             int sy = 20;
             getData().fonts.font(language.get("book", "book_deviate_with_transcript")).draw(25, Arg::topCenter(X_CENTER, sy), getData().colors.white);
             sy += 45;
-            text_area.active = true;
-            SimpleGUI::TextArea(text_area, Vec2{X_CENTER - 350, sy}, SizeF{700, 270}, TEXTBOX_MAX_CHARS);
+            if (DragDrop::HasNewFilePaths()) {
+                std::string path = DragDrop::GetDroppedFilePaths()[0].path.narrow();
+                std::ifstream ifs(path);
+                if (ifs.fail()){
+                    std::cerr << "can't open " << path << std::endl;
+                } else{
+                    std::istreambuf_iterator<char> it(ifs);
+                    std::istreambuf_iterator<char> last;
+                    std::string str(it, last);
+                    raw_transcripts = str;
+                    file_dragged = true;
+                }
+            }
+            if (file_dragged){
+                std::stringstream ss{raw_transcripts};
+                std::string line_preview;
+                bool need_to_write_more = true;
+                std::string preview;
+                for (int i = 0; i < 12; ++i){
+                    if (!getline(ss, line_preview)){
+                        need_to_write_more = false;
+                        break;
+                    } else{
+                        preview += line_preview + "\n";
+                    }
+                }
+                if (need_to_write_more){
+                    preview += "...";
+                }
+                getData().fonts.font(Unicode::Widen(preview)).draw(15, X_CENTER - 350, sy, getData().colors.white);
+            } else{
+                text_area.active = true;
+                SimpleGUI::TextArea(text_area, Vec2{X_CENTER - 350, sy}, SizeF{700, 270}, TEXTBOX_MAX_CHARS);
+                raw_transcripts = text_area.text.narrow();
+            }
             sy += 280;
             Rect bar_rect{X_CENTER - 220, sy, 440, 20};
             bar_rect.draw(Palette::Lightskyblue);
@@ -1189,17 +1225,17 @@ public:
             getData().fonts.font(language.get("book", "max_n_loops") + U" " + Format(max_n_loops)).draw(15, Arg::rightCenter(X_CENTER - 230, sy + 10), getData().colors.white);
             bar_circle.draw(bar_circle_color);
             sy += 25;
-            getData().fonts.font(language.get("book", "input_transcripts_with_line_breaks")).draw(13, Arg::topCenter(X_CENTER, sy), getData().colors.white);
+            getData().fonts.font(language.get("in_out", "you_can_paste_with_ctrl_v")).draw(13, Arg::topCenter(X_CENTER, sy), getData().colors.white);
             getData().fonts.font(Format(text_area.text.size()) + U"/" + Format(TEXTBOX_MAX_CHARS) + U" " + language.get("common", "characters")).draw(13, Arg::topRight(X_CENTER + 350, sy), getData().colors.white);
             sy += 20;
-            getData().fonts.font(language.get("in_out", "you_can_paste_with_ctrl_v")).draw(13, Arg::topCenter(X_CENTER, sy), getData().colors.white);
+            getData().fonts.font(language.get("book", "input_transcripts_with_line_breaks")).draw(13, Arg::topCenter(X_CENTER, sy), getData().colors.white);
             back_button.draw();
             start_button.draw();
             start_with_max_n_loops_button.draw();
             if (back_button.clicked() || KeyEscape.pressed()) {
                 changeScene(U"Main_scene", SCENE_FADE_TIME);
             }
-            if ((start_button.clicked() || start_with_max_n_loops_button.clicked()) && text_area.text.size()) {
+            if ((start_button.clicked() || start_with_max_n_loops_button.clicked()) && raw_transcripts.size()) {
                 if (start_button.clicked()){
                     max_n_loops_used = BOOK_DEVIATE_MAX_N_LOOPS_INF;
                 } else{
@@ -1240,6 +1276,7 @@ public:
                 board_list.clear();
                 done = false;
                 failed = false;
+                file_dragged = false;
             }
         }
         else { // training
@@ -1316,7 +1353,7 @@ public:
 private:
     bool import_transcript_processing() {
         bool error_found = false;
-        std::string str = text_area.text.replaced(U"\r", U"").replaced(U" ", U"").narrow();
+        std::string str = raw_transcripts;
         std::stringstream ss{str};
         std::string transcript;
         int line_idx = 1;
