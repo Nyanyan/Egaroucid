@@ -50,7 +50,7 @@
         "right_click_to_modify": "Right-click to Change",
         "book_deviate": "Book Deviate",
         "book_deviate_with_transcript": "Book Deviate with Transcripts",
-        "input_transcripts_with_line_breaks": "Input transcripts with line breaks",
+        "input_transcripts_with_line_breaks": "Input transcripts with line breaks / Drag & Drop a text file",
         "transcript_error": "Transcript Error",
         "book_fix": "Book Fix",
         "learning": "Calculating...",

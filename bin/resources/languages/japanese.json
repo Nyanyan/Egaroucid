@@ -50,7 +50,7 @@
         "right_click_to_modify": "右クリックで編集",
         "book_deviate": "Book学習",
         "book_deviate_with_transcript": "棋譜を指定してBook学習",
-        "input_transcripts_with_line_breaks": "改行区切りで棋譜を指定",
+        "input_transcripts_with_line_breaks": "改行区切りで棋譜を指定 / テキストファイルをドラッグ&ドロップ",
         "transcript_error": "棋譜エラー",
         "book_fix": "Book修正",
         "learning": "学習中...",

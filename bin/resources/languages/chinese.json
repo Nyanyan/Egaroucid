@@ -50,7 +50,7 @@
         "right_click_to_modify": "右键以更改",
         "book_deviate": "Book提高",
         "book_deviate_with_transcript": "使用棋谱Book提高",
-        "input_transcripts_with_line_breaks": "输入带有换行棋谱",
+        "input_transcripts_with_line_breaks": "输入带有换行棋谱 / 通过拖放添加",
         "transcript_error": "棋谱错误",
         "book_fix": "开局库修正",
         "learning": "计算中...",
