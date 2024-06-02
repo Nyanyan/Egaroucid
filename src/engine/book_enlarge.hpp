@@ -18,6 +18,8 @@
 // automatically save book in this time (milliseconds)
 #define AUTO_BOOK_SAVE_TIME 3600000ULL // 1 hour
 
+#define BOOK_DEVIATE_MAX_N_LOOPS_INF 100000000
+
 Search_result ai(Board board, int level, bool use_book, int book_acc_level, bool use_multi_thread, bool show_log);
 
 struct Book_deviate_todo_elem{
@@ -466,7 +468,7 @@ uint64_t expand_leaves(int book_depth, int level, int max_error_per_move, std::u
     @param book_bak             book backup file name
     @param book_learning        a flag for screen drawing
 */
-inline void book_deviate(Board root_board, int level, int book_depth, int max_error_per_move, int max_error_sum, int max_leaf_error, Board *board_copy, int *player, std::string book_file, std::string book_bak, bool *book_learning){
+inline void book_deviate(Board root_board, int level, int book_depth, int max_error_per_move, int max_error_sum, int max_leaf_error, int max_n_loops, Board *board_copy, int *player, std::string book_file, std::string book_bak, bool *book_learning){
     uint64_t all_strt = tim();
     uint64_t s = all_strt;
     std::cerr << "book deviate started" << std::endl;
@@ -479,7 +481,7 @@ inline void book_deviate(Board root_board, int level, int book_depth, int max_er
     root_elem.max_leaf_error = max_leaf_error;
     int n_loop = 0;
     uint64_t n_registered = 0;
-    while (true){
+    while (n_loop < max_n_loops){
         ++n_loop;
         if (tim() - s > AUTO_BOOK_SAVE_TIME && *book_learning){
             book.save_egbk3(book_file, book_bak);

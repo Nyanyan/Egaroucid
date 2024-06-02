@@ -658,7 +658,7 @@ public:
                         }
                     }
                 }
-                book_learn_future = std::async(std::launch::async, book_deviate, root_board, getData().menu_elements.level, depth, error_per_move, error_sum, error_leaf, &history_elem.board, &history_elem.player, getData().settings.book_file, getData().settings.book_file + ".bak", &book_learning);
+                book_learn_future = std::async(std::launch::async, book_deviate, root_board, getData().menu_elements.level, depth, error_per_move, error_sum, error_leaf, BOOK_DEVIATE_MAX_N_LOOPS_INF, &history_elem.board, &history_elem.player, getData().settings.book_file, getData().settings.book_file + ".bak", &book_learning);
             }
             back_button.draw();
             if (back_button.clicked() || KeyEscape.pressed()){
@@ -1102,7 +1102,8 @@ class Deviate_book_transcript : public App::Scene {
 private:
     Button single_back_button;
     Button back_button;
-    Button import_button;
+    Button start_button;
+    Button start_with_max_n_loops_button;
     bool done;
     bool failed;
     Board board;
@@ -1123,12 +1124,15 @@ private:
     int error_per_move;
     int error_sum;
     int error_leaf;
+    int max_n_loops;
+    int max_n_loops_used;
 
 public:
     Deviate_book_transcript(const InitData& init) : IScene{ init } {
         single_back_button.init(BACK_BUTTON_SX, BACK_BUTTON_SY, BACK_BUTTON_WIDTH, BACK_BUTTON_HEIGHT, BACK_BUTTON_RADIUS, language.get("common", "back"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
-        back_button.init(GO_BACK_BUTTON_BACK_SX, GO_BACK_BUTTON_SY, GO_BACK_BUTTON_WIDTH, GO_BACK_BUTTON_HEIGHT, GO_BACK_BUTTON_RADIUS, language.get("common", "back"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
-        import_button.init(GO_BACK_BUTTON_GO_SX, GO_BACK_BUTTON_SY, GO_BACK_BUTTON_WIDTH, GO_BACK_BUTTON_HEIGHT, GO_BACK_BUTTON_RADIUS, language.get("book", "start"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
+        back_button.init(BUTTON3_1_SX, BUTTON3_SY, BUTTON3_WIDTH, BUTTON3_HEIGHT, BUTTON3_RADIUS, language.get("common", "back"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
+        start_button.init(BUTTON3_2_SX, BUTTON3_SY, BUTTON3_WIDTH, BUTTON3_HEIGHT, BUTTON3_RADIUS, language.get("book", "start"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
+        start_with_max_n_loops_button.init(BUTTON3_3_SX, BUTTON3_SY, BUTTON3_WIDTH, BUTTON3_HEIGHT, BUTTON3_RADIUS, language.get("book", "start_with_max_n_loops"), 15, getData().fonts.font, getData().colors.white, getData().colors.black);
         done = false;
         failed = false;
 
@@ -1151,6 +1155,7 @@ public:
         error_leaf = getData().menu_elements.book_learn_error_leaf;
         if (!getData().menu_elements.use_book_learn_error_leaf)
             error_leaf = BOOK_ERROR_INF;
+        max_n_loops = 15;
     }
 
     void update() override {
@@ -1165,22 +1170,45 @@ public:
             getData().fonts.font(language.get("book", "book_deviate_with_transcript")).draw(25, Arg::topCenter(X_CENTER, sy), getData().colors.white);
             sy += 45;
             text_area.active = true;
-            SimpleGUI::TextArea(text_area, Vec2{X_CENTER - 350, sy}, SizeF{700, 300}, TEXTBOX_MAX_CHARS);
-            sy += 305;
+            SimpleGUI::TextArea(text_area, Vec2{X_CENTER - 350, sy}, SizeF{700, 270}, TEXTBOX_MAX_CHARS);
+            sy += 280;
+            Rect bar_rect{X_CENTER - 220, sy, 440, 20};
+            bar_rect.draw(Palette::Lightskyblue);
+            if (bar_rect.leftPressed()){
+                int min_error = INF;
+                int cursor_x = Cursor::Pos().x;
+                for (int i = 1; i <= 30; ++i) {
+                    int x = round((double)X_CENTER - 200.0 + 400.0 * (double)(i - 1) / 30.0);
+                    if (abs(cursor_x - x) < min_error) {
+                        min_error = abs(cursor_x - x);
+                        max_n_loops = i;
+                    }
+                }
+            }
+            Circle bar_circle{X_CENTER - 200 + 400 * (max_n_loops - 1) / 30.0, sy + 10, 12};
+            getData().fonts.font(language.get("book", "max_n_loops") + U" " + Format(max_n_loops)).draw(15, Arg::rightCenter(X_CENTER - 230, sy + 10), getData().colors.white);
+            bar_circle.draw(bar_circle_color);
+            sy += 25;
             getData().fonts.font(language.get("book", "input_transcripts_with_line_breaks")).draw(13, Arg::topCenter(X_CENTER, sy), getData().colors.white);
             getData().fonts.font(Format(text_area.text.size()) + U"/" + Format(TEXTBOX_MAX_CHARS) + U" " + language.get("common", "characters")).draw(13, Arg::topRight(X_CENTER + 350, sy), getData().colors.white);
             sy += 20;
             getData().fonts.font(language.get("in_out", "you_can_paste_with_ctrl_v")).draw(13, Arg::topCenter(X_CENTER, sy), getData().colors.white);
             back_button.draw();
-            import_button.draw();
+            start_button.draw();
+            start_with_max_n_loops_button.draw();
             if (back_button.clicked() || KeyEscape.pressed()) {
                 changeScene(U"Main_scene", SCENE_FADE_TIME);
             }
-            if (import_button.clicked()) {
+            if ((start_button.clicked() || start_with_max_n_loops_button.clicked()) && text_area.text.size()) {
+                if (start_button.clicked()){
+                    max_n_loops_used = BOOK_DEVIATE_MAX_N_LOOPS_INF;
+                } else{
+                    max_n_loops_used = max_n_loops;
+                }
                 failed = import_transcript_processing();
                 if (!failed){
                     board_idx = 0;
-                    book_learn_future = std::async(std::launch::async, book_deviate, board_list[board_idx], getData().menu_elements.level, depth, error_per_move, error_sum, error_leaf, &history_elem.board, &history_elem.player, getData().settings.book_file, getData().settings.book_file + ".bak", &book_learning);
+                    book_learn_future = std::async(std::launch::async, book_deviate, board_list[board_idx], getData().menu_elements.level, depth, error_per_move, error_sum, error_leaf, max_n_loops_used, &history_elem.board, &history_elem.player, getData().settings.book_file, getData().settings.book_file + ".bak", &book_learning);
                     book_learning = true;
                 }
                 done = true;
@@ -1260,7 +1288,7 @@ public:
                     ++board_idx;
                     global_searching = true;
                     if (board_idx < (int)board_list.size() && !stop_button_pressed){ // next board
-                        book_learn_future = std::async(std::launch::async, book_deviate, board_list[board_idx], getData().menu_elements.level, depth, error_per_move, error_sum, error_leaf, &history_elem.board, &history_elem.player, getData().settings.book_file, getData().settings.book_file + ".bak", &book_learning);
+                        book_learn_future = std::async(std::launch::async, book_deviate, board_list[board_idx], getData().menu_elements.level, depth, error_per_move, error_sum, error_leaf, max_n_loops_used, &history_elem.board, &history_elem.player, getData().settings.book_file, getData().settings.book_file + ".bak", &book_learning);
                         book_learning = true;
                         learning_done = false;
                     } else{ // all boards done
