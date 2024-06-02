@@ -915,7 +915,9 @@ bookにはリーフという概念があり、「これはbookに登録されて
 <div class="centering_box">
     <img class="pic2" src="img/book_deviate_with_transcript.png">
     <img class="pic2" src="img/book_deviate_with_transcript_error.png">
+    <img class="pic2" src="img/book_deviate_with_transcript_training.png">
 </div>
+
 
 ### Book操作 > Book修正
 
