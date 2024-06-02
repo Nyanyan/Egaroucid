@@ -1187,22 +1187,25 @@ public:
             }
         }
         else if (failed){ // error in transcript list
-            const int icon_width = SCENE_ICON_WIDTH;
-            getData().resources.icon.scaled((double)icon_width / getData().resources.icon.width()).draw(X_CENTER - icon_width / 2, 20);
-            getData().resources.logo.scaled((double)icon_width / getData().resources.logo.width()).draw(X_CENTER - icon_width / 2, 20 + icon_width);
-            int sy = 20 + icon_width + 50;
+            int sy = 20;
+            getData().fonts.font(language.get("book", "book_deviate_with_transcript")).draw(25, Arg::topCenter(X_CENTER, sy), getData().colors.white);
+            sy += 45;
             getData().fonts.font(language.get("book", "transcript_error")).draw(25, Arg::topCenter(X_CENTER, sy), getData().colors.white);
+            sy += 45;
             String error_lines_str = U"Line: ";
-            for (int i = 0; i < std::min(150, (int)error_lines.size()); ++i){
+            for (int i = 0; i < std::min(250, (int)error_lines.size()); ++i){
                 error_lines_str += Format(error_lines[i]);
                 if (i != (int)error_lines.size() - 1){
                     error_lines_str += U", ";
                 }
-                if ((i + 1) % 15 == 0){
+                if ((i + 1) % 20 == 0){
                     error_lines_str += U"\n";
                 }
             }
-            getData().fonts.font(error_lines_str).draw(17, Arg::topCenter(X_CENTER, sy + 30), getData().colors.white);
+            if (error_lines.size() > 250){
+                error_lines_str += U"...";
+            }
+            getData().fonts.font(error_lines_str).draw(15, Arg::topCenter(X_CENTER, sy), getData().colors.white);
             single_back_button.draw();
             if (single_back_button.clicked() || KeyEscape.pressed()) {
                 error_lines.clear();
