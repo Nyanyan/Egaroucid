@@ -6,7 +6,8 @@
         "empty": "空",
         "back": "返回",
         "level": "级别",
-        "othello_ai": "电脑AI"
+        "othello_ai": "电脑AI",
+        "characters": "个字符"
     },
     "loading": {
         "loading": "加载中...",

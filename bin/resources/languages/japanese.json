@@ -6,7 +6,8 @@
         "empty": "空",
         "back": "戻る",
         "level": "レベル",
-        "othello_ai": "オセロAI"
+        "othello_ai": "オセロAI",
+        "characters": "文字"
     },
     "loading": {
         "loading": "起動中...",

@@ -6,7 +6,8 @@
         "empty": "Empty",
         "back": "Back",
         "level": "Level",
-        "othello_ai": "Othello AI"
+        "othello_ai": "Othello AI",
+        "characters": "Characters"
     },
     "loading": {
         "loading": "Loading...",
