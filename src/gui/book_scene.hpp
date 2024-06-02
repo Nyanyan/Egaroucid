@@ -1122,15 +1122,16 @@ public:
         }
         Scene::SetBackground(getData().colors.green);
         if (!done){ // transcript
-            const int icon_width = SCENE_ICON_WIDTH;
-            getData().resources.icon.scaled((double)icon_width / getData().resources.icon.width()).draw(X_CENTER - icon_width / 2, 20);
-            getData().resources.logo.scaled((double)icon_width / getData().resources.logo.width()).draw(X_CENTER - icon_width / 2, 20 + icon_width);
-            int sy = 20 + icon_width + 50;
+            int sy = 20;
             getData().fonts.font(language.get("book", "book_deviate_with_transcript")).draw(25, Arg::topCenter(X_CENTER, sy), getData().colors.white);
+            sy += 45;
             text_area.active = true;
-            SimpleGUI::TextArea(text_area, Vec2{X_CENTER - 300, sy + 40}, SizeF{600, 130}, TEXTBOX_MAX_CHARS);
-            getData().fonts.font(language.get("book", "input_transcripts_with_line_breaks")).draw(13, Arg::topCenter(X_CENTER, sy + 175), getData().colors.white);
-            getData().fonts.font(language.get("in_out", "you_can_paste_with_ctrl_v")).draw(13, Arg::topCenter(X_CENTER, sy + 195), getData().colors.white);
+            SimpleGUI::TextArea(text_area, Vec2{X_CENTER - 350, sy}, SizeF{700, 300}, TEXTBOX_MAX_CHARS);
+            sy += 305;
+            getData().fonts.font(language.get("book", "input_transcripts_with_line_breaks")).draw(13, Arg::topCenter(X_CENTER, sy), getData().colors.white);
+            
+            sy += 20;
+            getData().fonts.font(language.get("in_out", "you_can_paste_with_ctrl_v")).draw(13, Arg::topCenter(X_CENTER, sy), getData().colors.white);
             back_button.draw();
             import_button.draw();
             if (back_button.clicked() || KeyEscape.pressed()) {
