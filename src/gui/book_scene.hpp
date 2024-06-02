@@ -1196,7 +1196,14 @@ public:
             if (book_learning) { // learning
                 getData().fonts.font(language.get("book", "learning")).draw(20, 480, 230, getData().colors.white);
                 getData().fonts.font(U"Line: " + Format(board_idx + 1)).draw(15, 480, 340, getData().colors.white);
-                getData().fonts.font(Unicode::Widen(transcript_list[board_idx])).draw(15, 480, 360, getData().colors.white);
+                std::string transcript_str = transcript_list[board_idx];
+                if (transcript_str.size() > 34){
+                    if (transcript_str.size() > 34 * 2){
+                        transcript_str = transcript_str.substr(0, 34 * 2 - 2) + "...";
+                    }
+                    transcript_str = transcript_str.substr(0, 34) + "\n" + transcript_str.substr(34, transcript_str.size() - 34);
+                }
+                getData().fonts.font(Unicode::Widen(transcript_str)).draw(15, 480, 360, getData().colors.white);
                 stop_button.draw();
                 if (stop_button.clicked()) {
                     global_searching = false;
