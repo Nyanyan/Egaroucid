@@ -1235,7 +1235,7 @@ public:
             }
             getData().fonts.font(error_lines_str).draw(15, Arg::topCenter(X_CENTER, sy), getData().colors.white);
             single_back_button.draw();
-            if (single_back_button.clicked() || KeyEscape.pressed()) {
+            if (single_back_button.clicked()) {
                 error_lines.clear();
                 board_list.clear();
                 done = false;
