@@ -620,6 +620,44 @@ public:
             if (start_button.clicked()){
                 before_start = false;
                 book_learning = true;
+                int fork_n_discs = -1;
+                if (getData().graph_resources.branch == 1){
+                    fork_n_discs = getData().graph_resources.nodes[1][0].board.n_discs();
+                }
+                int registered_value = 0; // from black
+                for (History_elem history_elem: getData().graph_resources.nodes[0]){
+                    if (history_elem.board.n_discs() == fork_n_discs){
+                        break;
+                    }
+                    if (book.contain(&history_elem.board)){
+                        registered_value = book.get(history_elem.board).value;
+                        if (history_elem.player == WHITE){
+                            registered_value *= -1;
+                        }
+                    } else{
+                        if (history_elem.player == BLACK){
+                            book.change(&history_elem.board, registered_value, getData().menu_elements.level);
+                        } else if (history_elem.player == WHITE){
+                            book.change(&history_elem.board, -registered_value, getData().menu_elements.level);
+                        }
+                    }
+                }
+                if (getData().graph_resources.branch == 1){
+                    for (History_elem history_elem: getData().graph_resources.nodes[1]){
+                        if (book.contain(&history_elem.board)){
+                            registered_value = book.get(history_elem.board).value;
+                            if (history_elem.player == WHITE){
+                                registered_value *= -1;
+                            }
+                        } else{
+                            if (history_elem.player == BLACK){
+                                book.change(&history_elem.board, registered_value, getData().menu_elements.level);
+                            } else if (history_elem.player == WHITE){
+                                book.change(&history_elem.board, -registered_value, getData().menu_elements.level);
+                            }
+                        }
+                    }
+                }
                 book_learn_future = std::async(std::launch::async, book_deviate, root_board, getData().menu_elements.level, depth, error_per_move, error_sum, error_leaf, &history_elem.board, &history_elem.player, getData().settings.book_file, getData().settings.book_file + ".bak", &book_learning);
             }
             back_button.draw();
