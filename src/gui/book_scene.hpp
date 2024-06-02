@@ -1303,7 +1303,7 @@ public:
             getData().fonts.font(language.get("book", "error_leaf") + U": " + error_leaf_str).draw(15, 480, 320, getData().colors.white);
             if (book_learning) { // learning
                 getData().fonts.font(language.get("book", "learning")).draw(20, 480, 230, getData().colors.white);
-                getData().fonts.font(U"Line: " + Format(board_idx + 1)).draw(15, 480, 340, getData().colors.white);
+                getData().fonts.font(U"Line: " + Format(board_idx + 1) + U"/" + Format(board_list.size())).draw(15, 480, 340, getData().colors.white);
                 std::string transcript_str = transcript_list[board_idx];
                 if (transcript_str.size() > 34){
                     if (transcript_str.size() > 34 * 2){
