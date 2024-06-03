@@ -1052,6 +1052,7 @@ private:
             }
             int n_disc_hint = std::min((int)hint_infos.size(), getData().menu_elements.n_disc_hint);
             for (int i = 0; i < n_disc_hint; ++i) {
+                //std::cerr << idx_to_coord(hint_infos[i].cell) << " " << hint_infos[i].value << std::endl;
                 int sx = BOARD_SX + (hint_infos[i].cell % HW) * BOARD_CELL_SIZE;
                 int sy = BOARD_SY + (hint_infos[i].cell / HW) * BOARD_CELL_SIZE;
                 Color color = getData().colors.white;
@@ -1375,7 +1376,7 @@ private:
                 if (book.contain(board)){
                     ai_status.hint_types[cell] = HINT_TYPE_BOOK;
                     Book_elem book_elem = book.get(board);
-                    ai_status.hint_values[cell] = -book_elem.value;
+                    ai_status.hint_values[cell] = -book_elem.value + 0.49; // priority to book
                     uint32_t n_lines = book_elem.n_lines;
                     String n_lines_str = Format(n_lines);
                     if (n_lines >= 1000000000){

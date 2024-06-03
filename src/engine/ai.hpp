@@ -448,7 +448,7 @@ void ai_hint(Board board, int level, bool use_book, int book_acc_level, bool use
     if (use_book){
         std::vector<Book_value> links = book.get_all_moves_with_value(&board);
         for (Book_value &link: links){
-            values[link.policy] = link.value + 0.99; // for priority of book
+            values[link.policy] = link.value;
             hint_types[link.policy] = HINT_TYPE_BOOK;
             legal ^= 1ULL << link.policy;
             --n_display;
