@@ -491,6 +491,7 @@ inline void book_deviate(Board root_board, int level, int book_depth, int max_er
         if (book_elem.value == SCORE_UNDEFINED){
             std::cerr << "board not registered, searching..." << std::endl;
             book_elem.value = ai(root_board, level, true, 0, true, false).value;
+            book.change(&root_board, book_elem.value, level);
         }
         bool book_recalculating = true;
         book_recalculate_leaf(root_board, std::min(20 + (level & 1), std::max(1, level - 2)), std::max(1, book_depth - 1), max_error_per_move, max_error_sum, board_copy, player, &book_recalculating, true, all_strt);
