@@ -629,6 +629,9 @@ public:
                     if (history_elem.board.n_discs() == fork_n_discs){
                         break;
                     }
+                    if (history_elem.board.n_discs() >= root_board.n_discs()){
+                        break;
+                    }
                     if (book.contain(&history_elem.board)){
                         registered_value = book.get(history_elem.board).value;
                         if (history_elem.player == WHITE){
@@ -644,6 +647,9 @@ public:
                 }
                 if (getData().graph_resources.branch == 1){
                     for (History_elem history_elem: getData().graph_resources.nodes[1]){
+                        if (history_elem.board.n_discs() >= root_board.n_discs()){
+                            break;
+                        }
                         if (book.contain(&history_elem.board)){
                             registered_value = book.get(history_elem.board).value;
                             if (history_elem.player == WHITE){
@@ -1420,6 +1426,9 @@ private:
             }
             if (!error_found_line){
                 for (std::pair<Board, int> board_to_be_registered: boards_to_be_registered){
+                    if (board_to_be_registered.first.n_discs() >= board.n_discs()){
+                        break;
+                    }
                     book.change(&board_to_be_registered.first, board_to_be_registered.second, getData().menu_elements.level);
                 }
                 board_list.emplace_back(board);
