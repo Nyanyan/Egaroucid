@@ -218,12 +218,13 @@ Egaroucid for Consoleはいくつかの外部ファイルを必要とします�
                     <li>hash27.eghs</li>
                 </ul>
             </li>
-            <li>book.egbk (bookファイル)</li>
-            <li>eval.egev (評価ファイル)</li>
+            <li>book.egbk3 (bookファイル)</li>
+            <li>eval.egev2 (評価ファイル)</li>
             <li>eval_move_ordering_end.egev (終盤探索向け評価ファイル)</li>
         </ul>
     </li>
 </ul>
+
 
 
 

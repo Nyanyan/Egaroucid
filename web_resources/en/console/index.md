@@ -234,12 +234,13 @@ Egaroucid for Console uses some external files. If you've got a trouble, please 
                     <li>hash27.eghs</li>
                 </ul>
             </li>
-            <li>book.egbk (book file)</li>
-            <li>eval.egev (evaluation file)</li>
+            <li>book.egbk3 (book file)</li>
+            <li>eval.egev2 (evaluation file)</li>
             <li>eval_move_ordering_end.egev (evaluation file for endgame)</li>
         </ul>
     </li>
 </ul>
+
 
 
 
