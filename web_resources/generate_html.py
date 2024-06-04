@@ -118,7 +118,7 @@ console_release_table_arr = {
     <td>x64 (標準)</td>
     <td>AVX-512</td>
     <td>DATE</td>
-    <td>[Egaroucid for Console VERSION_DOT Windows x64 SIMD](https://github.com/Nyanyan/Egaroucid/releases/download/console_vVERSION_DOT/Egaroucid_for_Console_VERSION_UNDERBAR_Windows_x64_AVX512.zip)</td>
+    <td>[Egaroucid for Console VERSION_DOT Windows x64 AVX512](https://github.com/Nyanyan/Egaroucid/releases/download/console_vVERSION_DOT/Egaroucid_for_Console_VERSION_UNDERBAR_Windows_x64_AVX512.zip)</td>
 </tr>
 <tr>
     <td>Windows</td>
@@ -157,7 +157,7 @@ console_release_table_arr = {
     <td>x64 (Standard)</td>
     <td>AVX-512</td>
     <td>DATE</td>
-    <td>[Egaroucid for Console VERSION_DOT Windows x64 SIMD](https://github.com/Nyanyan/Egaroucid/releases/download/console_vVERSION_DOT/Egaroucid_for_Console_VERSION_UNDERBAR_Windows_x64_AVX512.zip)</td>
+    <td>[Egaroucid for Console VERSION_DOT Windows x64 AVX512](https://github.com/Nyanyan/Egaroucid/releases/download/console_vVERSION_DOT/Egaroucid_for_Console_VERSION_UNDERBAR_Windows_x64_AVX512.zip)</td>
 </tr>
 <tr>
     <td>Windows</td>
