@@ -8,42 +8,13 @@
 
 Egaroucidはx64のCPU(Intel製かAMD製)に対応しています。ARMのCPUを使っている場合は動きません。
 
-EgaroucidはSIMDバージョン(AVX2が必要)に最適化して作っていますが、こちらは概ね2013年以降のCPUでないと動作しません。その場合にはGenericバージョンを使用してください。
+EgaroucidはSIMDバージョン(AVX2が必要)に最適化して作っていますが、こちらは概ね2013年以降のCPUでないと動作しません。その場合にはGenericバージョンを使用してください。また、AVX-512に対応したCPU (Intel Core iシリーズの第7から11世代など) をお使いの場合はAVX512版の方が高速に動くかもしれません。
 
 以下から自分の環境に合ったものをダウンロードしてください。
 
 
 
-
-<div class="table_wrapper">
-<table>
-<tr>
-    <th>OS</th>
-    <th>CPU</th>
-    <th>追加要件</th>
-    <th>リリース日</th>
-    <th>インストール版</th>
-    <th>Zip版</th>
-</tr>
-<tr>
-    <td>Windows</td>
-    <td>x64</td>
-    <td>AVX2(標準)</td>
-    <td>2024/04/17</td>
-    <td>[Egaroucid 7.0.0 SIMD インストーラ](https://github.com/Nyanyan/Egaroucid/releases/download/v7.0.0/Egaroucid_7_0_0_SIMD_installer.exe)</td>
-    <td>[Egaroucid 7.0.0 SIMD Zip](https://github.com/Nyanyan/Egaroucid/releases/download/v7.0.0/Egaroucid_7_0_0_Windows_x64_SIMD_Portable.zip)</td>
-</tr>
-<tr>
-    <td>Windows</td>
-    <td>x64</td>
-    <td>-</td>
-    <td>2024/04/17</td>
-    <td>[Egaroucid 7.0.0 Generic インストーラ](https://github.com/Nyanyan/Egaroucid/releases/download/v7.0.0/Egaroucid_7_0_0_Generic_installer.exe)</td>
-    <td>[Egaroucid 7.0.0 Generic Zip](https://github.com/Nyanyan/Egaroucid/releases/download/v7.0.0/Egaroucid_7_0_0_Windows_x64_Generic_Portable.zip)</td>
-</tr>
-</table>
-</div>
-
+GUI_DOWNLOAD_TABLE_HERE
 
 
 

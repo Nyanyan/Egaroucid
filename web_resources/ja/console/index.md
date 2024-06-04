@@ -18,37 +18,7 @@ Egaroucidはx64のSIMDバージョン(AVX2を使用)に最適化して作って�
 
 
 
-<div class="table_wrapper"><table>
-    <tr>
-        <th>OS</th>
-        <th>CPU</th>
-        <th>追加要件</th>
-        <th>リリース日</th>
-        <th>ダウンロード</th>
-    </tr>
-    <tr>
-        <td>Windows</td>
-        <td>x64 (標準)</td>
-        <td>AVX2 (標準)</td>
-        <td>2024/04/17</td>
-        <td>[Egaroucid for Console 7.0.0 Windows x64 SIMD](https://github.com/Nyanyan/Egaroucid/releases/download/console_v7.0.0/Egaroucid_for_Console_7_0_0_Windows_x64_SIMD.zip)</td>
-    </tr>
-    <tr>
-        <td>Windows</td>
-        <td>x64 (標準)</td>
-        <td>-</td>
-        <td>2024/04/17</td>
-        <td>[Egaroucid for Console 7.0.0 Windows x64 Generic](https://github.com/Nyanyan/Egaroucid/releases/download/console_v7.0.0/Egaroucid_for_Console_7_0_0_Windows_x64_Generic.zip)</td>
-    </tr>
-    <tr>
-        <td>Windows</td>
-        <td>x86</td>
-        <td>-</td>
-        <td>2024/04/17</td>
-        <td>[Egaroucid for Console 7.0.0 Windows x86 Generic](https://github.com/Nyanyan/Egaroucid/releases/download/console_v7.0.0/Egaroucid_for_Console_7_0_0_Windows_x86_Generic.zip)</td>
-    </tr>
-    </table></div>
-
+CONSOLE_DOWNLOAD_TABLE_HERE
 
 
 
@@ -63,16 +33,11 @@ cmakeでビルドするか、直接g++を使ってビルドすることができ
 
 下記リンクからコードをダウンロードし、任意の場所に解凍してください。
 
-<div class="table_wrapper"><table>
-    <tr>
-        <th>リリース日</th>
-        <th>ダウンロード</th>
-    </tr>
-    <tr>
-        <td>2024/04/17</td>
-        <td>[Egaroucid for Console 7.0.0 ソースコード](https://github.com/Nyanyan/Egaroucid/archive/refs/tags/console_v7.0.0.zip)</td>
-    </tr>
-    </table></div>
+
+
+CONSOLE_SOURCE_TABLE_HERE
+
+
 
 ### cmakeでビルド
 
@@ -113,7 +78,12 @@ cmakeでビルドするか、直接g++を使ってビルドすることができ
         <td>32bit環境で動かす場合</td>
         <td>-DHAS_32_BIT_OS=ON</td>
     </tr>
+    <tr>
+        <td>AVX-512が使えるCPUの場合</td>
+        <td>-DHAS_AVX512=ON</td>
+    </tr>
     </table></div>
+
 
 
 
@@ -181,7 +151,12 @@ cmakeでビルドするか、直接g++を使ってビルドすることができ
         <td>32bit環境で動かす場合</td>
         <td>-DHAS_32_BIT_OS</td>
     </tr>
+    <tr>
+        <td>AVX-512が使えるCPUの場合</td>
+        <td>-DHAS_AVX512</td>
+    </tr>
     </table></div>
+
 
 
 
