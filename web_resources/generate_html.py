@@ -19,193 +19,6 @@ GUI_RELEASE_IDENTIFIER = 'GUI_DOWNLOAD_TABLE_HERE'
 CONSOLE_RELEASE_IDENTIFIER = 'CONSOLE_DOWNLOAD_TABLE_HERE'
 CONSOLE_SOURCE_RELEASE_IDENTIFIER = 'CONSOLE_SOURCE_TABLE_HERE'
 
-gui_release_table_arr = {
-'ja': '''
-<div class="table_wrapper"><table>
-<tr>
-    <th>OS</th>
-    <th>CPU</th>
-    <th>追加要件</th>
-    <th>リリース日</th>
-    <th>インストール版</th>
-    <th>Zip版</th>
-</tr>
-<tr>
-    <td>Windows</td>
-    <td>x64</td>
-    <td>AVX2(標準)</td>
-    <td>DATE</td>
-    <td>[Egaroucid VERSION_DOT SIMD インストーラ](https://github.com/Nyanyan/Egaroucid/releases/download/vVERSION_DOT/Egaroucid_VERSION_UNDERBAR_SIMD_installer.exe)</td>
-    <td>[Egaroucid VERSION_DOT SIMD Zip](https://github.com/Nyanyan/Egaroucid/releases/download/vVERSION_DOT/Egaroucid_VERSION_UNDERBAR_Windows_x64_SIMD_Portable.zip)</td>
-</tr>
-<tr>
-    <td>Windows</td>
-    <td>x64</td>
-    <td>AVX-512</td>
-    <td>DATE</td>
-    <td>[Egaroucid VERSION_DOT AVX512 インストーラ](https://github.com/Nyanyan/Egaroucid/releases/download/vVERSION_DOT/Egaroucid_VERSION_UNDERBAR_AVX512_installer.exe)</td>
-    <td>[Egaroucid VERSION_DOT AVX512 Zip](https://github.com/Nyanyan/Egaroucid/releases/download/vVERSION_DOT/Egaroucid_VERSION_UNDERBAR_Windows_x64_AVX512_Portable.zip)</td>
-</tr>
-<tr>
-    <td>Windows</td>
-    <td>x64</td>
-    <td>-</td>
-    <td>DATE</td>
-    <td>[Egaroucid VERSION_DOT Generic インストーラ](https://github.com/Nyanyan/Egaroucid/releases/download/vVERSION_DOT/Egaroucid_VERSION_UNDERBAR_Generic_installer.exe)</td>
-    <td>[Egaroucid VERSION_DOT Generic Zip](https://github.com/Nyanyan/Egaroucid/releases/download/vVERSION_DOT/Egaroucid_VERSION_UNDERBAR_Windows_x64_Generic_Portable.zip)</td>
-</tr>
-</table></div>
-''',
-'en': '''
-<div class="table_wrapper"><table>
-<tr>
-    <th>OS</th>
-    <th>CPU</th>
-    <th>Requirements</th>
-    <th>Date</th>
-    <th>Installer</th>
-    <th>Zip</th>
-</tr>
-<tr>
-    <td>Windows</td>
-    <td>x64</td>
-    <td>AVX2 (Standard)</td>
-    <td>DATE</td>
-    <td>[Egaroucid VERSION_DOT SIMD Installer](https://github.com/Nyanyan/Egaroucid/releases/download/vVERSION_DOT/Egaroucid_VERSION_UNDERBAR_SIMD_installer.exe)</td>
-    <td>[Egaroucid VERSION_DOT SIMD Zip](https://github.com/Nyanyan/Egaroucid/releases/download/vVERSION_DOT/Egaroucid_VERSION_UNDERBAR_Windows_x64_SIMD_Portable.zip)</td>
-</tr>
-<tr>
-    <td>Windows</td>
-    <td>x64</td>
-    <td>AVX-512</td>
-    <td>DATE</td>
-    <td>[Egaroucid VERSION_DOT AVX512 Installer](https://github.com/Nyanyan/Egaroucid/releases/download/vVERSION_DOT/Egaroucid_VERSION_UNDERBAR_AVX512_installer.exe)</td>
-    <td>[Egaroucid VERSION_DOT AVX512 Zip](https://github.com/Nyanyan/Egaroucid/releases/download/vVERSION_DOT/Egaroucid_VERSION_UNDERBAR_Windows_x64_AVX512_Portable.zip)</td>
-</tr>
-<tr>
-    <td>Windows</td>
-    <td>x64</td>
-    <td>-</td>
-    <td>DATE</td>
-    <td>[Egaroucid VERSION_DOT Generic Installer](https://github.com/Nyanyan/Egaroucid/releases/download/vVERSION_DOT/Egaroucid_VERSION_UNDERBAR_Generic_installer.exe)</td>
-    <td>[Egaroucid VERSION_DOT Generic Zip](https://github.com/Nyanyan/Egaroucid/releases/download/vVERSION_DOT/Egaroucid_VERSION_UNDERBAR_Windows_x64_Generic_Portable.zip)</td>
-</tr>
-</table></div>
-'''
-}
-
-
-
-console_release_table_arr = {
-'ja': '''
-<div class="table_wrapper"><table>
-<tr>
-    <th>OS</th>
-    <th>CPU</th>
-    <th>追加要件</th>
-    <th>リリース日</th>
-    <th>ダウンロード</th>
-</tr>
-<tr>
-    <td>Windows</td>
-    <td>x64 (標準)</td>
-    <td>AVX2 (標準)</td>
-    <td>DATE</td>
-    <td>[Egaroucid for Console VERSION_DOT Windows x64 SIMD](https://github.com/Nyanyan/Egaroucid/releases/download/console_vVERSION_DOT/Egaroucid_for_Console_VERSION_UNDERBAR_Windows_x64_SIMD.zip)</td>
-</tr>
-<tr>
-    <td>Windows</td>
-    <td>x64 (標準)</td>
-    <td>AVX-512</td>
-    <td>DATE</td>
-    <td>[Egaroucid for Console VERSION_DOT Windows x64 AVX512](https://github.com/Nyanyan/Egaroucid/releases/download/console_vVERSION_DOT/Egaroucid_for_Console_VERSION_UNDERBAR_Windows_x64_AVX512.zip)</td>
-</tr>
-<tr>
-    <td>Windows</td>
-    <td>x64 (標準)</td>
-    <td>-</td>
-    <td>DATE</td>
-    <td>[Egaroucid for Console VERSION_DOT Windows x64 Generic](https://github.com/Nyanyan/Egaroucid/releases/download/console_vVERSION_DOT/Egaroucid_for_Console_VERSION_UNDERBAR_Windows_x64_Generic.zip)</td>
-</tr>
-<tr>
-    <td>Windows</td>
-    <td>x86</td>
-    <td>-</td>
-    <td>DATE</td>
-    <td>[Egaroucid for Console VERSION_DOT Windows x86 Generic](https://github.com/Nyanyan/Egaroucid/releases/download/console_vVERSION_DOT/Egaroucid_for_Console_VERSION_UNDERBAR_Windows_x86_Generic.zip)</td>
-</tr>
-</table></div>
-''',
-'en': '''
-<div class="table_wrapper"><table>
-<tr>
-    <th>OS</th>
-    <th>CPU</th>
-    <th>Requirements</th>
-    <th>Date</th>
-    <th>Download</th>
-</tr>
-<tr>
-    <td>Windows</td>
-    <td>x64 (Standard)</td>
-    <td>AVX2 (Standard)</td>
-    <td>DATE</td>
-    <td>[Egaroucid for Console VERSION_DOT Windows x64 SIMD](https://github.com/Nyanyan/Egaroucid/releases/download/console_vVERSION_DOT/Egaroucid_for_Console_VERSION_UNDERBAR_Windows_x64_SIMD.zip)</td>
-</tr>
-<tr>
-    <td>Windows</td>
-    <td>x64 (Standard)</td>
-    <td>AVX-512</td>
-    <td>DATE</td>
-    <td>[Egaroucid for Console VERSION_DOT Windows x64 AVX512](https://github.com/Nyanyan/Egaroucid/releases/download/console_vVERSION_DOT/Egaroucid_for_Console_VERSION_UNDERBAR_Windows_x64_AVX512.zip)</td>
-</tr>
-<tr>
-    <td>Windows</td>
-    <td>x64 (Standard)</td>
-    <td>-</td>
-    <td>DATE</td>
-    <td>[Egaroucid for Console VERSION_DOT Windows x64 Generic](https://github.com/Nyanyan/Egaroucid/releases/download/console_vVERSION_DOT/Egaroucid_for_Console_VERSION_UNDERBAR_Windows_x64_Generic.zip)</td>
-</tr>
-<tr>
-    <td>Windows</td>
-    <td>x86</td>
-    <td>-</td>
-    <td>DATE</td>
-    <td>[Egaroucid for Console VERSION_DOT Windows x86 Generic](https://github.com/Nyanyan/Egaroucid/releases/download/console_vVERSION_DOT/Egaroucid_for_Console_VERSION_UNDERBAR_Windows_x86_Generic.zip)</td>
-</tr>
-</table></div>
-'''
-}
-
-console_source_table_arr = {
-'ja': '''
-<div class="table_wrapper"><table>
-<tr>
-    <th>リリース日</th>
-    <th>ダウンロード</th>
-</tr>
-<tr>
-    <td>DATE</td>
-    <td>[Egaroucid for Console VERSION_DOT ソースコード](https://github.com/Nyanyan/Egaroucid/archive/refs/tags/console_vVERSION_DOT.zip)</td>
-</tr>
-</table></div>
-''',
-'en': '''
-<div class="table_wrapper"><table>
-<tr>
-    <th>Date</th>
-    <th>Download</th>
-</tr>
-<tr>
-    <td>DATE</td>
-    <td>[Egaroucid for Console VERSION_DOT source code](https://github.com/Nyanyan/Egaroucid/archive/refs/tags/console_vVERSION_DOT.zip)</td>
-</tr>
-</table></div>
-'''
-}
-
-
-
 
 MAX_IMG_SIZE = 400
 
@@ -274,6 +87,15 @@ with open(elements_dir + '/main_page_title.txt', 'r', encoding='utf-8') as f:
 
 with open(elements_dir + '/meta_description.txt', 'r', encoding='utf-8') as f:
     meta_description = f.readline()
+
+with open(elements_dir + '/release_gui.html', 'r', encoding='utf-8') as f:
+    release_gui_html = f.read().replace('DATE', GUI_DATE_STR).replace('VERSION_DOT', GUI_VERSION_DOT).replace('VERSION_UNDERBAR', GUI_VERSION_UNDERBAR)
+
+with open(elements_dir + '/release_console_zip.html', 'r', encoding='utf-8') as f:
+    release_console_zip_html = f.read().replace('DATE', CONSOLE_DATE_STR).replace('VERSION_DOT', CONSOLE_VERSION_DOT).replace('VERSION_UNDERBAR', CONSOLE_VERSION_UNDERBAR)
+
+with open(elements_dir + '/release_console_source.html', 'r', encoding='utf-8') as f:
+    release_console_source_html = f.read().replace('DATE', CONSOLE_DATE_STR).replace('VERSION_DOT', CONSOLE_VERSION_DOT).replace('VERSION_UNDERBAR', CONSOLE_VERSION_UNDERBAR)
 
 section_head1 = '<div>\n<h2>'
 section_head2 = '</h2>\n'
@@ -371,14 +193,11 @@ def create_html(dr):
             raw_html += judge_raw_html(html_elem)
         #download tables
         if GUI_RELEASE_IDENTIFIER in elem:
-            download_table = gui_release_table_arr[elements_dir].replace('DATE', GUI_DATE_STR).replace('VERSION_DOT', GUI_VERSION_DOT).replace('VERSION_UNDERBAR', GUI_VERSION_UNDERBAR)
-            elem = elem.replace(GUI_RELEASE_IDENTIFIER, download_table)
+            elem = elem.replace(GUI_RELEASE_IDENTIFIER, release_gui_html)
         if CONSOLE_RELEASE_IDENTIFIER in elem:
-            download_table = console_release_table_arr[elements_dir].replace('DATE', CONSOLE_DATE_STR).replace('VERSION_DOT', CONSOLE_VERSION_DOT).replace('VERSION_UNDERBAR', CONSOLE_VERSION_UNDERBAR)
-            elem = elem.replace(CONSOLE_RELEASE_IDENTIFIER, download_table)
+            elem = elem.replace(CONSOLE_RELEASE_IDENTIFIER, release_console_zip_html)
         if CONSOLE_SOURCE_RELEASE_IDENTIFIER in elem:
-            download_table = console_source_table_arr[elements_dir].replace('DATE', CONSOLE_DATE_STR).replace('VERSION_DOT', CONSOLE_VERSION_DOT).replace('VERSION_UNDERBAR', CONSOLE_VERSION_UNDERBAR)
-            elem = elem.replace(CONSOLE_SOURCE_RELEASE_IDENTIFIER, download_table)
+            elem = elem.replace(CONSOLE_SOURCE_RELEASE_IDENTIFIER, release_console_source_html)
         # section tags
         if elem[:2] == '# ':
             elem = '<h1>' + elem[2:] + '</h1>'
