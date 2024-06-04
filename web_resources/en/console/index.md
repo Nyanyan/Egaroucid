@@ -78,8 +78,11 @@ You can add additional options in <code>[options]</code>. Available options are:
         <td>Use 32-bit environment</td>
         <td>-DHAS_32_BIT_OS=ON</td>
     </tr>
+    <tr>
+        <td>Use CPUs with AVX-512</td>
+        <td>-DHAS_AVX512=ON</td>
+    </tr>
     </table></div>
-
 
 
 
@@ -131,6 +134,8 @@ Then compile it with <code>g++</code> command. You can change the output name.
 
 You can add additional options in <code>[options]</code>. Available options are:
 
+
+
 <div class="table_wrapper"><table>
     <tr>
         <th>You want to</th>
@@ -148,8 +153,11 @@ You can add additional options in <code>[options]</code>. Available options are:
         <td>Use 32-bit environment</td>
         <td>-DHAS_32_BIT_OS</td>
     </tr>
+    <tr>
+        <td>Use CPUs with AVX-512</td>
+        <td>-DHAS_AVX512</td>
+    </tr>
     </table></div>
-
 
 
 
