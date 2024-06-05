@@ -325,17 +325,21 @@ private:
         std::cerr << "terminating calculation" << std::endl;
         global_searching = false;
         if (ai_status.ai_future.valid()) {
+            std::cerr << "terminating AI" << std::endl;
             ai_status.ai_future.get();
         }
         if (ai_status.hint_future.valid()) {
+            std::cerr << "terminating hint" << std::endl;
             ai_status.hint_future.get();
         }
         for (int i = 0; i < ANALYZE_SIZE; ++i) {
+            std::cerr << "terminating analyze AI" << std::endl;
             if (ai_status.analyze_future[i].valid()) {
                 ai_status.analyze_future[i].get();
             }
         }
         for (int i = 0; i < HW2; ++i) {
+            std::cerr << "terminating umigame value" << std::endl;
             if (umigame_status.umigame_future[i].valid()) {
                 umigame_status.umigame_future[i].get();
             }
