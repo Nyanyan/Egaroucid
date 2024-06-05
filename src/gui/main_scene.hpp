@@ -526,6 +526,7 @@ private:
                 need_start_game_button_calculation();
             }
             if (getData().menu_elements.save_this_branch || KeyL.down()) {
+                stop_calculating();
                 if (getData().graph_resources.branch == GRAPH_MODE_INSPECT) {
                     std::vector<History_elem> new_branch;
                     int fork_start_idx = getData().graph_resources.node_find(0, getData().graph_resources.nodes[1].front().board.n_discs());
@@ -556,6 +557,7 @@ private:
                         reset_hint();
                     }
                 }
+                resume_calculating();
                 need_start_game_button_calculation();
             }
             if (getData().menu_elements.generate_random_board || KeyR.down()){
@@ -811,15 +813,19 @@ private:
         }
 
         if (MouseX1.down() || KeyLeft.down() || KeyA.down() || (move_board_button_status.left_pushed != BUTTON_NOT_PUSHED && tim() - move_board_button_status.left_pushed >= BUTTON_LONG_PRESS_THRESHOLD)) {
+            stop_calculating();
             --getData().graph_resources.n_discs;
             getData().graph_resources.delta = -1;
+            resume_calculating();
             if (KeyLeft.down() || KeyA.down()) {
                 move_board_button_status.left_pushed = tim();
             }
         }
         else if (MouseX2.down() || KeyRight.down() || KeyD.down() || (move_board_button_status.right_pushed != BUTTON_NOT_PUSHED && tim() - move_board_button_status.right_pushed >= BUTTON_LONG_PRESS_THRESHOLD)) {
+            stop_calculating();
             ++getData().graph_resources.n_discs;
             getData().graph_resources.delta = 1;
+            resume_calculating();
             if (KeyRight.down() || KeyD.down()) {
                 move_board_button_status.right_pushed = tim();
             }
@@ -906,6 +912,7 @@ private:
                 int y = cell / HW;
                 Rect cell_rect(BOARD_SX + x * BOARD_CELL_SIZE, BOARD_SY + y * BOARD_CELL_SIZE, BOARD_CELL_SIZE, BOARD_CELL_SIZE);
                 if (cell_rect.leftClicked()) {
+                    stop_calculating();
                     if (getData().graph_resources.branch == GRAPH_MODE_NORMAL) {
                         int parent_idx = getData().graph_resources.node_find(GRAPH_MODE_NORMAL, getData().history_elem.board.n_discs());
                         if (parent_idx != -1) {
@@ -917,7 +924,6 @@ private:
                             }
                         }
                     }
-                    stop_calculating();
                     move_processing(cell);
                     resume_calculating();
                 }
