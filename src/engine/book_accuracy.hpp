@@ -97,38 +97,45 @@ class Book_accuracy{
                     endgame_depth = get_level_endsearch_depth(book_elem.leaf.level);
                 }
                 if (HW2 - (board.n_discs() + 1) <= complete_depth){
-                    identifier |= 1;
+                    identifier |= 1 << BOOK_ACCURACY_LEVEL_A;
                 } else if (HW2 - (board.n_discs() + 1) <= endgame_depth){
-                    identifier |= 1 << 2;
+                    identifier |= 1 << BOOK_ACCURACY_LEVEL_C;
                 }
             }
-            // identifier : FEDCBA
+            //    COMPLETE  ENDGAME MIDGAME
+            // A:        1        0       0
+            // B:        1        1       0
+            // C:        0        1       0
+            // D:        1        -       1
+            // E:        0        1       1
+            // F:        0        0       1
+            // identifier bit : FEDCBA
             // if A:      RES = A or B or D
             // else if B: RES = B or D
             // else if C: RES = C or D
             // else:      RES = best_level
             res = BOOK_ACCURACY_LEVEL_F;
             if (identifier & (1 << BOOK_ACCURACY_LEVEL_A)){ // A found
-                if ((identifier & ~((1 << BOOK_ACCURACY_LEVEL_B) - 1)) == 0) // B-F not found
+                if ((identifier & ~((1 << BOOK_ACCURACY_LEVEL_B) - 1)) == 0) // B-F not found -> RES = A
                     res = BOOK_ACCURACY_LEVEL_A;
-                else if ((identifier & ~((1 << BOOK_ACCURACY_LEVEL_D) - 1)) == 0) // D-F not found
+                else if ((identifier & ~((1 << BOOK_ACCURACY_LEVEL_D) - 1)) == 0) // D-F not found (and B or C found) -> RES = C
                     res = BOOK_ACCURACY_LEVEL_B;
-                else
+                else // B and C not found, D-F found -> RES = D
                     res = BOOK_ACCURACY_LEVEL_D;
-            } else if (identifier & (1 << BOOK_ACCURACY_LEVEL_B)){ // B found
-                if ((identifier & ~((1 << BOOK_ACCURACY_LEVEL_C) - 1)) == 0) // C-F not found
+            } else if (identifier & (1 << BOOK_ACCURACY_LEVEL_B)){ // B found (A not found)
+                if ((identifier & ~((1 << BOOK_ACCURACY_LEVEL_D) - 1)) == 0) // D-F not found -> RES = B
                     res = BOOK_ACCURACY_LEVEL_B;
-                else 
+                else // D-F found -> RES = D
                     res = BOOK_ACCURACY_LEVEL_D;
-            } else if (identifier & (1 << BOOK_ACCURACY_LEVEL_C)){ // C found
-                if ((identifier & ~((1 << BOOK_ACCURACY_LEVEL_D) - 1)) == 0) // D-F not found
+            } else if (identifier & (1 << BOOK_ACCURACY_LEVEL_C)){ // C found (A and B not found)
+                if ((identifier & ~((1 << BOOK_ACCURACY_LEVEL_D) - 1)) == 0) // D-F not found -> RES = C
                     res = BOOK_ACCURACY_LEVEL_C;
-                else 
+                else // D-F found -> RES = D
                     res = BOOK_ACCURACY_LEVEL_D;
-            } else{
-                int lsb = (identifier >> 3);
-                lsb = pop_count_uint(~lsb & (lsb - 1));
-                res = BOOK_ACCURACY_LEVEL_D + lsb; // best level
+            } else{ // D-F found (A-C not found)
+                int lsb = (identifier >> 3); // bit: FED
+                lsb = pop_count_uint(~lsb & (lsb - 1)); // least bit is D: 0 E: 1 F: 2
+                res = BOOK_ACCURACY_LEVEL_D + lsb; // best accuracy level
             }
             reg(board, res);
             return res;
