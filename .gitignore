@@ -21,7 +21,6 @@ bin/data
 bin/problem
 bin/versions
 bin/transcript
-bin/resources/book
 
 # img directory
 img/demo
@@ -32,3 +31,6 @@ src/ai.wasm
 
 # web_resources directory
 web_resources/generated
+
+# book generate
+book
