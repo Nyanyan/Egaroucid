@@ -1218,7 +1218,7 @@ private:
     void copy_transcript() {
         std::string transcript;
         int inspect_switch_n_discs = INF;
-        if (getData().graph_resources.branch == 1) {
+        if (getData().graph_resources.branch == GRAPH_MODE_INSPECT) {
             if (getData().graph_resources.nodes[GRAPH_MODE_INSPECT].size()) {
                 inspect_switch_n_discs = getData().graph_resources.nodes[GRAPH_MODE_INSPECT][0].board.n_discs();
             }
@@ -1314,7 +1314,8 @@ private:
             ((getData().history_elem.player == BLACK && getData().menu_elements.ai_put_black) ||
             (getData().history_elem.player == WHITE && getData().menu_elements.ai_put_white)) &&
             getData().history_elem.board.n_discs() == getData().graph_resources.nodes[getData().graph_resources.branch].back().board.n_discs() &&
-            !getData().history_elem.board.is_end();
+            !getData().history_elem.board.is_end() && 
+            getData().graph_resources.branch == GRAPH_MODE_NORMAL;
     }
 
     void calculate_umigame() {
