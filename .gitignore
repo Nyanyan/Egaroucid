@@ -21,6 +21,7 @@ bin/data
 bin/problem
 bin/versions
 bin/transcript
+bin/resources/book
 
 # img directory
 img/demo
