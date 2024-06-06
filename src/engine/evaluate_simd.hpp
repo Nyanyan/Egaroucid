@@ -16,6 +16,7 @@
 #else
     #include <x86intrin.h>
 #endif
+#include <cstring>
 #include "setting.hpp"
 #include "common.hpp"
 #include "board.hpp"

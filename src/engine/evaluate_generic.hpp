@@ -11,6 +11,7 @@
 #pragma once
 #include <iostream>
 #include <fstream>
+#include <cstring>
 #include "setting.hpp"
 #include "common.hpp"
 #include "board.hpp"
