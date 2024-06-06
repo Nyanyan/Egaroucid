@@ -1,0 +1,170 @@
+html, body {
+    font-family: "Arial", "メイリオ";
+    line-height: 1.7em;
+}
+
+table{
+    border-collapse:  collapse;
+    margin: auto;
+    border: 1px solid #ddd;
+    white-space: nowrap;
+}
+
+tr:nth-child(odd){
+    background-color:  #eee;
+}
+
+th{
+    padding: 5px 10px;
+    background-color:  #ddd;
+    text-align: left;
+}
+
+td{
+    padding: 5px 10px;
+}
+
+.table_wrapper{
+    overflow-x: scroll;
+}
+
+.pic{
+    display: block;
+    margin: auto;
+    width: 50vmin;
+    height: auto;
+}
+
+.pic2{
+    width: max(45%, min(90vw, 300px));
+    height: auto;
+}
+
+.pic3{
+    width: max(30%, min(90vw, 250px));
+    height: auto;
+}
+
+.box{
+    width: min(1000px, 95vw);
+    text-align: start;
+    margin: 0 auto;
+}
+
+h1{
+    text-align: center;
+    line-height: 1.3em;
+}
+
+h2{
+    text-align: center;
+    background-color:  #8dc5ac;
+    margin-top: 5%;
+    padding: 0.2em;
+    line-height: 1.3em;
+}
+
+h3{
+    text-align: center;
+    background-color:  #cbc5de;
+    padding: 0.1em;
+    line-height: 1.3em;
+}
+
+h4{
+    text-align: center;
+    line-height: 1.3em;
+}
+
+.h3_left{
+    font-size: larger;
+    font-weight: bold;
+    text-align: left;
+}
+
+.menu_bar{
+    width: 100%;
+    height: min(9vw, 60px);
+    background-color:  #2a7253;
+    display: flex;
+    align-items: center;
+}
+
+.menu_a{
+    text-decoration: none;
+    height: 100%;
+    color: white;
+    display: table-cell;
+    vertical-align: middle;
+}
+
+.menu_button{
+    width: min(20vw, 130px);
+    height: min(9vw, 60px);
+    background-color:  #2a7253;
+    display: inline-block; 
+    text-align: center;
+    display: table;
+    vertical-align: middle;
+    font-size: min(2.5vw, 12pt);
+    line-height: 1.0em;
+}
+
+.centering_box{
+    width: 100%;
+    text-align: center;
+}
+
+code {
+    display: inline-block;
+    padding: 0.1em 0.25em;
+    color: #444;
+    background-color: #e7edf3;
+    border-radius: 3px;
+    border: solid 1px #d6dde4;
+    font-family: Consolas, Menlo, Monaco, -apple-system, BlinkMacSystemFont, "Segoe UI", Meiryo, monospace;
+}
+
+.footer{
+    background-color:  #2a7253;
+    color: white;
+    text-align: right;
+    padding: 1%;
+}
+
+details {
+    border: 1px solid #aaa;
+    border-radius: 4px;
+    width: 100%;
+    padding: 0.2em;
+    display: inline-block;
+    vertical-align: middle;
+    text-align: center;
+}
+
+summary {
+    font-weight: bold;
+    margin: 0;
+    padding: 0.5em;
+    font-size: x-large;
+}
+
+.table_of_contents_ol {
+    width: 100%;
+    margin: auto;
+    padding: 0;
+    display: -webkit-flex;
+    display: flex;
+    -webkit-justify-content: center;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.table_of_contents_li {
+    padding: 1.0em 1.0em 1.0em 2.0em;
+    margin: 0.5em;
+    width: max(min(90%, 15em), 25%);
+    text-align: left;
+    border: 1px solid #aaa;
+    border-radius: 4px;
+}
