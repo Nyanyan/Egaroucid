@@ -71,7 +71,7 @@ Egaroucid 6.2.0はEgaroucid 6.3.0と同一の評価関数のため、省いて�
 	</tr>
     <tr>
 		<td><a href="./benchmarks/7_1_0/">7.1.0</a></td>
-		<td>TBD</td>
+		<td>2024/06/06</td>
 	</tr>
     <tr>
 		<td><a href="./benchmarks/7_0_0/">7.0.0</a></td>

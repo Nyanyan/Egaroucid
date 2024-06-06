@@ -67,7 +67,7 @@ There are detailed benchmarks for each version including older versions.
 	</tr>
     <tr>
 		<td><a href="./benchmarks/7_1_0/">7.1.0</a></td>
-		<td>TBD</td>
+		<td>2024/06/06</td>
 	</tr>
     <tr>
 		<td><a href="./benchmarks/7_0_0/">7.0.0</a></td>
