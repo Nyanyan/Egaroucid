@@ -142,7 +142,7 @@ Search_result iterative_deepening_search(Board board, int depth, uint_fast8_t mp
             }
         }
     }
-    result.is_end_search = false;
+    result.is_end_search = is_end_search;
     result.probability = SELECTIVITY_PERCENTAGE[mpc_level];
     return result;
 }
