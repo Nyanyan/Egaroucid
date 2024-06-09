@@ -35,7 +35,7 @@ It is the best way to evaluate the strength of Othello AI that we have battles w
 
 To avoid same lines, I used [XOT](https://berg.earthlingz.de/xot/aboutxot.php?lang=en) as the beginning board. Each battle is done in level 1 (lookahead depth is 1 for the midgame, 2 for the endgame).
 
-<div class="table_wrapper"><table>
+<div class="table_wrapper"><table class="table_swapped">
 <tr><th>Name</th><th>Winning Rate</th></tr>
 <tr><td>7.1.0</td><td>0.5770</td></tr>
 <tr><td>7.0.0</td><td>0.5537</td></tr>
@@ -50,6 +50,7 @@ To avoid same lines, I used [XOT](https://berg.earthlingz.de/xot/aboutxot.php?la
 
 
 
+
 The further log is available [here](./battle.txt).
 
 Egaroucid 6.2.0 is omitted because it has the same evaluation function as 6.3.0.
@@ -60,7 +61,7 @@ Egaroucid 6.2.0 is omitted because it has the same evaluation function as 6.3.0.
 
 There are detailed benchmarks for each version including older versions.
 
-<div class="table_wrapper"><table>
+<div class="table_wrapper"><table class="table_swapped">
 	<tr>
 		<th>Version</th>
 		<th>Date</th>
