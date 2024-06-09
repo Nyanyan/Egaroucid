@@ -28,15 +28,6 @@ td{
     overflow-x: scroll;
 }
 
-.table_swapped{
-    writing-mode: vertical-lr;
-}
-
-.table_swapped th, .table_swapped td{
-    writing-mode: horizontal-tb;
-    height: 1.5em;
-}
-
 .pic{
     display: block;
     margin: auto;
