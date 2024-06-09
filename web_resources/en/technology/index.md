@@ -2,6 +2,18 @@
 
 
 
+## Download Transcript
+
+Huge dataset of games played by Egaroucid is available. Please see [Download Transcript](./transcript) page.
+
+
+
+## Technology Explanation
+
+I wrote [Technology Explanation](https://www.egaroucid.nyanyan.dev/ja/technology/explanation/) only in Japanese. I'm afraid but please translate by yourself.
+
+
+
 ## Benchmarks
 
 I used 2 benchmarks for evaluating Egaroucid. The first one is [The FFO endgame test suite](http://www.radagast.se/othello/ffotest.html). This test is for the speed of endgame complete search. The second one is the matches against old versions of Egaroucid and [Edax 4.4](https://github.com/abulmo/edax-reversi/releases/tag/v4.4). To test the strength of its evaluation function, I used no book, and used [XOT](https://berg.earthlingz.de/xot/aboutxot.php?lang=en) for the starting positions.
@@ -128,16 +140,3 @@ There are detailed benchmarks for each version including older versions.
 
 
 
-
-
-
-
-## Technology Explanation
-
-I wrote [Technology Explanation](https://www.egaroucid.nyanyan.dev/ja/technology/explanation/) only in Japanese. Please translate by yourself.
-
-
-
-## Download Transcript
-
-Huge dataset of games played by Egaroucid is available. Please see [Download Transcript](./transcript) page.

@@ -2,6 +2,18 @@
 
 
 
+## 棋譜公開
+
+Egaroucidによる自己対戦で生成した棋譜を大量に公開しています。詳しくは[棋譜公開](./transcript)をご覧ください。
+
+
+
+## 技術解説
+
+日本語のみでEgaroucidの[技術解説](./explanation)を書きました。のんびりと追記します。
+
+
+
 ## ベンチマーク
 
 Egaroucidの性能の確認として2種類のベンチマークを使用しています。1つ目は[The FFO endgame test suite](http://www.radagast.se/othello/ffotest.html)です。これは、終盤の完全読みにかかる時間に関するベンチマークです。2つ目は対戦です。Egaroucidの過去バージョンの他、他の強豪オセロAIとの対戦として、[Edax 4.4](https://github.com/abulmo/edax-reversi/releases/tag/v4.4)とも対戦しました。単純に評価関数の強さを計測するため、bookを使わず、[XOT](https://berg.earthlingz.de/xot/aboutxot.php?lang=en)という初期局面集を用いて対戦させました。
@@ -49,8 +61,6 @@ Egaroucidの性能の確認として2種類のベンチマークを使用して�
 <tr><td>6.0.X</td><td>0.4451</td></tr>
 <tr><td>Edax</td><td>0.4321</td></tr>
 </table></div>
-
-
 
 
 
@@ -128,21 +138,4 @@ Egaroucid 6.2.0はEgaroucid 6.3.0と同一の評価関数のため、省いて�
 		<td>2022/03/02</td>
 	</tr>
     </table></div>
-
-
-
-
-
-
-
-
-## 技術解説
-
-日本語のみでEgaroucidの[技術解説](./explanation)を書きました。のんびりと追記します。
-
-
-
-## 棋譜公開
-
-Egaroucidによる自己対戦で生成した棋譜を大量に公開しています。詳しくは[棋譜公開](./transcript)をご覧ください。
 
