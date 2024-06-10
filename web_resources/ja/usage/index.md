@@ -1,10 +1,10 @@
 # Egaroucid 使い方
 
-オセロAI Egaroucidの公式ドキュメントです。各機能の使い方を簡単に紹介します。このページの内容は最新バージョンに合わせてありますが、更新が追いつかない場合もあります。
-
 <b>This page is only in Japanese. Translation by Google Translator is [here](https://www-egaroucid-nyanyan-dev.translate.goog/ja/usage/?_x_tr_sl=ja&_x_tr_tl=en&_x_tr_hl=ja&_x_tr_pto=wapp).</b>
 
-最終更新: 2024/06/02 Egaroucid 7.1.0
+オセロAI Egaroucidの公式ドキュメントです。各機能の使い方を簡単に紹介します。このページの内容は最新バージョンに合わせてありますが、更新が追いつかない場合もあります。
+
+最終更新: 2024/06/10 Egaroucid 7.1.0
 
 INSERT_TABLE_OF_CONTENTS_HERE
 
