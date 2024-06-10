@@ -35,7 +35,8 @@ executable = 'eval_optimizer_cuda_12_2_0_move_ordering_end_nws.exe'
 '''
 '''
 # cell weight
-train_data_nums = [29]
+#train_data_nums = [29]
+train_data_nums = [52]
 train_root_dir = './../../../train_data/bin_data/20240419_1_cell_weight/'
 executable = 'eval_optimizer_cuda_12_2_0_cell_weight.exe'
 '''

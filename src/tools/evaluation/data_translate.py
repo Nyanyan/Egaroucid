@@ -9,7 +9,6 @@ import time
 bin_root_dir = './../../../train_data/bin_data/20240223_1/'
 exe = 'data_board_to_idx.out'
 N_PHASES = 60
-'''
 board_sub_dir_nums = [
     18, 19, 20, 21, 24, 25, 27, 28, 29, 30, 31, # old data
     34, 35, # mid-endgame data 1
@@ -17,8 +16,6 @@ board_sub_dir_nums = [
     #38, # test data
     39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 57, 60, 61, 62, 63 # mid-endgame data 2
 ]
-'''
-board_sub_dir_nums = [38]
 board_sub_dir_nums.sort()
 #'''
 '''
@@ -33,7 +30,8 @@ board_sub_dir_nums = [24, 28]
 bin_root_dir = './../../../train_data/bin_data/20240419_1_cell_weight/'
 exe = 'data_board_to_idx_cell.out'
 N_PHASES = 1
-board_sub_dir_nums = [26, 29] # used [0,10] with data 26
+#board_sub_dir_nums = [26, 29] # used [0,10] with data 26
+board_sub_dir_nums = [48, 52]
 '''
 '''
 # 7.1
