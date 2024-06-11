@@ -168,3 +168,25 @@ summary {
     border: 1px solid #aaa;
     border-radius: 4px;
 }
+
+.download_button {
+    background-color:  #816bc8;
+    font-size: 20pt;
+    height: 30pt;
+    width: 100%;
+    padding: 3%;
+    border-radius: 13pt;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.download_button_a {
+    text-decoration: none;
+    color: white;
+}
+
+.download_button_container {
+    width: 40%;
+    margin: 0 auto;
+}

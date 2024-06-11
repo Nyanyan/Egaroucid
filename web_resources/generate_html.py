@@ -232,7 +232,7 @@ def create_html(dr):
             html_code = '<code>' + code[3:-3] + '</code>'
             elem = elem.replace(code, html_code)
         # paragraph
-        if raw_html == 0:
+        if raw_html == 0 and len(elem):
             elem = '<p>' + elem + '</p>'
         # img
         if elem[:4] == '<img':
