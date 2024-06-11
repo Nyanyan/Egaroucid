@@ -3,15 +3,15 @@ import sys
 
 phase = str(sys.argv[1])
 hour = '0'
-minute = '6'
+minute = '2'
 second = '0'
-alpha = '800.0'
+alpha = '500.0'
 n_patience = '1000'
 
 model_dir = './../../../model/nomodel/'
 
 
-#'''
+'''
 # 7.0
 train_data_nums = [
     18, 19, 20, 21, 24, 25, 28, 29, 30, 31, # old data (no records27)
@@ -26,7 +26,7 @@ if int(phase) <= 11:
 train_data_nums.sort()
 train_root_dir = './../../../train_data/bin_data/20240223_1/'
 executable = 'eval_optimizer_cuda_12_2_0.exe'
-#'''
+'''
 '''
 # 7.0 move ordering end nws
 train_data_nums = [24, 28]
@@ -53,6 +53,14 @@ if int(phase) <= 11:
 else:
     test_data = './../../../train_data/bin_data/20240525_1/' + phase + '/38.dat'
 '''
+#'''
+# 20240611_1_move_ordering_end
+train_data_nums = [52]
+train_data_nums.sort()
+train_root_dir = './../../../train_data/bin_data/20240611_1_move_ordering_end/'
+executable = 'eval_optimizer_cuda_12_2_0_20240611_1_move_ordering_end.exe'
+test_data = './../../../train_data/bin_data/20240611_1_move_ordering_end/' + phase + '/52.dat'
+#'''
 
 
 
