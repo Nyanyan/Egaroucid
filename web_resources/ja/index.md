@@ -11,7 +11,7 @@ Egaroucidは世界最強クラスのオセロAIを搭載した無料のオセロ
 作者はオセロAIのコンテスト"[CodinGame Othello](https://www.codingame.com/multiplayer/bot-programming/othello-1)"で世界1位です(2023年9月4日現在)
 
 
-<div class="download_button_container"><a class="download_button_a" href="./download/">
+<div class="download_button_container"><a class="download_button_a" href="./download/" aria-label="Egaroucidをダウンロード">
 <div class="download_button"><img height="22pt" src="img/download.png" alt="ダウンロードアイコン">ダウンロード</div>
 </a></div>
 

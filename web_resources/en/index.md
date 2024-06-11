@@ -11,7 +11,7 @@ Egaroucid [ɪɡɑɻˈəʊsid] is an Othello app with one of the strongest othell
 The author is World No.1 in [CodinGame Othello](https://www.codingame.com/multiplayer/bot-programming/othello-1), Othello AI contest (as of 2023/09/04).
 
 
-<div class="download_button_container"><a class="download_button_a" href="./download/">
+<div class="download_button_container"><a class="download_button_a" href="./download/" aria-label="Download Egaroucid">
 <div class="download_button"><img height="22pt" src="img/download.png" alt="download icon">Download</div>
 </a></div>
 
