@@ -165,6 +165,7 @@ public:
 			resolution = GRAPH_RESOLUTION;
 			while ((y_max - y_min) / resolution > 8) { // when range is too wide
 				resolution *= 2;
+				std::cerr << "y_min " << y_min << " y_max " << y_max << " update resolution to " << resolution << std::endl;
 			}
 			if ((-y_min) % resolution){ // fit y_min/max to resolution
 				y_min -= resolution - (-y_min) % resolution;
@@ -172,6 +173,7 @@ public:
 			if (y_max % resolution){
 				y_max += resolution - y_max % resolution;
 			}
+			std::cerr << "updated y_min " << y_min << " y_max " << y_max << std::endl;
 		}
 		else {
 			if (show_graph_sum_of_loss){
