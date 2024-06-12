@@ -70,7 +70,6 @@ private:
 
 public:
 	void draw(std::vector<History_elem> nodes1, std::vector<History_elem> nodes2, int n_discs, bool show_graph, int level, Font font, int color_type, bool show_graph_sum_of_loss) {
-		int fix_resolution = 0;
 		std::vector<std::vector<Graph_loss_elem>> sum_of_loss_nodes1(2);
 		std::vector<std::vector<Graph_loss_elem>> sum_of_loss_nodes2(2);
 		if (show_graph_sum_of_loss){
@@ -158,22 +157,29 @@ public:
 			}
 		}
 		if (show_graph) {
-			resolution = GRAPH_RESOLUTION;
 			if (show_graph_sum_of_loss){
 				calc_range_sum_of_loss(sum_of_loss_nodes1, sum_of_loss_nodes2);
 			} else{
 				calc_range(nodes1, nodes2);
 			}
-			while ((y_max - y_min) / resolution > 8) { // range is too wide
-				++fix_resolution;
+			while ((y_max - y_min) / resolution > 8) { // when range is too wide
 				resolution *= 2;
-				y_min -= (resolution - (-y_min) % resolution) % resolution;
-				y_max += (resolution - y_max % resolution) % resolution;
+			}
+			if ((-y_min) % resolution){ // fit y_min/max to resolution
+				y_min -= resolution - (-y_min) % resolution;
+			}
+			if (y_max % resolution){
+				y_max += resolution - y_max % resolution;
 			}
 		}
 		else {
-			y_min = -resolution;
-			y_max = resolution;
+			if (show_graph_sum_of_loss){
+				y_min = -GRAPH_RESOLUTION;
+				y_max = 0;
+			} else{
+				y_min = -GRAPH_RESOLUTION;
+				y_max = GRAPH_RESOLUTION;
+			}
 		}
 		dy = (double)size_y / (y_max - y_min);
 		dx = (double)size_x / 60;
@@ -272,9 +278,6 @@ public:
 			int place_x = sx + dx * (n_discs - 4);
 			Line(place_x, sy, place_x, sy + size_y).draw(3, graph_place_color);
 		}
-		for (int i = 0; i < fix_resolution; ++i) {
-			resolution /= 2;
-		}
 	}
 
 	int update_n_discs(std::vector<History_elem> nodes1, std::vector<History_elem> nodes2, int n_discs) {
@@ -309,8 +312,8 @@ public:
 
 private:
 	void calc_range(std::vector<History_elem> nodes1, std::vector<History_elem> nodes2) {
-		y_min = -resolution;
-		y_max = resolution;
+		y_min = -GRAPH_RESOLUTION;
+		y_max = GRAPH_RESOLUTION;
 		for (const History_elem& b : nodes1) {
 			if (-HW2 <= b.v && b.v <= HW2) {
 				y_min = std::min(y_min, b.v);
@@ -323,12 +326,10 @@ private:
 				y_max = std::max(y_max, b.v);
 			}
 		}
-		y_min -= (resolution - (-y_min) % resolution) % resolution;
-		y_max += (resolution - y_max % resolution) % resolution;
 	}
 
 	void calc_range_sum_of_loss(std::vector<std::vector<Graph_loss_elem>> sum_of_loss_nodes1, std::vector<std::vector<Graph_loss_elem>> sum_of_loss_nodes2) {
-		y_min = -resolution;
+		y_min = -GRAPH_RESOLUTION;
 		y_max = 0;
 		for (int i = 0; i < 2; ++i){
 			for (const Graph_loss_elem& b : sum_of_loss_nodes1[i]) {
@@ -338,7 +339,6 @@ private:
 				y_min = std::min(y_min, b.v);
 			}
 		}
-		y_min -= (resolution - (-y_min) % resolution) % resolution;
 	}
 
 	void draw_graph(std::vector<History_elem> nodes, Color color, Color color2) {
