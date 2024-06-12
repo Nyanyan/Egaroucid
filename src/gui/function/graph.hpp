@@ -162,6 +162,7 @@ public:
 			} else{
 				calc_range(nodes1, nodes2);
 			}
+			resolution = GRAPH_RESOLUTION;
 			while ((y_max - y_min) / resolution > 8) { // when range is too wide
 				resolution *= 2;
 			}
