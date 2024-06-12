@@ -8,8 +8,6 @@ There are Install version and Zip version.
 
 <b>Egaroucid GUI version is for only Windows 64 bit on CPUs made by Intel or AMD.</b> If you are using windows with ARM CPU, you cannot use Egaroucid.
 
-Egaroucid is optimized to SIMD version, which requires AVX2 instructions, but old CPUs (created in 2013 or older) might not be able to run it. If so, please install Generic version. If you have a CPU that have AVX-512 extensions, AVX512 edition may be faster.
-
 Please download the one which is suitable to your environment.
 
 
@@ -17,6 +15,10 @@ Please download the one which is suitable to your environment.
 GUI_DOWNLOAD_TABLE_HERE
 
 
+
+There are 2 versions of Egaroucid, Install version and Portable version. You can use Install version with download the installer and run it to install Egaroucid. With Portable version, you should just download the zip file and unzip it. You can put Portable version into USB memory and use it in various computers.
+
+Egaroucid is optimized to SIMD version, which requires AVX2 instructions, but old CPUs (created in 2013 or older) might not be able to run it. If so, please install Generic version. If you have a CPU that have AVX-512 extensions, AVX512 edition may be faster.
 
 
 Please visit [GitHub Releases](https://github.com/Nyanyan/Egaroucid/releases) to see older versions and release notes.
