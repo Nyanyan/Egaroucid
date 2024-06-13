@@ -118,7 +118,7 @@ class Book_accuracy{
             if (identifier & (1 << BOOK_ACCURACY_LEVEL_A)){ // A found
                 if ((identifier & ~((1 << BOOK_ACCURACY_LEVEL_B) - 1)) == 0) // B-F not found -> RES = A
                     res = BOOK_ACCURACY_LEVEL_A;
-                else if ((identifier & ~((1 << BOOK_ACCURACY_LEVEL_D) - 1)) == 0) // D-F not found (and B or C found) -> RES = C
+                else if ((identifier & ~((1 << BOOK_ACCURACY_LEVEL_D) - 1)) == 0) // D-F not found (and B or C found) -> RES = B
                     res = BOOK_ACCURACY_LEVEL_B;
                 else // B and C not found, D-F found -> RES = D
                     res = BOOK_ACCURACY_LEVEL_D;
