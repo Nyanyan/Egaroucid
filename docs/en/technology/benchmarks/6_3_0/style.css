@@ -170,23 +170,18 @@ summary {
 }
 
 .download_button {
-    background-color:  #2a7253;
-    font-size: 20pt;
-    height: 30pt;
-    width: 100%;
-    padding: 3%;
-    border-radius: 13pt;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-}
-
-.download_button_a {
     text-decoration: none;
+    background-color:  #2a7253;
     color: white;
+    font-size: 16pt;
+    height: 40px;
+    width: 100%;
+    padding: 5%;
+    border-radius: 13pt;
 }
 
 .download_button_container {
-    width: min(100%, 200pt);
-    margin: 0 auto;
+    width: min(90%, 300pt);
+    margin: 4% auto;
+    text-align: center;
 }
