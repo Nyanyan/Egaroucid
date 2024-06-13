@@ -60,9 +60,9 @@ void save_settings(Menu_elements menu_elements, Settings settings, Directories d
 }
 
 void close_app(Menu_elements menu_elements, Settings settings, Directories directories, Book_information book_information, Window_state window_state) {
-	if (!window_state.loading) {
-		save_settings(menu_elements, settings, directories);
-	}
+    if (!window_state.loading) {
+        save_settings(menu_elements, settings, directories);
+    }
     if (book_information.changed) {
         book.save_egbk3(settings.book_file, settings.book_file + ".bak");
     }

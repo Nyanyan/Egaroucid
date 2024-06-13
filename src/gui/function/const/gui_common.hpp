@@ -326,7 +326,7 @@ struct Settings {
     bool show_last_move;
     bool show_next_move;
     int hash_level;
-	int book_acc_level;
+    int book_acc_level;
     bool pause_when_pass;
     bool show_next_move_change_view;
     bool change_color_type;
@@ -395,7 +395,7 @@ struct Menu_elements {
     // settings
     // AI settings
     bool use_book;
-	int book_acc_level;
+    int book_acc_level;
     int level;
     int n_threads;
     int hash_level;
@@ -441,7 +441,7 @@ struct Menu_elements {
     bool book_reference;
     bool change_book_by_right_click;
     bool import_book;
-	bool export_book;
+    bool export_book;
     bool book_start_reducing;
     bool book_start_recalculate_leaf;
     bool show_book_info;
@@ -499,7 +499,7 @@ struct Menu_elements {
         analyze = false;
 
         use_book = settings->use_book;
-		book_acc_level = settings->book_acc_level;
+        book_acc_level = settings->book_acc_level;
         level = settings->level;
         n_threads = settings->n_threads;
         hash_level = settings->hash_level;

@@ -86,7 +86,7 @@ private:
     Button update_button;
     Button book_ignore_button;
     String new_version;
-	bool stop_loading;
+    bool stop_loading;
 
 public:
     Load(const InitData& init) : IScene{ init } {
@@ -97,14 +97,14 @@ public:
         book_failed = false;
         tips = language.get_random("tips", "tips");
         update_found = false;
-		stop_loading = false;
+        stop_loading = false;
         load_future = std::async(std::launch::async, load_app, &getData().directories, &getData().resources, &getData().settings, &update_found, &new_version, &stop_loading);
     }
 
     void update() override {
-		if (System::GetUserActions() & UserAction::CloseButtonClicked) {
-			stop_loading = true;
-			load_future.get();
+        if (System::GetUserActions() & UserAction::CloseButtonClicked) {
+            stop_loading = true;
+            load_future.get();
             changeScene(U"Close", SCENE_FADE_TIME);
             return;
         }
@@ -143,7 +143,7 @@ public:
                     if (load_code == ERR_OK) {
                         std::cerr << "loaded" << std::endl;
                         getData().menu_elements.init(&getData().settings, &getData().resources);
-						getData().window_state.loading = false;
+                        getData().window_state.loading = false;
                         changeScene(U"Main_scene", SCENE_FADE_TIME);
                     }
                     else {
@@ -161,7 +161,7 @@ public:
                     if (book_ignore_button.clicked()) {
                         std::cerr << "loaded" << std::endl;
                         getData().menu_elements.init(&getData().settings, &getData().resources);
-						getData().window_state.loading = false;
+                        getData().window_state.loading = false;
                         changeScene(U"Main_scene", SCENE_FADE_TIME);
                     }
                 }
