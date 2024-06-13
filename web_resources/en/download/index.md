@@ -10,7 +10,7 @@ Please download an installer from this button. Then run the installer and instal
 
 REPLACE_DOWNLOAD_BUTTON_HERE
 
-Admin right is needed to install. If you see "Windows protected your PC" popup, then you can run it with clicking "More info", then "Run anyway". Egaroucid has no malicious codes, but please do this  operation at your own risk. The images are examples in Japanese.
+If you see "Windows protected your PC" popup, then you can run it with clicking "More info", then "Run anyway". Egaroucid has no malicious codes, but please do this  operation at your own risk. The images are examples in Japanese.
 
 <div class="centering_box">
     <img class="pic2" src="img/cant_run1.png" alt="running accross Windows protected your PC">
