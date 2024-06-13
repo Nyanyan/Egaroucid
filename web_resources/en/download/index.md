@@ -8,9 +8,7 @@ There are Install version and Portable version. With Install version, you should
 
 Please download an installer from this button. Then run the installer and install it!
 
-<div class="download_button_container"><a class="download_button_a" href="REPLACE_DOWNLOAD_BUTTON_URL" aria-label="Download Egaroucid">
-<div class="download_button"><img height="22pt" src="img/download.png" alt="download icon">Download Egaroucid REPLACE_DOWNLOAD_BUTTON_VERSION</div>
-</a></div>
+REPLACE_DOWNLOAD_BUTTON_HERE
 
 Admin right is needed to install. If you see "Windows protected your PC" popup, then you can run it with clicking "More info", then "Run anyway". Egaroucid has no malicious codes, but please do this  operation at your own risk. The images are examples in Japanese.
 

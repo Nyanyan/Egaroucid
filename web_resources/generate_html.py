@@ -99,6 +99,10 @@ with open(elements_dir + '/release_console_zip.html', 'r', encoding='utf-8') as 
 with open(elements_dir + '/release_console_source.html', 'r', encoding='utf-8') as f:
     release_console_source_html = f.read().replace('DATE', CONSOLE_DATE_STR).replace('VERSION_DOT', CONSOLE_VERSION_DOT).replace('VERSION_UNDERBAR', CONSOLE_VERSION_UNDERBAR)
 
+with open(elements_dir + '/download_button.html', 'r', encoding='utf-8') as f:
+    download_button = f.read().replace('REPLACE_DOWNLOAD_BUTTON_URL', DOWNLOAD_BUTTON_URL).replace('REPLACE_DOWNLOAD_BUTTON_VERSION', GUI_VERSION_DOT)
+
+
 section_head1 = '<div>\n<h2>'
 section_head2 = '</h2>\n'
 section_foot = '</div>\n'
@@ -194,10 +198,8 @@ def create_html(dr):
         for html_elem in html_elems:
             raw_html += judge_raw_html(html_elem)
         # download button
-        if 'REPLACE_DOWNLOAD_BUTTON_URL' in elem:
-            elem = elem.replace('REPLACE_DOWNLOAD_BUTTON_URL', DOWNLOAD_BUTTON_URL)
-        if 'REPLACE_DOWNLOAD_BUTTON_VERSION' in elem:
-            elem = elem.replace('REPLACE_DOWNLOAD_BUTTON_VERSION', GUI_VERSION_DOT)
+        if 'REPLACE_DOWNLOAD_BUTTON_HERE' in elem:
+            elem = elem.replace('REPLACE_DOWNLOAD_BUTTON_HERE', download_button)
         # download tables
         if GUI_RELEASE_IDENTIFIER in elem:
             elem = elem.replace(GUI_RELEASE_IDENTIFIER, release_gui_html)

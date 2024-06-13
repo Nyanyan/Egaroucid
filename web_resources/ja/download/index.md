@@ -8,9 +8,7 @@
 
 以下のボタンを押してインストーラをダウンロードしてください。ダウンロードが完了したらインストーラを実行し、手順に従うとインストールが完了します。
 
-<div class="download_button_container"><a class="download_button_a" href="REPLACE_DOWNLOAD_BUTTON_URL" aria-label="Egaroucidをダウンロード">
-<div class="download_button"><img height="22pt" src="img/download.png" alt="ダウンロードアイコン">Egaroucid REPLACE_DOWNLOAD_BUTTON_VERSION をダウンロード</div>
-</a></div>
+REPLACE_DOWNLOAD_BUTTON_HERE
 
 インストールは管理者権限が必要です。また、インストーラを実行すると以下のように「WindowsによってPCが保護されました」と出ますが、「詳細情報」を押すと「実行」ボタンが出ます。こちらを押すとインストーラを実行できます。なお、Egaroucidは悪意を持ったコードを含んでいませんが、この操作は自己責任で行ってください。
 
