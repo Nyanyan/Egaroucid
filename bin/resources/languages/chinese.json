@@ -6,7 +6,7 @@
         "empty": "空",
         "back": "返回",
         "level": "级别",
-        "othello_ai": "电脑AI",
+        "othello_ai": "AI",
         "characters": "个字符"
     },
     "loading": {
@@ -21,7 +21,7 @@
         "new_game": "新建对局 (玩家对弈) (Ctrl+N)",
         "new_game_human_black": "新建对局 (玩家执黑)",
         "new_game_human_white": "新建对局 (玩家执白)",
-        "new_selfplay": "新建对局 (电脑自弈)",
+        "new_selfplay": "新建对局 (AI自弈)",
         "analyze": "分析对局",
         "start_game": "开始",
         "pass": "pass"
@@ -29,8 +29,8 @@
     "settings": {
         "settings": "设置",
         "play": {
-            "ai_put_black": "电脑执黑 (B)",
-            "ai_put_white": "电脑执白 (W)",
+            "ai_put_black": "AI执黑 (B)",
+            "ai_put_white": "AI执白 (W)",
             "pause_when_pass": "当pass时暂停"
         },
         "thread": {
@@ -48,13 +48,13 @@
         "book_operation": "开局库操作",
         "file_operation": "文件操作",
         "right_click_to_modify": "右键以更改",
-        "book_deviate": "Book提高",
-        "book_deviate_with_transcript": "使用棋谱Book提高",
-        "input_transcripts_with_line_breaks": "输入带有换行棋谱 / 通过拖放添加",
+        "book_deviate": "开局库训练",
+        "book_deviate_with_transcript": "训练特定棋谱到开局库",
+        "input_transcripts_with_line_breaks": "直接输入棋谱 /或 通过拖放添加",
         "transcript_error": "棋谱错误",
         "book_fix": "开局库修正",
         "learning": "计算中...",
-        "stop_learn": "停止学习",
+        "stop_learn": "停止训练",
         "force_stop": "停止",
         "stopping": "停止中...",
         "complete": "完成",
@@ -64,14 +64,14 @@
         "error_sum": "积分误差",
         "error_leaf": "叶子误差",
         "changed_value": "数值",
-        "book_merge": "Book合并",
+        "book_merge": "开局库合并",
         "merge": "合并",
         "merge_explanation": "通过拖放添加Egaroucid/Edax的开局库",
         "import_failed": "导入失败",
         "loading": "导入中...",
         "book_reference": "开局库路径",
-        "input_book_path": "输入你的开局库路径/或者直接拖放",
-        "wrong_extension": "扩展名不同. ",
+        "input_book_path": "输入你的开局库路径 /或 将开局库直接拖放",
+        "wrong_extension": "扩展名不同.",
         "legal_extension1": "请输入.egbk3格式",
         "legal_extension2": "请输入.egbk3/dat格式",
         "legal_extension3": "请输入.egbk3/.egbk2/.egbk/.dat格式",
@@ -81,23 +81,23 @@
         "exporting": "导出中...",
         "use_default": "默认",
         "ignore": "覆盖现有的数值",
-        "import_book": "导入Book",
-        "export_book": "导出Book",
+        "import_book": "导入开局库",
+        "export_book": "导出开局库",
         "export_with_specified_level": "以指定级别导出",
         "egaroucid_format": "Egaroucid格式",
         "edax_format": "Edax格式",
         "undefined_format": "请输入egbk3(Egaroucid)或dat(Edax)格式",
-        "book_reduce": "Book精简",
+        "book_reduce": "开局库精简",
         "reducing": "精简中...",
         "book_recalculate_leaf": "重新计算叶子",
         "book_recalculate_n_lines": "重新计算行数",
         "start": "开始",
         "unlimited": "无限",
-        "show_book_info": "开局库情报",
-        "calculating": "计算",
-        "n_registered": "挂号",
+        "show_book_info": "开局库信息",
+        "calculating": "统计中...",
+        "n_registered": "合计",
         "max_n_loops": "最大循环次数",
-        "start_with_max_n_loops": "指定的循环次数开始"
+        "start_with_max_n_loops": "根据指定的循环次数开始"
     },
     "in_out": {
         "in_out": "输入/输出",
@@ -141,23 +141,23 @@
             "opening": "定式",
             "next_move": "落点提示",
             "next_move_change_view": "改变视图",
-            "show_book_accuracy": "Book准确性"
+            "show_book_accuracy": "开局库评级"
         },
         "disc": {
             "display_on_disc": "棋盘显示",
             "last_move": "上次落点",
             "stable": "稳定子",
-            "play_ordering": "播放顺序"
+            "play_ordering": "落子顺序"
         },
         "info": {
             "display_on_info_area": "情报显示",
-            "opening_name": "定式",
-            "principal_variation": "最好的棋谱"
+            "opening_name": "定式名",
+            "principal_variation": "AI推荐变化"
         },
         "graph": {
             "graph": "图像",
-            "value": "估值数量",
-            "sum_of_loss": "累计损失"
+            "value": "双方估值变化",
+            "sum_of_loss": "双方累计损子数"
         },
         "log": "记录",
         "change_color_type": "色调变化"
@@ -168,11 +168,11 @@
         "forward": "前进 (->/D)",
         "backward": "后退 (<-/A)",
         "undo": "撤销 (BackSpace)",
-        "save_this_branch": "保存此变化 (L)",
+        "save_this_branch": "应用此变化 (L)",
         "generate_random_board": {
             "generate_random_board": "生成随机局面",
             "generate": "生成 (R)",
-            "generate_n_moves": "生成的局面手数"
+            "generate_n_moves": "生成的局面步数"
         },
         "convert": {
             "convert": "转换视角",
@@ -187,14 +187,14 @@
         }
     },
     "info": {
-        "info": "情报",
+        "info": "信息",
         "black": "黑棋",
         "white": "白棋",
         "moves": " 步",
         "game_end": "对局结束",
         "opening_name": "定式",
-        "principal_variation": "最好的棋谱",
-        "ai": "电脑AI",
+        "principal_variation": "AI推荐变化",
+        "ai": "AI",
         "human": "人类",
         "lookahead": " 步",
         "to_last_move": "直到终盘",
