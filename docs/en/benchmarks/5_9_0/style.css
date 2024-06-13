@@ -182,6 +182,6 @@ summary {
 
 .download_button_container {
     width: min(90%, 300pt);
-    margin: 4% auto;
+    margin: max(4%, 30px) auto;
     text-align: center;
 }
