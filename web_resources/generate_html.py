@@ -6,8 +6,8 @@ import re
 from PIL import Image
 
 
-GUI_VERSION_DOT = '7.1.0'
-GUI_DATE_STR = '2024/06/06'
+GUI_VERSION_DOT = '7.1.1'
+GUI_DATE_STR = '2024/06/13'
 
 CONSOLE_VERSION_DOT = '7.1.0'
 CONSOLE_DATE_STR = '2024/06/06'
@@ -18,6 +18,8 @@ CONSOLE_VERSION_UNDERBAR = CONSOLE_VERSION_DOT.replace('.', '_')
 GUI_RELEASE_IDENTIFIER = 'GUI_DOWNLOAD_TABLE_HERE'
 CONSOLE_RELEASE_IDENTIFIER = 'CONSOLE_DOWNLOAD_TABLE_HERE'
 CONSOLE_SOURCE_RELEASE_IDENTIFIER = 'CONSOLE_SOURCE_TABLE_HERE'
+
+DOWNLOAD_BUTTON_URL = 'https://github.com/Nyanyan/Egaroucid/releases/download/v' + GUI_VERSION_DOT + '/Egaroucid_' + GUI_VERSION_UNDERBAR + '_Installer.exe'
 
 
 MAX_IMG_SIZE = 400
@@ -105,7 +107,7 @@ centering_head = '<div style="text-align: center">\n'
 centering_foot = '</div>'
 
 link1 = '<a href="'
-link2 = '" target="_blank" el=”noopener noreferrer”>'
+link2 = '" target="_blank" el="noopener noreferrer">'
 link3 = '</a>'
 
 link21 = '<a font-size="1.5em" href="'
@@ -191,7 +193,12 @@ def create_html(dr):
         html_elems = re.findall('\<.+?\>', elem)
         for html_elem in html_elems:
             raw_html += judge_raw_html(html_elem)
-        #download tables
+        # download button
+        if 'REPLACE_DOWNLOAD_BUTTON_URL' in elem:
+            elem = elem.replace('REPLACE_DOWNLOAD_BUTTON_URL', DOWNLOAD_BUTTON_URL)
+        if 'REPLACE_DOWNLOAD_BUTTON_VERSION' in elem:
+            elem = elem.replace('REPLACE_DOWNLOAD_BUTTON_VERSION', GUI_VERSION_DOT)
+        # download tables
         if GUI_RELEASE_IDENTIFIER in elem:
             elem = elem.replace(GUI_RELEASE_IDENTIFIER, release_gui_html)
         if CONSOLE_RELEASE_IDENTIFIER in elem:

@@ -1,36 +1,18 @@
 # Egaroucid ダウンロード
 
-インストール版とZip版があります。
+インストール版とポータブル版があります。インストール版はインストーラを実行すると自動的に最適な設定でインストールしてくれるものです。ポータブル版はzipファイルを解凍して使うものです。
 
 
 
-## ダウンロード
+## インストール版
 
-<b>Egaroucidは64bitのWindowsかつIntel製かAMD製のCPUに対応しています。</b>ARMのCPUを使っている場合は動きません。
+以下のボタンを押してインストーラをダウンロードしてください。ダウンロードが完了したらインストーラを実行し、手順に従うとインストールが完了します。
 
-以下から自分の環境に合ったものをダウンロードしてください。
+<div class="download_button_container"><a class="download_button_a" href="REPLACE_DOWNLOAD_BUTTON_URL" aria-label="Egaroucidをダウンロード">
+<div class="download_button"><img height="22pt" src="img/download.png" alt="ダウンロードアイコン">Egaroucid REPLACE_DOWNLOAD_BUTTON_VERSION をダウンロード</div>
+</a></div>
 
-
-
-GUI_DOWNLOAD_TABLE_HERE
-
-
-
-Egaroucidにはインストール版とポータブル版があります。インストール版はインストーラをダウンロードして、それを実行してインストールしてから使うものです。ポータブル版はzipファイルをダウンロードして、それを解凍して中の実行ファイルを実行すれば動きます。ポータブル版はUSBメモリなどに格納して様々なコンピュータで使うことができます。
-
-EgaroucidはSIMDバージョン(AVX2が必要)に最適化して作っていますが、こちらは概ね2013年以降のCPUでないと動作しません。その場合にはGenericバージョンを使用してください。また、AVX-512に対応したCPU (Intel Core iシリーズの第7から11世代の一部など) をお使いの場合はAVX512版の方が高速に動くかもしれません。
-
-過去のバージョンや各バージョンのリリースノートは[GitHubのリリース](https://github.com/Nyanyan/Egaroucid/releases)からご覧ください。
-
-
-
-## インストール
-
-インストール版の場合、ダウンロードしたインストーラを実行してください。管理者権限が必要です。
-
-
-
-「WindowsによってPCが保護されました」と出た場合は、「詳細情報」をクリックすると実行することができます。ただし、この操作は自己責任で行ってください。
+インストールは管理者権限が必要です。また、インストーラを実行すると以下のように「WindowsによってPCが保護されました」と出ますが、「詳細情報」を押すと「実行」ボタンが出ます。こちらを押すとインストーラを実行できます。なお、Egaroucidは悪意を持ったコードを含んでいませんが、この操作は自己責任で行ってください。
 
 <div class="centering_box">
     <img class="pic2" src="img/cant_run1.png" alt="「WindowsによってPCが保護されました」という画面">
@@ -39,14 +21,30 @@ EgaroucidはSIMDバージョン(AVX2が必要)に最適化して作っていま�
 
 
 
+Egaroucidは64bitのWindowsかつIntel製かAMD製のCPUに対応しています。
 
-## 実行
+Egaroucidは個々の環境向けに高速に動くようにいくつかのバージョン(SIMD / Generic / AVX512)を用意しています。インストール版では自動で最適なものをインストールしてくれます。
 
-インストールまたは解凍した<code>Egaroucid_[バージョン情報].exe</code>を実行するとEgaroucidが起動します。
+過去のバージョンや各バージョンのリリースノートは[GitHubのリリース](https://github.com/Nyanyan/Egaroucid/releases)からご覧ください。
 
-<div class="centering_box">
-    <img class="pic2" src="img/egaroucid.png" alt="Egaroucid">
-</div>
+
+
+## ポータブル版
+
+<b>Egaroucidは64bitのWindowsかつIntel製かAMD製のCPUに対応しています。</b>ARMのCPUを使っている場合は動きません。
+
+以下から自分の環境に合ったものをダウンロードし、zipを解凍してください。中のEgaroucid_[バージョン].exeを実行するとEgaroucidが起動します。
+
+
+
+GUI_DOWNLOAD_TABLE_HERE
+
+
+
+EgaroucidはSIMDバージョン(AVX2が必要)に最適化して作っていますが、こちらは概ね2013年以降のCPUでないと動作しません。その場合にはGenericバージョンを使用してください。また、AVX-512に対応したCPU (Intel Core iシリーズの第7から11世代の一部など) をお使いの場合はAVX512版の方が高速に動くかもしれません。
+
+過去のバージョンや各バージョンのリリースノートは[GitHubのリリース](https://github.com/Nyanyan/Egaroucid/releases)からご覧ください。
+
 
 
 ## book形式の変更について

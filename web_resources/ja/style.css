@@ -171,7 +171,7 @@ summary {
 
 .download_button {
     background-color:  #2a7253;
-    font-size: 20pt;
+    font-size: 16pt;
     height: 30pt;
     width: 100%;
     padding: 3%;
@@ -187,6 +187,6 @@ summary {
 }
 
 .download_button_container {
-    width: min(100%, 200pt);
+    width: min(90%, 300pt);
     margin: 0 auto;
 }

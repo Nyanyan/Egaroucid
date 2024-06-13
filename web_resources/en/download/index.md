@@ -1,39 +1,18 @@
 # Egaroucid Download
 
-There are Install version and Zip version.
+There are Install version and Portable version. With Install version, you should just download the installer and execute it to install. Installer automatically selects the optimal revision for your environment. With Portable version, you should download a zip file and unzip it.
 
 
 
-## Download
+## Install Version
 
-<b>Egaroucid GUI version is for only Windows 64 bit on CPUs made by Intel or AMD.</b> If you are using windows with ARM CPU, you cannot use Egaroucid.
+Please download an installer from this button. Then run the installer and install it!
 
-Please download the one which is suitable to your environment.
+<div class="download_button_container"><a class="download_button_a" href="REPLACE_DOWNLOAD_BUTTON_URL" aria-label="Download Egaroucid">
+<div class="download_button"><img height="22pt" src="img/download.png" alt="download icon">Download Egaroucid REPLACE_DOWNLOAD_BUTTON_VERSION</div>
+</a></div>
 
-
-
-GUI_DOWNLOAD_TABLE_HERE
-
-
-
-There are 2 versions of Egaroucid, Install version and Portable version. You can use Install version with download the installer and run it to install Egaroucid. With Portable version, you should just download the zip file and unzip it. You can put Portable version into USB memory and use it in various computers.
-
-Egaroucid is optimized to SIMD version, which requires AVX2 instructions, but old CPUs (created in 2013 or older) might not be able to run it. If so, please install Generic version. If you have a CPU that have AVX-512 extensions, AVX512 edition may be faster.
-
-
-Please visit [GitHub Releases](https://github.com/Nyanyan/Egaroucid/releases) to see older versions and release notes.
-
-
-
-## Install
-
-If you use Installer version, please execute the installer. You need admin rights.
-
-If you see "Windows protected your PC" popup, then you can run this  software with clicking "More info", then "Run anyway". Please do this  operation at your own risk.
-
-Pictures below are example in Japanese.
-
-
+Admin right is needed to install. If you see "Windows protected your PC" popup, then you can run it with clicking "More info", then "Run anyway". Egaroucid has no malicious codes, but please do this  operation at your own risk. The images are examples in Japanese.
 
 <div class="centering_box">
     <img class="pic2" src="img/cant_run1.png" alt="running accross Windows protected your PC">
@@ -42,14 +21,31 @@ Pictures below are example in Japanese.
 
 
 
+Egaroucid GUI version is for only Windows 64 bit on CPUs made by Intel or AMD.
 
-## Run
+Egaroucid has some revisions (SIMD / Generic / AVX512) to optimize the speed for several environments. Installer automatically select the best revision for you.
 
-Please execute <code>Egaroucid_[version].exe</code> to run Egaroucid!
+Please visit [GitHub Releases](https://github.com/Nyanyan/Egaroucid/releases) to see older versions and release notes.
 
-<div class="centering_box">
-    <img class="pic2" src="img/egaroucid.png" alt="Egaroucid">
-</div>
+
+
+## Portable Version
+
+<b>Egaroucid GUI version is for only Windows 64 bit on CPUs made by Intel or AMD.</b> If you are using windows with ARM CPU, you cannot use Egaroucid.
+
+Please download the one which is suitable to your environment, and unzip it. Egaroucid_[version].exe is the executable of Egaroucid.
+
+
+
+GUI_DOWNLOAD_TABLE_HERE
+
+
+
+Egaroucid is optimized to SIMD version, which requires AVX2 instructions, but old CPUs (created in 2013 or older) might not be able to run it. If so, please install Generic version. If you have a CPU that have AVX-512 extensions, AVX512 edition may be faster.
+
+
+Please visit [GitHub Releases](https://github.com/Nyanyan/Egaroucid/releases) to see older versions and release notes.
+
 
 
 ## About Changing Book Format
