@@ -1,0 +1,257 @@
+{
+    "lang_name": "简体中文",
+    "common": {
+        "black": "黑",
+        "white": "白",
+        "empty": "空",
+        "back": "返回",
+        "level": "级别",
+        "othello_ai": "AI",
+        "characters": "个字符"
+    },
+    "loading": {
+        "loading": "加载中...",
+        "load_failed": "加载失败.\n请检查源文件.",
+        "book_failed": "无法加载开局库.\n您可以直接开始.",
+        "launch": "开始"
+    },
+    "closing": "正在关闭...",
+    "play": {
+        "game": "对局",
+        "new_game": "新建对局 (玩家对弈) (Ctrl+N)",
+        "new_game_human_black": "新建对局 (玩家执黑)",
+        "new_game_human_white": "新建对局 (玩家执白)",
+        "new_selfplay": "新建对局 (AI自弈)",
+        "analyze": "分析对局",
+        "start_game": "开始",
+        "pass": "pass"
+    },
+    "settings": {
+        "settings": "设置",
+        "play": {
+            "ai_put_black": "AI执黑 (B)",
+            "ai_put_white": "AI执白 (W)",
+            "pause_when_pass": "当pass时暂停"
+        },
+        "thread": {
+            "thread": "线程"
+        },
+        "hash_level": "哈希级别"
+    },
+    "ai_settings": {
+        "use_book": "开局库使用",
+        "book_accuracy_level": "开局库丢失等级",
+        "level": "级别"
+    },
+    "book": {
+        "book": "开局库",
+        "book_operation": "开局库操作",
+        "file_operation": "文件操作",
+        "right_click_to_modify": "右键以更改",
+        "book_deviate": "开局库训练",
+        "book_deviate_with_transcript": "训练特定棋谱到开局库",
+        "input_transcripts_with_line_breaks": "直接输入棋谱 /或 通过拖放添加",
+        "transcript_error": "棋谱错误",
+        "book_fix": "开局库修正",
+        "learning": "计算中...",
+        "stop_learn": "停止训练",
+        "force_stop": "停止",
+        "stopping": "停止中...",
+        "complete": "完成",
+        "settings": "设置",
+        "depth": "深度",
+        "error_per_move": "落子的误差",
+        "error_sum": "积分误差",
+        "error_leaf": "叶子误差",
+        "changed_value": "数值",
+        "book_merge": "开局库合并",
+        "merge": "合并",
+        "merge_explanation": "通过拖放添加Egaroucid/Edax的开局库",
+        "import_failed": "导入失败",
+        "loading": "导入中...",
+        "book_reference": "开局库路径",
+        "input_book_path": "输入你的开局库路径 /或 将开局库直接拖放",
+        "wrong_extension": "扩展名不同.",
+        "legal_extension1": "请输入.egbk3格式",
+        "legal_extension2": "请输入.egbk3/dat格式",
+        "legal_extension3": "请输入.egbk3/.egbk2/.egbk/.dat格式",
+        "import": "导入",
+        "export_book_as_edax": "导出Edax格式的开局库.输入保存路径.",
+        "export": "导出",
+        "exporting": "导出中...",
+        "use_default": "默认",
+        "ignore": "覆盖现有的数值",
+        "import_book": "导入开局库",
+        "export_book": "导出开局库",
+        "export_with_specified_level": "以指定级别导出",
+        "egaroucid_format": "Egaroucid格式",
+        "edax_format": "Edax格式",
+        "undefined_format": "请输入egbk3(Egaroucid)或dat(Edax)格式",
+        "book_reduce": "开局库精简",
+        "reducing": "精简中...",
+        "book_recalculate_leaf": "重新计算叶子",
+        "book_recalculate_n_lines": "重新计算行数",
+        "start": "开始",
+        "unlimited": "无限",
+        "show_book_info": "开局库信息",
+        "calculating": "统计中...",
+        "n_registered": "合计",
+        "max_n_loops": "最大循环次数",
+        "start_with_max_n_loops": "根据指定的循环次数开始"
+    },
+    "in_out": {
+        "in_out": "输入/输出",
+        "in": "导入棋谱",
+        "out": "导出棋谱",
+        "import_failed": "导入失败",
+        "output_transcript": "复制棋谱到剪切板 (Ctrl+C)",
+        "output_board": "复制棋盘为字符串",
+        "output_game": "保存对局",
+        "input_transcript": "从剪切板导入棋谱",
+        "input_board": "字符串导入",
+        "edit_board": "编辑棋盘",
+        "input_bitboard": "导入棋盘作为位板",
+        "output_bitboard": "导出棋盘作为位板",
+        "player_opponent": "棋手/对手",
+        "black_white": "黑/白",
+        "player": "棋手",
+        "opponent": "对手",
+        "color": "颜色",
+        "input_game": "导入对局",
+        "no_game_available": "无可用对局",
+        "import": "导入",
+        "import_from_this_position": "从设定位置导入",
+        "export_main": "保存到默认目录",
+        "export_until_this_board": "保存到设定位置",
+        "player_name": "棋手名称",
+        "memo": "备注",
+        "screen_shot": "截图(复制/保存)",
+        "board_image": "编辑和保存当前棋盘图片",
+        "you_can_paste_with_ctrl_v": "您可以使用 Ctrl+V 粘贴"
+    },
+    "display": {
+        "display": "显示",
+        "cell": {
+            "display_on_cell": "棋子显示",
+            "legal": "可行步",
+            "disc_value": "显示估值数量 (V)",
+            "disc_value_number": "数量",
+            "umigame_value": "海龟数量 (U)",
+            "depth": "深度",
+            "opening": "定式",
+            "next_move": "落点提示",
+            "next_move_change_view": "改变视图",
+            "show_book_accuracy": "开局库评级"
+        },
+        "disc": {
+            "display_on_disc": "棋盘显示",
+            "last_move": "上次落点",
+            "stable": "稳定子",
+            "play_ordering": "落子顺序"
+        },
+        "info": {
+            "display_on_info_area": "情报显示",
+            "opening_name": "定式名",
+            "principal_variation": "AI推荐变化"
+        },
+        "graph": {
+            "graph": "图像",
+            "value": "双方估值变化",
+            "sum_of_loss": "双方累计损子数"
+        },
+        "log": "记录",
+        "change_color_type": "色调变化"
+    },
+    "operation": {
+        "operation": "操作",
+        "put_1_move_by_ai": "AI辅助落子一步 (G)",
+        "forward": "前进 (->/D)",
+        "backward": "后退 (<-/A)",
+        "undo": "撤销 (BackSpace)",
+        "save_this_branch": "应用此变化 (L)",
+        "generate_random_board": {
+            "generate_random_board": "生成随机局面",
+            "generate": "生成 (R)",
+            "generate_n_moves": "生成的局面步数"
+        },
+        "convert": {
+            "convert": "转换视角",
+            "vertical": "旋转180度",
+            "white_line": "白棋视角",
+            "black_line": "黑棋视角"
+        },
+        "ai_operation": {
+            "ai_operation": "AI操作",
+            "stop_calculating": "停止计算",
+            "cache_clear": "清理缓存"
+        }
+    },
+    "info": {
+        "info": "信息",
+        "black": "黑棋",
+        "white": "白棋",
+        "moves": " 步",
+        "game_end": "对局结束",
+        "opening_name": "定式",
+        "principal_variation": "AI推荐变化",
+        "ai": "AI",
+        "human": "人类",
+        "lookahead": " 步",
+        "to_last_move": "直到终盘",
+        "light": "轻盈",
+        "standard": "基准",
+        "pragmatic": "变通",
+        "accurate": "精准",
+        "danger": "危险",
+        "probability": "确定度"
+    },
+    "edit_board": {
+        "player": "玩家",
+        "stone": "颜色",
+        "black": "黑棋 (B)",
+        "white": "白棋 (W)",
+        "empty": "空处 (E)"
+    },
+    "help": {
+        "help": "帮助",
+        "usage": "使用教程 (仅日文)",
+        "website": "网站",
+        "bug_report": "Bug反馈",
+        "auto_update_check": "自动检查更新",
+        "new_version_available": "新版本可用.",
+        "download?": "您想访问下载页吗?",
+        "download": "下载",
+        "skip": "跳过",
+        "license_siv3d": "Siv3D许可协议",
+        "license_egaroucid": "Egaroucid许可协议"
+    },
+    "board_image": {
+        "save_image": "保存图片",
+        "rect": "■",
+        "star": "★",
+        "nomark": "删除 (点击同一标记亦有效)",
+        "default": "默认",
+        "monochrome": "单色",
+        "mark": "标记",
+        "color": "颜色"
+    },
+    "tips": {
+        "do_you_know": "你知道吗?",
+        "tips": [
+            "中文翻译问题请联系:深红(Eklos) eklos@foxmail.com",
+            "右键即可修改开局库",
+            "你可以导入Edax的开局库",
+            "通过拖动、<-/-> 键、A/D 键均可操作棋盘",
+            "你可以保存对局在'game'目录中",
+            "开局库和设置会在关闭时自动保存",
+            "你可以导入多种格式的棋谱",
+            "你可以导入棋谱、编辑棋盘等等",
+            "游戏数量取决于开局库的数量",
+            "如果等级设置的太高，计算将永远无法结束",
+            "点击'停止计算'可以控制电脑AI",
+            "你可以使用Enter/Esc作为快捷键",
+            "使用鼠标侧键可以向前/向后操作棋盘",
+            "提高哈希级别将使用更多内存"
+        ]
+    }
+}
