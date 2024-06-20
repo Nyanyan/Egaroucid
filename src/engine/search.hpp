@@ -413,17 +413,6 @@ class Search{
 };
 
 /*
-    @brief Clog search structure
-
-    @param board                board to solve
-    @param n_nodes              number of visited nodes
-*/
-struct Clog_search{
-    Board board;
-    uint64_t n_nodes;
-};
-
-/*
     @brief Clog search result structure
 
     @param pos                  position to put
