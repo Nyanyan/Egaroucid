@@ -21,6 +21,7 @@
 #include "search.hpp"
 #include "thread_pool.hpp"
 #include "util.hpp"
+#include "stability.hpp"
 
 #define CLOG_NOT_FOUND -127
 
@@ -112,7 +113,7 @@
 /*
     @brief Main algorithm for clog search
 
-    If player is enduring, try to find at least one move that doesn't lead early game over.
+    If player is enduring, try to find at least one move that doesn't lead early game over (find CLOG_NOT_FOUND)
     If player is attacking, try to find best move that leads early game over with highest score.
     If attacking, parallel search never increase number of visited nodes.
 
@@ -125,16 +126,21 @@ int clog_search(Clog_search *search, bool is_enduring, int depth){
     if (!global_searching)
         return CLOG_NOT_FOUND;
     ++search->n_nodes;
-    if (depth == 0)
+    if (depth == 0){
+        if (search->board.is_end()){
+            return search->board.score_player();
+        }
         return CLOG_NOT_FOUND;
+    }
     int res = CLOG_NOT_FOUND;
     uint64_t legal = search->board.get_legal();
     if (legal == 0ULL){
         search->board.pass();
-            if (search->board.get_legal() == 0ULL)
+            if (search->board.get_legal() == 0ULL){
                 res = search->board.score_player();
-            else
+            } else{
                 res = clog_search(search, !is_enduring, depth);
+            }
         search->board.pass();
         if (res != CLOG_NOT_FOUND)
             return -res;
@@ -175,12 +181,19 @@ int clog_search(Clog_search *search, bool is_enduring, int depth){
             search->board.move_board(&flip);
                 g = clog_search(search, !is_enduring, depth - 1);
             search->board.undo_board(&flip);
-            if (g != CLOG_NOT_FOUND)
+            if (g != CLOG_NOT_FOUND){
                 res = std::max(res, -g);
-            else if (is_enduring)
+            } else if (is_enduring){
                 return CLOG_NOT_FOUND;
+            }
         }
     #endif
+    if (res != CLOG_NOT_FOUND){
+        int max_score = HW2 - 2 * pop_count_ull(calc_stability(search->board.player, search->board.opponent));
+        if (res < max_score){
+            res = CLOG_NOT_FOUND;
+        }
+    }
     return res;
 }
 
@@ -221,24 +234,6 @@ std::vector<Clog_result> first_clog_search(Board board, uint64_t *n_nodes, int d
             }
         search.board.undo_board(&flip);
     }
-    *n_nodes = search.n_nodes;
-    return res;
-}
-
-/*
-    @brief Wrapper of clog search algorithm for convenience
-
-    @param board                a board to solve
-    @param n_nodes              number of nodes visited
-    @return best score
-*/
-int clog_search(Board board, uint64_t *n_nodes, int depth){
-    Clog_search search;
-    search.board = board.copy();
-    search.n_nodes = 0ULL;
-    int res = clog_search(&search, true, depth - 1);
-    if (res == CLOG_NOT_FOUND)
-        res = clog_search(&search, false, depth - 1);
     *n_nodes = search.n_nodes;
     return res;
 }
