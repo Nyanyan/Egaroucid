@@ -54,14 +54,23 @@ int init_ai(Settings* settings, const Directories* directories, bool *stop_loadi
 
 int check_update(const Directories* directories, String *new_version) {
     const FilePath version_save_path = U"{}version.txt"_fmt(Unicode::Widen(directories->appdata_dir));
-    if (SimpleHTTP::Save(VERSION_URL, version_save_path).isOK()) {
-        TextReader reader(version_save_path);
-        if (reader) {
-            reader.readLine(*new_version);
-            if (EGAROUCID_NUM_VERSION != *new_version) {
-                return UPDATE_CHECK_UPDATE_FOUND;
+    AsyncHTTPTask task = SimpleHTTP::SaveAsync(VERSION_URL, version_save_path);
+    uint64_t strt = tim();
+    while (tim() - strt < 1000){ // timeout 1000 ms
+        if (task.isReady()){
+            if (task.getResponse().isOK()){
+                TextReader reader(version_save_path);
+                if (reader) {
+                    reader.readLine(*new_version);
+                    if (EGAROUCID_NUM_VERSION != *new_version) { // new version found
+                        return UPDATE_CHECK_UPDATE_FOUND;
+                    }
+                }
             }
         }
+    }
+    if (task.getStatus() == HTTPAsyncStatus::Downloading){ // cancel task
+        task.cancel();
     }
     return UPDATE_CHECK_ALREADY_UPDATED;
 }
