@@ -64,7 +64,9 @@ void init_default_settings(const Directories* directories, const Resources* reso
     settings->change_book_by_right_click = false;
     settings->show_last_move = true;
     settings->show_next_move = true;
-    settings->hash_level = DEFAULT_HASH_LEVEL;
+    #if USE_CHANGEABLE_HASH_LEVEL
+        settings->hash_level = DEFAULT_HASH_LEVEL;
+    #endif
     settings->book_acc_level = 0;
     settings->pause_when_pass = false;
     settings->show_next_move_change_view = false;
@@ -246,11 +248,13 @@ void import_text_settings(const Directories* directories, const Resources* resou
             std::cerr << "err21" << std::endl;
             return;
         }
-        if (init_settings_import_int(&reader, &settings->hash_level) != ERR_OK) {
-            std::cerr << "err22" << std::endl;
-            return;
-        } else
-            settings->hash_level = std::max(settings->hash_level, DEFAULT_HASH_LEVEL);
+        #if USE_CHANGEABLE_HASH_LEVEL
+            if (init_settings_import_int(&reader, &settings->hash_level) != ERR_OK) {
+                std::cerr << "err22" << std::endl;
+                return;
+            } else
+                settings->hash_level = std::max(settings->hash_level, DEFAULT_HASH_LEVEL);
+        #endif
         if (init_settings_import_int(&reader, &settings->book_acc_level) != ERR_OK) {
             std::cerr << "err23" << std::endl;
             return;
@@ -353,10 +357,12 @@ void init_settings(const Directories* directories, const Resources* resources, S
     if (init_settings_import_bool(setting_json, U"show_next_move", &settings->show_next_move) != ERR_OK) {
         std::cerr << "err21" << std::endl;
     }
-    if (init_settings_import_int(setting_json, U"hash_level", &settings->hash_level) != ERR_OK) {
-        std::cerr << "err22" << std::endl;
-    } else
-        settings->hash_level = std::max(settings->hash_level, DEFAULT_HASH_LEVEL);
+    #if USE_CHANGEABLE_HASH_LEVEL
+        if (init_settings_import_int(setting_json, U"hash_level", &settings->hash_level) != ERR_OK) {
+            std::cerr << "err22" << std::endl;
+        } else
+            settings->hash_level = std::max(settings->hash_level, DEFAULT_HASH_LEVEL);
+    #endif
     if (init_settings_import_int(setting_json, U"book_acc_level", &settings->book_acc_level) != ERR_OK) {
         std::cerr << "err23" << std::endl;
     }

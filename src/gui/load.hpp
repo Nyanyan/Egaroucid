@@ -26,10 +26,14 @@ int init_ai(Settings* settings, const Directories* directories, bool *stop_loadi
     #if USE_MPC_PRE_CALCULATION
         mpc_init();
     #endif
-    if (!hash_resize(DEFAULT_HASH_LEVEL, settings->hash_level, true)) {
-        std::cerr << "hash resize failed. use default setting" << std::endl;
-        settings->hash_level = DEFAULT_HASH_LEVEL;
-    }
+    #if USE_CHANGEABLE_HASH_LEVEL
+        if (!hash_resize(DEFAULT_HASH_LEVEL, settings->hash_level, true)) {
+            std::cerr << "hash resize failed. use default setting" << std::endl;
+            settings->hash_level = DEFAULT_HASH_LEVEL;
+        }
+    #else
+        hash_resize(DEFAULT_HASH_LEVEL, DEFAULT_HASH_LEVEL, true);
+    #endif
     stability_init();
     if (!evaluate_init(directories->eval_file, directories->eval_mo_end_file, true)) {
         return ERR_EVAL_FILE_NOT_IMPORTED;

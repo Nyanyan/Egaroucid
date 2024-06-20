@@ -92,22 +92,24 @@ public:
         }
 
         // hash resize
-        if (getData().menu_elements.hash_level != global_hash_level) {
-            int n_hash_level = getData().menu_elements.hash_level;
-            if (n_hash_level != global_hash_level) {
-                stop_calculating();
-                if (!hash_resize(global_hash_level, n_hash_level, true)) {
-                    std::cerr << "hash resize failed. use default level" << std::endl;
-                    hash_resize(DEFAULT_HASH_LEVEL, DEFAULT_HASH_LEVEL, true);
-                    getData().menu_elements.hash_level = DEFAULT_HASH_LEVEL;
-                    global_hash_level = DEFAULT_HASH_LEVEL;
+        #if USE_CHANGEABLE_HASH_LEVEL
+            if (getData().menu_elements.hash_level != global_hash_level) {
+                int n_hash_level = getData().menu_elements.hash_level;
+                if (n_hash_level != global_hash_level) {
+                    stop_calculating();
+                    if (!hash_resize(global_hash_level, n_hash_level, true)) {
+                        std::cerr << "hash resize failed. use default level" << std::endl;
+                        hash_resize(DEFAULT_HASH_LEVEL, DEFAULT_HASH_LEVEL, true);
+                        getData().menu_elements.hash_level = DEFAULT_HASH_LEVEL;
+                        global_hash_level = DEFAULT_HASH_LEVEL;
+                    }
+                    else {
+                        global_hash_level = n_hash_level;
+                    }
+                    resume_calculating();
                 }
-                else {
-                    global_hash_level = n_hash_level;
-                }
-                resume_calculating();
             }
-        }
+        #endif
 
         // init
         getData().graph_resources.delta = 0;

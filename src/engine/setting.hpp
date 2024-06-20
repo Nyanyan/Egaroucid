@@ -38,7 +38,7 @@
 #define GUI_PORTABLE_MODE true
 
 // Open Console?
-#define GUI_OPEN_CONSOLE false
+#define GUI_OPEN_CONSOLE true
 
 
 #ifdef _WIN64 // Windows 64bit
@@ -214,6 +214,9 @@
 
 // aspiration search in negascout
 #define USE_ASPIRATION_NEGASCOUT true
+
+// Hash level setting
+#define USE_CHANGEABLE_HASH_LEVEL false
 
 
 

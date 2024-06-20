@@ -325,7 +325,9 @@ struct Settings {
     bool change_book_by_right_click;
     bool show_last_move;
     bool show_next_move;
-    int hash_level;
+    #if USE_CHANGEABLE_HASH_LEVEL
+        int hash_level;
+    #endif
     int book_acc_level;
     bool pause_when_pass;
     bool show_next_move_change_view;
@@ -398,7 +400,9 @@ struct Menu_elements {
     int book_acc_level;
     int level;
     int n_threads;
-    int hash_level;
+    #if USE_CHANGEABLE_HASH_LEVEL
+        int hash_level;
+    #endif
     // player
     bool ai_put_black;
     bool ai_put_white;
@@ -502,7 +506,9 @@ struct Menu_elements {
         book_acc_level = settings->book_acc_level;
         level = settings->level;
         n_threads = settings->n_threads;
-        hash_level = settings->hash_level;
+        #if USE_CHANGEABLE_HASH_LEVEL
+            hash_level = settings->hash_level;
+        #endif
         ai_put_black = settings->ai_put_black;
         ai_put_white = settings->ai_put_white;
         pause_when_pass = settings->pause_when_pass;

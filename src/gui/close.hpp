@@ -37,7 +37,9 @@ void save_settings(Menu_elements menu_elements, Settings settings, Directories d
     setting_json[U"change_book_by_right_click"] = menu_elements.change_book_by_right_click;
     setting_json[U"show_last_move"] = menu_elements.show_last_move;
     setting_json[U"show_next_move"] = menu_elements.show_next_move;
-    setting_json[U"hash_level"] = menu_elements.hash_level;
+    #if USE_CHANGEABLE_HASH_LEVEL
+        setting_json[U"hash_level"] = menu_elements.hash_level;
+    #endif
     setting_json[U"book_acc_level"] = menu_elements.book_acc_level;
     setting_json[U"pause_when_pass"] = menu_elements.pause_when_pass;
     setting_json[U"book_learn_error_sum"] = menu_elements.book_learn_error_sum;
