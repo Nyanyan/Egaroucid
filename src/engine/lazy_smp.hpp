@@ -65,7 +65,7 @@ Search_result lazy_smp(Board board, int depth, uint_fast8_t mpc_level, bool show
         int sub_max_mpc_level[61];
         bool sub_searching = true;
         int sub_depth = main_depth;
-        if (use_multi_thread && !(is_end_search && main_depth == depth)){
+        if (use_multi_thread && !(is_end_search && main_depth == depth) && main_depth < depth * 0.5){
             int max_thread_size = thread_pool.size();
             for (int i = 0; i < main_depth - 14; ++i){
                 max_thread_size *= 0.9;
@@ -81,7 +81,7 @@ Search_result lazy_smp(Board board, int depth, uint_fast8_t mpc_level, bool show
                 bool sub_is_end_search = (sub_depth == max_depth);
                 if (sub_mpc_level <= MPC_100_LEVEL){
                     //std::cerr << sub_thread_idx << " " << sub_depth << " " << SELECTIVITY_PERCENTAGE[sub_mpc_level] << std::endl;
-                    searches[sub_thread_idx].init(&board, sub_mpc_level, false, true, is_end_search);
+                    searches[sub_thread_idx].init(&board, sub_mpc_level, false, true, true);
                     bool pushed = false;
                     parallel_tasks.emplace_back(thread_pool.push(&pushed, std::bind(&nega_scout, &searches[sub_thread_idx], -SCORE_MAX, SCORE_MAX, sub_depth, false, LEGAL_UNDEFINED, sub_is_end_search, &sub_searching)));
                     sub_depth_arr.emplace_back(sub_depth);
