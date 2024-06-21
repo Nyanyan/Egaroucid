@@ -63,17 +63,19 @@ void print_version(){
 void print_commandline_options_list(){
     std::cout << "Commandline options:" << std::endl;
     for (int i = 0; i < N_COMMANDLINE_OPTIONS; ++i){
-        std::string s;
-        for (int j = 0; j < (int)commandline_option_data[i].names.size(); ++j){
-            if (j != 0)
-                s += "|";
-            s += commandline_option_data[i].names[j];
+        if (commandline_option_data[i].id != ID_NONE){
+            std::string s;
+            for (int j = 0; j < (int)commandline_option_data[i].names.size(); ++j){
+                if (j != 0)
+                    s += "|";
+                s += commandline_option_data[i].names[j];
+            }
+            s += " " + commandline_option_data[i].arg;
+            std::cout << COUT_TAB;
+            std::cout << std::left << std::setw(COMMANDLINE_OPTION_HELP_TAB_SIZE) << s;
+            std::cout << commandline_option_data[i].description;
+            std::cout << std::endl;
         }
-        s += " " + commandline_option_data[i].arg;
-        std::cout << COUT_TAB;
-        std::cout << std::left << std::setw(COMMANDLINE_OPTION_HELP_TAB_SIZE) << s;
-        std::cout << commandline_option_data[i].description;
-        std::cout << std::endl;
     }
     std::cout << std::endl;
 }
@@ -81,17 +83,19 @@ void print_commandline_options_list(){
 void print_commands_list(){
     std::cout << "Commands:" << std::endl;
     for (int i = 0; i < N_COMMANDS; ++i){
-        std::string s;
-        for (int j = 0; j < (int)command_data[i].names.size(); ++j){
-            if (j != 0)
-                s += "|";
-            s += command_data[i].names[j];
+        if (command_data[i].id != CMD_ID_NONE){
+            std::string s;
+            for (int j = 0; j < (int)command_data[i].names.size(); ++j){
+                if (j != 0)
+                    s += "|";
+                s += command_data[i].names[j];
+            }
+            s += " " + command_data[i].arg;
+            std::cout << COUT_TAB;
+            std::cout << std::left << std::setw(COMMAND_HELP_TAB_SIZE) << s;
+            std::cout << command_data[i].description;
+            std::cout << std::endl;
         }
-        s += " " + command_data[i].arg;
-        std::cout << COUT_TAB;
-        std::cout << std::left << std::setw(COMMAND_HELP_TAB_SIZE) << s;
-        std::cout << command_data[i].description;
-        std::cout << std::endl;
     }
     std::cout << std::endl;
 }

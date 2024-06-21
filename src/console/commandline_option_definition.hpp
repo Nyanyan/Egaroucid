@@ -14,12 +14,15 @@
 
 #define N_COMMANDLINE_OPTIONS 16
 
+#define ID_NONE -1
 #define ID_VERSION 0
 #define ID_HELP 1
 #define ID_LEVEL 2
 #define ID_THREAD 3
 #define ID_LOG 4
-#define ID_HASH 5
+#if USE_CHANGEABLE_HASH_LEVEL
+    #define ID_HASH 5
+#endif
 #define ID_LEVEL_INFO 6
 #define ID_BOOK_FILE 7
 #define ID_EVAL_FILE 8
@@ -45,7 +48,11 @@ const Commandline_option_info commandline_option_data[N_COMMANDLINE_OPTIONS] = {
     {ID_LEVEL,              {"-l", "-level"},                                   1, "<level>",          "Set level to <level> (0 to 60)"}, 
     {ID_THREAD,             {"-t", "-thread", "-threads"},                      1, "<n_threads>",      "Set number of threads (more than 0)"},
     {ID_LOG,                {"-noise"},                                         0, "",                 "Show all logs"},
-    {ID_HASH,               {"-hash", "-hashlevel"},                            1, "<hash_level>",     "Set hash level to <hash_level> (0 to 29)"},
+    #if USE_CHANGEABLE_HASH_LEVEL
+        {ID_HASH,               {"-hash", "-hashlevel"},                            1, "<hash_level>",     "Set hash level to <hash_level> (0 to 29)"},
+    #else
+        {ID_NONE},
+    #endif
     {ID_LEVEL_INFO,         {"-linfo", "-levelinfo"},                           0, "",                 "See level information"},
     {ID_BOOK_FILE,          {"-b", "-book"},                                    1, "<book_file>",      "Import <book_file> as Egaroucid's book"},
     {ID_EVAL_FILE,          {"-eval", "-evaluation"},                           1, "<eval_file>",      "Import <eval_file> as Egaroucid's evaluation function"},

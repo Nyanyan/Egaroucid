@@ -19,7 +19,9 @@ struct Options{
     int level;
     int n_threads;
     bool show_log;
-    int hash_level;
+    #if USE_CHANGEABLE_HASH_LEVEL
+        int hash_level;
+    #endif
     std::string book_file;
     std::string eval_file;
     bool nobook;
@@ -58,21 +60,23 @@ Options get_options(std::vector<Commandline_option> commandline_options, std::st
         }
     }
     res.show_log = find_commandline_option(commandline_options, ID_LOG);
-    res.hash_level = DEFAULT_HASH_LEVEL;
-    if (find_commandline_option(commandline_options, ID_HASH)){
-        std::vector<std::string> arg = get_commandline_option_arg(commandline_options, ID_HASH);
-        try {
-            res.hash_level = std::stoi(arg[0]);
-            if (res.hash_level < 0 || N_HASH_LEVEL <= res.hash_level){
-                res.hash_level = DEFAULT_HASH_LEVEL;
+    #if USE_CHANGEABLE_HASH_LEVEL
+        res.hash_level = DEFAULT_HASH_LEVEL;
+        if (find_commandline_option(commandline_options, ID_HASH)){
+            std::vector<std::string> arg = get_commandline_option_arg(commandline_options, ID_HASH);
+            try {
+                res.hash_level = std::stoi(arg[0]);
+                if (res.hash_level < 0 || N_HASH_LEVEL <= res.hash_level){
+                    res.hash_level = DEFAULT_HASH_LEVEL;
+                    std::cerr << "[ERROR] hash argument out of range" << std::endl;
+                }
+            } catch (const std::invalid_argument& e){
+                std::cerr << "[ERROR] hash argument invalid" << std::endl;
+            } catch (const std::out_of_range& e) {
                 std::cerr << "[ERROR] hash argument out of range" << std::endl;
             }
-        } catch (const std::invalid_argument& e){
-            std::cerr << "[ERROR] hash argument invalid" << std::endl;
-        } catch (const std::out_of_range& e) {
-            std::cerr << "[ERROR] hash argument out of range" << std::endl;
         }
-    }
+    #endif
     res.book_file = binary_path + "resources/book.egbk3";
     if (find_commandline_option(commandline_options, ID_BOOK_FILE)){
         std::vector<std::string> arg = get_commandline_option_arg(commandline_options, ID_BOOK_FILE);

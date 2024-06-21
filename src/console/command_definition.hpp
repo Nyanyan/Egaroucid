@@ -15,6 +15,7 @@
 
 #define N_COMMANDS 17
 
+#define CMD_ID_NONE -1
 #define CMD_ID_HELP 0
 #define CMD_ID_EXIT 1
 #define CMD_ID_VERSION 2

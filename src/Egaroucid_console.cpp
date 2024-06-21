@@ -29,7 +29,11 @@ void init_console(Options options, std::string binary_path){
     #if USE_MPC_PRE_CALCULATION
         mpc_init();
     #endif
-    hash_resize(DEFAULT_HASH_LEVEL, options.hash_level, options.binary_path, options.show_log);
+    #if USE_CHANGEABLE_HASH_LEVEL
+        hash_resize(DEFAULT_HASH_LEVEL, options.hash_level, options.binary_path, options.show_log);
+    #else
+        hash_resize(DEFAULT_HASH_LEVEL, DEFAULT_HASH_LEVEL, options.binary_path, options.show_log);
+    #endif
     stability_init();
     std::string mo_end_file = binary_path + "resources/eval_move_ordering_end.egev"; // filename fixed
     //std::string mo_mid_file = binary_path + "resources/eval_move_ordering_mid.egev"; // filename fixed
