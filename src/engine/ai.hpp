@@ -146,7 +146,7 @@ Search_result iterative_deepening_search(Board board, int depth, uint_fast8_t mp
     result.probability = SELECTIVITY_PERCENTAGE[mpc_level];
     return result;
 }
-
+/*
 Search_result endgame_optimized_search(Board board, int depth, uint_fast8_t mpc_level, bool show_log, std::vector<Clog_result> clogs, uint64_t use_legal, bool use_multi_thread){
     Search_result result;
     result.value = SCORE_UNDEFINED;
@@ -217,7 +217,7 @@ Search_result endgame_optimized_search(Board board, int depth, uint_fast8_t mpc_
     result.probability = SELECTIVITY_PERCENTAGE[mpc_level];
     return result;
 }
-
+*/
 
 void iterative_deepening_search_hint(Board board, int depth, uint_fast8_t mpc_level, bool show_log, uint64_t use_legal, bool use_multi_thread, int n_display, double values[], int hint_types[]){
     uint64_t strt = tim();
@@ -333,12 +333,15 @@ inline Search_result tree_search_legal(Board board, int depth, uint_fast8_t mpc_
         }
     }
     if (use_legal){
+        res = lazy_smp(board, depth, mpc_level, show_log, clogs, use_legal, use_multi_thread);
+        /*
         if (is_end_search){
             res = endgame_optimized_search(board, depth, mpc_level, show_log, clogs, use_legal, use_multi_thread);
         } else{
             res = lazy_smp(board, depth, mpc_level, show_log, clogs, use_legal, use_multi_thread);
             //res = iterative_deepening_search(board, depth, mpc_level, show_log, clogs, use_legal, use_multi_thread);
         }
+        */
     }
     thread_pool.reset_unavailable();
     return res;
