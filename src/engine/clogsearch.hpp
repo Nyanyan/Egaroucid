@@ -61,7 +61,7 @@
         Board board;
         board.player = player;
         board.opponent = opponent;
-        search.init(&board, MPC_100_LEVEL, true, false);
+        search.init(&board, MPC_100_LEVEL, true, false, false);
         Parallel_clog_task task;
         task.val = clog_search(&search, depth, searching);
         task.n_nodes = search.n_nodes;
@@ -200,7 +200,7 @@ int clog_search(Search *search, int depth, bool *searching){
 */
 std::vector<Clog_result> first_clog_search(Board board, uint64_t *n_nodes, int depth, uint64_t legal){
     Search search;
-    search.init(&board, MPC_100_LEVEL, true, false);
+    search.init(&board, MPC_100_LEVEL, true, false, false);
     std::vector<Clog_result> res;
     Flip flip;
     int g;

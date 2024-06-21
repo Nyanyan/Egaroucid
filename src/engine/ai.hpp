@@ -100,7 +100,7 @@ Search_result iterative_deepening_search(Board board, int depth, uint_fast8_t mp
         }
         bool is_last_search = (search_depth == depth) && (search_mpc_level == mpc_level);
         Search search;
-        search.init(&board, search_mpc_level, use_multi_thread, false);
+        search.init(&board, search_mpc_level, use_multi_thread, false, !is_last_search);
         bool searching = true;
         std::pair<int, int> id_result = first_nega_scout_legal(&search, -SCORE_MAX, SCORE_MAX, result.value, search_depth, search_is_end_search, clogs, use_legal, strt, &searching);
         result.nodes += search.n_nodes;
@@ -159,14 +159,14 @@ void iterative_deepening_search_hint(Board board, int depth, uint_fast8_t mpc_le
         search_mpc_level = MPC_74_LEVEL;
     }
     while (search_depth <= depth && search_mpc_level <= mpc_level && global_searching){
-        bool is_last_search_show_log = (search_depth == depth) && (search_mpc_level == mpc_level) && show_log;
+        bool is_last_search = (search_depth == depth) && (search_mpc_level == mpc_level);
         bool search_is_end_search = false;
         if (search_depth >= max_depth){
             search_is_end_search = true;
             search_depth = max_depth;
         }
         Search search;
-        search.init(&board, search_mpc_level, use_multi_thread, false);
+        search.init(&board, search_mpc_level, use_multi_thread, false, !is_last_search);
         bool searching = true;
         int hint_type = search_depth;
         if (search_is_end_search){ // endgame & this is last search
@@ -174,7 +174,7 @@ void iterative_deepening_search_hint(Board board, int depth, uint_fast8_t mpc_le
         }
         uint64_t use_legal_copy = use_legal;
         first_nega_scout_hint(&search, search_depth, depth, search_is_end_search, use_legal, &searching, values, hint_types, hint_type, n_display);
-        if (is_last_search_show_log){
+        if (is_last_search){
             std::cerr << "main ";
         } else{
             std::cerr << "pre ";
@@ -401,7 +401,7 @@ Analyze_result ai_analyze(Board board, int level, bool use_multi_thread, uint_fa
         clog_time = tim() - clog_strt;
     }
     Search search;
-    search.init(&board, mpc_level, use_multi_thread, false);
+    search.init(&board, mpc_level, use_multi_thread, false, false);
     uint64_t strt = tim();
     bool searching = true;
     return first_nega_scout_analyze(&search, -SCORE_MAX, SCORE_MAX, depth, is_end_search, clogs, clog_depth, played_move, strt, &searching);
