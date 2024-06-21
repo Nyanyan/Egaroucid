@@ -26,49 +26,54 @@ class Flip{
         uint64_t flip;
     
     public:
-        inline uint64_t calc_flip(const uint64_t player, const uint64_t opponent, const int place){
+        inline uint64_t calc_flip(uint64_t player, uint64_t opponent, const int place){
             uint64_t line, outflank;
-            uint64_t mopponent = opponent & 0x7E7E7E7E7E7E7E7EULL;
+            uint64_t mopponent = opponent & 0x7e7e7e7e7e7e7e7eULL;
+            uint64_t rplayer = rotate_180(player);
+            uint64_t ropponent = rotate_180(opponent);
+            uint64_t mropponent = ropponent & 0x7e7e7e7e7e7e7e7eULL;
             int rplace = HW2_M1 - place;
             pos = place;
             flip = 0;
+            uint64_t rflip = 0;
             
             // downward
-            line = 0x0080808080808080ULL >> rplace;
-            outflank = (0x8000000000000000ULL >> clz(~opponent & line)) & player;
-            flip |= ((~outflank + 1) * 2) & line;
+            line = 0x0101010101010100ULL << rplace;
+            outflank = ((ropponent | ~line) + 1) & line & rplayer;
+            rflip |= (outflank - (outflank != 0)) & line;
             // upward
             line = 0x0101010101010100ULL << place;
             outflank = ((opponent | ~line) + 1) & line & player;
             flip |= (outflank - (outflank != 0)) & line;
             
             // right
-            line = 0x7f00000000000000ULL >> rplace;
-            outflank = (0x8000000000000000ULL >> clz(~mopponent & line)) & player;
-            flip |= ((~outflank + 1) * 2) & line;
+            line = 0x00000000000000feULL << rplace;
+            outflank = ((mropponent | ~line) + 1) & line & rplayer;
+            rflip |= (outflank - (outflank != 0)) & line;
             // left
             line = 0x00000000000000feULL << place;
             outflank = ((mopponent | ~line) + 1) & line & player;
             flip |= (outflank - (outflank != 0)) & line;
 
             // d7 downward
-            line = 0x0102040810204000ULL >> rplace;
-            outflank = (0x8000000000000000ULL >> clz(~mopponent & line)) & player;
-            flip |= ((~outflank + 1) * 2) & line;
+            line = 0x0002040810204080ULL << rplace;
+            outflank = ((mropponent | ~line) + 1) & line & rplayer;
+            rflip |= (outflank - (outflank != 0)) & line;
             // d7 upward
             line = 0x0002040810204080ULL << place;
             outflank = ((mopponent | ~line) + 1) & line & player;
             flip |= (outflank - (outflank != 0)) & line;
 
             // d9 downward
-            line = 0x0040201008040201ULL >> rplace;
-            outflank = (0x8000000000000000ULL >> clz(~mopponent & line)) & player;
-            flip |= ((~outflank + 1) * 2) & line;
+            line = 0x8040201008040200ULL << rplace;
+            outflank = ((mropponent | ~line) + 1) & line & rplayer;
+            rflip |= (outflank - (outflank != 0)) & line;
             // d9 upward
             line = 0x8040201008040200ULL << place;
             outflank = ((mopponent | ~line) + 1) & line & player;
             flip |= (outflank - (outflank != 0)) & line;
             
+            flip |= rotate_180(rflip);
             return flip;
         }
 };

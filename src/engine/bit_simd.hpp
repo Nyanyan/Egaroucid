@@ -308,12 +308,6 @@ inline uint64_t rotate_180(uint64_t x){
     }
 #endif
 
-inline uint_fast8_t clz(uint64_t x){
-    return _lzcnt_u64(x);
-}
-
-
-
 /*
     @brief get the place of the first bit of a given board
 
