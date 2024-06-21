@@ -17,7 +17,7 @@
 #include "util.hpp"
 
 #define USE_MPC_DEPTH 3
-#define MAX_MPC_DEPTH_PRESEARCH 20
+#define MAX_MPC_DEPTH_PRESEARCH 22
 
 #if USE_ALL_NODE_PREDICTION
     #define ALL_NODE_CHECK_MPCT 1.8
