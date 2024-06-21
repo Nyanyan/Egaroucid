@@ -414,7 +414,7 @@ void print_transcript(std::vector<Board> boards){
         Board n_board = boards[i].copy();
         uint64_t played_board = (n_board.player | n_board.opponent) ^ (boards[i + 1].player | boards[i + 1].opponent);
         if (pop_count_ull(played_board) == 1){
-            uint_fast8_t played_move = ntz(played_board);
+            uint_fast8_t played_move = ctz(played_board);
             std::cout << idx_to_coord(played_move);
         }
     }

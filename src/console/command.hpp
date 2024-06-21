@@ -306,7 +306,7 @@ inline void analyze(Board_info *board, Options *options, State *state){
         Board n_board = board->boards[i].copy();
         uint64_t played_board = (n_board.player | n_board.opponent) ^ (board->boards[i + 1].player | board->boards[i + 1].opponent);
         if (pop_count_ull(played_board) == 1){
-            uint_fast8_t played_move = ntz(played_board);
+            uint_fast8_t played_move = ctz(played_board);
             Analyze_result result = ai_analyze(n_board, options->level, true, played_move);
             std::string judge = "";
             ++summary[board->players[i]].n_ply;

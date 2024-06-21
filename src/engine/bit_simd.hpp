@@ -269,44 +269,50 @@ inline uint64_t rotate_180(uint64_t x){
     @param x                    a pointer of a bitboard
 */
 #if USE_BUILTIN_NTZ
-    inline uint_fast8_t ntz(uint64_t *x){
+    inline uint_fast8_t ctz(uint64_t *x){
         return _tzcnt_u64(*x);
     }
 
-    inline uint_fast8_t ntz(uint64_t x){
+    inline uint_fast8_t ctz(uint64_t x){
         return _tzcnt_u64(x);
     }
 
-    inline uint_fast8_t ntz_uint32(uint32_t x){
+    inline uint_fast8_t ctz_uint32(uint32_t x){
         return _tzcnt_u32(x);
     }
 #elif USE_MINUS_NTZ
-    inline uint_fast8_t ntz(uint64_t *x){
+    inline uint_fast8_t ctz(uint64_t *x){
         return pop_count_ull((*x & (-(*x))) - 1);
     }
 
-    inline uint_fast8_t ntz(uint64_t x){
+    inline uint_fast8_t ctz(uint64_t x){
         return pop_count_ull((x & (-x)) - 1);
     }
 
-    inline uint_fast8_t ntz_uint32(uint32_t x){
+    inline uint_fast8_t ctz_uint32(uint32_t x){
         return pop_count_uint((x & (-x)) - 1);
     }
 #else
-    inline uint_fast8_t ntz(uint64_t *x){
+    inline uint_fast8_t ctz(uint64_t *x){
         //return pop_count_ull(_blsi_u64(*x) - 1);
         return pop_count_ull((~(*x)) & ((*x) - 1));
         //return pop_count_ull((*x & (~(*x) + 1)) - 1);
     }
 
-    inline uint_fast8_t ntz(uint64_t x){
+    inline uint_fast8_t ctz(uint64_t x){
         return pop_count_ull((~x) & (x - 1));
     }
 
-    inline uint_fast8_t ntz_uint32(uint32_t x){
+    inline uint_fast8_t ctz_uint32(uint32_t x){
         return pop_count_uint((~x) & (x - 1));
     }
 #endif
+
+inline uint_fast8_t clz(uint64_t x){
+    return _lzcnt_u64(x);
+}
+
+
 
 /*
     @brief get the place of the first bit of a given board
@@ -314,7 +320,7 @@ inline uint64_t rotate_180(uint64_t x){
     @param x                    a pointer of a bitboard
 */
 inline uint_fast8_t first_bit(uint64_t *x){
-    return ntz(x);
+    return ctz(x);
 }
 
 /*
@@ -330,7 +336,7 @@ inline uint_fast8_t next_bit(uint64_t *x){
     #else
         *x &= *x - 1;
     #endif
-    return ntz(x);
+    return ctz(x);
 }
 
 #if USE_BIT_GATHER_OPTIMIZE
