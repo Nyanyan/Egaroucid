@@ -14,6 +14,12 @@
 #include "common.hpp"
 #include "bit.hpp"
 
+uint8_t flip_pre_calc[N_8BIT][N_8BIT][HW];
+uint64_t line_to_board_d7[N_8BIT][HW * 2];
+uint64_t line_to_board_d9[N_8BIT][HW * 2];
+
+//int_fast8_t n_flip_pre_calc[N_8BIT][HW];
+
 /*
     @brief Flip class
 
@@ -26,57 +32,85 @@ class Flip{
         uint64_t flip;
     
     public:
-        inline uint64_t calc_flip(uint64_t player, uint64_t opponent, const int place){
-            uint64_t line, outflank;
-            uint64_t mopponent = opponent & 0x7e7e7e7e7e7e7e7eULL;
-            uint64_t rplayer = rotate_180(player);
-            uint64_t ropponent = rotate_180(opponent);
-            uint64_t mropponent = ropponent & 0x7e7e7e7e7e7e7e7eULL;
-            int rplace = HW2_M1 - place;
+        inline uint64_t calc_flip(const uint64_t player, const uint64_t opponent, const int place){
             pos = place;
-            flip = 0;
-            uint64_t rflip = 0;
-            
-            // downward
-            line = 0x0101010101010100ULL << rplace;
-            outflank = ((ropponent | ~line) + 1) & line & rplayer;
-            rflip |= (outflank - (outflank != 0)) & line;
-            // upward
-            line = 0x0101010101010100ULL << place;
-            outflank = ((opponent | ~line) + 1) & line & player;
-            flip |= (outflank - (outflank != 0)) & line;
-            
-            // right
-            line = 0x00000000000000feULL << rplace;
-            outflank = ((mropponent | ~line) + 1) & line & rplayer;
-            rflip |= (outflank - (outflank != 0)) & line;
-            // left
-            line = 0x00000000000000feULL << place;
-            outflank = ((mopponent | ~line) + 1) & line & player;
-            flip |= (outflank - (outflank != 0)) & line;
-
-            // d7 downward
-            line = 0x0002040810204080ULL << rplace;
-            outflank = ((mropponent | ~line) + 1) & line & rplayer;
-            rflip |= (outflank - (outflank != 0)) & line;
-            // d7 upward
-            line = 0x0002040810204080ULL << place;
-            outflank = ((mopponent | ~line) + 1) & line & player;
-            flip |= (outflank - (outflank != 0)) & line;
-
-            // d9 downward
-            line = 0x8040201008040200ULL << rplace;
-            outflank = ((mropponent | ~line) + 1) & line & rplayer;
-            rflip |= (outflank - (outflank != 0)) & line;
-            // d9 upward
-            line = 0x8040201008040200ULL << place;
-            outflank = ((mopponent | ~line) + 1) & line & player;
-            flip |= (outflank - (outflank != 0)) & line;
-            
-            flip |= rotate_180(rflip);
+            const int t = place >> 3;
+            const int u = place & 7;
+            flip = split_h_line(flip_pre_calc[join_h_line(player, t)][join_h_line(opponent, t)][u], t);
+            flip |= split_v_line(flip_pre_calc[join_v_line(player, u)][join_v_line(opponent, u)][t], u);
+            flip |= split_d7_line(flip_pre_calc[join_d7_line(player, u + t)][join_d7_line(opponent, u + t)][std::min(t, 7 - u)], u + t);
+            flip |= split_d9_line(flip_pre_calc[join_d9_line(player, u + 7 - t)][join_d9_line(opponent, u + 7 - t)][std::min(t, u)], u + 7 - t);
             return flip;
         }
 };
 
 void flip_init(){
+    int player, opponent, place;
+    int wh, put, m1, m2, m3, m4, m5, m6;
+    for (player = 0; player < N_8BIT; ++player){
+        for (opponent = 0; opponent < N_8BIT; ++opponent){
+            for (place = 0; place < HW; ++place){
+                flip_pre_calc[player][opponent][place] = 0;
+                if ((1 & (player >> place)) == 0 && (1 & (opponent >> place)) == 0 && (player & opponent) == 0){
+                    put = 1 << place;
+                    wh = opponent & 0b01111110;
+                    m1 = put >> 1;
+                    if( (m1 & wh) != 0 ) {
+                        if( ((m2 = m1 >> 1) & wh) == 0  ) {
+                            if( (m2 & player) != 0 )
+                                flip_pre_calc[player][opponent][place] |= m1;
+                        } else if( ((m3 = m2 >> 1) & wh) == 0 ) {
+                            if( (m3 & player) != 0 )
+                                flip_pre_calc[player][opponent][place] |= m1 | m2;
+                        } else if( ((m4 = m3 >> 1) & wh) == 0 ) {
+                            if( (m4 & player) != 0 )
+                                flip_pre_calc[player][opponent][place] |= m1 | m2 | m3;
+                        } else if( ((m5 = m4 >> 1) & wh) == 0 ) {
+                            if( (m5 & player) != 0 )
+                                flip_pre_calc[player][opponent][place] |= m1 | m2 | m3 | m4;
+                        } else if( ((m6 = m5 >> 1) & wh) == 0 ) {
+                            if( (m6 & player) != 0 )
+                                flip_pre_calc[player][opponent][place] |= m1 | m2 | m3 | m4 | m5;
+                        } else {
+                            if( ((m6 >> 1) & player) != 0 )
+                                flip_pre_calc[player][opponent][place] |= m1 | m2 | m3 | m4 | m5 | m6;
+                        }
+                    }
+                    m1 = put << 1;
+                    if( (m1 & wh) != 0 ) {
+                        if( ((m2 = m1 << 1) & wh) == 0  ) {
+                            if( (m2 & player) != 0 )
+                                flip_pre_calc[player][opponent][place] |= m1;
+                        } else if( ((m3 = m2 << 1) & wh) == 0 ) {
+                            if( (m3 & player) != 0 )
+                                flip_pre_calc[player][opponent][place] |= m1 | m2;
+                        } else if( ((m4 = m3 << 1) & wh) == 0 ) {
+                            if( (m4 & player) != 0 )
+                                flip_pre_calc[player][opponent][place] |= m1 | m2 | m3;
+                        } else if( ((m5 = m4 << 1) & wh) == 0 ) {
+                            if( (m5 & player) != 0 )
+                                flip_pre_calc[player][opponent][place] |= m1 | m2 | m3 | m4;
+                        } else if( ((m6 = m5 << 1) & wh) == 0 ) {
+                            if( (m6 & player) != 0 )
+                                flip_pre_calc[player][opponent][place] |= m1 | m2 | m3 | m4 | m5;
+                        } else {
+                            if( ((m6 << 1) & player) != 0 )
+                                flip_pre_calc[player][opponent][place] |= m1 | m2 | m3 | m4 | m5 | m6;
+                        }
+                    }
+                }
+            }
+        }
+    }
+    /*
+    for (player = 0; player < N_8BIT; ++player){
+        for (place = 0; place < HW; ++place){
+            n_flip_pre_calc[player][place] = 0;
+            if (player & (1 << place))
+                continue;
+            opponent = 0b11111111 ^ (player | (1 << place));
+            n_flip_pre_calc[player][place] = pop_count_uchar(flip_pre_calc[player][opponent][place]);
+        }
+    }
+    */
 }

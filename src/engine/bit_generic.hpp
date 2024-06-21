@@ -240,16 +240,6 @@ inline uint64_t rotate_180(uint64_t x){
     }
 #endif
 
-inline uint_fast8_t clz(int64_t x){
-    x = x | (x >> 1);
-    x = x | (x >> 2);
-    x = x | (x >> 4);
-    x = x | (x >> 8);
-    x = x | (x >> 16);
-    x = x | (x >> 32);
-    return pop_count_ull(~x);
-}
-
 /*
     @brief get the place of the first bit of a given board
 
