@@ -65,7 +65,7 @@ Search_result lazy_smp(Board board, int depth, uint_fast8_t mpc_level, bool show
         int sub_max_mpc_level[61];
         bool sub_searching = true;
         int sub_depth = main_depth;
-        if (use_multi_thread && !(is_end_search && main_depth == depth) && main_depth < 10){
+        if (use_multi_thread && !(is_end_search && main_depth == depth) && main_depth <= 10){
             int max_thread_size = thread_pool.size();
             for (int i = 0; i < main_depth - 14; ++i){
                 max_thread_size *= 0.9;

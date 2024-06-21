@@ -44,7 +44,7 @@ answer = '''#40 38  a2
 
 answer = answer.splitlines()
 
-cmd = 'versions/Egaroucid_for_Console_beta/Egaroucid_for_Console.exe -l 60 -nobook -hash 25 -solve problem/ffo40-59.txt -thread 32'
+cmd = 'versions/Egaroucid_for_Console_beta/Egaroucid_for_Console.exe -l 60 -nobook -solve problem/ffo40-59.txt -thread 32'
 if len(sys.argv) == 2:
     eval_file = sys.argv[1]
     print('eval ', eval_file)
