@@ -130,8 +130,10 @@ int nega_alpha_ordering_nws(Search *search, int alpha, int depth, bool skipped, 
         return v;
     }
     #if USE_MID_MPC
-        if (mpc(search, alpha, alpha + 1, depth, legal, is_end_search, &v, searching)){
-            return v;
+        if (depth >= USE_MPC_DEPTH && (!search->is_presearch || depth <= MAX_MPC_DEPTH_PRESEARCH)){
+            if (mpc(search, alpha, alpha + 1, depth, legal, is_end_search, &v, searching)){
+                return v;
+            }
         }
     #endif
     int best_move = TRANSPOSITION_TABLE_UNDEFINED;
