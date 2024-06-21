@@ -93,23 +93,23 @@ Search_result lazy_smp(Board board, int depth, uint_fast8_t mpc_level, bool show
                 }
             }
             int max_sub_search_depth = -1;
-            int max_sub_search_mpc_level = 0;
+            int max_sub_main_mpc_level = 0;
             bool max_is_only_one = false;
             for (int i = 0; i < (int)parallel_tasks.size(); ++i){
                 if (sub_depth_arr[i] > max_sub_search_depth){
                     max_sub_search_depth = sub_depth_arr[i];
-                    max_sub_search_mpc_level = searches[i].mpc_level;
+                    max_sub_main_mpc_level = searches[i].mpc_level;
                     max_is_only_one = true;
-                } else if (sub_depth_arr[i] == max_sub_search_depth && max_sub_search_mpc_level < searches[i].mpc_level){
-                    max_sub_search_mpc_level = searches[i].mpc_level;
+                } else if (sub_depth_arr[i] == max_sub_search_depth && max_sub_main_mpc_level < searches[i].mpc_level){
+                    max_sub_main_mpc_level = searches[i].mpc_level;
                     max_is_only_one = true;
-                } else if (sub_depth_arr[i] == max_sub_search_depth && searches[i].mpc_level == max_sub_search_mpc_level){
+                } else if (sub_depth_arr[i] == max_sub_search_depth && searches[i].mpc_level == max_sub_main_mpc_level){
                     max_is_only_one = false;
                 }
             }
             if (max_is_only_one){
                 for (int i = 0; i < (int)parallel_tasks.size(); ++i){
-                    if (sub_depth_arr[i] == max_sub_search_depth && searches[i].mpc_level == max_sub_search_mpc_level){
+                    if (sub_depth_arr[i] == max_sub_search_depth && searches[i].mpc_level == max_sub_main_mpc_level){
                         searches[i].need_to_see_tt_loop = false; // off the inside-loop tt lookup in the max level thread
                     }
                 }
@@ -151,7 +151,7 @@ Search_result lazy_smp(Board board, int depth, uint_fast8_t mpc_level, bool show
             std::cerr << "depth " << result.depth << "@" << SELECTIVITY_PERCENTAGE[main_mpc_level] << "%" << " value " << result.value << " (raw " << id_result.first << ") policy " << idx_to_coord(id_result.second) << " n_worker " << parallel_tasks.size() << " n_nodes " << result.nodes << " time " << result.time << " NPS " << result.nps << std::endl;
         }
         if (!is_end_search || main_depth < depth - LAZYSMP_ENDSEARCH_PRESEARCH_OFFSET){
-            if (main_depth < 13 && main_depth < depth - 3){
+            if (main_depth <= 15 && main_depth < depth - 3){
                 main_depth += 3;
             } else{
                 ++main_depth;
@@ -159,12 +159,25 @@ Search_result lazy_smp(Board board, int depth, uint_fast8_t mpc_level, bool show
         } else{
             if (main_depth < depth){
                 main_depth = depth;
-                main_mpc_level = MPC_74_LEVEL;
-            } else{
-                if (main_mpc_level == MPC_88_LEVEL && mpc_level > MPC_88_LEVEL){
-                    main_mpc_level = mpc_level;
+                if (depth <= 30 && mpc_level >= MPC_88_LEVEL){
+                    main_mpc_level = MPC_88_LEVEL;
                 } else{
-                    ++main_mpc_level;
+                    main_mpc_level = MPC_74_LEVEL;
+                }
+            } else{
+                if (main_mpc_level < mpc_level){
+                    if (
+                        (main_mpc_level >= MPC_74_LEVEL && mpc_level > MPC_74_LEVEL && depth <= 22) || 
+                        (main_mpc_level >= MPC_88_LEVEL && mpc_level > MPC_88_LEVEL && depth <= 25) || 
+                        (main_mpc_level >= MPC_93_LEVEL && mpc_level > MPC_93_LEVEL && depth <= 32) || 
+                        (main_mpc_level >= MPC_98_LEVEL && mpc_level > MPC_98_LEVEL)
+                        ){
+                        main_mpc_level = mpc_level;
+                    } else{
+                        ++main_mpc_level;
+                    }
+                } else{
+                    break;
                 }
             }
         }
