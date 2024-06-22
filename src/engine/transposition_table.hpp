@@ -332,7 +332,7 @@ class Transposition_table{
                 return true;
             }
         #else
-            inline bool resize(int hash_level){
+            inline bool set_size(){
                 table_size = TRANSPOSITION_TABLE_STACK_SIZE;
                 n_registered_threshold = table_size * TT_REGISTER_THRESHOLD_RATE;
                 init();
@@ -745,66 +745,86 @@ void transposition_table_init(){
     transposition_table.init();
 }
 
-/*
-    @brief Resize hash and transposition tables
+#if USE_CHANGEABLE_HASH_LEVEL
+    /*
+        @brief Resize hash and transposition tables
 
-    @param hash_level_failed    hash level used when failed
-    @param hash_level           new hash level
-    @return hash resized?
-*/
-bool hash_resize(int hash_level_failed, int hash_level, bool show_log){
-    if (!transposition_table.resize(hash_level)){
-        std::cerr << "[ERROR] hash table resize failed. resize to level " << hash_level_failed << std::endl;
-        transposition_table.resize(hash_level_failed);
-        if (!hash_init(hash_level_failed)){
-            std::cerr << "[ERROR] can't get hash. you can ignore this error" << std::endl;
-            hash_init_rand(hash_level_failed);
+        @param hash_level_failed    hash level used when failed
+        @param hash_level           new hash level
+        @return hash resized?
+    */
+    bool hash_resize(int hash_level_failed, int hash_level, bool show_log){
+        if (!transposition_table.resize(hash_level)){
+            std::cerr << "[ERROR] hash table resize failed. resize to level " << hash_level_failed << std::endl;
+            transposition_table.resize(hash_level_failed);
+            if (!hash_init(hash_level_failed)){
+                std::cerr << "[ERROR] can't get hash. you can ignore this error" << std::endl;
+                hash_init_rand(hash_level_failed);
+            }
+            global_hash_level = hash_level_failed;
+            return false;
         }
-        global_hash_level = hash_level_failed;
-        return false;
-    }
-    if (!hash_init(hash_level)){
-        std::cerr << "[ERROR] can't get hash. you can ignore this error" << std::endl;
-        hash_init_rand(hash_level);
-    }
-    global_hash_level = hash_level;
-    if (show_log){
-        double size_mb = (double)sizeof(Hash_node) / 1024 / 1024 * hash_sizes[hash_level];
-        std::cerr << "hash resized to level " << hash_level << " elements " << hash_sizes[hash_level] << " size " << size_mb << " MB" << std::endl;
-    }
-    return true;
-}
-
-/*
-    @brief Resize hash and transposition tables
-
-    @param hash_level_failed    hash level used when failed
-    @param hash_level           new hash level
-    @param binary_path          path to binary
-    @return hash resized?
-*/
-bool hash_resize(int hash_level_failed, int hash_level, std::string binary_path, bool show_log){
-    if (!transposition_table.resize(hash_level)){
-        std::cerr << "[ERROR] hash table resize failed. resize to level " << hash_level_failed << std::endl;
-        transposition_table.resize(hash_level_failed);
-        if (!hash_init(hash_level_failed, binary_path)){
+        if (!hash_init(hash_level)){
             std::cerr << "[ERROR] can't get hash. you can ignore this error" << std::endl;
-            hash_init_rand(hash_level_failed);
+            hash_init_rand(hash_level);
         }
-        global_hash_level = hash_level_failed;
-        return false;
+        global_hash_level = hash_level;
+        if (show_log){
+            double size_mb = (double)sizeof(Hash_node) / 1024 / 1024 * hash_sizes[hash_level];
+            std::cerr << "hash resized to level " << hash_level << " elements " << hash_sizes[hash_level] << " size " << size_mb << " MB" << std::endl;
+        }
+        return true;
     }
-    if (!hash_init(hash_level, binary_path)){
-        std::cerr << "[ERROR] can't get hash. you can ignore this error" << std::endl;
-        hash_init_rand(hash_level);
+
+    /*
+        @brief Resize hash and transposition tables
+
+        @param hash_level_failed    hash level used when failed
+        @param hash_level           new hash level
+        @param binary_path          path to binary
+        @return hash resized?
+    */
+    bool hash_resize(int hash_level_failed, int hash_level, std::string binary_path, bool show_log){
+        if (!transposition_table.resize(hash_level)){
+            std::cerr << "[ERROR] hash table resize failed. resize to level " << hash_level_failed << std::endl;
+            transposition_table.resize(hash_level_failed);
+            if (!hash_init(hash_level_failed, binary_path)){
+                std::cerr << "[ERROR] can't get hash. you can ignore this error" << std::endl;
+                hash_init_rand(hash_level_failed);
+            }
+            global_hash_level = hash_level_failed;
+            return false;
+        }
+        if (!hash_init(hash_level, binary_path)){
+            std::cerr << "[ERROR] can't get hash. you can ignore this error" << std::endl;
+            hash_init_rand(hash_level);
+        }
+        global_hash_level = hash_level;
+        if (show_log){
+            double size_mb = (double)sizeof(Hash_node) / 1024 / 1024 * hash_sizes[hash_level];
+            std::cerr << "hash resized to level " << hash_level << " elements " << hash_sizes[hash_level] << " size " << size_mb << " MB" << std::endl;
+        }
+        return true;
     }
-    global_hash_level = hash_level;
-    if (show_log){
-        double size_mb = (double)sizeof(Hash_node) / 1024 / 1024 * hash_sizes[hash_level];
-        std::cerr << "hash resized to level " << hash_level << " elements " << hash_sizes[hash_level] << " size " << size_mb << " MB" << std::endl;
+#else
+    bool hash_tt_init(std::string binary_path, bool show_log){
+        transposition_table.set_size();
+        if (!hash_init(DEFAULT_HASH_LEVEL, binary_path)){
+            std::cerr << "[ERROR] can't get hash. you can ignore this error" << std::endl;
+            hash_init_rand(DEFAULT_HASH_LEVEL);
+        }
+        return true;
     }
-    return true;
-}
+
+    bool hash_tt_init(bool show_log){
+        transposition_table.set_size();
+        if (!hash_init(DEFAULT_HASH_LEVEL)){
+            std::cerr << "[ERROR] can't get hash. you can ignore this error" << std::endl;
+            hash_init_rand(DEFAULT_HASH_LEVEL);
+        }
+        return true;
+    }
+#endif
 
 inline bool transposition_cutoff(Search *search, uint32_t hash_code, int depth, int *alpha, int *beta, int *v, uint_fast8_t moves[]){
     //if (depth >= USE_TT_DEPTH_THRESHOLD){

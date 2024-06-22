@@ -32,7 +32,7 @@ int init_ai(Settings* settings, const Directories* directories, bool *stop_loadi
             settings->hash_level = DEFAULT_HASH_LEVEL;
         }
     #else
-        hash_resize(DEFAULT_HASH_LEVEL, DEFAULT_HASH_LEVEL, true);
+        hash_tt_init(true);
     #endif
     stability_init();
     if (!evaluate_init(directories->eval_file, directories->eval_mo_end_file, true)) {

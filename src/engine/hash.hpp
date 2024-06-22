@@ -16,11 +16,13 @@
     @brief definition of maximum hash level
 */
 #define N_HASH_LEVEL 30
-#define MIN_HASH_LEVEL 25
 #define DEFAULT_HASH_LEVEL 25
-#define MAX_HASH_LEVEL 27
 
-int global_hash_level = DEFAULT_HASH_LEVEL;
+#if USE_CHANGEABLE_HASH_LEVEL
+    int global_hash_level = DEFAULT_HASH_LEVEL;
+    #define MIN_HASH_LEVEL 25
+    #define MAX_HASH_LEVEL 27
+#endif
 
 /*
     @brief array for calculating hash code
