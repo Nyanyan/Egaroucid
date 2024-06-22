@@ -4,7 +4,7 @@ import glob
 import psutil
 import time
 
-#'''
+'''
 # 7.0
 bin_root_dir = './../../../train_data/bin_data/20240223_1/'
 exe = 'data_board_to_idx.out'
@@ -17,7 +17,7 @@ board_sub_dir_nums = [
     39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 57, 60, 61, 62, 63 # mid-endgame data 2
 ]
 board_sub_dir_nums.sort()
-#'''
+'''
 '''
 # 7.0 move ordering_end_nws
 bin_root_dir = './../../../train_data/bin_data/20240304_1_move_ordering_end_nws/'
@@ -47,6 +47,20 @@ exe = 'data_board_to_idx_20240611_1_move_ordering_end.out'
 N_PHASES = 1
 board_sub_dir_nums = [52]
 '''
+#'''
+# 7.0 light
+bin_root_dir = './../../../train_data/bin_data/20240622_1_7_0_light/'
+exe = 'data_board_to_idx_20240622_1_7_0_light.out'
+N_PHASES = 60
+board_sub_dir_nums = [
+    18, 19, 20, 21, 24, 25, 27, 28, 29, 30, 31, # old data
+    34, 35, # mid-endgame data 1
+    36, 37, # book data
+    #38, # test data
+    39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 57, 60, 61, 62, 63 # mid-endgame data 2
+]
+board_sub_dir_nums.sort()
+#'''
 
 
 input_root_dir = './../../../train_data/board_data/'

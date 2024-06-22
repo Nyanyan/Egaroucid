@@ -3,15 +3,15 @@ import sys
 
 phase = str(sys.argv[1])
 hour = '0'
-minute = '2'
+minute = '1'
 second = '0'
-alpha = '500.0'
+alpha = '30.0'
 n_patience = '1000'
 
 model_dir = './../../../model/nomodel/'
 
 
-#'''
+'''
 # 7.0
 train_data_nums = [
     18, 19, 20, 21, 24, 25, 28, 29, 30, 31, # old data (no records27)
@@ -26,7 +26,7 @@ if int(phase) <= 11:
 train_data_nums.sort()
 train_root_dir = './../../../train_data/bin_data/20240223_1/'
 executable = 'eval_optimizer_cuda_12_2_0.exe'
-#'''
+'''
 '''
 # 7.0 move ordering end nws
 train_data_nums = [24, 28]
@@ -61,6 +61,22 @@ train_root_dir = './../../../train_data/bin_data/20240611_1_move_ordering_end/'
 executable = 'eval_optimizer_cuda_12_2_0_20240611_1_move_ordering_end.exe'
 test_data = './../../../train_data/bin_data/20240611_1_move_ordering_end/' + phase + '/52.dat'
 '''
+#'''
+# 7.0 light
+train_data_nums = [
+    18, 19, 20, 21, 24, 25, 28, 29, 30, 31, # old data (no records27)
+    34, 35, # mid-endgame data 1
+    36, 37, # book data
+    #38, # test data
+    39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 57, 60, 61, 62, 63, # mid-endgame data 2
+    64 # cut records27
+]
+if int(phase) <= 11:
+    train_data_nums = [36, 37] # use only book with phase <= 11
+train_data_nums.sort()
+train_root_dir = './../../../train_data/bin_data/20240622_1_7_0_light/'
+executable = 'eval_optimizer_cuda_12_2_0_20240622_1_7_0_light.exe'
+#'''
 
 
 
