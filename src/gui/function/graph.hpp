@@ -70,94 +70,12 @@ private:
 
 public:
     void draw(std::vector<History_elem> nodes1, std::vector<History_elem> nodes2, int n_discs, bool show_graph, int level, Font font, int color_type, bool show_graph_sum_of_loss) {
-        std::cerr << "GRAPH DRAW n_discs " << n_discs << " show_graph " << show_graph << " level " << level << " color_type " << color_type << " show_graph_sum_of_loss " << show_graph_sum_of_loss << std::endl;
         std::vector<std::vector<Graph_loss_elem>> sum_of_loss_nodes1(2);
         std::vector<std::vector<Graph_loss_elem>> sum_of_loss_nodes2(2);
         resolution = GRAPH_RESOLUTION;
         if (show_graph) {
             if (show_graph_sum_of_loss){
-                Graph_loss_elem elem;
-                elem.ply = nodes1[0].board.n_discs() - 4;
-                elem.v = 0;
-                sum_of_loss_nodes1[0].emplace_back(elem);
-                sum_of_loss_nodes1[1].emplace_back(elem);
-                int last_val_black = nodes1[0].v;
-                int last_val_white = -nodes1[0].v;
-                for (int i = 1; i < (int)nodes1.size(); ++i){
-                    int val_black = nodes1[i].v;
-                    int val_white = -nodes1[i].v;
-                    int loss_black = sum_of_loss_nodes1[0].back().v;
-                    int loss_white = sum_of_loss_nodes1[1].back().v;
-                    if (-HW2 <= val_black && val_black <= HW2){
-                        if (-HW2 <= last_val_black && last_val_black <= HW2){
-                            loss_black += std::max(0, last_val_black - val_black);
-                            loss_white += std::max(0, last_val_white - val_white);
-                        }
-                        last_val_black = val_black;
-                        last_val_white = val_white;
-                        elem.ply = nodes1[i].board.n_discs() - 4;
-                        elem.v = loss_black;
-                        sum_of_loss_nodes1[0].emplace_back(elem);
-                        elem.v = loss_white;
-                        sum_of_loss_nodes1[1].emplace_back(elem);
-                    }
-                }
-                if (nodes2.size()){
-                    elem.ply = nodes2[0].board.n_discs() - 4;
-                    elem.v = 0;
-                    for (Graph_loss_elem &elem1: sum_of_loss_nodes1[0]){
-                        if (elem1.ply <= elem.ply){
-                            elem.v = elem1.v;
-                        }
-                    }
-                    for (History_elem &elem2: nodes1){
-                        if (elem2.board.n_discs() - 4 == elem.ply - 1 && -HW2 <= elem2.v && elem2.v <= HW2 && -HW2 <= nodes2[0].v && nodes2[0].v <= HW2){
-                            elem.v += std::max(0, elem2.v - nodes2[0].v);
-                        }
-                    }
-                    sum_of_loss_nodes2[0].emplace_back(elem);
-                    elem.v = 0;
-                    for (Graph_loss_elem &elem1: sum_of_loss_nodes1[1]){
-                        if (elem1.ply <= elem.ply){
-                            elem.v = elem1.v;
-                        }
-                    }
-                    for (History_elem &elem2: nodes1){
-                        if (elem2.board.n_discs() - 4 == elem.ply - 1 && -HW2 <= elem2.v && elem2.v <= HW2 && -HW2 <= nodes2[0].v && nodes2[0].v <= HW2){
-                            elem.v -= std::max(0, (-elem2.v) - (-nodes2[0].v));
-                        }
-                    }
-                    sum_of_loss_nodes2[1].emplace_back(elem);
-                    int last_val_black = nodes2[0].v;
-                    int last_val_white = -nodes2[0].v;
-                    for (int i = 1; i < (int)nodes2.size(); ++i){
-                        int val_black = nodes2[i].v;
-                        int val_white = -nodes2[i].v;
-                        int loss_black = sum_of_loss_nodes2[0].back().v;
-                        int loss_white = sum_of_loss_nodes2[1].back().v;
-                        if (-HW2 <= val_black && val_black <= HW2){
-                            if (-HW2 <= last_val_black && last_val_black <= HW2){
-                                loss_black += std::max(0, last_val_black - val_black);
-                                loss_white += std::max(0, last_val_white - val_white);
-                            }
-                            last_val_black = val_black;
-                            last_val_white = val_white;
-                            elem.ply = nodes2[i].board.n_discs() - 4;
-                            elem.v = loss_black;
-                            sum_of_loss_nodes2[0].emplace_back(elem);
-                            elem.v = loss_white;
-                            sum_of_loss_nodes2[1].emplace_back(elem);
-                        }
-                    }
-                }
-                for (int i = 0; i < 2; ++i){
-                    for (Graph_loss_elem &el: sum_of_loss_nodes1[i]){
-                        el.v *= -1;
-                    }
-                    for (Graph_loss_elem &el: sum_of_loss_nodes2[i]){
-                        el.v *= -1;
-                    }
-                }
+                calc_sum_of_loss_nodes(nodes1, nodes2, sum_of_loss_nodes1, sum_of_loss_nodes2);
                 calc_range_sum_of_loss(sum_of_loss_nodes1, sum_of_loss_nodes2);
             } else{
                 calc_range(nodes1, nodes2);
@@ -230,7 +148,6 @@ public:
             font(Format(level) + language.get("info", "lookahead")).draw(font_size, Arg::topCenter((sx + endsearch_bound_coord) / 2, sy + LEVEL_DEPTH_DY - 18), graph_color);
             font(language.get("info", "to_last_move")).draw(font_size, Arg::topCenter((sx + size_x + endsearch_bound_coord) / 2, sy + LEVEL_DEPTH_DY - 18), graph_color);
         }
-        std::cerr << "DEBUG3" << std::endl;
         for (int y = 0; y <= y_max - y_min; y += resolution) {
             int yy = sy + dy * y;
             if (show_graph_sum_of_loss){
@@ -312,6 +229,91 @@ public:
     }
 
 private:
+    void calc_sum_of_loss_nodes(std::vector<History_elem> nodes1, std::vector<History_elem> nodes2, std::vector<std::vector<Graph_loss_elem>> &sum_of_loss_nodes1, std::vector<std::vector<Graph_loss_elem>> &sum_of_loss_nodes2){
+        Graph_loss_elem elem;
+        elem.ply = nodes1[0].board.n_discs() - 4;
+        elem.v = 0;
+        sum_of_loss_nodes1[0].emplace_back(elem);
+        sum_of_loss_nodes1[1].emplace_back(elem);
+        int last_val_black = nodes1[0].v;
+        int last_val_white = -nodes1[0].v;
+        for (int i = 1; i < (int)nodes1.size(); ++i){
+            int val_black = nodes1[i].v;
+            int val_white = -nodes1[i].v;
+            int loss_black = sum_of_loss_nodes1[0].back().v;
+            int loss_white = sum_of_loss_nodes1[1].back().v;
+            if (-HW2 <= val_black && val_black <= HW2){
+                if (-HW2 <= last_val_black && last_val_black <= HW2){
+                    loss_black += std::max(0, last_val_black - val_black);
+                    loss_white += std::max(0, last_val_white - val_white);
+                }
+                last_val_black = val_black;
+                last_val_white = val_white;
+                elem.ply = nodes1[i].board.n_discs() - 4;
+                elem.v = loss_black;
+                sum_of_loss_nodes1[0].emplace_back(elem);
+                elem.v = loss_white;
+                sum_of_loss_nodes1[1].emplace_back(elem);
+            }
+        }
+        if (nodes2.size()){
+            elem.ply = nodes2[0].board.n_discs() - 4;
+            elem.v = 0;
+            for (Graph_loss_elem &elem1: sum_of_loss_nodes1[0]){
+                if (elem1.ply <= elem.ply){
+                    elem.v = elem1.v;
+                }
+            }
+            for (History_elem &elem2: nodes1){
+                if (elem2.board.n_discs() - 4 == elem.ply - 1 && -HW2 <= elem2.v && elem2.v <= HW2 && -HW2 <= nodes2[0].v && nodes2[0].v <= HW2){
+                    elem.v += std::max(0, elem2.v - nodes2[0].v);
+                }
+            }
+            sum_of_loss_nodes2[0].emplace_back(elem);
+            elem.v = 0;
+            for (Graph_loss_elem &elem1: sum_of_loss_nodes1[1]){
+                if (elem1.ply <= elem.ply){
+                    elem.v = elem1.v;
+                }
+            }
+            for (History_elem &elem2: nodes1){
+                if (elem2.board.n_discs() - 4 == elem.ply - 1 && -HW2 <= elem2.v && elem2.v <= HW2 && -HW2 <= nodes2[0].v && nodes2[0].v <= HW2){
+                    elem.v -= std::max(0, (-elem2.v) - (-nodes2[0].v));
+                }
+            }
+            sum_of_loss_nodes2[1].emplace_back(elem);
+            int last_val_black = nodes2[0].v;
+            int last_val_white = -nodes2[0].v;
+            for (int i = 1; i < (int)nodes2.size(); ++i){
+                int val_black = nodes2[i].v;
+                int val_white = -nodes2[i].v;
+                int loss_black = sum_of_loss_nodes2[0].back().v;
+                int loss_white = sum_of_loss_nodes2[1].back().v;
+                if (-HW2 <= val_black && val_black <= HW2){
+                    if (-HW2 <= last_val_black && last_val_black <= HW2){
+                        loss_black += std::max(0, last_val_black - val_black);
+                        loss_white += std::max(0, last_val_white - val_white);
+                    }
+                    last_val_black = val_black;
+                    last_val_white = val_white;
+                    elem.ply = nodes2[i].board.n_discs() - 4;
+                    elem.v = loss_black;
+                    sum_of_loss_nodes2[0].emplace_back(elem);
+                    elem.v = loss_white;
+                    sum_of_loss_nodes2[1].emplace_back(elem);
+                }
+            }
+        }
+        for (int i = 0; i < 2; ++i){
+            for (Graph_loss_elem &el: sum_of_loss_nodes1[i]){
+                el.v *= -1;
+            }
+            for (Graph_loss_elem &el: sum_of_loss_nodes2[i]){
+                el.v *= -1;
+            }
+        }
+    }
+
     void calc_range(std::vector<History_elem> nodes1, std::vector<History_elem> nodes2) {
         y_min = -GRAPH_RESOLUTION;
         y_max = GRAPH_RESOLUTION;
