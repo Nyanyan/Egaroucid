@@ -28,77 +28,6 @@
 
 #define ENDSEARCH_PRESEARCH_OFFSET 10
 
-#define PRINCIPAL_VARIATION_MAX_LEN 7
-
-std::string get_principal_variation_str(Board board, int best_move){
-    std::string res;
-    Flip flip;
-    int len = 0;
-    //std::cerr << "given move: " << best_move << std::endl;
-    if (is_valid_policy(best_move) && (board.get_legal() & (1ULL << best_move))){
-        res += idx_to_coord(best_move);
-        ++len;
-        calc_flip(&flip, &board, best_move);
-        board.move_board(&flip);
-        //std::cerr << "given " << idx_to_coord(best_move) << std::endl;
-    }
-    bool pv_search_failed = false;
-    while (!pv_search_failed && len < PRINCIPAL_VARIATION_MAX_LEN){
-        pv_search_failed = true;
-        if (board.is_end()){
-            break; // game over
-        }
-        if (board.get_legal() == 0){
-            board.pass();
-        }
-        uint64_t legal = board.get_legal();
-        int best_move_book = book.get_specified_best_move(&board).policy;
-        if (is_valid_policy(best_move_book) && (legal & (1ULL << best_move_book))){ // search best move by book
-            res += idx_to_coord(best_move_book);
-            ++len;
-            calc_flip(&flip, &board, best_move_book);
-            board.move_board(&flip);
-            pv_search_failed = false;
-            //std::cerr << "book " << idx_to_coord(best_move_book) << std::endl;
-        } else{                                                                     // search pv by TT
-            int best_move_tt = transposition_table.get_best_move(&board, board.hash());
-            if (is_valid_policy(best_move_tt) && (legal & (1ULL << best_move_tt))){
-                int l, u;
-                int best_move_tt_expanded = MOVE_UNDEFINED;
-                int max_val = -SCORE_INF;
-                calc_flip(&flip, &board, best_move_tt);
-                board.move_board(&flip);
-                    transposition_table.get_value_any_level(&board, board.hash(), &l, &u);
-                    max_val = -u;
-                    best_move_tt_expanded = best_move_tt;
-                board.undo_board(&flip);
-                if (best_move_tt == best_move_tt_expanded){
-                    uint64_t legal2 = legal ^ (1ULL << best_move_tt);
-                    for (uint_fast8_t cell = first_bit(&legal2); legal2; cell = next_bit(&legal2)){
-                        calc_flip(&flip, &board, cell);
-                        board.move_board(&flip);
-                            transposition_table.get_value_any_level(&board, board.hash(), &l, &u);
-                            if (max_val < -u){
-                                max_val = -u;
-                                best_move_tt_expanded = cell;
-                            }
-                        board.undo_board(&flip);
-                    }
-                }
-                if (best_move_tt == best_move_tt_expanded){
-                    res += idx_to_coord(best_move_tt);
-                    ++len;
-                    calc_flip(&flip, &board, best_move_tt);
-                    board.move_board(&flip);
-                    pv_search_failed = false;
-                    //std::cerr << "tt " << idx_to_coord(best_move_tt) << std::endl;
-                }
-            }
-        }
-    }
-    return res;
-}
-
 Search_result iterative_deepening_search(Board board, int depth, uint_fast8_t mpc_level, bool show_log, std::vector<Clog_result> clogs, uint64_t use_legal, bool use_multi_thread){
     Search_result result;
     result.value = SCORE_UNDEFINED;
@@ -291,6 +220,7 @@ void iterative_deepening_search_hint(Board board, int depth, uint_fast8_t mpc_le
                 std::cerr << std::endl;
             }
         }
+        // update depth
         if (!is_end_search || search_depth < depth - ENDSEARCH_PRESEARCH_OFFSET){
             ++search_depth;
         } else{
