@@ -153,12 +153,6 @@ class Hash_data{
             importance = 1;
         }
 
-        inline void reg_best_move_if_not_registered(const int policy){
-            if (moves[0] == TRANSPOSITION_TABLE_UNDEFINED){
-                moves[0] = policy;
-            }
-        }
-
         /*
             @brief Get level of the element
 
@@ -453,65 +447,24 @@ class Transposition_table{
                 if (node->data.get_level() <= level){
                     node->lock.lock();
                         node_level = node->data.get_level();
-                        if (node->board.player == search->board.player && node->board.opponent == search->board.opponent){
-                            if (node_level == level)
-                                node->data.reg_same_level(alpha, beta, value, policy);
-                            else if (node_level < level)
-                                node->data.reg_new_level(depth, search->mpc_level, alpha, beta, value, policy);
-                            else
-                                node->data.reg_best_move_if_not_registered(policy);
-                            node->lock.unlock();
-                            break;
-                        } else if (node_level <= level){
-                            node->board.player = search->board.player;
-                            node->board.opponent = search->board.opponent;
-                            node->data.reg_new_data(depth, search->mpc_level, alpha, beta, value, policy);
-                            node->lock.unlock();
-                            if (node_level > 0){
-                                n_registered.fetch_add(1);
+                        if (node_level <= level){
+                            if (node->board.player == search->board.player && node->board.opponent == search->board.opponent){
+                                if (node_level == level)
+                                    node->data.reg_same_level(alpha, beta, value, policy);
+                                else
+                                    node->data.reg_new_level(depth, search->mpc_level, alpha, beta, value, policy);
+                                node->lock.unlock();
+                                break;
+                            } else{
+                                node->board.player = search->board.player;
+                                node->board.opponent = search->board.opponent;
+                                node->data.reg_new_data(depth, search->mpc_level, alpha, beta, value, policy);
+                                node->lock.unlock();
+                                if (node_level > 0){
+                                    n_registered.fetch_add(1);
+                                }
+                                break;
                             }
-                            break;
-                        }
-                    node->lock.unlock();
-                }
-                ++hash;
-                node = get_node(hash);
-            }
-            if (n_registered >= n_registered_threshold){
-                std::lock_guard lock(mtx);
-                if (n_registered >= n_registered_threshold){
-                    //std::cerr << "resetting transposition importance" << std::endl;
-                    reset_importance_proc();
-                }
-            }
-        }
-
-        inline void reg(const Board *board, uint32_t hash, const int depth, const uint_fast8_t mpc_level, int alpha, int beta, int value, int policy){
-            Hash_node *node = get_node(hash);
-            const uint32_t level = get_level_common(depth, mpc_level);
-            uint32_t node_level;
-            for (uint_fast8_t i = 0; i < TRANSPOSITION_TABLE_N_LOOP; ++i){
-                if (node->data.get_level() <= level){
-                    node->lock.lock();
-                        node_level = node->data.get_level();
-                        if (node->board.player == board->player && node->board.opponent == board->opponent){
-                            if (node_level == level)
-                                node->data.reg_same_level(alpha, beta, value, policy);
-                            else if (node_level < level)
-                                node->data.reg_new_level(depth, mpc_level, alpha, beta, value, policy);
-                            else
-                                node->data.reg_best_move_if_not_registered(policy);
-                            node->lock.unlock();
-                            break;
-                        } else if (node_level <= level){
-                            node->board.player = board->player;
-                            node->board.opponent = board->opponent;
-                            node->data.reg_new_data(depth, mpc_level, alpha, beta, value, policy);
-                            node->lock.unlock();
-                            if (node_level > 0){
-                                n_registered.fetch_add(1);
-                            }
-                            break;
                         }
                     node->lock.unlock();
                 }
@@ -587,9 +540,8 @@ class Transposition_table{
             }
         }
 
-
         /*
-            @brief get value from transposition table
+            @brief get best move from transposition table
 
             @param search               Search information
             @param hash                 hash code
@@ -617,7 +569,6 @@ class Transposition_table{
             }
             return false;
         }
-        
 
         /*
             @brief get best move from transposition table
@@ -649,7 +600,7 @@ class Transposition_table{
         /*
             @brief get best move from transposition table
 
-            @param search               Search information
+            @param board                Board
             @param hash                 hash code
             @param depth                depth
             @param lower                lower bound to store
