@@ -51,6 +51,9 @@ inline void calc_eval_features(Board *board, Eval_search *eval);
     inline void eval_move(Eval_search *eval, const Flip *flip, const Board *board);
     inline void eval_undo(Eval_search *eval);
     inline void eval_pass(Eval_search *eval, const Board *board);
+    inline void eval_move_light(Eval_search *eval, const Flip *flip, const Board *board);
+    inline void eval_undo_light(Eval_search *eval);
+    inline void eval_pass_light(Eval_search *eval, const Board *board);
     inline void eval_move_endsearch(Eval_search *eval, const Flip *flip, const Board *board);
     inline void eval_undo_endsearch(Eval_search *eval);
     inline void eval_pass_endsearch(Eval_search *eval, const Board *board);
@@ -303,6 +306,53 @@ class Search{
             #if USE_SIMD
                 eval_pass(&eval, &board);
             #else
+                eval_pass(&eval);
+            #endif
+            board.pass();
+        }
+
+        /*
+            @brief Move board and other variables
+
+            @param flip                 Flip information
+        */
+        inline void move_light(const Flip *flip) {
+            #if USE_SIMD
+                eval_move_light(&eval, flip, &board);
+            #else
+                TODO
+                eval_move(&eval, flip);
+            #endif
+            board.move_board(flip);
+            ++n_discs;
+            parity ^= cell_div4[flip->pos];
+        }
+
+        /*
+            @brief Undo board and other variables
+
+            @param flip                 Flip information
+        */
+        inline void undo_light(const Flip *flip) {
+            #if USE_SIMD
+                eval_undo_light(&eval);
+            #else
+                TODO
+                eval_undo(&eval, flip);
+            #endif
+            board.undo_board(flip);
+            --n_discs;
+            parity ^= cell_div4[flip->pos];
+        }
+
+        /*
+            @brief pass board
+        */
+        inline void pass_light(){
+            #if USE_SIMD
+                eval_pass_light(&eval, &board);
+            #else
+                TODO
                 eval_pass(&eval);
             #endif
             board.pass();

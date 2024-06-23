@@ -38,19 +38,19 @@ inline int nega_alpha_light_eval1(Search *search, int alpha, int beta, bool skip
     if (legal == 0ULL){
         if (skipped)
             return end_evaluate(&search->board);
-        search->pass();
+        search->pass_light();
             v = -nega_alpha_light_eval1(search, -beta, -alpha, true);
-        search->pass();
+        search->pass_light();
         return v;
     }
     int g;
     Flip flip;
     for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)){
         calc_flip(&flip, &search->board, cell);
-        search->move(&flip);
+        search->move_light(&flip);
             ++search->n_nodes;
             g = -mid_evaluate_light(search);
-        search->undo(&flip);
+        search->undo_light(&flip);
         ++search->n_nodes;
         if (v < g){
             if (alpha < g){
@@ -85,9 +85,9 @@ int nega_alpha_light(Search *search, int alpha, int beta, int depth, bool skippe
     if (legal == 0ULL){
         if (skipped)
             return end_evaluate(&search->board);
-        search->pass();
+        search->pass_light();
             v = -nega_alpha_light(search, -beta, -alpha, depth, true, LEGAL_UNDEFINED, searching);
-        search->pass();
+        search->pass_light();
         return v;
     }
     uint32_t hash_code = search->board.hash();
@@ -130,9 +130,9 @@ int nega_alpha_light(Search *search, int alpha, int beta, int depth, bool skippe
             if (move_list[move_idx].flip.flip == 0)
                 break;
         #endif
-        search->move(&move_list[move_idx].flip);
+        search->move_light(&move_list[move_idx].flip);
             g = -nega_alpha_light(search, -beta, -alpha, depth - 1, false, move_list[move_idx].n_legal, searching);
-        search->undo(&move_list[move_idx].flip);
+        search->undo_light(&move_list[move_idx].flip);
         if (v < g){
             v = g;
             //best_move = move_list[move_idx].flip.pos;
@@ -170,9 +170,9 @@ int nega_alpha_light_nws(Search *search, int alpha, int depth, bool skipped, uin
     if (legal == 0ULL){
         if (skipped)
             return end_evaluate(&search->board);
-        search->pass();
+        search->pass_light();
             v = -nega_alpha_light_nws(search, -alpha - 1, depth, true, LEGAL_UNDEFINED, searching);
-        search->pass();
+        search->pass_light();
         return v;
     }
     uint32_t hash_code = search->board.hash();
@@ -215,9 +215,9 @@ int nega_alpha_light_nws(Search *search, int alpha, int depth, bool skipped, uin
             if (move_list[move_idx].flip.flip == 0)
                 break;
         #endif
-        search->move(&move_list[move_idx].flip);
+        search->move_light(&move_list[move_idx].flip);
             g = -nega_alpha_light_nws(search, -alpha - 1, depth - 1, false, move_list[move_idx].n_legal, searching);
-        search->undo(&move_list[move_idx].flip);
+        search->undo_light(&move_list[move_idx].flip);
         if (v < g){
             v = g;
             best_move = move_list[move_idx].flip.pos;
