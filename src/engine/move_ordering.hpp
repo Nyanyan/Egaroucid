@@ -23,6 +23,7 @@
 #include "board.hpp"
 #include "search.hpp"
 #include "midsearch.hpp"
+#include "midsearch_light.hpp"
 #include "evaluate.hpp"
 #include "stability.hpp"
 #include "level.hpp"
@@ -102,32 +103,9 @@
 int nega_alpha_eval1(Search *search, int alpha, int beta, bool skipped);
 inline int nega_alpha_eval1_move_ordering_mid(Search *search, int alpha, int beta, bool skipped);
 int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, uint64_t legal, bool is_end_search, const bool *searching);
+inline int nega_alpha_light_eval1(Search *search, int alpha, int beta, bool skipped);
+int nega_alpha_light(Search *search, int alpha, int beta, int depth, bool skipped, uint64_t legal, const bool *searching);
 inline bool transposition_table_get_value(Search *search, uint32_t hash, int *l, int *u);
-
-/*
-    @brief Flip structure with more information
-
-    @param flip                 flip information
-    @param value                the move ordering value
-    @param n_legal              next legal moves as a bitboard for reusing
-*/
-struct Flip_value{
-    Flip flip;
-    int value;
-    uint64_t n_legal;
-
-    Flip_value(){
-        n_legal = LEGAL_UNDEFINED;
-    }
-
-    bool operator<(const Flip_value &another) const{
-        return value < another.value;
-    }
-
-    bool operator>(const Flip_value &another) const{
-        return value > another.value;
-    }
-};
 
 /*
     @brief Get number of corner mobility
@@ -214,9 +192,11 @@ inline void move_evaluate(Search *search, Flip_value *flip_value, int alpha, int
         switch (depth){
             case 0:
                 flip_value->value += (SCORE_MAX - mid_evaluate_diff(search)) * W_VALUE;
+                //flip_value->value += (SCORE_MAX - mid_evaluate_light(search)) * W_VALUE;
                 break;
             case 1:
                 flip_value->value += (SCORE_MAX - nega_alpha_eval1(search, alpha, beta, false)) * (W_VALUE + W_VALUE_DEEP_ADDITIONAL);
+                //flip_value->value += (SCORE_MAX - nega_alpha_light_eval1(search, alpha, beta, false)) * (W_VALUE + W_VALUE_DEEP_ADDITIONAL);
                 break;
             default:
                 if (transposition_table.has_node_any_level(search, search->board.hash())){
@@ -225,6 +205,7 @@ inline void move_evaluate(Search *search, Flip_value *flip_value, int alpha, int
                 uint_fast8_t mpc_level = search->mpc_level;
                 search->mpc_level = MOVE_ORDERING_MPC_LEVEL;
                     flip_value->value += (SCORE_MAX - nega_scout(search, alpha, beta, depth, false, flip_value->n_legal, false, searching)) * (W_VALUE + depth * W_VALUE_DEEP_ADDITIONAL);
+                    //flip_value->value += (SCORE_MAX - nega_alpha_light(search, alpha, beta, depth, false, flip_value->n_legal, searching)) * (W_VALUE + depth * W_VALUE_DEEP_ADDITIONAL);
                 search->mpc_level = mpc_level;
                 break;
         }
@@ -249,12 +230,14 @@ inline void move_evaluate_nws(Search *search, Flip_value *flip_value, int alpha,
         flip_value->value += (MO_OFFSET_L_PM - get_weighted_n_moves(flip_value->n_legal)) * W_NWS_MOBILITY;
         flip_value->value += (MO_OFFSET_L_PM - get_potential_mobility(search->board.opponent, ~(search->board.player | search->board.opponent))) * W_NWS_POTENTIAL_MOBILITY;
         if (depth == 0){
-            flip_value->value += (SCORE_MAX - mid_evaluate_diff(search)) * W_NWS_VALUE;
+            //flip_value->value += (SCORE_MAX - mid_evaluate_diff(search)) * W_NWS_VALUE;
+            flip_value->value += (SCORE_MAX - mid_evaluate_light(search)) * W_NWS_VALUE;
         } else{
             if (transposition_table.has_node_any_level(search, search->board.hash())){
                 flip_value->value += W_NWS_TT_BONUS;
             }
-            flip_value->value += (SCORE_MAX - nega_alpha_eval1(search, alpha, beta, false)) * (W_NWS_VALUE + W_NWS_VALUE_DEEP_ADDITIONAL);
+            //flip_value->value += (SCORE_MAX - nega_alpha_eval1(search, alpha, beta, false)) * (W_NWS_VALUE + W_NWS_VALUE_DEEP_ADDITIONAL);
+            flip_value->value += (SCORE_MAX - nega_alpha_light_eval1(search, alpha, beta, false)) * (W_NWS_VALUE + W_NWS_VALUE_DEEP_ADDITIONAL);
         }
     search->undo(&flip_value->flip);
 }

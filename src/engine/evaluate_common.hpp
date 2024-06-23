@@ -37,6 +37,9 @@
 #define N_PATTERNS_MO_END 4
 #define N_SYMMETRY_PATTERNS_MO_END 16
 
+// light evaluation function
+#define N_SYMMETRY_PATTERNS_LIGHT 46
+
 /*
     @brief value definition
 

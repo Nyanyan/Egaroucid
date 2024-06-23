@@ -425,3 +425,27 @@ struct Clog_result{
     int val;
 };
 
+/*
+    @brief Flip structure with more information
+
+    @param flip                 flip information
+    @param value                the move ordering value
+    @param n_legal              next legal moves as a bitboard for reusing
+*/
+struct Flip_value{
+    Flip flip;
+    int value;
+    uint64_t n_legal;
+
+    Flip_value(){
+        n_legal = LEGAL_UNDEFINED;
+    }
+
+    bool operator<(const Flip_value &another) const{
+        return value < another.value;
+    }
+
+    bool operator>(const Flip_value &another) const{
+        return value > another.value;
+    }
+};
