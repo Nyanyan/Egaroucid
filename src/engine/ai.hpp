@@ -28,7 +28,7 @@
 
 #define ENDSEARCH_PRESEARCH_OFFSET 10
 
-#define PRINCIPAL_VARIATION_MAX_LEN 5
+#define PRINCIPAL_VARIATION_MAX_LEN 7
 
 std::string get_principal_variation_str(Board board, int best_move){
     std::string res;
