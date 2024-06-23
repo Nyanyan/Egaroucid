@@ -540,8 +540,9 @@ class Transposition_table{
             }
         }
 
+
         /*
-            @brief get best move from transposition table
+            @brief get value from transposition table
 
             @param search               Search information
             @param hash                 hash code
@@ -569,6 +570,7 @@ class Transposition_table{
             }
             return false;
         }
+        
 
         /*
             @brief get best move from transposition table
@@ -585,6 +587,33 @@ class Transposition_table{
                 if (node->board.player == search->board.player && node->board.opponent == search->board.opponent){
                     node->lock.lock();
                         if (node->board.player == search->board.player && node->board.opponent == search->board.opponent){
+                            node->data.get_bounds(lower, upper);
+                            node->lock.unlock();
+                            return true;
+                        }
+                    node->lock.unlock();
+                }
+                ++hash;
+                node = get_node(hash);
+            }
+            return false;
+        }
+
+        /*
+            @brief get best move from transposition table
+
+            @param search               Search information
+            @param hash                 hash code
+            @param depth                depth
+            @param lower                lower bound to store
+            @param upper                upper bound to store
+        */
+        inline bool get_value_any_level(const Board *board, uint32_t hash, int *lower, int *upper){
+            Hash_node *node = get_node(hash);
+            for (uint_fast8_t i = 0; i < TRANSPOSITION_TABLE_N_LOOP; ++i){
+                if (node->board.player == board->player && node->board.opponent == board->opponent){
+                    node->lock.lock();
+                        if (node->board.player == board->player && node->board.opponent == board->opponent){
                             node->data.get_bounds(lower, upper);
                             node->lock.unlock();
                             return true;

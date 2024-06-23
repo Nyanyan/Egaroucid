@@ -44,6 +44,7 @@ std::string get_principal_variation_str(Board board, int best_move){
     }
     bool pv_search_failed = false;
     while (!pv_search_failed && len < PRINCIPAL_VARIATION_MAX_LEN){
+        pv_search_failed = true;
         if (board.is_end()){
             break; // game over
         }
@@ -52,24 +53,48 @@ std::string get_principal_variation_str(Board board, int best_move){
         }
         uint64_t legal = board.get_legal();
         int best_move_book = book.get_specified_best_move(&board).policy;
-        if (is_valid_policy(best_move_book) && (legal & (1ULL << best_move_book))){
+        if (is_valid_policy(best_move_book) && (legal & (1ULL << best_move_book))){ // search best move by book
             res += idx_to_coord(best_move_book);
             ++len;
             calc_flip(&flip, &board, best_move_book);
             board.move_board(&flip);
+            pv_search_failed = false;
             //std::cerr << "book " << idx_to_coord(best_move_book) << std::endl;
-        } else{
+        } else{                                                                     // search pv by TT
             int best_move_tt = transposition_table.get_best_move(&board, board.hash());
             if (is_valid_policy(best_move_tt) && (legal & (1ULL << best_move_tt))){
-                res += idx_to_coord(best_move_tt);
-                ++len;
+                int l, u;
+                int best_move_tt_expanded = MOVE_UNDEFINED;
+                int max_val = -SCORE_INF;
                 calc_flip(&flip, &board, best_move_tt);
                 board.move_board(&flip);
-                //std::cerr << "tt " << idx_to_coord(best_move_tt) << std::endl;
-            } else{
-                pv_search_failed = true;
-                //std::cerr << "not found on tt" << std::endl;
-                //board.print();
+                    transposition_table.get_value_any_level(&board, board.hash(), &l, &u);
+                    if (l == u){
+                        max_val = -u;
+                        best_move_tt_expanded = best_move_tt;
+                    }
+                board.undo_board(&flip);
+                if (best_move_tt == best_move_tt_expanded){
+                    uint64_t legal2 = legal ^ (1ULL << best_move_tt);
+                    for (uint_fast8_t cell = first_bit(&legal2); legal2; cell = next_bit(&legal2)){
+                        calc_flip(&flip, &board, cell);
+                        board.move_board(&flip);
+                            transposition_table.get_value_any_level(&board, board.hash(), &l, &u);
+                            if (l == u && max_val <= -u){
+                                max_val = -u;
+                                best_move_tt_expanded = cell;
+                            }
+                        board.undo_board(&flip);
+                    }
+                }
+                if (best_move_tt == best_move_tt_expanded){
+                    res += idx_to_coord(best_move_tt);
+                    ++len;
+                    calc_flip(&flip, &board, best_move_tt);
+                    board.move_board(&flip);
+                    pv_search_failed = false;
+                    //std::cerr << "tt " << idx_to_coord(best_move_tt) << std::endl;
+                }
             }
         }
     }
