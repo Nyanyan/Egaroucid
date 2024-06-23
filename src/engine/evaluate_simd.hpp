@@ -237,10 +237,12 @@ __m256i eval_surround_shift1879;
 int16_t pattern_arr[N_PHASES][N_PATTERN_PARAMS];
 int16_t eval_num_arr[N_PHASES][MAX_STONE_NUM];
 int16_t eval_sur0_sur1_arr[N_PHASES][MAX_SURROUND][MAX_SURROUND];
+#if USE_LIGHT_EVALUATION
 // light evaluation
 int16_t pattern_light_arr[N_PHASES][N_PATTERN_PARAMS_LIGHT];
 int16_t eval_light_num_arr[N_PHASES][MAX_STONE_NUM];
 int16_t eval_light_sur0_sur1_arr[N_PHASES][MAX_SURROUND][MAX_SURROUND];
+#endif
 // move ordering evaluation
 int16_t pattern_move_ordering_end_arr[N_PATTERN_PARAMS_MO_END];
 
@@ -284,6 +286,7 @@ inline bool load_eval_file(const char* file, bool show_log){
     return true;
 }
 
+#if USE_LIGHT_EVALUATION
 inline bool load_eval_light_file(const char* file, bool show_log){
     if (show_log)
         std::cerr << "evaluation file " << file << std::endl;
@@ -323,6 +326,7 @@ inline bool load_eval_light_file(const char* file, bool show_log){
     }
     return true;
 }
+#endif
 
 inline bool load_eval_move_ordering_end_file(const char* file, bool show_log){
     if (show_log)
@@ -480,11 +484,13 @@ inline bool evaluate_init(const char* file, const char* mo_end_nws_file, bool sh
         std::cerr << "[ERROR] [FATAL] evaluation file for move ordering end not loaded" << std::endl;
         return false;
     }
+    #if USE_LIGHT_EVALUATION
     bool eval_light_loaded = load_eval_light_file("resources/eval_light.egev2", show_log);
     if (!eval_light_loaded){
         std::cerr << "[ERROR] [FATAL] light evaluation file not loaded" << std::endl;
         return false;
     }
+    #endif
     pre_calculate_eval_constant();
     if (show_log)
         std::cerr << "evaluation function initialized" << std::endl;
@@ -559,6 +565,7 @@ inline int calc_pattern(const int phase_idx, Eval_features *features){
     return _mm_cvtsi128_si32(res128) + _mm_extract_epi32(res128, 1) - SIMD_EVAL_MAX_VALUE * N_SYMMETRY_PATTERNS;
 }
 
+#if USE_LIGHT_EVALUATION
 inline int calc_pattern_light(const int phase_idx, Eval_features *features){
     const int *start_addr = (int*)pattern_light_arr[phase_idx];
     __m256i res256 =                  gather_eval(start_addr, _mm256_cvtepu16_epi32(features->f128[0]));    // hv4 d5
@@ -572,6 +579,7 @@ inline int calc_pattern_light(const int phase_idx, Eval_features *features){
     res128 = _mm_hadd_epi32(res128, res128);
     return _mm_cvtsi128_si32(res128) + _mm_extract_epi32(res128, 1) - SIMD_EVAL_MAX_VALUE * N_SYMMETRY_PATTERNS_LIGHT;
 }
+#endif
 
 inline int calc_pattern_move_ordering_end(Eval_features *features){
     const int *start_addr = (int*)(pattern_move_ordering_end_arr - SHIFT_EVAL_MO_END);
@@ -634,6 +642,7 @@ inline int mid_evaluate_diff(Search *search){
     return res;
 }
 
+#if USE_LIGHT_EVALUATION
 /*
     @brief midgame evaluation function
 
@@ -656,6 +665,7 @@ inline int mid_evaluate_light(Search *search){
     res = std::clamp(res, -SCORE_MAX, SCORE_MAX);
     return res;
 }
+#endif
 
 /*
     @brief midgame evaluation function
@@ -789,7 +799,7 @@ inline void eval_pass(Eval_search *eval, const Board *board){
 
 
 
-
+#if USE_LIGHT_EVALUATION
 inline void eval_move_light(Eval_search *eval, const Flip *flip, const Board *board){
     const uint16_t *flipped_group = (uint16_t*)&(flip->flip);
     const uint16_t *player_group = (uint16_t*)&(board->player);
@@ -819,23 +829,10 @@ inline void eval_move_light(Eval_search *eval, const Flip *flip, const Board *bo
     eval->features[eval->feature_idx].f256[2] = f2;
 }
 
-/*
-    @brief undo evaluation features
-
-    @param eval                 evaluation features
-*/
 inline void eval_undo_light(Eval_search *eval){
     --eval->feature_idx;
 }
 
-/*
-    @brief pass evaluation features
-
-        player discs    0 -> 1 (player -> opponent) add
-        opponent discs  1 -> 0 (player -> opponent) sub
-
-    @param eval                 evaluation features
-*/
 inline void eval_pass_light(Eval_search *eval, const Board *board){
     const uint16_t *player_group = (uint16_t*)&(board->player);
     const uint16_t *opponent_group = (uint16_t*)&(board->opponent);
@@ -855,7 +852,7 @@ inline void eval_pass_light(Eval_search *eval, const Board *board){
     eval->features[eval->feature_idx].f256[1] = f1;
     eval->features[eval->feature_idx].f256[2] = f2;
 }
-
+#endif
 
 
 

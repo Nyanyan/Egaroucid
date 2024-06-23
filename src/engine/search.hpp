@@ -51,9 +51,11 @@ inline void calc_eval_features(Board *board, Eval_search *eval);
     inline void eval_move(Eval_search *eval, const Flip *flip, const Board *board);
     inline void eval_undo(Eval_search *eval);
     inline void eval_pass(Eval_search *eval, const Board *board);
+    #if USE_LIGHT_EVALUATION
     inline void eval_move_light(Eval_search *eval, const Flip *flip, const Board *board);
     inline void eval_undo_light(Eval_search *eval);
     inline void eval_pass_light(Eval_search *eval, const Board *board);
+    #endif
     inline void eval_move_endsearch(Eval_search *eval, const Flip *flip, const Board *board);
     inline void eval_undo_endsearch(Eval_search *eval);
     inline void eval_pass_endsearch(Eval_search *eval, const Board *board);
@@ -311,6 +313,7 @@ class Search{
             board.pass();
         }
 
+        #if USE_LIGHT_EVALUATION
         /*
             @brief Move board and other variables
 
@@ -357,6 +360,7 @@ class Search{
             #endif
             board.pass();
         }
+        #endif
 
         /*
             @brief Move board and other variables

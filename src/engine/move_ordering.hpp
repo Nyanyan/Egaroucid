@@ -23,7 +23,9 @@
 #include "board.hpp"
 #include "search.hpp"
 #include "midsearch.hpp"
+#if USE_LIGHT_EVALUATION
 #include "midsearch_light.hpp"
+#endif
 #include "evaluate.hpp"
 #include "stability.hpp"
 #include "level.hpp"
@@ -103,8 +105,10 @@
 int nega_alpha_eval1(Search *search, int alpha, int beta, bool skipped);
 inline int nega_alpha_eval1_move_ordering_mid(Search *search, int alpha, int beta, bool skipped);
 int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, uint64_t legal, bool is_end_search, const bool *searching);
+#if USE_LIGHT_EVALUATION
 inline int nega_alpha_light_eval1(Search *search, int alpha, int beta, bool skipped);
 int nega_alpha_light(Search *search, int alpha, int beta, int depth, bool skipped, uint64_t legal, const bool *searching);
+#endif
 inline bool transposition_table_get_value(Search *search, uint32_t hash, int *l, int *u);
 
 /*
@@ -227,14 +231,20 @@ inline void move_evaluate_nws(Search *search, Flip_value *flip_value, int alpha,
         flip_value->value += (MO_OFFSET_L_PM - get_weighted_n_moves(flip_value->n_legal)) * W_NWS_MOBILITY;
         flip_value->value += (MO_OFFSET_L_PM - get_potential_mobility(search->board.opponent, ~(search->board.player | search->board.opponent))) * W_NWS_POTENTIAL_MOBILITY;
         if (depth == 0){
-            //flip_value->value += (SCORE_MAX - mid_evaluate_diff(search)) * W_NWS_VALUE;
-            flip_value->value += (SCORE_MAX - mid_evaluate_light(search)) * W_NWS_VALUE;
+            #if USE_LIGHT_EVALUATION
+                flip_value->value += (SCORE_MAX - mid_evaluate_light(search)) * W_NWS_VALUE;
+            #else
+                flip_value->value += (SCORE_MAX - mid_evaluate_diff(search)) * W_NWS_VALUE;
+            #endif
         } else{
             if (transposition_table.has_node_any_level(search, search->board.hash())){
                 flip_value->value += W_NWS_TT_BONUS;
             }
-            //flip_value->value += (SCORE_MAX - nega_alpha_eval1(search, alpha, beta, false)) * (W_NWS_VALUE + W_NWS_VALUE_DEEP_ADDITIONAL);
-            flip_value->value += (SCORE_MAX - nega_alpha_light_eval1(search, alpha, beta, false)) * (W_NWS_VALUE + W_NWS_VALUE_DEEP_ADDITIONAL);
+            #if USE_LIGHT_EVALUATION
+                flip_value->value += (SCORE_MAX - nega_alpha_light_eval1(search, alpha, beta, false)) * (W_NWS_VALUE + W_NWS_VALUE_DEEP_ADDITIONAL);
+            #else
+                flip_value->value += (SCORE_MAX - nega_alpha_eval1(search, alpha, beta, false)) * (W_NWS_VALUE + W_NWS_VALUE_DEEP_ADDITIONAL);
+            #endif
         }
     search->undo(&flip_value->flip);
 }

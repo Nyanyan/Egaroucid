@@ -218,6 +218,9 @@
 // Hash level setting
 #define USE_CHANGEABLE_HASH_LEVEL false
 
+// Light Evaluation Function
+#define USE_LIGHT_EVALUATION false
+
 
 
 

@@ -37,8 +37,10 @@
 #define N_PATTERNS_MO_END 4
 #define N_SYMMETRY_PATTERNS_MO_END 16
 
+#if USE_LIGHT_EVALUATION
 // light evaluation function
 #define N_SYMMETRY_PATTERNS_LIGHT 46
+#endif
 
 /*
     @brief value definition
