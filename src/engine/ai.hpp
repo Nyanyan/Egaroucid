@@ -69,10 +69,8 @@ std::string get_principal_variation_str(Board board, int best_move){
                 calc_flip(&flip, &board, best_move_tt);
                 board.move_board(&flip);
                     transposition_table.get_value_any_level(&board, board.hash(), &l, &u);
-                    if (l == u){
-                        max_val = -u;
-                        best_move_tt_expanded = best_move_tt;
-                    }
+                    max_val = -u;
+                    best_move_tt_expanded = best_move_tt;
                 board.undo_board(&flip);
                 if (best_move_tt == best_move_tt_expanded){
                     uint64_t legal2 = legal ^ (1ULL << best_move_tt);
@@ -80,7 +78,7 @@ std::string get_principal_variation_str(Board board, int best_move){
                         calc_flip(&flip, &board, cell);
                         board.move_board(&flip);
                             transposition_table.get_value_any_level(&board, board.hash(), &l, &u);
-                            if (l == u && max_val <= -u){
+                            if (max_val < -u){
                                 max_val = -u;
                                 best_move_tt_expanded = cell;
                             }
