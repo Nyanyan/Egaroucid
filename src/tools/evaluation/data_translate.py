@@ -53,12 +53,14 @@ bin_root_dir = './../../../train_data/bin_data/20240622_1_7_0_light/'
 exe = 'data_board_to_idx_20240622_1_7_0_light.out'
 N_PHASES = 60
 board_sub_dir_nums = [
-    18, 19, 20, 21, 24, 25, 27, 28, 29, 30, 31, # old data
+    18, 19, 20, 21, 24, 25, 28, 29, 30, 31, # old data
     34, 35, # mid-endgame data 1
     36, 37, # book data
     #38, # test data
-    39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 57, 60, 61, 62, 63 # mid-endgame data 2
+    39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 57, 60, 61, 62, 63, # mid-endgame data 2
+    64
 ]
+board_sub_dir_nums = [64]
 board_sub_dir_nums.sort()
 #'''
 
@@ -108,7 +110,7 @@ board_n_moves['20'] = [11, 59] # random8           90741 games
 board_n_moves['21'] = [11, 59] # random10         134230 games
 board_n_moves['24'] = [21, 59] # random21        4790000 games
 board_n_moves['25'] = [30, 59] # random30        4760000 games
-board_n_moves['27'] = [12, 59] # random11 all   19786627 games > up to 5000000 games
+board_n_moves['27'] = [12, 59] # random11 all   19786627 games > up to 5000000 games as records64
 board_n_moves['28'] = [40, 59] # random40       14210000 games
 board_n_moves['29'] = [12, 59] # random12        4770000 games
 board_n_moves['30'] = [18, 59] # random18        4490454 games
@@ -150,6 +152,7 @@ board_n_moves['61'] = [57, 59] # random57        3000000 games
 board_n_moves['62'] = [56, 59] # random56        3000000 games
 board_n_moves['63'] = [55, 59] # random55        3000000 games
 
+board_n_moves['64'] = [12, 59] # random11 all    5000000 games
 
 
 procs = []
