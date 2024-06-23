@@ -56,11 +56,10 @@ board_sub_dir_nums = [
     18, 19, 20, 21, 24, 25, 28, 29, 30, 31, # old data
     34, 35, # mid-endgame data 1
     36, 37, # book data
-    #38, # test data
+    38, # test data
     39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 57, 60, 61, 62, 63, # mid-endgame data 2
     64
 ]
-board_sub_dir_nums = [64]
 board_sub_dir_nums.sort()
 #'''
 
