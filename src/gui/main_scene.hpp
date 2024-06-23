@@ -334,14 +334,14 @@ private:
             std::cerr << "terminating hint" << std::endl;
             ai_status.hint_future.get();
         }
+        std::cerr << "terminating analyze AI" << std::endl;
         for (int i = 0; i < ANALYZE_SIZE; ++i) {
-            std::cerr << "terminating analyze AI" << std::endl;
             if (ai_status.analyze_future[i].valid()) {
                 ai_status.analyze_future[i].get();
             }
         }
+        std::cerr << "terminating umigame value" << std::endl;
         for (int i = 0; i < HW2; ++i) {
-            std::cerr << "terminating umigame value" << std::endl;
             if (umigame_status.umigame_future[i].valid()) {
                 umigame_status.umigame_future[i].get();
             }
