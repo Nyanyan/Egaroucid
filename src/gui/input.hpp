@@ -404,6 +404,34 @@ public:
                     break;
                 }
             }
+            history_elem.policy = -1; // reset last policy
+            if (replace_place - 1 >= 0){
+                uint64_t f_discs = getData().graph_resources.nodes[getData().graph_resources.branch][replace_place - 1].board.player | getData().graph_resources.nodes[getData().graph_resources.branch][replace_place - 1].board.opponent;
+                uint64_t discs = history_elem.board.player | history_elem.board.opponent;
+                if (pop_count_ull(discs ^ f_discs) == 1){
+                    int last_policy = ctz(discs ^ f_discs);
+                    history_elem.policy = last_policy;
+                }
+            } else if (insert_place - 1 >= 0 && insert_place - 1 < getData().graph_resources.nodes[getData().graph_resources.branch].size()){
+                uint64_t f_discs = getData().graph_resources.nodes[getData().graph_resources.branch][insert_place - 1].board.player | getData().graph_resources.nodes[getData().graph_resources.branch][insert_place - 1].board.opponent;
+                uint64_t discs = history_elem.board.player | history_elem.board.opponent;
+                if (pop_count_ull(discs ^ f_discs) == 1){
+                    int last_policy = ctz(discs ^ f_discs);
+                    history_elem.policy = last_policy;
+                }
+            } else{
+                for (int i = 0; i < (int)getData().graph_resources.nodes[0].size(); ++i) {
+                    int node_n_discs = getData().graph_resources.nodes[0][i].board.n_discs();
+                    if (node_n_discs + 1 == n_discs){
+                        uint64_t f_discs = getData().graph_resources.nodes[0][i].board.player | getData().graph_resources.nodes[0][i].board.opponent;
+                        uint64_t discs = history_elem.board.player | history_elem.board.opponent;
+                        if (pop_count_ull(discs ^ f_discs) == 1){
+                            int last_policy = ctz(discs ^ f_discs);
+                            history_elem.policy = last_policy;
+                        }
+                    }
+                }
+            }
             if (replace_place != -1) {
                 std::cerr << "replace" << std::endl;
                 getData().graph_resources.nodes[getData().graph_resources.branch][replace_place] = history_elem;
