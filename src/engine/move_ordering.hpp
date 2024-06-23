@@ -192,11 +192,9 @@ inline void move_evaluate(Search *search, Flip_value *flip_value, int alpha, int
         switch (depth){
             case 0:
                 flip_value->value += (SCORE_MAX - mid_evaluate_diff(search)) * W_VALUE;
-                //flip_value->value += (SCORE_MAX - mid_evaluate_light(search)) * W_VALUE;
                 break;
             case 1:
                 flip_value->value += (SCORE_MAX - nega_alpha_eval1(search, alpha, beta, false)) * (W_VALUE + W_VALUE_DEEP_ADDITIONAL);
-                //flip_value->value += (SCORE_MAX - nega_alpha_light_eval1(search, alpha, beta, false)) * (W_VALUE + W_VALUE_DEEP_ADDITIONAL);
                 break;
             default:
                 if (transposition_table.has_node_any_level(search, search->board.hash())){
@@ -205,7 +203,6 @@ inline void move_evaluate(Search *search, Flip_value *flip_value, int alpha, int
                 uint_fast8_t mpc_level = search->mpc_level;
                 search->mpc_level = MOVE_ORDERING_MPC_LEVEL;
                     flip_value->value += (SCORE_MAX - nega_scout(search, alpha, beta, depth, false, flip_value->n_legal, false, searching)) * (W_VALUE + depth * W_VALUE_DEEP_ADDITIONAL);
-                    //flip_value->value += (SCORE_MAX - nega_alpha_light(search, alpha, beta, depth, false, flip_value->n_legal, searching)) * (W_VALUE + depth * W_VALUE_DEEP_ADDITIONAL);
                 search->mpc_level = mpc_level;
                 break;
         }
