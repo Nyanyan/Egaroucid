@@ -29,18 +29,24 @@
 */
 #define CEIL_N_SYMMETRY_PATTERNS 64         // N_SYMMETRY_PATTRENS + dummy
 #define N_PATTERN_PARAMS (521478 + 2)       // +2 for byte bound & dummy for d8
-#define N_PATTERN_PARAMS_LIGHT (285282 + 2) // +2 for byte bound & dummy for d8
 #define SIMD_EVAL_MAX_VALUE 4092            // evaluate range [-4092, 4092]
 #define N_SIMD_EVAL_FEATURES_SIMPLE 2
 #define N_SIMD_EVAL_FEATURES_COMP 2
 #define N_PATTERN_PARAMS_BEFORE_DUMMY 29403
 #define SIMD_EVAL_DUMMY_ADDR 29404
 #define N_PATTERN_PARAMS_AFTER_DUMMY 492075
+#define N_SIMD_EVAL_FEATURE_CELLS 16
+#define N_SIMD_EVAL_FEATURE_GROUP 4
+
+#if USE_LIGHT_EVALUATION
+/*
+    @brief evaluation pattern definition for SIMD light
+*/
+#define N_PATTERN_PARAMS_LIGHT (285282 + 2) // +2 for byte bound & dummy for d8
 #define N_PATTERN_PARAMS_BEFORE_DUMMY_LIGHT 29403
 #define SIMD_EVAL_DUMMY_ADDR_LIGHT 29404
 #define N_PATTERN_PARAMS_AFTER_DUMMY_LIGHT 255879
-#define N_SIMD_EVAL_FEATURE_CELLS 16
-#define N_SIMD_EVAL_FEATURE_GROUP 4
+#endif
 
 /*
     @brief evaluation pattern definition for SIMD move ordering end
