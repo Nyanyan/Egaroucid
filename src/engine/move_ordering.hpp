@@ -95,9 +95,9 @@
     #define W_END_NWS_SIMPLE_PARITY 17
 #endif
 
-#define MOVE_ORDERING_VALUE_OFFSET_ALPHA 12
+#define MOVE_ORDERING_VALUE_OFFSET_ALPHA 18
 #define MOVE_ORDERING_VALUE_OFFSET_BETA 12
-#define MOVE_ORDERING_NWS_VALUE_OFFSET_ALPHA 12
+#define MOVE_ORDERING_NWS_VALUE_OFFSET_ALPHA 16
 #define MOVE_ORDERING_NWS_VALUE_OFFSET_BETA 6
 
 #define MOVE_ORDERING_MPC_LEVEL MPC_88_LEVEL
@@ -224,27 +224,36 @@ inline void move_evaluate(Search *search, Flip_value *flip_value, int alpha, int
     @param searching            flag for terminating this search
     @return true if wipeout found else false
 */
-inline void move_evaluate_nws(Search *search, Flip_value *flip_value, int alpha, int beta, int depth){
+inline void move_evaluate_nws(Search *search, Flip_value *flip_value, int alpha, int beta, int depth, const bool *searching){
     flip_value->value = 0;
     search->move(&flip_value->flip);
         flip_value->n_legal = search->board.get_legal();
         flip_value->value += (MO_OFFSET_L_PM - get_weighted_n_moves(flip_value->n_legal)) * W_NWS_MOBILITY;
         flip_value->value += (MO_OFFSET_L_PM - get_potential_mobility(search->board.opponent, ~(search->board.player | search->board.opponent))) * W_NWS_POTENTIAL_MOBILITY;
-        if (depth == 0){
-            #if USE_LIGHT_EVALUATION
-                flip_value->value += (SCORE_MAX - mid_evaluate_light(search)) * W_NWS_VALUE;
-            #else
-                flip_value->value += (SCORE_MAX - mid_evaluate_diff(search)) * W_NWS_VALUE;
-            #endif
-        } else{
-            if (transposition_table.has_node_any_level(search, search->board.hash())){
-                flip_value->value += W_NWS_TT_BONUS;
-            }
-            #if USE_LIGHT_EVALUATION
-                flip_value->value += (SCORE_MAX - nega_alpha_light_eval1(search, alpha, beta, false)) * (W_NWS_VALUE + W_NWS_VALUE_DEEP_ADDITIONAL);
-            #else
-                flip_value->value += (SCORE_MAX - nega_alpha_eval1(search, alpha, beta, false)) * (W_NWS_VALUE + W_NWS_VALUE_DEEP_ADDITIONAL);
-            #endif
+        switch (depth){
+            case 0:
+                #if USE_LIGHT_EVALUATION
+                    flip_value->value += (SCORE_MAX - mid_evaluate_light(search)) * W_NWS_VALUE;
+                #else
+                    flip_value->value += (SCORE_MAX - mid_evaluate_diff(search)) * W_NWS_VALUE;
+                #endif
+                break;
+            case 1:
+                #if USE_LIGHT_EVALUATION
+                    flip_value->value += (SCORE_MAX - nega_alpha_light_eval1(search, alpha, beta, false)) * (W_NWS_VALUE + W_NWS_VALUE_DEEP_ADDITIONAL);
+                #else
+                    flip_value->value += (SCORE_MAX - nega_alpha_eval1(search, alpha, beta, false)) * (W_NWS_VALUE + W_NWS_VALUE_DEEP_ADDITIONAL);
+                #endif
+                break;
+            default:
+                if (transposition_table.has_node_any_level(search, search->board.hash())){
+                    flip_value->value += W_NWS_TT_BONUS;
+                }
+                uint_fast8_t mpc_level = search->mpc_level;
+                search->mpc_level = MOVE_ORDERING_MPC_LEVEL;
+                    flip_value->value += (SCORE_MAX - nega_scout(search, alpha, beta, depth, false, flip_value->n_legal, false, searching)) * (W_NWS_VALUE + depth * W_NWS_VALUE_DEEP_ADDITIONAL);
+                search->mpc_level = mpc_level;
+                break;
         }
     search->undo(&flip_value->flip);
 }
@@ -396,7 +405,7 @@ inline void move_list_evaluate_nws(Search *search, std::vector<Flip_value> &move
                 else if (flip_value.flip.pos == moves[1])
                     flip_value.value = W_2ND_MOVE;
                 else
-                    move_evaluate_nws(search, &flip_value, eval_alpha, eval_beta, eval_depth);
+                    move_evaluate_nws(search, &flip_value, eval_alpha, eval_beta, eval_depth, searching);
             } else
                 flip_value.value = -INF;
         #else
@@ -405,7 +414,7 @@ inline void move_list_evaluate_nws(Search *search, std::vector<Flip_value> &move
             else if (flip_value.flip.pos == moves[1])
                 flip_value.value = W_2ND_MOVE;
             else
-                move_evaluate_nws(search, &flip_value, eval_alpha, eval_beta, eval_depth);
+                move_evaluate_nws(search, &flip_value, eval_alpha, eval_beta, eval_depth, searching);
         #endif
     }
 }
