@@ -216,7 +216,7 @@
 #define USE_ASPIRATION_NEGASCOUT true
 
 // Hash level setting
-#define USE_CHANGEABLE_HASH_LEVEL false
+#define USE_CHANGEABLE_HASH_LEVEL true
 
 // Light Evaluation Function
 #define USE_LIGHT_EVALUATION false
