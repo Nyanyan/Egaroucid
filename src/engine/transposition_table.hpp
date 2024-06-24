@@ -443,6 +443,11 @@ class Transposition_table{
             Hash_node *node = get_node(hash);
             const uint32_t level = get_level_common(depth, search->mpc_level);
             uint32_t node_level;
+            #if TT_REGISTER_MIN_LEVEL
+                Hash_node *min_level_node = nullptr;
+                uint32_t min_level = 0x4fffffff;
+                bool registered = false;
+            #endif
             for (uint_fast8_t i = 0; i < TRANSPOSITION_TABLE_N_LOOP; ++i){
                 if (node->data.get_level() <= level){
                     node->lock.lock();
@@ -454,16 +459,26 @@ class Transposition_table{
                                 else
                                     node->data.reg_new_level(depth, search->mpc_level, alpha, beta, value, policy);
                                 node->lock.unlock();
+                                #if TT_REGISTER_MIN_LEVEL
+                                    registered = true;
+                                #endif
                                 break;
                             } else{
-                                node->board.player = search->board.player;
-                                node->board.opponent = search->board.opponent;
-                                node->data.reg_new_data(depth, search->mpc_level, alpha, beta, value, policy);
-                                node->lock.unlock();
-                                if (node_level > 0){
-                                    n_registered.fetch_add(1);
-                                }
-                                break;
+                                #if TT_REGISTER_MIN_LEVEL
+                                    if (node_level < min_level){
+                                        min_level = node_level;
+                                        min_level_node = node;
+                                    }
+                                #else
+                                    node->board.player = search->board.player;
+                                    node->board.opponent = search->board.opponent;
+                                    node->data.reg_new_data(depth, search->mpc_level, alpha, beta, value, policy);
+                                    node->lock.unlock();
+                                    if (node_level > 0){
+                                        n_registered.fetch_add(1);
+                                    }
+                                    break;
+                                #endif
                             }
                         }
                     node->lock.unlock();
@@ -471,6 +486,18 @@ class Transposition_table{
                 ++hash;
                 node = get_node(hash);
             }
+            #if TT_REGISTER_MIN_LEVEL
+                if (!registered && min_level_node != nullptr){
+                    min_level_node->lock.lock();
+                        min_level_node->board.player = search->board.player;
+                        min_level_node->board.opponent = search->board.opponent;
+                        min_level_node->data.reg_new_data(depth, search->mpc_level, alpha, beta, value, policy);
+                        if (min_level_node->data.get_level() > 0){
+                            n_registered.fetch_add(1);
+                        }
+                    min_level_node->lock.unlock();
+                }
+            #endif
             if (n_registered >= n_registered_threshold){
                 std::lock_guard lock(mtx);
                 if (n_registered >= n_registered_threshold){
