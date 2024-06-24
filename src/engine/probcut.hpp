@@ -26,9 +26,9 @@
 // constants from standard normal distribution table
 // constexpr int SELECTIVITY_PERCENTAGE[N_SELECTIVITY_LEVEL] = {74, 88, 93, 98, 99, 100};
 // two-sided test
-// these values must be selected with percentage                 74.0  88.0  93.0  98.0  99.0
+// for normal MPC                                                74.0  88.0  93.0  98.0  99.0
 constexpr double SELECTIVITY_MPCT_SINGLE[N_SELECTIVITY_LEVEL] = {1.13, 1.55, 1.81, 2.32, 2.57, 9.99};
-// these values must be selected with percentage ^ 2            54.8  77.4  86.5  96.0  98.0
+// for multi-MPC                                                54.8  77.4  86.5  96.0  98.0
 constexpr double SELECTIVITY_MPCT_MULTI[N_SELECTIVITY_LEVEL] = {0.75, 1.21, 1.49, 2.05, 2.32, 9.99};
 
 /*
