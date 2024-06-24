@@ -169,7 +169,7 @@ Search_result lazy_smp(Board board, int depth, uint_fast8_t mpc_level, bool show
                     if (
                         (main_mpc_level >= MPC_74_LEVEL && mpc_level > MPC_74_LEVEL && depth <= 22) || 
                         (main_mpc_level >= MPC_88_LEVEL && mpc_level > MPC_88_LEVEL && depth <= 25) || 
-                        (main_mpc_level >= MPC_93_LEVEL && mpc_level > MPC_93_LEVEL && depth <= 32) || 
+                        (main_mpc_level >= MPC_93_LEVEL && mpc_level > MPC_93_LEVEL && depth <= 29) || 
                         (main_mpc_level >= MPC_98_LEVEL && mpc_level > MPC_98_LEVEL)
                         ){
                         main_mpc_level = mpc_level;

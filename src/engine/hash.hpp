@@ -15,13 +15,13 @@
 /*
     @brief definition of maximum hash level
 */
-#define N_HASH_LEVEL 30
+#define N_HASH_LEVEL 34
 #define DEFAULT_HASH_LEVEL 25
 
 #if USE_CHANGEABLE_HASH_LEVEL
     int global_hash_level = DEFAULT_HASH_LEVEL;
     #define MIN_HASH_LEVEL 25
-    #define MAX_HASH_LEVEL 27
+    #define MAX_HASH_LEVEL 30
 #endif
 
 /*
@@ -65,7 +65,11 @@ constexpr size_t hash_sizes[N_HASH_LEVEL] = {
     67108864,
     134217728,
     268435456,
-    536870912
+    536870912,
+    1073741824,
+    2147483648,
+    4294967296,
+    8589934592
 };
 
 /*
