@@ -23,13 +23,23 @@
     #define ALL_NODE_CHECK_MPCT 1.8
 #endif
 
+#define N_SELECTIVITY_LEVEL 6
+
 // constants from standard normal distribution table
-// constexpr int SELECTIVITY_PERCENTAGE[N_SELECTIVITY_LEVEL] = {74, 88, 93, 98, 99, 100};
+constexpr double SELECTIVITY_PERCENTAGE[N_SELECTIVITY_LEVEL] = {74.0, 88.0, 95.0, 99.0, 99.9, 100.0};
 // two-sided test
-// these values must be selected with percentage                 74.0  88.0  93.0  98.0  99.0
-constexpr double SELECTIVITY_MPCT_SINGLE[N_SELECTIVITY_LEVEL] = {1.13, 1.55, 1.81, 2.32, 2.57, 9.99};
-// these values must be selected with percentage ^ 2            54.8  77.4  86.5  96.0  98.0
-constexpr double SELECTIVITY_MPCT_MULTI[N_SELECTIVITY_LEVEL] = {0.75, 1.21, 1.49, 2.05, 2.32, 9.99};
+// these values must be selected with percentage                 74.0  88.0  95.0  99.0  99.9
+constexpr double SELECTIVITY_MPCT_SINGLE[N_SELECTIVITY_LEVEL] = {1.13, 1.55, 1.96, 2.57, 3.29, 9.99};
+// multiple MPC (MULTI1 & MULTI2 = percentage)                   24.7  29.3  31.7  33.0  33.3
+//constexpr double SELECTIVITY_MPCT_MULTI1[N_SELECTIVITY_LEVEL] = {0.32, 0.37, 0.41, 0.43, 0.43, 9.99};
+// multiple MPC (MULTI1 & MULTI2 = percentage)                   65.5  83.0  92.7  98.5  99.85
+//constexpr double SELECTIVITY_MPCT_MULTI2[N_SELECTIVITY_LEVEL] = {0.95, 1.37, 1.79, 2.43, 3.17, 9.99};
+
+constexpr double SELECTIVITY_MPCT_MULTI1[N_SELECTIVITY_LEVEL] = {1.13, 1.55, 1.96, 2.57, 3.29, 9.99};
+constexpr double SELECTIVITY_MPCT_MULTI2[N_SELECTIVITY_LEVEL] = {1.13, 1.55, 1.96, 2.57, 3.29, 9.99};
+
+// multiple MPC (MULTI1 & MULTI2 = percentage)                   65.3  84.0  93.3  98.7  99.87 fixed 25%
+//constexpr double SELECTIVITY_MPCT_MULTI2[N_SELECTIVITY_LEVEL] = {0.94, 1.40, 1.83, 2.48, 3.22, 9.99};
 
 /*
     @brief constants for ProbCut error calculation
@@ -47,13 +57,15 @@ constexpr double SELECTIVITY_MPCT_MULTI[N_SELECTIVITY_LEVEL] = {0.75, 1.21, 1.49
 #define probcut_end_c 3.4489363934643062
 #define probcut_end_d 17.59122714043873
 #define probcut_end_e 25.90367861007957
-#define probcut_end_f 13.863445514648003
+#define probcut_end_f 15.863445514648003
 
 #if USE_MPC_PRE_CALCULATION
     int mpc_error_single0[N_SELECTIVITY_LEVEL][HW2 + 1][HW2 - 3];
     int mpc_error_end_single0[N_SELECTIVITY_LEVEL][HW2 - 3];
-    int mpc_error_multi[N_SELECTIVITY_LEVEL][HW2 + 1][HW2 - 3][HW2 - 3];
-    int mpc_error_end_multi[N_SELECTIVITY_LEVEL][HW2 + 1][HW2 - 3];
+    int mpc_error_multi1[N_SELECTIVITY_LEVEL][HW2 + 1][HW2 - 3][HW2 - 3];
+    int mpc_error_end_multi1[N_SELECTIVITY_LEVEL][HW2 + 1][HW2 - 3];
+    int mpc_error_multi2[N_SELECTIVITY_LEVEL][HW2 + 1][HW2 - 3][HW2 - 3];
+    int mpc_error_end_multi2[N_SELECTIVITY_LEVEL][HW2 + 1][HW2 - 3];
 #endif
 
 constexpr int mpc_search_depth_arr[2][61] = {
@@ -75,6 +87,7 @@ constexpr int mpc_search_depth_arr[2][61] = {
         24, 25, 24, 25, 26, 27, 26, 27, 28, 29, 
         28
     }, { // endgame
+        /*
          0,  1,  0,  1,  0,  1,  0,  1,  2,  3, 
          2,  3,  2,  3,  2,  3,  4,  5,  4,  5, 
          4,  5,  4,  5,  6,  7,  6,  7,  6,  7, 
@@ -82,15 +95,14 @@ constexpr int mpc_search_depth_arr[2][61] = {
         10, 11, 10, 11, 10, 11, 10, 11, 12, 13, 
         12, 13, 12, 13, 12, 13, 14, 15, 14, 15, 
         14
-        /*
-         0,  1,  0,  1,  0,  1,  2,  3,  2,  3, 
-         2,  3,  4,  5,  4,  5,  4,  5,  6,  7, 
-         6,  7,  6,  7,  6,  7,  8,  9,  8,  9, 
+        */
+         0,  1,  0,  1,  0,  1,  0,  1,  2,  3, 
+         2,  3,  2,  3,  2,  3,  4,  5,  4,  5, 
+         4,  5,  6,  7,  6,  7,  8,  9,  8,  9, 
          8,  9, 10, 11, 10, 11, 10, 11, 10, 11, 
         12, 13, 12, 13, 12, 13, 12, 13, 14, 15, 
         14, 15, 14, 15, 16, 17, 16, 17, 16, 17,
         18
-        */
         /*
          0,  1,  0,  1,  2,  3,  4,  5,  4,  5, 
          6,  7,  6,  7,  8,  9,  8,  9,  8,  9,
@@ -212,11 +224,11 @@ inline bool mpc(Search* search, int alpha, int beta, int depth, uint64_t legal, 
         uint_fast8_t mpc_level = search->mpc_level;
         #if USE_MPC_PRE_CALCULATION
             if (is_end_search){
-                error_search = mpc_error_end_multi[mpc_level][search->n_discs][search_depth];
-                error_0 = mpc_error_end_multi[mpc_level][search->n_discs][0];
+                error_0 = mpc_error_end_multi1[mpc_level][search->n_discs][0];
+                error_search = mpc_error_end_multi2[mpc_level][search->n_discs][search_depth];
             } else{
-                error_search = mpc_error_multi[mpc_level][search->n_discs][search_depth][depth];
-                error_0 = mpc_error_multi[mpc_level][search->n_discs][0][depth];
+                error_0 = mpc_error_multi1[mpc_level][search->n_discs][0][depth];
+                error_search = mpc_error_multi2[mpc_level][search->n_discs][search_depth][depth];
             }
         #else
             double mpct = SELECTIVITY_MPCT_MULTI[mpc_level];
@@ -307,9 +319,14 @@ inline bool mpc(Search* search, int alpha, int beta, int depth, uint64_t legal, 
                 for (depth2 = 0; depth2 < HW2 - 3; ++depth2)
                     mpc_error_single0[mpc_level][n_discs][depth2] = ceil(SELECTIVITY_MPCT_SINGLE[mpc_level] * probcut_sigma(n_discs, 0, depth2));
                 for (depth1 = 0; depth1 < HW2 - 3; ++depth1){
-                    mpc_error_end_multi[mpc_level][n_discs][depth1] = ceil(SELECTIVITY_MPCT_MULTI[mpc_level] * probcut_sigma_end(n_discs, depth1));
+                    mpc_error_end_multi1[mpc_level][n_discs][depth1] = ceil(SELECTIVITY_MPCT_MULTI1[mpc_level] * probcut_sigma_end(n_discs, depth1));
                     for (depth2 = 0; depth2 < HW2 - 3; ++depth2)
-                        mpc_error_multi[mpc_level][n_discs][depth1][depth2] = ceil(SELECTIVITY_MPCT_MULTI[mpc_level] * probcut_sigma(n_discs, depth1, depth2));
+                        mpc_error_multi1[mpc_level][n_discs][depth1][depth2] = ceil(SELECTIVITY_MPCT_MULTI1[mpc_level] * probcut_sigma(n_discs, depth1, depth2));
+                }
+                for (depth1 = 0; depth1 < HW2 - 3; ++depth1){
+                    mpc_error_end_multi2[mpc_level][n_discs][depth1] = ceil(SELECTIVITY_MPCT_MULTI2[mpc_level] * probcut_sigma_end(n_discs, depth1));
+                    for (depth2 = 0; depth2 < HW2 - 3; ++depth2)
+                        mpc_error_multi2[mpc_level][n_discs][depth1][depth2] = ceil(SELECTIVITY_MPCT_MULTI2[mpc_level] * probcut_sigma(n_discs, depth1, depth2));
                 }
             }
         }

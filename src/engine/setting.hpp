@@ -206,7 +206,7 @@
 #define USE_PARALLEL_CLOG_SEARCH true
 
 // MPC pre calculation
-#define USE_MPC_PRE_CALCULATION false
+#define USE_MPC_PRE_CALCULATION true
 
 // YBWC in negascout
 #define USE_YBWC_NWS true

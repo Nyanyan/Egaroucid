@@ -41,9 +41,6 @@
 #define MPC_100_LEVEL 5
 #define NODEPTH 100
 
-#define N_SELECTIVITY_LEVEL 6
-constexpr int SELECTIVITY_PERCENTAGE[N_SELECTIVITY_LEVEL] = {74, 88, 93, 98, 99, 100};
-
 /*
     @brief structure of level definition
 
