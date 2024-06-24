@@ -59,11 +59,11 @@ for n_discs in range(len(data)):
             z_mean.append(mean)
             weight_mean.append(1 / len(data[n_discs][depth]))
 
-for n_discs in range(20):
+for n_discs in range(0):
     depth = 0
     x_n_discs_sd.append(n_discs)
     y_depth_sd.append(depth)
-    z_sd.append(8.0 - n_discs / 60 * 0.0)
+    z_sd.append(14.0 - n_discs / 60 * 0.0)
     weight_sd.append(0.01)
 
 for n_discs in range(45):
@@ -82,7 +82,7 @@ def f(xy, probcut_a, probcut_b, probcut_c, probcut_d, probcut_e, probcut_f):
     return res
 
 def f_max(wxy, probcut_a, probcut_b, probcut_c, probcut_d, probcut_e, probcut_f):
-    return np.minimum(10.0, np.maximum(-0.5, f(wxy, probcut_a, probcut_b, probcut_c, probcut_d, probcut_e, probcut_f)))
+    return np.minimum(20.0, np.maximum(-0.5, f(wxy, probcut_a, probcut_b, probcut_c, probcut_d, probcut_e, probcut_f)))
 
 def plot_fit_result(x, y, z, params):
     fig = plt.figure()
@@ -97,7 +97,7 @@ def plot_fit_result(x, y, z, params):
     ax.set_ylabel('search_depth')
     ax.set_zlabel('error')
     ax.set_xlim(0, 64)
-    ax.set_ylim(0, 16)
+    ax.set_ylim(0, 20)
     plt.show()
 
 popt_sd, pcov_sd = curve_fit(f, (x_n_discs_sd, y_depth_sd), z_sd, np.ones(6), sigma=weight_sd, absolute_sigma=True)

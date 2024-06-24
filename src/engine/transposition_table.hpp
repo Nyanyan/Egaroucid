@@ -30,10 +30,12 @@ constexpr size_t TRANSPOSITION_TABLE_STACK_SIZE = hash_sizes[DEFAULT_HASH_LEVEL]
 
 inline uint32_t get_level_common(uint8_t depth, uint8_t mpc_level){
     return ((uint32_t)depth << 8) | mpc_level;
+    //return (uint32_t)depth + mpc_level * 2;
 }
 
 inline uint32_t get_level_common(int depth, uint_fast8_t mpc_level){
     return ((uint32_t)depth << 8) | mpc_level;
+    //return (uint32_t)depth + mpc_level * 2;
 }
 
 /*

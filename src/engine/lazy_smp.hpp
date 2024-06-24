@@ -118,7 +118,41 @@ Search_result lazy_smp(Board board, int depth, uint_fast8_t mpc_level, bool show
         Search main_search;
         main_search.init(&board, main_mpc_level, use_multi_thread, parallel_tasks.size() != 0, !is_last_search);
         bool searching = true;
-        std::pair<int, int> id_result = first_nega_scout_legal(&main_search, -SCORE_MAX, SCORE_MAX, result.value, main_depth, main_is_end_search, clogs, use_legal, strt, &searching);
+        std::pair<int, int> id_result;
+        if (main_is_end_search && main_mpc_level == MPC_100_LEVEL){
+            id_result = first_nega_scout_legal(&main_search, result.value - 1, result.value + 1, result.value, main_depth, main_is_end_search, clogs, use_legal, strt, &searching);
+            if (show_log){
+                std::cerr << "  main aspiration depth " << result.depth << "@" << SELECTIVITY_PERCENTAGE[main_mpc_level] << "%" << " window [" << result.value - 1 << ", " << result.value + 1 << "] value " << id_result.first << " policy " << idx_to_coord(id_result.second) << " time " << tim() - strt << std::endl;
+            }
+            if (id_result.first != result.value){
+                int alpha = -SCORE_MAX, beta = SCORE_MAX, expected_value = result.value;
+                if (id_result.first < result.value){ // lower than expected
+                    beta = result.value - 1;
+                    expected_value = result.value - 2;
+                } else{ // higher than expected
+                    alpha = result.value + 1;
+                    expected_value = result.value + 2;
+                }
+                for (main_mpc_level = MPC_93_LEVEL; main_mpc_level <= MPC_100_LEVEL; ++main_mpc_level){
+                    main_search.mpc_level = main_mpc_level; // do presearch again
+                    id_result = first_nega_scout_legal(&main_search, alpha, beta, expected_value, main_depth, main_is_end_search, clogs, use_legal, strt, &searching);
+                    if (show_log){
+                        std::cerr << "  again depth " << result.depth << "@" << SELECTIVITY_PERCENTAGE[main_search.mpc_level] << "%" << " window [" << alpha << ", " << beta << "] value " << id_result.first << " policy " << idx_to_coord(id_result.second) << " time " << tim() - strt << std::endl;
+                    }
+                    expected_value = id_result.first;
+                }
+                /*
+                main_mpc_level = MPC_100_LEVEL;
+                main_search.mpc_level = main_mpc_level; // do presearch again
+                id_result = first_nega_scout_legal(&main_search, alpha, beta, expected_value, main_depth, main_is_end_search, clogs, use_legal, strt, &searching);
+                if (show_log){
+                    std::cerr << "  again depth " << result.depth << "@" << SELECTIVITY_PERCENTAGE[main_search.mpc_level] << "%" << " window [" << alpha << ", " << beta << "] value " << id_result.first << " policy " << idx_to_coord(id_result.second) << " time " << tim() - strt << std::endl;
+                }
+                */
+            }
+        } else{
+            id_result = first_nega_scout_legal(&main_search, -SCORE_MAX, SCORE_MAX, result.value, main_depth, main_is_end_search, clogs, use_legal, strt, &searching);
+        }
         sub_searching = false;
         for (std::future<int> &task: parallel_tasks){
             task.get();
@@ -167,10 +201,18 @@ Search_result lazy_smp(Board board, int depth, uint_fast8_t mpc_level, bool show
             } else{
                 if (main_mpc_level < mpc_level){
                     if (
+                        /*
                         (main_mpc_level >= MPC_74_LEVEL && mpc_level > MPC_74_LEVEL && depth <= 22) || 
                         (main_mpc_level >= MPC_88_LEVEL && mpc_level > MPC_88_LEVEL && depth <= 25) || 
-                        (main_mpc_level >= MPC_93_LEVEL && mpc_level > MPC_93_LEVEL && depth <= 32) || 
-                        (main_mpc_level >= MPC_98_LEVEL && mpc_level > MPC_98_LEVEL)
+                        (main_mpc_level >= MPC_93_LEVEL && mpc_level > MPC_93_LEVEL && depth <= 29) || 
+                        (main_mpc_level >= MPC_98_LEVEL && mpc_level > MPC_98_LEVEL && depth <= 31) || 
+                        (main_mpc_level >= MPC_99_LEVEL && mpc_level > MPC_99_LEVEL)
+                        */
+                        /*
+                        (main_mpc_level >= MPC_74_LEVEL && mpc_level > MPC_74_LEVEL && depth <= 22) || 
+                        (main_mpc_level >= MPC_88_LEVEL && mpc_level > MPC_88_LEVEL)
+                        */
+                        (main_mpc_level >= MPC_74_LEVEL && mpc_level > MPC_74_LEVEL)
                         ){
                         main_mpc_level = mpc_level;
                     } else{
