@@ -156,7 +156,7 @@ int nega_alpha_ordering_nws(Search *search, int alpha, int depth, bool skipped, 
     #endif
     move_list_evaluate_nws(search, move_list, moves, depth, alpha, searching);
     #if USE_YBWC_NWS
-        if (search->use_multi_thread && depth - 1 >= YBWC_MID_SPLIT_MIN_DEPTH){
+        if (search->use_multi_thread && ((!is_end_search && depth - 1 >= YBWC_MID_SPLIT_MIN_DEPTH) || (is_end_search && depth - 1 >= YBWC_MID_SPLIT_MIN_DEPTH_END))){
             move_list_sort(move_list);
             if (move_list[0].flip.flip){
                 search->move(&move_list[0].flip);

@@ -174,7 +174,7 @@ int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, uin
     #endif
     move_list_evaluate(search, move_list, moves, depth, alpha, beta, searching);
     #if USE_YBWC_NEGASCOUT
-        if (search->use_multi_thread && depth - 1 >= YBWC_MID_SPLIT_MIN_DEPTH){
+        if (search->use_multi_thread && ((!is_end_search && depth - 1 >= YBWC_MID_SPLIT_MIN_DEPTH) || (is_end_search && depth - 1 >= YBWC_MID_SPLIT_MIN_DEPTH_END))){
             move_list_sort(move_list);
             /*
             if (depth >= 26){

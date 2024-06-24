@@ -23,6 +23,7 @@
     @brief YBWC parameters
 */
 #define YBWC_MID_SPLIT_MIN_DEPTH 5
+#define YBWC_MID_SPLIT_MIN_DEPTH_END 8
 #define YBWC_N_ELDER_CHILD 1
 #define YBWC_N_YOUNGER_CHILD 3
 // #define YBWC_MAX_RUNNING_COUNT 5
