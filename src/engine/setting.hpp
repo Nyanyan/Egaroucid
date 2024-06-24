@@ -222,7 +222,7 @@
 #define USE_LIGHT_EVALUATION false
 
 // transposition table registering
-#define TT_REGISTER_MIN_LEVEL true
+#define TT_REGISTER_MIN_LEVEL false
 
 
 
