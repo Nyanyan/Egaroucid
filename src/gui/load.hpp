@@ -11,6 +11,8 @@
 #pragma once
 #include <iostream>
 #include <future>
+#include <windows.h>
+#include <shlwapi.h>
 #include "./../engine/engine_all.hpp"
 #include "function/function_all.hpp"
 
@@ -26,6 +28,17 @@ int init_ai(Settings* settings, const Directories* directories, bool *stop_loadi
     #if USE_MPC_PRE_CALCULATION
         mpc_init();
     #endif
+    MEMORYSTATUSEX msex = { sizeof(MEMORYSTATUSEX) };
+    GlobalMemoryStatusEx( &msex );
+    double free_mb = (double)msex.ullAvailPhys / 1024 / 1024;
+    double size_mb = (double)sizeof(Hash_node) / 1024 / 1024 * hash_sizes[MAX_HASH_LEVEL];
+    std::cerr << "memory " << free_mb << " " << size_mb << std::endl;
+    while (free_mb <= size_mb && MAX_HASH_LEVEL > 26){
+        --MAX_HASH_LEVEL;
+        size_mb = (double)sizeof(Hash_node) / 1024 / 1024 * hash_sizes[MAX_HASH_LEVEL];
+    }
+    settings->hash_level = std::min(settings->hash_level, MAX_HASH_LEVEL);
+    std::cerr << "max hash level " << MAX_HASH_LEVEL << std::endl;
     #if USE_CHANGEABLE_HASH_LEVEL
         if (!hash_resize(DEFAULT_HASH_LEVEL, settings->hash_level, true)) {
             std::cerr << "hash resize failed. use default setting" << std::endl;

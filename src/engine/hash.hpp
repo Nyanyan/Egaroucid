@@ -21,7 +21,7 @@
 #if USE_CHANGEABLE_HASH_LEVEL
     int global_hash_level = DEFAULT_HASH_LEVEL;
     #define MIN_HASH_LEVEL 25
-    #define MAX_HASH_LEVEL 30
+    int MAX_HASH_LEVEL = 30; // adjustable for environment (GUI)
 #endif
 
 /*
