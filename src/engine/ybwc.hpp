@@ -23,7 +23,7 @@
     @brief YBWC parameters
 */
 #define YBWC_MID_SPLIT_MIN_DEPTH 5
-#define YBWC_MID_SPLIT_MIN_DEPTH_END 8
+#define YBWC_MID_SPLIT_MIN_DEPTH_END 10
 #define YBWC_N_ELDER_CHILD 1
 #define YBWC_N_YOUNGER_CHILD 3
 // #define YBWC_MAX_RUNNING_COUNT 5
@@ -57,7 +57,7 @@ Parallel_task ybwc_do_task_nws(uint64_t player, uint64_t opponent, int_fast8_t n
     search.parity = parity;
     search.mpc_level = mpc_level;
     search.n_nodes = 0ULL;
-    search.use_multi_thread = depth > YBWC_MID_SPLIT_MIN_DEPTH;
+    search.use_multi_thread = (!is_end_search && depth > YBWC_MID_SPLIT_MIN_DEPTH) || (is_end_search && depth > YBWC_MID_SPLIT_MIN_DEPTH_END);
     search.need_to_see_tt_loop = false; // because lazy smp sub threads are done in only single thread
     search.is_presearch = is_presearch;
     calc_eval_features(&search.board, &search.eval);
