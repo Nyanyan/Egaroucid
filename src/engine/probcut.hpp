@@ -51,7 +51,7 @@ constexpr double SELECTIVITY_MPCT_MULTI[N_SELECTIVITY_LEVEL] = {0.75, 1.21, 1.49
 
 #if USE_MPC_PRE_CALCULATION
     int mpc_error_single0[N_SELECTIVITY_LEVEL][HW2 + 1][HW2 - 3];
-    int mpc_error_end_single0[N_SELECTIVITY_LEVEL][HW2 - 3];
+    int mpc_error_end_single0[N_SELECTIVITY_LEVEL][HW2 + 1];
     int mpc_error_multi[N_SELECTIVITY_LEVEL][HW2 + 1][HW2 - 3][HW2 - 3];
     int mpc_error_end_multi[N_SELECTIVITY_LEVEL][HW2 + 1][HW2 - 3];
 #endif
