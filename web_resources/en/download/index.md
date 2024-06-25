@@ -4,6 +4,10 @@ There are Install version and Portable version. With Install version, you should
 
 
 
+<b>Egaroucid 7.1.0 and 7.1.1 had a fatal bug that it cannot finish loading. This bug is fixed in Egaroucid 7.2.0.</b>
+
+
+
 ## Install Version
 
 Please download an installer from this button. Then run the installer and install it!
