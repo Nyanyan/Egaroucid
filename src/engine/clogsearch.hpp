@@ -207,7 +207,7 @@ std::vector<Clog_result> first_clog_search(Board board, uint64_t *n_nodes, int d
     bool searching = true;
     for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)){
         calc_flip(&flip, &search.board, cell);
-        search.board.move_board(&flip);
+        search.move(&flip);
             g = clog_search(&search, depth - 1, &searching);
             if (g != CLOG_NOT_FOUND){
                 Clog_result result;
@@ -215,7 +215,7 @@ std::vector<Clog_result> first_clog_search(Board board, uint64_t *n_nodes, int d
                 result.val = -g;
                 res.emplace_back(result);
             }
-        search.board.undo_board(&flip);
+        search.undo(&flip);
     }
     *n_nodes = search.n_nodes;
     return res;
