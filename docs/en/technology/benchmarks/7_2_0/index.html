@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<link rel="shortcut icon" type="image/x-icon" href="https://raw.githubusercontent.com/Nyanyan/Egaroucid/main/img/favicon.ico">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="style.css">
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:site" content="@takuto_yamana" />
+<link rel="alternate" hreflang="ja" href="https://www.egaroucid.nyanyan.dev/ja/technology/benchmarks/7_2_0/"/>
+<link rel="alternate" hreflang="x-default" href="https://www.egaroucid.nyanyan.dev/en/technology/benchmarks/7_2_0/">
+<meta property="og:image" content="https://www.egaroucid.nyanyan.dev/en/technology/benchmarks/7_2_0/img/eyecatch.png" />
+<meta property="og:url" content="https://www.egaroucid.nyanyan.dev/en/technology/benchmarks/7_2_0/" />
+<meta property="og:title" content="Benchmarks Egaroucid 7.2.0" />
+<meta property="og:description" content="Othello AI Egaroucid Free software with one of the strongest Othello AI in the world. The light version got the first place in the world." />
+<link rel="canonical" href="https://www.egaroucid.nyanyan.dev/en/technology/benchmarks/7_2_0/">
+<meta name="description" content="Othello AI Egaroucid Free software with one of the strongest Othello AI in the world. The light version got the first place in the world."/>
+<title>Benchmarks Egaroucid 7.2.0</title>
+</head>
+<body>
+<div class="menu_bar">
+<div class="menu_button"><a class="menu_a" href="https://www.egaroucid.nyanyan.dev/en/">Home</a></div><div class="menu_button"><a class="menu_a" href="https://www.egaroucid.nyanyan.dev/en/download/">Download</a></div><div class="menu_button"><a class="menu_a" href="https://www.egaroucid.nyanyan.dev/ja/usage/" target="_blank" el=”noopener noreferrer”>Usage (Japanese)</div></a>
+<div class="menu_button"><a class="menu_a" href="https://www.egaroucid.nyanyan.dev/en/console/">Console Version</a></div><div class="menu_button"><a class="menu_a" href="https://www.egaroucid.nyanyan.dev/en/web/">Web Version</a></div><div class="menu_button"><a class="menu_a" href="https://www.egaroucid.nyanyan.dev/en/technology/">Technology</a></div></div>
+<div class="box">
+<p></p>
+<a href="https://twitter.com/share?ref_src=twsrc%5Etfw" class="twitter-share-button" data-text="Benchmarks Egaroucid 7.2.0 - One of the strongest Othello AI in the world" data-url="https://www.egaroucid.nyanyan.dev/en/technology/benchmarks/7_2_0" data-hashtags="egaroucid" data-related="takuto_yamana" data-show-count="false">Tweet</a><script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script> 
+<a font-size="1.5em" href="https://www.egaroucid.nyanyan.dev/ja/technology/benchmarks/7_2_0">日本語</a> 
+<p><h1>Egaroucid 7.2.0 Benchmarks</h1></p><p><h2 id="The FFO endgame test suite">The FFO endgame test suite</h2></p><p><a href="http://radagast.se/othello/ffotest.html" target="_blank" el=”noopener noreferrer”>The FFO endgame test suite</a> is a common benchmark for endgame searching. Computer completely solves each testcase, and find the best move. This benchmark evaluates the exact time for searching and the speed (NPS: Nodes Per Second).</p><div class="table_wrapper"><table><tr><th>CPU</th><th>Edition</th><th>Time (sec)</th><th>Nodes</th><th>NPS</th><th>File</th></tr><tr><td>Core i9-13900K</td><td>SIMD</td><td>27.364</td><td>26421069847</td><td>965541216</td><td><a href="./files/0_Core_i9-13900K_SIMD.txt">0_Core_i9-13900K_SIMD.txt</a></td></tr><tr><td>Core i9-13900K</td><td>Generic</td><td>47.844</td><td>28178107090</td><td>588958011</td><td><a href="./files/1_Core_i9-13900K_Generic.txt">1_Core_i9-13900K_Generic.txt</a></td></tr><tr><td>Core i9-11900K</td><td>AVX512</td><td>54.558</td><td>22702428048</td><td>416115474</td><td><a href="./files/2_Core_i9-11900K_AVX512.txt">2_Core_i9-11900K_AVX512.txt</a></td></tr><tr><td>Core i9-11900K</td><td>SIMD</td><td>54.676</td><td>22894546165</td><td>418731183</td><td><a href="./files/3_Core_i9-11900K_SIMD.txt">3_Core_i9-11900K_SIMD.txt</a></td></tr><tr><td>Core i9-11900K</td><td>Generic</td><td>115.479</td><td>23069092108</td><td>199768720</td><td><a href="./files/4_Core_i9-11900K_Generic.txt">4_Core_i9-11900K_Generic.txt</a></td></tr></table><p></div></p><p><h2 id="Play against Edax 4.4">Play against Edax 4.4</h2></p><p><a href="https://github.com/abulmo/edax-reversi" target="_blank" el=”noopener noreferrer”>Edax 4.4</a> is one of the best Othello AI in the world.</p><p>If I set the game from the very beginning, same line appears a lot. To avoid this, I set the game from many different near-draw lines.</p><p>I used <a href="https://berg.earthlingz.de/xot/index.php" target="_blank" el=”noopener noreferrer”>XOT</a> for its testcases.</p><p>No opening books used.</p><p>If Egaroucid Win Ratio is over 0.5, then Egaroucid wins more than Edax do. "Black" and "White" means Egaroucid played black/white. In all conditions, Egaroucid is stronger than Edax.</p><div class="table_wrapper"><table><tr><th>Level</th><th>Egaroucid win</th><th>Draw</th><th>Edax Win</th><th>Egaroucid Win Ratio</th></tr><tr><td>1</td><td>1236(Black: 586 White: 650)</td><td>51(Black: 33 White: 18)</td><td>713(Black: 381 White: 332)</td><td>0.631</td></tr><tr><td>5</td><td>1348(Black: 679 White: 669)</td><td>88(Black: 49 White: 39)</td><td>564(Black: 272 White: 292)</td><td>0.696</td></tr><tr><td>10</td><td>1028(Black: 563 White: 465)</td><td>233(Black: 117 White: 116)</td><td>739(Black: 320 White: 419)</td><td>0.572</td></tr><tr><td>15</td><td>238(Black: 134 White: 104)</td><td>102(Black: 43 White: 59)</td><td>160(Black: 73 White: 87)</td><td>0.578</td></tr><tr><td>21</td><td>79(Black: 46 White: 33)</td><td>60(Black: 34 White: 26)</td><td>61(Black: 20 White: 41)</td><td>0.545</td></tr><p></table></div></p><p></p>
+</div>
+</body>
+<div class="footer">
+    <p>オセロ・Othelloは株式会社メガハウスの登録商標です。</p>
+    <p>TM&© Othello,Co. and MegaHouse</p>
+    <p>© 2021-2024 Takuto Yamana</div></p>
+</div>
+</html>
