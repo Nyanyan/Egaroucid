@@ -52,15 +52,17 @@ Egaroucidの性能の確認として2種類のベンチマークを使用して�
 
 <div class="table_wrapper"><table>
 <tr><th>名称</th><th>勝率</th></tr>
-<tr><td>7.1.0</td><td>0.5770</td></tr>
-<tr><td>7.0.0</td><td>0.5537</td></tr>
-<tr><td>6.5.X</td><td>0.5434</td></tr>
-<tr><td>6.4.X</td><td>0.4904</td></tr>
-<tr><td>6.3.X</td><td>0.4561</td></tr>
-<tr><td>6.1.X</td><td>0.5020</td></tr>
-<tr><td>6.0.X</td><td>0.4451</td></tr>
-<tr><td>Edax</td><td>0.4321</td></tr>
+<tr><td>7.2.0</td><td>0.5653</td></tr>
+<tr><td>7.1.0</td><td>0.5693</td></tr>
+<tr><td>7.0.0</td><td>0.5484</td></tr>
+<tr><td>6.5.X</td><td>0.5280</td></tr>
+<tr><td>6.4.X</td><td>0.4840</td></tr>
+<tr><td>6.3.X</td><td>0.4507</td></tr>
+<tr><td>6.1.X</td><td>0.4958</td></tr>
+<tr><td>6.0.X</td><td>0.4350</td></tr>
+<tr><td>Edax</td><td>0.4236</td></tr>
 </table></div>
+
 
 
 
@@ -80,6 +82,10 @@ Egaroucid 6.2.0はEgaroucid 6.3.0と同一の評価関数のため、省いて�
 	<tr>
 		<th>バージョン</th>
 		<th>リリース時期</th>
+	</tr>
+    <tr>
+		<td><a href="./benchmarks/7_2_0/">7.2.0</a></td>
+		<td>2024/06/25</td>
 	</tr>
     <tr>
 		<td><a href="./benchmarks/7_1_0/">7.1.0</a></td>
@@ -138,4 +144,3 @@ Egaroucid 6.2.0はEgaroucid 6.3.0と同一の評価関数のため、省いて�
 		<td>2022/03/02</td>
 	</tr>
     </table></div>
-
