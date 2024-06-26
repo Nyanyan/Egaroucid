@@ -20,8 +20,9 @@
     <input type="checkbox" id="show_legal" checked><label class="setting" for="show_legal">Moves</label>
     <input type="checkbox" id="auto_pass" checked><label class="setting" for="auto_pass">Auto-Pass</label>
 </p>
+<p align="center" id="loading_info"></p>
 <div align="center" id="div_start">
-    <input type="submit" class="setting" value="AI Initializing" onclick="start()" id="start" disabled>
+    <input type="submit" class="setting" value="Start Game" onclick="start()" id="start" disabled>
     <input type="submit" class="setting" value="Reset" onclick="reset()" id="reset" disabled>
 </div>
 <div class="popup" id="js-popup">

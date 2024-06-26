@@ -16,6 +16,9 @@ const lang_tweet_str_5_win = '石勝ちしました！';
 const lang_tweet_str_5_lose = '石負けしました…';
 const lang_tweet_str_5_draw = 'と引き分けました！';
 const lang_tweet_result = '結果をツイート！';
+const lang_ai_loading = 'AI読み込み中…';
+const lang_ai_loaded = 'AI読み込み完了！';
+const lang_ai_load_failed = 'AI読み込み失敗 リロードしてください';
 
 
 
@@ -57,7 +60,7 @@ let show_value = true;
 let show_graph = true;
 let show_legal = true;
 let auto_pass = true;
-let ai_initialized = 1;
+let ai_initializing = true;
 let graph_values = [];
 let ctx = document.getElementById("graph");
 let graph = new Chart(ctx, {
@@ -602,20 +605,21 @@ window.onload = function() {
     document.body.appendChild(scriptElem);
     //ai_init_p();
     //setInterval(check_initialized, 250);
+    document.getElementById('loading_info').innerText = lang_ai_loading;
 };
 
 function try_initialize_ai(){
-    if (document.getElementById('start').value == 'AI読込中'){
+    if (ai_initializing){
         try{
             _init_ai();
             console.log("loaded AI");
-            document.getElementById('start').value = "対局開始";
             document.getElementById('start').disabled = false;
             document.getElementById('reset').disabled = false;
+            ai_initializing = false;
+            document.getElementById('loading_info').innerText = lang_ai_loaded;
         } catch(exception){
-            //console.error(exception);
-            //document.getElementById('start').value = "読込失敗 リロードしてください";
-            //document.getElementById('start').disabled = true;
+            console.error(exception);
+            document.getElementById('loading_info').innerText = lang_ai_load_failed;
         }
         clearInterval(try_initialize_ai);
     }

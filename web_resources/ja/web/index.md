@@ -19,8 +19,9 @@
     <input type="checkbox" id="show_legal" checked><label class="setting" for="show_legal">合法手</label>
     <input type="checkbox" id="auto_pass" checked><label class="setting" for="auto_pass">自動パス</label>
 </p>
+<p align="center" id="loading_info"></p>
 <div align="center" id="div_start">
-    <input type="submit" class="setting" value="AI読込中" onclick="start()" id="start" disabled>
+    <input type="submit" class="setting" value="対局開始" onclick="start()" id="start" disabled>
     <input type="submit" class="setting" value="リセット" onclick="reset()" id="reset" disabled>
 </div>
 <div class="popup" id="js-popup">
