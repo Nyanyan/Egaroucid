@@ -37,7 +37,7 @@
     <input type="submit" class="setting" value="パス" onclick="pass()" id="pass" disabled>
 </div>
 <div class="div_main">
-    <table class="table_board" align="center">
+    <table class="table_board" align="center" id="table_board">
         <tr>
             <td class="white_element"></td>
             <td class="white_element">
