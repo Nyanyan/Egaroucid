@@ -12,14 +12,17 @@
 #include <iostream>
 #include "web/ai.hpp"
 
-inline void init(){
+inline void init(int *percentage){
+    *percentage = 1;
     board_init();
     mobility_init();
     stability_init();
     parent_transpose_table.first_init();
     child_transpose_table.first_init();
+    *percentage = 80;
     evaluate_init();
     book_init();
+    *percentage = 100;
 }
 
 inline int input_board(Board *bd, const int *arr, const int ai_player){
@@ -63,9 +66,9 @@ inline int output_coord(int policy, int raw_val){
     return 1000 * (HW2_M1 - policy) + 100 + raw_val;
 }
 
-extern "C" int init_ai(){
+extern "C" int init_ai(int *percentage){
     cout << "initializing AI" << endl;
-    init();
+    init(percentage);
     cout << "AI iniitialized" << endl;
     return 0;
 }

@@ -63,6 +63,8 @@ let auto_pass = true;
 let ai_initializing = true;
 let graph_values = [];
 let ctx = document.getElementById("graph");
+let loading_percent = 0;
+let percent_pointer = null;
 let graph = new Chart(ctx, {
     type: 'line',
     data: {
@@ -100,6 +102,11 @@ let graph = new Chart(ctx, {
         },
     }
 });
+
+var Module = {
+    'noInitialRun' : true,
+    'onRuntimeInitialized' : initialize_ai
+}
 
 const level_range = document.getElementById('ai_level');
 const level_show = document.getElementById('ai_level_label');
@@ -554,18 +561,7 @@ function end_game() {
     for (var i = 0; i < 2; ++i)
         players.item(i).disabled = false;
 }
-/*
-var Module = {
-    'noInitialRun' : false,
-    'onRuntimeInitialized' : onruntimeinitialized
-}
 
-function onruntimeinitialized(){
-    console.log("loaded AI");
-    document.getElementById('start').value = "対局開始";
-    document.getElementById('start').disabled = false;
-}
-*/
 window.onload = function() {
     for (var i = 0; i <= 15; ++i) {
         level_names.push(lang_level + i);
@@ -595,33 +591,54 @@ window.onload = function() {
         table.appendChild(row);
     }
     show(-2, -2);
-    document.getElementById('start').disabled = true;
+
+    //document.getElementById('ai_info').innerText = lang_ai_loading + " " + loading_percent + "%";
+    document.getElementById('ai_info').innerText = lang_ai_loading;
+
     const scriptElem = document.createElement('script');
     scriptElem.src = 'ai.js';
-    scriptElem.addEventListener('load', (e) => {
-        console.log("start initializing AI");
-        setInterval(try_initialize_ai, 250);
-    });
     document.body.appendChild(scriptElem);
-    //ai_init_p();
-    //setInterval(check_initialized, 250);
-    document.getElementById('loading_info').innerText = lang_ai_loading;
+
+    //setInterval(display_loading, 100);
 };
 
-function try_initialize_ai(){
+/*
+function display_loading(){
+    console.log('ptr', percent_pointer);
+    if (percent_pointer != null){
+        loading_percent = new Int32Array(HEAP32.buffer, percent_pointer, 1)[0];
+        console.log(loading_percent);
+        document.getElementById('ai_info').innerText = lang_ai_loading + " " + loading_percent + "%";
+    }
+}
+    */
+
+function initialize_ai(){
     if (ai_initializing){
-        try{
-            _init_ai();
-            console.log("loaded AI");
-            document.getElementById('start').disabled = false;
-            document.getElementById('reset').disabled = false;
-            ai_initializing = false;
-            document.getElementById('loading_info').innerText = lang_ai_loaded;
-        } catch(exception){
-            console.error(exception);
-            document.getElementById('loading_info').innerText = lang_ai_load_failed;
+        console.log(Module['onRuntimeInitialized'])
+        if (Module['onRuntimeInitialized']){
+            try{
+                percent_pointer = _malloc(4);
+                var init_result = _init_ai(percent_pointer);
+                loading_percent = new Int32Array(HEAP32.buffer, percent_pointer, 1)[0];
+                _free(percent_pointer);
+                percent_pointer = null;
+                if (init_result == 0){
+                    console.log("loaded AI");
+                    document.getElementById('start').disabled = false;
+                    document.getElementById('reset').disabled = false;
+                    ai_initializing = false;
+                    document.getElementById('ai_info').innerText = lang_ai_loaded;
+                } else{
+                    console.error(exception);
+                    document.getElementById('ai_info').innerText = lang_ai_load_failed;
+                }
+            } catch(exception){
+                console.error(exception);
+                document.getElementById('ai_info').innerText = lang_ai_load_failed;
+            }
+            //clearInterval(display_loading);
         }
-        clearInterval(try_initialize_ai);
     }
 }
 
