@@ -65,6 +65,7 @@ let graph_values = [];
 let ctx = document.getElementById("graph");
 let loading_percent = 0;
 let percent_pointer = null;
+let initializing_var = null;
 let graph = new Chart(ctx, {
     type: 'line',
     data: {
@@ -105,7 +106,7 @@ let graph = new Chart(ctx, {
 
 var Module = {
     'noInitialRun' : true,
-    'onRuntimeInitialized' : initialize_ai
+    'onRuntimeInitialized' : initialize_ai_wrapper
 }
 
 const level_range = document.getElementById('ai_level');
@@ -616,30 +617,33 @@ function display_loading(){
 }
     */
 
+function initialize_ai_wrapper(){
+    initializing_var = setInterval(initialize_ai, 100);
+}
+
 function initialize_ai(){
-    while (!Module['onRuntimeInitialized']){
-        console.log(Module['onRuntimeInitialized']);
-    }
-    console.log('start!');
-    try{
-        percent_pointer = _malloc(4);
-        var init_result = _init_ai(percent_pointer);
-        loading_percent = new Int32Array(HEAP32.buffer, percent_pointer, 1)[0];
-        _free(percent_pointer);
-        percent_pointer = null;
-        if (init_result == 0){
-            console.log("loaded AI");
-            document.getElementById('start').disabled = false;
-            document.getElementById('reset').disabled = false;
-            ai_initializing = false;
-            document.getElementById('ai_info').innerText = lang_ai_loaded;
-        } else{
+    if (Module['onRuntimeInitialized']){
+        try{
+            percent_pointer = _malloc(4);
+            var init_result = _init_ai(percent_pointer);
+            loading_percent = new Int32Array(HEAP32.buffer, percent_pointer, 1)[0];
+            _free(percent_pointer);
+            percent_pointer = null;
+            if (init_result == 0){
+                console.log("loaded AI");
+                document.getElementById('start').disabled = false;
+                document.getElementById('reset').disabled = false;
+                ai_initializing = false;
+                document.getElementById('ai_info').innerText = lang_ai_loaded;
+            } else{
+                console.error(exception);
+                document.getElementById('ai_info').innerText = lang_ai_load_failed;
+            }
+        } catch(exception){
             console.error(exception);
             document.getElementById('ai_info').innerText = lang_ai_load_failed;
         }
-    } catch(exception){
-        console.error(exception);
-        document.getElementById('ai_info').innerText = lang_ai_load_failed;
+        clearInterval(initializing_var);
     }
 }
 
