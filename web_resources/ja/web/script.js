@@ -17,7 +17,6 @@ const lang_tweet_str_5_lose = '石負けしました…';
 const lang_tweet_str_5_draw = 'と引き分けました！';
 const lang_tweet_result = '結果をツイート！';
 const lang_ai_loading = 'AI読み込み中…';
-const lang_ai_initializing = 'AI初期化中…';
 const lang_ai_loaded = 'AI読み込み完了！';
 const lang_ai_load_failed = 'AI読み込み失敗 リロードしてください';
 
@@ -598,9 +597,9 @@ window.onload = function() {
 
     const scriptElem = document.createElement('script');
     scriptElem.src = 'ai.js';
-    scriptElem.addEventListener('load', (e) => {
-        document.getElementById('ai_info').innerText = lang_ai_initializing;
-    });
+    //scriptElem.addEventListener('load', (e) => {
+    //document.getElementById('ai_info').innerText = lang_ai_initializing;
+    //});
     document.body.appendChild(scriptElem);
 
     //setInterval(display_loading, 100);
@@ -618,31 +617,29 @@ function display_loading(){
     */
 
 function initialize_ai(){
-    if (ai_initializing){
-        console.log(Module['onRuntimeInitialized'])
-        if (Module['onRuntimeInitialized']){
-            try{
-                percent_pointer = _malloc(4);
-                var init_result = _init_ai(percent_pointer);
-                loading_percent = new Int32Array(HEAP32.buffer, percent_pointer, 1)[0];
-                _free(percent_pointer);
-                percent_pointer = null;
-                if (init_result == 0){
-                    console.log("loaded AI");
-                    document.getElementById('start').disabled = false;
-                    document.getElementById('reset').disabled = false;
-                    ai_initializing = false;
-                    document.getElementById('ai_info').innerText = lang_ai_loaded;
-                } else{
-                    console.error(exception);
-                    document.getElementById('ai_info').innerText = lang_ai_load_failed;
-                }
-            } catch(exception){
-                console.error(exception);
-                document.getElementById('ai_info').innerText = lang_ai_load_failed;
-            }
-            //clearInterval(display_loading);
+    while (!Module['onRuntimeInitialized']){
+        console.log(Module['onRuntimeInitialized']);
+    }
+    console.log('start!');
+    try{
+        percent_pointer = _malloc(4);
+        var init_result = _init_ai(percent_pointer);
+        loading_percent = new Int32Array(HEAP32.buffer, percent_pointer, 1)[0];
+        _free(percent_pointer);
+        percent_pointer = null;
+        if (init_result == 0){
+            console.log("loaded AI");
+            document.getElementById('start').disabled = false;
+            document.getElementById('reset').disabled = false;
+            ai_initializing = false;
+            document.getElementById('ai_info').innerText = lang_ai_loaded;
+        } else{
+            console.error(exception);
+            document.getElementById('ai_info').innerText = lang_ai_load_failed;
         }
+    } catch(exception){
+        console.error(exception);
+        document.getElementById('ai_info').innerText = lang_ai_load_failed;
     }
 }
 
