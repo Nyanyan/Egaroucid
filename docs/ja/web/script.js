@@ -1,6 +1,29 @@
-var instance;
-var hw = 8;
-var hw2 = 64;
+const lang_level = 'レベル';
+const lang_expected_score = '予想最終石差';
+const lang_without_hint = 'ヒントなし';
+const lang_with_hint = 'ヒントあり';
+const lang_you_win = 'あなたの勝ち！';
+const lang_ai_win = 'AIの勝ち！';
+const lang_draw = '引き分け！';
+const lang_tweet_str_0_win = '';
+const lang_tweet_str_0_lose = '';
+const lang_tweet_str_0_draw = '';
+const lang_tweet_str_1 = 'オセロAI Egaroucid for Web ';
+const lang_tweet_str_2 = '';
+const lang_tweet_str_3 = 'に';
+const lang_tweet_str_4 = '';
+const lang_tweet_str_5_win = '石勝ちしました！';
+const lang_tweet_str_5_lose = '石負けしました…';
+const lang_tweet_str_5_draw = 'と引き分けました！';
+const lang_tweet_result = '結果をツイート！';
+const lang_ai_loading = 'AI読み込み中…';
+const lang_ai_loaded = 'AI読み込み完了！';
+const lang_ai_load_failed = 'AI読み込み失敗 リロードしてください';
+
+
+
+let hw = 8;
+let hw2 = 64;
 let dy = [0, 1, 0, -1, 1, 1, -1, -1];
 let dx = [1, 0, -1, 0, 1, -1, 1, -1];
 let grid = [
@@ -23,30 +46,32 @@ let bef_grid = [
     [-1, -1, -1, -1, -1, -1, -1, -1],
     [-1, -1, -1, -1, -1, -1, -1, -1]
 ];
-var n_stones = 4;
-var player = 0;
-var ai_player = -1;
-var level_idx = 0;
-let level_names = ['レベル0', 'レベル1', 'レベル2', 'レベル3', 'レベル4', 'レベル5', 'レベル6', 'レベル7', 'レベル8', 'レベル9', 'レベル10', 'レベル11', 'レベル12', 'レベル13', 'レベル14', 'レベル15'];
-var game_end = false;
-var value_calced = false;
+let n_stones = 4;
+let player = 0;
+let ai_player = -1;
+let level_idx = 0;
+let level_names = [];
+let game_end = false;
+let value_calculated = false;
 let record = [];
-var step = 0;
-var isstart = true;
-var show_value = true;
-var show_graph = true;
-var show_legal = true;
-var auto_pass = true;
-var ai_initialized = 1;
+let step = 0;
+let isstart = true;
+let show_value = true;
+let show_graph = true;
+let show_legal = true;
+let auto_pass = true;
+let ai_initializing = true;
 let graph_values = [];
-var ctx = document.getElementById("graph");
-var graph = new Chart(ctx, {
+let ctx = document.getElementById("graph");
+let loading_percent = 0;
+let percent_pointer = null;
+let graph = new Chart(ctx, {
     type: 'line',
     data: {
     labels: [],
     datasets: [
         {
-        label: '予想最終石差',
+        label: lang_expected_score,
         data: [],
         fill: false,
         borderColor: "rgb(0,0,0)",
@@ -78,9 +103,15 @@ var graph = new Chart(ctx, {
     }
 });
 
+var Module = {
+    'noInitialRun' : true,
+    'onRuntimeInitialized' : initialize_ai
+}
+
 const level_range = document.getElementById('ai_level');
 const level_show = document.getElementById('ai_level_label');
 const custom_setting = document.getElementById('custom');
+
 const setCurrentValue = (val) => {
     level_show.innerText = level_names[val];
 }
@@ -239,7 +270,7 @@ function show(r, c) {
             }
         }
     }
-    value_calced = false;
+    value_calculated = false;
 }
 
 function ai_check() {
@@ -247,9 +278,9 @@ function ai_check() {
         clearInterval(ai_check);
     } else if (player == ai_player) {
         ai();
-    } else if (show_value && !value_calced) {
+    } else if (show_value && !value_calculated) {
         calc_value();
-        value_calced = true;
+        value_calculated = true;
     }
 }
 
@@ -446,7 +477,7 @@ function move(y, x) {
 
 function update_record() {
     var record_html = document.getElementById('record');
-    var new_coord = String.fromCharCode(65 + record[record.length - 1][1]) + String.fromCharCode(49 + record[record.length - 1][0]);
+    var new_coord = String.fromCharCode(97 + record[record.length - 1][1]) + String.fromCharCode(49 + record[record.length - 1][0]);
     record_html.innerHTML += new_coord;
 }
 
@@ -477,30 +508,30 @@ function end_game() {
             }
         }
     }
-    html2canvas(document.getElementById('main'),{
+    html2canvas(document.getElementById('table_board'),{
         onrendered: function(canvas){
             var imgData = canvas.toDataURL();
             document.getElementById("game_result").src = imgData;
         }
     });
     var tweet_str = "";
-    var hint = "ヒントなし";
+    var hint = lang_without_hint;
     if (show_value)
-        hint = "ヒントあり"
+        hint = lang_with_hint;
     if (stones[ai_player] < stones[1 - ai_player]) {
-        document.getElementById('result_text').innerHTML = "あなたの勝ち！";
+        document.getElementById('result_text').innerHTML = lang_you_win;
         var dis = stones[1 - ai_player] - stones[ai_player] + hw2 - stones[ai_player] - stones[1 - ai_player];
-        tweet_str = "オセロAI Egaroucid for Web " + level_names[level_idx] + hint + "に" + dis + "石勝ちしました！ :)";
+        tweet_str = lang_tweet_str_0_win + lang_tweet_str_1 + level_names[level_idx] + lang_tweet_str_2 + hint + lang_tweet_str_3 + dis + lang_tweet_str_4 + lang_tweet_str_5_win;
     } else if (stones[ai_player] > stones[1 - ai_player]) {
-        document.getElementById('result_text').innerHTML = "AIの勝ち！";
+        document.getElementById('result_text').innerHTML = lang_ai_win;
         var dis = stones[ai_player] - stones[1 - ai_player] + hw2 - stones[ai_player] - stones[1 - ai_player];
-        tweet_str = "オセロAI Egaroucid for Web " + level_names[level_idx] + hint + "に" + dis + "石負けしました… :(";
+        tweet_str = lang_tweet_str_0_lose + lang_tweet_str_1 + level_names[level_idx] + lang_tweet_str_2 + hint + lang_tweet_str_3 + dis + lang_tweet_str_4 + lang_tweet_str_5_lose;
     } else {
-        document.getElementById('result_text').innerHTML = "引き分け！";
-        tweet_str = "オセロAI Egaroucid for Web " + level_names[level_idx] + hint + "と引き分けました！ :|";
+        document.getElementById('result_text').innerHTML = lang_draw;
+        tweet_str = lang_tweet_str_0_draw + lang_tweet_str_1 + level_names[level_idx] + lang_tweet_str_2 + hint + lang_tweet_str_4 + lang_tweet_str_5_draw;
     }
     var tweet_result = document.getElementById('tweet_result');
-    tweet_result.innerHTML = '結果をツイート！<a href="https://twitter.com/share?ref_src=twsrc%5Etfw" class="twitter-share-button" data-text="' + tweet_str + '" data-url="https://www.egaroucid.nyanyan.dev/ja/web/" data-hashtags="egaroucid" data-related="takuto_yamana" data-show-count="false">Tweet</a><script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>';
+    tweet_result.innerHTML = lang_tweet_result + '<a href="https://twitter.com/share?ref_src=twsrc%5Etfw" class="twitter-share-button" data-text="' + tweet_str + '" data-url="https://www.egaroucid.nyanyan.dev/ja/web/" data-hashtags="egaroucid" data-related="takuto_yamana" data-show-count="false">Tweet</a><script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>';
     twttr.widgets.load();
     var popup = document.getElementById('js-popup');
     if(!popup) return;
@@ -530,19 +561,12 @@ function end_game() {
     for (var i = 0; i < 2; ++i)
         players.item(i).disabled = false;
 }
-/*
-var Module = {
-    'noInitialRun' : false,
-    'onRuntimeInitialized' : onruntimeinitialized
-}
 
-function onruntimeinitialized(){
-    console.log("loaded AI");
-    document.getElementById('start').value = "対局開始";
-    document.getElementById('start').disabled = false;
-}
-*/
 window.onload = function() {
+    for (var i = 0; i <= 15; ++i) {
+        level_names.push(lang_level + i);
+    }
+    level_names
     level_range.addEventListener('input', rangeOnChange);
     setCurrentValue(level_range.value);
     var container = document.getElementById('chart_container');
@@ -567,32 +591,54 @@ window.onload = function() {
         table.appendChild(row);
     }
     show(-2, -2);
-    document.getElementById('start').disabled = true;
+
+    //document.getElementById('ai_info').innerText = lang_ai_loading + " " + loading_percent + "%";
+    document.getElementById('ai_info').innerText = lang_ai_loading;
+
     const scriptElem = document.createElement('script');
     scriptElem.src = 'ai.js';
-    scriptElem.addEventListener('load', (e) => {
-        console.log("start initializing AI");
-        setInterval(try_initialize_ai, 250);
-    });
     document.body.appendChild(scriptElem);
-    //ai_init_p();
-    //setInterval(check_initialized, 250);
+
+    //setInterval(display_loading, 100);
 };
 
-function try_initialize_ai(){
-    if (document.getElementById('start').value == 'AI読込中'){
-        try{
-            _init_ai();
-            console.log("loaded AI");
-            document.getElementById('start').value = "対局開始";
-            document.getElementById('start').disabled = false;
-            document.getElementById('reset').disabled = false;
-        } catch(exception){
-            //console.error(exception);
-            //document.getElementById('start').value = "読込失敗 リロードしてください";
-            //document.getElementById('start').disabled = true;
+/*
+function display_loading(){
+    console.log('ptr', percent_pointer);
+    if (percent_pointer != null){
+        loading_percent = new Int32Array(HEAP32.buffer, percent_pointer, 1)[0];
+        console.log(loading_percent);
+        document.getElementById('ai_info').innerText = lang_ai_loading + " " + loading_percent + "%";
+    }
+}
+    */
+
+function initialize_ai(){
+    if (ai_initializing){
+        console.log(Module['onRuntimeInitialized'])
+        if (Module['onRuntimeInitialized']){
+            try{
+                percent_pointer = _malloc(4);
+                var init_result = _init_ai(percent_pointer);
+                loading_percent = new Int32Array(HEAP32.buffer, percent_pointer, 1)[0];
+                _free(percent_pointer);
+                percent_pointer = null;
+                if (init_result == 0){
+                    console.log("loaded AI");
+                    document.getElementById('start').disabled = false;
+                    document.getElementById('reset').disabled = false;
+                    ai_initializing = false;
+                    document.getElementById('ai_info').innerText = lang_ai_loaded;
+                } else{
+                    console.error(exception);
+                    document.getElementById('ai_info').innerText = lang_ai_load_failed;
+                }
+            } catch(exception){
+                console.error(exception);
+                document.getElementById('ai_info').innerText = lang_ai_load_failed;
+            }
+            //clearInterval(display_loading);
         }
-        clearInterval(try_initialize_ai);
     }
 }
 
