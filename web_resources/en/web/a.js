@@ -1,29 +1,6 @@
-const lang_level = 'Level ';
-const lang_expected_score = 'AI will win/lose by ';
-const lang_without_hint = ' without hints';
-const lang_with_hint = ' with hints';
-const lang_you_win = 'You Win!';
-const lang_ai_win = 'AI Win!';
-const lang_draw = 'Draw!';
-const lang_tweet_str_0_win = 'I won against ';
-const lang_tweet_str_0_lose = 'I lose against ';
-const lang_tweet_str_0_draw = 'I tied against ';
-const lang_tweet_str_1 = 'Othello AI Egaroucid for Web ';
-const lang_tweet_str_2 = '';
-const lang_tweet_str_3 = ' by ';
-const lang_tweet_str_4 = ' discs!';
-const lang_tweet_str_5_win = '';
-const lang_tweet_str_5_lose = '';
-const lang_tweet_str_5_draw = '';
-const lang_tweet_result = 'Tweet this Result!';
-const lang_ai_loading = "AI Initializing...\nIf it don't finish in 10 seconds, please reload this page.";
-const lang_ai_loaded = 'AI Initialized!';
-const lang_ai_load_failed = 'AI not loaded. Please reload this page.';
-
-
-
-let hw = 8;
-let hw2 = 64;
+var instance;
+var hw = 8;
+var hw2 = 64;
 let dy = [0, 1, 0, -1, 1, 1, -1, -1];
 let dx = [1, 0, -1, 0, 1, -1, 1, -1];
 let grid = [
@@ -46,33 +23,29 @@ let bef_grid = [
     [-1, -1, -1, -1, -1, -1, -1, -1],
     [-1, -1, -1, -1, -1, -1, -1, -1]
 ];
-let n_stones = 4;
-let player = 0;
-let ai_player = -1;
-let level_idx = 0;
-let level_names = [];
-let game_end = false;
-let value_calculated = false;
+var n_stones = 4;
+var player = 0;
+var ai_player = -1;
+var level_idx = 0;
+let level_names = ['Level 0', 'Level 1', 'Level 2', 'Level 3', 'Level 4', 'Level 5', 'Level 6', 'Level 7', 'Level 8', 'Level 9', 'Level 10', 'Level 11', 'Level 12', 'Level 13', 'Level 14', 'Level 15'];
+var game_end = false;
+var value_calced = false;
 let record = [];
-let step = 0;
-let isstart = true;
-let show_value = true;
-let show_graph = true;
-let show_legal = true;
-let auto_pass = true;
-let ai_initializing = true;
+var step = 0;
+var isstart = true;
+var show_value = true;
+var show_graph = true;
+var show_legal = true;
+var ai_initialized = 1;
 let graph_values = [];
-let ctx = document.getElementById("graph");
-let loading_percent = 0;
-let percent_pointer = null;
-let initializing_var = null;
-let graph = new Chart(ctx, {
+var ctx = document.getElementById("graph");
+var graph = new Chart(ctx, {
     type: 'line',
     data: {
     labels: [],
     datasets: [
         {
-        label: lang_expected_score,
+        label: 'AI will win/lose by ',
         data: [],
         fill: false,
         borderColor: "rgb(0,0,0)",
@@ -104,15 +77,9 @@ let graph = new Chart(ctx, {
     }
 });
 
-var Module = {
-    'noInitialRun' : true,
-    'onRuntimeInitialized' : initialize_ai_wrapper
-}
-
 const level_range = document.getElementById('ai_level');
 const level_show = document.getElementById('ai_level_label');
 const custom_setting = document.getElementById('custom');
-
 const setCurrentValue = (val) => {
     level_show.innerText = level_names[val];
 }
@@ -271,7 +238,7 @@ function show(r, c) {
             }
         }
     }
-    value_calculated = false;
+    value_calced = false;
 }
 
 function ai_check() {
@@ -279,9 +246,9 @@ function ai_check() {
         clearInterval(ai_check);
     } else if (player == ai_player) {
         ai();
-    } else if (show_value && !value_calculated) {
+    } else if (show_value && !value_calced) {
         calc_value();
-        value_calculated = true;
+        value_calced = true;
     }
 }
 
@@ -478,7 +445,7 @@ function move(y, x) {
 
 function update_record() {
     var record_html = document.getElementById('record');
-    var new_coord = String.fromCharCode(97 + record[record.length - 1][1]) + String.fromCharCode(49 + record[record.length - 1][0]);
+    var new_coord = String.fromCharCode(65 + record[record.length - 1][1]) + String.fromCharCode(49 + record[record.length - 1][0]);
     record_html.innerHTML += new_coord;
 }
 
@@ -509,30 +476,30 @@ function end_game() {
             }
         }
     }
-    html2canvas(document.getElementById('table_board'),{
+    html2canvas(document.getElementById('main'),{
         onrendered: function(canvas){
             var imgData = canvas.toDataURL();
             document.getElementById("game_result").src = imgData;
         }
     });
     var tweet_str = "";
-    var hint = lang_without_hint;
+    var hint = "without hints";
     if (show_value)
-        hint = lang_with_hint;
+        hint = "with hints"
     if (stones[ai_player] < stones[1 - ai_player]) {
-        document.getElementById('result_text').innerHTML = lang_you_win;
+        document.getElementById('result_text').innerHTML = "You Win!";
         var dis = stones[1 - ai_player] - stones[ai_player] + hw2 - stones[ai_player] - stones[1 - ai_player];
-        tweet_str = lang_tweet_str_0_win + lang_tweet_str_1 + level_names[level_idx] + lang_tweet_str_2 + hint + lang_tweet_str_3 + dis + lang_tweet_str_4 + lang_tweet_str_5_win;
+        tweet_str = "I won against the Othello AI Egaroucid for Web " + level_names[level_idx] + " " + hint + " by " + dis + "discs! :)";
     } else if (stones[ai_player] > stones[1 - ai_player]) {
-        document.getElementById('result_text').innerHTML = lang_ai_win;
+        document.getElementById('result_text').innerHTML = "AI Win!";
         var dis = stones[ai_player] - stones[1 - ai_player] + hw2 - stones[ai_player] - stones[1 - ai_player];
-        tweet_str = lang_tweet_str_0_lose + lang_tweet_str_1 + level_names[level_idx] + lang_tweet_str_2 + hint + lang_tweet_str_3 + dis + lang_tweet_str_4 + lang_tweet_str_5_lose;
+        tweet_str = "I lose against the Othello AI Egaroucid for Web " + level_names[level_idx] + " " + hint + " by " + dis + "discs... :(";
     } else {
-        document.getElementById('result_text').innerHTML = lang_draw;
-        tweet_str = lang_tweet_str_0_draw + lang_tweet_str_1 + level_names[level_idx] + lang_tweet_str_2 + hint + lang_tweet_str_4 + lang_tweet_str_5_draw;
+        document.getElementById('result_text').innerHTML = "Draw!";
+        tweet_str = "I tied against the Othello AI Egaroucid for Web " + level_names[level_idx] + " " + hint + " by " + dis + "discs... :|";
     }
     var tweet_result = document.getElementById('tweet_result');
-    tweet_result.innerHTML = lang_tweet_result + '<a href="https://twitter.com/share?ref_src=twsrc%5Etfw" class="twitter-share-button" data-text="' + tweet_str + '" data-url="https://www.egaroucid.nyanyan.dev/ja/web/" data-hashtags="egaroucid" data-related="takuto_yamana" data-show-count="false">Tweet</a><script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>';
+    tweet_result.innerHTML = 'Tweet this result!<a href="https://twitter.com/share?ref_src=twsrc%5Etfw" class="twitter-share-button" data-text="' + tweet_str + '" data-url="https://www.egaroucid.nyanyan.dev/en/web/" data-hashtags="egaroucid" data-related="takuto_yamana" data-show-count="false">Tweet</a><script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>';
     twttr.widgets.load();
     var popup = document.getElementById('js-popup');
     if(!popup) return;
@@ -562,12 +529,19 @@ function end_game() {
     for (var i = 0; i < 2; ++i)
         players.item(i).disabled = false;
 }
+/*
+var Module = {
+    'noInitialRun' : false,
+    'onRuntimeInitialized' : onruntimeinitialized
+}
 
+function onruntimeinitialized(){
+    console.log("loaded AI");
+    document.getElementById('start').value = "対局開始";
+    document.getElementById('start').disabled = false;
+}
+*/
 window.onload = function() {
-    for (var i = 0; i <= 15; ++i) {
-        level_names.push(lang_level + i);
-    }
-    level_names
     level_range.addEventListener('input', rangeOnChange);
     setCurrentValue(level_range.value);
     var container = document.getElementById('chart_container');
@@ -592,58 +566,30 @@ window.onload = function() {
         table.appendChild(row);
     }
     show(-2, -2);
-
-    //document.getElementById('ai_info').innerText = lang_ai_loading + " " + loading_percent + "%";
-    document.getElementById('ai_info').innerText = lang_ai_loading;
-
+    document.getElementById('start').disabled = true;
     const scriptElem = document.createElement('script');
     scriptElem.src = 'ai.js';
-    //scriptElem.addEventListener('load', (e) => {
-    //document.getElementById('ai_info').innerText = lang_ai_initializing;
-    //});
+    scriptElem.addEventListener('load', (e) => {
+        console.log("start initializing AI");
+        setInterval(try_initialize_ai, 250);
+    });
     document.body.appendChild(scriptElem);
-
-    //setInterval(display_loading, 100);
 };
 
-/*
-function display_loading(){
-    console.log('ptr', percent_pointer);
-    if (percent_pointer != null){
-        loading_percent = new Int32Array(HEAP32.buffer, percent_pointer, 1)[0];
-        console.log(loading_percent);
-        document.getElementById('ai_info').innerText = lang_ai_loading + " " + loading_percent + "%";
-    }
-}
-    */
-
-function initialize_ai_wrapper(){
-    initializing_var = setInterval(initialize_ai, 100);
-}
-
-function initialize_ai(){
-    if (Module['onRuntimeInitialized']){
+function try_initialize_ai(){
+    if (document.getElementById('start').value == 'AI Initializing'){
         try{
-            percent_pointer = _malloc(4);
-            var init_result = _init_ai(percent_pointer);
-            loading_percent = new Int32Array(HEAP32.buffer, percent_pointer, 1)[0];
-            _free(percent_pointer);
-            percent_pointer = null;
-            if (init_result == 0){
-                console.log("loaded AI");
-                document.getElementById('start').disabled = false;
-                document.getElementById('reset').disabled = false;
-                ai_initializing = false;
-                document.getElementById('ai_info').innerText = lang_ai_loaded;
-            } else{
-                console.error(exception);
-                document.getElementById('ai_info').innerText = lang_ai_load_failed;
-            }
+            _init_ai();
+            console.log("loaded AI");
+            document.getElementById('start').value = "Start";
+            document.getElementById('start').disabled = false;
+            document.getElementById('reset').disabled = false;
         } catch(exception){
-            console.error(exception);
-            document.getElementById('ai_info').innerText = lang_ai_load_failed;
+            //console.error(exception);
+            //document.getElementById('start').value = "Failed Initializing Please Reload";
+            //document.getElementById('start').disabled = true;
         }
-        clearInterval(initializing_var);
+        clearInterval(try_initialize_ai);
     }
 }
 
