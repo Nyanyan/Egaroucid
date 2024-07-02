@@ -173,15 +173,12 @@ summary {
     text-decoration: none;
     background-color:  #2a7253;
     color: white;
-    font-size: 16pt;
-    height: 40px;
-    width: 100%;
-    padding: 5%;
+    font-size: min(16pt, 4vw);
+    padding: 20px;
     border-radius: 13pt;
 }
 
 .download_button_container {
-    width: min(90%, 300pt);
     margin: max(4%, 30px) auto;
     text-align: center;
 }
