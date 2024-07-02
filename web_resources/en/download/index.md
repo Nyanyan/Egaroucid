@@ -23,7 +23,7 @@ If you see "Windows protected your PC" popup, then you can run it with clicking 
 
 
 
-Egaroucid GUI version is for only Windows 64 bit on CPUs made by Intel or AMD.
+Egaroucid GUI version is for only Windows 64 bit on CPUs made by Intel or AMD. Also, you can use Egaroucid with x64 compatible ARM CPU.
 
 Egaroucid has some revisions (SIMD / Generic / AVX512) to optimize the speed for several environments. Installer automatically select the best revision for you.
 
@@ -33,7 +33,7 @@ Please visit [GitHub Releases](https://github.com/Nyanyan/Egaroucid/releases) to
 
 ## Portable Version
 
-<b>Egaroucid GUI version is for only Windows 64 bit on CPUs made by Intel or AMD.</b> If you are using windows with ARM CPU, you cannot use Egaroucid.
+<b>Egaroucid GUI version is for only Windows 64 bit on CPUs made by Intel or AMD. Also, you can use Egaroucid with x64 compatible ARM CPU.</b>
 
 Please download the one which is suitable to your environment, and unzip it. Egaroucid_[version].exe is the executable of Egaroucid.
 

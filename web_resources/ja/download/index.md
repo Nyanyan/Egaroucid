@@ -23,7 +23,7 @@ REPLACE_DOWNLOAD_BUTTON_HERE
 
 
 
-Egaroucidは64bitのWindowsかつIntel製かAMD製のCPUに対応しています。
+Egaroucidは64bitのWindowsかつIntel製かAMD製のCPU、またはx64互換機能のあるARM製CPUに対応しています。
 
 Egaroucidは個々の環境向けに高速に動くようにいくつかのバージョン(SIMD / Generic / AVX512)を用意しています。インストール版では自動で最適なものをインストールしてくれます。
 
@@ -33,7 +33,7 @@ Egaroucidは個々の環境向けに高速に動くようにいくつかのバ�
 
 ## ポータブル版
 
-<b>Egaroucidは64bitのWindowsかつIntel製かAMD製のCPUに対応しています。</b>ARMのCPUを使っている場合は動きません。
+<b>Egaroucidは64bitのWindowsかつIntel製かAMD製のCPU、x64互換機能のあるARM製CPUに対応しています。</b>
 
 以下から自分の環境に合ったものをダウンロードし、zipを解凍してください。中のEgaroucid_[バージョン].exeを実行するとEgaroucidが起動します。
 
