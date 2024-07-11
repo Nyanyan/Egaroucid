@@ -38,53 +38,7 @@
     <input type="submit" class="setting" value="パス" onclick="pass()" id="pass" disabled>
 </div>
 <div class="div_main">
-    <table class="table_board" align="center" id="table_board">
-        <tr>
-            <td class="white_element"></td>
-            <td class="white_element">
-                <table class="coords" id="coord_top">
-                    <tr>
-                        <td class="coord_cell"><span class="coord">a</span></td>
-                        <td class="coord_cell"><span class="coord">b</span></td>
-                        <td class="coord_cell"><span class="coord">c</span></td>
-                        <td class="coord_cell"><span class="coord">d</span></td>
-                        <td class="coord_cell"><span class="coord">e</span></td>
-                        <td class="coord_cell"><span class="coord">f</span></td>
-                        <td class="coord_cell"><span class="coord">g</span></td>
-                        <td class="coord_cell"><span class="coord">h</span></td>
-                    </tr>
-                </table>
-            </td>
-            <td class="white_element"></td>
-        </tr>
-        <tr>
-            <td class="white_element">
-                <table class="coords" id="coord_left">
-                    <tr><td class="coord_cell"><span class="coord">1</span></td></tr>
-                    <tr><td class="coord_cell"><span class="coord">2</span></td></tr>
-                    <tr><td class="coord_cell"><span class="coord">3</span></td></tr>
-                    <tr><td class="coord_cell"><span class="coord">4</span></td></tr>
-                    <tr><td class="coord_cell"><span class="coord">5</span></td></tr>
-                    <tr><td class="coord_cell"><span class="coord">6</span></td></tr>
-                    <tr><td class="coord_cell"><span class="coord">7</span></td></tr>
-                    <tr><td class="coord_cell"><span class="coord">8</span></td></tr>
-                </table>
-            </td>
-            <td class="white_element"><table class="board" id="board" align="center"></table></td>
-            <td class="white_element">
-                <table class="coords" id="coord_right">
-                    <tr><td class="coord_cell"><span class="coord"></span></td></tr>
-                    <tr><td class="coord_cell"><span class="coord"></span></td></tr>
-                    <tr><td class="coord_cell"><span class="coord"></span></td></tr>
-                    <tr><td class="coord_cell"><span class="coord"></span></td></tr>
-                    <tr><td class="coord_cell"><span class="coord"></span></td></tr>
-                    <tr><td class="coord_cell"><span class="coord"></span></td></tr>
-                    <tr><td class="coord_cell"><span class="coord"></span></td></tr>
-                    <tr><td class="coord_cell"><span class="coord"></span></td></tr>
-                </table>
-            </td>
-        </tr>
-    </table>
+    <table class="table_board" align="center" id="table_board"></table>
     <table class="status" id="status" align="center">
         <tr>
             <td class="status_cell"><span class="state_blank"></span></td>

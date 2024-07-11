@@ -186,6 +186,7 @@ function pass(){
 }
 
 function show(r, c) {
+    console.log(r, c);
     var table = document.getElementById("board");
     var waiting_pass = false;
     if (!check_mobility()) {
@@ -201,43 +202,44 @@ function show(r, c) {
     }
     for (var y = 0; y < 8; ++y) {
         for (var x = 0; x < 8; ++x) {
-            table.rows[y].cells[x].style.backgroundColor = "#249972";
+            var stone_id = "stone_" + (y * hw + x);
+            var cell_id = "cell_" + (y * hw + x);
             if (grid[y][x] == 0) {
                 if (bef_grid[y][x] != 0) {
-                    table.rows[y].cells[x].innerHTML = '<span class="black_stone"></span>';
-                    table.rows[y].cells[x].setAttribute('onclick', "");
+                    document.getElementById(stone_id).className = "black_stone";
+                    document.getElementById(cell_id).setAttribute('onclick', "");
                 }
             } else if (grid[y][x] == 1) {
                 if (bef_grid[y][x] != 1) {
-                    table.rows[y].cells[x].innerHTML = '<span class="white_stone"></span>';
-                    table.rows[y].cells[x].setAttribute('onclick', "");
+                    document.getElementById(stone_id).className = "white_stone";
+                    document.getElementById(cell_id).setAttribute('onclick', "");
                 }
             } else if (grid[y][x] == 2 && !waiting_pass) {
                 if (r == -1 || inside(r, c)) {
                     if (show_legal) {
                         if (player == 0) {
-                            table.rows[y].cells[x].firstChild.className ="legal_stone_black";
+                            document.getElementById(stone_id).className = "legal_stone_black";
                         } else {
-                            table.rows[y].cells[x].firstChild.className ="legal_stone_white";
+                            document.getElementById(stone_id).className = "legal_stone_white";
                         }
                     } else {
-                        table.rows[y].cells[x].firstChild.className ="empty_stone";
+                        document.getElementById(stone_id).className = "empty_stone";
                     }
-                    table.rows[y].cells[x].setAttribute('onclick', "move(this.parentNode.rowIndex, this.cellIndex)");
+                    document.getElementById(cell_id).setAttribute('onclick', "move(" + y + ", " + x + ")");
                 } else {
-                    //table.rows[y].cells[x].innerHTML = '<span class="empty_stone"></span>';
-                    table.rows[y].cells[x].firstChild.className ="empty_stone";
-                    table.rows[y].cells[x].setAttribute('onclick', "");
+                    document.getElementById(stone_id).className = "empty_stone";
+                    document.getElementById(cell_id).setAttribute('onclick', "");
                 }
             } else {
-                //table.rows[y].cells[x].innerHTML = '<span class="empty_stone"></span>';
-                table.rows[y].cells[x].firstChild.className ="empty_stone";
-                table.rows[y].cells[x].setAttribute('onclick', "");
+                document.getElementById(stone_id).className = "empty_stone";
+                document.getElementById(cell_id).setAttribute('onclick', "");
             }
+            document.getElementById(cell_id).style.backgroundColor = "#249972";
         }
     }
     if (inside(r, c)) {
-        table.rows[r].cells[c].style.backgroundColor = "#d14141";
+        var cell_id = "cell_" + (r * hw + c);
+        document.getElementById(cell_id).style.backgroundColor = "#d14141";
     }
     var black_count = 0, white_count = 0;
     for (var y = 0; y < hw; ++y) {
@@ -262,14 +264,6 @@ function show(r, c) {
         table.rows[0].cells[6].firstChild.className = "state_blank";
         game_end = true;
         end_game();
-    }
-    var table = document.getElementById("board");
-    for (var y = 0; y < hw; ++y) {
-        for (var x = 0; x < hw; ++x) {
-            if (grid[y][x] == 2) {
-                table.rows[y].cells[x].firstChild.innerText = "";
-            }
-        }
     }
     value_calculated = false;
 }
@@ -578,15 +572,31 @@ window.onload = function() {
     grid[4][3] = 0
     grid[4][4] = 1
     player = 0;
-    var table = document.getElementById('board');
-    for (var y = 0; y < hw; ++y) {
+    var table = document.getElementById('table_board');
+    for (var y = -1; y < hw; ++y) {
         var row = document.createElement('tr');
-        for (var x = 0; x < hw; ++x) {
+        for (var x = -1; x < hw + 1; ++x) {
             var cell = document.createElement('td');
-            cell.className = "cell";
-            var stone = document.createElement('span');
-            stone.className = "empty_stone";
-            cell.appendChild(stone);
+            var stone_elem = document.createElement('span');
+            if (y == -1) {
+                cell.className = "coord_cell";
+                stone_elem.className = "coord";
+                if (0 <= x && x < hw) {
+                    stone_elem.innerHTML = "abcdefgh"[x];
+                }
+            } else if (x == -1 || x == hw) {
+                cell.className = "coord_cell";
+                stone_elem.className = "coord";
+                if (x == -1) {
+                    stone_elem.innerHTML = y;
+                }
+            } else {
+                cell.className = "cell";
+                cell.id = "cell_" + (y * hw + x);
+                stone_elem.className = "empty_stone";
+                stone_elem.id = "stone_" + (y * hw + x);
+            }
+            cell.appendChild(stone_elem);
             row.appendChild(cell);
         }
         table.appendChild(row);
