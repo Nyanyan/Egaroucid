@@ -48,7 +48,7 @@
     padding: 0px;
     width: 7vmin;
     height: 7vmin;
-    border: 0.25vmin solid transparent;
+    border: 0%;
     background-color: white;
 }
 .coord {
@@ -78,6 +78,7 @@
     width: 7vmin;
     height: 7vmin;
     border: max(2px, 0.5vmin) solid rgb(0, 0, 0);
+    background: rgb(36, 153, 114);
 }
 .black_stone {
     text-align: center;
@@ -145,9 +146,6 @@
     text-align: center;
     margin: 0px;
     padding: 0px;
-    width: 6vmin;
-    height: 6vmin;
-    background: rgb(36, 153, 114);
     display: inline-block;
 }
 .status {
