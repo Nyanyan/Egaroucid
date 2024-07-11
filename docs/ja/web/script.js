@@ -592,7 +592,7 @@ window.onload = function() {
                 cell.className = "coord_cell";
                 stone_elem.className = "coord";
                 if (x == -1) {
-                    stone_elem.innerHTML = y;
+                    stone_elem.innerHTML = y + 1;
                 }
             } else {
                 cell.className = "cell";
