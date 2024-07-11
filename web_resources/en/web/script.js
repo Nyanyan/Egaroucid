@@ -6,7 +6,7 @@ const lang_you_win = 'You Win!';
 const lang_ai_win = 'AI Win!';
 const lang_draw = 'Draw!';
 const lang_tweet_str_0_win = 'I won against ';
-const lang_tweet_str_0_lose = 'I lose against ';
+const lang_tweet_str_0_lose = 'I lost against ';
 const lang_tweet_str_0_draw = 'I tied against ';
 const lang_tweet_str_1 = 'Othello AI Egaroucid for Web ';
 const lang_tweet_str_2 = '';
@@ -204,6 +204,8 @@ function show(r, c) {
         for (var x = 0; x < 8; ++x) {
             var stone_id = "stone_" + (y * hw + x);
             var cell_id = "cell_" + (y * hw + x);
+            document.getElementById(cell_id).style.backgroundColor = "#249972";
+            document.getElementById(stone_id).innerHTML = "";
             if (grid[y][x] == 0) {
                 if (bef_grid[y][x] != 0) {
                     document.getElementById(stone_id).className = "black_stone";
@@ -234,7 +236,6 @@ function show(r, c) {
                 document.getElementById(stone_id).className = "empty_stone";
                 document.getElementById(cell_id).setAttribute('onclick', "");
             }
-            document.getElementById(cell_id).style.backgroundColor = "#249972";
         }
     }
     if (inside(r, c)) {
@@ -412,12 +413,12 @@ function calc_value() {
     var output_array = new Int32Array(HEAP32.buffer, pointer_value, hw2 + 10);
     _free(pointer_value);
     //console.log(output_array);
-    var table = document.getElementById("board");
     for (var y = 0; y < hw; ++y) {
         for (var x = 0; x < hw; ++x) {
             if (grid[y][x] == 2) {
                 if (-64 <= output_array[10 + y * hw + x] && output_array[10 + y * hw + x] <= 64){
-                    table.rows[y].cells[x].firstChild.innerText = output_array[10 + y * hw + x];
+                    var stone_id = "stone_" + (y * hw + x);
+                    document.getElementById(stone_id).innerHTML = output_array[10 + y * hw + x];
                 }
             }
         }
