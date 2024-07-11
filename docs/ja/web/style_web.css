@@ -40,6 +40,7 @@
 }
 .white_element{
     background-color: white;
+    border: 0px;
 }
 .coord_cell {
     text-align: center;
