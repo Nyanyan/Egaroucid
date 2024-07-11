@@ -377,6 +377,9 @@ async function ai() {
 }
 
 function calc_value() {
+    if (!check_mobility()) {
+        return;
+    }
     let res = new Int32Array([
         -1, -1, -1, -1, -1, -1, -1, -1, 
         -1, -1, -1, -1, -1, -1, -1, -1, 

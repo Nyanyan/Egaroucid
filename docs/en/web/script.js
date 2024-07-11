@@ -6,7 +6,7 @@ const lang_you_win = 'You Win!';
 const lang_ai_win = 'AI Win!';
 const lang_draw = 'Draw!';
 const lang_tweet_str_0_win = 'I won against ';
-const lang_tweet_str_0_lose = 'I lose against ';
+const lang_tweet_str_0_lose = 'I lost against ';
 const lang_tweet_str_0_draw = 'I tied against ';
 const lang_tweet_str_1 = 'Othello AI Egaroucid for Web ';
 const lang_tweet_str_2 = '';
@@ -377,6 +377,9 @@ async function ai() {
 }
 
 function calc_value() {
+    if (!check_mobility()) {
+        return;
+    }
     let res = new Int32Array([
         -1, -1, -1, -1, -1, -1, -1, -1, 
         -1, -1, -1, -1, -1, -1, -1, -1, 
