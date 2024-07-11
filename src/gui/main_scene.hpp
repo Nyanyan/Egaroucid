@@ -345,6 +345,12 @@ private:
                 umigame_status.umigame_future[i].get();
             }
         }
+        std::cerr << "terminating book accuracy" << std::endl;
+        for (int i = 0; i < HW2; ++i) {
+            if (book_accuracy_status.book_accuracy_future[i].valid()) {
+                book_accuracy_status.book_accuracy_future[i].get();
+            }
+        }
         std::cerr << "calculation terminated" << std::endl;
         reset_ai();
         reset_hint();
