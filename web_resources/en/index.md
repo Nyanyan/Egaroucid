@@ -177,6 +177,7 @@ I would like to thank these people for great contributions.
     </li>
     <li>User Test
         <ul>
+            <li>Ben Seeley</li>
             <li>Wanryu</li>
             <li>OGA NAO</li>
             <li>Satoshi Kurahashi</li>
