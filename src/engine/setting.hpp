@@ -18,8 +18,8 @@
 /*
     @brief version settings
 */
-#define EGAROUCID_ENGINE_VERSION "7.2"
-#define USE_BETA_VERSION false
+#define EGAROUCID_ENGINE_VERSION "7.3"
+#define USE_BETA_VERSION true
 
 /*
     @brief Major settings
