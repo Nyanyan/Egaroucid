@@ -15,6 +15,7 @@
 #include <queue>
 #include <thread>
 #include <atomic>
+#include <functional>
 
 // Original code based on
 //  * <https://github.com/bshoshany/thread-pool>
