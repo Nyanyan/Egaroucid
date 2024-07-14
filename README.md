@@ -37,7 +37,7 @@ Totally free application
 
 ![egaroucid_for_console](img/screen_shots/egaroucid_for_console.png)
 
-![egaroucid_for_web](img/screen_shots/egaroucid_for_web.png)
+![egaroucid_for_web](img/screen_shots/egaroucid_for_web_en.png)
 
 
 
