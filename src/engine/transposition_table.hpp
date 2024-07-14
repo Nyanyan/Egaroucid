@@ -16,6 +16,7 @@
 #include "spinlock.hpp"
 #include "search.hpp"
 #include <future>
+#include <functional>
 
 //#define USE_TT_DEPTH_THRESHOLD 0
 
