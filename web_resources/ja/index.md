@@ -178,9 +178,17 @@ GPL-3.0ライセンスの下で自由に使っていただいて構いません�
             <li>金子映像</li>
         </ul>
     </li>
-    <li>技術提供
+    <li>技術提供・[GitHubコントリビュータ](https://github.com/Nyanyan/Egaroucid/graphs/contributors)
         <ul>
             <li>奥原俊彦</li>
+            <li>HiraokaTakuya</li>
+            <li>Ben Stokmans</li>
+            <li>seigot</li>
+        </ul>
+    </li>
+    <li>翻訳
+        <ul>
+            <li>ZhangHengge (中国語)</li>
         </ul>
     </li>
     <li>技術的アドバイス
@@ -197,11 +205,6 @@ GPL-3.0ライセンスの下で自由に使っていただいて構いません�
     <li>Book提供
         <ul>
             <li>Gunnar Andersson</li>
-        </ul>
-    </li>
-    <li>翻訳
-        <ul>
-            <li>ZhangHengge (中国語)</li>
         </ul>
     </li>
     <li>ユーザテスト
@@ -222,6 +225,7 @@ GPL-3.0ライセンスの下で自由に使っていただいて構いません�
         </ul>
     </li>
 </ul>
+
 
 
 

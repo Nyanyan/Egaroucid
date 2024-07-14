@@ -149,9 +149,17 @@ I would like to thank these people for great contributions.
             <li>Kaneko Eizo</li>
         </ul>
     </li>
-    <li>Technical Contribution
+    <li>Technical Contribution / [GitHub Contribution](https://github.com/Nyanyan/Egaroucid/graphs/contributors)
         <ul>
             <li>Toshihiko Okuhara</li>
+            <li>HiraokaTakuya</li>
+            <li>Ben Stokmans</li>
+            <li>seigot</li>
+        </ul>
+    </li>
+    <li>Translation
+        <ul>
+            <li>ZhangHengge (Chinese)</li>
         </ul>
     </li>
     <li>Technical Advice
@@ -168,11 +176,6 @@ I would like to thank these people for great contributions.
     <li>Book Provision
         <ul>
             <li>Gunnar Andersson</li>
-        </ul>
-    </li>
-    <li>Translation
-        <ul>
-            <li>ZhangHengge (Chinese)</li>
         </ul>
     </li>
     <li>User Test
@@ -193,6 +196,7 @@ I would like to thank these people for great contributions.
         </ul>
     </li>
 </ul>
+
 
 
 
