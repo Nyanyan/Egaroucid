@@ -31,7 +31,7 @@ td{
 .pic{
     display: block;
     margin: auto;
-    width: 50vmin;
+    width: min(600px, 100%);
     height: auto;
 }
 

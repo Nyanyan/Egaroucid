@@ -22,7 +22,7 @@ CONSOLE_SOURCE_RELEASE_IDENTIFIER = 'CONSOLE_SOURCE_TABLE_HERE'
 DOWNLOAD_BUTTON_URL = 'https://github.com/Nyanyan/Egaroucid/releases/download/v' + GUI_VERSION_DOT + '/Egaroucid_' + GUI_VERSION_UNDERBAR + '_Installer.exe'
 
 
-MAX_IMG_SIZE = 400
+MAX_IMG_SIZE = 600
 
 def convert_img(file):
     img = Image.open(file)
