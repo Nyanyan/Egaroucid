@@ -40,9 +40,7 @@ REPLACE_DOWNLOAD_BUTTON_HERE
 
 
 <div class="centering_box">
-	<img class="pic2" src="img/egaroucid.png" alt="Egaroucid">
-    <img class="pic2" src="img/egaroucid_for_console.png" alt="Egaroucid for Console">
-    <img class="pic2" src="img/egaroucid_for_web.png" alt="Egaroucid for Web">
+	<img class="pic2" src="img/egaroucid_family_ja.png" alt="Egaroucid Family">
 </div>
 
 
