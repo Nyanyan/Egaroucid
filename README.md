@@ -33,11 +33,11 @@ Totally free application
   
   
 
-![app](img/app.png)
+![app_en](img/screen_shots/app_en.png)
 
-![egaroucid_for_console](img/egaroucid_for_console.png)
+![egaroucid_for_console](img/screen_shots/egaroucid_for_console.png)
 
-![egaroucid_for_web](img/egaroucid_for_web.png)
+![egaroucid_for_web](img/screen_shots/egaroucid_for_web.png)
 
 
 
