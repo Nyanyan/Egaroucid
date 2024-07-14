@@ -41,7 +41,7 @@ Completely free software. Egaroucid and Egaroucid for Console use the same (stro
 
 
 <div class="centering_box">
-	<img class="pic2" src="img/egaroucid_family_en.png" alt="Egaroucid Family">
+	<img class="pic" src="img/egaroucid_family_en.png" alt="Egaroucid Family">
 </div>
 
 
