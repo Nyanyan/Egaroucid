@@ -110,7 +110,7 @@ Requirements are:
 <ul>
     <li><code>g++</code> command
         <ul>
-            <li>I tested with version 12.2.0 on Windows</li>
+            <li>I tested with version 13.1.0 on Windows</li>
             <li>I tested with version 11.3.0 on Ubuntu</li>
         </ul>
     </li>

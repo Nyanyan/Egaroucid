@@ -108,7 +108,7 @@ CONSOLE_SOURCE_TABLE_HERE
 <ul>
     <li><code>g++</code>コマンドが必要
         <ul>
-            <li>Windowsではバージョン12.2.0で動作確認済</li>
+            <li>Windowsではバージョン13.1.0で動作確認済</li>
             <li>Ubuntuではバージョン11.3.0で動作確認済</li>
         </ul>
     </li>
