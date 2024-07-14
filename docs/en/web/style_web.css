@@ -46,77 +46,60 @@
     text-align: center;
     vertical-align: middle;
     padding: 0px;
-    width: 7vmin;
-    height: 7vmin;
-    border: 0.25vmin solid transparent;
+    width: min(min(1000px, 95vw) / 11, 7vmin);
+    height: min(min(1000px, 95vw) / 11, 7vmin);
+    border: 0%;
     background-color: white;
 }
 .coord {
     text-align: center;
     vertical-align: middle;
     padding: 0px;
-    width: 7vmin;
-    height: 7vmin;
-    font-size: 3.5vmin;
+    width: min(min(1000px, 95vw) / 11, 7vmin);
+    height: min(min(1000px, 95vw) / 11, 7vmin);
+    font-size: min(min(1000px, 95vw) / 22, 3.5vmin);
     font-weight: bolder;
-}
-.board {
-    margin: auto;
-    padding: 0px;
-    width: 56vmin;
-    height: 56vmin;
-    background: rgb(36, 153, 114);
-    border-collapse: collapse;
-    font-size: 0pt;
-    table-layout: fixed;
 }
 .cell {
     margin: auto;
     text-align: center;
     vertical-align: middle;
     padding: 0px;
-    width: 7vmin;
-    height: 7vmin;
-    border: max(2px, 0.5vmin) solid rgb(0, 0, 0);
+    width: min(min(1000px, 95vw) / 11, 7vmin);
+    height: min(min(1000px, 95vw) / 11, 7vmin);
+    border: max(2px, min(min(1000px, 95vw) / 100, 0.5vmin)) solid rgb(0, 0, 0);
+    background: rgb(36, 153, 114);
 }
 .black_stone {
     text-align: center;
     vertical-align: middle;
     padding: 0px;
-    width: 6vmin;
-    height: 6vmin;
+    width: min(min(1000px, 95vw) / 13, 6vmin);
+    height: min(min(1000px, 95vw) / 13, 6vmin);
+    border-radius: min(min(1000px, 95vw) / 26, 3vmin);
     background-color: rgb(0, 0, 0);
-    border-radius: 3vmin;
     display: inline-block;
 }
 .white_stone {
     text-align: center;
     vertical-align: middle;
     padding: 0px;
-    width: 6vmin;
-    height: 6vmin;
+    width: min(min(1000px, 95vw) / 13, 6vmin);
+    height: min(min(1000px, 95vw) / 13, 6vmin);
+    border-radius: min(min(1000px, 95vw) / 26, 3vmin);
     background-color: rgb(255, 255, 255);
-    border-radius: 3vmin;
     display: inline-block;
-}
-@keyframes flip {
-    0% {
-        width: 0vmin;
-    }
-    100% {
-        width: 6vmin;
-    }
 }
 .legal_stone_black {
     text-align: center;
     vertical-align: middle;
     margin: 0px;
-    width: 6vmin;
-    height: 6vmin;
+    width: min(min(1000px, 95vw) / 13, 6vmin);
+    height: min(min(1000px, 95vw) / 13, 6vmin);
+    border-radius: min(min(1000px, 95vw) / 26, 3vmin);
+    font-size: min(min(1000px, 95vw) / 26, 3vmin);
     background-color: rgba(0, 0, 0, 0.15);
-    border-radius: 3vmin;
     display: inline-block;
-    font-size: 3vmin;
     cursor: default;
     margin: auto;
     display: flex;
@@ -128,12 +111,12 @@
     text-align: center;
     vertical-align: middle;
     margin: 0px;
-    width: 6vmin;
-    height: 6vmin;
+    width: min(min(1000px, 95vw) / 13, 6vmin);
+    height: min(min(1000px, 95vw) / 13, 6vmin);
+    border-radius: min(min(1000px, 95vw) / 26, 3vmin);
+    font-size: min(min(1000px, 95vw) / 26, 3vmin);
     background-color: rgba(255, 255, 255, 0.15);
-    border-radius: 3vmin;
     display: inline-block;
-    font-size: 3vmin;
     cursor: default;
     margin: auto;
     display: flex;
@@ -145,16 +128,14 @@
     text-align: center;
     margin: 0px;
     padding: 0px;
-    width: 6vmin;
-    height: 6vmin;
-    background: rgb(36, 153, 114);
+    width: 0px;
+    height: 0px;
     display: inline-block;
 }
 .status {
     margin-top: 1vmin;
     padding: 0px;
-    width: 49vmin;
-    height: 7vmin;
+    width: min(min(1000px, 95vw), 49vmin);
     border-collapse: collapse;
     font-size: 0vw;
 }
@@ -162,24 +143,24 @@
     text-align: center;
     vertical-align: middle;
     padding: 0px;
-    width: 7vmin;
-    height: 7vmin;
+    width: min(min(1000px, 95vw) / 11, 7vmin);
+    height: min(min(1000px, 95vw) / 11, 7vmin);
     background-color: rgb(180, 180, 180);
 }
 .status_char {
     text-align: center;
     vertical-align: middle;
     padding: 0px;
-    width: 7vmin;
-    height: 7vmin;
+    width: min(min(1000px, 95vw) / 11, 7vmin);
+    height: min(min(1000px, 95vw) / 11, 7vmin);
     background-color: rgb(180, 180, 180);
-    font-size: 4vmin;
+    font-size: min(min(1000px, 95vw) / 18, 4vmin);
     font-weight: bolder;
 }
 .status_blank {
     margin: 0px;
-    width: 7vmin;
-    height: 7vmin;
+    width: min(min(1000px, 95vw) / 11, 7vmin);
+    height: min(min(1000px, 95vw) / 11, 7vmin);
     text-align: center;
     display: inline-block;
 }
@@ -209,14 +190,15 @@
     left: 50%;
     top: 50%;
     transform: translate(-50%,-50%);
-    width: 80%;
+    width: 70%;
     max-width: 600px;
     padding: 0;
     background-color: #fff;
     z-index: 2;
+    text-align: center;
 }
 .popup-inner img {
-    width: 100%;
+    width: 60%;
 }
 .black-background {
     position: absolute;
@@ -227,9 +209,6 @@
     background-color: rgba(0,0,0,.8);
     z-index: 1;
     cursor: pointer;
-}
-.image {
-    width: 50vmin;
 }
 .hidden {
     visibility: hidden;
