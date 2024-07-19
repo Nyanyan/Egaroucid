@@ -62,7 +62,7 @@ struct Book_value{
         res.clog_time = 0;
         res.clog_nodes = 0;
         res.nps = 0;
-        res.is_end_search - false;
+        res.is_end_search = false;
         res.probability = -1;
         return res;
     }
