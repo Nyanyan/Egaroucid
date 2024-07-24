@@ -27,7 +27,7 @@ inline bool etc(Search *search, std::vector<Flip_value> &move_list, int depth, i
         l = -SCORE_MAX;
         u = SCORE_MAX;
         search->move(&flip_value.flip);
-            transposition_table.get(search, search->board.hash(), depth - 1, &l, &u);
+            transposition_table.get_bounds(search, search->board.hash(), depth - 1, &l, &u);
         search->undo(&flip_value.flip);
         if (*beta <= -u){ // alpha < beta <= -u <= -l
             *v = -u;
@@ -62,7 +62,7 @@ inline bool etc_nws(Search *search, std::vector<Flip_value> &move_list, int dept
         l = -SCORE_MAX;
         u = SCORE_MAX;
         search->move(&flip_value.flip);
-            transposition_table.get(search, search->board.hash(), depth - 1, &l, &u);
+            transposition_table.get_bounds(search, search->board.hash(), depth - 1, &l, &u);
         search->undo(&flip_value.flip);
         if (alpha < -u){ // fail high at parent node
             *v = -u;

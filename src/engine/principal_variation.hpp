@@ -53,7 +53,7 @@ std::string get_principal_variation_str(Board board){
                 board.move_board(&flip);
                     l = -SCORE_MAX;
                     u = SCORE_MAX;
-                    transposition_table.get_value_any_level(&board, board.hash(), &l, &u);
+                    transposition_table.get_bounds_any_level(&board, board.hash(), &l, &u);
                     if (max_val < -u || (max_val <= -u && u == l)){
                         max_val = -u;
                         best_move_tt_expanded = cell;

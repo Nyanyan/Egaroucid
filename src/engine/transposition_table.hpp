@@ -181,9 +181,13 @@ class Hash_data{
 
             @param res_moves            array to store result
         */
-        inline void get_moves(uint_fast8_t res_moves[]){
+        inline void get_moves(uint_fast8_t res_moves[]) const{
             res_moves[0] = moves[0];
             res_moves[1] = moves[1];
+        }
+
+        inline int get_best_move() const{
+            return moves[0];
         }
 
         /*
@@ -207,17 +211,107 @@ class Hash_data{
         inline uint8_t get_mpc_level(){
             return mpc_level;
         }
+
+        inline int8_t get_lower() const{
+            return lower;
+        }
+
+        inline int8_t get_upper() const{
+            return upper;
+        }
 };
 
 struct Hash_node{
-    Board board;
+    Board key;
     Hash_data data;
-    Spinlock lock;
 
     void init(){
-        board.player = 0ULL;
-        board.opponent = 0ULL;
+        key.player = 0;
+        key.opponent = 0;
         data.init();
+    }
+
+    bool is_valid(const Board *board){
+        return key.player ^ data.get_lower() == board->player && key.opponent ^ data.get_upper() == board->opponent;
+    }
+
+    bool is_valid(const Board *board, uint32_t required_level){
+        int l = data.get_lower();
+        int u = data.get_upper();
+        uint32_t node_level = data.get_level();
+        if (l != data.get_lower() || u != data.get_upper()){
+            return false;
+        }
+        return key.player ^ l == board->player && key.opponent ^ u == board->opponent && node_level >= required_level;
+    }
+
+    bool is_valid_get_level(const Board *board, uint32_t required_level, uint32_t *node_level){
+        int l = data.get_lower();
+        int u = data.get_upper();
+        *node_level = data.get_level();
+        if (l != data.get_lower() || u != data.get_upper()){
+            return false;
+        }
+        return key.player ^ l == board->player && key.opponent ^ u == board->opponent && *node_level >= required_level;
+    }
+
+    bool try_get_bounds(const Board *board, uint32_t required_level, int *lower, int *upper){
+        int l = data.get_lower();
+        int u = data.get_upper();
+        uint32_t node_level = data.get_level_no_importance();
+        if (l != data.get_lower() || u != data.get_upper()){
+            return false;
+        }
+        if (key.player ^ l == board->player && key.opponent ^ u == board->opponent && node_level >= required_level){
+            *lower = l;
+            *upper = u;
+            return true;
+        }
+        return false;
+    }
+
+    bool try_get_bounds(const Board *board, int *lower, int *upper){
+        int l = data.get_lower();
+        int u = data.get_upper();
+        if (key.player ^ l == board->player && key.opponent ^ u == board->opponent){
+            *lower = l;
+            *upper = u;
+            return true;
+        }
+        return false;
+    }
+
+    int try_get_best_move(const Board *board){
+        int l = data.get_lower();
+        int u = data.get_upper();
+        int move = data.get_best_move();
+        if (l != data.get_lower() || u != data.get_upper()){
+            return TRANSPOSITION_TABLE_UNDEFINED;
+        }
+        if (key.player ^ l == board->player && key.opponent ^ u == board->opponent){
+            return move;
+        }
+        return TRANSPOSITION_TABLE_UNDEFINED;
+    }
+
+    bool try_get_moves(const Board *board, uint_fast8_t moves[]){
+        int l = data.get_lower();
+        int u = data.get_upper();
+        data.get_moves(moves);
+        if (l != data.get_lower() || u != data.get_upper()){
+            return false;
+        }
+        if (key.player ^ l == board->player && key.opponent ^ u == board->opponent){
+            return true;
+        }
+        return false;
+    }
+
+    void register_key(const Board *board){
+        int l = data.get_lower();
+        int u = data.get_upper();
+        key.player = board->player ^ l;
+        key.opponent = board->opponent ^ u;
     }
 };
 
@@ -492,39 +586,34 @@ class Transposition_table{
                 bool registered = false;
             #endif
             for (uint_fast8_t i = 0; i < TRANSPOSITION_TABLE_N_LOOP; ++i){
-                if (node->data.get_level() <= level){
-                    node->lock.lock();
-                        node_level = node->data.get_level();
-                        if (node_level <= level){
-                            if (node->board.player == search->board.player && node->board.opponent == search->board.opponent){
-                                if (node_level == level)
-                                    node->data.reg_same_level(alpha, beta, value, policy);
-                                else
-                                    node->data.reg_new_level(depth, search->mpc_level, alpha, beta, value, policy);
-                                node->lock.unlock();
-                                #if TT_REGISTER_MIN_LEVEL
-                                    registered = true;
-                                #endif
-                                break;
-                            } else{
-                                #if TT_REGISTER_MIN_LEVEL
-                                    if (node_level < min_level){
-                                        min_level = node_level;
-                                        min_level_node = node;
-                                    }
-                                #else
-                                    node->board.player = search->board.player;
-                                    node->board.opponent = search->board.opponent;
-                                    node->data.reg_new_data(depth, search->mpc_level, alpha, beta, value, policy);
-                                    node->lock.unlock();
-                                    if (node_level > 0){
-                                        n_registered.fetch_add(1);
-                                    }
-                                    break;
-                                #endif
-                            }
+                if (node->is_valid_get_level(&search->board, level, &node_level)){
+                    if (node_level == level)
+                        node->data.reg_same_level(alpha, beta, value, policy);
+                    else
+                        node->data.reg_new_level(depth, search->mpc_level, alpha, beta, value, policy);
+                    node->register_key(&search->board);
+                    //node->lock.unlock();
+                    #if TT_REGISTER_MIN_LEVEL
+                        registered = true;
+                    #endif
+                    break;
+                } else{
+                    #if TT_REGISTER_MIN_LEVEL
+                        if (node_level < min_level){
+                            min_level = node_level;
+                            min_level_node = node;
                         }
-                    node->lock.unlock();
+                    #else
+                        //node->board.player = search->board.player;
+                        //node->board.opponent = search->board.opponent;
+                        node->data.reg_new_data(depth, search->mpc_level, alpha, beta, value, policy);
+                        node->register_key(&search->board);
+                        //node->lock.unlock();
+                        if (node_level > 0){
+                            n_registered.fetch_add(1);
+                        }
+                        break;
+                    #endif
                 }
                 ++hash;
                 node = get_node(hash);
@@ -532,9 +621,10 @@ class Transposition_table{
             #if TT_REGISTER_MIN_LEVEL
                 if (!registered && min_level_node != nullptr){
                     min_level_node->lock.lock();
-                        min_level_node->board.player = search->board.player;
-                        min_level_node->board.opponent = search->board.opponent;
+                        //min_level_node->board.player = search->board.player;
+                        //min_level_node->board.opponent = search->board.opponent;
                         min_level_node->data.reg_new_data(depth, search->mpc_level, alpha, beta, value, policy);
+                        min_level_node->register_key(&search->board);
                         if (min_level_node->data.get_level() > 0){
                             n_registered.fetch_add(1);
                         }
@@ -551,7 +641,7 @@ class Transposition_table{
         }
 
         /*
-            @brief get best move from transposition table
+            @brief get bounds and best moves from transposition table
 
             @param search               Search information
             @param hash                 hash code
@@ -564,17 +654,9 @@ class Transposition_table{
             Hash_node *node = get_node(hash);
             const uint32_t level = get_level_common(depth, search->mpc_level);
             for (uint_fast8_t i = 0; i < TRANSPOSITION_TABLE_N_LOOP; ++i){
-                if (node->board.player == search->board.player && node->board.opponent == search->board.opponent){
-                    node->lock.lock();
-                        if (node->board.player == search->board.player && node->board.opponent == search->board.opponent){
-                            node->data.get_moves(moves);
-                            if (node->data.get_level_no_importance() >= level){
-                                node->data.get_bounds(lower, upper);
-                            }
-                            node->lock.unlock();
-                            return;
-                        }
-                    node->lock.unlock();
+                if (node->try_get_bounds(&search->board, level, lower, upper)){
+                    node->data.get_moves(moves);
+                    return;
                 }
                 ++hash;
                 node = get_node(hash);
@@ -582,7 +664,7 @@ class Transposition_table{
         }
 
         /*
-            @brief get best move from transposition table
+            @brief get bounds from transposition table
 
             @param search               Search information
             @param hash                 hash code
@@ -590,20 +672,12 @@ class Transposition_table{
             @param lower                lower bound to store
             @param upper                upper bound to store
         */
-        inline void get(const Search *search, uint32_t hash, const int depth, int *lower, int *upper){
+        inline void get_bounds(const Search *search, uint32_t hash, const int depth, int *lower, int *upper){
             Hash_node *node = get_node(hash);
             const uint32_t level = get_level_common(depth, search->mpc_level);
             for (uint_fast8_t i = 0; i < TRANSPOSITION_TABLE_N_LOOP; ++i){
-                if (node->board.player == search->board.player && node->board.opponent == search->board.opponent){
-                    node->lock.lock();
-                        if (node->board.player == search->board.player && node->board.opponent == search->board.opponent){
-                            if (node->data.get_level_no_importance() >= level){
-                                node->data.get_bounds(lower, upper);
-                            }
-                            node->lock.unlock();
-                            return;
-                        }
-                    node->lock.unlock();
+                if (node->try_get_bounds(&search->board, level, lower, upper)){
+                    return;
                 }
                 ++hash;
                 node = get_node(hash);
@@ -611,28 +685,18 @@ class Transposition_table{
         }
 
         /*
-            @brief get best move from transposition table
+            @brief get bounds from transposition table (no level check)
 
             @param search               Search information
             @param hash                 hash code
-            @param depth                depth
             @param lower                lower bound to store
             @param upper                upper bound to store
         */
-        inline bool get_value(const Search *search, uint32_t hash, int depth, int *lower, int *upper){
+        inline bool get_bounds_any_level(const Search *search, uint32_t hash, int *lower, int *upper){
             Hash_node *node = get_node(hash);
-            const uint32_t level = get_level_common(depth, search->mpc_level);
             for (uint_fast8_t i = 0; i < TRANSPOSITION_TABLE_N_LOOP; ++i){
-                if (node->board.player == search->board.player && node->board.opponent == search->board.opponent){
-                    node->lock.lock();
-                        if (node->board.player == search->board.player && node->board.opponent == search->board.opponent){
-                            if (node->data.get_level_no_importance() >= level){
-                                node->data.get_bounds(lower, upper);
-                                node->lock.unlock();
-                                return true;
-                            }
-                        }
-                    node->lock.unlock();
+                if (node->try_get_bounds(&search->board, lower, upper)){
+                    return true;
                 }
                 ++hash;
                 node = get_node(hash);
@@ -641,52 +705,18 @@ class Transposition_table{
         }
 
         /*
-            @brief get best move from transposition table
-
-            @param search               Search information
-            @param hash                 hash code
-            @param depth                depth
-            @param lower                lower bound to store
-            @param upper                upper bound to store
-        */
-        inline bool get_value_any_level(const Search *search, uint32_t hash, int *lower, int *upper){
-            Hash_node *node = get_node(hash);
-            for (uint_fast8_t i = 0; i < TRANSPOSITION_TABLE_N_LOOP; ++i){
-                if (node->board.player == search->board.player && node->board.opponent == search->board.opponent){
-                    node->lock.lock();
-                        if (node->board.player == search->board.player && node->board.opponent == search->board.opponent){
-                            node->data.get_bounds(lower, upper);
-                            node->lock.unlock();
-                            return true;
-                        }
-                    node->lock.unlock();
-                }
-                ++hash;
-                node = get_node(hash);
-            }
-            return false;
-        }
-
-        /*
-            @brief get best move from transposition table
+            @brief get bounds from transposition table (no level check)
 
             @param board                Board
             @param hash                 hash code
-            @param depth                depth
             @param lower                lower bound to store
             @param upper                upper bound to store
         */
-        inline bool get_value_any_level(const Board *board, uint32_t hash, int *lower, int *upper){
+        inline bool get_bounds_any_level(const Board *board, uint32_t hash, int *lower, int *upper){
             Hash_node *node = get_node(hash);
             for (uint_fast8_t i = 0; i < TRANSPOSITION_TABLE_N_LOOP; ++i){
-                if (node->board.player == board->player && node->board.opponent == board->opponent){
-                    node->lock.lock();
-                        if (node->board.player == board->player && node->board.opponent == board->opponent){
-                            node->data.get_bounds(lower, upper);
-                            node->lock.unlock();
-                            return true;
-                        }
-                    node->lock.unlock();
+                if (node->try_get_bounds(board, lower, upper)){
+                    return true;
                 }
                 ++hash;
                 node = get_node(hash);
@@ -695,7 +725,7 @@ class Transposition_table{
         }
 
         /*
-            @brief get best move from transposition table
+            @brief get best move from transposition table (no level check)
 
             @param board                board
             @param hash                 hash code
@@ -703,16 +733,11 @@ class Transposition_table{
         */
         inline int get_best_move(const Board *board, uint32_t hash){
             Hash_node *node = get_node(hash);
+            int move = TRANSPOSITION_TABLE_UNDEFINED;
             for (uint_fast8_t i = 0; i < TRANSPOSITION_TABLE_N_LOOP; ++i){
-                if (node->board.player == board->player && node->board.opponent == board->opponent){
-                    node->lock.lock();
-                        if (node->board.player == board->player && node->board.opponent == board->opponent){
-                            uint_fast8_t moves[N_TRANSPOSITION_MOVES];
-                            node->data.get_moves(moves);
-                            node->lock.unlock();
-                            return moves[0];
-                        }
-                    node->lock.unlock();
+                move = node->try_get_best_move(board);
+                if (move != TRANSPOSITION_TABLE_UNDEFINED){
+                    return move;
                 }
                 ++hash;
                 node = get_node(hash);
@@ -730,14 +755,8 @@ class Transposition_table{
         inline bool get_moves_any_level(const Board *board, uint32_t hash, uint_fast8_t moves[]){
             Hash_node *node = get_node(hash);
             for (uint_fast8_t i = 0; i < TRANSPOSITION_TABLE_N_LOOP; ++i){
-                if (node->board.player == board->player && node->board.opponent == board->opponent){
-                    node->lock.lock();
-                        if (node->board.player == board->player && node->board.opponent == board->opponent){
-                            node->data.get_moves(moves);
-                            node->lock.unlock();
-                            return true;
-                        }
-                    node->lock.unlock();
+                if (node->try_get_moves(board, moves)){
+                    return true;
                 }
                 ++hash;
                 node = get_node(hash);
@@ -752,9 +771,12 @@ class Transposition_table{
             @param hash                 hash code
             @return best move
         */
+        /*
         inline bool get_if_perfect(const Board *board, uint32_t hash, int *val, int *best_move){
             Hash_node *node = get_node(hash);
             for (uint_fast8_t i = 0; i < TRANSPOSITION_TABLE_N_LOOP; ++i){
+                if (node->try_get_data_if_perfect(board, moves)){
+                }
                 if (node->board.player == board->player && node->board.opponent == board->opponent){
                     node->lock.lock();
                         if (node->board.player == board->player && node->board.opponent == board->opponent && node->data.get_mpc_level() == MPC_100_LEVEL){
@@ -777,20 +799,14 @@ class Transposition_table{
             }
             return false;
         }
+        */
 
         inline bool has_node(const Search *search, uint32_t hash, int depth){
             Hash_node *node = get_node(hash);
             const uint32_t level = get_level_common(depth, search->mpc_level);
             for (uint_fast8_t i = 0; i < TRANSPOSITION_TABLE_N_LOOP; ++i){
-                if (node->board.player == search->board.player && node->board.opponent == search->board.opponent){
-                    node->lock.lock();
-                        if (node->board.player == search->board.player && node->board.opponent == search->board.opponent){
-                            if (node->data.get_level_no_importance() >= level){
-                                node->lock.unlock();
-                                return true;
-                            }
-                        }
-                    node->lock.unlock();
+                if (node->is_valid(&search->board, level)){
+                    return true;
                 }
                 ++hash;
                 node = get_node(hash);
@@ -801,7 +817,7 @@ class Transposition_table{
         inline bool has_node_any_level(const Search *search, uint32_t hash){
             Hash_node *node = get_node(hash);
             for (uint_fast8_t i = 0; i < TRANSPOSITION_TABLE_N_LOOP; ++i){
-                if (node->board.player == search->board.player && node->board.opponent == search->board.opponent){
+                if (node->is_valid(&search->board)){
                     return true;
                 }
                 ++hash;
@@ -998,7 +1014,7 @@ inline bool transposition_cutoff_nws(Search *search, uint32_t hash_code, int dep
 inline bool transposition_cutoff_nws(Search *search, uint32_t hash_code, int depth, int alpha, int *v){
     //if (depth >= USE_TT_DEPTH_THRESHOLD){
     int lower = -SCORE_MAX, upper = SCORE_MAX;
-    transposition_table.get(search, hash_code, depth, &lower, &upper);
+    transposition_table.get_bounds(search, hash_code, depth, &lower, &upper);
     if (upper == lower || upper <= alpha){
         *v = upper;
         return true;
