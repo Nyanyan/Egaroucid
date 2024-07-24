@@ -114,11 +114,13 @@ class Hash_node{
             if (node_level <= level){
                 if (key_p == board->player ^ l && key_o == board->opponent ^ u){ // same board
                     if (node_level == level){ // same level
-                        if (value < beta && value < upper)
+                        if (value < beta && value < u)
                             u = (int8_t)value;
-                        if (alpha < value && lower < value)
+                        if (alpha < value && l < value)
                             l = (int8_t)value;
                     } else{ // new level
+                        ml = r_mpc_level;
+                        d = r_depth;
                         if (value < beta)
                             u = (int8_t)value;
                         else
@@ -127,14 +129,14 @@ class Hash_node{
                             l = (int8_t)value;
                         else
                             l = -SCORE_MAX;
-                        d = r_depth;
-                        ml = r_mpc_level;
                     }
                     if ((alpha < value || value == -SCORE_MAX) && m0 != policy && policy != TRANSPOSITION_TABLE_UNDEFINED){
                         m1 = m0;
                         m0 = (uint8_t)policy;
                     }
                 } else{ // rewrite node
+                    ml = r_mpc_level;
+                    d = r_depth;
                     if (value < beta)
                         u = (int8_t)value;
                     else
