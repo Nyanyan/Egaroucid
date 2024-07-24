@@ -107,12 +107,13 @@ class Hash_node{
             uint64_t key_p = key.player;
             uint64_t key_o = key.opponent;
             uint32_t node_level = 0;
-            if (imp && l == lower && u == upper){
+            if (imp){
                 node_level = get_level_common(d, ml);
             }
             uint32_t level = get_level_common(r_depth, r_mpc_level);
+            uint64_t mask = get_mask(l, u, d, ml, m0, m1);
             if (node_level <= level){
-                if (key_p == board->player ^ l && key_o == board->opponent ^ u){ // same board
+                if (key_p == board->player ^ mask && key_o == board->opponent ^ mask){ // same board
                     if (node_level == level){ // same level
                         if (value < beta && value < u)
                             u = (int8_t)value;
@@ -158,8 +159,9 @@ class Hash_node{
                 importance = 1;
                 moves[0] = m0;
                 moves[1] = m1;
-                key.player = board->player ^ l;
-                key.opponent = board->opponent ^ u;
+                mask = get_mask(l, u, d, ml, m0, m1);
+                key.player = board->player ^ mask;
+                key.opponent = board->opponent ^ mask;
                 return true;
             }
             return false;
@@ -170,10 +172,14 @@ class Hash_node{
             int u = upper;
             uint8_t ml = mpc_level;
             uint8_t d = depth;
+            uint8_t imp = importance;
+            uint8_t m0 = moves[0];
+            uint8_t m1 = moves[1];
             uint64_t key_p = key.player;
             uint64_t key_o = key.opponent;
+            uint64_t mask = get_mask(l, u, d, ml, m0, m1);
             uint32_t node_level = get_level_common(d, ml);
-            if (key_p == board->player ^ l && key_o == board->opponent ^ u && node_level >= required_level){
+            if (key_p == board->player ^ mask && key_o == board->opponent ^ mask && node_level >= required_level){
                 *res_l = l;
                 *res_u = u;
                 return true;
@@ -184,9 +190,15 @@ class Hash_node{
         bool try_get_bounds(const Board *board, int *res_l, int *res_u){
             int l = lower;
             int u = upper;
+            uint8_t ml = mpc_level;
+            uint8_t d = depth;
+            uint8_t imp = importance;
+            uint8_t m0 = moves[0];
+            uint8_t m1 = moves[1];
             uint64_t key_p = key.player;
             uint64_t key_o = key.opponent;
-            if (key_p == board->player ^ l && key_o == board->opponent ^ u){
+            uint64_t mask = get_mask(l, u, d, ml, m0, m1);
+            if (key_p == board->player ^ mask && key_o == board->opponent ^ mask){
                 *res_l = l;
                 *res_u = u;
                 return true;
@@ -197,10 +209,15 @@ class Hash_node{
         int try_get_best_move(const Board *board){
             int l = lower;
             int u = upper;
-            int m0 = moves[0];
+            uint8_t ml = mpc_level;
+            uint8_t d = depth;
+            uint8_t imp = importance;
+            uint8_t m0 = moves[0];
+            uint8_t m1 = moves[1];
             uint64_t key_p = key.player;
             uint64_t key_o = key.opponent;
-            if (key_p == board->player ^ l && key_o == board->opponent ^ u){
+            uint64_t mask = get_mask(l, u, d, ml, m0, m1);
+            if (key_p == board->player ^ mask && key_o == board->opponent ^ mask){
                 return m0;
             }
             return TRANSPOSITION_TABLE_UNDEFINED;
@@ -209,11 +226,15 @@ class Hash_node{
         bool try_get_moves(const Board *board, uint_fast8_t res_moves[]){
             int l = lower;
             int u = upper;
-            uint_fast8_t m0 = moves[0];
-            uint_fast8_t m1 = moves[1];
+            uint8_t ml = mpc_level;
+            uint8_t d = depth;
+            uint8_t imp = importance;
+            uint8_t m0 = moves[0];
+            uint8_t m1 = moves[1];
             uint64_t key_p = key.player;
             uint64_t key_o = key.opponent;
-            if (key_p == board->player ^ l && key_o == board->opponent ^ u){
+            uint64_t mask = get_mask(l, u, d, ml, m0, m1);
+            if (key_p == board->player ^ mask && key_o == board->opponent ^ mask){
                 res_moves[0] = m0;
                 res_moves[1] = m1;
                 return true;
@@ -223,6 +244,11 @@ class Hash_node{
 
         void set_importance_zero(){
             importance = 0;
+        }
+    
+    private:
+        uint64_t get_mask(int8_t l, int8_t u, uint8_t d, uint8_t ml, uint8_t m0, uint8_t m1){
+            return ((uint64_t)m0 << 40) | ((uint64_t)m1 << 32) | ((uint64_t)ml << 24) | ((uint64_t)d << 16) | ((uint64_t)(u + SCORE_MAX) << 8) | (l + SCORE_MAX);
         }
 };
 
