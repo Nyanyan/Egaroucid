@@ -172,7 +172,6 @@ class Hash_node{
             int u = upper;
             uint8_t ml = mpc_level;
             uint8_t d = depth;
-            uint8_t imp = importance;
             uint8_t m0 = moves[0];
             uint8_t m1 = moves[1];
             uint64_t key_p = key.player;
@@ -187,12 +186,11 @@ class Hash_node{
             return false;
         }
 
-        bool try_get_bounds(const Board *board, int *res_l, int *res_u){
+        bool try_get_bounds_any_level(const Board *board, int *res_l, int *res_u){
             int l = lower;
             int u = upper;
             uint8_t ml = mpc_level;
             uint8_t d = depth;
-            uint8_t imp = importance;
             uint8_t m0 = moves[0];
             uint8_t m1 = moves[1];
             uint64_t key_p = key.player;
@@ -206,12 +204,11 @@ class Hash_node{
             return false;
         }
 
-        int try_get_best_move(const Board *board){
+        int try_get_best_move_any_level(const Board *board){
             int l = lower;
             int u = upper;
             uint8_t ml = mpc_level;
             uint8_t d = depth;
-            uint8_t imp = importance;
             uint8_t m0 = moves[0];
             uint8_t m1 = moves[1];
             uint64_t key_p = key.player;
@@ -223,12 +220,11 @@ class Hash_node{
             return TRANSPOSITION_TABLE_UNDEFINED;
         }
 
-        bool try_get_moves(const Board *board, uint_fast8_t res_moves[]){
+        bool try_get_moves_any_level(const Board *board, uint_fast8_t res_moves[]){
             int l = lower;
             int u = upper;
             uint8_t ml = mpc_level;
             uint8_t d = depth;
-            uint8_t imp = importance;
             uint8_t m0 = moves[0];
             uint8_t m1 = moves[1];
             uint64_t key_p = key.player;
@@ -515,7 +511,7 @@ class Transposition_table{
             Hash_node *node = get_node(hash);
             const uint32_t level = get_level_common(depth, search->mpc_level);
             for (uint_fast8_t i = 0; i < TRANSPOSITION_TABLE_N_LOOP; ++i){
-                if (node->try_get_moves(&search->board, moves)){
+                if (node->try_get_moves_any_level(&search->board, moves)){
                     return;
                 }
                 ++hash;
@@ -555,7 +551,7 @@ class Transposition_table{
         inline bool get_bounds_any_level(const Search *search, uint32_t hash, int *lower, int *upper){
             Hash_node *node = get_node(hash);
             for (uint_fast8_t i = 0; i < TRANSPOSITION_TABLE_N_LOOP; ++i){
-                if (node->try_get_bounds(&search->board, lower, upper)){
+                if (node->try_get_bounds_any_level(&search->board, lower, upper)){
                     return true;
                 }
                 ++hash;
@@ -575,7 +571,7 @@ class Transposition_table{
         inline bool get_bounds_any_level(const Board *board, uint32_t hash, int *lower, int *upper){
             Hash_node *node = get_node(hash);
             for (uint_fast8_t i = 0; i < TRANSPOSITION_TABLE_N_LOOP; ++i){
-                if (node->try_get_bounds(board, lower, upper)){
+                if (node->try_get_bounds_any_level(board, lower, upper)){
                     return true;
                 }
                 ++hash;
@@ -595,7 +591,7 @@ class Transposition_table{
             Hash_node *node = get_node(hash);
             int move = TRANSPOSITION_TABLE_UNDEFINED;
             for (uint_fast8_t i = 0; i < TRANSPOSITION_TABLE_N_LOOP; ++i){
-                move = node->try_get_best_move(board);
+                move = node->try_get_best_move_any_level(board);
                 if (move != TRANSPOSITION_TABLE_UNDEFINED){
                     return move;
                 }
@@ -615,7 +611,7 @@ class Transposition_table{
         inline bool get_moves_any_level(const Board *board, uint32_t hash, uint_fast8_t moves[]){
             Hash_node *node = get_node(hash);
             for (uint_fast8_t i = 0; i < TRANSPOSITION_TABLE_N_LOOP; ++i){
-                if (node->try_get_moves(board, moves)){
+                if (node->try_get_moves_any_level(board, moves)){
                     return true;
                 }
                 ++hash;
