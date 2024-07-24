@@ -62,43 +62,22 @@ class Hash_node{
             importance = 0;
         }
 
-        /*
-            @brief Get level of the element
-
-            @return level
-        */
-        inline uint32_t get_level(){
-            if (importance)
-                return get_level_common(depth, mpc_level);
-            return 0;
-        }
-
-        /*
-            @brief Get level of the element
-
-            @return level
-        */
-        inline uint32_t get_level_no_importance(){
-            return get_level_common(depth, mpc_level);
-        }
-
-        bool is_valid(const Board *board, uint32_t required_level){
-            int l = lower;
-            int u = upper;
-            uint32_t node_level = get_level_no_importance();
-            if (l != lower || u != upper){
-                return false;
-            }
-            return key.player ^ l == board->player && key.opponent ^ u == board->opponent && node_level >= required_level;
-        }
-
         bool is_valid_any_level(const Board *board){
-            return key.player ^ lower == board->player && key.opponent ^ upper == board->opponent;
+            int8_t l = lower;
+            int8_t u = upper;
+            uint8_t ml = mpc_level;
+            uint8_t d = depth;
+            uint8_t m0 = moves[0];
+            uint8_t m1 = moves[1];
+            uint64_t key_p = key.player;
+            uint64_t key_o = key.opponent;
+            uint64_t mask = get_mask(l, u, d, ml, m0, m1);
+            return key_p == board->player ^ mask && key_o == board->opponent ^ mask;
         }
 
         bool try_register(const Board *board, int r_depth, uint_fast8_t r_mpc_level, int alpha, int beta, int value, uint_fast8_t policy){
-            int l = lower;
-            int u = upper;
+            int8_t l = lower;
+            int8_t u = upper;
             uint8_t ml = mpc_level;
             uint8_t d = depth;
             uint8_t imp = importance;
@@ -106,12 +85,12 @@ class Hash_node{
             uint8_t m1 = moves[1];
             uint64_t key_p = key.player;
             uint64_t key_o = key.opponent;
+            uint64_t mask = get_mask(l, u, d, ml, m0, m1);
             uint32_t node_level = 0;
             if (imp){
                 node_level = get_level_common(d, ml);
             }
             uint32_t level = get_level_common(r_depth, r_mpc_level);
-            uint64_t mask = get_mask(l, u, d, ml, m0, m1);
             if (node_level <= level){
                 if (key_p == board->player ^ mask && key_o == board->opponent ^ mask){ // same board
                     if (node_level == level){ // same level
@@ -152,6 +131,7 @@ class Hash_node{
                     }
                 }
                 // register
+                mask = get_mask(l, u, d, ml, m0, m1);
                 lower = l;
                 upper = u;
                 mpc_level = ml;
@@ -159,7 +139,6 @@ class Hash_node{
                 importance = 1;
                 moves[0] = m0;
                 moves[1] = m1;
-                mask = get_mask(l, u, d, ml, m0, m1);
                 key.player = board->player ^ mask;
                 key.opponent = board->opponent ^ mask;
                 return true;
@@ -168,8 +147,8 @@ class Hash_node{
         }
 
         bool try_get_bounds(const Board *board, uint32_t required_level, int *res_l, int *res_u){
-            int l = lower;
-            int u = upper;
+            int8_t l = lower;
+            int8_t u = upper;
             uint8_t ml = mpc_level;
             uint8_t d = depth;
             uint8_t m0 = moves[0];
@@ -187,8 +166,8 @@ class Hash_node{
         }
 
         bool try_get_bounds_any_level(const Board *board, int *res_l, int *res_u){
-            int l = lower;
-            int u = upper;
+            int8_t l = lower;
+            int8_t u = upper;
             uint8_t ml = mpc_level;
             uint8_t d = depth;
             uint8_t m0 = moves[0];
@@ -204,25 +183,9 @@ class Hash_node{
             return false;
         }
 
-        int try_get_best_move_any_level(const Board *board){
-            int l = lower;
-            int u = upper;
-            uint8_t ml = mpc_level;
-            uint8_t d = depth;
-            uint8_t m0 = moves[0];
-            uint8_t m1 = moves[1];
-            uint64_t key_p = key.player;
-            uint64_t key_o = key.opponent;
-            uint64_t mask = get_mask(l, u, d, ml, m0, m1);
-            if (key_p == board->player ^ mask && key_o == board->opponent ^ mask){
-                return m0;
-            }
-            return TRANSPOSITION_TABLE_UNDEFINED;
-        }
-
         bool try_get_moves_any_level(const Board *board, uint_fast8_t res_moves[]){
-            int l = lower;
-            int u = upper;
+            int8_t l = lower;
+            int8_t u = upper;
             uint8_t ml = mpc_level;
             uint8_t d = depth;
             uint8_t m0 = moves[0];
@@ -581,27 +544,6 @@ class Transposition_table{
         }
 
         /*
-            @brief get best move from transposition table (no level check)
-
-            @param board                board
-            @param hash                 hash code
-            @return best move
-        */
-        inline int get_best_move(const Board *board, uint32_t hash){
-            Hash_node *node = get_node(hash);
-            int move = TRANSPOSITION_TABLE_UNDEFINED;
-            for (uint_fast8_t i = 0; i < TRANSPOSITION_TABLE_N_LOOP; ++i){
-                move = node->try_get_best_move_any_level(board);
-                if (move != TRANSPOSITION_TABLE_UNDEFINED){
-                    return move;
-                }
-                ++hash;
-                node = get_node(hash);
-            }
-            return TRANSPOSITION_TABLE_UNDEFINED;
-        }
-
-        /*
             @brief get best moves from transposition table with any level
 
             @param board                board
@@ -612,56 +554,6 @@ class Transposition_table{
             Hash_node *node = get_node(hash);
             for (uint_fast8_t i = 0; i < TRANSPOSITION_TABLE_N_LOOP; ++i){
                 if (node->try_get_moves_any_level(board, moves)){
-                    return true;
-                }
-                ++hash;
-                node = get_node(hash);
-            }
-            return false;
-        }
-
-        /*
-            @brief get best move from transposition table
-
-            @param board                board
-            @param hash                 hash code
-            @return best move
-        */
-        /*
-        inline bool get_if_perfect(const Board *board, uint32_t hash, int *val, int *best_move){
-            Hash_node *node = get_node(hash);
-            for (uint_fast8_t i = 0; i < TRANSPOSITION_TABLE_N_LOOP; ++i){
-                if (node->try_get_data_if_perfect(board, moves)){
-                }
-                if (node->board.player == board->player && node->board.opponent == board->opponent){
-                    node->lock.lock();
-                        if (node->board.player == board->player && node->board.opponent == board->opponent && node->data.get_mpc_level() == MPC_100_LEVEL){
-                            uint_fast8_t moves[N_TRANSPOSITION_MOVES];
-                            node->data.get_moves(moves);
-                            int l, u;
-                            node->data.get_bounds(&l, &u);
-                            node->lock.unlock();
-                            bool is_perfect = l == u;
-                            if (is_perfect){
-                                *val = l;
-                                *best_move = moves[0];
-                            }
-                            return is_perfect;
-                        }
-                    node->lock.unlock();
-                }
-                ++hash;
-                node = get_node(hash);
-            }
-            return false;
-        }
-        */
-
-        inline bool has_node(const Search *search, uint32_t hash, int depth){
-            Hash_node *node = get_node(hash);
-            const uint32_t level = get_level_common(depth, search->mpc_level);
-            for (uint_fast8_t i = 0; i < TRANSPOSITION_TABLE_N_LOOP; ++i){
-                if (node->is_valid(&search->board, level)){
                     return true;
                 }
                 ++hash;

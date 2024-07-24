@@ -167,7 +167,7 @@ int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, uin
         if (beta - alpha >= 4 && depth >= 5){
             int l = -HW2, u = HW2;
             transposition_table.get_bounds(search, hash_code, depth - 5, &l, &u);
-            if (l == u && alpha < l && l < beta){
+            if (l == u && alpha < l && l < beta && !(l % 2 && is_end_search)){
                 return aspiration_search(search, alpha, beta, l, depth, skipped, legal, is_end_search, searching);
             }
         }
