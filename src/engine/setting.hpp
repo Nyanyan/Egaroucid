@@ -221,9 +221,6 @@
 // Light Evaluation Function
 #define USE_LIGHT_EVALUATION false
 
-// transposition table registering
-#define TT_REGISTER_MIN_LEVEL false
-
 // transposition table stack / heap
 // if false, USE_CHANGEABLE_HASH_LEVEL must be true
 #define TT_USE_STACK true
