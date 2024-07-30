@@ -578,6 +578,31 @@ $s(p)=2^4 \times {}_{60}\mathrm{C}_p \times 2^p$
 
 
 
+### 最短引き分け
+
+オセロでは多くのマスが空いた状態で終局することがありますが、ここでは盤面がスカスカの状態で引き分けに終わる状態を考えます。
+
+最短引き分けは20手で、4通りありました。以下が棋譜です。
+
+<pre><code>f5f4c3f6g7f7f3h7f8b2h6e7h8g3d7e3f2f1a1c5
+f5f4c3f6g7f7f3h7f8b2h6e7h8e3d7g3f2f1a1c5
+f5f4c3f6g7f7f3h7f8b2h6e7h8e3d7g2f2f1a1c5
+f5f4c3f6g7f7f3h7f8b2h6e3a1e7f2f1h8e2d7c5</code></pre>
+
+上3つは下図左の終局に、一番下の棋譜は下図右の終局になります。
+
+<div class="centering_box">
+    <img class="pic2" src="img/shortest_draw.png">
+</div>
+
+最短引き分けの[詳しい解説記事](https://qiita.com/Nyanyan_Cube/items/ccab30af5c6a2b9d1e06)をQiitaに書きました。また、この結果を求めるために[使ったコード](https://github.com/Nyanyan/Shortest_Draw_Othello)をGitHubにて公開しています。
+
+最短引き分け4つのうち一つは私の取り組み以前に人力で見つかっていました。[人力探索の解説記事](https://note.com/berlin9/n/nc0e02c83b636)がnoteに公開されています。
+
+
+
+
+
 ## 参考となる資料
 
 私自身がオセロAI初心者から今に至るまでに参考とした資料(など)の紹介です。
