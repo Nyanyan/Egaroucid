@@ -601,6 +601,20 @@ f5f4c3f6g7f7f3h7f8b2h6e3a1e7f2f1h8e2d7c5</code></pre>
 
 
 
+### 最短ストナー
+
+オセロにおいてストナーという戦術があります。ストナーは最短で対局開始から13手で発動します。13手ストナーの一例は以下です。
+
+<code>e6d6c6d7c8b6c7f7f6e8f8g8b7</code>
+
+<div class="centering_box">
+    <img class="pic2" src="img/shortest_stoner.png">
+</div>
+
+最短ストナーを求める[詳しい解説記事](https://qiita.com/Nyanyan_Cube/items/bd0f808dbece005256e6)をQiitaに書きました。また、この結果を求めるために[使ったコード](https://github.com/Nyanyan/Shortest_Stoner)をGitHubで公開しています。
+
+
+
 
 
 ## 参考となる資料
