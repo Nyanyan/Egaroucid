@@ -6,7 +6,7 @@
 
 このページは日本語のみの雑多なオセロAI関連の技術文書です。のんびりと気が向いたときに書き足していきます。章立ての順番に意味はありません。読みたいところだけをぜひお読みください！
 
-最終更新: 2024/06/10
+最終更新: 2024/07/30
 
 INSERT_TABLE_OF_CONTENTS_HERE
 
@@ -582,12 +582,13 @@ $s(p)=2^4 \times {}_{60}\mathrm{C}_p \times 2^p$
 
 オセロでは多くのマスが空いた状態で終局することがありますが、ここでは盤面がスカスカの状態で引き分けに終わる状態を考えます。
 
-最短引き分けは20手で、4通りありました。以下が棋譜です。
+最短引き分けは20手で、4通り(対称形は同一視)ありました。以下が棋譜です。
 
-<pre><code>f5f4c3f6g7f7f3h7f8b2h6e7h8g3d7e3f2f1a1c5
-f5f4c3f6g7f7f3h7f8b2h6e7h8e3d7g3f2f1a1c5
-f5f4c3f6g7f7f3h7f8b2h6e7h8e3d7g2f2f1a1c5
-f5f4c3f6g7f7f3h7f8b2h6e3a1e7f2f1h8e2d7c5</code></pre>
+<code>f5f4c3f6g7f7f3h7f8b2h6e7h8g3d7e3f2f1a1c5</code>
+<code>f5f4c3f6g7f7f3h7f8b2h6e7h8e3d7g3f2f1a1c5</code>
+<code>f5f4c3f6g7f7f3h7f8b2h6e7h8e3d7g2f2f1a1c5</code>
+<code>f5f4c3f6g7f7f3h7f8b2h6e3a1e7f2f1h8e2d7c5</code>
+
 
 上3つは下図左の終局に、一番下の棋譜は下図右の終局になります。
 
