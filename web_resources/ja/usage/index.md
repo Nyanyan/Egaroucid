@@ -1,6 +1,6 @@
 # Egaroucid 使い方
 
-<b>This page is only in Japanese. Translation by Google Translator is [here](https://www-egaroucid-nyanyan-dev.translate.goog/ja/usage/?_x_tr_sl=ja&_x_tr_tl=en&_x_tr_hl=ja&_x_tr_pto=wapp).</b>
+<b>This page is only in Japanese. Please see [translation by Google here](https://www-egaroucid-nyanyan-dev.translate.goog/ja/usage/?_x_tr_sl=ja&_x_tr_tl=en&_x_tr_hl=ja&_x_tr_pto=wapp) in English.</b>
 
 オセロAI Egaroucidの公式ドキュメントです。各機能の使い方を簡単に紹介します。このページの内容は最新バージョンに合わせてありますが、更新が追いつかない場合もあります。
 
