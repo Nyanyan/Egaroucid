@@ -18,7 +18,7 @@
 */
 
 // if (i & (1 << j))  n_flip_pre_calc[i][j] = n_flip_pre_calc[i ^ (1 << j)][j];	// to use ~player instead of opponent
-constexpr int_fast8_t n_flip_pre_calc[N_8BIT][HW] = {
+constexpr uint8_t n_flip_pre_calc[N_8BIT][HW] = {
     {0, 0, 0, 0, 0, 0, 0, 0}, {0, 0, 1, 2, 3, 4, 5, 6}, {0, 0, 0, 1, 2, 3, 4, 5}, {0, 0, 0, 1, 2, 3, 4, 5}, {1, 0, 0, 0, 1, 2, 3, 4}, {1, 0, 1, 0, 1, 2, 3, 4}, {0, 0, 0, 0, 1, 2, 3, 4}, {0, 0, 0, 0, 1, 2, 3, 4},
     {2, 1, 0, 0, 0, 1, 2, 3}, {2, 1, 1, 2, 0, 1, 2, 3}, {0, 1, 0, 1, 0, 1, 2, 3}, {0, 1, 0, 1, 0, 1, 2, 3}, {1, 0, 0, 0, 0, 1, 2, 3}, {1, 0, 1, 0, 0, 1, 2, 3}, {0, 0, 0, 0, 0, 1, 2, 3}, {0, 0, 0, 0, 0, 1, 2, 3},
     {3, 2, 1, 0, 0, 0, 1, 2}, {3, 2, 2, 2, 3, 0, 1, 2}, {0, 2, 1, 1, 2, 0, 1, 2}, {0, 2, 1, 1, 2, 0, 1, 2}, {1, 0, 1, 0, 1, 0, 1, 2}, {1, 0, 2, 0, 1, 0, 1, 2}, {0, 0, 1, 0, 1, 0, 1, 2}, {0, 0, 1, 0, 1, 0, 1, 2},
@@ -61,13 +61,13 @@ constexpr int_fast8_t n_flip_pre_calc[N_8BIT][HW] = {
     @return number of flipping discs
 */
 inline int_fast8_t count_last_flip(uint64_t player, const uint_fast8_t place){
-    const int t = place >> 3;
-    const int u = place & 7;
+    const int x = place & 7;
+    const int y = place >> 3;
     return
-        n_flip_pre_calc[join_h_line(player, t)][u] + 
-        n_flip_pre_calc[join_v_line(player, u)][t] + 
-        n_flip_pre_calc[join_d7_line(player, u + t)][std::min(t, 7 - u)] + 
-        n_flip_pre_calc[join_d9_line(player, u + 7 - t)][std::min(t, u)];
+        n_flip_pre_calc[join_h_line(player, y)][x] + 
+        n_flip_pre_calc[join_v_line(player, x)][y] + 
+        n_flip_pre_calc[join_d7_line(player, x + y)][std::min(y, 7 - x)] + 
+        n_flip_pre_calc[join_d9_line(player, x + 7 - y)][std::min(y, x)];
 }
 
 inline void last_flip_init(){
