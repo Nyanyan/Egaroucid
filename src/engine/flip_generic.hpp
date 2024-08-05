@@ -14,30 +14,6 @@
 #include "common.hpp"
 #include "bit.hpp"
 
-/*
-constexpr uint64_t bb_vline[8] = {
-    0x0101010101010101ULL,
-    0x0202020202020202ULL,
-    0x0404040404040404ULL,
-    0x0808080808080808ULL,
-    0x1010101010101010ULL,
-    0x2020202020202020ULL,
-    0x4040404040404040ULL,
-    0x8080808080808080ULL,
-};
-
-constexpr uint64_t bb_mul16[8] = {
-    0x0204081020408100ULL,
-    0x0102040810204080ULL,
-    0x0081020408102040ULL,
-    0x0040810204081020ULL,
-    0x0020408102040810ULL,
-    0x0010204081020408ULL,
-    0x0008102040810204ULL,
-    0x0004081020408102ULL,
-};
-*/
-
 constexpr uint64_t bb_dline02[64] = {
     0x0000000000000000ULL, 0x0000000000000000ULL, 0x0000000000000000ULL, 0x0000000000000000ULL, 0x0000000000000000ULL, 0x0000000000000000ULL, 0x0000000000000000ULL, 0x0000000000000000ULL,
     0x0000000000000002ULL, 0x0000000000000005ULL, 0x000000000000000aULL, 0x0000000000000014ULL, 0x0000000000000028ULL, 0x0000000000000050ULL, 0x00000000000000a0ULL, 0x0000000000000040ULL,
@@ -309,17 +285,11 @@ class Flip{
                 return (bb_flipped[s][x] * 0x0101010101010101ULL) & a;
             };
 
-            //uint8_t vline = (((player >> x) & bb_vline[0]) * bb_mul16[1]) >> 56;
-            uint8_t vline = join_v_line(player, x);
-            //vline &= bb_seed[((opponent & bb_vline[x]) * bb_mul16[x]) >> 58][y];
-            vline &= bb_seed[(join_v_line(opponent, x) >> 1) & 0x3F][y];
-            flip = split_v_line(bb_flipped[vline][y], x);
-            //flip = *((uint64_t *) (((uint32_t *) bb_h2vline) + bb_flipped[vline][y])) << x;
+            uint8_t outflank_v = join_v_line(player, x) & bb_seed[(join_v_line(opponent, x) >> 1) & 0x3F][y];
+            flip = split_v_line(bb_flipped[outflank_v][y], x);
 
-            //uint8_t hline = ((uint8_t (*)[4]) bb_seed)[(opponent >> (place & 0x38)) & 0x7e][x];
-            uint8_t hline = join_h_line(player, y);
-            hline &= bb_seed[(join_h_line(opponent, y) >> 1) & 0x3F][x];
-            flip |= (uint64_t)bb_flipped[hline][x] << (place & 0x38);
+            uint8_t outflank_h = join_h_line(player, y) & bb_seed[(join_h_line(opponent, y) >> 1) & 0x3F][x];
+            flip |= split_h_line(bb_flipped[outflank_h][x], y);
 
             flip |= fd(bb_dline02[place]);
             flip |= fd(bb_dline57[place]);
