@@ -276,25 +276,25 @@ class Flip{
     public:
         inline uint64_t calc_flip(const uint64_t player, const uint64_t opponent, const int place){
             pos = place;
-            uint32_t x = place & 7;
-            uint32_t y = place >> 3;
+            uint_fast8_t x = place & 7;
+            uint_fast8_t y = place >> 3;
 
-            auto fd = [&](const uint64_t a) {
-                uint8_t s = bb_seed[((opponent & a) * 0x0202020202020202ULL) >> 58][x];
-                s &= ((player & a) * 0x0101010101010101ULL) >> 56;
-                return (bb_flipped[s][x] * 0x0101010101010101ULL) & a;
-            };
+            uint8_t outflank = join_v_line(player, x) & bb_seed[(join_v_line(opponent, x) >> 1) & 0x3F][y];
+            flip = split_v_line(bb_flipped[outflank][y], x);
 
-            uint8_t outflank_v = join_v_line(player, x) & bb_seed[(join_v_line(opponent, x) >> 1) & 0x3F][y];
-            flip = split_v_line(bb_flipped[outflank_v][y], x);
+            outflank = join_h_line(player, y) & bb_seed[(join_h_line(opponent, y) >> 1) & 0x3F][x];
+            flip |= split_h_line(bb_flipped[outflank][x], y);
 
-            uint8_t outflank_h = join_h_line(player, y) & bb_seed[(join_h_line(opponent, y) >> 1) & 0x3F][x];
-            flip |= split_h_line(bb_flipped[outflank_h][x], y);
-
-            flip |= fd(bb_dline02[place]);
-            flip |= fd(bb_dline57[place]);
+            flip |= flip_d(player, opponent, x, bb_dline02[place]);
+            flip |= flip_d(player, opponent, x, bb_dline57[place]);
 
             return flip;
+        }
+    
+    private:
+        inline uint64_t flip_d(uint64_t player, uint64_t opponent, uint_fast8_t x, uint64_t dline){
+            uint8_t outflank = (((player & dline) * 0x0101010101010101ULL) >> 56) & bb_seed[((opponent & dline) * 0x0202020202020202ULL) >> 58][x];
+            return (bb_flipped[outflank][x] * 0x0101010101010101ULL) & dline;
         }
 };
 
