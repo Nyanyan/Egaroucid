@@ -269,7 +269,7 @@ inline uint64_t split_h_line(uint_fast8_t x, int_fast8_t t){
     return (uint64_t)x << (HW * t);
 }
 
-inline int join_v_line(uint64_t x, int c){
+inline uint_fast8_t join_v_line(uint64_t x, int c){
     x = (x >> c) & 0x0101010101010101ULL;
     return (x * 0x0102040810204080ULL) >> 56;
 }

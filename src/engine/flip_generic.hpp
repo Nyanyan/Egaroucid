@@ -14,7 +14,8 @@
 #include "common.hpp"
 #include "bit.hpp"
 
-const uint64_t bb_vline[8] = {
+/*
+constexpr uint64_t bb_vline[8] = {
     0x0101010101010101ULL,
     0x0202020202020202ULL,
     0x0404040404040404ULL,
@@ -25,7 +26,7 @@ const uint64_t bb_vline[8] = {
     0x8080808080808080ULL,
 };
 
-const uint64_t bb_mul16[9] = {
+constexpr uint64_t bb_mul16[8] = {
     0x0204081020408100ULL,
     0x0102040810204080ULL,
     0x0081020408102040ULL,
@@ -34,10 +35,10 @@ const uint64_t bb_mul16[9] = {
     0x0010204081020408ULL,
     0x0008102040810204ULL,
     0x0004081020408102ULL,
-    0x0002040810204081ULL,
 };
+*/
 
-const uint64_t bb_dline02[64] = {
+constexpr uint64_t bb_dline02[64] = {
     0x0000000000000000ULL, 0x0000000000000000ULL, 0x0000000000000000ULL, 0x0000000000000000ULL, 0x0000000000000000ULL, 0x0000000000000000ULL, 0x0000000000000000ULL, 0x0000000000000000ULL,
     0x0000000000000002ULL, 0x0000000000000005ULL, 0x000000000000000aULL, 0x0000000000000014ULL, 0x0000000000000028ULL, 0x0000000000000050ULL, 0x00000000000000a0ULL, 0x0000000000000040ULL,
     0x0000000000000204ULL, 0x0000000000000508ULL, 0x0000000000000a11ULL, 0x0000000000001422ULL, 0x0000000000002844ULL, 0x0000000000005088ULL, 0x000000000000a010ULL, 0x0000000000004020ULL,
@@ -48,7 +49,7 @@ const uint64_t bb_dline02[64] = {
     0x0002040810204080ULL, 0x0005081020408000ULL, 0x000a112040800000ULL, 0x0014224180000000ULL, 0x0028448201000000ULL, 0x0050880402010000ULL, 0x00a0100804020100ULL, 0x0040201008040201ULL,
 };
 
-const uint64_t bb_dline57[64] = {
+constexpr uint64_t bb_dline57[64] = {
     0x8040201008040200ULL, 0x0080402010080500ULL, 0x0000804020110a00ULL, 0x0000008041221400ULL, 0x0000000182442800ULL, 0x0000010204885000ULL, 0x000102040810a000ULL, 0x0102040810204000ULL,
     0x4020100804020000ULL, 0x8040201008050000ULL, 0x00804020110a0000ULL, 0x0000804122140000ULL, 0x0000018244280000ULL, 0x0001020488500000ULL, 0x0102040810a00000ULL, 0x0204081020400000ULL,
     0x2010080402000000ULL, 0x4020100805000000ULL, 0x804020110a000000ULL, 0x0080412214000000ULL, 0x0001824428000000ULL, 0x0102048850000000ULL, 0x02040810a0000000ULL, 0x0408102040000000ULL,
@@ -59,7 +60,7 @@ const uint64_t bb_dline57[64] = {
     0x0000000000000000ULL, 0x0000000000000000ULL, 0x0000000000000000ULL, 0x0000000000000000ULL, 0x0000000000000000ULL, 0x0000000000000000ULL, 0x0000000000000000ULL, 0x0000000000000000ULL,
 };
 
-const uint8_t bb_seed[64][8] = {
+constexpr uint8_t bb_seed[64][8] = {
     {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
     {0x04, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00},
     {0x00, 0x08, 0x00, 0x02, 0x00, 0x00, 0x00, 0x00},
@@ -126,7 +127,7 @@ const uint8_t bb_seed[64][8] = {
     {0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01},
 };
 
-const uint8_t bb_flipped[137][8] = {
+constexpr uint8_t bb_flipped[137][8] = {
     {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
     {0x00, 0x00, 0x02, 0x06, 0x0e, 0x1e, 0x3e, 0x7e},
     {0x00, 0x00, 0x00, 0x04, 0x0c, 0x1c, 0x3c, 0x7c},
@@ -266,7 +267,7 @@ const uint8_t bb_flipped[137][8] = {
     {0x00, 0x00, 0x00, 0x00, 0x00, 0x50, 0x00, 0x00},
 };
 
-const uint64_t bb_h2vline[64] = {
+constexpr uint64_t bb_h2vline[64] = {
     0x0000000000000000ULL, 0x0000000000000100ULL, 0x0000000000010000ULL, 0x0000000000010100ULL,
     0x0000000001000000ULL, 0x0000000001000100ULL, 0x0000000001010000ULL, 0x0000000001010100ULL,
     0x0000000100000000ULL, 0x0000000000000000ULL, 0x0000000100010000ULL, 0x0000000100010100ULL,
@@ -303,18 +304,22 @@ class Flip{
             uint32_t y = place >> 3;
 
             auto fd = [&](const uint64_t a) {
-                uint8_t s = bb_seed[((opponent & a) * bb_vline[1]) >> 58][x];
-                s &= ((player & a) * bb_vline[0]) >> 56;
-                return (bb_flipped[s][x] * bb_vline[0]) & a;
+                uint8_t s = bb_seed[((opponent & a) * 0x0202020202020202ULL) >> 58][x];
+                s &= ((player & a) * 0x0101010101010101ULL) >> 56;
+                return (bb_flipped[s][x] * 0x0101010101010101ULL) & a;
             };
 
-            uint8_t s16 = (((player >> x) & bb_vline[0]) * bb_mul16[1]) >> 56;
-            s16 &= bb_seed[((opponent & bb_vline[x]) * bb_mul16[x]) >> 58][y];
-            flip = *((uint64_t *) (((uint32_t *) bb_h2vline) + bb_flipped[s16][y])) << x;
+            //uint8_t vline = (((player >> x) & bb_vline[0]) * bb_mul16[1]) >> 56;
+            uint8_t vline = join_v_line(player, x);
+            //vline &= bb_seed[((opponent & bb_vline[x]) * bb_mul16[x]) >> 58][y];
+            vline &= bb_seed[(join_v_line(opponent, x) >> 1) & 0x3F][y];
+            flip = split_v_line(bb_flipped[vline][y], x);
+            //flip = *((uint64_t *) (((uint32_t *) bb_h2vline) + bb_flipped[vline][y])) << x;
 
-            uint8_t s34 = ((uint8_t (*)[4]) bb_seed)[(opponent >> (place & 0x38)) & 0x7e][x];
-            s34 &= player >> (place & 0x38);
-            flip |= (uint64_t) bb_flipped[s34][x] << (place & 0x38);
+            //uint8_t hline = ((uint8_t (*)[4]) bb_seed)[(opponent >> (place & 0x38)) & 0x7e][x];
+            uint8_t hline = join_h_line(player, y);
+            hline &= bb_seed[(join_h_line(opponent, y) >> 1) & 0x3F][x];
+            flip |= (uint64_t)bb_flipped[hline][x] << (place & 0x38);
 
             flip |= fd(bb_dline02[place]);
             flip |= fd(bb_dline57[place]);
