@@ -5,25 +5,35 @@
     If loading doesn't finish in 10 seconds, please reload this page.<br></span>
     <span id="ai_info">AI Initializing...</span>
 </div>
-<p align="center">
-    <input type="radio" class="radio_size" name="ai_player" value="1" id="white" checked><label for="white" class="setting">Black(First): You White(Second): AI</label>
-    <br>
-    <input type="radio" class="radio_size" name="ai_player" value="0" id="black"><label for="black" class="setting">Black(First): AI White(Second): You</label>
-</p>
-<p align="center">
+<div align="center">
+    <table class="settings_table">
+        <tr class="settings_table">
+            <td class="settings_table"><label><input type="radio" class="radio_size" name="ai_player" value="1" id="white" checked><span class="setting">Black(First): You White(Second): AI</span></label></td>
+        </tr>
+        <tr class="settings_table">
+            <td class="settings_table"><label><input type="radio" class="radio_size" name="ai_player" value="0" id="black"><span class="setting">Black(First): AI White(Second): You</span></label></td>
+        </tr>
+    </table>
+</div>
+<div align="center">
     <label>
         <span class="setting">Strength</span>
         <input type="range" id="ai_level" min="0" max="15" step="1" value="7">
     </label>
     <span class="setting" id="ai_level_label"></span>
-</p>
-<p align="center">
-    <label><input type="checkbox" id="show_value" unchecked><span class="setting">Hint</span></label>
-    <label><input type="checkbox" id="show_graph" checked><span class="setting">Graph</span></label>
-    <br>
-    <label><input type="checkbox" id="show_legal" checked><span class="setting">Moves</span></label>
-    <label><input type="checkbox" id="auto_pass" checked><span class="setting">Auto-Pass</span></label>
-</p>
+</div>
+<div align="center">
+    <table class="settings_table">
+        <tr class="settings_table">
+            <td class="settings_table"><label><input type="checkbox" id="show_value" unchecked><span class="setting">Hint</span></label></td>
+            <td class="settings_table"><label><input type="checkbox" id="show_graph" checked><span class="setting">Graph</span></label></td>
+        </tr>
+        <tr class="settings_table">
+            <td class="settings_table"><label><input type="checkbox" id="show_legal" checked><span class="setting">Moves</span></label></td>
+            <td class="settings_table"><label><input type="checkbox" id="auto_pass" checked><span class="setting">Auto-Pass</span></label></td>
+        </tr>
+    </table>
+</div>
 <div align="center">
     <div class="buttons">
         <input type="submit" class="setting" value="Start Game" onclick="start()" id="start" disabled>

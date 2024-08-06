@@ -5,25 +5,35 @@
     10秒経っても読み込めない場合はリロードしてください。<br></span>
     <span id="ai_info">AI読み込み中…</span>
 </div>
-<p align="center">
-    <input type="radio" class="radio_size" name="ai_player" value="1" id="white" checked><label for="white" class="setting">黒(先手): あなた 白(後手): AI</label>
-    <br>
-    <input type="radio" class="radio_size" name="ai_player" value="0" id="black"><label for="black" class="setting">黒(先手): AI 白(後手): あなた</label>
-</p>
-<p align="center">
+<div align="center">
+    <table class="settings_table">
+        <tr class="settings_table">
+            <td class="settings_table"><label><input type="radio" class="radio_size" name="ai_player" value="1" id="white" checked><span class="setting">黒(先手): あなた 白(後手): AI</span></label></td>
+        </tr>
+        <tr class="settings_table">
+            <td class="settings_table"><label><input type="radio" class="radio_size" name="ai_player" value="0" id="black"><span class="setting">黒(先手): AI 白(後手): あなた</span></label></td>
+        </tr>
+    </table>
+</div>
+<div align="center">
     <label>
         <span class="setting">AIの強さ</span>
         <input type="range" id="ai_level" min="0" max="15" step="1" value="7">
     </label>
     <span class="setting" id="ai_level_label"></span>
-</p>
-<p align="center">
-    <label><input type="checkbox" id="show_value" unchecked><span class="setting">ヒント</span></label>
-    <label><input type="checkbox" id="show_graph" checked><span class="setting">グラフ</span></label>
-    <br>
-    <label><input type="checkbox" id="show_legal" checked><span class="setting">合法手</label>
-    <label><input type="checkbox" id="auto_pass" checked><span class="setting">自動パス</label>
-</p>
+</div>
+<div align="center">
+    <table class="settings_table">
+        <tr class="settings_table">
+            <td class="settings_table"><label><input type="checkbox" id="show_value" unchecked><span class="setting">ヒント</span></label></td>
+            <td class="settings_table"><label><input type="checkbox" id="show_graph" checked><span class="setting">グラフ</span></label></td>
+        </tr>
+        <tr class="settings_table">
+            <td class="settings_table"><label><input type="checkbox" id="show_legal" checked><span class="setting">合法手</span></label></td>
+            <td class="settings_table"><label><input type="checkbox" id="auto_pass" checked><span class="setting">自動パス</span></label></td>
+        </tr>
+    </table>
+</div>
 <div align="center">
     <div class="buttons">
         <input type="submit" class="setting" value="対局開始" onclick="start()" id="start" disabled>

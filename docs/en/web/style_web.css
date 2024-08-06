@@ -261,3 +261,7 @@ label {
     gap: 1rem;
     width: fit-content;
 }
+.settings_table {
+    background-color: white;
+    border: none;
+}
