@@ -280,6 +280,7 @@ def create_html(dr):
     head_title = '<title>' + page_title + '</title>\n'
     og_image = '<meta property="og:image" content="' + this_page_url + '/img/eyecatch.png" />\n'
     html += '<p></p>\n'
+    html += '<div class="util_wrapper">'
     html += tweet.replace('DATA_URL', this_page_url).replace('DATA_TEXT', page_title) + ' \n'
     if not noenglish:
         for lang_dr, lang_name in langs:
@@ -289,6 +290,7 @@ def create_html(dr):
             modified_dr = dr[len(original_lang) + 1:]
             lang_link = main_page_url + lang_dr + '/' + modified_dr
             html += link21 + lang_link + link22 + lang_name + link23 + ' \n'
+    html += '</div>'
     additional_head = '<meta property="og:url" content="' + this_page_url + '/" />\n'
     additional_head += '<meta property="og:title" content="' + page_title + '" />\n'
     #additional_head += '<meta property="og:description" content="' + main_page_description + '" />\n'

@@ -182,3 +182,9 @@ summary {
     margin: max(4%, 30px) auto;
     text-align: center;
 }
+
+.util_wrapper {
+    margin: auto;
+    height: 30px;
+    text-align: right;
+}
