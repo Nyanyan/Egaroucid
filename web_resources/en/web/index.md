@@ -7,6 +7,7 @@
 </div>
 <p align="center">
     <input type="radio" class="radio_size" name="ai_player" value="1" id="white" checked><label for="white" class="setting">Black(First): You White(Second): AI</label>
+    <br>
     <input type="radio" class="radio_size" name="ai_player" value="0" id="black"><label for="black" class="setting">Black(First): AI White(Second): You</label>
 </p>
 <p align="center">
@@ -19,6 +20,7 @@
 <p align="center">
     <label><input type="checkbox" id="show_value" unchecked><span class="setting">Hint</span></label>
     <label><input type="checkbox" id="show_graph" checked><span class="setting">Graph</span></label>
+    <br>
     <label><input type="checkbox" id="show_legal" checked><span class="setting">Moves</span></label>
     <label><input type="checkbox" id="auto_pass" checked><span class="setting">Auto-Pass</span></label>
 </p>
@@ -30,7 +32,7 @@
 <div class="popup" id="js-popup">
     <div class="popup-inner">
         <p align="center" class="sub_title" id="result_text"></p>
-        <img class="image" id="game_result" width="100%" height="auto" style="aspect-ratio: 1;">
+        <img class="image" id="game_result" width="80%" height="auto" style="aspect-ratio: 1.06;">
         <p align="center" class="hidden" id="tweet_result"></p>
         <p align="center" class="text">You can save this picture</p>
         <p align="center" class="text">Click black area to close</p>
@@ -55,7 +57,7 @@
     <div class="sub_title">Game Information</div>
     <div class="sub_sub_title">Graph</div>
     <div class="chart" id="chart_container">
-        <canvas id="graph" height="300px"></canvas>
+        <canvas id="graph"></canvas>
     </div>
     <div class="sub_sub_title">Transcript</div>
     <div class="record" id="record"></div>
