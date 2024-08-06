@@ -36,7 +36,7 @@
 </div>
 <div align="center">
     <div class="buttons">
-        <input type="submit" class="setting" value="Start Game" onclick="start()" id="start" disabled>
+        <input type="submit" class="setting" value="Start" onclick="start()" id="start" disabled>
         <input type="submit" class="setting" value="Reset" onclick="reset()" id="reset" disabled>
         <input type="submit" class="setting" value="Pass" onclick="pass()" id="pass" disabled>
     </div>
