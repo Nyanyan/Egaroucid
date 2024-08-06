@@ -28,7 +28,7 @@
 <div class="popup" id="js-popup">
     <div class="popup-inner">
         <p align="center" class="sub_title" id="result_text"></p>
-        <img class="image" id="game_result">
+        <img class="image" id="game_result" width="100%" height="auto" style="aspect-ratio: 1;">
         <p align="center" class="hidden" id="tweet_result"></p>
         <p align="center" class="text">上の画像は右クリックなどで保存できます。</p>
         <p align="center" class="text">周りをタップするとポップアップが消えます。</p>

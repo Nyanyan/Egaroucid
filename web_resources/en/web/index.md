@@ -29,7 +29,7 @@
 <div class="popup" id="js-popup">
     <div class="popup-inner">
         <p align="center" class="sub_title" id="result_text"></p>
-        <img class="image" id="game_result">
+        <img class="image" id="game_result" width="100%" height="auto" style="aspect-ratio: 1;">
         <p align="center" class="hidden" id="tweet_result"></p>
         <p align="center" class="text">You can save this picture</p>
         <p align="center" class="text">Click black area to close</p>
