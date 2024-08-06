@@ -20,7 +20,7 @@
     <input type="checkbox" id="show_legal" checked><label class="setting" for="show_legal">合法手</label>
     <input type="checkbox" id="auto_pass" checked><label class="setting" for="auto_pass">自動パス</label>
 </p>
-<p align="center" id="ai_info"></p>
+<p align="center" id="ai_info">AI読み込み中…</p>
 <div align="center" id="div_start">
     <input type="submit" class="setting" value="対局開始" onclick="start()" id="start" disabled>
     <input type="submit" class="setting" value="リセット" onclick="reset()" id="reset" disabled>
@@ -56,7 +56,7 @@
     <div class="sub_title">対局情報</div>
     <div class="sub_sub_title">予想最終石差グラフ</div>
     <div class="chart" id="chart_container">
-        <canvas id="graph"></canvas>
+        <canvas id="graph" height="300px"></canvas>
     </div>
     <div class="sub_sub_title">棋譜</div>
     <div class="record" id="record"></div>

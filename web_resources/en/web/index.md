@@ -21,7 +21,7 @@
     <input type="checkbox" id="show_legal" checked><label class="setting" for="show_legal">Moves</label>
     <input type="checkbox" id="auto_pass" checked><label class="setting" for="auto_pass">Auto-Pass</label>
 </p>
-<p align="center" id="ai_info"></p>
+<p align="center" id="ai_info">AI Initializing...</p>
 <div align="center" id="div_start">
     <input type="submit" class="setting" value="Start Game" onclick="start()" id="start" disabled>
     <input type="submit" class="setting" value="Reset" onclick="reset()" id="reset" disabled>
@@ -57,7 +57,7 @@
     <div class="sub_title">Game Information</div>
     <div class="sub_sub_title">Graph</div>
     <div class="chart" id="chart_container">
-        <canvas id="graph"></canvas>
+        <canvas id="graph" height="300px"></canvas>
     </div>
     <div class="sub_sub_title">Transcript</div>
     <div class="record" id="record"></div>
