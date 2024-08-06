@@ -561,7 +561,7 @@ function end_game() {
         players.item(i).disabled = false;
 }
 
-window.onload = function() {
+window.addEventListener('DOMContentLoaded', function () {
     for (var i = 0; i <= 15; ++i) {
         level_names.push(lang_level + i);
     }
@@ -606,7 +606,9 @@ window.onload = function() {
         table.appendChild(row);
     }
     show(-2, -2);
+});
 
+window.onload = function() {
     //document.getElementById('ai_info').innerText = lang_ai_loading + " " + loading_percent + "%";
     document.getElementById('ai_info').innerText = lang_ai_loading;
 
