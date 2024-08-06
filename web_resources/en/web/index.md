@@ -1,30 +1,31 @@
 # Egaroucid for Web
 
-<div align="center">
-    This is simplified version and weaker than [download version](./../download/). Also, this version has very few features. You can use full rich features with download version.<br>
-    If loading doesn't finish in 10 seconds, please reload this page.
+<div align="center" style="line-height: 1.5;">
+    <span>This is simplified version and weaker than [download version](./../download/). Also, this version has very few features. You can use full rich features with download version.<br>
+    If loading doesn't finish in 10 seconds, please reload this page.<br></span>
+    <span id="ai_info">AI Initializing...</span>
 </div>
-
-
 <p align="center">
     <input type="radio" class="radio_size" name="ai_player" value="1" id="white" checked><label for="white" class="setting">Black(First): You White(Second): AI</label>
     <input type="radio" class="radio_size" name="ai_player" value="0" id="black"><label for="black" class="setting">Black(First): AI White(Second): You</label>
 </p>
 <p align="center">
-    <span class="setting">Strength</span>
-    <input type="range" id="ai_level" min="0" max="15" step="1" value="7">
+    <label>
+        <span class="setting">Strength</span>
+        <input type="range" id="ai_level" min="0" max="15" step="1" value="7">
+    </label>
     <span class="setting" id="ai_level_label"></span>
 </p>
 <p align="center">
-    <input type="checkbox" id="show_value" unchecked><label class="setting" for="show_value">Hint</label>
-    <input type="checkbox" id="show_graph" checked><label class="setting" for="show_graph">Graph</label>
-    <input type="checkbox" id="show_legal" checked><label class="setting" for="show_legal">Moves</label>
-    <input type="checkbox" id="auto_pass" checked><label class="setting" for="auto_pass">Auto-Pass</label>
+    <label><input type="checkbox" id="show_value" unchecked><span class="setting">Hint</span></label>
+    <label><input type="checkbox" id="show_graph" checked><span class="setting">Graph</span></label>
+    <label><input type="checkbox" id="show_legal" checked><span class="setting">Moves</span></label>
+    <label><input type="checkbox" id="auto_pass" checked><span class="setting">Auto-Pass</span></label>
 </p>
-<p align="center" id="ai_info">AI Initializing...</p>
 <div align="center" id="div_start">
     <input type="submit" class="setting" value="Start Game" onclick="start()" id="start" disabled>
     <input type="submit" class="setting" value="Reset" onclick="reset()" id="reset" disabled>
+    <input type="submit" class="setting" value="Pass" onclick="pass()" id="pass" disabled>
 </div>
 <div class="popup" id="js-popup">
     <div class="popup-inner">
@@ -35,9 +36,6 @@
         <p align="center" class="text">Click black area to close</p>
     </div>
     <div class="black-background" id="js-black-bg"></div>
-</div>
-<div align="center">
-    <input type="submit" class="setting" value="Pass" onclick="pass()" id="pass" disabled>
 </div>
 <div class="div_main">
     <table class="table_board" align="center" id="table_board"></table>
@@ -65,7 +63,6 @@
 <div align="center">
     <div class="sub_title" id="usage">Usage</div>
     <div class="text">
-
         Select your turn and AI strength, then press "Start" button.<br>
         Graph shows how good the AI seems to be. If the value is big, AI seems to win. If small, you seems to win.<br>
         You can check the graph after the game though you don't check the "Graph" checkbox.<br>
@@ -79,10 +76,10 @@
     <div class="table_wrapper">
         <table>
             <tr>
-                <td class="text">Level</td>
-                <td class="text">midgame depth</td>
-                <td class="text">endgame depth</td>
-                <td class="text">perfect search</td>
+                <th class="text">Level</th>
+                <th class="text">midgame depth</th>
+                <th class="text">endgame depth</th>
+                <th class="text">perfect search</th>
             </tr>
             <tr>
                 <td class="text">0</td>

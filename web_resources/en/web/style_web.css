@@ -1,3 +1,8 @@
+label {
+    line-height: 1.7;
+    margin-left: 0.7%;
+    margin-right: 0.7%;
+}
 .title {
     text-align: center;
     font-size: xx-large;
@@ -15,11 +20,7 @@
 }
 .setting {
     font-size: large;
-}
-.setting_blue {
-    font-size: large;
-    color: blue;
-    font-weight: bold;
+    margin: 5px;
 }
 .text {
     font-size: medium;

@@ -1,29 +1,31 @@
 # Egaroucid for Web
 
 <div align="center">
-    これは[ダウンロード版](./../download/)よりも弱い簡易バージョンです。機能も非常に少ないです。豊富な機能の全てを使いたい場合はダウンロード版をお使いください。<br>
-    10秒経っても読み込めない場合はリロードしてください。
+    <span>これは[ダウンロード版](./../download/)よりも弱い簡易バージョンです。機能も非常に少ないです。豊富な機能の全てを使いたい場合はダウンロード版をお使いください。<br>
+    10秒経っても読み込めない場合はリロードしてください。<br></span>
+    <span id="ai_info">AI読み込み中…</span>
 </div>
-
 <p align="center">
     <input type="radio" class="radio_size" name="ai_player" value="1" id="white" checked><label for="white" class="setting">黒(先手): あなた 白(後手): AI</label>
     <input type="radio" class="radio_size" name="ai_player" value="0" id="black"><label for="black" class="setting">黒(先手): AI 白(後手): あなた</label>
 </p>
 <p align="center">
-    <span class="setting">AIの強さ</span>
-    <input type="range" id="ai_level" min="0" max="15" step="1" value="7">
+    <label>
+        <span class="setting">AIの強さ</span>
+        <input type="range" id="ai_level" min="0" max="15" step="1" value="7">
+    </label>
     <span class="setting" id="ai_level_label"></span>
 </p>
 <p align="center">
-    <input type="checkbox" id="show_value" unchecked><label class="setting" for="show_value">ヒント</label>
-    <input type="checkbox" id="show_graph" checked><label class="setting" for="show_graph">グラフ</label>
-    <input type="checkbox" id="show_legal" checked><label class="setting" for="show_legal">合法手</label>
-    <input type="checkbox" id="auto_pass" checked><label class="setting" for="auto_pass">自動パス</label>
+    <label><input type="checkbox" id="show_value" unchecked><span class="setting">ヒント</span></label>
+    <label><input type="checkbox" id="show_graph" checked><span class="setting">グラフ</span></label>
+    <label><input type="checkbox" id="show_legal" checked><span class="setting">合法手</label>
+    <label><input type="checkbox" id="auto_pass" checked><span class="setting">自動パス</label>
 </p>
-<p align="center" id="ai_info">AI読み込み中…</p>
 <div align="center" id="div_start">
     <input type="submit" class="setting" value="対局開始" onclick="start()" id="start" disabled>
     <input type="submit" class="setting" value="リセット" onclick="reset()" id="reset" disabled>
+    <input type="submit" class="setting" value="パス" onclick="pass()" id="pass" disabled>
 </div>
 <div class="popup" id="js-popup">
     <div class="popup-inner">
@@ -34,9 +36,6 @@
         <p align="center" class="text">周りをタップするとポップアップが消えます。</p>
     </div>
     <div class="black-background" id="js-black-bg"></div>
-</div>
-<div align="center">
-    <input type="submit" class="setting" value="パス" onclick="pass()" id="pass" disabled>
 </div>
 <div class="div_main">
     <table class="table_board" align="center" id="table_board"></table>
@@ -78,10 +77,10 @@
     <div class="table_wrapper">
         <table>
             <tr>
-                <td class="text">レベル</td>
-                <td class="text">中盤読み</td>
-                <td class="text">終盤読み切り</td>
-                <td class="text">完全読み</td>
+                <th class="text">レベル</th>
+                <th class="text">中盤読み</th>
+                <th class="text">終盤読み切り</th>
+                <th class="text">完全読み</th>
             </tr>
             <tr>
                 <td class="text">0</td>
