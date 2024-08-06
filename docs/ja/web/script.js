@@ -16,7 +16,7 @@ const lang_tweet_str_5_win = '石勝ちしました！';
 const lang_tweet_str_5_lose = '石負けしました…';
 const lang_tweet_str_5_draw = 'と引き分けました！';
 const lang_tweet_result = '結果をツイート！';
-const lang_ai_loading = 'AI読み込み中…\n10秒経っても読み込めない場合はリロードしてください';
+const lang_ai_loading = 'AI読み込み中…';
 const lang_ai_loaded = 'AI読み込み完了！';
 const lang_ai_load_failed = 'AI読み込み失敗 リロードしてください';
 

@@ -1,7 +1,8 @@
 # Egaroucid for Web
 
 <div align="center">
-    This is simplified version and weaker than [download version](./../download/). Also, this version has very few features. You can use full rich features with download version.
+    This is simplified version and weaker than [download version](./../download/). Also, this version has very few features. You can use full rich features with download version.<br>
+    If loading doesn't finish in 10 seconds, please reload this page.
 </div>
 
 

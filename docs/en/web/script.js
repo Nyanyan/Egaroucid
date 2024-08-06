@@ -16,7 +16,7 @@ const lang_tweet_str_5_win = '';
 const lang_tweet_str_5_lose = '';
 const lang_tweet_str_5_draw = '';
 const lang_tweet_result = 'Tweet this Result!';
-const lang_ai_loading = "AI Initializing...\nIf it don't finish in 10 seconds, please reload this page.";
+const lang_ai_loading = "AI Initializing...";
 const lang_ai_loaded = 'AI Initialized!';
 const lang_ai_load_failed = 'AI not loaded. Please reload this page.';
 
