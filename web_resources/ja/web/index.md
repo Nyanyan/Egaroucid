@@ -24,10 +24,12 @@
     <label><input type="checkbox" id="show_legal" checked><span class="setting">合法手</label>
     <label><input type="checkbox" id="auto_pass" checked><span class="setting">自動パス</label>
 </p>
-<div align="center" id="div_start">
-    <input type="submit" class="setting" value="対局開始" onclick="start()" id="start" disabled>
-    <input type="submit" class="setting" value="リセット" onclick="reset()" id="reset" disabled>
-    <input type="submit" class="setting" value="パス" onclick="pass()" id="pass" disabled>
+<div align="center">
+    <div class="buttons">
+        <input type="submit" class="setting" value="対局開始" onclick="start()" id="start" disabled>
+        <input type="submit" class="setting" value="リセット" onclick="reset()" id="reset" disabled>
+        <input type="submit" class="setting" value="パス" onclick="pass()" id="pass" disabled>
+    </div>
 </div>
 <div class="popup" id="js-popup">
     <div class="popup-inner">

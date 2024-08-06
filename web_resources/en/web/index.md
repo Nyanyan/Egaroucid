@@ -24,10 +24,12 @@
     <label><input type="checkbox" id="show_legal" checked><span class="setting">Moves</span></label>
     <label><input type="checkbox" id="auto_pass" checked><span class="setting">Auto-Pass</span></label>
 </p>
-<div align="center" id="div_start">
-    <input type="submit" class="setting" value="Start Game" onclick="start()" id="start" disabled>
-    <input type="submit" class="setting" value="Reset" onclick="reset()" id="reset" disabled>
-    <input type="submit" class="setting" value="Pass" onclick="pass()" id="pass" disabled>
+<div align="center">
+    <div class="buttons">
+        <input type="submit" class="setting" value="Start Game" onclick="start()" id="start" disabled>
+        <input type="submit" class="setting" value="Reset" onclick="reset()" id="reset" disabled>
+        <input type="submit" class="setting" value="Pass" onclick="pass()" id="pass" disabled>
+    </div>
 </div>
 <div class="popup" id="js-popup">
     <div class="popup-inner">
