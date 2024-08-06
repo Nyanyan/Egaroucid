@@ -53,7 +53,7 @@
         </tr>
     </table>
 </div>
-<div id="info" align="center">
+<div id="info" class="info">
     <div class="sub_title">Game Information</div>
     <div class="sub_sub_title">Graph</div>
     <div class="chart" id="chart_container">
@@ -63,14 +63,15 @@
     <div class="record" id="record"></div>
 </div>
 <div align="center">
-    <div class="sub_title" id="usage">Usage</div>
+    <div class="sub_title">Usage</div>
     <div class="text">
         Select your turn and AI strength, then press "Start" button.<br>
         Graph shows how good the AI seems to be. If the value is big, AI seems to win. If small, you seems to win.<br>
         You can check the graph after the game though you don't check the "Graph" checkbox.<br>
         Though you use level 8 or more, hint values are calculated in no more than level 8.<br>
     </div>
-    <summary class="summary">Strength</summary>
+    <p></p>
+    <div class="sub_title">Strength</div>
     <div class="text">
         Strength is adjusted by midgame lookahead, endgame lookahead, and depth of perfect searching. 
         If you use high level, the calculation time will be long.

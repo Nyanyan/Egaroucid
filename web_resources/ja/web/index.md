@@ -53,7 +53,7 @@
         </tr>
     </table>
 </div>
-<div id="info" align="center">
+<div id="info" class="info">
     <div class="sub_title">対局情報</div>
     <div class="sub_sub_title">予想最終石差グラフ</div>
     <div class="chart" id="chart_container">
@@ -63,14 +63,15 @@
     <div class="record" id="record"></div>
 </div>
 <div align="center">
-    <div class="sub_title" id="usage">使い方</div>
+    <div class="sub_title">使い方</div>
     <div class="text">
         手番とAIの強さを選択し、対局開始ボタンを押してください。<br>
         予想最終石差グラフは左が序盤、右が直近の手です。値が大きくなるほどAI有利と判断していて、0が互角です。<br>
         グラフ表示をオフにしても対局終了後にグラフが描画されます。<br>
         ヒントは最大でも7手読みの評価値ですので精度は悪めです。<br>
     </div>
-    <summary class="summary">AIの強さ</summary>
+    <p></p>
+    <div class="sub_title">AIの強さ</div>
     <div class="text">
         AIの強さは中盤の先読み手数、終盤の読み切り手数、及び完全読み手数で調整されます。
         レベルが上がると計算時間が増えるので、様子を見つつ設定してください。<br>
