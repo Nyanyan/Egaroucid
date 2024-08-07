@@ -144,16 +144,19 @@ struct LocalTTEntry {
     }
 };
 
-static thread_local LocalTTEntry lttable[MID_TO_END_DEPTH - END_FAST_DEPTH + 1][1 << 10];
+#define LOCAL_TT_SIZE 1024
+#define LOCAL_TT_SIZE_BIT 10
+
+static thread_local LocalTTEntry lttable[MID_TO_END_DEPTH - END_FAST_DEPTH + 1][LOCAL_TT_SIZE];
 
 inline uint32_t hash_bb(Board *board)
 {
-	return ((board->player * 0x9dda1c54cfe6b6e9ull) ^ (board->opponent * 0xa2e6c0300831e05aull)) >> 54;
+	return ((board->player * 0x9dda1c54cfe6b6e9ull) ^ (board->opponent * 0xa2e6c0300831e05aull)) >> (HW2 - LOCAL_TT_SIZE_BIT);
 }
 
 inline LocalTTEntry *get_ltt(Board *board, uint32_t n_discs)
 {
-	return lttable[HW2 - n_discs - END_FAST_DEPTH] + (hash_bb(board) & ((1 << 10) - 1));
+	return lttable[HW2 - n_discs - END_FAST_DEPTH] + hash_bb(board);
 }
 
 /*
