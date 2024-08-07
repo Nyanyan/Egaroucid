@@ -29,6 +29,8 @@
 #include "etc.hpp"
 #include "book.hpp"
 
+#include "endsearch_nws.hpp"
+
 inline int aspiration_search(Search *search, int alpha, int beta, int predicted_value, int depth, bool skipped, uint64_t legal, bool is_end_search, const bool *searching);
 
 /*
@@ -133,6 +135,24 @@ int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, uin
             v = -nega_scout(search, -beta, -alpha, depth, true, LEGAL_UNDEFINED, is_end_search, searching);
         search->pass();
         return v;
+    }
+    LocalTTEntry *tt = nullptr;
+    if (is_end_search && search->mpc_level == MPC_100_LEVEL && depth > END_FAST_DEPTH && depth <= MID_TO_END_DEPTH){
+        tt = get_ltt(&search->board, search->n_discs);
+        if (tt->cmp(&search->board)) {
+            if (beta <= tt->lower) {
+                return tt->lower;
+            }
+            if (tt->upper <= alpha) {
+                return tt->upper;
+            }
+            if (alpha < tt->lower) {
+                alpha = tt->lower;
+            }
+            if (tt->upper < beta) {
+                beta = tt->upper;
+            }
+        }
     }
     uint32_t hash_code = search->board.hash();
     uint_fast8_t moves[N_TRANSPOSITION_MOVES] = {TRANSPOSITION_TABLE_UNDEFINED, TRANSPOSITION_TABLE_UNDEFINED};
@@ -247,6 +267,16 @@ int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, uin
     #if USE_YBWC_NEGASCOUT
         }
     #endif
+    if (is_end_search && search->mpc_level == MPC_100_LEVEL && depth > END_FAST_DEPTH && depth <= MID_TO_END_DEPTH){
+        int l = -HW2, u = HW2;
+        if (first_alpha < v){
+            l = v;
+        }
+        if (v < first_beta){
+            u = v;
+        }
+        tt->set_score(&search->board, l, u);
+    }
     if (*searching && global_searching){
         transposition_table.reg(search, hash_code, depth, first_alpha, first_beta, v, best_move);
     }

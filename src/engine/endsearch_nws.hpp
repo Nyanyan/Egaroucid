@@ -147,7 +147,7 @@ struct LocalTTEntry {
 #define LOCAL_TT_SIZE 1024
 #define LOCAL_TT_SIZE_BIT 10
 
-static thread_local LocalTTEntry lttable[MID_TO_END_DEPTH - END_FAST_DEPTH + 1][LOCAL_TT_SIZE];
+static thread_local LocalTTEntry lttable[MID_TO_END_DEPTH - END_FAST_DEPTH][LOCAL_TT_SIZE];
 
 inline uint32_t hash_bb(Board *board)
 {
@@ -156,7 +156,7 @@ inline uint32_t hash_bb(Board *board)
 
 inline LocalTTEntry *get_ltt(Board *board, uint32_t n_discs)
 {
-	return lttable[HW2 - n_discs - END_FAST_DEPTH] + hash_bb(board);
+	return lttable[HW2 - n_discs - END_FAST_DEPTH - 1] + hash_bb(board);
 }
 
 /*
