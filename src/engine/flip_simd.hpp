@@ -44,51 +44,48 @@ class Flip{
 
         static inline __m128i calc_flip(__m128i OP, const uint_fast8_t place) {
     #ifdef USE_AVX512
-			auto bd = OP;
-			auto bp = _mm256_broadcastq_epi64 (bd);
-			auto bo = _mm256_permute4x64_epi64 (_mm256_castsi128_si256 (bd), 0x55);
+            auto bd = OP;
+            auto bp = _mm256_broadcastq_epi64 (bd);
+            auto bo = _mm256_permute4x64_epi64 (_mm256_castsi128_si256 (bd), 0x55);
 
-			auto ml = lrmask[place].v4[0];
-			auto mr = lrmask[place].v4[1];
-			auto rr = _mm256_and_si256 (bp, mr);
-			auto t0 = _mm256_srlv_epi64 (_mm256_set1_epi64x (-1), _mm256_lzcnt_epi64 (rr));
-			auto ll = _mm256_andnot_si256 (bo, ml);
-			auto t1 = _mm256_add_epi64 (ll, _mm256_set1_epi64x (-1));
-			auto t2 = _mm256_ternarylogic_epi64 (ml, t1, ll, 0x60);
-			auto k0 = _mm256_test_epi64_mask (bp, t2);
-			auto fl = _mm256_maskz_andnot_epi64 (k0, bp, t2);
-			auto t3 = _mm256_ternarylogic_epi64 (bo, mr, rr, 0x04);
-			auto k1 = _mm256_cmp_epi64_mask (t3, rr, _MM_CMPINT_LT);
-			auto f4 = _mm256_mask_ternarylogic_epi64 (fl, k1, t0, mr, 0xf2);
+            auto ml = lrmask[place].v4[0];
+            auto mr = lrmask[place].v4[1];
+            auto rr = _mm256_and_si256 (bp, mr);
+            auto t0 = _mm256_srlv_epi64 (_mm256_set1_epi64x (-1), _mm256_lzcnt_epi64 (rr));
+            auto ll = _mm256_andnot_si256 (bo, ml);
+            auto t1 = _mm256_add_epi64 (ll, _mm256_set1_epi64x (-1));
+            auto t2 = _mm256_ternarylogic_epi64 (ml, t1, ll, 0x60);
+            auto k0 = _mm256_test_epi64_mask (bp, t2);
+            auto fl = _mm256_maskz_andnot_epi64 (k0, bp, t2);
+            auto t3 = _mm256_ternarylogic_epi64 (bo, mr, rr, 0x04);
+            auto k1 = _mm256_cmp_epi64_mask (t3, rr, _MM_CMPINT_LT);
+            auto f4 = _mm256_mask_ternarylogic_epi64 (fl, k1, t0, mr, 0xf2);
 
-			auto f2 = _mm_or_si128 (_mm256_castsi256_si128 (f4), _mm256_extracti128_si256 (f4, 1));
+            auto f2 = _mm_or_si128 (_mm256_castsi256_si128 (f4), _mm256_extracti128_si256 (f4, 1));
 
-			return _mm_or_si128 (f2, _mm_shuffle_epi32 (f2, 0x4e));
+            return _mm_or_si128 (f2, _mm_shuffle_epi32 (f2, 0x4e));
     #else
-			auto bd = OP;
-			auto bp = _mm256_broadcastq_epi64 (bd);
-			auto bo = _mm256_permute4x64_epi64 (_mm256_castsi128_si256 (bd), 0x55);
+            __m256i bp = _mm256_broadcastq_epi64(OP);
+            __m256i bo = _mm256_permute4x64_epi64(_mm256_castsi128_si256(OP), 0x55);
 
-			auto ml = lrmask[place].v4[0];
-			auto mr = lrmask[place].v4[1];
-			auto rp = _mm256_and_si256 (bp, mr);
-			auto lo = _mm256_andnot_si256 (bo, ml);
-			auto cr = _mm256_cmpgt_epi64 (rp, _mm256_xor_si256 (_mm256_andnot_si256 (bo, mr), rp));
-			auto t1 = _mm256_or_si256 (_mm256_srlv_epi64 (rp, bb_shift[0]), rp);
-			auto t3 = _mm256_or_si256 (t1, _mm256_srlv_epi64 (t1, bb_shift[1]));
-			auto t5 = _mm256_or_si256 (t3, _mm256_srlv_epi64 (t3, bb_shift[2]));
-			auto rf = _mm256_and_si256 (_mm256_andnot_si256 (t5, mr), cr);
-			auto la = _mm256_add_epi64 (lo, _mm256_set1_epi64x (-1));
-			auto lp = _mm256_and_si256 (_mm256_xor_si256 (la, lo), ml);
-			auto ll = _mm256_andnot_si256 (bp, lp);
-			auto lf = _mm256_andnot_si256 (_mm256_cmpeq_epi64 (lp, ll), ll);
-			auto f4 = _mm256_or_si256 (rf, lf);
+            __m256i rp = _mm256_and_si256(bp, lrmask[place].v4[1]);
+            __m256i lo = _mm256_andnot_si256(bo, lrmask[place].v4[0]);
+            __m256i t5 = _mm256_or_si256(_mm256_srlv_epi64(rp, bb_shift[0]), rp);
+                    t5 = _mm256_or_si256(t5, _mm256_srlv_epi64(t5, bb_shift[1]));
+                    t5 = _mm256_or_si256(t5, _mm256_srlv_epi64(t5, bb_shift[2]));
+            __m256i rf = _mm256_cmpgt_epi64(rp, _mm256_xor_si256(_mm256_andnot_si256(bo, lrmask[place].v4[1]), rp));
+                    rf = _mm256_and_si256(_mm256_andnot_si256(t5, lrmask[place].v4[1]), rf);
 
-			auto fl = _mm_or_si128 (_mm256_castsi256_si128 (f4), _mm256_extracti128_si256 (f4, 1));
+            __m256i lp = _mm256_add_epi64(lo, _mm256_set1_epi64x(-1));
+                    lp = _mm256_and_si256(_mm256_xor_si256(lp, lo), lrmask[place].v4[0]);
+            __m256i lf = _mm256_andnot_si256(bp, lp);
+                    lf = _mm256_andnot_si256(_mm256_cmpeq_epi64(lp, lf), lf);
 
-			return _mm_or_si128 (fl, _mm_shuffle_epi32 (fl, 0x4e));
+            __m256i f4 = _mm256_or_si256(rf, lf);
+            __m128i fl = _mm_or_si128(_mm256_castsi256_si128(f4), _mm256_extracti128_si256(f4, 1));
+            return _mm_or_si128(fl, _mm_shuffle_epi32 (fl, 0x4e));
     #endif
-		}
+        }
 
         inline uint64_t calc_flip(const uint64_t player, const uint64_t opponent, const uint_fast8_t place) {
             pos = place;
@@ -122,7 +119,7 @@ void flip_init() {
             rmask = _mm256_srli_epi64(rmask, 8);
         }
     }
-	bb_shift[0] = _mm256_set_epi64x (7, 9, 8, 1);
-	bb_shift[1] = _mm256_set_epi64x (14, 18, 16, 2);
-	bb_shift[2] = _mm256_set_epi64x (21, 27, 24, 3);
+    bb_shift[0] = _mm256_set_epi64x (7, 9, 8, 1);
+    bb_shift[1] = _mm256_set_epi64x (14, 18, 16, 2);
+    bb_shift[2] = _mm256_set_epi64x (21, 27, 24, 3);
 }
