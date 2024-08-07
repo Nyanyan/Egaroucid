@@ -126,6 +126,36 @@ int nega_alpha_end_fast_nws(Search *search, int alpha, bool skipped, const bool 
     return v;
 }
 
+struct LocalTTEntry {
+    uint64_t player;
+    uint64_t opponent;
+    int lower;
+    int upper;
+    bool cmp (Board *board) {
+        return board->player == player && board->opponent == opponent;
+    }
+    void set_score (Board *board, int l, int u) {
+        player = board->player;
+        opponent = board->opponent;
+        lower = l;
+        upper = u;
+    }
+};
+
+static thread_local LocalTTEntry lttable[MID_TO_END_DEPTH - END_FAST_DEPTH + 1][1 << 10];
+
+inline uint32_t
+hash_bb (Board *board)
+{
+	return ((board->player * 0x9dda1c54cfe6b6e9ull) ^ (board->opponent * 0xa2e6c0300831e05aull)) >> 54;
+}
+
+inline LocalTTEntry *
+get_ltt (Board *board, uint32_t n_discs)
+{
+	return lttable[HW2 - n_discs - END_FAST_DEPTH] + (hash_bb (board) & ((1 << 10) - 1));
+}
+
 /*
     @brief Get a final score with some empties (NWS)
 
@@ -181,13 +211,29 @@ int nega_alpha_end_simple_nws(Search *search, int alpha, bool skipped, uint64_t 
         if (move_idx < 4)
             swap_next_best_move(move_list, move_idx, canput);
         search->move_noeval(&move_list[move_idx].flip);
+        Board nboard = search->board;
+        auto tt = get_ltt (&nboard, search->n_discs);
+        if (tt->cmp (&nboard)) {
+            if (alpha < tt->lower) {
+                v = tt->lower;
+                search->undo_noeval(&move_list[move_idx].flip);
+                break;
+            }
+            if (tt->upper <= alpha) {
+                search->undo_noeval(&move_list[move_idx].flip);
+                continue;
+            }
+        }
             g = -nega_alpha_end_simple_nws(search, -alpha - 1, false, move_list[move_idx].n_legal, searching);
         search->undo_noeval(&move_list[move_idx].flip);
         if (v < g){
             v = g;
-            if (alpha < v)
+            if (alpha < v) {
+                tt->set_score (&nboard, v, 64);
                 break;
+            }
         }
+        tt->set_score (&nboard, -64, g);
     }
     return v;
 }
@@ -258,14 +304,31 @@ int nega_alpha_end_nws(Search *search, int alpha, bool skipped, uint64_t legal, 
             }
             swap_next_best_move(move_list, move_idx, canput);
             search->move_noeval(&move_list[move_idx].flip);
+            Board nboard = search->board;
+            auto tt = get_ltt (&nboard, search->n_discs);
+            if (tt->cmp (&nboard)) {
+                if (alpha < tt->lower) {
+                    best_move = move_list[move_idx].flip.pos;
+                    v = tt->lower;
+                    search->undo_noeval(&move_list[move_idx].flip);
+                    break;
+                }
+                if (tt->upper <= alpha) {
+                    search->undo_noeval(&move_list[move_idx].flip);
+                    continue;
+                }
+            }
                 g = -nega_alpha_end_simple_nws(search, -alpha - 1, false, move_list[move_idx].n_legal, searching);
             search->undo_noeval(&move_list[move_idx].flip);
             if (v < g){
                 v = g;
                 best_move = move_list[move_idx].flip.pos;
-                if (alpha < v)
+                if (alpha < v) {
+                    tt->set_score (&nboard, v, 64);
                     break;
+                }
             }
+            tt->set_score (&nboard, -64, g);
         }
     } else{
         for (int move_idx = 0; move_idx < canput; ++move_idx){
@@ -276,14 +339,31 @@ int nega_alpha_end_nws(Search *search, int alpha, bool skipped, uint64_t legal, 
             }
             swap_next_best_move(move_list, move_idx, canput);
             search->move_endsearch(&move_list[move_idx].flip);
+            Board nboard = search->board;
+            auto tt = get_ltt (&nboard, search->n_discs);
+            if (tt->cmp (&nboard)) {
+                if (alpha < tt->lower) {
+                    best_move = move_list[move_idx].flip.pos;
+                    v = tt->lower;
+                    search->undo_endsearch(&move_list[move_idx].flip);
+                    break;
+                }
+                if (tt->upper <= alpha) {
+                    search->undo_endsearch(&move_list[move_idx].flip);
+                    continue;
+                }
+            }
                 g = -nega_alpha_end_nws(search, -alpha - 1, false, move_list[move_idx].n_legal, searching);
             search->undo_endsearch(&move_list[move_idx].flip);
             if (v < g){
                 v = g;
                 best_move = move_list[move_idx].flip.pos;
-                if (alpha < v)
+                if (alpha < v) {
+                    tt->set_score (&nboard, v, 64);
                     break;
+                }
             }
+            tt->set_score (&nboard, -64, g);
         }
     }
     if (*searching && global_searching){
