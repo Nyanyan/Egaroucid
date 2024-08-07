@@ -28,7 +28,7 @@
 // use SIMD
 #ifndef HAS_NO_AVX2
     #define USE_SIMD true
-    // #define HAS_AVX512
+    #define HAS_AVX512
     #ifdef HAS_AVX512
         #define USE_AVX512 true
     #endif
