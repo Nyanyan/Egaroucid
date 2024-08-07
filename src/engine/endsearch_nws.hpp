@@ -147,7 +147,7 @@ struct LocalTTEntry {
 #define LOCAL_TT_SIZE 1024
 #define LOCAL_TT_SIZE_BIT 10
 
-static thread_local LocalTTEntry lttable[MID_TO_END_DEPTH - END_FAST_DEPTH + 1][LOCAL_TT_SIZE];
+static thread_local LocalTTEntry lttable[MID_TO_END_DEPTH - END_FAST_DEPTH][LOCAL_TT_SIZE];
 
 inline uint32_t hash_bb(Board *board)
 {
@@ -298,76 +298,39 @@ int nega_alpha_end_nws(Search *search, int alpha, bool skipped, uint64_t legal, 
         ++idx;
     }
     move_list_evaluate_end_nws(search, move_list, moves, searching);
-    if (search->n_discs + 1 >= HW2 - END_SIMPLE_DEPTH){
-        for (int move_idx = 0; move_idx < canput && *searching; ++move_idx){
-            if (search->need_to_see_tt_loop){
-                if (transposition_cutoff_nws(search, hash_code, HW2 - search->n_discs, alpha, &v, moves)){
-                    return v;
-                }
+    for (int move_idx = 0; move_idx < canput; ++move_idx){
+        if (search->need_to_see_tt_loop){
+            if (transposition_cutoff_nws(search, hash_code, HW2 - search->n_discs, alpha, &v, moves)){
+                return v;
             }
-            swap_next_best_move(move_list, move_idx, canput);
-            search->move_noeval(&move_list[move_idx].flip);
-                Board nboard = search->board;
-                LocalTTEntry *tt = get_ltt(&nboard, search->n_discs);
-                if (tt->cmp(&nboard)) {
-                    if (alpha < tt->lower) {
-                        best_move = move_list[move_idx].flip.pos;
-                        v = tt->lower;
-                        search->undo_noeval(&move_list[move_idx].flip);
-                        break;
-                    }
-                    if (tt->upper <= alpha) {
-                        search->undo_noeval(&move_list[move_idx].flip);
-                        continue;
-                    }
-                }
-                g = -nega_alpha_end_simple_nws(search, -alpha - 1, false, move_list[move_idx].n_legal, searching);
-            search->undo_noeval(&move_list[move_idx].flip);
-            if (v < g){
-                v = g;
-                best_move = move_list[move_idx].flip.pos;
-                if (alpha < v) {
-                    tt->set_score(&nboard, v, 64);
+        }
+        swap_next_best_move(move_list, move_idx, canput);
+        search->move_endsearch(&move_list[move_idx].flip);
+            Board nboard = search->board;
+            LocalTTEntry *tt = get_ltt(&nboard, search->n_discs);
+            if (tt->cmp(&nboard)) {
+                if (alpha < tt->lower) {
+                    best_move = move_list[move_idx].flip.pos;
+                    v = tt->lower;
+                    search->undo_endsearch(&move_list[move_idx].flip);
                     break;
                 }
+                if (tt->upper <= alpha) {
+                    search->undo_endsearch(&move_list[move_idx].flip);
+                    continue;
+                }
             }
-            tt->set_score(&nboard, -64, g);
+            g = -nega_alpha_end_nws(search, -alpha - 1, false, move_list[move_idx].n_legal, searching);
+        search->undo_endsearch(&move_list[move_idx].flip);
+        if (v < g){
+            v = g;
+            best_move = move_list[move_idx].flip.pos;
+            if (alpha < v) {
+                tt->set_score(&nboard, v, 64);
+                break;
+            }
         }
-    } else{
-        for (int move_idx = 0; move_idx < canput; ++move_idx){
-            if (search->need_to_see_tt_loop){
-                if (transposition_cutoff_nws(search, hash_code, HW2 - search->n_discs, alpha, &v, moves)){
-                    return v;
-                }
-            }
-            swap_next_best_move(move_list, move_idx, canput);
-            search->move_endsearch(&move_list[move_idx].flip);
-                Board nboard = search->board;
-                LocalTTEntry *tt = get_ltt(&nboard, search->n_discs);
-                if (tt->cmp(&nboard)) {
-                    if (alpha < tt->lower) {
-                        best_move = move_list[move_idx].flip.pos;
-                        v = tt->lower;
-                        search->undo_endsearch(&move_list[move_idx].flip);
-                        break;
-                    }
-                    if (tt->upper <= alpha) {
-                        search->undo_endsearch(&move_list[move_idx].flip);
-                        continue;
-                    }
-                }
-                g = -nega_alpha_end_nws(search, -alpha - 1, false, move_list[move_idx].n_legal, searching);
-            search->undo_endsearch(&move_list[move_idx].flip);
-            if (v < g){
-                v = g;
-                best_move = move_list[move_idx].flip.pos;
-                if (alpha < v) {
-                    tt->set_score(&nboard, v, 64);
-                    break;
-                }
-            }
-            tt->set_score(&nboard, -64, g);
-        }
+        tt->set_score(&nboard, -64, g);
     }
     if (*searching && global_searching){
         transposition_table.reg(search, hash_code, HW2 - search->n_discs, alpha, alpha + 1, v, best_move);
