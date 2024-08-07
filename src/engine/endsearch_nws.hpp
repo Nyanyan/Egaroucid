@@ -281,11 +281,13 @@ int nega_alpha_end_nws(Search *search, int alpha, bool skipped, uint64_t legal, 
         search->pass_endsearch();
         return v;
     }
-    uint32_t hash_code = search->board.hash();
     uint_fast8_t moves[N_TRANSPOSITION_MOVES] = {TRANSPOSITION_TABLE_UNDEFINED, TRANSPOSITION_TABLE_UNDEFINED};
+    /*
+    uint32_t hash_code = search->board.hash();
     if (transposition_cutoff_nws(search, hash_code, HW2 - search->n_discs, alpha, &v, moves)){
         return v;
     }
+    */
     int best_move = TRANSPOSITION_TABLE_UNDEFINED;
     int g;
     const int canput = pop_count_ull(legal);
@@ -299,11 +301,13 @@ int nega_alpha_end_nws(Search *search, int alpha, bool skipped, uint64_t legal, 
     }
     move_list_evaluate_end_nws(search, move_list, moves, searching);
     for (int move_idx = 0; move_idx < canput; ++move_idx){
+        /*
         if (search->need_to_see_tt_loop){
             if (transposition_cutoff_nws(search, hash_code, HW2 - search->n_discs, alpha, &v, moves)){
                 return v;
             }
         }
+        */
         swap_next_best_move(move_list, move_idx, canput);
         search->move_endsearch(&move_list[move_idx].flip);
             Board nboard = search->board;
@@ -332,8 +336,10 @@ int nega_alpha_end_nws(Search *search, int alpha, bool skipped, uint64_t legal, 
         }
         tt->set_score(&nboard, -64, g);
     }
+    /*
     if (*searching && global_searching){
         transposition_table.reg(search, hash_code, HW2 - search->n_discs, alpha, alpha + 1, v, best_move);
     }
+    */
     return v;
 }
