@@ -55,9 +55,9 @@ class Flip{
             __m256i fl = _mm256_maskz_andnot_epi64(_mm256_test_epi64_mask(bp, t2), bp, t2);
             __m256i t3 = _mm256_ternarylogic_epi64(bo, lrmask[place].v4[1], rr, 0x04);
 
-            __m256i f4 = _mm256_mask_ternarylogic_epi64 (fl, _mm256_cmp_epi64_mask(t3, rr, _MM_CMPINT_LT), t0, lrmask[place].v4[1], 0xf2);
-            __m128i f2 = _mm_or_si128 (_mm256_castsi256_si128 (f4), _mm256_extracti128_si256 (f4, 1));
-            return _mm_or_si128 (f2, _mm_shuffle_epi32 (f2, 0x4e));
+            __m256i f4 = _mm256_mask_ternarylogic_epi64(fl, _mm256_cmp_epi64_mask(t3, rr, _MM_CMPINT_LT), t0, lrmask[place].v4[1], 0xf2);
+            __m128i f2 = _mm_or_si128(_mm256_castsi256_si128(f4), _mm256_extracti128_si256(f4, 1));
+            return _mm_or_si128(f2, _mm_shuffle_epi32(f2, 0x4e));
     #else
             __m256i bp = _mm256_broadcastq_epi64(OP);
             __m256i bo = _mm256_permute4x64_epi64(_mm256_castsi128_si256(OP), 0x55);
@@ -77,7 +77,7 @@ class Flip{
 
             __m256i f4 = _mm256_or_si256(rf, lf);
             __m128i fl = _mm_or_si128(_mm256_castsi256_si128(f4), _mm256_extracti128_si256(f4, 1));
-            return _mm_or_si128(fl, _mm_shuffle_epi32 (fl, 0x4e));
+            return _mm_or_si128(fl, _mm_shuffle_epi32(fl, 0x4e));
     #endif
         }
 
@@ -113,7 +113,7 @@ void flip_init() {
             rmask = _mm256_srli_epi64(rmask, 8);
         }
     }
-    bb_shift[0] = _mm256_set_epi64x (7, 9, 8, 1);
-    bb_shift[1] = _mm256_set_epi64x (14, 18, 16, 2);
-    bb_shift[2] = _mm256_set_epi64x (21, 27, 24, 3);
+    bb_shift[0] = _mm256_set_epi64x(7, 9, 8, 1);
+    bb_shift[1] = _mm256_set_epi64x(14, 18, 16, 2);
+    bb_shift[2] = _mm256_set_epi64x(21, 27, 24, 3);
 }
