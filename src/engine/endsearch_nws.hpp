@@ -223,6 +223,7 @@ int nega_alpha_end_simple_nws(Search *search, int alpha, bool skipped, uint64_t 
                     break;
                 }
                 if (tt->upper <= alpha) {
+                    v = tt->upper;
                     search->undo_noeval(&move_list[move_idx].flip);
                     continue;
                 }
@@ -320,6 +321,7 @@ int nega_alpha_end_nws(Search *search, int alpha, bool skipped, uint64_t legal, 
                     break;
                 }
                 if (tt->upper <= alpha) {
+                    v = tt->upper;
                     search->undo_endsearch(&move_list[move_idx].flip);
                     continue;
                 }
