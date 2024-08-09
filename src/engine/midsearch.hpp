@@ -390,9 +390,9 @@ std::pair<int, int> first_nega_scout_legal(Search *search, int alpha, int beta, 
             }
         #endif
     }
-    if (*searching && global_searching && is_all_legal){
-        transposition_table.reg(search, hash_code, depth, first_alpha, beta, v, best_move);
-    }
+    //if (*searching && global_searching && is_all_legal){
+    //    transposition_table.reg(search, hash_code, depth, first_alpha, beta, v, best_move);
+    //}
     return std::make_pair(v, best_move);
 }
 
@@ -556,7 +556,7 @@ Analyze_result first_nega_scout_analyze(Search *search, int alpha, int beta, int
             v = res.alt_score;
             best_move = res.alt_move;
         }
-        transposition_table.reg(search, hash_code, depth, first_alpha, beta, v, best_move);
+        //transposition_table.reg(search, hash_code, depth, first_alpha, beta, v, best_move);
     }
     return res;
 }
