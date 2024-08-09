@@ -448,7 +448,7 @@ Analyze_result first_nega_scout_analyze(Search *search, int alpha, int beta, int
         transposition_table.get_moves_any_level(&search->board, hash_code, moves);
         move_list_evaluate(search, move_list, moves, depth, alpha, beta, searching);
 
-        #if USE_YBWC_NEGASCOUT && false
+        #if USE_YBWC_NEGASCOUT_ANALYZE
             if (search->use_multi_thread && depth - 1 >= YBWC_MID_SPLIT_MIN_DEPTH){
                 move_list_sort(move_list);
                 bool book_used = false;
@@ -513,7 +513,7 @@ Analyze_result first_nega_scout_analyze(Search *search, int alpha, int beta, int
                         }
                     }
                 }
-        #if USE_YBWC_NEGASCOUT && false
+        #if USE_YBWC_NEGASCOUT_ANALYZE
             }
         #endif
     }
