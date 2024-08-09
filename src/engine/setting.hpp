@@ -213,7 +213,7 @@
 #define USE_YBWC_NEGASCOUT true
 
 // aspiration search in negascout
-#define USE_ASPIRATION_NEGASCOUT true
+#define USE_ASPIRATION_NEGASCOUT false
 
 // Hash level setting
 #define USE_CHANGEABLE_HASH_LEVEL true

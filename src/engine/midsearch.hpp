@@ -163,7 +163,7 @@ int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, uin
         }
     #endif
     int g;
-    #if USE_ASPIRATION_NEGASCOUT && false
+    #if USE_ASPIRATION_NEGASCOUT
         if (beta - alpha >= 4 && depth >= 5){
             int l = -HW2, u = HW2;
             transposition_table.get_bounds(search, hash_code, depth - 5, &l, &u);
@@ -174,7 +174,7 @@ int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, uin
     #endif
     move_list_evaluate(search, move_list, moves, depth, alpha, beta, searching);
     #if USE_YBWC_NEGASCOUT
-        if (search->use_multi_thread && ((!is_end_search && depth - 1 >= YBWC_MID_SPLIT_MIN_DEPTH) || (is_end_search && depth - 1 >= YBWC_MID_SPLIT_MIN_DEPTH_END))){
+        if (search->use_multi_thread && ((!is_end_search && depth - 1 >= YBWC_MID_SPLIT_MIN_DEPTH) || (is_end_search && depth - 1 >= YBWC_END_SPLIT_MIN_DEPTH))){
             move_list_sort(move_list);
             /*
             if (depth >= 26){
