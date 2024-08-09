@@ -327,7 +327,7 @@ std::pair<int, int> first_nega_scout_legal(Search *search, int alpha, int beta, 
                 alpha = v;
             }
         }
-        legal ^= 1ULL << clog.pos;
+        legal &= ~(1ULL << clog.pos);
     }
     uint32_t hash_code = search->board.hash();
     if (alpha < beta && legal){
@@ -441,7 +441,7 @@ Analyze_result first_nega_scout_analyze(Search *search, int alpha, int beta, int
                 alpha = res.alt_score;
             }
         }
-        legal ^= 1ULL << clog.pos;
+        legal &= ~(1ULL << clog.pos);
     }
     uint32_t hash_code = search->board.hash();
     if (alpha < beta && (legal & (1ULL << played_move))){

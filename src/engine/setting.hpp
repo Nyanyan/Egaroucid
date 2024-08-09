@@ -208,7 +208,7 @@
 // MPC pre calculation
 #define USE_MPC_PRE_CALCULATION true
 
-// YBWC in negascout
+// YBWC
 #define USE_YBWC_NWS true
 #define USE_YBWC_NEGASCOUT true
 
