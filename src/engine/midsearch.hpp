@@ -230,42 +230,44 @@ int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, uin
     return v;
 }
 
-/*
-    @brief aspiration search used in endgame search
+#if USE_ASPIRATION_NEGASCOUT
+    /*
+        @brief aspiration search used in endgame search
 
-    Used in PV node, if predicted value is available
-    Based on MTD-f algorithm
+        Used in PV node, if predicted value is available
+        Based on MTD-f algorithm
 
-    @param search               search information
-    @param alpha                alpha value
-    @param beta                 beta value
-    @param predicted_value      value prediction
-    @param depth                remaining depth
-    @param is_end_search        search till the end?
-    @param is_main_search       is this main search? (used for logging)
-    @param best_move            previously calculated best move
-    @param clogs                previously found clog moves
-    @param legal                legal moves in bitboard
-    @return pair of value and best move
-*/
-inline int aspiration_search(Search *search, int alpha, int beta, int predicted_value, int depth, bool skipped, uint64_t legal, bool is_end_search, const bool *searching){
-    if (predicted_value < alpha || beta <= predicted_value)
+        @param search               search information
+        @param alpha                alpha value
+        @param beta                 beta value
+        @param predicted_value      value prediction
+        @param depth                remaining depth
+        @param is_end_search        search till the end?
+        @param is_main_search       is this main search? (used for logging)
+        @param best_move            previously calculated best move
+        @param clogs                previously found clog moves
+        @param legal                legal moves in bitboard
+        @return pair of value and best move
+    */
+    inline int aspiration_search(Search *search, int alpha, int beta, int predicted_value, int depth, bool skipped, uint64_t legal, bool is_end_search, const bool *searching){
+        if (predicted_value < alpha || beta <= predicted_value)
+            return nega_scout(search, alpha, beta, depth, false, LEGAL_UNDEFINED, is_end_search, searching);
+        int pred_alpha = predicted_value - 1;
+        int pred_beta = predicted_value + 1;
+        if ((predicted_value % 2) && is_end_search){
+            --pred_alpha;
+            ++pred_beta;
+        }
+        pred_alpha = std::max(pred_alpha, alpha);
+        pred_beta = std::min(pred_beta, beta);
+        if (pred_beta - pred_alpha > 0){
+            int g = nega_scout(search, pred_alpha, pred_beta, depth, false, LEGAL_UNDEFINED, is_end_search, searching);
+            if (pred_alpha < g && g < pred_beta)
+                return g;
+        }
         return nega_scout(search, alpha, beta, depth, false, LEGAL_UNDEFINED, is_end_search, searching);
-    int pred_alpha = predicted_value - 1;
-    int pred_beta = predicted_value + 1;
-    if ((predicted_value % 2) && is_end_search){
-        --pred_alpha;
-        ++pred_beta;
     }
-    pred_alpha = std::max(pred_alpha, alpha);
-    pred_beta = std::min(pred_beta, beta);
-    if (pred_beta - pred_alpha > 0){
-        int g = nega_scout(search, pred_alpha, pred_beta, depth, false, LEGAL_UNDEFINED, is_end_search, searching);
-        if (pred_alpha < g && g < pred_beta)
-            return g;
-    }
-    return nega_scout(search, alpha, beta, depth, false, LEGAL_UNDEFINED, is_end_search, searching);
-}
+#endif
 
 /*
     @brief Wrapper of nega_scout
@@ -366,9 +368,9 @@ std::pair<int, int> first_nega_scout_legal(Search *search, int alpha, int beta, 
             }
         #endif
     }
-    //if (*searching && global_searching && is_all_legal){
-    //    transposition_table.reg(search, hash_code, depth, first_alpha, beta, v, best_move);
-    //}
+    if (*searching && global_searching && is_all_legal){
+        transposition_table.reg(search, hash_code, depth, first_alpha, beta, v, best_move);
+    }
     return std::make_pair(v, best_move);
 }
 
