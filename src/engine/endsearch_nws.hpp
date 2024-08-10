@@ -27,6 +27,7 @@
 #include "parallel.hpp"
 #include "ybwc.hpp"
 
+
 #if USE_SIMD
     #include "endsearch_nws_last_simd.hpp"
 #else
@@ -73,14 +74,13 @@ int nega_alpha_end_fast_nws(Search *search, int alpha, bool skipped, const bool 
     Board board0;
     search->board.copy(&board0);
     int v = -SCORE_INF;
-    uint_fast8_t parity0 = search->parity;
     int g;
     Flip flip;
     uint_fast8_t cell;
     uint64_t prioritymoves = legal;
     #if USE_END_PO
-        prioritymoves &= parity_table[parity0];
-        if (prioritymoves == 0) // all even
+        prioritymoves &= empty1_bb(search->board.player, search->board.opponent);
+        if (prioritymoves == 0)
             prioritymoves = legal;
     #endif
 
@@ -107,11 +107,9 @@ int nega_alpha_end_fast_nws(Search *search, int alpha, bool skipped, const bool 
             for (cell = first_bit(&prioritymoves); prioritymoves; cell = next_bit(&prioritymoves)) {
                 calc_flip(&flip, &board0, cell);
                 board0.move_copy(&flip, &search->board);
-                search->parity = parity0 ^ cell_div4[cell];
                 g = -nega_alpha_end_fast_nws(search, -alpha - 1, false, searching);
                 if (alpha < g) {
                     --search->n_discs;
-                    search->parity = parity0;
                     board0.copy(&search->board);
                     return g;
                 }
@@ -120,7 +118,6 @@ int nega_alpha_end_fast_nws(Search *search, int alpha, bool skipped, const bool 
             }
         } while ((prioritymoves = legal));
         --search->n_discs;
-        search->parity = parity0;
     }
     board0.copy(&search->board);
     return v;
