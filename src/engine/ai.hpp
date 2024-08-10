@@ -297,7 +297,7 @@ inline Search_result tree_search_legal(Board board, int depth, uint_fast8_t mpc_
         */
     }
     thread_pool.reset_unavailable();
-    //delete_tt(&board, 6);
+    delete_tt(&board, 6);
     return res;
 }
 
