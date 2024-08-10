@@ -203,7 +203,7 @@ int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, uin
                     }
                 }
                 search->move(&move_list[move_idx].flip);
-                    if (move_idx == 0){
+                    if (v == -SCORE_INF){
                         g = -nega_scout(search, -beta, -alpha, depth - 1, false, move_list[move_idx].n_legal, is_end_search, searching);
                     } else{
                         g = -nega_alpha_ordering_nws(search, -alpha - 1, depth - 1, false, move_list[move_idx].n_legal, is_end_search, searching);
@@ -345,7 +345,7 @@ std::pair<int, int> first_nega_scout_legal(Search *search, int alpha, int beta, 
                 for (int move_idx = 0; move_idx < canput && *searching; ++move_idx){
                     swap_next_best_move(move_list, move_idx, canput);
                     search->move(&move_list[move_idx].flip);
-                        if (move_idx == 0){
+                        if (v == -SCORE_INF){
                             g = -nega_scout(search, -beta, -alpha, depth - 1, false, move_list[move_idx].n_legal, is_end_search, searching);
                         } else{
                             g = -nega_alpha_ordering_nws(search, -alpha - 1, depth - 1, false, move_list[move_idx].n_legal, is_end_search, searching);
