@@ -334,29 +334,6 @@ inline void tree_search_hint(Board board, int depth, uint_fast8_t mpc_level, boo
     thread_pool.reset_unavailable();
 }
 
-void delete_tt(Board *board, int depth) {
-    transposition_table.del(board, board->hash());
-    if (depth == 0) {
-        return;
-    }
-    uint64_t legal = board->get_legal();
-    if (legal == 0) {
-        board->pass();
-            if (board->get_legal()) {
-                delete_tt(board, depth);
-            }
-        board->pass();
-        return;
-    }
-    Flip flip;
-    for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)) {
-        calc_flip(&flip, board, cell);
-        board->move_board(&flip);
-            delete_tt(board, depth - 1);
-        board->undo_board(&flip);
-    }
-}
-
 /*
     @brief Get a result of a search with book or search
 
@@ -408,7 +385,6 @@ Search_result ai_legal(Board board, int level, bool use_book, int book_acc_level
         res = tree_search_legal(board, depth, mpc_level, show_log, use_legal, use_multi_thread);
         res.value *= value_sign;
     }
-    delete_tt(&board, 2);
     return res;
 }
 
@@ -460,7 +436,6 @@ Analyze_result ai_analyze(Board board, int level, bool use_multi_thread, uint_fa
     uint64_t strt = tim();
     bool searching = true;
     Analyze_result res = first_nega_scout_analyze(&search, -SCORE_MAX, SCORE_MAX, depth, is_end_search, clogs, clog_depth, played_move, strt, &searching);
-    delete_tt(&board, 2);
     return res;
 }
 
@@ -497,7 +472,6 @@ Search_result ai_accept_loss(Board board, int level, int acceptable_loss){
     res.value = use_value;
     res.is_end_search = board.n_discs() == HW2 - 1;
     res.probability = SELECTIVITY_PERCENTAGE[MPC_100_LEVEL];
-    delete_tt(&board, 2);
     return res;
 }
 
@@ -519,5 +493,4 @@ void ai_hint(Board board, int level, bool use_book, int book_acc_level, bool use
     if (show_log)
         std::cerr << "level status " << level << " " << board.n_discs() - 4 << " discs depth " << depth << "@" << SELECTIVITY_PERCENTAGE[mpc_level] << "%" << std::endl;
     tree_search_hint(board, depth, mpc_level, use_multi_thread, show_log, legal, n_display, values, hint_types);
-    delete_tt(&board, 2);
 }

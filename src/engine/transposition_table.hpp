@@ -955,3 +955,26 @@ inline bool transposition_cutoff_nws_bestmove(Search *search, uint32_t hash_code
     //}
     return false;
 }
+
+void delete_tt(Board *board, int depth) {
+    transposition_table.del(board, board->hash());
+    if (depth == 0) {
+        return;
+    }
+    uint64_t legal = board->get_legal();
+    if (legal == 0) {
+        board->pass();
+            if (board->get_legal()) {
+                delete_tt(board, depth);
+            }
+        board->pass();
+        return;
+    }
+    Flip flip;
+    for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)) {
+        calc_flip(&flip, board, cell);
+        board->move_board(&flip);
+            delete_tt(board, depth - 1);
+        board->undo_board(&flip);
+    }
+}
