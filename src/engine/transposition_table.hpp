@@ -690,6 +690,20 @@ class Transposition_table{
             return false;
         }
 
+        inline void del(const Board *board, uint32_t hash){
+            Hash_node *node = get_node(hash);
+            uint32_t node_level;
+            for (uint_fast8_t i = 0; i < TRANSPOSITION_TABLE_N_LOOP; ++i){
+                node->lock.lock();
+                    if (node->board.player == board->player && node->board.opponent == board->opponent){
+                        node->init();
+                    }
+                node->lock.unlock();
+                ++hash;
+                node = get_node(hash);
+            }
+        }
+
         inline bool has_node(const Search *search, uint32_t hash, int depth){
             Hash_node *node = get_node(hash);
             const uint32_t level = get_level_common(depth, search->mpc_level);

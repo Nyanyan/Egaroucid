@@ -534,7 +534,7 @@ Analyze_result first_nega_scout_analyze(Search *search, int alpha, int beta, int
             v = res.alt_score;
             best_move = res.alt_move;
         }
-        //transposition_table.reg(search, hash_code, depth, first_alpha, beta, v, best_move);
+        transposition_table.reg(search, hash_code, depth, first_alpha, beta, v, best_move);
     }
     return res;
 }
