@@ -277,7 +277,6 @@ int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, uin
     @param search               search information
     @param alpha                alpha value
     @param beta                 beta value
-    @param predicted_value      value prediction
     @param depth                remaining depth
     @param is_end_search        search till the end?
     @param is_main_search       is this main search? (used for logging)
@@ -286,7 +285,7 @@ int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, uin
     @param legal                legal moves in bitboard
     @return pair of value and best move
 */
-std::pair<int, int> first_nega_scout_legal(Search *search, int alpha, int beta, int predicted_value, int depth, bool is_end_search, const std::vector<Clog_result> clogs, uint64_t legal, uint64_t strt, bool *searching){
+std::pair<int, int> first_nega_scout_legal(Search *search, int alpha, int beta, int depth, bool is_end_search, const std::vector<Clog_result> clogs, uint64_t legal, uint64_t strt, bool *searching){
     ++search->n_nodes;
     #if USE_SEARCH_STATISTICS
         ++search->n_nodes_discs[search->n_discs];
@@ -389,8 +388,8 @@ std::pair<int, int> first_nega_scout_legal(Search *search, int alpha, int beta, 
     @param clogs                previously found clog moves
     @return pair of value and best move
 */
-std::pair<int, int> first_nega_scout(Search *search, int alpha, int beta, int predicted_value, int depth, bool is_end_search, const std::vector<Clog_result> clogs, uint64_t strt, bool *searching){
-    return first_nega_scout_legal(search, alpha, beta, predicted_value, depth, is_end_search, clogs, search->board.get_legal(), strt, searching);
+std::pair<int, int> first_nega_scout(Search *search, int alpha, int beta, int depth, bool is_end_search, const std::vector<Clog_result> clogs, uint64_t strt, bool *searching){
+    return first_nega_scout_legal(search, alpha, beta, depth, is_end_search, clogs, search->board.get_legal(), strt, searching);
 }
 
 Analyze_result first_nega_scout_analyze(Search *search, int alpha, int beta, int depth, bool is_end_search, const std::vector<Clog_result> clogs, int clog_depth, uint_fast8_t played_move, uint64_t strt, bool *searching){

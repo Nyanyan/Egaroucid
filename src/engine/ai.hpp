@@ -54,7 +54,7 @@ Search_result iterative_deepening_search(Board board, int depth, uint_fast8_t mp
         Search search;
         search.init(&board, search_mpc_level, use_multi_thread, false, !is_last_search);
         bool searching = true;
-        std::pair<int, int> id_result = first_nega_scout_legal(&search, -SCORE_MAX, SCORE_MAX, result.value, search_depth, search_is_end_search, clogs, use_legal, strt, &searching);
+        std::pair<int, int> id_result = first_nega_scout_legal(&search, -SCORE_MAX, SCORE_MAX, search_depth, search_is_end_search, clogs, use_legal, strt, &searching);
         result.nodes += search.n_nodes;
         if (result.value != SCORE_UNDEFINED && !search_is_end_search){
             double n_value = (0.9 * result.value + 1.1 * id_result.first) / 2.0;
@@ -297,6 +297,7 @@ inline Search_result tree_search_legal(Board board, int depth, uint_fast8_t mpc_
         */
     }
     thread_pool.reset_unavailable();
+    //delete_tt(&board, 6);
     return res;
 }
 
