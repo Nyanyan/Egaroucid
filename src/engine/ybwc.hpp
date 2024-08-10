@@ -32,6 +32,7 @@
 #define YBWC_PUSHED 127
 
 int nega_alpha_ordering_nws(Search *search, int alpha, int depth, bool skipped, uint64_t legal, bool is_end_search, const bool *searching);
+//int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, uint64_t legal, bool is_end_search, const bool *searching);
 
 /*
     @brief Wrapper for parallel NWS (Null Window Search)
@@ -63,6 +64,7 @@ Parallel_task ybwc_do_task_nws(uint64_t player, uint64_t opponent, int_fast8_t n
     calc_eval_features(&search.board, &search.eval);
     Parallel_task task;
     task.value = -nega_alpha_ordering_nws(&search, alpha, depth, false, legal, is_end_search, searching);
+    //task.value = -nega_scout(&search, alpha, alpha + 1, depth, false, legal, is_end_search, searching);
     if (!(*searching))
         task.value = SCORE_UNDEFINED;
     task.n_nodes = search.n_nodes;
