@@ -187,7 +187,7 @@
     @brief search settings
 */
 // parity ordering
-#define USE_END_PO true
+#define USE_END_PO false
 
 // stability cut
 #define USE_END_SC true
