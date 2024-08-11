@@ -873,7 +873,7 @@ inline bool transposition_cutoff(Search *search, uint32_t hash_code, int depth, 
     if (*alpha < lower){
         *alpha = lower;
     }
-    if(upper < *beta){
+    if (upper < *beta){
         *beta = upper;
     }
     //}
@@ -898,7 +898,7 @@ inline bool transposition_cutoff_bestmove(Search *search, uint32_t hash_code, in
     if (*alpha < lower){
         *alpha = lower;
     }
-    if(upper < *beta){
+    if (upper < *beta){
         *beta = upper;
     }
     //}

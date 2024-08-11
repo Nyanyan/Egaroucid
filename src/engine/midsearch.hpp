@@ -97,11 +97,11 @@ inline int nega_alpha_eval1(Search *search, int alpha, int beta, bool skipped){
 int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, uint64_t legal, bool is_end_search, const bool *searching){
     if (!global_searching || !(*searching))
         return SCORE_UNDEFINED;
-    //if (alpha + 1 == beta)
-    //    return nega_alpha_ordering_nws(search, alpha, depth, skipped, legal, is_end_search, searching);
-    //if (is_end_search && search->n_discs == 60){
-    //    return last4(search, alpha, beta);
-    //}
+    if (alpha + 1 == beta)
+        return nega_alpha_ordering_nws(search, alpha, depth, skipped, legal, is_end_search, searching);
+    if (is_end_search && search->n_discs == 60){
+        return last4(search, alpha, beta);
+    }
     if (search->n_discs == HW2){
         return end_evaluate(&search->board);
     }
@@ -206,17 +206,13 @@ int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, uin
                     }
                 }
                 search->move(&move_list[move_idx].flip);
-                    g = -nega_scout(search, -beta, -alpha, depth - 1, false, move_list[move_idx].n_legal, is_end_search, searching);
-                    /*
                     if (v == -SCORE_INF){
                         g = -nega_scout(search, -beta, -alpha, depth - 1, false, move_list[move_idx].n_legal, is_end_search, searching);
                     } else{
-                        g = -nega_scout(search, -alpha - 1, alpha, depth - 1, false, move_list[move_idx].n_legal, is_end_search, searching);
-                        //g = -nega_alpha_ordering_nws(search, -alpha - 1, depth - 1, false, move_list[move_idx].n_legal, is_end_search, searching);
+                        g = -nega_alpha_ordering_nws(search, -alpha - 1, depth - 1, false, move_list[move_idx].n_legal, is_end_search, searching);
                         if (alpha < g && g < beta)
                             g = -nega_scout(search, -beta, -g, depth - 1, false, move_list[move_idx].n_legal, is_end_search, searching);
                     }
-                    */
                 search->undo(&move_list[move_idx].flip);
                 if (v < g){
                     v = g;
@@ -232,7 +228,8 @@ int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, uin
         }
     #endif
     if (*searching && global_searching){
-        transposition_table.reg(search, hash_code, depth, first_alpha, first_beta, v, best_move);
+        //transposition_table.reg(search, hash_code, depth, first_alpha, first_beta, v, best_move);
+        transposition_table.reg(search, hash_code, depth, alpha, beta, v, best_move);
     }
     return v;
 }
@@ -349,18 +346,14 @@ std::pair<int, int> first_nega_scout_legal(Search *search, int alpha, int beta, 
                 for (int move_idx = 0; move_idx < canput && *searching; ++move_idx){
                     swap_next_best_move(move_list, move_idx, canput);
                     search->move(&move_list[move_idx].flip);
-                        g = -nega_scout(search, -beta, -alpha, depth - 1, false, move_list[move_idx].n_legal, is_end_search, searching);
-                        /*
                         if (v == -SCORE_INF){
                             g = -nega_scout(search, -beta, -alpha, depth - 1, false, move_list[move_idx].n_legal, is_end_search, searching);
                         } else{
-                            g = -nega_scout(search, -alpha - 1, alpha, depth - 1, false, move_list[move_idx].n_legal, is_end_search, searching);
-                            //g = -nega_alpha_ordering_nws(search, -alpha - 1, depth - 1, false, move_list[move_idx].n_legal, is_end_search, searching);
+                            g = -nega_alpha_ordering_nws(search, -alpha - 1, depth - 1, false, move_list[move_idx].n_legal, is_end_search, searching);
                             if (alpha < g && g < beta){
                                 g = -nega_scout(search, -beta, -g, depth - 1, false, move_list[move_idx].n_legal, is_end_search, searching);
                             }
                         }
-                        */
                     search->undo(&move_list[move_idx].flip);
                     if (v < g){
                         v = g;
@@ -377,7 +370,8 @@ std::pair<int, int> first_nega_scout_legal(Search *search, int alpha, int beta, 
         #endif
     }
     if (*searching && global_searching && is_all_legal){
-        transposition_table.reg(search, hash_code, depth, first_alpha, beta, v, best_move);
+        //transposition_table.reg(search, hash_code, depth, first_alpha, beta, v, best_move);
+        transposition_table.reg(search, hash_code, depth, alpha, beta, v, best_move);
     }
     return std::make_pair(v, best_move);
 }
@@ -498,8 +492,7 @@ Analyze_result first_nega_scout_analyze(Search *search, int alpha, int beta, int
                             if (res.alt_score == -SCORE_INF){
                                 g = -nega_scout(search, -beta, -alpha, depth - 1, false, move_list[move_idx].n_legal, is_end_search, searching);
                             } else{
-                                g = -nega_scout(search, -alpha - 1, alpha, depth - 1, false, move_list[move_idx].n_legal, is_end_search, searching);
-                                //g = -nega_alpha_ordering_nws(search, -alpha - 1, depth - 1, false, move_list[move_idx].n_legal, is_end_search, searching);
+                                g = -nega_alpha_ordering_nws(search, -alpha - 1, depth - 1, false, move_list[move_idx].n_legal, is_end_search, searching);
                                 if (alpha < g && g < beta){
                                     g = -nega_scout(search, -beta, -g, depth - 1, false, move_list[move_idx].n_legal, is_end_search, searching);
                                 }
@@ -541,7 +534,8 @@ Analyze_result first_nega_scout_analyze(Search *search, int alpha, int beta, int
             v = res.alt_score;
             best_move = res.alt_move;
         }
-        transposition_table.reg(search, hash_code, depth, first_alpha, beta, v, best_move);
+        //transposition_table.reg(search, hash_code, depth, first_alpha, beta, v, best_move);
+        transposition_table.reg(search, hash_code, depth, alpha, beta, v, best_move);
     }
     return res;
 }
