@@ -356,7 +356,7 @@ std::pair<int, int> first_nega_scout_legal(Search *search, int alpha, int beta, 
                             }
                         }
                     search->undo(&move_list[move_idx].flip);
-                    std::cerr << move_idx << " " << idx_to_coord(move_list[move_idx].flip.pos) << " " << g << " " << alpha << "," << beta << std::endl;
+                    //std::cerr << move_idx << " " << idx_to_coord(move_list[move_idx].flip.pos) << " " << g << " " << alpha << "," << beta << std::endl;
                     if (v < g){
                         v = g;
                         best_move = move_list[move_idx].flip.pos;
