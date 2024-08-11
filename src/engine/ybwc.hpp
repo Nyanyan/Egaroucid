@@ -203,31 +203,25 @@ inline int ybwc_split_nws(Search *search, int alpha, int depth, uint64_t legal, 
         int next_alpha = *alpha;
         for (int move_idx = 1; move_idx < canput && n_searching && *searching; ++move_idx){
             if (move_list[move_idx].flip.flip){
-                /*
                 if (search->need_to_see_tt_loop && !need_best_move){
                     if (transposition_cutoff_bestmove(search, hash_code, depth, alpha, beta, v, best_move)){
                         n_searching = false;
                         break;
                     }
                 }
-                */
                 bool move_done = false, serial_searched = false;
                 search->move(&move_list[move_idx].flip);
-                    /*
                     int ybwc_split_state = ybwc_split_nws(search, -(*alpha) - 1, depth - 1, move_list[move_idx].n_legal, is_end_search, &n_searching, move_list[move_idx].flip.pos, move_idx, canput, running_count, parallel_tasks);
                     if (ybwc_split_state == YBWC_PUSHED){
                         ++running_count;
                     } else{
                         if (ybwc_split_state == YBWC_NOT_PUSHED){
-                    */
                             g = -nega_alpha_ordering_nws(search, -(*alpha) - 1, depth - 1, false, move_list[move_idx].n_legal, is_end_search, searching);
                             serial_searched = true;
-                    /*
                         } else{
                             g = -ybwc_split_state;
                             ++search->n_nodes;
                         }
-                    */
                         if (*searching){
                             if (*v < g){
                                 *v = g;
@@ -241,14 +235,11 @@ inline int ybwc_split_nws(Search *search, int alpha, int depth, uint64_t legal, 
                                 move_done = true;
                             }
                         }
-                    //}
+                    }
                 search->undo(&move_list[move_idx].flip);
-                /*
                 if (move_done){
                     move_list[move_idx].flip.flip = 0;
                 }
-                */
-                /*
                 if (running_count && serial_searched){
                     Parallel_task got_task;
                     for (std::future<Parallel_task> &task: parallel_tasks){
@@ -274,11 +265,9 @@ inline int ybwc_split_nws(Search *search, int alpha, int depth, uint64_t legal, 
                         }
                     }
                 }
-                */
             }
         }
         n_searching &= *searching;
-        /*
         if (running_count){
             Parallel_task got_task;
             for (std::future<Parallel_task> &task: parallel_tasks){
@@ -302,7 +291,6 @@ inline int ybwc_split_nws(Search *search, int alpha, int depth, uint64_t legal, 
                 }
             }
         }
-        */
         if (research_idxes.size() && next_alpha < *beta && *searching){
             int prev_alpha = *alpha;
             *alpha = next_alpha;
