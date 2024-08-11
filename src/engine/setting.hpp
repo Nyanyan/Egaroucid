@@ -210,7 +210,7 @@
 
 // YBWC
 #define USE_YBWC_NWS true
-#define USE_YBWC_NEGASCOUT true
+#define USE_YBWC_NEGASCOUT false
 #define USE_YBWC_NEGASCOUT_ANALYZE false
 
 // aspiration search in negascout
