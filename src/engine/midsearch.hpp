@@ -99,11 +99,8 @@ int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, uin
         return SCORE_UNDEFINED;
     if (alpha + 1 == beta)
         return nega_alpha_ordering_nws(search, alpha, depth, skipped, legal, is_end_search, searching);
-    if (is_end_search && search->n_discs == 60){
+    if (is_end_search && search->n_discs == HW2 - 4){
         return last4(search, alpha, beta);
-    }
-    if (search->n_discs == HW2){
-        return end_evaluate(&search->board);
     }
     if (!is_end_search){
         if (depth == 1)
@@ -228,8 +225,7 @@ int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, uin
         }
     #endif
     if (*searching && global_searching){
-        //transposition_table.reg(search, hash_code, depth, first_alpha, first_beta, v, best_move);
-        transposition_table.reg(search, hash_code, depth, alpha, beta, v, best_move);
+        transposition_table.reg(search, hash_code, depth, first_alpha, first_beta, v, best_move);
     }
     return v;
 }
@@ -299,6 +295,7 @@ std::pair<int, int> first_nega_scout_legal(Search *search, int alpha, int beta, 
         return std::make_pair(SCORE_UNDEFINED, -1);
     bool is_all_legal = legal == search->board.get_legal();
     int best_move = TRANSPOSITION_TABLE_UNDEFINED;
+    const int canput_all = pop_count_ull(legal);
     for (const Clog_result clog: clogs){
         if (v < clog.val){
             v = clog.val;
@@ -311,6 +308,7 @@ std::pair<int, int> first_nega_scout_legal(Search *search, int alpha, int beta, 
     }
     uint32_t hash_code = search->board.hash();
     if (alpha < beta && legal){
+        int pv_idx = 1;
         const int canput = pop_count_ull(legal);
         std::vector<Flip_value> move_list(canput);
         int idx = 0;
@@ -370,8 +368,7 @@ std::pair<int, int> first_nega_scout_legal(Search *search, int alpha, int beta, 
         #endif
     }
     if (*searching && global_searching && is_all_legal){
-        //transposition_table.reg(search, hash_code, depth, first_alpha, beta, v, best_move);
-        transposition_table.reg(search, hash_code, depth, alpha, beta, v, best_move);
+        transposition_table.reg(search, hash_code, depth, first_alpha, beta, v, best_move);
     }
     return std::make_pair(v, best_move);
 }
@@ -406,6 +403,7 @@ Analyze_result first_nega_scout_analyze(Search *search, int alpha, int beta, int
     res.alt_move = TRANSPOSITION_TABLE_UNDEFINED;
     int g, first_alpha = alpha;
     uint64_t legal = search->board.get_legal();
+    const int canput_all = pop_count_ull(legal);
     for (const Clog_result clog: clogs){
         if (clog.pos == played_move){
             res.played_score = clog.val;
@@ -439,6 +437,7 @@ Analyze_result first_nega_scout_analyze(Search *search, int alpha, int beta, int
         legal ^= 1ULL << played_move;
     }
     if (alpha < beta && legal){
+        int pv_idx = 1;
         const int canput = pop_count_ull(legal);
         std::vector<Flip_value> move_list(canput);
         int idx = 0;
@@ -534,8 +533,7 @@ Analyze_result first_nega_scout_analyze(Search *search, int alpha, int beta, int
             v = res.alt_score;
             best_move = res.alt_move;
         }
-        //transposition_table.reg(search, hash_code, depth, first_alpha, beta, v, best_move);
-        transposition_table.reg(search, hash_code, depth, alpha, beta, v, best_move);
+        transposition_table.reg(search, hash_code, depth, first_alpha, beta, v, best_move);
     }
     return res;
 }

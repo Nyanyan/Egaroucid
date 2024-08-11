@@ -27,13 +27,11 @@
 #define YBWC_N_ELDER_CHILD 1
 #define YBWC_N_YOUNGER_CHILD 3
 // #define YBWC_MAX_RUNNING_COUNT 5
-#define YBWC_FAIL_HIGH_DEFAULT -1
-#define YBWC_FAIL_HIGH_FOUND -2
+#define YBWC_FAIL_HIGH -1
 #define YBWC_NOT_PUSHED -127
 #define YBWC_PUSHED 127
 
 int nega_alpha_ordering_nws(Search *search, int alpha, int depth, bool skipped, uint64_t legal, bool is_end_search, const bool *searching);
-//int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, uint64_t legal, bool is_end_search, const bool *searching);
 
 /*
     @brief Wrapper for parallel NWS (Null Window Search)
@@ -199,14 +197,14 @@ inline int ybwc_split_nws(Search *search, int alpha, int depth, uint64_t legal, 
         bool n_searching = true;
         int canput = (int)move_list.size();
         int running_count = 0;
-        int g, fail_high_idx = YBWC_FAIL_HIGH_DEFAULT;
+        int g, fail_high_idx = -1;
         for (int move_idx = 1; move_idx < canput && n_searching; ++move_idx){
             n_searching &= *searching;
             if (move_list[move_idx].flip.flip){
                 if (search->need_to_see_tt_loop && !need_best_move){
                     if (transposition_cutoff_bestmove(search, hash_code, depth, alpha, beta, v, best_move)){
                         n_searching = false;
-                        fail_high_idx = YBWC_FAIL_HIGH_FOUND;
+                        fail_high_idx = YBWC_FAIL_HIGH;
                         break;
                     }
                 }
@@ -295,16 +293,18 @@ inline int ybwc_split_nws(Search *search, int alpha, int depth, uint64_t legal, 
                 }
             }
         }
-        if (*searching && fail_high_idx >= 0 && *alpha < *beta){
-            search->move(&move_list[fail_high_idx].flip);
-                g = -nega_scout(search, -(*beta), -(*alpha), depth - 1, false, move_list[fail_high_idx].n_legal, is_end_search, searching);
-            search->undo(&move_list[fail_high_idx].flip);
-            *alpha = g;
-            *v = g;
-            *best_move = move_list[fail_high_idx].flip.pos;
-            move_list[fail_high_idx].flip.flip = 0;
+        if (*searching && fail_high_idx != YBWC_FAIL_HIGH){
             if (*alpha < *beta){
-                ybwc_search_young_brothers(search, alpha, beta, v, best_move, hash_code, depth, is_end_search, move_list, need_best_move, searching);
+                search->move(&move_list[fail_high_idx].flip);
+                    g = -nega_scout(search, -(*beta), -(*alpha), depth - 1, false, move_list[fail_high_idx].n_legal, is_end_search, searching);
+                search->undo(&move_list[fail_high_idx].flip);
+                *alpha = g;
+                *v = g;
+                *best_move = move_list[fail_high_idx].flip.pos;
+                move_list[fail_high_idx].flip.flip = 0;
+                if (*alpha < *beta){
+                    ybwc_search_young_brothers(search, alpha, beta, v, best_move, hash_code, depth, is_end_search, move_list, need_best_move, searching);
+                }
             }
         }
     }
