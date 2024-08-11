@@ -99,8 +99,11 @@ int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, uin
         return SCORE_UNDEFINED;
     //if (alpha + 1 == beta)
     //    return nega_alpha_ordering_nws(search, alpha, depth, skipped, legal, is_end_search, searching);
-    if (is_end_search && search->n_discs == 60){
-        return last4(search, alpha, beta);
+    //if (is_end_search && search->n_discs == 60){
+    //    return last4(search, alpha, beta);
+    //}
+    if (search->n_discs == HW2){
+        return end_evaluate(&search->board);
     }
     if (!is_end_search){
         if (depth == 1)
@@ -203,6 +206,8 @@ int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, uin
                     }
                 }
                 search->move(&move_list[move_idx].flip);
+                    g = -nega_scout(search, -beta, -alpha, depth - 1, false, move_list[move_idx].n_legal, is_end_search, searching);
+                    /*
                     if (v == -SCORE_INF){
                         g = -nega_scout(search, -beta, -alpha, depth - 1, false, move_list[move_idx].n_legal, is_end_search, searching);
                     } else{
@@ -211,6 +216,7 @@ int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, uin
                         if (alpha < g && g < beta)
                             g = -nega_scout(search, -beta, -g, depth - 1, false, move_list[move_idx].n_legal, is_end_search, searching);
                     }
+                    */
                 search->undo(&move_list[move_idx].flip);
                 if (v < g){
                     v = g;
@@ -296,7 +302,6 @@ std::pair<int, int> first_nega_scout_legal(Search *search, int alpha, int beta, 
         return std::make_pair(SCORE_UNDEFINED, -1);
     bool is_all_legal = legal == search->board.get_legal();
     int best_move = TRANSPOSITION_TABLE_UNDEFINED;
-    const int canput_all = pop_count_ull(legal);
     for (const Clog_result clog: clogs){
         if (v < clog.val){
             v = clog.val;
@@ -309,7 +314,6 @@ std::pair<int, int> first_nega_scout_legal(Search *search, int alpha, int beta, 
     }
     uint32_t hash_code = search->board.hash();
     if (alpha < beta && legal){
-        int pv_idx = 1;
         const int canput = pop_count_ull(legal);
         std::vector<Flip_value> move_list(canput);
         int idx = 0;
@@ -345,6 +349,8 @@ std::pair<int, int> first_nega_scout_legal(Search *search, int alpha, int beta, 
                 for (int move_idx = 0; move_idx < canput && *searching; ++move_idx){
                     swap_next_best_move(move_list, move_idx, canput);
                     search->move(&move_list[move_idx].flip);
+                        g = -nega_scout(search, -beta, -alpha, depth - 1, false, move_list[move_idx].n_legal, is_end_search, searching);
+                        /*
                         if (v == -SCORE_INF){
                             g = -nega_scout(search, -beta, -alpha, depth - 1, false, move_list[move_idx].n_legal, is_end_search, searching);
                         } else{
@@ -354,6 +360,7 @@ std::pair<int, int> first_nega_scout_legal(Search *search, int alpha, int beta, 
                                 g = -nega_scout(search, -beta, -g, depth - 1, false, move_list[move_idx].n_legal, is_end_search, searching);
                             }
                         }
+                        */
                     search->undo(&move_list[move_idx].flip);
                     if (v < g){
                         v = g;
@@ -405,7 +412,6 @@ Analyze_result first_nega_scout_analyze(Search *search, int alpha, int beta, int
     res.alt_move = TRANSPOSITION_TABLE_UNDEFINED;
     int g, first_alpha = alpha;
     uint64_t legal = search->board.get_legal();
-    const int canput_all = pop_count_ull(legal);
     for (const Clog_result clog: clogs){
         if (clog.pos == played_move){
             res.played_score = clog.val;
@@ -439,7 +445,6 @@ Analyze_result first_nega_scout_analyze(Search *search, int alpha, int beta, int
         legal ^= 1ULL << played_move;
     }
     if (alpha < beta && legal){
-        int pv_idx = 1;
         const int canput = pop_count_ull(legal);
         std::vector<Flip_value> move_list(canput);
         int idx = 0;
