@@ -80,7 +80,6 @@ static int last2_nws(Search *search, int alpha, uint_fast8_t p0, uint_fast8_t p1
 
     @param search               search information
     @param alpha                alpha value (beta value is alpha + 1)
-    @param sort3                parity sort (lower 2 bits for this node)
     @param p0                   empty square 1/3
     @param p1                   empty square 2/3
     @param p2                   empty square 3/3
@@ -96,18 +95,15 @@ static int last2_nws(Search *search, int alpha, uint_fast8_t p0, uint_fast8_t p1
         1 - 0 - 0 > need to sort
         1 - 1 - 1
 */
-static int last3_nws(Search *search, int alpha, int sort3, uint_fast8_t p0, uint_fast8_t p1, uint_fast8_t p2, Board board) {
+static int last3_nws(Search *search, int alpha, uint_fast8_t p0, uint_fast8_t p1, uint_fast8_t p2, Board board) {
     // if (!global_searching || !(*searching))
     //  return SCORE_UNDEFINED;
     #if USE_END_PO
-        switch (sort3 & 3){
-            case 2:
-                std::swap(p0, p2);
-                break;
-            case 1:
-                std::swap(p0, p1);
-                break;
-        }
+        uint64_t empties = ~(search->board.player | search->board.opponent);
+        if (is_1empty(p2, empties))
+            std::swap(p2, p0);
+        else if (is_1empty(p1, empties))
+            std::swap(p1, p0);
     #endif
 
     Flip flip;
@@ -129,7 +125,7 @@ static int last3_nws(Search *search, int alpha, int sort3, uint_fast8_t p0, uint
         int g;
         if ((bit_around[p1] & board.opponent) && calc_flip(&flip, &board, p1)) {
             board.move_copy(&flip, &board2);
-            g = last2_nws(search, alpha, p0, p2, board2);
+            g = last2_nws(search, alpha, p2, p0, board2);
             if (alpha < g)
                 return g * pol;
             if (v < g)
@@ -138,7 +134,7 @@ static int last3_nws(Search *search, int alpha, int sort3, uint_fast8_t p0, uint
 
         if ((bit_around[p2] & board.opponent) && calc_flip(&flip, &board, p2)) {
             board.move_copy(&flip, &board2);
-            g = last2_nws(search, alpha, p0, p1, board2);
+            g = last2_nws(search, alpha, p1, p0, board2);
             if (v < g)
                 v = g;
             return v * pol;
@@ -178,10 +174,7 @@ static int last3_nws(Search *search, int alpha, int sort3, uint_fast8_t p0, uint
 */
 int last4_nws(Search *search, int alpha) {
     uint64_t empties = ~(search->board.player | search->board.opponent);
-    uint_fast8_t p0 = first_bit(&empties);
-    uint_fast8_t p1 = next_bit(&empties);
-    uint_fast8_t p2 = next_bit(&empties);
-    uint_fast8_t p3 = next_bit(&empties);
+    uint_fast8_t p0, p1, p2, p3;
 
     // if (!global_searching || !(*searching))
     //  return SCORE_UNDEFINED;
@@ -192,30 +185,27 @@ int last4_nws(Search *search, int alpha) {
         }
     #endif
     #if USE_END_PO
-                // parity ordering optimization
-                // I referred to http://www.amy.hi-ho.ne.jp/okuhara/edaxopt.htm
-        const int paritysort = parity_case[((p2 ^ p3) & 0x24) + ((((p1 ^ p3) & 0x24) * 2 + ((p0 ^ p3) & 0x24)) >> 2)];
-        switch (paritysort) {
-            case 8:     // case 1(p2) 1(p3) 2(p0 p1)
-                std::swap(p0, p2);
-                std::swap(p1, p3);
-                break;
-            case 7:     // case 1(p1) 1(p3) 2(p0 p2)
-                std::swap(p0, p3);
-                break;
-            case 6:     // case 1(p1) 1(p2) 2(p0 p3)
-                std::swap(p0, p2);
-                break;
-            case 5:     // case 1(p0) 1(p3) 2(p1 p2)
-                std::swap(p1, p3);
-                break;
-            case 4:     // case 1(p0) 1(p2) 2(p1 p3)
-                std::swap(p1, p2);
-                break;
-        }
-        int sort3 = parity_ordering_last3[paritysort];     // for move sorting on 3 empties
+        uint64_t e1 = empty1_bb(search->board.player, search->board.opponent);
+        if (!e1)
+            e1 = empties;
+        empties &= ~e1;
+    
+        p0 = first_bit(&e1);
+        if (!(e1 &= e1 - 1))
+            e1 = empties;
+        p1 = first_bit(&e1);
+        if (!(e1 &= e1 - 1))
+            e1 = empties;
+        p2 = first_bit(&e1);
+        if ((e1 &= e1 - 1))
+            p3 = first_bit(&e1);
+        else
+            p3 = first_bit(&empties);
     #else
-        constexpr int sort3 = 0;
+        p0 = first_bit(&empties);
+        p1 = next_bit(&empties);
+        p2 = next_bit(&empties);
+        p3 = next_bit(&empties);
     #endif
 
     Flip flip;
@@ -230,7 +220,7 @@ int last4_nws(Search *search, int alpha) {
         #endif
         if ((bit_around[p0] & board4.opponent) && calc_flip(&flip, &board4, p0)) {
             board4.move_copy(&flip, &board3);
-            v = last3_nws(search, alpha, sort3, p1, p2, p3, board3);
+            v = last3_nws(search, alpha, p1, p2, p3, board3);
             if (alpha >= v)
                 return v * pol;
         }
@@ -238,7 +228,7 @@ int last4_nws(Search *search, int alpha) {
         int g;
         if ((bit_around[p1] & board4.opponent) && calc_flip(&flip, &board4, p1)) {
             board4.move_copy(&flip, &board3);
-            g = last3_nws(search, alpha, sort3 >> 4, p0, p2, p3, board3);
+            g = last3_nws(search, alpha, p0, p2, p3, board3);
             if (alpha >= g)
                 return g * pol;
             if (v > g)
@@ -247,7 +237,7 @@ int last4_nws(Search *search, int alpha) {
 
         if ((bit_around[p2] & board4.opponent) && calc_flip(&flip, &board4, p2)) {
             board4.move_copy(&flip, &board3);
-            g = last3_nws(search, alpha, sort3 >> 8, p0, p1, p3, board3);
+            g = last3_nws(search, alpha, p0, p1, p3, board3);
             if (alpha >= g)
                 return g * pol;
             if (v > g)
@@ -256,7 +246,7 @@ int last4_nws(Search *search, int alpha) {
 
         if ((bit_around[p3] & board4.opponent) && calc_flip(&flip, &board4, p3)) {
             board4.move_copy(&flip, &board3);
-            g = last3_nws(search, alpha, sort3 >> 12, p0, p1, p2, board3);
+            g = last3_nws(search, alpha, p0, p1, p2, board3);
             if (v > g)
                 v = g;
             return v * pol;
