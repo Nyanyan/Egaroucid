@@ -83,7 +83,7 @@ int nega_alpha_end_fast_nws(Search *search, int alpha, bool skipped, const bool 
         if (prioritymoves == 0) // all even
             prioritymoves = legal;
     #endif
-
+    
     if (search->n_discs == 59)      // transfer to lastN, no longer uses n_discs, parity
         do {
             legal ^= prioritymoves;

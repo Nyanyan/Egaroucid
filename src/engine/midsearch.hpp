@@ -102,6 +102,9 @@ int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, uin
     if (is_end_search && search->n_discs == HW2 - 4){
         return -last4(search, -beta, -alpha);
     }
+    if (search->n_discs == HW2){
+        return end_evaluate(&search->board);
+    }
     if (!is_end_search){
         if (depth == 1)
             return nega_alpha_eval1(search, alpha, beta, skipped);
