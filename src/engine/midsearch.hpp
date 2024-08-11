@@ -100,7 +100,7 @@ int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, uin
     if (alpha + 1 == beta)
         return nega_alpha_ordering_nws(search, alpha, depth, skipped, legal, is_end_search, searching);
     if (is_end_search && search->n_discs == HW2 - 4){
-        return last4(search, alpha, beta);
+        return -last4(search, -beta, -alpha);
     }
     if (!is_end_search){
         if (depth == 1)

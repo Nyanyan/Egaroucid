@@ -90,7 +90,7 @@ int nega_alpha_end_fast_nws(Search *search, int alpha, bool skipped, const bool 
             for (cell = first_bit(&prioritymoves); prioritymoves; cell = next_bit(&prioritymoves)) {
                 calc_flip(&flip, &board0, cell);
                 board0.move_copy(&flip, &search->board);
-                g = -last4_nws(search, -alpha - 1);
+                g = last4_nws(search, alpha);
                 if (alpha < g) {
                     board0.copy(&search->board);
                     return g;
