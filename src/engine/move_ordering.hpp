@@ -140,6 +140,24 @@ inline int get_weighted_n_moves(uint64_t legal){
     return pop_count_ull(legal) * 2 + get_corner_n_moves(legal);
 }
 
+#ifdef USE_SIMD
+inline int get_n_moves_cornerX2(uint64_t legal){
+    return pop_count_ull(legal) + get_corner_n_moves(legal);
+}
+#else
+inline int get_n_moves_cornerX2(uint64_t legal){
+    uint64_t b = legal;
+    uint64_t c = b & 0x0100000000000001ull;
+    b -= (b >> 1) & 0x1555555555555515ull;
+    b = (b & 0x3333333333333333ull) + ((b >> 2) & 0x3333333333333333ull);
+    b += c;
+    b += (b >> 4);
+    b &= 0x0f0f0f0f0f0f0f0full;
+    b *= 0x0101010101010101ULL;
+    return b >> 56;
+}
+#endif
+
 /*
     @brief Get potential mobility
 
@@ -269,7 +287,7 @@ inline void move_evaluate_end_nws(Search *search, Flip_value *flip_value){
     flip_value->value = 0;
     search->move_endsearch(&flip_value->flip);
         flip_value->n_legal = search->board.get_legal();
-        flip_value->value += (MO_OFFSET_L_PM - pop_count_ull(flip_value->n_legal)) * W_END_NWS_MOBILITY;
+        flip_value->value += (MO_OFFSET_L_PM - get_n_moves_cornerX2(flip_value->n_legal)) * W_END_NWS_MOBILITY;
         flip_value->value += (MO_OFFSET_L_PM - mid_evaluate_move_ordering_end(search)) * W_END_NWS_VALUE;
     search->undo_endsearch(&flip_value->flip);
 }
@@ -287,7 +305,7 @@ inline void move_evaluate_end_simple_nws(Search *search, Flip_value *flip_value)
         flip_value->value += W_END_NWS_SIMPLE_PARITY;
     search->move_noeval(&flip_value->flip);
         flip_value->n_legal = search->board.get_legal();
-        flip_value->value += (MO_OFFSET_L_PM - pop_count_ull(flip_value->n_legal)) * W_END_NWS_SIMPLE_MOBILITY;
+        flip_value->value += (MO_OFFSET_L_PM - get_n_moves_cornerX2(flip_value->n_legal)) * W_END_NWS_SIMPLE_MOBILITY;
     search->undo_noeval(&flip_value->flip);
 }
 
