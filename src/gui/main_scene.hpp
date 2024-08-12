@@ -246,7 +246,8 @@ public:
         }
 
         // principal variation calculating
-        if (getData().menu_elements.show_principal_variation){
+        bool pv_ignore = ai_should_move || ai_status.analyzing || need_start_game_button || changing_scene;
+        if (!pv_ignore && getData().menu_elements.show_principal_variation){
             if (!ai_status.pv_calculating && !ai_status.pv_calculated){
                 pv_calculate();
             } else if (ai_status.pv_calculating && !ai_status.pv_calculated){
