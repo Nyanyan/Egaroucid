@@ -268,28 +268,11 @@ void hint(Board_info *board, Options *options, State *state, std::string arg){
     if ((int)result.size() < n_show){
         for (const Search_result &elem: result)
             legal ^= 1ULL << elem.policy;
-        int n_check = n_show + n_show / 4 - (int)result.size();
-        if (n_check > pop_count_ull(legal))
-            n_check = pop_count_ull(legal);
-        std::vector<Flip_value> move_list(pop_count_ull(legal));
-        int idx = 0;
-        for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal))
-            calc_flip(&move_list[idx++].flip, &board->board, cell);
-        int presearch_level = std::max(1, options->level / 2);
-        Board n_board = board->board.copy();
-        for (Flip_value &flip_value: move_list){
-            n_board.move_board(&flip_value.flip);
-                flip_value.value = -ai(n_board, presearch_level, true, 0, true, false).value;
-            n_board.undo_board(&flip_value.flip);
-        }
-        std::sort(move_list.rbegin(), move_list.rend());
-        for (int i = 0; i < n_check; ++i){
-            n_board.move_board(&move_list[i].flip);
-                Search_result elem = ai(n_board, options->level, true, 0, true, false);
-                elem.value *= -1;
-                elem.policy = move_list[i].flip.pos;
-            n_board.undo_board(&move_list[i].flip);
+        int n_show_ai = n_show - (int)result.size();
+        for (int i = 0; i < n_show_ai; ++i){
+            Search_result elem = ai_legal(board->board, options->level, true, 0, true, false, legal);
             result.emplace_back(elem);
+            legal ^= 1ULL << elem.policy;
         }
     }
     std::sort(result.rbegin(), result.rend());
