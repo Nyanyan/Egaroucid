@@ -386,19 +386,21 @@ void ai_hint(Board board, int level, bool use_book, int book_acc_level, bool use
             --n_display;
         }
     }
-    for (int search_level = 1; search_level <= level; ++search_level){
+    for (int search_level = 1; search_level <= level && global_searching; ++search_level){
         if (show_log){
             std::cerr << "hint level " << search_level << " calculating" << std::endl;
         }
         uint64_t search_legal = legal;
-        for (int i = 0; i < n_display && search_legal; ++i){
+        for (int i = 0; i < n_display && search_legal && global_searching; ++i){
             Search_result elem = ai_legal(board, search_level, use_book, book_acc_level, use_multi_thread, false, search_legal);
-            search_legal ^= 1ULL << elem.policy;
-            values[elem.policy] = elem.value;
-            if (elem.is_end_search){
-                hint_types[elem.policy] = elem.probability;
-            } else{
-                hint_types[elem.policy] = search_level;
+            if (global_searching){
+                search_legal ^= 1ULL << elem.policy;
+                values[elem.policy] = elem.value;
+                if (elem.is_end_search){
+                    hint_types[elem.policy] = elem.probability;
+                } else{
+                    hint_types[elem.policy] = search_level;
+                }
             }
         }
     }
