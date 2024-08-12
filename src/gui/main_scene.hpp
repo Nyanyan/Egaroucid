@@ -38,7 +38,6 @@ int get_book_accuracy(Board board){
 class Main_scene : public App::Scene {
 private:
     Graph graph;
-    //Level_display level_display;
     Move_board_button_status move_board_button_status;
     AI_status ai_status;
     Button start_game_button;
@@ -188,8 +187,8 @@ public:
             }
         }
 
+        // graph move
         bool graph_interact_ignore = ai_status.analyzing || ai_should_move;
-        // transcript move
         if (!ignore_move && !graph_interact_ignore && !getData().menu.active()) {
             interact_graph();
         }
