@@ -205,9 +205,9 @@ public:
             is_active = is_active || (elem.active() && last_active());
         }
         if (mode == bar_check_mode){
-            is_clicked = Rect(rect.x, rect.y, bar_sx - bar_value_offset - rect.x, rect.h).leftClicked();
+            is_clicked = Rect(rect.x, rect.y, bar_sx - bar_value_offset - rect.x, rect.h).leftReleased();
         } else
-            is_clicked = rect.leftClicked();
+            is_clicked = rect.leftReleased();
         if ((mode == bar_mode || (mode == bar_check_mode && (*is_checked))) && bar_rect.leftPressed()) {
             int min_error = INF;
             int cursor_x = Cursor::Pos().x;
