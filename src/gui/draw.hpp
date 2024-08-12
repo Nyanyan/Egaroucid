@@ -57,7 +57,7 @@ void draw_board(Fonts fonts, Colors colors, History_elem history_elem){
     draw_board(fonts, colors, history_elem, false);
 }
 
-void draw_info(Colors colors, History_elem history_elem, Fonts fonts, Menu_elements menu_elements, bool pausing_in_pass) {
+void draw_info(Colors colors, History_elem history_elem, Fonts fonts, Menu_elements menu_elements, bool pausing_in_pass, std::string principal_variation) {
     RoundRect round_rect{ INFO_SX, INFO_SY, INFO_WIDTH, INFO_HEIGHT, INFO_RECT_RADIUS };
     round_rect.drawFrame(INFO_RECT_THICKNESS, colors.white);
     // 1st line
@@ -129,7 +129,7 @@ void draw_info(Colors colors, History_elem history_elem, Fonts fonts, Menu_eleme
     // 5th line
     String pv_info = language.get("info", "principal_variation") + U": ";
     if (menu_elements.show_principal_variation) {
-        pv_info += Unicode::Widen(history_elem.principal_variation);
+        pv_info += Unicode::Widen(principal_variation);
     }
     fonts.font(pv_info).draw(13, Arg::topCenter(INFO_SX + INFO_WIDTH / 2, INFO_SY + dy));
 }

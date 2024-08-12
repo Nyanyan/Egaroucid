@@ -236,7 +236,6 @@ struct History_elem {
     int policy;
     int next_policy;
     std::string opening_name;
-    std::string principal_variation;
 
     History_elem() {
         reset();
@@ -250,10 +249,9 @@ struct History_elem {
         next_policy = -1;
         level = -1;
         opening_name.clear();
-        principal_variation.clear();
     }
 
-    void set(Board b, int p, int vv, int l, int pl, int npl, std::string o, std::string pv) {
+    void set(Board b, int p, int vv, int l, int pl, int npl, std::string o) {
         board = b;
         player = p;
         v = vv;
@@ -261,7 +259,6 @@ struct History_elem {
         policy = pl;
         next_policy = npl;
         opening_name = o;
-        principal_variation = pv;
     }
 };
 
@@ -709,6 +706,10 @@ struct AI_status {
     std::future<Search_result> analyze_future[ANALYZE_SIZE];
     int analyze_sgn[ANALYZE_SIZE];
     std::vector<std::pair<Analyze_info, std::function<Search_result()>>> analyze_task_stack;
+
+    bool pv_calculating{ false };
+    bool pv_calculated{ false };
+    std::future<void> pv_future;
 
     bool book_learning{ false };
 };

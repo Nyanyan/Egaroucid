@@ -51,6 +51,8 @@ private:
     bool pausing_in_pass;
     bool putting_1_move_by_ai;
     int umigame_value_depth_before;
+public:
+    std::string principal_variation;
 
 public:
     Main_scene(const InitData& init) : IScene{ init } {
@@ -243,6 +245,15 @@ public:
             }
         }
 
+        // principal variation calculating
+        if (getData().menu_elements.show_principal_variation){
+            if (!ai_status.pv_calculating && !ai_status.pv_calculated){
+                pv_calculate();
+            } else if (ai_status.pv_calculating && !ai_status.pv_calculated){
+                try_pv_get();
+            }
+        }
+
         // legal drawing
         if (getData().menu_elements.show_legal && !pausing_in_pass) {
             draw_legal(legal_ignore);
@@ -281,10 +292,8 @@ public:
         // graph drawing
         graph.draw(getData().graph_resources.nodes[0], getData().graph_resources.nodes[1], getData().graph_resources.n_discs, getData().menu_elements.show_graph, getData().menu_elements.level, getData().fonts.font, getData().menu_elements.change_color_type, getData().menu_elements.show_graph_sum_of_loss);
 
-        // update principal variation
-        getData().history_elem.principal_variation = get_principal_variation_str(getData().history_elem.board);
         // info drawing
-        draw_info(getData().colors, getData().history_elem, getData().fonts, getData().menu_elements, pausing_in_pass);
+        draw_info(getData().colors, getData().history_elem, getData().fonts, getData().menu_elements, pausing_in_pass, principal_variation);
 
         // opening on cell drawing
         if (getData().menu_elements.show_opening_on_cell) {
@@ -308,13 +317,19 @@ public:
     }
 
 private:
+    void reset_ai() {
+        ai_status.ai_thinking = false;
+    }
+
     void reset_hint() {
         ai_status.hint_calculating = false;
         ai_status.hint_calculated = false;
     }
 
-    void reset_ai() {
-        ai_status.ai_thinking = false;
+    void reset_pv(){
+        ai_status.pv_calculating = false;
+        ai_status.pv_calculated = false;
+        principal_variation = "";
     }
 
     void reset_analyze() {
@@ -340,6 +355,10 @@ private:
             std::cerr << "terminating hint" << std::endl;
             ai_status.hint_future.get();
         }
+        if (ai_status.pv_future.valid()){
+            std::cerr << "terminating pv" << std::endl;
+            ai_status.pv_future.get();
+        }
         std::cerr << "terminating analyze AI" << std::endl;
         for (int i = 0; i < ANALYZE_SIZE; ++i) {
             if (ai_status.analyze_future[i].valid()) {
@@ -361,6 +380,7 @@ private:
         std::cerr << "calculation terminated" << std::endl;
         reset_ai();
         reset_hint();
+        reset_pv();
         reset_analyze();
         reset_book_additional_features();
         std::cerr << "reset all calculations" << std::endl;
@@ -1071,7 +1091,6 @@ private:
                         getData().graph_resources.nodes[getData().graph_resources.branch][node_idx].level = min_hint_type;
                     }
                 }
-                //getData().history_elem.principal_variation = get_principal_variation_str(getData().history_elem.board, HW2_M1 - hint_infos[0].cell);
             }
             int n_disc_hint = std::min((int)hint_infos.size(), getData().menu_elements.n_disc_hint);
             for (int i = 0; i < n_disc_hint; ++i) {
@@ -1172,6 +1191,24 @@ private:
                 ai_status.hint_future.get();
                 ai_status.hint_calculating = false;
                 ai_status.hint_calculated = true;
+            }
+        }
+    }
+
+    void pv_calculate(){
+        ai_status.pv_calculating = true;
+        ai_status.pv_calculated = false;
+        std::cerr << "start pv calculation max_level " << getData().menu_elements.level << std::endl;
+        ai_status.pv_future = std::async(std::launch::async, std::bind(get_principal_variation_str, getData().history_elem.board, getData().menu_elements.level, &principal_variation));
+    }
+
+    void try_pv_get(){
+        if (ai_status.pv_future.valid()){
+            if (ai_status.pv_future.wait_for(std::chrono::seconds(0)) == std::future_status::ready){
+                ai_status.pv_future.get();
+                ai_status.pv_calculating = false;
+                ai_status.pv_calculated = true;
+                std::cerr << "finish pv calculation" << std::endl;
             }
         }
     }

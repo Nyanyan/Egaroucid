@@ -248,7 +248,7 @@ inline Search_result tree_search_legal(Board board, int depth, uint_fast8_t mpc_
     @param show_log             show log?
     @return the result in Search_result structure
 */
-Search_result ai_legal(Board board, int level, bool use_book, int book_acc_level, bool use_multi_thread, bool show_log, uint64_t use_legal){
+Search_result ai_common(Board board, int level, bool use_book, int book_acc_level, bool use_multi_thread, bool show_log, uint64_t use_legal, bool use_specified_move_book){
     Search_result res;
     int value_sign = 1;
     if (board.get_legal() == 0ULL){
@@ -265,8 +265,13 @@ Search_result ai_legal(Board board, int level, bool use_book, int book_acc_level
             value_sign = -1;
         }
     }
-    Book_value book_result = book.get_random_specified_moves(&board, book_acc_level, use_legal);
-    if (book_result.policy != -1 && use_book){
+    Book_value book_result;
+    if (use_specified_move_book){
+        book_result = book.get_specified_best_move(&board);
+    } else{
+        book_result = book.get_random_specified_moves(&board, book_acc_level, use_legal);
+    }
+    if (is_valid_policy(book_result.policy) && use_book){
         if (show_log)
             std::cerr << "book " << idx_to_coord(book_result.policy) << " " << book_result.value << " at book error level " << book_acc_level << std::endl;
         res.policy = book_result.policy;
@@ -303,7 +308,15 @@ Search_result ai_legal(Board board, int level, bool use_book, int book_acc_level
     @return the result in Search_result structure
 */
 Search_result ai(Board board, int level, bool use_book, int book_acc_level, bool use_multi_thread, bool show_log){
-    return ai_legal(board, level, use_book, book_acc_level, use_multi_thread, show_log, board.get_legal());
+    return ai_common(board, level, use_book, book_acc_level, use_multi_thread, show_log, board.get_legal(), false);
+}
+
+Search_result ai_legal(Board board, int level, bool use_book, int book_acc_level, bool use_multi_thread, bool show_log, uint64_t use_legal){
+    return ai_common(board, level, use_book, book_acc_level, use_multi_thread, show_log, use_legal, false);
+}
+
+Search_result ai_specified(Board board, int level, bool use_book, int book_acc_level, bool use_multi_thread, bool show_log){
+    return ai_common(board, level, use_book, book_acc_level, use_multi_thread, show_log, board.get_legal(), true);
 }
 
 /*

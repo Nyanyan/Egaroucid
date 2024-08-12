@@ -70,7 +70,7 @@ public:
                 History_elem history_elem;
                 Board h_bd;
                 h_bd.reset();
-                history_elem.set(h_bd, BLACK, GRAPH_IGNORE_VALUE, -1, -1, -1, "", "");
+                history_elem.set(h_bd, BLACK, GRAPH_IGNORE_VALUE, -1, -1, -1, "");
                 n_history.emplace_back(history_elem);
                 n_history = import_transcript_processing(n_history, history_elem, transcript, &failed);
                 done = true;
@@ -180,7 +180,7 @@ private:
                     break;
                 }
                 n_history.back().next_policy = y * HW + x;
-                history_elem.set(h_bd, player, GRAPH_IGNORE_VALUE, -1, y * HW + x, -1, "", "");
+                history_elem.set(h_bd, player, GRAPH_IGNORE_VALUE, -1, y * HW + x, -1, "");
                 n_history.emplace_back(history_elem);
             }
         }
