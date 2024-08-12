@@ -18,12 +18,13 @@
 
 #define BOOK_ACCURACY_LEVEL_UNDEFINED -127
 #define N_BOOK_ACCURACY_LEVEL 6
+#define N_BOOK_ACCURACY_S_LEVEL 5
 // [-2, 2] range
-#define BOOK_ACCURACY_LEVEL_SA (0 - N_BOOK_ACCURACY_LEVEL)
-#define BOOK_ACCURACY_LEVEL_SB (1 - N_BOOK_ACCURACY_LEVEL)
-#define BOOK_ACCURACY_LEVEL_SC (2 - N_BOOK_ACCURACY_LEVEL)
-#define BOOK_ACCURACY_LEVEL_SD (3 - N_BOOK_ACCURACY_LEVEL)
-#define BOOK_ACCURACY_LEVEL_SE (4 - N_BOOK_ACCURACY_LEVEL)
+#define BOOK_ACCURACY_LEVEL_SA (0 - N_BOOK_ACCURACY_S_LEVEL)
+#define BOOK_ACCURACY_LEVEL_SB (1 - N_BOOK_ACCURACY_S_LEVEL)
+#define BOOK_ACCURACY_LEVEL_SC (2 - N_BOOK_ACCURACY_S_LEVEL)
+#define BOOK_ACCURACY_LEVEL_SD (3 - N_BOOK_ACCURACY_S_LEVEL)
+#define BOOK_ACCURACY_LEVEL_SE (4 - N_BOOK_ACCURACY_S_LEVEL)
 // [-1, 1] range
 #define BOOK_ACCURACY_LEVEL_A 0 // A: all lines calculated with perfect search line
 #define BOOK_ACCURACY_LEVEL_B 1 // B: at least one perfect search line found and other all lines calculated with endgame search line
@@ -35,7 +36,7 @@
 class Book_accuracy{
     private:
         std::mutex mtx;
-        std::unordered_map<Board, int, Book_hash> book_accuracy;
+        std::unordered_map<Board, int, Book_hash> book_accuracy[2]; // 0 for A-F, 1 for SA-SE
     
     public:
         void calculate(Board *board){
@@ -49,28 +50,29 @@ class Book_accuracy{
 
         void delete_all(){
             std::lock_guard<std::mutex> lock(mtx);
-            book_accuracy.clear();
+            for (int i = 0; i < 2; ++i){
+                book_accuracy[i].clear();
+            }
         }
 
         int get(Board *board){
-            std::lock_guard<std::mutex> lock(mtx);
-            Board unique_board = get_representative_board(board->copy());
-            return get_representive(unique_board);
+            int res = get_raw(board, false);
+            if (res == BOOK_ACCURACY_LEVEL_A){
+                int res2 = get_raw(board, true);
+                if (res2 != BOOK_ACCURACY_LEVEL_UNDEFINED){
+                    res = res2 - N_BOOK_ACCURACY_S_LEVEL;
+                }
+            }
+            return res;
         }
 
     private:
-        int book_accuracy_search(Board board, const bool is_high_level){
+        int book_accuracy_search(Board board, bool is_high_level){
             if (!global_searching)
                 return BOOK_ACCURACY_LEVEL_UNDEFINED;
-            int res = get(&board);
+            int res = get_raw(&board, is_high_level);
             if (res != BOOK_ACCURACY_LEVEL_UNDEFINED){
-                if ((is_high_level && res != BOOK_ACCURACY_LEVEL_A) || !is_high_level){
-                    if (res < BOOK_ACCURACY_LEVEL_A){ // SA-SE
-                        return res + N_BOOK_ACCURACY_LEVEL;
-                    } else{ // A-F
-                        return res;
-                    }
-                }
+                return res;
             }
             if (board.get_legal() == 0ULL)
                 board.pass();
@@ -87,13 +89,7 @@ class Book_accuracy{
                     res = BOOK_ACCURACY_LEVEL_A;
                 else if (endgame_depth >= HW2 - board.n_discs())
                     res = BOOK_ACCURACY_LEVEL_C;
-                if (is_high_level){
-                    if (res != BOOK_ACCURACY_LEVEL_F){
-                        reg(board, res - N_BOOK_ACCURACY_LEVEL);
-                    }
-                } else{
-                    reg(board, res);
-                }
+                reg(board, res, is_high_level);
                 return res;
             }
             int best_score = -INF;
@@ -165,32 +161,26 @@ class Book_accuracy{
                 lsb = pop_count_uint(~lsb & (lsb - 1)); // least bit is D: 0 E: 1 F: 2
                 res = BOOK_ACCURACY_LEVEL_D + lsb; // best accuracy level
             }
-            if (is_high_level){
-                if (res != BOOK_ACCURACY_LEVEL_F){
-                    reg(board, res - N_BOOK_ACCURACY_LEVEL);
-                }
-            } else{
-                reg(board, res);
-            }
+            reg(board, res, is_high_level);
             return res;
         }
 
-        inline void reg(Board b, int val){
+        inline void reg(Board b, int val, bool is_high_level){
             Board unique_board = get_representative_board(b);
             std::lock_guard<std::mutex> lock(mtx);
-            book_accuracy[unique_board] = val;
+            book_accuracy[is_high_level][unique_board] = val;
         }
 
-        inline int get_representive(Board b){
+        inline int get_representive(Board b, bool is_high_level){
             int res = BOOK_ACCURACY_LEVEL_UNDEFINED;
-            if (book_accuracy.find(b) != book_accuracy.end())
-                res = book_accuracy[b];
+            if (book_accuracy[is_high_level].find(b) != book_accuracy[is_high_level].end())
+                res = book_accuracy[is_high_level][b];
             return res;
         }
 
-        inline bool contain(Board b){
+        inline bool contain(Board b, bool is_high_level){
             Board unique_board = get_representative_board(b);
-            return book_accuracy.find(unique_board) != book_accuracy.end();
+            return book_accuracy[is_high_level].find(unique_board) != book_accuracy[is_high_level].end();
         }
 
         inline void first_update_representative_board(Board *res, Board *sym){
@@ -223,6 +213,12 @@ class Book_accuracy{
             b.board_white_line_mirror();
             update_representative_board(&res, &b);
             return res;
+        }
+
+        int get_raw(Board *board, bool is_high_level){
+            std::lock_guard<std::mutex> lock(mtx);
+            Board unique_board = get_representative_board(board->copy());
+            return get_representive(unique_board, is_high_level);
         }
 };
 

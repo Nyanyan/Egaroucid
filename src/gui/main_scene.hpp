@@ -1497,10 +1497,10 @@ private:
                 if (book_accuracy_status.book_accuracy[cell] != BOOK_ACCURACY_LEVEL_UNDEFINED){
                     std::string judge;
                     constexpr std::string judge_list[N_BOOK_ACCURACY_LEVEL] = {"A", "B", "C", "D", "E", "F"};
-                    if (book_accuracy_status.book_accuracy[cell] >= 0){
+                    if (book_accuracy_status.book_accuracy[cell] >= BOOK_ACCURACY_LEVEL_A){
                         judge = judge_list[book_accuracy_status.book_accuracy[cell]];
                     } else{
-                        judge = "S" + judge_list[book_accuracy_status.book_accuracy[cell] + N_BOOK_ACCURACY_LEVEL];
+                        judge = "S" + judge_list[book_accuracy_status.book_accuracy[cell] + N_BOOK_ACCURACY_S_LEVEL];
                     }
                     Board board = getData().history_elem.board;
                     Flip flip;
