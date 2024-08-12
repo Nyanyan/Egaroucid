@@ -1495,7 +1495,13 @@ private:
                 int sx = BOARD_SX + ((HW2_M1 - cell) % HW) * BOARD_CELL_SIZE;
                 int sy = BOARD_SY + ((HW2_M1 - cell) / HW) * BOARD_CELL_SIZE;
                 if (book_accuracy_status.book_accuracy[cell] != BOOK_ACCURACY_LEVEL_UNDEFINED){
-                    std::string judge = {(char)book_accuracy_status.book_accuracy[cell] + 'A'};
+                    std::string judge;
+                    constexpr std::string judge_list[N_BOOK_ACCURACY_LEVEL] = {"A", "B", "C", "D", "E", "F"};
+                    if (book_accuracy_status.book_accuracy[cell] >= 0){
+                        judge = judge_list[book_accuracy_status.book_accuracy[cell]];
+                    } else{
+                        judge = "S" + judge_list[book_accuracy_status.book_accuracy[cell] + N_BOOK_ACCURACY_LEVEL];
+                    }
                     Board board = getData().history_elem.board;
                     Flip flip;
                     calc_flip(&flip, &board, cell);

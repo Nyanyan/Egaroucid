@@ -16,14 +16,21 @@
 #include "board.hpp"
 #include "book.hpp"
 
-#define BOOK_ACCURACY_LEVEL_UNDEFINED -1
+#define BOOK_ACCURACY_LEVEL_UNDEFINED -127
+#define N_BOOK_ACCURACY_LEVEL 6
+// [-2, 2] range
+#define BOOK_ACCURACY_LEVEL_SA (0 - N_BOOK_ACCURACY_LEVEL)
+#define BOOK_ACCURACY_LEVEL_SB (1 - N_BOOK_ACCURACY_LEVEL)
+#define BOOK_ACCURACY_LEVEL_SC (2 - N_BOOK_ACCURACY_LEVEL)
+#define BOOK_ACCURACY_LEVEL_SD (3 - N_BOOK_ACCURACY_LEVEL)
+#define BOOK_ACCURACY_LEVEL_SE (4 - N_BOOK_ACCURACY_LEVEL)
+// [-1, 1] range
 #define BOOK_ACCURACY_LEVEL_A 0 // A: all lines calculated with perfect search line
 #define BOOK_ACCURACY_LEVEL_B 1 // B: at least one perfect search line found and other all lines calculated with endgame search line
 #define BOOK_ACCURACY_LEVEL_C 2 // C: all lines calculated with endgame search
 #define BOOK_ACCURACY_LEVEL_D 3 // D: at least one perfect search line found
 #define BOOK_ACCURACY_LEVEL_E 4 // E: at least one endgame search line found
 #define BOOK_ACCURACY_LEVEL_F 5 // F: other
-#define N_BOOK_ACCURACY_LEVEL 6
 
 class Book_accuracy{
     private:
@@ -32,8 +39,12 @@ class Book_accuracy{
     
     public:
         void calculate(Board *board){
-            if (book.contain(board))
-                book_accuracy_search(board->copy());
+            if (book.contain(board)){
+                int accuracy = book_accuracy_search(board->copy(), false);
+                if (accuracy == BOOK_ACCURACY_LEVEL_A){
+                    book_accuracy_search(board->copy(), true);
+                }
+            }
         }
 
         void delete_all(){
@@ -48,12 +59,21 @@ class Book_accuracy{
         }
 
     private:
-        int book_accuracy_search(Board board){
+        int book_accuracy_search(Board board, const bool is_high_level){
             if (!global_searching)
                 return BOOK_ACCURACY_LEVEL_UNDEFINED;
             int res = get(&board);
-            if (res != BOOK_ACCURACY_LEVEL_UNDEFINED)
-                return res;
+            if (res != BOOK_ACCURACY_LEVEL_UNDEFINED){
+                if (is_high_level && res != BOOK_ACCURACY_LEVEL_A){
+                    if (res < BOOK_ACCURACY_LEVEL_A){ // SA-SF
+                        return res + N_BOOK_ACCURACY_LEVEL;
+                    } else{ // A-E
+                        return res;
+                    }
+                } else if (!is_high_level){
+                    return res;
+                }
+            }
             if (board.get_legal() == 0ULL)
                 board.pass();
             Book_elem book_elem = book.get(board);
@@ -69,7 +89,13 @@ class Book_accuracy{
                     res = BOOK_ACCURACY_LEVEL_A;
                 else if (endgame_depth >= HW2 - board.n_discs())
                     res = BOOK_ACCURACY_LEVEL_C;
-                reg(board, res);
+                if (is_high_level){
+                    if (res != BOOK_ACCURACY_LEVEL_F){
+                        reg(board, res - N_BOOK_ACCURACY_LEVEL);
+                    }
+                } else{
+                    reg(board, res);
+                }
                 return res;
             }
             int best_score = -INF;
@@ -78,11 +104,15 @@ class Book_accuracy{
             bool is_end = true;
             int identifier = 0;
             Flip flip;
+            int accept_loss = 1;
+            if (is_high_level){
+                accept_loss = 2;
+            }
             for (Book_value &link: links){
-                if (link.value >= best_score - 1){
+                if (link.value >= best_score - accept_loss){
                     calc_flip(&flip, &board, link.policy);
                     board.move_board(&flip);
-                        int child_book_acc = book_accuracy_search(board);
+                        int child_book_acc = book_accuracy_search(board, is_high_level);
                     board.undo_board(&flip);
                     if (child_book_acc == BOOK_ACCURACY_LEVEL_UNDEFINED)
                         return BOOK_ACCURACY_LEVEL_UNDEFINED;
@@ -90,7 +120,7 @@ class Book_accuracy{
                         identifier |= (child_book_acc == i) << i;
                 }
             }
-            if (book_elem.leaf.value >= best_score - 1){
+            if (book_elem.leaf.value >= best_score - accept_loss){
                 int complete_depth = 60, endgame_depth = 60;
                 if (book_elem.leaf.level < N_LEVEL){
                     complete_depth = get_level_complete_depth(book_elem.leaf.level);
@@ -137,7 +167,13 @@ class Book_accuracy{
                 lsb = pop_count_uint(~lsb & (lsb - 1)); // least bit is D: 0 E: 1 F: 2
                 res = BOOK_ACCURACY_LEVEL_D + lsb; // best accuracy level
             }
-            reg(board, res);
+            if (is_high_level){
+                if (res != BOOK_ACCURACY_LEVEL_F){
+                    reg(board, res - N_BOOK_ACCURACY_LEVEL);
+                }
+            } else{
+                reg(board, res);
+            }
             return res;
         }
 
