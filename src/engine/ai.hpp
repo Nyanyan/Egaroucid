@@ -386,13 +386,10 @@ void ai_hint(Board board, int level, bool use_book, int book_acc_level, bool use
             --n_display;
         }
     }
-    int depth;
-    bool is_mid_search;
-    uint_fast8_t mpc_level;
-    get_level(level, board.n_discs() - 4, &is_mid_search, &depth, &mpc_level);
-    if (show_log)
-        std::cerr << "hint level status " << level << " " << board.n_discs() - 4 << " discs depth " << depth << "@" << SELECTIVITY_PERCENTAGE[mpc_level] << "%" << std::endl;
     for (int search_level = 1; search_level <= level; ++search_level){
+        if (show_log){
+            std::cerr << "hint level " << search_level << " calculating" << std::endl;
+        }
         uint64_t search_legal = legal;
         for (int i = 0; i < n_display && search_legal; ++i){
             Search_result elem = ai_legal(board, search_level, use_book, book_acc_level, use_multi_thread, false, search_legal);
@@ -404,5 +401,8 @@ void ai_hint(Board board, int level, bool use_book, int book_acc_level, bool use
                 hint_types[elem.policy] = search_level;
             }
         }
+    }
+    if (show_log){
+        std::cerr << "hint level " << level << " calculated" << std::endl;
     }
 }
