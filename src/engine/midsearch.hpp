@@ -546,34 +546,3 @@ Analyze_result first_nega_scout_analyze(Search *search, int alpha, int beta, int
     }
     return res;
 }
-
-void first_nega_scout_hint(Search *search, int depth, int max_depth, bool is_end_search, uint64_t legal, bool *searching, double values[], int types[], int type, int n_display){
-    ++search->n_nodes;
-    std::vector<Value_policy> value_policies;
-    for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)){
-        Value_policy elem;
-        elem.value = values[cell];
-        elem.policy = cell;
-        value_policies.emplace_back(elem);
-    }
-    std::sort(value_policies.begin(), value_policies.end());
-    int n_threshold = n_display + 1 + ((int)value_policies.size() - n_display) * std::max(0, max_depth - depth) / max_depth;
-    if (n_threshold > (int)value_policies.size()){
-        n_threshold = (int)value_policies.size();
-    }
-    //std::cerr << depth << " " << max_depth << " " << n_threshold << " " << n_display << " " << value_policies.size() << std::endl;
-    Flip flip;
-    for (int i = 0; i < n_threshold && *searching && global_searching; ++i){
-        calc_flip(&flip, &search->board, value_policies[i].policy);
-        search->move(&flip);
-            int g = -nega_scout(search, -SCORE_MAX, SCORE_MAX, depth - 1, false, LEGAL_UNDEFINED, is_end_search, searching);
-            if (-SCORE_MAX <= g && g <= SCORE_MAX && *searching && global_searching){
-                if (values[value_policies[i].policy] == SCORE_UNDEFINED || is_end_search)
-                    values[value_policies[i].policy] = g;
-                else
-                    values[value_policies[i].policy] = (0.9 * values[value_policies[i].policy] + 1.1 * g) / 2.0;
-                types[value_policies[i].policy] = type;
-            }
-        search->undo(&flip);
-    }
-}

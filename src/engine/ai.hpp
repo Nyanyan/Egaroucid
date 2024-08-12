@@ -171,73 +171,6 @@ Search_result endgame_optimized_search(Board board, int depth, uint_fast8_t mpc_
 }
 */
 
-void iterative_deepening_search_hint(Board board, int depth, uint_fast8_t mpc_level, bool show_log, uint64_t use_legal, bool use_multi_thread, int n_display, double values[], int hint_types[]){
-    uint64_t strt = tim();
-    int search_depth = 1;
-    int search_mpc_level = mpc_level;
-    const int max_depth = HW2 - board.n_discs();
-    depth = std::min(depth, max_depth);
-    bool is_end_search = (depth == max_depth);
-    if (is_end_search){
-        search_mpc_level = MPC_74_LEVEL;
-    }
-    while (search_depth <= depth && search_mpc_level <= mpc_level && global_searching){
-        bool is_last_search = (search_depth == depth) && (search_mpc_level == mpc_level);
-        bool search_is_end_search = false;
-        if (search_depth >= max_depth){
-            search_is_end_search = true;
-            search_depth = max_depth;
-        }
-        Search search;
-        search.init(&board, search_mpc_level, use_multi_thread, false, !is_last_search);
-        bool searching = true;
-        int hint_type = search_depth;
-        if (search_is_end_search){ // endgame & this is last search
-            hint_type = SELECTIVITY_PERCENTAGE[search_mpc_level];
-        }
-        uint64_t use_legal_copy = use_legal;
-        first_nega_scout_hint(&search, search_depth, depth, search_is_end_search, use_legal, &searching, values, hint_types, hint_type, n_display);
-        if (is_last_search){
-            std::cerr << "main ";
-        } else{
-            std::cerr << "pre ";
-        }
-        if (search_is_end_search){
-            std::cerr << "end ";
-        } else{
-            std::cerr << "mid ";
-        }
-        std::cerr << "depth " << search_depth << "@" << SELECTIVITY_PERCENTAGE[search_mpc_level] << "%" << std::endl;
-        if (show_log){
-            for (int y = 0; y < HW; ++y){
-                for (int x = 0; x < HW; ++x){
-                    int cell = HW2_M1 - y * 8 - x;
-                    if (1 & (board.get_legal() >> cell))
-                        std::cerr << round(values[cell]) << " ";
-                    else
-                        std::cerr << "  ";
-                }
-                std::cerr << std::endl;
-            }
-        }
-        // update depth
-        if (!is_end_search || search_depth < depth - ENDSEARCH_PRESEARCH_OFFSET){
-            ++search_depth;
-        } else{
-            if (search_depth < depth){
-                search_depth = depth;
-                search_mpc_level = MPC_74_LEVEL;
-            } else{
-                if (search_mpc_level == MPC_88_LEVEL && mpc_level > MPC_88_LEVEL){
-                    search_mpc_level = mpc_level;
-                } else{
-                    ++search_mpc_level;
-                }
-            }
-        }
-    }
-}
-
 /*
     @brief Get a result of a search
 
@@ -299,40 +232,6 @@ inline Search_result tree_search_legal(Board board, int depth, uint_fast8_t mpc_
     thread_pool.reset_unavailable();
     //delete_tt(&board, 6);
     return res;
-}
-
-inline void tree_search_hint(Board board, int depth, uint_fast8_t mpc_level, bool use_multi_thread, bool show_log, uint64_t use_legal, int n_display, double values[], int hint_types[]){
-    depth = std::min(HW2 - board.n_discs(), depth);
-    bool is_end_search = (HW2 - board.n_discs() == depth);
-    std::vector<Clog_result> clogs;
-    uint64_t clog_nodes = 0;
-    uint64_t clog_time = 0;
-    if (mpc_level != MPC_100_LEVEL){
-        uint64_t strt = tim();
-        int clog_depth = std::min(depth, CLOG_SEARCH_MAX_DEPTH);
-        clogs = first_clog_search(board, &clog_nodes, clog_depth, use_legal);
-        clog_time = tim() - strt;
-        for (Clog_result &clog: clogs){
-            if (1 & (use_legal >> clog.pos)){
-                values[clog.pos] = clog.val;
-                hint_types[clog.pos] = 100;
-                use_legal ^= 1ULL << clog.pos;
-                --n_display;
-            }
-        }
-        if (show_log){
-            std::cerr << "clog search depth " << clog_depth << " time " << clog_time << " nodes " << clog_nodes << " nps " << calc_nps(clog_nodes, clog_time) << std::endl;
-            for (int i = 0; i < (int)clogs.size(); ++i){
-                std::cerr << "clogsearch " << i + 1 << "/" << clogs.size() << " " << idx_to_coord(clogs[i].pos) << " value " << clogs[i].val << std::endl;
-            }
-        }
-    }
-    if (n_display < 0){
-        return;
-    }
-    //lazy_smp_hint(board, depth, mpc_level, show_log, use_legal, use_multi_thread, n_display, values, hint_types);
-    iterative_deepening_search_hint(board, depth, mpc_level, show_log, use_legal, use_multi_thread, n_display, values, hint_types);
-    thread_pool.reset_unavailable();
 }
 
 /*
@@ -506,5 +405,4 @@ void ai_hint(Board board, int level, bool use_book, int book_acc_level, bool use
             }
         }
     }
-    //tree_search_hint(board, depth, mpc_level, use_multi_thread, show_log, legal, n_display, values, hint_types);
 }
