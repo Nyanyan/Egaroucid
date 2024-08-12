@@ -37,11 +37,13 @@ class Thread_pool {
         std::queue<std::function<void()>> tasks{};
         std::unique_ptr<std::thread[]> threads;
         std::condition_variable condition;
+        std::atomic<int> n_using_tasks;
 
     public:
         void set_thread(int new_n_thread){
             {
                 std::lock_guard<std::mutex> lock(mtx);
+                n_using_tasks.store(0);
                 if (new_n_thread < 0)
                     new_n_thread = 0;
                 n_thread = new_n_thread;
@@ -91,7 +93,7 @@ class Thread_pool {
         }
 
         void reset_unavailable(){
-            if (n_idle == n_thread){
+            if (n_idle == n_thread && n_using_tasks.load() == 0){
                 bool start_flag = false;
                 std::vector<std::future<void>> futures;
                 bool need_to_reset = false;
@@ -126,6 +128,14 @@ class Thread_pool {
             auto future = task->get_future();
             *pushed = push_task([task](){(*task)();});
             return future;
+        }
+
+        void tell_start_using(){
+            n_using_tasks.fetch_add(1);
+        }
+
+        void tell_finish_using(){
+            n_using_tasks.fetch_sub(1);
         }
 
     private:

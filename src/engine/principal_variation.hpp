@@ -31,7 +31,7 @@ void get_principal_variation_str(Board board, int max_level, std::string *res){
             calc_flip(&flip, &board_cpy, best_move);
             board_cpy.move_board(&flip);
         }
-        std::cerr << "pv level " << level << " " << pv << std::endl;
+        //std::cerr << "pv level " << level << " " << pv << std::endl;
         *res = pv;
     }
 }
