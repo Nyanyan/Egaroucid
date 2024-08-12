@@ -703,6 +703,7 @@ struct AI_status {
     bool hint_use[HW2];
     double hint_values[HW2];
     int hint_types[HW2];
+    int n_hint_display;
 
     bool analyzing{ false };
     std::future<Search_result> analyze_future[ANALYZE_SIZE];
