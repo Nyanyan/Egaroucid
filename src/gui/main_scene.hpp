@@ -1187,6 +1187,7 @@ private:
             ai_status.hint_use[cell] = true;
         }
         ai_status.n_hint_display = getData().menu_elements.n_disc_hint;
+        std::cerr << "start hint calculation" << std::endl;
         ai_status.hint_future = std::async(std::launch::async, std::bind(ai_hint, getData().history_elem.board, getData().menu_elements.level, getData().menu_elements.use_book, 0, true, true, getData().menu_elements.n_disc_hint, ai_status.hint_values, ai_status.hint_types));
     }
 
@@ -1196,6 +1197,7 @@ private:
                 ai_status.hint_future.get();
                 ai_status.hint_calculating = false;
                 ai_status.hint_calculated = true;
+                std::cerr << "finish hint calculation" << std::endl;
             }
         }
     }
@@ -1203,7 +1205,7 @@ private:
     void pv_calculate(){
         ai_status.pv_calculating = true;
         ai_status.pv_calculated = false;
-        std::cerr << "start pv calculation max_level " << getData().menu_elements.level << std::endl;
+        std::cerr << "start pv calculation" << std::endl;
         ai_status.pv_future = std::async(std::launch::async, std::bind(get_principal_variation_str, getData().history_elem.board, getData().menu_elements.level, &principal_variation));
     }
 
