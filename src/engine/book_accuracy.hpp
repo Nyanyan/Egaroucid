@@ -64,14 +64,12 @@ class Book_accuracy{
                 return BOOK_ACCURACY_LEVEL_UNDEFINED;
             int res = get(&board);
             if (res != BOOK_ACCURACY_LEVEL_UNDEFINED){
-                if (is_high_level && res != BOOK_ACCURACY_LEVEL_A){
-                    if (res < BOOK_ACCURACY_LEVEL_A){ // SA-SF
+                if ((is_high_level && res != BOOK_ACCURACY_LEVEL_A) || !is_high_level){
+                    if (res < BOOK_ACCURACY_LEVEL_A){ // SA-SE
                         return res + N_BOOK_ACCURACY_LEVEL;
-                    } else{ // A-E
+                    } else{ // A-F
                         return res;
                     }
-                } else if (!is_high_level){
-                    return res;
                 }
             }
             if (board.get_legal() == 0ULL)
