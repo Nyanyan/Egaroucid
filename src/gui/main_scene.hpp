@@ -520,6 +520,7 @@ private:
         if (getData().menu_elements.stop_calculating) {
             stop_calculating();
             reset_hint();
+            reset_pv();
             resume_calculating();
         }
         if (!ai_status.analyzing) {
@@ -538,6 +539,7 @@ private:
             if ((getData().menu_elements.undo || KeyBackspace.down()) && getData().book_information.changing == BOOK_CHANGE_NO_CELL) {
                 stop_calculating();
                 reset_hint();
+                reset_pv();
                 resume_calculating();
                 int n_discs_before = getData().history_elem.board.n_discs();
                 while (getData().graph_resources.nodes[getData().graph_resources.branch].back().board.n_discs() >= n_discs_before && 
@@ -556,6 +558,7 @@ private:
                     getData().history_elem = n_history_elem;
                     getData().graph_resources.n_discs = getData().history_elem.board.n_discs();
                     reset_hint();
+                    reset_pv();
                 }
                 need_start_game_button_calculation();
             }
@@ -589,6 +592,7 @@ private:
                         getData().history_elem = n_history_elem;
                         getData().graph_resources.n_discs = getData().history_elem.board.n_discs();
                         reset_hint();
+                        reset_pv();
                     }
                 }
                 resume_calculating();
@@ -935,6 +939,7 @@ private:
             getData().graph_resources.nodes[getData().graph_resources.branch].back().level = N_LEVEL - 1;
         }
         reset_hint();
+        reset_pv();
         reset_book_additional_features();
     }
 
