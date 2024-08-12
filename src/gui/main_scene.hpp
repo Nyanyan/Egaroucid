@@ -562,7 +562,7 @@ private:
                 }
                 need_start_game_button_calculation();
             }
-            if (getData().menu_elements.save_this_branch || KeyL.down()) {
+            if (getData().menu_elements.save_this_branch || (KeyControl + KeyL).down() || (KeyCommand + KeyL).down()) {
                 stop_calculating();
                 if (getData().graph_resources.branch == GRAPH_MODE_INSPECT) {
                     std::vector<History_elem> new_branch;
