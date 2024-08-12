@@ -1496,6 +1496,7 @@ private:
                 int sx = BOARD_SX + ((HW2_M1 - cell) % HW) * BOARD_CELL_SIZE;
                 int sy = BOARD_SY + ((HW2_M1 - cell) / HW) * BOARD_CELL_SIZE;
                 if (book_accuracy_status.book_accuracy[cell] != BOOK_ACCURACY_LEVEL_UNDEFINED){
+                    //std::cerr << idx_to_coord(cell) << " " << book_accuracy_status.book_accuracy[cell] << std::endl;
                     std::string judge;
                     constexpr std::string judge_list[N_BOOK_ACCURACY_LEVEL] = {"A", "B", "C", "D", "E", "F"};
                     if (book_accuracy_status.book_accuracy[cell] >= BOOK_ACCURACY_LEVEL_A){

@@ -61,6 +61,8 @@ class Book_accuracy{
                 int res2 = get_raw(board, true);
                 if (res2 != BOOK_ACCURACY_LEVEL_UNDEFINED){
                     res = res2 - N_BOOK_ACCURACY_S_LEVEL;
+                } else{
+                    res = BOOK_ACCURACY_LEVEL_UNDEFINED;
                 }
             }
             return res;
