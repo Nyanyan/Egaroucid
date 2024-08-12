@@ -28,7 +28,7 @@ void get_principal_variation_str(Board board, int max_level, std::string *res){
             Search_result search_result = ai_specified(board_cpy, level, true, 0, true, false);
             int best_move = search_result.policy;
             pv += idx_to_coord(best_move);
-            calc_flip(&flip, &board, best_move);
+            calc_flip(&flip, &board_cpy, best_move);
             board_cpy.move_board(&flip);
         }
         std::cerr << "pv level " << level << " " << pv << std::endl;
