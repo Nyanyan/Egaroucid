@@ -122,7 +122,8 @@ public:
 
         // screen shot
         if (taking_screen_shot) {
-            take_screen_shot(getData().window_state.window_scale, getData().directories.document_dir);
+            std::string transcript = get_transcript(getData().graph_resources, getData().history_elem);
+            take_screen_shot(getData().window_state.window_scale, getData().directories.document_dir, transcript);
             taking_screen_shot = false;
         }
 
@@ -1229,38 +1230,7 @@ private:
     }
 
     void copy_transcript() {
-        std::string transcript;
-        int inspect_switch_n_discs = INF;
-        if (getData().graph_resources.branch == GRAPH_MODE_INSPECT) {
-            if (getData().graph_resources.nodes[GRAPH_MODE_INSPECT].size()) {
-                inspect_switch_n_discs = getData().graph_resources.nodes[GRAPH_MODE_INSPECT][0].board.n_discs();
-            }
-            else {
-                std::cerr << "no node found in inspect mode" << std::endl;
-            }
-        }
-        std::cerr << inspect_switch_n_discs << std::endl;
-        for (History_elem& history_elem : getData().graph_resources.nodes[GRAPH_MODE_NORMAL]) {
-            if (history_elem.board.n_discs() + 1 >= inspect_switch_n_discs || history_elem.board.n_discs() >= getData().history_elem.board.n_discs()) {
-                break;
-            }
-            if (history_elem.next_policy != -1) {
-                transcript += idx_to_coord(history_elem.next_policy);
-            }
-        }
-        if (inspect_switch_n_discs != INF) {
-            if (getData().graph_resources.nodes[GRAPH_MODE_INSPECT][0].policy != -1) {
-                transcript += idx_to_coord(getData().graph_resources.nodes[GRAPH_MODE_INSPECT][0].policy);
-            }
-            for (History_elem& history_elem : getData().graph_resources.nodes[GRAPH_MODE_INSPECT]) {
-                if (history_elem.board.n_discs() >= getData().history_elem.board.n_discs()) {
-                    break;
-                }
-                if (history_elem.next_policy != -1) {
-                    transcript += idx_to_coord(history_elem.next_policy);
-                }
-            }
-        }
+        std::string transcript = get_transcript(getData().graph_resources, getData().history_elem);
         std::cerr << transcript << std::endl;
         Clipboard::SetText(Unicode::Widen(transcript));
     }
