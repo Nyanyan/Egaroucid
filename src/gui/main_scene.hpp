@@ -950,6 +950,9 @@ private:
                 int x = cell % HW;
                 int y = cell / HW;
                 Rect cell_rect(BOARD_SX + x * BOARD_CELL_SIZE, BOARD_SY + y * BOARD_CELL_SIZE, BOARD_CELL_SIZE, BOARD_CELL_SIZE);
+                if (cell_rect.mouseOver()){
+                    Cursor::RequestStyle(CursorStyle::Hand);
+                }
                 if (cell_rect.leftClicked()) {
                     stop_calculating();
                     if (getData().graph_resources.branch == GRAPH_MODE_NORMAL) {
