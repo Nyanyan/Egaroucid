@@ -159,6 +159,7 @@
             "value": "双方估值变化",
             "sum_of_loss": "双方累计损子数"
         },
+        "laser_pointer": "激光笔",
         "log": "记录",
         "change_color_type": "色调变化"
     },

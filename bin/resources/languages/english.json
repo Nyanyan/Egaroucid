@@ -159,6 +159,7 @@
             "value": "Evaluation",
             "sum_of_loss": "Sum of Loss"
         },
+        "laser_pointer": "Laser Pointer",
         "log": "Log",
         "change_color_type": "Change Color Type"
     },

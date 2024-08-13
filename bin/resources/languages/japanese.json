@@ -159,6 +159,7 @@
             "value": "評価値",
             "sum_of_loss": "累積石損"
         },
+        "laser_pointer": "レーザーポインタ",
         "log": "ログ",
         "change_color_type": "色調変更"
     },
