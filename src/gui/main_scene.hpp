@@ -307,6 +307,8 @@ public:
         }
 
         // laser pointer
+        if (KeyP.down())
+            getData().menu_elements.show_laser_pointer = !getData().menu_elements.show_laser_pointer;
         if (getData().menu_elements.show_laser_pointer){
             Cursor::RequestStyle(CursorStyle::Hidden);
             getData().resources.laser_pointer.scaled(30.0 / getData().resources.laser_pointer.width()).drawAt(Cursor::Pos());
