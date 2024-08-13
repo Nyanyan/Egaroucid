@@ -156,8 +156,8 @@
         },
         "graph": {
             "graph": "图像",
-            "value": "双方估值变化",
-            "sum_of_loss": "双方累计损子数"
+            "value": "双方估值变化 (D)",
+            "sum_of_loss": "双方累计损子数 (S)"
         },
         "laser_pointer": "激光笔 (P)",
         "log": "记录",

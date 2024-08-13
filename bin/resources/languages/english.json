@@ -156,8 +156,8 @@
         },
         "graph": {
             "graph": "Graph",
-            "value": "Evaluation",
-            "sum_of_loss": "Sum of Loss"
+            "value": "Evaluation (D)",
+            "sum_of_loss": "Sum of Loss (S)"
         },
         "laser_pointer": "Laser Pointer (P)",
         "log": "Log",

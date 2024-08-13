@@ -156,8 +156,8 @@
         },
         "graph": {
             "graph": "グラフ",
-            "value": "評価値",
-            "sum_of_loss": "累積石損"
+            "value": "評価値 (D)",
+            "sum_of_loss": "累積石損 (S)"
         },
         "laser_pointer": "レーザーポインタ (P)",
         "log": "ログ",
