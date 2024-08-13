@@ -125,7 +125,7 @@
         "export_until_this_board": "保存到设定位置",
         "player_name": "棋手名称",
         "memo": "备注",
-        "screen_shot": "截图(复制/保存)",
+        "screen_shot": "截图(复制/保存) (Ctrl+S)",
         "board_image": "编辑和保存当前棋盘图片",
         "you_can_paste_with_ctrl_v": "您可以使用 Ctrl+V 粘贴"
     },

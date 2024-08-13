@@ -125,7 +125,7 @@
         "export_until_this_board": "Save till set position",
         "player_name": "Player Name",
         "memo": "Memo",
-        "screen_shot": "Screen Shot (Copy & Save)",
+        "screen_shot": "Screen Shot (Copy & Save) (Ctrl+S)",
         "board_image": "Edit and Save Board Image",
         "you_can_paste_with_ctrl_v": "You can paste with Ctrl+V"
     },
