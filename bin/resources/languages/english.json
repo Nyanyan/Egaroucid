@@ -182,7 +182,7 @@
         },
         "ai_operation": {
             "ai_operation": "AI Operation",
-            "stop_calculating": "Stop Calculating",
+            "stop_calculating": "Stop Calculating (Q)",
             "cache_clear": "Cache Clear"
         }
     },

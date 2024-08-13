@@ -182,7 +182,7 @@
         },
         "ai_operation": {
             "ai_operation": "AI操作",
-            "stop_calculating": "計算停止",
+            "stop_calculating": "計算停止 (Q)",
             "cache_clear": "キャッシュクリア"
         }
     },
