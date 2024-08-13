@@ -18,13 +18,14 @@
 
 #define BOOK_ACCURACY_LEVEL_UNDEFINED -127
 #define N_BOOK_ACCURACY_LEVEL 6
-#define N_BOOK_ACCURACY_S_LEVEL 5
+#define BOOK_ACCURACY_A_SHIFT 5
 // [-2, 2] range
-#define BOOK_ACCURACY_LEVEL_SA (0 - N_BOOK_ACCURACY_S_LEVEL)
-#define BOOK_ACCURACY_LEVEL_SB (1 - N_BOOK_ACCURACY_S_LEVEL)
-#define BOOK_ACCURACY_LEVEL_SC (2 - N_BOOK_ACCURACY_S_LEVEL)
-#define BOOK_ACCURACY_LEVEL_SD (3 - N_BOOK_ACCURACY_S_LEVEL)
-#define BOOK_ACCURACY_LEVEL_SE (4 - N_BOOK_ACCURACY_S_LEVEL)
+#define BOOK_ACCURACY_LEVEL_AA (0 - BOOK_ACCURACY_A_SHIFT)
+#define BOOK_ACCURACY_LEVEL_AB (1 - BOOK_ACCURACY_A_SHIFT)
+#define BOOK_ACCURACY_LEVEL_AC (2 - BOOK_ACCURACY_A_SHIFT)
+#define BOOK_ACCURACY_LEVEL_AD (3 - BOOK_ACCURACY_A_SHIFT)
+#define BOOK_ACCURACY_LEVEL_AE (4 - BOOK_ACCURACY_A_SHIFT)
+#define BOOK_ACCURACY_LEVEL_AF (5 - BOOK_ACCURACY_A_SHIFT)
 // [-1, 1] range
 #define BOOK_ACCURACY_LEVEL_A 0 // A: all lines calculated with perfect search line
 #define BOOK_ACCURACY_LEVEL_B 1 // B: at least one perfect search line found and other all lines calculated with endgame search line
@@ -60,7 +61,7 @@ class Book_accuracy{
             if (res == BOOK_ACCURACY_LEVEL_A){
                 int res2 = get_raw(board, true);
                 if (res2 != BOOK_ACCURACY_LEVEL_UNDEFINED){
-                    res = res2 - N_BOOK_ACCURACY_S_LEVEL;
+                    res = res2 - BOOK_ACCURACY_A_SHIFT;
                 } else{
                     res = BOOK_ACCURACY_LEVEL_UNDEFINED;
                 }
