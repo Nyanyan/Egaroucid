@@ -37,7 +37,7 @@
 class Book_accuracy{
     private:
         std::mutex mtx;
-        std::unordered_map<Board, int, Book_hash> book_accuracy[2]; // 0 for A-F, 1 for SA-SE
+        std::unordered_map<Board, int, Book_hash> book_accuracy[2]; // 0 for A-F, 1 for AA-AF
     
     public:
         void calculate(Board *board){
