@@ -165,8 +165,8 @@
     "operation": {
         "operation": "操作",
         "put_1_move_by_ai": "AI辅助落子一步 (G)",
-        "forward": "前进 (->/D)",
-        "backward": "后退 (<-/A)",
+        "forward": "前进 (->)",
+        "backward": "后退 (<-)",
         "undo": "撤销 (BackSpace)",
         "save_this_branch": "应用此变化 (Ctrl+L)",
         "generate_random_board": {
