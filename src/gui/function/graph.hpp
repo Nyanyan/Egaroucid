@@ -195,6 +195,9 @@ public:
         if (n_discs >= 4){
             int place_x = sx + dx * (n_discs - 4);
             Line(place_x, sy, place_x, sy + size_y).draw(3, graph_place_color);
+            if (sx <= Cursor::Pos().x && Cursor::Pos().x <= sx + size_x && sy <= Cursor::Pos().y && Cursor::Pos().y <= sy + size_y && abs(Cursor::Pos().x - place_x) <= 4){
+                Cursor::RequestStyle(CursorStyle::Hand);
+            }
         }
     }
 
