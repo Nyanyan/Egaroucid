@@ -308,12 +308,8 @@ public:
 
         // laser pointer
         if (getData().menu_elements.show_laser_pointer){
-            Cursor::RequestStyle(U"LaserPointer");
-            if (!Cursor::isCaptured){
-                Cursor::SetCapture(true);
-            }
-        } else if (Cursor::isCaptured){
-            Cursor::SetCapture(false);
+            Cursor::RequestStyle(CursorStyle::Hidden);
+            getData().resources.laser_pointer.scaled(30.0 / getData().resources.laser_pointer.width()).drawAt(Cursor::Pos());
         }
 
         // for screen shot

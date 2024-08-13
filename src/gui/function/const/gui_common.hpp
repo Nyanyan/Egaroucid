@@ -290,6 +290,7 @@ struct Resources {
     Texture logo;
     Texture checkbox;
     Texture unchecked;
+    Texture laser_pointer;
     std::vector<Texture> lang_img;
 };
 

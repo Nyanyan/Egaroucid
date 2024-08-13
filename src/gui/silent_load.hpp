@@ -446,6 +446,7 @@ int init_resources(Resources* resources, Settings* settings, Fonts *fonts) {
     Texture logo(U"resources/img/logo.png", TextureDesc::Mipped);
     Texture checkbox(U"resources/img/checked.png", TextureDesc::Mipped);
     Texture unchecked(U"resources/img/unchecked.png", TextureDesc::Mipped);
+    Texture laser_pointer(U"resources/img/laser_pointer.png", TextureDesc::Mipped);
     std::vector<Texture> lang_img;
     for (int i = 0; i < (int)resources->language_names.size(); ++i) {
         Texture limg(U"resources/languages/" +  Unicode::Widen(resources->language_names[i]) + U".png", TextureDesc::Mipped);
@@ -462,16 +463,8 @@ int init_resources(Resources* resources, Settings* settings, Fonts *fonts) {
     resources->logo = logo;
     resources->checkbox = checkbox;
     resources->unchecked = unchecked;
+    resources->laser_pointer = laser_pointer;
     resources->lang_img = lang_img;
-
-    // laser pointer
-    Image laser_pointer{U"resources/img/laser_pointer.png"};
-    if (laser_pointer.isEmpty()){
-        return ERR_TEXTURE_NOT_LOADED;
-    }
-    if (!Cursor::RegisterCustomCursorStyle(U"LaserPointer", laser_pointer, Point{100, 100})){
-        return ERR_TEXTURE_NOT_LOADED;
-    }
 
     // opening
     if (!opening_init(settings->lang_name)) {
