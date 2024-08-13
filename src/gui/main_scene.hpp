@@ -306,6 +306,16 @@ public:
             getData().menu.draw();
         }
 
+        // laser pointer
+        if (getData().menu_elements.show_laser_pointer){
+            Cursor::RequestStyle(U"LaserPointer");
+            if (!Cursor::isCaptured){
+                Cursor::SetCapture(true);
+            }
+        } else if (Cursor::isCaptured){
+            Cursor::SetCapture(false);
+        }
+
         // for screen shot
         if (taking_screen_shot) {
             ScreenCapture::RequestCurrentFrame();

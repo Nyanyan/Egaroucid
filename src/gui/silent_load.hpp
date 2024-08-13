@@ -464,6 +464,15 @@ int init_resources(Resources* resources, Settings* settings, Fonts *fonts) {
     resources->unchecked = unchecked;
     resources->lang_img = lang_img;
 
+    // laser pointer
+    Image laser_pointer{U"resources/img/laser_pointer.png"};
+    if (laser_pointer.isEmpty()){
+        return ERR_TEXTURE_NOT_LOADED;
+    }
+    if (!Cursor::RegisterCustomCursorStyle(U"LaserPointer", laser_pointer, Point{100, 100})){
+        return ERR_TEXTURE_NOT_LOADED;
+    }
+
     // opening
     if (!opening_init(settings->lang_name)) {
         std::cerr << "opening file not found. use alternative opening file" << std::endl;

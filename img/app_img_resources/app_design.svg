@@ -7,10 +7,11 @@
    viewBox="0 0 210 297"
    version="1.1"
    id="svg5"
-   inkscape:version="1.1.1 (3bf5ae0d25, 2021-09-20)"
+   inkscape:version="1.3.2 (091e20e, 2023-11-25, custom)"
    sodipodi:docname="app_design.svg"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:xlink="http://www.w3.org/1999/xlink"
    xmlns="http://www.w3.org/2000/svg"
    xmlns:svg="http://www.w3.org/2000/svg">
   <sodipodi:namedview
@@ -36,22 +37,83 @@
      inkscape:snap-bbox-edge-midpoints="true"
      inkscape:bbox-nodes="true"
      inkscape:bbox-paths="true"
-     inkscape:zoom="0.38885732"
-     inkscape:cx="9.0007307"
-     inkscape:cy="5072.5546"
+     inkscape:zoom="0.64"
+     inkscape:cx="-54.6875"
+     inkscape:cy="5982.8125"
      inkscape:window-width="2104"
-     inkscape:window-height="2071"
-     inkscape:window-x="4800"
-     inkscape:window-y="1350"
+     inkscape:window-height="2041"
+     inkscape:window-x="764"
+     inkscape:window-y="2197"
      inkscape:window-maximized="0"
      inkscape:current-layer="layer1"
-     inkscape:snap-global="true" />
+     inkscape:snap-global="true"
+     inkscape:showpageshadow="2"
+     inkscape:deskcolor="#d1d1d1" />
   <defs
-     id="defs2" />
+     id="defs2">
+    <linearGradient
+       id="linearGradient4"
+       inkscape:collect="always">
+      <stop
+         style="stop-color:#9824ff;stop-opacity:1;"
+         offset="0.8697933"
+         id="stop3" />
+      <stop
+         style="stop-color:#9a24ff;stop-opacity:0;"
+         offset="1"
+         id="stop4" />
+    </linearGradient>
+    <linearGradient
+       id="linearGradient1"
+       inkscape:collect="always">
+      <stop
+         style="stop-color:#ffffff;stop-opacity:1;"
+         offset="0.31929824"
+         id="stop1" />
+      <stop
+         style="stop-color:#9a24ff;stop-opacity:1;"
+         offset="1"
+         id="stop2" />
+    </linearGradient>
+    <radialGradient
+       inkscape:collect="always"
+       xlink:href="#linearGradient1"
+       id="radialGradient2"
+       cx="91.445312"
+       cy="1446.3542"
+       fx="91.445312"
+       fy="1446.3542"
+       r="74.999992"
+       gradientTransform="translate(0,-1.4713077e-4)"
+       gradientUnits="userSpaceOnUse"
+       spreadMethod="pad" />
+    <radialGradient
+       inkscape:collect="always"
+       xlink:href="#linearGradient4"
+       id="radialGradient2-0"
+       cx="91.445312"
+       cy="1446.3542"
+       fx="91.445312"
+       fy="1446.3542"
+       r="74.999992"
+       gradientTransform="matrix(1.1197628,0,0,1.1197628,-10.951752,-173.21956)"
+       gradientUnits="userSpaceOnUse"
+       spreadMethod="pad" />
+  </defs>
   <g
      inkscape:label="Layer 1"
      inkscape:groupmode="layer"
      id="layer1">
+    <ellipse
+       style="fill:url(#radialGradient2-0);stroke:none;stroke-width:2.74465"
+       id="path1-8"
+       cx="91.445312"
+       cy="1446.3542"
+       rx="82.609879"
+       ry="82.609886"
+       inkscape:export-filename="laser_pointer.png"
+       inkscape:export-xdpi="30.746927"
+       inkscape:export-ydpi="30.746927" />
     <rect
        style="fill:#e3e3e3;fill-opacity:1;stroke:none;stroke-width:1.97691;stroke-opacity:1"
        id="rect846"
@@ -791,5 +853,12 @@
        inkscape:export-filename="C:\Users\yaman\Desktop\unchecked.png"
        inkscape:export-xdpi="35.549999"
        inkscape:export-ydpi="35.549999" />
+    <ellipse
+       style="fill:url(#radialGradient2);stroke:none;stroke-width:2.4511"
+       id="path1"
+       cx="91.445312"
+       cy="1446.3542"
+       rx="73.774445"
+       ry="73.774452" />
   </g>
 </svg>
