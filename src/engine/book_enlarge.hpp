@@ -282,62 +282,41 @@ void get_book_deviate_todo(Book_deviate_todo_elem todo_elem, int best_move_only_
     if (todo_elem.player == best_move_only_player){
         std::vector<Book_value> links = book.get_all_moves_with_value(&todo_elem.board);
         int best_score = -SCORE_MAX;
-        Flip flip;
         for (Book_value &link: links){
-            calc_flip(&flip, &todo_elem.board, link.policy);
-            int link_value = link.value;
-            todo_elem.board.move_board(&flip);
-                Book_elem link_elem = book.get(todo_elem.board);
-                if (link_elem.value != SCORE_UNDEFINED && link_value < -link_elem.value){
-                    link_value = link_elem.value;
-                }
-            todo_elem.board.undo_board(&flip);
-            best_score = std::max(best_score, link_value);
+            best_score = std::max(best_score, link.value);
         }
-
-        int best_score2 = -SCORE_MAX;
-        for (Book_value &link: links){
-            best_score2 = std::max(best_score2, link.value);
-        }
-        if (best_score != best_score2){
-            std::cerr << "BESTSCORE ERROR " << best_score << " " << best_score2 << std::endl;
-        }
-        
         if (-SCORE_MAX <= book_elem.leaf.value && book_elem.leaf.value <= SCORE_MAX && is_valid_policy(book_elem.leaf.move)){
             best_score = std::max(best_score, (int)book_elem.leaf.value);
         }
         // check leaf
-        int leaf_error = book_elem.value - book_elem.leaf.value;
-        if (book_elem.leaf.value == best_score && leaf_error <= todo_elem.max_leaf_error && is_valid_policy(book_elem.leaf.move)){
-            if (todo_elem.board.get_legal() & (1ULL << book_elem.leaf.move)){ // is leaf legal?
-                bool leaf_in_link = false;
-                for (Book_value &link: links){
-                    leaf_in_link |= link.policy == book_elem.leaf.move;
-                }
-                if (!leaf_in_link){
-                    book_deviate_todo.emplace(todo_elem);
-                    if (book_deviate_todo.size() % 100 == 0)
-                        std::cerr << "loop " << n_loop << " book deviate todo " << book_deviate_todo.size() << " calculating... time " << ms_to_time_short(tim() - all_strt) << std::endl;
+        if (book_elem.leaf.value == best_score){
+            int leaf_error = book_elem.value - book_elem.leaf.value;
+            if (leaf_error <= todo_elem.max_leaf_error && is_valid_policy(book_elem.leaf.move)){
+                if (todo_elem.board.get_legal() & (1ULL << book_elem.leaf.move)){ // is leaf legal?
+                    bool leaf_in_link = false;
+                    for (Book_value &link: links){
+                        leaf_in_link |= link.policy == book_elem.leaf.move;
+                    }
+                    if (!leaf_in_link){
+                        book_deviate_todo.emplace(todo_elem);
+                        if (book_deviate_todo.size() % 100 == 0)
+                            std::cerr << "loop " << n_loop << " book deviate todo " << book_deviate_todo.size() << " calculating... time " << ms_to_time_short(tim() - all_strt) << std::endl;
+                    }
                 }
             }
         }
         // expand links
         if (todo_elem.board.n_discs() + 1 < book_depth + 4){
-            //Flip flip;
+            Flip flip;
             for (Book_value &link: links){
-                calc_flip(&flip, &todo_elem.board, link.policy);
-                int link_value = link.value;
-                todo_elem.board.move_board(&flip);
-                    Book_elem link_elem = book.get(todo_elem.board);
-                    if (link_elem.value != SCORE_UNDEFINED && link_value < -link_elem.value){
-                        link_value = link_elem.value;
+                if (link.value == best_score){
+                    int link_error = book_elem.value - link.value;
+                    if (link_error <= todo_elem.max_error_per_move && link_error <= todo_elem.remaining_error){
+                        calc_flip(&flip, &todo_elem.board, link.policy);
+                        todo_elem.move(&flip, link_error);
+                            get_book_deviate_todo(todo_elem, best_move_only_player, book_depth, book_deviate_todo, all_strt, book_learning, board_copy, player, n_loop);
+                        todo_elem.undo(&flip, link_error);
                     }
-                todo_elem.board.undo_board(&flip);
-                int link_error = book_elem.value - link_value;
-                if (link_value == best_score && link_error <= todo_elem.max_error_per_move && link_error <= todo_elem.remaining_error){
-                    todo_elem.move(&flip, link_error);
-                        get_book_deviate_todo(todo_elem, best_move_only_player, book_depth, book_deviate_todo, all_strt, book_learning, board_copy, player, n_loop);
-                    todo_elem.undo(&flip, link_error);
                 }
             }
         }
