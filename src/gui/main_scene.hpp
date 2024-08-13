@@ -495,7 +495,7 @@ private:
             changeScene(U"Export_game", SCENE_FADE_TIME);
             return;
         }
-        if (getData().menu_elements.screen_shot) {
+        if (getData().menu_elements.screen_shot || (KeyControl + KeyS).down() || (KeyCommand + KeyS).down()) {
             taking_screen_shot = true;
             getData().menu_elements.screen_shot = false; // because skip drawing menu in next frame
         }
