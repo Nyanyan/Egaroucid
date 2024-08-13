@@ -37,13 +37,13 @@
      inkscape:snap-bbox-edge-midpoints="true"
      inkscape:bbox-nodes="true"
      inkscape:bbox-paths="true"
-     inkscape:zoom="0.64"
-     inkscape:cx="-54.6875"
-     inkscape:cy="5982.8125"
+     inkscape:zoom="0.45254834"
+     inkscape:cx="161.30873"
+     inkscape:cy="6008.1979"
      inkscape:window-width="2104"
      inkscape:window-height="2041"
      inkscape:window-x="764"
-     inkscape:window-y="2197"
+     inkscape:window-y="2170"
      inkscape:window-maximized="0"
      inkscape:current-layer="layer1"
      inkscape:snap-global="true"
@@ -56,7 +56,7 @@
        inkscape:collect="always">
       <stop
          style="stop-color:#9824ff;stop-opacity:1;"
-         offset="0.8697933"
+         offset="0.71014416"
          id="stop3" />
       <stop
          style="stop-color:#9a24ff;stop-opacity:0;"
@@ -96,7 +96,7 @@
        fx="91.445312"
        fy="1446.3542"
        r="74.999992"
-       gradientTransform="matrix(1.1197628,0,0,1.1197628,-10.951752,-173.21956)"
+       gradientTransform="matrix(1.4155687,0,0,1.4155687,-38.001814,-601.05975)"
        gradientUnits="userSpaceOnUse"
        spreadMethod="pad" />
   </defs>
@@ -105,15 +105,15 @@
      inkscape:groupmode="layer"
      id="layer1">
     <ellipse
-       style="fill:url(#radialGradient2-0);stroke:none;stroke-width:2.74465"
+       style="fill:url(#radialGradient2-0);stroke:none;stroke-width:3.4697"
        id="path1-8"
        cx="91.445312"
        cy="1446.3542"
-       rx="82.609879"
-       ry="82.609886"
+       rx="104.43279"
+       ry="104.4328"
        inkscape:export-filename="laser_pointer.png"
-       inkscape:export-xdpi="30.746927"
-       inkscape:export-ydpi="30.746927" />
+       inkscape:export-xdpi="36.482792"
+       inkscape:export-ydpi="36.482792" />
     <rect
        style="fill:#e3e3e3;fill-opacity:1;stroke:none;stroke-width:1.97691;stroke-opacity:1"
        id="rect846"
