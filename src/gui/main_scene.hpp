@@ -447,7 +447,7 @@ private:
     }
 
     void menu_in_out() {
-        if ((KeyControl + KeyT).down() || (KeyCommand + KeyT).down() || getData().menu_elements.input_transcript) {
+        if (getData().menu_elements.input_transcript || (KeyControl + KeyT).down() || (KeyCommand + KeyT).down()) {
             changing_scene = true;
             stop_calculating();
             resume_calculating();
