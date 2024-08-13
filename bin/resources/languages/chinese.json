@@ -109,7 +109,7 @@
         "output_game": "保存对局",
         "input_transcript": "从剪切板导入棋谱 (Ctrl+T)",
         "input_board": "字符串导入",
-        "edit_board": "编辑棋盘",
+        "edit_board": "编辑棋盘 (Ctrl+E)",
         "input_bitboard": "导入棋盘作为位板",
         "output_bitboard": "导出棋盘作为位板",
         "player_opponent": "棋手/对手",

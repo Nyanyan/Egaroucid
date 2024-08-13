@@ -109,7 +109,7 @@
         "output_game": "Save Game",
         "input_transcript": "Input Transcript (Ctrl+T)",
         "input_board": "Input Board",
-        "edit_board": "Edit Board",
+        "edit_board": "Edit Board (Ctrl+E)",
         "input_bitboard": "Input Board as Bitboard",
         "output_bitboard": "Output Board as Bitboard",
         "player_opponent": "Player/Opponent",

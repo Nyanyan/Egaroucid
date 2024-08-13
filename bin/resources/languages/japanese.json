@@ -109,7 +109,7 @@
         "output_game": "対局保存",
         "input_transcript": "棋譜入力 (Ctrl+T)",
         "input_board": "盤面入力",
-        "edit_board": "盤面編集",
+        "edit_board": "盤面編集 (Ctrl+E)",
         "input_bitboard": "ビットボード入力",
         "output_bitboard": "ビットボード出力",
         "player_opponent": "手番/相手",
