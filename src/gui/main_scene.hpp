@@ -843,28 +843,28 @@ private:
 
     void interact_graph() {
         getData().graph_resources.n_discs = graph.update_n_discs(getData().graph_resources.nodes[0], getData().graph_resources.nodes[1], getData().graph_resources.n_discs);
-        if (!KeyLeft.pressed() && !KeyA.pressed()) {
+        if (!KeyLeft.pressed()) {
             move_board_button_status.left_pushed = BUTTON_NOT_PUSHED;
         }
-        if (!KeyRight.pressed() && !KeyD.pressed()) {
+        if (!KeyRight.pressed()) {
             move_board_button_status.right_pushed = BUTTON_NOT_PUSHED;
         }
 
-        if (MouseX1.down() || KeyLeft.down() || KeyA.down() || (move_board_button_status.left_pushed != BUTTON_NOT_PUSHED && tim() - move_board_button_status.left_pushed >= BUTTON_LONG_PRESS_THRESHOLD)) {
+        if (MouseX1.down() || KeyLeft.down() || (move_board_button_status.left_pushed != BUTTON_NOT_PUSHED && tim() - move_board_button_status.left_pushed >= BUTTON_LONG_PRESS_THRESHOLD)) {
             stop_calculating();
             --getData().graph_resources.n_discs;
             getData().graph_resources.delta = -1;
             resume_calculating();
-            if (KeyLeft.down() || KeyA.down()) {
+            if (KeyLeft.down()) {
                 move_board_button_status.left_pushed = tim();
             }
         }
-        else if (MouseX2.down() || KeyRight.down() || KeyD.down() || (move_board_button_status.right_pushed != BUTTON_NOT_PUSHED && tim() - move_board_button_status.right_pushed >= BUTTON_LONG_PRESS_THRESHOLD)) {
+        else if (MouseX2.down() || KeyRight.down() || (move_board_button_status.right_pushed != BUTTON_NOT_PUSHED && tim() - move_board_button_status.right_pushed >= BUTTON_LONG_PRESS_THRESHOLD)) {
             stop_calculating();
             ++getData().graph_resources.n_discs;
             getData().graph_resources.delta = 1;
             resume_calculating();
-            if (KeyRight.down() || KeyD.down()) {
+            if (KeyRight.down()) {
                 move_board_button_status.right_pushed = tim();
             }
         }
