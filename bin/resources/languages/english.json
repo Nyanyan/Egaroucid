@@ -171,7 +171,7 @@
         "save_this_branch": "Save this Branch (Ctrl+L)",
         "generate_random_board": {
             "generate_random_board": "Generate Random Board",
-            "generate": "Generate (R)",
+            "generate": "Generate (Ctrl+R)",
             "generate_n_moves": "Moves"
         },
         "convert": {
