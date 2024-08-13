@@ -189,6 +189,16 @@ Search_result endgame_optimized_search(Board board, int depth, uint_fast8_t mpc_
 inline Search_result tree_search_legal(Board board, int depth, uint_fast8_t mpc_level, bool show_log, uint64_t use_legal, bool use_multi_thread){
     thread_pool.tell_start_using();
     Search_result res;
+    res.value = SCORE_UNDEFINED;
+    res.policy = MOVE_UNDEFINED;
+    res.nodes = 0;
+    res.nps = 0;
+    res.depth = 0;
+    res.is_end_search = false;
+    res.probability = 0;
+    res.time = 0;
+    res.clog_nodes = 0;
+    res.clog_time = 0;
     depth = std::min(HW2 - board.n_discs(), depth);
     bool is_end_search = (HW2 - board.n_discs() == depth);
     std::vector<Clog_result> clogs;
@@ -207,22 +217,18 @@ inline Search_result tree_search_legal(Board board, int depth, uint_fast8_t mpc_
         }
         res.clog_nodes = clog_nodes;
         res.clog_time = clog_time;
-        res.depth = clog_depth;
-        res.is_end_search = clog_depth >= HW2 - board.n_discs();
-        res.nodes = 0;
-        res.nps = 0;
-        res.probability = 100;
-        res.time = clog_time;
-        res.value = SCORE_UNDEFINED;
+        /*
         for (int i = 0; i < (int)clogs.size(); ++i){
             if (clogs[i].val > res.value){
                 res.value = clogs[i].val;
                 res.policy = clogs[i].pos;
+                res.is_end_search = true;
             }
         }
+        */
     }
     if (use_legal){
-        res = lazy_smp(board, depth, mpc_level, show_log, clogs, use_legal, use_multi_thread);
+        lazy_smp(board, depth, mpc_level, show_log, clogs, use_legal, use_multi_thread, &res);
         /*
         if (is_end_search){
             res = endgame_optimized_search(board, depth, mpc_level, show_log, clogs, use_legal, use_multi_thread);
