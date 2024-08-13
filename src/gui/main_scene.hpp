@@ -461,7 +461,7 @@ private:
             changeScene(U"Import_board", SCENE_FADE_TIME);
             return;
         }
-        if (getData().menu_elements.edit_board) {
+        if (getData().menu_elements.edit_board || (KeyControl + KeyE).down() || (KeyCommand + KeyE).down()) {
             changing_scene = true;
             stop_calculating();
             resume_calculating();
