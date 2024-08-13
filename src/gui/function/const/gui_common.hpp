@@ -309,6 +309,7 @@ struct Settings {
     bool show_legal;
     bool show_graph;
     bool show_opening_on_cell;
+    bool show_laser_pointer;
     bool show_log;
     int book_learn_depth;
     int book_learn_error_per_move;
@@ -415,6 +416,7 @@ struct Menu_elements {
     bool show_opening_on_cell;
     bool show_stable_discs;
     bool show_play_ordering;
+    bool show_laser_pointer;
     bool show_log;
     bool show_last_move;
     bool show_next_move;
@@ -519,6 +521,7 @@ struct Menu_elements {
         show_opening_on_cell = settings->show_opening_on_cell;
         show_stable_discs = settings->show_stable_discs;
         show_play_ordering = settings->show_play_ordering;
+        show_laser_pointer = settings->show_laser_pointer;
         show_log = settings->show_log;
         show_last_move = settings->show_last_move;
         show_next_move = settings->show_next_move;

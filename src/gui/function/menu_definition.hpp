@@ -113,6 +113,8 @@ Menu create_menu(Menu_elements* menu_elements, Resources *resources, Font font) 
     side_menu.init_radio(language.get("display", "graph", "sum_of_loss"), &menu_elements->show_graph_sum_of_loss, menu_elements->show_graph_sum_of_loss);
     menu_e.push(side_menu);
     title.push(menu_e);
+    menu_e.init_check(language.get("display", "laser_pointer"), &menu_elements->show_laser_pointer, menu_elements->show_laser_pointer);
+    title.push(menu_e);
     menu_e.init_check(language.get("display", "log"), &menu_elements->show_log, menu_elements->show_log);
     title.push(menu_e);
     menu_e.init_check(language.get("display", "change_color_type"), &menu_elements->change_color_type, menu_elements->change_color_type);
