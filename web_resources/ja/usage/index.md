@@ -95,9 +95,11 @@ AIの計算過程などを表示します。ユーザはあまり気にしなく
 Egaroucidは頻繁に使う機能にショートカットキーを割り当てています。それをここにまとめます。
 
 <ul>
+    <li>対局開始ボタン Space</li>
     <li>対局
         <ul>
             <li><a href="#対局_新規対局 (人間同士)">新規対局 (人間同士)</a> Ctrl+N (New game)</li>
+            <li><a href="#対局_分析">分析</a> A (Analyze)</li>
         </ul>
     </li>
     <li>設定
@@ -110,24 +112,31 @@ Egaroucidは頻繁に使う機能にショートカットキーを割り当て�
         <ul>
             <li><a href="#表示_合法手への表示 > 石差評価">合法手への表示 > 石差評価</a> V (evaluation Value)</li>
             <li><a href="#表示_合法手への表示 > うみがめ数">合法手への表示 > うみがめ数</a> U (Umigame's number)</li>
+            <li><a href="#表示_グラフ">評価値グラフ</a> D (estimated Disc difference)</li>
+            <li><a href="#表示_グラフ">累積石損グラフ</a> S (Sum of loss)</li>
+            <li><a href="#表示_レーザーポインタ">レーザーポインタ</a> P (laser Pointer)</li>
         </ul>
     </li>
     <li>操作
         <ul>
             <li><a href="#操作_AIに1手打たせる">AIに1手打たせる</a> G (Go)</li>
-            <li><a href="#操作_進む/戻る">進む</a> →/D</li>
-            <li><a href="#操作_進む/戻る">戻る</a> ←/A</li>
+            <li><a href="#操作_進む/戻る">進む</a> →</li>
+            <li><a href="#操作_進む/戻る">戻る</a> ←</li>
             <li><a href="#操作_待った">待った</a> BackSpace</li>
-            <li><a href="#操作_この分岐を保存">この分岐を保存</a> L (Line)</li>
+            <li><a href="#操作_この分岐を保存">この分岐を保存</a> Ctrl+L (Line)</li>
             <li><a href="#操作_ランダム局面を生成">ランダム局面を生成</a> R (Random)</li>
         </ul>
     </li>
     <li>入出力
         <ul>
-            <li><a href="#入出力_出力 > 現局面までの棋譜をコピー">棋譜をコピー</a> Ctrl+C (Copy)</li>
+            <li><a href="#入出力_入力 > 棋譜入力">入力 > 棋譜入力</a> Ctrl+T (Transcript)</li>
+            <li><a href="#入出力_入力 > 盤面編集">入力 > 盤面編集</a> Ctrl+E (Edit board)</li>
+            <li><a href="#入出力_出力 > 現局面までの棋譜をコピー">出力 > 棋譜をコピー</a> Ctrl+C (Copy)</li>
+            <li><a href="#入出力_出力 > スクリーンショット">出力 > スクリーンショット</a> Ctrl+S (Save / Screenshot)</li>
         </ul>
     </li>
 </ul>
+
 
 
 また、基本操作として、「取り込む」や「出力する」「スタート」「OK」のようなニュアンスのボタンはEnterキーで操作できます。「戻る」や「この画面から抜ける」のようなニュアンスのボタンはEscキーで操作できます。
