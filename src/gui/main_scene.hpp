@@ -462,6 +462,14 @@ private:
         if (KeyU.down()) {
             getData().menu_elements.use_umigame_value = !getData().menu_elements.use_umigame_value;
         }
+        if (KeyD.down()) {
+            getData().menu_elements.show_graph_value = true;
+            getData().menu_elements.show_graph_sum_of_loss = false;
+        }
+        if (KeyS.down()) {
+            getData().menu_elements.show_graph_value = false;
+            getData().menu_elements.show_graph_sum_of_loss = true;
+        }
         if (KeyP.down()) {
             getData().menu_elements.show_laser_pointer = !getData().menu_elements.show_laser_pointer;
         }
