@@ -441,8 +441,8 @@ private:
         }
         if ((getData().menu_elements.analyze || KeyA.down()) && !ai_status.ai_thinking && !ai_status.analyzing) {
             stop_calculating();
-            init_analyze();
             resume_calculating();
+            init_analyze();
         }
     }
 
