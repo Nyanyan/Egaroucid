@@ -517,7 +517,7 @@ private:
     }
 
     void menu_manipulate() {
-        if (getData().menu_elements.stop_calculating) {
+        if (getData().menu_elements.stop_calculating || KeyQ.down()) {
             stop_calculating();
             reset_hint();
             reset_pv();
