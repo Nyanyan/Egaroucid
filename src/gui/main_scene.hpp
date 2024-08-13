@@ -130,6 +130,8 @@ public:
 
         // menu
         menu_game();
+        menu_setting();
+        menu_display();
         menu_manipulate();
         menu_in_out();
         menu_book();
@@ -142,10 +144,6 @@ public:
         }
 
         // move
-        if (KeyB.down())
-            getData().menu_elements.ai_put_black = !getData().menu_elements.ai_put_black;
-        if (KeyW.down())
-            getData().menu_elements.ai_put_white = !getData().menu_elements.ai_put_white;
         bool ai_should_move =
             !need_start_game_button &&
             !getData().history_elem.board.is_end() && 
@@ -228,8 +226,6 @@ public:
 
         // hint calculating & drawing
         bool hint_ignore = ai_should_move || ai_status.analyzing || need_start_game_button || pausing_in_pass || changing_scene;
-        if (KeyV.down())
-            getData().menu_elements.use_disc_hint = !getData().menu_elements.use_disc_hint;
         if (!hint_ignore) {
             if (getData().menu_elements.use_disc_hint) {
                 if ((ai_status.hint_calculating || ai_status.hint_calculated) && getData().menu_elements.n_disc_hint > ai_status.n_hint_display){
@@ -271,8 +267,6 @@ public:
             }
 
             // umigame calculating / drawing
-            if (KeyU.down())
-                getData().menu_elements.use_umigame_value = !getData().menu_elements.use_umigame_value;
             if (getData().menu_elements.use_umigame_value && !hint_ignore) {
                 if (umigame_value_depth_before != getData().menu_elements.umigame_value_depth){
                     umigame_status.umigame_calculated = false;
@@ -307,8 +301,6 @@ public:
         }
 
         // laser pointer
-        if (KeyP.down())
-            getData().menu_elements.show_laser_pointer = !getData().menu_elements.show_laser_pointer;
         if (getData().menu_elements.show_laser_pointer){
             Cursor::RequestStyle(CursorStyle::Hidden);
             getData().resources.laser_pointer.scaled(30.0 / getData().resources.laser_pointer.width()).drawAt(Cursor::Pos());
@@ -451,6 +443,27 @@ private:
             stop_calculating();
             init_analyze();
             resume_calculating();
+        }
+    }
+
+    void menu_setting() {
+        if (KeyB.down()) {
+            getData().menu_elements.ai_put_black = !getData().menu_elements.ai_put_black;
+        }
+        if (KeyW.down()) {
+            getData().menu_elements.ai_put_white = !getData().menu_elements.ai_put_white;
+        }
+    }
+
+    void menu_display() {
+        if (KeyV.down()) {
+            getData().menu_elements.use_disc_hint = !getData().menu_elements.use_disc_hint;
+        }
+        if (KeyU.down()) {
+            getData().menu_elements.use_umigame_value = !getData().menu_elements.use_umigame_value;
+        }
+        if (KeyP.down()) {
+            getData().menu_elements.show_laser_pointer = !getData().menu_elements.show_laser_pointer;
         }
     }
 
