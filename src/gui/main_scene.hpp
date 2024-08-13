@@ -161,7 +161,7 @@ public:
         if (need_start_game_button) {
             need_start_game_button_calculation();
             start_game_button.draw();
-            if (start_game_button.clicked()) {
+            if (start_game_button.clicked() || KeySpace.down()) {
                 need_start_game_button = false;
                 stop_calculating();
                 resume_calculating();
