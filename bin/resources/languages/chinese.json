@@ -22,7 +22,7 @@
         "new_game_human_black": "新建对局 (玩家执黑)",
         "new_game_human_white": "新建对局 (玩家执白)",
         "new_selfplay": "新建对局 (AI自弈)",
-        "analyze": "分析对局",
+        "analyze": "分析对局 (A)",
         "start_game": "开始",
         "pass": "pass"
     },
