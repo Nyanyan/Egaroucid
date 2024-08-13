@@ -107,7 +107,7 @@
         "output_transcript": "复制棋谱到剪切板 (Ctrl+C)",
         "output_board": "复制棋盘为字符串",
         "output_game": "保存对局",
-        "input_transcript": "从剪切板导入棋谱",
+        "input_transcript": "从剪切板导入棋谱 (Ctrl+T)",
         "input_board": "字符串导入",
         "edit_board": "编辑棋盘",
         "input_bitboard": "导入棋盘作为位板",

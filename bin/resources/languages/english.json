@@ -107,7 +107,7 @@
         "output_transcript": "Copy Transcript (Ctrl+C)",
         "output_board": "Copy Board as String",
         "output_game": "Save Game",
-        "input_transcript": "Input Transcript",
+        "input_transcript": "Input Transcript (Ctrl+T)",
         "input_board": "Input Board",
         "edit_board": "Edit Board",
         "input_bitboard": "Input Board as Bitboard",
