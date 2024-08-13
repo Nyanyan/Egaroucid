@@ -41,24 +41,34 @@ class Flip{
     public:
         // original code from http://www.amy.hi-ho.ne.jp/okuhara/bitboard.htm
         // by Toshihiko Okuhara
+    #if USE_AVX512
 
         static inline __m128i calc_flip(__m128i OP, const uint_fast8_t place) {
-    #ifdef USE_AVX512
-            __m256i bp = _mm256_broadcastq_epi64(OP);
-            __m256i bo = _mm256_permute4x64_epi64(_mm256_castsi128_si256(OP), 0x55);
+            __m256i PP = _mm256_broadcastq_epi64(OP);
+            __m256i OO = _mm256_permute4x64_epi64(_mm256_castsi128_si256(OP), 0x55);
+            __m256i mask = lrmask[place].v4[1];
+              // right: look for non-opponent (or edge) bit with lzcnt
+            __m256i outflank = _mm256_andnot_si256(OO, mask);
+            outflank = _mm256_srlv_epi64(_mm256_set1_epi64x(0x8000000000000000), _mm256_lzcnt_epi64(outflank));
+            outflank = _mm256_and_si256(outflank, PP);
+              // set all bits higher than outflank
+            __m256i flip4 = _mm256_andnot_si256(_mm256_or_si256(_mm256_add_epi64(outflank, _mm256_set1_epi64x(-1)), outflank), mask);
 
-            __m256i rr = _mm256_and_si256(bp, lrmask[place].v4[1]);
-            __m256i ll = _mm256_andnot_si256(bo, lrmask[place].v4[0]);
-            __m256i t0 = _mm256_srlv_epi64(_mm256_set1_epi64x(-1), _mm256_lzcnt_epi64(rr));
-            __m256i t2 = _mm256_add_epi64(ll, _mm256_set1_epi64x(-1));
-                    t2 = _mm256_ternarylogic_epi64(lrmask[place].v4[0], t2, ll, 0x60);
-            __m256i fl = _mm256_maskz_andnot_epi64(_mm256_test_epi64_mask(bp, t2), bp, t2);
-            __m256i t3 = _mm256_ternarylogic_epi64(bo, lrmask[place].v4[1], rr, 0x04);
+              // left: look for non-opponent LS1B
+            mask = lrmask[place].v4[0];
+            outflank = _mm256_andnot_si256(OO, mask);
+            outflank = _mm256_xor_si256(outflank, _mm256_add_epi64(outflank, _mm256_set1_epi64x(-1)));	// BLSMSK
+            outflank = _mm256_and_si256(outflank, mask);	// non-opponent LS1B and opponent inbetween
+              // apply flip if P is in BLSMSK, i.e. LS1B is P
+            flip4 = _mm256_mask_or_epi64(flip4, _mm256_test_epi64_mask(outflank, PP), flip4, _mm256_and_si256(outflank, OO));
 
-            __m256i f4 = _mm256_mask_ternarylogic_epi64(fl, _mm256_cmp_epi64_mask(t3, rr, _MM_CMPINT_LT), t0, lrmask[place].v4[1], 0xf2);
-            __m128i f2 = _mm_or_si128(_mm256_castsi256_si128(f4), _mm256_extracti128_si256(f4, 1));
-            return _mm_or_si128(f2, _mm_shuffle_epi32(f2, 0x4e));
+            __m128i flip2 = _mm_or_si128(_mm256_castsi256_si128(flip4), _mm256_extracti128_si256(flip4, 1));
+            return _mm_or_si128(flip2, _mm_shuffle_epi32(flip2, 0x4e));	// SWAP64
+        }
+
     #else
+
+        static inline __m128i calc_flip(__m128i OP, const uint_fast8_t place) {
             __m256i bp = _mm256_broadcastq_epi64(OP);
             __m256i bo = _mm256_permute4x64_epi64(_mm256_castsi128_si256(OP), 0x55);
 
@@ -78,8 +88,9 @@ class Flip{
             __m256i f4 = _mm256_or_si256(rf, lf);
             __m128i fl = _mm_or_si128(_mm256_castsi256_si128(f4), _mm256_extracti128_si256(f4, 1));
             return _mm_or_si128(fl, _mm_shuffle_epi32(fl, 0x4e));
-    #endif
         }
+
+    #endif
 
         inline uint64_t calc_flip(const uint64_t player, const uint64_t opponent, const uint_fast8_t place) {
             pos = place;
