@@ -205,7 +205,7 @@ inline bool mpc(Search* search, int alpha, int beta, int depth, uint64_t legal, 
         search->mpc_level = MPC_100_LEVEL;
         if (d0value >= beta + error_0){
             int pc_beta = beta + error_search;
-            if (pc_beta < SCORE_MAX){
+            if (pc_beta <= SCORE_MAX){
                 if (nega_alpha_ordering_nws(search, pc_beta - 1, search_depth, false, legal, false, searching) >= pc_beta){
                     *v = beta;
                     if (is_end_search)
@@ -217,7 +217,7 @@ inline bool mpc(Search* search, int alpha, int beta, int depth, uint64_t legal, 
         }
         if (d0value <= alpha - error_0){
             int pc_alpha = alpha - error_search;
-            if (pc_alpha > -SCORE_MAX){
+            if (pc_alpha >= -SCORE_MAX){
                 if (nega_alpha_ordering_nws(search, pc_alpha, search_depth, false, legal, false, searching) <= pc_alpha){
                     *v = alpha;
                     if (is_end_search)
