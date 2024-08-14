@@ -1130,13 +1130,17 @@ private:
                 }
             }
             int n_disc_hint = std::min((int)hint_infos.size(), getData().menu_elements.n_disc_hint);
+            double best_score = -SCORE_INF;
+            for (int i = 0; i < n_disc_hint; ++i) {
+                best_score = std::max(best_score, hint_infos[i].value);
+            }
             for (int i = 0; i < n_disc_hint; ++i) {
                 //std::cerr << idx_to_coord(hint_infos[i].cell) << " " << hint_infos[i].value << std::endl;
                 int sx = BOARD_SX + (hint_infos[i].cell % HW) * BOARD_CELL_SIZE;
                 int sy = BOARD_SY + (hint_infos[i].cell / HW) * BOARD_CELL_SIZE;
                 Color color = getData().colors.white;
                 Font font = getData().fonts.font;
-                if (hint_infos[i].value == hint_infos[0].value) {
+                if (hint_infos[i].value == best_score) {
                     color = getData().colors.cyan;
                     font = getData().fonts.font_heavy;
                 }
