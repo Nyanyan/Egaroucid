@@ -840,3 +840,6 @@ level: 11 Egaroucid plays black WDL: 120-37-93 0.554 Egaroucid plays white WDL: 
 
 2024/08/15 mpda updated
 level: 11 Egaroucid plays black WDL: 123-33-94 0.558 Egaroucid plays white WDL: 114-35-101 0.526 Egaroucid win rate: 0.542
+
+2024/08/15 lazy smp updated
+level: 11 Egaroucid plays black WDL: 123-27-100 0.546 Egaroucid plays white WDL: 96-47-107 0.478 Egaroucid win rate: 0.512
