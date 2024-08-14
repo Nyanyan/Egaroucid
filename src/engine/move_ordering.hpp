@@ -301,8 +301,9 @@ inline void move_evaluate_end_nws(Search *search, Flip_value *flip_value){
 */
 inline void move_evaluate_end_simple_nws(Search *search, Flip_value *flip_value){
     flip_value->value = 0;
-    if (search->parity & cell_div4[flip_value->flip.pos])
+    if (search->parity & cell_div4[flip_value->flip.pos]){
         flip_value->value += W_END_NWS_SIMPLE_PARITY;
+    }
     search->move_noeval(&flip_value->flip);
         flip_value->n_legal = search->board.get_legal();
         flip_value->value += (MO_OFFSET_L_PM - get_n_moves_cornerX2(flip_value->n_legal)) * W_END_NWS_SIMPLE_MOBILITY;
@@ -317,8 +318,9 @@ inline void move_evaluate_end_simple_nws(Search *search, Flip_value *flip_value)
     @param siz                  the size of move_list
 */
 inline void swap_next_best_move(std::vector<Flip_value> &move_list, const int strt, const int siz){
-    if (strt == siz - 1)
+    if (strt == siz - 1){
         return;
+    }
     int top_idx = strt;
     int best_value = move_list[strt].value;
     for (int i = strt + 1; i < siz; ++i){
@@ -327,8 +329,9 @@ inline void swap_next_best_move(std::vector<Flip_value> &move_list, const int st
             top_idx = i;
         }
     }
-    if (top_idx != strt)
+    if (top_idx != strt){
         std::swap(move_list[strt], move_list[top_idx]);
+    }
 }
 
 /*
@@ -339,8 +342,9 @@ inline void swap_next_best_move(std::vector<Flip_value> &move_list, const int st
     @param siz                  the size of move_list
 */
 inline void swap_next_best_move(Flip_value move_list[], const int strt, const int siz){
-    if (strt == siz - 1)
+    if (strt == siz - 1){
         return;
+    }
     int top_idx = strt;
     int best_value = move_list[strt].value;
     for (int i = strt + 1; i < siz; ++i){
@@ -349,8 +353,9 @@ inline void swap_next_best_move(Flip_value move_list[], const int strt, const in
             top_idx = i;
         }
     }
-    if (top_idx != strt)
+    if (top_idx != strt){
         std::swap(move_list[strt], move_list[top_idx]);
+    }
 }
 
 /*
@@ -365,8 +370,9 @@ inline void swap_next_best_move(Flip_value move_list[], const int strt, const in
     @param searching            flag for terminating this search
 */
 inline void move_list_evaluate(Search *search, std::vector<Flip_value> &move_list, uint_fast8_t moves[], int depth, int alpha, int beta, const bool *searching){
-    if (move_list.size() == 1)
+    if (move_list.size() == 1){
         return;
+    }
     int eval_alpha = -std::min(SCORE_MAX, beta + MOVE_ORDERING_VALUE_OFFSET_BETA);
     int eval_beta = -std::max(-SCORE_MAX, alpha - MOVE_ORDERING_VALUE_OFFSET_ALPHA);
     int eval_depth = depth >> 2;
@@ -380,21 +386,24 @@ inline void move_list_evaluate(Search *search, std::vector<Flip_value> &move_lis
     for (Flip_value &flip_value: move_list){
         #if USE_MID_ETC
             if (flip_value.flip.flip){
-                if (flip_value.flip.pos == moves[0])
+                if (flip_value.flip.pos == moves[0]){
                     flip_value.value = W_1ST_MOVE;
-                else if (flip_value.flip.pos == moves[1])
+                } else if (flip_value.flip.pos == moves[1]){
                     flip_value.value = W_2ND_MOVE;
-                else
+                } else{
                     move_evaluate(search, &flip_value, eval_alpha, eval_beta, eval_depth, searching);
-            } else
+                }
+            } else{
                 flip_value.value = -INF;
+            }
         #else
-            if (flip_value.flip.pos == moves[0])
+            if (flip_value.flip.pos == moves[0]){
                 flip_value.value = W_1ST_MOVE;
-            else if (flip_value.flip.pos == moves[1])
+            } else if (flip_value.flip.pos == moves[1]){
                 flip_value.value = W_2ND_MOVE;
-            else
+            } else{
                 move_evaluate(search, &flip_value, eval_alpha, eval_beta, eval_depth, searching);
+            }
         #endif
     }
 }
@@ -410,29 +419,33 @@ inline void move_list_evaluate(Search *search, std::vector<Flip_value> &move_lis
     @param searching            flag for terminating this search
 */
 inline void move_list_evaluate_nws(Search *search, std::vector<Flip_value> &move_list, uint_fast8_t moves[], int depth, int alpha, const bool *searching){
-    if (move_list.size() <= 1)
+    if (move_list.size() <= 1){
         return;
+    }
     const int eval_alpha = -std::min(SCORE_MAX, alpha + MOVE_ORDERING_NWS_VALUE_OFFSET_BETA);
     const int eval_beta = -std::max(-SCORE_MAX, alpha - MOVE_ORDERING_NWS_VALUE_OFFSET_ALPHA);
     int eval_depth = depth >> 4;
     for (Flip_value &flip_value: move_list){
         #if USE_MID_ETC
             if (flip_value.flip.flip){
-                if (flip_value.flip.pos == moves[0])
+                if (flip_value.flip.pos == moves[0]){
                     flip_value.value = W_1ST_MOVE;
-                else if (flip_value.flip.pos == moves[1])
+                } else if (flip_value.flip.pos == moves[1]){
                     flip_value.value = W_2ND_MOVE;
-                else
+                } else{
                     move_evaluate_nws(search, &flip_value, eval_alpha, eval_beta, eval_depth, searching);
-            } else
+                }
+            } else{
                 flip_value.value = -INF;
+            }
         #else
-            if (flip_value.flip.pos == moves[0])
+            if (flip_value.flip.pos == moves[0]){
                 flip_value.value = W_1ST_MOVE;
-            else if (flip_value.flip.pos == moves[1])
+            } else if (flip_value.flip.pos == moves[1]){
                 flip_value.value = W_2ND_MOVE;
-            else
+            } else{
                 move_evaluate_nws(search, &flip_value, eval_alpha, eval_beta, eval_depth, searching);
+            }
         #endif
     }
 }
@@ -444,15 +457,17 @@ inline void move_list_evaluate_nws(Search *search, std::vector<Flip_value> &move
     @param move_list            list of moves
 */
 inline void move_list_evaluate_end_nws(Search *search, std::vector<Flip_value> &move_list, uint_fast8_t moves[], const bool *searching){
-    if (move_list.size() <= 1)
+    if (move_list.size() <= 1){
         return;
+    }
     for (Flip_value &flip_value: move_list){
-        if (flip_value.flip.pos == moves[0])
+        if (flip_value.flip.pos == moves[0]){
             flip_value.value = W_1ST_MOVE;
-        else if (flip_value.flip.pos == moves[1])
+        } else if (flip_value.flip.pos == moves[1]){
             flip_value.value = W_2ND_MOVE;
-        else
+        } else{
             move_evaluate_end_nws(search, &flip_value);
+        }
     }
 }
 
@@ -463,10 +478,12 @@ inline void move_list_evaluate_end_nws(Search *search, std::vector<Flip_value> &
     @param move_list            list of moves
 */
 inline void move_list_evaluate_end_simple_nws(Search *search, Flip_value move_list[], const int canput){
-    if (canput <= 1)
+    if (canput <= 1){
         return;
-    for (int i = 0; i < canput; ++i)
+    }
+    for (int i = 0; i < canput; ++i){
         move_evaluate_end_simple_nws(search, &move_list[i]);
+    }
 }
 
 inline void move_list_sort(std::vector<Flip_value> &move_list){
