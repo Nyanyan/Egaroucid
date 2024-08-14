@@ -1537,7 +1537,8 @@ private:
                     if (book_accuracy_status.book_accuracy[cell] > BOOK_ACCURACY_LEVEL_A){ // B-F
                         judge = judge_list[book_accuracy_status.book_accuracy[cell]];
                     } else{ // AA-AF
-                        judge = "A" + judge_list[book_accuracy_status.book_accuracy[cell] + BOOK_ACCURACY_A_SHIFT];
+                        judge = "A";
+                        judge += judge_list[book_accuracy_status.book_accuracy[cell] + BOOK_ACCURACY_A_SHIFT];
                     }
                     Board board = getData().history_elem.board;
                     Flip flip;
