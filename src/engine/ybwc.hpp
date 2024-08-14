@@ -94,7 +94,7 @@ inline int ybwc_split_nws(Search *search, int alpha, int depth, uint64_t legal, 
     ){
         int v;
         if (transposition_cutoff_nws(search, search->board.hash(), depth, alpha, &v)){
-            return v;
+            return -v;
         } else{
             bool pushed;
             parallel_tasks.emplace_back(thread_pool.push(&pushed, std::bind(&ybwc_do_task_nws, search->board.player, search->board.opponent, search->n_discs, search->parity, search->mpc_level, search->is_presearch, alpha, depth, legal, is_end_search, policy, move_idx, searching)));
@@ -133,7 +133,7 @@ inline int ybwc_split_nws(Search *search, int alpha, int depth, uint64_t legal, 
                             g = -nega_alpha_ordering_nws(search, -alpha - 1, depth - 1, false, move_list[move_idx].n_legal, is_end_search, searching);
                             serial_searched = true;
                         } else{
-                            g = -ybwc_split_state;
+                            g = ybwc_split_state;
                             ++search->n_nodes;
                         }
                         if (*searching){
@@ -219,7 +219,7 @@ inline int ybwc_split_nws(Search *search, int alpha, int depth, uint64_t legal, 
                             g = -nega_alpha_ordering_nws(search, -(*alpha) - 1, depth - 1, false, move_list[move_idx].n_legal, is_end_search, searching);
                             serial_searched = true;
                         } else{
-                            g = -ybwc_split_state;
+                            g = ybwc_split_state;
                             ++search->n_nodes;
                         }
                         if (*searching){
