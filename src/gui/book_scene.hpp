@@ -1134,6 +1134,7 @@ private:
     int error_leaf;
     int max_n_loops;
     int max_n_loops_used;
+	uint64_t last_saved_time;
 
 public:
     Deviate_book_transcript(const InitData& init) : IScene{ init } {
@@ -1253,6 +1254,7 @@ public:
                 if (!failed){
                     board_idx = 0;
                     book_learn_future = std::async(std::launch::async, book_deviate, board_list[board_idx], getData().menu_elements.level, depth, error_per_move, error_sum, error_leaf, max_n_loops_used, &history_elem.board, &history_elem.player, getData().settings.book_file, getData().settings.book_file + ".bak", &book_learning);
+					last_saved_time = tim();
                     book_learning = true;
                 }
                 done = true;
@@ -1333,6 +1335,10 @@ public:
                     ++board_idx;
                     global_searching = true;
                     if (board_idx < (int)board_list.size() && !stop_button_pressed){ // next board
+						if (tim() - last_saved_time >= AUTO_BOOK_SAVE_TIME){
+							book.save_egbk3(getData().settings.book_file, getData().settings.book_file + ".bak");
+							last_saved_time = tim();
+						}
                         book_learn_future = std::async(std::launch::async, book_deviate, board_list[board_idx], getData().menu_elements.level, depth, error_per_move, error_sum, error_leaf, max_n_loops_used, &history_elem.board, &history_elem.player, getData().settings.book_file, getData().settings.book_file + ".bak", &book_learning);
                         book_learning = true;
                         learning_done = false;
