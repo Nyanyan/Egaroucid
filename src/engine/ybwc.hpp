@@ -95,13 +95,18 @@ inline int ybwc_split_nws(Search *search, int alpha, int depth, uint64_t legal, 
         int v;
         if (transposition_cutoff_nws(search, search->board.hash(), depth, alpha, &v)){
             return -v;
+        }
+        if (!is_end_search && search->mpc_level < MPC_100_LEVEL){
+            if (mpc(search, alpha, alpha + 1, depth, legal, is_end_search, &v, searching)){
+                return -v;
+            }
+        }
+        bool pushed;
+        parallel_tasks.emplace_back(thread_pool.push(&pushed, std::bind(&ybwc_do_task_nws, search->board.player, search->board.opponent, search->n_discs, search->parity, search->mpc_level, search->is_presearch, alpha, depth, legal, is_end_search, policy, move_idx, searching)));
+        if (pushed){
+            return YBWC_PUSHED;
         } else{
-            bool pushed;
-            parallel_tasks.emplace_back(thread_pool.push(&pushed, std::bind(&ybwc_do_task_nws, search->board.player, search->board.opponent, search->n_discs, search->parity, search->mpc_level, search->is_presearch, alpha, depth, legal, is_end_search, policy, move_idx, searching)));
-            if (pushed)
-                return YBWC_PUSHED;
-            else
-                parallel_tasks.pop_back();
+            parallel_tasks.pop_back();
         }
     }
     return YBWC_NOT_PUSHED;
@@ -125,16 +130,7 @@ inline int ybwc_split_nws(Search *search, int alpha, int depth, uint64_t legal, 
                 }
                 bool serial_searched = false;
                 search->move(&move_list[move_idx].flip);
-                    int ybwc_split_state = YBWC_NOT_PUSHED;
-                    if (!is_end_search && search->mpc_level < MPC_100_LEVEL){
-                        int v;
-                        if (mpc(search, -alpha - 1, -alpha, depth - 1, move_list[move_idx].n_legal, false, &v, searching)){
-                            ybwc_split_state = -v;
-                        }
-                    }
-                    if (ybwc_split_state == YBWC_NOT_PUSHED){
-                        ybwc_split_state = ybwc_split_nws(search, -alpha - 1, depth - 1, move_list[move_idx].n_legal, is_end_search, &n_searching, move_list[move_idx].flip.pos, move_idx, canput, running_count, parallel_tasks);
-                    }
+                    int ybwc_split_state = ybwc_split_nws(search, -alpha - 1, depth - 1, move_list[move_idx].n_legal, is_end_search, &n_searching, move_list[move_idx].flip.pos, move_idx, canput, running_count, parallel_tasks);
                     if (ybwc_split_state == YBWC_PUSHED){
                         ++running_count;
                     } else {
