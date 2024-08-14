@@ -428,7 +428,7 @@ uint64_t expand_leaves(int book_depth, int level, int max_error_per_move, std::u
         bool use_multi_thread = (n_all - n_doing) < thread_pool.size() * 2;
         bool pushed;
         ++n_doing;
-        if (use_multi_thread){
+        if (use_multi_thread){ // multi thread, 1 problem
             n_add += expand_leaf(elem, book_depth, level, true, book_learning);
             ++n_done;
             int percent = 100ULL * n_done / n_all;
@@ -436,13 +436,11 @@ uint64_t expand_leaves(int book_depth, int level, int max_error_per_move, std::u
             std::string time_short = ms_to_time_short(tim() - all_strt);
             std::string eta_short = ms_to_time_short(eta);
             std::cerr << "loop " << n_loop << " book deviating " << percent << "% " <<  n_done << "/" << n_all << " registered " << n_add << " time " << time_short << " ETA " << eta_short << std::endl;
-        } else{
-            tasks.emplace_back(thread_pool.push(&pushed, std::bind(&expand_leaf, elem, book_depth, level, use_multi_thread, book_learning)));
+        } else{ // single thread, multi problems
+            tasks.emplace_back(thread_pool.push(&pushed, std::bind(&expand_leaf, elem, book_depth, level, false, book_learning)));
             if (!pushed){
-                //std::cerr << "deleted " << true << std::endl;
-                //elem.board.print();
                 tasks.pop_back();
-                expand_leaf(elem, book_depth, level, true, book_learning);
+                n_add += expand_leaf(elem, book_depth, level, true, book_learning);
                 ++n_done;
                 int percent = 100ULL * n_done / n_all;
                 uint64_t eta = (tim() - strt) * ((double)n_all / n_done - 1.0);

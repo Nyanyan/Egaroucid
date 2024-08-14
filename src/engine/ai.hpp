@@ -259,6 +259,10 @@ inline Search_result tree_search_legal(Board board, int depth, uint_fast8_t mpc_
     @return the result in Search_result structure
 */
 Search_result ai_common(Board board, int level, bool use_book, int book_acc_level, bool use_multi_thread, bool show_log, uint64_t use_legal, bool use_specified_move_book){
+    if (~board.get_legal() & use_legal){
+        std::cerr << "USE LEGAL ERROR " << std::hex << " " << board.get_legal() << use_legal << std::dec << std::endl;
+        board.print();
+    }
     Search_result res;
     int value_sign = 1;
     if (board.get_legal() == 0ULL){

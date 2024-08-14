@@ -93,6 +93,7 @@ class Thread_pool {
         }
 
         void reset_unavailable(){
+            /*
             if (n_idle == n_thread && n_using_tasks.load() == 0){
                 bool start_flag = false;
                 std::vector<std::future<void>> futures;
@@ -114,6 +115,7 @@ class Thread_pool {
                     resize(n_thread);
                 }
             }
+            */
         }
 
         #if ((defined(_MSVC_LANG) && _MSVC_LANG >= 201703L) || __cplusplus >= 201703L)
