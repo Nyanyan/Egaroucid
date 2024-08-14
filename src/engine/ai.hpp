@@ -187,7 +187,7 @@ Search_result endgame_optimized_search(Board board, int depth, uint_fast8_t mpc_
     @return the result in Search_result structure
 */
 inline Search_result tree_search_legal(Board board, int depth, uint_fast8_t mpc_level, bool show_log, uint64_t use_legal, bool use_multi_thread){
-    thread_pool.tell_start_using();
+    //thread_pool.tell_start_using();
     Search_result res;
     res.value = SCORE_UNDEFINED;
     res.policy = MOVE_UNDEFINED;
@@ -238,8 +238,8 @@ inline Search_result tree_search_legal(Board board, int depth, uint_fast8_t mpc_
         }
         */
     }
-    thread_pool.tell_finish_using();
-    thread_pool.reset_unavailable();
+    //thread_pool.tell_finish_using();
+    //thread_pool.reset_unavailable();
     //delete_tt(&board, 6);
     return res;
 }
@@ -297,9 +297,9 @@ Search_result ai_common(Board board, int level, bool use_book, int book_acc_leve
         get_level(level, board.n_discs() - 4, &is_mid_search, &depth, &mpc_level);
         if (show_log)
             std::cerr << "level status " << level << " " << board.n_discs() - 4 << " discs depth " << depth << "@" << SELECTIVITY_PERCENTAGE[mpc_level] << "%" << std::endl;
-        thread_pool.tell_start_using();
+        //thread_pool.tell_start_using();
         res = tree_search_legal(board, depth, mpc_level, show_log, use_legal, use_multi_thread);
-        thread_pool.tell_finish_using();
+        //thread_pool.tell_finish_using();
         res.value *= value_sign;
     }
     return res;
@@ -360,9 +360,9 @@ Analyze_result ai_analyze(Board board, int level, bool use_multi_thread, uint_fa
     search.init(&board, mpc_level, use_multi_thread, false, false);
     uint64_t strt = tim();
     bool searching = true;
-    thread_pool.tell_start_using();
+    //thread_pool.tell_start_using();
     Analyze_result res = first_nega_scout_analyze(&search, -SCORE_MAX, SCORE_MAX, depth, is_end_search, clogs, clog_depth, played_move, strt, &searching);
-    thread_pool.tell_finish_using();
+    //thread_pool.tell_finish_using();
     return res;
 }
 
@@ -374,7 +374,7 @@ Search_result ai_accept_loss(Board board, int level, int acceptable_loss){
     int v = SCORE_UNDEFINED;
     uint64_t legal = board.get_legal();
     std::vector<std::pair<int, int>> moves;
-    thread_pool.tell_start_using();
+    //thread_pool.tell_start_using();
     for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)){
         calc_flip(&flip, &board, cell);
         board.move_board(&flip);
@@ -383,7 +383,7 @@ Search_result ai_accept_loss(Board board, int level, int acceptable_loss){
         v = std::max(v, g);
         moves.emplace_back(std::make_pair(g, cell));
     }
-    thread_pool.tell_finish_using();
+    //thread_pool.tell_finish_using();
     std::vector<std::pair<int, int>> acceptable_moves;
     for (std::pair<int, int> move: moves){
         if (move.first >= v - acceptable_loss)
@@ -415,7 +415,7 @@ void ai_hint(Board board, int level, bool use_book, int book_acc_level, bool use
             --n_display;
         }
     }
-    thread_pool.tell_start_using();
+    //thread_pool.tell_start_using();
     for (int search_level = 1; search_level <= level && global_searching; ++search_level){
         //if (show_log){
         //    std::cerr << "hint level " << search_level << " calculating" << std::endl;
@@ -434,5 +434,5 @@ void ai_hint(Board board, int level, bool use_book, int book_acc_level, bool use
             }
         }
     }
-    thread_pool.tell_finish_using();
+    //thread_pool.tell_finish_using();
 }

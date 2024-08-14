@@ -37,13 +37,13 @@ class Thread_pool {
         std::queue<std::function<void()>> tasks{};
         std::unique_ptr<std::thread[]> threads;
         std::condition_variable condition;
-        std::atomic<int> n_using_tasks;
+        //std::atomic<int> n_using_tasks;
 
     public:
         void set_thread(int new_n_thread){
             {
                 std::lock_guard<std::mutex> lock(mtx);
-                n_using_tasks.store(0);
+                //n_using_tasks.store(0);
                 if (new_n_thread < 0)
                     new_n_thread = 0;
                 n_thread = new_n_thread;
@@ -92,8 +92,8 @@ class Thread_pool {
             return n_idle;
         }
 
+        /*
         void reset_unavailable(){
-            /*
             if (n_idle == n_thread && n_using_tasks.load() == 0){
                 bool start_flag = false;
                 std::vector<std::future<void>> futures;
@@ -115,8 +115,8 @@ class Thread_pool {
                     resize(n_thread);
                 }
             }
-            */
         }
+        */
 
         #if ((defined(_MSVC_LANG) && _MSVC_LANG >= 201703L) || __cplusplus >= 201703L)
             template<typename F, typename... Args, typename R = std::invoke_result_t<std::decay_t<F>, std::decay_t<Args>...>>
@@ -132,6 +132,7 @@ class Thread_pool {
             return future;
         }
 
+        /*
         void tell_start_using(){
             n_using_tasks.fetch_add(1);
         }
@@ -139,6 +140,7 @@ class Thread_pool {
         void tell_finish_using(){
             n_using_tasks.fetch_sub(1);
         }
+        */
 
     private:
 
