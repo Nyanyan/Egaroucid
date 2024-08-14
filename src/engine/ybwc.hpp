@@ -125,7 +125,15 @@ inline int ybwc_split_nws(Search *search, int alpha, int depth, uint64_t legal, 
                 }
                 bool serial_searched = false;
                 search->move(&move_list[move_idx].flip);
-                    int ybwc_split_state = ybwc_split_nws(search, -alpha - 1, depth - 1, move_list[move_idx].n_legal, is_end_search, &n_searching, move_list[move_idx].flip.pos, move_idx, canput, running_count, parallel_tasks);
+                    int ybwc_split_state = YBWC_NOT_PUSHED;
+                    if (!is_end_search){
+                        int v;
+                        if (mpc(search, -alpha - 1, -alpha, depth - 1, move_list[move_idx].n_legal, false, &v, searching)){
+                            ybwc_split_state = -v;
+                        } else{
+                            ybwc_split_state = ybwc_split_nws(search, -alpha - 1, depth - 1, move_list[move_idx].n_legal, is_end_search, &n_searching, move_list[move_idx].flip.pos, move_idx, canput, running_count, parallel_tasks);
+                        }
+                    }
                     if (ybwc_split_state == YBWC_PUSHED){
                         ++running_count;
                     } else {
