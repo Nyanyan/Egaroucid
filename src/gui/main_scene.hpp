@@ -1533,10 +1533,10 @@ private:
                 if (book_accuracy_status.book_accuracy[cell] != BOOK_ACCURACY_LEVEL_UNDEFINED){
                     //std::cerr << idx_to_coord(cell) << " " << book_accuracy_status.book_accuracy[cell] << std::endl;
                     std::string judge;
-                    constexpr std::string judge_list[N_BOOK_ACCURACY_LEVEL] = {"A", "B", "C", "D", "E", "F"};
+                    const std::string judge_list = "ABCDEF";
                     if (book_accuracy_status.book_accuracy[cell] > BOOK_ACCURACY_LEVEL_A){ // B-F
                         judge = judge_list[book_accuracy_status.book_accuracy[cell]];
-                    } else{ // AX
+                    } else{ // AA-AF
                         judge = "A" + judge_list[book_accuracy_status.book_accuracy[cell] + BOOK_ACCURACY_A_SHIFT];
                     }
                     Board board = getData().history_elem.board;
