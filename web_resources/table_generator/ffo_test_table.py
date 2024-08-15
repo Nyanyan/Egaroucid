@@ -18,29 +18,31 @@ else:
 </tr>
 '''
 
-
-files = glob.glob('./ffotest_result/*.txt')
-
-# CPU, version, time, nodes, NPS
+# CPU, version, time, nodes, NPS, file
 results = []
-for file in files:
-    with open(file, 'r') as f:
-        last_line_split = f.read().splitlines()[-1].split()
-    filename = file.replace('\\', '/').split('/')[-1]
-    cpu = ' '.join(filename.split('_')[1:-1])
-    edition = filename.split('_')[-1].split('.')[0]
-    nodes = last_line_split[1]
-    time = last_line_split[4][:-1]
-    nps = last_line_split[6]
-    print(cpu, edition, time, nodes, nps)
-    results.append([cpu, edition, time, nodes, nps])
+
+#7.3.0~
+#summary_file = input('summary file: ')
+summary_file = sys.argv[2]
+with open(summary_file, 'r') as f:
+    summary = f.read().splitlines()
+for line in summary:
+    line_elem = line.split(',')
+    cpu = line_elem[1].replace('_', ' ')
+    edition = line_elem[2]
+    time = line_elem[3]
+    nodes = line_elem[4]
+    nps = line_elem[5]
+    file = line_elem[6]
+    print(cpu, edition, time, nodes, nps, file)
+    results.append([cpu, edition, time, nodes, nps, file])
 
 res = head
-for result, file in zip(results, files):
+for result in results:
     res += '<tr>\n'
-    for elem in result:
+    for elem in result[:-1]:
         res += '<td>' + elem + '</td>'
-    filename = file.replace('\\', '/').split('/')[-1]
+    filename = result[-1].replace('\\', '/').split('/')[-1]
     res += '<td><a href="' + './files/' + filename + '">' + filename + '</a></td>'
     res += '\n'
     res += '</tr>\n'
