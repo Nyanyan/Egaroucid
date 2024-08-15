@@ -23,7 +23,25 @@ As a comparison, I also show [Edax 4.5.2](https://github.com/okuhara/edax-revers
 <tr><td>TABLE</td></tr>
 </table>
 </div>
+### Core i9-11900K
 
+With Core i9-11900K, you can run AVX512 edition.
+
+Egaroucid's result are:
+
+<div class="table_wrapper">
+<table>
+<tr><td>TABLE</td></tr>
+</table>
+</div>
+
+[Edax 4.5.2](https://github.com/okuhara/edax-reversi-AVX/releases/tag/v4.5.2)'s result are:
+
+<div class="table_wrapper">
+<table>
+<tr><td>TABLE</td></tr>
+</table>
+</div>
 
 
 
@@ -48,6 +66,5 @@ If Egaroucid Win Ratio is over 0.5, then Egaroucid wins more than Edax do. "Blac
 <tr><td>TABLE</td></tr>
 </table>
 </div>
-
 
 
