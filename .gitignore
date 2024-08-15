@@ -32,6 +32,8 @@ src/ai.wasm
 
 # web_resources directory
 web_resources/generated
+web_resources/table_generator/ffotest_result
 
 # book generate
 book
+
