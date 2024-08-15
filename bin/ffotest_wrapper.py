@@ -21,10 +21,10 @@ tasks = [ # is_egaroucid, start, end, n_threads, hash_level, exe, CPU, revision,
 # Core i9-11900K
 tasks = [ # start, end, n_threads, hash_level, exe, out_file
     #40-59
-    [True,  40, 59, 16, 25, 'versions/Egaroucid_for_Console_beta/Egaroucid_for_Console_7_3_0_x64_AVX512.exe',   'Core_i9-11900K', 'x64_AVX512',         '100_ffo40_59_Core_i9-11900K_x64_AVX512.txt'],
-    [True,  40, 59, 16, 25, 'versions/Egaroucid_for_Console_beta/Egaroucid_for_Console_7_3_0_x64_SIMD.exe',     'Core_i9-11900K', 'x64_SIMD',           '101_ffo40_59_Core_i9-11900K_x64_SIMD.txt'],
-    [True,  40, 59, 16, 25, 'versions/Egaroucid_for_Console_beta/Egaroucid_for_Console_7_3_0_x64_Generic.exe',  'Core_i9-11900K', 'x64_Generic',        '102_ffo40_59_Core_i9-11900K_x64_Generic.txt'],
-    [True,  40, 59, 16, 25, 'versions/Egaroucid_for_Console_beta/Egaroucid_for_Console_7_3_0_x86_Generic.exe',  'Core_i9-11900K', 'x86_Generic',        '103_ffo40_59_Core_i9-11900K_x86_Generic.txt'],
+    [True,  40, 59, 26, 25, 'versions/Egaroucid_for_Console_beta/Egaroucid_for_Console_7_3_0_x64_AVX512.exe',   'Core_i9-11900K', 'x64_AVX512',         '100_ffo40_59_Core_i9-11900K_x64_AVX512.txt'],
+    [True,  40, 59, 26, 25, 'versions/Egaroucid_for_Console_beta/Egaroucid_for_Console_7_3_0_x64_SIMD.exe',     'Core_i9-11900K', 'x64_SIMD',           '101_ffo40_59_Core_i9-11900K_x64_SIMD.txt'],
+    [True,  40, 59, 26, 25, 'versions/Egaroucid_for_Console_beta/Egaroucid_for_Console_7_3_0_x64_Generic.exe',  'Core_i9-11900K', 'x64_Generic',        '102_ffo40_59_Core_i9-11900K_x64_Generic.txt'],
+    [True,  40, 59, 26, 25, 'versions/Egaroucid_for_Console_beta/Egaroucid_for_Console_7_3_0_x86_Generic.exe',  'Core_i9-11900K', 'x86_Generic',        '103_ffo40_59_Core_i9-11900K_x86_Generic.txt'],
 
     [False, 40, 59, 16, 25, 'versions/edax_4_5_2/wEdax-x64-avx512.exe',                                         'Core_i9-11900K', 'x64_avx512',         '110_ffo40_59_Core_i9-11900K_edax_x64_avx512.txt'],
     [False, 40, 59, 16, 25, 'versions/edax_4_5_2/wEdax-x64-modern.exe',                                         'Core_i9-11900K', 'x64_modern',         '111_ffo40_59_Core_i9-11900K_edax_x64_modern.txt'],
