@@ -49,16 +49,21 @@ To avoid same lines, I used [XOT](https://berg.earthlingz.de/xot/aboutxot.php?la
 
 <div class="table_wrapper"><table>
 <tr><th>Name</th><th>Winning Rate</th></tr>
-<tr><td>7.2.0</td><td>0.5653</td></tr>
-<tr><td>7.1.0</td><td>0.5693</td></tr>
-<tr><td>7.0.0</td><td>0.5484</td></tr>
-<tr><td>6.5.X</td><td>0.5280</td></tr>
-<tr><td>6.4.X</td><td>0.4840</td></tr>
-<tr><td>6.3.X</td><td>0.4507</td></tr>
-<tr><td>6.1.X</td><td>0.4958</td></tr>
-<tr><td>6.0.X</td><td>0.4350</td></tr>
-<tr><td>Edax</td><td>0.4236</td></tr>
+<tr><td>7.3.0</td><td>0.5634</td></tr>
+<tr><td>7.2.0</td><td>0.5542</td></tr>
+<tr><td>7.1.0</td><td>0.5538</td></tr>
+<tr><td>7.0.0</td><td>0.5424</td></tr>
+<tr><td>6.5.X</td><td>0.5172</td></tr>
+<tr><td>6.4.X</td><td>0.4831</td></tr>
+<tr><td>6.3.X</td><td>0.4482</td></tr>
+<tr><td>6.1.X</td><td>0.4901</td></tr>
+<tr><td>6.0.X</td><td>0.4273</td></tr>
+<tr><td>Edax</td><td>0.4201</td></tr>
 </table></div>
+
+
+
+
 
 
 
@@ -80,6 +85,10 @@ There are detailed benchmarks for each version including older versions.
 	<tr>
 		<th>Version</th>
 		<th>Date</th>
+	</tr>
+    <tr>
+		<td><a href="./benchmarks/7_3_0/">7.3.0</a></td>
+		<td>TBD</td>
 	</tr>
     <tr>
 		<td><a href="./benchmarks/7_2_0/">7.2.0</a></td>
@@ -142,6 +151,7 @@ There are detailed benchmarks for each version including older versions.
 		<td>2022/03/02</td>
 	</tr>
 </table></div>
+
 
 
 
