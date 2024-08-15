@@ -5,27 +5,25 @@
 import subprocess
 import sys
 
-print('usage: python ffotest.py [start=40] [end=59] [n_threads=42] [hash_level=25] [exe=Egaroucid_for_Console.exe]')
-
 start = 40
-if len(sys.argv) >= 2:
-    start = int(sys.argv[1])
-
 end = 59
-if len(sys.argv) >= 3:
-    end = int(sys.argv[2])
-
 n_threads = 42
-if len(sys.argv) >= 4:
-    n_threads = int(sys.argv[3])
-
 hash_level = 25
-if len(sys.argv) >= 5:
-    n_threads = int(sys.argv[4])
-
 exe = 'Egaroucid_for_Console.exe'
-if len(sys.argv) >= 6:
-    exe = sys.argv[5]
+try:
+    if len(sys.argv) >= 2:
+        start = int(sys.argv[1])
+    if len(sys.argv) >= 3:
+        end = int(sys.argv[2])
+    if len(sys.argv) >= 4:
+        n_threads = int(sys.argv[3])
+    if len(sys.argv) >= 5:
+        hash_level = int(sys.argv[4])
+    if len(sys.argv) >= 6:
+        exe = sys.argv[5]
+except:
+    print('usage: python ffotest.py [start=40] [end=59] [n_threads=42] [hash_level=25] [exe=Egaroucid_for_Console.exe]')
+    exit()
 
 cmd = 'versions/Egaroucid_for_Console_beta/' + exe + ' -l 60 -hash ' + str(hash_level) + ' -nobook -solve problem/ffo' + str(start) + '-' + str(end) + '.txt -thread ' + str(n_threads)
 
@@ -118,7 +116,7 @@ answers = [ # best score, [best move, best move...]
 
 res = ''
 line = egaroucid.stdout.readline().decode().replace('\n', '').replace('\r', '')
-print('#   ' + line)
+print('#   ' + line, flush=True)
 for i in range(start, end + 1):
     line = egaroucid.stdout.readline().decode().replace('\n', '').replace('\r', '')
     policy = line.split()[3][:-1]
@@ -130,8 +128,8 @@ for i in range(start, end + 1):
     if int(score) != int(correct_score):
         line += ' WRONG SCORE'
     line = '#' + str(i) + ' ' + line
-    print(line)
+    print(line, flush=True)
     res += line + '\n'
 line = egaroucid.stdout.readline().decode().replace('\n', '').replace('\r', '')
-print(line)
+print(line, flush=True)
 egaroucid.kill()

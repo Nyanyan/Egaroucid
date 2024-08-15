@@ -12,7 +12,7 @@ res = ''
 for level, n_games in tasks:
     cmd = 'python egaroucid_vs_edax.py ' + str(level) + ' ' + str(n_games)
     print(cmd)
-    subprocess.run(cmd.split())
+    res += subprocess.run(cmd.split()).stdout.decode()
     #p = subprocess.Popen(cmd.split(), stdin=subprocess.PIPE, stdout=subprocess.PIPE)
     #res += p.stdout.readline().decode()
 print(res)
