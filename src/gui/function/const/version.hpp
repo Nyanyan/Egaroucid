@@ -11,6 +11,7 @@
 #pragma once
 #include <Siv3D.hpp>
 #include "./../../engine/setting.hpp"
+#include "settings.hpp"
 
 #define EGAROUCID_GUI_VERSION "0"
 #if USE_BETA_VERSION
