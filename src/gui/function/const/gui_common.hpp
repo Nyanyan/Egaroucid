@@ -20,7 +20,7 @@
 #define GRAPH_IGNORE_VALUE INF
 
 // scene definition
-#define SCENE_FADE_TIME 0
+#define SCENE_FADE_TIME 100
 
 // coordinate definition
 #define WINDOW_SIZE_X 800

@@ -46,6 +46,7 @@ double CalculateScale(const Vec2& baseSize, const Vec2& currentSize) {
     @brief main function
 */
 void Main() {
+    Scene::SetBackground(Color(36, 153, 114));
     Size window_size = Size(WINDOW_SIZE_X, WINDOW_SIZE_Y);
     Size min_window_size = Size(WINDOW_SIZE_X_MIN, WINDOW_SIZE_Y_MIN);
     Window::Resize(window_size);
