@@ -524,7 +524,6 @@ public:
             silent_load_future.get();
             System::Exit();
         }
-        Scene::SetBackground(getData().colors.green);
         if (loading){
             if (silent_load_future.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
                 int load_code = silent_load_future.get();
@@ -542,7 +541,6 @@ public:
     }
 
     void draw() const override {
-        //Scene::SetBackground(getData().colors.green);
-        Scene::SetBackground(getData().colors.black);
+        Scene::SetBackground(Color(36, 153, 114));
     }
 };
