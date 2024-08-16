@@ -55,7 +55,7 @@ void board_to_line(Board board, const int depth, const int error_per_move, int r
                         move_found = true;
                     }
                     if (!book_elem.seen){
-                        book.flag_book_elem(board);
+                        //book.flag_book_elem(board);
                         if (error <= error_per_move && n_remaining_error >= 0){
                             board_to_line(board, depth, error_per_move, n_remaining_error, transcript);
                         }
