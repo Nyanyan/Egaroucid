@@ -12,6 +12,7 @@
 #include "board_image.hpp"
 #include "book_scene.hpp"
 #include "close.hpp"
+#include "gui_settings.hpp"
 #include "input.hpp"
 #include "load.hpp"
 #include "main_scene.hpp"

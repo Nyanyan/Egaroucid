@@ -8,6 +8,7 @@
     @license GPL-3.0 license
 */
 #include "const/gui_common.hpp"
+#include "const/settings.hpp"
 #include "const/version.hpp"
 #include "const/url.hpp"
 
