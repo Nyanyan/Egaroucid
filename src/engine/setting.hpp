@@ -15,16 +15,27 @@
     -DHAS_32_BIT_OS     : 32bit environment
 */
 
+#include <string>
+
 /*
     @brief version settings
 */
 #define EGAROUCID_ENGINE_VERSION "7.3"
 #define USE_BETA_VERSION false
 
-/*
-    @brief Major settings
-*/
 
+/*
+    @brief GUI settings
+*/
+// GUI portable mode
+#define GUI_PORTABLE_MODE true
+// GUI Open Console?
+#define GUI_OPEN_CONSOLE false
+
+
+/*
+    @brief Option
+*/
 // use SIMD
 #ifndef HAS_NO_AVX2
     #define USE_SIMD true
@@ -34,105 +45,70 @@
     #endif
 #endif
 
-// GUI portable mode
-#define GUI_PORTABLE_MODE true
+// use ARM
+#ifdef HAS_ARM_PROCESSOR
+    #define USE_ARM true
+#endif
 
-// Open Console?
-#define GUI_OPEN_CONSOLE false
+#ifndef HAS_32_BIT_OS
+    #define USE_64_BIT true
+#endif
 
 
-#ifdef _WIN64 // Windows 64bit
-    #if USE_SIMD
-        #if USE_AVX512
-            #define EGAROUCID_ENGINE_ENV_VERSION "Windows x64 AVX512"
-        #else
-            #define EGAROUCID_ENGINE_ENV_VERSION "Windows x64 SIMD"
-        #endif
+
+/*
+    @brief Egaroucid engine settings
+*/
+
+// OS
+#ifdef _WIN64 
+    #define EGAROUCID_OS (std::string)"Windows"
+#elif defined _WIN32
+    #define EGAROUCID_OS (std::string)"Windows"
+#elif defined __APPLE__
+    #define EGAROUCID_OS (std::string)"Mac OSX"
+#else
+    #define EGAROUCID_OS (std::string)"Linux"
+#endif
+
+// CPU type
+#if USE_ARM
+    #if USE_64_BIT
+        #define EGAROUCID_CPU (std::string)"ARM64"
     #else
-        #define EGAROUCID_ENGINE_ENV_VERSION "Windows x64 Generic"
+        #define EGAROUCID_CPU (std::string)"ARM"
     #endif
-#elif _WIN32 // Windows 32bit
-    #if USE_SIMD
-        #if USE_AVX512
-            #define EGAROUCID_ENGINE_ENV_VERSION "Windows x86 AVX512"
-        #else
-            #define EGAROUCID_ENGINE_ENV_VERSION "Windows x86 SIMD"
-        #endif
+#else
+    #if USE_64_BIT
+        #define EGAROUCID_CPU (std::string)"x64"
     #else
-        #define EGAROUCID_ENGINE_ENV_VERSION "Windows x86 Generic"
-    #endif
-#elif __APPLE__ // Mac OSX
-    // use ARM
-    #ifdef HAS_ARM_PROCESSOR
-        #define USE_ARM true
-    #endif
-
-    // use 64 bit exclusively on Mac as of MacOS Mojave
-    #if USE_SIMD
-        #if USE_ARM
-            #if USE_AVX512
-                #define EGAROUCID_ENGINE_ENV_VERSION "Mac OSX ARM64 AVX512"
-            #else
-                #define EGAROUCID_ENGINE_ENV_VERSION "Mac OSX ARM64 SIMD"
-            #endif
-        #else
-            #define EGAROUCID_ENGINE_ENV_VERSION "Mac OSX x64 SIMD"
-        #endif
-    #else
-        #if USE_ARM
-            #define EGAROUCID_ENGINE_ENV_VERSION "Mac OSX ARM64 Generic"
-        #else
-            #define EGAROUCID_ENGINE_ENV_VERSION "Mac OSX x64 Generic"
-        #endif
-    #endif
-#else // Linux
-    // use ARM
-    #ifdef HAS_ARM_PROCESSOR
-        #define USE_ARM true
-    #endif
-
-    #ifndef HAS_32_BIT_OS
-        #define USE_64_BIT true
-    #endif
-
-    #if USE_SIMD
-        #if USE_ARM
-            #if USE_64_BIT
-                #if USE_AVX512
-                    #define EGAROUCID_ENGINE_ENV_VERSION "Linux ARM64 AVX512"
-                #else
-                    #define EGAROUCID_ENGINE_ENV_VERSION "Linux ARM64 SIMD"
-                #endif
-            #else
-                #define EGAROUCID_ENGINE_ENV_VERSION "Linux ARM SIMD"
-            #endif
-        #else
-            #if USE_64_BIT
-                #if USE_AVX512
-                    #define EGAROUCID_ENGINE_ENV_VERSION "Linux x64 AVX512"
-                #else
-                    #define EGAROUCID_ENGINE_ENV_VERSION "Linux x64 SIMD"
-                #endif
-            #else
-                #define EGAROUCID_ENGINE_ENV_VERSION "Linux x86 SIMD"
-            #endif
-        #endif
-    #else
-        #if USE_ARM
-            #if USE_64_BIT
-                #define EGAROUCID_ENGINE_ENV_VERSION "Linux ARM64 Generic"
-            #else
-                #define EGAROUCID_ENGINE_ENV_VERSION "Linux ARM Generic"
-            #endif
-        #else
-            #if USE_64_BIT
-                #define EGAROUCID_ENGINE_ENV_VERSION "Linux x64 Generic"
-            #else
-                #define EGAROUCID_ENGINE_ENV_VERSION "Linux x86 Generic"
-            #endif
-        #endif
+        #define EGAROUCID_CPU (std::string)"x86"
     #endif
 #endif
+
+// revision
+#if USE_SIMD
+    #if USE_AVX512
+        #define EGAROUCID_REVISION (std::string)"AVX512"
+    #else
+        #define EGAROUCID_REVISION (std::string)"SIMD"
+    #endif
+#else
+    #define EGAROUCID_REVISION (std::string)"Generic"
+#endif
+
+// compiler
+#ifdef __clang_version__
+    #define EGAROUCID_COMPILER (std::string)"Clang"
+#elif defined __GNUC__
+    #define EGAROUCID_COMPILER (std::string)"GCC"
+#elif defined _MSC_VER
+    #define EGAROUCID_COMPILER (std::string)"MSVC"
+#else
+    #define EGAROUCID_COMPILER (std::string)"Unknown Compiler"
+#endif
+
+#define EGAROUCID_ENGINE_ENV_VERSION (EGAROUCID_OS + " " + EGAROUCID_CPU + " " + EGAROUCID_REVISION + " (" + EGAROUCID_COMPILER + ")")
 
 
 /*
