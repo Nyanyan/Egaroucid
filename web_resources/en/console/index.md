@@ -28,7 +28,7 @@ Please visit [GitHub Releases](https://github.com/Nyanyan/Egaroucid/releases) to
 
 ## Linux / MacOS
 
-Please build on your own. You can use cmake or g++.
+Please build on your own. You can use cmake or g++ / clang.
 
 Please download source code here, then unzip it.
 
@@ -103,19 +103,20 @@ That's all. You can see <code>Egaroucid_for_Console.out</code> in <code>Egarouci
 
 
 
-### Build with g++
+### Build with g++ or clang
 
 Requirements are:
 
 <ul>
-    <li><code>g++</code> command
+    <li><code>g++</code> or <code>clang</code> command
         <ul>
-            <li>I tested with version 13.1.0 on Windows</li>
-            <li>I tested with version 11.3.0 on Ubuntu</li>
+            <li>I tested with version g++ 13.1.0 / clang 17.0.1 on Windows</li>
+            <li>I tested with version g++ 11.3.0 on Ubuntu</li>
         </ul>
     </li>
     <li>C++17</li>
 </ul>
+
 Change directory.
 
 
@@ -124,11 +125,13 @@ Change directory.
 
 
 
-Then compile it with <code>g++</code> command. You can change the output name.
+Then compile it with <code>g++</code> or <code>clang</code>command. You can change the output name.
 
 
 
 <code>$ g++ -O2 ./src/Egaroucid_console.cpp -o ./bin/Egaroucid_for_Console.out -mtune=native -march=native -mfpmath=both -pthread -std=c++17 [options]</code>
+
+<code>$ clang++ -O2 ./src/Egaroucid_console.cpp -o ./bin/Egaroucid_for_Console.out -mtune=native -march=native -pthread -std=c++17    [options]</code>
 
 
 

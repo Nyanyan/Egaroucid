@@ -29,7 +29,7 @@ CONSOLE_DOWNLOAD_TABLE_HERE
 
 ## Linux / MacOS
 
-cmakeでビルドするか、直接g++を使ってビルドすることができます。
+cmakeでビルドするか、直接g++またはclangを使ってビルドすることができます。
 
 下記リンクからコードをダウンロードし、任意の場所に解凍してください。
 
@@ -101,19 +101,20 @@ CONSOLE_SOURCE_TABLE_HERE
 
 
 
-### g++でビルド
+### g++またはclangでビルド
 
 以下の条件を満たしてください。
 
 <ul>
-    <li><code>g++</code>コマンドが必要
+    <li><code>g++</code>または<code>clang</code>コマンド
         <ul>
-            <li>Windowsではバージョン13.1.0で動作確認済</li>
-            <li>Ubuntuではバージョン11.3.0で動作確認済</li>
+            <li>Windowsではバージョンg++ 13.1.0 / clang 17.0.1で動作確認済</li>
+            <li>Ubuntuではバージョンg++ 11.3.0で動作確認済</li>
         </ul>
     </li>
     <li>C++17の機能が必要</li>
 </ul>
+
 ディレクトリを移動します。
 
 
@@ -122,11 +123,13 @@ CONSOLE_SOURCE_TABLE_HERE
 
 
 
-<code>g++</code>コマンドにてコンパイルします。出力ファイルは任意の名前で構いません。
+<code>g++</code>または<code>clang</code>コマンドにてコンパイルします。出力ファイルは任意の名前で構いません。
 
 
 
 <code>$ g++ -O2 ./src/Egaroucid_console.cpp -o ./bin/Egaroucid_for_Console.out -mtune=native -march=native -mfpmath=both -pthread -std=c++17 [options]</code>
+
+<code>$ clang++ -O2 ./src/Egaroucid_console.cpp -o ./bin/Egaroucid_for_Console.out -mtune=native -march=native -pthread -std=c++17    [options]</code>
 
 
 
