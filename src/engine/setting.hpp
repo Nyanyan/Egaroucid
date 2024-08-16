@@ -34,7 +34,11 @@
 
 #ifndef HAS_32_BIT_OS
     #ifdef _WIN32
-        #define USE_64_BIT false
+        #ifdef _WIN64
+            #define USE_64_BIT true
+        #else
+            #define USE_64_BIT false
+        #endif
     #else
         #define USE_64_BIT true
     #endif
