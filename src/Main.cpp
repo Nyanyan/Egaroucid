@@ -84,7 +84,7 @@ void Main() {
     scene_manager.add <Board_image>(U"Board_image");
     scene_manager.add <Import_bitboard>(U"Import_bitboard");
     scene_manager.add <Close>(U"Close");
-    scene_manager.setFadeColor(Palette::Black);
+    scene_manager.setFadeColor(Color(36, 153, 114));
     scene_manager.init(U"Silent_load");
 
     while (System::Update()) {

@@ -493,6 +493,7 @@ public:
     }
 
     void update() override {
+        Scene::SetBackground(getData().colors.green);
         if (loaded){
             std::cerr << "silent loaded" << std::endl;
             changeScene(U"Load", SCENE_FADE_TIME);
