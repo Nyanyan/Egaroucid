@@ -15,15 +15,6 @@
     -DHAS_32_BIT_OS     : 32bit environment
 */
 
-#include <string>
-
-/*
-    @brief version settings
-*/
-#define EGAROUCID_ENGINE_VERSION "7.3"
-#define USE_BETA_VERSION false
-
-
 /*
     @brief Option
 */
@@ -46,60 +37,6 @@
 #endif
 
 
-
-/*
-    @brief Egaroucid engine settings
-*/
-
-// OS
-#ifdef _WIN64 
-    #define EGAROUCID_OS (std::string)"Windows"
-#elif defined _WIN32
-    #define EGAROUCID_OS (std::string)"Windows"
-#elif defined __APPLE__
-    #define EGAROUCID_OS (std::string)"Mac OSX"
-#else
-    #define EGAROUCID_OS (std::string)"Linux"
-#endif
-
-// CPU type
-#if USE_ARM
-    #if USE_64_BIT
-        #define EGAROUCID_CPU (std::string)"ARM64"
-    #else
-        #define EGAROUCID_CPU (std::string)"ARM"
-    #endif
-#else
-    #if USE_64_BIT
-        #define EGAROUCID_CPU (std::string)"x64"
-    #else
-        #define EGAROUCID_CPU (std::string)"x86"
-    #endif
-#endif
-
-// revision
-#if USE_SIMD
-    #if USE_AVX512
-        #define EGAROUCID_REVISION (std::string)"AVX512"
-    #else
-        #define EGAROUCID_REVISION (std::string)"SIMD"
-    #endif
-#else
-    #define EGAROUCID_REVISION (std::string)"Generic"
-#endif
-
-// compiler
-#ifdef __clang_version__
-    #define EGAROUCID_COMPILER (std::string)"Clang"
-#elif defined __GNUC__
-    #define EGAROUCID_COMPILER (std::string)"GCC"
-#elif defined _MSC_VER
-    #define EGAROUCID_COMPILER (std::string)"MSVC"
-#else
-    #define EGAROUCID_COMPILER (std::string)"Unknown Compiler"
-#endif
-
-#define EGAROUCID_ENGINE_ENV_VERSION (EGAROUCID_OS + " " + EGAROUCID_CPU + " " + EGAROUCID_REVISION + " (" + EGAROUCID_COMPILER + ")")
 
 
 /*

@@ -15,3 +15,4 @@
 #include "umigame.hpp"
 #include "problem_generator.hpp"
 #include "principal_variation.hpp"
+#include "version.hpp"
