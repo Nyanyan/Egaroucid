@@ -85,7 +85,7 @@ void Main() {
     scene_manager.add <Import_bitboard>(U"Import_bitboard");
     scene_manager.add <Close>(U"Close");
     scene_manager.setFadeColor(Color(36, 153, 114));
-    scene_manager.init(U"Silent_load");
+    scene_manager.init(U"Silent_load", SCENE_FADE_TIME);
 
     while (System::Update()) {
 

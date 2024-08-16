@@ -423,10 +423,14 @@ void init_settings(const Directories* directories, const Resources* resources, S
     }
 }
 
-int init_resources(Resources* resources, Settings* settings, Fonts *fonts) {
+int init_resources(Resources* resources, Settings* settings, Fonts *fonts, bool *stop_loading) {
     // language json
     if (!language_name.init(resources->language_names)) {
         return ERR_LANG_JSON_NOT_LOADED;
+    }
+
+    if (*stop_loading){
+        return ERR_TERMINATED;
     }
 
     // language
@@ -439,7 +443,15 @@ int init_resources(Resources* resources, Settings* settings, Fonts *fonts) {
             return ERR_LANG_NOT_LOADED;
     }
 
+    if (*stop_loading){
+        return ERR_TERMINATED;
+    }
+
     fonts->init(settings->lang_name);
+
+    if (*stop_loading){
+        return ERR_TERMINATED;
+    }
 
     // textures
     Texture icon(U"resources/img/icon.png", TextureDesc::Mipped);
@@ -447,13 +459,22 @@ int init_resources(Resources* resources, Settings* settings, Fonts *fonts) {
     Texture checkbox(U"resources/img/checked.png", TextureDesc::Mipped);
     Texture unchecked(U"resources/img/unchecked.png", TextureDesc::Mipped);
     Texture laser_pointer(U"resources/img/laser_pointer.png", TextureDesc::Mipped);
+
+    if (*stop_loading){
+        return ERR_TERMINATED;
+    }
+
     std::vector<Texture> lang_img;
-    for (int i = 0; i < (int)resources->language_names.size(); ++i) {
+    for (int i = 0; i < (int)resources->language_names.size() && !(*stop_loading); ++i) {
         Texture limg(U"resources/languages/" +  Unicode::Widen(resources->language_names[i]) + U".png", TextureDesc::Mipped);
         if (limg.isEmpty()) {
             return ERR_TEXTURE_NOT_LOADED;
         }
         lang_img.emplace_back(limg);
+    }
+
+    if (*stop_loading){
+        return ERR_TERMINATED;
     }
 
     if (icon.isEmpty() || logo.isEmpty() || checkbox.isEmpty() || unchecked.isEmpty()) {
@@ -477,28 +498,46 @@ int init_resources(Resources* resources, Settings* settings, Fonts *fonts) {
 
 }
 
-int silent_load(Directories* directories, Resources* resources, Settings* settings, Fonts *fonts) {
+int silent_load(Directories* directories, Resources* resources, Settings* settings, Fonts *fonts, bool *stop_loading) {
     init_directories(directories);
     init_settings(directories, resources, settings);
-    return init_resources(resources, settings, fonts);
+    return init_resources(resources, settings, fonts, stop_loading);
 }
 
 class Silent_load : public App::Scene {
 private:
+    bool loading;
     bool loaded;
+    bool stop_loading;
+    std::future<int> silent_load_future;
 public:
     Silent_load(const InitData& init) : IScene{ init } {
-        int load_code = silent_load(&getData().directories, &getData().resources, &getData().settings, &getData().fonts);
-        loaded = load_code == ERR_OK;
+        stop_loading = false;
+        silent_load_future = std::async(std::launch::async, silent_load, &getData().directories, &getData().resources, &getData().settings, &getData().fonts, &stop_loading);
+        loading = true;
+        loaded = false;
     }
 
     void update() override {
+        if (System::GetUserActions() & UserAction::CloseButtonClicked) {
+            stop_loading = true;
+            silent_load_future.get();
+            System::Exit();
+        }
         Scene::SetBackground(getData().colors.green);
-        if (loaded){
-            std::cerr << "silent loaded" << std::endl;
-            changeScene(U"Load", SCENE_FADE_TIME);
+        if (loading){
+            if (silent_load_future.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
+                int load_code = silent_load_future.get();
+                loaded = load_code == ERR_OK;
+                loading = false;
+            }
         } else{
-            getData().fonts.font(U"BASIC DATA NOT LOADED. PLEASE RE-INSTALL.").draw(30, LEFT_LEFT, Y_CENTER + 50, getData().colors.white);
+            if (loaded){
+                std::cerr << "silent loaded" << std::endl;
+                changeScene(U"Load", SCENE_FADE_TIME);
+            } else{
+                getData().fonts.font(U"BASIC DATA NOT LOADED. PLEASE RE-INSTALL.").draw(30, LEFT_LEFT, Y_CENTER + 50, getData().colors.white);
+            }
         }
     }
 
