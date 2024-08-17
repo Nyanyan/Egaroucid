@@ -256,6 +256,7 @@ public:
         }
         // set bar position
         if ((mode == bar_mode || (mode == bar_check_mode && (*is_checked))) && bar_changeable) {
+            Cursor::RequestStyle(CursorStyle::ResizeLeftRight);
             int min_error = INF;
             int cursor_x = Cursor::Pos().x;
             for (int i = min_elem; i <= max_elem; ++i) {
