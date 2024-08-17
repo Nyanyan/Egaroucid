@@ -205,8 +205,8 @@ int nega_alpha_end_simple_nws(Search *search, int alpha, bool skipped, uint64_t 
             return SCORE_MAX;
         ++idx;
     }
-
     int g;
+    // move ordering
     if (canput > 1) {
         for (int i = 0; i < canput; ++i) {
             Flip_value *flip_value = move_list + i;
