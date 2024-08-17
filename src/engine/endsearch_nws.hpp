@@ -207,7 +207,6 @@ int nega_alpha_end_simple_nws(Search *search, int alpha, bool skipped, uint64_t 
     }
 
     int g;
-    uint64_t done = 0;
     if (canput > 1) {
         for (int i = 0; i < canput; ++i) {
             Flip_value *flip_value = move_list + i;
@@ -227,7 +226,7 @@ int nega_alpha_end_simple_nws(Search *search, int alpha, bool skipped, uint64_t 
                         if (v < tt->upper) {
                             v = tt->upper;
                         }
-                        done |= (1ull << flip_value->flip.pos);
+                        flip_value->value = -INF;
                         search->undo_noeval(&flip_value->flip);
                         continue;
                     }
@@ -246,7 +245,7 @@ int nega_alpha_end_simple_nws(Search *search, int alpha, bool skipped, uint64_t 
                         }
                     }
                     tt->set_score(&nboard, -64, g);
-                    done |= (1ull << flip_value->flip.pos);
+                    flip_value->value = -INF;
                     continue;
                 }
                 flip_value->value += (MO_OFFSET_L_PM - nm) * W_END_NWS_SIMPLE_MOBILITY;
@@ -257,7 +256,7 @@ int nega_alpha_end_simple_nws(Search *search, int alpha, bool skipped, uint64_t 
     for (int move_idx = 0; move_idx < canput && *searching; ++move_idx){
         if (move_idx < 4)
             swap_next_best_move(move_list, move_idx, canput);
-        if ((1ull << move_list[move_idx].flip.pos) & done)
+        if (move_list[move_idx].value == -INF)
             continue;
         search->move_noeval(&move_list[move_idx].flip);
             Board nboard = search->board;
