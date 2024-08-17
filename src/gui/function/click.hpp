@@ -12,7 +12,7 @@
 #include <Siv3D.hpp>
 
 
-struct Button_click{
+struct Click_supporter{
     bool clicked_down;
     bool pressed;
     bool f_pressed;

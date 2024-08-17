@@ -23,7 +23,7 @@ public:
     Color font_color;
 private:
     bool enabled;
-    Button_click button_click;
+    Click_supporter click_supporter;
 
 public:
     void init(int x, int y, int w, int h, int r, String s, int fs, Font f, Color c1, Color c2) {
@@ -38,7 +38,7 @@ public:
         button_color = c1;
         font_color = c2;
         enabled = true;
-        button_click.init();
+        click_supporter.init();
     }
 
     void draw() {
@@ -51,18 +51,11 @@ public:
             rect.draw(ColorF(button_color, 0.7));
             font(str).drawAt(font_size, rect.x + rect.w / 2, rect.y + rect.h / 2, font_color);
         }
-        button_click.update(rect);
-    }
-
-    void draw(double transparency) {
-        rect.draw(ColorF(button_color, transparency));
-        font(str).drawAt(font_size, rect.x + rect.w / 2, rect.y + rect.h / 2, ColorF(font_color, transparency));
-        if (rect.mouseOver())
-            Cursor::RequestStyle(CursorStyle::Hand);
+        click_supporter.update(rect);
     }
 
     bool clicked() {
-        return enabled && button_click.clicked();
+        return enabled && click_supporter.clicked();
     }
 
     void enable(){

@@ -48,7 +48,7 @@ private:
     std::vector<menu_elem> children;
     bool is_active;
     bool was_active;
-    Button_click click_supporter;
+    Click_supporter click_supporter;
 
     // bar mode
     int *bar_elem;
