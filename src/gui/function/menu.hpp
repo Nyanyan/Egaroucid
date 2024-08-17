@@ -12,6 +12,7 @@
 #include <Siv3D.hpp>
 #include <iostream>
 #include <vector>
+#include "click.hpp"
 
 constexpr Color menu_color = Palette::Gainsboro;
 constexpr Color menu_active_color = Palette::Lightblue;
@@ -47,14 +48,9 @@ private:
     std::vector<menu_elem> children;
     bool is_active;
     bool was_active;
+
+    // bar mode
     int *bar_elem;
-    bool *is_clicked_p;
-    bool is_clicked;
-    bool *is_checked;
-    String unchecked_str;
-    bool dammy_clicked;
-    Texture checkbox;
-    Texture unchecked;
     int min_elem;
     int max_elem;
     int bar_value_offset;
@@ -62,14 +58,22 @@ private:
     Rect bar_rect;
     int bar_sx;
     int bar_center_y;
-    Texture image;
+
+    // button mode
+    bool *is_clicked_p;
+    bool is_clicked;
+
+    // check mode
+    bool *is_checked;
+    String unchecked_str;
+    Texture checkbox;
+    Texture unchecked;
+
+    // display image on the menu (for language selection)
     bool use_image;
+    Texture image;
 
 public:
-    menu_elem(){
-        use_image = false;
-    }
-
     void init_button(String s, bool *c) {
         clear();
         mode = button_mode;
@@ -80,6 +84,7 @@ public:
         is_clicked_p = c;
         is_clicked = false;
         *is_clicked_p = is_clicked;
+        use_image = false;
     }
 
     void init_bar(String s, int *c, int d, int mn, int mx) {
@@ -94,6 +99,7 @@ public:
         min_elem = mn;
         max_elem = mx;
         is_clicked = false;
+        use_image = false;
     }
 
     void init_check(String s, bool *c, bool d) {
@@ -106,6 +112,7 @@ public:
         is_checked = c;
         *is_checked = d;
         is_clicked = false;
+        use_image = false;
     }
 
     void init_radio(String s, bool* c, bool d) {
@@ -117,6 +124,7 @@ public:
         is_checked = c;
         *is_checked = d;
         is_clicked = false;
+        use_image = false;
     }
 
     void init_radio(Texture t, bool* c, bool d) {
@@ -146,6 +154,7 @@ public:
         *is_checked = f;
         unchecked_str = u;
         is_clicked = false;
+        use_image = false;
     }
 
     void push(menu_elem ch) {
