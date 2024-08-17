@@ -43,12 +43,12 @@
     @brief constants for move ordering
 */
 #if TUNE_MOVE_ORDERING
-    #define N_MOVE_ORDERING_PARAM 14
+    #define N_MOVE_ORDERING_PARAM 15
     int move_ordering_param_array[N_MOVE_ORDERING_PARAM] = {
         35, 17, 485, 269, 94, 
         17, 8, 204, 7, 25, 
         40, 12, 
-        18, 17
+        18, 17, 200
     };
 
     #define W_MOBILITY                  move_ordering_param_array[0]
@@ -68,6 +68,7 @@
 
     #define W_END_NWS_SIMPLE_MOBILITY   move_ordering_param_array[12]
     #define W_END_NWS_SIMPLE_PARITY     move_ordering_param_array[13]
+    #define W_END_NWS_SIMPLE_TT_BONUS   move_ordering_param_array[14]
 
     #define MOVE_ORDERING_PARAM_START 0
     #define MOVE_ORDERING_PARAM_END 9
