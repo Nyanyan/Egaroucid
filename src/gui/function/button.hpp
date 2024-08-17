@@ -66,7 +66,7 @@ public:
     }
 
     bool clicked() {
-        return f_pressed && !pressed && !MouseL.pressed();
+        return f_pressed && !MouseL.pressed() && enabled;
         //return rect.leftClicked() && enabled;
     }
 
