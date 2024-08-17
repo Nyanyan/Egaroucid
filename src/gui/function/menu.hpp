@@ -49,6 +49,7 @@ private:
     bool is_active;
     bool was_active;
     Click_supporter click_supporter;
+    bool is_clicked;
 
     // bar mode
     int *bar_elem;
@@ -59,10 +60,10 @@ private:
     Rect bar_rect;
     int bar_sx;
     int bar_center_y;
+    bool bar_changeable;
 
     // button mode
     bool *is_clicked_p;
-    bool is_clicked;
 
     // check mode
     bool *is_checked;
@@ -99,6 +100,7 @@ public:
         str = s;
         bar_elem = c;
         *bar_elem = d;
+        bar_changeable = false;
         min_elem = mn;
         max_elem = mx;
         is_clicked = false;
@@ -216,9 +218,19 @@ public:
     void update() {
         was_active = is_active;
         is_active = rect.mouseOver();
+        if (mode == bar_mode || (mode == bar_check_mode && (*is_checked))){
+            if (bar_rect.leftClicked()){
+                bar_changeable = true;
+                std::cerr << "bar on" << std::endl;
+            } else if (!MouseL.pressed()){
+                bar_changeable = false;
+                std::cerr << "bar off" << std::endl;
+            }
+            is_active |= bar_changeable;
+        }
         for (menu_elem& elem : children) {
             elem.update();
-            is_active = is_active || (elem.active() && last_active());
+            is_active |= (elem.active() && last_active());
         }
         if (mode == bar_check_mode){
             Rect bar_check_rect = Rect(rect.x, rect.y, bar_sx - bar_value_offset - rect.x, rect.h);
@@ -230,7 +242,7 @@ public:
             is_clicked = click_supporter.clicked();
             //is_clicked = rect.leftReleased();
         }
-        if ((mode == bar_mode || (mode == bar_check_mode && (*is_checked))) && bar_rect.leftPressed()) {
+        if ((mode == bar_mode || (mode == bar_check_mode && (*is_checked))) && bar_changeable) {
             int min_error = INF;
             int cursor_x = Cursor::Pos().x;
             for (int i = min_elem; i <= max_elem; ++i) {

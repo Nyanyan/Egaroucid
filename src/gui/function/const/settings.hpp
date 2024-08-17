@@ -16,4 +16,4 @@
 // GUI portable mode
 #define GUI_PORTABLE_MODE true
 // GUI Open Console?
-#define GUI_OPEN_CONSOLE false
+#define GUI_OPEN_CONSOLE true
