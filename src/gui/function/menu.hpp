@@ -219,6 +219,7 @@ public:
         was_active = is_active;
         is_active = rect.mouseOver();
         if (mode == bar_mode || (mode == bar_check_mode && (*is_checked))){
+            // bar active?
             if (bar_rect.leftClicked()){
                 bar_changeable = true;
                 std::cerr << "bar on" << std::endl;
@@ -226,8 +227,10 @@ public:
                 bar_changeable = false;
                 std::cerr << "bar off" << std::endl;
             }
+            // bar is active -> this element is active
             is_active |= bar_changeable;
         }
+        // if a child bar is active, other children must be inactive
         bool active_child_bar_found = false;
         for (menu_elem& elem : children) {
             elem.update();
@@ -240,19 +243,20 @@ public:
                 }
             }
         }
+        // if a child is active, this element is active
         for (menu_elem& elem : children) {
             is_active |= (elem.active() && last_active());
         }
+        // check clicked
         if (mode == bar_check_mode){
             Rect bar_check_rect = Rect(rect.x, rect.y, bar_sx - bar_value_offset - rect.x, rect.h);
             click_supporter.update(bar_check_rect);
             is_clicked = click_supporter.clicked();
-            //is_clicked = Rect(rect.x, rect.y, bar_sx - bar_value_offset - rect.x, rect.h).leftReleased();
         } else{
             click_supporter.update(rect);
             is_clicked = click_supporter.clicked();
-            //is_clicked = rect.leftReleased();
         }
+        // set bar position
         if ((mode == bar_mode || (mode == bar_check_mode && (*is_checked))) && bar_changeable) {
             int min_error = INF;
             int cursor_x = Cursor::Pos().x;
