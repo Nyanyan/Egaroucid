@@ -48,7 +48,7 @@
         35, 17, 485, 269, 94, 
         17, 8, 204, 7, 25, 
         40, 12, 
-        18, 17, 200
+        18, 17, 300
     };
 
     #define W_MOBILITY                  move_ordering_param_array[0]
@@ -94,7 +94,7 @@
     // endgame simple null window search
     #define W_END_NWS_SIMPLE_MOBILITY 18
     #define W_END_NWS_SIMPLE_PARITY 17
-    #define W_END_NWS_SIMPLE_TT_BONUS 200
+    #define W_END_NWS_SIMPLE_TT_BONUS 300
 #endif
 
 #define MOVE_ORDERING_VALUE_OFFSET_ALPHA 18
