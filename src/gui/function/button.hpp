@@ -12,6 +12,42 @@
 #include <Siv3D.hpp>
 #include <iostream>
 
+struct Button_click{
+    bool clicked_down;
+    bool pressed;
+    bool f_pressed;
+
+    void init(){
+        clicked_down = false;
+        pressed = false;
+        f_pressed = false;
+    }
+
+    void update(Rect rect){
+        f_pressed = pressed;
+        pressed = rect.leftPressed();
+        if (rect.leftClicked()){
+            clicked_down = true;
+        } else if (!MouseL.down() && !f_pressed){
+            clicked_down = false;
+        }
+    }
+
+    void update(RoundRect rect){
+        f_pressed = pressed;
+        pressed = rect.leftPressed();
+        if (rect.leftClicked()){
+            clicked_down = true;
+        } else if (!MouseL.down() && !f_pressed){
+            clicked_down = false;
+        }
+    }
+
+    bool clicked(){
+        return clicked_down && f_pressed && !MouseL.pressed();
+    }
+};
+
 class Button {
 public:
     RoundRect rect;
@@ -22,9 +58,7 @@ public:
     Color font_color;
 private:
     bool enabled;
-    bool clicked_down;
-    bool pressed;
-    bool f_pressed;
+    Button_click button_click;
 
 public:
     void init(int x, int y, int w, int h, int r, String s, int fs, Font f, Color c1, Color c2) {
@@ -39,9 +73,7 @@ public:
         button_color = c1;
         font_color = c2;
         enabled = true;
-        clicked_down = false;
-        pressed = false;
-        f_pressed = false;
+        button_click.init();
     }
 
     void draw() {
@@ -53,16 +85,8 @@ public:
         } else{
             rect.draw(ColorF(button_color, 0.7));
             font(str).drawAt(font_size, rect.x + rect.w / 2, rect.y + rect.h / 2, font_color);
-            //if (rect.mouseOver())
-            //    Cursor::RequestStyle(CursorStyle::Hand);
         }
-        f_pressed = pressed;
-        pressed = rect.leftPressed();
-        if (rect.leftClicked()){
-            clicked_down = true;
-        } else if (!MouseL.down() && !f_pressed){
-            clicked_down = false;
-        }
+        button_click.update(rect);
     }
 
     void draw(double transparency) {
@@ -73,8 +97,7 @@ public:
     }
 
     bool clicked() {
-        return clicked_down && f_pressed && !MouseL.pressed() && enabled;
-        //return rect.leftClicked() && enabled;
+        return enabled && button_click.clicked();
     }
 
     void enable(){
