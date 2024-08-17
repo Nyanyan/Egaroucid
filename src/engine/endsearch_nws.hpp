@@ -231,6 +231,7 @@ int nega_alpha_end_simple_nws(Search *search, int alpha, bool skipped, uint64_t 
                         search->undo_noeval(&flip_value->flip);
                         continue;
                     }
+                    flip_value->value += W_END_NWS_SIMPLE_TT_BONUS;
                 }
                 flip_value->n_legal = search->board.get_legal();
                 int nm = get_n_moves_cornerX2(flip_value->n_legal);

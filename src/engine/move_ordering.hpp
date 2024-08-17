@@ -93,6 +93,7 @@
     // endgame simple null window search
     #define W_END_NWS_SIMPLE_MOBILITY 18
     #define W_END_NWS_SIMPLE_PARITY 17
+    #define W_END_NWS_SIMPLE_TT_BONUS 200
 #endif
 
 #define MOVE_ORDERING_VALUE_OFFSET_ALPHA 18
