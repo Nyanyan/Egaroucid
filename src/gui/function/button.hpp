@@ -20,7 +20,10 @@ public:
     int font_size;
     Color button_color;
     Color font_color;
+private:
     bool enabled;
+    bool pressed;
+    bool f_pressed;
 
 public:
     void init(int x, int y, int w, int h, int r, String s, int fs, Font f, Color c1, Color c2) {
@@ -35,6 +38,8 @@ public:
         button_color = c1;
         font_color = c2;
         enabled = true;
+        pressed = false;
+        f_pressed = false;
     }
 
     void draw() {
@@ -49,6 +54,8 @@ public:
             //if (rect.mouseOver())
             //    Cursor::RequestStyle(CursorStyle::Hand);
         }
+        f_pressed = pressed;
+        pressed = rect.leftPressed();
     }
 
     void draw(double transparency) {
@@ -59,7 +66,8 @@ public:
     }
 
     bool clicked() {
-        return rect.leftClicked() && enabled;
+        return f_pressed && !pressed;
+        //return rect.leftClicked() && enabled;
     }
 
     void enable(){
