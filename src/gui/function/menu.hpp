@@ -228,8 +228,19 @@ public:
             }
             is_active |= bar_changeable;
         }
+        bool active_child_bar_found = false;
         for (menu_elem& elem : children) {
             elem.update();
+            active_child_bar_found |= elem.bar_active();
+        }
+        if (active_child_bar_found){
+            for (menu_elem& elem : children) {
+                if (!elem.bar_active()){
+                    elem.set_inactive();
+                }
+            }
+        }
+        for (menu_elem& elem : children) {
             is_active |= (elem.active() && last_active());
         }
         if (mode == bar_check_mode){
@@ -341,6 +352,10 @@ public:
         }
     }
 
+    void set_inactive() {
+        is_active = false;
+    }
+
     void draw() {
         update();
         draw_noupdate();
@@ -348,6 +363,10 @@ public:
 
     bool clicked() {
         return is_clicked;
+    }
+    
+    bool bar_active() {
+        return bar_changeable;
     }
 
     bool active() {
