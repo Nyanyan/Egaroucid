@@ -222,10 +222,8 @@ public:
             // bar active?
             if (bar_rect.leftClicked()){
                 bar_changeable = true;
-                std::cerr << "bar on" << std::endl;
             } else if (!MouseL.pressed()){
                 bar_changeable = false;
-                std::cerr << "bar off" << std::endl;
             }
             // bar is active -> this element is active
             is_active |= bar_changeable;
