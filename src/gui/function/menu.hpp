@@ -84,6 +84,7 @@ public:
         is_active = false;
         was_active = false;
         str = s;
+        bar_changeable = false;
         is_clicked_p = c;
         is_clicked = false;
         *is_clicked_p = is_clicked;
@@ -115,6 +116,7 @@ public:
         is_active = false;
         was_active = false;
         str = s;
+        bar_changeable = false;
         is_checked = c;
         *is_checked = d;
         is_clicked = false;
@@ -128,6 +130,7 @@ public:
         has_child = false;
         is_active = false;
         str = s;
+        bar_changeable = false;
         is_checked = c;
         *is_checked = d;
         is_clicked = false;
@@ -140,6 +143,7 @@ public:
         mode = radio_mode;
         has_child = false;
         is_active = false;
+        bar_changeable = false;
         is_checked = c;
         *is_checked = d;
         is_clicked = false;
@@ -155,6 +159,7 @@ public:
         is_active = false;
         was_active = false;
         str = s;
+        bar_changeable = false;
         bar_elem = c;
         *bar_elem = d;
         min_elem = mn;
