@@ -48,6 +48,7 @@ private:
     std::vector<menu_elem> children;
     bool is_active;
     bool was_active;
+    Button_click click_supporter;
 
     // bar mode
     int *bar_elem;
@@ -76,6 +77,7 @@ private:
 public:
     void init_button(String s, bool *c) {
         clear();
+        click_supporter.init();
         mode = button_mode;
         has_child = false;
         is_active = false;
@@ -89,6 +91,7 @@ public:
 
     void init_bar(String s, int *c, int d, int mn, int mx) {
         clear();
+        click_supporter.init();
         mode = bar_mode;
         has_child = false;
         is_active = false;
@@ -104,6 +107,7 @@ public:
 
     void init_check(String s, bool *c, bool d) {
         clear();
+        click_supporter.init();
         mode = check_mode;
         has_child = false;
         is_active = false;
@@ -117,6 +121,7 @@ public:
 
     void init_radio(String s, bool* c, bool d) {
         clear();
+        click_supporter.init();
         mode = radio_mode;
         has_child = false;
         is_active = false;
@@ -129,6 +134,7 @@ public:
 
     void init_radio(Texture t, bool* c, bool d) {
         clear();
+        click_supporter.init();
         mode = radio_mode;
         has_child = false;
         is_active = false;
@@ -141,6 +147,7 @@ public:
 
     void init_bar_check(String s, int *c, int d, int mn, int mx, bool *e, bool f, String u){
         clear();
+        click_supporter.init();
         mode = bar_check_mode;
         has_child = false;
         is_active = false;
@@ -214,9 +221,15 @@ public:
             is_active = is_active || (elem.active() && last_active());
         }
         if (mode == bar_check_mode){
-            is_clicked = Rect(rect.x, rect.y, bar_sx - bar_value_offset - rect.x, rect.h).leftReleased();
-        } else
-            is_clicked = rect.leftReleased();
+            Rect bar_check_rect = Rect(rect.x, rect.y, bar_sx - bar_value_offset - rect.x, rect.h);
+            click_supporter.update(bar_check_rect);
+            is_clicked = click_supporter.clicked();
+            //is_clicked = Rect(rect.x, rect.y, bar_sx - bar_value_offset - rect.x, rect.h).leftReleased();
+        } else{
+            click_supporter.update(rect);
+            is_clicked = click_supporter.clicked();
+            //is_clicked = rect.leftReleased();
+        }
         if ((mode == bar_mode || (mode == bar_check_mode && (*is_checked))) && bar_rect.leftPressed()) {
             int min_error = INF;
             int cursor_x = Cursor::Pos().x;
