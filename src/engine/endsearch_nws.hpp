@@ -226,8 +226,8 @@ int nega_alpha_end_simple_nws(Search *search, int alpha, bool skipped, uint64_t 
                         if (v < tt->upper) {
                             v = tt->upper;
                         }
-                        flip_value->value = -INF;
                         search->undo_noeval(&flip_value->flip);
+                        flip_value->value = -INF;
                         continue;
                     }
                     flip_value->value += W_END_NWS_SIMPLE_TT_BONUS;
@@ -254,10 +254,10 @@ int nega_alpha_end_simple_nws(Search *search, int alpha, bool skipped, uint64_t 
     }
 
     for (int move_idx = 0; move_idx < canput && *searching; ++move_idx){
-        if (move_idx < 4)
-            swap_next_best_move(move_list, move_idx, canput);
-        if (move_list[move_idx].value == -INF)
-            continue;
+        swap_next_best_move(move_list, move_idx, canput);
+        if (move_list[move_idx].value == -INF){
+            break;
+        }
         search->move_noeval(&move_list[move_idx].flip);
             Board nboard = search->board;
             LocalTTEntry *tt = get_ltt(&nboard, search->n_discs);
