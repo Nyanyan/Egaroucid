@@ -230,20 +230,20 @@ public:
         }
         // if a child bar is active, other children must be inactive
         bool active_child_bar_found = false;
-        for (menu_elem& elem : children) {
-            elem.update();
-            active_child_bar_found |= elem.bar_active();
+        for (menu_elem& child: children) {
+            child.update();
+            active_child_bar_found |= child.bar_active();
         }
         if (active_child_bar_found){
-            for (menu_elem& elem : children) {
-                if (!elem.bar_active()){
-                    elem.set_inactive();
+            for (menu_elem& child: children) {
+                if (!child.bar_active()){
+                    child.set_inactive();
                 }
             }
         }
         // if a child is active, this element is active
-        for (menu_elem& elem : children) {
-            is_active |= (elem.active() && last_active());
+        for (menu_elem& child: children) {
+            is_active |= (child.active() && last_active());
         }
         // check clicked
         if (mode == bar_check_mode){
@@ -313,9 +313,9 @@ public:
             if (is_active) {
                 int radio_checked = -1;
                 int idx = 0;
-                for (menu_elem& elem : children) {
-                    if (elem.clicked()) {
-                        if (elem.menu_mode() == radio_mode && !elem.checked()) {
+                for (menu_elem& child: children) {
+                    if (child.clicked()) {
+                        if (child.menu_mode() == radio_mode && !child.checked()) {
                             radio_checked = idx;
                         }
                         is_clicked = true;
@@ -323,21 +323,14 @@ public:
                     ++idx;
                 }
                 idx = 0;
-                for (menu_elem& elem : children) {
-                    if (elem.menu_mode() == radio_mode && radio_checked != -1) {
-                        elem.set_checked(idx == radio_checked);
+                for (menu_elem& child: children) {
+                    if (child.menu_mode() == radio_mode && radio_checked != -1) {
+                        child.set_checked(idx == radio_checked);
                     }
-                    elem.draw_noupdate();
+                    child.draw_noupdate();
                     ++idx;
                 }
             }
-            /*
-            else {
-                for (menu_elem& elem : children) {
-                    elem.update_button();
-                }
-            }
-            */
         }
         if (mode == check_mode || mode == bar_check_mode) {
             if (*is_checked) {
@@ -396,11 +389,11 @@ public:
         return res;
     }
 
-    void not_clicked() {
+    void set_not_clicked() {
         is_clicked = false;
         if (has_child) {
-            for (menu_elem& elem : children) {
-                elem.not_clicked();
+            for (menu_elem& child: children) {
+                child.set_not_clicked();
             }
         }
     }
@@ -504,7 +497,7 @@ public:
         }
         else {
             for (menu_elem& elem : elems) {
-                elem.not_clicked();
+                elem.set_not_clicked();
                 elem.update_button();
             }
         }
