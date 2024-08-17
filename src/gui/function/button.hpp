@@ -22,6 +22,7 @@ public:
     Color font_color;
 private:
     bool enabled;
+    bool clicked_down;
     bool pressed;
     bool f_pressed;
 
@@ -38,6 +39,7 @@ public:
         button_color = c1;
         font_color = c2;
         enabled = true;
+        clicked_down = false;
         pressed = false;
         f_pressed = false;
     }
@@ -56,6 +58,11 @@ public:
         }
         f_pressed = pressed;
         pressed = rect.leftPressed();
+        if (rect.leftClicked()){
+            clicked_down = true;
+        } else if (!MouseL.down() && !f_pressed){
+            clicked_down = false;
+        }
     }
 
     void draw(double transparency) {
@@ -66,7 +73,7 @@ public:
     }
 
     bool clicked() {
-        return f_pressed && !MouseL.pressed() && enabled;
+        return clicked_down && f_pressed && !MouseL.pressed() && enabled;
         //return rect.leftClicked() && enabled;
     }
 
