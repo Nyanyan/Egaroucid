@@ -430,7 +430,7 @@ private:
     Font font;
     int font_size;
     bool is_open;
-    std::vector<menu_elem> elems;
+    std::vector<menu_elem> children;
     Texture checkbox;
     Texture unchecked;
 
@@ -454,9 +454,9 @@ public:
         rect.w = w;
         rect.h = h;
         int height = h - menu_offset_y * 2, width = w - menu_offset_x * 2;
-        for (menu_elem &elem : elems) {
-            elem.pre_init(font_size, font, checkbox, unchecked, height);
-            RectF r = elem.size();
+        for (menu_elem &child: children) {
+            child.pre_init(font_size, font, checkbox, unchecked, height);
+            RectF r = child.size();
             height = std::max(height, (int)r.h);
             width = std::max(width, (int)r.w);
         }
@@ -464,14 +464,14 @@ public:
         width += menu_offset_x * 2;
         int xx = rect.x;
         int yy = rect.y + rect.h;
-        for (menu_elem &elem : elems) {
-            elem.init_inside(xx, yy, width, height);
+        for (menu_elem &child: children) {
+            child.init_inside(xx, yy, width, height);
             yy += height;
         }
     }
 
     void push(menu_elem elem) {
-        elems.emplace_back(elem);
+        children.emplace_back(elem);
     }
 
     void draw() {
@@ -484,43 +484,43 @@ public:
             int radio_checked = -1;
             bool active_child_bar_found = false;
             int idx = 0;
-            for (menu_elem& elem : elems) {
-                elem.update();
+            for (menu_elem& child: children) {
+                child.update();
                 // radio button check
-                if (elem.clicked() && elem.menu_mode() == radio_mode && !elem.checked()) {
+                if (child.clicked() && child.menu_mode() == radio_mode && !child.checked()) {
                     radio_checked = idx;
                 }
                 // active bar check
-                active_child_bar_found |= elem.bar_active();
+                active_child_bar_found |= child.bar_active();
                 ++idx;
             }
             // radio button update
             idx = 0;
-            for (menu_elem& elem : elems) {
-                if (elem.menu_mode() == radio_mode && radio_checked != -1) {
-                    elem.set_checked(idx == radio_checked);
+            for (menu_elem& child: children) {
+                if (child.menu_mode() == radio_mode && radio_checked != -1) {
+                    child.set_checked(idx == radio_checked);
                 }
             }
             // bar update
             if (active_child_bar_found){
-                for (menu_elem& elem: elems) {
-                    if (!elem.bar_active()){
-                        elem.set_inactive();
+                for (menu_elem& child: children) {
+                    if (!child.bar_active()){
+                        child.set_inactive();
                     }
                 }
             }
             // draw children
-            for (menu_elem& elem : elems) {
-                elem.draw_noupdate();
-                n_is_open = n_is_open || elem.active();
-                clicked = clicked || elem.clicked();
+            for (menu_elem& child: children) {
+                child.draw_noupdate();
+                n_is_open = n_is_open || child.active();
+                clicked = clicked || child.clicked();
                 ++idx;
             }
         }
         else {
-            for (menu_elem& elem : elems) {
-                elem.set_not_clicked();
-                elem.update_button();
+            for (menu_elem& child: children) {
+                child.set_not_clicked();
+                child.update_button();
             }
         }
         if (is_open) {
@@ -549,7 +549,7 @@ public:
     }
 
     void clear() {
-        elems.clear();
+        children.clear();
     }
 };
 
