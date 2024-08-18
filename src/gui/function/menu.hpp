@@ -490,6 +490,19 @@ public:
                 }
                 ++idx;
             }
+            // if a child bar is active, other children must be inactive
+            bool active_child_bar_found = false;
+            for (menu_elem& child: elems) {
+                child.update();
+                active_child_bar_found |= child.bar_active();
+            }
+            if (active_child_bar_found){
+                for (menu_elem& child: elems) {
+                    if (!child.bar_active()){
+                        child.set_inactive();
+                    }
+                }
+            }
             idx = 0;
             for (menu_elem& elem : elems) {
                 if (elem.menu_mode() == radio_mode && radio_checked != -1) {
