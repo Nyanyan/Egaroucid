@@ -16,6 +16,8 @@
 #include "draw.hpp"
 #include "screen_shot.hpp"
 
+#define HINT_PRIORITY 0.49
+
 bool compare_value_cell(std::pair<int, int>& a, std::pair<int, int>& b) {
     return a.first > b.first;
 }
@@ -1110,7 +1112,7 @@ private:
         if (ai_status.hint_calculating || ai_status.hint_calculated) {
             std::vector<Hint_info> hint_infos;
             for (int cell = 0; cell < HW2; ++cell) {
-                if (ai_status.hint_use[HW2_M1 - cell] && -HW2 <= ai_status.hint_values[HW2_M1 - cell] && ai_status.hint_values[HW2_M1 - cell] <= HW2) {
+                if (ai_status.hint_use[HW2_M1 - cell] && -HW2 <= ai_status.hint_values[HW2_M1 - cell] && ai_status.hint_values[HW2_M1 - cell] <= (double)HW2 + HINT_PRIORITY + 0.009) {
                     Hint_info hint_info;
                     hint_info.value = ai_status.hint_values[HW2_M1 - cell];
                     hint_info.cell = cell;
@@ -1453,7 +1455,7 @@ private:
                 if (book.contain(board)){
                     ai_status.hint_types[cell] = HINT_TYPE_BOOK;
                     Book_elem book_elem = book.get(board);
-                    ai_status.hint_values[cell] = -book_elem.value + 0.49; // priority to book
+                    ai_status.hint_values[cell] = -book_elem.value + HINT_PRIORITY; // priority to book
                     uint32_t n_lines = book_elem.n_lines;
                     String n_lines_str = Format(n_lines);
                     if (n_lines >= 1000000000){
