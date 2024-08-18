@@ -229,7 +229,10 @@ public:
         if (!hint_ignore) {
             if (getData().menu_elements.use_disc_hint) {
                 if ((ai_status.hint_calculating || ai_status.hint_calculated) && getData().menu_elements.n_disc_hint > ai_status.n_hint_display){
+                    stop_calculating();
                     reset_hint();
+                    reset_pv();
+                    resume_calculating();
                 }
                 if (!ai_status.hint_calculating && !ai_status.hint_calculated) {
                     hint_calculate();
