@@ -81,9 +81,9 @@ constexpr int BOARD_CELL_SIZE = BOARD_SIZE / HW;
 #define START_GAME_BUTTON_RADIUS 10
 
 // main pass button constants
-#define PASS_BUTTON_SX 470
-#define PASS_BUTTON_SY 45
-#define PASS_BUTTON_WIDTH 80
+#define PASS_BUTTON_SX 700
+#define PASS_BUTTON_SY 11
+#define PASS_BUTTON_WIDTH 90
 #define PASS_BUTTON_HEIGHT 30
 #define PASS_BUTTON_RADIUS 10
 
