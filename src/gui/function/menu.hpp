@@ -482,32 +482,35 @@ public:
         }
         if (is_open) {
             int radio_checked = -1;
+            bool active_child_bar_found = false;
             int idx = 0;
             for (menu_elem& elem : elems) {
                 elem.update();
+                // radio button check
                 if (elem.clicked() && elem.menu_mode() == radio_mode && !elem.checked()) {
                     radio_checked = idx;
                 }
+                // active bar check
+                active_child_bar_found |= elem.bar_active();
                 ++idx;
             }
-            // if a child bar is active, other children must be inactive
-            bool active_child_bar_found = false;
-            for (menu_elem& child: elems) {
-                child.update();
-                active_child_bar_found |= child.bar_active();
-            }
-            if (active_child_bar_found){
-                for (menu_elem& child: elems) {
-                    if (!child.bar_active()){
-                        child.set_inactive();
-                    }
-                }
-            }
+            // radio button update
             idx = 0;
             for (menu_elem& elem : elems) {
                 if (elem.menu_mode() == radio_mode && radio_checked != -1) {
                     elem.set_checked(idx == radio_checked);
                 }
+            }
+            // bar update
+            if (active_child_bar_found){
+                for (menu_elem& elem: elems) {
+                    if (!elem.bar_active()){
+                        elem.set_inactive();
+                    }
+                }
+            }
+            // draw children
+            for (menu_elem& elem : elems) {
                 elem.draw_noupdate();
                 n_is_open = n_is_open || elem.active();
                 clicked = clicked || elem.clicked();
