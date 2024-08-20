@@ -207,12 +207,14 @@ int nega_alpha_end_simple_nws(Search *search, int alpha, bool skipped, uint64_t 
     }
     int g;
     // move ordering
+    uint64_t done = 0;
     if (canput > 1) {
         for (int i = 0; i < canput; ++i) {
             Flip_value *flip_value = move_list + i;
-             flip_value->value = 0;
-            if (search->parity & cell_div4[flip_value->flip.pos])
+            flip_value->value = 0;
+            if (search->parity & cell_div4[flip_value->flip.pos]){
                 flip_value->value += W_END_NWS_SIMPLE_PARITY;
+            }
             search->move_noeval(&flip_value->flip);
                 Board nboard = search->board;
                 LocalTTEntry *tt = get_ltt(&nboard, search->n_discs);
@@ -226,11 +228,10 @@ int nega_alpha_end_simple_nws(Search *search, int alpha, bool skipped, uint64_t 
                         if (v < tt->upper) {
                             v = tt->upper;
                         }
+                        done |= (1ULL << flip_value->flip.pos);
                         search->undo_noeval(&flip_value->flip);
-                        flip_value->value = -INF;
                         continue;
                     }
-                    flip_value->value += W_END_NWS_SIMPLE_TT_BONUS;
                 }
                 flip_value->n_legal = search->board.get_legal();
                 int nm = get_n_moves_cornerX2(flip_value->n_legal);
@@ -245,7 +246,7 @@ int nega_alpha_end_simple_nws(Search *search, int alpha, bool skipped, uint64_t 
                         }
                     }
                     tt->set_score(&nboard, -64, g);
-                    flip_value->value = -INF;
+                    done |= (1ULL << flip_value->flip.pos);
                     continue;
                 }
                 flip_value->value += (MO_OFFSET_L_PM - nm) * W_END_NWS_SIMPLE_MOBILITY;
@@ -255,8 +256,8 @@ int nega_alpha_end_simple_nws(Search *search, int alpha, bool skipped, uint64_t 
 
     for (int move_idx = 0; move_idx < canput && *searching; ++move_idx){
         swap_next_best_move(move_list, move_idx, canput);
-        if (move_list[move_idx].value == -INF){
-            break;
+        if ((1ULL << move_list[move_idx].flip.pos) & done){
+            continue;
         }
         search->move_noeval(&move_list[move_idx].flip);
             Board nboard = search->board;
