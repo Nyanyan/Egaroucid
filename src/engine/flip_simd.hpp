@@ -86,14 +86,14 @@ class Flip{
             __m256i F4 = _mm256_and_si256(rM, _mm256_sub_epi64(_mm256_setzero_si256(), rO));
 
         #else
-              // right: shadow mask lower than leftmost non-opponent
-            __m256i rS = _mm256_andnot_si256(OO, rM);
-            rS = _mm256_or_si256(rS, _mm256_srlv_epi64(rS, _mm256_set_epi64x(7, 9, 8, 1)));
+              // right: shadow mask lower than leftmost P
+            __m256i rP = _mm256_and_si256(PP, rM);
+            __m256i rS = _mm256_or_si256(rP, _mm256_srlv_epi64(rP, _mm256_set_epi64x(7, 9, 8, 1)));
             rS = _mm256_or_si256(rS, _mm256_srlv_epi64(rS, _mm256_set_epi64x(14, 18, 16, 2)));
             rS = _mm256_or_si256(rS, _mm256_srlv_epi64(rS, _mm256_set_epi64x(28, 36, 32, 4)));
               // erase if non-opponent MS1B is not P
-            __m256i F4 = _mm256_cmpgt_epi64(_mm256_and_si256(PP, rS), _mm256_andnot_si256(PP, rS));
-            F4 = _mm256_and_si256(_mm256_andnot_si256(rS, rM), F4);
+            __m256i rE = _mm256_xor_si256(_mm256_andnot_si256(OO, rM), rP);	// masked Empty
+            __m256i F4 = _mm256_and_si256(_mm256_andnot_si256(rS, rM), _mm256_cmpgt_epi64(rP, rE));
         #endif
 
         #if !(ACEPCK & 2)
