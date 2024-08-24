@@ -48,12 +48,13 @@ class Flip{
             __m256i lO = _mm256_andnot_si256(OO, lM);
 
     #ifdef USE_AVX512
-        #if !(ACEPCK & 1) // right: use prove
+        #if !(ACEPCK & 1) // right: use prove (no mask)
               // look for non-opponent (or edge) bit with lzcnt
             __m256i t0 = _mm256_lzcnt_epi64(_mm256_andnot_si256(OO, rM));
             t0 = _mm256_and_si256(_mm256_srlv_epi64(_mm256_set1_epi64x(0x8000000000000000), t0), PP);
               // clear masked OO lower than outflank
-            __m256i F4 = _mm256_andnot_si256(_mm256_or_si256(_mm256_add_epi64(t0, _mm256_set1_epi64x(-1)), t0), rM);
+            // __m256i F4 = _mm256_and_si256(_mm256_xor_si256(_mm256_sub_epi64(_mm256_setzero_si256(), tO), tO), rM);
+            __m256i F4 = _mm256_ternarylogic_epi64(_mm256_sub_epi64(_mm256_setzero_si256(), t0), t0, rM, 0x28);
 
         #else // right: use mask by acepck, step on a MSVC landmine?
               // shadow mask lower than leftmost P
@@ -66,12 +67,23 @@ class Flip{
         #endif
 
               // left: look for non-opponent LS1B
+        #if !(ACEPCK & 2) // LS1B (no mask)
+            // lO = _mm256_and_si256(lO, _mm256_sub_epi64(_mm256_setzero_si256(), lO));     // LS1B
+            // lO = _mm256_and_si256(lO, PP);
+            lO = _mm256_ternarylogic_epi64(lO, _mm256_sub_epi64(_mm256_setzero_si256(), lO), PP, 0x80);
+              // set all bits if outflank = 0, otherwise higher bits than outflank
+            __m256i lE = _mm256_sub_epi64(_mm256_cmpeq_epi64(lO, _mm256_setzero_si256()), lO);
+            // F4 = _mm256_or_si256(F4, _mm256_andnot_si256(lE, lM));
+            F4 = _mm256_ternarylogic_epi64(F4, lE, lM, 0xf2);
+
+        #else // use mask
             // __m256i t2 = _mm256_xor_si256(_mm256_add_epi64(lO, _mm256_set1_epi64x(-1)), lO);	// BLSMSK
             // t2 = _mm256_and_si256(lM, t2);	// non-opponent LS1B and opponent inbetween
             __m256i t2 = _mm256_ternarylogic_epi64(lM, _mm256_add_epi64(lO, _mm256_set1_epi64x(-1)), lO, 0x60);
               // apply flip if P is in BLSMSK, i.e. LS1B is P
-            // __m256i F4 = _mm256_mask_or_epi64(F4, _mm256_test_epi64_mask(PP, t2), F4, _mm256_andnot_si256(PP, t2));
-            __m256i F4 = _mm256_mask_ternarylogic_epi64(F4, _mm256_test_epi64_mask(PP, t2), PP, t2, 0xf2);
+            // F4 = _mm256_mask_or_epi64(F4, _mm256_test_epi64_mask(PP, t2), F4, _mm256_andnot_si256(PP, t2));
+            F4 = _mm256_mask_ternarylogic_epi64(F4, _mm256_test_epi64_mask(PP, t2), PP, t2, 0xf2);
+        #endif
 
     #else // AVX2
         #if !(ACEPCK & 1)
