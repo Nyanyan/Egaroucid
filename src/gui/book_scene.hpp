@@ -49,6 +49,7 @@ private:
     Button single_back_button;
     Button back_button;
     Button go_button;
+    Slidebar level_bar;
     std::string book_file;
     bool book_deleting;
     bool book_importing;
@@ -63,6 +64,8 @@ public:
         single_back_button.init(BACK_BUTTON_SX, BACK_BUTTON_SY, BACK_BUTTON_WIDTH, BACK_BUTTON_HEIGHT, BACK_BUTTON_RADIUS, language.get("common", "back"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
         back_button.init(GO_BACK_BUTTON_BACK_SX, GO_BACK_BUTTON_SY, GO_BACK_BUTTON_WIDTH, GO_BACK_BUTTON_HEIGHT, GO_BACK_BUTTON_RADIUS, language.get("common", "back"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
         go_button.init(GO_BACK_BUTTON_GO_SX, GO_BACK_BUTTON_SY, GO_BACK_BUTTON_WIDTH, GO_BACK_BUTTON_HEIGHT, GO_BACK_BUTTON_RADIUS, language.get("book", "import"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
+        level = 21;
+        level_bar.init(X_CENTER - 220, 355, 440, 20, language.get("ai_settings", "level"), 20, getData().colors.white, getData().fonts.font, 1, 60, &level);
         book_deleting = false;
         book_importing = false;
         failed = false;
@@ -111,6 +114,8 @@ public:
             }
             bool need_level_setting = ext == "egbk";
             if (need_level_setting){
+                level_bar.draw();
+                /*
                 Rect bar_rect{X_CENTER - 220, sy + 180, 440, 20};
                 bar_rect.draw(bar_color); // Palette::Lightskyblue
                 if (bar_rect.leftPressed()){
@@ -127,6 +132,7 @@ public:
                 Circle bar_circle{X_CENTER - 200 + 400 * level / 61, sy + 190, 12};
                 getData().fonts.font(language.get("ai_settings", "level") + Format(level)).draw(20, Arg::rightCenter(X_CENTER - 230, sy + 190), getData().colors.white);
                 bar_circle.draw(bar_circle_color);
+                */
             }
             back_button.draw();
             if (back_button.clicked() || KeyEscape.pressed()) {
