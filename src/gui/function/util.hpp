@@ -53,7 +53,7 @@ std::string get_transcript(Graph_resources graph_resources, History_elem current
             transcript += idx_to_coord(graph_resources.nodes[GRAPH_MODE_INSPECT][0].policy);
         }
         for (History_elem& history_elem : graph_resources.nodes[GRAPH_MODE_INSPECT]) {
-            if (history_elem.board.n_discs() >= history_elem.board.n_discs()) {
+            if (history_elem.board.n_discs() >= current_history_elem.board.n_discs()) {
                 break;
             }
             if (history_elem.next_policy != -1) {
