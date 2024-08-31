@@ -39,25 +39,32 @@ public:
 
     int get_shortcut_key(){
         const Array<Input> raw_keys = Keyboard::GetAllInputs();
+        bool down_found = false;
         std::unordered_set<String> keys;
         for (const auto& key : raw_keys){
+            down_found |= key.down();
             keys.emplace(key.name());
         }
-        std::cerr << "keys size " << keys.size() << std::endl;
+
+        std::cerr << "keys size " << keys.size() << " down found " << down_found << std::endl;
         for (const String& key : keys){
             std::cerr << key.narrow() << " ";
         }
         std::cerr << std::endl;
-        for (int i = 0; i < N_SHORTCUT_KEYS; ++i){
-            if (keys.size() == shortcut_keys[i].keys.size()){
-                bool matched = true;
-                for (const String& key : keys){
-                    if (std::find(shortcut_keys[i].keys.begin(), shortcut_keys[i].keys.end(), key) == shortcut_keys[i].keys.end()){
-                        matched = false;
+
+        if (down_found){
+            for (int i = 0; i < N_SHORTCUT_KEYS; ++i){
+                if (keys.size() == shortcut_keys[i].keys.size()){
+                    bool matched = true;
+                    for (const String& key : keys){
+                        std::cerr << key.narrow() << " " << (std::find(shortcut_keys[i].keys.begin(), shortcut_keys[i].keys.end(), key) == shortcut_keys[i].keys.end()) << std::endl;
+                        if (std::find(shortcut_keys[i].keys.begin(), shortcut_keys[i].keys.end(), key) == shortcut_keys[i].keys.end()){
+                            matched = false;
+                        }
                     }
-                }
-                if (matched){
-                    return i;
+                    if (matched){
+                        return i;
+                    }
                 }
             }
         }
