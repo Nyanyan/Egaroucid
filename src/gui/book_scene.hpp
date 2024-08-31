@@ -1110,6 +1110,7 @@ private:
     Button back_button;
     Button start_button;
     Button start_with_max_n_loops_button;
+    Slidebar n_loops_bar;
     bool done;
     bool failed;
     Board board;
@@ -1142,6 +1143,7 @@ public:
         back_button.init(BUTTON3_1_SX, BUTTON3_SY, BUTTON3_WIDTH, BUTTON3_HEIGHT, BUTTON3_RADIUS, language.get("common", "back"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
         start_button.init(BUTTON3_2_SX, BUTTON3_SY, BUTTON3_WIDTH, BUTTON3_HEIGHT, BUTTON3_RADIUS, language.get("book", "start"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
         start_with_max_n_loops_button.init(BUTTON3_3_SX, BUTTON3_SY, BUTTON3_WIDTH, BUTTON3_HEIGHT, BUTTON3_RADIUS, language.get("book", "start_with_max_n_loops"), 15, getData().fonts.font, getData().colors.white, getData().colors.black);
+        n_loops_bar.init(X_CENTER - 220, 350, 440, 20, language.get("book", "max_n_loops"), 15, getData().colors.white, getData().fonts.font, 1, 30, &max_n_loops);
         file_dragged = false;
         done = false;
         failed = false;
@@ -1215,6 +1217,7 @@ public:
                 raw_transcripts = text_area.text.narrow();
             }
             sy += 280;
+            /*
             Rect bar_rect{X_CENTER - 220, sy, 440, 20};
             bar_rect.draw(Palette::Lightskyblue);
             if (bar_rect.leftPressed()){
@@ -1231,6 +1234,8 @@ public:
             Circle bar_circle{X_CENTER - 200 + 400 * (max_n_loops - 1) / 30.0, sy + 10, 12};
             getData().fonts.font(language.get("book", "max_n_loops") + U" " + Format(max_n_loops)).draw(15, Arg::rightCenter(X_CENTER - 230, sy + 10), getData().colors.white);
             bar_circle.draw(bar_circle_color);
+            */
+            n_loops_bar.draw();
             sy += 25;
             getData().fonts.font(language.get("in_out", "you_can_paste_with_ctrl_v")).draw(13, Arg::topCenter(X_CENTER, sy), getData().colors.white);
             if (!file_dragged){
@@ -1244,7 +1249,7 @@ public:
             if (back_button.clicked() || KeyEscape.pressed()) {
                 changeScene(U"Main_scene", SCENE_FADE_TIME);
             }
-            if ((start_button.clicked() || start_with_max_n_loops_button.clicked()) && raw_transcripts.size()) {
+            if ((start_button.clicked() || start_with_max_n_loops_button.clicked()) && raw_transcripts.size() && !n_loops_bar.is_changeable()) {
                 if (start_button.clicked()){
                     max_n_loops_used = BOOK_DEVIATE_MAX_N_LOOPS_INF;
                 } else{
