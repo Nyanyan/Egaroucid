@@ -114,24 +114,6 @@ public:
             bool need_level_setting = ext == "egbk";
             if (need_level_setting){
                 level_bar.draw();
-                /*
-                Rect bar_rect{X_CENTER - 220, sy + 180, 440, 20};
-                bar_rect.draw(bar_color); // Palette::Lightskyblue
-                if (bar_rect.leftPressed()){
-                    int min_error = INF;
-                    int cursor_x = Cursor::Pos().x;
-                    for (int i = 0; i <= 60; ++i) {
-                        int x = round((double)X_CENTER - 200.0 + 400.0 * (double)i / 61.0);
-                        if (abs(cursor_x - x) < min_error) {
-                            min_error = abs(cursor_x - x);
-                            level = i;
-                        }
-                    }
-                }
-                Circle bar_circle{X_CENTER - 200 + 400 * level / 61, sy + 190, 12};
-                getData().fonts.font(language.get("ai_settings", "level") + Format(level)).draw(20, Arg::rightCenter(X_CENTER - 230, sy + 190), getData().colors.white);
-                bar_circle.draw(bar_circle_color);
-                */
             }
             back_button.draw();
             if (back_button.clicked() || KeyEscape.pressed()) {
@@ -259,24 +241,6 @@ public:
             getData().fonts.font(book_format_str).draw(18, Arg::topCenter(X_CENTER, sy + 142), getData().colors.white);
 
             level_bar.draw();
-            /*
-            Rect bar_rect{X_CENTER - 220, sy + 180, 440, 20};
-            bar_rect.draw(bar_color); // Palette::Lightskyblue
-            if (bar_rect.leftPressed()){
-                int min_error = INF;
-                int cursor_x = Cursor::Pos().x;
-                for (int i = 0; i <= 60; ++i) {
-                    int x = round((double)X_CENTER - 200.0 + 400.0 * (double)i / 61.0);
-                    if (abs(cursor_x - x) < min_error) {
-                        min_error = abs(cursor_x - x);
-                        level = i;
-                    }
-                }
-            }
-            Circle bar_circle{X_CENTER - 200 + 400 * level / 61, sy + 190, 12};
-            getData().fonts.font(language.get("ai_settings", "level") + Format(level)).draw(20, Arg::rightCenter(X_CENTER - 230, sy + 190), getData().colors.white);
-            bar_circle.draw(bar_circle_color);
-            */
 
             back_button.draw();
             go_with_level_button.draw();
@@ -1226,27 +1190,8 @@ public:
                 SimpleGUI::TextArea(text_area, Vec2{X_CENTER - 350, sy}, SizeF{700, 270}, TEXTBOX_MAX_CHARS);
                 raw_transcripts = text_area.text.narrow();
             }
-            sy += 280;
-            /*
-            Rect bar_rect{X_CENTER - 220, sy, 440, 20};
-            bar_rect.draw(Palette::Lightskyblue);
-            if (bar_rect.leftPressed()){
-                int min_error = INF;
-                int cursor_x = Cursor::Pos().x;
-                for (int i = 1; i <= 30; ++i) {
-                    int x = round((double)X_CENTER - 200.0 + 400.0 * (double)(i - 1) / 30.0);
-                    if (abs(cursor_x - x) < min_error) {
-                        min_error = abs(cursor_x - x);
-                        max_n_loops = i;
-                    }
-                }
-            }
-            Circle bar_circle{X_CENTER - 200 + 400 * (max_n_loops - 1) / 30.0, sy + 10, 12};
-            getData().fonts.font(language.get("book", "max_n_loops") + U" " + Format(max_n_loops)).draw(15, Arg::rightCenter(X_CENTER - 230, sy + 10), getData().colors.white);
-            bar_circle.draw(bar_circle_color);
-            */
             n_loops_bar.draw();
-            sy += 25;
+            sy += 305;
             getData().fonts.font(language.get("in_out", "you_can_paste_with_ctrl_v")).draw(13, Arg::topCenter(X_CENTER, sy), getData().colors.white);
             if (!file_dragged){
                 getData().fonts.font(Format(text_area.text.size()) + U"/" + Format(TEXTBOX_MAX_CHARS) + U" " + language.get("common", "characters")).draw(13, Arg::topRight(X_CENTER + 350, sy), getData().colors.white);
