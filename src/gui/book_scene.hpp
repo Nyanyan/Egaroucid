@@ -196,6 +196,7 @@ private:
     Button back_button;
     Button go_with_level_button;
     Button go_button;
+    Slidebar level_bar;
     std::string book_file;
     int level;
     std::future<void> save_book_edax_future;
@@ -211,9 +212,10 @@ public:
         text_area.text = Unicode::Widen(getData().directories.document_dir + "book_copy.egbk3");
         text_area.cursorPos = text_area.text.size();
         text_area.rebuildGlyphs();
-        level = getData().menu_elements.level;
         book_exporting = false;
         done = false;
+        level = getData().menu_elements.level;
+        level_bar.init(X_CENTER - 220, 355, 440, 20, language.get("ai_settings", "level"), 20, getData().colors.white, getData().fonts.font, 1, 60, &level);
     }
 
     void update() override {
@@ -256,6 +258,8 @@ public:
             }
             getData().fonts.font(book_format_str).draw(18, Arg::topCenter(X_CENTER, sy + 142), getData().colors.white);
 
+            level_bar.draw();
+            /*
             Rect bar_rect{X_CENTER - 220, sy + 180, 440, 20};
             bar_rect.draw(bar_color); // Palette::Lightskyblue
             if (bar_rect.leftPressed()){
@@ -272,6 +276,7 @@ public:
             Circle bar_circle{X_CENTER - 200 + 400 * level / 61, sy + 190, 12};
             getData().fonts.font(language.get("ai_settings", "level") + Format(level)).draw(20, Arg::rightCenter(X_CENTER - 230, sy + 190), getData().colors.white);
             bar_circle.draw(bar_circle_color);
+            */
 
             back_button.draw();
             go_with_level_button.draw();
