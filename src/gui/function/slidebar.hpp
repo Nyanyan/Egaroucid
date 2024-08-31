@@ -53,7 +53,7 @@ public:
         ex = rect.x + rect.w - circle.r * 1.1;
         cy = rect.y + rect.h / 2;
         str_ex = rect.x - font(U"88").region(font_size, Point{ 0, 0 }).w - 5;
-        update_x();
+        circle.x = round((double)sx + (double)(ex - sx) * (double)(*value - min_value) / (double)(max_value - min_value));
     }
 
     void draw() {
@@ -64,7 +64,16 @@ public:
         }
         if (changeable){
             Cursor::RequestStyle(CursorStyle::ResizeLeftRight);
-            update_x();
+            int min_error = INF;
+            int cursor_x = Cursor::Pos().x;
+            for (int i = min_value; i <= max_value; ++i) {
+                int x = round((double)sx + (double)(ex - sx) * (double)(i - min_value) / (double)(max_value - min_value));
+                if (abs(cursor_x - x) < min_error) {
+                    min_error = abs(cursor_x - x);
+                    *value = i;
+                    circle.x = x;
+                }
+            }
         }
         rect.draw(Palette::Lightskyblue);
         circle.draw(Palette::Deepskyblue);
@@ -77,16 +86,4 @@ public:
     }
 
 private:
-    void update_x(){
-        int min_error = INF;
-        int cursor_x = Cursor::Pos().x;
-        for (int i = min_value; i <= max_value; ++i) {
-            int x = round((double)sx + (double)(ex - sx) * (double)(i - min_value) / (double)(max_value - min_value));
-            if (abs(cursor_x - x) < min_error) {
-                min_error = abs(cursor_x - x);
-                *value = i;
-                circle.x = x;
-            }
-        }
-    }
 };
