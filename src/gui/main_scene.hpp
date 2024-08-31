@@ -161,7 +161,7 @@ public:
         if (need_start_game_button) {
             need_start_game_button_calculation();
             start_game_button.draw();
-            if (start_game_button.clicked() || KeySpace.down()) {
+            if (!getData().menu.active() && (start_game_button.clicked() || KeySpace.down())) {
                 need_start_game_button = false;
                 stop_calculating();
                 resume_calculating();
@@ -173,7 +173,7 @@ public:
                 pausing_in_pass = false;
             else{
                 pass_button.draw();
-                if (pass_button.clicked()){
+                if (!getData().menu.active() && pass_button.clicked()){
                     pausing_in_pass = false;
                 }
             }
