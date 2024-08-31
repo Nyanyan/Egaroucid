@@ -19,5 +19,6 @@
 #include "menu_definition.hpp"
 #include "opening_manager.hpp"
 #include "radio_button.hpp"
+#include "shortcut_key.hpp"
 #include "slidebar.hpp"
 #include "util.hpp"

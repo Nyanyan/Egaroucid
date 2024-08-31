@@ -494,6 +494,9 @@ int init_resources(Resources* resources, Settings* settings, Fonts *fonts, bool 
             return ERR_OPENING_NOT_LOADED;
     }
 
+    // shortcut
+    shortcut_keys.init();
+
     return ERR_OK;
 
 }

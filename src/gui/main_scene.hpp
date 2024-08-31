@@ -120,6 +120,10 @@ public:
         // init
         getData().graph_resources.delta = 0;
 
+        // shortcut
+        int shortcut_key = shortcut_keys.get_shortcut_key();
+        std::cerr << shortcut_key << std::endl;
+
         // opening
         update_opening();
 
