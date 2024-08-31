@@ -64,14 +64,13 @@ public:
         single_back_button.init(BACK_BUTTON_SX, BACK_BUTTON_SY, BACK_BUTTON_WIDTH, BACK_BUTTON_HEIGHT, BACK_BUTTON_RADIUS, language.get("common", "back"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
         back_button.init(GO_BACK_BUTTON_BACK_SX, GO_BACK_BUTTON_SY, GO_BACK_BUTTON_WIDTH, GO_BACK_BUTTON_HEIGHT, GO_BACK_BUTTON_RADIUS, language.get("common", "back"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
         go_button.init(GO_BACK_BUTTON_GO_SX, GO_BACK_BUTTON_SY, GO_BACK_BUTTON_WIDTH, GO_BACK_BUTTON_HEIGHT, GO_BACK_BUTTON_RADIUS, language.get("book", "import"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
-        level = 21;
-        level_bar.init(X_CENTER - 220, 355, 440, 20, language.get("ai_settings", "level"), 20, getData().colors.white, getData().fonts.font, 1, 60, &level);
         book_deleting = false;
         book_importing = false;
         failed = false;
         done = false;
-        level = getData().menu_elements.level;
         need_level = false;
+        level = getData().menu_elements.level;
+        level_bar.init(X_CENTER - 220, 355, 440, 20, language.get("ai_settings", "level"), 20, getData().colors.white, getData().fonts.font, 1, 60, &level);
     }
 
     void update() override {
