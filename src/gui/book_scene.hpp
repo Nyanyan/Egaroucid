@@ -1167,7 +1167,7 @@ public:
         if (!getData().menu_elements.use_book_learn_error_leaf)
             error_leaf = BOOK_ERROR_INF;
         max_n_loops = 15;
-        n_loops_bar.init(X_CENTER - 220, 350, 440, 20, language.get("book", "max_n_loops"), 15, getData().colors.white, getData().fonts.font, 1, 30, &max_n_loops);
+        n_loops_bar.init(X_CENTER - 220, 345, 440, 20, language.get("book", "max_n_loops"), 15, getData().colors.white, getData().fonts.font, 1, 30, &max_n_loops);
     }
 
     void update() override {
