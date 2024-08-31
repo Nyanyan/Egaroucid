@@ -160,6 +160,11 @@ public:
             ai_status.analyzing;
         if (need_start_game_button) {
             need_start_game_button_calculation();
+            if (getData().menu.active()){
+                start_game_button.disable_notransparent();
+            } else{
+                start_game_button.enable();
+            }
             start_game_button.draw();
             if (!getData().menu.active() && (start_game_button.clicked() || KeySpace.down())) {
                 need_start_game_button = false;
@@ -172,6 +177,11 @@ public:
             if (!ai_to_move)
                 pausing_in_pass = false;
             else{
+                if (getData().menu.active()){
+                    pass_button.disable_notransparent();
+                } else{
+                    pass_button.enable();
+                }
                 pass_button.draw();
                 if (!getData().menu.active() && pass_button.clicked()){
                     pausing_in_pass = false;

@@ -115,11 +115,21 @@ public:
             if (need_level_setting){
                 level_bar.draw();
             }
+            if (level_bar.is_changeable()){
+                back_button.disable_notransparent();
+            } else{
+                back_button.enable();
+            }
             back_button.draw();
             if (back_button.clicked() || KeyEscape.pressed()) {
                 reset_book_additional_information();
                 getData().graph_resources.need_init = false;
                 changeScene(U"Main_scene", SCENE_FADE_TIME);
+            }
+            if (level_bar.is_changeable()){
+                go_button.disable_notransparent();
+            } else{
+                go_button.enable();
             }
             go_button.draw();
             if (formatted_file && (go_button.clicked() || return_pressed || (file_dragged && !need_level_setting))) {
@@ -242,6 +252,15 @@ public:
 
             level_bar.draw();
 
+            if (level_bar.is_changeable()){
+                back_button.disable_notransparent();
+                go_with_level_button.disable_notransparent();
+                go_button.disable_notransparent();
+            } else{
+                back_button.enable();
+                go_with_level_button.enable();
+                go_button.enable();
+            }
             back_button.draw();
             go_with_level_button.draw();
             go_button.draw();
@@ -1198,6 +1217,15 @@ public:
             }
             sy += 20;
             getData().fonts.font(language.get("book", "input_transcripts_with_line_breaks")).draw(13, Arg::topCenter(X_CENTER, sy), getData().colors.white);
+            if (n_loops_bar.is_changeable()){
+                back_button.disable_notransparent();
+                start_button.disable_notransparent();
+                start_with_max_n_loops_button.disable_notransparent();
+            } else{
+                back_button.enable();
+                start_button.enable();
+                start_with_max_n_loops_button.enable();
+            }
             back_button.draw();
             start_button.draw();
             start_with_max_n_loops_button.draw();

@@ -23,6 +23,7 @@ public:
     Color font_color;
 private:
     bool enabled;
+    bool transparent;
     Click_supporter click_supporter;
 
 public:
@@ -38,6 +39,7 @@ public:
         button_color = c1;
         font_color = c2;
         enabled = true;
+        transparent = false;
         click_supporter.init();
     }
 
@@ -45,10 +47,15 @@ public:
         if (enabled){
             rect.draw(button_color);
             font(str).drawAt(font_size, rect.x + rect.w / 2, rect.y + rect.h / 2, font_color);
-            if (rect.mouseOver())
+            if (rect.mouseOver()){
                 Cursor::RequestStyle(CursorStyle::Hand);
+            }
         } else{
-            rect.draw(ColorF(button_color, 0.7));
+            if (transparent){
+                rect.draw(ColorF(button_color, 0.7));
+            } else{
+                rect.draw(button_color);
+            }
             font(str).drawAt(font_size, rect.x + rect.w / 2, rect.y + rect.h / 2, font_color);
         }
         click_supporter.update(rect);
@@ -64,6 +71,12 @@ public:
 
     void disable(){
         enabled = false;
+        transparent = true;
+    }
+
+    void disable_notransparent(){
+        enabled = false;
+        transparent = false;
     }
 };
 
