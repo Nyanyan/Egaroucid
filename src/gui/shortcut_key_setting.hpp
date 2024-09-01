@@ -71,7 +71,7 @@ public:
             if (changing_idx != i){
                 shortcut_key_str = shortcut_keys.get_shortcut_key_str(function_name);
             } else{
-                shortcut_key_str = get_new_shortcut_key_str();
+                shortcut_key_str = generate_key_str(changed_keys);
             }
             bool shortcut_assigned = true;
             if (shortcut_key_str == U""){
@@ -164,23 +164,6 @@ private:
                 changed_keys.emplace_back(key);
             }
         }
-    }
-
-    String get_new_shortcut_key_str(){
-        String res;
-        for (int i = 0; i < (int)changed_keys.size(); ++i){
-            if (changed_keys[i] == U"Right"){
-                res += U"->";
-            } else if (changed_keys[i] == U"Left"){
-                res += U"<-";
-            } else{
-                res += changed_keys[i];
-            }
-            if (i < (int)changed_keys.size() - 1){
-                res += U"+";
-            }
-        }
-        return res;
     }
 
     bool check_duplicate(){

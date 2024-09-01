@@ -61,6 +61,25 @@ std::vector<Shortcut_key_elem> shortcut_keys_default = {
     {U"screen_shot",            {U"Ctrl", U"S"},        {{"in_out", "in_out"}, {"in_out", "screen_shot"}}},
 };
 
+String generate_key_str(std::vector<String> keys){
+    String res;
+    for (int i = 0; i < (int)keys.size(); ++i){
+        if (keys[i] == U"Right"){
+            res += U"->";
+        } else if (keys[i] == U"Left"){
+            res += U"<-";
+        } else if (keys[i] == U"0x5b"){
+            res += U"Windows";
+        } else{
+            res += keys[i];
+        }
+        if (i < (int)keys.size() - 1){
+            res += U"+";
+        }
+    }
+    return res;
+}
+
 class Shortcut_keys{
 public:
     std::vector<Shortcut_key_elem> shortcut_keys;
@@ -143,20 +162,7 @@ public:
     String get_shortcut_key_str(String name){
         for (const Shortcut_key_elem &elem: shortcut_keys){
             if (elem.name == name){
-                String res;
-                for (int i = 0; i < (int)elem.keys.size(); ++i){
-                    if (elem.keys[i] == U"Right"){
-                        res += U"->";
-                    } else if (elem.keys[i] == U"Left"){
-                        res += U"<-";
-                    } else{
-                        res += elem.keys[i];
-                    }
-                    if (i < (int)elem.keys.size() - 1){
-                        res += U"+";
-                    }
-                }
-                return res;
+                return generate_key_str(elem.keys);
             }
         }
         return SHORTCUT_KEY_UNDEFINED;
