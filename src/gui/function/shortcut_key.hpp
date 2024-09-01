@@ -50,6 +50,7 @@ std::vector<Shortcut_key_dict_elem> shortcut_key_str = {
     {U"backward",               {{"operation", "backward"}}},
     {U"undo",                   {{"operation", "undo"}}},
     {U"save_this_branch",       {{"operation", "save_this_branch"}}},
+    {U"generate_random_board",  {{"operation", "generate_random_board", "generate"}}},
 
 };
 
@@ -83,6 +84,7 @@ std::vector<Shortcut_key_elem> shortcut_keys_default = {
     {U"backward",               {U"Left"}},
     {U"undo",                   {U"Backspace"}},
     {U"save_this_branch",       {U"Ctrl", U"L"}},
+    {U"generate_random_board",  {U"Ctrl", U"R"}},
 };
 
 class Shortcut_keys{

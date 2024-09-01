@@ -147,7 +147,7 @@ Menu create_menu(Menu_elements* menu_elements, Resources *resources, Font font) 
     menu_e.init_button(language.get("operation", "save_this_branch") + get_shortcut_key_info(U"save_this_branch"), &menu_elements->save_this_branch);
     title.push(menu_e);
     menu_e.init_button(language.get("operation", "generate_random_board", "generate_random_board"), &menu_elements->dummy);
-    side_menu.init_button(language.get("operation", "generate_random_board", "generate"), &menu_elements->generate_random_board);
+    side_menu.init_button(language.get("operation", "generate_random_board", "generate") + get_shortcut_key_info(U"generate_random_board"), &menu_elements->generate_random_board);
     menu_e.push(side_menu);
     side_menu.init_bar(language.get("operation", "generate_random_board", "generate_n_moves"), &menu_elements->generate_random_board_moves, menu_elements->generate_random_board_moves, 1, 60);
     menu_e.push(side_menu);
