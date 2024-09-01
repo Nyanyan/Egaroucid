@@ -44,10 +44,12 @@ std::vector<Shortcut_key_dict_elem> shortcut_key_str = {
     {U"graph_sum_of_loss",      {{"display", "graph", "sum_of_loss"}}},
     {U"laser_pointer",          {{"display", "laser_pointer"}}},
 
-    // manipulate
+    // operate
     {U"put_1_move_by_ai",       {{"operation", "put_1_move_by_ai"}}},
     {U"forward",                {{"operation", "forward"}}},
     {U"backward",               {{"operation", "backward"}}},
+    {U"undo",                   {{"operation", "undo"}}},
+    {U"save_this_branch",       {{"operation", "save_this_branch"}}},
 
 };
 
@@ -75,10 +77,12 @@ std::vector<Shortcut_key_elem> shortcut_keys_default = {
     {U"graph_sum_of_loss",      {U"S"}},
     {U"laser_pointer",          {U"P"}},
 
-    // manipulate
+    // operate
     {U"put_1_move_by_ai",       {U"G"}},
     {U"forward",                {U"Right"}},
     {U"backward",               {U"Left"}},
+    {U"undo",                   {U"Backspace"}},
+    {U"save_this_branch",       {U"Ctrl", U"L"}},
 };
 
 class Shortcut_keys{

@@ -428,7 +428,7 @@ private:
             need_start_game_button_calculation();
             pausing_in_pass = false;
         }
-        if (getData().menu_elements.start_game_human_black) {
+        if (getData().menu_elements.start_game_human_black || shortcut_key == U"new_game_human_black") {
             stop_calculating();
             getData().history_elem.reset();
             getData().graph_resources.init();
@@ -440,7 +440,7 @@ private:
             need_start_game_button_calculation();
             pausing_in_pass = false;
         }
-        if (getData().menu_elements.start_game_human_white) {
+        if (getData().menu_elements.start_game_human_white || shortcut_key == U"new_game_human_white") {
             stop_calculating();
             getData().history_elem.reset();
             getData().graph_resources.init();
@@ -452,7 +452,7 @@ private:
             need_start_game_button_calculation();
             pausing_in_pass = false;
         }
-        if (getData().menu_elements.start_selfplay) {
+        if (getData().menu_elements.start_selfplay || shortcut_key == U"new_selfplay") {
             stop_calculating();
             getData().history_elem.reset();
             getData().graph_resources.init();
@@ -590,7 +590,7 @@ private:
                 ++getData().graph_resources.n_discs;
                 getData().graph_resources.delta = 1;
             }
-            if ((getData().menu_elements.undo || KeyBackspace.down()) && getData().book_information.changing == BOOK_CHANGE_NO_CELL) {
+            if ((getData().menu_elements.undo || shortcut_key == U"undo") && getData().book_information.changing == BOOK_CHANGE_NO_CELL) {
                 stop_calculating();
                 reset_hint();
                 reset_pv();
@@ -616,7 +616,7 @@ private:
                 }
                 need_start_game_button_calculation();
             }
-            if (getData().menu_elements.save_this_branch || (KeyControl + KeyL).down() || (KeyCommand + KeyL).down()) {
+            if (getData().menu_elements.save_this_branch || shortcut_key == U"save_this_branch") {
                 stop_calculating();
                 if (getData().graph_resources.branch == GRAPH_MODE_INSPECT) {
                     std::vector<History_elem> new_branch;
