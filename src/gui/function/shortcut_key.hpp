@@ -119,40 +119,25 @@ public:
 public:
     void init(String file){
         shortcut_keys = shortcut_keys_default;
-        /*
         JSON json = JSON::Load(file);
         std::unordered_set<String> name_list;
-        for (Shortcut_key_dict_elem &elem: shortcut_key_str){
+        for (Shortcut_key_elem &elem: shortcut_keys_default){
             name_list.emplace(elem.name);
         }
-        shortcut_keys.clear();
         for (const auto& object: json){
             if (name_list.find(object.key) == name_list.end()){
                 std::cerr << "ERR shortcut key name not found " << object.key.narrow() << std::endl;
                 continue;
             }
-            Shortcut_key_elem elem;
-            elem.name = object.key;
-            for (const auto &key_name: object.value[U"keys"].arrayView()){
-                elem.keys.emplace_back(key_name.getString());
-            }
-            if (elem.keys.size()){
-                //for (const auto &str_list: object.value[U"func_key"].arrayView()){
-                //    std::vector<std::string> str_list_vector;
-                //    for (const auto &str: str_list.arrayView()){
-                //        str_list_vector.emplace_back(str.getString().narrow());
-                //    }
-                //    elem.function_str.emplace_back(language.get(str_list_vector));
-                //}
-                shortcut_keys.emplace_back(elem);
-                std::cerr << elem.name.narrow() << " [";
-                for (String &key: elem.keys){
-                    std::cerr << key.narrow() << " ";
+            for (int i = 0; i < (int)shortcut_keys.size(); ++i){
+                if (shortcut_keys[i].name == object.key){
+                    shortcut_keys[i].keys.clear();
+                    for (const auto &key_name: object.value.arrayView()){
+                        shortcut_keys[i].keys.emplace_back(key_name.getString());
+                    }
                 }
-                std::cerr << "]" << std::endl;
             }
         }
-        */
     }
 
     void check_shortcut_key(String *shortcut_name_down, String *shortcut_name_pressed){
