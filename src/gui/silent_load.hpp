@@ -494,17 +494,24 @@ int init_resources(Resources* resources, Settings* settings, Fonts *fonts, bool 
             return ERR_OPENING_NOT_LOADED;
     }
 
-    // shortcut
-    shortcut_keys.init();
-
     return ERR_OK;
 
+}
+
+void init_shortcut_keys(const Directories* directories){
+    // shortcut key
+    JSON shortcut_key_json = JSON::Load(U"{}shortcut_key.json"_fmt(Unicode::Widen(directories->appdata_dir)));
+    shortcut_keys.init(shortcut_key_json);
 }
 
 int silent_load(Directories* directories, Resources* resources, Settings* settings, Fonts *fonts, bool *stop_loading) {
     init_directories(directories);
     init_settings(directories, resources, settings);
-    return init_resources(resources, settings, fonts, stop_loading);
+    int res = init_resources(resources, settings, fonts, stop_loading);
+    if (res == ERR_OK){
+        init_shortcut_keys(directories);
+    }
+    return res;
 }
 
 class Silent_load : public App::Scene {

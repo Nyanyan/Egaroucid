@@ -12,14 +12,12 @@
 #include <Siv3D.hpp>
 #include <vector>
 #include <unordered_set>
+#include "language.hpp"
 
-#define N_SHORTCUT_KEYS 1
-
-#define SHORTCUT_KEY_NEW_GAME 0
-
-#define SHORTCUT_KEY_UNDEFINED -1
+#define SHORTCUT_KEY_UNDEFINED U"undefined"
 
 struct Shortcut_key_elem{
+    String name;
     std::vector<String> keys;
     std::vector<String> function_str;
 };
@@ -28,16 +26,35 @@ class Shortcut_keys{
 private:
     std::vector<Shortcut_key_elem> shortcut_keys;
 public:
-    void init(){
+    void init(const JSON json){
         shortcut_keys.clear();
-        shortcut_keys.resize(N_SHORTCUT_KEYS);
-        shortcut_keys[SHORTCUT_KEY_NEW_GAME].keys.emplace_back(U"Ctrl");
-        shortcut_keys[SHORTCUT_KEY_NEW_GAME].keys.emplace_back(U"N");
-        shortcut_keys[SHORTCUT_KEY_NEW_GAME].function_str.emplace_back(language.get("play", "game"));
-        shortcut_keys[SHORTCUT_KEY_NEW_GAME].function_str.emplace_back(language.get("play", "new_game"));
+        for (const auto& object: json){
+            Shortcut_key_elem elem;
+            elem.name = object.key;
+            for (const auto &key_name: object.value[U"keys"].arrayView()){
+                elem.keys.emplace_back(key_name.getString());
+            }
+            for (const auto &str_list: object.value[U"func_key"].arrayView()){
+                std::vector<std::string> str_list_vector;
+                for (const auto &str: str_list.arrayView()){
+                    str_list_vector.emplace_back(str.getString().narrow());
+                }
+                elem.function_str.emplace_back(language.get(str_list_vector));
+            }
+            shortcut_keys.emplace_back(elem);
+            std::cerr << elem.name.narrow() << " [";
+            for (String &key: elem.keys){
+                std::cerr << key.narrow() << " ";
+            }
+            std::cerr << "] [";
+            for (String &str: elem.function_str){
+                std::cerr << str.narrow() << " ";
+            }
+            std::cerr << "]" << std::endl;
+        }
     }
 
-    int get_shortcut_key(){
+    String get_shortcut_key(){
         const Array<Input> raw_keys = Keyboard::GetAllInputs();
         bool down_found = false;
         std::unordered_set<String> keys;
@@ -53,17 +70,17 @@ public:
         std::cerr << std::endl;
 
         if (down_found){
-            for (int i = 0; i < N_SHORTCUT_KEYS; ++i){
-                if (keys.size() == shortcut_keys[i].keys.size()){
+            for (const Shortcut_key_elem &elem: shortcut_keys){
+                if (keys.size() == elem.keys.size()){
                     bool matched = true;
                     for (const String& key : keys){
-                        std::cerr << key.narrow() << " " << (std::find(shortcut_keys[i].keys.begin(), shortcut_keys[i].keys.end(), key) == shortcut_keys[i].keys.end()) << std::endl;
-                        if (std::find(shortcut_keys[i].keys.begin(), shortcut_keys[i].keys.end(), key) == shortcut_keys[i].keys.end()){
+                        std::cerr << key.narrow() << " " << (std::find(elem.keys.begin(), elem.keys.end(), key) == elem.keys.end()) << std::endl;
+                        if (std::find(elem.keys.begin(), elem.keys.end(), key) == elem.keys.end()){
                             matched = false;
                         }
                     }
                     if (matched){
-                        return i;
+                        return elem.name;
                     }
                 }
             }

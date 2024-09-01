@@ -55,6 +55,18 @@ public:
         return lang[v0s][v1s][v2s].getString();
     }
 
+    String get(std::vector<std::string> vs) {
+        switch (vs.size()){
+            case 1:
+                return get(vs[0]);
+            case 2:
+                return get(vs[0], vs[1]);
+            case 3:
+                return get(vs[0], vs[1], vs[2]);
+        }
+        return U"?";
+    }
+
     String get_random(std::string v0, std::string v1) {
         String v0s = Unicode::Widen(v0);
         String v1s = Unicode::Widen(v1);
