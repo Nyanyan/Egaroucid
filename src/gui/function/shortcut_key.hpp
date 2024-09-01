@@ -18,46 +18,56 @@
 #define SHORTCUT_KEY_UNDEFINED U"undefined"
 
 struct Shortcut_key_dict_elem{
-    String name;
     std::vector<std::vector<std::string>> str_keys;
+
+    String get_str(){
+        String res;
+        for (int i = 0; i < (int)str_keys.size(); ++i){
+            res += language.get(str_keys[i]);
+            if (i < (int)str_keys.size() - 1){
+                res += U">";
+            }
+        }
+        return res;
+    }
 };
 
-std::vector<Shortcut_key_dict_elem> shortcut_key_str = {
+std::unordered_map<String, Shortcut_key_dict_elem> shortcut_key_str = {
     // buttons
-    {U"start_game",             {{"play", "start_game"}}},
+    {U"start_game",             {{{"play", "start_game"}}}},
 
     // game
-    {U"new_game",               {{"play", "new_game"}}},
-    {U"new_game_human_black",   {{"play", "new_game_human_black"}}},
-    {U"new_game_human_white",   {{"play", "new_game_human_white"}}},
-    {U"new_selfplay",           {{"play", "new_selfplay"}}},
-    {U"analyze",                {{"play", "analyze"}}},
+    {U"new_game",               {{{"play", "new_game"}}}},
+    {U"new_game_human_black",   {{{"play", "new_game_human_black"}}}},
+    {U"new_game_human_white",   {{{"play", "new_game_human_white"}}}},
+    {U"new_selfplay",           {{{"play", "new_selfplay"}}}},
+    {U"analyze",                {{{"play", "analyze"}}}},
 
     // settings
-    {U"ai_put_black",           {{"settings", "play", "ai_put_black"}}},
-    {U"ai_put_white",           {{"settings", "play", "ai_put_white"}}},
+    {U"ai_put_black",           {{{"settings", "play", "ai_put_black"}}}},
+    {U"ai_put_white",           {{{"settings", "play", "ai_put_white"}}}},
 
     // display
-    {U"disc_value",             {{"display", "display"}, {"display", "cell", "disc_value"}}},
-    {U"umigame_value",          {{"display", "display"}, {"display", "cell", "umigame_value"}}},
-    {U"graph_value",            {{"display", "graph", "value"}}},
-    {U"graph_sum_of_loss",      {{"display", "graph", "sum_of_loss"}}},
-    {U"laser_pointer",          {{"display", "laser_pointer"}}},
+    {U"disc_value",             {{{"display", "display"}, {"display", "cell", "disc_value"}}}},
+    {U"umigame_value",          {{{"display", "display"}, {"display", "cell", "umigame_value"}}}},
+    {U"graph_value",            {{{"display", "graph", "value"}}}},
+    {U"graph_sum_of_loss",      {{{"display", "graph", "sum_of_loss"}}}},
+    {U"laser_pointer",          {{{"display", "laser_pointer"}}}},
 
     // operate
-    {U"put_1_move_by_ai",       {{"operation", "put_1_move_by_ai"}}},
-    {U"forward",                {{"operation", "forward"}}},
-    {U"backward",               {{"operation", "backward"}}},
-    {U"undo",                   {{"operation", "undo"}}},
-    {U"save_this_branch",       {{"operation", "save_this_branch"}}},
-    {U"generate_random_board",  {{"operation", "generate_random_board", "generate"}}},
-    {U"stop_calculating",       {{"operation", "ai_operation", "stop_calculating"}}},
+    {U"put_1_move_by_ai",       {{{"operation", "put_1_move_by_ai"}}}},
+    {U"forward",                {{{"operation", "forward"}}}},
+    {U"backward",               {{{"operation", "backward"}}}},
+    {U"undo",                   {{{"operation", "undo"}}}},
+    {U"save_this_branch",       {{{"operation", "save_this_branch"}}}},
+    {U"generate_random_board",  {{{"operation", "generate_random_board", "generate"}}}},
+    {U"stop_calculating",       {{{"operation", "ai_operation", "stop_calculating"}}}},
 
     // input / output
-    {U"input_transcript",       {{"in_out", "input_transcript"}}},
-    {U"edit_board",             {{"in_out", "edit_board"}}},
-    {U"output_transcript",      {{"in_out", "output_transcript"}}},
-    {U"screen_shot",            {{"in_out", "screen_shot"}}},
+    {U"input_transcript",       {{{"in_out", "input_transcript"}}}},
+    {U"edit_board",             {{{"in_out", "edit_board"}}}},
+    {U"output_transcript",      {{{"in_out", "output_transcript"}}}},
+    {U"screen_shot",            {{{"in_out", "screen_shot"}}}},
 };
 
 struct Shortcut_key_elem{
@@ -101,7 +111,7 @@ std::vector<Shortcut_key_elem> shortcut_keys_default = {
 };
 
 class Shortcut_keys{
-private:
+public:
     std::vector<Shortcut_key_elem> shortcut_keys;
 public:
     void init(String file){

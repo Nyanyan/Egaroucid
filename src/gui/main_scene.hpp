@@ -478,6 +478,13 @@ private:
         if (shortcut_key == U"ai_put_white") {
             getData().menu_elements.ai_put_white = !getData().menu_elements.ai_put_white;
         }
+        if (getData().menu_elements.shortcut_key_setting) {
+            changing_scene = true;
+            stop_calculating();
+            resume_calculating();
+            changeScene(U"Shortcut_key_setting", SCENE_FADE_TIME);
+            return;
+        }
     }
 
     void menu_display() {

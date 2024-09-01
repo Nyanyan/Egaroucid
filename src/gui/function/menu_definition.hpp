@@ -72,6 +72,9 @@ Menu create_menu(Menu_elements* menu_elements, Resources *resources, Font font) 
     menu_e.init_check(language.get("settings", "play", "pause_when_pass"), &menu_elements->pause_when_pass, menu_elements->pause_when_pass);
     title.push(menu_e);
 
+    menu_e.init_button(language.get("settings", "shortcut_keys", "settings"), &menu_elements->shortcut_key_setting);
+    title.push(menu_e);
+
     menu.push(title);
 
 
