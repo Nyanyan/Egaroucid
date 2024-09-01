@@ -126,8 +126,8 @@ public:
 
         // shortcut
         shortcut_keys.check_shortcut_key(&shortcut_key, &shortcut_key_pressed);
-        if (shortcut_key != SHORTCUT_KEY_UNDEFINED || shortcut_key_pressed != SHORTCUT_KEY_UNDEFINED){
-            std::cerr << "shortcut key found: " << shortcut_key.narrow() << " " << shortcut_key_pressed.narrow() << std::endl;
+        if (shortcut_key != SHORTCUT_KEY_UNDEFINED){
+            std::cerr << "shortcut key found: " << shortcut_key.narrow() << std::endl;
         }
 
         // opening

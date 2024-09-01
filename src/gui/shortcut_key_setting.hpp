@@ -139,30 +139,10 @@ public:
     }
 private:
     void update_shortcut_key(){
-        const Array<Input> raw_keys = Keyboard::GetAllInputs();
         bool down_found = false;
-        std::unordered_set<String> keys;
-        for (const auto& key : raw_keys){
-            down_found |= key.down();
-            keys.emplace(key.name());
-        }
+        std::vector<String> keys = get_all_inputs(&down_found);
         if (down_found){
-            changed_keys.clear();
-            if (keys.find(U"Ctrl") != keys.end()){
-                changed_keys.emplace_back(U"Ctrl");
-            }
-            if (keys.find(U"Shift") != keys.end()){
-                changed_keys.emplace_back(U"Shift");
-            }
-            for (String key: keys){
-                if (key == U"Ctrl"){
-                    continue;
-                }
-                if (key == U"Shift"){
-                    continue;
-                }
-                changed_keys.emplace_back(key);
-            }
+            changed_keys = keys;
         }
     }
 

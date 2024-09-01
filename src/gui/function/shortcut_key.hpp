@@ -80,6 +80,39 @@ String generate_key_str(std::vector<String> keys){
     return res;
 }
 
+std::vector<String> get_all_inputs(bool *down_found){
+    const Array<Input> raw_keys = Keyboard::GetAllInputs();
+    *down_found = false;
+    std::unordered_set<String> keys;
+    for (const auto& key : raw_keys){
+        *down_found |= key.down();
+        keys.emplace(key.name());
+    }
+    std::vector<String> res;
+    if (keys.find(U"Ctrl") != keys.end()){
+        res.emplace_back(U"Ctrl");
+    }
+    if (keys.find(U"Shift") != keys.end()){
+        res.emplace_back(U"Shift");
+    }
+    if (keys.find(U"Alt") != keys.end()){
+        res.emplace_back(U"Alt");
+    }
+    for (String key: keys){
+        if (key == U"Ctrl"){
+            continue;
+        }
+        if (key == U"Shift"){
+            continue;
+        }
+        if (key == U"Alt"){
+            continue;
+        }
+        res.emplace_back(key);
+    }
+    return res;
+}
+
 class Shortcut_keys{
 public:
     std::vector<Shortcut_key_elem> shortcut_keys;
@@ -123,13 +156,8 @@ public:
     }
 
     void check_shortcut_key(String *shortcut_name_down, String *shortcut_name_pressed){
-        const Array<Input> raw_keys = Keyboard::GetAllInputs();
         bool down_found = false;
-        std::unordered_set<String> keys;
-        for (const auto& key : raw_keys){
-            down_found |= key.down();
-            keys.emplace(key.name());
-        }
+        std::vector<String> keys = get_all_inputs(&down_found);
 
         //std::cerr << "keys size " << keys.size() << " down found " << down_found << std::endl;
         //for (const String& key : keys){
