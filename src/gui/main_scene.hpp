@@ -53,6 +53,7 @@ private:
     bool putting_1_move_by_ai;
     int umigame_value_depth_before;
     String shortcut_key;
+    String shortcut_key_pressed;
 public:
     std::string principal_variation;
 
@@ -78,6 +79,7 @@ public:
         putting_1_move_by_ai = false;
         umigame_value_depth_before = 0;
         shortcut_key = SHORTCUT_KEY_UNDEFINED;
+        shortcut_key_pressed = SHORTCUT_KEY_UNDEFINED;
         std::cerr << "main scene loaded" << std::endl;
     }
 
@@ -123,9 +125,9 @@ public:
         getData().graph_resources.delta = 0;
 
         // shortcut
-        shortcut_key = shortcut_keys.check_shortcut_key();
-        if (shortcut_key != SHORTCUT_KEY_UNDEFINED){
-            std::cerr << "shortcut key found: " << shortcut_key.narrow() << std::endl;
+        shortcut_keys.check_shortcut_key(&shortcut_key, &shortcut_key_pressed);
+        if (shortcut_key != SHORTCUT_KEY_UNDEFINED || shortcut_key_pressed != SHORTCUT_KEY_UNDEFINED){
+            std::cerr << "shortcut key found: " << shortcut_key.narrow() << " " << shortcut_key_pressed.narrow() << std::endl;
         }
 
         // opening
@@ -895,28 +897,28 @@ private:
 
     void interact_graph() {
         getData().graph_resources.n_discs = graph.update_n_discs(getData().graph_resources.nodes[0], getData().graph_resources.nodes[1], getData().graph_resources.n_discs);
-        if (!KeyLeft.pressed()) {
+        if (shortcut_key_pressed != U"backward") {
             move_board_button_status.left_pushed = BUTTON_NOT_PUSHED;
         }
-        if (!KeyRight.pressed()) {
+        if (shortcut_key_pressed != U"forward") {
             move_board_button_status.right_pushed = BUTTON_NOT_PUSHED;
         }
 
-        if (MouseX1.down() || KeyLeft.down() || (move_board_button_status.left_pushed != BUTTON_NOT_PUSHED && tim() - move_board_button_status.left_pushed >= BUTTON_LONG_PRESS_THRESHOLD)) {
+        if (MouseX1.down() || shortcut_key == U"backward" || (move_board_button_status.left_pushed != BUTTON_NOT_PUSHED && tim() - move_board_button_status.left_pushed >= BUTTON_LONG_PRESS_THRESHOLD)) {
             stop_calculating();
             --getData().graph_resources.n_discs;
             getData().graph_resources.delta = -1;
             resume_calculating();
-            if (KeyLeft.down()) {
+            if (shortcut_key == U"backward") {
                 move_board_button_status.left_pushed = tim();
             }
         }
-        else if (MouseX2.down() || KeyRight.down() || (move_board_button_status.right_pushed != BUTTON_NOT_PUSHED && tim() - move_board_button_status.right_pushed >= BUTTON_LONG_PRESS_THRESHOLD)) {
+        else if (MouseX2.down() || shortcut_key == U"forward" || (move_board_button_status.right_pushed != BUTTON_NOT_PUSHED && tim() - move_board_button_status.right_pushed >= BUTTON_LONG_PRESS_THRESHOLD)) {
             stop_calculating();
             ++getData().graph_resources.n_discs;
             getData().graph_resources.delta = 1;
             resume_calculating();
-            if (KeyRight.down()) {
+            if (shortcut_key == U"forward") {
                 move_board_button_status.right_pushed = tim();
             }
         }

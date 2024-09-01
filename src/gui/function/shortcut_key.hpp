@@ -46,6 +46,8 @@ std::vector<Shortcut_key_dict_elem> shortcut_key_str = {
 
     // manipulate
     {U"put_1_move_by_ai",       {{"operation", "put_1_move_by_ai"}}},
+    {U"forward",                {{"operation", "forward"}}},
+    {U"backward",               {{"operation", "backward"}}},
 
 };
 
@@ -75,6 +77,8 @@ std::vector<Shortcut_key_elem> shortcut_keys_default = {
 
     // manipulate
     {U"put_1_move_by_ai",       {U"G"}},
+    {U"forward",                {U"Right"}},
+    {U"backward",               {U"Left"}},
 };
 
 class Shortcut_keys{
@@ -119,7 +123,7 @@ public:
         */
     }
 
-    String check_shortcut_key(){
+    void check_shortcut_key(String *shortcut_name_down, String *shortcut_name_pressed){
         const Array<Input> raw_keys = Keyboard::GetAllInputs();
         bool down_found = false;
         std::unordered_set<String> keys;
@@ -134,23 +138,26 @@ public:
         //}
         //std::cerr << std::endl;
 
-        if (down_found){
-            for (const Shortcut_key_elem &elem: shortcut_keys){
-                if (keys.size() == elem.keys.size()){
-                    bool matched = true;
-                    for (const String& key : keys){
-                        //std::cerr << key.narrow() << " " << (std::find(elem.keys.begin(), elem.keys.end(), key) == elem.keys.end()) << std::endl;
-                        if (std::find(elem.keys.begin(), elem.keys.end(), key) == elem.keys.end()){
-                            matched = false;
-                        }
+        for (const Shortcut_key_elem &elem: shortcut_keys){
+            *shortcut_name_down = SHORTCUT_KEY_UNDEFINED;
+            *shortcut_name_pressed = SHORTCUT_KEY_UNDEFINED;
+            if (keys.size() == elem.keys.size()){
+                bool matched = true;
+                for (const String& key : keys){
+                    //std::cerr << key.narrow() << " " << (std::find(elem.keys.begin(), elem.keys.end(), key) == elem.keys.end()) << std::endl;
+                    if (std::find(elem.keys.begin(), elem.keys.end(), key) == elem.keys.end()){
+                        matched = false;
                     }
-                    if (matched){
-                        return elem.name;
+                }
+                if (matched){
+                    if (down_found){
+                        *shortcut_name_down = elem.name;
                     }
+                    *shortcut_name_pressed = elem.name;
+                    return;
                 }
             }
         }
-        return SHORTCUT_KEY_UNDEFINED;
     }
 
     String get_shortcut_key_list(String name){
@@ -158,7 +165,13 @@ public:
             if (elem.name == name){
                 String res;
                 for (int i = 0; i < (int)elem.keys.size(); ++i){
-                    res += elem.keys[i];
+                    if (elem.keys[i] == U"Right"){
+                        res += U"->";
+                    } else if (elem.keys[i] == U"Left"){
+                        res += U"<-";
+                    } else{
+                        res += elem.keys[i];
+                    }
                     if (i < (int)elem.keys.size() - 1){
                         res += U"+";
                     }
