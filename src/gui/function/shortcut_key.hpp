@@ -51,7 +51,11 @@ std::vector<Shortcut_key_dict_elem> shortcut_key_str = {
     {U"undo",                   {{"operation", "undo"}}},
     {U"save_this_branch",       {{"operation", "save_this_branch"}}},
     {U"generate_random_board",  {{"operation", "generate_random_board", "generate"}}},
+    {U"stop_calculating",       {{"operation", "ai_operation", "stop_calculating"}}},
 
+    // input / output
+    {U"input_transcript",       {{"in_out", "input_transcript"}}},
+    {U"edit_board",             {{"in_out", "edit_board"}}},
 };
 
 struct Shortcut_key_elem{
@@ -85,6 +89,11 @@ std::vector<Shortcut_key_elem> shortcut_keys_default = {
     {U"undo",                   {U"Backspace"}},
     {U"save_this_branch",       {U"Ctrl", U"L"}},
     {U"generate_random_board",  {U"Ctrl", U"R"}},
+    {U"stop_calculating",       {U"Q"}},
+
+    // input / output
+    {U"input_transcript",       {U"Ctrl", U"T"}},
+    {U"edit_board",             {U"Ctrl", U"E"}},
 };
 
 class Shortcut_keys{

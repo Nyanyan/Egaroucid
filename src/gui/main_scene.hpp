@@ -501,7 +501,7 @@ private:
     }
 
     void menu_in_out() {
-        if (getData().menu_elements.input_transcript || (KeyControl + KeyT).down() || (KeyCommand + KeyT).down()) {
+        if (getData().menu_elements.input_transcript || shortcut_key == U"input_transcript") {
             changing_scene = true;
             stop_calculating();
             resume_calculating();
@@ -515,7 +515,7 @@ private:
             changeScene(U"Import_board", SCENE_FADE_TIME);
             return;
         }
-        if (getData().menu_elements.edit_board || (KeyControl + KeyE).down() || (KeyCommand + KeyE).down()) {
+        if (getData().menu_elements.edit_board || shortcut_key == U"edit_board") {
             changing_scene = true;
             stop_calculating();
             resume_calculating();
@@ -571,7 +571,7 @@ private:
     }
 
     void menu_manipulate() {
-        if (getData().menu_elements.stop_calculating || KeyQ.down()) {
+        if (getData().menu_elements.stop_calculating || shortcut_key == U"stop_calculating") {
             stop_calculating();
             reset_hint();
             reset_pv();

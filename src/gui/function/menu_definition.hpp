@@ -163,7 +163,7 @@ Menu create_menu(Menu_elements* menu_elements, Resources *resources, Font font) 
     title.push(menu_e);
 
     menu_e.init_button(language.get("operation", "ai_operation", "ai_operation"), &menu_elements->dummy);
-    side_menu.init_button(language.get("operation", "ai_operation", "stop_calculating"), &menu_elements->stop_calculating);
+    side_menu.init_button(language.get("operation", "ai_operation", "stop_calculating") + get_shortcut_key_info(U"stop_calculating"), &menu_elements->stop_calculating);
     menu_e.push(side_menu);
     side_menu.init_button(language.get("operation", "ai_operation", "cache_clear"), &menu_elements->cache_clear);
     menu_e.push(side_menu);
@@ -176,11 +176,11 @@ Menu create_menu(Menu_elements* menu_elements, Resources *resources, Font font) 
     title.init(language.get("in_out", "in_out"));
 
     menu_e.init_button(language.get("in_out", "in"), &menu_elements->dummy);
-    side_menu.init_button(language.get("in_out", "input_transcript"), &menu_elements->input_transcript);
+    side_menu.init_button(language.get("in_out", "input_transcript") + get_shortcut_key_info(U"input_transcript"), &menu_elements->input_transcript);
     menu_e.push(side_menu);
     side_menu.init_button(language.get("in_out", "input_board"), &menu_elements->input_board);
     menu_e.push(side_menu);
-    side_menu.init_button(language.get("in_out", "edit_board"), &menu_elements->edit_board);
+    side_menu.init_button(language.get("in_out", "edit_board") + get_shortcut_key_info(U"edit_board"), &menu_elements->edit_board);
     menu_e.push(side_menu);
     side_menu.init_button(language.get("in_out", "input_game"), &menu_elements->input_game);
     menu_e.push(side_menu);
