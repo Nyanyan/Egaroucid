@@ -529,7 +529,7 @@ private:
             changeScene(U"Import_game", SCENE_FADE_TIME);
             return;
         }
-        if (getData().menu_elements.copy_transcript || (KeyControl + KeyC).down() || (KeyCommand + KeyC).down()) {
+        if (getData().menu_elements.copy_transcript || shortcut_key == U"output_transcript") {
             copy_transcript();
         }
         if (getData().menu_elements.copy_board) {
@@ -549,7 +549,7 @@ private:
             changeScene(U"Export_game", SCENE_FADE_TIME);
             return;
         }
-        if (getData().menu_elements.screen_shot || (KeyControl + KeyS).down() || (KeyCommand + KeyS).down()) {
+        if (getData().menu_elements.screen_shot || shortcut_key == U"screen_shot") {
             taking_screen_shot = true;
             getData().menu_elements.screen_shot = false; // because skip drawing menu in next frame
         }

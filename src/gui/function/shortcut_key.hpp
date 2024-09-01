@@ -56,6 +56,8 @@ std::vector<Shortcut_key_dict_elem> shortcut_key_str = {
     // input / output
     {U"input_transcript",       {{"in_out", "input_transcript"}}},
     {U"edit_board",             {{"in_out", "edit_board"}}},
+    {U"output_transcript",      {{"in_out", "output_transcript"}}},
+    {U"screen_shot",            {{"in_out", "screen_shot"}}},
 };
 
 struct Shortcut_key_elem{
@@ -94,6 +96,8 @@ std::vector<Shortcut_key_elem> shortcut_keys_default = {
     // input / output
     {U"input_transcript",       {U"Ctrl", U"T"}},
     {U"edit_board",             {U"Ctrl", U"E"}},
+    {U"output_transcript",      {U"Ctrl", U"C"}},
+    {U"screen_shot",            {U"Ctrl", U"S"}},
 };
 
 class Shortcut_keys{

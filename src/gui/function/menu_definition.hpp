@@ -189,11 +189,11 @@ Menu create_menu(Menu_elements* menu_elements, Resources *resources, Font font) 
     title.push(menu_e);
 
     menu_e.init_button(language.get("in_out", "out"), &menu_elements->dummy);
-    side_menu.init_button(language.get("in_out", "output_transcript"), &menu_elements->copy_transcript);
+    side_menu.init_button(language.get("in_out", "output_transcript") + get_shortcut_key_info(U"output_transcript"), &menu_elements->copy_transcript);
     menu_e.push(side_menu);
     side_menu.init_button(language.get("in_out", "output_board"), &menu_elements->copy_board);
     menu_e.push(side_menu);
-    side_menu.init_button(language.get("in_out", "screen_shot"), &menu_elements->screen_shot);
+    side_menu.init_button(language.get("in_out", "screen_shot") + get_shortcut_key_info(U"screen_shot"), &menu_elements->screen_shot);
     menu_e.push(side_menu);
     side_menu.init_button(language.get("in_out", "board_image"), &menu_elements->board_image);
     menu_e.push(side_menu);
