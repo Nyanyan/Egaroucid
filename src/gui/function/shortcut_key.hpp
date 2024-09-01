@@ -23,16 +23,26 @@ struct Shortcut_key_dict_elem{
 };
 
 std::vector<Shortcut_key_dict_elem> shortcut_key_str = {
-    {U"start_game",         {{"play", "start_game"}}},
-    {U"new_game",           {{"play", "game"}, {"play", "new_game"}}},
-    {U"analyze",            {{"play", "analyze"}}},
-    {U"ai_put_black",       {{"settings", "play", "ai_put_black"}}},
-    {U"ai_put_white",       {{"settings", "play", "ai_put_white"}}},
-    {U"disc_value",         {{"display", "display"}, {"display", "cell", "disc_value"}}},
-    {U"umigame_value",      {{"display", "display"}, {"display", "cell", "umigame_value"}}},
-    {U"graph_value",        {{"display", "graph", "value"}}},
-    {U"graph_sum_of_loss",  {{"display", "graph", "sum_of_loss"}}},
-    {U"laser_pointer",      {{"display", "laser_pointer"}}},
+    // buttons
+    {U"start_game",             {{"play", "start_game"}}},
+
+    // game
+    {U"new_game",               {{"play", "new_game"}}},
+    {U"new_game_human_black",   {{"play", "new_game_human_black"}}},
+    {U"new_game_human_white",   {{"play", "new_game_human_white"}}},
+    {U"analyze",                {{"play", "analyze"}}},
+
+    // settings
+    {U"ai_put_black",           {{"settings", "play", "ai_put_black"}}},
+    {U"ai_put_white",           {{"settings", "play", "ai_put_white"}}},
+
+    // display
+    {U"disc_value",             {{"display", "display"}, {"display", "cell", "disc_value"}}},
+    {U"umigame_value",          {{"display", "display"}, {"display", "cell", "umigame_value"}}},
+    {U"graph_value",            {{"display", "graph", "value"}}},
+    {U"graph_sum_of_loss",      {{"display", "graph", "sum_of_loss"}}},
+    {U"laser_pointer",          {{"display", "laser_pointer"}}},
+
 };
 
 struct Shortcut_key_elem{
@@ -40,11 +50,33 @@ struct Shortcut_key_elem{
     std::vector<String> keys;
 };
 
+std::vector<Shortcut_key_elem> shortcut_keys_default = {
+    // buttons
+    {U"start_game",             {U"Space"}},
+
+    // game
+    {U"new_game",               {U"Ctrl", U"N"}},
+    {U"analyze",                {U"A"}},
+
+    // settings
+    {U"ai_put_black",           {U"B"}},
+    {U"ai_put_white",           {U"W"}},
+
+    // display
+    {U"disc_value",             {U"V"}},
+    {U"umigame_value",          {U"U"}},
+    {U"graph_value",            {U"D"}},
+    {U"graph_sum_of_loss",      {U"S"}},
+    {U"laser_pointer",          {U"P"}},
+};
+
 class Shortcut_keys{
 private:
     std::vector<Shortcut_key_elem> shortcut_keys;
 public:
     void init(String file){
+        shortcut_keys = shortcut_keys_default;
+        /*
         JSON json = JSON::Load(file);
         std::unordered_set<String> name_list;
         for (Shortcut_key_dict_elem &elem: shortcut_key_str){
@@ -61,28 +93,23 @@ public:
             for (const auto &key_name: object.value[U"keys"].arrayView()){
                 elem.keys.emplace_back(key_name.getString());
             }
-            /*
-            for (const auto &str_list: object.value[U"func_key"].arrayView()){
-                std::vector<std::string> str_list_vector;
-                for (const auto &str: str_list.arrayView()){
-                    str_list_vector.emplace_back(str.getString().narrow());
+            if (elem.keys.size()){
+                //for (const auto &str_list: object.value[U"func_key"].arrayView()){
+                //    std::vector<std::string> str_list_vector;
+                //    for (const auto &str: str_list.arrayView()){
+                //        str_list_vector.emplace_back(str.getString().narrow());
+                //    }
+                //    elem.function_str.emplace_back(language.get(str_list_vector));
+                //}
+                shortcut_keys.emplace_back(elem);
+                std::cerr << elem.name.narrow() << " [";
+                for (String &key: elem.keys){
+                    std::cerr << key.narrow() << " ";
                 }
-                elem.function_str.emplace_back(language.get(str_list_vector));
+                std::cerr << "]" << std::endl;
             }
-            */
-            shortcut_keys.emplace_back(elem);
-            std::cerr << elem.name.narrow() << " [";
-            for (String &key: elem.keys){
-                std::cerr << key.narrow() << " ";
-            }
-            std::cerr << "]" << std::endl;
-            /*
-            for (String &str: elem.function_str){
-                std::cerr << str.narrow() << " ";
-            }
-            std::cerr << "]" << std::endl;
-            */
         }
+        */
     }
 
     String check_shortcut_key(){
