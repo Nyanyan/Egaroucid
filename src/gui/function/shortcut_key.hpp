@@ -63,18 +63,18 @@ public:
             keys.emplace(key.name());
         }
 
-        std::cerr << "keys size " << keys.size() << " down found " << down_found << std::endl;
-        for (const String& key : keys){
-            std::cerr << key.narrow() << " ";
-        }
-        std::cerr << std::endl;
+        //std::cerr << "keys size " << keys.size() << " down found " << down_found << std::endl;
+        //for (const String& key : keys){
+        //    std::cerr << key.narrow() << " ";
+        //}
+        //std::cerr << std::endl;
 
         if (down_found){
             for (const Shortcut_key_elem &elem: shortcut_keys){
                 if (keys.size() == elem.keys.size()){
                     bool matched = true;
                     for (const String& key : keys){
-                        std::cerr << key.narrow() << " " << (std::find(elem.keys.begin(), elem.keys.end(), key) == elem.keys.end()) << std::endl;
+                        //std::cerr << key.narrow() << " " << (std::find(elem.keys.begin(), elem.keys.end(), key) == elem.keys.end()) << std::endl;
                         if (std::find(elem.keys.begin(), elem.keys.end(), key) == elem.keys.end()){
                             matched = false;
                         }
