@@ -30,6 +30,7 @@ std::vector<Shortcut_key_dict_elem> shortcut_key_str = {
     {U"new_game",               {{"play", "new_game"}}},
     {U"new_game_human_black",   {{"play", "new_game_human_black"}}},
     {U"new_game_human_white",   {{"play", "new_game_human_white"}}},
+    {U"new_selfplay",           {{"play", "new_selfplay"}}},
     {U"analyze",                {{"play", "analyze"}}},
 
     // settings
@@ -42,6 +43,9 @@ std::vector<Shortcut_key_dict_elem> shortcut_key_str = {
     {U"graph_value",            {{"display", "graph", "value"}}},
     {U"graph_sum_of_loss",      {{"display", "graph", "sum_of_loss"}}},
     {U"laser_pointer",          {{"display", "laser_pointer"}}},
+
+    // manipulate
+    {U"put_1_move_by_ai",       {{"operation", "put_1_move_by_ai"}}},
 
 };
 
@@ -68,6 +72,9 @@ std::vector<Shortcut_key_elem> shortcut_keys_default = {
     {U"graph_value",            {U"D"}},
     {U"graph_sum_of_loss",      {U"S"}},
     {U"laser_pointer",          {U"P"}},
+
+    // manipulate
+    {U"put_1_move_by_ai",       {U"G"}},
 };
 
 class Shortcut_keys{
@@ -159,7 +166,7 @@ public:
                 return res;
             }
         }
-        return U"";
+        return SHORTCUT_KEY_UNDEFINED;
     }
 };
 

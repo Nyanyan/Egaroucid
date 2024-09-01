@@ -576,7 +576,7 @@ private:
             resume_calculating();
         }
         if (!ai_status.analyzing) {
-            if ((getData().menu_elements.put_1_move_by_ai || KeyG.down()) && !ai_status.ai_thinking) {
+            if ((getData().menu_elements.put_1_move_by_ai || shortcut_key == U"put_1_move_by_ai") && !ai_status.ai_thinking) {
                 putting_1_move_by_ai = true;
                 ai_move();
             }

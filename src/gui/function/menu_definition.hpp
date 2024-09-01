@@ -35,11 +35,11 @@ Menu create_menu(Menu_elements* menu_elements, Resources *resources, Font font) 
 
     menu_e.init_button(language.get("play", "new_game") + get_shortcut_key_info(U"new_game"), &menu_elements->start_game);
     title.push(menu_e);
-    menu_e.init_button(language.get("play", "new_game_human_black"), &menu_elements->start_game_human_black);
+    menu_e.init_button(language.get("play", "new_game_human_black") + get_shortcut_key_info(U"new_game_human_black"), &menu_elements->start_game_human_black);
     title.push(menu_e);
-    menu_e.init_button(language.get("play", "new_game_human_white"), &menu_elements->start_game_human_white);
+    menu_e.init_button(language.get("play", "new_game_human_white") + get_shortcut_key_info(U"new_game_human_white"), &menu_elements->start_game_human_white);
     title.push(menu_e);
-    menu_e.init_button(language.get("play", "new_selfplay"), &menu_elements->start_selfplay);
+    menu_e.init_button(language.get("play", "new_selfplay") + get_shortcut_key_info(U"new_selfplay"), &menu_elements->start_selfplay);
     title.push(menu_e);
     menu_e.init_button(language.get("play", "analyze") + get_shortcut_key_info(U"analyze"), &menu_elements->analyze);
     title.push(menu_e);
@@ -136,7 +136,7 @@ Menu create_menu(Menu_elements* menu_elements, Resources *resources, Font font) 
 
     title.init(language.get("operation", "operation"));
 
-    menu_e.init_button(language.get("operation", "put_1_move_by_ai"), &menu_elements->put_1_move_by_ai);
+    menu_e.init_button(language.get("operation", "put_1_move_by_ai") + get_shortcut_key_info(U"put_1_move_by_ai"), &menu_elements->put_1_move_by_ai);
     title.push(menu_e);
     menu_e.init_button(language.get("operation", "forward"), &menu_elements->forward);
     title.push(menu_e);
