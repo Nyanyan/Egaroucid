@@ -500,6 +500,7 @@ public:
                 if (child.menu_mode() == radio_mode && radio_checked != -1) {
                     child.set_checked(idx == radio_checked);
                 }
+                ++idx;
             }
             // bar update
             if (active_child_bar_found){
