@@ -23,12 +23,16 @@ struct Shortcut_key_dict_elem{
 };
 
 std::vector<Shortcut_key_dict_elem> shortcut_key_str = {
-    {U"start_game", {{"play", "start_game"}}},
-    {U"new_game",   {{"play", "game"}, {"play", "new_game"}}},
-    {U"analyze", {{"play", "analyze"}}},
-    {U"ai_put_black", {{"settings", "play", "ai_put_black"}}},
-    {U"ai_put_white", {{"settings", "play", "ai_put_white"}}},
-    {U"disc_value", {{"display", "display"}, {"display", "cell", "disc_value"}}}
+    {U"start_game",         {{"play", "start_game"}}},
+    {U"new_game",           {{"play", "game"}, {"play", "new_game"}}},
+    {U"analyze",            {{"play", "analyze"}}},
+    {U"ai_put_black",       {{"settings", "play", "ai_put_black"}}},
+    {U"ai_put_white",       {{"settings", "play", "ai_put_white"}}},
+    {U"disc_value",         {{"display", "display"}, {"display", "cell", "disc_value"}}},
+    {U"umigame_value",      {{"display", "display"}, {"display", "cell", "umigame_value"}}},
+    {U"graph_value",        {{"display", "graph", "value"}}},
+    {U"graph_sum_of_loss",  {{"display", "graph", "sum_of_loss"}}},
+    {U"laser_pointer",      {{"display", "laser_pointer"}}},
 };
 
 struct Shortcut_key_elem{

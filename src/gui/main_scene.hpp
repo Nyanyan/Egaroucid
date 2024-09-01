@@ -482,18 +482,18 @@ private:
         if (shortcut_key == U"disc_value") {
             getData().menu_elements.use_disc_hint = !getData().menu_elements.use_disc_hint;
         }
-        if (KeyU.down()) {
+        if (shortcut_key == U"umigame_value") {
             getData().menu_elements.use_umigame_value = !getData().menu_elements.use_umigame_value;
         }
-        if (KeyD.down()) {
+        if (shortcut_key == U"graph_value") {
             getData().menu_elements.show_graph_value = true;
             getData().menu_elements.show_graph_sum_of_loss = false;
         }
-        if (KeyS.down()) {
+        if (shortcut_key == U"graph_sum_of_loss") {
             getData().menu_elements.show_graph_value = false;
             getData().menu_elements.show_graph_sum_of_loss = true;
         }
-        if (KeyP.down()) {
+        if (shortcut_key == U"laser_pointer") {
             getData().menu_elements.show_laser_pointer = !getData().menu_elements.show_laser_pointer;
         }
     }

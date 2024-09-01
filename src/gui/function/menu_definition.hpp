@@ -78,7 +78,7 @@ Menu create_menu(Menu_elements* menu_elements, Resources *resources, Font font) 
     side_side_menu.init_bar(language.get("display", "cell", "disc_value_number"), &menu_elements->n_disc_hint, menu_elements->n_disc_hint, 1, SHOW_ALL_HINT);
     side_menu.push(side_side_menu);
     menu_e.push(side_menu);
-    side_menu.init_check(language.get("display", "cell", "umigame_value"), &menu_elements->use_umigame_value, menu_elements->use_umigame_value);
+    side_menu.init_check(language.get("display", "cell", "umigame_value") + U" (" + shortcut_keys.get_shortcut_key_list(U"umigame_value") + U")", &menu_elements->use_umigame_value, menu_elements->use_umigame_value);
     side_side_menu.init_bar(language.get("display", "cell", "depth"), &menu_elements->umigame_value_depth, menu_elements->umigame_value_depth, 1, 60);
     side_menu.push(side_side_menu);
     menu_e.push(side_menu);
@@ -109,12 +109,12 @@ Menu create_menu(Menu_elements* menu_elements, Resources *resources, Font font) 
     title.push(menu_e);
 
     menu_e.init_check(language.get("display", "graph", "graph"), &menu_elements->show_graph, menu_elements->show_graph);
-    side_menu.init_radio(language.get("display", "graph", "value"), &menu_elements->show_graph_value, menu_elements->show_graph_value);
+    side_menu.init_radio(language.get("display", "graph", "value") + U" (" + shortcut_keys.get_shortcut_key_list(U"graph_value") + U")", &menu_elements->show_graph_value, menu_elements->show_graph_value);
     menu_e.push(side_menu);
-    side_menu.init_radio(language.get("display", "graph", "sum_of_loss"), &menu_elements->show_graph_sum_of_loss, menu_elements->show_graph_sum_of_loss);
+    side_menu.init_radio(language.get("display", "graph", "sum_of_loss") + U" (" + shortcut_keys.get_shortcut_key_list(U"graph_sum_of_loss") + U")", &menu_elements->show_graph_sum_of_loss, menu_elements->show_graph_sum_of_loss);
     menu_e.push(side_menu);
     title.push(menu_e);
-    menu_e.init_check(language.get("display", "laser_pointer"), &menu_elements->show_laser_pointer, menu_elements->show_laser_pointer);
+    menu_e.init_check(language.get("display", "laser_pointer") + U" (" + shortcut_keys.get_shortcut_key_list(U"laser_pointer") + U")", &menu_elements->show_laser_pointer, menu_elements->show_laser_pointer);
     title.push(menu_e);
     menu_e.init_check(language.get("display", "log"), &menu_elements->show_log, menu_elements->show_log);
     title.push(menu_e);
