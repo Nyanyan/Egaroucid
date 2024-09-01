@@ -138,9 +138,9 @@ Menu create_menu(Menu_elements* menu_elements, Resources *resources, Font font) 
 
     menu_e.init_button(language.get("operation", "put_1_move_by_ai") + get_shortcut_key_info(U"put_1_move_by_ai"), &menu_elements->put_1_move_by_ai);
     title.push(menu_e);
-    menu_e.init_button(language.get("operation", "forward"), &menu_elements->forward);
+    menu_e.init_button(language.get("operation", "forward") + get_shortcut_key_info(U"forward"), &menu_elements->forward);
     title.push(menu_e);
-    menu_e.init_button(language.get("operation", "backward"), &menu_elements->backward);
+    menu_e.init_button(language.get("operation", "backward") + get_shortcut_key_info(U"backward"), &menu_elements->backward);
     title.push(menu_e);
     menu_e.init_button(language.get("operation", "undo"), &menu_elements->undo);
     title.push(menu_e);
