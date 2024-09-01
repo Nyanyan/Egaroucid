@@ -13,6 +13,7 @@
 #include "const/gui_common.hpp"
 #include "menu.hpp"
 #include "language.hpp"
+#include "shortcut_key.hpp"
 #include "./../../engine/setting.hpp"
 
 Menu create_menu(Menu_elements* menu_elements, Resources *resources, Font font) {
@@ -24,7 +25,7 @@ Menu create_menu(Menu_elements* menu_elements, Resources *resources, Font font) 
 
     title.init(language.get("play", "game"));
 
-    menu_e.init_button(language.get("play", "new_game"), &menu_elements->start_game);
+    menu_e.init_button(language.get("play", "new_game") + U" (" + shortcut_keys.get_shortcut_key_list(U"new_game") + U")", &menu_elements->start_game);
     title.push(menu_e);
     menu_e.init_button(language.get("play", "new_game_human_black"), &menu_elements->start_game_human_black);
     title.push(menu_e);
@@ -32,7 +33,7 @@ Menu create_menu(Menu_elements* menu_elements, Resources *resources, Font font) 
     title.push(menu_e);
     menu_e.init_button(language.get("play", "new_selfplay"), &menu_elements->start_selfplay);
     title.push(menu_e);
-    menu_e.init_button(language.get("play", "analyze"), &menu_elements->analyze);
+    menu_e.init_button(language.get("play", "analyze") + U" (" + shortcut_keys.get_shortcut_key_list(U"analyze") + U")", &menu_elements->analyze);
     title.push(menu_e);
 
     menu.push(title);
@@ -55,9 +56,9 @@ Menu create_menu(Menu_elements* menu_elements, Resources *resources, Font font) 
         title.push(menu_e);
     #endif
 
-    menu_e.init_check(language.get("settings", "play", "ai_put_black"), &menu_elements->ai_put_black, menu_elements->ai_put_black);
+    menu_e.init_check(language.get("settings", "play", "ai_put_black") + U" (" + shortcut_keys.get_shortcut_key_list(U"ai_put_black") + U")", &menu_elements->ai_put_black, menu_elements->ai_put_black);
     title.push(menu_e);
-    menu_e.init_check(language.get("settings", "play", "ai_put_white"), &menu_elements->ai_put_white, menu_elements->ai_put_white);
+    menu_e.init_check(language.get("settings", "play", "ai_put_white") + U" (" + shortcut_keys.get_shortcut_key_list(U"ai_put_white") + U")", &menu_elements->ai_put_white, menu_elements->ai_put_white);
     title.push(menu_e);
 
     menu_e.init_check(language.get("settings", "play", "pause_when_pass"), &menu_elements->pause_when_pass, menu_elements->pause_when_pass);

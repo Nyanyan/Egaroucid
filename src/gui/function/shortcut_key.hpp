@@ -24,7 +24,10 @@ struct Shortcut_key_dict_elem{
 
 std::vector<Shortcut_key_dict_elem> shortcut_key_str = {
     {U"new_game",   {{"play", "game"}, {"play", "new_game"}}}, 
-    {U"start_game", {{"play", "start_game"}}}
+    {U"start_game", {{"play", "start_game"}}},
+    {U"analyze", {{"play", "analyze"}}},
+    {U"ai_put_black", {{"B"}}},
+    {U"ai_put_white", {{"W"}}}
 };
 
 struct Shortcut_key_elem{
@@ -76,7 +79,7 @@ public:
         }
     }
 
-    String get_shortcut_key(){
+    String check_shortcut_key(){
         const Array<Input> raw_keys = Keyboard::GetAllInputs();
         bool down_found = false;
         std::unordered_set<String> keys;
@@ -108,6 +111,22 @@ public:
             }
         }
         return SHORTCUT_KEY_UNDEFINED;
+    }
+
+    String get_shortcut_key_list(String name){
+        for (const Shortcut_key_elem &elem: shortcut_keys){
+            if (elem.name == name){
+                String res;
+                for (int i = 0; i < (int)elem.keys.size(); ++i){
+                    res += elem.keys[i];
+                    if (i < (int)elem.keys.size() - 1){
+                        res += U"+";
+                    }
+                }
+                return res;
+            }
+        }
+        return U"";
     }
 };
 

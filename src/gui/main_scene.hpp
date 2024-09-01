@@ -123,7 +123,7 @@ public:
         getData().graph_resources.delta = 0;
 
         // shortcut
-        shortcut_key = shortcut_keys.get_shortcut_key();
+        shortcut_key = shortcut_keys.check_shortcut_key();
         if (shortcut_key != SHORTCUT_KEY_UNDEFINED){
             std::cerr << "shortcut key found: " << shortcut_key.narrow() << std::endl;
         }
@@ -470,10 +470,10 @@ private:
     }
 
     void menu_setting() {
-        if (KeyB.down()) {
+        if (shortcut_key == U"ai_put_black") {
             getData().menu_elements.ai_put_black = !getData().menu_elements.ai_put_black;
         }
-        if (KeyW.down()) {
+        if (shortcut_key == U"ai_put_white") {
             getData().menu_elements.ai_put_white = !getData().menu_elements.ai_put_white;
         }
     }
