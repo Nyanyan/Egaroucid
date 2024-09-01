@@ -129,6 +129,12 @@ public:
         }
         if (changing_idx == SHORTCUT_KEY_SETTINGS_IDX_NOT_CHANGING){
             strt_idx = std::max(0, std::min((int)shortcut_keys.shortcut_keys.size() - 1, strt_idx + (int)Mouse::Wheel()));
+            if (KeyUp.down()){
+                strt_idx = std::max(0, strt_idx - 1);
+            }
+            if (KeyDown.down()){
+                strt_idx = std::min((int)shortcut_keys.shortcut_keys.size() - 1, strt_idx + 1);
+            }
         }
         if (reset_changing_idx){
             changing_idx = SHORTCUT_KEY_SETTINGS_IDX_NOT_CHANGING;
