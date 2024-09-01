@@ -464,7 +464,7 @@ private:
             need_start_game_button_calculation();
             pausing_in_pass = false;
         }
-        if ((getData().menu_elements.analyze || KeyA.down()) && !ai_status.ai_thinking && !ai_status.analyzing) {
+        if ((getData().menu_elements.analyze || shortcut_key == U"analyze") && !ai_status.ai_thinking && !ai_status.analyzing) {
             stop_calculating();
             resume_calculating();
             init_analyze();
