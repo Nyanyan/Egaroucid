@@ -479,7 +479,7 @@ private:
     }
 
     void menu_display() {
-        if (KeyV.down()) {
+        if (shortcut_key == U"disc_value") {
             getData().menu_elements.use_disc_hint = !getData().menu_elements.use_disc_hint;
         }
         if (KeyU.down()) {

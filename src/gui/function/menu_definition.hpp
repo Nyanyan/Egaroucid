@@ -74,7 +74,7 @@ Menu create_menu(Menu_elements* menu_elements, Resources *resources, Font font) 
     menu_e.init_button(language.get("display", "cell", "display_on_cell"), &menu_elements->dummy);
     side_menu.init_check(language.get("display", "cell", "legal"), &menu_elements->show_legal, menu_elements->show_legal);
     menu_e.push(side_menu);
-    side_menu.init_check(language.get("display", "cell", "disc_value"), &menu_elements->use_disc_hint, menu_elements->use_disc_hint);
+    side_menu.init_check(language.get("display", "cell", "disc_value") + U" (" + shortcut_keys.get_shortcut_key_list(U"disc_value") + U")", &menu_elements->use_disc_hint, menu_elements->use_disc_hint);
     side_side_menu.init_bar(language.get("display", "cell", "disc_value_number"), &menu_elements->n_disc_hint, menu_elements->n_disc_hint, 1, SHOW_ALL_HINT);
     side_menu.push(side_side_menu);
     menu_e.push(side_menu);
