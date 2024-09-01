@@ -36,13 +36,13 @@ public:
         ok_button.init(BACK_BUTTON_SX, BACK_BUTTON_SY, BACK_BUTTON_WIDTH, BACK_BUTTON_HEIGHT, BACK_BUTTON_RADIUS, language.get("common", "ok"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
         for (int i = 0; i < (int)shortcut_keys.shortcut_keys.size(); ++i){
             Button change_button;
-            change_button.init(0, 0, 100, 22, 7, language.get("settings", "shortcut_keys", "change"), 13, getData().fonts.font, getData().colors.white, getData().colors.black);
+            change_button.init(0, 0, 80, 22, 7, language.get("settings", "shortcut_keys", "change"), 13, getData().fonts.font, getData().colors.white, getData().colors.black);
             change_buttons.emplace_back(change_button);
             Button delete_button;
-            delete_button.init(0, 0, 100, 22, 7, language.get("settings", "shortcut_keys", "delete"), 13, getData().fonts.font, getData().colors.white, getData().colors.black);
+            delete_button.init(0, 0, 80, 22, 7, language.get("settings", "shortcut_keys", "delete"), 13, getData().fonts.font, getData().colors.white, getData().colors.black);
             delete_buttons.emplace_back(delete_button);
         }
-        assign_button.init(0, 0, 100, 22, 7, language.get("settings", "shortcut_keys", "assign"), 13, getData().fonts.font, getData().colors.white, getData().colors.black);
+        assign_button.init(0, 0, 80, 22, 7, language.get("settings", "shortcut_keys", "assign"), 13, getData().fonts.font, getData().colors.white, getData().colors.black);
         up_strt = BUTTON_NOT_PUSHED;
         down_strt = BUTTON_NOT_PUSHED;
     }
@@ -84,14 +84,14 @@ public:
             }
             getData().fonts.font(shortcut_key_str).draw(13, Arg::leftCenter(rect.x + 400, sy + rect.h / 2), getData().colors.white);
             if (changing_idx == SHORTCUT_KEY_SETTINGS_IDX_NOT_CHANGING){
-                change_buttons[i].move(660, sy + 4);
+                change_buttons[i].move(680, sy + 4);
                 change_buttons[i].draw();
                 if (change_buttons[i].clicked()){
                     changing_idx = i;
                     changed_keys = shortcut_keys.shortcut_keys[i].keys;
                 }
                 if (shortcut_assigned){
-                    delete_buttons[i].move(550, sy + 4);
+                    delete_buttons[i].move(590, sy + 4);
                     delete_buttons[i].draw();
                     if (delete_buttons[i].clicked()){
                         shortcut_keys.del(i);
@@ -103,7 +103,7 @@ public:
                     reset_changing_idx = true;
                 } else{
                     update_shortcut_key();
-                    assign_button.move(660, sy + 4);
+                    assign_button.move(680, sy + 4);
                     if (check_duplicate()){
                         assign_button.disable();
                         message = language.get("settings", "shortcut_keys", "key_duplicate_message");
