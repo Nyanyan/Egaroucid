@@ -20,7 +20,7 @@
 struct Shortcut_key_elem{
     String name;
     std::vector<String> keys;
-    std::vector<std::vector<std::string>> function_str_keys;
+    std::vector<std::vector<std::string>> description_keys;
 };
 
 std::vector<Shortcut_key_elem> shortcut_keys_default = {
@@ -55,10 +55,10 @@ std::vector<Shortcut_key_elem> shortcut_keys_default = {
     {U"stop_calculating",       {U"Q"},                 {{"operation", "operation"}, {"operation", "ai_operation", "stop_calculating"}}},
 
     // input / output
-    {U"input_transcript",       {U"Ctrl", U"T"},        {{"in_out", "in_out"}, {"in_out", "in"}, {"in_out", "input_transcript"}}},
-    {U"edit_board",             {U"Ctrl", U"E"},        {{"in_out", "in_out"}, {"in_out", "in"}, {"in_out", "edit_board"}}},
-    {U"output_transcript",      {U"Ctrl", U"C"},        {{"in_out", "in_out"}, {"in_out", "out"}, {"in_out", "output_transcript"}}},
-    {U"screen_shot",            {U"Ctrl", U"S"},        {{"in_out", "in_out"}, {"in_out", "out"}, {"in_out", "screen_shot"}}},
+    {U"input_transcript",       {U"Ctrl", U"T"},        {{"in_out", "in_out"}, {"in_out", "input_transcript"}}},
+    {U"edit_board",             {U"Ctrl", U"E"},        {{"in_out", "in_out"}, {"in_out", "edit_board"}}},
+    {U"output_transcript",      {U"Ctrl", U"C"},        {{"in_out", "in_out"}, {"in_out", "output_transcript"}}},
+    {U"screen_shot",            {U"Ctrl", U"S"},        {{"in_out", "in_out"}, {"in_out", "screen_shot"}}},
 };
 
 class Shortcut_keys{
@@ -140,7 +140,7 @@ public:
         }
     }
 
-    String get_shortcut_key_list(String name){
+    String get_shortcut_key_str(String name){
         for (const Shortcut_key_elem &elem: shortcut_keys){
             if (elem.name == name){
                 String res;
@@ -162,13 +162,13 @@ public:
         return SHORTCUT_KEY_UNDEFINED;
     }
 
-    String get_shortcut_key_function_str(String name){
+    String get_shortcut_key_description(String name){
         for (const Shortcut_key_elem &elem: shortcut_keys){
             if (elem.name == name){
                 String res;
-                for (int i = 0; i < (int)elem.function_str_keys.size(); ++i){
-                    res += language.get(elem.function_str_keys[i]);
-                    if (i < (int)elem.function_str_keys.size() - 1){
+                for (int i = 0; i < (int)elem.description_keys.size(); ++i){
+                    res += language.get(elem.description_keys[i]);
+                    if (i < (int)elem.description_keys.size() - 1){
                         res += U"> ";
                     }
                 }

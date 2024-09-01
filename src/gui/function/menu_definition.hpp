@@ -17,7 +17,7 @@
 #include "./../../engine/setting.hpp"
 
 String get_shortcut_key_info(String key){
-    String res = shortcut_keys.get_shortcut_key_list(key);
+    String res = shortcut_keys.get_shortcut_key_str(key);
     if (res == SHORTCUT_KEY_UNDEFINED){
         return U"";
     }

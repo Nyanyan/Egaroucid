@@ -45,9 +45,9 @@ public:
             rect.h = 32;
             rect.draw(getData().colors.green).drawFrame(1.0, getData().colors.white);
             String function_name = shortcut_keys.shortcut_keys[i].name;
-            String function_str = shortcut_keys.get_shortcut_key_function_str(function_name);
-            getData().fonts.font(function_str).draw(15, Arg::leftCenter(rect.x + 10, sy + rect.h / 2), getData().colors.white);
-            String shortcut_key_str = shortcut_keys.get_shortcut_key_list(function_name);
+            String function_description = shortcut_keys.get_shortcut_key_description(function_name);
+            getData().fonts.font(function_description).draw(15, Arg::leftCenter(rect.x + 10, sy + rect.h / 2), getData().colors.white);
+            String shortcut_key_str = shortcut_keys.get_shortcut_key_str(function_name);
             if (shortcut_key_str == U""){
                 shortcut_key_str = language.get("settings", "shortcut_keys", "not_assigned");
             }
