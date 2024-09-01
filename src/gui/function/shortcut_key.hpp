@@ -181,12 +181,6 @@ public:
     void change(int idx, std::vector<String> keys){
         shortcut_keys[idx].keys.clear();
         for (String key: keys){
-            if (key == U"Ctrl"){
-                continue;
-            }
-            if (key == U"Shift"){
-                continue;
-            }
             shortcut_keys[idx].keys.emplace_back(key);
         }
     }
