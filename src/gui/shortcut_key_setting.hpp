@@ -45,9 +45,12 @@ public:
             rect.h = 32;
             rect.draw(getData().colors.green).drawFrame(1.0, getData().colors.white);
             String function_name = shortcut_keys.shortcut_keys[i].name;
-            String function_str = shortcut_key_str[function_name].get_str();
+            String function_str = shortcut_keys.get_shortcut_key_function_str(function_name);
             getData().fonts.font(function_str).draw(15, Arg::leftCenter(rect.x + 10, sy + rect.h / 2), getData().colors.white);
             String shortcut_key_str = shortcut_keys.get_shortcut_key_list(function_name);
+            if (shortcut_key_str == U""){
+                shortcut_key_str = language.get("settings", "shortcut_keys", "not_assigned");
+            }
             getData().fonts.font(shortcut_key_str).draw(15, Arg::leftCenter(rect.x + 400, sy + rect.h / 2), getData().colors.white);
             Button button;
             button.init(660, sy + 4, 100, 24, 7, language.get("settings", "shortcut_keys", "change"), 15, getData().fonts.font, getData().colors.white, getData().colors.black);
@@ -56,7 +59,7 @@ public:
             sy += rect.h;
         }
         if (strt_idx + SHORTCUT_KEY_SETTINGS_N_ON_WINDOW < (int)shortcut_keys.shortcut_keys.size() - 1) {
-            getData().fonts.font(U"︙").draw(15, Arg::topCenter = Vec2{X_CENTER, 399}, getData().colors.white);
+            getData().fonts.font(U"︙").draw(15, Arg::topCenter = Vec2{X_CENTER, 392}, getData().colors.white);
         }
         for (std::pair<int, Button> button_pair : change_buttons) {
             if (button_pair.second.clicked()) {
