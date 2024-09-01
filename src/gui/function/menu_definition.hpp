@@ -16,6 +16,14 @@
 #include "shortcut_key.hpp"
 #include "./../../engine/setting.hpp"
 
+String get_shortcut_key_info(String key){
+    String res = shortcut_keys.get_shortcut_key_list(key);
+    if (res == SHORTCUT_KEY_UNDEFINED){
+        return U"";
+    }
+    return U" (" + res + U")";
+}
+
 Menu create_menu(Menu_elements* menu_elements, Resources *resources, Font font) {
     Menu menu;
     menu_title title;
@@ -25,7 +33,7 @@ Menu create_menu(Menu_elements* menu_elements, Resources *resources, Font font) 
 
     title.init(language.get("play", "game"));
 
-    menu_e.init_button(language.get("play", "new_game") + U" (" + shortcut_keys.get_shortcut_key_list(U"new_game") + U")", &menu_elements->start_game);
+    menu_e.init_button(language.get("play", "new_game") + get_shortcut_key_info(U"new_game"), &menu_elements->start_game);
     title.push(menu_e);
     menu_e.init_button(language.get("play", "new_game_human_black"), &menu_elements->start_game_human_black);
     title.push(menu_e);
@@ -33,7 +41,7 @@ Menu create_menu(Menu_elements* menu_elements, Resources *resources, Font font) 
     title.push(menu_e);
     menu_e.init_button(language.get("play", "new_selfplay"), &menu_elements->start_selfplay);
     title.push(menu_e);
-    menu_e.init_button(language.get("play", "analyze") + U" (" + shortcut_keys.get_shortcut_key_list(U"analyze") + U")", &menu_elements->analyze);
+    menu_e.init_button(language.get("play", "analyze") + get_shortcut_key_info(U"analyze"), &menu_elements->analyze);
     title.push(menu_e);
 
     menu.push(title);
@@ -56,9 +64,9 @@ Menu create_menu(Menu_elements* menu_elements, Resources *resources, Font font) 
         title.push(menu_e);
     #endif
 
-    menu_e.init_check(language.get("settings", "play", "ai_put_black") + U" (" + shortcut_keys.get_shortcut_key_list(U"ai_put_black") + U")", &menu_elements->ai_put_black, menu_elements->ai_put_black);
+    menu_e.init_check(language.get("settings", "play", "ai_put_black") + get_shortcut_key_info(U"ai_put_black"), &menu_elements->ai_put_black, menu_elements->ai_put_black);
     title.push(menu_e);
-    menu_e.init_check(language.get("settings", "play", "ai_put_white") + U" (" + shortcut_keys.get_shortcut_key_list(U"ai_put_white") + U")", &menu_elements->ai_put_white, menu_elements->ai_put_white);
+    menu_e.init_check(language.get("settings", "play", "ai_put_white") + get_shortcut_key_info(U"ai_put_white"), &menu_elements->ai_put_white, menu_elements->ai_put_white);
     title.push(menu_e);
 
     menu_e.init_check(language.get("settings", "play", "pause_when_pass"), &menu_elements->pause_when_pass, menu_elements->pause_when_pass);
@@ -74,11 +82,11 @@ Menu create_menu(Menu_elements* menu_elements, Resources *resources, Font font) 
     menu_e.init_button(language.get("display", "cell", "display_on_cell"), &menu_elements->dummy);
     side_menu.init_check(language.get("display", "cell", "legal"), &menu_elements->show_legal, menu_elements->show_legal);
     menu_e.push(side_menu);
-    side_menu.init_check(language.get("display", "cell", "disc_value") + U" (" + shortcut_keys.get_shortcut_key_list(U"disc_value") + U")", &menu_elements->use_disc_hint, menu_elements->use_disc_hint);
+    side_menu.init_check(language.get("display", "cell", "disc_value") + get_shortcut_key_info(U"disc_value"), &menu_elements->use_disc_hint, menu_elements->use_disc_hint);
     side_side_menu.init_bar(language.get("display", "cell", "disc_value_number"), &menu_elements->n_disc_hint, menu_elements->n_disc_hint, 1, SHOW_ALL_HINT);
     side_menu.push(side_side_menu);
     menu_e.push(side_menu);
-    side_menu.init_check(language.get("display", "cell", "umigame_value") + U" (" + shortcut_keys.get_shortcut_key_list(U"umigame_value") + U")", &menu_elements->use_umigame_value, menu_elements->use_umigame_value);
+    side_menu.init_check(language.get("display", "cell", "umigame_value") + get_shortcut_key_info(U"umigame_value"), &menu_elements->use_umigame_value, menu_elements->use_umigame_value);
     side_side_menu.init_bar(language.get("display", "cell", "depth"), &menu_elements->umigame_value_depth, menu_elements->umigame_value_depth, 1, 60);
     side_menu.push(side_side_menu);
     menu_e.push(side_menu);
@@ -109,12 +117,12 @@ Menu create_menu(Menu_elements* menu_elements, Resources *resources, Font font) 
     title.push(menu_e);
 
     menu_e.init_check(language.get("display", "graph", "graph"), &menu_elements->show_graph, menu_elements->show_graph);
-    side_menu.init_radio(language.get("display", "graph", "value") + U" (" + shortcut_keys.get_shortcut_key_list(U"graph_value") + U")", &menu_elements->show_graph_value, menu_elements->show_graph_value);
+    side_menu.init_radio(language.get("display", "graph", "value") + get_shortcut_key_info(U"graph_value"), &menu_elements->show_graph_value, menu_elements->show_graph_value);
     menu_e.push(side_menu);
-    side_menu.init_radio(language.get("display", "graph", "sum_of_loss") + U" (" + shortcut_keys.get_shortcut_key_list(U"graph_sum_of_loss") + U")", &menu_elements->show_graph_sum_of_loss, menu_elements->show_graph_sum_of_loss);
+    side_menu.init_radio(language.get("display", "graph", "sum_of_loss") + get_shortcut_key_info(U"graph_sum_of_loss"), &menu_elements->show_graph_sum_of_loss, menu_elements->show_graph_sum_of_loss);
     menu_e.push(side_menu);
     title.push(menu_e);
-    menu_e.init_check(language.get("display", "laser_pointer") + U" (" + shortcut_keys.get_shortcut_key_list(U"laser_pointer") + U")", &menu_elements->show_laser_pointer, menu_elements->show_laser_pointer);
+    menu_e.init_check(language.get("display", "laser_pointer") + get_shortcut_key_info(U"laser_pointer"), &menu_elements->show_laser_pointer, menu_elements->show_laser_pointer);
     title.push(menu_e);
     menu_e.init_check(language.get("display", "log"), &menu_elements->show_log, menu_elements->show_log);
     title.push(menu_e);
