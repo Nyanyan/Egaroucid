@@ -41,24 +41,24 @@ std::vector<Shortcut_key_elem> shortcut_keys_default = {
     // display
     {U"disc_value",             {U"V"},                 {{"display", "display"}, {"display", "cell", "disc_value"}}},
     {U"umigame_value",          {U"U"},                 {{"display", "display"}, {"display", "cell", "umigame_value"}}},
-    {U"graph_value",            {U"D"},                 {{"display", "graph", "value"}}},
-    {U"graph_sum_of_loss",      {U"S"},                 {{"display", "graph", "sum_of_loss"}}},
-    {U"laser_pointer",          {U"P"},                 {{"display", "laser_pointer"}}},
+    {U"graph_value",            {U"D"},                 {{"display", "display"}, {"display", "graph", "value"}}},
+    {U"graph_sum_of_loss",      {U"S"},                 {{"display", "display"}, {"display", "graph", "sum_of_loss"}}},
+    {U"laser_pointer",          {U"P"},                 {{"display", "display"}, {"display", "laser_pointer"}}},
 
     // operate
-    {U"put_1_move_by_ai",       {U"G"},                 {{"operation", "put_1_move_by_ai"}}},
-    {U"forward",                {U"Right"},             {{"operation", "forward"}}},
-    {U"backward",               {U"Left"},              {{"operation", "backward"}}},
-    {U"undo",                   {U"Backspace"},         {{"operation", "undo"}}},
-    {U"save_this_branch",       {U"Ctrl", U"L"},        {{"operation", "save_this_branch"}}},
-    {U"generate_random_board",  {U"Ctrl", U"R"},        {{"operation", "generate_random_board", "generate"}}},
-    {U"stop_calculating",       {U"Q"},                 {{"operation", "ai_operation", "stop_calculating"}}},
+    {U"put_1_move_by_ai",       {U"G"},                 {{"operation", "operation"}, {"operation", "put_1_move_by_ai"}}},
+    {U"forward",                {U"Right"},             {{"operation", "operation"}, {"operation", "forward"}}},
+    {U"backward",               {U"Left"},              {{"operation", "operation"}, {"operation", "backward"}}},
+    {U"undo",                   {U"Backspace"},         {{"operation", "operation"}, {"operation", "undo"}}},
+    {U"save_this_branch",       {U"Ctrl", U"L"},        {{"operation", "operation"}, {"operation", "save_this_branch"}}},
+    {U"generate_random_board",  {U"Ctrl", U"R"},        {{"operation", "operation"}, {"operation", "generate_random_board", "generate"}}},
+    {U"stop_calculating",       {U"Q"},                 {{"operation", "operation"}, {"operation", "ai_operation", "stop_calculating"}}},
 
     // input / output
-    {U"input_transcript",       {U"Ctrl", U"T"},        {{"in_out", "input_transcript"}}},
-    {U"edit_board",             {U"Ctrl", U"E"},        {{"in_out", "edit_board"}}},
-    {U"output_transcript",      {U"Ctrl", U"C"},        {{"in_out", "output_transcript"}}},
-    {U"screen_shot",            {U"Ctrl", U"S"},        {{"in_out", "screen_shot"}}},
+    {U"input_transcript",       {U"Ctrl", U"T"},        {{"in_out", "in_out"}, {"in_out", "in"}, {"in_out", "input_transcript"}}},
+    {U"edit_board",             {U"Ctrl", U"E"},        {{"in_out", "in_out"}, {"in_out", "in"}, {"in_out", "edit_board"}}},
+    {U"output_transcript",      {U"Ctrl", U"C"},        {{"in_out", "in_out"}, {"in_out", "out"}, {"in_out", "output_transcript"}}},
+    {U"screen_shot",            {U"Ctrl", U"S"},        {{"in_out", "in_out"}, {"in_out", "out"}, {"in_out", "screen_shot"}}},
 };
 
 class Shortcut_keys{
@@ -169,7 +169,7 @@ public:
                 for (int i = 0; i < (int)elem.function_str_keys.size(); ++i){
                     res += language.get(elem.function_str_keys[i]);
                     if (i < (int)elem.function_str_keys.size() - 1){
-                        res += U">";
+                        res += U"> ";
                     }
                 }
                 return res;
