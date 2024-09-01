@@ -52,6 +52,7 @@ private:
     bool pausing_in_pass;
     bool putting_1_move_by_ai;
     int umigame_value_depth_before;
+    String shortcut_key;
 public:
     std::string principal_variation;
 
@@ -76,6 +77,7 @@ public:
         pausing_in_pass = false;
         putting_1_move_by_ai = false;
         umigame_value_depth_before = 0;
+        shortcut_key = SHORTCUT_KEY_UNDEFINED;
         std::cerr << "main scene loaded" << std::endl;
     }
 
@@ -121,8 +123,10 @@ public:
         getData().graph_resources.delta = 0;
 
         // shortcut
-        String shortcut_key = shortcut_keys.get_shortcut_key();
-        std::cerr << shortcut_key.narrow() << std::endl;
+        shortcut_key = shortcut_keys.get_shortcut_key();
+        if (shortcut_key != SHORTCUT_KEY_UNDEFINED){
+            std::cerr << "shortcut key found: " << shortcut_key.narrow() << std::endl;
+        }
 
         // opening
         update_opening();
@@ -170,7 +174,7 @@ public:
                 start_game_button.enable();
             }
             start_game_button.draw();
-            if (!getData().menu.active() && (start_game_button.clicked() || KeySpace.down())) {
+            if (!getData().menu.active() && (start_game_button.clicked() || shortcut_key == U"start_game")) {
                 need_start_game_button = false;
                 stop_calculating();
                 resume_calculating();
@@ -410,7 +414,7 @@ private:
     }
 
     void menu_game() {
-        if (getData().menu_elements.start_game || (KeyControl + KeyN).down() || (KeyCommand + KeyN).down()) {
+        if (getData().menu_elements.start_game || shortcut_key == U"new_game") {
             stop_calculating();
             getData().history_elem.reset();
             getData().graph_resources.init();
