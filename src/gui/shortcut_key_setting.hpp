@@ -14,16 +14,28 @@
 #include "function/function_all.hpp"
 
 #define SHORTCUT_KEY_SETTINGS_N_ON_WINDOW 10
+#define SHORTCUT_KEY_SETTINGS_IDX_NOT_CHANGING -1
 
 class Shortcut_key_setting : public App::Scene {
 private:
     Button ok_button;
     int strt_idx;
+    int changing_idx;
+    std::vector<String> changed_keys;
+    std::vector<Button> change_buttons;
+    Button assign_button;
 
 public:
     Shortcut_key_setting(const InitData& init) : IScene{ init } {
         strt_idx = 0;
+        changing_idx = SHORTCUT_KEY_SETTINGS_IDX_NOT_CHANGING;
         ok_button.init(BACK_BUTTON_SX, BACK_BUTTON_SY, BACK_BUTTON_WIDTH, BACK_BUTTON_HEIGHT, BACK_BUTTON_RADIUS, language.get("common", "ok"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
+        for (int i = 0; i < (int)shortcut_keys.shortcut_keys.size(); ++i){
+            Button change_button;
+            change_button.init(0, 0, 100, 24, 7, language.get("settings", "shortcut_keys", "change"), 15, getData().fonts.font, getData().colors.white, getData().colors.black);
+            change_buttons.emplace_back(change_button);
+        }
+        assign_button.init(0, 0, 100, 24, 7, language.get("settings", "shortcut_keys", "assign"), 15, getData().fonts.font, getData().colors.white, getData().colors.black);
     }
 
     void update() override {
@@ -31,12 +43,12 @@ public:
             changeScene(U"Close", SCENE_FADE_TIME);
         }
         getData().fonts.font(language.get("settings", "shortcut_keys", "settings")).draw(25, Arg::topCenter(X_CENTER, 10), getData().colors.white);
-        std::vector<std::pair<int, Button>> change_buttons;
         int sy = 65;
         if (strt_idx > 0) {
             getData().fonts.font(U"︙").draw(15, Arg::bottomCenter = Vec2{ X_CENTER, sy }, getData().colors.white);
         }
         sy += 6;
+        bool reset_changing_idx = false;
         for (int i = strt_idx; i < std::min((int)shortcut_keys.shortcut_keys.size(), strt_idx + SHORTCUT_KEY_SETTINGS_N_ON_WINDOW); ++i) {
             Rect rect;
             rect.y = sy;
@@ -47,37 +59,97 @@ public:
             String function_name = shortcut_keys.shortcut_keys[i].name;
             String function_description = shortcut_keys.get_shortcut_key_description(function_name);
             getData().fonts.font(function_description).draw(15, Arg::leftCenter(rect.x + 10, sy + rect.h / 2), getData().colors.white);
-            String shortcut_key_str = shortcut_keys.get_shortcut_key_str(function_name);
+            String shortcut_key_str;
+            if (changing_idx != i){
+                shortcut_key_str = shortcut_keys.get_shortcut_key_str(function_name);
+            } else{
+                shortcut_key_str = get_new_shortcut_key_str();
+            }
             if (shortcut_key_str == U""){
                 shortcut_key_str = language.get("settings", "shortcut_keys", "not_assigned");
             }
             getData().fonts.font(shortcut_key_str).draw(15, Arg::leftCenter(rect.x + 400, sy + rect.h / 2), getData().colors.white);
-            Button button;
-            button.init(660, sy + 4, 100, 24, 7, language.get("settings", "shortcut_keys", "change"), 15, getData().fonts.font, getData().colors.white, getData().colors.black);
-            button.draw();
-            change_buttons.emplace_back(std::make_pair(i, button));
+            if (changing_idx == SHORTCUT_KEY_SETTINGS_IDX_NOT_CHANGING){
+                change_buttons[i].move(660, sy + 4);
+                change_buttons[i].draw();
+                if (change_buttons[i].clicked()){
+                    changing_idx = i;
+                    changed_keys = shortcut_keys.shortcut_keys[i].keys;
+                }
+            } else if (changing_idx == i){
+                update_shortcut_key();
+                assign_button.move(660, sy + 4);
+                assign_button.draw();
+                if (assign_button.clicked()){
+                    shortcut_keys.change(changing_idx, changed_keys);
+                    changed_keys.clear();
+                    reset_changing_idx = true;
+                }
+            }
             sy += rect.h;
         }
         if (strt_idx + SHORTCUT_KEY_SETTINGS_N_ON_WINDOW < (int)shortcut_keys.shortcut_keys.size() - 1) {
             getData().fonts.font(U"︙").draw(15, Arg::topCenter = Vec2{X_CENTER, 392}, getData().colors.white);
-        }
-        for (std::pair<int, Button> button_pair : change_buttons) {
-            if (button_pair.second.clicked()) {
-                
-            }
         }
         ok_button.draw();
         if (ok_button.clicked() || KeyEnter.pressed()) {
             getData().graph_resources.need_init = false;
             changeScene(U"Main_scene", SCENE_FADE_TIME);
         }
-        strt_idx = std::max(0, std::min((int)shortcut_keys.shortcut_keys.size() - 1, strt_idx + (int)Mouse::Wheel()));
+        if (changing_idx == SHORTCUT_KEY_SETTINGS_IDX_NOT_CHANGING){
+            strt_idx = std::max(0, std::min((int)shortcut_keys.shortcut_keys.size() - 1, strt_idx + (int)Mouse::Wheel()));
+        }
+        if (reset_changing_idx){
+            changing_idx = SHORTCUT_KEY_SETTINGS_IDX_NOT_CHANGING;
+        }
     }
 
     void draw() const override {
 
     }
-
 private:
-    
+    void update_shortcut_key(){
+        const Array<Input> raw_keys = Keyboard::GetAllInputs();
+        bool down_found = false;
+        std::unordered_set<String> keys;
+        for (const auto& key : raw_keys){
+            down_found |= key.down();
+            keys.emplace(key.name());
+        }
+        if (down_found){
+            changed_keys.clear();
+            if (keys.find(U"Ctrl") != keys.end()){
+                changed_keys.emplace_back(U"Ctrl");
+            }
+            if (keys.find(U"Shift") != keys.end()){
+                changed_keys.emplace_back(U"Shift");
+            }
+            for (String key: keys){
+                if (key == U"Ctrl"){
+                    continue;
+                }
+                if (key == U"Shift"){
+                    continue;
+                }
+                changed_keys.emplace_back(key);
+            }
+        }
+    }
+
+    String get_new_shortcut_key_str(){
+        String res;
+        for (int i = 0; i < (int)changed_keys.size(); ++i){
+            if (changed_keys[i] == U"Right"){
+                res += U"->";
+            } else if (changed_keys[i] == U"Left"){
+                res += U"<-";
+            } else{
+                res += changed_keys[i];
+            }
+            if (i < (int)changed_keys.size() - 1){
+                res += U"+";
+            }
+        }
+        return res;
+    }
 };

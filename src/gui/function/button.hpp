@@ -43,6 +43,11 @@ public:
         click_supporter.init();
     }
 
+    void move(int x, int y){
+        rect.x = x;
+        rect.y = y;
+    }
+
     void draw() {
         if (enabled){
             rect.draw(button_color);
