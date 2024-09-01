@@ -35,8 +35,11 @@ std::vector<Shortcut_key_elem> shortcut_keys_default = {
     {U"analyze",                {U"A"},                 {{"play", "game"}, {"play", "analyze"}}},
 
     // settings
+    {U"use_book",               {},                     {{"settings", "settings"}, {"ai_settings", "use_book"}}},
     {U"ai_put_black",           {U"B"},                 {{"settings", "settings"}, {"settings", "play", "ai_put_black"}}},
     {U"ai_put_white",           {U"W"},                 {{"settings", "settings"}, {"settings", "play", "ai_put_white"}}},
+    {U"pause_when_pass",        {},                     {{"settings", "settings"}, {"settings", "play", "pause_when_pass"}}},
+    {U"shortcut_key_setting",   {},                     {{"settings", "settings"}, {"settings", "shortcut_keys", "settings"}}},
 
     // display
     {U"disc_value",             {U"V"},                 {{"display", "display"}, {"display", "cell", "disc_value"}}},

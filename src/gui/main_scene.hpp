@@ -472,13 +472,19 @@ private:
     }
 
     void menu_setting() {
+        if (shortcut_key == U"use_book") {
+            getData().menu_elements.use_book = !getData().menu_elements.use_book;
+        }
         if (shortcut_key == U"ai_put_black") {
             getData().menu_elements.ai_put_black = !getData().menu_elements.ai_put_black;
         }
         if (shortcut_key == U"ai_put_white") {
             getData().menu_elements.ai_put_white = !getData().menu_elements.ai_put_white;
         }
-        if (getData().menu_elements.shortcut_key_setting) {
+        if (shortcut_key == U"pause_when_pass"){
+            getData().menu_elements.pause_when_pass = !getData().menu_elements.pause_when_pass;
+        }
+        if (getData().menu_elements.shortcut_key_setting || shortcut_key == U"shortcut_key_setting") {
             changing_scene = true;
             stop_calculating();
             resume_calculating();
