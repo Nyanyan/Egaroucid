@@ -499,9 +499,8 @@ int init_resources(Resources* resources, Settings* settings, Fonts *fonts, bool 
 }
 
 void init_shortcut_keys(const Directories* directories){
-    // shortcut key
-    JSON shortcut_key_json = JSON::Load(U"{}shortcut_key.json"_fmt(Unicode::Widen(directories->appdata_dir)));
-    shortcut_keys.init(shortcut_key_json);
+    String file = U"{}shortcut_key.json"_fmt(Unicode::Widen(directories->appdata_dir));
+    shortcut_keys.init(file);
 }
 
 int silent_load(Directories* directories, Resources* resources, Settings* settings, Fonts *fonts, bool *stop_loading) {

@@ -44,7 +44,8 @@ class Shortcut_keys{
 private:
     std::vector<Shortcut_key_elem> shortcut_keys;
 public:
-    void init(const JSON json){
+    void init(String file){
+        JSON json = JSON::Load(file);
         std::unordered_set<String> name_list;
         for (Shortcut_key_dict_elem &elem: shortcut_key_str){
             name_list.emplace(elem.name);
