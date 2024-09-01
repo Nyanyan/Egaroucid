@@ -26,6 +26,8 @@ private:
     std::vector<Button> delete_buttons;
     Button assign_button;
     String message;
+    uint64_t up_strt;
+    uint64_t down_strt;
 
 public:
     Shortcut_key_setting(const InitData& init) : IScene{ init } {
@@ -41,6 +43,8 @@ public:
             delete_buttons.emplace_back(delete_button);
         }
         assign_button.init(0, 0, 100, 22, 7, language.get("settings", "shortcut_keys", "assign"), 13, getData().fonts.font, getData().colors.white, getData().colors.black);
+        up_strt = BUTTON_NOT_PUSHED;
+        down_strt = BUTTON_NOT_PUSHED;
     }
 
     void update() override {
@@ -129,11 +133,23 @@ public:
         }
         if (changing_idx == SHORTCUT_KEY_SETTINGS_IDX_NOT_CHANGING){
             strt_idx = std::max(0, std::min((int)shortcut_keys.shortcut_keys.size() - 1, strt_idx + (int)Mouse::Wheel()));
-            if (KeyUp.down()){
-                strt_idx = std::max(0, strt_idx - 1);
+            if (!KeyUp.pressed()){
+                up_strt = BUTTON_NOT_PUSHED;
             }
-            if (KeyDown.down()){
+            if (!KeyDown.pressed()){
+                down_strt = BUTTON_NOT_PUSHED;
+            }
+            if (KeyUp.down() || (up_strt != BUTTON_NOT_PUSHED && tim() - up_strt >= BUTTON_LONG_PRESS_THRESHOLD)){
+                strt_idx = std::max(0, strt_idx - 1);
+                if (KeyUp.down()){
+                    up_strt = tim();
+                }
+            }
+            if (KeyDown.down() || (down_strt != BUTTON_NOT_PUSHED && tim() - down_strt >= BUTTON_LONG_PRESS_THRESHOLD)){
                 strt_idx = std::min((int)shortcut_keys.shortcut_keys.size() - 1, strt_idx + 1);
+                if (KeyDown.down()){
+                    down_strt = tim();
+                }
             }
         }
         if (reset_changing_idx){
