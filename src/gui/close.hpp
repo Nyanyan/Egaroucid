@@ -65,6 +65,8 @@ void save_settings(Menu_elements menu_elements, Settings settings, Directories d
 void close_app(Menu_elements menu_elements, Settings settings, Directories directories, Book_information book_information, Window_state window_state) {
     if (!window_state.loading) {
         save_settings(menu_elements, settings, directories);
+        String shortcut_key_file = U"{}shortcut_key.json"_fmt(Unicode::Widen(directories.appdata_dir));
+        shortcut_keys.save_settings(shortcut_key_file);
     }
     if (book_information.changed) {
         book.save_egbk3(settings.book_file, settings.book_file + ".bak");

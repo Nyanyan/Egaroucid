@@ -140,16 +140,21 @@ public:
         }
     }
 
+    void save_settings(String file){
+        JSON json;
+        for (const Shortcut_key_elem &elem: shortcut_keys){
+            Array<JSON> arrayJSON;
+            for (String key: elem.keys){
+                arrayJSON << key;
+            }
+            json[elem.name] = arrayJSON;
+        }
+        json.save(file);
+    }
+
     void check_shortcut_key(String *shortcut_name_down, String *shortcut_name_pressed){
         bool down_found = false;
         std::vector<String> keys = get_all_inputs(&down_found);
-
-        //std::cerr << "keys size " << keys.size() << " down found " << down_found << std::endl;
-        //for (const String& key : keys){
-        //    std::cerr << key.narrow() << " ";
-        //}
-        //std::cerr << std::endl;
-
         *shortcut_name_down = SHORTCUT_KEY_UNDEFINED;
         *shortcut_name_pressed = SHORTCUT_KEY_UNDEFINED;
         for (const Shortcut_key_elem &elem: shortcut_keys){
