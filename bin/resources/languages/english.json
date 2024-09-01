@@ -4,6 +4,7 @@
         "black": "Black",
         "white": "White",
         "empty": "Empty",
+        "ok": "OK",
         "back": "Back",
         "level": "Level",
         "othello_ai": "Othello AI",
@@ -18,25 +19,34 @@
     "closing": "Closing...",
     "play": {
         "game": "Game",
-        "new_game": "New Game (Human vs Human) (Ctrl+N)",
+        "new_game": "New Game (Human vs Human)",
         "new_game_human_black": "New Game (You as Black)",
         "new_game_human_white": "New Game (You as White)",
         "new_selfplay": "New Selfplay",
-        "analyze": "Analyze (A)",
+        "analyze": "Analyze",
         "start_game": "Start",
         "pass": "Pass"
     },
     "settings": {
         "settings": "Settings",
         "play": {
-            "ai_put_black": "AI as Black (B)",
-            "ai_put_white": "AI as White (W)",
+            "ai_put_black": "AI as Black",
+            "ai_put_white": "AI as White",
             "pause_when_pass": "Pause when Pass"
         },
         "thread": {
             "thread": "Threads"
         },
-        "hash_level": "Hash Level"
+        "hash_level": "Hash Level",
+        "shortcut_keys": {
+            "settings": "Shortcut Key Settings",
+            "change": "Change",
+            "delete": "Delete",
+            "assign": "Assign",
+            "not_assigned": "Not Assigned",
+            "changing_message": "Push keys to assign (Esc to turn back)",
+            "key_duplicate_message": "This key is already assigned"
+        }
     },
     "ai_settings": {
         "use_book": "Book Use",
@@ -104,12 +114,12 @@
         "in": "Input",
         "out": "Output",
         "import_failed": "Import Failed",
-        "output_transcript": "Copy Transcript (Ctrl+C)",
+        "output_transcript": "Copy Transcript",
         "output_board": "Copy Board as String",
         "output_game": "Save Game",
-        "input_transcript": "Input Transcript (Ctrl+T)",
+        "input_transcript": "Input Transcript",
         "input_board": "Input Board",
-        "edit_board": "Edit Board (Ctrl+E)",
+        "edit_board": "Edit Board",
         "input_bitboard": "Input Board as Bitboard",
         "output_bitboard": "Output Board as Bitboard",
         "player_opponent": "Player/Opponent",
@@ -125,7 +135,7 @@
         "export_until_this_board": "Save till set position",
         "player_name": "Player Name",
         "memo": "Memo",
-        "screen_shot": "Screen Shot (Copy & Save) (Ctrl+S)",
+        "screen_shot": "Screen Shot (Copy & Save)",
         "board_image": "Edit and Save Board Image",
         "you_can_paste_with_ctrl_v": "You can paste with Ctrl+V"
     },
@@ -134,9 +144,9 @@
         "cell": {
             "display_on_cell": "On Cell",
             "legal": "Legal",
-            "disc_value": "Evaluation (V)",
+            "disc_value": "Evaluation",
             "disc_value_number": "Number",
-            "umigame_value": "Min Memorize Number (U)",
+            "umigame_value": "Min Memorize Number",
             "depth": "Depth",
             "opening": "Opening",
             "next_move": "Next Move",
@@ -156,23 +166,23 @@
         },
         "graph": {
             "graph": "Graph",
-            "value": "Evaluation (D)",
-            "sum_of_loss": "Sum of Loss (S)"
+            "value": "Evaluation",
+            "sum_of_loss": "Sum of Loss"
         },
-        "laser_pointer": "Laser Pointer (P)",
+        "laser_pointer": "Laser Pointer",
         "log": "Log",
         "change_color_type": "Change Color Type"
     },
     "operation": {
         "operation": "Operate",
-        "put_1_move_by_ai": "Put 1 Move by AI (G)",
-        "forward": "Forward (->)",
-        "backward": "Backward (<-)",
-        "undo": "Undo (BackSpace)",
-        "save_this_branch": "Save this Branch (Ctrl+L)",
+        "put_1_move_by_ai": "Put 1 Move by AI",
+        "forward": "Forward",
+        "backward": "Backward",
+        "undo": "Undo",
+        "save_this_branch": "Save this Branch",
         "generate_random_board": {
             "generate_random_board": "Generate Random Board",
-            "generate": "Generate (Ctrl+R)",
+            "generate": "Generate",
             "generate_n_moves": "Moves"
         },
         "convert": {
@@ -183,7 +193,7 @@
         },
         "ai_operation": {
             "ai_operation": "AI Operation",
-            "stop_calculating": "Stop Calculating (Q)",
+            "stop_calculating": "Stop Calculating",
             "cache_clear": "Cache Clear"
         }
     },

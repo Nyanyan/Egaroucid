@@ -4,6 +4,7 @@
         "black": "黑",
         "white": "白",
         "empty": "空",
+        "ok": "确定",
         "back": "返回",
         "level": "级别",
         "othello_ai": "AI",
@@ -18,25 +19,34 @@
     "closing": "正在关闭...",
     "play": {
         "game": "对局",
-        "new_game": "新建对局 (玩家对弈) (Ctrl+N)",
+        "new_game": "新建对局 (玩家对弈)",
         "new_game_human_black": "新建对局 (玩家执黑)",
         "new_game_human_white": "新建对局 (玩家执白)",
         "new_selfplay": "新建对局 (AI自弈)",
-        "analyze": "分析对局 (A)",
+        "analyze": "分析对局",
         "start_game": "开始",
         "pass": "pass"
     },
     "settings": {
         "settings": "设置",
         "play": {
-            "ai_put_black": "AI执黑 (B)",
-            "ai_put_white": "AI执白 (W)",
+            "ai_put_black": "AI执黑",
+            "ai_put_white": "AI执白",
             "pause_when_pass": "当pass时暂停"
         },
         "thread": {
             "thread": "线程"
         },
-        "hash_level": "哈希级别"
+        "hash_level": "哈希级别",
+        "shortcut_keys": {
+            "settings": "快捷键设置",
+            "change": "改变",
+            "delete": "删除",
+            "assign": "分配",
+            "not_assigned": "未分配",
+            "changing_message": "按下按键进行分配 (Esc 返回)",
+            "key_duplicate_message": "此键已分配"
+        }
     },
     "ai_settings": {
         "use_book": "开局库使用",
@@ -104,12 +114,12 @@
         "in": "导入棋谱",
         "out": "导出棋谱",
         "import_failed": "导入失败",
-        "output_transcript": "复制棋谱到剪切板 (Ctrl+C)",
+        "output_transcript": "复制棋谱到剪切板",
         "output_board": "复制棋盘为字符串",
         "output_game": "保存对局",
-        "input_transcript": "从剪切板导入棋谱 (Ctrl+T)",
+        "input_transcript": "从剪切板导入棋谱",
         "input_board": "字符串导入",
-        "edit_board": "编辑棋盘 (Ctrl+E)",
+        "edit_board": "编辑棋盘",
         "input_bitboard": "导入棋盘作为位板",
         "output_bitboard": "导出棋盘作为位板",
         "player_opponent": "棋手/对手",
@@ -125,7 +135,7 @@
         "export_until_this_board": "保存到设定位置",
         "player_name": "棋手名称",
         "memo": "备注",
-        "screen_shot": "截图(复制/保存) (Ctrl+S)",
+        "screen_shot": "截图(复制/保存)",
         "board_image": "编辑和保存当前棋盘图片",
         "you_can_paste_with_ctrl_v": "您可以使用 Ctrl+V 粘贴"
     },
@@ -134,9 +144,9 @@
         "cell": {
             "display_on_cell": "棋子显示",
             "legal": "可行步",
-            "disc_value": "显示估值数量 (V)",
+            "disc_value": "显示估值数量",
             "disc_value_number": "数量",
-            "umigame_value": "海龟数量 (U)",
+            "umigame_value": "海龟数量",
             "depth": "深度",
             "opening": "定式",
             "next_move": "落点提示",
@@ -156,23 +166,23 @@
         },
         "graph": {
             "graph": "图像",
-            "value": "双方估值变化 (D)",
-            "sum_of_loss": "双方累计损子数 (S)"
+            "value": "双方估值变化",
+            "sum_of_loss": "双方累计损子数"
         },
-        "laser_pointer": "激光笔 (P)",
+        "laser_pointer": "激光笔",
         "log": "记录",
         "change_color_type": "色调变化"
     },
     "operation": {
         "operation": "操作",
-        "put_1_move_by_ai": "AI辅助落子一步 (G)",
-        "forward": "前进 (->)",
-        "backward": "后退 (<-)",
-        "undo": "撤销 (BackSpace)",
-        "save_this_branch": "应用此变化 (Ctrl+L)",
+        "put_1_move_by_ai": "AI辅助落子一步",
+        "forward": "前进",
+        "backward": "后退",
+        "undo": "撤销",
+        "save_this_branch": "应用此变化",
         "generate_random_board": {
             "generate_random_board": "生成随机局面",
-            "generate": "生成 (Ctrl+R)",
+            "generate": "生成",
             "generate_n_moves": "生成的局面步数"
         },
         "convert": {
@@ -183,7 +193,7 @@
         },
         "ai_operation": {
             "ai_operation": "AI操作",
-            "stop_calculating": "停止计算 (Q)",
+            "stop_calculating": "停止计算",
             "cache_clear": "清理缓存"
         }
     },

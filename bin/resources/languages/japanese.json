@@ -4,6 +4,7 @@
         "black": "黒",
         "white": "白",
         "empty": "空",
+        "ok": "OK",
         "back": "戻る",
         "level": "レベル",
         "othello_ai": "オセロAI",
@@ -18,25 +19,34 @@
     "closing": "終了中...",
     "play": {
         "game": "対局",
-        "new_game": "新規対局 (人間同士) (Ctrl+N)",
+        "new_game": "新規対局 (人間同士)",
         "new_game_human_black": "新規対局 (人間黒番)",
         "new_game_human_white": "新規対局 (人間白番)",
         "new_selfplay": "新規自己対戦",
-        "analyze": "分析 (A)",
+        "analyze": "分析",
         "start_game": "対局開始",
         "pass": "パス"
     },
     "settings": {
         "settings": "設定",
         "play": {
-            "ai_put_black": "AIが黒に着手 (B)",
-            "ai_put_white": "AIが白に着手 (W)",
+            "ai_put_black": "AIが黒に着手",
+            "ai_put_white": "AIが白に着手",
             "pause_when_pass": "パスで一時停止"
         },
         "thread": {
             "thread": "スレッド数"
         },
-        "hash_level": "ハッシュレベル"
+        "hash_level": "ハッシュレベル",
+        "shortcut_keys": {
+            "settings": "ショートカットキー設定",
+            "change": "変更",
+            "delete": "削除",
+            "assign": "割り当て完了",
+            "not_assigned": "割り当てなし",
+            "changing_message": "登録したいキーを押してください (Escで戻る)",
+            "key_duplicate_message": "そのキーはすでに登録されています"
+        }
     },
     "ai_settings": {
         "use_book": "book使用",
@@ -104,12 +114,12 @@
         "in": "入力",
         "out": "出力",
         "import_failed": "取り込み失敗",
-        "output_transcript": "現局面までの棋譜をコピー (Ctrl+C)",
+        "output_transcript": "現局面までの棋譜をコピー",
         "output_board": "盤面を文字列でコピー",
         "output_game": "対局保存",
-        "input_transcript": "棋譜入力 (Ctrl+T)",
+        "input_transcript": "棋譜入力",
         "input_board": "盤面入力",
-        "edit_board": "盤面編集 (Ctrl+E)",
+        "edit_board": "盤面編集",
         "input_bitboard": "ビットボード入力",
         "output_bitboard": "ビットボード出力",
         "player_opponent": "手番/相手",
@@ -125,7 +135,7 @@
         "export_until_this_board": "設定局面までを保存",
         "player_name": "プレイヤー名",
         "memo": "メモ",
-        "screen_shot": "スクリーンショット (コピー/保存) (Ctrl+S)",
+        "screen_shot": "スクリーンショット (コピー/保存)",
         "board_image": "ボードの画像を編集",
         "you_can_paste_with_ctrl_v": "Ctrl+Vで貼り付け可能"
     },
@@ -134,9 +144,9 @@
         "cell": {
             "display_on_cell": "合法手への表示",
             "legal": "合法手",
-            "disc_value": "石差評価 (V)",
+            "disc_value": "石差評価",
             "disc_value_number": "表示個数",
-            "umigame_value": "うみがめ数 (U)",
+            "umigame_value": "うみがめ数",
             "depth": "深さ",
             "opening": "定石",
             "next_move": "直後の手",
@@ -156,23 +166,23 @@
         },
         "graph": {
             "graph": "グラフ",
-            "value": "評価値 (D)",
-            "sum_of_loss": "累積石損 (S)"
+            "value": "評価値",
+            "sum_of_loss": "累積石損"
         },
-        "laser_pointer": "レーザーポインタ (P)",
+        "laser_pointer": "レーザーポインタ",
         "log": "ログ",
         "change_color_type": "色調変更"
     },
     "operation": {
         "operation": "操作",
-        "put_1_move_by_ai": "AIに1手打たせる (G)",
-        "forward": "進む (->)",
-        "backward": "戻る (<-)",
-        "undo": "待った (BackSpace)",
-        "save_this_branch": "この分岐を保存 (Ctrl+L)",
+        "put_1_move_by_ai": "AIに1手打たせる",
+        "forward": "進む",
+        "backward": "戻る",
+        "undo": "待った",
+        "save_this_branch": "この分岐を保存",
         "generate_random_board": {
             "generate_random_board": "ランダム局面を生成",
-            "generate": "生成 (Ctrl+R)",
+            "generate": "生成",
             "generate_n_moves": "生成手数"
         },
         "convert": {
@@ -183,7 +193,7 @@
         },
         "ai_operation": {
             "ai_operation": "AI操作",
-            "stop_calculating": "計算停止 (Q)",
+            "stop_calculating": "計算停止",
             "cache_clear": "キャッシュクリア"
         }
     },
