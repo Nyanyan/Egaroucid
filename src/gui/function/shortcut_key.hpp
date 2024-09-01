@@ -184,6 +184,10 @@ public:
             shortcut_keys[idx].keys.emplace_back(key);
         }
     }
+
+    void del(int idx){
+        shortcut_keys[idx].keys.clear();
+    }
 };
 
 Shortcut_keys shortcut_keys;

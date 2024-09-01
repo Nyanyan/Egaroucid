@@ -23,6 +23,7 @@ private:
     int changing_idx;
     std::vector<String> changed_keys;
     std::vector<Button> change_buttons;
+    std::vector<Button> delete_buttons;
     Button assign_button;
 
 public:
@@ -34,6 +35,9 @@ public:
             Button change_button;
             change_button.init(0, 0, 100, 24, 7, language.get("settings", "shortcut_keys", "change"), 15, getData().fonts.font, getData().colors.white, getData().colors.black);
             change_buttons.emplace_back(change_button);
+            Button delete_button;
+            delete_button.init(0, 0, 100, 24, 7, language.get("settings", "shortcut_keys", "delete"), 15, getData().fonts.font, getData().colors.white, getData().colors.black);
+            delete_buttons.emplace_back(delete_button);
         }
         assign_button.init(0, 0, 100, 24, 7, language.get("settings", "shortcut_keys", "assign"), 15, getData().fonts.font, getData().colors.white, getData().colors.black);
     }
@@ -65,7 +69,9 @@ public:
             } else{
                 shortcut_key_str = get_new_shortcut_key_str();
             }
+            bool shortcut_assigned = true;
             if (shortcut_key_str == U""){
+                shortcut_assigned = false;
                 shortcut_key_str = language.get("settings", "shortcut_keys", "not_assigned");
             }
             getData().fonts.font(shortcut_key_str).draw(15, Arg::leftCenter(rect.x + 400, sy + rect.h / 2), getData().colors.white);
@@ -75,6 +81,13 @@ public:
                 if (change_buttons[i].clicked()){
                     changing_idx = i;
                     changed_keys = shortcut_keys.shortcut_keys[i].keys;
+                }
+                if (shortcut_assigned){
+                    delete_buttons[i].move(550, sy + 4);
+                    delete_buttons[i].draw();
+                    if (delete_buttons[i].clicked()){
+                        shortcut_keys.del(i);
+                    }
                 }
             } else if (changing_idx == i){
                 update_shortcut_key();
