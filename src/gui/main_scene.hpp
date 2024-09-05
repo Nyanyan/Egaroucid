@@ -503,6 +503,12 @@ private:
         if (shortcut_key == U"umigame_value") {
             getData().menu_elements.use_umigame_value = !getData().menu_elements.use_umigame_value;
         }
+        if (shortcut_key == U"show_opening_on_cell") {
+            getData().menu_elements.show_opening_on_cell = !getData().menu_elements.show_opening_on_cell;
+        }
+        if (shortcut_key == U"show_next_move") {
+            getData().menu_elements.show_next_move = !getData().menu_elements.show_next_move;
+        }
         if (shortcut_key == U"graph_value") {
             getData().menu_elements.show_graph_value = true;
             getData().menu_elements.show_graph_sum_of_loss = false;

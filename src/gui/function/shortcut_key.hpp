@@ -42,9 +42,11 @@ std::vector<Shortcut_key_elem> shortcut_keys_default = {
     {U"shortcut_key_setting",   {},                     {{"settings", "settings"}, {"settings", "shortcut_keys", "settings"}}},
 
     // display
-    {U"show_legal",             {},                     {{"display", "display"}, {"display", "cell", "display_on_cell"}}},
-    {U"disc_value",             {U"V"},                 {{"display", "display"}, {"display", "cell", "disc_value"}}},
-    {U"umigame_value",          {U"U"},                 {{"display", "display"}, {"display", "cell", "umigame_value"}}},
+    {U"show_legal",             {},                     {{"display", "display"}, {"display", "cell", "display_on_cell"}, {"display", "cell", "display_on_cell"}}},
+    {U"disc_value",             {U"V"},                 {{"display", "display"}, {"display", "cell", "display_on_cell"}, {"display", "cell", "disc_value"}}},
+    {U"umigame_value",          {U"U"},                 {{"display", "display"}, {"display", "cell", "display_on_cell"}, {"display", "cell", "umigame_value"}}},
+    {U"show_opening_on_cell",   {},                     {{"display", "display"}, {"display", "cell", "display_on_cell"}, {"display", "cell", "opening"}}},
+    {U"show_next_move",         {},                     {{"display", "display"}, {"display", "cell", "display_on_cell"}, {"display", "cell", "next_move"}}},
     {U"graph_value",            {U"D"},                 {{"display", "display"}, {"display", "graph", "value"}}},
     {U"graph_sum_of_loss",      {U"S"},                 {{"display", "display"}, {"display", "graph", "sum_of_loss"}}},
     {U"laser_pointer",          {U"P"},                 {{"display", "display"}, {"display", "laser_pointer"}}},
