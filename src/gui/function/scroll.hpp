@@ -22,6 +22,9 @@ private:
     int n_elem_per_window;
     int rect_height;
     int max_strt_idx;
+    double strt_idx_double;
+    uint64_t up_strt;
+    uint64_t down_strt;
 
 public:
     void init(int x, int y, int w, int h, int rect_mh, int ne, int n_epw){
@@ -34,15 +37,44 @@ public:
         n_elem_per_window = n_epw;
         rect_height = std::max(rect_min_height, (int)round((double)n_elem_per_window / (double)n_elem * (double)height));
         max_strt_idx = std::max(n_elem - n_elem_per_window, 0);
+        strt_idx_double = 0.0;
+        up_strt = BUTTON_NOT_PUSHED;
+        down_strt = BUTTON_NOT_PUSHED;
     }
 
-    void draw(int strt_idx){
-        double percent = (double)strt_idx / (double)max_strt_idx;
+    void draw(){
+        int strt_idx_int = round(strt_idx_double);
+        double percent = (double)strt_idx_int / (double)max_strt_idx;
         int rect_y = sy + round(percent * (double)(height - rect_height));
         Rect frame_rect(sx, sy, width, height);
         frame_rect.drawFrame(1.0, Palette::White);
         Rect rect(sx, rect_y, width, rect_height);
         rect.draw(Palette::White);
-        std::cerr << strt_idx << " " << percent << "  " << sx << " " << sy << " " << rect_y << " " << rect_height << std::endl;
+    }
+
+    void update(){
+        strt_idx_double = std::max(0.0, std::min((double)(n_elem - n_elem_per_window), strt_idx_double + Mouse::Wheel()));
+        if (!KeyUp.pressed()){
+            up_strt = BUTTON_NOT_PUSHED;
+        }
+        if (!KeyDown.pressed()){
+            down_strt = BUTTON_NOT_PUSHED;
+        }
+        if (KeyUp.down() || (up_strt != BUTTON_NOT_PUSHED && tim() - up_strt >= BUTTON_LONG_PRESS_THRESHOLD)){
+            strt_idx_double = std::max(0.0, strt_idx_double - 1.0);
+            if (KeyUp.down()){
+                up_strt = tim();
+            }
+        }
+        if (KeyDown.down() || (down_strt != BUTTON_NOT_PUSHED && tim() - down_strt >= BUTTON_LONG_PRESS_THRESHOLD)){
+            strt_idx_double = std::max(0.0, std::min((double)(n_elem - n_elem_per_window), strt_idx_double + 1.0));
+            if (KeyDown.down()){
+                down_strt = tim();
+            }
+        }
+    }
+
+    int get_strt_idx_int() const{
+        return (int)strt_idx_double;
     }
 };

@@ -21,19 +21,15 @@ private:
     Button default_button;
     Button ok_button;
     Scroll_manager scroll_manager;
-    double strt_idx;
     int changing_idx;
     std::vector<String> changed_keys;
     std::vector<Button> change_buttons;
     std::vector<Button> delete_buttons;
     Button assign_button;
     String message;
-    uint64_t up_strt;
-    uint64_t down_strt;
 
 public:
     Shortcut_key_setting(const InitData& init) : IScene{ init } {
-        strt_idx = 0.0;
         changing_idx = SHORTCUT_KEY_SETTINGS_IDX_NOT_CHANGING;
         default_button.init(GO_BACK_BUTTON_BACK_SX, GO_BACK_BUTTON_SY, GO_BACK_BUTTON_WIDTH, GO_BACK_BUTTON_HEIGHT, GO_BACK_BUTTON_RADIUS, language.get("common", "use_default"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
         ok_button.init(GO_BACK_BUTTON_GO_SX, GO_BACK_BUTTON_SY, GO_BACK_BUTTON_WIDTH, GO_BACK_BUTTON_HEIGHT, GO_BACK_BUTTON_RADIUS, language.get("common", "ok"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
@@ -46,8 +42,6 @@ public:
             delete_buttons.emplace_back(delete_button);
         }
         assign_button.init(0, 0, 80, 22, 7, language.get("settings", "shortcut_keys", "assign"), 12, getData().fonts.font, getData().colors.white, getData().colors.black);
-        up_strt = BUTTON_NOT_PUSHED;
-        down_strt = BUTTON_NOT_PUSHED;
         scroll_manager.init(780, 86, 10, 300, 20, (int)shortcut_keys.shortcut_keys.size(), SHORTCUT_KEY_SETTINGS_N_ON_WINDOW);
     }
 
@@ -60,7 +54,7 @@ public:
             getData().fonts.font(message).draw(15, Arg::topCenter(X_CENTER, 39), getData().colors.white);
         }
         int sy = 80;
-        int strt_idx_int = (int)strt_idx;
+        int strt_idx_int = scroll_manager.get_strt_idx_int();
         if (strt_idx_int > 0) {
             getData().fonts.font(U"︙").draw(15, Arg::bottomCenter = Vec2{ X_CENTER, sy }, getData().colors.white);
         }
@@ -141,8 +135,8 @@ public:
             }
         }
         if (changing_idx == SHORTCUT_KEY_SETTINGS_IDX_NOT_CHANGING){
-            scroll_manager.draw(strt_idx_int);
-            scroll();
+            scroll_manager.draw();
+            scroll_manager.update();
         }
         if (reset_changing_idx){
             changing_idx = SHORTCUT_KEY_SETTINGS_IDX_NOT_CHANGING;
@@ -189,27 +183,5 @@ private:
             }
         }
         return false;
-    }
-
-    void scroll(){
-        strt_idx = std::max(std::min((double)(shortcut_keys.shortcut_keys.size() - SHORTCUT_KEY_SETTINGS_N_ON_WINDOW), strt_idx + Mouse::Wheel()), 0.0);
-        if (!KeyUp.pressed()){
-            up_strt = BUTTON_NOT_PUSHED;
-        }
-        if (!KeyDown.pressed()){
-            down_strt = BUTTON_NOT_PUSHED;
-        }
-        if (KeyUp.down() || (up_strt != BUTTON_NOT_PUSHED && tim() - up_strt >= BUTTON_LONG_PRESS_THRESHOLD)){
-            strt_idx = std::max(0.0, strt_idx - 1.0);
-            if (KeyUp.down()){
-                up_strt = tim();
-            }
-        }
-        if (KeyDown.down() || (down_strt != BUTTON_NOT_PUSHED && tim() - down_strt >= BUTTON_LONG_PRESS_THRESHOLD)){
-            strt_idx = std::max(std::min((double)(shortcut_keys.shortcut_keys.size() - SHORTCUT_KEY_SETTINGS_N_ON_WINDOW), strt_idx + 1.0), 0.0);
-            if (KeyDown.down()){
-                down_strt = tim();
-            }
-        }
     }
 };
