@@ -494,6 +494,19 @@ int init_resources(Resources* resources, Settings* settings, Fonts *fonts, bool 
             return ERR_OPENING_NOT_LOADED;
     }
 
+    // license
+    TextReader reader{U"LICENSE"};
+    if (not reader) {
+        return ERR_LICENSE_FILE_NOT_LOADED;
+    }
+    String copyright = Unicode::Widen("(C) " + (std::string)EGAROUCID_DATE + " " + (std::string)EGAROUCID_AUTHOR);
+    String license = reader.readAll();
+    LicenseManager::AddLicense({
+        .title = U"Egaroucid",
+        .copyright = copyright,
+        .text = license
+    });
+
     return ERR_OK;
 
 }

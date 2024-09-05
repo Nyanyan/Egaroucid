@@ -2,7 +2,7 @@
     Egaroucid Project
 
     @file info.hpp
-        Egaroucid's software information
+        Egaroucid for Console's software information
     @date 2021-2024
     @author Takuto Yamana
     @license GPL-3.0 license

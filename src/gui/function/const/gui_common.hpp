@@ -13,7 +13,7 @@
 #include <Siv3D.hpp>
 #include "./../../engine/engine_all.hpp"
 #include "./../menu.hpp"
-#include "version.hpp"
+#include "info.hpp"
 #include "url.hpp"
 
 // graph definition
@@ -47,7 +47,8 @@ constexpr int Y_CENTER = WINDOW_SIZE_Y / 2;
 #define ERR_LANG_NOT_LOADED 3
 #define ERR_TEXTURE_NOT_LOADED 4
 #define ERR_OPENING_NOT_LOADED 5
-#define ERR_TERMINATED 6
+#define ERR_LICENSE_FILE_NOT_LOADED 6
+#define ERR_TERMINATED 7
 #define ERR_EVAL_FILE_NOT_IMPORTED 1
 #define ERR_BOOK_FILE_NOT_IMPORTED 2
 #define ERR_HASH_NOT_RESIZED 3
