@@ -529,7 +529,8 @@ public:
                     }
                 }
                 rect.draw(getData().colors.green).drawFrame(1.0, getData().colors.white);
-                getData().fonts.font(games[i].date.substr(0, 10)).draw(15, IMPORT_GAME_SX + 10, sy + 2, getData().colors.white);
+                String date = games[i].date.substr(0, 10).replace(U"_", U"/");
+                getData().fonts.font(date).draw(15, IMPORT_GAME_SX + 10, sy + 2, getData().colors.white);
                 // player (black)
                 Rect black_player_rect;
                 black_player_rect.w = IMPORT_GAME_PLAYER_WIDTH;
