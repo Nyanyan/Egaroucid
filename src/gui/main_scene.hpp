@@ -732,7 +732,7 @@ private:
             }
             resume_calculating();
         }
-        if (getData().menu_elements.cache_clear) {
+        if (getData().menu_elements.cache_clear || shortcut_key == U"cache_clear") {
             stop_calculating();
             transposition_table.init();
             resume_calculating();

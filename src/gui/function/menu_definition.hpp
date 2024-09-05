@@ -168,7 +168,7 @@ Menu create_menu(Menu_elements* menu_elements, Resources *resources, Font font) 
     menu_e.init_button(language.get("operation", "ai_operation", "ai_operation"), &menu_elements->dummy);
     side_menu.init_button(language.get("operation", "ai_operation", "stop_calculating") + get_shortcut_key_info(U"stop_calculating"), &menu_elements->stop_calculating);
     menu_e.push(side_menu);
-    side_menu.init_button(language.get("operation", "ai_operation", "cache_clear"), &menu_elements->cache_clear);
+    side_menu.init_button(language.get("operation", "ai_operation", "cache_clear") + get_shortcut_key_info(U"cache_clear"), &menu_elements->cache_clear);
     menu_e.push(side_menu);
     title.push(menu_e);
 
