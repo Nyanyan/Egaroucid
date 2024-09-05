@@ -42,7 +42,10 @@ public:
         rect_min_height = rect_mh;
         n_elem = ne;
         n_elem_per_window = n_epw;
-        rect_height = std::max(rect_min_height, (int)round((double)n_elem_per_window / (double)n_elem * (double)height));
+        rect_height = height;
+        if (n_elem > n_elem_per_window){
+            rect_height = std::max(rect_min_height, (int)round((double)n_elem_per_window / (double)n_elem * (double)height));
+        }
         max_strt_idx = std::max(n_elem - n_elem_per_window, 0);
         strt_idx_double = 0.0;
         up_strt = BUTTON_NOT_PUSHED;
@@ -61,7 +64,10 @@ public:
 
     void draw(){
         int strt_idx_int = round(strt_idx_double);
-        double percent = (double)strt_idx_int / (double)max_strt_idx;
+        double percent = 0.0;
+        if (max_strt_idx > 0){
+            percent = (double)strt_idx_int / (double)max_strt_idx;
+        }
         int rect_y = sy + round(percent * (double)(height - rect_height));
         frame_rect.drawFrame(1.0, Palette::White);
         rect.y = rect_y;
@@ -112,17 +118,19 @@ public:
         if (rect.leftClicked()){
             dragged = true;
             dragged_y_offset = Cursor::Pos().y - rect.y;
-            std::cerr << dragged_y_offset << std::endl;
         } else if (!MouseL.pressed()){
             dragged = false;
         }
         if (dragged){
-            double n_percent = std::max(0.0, std::min(1.0, (double)(Cursor::Pos().y - dragged_y_offset - sy) / (height - rect_height)));
+            double n_percent = std::max(0.0, std::min(1.0, (double)(Cursor::Pos().y - dragged_y_offset - sy) / std::max(1, (height - rect_height))));
             strt_idx_double = n_percent * (double)max_strt_idx;
         }
         if (frame_rect.leftClicked()){
-            double n_percent = std::max(0.0, std::min(1.0, (double)(Cursor::Pos().y - rect.h / 2 - sy) / (height - rect_height)));
+            double n_percent = std::max(0.0, std::min(1.0, (double)(Cursor::Pos().y - rect.h / 2 - sy) / std::max(1, (height - rect_height))));
             strt_idx_double = n_percent * (double)max_strt_idx;
+            dragged = true;
+            int rect_y = sy + round(n_percent * (double)(height - rect_height));
+            dragged_y_offset = Cursor::Pos().y - rect_y;
         }
     }
 
