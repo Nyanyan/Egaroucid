@@ -55,6 +55,9 @@ void Main() {
     Scene::SetResizeMode(ResizeMode::Virtual);
     Window::SetTitle(U"Egaroucid {}"_fmt(EGAROUCID_VERSION));
     System::SetTerminationTriggers(UserAction::NoAction);
+    ScreenCapture::SetShortcutKeys({KeyPrintScreen});
+    Window::SetToggleFullscreenEnabled(false);
+    LicenseManager::DisableDefaultTrigger();
     #if GUI_OPEN_CONSOLE
         Console.open();
     #else
