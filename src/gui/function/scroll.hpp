@@ -14,6 +14,7 @@
 class Scroll_manager{
 private:
     Rect rect;
+    Rect frame_rect;
     int sx;
     int sy;
     int width;
@@ -52,13 +53,16 @@ public:
         rect.x = sx;
         rect.w = width;
         rect.h = rect_height;
+        frame_rect.x = sx;
+        frame_rect.y = sy;
+        frame_rect.w = width;
+        frame_rect.h = height;
     }
 
     void draw(){
         int strt_idx_int = round(strt_idx_double);
         double percent = (double)strt_idx_int / (double)max_strt_idx;
         int rect_y = sy + round(percent * (double)(height - rect_height));
-        Rect frame_rect(sx, sy, width, height);
         frame_rect.drawFrame(1.0, Palette::White);
         rect.y = rect_y;
         rect.draw(Palette::White);
@@ -114,6 +118,10 @@ public:
         }
         if (dragged){
             double n_percent = std::max(0.0, std::min(1.0, (double)(Cursor::Pos().y - dragged_y_offset - sy) / (height - rect_height)));
+            strt_idx_double = n_percent * (double)max_strt_idx;
+        }
+        if (frame_rect.leftClicked()){
+            double n_percent = std::max(0.0, std::min(1.0, (double)(Cursor::Pos().y - rect.h / 2 - sy) / (height - rect_height)));
             strt_idx_double = n_percent * (double)max_strt_idx;
         }
     }
