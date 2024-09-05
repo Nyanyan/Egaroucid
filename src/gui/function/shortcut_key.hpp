@@ -111,6 +111,14 @@ std::vector<Shortcut_key_elem> shortcut_keys_default = {
     {U"book_reference",         {},                     {{"book", "book"}, {"book", "file_operation"}, {"book", "book_reference"}}},
     // others
     {U"show_book_info",         {},                     {{"book", "book"}, {"book", "show_book_info"}}},
+
+    // help
+    {U"open_usage",             {},                     {{"help", "help"}, {"help", "usage"}}},
+    {U"open_website",           {},                     {{"help", "help"}, {"help", "website"}}},
+    {U"bug_report",             {},                     {{"help", "help"}, {"help", "bug_report"}}},
+    {U"auto_update_check",      {},                     {{"help", "help"}, {"help", "auto_update_check"}}},
+    {U"license_egaroucid",      {},                     {{"help", "help"}, {"help", "license_egaroucid"}}},
+    {U"license_siv3d",          {},                     {{"help", "help"}, {"help", "license_siv3d"}}},
 };
 
 String generate_key_str(std::vector<String> keys){

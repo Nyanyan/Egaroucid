@@ -265,17 +265,17 @@ Menu create_menu(Menu_elements* menu_elements, Resources *resources, Font font) 
 
 
     title.init(language.get("help", "help"));
-    menu_e.init_button(language.get("help", "usage"), &menu_elements->usage);
+    menu_e.init_button(language.get("help", "usage") + get_shortcut_key_info(U"open_usage"), &menu_elements->usage);
     title.push(menu_e);
-    menu_e.init_button(language.get("help", "website"), &menu_elements->website);
+    menu_e.init_button(language.get("help", "website") + get_shortcut_key_info(U"open_website"), &menu_elements->website);
     title.push(menu_e);
-    menu_e.init_button(language.get("help", "bug_report"), &menu_elements->bug_report);
+    menu_e.init_button(language.get("help", "bug_report") + get_shortcut_key_info(U"bug_report"), &menu_elements->bug_report);
     title.push(menu_e);
-    menu_e.init_check(language.get("help", "auto_update_check"), &menu_elements->auto_update_check, menu_elements->auto_update_check);
+    menu_e.init_check(language.get("help", "auto_update_check") + get_shortcut_key_info(U"auto_update_check"), &menu_elements->auto_update_check, menu_elements->auto_update_check);
     title.push(menu_e);
-    menu_e.init_button(language.get("help", "license_egaroucid"), &menu_elements->license_egaroucid);
+    menu_e.init_button(language.get("help", "license_egaroucid") + get_shortcut_key_info(U"license_egaroucid"), &menu_elements->license_egaroucid);
     title.push(menu_e);
-    menu_e.init_button(language.get("help", "license_siv3d"), &menu_elements->license_siv3d);
+    menu_e.init_button(language.get("help", "license_siv3d") + get_shortcut_key_info(U"license_siv3d"), &menu_elements->license_siv3d);
     title.push(menu_e);
     menu.push(title);
 
