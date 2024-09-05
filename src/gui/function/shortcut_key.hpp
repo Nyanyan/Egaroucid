@@ -42,6 +42,7 @@ std::vector<Shortcut_key_elem> shortcut_keys_default = {
     {U"shortcut_key_setting",   {},                     {{"settings", "settings"}, {"settings", "shortcut_keys", "settings"}}},
 
     // display
+    {U"show_legal",             {},                     {{"display", "display"}, {"display", "cell", "display_on_cell"}}},
     {U"disc_value",             {U"V"},                 {{"display", "display"}, {"display", "cell", "disc_value"}}},
     {U"umigame_value",          {U"U"},                 {{"display", "display"}, {"display", "cell", "umigame_value"}}},
     {U"graph_value",            {U"D"},                 {{"display", "display"}, {"display", "graph", "value"}}},

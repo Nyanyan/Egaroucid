@@ -494,6 +494,9 @@ private:
     }
 
     void menu_display() {
+        if (shortcut_key == U"show_legal") {
+            getData().menu_elements.show_legal = !getData().menu_elements.show_legal;
+        }
         if (shortcut_key == U"disc_value") {
             getData().menu_elements.use_disc_hint = !getData().menu_elements.use_disc_hint;
         }
