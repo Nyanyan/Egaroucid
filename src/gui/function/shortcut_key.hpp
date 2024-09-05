@@ -68,6 +68,9 @@ std::vector<Shortcut_key_elem> shortcut_keys_default = {
     {U"undo",                   {U"Backspace"},         {{"operation", "operation"}, {"operation", "undo"}}},
     {U"save_this_branch",       {U"Ctrl", U"L"},        {{"operation", "operation"}, {"operation", "save_this_branch"}}},
     {U"generate_random_board",  {U"Ctrl", U"R"},        {{"operation", "operation"}, {"operation", "generate_random_board", "generate"}}},
+    {U"convert_180",            {},                     {{"operation", "operation"}, {"operation", "convert", "convert"}, {"operation", "convert", "vertical"}}},
+    {U"convert_blackline",      {},                     {{"operation", "operation"}, {"operation", "convert", "convert"}, {"operation", "convert", "black_line"}}},
+    {U"convert_whiteline",      {},                     {{"operation", "operation"}, {"operation", "convert", "convert"}, {"operation", "convert", "white_line"}}},
     {U"stop_calculating",       {U"Q"},                 {{"operation", "operation"}, {"operation", "ai_operation", "stop_calculating"}}},
 
     // input / output

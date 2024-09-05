@@ -543,76 +543,6 @@ private:
         }
     }
 
-    void menu_in_out() {
-        if (getData().menu_elements.input_transcript || shortcut_key == U"input_transcript") {
-            changing_scene = true;
-            stop_calculating();
-            resume_calculating();
-            changeScene(U"Import_transcript", SCENE_FADE_TIME);
-            return;
-        }
-        if (getData().menu_elements.input_board) {
-            changing_scene = true;
-            stop_calculating();
-            resume_calculating();
-            changeScene(U"Import_board", SCENE_FADE_TIME);
-            return;
-        }
-        if (getData().menu_elements.edit_board || shortcut_key == U"edit_board") {
-            changing_scene = true;
-            stop_calculating();
-            resume_calculating();
-            changeScene(U"Edit_board", SCENE_FADE_TIME);
-            return;
-        }
-        if (getData().menu_elements.input_game) {
-            changing_scene = true;
-            stop_calculating();
-            resume_calculating();
-            changeScene(U"Import_game", SCENE_FADE_TIME);
-            return;
-        }
-        if (getData().menu_elements.copy_transcript || shortcut_key == U"output_transcript") {
-            copy_transcript();
-        }
-        if (getData().menu_elements.copy_board) {
-            copy_board();
-        }
-        if (getData().menu_elements.input_bitboard) {
-            changing_scene = true;
-            stop_calculating();
-            resume_calculating();
-            changeScene(U"Import_bitboard", SCENE_FADE_TIME);
-            return;
-        }
-        if (getData().menu_elements.save_game) {
-            changing_scene = true;
-            stop_calculating();
-            resume_calculating();
-            changeScene(U"Export_game", SCENE_FADE_TIME);
-            return;
-        }
-        if (getData().menu_elements.screen_shot || shortcut_key == U"screen_shot") {
-            taking_screen_shot = true;
-            getData().menu_elements.screen_shot = false; // because skip drawing menu in next frame
-        }
-        if (getData().menu_elements.board_image) {
-            changing_scene = true;
-            stop_calculating();
-            resume_calculating();
-            changeScene(U"Board_image", SCENE_FADE_TIME);
-            return;
-        }
-        if (getData().menu_elements.output_bitboard_player_opponent) {
-            copy_bitboard_player_opponent();
-            return;
-        }
-        if (getData().menu_elements.output_bitboard_black_white) {
-            copy_bitboard_black_white();
-            return;
-        }
-    }
-
     void menu_manipulate() {
         if (getData().menu_elements.stop_calculating || shortcut_key == U"stop_calculating") {
             stop_calculating();
@@ -720,7 +650,7 @@ private:
                 need_start_game_button_calculation();
             }
         }
-        if (getData().menu_elements.convert_180) {
+        if (getData().menu_elements.convert_180 || shortcut_key == U"convert_180") {
             stop_calculating();
             getData().history_elem.board.board_rotate_180();
             if (0 <= getData().history_elem.policy && getData().history_elem.policy < HW2) {
@@ -742,7 +672,7 @@ private:
             }
             resume_calculating();
         }
-        if (getData().menu_elements.convert_blackline) {
+        if (getData().menu_elements.convert_blackline || shortcut_key == U"convert_blackline") {
             stop_calculating();
             getData().history_elem.board.board_black_line_mirror();
             if (0 <= getData().history_elem.policy && getData().history_elem.policy < HW2) {
@@ -772,7 +702,7 @@ private:
             }
             resume_calculating();
         }
-        if (getData().menu_elements.convert_whiteline) {
+        if (getData().menu_elements.convert_whiteline || shortcut_key == U"convert_whiteline") {
             stop_calculating();
             getData().history_elem.board.board_white_line_mirror();
             if (0 <= getData().history_elem.policy && getData().history_elem.policy < HW2) {
@@ -806,6 +736,76 @@ private:
             stop_calculating();
             transposition_table.init();
             resume_calculating();
+        }
+    }
+
+    void menu_in_out() {
+        if (getData().menu_elements.input_transcript || shortcut_key == U"input_transcript") {
+            changing_scene = true;
+            stop_calculating();
+            resume_calculating();
+            changeScene(U"Import_transcript", SCENE_FADE_TIME);
+            return;
+        }
+        if (getData().menu_elements.input_board) {
+            changing_scene = true;
+            stop_calculating();
+            resume_calculating();
+            changeScene(U"Import_board", SCENE_FADE_TIME);
+            return;
+        }
+        if (getData().menu_elements.edit_board || shortcut_key == U"edit_board") {
+            changing_scene = true;
+            stop_calculating();
+            resume_calculating();
+            changeScene(U"Edit_board", SCENE_FADE_TIME);
+            return;
+        }
+        if (getData().menu_elements.input_game) {
+            changing_scene = true;
+            stop_calculating();
+            resume_calculating();
+            changeScene(U"Import_game", SCENE_FADE_TIME);
+            return;
+        }
+        if (getData().menu_elements.copy_transcript || shortcut_key == U"output_transcript") {
+            copy_transcript();
+        }
+        if (getData().menu_elements.copy_board) {
+            copy_board();
+        }
+        if (getData().menu_elements.input_bitboard) {
+            changing_scene = true;
+            stop_calculating();
+            resume_calculating();
+            changeScene(U"Import_bitboard", SCENE_FADE_TIME);
+            return;
+        }
+        if (getData().menu_elements.save_game) {
+            changing_scene = true;
+            stop_calculating();
+            resume_calculating();
+            changeScene(U"Export_game", SCENE_FADE_TIME);
+            return;
+        }
+        if (getData().menu_elements.screen_shot || shortcut_key == U"screen_shot") {
+            taking_screen_shot = true;
+            getData().menu_elements.screen_shot = false; // because skip drawing menu in next frame
+        }
+        if (getData().menu_elements.board_image) {
+            changing_scene = true;
+            stop_calculating();
+            resume_calculating();
+            changeScene(U"Board_image", SCENE_FADE_TIME);
+            return;
+        }
+        if (getData().menu_elements.output_bitboard_player_opponent) {
+            copy_bitboard_player_opponent();
+            return;
+        }
+        if (getData().menu_elements.output_bitboard_black_white) {
+            copy_bitboard_black_white();
+            return;
         }
     }
 
