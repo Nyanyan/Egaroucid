@@ -75,10 +75,14 @@ std::vector<Shortcut_key_elem> shortcut_keys_default = {
     {U"cache_clear",            {},                     {{"operation", "operation"}, {"operation", "ai_operation", "ai_operation"}, {"operation", "ai_operation", "cache_clear"}}},
 
     // input / output
-    {U"input_transcript",       {U"Ctrl", U"T"},        {{"in_out", "in_out"}, {"in_out", "input_transcript"}}},
-    {U"edit_board",             {U"Ctrl", U"E"},        {{"in_out", "in_out"}, {"in_out", "edit_board"}}},
-    {U"output_transcript",      {U"Ctrl", U"C"},        {{"in_out", "in_out"}, {"in_out", "output_transcript"}}},
-    {U"screen_shot",            {U"Ctrl", U"S"},        {{"in_out", "in_out"}, {"in_out", "screen_shot"}}},
+    // input
+    {U"input_transcript",       {U"Ctrl", U"T"},        {{"in_out", "in_out"}, {"in_out", "in"}, {"in_out", "input_transcript"}}},
+    {U"input_board",            {},                     {{"in_out", "in_out"}, {"in_out", "in"}, {"in_out", "input_board"}}},
+    {U"edit_board",             {U"Ctrl", U"E"},        {{"in_out", "in_out"}, {"in_out", "in"}, {"in_out", "edit_board"}}},
+    {U"input_game",             {},                     {{"in_out", "in_out"}, {"in_out", "in"}, {"in_out", "input_game"}}},
+    // output
+    {U"output_transcript",      {U"Ctrl", U"C"},        {{"in_out", "in_out"}, {"in_out", "out"}, {"in_out", "output_transcript"}}},
+    {U"screen_shot",            {U"Ctrl", U"S"},        {{"in_out", "in_out"}, {"in_out", "out"}, {"in_out", "screen_shot"}}},
 };
 
 String generate_key_str(std::vector<String> keys){

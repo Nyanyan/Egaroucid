@@ -181,13 +181,13 @@ Menu create_menu(Menu_elements* menu_elements, Resources *resources, Font font) 
     menu_e.init_button(language.get("in_out", "in"), &menu_elements->dummy);
     side_menu.init_button(language.get("in_out", "input_transcript") + get_shortcut_key_info(U"input_transcript"), &menu_elements->input_transcript);
     menu_e.push(side_menu);
-    side_menu.init_button(language.get("in_out", "input_board"), &menu_elements->input_board);
+    side_menu.init_button(language.get("in_out", "input_board") + get_shortcut_key_info(U"input_board"), &menu_elements->input_board);
     menu_e.push(side_menu);
     side_menu.init_button(language.get("in_out", "edit_board") + get_shortcut_key_info(U"edit_board"), &menu_elements->edit_board);
     menu_e.push(side_menu);
-    side_menu.init_button(language.get("in_out", "input_game"), &menu_elements->input_game);
+    side_menu.init_button(language.get("in_out", "input_game") + get_shortcut_key_info(U"input_game"), &menu_elements->input_game);
     menu_e.push(side_menu);
-    side_menu.init_button(language.get("in_out", "input_bitboard"), &menu_elements->input_bitboard);
+    side_menu.init_button(language.get("in_out", "input_bitboard") + get_shortcut_key_info(U"input_bitboard"), &menu_elements->input_bitboard);
     menu_e.push(side_menu);
     title.push(menu_e);
 

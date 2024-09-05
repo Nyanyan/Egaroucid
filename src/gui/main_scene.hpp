@@ -747,7 +747,7 @@ private:
             changeScene(U"Import_transcript", SCENE_FADE_TIME);
             return;
         }
-        if (getData().menu_elements.input_board) {
+        if (getData().menu_elements.input_board || shortcut_key == U"input_board") {
             changing_scene = true;
             stop_calculating();
             resume_calculating();
@@ -761,7 +761,7 @@ private:
             changeScene(U"Edit_board", SCENE_FADE_TIME);
             return;
         }
-        if (getData().menu_elements.input_game) {
+        if (getData().menu_elements.input_game || shortcut_key == U"input_game") {
             changing_scene = true;
             stop_calculating();
             resume_calculating();
