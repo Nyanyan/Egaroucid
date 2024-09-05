@@ -135,7 +135,7 @@
         "export_until_this_board": "設定局面までを保存",
         "player_name": "プレイヤー名",
         "memo": "メモ",
-        "screen_shot": "スクリーンショット (コピー/保存)",
+        "screen_shot": "スクリーンショット",
         "board_image": "ボードの画像を編集",
         "you_can_paste_with_ctrl_v": "Ctrl+Vで貼り付け可能"
     },
