@@ -315,7 +315,7 @@ public:
         draw_info(getData().colors, getData().history_elem, getData().fonts, getData().menu_elements, pausing_in_pass, principal_variation);
 
         // opening on cell drawing
-        if (getData().menu_elements.show_opening_on_cell) {
+        if (getData().menu_elements.show_opening_on_cell && !getData().menu.active()) {
             draw_opening_on_cell();
         }
 
