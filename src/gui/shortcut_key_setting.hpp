@@ -20,6 +20,7 @@ class Shortcut_key_setting : public App::Scene {
 private:
     Button default_button;
     Button ok_button;
+    Scroll_manager scroll_manager;
     double strt_idx;
     int changing_idx;
     std::vector<String> changed_keys;
@@ -47,6 +48,7 @@ public:
         assign_button.init(0, 0, 80, 22, 7, language.get("settings", "shortcut_keys", "assign"), 12, getData().fonts.font, getData().colors.white, getData().colors.black);
         up_strt = BUTTON_NOT_PUSHED;
         down_strt = BUTTON_NOT_PUSHED;
+        scroll_manager.init(780, 86, 10, 300, 20, (int)shortcut_keys.shortcut_keys.size(), SHORTCUT_KEY_SETTINGS_N_ON_WINDOW);
     }
 
     void update() override {
@@ -139,6 +141,7 @@ public:
             }
         }
         if (changing_idx == SHORTCUT_KEY_SETTINGS_IDX_NOT_CHANGING){
+            scroll_manager.draw(strt_idx_int);
             scroll();
         }
         if (reset_changing_idx){
