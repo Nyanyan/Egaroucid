@@ -868,35 +868,35 @@ private:
             return;
         }
         // file operation
-        if (getData().menu_elements.book_merge) {
-            changing_scene = true;
-            stop_calculating();
-            resume_calculating();
-            changeScene(U"Merge_book", SCENE_FADE_TIME);
-            return;
-        }
-        if (getData().menu_elements.book_reference) {
-            changing_scene = true;
-            stop_calculating();
-            resume_calculating();
-            changeScene(U"Refer_book", SCENE_FADE_TIME);
-            return;
-        }
-        if (getData().menu_elements.import_book) {
+        if (getData().menu_elements.import_book || shortcut_key == U"import_book") {
             changing_scene = true;
             stop_calculating();
             resume_calculating();
             changeScene(U"Import_book", SCENE_FADE_TIME);
             return;
         }
-        if (getData().menu_elements.export_book) {
+        if (getData().menu_elements.export_book || shortcut_key == U"export_book") {
             changing_scene = true;
             stop_calculating();
             resume_calculating();
             changeScene(U"Export_book", SCENE_FADE_TIME);
             return;
         }
-        if (getData().menu_elements.show_book_info) {
+        if (getData().menu_elements.book_merge || shortcut_key == U"book_merge") {
+            changing_scene = true;
+            stop_calculating();
+            resume_calculating();
+            changeScene(U"Merge_book", SCENE_FADE_TIME);
+            return;
+        }
+        if (getData().menu_elements.book_reference || shortcut_key == U"book_reference") {
+            changing_scene = true;
+            stop_calculating();
+            resume_calculating();
+            changeScene(U"Refer_book", SCENE_FADE_TIME);
+            return;
+        }
+        if (getData().menu_elements.show_book_info || shortcut_key == U"show_book_info") {
             changing_scene = true;
             stop_calculating();
             resume_calculating();

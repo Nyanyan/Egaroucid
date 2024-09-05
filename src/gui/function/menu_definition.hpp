@@ -246,17 +246,17 @@ Menu create_menu(Menu_elements* menu_elements, Resources *resources, Font font) 
     title.push(menu_e);
 
     menu_e.init_button(language.get("book", "file_operation"), &menu_elements->dummy);
-    side_menu.init_button(language.get("book", "import_book"), &menu_elements->import_book);
+    side_menu.init_button(language.get("book", "import_book") + get_shortcut_key_info(U"import_book"), &menu_elements->import_book);
     menu_e.push(side_menu);
-    side_menu.init_button(language.get("book", "export_book"), &menu_elements->export_book);
+    side_menu.init_button(language.get("book", "export_book") + get_shortcut_key_info(U"export_book"), &menu_elements->export_book);
     menu_e.push(side_menu);
-    side_menu.init_button(language.get("book", "book_merge"), &menu_elements->book_merge);
+    side_menu.init_button(language.get("book", "book_merge") + get_shortcut_key_info(U"book_merge"), &menu_elements->book_merge);
     menu_e.push(side_menu);
-    side_menu.init_button(language.get("book", "book_reference"), &menu_elements->book_reference);
+    side_menu.init_button(language.get("book", "book_reference") + get_shortcut_key_info(U"book_reference"), &menu_elements->book_reference);
     menu_e.push(side_menu);
     title.push(menu_e);
 
-    menu_e.init_button(language.get("book", "show_book_info"), &menu_elements->show_book_info);
+    menu_e.init_button(language.get("book", "show_book_info") + get_shortcut_key_info(U"show_book_info"), &menu_elements->show_book_info);
     title.push(menu_e);
 
     menu.push(title);

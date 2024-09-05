@@ -105,6 +105,12 @@ std::vector<Shortcut_key_elem> shortcut_keys_default = {
     {U"book_start_recalculate_leaf",        {},         {{"book", "book"}, {"book", "book_operation"}, {"book", "book_recalculate_leaf"}}},
     {U"book_start_recalculate_n_lines",     {},         {{"book", "book"}, {"book", "book_operation"}, {"book", "book_recalculate_n_lines"}}},
     // file operation
+    {U"import_book",            {},                     {{"book", "book"}, {"book", "file_operation"}, {"book", "import_book"}}},
+    {U"export_book",            {},                     {{"book", "book"}, {"book", "file_operation"}, {"book", "export_book"}}},
+    {U"book_merge",             {},                     {{"book", "book"}, {"book", "file_operation"}, {"book", "book_merge"}}},
+    {U"book_reference",         {},                     {{"book", "book"}, {"book", "file_operation"}, {"book", "book_reference"}}},
+    // others
+    {U"show_book_info",         {},                     {{"book", "book"}, {"book", "show_book_info"}}},
 };
 
 String generate_key_str(std::vector<String> keys){
