@@ -139,7 +139,7 @@ public:
             }
         }
         if (changing_idx == SHORTCUT_KEY_SETTINGS_IDX_NOT_CHANGING){
-            strt_idx = std::max(0.0, std::min((double)(shortcut_keys.shortcut_keys.size() - 1), strt_idx + Mouse::Wheel()));
+            strt_idx = std::max(0.0, std::min((double)(shortcut_keys.shortcut_keys.size() - SHORTCUT_KEY_SETTINGS_N_ON_WINDOW), strt_idx + Mouse::Wheel()));
             if (!KeyUp.pressed()){
                 up_strt = BUTTON_NOT_PUSHED;
             }
@@ -153,7 +153,7 @@ public:
                 }
             }
             if (KeyDown.down() || (down_strt != BUTTON_NOT_PUSHED && tim() - down_strt >= BUTTON_LONG_PRESS_THRESHOLD)){
-                strt_idx = std::min((double)shortcut_keys.shortcut_keys.size() - 1.0, strt_idx + 1.0);
+                strt_idx = std::min((double)(shortcut_keys.shortcut_keys.size() - SHORTCUT_KEY_SETTINGS_N_ON_WINDOW), strt_idx + 1.0);
                 if (KeyDown.down()){
                     down_strt = tim();
                 }

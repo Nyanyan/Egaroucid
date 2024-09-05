@@ -584,7 +584,7 @@ public:
             getData().graph_resources.need_init = false;
             changeScene(U"Main_scene", SCENE_FADE_TIME);
         }
-        strt_idx = std::max(0.0, std::min((double)games.size() - 1.0, strt_idx + Mouse::Wheel()));
+        strt_idx = std::max(0.0, std::min((double)(games.size() - IMPORT_GAME_N_GAMES_ON_WINDOW), strt_idx + Mouse::Wheel()));
         if (!KeyUp.pressed()){
             up_strt = BUTTON_NOT_PUSHED;
         }
@@ -598,7 +598,7 @@ public:
             }
         }
         if (KeyDown.down() || (down_strt != BUTTON_NOT_PUSHED && tim() - down_strt >= BUTTON_LONG_PRESS_THRESHOLD)){
-            strt_idx = std::min((double)games.size() - 1.0, strt_idx + 1.0);
+            strt_idx = std::min((double)(games.size() - IMPORT_GAME_N_GAMES_ON_WINDOW), strt_idx + 1.0);
             if (KeyDown.down()){
                 down_strt = tim();
             }
