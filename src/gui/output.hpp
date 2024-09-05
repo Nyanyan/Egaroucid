@@ -34,6 +34,12 @@ public:
         export_main_button.init(BUTTON3_2_SX, BUTTON3_SY, BUTTON3_WIDTH, BUTTON3_HEIGHT, BUTTON3_RADIUS, language.get("in_out", "export_main"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
         export_this_board_button.init(BUTTON3_3_SX, BUTTON3_SY, BUTTON3_WIDTH, BUTTON3_HEIGHT, BUTTON3_RADIUS, language.get("in_out", "export_until_this_board"), 15, getData().fonts.font, getData().colors.white, getData().colors.black);
         text_area[BLACK_PLAYER_IDX].active = true;
+        text_area[BLACK_PLAYER_IDX].text = getData().game_information.black_player_name;
+        text_area[WHITE_PLAYER_IDX].text = getData().game_information.white_player_name;
+        text_area[MEMO_IDX].text = getData().game_information.memo;
+        for (int i = 0; i < 3; ++i){
+            text_area[i].rebuildGlyphs();
+        }
     }
 
     void update() override {
