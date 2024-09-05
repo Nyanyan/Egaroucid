@@ -456,12 +456,12 @@ class Import_game : public App::Scene {
 private:
     std::vector<Game_abstract> games;
     Button back_button;
-    int strt_idx;
+    double strt_idx;
     bool failed;
 
 public:
     Import_game(const InitData& init) : IScene{ init } {
-        strt_idx = 0;
+        strt_idx = 0.0;
         back_button.init(BACK_BUTTON_SX, BACK_BUTTON_SY, BACK_BUTTON_WIDTH, BACK_BUTTON_HEIGHT, BACK_BUTTON_RADIUS, language.get("common", "back"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
         failed = false;
         const String csv_path = Unicode::Widen(getData().directories.document_dir) + U"games/summary.csv";
@@ -485,6 +485,7 @@ public:
         if (System::GetUserActions() & UserAction::CloseButtonClicked) {
             changeScene(U"Close", SCENE_FADE_TIME);
         }
+        int strt_idx_int = (int)strt_idx;
         getData().fonts.font(language.get("in_out", "input_game")).draw(25, Arg::topCenter(X_CENTER, 10), getData().colors.white);
         if (failed) {
             getData().fonts.font(language.get("in_out", "import_failed")).draw(20, Arg::center(X_CENTER, Y_CENTER), getData().colors.white);
@@ -495,11 +496,11 @@ public:
         else {
             std::vector<std::pair<int, Button>> buttons;
             int sy = IMPORT_GAME_SY;
-            if (strt_idx > 0) {
+            if (strt_idx_int > 0) {
                 getData().fonts.font(U"︙").draw(15, Arg::bottomCenter = Vec2{ X_CENTER, sy }, getData().colors.white);
             }
             sy += 8;
-            for (int i = strt_idx; i < std::min((int)games.size(), strt_idx + IMPORT_GAME_N_GAMES_ON_WINDOW); ++i) {
+            for (int i = strt_idx_int; i < std::min((int)games.size(), strt_idx_int + IMPORT_GAME_N_GAMES_ON_WINDOW); ++i) {
                 Rect rect;
                 rect.y = sy;
                 rect.x = IMPORT_GAME_SX;
@@ -564,7 +565,7 @@ public:
                 buttons.emplace_back(std::make_pair(i, button));
                 sy += IMPORT_GAME_HEIGHT;
             }
-            if (strt_idx + IMPORT_GAME_N_GAMES_ON_WINDOW < (int)games.size() - 1) {
+            if (strt_idx_int + IMPORT_GAME_N_GAMES_ON_WINDOW < (int)games.size() - 1) {
                 getData().fonts.font(U"︙").draw(15, Arg::bottomCenter = Vec2{ X_CENTER, 415}, getData().colors.white);
             }
             for (std::pair<int, Button> button_pair : buttons) {
@@ -578,7 +579,7 @@ public:
             getData().graph_resources.need_init = false;
             changeScene(U"Main_scene", SCENE_FADE_TIME);
         }
-        strt_idx = std::max(0, std::min((int)games.size() - 1, strt_idx + (int)Mouse::Wheel()));
+        strt_idx = std::max(0.0, std::min((double)games.size() - 1.0, strt_idx + Mouse::Wheel()));
     }
 
     void draw() const override {

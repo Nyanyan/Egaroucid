@@ -32,7 +32,7 @@ private:
 
 public:
     Shortcut_key_setting(const InitData& init) : IScene{ init } {
-        strt_idx = 0;
+        strt_idx = 0.0;
         changing_idx = SHORTCUT_KEY_SETTINGS_IDX_NOT_CHANGING;
         default_button.init(GO_BACK_BUTTON_BACK_SX, GO_BACK_BUTTON_SY, GO_BACK_BUTTON_WIDTH, GO_BACK_BUTTON_HEIGHT, GO_BACK_BUTTON_RADIUS, language.get("common", "use_default"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
         ok_button.init(GO_BACK_BUTTON_GO_SX, GO_BACK_BUTTON_SY, GO_BACK_BUTTON_WIDTH, GO_BACK_BUTTON_HEIGHT, GO_BACK_BUTTON_RADIUS, language.get("common", "ok"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
