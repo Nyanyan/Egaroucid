@@ -36,13 +36,13 @@ public:
         ok_button.init(BACK_BUTTON_SX, BACK_BUTTON_SY, BACK_BUTTON_WIDTH, BACK_BUTTON_HEIGHT, BACK_BUTTON_RADIUS, language.get("common", "ok"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
         for (int i = 0; i < (int)shortcut_keys.shortcut_keys.size(); ++i){
             Button change_button;
-            change_button.init(0, 0, 80, 22, 7, language.get("settings", "shortcut_keys", "change"), 13, getData().fonts.font, getData().colors.white, getData().colors.black);
+            change_button.init(0, 0, 80, 22, 7, language.get("settings", "shortcut_keys", "change"), 12, getData().fonts.font, getData().colors.white, getData().colors.black);
             change_buttons.emplace_back(change_button);
             Button delete_button;
-            delete_button.init(0, 0, 80, 22, 7, language.get("settings", "shortcut_keys", "delete"), 13, getData().fonts.font, getData().colors.white, getData().colors.black);
+            delete_button.init(0, 0, 80, 22, 7, language.get("settings", "shortcut_keys", "delete"), 12, getData().fonts.font, getData().colors.white, getData().colors.black);
             delete_buttons.emplace_back(delete_button);
         }
-        assign_button.init(0, 0, 80, 22, 7, language.get("settings", "shortcut_keys", "assign"), 13, getData().fonts.font, getData().colors.white, getData().colors.black);
+        assign_button.init(0, 0, 80, 22, 7, language.get("settings", "shortcut_keys", "assign"), 12, getData().fonts.font, getData().colors.white, getData().colors.black);
         up_strt = BUTTON_NOT_PUSHED;
         down_strt = BUTTON_NOT_PUSHED;
     }

@@ -51,7 +51,7 @@ Menu create_menu(Menu_elements* menu_elements, Resources *resources, Font font) 
 
     title.init(language.get("settings", "settings"));
 
-    menu_e.init_check(language.get("ai_settings", "use_book"), &menu_elements->use_book, menu_elements->use_book);
+    menu_e.init_check(language.get("ai_settings", "use_book") + get_shortcut_key_info(U"use_book"), &menu_elements->use_book, menu_elements->use_book);
     title.push(menu_e);
     menu_e.init_bar(language.get("ai_settings", "book_accuracy_level"), &menu_elements->book_acc_level, menu_elements->book_acc_level, 0, BOOK_ACCURACY_LEVEL_INF);
     title.push(menu_e);
@@ -69,10 +69,10 @@ Menu create_menu(Menu_elements* menu_elements, Resources *resources, Font font) 
     menu_e.init_check(language.get("settings", "play", "ai_put_white") + get_shortcut_key_info(U"ai_put_white"), &menu_elements->ai_put_white, menu_elements->ai_put_white);
     title.push(menu_e);
 
-    menu_e.init_check(language.get("settings", "play", "pause_when_pass"), &menu_elements->pause_when_pass, menu_elements->pause_when_pass);
+    menu_e.init_check(language.get("settings", "play", "pause_when_pass") + get_shortcut_key_info(U"pause_when_pass"), &menu_elements->pause_when_pass, menu_elements->pause_when_pass);
     title.push(menu_e);
 
-    menu_e.init_button(language.get("settings", "shortcut_keys", "settings"), &menu_elements->shortcut_key_setting);
+    menu_e.init_button(language.get("settings", "shortcut_keys", "settings") + get_shortcut_key_info(U"shortcut_key_setting"), &menu_elements->shortcut_key_setting);
     title.push(menu_e);
 
     menu.push(title);
@@ -83,32 +83,32 @@ Menu create_menu(Menu_elements* menu_elements, Resources *resources, Font font) 
     title.init(language.get("display", "display"));
 
     menu_e.init_button(language.get("display", "cell", "display_on_cell"), &menu_elements->dummy);
-    side_menu.init_check(language.get("display", "cell", "legal"), &menu_elements->show_legal, menu_elements->show_legal);
+    side_menu.init_check(language.get("display", "cell", "legal") + get_shortcut_key_info(U"show_legal"), &menu_elements->show_legal, menu_elements->show_legal);
     menu_e.push(side_menu);
-    side_menu.init_check(language.get("display", "cell", "disc_value") + get_shortcut_key_info(U"disc_value"), &menu_elements->use_disc_hint, menu_elements->use_disc_hint);
+    side_menu.init_check(language.get("display", "cell", "disc_value") + get_shortcut_key_info(U"show_disc_hint"), &menu_elements->use_disc_hint, menu_elements->use_disc_hint);
     side_side_menu.init_bar(language.get("display", "cell", "disc_value_number"), &menu_elements->n_disc_hint, menu_elements->n_disc_hint, 1, SHOW_ALL_HINT);
     side_menu.push(side_side_menu);
     menu_e.push(side_menu);
-    side_menu.init_check(language.get("display", "cell", "umigame_value") + get_shortcut_key_info(U"umigame_value"), &menu_elements->use_umigame_value, menu_elements->use_umigame_value);
+    side_menu.init_check(language.get("display", "cell", "umigame_value") + get_shortcut_key_info(U"show_umigame_value"), &menu_elements->use_umigame_value, menu_elements->use_umigame_value);
     side_side_menu.init_bar(language.get("display", "cell", "depth"), &menu_elements->umigame_value_depth, menu_elements->umigame_value_depth, 1, 60);
     side_menu.push(side_side_menu);
     menu_e.push(side_menu);
-    side_menu.init_check(language.get("display", "cell", "opening"), &menu_elements->show_opening_on_cell, menu_elements->show_opening_on_cell);
+    side_menu.init_check(language.get("display", "cell", "opening") + get_shortcut_key_info(U"show_opening_on_cell"), &menu_elements->show_opening_on_cell, menu_elements->show_opening_on_cell);
     menu_e.push(side_menu);
-    side_menu.init_check(language.get("display", "cell", "next_move"), &menu_elements->show_next_move, menu_elements->show_next_move);
+    side_menu.init_check(language.get("display", "cell", "next_move") + get_shortcut_key_info(U"show_next_move"), &menu_elements->show_next_move, menu_elements->show_next_move);
     side_side_menu.init_check(language.get("display", "cell", "next_move_change_view"), &menu_elements->show_next_move_change_view, menu_elements->show_next_move_change_view);
     side_menu.push(side_side_menu);
     menu_e.push(side_menu);
-    side_menu.init_check(language.get("display", "cell", "show_book_accuracy"), &menu_elements->show_book_accuracy, menu_elements->show_book_accuracy);
+    side_menu.init_check(language.get("display", "cell", "show_book_accuracy") + get_shortcut_key_info(U"show_book_accuracy"), &menu_elements->show_book_accuracy, menu_elements->show_book_accuracy);
     menu_e.push(side_menu);
     title.push(menu_e);
 
     menu_e.init_button(language.get("display", "disc", "display_on_disc"), &menu_elements->dummy);
-    side_menu.init_check(language.get("display", "disc", "last_move"), &menu_elements->show_last_move, menu_elements->show_last_move);
+    side_menu.init_check(language.get("display", "disc", "last_move") + get_shortcut_key_info(U"show_last_move"), &menu_elements->show_last_move, menu_elements->show_last_move);
     menu_e.push(side_menu);
-    side_menu.init_check(language.get("display", "disc", "stable"), &menu_elements->show_stable_discs, menu_elements->show_stable_discs);
+    side_menu.init_check(language.get("display", "disc", "stable") + get_shortcut_key_info(U"show_stable_discs"), &menu_elements->show_stable_discs, menu_elements->show_stable_discs);
     menu_e.push(side_menu);
-    side_menu.init_check(language.get("display", "disc", "play_ordering"), &menu_elements->show_play_ordering, menu_elements->show_play_ordering);
+    side_menu.init_check(language.get("display", "disc", "play_ordering") + get_shortcut_key_info(U"show_play_ordering"), &menu_elements->show_play_ordering, menu_elements->show_play_ordering);
     menu_e.push(side_menu);
     title.push(menu_e);
 
@@ -120,12 +120,12 @@ Menu create_menu(Menu_elements* menu_elements, Resources *resources, Font font) 
     title.push(menu_e);
 
     menu_e.init_check(language.get("display", "graph", "graph"), &menu_elements->show_graph, menu_elements->show_graph);
-    side_menu.init_radio(language.get("display", "graph", "value") + get_shortcut_key_info(U"graph_value"), &menu_elements->show_graph_value, menu_elements->show_graph_value);
+    side_menu.init_radio(language.get("display", "graph", "value") + get_shortcut_key_info(U"show_graph_value"), &menu_elements->show_graph_value, menu_elements->show_graph_value);
     menu_e.push(side_menu);
-    side_menu.init_radio(language.get("display", "graph", "sum_of_loss") + get_shortcut_key_info(U"graph_sum_of_loss"), &menu_elements->show_graph_sum_of_loss, menu_elements->show_graph_sum_of_loss);
+    side_menu.init_radio(language.get("display", "graph", "sum_of_loss") + get_shortcut_key_info(U"show_graph_sum_of_loss"), &menu_elements->show_graph_sum_of_loss, menu_elements->show_graph_sum_of_loss);
     menu_e.push(side_menu);
     title.push(menu_e);
-    menu_e.init_check(language.get("display", "laser_pointer") + get_shortcut_key_info(U"laser_pointer"), &menu_elements->show_laser_pointer, menu_elements->show_laser_pointer);
+    menu_e.init_check(language.get("display", "laser_pointer") + get_shortcut_key_info(U"show_laser_pointer"), &menu_elements->show_laser_pointer, menu_elements->show_laser_pointer);
     title.push(menu_e);
     menu_e.init_check(language.get("display", "log"), &menu_elements->show_log, menu_elements->show_log);
     title.push(menu_e);

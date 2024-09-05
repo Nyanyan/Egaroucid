@@ -42,14 +42,21 @@ std::vector<Shortcut_key_elem> shortcut_keys_default = {
     {U"shortcut_key_setting",   {},                     {{"settings", "settings"}, {"settings", "shortcut_keys", "settings"}}},
 
     // display
-    {U"show_legal",             {},                     {{"display", "display"}, {"display", "cell", "display_on_cell"}, {"display", "cell", "display_on_cell"}}},
-    {U"disc_value",             {U"V"},                 {{"display", "display"}, {"display", "cell", "display_on_cell"}, {"display", "cell", "disc_value"}}},
-    {U"umigame_value",          {U"U"},                 {{"display", "display"}, {"display", "cell", "display_on_cell"}, {"display", "cell", "umigame_value"}}},
+    // on cell
+    {U"show_legal",             {},                     {{"display", "display"}, {"display", "cell", "display_on_cell"}, {"display", "cell", "legal"}}},
+    {U"show_disc_hint",         {U"V"},                 {{"display", "display"}, {"display", "cell", "display_on_cell"}, {"display", "cell", "disc_value"}}},
+    {U"show_umigame_value",     {U"U"},                 {{"display", "display"}, {"display", "cell", "display_on_cell"}, {"display", "cell", "umigame_value"}}},
     {U"show_opening_on_cell",   {},                     {{"display", "display"}, {"display", "cell", "display_on_cell"}, {"display", "cell", "opening"}}},
     {U"show_next_move",         {},                     {{"display", "display"}, {"display", "cell", "display_on_cell"}, {"display", "cell", "next_move"}}},
-    {U"graph_value",            {U"D"},                 {{"display", "display"}, {"display", "graph", "value"}}},
-    {U"graph_sum_of_loss",      {U"S"},                 {{"display", "display"}, {"display", "graph", "sum_of_loss"}}},
-    {U"laser_pointer",          {U"P"},                 {{"display", "display"}, {"display", "laser_pointer"}}},
+    {U"show_book_accuracy",     {},                     {{"display", "display"}, {"display", "cell", "display_on_cell"}, {"display", "cell", "show_book_accuracy"}}},
+    // on discs
+    {U"show_last_move",         {},                     {{"display", "display"}, {"display", "disc", "display_on_disc"}, {"display", "disc", "last_move"}}},
+    {U"show_stable_discs",      {},                     {{"display", "display"}, {"display", "disc", "display_on_disc"}, {"display", "disc", "stable"}}},
+    {U"show_play_ordering",     {},                     {{"display", "display"}, {"display", "disc", "display_on_disc"}, {"display", "disc", "play_ordering"}}},
+    // others
+    {U"show_graph_value",       {U"D"},                 {{"display", "display"}, {"display", "graph", "value"}}},
+    {U"show_graph_sum_of_loss", {U"S"},                 {{"display", "display"}, {"display", "graph", "sum_of_loss"}}},
+    {U"show_laser_pointer",     {U"P"},                 {{"display", "display"}, {"display", "laser_pointer"}}},
 
     // operate
     {U"put_1_move_by_ai",       {U"G"},                 {{"operation", "operation"}, {"operation", "put_1_move_by_ai"}}},

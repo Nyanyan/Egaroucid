@@ -497,10 +497,10 @@ private:
         if (shortcut_key == U"show_legal") {
             getData().menu_elements.show_legal = !getData().menu_elements.show_legal;
         }
-        if (shortcut_key == U"disc_value") {
+        if (shortcut_key == U"show_disc_hint") {
             getData().menu_elements.use_disc_hint = !getData().menu_elements.use_disc_hint;
         }
-        if (shortcut_key == U"umigame_value") {
+        if (shortcut_key == U"show_umigame_value") {
             getData().menu_elements.use_umigame_value = !getData().menu_elements.use_umigame_value;
         }
         if (shortcut_key == U"show_opening_on_cell") {
@@ -509,15 +509,27 @@ private:
         if (shortcut_key == U"show_next_move") {
             getData().menu_elements.show_next_move = !getData().menu_elements.show_next_move;
         }
-        if (shortcut_key == U"graph_value") {
+        if (shortcut_key == U"show_book_accuracy") {
+            getData().menu_elements.show_book_accuracy = !getData().menu_elements.show_book_accuracy;
+        }
+        if (shortcut_key == U"show_last_move") {
+            getData().menu_elements.show_last_move = !getData().menu_elements.show_last_move;
+        }
+        if (shortcut_key == U"show_stable_discs") {
+            getData().menu_elements.show_stable_discs = !getData().menu_elements.show_stable_discs;
+        }
+        if (shortcut_key == U"show_play_ordering") {
+            getData().menu_elements.show_play_ordering = !getData().menu_elements.show_play_ordering;
+        }
+        if (shortcut_key == U"show_graph_value") {
             getData().menu_elements.show_graph_value = true;
             getData().menu_elements.show_graph_sum_of_loss = false;
         }
-        if (shortcut_key == U"graph_sum_of_loss") {
+        if (shortcut_key == U"show_graph_sum_of_loss") {
             getData().menu_elements.show_graph_value = false;
             getData().menu_elements.show_graph_sum_of_loss = true;
         }
-        if (shortcut_key == U"laser_pointer") {
+        if (shortcut_key == U"show_laser_pointer") {
             getData().menu_elements.show_laser_pointer = !getData().menu_elements.show_laser_pointer;
         }
     }
