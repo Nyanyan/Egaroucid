@@ -153,7 +153,7 @@ public:
                 }
             }
             if (KeyDown.down() || (down_strt != BUTTON_NOT_PUSHED && tim() - down_strt >= BUTTON_LONG_PRESS_THRESHOLD)){
-                strt_idx = std::max(std::min((double)(shortcut_keys.shortcut_keys.size() - SHORTCUT_KEY_SETTINGS_N_ON_WINDOW), strt_idx + 1.0));
+                strt_idx = std::max(std::min((double)(shortcut_keys.shortcut_keys.size() - SHORTCUT_KEY_SETTINGS_N_ON_WINDOW), strt_idx + 1.0), 0.0);
                 if (KeyDown.down()){
                     down_strt = tim();
                 }
