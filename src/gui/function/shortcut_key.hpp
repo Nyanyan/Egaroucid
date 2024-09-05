@@ -117,8 +117,7 @@ std::vector<Shortcut_key_elem> shortcut_keys_default = {
     {U"open_website",           {},                     {{"help", "help"}, {"help", "website"}}},
     {U"bug_report",             {},                     {{"help", "help"}, {"help", "bug_report"}}},
     {U"auto_update_check",      {},                     {{"help", "help"}, {"help", "auto_update_check"}}},
-    {U"license_egaroucid",      {},                     {{"help", "help"}, {"help", "license_egaroucid"}}},
-    {U"license_siv3d",          {},                     {{"help", "help"}, {"help", "license_siv3d"}}},
+    {U"license",                {},                     {{"help", "help"}, {"help", "license"}}},
 };
 
 String generate_key_str(std::vector<String> keys){

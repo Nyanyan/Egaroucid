@@ -926,12 +926,7 @@ private:
         if (shortcut_key == U"auto_update_check") {
             getData().menu_elements.auto_update_check = !getData().menu_elements.auto_update_check;
         }
-        if (getData().menu_elements.license_egaroucid || shortcut_key == U"license_egaroucid") {
-            shortcut_key = SHORTCUT_KEY_UNDEFINED;
-            //System::LaunchBrowser(U"LICENSE");
-            System::LaunchBrowser(U"https://github.com/Nyanyan/Egaroucid/blob/main/LICENSE");
-        }
-        if (getData().menu_elements.license_siv3d || shortcut_key == U"license_siv3d") {
+        if (getData().menu_elements.license || shortcut_key == U"license") {
             shortcut_key = SHORTCUT_KEY_UNDEFINED;
             LicenseManager::ShowInBrowser();
         }

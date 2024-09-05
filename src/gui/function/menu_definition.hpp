@@ -273,9 +273,7 @@ Menu create_menu(Menu_elements* menu_elements, Resources *resources, Font font) 
     title.push(menu_e);
     menu_e.init_check(language.get("help", "auto_update_check") + get_shortcut_key_info(U"auto_update_check"), &menu_elements->auto_update_check, menu_elements->auto_update_check);
     title.push(menu_e);
-    menu_e.init_button(language.get("help", "license_egaroucid") + get_shortcut_key_info(U"license_egaroucid"), &menu_elements->license_egaroucid);
-    title.push(menu_e);
-    menu_e.init_button(language.get("help", "license_siv3d") + get_shortcut_key_info(U"license_siv3d"), &menu_elements->license_siv3d);
+    menu_e.init_button(language.get("help", "license") + get_shortcut_key_info(U"license"), &menu_elements->license);
     title.push(menu_e);
     menu.push(title);
 
