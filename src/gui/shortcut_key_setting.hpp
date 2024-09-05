@@ -101,7 +101,7 @@ public:
                     assign_button.move(680, sy + 4);
                     if (check_duplicate()){
                         assign_button.disable();
-                        message = language.get("settings", "shortcut_keys", "key_duplicate_message");
+                        message = language.get("settings", "shortcut_keys", "key_duplicate_message") + U": " + get_duplicate_function();
                     } else{
                         assign_button.enable();
                         message = language.get("settings", "shortcut_keys", "changing_message");
@@ -182,5 +182,34 @@ private:
             }
         }
         return false;
+    }
+
+    String get_duplicate_function(){
+        for (int i = 0; i < (int)shortcut_keys.shortcut_keys.size(); ++i) {
+            if (i == changing_idx){
+                continue;
+            }
+            if (changed_keys.size() == shortcut_keys.shortcut_keys[i].keys.size()){
+                bool duplicate = true;
+                for (const String &key1: changed_keys){
+                    bool found = false;
+                    for (const String &key2: shortcut_keys.shortcut_keys[i].keys){
+                        if (key1 == key2){
+                            found = true;
+                            break;
+                        }
+                    }
+                    if (!found){
+                        duplicate = false;
+                        break;
+                    }
+                }
+                if (duplicate){
+                    String function_name = shortcut_keys.shortcut_keys[i].name;
+                    return shortcut_keys.get_shortcut_key_description(function_name);
+                }
+            }
+        }
+        return U"?";
     }
 };
