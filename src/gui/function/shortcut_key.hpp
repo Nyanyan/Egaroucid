@@ -93,6 +93,18 @@ std::vector<Shortcut_key_elem> shortcut_keys_default = {
     {U"save_game",              {},                     {{"in_out", "in_out"}, {"in_out", "out"}, {"in_out", "output_game"}}},
     {U"output_bitboard_player_opponent",    {},         {{"in_out", "in_out"}, {"in_out", "out"}, {"in_out", "output_bitboard"}, {"in_out", "player_opponent"}}},
     {U"output_bitboard_black_white",        {},         {{"in_out", "in_out"}, {"in_out", "out"}, {"in_out", "output_bitboard"}, {"in_out", "black_white"}}},
+
+    // book
+    // book settings
+    // book operation
+    {U"change_book_by_right_click", {},                 {{"book", "book"}, {"book", "book_operation"}, {"book", "right_click_to_modify"}}},
+    {U"book_start_deviate",     {},                     {{"book", "book"}, {"book", "book_operation"}, {"book", "book_deviate"}}},
+    {U"book_start_deviate_with_transcript", {},         {{"book", "book"}, {"book", "book_operation"}, {"book", "book_deviate_with_transcript"}}},
+    {U"book_start_fix",         {},                     {{"book", "book"}, {"book", "book_operation"}, {"book", "book_fix"}}},
+    {U"book_start_reducing",    {},                     {{"book", "book"}, {"book", "book_operation"}, {"book", "book_reduce"}}},
+    {U"book_start_recalculate_leaf",        {},         {{"book", "book"}, {"book", "book_operation"}, {"book", "book_recalculate_leaf"}}},
+    {U"book_start_recalculate_n_lines",     {},         {{"book", "book"}, {"book", "book_operation"}, {"book", "book_recalculate_n_lines"}}},
+    // file operation
 };
 
 String generate_key_str(std::vector<String> keys){
@@ -151,8 +163,12 @@ class Shortcut_keys{
 public:
     std::vector<Shortcut_key_elem> shortcut_keys;
 public:
-    void init(String file){
+    void set_default(){
         shortcut_keys = shortcut_keys_default;
+    }
+
+    void init(String file){
+        set_default();
         JSON json = JSON::Load(file);
         std::unordered_set<String> name_list;
         for (Shortcut_key_elem &elem: shortcut_keys_default){

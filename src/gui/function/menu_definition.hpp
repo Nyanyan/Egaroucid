@@ -229,19 +229,19 @@ Menu create_menu(Menu_elements* menu_elements, Resources *resources, Font font) 
     title.push(menu_e);
 
     menu_e.init_button(language.get("book", "book_operation"), &menu_elements->dummy);
-    side_menu.init_check(language.get("book", "right_click_to_modify"), &menu_elements->change_book_by_right_click, menu_elements->change_book_by_right_click);
+    side_menu.init_check(language.get("book", "right_click_to_modify") + get_shortcut_key_info(U"change_book_by_right_click"), &menu_elements->change_book_by_right_click, menu_elements->change_book_by_right_click);
     menu_e.push(side_menu);
-    side_menu.init_button(language.get("book", "book_deviate"), &menu_elements->book_start_deviate);
+    side_menu.init_button(language.get("book", "book_deviate") + get_shortcut_key_info(U"book_start_deviate"), &menu_elements->book_start_deviate);
     menu_e.push(side_menu);
-    side_menu.init_button(language.get("book", "book_deviate_with_transcript"), &menu_elements->book_start_deviate_with_transcript);
+    side_menu.init_button(language.get("book", "book_deviate_with_transcript") + get_shortcut_key_info(U"book_start_deviate_with_transcript"), &menu_elements->book_start_deviate_with_transcript);
     menu_e.push(side_menu);
-    side_menu.init_button(language.get("book", "book_fix"), &menu_elements->book_start_fix);
+    side_menu.init_button(language.get("book", "book_fix") + get_shortcut_key_info(U"book_start_fix"), &menu_elements->book_start_fix);
     menu_e.push(side_menu);
-    side_menu.init_button(language.get("book", "book_reduce"), &menu_elements->book_start_reducing);
+    side_menu.init_button(language.get("book", "book_reduce") + get_shortcut_key_info(U"book_start_reducing"), &menu_elements->book_start_reducing);
     menu_e.push(side_menu);
-    side_menu.init_button(language.get("book", "book_recalculate_leaf"), &menu_elements->book_start_recalculate_leaf);
+    side_menu.init_button(language.get("book", "book_recalculate_leaf") + get_shortcut_key_info(U"book_start_recalculate_leaf"), &menu_elements->book_start_recalculate_leaf);
     menu_e.push(side_menu);
-    side_menu.init_button(language.get("book", "book_recalculate_n_lines"), &menu_elements->book_start_recalculate_n_lines);
+    side_menu.init_button(language.get("book", "book_recalculate_n_lines") + get_shortcut_key_info(U"book_start_recalculate_n_lines"), &menu_elements->book_start_recalculate_n_lines);
     menu_e.push(side_menu);
     title.push(menu_e);
 

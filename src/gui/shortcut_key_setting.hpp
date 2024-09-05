@@ -18,6 +18,7 @@
 
 class Shortcut_key_setting : public App::Scene {
 private:
+    Button default_button;
     Button ok_button;
     int strt_idx;
     int changing_idx;
@@ -33,7 +34,8 @@ public:
     Shortcut_key_setting(const InitData& init) : IScene{ init } {
         strt_idx = 0;
         changing_idx = SHORTCUT_KEY_SETTINGS_IDX_NOT_CHANGING;
-        ok_button.init(BACK_BUTTON_SX, BACK_BUTTON_SY, BACK_BUTTON_WIDTH, BACK_BUTTON_HEIGHT, BACK_BUTTON_RADIUS, language.get("common", "ok"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
+        default_button.init(GO_BACK_BUTTON_BACK_SX, GO_BACK_BUTTON_SY, GO_BACK_BUTTON_WIDTH, GO_BACK_BUTTON_HEIGHT, GO_BACK_BUTTON_RADIUS, language.get("common", "use_default"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
+        ok_button.init(GO_BACK_BUTTON_GO_SX, GO_BACK_BUTTON_SY, GO_BACK_BUTTON_WIDTH, GO_BACK_BUTTON_HEIGHT, GO_BACK_BUTTON_RADIUS, language.get("common", "ok"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
         for (int i = 0; i < (int)shortcut_keys.shortcut_keys.size(); ++i){
             Button change_button;
             change_button.init(0, 0, 80, 22, 7, language.get("settings", "shortcut_keys", "change"), 12, getData().fonts.font, getData().colors.white, getData().colors.black);
@@ -129,6 +131,10 @@ public:
             if (ok_button.clicked() || KeyEnter.pressed()) {
                 getData().graph_resources.need_init = false;
                 changeScene(U"Main_scene", SCENE_FADE_TIME);
+            }
+            default_button.draw();
+            if (default_button.clicked()) {
+                shortcut_keys.set_default();
             }
         }
         if (changing_idx == SHORTCUT_KEY_SETTINGS_IDX_NOT_CHANGING){

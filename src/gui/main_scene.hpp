@@ -821,48 +821,53 @@ private:
     }
 
     void menu_book() {
-        if (getData().menu_elements.book_start_deviate) {
+        // book operation
+        if (shortcut_key == U"change_book_by_right_click") {
+            getData().menu_elements.change_book_by_right_click = !getData().menu_elements.change_book_by_right_click;
+        }
+        if (getData().menu_elements.book_start_deviate || shortcut_key == U"book_start_deviate") {
             changing_scene = true;
             stop_calculating();
             resume_calculating();
             changeScene(U"Enhance_book", SCENE_FADE_TIME);
             return;
         }
-        if (getData().menu_elements.book_start_deviate_with_transcript) {
+        if (getData().menu_elements.book_start_deviate_with_transcript || shortcut_key == U"book_start_deviate_with_transcript") {
             changing_scene = true;
             stop_calculating();
             resume_calculating();
             changeScene(U"Deviate_book_transcript", SCENE_FADE_TIME);
             return;
         }
-        if (getData().menu_elements.book_start_fix) {
+        if (getData().menu_elements.book_start_fix || shortcut_key == U"book_start_fix") {
             changing_scene = true;
             stop_calculating();
             resume_calculating();
             changeScene(U"Fix_book", SCENE_FADE_TIME);
             return;
         }
-        if (getData().menu_elements.book_start_reducing) {
+        if (getData().menu_elements.book_start_reducing || shortcut_key == U"book_start_reducing") {
             changing_scene = true;
             stop_calculating();
             resume_calculating();
             changeScene(U"Reduce_book", SCENE_FADE_TIME);
             return;
         }
-        if (getData().menu_elements.book_start_recalculate_leaf) {
+        if (getData().menu_elements.book_start_recalculate_leaf || shortcut_key == U"book_start_recalculate_leaf") {
             changing_scene = true;
             stop_calculating();
             resume_calculating();
             changeScene(U"Leaf_recalculate_book", SCENE_FADE_TIME);
             return;
         }
-        if (getData().menu_elements.book_start_recalculate_n_lines) {
+        if (getData().menu_elements.book_start_recalculate_n_lines || shortcut_key == U"book_start_recalculate_n_lines") {
             changing_scene = true;
             stop_calculating();
             resume_calculating();
             changeScene(U"N_lines_recalculate_book", SCENE_FADE_TIME);
             return;
         }
+        // file operation
         if (getData().menu_elements.book_merge) {
             changing_scene = true;
             stop_calculating();
