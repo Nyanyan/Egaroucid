@@ -521,6 +521,9 @@ private:
         if (shortcut_key == U"show_play_ordering") {
             getData().menu_elements.show_play_ordering = !getData().menu_elements.show_play_ordering;
         }
+        if (shortcut_key == U"show_graph") {
+            getData().menu_elements.show_graph = !getData().menu_elements.show_graph;
+        }
         if (shortcut_key == U"show_graph_value") {
             getData().menu_elements.show_graph_value = true;
             getData().menu_elements.show_graph_sum_of_loss = false;
@@ -531,6 +534,12 @@ private:
         }
         if (shortcut_key == U"show_laser_pointer") {
             getData().menu_elements.show_laser_pointer = !getData().menu_elements.show_laser_pointer;
+        }
+        if (shortcut_key == U"show_log") {
+            getData().menu_elements.show_log = !getData().menu_elements.show_log;
+        }
+        if (shortcut_key == U"change_color_type") {
+            getData().menu_elements.change_color_type = !getData().menu_elements.change_color_type;
         }
     }
 

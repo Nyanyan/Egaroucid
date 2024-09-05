@@ -119,7 +119,7 @@ Menu create_menu(Menu_elements* menu_elements, Resources *resources, Font font) 
     menu_e.push(side_menu);
     title.push(menu_e);
 
-    menu_e.init_check(language.get("display", "graph", "graph"), &menu_elements->show_graph, menu_elements->show_graph);
+    menu_e.init_check(language.get("display", "graph", "graph") + get_shortcut_key_info(U"show_graph"), &menu_elements->show_graph, menu_elements->show_graph);
     side_menu.init_radio(language.get("display", "graph", "value") + get_shortcut_key_info(U"show_graph_value"), &menu_elements->show_graph_value, menu_elements->show_graph_value);
     menu_e.push(side_menu);
     side_menu.init_radio(language.get("display", "graph", "sum_of_loss") + get_shortcut_key_info(U"show_graph_sum_of_loss"), &menu_elements->show_graph_sum_of_loss, menu_elements->show_graph_sum_of_loss);
@@ -127,9 +127,9 @@ Menu create_menu(Menu_elements* menu_elements, Resources *resources, Font font) 
     title.push(menu_e);
     menu_e.init_check(language.get("display", "laser_pointer") + get_shortcut_key_info(U"show_laser_pointer"), &menu_elements->show_laser_pointer, menu_elements->show_laser_pointer);
     title.push(menu_e);
-    menu_e.init_check(language.get("display", "log"), &menu_elements->show_log, menu_elements->show_log);
+    menu_e.init_check(language.get("display", "log") + get_shortcut_key_info(U"show_log"), &menu_elements->show_log, menu_elements->show_log);
     title.push(menu_e);
-    menu_e.init_check(language.get("display", "change_color_type"), &menu_elements->change_color_type, menu_elements->change_color_type);
+    menu_e.init_check(language.get("display", "change_color_type") + get_shortcut_key_info(U"change_color_type"), &menu_elements->change_color_type, menu_elements->change_color_type);
     title.push(menu_e);
 
     menu.push(title);
