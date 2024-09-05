@@ -456,15 +456,12 @@ class Import_game : public App::Scene {
 private:
     std::vector<Game_abstract> games;
     std::vector<Button> import_buttons;
+    Scroll_manager scroll_manager;
     Button back_button;
-    double strt_idx;
     bool failed;
-    uint64_t up_strt;
-    uint64_t down_strt;
 
 public:
     Import_game(const InitData& init) : IScene{ init } {
-        strt_idx = 0.0;
         back_button.init(BACK_BUTTON_SX, BACK_BUTTON_SY, BACK_BUTTON_WIDTH, BACK_BUTTON_HEIGHT, BACK_BUTTON_RADIUS, language.get("common", "back"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
         failed = false;
         const String csv_path = Unicode::Widen(getData().directories.document_dir) + U"games/summary.csv";
@@ -487,16 +484,19 @@ public:
             button.init(0, 0, IMPORT_GAME_BUTTON_WIDTH, IMPORT_GAME_BUTTON_HEIGHT, IMPORT_GAME_BUTTON_RADIUS, language.get("in_out", "import"), 15, getData().fonts.font, getData().colors.white, getData().colors.black);
             import_buttons.emplace_back(button);
         }
-        up_strt = BUTTON_NOT_PUSHED;
-        down_strt = BUTTON_NOT_PUSHED;
+        scroll_manager.init(780, IMPORT_GAME_SY + 8, 10, IMPORT_GAME_HEIGHT * IMPORT_GAME_N_GAMES_ON_WINDOW, 20, (int)games.size(), IMPORT_GAME_N_GAMES_ON_WINDOW);
     }
 
     void update() override {
         if (System::GetUserActions() & UserAction::CloseButtonClicked) {
             changeScene(U"Close", SCENE_FADE_TIME);
         }
-        int strt_idx_int = (int)strt_idx;
         getData().fonts.font(language.get("in_out", "input_game")).draw(25, Arg::topCenter(X_CENTER, 10), getData().colors.white);
+        back_button.draw();
+        if (back_button.clicked() || KeyEscape.pressed()) {
+            getData().graph_resources.need_init = false;
+            changeScene(U"Main_scene", SCENE_FADE_TIME);
+        }
         if (failed) {
             getData().fonts.font(language.get("in_out", "import_failed")).draw(20, Arg::center(X_CENTER, Y_CENTER), getData().colors.white);
         }
@@ -505,6 +505,7 @@ public:
         }
         else {
             int sy = IMPORT_GAME_SY;
+            int strt_idx_int = scroll_manager.get_strt_idx_int();
             if (strt_idx_int > 0) {
                 getData().fonts.font(U"︙").draw(15, Arg::bottomCenter = Vec2{ X_CENTER, sy }, getData().colors.white);
             }
@@ -578,13 +579,9 @@ public:
             if (strt_idx_int + IMPORT_GAME_N_GAMES_ON_WINDOW < (int)games.size()) {
                 getData().fonts.font(U"︙").draw(15, Arg::bottomCenter = Vec2{ X_CENTER, 415}, getData().colors.white);
             }
+            scroll_manager.draw();
+            scroll_manager.update();
         }
-        back_button.draw();
-        if (back_button.clicked() || KeyEscape.pressed()) {
-            getData().graph_resources.need_init = false;
-            changeScene(U"Main_scene", SCENE_FADE_TIME);
-        }
-        scroll();
     }
 
     void draw() const override {
@@ -674,28 +671,6 @@ private:
         getData().graph_resources.need_init = false;
         getData().history_elem = getData().graph_resources.nodes[GRAPH_MODE_NORMAL].back();
         changeScene(U"Main_scene", SCENE_FADE_TIME);
-    }
-
-    void scroll(){
-        strt_idx = std::max(std::min((double)(games.size() - IMPORT_GAME_N_GAMES_ON_WINDOW), strt_idx + Mouse::Wheel()), 0.0);
-        if (!KeyUp.pressed()){
-            up_strt = BUTTON_NOT_PUSHED;
-        }
-        if (!KeyDown.pressed()){
-            down_strt = BUTTON_NOT_PUSHED;
-        }
-        if (KeyUp.down() || (up_strt != BUTTON_NOT_PUSHED && tim() - up_strt >= BUTTON_LONG_PRESS_THRESHOLD)){
-            strt_idx = std::max(0.0, strt_idx - 1.0);
-            if (KeyUp.down()){
-                up_strt = tim();
-            }
-        }
-        if (KeyDown.down() || (down_strt != BUTTON_NOT_PUSHED && tim() - down_strt >= BUTTON_LONG_PRESS_THRESHOLD)){
-            strt_idx = std::max(std::min((double)(games.size() - IMPORT_GAME_N_GAMES_ON_WINDOW), strt_idx + 1.0), 0.0);
-            if (KeyDown.down()){
-                down_strt = tim();
-            }
-        }
     }
 };
 
