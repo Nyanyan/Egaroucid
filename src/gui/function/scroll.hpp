@@ -25,6 +25,8 @@ private:
     double strt_idx_double;
     uint64_t up_strt;
     uint64_t down_strt;
+    uint64_t pup_strt;
+    uint64_t pdown_strt;
 
 public:
     void init(int x, int y, int w, int h, int rect_mh, int ne, int n_epw){
@@ -40,6 +42,8 @@ public:
         strt_idx_double = 0.0;
         up_strt = BUTTON_NOT_PUSHED;
         down_strt = BUTTON_NOT_PUSHED;
+        pup_strt = BUTTON_NOT_PUSHED;
+        pdown_strt = BUTTON_NOT_PUSHED;
     }
 
     void draw(){
@@ -60,6 +64,12 @@ public:
         if (!KeyDown.pressed()){
             down_strt = BUTTON_NOT_PUSHED;
         }
+        if (!KeyPageUp.pressed()){
+            pup_strt = BUTTON_NOT_PUSHED;
+        }
+        if (!KeyPageDown.pressed()){
+            pdown_strt = BUTTON_NOT_PUSHED;
+        }
         if (KeyUp.down() || (up_strt != BUTTON_NOT_PUSHED && tim() - up_strt >= BUTTON_LONG_PRESS_THRESHOLD)){
             strt_idx_double = std::max(0.0, strt_idx_double - 1.0);
             if (KeyUp.down()){
@@ -70,6 +80,18 @@ public:
             strt_idx_double = std::max(0.0, std::min((double)(n_elem - n_elem_per_window), strt_idx_double + 1.0));
             if (KeyDown.down()){
                 down_strt = tim();
+            }
+        }
+        if (KeyPageUp.down() || (pup_strt != BUTTON_NOT_PUSHED && tim() - pup_strt >= BUTTON_LONG_PRESS_THRESHOLD)){
+            strt_idx_double = std::max(0.0, strt_idx_double - n_elem_per_window);
+            if (KeyPageUp.down()){
+                pup_strt = tim();
+            }
+        }
+        if (KeyPageDown.down() || (pdown_strt != BUTTON_NOT_PUSHED && tim() - pdown_strt >= BUTTON_LONG_PRESS_THRESHOLD)){
+            strt_idx_double = std::max(0.0, std::min((double)(n_elem - n_elem_per_window), strt_idx_double + n_elem_per_window));
+            if (KeyPageDown.down()){
+                pdown_strt = tim();
             }
         }
     }
