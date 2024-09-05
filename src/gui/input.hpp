@@ -459,6 +459,8 @@ private:
     Button back_button;
     double strt_idx;
     bool failed;
+    uint64_t up_strt;
+    uint64_t down_strt;
 
 public:
     Import_game(const InitData& init) : IScene{ init } {
@@ -485,6 +487,8 @@ public:
             button.init(0, 0, IMPORT_GAME_BUTTON_WIDTH, IMPORT_GAME_BUTTON_HEIGHT, IMPORT_GAME_BUTTON_RADIUS, language.get("in_out", "import"), 15, getData().fonts.font, getData().colors.white, getData().colors.black);
             import_buttons.emplace_back(button);
         }
+        up_strt = BUTTON_NOT_PUSHED;
+        down_strt = BUTTON_NOT_PUSHED;
     }
 
     void update() override {
@@ -581,6 +585,24 @@ public:
             changeScene(U"Main_scene", SCENE_FADE_TIME);
         }
         strt_idx = std::max(0.0, std::min((double)games.size() - 1.0, strt_idx + Mouse::Wheel()));
+        if (!KeyUp.pressed()){
+            up_strt = BUTTON_NOT_PUSHED;
+        }
+        if (!KeyDown.pressed()){
+            down_strt = BUTTON_NOT_PUSHED;
+        }
+        if (KeyUp.down() || (up_strt != BUTTON_NOT_PUSHED && tim() - up_strt >= BUTTON_LONG_PRESS_THRESHOLD)){
+            strt_idx = std::max(0.0, strt_idx - 1.0);
+            if (KeyUp.down()){
+                up_strt = tim();
+            }
+        }
+        if (KeyDown.down() || (down_strt != BUTTON_NOT_PUSHED && tim() - down_strt >= BUTTON_LONG_PRESS_THRESHOLD)){
+            strt_idx = std::min((double)games.size() - 1.0, strt_idx + 1.0);
+            if (KeyDown.down()){
+                down_strt = tim();
+            }
+        }
     }
 
     void draw() const override {
