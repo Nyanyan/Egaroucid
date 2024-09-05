@@ -187,7 +187,7 @@
         },
         "convert": {
             "convert": "変換",
-            "vertical": "180度",
+            "rotate_180": "180度回転",
             "white_line": "ホワイトライン",
             "black_line": "ブラックライン"
         },

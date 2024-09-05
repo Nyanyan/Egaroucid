@@ -187,7 +187,7 @@
         },
         "convert": {
             "convert": "Convert",
-            "vertical": "Rotate 180",
+            "rotate_180": "Rotate 180",
             "white_line": "White Line",
             "black_line": "Black Line"
         },

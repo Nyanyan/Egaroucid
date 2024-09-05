@@ -187,7 +187,7 @@
         },
         "convert": {
             "convert": "转换视角",
-            "vertical": "旋转180度",
+            "rotate_180": "旋转180度",
             "white_line": "白棋视角",
             "black_line": "黑棋视角"
         },

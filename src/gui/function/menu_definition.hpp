@@ -157,7 +157,7 @@ Menu create_menu(Menu_elements* menu_elements, Resources *resources, Font font) 
     title.push(menu_e);
 
     menu_e.init_button(language.get("operation", "convert", "convert"), &menu_elements->dummy);
-    side_menu.init_button(language.get("operation", "convert", "vertical") + get_shortcut_key_info(U"convert_180"), &menu_elements->convert_180);
+    side_menu.init_button(language.get("operation", "convert", "rotate_180") + get_shortcut_key_info(U"convert_180"), &menu_elements->convert_180);
     menu_e.push(side_menu);
     side_menu.init_button(language.get("operation", "convert", "black_line") + get_shortcut_key_info(U"convert_blackline"), &menu_elements->convert_blackline);
     menu_e.push(side_menu);
