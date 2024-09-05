@@ -529,7 +529,8 @@ public:
                     }
                 }
                 rect.draw(getData().colors.green).drawFrame(1.0, getData().colors.white);
-                getData().fonts.font(games[i].date.substr(0, 10)).draw(15, IMPORT_GAME_SX + 10, sy + 1, getData().colors.white);
+                getData().fonts.font(games[i].date.substr(0, 10)).draw(15, IMPORT_GAME_SX + 10, sy + 2, getData().colors.white);
+                // player (black)
                 Rect black_player_rect;
                 black_player_rect.w = IMPORT_GAME_PLAYER_WIDTH;
                 black_player_rect.h = IMPORT_GAME_PLAYER_HEIGHT;
@@ -544,15 +545,34 @@ public:
                 else if (winner == IMPORT_GAME_WINNER_DRAW) {
                     black_player_rect.draw(getData().colors.chocolate);
                 }
-                getData().fonts.font(games[i].black_player).draw(15, black_player_rect.stretched(-1), getData().colors.white);
+                int upper_center_y = black_player_rect.y + black_player_rect.h / 2;
+                for (int font_size = 15; font_size >= 12; --font_size){
+                    if (getData().fonts.font(games[i].black_player).region(font_size, Vec2{0, 0}).w <= IMPORT_GAME_PLAYER_WIDTH - 2){
+                        getData().fonts.font(games[i].black_player).draw(font_size, Arg::rightCenter(black_player_rect.x + IMPORT_GAME_PLAYER_WIDTH - 1, upper_center_y), getData().colors.white);
+                        break;
+                    } else if (font_size == 12){
+                        String player = games[i].black_player;
+                        while (getData().fonts.font(player).region(font_size, Vec2{0, 0}).w > IMPORT_GAME_PLAYER_WIDTH - 2){
+                            for (int i = 0; i < 4; ++i){
+                                player.pop_back();
+                            }
+                            player += U"...";
+                        }
+                        getData().fonts.font(player).draw(font_size, Arg::rightCenter(black_player_rect.x + IMPORT_GAME_PLAYER_WIDTH - 1, upper_center_y), getData().colors.white);
+                    }
+                }
+                // score
+                String black_score = U"??";
+                String white_score = U"??";
                 if (games[i].black_score != GAME_DISCS_UNDEFINED && games[i].white_score != GAME_DISCS_UNDEFINED) {
-                    getData().fonts.font(games[i].black_score).draw(15, black_player_rect.x + IMPORT_GAME_PLAYER_WIDTH + 5, sy + 1, getData().colors.white);
-                    getData().fonts.font(U"-").draw(15, black_player_rect.x + IMPORT_GAME_PLAYER_WIDTH + 28, sy + 1, getData().colors.white);
-                    getData().fonts.font(games[i].white_score).draw(15, black_player_rect.x + IMPORT_GAME_PLAYER_WIDTH + 38, sy + 1, getData().colors.white);
+                    black_score = Format(games[i].black_score);
+                    white_score = Format(games[i].white_score);
                 }
-                else {
-                    getData().fonts.font(U"?? - ??").draw(15, black_player_rect.x + IMPORT_GAME_PLAYER_WIDTH + 5, sy + 1, getData().colors.white);
-                }
+                double hyphen_w = getData().fonts.font(U"-").region(15, Vec2{0, 0}).w;
+                getData().fonts.font(games[i].black_score).draw(15, Arg::rightCenter(black_player_rect.x + IMPORT_GAME_PLAYER_WIDTH + IMPORT_GAME_SCORE_WIDTH / 2 - hyphen_w / 2 - 1, upper_center_y), getData().colors.white);
+                getData().fonts.font(U"-").draw(15, Arg::center(black_player_rect.x + IMPORT_GAME_PLAYER_WIDTH + IMPORT_GAME_SCORE_WIDTH / 2, upper_center_y), getData().colors.white);
+                getData().fonts.font(games[i].white_score).draw(15, Arg::leftCenter(black_player_rect.x + IMPORT_GAME_PLAYER_WIDTH + IMPORT_GAME_SCORE_WIDTH / 2 + hyphen_w / 2 + 1, upper_center_y), getData().colors.white);
+                // player (white)
                 Rect white_player_rect;
                 white_player_rect.w = IMPORT_GAME_PLAYER_WIDTH;
                 white_player_rect.h = IMPORT_GAME_PLAYER_HEIGHT;
@@ -567,7 +587,21 @@ public:
                 else if (winner == IMPORT_GAME_WINNER_DRAW) {
                     white_player_rect.draw(getData().colors.chocolate);
                 }
-                getData().fonts.font(games[i].white_player).draw(15, white_player_rect.stretched(-1), getData().colors.white);
+                for (int font_size = 15; font_size >= 12; --font_size){
+                    if (getData().fonts.font(games[i].white_player).region(font_size, Vec2{0, 0}).w <= IMPORT_GAME_PLAYER_WIDTH - 2){
+                        getData().fonts.font(games[i].white_player).draw(font_size, Arg::leftCenter(white_player_rect.x + 1, upper_center_y), getData().colors.white);
+                        break;
+                    } else if (font_size == 12){
+                        String player = games[i].white_player;
+                        while (getData().fonts.font(player).region(font_size, Vec2{0, 0}).w > IMPORT_GAME_PLAYER_WIDTH - 2){
+                            for (int i = 0; i < 4; ++i){
+                                player.pop_back();
+                            }
+                            player += U"...";
+                        }
+                        getData().fonts.font(player).draw(font_size, Arg::leftCenter(white_player_rect.x + 1, upper_center_y), getData().colors.white);
+                    }
+                }
                 getData().fonts.font(games[i].memo).draw(12, IMPORT_GAME_SX + 10, black_player_rect.y + black_player_rect.h, getData().colors.white);
                 import_buttons[i].move(IMPORT_GAME_BUTTON_SX, sy + IMPORT_GAME_BUTTON_SY);
                 import_buttons[i].draw();
