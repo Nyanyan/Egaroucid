@@ -907,9 +907,11 @@ private:
 
     void menu_help() {
         if (getData().menu_elements.usage || shortcut_key == U"open_usage") {
+            shortcut_key = SHORTCUT_KEY_UNDEFINED;
             System::LaunchBrowser(U"https://www.egaroucid.nyanyan.dev/ja/usage/");
         }
         if (getData().menu_elements.website || shortcut_key == U"open_website") {
+            shortcut_key = SHORTCUT_KEY_UNDEFINED;
             if (language.get("lang_name") == U"日本語") {
                 System::LaunchBrowser(U"https://www.egaroucid.nyanyan.dev/ja/");
             }
@@ -918,13 +920,19 @@ private:
             }
         }
         if (getData().menu_elements.bug_report || shortcut_key == U"bug_report") {
+            shortcut_key = SHORTCUT_KEY_UNDEFINED;
             System::LaunchBrowser(U"https://docs.google.com/forms/d/e/1FAIpQLSd6ML1T1fc707luPEefBXuImMnlM9cQP8j-YHKiSyFoS-8rmQ/viewform?usp=sf_link");
         }
+        if (shortcut_key == U"auto_update_check") {
+            getData().menu_elements.auto_update_check = !getData().menu_elements.auto_update_check;
+        }
         if (getData().menu_elements.license_egaroucid || shortcut_key == U"license_egaroucid") {
+            shortcut_key = SHORTCUT_KEY_UNDEFINED;
             //System::LaunchBrowser(U"LICENSE");
             System::LaunchBrowser(U"https://github.com/Nyanyan/Egaroucid/blob/main/LICENSE");
         }
         if (getData().menu_elements.license_siv3d || shortcut_key == U"license_siv3d") {
+            shortcut_key = SHORTCUT_KEY_UNDEFINED;
             LicenseManager::ShowInBrowser();
         }
     }
