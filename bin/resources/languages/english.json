@@ -5,6 +5,7 @@
         "white": "White",
         "empty": "Empty",
         "ok": "OK",
+        "use_default": "Default",
         "back": "Back",
         "level": "Level",
         "othello_ai": "Othello AI",
@@ -233,8 +234,7 @@
         "download?": "Do you want to visit download page?",
         "download": "Download",
         "skip": "Skip",
-        "license_siv3d": "License of Siv3D",
-        "license_egaroucid": "License of Egaroucid"
+        "license": "Licenses"
     },
     "board_image": {
         "save_image": "Save Image",

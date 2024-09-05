@@ -5,6 +5,7 @@
         "white": "白",
         "empty": "空",
         "ok": "确定",
+        "use_default": "默认",
         "back": "返回",
         "level": "级别",
         "othello_ai": "AI",
@@ -233,8 +234,7 @@
         "download?": "您想访问下载页吗?",
         "download": "下载",
         "skip": "跳过",
-        "license_siv3d": "Siv3D许可协议",
-        "license_egaroucid": "Egaroucid许可协议"
+        "license": "许可协议"
     },
     "board_image": {
         "save_image": "保存图片",

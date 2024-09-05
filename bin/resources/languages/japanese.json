@@ -5,6 +5,7 @@
         "white": "白",
         "empty": "空",
         "ok": "OK",
+        "use_default": "初期設定",
         "back": "戻る",
         "level": "レベル",
         "othello_ai": "オセロAI",
@@ -233,8 +234,7 @@
         "download?": "ダウンロードページを開きますか？",
         "download": "ダウンロード",
         "skip": "スキップ",
-        "license_siv3d": "Siv3Dのライセンス",
-        "license_egaroucid": "Egaroucidのライセンス"
+        "license": "ライセンス"
     },
     "board_image": {
         "save_image": "画像を保存",
