@@ -70,7 +70,7 @@ public:
             rect.draw(getData().colors.green).drawFrame(1.0, getData().colors.white);
             String function_name = shortcut_keys.shortcut_keys[i].name;
             String function_description = shortcut_keys.get_shortcut_key_description(function_name);
-            getData().fonts.font(function_description).draw(13, Arg::leftCenter(rect.x + 10, sy + rect.h / 2), getData().colors.white);
+            getData().fonts.font(function_description).draw(12, Arg::leftCenter(rect.x + 10, sy + rect.h / 2), getData().colors.white);
             String shortcut_key_str;
             if (changing_idx != i){
                 shortcut_key_str = shortcut_keys.get_shortcut_key_str(function_name);
