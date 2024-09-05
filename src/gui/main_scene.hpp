@@ -768,18 +768,18 @@ private:
             changeScene(U"Import_game", SCENE_FADE_TIME);
             return;
         }
-        if (getData().menu_elements.copy_transcript || shortcut_key == U"output_transcript") {
-            copy_transcript();
-        }
-        if (getData().menu_elements.copy_board) {
-            copy_board();
-        }
-        if (getData().menu_elements.input_bitboard) {
+        if (getData().menu_elements.input_bitboard || shortcut_key == U"input_bitboard") {
             changing_scene = true;
             stop_calculating();
             resume_calculating();
             changeScene(U"Import_bitboard", SCENE_FADE_TIME);
             return;
+        }
+        if (getData().menu_elements.copy_transcript || shortcut_key == U"output_transcript") {
+            copy_transcript();
+        }
+        if (getData().menu_elements.copy_board) {
+            copy_board();
         }
         if (getData().menu_elements.save_game) {
             changing_scene = true;
