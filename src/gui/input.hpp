@@ -455,6 +455,7 @@ public:
 class Import_game : public App::Scene {
 private:
     std::vector<Game_abstract> games;
+    std::vector<Button> import_buttons;
     Button back_button;
     double strt_idx;
     bool failed;
@@ -479,6 +480,11 @@ public:
             }
         }
         reverse(games.begin(), games.end());
+        for (int i = 0; i < (int)games.size(); ++i){
+            Button button;
+            button.init(0, 0, IMPORT_GAME_BUTTON_WIDTH, IMPORT_GAME_BUTTON_HEIGHT, IMPORT_GAME_BUTTON_RADIUS, language.get("in_out", "import"), 15, getData().fonts.font, getData().colors.white, getData().colors.black);
+            import_buttons.emplace_back(button);
+        }
     }
 
     void update() override {
@@ -494,7 +500,6 @@ public:
             getData().fonts.font(language.get("in_out", "no_game_available")).draw(20, Arg::center(X_CENTER, Y_CENTER), getData().colors.white);
         }
         else {
-            std::vector<std::pair<int, Button>> buttons;
             int sy = IMPORT_GAME_SY;
             if (strt_idx_int > 0) {
                 getData().fonts.font(U"︙").draw(15, Arg::bottomCenter = Vec2{ X_CENTER, sy }, getData().colors.white);
@@ -559,19 +564,15 @@ public:
                 }
                 getData().fonts.font(games[i].white_player).draw(15, white_player_rect.stretched(-1), getData().colors.white);
                 getData().fonts.font(games[i].memo).draw(12, IMPORT_GAME_SX + 10, black_player_rect.y + black_player_rect.h, getData().colors.white);
-                Button button;
-                button.init(IMPORT_GAME_BUTTON_SX, sy + IMPORT_GAME_BUTTON_SY, IMPORT_GAME_BUTTON_WIDTH, IMPORT_GAME_BUTTON_HEIGHT, IMPORT_GAME_BUTTON_RADIUS, language.get("in_out", "import"), 15, getData().fonts.font, getData().colors.white, getData().colors.black);
-                button.draw();
-                buttons.emplace_back(std::make_pair(i, button));
+                import_buttons[i].move(IMPORT_GAME_BUTTON_SX, sy + IMPORT_GAME_BUTTON_SY);
+                import_buttons[i].draw();
+                if (import_buttons[i].clicked()){
+                    import_game(i);
+                }
                 sy += IMPORT_GAME_HEIGHT;
             }
-            if (strt_idx_int + IMPORT_GAME_N_GAMES_ON_WINDOW < (int)games.size() - 1) {
+            if (strt_idx_int + IMPORT_GAME_N_GAMES_ON_WINDOW < (int)games.size()) {
                 getData().fonts.font(U"︙").draw(15, Arg::bottomCenter = Vec2{ X_CENTER, 415}, getData().colors.white);
-            }
-            for (std::pair<int, Button> button_pair : buttons) {
-                if (button_pair.second.clicked()) {
-                    import_game(button_pair.first);
-                }
             }
         }
         back_button.draw();
