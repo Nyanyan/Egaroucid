@@ -54,6 +54,7 @@ void Main() {
     Window::SetStyle(WindowStyle::Sizable);
     Scene::SetResizeMode(ResizeMode::Virtual);
     Window::SetTitle(U"Egaroucid {}"_fmt(EGAROUCID_VERSION));
+    // inactivate special keys of Siv3D
     System::SetTerminationTriggers(UserAction::NoAction);
     ScreenCapture::SetShortcutKeys({KeyPrintScreen});
     Window::SetToggleFullscreenEnabled(false);
