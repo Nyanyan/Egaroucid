@@ -42,23 +42,19 @@ public:
             delete_buttons.emplace_back(delete_button);
         }
         assign_button.init(0, 0, 80, 22, 7, language.get("settings", "shortcut_keys", "assign"), 12, getData().fonts.font, getData().colors.white, getData().colors.black);
-        scroll_manager.init(780, 86, 10, 300, 20, (int)shortcut_keys.shortcut_keys.size(), SHORTCUT_KEY_SETTINGS_N_ON_WINDOW);
+        scroll_manager.init(780, 78, 10, 300, 20, (int)shortcut_keys.shortcut_keys.size(), SHORTCUT_KEY_SETTINGS_N_ON_WINDOW);
     }
 
     void update() override {
         if (System::GetUserActions() & UserAction::CloseButtonClicked) {
             changeScene(U"Close", SCENE_FADE_TIME);
         }
-        getData().fonts.font(language.get("settings", "shortcut_keys", "settings")).draw(25, Arg::topCenter(X_CENTER, 6), getData().colors.white);
-        if (changing_idx != SHORTCUT_KEY_SETTINGS_IDX_NOT_CHANGING){
-            getData().fonts.font(message).draw(15, Arg::topCenter(X_CENTER, 39), getData().colors.white);
-        }
-        int sy = 80;
+        getData().fonts.font(language.get("settings", "shortcut_keys", "settings")).draw(25, Arg::topCenter(X_CENTER, 10), getData().colors.white);
+        int sy = 78;
         int strt_idx_int = scroll_manager.get_strt_idx_int();
         if (strt_idx_int > 0) {
-            getData().fonts.font(U"︙").draw(15, Arg::bottomCenter = Vec2{ X_CENTER, sy }, getData().colors.white);
+            getData().fonts.font(U"︙").draw(15, Arg::bottomCenter(X_CENTER, sy - 6), getData().colors.white);
         }
-        sy += 6;
         bool reset_changing_idx = false;
         for (int i = strt_idx_int; i < std::min((int)shortcut_keys.shortcut_keys.size(), strt_idx_int + SHORTCUT_KEY_SETTINGS_N_ON_WINDOW); ++i) {
             Rect rect;
@@ -121,7 +117,7 @@ public:
             sy += rect.h;
         }
         if (strt_idx_int + SHORTCUT_KEY_SETTINGS_N_ON_WINDOW < (int)shortcut_keys.shortcut_keys.size()) {
-            getData().fonts.font(U"︙").draw(15, Arg::topCenter = Vec2{X_CENTER, 392}, getData().colors.white);
+            getData().fonts.font(U"︙").draw(15, Arg::topCenter(X_CENTER, sy + 6), getData().colors.white);
         }
         if (changing_idx == SHORTCUT_KEY_SETTINGS_IDX_NOT_CHANGING){
             ok_button.draw();
@@ -133,6 +129,9 @@ public:
             if (default_button.clicked()) {
                 shortcut_keys.set_default();
             }
+        }
+        if (changing_idx != SHORTCUT_KEY_SETTINGS_IDX_NOT_CHANGING){
+            getData().fonts.font(message).draw(15, Arg::topCenter(X_CENTER, 440), getData().colors.white);
         }
         if (changing_idx == SHORTCUT_KEY_SETTINGS_IDX_NOT_CHANGING){
             scroll_manager.draw();
