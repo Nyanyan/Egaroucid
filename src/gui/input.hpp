@@ -584,25 +584,7 @@ public:
             getData().graph_resources.need_init = false;
             changeScene(U"Main_scene", SCENE_FADE_TIME);
         }
-        strt_idx = std::max(std::min((double)(games.size() - IMPORT_GAME_N_GAMES_ON_WINDOW), strt_idx + Mouse::Wheel()), 0.0);
-        if (!KeyUp.pressed()){
-            up_strt = BUTTON_NOT_PUSHED;
-        }
-        if (!KeyDown.pressed()){
-            down_strt = BUTTON_NOT_PUSHED;
-        }
-        if (KeyUp.down() || (up_strt != BUTTON_NOT_PUSHED && tim() - up_strt >= BUTTON_LONG_PRESS_THRESHOLD)){
-            strt_idx = std::max(0.0, strt_idx - 1.0);
-            if (KeyUp.down()){
-                up_strt = tim();
-            }
-        }
-        if (KeyDown.down() || (down_strt != BUTTON_NOT_PUSHED && tim() - down_strt >= BUTTON_LONG_PRESS_THRESHOLD)){
-            strt_idx = std::max(std::min((double)(games.size() - IMPORT_GAME_N_GAMES_ON_WINDOW), strt_idx + 1.0), 0.0);
-            if (KeyDown.down()){
-                down_strt = tim();
-            }
-        }
+        scroll();
     }
 
     void draw() const override {
@@ -692,6 +674,28 @@ private:
         getData().graph_resources.need_init = false;
         getData().history_elem = getData().graph_resources.nodes[GRAPH_MODE_NORMAL].back();
         changeScene(U"Main_scene", SCENE_FADE_TIME);
+    }
+
+    void scroll(){
+        strt_idx = std::max(std::min((double)(games.size() - IMPORT_GAME_N_GAMES_ON_WINDOW), strt_idx + Mouse::Wheel()), 0.0);
+        if (!KeyUp.pressed()){
+            up_strt = BUTTON_NOT_PUSHED;
+        }
+        if (!KeyDown.pressed()){
+            down_strt = BUTTON_NOT_PUSHED;
+        }
+        if (KeyUp.down() || (up_strt != BUTTON_NOT_PUSHED && tim() - up_strt >= BUTTON_LONG_PRESS_THRESHOLD)){
+            strt_idx = std::max(0.0, strt_idx - 1.0);
+            if (KeyUp.down()){
+                up_strt = tim();
+            }
+        }
+        if (KeyDown.down() || (down_strt != BUTTON_NOT_PUSHED && tim() - down_strt >= BUTTON_LONG_PRESS_THRESHOLD)){
+            strt_idx = std::max(std::min((double)(games.size() - IMPORT_GAME_N_GAMES_ON_WINDOW), strt_idx + 1.0), 0.0);
+            if (KeyDown.down()){
+                down_strt = tim();
+            }
+        }
     }
 };
 
