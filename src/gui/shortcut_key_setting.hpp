@@ -20,7 +20,7 @@ class Shortcut_key_setting : public App::Scene {
 private:
     Button default_button;
     Button ok_button;
-    int strt_idx;
+    double strt_idx;
     int changing_idx;
     std::vector<String> changed_keys;
     std::vector<Button> change_buttons;
@@ -58,12 +58,13 @@ public:
             getData().fonts.font(message).draw(15, Arg::topCenter(X_CENTER, 39), getData().colors.white);
         }
         int sy = 80;
-        if (strt_idx > 0) {
+        int strt_idx_int = (int)strt_idx;
+        if (strt_idx_int > 0) {
             getData().fonts.font(U"︙").draw(15, Arg::bottomCenter = Vec2{ X_CENTER, sy }, getData().colors.white);
         }
         sy += 6;
         bool reset_changing_idx = false;
-        for (int i = strt_idx; i < std::min((int)shortcut_keys.shortcut_keys.size(), strt_idx + SHORTCUT_KEY_SETTINGS_N_ON_WINDOW); ++i) {
+        for (int i = strt_idx_int; i < std::min((int)shortcut_keys.shortcut_keys.size(), strt_idx_int + SHORTCUT_KEY_SETTINGS_N_ON_WINDOW); ++i) {
             Rect rect;
             rect.y = sy;
             rect.x = 30;
@@ -123,7 +124,7 @@ public:
             }
             sy += rect.h;
         }
-        if (strt_idx + SHORTCUT_KEY_SETTINGS_N_ON_WINDOW < (int)shortcut_keys.shortcut_keys.size()) {
+        if (strt_idx_int + SHORTCUT_KEY_SETTINGS_N_ON_WINDOW < (int)shortcut_keys.shortcut_keys.size()) {
             getData().fonts.font(U"︙").draw(15, Arg::topCenter = Vec2{X_CENTER, 392}, getData().colors.white);
         }
         if (changing_idx == SHORTCUT_KEY_SETTINGS_IDX_NOT_CHANGING){
@@ -138,7 +139,7 @@ public:
             }
         }
         if (changing_idx == SHORTCUT_KEY_SETTINGS_IDX_NOT_CHANGING){
-            strt_idx = std::max(0, std::min((int)shortcut_keys.shortcut_keys.size() - 1, strt_idx + (int)Mouse::Wheel()));
+            strt_idx = std::max(0.0, std::min((double)(shortcut_keys.shortcut_keys.size() - 1), strt_idx + Mouse::Wheel()));
             if (!KeyUp.pressed()){
                 up_strt = BUTTON_NOT_PUSHED;
             }
@@ -146,13 +147,13 @@ public:
                 down_strt = BUTTON_NOT_PUSHED;
             }
             if (KeyUp.down() || (up_strt != BUTTON_NOT_PUSHED && tim() - up_strt >= BUTTON_LONG_PRESS_THRESHOLD)){
-                strt_idx = std::max(0, strt_idx - 1);
+                strt_idx = std::max(0.0, strt_idx - 1.0);
                 if (KeyUp.down()){
                     up_strt = tim();
                 }
             }
             if (KeyDown.down() || (down_strt != BUTTON_NOT_PUSHED && tim() - down_strt >= BUTTON_LONG_PRESS_THRESHOLD)){
-                strt_idx = std::min((int)shortcut_keys.shortcut_keys.size() - 1, strt_idx + 1);
+                strt_idx = std::min((double)shortcut_keys.shortcut_keys.size() - 1.0, strt_idx + 1.0);
                 if (KeyDown.down()){
                     down_strt = tim();
                 }
