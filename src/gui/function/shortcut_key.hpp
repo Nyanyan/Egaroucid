@@ -53,10 +53,14 @@ std::vector<Shortcut_key_elem> shortcut_keys_default = {
     {U"show_last_move",         {},                     {{"display", "display"}, {"display", "disc", "display_on_disc"}, {"display", "disc", "last_move"}}},
     {U"show_stable_discs",      {},                     {{"display", "display"}, {"display", "disc", "display_on_disc"}, {"display", "disc", "stable"}}},
     {U"show_play_ordering",     {},                     {{"display", "display"}, {"display", "disc", "display_on_disc"}, {"display", "disc", "play_ordering"}}},
-    // others
+    // info area
+    {U"show_opening_name",      {},                     {{"display", "display"}, {"display", "info", "display_on_info_area"}, {"display", "info", "opening_name"}}},
+    {U"show_principal_variation",   {},                 {{"display", "display"}, {"display", "info", "display_on_info_area"}, {"display", "info", "principal_variation"}}},
+    // graph
     {U"show_graph",             {},                     {{"display", "display"}, {"display", "graph", "graph"}}},
     {U"show_graph_value",       {U"D"},                 {{"display", "display"}, {"display", "graph", "graph"}, {"display", "graph", "value"}}},
     {U"show_graph_sum_of_loss", {U"S"},                 {{"display", "display"}, {"display", "graph", "graph"}, {"display", "graph", "sum_of_loss"}}},
+    // others
     {U"show_laser_pointer",     {U"P"},                 {{"display", "display"}, {"display", "laser_pointer"}}},
     {U"show_log",               {},                     {{"display", "display"}, {"display", "log"}}},
     {U"change_color_type",      {},                     {{"display", "display"}, {"display", "change_color_type"}}},

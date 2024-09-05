@@ -494,6 +494,7 @@ private:
     }
 
     void menu_display() {
+        // on cells
         if (shortcut_key == U"show_legal") {
             getData().menu_elements.show_legal = !getData().menu_elements.show_legal;
         }
@@ -512,6 +513,7 @@ private:
         if (shortcut_key == U"show_book_accuracy") {
             getData().menu_elements.show_book_accuracy = !getData().menu_elements.show_book_accuracy;
         }
+        // on discs
         if (shortcut_key == U"show_last_move") {
             getData().menu_elements.show_last_move = !getData().menu_elements.show_last_move;
         }
@@ -521,6 +523,14 @@ private:
         if (shortcut_key == U"show_play_ordering") {
             getData().menu_elements.show_play_ordering = !getData().menu_elements.show_play_ordering;
         }
+        // info area
+        if (shortcut_key == U"show_opening_name") {
+            getData().menu_elements.show_opening_name = !getData().menu_elements.show_opening_name;
+        }
+        if (shortcut_key == U"show_principal_variation") {
+            getData().menu_elements.show_principal_variation = !getData().menu_elements.show_principal_variation;
+        }
+        // graph
         if (shortcut_key == U"show_graph") {
             getData().menu_elements.show_graph = !getData().menu_elements.show_graph;
         }
@@ -532,6 +542,7 @@ private:
             getData().menu_elements.show_graph_value = false;
             getData().menu_elements.show_graph_sum_of_loss = true;
         }
+        // others
         if (shortcut_key == U"show_laser_pointer") {
             getData().menu_elements.show_laser_pointer = !getData().menu_elements.show_laser_pointer;
         }
