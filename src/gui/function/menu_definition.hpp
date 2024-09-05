@@ -113,9 +113,9 @@ Menu create_menu(Menu_elements* menu_elements, Resources *resources, Font font) 
     title.push(menu_e);
 
     menu_e.init_button(language.get("display", "info", "display_on_info_area"), &menu_elements->dummy);
-    side_menu.init_check(language.get("display", "info", "opening_name"), &menu_elements->show_opening_name, menu_elements->show_opening_name);
+    side_menu.init_check(language.get("display", "info", "opening_name") + get_shortcut_key_info(U"show_opening_name"), &menu_elements->show_opening_name, menu_elements->show_opening_name);
     menu_e.push(side_menu);
-    side_menu.init_check(language.get("display", "info", "principal_variation"), &menu_elements->show_principal_variation, menu_elements->show_principal_variation);
+    side_menu.init_check(language.get("display", "info", "principal_variation") + get_shortcut_key_info(U"show_principal_variation"), &menu_elements->show_principal_variation, menu_elements->show_principal_variation);
     menu_e.push(side_menu);
     title.push(menu_e);
 
