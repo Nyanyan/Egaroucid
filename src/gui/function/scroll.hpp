@@ -13,6 +13,7 @@
 
 class Scroll_manager{
 private:
+    Rect rect;
     int sx;
     int sy;
     int width;
@@ -27,6 +28,9 @@ private:
     uint64_t down_strt;
     uint64_t pup_strt;
     uint64_t pdown_strt;
+    bool dragged;
+    int dragged_y_offset;
+
 
 public:
     void init(int x, int y, int w, int h, int rect_mh, int ne, int n_epw){
@@ -44,6 +48,10 @@ public:
         down_strt = BUTTON_NOT_PUSHED;
         pup_strt = BUTTON_NOT_PUSHED;
         pdown_strt = BUTTON_NOT_PUSHED;
+        dragged = false;
+        rect.x = sx;
+        rect.w = width;
+        rect.h = rect_height;
     }
 
     void draw(){
@@ -52,8 +60,11 @@ public:
         int rect_y = sy + round(percent * (double)(height - rect_height));
         Rect frame_rect(sx, sy, width, height);
         frame_rect.drawFrame(1.0, Palette::White);
-        Rect rect(sx, rect_y, width, rect_height);
+        rect.y = rect_y;
         rect.draw(Palette::White);
+        if (dragged){
+            Cursor::RequestStyle(CursorStyle::ResizeUpDown);
+        }
     }
 
     void update(){
@@ -94,9 +105,24 @@ public:
                 pdown_strt = tim();
             }
         }
+        if (rect.leftClicked()){
+            dragged = true;
+            dragged_y_offset = Cursor::Pos().y - rect.y;
+            std::cerr << dragged_y_offset << std::endl;
+        } else if (!MouseL.pressed()){
+            dragged = false;
+        }
+        if (dragged){
+            double n_percent = std::max(0.0, std::min(1.0, (double)(Cursor::Pos().y - dragged_y_offset - sy) / (height - rect_height)));
+            strt_idx_double = n_percent * (double)max_strt_idx;
+        }
     }
 
     int get_strt_idx_int() const{
         return (int)strt_idx_double;
+    }
+
+    bool is_dragged() const{
+        return dragged;
     }
 };
