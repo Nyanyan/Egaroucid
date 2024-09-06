@@ -423,14 +423,14 @@ void init_directories(Directories* directories) {
     directories->eval_mo_end_file = "resources/eval_move_ordering_end.egev";
 }
 
-int init_resources(Resources* resources, Settings* settings, Fonts *fonts, bool *stop_loading) {
+int init_resources_silent_load(Resources* resources, Settings* settings, Fonts *fonts, bool *stop_loading) {
     // language json
     if (!language_name.init(resources->language_names)) {
-        return ERR_LANG_JSON_NOT_LOADED;
+        return ERR_SILENT_LOAD_LANG_JSON_NOT_LOADED;
     }
 
     if (*stop_loading){
-        return ERR_TERMINATED;
+        return ERR_SILENT_LOAD_TERMINATED;
     }
 
     // language
@@ -440,76 +440,31 @@ int init_resources(Resources* resources, Settings* settings, Fonts *fonts, bool 
         settings->lang_name = DEFAULT_LANGUAGE;
         lang_file = "resources/languages/" + settings->lang_name + ".json";
         if (!language.init(lang_file))
-            return ERR_LANG_NOT_LOADED;
+            return ERR_SILENT_LOAD_LANG_NOT_LOADED;
     }
 
     if (*stop_loading){
-        return ERR_TERMINATED;
+        return ERR_SILENT_LOAD_TERMINATED;
     }
 
     fonts->init(settings->lang_name);
 
     if (*stop_loading){
-        return ERR_TERMINATED;
+        return ERR_SILENT_LOAD_TERMINATED;
     }
 
     // textures
     Texture icon(U"resources/img/icon.png", TextureDesc::Mipped);
     Texture logo(U"resources/img/logo.png", TextureDesc::Mipped);
-    Texture checkbox(U"resources/img/checked.png", TextureDesc::Mipped);
-    Texture unchecked(U"resources/img/unchecked.png", TextureDesc::Mipped);
-    Texture laser_pointer(U"resources/img/laser_pointer.png", TextureDesc::Mipped);
-
-    if (*stop_loading){
-        return ERR_TERMINATED;
-    }
-
-    std::vector<Texture> lang_img;
-    for (int i = 0; i < (int)resources->language_names.size() && !(*stop_loading); ++i) {
-        Texture limg(U"resources/languages/" +  Unicode::Widen(resources->language_names[i]) + U".png", TextureDesc::Mipped);
-        if (limg.isEmpty()) {
-            return ERR_TEXTURE_NOT_LOADED;
-        }
-        lang_img.emplace_back(limg);
-    }
-
-    if (*stop_loading){
-        return ERR_TERMINATED;
-    }
-
-    if (icon.isEmpty() || logo.isEmpty() || checkbox.isEmpty() || unchecked.isEmpty()) {
-        return ERR_TEXTURE_NOT_LOADED;
+    if (icon.isEmpty() || logo.isEmpty()) {
+        return ERR_SILENT_LOAD_TEXTURE_NOT_LOADED;
     }
     resources->icon = icon;
     resources->logo = logo;
-    resources->checkbox = checkbox;
-    resources->unchecked = unchecked;
-    resources->laser_pointer = laser_pointer;
-    resources->lang_img = lang_img;
-
-    // opening
-    if (!opening_init(settings->lang_name)) {
-        std::cerr << "opening file not found. use alternative opening file" << std::endl;
-        if (!opening_init(DEFAULT_OPENING_LANG_NAME))
-            return ERR_OPENING_NOT_LOADED;
-    }
 
     if (*stop_loading){
-        return ERR_TERMINATED;
+        return ERR_SILENT_LOAD_TERMINATED;
     }
-
-    // license
-    TextReader reader{U"LICENSE"};
-    if (not reader) {
-        return ERR_LICENSE_FILE_NOT_LOADED;
-    }
-    String copyright = Unicode::Widen("(C) " + (std::string)EGAROUCID_DATE + " " + (std::string)EGAROUCID_AUTHOR);
-    String license = reader.readAll();
-    LicenseManager::AddLicense({
-        .title = U"Egaroucid",
-        .copyright = copyright,
-        .text = license
-    });
 
     return ERR_OK;
 
@@ -518,7 +473,7 @@ int init_resources(Resources* resources, Settings* settings, Fonts *fonts, bool 
 int silent_load(Directories* directories, Resources* resources, Settings* settings, Fonts *fonts, bool *stop_loading) {
     init_directories(directories);
     init_settings(directories, resources, settings);
-    return init_resources(resources, settings, fonts, stop_loading);
+    return init_resources_silent_load(resources, settings, fonts, stop_loading);
 }
 
 class Silent_load : public App::Scene {

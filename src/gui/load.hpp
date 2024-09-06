@@ -21,6 +21,87 @@ void init_shortcut_keys(const Directories* directories){
     shortcut_keys.init(file);
 }
 
+int check_update(const Directories* directories, String *new_version) {
+    const FilePath version_save_path = U"{}version.txt"_fmt(Unicode::Widen(directories->appdata_dir));
+    AsyncHTTPTask task = SimpleHTTP::SaveAsync(VERSION_URL, version_save_path);
+    uint64_t strt = tim();
+    while (tim() - strt < 1000){ // timeout 1000 ms
+        if (task.isReady()){
+            if (task.getResponse().isOK()){
+                TextReader reader(version_save_path);
+                if (reader) {
+                    reader.readLine(*new_version);
+                    if (EGAROUCID_NUM_VERSION != *new_version) { // new version found
+                        return UPDATE_CHECK_UPDATE_FOUND;
+                    }
+                }
+            }
+        }
+    }
+    if (task.getStatus() == HTTPAsyncStatus::Downloading){ // cancel task
+        task.cancel();
+    }
+    return UPDATE_CHECK_ALREADY_UPDATED;
+}
+
+int init_resources_load(Resources* resources, Settings* settings, bool *stop_loading) {
+    // texture
+    Texture checkbox(U"resources/img/checked.png", TextureDesc::Mipped);
+    Texture unchecked(U"resources/img/unchecked.png", TextureDesc::Mipped);
+    Texture laser_pointer(U"resources/img/laser_pointer.png", TextureDesc::Mipped);
+    if (checkbox.isEmpty() || unchecked.isEmpty() || laser_pointer.isEmpty()) {
+        return ERR_LOAD_TEXTURE_NOT_LOADED;
+    }
+    resources->checkbox = checkbox;
+    resources->unchecked = unchecked;
+    resources->laser_pointer = laser_pointer;
+
+    if (*stop_loading){
+        return ERR_LOAD_TERMINATED;
+    }
+
+    // language image
+    std::vector<Texture> lang_img;
+    for (int i = 0; i < (int)resources->language_names.size() && !(*stop_loading); ++i) {
+        Texture limg(U"resources/languages/" +  Unicode::Widen(resources->language_names[i]) + U".png", TextureDesc::Mipped);
+        if (limg.isEmpty()) {
+            return ERR_LOAD_TEXTURE_NOT_LOADED;
+        }
+        lang_img.emplace_back(limg);
+    }
+    resources->lang_img = lang_img;
+
+    if (*stop_loading){
+        return ERR_LOAD_TERMINATED;
+    }
+
+    // opening
+    if (!opening_init(settings->lang_name)) {
+        std::cerr << "opening file not found. use alternative opening file" << std::endl;
+        if (!opening_init(DEFAULT_OPENING_LANG_NAME))
+            return ERR_LOAD_OPENING_NOT_LOADED;
+    }
+
+    if (*stop_loading){
+        return ERR_LOAD_TERMINATED;
+    }
+
+    // license
+    TextReader reader{U"LICENSE"};
+    if (not reader) {
+        return ERR_LOAD_LICENSE_FILE_NOT_LOADED;
+    }
+    String copyright = Unicode::Widen("(C) " + (std::string)EGAROUCID_DATE + " " + (std::string)EGAROUCID_AUTHOR);
+    String license = reader.readAll();
+    LicenseManager::AddLicense({
+        .title = U"Egaroucid",
+        .copyright = copyright,
+        .text = license
+    });
+
+    return ERR_OK;
+}
+
 int init_ai(Settings* settings, const Directories* directories, bool *stop_loading) {
     thread_pool.resize(settings->n_threads - 1);
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
@@ -54,10 +135,10 @@ int init_ai(Settings* settings, const Directories* directories, bool *stop_loadi
     #endif
     stability_init();
     if (!evaluate_init(directories->eval_file, directories->eval_mo_end_file, true)) {
-        return ERR_EVAL_FILE_NOT_IMPORTED;
+        return ERR_LOAD_EVAL_FILE_NOT_IMPORTED;
     }
     if (!book_init(settings->book_file, true, stop_loading)) {
-        return ERR_BOOK_FILE_NOT_IMPORTED;
+        return ERR_LOAD_BOOK_FILE_NOT_IMPORTED;
     }
     std::string ext = get_extension(settings->book_file);
     if (ext == "egbk"){
@@ -70,36 +151,14 @@ int init_ai(Settings* settings, const Directories* directories, bool *stop_loadi
     return ERR_OK;
 }
 
-int check_update(const Directories* directories, String *new_version) {
-    const FilePath version_save_path = U"{}version.txt"_fmt(Unicode::Widen(directories->appdata_dir));
-    AsyncHTTPTask task = SimpleHTTP::SaveAsync(VERSION_URL, version_save_path);
-    uint64_t strt = tim();
-    while (tim() - strt < 1000){ // timeout 1000 ms
-        if (task.isReady()){
-            if (task.getResponse().isOK()){
-                TextReader reader(version_save_path);
-                if (reader) {
-                    reader.readLine(*new_version);
-                    if (EGAROUCID_NUM_VERSION != *new_version) { // new version found
-                        return UPDATE_CHECK_UPDATE_FOUND;
-                    }
-                }
-            }
-        }
-    }
-    if (task.getStatus() == HTTPAsyncStatus::Downloading){ // cancel task
-        task.cancel();
-    }
-    return UPDATE_CHECK_ALREADY_UPDATED;
-}
-
 int load_app(Directories* directories, Resources* resources, Settings* settings, bool* update_found, String *new_version, bool *stop_loading) {
-    init_shortcut_keys(directories);
     if (settings->auto_update_check) {
         if (check_update(directories, new_version) == UPDATE_CHECK_UPDATE_FOUND) {
             *update_found = true;
         }
     }
+    init_shortcut_keys(directories);
+    init_resources_load(resources, settings, stop_loading);
     return init_ai(settings, directories, stop_loading);
 }
 
@@ -178,7 +237,7 @@ public:
                     }
                     else {
                         load_failed = true;
-                        if (load_code == ERR_BOOK_FILE_NOT_IMPORTED) {
+                        if (load_code == ERR_LOAD_BOOK_FILE_NOT_IMPORTED) {
                             book_failed = true;
                         }
                     }
