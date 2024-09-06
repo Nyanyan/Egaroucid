@@ -508,7 +508,6 @@ public:
         if (loading){
             if (silent_load_future.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
                 load_code = silent_load_future.get();
-                std::cerr << "load code " << load_code << std::endl;
                 loaded = load_code == ERR_OK;
                 loading = false;
             }

@@ -81,8 +81,10 @@ int init_resources_load(Resources* resources, Settings* settings, bool *stop_loa
     std::cerr << "loading openings" << std::endl;
     if (!opening_init(settings->lang_name)) {
         std::cerr << "opening file not found. use alternative opening file" << std::endl;
-        if (!opening_init(DEFAULT_OPENING_LANG_NAME))
+        if (!opening_init(DEFAULT_OPENING_LANG_NAME)){
+            std::cerr << "opening file not found" << std::endl;
             return ERR_LOAD_OPENING_NOT_LOADED;
+        }
     }
 
     if (*stop_loading){
@@ -162,8 +164,11 @@ int load_app(Directories* directories, Resources* resources, Settings* settings,
         }
     }
     init_shortcut_keys(directories);
-    init_resources_load(resources, settings, stop_loading);
-    return init_ai(settings, directories, stop_loading);
+    int code = init_resources_load(resources, settings, stop_loading);
+    if (code == ERR_OK){
+        code = init_ai(settings, directories, stop_loading);
+    }
+    return code;
 }
 
 
@@ -171,7 +176,7 @@ int load_app(Directories* directories, Resources* resources, Settings* settings,
 class Load : public App::Scene {
 private:
     bool load_failed;
-    bool book_failed;
+    int load_code;
     String tips;
     bool update_found;
     std::future<int> load_future;
@@ -187,7 +192,6 @@ public:
         update_button.init(GO_BACK_BUTTON_GO_SX, GO_BACK_BUTTON_SY, GO_BACK_BUTTON_WIDTH, GO_BACK_BUTTON_HEIGHT, GO_BACK_BUTTON_RADIUS, language.get("help", "download"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
         book_ignore_button.init(BACK_BUTTON_SX, BACK_BUTTON_SY, BACK_BUTTON_WIDTH, BACK_BUTTON_HEIGHT, BACK_BUTTON_RADIUS, language.get("loading", "launch"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
         load_failed = false;
-        book_failed = false;
         tips = language.get_random("tips", "tips");
         update_found = false;
         stop_loading = false;
@@ -234,7 +238,7 @@ public:
             getData().resources.logo.scaled((double)icon_width * 0.8 / getData().resources.logo.width()).draw(RIGHT_LEFT, Y_CENTER - 40);
             if (load_future.valid()) {
                 if (load_future.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
-                    int load_code = load_future.get();
+                    load_code = load_future.get();
                     if (load_code == ERR_OK) {
                         std::cerr << "loaded" << std::endl;
                         getData().menu_elements.init(&getData().settings, &getData().resources);
@@ -243,14 +247,11 @@ public:
                     }
                     else {
                         load_failed = true;
-                        if (load_code == ERR_LOAD_BOOK_FILE_NOT_IMPORTED) {
-                            book_failed = true;
-                        }
                     }
                 }
             }
             if (load_failed) {
-                if (book_failed) {
+                if (load_code == ERR_LOAD_BOOK_FILE_NOT_IMPORTED) {
                     getData().fonts.font(language.get("loading", "book_failed")).draw(20, RIGHT_LEFT, Y_CENTER + 50, getData().colors.white);
                     book_ignore_button.draw();
                     if (book_ignore_button.clicked()) {
@@ -261,7 +262,8 @@ public:
                     }
                 }
                 else {
-                    getData().fonts.font(language.get("loading", "load_failed")).draw(20, RIGHT_LEFT, Y_CENTER + 50, getData().colors.white);
+                    String err_str = language.get("loading", "load_failed") + U"\nERROR CODE: " + Format(load_code);
+                    getData().fonts.font(err_str).draw(20, RIGHT_LEFT, Y_CENTER + 50, getData().colors.white);
                     if (System::GetUserActions() & UserAction::CloseButtonClicked) {
                         System::Exit();
                     }
