@@ -19,12 +19,15 @@ uint64_t perft(Board *board, int depth, bool passed){
     uint64_t legal = board->get_legal();
     if (legal == 0){
         if (passed){
-            return 0ULL;
+            return 1ULL; // game over
         }
         board->pass();
-            res = perft(board, depth - 1, true);
+            res = perft(board, depth - 1, true); // pass counted as 1 move
         board->pass();
         return res;
+    }
+    if (depth == 1){
+        return pop_count_ull(legal); // speedup with bulk-counting
     }
     Flip flip;
     for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)){
@@ -44,12 +47,15 @@ uint64_t perft_no_pass_count(Board *board, int depth, bool passed){
     uint64_t legal = board->get_legal();
     if (legal == 0){
         if (passed){
-            return 0ULL;
+            return 1ULL; // game over
         }
         board->pass();
-            res = perft(board, depth, true);
+            res = perft(board, depth, true); // pass not counted as 1 move
         board->pass();
         return res;
+    }
+    if (depth == 1){
+        return pop_count_ull(legal); // speedup with bulk-counting
     }
     Flip flip;
     for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)){

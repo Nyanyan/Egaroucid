@@ -312,6 +312,10 @@ void perft_commandline(std::vector<std::string> arg){
         std::cout << "mode must be 1 or 2, got " << mode << std::endl;
         std::exit(1);
     }
+    if (depth <= 0 || 60 < depth){
+        std::cout << "depth must be in [1, 60], got " << depth << std::endl;
+        std::exit(1);
+    }
     Board board;
     board.reset();
     uint64_t strt = tim();
