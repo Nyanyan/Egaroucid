@@ -425,13 +425,17 @@ void print_special_commandline_options(std::vector<Commandline_option> commandli
     if (find_commandline_option(commandline_options, ID_VERSION)){
         print_version();
         std::exit(0);
-    }
-    if (find_commandline_option(commandline_options, ID_HELP)){
+    } else if (find_commandline_option(commandline_options, ID_HELP)){
         print_help();
         std::exit(0);
-    }
-    if (find_commandline_option(commandline_options, ID_LEVEL_INFO)){
+    } else if (find_commandline_option(commandline_options, ID_LEVEL_INFO)){
         print_level_info();
+        std::exit(0);
+    } else if (find_commandline_option(commandline_options, ID_PERFT)){
+        bit_init();
+        mobility_init();
+        flip_init();
+        perft_commandline(get_commandline_option_arg(commandline_options, ID_PERFT));
         std::exit(0);
     }
 }
@@ -445,9 +449,6 @@ void execute_special_commandline_tasks(std::vector<Commandline_option> commandli
         std::exit(0);
     } else if (find_commandline_option(commandline_options, ID_SELF_PLAY_LINE)){
         self_play_line(get_commandline_option_arg(commandline_options, ID_SELF_PLAY_LINE), options, state);
-        std::exit(0);
-    } else if (find_commandline_option(commandline_options, ID_PERFT)){
-        perft_commandline(get_commandline_option_arg(commandline_options, ID_PERFT));
         std::exit(0);
     }
 }
