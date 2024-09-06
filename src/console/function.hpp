@@ -291,24 +291,35 @@ void self_play_line(std::vector<std::string> arg, Options *options, State *state
 }
 
 void perft_commandline(std::vector<std::string> arg){
-    if (arg.size() < 1){
-        std::cerr << "please input depth" << std::endl;
+    if (arg.size() < 2){
+        std::cerr << "please input <depth> <mode>" << std::endl;
         std::exit(1);
     }
-    int depth;
+    int depth, mode;
     std::string str_depth = arg[0];
+    std::string str_mode = arg[1];
     try{
         depth = std::stoi(str_depth);
+        mode = std::stoi(str_mode);
     } catch (const std::invalid_argument& e) {
-        std::cout << str_depth << " invalid argument" << std::endl;
+        std::cout << str_depth << " " << str_mode << " invalid argument" << std::endl;
         std::exit(1);
     } catch (const std::out_of_range& e) {
-        std::cout << str_depth << " out of range" << std::endl;
+        std::cout << str_depth << " " << str_mode << " out of range" << std::endl;
+        std::exit(1);
+    }
+    if (mode != 1 && mode != 2){
+        std::cout << "mode must be 1 or 2, got " << mode << std::endl;
         std::exit(1);
     }
     Board board;
     board.reset();
     uint64_t strt = tim();
-    uint64_t res = perft(&board, depth, false);
+    uint64_t res;
+    if (mode == 1){
+        res = perft(&board, depth, false);
+    } else{
+        res = perft_no_pass_count(&board, depth, false);
+    }
     std::cout << "perft depth " << depth << " " << res << " leaves found in " << tim() - strt << " ms" << std::endl;
 }
