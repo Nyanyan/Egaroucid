@@ -197,7 +197,9 @@ public:
     void update() override {
         if (System::GetUserActions() & UserAction::CloseButtonClicked) {
             stop_loading = true;
-            load_future.get();
+            if (load_future.valid()){
+                load_future.get();
+            }
             changeScene(U"Close", SCENE_FADE_TIME);
             return;
         }
