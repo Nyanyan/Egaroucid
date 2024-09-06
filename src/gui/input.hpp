@@ -484,7 +484,7 @@ public:
             button.init(0, 0, IMPORT_GAME_BUTTON_WIDTH, IMPORT_GAME_BUTTON_HEIGHT, IMPORT_GAME_BUTTON_RADIUS, language.get("in_out", "import"), 15, getData().fonts.font, getData().colors.white, getData().colors.black);
             import_buttons.emplace_back(button);
         }
-        scroll_manager.init(780, IMPORT_GAME_SY + 8, 10, IMPORT_GAME_HEIGHT * IMPORT_GAME_N_GAMES_ON_WINDOW, 20, (int)games.size(), IMPORT_GAME_N_GAMES_ON_WINDOW);
+        scroll_manager.init(770, IMPORT_GAME_SY + 8, 10, IMPORT_GAME_HEIGHT * IMPORT_GAME_N_GAMES_ON_WINDOW, 20, (int)games.size(), IMPORT_GAME_N_GAMES_ON_WINDOW);
     }
 
     void update() override {

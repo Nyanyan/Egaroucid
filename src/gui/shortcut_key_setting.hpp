@@ -42,7 +42,7 @@ public:
             delete_buttons.emplace_back(delete_button);
         }
         assign_button.init(0, 0, 80, 22, 7, language.get("settings", "shortcut_keys", "assign"), 12, getData().fonts.font, getData().colors.white, getData().colors.black);
-        scroll_manager.init(780, 78, 10, 300, 20, (int)shortcut_keys.shortcut_keys.size(), SHORTCUT_KEY_SETTINGS_N_ON_WINDOW);
+        scroll_manager.init(770, 78, 10, 300, 20, (int)shortcut_keys.shortcut_keys.size(), SHORTCUT_KEY_SETTINGS_N_ON_WINDOW);
     }
 
     void update() override {
