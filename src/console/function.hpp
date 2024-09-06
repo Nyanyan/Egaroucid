@@ -310,5 +310,5 @@ void perft_commandline(std::vector<std::string> arg){
     board.reset();
     uint64_t strt = tim();
     uint64_t res = perft(&board, depth, false);
-    std::cout << res << " nodes found in " << tim() - strt << " ms" << std::endl;
+    std::cout << res << " terminal boards found in " << tim() - strt << " ms" << std::endl;
 }
