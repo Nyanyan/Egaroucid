@@ -62,7 +62,11 @@ public:
             rect.x = 30;
             rect.w = 740;
             rect.h = 30;
-            rect.draw(getData().colors.green).drawFrame(1.0, getData().colors.white);
+            if (i % 2){
+                rect.draw(getData().colors.dark_green).drawFrame(1.0, getData().colors.white);
+            } else{
+                rect.draw(getData().colors.green).drawFrame(1.0, getData().colors.white);
+            }
             String function_name = shortcut_keys.shortcut_keys[i].name;
             String function_description = shortcut_keys.get_shortcut_key_description(function_name);
             getData().fonts.font(function_description).draw(12, Arg::leftCenter(rect.x + 10, sy + rect.h / 2), getData().colors.white);

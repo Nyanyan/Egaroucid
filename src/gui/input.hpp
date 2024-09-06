@@ -528,7 +528,11 @@ public:
                         winner = IMPORT_GAME_WINNER_DRAW;
                     }
                 }
-                rect.draw(getData().colors.green).drawFrame(1.0, getData().colors.white);
+                if (i % 2){
+                    rect.draw(getData().colors.dark_green).drawFrame(1.0, getData().colors.white);
+                } else{
+                    rect.draw(getData().colors.green).drawFrame(1.0, getData().colors.white);
+                }
                 String date = games[i].date.substr(0, 10).replace(U"_", U"/");
                 getData().fonts.font(date).draw(15, IMPORT_GAME_SX + 10, sy + 2, getData().colors.white);
                 // player (black)
