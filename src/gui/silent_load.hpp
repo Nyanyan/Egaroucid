@@ -485,8 +485,10 @@ class Silent_load : public App::Scene {
 private:
     bool loading;
     bool loaded;
+    int load_code;
     bool stop_loading;
     std::future<int> silent_load_future;
+    Font err_font{ FontMethod::MSDF, FONT_DEFAULT_SIZE };
 public:
     Silent_load(const InitData& init) : IScene{ init } {
         stop_loading = false;
@@ -498,12 +500,15 @@ public:
     void update() override {
         if (System::GetUserActions() & UserAction::CloseButtonClicked) {
             stop_loading = true;
-            silent_load_future.get();
+            if (silent_load_future.valid()){
+                silent_load_future.get();
+            }
             System::Exit();
         }
         if (loading){
             if (silent_load_future.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
-                int load_code = silent_load_future.get();
+                load_code = silent_load_future.get();
+                std::cerr << "load code " << load_code << std::endl;
                 loaded = load_code == ERR_OK;
                 loading = false;
             }
@@ -512,7 +517,8 @@ public:
                 std::cerr << "silent loaded" << std::endl;
                 changeScene(U"Load", SCENE_FADE_TIME);
             } else{
-                getData().fonts.font(U"BASIC DATA NOT LOADED. PLEASE RE-INSTALL.").draw(30, LEFT_LEFT, Y_CENTER + 50, getData().colors.white);
+                String err_str = U"BASIC DATA NOT LOADED. PLEASE RE-INSTALL.\nERROR CODE: " + Format(load_code);
+                err_font(err_str).draw(20, Arg::leftCenter(LEFT_LEFT, Y_CENTER), Palette::White);
             }
         }
     }
