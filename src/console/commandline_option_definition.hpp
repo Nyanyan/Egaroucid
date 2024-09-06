@@ -12,7 +12,7 @@
 #include <string>
 #include <vector>
 
-#define N_COMMANDLINE_OPTIONS 16
+#define N_COMMANDLINE_OPTIONS 17
 
 #define ID_NONE -1
 #define ID_VERSION 0
@@ -33,6 +33,7 @@
 #define ID_QUIET 13
 #define ID_SELF_PLAY 14
 #define ID_SELF_PLAY_LINE 15
+#define ID_PERFT 16
 
 struct Commandline_option_info{
     int id;
@@ -62,5 +63,6 @@ const Commandline_option_info commandline_option_data[N_COMMANDLINE_OPTIONS] = {
     {ID_GTP,                {"-gtp"},                                           0, "",                 "Use GTP (Go Text Protocol) mode"},
     {ID_QUIET,              {"-q", "-quiet", "-silent"},                        0, "",                 "Quiet mode"},
     {ID_SELF_PLAY,          {"-sf", "-selfplay"},                               2, "<n> <m>",          "Self play <n> games (play randomly first <m> moves)"},
-    {ID_SELF_PLAY_LINE,     {"-sfl", "-selfplayline"},                          1, "<file>",           "Self play with given openings"}
+    {ID_SELF_PLAY_LINE,     {"-sfl", "-selfplayline"},                          1, "<file>",           "Self play with given openings"},
+    {ID_PERFT,              {"-perft"},                                         1, "<depth>",          "Perft for Othello with depth <depth>"}
 };
