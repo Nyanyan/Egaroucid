@@ -425,6 +425,7 @@ void init_directories(Directories* directories) {
 
 int init_resources_silent_load(Resources* resources, Settings* settings, Fonts *fonts, bool *stop_loading) {
     // language json
+    std::cerr << "loading language list" << std::endl;
     if (!language_name.init(resources->language_names)) {
         return ERR_SILENT_LOAD_LANG_JSON_NOT_LOADED;
     }
@@ -434,6 +435,7 @@ int init_resources_silent_load(Resources* resources, Settings* settings, Fonts *
     }
 
     // language
+    std::cerr << "loading language pack" << std::endl;
     std::string lang_file = "resources/languages/" + settings->lang_name + ".json";
     if (!language.init(lang_file)) {
         std::cerr << "language file not found. use alternative language" << std::endl;
@@ -447,6 +449,8 @@ int init_resources_silent_load(Resources* resources, Settings* settings, Fonts *
         return ERR_SILENT_LOAD_TERMINATED;
     }
 
+    // font
+    std::cerr << "loading font" << std::endl;
     fonts->init(settings->lang_name);
 
     if (*stop_loading){
@@ -454,6 +458,7 @@ int init_resources_silent_load(Resources* resources, Settings* settings, Fonts *
     }
 
     // textures
+    std::cerr << "loading textures (1)" << std::endl;
     Texture icon(U"resources/img/icon.png", TextureDesc::Mipped);
     Texture logo(U"resources/img/logo.png", TextureDesc::Mipped);
     if (icon.isEmpty() || logo.isEmpty()) {

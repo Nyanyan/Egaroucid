@@ -60,9 +60,9 @@ constexpr int Y_CENTER = WINDOW_SIZE_Y / 2;
 #define ERR_LOAD_HASH_NOT_RESIZED 303
 
 // constant definition
-#define SHOW_ALL_HINT 35
 #define UPDATE_CHECK_ALREADY_UPDATED 0
 #define UPDATE_CHECK_UPDATE_FOUND 1
+#define SHOW_ALL_HINT 35
 
 // board drawing constants
 #define BOARD_SIZE 400

@@ -46,6 +46,7 @@ int check_update(const Directories* directories, String *new_version) {
 
 int init_resources_load(Resources* resources, Settings* settings, bool *stop_loading) {
     // texture
+    std::cerr << "loading textures (2)" << std::endl;
     Texture checkbox(U"resources/img/checked.png", TextureDesc::Mipped);
     Texture unchecked(U"resources/img/unchecked.png", TextureDesc::Mipped);
     Texture laser_pointer(U"resources/img/laser_pointer.png", TextureDesc::Mipped);
@@ -61,6 +62,7 @@ int init_resources_load(Resources* resources, Settings* settings, bool *stop_loa
     }
 
     // language image
+    std::cerr << "loading language images" << std::endl;
     std::vector<Texture> lang_img;
     for (int i = 0; i < (int)resources->language_names.size() && !(*stop_loading); ++i) {
         Texture limg(U"resources/languages/" +  Unicode::Widen(resources->language_names[i]) + U".png", TextureDesc::Mipped);
@@ -76,6 +78,7 @@ int init_resources_load(Resources* resources, Settings* settings, bool *stop_loa
     }
 
     // opening
+    std::cerr << "loading openings" << std::endl;
     if (!opening_init(settings->lang_name)) {
         std::cerr << "opening file not found. use alternative opening file" << std::endl;
         if (!opening_init(DEFAULT_OPENING_LANG_NAME))
@@ -87,6 +90,7 @@ int init_resources_load(Resources* resources, Settings* settings, bool *stop_loa
     }
 
     // license
+    std::cerr << "loading license" << std::endl;
     TextReader reader{U"LICENSE"};
     if (not reader) {
         return ERR_LOAD_LICENSE_FILE_NOT_LOADED;
