@@ -10,9 +10,10 @@
 
 #pragma once
 #include "ai.hpp"
-#include "book_enlarge.hpp"
 #include "book_accuracy.hpp"
-#include "umigame.hpp"
-#include "problem_generator.hpp"
+#include "book_enlarge.hpp"
+#include "perft.hpp"
 #include "principal_variation.hpp"
+#include "problem_generator.hpp"
+#include "umigame.hpp"
 #include "version.hpp"
