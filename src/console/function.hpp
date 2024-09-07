@@ -325,5 +325,5 @@ void perft_commandline(std::vector<std::string> arg){
     } else{
         res = perft_no_pass_count(&board, depth, false);
     }
-    std::cout << "perft depth " << depth << " " << res << " leaves found in " << tim() - strt << " ms" << std::endl;
+    std::cout << "perft mode " << mode << " depth " << depth << " " << res << " leaves found in " << tim() - strt << " ms" << std::endl;
 }

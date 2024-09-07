@@ -50,7 +50,7 @@ uint64_t perft_no_pass_count(Board *board, int depth, bool passed){
             return 1ULL; // game over
         }
         board->pass();
-            res = perft(board, depth, true); // pass not counted as 1 move
+            res = perft_no_pass_count(board, depth, true); // pass NOT counted as 1 move
         board->pass();
         return res;
     }
@@ -61,7 +61,7 @@ uint64_t perft_no_pass_count(Board *board, int depth, bool passed){
     for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)){
         calc_flip(&flip, board, cell);
         board->move_board(&flip);
-            res += perft(board, depth - 1, false);
+            res += perft_no_pass_count(board, depth - 1, false);
         board->undo_board(&flip);
     }
     return res;
