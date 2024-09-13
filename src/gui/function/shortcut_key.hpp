@@ -26,6 +26,7 @@ struct Shortcut_key_elem{
 std::vector<Shortcut_key_elem> shortcut_keys_default = {
     // buttons
     {U"start_game",             {U"Space"},             {{"play", "start_game"}}},
+    {U"pass",                   {},                     {{"play", "pass"}}},
 
     // game
     {U"new_game",               {U"Ctrl", U"N"},        {{"play", "game"}, {"play", "new_game"}}},

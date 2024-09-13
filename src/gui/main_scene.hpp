@@ -193,7 +193,7 @@ public:
                     pass_button.enable();
                 }
                 pass_button.draw();
-                if (!getData().menu.active() && pass_button.clicked()){
+                if (!getData().menu.active() && (pass_button.clicked() || (pass_button.is_enabled() && shortcut_key == U"pass"))){
                     pausing_in_pass = false;
                 }
             }

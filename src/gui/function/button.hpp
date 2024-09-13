@@ -83,6 +83,10 @@ public:
         enabled = false;
         transparent = false;
     }
+
+    bool is_enabled() const{
+        return enabled;
+    }
 };
 
 class FrameButton {
