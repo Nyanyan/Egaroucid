@@ -15,6 +15,7 @@ class Scroll_manager{
 private:
     Rect rect;
     Rect frame_rect;
+    Rect mouseover_rect;
     int sx;
     int sy;
     int width;
@@ -34,7 +35,7 @@ private:
 
 
 public:
-    void init(int x, int y, int w, int h, int rect_mh, int ne, int n_epw){
+    void init(int x, int y, int w, int h, int rect_mh, int ne, int n_epw, int mx, int my, int mw, int mh){
         sx = x;
         sy = y;
         width = w;
@@ -60,6 +61,10 @@ public:
         frame_rect.y = sy;
         frame_rect.w = width;
         frame_rect.h = height;
+        mouseover_rect.x = mx;
+        mouseover_rect.y = my;
+        mouseover_rect.w = mw;
+        mouseover_rect.h = mh;
     }
 
     void draw(){
@@ -78,7 +83,9 @@ public:
     }
 
     void update(){
-        strt_idx_double = std::max(0.0, std::min((double)(n_elem - n_elem_per_window), strt_idx_double + Mouse::Wheel()));
+        if (mouseover_rect.mouseOver()){
+            strt_idx_double = std::max(0.0, std::min((double)(n_elem - n_elem_per_window), strt_idx_double + Mouse::Wheel()));
+        }
         if (!KeyUp.pressed()){
             up_strt = BUTTON_NOT_PUSHED;
         }

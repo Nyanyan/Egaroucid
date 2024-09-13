@@ -26,7 +26,7 @@ public:
         back_button.init(GO_BACK_BUTTON_BACK_SX, GO_BACK_BUTTON_SY, GO_BACK_BUTTON_WIDTH, GO_BACK_BUTTON_HEIGHT, GO_BACK_BUTTON_RADIUS, language.get("common", "back"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
         edit_button.init(GO_BACK_BUTTON_GO_SX, GO_BACK_BUTTON_SY, GO_BACK_BUTTON_WIDTH, GO_BACK_BUTTON_HEIGHT, GO_BACK_BUTTON_RADIUS, language.get("common", "edit"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
         scroll_manager_black.init(X_CENTER - EXPORT_GAME_PLAYER_WIDTH, 80 + EXPORT_GAME_RADIUS * 2, EXPORT_GAME_PLAYER_WIDTH - 10, 10, 20, getData().game_information.black_player_name.size(), 1, X_CENTER - EXPORT_GAME_PLAYER_WIDTH, 80, EXPORT_GAME_PLAYER_WIDTH - 10, EXPORT_GAME_RADIUS * 2 + 10);
-        scroll_manager_memo.init(X_CENTER + 300, 140, 10, 250, 20, 20, 1);
+        scroll_manager_memo.init(X_CENTER + 300, 140, 10, 250, 20, 20, 1, X_CENTER - 300, 140, 600 + 10, 250);
     }
 
     void update() override {
