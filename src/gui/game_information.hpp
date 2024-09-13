@@ -23,7 +23,7 @@ public:
     Game_information_scene(const InitData& init) : IScene{ init } {
         back_button.init(GO_BACK_BUTTON_BACK_SX, GO_BACK_BUTTON_SY, GO_BACK_BUTTON_WIDTH, GO_BACK_BUTTON_HEIGHT, GO_BACK_BUTTON_RADIUS, language.get("common", "back"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
         edit_button.init(GO_BACK_BUTTON_GO_SX, GO_BACK_BUTTON_SY, GO_BACK_BUTTON_WIDTH, GO_BACK_BUTTON_HEIGHT, GO_BACK_BUTTON_RADIUS, language.get("common", "edit"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
-        scroll_manager.init(770, 100, 10, 300, 20, 20, 10);
+        scroll_manager.init(X_CENTER + 300, 140, 10, 250, 20, 20, 10);
     }
 
     void update() override {
@@ -36,13 +36,14 @@ public:
         Circle(X_CENTER - EXPORT_GAME_PLAYER_WIDTH - EXPORT_GAME_RADIUS - 20, 80 + EXPORT_GAME_RADIUS, EXPORT_GAME_RADIUS).draw(getData().colors.black);
         Circle(X_CENTER + EXPORT_GAME_PLAYER_WIDTH + EXPORT_GAME_RADIUS + 20, 80 + EXPORT_GAME_RADIUS, EXPORT_GAME_RADIUS).draw(getData().colors.white);
         Rect black_player_rect{X_CENTER - EXPORT_GAME_PLAYER_WIDTH, 80, EXPORT_GAME_PLAYER_WIDTH - 10, EXPORT_GAME_RADIUS * 2};
-        black_player_rect.draw(getData().colors.white);
-        getData().fonts.font(getData().game_information.black_player_name).draw(15, black_player_rect.stretched(-10), getData().colors.black);
+        black_player_rect.drawFrame(1, getData().colors.white);
+        getData().fonts.font(getData().game_information.black_player_name).draw(15, black_player_rect.stretched(-3), getData().colors.white);
         Rect white_player_rect{X_CENTER + 10, 80, EXPORT_GAME_PLAYER_WIDTH - 10, EXPORT_GAME_RADIUS * 2};
-        white_player_rect.draw(getData().colors.white);
+        white_player_rect.drawFrame(1, getData().colors.white);
+        getData().fonts.font(getData().game_information.white_player_name).draw(15, white_player_rect.stretched(-3), getData().colors.white);
         getData().fonts.font(language.get("in_out", "memo")).draw(15, Arg::topCenter(X_CENTER, 117), getData().colors.white);
-        Rect memo_rect{X_CENTER - 300, 130, 600, 400};
-        memo_rect.draw(getData().colors.white);
+        Rect memo_rect{X_CENTER - 300, 140, 600, 250};
+        memo_rect.drawFrame(1, getData().colors.white);
 
         scroll_manager.draw();
         back_button.draw();
