@@ -142,3 +142,92 @@ public:
         return dragged;
     }
 };
+
+
+class Scroll_horizontal_manager{
+private:
+    Rect rect;
+    Rect frame_rect;
+    int sx;
+    int sy;
+    int width;
+    int height;
+    int rect_min_width;
+    int n_elem;
+    int n_elem_per_window;
+    int rect_width;
+    int max_strt_idx;
+    double strt_idx_double;
+    bool dragged;
+    int dragged_x_offset;
+
+
+public:
+    void init(int x, int y, int w, int h, int rect_mw, int ne, int n_epw){
+        sx = x;
+        sy = y;
+        width = w;
+        height = h;
+        rect_min_width = rect_mw;
+        n_elem = ne;
+        n_elem_per_window = n_epw;
+        rect_width = width;
+        if (n_elem > n_elem_per_window){
+            rect_width = std::max(rect_min_width, (int)round((double)n_elem_per_window / (double)n_elem * (double)height));
+        }
+        max_strt_idx = std::max(n_elem - n_elem_per_window, 0);
+        strt_idx_double = 0.0;
+        dragged = false;
+        rect.y = sy;
+        rect.w = rect_width;
+        rect.h = height;
+        frame_rect.x = sx;
+        frame_rect.y = sy;
+        frame_rect.w = width;
+        frame_rect.h = height;
+    }
+
+    void draw(){
+        int strt_idx_int = round(strt_idx_double);
+        double percent = 0.0;
+        if (max_strt_idx > 0){
+            percent = (double)strt_idx_int / (double)max_strt_idx;
+        }
+        int rect_x = sx + round(percent * (double)(width - rect_width));
+        frame_rect.drawFrame(1.0, Palette::White);
+        rect.x = rect_x;
+        rect.draw(Palette::White);
+        if (dragged){
+            Cursor::RequestStyle(CursorStyle::ResizeLeftRight);
+        }
+    }
+
+    void update(){
+        strt_idx_double = std::max(0.0, std::min((double)(n_elem - n_elem_per_window), strt_idx_double + Mouse::Wheel()));
+        if (rect.leftClicked()){
+            dragged = true;
+            dragged_x_offset = Cursor::Pos().x - rect.x;
+        } else if (!MouseL.pressed()){
+            dragged = false;
+        }
+        if (dragged){
+            double n_percent = std::max(0.0, std::min(1.0, (double)(Cursor::Pos().x - dragged_x_offset - sx) / std::max(1, (width - rect_width))));
+            strt_idx_double = n_percent * (double)max_strt_idx;
+        }
+        if (frame_rect.leftClicked()){
+            double n_percent = std::max(0.0, std::min(1.0, (double)(Cursor::Pos().x - rect.x / 2 - sx) / std::max(1, (width - rect_width))));
+            strt_idx_double = n_percent * (double)max_strt_idx;
+            dragged = true;
+            int rect_x = sx + round(n_percent * (double)(width - rect_width));
+            dragged_x_offset = Cursor::Pos().x - rect_x;
+        }
+    }
+
+    int get_strt_idx_int() const{
+        return (int)strt_idx_double;
+    }
+
+    bool is_dragged() const{
+        return dragged;
+    }
+};
