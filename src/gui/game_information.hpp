@@ -20,7 +20,7 @@ private:
     Scroll_horizontal_manager scroll_manager_black;
     Scroll_horizontal_manager scroll_manager_white;
     Scroll_manager scroll_manager_memo;
-    int n_lines_memo;
+    std::vector<String> memo_lines;
 
 public:
     Game_information_scene(const InitData& init) : IScene{ init } {
@@ -28,9 +28,16 @@ public:
         edit_button.init(GO_BACK_BUTTON_GO_SX, GO_BACK_BUTTON_SY, GO_BACK_BUTTON_WIDTH, GO_BACK_BUTTON_HEIGHT, GO_BACK_BUTTON_RADIUS, language.get("common", "edit"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
         scroll_manager_black.init(X_CENTER - 300, 80 + 15 * 2, 300 - 10, 10, 20, getData().game_information.black_player_name.size(), 1, X_CENTER - 300, 80, 300 - 10, 15 * 2 + 10);
         scroll_manager_white.init(X_CENTER + 10, 80 + 15 * 2, 300 - 10, 10, 20, getData().game_information.white_player_name.size(), 1, X_CENTER + 10, 80, 300 - 10, 15 * 2 + 10);
-        n_lines_memo = 0;
-        
-        scroll_manager_memo.init(X_CENTER + 300, 150, 10, 250, 20, n_lines_memo, 1, X_CENTER - 300, 140, 600 + 10, 250);
+        Array<String> lines = getData().game_information.memo.split(U'\n');
+        for (String line: lines){
+            int idx = 0;
+            while (idx < line.size()){
+                String sub_line = get_substr(line, idx, 600 - 4);
+                memo_lines.emplace_back(sub_line);
+                idx += sub_line.size();
+            }
+        }
+        scroll_manager_memo.init(X_CENTER + 300, 150, 10, 250, 20, (int)memo_lines.size(), 1, X_CENTER - 300, 140, 600 + 10, 250);
     }
 
     void update() override {
@@ -60,9 +67,11 @@ public:
         getData().fonts.font(language.get("in_out", "memo")).draw(15, Arg::topCenter(X_CENTER, 127), getData().colors.white);
         Rect memo_rect{X_CENTER - 300, 150, 600, 250};
         memo_rect.drawFrame(1, getData().colors.white);
-
         scroll_manager_memo.draw();
         scroll_manager_memo.update();
+        String memo_display = get_substr_memo(scroll_manager_memo.get_strt_idx_int(), 250);
+        getData().fonts.font(memo_display).draw(15, X_CENTER - 300 + 2, 150, getData().colors.white);
+        // buttons
         back_button.draw();
         edit_button.draw();
         if (back_button.clicked() || KeyEscape.pressed()){
@@ -83,6 +92,20 @@ private:
         while (region.w > width && res.size()){
             res.pop_back();
             region = getData().fonts.font(res).region(15, Vec2{0, 0});
+        }
+        return res;
+    }
+
+    String get_substr_memo(int strt_idx, int height){
+        String res;
+        double height_used = 0;
+        for (int idx = strt_idx; idx < (int)memo_lines.size(); ++idx){
+            RectF region = getData().fonts.font(memo_lines[idx]).region(15, Vec2{0, 0});
+            if (region.h + height_used > (double)height){
+                break;
+            }
+            res += memo_lines[idx] + U"\n";
+            height_used += region.h;
         }
         return res;
     }
