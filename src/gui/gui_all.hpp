@@ -9,9 +9,12 @@
 */
 
 #pragma once
+#include "function/function_all.hpp"
+
 #include "board_image.hpp"
 #include "book_scene.hpp"
 #include "close.hpp"
+#include "game_information.hpp"
 #include "input.hpp"
 #include "load.hpp"
 #include "main_scene.hpp"
@@ -19,4 +22,3 @@
 #include "screen_shot.hpp"
 #include "shortcut_key_setting.hpp"
 #include "silent_load.hpp"
-#include "function/function_all.hpp"

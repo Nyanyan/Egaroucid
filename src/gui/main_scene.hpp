@@ -469,6 +469,13 @@ private:
             resume_calculating();
             init_analyze();
         }
+        if (getData().menu_elements.game_information || shortcut_key == U"game_information") {
+            changing_scene = true;
+            stop_calculating();
+            resume_calculating();
+            changeScene(U"Game_information", SCENE_FADE_TIME);
+            return;
+        }
     }
 
     void menu_setting() {

@@ -34,6 +34,7 @@ std::vector<Shortcut_key_elem> shortcut_keys_default = {
     {U"new_game_human_white",   {},                     {{"play", "game"}, {"play", "new_game_human_white"}}},
     {U"new_selfplay",           {},                     {{"play", "game"}, {"play", "new_selfplay"}}},
     {U"analyze",                {U"A"},                 {{"play", "game"}, {"play", "analyze"}}},
+    {U"game_information",       {},                     {{"play", "game"}, {"play", "game_information"}}},
 
     // settings
     {U"use_book",               {},                     {{"settings", "settings"}, {"ai_settings", "use_book"}}},

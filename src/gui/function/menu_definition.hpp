@@ -43,6 +43,8 @@ Menu create_menu(Menu_elements* menu_elements, Resources *resources, Font font) 
     title.push(menu_e);
     menu_e.init_button(language.get("play", "analyze") + get_shortcut_key_info(U"analyze"), &menu_elements->analyze);
     title.push(menu_e);
+    menu_e.init_button(language.get("play", "game_information") + get_shortcut_key_info(U"game_information"), &menu_elements->game_information);
+    title.push(menu_e);
 
     menu.push(title);
 

@@ -70,6 +70,7 @@ void Main() {
     scene_manager.add <Silent_load> (U"Silent_load");
     scene_manager.add <Load>(U"Load");
     scene_manager.add <Main_scene>(U"Main_scene");
+    scene_manager.add <Game_information>(U"Game_information");
     scene_manager.add <Shortcut_key_setting>(U"Shortcut_key_setting");
     scene_manager.add <Merge_book>(U"Merge_book");
     scene_manager.add <Refer_book>(U"Refer_book");

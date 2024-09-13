@@ -400,6 +400,7 @@ struct Menu_elements {
     bool start_game_human_white;
     bool start_selfplay;
     bool analyze;
+    bool game_information;
 
     // settings
     // AI settings
@@ -509,6 +510,7 @@ struct Menu_elements {
         start_game_human_white = false;
         start_selfplay = false;
         analyze = false;
+        game_information = false;
 
         use_book = settings->use_book;
         book_acc_level = settings->book_acc_level;
