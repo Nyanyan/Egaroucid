@@ -25,7 +25,7 @@ public:
     Game_information_scene(const InitData& init) : IScene{ init } {
         back_button.init(GO_BACK_BUTTON_BACK_SX, GO_BACK_BUTTON_SY, GO_BACK_BUTTON_WIDTH, GO_BACK_BUTTON_HEIGHT, GO_BACK_BUTTON_RADIUS, language.get("common", "back"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
         edit_button.init(GO_BACK_BUTTON_GO_SX, GO_BACK_BUTTON_SY, GO_BACK_BUTTON_WIDTH, GO_BACK_BUTTON_HEIGHT, GO_BACK_BUTTON_RADIUS, language.get("common", "edit"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
-        scroll_manager_black.init(X_CENTER - EXPORT_GAME_PLAYER_WIDTH, 80 + EXPORT_GAME_RADIUS * 2, EXPORT_GAME_PLAYER_WIDTH - 10, 10, 20, getData().game_information.black_player_name.size(), 1);
+        scroll_manager_black.init(X_CENTER - EXPORT_GAME_PLAYER_WIDTH, 80 + EXPORT_GAME_RADIUS * 2, EXPORT_GAME_PLAYER_WIDTH - 10, 10, 20, getData().game_information.black_player_name.size(), 1, X_CENTER - EXPORT_GAME_PLAYER_WIDTH, 80, EXPORT_GAME_PLAYER_WIDTH - 10, EXPORT_GAME_RADIUS * 2 + 10);
         scroll_manager_memo.init(X_CENTER + 300, 140, 10, 250, 20, 20, 1);
     }
 
@@ -73,7 +73,7 @@ private:
     String get_substr(String str, int strt_idx, int width){
         String res = str.substr(strt_idx);
         RectF region = getData().fonts.font(res).region(15, Vec2{0, 0});
-        while (region.w > width){
+        while (region.w > width && res.size()){
             res.pop_back();
             region = getData().fonts.font(res).region(15, Vec2{0, 0});
         }

@@ -63,7 +63,7 @@ public:
     }
 
     void draw(){
-        int strt_idx_int = round(strt_idx_double);
+        int strt_idx_int = (int)strt_idx_double;
         double percent = 0.0;
         if (max_strt_idx > 0){
             percent = (double)strt_idx_int / (double)max_strt_idx;
@@ -148,6 +148,7 @@ class Scroll_horizontal_manager{
 private:
     Rect rect;
     Rect frame_rect;
+    Rect mouseover_rect;
     int sx;
     int sy;
     int width;
@@ -163,7 +164,7 @@ private:
 
 
 public:
-    void init(int x, int y, int w, int h, int rect_mw, int ne, int n_epw){
+    void init(int x, int y, int w, int h, int rect_mw, int ne, int n_epw, int mx, int my, int mw, int mh){
         sx = x;
         sy = y;
         width = w;
@@ -185,10 +186,14 @@ public:
         frame_rect.y = sy;
         frame_rect.w = width;
         frame_rect.h = height;
+        mouseover_rect.x = mx;
+        mouseover_rect.y = my;
+        mouseover_rect.w = mw;
+        mouseover_rect.h = mh;
     }
 
     void draw(){
-        int strt_idx_int = round(strt_idx_double);
+        int strt_idx_int = (int)strt_idx_double;
         double percent = 0.0;
         if (max_strt_idx > 0){
             percent = (double)strt_idx_int / (double)max_strt_idx;
@@ -203,7 +208,9 @@ public:
     }
 
     void update(){
-        strt_idx_double = std::max(0.0, std::min((double)(n_elem - n_elem_per_window), strt_idx_double + Mouse::Wheel()));
+        if (mouseover_rect.mouseOver()){
+            strt_idx_double = std::max(0.0, std::min((double)(n_elem - n_elem_per_window), strt_idx_double + Mouse::Wheel()));
+        }
         if (rect.leftClicked()){
             dragged = true;
             dragged_x_offset = Cursor::Pos().x - rect.x;
