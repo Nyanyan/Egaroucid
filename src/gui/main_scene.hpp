@@ -473,7 +473,7 @@ private:
             changing_scene = true;
             stop_calculating();
             resume_calculating();
-            changeScene(U"Game_information", SCENE_FADE_TIME);
+            changeScene(U"Game_information_scene", SCENE_FADE_TIME);
             return;
         }
     }
