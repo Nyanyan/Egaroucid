@@ -9,7 +9,8 @@
         "back": "返回",
         "level": "级别",
         "othello_ai": "AI",
-        "characters": "个字符"
+        "characters": "个字符",
+        "edit": "编辑"
     },
     "loading": {
         "loading": "加载中...",
@@ -26,7 +27,8 @@
         "new_selfplay": "新建对局 (AI自弈)",
         "analyze": "分析对局",
         "start_game": "开始",
-        "pass": "pass"
+        "pass": "pass",
+        "game_information": "对局情报"
     },
     "settings": {
         "settings": "设置",

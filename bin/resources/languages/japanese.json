@@ -9,7 +9,8 @@
         "back": "戻る",
         "level": "レベル",
         "othello_ai": "オセロAI",
-        "characters": "文字"
+        "characters": "文字",
+        "edit": "編集"
     },
     "loading": {
         "loading": "起動中...",
@@ -26,7 +27,8 @@
         "new_selfplay": "新規自己対戦",
         "analyze": "分析",
         "start_game": "対局開始",
-        "pass": "パス"
+        "pass": "パス",
+        "game_information": "対局情報"
     },
     "settings": {
         "settings": "設定",

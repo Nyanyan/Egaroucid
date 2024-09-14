@@ -9,7 +9,8 @@
         "back": "Back",
         "level": "Level",
         "othello_ai": "Othello AI",
-        "characters": "Characters"
+        "characters": "Characters",
+        "edit": "Edit"
     },
     "loading": {
         "loading": "Loading...",
@@ -26,7 +27,8 @@
         "new_selfplay": "New Selfplay",
         "analyze": "Analyze",
         "start_game": "Start",
-        "pass": "Pass"
+        "pass": "Pass",
+        "game_information": "Game Information"
     },
     "settings": {
         "settings": "Settings",
