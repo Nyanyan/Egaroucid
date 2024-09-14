@@ -109,33 +109,37 @@ public:
                 } else{
                     update_shortcut_key();
                     assign_button.move(680, sy + 4);
-                    assign_button.enable();
-                    message = language.get("settings", "shortcut_keys", "changing_message");
-                    // key valid?
-                    int n_other_keys = 0;
-                    for (String &key: changed_keys){
-                        if (std::find(allow_multi_input_keys.begin(), allow_multi_input_keys.end(), key) == allow_multi_input_keys.end()){
-                            ++n_other_keys;
+                    if (changed_keys.size()){
+                        assign_button.enable();
+                        message = language.get("settings", "shortcut_keys", "changing_message");
+                        // key valid?
+                        int n_other_keys = 0;
+                        for (String &key: changed_keys){
+                            if (std::find(allow_multi_input_keys.begin(), allow_multi_input_keys.end(), key) == allow_multi_input_keys.end()){
+                                ++n_other_keys;
+                            }
                         }
-                    }
-                    std::cerr << n_other_keys << std::endl;
-                    if (n_other_keys == 0){ // Ctrl/Shift/Alt only
+                        if (n_other_keys == 0){ // Ctrl/Shift/Alt only
+                            assign_button.disable();
+                            message = language.get("settings", "shortcut_keys", "special_key_error_message");
+                        } else if (n_other_keys > 1){ // too many keys
+                            assign_button.disable();
+                            message = language.get("settings", "shortcut_keys", "multi_input_error_message");
+                        }
+                        // key duplicate?
+                        if (check_duplicate()){
+                            assign_button.disable();
+                            message = language.get("settings", "shortcut_keys", "key_duplicate_message") + U": " + get_duplicate_function();
+                        }
+                        assign_button.draw();
+                        if (assign_button.clicked()){
+                            shortcut_keys.change(changing_idx, changed_keys);
+                            changed_keys.clear();
+                            reset_changing_idx = true;
+                        }
+                    } else{ // no keys
                         assign_button.disable();
-                        message = language.get("settings", "shortcut_keys", "special_key_error_message");
-                    } else if (n_other_keys > 1){ // too many keys
-                        assign_button.disable();
-                        message = language.get("settings", "shortcut_keys", "multi_input_error_message");
-                    }
-                    // key duplicate?
-                    if (check_duplicate()){
-                        assign_button.disable();
-                        message = language.get("settings", "shortcut_keys", "key_duplicate_message") + U": " + get_duplicate_function();
-                    }
-                    assign_button.draw();
-                    if (assign_button.clicked()){
-                        shortcut_keys.change(changing_idx, changed_keys);
-                        changed_keys.clear();
-                        reset_changing_idx = true;
+                        message = language.get("settings", "shortcut_keys", "changing_message");
                     }
                 }
             }
