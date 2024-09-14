@@ -16,6 +16,12 @@
 #define SHORTCUT_KEY_SETTINGS_N_ON_WINDOW 10
 #define SHORTCUT_KEY_SETTINGS_IDX_NOT_CHANGING -1
 
+std::vector<String> allow_multi_input_keys = {
+    U"Ctrl",
+    U"Shift",
+    U"Alt"
+};
+
 class Shortcut_key_setting : public App::Scene {
 private:
     Button default_button;
@@ -103,12 +109,27 @@ public:
                 } else{
                     update_shortcut_key();
                     assign_button.move(680, sy + 4);
+                    assign_button.enable();
+                    message = language.get("settings", "shortcut_keys", "changing_message");
+                    // key valid?
+                    int n_other_keys = 0;
+                    for (String &key: changed_keys){
+                        if (std::find(allow_multi_input_keys.begin(), allow_multi_input_keys.end(), key) == allow_multi_input_keys.end()){
+                            ++n_other_keys;
+                        }
+                    }
+                    std::cerr << n_other_keys << std::endl;
+                    if (n_other_keys == 0){ // Ctrl/Shift/Alt only
+                        assign_button.disable();
+                        message = language.get("settings", "shortcut_keys", "special_key_error_message");
+                    } else if (n_other_keys > 1){ // too many keys
+                        assign_button.disable();
+                        message = language.get("settings", "shortcut_keys", "multi_input_error_message");
+                    }
+                    // key duplicate?
                     if (check_duplicate()){
                         assign_button.disable();
                         message = language.get("settings", "shortcut_keys", "key_duplicate_message") + U": " + get_duplicate_function();
-                    } else{
-                        assign_button.enable();
-                        message = language.get("settings", "shortcut_keys", "changing_message");
                     }
                     assign_button.draw();
                     if (assign_button.clicked()){
