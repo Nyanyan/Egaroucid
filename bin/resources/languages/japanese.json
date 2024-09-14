@@ -48,7 +48,9 @@
             "assign": "割り当て完了",
             "not_assigned": "割り当てなし",
             "changing_message": "登録したいキーを押してください (Escで戻る)",
-            "key_duplicate_message": "そのキーはすでに登録されています"
+            "key_duplicate_message": "そのキーはすでに登録されています",
+            "multi_input_error_message": "同時押しに対応しているのはCtrl/Shift/Altのみです",
+            "special_key_error_message": "Ctrl/Shift/Altのみのキーは登録できません"
         }
     },
     "ai_settings": {

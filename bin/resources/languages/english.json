@@ -48,7 +48,9 @@
             "assign": "Assign",
             "not_assigned": "Not Assigned",
             "changing_message": "Push keys to assign (Esc to turn back)",
-            "key_duplicate_message": "This key is already assigned"
+            "key_duplicate_message": "This key is already assigned",
+            "multi_input_error_message": "Only Ctrl/Shift/Alt are supported for simultaneous input",
+            "special_key_error_message": "Ctrl/Shift/Alt keys alone cannot be assigned"
         }
     },
     "ai_settings": {
