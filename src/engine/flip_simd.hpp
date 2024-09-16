@@ -58,8 +58,8 @@ class Flip{
 
         static inline __m128i calc_flip(__m128i OP, const uint_fast8_t place) {
             __m256i PP = _mm256_broadcastq_epi64(OP);
-            //__m256i OO = _mm256_broadcastq_epi64(_mm_unpackhi_epi64(OP, OP));
-            __m256i OO = _mm256_permute4x64_epi64(_mm256_castsi128_si256(OP), 0x55);
+            //__m256i OO = _mm256_broadcastq_epi64(_mm_unpackhi_epi64(OP, OP)); // fast with AMD
+            __m256i OO = _mm256_permute4x64_epi64(_mm256_castsi128_si256(OP), 0x55); // fast with Intel
             __m256i mask = lrmask[place].v4[1];
         
         #if ACEPCK_RIGHT
