@@ -103,7 +103,7 @@ public:
                     }
                 }
             } else if (changing_idx == i){
-                if (KeyEscape.pressed()){
+                if (KeyEscape.down()){
                     changed_keys.clear();
                     reset_changing_idx = true;
                 } else{
@@ -132,7 +132,7 @@ public:
                             message = language.get("settings", "shortcut_keys", "key_duplicate_message") + U": " + get_duplicate_function();
                         }
                         assign_button.draw();
-                        if (assign_button.clicked()){
+                        if (assign_button.clicked() || (assign_button.is_enabled() && KeyEnter.down())){
                             shortcut_keys.change(changing_idx, changed_keys);
                             changed_keys.clear();
                             reset_changing_idx = true;
@@ -148,9 +148,9 @@ public:
         if (strt_idx_int + SHORTCUT_KEY_SETTINGS_N_ON_WINDOW < (int)shortcut_keys.shortcut_keys.size()) {
             getData().fonts.font(U"︙").draw(15, Arg::topCenter(X_CENTER, sy + 6), getData().colors.white);
         }
-        if (changing_idx == SHORTCUT_KEY_SETTINGS_IDX_NOT_CHANGING){
+        if (changing_idx == SHORTCUT_KEY_SETTINGS_IDX_NOT_CHANGING) {
             ok_button.draw();
-            if (ok_button.clicked() || KeyEnter.pressed()) {
+            if (ok_button.clicked() || KeyEnter.down()) {
                 getData().graph_resources.need_init = false;
                 changeScene(U"Main_scene", SCENE_FADE_TIME);
             }

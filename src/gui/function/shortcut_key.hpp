@@ -146,29 +146,26 @@ std::vector<String> get_all_inputs(bool *down_found){
     *down_found = false;
     std::unordered_set<String> keys;
     for (const auto& key : raw_keys){
+        if (key.name() == U"Enter"){ // prohibited
+            continue;
+        }
         *down_found |= key.down();
         keys.emplace(key.name());
     }
     std::vector<String> res;
     if (keys.find(U"Ctrl") != keys.end()){
         res.emplace_back(U"Ctrl");
+        keys.erase(U"Ctrl");
     }
     if (keys.find(U"Shift") != keys.end()){
         res.emplace_back(U"Shift");
+        keys.erase(U"Shift");
     }
     if (keys.find(U"Alt") != keys.end()){
         res.emplace_back(U"Alt");
+        keys.erase(U"Alt");
     }
     for (String key: keys){
-        if (key == U"Ctrl"){
-            continue;
-        }
-        if (key == U"Shift"){
-            continue;
-        }
-        if (key == U"Alt"){
-            continue;
-        }
         res.emplace_back(key);
     }
     return res;
