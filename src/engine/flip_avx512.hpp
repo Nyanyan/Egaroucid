@@ -15,8 +15,24 @@
 #include "common.hpp"
 #include "bit.hpp"
 
-#define ACEPCK_RIGHT false
-#define ACEPCK_LEFT false
+#if AUTO_FLIP_OPT_BY_COMPILER
+    #ifdef __clang_version__
+        #define ACEPCK_RIGHT true
+        #define ACEPCK_LEFT false
+    #elif defined __GNUC__
+        #define ACEPCK_RIGHT true
+        #define ACEPCK_LEFT false
+    #elif defined _MSC_VER
+        #define ACEPCK_RIGHT true
+        #define ACEPCK_LEFT false
+    #else
+        #define ACEPCK_RIGHT false
+        #define ACEPCK_LEFT false
+    #endif
+#else
+    #define ACEPCK_RIGHT false
+    #define ACEPCK_LEFT false
+#endif
 
 union V8DI {
     uint64_t ull[8];
