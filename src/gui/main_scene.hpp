@@ -1214,12 +1214,13 @@ private:
                 int sgn = getData().history_elem.player == 0 ? 1 : -1;
                 int node_idx = getData().graph_resources.node_find(getData().graph_resources.branch, getData().graph_resources.n_discs);
                 if (node_idx != -1) {
-                    int min_hint_type = 1000;
-                    for (Hint_info &hint_info: hint_infos)
-                        min_hint_type = std::min(min_hint_type, hint_info.type);
-                    if (getData().graph_resources.nodes[getData().graph_resources.branch][node_idx].level < min_hint_type) {
-                        getData().graph_resources.nodes[getData().graph_resources.branch][node_idx].v = sgn * (int)round(hint_infos[0].value);
-                        getData().graph_resources.nodes[getData().graph_resources.branch][node_idx].level = min_hint_type;
+                    int value_signed = sgn * (int)round(hint_infos[0].value);
+                    if (
+                        getData().graph_resources.nodes[getData().graph_resources.branch][node_idx].level < hint_infos[0].type || 
+                        getData().graph_resources.nodes[getData().graph_resources.branch][node_idx].v != value_signed
+                        ) {
+                        getData().graph_resources.nodes[getData().graph_resources.branch][node_idx].v = value_signed;
+                        getData().graph_resources.nodes[getData().graph_resources.branch][node_idx].level = hint_infos[0].type;
                     }
                 }
             }
