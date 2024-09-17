@@ -32,6 +32,11 @@
     #define USE_ARM true
 #endif
 
+// optimize for AMD processors
+#if HAS_AMD_PROCESSOR
+    #define USE_AMD true
+#endif
+
 #ifndef HAS_32_BIT_OS
     #ifdef _WIN32
         #ifdef _WIN64
