@@ -13,7 +13,7 @@
 #include <string>
 #include "web/ai.hpp"
 
-inline void init(){
+inline void init() {
     board_init();
     mobility_init();
     stability_init();
@@ -25,13 +25,13 @@ inline void init(){
     #endif
 }
 
-Board input_board_po(){
+Board input_board_po() {
     Board board;
     board.player = 0;
     board.opponent = 0;
     std::string s;
     std::cin >> s;
-    for (int i = 0; i < HW2; ++i){
+    for (int i = 0; i < HW2; ++i) {
         if (s[i] == 'P')
             board.player |= 1ULL << (HW2_M1 - i);
         else if (s[i] == 'O')
@@ -40,7 +40,7 @@ Board input_board_po(){
     return board;
 }
 
-int main(){
+int main() {
     init();
     Board board;
     #ifndef NO_BOOK
@@ -50,7 +50,7 @@ int main(){
     #endif
     int level = 10;
     bool show_log = true;
-    while (true){
+    while (true) {
         board = input_board_po();
         board.print();
         Search_result search_result = ai(board, level, use_book, false, show_log);

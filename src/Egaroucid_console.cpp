@@ -16,7 +16,7 @@
 #endif
 
 
-void init_console(Options options, std::string binary_path){
+void init_console(Options options, std::string binary_path) {
     int thread_size = std::max(0, options.n_threads - 1);
     thread_pool.resize(thread_size);
     if (options.show_log)
@@ -45,7 +45,7 @@ void init_console(Options options, std::string binary_path){
         std::cerr << "initialized" << std::endl;
 }
 
-int main(int argc, char* argv[]){
+int main(int argc, char* argv[]) {
     State state;
     std::string binary_path = get_binary_path();
     std::vector<Commandline_option> commandline_options = get_commandline_options(argc, argv);
@@ -60,11 +60,11 @@ int main(int argc, char* argv[]){
     #endif
     Board_info board;
     board.reset();
-    while (true){
-        if (options.gtp){
+    while (true) {
+        if (options.gtp) {
             gtp_check_command(&board, &state, &options);
         }else {
-            if (!options.quiet){
+            if (!options.quiet) {
                 print_board_info(&board);
                 std::cout << std::endl;
                 //std::cerr << "val " << mid_evaluate(&board.board) << std::endl;

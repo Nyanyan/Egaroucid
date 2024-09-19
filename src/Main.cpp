@@ -19,21 +19,21 @@ double CalculateScale(const Vec2& baseSize, const Vec2& currentSize) {
 }
 
 #if !GUI_OPEN_CONSOLE
-    class Logger_cerr{
+    class Logger_cerr {
         private:
             std::stringstream logger_stream;
             std::mutex logger_mtx;
             String logger_String;
 
         public:
-            Logger_cerr(){
+            Logger_cerr() {
                 std::cerr.rdbuf(logger_stream.rdbuf());
             }
 
-            String get_last_line(){
+            String get_last_line() {
                 std::unique_lock{logger_mtx};
                 std::string log_line;
-                while (getline(logger_stream, log_line)){
+                while (getline(logger_stream, log_line)) {
                     logger_String = Unicode::Widen(log_line);
                 }
                 logger_stream.clear(std::stringstream::goodbit);
