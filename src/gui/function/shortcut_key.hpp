@@ -17,7 +17,7 @@
 
 #define SHORTCUT_KEY_UNDEFINED U"undefined"
 
-struct Shortcut_key_elem{
+struct Shortcut_key_elem {
     String name;
     std::vector<String> keys;
     std::vector<std::vector<std::string>> description_keys;
@@ -171,7 +171,7 @@ std::vector<String> get_all_inputs(bool *down_found) {
     return res;
 }
 
-class Shortcut_keys{
+class Shortcut_keys {
 public:
     std::vector<Shortcut_key_elem> shortcut_keys;
 public:

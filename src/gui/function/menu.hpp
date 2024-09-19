@@ -554,7 +554,7 @@ public:
     }
 };
 
-class Menu{
+class Menu {
 private:
     bool is_open;
     std::vector<menu_title> menu;

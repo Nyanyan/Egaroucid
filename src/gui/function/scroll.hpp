@@ -11,7 +11,7 @@
 #pragma once
 #include "const/gui_common.hpp"
 
-class Scroll_manager{
+class Scroll_manager {
 private:
     Rect rect;
     Rect frame_rect;
@@ -151,7 +151,7 @@ public:
 };
 
 
-class Scroll_horizontal_manager{
+class Scroll_horizontal_manager {
 private:
     Rect rect;
     Rect frame_rect;

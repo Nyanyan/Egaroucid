@@ -48,7 +48,7 @@ constexpr Color level_prob_color = Palette::White;
 
 constexpr Color graph_rect_color = Palette::White;
 
-struct Graph_loss_elem{
+struct Graph_loss_elem {
     int ply;
     int v;
 };
