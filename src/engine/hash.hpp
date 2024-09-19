@@ -77,10 +77,10 @@ constexpr size_t hash_sizes[N_HASH_LEVEL] = {
 
     @param hash_level           hash level
 */
-void hash_init_rand(int hash_level){
+void hash_init_rand(int hash_level) {
     int i, j;
-    for (i = 0; i < 4; ++i){
-        for (j = 0; j < 65536; ++j){
+    for (i = 0; i < 4; ++i) {
+        for (j = 0; j < 65536; ++j) {
             hash_rand_player[i][j] = 0;
             while (pop_count_uint(hash_rand_player[i][j]) < hash_level / 6)
                 hash_rand_player[i][j] = myrand_uint_rev() & (hash_sizes[hash_level] - 1);
@@ -96,20 +96,20 @@ void hash_init_rand(int hash_level){
 
     @param hash_level           hash level
 */
-bool hash_init(int hash_level){
+bool hash_init(int hash_level) {
     FILE* fp;
-    if (!file_open(&fp, ("resources/hash/hash" + std::to_string(hash_level) + ".eghs").c_str(), "rb")){
+    if (!file_open(&fp, ("resources/hash/hash" + std::to_string(hash_level) + ".eghs").c_str(), "rb")) {
         std::cerr << "[ERROR] can't open hash" + std::to_string(hash_level) + ".eghs" << std::endl;
         return false;
     }
-    for (int i = 0; i < 4; ++i){
-        if (fread(hash_rand_player[i], 4, 65536, fp) < 65536){
+    for (int i = 0; i < 4; ++i) {
+        if (fread(hash_rand_player[i], 4, 65536, fp) < 65536) {
             std::cerr << "[ERROR] hash" + std::to_string(hash_level) + ".eghs broken" << std::endl;
             return false;
         }
     }
-    for (int i = 0; i < 4; ++i){
-        if (fread(hash_rand_opponent[i], 4, 65536, fp) < 65536){
+    for (int i = 0; i < 4; ++i) {
+        if (fread(hash_rand_opponent[i], 4, 65536, fp) < 65536) {
             std::cerr << "[ERROR] hash" + std::to_string(hash_level) + ".eghs broken" << std::endl;
             return false;
         }
@@ -123,20 +123,20 @@ bool hash_init(int hash_level){
     @param hash_level           hash level
     @param binary_path          path to binary
 */
-bool hash_init(int hash_level, std::string binary_path){
+bool hash_init(int hash_level, std::string binary_path) {
     FILE* fp;
-    if (!file_open(&fp, (binary_path + "resources/hash/hash" + std::to_string(hash_level) + ".eghs").c_str(), "rb")){
+    if (!file_open(&fp, (binary_path + "resources/hash/hash" + std::to_string(hash_level) + ".eghs").c_str(), "rb")) {
         std::cerr << "[ERROR] can't open hash" + std::to_string(hash_level) + ".eghs" << std::endl;
         return false;
     }
-    for (int i = 0; i < 4; ++i){
-        if (fread(hash_rand_player[i], 4, 65536, fp) < 65536){
+    for (int i = 0; i < 4; ++i) {
+        if (fread(hash_rand_player[i], 4, 65536, fp) < 65536) {
             std::cerr << "[ERROR] hash" + std::to_string(hash_level) + ".eghs broken" << std::endl;
             return false;
         }
     }
-    for (int i = 0; i < 4; ++i){
-        if (fread(hash_rand_opponent[i], 4, 65536, fp) < 65536){
+    for (int i = 0; i < 4; ++i) {
+        if (fread(hash_rand_opponent[i], 4, 65536, fp) < 65536) {
             std::cerr << "[ERROR] hash" + std::to_string(hash_level) + ".eghs broken" << std::endl;
             return false;
         }

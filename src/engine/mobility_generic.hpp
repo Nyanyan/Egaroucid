@@ -17,7 +17,7 @@
 /*
     @brief mobility initialize
 */
-void mobility_init(){
+void mobility_init() {
 }
 
 /*
@@ -29,7 +29,7 @@ void mobility_init(){
 */
 // original code from http://www.amy.hi-ho.ne.jp/okuhara/bitboard.htm
 // modified by Nyanyan
-inline uint64_t calc_legal(const uint64_t P, const uint64_t O){
+inline uint64_t calc_legal(const uint64_t P, const uint64_t O) {
     uint64_t moves, mO;
     uint64_t flip1, flip7, flip9, flip8, pre1, pre7, pre9, pre8;
     mO = O & 0x7e7e7e7e7e7e7e7eULL;

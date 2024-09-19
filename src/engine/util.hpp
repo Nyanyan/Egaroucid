@@ -22,21 +22,21 @@
 
     @return board structure
 */
-Board input_board(){
+Board input_board() {
     Board res;
     char elem;
     int player;
     std::cin >> player;
     res.player = 0;
     res.opponent = 0;
-    for (int i = 0; i < HW2; ++i){
+    for (int i = 0; i < HW2; ++i) {
         std::cin >> elem;
-        if (elem == '0'){
+        if (elem == '0') {
             if (player == BLACK)
                 res.player |= 1ULL << (HW2_M1 - i);
             else
                 res.opponent |= 1ULL << (HW2_M1 - i);
-        } else if (elem == '1'){
+        } else if (elem == '1') {
             if (player == WHITE)
                 res.player |= 1ULL << (HW2_M1 - i);
             else
@@ -74,7 +74,7 @@ Board input_board(){
     
 */
 bool input_board_base81(std::string board_str, Board *board) {
-    if (board_str.length() != 16){
+    if (board_str.length() != 16) {
         std::cerr << "[ERROR] invalid argument" << std::endl;
         return true;
     }
@@ -82,37 +82,37 @@ bool input_board_base81(std::string board_str, Board *board) {
     board->opponent = 0;
     int idx, d;
     char c;
-    for (int i = 0; i < 16; ++i){
+    for (int i = 0; i < 16; ++i) {
         idx = i * 4 + 3;
         c = board_str[i] - '!';
         d = c / 32;
-        if (d == 1){
+        if (d == 1) {
             board->player |= 1ULL << idx;
-        } else if (d == 2){
+        } else if (d == 2) {
             board->opponent |= 1ULL << idx;
         }
         --idx;
         c %= 32;
         d = c / 9;
-        if (d == 1){
+        if (d == 1) {
             board->player |= 1ULL << idx;
-        } else if (d == 2){
+        } else if (d == 2) {
             board->opponent |= 1ULL << idx;
         }
         --idx;
         c %= 9;
         d = c / 3;
-        if (d == 1){
+        if (d == 1) {
             board->player |= 1ULL << idx;
-        } else if (d == 2){
+        } else if (d == 2) {
             board->opponent |= 1ULL << idx;
         }
         --idx;
         c %= 3;
         d = c;
-        if (d == 1){
+        if (d == 1) {
             board->player |= 1ULL << idx;
-        } else if (d == 2){
+        } else if (d == 2) {
             board->opponent |= 1ULL << idx;
         }
     }
@@ -125,7 +125,7 @@ bool input_board_base81(std::string board_str, Board *board) {
     @param idx                  index of the coordinate
     @return coordinate as string
 */
-std::string idx_to_coord(int idx){
+std::string idx_to_coord(int idx) {
     if (idx < 0 || HW2 <= idx)
         return "??";
     int y = HW_M1 - idx / HW;
@@ -140,7 +140,7 @@ std::string idx_to_coord(int idx){
     @param t                    time in [ms]
     @return time with ms as string
 */
-std::string ms_to_time(uint64_t t){
+std::string ms_to_time(uint64_t t) {
     std::string res;
     uint64_t hour = t / (1000 * 60 * 60);
     t %= 1000 * 60 * 60;
@@ -172,7 +172,7 @@ std::string ms_to_time(uint64_t t){
     @param t                    time in [ms]
     @return time as string
 */
-std::string ms_to_time_short(uint64_t t){
+std::string ms_to_time_short(uint64_t t) {
     std::string res;
     uint64_t hour = t / (1000 * 60 * 60);
     t -= hour * 1000 * 60 * 60;

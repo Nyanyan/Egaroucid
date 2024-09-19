@@ -252,16 +252,16 @@ int16_t eval_light_sur0_sur1_arr[N_PHASES][MAX_SURROUND][MAX_SURROUND];
 // move ordering evaluation
 int16_t pattern_move_ordering_end_arr[N_PATTERN_PARAMS_MO_END];
 
-inline bool load_eval_file(const char* file, bool show_log){
+inline bool load_eval_file(const char* file, bool show_log) {
     if (show_log)
         std::cerr << "evaluation file " << file << std::endl;
     bool failed = false;
     std::vector<int16_t> unzipped_params = load_unzip_egev2(file, show_log, &failed);
-    if (failed){
+    if (failed) {
         return false;
     }
     size_t param_idx = 0;
-    for (int phase_idx = 0; phase_idx < N_PHASES; ++phase_idx){
+    for (int phase_idx = 0; phase_idx < N_PHASES; ++phase_idx) {
         pattern_arr[phase_idx][0] = 0; // memory bound
         std::memcpy(pattern_arr[phase_idx] + 1, &unzipped_params[param_idx], sizeof(short) * N_PATTERN_PARAMS_BEFORE_DUMMY);
         param_idx += N_PATTERN_PARAMS_BEFORE_DUMMY;
@@ -274,15 +274,15 @@ inline bool load_eval_file(const char* file, bool show_log){
         param_idx += MAX_SURROUND * MAX_SURROUND;
     }
     // check max value
-    for (int phase_idx = 0; phase_idx < N_PHASES; ++phase_idx){
-        for (int i = 1; i < N_PATTERN_PARAMS; ++i){
+    for (int phase_idx = 0; phase_idx < N_PHASES; ++phase_idx) {
+        for (int i = 1; i < N_PATTERN_PARAMS; ++i) {
             if (i == SIMD_EVAL_DUMMY_ADDR) // dummy
                 continue;
-            if (pattern_arr[phase_idx][i] < -SIMD_EVAL_MAX_VALUE){
+            if (pattern_arr[phase_idx][i] < -SIMD_EVAL_MAX_VALUE) {
                 std::cerr << "[ERROR] evaluation value too low. you can ignore this error. phase " << phase_idx << " index " << i << " found " << pattern_arr[phase_idx][i] << std::endl;
                 pattern_arr[phase_idx][i] = -SIMD_EVAL_MAX_VALUE;
             }
-            if (pattern_arr[phase_idx][i] > SIMD_EVAL_MAX_VALUE){
+            if (pattern_arr[phase_idx][i] > SIMD_EVAL_MAX_VALUE) {
                 std::cerr << "[ERROR] evaluation value too high. you can ignore this error. phase " << phase_idx << " index " << i << " found " << pattern_arr[phase_idx][i] << std::endl;
                 pattern_arr[phase_idx][i] = SIMD_EVAL_MAX_VALUE;
             }
@@ -293,16 +293,16 @@ inline bool load_eval_file(const char* file, bool show_log){
 }
 
 #if USE_LIGHT_EVALUATION
-inline bool load_eval_light_file(const char* file, bool show_log){
+inline bool load_eval_light_file(const char* file, bool show_log) {
     if (show_log)
         std::cerr << "evaluation file " << file << std::endl;
     bool failed = false;
     std::vector<int16_t> unzipped_params = load_unzip_egev2(file, show_log, &failed);
-    if (failed){
+    if (failed) {
         return false;
     }
     size_t param_idx = 0;
-    for (int phase_idx = 0; phase_idx < N_PHASES; ++phase_idx){
+    for (int phase_idx = 0; phase_idx < N_PHASES; ++phase_idx) {
         pattern_light_arr[phase_idx][0] = 0; // memory bound
         std::memcpy(pattern_light_arr[phase_idx] + 1, &unzipped_params[param_idx], sizeof(short) * N_PATTERN_PARAMS_BEFORE_DUMMY_LIGHT);
         param_idx += N_PATTERN_PARAMS_BEFORE_DUMMY_LIGHT;
@@ -315,15 +315,15 @@ inline bool load_eval_light_file(const char* file, bool show_log){
         param_idx += MAX_SURROUND * MAX_SURROUND;
     }
     // check max value
-    for (int phase_idx = 0; phase_idx < N_PHASES; ++phase_idx){
-        for (int i = 1; i < N_PATTERN_PARAMS_LIGHT; ++i){
+    for (int phase_idx = 0; phase_idx < N_PHASES; ++phase_idx) {
+        for (int i = 1; i < N_PATTERN_PARAMS_LIGHT; ++i) {
             if (i == SIMD_EVAL_DUMMY_ADDR_LIGHT) // dummy
                 continue;
-            if (pattern_light_arr[phase_idx][i] < -SIMD_EVAL_MAX_VALUE){
+            if (pattern_light_arr[phase_idx][i] < -SIMD_EVAL_MAX_VALUE) {
                 std::cerr << "[ERROR] evaluation value too low. you can ignore this error. phase " << phase_idx << " index " << i << " found " << pattern_light_arr[phase_idx][i] << std::endl;
                 pattern_light_arr[phase_idx][i] = -SIMD_EVAL_MAX_VALUE;
             }
-            if (pattern_light_arr[phase_idx][i] > SIMD_EVAL_MAX_VALUE){
+            if (pattern_light_arr[phase_idx][i] > SIMD_EVAL_MAX_VALUE) {
                 std::cerr << "[ERROR] evaluation value too high. you can ignore this error. phase " << phase_idx << " index " << i << " found " << pattern_light_arr[phase_idx][i] << std::endl;
                 pattern_light_arr[phase_idx][i] = SIMD_EVAL_MAX_VALUE;
             }
@@ -334,27 +334,27 @@ inline bool load_eval_light_file(const char* file, bool show_log){
 }
 #endif
 
-inline bool load_eval_move_ordering_end_file(const char* file, bool show_log){
+inline bool load_eval_move_ordering_end_file(const char* file, bool show_log) {
     if (show_log)
         std::cerr << "evaluation for move ordering end file " << file << std::endl;
     FILE* fp;
-    if (!file_open(&fp, file, "rb")){
+    if (!file_open(&fp, file, "rb")) {
         std::cerr << "[ERROR] [FATAL] can't open eval " << file << std::endl;
         return false;
     }
     pattern_move_ordering_end_arr[0] = 0; // memory bound
-    if (fread(pattern_move_ordering_end_arr + 1, 2, N_PATTERN_PARAMS_MO_END - 1, fp) < N_PATTERN_PARAMS_MO_END - 1){
+    if (fread(pattern_move_ordering_end_arr + 1, 2, N_PATTERN_PARAMS_MO_END - 1, fp) < N_PATTERN_PARAMS_MO_END - 1) {
         std::cerr << "[ERROR] [FATAL] evaluation file for move ordering end broken" << std::endl;
         fclose(fp);
         return false;
     }
     // check max value
-    for (int i = 1; i < N_PATTERN_PARAMS_MO_END; ++i){
-        if (pattern_move_ordering_end_arr[i] < -SIMD_EVAL_MAX_VALUE_MO_END){
+    for (int i = 1; i < N_PATTERN_PARAMS_MO_END; ++i) {
+        if (pattern_move_ordering_end_arr[i] < -SIMD_EVAL_MAX_VALUE_MO_END) {
             std::cerr << "[ERROR] evaluation value too low. you can ignore this error. index " << i << " found " << pattern_move_ordering_end_arr[i] << std::endl;
             pattern_move_ordering_end_arr[i] = -SIMD_EVAL_MAX_VALUE_MO_END;
         }
-        if (pattern_move_ordering_end_arr[i] > SIMD_EVAL_MAX_VALUE_MO_END){
+        if (pattern_move_ordering_end_arr[i] > SIMD_EVAL_MAX_VALUE_MO_END) {
             std::cerr << "[ERROR] evaluation value too high. you can ignore this error. index " << i << " found " << pattern_move_ordering_end_arr[i] << std::endl;
             pattern_move_ordering_end_arr[i] = SIMD_EVAL_MAX_VALUE_MO_END;
         }
@@ -363,7 +363,7 @@ inline bool load_eval_move_ordering_end_file(const char* file, bool show_log){
     return true;
 }
 
-inline void pre_calculate_eval_constant(){
+inline void pre_calculate_eval_constant() {
     constexpr int pattern_starts[N_PATTERNS] = {
         1, 6562, 13123, 19684, // features[0]
         19927, 20656, 22843, /*dummy 29404*/ 29405, // features[1]
@@ -372,8 +372,8 @@ inline void pre_calculate_eval_constant(){
     };
     { // calc_eval_features initialization
         int16_t f2c[16];
-        for (int i = 0; i < N_SIMD_EVAL_FEATURES; ++i){
-            for (int j = 0; j < MAX_PATTERN_CELLS - 1; ++j){
+        for (int i = 0; i < N_SIMD_EVAL_FEATURES; ++i) {
+            for (int j = 0; j < MAX_PATTERN_CELLS - 1; ++j) {
                 for (int k = 0; k < 16; ++k)
                     f2c[k] = (j < feature_to_coord[i * 16 + k].n_cells - 1) ? 3 : 1;
                 feature_to_coord_simd_mul[i][j] = _mm256_set_epi16(
@@ -385,8 +385,8 @@ inline void pre_calculate_eval_constant(){
             }
         }
         int32_t f2c32[8];
-        for (int i = 0; i < N_SIMD_EVAL_FEATURES; ++i){
-            for (int j = 0; j < MAX_PATTERN_CELLS; ++j){
+        for (int i = 0; i < N_SIMD_EVAL_FEATURES; ++i) {
+            for (int j = 0; j < MAX_PATTERN_CELLS; ++j) {
                 for (int k = 0; k < 8; ++k)
                     f2c32[k] = feature_to_coord[i * 16 + k * 2 + 1].cells[j];
                 feature_to_coord_simd_cell[i][j][0] = _mm256_set_epi32(
@@ -416,12 +416,12 @@ inline void pre_calculate_eval_constant(){
     }
     { // eval_move initialization
         uint16_t c2f[CEIL_N_SYMMETRY_PATTERNS];
-        for (int cell = 0; cell < HW2; ++cell){ // 0 for h8, 63 for a1
+        for (int cell = 0; cell < HW2; ++cell) { // 0 for h8, 63 for a1
             for (int i = 0; i < CEIL_N_SYMMETRY_PATTERNS; ++i)
                 c2f[i] = 0;
             for (int i = 0; i < coord_to_feature[cell].n_features; ++i)
                 c2f[coord_to_feature[cell].features[i].feature] = coord_to_feature[cell].features[i].x;
-            for (int i = 0; i < N_SIMD_EVAL_FEATURES; ++i){
+            for (int i = 0; i < N_SIMD_EVAL_FEATURES; ++i) {
                 int idx = i * 16;
                 coord_to_feature_simd[cell][i] = _mm256_set_epi16(
                     c2f[idx], c2f[idx + 1], c2f[idx + 2], c2f[idx + 3], 
@@ -431,18 +431,18 @@ inline void pre_calculate_eval_constant(){
                 );
             }
         }
-        for (int bits = 0; bits < N_16BIT; ++bits){ // 1: unflipped discs, 0: others
-            for (int group = 0; group < N_SIMD_EVAL_FEATURE_GROUP; ++group){ // a1-h2, a3-h4, ..., a7-h8
+        for (int bits = 0; bits < N_16BIT; ++bits) { // 1: unflipped discs, 0: others
+            for (int group = 0; group < N_SIMD_EVAL_FEATURE_GROUP; ++group) { // a1-h2, a3-h4, ..., a7-h8
                 for (int i = 0; i < CEIL_N_SYMMETRY_PATTERNS; ++i)
                     c2f[i] = 0;
-                for (int cell = 0; cell < N_SIMD_EVAL_FEATURE_CELLS; ++cell){
-                    if (1 & (bits >> cell)){
+                for (int cell = 0; cell < N_SIMD_EVAL_FEATURE_CELLS; ++cell) {
+                    if (1 & (bits >> cell)) {
                         int global_cell = group * N_SIMD_EVAL_FEATURE_CELLS + cell;
                         for (int i = 0; i < coord_to_feature[global_cell].n_features; ++i)
                             c2f[coord_to_feature[global_cell].features[i].feature] += coord_to_feature[global_cell].features[i].x;
                     }
                 }
-                for (int simd_feature_idx = 0; simd_feature_idx < N_SIMD_EVAL_FEATURES; ++simd_feature_idx){
+                for (int simd_feature_idx = 0; simd_feature_idx < N_SIMD_EVAL_FEATURES; ++simd_feature_idx) {
                     int idx = simd_feature_idx * 16;
                     eval_move_unflipped_16bit[bits][group][simd_feature_idx] = _mm256_set_epi16(
                         c2f[idx], c2f[idx + 1], c2f[idx + 2], c2f[idx + 3], 
@@ -453,7 +453,7 @@ inline void pre_calculate_eval_constant(){
                 }
             }
         }
-        for (int i = 0; i < N_SIMD_EVAL_FEATURES_COMP; ++i){
+        for (int i = 0; i < N_SIMD_EVAL_FEATURES_COMP; ++i) {
             int i4 = i * 4;
             eval_simd_offsets_comp[i * 2] = _mm256_set_epi32(
                 pattern_starts[10 + i4], pattern_starts[10 + i4], pattern_starts[10 + i4], pattern_starts[10 + i4], 
@@ -479,20 +479,20 @@ inline void pre_calculate_eval_constant(){
     @param show_log             debug information?
     @return evaluation function conpletely initialized?
 */
-inline bool evaluate_init(const char* file, const char* mo_end_nws_file, bool show_log){
+inline bool evaluate_init(const char* file, const char* mo_end_nws_file, bool show_log) {
     bool eval_loaded = load_eval_file(file, show_log);
-    if (!eval_loaded){
+    if (!eval_loaded) {
         std::cerr << "[ERROR] [FATAL] evaluation file not loaded" << std::endl;
         return false;
     }
     bool eval_move_ordering_end_nws_loaded = load_eval_move_ordering_end_file(mo_end_nws_file, show_log);
-    if (!eval_move_ordering_end_nws_loaded){
+    if (!eval_move_ordering_end_nws_loaded) {
         std::cerr << "[ERROR] [FATAL] evaluation file for move ordering end not loaded" << std::endl;
         return false;
     }
     #if USE_LIGHT_EVALUATION
     bool eval_light_loaded = load_eval_light_file("resources/eval_light.egev2", show_log);
-    if (!eval_light_loaded){
+    if (!eval_light_loaded) {
         std::cerr << "[ERROR] [FATAL] light evaluation file not loaded" << std::endl;
         return false;
     }
@@ -509,7 +509,7 @@ inline bool evaluate_init(const char* file, const char* mo_end_nws_file, bool sh
     @param file                 evaluation file name
     @return evaluation function conpletely initialized?
 */
-bool evaluate_init(const std::string file, std::string mo_end_nws_file, bool show_log){
+bool evaluate_init(const std::string file, std::string mo_end_nws_file, bool show_log) {
     return evaluate_init(file.c_str(), mo_end_nws_file.c_str(), show_log);
 }
 
@@ -518,7 +518,7 @@ bool evaluate_init(const std::string file, std::string mo_end_nws_file, bool sho
 
     @return evaluation function conpletely initialized?
 */
-bool evaluate_init(bool show_log){
+bool evaluate_init(bool show_log) {
     return evaluate_init("resources/eval.egev2", "resources/eval_move_ordering_end.egev", show_log);
 }
 
@@ -529,7 +529,7 @@ bool evaluate_init(bool show_log){
     @param empties              a bitboard representing empties
     @return surround value
 */
-inline int calc_surround(const uint64_t discs, const uint64_t empties){
+inline int calc_surround(const uint64_t discs, const uint64_t empties) {
     __m256i pl = _mm256_set1_epi64x(discs);
     pl = _mm256_and_si256(pl, eval_surround_mask);
     pl = _mm256_or_si256(_mm256_sllv_epi64(pl, eval_surround_shift1879), _mm256_srlv_epi64(pl, eval_surround_shift1879));
@@ -546,16 +546,16 @@ inline int calc_surround(const uint64_t discs, const uint64_t empties){
     @param search               search information
     @return pattern evaluation value
 */
-inline __m256i calc_idx8_comp(const __m128i feature, const int i){
+inline __m256i calc_idx8_comp(const __m128i feature, const int i) {
     return _mm256_add_epi32(_mm256_cvtepu16_epi32(feature), eval_simd_offsets_comp[i]);
 }
 
-inline __m256i gather_eval(const int *start_addr, const __m256i idx8){
+inline __m256i gather_eval(const int *start_addr, const __m256i idx8) {
     return _mm256_i32gather_epi32(start_addr, idx8, 2); // stride is 2 byte, because 16 bit array used, HACK: if (SIMD_EVAL_MAX_VALUE * 2) * (N_ADD=8) < 2 ^ 16, AND is unnecessary
     // return _mm256_and_si256(_mm256_i32gather_epi32(start_addr, idx8, 2), eval_lower_mask);
 }
 
-inline int calc_pattern(const int phase_idx, Eval_features *features){
+inline int calc_pattern(const int phase_idx, Eval_features *features) {
     const int *start_addr = (int*)pattern_arr[phase_idx];
     __m256i res256 =                  gather_eval(start_addr, _mm256_cvtepu16_epi32(features->f128[0]));    // hv4 d5
     res256 = _mm256_add_epi32(res256, gather_eval(start_addr, _mm256_cvtepu16_epi32(features->f128[1])));   // hv2 hv3
@@ -572,7 +572,7 @@ inline int calc_pattern(const int phase_idx, Eval_features *features){
 }
 
 #if USE_LIGHT_EVALUATION
-inline int calc_pattern_light(const int phase_idx, Eval_features *features){
+inline int calc_pattern_light(const int phase_idx, Eval_features *features) {
     const int *start_addr = (int*)pattern_light_arr[phase_idx];
     __m256i res256 =                  gather_eval(start_addr, _mm256_cvtepu16_epi32(features->f128[0]));    // hv4 d5
     res256 = _mm256_add_epi32(res256, gather_eval(start_addr, _mm256_cvtepu16_epi32(features->f128[1])));   // hv2 hv3
@@ -587,7 +587,7 @@ inline int calc_pattern_light(const int phase_idx, Eval_features *features){
 }
 #endif
 
-inline int calc_pattern_move_ordering_end(Eval_features *features){
+inline int calc_pattern_move_ordering_end(Eval_features *features) {
     const int *start_addr = (int*)(pattern_move_ordering_end_arr - SHIFT_EVAL_MO_END);
     __m256i res256 =                  gather_eval(start_addr, calc_idx8_comp(features->f128[4], 0));        // corner+block cross
     res256 = _mm256_add_epi32(res256, gather_eval(start_addr, calc_idx8_comp(features->f128[5], 1)));       // edge+2X triangle
@@ -605,7 +605,7 @@ inline void calc_eval_features(Board *board, Eval_search *eval);
     @param b                    board
     @return evaluation value
 */
-inline int mid_evaluate(Board *board){
+inline int mid_evaluate(Board *board) {
     Search search;
     search.init_board(board);
     calc_eval_features(&(search.board), &(search.eval));
@@ -631,7 +631,7 @@ inline int mid_evaluate(Board *board){
     @param search               search information
     @return evaluation value
 */
-inline int mid_evaluate_diff(Search *search){
+inline int mid_evaluate_diff(Search *search) {
     int phase_idx, sur0, sur1, num0;
     uint64_t empties;
     phase_idx = search->phase();
@@ -655,7 +655,7 @@ inline int mid_evaluate_diff(Search *search){
     @param search               search information
     @return evaluation value
 */
-inline int mid_evaluate_light(Search *search){
+inline int mid_evaluate_light(Search *search) {
     int phase_idx, sur0, sur1, num0;
     uint64_t empties;
     phase_idx = search->phase();
@@ -679,16 +679,16 @@ inline int mid_evaluate_light(Search *search){
     @param search               search information
     @return evaluation value
 */
-inline int mid_evaluate_move_ordering_end(Search *search){
+inline int mid_evaluate_move_ordering_end(Search *search) {
     int res = calc_pattern_move_ordering_end(&search->eval.features[search->eval.feature_idx]);
     res += res >= 0 ? STEP_2 : -STEP_2;
     res /= STEP;
     return res;
 }
 
-inline void calc_feature_vector(__m256i &f, const int *b_arr_int, const int i, const int n){
+inline void calc_feature_vector(__m256i &f, const int *b_arr_int, const int i, const int n) {
     f = _mm256_set1_epi16(0);
-    for (int j = 0; j < n; ++j){ // n: max n_cells in pattern - 1
+    for (int j = 0; j < n; ++j) { // n: max n_cells in pattern - 1
         f = _mm256_add_epi16(f, _mm256_i32gather_epi32(b_arr_int, feature_to_coord_simd_cell[i][j][0], 4));
         f = _mm256_add_epi16(f, _mm256_slli_epi32(_mm256_i32gather_epi32(b_arr_int, feature_to_coord_simd_cell[i][j][1], 4), 16));
         f = _mm256_mullo_epi16(f, feature_to_coord_simd_mul[i][j]);
@@ -702,7 +702,7 @@ inline void calc_feature_vector(__m256i &f, const int *b_arr_int, const int i, c
 
     @param search               search information
 */
-inline void calc_eval_features(Board *board, Eval_search *eval){
+inline void calc_eval_features(Board *board, Eval_search *eval) {
     int b_arr_int[HW2 + 1];
     board->translate_to_arr_player_rev(b_arr_int);
     b_arr_int[COORD_NO] = 0;
@@ -727,7 +727,7 @@ inline void calc_eval_features(Board *board, Eval_search *eval){
     @param eval                 evaluation features
     @param flip                 flip information
 */
-inline void eval_move(Eval_search *eval, const Flip *flip, const Board *board){
+inline void eval_move(Eval_search *eval, const Flip *flip, const Board *board) {
     const uint16_t *flipped_group = (uint16_t*)&(flip->flip);
     const uint16_t *player_group = (uint16_t*)&(board->player);
     const uint16_t *opponent_group = (uint16_t*)&(board->opponent);
@@ -739,7 +739,7 @@ inline void eval_move(Eval_search *eval, const Flip *flip, const Board *board){
     f1 = _mm256_sub_epi16(eval->features[eval->feature_idx].f256[1], coord_to_feature_simd[flip->pos][1]);
     f2 = _mm256_sub_epi16(eval->features[eval->feature_idx].f256[2], coord_to_feature_simd[flip->pos][2]);
     f3 = _mm256_sub_epi16(eval->features[eval->feature_idx].f256[3], coord_to_feature_simd[flip->pos][3]);
-    for (int i = 0; i < N_SIMD_EVAL_FEATURE_GROUP; ++i){
+    for (int i = 0; i < N_SIMD_EVAL_FEATURE_GROUP; ++i) {
         // player discs 0 -> 1
         unflipped_p = ~flipped_group[i] & player_group[i];
         f0 = _mm256_add_epi16(f0, eval_move_unflipped_16bit[unflipped_p][i][0]);
@@ -765,7 +765,7 @@ inline void eval_move(Eval_search *eval, const Flip *flip, const Board *board){
 
     @param eval                 evaluation features
 */
-inline void eval_undo(Eval_search *eval){
+inline void eval_undo(Eval_search *eval) {
     --eval->feature_idx;
 }
 
@@ -777,7 +777,7 @@ inline void eval_undo(Eval_search *eval){
 
     @param eval                 evaluation features
 */
-inline void eval_pass(Eval_search *eval, const Board *board){
+inline void eval_pass(Eval_search *eval, const Board *board) {
     const uint16_t *player_group = (uint16_t*)&(board->player);
     const uint16_t *opponent_group = (uint16_t*)&(board->opponent);
     __m256i f0, f1, f2, f3;
@@ -785,7 +785,7 @@ inline void eval_pass(Eval_search *eval, const Board *board){
     f1 = eval->features[eval->feature_idx].f256[1];
     f2 = eval->features[eval->feature_idx].f256[2];
     f3 = eval->features[eval->feature_idx].f256[3];
-    for (int i = 0; i < N_SIMD_EVAL_FEATURE_GROUP; ++i){
+    for (int i = 0; i < N_SIMD_EVAL_FEATURE_GROUP; ++i) {
         f0 = _mm256_add_epi16(f0, eval_move_unflipped_16bit[player_group[i]][i][0]);
         f1 = _mm256_add_epi16(f1, eval_move_unflipped_16bit[player_group[i]][i][1]);
         f2 = _mm256_add_epi16(f2, eval_move_unflipped_16bit[player_group[i]][i][2]);
@@ -806,7 +806,7 @@ inline void eval_pass(Eval_search *eval, const Board *board){
 
 
 #if USE_LIGHT_EVALUATION
-inline void eval_move_light(Eval_search *eval, const Flip *flip, const Board *board){
+inline void eval_move_light(Eval_search *eval, const Flip *flip, const Board *board) {
     const uint16_t *flipped_group = (uint16_t*)&(flip->flip);
     const uint16_t *player_group = (uint16_t*)&(board->player);
     const uint16_t *opponent_group = (uint16_t*)&(board->opponent);
@@ -817,7 +817,7 @@ inline void eval_move_light(Eval_search *eval, const Flip *flip, const Board *bo
     f0 = _mm256_sub_epi16(eval->features[eval->feature_idx].f256[0], coord_to_feature_simd[flip->pos][0]);
     f1 = _mm256_sub_epi16(eval->features[eval->feature_idx].f256[1], coord_to_feature_simd[flip->pos][1]);
     f2 = _mm256_sub_epi16(eval->features[eval->feature_idx].f256[2], coord_to_feature_simd[flip->pos][2]);
-    for (int i = 0; i < N_SIMD_EVAL_FEATURE_GROUP; ++i){
+    for (int i = 0; i < N_SIMD_EVAL_FEATURE_GROUP; ++i) {
         // player discs 0 -> 1
         unflipped_p = ~flipped_group[i] & player_group[i];
         f0 = _mm256_add_epi16(f0, eval_move_unflipped_16bit[unflipped_p][i][0]);
@@ -835,18 +835,18 @@ inline void eval_move_light(Eval_search *eval, const Flip *flip, const Board *bo
     eval->features[eval->feature_idx].f256[2] = f2;
 }
 
-inline void eval_undo_light(Eval_search *eval){
+inline void eval_undo_light(Eval_search *eval) {
     --eval->feature_idx;
 }
 
-inline void eval_pass_light(Eval_search *eval, const Board *board){
+inline void eval_pass_light(Eval_search *eval, const Board *board) {
     const uint16_t *player_group = (uint16_t*)&(board->player);
     const uint16_t *opponent_group = (uint16_t*)&(board->opponent);
     __m256i f0, f1, f2;
     f0 = eval->features[eval->feature_idx].f256[0];
     f1 = eval->features[eval->feature_idx].f256[1];
     f2 = eval->features[eval->feature_idx].f256[2];
-    for (int i = 0; i < N_SIMD_EVAL_FEATURE_GROUP; ++i){
+    for (int i = 0; i < N_SIMD_EVAL_FEATURE_GROUP; ++i) {
         f0 = _mm256_add_epi16(f0, eval_move_unflipped_16bit[player_group[i]][i][0]);
         f1 = _mm256_add_epi16(f1, eval_move_unflipped_16bit[player_group[i]][i][1]);
         f2 = _mm256_add_epi16(f2, eval_move_unflipped_16bit[player_group[i]][i][2]);
@@ -865,13 +865,13 @@ inline void eval_pass_light(Eval_search *eval, const Board *board){
 
 
 // only corner+block cross edge+2X triangle
-inline void eval_move_endsearch(Eval_search *eval, const Flip *flip, const Board *board){
+inline void eval_move_endsearch(Eval_search *eval, const Flip *flip, const Board *board) {
     const uint16_t *flipped_group = (uint16_t*)&(flip->flip);
     const uint16_t *player_group = (uint16_t*)&(board->player);
     const uint16_t *opponent_group = (uint16_t*)&(board->opponent);
     // put cell 2 -> 1
     __m256i f2 = _mm256_sub_epi16(eval->features[eval->feature_idx].f256[2], coord_to_feature_simd[flip->pos][2]);
-    for (int i = 0; i < N_SIMD_EVAL_FEATURE_GROUP; ++i){
+    for (int i = 0; i < N_SIMD_EVAL_FEATURE_GROUP; ++i) {
         // player discs 0 -> 1
         f2 = _mm256_add_epi16(f2, eval_move_unflipped_16bit[~flipped_group[i] & player_group[i]][i][2]);
         // opponent discs 1 -> 0
@@ -881,15 +881,15 @@ inline void eval_move_endsearch(Eval_search *eval, const Flip *flip, const Board
     eval->features[eval->feature_idx].f256[2] = f2;
 }
 
-inline void eval_undo_endsearch(Eval_search *eval){
+inline void eval_undo_endsearch(Eval_search *eval) {
     --eval->feature_idx;
 }
 
-inline void eval_pass_endsearch(Eval_search *eval, const Board *board){
+inline void eval_pass_endsearch(Eval_search *eval, const Board *board) {
     const uint16_t *player_group = (uint16_t*)&(board->player);
     const uint16_t *opponent_group = (uint16_t*)&(board->opponent);
     __m256i f2 = eval->features[eval->feature_idx].f256[2];
-    for (int i = 0; i < N_SIMD_EVAL_FEATURE_GROUP; ++i){
+    for (int i = 0; i < N_SIMD_EVAL_FEATURE_GROUP; ++i) {
         f2 = _mm256_add_epi16(f2, eval_move_unflipped_16bit[player_group[i]][i][2]);
         f2 = _mm256_sub_epi16(f2, eval_move_unflipped_16bit[opponent_group[i]][i][2]);
     }

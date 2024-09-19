@@ -42,7 +42,7 @@
 // undefined legal bitboard: set bit on d4, d5, e4, and e5
 #define LEGAL_UNDEFINED 0x0000001818000000ULL
 
-struct Value_policy{
+struct Value_policy {
     int value;
     int policy;
     bool operator<( const Value_policy other ) const {
@@ -55,7 +55,7 @@ struct Value_policy{
 
     @return time in milliseconds
 */
-inline uint64_t tim(){
+inline uint64_t tim() {
     return std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now().time_since_epoch()).count();
 }
 
@@ -66,7 +66,7 @@ std::mt19937 raw_myrandom(tim());
 
     @return random value from 0.0 to 1.0 (not including 1.0)
 */
-inline double myrandom(){
+inline double myrandom() {
     return (double)raw_myrandom() / std::mt19937::max();
 }
 
@@ -77,7 +77,7 @@ inline double myrandom(){
     @param e                    maximum integer
     @return random integer from s to e - 1
 */
-inline int32_t myrandrange(int32_t s, int32_t e){
+inline int32_t myrandrange(int32_t s, int32_t e) {
     return s +(int)((e - s) * myrandom());
 }
 
@@ -86,7 +86,7 @@ inline int32_t myrandrange(int32_t s, int32_t e){
 
     @return random 32bit integer
 */
-inline uint32_t myrand_uint(){
+inline uint32_t myrand_uint() {
     return (uint32_t)raw_myrandom();
 }
 
@@ -95,7 +95,7 @@ inline uint32_t myrand_uint(){
 
     @return random 32bit integer with reversed bits
 */
-inline uint32_t myrand_uint_rev(){
+inline uint32_t myrand_uint_rev() {
     uint32_t x = raw_myrandom();
     x = ((x & 0x55555555U) << 1) | ((x & 0xAAAAAAAAU) >> 1);
     x = ((x & 0x33333333U) << 2) | ((x & 0xCCCCCCCCU) >> 2);
@@ -109,7 +109,7 @@ inline uint32_t myrand_uint_rev(){
 
     @return random 64bit integer
 */
-inline uint64_t myrand_ull(){
+inline uint64_t myrand_ull() {
     return ((uint64_t)raw_myrandom() << 32) | (uint64_t)raw_myrandom();
 }
 
@@ -123,7 +123,7 @@ inline uint64_t myrand_ull(){
     @param mode                 open mode
     @return file opened?
 */
-inline bool file_open(FILE **fp, const char *file, const char *mode){
+inline bool file_open(FILE **fp, const char *file, const char *mode) {
     #ifdef _WIN64
         return fopen_s(fp, file, mode) == 0;
     #elif _WIN32
@@ -141,7 +141,7 @@ inline bool file_open(FILE **fp, const char *file, const char *mode){
     @param elapsed              time
     @return NPS
 */
-inline uint64_t calc_nps(uint64_t n_nodes, uint64_t elapsed){
+inline uint64_t calc_nps(uint64_t n_nodes, uint64_t elapsed) {
     if (elapsed == 0ULL)
         elapsed = 1ULL;
     return n_nodes * 1000ULL / elapsed;
@@ -231,6 +231,6 @@ void calc_date(int *year, int *month, int *day, int *hour, int *minute, int *sec
     *second = newtime.tm_sec;
 }
 
-bool is_valid_policy(int policy){
+bool is_valid_policy(int policy) {
     return 0 <= policy && policy < HW2;
 }

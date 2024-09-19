@@ -36,16 +36,16 @@ uint64_t stability_edge_arr[N_8BIT][N_8BIT][2];
     @param np                   an integer to store result of player discs
     @param no                   an integer to store result of opponent discs
 */
-inline void probably_move_line(int p, int o, int place, int *np, int *no){
+inline void probably_move_line(int p, int o, int place, int *np, int *no) {
     int i, j;
     *np = p | (1 << place);
     for (i = place - 1; i > 0 && (1 & (o >> i)); --i);
-    if (1 & (p >> i)){
+    if (1 & (p >> i)) {
         for (j = place - 1; j > i; --j)
             *np ^= 1 << j;
     }
     for (i = place + 1; i < HW_M1 && (1 & (o >> i)); ++i);
-    if (1 & (p >> i)){
+    if (1 & (p >> i)) {
         for (j = place + 1; j < i; ++j)
             *np ^= 1 << j;
     }
@@ -58,11 +58,11 @@ inline void probably_move_line(int p, int o, int place, int *np, int *no){
     @param b                    player 1/2
     @param w                    player 2/2
 */
-int calc_stability_line(int b, int w){
+int calc_stability_line(int b, int w) {
     int i, nb, nw, res = b | w;
     int empties = ~(b | w);
-    for (i = 0; i < HW; ++i){
-        if (1 & (empties >> i)){
+    for (i = 0; i < HW; ++i) {
+        if (1 & (empties >> i)) {
             probably_move_line(b, w, i, &nb, &nw);
             res &= b | nw;
             res &= calc_stability_line(nb, nw);
@@ -80,8 +80,8 @@ int calc_stability_line(int b, int w){
 inline void stability_init() {
     int place, b, w, stab;
     for (b = 0; b < N_8BIT; ++b) {
-        for (w = b; w < N_8BIT; ++w){
-            if (b & w){
+        for (w = b; w < N_8BIT; ++w) {
+            if (b & w) {
                 stability_edge_arr[b][w][0] = 0;
                 stability_edge_arr[b][w][1] = 0;
                 stability_edge_arr[w][b][0] = 0;
@@ -90,8 +90,8 @@ inline void stability_init() {
                 stab = calc_stability_line(b, w);
                 stability_edge_arr[b][w][0] = 0;
                 stability_edge_arr[b][w][1] = 0;
-                for (place = 0; place < HW; ++place){
-                    if (1 & (stab >> place)){
+                for (place = 0; place < HW; ++place) {
+                    if (1 & (stab >> place)) {
                         stability_edge_arr[b][w][0] |= 1ULL << place;
                         stability_edge_arr[b][w][1] |= 1ULL << (place * HW);
                     }
@@ -123,7 +123,7 @@ inline void stability_init() {
 
     @param full                 a bitboard representing discs
 */
-inline uint64_t full_stability_h(uint64_t full){
+inline uint64_t full_stability_h(uint64_t full) {
     full &= full >> 1;
     full &= full >> 2;
     full &= full >> 4;
@@ -135,7 +135,7 @@ inline uint64_t full_stability_h(uint64_t full){
 
     @param full                 a bitboard representing discs
 */
-inline uint64_t full_stability_v(uint64_t full){
+inline uint64_t full_stability_v(uint64_t full) {
     full &= (full >> 8) | (full << 56);
     full &= (full >> 16) | (full << 48);
     full &= (full >> 32) | (full << 32);
@@ -143,7 +143,7 @@ inline uint64_t full_stability_v(uint64_t full){
 }
 
 #if USE_SIMD
-    inline void full_stability(uint64_t discs, uint64_t *h, uint64_t *v, uint64_t *d7, uint64_t *d9){
+    inline void full_stability(uint64_t discs, uint64_t *h, uint64_t *v, uint64_t *d7, uint64_t *d9) {
         /* // need AVX512
         // horizontal & vertical
         __m128i hv = _mm_set1_epi64x(discs);
@@ -177,7 +177,7 @@ inline uint64_t full_stability_v(uint64_t full){
         @param full_d7              an integer to store result of d7 line
         @param full_d9              an integer to store result of d9 line
     */
-    inline void full_stability_d(uint64_t full, uint64_t *full_d7, uint64_t *full_d9){
+    inline void full_stability_d(uint64_t full, uint64_t *full_d7, uint64_t *full_d9) {
         constexpr uint64_t edge = 0xFF818181818181FFULL;
         uint64_t l7, r7, l9, r9;
         l7 = r7 = full;
@@ -201,7 +201,7 @@ inline uint64_t full_stability_v(uint64_t full){
         @param d7                   an integer to store result of d7 line
         @param d9                   an integer to store result of d9 line
     */
-    inline void full_stability(uint64_t discs, uint64_t *h, uint64_t *v, uint64_t *d7, uint64_t *d9){
+    inline void full_stability(uint64_t discs, uint64_t *h, uint64_t *v, uint64_t *d7, uint64_t *d9) {
         *h = full_stability_h(discs);
         *v = full_stability_v(discs);
         full_stability_d(discs, d7, d9);
@@ -219,7 +219,7 @@ inline uint64_t full_stability_v(uint64_t full){
     @param opponent             bitboard representing opponent
     @return found player's stable discs as a bitboard
 */
-inline uint64_t calc_stability(uint64_t player, uint64_t opponent){
+inline uint64_t calc_stability(uint64_t player, uint64_t opponent) {
     uint64_t player_stability = 0, n_stability;
     const uint64_t player_mask = player & 0x007E7E7E7E7E7E00ULL;
     n_stability = stability_edge_arr[player & 0xFFU][opponent & 0xFFU][0];
@@ -234,7 +234,7 @@ inline uint64_t calc_stability(uint64_t player, uint64_t opponent){
         __m256i hvd7d9, p256;
         const __m256i shift = _mm256_set_epi64x(1, HW, HW_M1, HW_P1);
         __m128i and_tmp;
-        while (n_stability & ~player_stability){
+        while (n_stability & ~player_stability) {
             player_stability |= n_stability;
             p256 = _mm256_set1_epi64x(player_stability);
             hvd7d9 = _mm256_set_epi64x(full_h, full_v, full_d7, full_d9);
@@ -245,7 +245,7 @@ inline uint64_t calc_stability(uint64_t player, uint64_t opponent){
         }
     #else
         uint64_t h, v, d7, d9;
-        while (n_stability & ~player_stability){
+        while (n_stability & ~player_stability) {
             player_stability |= n_stability;
             h = (player_stability >> 1) | (player_stability << 1) | full_h;
             v = (player_stability >> HW) | (player_stability << HW) | full_v;
@@ -266,7 +266,7 @@ inline uint64_t calc_stability(uint64_t player, uint64_t opponent){
     @param board                board
     @return found stable discs as a bitboard
 */
-inline uint64_t calc_stability_bits(Board *board){
+inline uint64_t calc_stability_bits(Board *board) {
     return calc_stability(board->player, board->opponent) | calc_stability(board->opponent, board->player);
 }
 
@@ -282,8 +282,8 @@ inline uint64_t calc_stability_bits(Board *board){
     @param beta                 beta value
     @return SCORE_UNDEFINED if no cutoff found else the score
 */
-inline int stability_cut(Search *search, int *alpha, int *beta){
-    if (*beta >= stability_threshold[search->n_discs]){
+inline int stability_cut(Search *search, int *alpha, int *beta) {
+    if (*beta >= stability_threshold[search->n_discs]) {
         int n_beta = HW2 - 2 * pop_count_ull(calc_stability(search->board.opponent, search->board.player));
         if (n_beta <= *alpha)
             return n_beta;
@@ -294,8 +294,8 @@ inline int stability_cut(Search *search, int *alpha, int *beta){
 }
 
 // last4 (min stage)
-inline int stability_cut_last4(Search *search, int *alpha, int beta){
-    if (*alpha <= -stability_threshold[60]){
+inline int stability_cut_last4(Search *search, int *alpha, int beta) {
+    if (*alpha <= -stability_threshold[60]) {
         int n_alpha = 2 * pop_count_ull(calc_stability(search->board.opponent, search->board.player)) - HW2;
         if (n_alpha >= beta)
             return n_alpha;
@@ -316,8 +316,8 @@ inline int stability_cut_last4(Search *search, int *alpha, int beta){
     @param alpha                alpha value (beta = alpha + 1)
     @return SCORE_UNDEFINED if no cutoff found else the score
 */
-inline int stability_cut_nws(Search *search, int alpha){
-    if (alpha >= stability_threshold_nws[search->n_discs]){
+inline int stability_cut_nws(Search *search, int alpha) {
+    if (alpha >= stability_threshold_nws[search->n_discs]) {
         int n_beta = HW2 - 2 * pop_count_ull(calc_stability(search->board.opponent, search->board.player));
         if (n_beta <= alpha)
             return n_beta;
@@ -326,8 +326,8 @@ inline int stability_cut_nws(Search *search, int alpha){
 }
 
 // last4 (min stage)
-inline int stability_cut_last4_nws(Search *search, int alpha){
-    if (alpha < -stability_threshold_nws[60]){
+inline int stability_cut_last4_nws(Search *search, int alpha) {
+    if (alpha < -stability_threshold_nws[60]) {
         int n_alpha = 2 * pop_count_ull(calc_stability(search->board.opponent, search->board.player)) - HW2;
         if (n_alpha > alpha)
             return n_alpha;

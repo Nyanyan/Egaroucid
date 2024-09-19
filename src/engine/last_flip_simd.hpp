@@ -64,7 +64,7 @@ constexpr int_fast8_t n_flip_pre_calc[N_8BIT][HW] = {
     @param place                a place to put
     @return number of flipping discs
 */
-inline int_fast8_t count_last_flip(uint64_t player, const uint_fast8_t place){
+inline int_fast8_t count_last_flip(uint64_t player, const uint_fast8_t place) {
     const int t = place >> 3;
     const int u = place & 7;
     #if USE_BIT_GATHER_OPTIMIZE && false
@@ -84,20 +84,20 @@ inline int_fast8_t count_last_flip(uint64_t player, const uint_fast8_t place){
     #endif
 }
 
-inline void last_flip_init(){
+inline void last_flip_init() {
     #if USE_BIT_GATHER_OPTIMIZE && false
-        for (int i = 0; i < HW2; ++i){
+        for (int i = 0; i < HW2; ++i) {
             uint64_t d9 = 0ULL;
             uint64_t d7 = 0ULL;
             bool d9_wall = false;
             bool d7_wall = false;
-            for (int j = 0; j < HW; ++j){
-                if (i + j * 9 < HW2 && !d9_wall){
+            for (int j = 0; j < HW; ++j) {
+                if (i + j * 9 < HW2 && !d9_wall) {
                     d9 |= 1ULL << (i + j * 9);
                     if (d9 & 0x8080808080808080ULL)
                         d9_wall = true;
                 }
-                if (i + j * 7 < HW2 && !d7_wall){
+                if (i + j * 7 < HW2 && !d7_wall) {
                     d7 |= 1ULL << (i + j * 7);
                     if (d7 & 0x0101010101010101ULL)
                         d7_wall = true;
@@ -105,13 +105,13 @@ inline void last_flip_init(){
             }
             d9_wall = false;
             d7_wall = false;
-            for (int j = 0; j < HW; ++j){
-                if (i - j * 9 >= 0 && !d9_wall){
+            for (int j = 0; j < HW; ++j) {
+                if (i - j * 9 >= 0 && !d9_wall) {
                     d9 |= 1ULL << (i - j * 9);
                     if (d9 & 0x0101010101010101ULL)
                         d9_wall = true;
                 }
-                if (i - j * 7 >= 0 && !d7_wall){
+                if (i - j * 7 >= 0 && !d7_wall) {
                     d7 |= 1ULL << (i - j * 7);
                     if (d7 & 0x8080808080808080ULL)
                         d7_wall = true;

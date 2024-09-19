@@ -165,14 +165,14 @@ constexpr Level level_definition[N_LEVEL] = {
     @param depth                integer to store the depth
     @param mpc_level            MPC level
 */
-void get_level(int level, int n_moves, bool *is_mid_search, int *depth, uint_fast8_t *mpc_level){
+void get_level(int level, int n_moves, bool *is_mid_search, int *depth, uint_fast8_t *mpc_level) {
     if (level < 1)
         level = 1;
     if (level > 60)
         level = 60;
     Level level_status = level_definition[level];
     int n_empties = 60 - n_moves;
-    if (n_empties > level_status.complete0){
+    if (n_empties > level_status.complete0) {
         *is_mid_search = true;
         *depth = level_status.mid_lookahead;
         *mpc_level = level_status.mid_mpc_level;
@@ -201,23 +201,23 @@ void get_level(int level, int n_moves, bool *is_mid_search, int *depth, uint_fas
     @param n_moves              ply
     @return use MPC (Multi-ProbCut)?
 */
-bool get_level_use_mpc(int level, int n_moves){
+bool get_level_use_mpc(int level, int n_moves) {
     if (level < 1)
         level = 1;
     if (level > 60)
         level = 60;
     Level level_status = level_definition[level];
     int n_empties = 60 - n_moves;
-    if (n_empties < level_status.complete0){
+    if (n_empties < level_status.complete0) {
         return level_status.mid_mpc_level != MPC_100_LEVEL;
     } else {
-        if (n_empties > level_status.complete1){
+        if (n_empties > level_status.complete1) {
             return level_status.complete0_mpc_level != MPC_100_LEVEL;
-        } else if (n_empties > level_status.complete2){
+        } else if (n_empties > level_status.complete2) {
             return level_status.complete1_mpc_level != MPC_100_LEVEL;
-        } else if (n_empties > level_status.complete3){
+        } else if (n_empties > level_status.complete3) {
             return level_status.complete2_mpc_level != MPC_100_LEVEL;
-        } else if (n_empties > level_status.complete4){
+        } else if (n_empties > level_status.complete4) {
             return level_status.complete3_mpc_level != MPC_100_LEVEL;
         } else{
             return level_status.complete4_mpc_level != MPC_100_LEVEL;
@@ -234,7 +234,7 @@ bool get_level_use_mpc(int level, int n_moves){
     @param mid_depth            integer to store midgame lookahead depth
     @param end_depth            integer to store endgame lookahead depth
 */
-void get_level_depth(int level, int *mid_depth, int *end_depth){
+void get_level_depth(int level, int *mid_depth, int *end_depth) {
     if (level < 1)
         level = 1;
     if (level > 60)
@@ -252,14 +252,14 @@ void get_level_depth(int level, int *mid_depth, int *end_depth){
     @param n_moves              ply
     @return midgame search?
 */
-bool get_level_midsearch(int level, int n_moves){
+bool get_level_midsearch(int level, int n_moves) {
     if (level < 1)
         level = 1;
     if (level > 60)
         level = 60;
     Level level_status = level_definition[level];
     int n_empties = 60 - n_moves;
-    if (n_empties > level_status.complete0){
+    if (n_empties > level_status.complete0) {
         return true;
     } else {
         return false;
@@ -274,7 +274,7 @@ bool get_level_midsearch(int level, int n_moves){
     @param level                level to search
     @return endgame search depth
 */
-int get_level_endsearch_depth(int level){
+int get_level_endsearch_depth(int level) {
     return level_definition[level].complete0;
 }
 
@@ -286,7 +286,7 @@ int get_level_endsearch_depth(int level){
     @param level                level to search
     @return endgame complete search depth
 */
-int get_level_complete_depth(int level){
+int get_level_complete_depth(int level) {
     if (level_definition[level].complete0_mpc_level == MPC_100_LEVEL)
         return level_definition[level].complete0;
     if (level_definition[level].complete1_mpc_level == MPC_100_LEVEL)

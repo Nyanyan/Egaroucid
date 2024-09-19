@@ -136,7 +136,7 @@ constexpr uint64_t parity_table[16] = {
     @param is_end_search        search till the end?
     @param probability          MPC (Multi-ProbCut) probability in integer [%]
 */
-struct Search_result{
+struct Search_result {
     int_fast8_t policy;
     int value;
     int depth;
@@ -148,7 +148,7 @@ struct Search_result{
     bool is_end_search;
     int probability;
 
-    Search_result(){
+    Search_result() {
         policy = HW2;
         value = SCORE_UNDEFINED;
         depth = -1;
@@ -192,7 +192,7 @@ struct Search_result{
     @param alt_depth            depth of search for alt_score calculation
     @param alt_probability      probability of search for alt_score calculation
 */
-struct Analyze_result{
+struct Analyze_result {
     int played_move;
     int played_score;
     int played_depth;
@@ -217,7 +217,7 @@ struct Analyze_result{
     @param eval_feature_reversed    need to swap player in evaluation?
     @param use_multi_thread     use parallel search?
 */
-class Search{
+class Search {
     public:
         Board board;
         //int_fast8_t strt_n_discs;
@@ -235,7 +235,7 @@ class Search{
 
     public:
 
-        inline void init(Board *init_board, uint_fast8_t init_mpc_level, bool init_use_multi_thread, bool init_need_to_see_tt_loop, bool init_is_presearch){
+        inline void init(Board *init_board, uint_fast8_t init_mpc_level, bool init_use_multi_thread, bool init_need_to_see_tt_loop, bool init_is_presearch) {
             board = init_board->copy();
             n_discs = board.n_discs();
             //strt_n_discs = n_discs;
@@ -257,7 +257,7 @@ class Search{
 
             @param init_board           a board to set
         */
-        inline void init_board(Board *init_board){
+        inline void init_board(Board *init_board) {
             board = init_board->copy();
             n_discs = board.n_discs();
             //strt_n_discs = n_discs;
@@ -304,7 +304,7 @@ class Search{
         /*
             @brief pass board
         */
-        inline void pass(){
+        inline void pass() {
             #if USE_SIMD
                 eval_pass(&eval, &board);
             #else
@@ -351,7 +351,7 @@ class Search{
         /*
             @brief pass board
         */
-        inline void pass_light(){
+        inline void pass_light() {
             #if USE_SIMD
                 eval_pass_light(&eval, &board);
             #else
@@ -397,7 +397,7 @@ class Search{
         /*
             @brief pass board
         */
-        inline void pass_endsearch(){
+        inline void pass_endsearch() {
             #if USE_SIMD
                 eval_pass_endsearch(&eval, &board);
             #else
@@ -431,7 +431,7 @@ class Search{
         /*
             @brief pass board except eval_features
         */
-        inline void pass_noeval(){
+        inline void pass_noeval() {
             board.pass();
         }
 
@@ -462,7 +462,7 @@ class Search{
         /*
             @brief Get evaluation phase
         */
-        inline int phase(){
+        inline int phase() {
             return (n_discs - 4) / PHASE_N_DISCS;
             //return std::min(N_PHASES - 1, (n_discs - 4) / PHASE_N_DISCS);
         }
@@ -474,7 +474,7 @@ class Search{
     @param pos                  position to put
     @param val                  the exact score
 */
-struct Clog_result{
+struct Clog_result {
     uint_fast8_t pos;
     int val;
 };
@@ -486,12 +486,12 @@ struct Clog_result{
     @param value                the move ordering value
     @param n_legal              next legal moves as a bitboard for reusing
 */
-struct Flip_value{
+struct Flip_value {
     Flip flip;
     int value;
     uint64_t n_legal;
 
-    Flip_value(){
+    Flip_value() {
         n_legal = LEGAL_UNDEFINED;
     }
 

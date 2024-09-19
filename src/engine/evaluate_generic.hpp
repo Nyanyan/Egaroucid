@@ -293,9 +293,9 @@ int16_t pattern_arr_move_ordering_end[2][N_PATTERNS][MAX_EVALUATE_IDX];
     @param pattern_size         size of the pattern
     @return swapped index
 */
-inline int swap_player_idx(int i, int pattern_size){
+inline int swap_player_idx(int i, int pattern_size) {
     int j, ri = i;
-    for (j = 0; j < pattern_size; ++j){
+    for (j = 0; j < pattern_size; ++j) {
         if ((i / pow3[j]) % 3 == 0)
             ri += pow3[j];
         else if ((i / pow3[j]) % 3 == 1)
@@ -311,8 +311,8 @@ inline int swap_player_idx(int i, int pattern_size){
     @param pattern_idx          evaluation pattern's index
     @param siz                  size of the pattern
 */
-void init_pattern_arr_rev(int phase_idx, int pattern_idx, int siz){
-    for (int i = 0; i < (int)pow3[siz]; ++i){
+void init_pattern_arr_rev(int phase_idx, int pattern_idx, int siz) {
+    for (int i = 0; i < (int)pow3[siz]; ++i) {
         int ri = swap_player_idx(i, siz);
         pattern_arr[1][phase_idx][pattern_idx][ri] = pattern_arr[0][phase_idx][pattern_idx][i];
     }
@@ -324,12 +324,12 @@ void init_pattern_arr_rev(int phase_idx, int pattern_idx, int siz){
     @param file                 evaluation file name
     @return evaluation function conpletely initialized?
 */
-inline bool load_eval_file(const char* file, bool show_log){
+inline bool load_eval_file(const char* file, bool show_log) {
     if (show_log)
         std::cerr << "evaluation file " << file << std::endl;
     bool failed = false;
     std::vector<int16_t> unzipped_params = load_unzip_egev2(file, show_log, &failed);
-    if (failed){
+    if (failed) {
         return false;
     }
     constexpr int pattern_sizes[N_PATTERNS] = {
@@ -339,8 +339,8 @@ inline bool load_eval_file(const char* file, bool show_log){
         10, 10, 10, 10
     };
     size_t param_idx = 0;
-    for (int phase_idx = 0; phase_idx < N_PHASES; ++phase_idx){
-        for (int pattern_idx = 0; pattern_idx < N_PATTERNS; ++pattern_idx){
+    for (int phase_idx = 0; phase_idx < N_PHASES; ++phase_idx) {
+        for (int pattern_idx = 0; pattern_idx < N_PATTERNS; ++pattern_idx) {
             std::memcpy(pattern_arr[0][phase_idx][pattern_idx], &unzipped_params[param_idx], sizeof(short) * pow3[pattern_sizes[pattern_idx]]);
             param_idx += pow3[pattern_sizes[pattern_idx]];
         }
@@ -349,11 +349,11 @@ inline bool load_eval_file(const char* file, bool show_log){
         std::memcpy(eval_sur0_sur1_arr[phase_idx], &unzipped_params[param_idx], sizeof(short) * MAX_SURROUND * MAX_SURROUND);
         param_idx += MAX_SURROUND * MAX_SURROUND;
     }
-    if (thread_pool.size() >= 2){
+    if (thread_pool.size() >= 2) {
         std::future<void> tasks[N_PHASES * N_PATTERNS];
         int i = 0;
-        for (int phase_idx = 0; phase_idx < N_PHASES; ++phase_idx){
-            for (int pattern_idx = 0; pattern_idx < N_PATTERNS; ++pattern_idx){
+        for (int phase_idx = 0; phase_idx < N_PHASES; ++phase_idx) {
+            for (int pattern_idx = 0; pattern_idx < N_PATTERNS; ++pattern_idx) {
                 bool pushed = false;
                 while (!pushed)
                     tasks[i] = thread_pool.push(&pushed, std::bind(init_pattern_arr_rev, phase_idx, pattern_idx, pattern_sizes[pattern_idx]));
@@ -363,7 +363,7 @@ inline bool load_eval_file(const char* file, bool show_log){
         for (std::future<void> &task: tasks)
             task.get();
     } else{
-        for (int phase_idx = 0; phase_idx < N_PHASES; ++phase_idx){
+        for (int phase_idx = 0; phase_idx < N_PHASES; ++phase_idx) {
             for (int pattern_idx = 0; pattern_idx < N_PATTERNS; ++pattern_idx)
                 init_pattern_arr_rev(phase_idx, pattern_idx, pattern_sizes[pattern_idx]);
         }
@@ -371,24 +371,24 @@ inline bool load_eval_file(const char* file, bool show_log){
     return true;
 }
 
-inline bool load_eval_move_ordering_end_file(const char* file, bool show_log){
+inline bool load_eval_move_ordering_end_file(const char* file, bool show_log) {
     if (show_log)
         std::cerr << "evaluation for move ordering end file " << file << std::endl;
     FILE* fp;
-    if (!file_open(&fp, file, "rb")){
+    if (!file_open(&fp, file, "rb")) {
         std::cerr << "[ERROR] [FATAL] can't open eval " << file << std::endl;
         return false;
     }
     constexpr int pattern_sizes[N_PATTERNS_MO_END] = {10, 10, 10, 10};
-    for (int pattern_idx = 0; pattern_idx < N_PATTERNS_MO_END; ++pattern_idx){
-        if (fread(pattern_arr_move_ordering_end[0][pattern_idx], 2, pow3[pattern_sizes[pattern_idx]], fp) < pow3[pattern_sizes[pattern_idx]]){
+    for (int pattern_idx = 0; pattern_idx < N_PATTERNS_MO_END; ++pattern_idx) {
+        if (fread(pattern_arr_move_ordering_end[0][pattern_idx], 2, pow3[pattern_sizes[pattern_idx]], fp) < pow3[pattern_sizes[pattern_idx]]) {
             std::cerr << "[ERROR] [FATAL] evaluation file file for move ordering broken" << std::endl;
             fclose(fp);
             return false;
         }
     }
-    for (int pattern_idx = 0; pattern_idx < N_PATTERNS_MO_END; ++pattern_idx){
-        for (int i = 0; i < (int)pow3[pattern_sizes[pattern_idx]]; ++i){
+    for (int pattern_idx = 0; pattern_idx < N_PATTERNS_MO_END; ++pattern_idx) {
+        for (int i = 0; i < (int)pow3[pattern_sizes[pattern_idx]]; ++i) {
             int ri = swap_player_idx(i, pattern_sizes[pattern_idx]);
             pattern_arr_move_ordering_end[1][pattern_idx][ri] = pattern_arr_move_ordering_end[0][pattern_idx][i];
         }
@@ -403,14 +403,14 @@ inline bool load_eval_move_ordering_end_file(const char* file, bool show_log){
     @param show_log             debug information?
     @return evaluation function conpletely initialized?
 */
-inline bool evaluate_init(const char* file, const char* mo_end_nws_file, bool show_log){
+inline bool evaluate_init(const char* file, const char* mo_end_nws_file, bool show_log) {
     bool eval_loaded = load_eval_file(file, show_log);
-    if (!eval_loaded){
+    if (!eval_loaded) {
         std::cerr << "[ERROR] [FATAL] evaluation file not loaded" << std::endl;
         return false;
     }
     bool eval_move_ordering_end_nws_loaded = load_eval_move_ordering_end_file(mo_end_nws_file, show_log);
-    if (!eval_move_ordering_end_nws_loaded){
+    if (!eval_move_ordering_end_nws_loaded) {
         std::cerr << "[ERROR] [FATAL] evaluation file for move ordering end not loaded" << std::endl;
         return false;
     }
@@ -425,7 +425,7 @@ inline bool evaluate_init(const char* file, const char* mo_end_nws_file, bool sh
     @param file                 evaluation file name
     @return evaluation function conpletely initialized?
 */
-bool evaluate_init(const std::string file, std::string mo_end_nws_file, bool show_log){
+bool evaluate_init(const std::string file, std::string mo_end_nws_file, bool show_log) {
     return evaluate_init(file.c_str(), mo_end_nws_file.c_str(), show_log);
 }
 
@@ -434,7 +434,7 @@ bool evaluate_init(const std::string file, std::string mo_end_nws_file, bool sho
 
     @return evaluation function conpletely initialized?
 */
-bool evaluate_init(bool show_log){
+bool evaluate_init(bool show_log) {
     return evaluate_init("resources/eval.egev2", "resources/eval_move_ordering_end.egev", show_log);
 }
 
@@ -445,7 +445,7 @@ bool evaluate_init(bool show_log){
     @param empties              a bitboard representing empties
     @return surround value
 */
-inline int calc_surround(uint64_t discs, uint64_t empties){
+inline int calc_surround(uint64_t discs, uint64_t empties) {
     uint64_t hmask = discs & 0x7E7E7E7E7E7E7E7EULL;
     uint64_t vmask = discs & 0x00FFFFFFFFFFFF00ULL;
     uint64_t hvmask = discs & 0x007E7E7E7E7E7E00ULL;
@@ -465,7 +465,7 @@ inline int calc_surround(uint64_t discs, uint64_t empties){
     @param search               search information
     @return pattern evaluation value
 */
-inline int calc_pattern(const int phase_idx, Eval_search *eval){
+inline int calc_pattern(const int phase_idx, Eval_search *eval) {
     int res = 0;
     for (int i = 0; i < N_SYMMETRY_PATTERNS; ++i)
         res += pattern_arr[eval->reversed[eval->feature_idx]][phase_idx][feature_to_pattern[i]][eval->features[eval->feature_idx][i]];
@@ -479,7 +479,7 @@ inline int calc_pattern(const int phase_idx, Eval_search *eval){
     @param search               search information
     @return pattern evaluation value
 */
-inline int calc_pattern_move_ordering_end(Eval_search *eval){
+inline int calc_pattern_move_ordering_end(Eval_search *eval) {
     int res = 0;
     for (int i = EVAL_IDX_START_MOVE_ORDERING_END; i < EVAL_IDX_END_MOVE_ORDERING_END; ++i)
         res += pattern_arr_move_ordering_end[eval->reversed[eval->feature_idx]][feature_to_pattern[i] - EVAL_FEATURE_START_MOVE_ORDERING_END][eval->features[eval->feature_idx][i]];
@@ -494,7 +494,7 @@ inline void calc_eval_features(Board *board, Eval_search *eval);
     @param b                    board
     @return evaluation value
 */
-inline int mid_evaluate(Board *board){
+inline int mid_evaluate(Board *board) {
     Search search;
     search.init_board(board);
     calc_eval_features(board, &search.eval);
@@ -520,7 +520,7 @@ inline int mid_evaluate(Board *board){
     @param search               search information
     @return evaluation value
 */
-inline int mid_evaluate_diff(Search *search){
+inline int mid_evaluate_diff(Search *search) {
     int phase_idx, sur0, sur1, num0;
     uint64_t empties;
     phase_idx = search->phase();
@@ -543,23 +543,23 @@ inline int mid_evaluate_diff(Search *search){
     @param search               search information
     @return evaluation value
 */
-inline int mid_evaluate_move_ordering_end(Search *search){
+inline int mid_evaluate_move_ordering_end(Search *search) {
     int res = calc_pattern_move_ordering_end(&search->eval);
     res += res >= 0 ? STEP_2 : -STEP_2;
     res /= STEP;
     return res;
 }
 
-inline uint_fast16_t pick_pattern_idx(const uint_fast8_t b_arr[], const Feature_to_coord *f){
+inline uint_fast16_t pick_pattern_idx(const uint_fast8_t b_arr[], const Feature_to_coord *f) {
     uint_fast16_t res = 0;
-    for (int i = 0; i < f->n_cells; ++i){
+    for (int i = 0; i < f->n_cells; ++i) {
         res *= 3;
         res += b_arr[HW2_M1 - f->cells[i]];
     }
     return res;
 }
 
-inline void calc_eval_features(Board *board, Eval_search *eval){
+inline void calc_eval_features(Board *board, Eval_search *eval) {
     uint_fast8_t b_arr[HW2];
     board->translate_to_arr_player(b_arr);
     for (int i = 0; i < N_SYMMETRY_PATTERNS; ++i)
@@ -568,17 +568,17 @@ inline void calc_eval_features(Board *board, Eval_search *eval){
     eval->feature_idx = 0;
 }
 
-inline void eval_move(Eval_search *eval, const Flip *flip){
+inline void eval_move(Eval_search *eval, const Flip *flip) {
     uint_fast8_t i, cell;
     uint64_t f;
-    for (i = 0; i < N_SYMMETRY_PATTERNS; ++i){
+    for (i = 0; i < N_SYMMETRY_PATTERNS; ++i) {
         eval->features[eval->feature_idx + 1][i] = eval->features[eval->feature_idx][i];
     }
-    if (eval->reversed[eval->feature_idx]){
+    if (eval->reversed[eval->feature_idx]) {
         for (i = 0; i < MAX_CELL_PATTERNS && coord_to_feature[flip->pos].features[i].x; ++i)
             eval->features[eval->feature_idx + 1][coord_to_feature[flip->pos].features[i].feature] -= coord_to_feature[flip->pos].features[i].x;
         f = flip->flip;
-        for (cell = first_bit(&f); f; cell = next_bit(&f)){
+        for (cell = first_bit(&f); f; cell = next_bit(&f)) {
             for (i = 0; i < MAX_CELL_PATTERNS && coord_to_feature[cell].features[i].x; ++i)
                 eval->features[eval->feature_idx + 1][coord_to_feature[cell].features[i].feature] += coord_to_feature[cell].features[i].x;
         }
@@ -586,7 +586,7 @@ inline void eval_move(Eval_search *eval, const Flip *flip){
         for (i = 0; i < MAX_CELL_PATTERNS && coord_to_feature[flip->pos].features[i].x; ++i)
             eval->features[eval->feature_idx + 1][coord_to_feature[flip->pos].features[i].feature] -= 2 * coord_to_feature[flip->pos].features[i].x;
         f = flip->flip;
-        for (cell = first_bit(&f); f; cell = next_bit(&f)){
+        for (cell = first_bit(&f); f; cell = next_bit(&f)) {
             for (i = 0; i < MAX_CELL_PATTERNS && coord_to_feature[cell].features[i].x; ++i)
                 eval->features[eval->feature_idx + 1][coord_to_feature[cell].features[i].feature] -= coord_to_feature[cell].features[i].x;
         }
@@ -595,7 +595,7 @@ inline void eval_move(Eval_search *eval, const Flip *flip){
     ++eval->feature_idx;
 }
 
-inline void eval_undo(Eval_search *eval, const Flip *flip){
+inline void eval_undo(Eval_search *eval, const Flip *flip) {
     --eval->feature_idx;
 }
 
@@ -604,23 +604,23 @@ inline void eval_undo(Eval_search *eval, const Flip *flip){
 
     @param search               search information
 */
-inline void eval_pass(Eval_search *eval){
+inline void eval_pass(Eval_search *eval) {
     eval->reversed[eval->feature_idx] ^= 1;
 }
 
 
 
-inline void eval_move_endsearch(Eval_search *eval, const Flip *flip){
+inline void eval_move_endsearch(Eval_search *eval, const Flip *flip) {
     uint_fast8_t i, cell;
     uint64_t f;
-    for (i = EVAL_IDX_START_MOVE_ORDERING_END; i < EVAL_IDX_END_MOVE_ORDERING_END; ++i){
+    for (i = EVAL_IDX_START_MOVE_ORDERING_END; i < EVAL_IDX_END_MOVE_ORDERING_END; ++i) {
         eval->features[eval->feature_idx + 1][i] = eval->features[eval->feature_idx][i];
     }
-    if (eval->reversed[eval->feature_idx]){
+    if (eval->reversed[eval->feature_idx]) {
         for (i = 0; i < MAX_CELL_PATTERNS_MOVE_ORDERING_END && coord_to_feature_move_ordering_end[flip->pos].features[i].x; ++i)
             eval->features[eval->feature_idx + 1][coord_to_feature_move_ordering_end[flip->pos].features[i].feature + EVAL_IDX_START_MOVE_ORDERING_END] -= coord_to_feature_move_ordering_end[flip->pos].features[i].x;
         f = flip->flip;
-        for (cell = first_bit(&f); f; cell = next_bit(&f)){
+        for (cell = first_bit(&f); f; cell = next_bit(&f)) {
             for (i = 0; i < MAX_CELL_PATTERNS_MOVE_ORDERING_END && coord_to_feature_move_ordering_end[cell].features[i].x; ++i)
                 eval->features[eval->feature_idx + 1][coord_to_feature_move_ordering_end[cell].features[i].feature + EVAL_IDX_START_MOVE_ORDERING_END] += coord_to_feature_move_ordering_end[cell].features[i].x;
         }
@@ -628,7 +628,7 @@ inline void eval_move_endsearch(Eval_search *eval, const Flip *flip){
         for (i = 0; i < MAX_CELL_PATTERNS_MOVE_ORDERING_END && coord_to_feature_move_ordering_end[flip->pos].features[i].x; ++i)
             eval->features[eval->feature_idx + 1][coord_to_feature_move_ordering_end[flip->pos].features[i].feature + EVAL_IDX_START_MOVE_ORDERING_END] -= 2 * coord_to_feature_move_ordering_end[flip->pos].features[i].x;
         f = flip->flip;
-        for (cell = first_bit(&f); f; cell = next_bit(&f)){
+        for (cell = first_bit(&f); f; cell = next_bit(&f)) {
             for (i = 0; i < MAX_CELL_PATTERNS_MOVE_ORDERING_END && coord_to_feature_move_ordering_end[cell].features[i].x; ++i)
                 eval->features[eval->feature_idx + 1][coord_to_feature_move_ordering_end[cell].features[i].feature + EVAL_IDX_START_MOVE_ORDERING_END] -= coord_to_feature_move_ordering_end[cell].features[i].x;
         }
@@ -637,7 +637,7 @@ inline void eval_move_endsearch(Eval_search *eval, const Flip *flip){
     ++eval->feature_idx;
 }
 
-inline void eval_undo_endsearch(Eval_search *eval, const Flip *flip){
+inline void eval_undo_endsearch(Eval_search *eval, const Flip *flip) {
     --eval->feature_idx;
 }
 
@@ -646,6 +646,6 @@ inline void eval_undo_endsearch(Eval_search *eval, const Flip *flip){
 
     @param search               search information
 */
-inline void eval_pass_endsearch(Eval_search *eval){
+inline void eval_pass_endsearch(Eval_search *eval) {
     eval->reversed[eval->feature_idx] ^= 1;
 }

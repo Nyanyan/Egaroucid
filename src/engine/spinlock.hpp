@@ -19,7 +19,7 @@
 struct Spinlock {
     std::atomic<bool> lock_ = {0};
 
-    void lock(){
+    void lock() {
         for (;;) {
             if (!lock_.exchange(true, std::memory_order_acquire)) {
                 return;

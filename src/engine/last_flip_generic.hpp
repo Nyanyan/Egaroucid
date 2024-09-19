@@ -60,7 +60,7 @@ constexpr uint8_t n_flip_pre_calc[N_8BIT][HW] = {
     @param place                a place to put
     @return number of flipping discs
 */
-inline int_fast8_t count_last_flip(uint64_t player, const uint_fast8_t place){
+inline int_fast8_t count_last_flip(uint64_t player, const uint_fast8_t place) {
     const int x = place & 7;
     const int y = place >> 3;
     return
@@ -70,5 +70,5 @@ inline int_fast8_t count_last_flip(uint64_t player, const uint_fast8_t place){
         n_flip_pre_calc[join_d9_line(player, x + 7 - y)][std::min(y, x)];
 }
 
-inline void last_flip_init(){
+inline void last_flip_init() {
 }

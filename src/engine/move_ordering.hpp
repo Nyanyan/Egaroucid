@@ -122,11 +122,11 @@ inline bool transposition_table_get_value(Search *search, uint32_t hash, int *l,
     @return number of legal moves on corners
 */
 #if USE_BUILTIN_POPCOUNT
-    inline int get_corner_n_moves(uint64_t legal){
+    inline int get_corner_n_moves(uint64_t legal) {
         return pop_count_ull(legal & 0x8100000000000081ULL);
     }
 #else
-    inline int get_corner_n_moves(uint64_t legal){
+    inline int get_corner_n_moves(uint64_t legal) {
         int res = (int)((legal & 0b10000001ULL) + ((legal >> 56) & 0b10000001ULL));
         return (res & 0b11) + (res >> 7);
     }
@@ -138,16 +138,16 @@ inline bool transposition_table_get_value(Search *search, uint32_t hash, int *l,
     @param legal                legal moves as a bitboard
     @return weighted mobility
 */
-inline int get_weighted_n_moves(uint64_t legal){
+inline int get_weighted_n_moves(uint64_t legal) {
     return pop_count_ull(legal) * 2 + get_corner_n_moves(legal);
 }
 
 #ifdef USE_SIMD
-inline int get_n_moves_cornerX2(uint64_t legal){
+inline int get_n_moves_cornerX2(uint64_t legal) {
     return pop_count_ull(legal) + get_corner_n_moves(legal);
 }
 #else
-inline int get_n_moves_cornerX2(uint64_t legal){
+inline int get_n_moves_cornerX2(uint64_t legal) {
     uint64_t b = legal;
     uint64_t c = b & 0x0100000000000001ull;
     b -= (b >> 1) & 0x1555555555555515ull;
@@ -172,7 +172,7 @@ inline int get_n_moves_cornerX2(uint64_t legal){
 #ifdef CALC_SURROUND_FUNCTION
     #define get_potential_mobility(discs, empties) calc_surround(discs, empties)
 #elif USE_SIMD
-    inline int get_potential_mobility(uint64_t discs, uint64_t empties){
+    inline int get_potential_mobility(uint64_t discs, uint64_t empties) {
         __m256i eval_surround_mask = _mm256_set_epi64x(0x7E7E7E7E7E7E7E7EULL, 0x00FFFFFFFFFFFF00ULL, 0x007E7E7E7E7E7E00ULL, 0x007E7E7E7E7E7E00ULL);
         __m128i eval_surround_shift1879 = _mm_set_epi32(1, HW, HW_M1, HW_P1);
         __m256i pl = _mm256_set1_epi64x(discs);
@@ -183,7 +183,7 @@ inline int get_n_moves_cornerX2(uint64_t legal){
         return pop_count_ull(_mm_cvtsi128_si64(res) & empties);
     }
 #else
-    inline int get_potential_mobility(uint64_t discs, uint64_t empties){
+    inline int get_potential_mobility(uint64_t discs, uint64_t empties) {
         uint64_t hmask = discs & 0x7E7E7E7E7E7E7E7EULL;
         uint64_t vmask = discs & 0x00FFFFFFFFFFFF00ULL;
         uint64_t hvmask = discs & 0x007E7E7E7E7E7E00ULL;
@@ -207,13 +207,13 @@ inline int get_n_moves_cornerX2(uint64_t legal){
     @param searching            flag for terminating this search
     @return true if wipeout found else false
 */
-inline void move_evaluate(Search *search, Flip_value *flip_value, int alpha, int beta, int depth, const bool *searching){
+inline void move_evaluate(Search *search, Flip_value *flip_value, int alpha, int beta, int depth, const bool *searching) {
     flip_value->value = 0;
     search->move(&flip_value->flip);
         flip_value->n_legal = search->board.get_legal();
         flip_value->value += (MO_OFFSET_L_PM - get_weighted_n_moves(flip_value->n_legal)) * W_MOBILITY;
         flip_value->value += (MO_OFFSET_L_PM - get_potential_mobility(search->board.opponent, ~(search->board.player | search->board.opponent))) * W_POTENTIAL_MOBILITY;
-        switch (depth){
+        switch (depth) {
             case 0:
                 flip_value->value += (SCORE_MAX - mid_evaluate_diff(search)) * W_VALUE;
                 break;
@@ -221,7 +221,7 @@ inline void move_evaluate(Search *search, Flip_value *flip_value, int alpha, int
                 flip_value->value += (SCORE_MAX - nega_alpha_eval1(search, alpha, beta, false)) * (W_VALUE + W_VALUE_DEEP_ADDITIONAL);
                 break;
             default:
-                if (transposition_table.has_node_any_level(search, search->board.hash())){
+                if (transposition_table.has_node_any_level(search, search->board.hash())) {
                     flip_value->value += W_TT_BONUS;
                 }
                 uint_fast8_t mpc_level = search->mpc_level;
@@ -244,13 +244,13 @@ inline void move_evaluate(Search *search, Flip_value *flip_value, int alpha, int
     @param searching            flag for terminating this search
     @return true if wipeout found else false
 */
-inline void move_evaluate_nws(Search *search, Flip_value *flip_value, int alpha, int beta, int depth, const bool *searching){
+inline void move_evaluate_nws(Search *search, Flip_value *flip_value, int alpha, int beta, int depth, const bool *searching) {
     flip_value->value = 0;
     search->move(&flip_value->flip);
         flip_value->n_legal = search->board.get_legal();
         flip_value->value += (MO_OFFSET_L_PM - get_weighted_n_moves(flip_value->n_legal)) * W_NWS_MOBILITY;
         flip_value->value += (MO_OFFSET_L_PM - get_potential_mobility(search->board.opponent, ~(search->board.player | search->board.opponent))) * W_NWS_POTENTIAL_MOBILITY;
-        switch (depth){
+        switch (depth) {
             case 0:
                 #if USE_LIGHT_EVALUATION
                     flip_value->value += (SCORE_MAX - mid_evaluate_light(search)) * W_NWS_VALUE;
@@ -266,7 +266,7 @@ inline void move_evaluate_nws(Search *search, Flip_value *flip_value, int alpha,
                 #endif
                 break;
             default:
-                if (transposition_table.has_node_any_level(search, search->board.hash())){
+                if (transposition_table.has_node_any_level(search, search->board.hash())) {
                     flip_value->value += W_NWS_TT_BONUS;
                 }
                 uint_fast8_t mpc_level = search->mpc_level;
@@ -285,7 +285,7 @@ inline void move_evaluate_nws(Search *search, Flip_value *flip_value, int alpha,
     @param flip_value           flip with value
     @return true if wipeout found else false
 */
-inline void move_evaluate_end_nws(Search *search, Flip_value *flip_value){
+inline void move_evaluate_end_nws(Search *search, Flip_value *flip_value) {
     flip_value->value = 0;
     search->move_endsearch(&flip_value->flip);
         flip_value->n_legal = search->board.get_legal();
@@ -301,9 +301,9 @@ inline void move_evaluate_end_nws(Search *search, Flip_value *flip_value){
     @param flip_value           flip with value
     @return true if wipeout found else false
 */
-inline void move_evaluate_end_simple_nws(Search *search, Flip_value *flip_value){
+inline void move_evaluate_end_simple_nws(Search *search, Flip_value *flip_value) {
     flip_value->value = 0;
-    if (search->parity & cell_div4[flip_value->flip.pos]){
+    if (search->parity & cell_div4[flip_value->flip.pos]) {
         flip_value->value += W_END_NWS_SIMPLE_PARITY;
     }
     search->move_noeval(&flip_value->flip);
@@ -319,19 +319,19 @@ inline void move_evaluate_end_simple_nws(Search *search, Flip_value *flip_value)
     @param strt                 the first index
     @param siz                  the size of move_list
 */
-inline void swap_next_best_move(std::vector<Flip_value> &move_list, const int strt, const int siz){
-    if (strt == siz - 1){
+inline void swap_next_best_move(std::vector<Flip_value> &move_list, const int strt, const int siz) {
+    if (strt == siz - 1) {
         return;
     }
     int top_idx = strt;
     int best_value = move_list[strt].value;
-    for (int i = strt + 1; i < siz; ++i){
-        if (best_value < move_list[i].value){
+    for (int i = strt + 1; i < siz; ++i) {
+        if (best_value < move_list[i].value) {
             best_value = move_list[i].value;
             top_idx = i;
         }
     }
-    if (top_idx != strt){
+    if (top_idx != strt) {
         std::swap(move_list[strt], move_list[top_idx]);
     }
 }
@@ -343,19 +343,19 @@ inline void swap_next_best_move(std::vector<Flip_value> &move_list, const int st
     @param strt                 the first index
     @param siz                  the size of move_list
 */
-inline void swap_next_best_move(Flip_value move_list[], const int strt, const int siz){
-    if (strt == siz - 1){
+inline void swap_next_best_move(Flip_value move_list[], const int strt, const int siz) {
+    if (strt == siz - 1) {
         return;
     }
     int top_idx = strt;
     int best_value = move_list[strt].value;
-    for (int i = strt + 1; i < siz; ++i){
-        if (best_value < move_list[i].value){
+    for (int i = strt + 1; i < siz; ++i) {
+        if (best_value < move_list[i].value) {
             best_value = move_list[i].value;
             top_idx = i;
         }
     }
-    if (top_idx != strt){
+    if (top_idx != strt) {
         std::swap(move_list[strt], move_list[top_idx]);
     }
 }
@@ -371,8 +371,8 @@ inline void swap_next_best_move(Flip_value move_list[], const int strt, const in
     @param beta                 beta value
     @param searching            flag for terminating this search
 */
-inline void move_list_evaluate(Search *search, std::vector<Flip_value> &move_list, uint_fast8_t moves[], int depth, int alpha, int beta, const bool *searching){
-    if (move_list.size() == 1){
+inline void move_list_evaluate(Search *search, std::vector<Flip_value> &move_list, uint_fast8_t moves[], int depth, int alpha, int beta, const bool *searching) {
+    if (move_list.size() == 1) {
         return;
     }
     int eval_alpha = -std::min(SCORE_MAX, beta + MOVE_ORDERING_VALUE_OFFSET_BETA);
@@ -381,16 +381,16 @@ inline void move_list_evaluate(Search *search, std::vector<Flip_value> &move_lis
     /*
     int l, u = SCORE_MAX;
     transposition_table.get_value_any_level(search, search->board.hash(), &l, &u);
-    if (u <= alpha){
+    if (u <= alpha) {
         eval_depth = std::max(0, eval_depth - 4);
     }
     */
-    for (Flip_value &flip_value: move_list){
+    for (Flip_value &flip_value: move_list) {
         #if USE_MID_ETC
-            if (flip_value.flip.flip){
-                if (flip_value.flip.pos == moves[0]){
+            if (flip_value.flip.flip) {
+                if (flip_value.flip.pos == moves[0]) {
                     flip_value.value = W_1ST_MOVE;
-                } else if (flip_value.flip.pos == moves[1]){
+                } else if (flip_value.flip.pos == moves[1]) {
                     flip_value.value = W_2ND_MOVE;
                 } else{
                     move_evaluate(search, &flip_value, eval_alpha, eval_beta, eval_depth, searching);
@@ -399,9 +399,9 @@ inline void move_list_evaluate(Search *search, std::vector<Flip_value> &move_lis
                 flip_value.value = -INF;
             }
         #else
-            if (flip_value.flip.pos == moves[0]){
+            if (flip_value.flip.pos == moves[0]) {
                 flip_value.value = W_1ST_MOVE;
-            } else if (flip_value.flip.pos == moves[1]){
+            } else if (flip_value.flip.pos == moves[1]) {
                 flip_value.value = W_2ND_MOVE;
             } else{
                 move_evaluate(search, &flip_value, eval_alpha, eval_beta, eval_depth, searching);
@@ -420,19 +420,19 @@ inline void move_list_evaluate(Search *search, std::vector<Flip_value> &move_lis
     @param alpha                alpha value (beta = alpha + 1)
     @param searching            flag for terminating this search
 */
-inline void move_list_evaluate_nws(Search *search, std::vector<Flip_value> &move_list, uint_fast8_t moves[], int depth, int alpha, const bool *searching){
-    if (move_list.size() <= 1){
+inline void move_list_evaluate_nws(Search *search, std::vector<Flip_value> &move_list, uint_fast8_t moves[], int depth, int alpha, const bool *searching) {
+    if (move_list.size() <= 1) {
         return;
     }
     const int eval_alpha = -std::min(SCORE_MAX, alpha + MOVE_ORDERING_NWS_VALUE_OFFSET_BETA);
     const int eval_beta = -std::max(-SCORE_MAX, alpha - MOVE_ORDERING_NWS_VALUE_OFFSET_ALPHA);
     int eval_depth = depth >> 4;
-    for (Flip_value &flip_value: move_list){
+    for (Flip_value &flip_value: move_list) {
         #if USE_MID_ETC
-            if (flip_value.flip.flip){
-                if (flip_value.flip.pos == moves[0]){
+            if (flip_value.flip.flip) {
+                if (flip_value.flip.pos == moves[0]) {
                     flip_value.value = W_1ST_MOVE;
-                } else if (flip_value.flip.pos == moves[1]){
+                } else if (flip_value.flip.pos == moves[1]) {
                     flip_value.value = W_2ND_MOVE;
                 } else{
                     move_evaluate_nws(search, &flip_value, eval_alpha, eval_beta, eval_depth, searching);
@@ -441,9 +441,9 @@ inline void move_list_evaluate_nws(Search *search, std::vector<Flip_value> &move
                 flip_value.value = -INF;
             }
         #else
-            if (flip_value.flip.pos == moves[0]){
+            if (flip_value.flip.pos == moves[0]) {
                 flip_value.value = W_1ST_MOVE;
-            } else if (flip_value.flip.pos == moves[1]){
+            } else if (flip_value.flip.pos == moves[1]) {
                 flip_value.value = W_2ND_MOVE;
             } else{
                 move_evaluate_nws(search, &flip_value, eval_alpha, eval_beta, eval_depth, searching);
@@ -458,14 +458,14 @@ inline void move_list_evaluate_nws(Search *search, std::vector<Flip_value> &move
     @param search               search information
     @param move_list            list of moves
 */
-inline void move_list_evaluate_end_nws(Search *search, std::vector<Flip_value> &move_list, uint_fast8_t moves[], const bool *searching){
-    if (move_list.size() <= 1){
+inline void move_list_evaluate_end_nws(Search *search, std::vector<Flip_value> &move_list, uint_fast8_t moves[], const bool *searching) {
+    if (move_list.size() <= 1) {
         return;
     }
-    for (Flip_value &flip_value: move_list){
-        if (flip_value.flip.pos == moves[0]){
+    for (Flip_value &flip_value: move_list) {
+        if (flip_value.flip.pos == moves[0]) {
             flip_value.value = W_1ST_MOVE;
-        } else if (flip_value.flip.pos == moves[1]){
+        } else if (flip_value.flip.pos == moves[1]) {
             flip_value.value = W_2ND_MOVE;
         } else{
             move_evaluate_end_nws(search, &flip_value);
@@ -479,16 +479,16 @@ inline void move_list_evaluate_end_nws(Search *search, std::vector<Flip_value> &
     @param search               search information
     @param move_list            list of moves
 */
-inline void move_list_evaluate_end_simple_nws(Search *search, Flip_value move_list[], const int canput){
-    if (canput <= 1){
+inline void move_list_evaluate_end_simple_nws(Search *search, Flip_value move_list[], const int canput) {
+    if (canput <= 1) {
         return;
     }
-    for (int i = 0; i < canput; ++i){
+    for (int i = 0; i < canput; ++i) {
         move_evaluate_end_simple_nws(search, &move_list[i]);
     }
 }
 
-inline void move_list_sort(std::vector<Flip_value> &move_list){
+inline void move_list_sort(std::vector<Flip_value> &move_list) {
     std::sort(move_list.begin(), move_list.end(), [](Flip_value &a, Flip_value &b) { return a.value > b.value; });
 }
 
@@ -499,17 +499,17 @@ inline void move_list_sort(std::vector<Flip_value> &move_list){
     #include "ai.hpp"
     inline Search_result tree_search_legal(Board board, int depth, uint_fast8_t mpc_level, bool show_log, uint64_t use_legal, bool use_multi_thread);
 
-    Board get_board(std::string board_str){
+    Board get_board(std::string board_str) {
         board_str.erase(std::remove_if(board_str.begin(), board_str.end(), ::isspace), board_str.end());
         Board new_board;
         int player = BLACK;
         new_board.player = 0ULL;
         new_board.opponent = 0ULL;
-        if (board_str.length() != HW2 + 1){
+        if (board_str.length() != HW2 + 1) {
             std::cerr << "[ERROR] invalid argument" << std::endl;
             return new_board;
         }
-        for (int i = 0; i < HW2; ++i){
+        for (int i = 0; i < HW2; ++i) {
             if (board_str[i] == 'B' || board_str[i] == 'b' || board_str[i] == 'X' || board_str[i] == 'x' || board_str[i] == '0' || board_str[i] == '*')
                 new_board.player |= 1ULL << (HW2_M1 - i);
             else if (board_str[i] == 'W' || board_str[i] == 'w' || board_str[i] == 'O' || board_str[i] == 'o' || board_str[i] == '1')
@@ -528,9 +528,9 @@ inline void move_list_sort(std::vector<Flip_value> &move_list){
         return new_board;
     }
 
-    uint64_t n_nodes_test(int level, std::vector<Board> testcase_arr){
+    uint64_t n_nodes_test(int level, std::vector<Board> testcase_arr) {
         uint64_t n_nodes = 0;
-        for (Board &board: testcase_arr){
+        for (Board &board: testcase_arr) {
             int depth;
             bool is_mid_search;
             uint_fast8_t mpc_level;
@@ -543,18 +543,18 @@ inline void move_list_sort(std::vector<Flip_value> &move_list){
         return n_nodes;
     }
 
-    void tune_move_ordering(int level){
+    void tune_move_ordering(int level) {
         std::cout << "please input testcase file" << std::endl;
         std::string file;
         std::cin >> file;
         std::ifstream ifs(file);
-        if (ifs.fail()){
+        if (ifs.fail()) {
             std::cerr << "[ERROR] [FATAL] problem file " << file << " not found" << std::endl;
             return;
         }
         std::vector<Board> testcase_arr;
         std::string line;
-        while (std::getline(ifs, line)){
+        while (std::getline(ifs, line)) {
             testcase_arr.emplace_back(get_board(line));
         }
         std::cerr << testcase_arr.size() << " testcases loaded" << std::endl;
@@ -569,7 +569,7 @@ inline void move_list_sort(std::vector<Flip_value> &move_list){
         int n_updated = 0;
         int n_try = 0;
         uint64_t strt = tim();
-        while (tim() - strt < tl){
+        while (tim() - strt < tl) {
             // update parameter randomly
             int idx = myrandrange(MOVE_ORDERING_PARAM_START, MOVE_ORDERING_PARAM_END + 1); // midgame search
             int delta = myrandrange(-5, 6);
@@ -586,7 +586,7 @@ inline void move_list_sort(std::vector<Flip_value> &move_list){
             constexpr double end_temp = 0.0001; // percent
             double temp = start_temp + (end_temp - start_temp) * (tim() - strt) / tl;
             double prob = exp((min_percentage - percentage) / temp);
-            if (prob > myrandom()){
+            if (prob > myrandom()) {
                 min_n_nodes = n_nodes;
                 min_percentage = percentage;
                 ++n_updated;
@@ -596,13 +596,13 @@ inline void move_list_sort(std::vector<Flip_value> &move_list){
             ++n_try;
 
             std::cerr << "try " << n_try << " updated " << n_updated << " min_n_nodes " << min_n_nodes << " n_nodes " << n_nodes << " " << min_percentage << "% " << tim() - strt << " ms ";
-            for (int i = 0; i < N_MOVE_ORDERING_PARAM; ++i){
+            for (int i = 0; i < N_MOVE_ORDERING_PARAM; ++i) {
                 std::cerr << ", " << move_ordering_param_array[i];
             }
             std::cerr << std::endl;
         }
         std::cout << "done " << min_percentage << "% ";
-        for (int i = 0; i < N_MOVE_ORDERING_PARAM; ++i){
+        for (int i = 0; i < N_MOVE_ORDERING_PARAM; ++i) {
             std::cout << ", " << move_ordering_param_array[i];
         }
         std::cout << std::endl;

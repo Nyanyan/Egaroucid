@@ -112,7 +112,7 @@ inline bool is_1empty(uint32_t place, uint64_t b) {
     @param p0                   last empty square
     @return the final score
 */
-inline int last1(Search *search, uint64_t player, int alpha, uint_fast8_t p0){
+inline int last1(Search *search, uint64_t player, int alpha, uint_fast8_t p0) {
     ++search->n_nodes;
     #if USE_SEARCH_STATISTICS
         ++search->n_nodes_discs[63];
@@ -193,7 +193,7 @@ inline int last1(Search *search, uint64_t player, int alpha, uint_fast8_t p0){
     }
 #endif
 
-void endsearch_init(){
+void endsearch_init() {
     #if USE_SIMD
         for (int i = 0; i < 64; ++i) {
               // X_TO_BIT

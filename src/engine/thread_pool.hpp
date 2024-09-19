@@ -23,7 +23,7 @@
 //  * <https://github.com/SandSnip3r/thread-pool>
 // Thank you! :)
 
-void reset_unavailable_task(bool *start_flag){
+void reset_unavailable_task(bool *start_flag) {
     while (!*start_flag);
 }
 
@@ -40,7 +40,7 @@ class Thread_pool {
         //std::atomic<int> n_using_tasks;
 
     public:
-        void set_thread(int new_n_thread){
+        void set_thread(int new_n_thread) {
             {
                 std::lock_guard<std::mutex> lock(mtx);
                 //n_using_tasks.store(0);
@@ -55,7 +55,7 @@ class Thread_pool {
             }
         }
 
-        void exit_thread(){
+        void exit_thread() {
             {
                 std::lock_guard<std::mutex> lock(mtx);
                 running = false;
@@ -67,19 +67,19 @@ class Thread_pool {
             n_idle = 0;
         }
 
-        Thread_pool(){
+        Thread_pool() {
             set_thread(0);
         }
 
-        Thread_pool(int new_n_thread){
+        Thread_pool(int new_n_thread) {
             set_thread(new_n_thread);
         }
 
-        ~Thread_pool(){
+        ~Thread_pool() {
             exit_thread();
         }
 
-        void resize(int new_n_thread){
+        void resize(int new_n_thread) {
             exit_thread();
             set_thread(new_n_thread);
         }
@@ -93,24 +93,24 @@ class Thread_pool {
         }
 
         /*
-        void reset_unavailable(){
-            if (n_idle == n_thread && n_using_tasks.load() == 0){
+        void reset_unavailable() {
+            if (n_idle == n_thread && n_using_tasks.load() == 0) {
                 bool start_flag = false;
                 std::vector<std::future<void>> futures;
                 bool need_to_reset = false;
-                for (int i = 0; i < n_thread; ++i){
+                for (int i = 0; i < n_thread; ++i) {
                     bool pushed;
                     futures.emplace_back(push(&pushed, std::bind(reset_unavailable_task, &start_flag)));
-                    if (!pushed){
+                    if (!pushed) {
                         futures.pop_back();
                         need_to_reset = true;
                     }
                 }
                 start_flag = true;
-                for (std::future<void> &f: futures){
+                for (std::future<void> &f: futures) {
                     f.get();
                 }
-                if (need_to_reset){
+                if (need_to_reset) {
                     std::cerr << "reset unavailable threads" << std::endl;
                     resize(n_thread);
                 }
@@ -123,21 +123,21 @@ class Thread_pool {
         #else
             template<typename F, typename... Args, typename R = typename std::result_of<std::decay_t<F>(std::decay_t<Args>...)>::type>
         #endif
-        std::future<R> push(bool *pushed, F &&func, const Args &&...args){
-            auto task = std::make_shared<std::packaged_task<R()>>([func, args...](){
+        std::future<R> push(bool *pushed, F &&func, const Args &&...args) {
+            auto task = std::make_shared<std::packaged_task<R()>>([func, args...]() {
                 return func(args...);
             });
             auto future = task->get_future();
-            *pushed = push_task([task](){(*task)();});
+            *pushed = push_task([task]() {(*task)();});
             return future;
         }
 
         /*
-        void tell_start_using(){
+        void tell_start_using() {
             n_using_tasks.fetch_add(1);
         }
 
-        void tell_finish_using(){
+        void tell_finish_using() {
             n_using_tasks.fetch_sub(1);
         }
         */
@@ -145,14 +145,14 @@ class Thread_pool {
     private:
 
         template<typename F>
-        inline bool push_task(const F &task){
+        inline bool push_task(const F &task) {
             if (!running)
                 throw std::runtime_error("Cannot schedule new task after shutdown.");
             bool pushed = false;
-            if (n_idle > 0){
+            if (n_idle > 0) {
                 {
                     std::unique_lock<std::mutex> lock(mtx);
-                    if (n_idle > 0){
+                    if (n_idle > 0) {
                         pushed = true;
                         tasks.push(std::function<void()>(task));
                         --n_idle;
@@ -163,9 +163,9 @@ class Thread_pool {
             return pushed;
         }
 
-        void worker(){
+        void worker() {
             std::function<void()> task;
-            for (;;){
+            for (;;) {
                 {
                     std::unique_lock<std::mutex> lock(mtx);
                     ++n_idle;

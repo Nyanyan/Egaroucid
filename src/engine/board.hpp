@@ -38,7 +38,7 @@ class Board {
 
             @return board class
         */
-        inline Board copy(){
+        inline Board copy() {
             Board res;
             res.player = player;
             res.opponent = opponent;
@@ -50,7 +50,7 @@ class Board {
 
             @param res                  board class
         */
-        inline void copy(Board *res){
+        inline void copy(Board *res) {
             res->player = player;
             res->opponent = opponent;
         }
@@ -77,7 +77,7 @@ class Board {
         /*
             @brief mirroring in white line
         */
-        inline void board_white_line_mirror(){
+        inline void board_white_line_mirror() {
             player = white_line_mirror(player);
             opponent = white_line_mirror(opponent);
         }
@@ -85,7 +85,7 @@ class Board {
         /*
             @brief mirroring in black line
         */
-        inline void board_black_line_mirror(){
+        inline void board_black_line_mirror() {
             player = black_line_mirror(player);
             opponent = black_line_mirror(opponent);
         }
@@ -93,7 +93,7 @@ class Board {
         /*
             @brief mirroring in vertical
         */
-        inline void board_vertical_mirror(){
+        inline void board_vertical_mirror() {
             player = vertical_mirror(player);
             opponent = vertical_mirror(opponent);
         }
@@ -101,7 +101,7 @@ class Board {
         /*
             @brief mirroring in horizontal
         */
-        inline void board_horizontal_mirror(){
+        inline void board_horizontal_mirror() {
             player = horizontal_mirror(player);
             opponent = horizontal_mirror(opponent);
         }
@@ -109,7 +109,7 @@ class Board {
         /*
             @brief rotate 90 degrees counter clockwise
         */
-        inline void board_rotate_90(){
+        inline void board_rotate_90() {
             player = rotate_90(player);
             opponent = rotate_90(opponent);
         }
@@ -117,7 +117,7 @@ class Board {
         /*
             @brief rotate 270 degrees counter clockwise
         */
-        inline void board_rotate_270(){
+        inline void board_rotate_270() {
             player = rotate_270(player);
             opponent = rotate_270(opponent);
         }
@@ -125,7 +125,7 @@ class Board {
         /*
             @brief rotate 180 degrees
         */
-        inline void board_rotate_180(){
+        inline void board_rotate_180() {
             player = rotate_180(player);
             opponent = rotate_180(opponent);
         }
@@ -134,7 +134,7 @@ class Board {
             @brief print the board
         */
         inline void print() const{
-            for (int i = HW2_M1; i >= 0; --i){
+            for (int i = HW2_M1; i >= 0; --i) {
                 if (1 & (player >> i))
                     std::cerr << "X ";
                 else if (1 & (opponent >> i))
@@ -151,7 +151,7 @@ class Board {
 
             @return a bitboard with bits of legal cells set
         */
-        inline uint64_t get_legal(){
+        inline uint64_t get_legal() {
             return calc_legal(player, opponent);
         }
 
@@ -196,7 +196,7 @@ class Board {
 
             swap player and opponent
         */
-        inline void pass(){
+        inline void pass() {
             std::swap(player, opponent);
         }
 
@@ -205,7 +205,7 @@ class Board {
 
             @param flip                 Flip structure
         */
-        inline void undo_board(const Flip *flip){
+        inline void undo_board(const Flip *flip) {
             std::swap(player, opponent);
             player ^= 1ULL << flip->pos;
             player ^= flip->flip;
@@ -239,7 +239,7 @@ class Board {
             @param p                    player (0: black, 1: white)
         */
         inline void translate_to_arr(int res[], int p) {
-            if (p == 0){
+            if (p == 0) {
                 for (int i = 0; i < HW2; ++i)
                     res[HW2_M1 - i] = 2 - (1 & (player >> i)) * 2 - (1 & (opponent >> i));
             } else{
@@ -255,7 +255,7 @@ class Board {
             @param p                    player (0: black, 1: white)
         */
         inline void translate_to_arr(uint_fast8_t res[], int p) {
-            if (p == 0){
+            if (p == 0) {
                 for (int i = 0; i < HW2; ++i)
                     res[HW2_M1 - i] = 2 - (1 & (player >> i)) * 2 - (1 & (opponent >> i));
             } else{
@@ -294,7 +294,7 @@ class Board {
             int i;
             player = 0;
             opponent = 0;
-            if (player_idx == BLACK){
+            if (player_idx == BLACK) {
                 for (i = 0; i < HW2; ++i) {
                     if (arr[HW2_M1 - i] == BLACK)
                         player |= 1ULL << i;
@@ -329,7 +329,7 @@ class Board {
 
             @return score of player
         */
-        inline int score_player(){
+        inline int score_player() {
             int e = pop_count_ull(~(player | opponent));
             int score = pop_count_ull(player) * 2 + e;
             score += (((score >> 6) & 1) + (((score + HW2_M1) >> 7) & 1) - 1) * e;
@@ -341,7 +341,7 @@ class Board {
 
             @return score of opponent
         */
-        inline int score_opponent(){
+        inline int score_opponent() {
             int e = pop_count_ull(~(player | opponent));
             int score = pop_count_ull(opponent) * 2 + e;
             score += (((score >> 6) & 1) + (((score + HW2_M1) >> 7) & 1) - 1) * e;
@@ -380,9 +380,9 @@ class Board {
 
             @return pass found?
         */
-        inline bool check_player(){
+        inline bool check_player() {
             bool passed = (get_legal() == 0);
-            if (passed){
+            if (passed) {
                 pass();
                 passed = (get_legal() == 0);
                 if (passed)
@@ -396,7 +396,7 @@ class Board {
 
             @return game over?
         */
-        inline bool is_end(){
+        inline bool is_end() {
             return (calc_legal(player, opponent) == 0ULL) && (calc_legal(opponent, player) == 0ULL);
         }
 
@@ -405,9 +405,9 @@ class Board {
 
             @return game not over?
         */
-        inline bool check_pass(){
+        inline bool check_pass() {
             bool passed = (get_legal() == 0);
-            if (passed){
+            if (passed) {
                 pass();
                 passed = (get_legal() == 0);
                 if (passed)
@@ -419,7 +419,7 @@ class Board {
         /*
             @brief reset board
         */
-        inline void reset(){
+        inline void reset() {
             player = 0x0000000810000000ULL;
             opponent = 0x0000001008000000ULL;
         }
@@ -432,18 +432,18 @@ class Board {
             @return the phase of the board
         */
         /*
-        inline int phase_slow(){
+        inline int phase_slow() {
             int n_discs = pop_count_ull(player | opponent);
             return std::min(N_PHASES - 1, (n_discs - 4) / PHASE_N_STONES);
         }
         */
 };
 
-bool operator==(const Board& a, const Board& b){
+bool operator==(const Board& a, const Board& b) {
     return a.player == b.player && a.opponent == b.opponent;
 }
 
-bool operator!=(const Board& a, const Board& b){
+bool operator!=(const Board& a, const Board& b) {
     return a.player != b.player || a.opponent != b.opponent;
 }
 
@@ -455,6 +455,6 @@ bool operator!=(const Board& a, const Board& b){
     @param place                cell to put disc
     @return flip.flip
 */
-inline uint64_t calc_flip(Flip *flip, Board *board, uint_fast8_t place){
+inline uint64_t calc_flip(Flip *flip, Board *board, uint_fast8_t place) {
     return flip->calc_flip(board->player, board->opponent, place);
 }

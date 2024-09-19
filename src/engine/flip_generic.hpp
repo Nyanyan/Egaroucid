@@ -290,13 +290,13 @@ constexpr uint64_t bb_h2vline[64] = {
     @param pos                  a cell to put disc
     @param flip                 a bitboard representing flipped discs
 */
-class Flip{
+class Flip {
     public:
         uint_fast8_t pos;
         uint64_t flip;
     
     public:
-        inline uint64_t calc_flip(const uint64_t player, const uint64_t opponent, const int place){
+        inline uint64_t calc_flip(const uint64_t player, const uint64_t opponent, const int place) {
             pos = place;
             uint32_t x = place & 7;
             uint32_t y = place >> 3;
@@ -322,5 +322,5 @@ class Flip{
         }
 };
 
-void flip_init(){
+void flip_init() {
 }

@@ -28,14 +28,14 @@ inline void swap_next_best_move(std::vector<Flip_value> &move_list, const int st
 inline void move_list_evaluate(Search *search, std::vector<Flip_value> &move_list, uint_fast8_t moves[], int depth, int alpha, int beta, const bool *searching);
 inline void move_list_evaluate_nws(Search *search, std::vector<Flip_value> &move_list, uint_fast8_t moves[], int depth, int alpha, const bool *searching);
 
-inline int nega_alpha_light_eval1(Search *search, int alpha, int beta, bool skipped){
+inline int nega_alpha_light_eval1(Search *search, int alpha, int beta, bool skipped) {
     ++search->n_nodes;
     #if USE_SEARCH_STATISTICS
         ++search->n_nodes_discs[search->n_discs];
     #endif
     int v = -SCORE_INF;
     uint64_t legal = search->board.get_legal();
-    if (legal == 0ULL){
+    if (legal == 0ULL) {
         if (skipped)
             return end_evaluate(&search->board);
         search->pass_light();
@@ -45,15 +45,15 @@ inline int nega_alpha_light_eval1(Search *search, int alpha, int beta, bool skip
     }
     int g;
     Flip flip;
-    for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)){
+    for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)) {
         calc_flip(&flip, &search->board, cell);
         search->move_light(&flip);
             ++search->n_nodes;
             g = -mid_evaluate_light(search);
         search->undo_light(&flip);
         ++search->n_nodes;
-        if (v < g){
-            if (alpha < g){
+        if (v < g) {
+            if (alpha < g) {
                 if (beta <= g)
                     return g;
                 alpha = g;
@@ -64,12 +64,12 @@ inline int nega_alpha_light_eval1(Search *search, int alpha, int beta, bool skip
     return v;
 }
 
-int nega_alpha_light(Search *search, int alpha, int beta, int depth, bool skipped, uint64_t legal, const bool *searching){
+int nega_alpha_light(Search *search, int alpha, int beta, int depth, bool skipped, uint64_t legal, const bool *searching) {
     if (!global_searching || !(*searching))
         return SCORE_UNDEFINED;
     if (depth == 1)
         return nega_alpha_light_eval1(search, alpha, beta, skipped);
-    if (depth == 0){
+    if (depth == 0) {
         ++search->n_nodes;
         return mid_evaluate_light(search);
     }
@@ -82,7 +82,7 @@ int nega_alpha_light(Search *search, int alpha, int beta, int depth, bool skippe
     if (legal == LEGAL_UNDEFINED)
         legal = search->board.get_legal();
     int v = -SCORE_INF;
-    if (legal == 0ULL){
+    if (legal == 0ULL) {
         if (skipped)
             return end_evaluate(&search->board);
         search->pass_light();
@@ -92,13 +92,13 @@ int nega_alpha_light(Search *search, int alpha, int beta, int depth, bool skippe
     }
     uint32_t hash_code = search->board.hash();
     uint_fast8_t moves[N_TRANSPOSITION_MOVES] = {TRANSPOSITION_TABLE_UNDEFINED, TRANSPOSITION_TABLE_UNDEFINED};
-    if (transposition_cutoff(search, hash_code, depth, &alpha, &beta, &v, moves)){
+    if (transposition_cutoff(search, hash_code, depth, &alpha, &beta, &v, moves)) {
         return v;
     }
     const int canput = pop_count_ull(legal);
     std::vector<Flip_value> move_list(canput);
     int idx = 0;
-    for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)){
+    for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)) {
         calc_flip(&move_list[idx].flip, &search->board, cell);
         if (move_list[idx].flip.flip == search->board.opponent)
             return SCORE_MAX;
@@ -107,8 +107,8 @@ int nega_alpha_light(Search *search, int alpha, int beta, int depth, bool skippe
     int etc_done_idx = 0;
     /*
     #if USE_MID_ETC
-        if (depth >= MID_ETC_DEPTH){
-            if (etc(search, move_list, depth, &alpha, &beta, &v, &etc_done_idx)){
+        if (depth >= MID_ETC_DEPTH) {
+            if (etc(search, move_list, depth, &alpha, &beta, &v, &etc_done_idx)) {
                 return v;
             }
         }
@@ -116,7 +116,7 @@ int nega_alpha_light(Search *search, int alpha, int beta, int depth, bool skippe
     */
     /*
     #if USE_MID_MPC
-        if (mpc(search, alpha, beta, depth, legal, is_end_search, &v, searching)){
+        if (mpc(search, alpha, beta, depth, legal, is_end_search, &v, searching)) {
             return v;
         }
     #endif
@@ -124,7 +124,7 @@ int nega_alpha_light(Search *search, int alpha, int beta, int depth, bool skippe
     int g;
     //int best_move = TRANSPOSITION_TABLE_UNDEFINED;
     move_list_evaluate(search, move_list, moves, depth, alpha, beta, searching);
-    for (int move_idx = 0; move_idx < canput - etc_done_idx && *searching; ++move_idx){
+    for (int move_idx = 0; move_idx < canput - etc_done_idx && *searching; ++move_idx) {
         swap_next_best_move(move_list, move_idx, canput);
         #if USE_MID_ETC
             if (move_list[move_idx].flip.flip == 0)
@@ -133,10 +133,10 @@ int nega_alpha_light(Search *search, int alpha, int beta, int depth, bool skippe
         search->move_light(&move_list[move_idx].flip);
             g = -nega_alpha_light(search, -beta, -alpha, depth - 1, false, move_list[move_idx].n_legal, searching);
         search->undo_light(&move_list[move_idx].flip);
-        if (v < g){
+        if (v < g) {
             v = g;
             //best_move = move_list[move_idx].flip.pos;
-            if (alpha < v){
+            if (alpha < v) {
                 if (beta <= v)
                     break;
                 alpha = v;
@@ -144,19 +144,19 @@ int nega_alpha_light(Search *search, int alpha, int beta, int depth, bool skippe
         }
     }
     /*
-    if (*searching && global_searching){
+    if (*searching && global_searching) {
         transposition_table.reg_best_move(search, hash_code, best_move);
     }
     */
     return v;
 }
 
-int nega_alpha_light_nws(Search *search, int alpha, int depth, bool skipped, uint64_t legal, const bool *searching){
+int nega_alpha_light_nws(Search *search, int alpha, int depth, bool skipped, uint64_t legal, const bool *searching) {
     if (!global_searching || !(*searching))
         return SCORE_UNDEFINED;
     if (depth == 1)
         return nega_alpha_light_eval1(search, alpha, alpha + 1, skipped);
-    if (depth == 0){
+    if (depth == 0) {
         ++search->n_nodes;
         return mid_evaluate_light(search);
     }
@@ -167,7 +167,7 @@ int nega_alpha_light_nws(Search *search, int alpha, int depth, bool skipped, uin
     if (legal == LEGAL_UNDEFINED)
         legal = search->board.get_legal();
     int v = -SCORE_INF;
-    if (legal == 0ULL){
+    if (legal == 0ULL) {
         if (skipped)
             return end_evaluate(&search->board);
         search->pass_light();
@@ -177,12 +177,12 @@ int nega_alpha_light_nws(Search *search, int alpha, int depth, bool skipped, uin
     }
     uint32_t hash_code = search->board.hash();
     uint_fast8_t moves[N_TRANSPOSITION_MOVES] = {TRANSPOSITION_TABLE_UNDEFINED, TRANSPOSITION_TABLE_UNDEFINED};
-    if (transposition_cutoff_nws(search, hash_code, depth, alpha, &v, moves)){
+    if (transposition_cutoff_nws(search, hash_code, depth, alpha, &v, moves)) {
         return v;
     }
     /*
     #if USE_MID_MPC
-        if (mpc(search, alpha, alpha + 1, depth, legal, is_end_search, &v, searching)){
+        if (mpc(search, alpha, alpha + 1, depth, legal, is_end_search, &v, searching)) {
             return v;
         }
     #endif
@@ -192,7 +192,7 @@ int nega_alpha_light_nws(Search *search, int alpha, int depth, bool skipped, uin
     const int canput = pop_count_ull(legal);
     std::vector<Flip_value> move_list(canput);
     int idx = 0;
-    for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)){
+    for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)) {
         calc_flip(&move_list[idx].flip, &search->board, cell);
         if (move_list[idx].flip.flip == search->board.opponent)
             return SCORE_MAX;
@@ -201,15 +201,15 @@ int nega_alpha_light_nws(Search *search, int alpha, int depth, bool skipped, uin
     int etc_done_idx = 0;
     /*
     #if USE_MID_ETC
-        if (depth >= MID_ETC_DEPTH){
-            if (etc_nws(search, move_list, depth, alpha, &v, &etc_done_idx)){
+        if (depth >= MID_ETC_DEPTH) {
+            if (etc_nws(search, move_list, depth, alpha, &v, &etc_done_idx)) {
                 return v;
             }
         }
     #endif
     */
     move_list_evaluate_nws(search, move_list, moves, depth, alpha, searching);
-    for (int move_idx = 0; move_idx < canput - etc_done_idx && *searching; ++move_idx){
+    for (int move_idx = 0; move_idx < canput - etc_done_idx && *searching; ++move_idx) {
         swap_next_best_move(move_list, move_idx, canput);
         #if USE_MID_ETC
             if (move_list[move_idx].flip.flip == 0)
@@ -218,7 +218,7 @@ int nega_alpha_light_nws(Search *search, int alpha, int depth, bool skipped, uin
         search->move_light(&move_list[move_idx].flip);
             g = -nega_alpha_light_nws(search, -alpha - 1, depth - 1, false, move_list[move_idx].n_legal, searching);
         search->undo_light(&move_list[move_idx].flip);
-        if (v < g){
+        if (v < g) {
             v = g;
             best_move = move_list[move_idx].flip.pos;
             if (alpha < v)

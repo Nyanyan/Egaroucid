@@ -12,7 +12,7 @@
 #include "fstream"
 
 
-void endgame_accuracy_test(){
+void endgame_accuracy_test() {
     std::string problem_file, answer_file;
     std::cerr << "endgame accuracy test" << std::endl;
     std::cerr << "input [problem_file] [answer_file]" << std::endl;
@@ -32,7 +32,7 @@ void endgame_accuracy_test(){
     const uint64_t n_data = stoi(line);
     uint64_t n_error = 0;
     for (uint64_t i = 0; i < n_data; ++i) {
-        if ((i & 0xff) == 0xff){
+        if ((i & 0xff) == 0xff) {
             std::cerr << '\r' << i;
         }
         ifs >> line;
@@ -44,7 +44,7 @@ void endgame_accuracy_test(){
         int v = ai(board, 60, false, 0, true, false).value;
         int v_ans;
         ans >> v_ans;
-        if (v != v_ans){
+        if (v != v_ans) {
             ++n_error;
             std::cerr << "[ERROR] endgame value wrong idx " << i << " got " << v << " expected " << v_ans << std::endl;
         }

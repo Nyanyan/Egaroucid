@@ -18,7 +18,7 @@
     @brief mobility initialize
 */
 __m256i shift1897, mflipH;
-void mobility_init(){
+void mobility_init() {
     shift1897 = _mm256_set_epi64x(7, 9, 8, 1);
     mflipH = _mm256_set_epi64x(0x7E7E7E7E7E7E7E7E, 0x7E7E7E7E7E7E7E7E, -1, 0x7E7E7E7E7E7E7E7E);
 }
@@ -32,7 +32,7 @@ void mobility_init(){
 */
 // original code from http://www.amy.hi-ho.ne.jp/okuhara/bitboard.htm
 // modified by Nyanyan
-inline uint64_t calc_legal(const uint64_t P, const uint64_t O){
+inline uint64_t calc_legal(const uint64_t P, const uint64_t O) {
     __m256i	PP, mOO, MM, flip_l, flip_r, pre_l, pre_r, shift2;
     __m128i	M;
     PP = _mm256_broadcastq_epi64(_mm_cvtsi64_si128(P));

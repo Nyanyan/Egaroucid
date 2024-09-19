@@ -153,7 +153,7 @@
     @param n_cells              number of cells included in the pattern
     @param cells                coordinates of each cell
 */
-struct Feature_to_coord{
+struct Feature_to_coord {
     uint_fast8_t n_cells;
     uint_fast8_t cells[MAX_PATTERN_CELLS];
 };
@@ -166,7 +166,7 @@ struct Feature_to_coord{
     @param feature              the index of feature
     @param x                    the offset value of the cell in this feature
 */
-struct Coord_feature{
+struct Coord_feature {
     uint_fast8_t feature;
     uint_fast16_t x;
 };
@@ -179,23 +179,23 @@ struct Coord_feature{
     @param n_features           number of features the cell is used by
     @param features             information for each feature
 */
-struct Coord_to_feature{
+struct Coord_to_feature {
     uint_fast8_t n_features;
     Coord_feature features[MAX_CELL_PATTERNS];
 };
 
 #if USE_SIMD
-    union Eval_features{
+    union Eval_features {
         __m256i f256[N_SIMD_EVAL_FEATURES];
         __m128i f128[N_SIMD_EVAL_FEATURES * 2];
     };
 
-    struct Eval_search{
+    struct Eval_search {
         Eval_features features[HW2 - 4];
         uint_fast8_t feature_idx;
     };
 #else
-    struct Eval_search{
+    struct Eval_search {
         uint_fast16_t features[HW2 - 4][N_SYMMETRY_PATTERNS];
         bool reversed[HW2 - 4];
         uint_fast8_t feature_idx;
@@ -213,7 +213,7 @@ constexpr uint_fast16_t pow3[11] = {1, P31, P32, P33, P34, P35, P36, P37, P38, P
     @param b                    board
     @return final score
 */
-inline int end_evaluate(Board *b){
+inline int end_evaluate(Board *b) {
     return b->score_player();
 }
 
@@ -224,7 +224,7 @@ inline int end_evaluate(Board *b){
     @param e                    number of empty squares
     @return final score
 */
-inline int end_evaluate(Board *b, int e){
+inline int end_evaluate(Board *b, int e) {
     int score = b->count_player() * 2 + e;
     score += (((score >> 6) & 1) + (((score + HW2_M1) >> 7) & 1) - 1) * e;
     return score - HW2;
@@ -237,49 +237,49 @@ inline int end_evaluate(Board *b, int e){
     @param e                    number of empty squares
     @return final score
 */
-inline int end_evaluate_odd(Board *b, int e){
+inline int end_evaluate_odd(Board *b, int e) {
     int score = b->count_player() * 2 + e;
     score += (((score >> 5) & 2) - 1) * e;
     return score - HW2;
 }
 
-inline std::vector<int16_t> load_unzip_egev2(const char* file, bool show_log, bool *failed){
+inline std::vector<int16_t> load_unzip_egev2(const char* file, bool show_log, bool *failed) {
     *failed = false;
     std::vector<int16_t> res;
     FILE* fp;
-    if (!file_open(&fp, file, "rb")){
+    if (!file_open(&fp, file, "rb")) {
         std::cerr << "[ERROR] [FATAL] can't open eval " << file << std::endl;
         *failed = true;
         return res;
     }
     int n_unzipped_params = -1;
-    if (fread(&n_unzipped_params, 4, 1, fp) < 1){
+    if (fread(&n_unzipped_params, 4, 1, fp) < 1) {
         std::cerr << "[ERROR] [FATAL] evaluation file broken" << std::endl;
         fclose(fp);
         *failed = true;
         return res;
     }
-    if (show_log){
+    if (show_log) {
         std::cerr << n_unzipped_params << " elems found in " << file << std::endl;
     }
     short *unzipped_params = (short*)malloc(sizeof(short) * n_unzipped_params);
-    if (fread(unzipped_params, 2, n_unzipped_params, fp) < n_unzipped_params){
+    if (fread(unzipped_params, 2, n_unzipped_params, fp) < n_unzipped_params) {
         std::cerr << "[ERROR] [FATAL] evaluation file broken" << std::endl;
         fclose(fp);
         free(unzipped_params);
         *failed = true;
         return res;
     }
-    for (int i = 0; i < n_unzipped_params; ++i){
-        if (unzipped_params[i] >= N_ZEROS_PLUS){
-            for (int j = 0; j < unzipped_params[i] - N_ZEROS_PLUS; ++j){
+    for (int i = 0; i < n_unzipped_params; ++i) {
+        if (unzipped_params[i] >= N_ZEROS_PLUS) {
+            for (int j = 0; j < unzipped_params[i] - N_ZEROS_PLUS; ++j) {
                 res.emplace_back(0);
             }
         } else{
             res.emplace_back(unzipped_params[i]);
         }
     }
-    if (show_log){
+    if (show_log) {
         std::cerr << res.size() << " elems found in unzipped " << file << std::endl;
     }
     free(unzipped_params);

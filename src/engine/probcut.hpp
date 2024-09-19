@@ -84,7 +84,7 @@ constexpr int mpc_search_depth_arr[2][61] = {
     @param depth2               depth of deep search
     @return expected error
 */
-inline double probcut_sigma(int n_discs, int depth1, int depth2){
+inline double probcut_sigma(int n_discs, int depth1, int depth2) {
     double res = probcut_a * ((double)n_discs / 64.0) + probcut_b * ((double)depth1 / 60.0) + probcut_c * ((double)depth2 / 60.0);
     res = probcut_d * res * res * res + probcut_e * res * res + probcut_f * res + probcut_g;
     return res;
@@ -97,7 +97,7 @@ inline double probcut_sigma(int n_discs, int depth1, int depth2){
     @param depth2               depth of deep search
     @return expected error
 */
-inline double probcut_sigma_depth0(int n_discs, int depth2){
+inline double probcut_sigma_depth0(int n_discs, int depth2) {
     double res = probcut_a * ((double)n_discs / 64.0) + probcut_c * ((double)depth2 / 60.0);
     res = probcut_d * res * res * res + probcut_e * res * res + probcut_f * res + probcut_g;
     return res;
@@ -110,7 +110,7 @@ inline double probcut_sigma_depth0(int n_discs, int depth2){
     @param depth                depth of shallow search
     @return expected error
 */
-inline double probcut_sigma_end(int n_discs, int depth){
+inline double probcut_sigma_end(int n_discs, int depth) {
     double res = probcut_end_a * ((double)n_discs / 64.0) + probcut_end_b * ((double)depth / 60.0);
     res = probcut_end_c * res * res * res + probcut_end_d * res * res + probcut_end_e * res + probcut_end_f;
     return res;
@@ -122,7 +122,7 @@ inline double probcut_sigma_end(int n_discs, int depth){
     @param n_discs              number of discs on the board
     @return expected error
 */
-inline double probcut_sigma_end_depth0(int n_discs){
+inline double probcut_sigma_end_depth0(int n_discs) {
     double res = probcut_end_a * ((double)n_discs / 64.0);
     res = probcut_end_c * res * res * res + probcut_end_d * res * res + probcut_end_e * res + probcut_end_f;
     return res;
@@ -147,34 +147,34 @@ int nega_alpha_ordering_nws(Search *search, int alpha, int depth, bool skipped, 
     @param searching            flag for terminating this search
     @return cutoff occurred?
 */
-inline bool mpc(Search* search, int alpha, int beta, int depth, uint64_t legal, bool is_end_search, int* v, const bool* searching){
+inline bool mpc(Search* search, int alpha, int beta, int depth, uint64_t legal, bool is_end_search, int* v, const bool* searching) {
     if (search->mpc_level == MPC_100_LEVEL || depth < USE_MPC_DEPTH || (search->is_presearch && depth >= MAX_MPC_DEPTH_PRESEARCH))
         return false;
     int search_depth = mpc_search_depth_arr[is_end_search][depth];
-    if (search_depth == 0){
+    if (search_depth == 0) {
         int error;
         #if USE_MPC_PRE_CALCULATION
-            if (is_end_search){
+            if (is_end_search) {
                 error = mpc_error_end_single0[search->mpc_level][search->n_discs];
             } else{
                 error = mpc_error_single0[search->mpc_level][search->n_discs][depth];
             }
         #else
             double mpct = SELECTIVITY_MPCT_SINGLE[search->mpc_level];
-            if (is_end_search){
+            if (is_end_search) {
                 error = ceil(mpct * probcut_sigma_end(search->n_discs, 0));
             }else{
                 error = ceil(mpct * probcut_sigma(search->n_discs, 0, depth));
             }
         #endif
         int d0value = mid_evaluate_diff(search);
-        if (d0value >= beta + error){
+        if (d0value >= beta + error) {
             *v = beta;
             if (is_end_search)
                 *v += beta & 1;
             return true;
         }
-        if (d0value <= alpha - error){
+        if (d0value <= alpha - error) {
             *v = alpha;
             if (is_end_search)
                 *v -= alpha & 1;
@@ -184,7 +184,7 @@ inline bool mpc(Search* search, int alpha, int beta, int depth, uint64_t legal, 
         int error_search, error_0;
         uint_fast8_t mpc_level = search->mpc_level;
         #if USE_MPC_PRE_CALCULATION
-            if (is_end_search){
+            if (is_end_search) {
                 error_search = mpc_error_end_multi[mpc_level][search->n_discs][search_depth];
                 error_0 = mpc_error_end_multi[mpc_level][search->n_discs][0];
             } else{
@@ -193,7 +193,7 @@ inline bool mpc(Search* search, int alpha, int beta, int depth, uint64_t legal, 
             }
         #else
             double mpct = SELECTIVITY_MPCT_MULTI[mpc_level];
-            if (is_end_search){
+            if (is_end_search) {
                 error_search = ceil(mpct * probcut_sigma_end(search->n_discs, search_depth));
                 error_0 = ceil(mpct * probcut_sigma_end(search->n_discs, 0));
             }else{
@@ -203,10 +203,10 @@ inline bool mpc(Search* search, int alpha, int beta, int depth, uint64_t legal, 
         #endif
         int d0value = mid_evaluate_diff(search);
         search->mpc_level = MPC_100_LEVEL;
-        if (d0value >= beta + error_0){
+        if (d0value >= beta + error_0) {
             int pc_beta = beta + error_search;
-            if (pc_beta <= SCORE_MAX){
-                if (nega_alpha_ordering_nws(search, pc_beta - 1, search_depth, false, legal, false, searching) >= pc_beta){
+            if (pc_beta <= SCORE_MAX) {
+                if (nega_alpha_ordering_nws(search, pc_beta - 1, search_depth, false, legal, false, searching) >= pc_beta) {
                     *v = beta;
                     if (is_end_search)
                         *v += beta & 1;
@@ -215,10 +215,10 @@ inline bool mpc(Search* search, int alpha, int beta, int depth, uint64_t legal, 
                 }
             }
         }
-        if (d0value <= alpha - error_0){
+        if (d0value <= alpha - error_0) {
             int pc_alpha = alpha - error_search;
-            if (pc_alpha >= -SCORE_MAX){
-                if (nega_alpha_ordering_nws(search, pc_alpha, search_depth, false, legal, false, searching) <= pc_alpha){
+            if (pc_alpha >= -SCORE_MAX) {
+                if (nega_alpha_ordering_nws(search, pc_alpha, search_depth, false, legal, false, searching) <= pc_alpha) {
                     *v = alpha;
                     if (is_end_search)
                         *v -= alpha & 1;
@@ -234,12 +234,12 @@ inline bool mpc(Search* search, int alpha, int beta, int depth, uint64_t legal, 
 
 
 #if USE_ALL_NODE_PREDICTION_NWS
-    inline bool predict_all_node(Search* search, int alpha, int depth, uint64_t legal, bool is_end_search, const bool* searching){
+    inline bool predict_all_node(Search* search, int alpha, int depth, uint64_t legal, bool is_end_search, const bool* searching) {
         uint_fast8_t mpc_level = MPC_93_LEVEL;
         int search_depth = mpc_search_depth_arr[is_end_search][depth];
         int error_search, error_0;
         #if USE_MPC_PRE_CALCULATION
-            if (is_end_search){
+            if (is_end_search) {
                 error_search = mpc_error_end[mpc_level][search->n_discs][search_depth];
                 error_0 = mpc_error_end[mpc_level][search->n_discs][0];
             } else{
@@ -248,7 +248,7 @@ inline bool mpc(Search* search, int alpha, int beta, int depth, uint64_t legal, 
             }
         #else
             double mpct = SELECTIVITY_MPCT[mpc_level];
-            if (is_end_search){
+            if (is_end_search) {
                 error_search = ceil(mpct * probcut_sigma_end(search->n_discs, search_depth));
                 error_0 = ceil(mpct * probcut_sigma_end(search->n_discs, 0));
             }else{
@@ -257,10 +257,10 @@ inline bool mpc(Search* search, int alpha, int beta, int depth, uint64_t legal, 
             }
         #endif
         int d0value = mid_evaluate_diff(search);
-        if (d0value <= alpha - (error_search + error_0) / 2){
+        if (d0value <= alpha - (error_search + error_0) / 2) {
             int pc_alpha = alpha - error_search;
-            if (pc_alpha > -SCORE_MAX){
-                if (nega_alpha_ordering_nws(search, pc_alpha, search_depth, false, legal, false, searching) <= pc_alpha){
+            if (pc_alpha > -SCORE_MAX) {
+                if (nega_alpha_ordering_nws(search, pc_alpha, search_depth, false, legal, false, searching) <= pc_alpha) {
                     return true;
                 }
             }
@@ -272,14 +272,14 @@ inline bool mpc(Search* search, int alpha, int beta, int depth, uint64_t legal, 
 
 
 #if USE_MPC_PRE_CALCULATION
-    void mpc_init(){
+    void mpc_init() {
         int mpc_level, n_discs, depth1, depth2;
-        for (mpc_level = 0; mpc_level < N_SELECTIVITY_LEVEL; ++mpc_level){
-            for (n_discs = 0; n_discs < HW2 + 1; ++n_discs){
+        for (mpc_level = 0; mpc_level < N_SELECTIVITY_LEVEL; ++mpc_level) {
+            for (n_discs = 0; n_discs < HW2 + 1; ++n_discs) {
                 mpc_error_end_single0[mpc_level][n_discs] = ceil(SELECTIVITY_MPCT_SINGLE[mpc_level] * probcut_sigma_end(n_discs, 0));
                 for (depth2 = 0; depth2 < HW2 - 3; ++depth2)
                     mpc_error_single0[mpc_level][n_discs][depth2] = ceil(SELECTIVITY_MPCT_SINGLE[mpc_level] * probcut_sigma(n_discs, 0, depth2));
-                for (depth1 = 0; depth1 < HW2 - 3; ++depth1){
+                for (depth1 = 0; depth1 < HW2 - 3; ++depth1) {
                     mpc_error_end_multi[mpc_level][n_discs][depth1] = ceil(SELECTIVITY_MPCT_MULTI[mpc_level] * probcut_sigma_end(n_discs, depth1));
                     for (depth2 = 0; depth2 < HW2 - 3; ++depth2)
                         mpc_error_multi[mpc_level][n_discs][depth1][depth2] = ceil(SELECTIVITY_MPCT_MULTI[mpc_level] * probcut_sigma(n_discs, depth1, depth2));
@@ -291,21 +291,21 @@ inline bool mpc(Search* search, int alpha, int beta, int depth, uint64_t legal, 
 
 #if TUNE_PROBCUT_MID
     inline Search_result tree_search_legal(Board board, int depth, uint_fast8_t mpc_level, bool show_log, uint64_t use_legal, bool use_multi_thread);
-    void get_data_probcut_mid(){
+    void get_data_probcut_mid() {
         std::ofstream ofs("probcut_mid.txt");
         Board board;
         Flip flip;
         Search_result short_ans, long_ans;
-        for (int i = 0; i < 1000; ++i){
-            for (int depth = 2; depth < 15; ++depth){
-                for (int n_discs = 4; n_discs < HW2 - depth - 5; ++n_discs){
+        for (int i = 0; i < 1000; ++i) {
+            for (int depth = 2; depth < 15; ++depth) {
+                for (int n_discs = 4; n_discs < HW2 - depth - 5; ++n_discs) {
                     board.reset();
-                    for (int j = 4; j < n_discs && board.check_pass(); ++j){ // random move
+                    for (int j = 4; j < n_discs && board.check_pass(); ++j) { // random move
                         uint64_t legal = board.get_legal();
                         int random_idx = myrandrange(0, pop_count_ull(legal));
                         int t = 0;
-                        for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)){
-                            if (t == random_idx){
+                        for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)) {
+                            if (t == random_idx) {
                                 calc_flip(&flip, &board, cell);
                                 break;
                             }
@@ -313,12 +313,12 @@ inline bool mpc(Search* search, int alpha, int beta, int depth, uint64_t legal, 
                         }
                         board.move_board(&flip);
                     }
-                    if (board.check_pass()){
+                    if (board.check_pass()) {
                         int short_depth = myrandrange(1, depth - 1);
                         short_depth &= 0xfffffffe;
                         short_depth |= depth & 1;
                         //int short_depth = mpc_search_depth_arr[0][depth];
-                        if (short_depth == 0){
+                        if (short_depth == 0) {
                             short_ans.value = mid_evaluate(&board);
                         } else{
                             short_ans = tree_search_legal(board, short_depth, MPC_100_LEVEL, false, board.get_legal(), true);
@@ -336,20 +336,20 @@ inline bool mpc(Search* search, int alpha, int beta, int depth, uint64_t legal, 
 
 #if TUNE_PROBCUT_END
     inline Search_result tree_search_legal(Board board, int depth, uint_fast8_t mpc_level, bool show_log, uint64_t use_legal, bool use_multi_thread);
-    void get_data_probcut_end(){
+    void get_data_probcut_end() {
         std::ofstream ofs("probcut_end.txt");
         Board board;
         Flip flip;
         Search_result short_ans, long_ans;
-        for (int i = 0; i < 1000; ++i){
-            for (int depth = 6; depth < 24; ++depth){
+        for (int i = 0; i < 1000; ++i) {
+            for (int depth = 6; depth < 24; ++depth) {
                 board.reset();
-                for (int j = 0; j < HW2 - 4 - depth && board.check_pass(); ++j){ // random move
+                for (int j = 0; j < HW2 - 4 - depth && board.check_pass(); ++j) { // random move
                     uint64_t legal = board.get_legal();
                     int random_idx = myrandrange(0, pop_count_ull(legal));
                     int t = 0;
-                    for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)){
-                        if (t == random_idx){
+                    for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)) {
+                        if (t == random_idx) {
                             calc_flip(&flip, &board, cell);
                             break;
                         }
@@ -357,12 +357,12 @@ inline bool mpc(Search* search, int alpha, int beta, int depth, uint64_t legal, 
                     }
                     board.move_board(&flip);
                 }
-                if (board.check_pass()){
+                if (board.check_pass()) {
                     int short_depth = myrandrange(1, std::min(15, depth - 1));
                     short_depth &= 0xfffffffe;
                     short_depth |= depth & 1;
                     //int short_depth = mpc_search_depth_arr[1][depth];
-                    if (short_depth == 0){
+                    if (short_depth == 0) {
                         short_ans.value = mid_evaluate(&board);
                     } else{
                         short_ans = tree_search_legal(board, short_depth, MPC_100_LEVEL, false, board.get_legal(), true);

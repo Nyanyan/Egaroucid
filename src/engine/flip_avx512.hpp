@@ -48,7 +48,7 @@ V8DI lrmask[HW2];
     @param pos                  a cell to put disc
     @param flip                 a bitboard representing flipped discs
 */
-class Flip{
+class Flip {
 
     public:
         uint_fast8_t pos;

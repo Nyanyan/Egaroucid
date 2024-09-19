@@ -29,7 +29,7 @@
 #define ENDSEARCH_PRESEARCH_OFFSET 10
 
 /*
-Search_result iterative_deepening_search(Board board, int depth, uint_fast8_t mpc_level, bool show_log, std::vector<Clog_result> clogs, uint64_t use_legal, bool use_multi_thread){
+Search_result iterative_deepening_search(Board board, int depth, uint_fast8_t mpc_level, bool show_log, std::vector<Clog_result> clogs, uint64_t use_legal, bool use_multi_thread) {
     Search_result result;
     result.value = SCORE_UNDEFINED;
     result.nodes = 0;
@@ -37,17 +37,17 @@ Search_result iterative_deepening_search(Board board, int depth, uint_fast8_t mp
     const int max_depth = HW2 - board.n_discs();
     depth = std::min(depth, max_depth);
     int search_depth = 1;
-    if (depth % 2 == 0 && depth >= 2){
+    if (depth % 2 == 0 && depth >= 2) {
         search_depth = 2;
     }
     int search_mpc_level = mpc_level;
     bool is_end_search = (depth == max_depth);
-    if (is_end_search){
+    if (is_end_search) {
         search_mpc_level = MPC_74_LEVEL;
     }
-    while (search_depth <= depth && search_mpc_level <= mpc_level && global_searching){
+    while (search_depth <= depth && search_mpc_level <= mpc_level && global_searching) {
         bool search_is_end_search = false;
-        if (search_depth >= max_depth){
+        if (search_depth >= max_depth) {
             search_is_end_search = true;
             search_depth = max_depth;
         }
@@ -57,7 +57,7 @@ Search_result iterative_deepening_search(Board board, int depth, uint_fast8_t mp
         bool searching = true;
         std::pair<int, int> id_result = first_nega_scout_legal(&search, -SCORE_MAX, SCORE_MAX, search_depth, search_is_end_search, clogs, use_legal, strt, &searching);
         result.nodes += search.n_nodes;
-        if (result.value != SCORE_UNDEFINED && !search_is_end_search){
+        if (result.value != SCORE_UNDEFINED && !search_is_end_search) {
             double n_value = (0.9 * result.value + 1.1 * id_result.first) / 2.0;
             result.value = round(n_value);
         } else{
@@ -67,27 +67,27 @@ Search_result iterative_deepening_search(Board board, int depth, uint_fast8_t mp
         result.depth = search_depth;
         result.time = tim() - strt;
         result.nps = calc_nps(result.nodes, result.time);
-        if (show_log){
-            if (is_last_search){
+        if (show_log) {
+            if (is_last_search) {
                 std::cerr << "main ";
             } else{
                 std::cerr << "pre ";
             }
-            if (search_is_end_search){
+            if (search_is_end_search) {
                 std::cerr << "end ";
             } else{
                 std::cerr << "mid ";
             }
             std::cerr << "depth " << result.depth << "@" << SELECTIVITY_PERCENTAGE[search_mpc_level] << "%" << " value " << result.value << " (raw " << id_result.first << ") policy " << idx_to_coord(id_result.second) << " n_nodes " << result.nodes << " time " << result.time << " NPS " << result.nps << std::endl;
         }
-        if (!is_end_search || search_depth < depth - ENDSEARCH_PRESEARCH_OFFSET){
+        if (!is_end_search || search_depth < depth - ENDSEARCH_PRESEARCH_OFFSET) {
             ++search_depth;
         } else{
-            if (search_depth < depth){
+            if (search_depth < depth) {
                 search_depth = depth;
                 search_mpc_level = MPC_74_LEVEL;
             } else{
-                if (search_mpc_level == MPC_88_LEVEL && mpc_level > MPC_88_LEVEL){
+                if (search_mpc_level == MPC_88_LEVEL && mpc_level > MPC_88_LEVEL) {
                     search_mpc_level = mpc_level;
                 } else{
                     ++search_mpc_level;
@@ -101,21 +101,21 @@ Search_result iterative_deepening_search(Board board, int depth, uint_fast8_t mp
 }
 */
 /*
-Search_result endgame_optimized_search(Board board, int depth, uint_fast8_t mpc_level, bool show_log, std::vector<Clog_result> clogs, uint64_t use_legal, bool use_multi_thread){
+Search_result endgame_optimized_search(Board board, int depth, uint_fast8_t mpc_level, bool show_log, std::vector<Clog_result> clogs, uint64_t use_legal, bool use_multi_thread) {
     Search_result result;
     result.value = SCORE_UNDEFINED;
     result.nodes = 0;
     uint64_t strt = tim();
     int search_depth = depth * 0.3;
-    if (search_depth < 1){
+    if (search_depth < 1) {
         search_depth = 1;
-    } else if (search_depth > 5){
+    } else if (search_depth > 5) {
         search_depth = 5;
     }
     int search_mpc_level = MPC_74_LEVEL;
-    while (search_depth <= depth && search_mpc_level <= mpc_level && global_searching){
+    while (search_depth <= depth && search_mpc_level <= mpc_level && global_searching) {
         bool search_is_end_search = false;
-        if (search_depth >= depth){
+        if (search_depth >= depth) {
             search_is_end_search = true;
             search_depth = depth;
         }
@@ -125,7 +125,7 @@ Search_result endgame_optimized_search(Board board, int depth, uint_fast8_t mpc_
         bool searching = true;
         std::pair<int, int> id_result = first_nega_scout_legal(&search, -SCORE_MAX, SCORE_MAX, result.value, search_depth, search_is_end_search, clogs, use_legal, strt, &searching);
         result.nodes += search.n_nodes;
-        if (result.value != SCORE_UNDEFINED && !search_is_end_search){
+        if (result.value != SCORE_UNDEFINED && !search_is_end_search) {
             double n_value = (0.9 * result.value + 1.1 * id_result.first) / 2.0;
             result.value = round(n_value);
         } else{
@@ -135,31 +135,31 @@ Search_result endgame_optimized_search(Board board, int depth, uint_fast8_t mpc_
         result.depth = search_depth;
         result.time = tim() - strt;
         result.nps = calc_nps(result.nodes, result.time);
-        if (show_log){
-            if (is_last_search){
+        if (show_log) {
+            if (is_last_search) {
                 std::cerr << "main ";
             } else{
                 std::cerr << "pre ";
             }
-            if (search_is_end_search){
+            if (search_is_end_search) {
                 std::cerr << "end ";
             } else{
                 std::cerr << "mid ";
             }
             std::cerr << "depth " << result.depth << "@" << SELECTIVITY_PERCENTAGE[search_mpc_level] << "%" << " value " << result.value << " (raw " << id_result.first << ") policy " << idx_to_coord(id_result.second) << " n_nodes " << result.nodes << " time " << result.time << " NPS " << result.nps << std::endl;
         }
-        if (search_depth < depth - ENDSEARCH_PRESEARCH_OFFSET){
-            if (search_depth < 10){
+        if (search_depth < depth - ENDSEARCH_PRESEARCH_OFFSET) {
+            if (search_depth < 10) {
                 search_depth += 3;
             } else{
                 search_depth += 1;
             }
         } else{
-            if (search_depth < depth){
+            if (search_depth < depth) {
                 search_depth = depth;
                 search_mpc_level = MPC_74_LEVEL;
             } else{
-                if (search_mpc_level == MPC_88_LEVEL && mpc_level > MPC_88_LEVEL){
+                if (search_mpc_level == MPC_88_LEVEL && mpc_level > MPC_88_LEVEL) {
                     search_mpc_level = mpc_level;
                 } else{
                     ++search_mpc_level;
@@ -186,7 +186,7 @@ Search_result endgame_optimized_search(Board board, int depth, uint_fast8_t mpc_
     @param use_multi_thread     search in multi thread?
     @return the result in Search_result structure
 */
-inline Search_result tree_search_legal(Board board, int depth, uint_fast8_t mpc_level, bool show_log, uint64_t use_legal, bool use_multi_thread){
+inline Search_result tree_search_legal(Board board, int depth, uint_fast8_t mpc_level, bool show_log, uint64_t use_legal, bool use_multi_thread) {
     //thread_pool.tell_start_using();
     Search_result res;
     res.value = SCORE_UNDEFINED;
@@ -204,22 +204,22 @@ inline Search_result tree_search_legal(Board board, int depth, uint_fast8_t mpc_
     std::vector<Clog_result> clogs;
     uint64_t clog_nodes = 0;
     uint64_t clog_time = 0;
-    if (mpc_level != MPC_100_LEVEL){
+    if (mpc_level != MPC_100_LEVEL) {
         uint64_t strt = tim();
         int clog_depth = std::min(depth, CLOG_SEARCH_MAX_DEPTH);
         clogs = first_clog_search(board, &clog_nodes, clog_depth, use_legal);
         clog_time = tim() - strt;
-        if (show_log){
+        if (show_log) {
             std::cerr << "clog search depth " << clog_depth << " time " << clog_time << " nodes " << clog_nodes << " nps " << calc_nps(clog_nodes, clog_time) << std::endl;
-            for (int i = 0; i < (int)clogs.size(); ++i){
+            for (int i = 0; i < (int)clogs.size(); ++i) {
                 std::cerr << "clogsearch " << i + 1 << "/" << clogs.size() << " " << idx_to_coord(clogs[i].pos) << " value " << clogs[i].val << std::endl;
             }
         }
         res.clog_nodes = clog_nodes;
         res.clog_time = clog_time;
         /*
-        for (int i = 0; i < (int)clogs.size(); ++i){
-            if (clogs[i].val > res.value){
+        for (int i = 0; i < (int)clogs.size(); ++i) {
+            if (clogs[i].val > res.value) {
                 res.value = clogs[i].val;
                 res.policy = clogs[i].pos;
                 res.is_end_search = true;
@@ -227,10 +227,10 @@ inline Search_result tree_search_legal(Board board, int depth, uint_fast8_t mpc_
         }
         */
     }
-    if (use_legal){
+    if (use_legal) {
         lazy_smp(board, depth, mpc_level, show_log, clogs, use_legal, use_multi_thread, &res);
         /*
-        if (is_end_search){
+        if (is_end_search) {
             res = endgame_optimized_search(board, depth, mpc_level, show_log, clogs, use_legal, use_multi_thread);
         } else{
             res = lazy_smp(board, depth, mpc_level, show_log, clogs, use_legal, use_multi_thread);
@@ -258,12 +258,12 @@ inline Search_result tree_search_legal(Board board, int depth, uint_fast8_t mpc_
     @param show_log             show log?
     @return the result in Search_result structure
 */
-Search_result ai_common(Board board, int level, bool use_book, int book_acc_level, bool use_multi_thread, bool show_log, uint64_t use_legal, bool use_specified_move_book){
+Search_result ai_common(Board board, int level, bool use_book, int book_acc_level, bool use_multi_thread, bool show_log, uint64_t use_legal, bool use_specified_move_book) {
     Search_result res;
     int value_sign = 1;
-    if (board.get_legal() == 0ULL){
+    if (board.get_legal() == 0ULL) {
         board.pass();
-        if (board.get_legal() == 0ULL){
+        if (board.get_legal() == 0ULL) {
             res.policy = 64;
             res.value = -board.score_player();
             res.depth = 0;
@@ -276,12 +276,12 @@ Search_result ai_common(Board board, int level, bool use_book, int book_acc_leve
         }
     }
     Book_value book_result;
-    if (use_specified_move_book){
+    if (use_specified_move_book) {
         book_result = book.get_specified_best_move(&board);
     } else{
         book_result = book.get_random_specified_moves(&board, book_acc_level, use_legal);
     }
-    if (is_valid_policy(book_result.policy) && use_book){
+    if (is_valid_policy(book_result.policy) && use_book) {
         if (show_log)
             std::cerr << "book " << idx_to_coord(book_result.policy) << " " << book_result.value << " at book error level " << book_acc_level << std::endl;
         res.policy = book_result.policy;
@@ -319,15 +319,15 @@ Search_result ai_common(Board board, int level, bool use_book, int book_acc_leve
     @param show_log             show log?
     @return the result in Search_result structure
 */
-Search_result ai(Board board, int level, bool use_book, int book_acc_level, bool use_multi_thread, bool show_log){
+Search_result ai(Board board, int level, bool use_book, int book_acc_level, bool use_multi_thread, bool show_log) {
     return ai_common(board, level, use_book, book_acc_level, use_multi_thread, show_log, board.get_legal(), false);
 }
 
-Search_result ai_legal(Board board, int level, bool use_book, int book_acc_level, bool use_multi_thread, bool show_log, uint64_t use_legal){
+Search_result ai_legal(Board board, int level, bool use_book, int book_acc_level, bool use_multi_thread, bool show_log, uint64_t use_legal) {
     return ai_common(board, level, use_book, book_acc_level, use_multi_thread, show_log, use_legal, false);
 }
 
-Search_result ai_specified(Board board, int level, bool use_book, int book_acc_level, bool use_multi_thread, bool show_log){
+Search_result ai_specified(Board board, int level, bool use_book, int book_acc_level, bool use_multi_thread, bool show_log) {
     return ai_common(board, level, use_book, book_acc_level, use_multi_thread, show_log, board.get_legal(), true);
 }
 
@@ -340,7 +340,7 @@ Search_result ai_specified(Board board, int level, bool use_book, int book_acc_l
     @return the result in Search_result structure
 */
 
-Analyze_result ai_analyze(Board board, int level, bool use_multi_thread, uint_fast8_t played_move){
+Analyze_result ai_analyze(Board board, int level, bool use_multi_thread, uint_fast8_t played_move) {
     int depth;
     bool is_mid_search;
     uint_fast8_t mpc_level;
@@ -351,7 +351,7 @@ Analyze_result ai_analyze(Board board, int level, bool use_multi_thread, uint_fa
     uint64_t clog_nodes = 0;
     uint64_t clog_time = 0;
     int clog_depth = std::min(depth, CLOG_SEARCH_MAX_DEPTH);
-    if (mpc_level != MPC_100_LEVEL){
+    if (mpc_level != MPC_100_LEVEL) {
         uint64_t clog_strt = tim();
         clogs = first_clog_search(board, &clog_nodes, clog_depth, board.get_legal());
         clog_time = tim() - clog_strt;
@@ -368,14 +368,14 @@ Analyze_result ai_analyze(Board board, int level, bool use_multi_thread, uint_fa
 
 
 
-Search_result ai_accept_loss(Board board, int level, int acceptable_loss){
+Search_result ai_accept_loss(Board board, int level, int acceptable_loss) {
     uint64_t strt = tim();
     Flip flip;
     int v = SCORE_UNDEFINED;
     uint64_t legal = board.get_legal();
     std::vector<std::pair<int, int>> moves;
     //thread_pool.tell_start_using();
-    for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)){
+    for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)) {
         calc_flip(&flip, &board, cell);
         board.move_board(&flip);
             int g = -ai(board, level, true, 0, true, false).value;
@@ -385,7 +385,7 @@ Search_result ai_accept_loss(Board board, int level, int acceptable_loss){
     }
     //thread_pool.tell_finish_using();
     std::vector<std::pair<int, int>> acceptable_moves;
-    for (std::pair<int, int> move: moves){
+    for (std::pair<int, int> move: moves) {
         if (move.first >= v - acceptable_loss)
             acceptable_moves.emplace_back(move);
     }
@@ -404,11 +404,11 @@ Search_result ai_accept_loss(Board board, int level, int acceptable_loss){
     return res;
 }
 
-void ai_hint(Board board, int level, bool use_book, int book_acc_level, bool use_multi_thread, bool show_log, int n_display, double values[], int hint_types[]){
+void ai_hint(Board board, int level, bool use_book, int book_acc_level, bool use_multi_thread, bool show_log, int n_display, double values[], int hint_types[]) {
     uint64_t legal = board.get_legal();
-    if (use_book){
+    if (use_book) {
         std::vector<Book_value> links = book.get_all_moves_with_value(&board);
-        for (Book_value &link: links){
+        for (Book_value &link: links) {
             values[link.policy] = link.value;
             hint_types[link.policy] = HINT_TYPE_BOOK;
             legal ^= 1ULL << link.policy;
@@ -416,17 +416,17 @@ void ai_hint(Board board, int level, bool use_book, int book_acc_level, bool use
         }
     }
     //thread_pool.tell_start_using();
-    for (int search_level = 1; search_level <= level && global_searching; ++search_level){
-        //if (show_log){
+    for (int search_level = 1; search_level <= level && global_searching; ++search_level) {
+        //if (show_log) {
         //    std::cerr << "hint level " << search_level << " calculating" << std::endl;
         //}
         uint64_t search_legal = legal;
-        for (int i = 0; i < n_display && search_legal && global_searching; ++i){
+        for (int i = 0; i < n_display && search_legal && global_searching; ++i) {
             Search_result elem = ai_legal(board, search_level, use_book, book_acc_level, use_multi_thread, false, search_legal);
-            if (global_searching && (search_legal & (1ULL << elem.policy))){
+            if (global_searching && (search_legal & (1ULL << elem.policy))) {
                 search_legal ^= 1ULL << elem.policy;
                 values[elem.policy] = elem.value;
-                if (elem.is_end_search){
+                if (elem.is_end_search) {
                     hint_types[elem.policy] = elem.probability;
                 } else{
                     hint_types[elem.policy] = search_level;

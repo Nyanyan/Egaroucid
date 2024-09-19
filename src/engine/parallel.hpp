@@ -21,7 +21,7 @@
     @param n_nodes              number of nodes visited
     @param cell                 last move (for transposition table)
 */
-struct Parallel_task{
+struct Parallel_task {
     int value;
     uint64_t n_nodes;
     uint_fast8_t cell;

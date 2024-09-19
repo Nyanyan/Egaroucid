@@ -31,11 +31,11 @@
 #define N_TRANSPOSITION_MOVES 2
 #define TT_REGISTER_THRESHOLD_RATE 4.0
 
-inline uint32_t get_level_common(uint8_t depth, uint8_t mpc_level){
+inline uint32_t get_level_common(uint8_t depth, uint8_t mpc_level) {
     return ((uint32_t)depth << 8) | mpc_level;
 }
 
-inline uint32_t get_level_common(int depth, uint_fast8_t mpc_level){
+inline uint32_t get_level_common(int depth, uint_fast8_t mpc_level) {
     return ((uint32_t)depth << 8) | mpc_level;
 }
 
@@ -49,7 +49,7 @@ inline uint32_t get_level_common(int depth, uint_fast8_t mpc_level){
     @param upper                upper bound
     @param moves                best moves
 */
-class Hash_data{
+class Hash_data {
     private:
         uint8_t mpc_level;
         uint8_t depth;
@@ -63,7 +63,7 @@ class Hash_data{
         /*
             @brief Initialize a node
         */
-        inline void init(){
+        inline void init() {
             lower = -SCORE_MAX;
             upper = SCORE_MAX;
             moves[0] = TRANSPOSITION_TABLE_UNDEFINED;
@@ -81,12 +81,12 @@ class Hash_data{
             @param value                best value
             @param policy               best move
         */
-        inline void reg_same_level(const int alpha, const int beta, const int value, const int policy){
+        inline void reg_same_level(const int alpha, const int beta, const int value, const int policy) {
             if (value < beta && value < upper)
                 upper = (int8_t)value;
             if (alpha < value && lower < value)
                 lower = (int8_t)value;
-            if ((alpha < value || value == -SCORE_MAX) && moves[0] != policy && policy != TRANSPOSITION_TABLE_UNDEFINED){
+            if ((alpha < value || value == -SCORE_MAX) && moves[0] != policy && policy != TRANSPOSITION_TABLE_UNDEFINED) {
                 moves[1] = moves[0];
                 moves[0] = (uint8_t)policy;
             }
@@ -106,7 +106,7 @@ class Hash_data{
             @param value                best value
             @param policy               best move
         */
-        inline void reg_new_level(const int d, const uint_fast8_t ml, const int alpha, const int beta, const int value, const int policy){
+        inline void reg_new_level(const int d, const uint_fast8_t ml, const int alpha, const int beta, const int value, const int policy) {
             if (value < beta)
                 upper = (int8_t)value;
             else
@@ -115,7 +115,7 @@ class Hash_data{
                 lower = (int8_t)value;
             else
                 lower = -SCORE_MAX;
-            if ((alpha < value || value == -SCORE_MAX) && moves[0] != policy && policy != TRANSPOSITION_TABLE_UNDEFINED){
+            if ((alpha < value || value == -SCORE_MAX) && moves[0] != policy && policy != TRANSPOSITION_TABLE_UNDEFINED) {
                 moves[1] = moves[0];
                 moves[0] = policy;
             }
@@ -137,7 +137,7 @@ class Hash_data{
             @param value                best value
             @param policy               best move
         */
-        inline void reg_new_data(const int d, const uint_fast8_t ml, const int alpha, const int beta, const int value, const int policy){
+        inline void reg_new_data(const int d, const uint_fast8_t ml, const int alpha, const int beta, const int value, const int policy) {
             if (value < beta)
                 upper = (int8_t)value;
             else
@@ -161,7 +161,7 @@ class Hash_data{
 
             @return level
         */
-        inline uint32_t get_level(){
+        inline uint32_t get_level() {
             if (importance)
                 return get_level_common(depth, mpc_level);
             return 0;
@@ -172,7 +172,7 @@ class Hash_data{
 
             @return level
         */
-        inline uint32_t get_level_no_importance(){
+        inline uint32_t get_level_no_importance() {
             return get_level_common(depth, mpc_level);
         }
 
@@ -181,7 +181,7 @@ class Hash_data{
 
             @param res_moves            array to store result
         */
-        inline void get_moves(uint_fast8_t res_moves[]){
+        inline void get_moves(uint_fast8_t res_moves[]) {
             res_moves[0] = moves[0];
             res_moves[1] = moves[1];
         }
@@ -192,7 +192,7 @@ class Hash_data{
             @param l                    lower bound
             @param u                    upper bound
         */
-        inline void get_bounds(int *l, int *u){
+        inline void get_bounds(int *l, int *u) {
             *l = lower;
             *u = upper;
         }
@@ -200,21 +200,21 @@ class Hash_data{
         /*
             @brief Reset date
         */
-        inline void set_importance_zero(){
+        inline void set_importance_zero() {
             importance = 0;
         }
 
-        inline uint8_t get_mpc_level(){
+        inline uint8_t get_mpc_level() {
             return mpc_level;
         }
 };
 
-struct Hash_node{
+struct Hash_node {
     Board board;
     Hash_data data;
     Spinlock lock;
 
-    void init(){
+    void init() {
         board.player = 0ULL;
         board.opponent = 0ULL;
         data.init();
@@ -228,8 +228,8 @@ struct Hash_node{
     @param s                    start index
     @param e                    end index
 */
-void init_transposition_table(Hash_node table[], size_t s, size_t e){
-    for(size_t i = s; i < e; ++i){
+void init_transposition_table(Hash_node table[], size_t s, size_t e) {
+    for(size_t i = s; i < e; ++i) {
         table[i].init();
     }
 }
@@ -241,8 +241,8 @@ void init_transposition_table(Hash_node table[], size_t s, size_t e){
     @param s                    start index
     @param e                    end index
 */
-void set_importance_zero_transposition_table(Hash_node table[], size_t s, size_t e){
-    for(size_t i = s; i < e; ++i){
+void set_importance_zero_transposition_table(Hash_node table[], size_t s, size_t e) {
+    for(size_t i = s; i < e; ++i) {
         table[i].data.set_importance_zero();
     }
 }
@@ -250,30 +250,30 @@ void set_importance_zero_transposition_table(Hash_node table[], size_t s, size_t
 #if TUNE_MOVE_ORDERING_MID || TUNE_MOVE_ORDERING_END
 class Transposition_table{
     public:
-        inline void update_date(){
+        inline void update_date() {
         }
-        inline uint8_t get_date(){
+        inline uint8_t get_date() {
             return 0;
         }
-        inline bool resize(int hash_level){
+        inline bool resize(int hash_level) {
             return true;
         }
-        inline void init(){
+        inline void init() {
         }
-        inline void reset_date(){
+        inline void reset_date() {
         }
-        inline void reset_date_new_thread(int thread_size){
+        inline void reset_date_new_thread(int thread_size) {
         }
-        inline void reg(const Search *search, uint32_t hash, const int depth, int alpha, int beta, int value, int policy){
+        inline void reg(const Search *search, uint32_t hash, const int depth, int alpha, int beta, int value, int policy) {
         }
-        inline void get(const Search *search, uint32_t hash, const int depth, int *lower, int *upper, uint_fast8_t moves[]){
+        inline void get(const Search *search, uint32_t hash, const int depth, int *lower, int *upper, uint_fast8_t moves[]) {
         }
-        inline void get(const Search *search, uint32_t hash, const int depth, int *lower, int *upper){
+        inline void get(const Search *search, uint32_t hash, const int depth, int *lower, int *upper) {
         }
-        inline int get_best_move(const Board *board, uint32_t hash){
+        inline int get_best_move(const Board *board, uint32_t hash) {
             return TRANSPOSITION_TABLE_UNDEFINED;
         }
-        inline bool get_if_perfect(const Board *board, uint32_t hash, int *val, int *best_move){
+        inline bool get_if_perfect(const Board *board, uint32_t hash, int *val, int *best_move) {
             return false;
         }
 };
@@ -286,7 +286,7 @@ class Transposition_table{
     @param table_heap           transposition table on heap
     @param table_size           total table size
 */
-class Transposition_table{
+class Transposition_table {
     private:
         std::mutex mtx;
         #if TT_USE_STACK
@@ -303,7 +303,7 @@ class Transposition_table{
         /*
             @brief Constructor of transposition table
         */
-        Transposition_table(){
+        Transposition_table() {
             #if USE_CHANGEABLE_HASH_LEVEL || !TT_USE_STACK
                 table_heap = nullptr;
             #endif
@@ -319,7 +319,7 @@ class Transposition_table{
                 @param hash_level           hash level representing the size
                 @return table initialized?
             */
-            inline bool resize(int hash_level){
+            inline bool resize(int hash_level) {
                 size_t n_table_size = hash_sizes[hash_level] + TRANSPOSITION_TABLE_N_LOOP - 1;
                 table_size = 0;
                 if (table_heap != nullptr) {
@@ -327,7 +327,7 @@ class Transposition_table{
                     table_heap = nullptr;
                 }
                 #if TT_USE_STACK
-                    if (n_table_size > TRANSPOSITION_TABLE_STACK_SIZE){
+                    if (n_table_size > TRANSPOSITION_TABLE_STACK_SIZE) {
                         table_heap = (Hash_node*)malloc(sizeof(Hash_node) * (n_table_size - TRANSPOSITION_TABLE_STACK_SIZE));
                         if (table_heap == nullptr)
                             return false;
@@ -343,7 +343,7 @@ class Transposition_table{
                 return true;
             }
         #else
-            inline bool set_size(){
+            inline bool set_size() {
                 table_size = TRANSPOSITION_TABLE_STACK_SIZE;
                 n_registered_threshold = table_size * TT_REGISTER_THRESHOLD_RATE;
                 init();
@@ -354,14 +354,14 @@ class Transposition_table{
         /*
             @brief Initialize transposition table
         */
-        inline void init(){
+        inline void init() {
             int thread_size = thread_pool.size();
-            if (thread_size == 0){
+            if (thread_size == 0) {
                 #if TT_USE_STACK
                     for (size_t i = 0; i < std::min(table_size, (size_t)TRANSPOSITION_TABLE_STACK_SIZE); ++i)
                         table_stack[i].init();
                     #if USE_CHANGEABLE_HASH_LEVEL
-                        if (table_size > TRANSPOSITION_TABLE_STACK_SIZE){
+                        if (table_size > TRANSPOSITION_TABLE_STACK_SIZE) {
                             for (size_t i = 0; i < table_size - (size_t)TRANSPOSITION_TABLE_STACK_SIZE; ++i)
                                 table_heap[i].init();
                         }
@@ -376,10 +376,10 @@ class Transposition_table{
                 #if TT_USE_STACK
                     size_t delta = (std::min(table_size, (size_t)TRANSPOSITION_TABLE_STACK_SIZE) + thread_size - 1) / thread_size;
                     s = 0;
-                    for (int i = 0; i < thread_size; ++i){
+                    for (int i = 0; i < thread_size; ++i) {
                         e = std::min(std::min(table_size, (size_t)TRANSPOSITION_TABLE_STACK_SIZE), s + delta);
                         bool pushed = false;
-                        while (!pushed){
+                        while (!pushed) {
                             tasks.emplace_back(thread_pool.push(&pushed, std::bind(&init_transposition_table, table_stack, s, e)));
                             if (!pushed)
                                 tasks.pop_back();
@@ -387,13 +387,13 @@ class Transposition_table{
                         s = e;
                     }
                     #if USE_CHANGEABLE_HASH_LEVEL
-                        if (table_size > TRANSPOSITION_TABLE_STACK_SIZE){
+                        if (table_size > TRANSPOSITION_TABLE_STACK_SIZE) {
                             delta = (table_size - (size_t)TRANSPOSITION_TABLE_STACK_SIZE + thread_size - 1) / thread_size;
                             s = 0;
-                            for (int i = 0; i < thread_size; ++i){
+                            for (int i = 0; i < thread_size; ++i) {
                                 e = std::min(table_size - (size_t)TRANSPOSITION_TABLE_STACK_SIZE, s + delta);
                                 bool pushed = false;
-                                while (!pushed){
+                                while (!pushed) {
                                     tasks.emplace_back(thread_pool.push(&pushed, std::bind(&init_transposition_table, table_heap, s, e)));
                                     if (!pushed)
                                         tasks.pop_back();
@@ -405,10 +405,10 @@ class Transposition_table{
                 #else
                     size_t delta = (table_size + thread_size - 1) / thread_size;
                     s = 0;
-                    for (int i = 0; i < thread_size; ++i){
+                    for (int i = 0; i < thread_size; ++i) {
                         e = std::min(table_size, s + delta);
                         bool pushed = false;
-                        while (!pushed){
+                        while (!pushed) {
                             tasks.emplace_back(thread_pool.push(&pushed, std::bind(&init_transposition_table, table_heap, s, e)));
                             if (!pushed)
                                 tasks.pop_back();
@@ -424,7 +424,7 @@ class Transposition_table{
         /*
             @brief set all date to 0
         */
-        inline void reset_importance(){
+        inline void reset_importance() {
             std::lock_guard lock(mtx);
             reset_importance_proc();
         }
@@ -434,22 +434,22 @@ class Transposition_table{
 
             create new thread
         */
-        inline void reset_importance_new_thread(int thread_size){
+        inline void reset_importance_new_thread(int thread_size) {
             size_t s, e;
             std::vector<std::future<void>> tasks;
             #if TT_USE_STACK
                 size_t delta = (std::min(table_size, (size_t)TRANSPOSITION_TABLE_STACK_SIZE) + thread_size - 1) / thread_size;
                 s = 0;
-                for (int i = 0; i < thread_size; ++i){
+                for (int i = 0; i < thread_size; ++i) {
                     e = std::min(std::min(table_size, (size_t)TRANSPOSITION_TABLE_STACK_SIZE), s + delta);
                     tasks.emplace_back(std::async(std::launch::async, std::bind(&set_importance_zero_transposition_table, table_stack, s, e)));
                     s = e;
                 }
                 #if USE_CHANGEABLE_HASH_LEVEL
-                    if (table_size > TRANSPOSITION_TABLE_STACK_SIZE){
+                    if (table_size > TRANSPOSITION_TABLE_STACK_SIZE) {
                         delta = (table_size - (size_t)TRANSPOSITION_TABLE_STACK_SIZE + thread_size - 1) / thread_size;
                         s = 0;
-                        for (int i = 0; i < thread_size; ++i){
+                        for (int i = 0; i < thread_size; ++i) {
                             e = std::min(table_size - (size_t)TRANSPOSITION_TABLE_STACK_SIZE, s + delta);
                             tasks.emplace_back(std::async(std::launch::async, std::bind(&set_importance_zero_transposition_table, table_heap, s, e)));
                             s = e;
@@ -459,7 +459,7 @@ class Transposition_table{
             #else
                 size_t delta = (table_size + thread_size - 1) / thread_size;
                 s = 0;
-                for (int i = 0; i < thread_size; ++i){
+                for (int i = 0; i < thread_size; ++i) {
                     e = std::min(table_size, s + delta);
                     tasks.emplace_back(std::async(std::launch::async, std::bind(&set_importance_zero_transposition_table, table_heap, s, e)));
                     s = e;
@@ -482,7 +482,7 @@ class Transposition_table{
             @param policy               best move
             @param cost                 search cost (log2(nodes))
         */
-        inline void reg(const Search *search, uint32_t hash, const int depth, int alpha, int beta, int value, int policy){
+        inline void reg(const Search *search, uint32_t hash, const int depth, int alpha, int beta, int value, int policy) {
             Hash_node *node = get_node(hash);
             const uint32_t level = get_level_common(depth, search->mpc_level);
             uint32_t node_level;
@@ -491,12 +491,12 @@ class Transposition_table{
                 uint32_t min_level = 0x4fffffff;
                 bool registered = false;
             #endif
-            for (uint_fast8_t i = 0; i < TRANSPOSITION_TABLE_N_LOOP; ++i){
-                if (node->data.get_level() <= level){
+            for (uint_fast8_t i = 0; i < TRANSPOSITION_TABLE_N_LOOP; ++i) {
+                if (node->data.get_level() <= level) {
                     node->lock.lock();
                         node_level = node->data.get_level();
-                        if (node_level <= level){
-                            if (node->board.player == search->board.player && node->board.opponent == search->board.opponent){
+                        if (node_level <= level) {
+                            if (node->board.player == search->board.player && node->board.opponent == search->board.opponent) {
                                 if (node_level == level)
                                     node->data.reg_same_level(alpha, beta, value, policy);
                                 else
@@ -508,7 +508,7 @@ class Transposition_table{
                                 break;
                             } else{
                                 #if TT_REGISTER_MIN_LEVEL
-                                    if (node_level < min_level){
+                                    if (node_level < min_level) {
                                         min_level = node_level;
                                         min_level_node = node;
                                     }
@@ -517,7 +517,7 @@ class Transposition_table{
                                     node->board.opponent = search->board.opponent;
                                     node->data.reg_new_data(depth, search->mpc_level, alpha, beta, value, policy);
                                     node->lock.unlock();
-                                    if (node_level > 0){
+                                    if (node_level > 0) {
                                         n_registered.fetch_add(1);
                                     }
                                     break;
@@ -530,20 +530,20 @@ class Transposition_table{
                 node = get_node(hash);
             }
             #if TT_REGISTER_MIN_LEVEL
-                if (!registered && min_level_node != nullptr){
+                if (!registered && min_level_node != nullptr) {
                     min_level_node->lock.lock();
                         min_level_node->board.player = search->board.player;
                         min_level_node->board.opponent = search->board.opponent;
                         min_level_node->data.reg_new_data(depth, search->mpc_level, alpha, beta, value, policy);
-                        if (min_level_node->data.get_level() > 0){
+                        if (min_level_node->data.get_level() > 0) {
                             n_registered.fetch_add(1);
                         }
                     min_level_node->lock.unlock();
                 }
             #endif
-            if (n_registered >= n_registered_threshold){
+            if (n_registered >= n_registered_threshold) {
                 std::lock_guard lock(mtx);
-                if (n_registered >= n_registered_threshold){
+                if (n_registered >= n_registered_threshold) {
                     //std::cerr << "resetting transposition importance" << std::endl;
                     reset_importance_proc();
                 }
@@ -560,15 +560,15 @@ class Transposition_table{
             @param upper                upper bound to store
             @param moves                best moves to store
         */
-        inline void get(const Search *search, uint32_t hash, const int depth, int *lower, int *upper, uint_fast8_t moves[]){
+        inline void get(const Search *search, uint32_t hash, const int depth, int *lower, int *upper, uint_fast8_t moves[]) {
             Hash_node *node = get_node(hash);
             const uint32_t level = get_level_common(depth, search->mpc_level);
-            for (uint_fast8_t i = 0; i < TRANSPOSITION_TABLE_N_LOOP; ++i){
-                if (node->board.player == search->board.player && node->board.opponent == search->board.opponent){
+            for (uint_fast8_t i = 0; i < TRANSPOSITION_TABLE_N_LOOP; ++i) {
+                if (node->board.player == search->board.player && node->board.opponent == search->board.opponent) {
                     node->lock.lock();
-                        if (node->board.player == search->board.player && node->board.opponent == search->board.opponent){
+                        if (node->board.player == search->board.player && node->board.opponent == search->board.opponent) {
                             node->data.get_moves(moves);
-                            if (node->data.get_level_no_importance() >= level){
+                            if (node->data.get_level_no_importance() >= level) {
                                 node->data.get_bounds(lower, upper);
                             }
                             node->lock.unlock();
@@ -590,14 +590,14 @@ class Transposition_table{
             @param lower                lower bound to store
             @param upper                upper bound to store
         */
-        inline bool get_bounds(const Search *search, uint32_t hash, int depth, int *lower, int *upper){
+        inline bool get_bounds(const Search *search, uint32_t hash, int depth, int *lower, int *upper) {
             Hash_node *node = get_node(hash);
             const uint32_t level = get_level_common(depth, search->mpc_level);
-            for (uint_fast8_t i = 0; i < TRANSPOSITION_TABLE_N_LOOP; ++i){
-                if (node->board.player == search->board.player && node->board.opponent == search->board.opponent){
+            for (uint_fast8_t i = 0; i < TRANSPOSITION_TABLE_N_LOOP; ++i) {
+                if (node->board.player == search->board.player && node->board.opponent == search->board.opponent) {
                     node->lock.lock();
-                        if (node->board.player == search->board.player && node->board.opponent == search->board.opponent){
-                            if (node->data.get_level_no_importance() >= level){
+                        if (node->board.player == search->board.player && node->board.opponent == search->board.opponent) {
+                            if (node->data.get_level_no_importance() >= level) {
                                 node->data.get_bounds(lower, upper);
                                 node->lock.unlock();
                                 return true;
@@ -620,12 +620,12 @@ class Transposition_table{
             @param lower                lower bound to store
             @param upper                upper bound to store
         */
-        inline bool get_bounds_any_level(const Search *search, uint32_t hash, int *lower, int *upper){
+        inline bool get_bounds_any_level(const Search *search, uint32_t hash, int *lower, int *upper) {
             Hash_node *node = get_node(hash);
-            for (uint_fast8_t i = 0; i < TRANSPOSITION_TABLE_N_LOOP; ++i){
-                if (node->board.player == search->board.player && node->board.opponent == search->board.opponent){
+            for (uint_fast8_t i = 0; i < TRANSPOSITION_TABLE_N_LOOP; ++i) {
+                if (node->board.player == search->board.player && node->board.opponent == search->board.opponent) {
                     node->lock.lock();
-                        if (node->board.player == search->board.player && node->board.opponent == search->board.opponent){
+                        if (node->board.player == search->board.player && node->board.opponent == search->board.opponent) {
                             node->data.get_bounds(lower, upper);
                             node->lock.unlock();
                             return true;
@@ -647,12 +647,12 @@ class Transposition_table{
             @param lower                lower bound to store
             @param upper                upper bound to store
         */
-        inline bool get_bounds_any_level(const Board *board, uint32_t hash, int *lower, int *upper){
+        inline bool get_bounds_any_level(const Board *board, uint32_t hash, int *lower, int *upper) {
             Hash_node *node = get_node(hash);
-            for (uint_fast8_t i = 0; i < TRANSPOSITION_TABLE_N_LOOP; ++i){
-                if (node->board.player == board->player && node->board.opponent == board->opponent){
+            for (uint_fast8_t i = 0; i < TRANSPOSITION_TABLE_N_LOOP; ++i) {
+                if (node->board.player == board->player && node->board.opponent == board->opponent) {
                     node->lock.lock();
-                        if (node->board.player == board->player && node->board.opponent == board->opponent){
+                        if (node->board.player == board->player && node->board.opponent == board->opponent) {
                             node->data.get_bounds(lower, upper);
                             node->lock.unlock();
                             return true;
@@ -672,12 +672,12 @@ class Transposition_table{
             @param hash                 hash code
             @return best move
         */
-        inline bool get_moves_any_level(const Board *board, uint32_t hash, uint_fast8_t moves[]){
+        inline bool get_moves_any_level(const Board *board, uint32_t hash, uint_fast8_t moves[]) {
             Hash_node *node = get_node(hash);
-            for (uint_fast8_t i = 0; i < TRANSPOSITION_TABLE_N_LOOP; ++i){
-                if (node->board.player == board->player && node->board.opponent == board->opponent){
+            for (uint_fast8_t i = 0; i < TRANSPOSITION_TABLE_N_LOOP; ++i) {
+                if (node->board.player == board->player && node->board.opponent == board->opponent) {
                     node->lock.lock();
-                        if (node->board.player == board->player && node->board.opponent == board->opponent){
+                        if (node->board.player == board->player && node->board.opponent == board->opponent) {
                             node->data.get_moves(moves);
                             node->lock.unlock();
                             return true;
@@ -690,12 +690,12 @@ class Transposition_table{
             return false;
         }
 
-        inline void del(const Board *board, uint32_t hash){
+        inline void del(const Board *board, uint32_t hash) {
             Hash_node *node = get_node(hash);
             uint32_t node_level;
-            for (uint_fast8_t i = 0; i < TRANSPOSITION_TABLE_N_LOOP; ++i){
+            for (uint_fast8_t i = 0; i < TRANSPOSITION_TABLE_N_LOOP; ++i) {
                 node->lock.lock();
-                    if (node->board.player == board->player && node->board.opponent == board->opponent){
+                    if (node->board.player == board->player && node->board.opponent == board->opponent) {
                         node->init();
                     }
                 node->lock.unlock();
@@ -704,14 +704,14 @@ class Transposition_table{
             }
         }
 
-        inline bool has_node(const Search *search, uint32_t hash, int depth){
+        inline bool has_node(const Search *search, uint32_t hash, int depth) {
             Hash_node *node = get_node(hash);
             const uint32_t level = get_level_common(depth, search->mpc_level);
-            for (uint_fast8_t i = 0; i < TRANSPOSITION_TABLE_N_LOOP; ++i){
-                if (node->board.player == search->board.player && node->board.opponent == search->board.opponent){
+            for (uint_fast8_t i = 0; i < TRANSPOSITION_TABLE_N_LOOP; ++i) {
+                if (node->board.player == search->board.player && node->board.opponent == search->board.opponent) {
                     node->lock.lock();
-                        if (node->board.player == search->board.player && node->board.opponent == search->board.opponent){
-                            if (node->data.get_level_no_importance() >= level){
+                        if (node->board.player == search->board.player && node->board.opponent == search->board.opponent) {
+                            if (node->data.get_level_no_importance() >= level) {
                                 node->lock.unlock();
                                 return true;
                             }
@@ -724,10 +724,10 @@ class Transposition_table{
             return false;
         }
 
-        inline bool has_node_any_level(const Search *search, uint32_t hash){
+        inline bool has_node_any_level(const Search *search, uint32_t hash) {
             Hash_node *node = get_node(hash);
-            for (uint_fast8_t i = 0; i < TRANSPOSITION_TABLE_N_LOOP; ++i){
-                if (node->board.player == search->board.player && node->board.opponent == search->board.opponent){
+            for (uint_fast8_t i = 0; i < TRANSPOSITION_TABLE_N_LOOP; ++i) {
+                if (node->board.player == search->board.player && node->board.opponent == search->board.opponent) {
                     return true;
                 }
                 ++hash;
@@ -737,7 +737,7 @@ class Transposition_table{
         }
 
     private:
-        inline Hash_node* get_node(uint32_t hash){
+        inline Hash_node* get_node(uint32_t hash) {
             #if TT_USE_STACK
                 #if USE_CHANGEABLE_HASH_LEVEL
                     if (hash < TRANSPOSITION_TABLE_STACK_SIZE)
@@ -751,13 +751,13 @@ class Transposition_table{
             #endif
         }
 
-        inline void reset_importance_proc(){
+        inline void reset_importance_proc() {
             //std::cerr << "importance reset n_registered " << n_registered << " threshold " << n_registered_threshold << " table_size " << table_size << std::endl;
             #if TT_USE_STACK
                 for (size_t i = 0; i < std::min(table_size, (size_t)TRANSPOSITION_TABLE_STACK_SIZE); ++i)
                     table_stack[i].data.set_importance_zero();
                 #if USE_CHANGEABLE_HASH_LEVEL
-                    if (table_size > TRANSPOSITION_TABLE_STACK_SIZE){
+                    if (table_size > TRANSPOSITION_TABLE_STACK_SIZE) {
                         for (size_t i = 0; i < table_size - (size_t)TRANSPOSITION_TABLE_STACK_SIZE; ++i)
                             table_heap[i].data.set_importance_zero();
                     }
@@ -773,7 +773,7 @@ class Transposition_table{
 
 Transposition_table transposition_table;
 
-void transposition_table_init(){
+void transposition_table_init() {
     transposition_table.init();
 }
 
@@ -785,23 +785,23 @@ void transposition_table_init(){
         @param hash_level           new hash level
         @return hash resized?
     */
-    bool hash_resize(int hash_level_failed, int hash_level, bool show_log){
-        if (!transposition_table.resize(hash_level)){
+    bool hash_resize(int hash_level_failed, int hash_level, bool show_log) {
+        if (!transposition_table.resize(hash_level)) {
             std::cerr << "[ERROR] hash table resize failed. resize to level " << hash_level_failed << std::endl;
             transposition_table.resize(hash_level_failed);
-            if (!hash_init(hash_level_failed)){
+            if (!hash_init(hash_level_failed)) {
                 std::cerr << "[ERROR] can't get hash. you can ignore this error" << std::endl;
                 hash_init_rand(hash_level_failed);
             }
             global_hash_level = hash_level_failed;
             return false;
         }
-        if (!hash_init(hash_level)){
+        if (!hash_init(hash_level)) {
             std::cerr << "[ERROR] can't get hash. you can ignore this error" << std::endl;
             hash_init_rand(hash_level);
         }
         global_hash_level = hash_level;
-        if (show_log){
+        if (show_log) {
             double size_mb = (double)sizeof(Hash_node) / 1024 / 1024 * hash_sizes[hash_level];
             std::cerr << "hash resized to level " << hash_level << " elements " << hash_sizes[hash_level] << " size " << size_mb << " MB" << std::endl;
         }
@@ -816,41 +816,41 @@ void transposition_table_init(){
         @param binary_path          path to binary
         @return hash resized?
     */
-    bool hash_resize(int hash_level_failed, int hash_level, std::string binary_path, bool show_log){
-        if (!transposition_table.resize(hash_level)){
+    bool hash_resize(int hash_level_failed, int hash_level, std::string binary_path, bool show_log) {
+        if (!transposition_table.resize(hash_level)) {
             std::cerr << "[ERROR] hash table resize failed. resize to level " << hash_level_failed << std::endl;
             transposition_table.resize(hash_level_failed);
-            if (!hash_init(hash_level_failed, binary_path)){
+            if (!hash_init(hash_level_failed, binary_path)) {
                 std::cerr << "[ERROR] can't get hash. you can ignore this error" << std::endl;
                 hash_init_rand(hash_level_failed);
             }
             global_hash_level = hash_level_failed;
             return false;
         }
-        if (!hash_init(hash_level, binary_path)){
+        if (!hash_init(hash_level, binary_path)) {
             std::cerr << "[ERROR] can't get hash. you can ignore this error" << std::endl;
             hash_init_rand(hash_level);
         }
         global_hash_level = hash_level;
-        if (show_log){
+        if (show_log) {
             double size_mb = (double)sizeof(Hash_node) / 1024 / 1024 * hash_sizes[hash_level];
             std::cerr << "hash resized to level " << hash_level << " elements " << hash_sizes[hash_level] << " size " << size_mb << " MB" << std::endl;
         }
         return true;
     }
 #else
-    bool hash_tt_init(std::string binary_path, bool show_log){
+    bool hash_tt_init(std::string binary_path, bool show_log) {
         transposition_table.set_size();
-        if (!hash_init(DEFAULT_HASH_LEVEL, binary_path)){
+        if (!hash_init(DEFAULT_HASH_LEVEL, binary_path)) {
             std::cerr << "[ERROR] can't get hash. you can ignore this error" << std::endl;
             hash_init_rand(DEFAULT_HASH_LEVEL);
         }
         return true;
     }
 
-    bool hash_tt_init(bool show_log){
+    bool hash_tt_init(bool show_log) {
         transposition_table.set_size();
-        if (!hash_init(DEFAULT_HASH_LEVEL)){
+        if (!hash_init(DEFAULT_HASH_LEVEL)) {
             std::cerr << "[ERROR] can't get hash. you can ignore this error" << std::endl;
             hash_init_rand(DEFAULT_HASH_LEVEL);
         }
@@ -858,62 +858,62 @@ void transposition_table_init(){
     }
 #endif
 
-inline bool transposition_cutoff(Search *search, uint32_t hash_code, int depth, int *alpha, int *beta, int *v, uint_fast8_t moves[]){
-    //if (depth >= USE_TT_DEPTH_THRESHOLD){
+inline bool transposition_cutoff(Search *search, uint32_t hash_code, int depth, int *alpha, int *beta, int *v, uint_fast8_t moves[]) {
+    //if (depth >= USE_TT_DEPTH_THRESHOLD) {
     int lower = -SCORE_MAX, upper = SCORE_MAX;
     transposition_table.get(search, hash_code, depth, &lower, &upper, moves);
-    if (upper == lower || upper <= *alpha){
+    if (upper == lower || upper <= *alpha) {
         *v = upper;
         return true;
     }
-    if (*beta <= lower){
+    if (*beta <= lower) {
         *v = lower;
         return true;
     }
-    if (*alpha < lower){
+    if (*alpha < lower) {
         *alpha = lower;
     }
-    if(upper < *beta){
+    if(upper < *beta) {
         *beta = upper;
     }
     //}
     return false;
 }
 
-inline bool transposition_cutoff_bestmove(Search *search, uint32_t hash_code, int depth, int *alpha, int *beta, int *v, int *best_move){
-    //if (depth >= USE_TT_DEPTH_THRESHOLD){
+inline bool transposition_cutoff_bestmove(Search *search, uint32_t hash_code, int depth, int *alpha, int *beta, int *v, int *best_move) {
+    //if (depth >= USE_TT_DEPTH_THRESHOLD) {
     int lower = -SCORE_MAX, upper = SCORE_MAX;
     uint_fast8_t moves[N_TRANSPOSITION_MOVES];
     transposition_table.get(search, hash_code, depth, &lower, &upper, moves);
-    if (upper == lower || upper <= *alpha){
+    if (upper == lower || upper <= *alpha) {
         *v = upper;
         *best_move = moves[0];
         return true;
     }
-    if (*beta <= lower){
+    if (*beta <= lower) {
         *v = lower;
         *best_move = moves[0];
         return true;
     }
-    if (*alpha < lower){
+    if (*alpha < lower) {
         *alpha = lower;
     }
-    if(upper < *beta){
+    if(upper < *beta) {
         *beta = upper;
     }
     //}
     return false;
 }
 
-inline bool transposition_cutoff_nws(Search *search, uint32_t hash_code, int depth, int alpha, int *v, uint_fast8_t moves[]){
-    //if (depth >= USE_TT_DEPTH_THRESHOLD){
+inline bool transposition_cutoff_nws(Search *search, uint32_t hash_code, int depth, int alpha, int *v, uint_fast8_t moves[]) {
+    //if (depth >= USE_TT_DEPTH_THRESHOLD) {
     int lower = -SCORE_MAX, upper = SCORE_MAX;
     transposition_table.get(search, hash_code, depth, &lower, &upper, moves);
-    if (upper == lower || upper <= alpha){
+    if (upper == lower || upper <= alpha) {
         *v = upper;
         return true;
     }
-    if (alpha < lower){
+    if (alpha < lower) {
         *v = lower;
         return true;
     }
@@ -921,15 +921,15 @@ inline bool transposition_cutoff_nws(Search *search, uint32_t hash_code, int dep
     return false;
 }
 
-inline bool transposition_cutoff_nws(Search *search, uint32_t hash_code, int depth, int alpha, int *v){
-    //if (depth >= USE_TT_DEPTH_THRESHOLD){
+inline bool transposition_cutoff_nws(Search *search, uint32_t hash_code, int depth, int alpha, int *v) {
+    //if (depth >= USE_TT_DEPTH_THRESHOLD) {
     int lower = -SCORE_MAX, upper = SCORE_MAX;
     transposition_table.get_bounds(search, hash_code, depth, &lower, &upper);
-    if (upper == lower || upper <= alpha){
+    if (upper == lower || upper <= alpha) {
         *v = upper;
         return true;
     }
-    if (alpha < lower){
+    if (alpha < lower) {
         *v = lower;
         return true;
     }
@@ -937,17 +937,17 @@ inline bool transposition_cutoff_nws(Search *search, uint32_t hash_code, int dep
     return false;
 }
 
-inline bool transposition_cutoff_nws_bestmove(Search *search, uint32_t hash_code, int depth, int alpha, int *v, int *best_move){
-    //if (depth >= USE_TT_DEPTH_THRESHOLD){
+inline bool transposition_cutoff_nws_bestmove(Search *search, uint32_t hash_code, int depth, int alpha, int *v, int *best_move) {
+    //if (depth >= USE_TT_DEPTH_THRESHOLD) {
     int lower = -SCORE_MAX, upper = SCORE_MAX;
     uint_fast8_t moves[N_TRANSPOSITION_MOVES];
     transposition_table.get(search, hash_code, depth, &lower, &upper, moves);
-    if (upper == lower || upper <= alpha){
+    if (upper == lower || upper <= alpha) {
         *v = upper;
         *best_move = moves[0];
         return true;
     }
-    if (alpha < lower){
+    if (alpha < lower) {
         *v = lower;
         *best_move = moves[0];
         return true;
