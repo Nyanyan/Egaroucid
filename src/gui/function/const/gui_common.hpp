@@ -363,9 +363,9 @@ struct Fonts {
     Font font_bold_SC{ FontMethod::MSDF, FONT_DEFAULT_SIZE, Typeface::CJK_Regular_SC, FontStyle::Bold };
     Font font_heavy_SC{ FontMethod::MSDF, FONT_DEFAULT_SIZE, Typeface::CJK_Regular_SC, FontStyle::Bold };
 
-    void init(std::string lang){
+    void init(std::string lang) {
         std::cerr << "font init " << lang << std::endl;
-        if (lang == "chinese"){
+        if (lang == "chinese") {
             font = font_SC;
             font_bold = font_bold_SC;
             font_heavy = font_heavy_SC;
@@ -377,7 +377,7 @@ struct Fonts {
         add_fallback();
     }
 
-    void add_fallback(){
+    void add_fallback() {
 
         // japanese / english
         font.addFallback(font_default);
@@ -663,10 +663,10 @@ struct Book_information {
     String val_str;
 };
 
-struct Window_state{
+struct Window_state {
     double window_scale;
     bool loading;
-    Window_state(){
+    Window_state() {
         window_scale = 1.0;
         loading = true;
     }
