@@ -122,50 +122,50 @@ std::vector<Shortcut_key_elem> shortcut_keys_default = {
     {U"license",                {},                     {{"help", "help"}, {"help", "license"}}},
 };
 
-String generate_key_str(std::vector<String> keys){
+String generate_key_str(std::vector<String> keys) {
     String res;
-    for (int i = 0; i < (int)keys.size(); ++i){
-        if (keys[i] == U"Right"){
+    for (int i = 0; i < (int)keys.size(); ++i) {
+        if (keys[i] == U"Right") {
             res += U"->";
-        } else if (keys[i] == U"Left"){
+        } else if (keys[i] == U"Left") {
             res += U"<-";
-        } else if (keys[i] == U"0x5b"){
+        } else if (keys[i] == U"0x5b") {
             res += U"Windows";
         } else{
             res += keys[i];
         }
-        if (i < (int)keys.size() - 1){
+        if (i < (int)keys.size() - 1) {
             res += U"+";
         }
     }
     return res;
 }
 
-std::vector<String> get_all_inputs(bool *down_found){
+std::vector<String> get_all_inputs(bool *down_found) {
     const Array<Input> raw_keys = Keyboard::GetAllInputs();
     *down_found = false;
     std::unordered_set<String> keys;
-    for (const auto& key : raw_keys){
-        if (key.name() == U"Enter"){ // prohibited
+    for (const auto& key : raw_keys) {
+        if (key.name() == U"Enter") { // prohibited
             continue;
         }
         *down_found |= key.down();
         keys.emplace(key.name());
     }
     std::vector<String> res;
-    if (keys.find(U"Ctrl") != keys.end()){
+    if (keys.find(U"Ctrl") != keys.end()) {
         res.emplace_back(U"Ctrl");
         keys.erase(U"Ctrl");
     }
-    if (keys.find(U"Shift") != keys.end()){
+    if (keys.find(U"Shift") != keys.end()) {
         res.emplace_back(U"Shift");
         keys.erase(U"Shift");
     }
-    if (keys.find(U"Alt") != keys.end()){
+    if (keys.find(U"Alt") != keys.end()) {
         res.emplace_back(U"Alt");
         keys.erase(U"Alt");
     }
-    for (String key: keys){
+    for (String key: keys) {
         res.emplace_back(key);
     }
     return res;
@@ -175,26 +175,26 @@ class Shortcut_keys{
 public:
     std::vector<Shortcut_key_elem> shortcut_keys;
 public:
-    void set_default(){
+    void set_default() {
         shortcut_keys = shortcut_keys_default;
     }
 
-    void init(String file){
+    void init(String file) {
         set_default();
         JSON json = JSON::Load(file);
         std::unordered_set<String> name_list;
-        for (Shortcut_key_elem &elem: shortcut_keys_default){
+        for (Shortcut_key_elem &elem: shortcut_keys_default) {
             name_list.emplace(elem.name);
         }
-        for (const auto& object: json){
-            if (name_list.find(object.key) == name_list.end()){
+        for (const auto& object: json) {
+            if (name_list.find(object.key) == name_list.end()) {
                 std::cerr << "ERR shortcut key name not found " << object.key.narrow() << std::endl;
                 continue;
             }
-            for (int i = 0; i < (int)shortcut_keys.size(); ++i){
-                if (shortcut_keys[i].name == object.key){
+            for (int i = 0; i < (int)shortcut_keys.size(); ++i) {
+                if (shortcut_keys[i].name == object.key) {
                     shortcut_keys[i].keys.clear();
-                    for (const auto &key_name: object.value.arrayView()){
+                    for (const auto &key_name: object.value.arrayView()) {
                         shortcut_keys[i].keys.emplace_back(key_name.getString());
                     }
                 }
@@ -202,11 +202,11 @@ public:
         }
     }
 
-    void save_settings(String file){
+    void save_settings(String file) {
         JSON json;
-        for (const Shortcut_key_elem &elem: shortcut_keys){
+        for (const Shortcut_key_elem &elem: shortcut_keys) {
             Array<JSON> arrayJSON;
-            for (String key: elem.keys){
+            for (String key: elem.keys) {
                 arrayJSON << key;
             }
             json[elem.name] = arrayJSON;
@@ -214,22 +214,22 @@ public:
         json.save(file);
     }
 
-    void check_shortcut_key(String *shortcut_name_down, String *shortcut_name_pressed){
+    void check_shortcut_key(String *shortcut_name_down, String *shortcut_name_pressed) {
         bool down_found = false;
         std::vector<String> keys = get_all_inputs(&down_found);
         *shortcut_name_down = SHORTCUT_KEY_UNDEFINED;
         *shortcut_name_pressed = SHORTCUT_KEY_UNDEFINED;
-        for (const Shortcut_key_elem &elem: shortcut_keys){
-            if (keys.size() && keys.size() == elem.keys.size()){
+        for (const Shortcut_key_elem &elem: shortcut_keys) {
+            if (keys.size() && keys.size() == elem.keys.size()) {
                 bool matched = true;
-                for (const String& key : keys){
+                for (const String& key : keys) {
                     //std::cerr << key.narrow() << " " << (std::find(elem.keys.begin(), elem.keys.end(), key) == elem.keys.end()) << std::endl;
-                    if (std::find(elem.keys.begin(), elem.keys.end(), key) == elem.keys.end()){
+                    if (std::find(elem.keys.begin(), elem.keys.end(), key) == elem.keys.end()) {
                         matched = false;
                     }
                 }
-                if (matched){
-                    if (down_found){
+                if (matched) {
+                    if (down_found) {
                         *shortcut_name_down = elem.name;
                     }
                     *shortcut_name_pressed = elem.name;
@@ -239,22 +239,22 @@ public:
         }
     }
 
-    String get_shortcut_key_str(String name){
-        for (const Shortcut_key_elem &elem: shortcut_keys){
-            if (elem.name == name){
+    String get_shortcut_key_str(String name) {
+        for (const Shortcut_key_elem &elem: shortcut_keys) {
+            if (elem.name == name) {
                 return generate_key_str(elem.keys);
             }
         }
         return SHORTCUT_KEY_UNDEFINED;
     }
 
-    String get_shortcut_key_description(String name){
-        for (const Shortcut_key_elem &elem: shortcut_keys){
-            if (elem.name == name){
+    String get_shortcut_key_description(String name) {
+        for (const Shortcut_key_elem &elem: shortcut_keys) {
+            if (elem.name == name) {
                 String res;
-                for (int i = 0; i < (int)elem.description_keys.size(); ++i){
+                for (int i = 0; i < (int)elem.description_keys.size(); ++i) {
                     res += language.get(elem.description_keys[i]);
-                    if (i < (int)elem.description_keys.size() - 1){
+                    if (i < (int)elem.description_keys.size() - 1) {
                         res += U"> ";
                     }
                 }
@@ -264,14 +264,14 @@ public:
         return SHORTCUT_KEY_UNDEFINED;
     }
 
-    void change(int idx, std::vector<String> keys){
+    void change(int idx, std::vector<String> keys) {
         shortcut_keys[idx].keys.clear();
-        for (String key: keys){
+        for (String key: keys) {
             shortcut_keys[idx].keys.emplace_back(key);
         }
     }
 
-    void del(int idx){
+    void del(int idx) {
         shortcut_keys[idx].keys.clear();
     }
 };

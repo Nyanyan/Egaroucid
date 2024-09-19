@@ -17,33 +17,33 @@ struct Click_supporter{
     bool pressed;
     bool f_pressed;
 
-    void init(){
+    void init() {
         clicked_down = false;
         pressed = false;
         f_pressed = false;
     }
 
-    void update(Rect rect){
+    void update(Rect rect) {
         f_pressed = pressed;
         pressed = rect.leftPressed();
-        if (rect.leftClicked()){
+        if (rect.leftClicked()) {
             clicked_down = true;
-        } else if (!MouseL.down() && !f_pressed){
+        } else if (!MouseL.down() && !f_pressed) {
             clicked_down = false;
         }
     }
 
-    void update(RoundRect rect){
+    void update(RoundRect rect) {
         f_pressed = pressed;
         pressed = rect.leftPressed();
-        if (rect.leftClicked()){
+        if (rect.leftClicked()) {
             clicked_down = true;
-        } else if (!MouseL.down() && !f_pressed){
+        } else if (!MouseL.down() && !f_pressed) {
             clicked_down = false;
         }
     }
 
-    bool clicked(){
+    bool clicked() {
         return clicked_down && f_pressed && !MouseL.pressed();
     }
 };

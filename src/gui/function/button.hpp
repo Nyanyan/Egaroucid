@@ -43,20 +43,20 @@ public:
         click_supporter.init();
     }
 
-    void move(int x, int y){
+    void move(int x, int y) {
         rect.x = x;
         rect.y = y;
     }
 
     void draw() {
-        if (enabled){
+        if (enabled) {
             rect.draw(button_color);
             font(str).drawAt(font_size, rect.x + rect.w / 2, rect.y + rect.h / 2, font_color);
-            if (rect.mouseOver()){
+            if (rect.mouseOver()) {
                 Cursor::RequestStyle(CursorStyle::Hand);
             }
         } else{
-            if (transparent){
+            if (transparent) {
                 rect.draw(ColorF(button_color, 0.7));
             } else{
                 rect.draw(button_color);
@@ -70,16 +70,16 @@ public:
         return enabled && click_supporter.clicked();
     }
 
-    void enable(){
+    void enable() {
         enabled = true;
     }
 
-    void disable(){
+    void disable() {
         enabled = false;
         transparent = true;
     }
 
-    void disable_notransparent(){
+    void disable_notransparent() {
         enabled = false;
         transparent = false;
     }

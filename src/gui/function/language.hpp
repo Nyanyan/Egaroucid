@@ -56,7 +56,7 @@ public:
     }
 
     String get(std::vector<std::string> vs) {
-        switch (vs.size()){
+        switch (vs.size()) {
             case 1:
                 return get(vs[0]);
             case 2:
@@ -73,7 +73,7 @@ public:
         if (lang[v0s][v1s].getType() != JSONValueType::Array)
             return U"?";
         std::vector<String> arr;
-        for (const auto& elem : lang[v0s][v1s].arrayView()){
+        for (const auto& elem : lang[v0s][v1s].arrayView()) {
             arr.emplace_back(elem.getString());
         }
         int idx = myrandrange(0, (int)arr.size());
@@ -96,11 +96,11 @@ public:
         }
         for (const auto& object : lang)
             language_name_list.emplace_back(object.key.narrow());
-        for (int i = 1; i < (int)language_name_list.size(); ++i){
+        for (int i = 1; i < (int)language_name_list.size(); ++i) {
             if (language_name_list[i] == "japanese")
                 std::swap(language_name_list[i], language_name_list[0]);
         }
-        for (int i = 2; i < (int)language_name_list.size(); ++i){
+        for (int i = 2; i < (int)language_name_list.size(); ++i) {
             if (language_name_list[i] == "english")
                 std::swap(language_name_list[i], language_name_list[1]);
         }
@@ -114,7 +114,7 @@ public:
         return lang[v0s].getString();
     }
 
-    int size(){
+    int size() {
         return lang.size();
     }
 };

@@ -13,11 +13,11 @@
 #include <vector>
 #include "const/gui_common.hpp"
 
-std::string get_extension(std::string file){
+std::string get_extension(std::string file) {
     std::string res;
     bool dot_found = false;
-    for (int i = (int)file.size() - 1; i >= 0; --i){
-        if (file[i] == '.'){
+    for (int i = (int)file.size() - 1; i >= 0; --i) {
+        if (file[i] == '.') {
             dot_found = true;
             break;
         }
@@ -28,7 +28,7 @@ std::string get_extension(std::string file){
     return "";
 }
 
-std::string get_transcript(Graph_resources graph_resources, History_elem current_history_elem){
+std::string get_transcript(Graph_resources graph_resources, History_elem current_history_elem) {
     std::string transcript;
     int inspect_switch_n_discs = INF;
     if (graph_resources.branch == GRAPH_MODE_INSPECT) {

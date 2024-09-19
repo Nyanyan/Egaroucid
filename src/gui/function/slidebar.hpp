@@ -57,12 +57,12 @@ public:
     }
 
     void draw() {
-        if (rect.leftClicked()){
+        if (rect.leftClicked()) {
             changeable = true;
-        } else if (!MouseL.pressed()){
+        } else if (!MouseL.pressed()) {
             changeable = false;
         }
-        if (changeable){
+        if (changeable) {
             Cursor::RequestStyle(CursorStyle::ResizeLeftRight);
             int min_error = INF;
             int cursor_x = Cursor::Pos().x;

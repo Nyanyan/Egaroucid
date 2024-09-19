@@ -35,7 +35,7 @@ private:
 
 
 public:
-    void init(int x, int y, int w, int h, int rect_mh, int ne, int n_epw, int mx, int my, int mw, int mh){
+    void init(int x, int y, int w, int h, int rect_mh, int ne, int n_epw, int mx, int my, int mw, int mh) {
         sx = x;
         sy = y;
         width = w;
@@ -44,7 +44,7 @@ public:
         n_elem = ne;
         n_elem_per_window = n_epw;
         rect_height = height;
-        if (n_elem > n_elem_per_window){
+        if (n_elem > n_elem_per_window) {
             rect_height = std::max(rect_min_height, (int)round((double)n_elem_per_window / (double)n_elem * (double)height));
         }
         max_strt_idx = std::max(n_elem - n_elem_per_window, 0);
@@ -67,72 +67,72 @@ public:
         mouseover_rect.h = mh;
     }
 
-    void draw(){
+    void draw() {
         int strt_idx_int = (int)strt_idx_double;
         double percent = 0.0;
-        if (max_strt_idx > 0){
+        if (max_strt_idx > 0) {
             percent = (double)strt_idx_int / (double)max_strt_idx;
         }
         int rect_y = sy + round(percent * (double)(height - rect_height));
         frame_rect.drawFrame(1.0, Palette::White);
         rect.y = rect_y;
         rect.draw(Palette::White);
-        if (dragged){
+        if (dragged) {
             Cursor::RequestStyle(CursorStyle::ResizeUpDown);
         }
     }
 
-    void update(){
-        if (mouseover_rect.mouseOver()){
+    void update() {
+        if (mouseover_rect.mouseOver()) {
             strt_idx_double = std::max(0.0, std::min((double)(n_elem - n_elem_per_window), strt_idx_double + Mouse::Wheel()));
         }
-        if (!KeyUp.pressed()){
+        if (!KeyUp.pressed()) {
             up_strt = BUTTON_NOT_PUSHED;
         }
-        if (!KeyDown.pressed()){
+        if (!KeyDown.pressed()) {
             down_strt = BUTTON_NOT_PUSHED;
         }
-        if (!KeyPageUp.pressed()){
+        if (!KeyPageUp.pressed()) {
             pup_strt = BUTTON_NOT_PUSHED;
         }
-        if (!KeyPageDown.pressed()){
+        if (!KeyPageDown.pressed()) {
             pdown_strt = BUTTON_NOT_PUSHED;
         }
-        if (KeyUp.down() || (up_strt != BUTTON_NOT_PUSHED && tim() - up_strt >= BUTTON_LONG_PRESS_THRESHOLD)){
+        if (KeyUp.down() || (up_strt != BUTTON_NOT_PUSHED && tim() - up_strt >= BUTTON_LONG_PRESS_THRESHOLD)) {
             strt_idx_double = std::max(0.0, strt_idx_double - 1.0);
-            if (KeyUp.down()){
+            if (KeyUp.down()) {
                 up_strt = tim();
             }
         }
-        if (KeyDown.down() || (down_strt != BUTTON_NOT_PUSHED && tim() - down_strt >= BUTTON_LONG_PRESS_THRESHOLD)){
+        if (KeyDown.down() || (down_strt != BUTTON_NOT_PUSHED && tim() - down_strt >= BUTTON_LONG_PRESS_THRESHOLD)) {
             strt_idx_double = std::max(0.0, std::min((double)(n_elem - n_elem_per_window), strt_idx_double + 1.0));
-            if (KeyDown.down()){
+            if (KeyDown.down()) {
                 down_strt = tim();
             }
         }
-        if (KeyPageUp.down() || (pup_strt != BUTTON_NOT_PUSHED && tim() - pup_strt >= BUTTON_LONG_PRESS_THRESHOLD)){
+        if (KeyPageUp.down() || (pup_strt != BUTTON_NOT_PUSHED && tim() - pup_strt >= BUTTON_LONG_PRESS_THRESHOLD)) {
             strt_idx_double = std::max(0.0, strt_idx_double - n_elem_per_window);
-            if (KeyPageUp.down()){
+            if (KeyPageUp.down()) {
                 pup_strt = tim();
             }
         }
-        if (KeyPageDown.down() || (pdown_strt != BUTTON_NOT_PUSHED && tim() - pdown_strt >= BUTTON_LONG_PRESS_THRESHOLD)){
+        if (KeyPageDown.down() || (pdown_strt != BUTTON_NOT_PUSHED && tim() - pdown_strt >= BUTTON_LONG_PRESS_THRESHOLD)) {
             strt_idx_double = std::max(0.0, std::min((double)(n_elem - n_elem_per_window), strt_idx_double + n_elem_per_window));
-            if (KeyPageDown.down()){
+            if (KeyPageDown.down()) {
                 pdown_strt = tim();
             }
         }
-        if (rect.leftClicked()){
+        if (rect.leftClicked()) {
             dragged = true;
             dragged_y_offset = Cursor::Pos().y - rect.y;
-        } else if (!MouseL.pressed()){
+        } else if (!MouseL.pressed()) {
             dragged = false;
         }
-        if (dragged){
+        if (dragged) {
             double n_percent = std::max(0.0, std::min(1.0, (double)(Cursor::Pos().y - dragged_y_offset - sy) / std::max(1, (height - rect_height))));
             strt_idx_double = n_percent * (double)max_strt_idx;
         }
-        if (frame_rect.leftClicked()){
+        if (frame_rect.leftClicked()) {
             double n_percent = std::max(0.0, std::min(1.0, (double)(Cursor::Pos().y - rect.h / 2 - sy) / std::max(1, (height - rect_height))));
             strt_idx_double = n_percent * (double)max_strt_idx;
             dragged = true;
@@ -171,7 +171,7 @@ private:
 
 
 public:
-    void init(int x, int y, int w, int h, int rect_mw, int ne, int n_epw, int mx, int my, int mw, int mh){
+    void init(int x, int y, int w, int h, int rect_mw, int ne, int n_epw, int mx, int my, int mw, int mh) {
         sx = x;
         sy = y;
         width = w;
@@ -180,7 +180,7 @@ public:
         n_elem = ne;
         n_elem_per_window = n_epw;
         rect_width = width;
-        if (n_elem > n_elem_per_window){
+        if (n_elem > n_elem_per_window) {
             rect_width = std::max(rect_min_width, (int)round((double)n_elem_per_window / (double)n_elem * (double)height));
         }
         max_strt_idx = std::max(n_elem - n_elem_per_window, 0);
@@ -199,36 +199,36 @@ public:
         mouseover_rect.h = mh;
     }
 
-    void draw(){
+    void draw() {
         int strt_idx_int = (int)strt_idx_double;
         double percent = 0.0;
-        if (max_strt_idx > 0){
+        if (max_strt_idx > 0) {
             percent = (double)strt_idx_int / (double)max_strt_idx;
         }
         int rect_x = sx + round(percent * (double)(width - rect_width));
         frame_rect.drawFrame(1.0, Palette::White);
         rect.x = rect_x;
         rect.draw(Palette::White);
-        if (dragged){
+        if (dragged) {
             Cursor::RequestStyle(CursorStyle::ResizeLeftRight);
         }
     }
 
-    void update(){
-        if (mouseover_rect.mouseOver()){
+    void update() {
+        if (mouseover_rect.mouseOver()) {
             strt_idx_double = std::max(0.0, std::min((double)(n_elem - n_elem_per_window), strt_idx_double + Mouse::Wheel()));
         }
-        if (rect.leftClicked()){
+        if (rect.leftClicked()) {
             dragged = true;
             dragged_x_offset = Cursor::Pos().x - rect.x;
-        } else if (!MouseL.pressed()){
+        } else if (!MouseL.pressed()) {
             dragged = false;
         }
-        if (dragged){
+        if (dragged) {
             double n_percent = std::max(0.0, std::min(1.0, (double)(Cursor::Pos().x - dragged_x_offset - sx) / std::max(1, (width - rect_width))));
             strt_idx_double = n_percent * (double)max_strt_idx;
         }
-        if (frame_rect.leftClicked()){
+        if (frame_rect.leftClicked()) {
             double n_percent = std::max(0.0, std::min(1.0, (double)(Cursor::Pos().x - rect.x / 2 - sx) / std::max(1, (width - rect_width))));
             strt_idx_double = n_percent * (double)max_strt_idx;
             dragged = true;

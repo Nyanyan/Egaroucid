@@ -74,7 +74,7 @@ public:
         std::vector<std::vector<Graph_loss_elem>> sum_of_loss_nodes2(2);
         resolution = GRAPH_RESOLUTION;
         if (show_graph) {
-            if (show_graph_sum_of_loss){
+            if (show_graph_sum_of_loss) {
                 calc_sum_of_loss_nodes(nodes1, nodes2, sum_of_loss_nodes1, sum_of_loss_nodes2);
                 calc_range_sum_of_loss(sum_of_loss_nodes1, sum_of_loss_nodes2);
             } else{
@@ -83,15 +83,15 @@ public:
             while ((y_max - y_min) / resolution > 8) { // when range is too wide
                 resolution *= 2;
             }
-            if ((-y_min) % resolution){ // fit y_min/max to resolution
+            if ((-y_min) % resolution) { // fit y_min/max to resolution
                 y_min -= resolution - (-y_min) % resolution;
             }
-            if (y_max % resolution){
+            if (y_max % resolution) {
                 y_max += resolution - y_max % resolution;
             }
         }
         else {
-            if (show_graph_sum_of_loss){
+            if (show_graph_sum_of_loss) {
                 y_min = -GRAPH_RESOLUTION;
                 y_max = 0;
             } else{
@@ -109,7 +109,7 @@ public:
         rect_prob.draw(graph_color);
         font(language.get("info", "probability")).draw(font_size, Arg::center(info_x + LEVEL_PROB_WIDTH / 2, info_y + LEVEL_INFO_HEIGHT / 2), level_prob_color);
         info_x += LEVEL_PROB_WIDTH;
-        for (int i = 0; i < N_SELECTIVITY_LEVEL; ++i){
+        for (int i = 0; i < N_SELECTIVITY_LEVEL; ++i) {
             Rect rect_selectivity{ info_x, info_y, LEVEL_INFO_WIDTH, LEVEL_INFO_HEIGHT };
             rect_selectivity.draw(color_selectivity[color_type][i]);
             font(Format(SELECTIVITY_PERCENTAGE[i]) + U"%").draw(font_size, Arg::center(info_x + LEVEL_INFO_WIDTH / 2, info_y + LEVEL_INFO_HEIGHT / 2), level_info_color);
@@ -150,12 +150,12 @@ public:
         }
         for (int y = 0; y <= y_max - y_min; y += resolution) {
             int yy = sy + dy * y;
-            if (show_graph_sum_of_loss){
+            if (show_graph_sum_of_loss) {
                 font(y_max - y).draw(font_size, sx - font(y_max - y).region(font_size, Point{ 0, 0 }).w - 10, yy - font(y_max - y).region(font_size, Point{ 0, 0 }).h / 2, graph_color);
             } else{
-                if (y_max - y >= 0){
+                if (y_max - y >= 0) {
                     font(y_max - y).draw(font_size, sx - font(y_max - y).region(font_size, Point{ 0, 0 }).w - 10, yy - font(y_max - y).region(font_size, Point{ 0, 0 }).h / 2, graph_color);
-                } else if (y_max - y < 0){
+                } else if (y_max - y < 0) {
                     font(std::abs(y_max - y)).draw(font_size, sx - font(std::abs(y_max - y)).region(font_size, Point{ 0, 0 }).w - 10, yy - font(y_max - y).region(font_size, Point{ 0, 0 }).h / 2, Palette::White);
                 }
             }
@@ -169,10 +169,10 @@ public:
             Line{ sx + dx * x, sy, sx + dx * x, sy + size_y }.draw(1, graph_color);
         }
         if (show_graph) {
-            if (show_graph_sum_of_loss){
+            if (show_graph_sum_of_loss) {
                 int max_ply1 = nodes1.back().board.n_discs() - 4;
                 int max_ply2 = 0;
-                if (nodes2.size()){
+                if (nodes2.size()) {
                     max_ply2 = nodes2.back().board.n_discs() - 4;
                 }
                 draw_graph_sum_of_loss(sum_of_loss_nodes1[0], Palette::Black, graph_history_not_calculated_color, max_ply1);
@@ -188,14 +188,14 @@ public:
             draw_graph_not_calculated(nodes1, graph_history_not_calculated_color);
             draw_graph_not_calculated(nodes2, graph_fork_not_calculated_color);
         }
-        if (!show_graph_sum_of_loss){
+        if (!show_graph_sum_of_loss) {
             Circle(sx, sy, 6).draw(Palette::Black);
             Circle(sx, sy + size_y, 6).draw(Palette::White);
         }
-        if (n_discs >= 4){
+        if (n_discs >= 4) {
             int place_x = sx + dx * (n_discs - 4);
             Line(place_x, sy, place_x, sy + size_y).draw(3, graph_place_color);
-            if (sx <= Cursor::Pos().x && Cursor::Pos().x <= sx + size_x && sy <= Cursor::Pos().y && Cursor::Pos().y <= sy + size_y && abs(Cursor::Pos().x - place_x) <= 4){
+            if (sx <= Cursor::Pos().x && Cursor::Pos().x <= sx + size_x && sy <= Cursor::Pos().y && Cursor::Pos().y <= sy + size_y && abs(Cursor::Pos().x - place_x) <= 4) {
                 Cursor::RequestStyle(CursorStyle::ResizeLeftRight);
             }
         }
@@ -232,7 +232,7 @@ public:
     }
 
 private:
-    void calc_sum_of_loss_nodes(std::vector<History_elem> nodes1, std::vector<History_elem> nodes2, std::vector<std::vector<Graph_loss_elem>> &sum_of_loss_nodes1, std::vector<std::vector<Graph_loss_elem>> &sum_of_loss_nodes2){
+    void calc_sum_of_loss_nodes(std::vector<History_elem> nodes1, std::vector<History_elem> nodes2, std::vector<std::vector<Graph_loss_elem>> &sum_of_loss_nodes1, std::vector<std::vector<Graph_loss_elem>> &sum_of_loss_nodes2) {
         Graph_loss_elem elem;
         elem.ply = nodes1[0].board.n_discs() - 4;
         elem.v = 0;
@@ -240,13 +240,13 @@ private:
         sum_of_loss_nodes1[1].emplace_back(elem);
         int last_val_black = nodes1[0].v;
         int last_val_white = -nodes1[0].v;
-        for (int i = 1; i < (int)nodes1.size(); ++i){
+        for (int i = 1; i < (int)nodes1.size(); ++i) {
             int val_black = nodes1[i].v;
             int val_white = -nodes1[i].v;
             int loss_black = sum_of_loss_nodes1[0].back().v;
             int loss_white = sum_of_loss_nodes1[1].back().v;
-            if (-HW2 <= val_black && val_black <= HW2){
-                if (-HW2 <= last_val_black && last_val_black <= HW2){
+            if (-HW2 <= val_black && val_black <= HW2) {
+                if (-HW2 <= last_val_black && last_val_black <= HW2) {
                     loss_black += std::max(0, last_val_black - val_black);
                     loss_white += std::max(0, last_val_white - val_white);
                 }
@@ -259,41 +259,41 @@ private:
                 sum_of_loss_nodes1[1].emplace_back(elem);
             }
         }
-        if (nodes2.size()){
+        if (nodes2.size()) {
             elem.ply = nodes2[0].board.n_discs() - 4;
             elem.v = 0;
-            for (Graph_loss_elem &elem1: sum_of_loss_nodes1[0]){
-                if (elem1.ply <= elem.ply){
+            for (Graph_loss_elem &elem1: sum_of_loss_nodes1[0]) {
+                if (elem1.ply <= elem.ply) {
                     elem.v = elem1.v;
                 }
             }
-            for (History_elem &elem2: nodes1){
-                if (elem2.board.n_discs() - 4 == elem.ply - 1 && -HW2 <= elem2.v && elem2.v <= HW2 && -HW2 <= nodes2[0].v && nodes2[0].v <= HW2){
+            for (History_elem &elem2: nodes1) {
+                if (elem2.board.n_discs() - 4 == elem.ply - 1 && -HW2 <= elem2.v && elem2.v <= HW2 && -HW2 <= nodes2[0].v && nodes2[0].v <= HW2) {
                     elem.v += std::max(0, elem2.v - nodes2[0].v);
                 }
             }
             sum_of_loss_nodes2[0].emplace_back(elem);
             elem.v = 0;
-            for (Graph_loss_elem &elem1: sum_of_loss_nodes1[1]){
-                if (elem1.ply <= elem.ply){
+            for (Graph_loss_elem &elem1: sum_of_loss_nodes1[1]) {
+                if (elem1.ply <= elem.ply) {
                     elem.v = elem1.v;
                 }
             }
-            for (History_elem &elem2: nodes1){
-                if (elem2.board.n_discs() - 4 == elem.ply - 1 && -HW2 <= elem2.v && elem2.v <= HW2 && -HW2 <= nodes2[0].v && nodes2[0].v <= HW2){
+            for (History_elem &elem2: nodes1) {
+                if (elem2.board.n_discs() - 4 == elem.ply - 1 && -HW2 <= elem2.v && elem2.v <= HW2 && -HW2 <= nodes2[0].v && nodes2[0].v <= HW2) {
                     elem.v -= std::max(0, (-elem2.v) - (-nodes2[0].v));
                 }
             }
             sum_of_loss_nodes2[1].emplace_back(elem);
             int last_val_black = nodes2[0].v;
             int last_val_white = -nodes2[0].v;
-            for (int i = 1; i < (int)nodes2.size(); ++i){
+            for (int i = 1; i < (int)nodes2.size(); ++i) {
                 int val_black = nodes2[i].v;
                 int val_white = -nodes2[i].v;
                 int loss_black = sum_of_loss_nodes2[0].back().v;
                 int loss_white = sum_of_loss_nodes2[1].back().v;
-                if (-HW2 <= val_black && val_black <= HW2){
-                    if (-HW2 <= last_val_black && last_val_black <= HW2){
+                if (-HW2 <= val_black && val_black <= HW2) {
+                    if (-HW2 <= last_val_black && last_val_black <= HW2) {
                         loss_black += std::max(0, last_val_black - val_black);
                         loss_white += std::max(0, last_val_white - val_white);
                     }
@@ -307,11 +307,11 @@ private:
                 }
             }
         }
-        for (int i = 0; i < 2; ++i){
-            for (Graph_loss_elem &el: sum_of_loss_nodes1[i]){
+        for (int i = 0; i < 2; ++i) {
+            for (Graph_loss_elem &el: sum_of_loss_nodes1[i]) {
                 el.v *= -1;
             }
-            for (Graph_loss_elem &el: sum_of_loss_nodes2[i]){
+            for (Graph_loss_elem &el: sum_of_loss_nodes2[i]) {
                 el.v *= -1;
             }
         }
@@ -337,7 +337,7 @@ private:
     void calc_range_sum_of_loss(std::vector<std::vector<Graph_loss_elem>> sum_of_loss_nodes1, std::vector<std::vector<Graph_loss_elem>> sum_of_loss_nodes2) {
         y_min = -GRAPH_RESOLUTION;
         y_max = 0;
-        for (int i = 0; i < 2; ++i){
+        for (int i = 0; i < 2; ++i) {
             for (const Graph_loss_elem& b : sum_of_loss_nodes1[i]) {
                 y_min = std::min(y_min, b.v);
             }
@@ -350,7 +350,7 @@ private:
     void draw_graph(std::vector<History_elem> nodes, Color color, Color color2) {
         std::vector<std::pair<int, int>> values;
         for (const History_elem& b : nodes) {
-            if (b.board.n_discs() >= 4){
+            if (b.board.n_discs() >= 4) {
                 if (abs(b.v) <= HW2) {
                     int xx = sx + dx * (b.board.n_discs() - 4);
                     int yy = sy + dy * (y_max - b.v);
@@ -370,12 +370,12 @@ private:
     }
 
     void draw_graph_sum_of_loss(std::vector<Graph_loss_elem> nodes, Color color, Color color2, int max_ply) {
-        if (nodes.size()){
+        if (nodes.size()) {
             std::vector<std::pair<int, int>> values;
             int last_ply = nodes[0].ply;
             for (const Graph_loss_elem& b : nodes) {
-                if (b.ply >= 0){
-                    for (int ply = last_ply + 1; ply < b.ply; ++ply){
+                if (b.ply >= 0) {
+                    for (int ply = last_ply + 1; ply < b.ply; ++ply) {
                         int xx = sx + dx * ply;
                         int yy = sy + dy * y_max;
                         Circle{ xx, yy, 2.5 }.draw(color2);
@@ -387,7 +387,7 @@ private:
                     last_ply = b.ply;
                 }
             }
-            for (int ply = last_ply + 1; ply < max_ply; ++ply){
+            for (int ply = last_ply + 1; ply < max_ply; ++ply) {
                 int xx = sx + dx * ply;
                 int yy = sy + dy * y_max;
                 Circle{ xx, yy, 2.5 }.draw(color2);
@@ -401,7 +401,7 @@ private:
     void draw_graph_not_calculated(std::vector<History_elem> nodes, Color color) {
         std::vector<std::pair<int, int>> values;
         for (const History_elem& b : nodes) {
-            if (b.board.n_discs() >= 4){
+            if (b.board.n_discs() >= 4) {
                 int yy = sy + dy * y_max;
                 Circle{ sx + dx * (b.board.n_discs() - 4), yy, 2.5 }.draw(color);
             }

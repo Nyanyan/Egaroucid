@@ -151,7 +151,7 @@ public:
         image = t;
     }
 
-    void init_bar_check(String s, int *c, int d, int mn, int mx, bool *e, bool f, String u){
+    void init_bar_check(String s, int *c, int d, int mn, int mx, bool *e, bool f, String u) {
         clear();
         click_supporter.init();
         mode = bar_check_mode;
@@ -223,11 +223,11 @@ public:
     void update() {
         was_active = is_active;
         is_active = rect.mouseOver();
-        if (mode == bar_mode || (mode == bar_check_mode && (*is_checked))){
+        if (mode == bar_mode || (mode == bar_check_mode && (*is_checked))) {
             // bar active?
-            if (bar_rect.leftClicked()){
+            if (bar_rect.leftClicked()) {
                 bar_changeable = true;
-            } else if (!MouseL.pressed()){
+            } else if (!MouseL.pressed()) {
                 bar_changeable = false;
             }
             // bar is active -> this element is active
@@ -239,9 +239,9 @@ public:
             child.update();
             active_child_bar_found |= child.bar_active();
         }
-        if (active_child_bar_found){
+        if (active_child_bar_found) {
             for (menu_elem& child: children) {
-                if (!child.bar_active()){
+                if (!child.bar_active()) {
                     child.set_inactive();
                 }
             }
@@ -251,7 +251,7 @@ public:
             is_active |= (child.active() && last_active());
         }
         // check clicked
-        if (mode == bar_check_mode){
+        if (mode == bar_check_mode) {
             Rect bar_check_rect = Rect(rect.x, rect.y, bar_sx - bar_value_offset - rect.x, rect.h);
             click_supporter.update(bar_check_rect);
             is_clicked = click_supporter.clicked();
@@ -293,13 +293,13 @@ public:
         else {
             rect.draw(menu_select_color);
         }
-        if (use_image){
+        if (use_image) {
             image.scaled((double)(rect.h - 2 * menu_image_offset_y) / image.height()).draw(rect.x + rect.h - menu_offset_y, rect.y + menu_image_offset_y);
         } else{
             font(str).draw(font_size, rect.x + rect.h - menu_offset_y, rect.y + menu_offset_y, menu_font_color);
         }
         if (mode == bar_mode || mode == bar_check_mode) {
-            if (mode == bar_check_mode && !(*is_checked)){
+            if (mode == bar_check_mode && !(*is_checked)) {
                 font(unchecked_str).draw(font_size, bar_sx - menu_offset_x - menu_child_offset - font(unchecked_str).region(font_size, Point{ 0, 0 }).w, rect.y + menu_offset_y, menu_font_color);
             } else{
                 font(*bar_elem).draw(font_size, bar_sx - menu_offset_x - menu_child_offset - bar_value_offset, rect.y + menu_offset_y, menu_font_color);
@@ -380,7 +380,7 @@ public:
 
     RectF size() {
         RectF res;
-        if (use_image){
+        if (use_image) {
             res.x = 0;
             res.y = 0;
             res.h = rect.h - 2 * menu_image_offset_y;
@@ -503,9 +503,9 @@ public:
                 ++idx;
             }
             // bar update
-            if (active_child_bar_found){
+            if (active_child_bar_found) {
                 for (menu_elem& child: children) {
-                    if (!child.bar_active()){
+                    if (!child.bar_active()) {
                         child.set_inactive();
                     }
                 }

@@ -16,9 +16,9 @@
 #include "shortcut_key.hpp"
 #include "./../../engine/setting.hpp"
 
-String get_shortcut_key_info(String key){
+String get_shortcut_key_info(String key) {
     String res = shortcut_keys.get_shortcut_key_str(key);
-    if (res == U""){
+    if (res == U"") {
         return U"";
     }
     return U" (" + res + U")";
