@@ -152,7 +152,7 @@ public:
         save_image_button.draw();
         back_button.draw();
 
-        if (save_image_button.clicked()){
+        if (save_image_button.clicked()) {
             taking_screen_shot = true;
             ScreenCapture::RequestCurrentFrame();
         }

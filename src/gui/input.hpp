@@ -301,7 +301,7 @@ private:
         }
         if (!failed_res) {
             board.translate_from_arr(bd_arr, player);
-            if (!board.is_end() && board.get_legal() == 0){
+            if (!board.is_end() && board.get_legal() == 0) {
                 board.pass();
             }
         }
@@ -379,14 +379,14 @@ public:
             changeScene(U"Main_scene", SCENE_FADE_TIME);
         }
         if (set_button.clicked() || KeyEnter.pressed()) {
-            if (history_elem.player != player_radio.checked){
+            if (history_elem.player != player_radio.checked) {
                 history_elem.board.pass();
                 history_elem.player = player_radio.checked;
             }
             history_elem.v = GRAPH_IGNORE_VALUE;
             history_elem.level = -1;
             getData().history_elem = history_elem;
-            if (!history_elem.board.is_end() && history_elem.board.get_legal() == 0){
+            if (!history_elem.board.is_end() && history_elem.board.get_legal() == 0) {
                 history_elem.board.pass();
             }
             int n_discs = history_elem.board.n_discs();
@@ -405,27 +405,27 @@ public:
                 }
             }
             history_elem.policy = -1; // reset last policy
-            if (replace_place - 1 >= 0){
+            if (replace_place - 1 >= 0) {
                 uint64_t f_discs = getData().graph_resources.nodes[getData().graph_resources.branch][replace_place - 1].board.player | getData().graph_resources.nodes[getData().graph_resources.branch][replace_place - 1].board.opponent;
                 uint64_t discs = history_elem.board.player | history_elem.board.opponent;
-                if (pop_count_ull(discs ^ f_discs) == 1){
+                if (pop_count_ull(discs ^ f_discs) == 1) {
                     int last_policy = ctz(discs ^ f_discs);
                     history_elem.policy = last_policy;
                 }
-            } else if (insert_place - 1 >= 0 && insert_place - 1 < getData().graph_resources.nodes[getData().graph_resources.branch].size()){
+            } else if (insert_place - 1 >= 0 && insert_place - 1 < getData().graph_resources.nodes[getData().graph_resources.branch].size()) {
                 uint64_t f_discs = getData().graph_resources.nodes[getData().graph_resources.branch][insert_place - 1].board.player | getData().graph_resources.nodes[getData().graph_resources.branch][insert_place - 1].board.opponent;
                 uint64_t discs = history_elem.board.player | history_elem.board.opponent;
-                if (pop_count_ull(discs ^ f_discs) == 1){
+                if (pop_count_ull(discs ^ f_discs) == 1) {
                     int last_policy = ctz(discs ^ f_discs);
                     history_elem.policy = last_policy;
                 }
             } else{
                 for (int i = 0; i < (int)getData().graph_resources.nodes[0].size(); ++i) {
                     int node_n_discs = getData().graph_resources.nodes[0][i].board.n_discs();
-                    if (node_n_discs + 1 == n_discs){
+                    if (node_n_discs + 1 == n_discs) {
                         uint64_t f_discs = getData().graph_resources.nodes[0][i].board.player | getData().graph_resources.nodes[0][i].board.opponent;
                         uint64_t discs = history_elem.board.player | history_elem.board.opponent;
-                        if (pop_count_ull(discs ^ f_discs) == 1){
+                        if (pop_count_ull(discs ^ f_discs) == 1) {
                             int last_policy = ctz(discs ^ f_discs);
                             history_elem.policy = last_policy;
                         }
@@ -479,7 +479,7 @@ public:
             }
         }
         reverse(games.begin(), games.end());
-        for (int i = 0; i < (int)games.size(); ++i){
+        for (int i = 0; i < (int)games.size(); ++i) {
             Button button;
             button.init(0, 0, IMPORT_GAME_BUTTON_WIDTH, IMPORT_GAME_BUTTON_HEIGHT, IMPORT_GAME_BUTTON_RADIUS, language.get("in_out", "import"), 15, getData().fonts.font, getData().colors.white, getData().colors.black);
             import_buttons.emplace_back(button);
@@ -528,7 +528,7 @@ public:
                         winner = IMPORT_GAME_WINNER_DRAW;
                     }
                 }
-                if (i % 2){
+                if (i % 2) {
                     rect.draw(getData().colors.dark_green).drawFrame(1.0, getData().colors.white);
                 } else{
                     rect.draw(getData().colors.green).drawFrame(1.0, getData().colors.white);
@@ -551,14 +551,14 @@ public:
                     black_player_rect.draw(getData().colors.chocolate);
                 }
                 int upper_center_y = black_player_rect.y + black_player_rect.h / 2;
-                for (int font_size = 15; font_size >= 12; --font_size){
-                    if (getData().fonts.font(games[i].black_player).region(font_size, Vec2{0, 0}).w <= IMPORT_GAME_PLAYER_WIDTH - 4){
+                for (int font_size = 15; font_size >= 12; --font_size) {
+                    if (getData().fonts.font(games[i].black_player).region(font_size, Vec2{0, 0}).w <= IMPORT_GAME_PLAYER_WIDTH - 4) {
                         getData().fonts.font(games[i].black_player).draw(font_size, Arg::rightCenter(black_player_rect.x + IMPORT_GAME_PLAYER_WIDTH - 2, upper_center_y), getData().colors.white);
                         break;
-                    } else if (font_size == 12){
+                    } else if (font_size == 12) {
                         String player = games[i].black_player;
-                        while (getData().fonts.font(player).region(font_size, Vec2{0, 0}).w > IMPORT_GAME_PLAYER_WIDTH - 4){
-                            for (int i = 0; i < 4; ++i){
+                        while (getData().fonts.font(player).region(font_size, Vec2{0, 0}).w > IMPORT_GAME_PLAYER_WIDTH - 4) {
+                            for (int i = 0; i < 4; ++i) {
                                 player.pop_back();
                             }
                             player += U"...";
@@ -592,14 +592,14 @@ public:
                 else if (winner == IMPORT_GAME_WINNER_DRAW) {
                     white_player_rect.draw(getData().colors.chocolate);
                 }
-                for (int font_size = 15; font_size >= 12; --font_size){
-                    if (getData().fonts.font(games[i].white_player).region(font_size, Vec2{0, 0}).w <= IMPORT_GAME_PLAYER_WIDTH - 4){
+                for (int font_size = 15; font_size >= 12; --font_size) {
+                    if (getData().fonts.font(games[i].white_player).region(font_size, Vec2{0, 0}).w <= IMPORT_GAME_PLAYER_WIDTH - 4) {
                         getData().fonts.font(games[i].white_player).draw(font_size, Arg::leftCenter(white_player_rect.x + 2, upper_center_y), getData().colors.white);
                         break;
-                    } else if (font_size == 12){
+                    } else if (font_size == 12) {
                         String player = games[i].white_player;
-                        while (getData().fonts.font(player).region(font_size, Vec2{0, 0}).w > IMPORT_GAME_PLAYER_WIDTH - 4){
-                            for (int i = 0; i < 4; ++i){
+                        while (getData().fonts.font(player).region(font_size, Vec2{0, 0}).w > IMPORT_GAME_PLAYER_WIDTH - 4) {
+                            for (int i = 0; i < 4; ++i) {
                                 player.pop_back();
                             }
                             player += U"...";
@@ -610,7 +610,7 @@ public:
                 getData().fonts.font(games[i].memo).draw(12, IMPORT_GAME_SX + 10, black_player_rect.y + black_player_rect.h, getData().colors.white);
                 import_buttons[i].move(IMPORT_GAME_BUTTON_SX, sy + IMPORT_GAME_BUTTON_SY);
                 import_buttons[i].draw();
-                if (import_buttons[i].clicked()){
+                if (import_buttons[i].clicked()) {
                     import_game(i);
                 }
                 sy += IMPORT_GAME_HEIGHT;
@@ -757,9 +757,9 @@ public:
             const int text_area_y[2] = {sy + 40, sy + 90};
             constexpr int text_area_h = 40;
             constexpr int circle_radius = 15;
-            for (int i = 0; i < 2; ++i){
+            for (int i = 0; i < 2; ++i) {
                 SimpleGUI::TextArea(text_area[i], Vec2{X_CENTER - 300, text_area_y[i]}, SizeF{600, text_area_h}, SimpleGUI::PreferredTextAreaMaxChars);
-                if (player_radio.checked == i){
+                if (player_radio.checked == i) {
                     Circle(X_CENTER + 330, text_area_y[i] + text_area_h / 2, circle_radius).draw(getData().colors.black);
                 } else{
                     Circle(X_CENTER + 330, text_area_y[i] + text_area_h / 2, circle_radius).draw(getData().colors.white);
@@ -770,18 +770,18 @@ public:
             getData().fonts.font(language.get("in_out", "you_can_paste_with_ctrl_v")).draw(13, Arg::topCenter(X_CENTER, sy + 140), getData().colors.white);
             getData().fonts.font(language.get("in_out", "player")).draw(25, Arg::rightCenter(X_CENTER - 5, 70 + SCENE_ICON_WIDTH + 188), getData().colors.white);
             player_radio.draw();
-            for (int i = 0; i < 2; ++i){
+            for (int i = 0; i < 2; ++i) {
                 std::string str = text_area[i].text.narrow();
-                if (str.find("\t") != std::string::npos){
+                if (str.find("\t") != std::string::npos) {
                     text_area[i].active = false;
                     text_area[(i + 1) % 2].active = true;
                     int tab_place = str.find("\t");
                     std::string txt0;
-                    for (int j = 0; j < tab_place; ++j){
+                    for (int j = 0; j < tab_place; ++j) {
                         txt0 += str[j];
                     }
                     std::string txt1;
-                    for (int j = tab_place + 1; j < (int)str.size(); ++j){
+                    for (int j = tab_place + 1; j < (int)str.size(); ++j) {
                         txt1 += str[j];
                     }
                     text_area[i].text = Unicode::Widen(txt0);
@@ -793,7 +793,7 @@ public:
                 }
             }
             bool return_pressed = false;
-            for (int i = 0; i < 2; ++i){
+            for (int i = 0; i < 2; ++i) {
                 if (text_area[i].text.size()) {
                     if (text_area[i].text[text_area[i].text.size() - 1] == '\n') {
                         return_pressed = true;
@@ -841,38 +841,38 @@ public:
 
 private:
     bool import_bitboard_processing() {
-        if (player_string[0] == '0' && player_string[1] == 'x'){
+        if (player_string[0] == '0' && player_string[1] == 'x') {
             player_string = player_string.substr(2);
         }
-        if (opponent_string[0] == '0' && opponent_string[1] == 'x'){
+        if (opponent_string[0] == '0' && opponent_string[1] == 'x') {
             opponent_string = opponent_string.substr(2);
         }
-        while (player_string.size() < 16){
+        while (player_string.size() < 16) {
             player_string = "0" + player_string;
         }
-        while (opponent_string.size() < 16){
+        while (opponent_string.size() < 16) {
             opponent_string = "0" + opponent_string;
         }
         board.player = 0;
         board.opponent = 0;
-        for (int i = 0; i < 16; ++i){
+        for (int i = 0; i < 16; ++i) {
             player_string[i] |= 0x20; // lower case
             opponent_string[i] |= 0x20; // lower case
-            if (player_string[i] < '0' || ('9' < player_string[i] && player_string[i] < 'a') || 'f' < player_string[i]){ // out of range
+            if (player_string[i] < '0' || ('9' < player_string[i] && player_string[i] < 'a') || 'f' < player_string[i]) { // out of range
                 std::cerr << "player out of range" << std::endl;
                 return true;
             }
-            if (opponent_string[i] < '0' || ('9' < opponent_string[i] && opponent_string[i] < 'a') || 'f' < opponent_string[i]){ // out of range
+            if (opponent_string[i] < '0' || ('9' < opponent_string[i] && opponent_string[i] < 'a') || 'f' < opponent_string[i]) { // out of range
                 std::cerr << "opponent out of range" << std::endl;
                 return true;
             }
             int p_int = player_string[i] % 87 % 48; // 0-9, a-f hex to decimal
             int o_int = opponent_string[i] % 87 % 48; // 0-9, a-f hex to decimal
-            if (p_int & o_int){ // 2 discs on same square
+            if (p_int & o_int) { // 2 discs on same square
                 std::cerr << "both discs on same square" << std::endl;
                 return true;
             }
-            for (int j = 0; j < 4; ++j){
+            for (int j = 0; j < 4; ++j) {
                 int idx = HW2_M1 - (i * 4 + 3 - j);
                 board.player |= (uint64_t)(p_int & 1) << idx;
                 board.opponent |= (uint64_t)(o_int & 1) << idx;
@@ -880,7 +880,7 @@ private:
                 o_int /= 2;
             }
         }
-        if (!board.is_end() && board.get_legal() == 0){
+        if (!board.is_end() && board.get_legal() == 0) {
             board.pass();
         }
         return false;

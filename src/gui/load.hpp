@@ -16,7 +16,7 @@
 #include "./../engine/engine_all.hpp"
 #include "function/function_all.hpp"
 
-void init_shortcut_keys(const Directories* directories){
+void init_shortcut_keys(const Directories* directories) {
     String file = U"{}shortcut_key.json"_fmt(Unicode::Widen(directories->appdata_dir));
     shortcut_keys.init(file);
 }
@@ -25,9 +25,9 @@ int check_update(const Directories* directories, String *new_version) {
     const FilePath version_save_path = U"{}version.txt"_fmt(Unicode::Widen(directories->appdata_dir));
     AsyncHTTPTask task = SimpleHTTP::SaveAsync(VERSION_URL, version_save_path);
     uint64_t strt = tim();
-    while (tim() - strt < 1000){ // timeout 1000 ms
-        if (task.isReady()){
-            if (task.getResponse().isOK()){
+    while (tim() - strt < 1000) { // timeout 1000 ms
+        if (task.isReady()) {
+            if (task.getResponse().isOK()) {
                 TextReader reader(version_save_path);
                 if (reader) {
                     reader.readLine(*new_version);
@@ -38,7 +38,7 @@ int check_update(const Directories* directories, String *new_version) {
             }
         }
     }
-    if (task.getStatus() == HTTPAsyncStatus::Downloading){ // cancel task
+    if (task.getStatus() == HTTPAsyncStatus::Downloading) { // cancel task
         task.cancel();
     }
     return UPDATE_CHECK_ALREADY_UPDATED;
@@ -57,7 +57,7 @@ int init_resources_load(Resources* resources, Settings* settings, bool *stop_loa
     resources->unchecked = unchecked;
     resources->laser_pointer = laser_pointer;
 
-    if (*stop_loading){
+    if (*stop_loading) {
         return ERR_LOAD_TERMINATED;
     }
 
@@ -73,7 +73,7 @@ int init_resources_load(Resources* resources, Settings* settings, bool *stop_loa
     }
     resources->lang_img = lang_img;
 
-    if (*stop_loading){
+    if (*stop_loading) {
         return ERR_LOAD_TERMINATED;
     }
 
@@ -81,13 +81,13 @@ int init_resources_load(Resources* resources, Settings* settings, bool *stop_loa
     std::cerr << "loading openings" << std::endl;
     if (!opening_init(settings->lang_name)) {
         std::cerr << "opening file not found. use alternative opening file" << std::endl;
-        if (!opening_init(DEFAULT_OPENING_LANG_NAME)){
+        if (!opening_init(DEFAULT_OPENING_LANG_NAME)) {
             std::cerr << "opening file not found" << std::endl;
             return ERR_LOAD_OPENING_NOT_LOADED;
         }
     }
 
-    if (*stop_loading){
+    if (*stop_loading) {
         return ERR_LOAD_TERMINATED;
     }
 
@@ -125,7 +125,7 @@ int init_ai(Settings* settings, const Directories* directories, bool *stop_loadi
     double free_mb = (double)msex.ullAvailPhys / 1024 / 1024;
     double size_mb = (double)sizeof(Hash_node) / 1024 / 1024 * hash_sizes[MAX_HASH_LEVEL];
     std::cerr << "memory " << free_mb << " " << size_mb << std::endl;
-    while (free_mb <= size_mb && MAX_HASH_LEVEL > 26){
+    while (free_mb <= size_mb && MAX_HASH_LEVEL > 26) {
         --MAX_HASH_LEVEL;
         size_mb = (double)sizeof(Hash_node) / 1024 / 1024 * hash_sizes[MAX_HASH_LEVEL];
     }
@@ -147,10 +147,10 @@ int init_ai(Settings* settings, const Directories* directories, bool *stop_loadi
         return ERR_LOAD_BOOK_FILE_NOT_IMPORTED;
     }
     std::string ext = get_extension(settings->book_file);
-    if (ext == "egbk"){
+    if (ext == "egbk") {
         settings->book_file += "2"; // force book version 3
         book.save_egbk3(settings->book_file, settings->book_file + ".bak");
-    } else if (ext == "egbk2"){
+    } else if (ext == "egbk2") {
         settings->book_file[settings->book_file.size() - 1] = '3'; // force book version 3
         book.save_egbk3(settings->book_file, settings->book_file + ".bak");
     }
@@ -165,7 +165,7 @@ int load_app(Directories* directories, Resources* resources, Settings* settings,
     }
     init_shortcut_keys(directories);
     int code = init_resources_load(resources, settings, stop_loading);
-    if (code == ERR_OK){
+    if (code == ERR_OK) {
         code = init_ai(settings, directories, stop_loading);
     }
     return code;
@@ -201,7 +201,7 @@ public:
     void update() override {
         if (System::GetUserActions() & UserAction::CloseButtonClicked) {
             stop_loading = true;
-            if (load_future.valid()){
+            if (load_future.valid()) {
                 load_future.get();
             }
             changeScene(U"Close", SCENE_FADE_TIME);

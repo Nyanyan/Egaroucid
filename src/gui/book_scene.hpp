@@ -18,7 +18,7 @@
 #define BOOK_DEPTH_INF 80
 #define BOOK_ERROR_INF 100000
 
-void reset_book_additional_information(){
+void reset_book_additional_information() {
     umigame.delete_all();
     book_accuracy.delete_all();
 }
@@ -104,7 +104,7 @@ public:
             book_file = text_area.text.replaced(U"\r", U"").replaced(U"\n", U"").narrow();
             std::string ext = get_extension(book_file);
             bool formatted_file = false;
-            if (ext == BOOK_EXTENSION_NODOT || ext == "egbk2" || ext == "egbk" || ext == "dat"){
+            if (ext == BOOK_EXTENSION_NODOT || ext == "egbk2" || ext == "egbk" || ext == "dat") {
                 go_button.enable();
                 formatted_file = true;
             } else{
@@ -112,10 +112,10 @@ public:
                 getData().fonts.font(language.get("book", "wrong_extension") + U" " + language.get("book", "legal_extension3")).draw(15, Arg::topCenter(X_CENTER, sy + 170), getData().colors.white);
             }
             bool need_level_setting = ext == "egbk";
-            if (need_level_setting){
+            if (need_level_setting) {
                 level_bar.draw();
             }
-            if (level_bar.is_changeable()){
+            if (level_bar.is_changeable()) {
                 back_button.disable_notransparent();
             } else{
                 back_button.enable();
@@ -126,7 +126,7 @@ public:
                 getData().graph_resources.need_init = false;
                 changeScene(U"Main_scene", SCENE_FADE_TIME);
             }
-            if (level_bar.is_changeable()){
+            if (level_bar.is_changeable()) {
                 go_button.disable_notransparent();
             } else{
                 go_button.enable();
@@ -233,12 +233,12 @@ public:
             std::string ext = get_extension(book_file);
             bool button_enabled = false;
             String book_format_str;
-            if (ext == BOOK_EXTENSION_NODOT){
+            if (ext == BOOK_EXTENSION_NODOT) {
                 book_format_str = language.get("book", "egaroucid_format");
                 go_button.enable();
                 go_with_level_button.enable();
                 button_enabled = true;
-            } else if (ext == "dat"){
+            } else if (ext == "dat") {
                 book_format_str = language.get("book", "edax_format");
                 go_button.enable();
                 go_with_level_button.enable();
@@ -252,7 +252,7 @@ public:
 
             level_bar.draw();
 
-            if (level_bar.is_changeable()){
+            if (level_bar.is_changeable()) {
                 back_button.disable_notransparent();
                 go_with_level_button.disable_notransparent();
                 go_button.disable_notransparent();
@@ -268,7 +268,7 @@ public:
                 getData().graph_resources.need_init = false;
                 changeScene(U"Main_scene", SCENE_FADE_TIME);
             }
-            if (go_with_level_button.clicked()){
+            if (go_with_level_button.clicked()) {
                 if (ext == BOOK_EXTENSION_NODOT)
                     save_book_edax_future = std::async(std::launch::async, book_save_as_egaroucid, book_file, level);
                 else if (ext == "dat")
@@ -349,7 +349,7 @@ public:
             book_file = text_area.text.replaced(U"\r", U"").replaced(U"\n", U"").narrow();
             std::string ext = get_extension(book_file);
             bool formatted_file = false;
-            if (ext == BOOK_EXTENSION_NODOT || ext == "dat"){
+            if (ext == BOOK_EXTENSION_NODOT || ext == "dat") {
                 go_button.enable();
                 formatted_file = true;
             } else{
@@ -460,7 +460,7 @@ public:
             book_file = text_area.text.replaced(U"\r", U"").replaced(U"\n", U"").narrow();
             std::string ext = get_extension(book_file);
             bool formatted_book = false;
-            if (ext == BOOK_EXTENSION_NODOT){
+            if (ext == BOOK_EXTENSION_NODOT) {
                 go_button.enable();
                 formatted_book = true;
             } else{
@@ -608,50 +608,50 @@ public:
                 global_searching = false;
                 book_learning = false;
             }
-        } else if (before_start){
+        } else if (before_start) {
             start_button.draw();
-            if (start_button.clicked()){
+            if (start_button.clicked()) {
                 before_start = false;
                 book_learning = true;
                 int fork_n_discs = -1;
-                if (getData().graph_resources.branch == 1){
+                if (getData().graph_resources.branch == 1) {
                     fork_n_discs = getData().graph_resources.nodes[1][0].board.n_discs();
                 }
                 int registered_value = 0; // from black
-                for (History_elem history_elem: getData().graph_resources.nodes[0]){
-                    if (history_elem.board.n_discs() == fork_n_discs){
+                for (History_elem history_elem: getData().graph_resources.nodes[0]) {
+                    if (history_elem.board.n_discs() == fork_n_discs) {
                         break;
                     }
-                    if (history_elem.board.n_discs() >= root_board.n_discs()){
+                    if (history_elem.board.n_discs() >= root_board.n_discs()) {
                         break;
                     }
-                    if (book.contain(&history_elem.board)){
+                    if (book.contain(&history_elem.board)) {
                         registered_value = book.get(history_elem.board).value;
-                        if (history_elem.player == WHITE){
+                        if (history_elem.player == WHITE) {
                             registered_value *= -1;
                         }
                     } else{
-                        if (history_elem.player == BLACK){
+                        if (history_elem.player == BLACK) {
                             book.change(&history_elem.board, registered_value, getData().menu_elements.level);
-                        } else if (history_elem.player == WHITE){
+                        } else if (history_elem.player == WHITE) {
                             book.change(&history_elem.board, -registered_value, getData().menu_elements.level);
                         }
                     }
                 }
-                if (getData().graph_resources.branch == 1){
-                    for (History_elem history_elem: getData().graph_resources.nodes[1]){
-                        if (history_elem.board.n_discs() >= root_board.n_discs()){
+                if (getData().graph_resources.branch == 1) {
+                    for (History_elem history_elem: getData().graph_resources.nodes[1]) {
+                        if (history_elem.board.n_discs() >= root_board.n_discs()) {
                             break;
                         }
-                        if (book.contain(&history_elem.board)){
+                        if (book.contain(&history_elem.board)) {
                             registered_value = book.get(history_elem.board).value;
-                            if (history_elem.player == WHITE){
+                            if (history_elem.player == WHITE) {
                                 registered_value *= -1;
                             }
                         } else{
-                            if (history_elem.player == BLACK){
+                            if (history_elem.player == BLACK) {
                                 book.change(&history_elem.board, registered_value, getData().menu_elements.level);
-                            } else if (history_elem.player == WHITE){
+                            } else if (history_elem.player == WHITE) {
                                 book.change(&history_elem.board, -registered_value, getData().menu_elements.level);
                             }
                         }
@@ -660,7 +660,7 @@ public:
                 book_learn_future = std::async(std::launch::async, book_deviate, root_board, getData().menu_elements.level, depth, error_per_move, error_sum, error_leaf, BOOK_DEVIATE_MAX_N_LOOPS_INF, &history_elem.board, &history_elem.player, getData().settings.book_file, getData().settings.book_file + ".bak", &book_learning);
             }
             back_button.draw();
-            if (back_button.clicked() || KeyEscape.pressed()){
+            if (back_button.clicked() || KeyEscape.pressed()) {
                 getData().graph_resources.need_init = false;
                 changeScene(U"Main_scene", SCENE_FADE_TIME);
             }
@@ -715,18 +715,18 @@ public:
         //}
         Scene::SetBackground(getData().colors.green);
         getData().fonts.font(language.get("book", "book_fix")).draw(25, 50, 50, getData().colors.white);
-        if (before_start){
+        if (before_start) {
             start_button.draw();
-            if (start_button.clicked()){
+            if (start_button.clicked()) {
                 before_start = false;
                 task_future = std::async(std::launch::async, book_fix, &stop);
             }
             back_button.draw();
-            if (back_button.clicked() || KeyEscape.pressed()){
+            if (back_button.clicked() || KeyEscape.pressed()) {
                 getData().graph_resources.need_init = false;
                 changeScene(U"Main_scene", SCENE_FADE_TIME);
             }
-        } else if (!done){
+        } else if (!done) {
             stop_button.draw();
             if (stop_button.clicked())
                 stop = true;
@@ -814,15 +814,15 @@ public:
                 global_searching = false;
                 book_learning = false;
             }
-        } else if (before_start){
+        } else if (before_start) {
             start_button.draw();
-            if (start_button.clicked()){
+            if (start_button.clicked()) {
                 before_start = false;
                 book_learning = true;
                 book_learn_future = std::async(std::launch::async, book_reduce, root_board, depth, error_per_move, error_sum, &book_learning);
             }
             back_button.draw();
-            if (back_button.clicked() || KeyEscape.pressed()){
+            if (back_button.clicked() || KeyEscape.pressed()) {
                 getData().graph_resources.need_init = false;
                 changeScene(U"Main_scene", SCENE_FADE_TIME);
             }
@@ -915,15 +915,15 @@ public:
                 global_searching = false;
                 book_learning = false;
             }
-        } else if (before_start){
+        } else if (before_start) {
             start_button.draw();
-            if (start_button.clicked()){
+            if (start_button.clicked()) {
                 before_start = false;
                 book_learning = true;
                 book_learn_future = std::async(std::launch::async, book_recalculate_leaf, root_board, getData().menu_elements.level, depth, error_per_move, error_sum, &history_elem.board, &history_elem.player, &book_learning, false, tim());
             }
             back_button.draw();
-            if (back_button.clicked() || KeyEscape.pressed()){
+            if (back_button.clicked() || KeyEscape.pressed()) {
                 getData().graph_resources.need_init = false;
                 changeScene(U"Main_scene", SCENE_FADE_TIME);
             }
@@ -982,18 +982,18 @@ public:
         //}
         Scene::SetBackground(getData().colors.green);
         getData().fonts.font(language.get("book", "book_recalculate_n_lines")).draw(25, 50, 50, getData().colors.white);
-        if (before_start){
+        if (before_start) {
             start_button.draw();
-            if (start_button.clicked()){
+            if (start_button.clicked()) {
                 before_start = false;
                 task_future = std::async(std::launch::async, book_recalculate_n_lines_all, &stop);
             }
             back_button.draw();
-            if (back_button.clicked() || KeyEscape.pressed()){
+            if (back_button.clicked() || KeyEscape.pressed()) {
                 getData().graph_resources.need_init = false;
                 changeScene(U"Main_scene", SCENE_FADE_TIME);
             }
-        } else if (!done){
+        } else if (!done) {
             stop_button.draw();
             if (stop_button.clicked())
                 stop = true;
@@ -1038,9 +1038,9 @@ public:
         }
         Scene::SetBackground(getData().colors.green);
         getData().fonts.font(language.get("book", "show_book_info")).draw(25, 40, 30, getData().colors.white);
-        if (book_info_calculating){
+        if (book_info_calculating) {
             getData().fonts.font(language.get("book", "calculating")).draw(25, 50, 67, getData().colors.white);
-            if (book_info_future.wait_for(std::chrono::seconds(0)) == std::future_status::ready){
+            if (book_info_future.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
                 book_info = book_info_future.get();
                 book_info_calculating = false;
             }
@@ -1048,15 +1048,15 @@ public:
             getData().fonts.font(language.get("book", "n_registered") + U": " + Format(book_info.n_boards)).draw(15, 50, 67, getData().colors.white);
             int sy = 90;
             int sx = 50;
-            for (int level = 1; level < N_LEVEL; ++level){
+            for (int level = 1; level < N_LEVEL; ++level) {
                 String str = U"Lv.";
-                if (level < 10){
+                if (level < 10) {
                     str += U" ";
                 }
                 str += Format(level) + U": " + Format(book_info.n_boards_in_level[level]);
                 getData().fonts.font(str).draw(13, sx, sy, getData().colors.white);
                 sy += 15;
-                if (level % 20 == 0 && level != N_LEVEL - 1){
+                if (level % 20 == 0 && level != N_LEVEL - 1) {
                     sy = 90;
                     sx += 120;
                 }
@@ -1065,15 +1065,15 @@ public:
             getData().fonts.font(str).draw(13, sx, sy, getData().colors.white);
             sx += 130;
             sy = 90;
-            for (int ply = 0; ply <= HW2 - 4; ++ply){
+            for (int ply = 0; ply <= HW2 - 4; ++ply) {
                 String str = U"Ply.";
-                if (ply < 10){
+                if (ply < 10) {
                     str += U" ";
                 }
                 str += Format(ply) + U": " + Format(book_info.n_boards_in_ply[ply]);
                 getData().fonts.font(str).draw(13, sx, sy, getData().colors.white);
                 sy += 15;
-                if (ply % 21 == 20){
+                if (ply % 21 == 20) {
                     sy = 90;
                     sx += 120;
                 }
@@ -1081,7 +1081,7 @@ public:
         }
         back_button.draw();
         if (back_button.clicked() || KeyEscape.pressed()) {
-            if (book_info_calculating){
+            if (book_info_calculating) {
                 book_info_calculating = false;
                 book_info_future.get();
             }
@@ -1164,20 +1164,20 @@ public:
     }
 
     void update() override {
-        if (!done || failed){
+        if (!done || failed) {
             if (System::GetUserActions() & UserAction::CloseButtonClicked) {
                 changeScene(U"Close", SCENE_FADE_TIME);
             }
         }
         Scene::SetBackground(getData().colors.green);
-        if (!done){ // transcript
+        if (!done) { // transcript
             int sy = 20;
             getData().fonts.font(language.get("book", "book_deviate_with_transcript")).draw(25, Arg::topCenter(X_CENTER, sy), getData().colors.white);
             sy += 45;
             if (DragDrop::HasNewFilePaths()) {
                 std::string path = DragDrop::GetDroppedFilePaths()[0].path.narrow();
                 std::ifstream ifs(path);
-                if (ifs.fail()){
+                if (ifs.fail()) {
                     std::cerr << "can't open " << path << std::endl;
                 } else{
                     std::istreambuf_iterator<char> it(ifs);
@@ -1187,20 +1187,20 @@ public:
                     file_dragged = true;
                 }
             }
-            if (file_dragged){
+            if (file_dragged) {
                 std::stringstream ss{raw_transcripts};
                 std::string line_preview;
                 bool need_to_write_more = true;
                 std::string preview;
-                for (int i = 0; i < 12; ++i){
-                    if (!getline(ss, line_preview)){
+                for (int i = 0; i < 12; ++i) {
+                    if (!getline(ss, line_preview)) {
                         need_to_write_more = false;
                         break;
                     } else{
                         preview += line_preview + "\n";
                     }
                 }
-                if (need_to_write_more){
+                if (need_to_write_more) {
                     preview += "...";
                 }
                 getData().fonts.font(Unicode::Widen(preview)).draw(15, X_CENTER - 350, sy, getData().colors.white);
@@ -1212,12 +1212,12 @@ public:
             n_loops_bar.draw();
             sy += 305;
             getData().fonts.font(language.get("in_out", "you_can_paste_with_ctrl_v")).draw(13, Arg::topCenter(X_CENTER, sy), getData().colors.white);
-            if (!file_dragged){
+            if (!file_dragged) {
                 getData().fonts.font(Format(text_area.text.size()) + U"/" + Format(TEXTBOX_MAX_CHARS) + U" " + language.get("common", "characters")).draw(13, Arg::topRight(X_CENTER + 350, sy), getData().colors.white);
             }
             sy += 20;
             getData().fonts.font(language.get("book", "input_transcripts_with_line_breaks")).draw(13, Arg::topCenter(X_CENTER, sy), getData().colors.white);
-            if (n_loops_bar.is_changeable()){
+            if (n_loops_bar.is_changeable()) {
                 back_button.disable_notransparent();
                 start_button.disable_notransparent();
                 start_with_max_n_loops_button.disable_notransparent();
@@ -1233,13 +1233,13 @@ public:
                 changeScene(U"Main_scene", SCENE_FADE_TIME);
             }
             if ((start_button.clicked() || start_with_max_n_loops_button.clicked()) && raw_transcripts.size() && !n_loops_bar.is_changeable()) {
-                if (start_button.clicked()){
+                if (start_button.clicked()) {
                     max_n_loops_used = BOOK_DEVIATE_MAX_N_LOOPS_INF;
                 } else{
                     max_n_loops_used = max_n_loops;
                 }
                 failed = import_transcript_processing();
-                if (!failed){
+                if (!failed) {
                     board_idx = 0;
                     book_learn_future = std::async(std::launch::async, book_deviate, board_list[board_idx], getData().menu_elements.level, depth, error_per_move, error_sum, error_leaf, max_n_loops_used, &history_elem.board, &history_elem.player, getData().settings.book_file, getData().settings.book_file + ".bak", &book_learning);
 					last_saved_time = tim();
@@ -1248,23 +1248,23 @@ public:
                 done = true;
             }
         }
-        else if (failed){ // error in transcript list
+        else if (failed) { // error in transcript list
             int sy = 20;
             getData().fonts.font(language.get("book", "book_deviate_with_transcript")).draw(25, Arg::topCenter(X_CENTER, sy), getData().colors.white);
             sy += 45;
             getData().fonts.font(language.get("book", "transcript_error")).draw(25, Arg::topCenter(X_CENTER, sy), getData().colors.white);
             sy += 45;
             String error_lines_str = U"Line: ";
-            for (int i = 0; i < std::min(250, (int)error_lines.size()); ++i){
+            for (int i = 0; i < std::min(250, (int)error_lines.size()); ++i) {
                 error_lines_str += Format(error_lines[i]);
-                if (i != (int)error_lines.size() - 1){
+                if (i != (int)error_lines.size() - 1) {
                     error_lines_str += U", ";
                 }
-                if ((i + 1) % 20 == 0){
+                if ((i + 1) % 20 == 0) {
                     error_lines_str += U"\n";
                 }
             }
-            if (error_lines.size() > 250){
+            if (error_lines.size() > 250) {
                 error_lines_str += U"...";
             }
             getData().fonts.font(error_lines_str).draw(15, Arg::topCenter(X_CENTER, sy), getData().colors.white);
@@ -1301,8 +1301,8 @@ public:
                 getData().fonts.font(language.get("book", "learning")).draw(20, 480, 230, getData().colors.white);
                 getData().fonts.font(U"Line: " + Format(board_idx + 1) + U"/" + Format(board_list.size())).draw(15, 480, 340, getData().colors.white);
                 std::string transcript_str = transcript_list[board_idx];
-                if (transcript_str.size() > 34){
-                    if (transcript_str.size() > 34 * 2){
+                if (transcript_str.size() > 34) {
+                    if (transcript_str.size() > 34 * 2) {
                         transcript_str = transcript_str.substr(0, 34 * 2 - 2) + "...";
                     }
                     transcript_str = transcript_str.substr(0, 34) + "\n" + transcript_str.substr(34, transcript_str.size() - 34);
@@ -1315,15 +1315,15 @@ public:
                     stop_button_pressed = true;
                 }
             } else if (!learning_done) { // stop button pressed or completed
-                if (stop_button_pressed){
+                if (stop_button_pressed) {
                     getData().fonts.font(language.get("book", "stopping")).draw(20, 480, 230, getData().colors.white);
                 }
                 if (book_learn_future.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
                     book_learn_future.get();
                     ++board_idx;
                     global_searching = true;
-                    if (board_idx < (int)board_list.size() && !stop_button_pressed){ // next board
-						if (tim() - last_saved_time >= AUTO_BOOK_SAVE_TIME){
+                    if (board_idx < (int)board_list.size() && !stop_button_pressed) { // next board
+						if (tim() - last_saved_time >= AUTO_BOOK_SAVE_TIME) {
 							book.save_egbk3(getData().settings.book_file, getData().settings.book_file + ".bak");
 							last_saved_time = tim();
 						}
@@ -1359,8 +1359,8 @@ private:
         std::stringstream ss{str};
         std::string transcript;
         int line_idx = 1;
-        while (getline(ss, transcript)){
-            if (transcript.size() == 0){
+        while (getline(ss, transcript)) {
+            if (transcript.size() == 0) {
                 continue;
             }
             Board board;
@@ -1369,15 +1369,15 @@ private:
             board.reset();
             std::vector<std::pair<Board, int>> boards_to_be_registered;
             int registered_value = 0;
-            for (int i = 0; i < transcript.size(); i += 2){
-                if (book.contain(&board)){
+            for (int i = 0; i < transcript.size(); i += 2) {
+                if (book.contain(&board)) {
                     registered_value = book.get(&board).value;
                 }
                 int x = (int)(transcript[i] - 'a');
-                if (x < 0 || HW <= x){
+                if (x < 0 || HW <= x) {
                     x = (int)(transcript[i] - 'A');
                 }
-                if (transcript.size() <= i + 1){
+                if (transcript.size() <= i + 1) {
                     error_found = true;
                     error_found_line = true;
                     error_lines.emplace_back(line_idx);
@@ -1385,7 +1385,7 @@ private:
                     break;
                 }
                 int y = (int)(transcript[i + 1] - '1');
-                if (x < 0 || HW <= x || y < 0 || HW <= y){
+                if (x < 0 || HW <= x || y < 0 || HW <= y) {
                     error_found = true;
                     error_found_line = true;
                     error_lines.emplace_back(line_idx);
@@ -1393,7 +1393,7 @@ private:
                     break;
                 }
                 int policy = HW2_M1 - (y * HW + x);
-                if ((1 & (board.get_legal() >> policy)) == 0){
+                if ((1 & (board.get_legal() >> policy)) == 0) {
                     error_found = true;
                     error_found_line = true;
                     error_lines.emplace_back(line_idx);
@@ -1403,8 +1403,8 @@ private:
                 calc_flip(&flip, &board, policy);
                 board.move_board(&flip);
                 registered_value *= -1;
-                if (board.get_legal() == 0){
-                    if (board.is_end()){
+                if (board.get_legal() == 0) {
+                    if (board.is_end()) {
                         error_found = true;
                         error_found_line = true;
                         error_lines.emplace_back(line_idx);
@@ -1414,13 +1414,13 @@ private:
                     board.pass();
                     registered_value *= -1;
                 }
-                if (!book.contain(&board)){
+                if (!book.contain(&board)) {
                     boards_to_be_registered.emplace_back(std::make_pair(board, registered_value));
                 }
             }
-            if (!error_found_line){
-                for (std::pair<Board, int> board_to_be_registered: boards_to_be_registered){
-                    if (board_to_be_registered.first.n_discs() >= board.n_discs()){
+            if (!error_found_line) {
+                for (std::pair<Board, int> board_to_be_registered: boards_to_be_registered) {
+                    if (board_to_be_registered.first.n_discs() >= board.n_discs()) {
                         break;
                     }
                     book.change(&board_to_be_registered.first, board_to_be_registered.second, getData().menu_elements.level);
@@ -1428,7 +1428,7 @@ private:
                 board_list.emplace_back(board);
                 transcript_list.emplace_back(transcript);
             }
-            //if (error_found_line){
+            //if (error_found_line) {
             //    std::cerr << "error found in line " << line_idx << " " << transcript << std::endl;
             //}
             ++line_idx;

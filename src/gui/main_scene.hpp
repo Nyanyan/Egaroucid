@@ -23,7 +23,7 @@ bool compare_value_cell(std::pair<int, int>& a, std::pair<int, int>& b) {
 }
 
 bool compare_hint_info(Hint_info& a, Hint_info& b) {
-    if (a.type != b.type){
+    if (a.type != b.type) {
         return a.type > b.type;
     }
     return a.value > b.value;
@@ -33,7 +33,7 @@ Umigame_result get_umigame(Board board, int player, int depth) {
     return calculate_umigame(&board, player, depth);
 }
 
-int get_book_accuracy(Board board){
+int get_book_accuracy(Board board) {
     return calculate_book_accuracy(&board);
 }
 
@@ -126,7 +126,7 @@ public:
 
         // shortcut
         shortcut_keys.check_shortcut_key(&shortcut_key, &shortcut_key_pressed);
-        if (shortcut_key != SHORTCUT_KEY_UNDEFINED){
+        if (shortcut_key != SHORTCUT_KEY_UNDEFINED) {
             std::cerr << "shortcut key found: " << shortcut_key.narrow() << std::endl;
         }
 
@@ -170,7 +170,7 @@ public:
             ai_status.analyzing;
         if (need_start_game_button) {
             need_start_game_button_calculation();
-            if (getData().menu.active()){
+            if (getData().menu.active()) {
                 start_game_button.disable_notransparent();
             } else{
                 start_game_button.enable();
@@ -182,18 +182,18 @@ public:
                 resume_calculating();
             }
         }
-        if (pausing_in_pass){
+        if (pausing_in_pass) {
             bool ai_to_move = ((getData().history_elem.player == BLACK && getData().menu_elements.ai_put_black) || (getData().history_elem.player == WHITE && getData().menu_elements.ai_put_white));
             if (!ai_to_move)
                 pausing_in_pass = false;
             else{
-                if (getData().menu.active()){
+                if (getData().menu.active()) {
                     pass_button.disable_notransparent();
                 } else{
                     pass_button.enable();
                 }
                 pass_button.draw();
-                if (!getData().menu.active() && (pass_button.clicked() || (pass_button.is_enabled() && shortcut_key == U"pass"))){
+                if (!getData().menu.active() && (pass_button.clicked() || (pass_button.is_enabled() && shortcut_key == U"pass"))) {
                     pausing_in_pass = false;
                 }
             }
@@ -234,7 +234,7 @@ public:
         }
 
         // play ordering drawing
-        if (getData().menu_elements.show_play_ordering){
+        if (getData().menu_elements.show_play_ordering) {
             draw_play_ordering();
         }
 
@@ -250,7 +250,7 @@ public:
         bool hint_ignore = ai_should_move || ai_status.analyzing || need_start_game_button || pausing_in_pass || changing_scene;
         if (!hint_ignore) {
             if (getData().menu_elements.use_disc_hint) {
-                if ((ai_status.hint_calculating || ai_status.hint_calculated) && getData().menu_elements.n_disc_hint > ai_status.n_hint_display){
+                if ((ai_status.hint_calculating || ai_status.hint_calculated) && getData().menu_elements.n_disc_hint > ai_status.n_hint_display) {
                     stop_calculating();
                     reset_hint();
                     reset_pv();
@@ -267,10 +267,10 @@ public:
 
         // principal variation calculating
         bool pv_ignore = ai_should_move || ai_status.analyzing || need_start_game_button || changing_scene;
-        if (!pv_ignore && getData().menu_elements.show_principal_variation){
-            if (!ai_status.pv_calculating && !ai_status.pv_calculated){
+        if (!pv_ignore && getData().menu_elements.show_principal_variation) {
+            if (!ai_status.pv_calculating && !ai_status.pv_calculated) {
                 pv_calculate();
-            } else if (ai_status.pv_calculating && !ai_status.pv_calculated){
+            } else if (ai_status.pv_calculating && !ai_status.pv_calculated) {
                 try_pv_get();
             }
         }
@@ -281,11 +281,11 @@ public:
         }
 
         // book information drawing
-        if (getData().menu_elements.use_book){
+        if (getData().menu_elements.use_book) {
             // book accuracy drawing
-            if (getData().menu_elements.show_book_accuracy && !hint_ignore){
+            if (getData().menu_elements.show_book_accuracy && !hint_ignore) {
                 draw_book_n_lines(legal_ignore);
-                if (book_accuracy_status.book_accuracy_calculated){
+                if (book_accuracy_status.book_accuracy_calculated) {
                     draw_book_accuracy(legal_ignore);
                 } else
                     calculate_book_accuracy();
@@ -293,7 +293,7 @@ public:
 
             // umigame calculating / drawing
             if (getData().menu_elements.use_umigame_value && !hint_ignore) {
-                if (umigame_value_depth_before != getData().menu_elements.umigame_value_depth){
+                if (umigame_value_depth_before != getData().menu_elements.umigame_value_depth) {
                     umigame_status.umigame_calculated = false;
                     umigame_status.umigame_calculating = false;
                     umigame.delete_all();
@@ -326,7 +326,7 @@ public:
         }
 
         // laser pointer
-        if (getData().menu_elements.show_laser_pointer && Cursor::Pos().y >= 0){
+        if (getData().menu_elements.show_laser_pointer && Cursor::Pos().y >= 0) {
             Cursor::RequestStyle(CursorStyle::Hidden);
             getData().resources.laser_pointer.scaled(30.0 / getData().resources.laser_pointer.width()).drawAt(Cursor::Pos());
         }
@@ -351,7 +351,7 @@ private:
         ai_status.hint_calculated = false;
     }
 
-    void reset_pv(){
+    void reset_pv() {
         ai_status.pv_calculating = false;
         ai_status.pv_calculated = false;
         principal_variation = "";
@@ -362,7 +362,7 @@ private:
         ai_status.analyze_task_stack.clear();
     }
 
-    void reset_book_additional_features(){
+    void reset_book_additional_features() {
         umigame_status.umigame_calculated = false;
         umigame_status.umigame_calculating = false;
         book_accuracy_status.book_accuracy_calculated = false;
@@ -380,7 +380,7 @@ private:
             std::cerr << "terminating hint" << std::endl;
             ai_status.hint_future.get();
         }
-        if (ai_status.pv_future.valid()){
+        if (ai_status.pv_future.valid()) {
             std::cerr << "terminating pv" << std::endl;
             ai_status.pv_future.get();
         }
@@ -488,7 +488,7 @@ private:
         if (shortcut_key == U"ai_put_white") {
             getData().menu_elements.ai_put_white = !getData().menu_elements.ai_put_white;
         }
-        if (shortcut_key == U"pause_when_pass"){
+        if (shortcut_key == U"pause_when_pass") {
             getData().menu_elements.pause_when_pass = !getData().menu_elements.pause_when_pass;
         }
         if (getData().menu_elements.shortcut_key_setting || shortcut_key == U"shortcut_key_setting") {
@@ -591,7 +591,7 @@ private:
                     ((getData().graph_resources.branch == GRAPH_MODE_NORMAL && getData().graph_resources.nodes[GRAPH_MODE_NORMAL].size() > 1) || (getData().graph_resources.branch == GRAPH_MODE_INSPECT && getData().graph_resources.nodes[GRAPH_MODE_INSPECT].size() > 0))) {
                     getData().graph_resources.nodes[getData().graph_resources.branch].pop_back();
                     History_elem n_history_elem = getData().history_elem;
-                    if (getData().graph_resources.branch == GRAPH_MODE_INSPECT && getData().graph_resources.nodes[GRAPH_MODE_INSPECT].size() == 0){
+                    if (getData().graph_resources.branch == GRAPH_MODE_INSPECT && getData().graph_resources.nodes[GRAPH_MODE_INSPECT].size() == 0) {
                         getData().graph_resources.branch = GRAPH_MODE_NORMAL;
                         getData().graph_resources.nodes[GRAPH_MODE_NORMAL][getData().graph_resources.node_find(0, getData().history_elem.board.n_discs())].next_policy = -1;
                         n_history_elem = getData().graph_resources.nodes[0][getData().graph_resources.node_find(0, getData().history_elem.board.n_discs())];
@@ -626,7 +626,7 @@ private:
                         getData().graph_resources.nodes[0].emplace_back(elem);
                     }
                     getData().graph_resources.branch = 0;
-                } else if (getData().graph_resources.branch == GRAPH_MODE_NORMAL){
+                } else if (getData().graph_resources.branch == GRAPH_MODE_NORMAL) {
                     int n_discs_before = getData().history_elem.board.n_discs();
                     while (getData().graph_resources.nodes[GRAPH_MODE_NORMAL].back().board.n_discs() > n_discs_before && getData().graph_resources.nodes[GRAPH_MODE_NORMAL].size() > 1) {
                         getData().graph_resources.nodes[GRAPH_MODE_NORMAL].pop_back();
@@ -643,7 +643,7 @@ private:
                 resume_calculating();
                 need_start_game_button_calculation();
             }
-            if (getData().menu_elements.generate_random_board || shortcut_key == U"generate_random_board"){
+            if (getData().menu_elements.generate_random_board || shortcut_key == U"generate_random_board") {
                 int max_n_moves = getData().menu_elements.generate_random_board_moves;
                 int level = 2;
                 std::random_device seed_gen;
@@ -656,7 +656,7 @@ private:
                 getData().game_information.init();
                 pausing_in_pass = false;
                 resume_calculating();
-                for (int i = 0; i < max_n_moves; ++i){
+                for (int i = 0; i < max_n_moves; ++i) {
                     if (getData().history_elem.board.get_legal() == 0)
                         break;
                     int acceptable_loss = std::abs(std::round(dist(engine)));
@@ -1056,7 +1056,7 @@ private:
         }
         getData().graph_resources.nodes[getData().graph_resources.branch].emplace_back(getData().history_elem);
         getData().graph_resources.n_discs++;
-        if (getData().history_elem.board.is_end()){
+        if (getData().history_elem.board.is_end()) {
             int sgn = getData().history_elem.player == 0 ? 1 : -1;
             getData().graph_resources.nodes[getData().graph_resources.branch].back().v = sgn * getData().history_elem.board.score_player();
             getData().graph_resources.nodes[getData().graph_resources.branch].back().level = N_LEVEL - 1;
@@ -1073,7 +1073,7 @@ private:
                 int x = cell % HW;
                 int y = cell / HW;
                 Rect cell_rect(BOARD_SX + x * BOARD_CELL_SIZE, BOARD_SY + y * BOARD_CELL_SIZE, BOARD_CELL_SIZE, BOARD_CELL_SIZE);
-                if (cell_rect.mouseOver()){
+                if (cell_rect.mouseOver()) {
                     Cursor::RequestStyle(CursorStyle::Hand);
                 }
                 if (cell_rect.leftClicked()) {
@@ -1163,7 +1163,7 @@ private:
         if (0 <= getData().history_elem.next_policy && getData().history_elem.next_policy <= HW2) {
             uint64_t legal = getData().history_elem.board.get_legal();
             if (1 & (legal >> getData().history_elem.next_policy)) {
-                if (getData().menu_elements.show_next_move_change_view){
+                if (getData().menu_elements.show_next_move_change_view) {
                     int sx = BOARD_SX + (HW_M1 - getData().history_elem.next_policy % HW) * BOARD_CELL_SIZE;
                     int sy = BOARD_SY + (HW_M1 - getData().history_elem.next_policy / HW) * BOARD_CELL_SIZE;
                     Rect(sx, sy, BOARD_CELL_SIZE, BOARD_CELL_SIZE).drawFrame(8, 0, ColorF(getData().colors.purple, 0.7));
@@ -1181,9 +1181,9 @@ private:
     }
 
     void draw_play_ordering() {
-        for (History_elem &elem: getData().graph_resources.nodes[getData().graph_resources.branch]){
+        for (History_elem &elem: getData().graph_resources.nodes[getData().graph_resources.branch]) {
             int cell = elem.policy;
-            if (0 <= cell && cell < HW2 && ((getData().history_elem.board.player | getData().history_elem.board.opponent) & (1ULL << cell))){
+            if (0 <= cell && cell < HW2 && ((getData().history_elem.board.player | getData().history_elem.board.opponent) & (1ULL << cell))) {
                 int x = BOARD_SX + ((HW2_M1 - cell) % HW) * BOARD_CELL_SIZE + BOARD_CELL_SIZE / 2;
                 int y = BOARD_SY + ((HW2_M1 - cell) / HW) * BOARD_CELL_SIZE + BOARD_CELL_SIZE / 2;
                 bool is_black_disc = getData().history_elem.player == BLACK && (getData().history_elem.board.player & (1ULL << cell)) != 0;
@@ -1306,15 +1306,15 @@ private:
         return m1 == m2 && d1 == d2 && ml1 == ml2;
     }
 
-    void hint_calculate(){
+    void hint_calculate() {
         ai_status.hint_calculating = true;
         ai_status.hint_calculated = false;
-        for (int i = 0; i < HW2; ++i){
+        for (int i = 0; i < HW2; ++i) {
             ai_status.hint_use[i] = false;
             ai_status.hint_values[i] = SCORE_UNDEFINED;
         }
         uint64_t legal = getData().history_elem.board.get_legal();
-        for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)){
+        for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)) {
             ai_status.hint_use[cell] = true;
         }
         ai_status.n_hint_display = getData().menu_elements.n_disc_hint;
@@ -1322,9 +1322,9 @@ private:
         ai_status.hint_future = std::async(std::launch::async, std::bind(ai_hint, getData().history_elem.board, getData().menu_elements.level, getData().menu_elements.use_book, 0, true, true, getData().menu_elements.n_disc_hint, ai_status.hint_values, ai_status.hint_types));
     }
 
-    void try_hint_get(){
-        if (ai_status.hint_future.valid()){
-            if (ai_status.hint_future.wait_for(std::chrono::seconds(0)) == std::future_status::ready){
+    void try_hint_get() {
+        if (ai_status.hint_future.valid()) {
+            if (ai_status.hint_future.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
                 ai_status.hint_future.get();
                 ai_status.hint_calculating = false;
                 ai_status.hint_calculated = true;
@@ -1333,16 +1333,16 @@ private:
         }
     }
 
-    void pv_calculate(){
+    void pv_calculate() {
         ai_status.pv_calculating = true;
         ai_status.pv_calculated = false;
         std::cerr << "start pv calculation" << std::endl;
         ai_status.pv_future = std::async(std::launch::async, std::bind(get_principal_variation_str, getData().history_elem.board, getData().menu_elements.level, &principal_variation));
     }
 
-    void try_pv_get(){
-        if (ai_status.pv_future.valid()){
-            if (ai_status.pv_future.wait_for(std::chrono::seconds(0)) == std::future_status::ready){
+    void try_pv_get() {
+        if (ai_status.pv_future.valid()) {
+            if (ai_status.pv_future.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
                 ai_status.pv_future.get();
                 ai_status.pv_calculating = false;
                 ai_status.pv_calculated = true;
@@ -1412,19 +1412,19 @@ private:
 
     void copy_board() {
         std::string board_str;
-        for (int i = 0; i < HW2; ++i){
-            if (getData().history_elem.player == BLACK){
-                if (getData().history_elem.board.player & (1ULL << (HW2_M1 - i))){
+        for (int i = 0; i < HW2; ++i) {
+            if (getData().history_elem.player == BLACK) {
+                if (getData().history_elem.board.player & (1ULL << (HW2_M1 - i))) {
                     board_str += "X";
-                } else if (getData().history_elem.board.opponent & (1ULL << (HW2_M1 - i))){
+                } else if (getData().history_elem.board.opponent & (1ULL << (HW2_M1 - i))) {
                     board_str += "O";
                 } else{
                     board_str += "-";
                 }
             } else{
-                if (getData().history_elem.board.player & (1ULL << (HW2_M1 - i))){
+                if (getData().history_elem.board.player & (1ULL << (HW2_M1 - i))) {
                     board_str += "O";
-                } else if (getData().history_elem.board.opponent & (1ULL << (HW2_M1 - i))){
+                } else if (getData().history_elem.board.opponent & (1ULL << (HW2_M1 - i))) {
                     board_str += "X";
                 } else{
                     board_str += "-";
@@ -1432,7 +1432,7 @@ private:
             }
         }
         board_str += " ";
-        if (getData().history_elem.player == BLACK){
+        if (getData().history_elem.player == BLACK) {
             board_str += "X";
         } else{
             board_str += "O";
@@ -1453,7 +1453,7 @@ private:
 
     void copy_bitboard_black_white() {
         std::ostringstream ss;
-        if (getData().history_elem.player == BLACK){
+        if (getData().history_elem.player == BLACK) {
             ss << "0x" << std::setfill('0') << std::setw(16) << std::hex << getData().history_elem.board.player;
             ss << "\t";
             ss << "0x" << std::setfill('0') << std::setw(16) << std::hex << getData().history_elem.board.opponent;
@@ -1486,7 +1486,7 @@ private:
                 for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)) {
                     calc_flip(&flip, &board, cell);
                     board.move_board(&flip);
-                        if (board.get_legal() == 0ULL){
+                        if (board.get_legal() == 0ULL) {
                             board.pass();
                                 umigame_status.umigame_future[cell] = std::async(std::launch::async, get_umigame, board, n_player ^ 1, getData().menu_elements.umigame_value_depth);
                             board.pass();
@@ -1542,30 +1542,30 @@ private:
                 Flip flip;
                 calc_flip(&flip, &board, cell);
                 board.move_board(&flip);
-                if (book.contain(board)){
+                if (book.contain(board)) {
                     ai_status.hint_types[cell] = HINT_TYPE_BOOK;
                     Book_elem book_elem = book.get(board);
                     ai_status.hint_values[cell] = -book_elem.value + HINT_PRIORITY; // priority to book
                     uint32_t n_lines = book_elem.n_lines;
                     String n_lines_str = Format(n_lines);
-                    if (n_lines >= 1000000000){
-                        if (n_lines / 1000000000 < 10){
+                    if (n_lines >= 1000000000) {
+                        if (n_lines / 1000000000 < 10) {
                             uint32_t d1 = n_lines / 1000000000;
                             uint32_t d2 = (n_lines - d1 * 1000000000) / 100000000;
                             n_lines_str = Format(d1) + U"." + Format(d2) + U"G";
                         } else{
                             n_lines_str = Format(n_lines / 1000000000) + U"G";
                         }
-                    } else if (n_lines >= 1000000){
-                        if (n_lines / 1000000 < 10){
+                    } else if (n_lines >= 1000000) {
+                        if (n_lines / 1000000 < 10) {
                             uint32_t d1 = n_lines / 1000000;
                             uint32_t d2 = (n_lines - d1 * 1000000) / 100000;
                             n_lines_str = Format(d1) + U"." + Format(d2) + U"M";
                         } else{
                             n_lines_str = Format(n_lines / 1000000) + U"M";
                         }
-                    } else if (n_lines >= 1000){
-                        if (n_lines / 1000 < 10){
+                    } else if (n_lines >= 1000) {
+                        if (n_lines / 1000 < 10) {
                             uint32_t d1 = n_lines / 1000;
                             uint32_t d2 = (n_lines - d1 * 1000) / 100;
                             n_lines_str = Format(d1) + U"." + Format(d2) + U"K";
@@ -1588,7 +1588,7 @@ private:
                 for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)) {
                     calc_flip(&flip, &board, cell);
                     board.move_board(&flip);
-                        if (board.get_legal() == 0ULL){
+                        if (board.get_legal() == 0ULL) {
                             board.pass();
                                 book_accuracy_status.book_accuracy_future[cell] = std::async(std::launch::async, get_book_accuracy, board);
                             board.pass();
@@ -1625,11 +1625,11 @@ private:
             if (1 & (legal_ignore >> cell)) {
                 int sx = BOARD_SX + ((HW2_M1 - cell) % HW) * BOARD_CELL_SIZE;
                 int sy = BOARD_SY + ((HW2_M1 - cell) / HW) * BOARD_CELL_SIZE;
-                if (book_accuracy_status.book_accuracy[cell] != BOOK_ACCURACY_LEVEL_UNDEFINED){
+                if (book_accuracy_status.book_accuracy[cell] != BOOK_ACCURACY_LEVEL_UNDEFINED) {
                     //std::cerr << idx_to_coord(cell) << " " << book_accuracy_status.book_accuracy[cell] << std::endl;
                     std::string judge;
                     const std::string judge_list = "ABCDEF";
-                    if (book_accuracy_status.book_accuracy[cell] > BOOK_ACCURACY_LEVEL_A){ // B-F
+                    if (book_accuracy_status.book_accuracy[cell] > BOOK_ACCURACY_LEVEL_A) { // B-F
                         judge = judge_list[book_accuracy_status.book_accuracy[cell]];
                     } else{ // AA-AF
                         judge = "A";
@@ -1726,8 +1726,8 @@ private:
                             Flip flip;
                             calc_flip(&flip, &getData().history_elem.board, getData().book_information.changing);
                             Board moved_board = getData().history_elem.board.move_copy(&flip);
-                            if (moved_board.get_legal() == 0){
-                                if (moved_board.is_end()){ // game over
+                            if (moved_board.get_legal() == 0) {
+                                if (moved_board.is_end()) { // game over
                                     book.change(moved_board, -changed_book_value, LEVEL_HUMAN);
                                 } else{ // just pass
                                     moved_board.pass();
@@ -1748,7 +1748,7 @@ private:
                             calc_flip(&flip, &getData().history_elem.board, getData().book_information.changing);
                             Board moved_board = getData().history_elem.board.move_copy(&flip);
                             book.delete_elem(moved_board);
-                            if (moved_board.get_legal() == 0){
+                            if (moved_board.get_legal() == 0) {
                                 moved_board.pass();
                                 book.delete_elem(moved_board);
                             }

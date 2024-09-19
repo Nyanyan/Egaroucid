@@ -53,7 +53,7 @@ void draw_board(Fonts fonts, Colors colors, History_elem history_elem, bool mono
     }
 }
 
-void draw_board(Fonts fonts, Colors colors, History_elem history_elem){
+void draw_board(Fonts fonts, Colors colors, History_elem history_elem) {
     draw_board(fonts, colors, history_elem, false);
 }
 
@@ -72,7 +72,7 @@ void draw_info(Colors colors, History_elem history_elem, Fonts fonts, Menu_eleme
             moves_line += U" " + language.get("info", "white");
         }
         bool ai_to_move = (menu_elements.ai_put_black && history_elem.player == BLACK) || (menu_elements.ai_put_white && history_elem.player == WHITE);
-        if (ai_to_move ^ pausing_in_pass){
+        if (ai_to_move ^ pausing_in_pass) {
             moves_line += U" (" + language.get("info", "ai") + U")";
         } else {
             moves_line += U" (" + language.get("info", "human") + U")";

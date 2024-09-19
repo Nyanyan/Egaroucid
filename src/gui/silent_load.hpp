@@ -14,7 +14,7 @@
 #include "./../engine/engine_all.hpp"
 #include "function/function_all.hpp"
 
-std::string get_default_language(){
+std::string get_default_language() {
     std::string default_language = System::DefaultLanguage().narrow();
     std::string res = "english";
     if (default_language == "ja-JP") // japanese
@@ -142,7 +142,7 @@ int init_settings_import_str(TextReader* reader, std::string* res) {
     }
 }
 
-void import_text_settings(const Directories* directories, const Resources* resources, Settings* settings){
+void import_text_settings(const Directories* directories, const Resources* resources, Settings* settings) {
     TextReader reader(U"{}setting.txt"_fmt(Unicode::Widen(directories->appdata_dir)));
     if (!reader) {
         std::cerr << "err-1" << std::endl;
@@ -274,12 +274,12 @@ void import_text_settings(const Directories* directories, const Resources* resou
 void init_settings(const Directories* directories, const Resources* resources, Settings* settings) {
     init_default_settings(directories, resources, settings);
     JSON setting_json = JSON::Load(U"{}setting.json"_fmt(Unicode::Widen(directories->appdata_dir)));
-    if (setting_json.size() == 0){
+    if (setting_json.size() == 0) {
         std::cerr << "json not found, try legacy txt settings" << std::endl;
         import_text_settings(directories, resources, settings);
         return;
     }
-    if (init_settings_import_int(setting_json, U"n_threads", &settings->n_threads) != ERR_OK){
+    if (init_settings_import_int(setting_json, U"n_threads", &settings->n_threads) != ERR_OK) {
         std::cerr << "err0" << std::endl;
     }
     if (init_settings_import_bool(setting_json, U"auto_update_check", &settings->auto_update_check) != ERR_OK) {
@@ -430,7 +430,7 @@ int init_resources_silent_load(Resources* resources, Settings* settings, Fonts *
         return ERR_SILENT_LOAD_LANG_JSON_NOT_LOADED;
     }
 
-    if (*stop_loading){
+    if (*stop_loading) {
         return ERR_SILENT_LOAD_TERMINATED;
     }
 
@@ -445,7 +445,7 @@ int init_resources_silent_load(Resources* resources, Settings* settings, Fonts *
             return ERR_SILENT_LOAD_LANG_NOT_LOADED;
     }
 
-    if (*stop_loading){
+    if (*stop_loading) {
         return ERR_SILENT_LOAD_TERMINATED;
     }
 
@@ -453,7 +453,7 @@ int init_resources_silent_load(Resources* resources, Settings* settings, Fonts *
     std::cerr << "loading font" << std::endl;
     fonts->init(settings->lang_name);
 
-    if (*stop_loading){
+    if (*stop_loading) {
         return ERR_SILENT_LOAD_TERMINATED;
     }
 
@@ -467,7 +467,7 @@ int init_resources_silent_load(Resources* resources, Settings* settings, Fonts *
     resources->icon = icon;
     resources->logo = logo;
 
-    if (*stop_loading){
+    if (*stop_loading) {
         return ERR_SILENT_LOAD_TERMINATED;
     }
 
@@ -500,19 +500,19 @@ public:
     void update() override {
         if (System::GetUserActions() & UserAction::CloseButtonClicked) {
             stop_loading = true;
-            if (silent_load_future.valid()){
+            if (silent_load_future.valid()) {
                 silent_load_future.get();
             }
             System::Exit();
         }
-        if (loading){
+        if (loading) {
             if (silent_load_future.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
                 load_code = silent_load_future.get();
                 loaded = load_code == ERR_OK;
                 loading = false;
             }
         } else{
-            if (loaded){
+            if (loaded) {
                 std::cerr << "silent loaded" << std::endl;
                 changeScene(U"Load", SCENE_FADE_TIME);
             } else{

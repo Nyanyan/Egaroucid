@@ -29,9 +29,9 @@ public:
         scroll_manager_black.init(X_CENTER - 300, 80 + 15 * 2, 300 - 10, 10, 20, getData().game_information.black_player_name.size(), 1, X_CENTER - 300, 80, 300 - 10, 15 * 2 + 10);
         scroll_manager_white.init(X_CENTER + 10, 80 + 15 * 2, 300 - 10, 10, 20, getData().game_information.white_player_name.size(), 1, X_CENTER + 10, 80, 300 - 10, 15 * 2 + 10);
         Array<String> lines = getData().game_information.memo.split(U'\n');
-        for (String line: lines){
+        for (String line: lines) {
             int idx = 0;
-            while (idx < line.size()){
+            while (idx < line.size()) {
                 String sub_line = get_substr(line, idx, 600 - 4);
                 memo_lines.emplace_back(sub_line);
                 idx += sub_line.size();
@@ -74,10 +74,10 @@ public:
         // buttons
         back_button.draw();
         edit_button.draw();
-        if (back_button.clicked() || KeyEscape.pressed()){
+        if (back_button.clicked() || KeyEscape.pressed()) {
             changeScene(U"Main_scene", SCENE_FADE_TIME);
         }
-        if (edit_button.clicked()){
+        if (edit_button.clicked()) {
             changeScene(U"Export_game", SCENE_FADE_TIME);
         }
     }
@@ -86,22 +86,22 @@ public:
     }
 
 private:
-    String get_substr(String str, int strt_idx, int width){
+    String get_substr(String str, int strt_idx, int width) {
         String res = str.substr(strt_idx);
         RectF region = getData().fonts.font(res).region(15, Vec2{0, 0});
-        while (region.w > width && res.size()){
+        while (region.w > width && res.size()) {
             res.pop_back();
             region = getData().fonts.font(res).region(15, Vec2{0, 0});
         }
         return res;
     }
 
-    String get_substr_memo(int strt_idx, int height){
+    String get_substr_memo(int strt_idx, int height) {
         String res;
         double height_used = 0;
-        for (int idx = strt_idx; idx < (int)memo_lines.size(); ++idx){
+        for (int idx = strt_idx; idx < (int)memo_lines.size(); ++idx) {
             RectF region = getData().fonts.font(memo_lines[idx]).region(15, Vec2{0, 0});
-            if (region.h + height_used > (double)height){
+            if (region.h + height_used > (double)height) {
                 break;
             }
             res += memo_lines[idx] + U"\n";
