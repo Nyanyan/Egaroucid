@@ -35,14 +35,14 @@
 #define MODE_AI_AI 2
 #define MODE_HUMAN_HUMAN 3
 
-std::string get_parent_path(char raw_path[]){
+std::string get_parent_path(char raw_path[]) {
     std::filesystem::path p = raw_path;
     //p = std::filesystem::canonical(p);
     std::string res = p.parent_path().string() + "/";
     return res;
 }
 
-std::string get_parent_path(wchar_t raw_path[]){
+std::string get_parent_path(wchar_t raw_path[]) {
     std::filesystem::path p = raw_path;
     //p = std::filesystem::canonical(p);
     std::string res = p.parent_path().string() + "/";
@@ -50,7 +50,7 @@ std::string get_parent_path(wchar_t raw_path[]){
 }
 
 #ifdef _WIN64 // Windows
-    std::string get_binary_path(){
+    std::string get_binary_path() {
         std::string res;
         #ifdef UNICODE
             wchar_t raw_path[MAX_PATH + 1];
@@ -62,7 +62,7 @@ std::string get_parent_path(wchar_t raw_path[]){
         return res;
     }
 #elif _WIN32
-    std::string get_binary_path(){
+    std::string get_binary_path() {
         std::string res;
         #ifdef UNICODE
             wchar_t raw_path[MAX_PATH + 1];
@@ -74,18 +74,18 @@ std::string get_parent_path(wchar_t raw_path[]){
         return res;
     }
 #elif __APPLE__ // Mac TBD
-    std::string get_binary_path(){
+    std::string get_binary_path() {
         std::string res;
         return res;
     }
 #else // Linux
-    std::string get_binary_path(){
+    std::string get_binary_path() {
         char raw_path[PATH_MAX + 1];
         const size_t LINKSIZE = 100;
         char link[LINKSIZE];
         snprintf(link, LINKSIZE, "/proc/%d/exe", getpid());
         ssize_t e = readlink(link, raw_path, PATH_MAX);
-        if (e == -1){
+        if (e == -1) {
             std::cerr << "[ERROR] can't get binary path. You can ignore this error." << std::endl;
             return "";
         }

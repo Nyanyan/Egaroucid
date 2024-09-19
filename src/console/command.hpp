@@ -24,33 +24,33 @@
 
 #define ANALYZE_MISTAKE_THRESHOLD 4
 
-std::string get_command_line(){
+std::string get_command_line() {
     std::cerr << "> ";
     std::string cmd_line;
     std::getline(std::cin, cmd_line);
     return cmd_line;
 }
 
-void split_cmd_arg(std::string cmd_line, std::string *cmd, std::string *arg){
+void split_cmd_arg(std::string cmd_line, std::string *cmd, std::string *arg) {
     std::istringstream iss(cmd_line);
     iss >> *cmd;
     iss.get();
     std::getline(iss, *arg);
 }
 
-int get_command_id(std::string cmd){
-    for (int i = 0; i < N_COMMANDS; ++i){
+int get_command_id(std::string cmd) {
+    for (int i = 0; i < N_COMMANDS; ++i) {
         if (std::find(command_data[i].names.begin(), command_data[i].names.end(), cmd) != command_data[i].names.end())
             return command_data[i].id;
     }
     return COMMAND_NOT_FOUND;
 }
 
-void init_board(Board_info *board){
+void init_board(Board_info *board) {
     board->reset();
 }
 
-void new_board(Board_info *board){
+void new_board(Board_info *board) {
     board->board = board->boards[0].copy();
     board->player = board->players[0];
     board->boards.clear();
@@ -60,44 +60,44 @@ void new_board(Board_info *board){
     board->ply_vec = 0;
 }
 
-bool outside(int y, int x){
+bool outside(int y, int x) {
     return y < 0 || HW <= y || x < 0 || HW <= x;
 }
 
-void play(Board_info *board, std::string transcript){
-    if (transcript.length() % 2){
+void play(Board_info *board, std::string transcript) {
+    if (transcript.length() % 2) {
         std::cerr << "[ERROR] invalid transcript length" << std::endl;
         return;
     }
     Board_info board_bak = board->copy();
-    while (board->ply_vec < (int)board->boards.size() - 1){
+    while (board->ply_vec < (int)board->boards.size() - 1) {
         board->boards.pop_back();
         board->players.pop_back();
     }
     Flip flip;
-    for (int i = 0; i < (int)transcript.length(); i += 2){
+    for (int i = 0; i < (int)transcript.length(); i += 2) {
         int x = HW_M1 - (int)(transcript[i] - 'a');
         if (x >= HW)
             x = HW_M1 - (int)(transcript[i] - 'A');
         int y = HW_M1 - (int)(transcript[i + 1] - '1');
-        if (outside(y, x)){
+        if (outside(y, x)) {
             std::cerr << "[ERROR] invalid coordinate " << transcript[i] << transcript[i + 1] << std::endl;
             *board = board_bak;
             return;
         }
         calc_flip(&flip, &board->board, y * HW + x);
-        if (flip.flip == 0ULL){
+        if (flip.flip == 0ULL) {
             std::cerr << "[ERROR] invalid move " << transcript[i] << transcript[i + 1] << std::endl;
             *board = board_bak;
             return;
         }
         board->board.move_board(&flip);
         board->player ^= 1;
-        if (board->board.is_end() && i < (int)transcript.length() - 2){
+        if (board->board.is_end() && i < (int)transcript.length() - 2) {
             std::cerr << "[ERROR] game over found before checking all transcript. remaining codes ignored." << std::endl;
             return;
         }
-        if (board->board.get_legal() == 0ULL){
+        if (board->board.get_legal() == 0ULL) {
             board->board.pass();
             board->player ^= 1;
         }
@@ -107,13 +107,13 @@ void play(Board_info *board, std::string transcript){
     }
 }
 
-int calc_remain(std::string arg){
+int calc_remain(std::string arg) {
     int remain = 1;
     try{
         remain = std::stoi(arg);
-    } catch (const std::invalid_argument& ex){
+    } catch (const std::invalid_argument& ex) {
         remain = 1;
-    } catch (const std::out_of_range& ex){
+    } catch (const std::out_of_range& ex) {
         remain = 1;
     }
     if (remain <= 0)
@@ -121,10 +121,10 @@ int calc_remain(std::string arg){
     return remain;
 }
 
-void undo(Board_info *board, int remain){
+void undo(Board_info *board, int remain) {
     if (remain == 0)
         return;
-    if (board->ply_vec <= 0){
+    if (board->ply_vec <= 0) {
         std::cerr << "[ERROR] can't undo" << std::endl;
         return;
     }
@@ -134,10 +134,10 @@ void undo(Board_info *board, int remain){
     undo(board, remain - 1);
 }
 
-void redo(Board_info *board, int remain){
+void redo(Board_info *board, int remain) {
     if (remain == 0)
         return;
-    if (board->ply_vec >= (int)board->boards.size() - 1){
+    if (board->ply_vec >= (int)board->boards.size() - 1) {
         std::cerr << "[ERROR] can't redo" << std::endl;
         return;
     }
@@ -147,8 +147,8 @@ void redo(Board_info *board, int remain){
     redo(board, remain - 1);
 }
 
-Search_result go_noprint(Board_info *board, Options *options, State *state){
-    if (board->board.is_end()){
+Search_result go_noprint(Board_info *board, Options *options, State *state) {
+    if (board->board.is_end()) {
         std::cerr << "[ERROR] game over" << std::endl;
         Search_result res;
         return res;
@@ -158,11 +158,11 @@ Search_result go_noprint(Board_info *board, Options *options, State *state){
     calc_flip(&flip, &board->board, result.policy);
     board->board.move_board(&flip);
     board->player ^= 1;
-    if (board->board.get_legal() == 0ULL){
+    if (board->board.get_legal() == 0ULL) {
         board->board.pass();
         board->player ^= 1;
     }
-    while (board->ply_vec < (int)board->boards.size() - 1){
+    while (board->ply_vec < (int)board->boards.size() - 1) {
         board->boards.pop_back();
         board->players.pop_back();
     }
@@ -172,7 +172,7 @@ Search_result go_noprint(Board_info *board, Options *options, State *state){
     return result;
 }
 
-void go(Board_info *board, Options *options, State *state){
+void go(Board_info *board, Options *options, State *state) {
     Search_result result = go_noprint(board, options, state);
     if (options->quiet)
         print_search_result_quiet(result);
@@ -180,9 +180,9 @@ void go(Board_info *board, Options *options, State *state){
         print_search_result(result, options->level);
 }
 
-void setboard(Board_info *board, std::string board_str){
+void setboard(Board_info *board, std::string board_str) {
     board_str.erase(std::remove_if(board_str.begin(), board_str.end(), ::isspace), board_str.end());
-    if (board_str.length() != HW2 + 1){
+    if (board_str.length() != HW2 + 1) {
         std::cerr << "[ERROR] invalid argument" << std::endl;
         return;
     }
@@ -190,7 +190,7 @@ void setboard(Board_info *board, std::string board_str){
     int player = BLACK;
     new_board.player = 0ULL;
     new_board.opponent = 0ULL;
-    for (int i = 0; i < HW2; ++i){
+    for (int i = 0; i < HW2; ++i) {
         if (board_str[i] == 'B' || board_str[i] == 'b' || board_str[i] == 'X' || board_str[i] == 'x' || board_str[i] == '0' || board_str[i] == '*')
             new_board.player |= 1ULL << (HW2_M1 - i);
         else if (board_str[i] == 'W' || board_str[i] == 'w' || board_str[i] == 'O' || board_str[i] == 'o' || board_str[i] == '1')
@@ -215,10 +215,10 @@ void setboard(Board_info *board, std::string board_str){
     board->ply_vec = 0;
 }
 
-void set_level(Options *options, std::string level_str){
+void set_level(Options *options, std::string level_str) {
     try {
         int level = std::stoi(level_str);
-        if (1 <= level && level < N_LEVEL){
+        if (1 <= level && level < N_LEVEL) {
             options->level = level;
             if (options->show_log)
                 std::cerr << "level set to " << options->level << std::endl;
@@ -231,10 +231,10 @@ void set_level(Options *options, std::string level_str){
     }
 }
 
-void set_mode(Options *options, std::string mode_str){
+void set_mode(Options *options, std::string mode_str) {
     try {
         int mode = std::stoi(mode_str);
-        if (0 <= mode && mode < 4){
+        if (0 <= mode && mode < 4) {
             options->mode = mode;
             if (options->show_log)
                 std::cerr << "mode set to " << options->mode << std::endl;
@@ -247,7 +247,7 @@ void set_mode(Options *options, std::string mode_str){
     }
 }
 
-void hint(Board_info *board, Options *options, State *state, std::string arg){
+void hint(Board_info *board, Options *options, State *state, std::string arg) {
     int n_show = 1;
     try {
         n_show = std::stoi(arg);
@@ -265,11 +265,11 @@ void hint(Board_info *board, Options *options, State *state, std::string arg){
     std::vector<Search_result> result;
     for (Book_value elem: result_book_value)
         result.emplace_back(elem.to_search_result());
-    if ((int)result.size() < n_show){
+    if ((int)result.size() < n_show) {
         for (const Search_result &elem: result)
             legal ^= 1ULL << elem.policy;
         int n_show_ai = n_show - (int)result.size();
-        for (int i = 0; i < n_show_ai; ++i){
+        for (int i = 0; i < n_show_ai; ++i) {
             Search_result elem = ai_legal(board->board, options->level, true, 0, true, false, legal);
             result.emplace_back(elem);
             legal ^= 1ULL << elem.policy;
@@ -281,20 +281,20 @@ void hint(Board_info *board, Options *options, State *state, std::string arg){
         print_search_result_body(result[i], options->level);
 }
 
-inline void analyze(Board_info *board, Options *options, State *state){
+inline void analyze(Board_info *board, Options *options, State *state) {
     print_transcript(board->boards);
     print_analyze_head();
     Analyze_summary summary[2];
-    for (int i = (int)board->boards.size() - 2; i >= 0; --i){
+    for (int i = (int)board->boards.size() - 2; i >= 0; --i) {
         Board n_board = board->boards[i].copy();
         uint64_t played_board = (n_board.player | n_board.opponent) ^ (board->boards[i + 1].player | board->boards[i + 1].opponent);
-        if (pop_count_ull(played_board) == 1){
+        if (pop_count_ull(played_board) == 1) {
             uint_fast8_t played_move = ctz(played_board);
             Analyze_result result = ai_analyze(n_board, options->level, true, played_move);
             std::string judge = "";
             ++summary[board->players[i]].n_ply;
-            if (result.alt_score > result.played_score){
-                if (result.alt_score - result.played_score >= ANALYZE_MISTAKE_THRESHOLD){
+            if (result.alt_score > result.played_score) {
+                if (result.alt_score - result.played_score >= ANALYZE_MISTAKE_THRESHOLD) {
                     ++summary[board->players[i]].n_mistake;
                     summary[board->players[i]].sum_mistake += result.alt_score - result.played_score;
                     judge = "Mistake";
@@ -311,9 +311,9 @@ inline void analyze(Board_info *board, Options *options, State *state){
     print_analyze_foot(summary);
 }
 
-void generate_problems(Options *options, std::string arg){
+void generate_problems(Options *options, std::string arg) {
     int pos = arg.find(' ');
-    if (pos == std::string::npos){
+    if (pos == std::string::npos) {
         std::cerr << "[ERROR] please input <n_empties> <n_problems>" << std::endl;
     }else{
         std::string n_empties_str = arg.substr(0, pos);
@@ -330,12 +330,12 @@ void generate_problems(Options *options, std::string arg){
     }
 }
 
-void check_command(Board_info *board, State *state, Options *options){
+void check_command(Board_info *board, State *state, Options *options) {
     std::string cmd_line = get_command_line();
     std::string cmd, arg;
     split_cmd_arg(cmd_line, &cmd, &arg);
     int cmd_id = get_command_id(cmd);
-    switch (cmd_id){
+    switch (cmd_id) {
         case COMMAND_NOT_FOUND:
             std::cout << "[ERROR] command `" << cmd << "` not found" << std::endl;
             break;

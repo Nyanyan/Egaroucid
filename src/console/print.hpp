@@ -29,14 +29,14 @@
 #define ANALYZE_TAB_SIZE 13
 #define ANALYZE_SUMMARY_TAB_SIZE 13
 
-struct Analyze_summary{
+struct Analyze_summary {
     int n_ply;
     int n_disagree;
     int sum_disagree;
     int n_mistake;
     int sum_mistake;
 
-    Analyze_summary(){
+    Analyze_summary() {
         n_ply = 0;
         n_disagree = 0;
         sum_disagree = 0;
@@ -45,7 +45,7 @@ struct Analyze_summary{
     }
 };
 
-void print_version(){
+void print_version() {
     std::cout << EGAROUCID_NAME << " " << EGAROUCID_VERSION << std::endl;
     std::cout << COUT_TAB << std::left << std::setw(VERSION_TAB_SIZE) << "@date ";
     std::cout << EGAROUCID_DATE << std::endl;
@@ -60,12 +60,12 @@ void print_version(){
     std::cout << std::endl;
 }
 
-void print_commandline_options_list(){
+void print_commandline_options_list() {
     std::cout << "Commandline options:" << std::endl;
-    for (int i = 0; i < N_COMMANDLINE_OPTIONS; ++i){
-        if (commandline_option_data[i].id != ID_NONE){
+    for (int i = 0; i < N_COMMANDLINE_OPTIONS; ++i) {
+        if (commandline_option_data[i].id != ID_NONE) {
             std::string s;
-            for (int j = 0; j < (int)commandline_option_data[i].names.size(); ++j){
+            for (int j = 0; j < (int)commandline_option_data[i].names.size(); ++j) {
                 if (j != 0)
                     s += "|";
                 s += commandline_option_data[i].names[j];
@@ -80,12 +80,12 @@ void print_commandline_options_list(){
     std::cout << std::endl;
 }
 
-void print_commands_list(){
+void print_commands_list() {
     std::cout << "Commands:" << std::endl;
-    for (int i = 0; i < N_COMMANDS; ++i){
-        if (command_data[i].id != CMD_ID_NONE){
+    for (int i = 0; i < N_COMMANDS; ++i) {
+        if (command_data[i].id != CMD_ID_NONE) {
             std::string s;
-            for (int j = 0; j < (int)command_data[i].names.size(); ++j){
+            for (int j = 0; j < (int)command_data[i].names.size(); ++j) {
                 if (j != 0)
                     s += "|";
                 s += command_data[i].names[j];
@@ -100,13 +100,13 @@ void print_commands_list(){
     std::cout << std::endl;
 }
 
-void print_help(){
+void print_help() {
     print_version();
     print_commandline_options_list();
     print_commands_list();
 }
 
-void print_level_info(){
+void print_level_info() {
     const std::string probability_char = "_-=+^#";
     std::cout << "Level definition:" << std::endl;
     std::cout << COUT_TAB;
@@ -122,12 +122,12 @@ void print_level_info(){
     std::string str_endgame_10 = "Endgame " + std::to_string(LEVEL_DEPTH_TAB_SIZE);
     std::cout << std::right << std::setw(LEVEL_DEPTH_TAB_SIZE) << str_endgame_10;
     std::cout << "|";
-    for (int depth = LEVEL_DEPTH_TAB_SIZE * 2; depth <= 60; depth += LEVEL_DEPTH_TAB_SIZE){
+    for (int depth = LEVEL_DEPTH_TAB_SIZE * 2; depth <= 60; depth += LEVEL_DEPTH_TAB_SIZE) {
         std::cout << std::right << std::setw(LEVEL_DEPTH_TAB_SIZE) << depth;
         std::cout << "|";
     }
     std::cout << std::endl;
-    for (int level = 1; level < N_LEVEL; ++level){
+    for (int level = 1; level < N_LEVEL; ++level) {
         std::cout << COUT_TAB;
         std::cout << "|";
         std::cout << std::right << std::setw(LEVEL_INFO_TAB_SIZE) << level;
@@ -138,7 +138,7 @@ void print_level_info(){
         else
             s = "None";
         std::cout << std::right << std::setw(LEVEL_MIDGAME_TAB_SIZE) << s;
-        for (int n_moves = 0; n_moves < HW2 - 4; ++n_moves){
+        for (int n_moves = 0; n_moves < HW2 - 4; ++n_moves) {
             if (n_moves % LEVEL_DEPTH_TAB_SIZE == 0)
                 std::cout << "|";
             bool is_mid_search;
@@ -156,7 +156,7 @@ void print_level_info(){
     }
 }
 
-void print_board_info(Board_info *board){
+void print_board_info(Board_info *board) {
     uint64_t black = board->board.player;
     uint64_t white = board->board.opponent;
     if (board->player == WHITE)
@@ -165,9 +165,9 @@ void print_board_info(Board_info *board){
     for (int x = 0; x < HW; ++x)
         std::cout << (char)('a' + x) << " ";
     std::cout << std::endl;
-    for (int y = 0; y < HW; ++y){
+    for (int y = 0; y < HW; ++y) {
         std::cout << y + 1 << " ";
-        for (int x = 0; x < HW; ++x){
+        for (int x = 0; x < HW; ++x) {
             int cell = HW2_M1 - (y * HW + x);
             if (1 & (black >> cell))
                 std::cout << "X ";
@@ -176,7 +176,7 @@ void print_board_info(Board_info *board){
             else
                 std::cout << ". ";
         }
-        if (y == 2){
+        if (y == 2) {
             std::cout << COUT_TAB;
             if (board->board.is_end())
                 std::cout << "GAME OVER";
@@ -184,10 +184,10 @@ void print_board_info(Board_info *board){
                 std::cout << "BLACK to move";
             else
                 std::cout << "WHITE to move";
-        } else if (y == 3){
+        } else if (y == 3) {
             std::cout << COUT_TAB;
             std::cout << "ply " << board->board.n_discs() - 3 << " " << HW2 - board->board.n_discs() << " empties";
-        } else if (y == 4){
+        } else if (y == 4) {
             std::cout << COUT_TAB;
             int black_discs, white_discs;
             black_discs = board->board.count_player();
@@ -200,9 +200,9 @@ void print_board_info(Board_info *board){
     }
 }
 
-inline void print_search_result_body(Search_result result, int level){
+inline void print_search_result_body(Search_result result, int level) {
     std::string s;
-    if (result.depth == SEARCH_BOOK){
+    if (result.depth == SEARCH_BOOK) {
         std::cout << "|";
         std::cout << std::right << std::setw(SEARCH_RESULT_TAB_SIZE) << level;
         std::cout << "|";
@@ -250,7 +250,7 @@ inline void print_search_result_body(Search_result result, int level){
     }
 }
 
-inline void print_search_result_head(){
+inline void print_search_result_head() {
     std::cout << "|";
     std::cout << std::right << std::setw(SEARCH_RESULT_TAB_SIZE) << "Level";
     std::cout << "|";
@@ -269,16 +269,16 @@ inline void print_search_result_head(){
     std::cout << std::endl;
 }
 
-inline void print_search_result(Search_result result, int level){
+inline void print_search_result(Search_result result, int level) {
     print_search_result_head();
     print_search_result_body(result, level);
 }
 
-void print_search_result_quiet(Search_result result){
+void print_search_result_quiet(Search_result result) {
     std::cout << idx_to_coord(result.policy) << std::endl;
 }
 
-inline void print_analyze_body(Analyze_result result, int ply, int player, std::string judge){
+inline void print_analyze_body(Analyze_result result, int ply, int player, std::string judge) {
     std::string s;
     std::cout << "|";
     std::cout << std::right << std::setw(ANALYZE_TAB_SIZE) << ply;
@@ -303,7 +303,7 @@ inline void print_analyze_body(Analyze_result result, int ply, int player, std::
         s = std::to_string(result.played_score);
     std::cout << std::right << std::setw(ANALYZE_TAB_SIZE) << s;
     std::cout << "|";
-    if (result.alt_move != -1){
+    if (result.alt_move != -1) {
         std::cout << std::right << std::setw(ANALYZE_TAB_SIZE) << idx_to_coord(result.alt_move);
         std::cout << "|";
         if (result.alt_depth == SEARCH_BOOK)
@@ -332,7 +332,7 @@ inline void print_analyze_body(Analyze_result result, int ply, int player, std::
     std::cout << std::endl;
 }
 
-inline void print_analyze_head(){
+inline void print_analyze_head() {
     std::cout << "|";
     std::cout << std::right << std::setw(ANALYZE_TAB_SIZE) << "Ply";
     std::cout << "|";
@@ -355,7 +355,7 @@ inline void print_analyze_head(){
     std::cout << std::endl;
 }
 
-inline void print_analyze_foot(Analyze_summary summary[]){
+inline void print_analyze_foot(Analyze_summary summary[]) {
     std::cout << std::endl;
     std::cout << "|";
     std::cout << std::right << std::setw(ANALYZE_SUMMARY_TAB_SIZE) << "Player";
@@ -376,7 +376,7 @@ inline void print_analyze_foot(Analyze_summary summary[]){
     std::cout << "|";
     std::cout << std::endl;
     std::string s;
-    for (int i = 0; i < 2; ++i){
+    for (int i = 0; i < 2; ++i) {
         std::cout << "|";
         if (i == BLACK)
             std::cout << std::right << std::setw(ANALYZE_SUMMARY_TAB_SIZE) << "Black";
@@ -409,11 +409,11 @@ inline void print_analyze_foot(Analyze_summary summary[]){
     }
 }
 
-void print_transcript(std::vector<Board> boards){
-    for (int i = 0; i < (int)boards.size() - 1; ++i){
+void print_transcript(std::vector<Board> boards) {
+    for (int i = 0; i < (int)boards.size() - 1; ++i) {
         Board n_board = boards[i].copy();
         uint64_t played_board = (n_board.player | n_board.opponent) ^ (boards[i + 1].player | boards[i + 1].opponent);
-        if (pop_count_ull(played_board) == 1){
+        if (pop_count_ull(played_board) == 1) {
             uint_fast8_t played_move = ctz(played_board);
             std::cout << idx_to_coord(played_move);
         }
@@ -421,17 +421,17 @@ void print_transcript(std::vector<Board> boards){
     std::cout << std::endl;
 }
 
-void print_special_commandline_options(std::vector<Commandline_option> commandline_options){
-    if (find_commandline_option(commandline_options, ID_VERSION)){
+void print_special_commandline_options(std::vector<Commandline_option> commandline_options) {
+    if (find_commandline_option(commandline_options, ID_VERSION)) {
         print_version();
         std::exit(0);
-    } else if (find_commandline_option(commandline_options, ID_HELP)){
+    } else if (find_commandline_option(commandline_options, ID_HELP)) {
         print_help();
         std::exit(0);
-    } else if (find_commandline_option(commandline_options, ID_LEVEL_INFO)){
+    } else if (find_commandline_option(commandline_options, ID_LEVEL_INFO)) {
         print_level_info();
         std::exit(0);
-    } else if (find_commandline_option(commandline_options, ID_PERFT)){
+    } else if (find_commandline_option(commandline_options, ID_PERFT)) {
         bit_init();
         mobility_init();
         flip_init();
@@ -440,14 +440,14 @@ void print_special_commandline_options(std::vector<Commandline_option> commandli
     }
 }
 
-void execute_special_commandline_tasks(std::vector<Commandline_option> commandline_options, Options *options, State *state){
-    if (find_commandline_option(commandline_options, ID_SOLVE)){
+void execute_special_commandline_tasks(std::vector<Commandline_option> commandline_options, Options *options, State *state) {
+    if (find_commandline_option(commandline_options, ID_SOLVE)) {
         solve_problems(get_commandline_option_arg(commandline_options, ID_SOLVE), options, state);
         std::exit(0);
-    } else if (find_commandline_option(commandline_options, ID_SELF_PLAY)){
+    } else if (find_commandline_option(commandline_options, ID_SELF_PLAY)) {
         self_play(get_commandline_option_arg(commandline_options, ID_SELF_PLAY), options, state);
         std::exit(0);
-    } else if (find_commandline_option(commandline_options, ID_SELF_PLAY_LINE)){
+    } else if (find_commandline_option(commandline_options, ID_SELF_PLAY_LINE)) {
         self_play_line(get_commandline_option_arg(commandline_options, ID_SELF_PLAY_LINE), options, state);
         std::exit(0);
     }

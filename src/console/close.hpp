@@ -14,7 +14,7 @@
 #include "option.hpp"
 #include "state.hpp"
 
-void close(State *state, Options *options){
+void close(State *state, Options *options) {
     if (state->book_changed)
         book.save_egbk3(options->book_file, options->book_file + ".bak");
     std::exit(0);

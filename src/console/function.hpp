@@ -28,14 +28,14 @@ void print_search_result_head();
 void print_search_result_body(Search_result result, int level);
 void go(Board_info *board, Options *options, State *state);
 
-void solve_problems(std::vector<std::string> arg, Options *options, State *state){
-    if (arg.size() < 1){
+void solve_problems(std::vector<std::string> arg, Options *options, State *state) {
+    if (arg.size() < 1) {
         std::cerr << "[ERROR] [FATAL] please input problem file" << std::endl;
         return;
     }
     std::string file = arg[0];
     std::ifstream ifs(file);
-    if (ifs.fail()){
+    if (ifs.fail()) {
         std::cerr << "[ERROR] [FATAL] no problem file found" << std::endl;
         return;
     }
@@ -46,7 +46,7 @@ void solve_problems(std::vector<std::string> arg, Options *options, State *state
     Search_result total;
     total.nodes = 0;
     total.time = 0;
-    while (std::getline(ifs, line)){
+    while (std::getline(ifs, line)) {
         transposition_table.init();
         setboard(&board, line);
         #if USE_THREAD_MONITOR
@@ -62,7 +62,7 @@ void solve_problems(std::vector<std::string> arg, Options *options, State *state
     std::cout << "total " << total.nodes << " nodes in " << ((double)total.time / 1000) << "s NPS " << (total.nodes * 1000 / total.time) << std::endl;
 }
 
-void execute_special_tasks(Options options){
+void execute_special_tasks(Options options) {
     // move ordering tuning
     #if TUNE_MOVE_ORDERING
         std::cout << "tune move ordering ";
@@ -85,14 +85,14 @@ void execute_special_tasks(Options options){
     #endif
 }
 
-bool execute_special_tasks_loop(Board_info *board, State *state, Options *options){
-    if (options->mode == MODE_HUMAN_AI && board->player == WHITE && !board->board.is_end()){
+bool execute_special_tasks_loop(Board_info *board, State *state, Options *options) {
+    if (options->mode == MODE_HUMAN_AI && board->player == WHITE && !board->board.is_end()) {
         go(board, options, state);
         return true;
-    } else if (options->mode == MODE_AI_HUMAN && board->player == BLACK && !board->board.is_end()){
+    } else if (options->mode == MODE_AI_HUMAN && board->player == BLACK && !board->board.is_end()) {
         go(board, options, state);
         return true;
-    } else if (options->mode == MODE_AI_AI && !board->board.is_end()){
+    } else if (options->mode == MODE_AI_AI && !board->board.is_end()) {
         go(board, options, state);
         return true;
     }
@@ -100,18 +100,18 @@ bool execute_special_tasks_loop(Board_info *board, State *state, Options *option
 }
 
 
-std::string self_play_task(Options *options, bool use_multi_thread, int n_random_moves, int n_try){
+std::string self_play_task(Options *options, bool use_multi_thread, int n_random_moves, int n_try) {
     Board board_start;
     Flip flip;
     Search_result result;
     board_start.reset();
     std::string res;
-    for (int j = 0; j < n_random_moves && board_start.check_pass(); ++j){
+    for (int j = 0; j < n_random_moves && board_start.check_pass(); ++j) {
         uint64_t legal = board_start.get_legal();
         int random_idx = myrandrange(0, pop_count_ull(legal));
         int t = 0;
-        for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)){
-            if (t == random_idx){
+        for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)) {
+            if (t == random_idx) {
                 calc_flip(&flip, &board_start, cell);
                 break;
             }
@@ -121,22 +121,22 @@ std::string self_play_task(Options *options, bool use_multi_thread, int n_random
         board_start.move_board(&flip);
     }
     std::vector<int> prev_transcript;
-    for (int i = 0; i < n_try; ++i){
+    for (int i = 0; i < n_try; ++i) {
         Board board = board_start.copy();
         std::vector<int> transcript;
-        while (board.check_pass()){
+        while (board.check_pass()) {
             result = ai(board, options->level, true, 0, false, options->show_log);
             transcript.emplace_back(result.policy);
             calc_flip(&flip, &board, result.policy);
             board.move_board(&flip);
         }
         bool break_flag = true;
-        if (i < SELF_PLAY_N_TRY - 1){
-            if (prev_transcript.size() != transcript.size()){
+        if (i < SELF_PLAY_N_TRY - 1) {
+            if (prev_transcript.size() != transcript.size()) {
                 break_flag = false;
             } else{
-                for (int i = 0; i < transcript.size(); ++i){
-                    if (transcript[i] != prev_transcript[i]){
+                for (int i = 0; i < transcript.size(); ++i) {
+                    if (transcript[i] != prev_transcript[i]) {
                         break_flag = false;
                         break;
                     }
@@ -144,22 +144,22 @@ std::string self_play_task(Options *options, bool use_multi_thread, int n_random
             }
         }
         prev_transcript.clear();
-        for (int &elem: transcript){
+        for (int &elem: transcript) {
             prev_transcript.emplace_back(elem);
         }
-        if (break_flag){
+        if (break_flag) {
             break;
         }
     }
-    for (int &elem: prev_transcript){
+    for (int &elem: prev_transcript) {
         res += idx_to_coord(elem);
     }
     return res;
 }
 
-void self_play(std::vector<std::string> arg, Options *options, State *state){
+void self_play(std::vector<std::string> arg, Options *options, State *state) {
     int n_games, n_random_moves;
-    if (arg.size() < 2){
+    if (arg.size() < 2) {
         std::cerr << "[ERROR] [FATAL] please input arguments" << std::endl;
         std::exit(1);
     }
@@ -177,24 +177,24 @@ void self_play(std::vector<std::string> arg, Options *options, State *state){
     }
     std::cerr << n_games << " games with " << n_random_moves << " random moves" << std::endl;
     uint64_t strt = tim();
-    if (thread_pool.size() == 0){
-        for (int i = 0; i < n_games; ++i){
+    if (thread_pool.size() == 0) {
+        for (int i = 0; i < n_games; ++i) {
             std::string transcript = self_play_task(options, false, n_random_moves, SELF_PLAY_N_TRY);
             std::cout << transcript << std::endl;
         }
     } else{
         int n_games_done = 0;
         std::vector<std::future<std::string>> tasks;
-        while (n_games_done < n_games){
-            if (thread_pool.get_n_idle() && (int)tasks.size() < n_games){
+        while (n_games_done < n_games) {
+            if (thread_pool.get_n_idle() && (int)tasks.size() < n_games) {
                 bool pushed = false;
                 tasks.emplace_back(thread_pool.push(&pushed, std::bind(&self_play_task, options, true, n_random_moves, SELF_PLAY_N_TRY)));
                 if (!pushed)
                     tasks.pop_back();
             }
-            for (std::future<std::string> &task: tasks){
-                if (task.valid()){
-                    if (task.wait_for(std::chrono::seconds(0)) == std::future_status::ready){
+            for (std::future<std::string> &task: tasks) {
+                if (task.valid()) {
+                    if (task.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
                         std::string transcript = task.get();
                         std::cout << transcript << std::endl;
                         ++n_games_done;
@@ -209,7 +209,7 @@ void self_play(std::vector<std::string> arg, Options *options, State *state){
 }
 
 /*
-void self_play(std::string str_n_games, Options *options, State *state){
+void self_play(std::string str_n_games, Options *options, State *state) {
     int n_games;
     try{
         n_games = std::stoi(str_n_games);
@@ -221,18 +221,18 @@ void self_play(std::string str_n_games, Options *options, State *state){
         std::exit(1);
     }
     uint64_t strt = tim();
-    for (int i = 0; i < n_games; ++i){
+    for (int i = 0; i < n_games; ++i) {
         int n_random_moves = myrandrange(10, 20);
         Board board;
         Flip flip;
         Search_result result;
         board.reset();
-        for (int j = 0; j < n_random_moves && board.check_pass(); ++j){
+        for (int j = 0; j < n_random_moves && board.check_pass(); ++j) {
             uint64_t legal = board.get_legal();
             int random_idx = myrandrange(0, pop_count_ull(legal));
             int t = 0;
-            for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)){
-                if (t == random_idx){
+            for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)) {
+                if (t == random_idx) {
                     calc_flip(&flip, &board, cell);
                     break;
                 }
@@ -241,7 +241,7 @@ void self_play(std::string str_n_games, Options *options, State *state){
             std::cout << idx_to_coord(flip.pos);
             board.move_board(&flip);
         }
-        while (board.check_pass()){
+        while (board.check_pass()) {
             result = ai(board, options->level, true, 0, true, options->show_log);
             calc_flip(&flip, &board, result.policy);
             std::cout << idx_to_coord(flip.pos);
@@ -253,15 +253,15 @@ void self_play(std::string str_n_games, Options *options, State *state){
 }
 */
 
-void self_play_line(std::vector<std::string> arg, Options *options, State *state){
-    if (arg.size() < 1){
+void self_play_line(std::vector<std::string> arg, Options *options, State *state) {
+    if (arg.size() < 1) {
         std::cerr << "please input opening file" << std::endl;
         std::exit(1);
     }
     std::string opening_file = arg[0];
     std::cerr << "selfplay with opening file " << opening_file << std::endl;
     std::ifstream ifs(opening_file);
-    if (!ifs){
+    if (!ifs) {
         std::cerr << "can't open file " << opening_file << std::endl;
     }
     uint64_t strt = tim();
@@ -269,9 +269,9 @@ void self_play_line(std::vector<std::string> arg, Options *options, State *state
     Board board;
     Flip flip;
     Search_result result;
-    while (std::getline(ifs, line)){
+    while (std::getline(ifs, line)) {
         board.reset();
-        for (int i = 0; i < (int)line.size() - 1; i += 2){
+        for (int i = 0; i < (int)line.size() - 1; i += 2) {
             int x = line[i] - 'a';
             int y = line[i + 1] - '1';
             int coord = HW2_M1 - (y * HW + x);
@@ -279,7 +279,7 @@ void self_play_line(std::vector<std::string> arg, Options *options, State *state
             std::cout << idx_to_coord(flip.pos);
             board.move_board(&flip);
         }
-        while (board.check_pass()){
+        while (board.check_pass()) {
             result = ai(board, options->level, true, 0, true, options->show_log);
             calc_flip(&flip, &board, result.policy);
             std::cout << idx_to_coord(flip.pos);
@@ -290,8 +290,8 @@ void self_play_line(std::vector<std::string> arg, Options *options, State *state
     std::cerr << "done in " << tim() - strt << " ms" << std::endl;
 }
 
-void perft_commandline(std::vector<std::string> arg){
-    if (arg.size() < 2){
+void perft_commandline(std::vector<std::string> arg) {
+    if (arg.size() < 2) {
         std::cerr << "please input <depth> <mode>" << std::endl;
         std::exit(1);
     }
@@ -308,11 +308,11 @@ void perft_commandline(std::vector<std::string> arg){
         std::cout << str_depth << " " << str_mode << " out of range" << std::endl;
         std::exit(1);
     }
-    if (mode != 1 && mode != 2){
+    if (mode != 1 && mode != 2) {
         std::cout << "mode must be 1 or 2, got " << mode << std::endl;
         std::exit(1);
     }
-    if (depth <= 0 || 60 < depth){
+    if (depth <= 0 || 60 < depth) {
         std::cout << "depth must be in [1, 60], got " << depth << std::endl;
         std::exit(1);
     }
@@ -320,7 +320,7 @@ void perft_commandline(std::vector<std::string> arg){
     board.reset();
     uint64_t strt = tim();
     uint64_t res;
-    if (mode == 1){
+    if (mode == 1) {
         res = perft(&board, depth, false);
     } else{
         res = perft_no_pass_count(&board, depth, false);

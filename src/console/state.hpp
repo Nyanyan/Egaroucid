@@ -10,10 +10,10 @@
 #pragma once
 #include "./../engine/engine_all.hpp"
 
-struct State{
+struct State {
     bool book_changed;
 
-    State(){
+    State() {
         book_changed = false;
     }
 };

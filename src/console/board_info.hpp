@@ -13,14 +13,14 @@
 
 #define INVALID_CELL -1
 
-struct Board_info{
+struct Board_info {
     Board board;
     uint_fast8_t player;
     std::vector<Board> boards;
     std::vector<int> players;
     int ply_vec;
 
-    void reset(){
+    void reset() {
         board.reset();
         player = BLACK;
         boards.clear();
@@ -30,7 +30,7 @@ struct Board_info{
         ply_vec = 0;
     }
 
-    Board_info copy(){
+    Board_info copy() {
         Board_info res;
         res.board = board.copy();
         res.player = player;
