@@ -30,7 +30,7 @@
 #define CEIL_N_SYMMETRY_PATTERNS 64         // N_SYMMETRY_PATTRENS
 #define N_PATTERN_PARAMS_RAW 573966
 #define N_PATTERN_PARAMS (N_PATTERN_PARAMS_RAW + 1) // +1 for byte bound
-#define FEATURE1_START_IDX (39366 + 1)      // feature1 special case
+#define FEATURE1_START_IDX 39366            // feature1 special case
 #define SIMD_EVAL_MAX_VALUE 4092            // evaluate range [-4092, 4092]
 #define N_SIMD_EVAL_FEATURES_SIMPLE 2
 #define N_SIMD_EVAL_FEATURES_COMP 2
@@ -52,7 +52,7 @@
 */
 #define N_PATTERN_PARAMS_MO_END (236196 + 1) // +1 for byte bound
 #define SIMD_EVAL_MAX_VALUE_MO_END 16380
-#define SHIFT_EVAL_MO_END 49087 // pattern_starts[8]
+#define SHIFT_EVAL_MO_END 101575 // pattern_starts[8]
 
 constexpr Feature_to_coord feature_to_coord[CEIL_N_SYMMETRY_PATTERNS] = {
     // 0 hv2
@@ -260,7 +260,6 @@ inline bool load_eval_file(const char* file, bool show_log) {
     size_t param_idx = 0;
     for (int phase_idx = 0; phase_idx < N_PHASES; ++phase_idx) {
         pattern_arr[phase_idx][0] = 0; // memory bound
-        param_idx += 1;
         std::memcpy(pattern_arr[phase_idx] + 1, &unzipped_params[param_idx], sizeof(short) * N_PATTERN_PARAMS_RAW);
         param_idx += N_PATTERN_PARAMS_RAW;
         std::memcpy(eval_num_arr[phase_idx], &unzipped_params[param_idx], sizeof(short) * MAX_STONE_NUM);
@@ -552,7 +551,7 @@ inline __m256i gather_eval(const int *start_addr, const __m256i idx8) {
 
 inline int calc_pattern(const int phase_idx, Eval_features *features) {
     const int *start_addr = (int*)pattern_arr[phase_idx];
-    const int *start_addr2 = (int*)&pattern_arr[phase_idx][FEATURE1_START_IDX];
+    const int *start_addr2 = (int*)(pattern_arr[phase_idx] + FEATURE1_START_IDX);
     __m256i res256 =                  gather_eval(start_addr, _mm256_cvtepu16_epi32(features->f128[0]));    // hv4 d5
     res256 = _mm256_add_epi32(res256, gather_eval(start_addr, _mm256_cvtepu16_epi32(features->f128[1])));   // hv2 hv3
     res256 = _mm256_add_epi32(res256, gather_eval(start_addr2, _mm256_cvtepu16_epi32(features->f128[2])));   // d8 corner9
