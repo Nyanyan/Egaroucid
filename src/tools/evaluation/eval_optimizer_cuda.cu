@@ -566,7 +566,7 @@ int main(int argc, char* argv[]) {
     std::uniform_int_distribution<int> randint_eval(0, eval_size - 1); // [0, eval_size - 1] (include last)
     uint64_t round_n_loop = 0, round_n_updated = 0, round_n_improve = 0;
     uint64_t round_strt = tim();
-    uint64_t round_tl = 200000; // 200s
+    uint64_t round_tl = 60000; // 60s
     while (tim() - round_strt < round_tl && ((double)round_n_improve * 100.0 / round_n_loop > 0.01 || round_n_loop < 100)){ // improve percentage > 1% or loop_count < 100
         int change_idx = randint_eval(engine);
         if (host_eval_arr_roundup[change_idx] != host_eval_arr_rounddown[change_idx]){
