@@ -58,7 +58,7 @@
 */
 #define N_PATTERN_PARAMS_MO_END (236196 + 1) // +1 for byte bound
 #define SIMD_EVAL_MAX_VALUE_MO_END 16380
-#define SHIFT_EVAL_MO_END 101575 // pattern_starts[8]
+#define SHIFT_EVAL_MO_END 101574 // pattern_starts[8] - 1
 
 constexpr Feature_to_coord feature_to_coord[CEIL_N_SYMMETRY_PATTERNS] = {
     // 0 hv2
