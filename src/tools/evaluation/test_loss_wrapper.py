@@ -22,10 +22,22 @@ for _ in range(12):
 for _ in range(12, 61):
     data_nums.append([38])
 '''
-#''' # 7.0 light
+''' # 7.0 light
 N_PHASES = 60
 data_root_dir = './../../../train_data/bin_data/20240622_1_7_0_light/'
 exe = 'test_loss_20240622_1_7_0_light.out'
+eval_file = 'trained/eval.egev'
+data_nums = []
+for _ in range(12):
+    data_nums.append([36])
+for _ in range(12, 61):
+    data_nums.append([38])
+'''
+
+#''' # 7.4
+N_PHASES = 60
+data_root_dir = './../../../train_data/bin_data/20240925_1/'
+exe = 'test_loss_20240925_1_7_4.out'
 eval_file = 'trained/eval.egev'
 data_nums = []
 for _ in range(12):
