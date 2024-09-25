@@ -19,8 +19,8 @@
 #include "util.hpp"
 #include "evaluate_common.hpp"
 
-#define EVAL_IDX_START_MOVE_ORDERING_END 30
-#define EVAL_IDX_END_MOVE_ORDERING_END 46
+#define EVAL_IDX_START_MOVE_ORDERING_END 32
+#define EVAL_IDX_END_MOVE_ORDERING_END 48
 #define EVAL_FEATURE_START_MOVE_ORDERING_END 8
 #define MAX_CELL_PATTERNS_MOVE_ORDERING_END 6
 
@@ -351,6 +351,7 @@ inline bool load_eval_file(const char* file, bool show_log) {
         std::memcpy(eval_sur0_sur1_arr[phase_idx], &unzipped_params[param_idx], sizeof(short) * MAX_SURROUND * MAX_SURROUND);
         param_idx += MAX_SURROUND * MAX_SURROUND;
     }
+    std::cerr << param_idx << std::endl;
     if (thread_pool.size() >= 2) {
         std::future<void> tasks[N_PHASES * N_PATTERNS];
         int i = 0;

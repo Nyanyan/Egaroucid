@@ -37,6 +37,12 @@
 #define N_SIMD_EVAL_FEATURE_CELLS 16
 #define N_SIMD_EVAL_FEATURE_GROUP 4
 
+// number of cells included in the group
+#define MAX_N_CELLS_GROUP0 9
+#define MAX_N_CELLS_GROUP1 10
+#define MAX_N_CELLS_GROUP2 10
+#define MAX_N_CELLS_GROUP3 10
+
 #if USE_LIGHT_EVALUATION
 /*
     @brief evaluation pattern definition for SIMD light
@@ -367,7 +373,7 @@ inline void pre_calculate_eval_constant() {
         int16_t f2c[16];
         for (int i = 0; i < N_SIMD_EVAL_FEATURES; ++i) {
             for (int j = 0; j < MAX_PATTERN_CELLS - 1; ++j) {
-                for (int k = 0; k < 16; ++k){
+                for (int k = 0; k < 16; ++k) {
                     f2c[k] = (j < feature_to_coord[i * 16 + k].n_cells - 1) ? 3 : 1;
                 }
                 feature_to_coord_simd_mul[i][j] = _mm256_set_epi16(
@@ -432,8 +438,9 @@ inline void pre_calculate_eval_constant() {
                 for (int cell = 0; cell < N_SIMD_EVAL_FEATURE_CELLS; ++cell) {
                     if (1 & (bits >> cell)) {
                         int global_cell = group * N_SIMD_EVAL_FEATURE_CELLS + cell;
-                        for (int i = 0; i < coord_to_feature[global_cell].n_features; ++i)
+                        for (int i = 0; i < coord_to_feature[global_cell].n_features; ++i) {
                             c2f[coord_to_feature[global_cell].features[i].feature] += coord_to_feature[global_cell].features[i].x;
+                        }
                     }
                 }
                 for (int simd_feature_idx = 0; simd_feature_idx < N_SIMD_EVAL_FEATURES; ++simd_feature_idx) {
@@ -551,11 +558,11 @@ inline __m256i gather_eval(const int *start_addr, const __m256i idx8) {
 
 inline int calc_pattern(const int phase_idx, Eval_features *features) {
     const int *start_addr = (int*)pattern_arr[phase_idx];
-    const int *start_addr2 = (int*)(pattern_arr[phase_idx] + FEATURE1_START_IDX);
-    __m256i res256 =                  gather_eval(start_addr, _mm256_cvtepu16_epi32(features->f128[0]));    // hv4 d5
+    const int *start_addr2 = (int*)&pattern_arr[phase_idx][FEATURE1_START_IDX];
+    __m256i res256 =                  gather_eval(start_addr, _mm256_cvtepu16_epi32(features->f128[0]));    // hv4 corner9
     res256 = _mm256_add_epi32(res256, gather_eval(start_addr, _mm256_cvtepu16_epi32(features->f128[1])));   // hv2 hv3
-    res256 = _mm256_add_epi32(res256, gather_eval(start_addr2, _mm256_cvtepu16_epi32(features->f128[2])));   // d8 corner9
-    res256 = _mm256_add_epi32(res256, gather_eval(start_addr2, _mm256_cvtepu16_epi32(features->f128[3])));   // d6 d7
+    res256 = _mm256_add_epi32(res256, gather_eval(start_addr2, _mm256_cvtepu16_epi32(features->f128[2])));  // d7 d8+2C
+    res256 = _mm256_add_epi32(res256, gather_eval(start_addr2, _mm256_cvtepu16_epi32(features->f128[3])));  // d5 d6
     res256 = _mm256_add_epi32(res256, gather_eval(start_addr, calc_idx8_comp(features->f128[4], 0)));       // corner+block cross
     res256 = _mm256_add_epi32(res256, gather_eval(start_addr, calc_idx8_comp(features->f128[5], 1)));       // edge+2X triangle
     res256 = _mm256_add_epi32(res256, gather_eval(start_addr, calc_idx8_comp(features->f128[6], 2)));       // fish kite
@@ -701,10 +708,10 @@ inline void calc_eval_features(Board *board, Eval_search *eval) {
     int b_arr_int[HW2 + 1];
     board->translate_to_arr_player_rev(b_arr_int);
     b_arr_int[COORD_NO] = 0;
-    calc_feature_vector(eval->features[0].f256[0], b_arr_int, 0, 7);
-    calc_feature_vector(eval->features[0].f256[1], b_arr_int, 1, 8);
-    calc_feature_vector(eval->features[0].f256[2], b_arr_int, 2, 9);
-    calc_feature_vector(eval->features[0].f256[3], b_arr_int, 3, 9);
+    calc_feature_vector(eval->features[0].f256[0], b_arr_int, 0, MAX_N_CELLS_GROUP0 - 1);
+    calc_feature_vector(eval->features[0].f256[1], b_arr_int, 1, MAX_N_CELLS_GROUP1 - 1);
+    calc_feature_vector(eval->features[0].f256[2], b_arr_int, 2, MAX_N_CELLS_GROUP2 - 1);
+    calc_feature_vector(eval->features[0].f256[3], b_arr_int, 3, MAX_N_CELLS_GROUP3 - 1);
     eval->feature_idx = 0;
     eval->features[eval->feature_idx].f256[0] = _mm256_add_epi16(eval->features[eval->feature_idx].f256[0], eval_simd_offsets_simple[0]); // global index
     eval->features[eval->feature_idx].f256[1] = _mm256_add_epi16(eval->features[eval->feature_idx].f256[1], eval_simd_offsets_simple[1]); // global index
