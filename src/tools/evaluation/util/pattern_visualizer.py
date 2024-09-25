@@ -14,6 +14,8 @@ while True:
     s = s.replace(' ', '')
     print(s)
     if s == '':
+        continue
+    if s == 'quit':
         break
     coords = s.split(',')
     plt.figure(figsize=(8, 8))
