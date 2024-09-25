@@ -132,7 +132,7 @@ public:
             double n_percent = std::max(0.0, std::min(1.0, (double)(Cursor::Pos().y - dragged_y_offset - sy) / std::max(1, (height - rect_height))));
             strt_idx_double = n_percent * (double)max_strt_idx;
         }
-        if (frame_rect.leftClicked()) {
+        if (frame_rect.leftClicked() && !rect.leftClicked()) {
             double n_percent = std::max(0.0, std::min(1.0, (double)(Cursor::Pos().y - rect.h / 2 - sy) / std::max(1, (height - rect_height))));
             strt_idx_double = n_percent * (double)max_strt_idx;
             dragged = true;
@@ -228,7 +228,7 @@ public:
             double n_percent = std::max(0.0, std::min(1.0, (double)(Cursor::Pos().x - dragged_x_offset - sx) / std::max(1, (width - rect_width))));
             strt_idx_double = n_percent * (double)max_strt_idx;
         }
-        if (frame_rect.leftClicked()) {
+        if (frame_rect.leftClicked() && !rect.leftClicked()) {
             double n_percent = std::max(0.0, std::min(1.0, (double)(Cursor::Pos().x - rect.x / 2 - sx) / std::max(1, (width - rect_width))));
             strt_idx_double = n_percent * (double)max_strt_idx;
             dragged = true;
