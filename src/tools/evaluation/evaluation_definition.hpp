@@ -15,4 +15,5 @@
 //#include "evaluation_definition_20240419_1_cell_weight.hpp"
 //#include "evaluation_definition_20240525_1_7_1.hpp"
 //#include "evaluation_definition_20240611_1_move_ordering_end.hpp"
-#include "evaluation_definition_20240622_1_7_0_light.hpp"
+//#include "evaluation_definition_20240622_1_7_0_light.hpp"
+#include "evaluation_definition_20240925_1_7_4.hpp"
