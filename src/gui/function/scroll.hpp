@@ -229,7 +229,7 @@ public:
             strt_idx_double = n_percent * (double)max_strt_idx;
         }
         if (frame_rect.leftClicked() && !rect.leftClicked()) {
-            double n_percent = std::max(0.0, std::min(1.0, (double)(Cursor::Pos().x - rect.x / 2 - sx) / std::max(1, (width - rect_width))));
+            double n_percent = std::max(0.0, std::min(1.0, (double)(Cursor::Pos().x - rect.w / 2 - sx) / std::max(1, (width - rect_width))));
             strt_idx_double = n_percent * (double)max_strt_idx;
             dragged = true;
             int rect_x = sx + round(n_percent * (double)(width - rect_width));
