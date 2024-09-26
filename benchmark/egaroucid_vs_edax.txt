@@ -861,5 +861,5 @@ level: 21 Egaroucid plays black WDL: 47-25-28 0.595 Egaroucid plays white WDL: 3
 level: 1 Egaroucid plays black WDL: 629-29-342 0.6435 Egaroucid plays white WDL: 644-18-338 0.653 Egaroucid win rate: 0.64825
 level: 5 Egaroucid plays black WDL: 672-55-273 0.6995 Egaroucid plays white WDL: 663-45-292 0.6855 Egaroucid win rate: 0.6925
 level: 10 Egaroucid plays black WDL: 610-108-282 0.664 Egaroucid plays white WDL: 454-118-428 0.513 Egaroucid win rate: 0.5885
-level: 15 Egaroucid plays black WDL: 134-50-66 0.636 Egaroucid plays white WDL: 114-52-84 0.56 Egaroucid win rate: 0.598 
-level: 21 Egaroucid plays black WDL: 53-20-27 0.63 Egaroucid plays white WDL: 25-32-43 0.41 Egaroucid win rate: 0.52
+level: 15 Egaroucid plays black WDL: 130-50-70 0.62 Egaroucid plays white WDL: 115-54-81 0.568 Egaroucid win rate: 0.594
+level: 21 Egaroucid plays black WDL: 59-15-26 0.665 Egaroucid plays white WDL: 25-28-47 0.39 Egaroucid win rate: 0.5275
