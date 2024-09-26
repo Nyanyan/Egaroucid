@@ -5,7 +5,7 @@ from random import shuffle
 
 with open('problem/xot_small_shuffled.txt', 'r') as f:
     tactic = [elem for elem in f.read().splitlines()]
-print(len(tactic), 'openings found')
+print(len(tactic), 'openings found', file=sys.stderr)
 
 level = int(sys.argv[1])
 n_games = int(sys.argv[2])
@@ -14,10 +14,10 @@ file = None
 cmd = 'versions/Egaroucid_for_Console_beta/Egaroucid_for_console.exe -quiet -nobook -level ' + str(level)
 if len(sys.argv) == 4:
     file = sys.argv[3]
-    print('egaroucid eval ', file)
+    print('egaroucid eval ', file, file=sys.stderr)
     cmd += ' -eval ' + file
 
-print(cmd)
+print(cmd, file=sys.stderr)
 egaroucid = [
     subprocess.Popen(cmd.split(), stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL),
     subprocess.Popen(cmd.split(), stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
@@ -26,12 +26,12 @@ egaroucid_win = [0, 0]
 edax_win = [0, 0]
 draw = [0, 0]
 
-print('level', level)
-print('openings', len(tactic))
+print('level', level, file=sys.stderr)
+print('openings', len(tactic), file=sys.stderr)
 
 max_num = min(len(tactic), n_games)
 smpl = range(len(tactic))
-print('play', max_num, 'games')
+print('play', max_num, 'games', file=sys.stderr)
 
 edax = [
     subprocess.Popen(('versions/edax_4_4/edax-4.4 -q -level ' + str(level)).split(), stdin=subprocess.PIPE, stdout=subprocess.PIPE),
@@ -131,9 +131,9 @@ for num in range(max_num):
             edax_win[player] += 1
             #print(record)
         print('\r', num, max_num, ' ', egaroucid_win, draw, edax_win, sum(egaroucid_win) + sum(draw) * 0.5, sum(edax_win) + sum(draw) * 0.5, 
-              (sum(egaroucid_win) + sum(draw) * 0.5) / max(1, sum(egaroucid_win) + sum(edax_win) + sum(draw)), end='                ')
+              (sum(egaroucid_win) + sum(draw) * 0.5) / max(1, sum(egaroucid_win) + sum(edax_win) + sum(draw)), end='                ', file=sys.stderr)
 
-print('')
+print('', file=sys.stderr)
 
 print('level: ', level, 
       ' Egaroucid plays black WDL: ', egaroucid_win[0], '-', draw[0], '-', edax_win[0], ' ', (egaroucid_win[0] + draw[0] * 0.5) / (egaroucid_win[0] + edax_win[0] + draw[0]), 
