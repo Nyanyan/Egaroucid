@@ -13,6 +13,7 @@
     -DHAS_NO_AVX2       : no AVX2
     -DHAS_ARM_PROCESSOR : ARM Processor
     -DHAS_32_BIT_OS     : 32bit environment
+    -DHAS_AMD_PROCESSOR : Optimization for AMD CPU
 */
 
 /*

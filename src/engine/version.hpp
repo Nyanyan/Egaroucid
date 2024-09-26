@@ -38,9 +38,17 @@
     #endif
 #else
     #if USE_64_BIT
-        #define EGAROUCID_CPU (std::string)"x64"
+        #if USE_AMD
+            #define EGAROUCID_CPU (std::string)"x64 (AMD)"
+        #else
+            #define EGAROUCID_CPU (std::string)"x64"
+        #endif
     #else
-        #define EGAROUCID_CPU (std::string)"x86"
+        #if USE_AMD
+            #define EGAROUCID_CPU (std::string)"x86 (AMD)"
+        #else
+            #define EGAROUCID_CPU (std::string)"x86"
+        #endif
     #endif
 #endif
 
