@@ -160,7 +160,9 @@ void mm256_print_epu16(__m256i v) {
     inline int pop_count_uint(uint32_t x) {
         x = (x & 0x55555555) + ((x & 0xAAAAAAAA) >> 1);
         x = (x & 0x33333333) + ((x & 0xCCCCCCCC) >> 2);
-        return (x & 0x0F0F0F0F) + ((x & 0xF0F0F0F0) >> 4);
+        x = (x & 0x0F0F0F0F) + ((x & 0xF0F0F0F0) >> 4);
+        x = (x & 0x00FF00FF) + ((x & 0xFF00FF00) >> 8);
+        return (x & 0x0000FFFF) + ((x & 0xFFFF0000) >> 16);
     }
 
     inline int pop_count_uchar(uint8_t x) {
