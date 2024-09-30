@@ -4,18 +4,18 @@ import subprocess
 # Core i9-13900K
 tasks = [ # is_egaroucid, start, end, n_threads, hash_level, exe, CPU, revision, file
     #40-59
-    #[True,  40, 59, 42, 25, 'versions/Egaroucid_for_Console_beta/Egaroucid_for_Console_x64_SIMD.exe',       'Core_i9-13900K', 'x64_SIMD',       '000_ffo40_59_Core_i9-13900K_x64_SIMD.txt'],
-    #[True,  40, 59, 42, 25, 'versions/Egaroucid_for_Console_beta/Egaroucid_for_Console_x64_Generic.exe',    'Core_i9-13900K', 'x64_Generic',    '001_ffo40_59_Core_i9-13900K_x64_Generic.txt'],
-    #[True,  40, 59, 42, 25, 'versions/Egaroucid_for_Console_beta/Egaroucid_for_Console_x86_Generic.exe',    'Core_i9-13900K', 'x86_Generic',    '002_ffo40_59_Core_i9-13900K_x86_Generic.txt'],
+    [True,  40, 59, 42, 25, 'versions/Egaroucid_for_Console_beta/Egaroucid_for_Console_x64_SIMD.exe',       'Core_i9-13900K', 'x64_SIMD',       '000_ffo40_59_Core_i9-13900K_x64_SIMD.txt'],
+    [True,  40, 59, 42, 25, 'versions/Egaroucid_for_Console_beta/Egaroucid_for_Console_x64_Generic.exe',    'Core_i9-13900K', 'x64_Generic',    '001_ffo40_59_Core_i9-13900K_x64_Generic.txt'],
+    [True,  40, 59, 42, 25, 'versions/Egaroucid_for_Console_beta/Egaroucid_for_Console_x86_Generic.exe',    'Core_i9-13900K', 'x86_Generic',    '002_ffo40_59_Core_i9-13900K_x86_Generic.txt'],
 
-    #[False, 40, 59, 32, 25, 'versions/edax_4_5_2/wEdax-x64-modern.exe',                                     'Core_i9-13900K', 'x64_modern',     '010_ffo40_59_Core_i9-13900K_edax_x64_modern.txt'],
-    #[False, 40, 59, 32, 25, 'versions/edax_4_5_2/wEdax-x64.exe',                                            'Core_i9-13900K', 'x64',            '011_ffo40_59_Core_i9-13900K_edax_x64.txt'],
-    #[False, 40, 59, 32, 25, 'versions/edax_4_5_2/wEdax-x86.exe',                                            'Core_i9-13900K', 'x86',            '012_ffo40_59_Core_i9-13900K_edax_x86.txt'],
+    [False, 40, 59, 32, 25, 'versions/edax_4_5_2/wEdax-x64-modern.exe',                                     'Core_i9-13900K', 'x64_modern',     '010_ffo40_59_Core_i9-13900K_edax_x64_modern.txt'],
+    [False, 40, 59, 32, 25, 'versions/edax_4_5_2/wEdax-x64.exe',                                            'Core_i9-13900K', 'x64',            '011_ffo40_59_Core_i9-13900K_edax_x64.txt'],
+    [False, 40, 59, 32, 25, 'versions/edax_4_5_2/wEdax-x86.exe',                                            'Core_i9-13900K', 'x86',            '012_ffo40_59_Core_i9-13900K_edax_x86.txt'],
 
     #60-79
-    [True,  60, 79, 42, 27, 'versions/Egaroucid_for_Console_beta/Egaroucid_for_Console_x64_SIMD.exe',      'Core_i9-13900K', 'x64_SIMD',       '020_ffo60_79_Core_i9-13900K_x64_SIMD.txt'],
+    #[True,  60, 79, 42, 27, 'versions/Egaroucid_for_Console_beta/Egaroucid_for_Console_x64_SIMD.exe',      'Core_i9-13900K', 'x64_SIMD',       '020_ffo60_79_Core_i9-13900K_x64_SIMD.txt'],
 
-    [False, 60, 79, 32, 27, 'versions/edax_4_5_2/wEdax-x64-modern.exe',                                    'Core_i9-13900K', 'x64_modern',     '030_ffo60_79_Core_i9-13900K_edax_x64_modern.txt'],
+    #[False, 60, 79, 32, 27, 'versions/edax_4_5_2/wEdax-x64-modern.exe',                                    'Core_i9-13900K', 'x64_modern',     '030_ffo60_79_Core_i9-13900K_edax_x64_modern.txt'],
 ]
 #'''
 
