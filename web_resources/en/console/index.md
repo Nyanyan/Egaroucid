@@ -75,6 +75,10 @@ You can add additional options in <code>[options]</code>. Available options are:
         <td>-DHAS_ARM_PROCESSOR=ON</td>
     </tr>
     <tr>
+        <td>Optimization for AMD processors</td>
+        <td>-DHAS_AMD_PROCESSOR=ON</td>
+    </tr>
+    <tr>
         <td>Use 32-bit environment</td>
         <td>-DHAS_32_BIT_OS=ON</td>
     </tr>
@@ -83,6 +87,7 @@ You can add additional options in <code>[options]</code>. Available options are:
         <td>-DHAS_AVX512=ON</td>
     </tr>
     </table></div>
+
 
 
 
@@ -153,6 +158,10 @@ You can add additional options in <code>[options]</code>. Available options are:
         <td>-DHAS_ARM_PROCESSOR</td>
     </tr>
     <tr>
+        <td>Optimization for AMD processors</td>
+        <td>-DHAS_AMD_PROCESSOR</td>
+    </tr>
+    <tr>
         <td>Use 32-bit environment</td>
         <td>-DHAS_32_BIT_OS</td>
     </tr>
@@ -161,6 +170,7 @@ You can add additional options in <code>[options]</code>. Available options are:
         <td>-DHAS_AVX512</td>
     </tr>
     </table></div>
+
 
 
 

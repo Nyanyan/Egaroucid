@@ -75,6 +75,10 @@ CONSOLE_SOURCE_TABLE_HERE
         <td>-DHAS_ARM_PROCESSOR=ON</td>
     </tr>
     <tr>
+        <td>AMD製のプロセッサで動かす場合の高速化オプション</td>
+        <td>-DHAS_AMD_PROCESSOR=ON</td>
+    </tr>
+    <tr>
         <td>32bit環境で動かす場合</td>
         <td>-DHAS_32_BIT_OS=ON</td>
     </tr>
@@ -83,6 +87,7 @@ CONSOLE_SOURCE_TABLE_HERE
         <td>-DHAS_AVX512=ON</td>
     </tr>
     </table></div>
+
 
 
 
@@ -151,6 +156,10 @@ CONSOLE_SOURCE_TABLE_HERE
         <td>-DHAS_ARM_PROCESSOR</td>
     </tr>
     <tr>
+        <td>AMD製のプロセッサで動かす場合の高速化オプション</td>
+        <td>-DHAS_AMD_PROCESSOR</td>
+    </tr>
+    <tr>
         <td>32bit環境で動かす場合</td>
         <td>-DHAS_32_BIT_OS</td>
     </tr>
@@ -159,6 +168,7 @@ CONSOLE_SOURCE_TABLE_HERE
         <td>-DHAS_AVX512</td>
     </tr>
     </table></div>
+
 
 
 
