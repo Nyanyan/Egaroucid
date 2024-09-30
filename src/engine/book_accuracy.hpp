@@ -99,7 +99,7 @@ class Book_accuracy {
             for (Book_value &link: links)
                 best_score = std::max(best_score, link.value);
             bool is_end = true;
-            int identifier = 0;
+            uint32_t identifier = 0;
             Flip flip;
             int accept_loss = 1;
             if (is_high_level) {
@@ -160,7 +160,7 @@ class Book_accuracy {
                 else // D-F found -> RES = D
                     res = BOOK_ACCURACY_LEVEL_D;
             } else{ // D-F found (A-C not found)
-                int lsb = (identifier >> 3); // bit: FED
+                uint32_t lsb = (identifier >> 3); // bit: FED
                 lsb = pop_count_uint(~lsb & (lsb - 1)); // least bit is D: 0 E: 1 F: 2
                 res = BOOK_ACCURACY_LEVEL_D + lsb; // best accuracy level
             }
