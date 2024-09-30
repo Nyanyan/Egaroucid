@@ -129,9 +129,9 @@ Then compile it with <code>g++</code> or <code>clang</code>command. You can chan
 
 
 
-<code>$ g++ -O2 ./src/Egaroucid_console.cpp -o ./bin/Egaroucid_for_Console.out -mtune=native -march=native -mfpmath=both -pthread -std=c++17 [options]</code>
+<code>$ g++ -O2 ./src/Egaroucid_console.cpp -o ./bin/Egaroucid_for_Console.out -mtune=native -march=native -mfpmath=both -pthread -std=c++20 [options]</code>
 
-<code>$ clang++ -O2 ./src/Egaroucid_console.cpp -o ./bin/Egaroucid_for_Console.out -mtune=native -march=native -pthread -std=c++17    [options]</code>
+<code>$ clang++ -O2 ./src/Egaroucid_console.cpp -o ./bin/Egaroucid_for_Console.out -mtune=native -march=native -pthread -std=c++20 [options]</code>
 
 
 
