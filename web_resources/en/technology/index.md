@@ -39,7 +39,7 @@ There are some graphs of results of The FFO endgame test suite on Core i9 13900K
     <img class="pic2" src="img/ffo_node.png">
     <img class="pic2" src="img/ffo_nps.png">
 </div>
-
+You can see that Egaroucid 7.4.0 takes longer time than 7.3.0. This is because of Intel microcode 0x129. In 7.3.0 measurement, 0x129 was not included, but in 7.4.0, 0x129 was included.
 
 ### Battles with XOT
 
