@@ -97,6 +97,11 @@ void print_board(uint64_t p, uint64_t o) {
 
     @param x                    an integer
 */
+#define	pop_count_ull(x) std::popcount(x)
+#define pop_count_uint(x) std::popcount(x)
+#define pop_count_uchar(x) std::popcount(x)
+
+/*
 inline int pop_count_ull(uint64_t x) {
     x = x - ((x >> 1) & 0x5555555555555555ULL);
     x = (x & 0x3333333333333333ULL) + ((x >> 2) & 0x3333333333333333ULL);
@@ -118,6 +123,7 @@ inline int pop_count_uchar(uint8_t x) {
     x = (x & 0b00110011) + ((x & 0b11001100) >> 2);
     return (x & 0b00001111) + ((x & 0b11110000) >> 4);
 }
+*/
 
 /*
     @brief extract a digit of an integer

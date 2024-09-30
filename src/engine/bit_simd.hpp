@@ -137,6 +137,10 @@ void mm256_print_epu16(__m256i v) {
 
     @param x                    an integer
 */
+#define	pop_count_ull(x) std::popcount(x)
+#define pop_count_uint(x) std::popcount(x)
+#define pop_count_uchar(x) std::popcount(x)
+/*
 #if USE_BUILTIN_POPCOUNT
     #ifdef __GNUC__
         #define	pop_count_ull(x) (int)__builtin_popcountll(x)
@@ -172,6 +176,7 @@ void mm256_print_epu16(__m256i v) {
     }
 
 #endif
+*/
 
 /*
     @brief extract a digit of an integer
