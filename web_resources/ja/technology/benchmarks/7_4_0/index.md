@@ -12,17 +12,41 @@ Egaroucidの結果は以下の通りです。
 
 <div class="table_wrapper">
 <table>
-<tr><td>TABLE</td></tr>
+<tr>
+<th>CPU</th><th>版</th><th>時間(秒)</th><th>ノード数</th><th>NPS</th><th>ファイル</th>
+</tr>
+<tr>
+<td>Core i9-13900K</td><td>x64_SIMD</td><td>23.965</td><td>19280200483</td><td>804514937</td><td><a href="./files/000_ffo40_59_Core_i9-13900K_x64_SIMD.txt">000_ffo40_59_Core_i9-13900K_x64_SIMD.txt</a></td>
+</tr>
+<tr>
+<td>Core i9-13900K</td><td>x64_Generic</td><td>36.944</td><td>18881840820</td><td>511093569</td><td><a href="./files/001_ffo40_59_Core_i9-13900K_x64_Generic.txt">001_ffo40_59_Core_i9-13900K_x64_Generic.txt</a></td>
+</tr>
+<tr>
+<td>Core i9-13900K</td><td>x86_Generic</td><td>92.242</td><td>19458620997</td><td>210951854</td><td><a href="./files/002_ffo40_59_Core_i9-13900K_x86_Generic.txt">002_ffo40_59_Core_i9-13900K_x86_Generic.txt</a></td>
+</tr>
 </table>
 </div>
+
 
 比較として、オープンソースで最速クラスのオセロAI [Edax 4.5.2](https://github.com/okuhara/edax-reversi-AVX/releases/tag/v4.5.2)の結果も掲載します。
 
 <div class="table_wrapper">
 <table>
-<tr><td>TABLE</td></tr>
+<tr>
+<th>CPU</th><th>版</th><th>時間(秒)</th><th>ノード数</th><th>NPS</th><th>ファイル</th>
+</tr>
+<tr>
+<td>Core i9-13900K</td><td>x64_modern</td><td>24.908</td><td>27698822259</td><td>1112045217</td><td><a href="./files/010_ffo40_59_Core_i9-13900K_edax_x64_modern.txt">010_ffo40_59_Core_i9-13900K_edax_x64_modern.txt</a></td>
+</tr>
+<tr>
+<td>Core i9-13900K</td><td>x64</td><td>29.469</td><td>27561483343</td><td>935270397</td><td><a href="./files/011_ffo40_59_Core_i9-13900K_edax_x64.txt">011_ffo40_59_Core_i9-13900K_edax_x64.txt</a></td>
+</tr>
+<tr>
+<td>Core i9-13900K</td><td>x86</td><td>45.156</td><td>28511338646</td><td>631396462</td><td><a href="./files/012_ffo40_59_Core_i9-13900K_edax_x86.txt">012_ffo40_59_Core_i9-13900K_edax_x86.txt</a></td>
+</tr>
 </table>
 </div>
+
 
 ### Core i9-11900K
 
@@ -32,17 +56,47 @@ Egaroucidの結果は以下の通りです。
 
 <div class="table_wrapper">
 <table>
-<tr><td>TABLE</td></tr>
+<tr>
+<th>CPU</th><th>版</th><th>時間(秒)</th><th>ノード数</th><th>NPS</th><th>ファイル</th>
+</tr>
+<tr>
+<td>Core i9-11900K</td><td>x64_AVX512</td><td>44.232</td><td>17098579900</td><td>386565832</td><td><a href="./files/100_ffo40_59_Core_i9-11900K_x64_AVX512.txt">100_ffo40_59_Core_i9-11900K_x64_AVX512.txt</a></td>
+</tr>
+<tr>
+<td>Core i9-11900K</td><td>x64_SIMD</td><td>48.614</td><td>18373521423</td><td>377947122</td><td><a href="./files/101_ffo40_59_Core_i9-11900K_x64_SIMD.txt">101_ffo40_59_Core_i9-11900K_x64_SIMD.txt</a></td>
+</tr>
+<tr>
+<td>Core i9-11900K</td><td>x64_Generic</td><td>90.339</td><td>18611218041</td><td>206015320</td><td><a href="./files/102_ffo40_59_Core_i9-11900K_x64_Generic.txt">102_ffo40_59_Core_i9-11900K_x64_Generic.txt</a></td>
+</tr>
+<tr>
+<td>Core i9-11900K</td><td>x86_Generic</td><td>242.571</td><td>18802482708</td><td>77513316</td><td><a href="./files/103_ffo40_59_Core_i9-11900K_x86_Generic.txt">103_ffo40_59_Core_i9-11900K_x86_Generic.txt</a></td>
+</tr>
 </table>
 </div>
+
 
 [Edax 4.5.2](https://github.com/okuhara/edax-reversi-AVX/releases/tag/v4.5.2)の結果は以下の通りです。
 
 <div class="table_wrapper">
 <table>
-<tr><td>TABLE</td></tr>
+<tr>
+<th>CPU</th><th>版</th><th>時間(秒)</th><th>ノード数</th><th>NPS</th><th>ファイル</th>
+</tr>
+<tr>
+<td>Core i9-11900K</td><td>x64_avx512</td><td>46.642</td><td>27072480526</td><td>580431382</td><td><a href="./files/110_ffo40_59_Core_i9-11900K_edax_x64_avx512.txt">110_ffo40_59_Core_i9-11900K_edax_x64_avx512.txt</a></td>
+</tr>
+<tr>
+<td>Core i9-11900K</td><td>x64_modern</td><td>46.561</td><td>27575952822</td><td>592254308</td><td><a href="./files/111_ffo40_59_Core_i9-11900K_edax_x64_modern.txt">111_ffo40_59_Core_i9-11900K_edax_x64_modern.txt</a></td>
+</tr>
+<tr>
+<td>Core i9-11900K</td><td>x64</td><td>56.86</td><td>26635810350</td><td>468445486</td><td><a href="./files/112_ffo40_59_Core_i9-11900K_edax_x64.txt">112_ffo40_59_Core_i9-11900K_edax_x64.txt</a></td>
+</tr>
+<tr>
+<td>Core i9-11900K</td><td>x86</td><td>91.764</td><td>26989485812</td><td>294118454</td><td><a href="./files/113_ffo40_59_Core_i9-11900K_edax_x86.txt">113_ffo40_59_Core_i9-11900K_edax_x86.txt</a></td>
+</tr>
 </table>
 </div>
+
 
 
 
@@ -69,6 +123,5 @@ Egaroucid勝率が0.5を上回っていればEgaroucidがEdaxに勝ち越して�
 <tr><td>15</td><td>245(黒: 130 白: 115)</td><td>104(黒: 50 白: 54)</td><td>151(黒: 70 白: 81)</td><td>0.594</td></tr>
 <tr><td>21</td><td>84(黒: 59 白: 25)</td><td>43(黒: 15 白: 28)</td><td>73(黒: 26 白: 47)</td><td>0.527</td></tr>
 </table></div>
-
 
 
