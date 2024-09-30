@@ -27,6 +27,12 @@ if (HAS_32_BIT_OS)
     add_compile_options(-DHAS_32_BIT_OS)
 endif(HAS_32_BIT_OS)
 
+# AMD Optimization
+option(HAS_AMD_PROCESSOR "turn on AMD Optimization" OFF)
+if (HAS_AMD_PROCESSOR)
+    add_compile_options(-DHAS_AMD_PROCESSOR)
+endif(HAS_AMD_PROCESSOR)
+
 #Executable
 set(EXECUTABLE_OUTPUT_PATH ${CMAKE_CURRENT_SOURCE_DIR}/bin)
 add_executable(Egaroucid_for_Console.out ./src/Egaroucid_console.cpp)
