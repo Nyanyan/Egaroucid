@@ -19,13 +19,14 @@ Egaroucidの結果は以下の通りです。
 <td>Core i9-13900K</td><td>x64_SIMD</td><td>23.965</td><td>19280200483</td><td>804514937</td><td><a href="./files/000_ffo40_59_Core_i9-13900K_x64_SIMD.txt">000_ffo40_59_Core_i9-13900K_x64_SIMD.txt</a></td>
 </tr>
 <tr>
-<td>Core i9-13900K</td><td>x64_Generic</td><td>36.944</td><td>18881840820</td><td>511093569</td><td><a href="./files/001_ffo40_59_Core_i9-13900K_x64_Generic.txt">001_ffo40_59_Core_i9-13900K_x64_Generic.txt</a></td>
+<td>Core i9-13900K</td><td>x64_Generic</td><td>35.053</td><td>18750846644</td><td>534928441</td><td><a href="./files/001_ffo40_59_Core_i9-13900K_x64_Generic.txt">001_ffo40_59_Core_i9-13900K_x64_Generic.txt</a></td>
 </tr>
 <tr>
-<td>Core i9-13900K</td><td>x86_Generic</td><td>92.242</td><td>19458620997</td><td>210951854</td><td><a href="./files/002_ffo40_59_Core_i9-13900K_x86_Generic.txt">002_ffo40_59_Core_i9-13900K_x86_Generic.txt</a></td>
+<td>Core i9-13900K</td><td>x86_Generic</td><td>88.496</td><td>19057983884</td><td>215354184</td><td><a href="./files/002_ffo40_59_Core_i9-13900K_x86_Generic.txt">002_ffo40_59_Core_i9-13900K_x86_Generic.txt</a></td>
 </tr>
 </table>
 </div>
+
 
 
 比較として、オープンソースで最速クラスのオセロAI [Edax 4.5.2](https://github.com/okuhara/edax-reversi-AVX/releases/tag/v4.5.2)の結果も掲載します。
@@ -66,10 +67,10 @@ Egaroucidの結果は以下の通りです。
 <td>Core i9-11900K</td><td>x64_SIMD</td><td>48.614</td><td>18373521423</td><td>377947122</td><td><a href="./files/101_ffo40_59_Core_i9-11900K_x64_SIMD.txt">101_ffo40_59_Core_i9-11900K_x64_SIMD.txt</a></td>
 </tr>
 <tr>
-<td>Core i9-11900K</td><td>x64_Generic</td><td>90.339</td><td>18611218041</td><td>206015320</td><td><a href="./files/102_ffo40_59_Core_i9-11900K_x64_Generic.txt">102_ffo40_59_Core_i9-11900K_x64_Generic.txt</a></td>
+<td>Core i9-11900K</td><td>x64_Generic</td><td>85.018</td><td>17451101371</td><td>205263607</td><td><a href="./files/102_ffo40_59_Core_i9-11900K_x64_Generic.txt">102_ffo40_59_Core_i9-11900K_x64_Generic.txt</a></td>
 </tr>
 <tr>
-<td>Core i9-11900K</td><td>x86_Generic</td><td>242.571</td><td>18802482708</td><td>77513316</td><td><a href="./files/103_ffo40_59_Core_i9-11900K_x86_Generic.txt">103_ffo40_59_Core_i9-11900K_x86_Generic.txt</a></td>
+<td>Core i9-11900K</td><td>x86_Generic</td><td>238.965</td><td>18184845840</td><td>76098365</td><td><a href="./files/103_ffo40_59_Core_i9-11900K_x86_Generic.txt">103_ffo40_59_Core_i9-11900K_x86_Generic.txt</a></td>
 </tr>
 </table>
 </div>
