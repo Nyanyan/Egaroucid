@@ -2,12 +2,6 @@
 
 
 
-## Download Transcript
-
-Huge dataset of games played by Egaroucid is available. Please see [Download Transcript](./transcript) page.
-
-
-
 ## Technology Explanation
 
 I wrote [Technology Explanation](https://www.egaroucid.nyanyan.dev/ja/technology/explanation/) only in Japanese. I'm afraid but please translate by yourself.
@@ -70,4 +64,8 @@ There are detailed benchmarks for each version including older versions.
 
 
 
+
+## Download Transcript
+
+Huge dataset of games played by Egaroucid is available. Please see [Download Transcript](./transcript) page.
 
