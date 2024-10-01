@@ -1,27 +1,35 @@
 import pyperclip
 import sys
 
-if sys.argv[1] == 'ja':
-    head = '''<div class="table_wrapper"><table>
-<tr><th>名称</th><th>勝率</th></tr>
-'''
-else:
-    head = '''<div class="table_wrapper"><table>
-<tr><th>Name</th><th>Winning Rate</th></tr>
-'''
 
-res = head
+
+if sys.argv[1] == 'ja':
+    NAME = '名称'
+    WIN_RATE = '勝率'
+else:
+    NAME = 'Name'
+    WIN_RATE = 'Winning Rate'
+
+table = [[], []]
 while True:
     try:
         data = input().split()
         name = data[0]
         winning_rate = data[-1]
-        res += '<tr>'
-        res += '<td>' + name + '</td>'
-        res += '<td>' + winning_rate + '</td>'
-        res += '</tr>\n'
+        table[0].append(name)
+        table[1].append(winning_rate)
     except:
         break
+
+res = '<div class="table_wrapper"><table>\n'
+
+res += '<tr><th>' + NAME + '</th>'
+for elem in table[0]:
+    res += '<td>' + elem + '</td>'
+
+res += '<tr><th>' + WIN_RATE + '</th>'
+for elem in table[1]:
+    res += '<td>' + elem + '</td>'
 
 res += '\n</table></div>'
 
