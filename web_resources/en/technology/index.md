@@ -64,79 +64,9 @@ Egaroucid 6.2.0 is omitted because it has the same evaluation function as 6.3.0.
 There are detailed benchmarks for each version including older versions.
 
 <div class="table_wrapper"><table>
-	<tr>
-		<th>Version</th>
-		<th>Date</th>
-	</tr>
-    <tr>
-		<td><a href="./benchmarks/7_4_0/">7.4.0</a></td>
-		<td>TBD</td>
-	</tr>
-    <tr>
-		<td><a href="./benchmarks/7_3_0/">7.3.0</a></td>
-		<td>2024/08/16</td>
-	</tr>
-    <tr>
-		<td><a href="./benchmarks/7_2_0/">7.2.0</a></td>
-		<td>2024/06/25</td>
-	</tr>
-    <tr>
-		<td><a href="./benchmarks/7_1_0/">7.1.0</a></td>
-		<td>2024/06/06</td>
-	</tr>
-    <tr>
-		<td><a href="./benchmarks/7_0_0/">7.0.0</a></td>
-		<td>2024/04/17</td>
-	</tr>
-    <tr>
-		<td><a href="./benchmarks/6_5_0/">6.5.0</a></td>
-		<td>2023/10/25</td>
-	</tr>
-    <tr>
-		<td><a href="./benchmarks/6_4_0/">6.4.0</a></td>
-		<td>2023/09/01</td>
-	</tr>
-    <tr>
-		<td><a href="./benchmarks/6_3_0/">6.3.0</a></td>
-		<td>2023/07/09</td>
-	</tr>
-    <tr>
-		<td><a href="./benchmarks/6_2_0/">6.2.0</a></td>
-		<td>2023/03/15</td>
-	</tr>
-    <tr>
-		<td><a href="./benchmarks/6_1_0/">6.1.0</a></td>
-		<td>2022/12/23</td>
-	</tr>
-	<tr>
-		<td><a href="./benchmarks/6_0_0/">6.0.0</a></td>
-		<td>2022/10/10</td>
-	</tr>
-    	<tr>
-		<td><a href="./benchmarks/5_10_0/">5.10.0</a></td>
-		<td>2022/06/08</td>
-	</tr>
-    	<tr>
-		<td><a href="./benchmarks/5_9_0/">5.9.0</a></td>
-		<td>2022/06/07</td>
-	</tr>
-    	<tr>
-		<td><a href="./benchmarks/5_8_0/">5.8.0</a></td>
-		<td>2022/05/13</td>
-	</tr>
-    	<tr>
-		<td><a href="./benchmarks/5_7_0/">5.7.0</a></td>
-		<td>2022/03/26</td>
-	</tr>
-    	<tr>
-		<td><a href="./benchmarks/5_5_0/">5.5.0/5.6.0</a></td>
-		<td>2022/03/16</td>
-	</tr>
-    <tr>
-		<td><a href="./benchmarks/5_4_1/">5.4.1</a></td>
-		<td>2022/03/02</td>
-	</tr>
+<tr><th>Version</th><td><a href="./benchmarks/7_4_0/">7.4.0</a></td><td><a href="./benchmarks/7_3_0/">7.3.0</a></td><td><a href="./benchmarks/7_2_0/">7.2.0</a></td><td><a href="./benchmarks/7_1_0/">7.1.0</a></td><td><a href="./benchmarks/7_0_0/">7.0.0</a></td><td><a href="./benchmarks/6_5_0/">6.5.0</a></td><td><a href="./benchmarks/6_4_0/">6.4.0</a></td><td><a href="./benchmarks/6_3_0/">6.3.0</a></td><td><a href="./benchmarks/6_2_0/">6.2.0</a></td><td><a href="./benchmarks/6_1_0/">6.1.0</a></td><td><a href="./benchmarks/6_0_0/">6.0.0</a></td><td><a href="./benchmarks/5_10_0/">5.10.0</a></td><td><a href="./benchmarks/5_9_0/">5.9.0</a></td><td><a href="./benchmarks/5_8_0/">5.8.0</a></td><td><a href="./benchmarks/5_7_0/">5.7.0</a></td><td><a href="./benchmarks/5_5_0/">5.5.0/5.6.0</a></td><td><a href="./benchmarks/5_4_1/">5.4.1</a></td><tr><th>Date</th><td>TBD</td><td>2024/08/16</td><td>2024/06/25</td><td>2024/06/06</td><td>2024/04/17</td><td>2023/10/25</td><td>2023/09/01</td><td>2023/07/09</td><td>2023/03/15</td><td>2022/12/23</td><td>2022/10/10</td><td>2022/06/08</td><td>2022/06/07</td><td>2022/05/13</td><td>2022/03/26</td><td>2022/03/16</td><td>2022/03/02</td>
 </table></div>
+
 
 
 
