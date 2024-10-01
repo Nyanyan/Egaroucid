@@ -289,7 +289,7 @@ void get_book_deviate_todo(Book_deviate_todo_elem todo_elem, int best_move_only_
             best_score = std::max(best_score, (int)book_elem.leaf.value);
         }
         // check leaf
-        if (book_elem.leaf.value == best_score) {
+        if (book_elem.leaf.value >= best_score) {
             int leaf_error = book_elem.value - book_elem.leaf.value;
             if (leaf_error <= todo_elem.max_leaf_error && is_valid_policy(book_elem.leaf.move)) {
                 if (todo_elem.board.get_legal() & (1ULL << book_elem.leaf.move)) { // is leaf legal?
