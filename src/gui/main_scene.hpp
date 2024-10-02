@@ -1216,8 +1216,8 @@ private:
                 if (node_idx != -1) {
                     int value_signed = sgn * (int)round(hint_infos[0].value);
                     if (
-                        getData().graph_resources.nodes[getData().graph_resources.branch][node_idx].level < hint_infos[0].type || 
-                        getData().graph_resources.nodes[getData().graph_resources.branch][node_idx].v != value_signed
+                        getData().graph_resources.nodes[getData().graph_resources.branch][node_idx].level < hint_infos[0].type // || 
+                        //getData().graph_resources.nodes[getData().graph_resources.branch][node_idx].v != value_signed
                         ) {
                         getData().graph_resources.nodes[getData().graph_resources.branch][node_idx].v = value_signed;
                         getData().graph_resources.nodes[getData().graph_resources.branch][node_idx].level = hint_infos[0].type;
