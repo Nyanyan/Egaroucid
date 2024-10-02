@@ -426,11 +426,7 @@ void ai_hint(Board board, int level, bool use_book, int book_acc_level, bool use
             if (global_searching && (search_legal & (1ULL << elem.policy))) {
                 search_legal ^= 1ULL << elem.policy;
                 values[elem.policy] = elem.value;
-                if (elem.is_end_search) {
-                    hint_types[elem.policy] = elem.probability;
-                } else{
-                    hint_types[elem.policy] = search_level;
-                }
+                hint_types[elem.policy] = search_level;
             }
         }
     }

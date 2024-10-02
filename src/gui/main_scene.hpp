@@ -1114,7 +1114,11 @@ private:
                         int player_bef = getData().history_elem.player;
                         int sgn = getData().history_elem.player == 0 ? 1 : -1;
                         getData().graph_resources.nodes[getData().graph_resources.branch].back().v = sgn * search_result.value;
-                        getData().graph_resources.nodes[getData().graph_resources.branch].back().level = getData().menu_elements.level;
+                        if (search_result.depth == SEARCH_BOOK) {
+                            getData().graph_resources.nodes[getData().graph_resources.branch].back().level = HINT_TYPE_BOOK;
+                        } else {
+                            getData().graph_resources.nodes[getData().graph_resources.branch].back().level = getData().menu_elements.level;
+                        }
                         move_processing(HW2_M1 - search_result.policy);
                         if (getData().history_elem.player == player_bef && (getData().menu_elements.ai_put_black ^ getData().menu_elements.ai_put_white) && getData().menu_elements.pause_when_pass && !getData().history_elem.board.is_end())
                             pausing_in_pass = true;
@@ -1391,7 +1395,11 @@ private:
                     Search_result search_result = ai_status.analyze_future[i].get();
                     int value = ai_status.analyze_sgn[i] * search_result.value;
                     getData().graph_resources.nodes[getData().graph_resources.branch][i].v = value;
-                    getData().graph_resources.nodes[getData().graph_resources.branch][i].level = getData().menu_elements.level;
+                    if (search_result.depth == SEARCH_BOOK) {
+                        getData().graph_resources.nodes[getData().graph_resources.branch][i].level = HINT_TYPE_BOOK;
+                    } else {
+                        getData().graph_resources.nodes[getData().graph_resources.branch][i].level = getData().menu_elements.level;
+                    }
                     task_finished = true;
                 }
             }
