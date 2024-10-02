@@ -22,9 +22,7 @@
 
 #define SEARCH_BOOK -1
 
-#ifndef HINT_TYPE_BOOK
-    #define HINT_TYPE_BOOK 1000
-#endif
+#define AI_TYPE_BOOK 1000
 
 #define ENDSEARCH_PRESEARCH_OFFSET 10
 
@@ -410,7 +408,7 @@ void ai_hint(Board board, int level, bool use_book, int book_acc_level, bool use
         std::vector<Book_value> links = book.get_all_moves_with_value(&board);
         for (Book_value &link: links) {
             values[link.policy] = link.value;
-            hint_types[link.policy] = HINT_TYPE_BOOK;
+            hint_types[link.policy] = AI_TYPE_BOOK;
             legal ^= 1ULL << link.policy;
             --n_display;
         }
@@ -426,7 +424,11 @@ void ai_hint(Board board, int level, bool use_book, int book_acc_level, bool use
             if (global_searching && (search_legal & (1ULL << elem.policy))) {
                 search_legal ^= 1ULL << elem.policy;
                 values[elem.policy] = elem.value;
-                hint_types[elem.policy] = search_level;
+                if (elem.is_end_search) {
+                    hint_types[elem.policy] = elem.probability;
+                } else{
+                    hint_types[elem.policy] = search_level;
+                }
             }
         }
     }

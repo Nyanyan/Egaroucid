@@ -1114,11 +1114,7 @@ private:
                         int player_bef = getData().history_elem.player;
                         int sgn = getData().history_elem.player == 0 ? 1 : -1;
                         getData().graph_resources.nodes[getData().graph_resources.branch].back().v = sgn * search_result.value;
-                        if (search_result.depth == SEARCH_BOOK) {
-                            getData().graph_resources.nodes[getData().graph_resources.branch].back().level = HINT_TYPE_BOOK;
-                        } else {
-                            getData().graph_resources.nodes[getData().graph_resources.branch].back().level = getData().menu_elements.level;
-                        }
+                        getData().graph_resources.nodes[getData().graph_resources.branch].back().level = calc_ai_type(search_result);
                         move_processing(HW2_M1 - search_result.policy);
                         if (getData().history_elem.player == player_bef && (getData().menu_elements.ai_put_black ^ getData().menu_elements.ai_put_white) && getData().menu_elements.pause_when_pass && !getData().history_elem.board.is_end())
                             pausing_in_pass = true;
@@ -1241,7 +1237,7 @@ private:
                     font = getData().fonts.font_heavy;
                 }
                 font((int)round(hint_infos[i].value)).draw(18, sx + 3, sy, color);
-                if (hint_infos[i].type == HINT_TYPE_BOOK) {
+                if (hint_infos[i].type == AI_TYPE_BOOK) {
                     if (!ignore_book_info)
                         getData().fonts.font_bold(U"book").draw(10, sx + 3, sy + 19, color);
                 }
@@ -1395,11 +1391,7 @@ private:
                     Search_result search_result = ai_status.analyze_future[i].get();
                     int value = ai_status.analyze_sgn[i] * search_result.value;
                     getData().graph_resources.nodes[getData().graph_resources.branch][i].v = value;
-                    if (search_result.depth == SEARCH_BOOK) {
-                        getData().graph_resources.nodes[getData().graph_resources.branch][i].level = HINT_TYPE_BOOK;
-                    } else {
-                        getData().graph_resources.nodes[getData().graph_resources.branch][i].level = getData().menu_elements.level;
-                    }
+                    getData().graph_resources.nodes[getData().graph_resources.branch][i].level = calc_ai_type(search_result);
                     task_finished = true;
                 }
             }
@@ -1548,7 +1540,7 @@ private:
                 calc_flip(&flip, &board, cell);
                 board.move_board(&flip);
                 if (book.contain(board)) {
-                    ai_status.hint_types[cell] = HINT_TYPE_BOOK;
+                    ai_status.hint_types[cell] = AI_TYPE_BOOK;
                     Book_elem book_elem = book.get(board);
                     ai_status.hint_values[cell] = -book_elem.value + HINT_PRIORITY; // priority to book
                     uint32_t n_lines = book_elem.n_lines;
@@ -1818,5 +1810,15 @@ private:
                 getData().history_elem.opening_name = getData().graph_resources.nodes[getData().graph_resources.branch][now_node_idx].opening_name;
             }
         }
+    }
+
+    int calc_ai_type(Search_result search_result) {
+        if (search_result.depth == SEARCH_BOOK) {
+            return AI_TYPE_BOOK;
+        }
+        if (search_result.is_end_search) {
+            return search_result.probability;
+        }
+        return search_result.depth;
     }
 };

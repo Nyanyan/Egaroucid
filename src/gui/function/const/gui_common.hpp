@@ -137,7 +137,6 @@ constexpr int INFO_HEIGHT = 200 - INFO_SY - 12;
 // hint constants
 #define HINT_NOT_CALCULATING -1
 #define HINT_INIT_VALUE -INF
-#define HINT_TYPE_BOOK 1000
 #define HINT_INF_LEVEL 100
 #define HINT_MAX_LEVEL 60
 
