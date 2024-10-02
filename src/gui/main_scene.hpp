@@ -1057,9 +1057,9 @@ private:
         getData().graph_resources.nodes[getData().graph_resources.branch].emplace_back(getData().history_elem);
         getData().graph_resources.n_discs++;
         if (getData().history_elem.board.is_end()) {
-            int sgn = getData().history_elem.player == 0 ? 1 : -1;
+            int sgn = getData().history_elem.player == BLACK ? 1 : -1;
             getData().graph_resources.nodes[getData().graph_resources.branch].back().v = sgn * getData().history_elem.board.score_player();
-            getData().graph_resources.nodes[getData().graph_resources.branch].back().level = N_LEVEL - 1;
+            getData().graph_resources.nodes[getData().graph_resources.branch].back().level = 100; // 100% search
         }
         reset_hint();
         reset_pv();
@@ -1112,7 +1112,7 @@ private:
                     Search_result search_result = ai_status.ai_future.get();
                     if (1 & (legal >> search_result.policy)) {
                         int player_bef = getData().history_elem.player;
-                        int sgn = getData().history_elem.player == 0 ? 1 : -1;
+                        int sgn = getData().history_elem.player == BLACK ? 1 : -1;
                         getData().graph_resources.nodes[getData().graph_resources.branch].back().v = sgn * search_result.value;
                         getData().graph_resources.nodes[getData().graph_resources.branch].back().level = calc_ai_type(search_result);
                         move_processing(HW2_M1 - search_result.policy);
@@ -1211,7 +1211,7 @@ private:
             }
             if (hint_infos.size()) {
                 sort(hint_infos.begin(), hint_infos.end(), compare_hint_info);
-                int sgn = getData().history_elem.player == 0 ? 1 : -1;
+                int sgn = getData().history_elem.player == BLACK ? 1 : -1;
                 int node_idx = getData().graph_resources.node_find(getData().graph_resources.branch, getData().graph_resources.n_discs);
                 if (node_idx != -1) {
                     int value_signed = sgn * (int)round(hint_infos[0].value);
