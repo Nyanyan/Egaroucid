@@ -1,0 +1,271 @@
+{
+    "lang_name": "日本語",
+    "common": {
+        "black": "黒",
+        "white": "白",
+        "empty": "空",
+        "ok": "OK",
+        "use_default": "初期設定",
+        "back": "戻る",
+        "level": "レベル",
+        "othello_ai": "オセロAI",
+        "characters": "文字",
+        "edit": "編集"
+    },
+    "loading": {
+        "loading": "起動中...",
+        "load_failed": "起動失敗\nリソースファイルを確認してください",
+        "book_failed": "Book読み込み失敗\nそのまま起動できます",
+        "launch": "起動"
+    },
+    "closing": "終了中...",
+    "play": {
+        "game": "対局",
+        "new_game": "新規対局 (人間同士)",
+        "new_game_human_black": "新規対局 (人間黒番)",
+        "new_game_human_white": "新規対局 (人間白番)",
+        "new_selfplay": "新規自己対戦",
+        "analyze": "分析",
+        "start_game": "対局開始",
+        "pass": "パス",
+        "game_information": "対局情報"
+    },
+    "settings": {
+        "settings": "設定",
+        "play": {
+            "ai_put_black": "AIが黒に着手",
+            "ai_put_white": "AIが白に着手",
+            "pause_when_pass": "パスで一時停止"
+        },
+        "thread": {
+            "thread": "スレッド数"
+        },
+        "hash_level": "ハッシュレベル",
+        "shortcut_keys": {
+            "settings": "ショートカットキー設定",
+            "change": "変更",
+            "delete": "削除",
+            "assign": "割り当て完了",
+            "not_assigned": "割り当てなし",
+            "changing_message": "登録したいキーを押してください (Escで戻る)",
+            "key_duplicate_message": "そのキーはすでに登録されています",
+            "multi_input_error_message": "同時押しに対応しているのはCtrl/Shift/Altのみです",
+            "special_key_error_message": "Ctrl/Shift/Altのみのキーは登録できません"
+        }
+    },
+    "ai_settings": {
+        "use_book": "book使用",
+        "book_accuracy_level": "book変化レベル",
+        "level": "レベル"
+    },
+    "book": {
+        "book": "Book",
+        "book_operation": "Book操作",
+        "file_operation": "ファイル操作",
+        "right_click_to_modify": "右クリックで編集",
+        "book_deviate": "Book学習",
+        "book_deviate_with_transcript": "棋譜を指定してBook学習",
+        "input_transcripts_with_line_breaks": "改行区切りで棋譜を指定 / テキストファイルをドラッグ&ドロップ",
+        "transcript_error": "棋譜エラー",
+        "book_fix": "Book修正",
+        "learning": "学習中...",
+        "stop_learn": "学習停止",
+        "force_stop": "強制停止",
+        "stopping": "終了中...",
+        "complete": "完了",
+        "settings": "Book操作設定",
+        "depth": "深さ",
+        "error_per_move": "1手あたりの誤差",
+        "error_sum": "積算誤差",
+        "error_leaf": "リーフ誤差",
+        "changed_value": "評価値",
+        "book_merge": "Book統合",
+        "merge": "統合",
+        "merge_explanation": "ドラッグ&ドロップでEgaroucid/Edax形式のBookを追加統合",
+        "import_failed": "取り込み失敗",
+        "loading": "取り込み中...",
+        "book_reference": "Bookの参照",
+        "input_book_path": "Bookのパスを入力 / ドラッグ&ドロップ",
+        "wrong_extension": "拡張子が違います。",
+        "legal_extension1": "拡張子は.egbk3である必要があります。",
+        "legal_extension2": "拡張子は.egbk3/.datである必要があります。",
+        "legal_extension3": "拡張子は.egbk3/.egbk2/.egbk/.datである必要があります。",
+        "import": "読み込み",
+        "export_book_as_edax": "Edax形式で書き出し パスを入力",
+        "export": "書き出し",
+        "exporting": "書き出し中...",
+        "use_default": "初期設定",
+        "ignore": "既存Book値を上書き",
+        "import_book": "Book読み込み",
+        "export_book": "Book書き出し",
+        "export_with_specified_level": "指定レベルで書き出し",
+        "egaroucid_format": "Egaroucid形式",
+        "edax_format": "Edax形式",
+        "undefined_format": "egbk3形式(Egaroucid)かdat形式(Edax)で入力してください",
+        "book_reduce": "Book削減",
+        "reducing": "削減中",
+        "book_recalculate_leaf": "リーフ再計算",
+        "book_recalculate_n_lines": "ライン数再計算",
+        "start": "開始",
+        "unlimited": "無制限",
+        "show_book_info": "Book情報",
+        "calculating": "計算中",
+        "n_registered": "登録局面数",
+        "max_n_loops": "最大ループ数",
+        "start_with_max_n_loops": "指定ループ数で開始"
+    },
+    "in_out": {
+        "in_out": "入出力",
+        "in": "入力",
+        "out": "出力",
+        "import_failed": "取り込み失敗",
+        "output_transcript": "現局面までの棋譜をコピー",
+        "output_board": "盤面を文字列でコピー",
+        "output_game": "対局保存",
+        "input_transcript": "棋譜入力",
+        "input_board": "盤面入力",
+        "edit_board": "盤面編集",
+        "input_bitboard": "ビットボード入力",
+        "output_bitboard": "ビットボード出力",
+        "player_opponent": "手番/相手",
+        "black_white": "黒/白",
+        "player": "手番",
+        "opponent": "相手",
+        "color": "色",
+        "input_game": "対局読み込み",
+        "no_game_available": "対局が保存されていません",
+        "import": "取り込む",
+        "import_from_this_position": "設定局面から取り込む",
+        "export_main": "本筋を保存",
+        "export_until_this_board": "設定局面までを保存",
+        "player_name": "プレイヤー名",
+        "memo": "メモ",
+        "screen_shot": "スクリーンショット",
+        "board_image": "ボードの画像を編集",
+        "you_can_paste_with_ctrl_v": "Ctrl+Vで貼り付け可能"
+    },
+    "display": {
+        "display": "表示",
+        "cell": {
+            "display_on_cell": "合法手への表示",
+            "legal": "合法手",
+            "disc_value": "石差評価",
+            "disc_value_number": "表示個数",
+            "umigame_value": "うみがめ数",
+            "depth": "深さ",
+            "opening": "定石",
+            "next_move": "直後の手",
+            "next_move_change_view": "表示変更",
+            "show_book_accuracy": "Book精度"
+        },
+        "disc": {
+            "display_on_disc": "石への表示",
+            "last_move": "直前の手",
+            "stable": "確定石",
+            "play_ordering": "着手順"
+        },
+        "info": {
+            "display_on_info_area": "情報エリアへの表示",
+            "opening_name": "定石",
+            "principal_variation": "最善筋"
+        },
+        "graph": {
+            "graph": "グラフ",
+            "value": "評価値",
+            "sum_of_loss": "累積石損"
+        },
+        "laser_pointer": "レーザーポインタ",
+        "log": "ログ",
+        "change_color_type": "色調変更"
+    },
+    "operation": {
+        "operation": "操作",
+        "put_1_move_by_ai": "AIに1手打たせる",
+        "forward": "進む",
+        "backward": "戻る",
+        "undo": "待った",
+        "save_this_branch": "この分岐を保存",
+        "generate_random_board": {
+            "generate_random_board": "ランダム局面を生成",
+            "generate": "生成",
+            "generate_n_moves": "生成手数"
+        },
+        "convert": {
+            "convert": "変換",
+            "rotate_180": "180度回転",
+            "white_line": "ホワイトライン",
+            "black_line": "ブラックライン"
+        },
+        "ai_operation": {
+            "ai_operation": "AI操作",
+            "stop_calculating": "計算停止",
+            "cache_clear": "キャッシュクリア"
+        }
+    },
+    "info": {
+        "info": "情報",
+        "black": "黒番",
+        "white": "白番",
+        "moves": "手目",
+        "game_end": "終局",
+        "opening_name": "定石",
+        "principal_variation": "最善筋",
+        "ai": "AI",
+        "human": "人間",
+        "lookahead": "手読み",
+        "to_last_move": "読み切り",
+        "light": "軽量",
+        "standard": "標準",
+        "pragmatic": "実用的",
+        "accurate": "正確",
+        "danger": "危険",
+        "probability": "探索確率"
+    },
+    "edit_board": {
+        "player": "手番",
+        "stone": "石の色",
+        "black": "黒(B)",
+        "white": "白(W)",
+        "empty": "空(E)"
+    },
+    "help": {
+        "help": "ヘルプ",
+        "usage": "使い方",
+        "website": "Webサイト",
+        "bug_report": "バグレポート",
+        "auto_update_check": "自動更新確認",
+        "new_version_available": "新しいバージョンがダウンロードできます。",
+        "download?": "ダウンロードページを開きますか？",
+        "download": "ダウンロード",
+        "skip": "スキップ",
+        "license": "ライセンス"
+    },
+    "board_image": {
+        "save_image": "画像を保存",
+        "rect": "■",
+        "star": "★",
+        "nomark": "削除 (同じマークでクリックでも可)",
+        "default": "デフォルト",
+        "monochrome": "モノクロ",
+        "mark": "マーク",
+        "color": "色"
+    },
+    "tips": {
+        "do_you_know": "ご存知ですか？",
+        "tips": [
+            "マスを右クリックでbookを変更",
+            "Edax形式のbookもそのまま追加",
+            "ドラッグ、←→キーで局面を移動",
+            "対局はgamesフォルダに保存",
+            "bookや設定は終了時に自動保存",
+            "盤面入力は様々な形式に対応",
+            "棋譜や局面を入力可能",
+            "うみがめ数はbookに依存",
+            "AIのレベルを上げすぎると計算時間が爆発",
+            "計算停止ボタンで計算を強制終了",
+            "Enter/Escによるショートカットに対応",
+            "マウスの進む/戻るで局面移動",
+            "ハッシュレベルを上げるとメモリ使用量が増加"
+        ]
+    }
+}

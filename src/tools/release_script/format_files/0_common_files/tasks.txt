@@ -1,0 +1,15 @@
+console book.egbk3 resources
+console eval.egev2 resources
+console eval_move_ordering_end.egev resources
+installer img resources/img
+installer languages resources/languages
+installer book.egbk3 Documents/Egaroucid
+installer eval.egev2 resources
+installer eval_move_ordering_end.egev resources
+installer version.txt AppData/Egaroucid
+portable img resources/img
+portable languages resources/languages
+portable book.egbk3 document
+portable eval.egev2 resources
+portable eval_move_ordering_end.egev resources
+portable version.txt appdata
