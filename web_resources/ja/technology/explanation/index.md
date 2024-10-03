@@ -721,7 +721,13 @@ $s(p)=2^4 \times {}_{60}\mathrm{C}_p \times 2^p$
 
 ### 返る石数の平均値
 
-TBD
+オセロにおいて、返る石の平均値はいくつでしょうか。これをランダム打ちによって概算してみました。その結果、1手目から60手目まで、合法手1手で返る石の数は、大体2.25枚であるとわかりました。この実験に使ったコードは[こちら](https://github.com/Nyanyan/Count_Flipped_Othello)に公開しています。
+
+1手ごとにこの結果をプロットすると以下のようにあります。$10^7$回の対戦(ランダム打ち)によって計算した結果です。
+
+<div class="centering_box">
+    <img class="pic2" src="img/n_flipped_graph.png">
+</div>
 
 
 
