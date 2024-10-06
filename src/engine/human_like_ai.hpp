@@ -35,13 +35,17 @@ void noise_flip(Flip *flip, int depth) {
     flip->flip ^= mask; // off some bits
 }
 
-int nega_alpha_human_like(Search *search, int alpha, int beta, int depth, bool skipped, const bool *searching) {
+int nega_alpha_human_like(Search *search, int alpha, int beta, int depth, bool skipped, bool is_end_search, const bool *searching) {
     if (!(*searching) || !global_searching) {
         return SCORE_UNDEFINED;
     }
     ++search->n_nodes;
     if (depth == 0) {
-        return mid_evaluate_diff(search);
+        if (is_end_search) {
+            return end_evaluate(&search->board);
+        } else {
+            return mid_evaluate_diff(search);
+        }
     }
     uint64_t legal = search->board.get_legal();
     if (legal == 0) {
@@ -49,7 +53,7 @@ int nega_alpha_human_like(Search *search, int alpha, int beta, int depth, bool s
             return end_evaluate(&search->board);
         }
         search->pass();
-            int v = -nega_alpha_human_like(search, -beta, -alpha, depth, true, searching);
+            int v = -nega_alpha_human_like(search, -beta, -alpha, depth, true, is_end_search, searching);
         search->pass();
         return v;
     }
@@ -67,7 +71,7 @@ int nega_alpha_human_like(Search *search, int alpha, int beta, int depth, bool s
     for (int move_idx = 0; move_idx < canput && *searching; ++move_idx) {
         swap_next_best_move(move_list, move_idx, canput);
         search->move(&move_list[move_idx].flip);
-            g = -nega_alpha_human_like(search, -beta, -alpha, depth - 1, false, searching);
+            g = -nega_alpha_human_like(search, -beta, -alpha, depth - 1, false, is_end_search, searching);
         search->undo(&move_list[move_idx].flip);
         if (v < g) {
             v = g;
@@ -82,7 +86,7 @@ int nega_alpha_human_like(Search *search, int alpha, int beta, int depth, bool s
     return v;
 }
 
-Search_result nega_alpha_human_like_root(Search *search, int alpha, int beta, int depth, const bool *searching) {
+Search_result nega_alpha_human_like_root(Search *search, int alpha, int beta, int depth, bool is_end_search, const bool *searching) {
     Search_result res;
     if (!(*searching) || !global_searching || depth <= 0) {
         res.value = SCORE_UNDEFINED;
@@ -111,8 +115,9 @@ Search_result nega_alpha_human_like_root(Search *search, int alpha, int beta, in
     for (int move_idx = 0; move_idx < canput && *searching; ++move_idx) {
         swap_next_best_move(move_list, move_idx, canput);
         search->move(&move_list[move_idx].flip);
-            g = -nega_alpha_human_like(search, -beta, -alpha, depth - 1, false, searching);
+            g = -nega_alpha_human_like(search, -beta, -alpha, depth - 1, false, is_end_search, searching);
         search->undo(&move_list[move_idx].flip);
+        std::cerr << "human like ai move " << move_idx + 1 << "/" << canput << " value " << g << " policy " << idx_to_coord(move_list[move_idx].flip.pos) << " window " << "[" << alpha << "," << beta << "] " << std::endl;
         if (res.value < g) {
             res.value = g;
             res.policy = move_list[move_idx].flip.pos;
@@ -123,7 +128,6 @@ Search_result nega_alpha_human_like_root(Search *search, int alpha, int beta, in
                 alpha = res.value;
             }
         }
-        std::cerr << "human like ai move " << move_idx + 1 << "/" << canput << " value " << g << " policy " << idx_to_coord(move_list[move_idx].flip.pos) << " best value " << res.value << " policy " << idx_to_coord(res.policy) << std::endl;
     }
     return res;
 }
@@ -163,12 +167,12 @@ Search_result human_like_ai(Board board, int level, bool show_log) {
     search.init(&board, mpc_level, false, false, false);
     bool searching = true;
     uint64_t strt = tim();
-    res = nega_alpha_human_like_root(&search, -SCORE_MAX, SCORE_MAX, depth, &searching);
+    res = nega_alpha_human_like_root(&search, -SCORE_MAX, SCORE_MAX, depth, !is_mid_search, &searching);
     res.value *= value_sign;
     res.time = tim() - strt;
     res.nps = calc_nps(res.nodes, res.time);
     res.depth = depth;
-    res.is_end_search = false;
+    res.is_end_search = !is_mid_search;
     res.probability = 100;
     res.clog_nodes = 0;
     res.clog_time = 0;
