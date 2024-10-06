@@ -36,12 +36,12 @@ void noise_flip(Flip *flip, int depth) {
 }
 
 int nega_alpha_human_like(Search *search, int alpha, int beta, int depth, bool skipped, const bool *searching) {
-    if (!(*searching)) {
+    if (!(*searching) || !global_searching) {
         return SCORE_UNDEFINED;
     }
     ++search->n_nodes;
     if (depth == 0) {
-        return mid_evaluate(search);
+        return mid_evaluate_diff(search);
     }
     uint64_t legal = search->board.get_legal();
     if (legal == 0) {
@@ -51,6 +51,7 @@ int nega_alpha_human_like(Search *search, int alpha, int beta, int depth, bool s
         search->pass();
             int v = -nega_alpha_human_like(search, -beta, -alpha, depth, true, searching);
         search->pass();
+        return v;
     }
     int canput = pop_count_ull(legal);
     std::vector<Flip_value> move_list(canput);
@@ -83,7 +84,7 @@ int nega_alpha_human_like(Search *search, int alpha, int beta, int depth, bool s
 
 Search_result nega_alpha_human_like_root(Search *search, int alpha, int beta, int depth, const bool *searching) {
     Search_result res;
-    if (!(*searching) || depth <= 0) {
+    if (!(*searching) || !global_searching || depth <= 0) {
         res.value = SCORE_UNDEFINED;
         res.policy = MOVE_NOMOVE;
         return res;
@@ -122,6 +123,7 @@ Search_result nega_alpha_human_like_root(Search *search, int alpha, int beta, in
                 alpha = res.value;
             }
         }
+        std::cerr << "human like ai move " << move_idx + 1 << "/" << canput << " value " << g << " policy " << idx_to_coord(move_list[move_idx].flip.pos) << " best value " << res.value << " policy " << idx_to_coord(res.policy) << std::endl;
     }
     return res;
 }
@@ -170,5 +172,8 @@ Search_result human_like_ai(Board board, int level, bool show_log) {
     res.probability = 100;
     res.clog_nodes = 0;
     res.clog_time = 0;
+    if (show_log) {
+        std::cerr << "human like ai value " << res.value << " policy " << idx_to_coord(res.policy) << std::endl;
+    }
     return res;
 }
