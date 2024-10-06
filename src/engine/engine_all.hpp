@@ -12,6 +12,7 @@
 #include "ai.hpp"
 #include "book_accuracy.hpp"
 #include "book_enlarge.hpp"
+#include "human_like_ai.hpp"
 #include "perft.hpp"
 #include "principal_variation.hpp"
 #include "problem_generator.hpp"

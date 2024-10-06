@@ -126,7 +126,7 @@ Search_result nega_alpha_human_like_root(Search *search, int alpha, int beta, in
     return res;
 }
 
-Search_result human_like_ai(Board board, int level, bool use_multi_thread, bool show_log) {
+Search_result human_like_ai(Board board, int level, bool show_log) {
     int value_sign = 1;
     Search_result res;
     res.value = SCORE_UNDEFINED;
