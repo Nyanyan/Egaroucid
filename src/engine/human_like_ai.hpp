@@ -26,10 +26,13 @@ std::uniform_int_distribution<uint64_t> dist(0, 0xFFFFFFFFFFFFFFFFULL);
 
 void noise_flip(Flip *flip, int depth) {
     uint64_t mask = flip->flip;
-    for (int i = 0; i < depth; ++i) { // deeper -> more errors
+    int n_masked = pop_count_ull(flip->flip);
+    for (int i = 0; i < depth + 2; ++i) { // deeper -> more errors
         uint64_t n_mask = flip->flip & dist(engine);
-        if (pop_count_ull(n_mask) <= pop_count_ull(mask)) {
+        int n_n_masked = pop_count_ull(n_mask);
+        if (n_n_masked <= n_masked) {
             mask = n_mask;
+            n_masked = n_n_masked;
         }
     }
     flip->flip ^= mask; // off some bits
