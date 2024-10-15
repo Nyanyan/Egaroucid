@@ -18,7 +18,10 @@ def fill0(n, r):
     res = str(n)
     return '0' * (r - len(res)) + res
 
-cmd = './../versions/Egaroucid_for_Console_beta/Egaroucid_for_Console.exe -nobook -l ' + str(LEVEL) + ' -thread ' + str(N_THREAD) + ' -selfplay ' + str(N_GAMES_PER_FILE) + ' ' + str(n_random_moves)
+#exe = './../versions/Egaroucid_for_Console_beta/Egaroucid_for_Console.exe'
+exe = './../versions/Egaroucid_for_Console_7_4_0_Windows_x64_SIMD/Egaroucid_for_Console_7_4_0_x64_SIMD.exe'
+
+cmd = exe + ' -nobook -l ' + str(LEVEL) + ' -thread ' + str(N_THREAD) + ' -selfplay ' + str(N_GAMES_PER_FILE) + ' ' + str(n_random_moves)
 print(cmd)
 
 for idx in range(IDX_START, IDX_END + 1):
