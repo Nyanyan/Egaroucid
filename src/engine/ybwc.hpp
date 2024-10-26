@@ -49,17 +49,7 @@ int nega_alpha_ordering_nws(Search *search, int alpha, int depth, bool skipped, 
     @return the result in Parallel_task structure
 */
 Parallel_task ybwc_do_task_nws(uint64_t player, uint64_t opponent, int_fast8_t n_discs, uint_fast8_t parity, uint_fast8_t mpc_level, bool is_presearch, int alpha, int depth, uint64_t legal, bool is_end_search, uint_fast8_t policy, int move_idx, const bool *searching) {
-    Search search;
-    search.board.player = player;
-    search.board.opponent = opponent;
-    search.n_discs = n_discs;
-    search.parity = parity;
-    search.mpc_level = mpc_level;
-    search.n_nodes = 0ULL;
-    search.use_multi_thread = (!is_end_search && depth > YBWC_MID_SPLIT_MIN_DEPTH) || (is_end_search && depth > YBWC_END_SPLIT_MIN_DEPTH);
-    search.need_to_see_tt_loop = false; // because lazy smp sub threads are done in only single thread
-    search.is_presearch = is_presearch;
-    calc_eval_features(&search.board, &search.eval);
+    Search search(player, opponent, n_discs, parity, mpc_level, (!is_end_search && depth > YBWC_MID_SPLIT_MIN_DEPTH) || (is_end_search && depth > YBWC_END_SPLIT_MIN_DEPTH), false, is_presearch);
     Parallel_task task;
     task.value = -nega_alpha_ordering_nws(&search, alpha, depth, false, legal, is_end_search, searching);
     if (!(*searching))

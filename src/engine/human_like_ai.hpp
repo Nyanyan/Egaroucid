@@ -138,16 +138,6 @@ Search_result nega_alpha_human_like_root(Search *search, int alpha, int beta, in
 Search_result human_like_ai(Board board, int level, bool show_log) {
     int value_sign = 1;
     Search_result res;
-    res.value = SCORE_UNDEFINED;
-    res.policy = MOVE_UNDEFINED;
-    res.nodes = 0;
-    res.nps = 0;
-    res.depth = 0;
-    res.is_end_search = false;
-    res.probability = 0;
-    res.time = 0;
-    res.clog_nodes = 0;
-    res.clog_time = 0;
     if (board.get_legal() == 0ULL) {
         board.pass();
         if (board.get_legal() == 0ULL) {
@@ -166,8 +156,7 @@ Search_result human_like_ai(Board board, int level, bool show_log) {
     bool is_mid_search;
     uint_fast8_t mpc_level;
     get_level(level, board.n_discs() - 4, &is_mid_search, &depth, &mpc_level);
-    Search search;
-    search.init(&board, mpc_level, false, false, false);
+    Search search(&board, mpc_level, false, false, false);
     bool searching = true;
     uint64_t strt = tim();
     res = nega_alpha_human_like_root(&search, -SCORE_MAX, SCORE_MAX, depth, !is_mid_search, &searching);

@@ -149,7 +149,7 @@ struct Search_result {
     int probability;
 
     Search_result() 
-        : policy(HW2), value(SCORE_UNDEFINED), depth(-1), time(0), nodes(0), clog_time(0), clog_nodes(0), nps(0), is_end_search(false), probability(0) {}
+        : policy(MOVE_UNDEFINED), value(SCORE_UNDEFINED), depth(-1), time(0), nodes(0), clog_time(0), clog_nodes(0), nps(0), is_end_search(false), probability(0) {}
 
     bool operator<(const Search_result &another) const{
         if (depth == SEARCH_BOOK && another.depth != SEARCH_BOOK)
@@ -281,6 +281,11 @@ class Search {
             calc_eval_features(&board, &eval);
         }
         */
+
+        Search(uint64_t board_player, uint64_t board_opponent, int_fast8_t n_discs_, uint_fast8_t parity_, uint_fast8_t init_mpc_level, bool init_use_multi_thread, bool init_need_to_see_tt_loop, bool init_is_presearch)
+            : board(Board(board_player, board_opponent)), n_discs(n_discs_), parity(parity_), mpc_level(init_mpc_level), use_multi_thread(init_use_multi_thread), n_nodes(0), need_to_see_tt_loop(init_need_to_see_tt_loop), is_presearch(init_is_presearch) {
+            calc_eval_features(&board, &eval);
+        }
 
         /*
             @brief Move board and other variables

@@ -187,16 +187,6 @@ Search_result endgame_optimized_search(Board board, int depth, uint_fast8_t mpc_
 inline Search_result tree_search_legal(Board board, int depth, uint_fast8_t mpc_level, bool show_log, uint64_t use_legal, bool use_multi_thread) {
     //thread_pool.tell_start_using();
     Search_result res;
-    res.value = SCORE_UNDEFINED;
-    res.policy = MOVE_UNDEFINED;
-    res.nodes = 0;
-    res.nps = 0;
-    res.depth = 0;
-    res.is_end_search = false;
-    res.probability = 0;
-    res.time = 0;
-    res.clog_nodes = 0;
-    res.clog_time = 0;
     depth = std::min(HW2 - board.n_discs(), depth);
     bool is_end_search = (HW2 - board.n_discs() == depth);
     std::vector<Clog_result> clogs;
@@ -354,8 +344,7 @@ Analyze_result ai_analyze(Board board, int level, bool use_multi_thread, uint_fa
         clogs = first_clog_search(board, &clog_nodes, clog_depth, board.get_legal());
         clog_time = tim() - clog_strt;
     }
-    Search search;
-    search.init(&board, mpc_level, use_multi_thread, false, false);
+    Search search(&board, mpc_level, use_multi_thread, false, false);
     uint64_t strt = tim();
     bool searching = true;
     //thread_pool.tell_start_using();
