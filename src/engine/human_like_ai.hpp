@@ -107,7 +107,7 @@ Search_result nega_alpha_human_like_root(Search *search, int alpha, int beta, in
     int idx = 0;
     for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)) {
         calc_flip(&move_list[idx].flip, &search->board, cell);
-        noise_flip(&move_list[idx].flip, depth);
+        //noise_flip(&move_list[idx].flip, depth);
         ++idx;
     }
     uint_fast8_t moves[N_TRANSPOSITION_MOVES] = {TRANSPOSITION_TABLE_UNDEFINED, TRANSPOSITION_TABLE_UNDEFINED};
