@@ -225,6 +225,17 @@ class Search {
 
     public:
 
+        Search(Board *init_board, uint_fast8_t init_mpc_level, bool init_use_multi_thread, bool init_need_to_see_tt_loop, bool init_is_presearch)
+            : board(init_board->copy()), n_discs(init_board->n_discs()), mpc_level(init_mpc_level), use_multi_thread(init_use_multi_thread), n_nodes(0), need_to_see_tt_loop(init_need_to_see_tt_loop), is_presearch(init_is_presearch) {
+            uint64_t empty = ~(board.player | board.opponent);
+            parity = 1 & pop_count_ull(empty & 0x000000000F0F0F0FULL);
+            parity |= (1 & pop_count_ull(empty & 0x00000000F0F0F0F0ULL)) << 1;
+            parity |= (1 & pop_count_ull(empty & 0x0F0F0F0F00000000ULL)) << 2;
+            parity |= (1 & pop_count_ull(empty & 0xF0F0F0F000000000ULL)) << 3;
+            calc_eval_features(&board, &eval);
+        }
+
+        /*
         inline void init(Board *init_board, uint_fast8_t init_mpc_level, bool init_use_multi_thread, bool init_need_to_see_tt_loop, bool init_is_presearch) {
             board = init_board->copy();
             n_discs = board.n_discs();
@@ -241,12 +252,23 @@ class Search {
             need_to_see_tt_loop = init_need_to_see_tt_loop;
             is_presearch = init_is_presearch;
         }
+        */
 
         /*
             @brief Initialize with board
 
             @param init_board           a board to set
         */
+        Search(Board *init_board)
+            : board(init_board->copy()), n_discs(init_board->n_discs()) {
+            uint64_t empty = ~(board.player | board.opponent);
+            parity = 1 & pop_count_ull(empty & 0x000000000F0F0F0FULL);
+            parity |= (1 & pop_count_ull(empty & 0x00000000F0F0F0F0ULL)) << 1;
+            parity |= (1 & pop_count_ull(empty & 0x0F0F0F0F00000000ULL)) << 2;
+            parity |= (1 & pop_count_ull(empty & 0xF0F0F0F000000000ULL)) << 3;
+            calc_eval_features(&board, &eval);
+        }
+        /*
         inline void init_board(Board *init_board) {
             board = init_board->copy();
             n_discs = board.n_discs();
@@ -258,6 +280,7 @@ class Search {
             parity |= (1 & pop_count_ull(empty & 0xF0F0F0F000000000ULL)) << 3;
             calc_eval_features(&board, &eval);
         }
+        */
 
         /*
             @brief Move board and other variables
