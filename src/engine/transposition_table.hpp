@@ -303,14 +303,12 @@ class Transposition_table {
         /*
             @brief Constructor of transposition table
         */
-        Transposition_table() {
-            #if USE_CHANGEABLE_HASH_LEVEL || !TT_USE_STACK
-                table_heap = nullptr;
-            #endif
-            table_size = 0;
-            n_registered = 0;
-            n_registered_threshold = 0;
-        }
+        Transposition_table() 
+        #if USE_CHANGEABLE_HASH_LEVEL || !TT_USE_STACK
+            : table_heap(nullptr), table_size(0), n_registered(0), n_registered_threshold(0) {}
+        #else
+            : table_size(0), n_registered(0), n_registered_threshold(0) {}
+        #endif
 
         #if USE_CHANGEABLE_HASH_LEVEL
             /*

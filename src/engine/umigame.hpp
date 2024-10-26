@@ -32,10 +32,8 @@ struct Umigame_result {
     int b;
     int w;
 
-    Umigame_result() {
-        b = UMIGAME_UNDEFINED;
-        w = UMIGAME_UNDEFINED;
-    }
+    Umigame_result()
+        : b(UMIGAME_UNDEFINED), w(UMIGAME_UNDEFINED) {}
 
     Umigame_result operator+(const Umigame_result& other) {
         Umigame_result res;
