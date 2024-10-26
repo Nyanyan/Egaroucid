@@ -60,6 +60,9 @@ class Hash_data {
 
     public:
 
+        //Hash_data()
+        //    : lower(-SCORE_MAX), upper(SCORE_MAX), moves({TRANSPOSITION_TABLE_UNDEFINED, TRANSPOSITION_TABLE_UNDEFINED}), mpc_level(0), depth(0), importance(0) {}
+        
         /*
             @brief Initialize a node
         */
@@ -213,6 +216,9 @@ struct Hash_node {
     Board board;
     Hash_data data;
     Spinlock lock;
+
+    //Hash_node() 
+    //    : board(Board{0ULL, 0ULL}) {}
 
     void init() {
         board.player = 0ULL;
