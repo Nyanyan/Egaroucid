@@ -33,15 +33,17 @@ class Board {
         uint64_t opponent;
 
     public:
+        Board(uint64_t player_, uint64_t opponent_)
+            : player(player_), opponent(opponent_) {}
+    
+        Board() {}
         /*
             @brief copy this board
 
             @return board class
         */
         inline Board copy() {
-            Board res;
-            res.player = player;
-            res.opponent = opponent;
+            Board res(player, opponent);
             return res;
         }
 

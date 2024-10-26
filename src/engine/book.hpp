@@ -73,11 +73,8 @@ struct Leaf {
     int8_t move;
     int8_t level;
 
-    Leaf() {
-        value = SCORE_UNDEFINED;
-        move = MOVE_UNDEFINED;
-        level = LEVEL_UNDEFINED;
-    }
+    Leaf()
+        : value(SCORE_UNDEFINED), move(MOVE_UNDEFINED), level(LEVEL_UNDEFINED) {}
 };
 
 /*
@@ -94,12 +91,8 @@ struct Book_elem {
     uint32_t n_lines;
     bool seen; // used in various situation
 
-    Book_elem() {
-        value = SCORE_UNDEFINED;
-        level = LEVEL_UNDEFINED;
-        n_lines = 0;
-        seen = false;
-    }
+    Book_elem()
+        : value(SCORE_UNDEFINED), level(LEVEL_UNDEFINED), n_lines(0), seen(false) {}
 };
 
 struct Book_info {
@@ -109,8 +102,8 @@ struct Book_info {
     uint64_t n_leaves_in_level[LEVEL_HUMAN + 1];
     uint64_t n_leaves_in_ply[HW2 - 4 + 1];
 
-    Book_info() {
-        n_boards = 0;
+    Book_info() 
+        : n_boards(0) {
         for (int i = 0; i < LEVEL_HUMAN + 1; ++i) {
             n_boards_in_level[i] = 0;
             n_leaves_in_level[i] = 0;
