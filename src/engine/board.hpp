@@ -42,7 +42,7 @@ class Board {
 
             @return board class
         */
-        inline Board copy() {
+        inline Board copy() const {
             Board res(player, opponent);
             return res;
         }
@@ -52,7 +52,7 @@ class Board {
 
             @param res                  board class
         */
-        inline void copy(Board *res) {
+        inline void copy(Board *res) const {
             res->player = player;
             res->opponent = opponent;
         }

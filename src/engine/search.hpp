@@ -227,8 +227,8 @@ class Search {
 
         Search() {};
 
-        Search(Board *init_board, uint_fast8_t init_mpc_level, bool init_use_multi_thread, bool init_need_to_see_tt_loop, bool init_is_presearch)
-            : board(init_board->copy()), n_discs(init_board->n_discs()), mpc_level(init_mpc_level), use_multi_thread(init_use_multi_thread), n_nodes(0), need_to_see_tt_loop(init_need_to_see_tt_loop), is_presearch(init_is_presearch) {
+        Search(const Board *board_, uint_fast8_t mpc_level_, bool use_multi_thread_, bool need_to_see_tt_loop_, bool is_presearch_)
+            : board(board_->copy()), n_discs(board_->n_discs()), mpc_level(mpc_level_), use_multi_thread(use_multi_thread_), n_nodes(0), need_to_see_tt_loop(need_to_see_tt_loop_), is_presearch(is_presearch_) {
             uint64_t empty = ~(board.player | board.opponent);
             parity = 1 & pop_count_ull(empty & 0x000000000F0F0F0FULL);
             parity |= (1 & pop_count_ull(empty & 0x00000000F0F0F0F0ULL)) << 1;
@@ -237,8 +237,8 @@ class Search {
             calc_eval_features(&board, &eval);
         }
 
-        Search(uint64_t board_player, uint64_t board_opponent, uint_fast8_t init_mpc_level, bool init_use_multi_thread, bool init_need_to_see_tt_loop, bool init_is_presearch)
-            : board(Board{board_player, board_opponent}), n_discs(pop_count_ull(board_player | board_opponent)), mpc_level(init_mpc_level), use_multi_thread(init_use_multi_thread), n_nodes(0), need_to_see_tt_loop(init_need_to_see_tt_loop), is_presearch(init_is_presearch) {
+        Search(uint64_t board_player, uint64_t board_opponent, uint_fast8_t mpc_level_, bool use_multi_thread_, bool need_to_see_tt_loop_, bool is_presearch_)
+            : board(Board{board_player, board_opponent}), n_discs(pop_count_ull(board_player | board_opponent)), mpc_level(mpc_level_), use_multi_thread(use_multi_thread_), n_nodes(0), need_to_see_tt_loop(need_to_see_tt_loop_), is_presearch(is_presearch_) {
             uint64_t empty = ~(board.player | board.opponent);
             parity = 1 & pop_count_ull(empty & 0x000000000F0F0F0FULL);
             parity |= (1 & pop_count_ull(empty & 0x00000000F0F0F0F0ULL)) << 1;
@@ -271,8 +271,8 @@ class Search {
 
             @param init_board           a board to set
         */
-        Search(Board *init_board)
-            : board(init_board->copy()), n_discs(init_board->n_discs()) {
+        Search(const Board *board_)
+            : board(board_->copy()), n_discs(board_->n_discs()) {
             uint64_t empty = ~(board.player | board.opponent);
             parity = 1 & pop_count_ull(empty & 0x000000000F0F0F0FULL);
             parity |= (1 & pop_count_ull(empty & 0x00000000F0F0F0F0ULL)) << 1;
@@ -294,8 +294,8 @@ class Search {
         }
         */
 
-        Search(uint64_t board_player, uint64_t board_opponent, int_fast8_t n_discs_, uint_fast8_t parity_, uint_fast8_t init_mpc_level, bool init_use_multi_thread, bool init_need_to_see_tt_loop, bool init_is_presearch)
-            : board(Board(board_player, board_opponent)), n_discs(n_discs_), parity(parity_), mpc_level(init_mpc_level), use_multi_thread(init_use_multi_thread), n_nodes(0), need_to_see_tt_loop(init_need_to_see_tt_loop), is_presearch(init_is_presearch) {
+        Search(uint64_t board_player, uint64_t board_opponent, int_fast8_t n_discs_, uint_fast8_t parity_, uint_fast8_t mpc_level_, bool use_multi_thread_, bool need_to_see_tt_loop_, bool is_presearch_)
+            : board(Board(board_player, board_opponent)), n_discs(n_discs_), parity(parity_), mpc_level(mpc_level_), use_multi_thread(use_multi_thread_), n_nodes(0), need_to_see_tt_loop(need_to_see_tt_loop_), is_presearch(is_presearch_) {
             calc_eval_features(&board, &eval);
         }
 
