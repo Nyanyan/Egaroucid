@@ -67,14 +67,18 @@ board_sub_dir_nums.sort()
 bin_root_dir = './../../../train_data/bin_data/20240925_1/'
 exe = 'data_board_to_idx_20240925_1_7_4.out'
 N_PHASES = 60
+'''
 board_sub_dir_nums = [
     18, 19, 20, 21, 24, 25, 27, 28, 29, 30, 31, # old data
     34, 35, # mid-endgame data 1
     36, 37, # book data
     38, # test data
     39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 57, 60, 61, 62, 63, # mid-endgame data 2
-    64
+    64,
+    65, 66, 67, 68, 69, 70, 71, 72, 73, 74, # Egaroucid 7.4.0 1000000 data
 ]
+'''
+board_sub_dir_nums = [65, 66, 67, 68, 69, 70, 71, 72, 73, 74]
 board_sub_dir_nums.sort()
 #'''
 
@@ -167,6 +171,21 @@ board_n_moves['62'] = [56, 59] # random56        3000000 games
 board_n_moves['63'] = [55, 59] # random55        3000000 games
 
 board_n_moves['64'] = [12, 59] # random11 all    5000000 games
+
+
+### Egaroucid 7.4.0 lv.11 data
+board_n_moves['65'] = [10, 59] # random10         100000 games
+board_n_moves['66'] = [11, 59] # random11         100000 games
+board_n_moves['67'] = [12, 59] # random12         100000 games
+board_n_moves['68'] = [13, 59] # random13         100000 games
+board_n_moves['69'] = [14, 59] # random14         100000 games
+board_n_moves['70'] = [15, 59] # random15         100000 games
+board_n_moves['71'] = [16, 59] # random16         100000 games
+board_n_moves['72'] = [17, 59] # random17         100000 games
+board_n_moves['73'] = [18, 59] # random18         100000 games
+board_n_moves['74'] = [19, 59] # random19         100000 games
+
+
 
 
 procs = []
