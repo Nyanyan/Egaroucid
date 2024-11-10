@@ -37,3 +37,6 @@ web_resources/table_generator/ffotest_result
 # book generate
 book
 
+# for macOS
+.DS_Store
+App

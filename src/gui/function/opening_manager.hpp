@@ -1,4 +1,4 @@
-﻿/*
+/*
     Egaroucid Project
 
     @file opening_manager.hpp
@@ -22,6 +22,7 @@ private:
 public:
     bool init(std::string file) {
         arr.clear();
+//        file = FileSystem::RelativePath(Resource(Unicode::Widen(file))).narrow();
         std::ifstream ifs(file);
         if (ifs.fail()) {
             std::cerr << "opening file " << file << " not found" << std::endl;
@@ -72,6 +73,8 @@ Opening opening;
 Opening opening_many;
 
 bool opening_init(std::string lang) {
-    return opening.init("resources/openings/" + lang + "/openings.txt") && opening_many.init("resources/openings/" + lang + "/openings_fork.txt");
+    return opening
+        .init(FileSystem::RelativePath(Resource(Unicode::Widen("resources/openings/" + lang + "/openings.txt"))).narrow()) && opening_many
+        .init(FileSystem::RelativePath(Resource(Unicode::Widen("resources/openings/" + lang + "/openings_fork.txt"))).narrow());
 
 }

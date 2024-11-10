@@ -1,4 +1,4 @@
-﻿/*
+/*
     Egaroucid Project
 
     @file silent_load.hpp
@@ -410,17 +410,17 @@ void init_settings(const Directories* directories, const Resources* resources, S
 void init_directories(Directories* directories) {
     // system directory
     #if GUI_PORTABLE_MODE
-        directories->document_dir = "./document/";
-        directories->appdata_dir = "./appdata/";
+        directories->document_dir = "Documents/Egaroucid/";
+        directories->appdata_dir = "Documents/Egaroucid/Data/";
     #else
-        directories->document_dir = FileSystem::GetFolderPath(SpecialFolder::Documents).narrow() + "Egaroucid/";
-        directories->appdata_dir = FileSystem::GetFolderPath(SpecialFolder::LocalAppData).narrow() + "Egaroucid/";
+        directories->document_dir = FileSystem::GetFolderPath(SpecialFolder::UserProfile).narrow() + "Documents/Egaroucid/";
+        directories->appdata_dir = FileSystem::GetFolderPath(SpecialFolder::UserProfile).narrow() + "Library/Application Support/Egaroucid/";
     #endif
     std::cerr << "document_dir " << directories->document_dir << " appdata_dir " << directories->appdata_dir << std::endl;
 
     // file directories
-    directories->eval_file = "resources/eval.egev2";
-    directories->eval_mo_end_file = "resources/eval_move_ordering_end.egev";
+    directories->eval_file = FileSystem::RelativePath(Resource(Unicode::Widen("eval.egev2"))).narrow();
+    directories->eval_mo_end_file = FileSystem::RelativePath(Resource(Unicode::Widen("eval_move_ordering_end.egev"))).narrow();
 }
 
 int init_resources_silent_load(Resources* resources, Settings* settings, Fonts *fonts, bool *stop_loading) {
@@ -436,11 +436,11 @@ int init_resources_silent_load(Resources* resources, Settings* settings, Fonts *
 
     // language
     std::cerr << "loading language pack" << std::endl;
-    std::string lang_file = "resources/languages/" + settings->lang_name + ".json";
+    std::string lang_file = FileSystem::RelativePath(Resource(Unicode::Widen("languages/" + settings->lang_name + ".json"))).narrow();
     if (!language.init(lang_file)) {
         std::cerr << "language file not found. use alternative language" << std::endl;
         settings->lang_name = DEFAULT_LANGUAGE;
-        lang_file = "resources/languages/" + settings->lang_name + ".json";
+        lang_file = FileSystem::RelativePath(Resource(Unicode::Widen("languages/" + settings->lang_name + ".json"))).narrow();
         if (!language.init(lang_file))
             return ERR_SILENT_LOAD_LANG_NOT_LOADED;
     }
@@ -459,8 +459,8 @@ int init_resources_silent_load(Resources* resources, Settings* settings, Fonts *
 
     // textures
     std::cerr << "loading textures (1)" << std::endl;
-    Texture icon(U"resources/img/icon.png", TextureDesc::Mipped);
-    Texture logo(U"resources/img/logo.png", TextureDesc::Mipped);
+    Texture icon(Resource(U"img/icon.png"), TextureDesc::Mipped);
+    Texture logo(Resource(U"img/logo.png"), TextureDesc::Mipped);
     if (icon.isEmpty() || logo.isEmpty()) {
         return ERR_SILENT_LOAD_TEXTURE_NOT_LOADED;
     }

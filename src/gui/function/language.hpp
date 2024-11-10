@@ -1,4 +1,4 @@
-﻿/*
+/*
     Egaroucid Project
 
     @file language.hpp
@@ -89,7 +89,7 @@ private:
 
 public:
     bool init(std::vector<std::string> &language_name_list) {
-        lang = JSON::Load(U"resources/languages/languages.json");
+        lang = JSON::Load(Resource(U"languages/languages.json"));
         if (not lang) {
             std::cerr << "can't open languages.json" << std::endl;
             return false;
