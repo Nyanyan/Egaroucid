@@ -81,9 +81,9 @@ int check_update(const Directories* directories, String *new_version) {
 int init_resources_load(Resources* resources, Settings* settings, bool *stop_loading) {
     // texture
     std::cerr << "loading textures (2)" << std::endl;
-    Texture checkbox(Resource(U"img/checked.png"), TextureDesc::Mipped);
-    Texture unchecked(Resource(U"img/unchecked.png"), TextureDesc::Mipped);
-    Texture laser_pointer(Resource(U"img/laser_pointer.png"), TextureDesc::Mipped);
+    Texture checkbox(Unicode::Widen(RESOURCE_PATH + "resources/img/checked.png"), TextureDesc::Mipped);
+    Texture unchecked(Unicode::Widen(RESOURCE_PATH + "resources/img/unchecked.png"), TextureDesc::Mipped);
+    Texture laser_pointer(Unicode::Widen(RESOURCE_PATH + "resources/img/laser_pointer.png"), TextureDesc::Mipped);
     if (checkbox.isEmpty() || unchecked.isEmpty() || laser_pointer.isEmpty()) {
         return ERR_LOAD_TEXTURE_NOT_LOADED;
     }
@@ -99,7 +99,7 @@ int init_resources_load(Resources* resources, Settings* settings, bool *stop_loa
     std::cerr << "loading language images" << std::endl;
     std::vector<Texture> lang_img;
     for (int i = 0; i < (int)resources->language_names.size() && !(*stop_loading); ++i) {
-        Texture limg(Resource(U"languages/" +  Unicode::Widen(resources->language_names[i]) + U".png"), TextureDesc::Mipped);
+        Texture limg(Unicode::Widen(RESOURCE_PATH + "resources/languages/" + resources->language_names[i] + ".png"), TextureDesc::Mipped);
         if (limg.isEmpty()) {
             return ERR_LOAD_TEXTURE_NOT_LOADED;
         }

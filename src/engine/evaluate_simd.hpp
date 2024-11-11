@@ -520,7 +520,7 @@ bool evaluate_init(const std::string file, std::string mo_end_nws_file, bool sho
     @return evaluation function conpletely initialized?
 */
 bool evaluate_init(bool show_log) {
-    return evaluate_init(FileSystem::RelativePath(Resource(Unicode::Widen("resources/eval.egev2"))).narrow(), FileSystem::RelativePath(Resource(Unicode::Widen("resources/eval_move_ordering_end.egev"))).narrow(), show_log);
+    return evaluate_init(RESOURCE_PATH + "resources/eval.egev2", RESOURCE_PATH + "resources/eval_move_ordering_end.egev", show_log);
 }
 /*
     @brief calculate surround value used in evaluation function

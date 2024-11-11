@@ -38,12 +38,6 @@
 		2CD8412C283263B2005013A6 /* libboost_filesystem.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 2CD8412B283263B2005013A6 /* libboost_filesystem.a */; };
 		5AB111E12CE0787400CE501D /* engine in Resources */ = {isa = PBXBuildFile; fileRef = 5AB111E02CE0787400CE501D /* engine */; };
 		5AB111E72CE0847D00CE501D /* LICENSE in Resources */ = {isa = PBXBuildFile; fileRef = 5AB111E62CE0847D00CE501D /* LICENSE */; };
-		5AD7B4172CE0E76600E1630F /* book.egbk3 in Resources */ = {isa = PBXBuildFile; fileRef = 5AD7B4162CE0E76600E1630F /* book.egbk3 */; };
-		5AD7B4192CE0E77700E1630F /* eval_move_ordering_end.egev in Resources */ = {isa = PBXBuildFile; fileRef = 5AD7B4182CE0E77700E1630F /* eval_move_ordering_end.egev */; };
-		5AD7B41B2CE0E78500E1630F /* eval.egev2 in Resources */ = {isa = PBXBuildFile; fileRef = 5AD7B41A2CE0E78400E1630F /* eval.egev2 */; };
-		5AD7B41E2CE0E79500E1630F /* languages in Resources */ = {isa = PBXBuildFile; fileRef = 5AD7B41C2CE0E79500E1630F /* languages */; };
-		5AD7B41F2CE0E79500E1630F /* img in Resources */ = {isa = PBXBuildFile; fileRef = 5AD7B41D2CE0E79500E1630F /* img */; };
-		5AD7B4212CE0E7B800E1630F /* resources in Resources */ = {isa = PBXBuildFile; fileRef = 5AD7B4202CE0E7B800E1630F /* resources */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -84,12 +78,6 @@
 		5AB10A062CE070D200CE501D /* Egaroucid_web_compile_cmd.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = Egaroucid_web_compile_cmd.txt; sourceTree = "<group>"; };
 		5AB111E02CE0787400CE501D /* engine */ = {isa = PBXFileReference; lastKnownFileType = folder; name = engine; path = App/engine; sourceTree = "<group>"; };
 		5AB111E62CE0847D00CE501D /* LICENSE */ = {isa = PBXFileReference; lastKnownFileType = text; path = LICENSE; sourceTree = "<group>"; };
-		5AD7B4162CE0E76600E1630F /* book.egbk3 */ = {isa = PBXFileReference; lastKnownFileType = file; name = book.egbk3; path = src/tools/release_script/format_files/0_common_files/book.egbk3; sourceTree = "<group>"; };
-		5AD7B4182CE0E77700E1630F /* eval_move_ordering_end.egev */ = {isa = PBXFileReference; lastKnownFileType = file; name = eval_move_ordering_end.egev; path = src/tools/release_script/format_files/0_common_files/eval_move_ordering_end.egev; sourceTree = "<group>"; };
-		5AD7B41A2CE0E78400E1630F /* eval.egev2 */ = {isa = PBXFileReference; lastKnownFileType = file; name = eval.egev2; path = src/tools/release_script/format_files/0_common_files/eval.egev2; sourceTree = "<group>"; };
-		5AD7B41C2CE0E79500E1630F /* languages */ = {isa = PBXFileReference; lastKnownFileType = folder; name = languages; path = src/tools/release_script/format_files/0_common_files/languages; sourceTree = "<group>"; };
-		5AD7B41D2CE0E79500E1630F /* img */ = {isa = PBXFileReference; lastKnownFileType = folder; name = img; path = src/tools/release_script/format_files/0_common_files/img; sourceTree = "<group>"; };
-		5AD7B4202CE0E7B800E1630F /* resources */ = {isa = PBXFileReference; lastKnownFileType = folder; name = resources; path = src/tools/release_script/format_files/GUI_Installer_files/resources; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -139,12 +127,6 @@
 		2C1778791CE0A9D800BB8AD0 = {
 			isa = PBXGroup;
 			children = (
-				5AD7B4202CE0E7B800E1630F /* resources */,
-				5AD7B41D2CE0E79500E1630F /* img */,
-				5AD7B41C2CE0E79500E1630F /* languages */,
-				5AD7B41A2CE0E78400E1630F /* eval.egev2 */,
-				5AD7B4182CE0E77700E1630F /* eval_move_ordering_end.egev */,
-				5AD7B4162CE0E76600E1630F /* book.egbk3 */,
 				5AB111E62CE0847D00CE501D /* LICENSE */,
 				5AB111E02CE0787400CE501D /* engine */,
 				2C1778921CE0A9EA00BB8AD0 /* Info.plist */,
@@ -222,6 +204,7 @@
 				2C1778801CE0A9EA00BB8AD0 /* Sources */,
 				2C1778811CE0A9EA00BB8AD0 /* Frameworks */,
 				2C1778821CE0A9EA00BB8AD0 /* Resources */,
+				5A2C37D62CE1E838009BFF21 /* ShellScript */,
 			);
 			buildRules = (
 			);
@@ -268,12 +251,6 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				5AD7B4212CE0E7B800E1630F /* resources in Resources */,
-				5AD7B41E2CE0E79500E1630F /* languages in Resources */,
-				5AD7B41F2CE0E79500E1630F /* img in Resources */,
-				5AD7B41B2CE0E78500E1630F /* eval.egev2 in Resources */,
-				5AD7B4192CE0E77700E1630F /* eval_move_ordering_end.egev in Resources */,
-				5AD7B4172CE0E76600E1630F /* book.egbk3 in Resources */,
 				5AB111E12CE0787400CE501D /* engine in Resources */,
 				5AB111E72CE0847D00CE501D /* LICENSE in Resources */,
 				2C1778A31CE0B65500BB8AD0 /* icon.icns in Resources */,
@@ -281,6 +258,26 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXResourcesBuildPhase section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		5A2C37D62CE1E838009BFF21 /* ShellScript */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+			);
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "# Type a script or drag a script file from your workspace to insert its path.\nTARGET_RESOURCES=\"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/resources\"\n\nmkdir -p \"${TARGET_RESOURCES}\"\n\ncp -r ${SRCROOT}/src/tools/release_script/format_files/GUI_Installer_files/resources/* ${TARGET_RESOURCES}/\ncp -r ${SRCROOT}/src/tools/release_script/format_files/0_common_files/* ${TARGET_RESOURCES}/\n\n";
+		};
+/* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		2C1778801CE0A9EA00BB8AD0 /* Sources */ = {
@@ -451,6 +448,7 @@
 				OTHER_CPLUSPLUSFLAGS = (
 					"$(OTHER_CFLAGS)",
 					"-fvisibility=hidden",
+					"-DHAS_NO_AVX2=ON",
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.Nyanyan.egaroucid;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -538,6 +536,7 @@
 				OTHER_CPLUSPLUSFLAGS = (
 					"$(OTHER_CFLAGS)",
 					"-fvisibility=hidden",
+					"-DHAS_NO_AVX2=ON",
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.Nyanyan.egaroucid;
 				PRODUCT_NAME = "$(TARGET_NAME)";

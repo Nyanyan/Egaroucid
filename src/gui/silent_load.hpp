@@ -419,8 +419,8 @@ void init_directories(Directories* directories) {
     std::cerr << "document_dir " << directories->document_dir << " appdata_dir " << directories->appdata_dir << std::endl;
 
     // file directories
-    directories->eval_file = FileSystem::RelativePath(Resource(Unicode::Widen("eval.egev2"))).narrow();
-    directories->eval_mo_end_file = FileSystem::RelativePath(Resource(Unicode::Widen("eval_move_ordering_end.egev"))).narrow();
+    directories->eval_file = RESOURCE_PATH + "resources/eval.egev2";
+    directories->eval_mo_end_file = RESOURCE_PATH + "resources/eval_move_ordering_end.egev";
 }
 
 int init_resources_silent_load(Resources* resources, Settings* settings, Fonts *fonts, bool *stop_loading) {
@@ -436,11 +436,11 @@ int init_resources_silent_load(Resources* resources, Settings* settings, Fonts *
 
     // language
     std::cerr << "loading language pack" << std::endl;
-    std::string lang_file = FileSystem::RelativePath(Resource(Unicode::Widen("languages/" + settings->lang_name + ".json"))).narrow();
+    std::string lang_file = RESOURCE_PATH + "resources/languages/" + settings->lang_name + ".json";
     if (!language.init(lang_file)) {
         std::cerr << "language file not found. use alternative language" << std::endl;
         settings->lang_name = DEFAULT_LANGUAGE;
-        lang_file = FileSystem::RelativePath(Resource(Unicode::Widen("languages/" + settings->lang_name + ".json"))).narrow();
+        lang_file = RESOURCE_PATH + "resources/languages/" + settings->lang_name + ".json";
         if (!language.init(lang_file))
             return ERR_SILENT_LOAD_LANG_NOT_LOADED;
     }
@@ -459,8 +459,8 @@ int init_resources_silent_load(Resources* resources, Settings* settings, Fonts *
 
     // textures
     std::cerr << "loading textures (1)" << std::endl;
-    Texture icon(Resource(U"img/icon.png"), TextureDesc::Mipped);
-    Texture logo(Resource(U"img/logo.png"), TextureDesc::Mipped);
+    Texture icon(Unicode::Widen(RESOURCE_PATH + "resources/img/icon.png"), TextureDesc::Mipped);
+    Texture logo(Unicode::Widen(RESOURCE_PATH + "resources/img/logo.png"), TextureDesc::Mipped);
     if (icon.isEmpty() || logo.isEmpty()) {
         return ERR_SILENT_LOAD_TEXTURE_NOT_LOADED;
     }

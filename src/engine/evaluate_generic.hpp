@@ -408,7 +408,6 @@ inline bool load_eval_move_ordering_end_file(const char* file, bool show_log) {
     @return evaluation function conpletely initialized?
 */
 inline bool evaluate_init(const char* file, const char* mo_end_nws_file, bool show_log) {
-    std::string file_str(file);
     bool eval_loaded = load_eval_file(file, show_log);
     if (!eval_loaded) {
         std::cerr << "[ERROR] [FATAL] evaluation file not loaded" << std::endl;
@@ -440,7 +439,7 @@ bool evaluate_init(const std::string file, std::string mo_end_nws_file, bool sho
     @return evaluation function conpletely initialized?
 */
 bool evaluate_init(bool show_log) {
-    return evaluate_init(FileSystem::RelativePath(Resource(Unicode::Widen("resources/eval.egev2"))).narrow(), FileSystem::RelativePath(Resource(Unicode::Widen("resources/eval_move_ordering_end.egev"))).narrow(), show_log);
+    return evaluate_init(RESOURCE_PATH + "resources/eval.egev2", RESOURCE_PATH + "resources/eval_move_ordering_end.egev", show_log);
 }
 
 /*

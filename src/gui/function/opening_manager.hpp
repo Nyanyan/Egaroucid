@@ -22,7 +22,6 @@ private:
 public:
     bool init(std::string file) {
         arr.clear();
-//        file = FileSystem::RelativePath(Resource(Unicode::Widen(file))).narrow();
         std::ifstream ifs(file);
         if (ifs.fail()) {
             std::cerr << "opening file " << file << " not found" << std::endl;
