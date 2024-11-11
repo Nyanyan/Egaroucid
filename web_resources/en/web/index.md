@@ -1,9 +1,7 @@
 # Egaroucid for Web
 
 <div align="center" style="line-height: 1.5;">
-    <span>This is simplified version and weaker than [download version](./../download/). Also, this version has very few features. You can use full rich features with download version.<br>
-    If loading doesn't finish in 10 seconds, please reload this page.<br></span>
-    <span id="ai_info">AI Initializing...</span>
+    <span id="ai_info">AI Initializing...</span><span>If loading doesn't finish in 10 seconds, please reload.</span>
 </div>
 <div align="center">
     <table class="settings_table">
@@ -75,6 +73,7 @@
     <div class="record" id="record"></div>
 </div>
 <div align="center">
+    <p>This is simplified version and weaker than [download version](./../download/). Also, this version has very few features. You can use full rich features with download version.</p>
     <div class="sub_title">Usage</div>
     <div class="text">
         Select your turn and AI strength, then press "Start" button.<br>

@@ -1,9 +1,7 @@
 # Egaroucid for Web
 
 <div align="center">
-    <span>これは[ダウンロード版](./../download/)よりも弱い簡易バージョンです。機能も非常に少ないです。豊富な機能の全てを使いたい場合はダウンロード版をお使いください。<br>
-    10秒経っても読み込めない場合はリロードしてください。<br></span>
-    <span id="ai_info">AI読み込み中…</span>
+    <span id="ai_info">AI読み込み中…</span><span>10秒経っても読み込めない場合はリロードしてください。</span>
 </div>
 <div align="center">
     <table class="settings_table">
@@ -75,6 +73,7 @@
     <div class="record" id="record"></div>
 </div>
 <div align="center">
+    <p>これは[ダウンロード版](./../download/)よりも弱い簡易バージョンです。機能も非常に少ないです。豊富な機能の全てを使いたい場合はダウンロード版をお使いください。<p>
     <div class="sub_title">使い方</div>
     <div class="text">
         手番とAIの強さを選択し、対局開始ボタンを押してください。<br>
