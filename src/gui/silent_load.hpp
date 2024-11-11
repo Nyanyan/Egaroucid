@@ -410,11 +410,11 @@ void init_settings(const Directories* directories, const Resources* resources, S
 void init_directories(Directories* directories) {
     // system directory
     #if GUI_PORTABLE_MODE
-        directories->document_dir = "Documents/Egaroucid/";
-        directories->appdata_dir = "Documents/Egaroucid/Data/";
+        directories->document_dir = "./document/";
+        directories->appdata_dir = "./appdata/";
     #else
-        directories->document_dir = FileSystem::GetFolderPath(SpecialFolder::UserProfile).narrow() + "Documents/Egaroucid/";
-        directories->appdata_dir = FileSystem::GetFolderPath(SpecialFolder::UserProfile).narrow() + "Library/Application Support/Egaroucid/";
+        directories->document_dir = FileSystem::GetFolderPath(SpecialFolder::Documents).narrow() + "Egaroucid/";
+        directories->appdata_dir = FileSystem::GetFolderPath(SpecialFolder::LocalAppData).narrow() + "Egaroucid/";
     #endif
     std::cerr << "document_dir " << directories->document_dir << " appdata_dir " << directories->appdata_dir << std::endl;
 
