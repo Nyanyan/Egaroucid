@@ -127,7 +127,7 @@ int init_resources_load(Resources* resources, Settings* settings, bool *stop_loa
 
     // license
     std::cerr << "loading license" << std::endl;
-    TextReader reader{Resource(U"LICENSE")};
+    TextReader reader{Unicode::Widen(RESOURCE_PATH + "LICENSE")};
     if (not reader) {
         return ERR_LOAD_LICENSE_FILE_NOT_LOADED;
     }

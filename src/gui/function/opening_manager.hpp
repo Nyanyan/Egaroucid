@@ -73,7 +73,7 @@ Opening opening_many;
 
 bool opening_init(std::string lang) {
     return opening
-        .init(FileSystem::RelativePath(Resource(Unicode::Widen("resources/openings/" + lang + "/openings.txt"))).narrow()) && opening_many
-        .init(FileSystem::RelativePath(Resource(Unicode::Widen("resources/openings/" + lang + "/openings_fork.txt"))).narrow());
+        .init(RESOURCE_PATH + "resources/openings/" + lang + "/openings.txt") && opening_many
+        .init(RESOURCE_PATH + "resources/openings/" + lang + "/openings_fork.txt");
 
 }
