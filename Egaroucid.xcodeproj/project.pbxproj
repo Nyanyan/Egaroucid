@@ -83,7 +83,6 @@
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		5AB110B42CE0740200CE501D /* engine */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = engine; sourceTree = "<group>"; };
 		5AB110D52CE0740200CE501D /* gui */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = gui; sourceTree = "<group>"; };
-		5AB111952CE0740200CE501D /* tools */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = tools; sourceTree = "<group>"; };
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -155,7 +154,6 @@
 				5AB10A062CE070D200CE501D /* Egaroucid_web_compile_cmd.txt */,
 				5AB110B42CE0740200CE501D /* engine */,
 				5AB110D52CE0740200CE501D /* gui */,
-				5AB111952CE0740200CE501D /* tools */,
 			);
 			path = src;
 			sourceTree = "<group>";
