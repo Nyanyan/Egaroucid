@@ -186,7 +186,7 @@
 #include <string>
 #include <Siv3D.hpp>
 #ifdef __APPLE__
-    constexpr std::string RESOURCE_PATH = FileSystem::RelativePath(Resource(U"")).narrow();
+    const std::string RESOURCE_PATH = FileSystem::RelativePath(Resource(U"")).narrow();
 #else
     constexpr std::string RESOURCE_PATH = "./";
 #endif
