@@ -287,6 +287,7 @@ void self_play_line(std::vector<std::string> arg, Options *options, State *state
             std::cout << transcript << std::endl;
         }
     } else{
+        int print_task_idx = 0;
         std::vector<std::future<std::string>> tasks;
         for (std::pair<std::string, Board> start_position: board_list) {
             bool go_to_next_task = false;
@@ -300,20 +301,28 @@ void self_play_line(std::vector<std::string> arg, Options *options, State *state
                         tasks.pop_back();
                     }
                 }
-                for (std::future<std::string> &task: tasks) {
-                    if (task.valid()) {
-                        if (task.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
-                            std::string transcript = task.get();
+                if (tasks.size() > print_task_idx) {
+                    if (tasks[print_task_idx].valid()) {
+                        if (tasks[print_task_idx].wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
+                            std::string transcript = tasks[print_task_idx].get();
                             std::cout << transcript << std::endl;
+                            ++print_task_idx;
                         }
+                    } else {
+                        std::cerr << "[ERROR] task not valid" << std::endl;
+                        std::exit(1);
                     }
                 }
             }
         }
-        for (std::future<std::string> &task: tasks) {
-            if (task.valid()) {
-                std::string transcript = task.get();
+        while (print_task_idx < tasks.size()) {
+            if (tasks[print_task_idx].valid()) {
+                std::string transcript = tasks[print_task_idx].get();
                 std::cout << transcript << std::endl;
+                ++print_task_idx;
+            } else {
+                std::cerr << "[ERROR] task not valid" << std::endl;
+                std::exit(1);
             }
         }
     }
