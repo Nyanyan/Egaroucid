@@ -14,10 +14,7 @@
 #include "./../engine/engine_all.hpp"
 #include "function/function_all.hpp"
 
-#ifndef __APPLE__
-    #include <windows.h>
-    #include <shlwapi.h>
-#else
+#ifdef __APPLE__
     #include <sys/types.h>
     #include <sys/sysctl.h>
     #include <mach/mach.h>
@@ -54,6 +51,9 @@
             }
         }
     };
+#else
+    #include <windows.h>
+    #include <shlwapi.h>
 #endif
 
 
