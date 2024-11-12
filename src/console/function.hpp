@@ -305,6 +305,12 @@ void self_play_line(std::vector<std::string> arg, Options *options, State *state
                 }
             }
         }
+        for (std::future<std::string> &task: tasks) {
+            if (task.valid()) {
+                std::string transcript = task.get();
+                std::cout << transcript << std::endl;
+            }
+        }
     }
     std::cerr << "done in " << tim() - strt << " ms" << std::endl;
 }
