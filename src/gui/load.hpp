@@ -51,7 +51,7 @@
             }
         }
     };
-#else
+#else // Windows
     #include <windows.h>
     #include <shlwapi.h>
 #endif
