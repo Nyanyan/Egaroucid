@@ -16,6 +16,10 @@
     -DHAS_32_BIT_OS     : 32bit environment
 */
 
+#pragma once
+#include <string>
+#include <Siv3D.hpp>
+
 /*
     @brief Option
 */
@@ -181,12 +185,14 @@
 // endgame accuracy test
 #define TEST_ENDGAME_ACCURACY false
 
-//resource path
-#pragma once
-#include <string>
-#include <Siv3D.hpp>
+
+
+
+/*
+    @brief path definition
+*/
 #ifdef __APPLE__
     const std::string RESOURCE_PATH = FileSystem::RelativePath(Resource(U"")).narrow();
-#else
+#else // Windows
     constexpr std::string RESOURCE_PATH = "./";
 #endif
