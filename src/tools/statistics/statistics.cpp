@@ -5,7 +5,7 @@
 #include <fstream>
 #include <ios>
 #include <algorithm>
-#include "util/board.hpp"
+#include "../../engine/board.hpp"
 
 using namespace std;
 

@@ -1,6 +1,6 @@
 #include <iostream>
 #include <string>
-#include "engine/engine_all.hpp"
+#include "../../engine/engine_all.hpp"
 
 void board_to_line_init(std::string book_file){
     thread_pool.resize(32);

@@ -1,4 +1,4 @@
-﻿/*
+/*
     Egaroucid Project
 
     @file load.hpp
@@ -11,10 +11,51 @@
 #pragma once
 #include <iostream>
 #include <future>
-#include <windows.h>
-#include <shlwapi.h>
 #include "./../engine/engine_all.hpp"
 #include "function/function_all.hpp"
+
+#ifndef __APPLE__
+    #include <windows.h>
+    #include <shlwapi.h>
+#else
+    #include <sys/types.h>
+    #include <sys/sysctl.h>
+    #include <mach/mach.h>
+
+    struct MacMemoryStatusEx {
+        uint64_t totalPhysicalMemory;
+        uint64_t freeMemory;
+        uint64_t usedMemory;
+        uint64_t activeMemory;
+        uint64_t inactiveMemory;
+        uint64_t wiredMemory;
+
+        MacMemoryStatusEx() {
+            totalPhysicalMemory = 0;
+            freeMemory = 0;
+            usedMemory = 0;
+            activeMemory = 0;
+            inactiveMemory = 0;
+            wiredMemory = 0;
+        }
+
+        void updateMemoryStatus() {
+            size_t length = sizeof(totalPhysicalMemory);
+            sysctlbyname("hw.memsize", &totalPhysicalMemory, &length, nullptr, 0);
+            
+            mach_msg_type_number_t count = HOST_VM_INFO_COUNT;
+            vm_statistics64_data_t vm_stat;
+            if (host_statistics64(mach_host_self(), HOST_VM_INFO, (host_info64_t)&vm_stat, &count) == KERN_SUCCESS) {
+                freeMemory = vm_stat.free_count * vm_page_size;
+                activeMemory = vm_stat.active_count * vm_page_size;
+                inactiveMemory = vm_stat.inactive_count * vm_page_size;
+                wiredMemory = vm_stat.wire_count * vm_page_size;
+                usedMemory = (activeMemory + inactiveMemory + wiredMemory);
+            }
+        }
+    };
+#endif
+
 
 void init_shortcut_keys(const Directories* directories) {
     String file = U"{}shortcut_key.json"_fmt(Unicode::Widen(directories->appdata_dir));
@@ -47,9 +88,9 @@ int check_update(const Directories* directories, String *new_version) {
 int init_resources_load(Resources* resources, Settings* settings, bool *stop_loading) {
     // texture
     std::cerr << "loading textures (2)" << std::endl;
-    Texture checkbox(U"resources/img/checked.png", TextureDesc::Mipped);
-    Texture unchecked(U"resources/img/unchecked.png", TextureDesc::Mipped);
-    Texture laser_pointer(U"resources/img/laser_pointer.png", TextureDesc::Mipped);
+    Texture checkbox(Unicode::Widen(RESOURCE_PATH + "resources/img/checked.png"), TextureDesc::Mipped);
+    Texture unchecked(Unicode::Widen(RESOURCE_PATH + "resources/img/unchecked.png"), TextureDesc::Mipped);
+    Texture laser_pointer(Unicode::Widen(RESOURCE_PATH + "resources/img/laser_pointer.png"), TextureDesc::Mipped);
     if (checkbox.isEmpty() || unchecked.isEmpty() || laser_pointer.isEmpty()) {
         return ERR_LOAD_TEXTURE_NOT_LOADED;
     }
@@ -65,7 +106,7 @@ int init_resources_load(Resources* resources, Settings* settings, bool *stop_loa
     std::cerr << "loading language images" << std::endl;
     std::vector<Texture> lang_img;
     for (int i = 0; i < (int)resources->language_names.size() && !(*stop_loading); ++i) {
-        Texture limg(U"resources/languages/" +  Unicode::Widen(resources->language_names[i]) + U".png", TextureDesc::Mipped);
+        Texture limg(Unicode::Widen(RESOURCE_PATH + "resources/languages/" + resources->language_names[i] + ".png"), TextureDesc::Mipped);
         if (limg.isEmpty()) {
             return ERR_LOAD_TEXTURE_NOT_LOADED;
         }
@@ -93,7 +134,7 @@ int init_resources_load(Resources* resources, Settings* settings, bool *stop_loa
 
     // license
     std::cerr << "loading license" << std::endl;
-    TextReader reader{U"LICENSE"};
+    TextReader reader{Unicode::Widen(RESOURCE_PATH + "LICENSE")};
     if (not reader) {
         return ERR_LOAD_LICENSE_FILE_NOT_LOADED;
     }
@@ -120,9 +161,15 @@ int init_ai(Settings* settings, const Directories* directories, bool *stop_loadi
     #if USE_MPC_PRE_CALCULATION
         mpc_init();
     #endif
-    MEMORYSTATUSEX msex = { sizeof(MEMORYSTATUSEX) };
-    GlobalMemoryStatusEx( &msex );
-    double free_mb = (double)msex.ullAvailPhys / 1024 / 1024;
+    #ifndef __APPLE__
+        MEMORYSTATUSEX msex = { sizeof(MEMORYSTATUSEX) };
+        GlobalMemoryStatusEx( &msex );
+        double free_mb = (double)msex.ullAvailPhys / 1024 / 1024;
+    #else
+        MacMemoryStatusEx msex;
+        msex.updateMemoryStatus();
+        double free_mb = static_cast<double>(msex.freeMemory) / 1024 / 1024;
+    #endif
     double size_mb = (double)sizeof(Hash_node) / 1024 / 1024 * hash_sizes[MAX_HASH_LEVEL];
     std::cerr << "memory " << free_mb << " " << size_mb << std::endl;
     while (free_mb <= size_mb && MAX_HASH_LEVEL > 26) {

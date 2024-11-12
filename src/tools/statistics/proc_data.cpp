@@ -3,7 +3,7 @@
 #include <sstream>
 #include <iomanip>
 #include <fstream>
-#include "util/board.hpp"
+#include "../../engine/board.hpp"
 
 using namespace std;
 

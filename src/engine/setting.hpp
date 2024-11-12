@@ -162,12 +162,6 @@
 // thread monitor
 #define USE_THREAD_MONITOR false
 
-
-
-
-
-
-
 /*
     @brief tuning
 */
@@ -186,3 +180,11 @@
 
 // endgame accuracy test
 #define TEST_ENDGAME_ACCURACY false
+
+//resource path
+#pragma once
+#ifdef __APPLE__
+    const std::string RESOURCE_PATH = FileSystem::RelativePath(Resource(U"")).narrow();
+#else
+    const std::string RESOURCE_PATH = "./"
+#endif

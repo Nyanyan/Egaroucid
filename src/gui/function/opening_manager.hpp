@@ -1,4 +1,4 @@
-﻿/*
+/*
     Egaroucid Project
 
     @file opening_manager.hpp
@@ -72,6 +72,8 @@ Opening opening;
 Opening opening_many;
 
 bool opening_init(std::string lang) {
-    return opening.init("resources/openings/" + lang + "/openings.txt") && opening_many.init("resources/openings/" + lang + "/openings_fork.txt");
+    return opening
+        .init(RESOURCE_PATH + "resources/openings/" + lang + "/openings.txt") && opening_many
+        .init(RESOURCE_PATH + "resources/openings/" + lang + "/openings_fork.txt");
 
 }

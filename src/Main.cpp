@@ -1,4 +1,4 @@
-﻿/*
+/*
     Egaroucid Project
 
     @file Main.cpp
@@ -40,7 +40,7 @@ double CalculateScale(const Vec2& baseSize, const Vec2& currentSize) {
                 return logger_String;
             }
     };
-#endif 
+#endif
 
 /*
     @brief main function
@@ -113,3 +113,4 @@ void Main() {
         #endif
     }
 }
+

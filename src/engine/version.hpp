@@ -24,7 +24,7 @@
 #elif defined _WIN32
     #define EGAROUCID_OS (std::string)"Windows"
 #elif defined __APPLE__
-    #define EGAROUCID_OS (std::string)"Mac OSX"
+    #define EGAROUCID_OS (std::string)"macOS"
 #else
     #define EGAROUCID_OS (std::string)"Linux"
 #endif
