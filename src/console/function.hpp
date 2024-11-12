@@ -199,7 +199,6 @@ void self_play(std::vector<std::string> arg, Options *options, State *state) {
                         std::string transcript = task.get();
                         std::cout << transcript << std::endl;
                         ++n_games_done;
-                        break;
                     }
                 }
             }
@@ -302,7 +301,6 @@ void self_play_line(std::vector<std::string> arg, Options *options, State *state
                     if (task.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
                         std::string transcript = task.get();
                         std::cout << transcript << std::endl;
-                        break;
                     }
                 }
             }
