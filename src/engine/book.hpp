@@ -1,4 +1,4 @@
-/*
+﻿/*
     Egaroucid Project
 
     @file book.hpp
