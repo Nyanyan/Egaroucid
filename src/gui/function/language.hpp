@@ -89,7 +89,7 @@ private:
 
 public:
     bool init(std::vector<std::string> &language_name_list) {
-        lang = JSON::Load(Unicode::Widen(RESOURCE_PATH + "resources/languages/languages.json"));
+        lang = JSON::Load(Unicode::Widen(EXE_DIRECTORY_PATH + "resources/languages/languages.json"));
         if (not lang) {
             std::cerr << "can't open languages.json" << std::endl;
             return false;

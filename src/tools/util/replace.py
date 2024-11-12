@@ -1,7 +1,7 @@
 import glob
 
 str_replaces = [
-    ['put_order', 'play_ordering']
+    ['RESOURCE_PATH', 'EXE_DIRECTORY_PATH']
 ]
 
 files = glob.glob('./../../**/*.cpp', recursive=True)

@@ -192,7 +192,7 @@
     @brief path definition
 */
 #ifdef __APPLE__
-    const std::string RESOURCE_PATH = FileSystem::RelativePath(Resource(U"")).narrow();
+    const std::string EXE_DIRECTORY_PATH = FileSystem::RelativePath(Resource(U"")).narrow();
 #else // Windows
-    constexpr std::string RESOURCE_PATH = "./";
+    constexpr std::string EXE_DIRECTORY_PATH = "./";
 #endif
