@@ -289,18 +289,23 @@ void self_play_line(std::vector<std::string> arg, Options *options, State *state
     } else{
         std::vector<std::future<std::string>> tasks;
         for (std::pair<std::string, Board> start_position: board_list) {
-            if (thread_pool.get_n_idle() && tasks.size() < board_list.size()) {
-                bool pushed = false;
-                tasks.emplace_back(thread_pool.push(&pushed, std::bind(&self_play_task, start_position.second, start_position.first, options, true, 0, SELF_PLAY_N_TRY)));
-                if (!pushed) {
-                    tasks.pop_back();
+            bool go_to_next_task = false;
+            while (!go_to_next_task) {
+                if (thread_pool.get_n_idle() && tasks.size() < board_list.size()) {
+                    bool pushed = false;
+                    tasks.emplace_back(thread_pool.push(&pushed, std::bind(&self_play_task, start_position.second, start_position.first, options, true, 0, SELF_PLAY_N_TRY)));
+                    if (pushed) {
+                        go_to_next_task = true;
+                    } else {
+                        tasks.pop_back();
+                    }
                 }
-            }
-            for (std::future<std::string> &task: tasks) {
-                if (task.valid()) {
-                    if (task.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
-                        std::string transcript = task.get();
-                        std::cout << transcript << std::endl;
+                for (std::future<std::string> &task: tasks) {
+                    if (task.valid()) {
+                        if (task.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
+                            std::string transcript = task.get();
+                            std::cout << transcript << std::endl;
+                        }
                     }
                 }
             }
