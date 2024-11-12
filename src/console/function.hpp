@@ -100,13 +100,11 @@ bool execute_special_tasks_loop(Board_info *board, State *state, Options *option
 }
 
 
-std::string self_play_task(Options *options, bool use_multi_thread, int n_random_moves, int n_try) {
-    Board board_start;
+std::string self_play_task(Board board_start, std::string pre_moves_transcript, Options *options, bool use_multi_thread, int n_random_moves_additional, int n_try) {
     Flip flip;
     Search_result result;
-    board_start.reset();
-    std::string res;
-    for (int j = 0; j < n_random_moves && board_start.check_pass(); ++j) {
+    std::string res = pre_moves_transcript;
+    for (int j = 0; j < n_random_moves_additional && board_start.check_pass(); ++j) {
         uint64_t legal = board_start.get_legal();
         int random_idx = myrandrange(0, pop_count_ull(legal));
         int t = 0;
@@ -177,9 +175,11 @@ void self_play(std::vector<std::string> arg, Options *options, State *state) {
     }
     std::cerr << n_games << " games with " << n_random_moves << " random moves" << std::endl;
     uint64_t strt = tim();
+    Board board_start;
+    board_start.reset();
     if (thread_pool.size() == 0) {
         for (int i = 0; i < n_games; ++i) {
-            std::string transcript = self_play_task(options, false, n_random_moves, SELF_PLAY_N_TRY);
+            std::string transcript = self_play_task(board_start, "", options, false, n_random_moves, SELF_PLAY_N_TRY);
             std::cout << transcript << std::endl;
         }
     } else{
@@ -188,9 +188,10 @@ void self_play(std::vector<std::string> arg, Options *options, State *state) {
         while (n_games_done < n_games) {
             if (thread_pool.get_n_idle() && (int)tasks.size() < n_games) {
                 bool pushed = false;
-                tasks.emplace_back(thread_pool.push(&pushed, std::bind(&self_play_task, options, true, n_random_moves, SELF_PLAY_N_TRY)));
-                if (!pushed)
+                tasks.emplace_back(thread_pool.push(&pushed, std::bind(&self_play_task, board_start, "", options, true, n_random_moves, SELF_PLAY_N_TRY)));
+                if (!pushed) {
                     tasks.pop_back();
+                }
             }
             for (std::future<std::string> &task: tasks) {
                 if (task.valid()) {
@@ -266,26 +267,46 @@ void self_play_line(std::vector<std::string> arg, Options *options, State *state
     }
     uint64_t strt = tim();
     std::string line;
-    Board board;
+    Board board_start;
     Flip flip;
     Search_result result;
+    std::vector<std::pair<std::string, Board>> board_list;
     while (std::getline(ifs, line)) {
-        board.reset();
+        board_start.reset();
         for (int i = 0; i < (int)line.size() - 1; i += 2) {
             int x = line[i] - 'a';
             int y = line[i + 1] - '1';
             int coord = HW2_M1 - (y * HW + x);
-            calc_flip(&flip, &board, coord);
-            std::cout << idx_to_coord(flip.pos);
-            board.move_board(&flip);
+            calc_flip(&flip, &board_start, coord);
+            board_start.move_board(&flip);
         }
-        while (board.check_pass()) {
-            result = ai(board, options->level, true, 0, true, options->show_log);
-            calc_flip(&flip, &board, result.policy);
-            std::cout << idx_to_coord(flip.pos);
-            board.move_board(&flip);
+        board_list.emplace_back(std::make_pair(line, board_start));
+    }
+    if (thread_pool.size() == 0) {
+        for (std::pair<std::string, Board> start_position: board_list) {
+            std::string transcript = self_play_task(start_position.second, start_position.first, options, false, 0, SELF_PLAY_N_TRY);
+            std::cout << transcript << std::endl;
         }
-        std::cout << std::endl;
+    } else{
+        std::vector<std::future<std::string>> tasks;
+        for (std::pair<std::string, Board> start_position: board_list) {
+            if (thread_pool.get_n_idle() && tasks.size() < board_list.size()) {
+                bool pushed = false;
+                tasks.emplace_back(thread_pool.push(&pushed, std::bind(&self_play_task, start_position.second, start_position.first, options, true, 0, SELF_PLAY_N_TRY)));
+                if (!pushed) {
+                    tasks.pop_back();
+                }
+            }
+            for (std::future<std::string> &task: tasks) {
+                if (task.valid()) {
+                    if (task.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
+                        std::string transcript = task.get();
+                        std::cout << transcript << std::endl;
+                        break;
+                    }
+                }
+            }
+        }
     }
     std::cerr << "done in " << tim() - strt << " ms" << std::endl;
 }
