@@ -22,7 +22,7 @@
 
 #define SELF_PLAY_N_TRY 1
 
-void setboard(Board_info *board, std::string board_str);
+void setboard(Board_info *board, Options *options, State *state, std::string board_str);
 Search_result go_noprint(Board_info *board, Options *options, State *state);
 void print_search_result_head();
 void print_search_result_body(Search_result result, int level);
@@ -48,7 +48,7 @@ void solve_problems(std::vector<std::string> arg, Options *options, State *state
     total.time = 0;
     while (std::getline(ifs, line)) {
         transposition_table.init();
-        setboard(&board, line);
+        setboard(&board, options, state, line);
         #if USE_THREAD_MONITOR
             start_thread_monitor();
         #endif

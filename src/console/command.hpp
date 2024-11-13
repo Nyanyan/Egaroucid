@@ -155,8 +155,8 @@ void redo(Board_info *board, int remain) {
     redo(board, remain - 1);
 }
 
-uint64_t calc_allowed_time_ply(Board board, const State *state) {
-    int remaining_moves = HW2 - board->n_discs();
+uint64_t calc_allowed_time_ply(const Board board, const State *state) {
+    int remaining_moves = HW2 - board.n_discs();
     return state->remaining_time_msec / remaining_moves;
 }
 
@@ -206,7 +206,7 @@ void go(Board_info *board, Options *options, State *state) {
     }
 }
 
-void setboard(Board_info *board, std::string board_str, Options *options, State *state) {
+void setboard(Board_info *board, Options *options, State *state, std::string board_str) {
     board_str.erase(std::remove_if(board_str.begin(), board_str.end(), ::isspace), board_str.end());
     if (board_str.length() != HW2 + 1) {
         std::cerr << "[ERROR] invalid argument" << std::endl;
