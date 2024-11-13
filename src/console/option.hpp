@@ -14,6 +14,8 @@
 #include "commandline_option.hpp"
 #include "console_common.hpp"
 
+#define TIME_NOT_ALLOCATED -1
+
 struct Options {
     std::string binary_path;
     int level;
@@ -28,6 +30,8 @@ struct Options {
     int mode;
     bool gtp;
     bool quiet;
+    int time_allocated_minutes; // -1 (TIME_NOT_ALLOCATED): not allocated
+    bool ponder;
 };
 
 Options get_options(std::vector<Commandline_option> commandline_options, std::string binary_path) {
@@ -117,5 +121,21 @@ Options get_options(std::vector<Commandline_option> commandline_options, std::st
     }
     res.gtp = find_commandline_option(commandline_options, ID_GTP);
     res.quiet = find_commandline_option(commandline_options, ID_QUIET);
+    res.time_allocated_minutes = TIME_NOT_ALLOCATED;
+    if (find_commandline_option(commandline_options, ID_TIME_ALLOCATE)) {
+        std::vector<std::string> arg = get_commandline_option_arg(commandline_options, ID_TIME_ALLOCATE);
+        try {
+            res.time_allocated_minutes = std::stoi(arg[0]);
+            if (res.time_allocated_minutes < 1) {
+                res.time_allocated_minutes = TIME_NOT_ALLOCATED;
+                std::cerr << "[ERROR] time allocation argument out of range" << std::endl;
+            }
+        } catch (const std::invalid_argument& e) {
+            std::cerr << "[ERROR] invalid time allocation" << std::endl;
+        } catch (const std::out_of_range& e) {
+            std::cerr << "[ERROR] time allocation argument out of range" << std::endl;
+        }
+    }
+    res.ponder = find_commandline_option(commandline_options, ID_PONDER);
     return res;
 }
