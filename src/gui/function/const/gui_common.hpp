@@ -11,22 +11,10 @@
 #pragma once
 #include <iostream>
 #include <Siv3D.hpp>
-#include <string>
 #include "./../../engine/engine_all.hpp"
 #include "./../menu.hpp"
 #include "info.hpp"
 #include "url.hpp"
-
-
-/*
-    @brief path definition
-*/
-#ifdef __APPLE__
-    const std::string EXE_DIRECTORY_PATH = FileSystem::RelativePath(Resource(U"")).narrow();
-#else // Windows
-    constexpr std::string EXE_DIRECTORY_PATH = "./";
-#endif
-
 
 // graph definition
 #define GRAPH_IGNORE_VALUE INF

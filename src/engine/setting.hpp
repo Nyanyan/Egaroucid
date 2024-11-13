@@ -17,6 +17,7 @@
 */
 
 #pragma once
+#include <string>
 
 /*
     @brief Option
@@ -182,3 +183,20 @@
 
 // endgame accuracy test
 #define TEST_ENDGAME_ACCURACY false
+
+
+
+
+/*
+    @brief path definition
+*/
+#ifdef __APPLE__
+    #ifdef GUI_BUILD
+        #include <Siv3D.hpp>
+        const std::string EXE_DIRECTORY_PATH = FileSystem::RelativePath(Resource(U"")).narrow();
+    #else
+        constexpr std::string EXE_DIRECTORY_PATH = "./";
+    #endif
+#else // Windows
+    constexpr std::string EXE_DIRECTORY_PATH = "./";
+#endif
