@@ -155,6 +155,11 @@ void redo(Board_info *board, int remain) {
     redo(board, remain - 1);
 }
 
+uint64_t calc_allowed_time_ply(Board board, const State *state) {
+    int remaining_moves = HW2 - board->n_discs();
+    return state->remaining_time_msec / remaining_moves;
+}
+
 Search_result go_noprint(Board_info *board, Options *options, State *state) {
     if (board->board.is_end()) {
         std::cerr << "[ERROR] game over" << std::endl;
@@ -165,7 +170,14 @@ Search_result go_noprint(Board_info *board, Options *options, State *state) {
     if (options->time_allocated_minutes == TIME_NOT_ALLOCATED) {
         result = ai(board->board, options->level, true, 0, true, options->show_log);
     } else {
-        // TBD
+        uint64_t start_time = tim();
+        uint64_t allowed_time_ply = calc_allowed_time_ply(board->board, state);
+        for (int level = 1; level < 60 && tim() - start_time < allowed_time_ply; ++level) {
+            result = ai(board->board, level, true, 0, true, options->show_log);
+            if (result.is_end_search && result.probability == 100) { // complete search
+                break;
+            }
+        }
     }
     Flip flip;
     calc_flip(&flip, &board->board, result.policy);
