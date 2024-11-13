@@ -18,7 +18,7 @@ print(IDX_START, IDX_END)
 
 LEVEL = 11
 N_GAMES_PER_FILE = 10000
-N_THREAD = 2
+N_THREAD = 30
 
 def fill0(n, r):
     res = str(n)
