@@ -10,6 +10,7 @@
 
 #pragma once
 #include <iostream>
+#include <iomanip>
 #include <unordered_map>
 #include "./../engine/engine_all.hpp"
 #include "option.hpp"
@@ -225,7 +226,7 @@ inline void print_search_result_body(Search_result result, const Options *option
         std::cout << std::right << std::setw(SEARCH_RESULT_TAB_SIZE) << 0;
         std::cout << "|";
         if (options->time_allocated_minutes != TIME_NOT_ALLOCATED) {
-            std::cout << std::right << std::setw(SEARCH_RESULT_TAB_SIZE) << remaining_time_sec;
+            std::cout << std::right << std::setw(SEARCH_RESULT_TAB_SIZE) << std::fixed << std::setprecision(3) << remaining_time_sec;
         } else {
             std::cout << std::right << std::setw(SEARCH_RESULT_TAB_SIZE) << "-";
         }
@@ -254,7 +255,7 @@ inline void print_search_result_body(Search_result result, const Options *option
         std::cout << std::right << std::setw(SEARCH_RESULT_TAB_SIZE) << result.nps;
         std::cout << "|";
         if (options->time_allocated_minutes != TIME_NOT_ALLOCATED) {
-            std::cout << std::right << std::setw(SEARCH_RESULT_TAB_SIZE) << remaining_time_sec;
+            std::cout << std::right << std::setw(SEARCH_RESULT_TAB_SIZE) << std::fixed << std::setprecision(3) << remaining_time_sec;
         } else {
             std::cout << std::right << std::setw(SEARCH_RESULT_TAB_SIZE) << "-";
         }

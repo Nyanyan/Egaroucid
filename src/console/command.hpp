@@ -156,8 +156,11 @@ void redo(Board_info *board, int remain) {
 }
 
 uint64_t calc_allowed_time_ply(const Board board, const State *state) {
-    int remaining_moves = HW2 - board.n_discs();
-    return state->remaining_time_msec / remaining_moves;
+    if (state->remaining_time_msec > 0) {
+        int remaining_moves = HW2 - board.n_discs();
+        return state->remaining_time_msec / remaining_moves;
+    }
+    return 0;
 }
 
 Search_result go_noprint(Board_info *board, Options *options, State *state) {
@@ -172,6 +175,9 @@ Search_result go_noprint(Board_info *board, Options *options, State *state) {
     } else {
         uint64_t start_time = tim();
         uint64_t allowed_time_ply = calc_allowed_time_ply(board->board, state);
+        if (options->show_log) {
+            std::cerr << "time limit: " << allowed_time_ply << std::endl;
+        }
         for (int level = 1; level < 60 && tim() - start_time < allowed_time_ply; ++level) {
             result = ai(board->board, level, true, 0, true, options->show_log);
             if (result.is_end_search && result.probability == 100) { // complete search
@@ -180,6 +186,12 @@ Search_result go_noprint(Board_info *board, Options *options, State *state) {
             if (result.depth == SEARCH_BOOK) { // book
                 break;
             }
+        }
+        uint64_t elapsed = tim() - start_time;
+        if (elapsed <= state->remaining_time_msec) {
+            state->remaining_time_msec -= elapsed;
+        } else {
+            state->remaining_time_msec = 0;
         }
     }
     Flip flip;
