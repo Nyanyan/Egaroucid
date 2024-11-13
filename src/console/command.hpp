@@ -168,6 +168,9 @@ uint64_t calc_time_limit_ply(const Board board, const State *state) {
         if (state->remaining_time_msec > 30000 && board.n_discs() >= 32) { // last 32 moves
             remaining_moves = std::max(2, remaining_moves - 1);
         }
+        if (state->remaining_time_msec > 10000 && board.n_discs() >= 30) { // last 30 moves
+            remaining_moves = std::max(2, remaining_moves - 1);
+        }
         return (state->remaining_time_msec - TIME_MANAGEMENT_REMAINING_TIME_OFFSET) / remaining_moves;
     }
     return 1;
