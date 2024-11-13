@@ -156,12 +156,15 @@ void redo(Board_info *board, int remain) {
 }
 
 #define TIME_MANAGEMENT_REMAINING_TIME_OFFSET 500 // ms
-#define TIME_MANAGEMENT_REMAINING_MOVES_OFFSET 25 // moves
+#define TIME_MANAGEMENT_REMAINING_MOVES_OFFSET 23 // moves
 
 uint64_t calc_time_limit_ply(const Board board, const State *state) {
     if (state->remaining_time_msec - TIME_MANAGEMENT_REMAINING_TIME_OFFSET > 0) {
         int remaining_moves = HW2 - board.n_discs();
         remaining_moves = std::max(2, remaining_moves - TIME_MANAGEMENT_REMAINING_MOVES_OFFSET);
+        if (board.n_discs() >= 34) {
+            remaining_moves = std::max(2, remaining_moves - 1);
+        }
         return (state->remaining_time_msec - TIME_MANAGEMENT_REMAINING_TIME_OFFSET) / remaining_moves;
     }
     return 1;
@@ -179,9 +182,9 @@ Search_result go_noprint(Board_info *board, Options *options, State *state) {
     } else {
         uint64_t start_time = tim();
         uint64_t time_limit_ply = calc_time_limit_ply(board->board, state);
-        if (options->show_log) {
+        //if (options->show_log) {
             std::cerr << "time limit: " << time_limit_ply << std::endl;
-        }
+        //}
         result = ai_time_limit(board->board, options->level, true, 0, true, options->show_log, time_limit_ply);
         uint64_t elapsed = tim() - start_time;
         if (elapsed <= state->remaining_time_msec) {
