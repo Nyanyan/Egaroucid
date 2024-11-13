@@ -12,10 +12,12 @@
 
 struct State {
     bool book_changed;
-    uint64_t remaining_time_msec;
+    uint64_t remaining_time_msec_black;
+    uint64_t remaining_time_msec_white;
 
     State() {
         book_changed = false;
-        remaining_time_msec = 0;
+        remaining_time_msec_black = 0;
+        remaining_time_msec_white = 0;
     }
 };

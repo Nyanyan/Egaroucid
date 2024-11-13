@@ -203,7 +203,11 @@ void print_board_info(Board_info *board) {
 
 inline void print_search_result_body(Search_result result, const Options *options, const State *state) {
     std::string s;
-    double remaining_time_sec = (double)state->remaining_time_msec / 1000.0;
+    double remaining_time_sec_black = (double)state->remaining_time_msec_black / 1000.0;
+    double remaining_time_sec_white = (double)state->remaining_time_msec_white / 1000.0;
+    std::stringstream ss;
+    ss << std::fixed << std::setprecision(2) << remaining_time_sec_black << "/" << remaining_time_sec_white;
+    std::string remaining_time_str = ss.str();
     if (result.depth == SEARCH_BOOK) {
         std::cout << "|";
         std::cout << std::right << std::setw(SEARCH_RESULT_TAB_SIZE) << result.level;
@@ -226,7 +230,7 @@ inline void print_search_result_body(Search_result result, const Options *option
         std::cout << std::right << std::setw(SEARCH_RESULT_TAB_SIZE) << 0;
         std::cout << "|";
         if (options->time_allocated_seconds != TIME_NOT_ALLOCATED) {
-            std::cout << std::right << std::setw(SEARCH_RESULT_TAB_SIZE) << std::fixed << std::setprecision(3) << remaining_time_sec;
+            std::cout << std::right << std::setw(SEARCH_RESULT_TAB_SIZE) << remaining_time_str;
         } else {
             std::cout << std::right << std::setw(SEARCH_RESULT_TAB_SIZE) << "-";
         }
@@ -255,7 +259,7 @@ inline void print_search_result_body(Search_result result, const Options *option
         std::cout << std::right << std::setw(SEARCH_RESULT_TAB_SIZE) << result.nps;
         std::cout << "|";
         if (options->time_allocated_seconds != TIME_NOT_ALLOCATED) {
-            std::cout << std::right << std::setw(SEARCH_RESULT_TAB_SIZE) << std::fixed << std::setprecision(3) << remaining_time_sec;
+            std::cout << std::right << std::setw(SEARCH_RESULT_TAB_SIZE) << remaining_time_str;
         } else {
             std::cout << std::right << std::setw(SEARCH_RESULT_TAB_SIZE) << "-";
         }
