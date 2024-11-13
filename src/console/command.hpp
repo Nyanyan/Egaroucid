@@ -46,11 +46,18 @@ int get_command_id(std::string cmd) {
     return COMMAND_NOT_FOUND;
 }
 
-void init_board(Board_info *board) {
-    board->reset();
+void allocate_time(Options *options, State *state) {
+    if (options->time_allocated_minutes != TIME_NOT_ALLOCATED) {
+        state->remaining_time_msec = 60ULL * 1000ULL * options->time_allocated_minutes;
+    }
 }
 
-void new_board(Board_info *board) {
+void init_board(Board_info *board, Options *options, State *state) {
+    board->reset();
+    allocate_time(options, state);
+}
+
+void new_board(Board_info *board, Options *options, State *state) {
     board->board = board->boards[0].copy();
     board->player = board->players[0];
     board->boards.clear();
@@ -58,6 +65,7 @@ void new_board(Board_info *board) {
     board->boards.emplace_back(board->board);
     board->players.emplace_back(board->player);
     board->ply_vec = 0;
+    allocate_time(options, state);
 }
 
 bool outside(int y, int x) {
@@ -153,7 +161,12 @@ Search_result go_noprint(Board_info *board, Options *options, State *state) {
         Search_result res;
         return res;
     }
-    Search_result result = ai(board->board, options->level, true, 0, true, options->show_log);
+    Search_result result;
+    if (options->time_allocated_minutes == TIME_NOT_ALLOCATED) {
+        result = ai(board->board, options->level, true, 0, true, options->show_log);
+    } else {
+        // TBD
+    }
     Flip flip;
     calc_flip(&flip, &board->board, result.policy);
     board->board.move_board(&flip);
@@ -174,13 +187,14 @@ Search_result go_noprint(Board_info *board, Options *options, State *state) {
 
 void go(Board_info *board, Options *options, State *state) {
     Search_result result = go_noprint(board, options, state);
-    if (options->quiet)
+    if (options->quiet) {
         print_search_result_quiet(result);
-    else
+    } else {
         print_search_result(result, options->level);
+    }
 }
 
-void setboard(Board_info *board, std::string board_str) {
+void setboard(Board_info *board, std::string board_str, Options *options, State *state) {
     board_str.erase(std::remove_if(board_str.begin(), board_str.end(), ::isspace), board_str.end());
     if (board_str.length() != HW2 + 1) {
         std::cerr << "[ERROR] invalid argument" << std::endl;
@@ -213,6 +227,7 @@ void setboard(Board_info *board, std::string board_str) {
     board->boards.emplace_back(board->board);
     board->players.emplace_back(board->player);
     board->ply_vec = 0;
+    allocate_time(options, state);
 }
 
 void set_level(Options *options, std::string level_str) {
@@ -349,10 +364,10 @@ void check_command(Board_info *board, State *state, Options *options) {
             print_version();
             break;
         case CMD_ID_INIT:
-            init_board(board);
+            init_board(board, options, state);
             break;
         case CMD_ID_NEW:
-            new_board(board);
+            new_board(board, options, state);
             break;
         case CMD_ID_PLAY:
             play(board, arg);
@@ -367,7 +382,7 @@ void check_command(Board_info *board, State *state, Options *options) {
             go(board, options, state);
             break;
         case CMD_ID_SETBOARD:
-            setboard(board, arg);
+            setboard(board, options, state, arg);
             break;
         case CMD_ID_LEVEL:
             set_level(options, arg);
