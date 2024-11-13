@@ -35,6 +35,9 @@
 
 
 
+#define TIME_LIMIT_INF 18446744073709551615ULL
+
+
 /*
     @brief Search constant
 */

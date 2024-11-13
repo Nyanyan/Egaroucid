@@ -184,7 +184,7 @@ Search_result endgame_optimized_search(Board board, int depth, uint_fast8_t mpc_
     @param use_multi_thread     search in multi thread?
     @return the result in Search_result structure
 */
-inline Search_result tree_search_legal(Board board, int depth, uint_fast8_t mpc_level, bool show_log, uint64_t use_legal, bool use_multi_thread) {
+inline Search_result tree_search_legal(Board board, int depth, uint_fast8_t mpc_level, bool show_log, uint64_t use_legal, bool use_multi_thread, uint64_t time_limit) {
     //thread_pool.tell_start_using();
     Search_result res;
     depth = std::min(HW2 - board.n_discs(), depth);
@@ -216,7 +216,11 @@ inline Search_result tree_search_legal(Board board, int depth, uint_fast8_t mpc_
         */
     }
     if (use_legal) {
-        lazy_smp(board, depth, mpc_level, show_log, clogs, use_legal, use_multi_thread, &res);
+        uint64_t time_limit_proc = time_limit - clog_time;
+        if (time_limit == TIME_LIMIT_INF) {
+            time_limit_proc = TIME_LIMIT_INF;
+        }
+        lazy_smp(board, depth, mpc_level, show_log, clogs, use_legal, use_multi_thread, &res, time_limit_proc);
         /*
         if (is_end_search) {
             res = endgame_optimized_search(board, depth, mpc_level, show_log, clogs, use_legal, use_multi_thread);
@@ -246,7 +250,7 @@ inline Search_result tree_search_legal(Board board, int depth, uint_fast8_t mpc_
     @param show_log             show log?
     @return the result in Search_result structure
 */
-Search_result ai_common(Board board, int level, bool use_book, int book_acc_level, bool use_multi_thread, bool show_log, uint64_t use_legal, bool use_specified_move_book) {
+Search_result ai_common(Board board, int level, bool use_book, int book_acc_level, bool use_multi_thread, bool show_log, uint64_t use_legal, bool use_specified_move_book, uint64_t time_limit) {
     Search_result res;
     int value_sign = 1;
     if (board.get_legal() == 0ULL) {
@@ -288,7 +292,7 @@ Search_result ai_common(Board board, int level, bool use_book, int book_acc_leve
         if (show_log)
             std::cerr << "level status " << level << " " << board.n_discs() - 4 << " discs depth " << depth << "@" << SELECTIVITY_PERCENTAGE[mpc_level] << "%" << std::endl;
         //thread_pool.tell_start_using();
-        res = tree_search_legal(board, depth, mpc_level, show_log, use_legal, use_multi_thread);
+        res = tree_search_legal(board, depth, mpc_level, show_log, use_legal, use_multi_thread, time_limit);
         res.level = level;
         //thread_pool.tell_finish_using();
         res.value *= value_sign;
@@ -311,15 +315,19 @@ Search_result ai_common(Board board, int level, bool use_book, int book_acc_leve
     @return the result in Search_result structure
 */
 Search_result ai(Board board, int level, bool use_book, int book_acc_level, bool use_multi_thread, bool show_log) {
-    return ai_common(board, level, use_book, book_acc_level, use_multi_thread, show_log, board.get_legal(), false);
+    return ai_common(board, level, use_book, book_acc_level, use_multi_thread, show_log, board.get_legal(), false, TIME_LIMIT_INF);
 }
 
 Search_result ai_legal(Board board, int level, bool use_book, int book_acc_level, bool use_multi_thread, bool show_log, uint64_t use_legal) {
-    return ai_common(board, level, use_book, book_acc_level, use_multi_thread, show_log, use_legal, false);
+    return ai_common(board, level, use_book, book_acc_level, use_multi_thread, show_log, use_legal, false, TIME_LIMIT_INF);
 }
 
 Search_result ai_specified(Board board, int level, bool use_book, int book_acc_level, bool use_multi_thread, bool show_log) {
-    return ai_common(board, level, use_book, book_acc_level, use_multi_thread, show_log, board.get_legal(), true);
+    return ai_common(board, level, use_book, book_acc_level, use_multi_thread, show_log, board.get_legal(), true, TIME_LIMIT_INF);
+}
+
+Search_result ai_time_limit(Board board, int level, bool use_book, int book_acc_level, bool use_multi_thread, bool show_log, uint64_t time_limit) {
+    return ai_common(board, level, use_book, book_acc_level, use_multi_thread, show_log, board.get_legal(), false, time_limit);
 }
 
 /*

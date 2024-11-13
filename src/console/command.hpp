@@ -155,10 +155,12 @@ void redo(Board_info *board, int remain) {
     redo(board, remain - 1);
 }
 
+#define REMAINING_TIME_OFFSET 300 // ms
+
 uint64_t calc_allowed_time_ply(const Board board, const State *state) {
-    if (state->remaining_time_msec > 0) {
+    if (state->remaining_time_msec - REMAINING_TIME_OFFSET > 0) {
         int remaining_moves = HW2 - board.n_discs();
-        return state->remaining_time_msec / remaining_moves;
+        return (state->remaining_time_msec - REMAINING_TIME_OFFSET) / remaining_moves;
     }
     return 0;
 }
@@ -174,19 +176,11 @@ Search_result go_noprint(Board_info *board, Options *options, State *state) {
         result = ai(board->board, options->level, true, 0, true, options->show_log);
     } else {
         uint64_t start_time = tim();
-        uint64_t allowed_time_ply = calc_allowed_time_ply(board->board, state);
-        if (options->show_log) {
-            std::cerr << "time limit: " << allowed_time_ply << std::endl;
-        }
-        for (int level = 1; level < 60 && tim() - start_time < allowed_time_ply; ++level) {
-            result = ai(board->board, level, true, 0, true, options->show_log);
-            if (result.is_end_search && result.probability == 100) { // complete search
-                break;
-            }
-            if (result.depth == SEARCH_BOOK) { // book
-                break;
-            }
-        }
+        uint64_t time_limit_ply = calc_allowed_time_ply(board->board, state);
+        //if (options->show_log) {
+            std::cerr << "time limit: " << time_limit_ply << std::endl;
+        //}
+        result = ai_time_limit(board->board, MAX_LEVEL, true, 0, true, options->show_log, time_limit_ply);
         uint64_t elapsed = tim() - start_time;
         if (elapsed <= state->remaining_time_msec) {
             state->remaining_time_msec -= elapsed;
