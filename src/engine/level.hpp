@@ -306,19 +306,19 @@ int get_level_from_depth_mpc_level(int n_discs, int depth, int mpc_level) {
     int n_empties = HW2 - n_discs;
     if (depth >= n_empties) { // endgame search
         for (int level = 0; level < N_LEVEL; ++level) {
-            if (level_definition[level].complete0 >= depth && level_definition[level].complete0_mpc_level == mpc_level) {
+            if (level_definition[level].complete0 != NODEPTH && level_definition[level].complete0 >= depth && level_definition[level].complete0_mpc_level == mpc_level) {
                 return level;
             }
-            if (level_definition[level].complete1 >= depth && level_definition[level].complete1_mpc_level == mpc_level) {
+            if (level_definition[level].complete1 != NODEPTH && level_definition[level].complete1 >= depth && level_definition[level].complete1_mpc_level == mpc_level) {
                 return level;
             }
-            if (level_definition[level].complete2 >= depth && level_definition[level].complete2_mpc_level == mpc_level) {
+            if (level_definition[level].complete2 != NODEPTH && level_definition[level].complete2 >= depth && level_definition[level].complete2_mpc_level == mpc_level) {
                 return level;
             }
-            if (level_definition[level].complete3 >= depth && level_definition[level].complete3_mpc_level == mpc_level) {
+            if (level_definition[level].complete3 != NODEPTH && level_definition[level].complete3 >= depth && level_definition[level].complete3_mpc_level == mpc_level) {
                 return level;
             }
-            if (level_definition[level].complete4 >= depth && level_definition[level].complete4_mpc_level == mpc_level) {
+            if (level_definition[level].complete4 != NODEPTH && level_definition[level].complete4 >= depth && level_definition[level].complete4_mpc_level == mpc_level) {
                 return level;
             }
         }
