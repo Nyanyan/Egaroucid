@@ -179,9 +179,9 @@ Search_result go_noprint(Board_info *board, Options *options, State *state) {
     } else {
         uint64_t start_time = tim();
         uint64_t time_limit_ply = calc_time_limit_ply(board->board, state);
-        //if (options->show_log) {
+        if (options->show_log) {
             std::cerr << "time limit: " << time_limit_ply << std::endl;
-        //}
+        }
         result = ai_time_limit(board->board, MAX_LEVEL, true, 0, true, options->show_log, time_limit_ply);
         uint64_t elapsed = tim() - start_time;
         if (elapsed <= state->remaining_time_msec) {
