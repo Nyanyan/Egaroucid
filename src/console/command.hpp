@@ -157,7 +157,7 @@ void redo(Board_info *board, int remain) {
 }
 
 #define TIME_MANAGEMENT_REMAINING_TIME_OFFSET 200 // ms / move
-#define TIME_MANAGEMENT_REMAINING_MOVES_OFFSET 10 // moves (fast complete search = 20 moves)
+#define TIME_MANAGEMENT_REMAINING_MOVES_OFFSET 12 // moves (fast complete search = 24 moves)
 
 uint64_t calc_time_limit_ply(const Board board, uint64_t remaining_time_msec) {
     int remaining_moves = (HW2 - board.n_discs() + 1) / 2;
