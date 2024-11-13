@@ -232,7 +232,7 @@ inline void print_search_result_body(Search_result result, const Options *option
         if (options->time_allocated_seconds != TIME_NOT_ALLOCATED) {
             std::cout << std::right << std::setw(SEARCH_RESULT_TAB_SIZE) << remaining_time_str;
         } else {
-            std::cout << std::right << std::setw(SEARCH_RESULT_TAB_SIZE) << "-";
+            std::cout << std::right << std::setw(SEARCH_RESULT_TAB_SIZE) << "-/-";
         }
         std::cout << "|";
         std::cout << std::endl;
@@ -261,7 +261,7 @@ inline void print_search_result_body(Search_result result, const Options *option
         if (options->time_allocated_seconds != TIME_NOT_ALLOCATED) {
             std::cout << std::right << std::setw(SEARCH_RESULT_TAB_SIZE) << remaining_time_str;
         } else {
-            std::cout << std::right << std::setw(SEARCH_RESULT_TAB_SIZE) << "-";
+            std::cout << std::right << std::setw(SEARCH_RESULT_TAB_SIZE) << "-/-";
         }
         std::cout << "|";
         std::cout << std::endl;
