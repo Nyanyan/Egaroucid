@@ -11,6 +11,7 @@
 #pragma once
 #include <iostream>
 #include <cmath>
+#include "common.hpp"
 
 /*
     @brief definition of level categories
@@ -299,4 +300,28 @@ int get_level_complete_depth(int level) {
     if (level_definition[level].complete3_mpc_level == MPC_100_LEVEL)
         return level_definition[level].complete3;
     return level_definition[level].complete4;
+}
+
+int get_level_from_depth_mpc_level(int n_discs, int depth, int mpc_level) {
+    int n_empties = HW2 - n_discs;
+    if (depth >= n_empties) { // endgame search
+        for (int level = 0; level < N_LEVEL; ++level) {
+            if (level_definition[level].complete0 >= depth && level_definition[level].complete0_mpc_level == mpc_level) {
+                return level;
+            }
+            if (level_definition[level].complete1 >= depth && level_definition[level].complete1_mpc_level == mpc_level) {
+                return level;
+            }
+            if (level_definition[level].complete2 >= depth && level_definition[level].complete2_mpc_level == mpc_level) {
+                return level;
+            }
+            if (level_definition[level].complete3 >= depth && level_definition[level].complete3_mpc_level == mpc_level) {
+                return level;
+            }
+            if (level_definition[level].complete4 >= depth && level_definition[level].complete4_mpc_level == mpc_level) {
+                return level;
+            }
+        }
+    }
+    return depth; // level == midgame lookahead depth
 }

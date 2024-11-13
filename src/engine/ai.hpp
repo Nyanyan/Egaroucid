@@ -293,7 +293,6 @@ Search_result ai_common(Board board, int level, bool use_book, int book_acc_leve
             std::cerr << "level status " << level << " " << board.n_discs() - 4 << " discs depth " << depth << "@" << SELECTIVITY_PERCENTAGE[mpc_level] << "%" << std::endl;
         //thread_pool.tell_start_using();
         res = tree_search_legal(board, depth, mpc_level, show_log, use_legal, use_multi_thread, time_limit);
-        res.level = level;
         //thread_pool.tell_finish_using();
         res.value *= value_sign;
     }

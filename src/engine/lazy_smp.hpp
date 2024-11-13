@@ -138,6 +138,7 @@ void lazy_smp(Board board, int depth, uint_fast8_t mpc_level, bool show_log, std
         }
         result->nodes += main_search.n_nodes;
         if (search_success) {
+            result->level = get_level_from_depth_mpc_level(board.n_discs(), main_depth, main_mpc_level);
             if (result->value != SCORE_UNDEFINED && !main_is_end_search) {
                 double n_value = (0.9 * result->value + 1.1 * id_result.first) / 2.0;
                 result->value = round(n_value);
