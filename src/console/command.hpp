@@ -55,7 +55,6 @@ void allocate_time(Options *options, State *state) {
 
 void update_time(int player, State *state, Options *options, uint64_t elapsed) {
     if (options->time_allocated_seconds != TIME_NOT_ALLOCATED) {
-        std::cerr << "update time! " << player << " " << elapsed << std::endl;
         uint64_t *remaining_time_msec;
         if (player == BLACK) {
             remaining_time_msec = &state->remaining_time_msec_black;
