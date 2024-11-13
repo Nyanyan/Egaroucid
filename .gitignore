@@ -23,7 +23,7 @@ bin/versions
 bin/transcript
 bin/ffotest_result
 
-# img directory
+# img
 img/demo
 
 # src directory
@@ -40,3 +40,4 @@ book
 # for macOS
 .DS_Store
 App
+Egaroucid.xcodeproj/xcuserdata
