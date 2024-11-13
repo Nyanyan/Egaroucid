@@ -44,6 +44,9 @@
 #define N_SELECTIVITY_LEVEL 6
 constexpr int SELECTIVITY_PERCENTAGE[N_SELECTIVITY_LEVEL] = {74, 88, 93, 98, 99, 100};
 
+#define MAX_LEVEL (N_LEVEL - 1)
+#define LEVEL_TYPE_BOOK 1000
+
 /*
     @brief structure of level definition
 

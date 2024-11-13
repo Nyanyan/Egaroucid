@@ -252,6 +252,7 @@ Search_result ai_common(Board board, int level, bool use_book, int book_acc_leve
     if (board.get_legal() == 0ULL) {
         board.pass();
         if (board.get_legal() == 0ULL) {
+            res.level = MAX_LEVEL;
             res.policy = 64;
             res.value = -board.score_player();
             res.depth = 0;
@@ -272,6 +273,7 @@ Search_result ai_common(Board board, int level, bool use_book, int book_acc_leve
     if (is_valid_policy(book_result.policy) && use_book) {
         if (show_log)
             std::cerr << "book " << idx_to_coord(book_result.policy) << " " << book_result.value << " at book error level " << book_acc_level << std::endl;
+        res.level = LEVEL_TYPE_BOOK;
         res.policy = book_result.policy;
         res.value = value_sign * book_result.value;
         res.depth = SEARCH_BOOK;
@@ -287,6 +289,7 @@ Search_result ai_common(Board board, int level, bool use_book, int book_acc_leve
             std::cerr << "level status " << level << " " << board.n_discs() - 4 << " discs depth " << depth << "@" << SELECTIVITY_PERCENTAGE[mpc_level] << "%" << std::endl;
         //thread_pool.tell_start_using();
         res = tree_search_legal(board, depth, mpc_level, show_log, use_legal, use_multi_thread);
+        res.level = level;
         //thread_pool.tell_finish_using();
         res.value *= value_sign;
     }

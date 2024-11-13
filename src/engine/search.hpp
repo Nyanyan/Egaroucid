@@ -137,6 +137,7 @@ constexpr uint64_t parity_table[16] = {
     @param probability          MPC (Multi-ProbCut) probability in integer [%]
 */
 struct Search_result {
+    int level;
     int_fast8_t policy;
     int value;
     int depth;
@@ -149,9 +150,9 @@ struct Search_result {
     int probability;
 
     Search_result() 
-        : policy(MOVE_UNDEFINED), value(SCORE_UNDEFINED), depth(-1), time(0), nodes(0), clog_time(0), clog_nodes(0), nps(0), is_end_search(false), probability(0) {}
+        : level(0), policy(MOVE_UNDEFINED), value(SCORE_UNDEFINED), depth(-1), time(0), nodes(0), clog_time(0), clog_nodes(0), nps(0), is_end_search(false), probability(0) {}
 
-    bool operator<(const Search_result &another) const{
+    bool operator<(const Search_result &another) const {
         if (depth == SEARCH_BOOK && another.depth != SEARCH_BOOK)
             return false;
         else if (depth != SEARCH_BOOK && another.depth == SEARCH_BOOK)
@@ -159,7 +160,7 @@ struct Search_result {
         return value < another.value;
     }
 
-    bool operator>(const Search_result &another) const{
+    bool operator>(const Search_result &another) const {
         if (another.depth == SEARCH_BOOK && depth != SEARCH_BOOK)
             return false;
         else if (another.depth != SEARCH_BOOK && depth == SEARCH_BOOK)

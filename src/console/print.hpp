@@ -206,7 +206,7 @@ inline void print_search_result_body(Search_result result, const Options *option
     double remaining_time_sec = (double)state->remaining_time_msec / 1000.0;
     if (result.depth == SEARCH_BOOK) {
         std::cout << "|";
-        std::cout << std::right << std::setw(SEARCH_RESULT_TAB_SIZE) << options->level;
+        std::cout << std::right << std::setw(SEARCH_RESULT_TAB_SIZE) << result.level;
         std::cout << "|";
         std::cout << std::right << std::setw(SEARCH_RESULT_TAB_SIZE) << "Book";
         std::cout << "|";
@@ -234,7 +234,7 @@ inline void print_search_result_body(Search_result result, const Options *option
         std::cout << std::endl;
     } else{
         std::cout << "|";
-        std::cout << std::right << std::setw(SEARCH_RESULT_TAB_SIZE) << options->level;
+        std::cout << std::right << std::setw(SEARCH_RESULT_TAB_SIZE) << result.level;
         std::cout << "|";
         s = std::to_string(result.depth) + "@" + std::to_string(result.probability) + "%";
         std::cout << std::right << std::setw(SEARCH_RESULT_TAB_SIZE) << s;
