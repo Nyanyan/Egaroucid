@@ -12,7 +12,7 @@
 #include <string>
 #include <vector>
 
-#define N_COMMANDLINE_OPTIONS 17
+#define N_COMMANDLINE_OPTIONS 19
 
 #define ID_NONE -1
 #define ID_VERSION 0
@@ -34,6 +34,8 @@
 #define ID_SELF_PLAY 14
 #define ID_SELF_PLAY_LINE 15
 #define ID_PERFT 16
+#define ID_TIME_ALLOCATE 17
+#define ID_PONDER 18
 
 struct Commandline_option_info{
     int id;
@@ -64,5 +66,7 @@ const Commandline_option_info commandline_option_data[N_COMMANDLINE_OPTIONS] = {
     {ID_QUIET,              {"-q", "-quiet", "-silent"},                        0, "",                 "Quiet mode"},
     {ID_SELF_PLAY,          {"-sf", "-selfplay"},                               2, "<n> <m>",          "Self play <n> games (play randomly first <m> moves)"},
     {ID_SELF_PLAY_LINE,     {"-sfl", "-selfplayline"},                          1, "<file>",           "Self play with given openings"},
-    {ID_PERFT,              {"-perft"},                                         2, "<depth> <mode>",   "Perft for Othello with <depth> in <mode>, 1: pass is counted as 1 move (normal perft), 2: pass is not counted as a move"}
+    {ID_PERFT,              {"-perft"},                                         2, "<depth> <mode>",   "Perft for Othello with <depth> in <mode>, 1: pass is counted as 1 move (normal perft), 2: pass is not counted as a move"},
+    {ID_TIME_ALLOCATE,      {"-time"},                                          1, "<minutes>",        "Time allocate <minutes> minutes"},
+    {ID_PONDER,             {"-ponder"},                                        0, "",                  "Enable ponder"}
 };
