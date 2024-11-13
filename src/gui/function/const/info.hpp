@@ -10,7 +10,7 @@
 
 #pragma once
 #include <Siv3D.hpp>
-#include "./../../engine/setting.hpp"
+#include "./../../../engine/setting.hpp"
 #include "settings.hpp"
 
 #define EGAROUCID_GUI_VERSION "1"

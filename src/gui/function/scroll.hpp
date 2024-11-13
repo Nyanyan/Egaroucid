@@ -9,7 +9,7 @@
 */
 
 #pragma once
-#include "const/gui_common.hpp"
+#include "./const/gui_common.hpp"
 
 class Scroll_manager {
 private:
