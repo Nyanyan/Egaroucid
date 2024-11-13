@@ -1,4 +1,4 @@
-/*
+﻿/*
     Egaroucid Project
 
     @file gui_common.hpp
@@ -11,7 +11,7 @@
 #pragma once
 #include <iostream>
 #include <Siv3D.hpp>
-#include "../../../engine/engine_all.hpp"
+#include "./../../engine/engine_all.hpp"
 #include "./../menu.hpp"
 #include "info.hpp"
 #include "url.hpp"
