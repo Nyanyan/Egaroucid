@@ -155,8 +155,8 @@ void redo(Board_info *board, int remain) {
     redo(board, remain - 1);
 }
 
-#define TIME_MANAGEMENT_REMAINING_TIME_OFFSET 300 // ms
-#define TIME_MANAGEMENT_REMAINING_MOVES_OFFSET 20 // moves
+#define TIME_MANAGEMENT_REMAINING_TIME_OFFSET 500 // ms
+#define TIME_MANAGEMENT_REMAINING_MOVES_OFFSET 25 // moves
 
 uint64_t calc_time_limit_ply(const Board board, const State *state) {
     if (state->remaining_time_msec - TIME_MANAGEMENT_REMAINING_TIME_OFFSET > 0) {
@@ -164,7 +164,7 @@ uint64_t calc_time_limit_ply(const Board board, const State *state) {
         remaining_moves = std::max(2, remaining_moves - TIME_MANAGEMENT_REMAINING_MOVES_OFFSET);
         return (state->remaining_time_msec - TIME_MANAGEMENT_REMAINING_TIME_OFFSET) / remaining_moves;
     }
-    return 0;
+    return 1;
 }
 
 Search_result go_noprint(Board_info *board, Options *options, State *state) {
