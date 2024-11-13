@@ -69,8 +69,9 @@ int main(int argc, char* argv[]) {
                 std::cout << std::endl;
                 //std::cerr << "val " << mid_evaluate(&board.board) << std::endl;
             }
-            if (!execute_special_tasks_loop(&board, &state, &options))
+            if (!execute_special_tasks_loop(&board, &state, &options)) {
                 check_command(&board, &state, &options);
+            }
         }
     }
     return 0;

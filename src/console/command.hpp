@@ -53,6 +53,23 @@ void allocate_time(Options *options, State *state) {
     }
 }
 
+void update_time(int player, State *state, Options *options, uint64_t elapsed) {
+    if (options->time_allocated_seconds != TIME_NOT_ALLOCATED) {
+        std::cerr << "update time! " << player << " " << elapsed << std::endl;
+        uint64_t *remaining_time_msec;
+        if (player == BLACK) {
+            remaining_time_msec = &state->remaining_time_msec_black;
+        } else {
+            remaining_time_msec = &state->remaining_time_msec_white;
+        }
+        if (elapsed <= *remaining_time_msec) {
+            *remaining_time_msec -= elapsed;
+        } else {
+            *remaining_time_msec = 0;
+        }
+    }
+}
+
 void init_board(Board_info *board, Options *options, State *state) {
     board->reset();
     allocate_time(options, state);
@@ -198,12 +215,6 @@ Search_result go_noprint(Board_info *board, Options *options, State *state) {
             std::cerr << "time limit: " << time_limit_ply << std::endl;
         }
         result = ai_time_limit(board->board, options->level, true, 0, true, options->show_log, time_limit_ply);
-        uint64_t elapsed = tim() - start_time;
-        if (elapsed <= *remaining_time_msec) {
-            *remaining_time_msec -= elapsed;
-        } else {
-            *remaining_time_msec = 0;
-        }
     }
     Flip flip;
     calc_flip(&flip, &board->board, result.policy);
@@ -223,8 +234,10 @@ Search_result go_noprint(Board_info *board, Options *options, State *state) {
     return result;
 }
 
-void go(Board_info *board, Options *options, State *state) {
+void go(Board_info *board, Options *options, State *state, uint64_t start_time) {
+    int before_player = board->player;
     Search_result result = go_noprint(board, options, state);
+    update_time(before_player, state, options, tim() - start_time);
     if (options->quiet) {
         print_search_result_quiet(result);
     } else {
@@ -384,10 +397,12 @@ void generate_problems(Options *options, std::string arg) {
 }
 
 void check_command(Board_info *board, State *state, Options *options) {
+    uint64_t start_time = tim();
     std::string cmd_line = get_command_line();
     std::string cmd, arg;
     split_cmd_arg(cmd_line, &cmd, &arg);
     int cmd_id = get_command_id(cmd);
+    int player_before = board->player;
     switch (cmd_id) {
         case COMMAND_NOT_FOUND:
             std::cout << "[ERROR] command `" << cmd << "` not found" << std::endl;
@@ -409,6 +424,7 @@ void check_command(Board_info *board, State *state, Options *options) {
             break;
         case CMD_ID_PLAY:
             play(board, arg);
+            update_time(player_before, state, options, tim() - start_time);
             break;
         case CMD_ID_UNDO:
             undo(board, calc_remain(arg));
@@ -417,7 +433,7 @@ void check_command(Board_info *board, State *state, Options *options) {
             redo(board, calc_remain(arg));
             break;
         case CMD_ID_GO:
-            go(board, options, state);
+            go(board, options, state, start_time);
             break;
         case CMD_ID_SETBOARD:
             setboard(board, options, state, arg);

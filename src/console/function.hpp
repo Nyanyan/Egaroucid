@@ -26,7 +26,7 @@ void setboard(Board_info *board, Options *options, State *state, std::string boa
 Search_result go_noprint(Board_info *board, Options *options, State *state);
 void print_search_result_head();
 void print_search_result_body(Search_result result, const Options *options, const State *state);
-void go(Board_info *board, Options *options, State *state);
+void go(Board_info *board, Options *options, State *state, uint64_t start_time);
 
 void solve_problems(std::vector<std::string> arg, Options *options, State *state) {
     if (arg.size() < 1) {
@@ -86,14 +86,16 @@ void execute_special_tasks(Options options) {
 }
 
 bool execute_special_tasks_loop(Board_info *board, State *state, Options *options) {
+    uint64_t start_time = tim();
+    int player_before = board->player;
     if (options->mode == MODE_HUMAN_AI && board->player == WHITE && !board->board.is_end()) {
-        go(board, options, state);
+        go(board, options, state, start_time);
         return true;
     } else if (options->mode == MODE_AI_HUMAN && board->player == BLACK && !board->board.is_end()) {
-        go(board, options, state);
+        go(board, options, state, start_time);
         return true;
     } else if (options->mode == MODE_AI_AI && !board->board.is_end()) {
-        go(board, options, state);
+        go(board, options, state, start_time);
         return true;
     }
     return false;
