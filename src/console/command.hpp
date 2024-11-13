@@ -205,7 +205,7 @@ void go(Board_info *board, Options *options, State *state) {
     if (options->quiet) {
         print_search_result_quiet(result);
     } else {
-        print_search_result(result, options->level);
+        print_search_result(result, options, state);
     }
 }
 
@@ -308,7 +308,7 @@ void hint(Board_info *board, Options *options, State *state, std::string arg) {
     std::sort(result.rbegin(), result.rend());
     print_search_result_head();
     for (int i = 0; i < n_show; ++i)
-        print_search_result_body(result[i], options->level);
+        print_search_result_body(result[i], options, state);
 }
 
 inline void analyze(Board_info *board, Options *options, State *state) {

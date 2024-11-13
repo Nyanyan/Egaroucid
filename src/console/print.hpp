@@ -200,11 +200,12 @@ void print_board_info(Board_info *board) {
     }
 }
 
-inline void print_search_result_body(Search_result result, int level) {
+inline void print_search_result_body(Search_result result, const Options *options, const State *state) {
     std::string s;
+    double remaining_time_sec = (double)state->remaining_time_msec / 1000.0;
     if (result.depth == SEARCH_BOOK) {
         std::cout << "|";
-        std::cout << std::right << std::setw(SEARCH_RESULT_TAB_SIZE) << level;
+        std::cout << std::right << std::setw(SEARCH_RESULT_TAB_SIZE) << options->level;
         std::cout << "|";
         std::cout << std::right << std::setw(SEARCH_RESULT_TAB_SIZE) << "Book";
         std::cout << "|";
@@ -223,10 +224,16 @@ inline void print_search_result_body(Search_result result, int level) {
         std::cout << "|";
         std::cout << std::right << std::setw(SEARCH_RESULT_TAB_SIZE) << 0;
         std::cout << "|";
+        if (options->time_allocated_minutes != TIME_NOT_ALLOCATED) {
+            std::cout << std::right << std::setw(SEARCH_RESULT_TAB_SIZE) << remaining_time_sec;
+        } else {
+            std::cout << std::right << std::setw(SEARCH_RESULT_TAB_SIZE) << "-";
+        }
+        std::cout << "|";
         std::cout << std::endl;
     } else{
         std::cout << "|";
-        std::cout << std::right << std::setw(SEARCH_RESULT_TAB_SIZE) << level;
+        std::cout << std::right << std::setw(SEARCH_RESULT_TAB_SIZE) << options->level;
         std::cout << "|";
         s = std::to_string(result.depth) + "@" + std::to_string(result.probability) + "%";
         std::cout << std::right << std::setw(SEARCH_RESULT_TAB_SIZE) << s;
@@ -246,6 +253,11 @@ inline void print_search_result_body(Search_result result, int level) {
         std::cout << "|";
         std::cout << std::right << std::setw(SEARCH_RESULT_TAB_SIZE) << result.nps;
         std::cout << "|";
+        if (options->time_allocated_minutes != TIME_NOT_ALLOCATED) {
+            std::cout << std::right << std::setw(SEARCH_RESULT_TAB_SIZE) << remaining_time_sec;
+        } else {
+            std::cout << std::right << std::setw(SEARCH_RESULT_TAB_SIZE) << "-";
+        }
         std::cout << std::endl;
     }
 }
@@ -266,12 +278,14 @@ inline void print_search_result_head() {
     std::cout << "|";
     std::cout << std::right << std::setw(SEARCH_RESULT_TAB_SIZE) << "NPS";
     std::cout << "|";
+    std::cout << std::right << std::setw(SEARCH_RESULT_TAB_SIZE) << "Remaining Time";
+    std::cout << "|";
     std::cout << std::endl;
 }
 
-inline void print_search_result(Search_result result, int level) {
+inline void print_search_result(Search_result result, const Options *options, const State *state) {
     print_search_result_head();
-    print_search_result_body(result, level);
+    print_search_result_body(result, options, state);
 }
 
 void print_search_result_quiet(Search_result result) {
