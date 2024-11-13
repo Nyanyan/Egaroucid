@@ -225,7 +225,7 @@ inline void print_search_result_body(Search_result result, const Options *option
         std::cout << "|";
         std::cout << std::right << std::setw(SEARCH_RESULT_TAB_SIZE) << 0;
         std::cout << "|";
-        if (options->time_allocated_minutes != TIME_NOT_ALLOCATED) {
+        if (options->time_allocated_seconds != TIME_NOT_ALLOCATED) {
             std::cout << std::right << std::setw(SEARCH_RESULT_TAB_SIZE) << std::fixed << std::setprecision(3) << remaining_time_sec;
         } else {
             std::cout << std::right << std::setw(SEARCH_RESULT_TAB_SIZE) << "-";
@@ -254,7 +254,7 @@ inline void print_search_result_body(Search_result result, const Options *option
         std::cout << "|";
         std::cout << std::right << std::setw(SEARCH_RESULT_TAB_SIZE) << result.nps;
         std::cout << "|";
-        if (options->time_allocated_minutes != TIME_NOT_ALLOCATED) {
+        if (options->time_allocated_seconds != TIME_NOT_ALLOCATED) {
             std::cout << std::right << std::setw(SEARCH_RESULT_TAB_SIZE) << std::fixed << std::setprecision(3) << remaining_time_sec;
         } else {
             std::cout << std::right << std::setw(SEARCH_RESULT_TAB_SIZE) << "-";

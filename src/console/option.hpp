@@ -30,7 +30,7 @@ struct Options {
     int mode;
     bool gtp;
     bool quiet;
-    int time_allocated_minutes; // -1 (TIME_NOT_ALLOCATED): not allocated
+    int time_allocated_seconds; // -1 (TIME_NOT_ALLOCATED): not allocated
     bool ponder;
 };
 
@@ -121,13 +121,13 @@ Options get_options(std::vector<Commandline_option> commandline_options, std::st
     }
     res.gtp = find_commandline_option(commandline_options, ID_GTP);
     res.quiet = find_commandline_option(commandline_options, ID_QUIET);
-    res.time_allocated_minutes = TIME_NOT_ALLOCATED;
+    res.time_allocated_seconds = TIME_NOT_ALLOCATED;
     if (find_commandline_option(commandline_options, ID_TIME_ALLOCATE)) {
         std::vector<std::string> arg = get_commandline_option_arg(commandline_options, ID_TIME_ALLOCATE);
         try {
-            res.time_allocated_minutes = std::stoi(arg[0]);
-            if (res.time_allocated_minutes < 1) {
-                res.time_allocated_minutes = TIME_NOT_ALLOCATED;
+            res.time_allocated_seconds = std::stoi(arg[0]);
+            if (res.time_allocated_seconds < 1) {
+                res.time_allocated_seconds = TIME_NOT_ALLOCATED;
                 std::cerr << "[ERROR] time allocation argument out of range" << std::endl;
             }
         } catch (const std::invalid_argument& e) {

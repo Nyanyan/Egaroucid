@@ -47,8 +47,8 @@ int get_command_id(std::string cmd) {
 }
 
 void allocate_time(Options *options, State *state) {
-    if (options->time_allocated_minutes != TIME_NOT_ALLOCATED) {
-        state->remaining_time_msec = 60ULL * 1000ULL * options->time_allocated_minutes;
+    if (options->time_allocated_seconds != TIME_NOT_ALLOCATED) {
+        state->remaining_time_msec = 60ULL * 1000ULL * options->time_allocated_seconds;
     }
 }
 
@@ -174,7 +174,7 @@ Search_result go_noprint(Board_info *board, Options *options, State *state) {
         return res;
     }
     Search_result result;
-    if (options->time_allocated_minutes == TIME_NOT_ALLOCATED) {
+    if (options->time_allocated_seconds == TIME_NOT_ALLOCATED) {
         result = ai(board->board, options->level, true, 0, true, options->show_log);
     } else {
         uint64_t start_time = tim();

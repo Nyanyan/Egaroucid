@@ -60,8 +60,8 @@ int main(int argc, char* argv[]) {
     #endif
     Board_info board;
     board.reset();
-    if (options.time_allocated_minutes != TIME_NOT_ALLOCATED) {
-        state.remaining_time_msec = 60ULL * 1000ULL * options.time_allocated_minutes;
+    if (options.time_allocated_seconds != TIME_NOT_ALLOCATED) {
+        state.remaining_time_msec = 1000ULL * options.time_allocated_seconds;
     }
     while (true) {
         if (options.gtp) {
