@@ -177,6 +177,9 @@ Search_result go_noprint(Board_info *board, Options *options, State *state) {
             if (result.is_end_search && result.probability == 100) { // complete search
                 break;
             }
+            if (result.depth == SEARCH_BOOK) { // book
+                break;
+            }
         }
     }
     Flip flip;
