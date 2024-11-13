@@ -216,9 +216,11 @@ inline Search_result tree_search_legal(Board board, int depth, uint_fast8_t mpc_
         */
     }
     if (use_legal) {
-        uint64_t time_limit_proc = time_limit - clog_time;
-        if (time_limit == TIME_LIMIT_INF) {
-            time_limit_proc = TIME_LIMIT_INF;
+        uint64_t time_limit_proc = TIME_LIMIT_INF;
+        if (time_limit > clog_time) {
+            time_limit_proc = time_limit - clog_time;
+        } else {
+            time_limit_proc = 1;
         }
         lazy_smp(board, depth, mpc_level, show_log, clogs, use_legal, use_multi_thread, &res, time_limit_proc);
         /*

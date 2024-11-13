@@ -156,23 +156,22 @@ void redo(Board_info *board, int remain) {
     redo(board, remain - 1);
 }
 
-#define TIME_MANAGEMENT_REMAINING_TIME_OFFSET 500 // ms
-#define TIME_MANAGEMENT_REMAINING_MOVES_OFFSET 23 // moves
+#define TIME_MANAGEMENT_REMAINING_TIME_OFFSET 200 // ms / move
+#define TIME_MANAGEMENT_REMAINING_MOVES_OFFSET 20 // moves (fast complete search)
 
 uint64_t calc_time_limit_ply(const Board board, uint64_t remaining_time_msec) {
-    if (remaining_time_msec - TIME_MANAGEMENT_REMAINING_TIME_OFFSET > 0) {
-        int remaining_moves = HW2 - board.n_discs();
-        remaining_moves = std::max(2, remaining_moves - TIME_MANAGEMENT_REMAINING_MOVES_OFFSET);
-        if (remaining_time_msec > 60000 && board.n_discs() >= 30) { // last 34 moves
-            remaining_moves = std::max(2, remaining_moves - 1);
+    int remaining_moves = (HW2 - board.n_discs() + 1) / 2;
+    if (remaining_time_msec > TIME_MANAGEMENT_REMAINING_TIME_OFFSET * remaining_moves) {
+        uint64_t remaining_time_msec_proc = remaining_time_msec - TIME_MANAGEMENT_REMAINING_TIME_OFFSET * remaining_moves;
+        int remaining_moves_proc = std::max(2, remaining_moves - TIME_MANAGEMENT_REMAINING_MOVES_OFFSET);
+        if (remaining_time_msec > 60000 && board.n_discs() >= 30) { // last 34 moves (60 sec)
+            remaining_moves_proc = std::max(2, remaining_moves_proc - 1);
+        } else if (remaining_time_msec > 30000 && board.n_discs() >= 32) { // last 32 moves (30 sec)
+            remaining_moves_proc = std::max(2, remaining_moves_proc - 1);
+        } else if (remaining_time_msec > 10000 && board.n_discs() >= 30) { // last 30 moves (10 sec)
+            remaining_moves_proc = std::max(2, remaining_moves_proc - 1);
         }
-        if (remaining_time_msec > 30000 && board.n_discs() >= 32) { // last 32 moves
-            remaining_moves = std::max(2, remaining_moves - 1);
-        }
-        if (remaining_time_msec > 10000 && board.n_discs() >= 30) { // last 30 moves
-            remaining_moves = std::max(2, remaining_moves - 1);
-        }
-        return (remaining_time_msec - TIME_MANAGEMENT_REMAINING_TIME_OFFSET) / remaining_moves;
+        return remaining_time_msec_proc / remaining_moves_proc;
     }
     return 1;
 }
@@ -195,9 +194,9 @@ Search_result go_noprint(Board_info *board, Options *options, State *state) {
             remaining_time_msec = &state->remaining_time_msec_white;
         }
         uint64_t time_limit_ply = calc_time_limit_ply(board->board, *remaining_time_msec);
-        //if (options->show_log) {
+        if (options->show_log) {
             std::cerr << "time limit: " << time_limit_ply << std::endl;
-        //}
+        }
         result = ai_time_limit(board->board, options->level, true, 0, true, options->show_log, time_limit_ply);
         uint64_t elapsed = tim() - start_time;
         if (elapsed <= *remaining_time_msec) {
