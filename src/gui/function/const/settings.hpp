@@ -1,4 +1,4 @@
-﻿/*
+/*
     Egaroucid Project
 
     @file settings.hpp
@@ -14,6 +14,10 @@
     @brief GUI settings
 */
 // GUI portable mode
-#define GUI_PORTABLE_MODE true
+#ifdef __APPLE__
+    #define GUI_PORTABLE_MODE false
+#else
+    #define GUI_PORTABLE_MODE true
+#endif
 // GUI Open Console?
 #define GUI_OPEN_CONSOLE true
