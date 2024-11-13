@@ -59,10 +59,7 @@ int main(int argc, char* argv[]) {
         return 0;
     #endif
     Board_info board;
-    board.reset();
-    if (options.time_allocated_seconds != TIME_NOT_ALLOCATED) {
-        state.remaining_time_msec = 1000ULL * options.time_allocated_seconds;
-    }
+    init_board(&board, &options, &state);
     while (true) {
         if (options.gtp) {
             gtp_check_command(&board, &state, &options);
