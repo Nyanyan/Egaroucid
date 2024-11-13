@@ -16,6 +16,10 @@
     -DHAS_32_BIT_OS     : 32bit environment
 */
 
+#pragma once
+#include <string>
+#include <Siv3D.hpp>
+
 /*
     @brief Option
 */
@@ -162,12 +166,6 @@
 // thread monitor
 #define USE_THREAD_MONITOR false
 
-
-
-
-
-
-
 /*
     @brief tuning
 */
@@ -186,3 +184,15 @@
 
 // endgame accuracy test
 #define TEST_ENDGAME_ACCURACY false
+
+
+
+
+/*
+    @brief path definition
+*/
+#ifdef __APPLE__
+    const std::string EXE_DIRECTORY_PATH = FileSystem::RelativePath(Resource(U"")).narrow();
+#else // Windows
+    constexpr std::string EXE_DIRECTORY_PATH = "./";
+#endif
