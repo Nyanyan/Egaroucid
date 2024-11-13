@@ -161,7 +161,7 @@ void redo(Board_info *board, int remain) {
 uint64_t calc_time_limit_ply(const Board board, const State *state) {
     if (state->remaining_time_msec - TIME_MANAGEMENT_REMAINING_TIME_OFFSET > 0) {
         int remaining_moves = HW2 - board.n_discs();
-        remaining_moves = std::max(0, remaining_moves - TIME_MANAGEMENT_REMAINING_MOVES_OFFSET);
+        remaining_moves = std::max(2, remaining_moves - TIME_MANAGEMENT_REMAINING_MOVES_OFFSET);
         return (state->remaining_time_msec - TIME_MANAGEMENT_REMAINING_TIME_OFFSET) / remaining_moves;
     }
     return 0;
