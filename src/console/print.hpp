@@ -259,6 +259,7 @@ inline void print_search_result_body(Search_result result, const Options *option
         } else {
             std::cout << std::right << std::setw(SEARCH_RESULT_TAB_SIZE) << "-";
         }
+        std::cout << "|";
         std::cout << std::endl;
     }
 }
