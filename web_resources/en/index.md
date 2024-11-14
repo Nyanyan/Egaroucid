@@ -150,6 +150,7 @@ I would like to thank these people for great contributions.
     <li>Technical Contribution / [GitHub Contribution](https://github.com/Nyanyan/Egaroucid/graphs/contributors)
         <ul>
             <li>Toshihiko Okuhara</li>
+            <li>Hayato Sasakura</li>
             <li>acepck</li>
             <li>HiraokaTakuya</li>
             <li>Ben Stokmans</li>
@@ -195,6 +196,7 @@ I would like to thank these people for great contributions.
         </ul>
     </li>
 </ul>
+
 
 
 

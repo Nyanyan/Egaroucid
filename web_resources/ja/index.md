@@ -179,6 +179,7 @@ GPL-3.0ライセンスの下で自由に使っていただいて構いません�
     <li>技術提供・[GitHubコントリビュータ](https://github.com/Nyanyan/Egaroucid/graphs/contributors)
         <ul>
             <li>奥原俊彦</li>
+            <li>笹倉颯人</li>
             <li>acepck</li>
             <li>HiraokaTakuya</li>
             <li>Ben Stokmans</li>
@@ -224,6 +225,7 @@ GPL-3.0ライセンスの下で自由に使っていただいて構いません�
         </ul>
     </li>
 </ul>
+
 
 
 
