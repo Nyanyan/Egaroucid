@@ -173,10 +173,23 @@ void redo(Board_info *board, int remain) {
 }
 
 #define TIME_MANAGEMENT_REMAINING_TIME_OFFSET 200 // ms / move
-#define TIME_MANAGEMENT_REMAINING_MOVES_OFFSET 12 // moves (fast complete search = 24 moves)
+//#define TIME_MANAGEMENT_REMAINING_MOVES_OFFSET 12 // moves (fast complete search = 24 moves)
+#define TIME_MANAGEMENT_REMAINING_MOVES_OFFSET 5
 
 uint64_t calc_time_limit_ply(const Board board, uint64_t remaining_time_msec) {
-    int remaining_moves = (HW2 - board.n_discs() + 1) / 2;
+    // try complete search
+    // Nodes(depth) = a * exp(b * depth)
+    constexpr double const_a = 0.5;
+    constexpr double const_b = 0.8;
+    constexpr double nps = 120000000.0;
+    double complete_search_depth = log((double)remaining_time_msec / 1000.0 * nps / const_a) / const_b;
+    std::cerr << "complete search depth " << complete_search_depth << std::endl;
+    int n_empties = HW2 - board.n_discs();
+    if (n_empties <= complete_search_depth) {
+        return remaining_time_msec * 0.8;
+    }
+    // midgame search
+    int remaining_moves = (n_empties + 1) / 2;
     if (remaining_time_msec > TIME_MANAGEMENT_REMAINING_TIME_OFFSET * remaining_moves) {
         uint64_t remaining_time_msec_proc = remaining_time_msec - TIME_MANAGEMENT_REMAINING_TIME_OFFSET * remaining_moves;
         int remaining_moves_proc = std::max(2, remaining_moves - TIME_MANAGEMENT_REMAINING_MOVES_OFFSET);
