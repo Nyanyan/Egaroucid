@@ -179,10 +179,10 @@ void redo(Board_info *board, int remain) {
 uint64_t calc_time_limit_ply(const Board board, uint64_t remaining_time_msec) {
     // try complete search
     // Nodes(depth) = a * exp(b * depth)
-    constexpr double const_a = 0.5;
-    constexpr double const_b = 0.8;
-    constexpr double nps = 120000000.0;
-    double complete_search_depth = log((double)remaining_time_msec / 1000.0 * nps / const_a) / const_b;
+    constexpr double complete_const_a = 0.6;
+    constexpr double complete_const_b = 0.75;
+    constexpr double complete_nps = 120000000.0;
+    double complete_search_depth = log((double)remaining_time_msec / 1000.0 * complete_nps / complete_const_a) / complete_const_b;
     std::cerr << "complete search depth " << complete_search_depth << std::endl;
     int n_empties = HW2 - board.n_discs();
     if (n_empties <= complete_search_depth) {
@@ -193,13 +193,6 @@ uint64_t calc_time_limit_ply(const Board board, uint64_t remaining_time_msec) {
     if (remaining_time_msec > TIME_MANAGEMENT_REMAINING_TIME_OFFSET * remaining_moves) {
         uint64_t remaining_time_msec_proc = remaining_time_msec - TIME_MANAGEMENT_REMAINING_TIME_OFFSET * remaining_moves;
         int remaining_moves_proc = std::max(2, remaining_moves - TIME_MANAGEMENT_REMAINING_MOVES_OFFSET);
-        if (remaining_time_msec > 60000 && board.n_discs() >= 30) { // last 34 moves (60 sec)
-            remaining_moves_proc = std::max(2, remaining_moves_proc - 1);
-        } else if (remaining_time_msec > 30000 && board.n_discs() >= 32) { // last 32 moves (30 sec)
-            remaining_moves_proc = std::max(2, remaining_moves_proc - 1);
-        } else if (remaining_time_msec > 10000 && board.n_discs() >= 30) { // last 30 moves (10 sec)
-            remaining_moves_proc = std::max(2, remaining_moves_proc - 1);
-        }
         return remaining_time_msec_proc / remaining_moves_proc;
     }
     return 1;
