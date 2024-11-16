@@ -209,7 +209,7 @@ inline void print_search_result_body(Search_result result, const Options *option
         double remaining_time_sec_white = (double)state->remaining_time_msec_white / 1000.0;
         std::stringstream ss;
         ss << std::fixed << std::setprecision(2) << remaining_time_sec_black << "/" << remaining_time_sec_white;
-        std::string remaining_time_str = ss.str();
+        remaining_time_str = ss.str();
     }
     std::string level_str = "-";
     if (result.depth == SEARCH_BOOK) {
