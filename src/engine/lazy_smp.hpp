@@ -40,6 +40,7 @@ void lazy_smp(Board board, int depth, uint_fast8_t mpc_level, bool show_log, std
         std::cerr << "thread pool size " << thread_pool.size() << " n_idle " << thread_pool.get_n_idle() << std::endl;
     }
     std::vector<Search> searches(thread_pool.size() + 1);
+    int before_raw_value = -100;
     while (main_depth <= depth && main_mpc_level <= mpc_level && global_searching && tim() - strt < time_limit) {
         for (Search &search: searches) {
             search.n_nodes = 0;
@@ -147,6 +148,7 @@ void lazy_smp(Board board, int depth, uint_fast8_t mpc_level, bool show_log, std
             } else{
                 result->value = id_result.first;
             }
+            bool policy_changed = result->policy != id_result.second;
             result->policy = id_result.second;
             result->depth = main_depth;
             result->is_end_search = main_is_end_search;
@@ -164,6 +166,15 @@ void lazy_smp(Board board, int depth, uint_fast8_t mpc_level, bool show_log, std
                 }
                 std::cerr << "depth " << result->depth << "@" << SELECTIVITY_PERCENTAGE[main_mpc_level] << "%" << " value " << result->value << " (raw " << id_result.first << ") policy " << idx_to_coord(id_result.second) << " n_worker " << parallel_tasks.size() << " n_nodes " << result->nodes << " time " << result->time << " NPS " << result->nps << std::endl;
             }
+            if (
+                main_depth >= 20 && 
+                result->nodes >= 10000000ULL && 
+                !policy_changed && 
+                abs(before_raw_value - id_result.first) <= 1
+            ) {
+                break;
+            }
+            before_raw_value = id_result.first;
         }
         if (!is_end_search || main_depth < depth - LAZYSMP_ENDSEARCH_PRESEARCH_OFFSET) {
             if (main_depth <= 15 && main_depth < depth - 3) {
