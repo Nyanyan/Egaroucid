@@ -13,8 +13,8 @@
 
 
 
-#define TIME_MANAGEMENT_REMAINING_TIME_OFFSET 200 // ms / move
-#define TIME_MANAGEMENT_REMAINING_MOVES_OFFSET 5
+#define TIME_MANAGEMENT_REMAINING_TIME_OFFSET 10 // ms / move
+#define TIME_MANAGEMENT_REMAINING_MOVES_OFFSET 12 // 12 * 2 = 24 moves
 
 Search_result ai(Board board, int level, bool use_book, int book_acc_level, bool use_multi_thread, bool show_log);
 
@@ -24,7 +24,7 @@ uint64_t calc_time_limit_ply(const Board board, uint64_t remaining_time_msec, bo
     // try complete search
     // Nodes(depth) = a * exp(b * depth)
     constexpr double complete_const_a = 0.6;
-    constexpr double complete_const_b = 0.75;
+    constexpr double complete_const_b = 0.74;
     constexpr double complete_nps = 120000000.0;
     double complete_use_time = (double)remaining_time_msec * 0.8;
     double complete_search_depth = log(complete_use_time / 1000.0 * complete_nps / complete_const_a) / complete_const_b;
@@ -32,7 +32,7 @@ uint64_t calc_time_limit_ply(const Board board, uint64_t remaining_time_msec, bo
     // try endgame search
     // Nodes(depth) = a * exp(b * depth)
     constexpr double endgame_const_a = 0.3;
-    constexpr double endgame_const_b = 0.65;
+    constexpr double endgame_const_b = 0.63;
     constexpr double endgame_nps = 90000000.0;
     double endgame_use_time = (double)remaining_time_msec * 0.25;
     double endgame_search_depth = log(endgame_use_time / 1000.0 * endgame_nps / endgame_const_a) / endgame_const_b;
