@@ -308,7 +308,7 @@ void lazy_smp_time_limit(Board board, bool show_log, std::vector<Clog_result> cl
             if (
                 !main_is_end_search && 
                 main_depth >= 23 && 
-                tim() - strt > time_limit * 0.2 && 
+                tim() - strt > time_limit * 0.35 && 
                 result->nodes >= 100000000ULL && 
                 !policy_changed && 
                 abs(before_raw_value - id_result.first) <= 0
