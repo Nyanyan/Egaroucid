@@ -107,22 +107,22 @@ inline int ybwc_split_nws(Search *search, int alpha, int depth, uint64_t legal, 
 #if USE_YBWC_NWS
     inline void ybwc_search_young_brothers_nws(Search *search, int alpha, int *v, int *best_move, uint32_t hash_code, int depth, bool is_end_search, std::vector<Flip_value> &move_list, bool *searching) {
         std::vector<std::future<Parallel_task>> parallel_tasks;
-        bool n_searching = true;
+        bool *n_searching = searching;
+        bool not_searching = false;
         int canput = (int)move_list.size();
         int running_count = 0;
         int g;
-        for (int move_idx = 1; move_idx < canput && n_searching; ++move_idx) {
-            n_searching &= *searching;
+        for (int move_idx = 1; move_idx < canput && *n_searching; ++move_idx) {
             if (move_list[move_idx].flip.flip) {
                 if (search->need_to_see_tt_loop) {
                     if (transposition_cutoff_nws_bestmove(search, hash_code, depth, alpha, v, best_move)) {
-                        n_searching = false;
+                        n_searching = &not_searching;
                         break;
                     }
                 }
                 bool serial_searched = false;
                 search->move(&move_list[move_idx].flip);
-                    int ybwc_split_state = ybwc_split_nws(search, -alpha - 1, depth - 1, move_list[move_idx].n_legal, is_end_search, &n_searching, move_list[move_idx].flip.pos, move_idx, canput, running_count, parallel_tasks);
+                    int ybwc_split_state = ybwc_split_nws(search, -alpha - 1, depth - 1, move_list[move_idx].n_legal, is_end_search, n_searching, move_list[move_idx].flip.pos, move_idx, canput, running_count, parallel_tasks);
                     if (*searching) {
                         if (ybwc_split_state == YBWC_PUSHED) {
                             ++running_count;
@@ -139,7 +139,7 @@ inline int ybwc_split_nws(Search *search, int alpha, int depth, uint64_t legal, 
                                     *v = g;
                                     *best_move = move_list[move_idx].flip.pos;
                                     if (alpha < g) {
-                                        n_searching = false;
+                                        n_searching = &not_searching;
                                     }
                                 }
                             }
@@ -153,12 +153,12 @@ inline int ybwc_split_nws(Search *search, int alpha, int depth, uint64_t legal, 
                             if (task.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
                                 got_task = task.get();
                                 --running_count;
-                                if (n_searching) {
+                                if (*n_searching) {
                                     if (*v < got_task.value) {
                                         *v = got_task.value;
                                         *best_move = move_list[got_task.move_idx].flip.pos;
                                         if (alpha < got_task.value) {
-                                            n_searching = false;
+                                            n_searching = &not_searching;
                                         }
                                     }
                                 }
@@ -175,12 +175,12 @@ inline int ybwc_split_nws(Search *search, int alpha, int depth, uint64_t legal, 
                 if (task.valid()) {
                     got_task = task.get();
                     --running_count;
-                    if (n_searching) {
+                    if (*n_searching) {
                         if (*v < got_task.value) {
                             *v = got_task.value;
                             *best_move = move_list[got_task.move_idx].flip.pos;
                             if (alpha < got_task.value) {
-                                n_searching = false;
+                                n_searching = &not_searching;
                             }
                         }
                     }
