@@ -172,47 +172,6 @@ void redo(Board_info *board, int remain) {
     redo(board, remain - 1);
 }
 
-#define TIME_MANAGEMENT_REMAINING_TIME_OFFSET 200 // ms / move
-//#define TIME_MANAGEMENT_REMAINING_MOVES_OFFSET 12 // moves (fast complete search = 24 moves)
-#define TIME_MANAGEMENT_REMAINING_MOVES_OFFSET 5
-
-uint64_t calc_time_limit_ply(const Board board, uint64_t remaining_time_msec) {
-    int n_empties = HW2 - board.n_discs();
-
-    // try complete search
-    // Nodes(depth) = a * exp(b * depth)
-    constexpr double complete_const_a = 0.6;
-    constexpr double complete_const_b = 0.75;
-    constexpr double complete_nps = 120000000.0;
-    double complete_use_time = (double)remaining_time_msec * 0.8;
-    double complete_search_depth = log(complete_use_time / 1000.0 * complete_nps / complete_const_a) / complete_const_b;
-    std::cerr << "complete search depth " << complete_search_depth << std::endl;
-    if (n_empties <= complete_search_depth) {
-        return complete_use_time;
-    }
-
-    // try endgame search
-    // Nodes(depth) = a * exp(b * depth)
-    constexpr double endgame_const_a = 0.3;
-    constexpr double endgame_const_b = 0.65;
-    constexpr double endgame_nps = 90000000.0;
-    double endgame_use_time = (double)remaining_time_msec * 0.25;
-    double endgame_search_depth = log(endgame_use_time / 1000.0 * endgame_nps / endgame_const_a) / endgame_const_b;
-    std::cerr << "endgame search depth " << endgame_search_depth << std::endl;
-    if (n_empties <= endgame_search_depth) {
-        return endgame_use_time;
-    }
-
-    // midgame search
-    int remaining_moves = (n_empties + 1) / 2;
-    if (remaining_time_msec > TIME_MANAGEMENT_REMAINING_TIME_OFFSET * remaining_moves) {
-        uint64_t remaining_time_msec_proc = remaining_time_msec - TIME_MANAGEMENT_REMAINING_TIME_OFFSET * remaining_moves;
-        int remaining_moves_proc = std::max(2, remaining_moves - TIME_MANAGEMENT_REMAINING_MOVES_OFFSET);
-        return remaining_time_msec_proc / remaining_moves_proc;
-    }
-    return 1;
-}
-
 Search_result go_noprint(Board_info *board, Options *options, State *state) {
     if (board->board.is_end()) {
         std::cerr << "[ERROR] game over" << std::endl;
@@ -223,18 +182,13 @@ Search_result go_noprint(Board_info *board, Options *options, State *state) {
     if (options->time_allocated_seconds == TIME_NOT_ALLOCATED) {
         result = ai(board->board, options->level, true, 0, true, options->show_log);
     } else {
-        uint64_t start_time = tim();
         uint64_t *remaining_time_msec;
         if (board->player == BLACK) {
             remaining_time_msec = &state->remaining_time_msec_black;
         } else {
             remaining_time_msec = &state->remaining_time_msec_white;
         }
-        uint64_t time_limit_ply = calc_time_limit_ply(board->board, *remaining_time_msec);
-        if (options->show_log) {
-            std::cerr << "time limit: " << time_limit_ply << std::endl;
-        }
-        result = ai_time_limit(board->board, options->level, true, 0, true, options->show_log, time_limit_ply);
+        result = ai_time_limit(board->board, options->level, true, 0, true, options->show_log, *remaining_time_msec);
     }
     Flip flip;
     calc_flip(&flip, &board->board, result.policy);
