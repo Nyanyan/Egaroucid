@@ -33,10 +33,12 @@
 
 inline uint32_t get_level_common(uint8_t depth, uint8_t mpc_level) {
     return ((uint32_t)depth << 8) | mpc_level;
+    //return depth + mpc_level;
 }
 
 inline uint32_t get_level_common(int depth, uint_fast8_t mpc_level) {
     return ((uint32_t)depth << 8) | mpc_level;
+    //return depth + mpc_level;
 }
 
 /*

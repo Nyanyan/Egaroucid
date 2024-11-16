@@ -26,6 +26,65 @@
 
 #define ENDSEARCH_PRESEARCH_OFFSET 10
 
+
+Search_result midgame_time_limit_search(Board board, int depth, uint_fast8_t mpc_level, bool show_log, std::vector<Clog_result> clogs, uint64_t use_legal, bool use_multi_thread, uint64_t time_limit) {
+    Search_result result;
+    result.value = SCORE_UNDEFINED;
+    result.nodes = 0;
+    uint64_t strt = tim();
+    const int max_depth = HW2 - board.n_discs();
+    depth = std::min(depth, max_depth);
+    int search_depth = 1;
+    if (depth % 2 == 0 && depth >= 2) {
+        search_depth = 2;
+    }
+    int search_mpc_level = mpc_level;
+    if (depth >= max_depth) {
+        depth = max_depth - 1;
+    }
+    constexpr int search_do_depth = 21;
+    constexpr uint64_t search_do_nodes = 10000000ULL;
+    int before_raw_value = -100;
+    while (search_depth <= depth && global_searching && tim() - strt < time_limit) {
+        bool search_is_end_search = false;
+        if (search_depth >= max_depth) {
+            search_is_end_search = true;
+            search_depth = max_depth;
+        }
+        Search search(&board, mpc_level, use_multi_thread, false, true);
+        bool searching = true;
+        std::cerr << "depth " << search_depth;
+        std::pair<int, int> id_result1 = first_nega_scout_legal(&search, -SCORE_MAX, SCORE_MAX, search_depth, search_is_end_search, clogs, use_legal, strt, &searching);
+        std::cerr << " A: " << id_result1.first << " " << idx_to_coord(id_result1.second);
+        search.mpc_level = MPC_93_LEVEL;
+        std::pair<int, int> id_result2 = first_nega_scout_legal(&search, -SCORE_MAX, SCORE_MAX, search_depth, search_is_end_search, clogs, use_legal, strt, &searching);
+        std::cerr << " B: " << id_result2.first << " " << idx_to_coord(id_result2.second) << std::endl;
+        result.nodes += search.n_nodes;
+        if (result.value != SCORE_UNDEFINED && !search_is_end_search) {
+            double n_value = (0.9 * result.value + 1.1 * id_result2.first) / 2.0;
+            result.value = round(n_value);
+        } else{
+            result.value = id_result2.first;
+        }
+        bool policy_changed = result.policy != id_result2.second;
+        result.policy = id_result2.second;
+        result.depth = search_depth;
+        result.time = tim() - strt;
+        result.nps = calc_nps(result.nodes, result.time);
+        if (show_log) {
+            std::cerr << "mid depth " << result.depth << "@" << SELECTIVITY_PERCENTAGE[search_mpc_level] << "%" << " value " << result.value << " (raw " << id_result2.first << ") policy " << idx_to_coord(id_result2.second) << " n_nodes " << result.nodes << " time " << result.time << " NPS " << result.nps << std::endl;
+        }
+        if (search_depth >= search_do_depth && result.nodes >= search_do_nodes && !policy_changed && abs(before_raw_value - id_result2.first) <= 1 && abs(id_result1.first - id_result2.first) <= 1 && id_result1.second == id_result2.second) {
+            break;
+        }
+        before_raw_value = id_result2.first;
+        ++search_depth;
+    }
+    result.is_end_search = false;
+    result.probability = SELECTIVITY_PERCENTAGE[mpc_level];
+    return result;
+}
+
 /*
 Search_result iterative_deepening_search(Board board, int depth, uint_fast8_t mpc_level, bool show_log, std::vector<Clog_result> clogs, uint64_t use_legal, bool use_multi_thread) {
     Search_result result;
@@ -222,7 +281,11 @@ inline Search_result tree_search_legal(Board board, int depth, uint_fast8_t mpc_
         } else {
             time_limit_proc = 1;
         }
-        lazy_smp(board, depth, mpc_level, show_log, clogs, use_legal, use_multi_thread, &res, time_limit_proc);
+        if (!is_end_search) {
+            res = midgame_time_limit_search(board, depth, mpc_level, show_log, clogs, use_legal, use_multi_thread, time_limit);
+        } else {
+            lazy_smp(board, depth, mpc_level, show_log, clogs, use_legal, use_multi_thread, &res, time_limit_proc);
+        }
         /*
         if (is_end_search) {
             res = endgame_optimized_search(board, depth, mpc_level, show_log, clogs, use_legal, use_multi_thread);
