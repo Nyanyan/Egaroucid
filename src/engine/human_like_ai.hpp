@@ -38,7 +38,7 @@ void noise_flip(Flip *flip, int depth) {
     flip->flip ^= mask; // off some bits
 }
 
-int nega_alpha_human_like(Search *search, int alpha, int beta, int depth, bool skipped, bool is_end_search, const bool *searching) {
+int nega_alpha_human_like(Search *search, int alpha, int beta, int depth, bool skipped, bool is_end_search, bool *searching) {
     if (!(*searching) || !global_searching) {
         return SCORE_UNDEFINED;
     }
@@ -89,7 +89,7 @@ int nega_alpha_human_like(Search *search, int alpha, int beta, int depth, bool s
     return v;
 }
 
-Search_result nega_alpha_human_like_root(Search *search, int alpha, int beta, int depth, bool is_end_search, const bool *searching) {
+Search_result nega_alpha_human_like_root(Search *search, int alpha, int beta, int depth, bool is_end_search, bool *searching) {
     Search_result res;
     if (!(*searching) || !global_searching || depth <= 0) {
         res.value = SCORE_UNDEFINED;

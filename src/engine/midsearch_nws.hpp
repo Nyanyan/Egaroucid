@@ -28,9 +28,9 @@
 #include "stability.hpp"
 #include "etc.hpp"
 
-inline bool ybwc_split_nws(const Search *search, int alpha, int depth, uint64_t legal, bool is_end_search, const bool *searching, uint_fast8_t policy, const int pv_idx, const int move_idx, const int canput, const int running_count, std::vector<std::future<Parallel_task>> &parallel_tasks);
+inline bool ybwc_split_nws(const Search *search, int alpha, int depth, uint64_t legal, bool is_end_search, bool *searching, uint_fast8_t policy, const int pv_idx, const int move_idx, const int canput, const int running_count, std::vector<std::future<Parallel_task>> &parallel_tasks);
 inline void ybwc_get_end_tasks(Search *search, std::vector<std::future<Parallel_task>> &parallel_tasks, int *v, int *best_move, int *running_count);
-inline void ybwc_wait_all_nws(Search *search, std::vector<std::future<Parallel_task>> &parallel_tasks, int *v, int *best_move, int *running_count, int alpha, const bool *searching, bool *n_searching);
+inline void ybwc_wait_all_nws(Search *search, std::vector<std::future<Parallel_task>> &parallel_tasks, int *v, int *best_move, int *running_count, int alpha, bool *searching, bool *n_searching);
 inline bool mpc(Search* search, int alpha, int beta, int depth, uint64_t legal, bool is_end_search, int* v, const bool* searching);
 
 /*
@@ -44,7 +44,7 @@ inline bool mpc(Search* search, int alpha, int beta, int depth, uint64_t legal, 
     @param searching            flag for terminating this search
     @return the value
 */
-inline int nega_alpha_eval1_nws(Search *search, int alpha, bool skipped, const bool *searching) {
+inline int nega_alpha_eval1_nws(Search *search, int alpha, bool skipped, bool *searching) {
     if (!global_searching || !(*searching))
         return SCORE_UNDEFINED;
     ++search->n_nodes;
@@ -96,7 +96,7 @@ inline int nega_alpha_eval1_nws(Search *search, int alpha, bool skipped, const b
     @param searching            flag for terminating this search
     @return the value
 */
-int nega_alpha_ordering_nws(Search *search, int alpha, int depth, bool skipped, uint64_t legal, bool is_end_search, const bool *searching) {
+int nega_alpha_ordering_nws(Search *search, int alpha, int depth, bool skipped, uint64_t legal, bool is_end_search, bool *searching) {
     if (!global_searching || !(*searching))
         return SCORE_UNDEFINED;
     if (is_end_search && depth <= MID_TO_END_DEPTH) {

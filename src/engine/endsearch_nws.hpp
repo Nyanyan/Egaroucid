@@ -46,7 +46,7 @@
     @param searching            flag for terminating this search
     @return the final score
 */
-int nega_alpha_end_fast_nws(Search *search, int alpha, bool skipped, const bool *searching) {
+int nega_alpha_end_fast_nws(Search *search, int alpha, bool skipped, bool *searching) {
     if (!global_searching || !(*searching))
         return SCORE_UNDEFINED;
     ++search->n_nodes;
@@ -168,7 +168,7 @@ inline LocalTTEntry *get_ltt(Board *board, uint32_t n_discs)
     @param searching            flag for terminating this search
     @return the final score
 */
-int nega_alpha_end_simple_nws(Search *search, int alpha, bool skipped, uint64_t legal, const bool *searching) {
+int nega_alpha_end_simple_nws(Search *search, int alpha, bool skipped, uint64_t legal, bool *searching) {
     if (!global_searching || !(*searching))
         return SCORE_UNDEFINED;
     if (search->n_discs >= HW2 - END_FAST_DEPTH)
@@ -288,7 +288,7 @@ int nega_alpha_end_simple_nws(Search *search, int alpha, bool skipped, uint64_t 
     @param searching            flag for terminating this search
     @return the final score
 */
-int nega_alpha_end_nws(Search *search, int alpha, bool skipped, uint64_t legal, const bool *searching) {
+int nega_alpha_end_nws(Search *search, int alpha, bool skipped, uint64_t legal, bool *searching) {
     if (!global_searching || !(*searching))
         return SCORE_UNDEFINED;
     if (search->n_discs >= HW2 - END_SIMPLE_DEPTH)
