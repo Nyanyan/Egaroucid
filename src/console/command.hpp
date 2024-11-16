@@ -433,6 +433,9 @@ void check_command(Board_info *board, State *state, Options *options) {
         case CMD_ID_GENPROBLEM:
             generate_problems(options, arg);
             break;
+        case CMD_ID_TRANSCRIPT:
+            print_transcript(board->boards);
+            break;
         default:
             break;
     }
