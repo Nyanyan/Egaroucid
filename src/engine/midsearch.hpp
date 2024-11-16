@@ -343,7 +343,7 @@ std::pair<int, int> first_nega_scout_legal(Search *search, int alpha, int beta, 
                             alpha = v;
                         }
                     }
-                    if (alpha < beta) {
+                    if (alpha < beta && *searching) {
                         ybwc_search_young_brothers(search, &alpha, &beta, &v, &best_move, hash_code, depth, is_end_search, move_list, true, searching);
                     }
                 }
