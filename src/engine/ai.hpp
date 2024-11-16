@@ -409,12 +409,14 @@ inline Search_result tree_search_legal(Board board, int depth, uint_fast8_t mpc_
             }
         }
         if (use_time_limit) {
+            /*
             if (HW2 - board.n_discs() >= 30) {
                 uint64_t strt_selfplay = tim();
                 uint64_t selfplay_time = time_limit_proc * 0.3;
                 time_management_selfplay(board, show_log, use_legal, selfplay_time);
                 time_limit_proc -= tim() - strt_selfplay;
             }
+            */
             iterative_deepening_search_time_limit(board, show_log, clogs, use_legal, use_multi_thread, &res, time_limit_proc);
         } else {
             iterative_deepening_search(board, depth, mpc_level, show_log, clogs, use_legal, use_multi_thread, &res);
