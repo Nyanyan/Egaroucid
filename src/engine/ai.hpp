@@ -277,7 +277,7 @@ void iterative_deepening_search_time_limit(Board board, bool show_log, std::vect
                     searching = false;
                     f.get();
                     search_success = false;
-                    std::cerr << "got main" << std::endl;
+                    std::cerr << "got main " << tim() - strt << " ms" << std::endl;
                     break;
                 }
             }
@@ -313,6 +313,7 @@ void iterative_deepening_search_time_limit(Board board, bool show_log, std::vect
                 }
                 std::cerr << "depth " << result->depth << "@" << SELECTIVITY_PERCENTAGE[main_mpc_level] << "%" << " value " << result->value << " (raw " << id_result.first << ") policy " << idx_to_coord(id_result.second) << " n_worker " << parallel_tasks.size() << " n_nodes " << result->nodes << " time " << result->time << " NPS " << result->nps << std::endl;
             }
+            /*
             if (
                 !main_is_end_search && 
                 main_depth >= 23 && 
@@ -326,6 +327,7 @@ void iterative_deepening_search_time_limit(Board board, bool show_log, std::vect
                 }
                 break;
             }
+            */
             before_raw_value = id_result.first;
         }
         if (main_depth < max_depth - IDSEARCH_ENDSEARCH_PRESEARCH_OFFSET) { // next: midgame search

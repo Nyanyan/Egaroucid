@@ -92,12 +92,14 @@ inline int ybwc_split_nws(Search *search, int alpha, int depth, uint64_t legal, 
                 return -v;
             }
         }
-        bool pushed;
-        parallel_tasks.emplace_back(thread_pool.push(&pushed, std::bind(&ybwc_do_task_nws, search->board.player, search->board.opponent, search->n_discs, search->parity, search->mpc_level, search->is_presearch, alpha, depth, legal, is_end_search, policy, move_idx, n_searching)));
-        if (pushed) {
-            return YBWC_PUSHED;
-        } else{
-            parallel_tasks.pop_back();
+        if (*searching && *n_searching) {
+            bool pushed;
+            parallel_tasks.emplace_back(thread_pool.push(&pushed, std::bind(&ybwc_do_task_nws, search->board.player, search->board.opponent, search->n_discs, search->parity, search->mpc_level, search->is_presearch, alpha, depth, legal, is_end_search, policy, move_idx, n_searching)));
+            if (pushed) {
+                return YBWC_PUSHED;
+            } else{
+                parallel_tasks.pop_back();
+            }
         }
     }
     return YBWC_NOT_PUSHED;
