@@ -176,7 +176,6 @@ void lazy_smp(Board board, int depth, uint_fast8_t mpc_level, bool show_log, std
 }
 
 void lazy_smp_time_limit(Board board, bool show_log, std::vector<Clog_result> clogs, uint64_t use_legal, bool use_multi_thread, Search_result *result, uint64_t time_limit) {
-    std::cerr << "TL SEARCH" << std::endl;
     uint64_t strt = tim();
     result->value = SCORE_UNDEFINED;
     int main_depth = 1;
@@ -309,33 +308,36 @@ void lazy_smp_time_limit(Board board, bool show_log, std::vector<Clog_result> cl
             if (
                 !main_is_end_search && 
                 main_depth >= 23 && 
+                tim() - strt > time_limit * 0.2 && 
                 result->nodes >= 100000000ULL && 
                 !policy_changed && 
                 abs(before_raw_value - id_result.first) <= 0
             ) {
-                std::cerr << "early break" << std::endl;
+                if (show_log) {
+                    std::cerr << "early break" << std::endl;
+                }
                 break;
             }
             before_raw_value = id_result.first;
         }
-        if (main_depth < max_depth - LAZYSMP_ENDSEARCH_PRESEARCH_OFFSET) {
+        if (main_depth < max_depth - LAZYSMP_ENDSEARCH_PRESEARCH_OFFSET) { // next: midgame search
             if (main_depth <= 15 && main_depth < max_depth - 3) {
                 main_depth += 3;
             } else{
                 ++main_depth;
             }
-            if (main_depth > 11 && main_mpc_level == MPC_100_LEVEL) {
+            if (main_depth > 13 && main_mpc_level == MPC_100_LEVEL) {
                 main_mpc_level = MPC_74_LEVEL;
             }
             if (main_depth > 23) {
-                if (main_mpc_level < MPC_99_LEVEL) {
+                if (main_mpc_level < MPC_93_LEVEL) {
                     --main_depth;
                     ++main_mpc_level;
                 } else {
                     main_mpc_level = MPC_74_LEVEL;
                 }
             }
-        } else{
+        } else{ // next: endgame search
             if (main_depth < max_depth) {
                 main_depth = max_depth;
                 main_mpc_level = MPC_74_LEVEL;
@@ -343,7 +345,9 @@ void lazy_smp_time_limit(Board board, bool show_log, std::vector<Clog_result> cl
                 if (main_mpc_level < MPC_100_LEVEL) {
                     ++main_mpc_level;
                 } else{
-                    std::cerr << "all searched" << std::endl;
+                    if (show_log) {
+                        std::cerr << "all searched" << std::endl;
+                    }
                     break;
                 }
             }

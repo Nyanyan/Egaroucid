@@ -184,7 +184,7 @@ uint64_t calc_time_limit_ply(const Board board, uint64_t remaining_time_msec) {
     constexpr double complete_const_a = 0.6;
     constexpr double complete_const_b = 0.75;
     constexpr double complete_nps = 120000000.0;
-    double complete_use_time = (double)remaining_time_msec * 0.9;
+    double complete_use_time = (double)remaining_time_msec * 0.8;
     double complete_search_depth = log(complete_use_time / 1000.0 * complete_nps / complete_const_a) / complete_const_b;
     std::cerr << "complete search depth " << complete_search_depth << std::endl;
     if (n_empties <= complete_search_depth) {
