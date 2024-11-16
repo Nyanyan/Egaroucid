@@ -67,6 +67,6 @@ const Commandline_option_info commandline_option_data[N_COMMANDLINE_OPTIONS] = {
     {ID_SELF_PLAY,          {"-sf", "-selfplay"},                               2, "<n> <m>",          "Self play <n> games (play randomly first <m> moves)"},
     {ID_SELF_PLAY_LINE,     {"-sfl", "-selfplayline"},                          1, "<file>",           "Self play with given openings"},
     {ID_PERFT,              {"-perft"},                                         2, "<depth> <mode>",   "Perft for Othello with <depth> in <mode>, 1: pass is counted as 1 move (normal perft), 2: pass is not counted as a move"},
-    {ID_TIME_ALLOCATE,      {"-time"},                                          1, "<seconds>",        "Time allocate <seconds> seconds. -level will be the max level for AI"},
+    {ID_TIME_ALLOCATE,      {"-time"},                                          1, "<seconds>",        "Time allocate <seconds> seconds. -level will be ignored"},
     {ID_PONDER,             {"-ponder"},                                        0, "",                  "Enable ponder"}
 };

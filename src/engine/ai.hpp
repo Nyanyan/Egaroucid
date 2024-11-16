@@ -249,6 +249,7 @@ inline Search_result tree_search_legal(Board board, int depth, uint_fast8_t mpc_
     Search_result res;
     depth = std::min(HW2 - board.n_discs(), depth);
     bool is_end_search = (HW2 - board.n_discs() == depth);
+    bool use_time_limit = (time_limit != TIME_LIMIT_INF);
     std::vector<Clog_result> clogs;
     uint64_t clog_nodes = 0;
     uint64_t clog_time = 0;
@@ -277,27 +278,18 @@ inline Search_result tree_search_legal(Board board, int depth, uint_fast8_t mpc_
     }
     if (use_legal) {
         uint64_t time_limit_proc = TIME_LIMIT_INF;
-        if (time_limit > clog_time) {
-            time_limit_proc = time_limit - clog_time;
+        if (use_time_limit) {
+            if (time_limit > clog_time) {
+                time_limit_proc = time_limit - clog_time;
+            } else {
+                time_limit_proc = 1;
+            }
+        }
+        if (use_time_limit) {
+            lazy_smp_time_limit(board, show_log, clogs, use_legal, use_multi_thread, &res, time_limit_proc);
         } else {
-            time_limit_proc = 1;
+            lazy_smp(board, depth, mpc_level, show_log, clogs, use_legal, use_multi_thread, &res);
         }
-        /*
-        if (!is_end_search) {
-            res = midgame_time_limit_search(board, depth, mpc_level, show_log, clogs, use_legal, use_multi_thread, time_limit);
-        } else {
-            lazy_smp(board, depth, mpc_level, show_log, clogs, use_legal, use_multi_thread, &res, time_limit_proc);
-        }
-        */
-        lazy_smp(board, depth, mpc_level, show_log, clogs, use_legal, use_multi_thread, &res, time_limit_proc);
-        /*
-        if (is_end_search) {
-            res = endgame_optimized_search(board, depth, mpc_level, show_log, clogs, use_legal, use_multi_thread);
-        } else{
-            res = lazy_smp(board, depth, mpc_level, show_log, clogs, use_legal, use_multi_thread);
-            //res = iterative_deepening_search(board, depth, mpc_level, show_log, clogs, use_legal, use_multi_thread);
-        }
-        */
     }
     //thread_pool.tell_finish_using();
     //thread_pool.reset_unavailable();
