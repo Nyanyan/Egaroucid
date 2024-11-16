@@ -122,22 +122,24 @@ inline int ybwc_split_nws(Search *search, int alpha, int depth, uint64_t legal, 
                 bool serial_searched = false;
                 search->move(&move_list[move_idx].flip);
                     int ybwc_split_state = ybwc_split_nws(search, -alpha - 1, depth - 1, move_list[move_idx].n_legal, is_end_search, searching, &n_searching, move_list[move_idx].flip.pos, move_idx, canput, running_count, parallel_tasks);
-                    if (ybwc_split_state == YBWC_PUSHED) {
-                        ++running_count;
-                    } else {
-                        if (ybwc_split_state == YBWC_NOT_PUSHED) {
-                            g = -nega_alpha_ordering_nws(search, -alpha - 1, depth - 1, false, move_list[move_idx].n_legal, is_end_search, searching);
-                            serial_searched = true;
-                        } else{
-                            g = ybwc_split_state;
-                            ++search->n_nodes;
-                        }
-                        if (*searching) {
-                            if (*v < g) {
-                                *v = g;
-                                *best_move = move_list[move_idx].flip.pos;
-                                if (alpha < g) {
-                                    n_searching = false;
+                    if (*searching) {
+                        if (ybwc_split_state == YBWC_PUSHED) {
+                            ++running_count;
+                        } else {
+                            if (ybwc_split_state == YBWC_NOT_PUSHED) {
+                                g = -nega_alpha_ordering_nws(search, -alpha - 1, depth - 1, false, move_list[move_idx].n_legal, is_end_search, searching);
+                                serial_searched = true;
+                            } else{
+                                g = ybwc_split_state;
+                                ++search->n_nodes;
+                            }
+                            if (*searching) {
+                                if (*v < g) {
+                                    *v = g;
+                                    *best_move = move_list[move_idx].flip.pos;
+                                    if (alpha < g) {
+                                        n_searching = false;
+                                    }
                                 }
                             }
                         }

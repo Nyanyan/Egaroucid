@@ -272,11 +272,12 @@ void iterative_deepening_search_time_limit(Board board, bool show_log, std::vect
                 }
                 if (tim() - strt >= time_limit) {
                     if (show_log) {
-                        std::cerr << "terminate search by time limit" << std::endl;
+                        std::cerr << "terminate search by time limit " << tim() - strt << " ms" << std::endl;
                     }
                     searching = false;
                     f.get();
                     search_success = false;
+                    std::cerr << "got main" << std::endl;
                     break;
                 }
             }
