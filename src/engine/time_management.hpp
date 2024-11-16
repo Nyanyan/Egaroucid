@@ -9,13 +9,14 @@
 */
 
 #pragma once
-#include "board.hpp"
+#include "ai.hpp"
 
 
 
 #define TIME_MANAGEMENT_REMAINING_TIME_OFFSET 200 // ms / move
-//#define TIME_MANAGEMENT_REMAINING_MOVES_OFFSET 12 // moves (fast complete search = 24 moves)
 #define TIME_MANAGEMENT_REMAINING_MOVES_OFFSET 5
+
+Search_result ai(Board board, int level, bool use_book, int book_acc_level, bool use_multi_thread, bool show_log);
 
 uint64_t calc_time_limit_ply(const Board board, uint64_t remaining_time_msec, bool show_log) {
     int n_empties = HW2 - board.n_discs();
@@ -63,3 +64,40 @@ uint64_t calc_time_limit_ply(const Board board, uint64_t remaining_time_msec, bo
     return 1;
 }
 
+
+void selfplay(Board board, int level) {
+    Search_result result;
+    Flip flip;
+    while (board.check_pass()) {
+        result = ai(board, level, true, 0, false, false);
+        calc_flip(&flip, &board, result.policy);
+        board.move_board(&flip);
+    }
+}
+
+
+void time_management_selfplay(Board board, bool show_log, uint64_t use_legal, uint64_t time_limit) {
+    uint64_t start_time = tim();
+    if (show_log) {
+        std::cerr << "self play time " << time_limit << " ms" << std::endl;
+    }
+    std::vector<Flip> move_list(pop_count_ull(use_legal));
+    int idx = 0;
+    for (uint_fast8_t cell = first_bit(&use_legal); use_legal; cell = next_bit(&use_legal)) {
+        calc_flip(&move_list[idx], &board, cell);
+        ++idx;
+    }
+    int select_idx = 0;
+    uint64_t count = 0;
+    while (tim() - start_time < time_limit) {
+        board.move_board(&move_list[select_idx]);
+            selfplay(board, 11);
+        board.undo_board(&move_list[select_idx]);
+        ++count;
+        ++select_idx;
+        select_idx %= move_list.size();
+    }
+    if (show_log) {
+        std::cerr << "self play count " << count << std::endl;
+    }
+}
