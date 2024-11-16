@@ -277,7 +277,7 @@ void iterative_deepening_search_time_limit(Board board, bool show_log, std::vect
                     searching = false;
                     f.get();
                     search_success = false;
-                    std::cerr << "got main " << tim() - strt << " ms" << std::endl;
+                    //std::cerr << "got main " << tim() - strt << " ms" << std::endl;
                     break;
                 }
             }
