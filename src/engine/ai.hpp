@@ -675,6 +675,7 @@ void ai_ponder(Board board, bool *searching) {
         }
         searched_levels[selected_idx] = new_level;
         ++searched_counts[selected_idx];
+        std::cerr << "loop " << n_searched_all << std::endl;
         for (int i = 0; i < canput; ++i) {
             std::cerr << idx_to_coord(move_list[i].flip.pos) << " " << move_list[i].value << " " << searched_counts[i] << std::endl;
         }
