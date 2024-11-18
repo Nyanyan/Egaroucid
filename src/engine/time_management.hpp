@@ -19,6 +19,10 @@
 Search_result ai(Board board, int level, bool use_book, int book_acc_level, bool use_multi_thread, bool show_log);
 
 uint64_t calc_time_limit_ply(const Board board, uint64_t remaining_time_msec, bool show_log) {
+    uint64_t remaining_time_msec_margin = remaining_time_msec;
+    if (remaining_time_msec > 3000) {
+        remaining_time_msec_margin -= 2000;
+    }
     int n_empties = HW2 - board.n_discs();
 
     // try complete search
@@ -26,7 +30,7 @@ uint64_t calc_time_limit_ply(const Board board, uint64_t remaining_time_msec, bo
     constexpr double complete_const_a = 0.45; //2.1747;
     constexpr double complete_const_b = 0.76;
     constexpr double complete_nps = 4.0e8;
-    double complete_use_time = (double)remaining_time_msec * 0.9;
+    double complete_use_time = (double)remaining_time_msec_margin * 0.9;
     double complete_search_depth = log(complete_use_time / 1000.0 * complete_nps / complete_const_a) / complete_const_b;
 
     // try endgame search
@@ -34,7 +38,7 @@ uint64_t calc_time_limit_ply(const Board board, uint64_t remaining_time_msec, bo
     constexpr double endgame_const_a = 0.25; //1.8654;
     constexpr double endgame_const_b = 0.62;
     constexpr double endgame_nps = 4.0e8;
-    double endgame_use_time = (double)remaining_time_msec * 0.45;
+    double endgame_use_time = (double)remaining_time_msec_margin * 0.45;
     double endgame_search_depth = log(endgame_use_time / 1000.0 * endgame_nps / endgame_const_a) / endgame_const_b;
 
 
@@ -56,7 +60,7 @@ uint64_t calc_time_limit_ply(const Board board, uint64_t remaining_time_msec, bo
 
     // midgame search
     int remaining_moves = (n_empties + 1) / 2;
-    if (remaining_time_msec > TIME_MANAGEMENT_REMAINING_TIME_OFFSET * remaining_moves) {
+    if (remaining_time_msec_margin > TIME_MANAGEMENT_REMAINING_TIME_OFFSET * remaining_moves) {
         uint64_t remaining_time_msec_proc = remaining_time_msec - TIME_MANAGEMENT_REMAINING_TIME_OFFSET * remaining_moves;
         int remaining_moves_proc = std::max(2, remaining_moves - TIME_MANAGEMENT_REMAINING_MOVES_OFFSET);
         return remaining_time_msec_proc / remaining_moves_proc;
