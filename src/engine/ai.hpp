@@ -193,7 +193,7 @@ void iterative_deepening_search_time_limit(Board board, bool show_log, std::vect
     }
     std::vector<Search> searches(thread_pool.size() + 1);
     int before_raw_value = -100;
-    while (global_searching && tim() - strt < time_limit) {
+    while (global_searching && ((tim() - strt < time_limit) || main_depth <= 1)) {
         for (Search &search: searches) {
             search.n_nodes = 0;
         }
@@ -270,7 +270,7 @@ void iterative_deepening_search_time_limit(Board board, bool show_log, std::vect
                     id_result = f.get();
                     break;
                 }
-                if (tim() - strt >= time_limit) {
+                if (tim() - strt >= time_limit && main_depth > 1) {
                     if (show_log) {
                         std::cerr << "terminate search by time limit " << tim() - strt << " ms" << std::endl;
                     }
