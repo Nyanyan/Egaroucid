@@ -76,9 +76,11 @@ board_sub_dir_nums = [
     39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 57, 60, 61, 62, 63, # mid-endgame data 2
     64,
     65, 66, 67, 68, 69, 70, 71, 72, 73, 74, # Egaroucid 7.4.0 1000000 data
+    75, 
 ]
 '''
-board_sub_dir_nums = [65, 66, 67, 68, 69, 70, 71, 72, 73, 74]
+#board_sub_dir_nums = [65, 66, 67, 68, 69, 70, 71, 72, 73, 74]
+board_sub_dir_nums = [75]
 board_sub_dir_nums.sort()
 #'''
 
@@ -185,6 +187,7 @@ board_n_moves['72'] = [17, 59] # random17         100000 games
 board_n_moves['73'] = [18, 59] # random18         100000 games
 board_n_moves['74'] = [19, 59] # random19         100000 games
 
+board_n_moves['75'] = [12, 59] # random12         7800000 games
 
 
 
