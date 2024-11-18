@@ -46,8 +46,11 @@ idx_lst2 = [
     4, 14, 24, 34, 44, 54, 64, 
     81, 101, 131, 133, 161, 191, 221, 251, 281, 311, 341, 371, 401, 431, 461, 491
 ]
-#for idx in range(IDX_START, IDX_END + 1):
-for idx in idx_lst:
+
+IDX_START = 766
+IDX_END = 999
+
+for idx in range(IDX_START, IDX_END + 1):
     print(fill0(idx, 7))
     file = line_dr + '/' + fill0(idx, 7) + '.txt'
     cmd = exe + ' -nobook -l ' + str(LEVEL) + ' -thread ' + str(N_THREAD) + ' -selfplayline ' + file
