@@ -2,18 +2,21 @@ import subprocess
 from othello_py import *
 import sys
 from random import shuffle
+from time import time
 
-#with open('problem/xot_small_shuffled.txt', 'r') as f:
-#    tactic = [elem for elem in f.read().splitlines()]
-tactic = ['']
+with open('problem/xot_small_shuffled.txt', 'r') as f:
+    tactic = [elem for elem in f.read().splitlines()]
+#tactic = ['']
 print(len(tactic), 'openings found', file=sys.stderr)
 
 level = int(sys.argv[1])
 n_games = int(sys.argv[2])
 
+time_limit = 120
+
 file = None
 #cmd = 'versions/Egaroucid_for_Console_beta/Egaroucid_for_console.exe -quiet -nobook -level ' + str(level)
-cmd = 'versions/Egaroucid_for_Console_beta/Egaroucid_for_console.exe -quiet -nobook -time 480'
+cmd = 'versions/Egaroucid_for_Console_beta/Egaroucid_for_console.exe -quiet -nobook -time ' + str(time_limit)
 if len(sys.argv) == 4:
     file = sys.argv[3]
     print('egaroucid eval ', file, file=sys.stderr)
@@ -37,7 +40,7 @@ print('play', max_num, 'games', file=sys.stderr)
 
 
 #edax_cmd = 'versions/edax_4_4/edax-4.4 -q -level ' + str(level)
-edax_cmd = 'versions/edax_4_4/edax-4.4 -q -game-time 480 -l 50'
+edax_cmd = 'versions/edax_4_4/edax-4.4 -q -l 50 -game-time ' + str(time_limit)
 edax = [
     subprocess.Popen(edax_cmd.split(), stdin=subprocess.PIPE, stdout=subprocess.PIPE),
     subprocess.Popen(edax_cmd.split(), stdin=subprocess.PIPE, stdout=subprocess.PIPE)
@@ -52,6 +55,8 @@ for num in range(max_num):
         record = ''
         boards = []
         o = othello()
+        egaroucid_used_time = 0
+        edax_used_time = 0
         for i in range(0, len(tactic[tactic_idx]), 2):
             if not o.check_legal():
                 o.player = 1 - o.player
@@ -82,7 +87,7 @@ for num in range(max_num):
                 o.player = 1 - o.player
                 if not o.check_legal():
                     break
-            
+            move_strt_time = time()
             if o.player == player:
                 egaroucid[player].stdin.write('go\n'.encode('utf-8'))
                 egaroucid[player].stdin.flush()
@@ -105,6 +110,7 @@ for num in range(max_num):
                     edax[player].stdin.flush()
                     exit()
                 play_cmd ='play ' + coord + '\n'
+                egaroucid_used_time += time() - move_strt_time
                 edax[player].stdin.write(play_cmd.encode('utf-8'))
                 edax[player].stdin.flush()
             else:
@@ -131,10 +137,11 @@ for num in range(max_num):
                         edax[player].stdin.flush()
                         exit()
                 play_cmd ='play ' + coord + '\n'
+                edax_used_time += time() - move_strt_time
                 egaroucid[player].stdin.write(play_cmd.encode('utf-8'))
                 egaroucid[player].stdin.flush()
             record += chr(ord('a') + x) + str(y + 1)
-            print(record)
+            #print(record)
             if not o.move(y, x):
                 o.print_info()
                 print(o.player, player)
@@ -147,6 +154,7 @@ for num in range(max_num):
         else:
             edax_win[player] += 1
             print(record)
+            print('egaroucid', egaroucid_used_time, 's', 'edax', edax_used_time, 's')
         print('\r', num, max_num, ' ', egaroucid_win, draw, edax_win, sum(egaroucid_win) + sum(draw) * 0.5, sum(edax_win) + sum(draw) * 0.5, 
               (sum(egaroucid_win) + sum(draw) * 0.5) / max(1, sum(egaroucid_win) + sum(edax_win) + sum(draw)), end='                ', file=sys.stderr)
 
