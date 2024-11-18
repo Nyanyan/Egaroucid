@@ -3,8 +3,9 @@ from othello_py import *
 import sys
 from random import shuffle
 
-with open('problem/xot_small_shuffled.txt', 'r') as f:
-    tactic = [elem for elem in f.read().splitlines()]
+#with open('problem/xot_small_shuffled.txt', 'r') as f:
+#    tactic = [elem for elem in f.read().splitlines()]
+tactic = ['']
 print(len(tactic), 'openings found', file=sys.stderr)
 
 level = int(sys.argv[1])
@@ -96,6 +97,7 @@ for num in range(max_num):
                     print('error')
                     print(grid_str[:-1])
                     print(o.player, player)
+                    print(line)
                     print(coord)
                     egaroucid[player].stdin.write('quit\n'.encode('utf-8'))
                     egaroucid[player].stdin.flush()
@@ -114,13 +116,14 @@ for num in range(max_num):
                         line = edax[player].stdout.readline().decode().replace('\r', '').replace('\n', '')
                     try:
                         coord = line.split()[2]
-                        if coord != 'STILL':
+                        if coord != 'STILL' and coord != 'ALREADY':
                             y = int(coord[1]) - 1
                             x = ord(coord[0]) - ord('A')
                             break
                     except:
                         print('error')
                         print(o.player, player)
+                        print(line)
                         print(coord)
                         egaroucid[player].stdin.write('quit\n'.encode('utf-8'))
                         egaroucid[player].stdin.flush()

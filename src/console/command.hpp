@@ -222,7 +222,7 @@ void go(Board_info *board, Options *options, State *state, uint64_t start_time) 
 void setboard(Board_info *board, Options *options, State *state, std::string board_str) {
     board_str.erase(std::remove_if(board_str.begin(), board_str.end(), ::isspace), board_str.end());
     if (board_str.length() != HW2 + 1) {
-        std::cerr << "[ERROR] invalid argument" << std::endl;
+        std::cerr << "[ERROR] invalid argument got length " << board_str.length() << " expected " << HW2 + 1 << std::endl;
         return;
     }
     Board new_board;
