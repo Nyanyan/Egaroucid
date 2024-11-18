@@ -14,10 +14,13 @@ struct State {
     bool book_changed;
     uint64_t remaining_time_msec_black;
     uint64_t remaining_time_msec_white;
+    std::future<void> ponder_future;
+    bool ponder_searching;
 
     State() {
         book_changed = false;
         remaining_time_msec_black = 0;
         remaining_time_msec_white = 0;
+        ponder_searching = false;
     }
 };

@@ -372,6 +372,10 @@ void generate_problems(Options *options, std::string arg) {
 void check_command(Board_info *board, State *state, Options *options) {
     uint64_t start_time = tim();
     std::string cmd_line = get_command_line();
+    if (options->ponder) {
+        state->ponder_searching = false;
+        state->ponder_future.get();
+    }
     std::string cmd, arg;
     split_cmd_arg(cmd_line, &cmd, &arg);
     int cmd_id = get_command_id(cmd);

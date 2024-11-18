@@ -62,6 +62,10 @@ int main(int argc, char* argv[]) {
     init_board(&board, &options, &state);
     while (true) {
         if (options.gtp) {
+            if (options.ponder) {
+                state.ponder_searching = true;
+                state.ponder_future = std::async(std::launch::async, ai_ponder, board.board, options.show_log, &state.ponder_searching);
+            }
             gtp_check_command(&board, &state, &options);
         }else {
             if (!options.quiet) {
@@ -70,6 +74,10 @@ int main(int argc, char* argv[]) {
                 //std::cerr << "val " << mid_evaluate(&board.board) << std::endl;
             }
             if (!execute_special_tasks_loop(&board, &state, &options)) {
+                if (options.ponder) {
+                    state.ponder_searching = true;
+                    state.ponder_future = std::async(std::launch::async, ai_ponder, board.board, options.show_log, &state.ponder_searching);
+                }
                 check_command(&board, &state, &options);
             }
         }
