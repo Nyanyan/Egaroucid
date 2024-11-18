@@ -172,26 +172,6 @@ void redo(Board_info *board, int remain) {
     redo(board, remain - 1);
 }
 
-#define TIME_MANAGEMENT_REMAINING_TIME_OFFSET 200 // ms / move
-#define TIME_MANAGEMENT_REMAINING_MOVES_OFFSET 12 // moves (fast complete search = 24 moves)
-
-uint64_t calc_time_limit_ply(const Board board, uint64_t remaining_time_msec) {
-    int remaining_moves = (HW2 - board.n_discs() + 1) / 2;
-    if (remaining_time_msec > TIME_MANAGEMENT_REMAINING_TIME_OFFSET * remaining_moves) {
-        uint64_t remaining_time_msec_proc = remaining_time_msec - TIME_MANAGEMENT_REMAINING_TIME_OFFSET * remaining_moves;
-        int remaining_moves_proc = std::max(2, remaining_moves - TIME_MANAGEMENT_REMAINING_MOVES_OFFSET);
-        if (remaining_time_msec > 60000 && board.n_discs() >= 30) { // last 34 moves (60 sec)
-            remaining_moves_proc = std::max(2, remaining_moves_proc - 1);
-        } else if (remaining_time_msec > 30000 && board.n_discs() >= 32) { // last 32 moves (30 sec)
-            remaining_moves_proc = std::max(2, remaining_moves_proc - 1);
-        } else if (remaining_time_msec > 10000 && board.n_discs() >= 30) { // last 30 moves (10 sec)
-            remaining_moves_proc = std::max(2, remaining_moves_proc - 1);
-        }
-        return remaining_time_msec_proc / remaining_moves_proc;
-    }
-    return 1;
-}
-
 Search_result go_noprint(Board_info *board, Options *options, State *state) {
     if (board->board.is_end()) {
         std::cerr << "[ERROR] game over" << std::endl;
@@ -202,18 +182,13 @@ Search_result go_noprint(Board_info *board, Options *options, State *state) {
     if (options->time_allocated_seconds == TIME_NOT_ALLOCATED) {
         result = ai(board->board, options->level, true, 0, true, options->show_log);
     } else {
-        uint64_t start_time = tim();
         uint64_t *remaining_time_msec;
         if (board->player == BLACK) {
             remaining_time_msec = &state->remaining_time_msec_black;
         } else {
             remaining_time_msec = &state->remaining_time_msec_white;
         }
-        uint64_t time_limit_ply = calc_time_limit_ply(board->board, *remaining_time_msec);
-        if (options->show_log) {
-            std::cerr << "time limit: " << time_limit_ply << std::endl;
-        }
-        result = ai_time_limit(board->board, options->level, true, 0, true, options->show_log, time_limit_ply);
+        result = ai_time_limit(board->board, options->level, true, 0, true, options->show_log, *remaining_time_msec);
     }
     Flip flip;
     calc_flip(&flip, &board->board, result.policy);
@@ -247,7 +222,7 @@ void go(Board_info *board, Options *options, State *state, uint64_t start_time) 
 void setboard(Board_info *board, Options *options, State *state, std::string board_str) {
     board_str.erase(std::remove_if(board_str.begin(), board_str.end(), ::isspace), board_str.end());
     if (board_str.length() != HW2 + 1) {
-        std::cerr << "[ERROR] invalid argument" << std::endl;
+        std::cerr << "[ERROR] invalid argument got length " << board_str.length() << " expected " << HW2 + 1 << std::endl;
         return;
     }
     Board new_board;
@@ -347,7 +322,6 @@ void hint(Board_info *board, Options *options, State *state, std::string arg) {
 }
 
 inline void analyze(Board_info *board, Options *options, State *state) {
-    print_transcript(board->boards);
     print_analyze_head();
     Analyze_summary summary[2];
     for (int i = (int)board->boards.size() - 2; i >= 0; --i) {
@@ -457,6 +431,9 @@ void check_command(Board_info *board, State *state, Options *options) {
             break;
         case CMD_ID_GENPROBLEM:
             generate_problems(options, arg);
+            break;
+        case CMD_ID_TRANSCRIPT:
+            print_transcript(board->boards);
             break;
         default:
             break;

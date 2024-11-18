@@ -137,5 +137,8 @@ Options get_options(std::vector<Commandline_option> commandline_options, std::st
         }
     }
     res.ponder = find_commandline_option(commandline_options, ID_PONDER);
+    if (find_commandline_option(commandline_options, ID_DISABLE_AUTO_CACHE_CLEAR)) {
+        transposition_table_auto_reset_importance = false;
+    }
     return res;
 }

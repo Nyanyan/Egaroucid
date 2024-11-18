@@ -31,12 +31,16 @@
 #define N_TRANSPOSITION_MOVES 2
 #define TT_REGISTER_THRESHOLD_RATE 4.0
 
+bool transposition_table_auto_reset_importance = true;
+
 inline uint32_t get_level_common(uint8_t depth, uint8_t mpc_level) {
     return ((uint32_t)depth << 8) | mpc_level;
+    //return depth + mpc_level;
 }
 
 inline uint32_t get_level_common(int depth, uint_fast8_t mpc_level) {
     return ((uint32_t)depth << 8) | mpc_level;
+    //return depth + mpc_level;
 }
 
 /*
@@ -545,7 +549,7 @@ class Transposition_table {
                     min_level_node->lock.unlock();
                 }
             #endif
-            if (n_registered >= n_registered_threshold) {
+            if (n_registered >= n_registered_threshold && transposition_table_auto_reset_importance) {
                 std::lock_guard lock(mtx);
                 if (n_registered >= n_registered_threshold) {
                     //std::cerr << "resetting transposition importance" << std::endl;

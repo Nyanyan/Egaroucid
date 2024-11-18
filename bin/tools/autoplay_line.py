@@ -15,7 +15,7 @@ IDX_END = int(sys.argv[2])
 # IDX_START = 10
 # IDX_END = 100
 
-#print(IDX_START, IDX_END)
+print(IDX_START, IDX_END)
 
 
 LEVEL = 11
