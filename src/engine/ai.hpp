@@ -630,3 +630,54 @@ void ai_hint(Board board, int level, bool use_book, int book_acc_level, bool use
     }
     //thread_pool.tell_finish_using();
 }
+
+
+void ai_ponder(Board board, bool *searching) {
+    uint64_t legal = board.get_legal();
+    const int canput = pop_count_ull(legal);
+    std::vector<Flip_value> move_list(canput);
+    std::vector<int> searched_levels(canput);
+    std::vector<int> searched_counts(canput);
+    int idx = 0;
+    for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)) {
+        calc_flip(&move_list[idx].flip, &board, cell);
+        move_list[idx].value = INF;
+        searched_levels[idx] = 0;
+        searched_counts[idx] = 0;
+        ++idx;
+    }
+    int n_searched_all = 1;
+    while (*searching) {
+        int selected_idx = 0;
+        double max_ucb = -1000;
+        for (int i = 0; i < canput; ++i) {
+            double ucb = move_list[i].value + sqrt(log((double)n_searched_all) / 2.0 / (double)searched_counts[i]);
+            if (ucb > max_ucb) {
+                selected_idx = i;
+                max_ucb = ucb;
+            }
+        }
+        Board n_board = board.copy();
+        n_board.move_board(&move_list[selected_idx].flip);
+        int new_level = searched_levels[selected_idx] + 1;
+        int depth;
+        bool is_mid_search;
+        uint_fast8_t mpc_level;
+        get_level(new_level, n_board.n_discs() - 4, &is_mid_search, &depth, &mpc_level);
+        depth = std::min(HW2 - board.n_discs(), depth);
+        Search search(&n_board, mpc_level, true, false, false);
+        int v = nega_scout(&search, -SCORE_MAX, SCORE_MAX, depth, false, LEGAL_UNDEFINED, !is_mid_search, searching);
+        if (move_list[selected_idx].value != INF) {
+            move_list[selected_idx].value = v;
+        } else {
+            double n_value = (0.9 * move_list[selected_idx].value + 1.1 * v) / 2.0;
+            move_list[selected_idx].value = round(n_value);
+        }
+        searched_levels[selected_idx] = new_level;
+        ++searched_counts[selected_idx];
+        for (int i = 0; i < canput; ++i) {
+            std::cerr << idx_to_coord(move_list[i].flip.pos) << " " << move_list[i].value << " " << searched_counts[i] << std::endl;
+        }
+        ++n_searched_all;
+    }
+}
