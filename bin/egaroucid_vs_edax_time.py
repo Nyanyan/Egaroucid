@@ -77,7 +77,7 @@ for num in range(max_num):
             if not o.check_legal():
                 o.player = 1 - o.player
                 if o.check_legal():
-                    if o.player == player:
+                    if o.player == 1 - player: # edax -> (pass) -> edax
                         edax.stdin.write('ps\n'.encode('utf-8'))
                         edax.stdin.flush()
                 else:
