@@ -9,13 +9,10 @@ with open('problem/xot_small_shuffled.txt', 'r') as f:
 #tactic = ['']
 print(len(tactic), 'openings found', file=sys.stderr)
 
-level = int(sys.argv[1])
+time_limit = int(sys.argv[1])
 n_games = int(sys.argv[2])
 
-time_limit = 480
-
 file = None
-#cmd = 'versions/Egaroucid_for_Console_beta/Egaroucid_for_console.exe -quiet -nobook -level ' + str(level)
 egaroucid_cmd = 'versions/Egaroucid_for_Console_beta/Egaroucid_for_console.exe -quiet -nobook -time ' + str(time_limit)
 if len(sys.argv) == 4:
     file = sys.argv[3]
@@ -28,7 +25,7 @@ egaroucid_win = [0, 0]
 edax_win = [0, 0]
 draw = [0, 0]
 
-print('level', level, file=sys.stderr)
+print('time_limit', time_limit, file=sys.stderr)
 print('openings', len(tactic), file=sys.stderr)
 
 max_num = min(len(tactic), n_games)
@@ -36,7 +33,6 @@ smpl = range(len(tactic))
 print('play', max_num, 'games', file=sys.stderr)
 
 
-#edax_cmd = 'versions/edax_4_4/edax-4.4 -q -level ' + str(level)
 edax_cmd = 'versions/edax_4_4/edax-4.4 -q -l 50 -game-time ' + str(time_limit)
 
 for num in range(max_num):
@@ -80,7 +76,11 @@ for num in range(max_num):
         while True:
             if not o.check_legal():
                 o.player = 1 - o.player
-                if not o.check_legal():
+                if o.check_legal():
+                    if o.player == player:
+                        edax.stdin.write('ps\n'.encode('utf-8'))
+                        edax.stdin.flush()
+                else:
                     break
             move_strt_time = time()
             if o.player == player:
@@ -136,7 +136,7 @@ for num in range(max_num):
                 egaroucid.stdin.write(play_cmd.encode('utf-8'))
                 egaroucid.stdin.flush()
             record += chr(ord('a') + x) + str(y + 1)
-            print(record)
+            print('\r' + record, end='')
             if not o.move(y, x):
                 o.print_info()
                 print(o.player, player)
@@ -150,6 +150,7 @@ for num in range(max_num):
             edax_win[player] += 1
         egaroucid.kill()
         edax.kill()
+        print('')
         print(record)
         print('egaroucid', egaroucid_used_time, 's', 'edax', edax_used_time, 's')
         print(num, max_num, ' ', egaroucid_win, draw, edax_win, sum(egaroucid_win) + sum(draw) * 0.5, sum(edax_win) + sum(draw) * 0.5, 
@@ -157,7 +158,7 @@ for num in range(max_num):
 
 print('', file=sys.stderr)
 
-print('level: ', level, 
+print('time_limit: ', time_limit, 
       ' Egaroucid plays black WDL: ', egaroucid_win[0], '-', draw[0], '-', edax_win[0], ' ', (egaroucid_win[0] + draw[0] * 0.5) / (egaroucid_win[0] + edax_win[0] + draw[0]), 
       ' Egaroucid plays white WDL: ', egaroucid_win[1], '-', draw[1], '-', edax_win[1], ' ', (egaroucid_win[1] + draw[1] * 0.5) / (egaroucid_win[1] + edax_win[1] + draw[1]), 
       ' Egaroucid win rate: ', (sum(egaroucid_win) + sum(draw) * 0.5) / max(1, sum(egaroucid_win) + sum(edax_win) + sum(draw)), sep='')
