@@ -659,7 +659,7 @@ void ai_ponder(Board board, bool *searching) {
         }
         Board n_board = board.copy();
         n_board.move_board(&move_list[selected_idx].flip);
-        int new_level = searched_levels[selected_idx] + 1;
+        int new_level = std::min(60, searched_levels[selected_idx] + 1);
         int depth;
         bool is_mid_search;
         uint_fast8_t mpc_level;
