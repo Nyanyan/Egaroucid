@@ -337,7 +337,7 @@ void iterative_deepening_search_time_limit(Board board, bool show_log, std::vect
                 main_mpc_level = MPC_74_LEVEL;
             }
             if (main_depth > 23) {
-                if (main_mpc_level < MPC_93_LEVEL) {
+                if (main_mpc_level < MPC_88_LEVEL) {
                     --main_depth;
                     ++main_mpc_level;
                 } else {
