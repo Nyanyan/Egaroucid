@@ -89,7 +89,7 @@ bool outside(int y, int x) {
     return y < 0 || HW <= y || x < 0 || HW <= x;
 }
 
-void play(Board_info *board, std::string transcript) {
+void play(Board_info *board, Options *options, std::string transcript) {
     if (transcript.length() % 2) {
         std::cerr << "[ERROR] invalid transcript length" << std::endl;
         return;
@@ -101,6 +101,18 @@ void play(Board_info *board, std::string transcript) {
     }
     Flip flip;
     for (int i = 0; i < (int)transcript.length(); i += 2) {
+        if (options->noautopass) {
+            if (std::tolower(transcript[i]) == 'p' && std::tolower(transcript[i + 1]) == 's') {
+                if (board->board.get_legal() == 0) {
+                    board->board.pass();
+                    board->player ^= 1;
+                } else {
+                    std::cerr << "[ERROR] can't pass " << transcript[i] << transcript[i + 1] << std::endl;
+                    *board = board_bak;
+                    return;
+                }
+            }
+        }
         int x = HW_M1 - (int)(transcript[i] - 'a');
         if (x >= HW)
             x = HW_M1 - (int)(transcript[i] - 'A');
@@ -122,9 +134,11 @@ void play(Board_info *board, std::string transcript) {
             std::cerr << "[ERROR] game over found before checking all transcript. remaining codes ignored." << std::endl;
             return;
         }
-        if (board->board.get_legal() == 0ULL) {
-            board->board.pass();
-            board->player ^= 1;
+        if (!options->noautopass) {
+            if (board->board.get_legal() == 0ULL) {
+                board->board.pass();
+                board->player ^= 1;
+            }
         }
         board->boards.emplace_back(board->board);
         board->players.emplace_back(board->player);
@@ -411,7 +425,7 @@ void check_command(Board_info *board, State *state, Options *options) {
             new_board(board, options, state);
             break;
         case CMD_ID_PLAY:
-            play(board, arg);
+            play(board, options, arg);
             update_time(player_before, state, options, tim() - start_time);
             break;
         case CMD_ID_UNDO:

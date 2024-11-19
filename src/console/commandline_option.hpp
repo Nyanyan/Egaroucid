@@ -41,8 +41,9 @@ std::vector<Commandline_option> get_commandline_options(int argc, char* argv[]) 
                 std::vector<std::string> args;
                 for (int j = 0; j < commandline_option_data[i].n_args; ++j) {
                     ++idx;
-                    if (idx >= argc)
+                    if (idx >= argc) {
                         break;
+                    }
                     args.emplace_back(argv_string[idx]);
                 }
                 res.emplace_back(Commandline_option(commandline_option_data[i].id, args));
@@ -64,8 +65,9 @@ bool find_commandline_option(std::vector<Commandline_option> commandline_options
 
 std::vector<std::string> get_commandline_option_arg(std::vector<Commandline_option> commandline_options, int id) {
     for (Commandline_option option: commandline_options) {
-        if (option.id == id)
+        if (option.id == id) {
             return option.arg;
+        }
     }
     std::vector<std::string> nores;
     return nores;
