@@ -34,20 +34,20 @@ constexpr double SELECTIVITY_MPCT_MULTI[N_SELECTIVITY_LEVEL] = {0.75, 1.21, 1.49
 /*
     @brief constants for ProbCut error calculation
 */
-#define probcut_a 1.0901427028325672
-#define probcut_b -7.9113835665474435
-#define probcut_c 1.2978370341097043
-#define probcut_d -0.029641076120196456
-#define probcut_e 1.8302592385545298
-#define probcut_f 2.74058723049149
-#define probcut_g 1.9042567204493797
+#define probcut_a 0.8946243152548794
+#define probcut_b -6.675418439889305
+#define probcut_c 1.4253629614285719
+#define probcut_d -0.8182849959066985
+#define probcut_e 3.0170973414705293
+#define probcut_f 3.5237025397250226
+#define probcut_g 1.833078781008587
 
-#define probcut_end_a 1.1061311983083213
-#define probcut_end_b 5.306251482498488
-#define probcut_end_c 2.7841341020019725
-#define probcut_end_d -8.127110190369523
-#define probcut_end_e 1.5249838132199092
-#define probcut_end_f 9.523545818247126
+#define probcut_end_a 1.1341071960315952
+#define probcut_end_b 2.4139411542361073
+#define probcut_end_c -2.4206844412578903
+#define probcut_end_d 1.351944372285437
+#define probcut_end_e -2.763003396865285
+#define probcut_end_f 8.707270177528274
 
 #if USE_MPC_PRE_CALCULATION
     int mpc_error_single0[N_SELECTIVITY_LEVEL][HW2 + 1][HW2 - 3];
