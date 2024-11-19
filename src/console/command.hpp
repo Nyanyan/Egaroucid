@@ -106,6 +106,9 @@ void play(Board_info *board, Options *options, std::string transcript) {
                 if (board->board.get_legal() == 0) {
                     board->board.pass();
                     board->player ^= 1;
+                    board->boards.emplace_back(board->board);
+                    board->players.emplace_back(board->player);
+                    ++board->ply_vec;
                     continue;
                 } else {
                     std::cerr << "[ERROR] can't pass here" << std::endl;
@@ -201,6 +204,9 @@ Search_result go_noprint(Board_info *board, Options *options, State *state) {
             res.nps = 0;
             board->board.pass();
             board->player ^= 1;
+            board->boards.emplace_back(board->board);
+            board->players.emplace_back(board->player);
+            ++board->ply_vec;
             return res;
         }
     }
