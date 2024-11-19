@@ -646,12 +646,19 @@ void ai_ponder(Board board, bool show_log, bool *searching) {
         searched_counts[idx] = 0;
         ++idx;
     }
-    int n_searched_all = 1;
+    int n_searched_all = 0;
     while (*searching) {
         int selected_idx = 0;
-        double max_ucb = -1000;
+        double max_ucb = -1000.0;
         for (int i = 0; i < canput; ++i) {
-            double ucb = move_list[i].value + sqrt(log((double)n_searched_all) / 2.0 / (double)searched_counts[i]);
+            double ucb = -1000.0;
+            if (n_searched_all == 0) {
+                ucb = move_list[i].value;
+            } else if (searched_counts[i] == 0) {
+                ucb = INF;
+            } else {
+                ucb = move_list[i].value * (double)searched_levels[i] + sqrt(log((double)n_searched_all) / 2.0 / (double)searched_counts[i]) * (60.0 - (double)searched_levels[i]);
+            }
             if (ucb > max_ucb) {
                 selected_idx = i;
                 max_ucb = ucb;
