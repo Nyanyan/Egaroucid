@@ -701,7 +701,7 @@ void ai_ponder(Board board, bool show_log, bool *searching) {
         std::cerr << "ponder loop " << n_searched_all << std::endl;
         std::sort(move_list.begin(), move_list.end(), comp_ponder_elem);
         for (int i = 0; i < canput; ++i) {
-            std::cerr << idx_to_coord(move_list[i].flip.pos) << " value " << move_list[i].value << " level " << move_list[i].level << " count " << move_list[i].count << std::endl;
+            std::cerr << "pd " << idx_to_coord(move_list[i].flip.pos) << " value " << move_list[i].value << " level " << move_list[i].level << " count " << move_list[i].count << std::endl;
         }
     }
 }
