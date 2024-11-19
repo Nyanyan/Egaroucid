@@ -193,7 +193,7 @@ void iterative_deepening_search_time_limit(Board board, bool show_log, std::vect
     }
     std::vector<Search> searches(thread_pool.size() + 1);
     int before_raw_value = -100;
-    while (global_searching && tim() - strt < time_limit) {
+    while (global_searching && ((tim() - strt < time_limit) || main_depth <= 1)) {
         for (Search &search: searches) {
             search.n_nodes = 0;
         }
@@ -270,7 +270,7 @@ void iterative_deepening_search_time_limit(Board board, bool show_log, std::vect
                     id_result = f.get();
                     break;
                 }
-                if (tim() - strt >= time_limit) {
+                if (tim() - strt >= time_limit && main_depth > 1) {
                     if (show_log) {
                         std::cerr << "terminate search by time limit " << tim() - strt << " ms" << std::endl;
                     }
@@ -632,7 +632,7 @@ void ai_hint(Board board, int level, bool use_book, int book_acc_level, bool use
 }
 
 
-void ai_ponder(Board board, bool *searching) {
+void ai_ponder(Board board, bool show_log, bool *searching) {
     uint64_t legal = board.get_legal();
     const int canput = pop_count_ull(legal);
     std::vector<Flip_value> move_list(canput);
@@ -666,8 +666,8 @@ void ai_ponder(Board board, bool *searching) {
         get_level(new_level, n_board.n_discs() - 4, &is_mid_search, &depth, &mpc_level);
         depth = std::min(HW2 - board.n_discs(), depth);
         Search search(&n_board, mpc_level, true, false, false);
-        int v = nega_scout(&search, -SCORE_MAX, SCORE_MAX, depth, false, LEGAL_UNDEFINED, !is_mid_search, searching);
-        if (move_list[selected_idx].value != INF) {
+        int v = -nega_scout(&search, -SCORE_MAX, SCORE_MAX, depth, false, LEGAL_UNDEFINED, !is_mid_search, searching);
+        if (move_list[selected_idx].value == INF) {
             move_list[selected_idx].value = v;
         } else {
             double n_value = (0.9 * move_list[selected_idx].value + 1.1 * v) / 2.0;
@@ -675,9 +675,12 @@ void ai_ponder(Board board, bool *searching) {
         }
         searched_levels[selected_idx] = new_level;
         ++searched_counts[selected_idx];
-        for (int i = 0; i < canput; ++i) {
-            std::cerr << idx_to_coord(move_list[i].flip.pos) << " " << move_list[i].value << " " << searched_counts[i] << std::endl;
-        }
         ++n_searched_all;
+    }
+    if (show_log) {
+        std::cerr << "ponder loop " << n_searched_all << std::endl;
+        for (int i = 0; i < canput; ++i) {
+            std::cerr << idx_to_coord(move_list[i].flip.pos) << " value " << move_list[i].value << " level " << searched_levels[i] << " count " << searched_counts[i] << std::endl;
+        }
     }
 }

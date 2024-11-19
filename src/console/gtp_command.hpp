@@ -382,6 +382,10 @@ void gtp_list_games(int id) {
 
 void gtp_check_command(Board_info *board, State *state, Options *options) {
     std::string cmd_line = gtp_get_command_line();
+    if (options->ponder) {
+        state->ponder_searching = false;
+        state->ponder_future.get();
+    }
     std::string cmd, arg;
     int id;
     gtp_split_cmd_arg(cmd_line, &id, &cmd, &arg);
