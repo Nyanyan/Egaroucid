@@ -38,8 +38,6 @@ std::vector<Commandline_option> get_commandline_options(int argc, char* argv[]) 
     while (idx < argc) {
         for (i = 0; i < N_COMMANDLINE_OPTIONS; ++i) {
             if (std::find(commandline_option_data[i].names.begin(), commandline_option_data[i].names.end(), argv_string[idx]) != commandline_option_data[i].names.end()) {
-                std::cerr << argv_string[idx] << std::endl;
-                std::cerr << commandline_option_data[i].id << std::endl;
                 std::vector<std::string> args;
                 for (int j = 0; j < commandline_option_data[i].n_args; ++j) {
                     ++idx;
