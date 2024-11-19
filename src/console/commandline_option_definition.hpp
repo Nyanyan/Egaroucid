@@ -38,7 +38,7 @@
 #define ID_PONDER 18
 #define ID_DISABLE_AUTO_CACHE_CLEAR 19
 #define ID_NOBOARD 20
-#define ID_LOG 21
+#define ID_LOG_TO_FILE 21
 #define ID_NOAUTOPASS 22
 
 struct Commandline_option_info{
@@ -75,6 +75,6 @@ const Commandline_option_info commandline_option_data[N_COMMANDLINE_OPTIONS] = {
     {ID_PONDER,             {"-ponder"},                                        0, "",                  "Enable ponder"},
     {ID_DISABLE_AUTO_CACHE_CLEAR, {"-noautocacheclear"},                        0, "",                  "Disable auto cache clearing"},
     {ID_NOBOARD,            {"-noboard"},                                       0, "",                  "Hide Board"},
-    {ID_LOG,                {"-logfile"},                                           1, "<file>",            "Save search log to <file>"},
+    {ID_LOG_TO_FILE,        {"-logfile"},                                           1, "<file>",            "Save search log to <file>"},
     {ID_NOAUTOPASS,         {"-noautopass"},                                    0, "",                  "No auto-pass"}
 };

@@ -145,9 +145,9 @@ Options get_options(std::vector<Commandline_option> commandline_options, std::st
         transposition_table_auto_reset_importance = false;
     }
     res.noboard = find_commandline_option(commandline_options, ID_NOBOARD);
-    if (find_commandline_option(commandline_options, ID_LOG)) {
+    if (find_commandline_option(commandline_options, ID_LOG_TO_FILE)) {
         res.log_to_file = true;
-        std::vector<std::string> arg = get_commandline_option_arg(commandline_options, ID_LOG);
+        std::vector<std::string> arg = get_commandline_option_arg(commandline_options, ID_LOG_TO_FILE);
         try {
             res.log_file = arg[0];
         } catch (const std::invalid_argument& e) {
