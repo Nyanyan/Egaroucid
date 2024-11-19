@@ -38,6 +38,7 @@
 #define INF 100000000
 #define SCORE_INF 127
 #define SCORE_MAX 64
+#define MOVE_PASS 64
 
 // undefined legal bitboard: set bit on d4, d5, e4, and e5
 #define LEGAL_UNDEFINED 0x0000001818000000ULL

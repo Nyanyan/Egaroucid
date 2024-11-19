@@ -224,31 +224,43 @@ void print_board_info(Board_info *board, State *state, Options *options) {
 }
 
 inline void print_search_result_body(Search_result result, const Options *options, const State *state) {
-    std::string s;
-    std::string level_str = "-";
-    if (result.depth == SEARCH_BOOK) {
-        level_str = "Book";
-    } else if (options->time_allocated_seconds == TIME_NOT_ALLOCATED) {
-        level_str = std::to_string(result.level);
-    }
-    std::string depth_str = "-";
-    if (result.depth != SEARCH_BOOK) {
-        depth_str = std::to_string(result.depth) + "@" + std::to_string(result.probability) + "%";
-    }
-    std::cout << "|";
-    std::cout << std::right << std::setw(SEARCH_RESULT_TAB_SIZE) << level_str;
-    std::cout << "|";
-    std::cout << std::right << std::setw(SEARCH_RESULT_TAB_SIZE) << depth_str;
-    std::cout << "|";
-    std::cout << std::right << std::setw(SEARCH_RESULT_TAB_SIZE) << idx_to_coord(result.policy);
-    std::cout << "|";
-    if (result.value >= 0) {
-        s = "+" + std::to_string(result.value);
+    if (result.policy == MOVE_PASS) {
+        std::cout << "|";
+        std::cout << std::right << std::setw(SEARCH_RESULT_TAB_SIZE) << "-";
+        std::cout << "|";
+        std::cout << std::right << std::setw(SEARCH_RESULT_TAB_SIZE) << "-";
+        std::cout << "|";
+        std::cout << std::right << std::setw(SEARCH_RESULT_TAB_SIZE) << "ps";
+        std::cout << "|";
+        std::cout << std::right << std::setw(SEARCH_RESULT_TAB_SIZE) << "-";
+        std::cout << "|";
     } else {
-        s = std::to_string(result.value);
+        std::string s;
+        std::string level_str = "-";
+        if (result.depth == SEARCH_BOOK) {
+            level_str = "Book";
+        } else if (options->time_allocated_seconds == TIME_NOT_ALLOCATED) {
+            level_str = std::to_string(result.level);
+        }
+        std::string depth_str = "-";
+        if (result.depth != SEARCH_BOOK) {
+            depth_str = std::to_string(result.depth) + "@" + std::to_string(result.probability) + "%";
+        }
+        std::cout << "|";
+        std::cout << std::right << std::setw(SEARCH_RESULT_TAB_SIZE) << level_str;
+        std::cout << "|";
+        std::cout << std::right << std::setw(SEARCH_RESULT_TAB_SIZE) << depth_str;
+        std::cout << "|";
+        std::cout << std::right << std::setw(SEARCH_RESULT_TAB_SIZE) << idx_to_coord(result.policy);
+        std::cout << "|";
+        if (result.value >= 0) {
+            s = "+" + std::to_string(result.value);
+        } else {
+            s = std::to_string(result.value);
+        }
+        std::cout << std::right << std::setw(SEARCH_RESULT_TAB_SIZE) << s;
+        std::cout << "|";
     }
-    std::cout << std::right << std::setw(SEARCH_RESULT_TAB_SIZE) << s;
-    std::cout << "|";
     std::cout << std::right << std::setw(SEARCH_RESULT_TAB_SIZE) << ms_to_time(result.time);
     std::cout << "|";
     std::cout << std::right << std::setw(SEARCH_RESULT_TAB_SIZE) << result.nodes;
@@ -283,7 +295,11 @@ inline void print_search_result(Search_result result, const Options *options, co
 }
 
 void print_search_result_quiet(Search_result result) {
-    std::cout << idx_to_coord(result.policy) << std::endl;
+    if (result.policy == MOVE_PASS) {
+        std::cout << "ps" << std::endl;
+    } else {
+        std::cout << idx_to_coord(result.policy) << std::endl;
+    }
 }
 
 inline void print_analyze_body(Analyze_result result, int ply, int player, std::string judge) {

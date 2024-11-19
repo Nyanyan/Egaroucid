@@ -173,10 +173,19 @@ void redo(Board_info *board, int remain) {
 }
 
 Search_result go_noprint(Board_info *board, Options *options, State *state) {
-    if (board->board.is_end()) {
-        std::cerr << "[ERROR] game over" << std::endl;
-        Search_result res;
-        return res;
+    if (board->board.get_legal() == 0) {
+        if (board->board.is_end()) { // game over
+            std::cerr << "[ERROR] game over" << std::endl;
+            Search_result res;
+            return res;
+        } else { // pass
+            Search_result res;
+            res.policy = MOVE_PASS;
+            res.time = 0;
+            res.nodes = 0;
+            res.nps = 0;
+            return res;
+        }
     }
     Search_result result;
     if (options->time_allocated_seconds == TIME_NOT_ALLOCATED) {
@@ -194,7 +203,8 @@ Search_result go_noprint(Board_info *board, Options *options, State *state) {
     calc_flip(&flip, &board->board, result.policy);
     board->board.move_board(&flip);
     board->player ^= 1;
-    if (board->board.get_legal() == 0ULL) {
+    bool pass_found = board->board.get_legal() == 0ULL;
+    if (pass_found && !options->noautopass) {
         board->board.pass();
         board->player ^= 1;
     }
@@ -317,8 +327,9 @@ void hint(Board_info *board, Options *options, State *state, std::string arg) {
     }
     std::sort(result.rbegin(), result.rend());
     print_search_result_head();
-    for (int i = 0; i < n_show; ++i)
+    for (int i = 0; i < n_show; ++i) {
         print_search_result_body(result[i], options, state);
+    }
 }
 
 inline void analyze(Board_info *board, Options *options, State *state) {

@@ -35,6 +35,7 @@ struct Options {
     bool noboard;
     bool log_to_file;
     std::string log_file;
+    bool noautopass;
 };
 
 Options get_options(std::vector<Commandline_option> commandline_options, std::string binary_path) {
@@ -155,5 +156,6 @@ Options get_options(std::vector<Commandline_option> commandline_options, std::st
             std::cerr << "[ERROR] log file out of range" << std::endl;
         }
     }
+    res.noautopass = find_commandline_option(commandline_options, ID_NOAUTOPASS);
     return res;
 }
