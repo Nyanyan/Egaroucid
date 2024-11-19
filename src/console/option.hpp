@@ -33,6 +33,8 @@ struct Options {
     int time_allocated_seconds; // -1 (TIME_NOT_ALLOCATED): not allocated
     bool ponder;
     bool noboard;
+    bool log_to_file;
+    std::string log_file;
 };
 
 Options get_options(std::vector<Commandline_option> commandline_options, std::string binary_path) {
@@ -142,5 +144,16 @@ Options get_options(std::vector<Commandline_option> commandline_options, std::st
         transposition_table_auto_reset_importance = false;
     }
     res.noboard = find_commandline_option(commandline_options, ID_NOBOARD);
+    if (find_commandline_option(commandline_options, ID_LOG)) {
+        res.log_to_file = true;
+        std::vector<std::string> arg = get_commandline_option_arg(commandline_options, ID_LOG);
+        try {
+            res.log_file = arg[0];
+        } catch (const std::invalid_argument& e) {
+            std::cerr << "[ERROR] invalid log file" << std::endl;
+        } catch (const std::out_of_range& e) {
+            std::cerr << "[ERROR] log file out of range" << std::endl;
+        }
+    }
     return res;
 }

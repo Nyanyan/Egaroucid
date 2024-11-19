@@ -12,7 +12,7 @@
 #include <string>
 #include <vector>
 
-#define N_COMMANDLINE_OPTIONS 21
+#define N_COMMANDLINE_OPTIONS 22
 
 #define ID_NONE -1
 #define ID_VERSION 0
@@ -38,6 +38,7 @@
 #define ID_PONDER 18
 #define ID_DISABLE_AUTO_CACHE_CLEAR 19
 #define ID_NOBOARD 20
+#define ID_LOG 21
 
 struct Commandline_option_info{
     int id;
@@ -72,5 +73,6 @@ const Commandline_option_info commandline_option_data[N_COMMANDLINE_OPTIONS] = {
     {ID_TIME_ALLOCATE,      {"-time"},                                          1, "<seconds>",        "Time allocate <seconds> seconds. -level will be ignored"},
     {ID_PONDER,             {"-ponder"},                                        0, "",                  "Enable ponder"},
     {ID_DISABLE_AUTO_CACHE_CLEAR, {"-noautocacheclear"},                        0, "",                  "Disable auto cache clearing"},
-    {ID_NOBOARD,            {"-noboard"},                                       0, "",                  "Hide Board"}
+    {ID_NOBOARD,            {"-noboard"},                                       0, "",                  "Hide Board"},
+    {ID_LOG,                {"-log"},                                           0, "<file>",            "Save search log to <file>"}
 };
