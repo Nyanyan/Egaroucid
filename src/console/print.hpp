@@ -157,34 +157,50 @@ void print_level_info() {
     }
 }
 
-void print_board_info(Board_info *board) {
+void print_board_info(Board_info *board, State *state, Options *options) {
+    std::string remaining_time_str_black = "";
+    std::string remaining_time_str_white = "";
+    if (options->time_allocated_seconds != TIME_NOT_ALLOCATED) {
+        double remaining_time_sec_black = (double)state->remaining_time_msec_black / 1000.0;
+        double remaining_time_sec_white = (double)state->remaining_time_msec_white / 1000.0;
+        std::stringstream ss1;
+        ss1 << std::fixed << std::setprecision(2) << remaining_time_sec_black;
+        remaining_time_str_black = ss1.str();
+        std::stringstream ss2;
+        ss2 << std::fixed << std::setprecision(2) << remaining_time_sec_white;
+        remaining_time_str_white = ss2.str();
+    }
     uint64_t black = board->board.player;
     uint64_t white = board->board.opponent;
-    if (board->player == WHITE)
+    if (board->player == WHITE) {
         std::swap(black, white);
+    }
     std::cout << "  ";
-    for (int x = 0; x < HW; ++x)
+    for (int x = 0; x < HW; ++x) {
         std::cout << (char)('a' + x) << " ";
+    }
     std::cout << std::endl;
     for (int y = 0; y < HW; ++y) {
         std::cout << y + 1 << " ";
         for (int x = 0; x < HW; ++x) {
             int cell = HW2_M1 - (y * HW + x);
-            if (1 & (black >> cell))
+            if (1 & (black >> cell)) {
                 std::cout << "X ";
-            else if (1 & (white >> cell))
+            } else if (1 & (white >> cell)) {
                 std::cout << "O ";
-            else
+            } else {
                 std::cout << ". ";
+            }
         }
         if (y == 2) {
             std::cout << COUT_TAB;
-            if (board->board.is_end())
+            if (board->board.is_end()) {
                 std::cout << "GAME OVER";
-            else if (board->player == BLACK)
+            } else if (board->player == BLACK) {
                 std::cout << "BLACK to move";
-            else
+            } else {
                 std::cout << "WHITE to move";
+            }
         } else if (y == 3) {
             std::cout << COUT_TAB;
             std::cout << "ply " << board->board.n_discs() - 3 << " " << HW2 - board->board.n_discs() << " empties";
@@ -196,6 +212,24 @@ void print_board_info(Board_info *board) {
             if (board->player)
                 std::swap(black_discs, white_discs);
             std::cout << "BLACK: " << black_discs << " WHITE: " << white_discs;
+        } else if (y == 5) {
+            std::cout << COUT_TAB;
+            std::cout << "BLACK Remaining ";
+            if (options->time_allocated_seconds != TIME_NOT_ALLOCATED) {
+                std::cout << remaining_time_str_black;
+            } else {
+                std::cout << "-";
+            }
+            std::cout << "s";
+        } else if (y == 6) {
+            std::cout << COUT_TAB;
+            std::cout << "WHITE Remaining ";
+            if (options->time_allocated_seconds != TIME_NOT_ALLOCATED) {
+                std::cout << remaining_time_str_white;
+            } else {
+                std::cout << "-";
+            }
+            std::cout << "s";
         }
         std::cout << std::endl;
     }
@@ -203,14 +237,6 @@ void print_board_info(Board_info *board) {
 
 inline void print_search_result_body(Search_result result, const Options *options, const State *state) {
     std::string s;
-    std::string remaining_time_str = "-/-";
-    if (options->time_allocated_seconds != TIME_NOT_ALLOCATED) {
-        double remaining_time_sec_black = (double)state->remaining_time_msec_black / 1000.0;
-        double remaining_time_sec_white = (double)state->remaining_time_msec_white / 1000.0;
-        std::stringstream ss;
-        ss << std::fixed << std::setprecision(2) << remaining_time_sec_black << "/" << remaining_time_sec_white;
-        remaining_time_str = ss.str();
-    }
     std::string level_str = "-";
     if (result.depth == SEARCH_BOOK) {
         level_str = "Book";
@@ -241,8 +267,6 @@ inline void print_search_result_body(Search_result result, const Options *option
     std::cout << "|";
     std::cout << std::right << std::setw(SEARCH_RESULT_TAB_SIZE) << result.nps;
     std::cout << "|";
-    std::cout << std::right << std::setw(SEARCH_RESULT_TAB_SIZE) << remaining_time_str;
-    std::cout << "|";
     std::cout << std::endl;
 }
 
@@ -261,8 +285,6 @@ inline void print_search_result_head() {
     std::cout << std::right << std::setw(SEARCH_RESULT_TAB_SIZE) << "Nodes";
     std::cout << "|";
     std::cout << std::right << std::setw(SEARCH_RESULT_TAB_SIZE) << "NPS";
-    std::cout << "|";
-    std::cout << std::right << std::setw(SEARCH_RESULT_TAB_SIZE) << "Remaining Time";
     std::cout << "|";
     std::cout << std::endl;
 }
