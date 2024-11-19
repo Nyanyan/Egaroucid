@@ -9,6 +9,7 @@
 */
 
 #include <iostream>
+#include <fstream>
 #include "engine/engine_all.hpp"
 #include "console/console_all.hpp"
 #if TEST_ENDGAME_ACCURACY
@@ -50,6 +51,15 @@ int main(int argc, char* argv[]) {
     std::string binary_path = get_binary_path();
     std::vector<Commandline_option> commandline_options = get_commandline_options(argc, argv);
     Options options = get_options(commandline_options, binary_path);
+    std::ofstream ofs;
+    if (options.log_to_file) {
+        ofs.open(options.log_file);
+        if (!ofs) {
+            std::cout << "[ERROR] can't open log file " << options.log_file << std::endl;
+            std::exit(1);
+        }
+        std::cerr.rdbuf(ofs.rdbuf());
+    }
     print_special_commandline_options(commandline_options);
     init_console(options, binary_path);
     execute_special_tasks(options);
