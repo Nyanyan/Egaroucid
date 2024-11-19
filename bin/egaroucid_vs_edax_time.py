@@ -13,7 +13,7 @@ time_limit = int(sys.argv[1])
 n_games = int(sys.argv[2])
 
 file = None
-egaroucid_cmd = 'versions/Egaroucid_for_Console_beta/Egaroucid_for_console.exe -quiet -nobook -time ' + str(time_limit)
+egaroucid_cmd = 'versions/Egaroucid_for_Console_beta/Egaroucid_for_console.exe -quiet -nobook -ponder -t 8 -hash 27 -time ' + str(time_limit)
 if len(sys.argv) == 4:
     file = sys.argv[3]
     print('egaroucid eval ', file, file=sys.stderr)
@@ -33,15 +33,23 @@ smpl = range(len(tactic))
 print('play', max_num, 'games', file=sys.stderr)
 
 
-edax_cmd = 'versions/edax_4_4/edax-4.4 -q -l 50 -game-time ' + str(time_limit)
+edax_cmd = 'versions/edax_4_4/edax-4.4 -q -l 50 -ponder on -n 8 -game-time ' + str(time_limit)
 
 for num in range(max_num):
     tactic_idx = smpl[num % len(tactic)]
-    shuffled_range2 = [0, 1]
-    shuffle(shuffled_range2)
-    for player in shuffled_range2:
-        egaroucid = subprocess.Popen(egaroucid_cmd.split(), stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
-        edax = subprocess.Popen(edax_cmd.split(), stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+    for player in range(2):
+        egaroucid_cmd_player = egaroucid_cmd + ' -mode ' + str(1 - player)
+        edax_cmd_player = edax_cmd + ' -mode ' + str(player)
+        #print(egaroucid_cmd_player)
+        #print(edax_cmd_player)
+        egaroucid = subprocess.Popen(egaroucid_cmd_player.split(), stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
+        edax = subprocess.Popen(edax_cmd_player.split(), stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+        if player == 0: # ignore first move
+            egaroucid.stdout.readline()
+        else:
+            line = ''
+            while len(line) < 3:
+                line = edax.stdout.readline().decode().replace('\r', '').replace('\n', '')
         print('player', player)
         record = ''
         boards = []
@@ -73,6 +81,7 @@ for num in range(max_num):
         egaroucid.stdin.flush()
         edax.stdin.write(grid_str.encode('utf-8'))
         edax.stdin.flush()
+        print(record, end='')
         while True:
             if not o.check_legal():
                 o.player = 1 - o.player
@@ -84,8 +93,8 @@ for num in range(max_num):
                     break
             move_strt_time = time()
             if o.player == player:
-                egaroucid.stdin.write('go\n'.encode('utf-8'))
-                egaroucid.stdin.flush()
+                #egaroucid.stdin.write('go\n'.encode('utf-8'))
+                #egaroucid.stdin.flush()
                 line = ''
                 while line == '':
                     line = egaroucid.stdout.readline().decode().replace('\r', '').replace('\n', '')
@@ -109,8 +118,8 @@ for num in range(max_num):
                 edax.stdin.write(play_cmd.encode('utf-8'))
                 edax.stdin.flush()
             else:
-                edax.stdin.write('go\n'.encode('utf-8'))
-                edax.stdin.flush()
+                #edax.stdin.write('go\n'.encode('utf-8'))
+                #edax.stdin.flush()
                 while True:
                     line = ''
                     while len(line) < 3:
@@ -138,6 +147,8 @@ for num in range(max_num):
             record += chr(ord('a') + x) + str(y + 1)
             print('\r' + record, end='')
             if not o.move(y, x):
+                print('')
+                print(o.player == player)
                 o.print_info()
                 print(o.player, player)
                 print(coord)

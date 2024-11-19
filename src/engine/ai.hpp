@@ -12,6 +12,7 @@
 #include <iostream>
 #include <future>
 #include <unordered_set>
+#include <iomanip>
 #include "level.hpp"
 #include "setting.hpp"
 #include "midsearch.hpp"
@@ -672,7 +673,7 @@ void ai_ponder(Board board, bool show_log, bool *searching) {
                 ucb = -INF;
             } else {
                 double level_weight = (double)move_list[i].level / 60.0;
-                ucb = move_list[i].value * level_weight + sqrt(log((double)n_searched_all) / 2.0 / (double)move_list[i].count) * (1.0 - level_weight);
+                ucb = move_list[i].value * level_weight + 0.5 * sqrt(log(2.0 * (double)n_searched_all) / (double)move_list[i].count) * (1.0 - level_weight);
             }
             if (ucb > max_ucb) {
                 selected_idx = i;
@@ -708,7 +709,8 @@ void ai_ponder(Board board, bool show_log, bool *searching) {
         std::cerr << "ponder loop " << n_searched_all << std::endl;
         std::sort(move_list.begin(), move_list.end(), comp_ponder_elem);
         for (int i = 0; i < canput; ++i) {
-            std::cerr << "pd " << idx_to_coord(move_list[i].flip.pos) << " value " << move_list[i].value << " level " << move_list[i].level << " count " << move_list[i].count << std::endl;
+            std::cerr << "pd " << idx_to_coord(move_list[i].flip.pos) << " value " << std::fixed << std::setprecision(2) << move_list[i].value;
+            std::cerr << " level " << move_list[i].level << " count " << move_list[i].count << std::endl;
         }
     }
 }
