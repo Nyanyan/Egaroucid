@@ -32,6 +32,7 @@ struct Options {
     bool quiet;
     int time_allocated_seconds; // -1 (TIME_NOT_ALLOCATED): not allocated
     bool ponder;
+    bool noboard;
 };
 
 Options get_options(std::vector<Commandline_option> commandline_options, std::string binary_path) {
@@ -140,5 +141,6 @@ Options get_options(std::vector<Commandline_option> commandline_options, std::st
     if (find_commandline_option(commandline_options, ID_DISABLE_AUTO_CACHE_CLEAR)) {
         transposition_table_auto_reset_importance = false;
     }
+    res.noboard = find_commandline_option(commandline_options, ID_NOBOARD);
     return res;
 }

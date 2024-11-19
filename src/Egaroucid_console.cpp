@@ -68,7 +68,7 @@ int main(int argc, char* argv[]) {
             }
             gtp_check_command(&board, &state, &options);
         }else {
-            if (!options.quiet) {
+            if (!options.quiet && !options.noboard) {
                 print_board_info(&board, &state, &options);
                 std::cout << std::endl;
                 //std::cerr << "val " << mid_evaluate(&board.board) << std::endl;
