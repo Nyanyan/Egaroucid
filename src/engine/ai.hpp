@@ -671,12 +671,19 @@ void ai_ponder(Board board, bool show_log, bool *searching) {
             } else if (get_level_complete_depth(move_list[i].level) >= max_depth) { // fully searched
                 ucb = -INF;
             } else {
-                ucb = move_list[i].value * (double)move_list[i].level + sqrt(log((double)n_searched_all) / 2.0 / (double)move_list[i].count) * (60.0 - (double)move_list[i].level);
+                double level_weight = (double)move_list[i].level / 60.0;
+                ucb = move_list[i].value * level_weight + sqrt(log((double)n_searched_all) / 2.0 / (double)move_list[i].count) * (1.0 - level_weight);
             }
             if (ucb > max_ucb) {
                 selected_idx = i;
                 max_ucb = ucb;
             }
+        }
+        if (get_level_complete_depth(move_list[selected_idx].level) >= max_depth) {
+            if (show_log) {
+                std::cerr << "ponder completely searched" << std::endl;
+            }
+            break;
         }
         Board n_board = board.copy();
         n_board.move_board(&move_list[selected_idx].flip);
@@ -688,7 +695,7 @@ void ai_ponder(Board board, bool show_log, bool *searching) {
         depth = std::min(HW2 - board.n_discs(), depth);
         Search search(&n_board, mpc_level, true, false, false);
         int v = -nega_scout(&search, -SCORE_MAX, SCORE_MAX, depth, false, LEGAL_UNDEFINED, !is_mid_search, searching);
-        if (move_list[selected_idx].value == INF) {
+        if (move_list[selected_idx].value == INF || !is_mid_search) {
             move_list[selected_idx].value = v;
         } else {
             move_list[selected_idx].value = (0.9 * move_list[selected_idx].value + 1.1 * v) / 2.0;
