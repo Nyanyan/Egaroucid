@@ -40,8 +40,8 @@ for num in range(max_num):
     for player in range(2):
         egaroucid_cmd_player = egaroucid_cmd + ' -mode ' + str(1 - player)
         edax_cmd_player = edax_cmd + ' -mode ' + str(player)
-        print(egaroucid_cmd_player)
-        print(edax_cmd_player)
+        #print(egaroucid_cmd_player)
+        #print(edax_cmd_player)
         egaroucid = subprocess.Popen(egaroucid_cmd_player.split(), stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
         edax = subprocess.Popen(edax_cmd_player.split(), stdin=subprocess.PIPE, stdout=subprocess.PIPE)
         if player == 0: # ignore first move
