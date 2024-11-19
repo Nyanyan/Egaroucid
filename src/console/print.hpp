@@ -158,8 +158,8 @@ void print_level_info() {
 }
 
 void print_board_info(Board_info *board, State *state, Options *options) {
-    std::string remaining_time_str_black = "";
-    std::string remaining_time_str_white = "";
+    std::string remaining_time_str_black = "-";
+    std::string remaining_time_str_white = "-";
     if (options->time_allocated_seconds != TIME_NOT_ALLOCATED) {
         double remaining_time_sec_black = (double)state->remaining_time_msec_black / 1000.0;
         double remaining_time_sec_white = (double)state->remaining_time_msec_white / 1000.0;
@@ -192,7 +192,7 @@ void print_board_info(Board_info *board, State *state, Options *options) {
                 std::cout << ". ";
             }
         }
-        if (y == 2) {
+        if (y == 1) {
             std::cout << COUT_TAB;
             if (board->board.is_end()) {
                 std::cout << "GAME OVER";
@@ -201,10 +201,10 @@ void print_board_info(Board_info *board, State *state, Options *options) {
             } else {
                 std::cout << "WHITE to move";
             }
-        } else if (y == 3) {
+        } else if (y == 2) {
             std::cout << COUT_TAB;
             std::cout << "ply " << board->board.n_discs() - 3 << " " << HW2 - board->board.n_discs() << " empties";
-        } else if (y == 4) {
+        } else if (y == 3) {
             std::cout << COUT_TAB;
             int black_discs, white_discs;
             black_discs = board->board.count_player();
@@ -212,24 +212,12 @@ void print_board_info(Board_info *board, State *state, Options *options) {
             if (board->player)
                 std::swap(black_discs, white_discs);
             std::cout << "BLACK: " << black_discs << " WHITE: " << white_discs;
+        } else if (y == 4) {
+            std::cout << COUT_TAB;
+            std::cout << "BLACK Remaining " << remaining_time_str_black << "s";
         } else if (y == 5) {
             std::cout << COUT_TAB;
-            std::cout << "BLACK Remaining ";
-            if (options->time_allocated_seconds != TIME_NOT_ALLOCATED) {
-                std::cout << remaining_time_str_black;
-            } else {
-                std::cout << "-";
-            }
-            std::cout << "s";
-        } else if (y == 6) {
-            std::cout << COUT_TAB;
-            std::cout << "WHITE Remaining ";
-            if (options->time_allocated_seconds != TIME_NOT_ALLOCATED) {
-                std::cout << remaining_time_str_white;
-            } else {
-                std::cout << "-";
-            }
-            std::cout << "s";
+            std::cout << "WHITE Remaining " << remaining_time_str_white << "s";
         }
         std::cout << std::endl;
     }
