@@ -23,6 +23,7 @@ bin/versions
 bin/transcript
 bin/ffotest_result
 bin/ggs/id
+bin/ggs/log
 
 # img
 img/demo
