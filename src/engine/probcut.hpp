@@ -128,7 +128,6 @@ inline double probcut_sigma_end_depth0(int n_discs) {
     return res;
 }
 
-inline int nega_alpha_eval1_nws(Search *search, int alpha, bool skipped, bool *searching);
 #if USE_NEGA_ALPHA_ORDERING
     int nega_alpha_ordering(Search *search, int alpha, int beta, int depth, bool skipped, uint64_t legal, bool is_end_search, bool *searching);
 #endif
