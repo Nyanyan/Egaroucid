@@ -86,10 +86,10 @@ train_data_nums = [
     36, 37, # book data
     #38, # test data
     39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 57, 60, 61, 62, 63, # mid-endgame data 2
-    #64, # cut records27
+    64, # cut records27
     65, 66, 67, 68, 69, 70, 71, 72, 73, 74, # Egaroucid 7.4.0 1000000 data
     75, 
-    76, # cut records27 (8000000 games)
+    #76, # cut records27 (8000000 games)
 ]
 if int(phase) <= 11:
     train_data_nums = [36, 37] # use only book with phase <= 11
