@@ -98,8 +98,6 @@ static int last2(Search *search, int alpha, int beta, uint_fast8_t p0, uint_fast
         1 - 1 - 1
 */
 static int last3(Search *search, int alpha, int beta, uint_fast8_t p0, uint_fast8_t p1, uint_fast8_t p2, Board board) {
-    // if (!global_searching || !(*searching))
-    //  return SCORE_UNDEFINED;
     #if USE_END_PO
         uint64_t empties = ~(search->board.player | search->board.opponent);
         if (is_1empty(p2, empties))
@@ -183,8 +181,6 @@ int last4(Search *search, int alpha, int beta) {
     uint64_t empties = ~(search->board.player | search->board.opponent);
     uint_fast8_t p0, p1, p2, p3;
 
-    // if (!global_searching || !(*searching))
-    //  return SCORE_UNDEFINED;
     #if USE_LAST4_SC
         int stab_res = stability_cut_last4(search, &alpha, beta);
         if (stab_res != SCORE_UNDEFINED) {

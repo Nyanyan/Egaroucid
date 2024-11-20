@@ -96,8 +96,6 @@ static int last2_nws(Search *search, int alpha, uint_fast8_t p0, uint_fast8_t p1
         1 - 1 - 1
 */
 static int last3_nws(Search *search, int alpha, uint_fast8_t p0, uint_fast8_t p1, uint_fast8_t p2, Board board) {
-    // if (!global_searching || !(*searching))
-    //  return SCORE_UNDEFINED;
     #if USE_END_PO
         uint64_t empties = ~(search->board.player | search->board.opponent);
         if (is_1empty(p2, empties))
@@ -176,8 +174,6 @@ int last4_nws(Search *search, int alpha) {
     uint64_t empties = ~(search->board.player | search->board.opponent);
     uint_fast8_t p0, p1, p2, p3;
 
-    // if (!global_searching || !(*searching))
-    //  return SCORE_UNDEFINED;
     #if USE_LAST4_SC
         int stab_res = stability_cut_last4_nws(search, alpha);
         if (stab_res != SCORE_UNDEFINED) {

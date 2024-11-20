@@ -237,8 +237,6 @@ static int vectorcall last3_nws(Search *search, __m128i OP, int alpha, uint32_t 
     else if (is_1empty(p1, empties))
         std::swap(p1, p0);
 
-    // if (!global_searching || !(*searching))
-    //  return SCORE_UNDEFINED;
     int v = -SCORE_INF;
     int pol = 1;
     do {
@@ -311,8 +309,6 @@ int last4_nws(Search *search, int alpha) {
     uint64_t empties = ~(search->board.player | search->board.opponent);
     uint_fast8_t p0, p1, p2, p3;
 
-    // if (!global_searching || !(*searching))
-    //  return SCORE_UNDEFINED;
     #if USE_LAST4_SC
         int stab_res = stability_cut_last4_nws(search, alpha);
         if (stab_res != SCORE_UNDEFINED) {
