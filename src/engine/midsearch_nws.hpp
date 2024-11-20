@@ -101,8 +101,9 @@ int nega_alpha_ordering_nws(Search *search, int alpha, int depth, bool skipped, 
         return nega_alpha_end_nws(search, alpha, skipped, legal);
     }
     if (!is_end_search) {
-        if (depth == 1)
+        if (depth == 1) {
             return nega_alpha_eval1_nws(search, alpha, skipped);
+        }
         if (depth == 0) {
             ++search->n_nodes;
             return mid_evaluate_diff(search);
@@ -112,8 +113,9 @@ int nega_alpha_ordering_nws(Search *search, int alpha, int depth, bool skipped, 
     #if USE_SEARCH_STATISTICS
         ++search->n_nodes_discs[search->n_discs];
     #endif
-    if (legal == LEGAL_UNDEFINED)
+    if (legal == LEGAL_UNDEFINED) {
         legal = search->board.get_legal();
+    }
     int v = -SCORE_INF;
     if (legal == 0ULL) {
         if (skipped)
@@ -140,8 +142,9 @@ int nega_alpha_ordering_nws(Search *search, int alpha, int depth, bool skipped, 
     int idx = 0;
     for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)) {
         calc_flip(&move_list[idx].flip, &search->board, cell);
-        if (move_list[idx].flip.flip == search->board.opponent)
+        if (move_list[idx].flip.flip == search->board.opponent) {
             return SCORE_MAX;
+        }
         ++idx;
     }
     int etc_done_idx = 0;
@@ -173,8 +176,9 @@ int nega_alpha_ordering_nws(Search *search, int alpha, int depth, bool skipped, 
             for (int move_idx = 0; move_idx < canput - etc_done_idx && *searching; ++move_idx) {
                 swap_next_best_move(move_list, move_idx, canput);
                 #if USE_MID_ETC
-                    if (move_list[move_idx].flip.flip == 0)
+                    if (move_list[move_idx].flip.flip == 0) {
                         break;
+                    }
                 #endif
                 if (search->need_to_see_tt_loop) {
                     if (transposition_cutoff_nws_bestmove(search, hash_code, depth, alpha, &v, &best_move)) {
@@ -187,8 +191,9 @@ int nega_alpha_ordering_nws(Search *search, int alpha, int depth, bool skipped, 
                 if (v < g) {
                     v = g;
                     best_move = move_list[move_idx].flip.pos;
-                    if (alpha < v)
+                    if (alpha < v) {
                         break;
+                    }
                 }
             }
     #if USE_YBWC_NWS
