@@ -19,7 +19,7 @@ def wait_ready():
     output = tn.read_until(b"READY", timeout=10).decode("utf-8")
     print(output)
 
-def get_board():
+def ggs_get_board():
     tn.read_until(b"A B C D E F G H", timeout=None).decode("utf-8")
     raw_board = tn.read_until(b"A B C D E F G H", timeout=None).decode("utf-8")
     print(raw_board)
@@ -39,7 +39,7 @@ def get_board():
     print(board)
     return board
 
-def play_move(coord, value):
+def ggs_play_move(coord, value):
     cmd = 't /os play ' + coord + '/' + value
     tn.write((cmd + '\n').encode('utf-8'))
 
@@ -61,11 +61,11 @@ tn.write(b"ts ask 8w 05:00/00:00/02:00 nyanyan\n")
 wait_ready()
 wait_ready()
 
-egaroucid_cmd = './../versions/Egaroucid_for_Console_beta/Egaroucid_for_Console.exe -quiet -showvalue -ponder -time 295'
+egaroucid_cmd = './../versions/Egaroucid_for_Console_beta/Egaroucid_for_Console.exe -quiet -noise -showvalue -ponder -logfile log.txt -time 120'
 egaroucid = subprocess.Popen(egaroucid_cmd.split(), stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
 while True:
-    board = get_board()
-    print('[INFO]', 'got board', board)
+    board = ggs_get_board()
+    print('[INFO]', 'got board from GGS', board)
     egaroucid.stdin.write(('setboard ' + board + '\n').encode('utf-8'))
     egaroucid.stdin.flush()
     egaroucid.stdin.write(('go\n').encode('utf-8'))
@@ -74,6 +74,6 @@ while True:
     coord = line.split()[0]
     value = line.split()[1]
     print('[INFO]', 'got move from Egaroucid', coord, value)
-    play_move(coord, value)
+    ggs_play_move(coord, value)
 
 tn.close()
