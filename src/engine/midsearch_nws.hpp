@@ -41,12 +41,9 @@ inline bool mpc(Search* search, int alpha, int beta, int depth, uint64_t legal, 
     @param search               search information
     @param alpha                alpha value (beta value is alpha + 1)
     @param skipped              already passed?
-    @param searching            flag for terminating this search
     @return the value
 */
-inline int nega_alpha_eval1_nws(Search *search, int alpha, bool skipped, bool *searching) {
-    if (!global_searching || !(*searching))
-        return SCORE_UNDEFINED;
+inline int nega_alpha_eval1_nws(Search *search, int alpha, bool skipped) {
     ++search->n_nodes;
     #if USE_SEARCH_STATISTICS
         ++search->n_nodes_discs[search->n_discs];
@@ -57,7 +54,7 @@ inline int nega_alpha_eval1_nws(Search *search, int alpha, bool skipped, bool *s
         if (skipped)
             return end_evaluate(&search->board);
         search->pass();
-            v = -nega_alpha_eval1_nws(search, -alpha - 1, true, searching);
+            v = -nega_alpha_eval1_nws(search, -alpha - 1, true);
         search->pass();
         return v;
     }

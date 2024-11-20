@@ -23,9 +23,6 @@
 #include "board.hpp"
 #include "search.hpp"
 #include "midsearch.hpp"
-#if USE_LIGHT_EVALUATION
-#include "midsearch_light.hpp"
-#endif
 #include "evaluate.hpp"
 #include "stability.hpp"
 #include "level.hpp"
@@ -107,10 +104,6 @@
 int nega_alpha_eval1(Search *search, int alpha, int beta, bool skipped);
 inline int nega_alpha_eval1_move_ordering_mid(Search *search, int alpha, int beta, bool skipped);
 int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, uint64_t legal, bool is_end_search, bool *searching);
-#if USE_LIGHT_EVALUATION
-inline int nega_alpha_light_eval1(Search *search, int alpha, int beta, bool skipped);
-int nega_alpha_light(Search *search, int alpha, int beta, int depth, bool skipped, uint64_t legal, bool *searching);
-#endif
 inline bool transposition_table_get_value(Search *search, uint32_t hash, int *l, int *u);
 
 /*
@@ -252,18 +245,10 @@ inline void move_evaluate_nws(Search *search, Flip_value *flip_value, int alpha,
         flip_value->value += (MO_OFFSET_L_PM - get_potential_mobility(search->board.opponent, ~(search->board.player | search->board.opponent))) * W_NWS_POTENTIAL_MOBILITY;
         switch (depth) {
             case 0:
-                #if USE_LIGHT_EVALUATION
-                    flip_value->value += (SCORE_MAX - mid_evaluate_light(search)) * W_NWS_VALUE;
-                #else
-                    flip_value->value += (SCORE_MAX - mid_evaluate_diff(search)) * W_NWS_VALUE;
-                #endif
+                flip_value->value += (SCORE_MAX - mid_evaluate_diff(search)) * W_NWS_VALUE;
                 break;
             case 1:
-                #if USE_LIGHT_EVALUATION
-                    flip_value->value += (SCORE_MAX - nega_alpha_light_eval1(search, alpha, beta, false)) * (W_NWS_VALUE + W_NWS_VALUE_DEEP_ADDITIONAL);
-                #else
-                    flip_value->value += (SCORE_MAX - nega_alpha_eval1(search, alpha, beta, false)) * (W_NWS_VALUE + W_NWS_VALUE_DEEP_ADDITIONAL);
-                #endif
+                flip_value->value += (SCORE_MAX - nega_alpha_eval1(search, alpha, beta, false)) * (W_NWS_VALUE + W_NWS_VALUE_DEEP_ADDITIONAL);
                 break;
             default:
                 if (transposition_table.has_node_any_level(search, search->board.hash())) {
