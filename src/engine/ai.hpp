@@ -160,7 +160,7 @@ void iterative_deepening_search(Board board, int depth, uint_fast8_t mpc_level, 
                 main_depth = depth;
                 if (depth <= 30 && mpc_level >= MPC_88_LEVEL) {
                     main_mpc_level = MPC_88_LEVEL;
-                } else{
+                } else {
                     main_mpc_level = MPC_74_LEVEL;
                 }
             } else{
@@ -170,7 +170,7 @@ void iterative_deepening_search(Board board, int depth, uint_fast8_t mpc_level, 
                         (main_mpc_level >= MPC_88_LEVEL && mpc_level > MPC_88_LEVEL && depth <= 25) || 
                         (main_mpc_level >= MPC_93_LEVEL && mpc_level > MPC_93_LEVEL && depth <= 29) || 
                         (main_mpc_level >= MPC_98_LEVEL && mpc_level > MPC_98_LEVEL)
-                        ) {
+                    ) {
                         main_mpc_level = mpc_level;
                     } else{
                         ++main_mpc_level;
