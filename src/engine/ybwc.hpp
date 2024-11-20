@@ -293,7 +293,6 @@ inline int ybwc_split_nws(Search *search, int alpha, int depth, uint64_t legal, 
             }
         }
         if (research_idxes.size() && next_alpha < *beta && *searching) {
-            int prev_alpha = *alpha;
             *alpha = next_alpha;
             for (const int &research_idx: research_idxes) {
                 search->move(&move_list[research_idx].flip);
