@@ -1,6 +1,11 @@
 import telnetlib
 import subprocess
 
+# launch Egaroucid
+egaroucid_cmd = './../versions/Egaroucid_for_Console_beta/Egaroucid_for_Console.exe -quiet -noise -showvalue -ponder -logfile log/log.txt -hash 27 -time 120'
+egaroucid = subprocess.Popen(egaroucid_cmd.split(), stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
+
+
 with open('id/ggs_id.txt', 'r') as f:
     ggs_id = f.read()
 with open('id/ggs_pw.txt', 'r') as f:
@@ -48,6 +53,22 @@ def idx_to_coord_str_rev(coord):
     y = coord // 8
     return chr(ord('a') + x) + str(y + 1)
 
+def egaroucid_play_move(move):
+    egaroucid.stdin.write(('play ' + move + '\n').encode('utf-8'))
+    egaroucid.stdin.flush()
+
+def egaroucid_setboard(board):
+    egaroucid.stdin.write(('setboard ' + board + '\n').encode('utf-8'))
+    egaroucid.stdin.flush()
+
+def egaroucid_get_move_score():
+    egaroucid.stdin.write(('go\n').encode('utf-8'))
+    egaroucid.stdin.flush()
+    line = egaroucid.stdout.readline().decode().replace('\r', '').replace('\n', '')
+    coord = line.split()[0]
+    value = line.split()[1]
+    return coord, value
+
 # login
 tn.read_until(b": Enter login (yours, or one you'd like to use).")
 tn.write((ggs_id + '\n').encode('utf-8'))
@@ -59,53 +80,49 @@ wait_ready()
 tn.write(b"ms /os\n")
 wait_ready()
 
-print('[INFO]', 'set up')
+print('[INFO]', 'initialized!')
 
-# start game
-tn.write(b"ts ask 8w 05:00/00:00/02:00 nyanyan\n")
-wait_ready()
-wait_ready()
-
-egaroucid_turn = 'O'
-
-egaroucid_cmd = './../versions/Egaroucid_for_Console_beta/Egaroucid_for_Console.exe -quiet -noise -showvalue -ponder -logfile log/log.txt -time 120'
-egaroucid = subprocess.Popen(egaroucid_cmd.split(), stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
-last_board = '---------------------------------------------------------------- ?'
 while True:
-    board = ggs_get_board()
-    print('[INFO]', 'got board from GGS', board)
-    last_played_move = ''
-    n_empties = 0
-    n_diff = 0
-    for i in range(64):
-        if board[i] == '-':
-            n_empties += 1
-        if last_board[i] == '-' and board[i] != '-':
-            last_played_move = idx_to_coord_str_rev(i)
-            n_diff += 1
-    if n_diff == 0:
-        print('[WARNING]', 'no move found')
-    elif n_diff == 1:
-        print('[INFO]', 'last played', last_played_move)
-    else:
-        print('[WARNING]', 'new board found')
-    if board[-1] == egaroucid_turn and n_empties >= 1:
-        print('[INFO]', 'Egaroucid playing...')
+    # start game
+    tn.write(b"ts ask 8w 05:00/00:00/02:00 nyanyan\n")
+    wait_ready()
+    wait_ready()
+
+    egaroucid_turn = 'O'
+
+
+    last_board = '---------------------------------------------------------------- ?'
+    while True:
+        board = ggs_get_board()
+        print('[INFO]', 'got board from GGS', board)
+        last_played_move = ''
+        n_empties = 0
+        n_diff = 0
+        for i in range(64):
+            if board[i] == '-':
+                n_empties += 1
+            if last_board[i] == '-' and board[i] != '-':
+                last_played_move = idx_to_coord_str_rev(i)
+                n_diff += 1
         if n_diff == 0:
-            pass
+            print('[INFO]', 'no move found. opponent passed?')
         elif n_diff == 1:
-            egaroucid.stdin.write(('play ' + last_played_move + '\n').encode('utf-8'))
-            egaroucid.stdin.flush()
+            print('[INFO]', 'last played', last_played_move)
         else:
-            egaroucid.stdin.write(('setboard ' + board + '\n').encode('utf-8'))
-            egaroucid.stdin.flush()
-        egaroucid.stdin.write(('go\n').encode('utf-8'))
-        egaroucid.stdin.flush()
-        line = egaroucid.stdout.readline().decode().replace('\r', '').replace('\n', '')
-        coord = line.split()[0]
-        value = line.split()[1]
-        print('[INFO]', 'got move from Egaroucid', coord, value)
-        ggs_play_move(coord, value)
-    last_board = board
+            print('[INFO]', 'new board found')
+        if n_empties == 0:
+            print('[INFO]', 'game over')
+        if board[-1] == egaroucid_turn:
+            print('[INFO]', 'Egaroucid playing...')
+            if n_diff == 0:
+                pass
+            elif n_diff == 1:
+                egaroucid_play_move(last_played_move)
+            else:
+                egaroucid_setboard(board)
+            coord, value = egaroucid_get_move_score()
+            print('[INFO]', 'got move from Egaroucid', coord, value)
+            ggs_play_move(coord, value)
+        last_board = board
 
 tn.close()
