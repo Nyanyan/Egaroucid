@@ -214,7 +214,7 @@ inline int ybwc_split_nws(Search *search, int alpha, int depth, uint64_t legal, 
                     int ybwc_split_state = ybwc_split_nws(search, -(*alpha) - 1, depth - 1, move_list[move_idx].n_legal, is_end_search, n_searching, move_list[move_idx].flip.pos, move_idx, canput, running_count, parallel_tasks);
                     if (ybwc_split_state == YBWC_PUSHED) {
                         ++running_count;
-                    } else{
+                    } else {
                         if (ybwc_split_state == YBWC_NOT_PUSHED) {
                             g = -nega_alpha_ordering_nws(search, -(*alpha) - 1, depth - 1, false, move_list[move_idx].n_legal, is_end_search, searching);
                             serial_searched = true;

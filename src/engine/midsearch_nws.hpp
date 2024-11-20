@@ -94,8 +94,9 @@ inline int nega_alpha_eval1_nws(Search *search, int alpha, bool skipped) {
     @return the value
 */
 int nega_alpha_ordering_nws(Search *search, int alpha, int depth, bool skipped, uint64_t legal, bool is_end_search, bool *searching) {
-    if (!global_searching || !(*searching))
+    if (!global_searching || !(*searching)) {
         return SCORE_UNDEFINED;
+    }
     if (is_end_search && depth <= MID_TO_END_DEPTH) {
         return nega_alpha_end_nws(search, alpha, skipped, legal);
     }
@@ -193,7 +194,8 @@ int nega_alpha_ordering_nws(Search *search, int alpha, int depth, bool skipped, 
     #if USE_YBWC_NWS
         }
     #endif
-    if (*searching && global_searching)
+    if (*searching && global_searching) {
         transposition_table.reg(search, hash_code, depth, alpha, alpha + 1, v, best_move);
+    }
     return v;
 }
