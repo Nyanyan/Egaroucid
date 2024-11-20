@@ -294,12 +294,16 @@ inline void print_search_result(Search_result result, const Options *options, co
     print_search_result_body(result, options, state);
 }
 
-void print_search_result_quiet(Search_result result) {
+void print_search_result_quiet(Search_result result, const Options *options) {
     if (result.policy == MOVE_PASS) {
-        std::cout << "ps" << std::endl;
+        std::cout << "ps";
     } else {
-        std::cout << idx_to_coord(result.policy) << std::endl;
+        std::cout << idx_to_coord(result.policy);
     }
+    if (options->show_value) {
+        std::cout << " " << result.value;
+    }
+    std::cout << std::endl;
 }
 
 inline void print_analyze_body(Analyze_result result, int ply, int player, std::string judge) {

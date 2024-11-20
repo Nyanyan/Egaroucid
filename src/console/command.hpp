@@ -246,7 +246,7 @@ void go(Board_info *board, Options *options, State *state, uint64_t start_time) 
     Search_result result = go_noprint(board, options, state);
     update_time(before_player, state, options, tim() - start_time);
     if (options->quiet) {
-        print_search_result_quiet(result);
+        print_search_result_quiet(result, options);
     } else {
         print_search_result(result, options, state);
     }

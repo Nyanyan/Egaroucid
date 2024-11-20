@@ -36,6 +36,7 @@ struct Options {
     bool log_to_file;
     std::string log_file;
     bool noautopass;
+    bool show_value;
 };
 
 Options get_options(std::vector<Commandline_option> commandline_options, std::string binary_path) {
@@ -157,5 +158,6 @@ Options get_options(std::vector<Commandline_option> commandline_options, std::st
         }
     }
     res.noautopass = find_commandline_option(commandline_options, ID_NOAUTOPASS);
+    res.show_value = find_commandline_option(commandline_options, ID_SHOWVALUE);
     return res;
 }
