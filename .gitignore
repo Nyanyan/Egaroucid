@@ -22,6 +22,8 @@ bin/problem
 bin/versions
 bin/transcript
 bin/ffotest_result
+bin/ggs/ggs_id.txt
+bin/ggs/ggs_pw.txt
 
 # img
 img/demo
