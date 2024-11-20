@@ -6,10 +6,11 @@ from othello_py import *
 
 LEVEL = 1
 
-N_SET_GAMES = 250
+N_SET_GAMES = 1000
 
 # name, cmd
 player_info = [
+    ['beta2', 'versions/Egaroucid_for_Console_beta2/Egaroucid_for_Console.exe -quiet -nobook -t 32'],
     ['beta', 'versions/Egaroucid_for_Console_beta/Egaroucid_for_Console.exe -quiet -nobook -t 32'],
     ['7.4.0', 'versions/Egaroucid_for_Console_7_4_0_Windows_x64_SIMD/Egaroucid_for_Console_7_4_0_x64_SIMD.exe -quiet -nobook -t 32'],
     ['7.3.0', 'versions/Egaroucid_for_Console_7_3_0_Windows_x64_SIMD/Egaroucid_for_Console_7_3_0_x64_SIMD.exe -quiet -nobook -t 32'],
