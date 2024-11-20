@@ -1,10 +1,11 @@
 import telnetlib
 import subprocess
 
-# launch Egaroucid
-egaroucid_cmd = './../versions/Egaroucid_for_Console_beta/Egaroucid_for_Console.exe -quiet -noise -showvalue -ponder -logfile log/log.txt -hash 27 -time 120'
-egaroucid = subprocess.Popen(egaroucid_cmd.split(), stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
-
+tl1 = 5 #minutes
+tl2 = 0
+tl3 = 0
+egaroucid_turn = 'X'
+opponent = 'nyanyan'
 
 with open('id/ggs_id.txt', 'r') as f:
     ggs_id = f.read()
@@ -17,12 +18,32 @@ with open('id/ggs_port.txt', 'r') as f:
 print('GGS server', ggs_server, 'port', ggs_port)
 print('GGS ID', ggs_id, 'GGS PW', ggs_pw)
 
+
+# launch Egaroucid
+egaroucid_cmd = './../versions/Egaroucid_for_Console_beta/Egaroucid_for_Console.exe -quiet -noise -showvalue -ponder -logfile log/log.txt -hash 27 -time ' + str(tl1 * 60 - 5)
+egaroucid = subprocess.Popen(egaroucid_cmd.split(), stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
+
 # telnet
 tn = telnetlib.Telnet(ggs_server, ggs_port)
 
-def wait_ready():
-    output = tn.read_until(b"READY", timeout=10).decode("utf-8")
+def fill0(n, r):
+    res = str(n)
+    return '0' * (r - len(res)) + res
+
+def ggs_wait_ready():
+    output = tn.read_until(b"READY", timeout=None).decode("utf-8")
     print(output)
+
+def ggs_ask_game(tl1, tl2, tl3, turn, user):
+    turn_str = 'b' if turn == 'X' else 'w'
+    tl1_str = fill0(tl1, 2) + ':00'
+    tl2_str = fill0(tl2, 2) + ':00'
+    tl3_str = fill0(tl3, 2) + ':00'
+    cmd = 'ts ask 8' + turn_str + ' ' + tl1_str + '/' + tl2_str + '/' + tl3_str + ' ' + user
+    print('[INFO]', 'ask game', cmd)
+    tn.write((cmd + '\n').encode('utf-8'))
+    ggs_wait_ready()
+    ggs_wait_ready()
 
 def ggs_get_board():
     tn.read_until(b"A B C D E F G H", timeout=None).decode("utf-8")
@@ -74,22 +95,17 @@ tn.read_until(b": Enter login (yours, or one you'd like to use).")
 tn.write((ggs_id + '\n').encode('utf-8'))
 tn.read_until(b": Enter your password.")
 tn.write((ggs_pw + '\n').encode('utf-8'))
-wait_ready()
+ggs_wait_ready()
 
 # alias
 tn.write(b"ms /os\n")
-wait_ready()
+ggs_wait_ready()
 
 print('[INFO]', 'initialized!')
 
 while True:
     # start game
-    tn.write(b"ts ask 8w 05:00/00:00/02:00 nyanyan\n")
-    wait_ready()
-    wait_ready()
-
-    egaroucid_turn = 'O'
-
+    ggs_ask_game(tl1, tl2, tl3, egaroucid_turn, opponent)
 
     last_board = '---------------------------------------------------------------- ?'
     while True:
@@ -112,6 +128,7 @@ while True:
             print('[INFO]', 'new board found')
         if n_empties == 0:
             print('[INFO]', 'game over')
+            break
         if board[-1] == egaroucid_turn:
             print('[INFO]', 'Egaroucid playing...')
             if n_diff == 0:
@@ -124,5 +141,7 @@ while True:
             print('[INFO]', 'got move from Egaroucid', coord, value)
             ggs_play_move(coord, value)
         last_board = board
+    
+    break
 
 tn.close()
