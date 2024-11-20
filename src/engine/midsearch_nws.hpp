@@ -101,7 +101,7 @@ int nega_alpha_ordering_nws(Search *search, int alpha, int depth, bool skipped, 
     }
     if (!is_end_search) {
         if (depth == 1)
-            return nega_alpha_eval1_nws(search, alpha, skipped, searching);
+            return nega_alpha_eval1_nws(search, alpha, skipped);
         if (depth == 0) {
             ++search->n_nodes;
             return mid_evaluate_diff(search);
