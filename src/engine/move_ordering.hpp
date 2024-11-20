@@ -67,8 +67,8 @@
     #define W_END_NWS_SIMPLE_PARITY     move_ordering_param_array[13]
     #define W_END_NWS_SIMPLE_TT_BONUS   move_ordering_param_array[14]
 
-    #define MOVE_ORDERING_PARAM_START 0
-    #define MOVE_ORDERING_PARAM_END 9
+    #define MOVE_ORDERING_PARAM_START 10
+    #define MOVE_ORDERING_PARAM_END 14
 #else
     // midgame search
     #define W_MOBILITY 35
@@ -482,7 +482,7 @@ inline void move_list_sort(std::vector<Flip_value> &move_list) {
 */
 #if TUNE_MOVE_ORDERING
     #include "ai.hpp"
-    inline Search_result tree_search_legal(Board board, int depth, uint_fast8_t mpc_level, bool show_log, uint64_t use_legal, bool use_multi_thread);
+    inline Search_result tree_search_legal(Board board, int depth, uint_fast8_t mpc_level, bool show_log, uint64_t use_legal, bool use_multi_thread, uint64_t time_limit);
 
     Board get_board(std::string board_str) {
         board_str.erase(std::remove_if(board_str.begin(), board_str.end(), ::isspace), board_str.end());
@@ -521,7 +521,7 @@ inline void move_list_sort(std::vector<Flip_value> &move_list) {
             uint_fast8_t mpc_level;
             get_level(level, board.n_discs() - 4, &is_mid_search, &depth, &mpc_level);
             transposition_table.init();
-            Search_result result = tree_search_legal(board, depth, mpc_level, false, board.get_legal(), true);
+            Search_result result = tree_search_legal(board, depth, mpc_level, false, board.get_legal(), true, TIME_LIMIT_INF);
             n_nodes += result.nodes;
         }
         transposition_table.reset_importance();
