@@ -170,7 +170,7 @@ int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, uin
         if (beta - alpha >= 4 && depth >= 5) {
             int l = -HW2, u = HW2;
             transposition_table.get_bounds(search, hash_code, depth - 5, &l, &u);
-            if (l == u && alpha < l && l < beta && !(l % 2 && is_end_search)) {
+            if (l == u && alpha < l && l < beta && !((l % 2) && is_end_search)) {
                 return aspiration_search(search, alpha, beta, l, depth, skipped, legal, is_end_search, searching);
             }
         }
@@ -256,20 +256,21 @@ int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, uin
         @return pair of value and best move
     */
     inline int aspiration_search(Search *search, int alpha, int beta, int predicted_value, int depth, bool skipped, uint64_t legal, bool is_end_search, bool *searching) {
-        if (predicted_value < alpha || beta <= predicted_value)
-            return nega_scout(search, alpha, beta, depth, false, LEGAL_UNDEFINED, is_end_search, searching);
         int pred_alpha = predicted_value - 1;
         int pred_beta = predicted_value + 1;
-        if ((predicted_value % 2) && is_end_search) {
-            --pred_alpha;
-            ++pred_beta;
-        }
-        pred_alpha = std::max(pred_alpha, alpha);
-        pred_beta = std::min(pred_beta, beta);
-        if (pred_beta - pred_alpha > 0) {
-            int g = nega_scout(search, pred_alpha, pred_beta, depth, false, LEGAL_UNDEFINED, is_end_search, searching);
-            if (pred_alpha < g && g < pred_beta)
+        int g = nega_scout(search, pred_alpha, pred_beta, depth, false, LEGAL_UNDEFINED, is_end_search, searching);
+        if (pred_alpha < g && g < pred_beta) {
+            return g;
+        } else if (g <= pred_alpha) {
+            if (g <= alpha) {
                 return g;
+            }
+            beta = g;
+        } else if (pred_beta <= g) {
+            if (beta <= g) {
+                return g;
+            }
+            alpha = g;
         }
         return nega_scout(search, alpha, beta, depth, false, LEGAL_UNDEFINED, is_end_search, searching);
     }
