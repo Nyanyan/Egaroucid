@@ -222,7 +222,7 @@ inline int ybwc_split_nws(Search *search, int alpha, int depth, uint64_t legal, 
                             g = ybwc_split_state;
                             ++search->n_nodes;
                         }
-                        if (*searching) {
+                        if (*n_searching) {
                             if (*v < g) {
                                 *v = g;
                                 *best_move = move_list[move_idx].flip.pos;
