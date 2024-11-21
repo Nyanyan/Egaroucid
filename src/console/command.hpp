@@ -414,11 +414,11 @@ void settime(State *state, std::string arg) {
         std::string color = arg.substr(0, pos);
         std::string time_sec_str = arg.substr(pos + 1);
         try{
-            uint64_t time_msec = 1000ULLL * (uint64_t)std::stoi(time_sec_str);
+            uint64_t time_msec = 1000ULL * (uint64_t)std::stoi(time_sec_str);
             if (color == "X" || color == "x" || color == "B" || color == "b" || color == "0" || color == "*") {
-                state->remaining_time_msec_black = time_ms;
+                state->remaining_time_msec_black = time_msec;
             } else if (color == "O" || color == "o" || color == "W" || color == "w" || color == "1") {
-                state->remaining_time_msec_white = time_ms;
+                state->remaining_time_msec_white = time_msec;
             } else {
                 std::cerr << "[ERROR] can't recognize color: " << color << std::endl;
             }
