@@ -287,7 +287,7 @@ while True:
             print_color('[INFO] GGS Got board from GGS egaroucid_color : ' + me_color, 'green')
             print_color('[INFO] GGS Got board from GGS remaining_time : ' + str(me_remaining_time), 'green')
             print_color('[INFO] GGS Got board from GGS board : ' + board, 'green')
-            egaroucid_setboard([board, ''])
+            egaroucid_setboard(board)
             sub_idx = 0
             if me_color == color_to_move:
                 me_remaining_time_proc = max(1, me_remaining_time - 10)
@@ -302,8 +302,8 @@ while True:
                     egaroucid_setboard(latest_board)
                     if latest_move != '':
                         egaroucid_play_move(latest_move)
-                    latest_board.append([board, coord])
+                    ponder_boards.append([board, coord])
             else:
-                ponder_boards.append(board)
+                ponder_boards.append([board, ''])
 
 tn.close()
