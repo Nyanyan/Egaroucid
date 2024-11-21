@@ -289,6 +289,28 @@ inline void print_search_result_head() {
     std::cout << std::endl;
 }
 
+inline void print_search_result_debug(Search_result result, const Options *options, const State *state) {
+    if (result.policy == MOVE_PASS) {
+        std::cerr << "Pass";
+    } else {
+        std::string s;
+        std::string level_str = "-";
+        if (result.depth == SEARCH_BOOK) {
+            level_str = "Book";
+        } else if (options->time_allocated_seconds == TIME_NOT_ALLOCATED) {
+            level_str = std::to_string(result.level);
+        }
+        std::string depth_str = "-";
+        if (result.depth != SEARCH_BOOK) {
+            depth_str = std::to_string(result.depth) + "@" + std::to_string(result.probability) + "%";
+        }
+        std::cerr << "level " << level_str << " depth " << depth_str << " " << idx_to_coord(result.policy) << " " << result.value;
+    }
+    std::cerr << " elapsed " << ms_to_time(result.time) << " nodes " << result.nodes << " nps " << result.nps;
+    std::cerr << " remaining time " << ms_to_time(state->remaining_time_msec_black) << " / " << ms_to_time(remaining_time_msec_white);
+    std::cerr << std::endl;
+}
+
 inline void print_search_result(Search_result result, const Options *options, const State *state) {
     print_search_result_head();
     print_search_result_body(result, options, state);

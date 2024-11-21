@@ -20,7 +20,7 @@ print('GGS ID', ggs_id, 'GGS PW', ggs_pw)
 
 
 # launch Egaroucid
-egaroucid_cmd = './../versions/Egaroucid_for_Console_beta/Egaroucid_for_Console.exe -quiet -noise -showvalue -ponder -logfile log/log.txt -hash 27 -time ' + str(tl1 * 60 - 5)
+egaroucid_cmd = './../versions/Egaroucid_for_Console_beta/Egaroucid_for_Console.exe -quiet -noise -showvalue -noautopass -ponder -logfile log/log.txt -hash 27 -time ' + str(tl1 * 60 - 10)
 egaroucid = subprocess.Popen(egaroucid_cmd.split(), stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
 
 # telnet
