@@ -439,6 +439,9 @@ void settime(State *state, Options *options, std::string arg) {
 void check_command(Board_info *board, State *state, Options *options) {
     uint64_t start_time = tim();
     std::string cmd_line = get_command_line();
+    if (options->show_log) {
+        std::cerr << "received cmd: " << cmd_line << std::endl;
+    }
     if (options->ponder) {
         state->ponder_searching = false;
         state->ponder_future.get();
