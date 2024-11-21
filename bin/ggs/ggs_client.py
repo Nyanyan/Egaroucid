@@ -66,9 +66,12 @@ def ggs_get_board(timeout):
     data = []
     strt = time.time()
     while len(data) < 9 and time.time() - strt < timeout:
-        data = ggs_wait_ready(timeout).splitlines()
+        data = ggs_wait_ready(timeout)
+        print(data)
+        data = data.splitlines()
     if len(data) < 9:
         return -1, -1, -1, -1, -1
+    game_id = '?'
     for datum in data:
         if len(datum) >= 4:
             if datum[:4] == '/os:':
@@ -234,7 +237,6 @@ while True:
         for i in range(2):
             if futures[i][0] != None:
                 if futures[i][1].done():
-                    print('[INFO]', 'future', i, 'done')
                     coord, value = futures[i][1].result()
                     print('[INFO]', 'game_id', futures[i][0], 'got move from Egaroucid', coord, value)
                     ggs_play_move(futures[i][0], coord, value)
