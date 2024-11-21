@@ -2,7 +2,6 @@ import telnetlib
 import subprocess
 import datetime
 import time
-from concurrent.futures import ThreadPoolExecutor
 
 with open('id/ggs_id.txt', 'r') as f:
     ggs_id = f.read()
@@ -15,8 +14,22 @@ with open('id/ggs_port.txt', 'r') as f:
 print('GGS server', ggs_server, 'port', ggs_port)
 print('GGS ID', ggs_id, 'GGS PW', ggs_pw)
 
+
+# launch Egaroucid
+d_today = str(datetime.date.today())
+t_now = str(datetime.datetime.now().time())
+logfile = 'log/' + d_today.replace('-', '') + '_' + t_now.split('.')[0].replace(':', '') + '.txt'
+print('log file', logfile)
+egaroucid_cmd = './../versions/Egaroucid_for_Console_beta/Egaroucid_for_Console.exe -t 8 -quiet -noise -showvalue -noautopass -ponder -hash 27 -logfile ' + logfile
+egaroucid = subprocess.Popen(egaroucid_cmd.split(), stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
+
+
+
 # telnet
 tn = telnetlib.Telnet(ggs_server, ggs_port)
+
+
+
 
 def fill0(n, r):
     res = str(n)
@@ -28,7 +41,9 @@ def ggs_wait_ready(timeout=None):
         print(output)
     return output
 
-def ggs_ask_game(tl1, tl2, tl3, turn, user):
+
+
+def ggs_os_ask_game(tl1, tl2, tl3, turn, user):
     turn_str = 'b' if turn == 'X' else 'w'
     tl1_str = fill0(tl1 // 60, 2) + ':' + fill0(tl1 % 60, 2)
     tl2_str = fill0(tl2 // 60, 2) + ':' + fill0(tl2 % 60, 2)
@@ -36,52 +51,74 @@ def ggs_ask_game(tl1, tl2, tl3, turn, user):
     cmd = 'ts ask 8' + turn_str + ' ' + tl1_str + '/' + tl2_str + '/' + tl3_str + ' ' + user
     print('[INFO]', 'ask game', cmd)
     tn.write((cmd + '\n').encode('utf-8'))
-    ggs_wait_ready()
-    ggs_wait_ready()
 
-def ggs_receive_game():
-    output = ggs_wait_ready().splitlines()
-    for line in output:
+
+
+
+def ggs_os_get_info(s):
+    ss = s.splitlines()
+    for line in ss:
         if line[:4] == '/os:':
-            data = line.split()
-            if len(data) == 10:
-                game_id = data[2]
-                opponent = data[4]
-                raw_tls = data[5].split('/')
-                tls = [0, 0, 0]
-                for i in range(3):
-                    if raw_tls[i] != '':
-                        tls[i] = int(raw_tls[i].split(':')[0]) + int(raw_tls[i].split(':')[1]) / 60 # minutes
-                    else:
-                        tls[i] = 0
-                game_type = data[6]
-                return game_id, tls[0], tls[1], tls[2], opponent, game_type
-    print('[ERROR]', 'cannot receive game')
+            return line
+    return ''
 
-def ggs_accept_game(game_id):
-    print('[INFO]', 'accept game', game_id)
-    tn.write(('ts accept ' + game_id + '\n').encode('utf-8'))
-    ggs_wait_ready()
+def ggs_os_is_game_request(s):
+    ss = s.split()
+    if len(ss) == 10:
+        return (ss[1] == '+' or ss[1] == '-') and ss[9] == ggs_id
+    return False
 
-def ggs_get_board(timeout=None):
-    data = []
-    strt = time.time()
-    while len(data) < 9:
-        if timeout != None:
-            if time.time() - strt >= timeout:
-                break
-        data = ggs_wait_ready(timeout)
-        data = data.splitlines()
-    if len(data) < 9:
-        return -1, -1, -1, -1, -1
-    game_id = '?'
-    print(data)
-    for datum in data:
-        if len(datum) >= 4:
-            if datum[:4] == '/os:':
-                line = datum.split()
-                game_id = line[2]
-    #print('[INFO]', 'game_id', game_id)
+def ggs_os_get_received_game_info(s):
+    print('received game info')
+    print(s)
+    data = s.split()
+    if len(data) == 10:
+        game_id = data[2]
+        opponent = data[4]
+        raw_tls = data[5].split('/')
+        tls = [0, 0, 0]
+        for i in range(3):
+            if raw_tls[i] != '':
+                tls[i] = int(raw_tls[i].split(':')[0]) * 60 + int(raw_tls[i].split(':')[1]) # seconds
+            else:
+                tls[i] = 0
+        game_type = data[6]
+        return game_id, tls[0], tls[1], tls[2], opponent, game_type
+    print('[ERROR]', 'cannot receive game:', s)
+
+def ggs_os_accept_game(request_id):
+    print('[INFO]', 'accept game', request_id)
+    tn.write(('ts accept ' + request_id + '\n').encode('utf-8'))
+
+
+
+def ggs_os_is_start_game(s):
+    ss = s.split()
+    if len(ss) > 3:
+        return ss[2] == 'match'
+    return False
+
+def ggs_os_start_game_get_id(s):
+    ss = s.split()
+    if len(ss) > 4:
+        return ss[3]
+    print('[ERROR]', 'cannot receive game id:', s)
+
+
+def ggs_os_is_board_info(s):
+    ss = s.split()
+    if len(ss) > 2:
+        return ss[1] == 'update' or ss[1] == 'join'
+    return False
+
+def ggs_os_board_info_get_id(s):
+    ss = s.split()
+    if len(ss) >= 3:
+        return ss[2]
+    print('[ERROR]', 'cannot receive game id:', s)
+
+def ggs_os_get_board(s):
+    data = s.splitlines()
 
     me_color = ''
     me_remaining_time = 0
@@ -135,41 +172,57 @@ def ggs_get_board(timeout=None):
     board = board.replace('*', 'X') + ' ' + color_to_move
     #print('[INFO]', 'board', board)
 
-    return game_id, me_color, me_remaining_time, board, color_to_move
+    return me_color, me_remaining_time, board, color_to_move
 
-def ggs_play_move(game_id, coord, value):
+
+
+
+
+
+
+
+
+def ggs_os_play_move(game_id, coord, value):
     cmd = 't /os play ' + game_id  + ' ' + coord + '/' + value
     tn.write((cmd + '\n').encode('utf-8'))
+
+
+
+
+
+
+
+
 
 def idx_to_coord_str_rev(coord):
     x = coord % 8
     y = coord // 8
     return chr(ord('a') + x) + str(y + 1)
 
-def egaroucid_play_move(egaroucid_idx, move):
+def egaroucid_play_move(move):
     cmd = 'play ' + move
-    print('[INFO]', 'egaroucid play', cmd)
-    egaroucids[egaroucid_idx].stdin.write((cmd + '\n').encode('utf-8'))
-    egaroucids[egaroucid_idx].stdin.flush()
+    print('[INFO]', 'egaroucid play', ':', cmd)
+    egaroucid.stdin.write((cmd + '\n').encode('utf-8'))
+    egaroucid.stdin.flush()
 
-def egaroucid_settime(egaroucid_idx, color, time_limit):
+def egaroucid_settime(color, time_limit):
     cmd = 'settime ' + color + ' ' + str(time_limit)
-    print('[INFO]', 'egaroucid settime', cmd)
-    egaroucids[egaroucid_idx].stdin.write((cmd + '\n').encode('utf-8'))
-    egaroucids[egaroucid_idx].stdin.flush()
+    print('[INFO]', 'egaroucid settime', ':', cmd)
+    egaroucid.stdin.write((cmd + '\n').encode('utf-8'))
+    egaroucid.stdin.flush()
 
-def egaroucid_setboard(egaroucid_idx, board):
+def egaroucid_setboard(board):
     cmd = 'setboard ' + board
-    print('[INFO]', 'egaroucid setboard', cmd)
-    egaroucids[egaroucid_idx].stdin.write((cmd + '\n').encode('utf-8'))
-    egaroucids[egaroucid_idx].stdin.flush()
+    print('[INFO]', 'egaroucid setboard', ':', cmd)
+    egaroucid.stdin.write((cmd + '\n').encode('utf-8'))
+    egaroucid.stdin.flush()
 
-def egaroucid_get_move_score(egaroucid_idx):
+def egaroucid_get_move_score():
     cmd = 'go'
-    #print('[INFO]', 'egaroucid play', cmd)
-    egaroucids[egaroucid_idx].stdin.write((cmd + '\n').encode('utf-8'))
-    egaroucids[egaroucid_idx].stdin.flush()
-    line = egaroucids[egaroucid_idx].stdout.readline().decode().replace('\r', '').replace('\n', '')
+    print('[INFO]', 'egaroucid play', ':', cmd)
+    egaroucid.stdin.write((cmd + '\n').encode('utf-8'))
+    egaroucid.stdin.flush()
+    line = egaroucid.stdout.readline().decode().replace('\r', '').replace('\n', '')
     coord = line.split()[0]
     value = line.split()[1]
     return coord, value
@@ -193,70 +246,32 @@ ggs_wait_ready()
 
 print('[INFO]', 'initialized!')
 
+
+playing_game_id = ''
+
 while True:
-    
-    '''
-    tl1 = 300 # seconds
-    tl2 = 0
-    tl3 = 0
-    egaroucid_turn = 'O'
-    # start game
-    opponent = input('who do you want to ask game?: ')
-    ggs_ask_game(tl1, tl2, tl3, egaroucid_turn, opponent)
-    #'''
-
-    #'''
-    # receive game
-    print('[INFO]', 'waiting request...')
-    game_id, tl1, tl2, tl3, opponent, game_type = ggs_receive_game()
-    ggs_accept_game(game_id)
-    #'''
-
-    synchro = game_type[0] == 's'
-
-
-    # launch Egaroucid
-    d_today = str(datetime.date.today())
-    t_now = str(datetime.datetime.now().time())
-    logfile = 'log/' + d_today.replace('-', '') + '_' + t_now.split('.')[0].replace(':', '') + '.txt'
-    print('log file', logfile)
-    egaroucid_cmd = './../versions/Egaroucid_for_Console_beta/Egaroucid_for_Console.exe -t 8 -quiet -noise -showvalue -noautopass -ponder -hash 27 -logfile ' + logfile
-    egaroucids = []
-    egaroucids.append(subprocess.Popen(egaroucid_cmd.split(), stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL))
-    if synchro:
-        egaroucids.append(subprocess.Popen(egaroucid_cmd.split(), stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL))
-
-    executor = ThreadPoolExecutor(max_workers=2)
-    futures = [[None, None], [None, None]]
-
-    while True:
-        game_id, me_color, me_remaining_time, board, color_to_move = ggs_get_board()
-        if game_id != -1:
+    received_data = ggs_wait_ready()
+    os_info = ggs_os_get_info(received_data)
+    if ggs_os_is_game_request(os_info):
+        request_id, tl1, tl2, tl3, opponent, game_type = ggs_os_get_received_game_info(os_info)
+        ggs_os_accept_game(request_id)
+    elif ggs_os_is_start_game(os_info):
+        game_id = ggs_os_start_game_get_id(os_info)
+        playing_game_id = game_id
+    elif ggs_os_is_board_info(os_info):
+        game_id = ggs_os_board_info_get_id(os_info)
+        if game_id[:len(playing_game_id)] == playing_game_id:
+            me_color, me_remaining_time, board, color_to_move = ggs_os_get_board(received_data)
             print('[INFO]', 'got board from GGS', 'game id', game_id, 'egaroucid_color', me_color, 'remaining_time', me_remaining_time, 'board', board, 'color_to_move', color_to_move)
-            egaroucid_idx = 0
-            if synchro:
-                egaroucid_idx = int(game_id.split('.')[2])
             print('[INFO]', 'game_id', game_id, 'set board')
-            egaroucid_setboard(egaroucid_idx, board)
+            egaroucid_setboard(board)
             if me_color == color_to_move:
                 me_remaining_time_proc = max(1, me_remaining_time - 10)
-                egaroucid_settime(egaroucid_idx, me_color, me_remaining_time_proc)
-                future = executor.submit(egaroucid_get_move_score, egaroucid_idx)
-                futures[egaroucid_idx] = [game_id, future]
+                egaroucid_settime(me_color, me_remaining_time_proc)
                 print('[INFO]', 'game_id', game_id, 'Egaroucid playing...')
-                #coord, value = egaroucid_get_move_score(egaroucid_idx)
-                #print('[INFO]', 'got move from Egaroucid', coord, value)
-                #ggs_play_move(game_id, coord, value)
-        for i in range(2):
-            if futures[i][0] != None:
-                if futures[i][1].done():
-                    coord, value = futures[i][1].result()
-                    print('[INFO]', 'game_id', futures[i][0], 'got move from Egaroucid', coord, value)
-                    ggs_play_move(futures[i][0], coord, value)
-                    futures[i] = [None, None]
+                coord, value = egaroucid_get_move_score()
+                print('[INFO]', 'got move from Egaroucid', coord, value)
+                ggs_os_play_move(game_id, coord, value)
 
-    for egaroucid in egaroucids:
-        egaroucid.kill()
-    break
 
 tn.close()
