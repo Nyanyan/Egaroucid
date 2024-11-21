@@ -67,12 +67,12 @@ def ggs_get_board(timeout):
     strt = time.time()
     while len(data) < 9 and time.time() - strt < timeout:
         data = ggs_wait_ready(timeout)
-        print(data)
         data = data.splitlines()
     if len(data) < 9:
         return -1, -1, -1, -1, -1
     game_id = '?'
     for datum in data:
+        print(datum)
         if len(datum) >= 4:
             if datum[:4] == '/os:':
                 line = datum.split()
@@ -226,7 +226,8 @@ while True:
                 egaroucid_idx = int(game_id.split('.')[2])
             print('[INFO]', 'game_id', game_id, 'set board')
             egaroucid_setboard(egaroucid_idx, board)
-            egaroucid_settime(egaroucid_idx, me_color, me_remaining_time)
+            me_remaining_time_proc = max(1, me_remaining_time - 5)
+            egaroucid_settime(egaroucid_idx, me_color, me_remaining_time_proc)
             if me_color == color_to_move:
                 future = executor.submit(egaroucid_get_move_score, egaroucid_idx)
                 futures[egaroucid_idx] = [game_id, future]
