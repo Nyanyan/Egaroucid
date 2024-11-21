@@ -47,12 +47,11 @@ def ggs_wait_ready(timeout=None):
 
 
 
-def ggs_os_ask_game(tl1, tl2, tl3, turn, user):
-    turn_str = 'b' if turn == 'X' else 'w'
+def ggs_os_ask_game(tl1, tl2, tl3, game_type, user):
     tl1_str = fill0(tl1 // 60, 2) + ':' + fill0(tl1 % 60, 2)
     tl2_str = fill0(tl2 // 60, 2) + ':' + fill0(tl2 % 60, 2)
     tl3_str = fill0(tl3 // 60, 2) + ':' + fill0(tl3 % 60, 2)
-    cmd = 'ts ask 8' + turn_str + ' ' + tl1_str + '/' + tl2_str + '/' + tl3_str + ' ' + user
+    cmd = 'ts ask ' + game_type + ' ' + tl1_str + '/' + tl2_str + '/' + tl3_str + ' ' + user
     print_color('[INFO] ask game ' + cmd, 'green')
     tn.write((cmd + '\n').encode('utf-8'))
 
@@ -93,11 +92,22 @@ def ggs_os_accept_game(request_id):
     tn.write(('ts accept ' + request_id + '\n').encode('utf-8'))
 
 
+def ggs_os_is_game_end(s):
+    ss = s.split()
+    if len(ss) >= 2:
+        return ss[1] == 'end'
+    return False
 
 def ggs_os_is_start_game(s):
     ss = s.split()
     if len(ss) > 3:
         return ss[1] == '+' and ss[2] == 'match'
+    return False
+
+def ggs_os_is_game_terminated(s):
+    ss = s.split()
+    if len(ss) > 3:
+        return ss[1] == '-'
     return False
 
 def ggs_os_start_game_get_id(s):
@@ -256,11 +266,18 @@ print_color('[INFO] Initialized!', 'green')
 
 
 playing_game_id = ''
+game_playing = False
+asking_game = False
 
 ponder_boards = []
 
 
 while True:
+    '''
+    if (not game_playing) and (not asking_game):
+        ggs_os_ask_game(300, 0, 0, 's8r18', 'nyanyan')
+        asking_game = True
+    #'''
     received_data = ggs_wait_ready()
     os_info = ggs_os_get_info(received_data)
     if os_info != '':
@@ -274,6 +291,16 @@ while True:
         game_id = ggs_os_start_game_get_id(os_info)
         playing_game_id = game_id
         print_color('[INFO] GGS Playing Game ID : ' + playing_game_id, 'green')
+        game_playing = True
+        asking_game = False
+    elif ggs_os_is_game_end(os_info):
+        print_color('[INFO] GGS Game End : ' + os_info, 'green')
+        game_playing = False
+        playing_game_id = ''
+    elif ggs_os_is_game_terminated(os_info):
+        print_color('[INFO] GGS Game Terminated : ' + os_info, 'green')
+        game_playing = False
+        asking_game = False
     elif ggs_os_is_board_info(os_info):
         game_id = ggs_os_board_info_get_id(os_info)
         game_id_nosub = game_id
@@ -305,5 +332,4 @@ while True:
                     ponder_boards.append([board, coord])
             else:
                 ponder_boards.append([board, ''])
-
 tn.close()
