@@ -22,9 +22,12 @@ print('GGS ID', ggs_id, 'GGS PW', ggs_pw)
 # launch Egaroucid
 d_today = str(datetime.date.today())
 t_now = str(datetime.datetime.now().time())
-logfile = 'log/' + d_today.replace('-', '') + '_' + t_now.split('.')[0].replace(':', '') + '.txt'
-print('log file', logfile)
-egaroucid_cmd = './../versions/Egaroucid_for_Console_beta/Egaroucid_for_Console.exe -t 8 -quiet -noise -ponder -showvalue -noautopass -hash 27 -logfile ' + logfile
+logfile_egaroucid = 'log/' + d_today.replace('-', '') + '_' + t_now.split('.')[0].replace(':', '') + '_egaroucid.txt'
+logfile_boards = 'log/' + d_today.replace('-', '') + '_' + t_now.split('.')[0].replace(':', '') + '_boards.txt'
+logfile_client = 'log/' + d_today.replace('-', '') + '_' + t_now.split('.')[0].replace(':', '') + '_client.txt'
+
+print('log file for Egaroucid', logfile_egaroucid)
+egaroucid_cmd = './../versions/Egaroucid_for_Console_beta/Egaroucid_for_Console.exe -t 8 -quiet -noise -ponder -showvalue -noautopass -hash 27 -logfile ' + logfile_egaroucid
 egaroucid = subprocess.Popen(egaroucid_cmd.split(), stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
 
 
