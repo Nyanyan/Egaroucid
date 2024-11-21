@@ -406,6 +406,30 @@ void generate_problems(Options *options, std::string arg) {
     }
 }
 
+void settime(State *state, std::string arg) {
+    int pos = arg.find(' ');
+    if (pos == std::string::npos) {
+        std::cerr << "[ERROR] please input <color> <time>" << std::endl;
+    }else{
+        std::string color = arg.substr(0, pos);
+        std::string time_sec_str = arg.substr(pos + 1);
+        try{
+            uint64_t time_msec = 1000ULLL * (uint64_t)std::stoi(time_sec_str);
+            if (color == "X" || color == "x" || color == "B" || color == "b" || color == "0" || color == "*") {
+                state->remaining_time_msec_black = time_ms;
+            } else if (color == "O" || color == "o" || color == "W" || color == "w" || color == "1") {
+                state->remaining_time_msec_white = time_ms;
+            } else {
+                std::cerr << "[ERROR] can't recognize color: " << color << std::endl;
+            }
+        } catch (const std::invalid_argument& e) {
+            std::cerr << "[ERROR] invalid argument" << std::endl;
+        } catch (const std::out_of_range& e) {
+            std::cerr << "[ERROR] out of range" << std::endl;
+        }
+    }
+}
+
 void check_command(Board_info *board, State *state, Options *options) {
     uint64_t start_time = tim();
     std::string cmd_line = get_command_line();
@@ -475,6 +499,9 @@ void check_command(Board_info *board, State *state, Options *options) {
             break;
         case CMD_ID_TRANSCRIPT:
             print_transcript(board->boards);
+            break;
+        case CMD_ID_SETTIME:
+            settime(state, arg);
             break;
         default:
             break;

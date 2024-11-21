@@ -13,7 +13,7 @@
 #include <vector>
 #include "console_common.hpp"
 
-#define N_COMMANDS 18
+#define N_COMMANDS 19
 
 #define CMD_ID_NONE -1
 #define CMD_ID_HELP 0
@@ -34,6 +34,7 @@
 #define CMD_ID_CLEARCACHE 15
 #define CMD_ID_GENPROBLEM 16
 #define CMD_ID_TRANSCRIPT 17
+#define CMD_ID_SETTIME 18
 
 #define COMMAND_NOT_FOUND -1
 
@@ -62,5 +63,6 @@ const Command_info command_data[N_COMMANDS] = {
     {CMD_ID_ANALYZE,    {"analyze", "analyse"},                             "",                         "Analyze last game."},
     {CMD_ID_CLEARCACHE, {"clearcache"},                                     "",                         "Clear cache."},
     {CMD_ID_GENPROBLEM, {"genproblem"},                                     "<n_empties> <n_problems>", "Generate <n_problems> problems with <n_empties> empty squares and calculate the score and bestmove with specified level"},
-    {CMD_ID_TRANSCRIPT, {"transcript"},                                     "",                         "Show transcript of the game"}
+    {CMD_ID_TRANSCRIPT, {"transcript"},                                     "",                         "Show transcript of the game"},
+    {CMD_ID_SETTIME,    {"settime"},                                        "<color> <time>",           "Set <color> (X / B / O / W) player's remaining time to <time> (seconds)"}
 };
