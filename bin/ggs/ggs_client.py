@@ -74,7 +74,7 @@ def ggs_get_board(timeout):
             if datum[:4] == '/os:':
                 line = datum.split()
                 game_id = line[2]
-    print('[INFO]', 'game_id', game_id)
+    #print('[INFO]', 'game_id', game_id)
 
     me_color = ''
     me_remaining_time = 0
@@ -91,7 +91,7 @@ def ggs_get_board(timeout):
                         print('[ERROR]', 'invalid color', datum, line)
                     raw_me_remaining_time = line[3].split(',')[0]
                     me_remaining_time = int(raw_me_remaining_time.split(':')[0]) * 60 + int(raw_me_remaining_time.split(':')[1])
-    print('[INFO]', 'me_color', me_color, 'me_remaining_time', me_remaining_time)
+    #print('[INFO]', 'me_color', me_color, 'me_remaining_time', me_remaining_time)
     raw_player = ''
     for datum in data:
         if len(datum):
@@ -107,7 +107,7 @@ def ggs_get_board(timeout):
         color_to_move = 'O'
     else:
         print('[ERROR]', 'cannot recognize player', raw_player)
-    print('[INFO]', 'color_to_move', color_to_move)
+    #print('[INFO]', 'color_to_move', color_to_move)
 
     raw_board = ''
     got_coord = False
@@ -126,7 +126,7 @@ def ggs_get_board(timeout):
     for i in range(1, 9):
         board = board.replace(str(i), '')
     board = board.replace('*', 'X') + ' ' + color_to_move
-    print('[INFO]', 'board', board)
+    #print('[INFO]', 'board', board)
 
     return game_id, me_color, me_remaining_time, board, color_to_move
 
@@ -205,7 +205,7 @@ while True:
     t_now = str(datetime.datetime.now().time())
     logfile = 'log/' + d_today.replace('-', '') + '_' + t_now.split('.')[0].replace(':', '') + '.txt'
     print('log file', logfile)
-    egaroucid_cmd = './../versions/Egaroucid_for_Console_beta/Egaroucid_for_Console.exe -quiet -noise -showvalue -noautopass -ponder -hash 27 -logfile ' + logfile
+    egaroucid_cmd = './../versions/Egaroucid_for_Console_beta/Egaroucid_for_Console.exe -t 8 -quiet -noise -showvalue -noautopass -ponder -hash 27 -logfile ' + logfile
     egaroucids = []
     egaroucids.append(subprocess.Popen(egaroucid_cmd.split(), stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL))
     if synchro:
@@ -215,30 +215,30 @@ while True:
     futures = [[None, None], [None, None]]
 
     while True:
-        game_id, me_color, me_remaining_time, board, color_to_move = ggs_get_board(1)
+        game_id, me_color, me_remaining_time, board, color_to_move = ggs_get_board(0.2)
         if game_id != -1:
-            print('[INFO]', 'got board from GGS', game_id, me_color, me_remaining_time, board, color_to_move)
+            print('[INFO]', 'got board from GGS', 'game id', game_id, 'egaroucid_color', me_color, 'remaining_time', me_remaining_time, 'board', board, 'color_to_move', color_to_move)
             egaroucid_idx = 0
             if synchro:
                 egaroucid_idx = int(game_id.split('.')[2])
+            print('[INFO]', 'game_id', game_id, 'set board')
+            egaroucid_setboard(egaroucid_idx, board)
+            egaroucid_settime(egaroucid_idx, me_color, me_remaining_time)
             if me_color == color_to_move:
-                print('[INFO]', 'game_id', game_id, 'Egaroucid playing...')
-                egaroucid_setboard(egaroucid_idx, board)
-                egaroucid_settime(egaroucid_idx, me_color, me_remaining_time)
                 future = executor.submit(egaroucid_get_move_score, egaroucid_idx)
                 futures[egaroucid_idx] = [game_id, future]
+                print('[INFO]', 'game_id', game_id, 'Egaroucid playing...')
                 #coord, value = egaroucid_get_move_score(egaroucid_idx)
                 #print('[INFO]', 'got move from Egaroucid', coord, value)
                 #ggs_play_move(game_id, coord, value)
         for i in range(2):
             if futures[i][0] != None:
                 if futures[i][1].done():
+                    print('[INFO]', 'future', i, 'done')
                     coord, value = futures[i][1].result()
                     print('[INFO]', 'game_id', futures[i][0], 'got move from Egaroucid', coord, value)
                     ggs_play_move(futures[i][0], coord, value)
                     futures[i] = [None, None]
-
-        
 
     for egaroucid in egaroucids:
         egaroucid.kill()
