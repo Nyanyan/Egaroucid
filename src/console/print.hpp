@@ -307,7 +307,7 @@ inline void print_search_result_debug(Search_result result, const Options *optio
         std::cerr << "level " << level_str << " depth " << depth_str << " " << idx_to_coord(result.policy) << " " << result.value;
     }
     std::cerr << " elapsed " << ms_to_time(result.time) << " nodes " << result.nodes << " nps " << result.nps;
-    std::cerr << " remaining time " << ms_to_time(state->remaining_time_msec_black) << " / " << ms_to_time(remaining_time_msec_white);
+    std::cerr << " remaining time " << ms_to_time(state->remaining_time_msec_black) << " / " << ms_to_time(state->remaining_time_msec_white);
     std::cerr << std::endl;
 }
 
