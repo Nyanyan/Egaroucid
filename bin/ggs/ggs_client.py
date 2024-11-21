@@ -281,8 +281,10 @@ while True:
             game_id_nosub = game_id[:len(str(sub_idx))]
         if game_id_nosub == playing_game_id:
             me_color, me_remaining_time, board, color_to_move = ggs_os_get_board(received_data)
-            print_color('[INFO] got board from GGS : game_id ' + game_id, 'green')
-            print('[INFO]', 'got board from GGS', 'game id', game_id, 'egaroucid_color', me_color, 'remaining_time', me_remaining_time, 'board', board, 'color_to_move', color_to_move)
+            print_color('[INFO] got board from GGS game_id : ' + game_id, 'green')
+            print_color('[INFO] got board from GGS egaroucid_color : ' + me_color, 'green')
+            print_color('[INFO] got board from GGS remaining_time : ' + me_remaining_time, 'green')
+            print_color('[INFO] got board from GGS board : ' + board, 'green')
             egaroucid_setboard(board)
             sub_idx = 0
             latest_boards[sub_idx] = board
@@ -290,9 +292,9 @@ while True:
             if me_color == color_to_move:
                 me_remaining_time_proc = max(1, me_remaining_time - 10)
                 egaroucid_settime(me_color, me_remaining_time_proc)
-                print('[INFO]', 'game_id', game_id, 'Egaroucid playing...')
+                print_color('[INFO] Egaroucid playing... game_id : ' + game_id, 'green')
                 coord, value = egaroucid_get_move_score()
-                print('[INFO]', 'got move from Egaroucid', coord, value)
+                print_color('[INFO] Egaroucid Moved : ' + coord + ' ' + value, 'green')
                 ggs_os_play_move(game_id, coord, value)
                 latest_moves[sub_idx] = coord
                 last_board_move_time = time.time()
