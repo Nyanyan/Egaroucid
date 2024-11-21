@@ -648,6 +648,17 @@ bool comp_ponder_elem(Ponder_elem &a, Ponder_elem &b) {
 
 void ai_ponder(Board board, bool show_log, bool *searching) {
     uint64_t legal = board.get_legal();
+    if (legal == 0) {
+        board.pass();
+        legal = board.get_legal();
+        if (legal == 0) {
+            if (show_log) {
+                std::cerr << "no ponder with game over" << std::endl;
+            }
+        } else {
+            std::cerr << "ponder pass found" << std::endl;
+        }
+    }
     const int canput = pop_count_ull(legal);
     std::vector<Ponder_elem> move_list(canput);
     int idx = 0;
