@@ -20,7 +20,7 @@ d_today = str(datetime.date.today())
 t_now = str(datetime.datetime.now().time())
 logfile = 'log/' + d_today.replace('-', '') + '_' + t_now.split('.')[0].replace(':', '') + '.txt'
 print('log file', logfile)
-egaroucid_cmd = './../versions/Egaroucid_for_Console_beta/Egaroucid_for_Console.exe -t 8 -quiet -noise -showvalue -noautopass -ponder -hash 27 -logfile ' + logfile
+egaroucid_cmd = './../versions/Egaroucid_for_Console_beta/Egaroucid_for_Console.exe -t 8 -quiet -noise -showvalue -noautopass -hash 27 -logfile ' + logfile
 egaroucid = subprocess.Popen(egaroucid_cmd.split(), stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
 
 
@@ -189,6 +189,12 @@ def ggs_os_play_move(game_id, coord, value):
 
 
 
+def ggs_os_is_synchro(game_id):
+    return len(game_id.split('.')) == 3
+
+def ggs_os_get_synchro_id(game_id):
+    return game_id.split()[2]
+
 
 
 
@@ -249,13 +255,20 @@ print('[INFO]', 'initialized!')
 
 playing_game_id = ''
 
+last_board_move_time = time.time()
+latest_boards = ['', '']
+latest_moves = ['', '']
+
+
 while True:
     received_data = ggs_wait_ready()
     os_info = ggs_os_get_info(received_data)
     if ggs_os_is_game_request(os_info):
+        print('[INFO]', 'GGS Game Request', ':', os_info)
         request_id, tl1, tl2, tl3, opponent, game_type = ggs_os_get_received_game_info(os_info)
         ggs_os_accept_game(request_id)
     elif ggs_os_is_start_game(os_info):
+        print('[INFO]', 'GGS Game Start', ':', os_info)
         game_id = ggs_os_start_game_get_id(os_info)
         playing_game_id = game_id
     elif ggs_os_is_board_info(os_info):
@@ -265,6 +278,11 @@ while True:
             print('[INFO]', 'got board from GGS', 'game id', game_id, 'egaroucid_color', me_color, 'remaining_time', me_remaining_time, 'board', board, 'color_to_move', color_to_move)
             print('[INFO]', 'game_id', game_id, 'set board')
             egaroucid_setboard(board)
+            sub_idx = 0
+            if ggs_os_is_synchro(game_id):
+                sub_idx = ggs_os_get_synchro_id[game_id]
+            latest_boards[sub_idx] = board
+            last_board_move_time = time.time()
             if me_color == color_to_move:
                 me_remaining_time_proc = max(1, me_remaining_time - 10)
                 egaroucid_settime(me_color, me_remaining_time_proc)
@@ -272,6 +290,7 @@ while True:
                 coord, value = egaroucid_get_move_score()
                 print('[INFO]', 'got move from Egaroucid', coord, value)
                 ggs_os_play_move(game_id, coord, value)
-
+                latest_moves[sub_idx] = coord
+                last_board_move_time = time.time()
 
 tn.close()
