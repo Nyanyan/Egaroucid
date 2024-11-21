@@ -1,6 +1,8 @@
 import telnetlib
 import subprocess
 import datetime
+import time
+from concurrent.futures import ThreadPoolExecutor
 
 with open('id/ggs_id.txt', 'r') as f:
     ggs_id = f.read()
@@ -20,9 +22,9 @@ def fill0(n, r):
     res = str(n)
     return '0' * (r - len(res)) + res
 
-def ggs_wait_ready():
-    output = tn.read_until(b"READY", timeout=None).decode("utf-8")
-    print(output)
+def ggs_wait_ready(timeout=None):
+    output = tn.read_until(b"READY", timeout=timeout).decode("utf-8")
+    #print(output)
     return output
 
 def ggs_ask_game(tl1, tl2, tl3, turn, user):
@@ -60,10 +62,13 @@ def ggs_accept_game(game_id):
     tn.write(('ts accept ' + game_id + '\n').encode('utf-8'))
     ggs_wait_ready()
 
-def ggs_get_board():
+def ggs_get_board(timeout):
     data = []
-    while len(data) < 9:
-        data = ggs_wait_ready().splitlines()
+    strt = time.time()
+    while len(data) < 9 and time.time() - strt < timeout:
+        data = ggs_wait_ready(timeout).splitlines()
+    if len(data) < 9:
+        return -1, -1, -1, -1, -1
     for datum in data:
         if len(datum) >= 4:
             if datum[:4] == '/os:':
@@ -135,21 +140,21 @@ def idx_to_coord_str_rev(coord):
     return chr(ord('a') + x) + str(y + 1)
 
 def egaroucid_play_move(egaroucid_idx, move):
-    egaroucid[egaroucid_idx].stdin.write(('play ' + move + '\n').encode('utf-8'))
-    egaroucid[egaroucid_idx].stdin.flush()
+    egaroucids[egaroucid_idx].stdin.write(('play ' + move + '\n').encode('utf-8'))
+    egaroucids[egaroucid_idx].stdin.flush()
 
 def egaroucid_settime(egaroucid_idx, color, time_limit):
-    egaroucid[egaroucid_idx].stdin.write(('settime ' + color + ' ' + str(time_limit) + '\n').encode('utf-8'))
-    egaroucid[egaroucid_idx].stdin.flush()
+    egaroucids[egaroucid_idx].stdin.write(('settime ' + color + ' ' + str(time_limit) + '\n').encode('utf-8'))
+    egaroucids[egaroucid_idx].stdin.flush()
 
 def egaroucid_setboard(egaroucid_idx, board):
-    egaroucid[egaroucid_idx].stdin.write(('setboard ' + board + '\n').encode('utf-8'))
-    egaroucid[egaroucid_idx].stdin.flush()
+    egaroucids[egaroucid_idx].stdin.write(('setboard ' + board + '\n').encode('utf-8'))
+    egaroucids[egaroucid_idx].stdin.flush()
 
 def egaroucid_get_move_score(egaroucid_idx):
-    egaroucid[egaroucid_idx].stdin.write(('go\n').encode('utf-8'))
-    egaroucid[egaroucid_idx].stdin.flush()
-    line = egaroucid[egaroucid_idx].stdout.readline().decode().replace('\r', '').replace('\n', '')
+    egaroucids[egaroucid_idx].stdin.write(('go\n').encode('utf-8'))
+    egaroucids[egaroucid_idx].stdin.flush()
+    line = egaroucids[egaroucid_idx].stdout.readline().decode().replace('\r', '').replace('\n', '')
     coord = line.split()[0]
     value = line.split()[1]
     return coord, value
@@ -206,19 +211,34 @@ while True:
     if synchro:
         egaroucids.append(subprocess.Popen(egaroucid_cmd.split(), stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL))
 
+    executor = ThreadPoolExecutor(max_workers=2)
+    futures = [[None, None], [None, None]]
+
     while True:
-        game_id, me_color, me_remaining_time, board, color_to_move = ggs_get_board()
-        print('[INFO]', 'got board from GGS', game_id, me_color, me_remaining_time, board, color_to_move)
-        egaroucid_idx = 0
-        if synchro:
-            egaroucid_idx = int(game_id.split()[1])
-        if me_color == color_to_move:
-            print('[INFO]', 'Egaroucid playing...')
-            egaroucid_setboard(egaroucid_idx, board)
-            egaroucid_settime(egaroucid_idx, me_color, me_remaining_time)
-            coord, value = egaroucid_get_move_score(egaroucid_idx)
-            print('[INFO]', 'got move from Egaroucid', coord, value)
-            ggs_play_move(game_id, coord, value)
+        game_id, me_color, me_remaining_time, board, color_to_move = ggs_get_board(1)
+        if game_id != -1:
+            print('[INFO]', 'got board from GGS', game_id, me_color, me_remaining_time, board, color_to_move)
+            egaroucid_idx = 0
+            if synchro:
+                egaroucid_idx = int(game_id.split('.')[2])
+            if me_color == color_to_move:
+                print('[INFO]', 'game_id', game_id, 'Egaroucid playing...')
+                egaroucid_setboard(egaroucid_idx, board)
+                egaroucid_settime(egaroucid_idx, me_color, me_remaining_time)
+                future = executor.submit(egaroucid_get_move_score, egaroucid_idx)
+                futures[egaroucid_idx] = [game_id, future]
+                #coord, value = egaroucid_get_move_score(egaroucid_idx)
+                #print('[INFO]', 'got move from Egaroucid', coord, value)
+                #ggs_play_move(game_id, coord, value)
+        for i in range(2):
+            if futures[i][0] != None:
+                if futures[i][1].done():
+                    coord, value = futures[i][1].result()
+                    print('[INFO]', 'game_id', futures[i][0], 'got move from Egaroucid', coord, value)
+                    ggs_play_move(futures[i][0], coord, value)
+                    futures[i] = [None, None]
+
+        
 
     for egaroucid in egaroucids:
         egaroucid.kill()
