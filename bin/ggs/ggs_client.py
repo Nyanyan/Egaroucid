@@ -53,56 +53,65 @@ def ggs_receive_game():
                         tls[i] = 0
                 game_type = data[6]
                 return tls[0], tls[1], tls[2], egaroucid_turn, opponent, game_type
+    print('[ERROR]', 'cannot receive game')
 
 
 def ggs_get_board():
-    data = ggs_wait_ready().splitlines()
+    data = []
+    while len(data) < 9:
+        data = ggs_wait_ready().splitlines()
 
     me_color = ''
     me_remaining_time = 0
     for datum in data:
-        if datum.find(ggs_id) >= 0:
-            line = datum.split()
-            if line[2][0] == '*':
-                me_color = 'X'
-            elif line[2][0] == 'O':
-                me_color = 'O'
-            else:
-                print('[ERROR]', 'invalid color', datum)
-            raw_me_remaining_time = line[3].split(',')[0]
-            me_remaining_time = int(raw_me_remaining_time.split(':')[0]) * 60 + int(raw_me_remaining_time.split(':')[1])
-    
+        if len(datum):
+            if datum[0] == '|':
+                if datum.find(ggs_id) >= 0:
+                    line = datum.split()
+                    if line[2][0] == '*':
+                        me_color = 'X'
+                    elif line[2][0] == 'O':
+                        me_color = 'O'
+                    else:
+                        print('[ERROR]', 'invalid color', datum, line)
+                    raw_me_remaining_time = line[3].split(',')[0]
+                    me_remaining_time = int(raw_me_remaining_time.split(':')[0]) * 60 + int(raw_me_remaining_time.split(':')[1])
+    print('[INFO]', 'me_color', me_color, 'me_remaining_time', me_remaining_time)
     raw_player = ''
     for datum in data:
-        player_info_place = datum.find(' to move')
-        if player_info_place >= 1:
-            raw_player = datum[player_info_place - 1]
-            break
-    print(raw_player)
+        if len(datum):
+            if datum[0] == '|':
+                player_info_place = datum.find(' to move')
+                if player_info_place >= 1:
+                    raw_player = datum[player_info_place - 1]
+                    break
+    #print('[INFO]', 'raw_player', raw_player)
     if raw_player == '*':
         color_to_move = 'X'
     elif raw_player == 'O':
         color_to_move = 'O'
     else:
-        print('[ERROR]', 'cannot recognize player')
-    print(color_to_move)
+        print('[ERROR]', 'cannot recognize player', raw_player)
+    print('[INFO]', 'color_to_move', color_to_move)
 
     raw_board = ''
     got_coord = False
     for datum in data:
-        if datum.find("A B C D E F G H") >= 0:
-            if got_coord:
-                break
-            else:
-                got_coord = True
-        if got_coord:
-            raw_board += datum
-    print(raw_board)
+        if len(datum):
+            if datum[0] == '|':
+                if datum.find("A B C D E F G H") >= 0:
+                    if got_coord:
+                        break
+                    else:
+                        got_coord = True
+                if got_coord:
+                    raw_board += datum
+    #print(raw_board)
     board = raw_board.replace('A B C D E F G H', '').replace('\r', '').replace('\n', '').replace('|', '').replace(' ', '')
     for i in range(1, 9):
         board = board.replace(str(i), '')
     board = board.replace('*', 'X') + ' ' + color_to_move
-    print(board)
+    print('[INFO]', 'board', board)
 
     return me_color, me_remaining_time, board, color_to_move
 
@@ -141,6 +150,10 @@ tn.write((ggs_id + '\n').encode('utf-8'))
 tn.read_until(b": Enter your password.")
 tn.write((ggs_pw + '\n').encode('utf-8'))
 ggs_wait_ready()
+ggs_wait_ready()
+ggs_wait_ready()
+ggs_wait_ready()
+ggs_wait_ready()
 
 # setup
 tn.write(b"ms /os\n")
@@ -164,7 +177,7 @@ while True:
 
     '''
     # receive game
-    tl1, tl2, tl3, egaroucid_turn, opponent = ggs_receive_game()
+    tl1, tl2, tl3, egaroucid_turn, opponent, game_type = ggs_receive_game()
     #'''
 
 
@@ -186,7 +199,8 @@ while True:
             coord, value = egaroucid_get_move_score()
             print('[INFO]', 'got move from Egaroucid', coord, value)
             ggs_play_move(coord, value)
-    
+
+    egaroucid.kill()
     break
 
 tn.close()
