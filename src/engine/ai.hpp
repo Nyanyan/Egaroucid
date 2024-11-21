@@ -653,8 +653,9 @@ void ai_ponder(Board board, bool show_log, bool *searching) {
         legal = board.get_legal();
         if (legal == 0) {
             if (show_log) {
-                std::cerr << "no ponder with game over" << std::endl;
+                std::cerr << "no ponder needed because of game over" << std::endl;
             }
+            return;
         } else {
             std::cerr << "ponder pass found" << std::endl;
         }
@@ -672,7 +673,7 @@ void ai_ponder(Board board, bool show_log, bool *searching) {
     const int max_depth = HW2 - board.n_discs() - 1;
     int n_searched_all = 0;
     while (*searching) {
-        int selected_idx = 0;
+        int selected_idx = -1;
         double max_ucb = -INF - 1;
         for (int i = 0; i < canput; ++i) {
             double ucb = -INF;
@@ -690,6 +691,12 @@ void ai_ponder(Board board, bool show_log, bool *searching) {
                 selected_idx = i;
                 max_ucb = ucb;
             }
+        }
+        if (selected_idx == -1) {
+            if (show_log) {
+                std::cerr << "ponder: no move selected n_moves " << canput << std::endl;
+            }
+            break;
         }
         if (get_level_complete_depth(move_list[selected_idx].level) >= max_depth) {
             if (show_log) {
