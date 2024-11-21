@@ -23,7 +23,7 @@ print('GGS ID', ggs_id, 'GGS PW', ggs_pw)
 d_today = str(datetime.date.today())
 t_now = str(datetime.datetime.now().time())
 logfile_egaroucid = 'log/' + d_today.replace('-', '') + '_' + t_now.split('.')[0].replace(':', '') + '_egaroucid.txt'
-logfile_boards = 'log/' + d_today.replace('-', '') + '_' + t_now.split('.')[0].replace(':', '') + '_boards.txt'
+logfile_transcript = 'log/' + d_today.replace('-', '') + '_' + t_now.split('.')[0].replace(':', '') + '_transcript.txt'
 logfile_client = 'log/' + d_today.replace('-', '') + '_' + t_now.split('.')[0].replace(':', '') + '_client.txt'
 
 print('log file for Egaroucid', logfile_egaroucid)
