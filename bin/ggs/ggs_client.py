@@ -1,11 +1,12 @@
 import telnetlib
 import subprocess
+import datetime
 
 tl1 = 5 #minutes
 tl2 = 0
 tl3 = 0
-egaroucid_turn = 'X'
-opponent = 'nyanyan'
+egaroucid_turn = 'O'
+#opponent = 'nyanyan'
 
 with open('id/ggs_id.txt', 'r') as f:
     ggs_id = f.read()
@@ -20,7 +21,11 @@ print('GGS ID', ggs_id, 'GGS PW', ggs_pw)
 
 
 # launch Egaroucid
-egaroucid_cmd = './../versions/Egaroucid_for_Console_beta/Egaroucid_for_Console.exe -quiet -noise -showvalue -noautopass -ponder -logfile log/log.txt -hash 27 -time ' + str(tl1 * 60 - 10)
+d_today = str(datetime.date.today())
+t_now = str(datetime.datetime.now().time())
+logfile = 'log/' + d_today.replace('-', '') + '_' + t_now.split('.')[0].replace(':', '') + '.txt'
+print('log file', logfile)
+egaroucid_cmd = './../versions/Egaroucid_for_Console_beta/Egaroucid_for_Console.exe -quiet -noise -showvalue -noautopass -ponder -hash 27 -logfile ' + logfile + ' -time ' + str(tl1 * 60 - 10)
 egaroucid = subprocess.Popen(egaroucid_cmd.split(), stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
 
 # telnet
@@ -104,6 +109,7 @@ ggs_wait_ready()
 print('[INFO]', 'initialized!')
 
 while True:
+    opponent = input('who do you want to ask game?: ')
     # start game
     ggs_ask_game(tl1, tl2, tl3, egaroucid_turn, opponent)
 
@@ -131,11 +137,11 @@ while True:
             break
         if board[-1] == egaroucid_turn:
             print('[INFO]', 'Egaroucid playing...')
-            if n_diff == 0:
-                pass
-            elif n_diff == 1:
+            if n_diff == 0: # pass
+                egaroucid_play_move('ps')
+            elif n_diff == 1: # move
                 egaroucid_play_move(last_played_move)
-            else:
+            else: # new board
                 egaroucid_setboard(board)
             coord, value = egaroucid_get_move_score()
             print('[INFO]', 'got move from Egaroucid', coord, value)
