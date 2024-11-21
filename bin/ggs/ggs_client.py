@@ -209,25 +209,25 @@ def idx_to_coord_str_rev(coord):
 
 def egaroucid_play_move(move):
     cmd = 'play ' + move
-    print_color('[INFO] Egaroucid play : ' + cmd, 'green')
+    #print_color('[INFO] Egaroucid play : ' + cmd, 'green')
     egaroucid.stdin.write((cmd + '\n').encode('utf-8'))
     egaroucid.stdin.flush()
 
 def egaroucid_settime(color, time_limit):
     cmd = 'settime ' + color + ' ' + str(time_limit)
-    print_color('[INFO] Egaroucid settime : ' + cmd, 'green')
+    #print_color('[INFO] Egaroucid settime : ' + cmd, 'green')
     egaroucid.stdin.write((cmd + '\n').encode('utf-8'))
     egaroucid.stdin.flush()
 
 def egaroucid_setboard(board):
     cmd = 'setboard ' + board
-    print_color('[INFO] Egaroucid setboard : ' + cmd, 'green')
+    #print_color('[INFO] Egaroucid setboard : ' + cmd, 'green')
     egaroucid.stdin.write((cmd + '\n').encode('utf-8'))
     egaroucid.stdin.flush()
 
 def egaroucid_get_move_score():
     cmd = 'go'
-    print_color('[INFO] Egaroucid go : ' + cmd, 'green')
+    #print_color('[INFO] Egaroucid go : ' + cmd, 'green')
     egaroucid.stdin.write((cmd + '\n').encode('utf-8'))
     egaroucid.stdin.flush()
     line = egaroucid.stdout.readline().decode().replace('\r', '').replace('\n', '')
@@ -292,7 +292,7 @@ while True:
             if me_color == color_to_move:
                 me_remaining_time_proc = max(1, me_remaining_time - 10)
                 egaroucid_settime(me_color, me_remaining_time_proc)
-                print_color('[INFO] Egaroucid playing... game_id : ' + game_id, 'green')
+                print_color('[INFO] Egaroucid thinking... game_id : ' + game_id, 'green')
                 coord, value = egaroucid_get_move_score()
                 print_color('[INFO] Egaroucid moved : ' + coord + ' score ' + value, 'green')
                 ggs_os_play_move(game_id, coord, value)
