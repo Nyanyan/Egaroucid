@@ -119,7 +119,7 @@ def egaroucid_play_move(move):
     egaroucid.stdin.write(('play ' + move + '\n').encode('utf-8'))
     egaroucid.stdin.flush()
 
-def egaroucid_setboard(color, time_limit):
+def egaroucid_settime(color, time_limit):
     egaroucid.stdin.write(('settime ' + color + ' ' + str(time_limit) + '\n').encode('utf-8'))
     egaroucid.stdin.flush()
 
@@ -182,7 +182,7 @@ while True:
         if me_color == color_to_move:
             print('[INFO]', 'Egaroucid playing...')
             egaroucid_setboard(board)
-            egaroucid_set_time(me_color, me_remaining_time)
+            egaroucid_settime(me_color, me_remaining_time)
             coord, value = egaroucid_get_move_score()
             print('[INFO]', 'got move from Egaroucid', coord, value)
             ggs_play_move(coord, value)
