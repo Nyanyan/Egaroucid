@@ -406,7 +406,7 @@ void generate_problems(Options *options, std::string arg) {
     }
 }
 
-void settime(State *state, std::string arg) {
+void settime(State *state, Options *options, std::string arg) {
     int pos = arg.find(' ');
     if (pos == std::string::npos) {
         std::cerr << "[ERROR] please input <color> <time>" << std::endl;
@@ -416,8 +416,14 @@ void settime(State *state, std::string arg) {
         try{
             uint64_t time_msec = 1000ULL * (uint64_t)std::stoi(time_sec_str);
             if (color == "X" || color == "x" || color == "B" || color == "b" || color == "0" || color == "*") {
+                if (options->time_allocated_seconds == TIME_NOT_ALLOCATED) {
+                    options->time_allocated_seconds = 0;
+                }
                 state->remaining_time_msec_black = time_msec;
             } else if (color == "O" || color == "o" || color == "W" || color == "w" || color == "1") {
+                if (options->time_allocated_seconds == TIME_NOT_ALLOCATED) {
+                    options->time_allocated_seconds = 0;
+                }
                 state->remaining_time_msec_white = time_msec;
             } else {
                 std::cerr << "[ERROR] can't recognize color: " << color << std::endl;
@@ -501,7 +507,7 @@ void check_command(Board_info *board, State *state, Options *options) {
             print_transcript(board->boards);
             break;
         case CMD_ID_SETTIME:
-            settime(state, arg);
+            settime(state, options, arg);
             break;
         default:
             break;
