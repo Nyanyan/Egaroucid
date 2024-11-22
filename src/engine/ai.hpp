@@ -27,6 +27,8 @@
 
 #define IDSEARCH_ENDSEARCH_PRESEARCH_OFFSET 10
 
+#define NOBOOK_MIN_SEARCH_LEVEL 10
+
 struct Lazy_SMP_task {
     uint_fast8_t mpc_level;
     int depth;
