@@ -395,9 +395,12 @@ inline Search_result tree_search_legal(Board board, int depth, uint_fast8_t mpc_
     std::vector<Clog_result> clogs;
     uint64_t clog_nodes = 0;
     uint64_t clog_time = 0;
-    if (mpc_level != MPC_100_LEVEL) {
+    if (mpc_level != MPC_100_LEVEL || use_time_limit) {
         uint64_t strt = tim();
         int clog_depth = std::min(depth, CLOG_SEARCH_MAX_DEPTH);
+        if (use_time_limit) {
+            clog_depth = CLOG_SEARCH_MAX_DEPTH;
+        }
         clogs = first_clog_search(board, &clog_nodes, clog_depth, use_legal);
         clog_time = tim() - strt;
         if (show_log) {
