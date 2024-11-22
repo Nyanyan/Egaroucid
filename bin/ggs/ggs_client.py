@@ -3,10 +3,6 @@ import subprocess
 import datetime
 import time
 
-color_dic = {"black":"\033[30m", "red":"\033[31m", "green":"\033[32m", "yellow":"\033[33m", "blue":"\033[34m", "end":"\033[0m"}
-def print_color(text, color="red"):
-    print(color_dic[color] + text + color_dic["end"])
-
 with open('id/ggs_id.txt', 'r') as f:
     ggs_id = f.read()
 with open('id/ggs_pw.txt', 'r') as f:
@@ -15,9 +11,6 @@ with open('id/ggs_server.txt', 'r') as f:
     ggs_server = f.read()
 with open('id/ggs_port.txt', 'r') as f:
     ggs_port = f.read()
-print('GGS server', ggs_server, 'port', ggs_port)
-print('GGS ID', ggs_id, 'GGS PW', ggs_pw)
-
 
 # launch Egaroucid
 d_today = str(datetime.date.today())
@@ -26,9 +19,25 @@ logfile_egaroucid = 'log/' + d_today.replace('-', '') + '_' + t_now.split('.')[0
 logfile_transcript = 'log/' + d_today.replace('-', '') + '_' + t_now.split('.')[0].replace(':', '') + '_transcript.txt'
 logfile_client = 'log/' + d_today.replace('-', '') + '_' + t_now.split('.')[0].replace(':', '') + '_client.txt'
 
-print('log file for Egaroucid', logfile_egaroucid)
+color_dic = {"black":"\033[30m", "red":"\033[31m", "green":"\033[32m", "yellow":"\033[33m", "blue":"\033[34m", "end":"\033[0m"}
+
+def print_log(*args):
+    txt = ' '.join([str(elem) for elem in args])
+    with open(logfile_client, 'a') as f:
+        f.write(txt + '\n')
+    print(txt)
+
+def print_log_color(*args, color='red'):
+    txt = ' '.join([str(elem) for elem in args])
+    with open(logfile_client, 'a') as f:
+        f.write(txt + '\n')
+    print(color_dic[color] + txt + color_dic["end"])
+
+
+print_log('log files', logfile_egaroucid, logfile_transcript, logfile_client)
 egaroucid_cmd = './../versions/Egaroucid_for_Console_beta/Egaroucid_for_Console.exe -t 8 -quiet -noise -ponder -showvalue -noautopass -hash 27 -logfile ' + logfile_egaroucid
 egaroucid = subprocess.Popen(egaroucid_cmd.split(), stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
+
 
 
 
@@ -45,7 +54,7 @@ def fill0(n, r):
 def ggs_wait_ready(timeout=None):
     output = tn.read_until(b"READY", timeout=timeout).decode("utf-8")
     if len(output):
-        print(output)
+        print_log(output)
     return output
 
 
@@ -55,7 +64,7 @@ def ggs_os_ask_game(tl1, tl2, tl3, game_type, user):
     tl2_str = fill0(tl2 // 60, 2) + ':' + fill0(tl2 % 60, 2)
     tl3_str = fill0(tl3 // 60, 2) + ':' + fill0(tl3 % 60, 2)
     cmd = 'ts ask ' + game_type + ' ' + tl1_str + '/' + tl2_str + '/' + tl3_str + ' ' + user
-    print_color('[INFO] ask game ' + cmd, 'green')
+    print_log_color('[INFO] ask game ' + cmd, color='green')
     tn.write((cmd + '\n').encode('utf-8'))
 
 
@@ -88,10 +97,10 @@ def ggs_os_get_received_game_info(s):
                 tls[i] = 0
         game_type = data[6]
         return game_id, tls[0], tls[1], tls[2], opponent, game_type
-    print_color('[ERROR] cannot receive game : ' + s, 'red')
+    print_log_color('[ERROR] cannot receive game : ' + s, color='red')
 
 def ggs_os_accept_game(request_id):
-    print_color('[INFO] accept game : ' + request_id, 'green')
+    print_log_color('[INFO] accept game : ' + request_id, color='green')
     tn.write(('ts accept ' + request_id + '\n').encode('utf-8'))
 
 
@@ -117,7 +126,7 @@ def ggs_os_start_game_get_id(s):
     ss = s.split()
     if len(ss) > 4:
         return ss[3]
-    print_color('[ERROR] cannot receive game id: ' + s, 'red')
+    print_log_color('[ERROR] cannot receive game id: ' + s, color='red')
 
 
 def ggs_os_is_board_info(s):
@@ -130,7 +139,7 @@ def ggs_os_board_info_get_id(s):
     ss = s.split()
     if len(ss) >= 3:
         return ss[2]
-    print_color('[ERROR] cannot receive game id: ' + s, 'red')
+    print_log_color('[ERROR] cannot receive game id: ' + s, color='red')
 
 def ggs_os_get_board(s):
     data = s.splitlines()
@@ -147,10 +156,10 @@ def ggs_os_get_board(s):
                     elif line[2][0] == 'O':
                         me_color = 'O'
                     else:
-                        print_color('[ERROR] invalid color: ' + datum, 'red')
+                        print_log_color('[ERROR] invalid color: ' + datum, color='red')
                     raw_me_remaining_time = line[3].split(',')[0]
                     me_remaining_time = int(raw_me_remaining_time.split(':')[0]) * 60 + int(raw_me_remaining_time.split(':')[1])
-    #print('[INFO]', 'me_color', me_color, 'me_remaining_time', me_remaining_time)
+    #print_log('[INFO]', 'me_color', me_color, 'me_remaining_time', me_remaining_time)
     raw_player = ''
     for datum in data:
         if len(datum):
@@ -159,14 +168,14 @@ def ggs_os_get_board(s):
                 if player_info_place >= 1:
                     raw_player = datum[player_info_place - 1]
                     break
-    #print('[INFO]', 'raw_player', raw_player)
+    #print_log('[INFO]', 'raw_player', raw_player)
     if raw_player == '*':
         color_to_move = 'X'
     elif raw_player == 'O':
         color_to_move = 'O'
     else:
-        print_color('[ERROR] cannot recognize player: ' + raw_player, 'red')
-    #print('[INFO]', 'color_to_move', color_to_move)
+        print_log_color('[ERROR] cannot recognize player: ' + raw_player, color='red')
+    #print_log('[INFO]', 'color_to_move', color_to_move)
 
     raw_board = ''
     got_coord = False
@@ -180,12 +189,12 @@ def ggs_os_get_board(s):
                         got_coord = True
                 if got_coord:
                     raw_board += datum
-    #print(raw_board)
+    #print_log(raw_board)
     board = raw_board.replace('A B C D E F G H', '').replace('\r', '').replace('\n', '').replace('|', '').replace(' ', '')
     for i in range(1, 9):
         board = board.replace(str(i), '')
     board = board.replace('*', 'X') + ' ' + color_to_move
-    #print('[INFO]', 'board', board)
+    #print_log('[INFO]', 'board', board)
 
     return me_color, me_remaining_time, board, color_to_move
 
@@ -222,25 +231,25 @@ def idx_to_coord_str_rev(coord):
 
 def egaroucid_play_move(move):
     cmd = 'play ' + move
-    #print_color('[INFO] Egaroucid play : ' + cmd, 'green')
+    #print_log_color('[INFO] Egaroucid play : ' + cmd, color='green')
     egaroucid.stdin.write((cmd + '\n').encode('utf-8'))
     egaroucid.stdin.flush()
 
 def egaroucid_settime(color, time_limit):
     cmd = 'settime ' + color + ' ' + str(time_limit)
-    #print_color('[INFO] Egaroucid settime : ' + cmd, 'green')
+    #print_log_color('[INFO] Egaroucid settime : ' + cmd, color='green')
     egaroucid.stdin.write((cmd + '\n').encode('utf-8'))
     egaroucid.stdin.flush()
 
 def egaroucid_setboard(board):
     cmd = 'setboard ' + board
-    #print_color('[INFO] Egaroucid setboard : ' + cmd, 'green')
+    #print_log_color('[INFO] Egaroucid setboard : ' + cmd, color='green')
     egaroucid.stdin.write((cmd + '\n').encode('utf-8'))
     egaroucid.stdin.flush()
 
 def egaroucid_get_move_score():
     cmd = 'go'
-    #print_color('[INFO] Egaroucid go : ' + cmd, 'green')
+    #print_log_color('[INFO] Egaroucid go : ' + cmd, color='green')
     egaroucid.stdin.write((cmd + '\n').encode('utf-8'))
     egaroucid.stdin.flush()
     line = egaroucid.stdout.readline().decode().replace('\r', '').replace('\n', '')
@@ -265,7 +274,7 @@ ggs_wait_ready()
 tn.write(b"ts client -\n")
 ggs_wait_ready()
 
-print_color('[INFO] Initialized!', 'green')
+print_log_color('[INFO] Initialized!', color='green')
 
 
 playing_game_id = ''
@@ -284,24 +293,24 @@ while True:
     received_data = ggs_wait_ready()
     os_info = ggs_os_get_info(received_data)
     if os_info != '':
-        print_color('[INFO] GGS /os info : ' + os_info, 'green')
+        print_log_color('[INFO] GGS /os info : ' + os_info, color='green')
     if ggs_os_is_game_request(os_info):
-        print_color('[INFO] GGS Game Request : ' + os_info, 'green')
+        print_log_color('[INFO] GGS Game Request : ' + os_info, color='green')
         request_id, tl1, tl2, tl3, opponent, game_type = ggs_os_get_received_game_info(os_info)
         ggs_os_accept_game(request_id)
     elif ggs_os_is_start_game(os_info):
-        print_color('[INFO] GGS Game Start : ' + os_info, 'green')
+        print_log_color('[INFO] GGS Game Start : ' + os_info, color='green')
         game_id = ggs_os_start_game_get_id(os_info)
         playing_game_id = game_id
-        print_color('[INFO] GGS Playing Game ID : ' + playing_game_id, 'green')
+        print_log_color('[INFO] GGS Playing Game ID : ' + playing_game_id, color='green')
         game_playing = True
         asking_game = False
     elif ggs_os_is_game_end(os_info):
-        print_color('[INFO] GGS Game End : ' + os_info, 'green')
+        print_log_color('[INFO] GGS Game End : ' + os_info, color='green')
         game_playing = False
         playing_game_id = ''
     elif ggs_os_is_game_terminated(os_info):
-        print_color('[INFO] GGS Game Terminated : ' + os_info, 'green')
+        print_log_color('[INFO] GGS Game Terminated : ' + os_info, color='green')
         game_playing = False
         asking_game = False
     elif ggs_os_is_board_info(os_info):
@@ -310,25 +319,25 @@ while True:
         if ggs_os_is_synchro(game_id):
             sub_idx = ggs_os_get_synchro_id(game_id)
             game_id_nosub = game_id[:-len(str(sub_idx)) - 1]
-        print_color('[INFO] GGS Received board game_id : ' + game_id_nosub, 'green')
+        print_log_color('[INFO] GGS Received board game_id : ' + game_id_nosub, color='green')
         if game_id_nosub == playing_game_id:
             me_color, me_remaining_time, board, color_to_move = ggs_os_get_board(received_data)
-            print_color('[INFO] GGS Got board from GGS game_id : ' + game_id, 'green')
-            print_color('[INFO] GGS Got board from GGS egaroucid_color : ' + me_color, 'green')
-            print_color('[INFO] GGS Got board from GGS remaining_time : ' + str(me_remaining_time), 'green')
-            print_color('[INFO] GGS Got board from GGS board : ' + board, 'green')
+            print_log_color('[INFO] GGS Got board from GGS game_id : ' + game_id, color='green')
+            print_log_color('[INFO] GGS Got board from GGS egaroucid_color : ' + me_color, color='green')
+            print_log_color('[INFO] GGS Got board from GGS remaining_time : ' + str(me_remaining_time), color='green')
+            print_log_color('[INFO] GGS Got board from GGS board : ' + board, color='green')
             egaroucid_setboard(board)
             sub_idx = 0
             if me_color == color_to_move:
                 me_remaining_time_proc = max(1, me_remaining_time - 10)
                 egaroucid_settime(me_color, me_remaining_time_proc)
-                print_color('[INFO] Egaroucid thinking... game_id : ' + game_id, 'green')
+                print_log_color('[INFO] Egaroucid thinking... game_id : ' + game_id, color='green')
                 coord, value = egaroucid_get_move_score()
-                print_color('[INFO] Egaroucid moved : ' + coord + ' score ' + value, 'green')
+                print_log_color('[INFO] Egaroucid moved : ' + coord + ' score ' + value, color='green')
                 ggs_os_play_move(game_id, coord, value)
                 if len(ponder_boards):
                     latest_board, latest_move = ponder_boards.pop()
-                    print_color('[INFO] Egaroucid set board for ponder : ' + latest_board + ' ' + latest_move, 'green')
+                    print_log_color('[INFO] Egaroucid set board for ponder : ' + latest_board + ' ' + latest_move, color='green')
                     egaroucid_setboard(latest_board)
                     if latest_move != '':
                         egaroucid_play_move(latest_move)
