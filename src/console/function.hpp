@@ -382,8 +382,7 @@ void self_play_board(std::vector<std::string> arg, Options *options, State *stat
                     if (tasks[print_task_idx].valid()) {
                         if (tasks[print_task_idx].wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
                             std::string transcript = tasks[print_task_idx].get();
-                            std::string board_str = board_list[print_task_idx].first;
-                            std::cout << board_str << " " << transcript << std::endl;
+                            std::cout << board_list[print_task_idx].first << " " << transcript << std::endl;
                             ++print_task_idx;
                         }
                     } else {
@@ -396,7 +395,7 @@ void self_play_board(std::vector<std::string> arg, Options *options, State *stat
         while (print_task_idx < tasks.size()) {
             if (tasks[print_task_idx].valid()) {
                 std::string transcript = tasks[print_task_idx].get();
-                std::cout << transcript << std::endl;
+                std::cout << board_list[print_task_idx].first << " " << transcript << std::endl;
                 ++print_task_idx;
             } else {
                 std::cerr << "[ERROR] task not valid" << std::endl;
