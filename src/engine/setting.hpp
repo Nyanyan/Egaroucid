@@ -192,8 +192,8 @@
         #include <Siv3D.hpp>
         const std::string EXE_DIRECTORY_PATH = FileSystem::RelativePath(Resource(U"")).narrow();
     #else
-        constexpr std::string EXE_DIRECTORY_PATH = "./";
+        const std::string EXE_DIRECTORY_PATH = "./";
     #endif
 #else // Windows
-    constexpr std::string EXE_DIRECTORY_PATH = "./";
+    const std::string EXE_DIRECTORY_PATH = "./";
 #endif
