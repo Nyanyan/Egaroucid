@@ -264,7 +264,8 @@ void self_play_line(std::vector<std::string> arg, Options *options, State *state
     std::cerr << "selfplay with opening file " << opening_file << std::endl;
     std::ifstream ifs(opening_file);
     if (!ifs) {
-        std::cerr << "can't open file " << opening_file << std::endl;
+        std::cerr << "[ERROR] can't open file " << opening_file << std::endl;
+        std::exit(1);
     }
     uint64_t strt = tim();
     std::string line;
@@ -332,56 +333,77 @@ void self_play_line(std::vector<std::string> arg, Options *options, State *state
 }
 
 
-void self_play_randdiscs(std::vector<std::string> arg, Options *options, State *state) {
-    int n_games, n_random_discs;
-    if (arg.size() < 2) {
-        std::cerr << "[ERROR] [FATAL] please input arguments" << std::endl;
+void self_play_board(std::vector<std::string> arg, Options *options, State *state) {
+    if (arg.size() < 1) {
+        std::cerr << "please input opening board file" << std::endl;
         std::exit(1);
     }
-    std::string str_n_games = arg[0];
-    std::string str_n_random_discs = arg[1];
-    try{
-        n_games = std::stoi(str_n_games);
-        n_random_discs = std::stoi(str_n_random_discs);
-    } catch (const std::invalid_argument& e) {
-        std::cout << str_n_games << " " << str_n_random_discs << " invalid argument" << std::endl;
-        std::exit(1);
-    } catch (const std::out_of_range& e) {
-        std::cout << str_n_games << " " << str_n_random_discs << " out of range" << std::endl;
+    std::string opening_board_file = arg[0];
+    std::cerr << "selfplay with opening board file " << opening_board_file << std::endl;
+    std::ifstream ifs(opening_board_file);
+    if (!ifs) {
+        std::cerr << "[ERROR] can't open file " << opening_board_file << std::endl;
         std::exit(1);
     }
-    std::cerr << n_games << " games with " << n_random_discs << " random moves" << std::endl;
     uint64_t strt = tim();
-    Board board_start;
-    board_start.reset();
+    std::string line;
+    Flip flip;
+    Search_result result;
+    std::vector<std::pair<std::string, Board>> board_list;
+    while (std::getline(ifs, line)) {
+        std::pair<Board, int> board_player = convert_board_from_str(line);
+        if (board_player.second != BLACK && board_player.second !- WHITE) {
+            std::cerr << "[ERROR] can't convert board " << line << std::endl;
+            std::exit(1);
+        }
+        board_list.emplace_back(std::make_pair(line, board_player.first));
+    }
     if (thread_pool.size() == 0) {
-        for (int i = 0; i < n_games; ++i) {
-            std::string transcript = self_play_task(board_start, "", options, false, n_random_moves, SELF_PLAY_N_TRY);
-            std::cout << transcript << std::endl;
+        for (std::pair<std::string, Board> start_position: board_list) {
+            std::string transcript = self_play_task(start_position.second, "", options, false, 0, SELF_PLAY_N_TRY);
+            std::cout << start_position.first << " " << transcript << std::endl;
         }
     } else{
-        int n_games_done = 0;
+        int print_task_idx = 0;
         std::vector<std::future<std::string>> tasks;
-        while (n_games_done < n_games) {
-            if (thread_pool.get_n_idle() && (int)tasks.size() < n_games) {
-                bool pushed = false;
-                tasks.emplace_back(thread_pool.push(&pushed, std::bind(&self_play_task, board_start, "", options, true, n_random_moves, SELF_PLAY_N_TRY)));
-                if (!pushed) {
-                    tasks.pop_back();
+        for (std::pair<std::string, Board> start_position: board_list) {
+            bool go_to_next_task = false;
+            while (!go_to_next_task) {
+                if (thread_pool.get_n_idle() && tasks.size() < board_list.size()) {
+                    bool pushed = false;
+                    tasks.emplace_back(thread_pool.push(&pushed, std::bind(&self_play_task, start_position.second, "", options, true, 0, SELF_PLAY_N_TRY)));
+                    if (pushed) {
+                        go_to_next_task = true;
+                    } else {
+                        tasks.pop_back();
+                    }
                 }
-            }
-            for (std::future<std::string> &task: tasks) {
-                if (task.valid()) {
-                    if (task.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
-                        std::string transcript = task.get();
-                        std::cout << transcript << std::endl;
-                        ++n_games_done;
+                if (tasks.size() > print_task_idx) {
+                    if (tasks[print_task_idx].valid()) {
+                        if (tasks[print_task_idx].wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
+                            std::string transcript = tasks[print_task_idx].get();
+                            std::string board_str = board_list[print_task_idx].first;
+                            std::cout << board_str << " " << transcript << std::endl;
+                            ++print_task_idx;
+                        }
+                    } else {
+                        std::cerr << "[ERROR] task not valid" << std::endl;
+                        std::exit(1);
                     }
                 }
             }
         }
+        while (print_task_idx < tasks.size()) {
+            if (tasks[print_task_idx].valid()) {
+                std::string transcript = tasks[print_task_idx].get();
+                std::cout << transcript << std::endl;
+                ++print_task_idx;
+            } else {
+                std::cerr << "[ERROR] task not valid" << std::endl;
+                std::exit(1);
+            }
+        }
     }
-    global_searching = false;
     std::cerr << "done in " << tim() - strt << " ms" << std::endl;
 }
 

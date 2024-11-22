@@ -33,15 +33,15 @@
 #define ID_QUIET 13
 #define ID_SELF_PLAY 14
 #define ID_SELF_PLAY_LINE 15
-#define ID_PERFT 16
-#define ID_TIME_ALLOCATE 17
-#define ID_PONDER 18
-#define ID_DISABLE_AUTO_CACHE_CLEAR 19
-#define ID_NOBOARD 20
-#define ID_LOG_TO_FILE 21
-#define ID_NOAUTOPASS 22
-#define ID_SHOWVALUE 23
-#define ID_SELF_PLAY_RANDDISCS 24
+#define ID_SELF_PLAY_BOARD 16
+#define ID_PERFT 17
+#define ID_TIME_ALLOCATE 18
+#define ID_PONDER 19
+#define ID_DISABLE_AUTO_CACHE_CLEAR 20
+#define ID_NOBOARD 21
+#define ID_LOG_TO_FILE 22
+#define ID_NOAUTOPASS 23
+#define ID_SHOWVALUE 24
 
 struct Commandline_option_info{
     int id;
@@ -72,13 +72,13 @@ const Commandline_option_info commandline_option_data[N_COMMANDLINE_OPTIONS] = {
     {ID_QUIET,              {"-q", "-quiet", "-silent"},                        0, "",                 "Quiet mode"},
     {ID_SELF_PLAY,          {"-sf", "-selfplay"},                               2, "<n> <m>",          "Self play <n> games (play randomly first <m> moves)"},
     {ID_SELF_PLAY_LINE,     {"-sfl", "-selfplayline"},                          1, "<file>",           "Self play with given openings"},
+    {ID_SELF_PLAY_BOARD,    {"-sfb", "-selfplayboard"},                         1, "<file>",            "Self play with given opening boards"},
     {ID_PERFT,              {"-perft"},                                         2, "<depth> <mode>",   "Perft for Othello with <depth> in <mode>, 1: pass is counted as 1 move (normal perft), 2: pass is not counted as a move"},
     {ID_TIME_ALLOCATE,      {"-time"},                                          1, "<seconds>",        "Time allocate <seconds> seconds. -level will be ignored"},
     {ID_PONDER,             {"-ponder"},                                        0, "",                  "Enable ponder"},
     {ID_DISABLE_AUTO_CACHE_CLEAR, {"-noautocacheclear"},                        0, "",                  "Disable auto cache clearing"},
     {ID_NOBOARD,            {"-noboard"},                                       0, "",                  "Hide Board"},
-    {ID_LOG_TO_FILE,        {"-logfile"},                                           1, "<file>",        "Save search log to <file>"},
+    {ID_LOG_TO_FILE,        {"-logfile"},                                       1, "<file>",        "Save search log to <file>"},
     {ID_NOAUTOPASS,         {"-noautopass"},                                    0, "",                  "No auto-pass"},
-    {ID_SHOWVALUE,          {"-showvalue", "-showval"},                         0, "",                  "Show Value with -quiet mode"},
-    {ID_SELF_PLAY_RANDDISCS,{"-selfplayrand", "-selfplayrnd", "-sfr"},          2, "<n_discs> <n>",     "Self play <n> games starting with <n_discs> discs random boards"}
+    {ID_SHOWVALUE,          {"-showvalue", "-showval"},                         0, "",                  "Show Value with -quiet mode"}
 };

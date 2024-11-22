@@ -15,6 +15,37 @@
 #include <string>
 #include "board.hpp"
 
+std::pair<Board, int> convert_board_from_str(std::string board_str) {
+    board_str.erase(std::remove_if(board_str.begin(), board_str.end(), ::isspace), board_str.end());
+    Board board;
+    if (board_str.length() != HW2 + 1) {
+        std::cerr << "[ERROR] invalid argument got length " << board_str.length() << " expected " << HW2 + 1 << std::endl;
+        return std::make_pair(board, -1);
+    }
+    int player = BLACK;
+    board.player = 0ULL;
+    board.opponent = 0ULL;
+    for (int i = 0; i < HW2; ++i) {
+        if (board_str[i] == 'B' || board_str[i] == 'b' || board_str[i] == 'X' || board_str[i] == 'x' || board_str[i] == '0' || board_str[i] == '*') {
+            board.player |= 1ULL << (HW2_M1 - i);
+        } else if (board_str[i] == 'W' || board_str[i] == 'w' || board_str[i] == 'O' || board_str[i] == 'o' || board_str[i] == '1') {
+            board.opponent |= 1ULL << (HW2_M1 - i);
+        }
+    }
+    if (board_str[HW2] == 'B' || board_str[HW2] == 'b' || board_str[HW2] == 'X' || board_str[HW2] == 'x' || board_str[HW2] == '0' || board_str[HW2] == '*') {
+        player = BLACK;
+    } else if (board_str[HW2] == 'W' || board_str[HW2] == 'w' || board_str[HW2] == 'O' || board_str[HW2] == 'o' || board_str[HW2] == '1') {
+        player = WHITE;
+    } else {
+        std::cerr << "[ERROR] invalid player argument" << std::endl;
+        return;
+    }
+    if (player == WHITE) {
+        std::swap(board.player, board.opponent);
+    }
+    return std::make_pair(board, player);
+}
+
 /*
     @brief Input board from console
 

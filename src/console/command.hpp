@@ -256,31 +256,12 @@ void go(Board_info *board, Options *options, State *state, uint64_t start_time) 
 }
 
 void setboard(Board_info *board, Options *options, State *state, std::string board_str) {
-    board_str.erase(std::remove_if(board_str.begin(), board_str.end(), ::isspace), board_str.end());
-    if (board_str.length() != HW2 + 1) {
-        std::cerr << "[ERROR] invalid argument got length " << board_str.length() << " expected " << HW2 + 1 << std::endl;
+    std::pair<Board, int> board_player = convert_board_from_str(board_str);
+    Board new_board = board_player.first;
+    int player = board_player.second;
+    if (player != BLACK && player != WHITE) {
         return;
     }
-    Board new_board;
-    int player = BLACK;
-    new_board.player = 0ULL;
-    new_board.opponent = 0ULL;
-    for (int i = 0; i < HW2; ++i) {
-        if (board_str[i] == 'B' || board_str[i] == 'b' || board_str[i] == 'X' || board_str[i] == 'x' || board_str[i] == '0' || board_str[i] == '*')
-            new_board.player |= 1ULL << (HW2_M1 - i);
-        else if (board_str[i] == 'W' || board_str[i] == 'w' || board_str[i] == 'O' || board_str[i] == 'o' || board_str[i] == '1')
-            new_board.opponent |= 1ULL << (HW2_M1 - i);
-    }
-    if (board_str[HW2] == 'B' || board_str[HW2] == 'b' || board_str[HW2] == 'X' || board_str[HW2] == 'x' || board_str[HW2] == '0' || board_str[HW2] == '*')
-        player = BLACK;
-    else if (board_str[HW2] == 'W' || board_str[HW2] == 'w' || board_str[HW2] == 'O' || board_str[HW2] == 'o' || board_str[HW2] == '1')
-        player = WHITE;
-    else{
-        std::cerr << "[ERROR] invalid player argument" << std::endl;
-        return;
-    }
-    if (player == WHITE)
-        std::swap(new_board.player, new_board.opponent);
     board->board = new_board.copy();
     board->player = player;
     board->boards.clear();
