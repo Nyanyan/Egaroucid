@@ -38,7 +38,7 @@ std::pair<Board, int> convert_board_from_str(std::string board_str) {
         player = WHITE;
     } else {
         std::cerr << "[ERROR] invalid player argument" << std::endl;
-        return;
+        return std::make_pair(board, -1);
     }
     if (player == WHITE) {
         std::swap(board.player, board.opponent);

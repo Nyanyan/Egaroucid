@@ -352,7 +352,7 @@ void self_play_board(std::vector<std::string> arg, Options *options, State *stat
     std::vector<std::pair<std::string, Board>> board_list;
     while (std::getline(ifs, line)) {
         std::pair<Board, int> board_player = convert_board_from_str(line);
-        if (board_player.second != BLACK && board_player.second !- WHITE) {
+        if (board_player.second != BLACK && board_player.second != WHITE) {
             std::cerr << "[ERROR] can't convert board " << line << std::endl;
             std::exit(1);
         }
