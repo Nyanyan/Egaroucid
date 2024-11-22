@@ -12,7 +12,7 @@
 #include <string>
 #include <vector>
 
-#define N_COMMANDLINE_OPTIONS 24
+#define N_COMMANDLINE_OPTIONS 25
 
 #define ID_NONE -1
 #define ID_VERSION 0
@@ -41,6 +41,7 @@
 #define ID_LOG_TO_FILE 21
 #define ID_NOAUTOPASS 22
 #define ID_SHOWVALUE 23
+#define ID_SELF_PLAY_RANDDISCS 24
 
 struct Commandline_option_info{
     int id;
@@ -78,5 +79,6 @@ const Commandline_option_info commandline_option_data[N_COMMANDLINE_OPTIONS] = {
     {ID_NOBOARD,            {"-noboard"},                                       0, "",                  "Hide Board"},
     {ID_LOG_TO_FILE,        {"-logfile"},                                           1, "<file>",        "Save search log to <file>"},
     {ID_NOAUTOPASS,         {"-noautopass"},                                    0, "",                  "No auto-pass"},
-    {ID_SHOWVALUE,          {"-showvalue", "-showval"},                         0, "",                  "Show Value with -quiet mode"}
+    {ID_SHOWVALUE,          {"-showvalue", "-showval"},                         0, "",                  "Show Value with -quiet mode"},
+    {ID_SELF_PLAY_RANDDISCS,{"-selfplayrand", "-selfplayrnd", "-sfr"},          2, "<n_discs> <n>",     "Self play <n> games starting with <n_discs> discs random boards"}
 };

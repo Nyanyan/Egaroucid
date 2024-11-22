@@ -331,6 +331,61 @@ void self_play_line(std::vector<std::string> arg, Options *options, State *state
     std::cerr << "done in " << tim() - strt << " ms" << std::endl;
 }
 
+
+void self_play_randdiscs(std::vector<std::string> arg, Options *options, State *state) {
+    int n_games, n_random_discs;
+    if (arg.size() < 2) {
+        std::cerr << "[ERROR] [FATAL] please input arguments" << std::endl;
+        std::exit(1);
+    }
+    std::string str_n_games = arg[0];
+    std::string str_n_random_discs = arg[1];
+    try{
+        n_games = std::stoi(str_n_games);
+        n_random_discs = std::stoi(str_n_random_discs);
+    } catch (const std::invalid_argument& e) {
+        std::cout << str_n_games << " " << str_n_random_discs << " invalid argument" << std::endl;
+        std::exit(1);
+    } catch (const std::out_of_range& e) {
+        std::cout << str_n_games << " " << str_n_random_discs << " out of range" << std::endl;
+        std::exit(1);
+    }
+    std::cerr << n_games << " games with " << n_random_discs << " random moves" << std::endl;
+    uint64_t strt = tim();
+    Board board_start;
+    board_start.reset();
+    if (thread_pool.size() == 0) {
+        for (int i = 0; i < n_games; ++i) {
+            std::string transcript = self_play_task(board_start, "", options, false, n_random_moves, SELF_PLAY_N_TRY);
+            std::cout << transcript << std::endl;
+        }
+    } else{
+        int n_games_done = 0;
+        std::vector<std::future<std::string>> tasks;
+        while (n_games_done < n_games) {
+            if (thread_pool.get_n_idle() && (int)tasks.size() < n_games) {
+                bool pushed = false;
+                tasks.emplace_back(thread_pool.push(&pushed, std::bind(&self_play_task, board_start, "", options, true, n_random_moves, SELF_PLAY_N_TRY)));
+                if (!pushed) {
+                    tasks.pop_back();
+                }
+            }
+            for (std::future<std::string> &task: tasks) {
+                if (task.valid()) {
+                    if (task.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
+                        std::string transcript = task.get();
+                        std::cout << transcript << std::endl;
+                        ++n_games_done;
+                    }
+                }
+            }
+        }
+    }
+    global_searching = false;
+    std::cerr << "done in " << tim() - strt << " ms" << std::endl;
+}
+
+
 void perft_commandline(std::vector<std::string> arg) {
     if (arg.size() < 2) {
         std::cerr << "please input <depth> <mode>" << std::endl;
