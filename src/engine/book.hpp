@@ -1265,7 +1265,7 @@ class Book {
             return policies;
         }
 
-        inline Book_value get_random_specified_moves(Board *b, int acc_level, uint64_t use_legal) {
+        inline Book_value get_random(Board *b, int acc_level, uint64_t use_legal) {
             std::vector<std::pair<double, int>> value_policies;
             std::vector<std::pair<int, int>> value_policies_memo;
             uint64_t legal = b->get_legal();
@@ -1284,8 +1284,9 @@ class Book {
                             Book_value book_value;
                             book_value.policy = cell;
                             book_value.value = sgn * get(b).value;
-                            if (book_value.value > best_score)
+                            if (book_value.value > best_score) {
                                 best_score = (double)book_value.value;
+                            }
                             value_policies.emplace_back(std::make_pair((double)book_value.value, cell));
                             value_policies_memo.emplace_back(std::make_pair(book_value.value, cell));
                         }
@@ -1301,12 +1302,12 @@ class Book {
                 res.value = -INF;
                 return res;
             }
-            double acceptable_min_value = best_score - 2.0 * acc_level - 0.5;
+            double acceptable_min_value = best_score - 2.0 * acc_level - 0.5; // acc_level: 0 is best
             double sum_exp_values = 0.0;
             for (std::pair<double, int> &elem: value_policies) {
-                if (elem.first < acceptable_min_value)
+                if (elem.first < acceptable_min_value) {
                     elem.first = 0.0;
-                else{
+                } else {
                     double exp_val = (exp(elem.first - best_score) + 1.5) / 3.0;
                     elem.first = pow(exp_val, BOOK_ACCURACY_LEVEL_INF - acc_level);
                 }
@@ -1347,16 +1348,15 @@ class Book {
             @return best move and value as Book_value structure
         */
         inline Book_value get_random(Board *b, int acc_level) {
-            return get_random_specified_moves(b, acc_level, b->get_legal());
+            return get_random(b, acc_level, b->get_legal());
         }
 
-        inline Book_value get_specified_best_move(Board *b) {
+        inline Book_value get_specified_best_move(Board *b, uint64_t use_legal) {
             Book_value res;
             res.policy = MOVE_UNDEFINED;
             res.value = -INF;
-            uint64_t legal = b->get_legal();
             Flip flip;
-            for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)) {
+            for (uint_fast8_t cell = first_bit(&use_legal); use_legal; cell = next_bit(&use_legal)) {
                 calc_flip(&flip, b, cell);
                 b->move_board(&flip);
                     int sgn = -1;
