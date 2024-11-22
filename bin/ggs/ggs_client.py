@@ -79,16 +79,19 @@ def ggs_os_get_info(s):
 
 def ggs_os_is_game_request(s):
     ss = s.split()
-    if len(ss) == 10:
+    if len(ss) == 10 or len(ss) == 11:
         return ss[1] == '+' and ss[9] == ggs_id
     return False
 
 def ggs_os_get_received_game_info(s):
     data = s.split()
-    if len(data) == 10:
+    if len(data) == 10 or len(data) == 11:
         game_id = data[2]
         opponent = data[4]
-        raw_tls = data[5].split('/')
+        if len(data) == 10:
+            raw_tls = data[5].split('/')
+        else:
+            raw_tls = data[10].split('/')
         tls = [0, 0, 0]
         for i in range(3):
             if raw_tls[i] != '':
@@ -142,32 +145,33 @@ def ggs_os_board_info_get_id(s):
     print_log_color('[ERROR] cannot receive game id: ' + s, color='red')
 
 def ggs_os_get_board(s):
-    data = s.splitlines()
+    raw_data = s.splitlines()
+    data = []
+    for datum in raw_data:
+        if len(datum):
+            if datum[0] == '|':
+                data.append(datum)
 
     me_color = ''
     me_remaining_time = 0
     for datum in data:
-        if len(datum):
-            if datum[0] == '|':
-                if datum.find(ggs_id) >= 0:
-                    line = datum.split()
-                    if line[2][0] == '*':
-                        me_color = 'X'
-                    elif line[2][0] == 'O':
-                        me_color = 'O'
-                    else:
-                        print_log_color('[ERROR] invalid color: ' + datum, color='red')
-                    raw_me_remaining_time = line[3].split(',')[0]
-                    me_remaining_time = int(raw_me_remaining_time.split(':')[0]) * 60 + int(raw_me_remaining_time.split(':')[1])
+        if datum.find(ggs_id) >= 0:
+            line = datum.split()
+            if line[2][0] == '*':
+                me_color = 'X'
+            elif line[2][0] == 'O':
+                me_color = 'O'
+            else:
+                print_log_color('[ERROR] invalid color: ' + datum, color='red')
+            raw_me_remaining_time = line[3].split(',')[0]
+            me_remaining_time = int(raw_me_remaining_time.split(':')[0]) * 60 + int(raw_me_remaining_time.split(':')[1])
     #print_log('[INFO]', 'me_color', me_color, 'me_remaining_time', me_remaining_time)
     raw_player = ''
     for datum in data:
-        if len(datum):
-            if datum[0] == '|':
-                player_info_place = datum.find(' to move')
-                if player_info_place >= 1:
-                    raw_player = datum[player_info_place - 1]
-                    break
+        player_info_place = datum.find(' to move')
+        if player_info_place >= 1:
+            raw_player = datum[player_info_place - 1]
+            break
     #print_log('[INFO]', 'raw_player', raw_player)
     if raw_player == '*':
         color_to_move = 'X'
@@ -180,15 +184,13 @@ def ggs_os_get_board(s):
     raw_board = ''
     got_coord = False
     for datum in data:
-        if len(datum):
-            if datum[0] == '|':
-                if datum.find("A B C D E F G H") >= 0:
-                    if got_coord:
-                        break
-                    else:
-                        got_coord = True
-                if got_coord:
-                    raw_board += datum
+        if datum.find("A B C D E F G H") >= 0:
+            if got_coord:
+                break
+            else:
+                got_coord = True
+        if got_coord:
+            raw_board += datum
     #print_log(raw_board)
     board = raw_board.replace('A B C D E F G H', '').replace('\r', '').replace('\n', '').replace('|', '').replace(' ', '')
     for i in range(1, 9):
@@ -196,7 +198,7 @@ def ggs_os_get_board(s):
     board = board.replace('*', 'X') + ' ' + color_to_move
     #print_log('[INFO]', 'board', board)
 
-    return me_color, me_remaining_time, board, color_to_move
+    return last_move, me_color, me_remaining_time, board, color_to_move
 
 
 
@@ -333,6 +335,8 @@ while True:
                 egaroucid_settime(me_color, me_remaining_time_proc)
                 print_log_color('[INFO] Egaroucid thinking... game_id : ' + game_id, color='green')
                 coord, value = egaroucid_get_move_score()
+                if coord == 'ps':
+                    coord = 'PA' # pass for GGS
                 print_log_color('[INFO] Egaroucid moved : ' + coord + ' score ' + value, color='green')
                 ggs_os_play_move(game_id, coord, value)
                 if len(ponder_boards):
