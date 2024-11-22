@@ -33,6 +33,13 @@ struct Lazy_SMP_task {
     bool is_end_search;
 };
 
+struct Ponder_elem {
+    Flip flip;
+    double value;
+    int level;
+    int count;
+};
+
 void iterative_deepening_search(Board board, int depth, uint_fast8_t mpc_level, bool show_log, std::vector<Clog_result> clogs, uint64_t use_legal, bool use_multi_thread, Search_result *result) {
     uint64_t strt = tim();
     result->value = SCORE_UNDEFINED;
@@ -631,13 +638,6 @@ void ai_hint(Board board, int level, bool use_book, int book_acc_level, bool use
     }
     //thread_pool.tell_finish_using();
 }
-
-struct Ponder_elem {
-    Flip flip;
-    double value;
-    int level;
-    int count;
-};
 
 bool comp_ponder_elem(Ponder_elem &a, Ponder_elem &b) {
     if (a.count == b.count) {
