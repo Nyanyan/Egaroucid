@@ -128,6 +128,12 @@ void fill_silhouette(uint64_t silhouette, const std::vector<int> &cell_list, int
     }
 }
 
+void fill_discs(uint64_t silhouette, int n_discs, int n_white_min_discs, int n_white_max_discs) {
+    for (int n_white = n_white_min_discs; n_white <= n_white_max_discs; ++n_white) {
+        int n_black = n_discs - n_white;
+    }
+}
+
 #define N_BOARDS_PER_FILE 10000
 
 int main(int argc, char *argv[]){
@@ -196,10 +202,21 @@ int main(int argc, char *argv[]){
     bit_print_board(silhouette);
 
     fill_silhouette(silhouette, randomly_filled_cells, 0, n_randomly_filled);
-    std::cerr << all_silhouettes.size() << std::endl;
+    std::cerr << "n_silhouettes " << all_silhouettes.size() << std::endl;
 
-    for (uint64_t s: all_silhouettes) {
-        bit_print_board(s);
+    int d2_n_discs = n_discs / 2;
+    int imb = d2_n_discs / 3;
+    int n_white_min_discs = d2_n_discs - imb;
+    int n_white_max_discs = d2_n_discs + imb;
+    if (n_discs % 2 == 1) {
+        ++d2_n_discs;
+        imb = d2_n_discs / 3;
+        n_white_min_discs = std::min(n_white_min_discs, d2_n_discs - imb);
+        n_white_max_discs = std::min(n_white_max_discs, d2_n_discs + imb);
+    }
+    std::cerr << "white min_discs " << n_white_min_discs << " max_discs " << n_white_max_discs << std::endl;
+    for (uint64_t sil: all_silhouettes) {
+        fill_discs(sil, n_discs, n_white_min_discs, n_white_max_discs);
     }
 
     return 0;
