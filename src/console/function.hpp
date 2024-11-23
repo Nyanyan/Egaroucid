@@ -393,13 +393,15 @@ void self_play_lossless_lines_task(Board board, const std::string starting_board
     board.undo_board(&flip);
     legal ^= 1ULL << search_result.policy;
     int best_score = search_result.value;
-    int alpha = best_score - 2;
+    //int best_move = search_result.policy;
+    int alpha = best_score - 2; // accept best - 1
     int beta = best_score;
     while (legal) {
         search_result = ai_legal_window(board, alpha, beta, options->level, true, 0, true, false, legal);
         if (search_result.value <= alpha) {
             break;
         }
+        //std::cerr << board.to_str() << " best " << idx_to_coord(best_move) << " " << best_score << " alt " << idx_to_coord(search_result.policy) << " " << search_result.value << " [" << alpha << "," << beta << "]" << std::endl;
         calc_flip(&flip, &board, search_result.policy);
         board.move_board(&flip);
         transcript.emplace_back(search_result.policy);
