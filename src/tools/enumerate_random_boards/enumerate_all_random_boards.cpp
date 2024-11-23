@@ -128,9 +128,27 @@ void fill_silhouette(uint64_t silhouette, const std::vector<int> &cell_list, int
     }
 }
 
+void fill_discs_p(const uint64_t silhouette, uint64_t silhouette_white, int n_white_discs_remaining, uint64_t white) {
+    //std::cerr << n_white_discs_remaining << " " << pop_count_ull(silhouette_white) << std::endl;
+    if (n_white_discs_remaining == 0) {
+        Board board;
+        board.player = silhouette ^ white;
+        board.opponent = white;
+        Board rboard = get_representative_board(board);
+        all_boards.emplace(rboard);
+        return;
+    }
+    if (silhouette_white) {
+        uint64_t next_white_disc = 1ULL << ctz(silhouette_white);
+        silhouette_white ^= next_white_disc;
+        fill_discs_p(silhouette, silhouette_white, n_white_discs_remaining, white); // next_white_disc = 0
+        fill_discs_p(silhouette, silhouette_white, n_white_discs_remaining - 1, white ^ next_white_disc); // next_white_disc = 1
+    }
+}
+
 void fill_discs(uint64_t silhouette, int n_discs, int n_white_min_discs, int n_white_max_discs) {
     for (int n_white = n_white_min_discs; n_white <= n_white_max_discs; ++n_white) {
-        int n_black = n_discs - n_white;
+        fill_discs_p(silhouette, silhouette, n_white, 0);
     }
 }
 
@@ -216,8 +234,19 @@ int main(int argc, char *argv[]){
     }
     std::cerr << "white min_discs " << n_white_min_discs << " max_discs " << n_white_max_discs << std::endl;
     for (uint64_t sil: all_silhouettes) {
+        size_t pre = all_boards.size();
         fill_discs(sil, n_discs, n_white_min_discs, n_white_max_discs);
+        std::cerr << all_boards.size() - pre << std::endl;
+        bit_print_board(sil);
     }
+    std::cerr << "all boards " << all_boards.size() << std::endl;
+
+    int turn_color = (n_discs % 2) ? WHITE : BLACK;
+    /*
+    if (turn_color == WHITE) {
+        std::swap(board.player, board.opponent);
+    }
+    */
 
     return 0;
 }
