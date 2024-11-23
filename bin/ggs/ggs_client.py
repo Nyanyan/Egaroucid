@@ -351,7 +351,7 @@ while True:
                 print_log_color('[INFO] Egaroucid thinking... game_id : ' + game_id, color='green')
                 coord, value = egaroucid_get_move_score()
                 if coord == 'ps':
-                    coord = 'PA' # pass for GGS
+                    coord = 'pa' # pass for GGS
                 print_log_color('[INFO] Egaroucid moved : ' + coord + ' score ' + value, color='green')
                 ggs_os_play_move(game_id, coord, value)
                 if len(ponder_boards):
