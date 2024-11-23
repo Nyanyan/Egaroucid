@@ -362,26 +362,30 @@ void self_play_board(std::vector<std::string> arg, Options *options, State *stat
 }
 
 void self_play_lossless_lines_task(Board board, const std::string starting_board, Options *options, const int to_n_discs, std::vector<int> &transcript) {
-    uint64_t legal = board.get_legal();
-    if (legal == 0) {
-        board.pass();
-        legal = board.get_legal();
-        if (legal == 0) {
-            std::cout << starting_board << " ";
-            for (int &cell: transcript) {
-                std::cout << idx_to_coord(cell);
-            }
-            std::cout << " " << board.to_str() << " END" << std::endl;
-            return;
-        }
-    }
     if (board.n_discs() >= to_n_discs) {
         std::cout << starting_board << " ";
         for (int &cell: transcript) {
             std::cout << idx_to_coord(cell);
         }
-        std::cout << " " << board.to_str() << std::endl;
+        //std::cout << " " << board.to_str() << std::endl;
+        Search_result accurate_search_result = ai(board, 35, true, 0, true, true);
+        int accurate_val = accurate_search_result.value;
+        std::cout << " " << accurate_val << std::endl;
         return;
+    }
+    if (board.is_end()) {
+        std::cout << starting_board << " ";
+        for (int &cell: transcript) {
+            std::cout << idx_to_coord(cell);
+        }
+        //std::cout << " " << board.to_str() << " END" << std::endl;
+        std::cout << " " << board.score_player() << std::endl;
+        return;
+    }
+    uint64_t legal = board.get_legal();
+    if (legal == 0) {
+        board.pass();
+        legal = board.get_legal();
     }
     Flip flip;
     Search_result search_result = ai(board, options->level, true, 0, true, false);
