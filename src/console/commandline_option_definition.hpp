@@ -78,7 +78,7 @@ const Commandline_option_info commandline_option_data[N_COMMANDLINE_OPTIONS] = {
     {ID_PONDER,             {"-ponder"},                                        0, "",                  "Enable ponder"},
     {ID_DISABLE_AUTO_CACHE_CLEAR, {"-noautocacheclear"},                        0, "",                  "Disable auto cache clearing"},
     {ID_NOBOARD,            {"-noboard"},                                       0, "",                  "Hide Board"},
-    {ID_LOG_TO_FILE,        {"-logfile"},                                       1, "<file>",        "Save search log to <file>"},
+    {ID_LOG_TO_FILE,        {"-logfile"},                                       1, "<file>",            "Save search log to <file>"},
     {ID_NOAUTOPASS,         {"-noautopass"},                                    0, "",                  "No auto-pass"},
     {ID_SHOWVALUE,          {"-showvalue", "-showval"},                         0, "",                  "Show Value with -quiet mode"}
 };
