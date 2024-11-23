@@ -368,9 +368,10 @@ void self_play_lossless_lines_task(Board board, const std::string starting_board
             std::cout << idx_to_coord(cell);
         }
         //std::cout << " " << board.to_str() << std::endl;
-        Search_result accurate_search_result = ai(board, 35, true, 0, true, true);
-        int accurate_val = accurate_search_result.value;
-        std::cout << " " << accurate_val << std::endl;
+        //Search_result accurate_search_result = ai(board, 28, true, 0, true, true);
+        //int accurate_val = accurate_search_result.value;
+        //std::cout << " " << accurate_val << std::endl;
+        std::cout << std::endl;
         return;
     }
     if (board.is_end()) {
@@ -379,7 +380,8 @@ void self_play_lossless_lines_task(Board board, const std::string starting_board
             std::cout << idx_to_coord(cell);
         }
         //std::cout << " " << board.to_str() << " END" << std::endl;
-        std::cout << " " << board.score_player() << std::endl;
+        //std::cout << " " << board.score_player() << std::endl;
+        std::cout << std::endl;
         return;
     }
     uint64_t legal = board.get_legal();
