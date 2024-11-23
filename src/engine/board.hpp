@@ -439,6 +439,23 @@ class Board {
             return std::min(N_PHASES - 1, (n_discs - 4) / PHASE_N_STONES);
         }
         */
+
+        inline std::string to_str() const {
+            std::string res;
+            uint64_t cell_bit = 1ULL << (HW2 - 1);
+            for (int i = 0; i < HW2; ++i) {
+                if (player & cell_bit) {
+                    res += "X";
+                } else if (opponent & cell_bit) {
+                    res += "O";
+                } else {
+                    res += "-";
+                }
+                cell_bit >>= 1;
+            }
+            res += " X";
+            return res;
+        }
 };
 
 bool operator==(const Board& a, const Board& b) {

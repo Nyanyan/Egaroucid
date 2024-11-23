@@ -361,6 +361,84 @@ void self_play_board(std::vector<std::string> arg, Options *options, State *stat
     std::cerr << "done in " << tim() - strt << " ms" << std::endl;
 }
 
+void self_play_lossless_lines_task(Board board, const std::string starting_board, Options *options, const int to_n_discs, std::vector<int> &transcript) {
+    uint64_t legal = board.get_legal();
+    if (legal == 0) {
+        board.pass();
+        legal = board.get_legal();
+        if (legal == 0) {
+            std::cout << starting_board << " ";
+            for (int &cell: transcript) {
+                std::cout << idx_to_coord(cell);
+            }
+            std::cout << " " << board.to_str() << " END" << std::endl;
+            return;
+        }
+    }
+    if (board.n_discs() >= to_n_discs) {
+        std::cout << starting_board << " ";
+        for (int &cell: transcript) {
+            std::cout << idx_to_coord(cell);
+        }
+        std::cout << " " << board.to_str() << std::endl;
+        return;
+    }
+    double hint_values[HW2];
+    int hint_types[HW2];
+    ai_hint(board, options->level, true, 0, true, false, 35, hint_values, hint_types);
+    uint64_t legal_copy = legal;
+    int best_score = -SCORE_MAX - 1;
+    for (uint_fast8_t cell = first_bit(&legal_copy); legal_copy; cell = next_bit(&legal_copy)) {
+        if (hint_values[cell] > best_score) {
+            best_score = hint_values[cell];
+        }
+    }
+    uint64_t legal_copy = legal;
+    Flip flip;
+    for (uint_fast8_t cell = first_bit(&legal_copy); legal_copy; cell = next_bit(&legal_copy)) {
+        if (hint_values[cell] >= best_score - 2) {
+            calc_flip(&flip, &board, cell);
+            board.move_board(&flip);
+            transcript.emplace_back(cell);
+                self_play_lossless_lines_task(board, starting_board, options, to_n_discs, transcript);
+            transcript.pop_back();
+            board.undo_board(&flip);
+        }
+    }
+}
+
+void self_play_board_lossless_lines(std::vector<std::string> arg, Options *options, State *state, int to_n_discs) {
+    if (arg.size() < 1) {
+        std::cerr << "please input opening board file" << std::endl;
+        std::exit(1);
+    }
+    std::string opening_board_file = arg[0];
+    std::cerr << "selfplay with opening board file " << opening_board_file << std::endl;
+    std::ifstream ifs(opening_board_file);
+    if (!ifs) {
+        std::cerr << "[ERROR] can't open file " << opening_board_file << std::endl;
+        std::exit(1);
+    }
+    uint64_t strt = tim();
+    std::string line;
+    Flip flip;
+    Search_result result;
+    std::vector<std::pair<std::string, Board>> board_list;
+    while (std::getline(ifs, line)) {
+        std::pair<Board, int> board_player = convert_board_from_str(line);
+        if (board_player.second != BLACK && board_player.second != WHITE) {
+            std::cerr << "[ERROR] can't convert board " << line << std::endl;
+            std::exit(1);
+        }
+        board_list.emplace_back(std::make_pair(line, board_player.first));
+    }
+    for (std::pair<std::string, Board> start_position: board_list) {
+        std::vector<int> transcript;
+        self_play_lossless_lines_task(start_position.second, start_position.first, options, to_n_discs, transcript);
+    }
+    std::cerr << "done in " << tim() - strt << " ms" << std::endl;
+}
+
 
 void perft_commandline(std::vector<std::string> arg) {
     if (arg.size() < 2) {
