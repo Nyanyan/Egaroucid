@@ -152,6 +152,37 @@ void fill_discs(uint64_t silhouette, int n_discs, int n_white_min_discs, int n_w
     }
 }
 
+std::string get_str(Board board, int turn_color) {
+    std::string res;
+    for (int cell = HW2 - 1; cell >= 0; --cell) {
+        uint64_t cell_bit = 1ULL << cell;
+        if (turn_color == BLACK) {
+            if (board.player & cell_bit) {
+                res += "X";
+            } else if (board.opponent & cell_bit) {
+                res += "O";
+            } else {
+                res += "-";
+            }
+        } else {
+            if (board.player & cell_bit) {
+                res += "O";
+            } else if (board.opponent & cell_bit) {
+                res += "X";
+            } else {
+                res += "-";
+            }
+        }
+    }
+    res += " ";
+    if (turn_color == BLACK) {
+        res += "X";
+    } else {
+        res += "O";
+    }
+    return res;
+}
+
 #define N_BOARDS_PER_FILE 10000
 
 int main(int argc, char *argv[]){
@@ -242,6 +273,36 @@ int main(int argc, char *argv[]){
     std::cerr << "all boards " << all_boards.size() << std::endl;
 
     int turn_color = (n_discs % 2) ? WHITE : BLACK;
+    std::cerr << "turn_color " << turn_color << std::endl;
+    
+
+    std::vector<Board> all_boards_vector;
+    for (const Board &board: all_boards) {
+        all_boards_vector.emplace_back(board);
+    }
+    if (turn_color == WHITE) {
+        for (int i = 0; i < (int)all_boards_vector.size(); ++i) {
+            all_boards_vector[i].pass();
+        }
+    }
+    std::random_device seed_gen;
+    std::mt19937 engine(seed_gen());
+    std::shuffle(all_boards_vector.begin(), all_boards_vector.end(), engine);
+
+    int n_files = (all_boards.size() + N_BOARDS_PER_FILE - 1) / N_BOARDS_PER_FILE;
+    std::cerr << "n_files " << n_files << std::endl;
+    int global_idx = 0;
+    for (int file_idx = 0; file_idx < n_files; ++file_idx) {
+        std::string file = "output/" + std::to_string(n_discs) + "/" + fill0(file_idx, 7) + ".txt";
+        std::cerr << "output file " << file << std::endl;
+        std::ofstream ofs(file);
+        for (int i = 0; i < N_BOARDS_PER_FILE && global_idx < (int)all_boards_vector.size(); ++i) {
+            std::string board_str = get_str(all_boards_vector[global_idx], turn_color);
+            ofs << board_str << std::endl;
+            ++global_idx;
+        }
+    }
+
     /*
     if (turn_color == WHITE) {
         std::swap(board.player, board.opponent);
