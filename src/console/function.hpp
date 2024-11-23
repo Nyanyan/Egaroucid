@@ -407,13 +407,26 @@ void self_play_lossless_lines_task(Board board, const std::string starting_board
     }
 }
 
-void self_play_board_lossless_lines(std::vector<std::string> arg, Options *options, State *state, int to_n_discs) {
-    if (arg.size() < 1) {
-        std::cerr << "please input opening board file" << std::endl;
+void self_play_board_lossless_lines(std::vector<std::string> arg, Options *options, State *state) {
+    if (arg.size() < 2) {
+        std::cerr << "please input opening board file and to_n_discs" << std::endl;
         std::exit(1);
     }
     std::string opening_board_file = arg[0];
-    std::cerr << "selfplay with opening board file " << opening_board_file << std::endl;
+    int to_n_discs = 0;
+    try{
+        to_n_discs = std::stoi(arg[1]);
+    } catch (const std::invalid_argument& e) {
+        std::cout << arg[1] << " invalid argument" << std::endl;
+        std::exit(1);
+    } catch (const std::out_of_range& e) {
+        std::cout << arg[1] << " out of range" << std::endl;
+        std::exit(1);
+    }
+    if (to_n_discs > HW2) {
+        to_n_discs = HW2;
+    }
+    std::cerr << "selfplay with opening board file " << opening_board_file << " to " << to_n_discs << "discs" << std::endl;
     std::ifstream ifs(opening_board_file);
     if (!ifs) {
         std::cerr << "[ERROR] can't open file " << opening_board_file << std::endl;
