@@ -396,7 +396,7 @@ void self_play_lossless_lines_task(Board board, const std::string starting_board
     legal_copy = legal;
     Flip flip;
     for (uint_fast8_t cell = first_bit(&legal_copy); legal_copy; cell = next_bit(&legal_copy)) {
-        if (hint_values[cell] >= best_score - 2) {
+        if (hint_values[cell] >= best_score - 1) {
             calc_flip(&flip, &board, cell);
             board.move_board(&flip);
             transcript.emplace_back(cell);
