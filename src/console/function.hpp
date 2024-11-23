@@ -383,27 +383,30 @@ void self_play_lossless_lines_task(Board board, const std::string starting_board
         std::cout << " " << board.to_str() << std::endl;
         return;
     }
-    double hint_values[HW2];
-    int hint_types[HW2];
-    ai_hint(board, options->level, true, 0, true, false, 35, hint_values, hint_types);
-    uint64_t legal_copy = legal;
-    int best_score = -SCORE_MAX - 1;
-    for (uint_fast8_t cell = first_bit(&legal_copy); legal_copy; cell = next_bit(&legal_copy)) {
-        if (hint_values[cell] > best_score) {
-            best_score = hint_values[cell];
-        }
-    }
-    legal_copy = legal;
     Flip flip;
-    for (uint_fast8_t cell = first_bit(&legal_copy); legal_copy; cell = next_bit(&legal_copy)) {
-        if (hint_values[cell] >= best_score - 1) {
-            calc_flip(&flip, &board, cell);
-            board.move_board(&flip);
-            transcript.emplace_back(cell);
-                self_play_lossless_lines_task(board, starting_board, options, to_n_discs, transcript);
-            transcript.pop_back();
-            board.undo_board(&flip);
+    Search_result search_result = ai(board, options->level, true, 0, true, false);
+    calc_flip(&flip, &board, search_result.policy);
+    board.move_board(&flip);
+    transcript.emplace_back(search_result.policy);
+        self_play_lossless_lines_task(board, starting_board, options, to_n_discs, transcript);
+    transcript.pop_back();
+    board.undo_board(&flip);
+    legal ^= 1ULL << search_result.policy;
+    int best_score = search_result.value;
+    int alpha = best_score - 2;
+    int beta = best_score;
+    while (legal) {
+        search_result = ai_legal_window(board, alpha, beta, options->level, true, 0, true, false, legal);
+        if (search_result.value <= alpha) {
+            break;
         }
+        calc_flip(&flip, &board, search_result.policy);
+        board.move_board(&flip);
+        transcript.emplace_back(search_result.policy);
+            self_play_lossless_lines_task(board, starting_board, options, to_n_discs, transcript);
+        transcript.pop_back();
+        board.undo_board(&flip);
+        legal ^= 1ULL << search_result.policy;
     }
 }
 
