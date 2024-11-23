@@ -445,7 +445,11 @@ void self_play_board_lossless_lines(std::vector<std::string> arg, Options *optio
         }
         board_list.emplace_back(std::make_pair(line, board_player.first));
     }
+    int idx = 0;
     for (std::pair<std::string, Board> start_position: board_list) {
+        ++idx;
+        double percent = (double)idx / board_list.size() * 100.0;
+        std::cerr << idx << "/" << board_list.size() << " " << percent << "%" << std::endl;
         std::vector<int> transcript;
         self_play_lossless_lines_task(start_position.second, start_position.first, options, to_n_discs, transcript);
     }
