@@ -26,6 +26,7 @@
 #define AI_TYPE_BOOK 1000
 
 #define IDSEARCH_ENDSEARCH_PRESEARCH_OFFSET 10
+#define IDSEARCH_ENDSEARCH_PRESEARCH_MAX_DEPTH 25
 
 #define NOBOOK_SEARCH_LEVEL 10
 #define NOBOOK_SEARCH_MARGIN 1
@@ -159,13 +160,7 @@ void iterative_deepening_search(Board board, int alpha, int beta, int depth, uin
             }
             std::cerr << "depth " << result->depth << "@" << SELECTIVITY_PERCENTAGE[main_mpc_level] << "%" << " value " << result->value << " (raw " << id_result.first << ") policy " << idx_to_coord(id_result.second) << " n_worker " << parallel_tasks.size() << " n_nodes " << result->nodes << " time " << result->time << " NPS " << result->nps << std::endl;
         }
-        if (!is_end_search || main_depth < depth - IDSEARCH_ENDSEARCH_PRESEARCH_OFFSET) {
-            if (main_depth <= 15 && main_depth < depth - 3) {
-                main_depth += 3;
-            } else{
-                ++main_depth;
-            }
-        } else{
+        if (is_end_search && (main_depth >= IDSEARCH_ENDSEARCH_PRESEARCH_MAX_DEPTH || main_depth >= depth - IDSEARCH_ENDSEARCH_PRESEARCH_OFFSET)) {
             if (main_depth < depth) {
                 main_depth = depth;
                 if (depth <= 30 && mpc_level >= MPC_88_LEVEL) {
@@ -188,6 +183,12 @@ void iterative_deepening_search(Board board, int alpha, int beta, int depth, uin
                 } else{
                     break;
                 }
+            }
+        } else {
+            if (main_depth <= 15 && main_depth < depth - 3) {
+                main_depth += 3;
+            } else{
+                ++main_depth;
             }
         }
     }
