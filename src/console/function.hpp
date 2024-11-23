@@ -393,7 +393,7 @@ void self_play_lossless_lines_task(Board board, const std::string starting_board
             best_score = hint_values[cell];
         }
     }
-    uint64_t legal_copy = legal;
+    legal_copy = legal;
     Flip flip;
     for (uint_fast8_t cell = first_bit(&legal_copy); legal_copy; cell = next_bit(&legal_copy)) {
         if (hint_values[cell] >= best_score - 2) {
