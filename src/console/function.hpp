@@ -426,7 +426,7 @@ void self_play_board_lossless_lines(std::vector<std::string> arg, Options *optio
     if (to_n_discs > HW2) {
         to_n_discs = HW2;
     }
-    std::cerr << "selfplay with opening board file " << opening_board_file << " to " << to_n_discs << "discs" << std::endl;
+    std::cerr << "selfplay with opening board file " << opening_board_file << " to " << to_n_discs << " discs" << std::endl;
     std::ifstream ifs(opening_board_file);
     if (!ifs) {
         std::cerr << "[ERROR] can't open file " << opening_board_file << std::endl;
