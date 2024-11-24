@@ -1,8 +1,8 @@
 /*
     Egaroucid Project
 
-    @file board.hpp
-        Board class
+    @file perft.hpp
+        Perft for Reversi
     @date 2021-2024
     @author Takuto Yamana
     @license GPL-3.0 license
