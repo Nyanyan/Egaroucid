@@ -21,17 +21,17 @@ int minimax_p(Search *search, int depth, bool passed) {
         if (passed) {
             return search->board.score_player(); // game over
         }
-        search->board.pass();
+        search->pass();
             v = -minimax_p(search, depth, true); // pass NOT counted as 1 move
-        search->board.pass();
+        search->pass();
         return v;
     }
     Flip flip;
     for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)) {
         calc_flip(&flip, &search->board, cell);
-        search->board.move_board(&flip);
+        search->move(&flip);
             v = std::max(v, minimax_p(search, depth - 1, false));
-        search->board.undo_board(&flip);
+        search->undo(&flip);
     }
     return v;
 }
