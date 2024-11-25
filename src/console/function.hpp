@@ -530,5 +530,5 @@ void minimax_commandline(std::vector<std::string> arg) {
     board.reset();
     uint64_t strt = tim();
     int res = minimax(&board, depth);
-    std::cout << "minimax depth " << depth << " " << res << " in " << tim() - strt << " ms" << std::endl;
+    std::cout << "minimax depth " << depth << " value " << res << " in " << tim() - strt << " ms" << std::endl;
 }
