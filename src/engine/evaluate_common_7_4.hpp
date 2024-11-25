@@ -17,7 +17,7 @@
 // disc patterns
 #define N_PATTERNS 16
 #define MAX_PATTERN_CELLS 10
-#define MAX_CELL_PATTERNS 15
+#define MAX_CELL_PATTERNS 13
 #define MAX_EVALUATE_IDX 59049
 #define N_SYMMETRY_PATTERNS 64
 #if USE_SIMD_EVALUATION
@@ -25,6 +25,7 @@
 #endif
 
 // additional features
+#define MAX_SURROUND 64
 #define MAX_STONE_NUM 65
 
 // evaluation phase definition
@@ -35,6 +36,11 @@
 #define MAX_EVALUATE_IDX_MO 59049
 #define N_PATTERNS_MO_END 4
 #define N_SYMMETRY_PATTERNS_MO_END 16
+
+#if USE_LIGHT_EVALUATION
+// light evaluation function
+#define N_SYMMETRY_PATTERNS_LIGHT 46
+#endif
 
 /*
     @brief value definition
