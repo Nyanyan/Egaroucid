@@ -93,18 +93,24 @@ exe = 'data_board_to_idx_20241125_1_7_5.out'
 N_PHASES = 60
 '''
 board_sub_dir_nums = [
-    18, 19, 20, 21, 24, 25, 27, 28, 29, 30, 31, # old data
+    18, 19, 20, 21, 24, 25, 28, 29, 30, 31, # old data (without records27)
     34, 35, # mid-endgame data 1
     36, 37, # book data
     38, # test data
     39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 57, 60, 61, 62, 63, # mid-endgame data 2
-    64,
+    64, # cut records27 (5000000 games)
     65, 66, 67, 68, 69, 70, 71, 72, 73, 74, # Egaroucid 7.4.0 1000000 data
-    75, 
-    77
+    75, # random 12
+    77  # random 18 discs (GGS)
 ]
 '''
-board_sub_dir_nums = [36, 37]
+board_sub_dir_nums = [
+    #18, 19, 20, 21, 24, 25, 28, 29, 30, 31, # old data
+    #39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 57, 60, 61, 62, 63, # mid-endgame data 2
+    #64,
+    #75, 
+    #77
+]
 board_sub_dir_nums.sort()
 #'''
 

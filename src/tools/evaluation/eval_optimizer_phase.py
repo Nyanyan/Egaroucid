@@ -100,7 +100,7 @@ executable = 'eval_optimizer_cuda_12_2_0_20240925_1_7_4.exe'
 #'''
 # 7.5
 train_data_nums = [
-    18, 19, 20, 21, 24, 25, 27, 28, 29, 30, 31, # old data
+    18, 19, 20, 21, 24, 25, 28, 29, 30, 31, # old data (without records27)
     34, 35, # mid-endgame data 1
     36, 37, # book data
     38, # test data
