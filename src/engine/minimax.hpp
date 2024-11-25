@@ -11,7 +11,7 @@
 #pragma once
 #include "evaluate.hpp"
 
-int minimax_p(Search *search, int depth, bool passed) {
+int negamax(Search *search, int depth, bool passed) {
     if (depth == 0) {
         return mid_evaluate_diff(search);
     }
@@ -22,7 +22,7 @@ int minimax_p(Search *search, int depth, bool passed) {
             return search->board.score_player(); // game over
         }
         search->pass();
-            v = -minimax_p(search, depth, true); // pass NOT counted as 1 move
+            v = -negamax(search, depth, true); // pass NOT counted as 1 move
         search->pass();
         return v;
     }
@@ -30,7 +30,7 @@ int minimax_p(Search *search, int depth, bool passed) {
     for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)) {
         calc_flip(&flip, &search->board, cell);
         search->move(&flip);
-            v = std::max(v, minimax_p(search, depth - 1, false));
+            v = std::max(v, -negamax(search, depth - 1, false));
         search->undo(&flip);
     }
     return v;
@@ -38,5 +38,5 @@ int minimax_p(Search *search, int depth, bool passed) {
 
 int minimax(Board *board, int depth) {
     Search search(board);
-    return minimax_p(&search, depth, false);
+    return negamax(&search, depth, false);
 }
