@@ -28,7 +28,7 @@
     @brief evaluation pattern definition for SIMD
 */
 #define CEIL_N_SYMMETRY_PATTERNS 64         // N_SYMMETRY_PATTRENS
-#define N_PATTERN_PARAMS_RAW 612425
+#define N_PATTERN_PARAMS_RAW 612360
 #define N_PATTERN_PARAMS (N_PATTERN_PARAMS_RAW + 1) // +1 for byte bound
 #define PATTERN4_START_IDX 52488            // special case
 #define PATTERN6_START_IDX 78732            // special case
