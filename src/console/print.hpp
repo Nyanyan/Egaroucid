@@ -506,5 +506,8 @@ void execute_special_commandline_tasks(std::vector<Commandline_option> commandli
     } else if (find_commandline_option(commandline_options, ID_LOSSLESS_LINES)) {
         self_play_board_lossless_lines(get_commandline_option_arg(commandline_options, ID_LOSSLESS_LINES), options, state);
         std::exit(0);
+    } else if (find_commandline_option(commandline_options, ID_MINIMAX)) {
+        minimax_commandline(get_commandline_option_arg(commandline_options, ID_MINIMAX), options, state);
+        std::exit(0);
     }
 }

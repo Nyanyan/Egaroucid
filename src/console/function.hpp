@@ -505,3 +505,30 @@ void perft_commandline(std::vector<std::string> arg) {
     }
     std::cout << "perft mode " << mode << " depth " << depth << " " << res << " leaves found in " << tim() - strt << " ms" << std::endl;
 }
+
+void minimax_commandline(std::vector<std::string> arg) {
+    if (arg.size() < 1) {
+        std::cerr << "please input <depth>" << std::endl;
+        std::exit(1);
+    }
+    int depth;
+    std::string str_depth = arg[0];
+    try{
+        depth = std::stoi(str_depth);
+    } catch (const std::invalid_argument& e) {
+        std::cout << str_depth << " invalid argument" << std::endl;
+        std::exit(1);
+    } catch (const std::out_of_range& e) {
+        std::cout << str_depth << " out of range" << std::endl;
+        std::exit(1);
+    }
+    if (depth <= 0 || 60 < depth) {
+        std::cout << "depth must be in [1, 60], got " << depth << std::endl;
+        std::exit(1);
+    }
+    Board board;
+    board.reset();
+    uint64_t strt = tim();
+    int res = minimax(&board, depth);
+    std::cout << "minimax depth " << depth << " " << res << " in " << tim() - strt << " ms" << std::endl;
+}

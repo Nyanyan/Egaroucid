@@ -12,7 +12,7 @@
 #include <string>
 #include <vector>
 
-#define N_COMMANDLINE_OPTIONS 26
+#define N_COMMANDLINE_OPTIONS 27
 
 #define ID_NONE -1
 #define ID_VERSION 0
@@ -43,6 +43,7 @@
 #define ID_NOAUTOPASS 23
 #define ID_SHOWVALUE 24
 #define ID_LOSSLESS_LINES 25
+#define ID_MINIMAX 26
 
 struct Commandline_option_info{
     int id;
@@ -82,5 +83,6 @@ const Commandline_option_info commandline_option_data[N_COMMANDLINE_OPTIONS] = {
     {ID_LOG_TO_FILE,        {"-logfile"},                                       1, "<file>",            "Save search log to <file>"},
     {ID_NOAUTOPASS,         {"-noautopass"},                                    0, "",                  "No auto-pass"},
     {ID_SHOWVALUE,          {"-showvalue", "-showval"},                         0, "",                  "Show Value with -quiet mode"},
-    {ID_LOSSLESS_LINES,     {"-lllb", "-losslesslinesboard"},                   2, "<file> <n_discs>",  "enumerate loss-less lines to <n_discs> discs"}
+    {ID_LOSSLESS_LINES,     {"-lllb", "-losslesslinesboard"},                   2, "<file> <n_discs>",  "enumerate loss-less lines to <n_discs> discs"},
+    {ID_MINIMAX,            {"-minimax"},                                       1, "<depth>",           "Minimax search from root node for <depth>"}
 };
