@@ -25,7 +25,7 @@
 #define MAX_CELL_PATTERNS_MOVE_ORDERING_END 6
 
 
-constexpr Feature_to_coord feature_to_coord[CEIL_N_SYMMETRY_PATTERNS] = {
+constexpr Feature_to_coord feature_to_coord[N_SYMMETRY_PATTERNS] = {
     // 0 hv2
     {8, {COORD_A2, COORD_B2, COORD_C2, COORD_D2, COORD_E2, COORD_F2, COORD_G2, COORD_H2, COORD_NO, COORD_NO}},
     {8, {COORD_B1, COORD_B2, COORD_B3, COORD_B4, COORD_B5, COORD_B6, COORD_B7, COORD_B8, COORD_NO, COORD_NO}},
@@ -257,6 +257,13 @@ constexpr Coord_to_feature coord_to_feature_move_ordering_end[HW2] = {
     { 6, {{ 0, P38}, { 1, P38}, { 4, P39}, { 8, P39}, { 9, P39}, {12, P39}}}  // COORD_A1
 };
 
+constexpr int pattern_sizes[N_PATTERNS] = {
+    8, 9, 8, 9,
+    8, 9, 7, 10, 
+    10, 10, 10, 10, 
+    10, 10, 10, 10
+};
+
 /*
     @brief feature to pattern
 */
@@ -334,12 +341,6 @@ inline bool load_eval_file(const char* file, bool show_log) {
     if (failed) {
         return false;
     }
-    constexpr int pattern_sizes[N_PATTERNS] = {
-        8, 8, 8, 9,
-        5, 6, 7, 10, 
-        10, 10, 10, 10, 
-        10, 10, 10, 10
-    };
     size_t param_idx = 0;
     for (int phase_idx = 0; phase_idx < N_PHASES; ++phase_idx) {
         for (int pattern_idx = 0; pattern_idx < N_PATTERNS; ++pattern_idx) {

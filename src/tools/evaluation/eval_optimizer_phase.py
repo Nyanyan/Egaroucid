@@ -3,10 +3,10 @@ import sys
 
 phase = str(sys.argv[1])
 hour = '0'
-minute = '1'
+minute = '5'
 second = '0'
-alpha = '1.0'
-n_patience = '100'
+alpha = '400.0'
+n_patience = '1000'
 
 model_dir = './../../../model/nomodel/'
 #model_dir = './../../../model/20241107_1_dl_128_5/'
