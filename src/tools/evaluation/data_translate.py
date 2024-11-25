@@ -91,6 +91,7 @@ board_sub_dir_nums.sort()
 bin_root_dir = './../../../train_data/bin_data/20241125_1/'
 exe = 'data_board_to_idx_20241125_1_7_5.out'
 N_PHASES = 60
+'''
 board_sub_dir_nums = [
     18, 19, 20, 21, 24, 25, 27, 28, 29, 30, 31, # old data
     34, 35, # mid-endgame data 1
@@ -102,6 +103,8 @@ board_sub_dir_nums = [
     75, 
     77
 ]
+'''
+board_sub_dir_nums = [36, 37]
 board_sub_dir_nums.sort()
 #'''
 

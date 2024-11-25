@@ -192,11 +192,11 @@ constexpr int adj_rev_patterns[ADJ_N_PATTERNS][ADJ_MAX_PATTERN_CELLS] = {
 };
 
 constexpr int adj_eval_sizes[ADJ_N_EVAL] = {
-    P38, P38, P38, P39, 
-    P35, P36, P37, P310, 
+    P38, P39, P38, P39, 
+    P38, P39, P37, P310, 
     P310, P310, P310, P310, 
     P310, P310, P310, P310, 
-    ADJ_MAX_STONE_NUM, 
+    ADJ_MAX_STONE_NUM
 };
 
 constexpr int adj_feature_to_eval_idx[ADJ_N_FEATURES] = {
