@@ -13,6 +13,15 @@
 
 
 
+## 開始ボード+棋譜から
+
+* ```all_expand_transcript_with_starting_board.py```を実行
+  * ```expand_transcript_with_starting_board.cpp```をラップしてある
+  * 以下のような形式が改行区切りで収録されたテキストファイルを読む
+  * ```------------------OOOX----XOOX---XOOOO----XXOXO----------------- X b4g5f7e7f8g3c2d7e8c8c7b3a4c1d2e2h6a3h4g7g4h5h3g8a2b8e1f1g1d8h8a5a6b7d1h1h2h7b6g2f2b1b2a1a8a7```
+
+
+
 ## ボード情報から
 
 * ```board_data_processing.cpp```を使用
