@@ -40,7 +40,7 @@ while True:
 print('n_features', len(s_arr))
 
 duplication = [[0 for _ in range(8)] for _ in range(8)]
-fig = plt.figure(figsize=(11, 10))
+fig = plt.figure(figsize=(10, 11))
 for idx, s in enumerate(s_arr):
     coords = s.split(',')
     ax = fig.add_subplot(9, 8, idx + 1)
