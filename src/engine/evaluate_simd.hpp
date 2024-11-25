@@ -28,9 +28,10 @@
     @brief evaluation pattern definition for SIMD
 */
 #define CEIL_N_SYMMETRY_PATTERNS 64         // N_SYMMETRY_PATTRENS
-#define N_PATTERN_PARAMS_RAW 573966
+#define N_PATTERN_PARAMS_RAW 612425
 #define N_PATTERN_PARAMS (N_PATTERN_PARAMS_RAW + 1) // +1 for byte bound
-#define FEATURE1_START_IDX 39366            // feature1 special case
+#define PATTERN4_START_IDX 52488            // special case
+#define PATTERN6_START_IDX 78732            // special case
 #define SIMD_EVAL_MAX_VALUE 4092            // evaluate range [-4092, 4092]
 #define N_SIMD_EVAL_FEATURES_SIMPLE 2
 #define N_SIMD_EVAL_FEATURES_COMP 2
@@ -216,6 +217,14 @@ constexpr Coord_to_feature coord_to_feature[HW2] = {
     {15, {{12, P38}, {14, P30}, {20, P38}, {28, P39}, {29, P32}, {32, P38}, {33, P38}, {36, P39}, {40, P39}, {41, P39}, {44, P39}, {48, P38}, {49, P38}, {52, P39}, {56, P39}}}  // COORD_A1
 };
 
+constexpr int pattern_starts[N_PATTERNS] = {
+    1, 6562, 26245, 32806, // features[0] h2, d6+2C+X, h3, d7+2corner (from 0)
+    1, 6562, // features[1] h4, corner9 (from PATTERN4_START_IDX)
+    1, 2188, // features[1] d5+2X, d8+2C (from PATTERN6_START_IDX)
+    139969, 199018, 258067, 317116, // features[2] (from 0)
+    376165, 435214, 494263, 553312 // features[3] (from 0)
+};
+
 /*
     @brief constants used for evaluation function with SIMD
 */
@@ -238,8 +247,9 @@ int16_t eval_num_arr[N_PHASES][MAX_STONE_NUM];
 int16_t pattern_move_ordering_end_arr[N_PATTERN_PARAMS_MO_END];
 
 inline bool load_eval_file(const char* file, bool show_log) {
-    if (show_log)
+    if (show_log) {
         std::cerr << "evaluation file " << file << std::endl;
+    }
     bool failed = false;
     std::vector<int16_t> unzipped_params = load_unzip_egev2(file, show_log, &failed);
     if (failed) {
@@ -300,13 +310,6 @@ inline bool load_eval_move_ordering_end_file(const char* file, bool show_log) {
 }
 
 inline void pre_calculate_eval_constant() {
-    constexpr int pattern_starts[N_PATTERNS] = {
-        1, 6562, 13123, 19684, // features[0]
-        1, 244, 973, 3160, // features[1] from FEATURE1_START_IDX
-        //39367, 39610, 40339, 42526, // features[1]
-        101575, 160624, 219673, 278722, // features[2]
-        337771, 396820, 455869, 514918 // features[3]
-    };
     { // calc_eval_features initialization
         int16_t f2c[16];
         for (int i = 0; i < N_SIMD_EVAL_FEATURES; ++i) {
@@ -467,16 +470,17 @@ inline __m256i gather_eval(const int *start_addr, const __m256i idx8) {
 }
 
 inline int calc_pattern(const int phase_idx, Eval_features *features) {
-    const int *start_addr = (int*)pattern_arr[phase_idx];
-    const int *start_addr2 = (int*)&pattern_arr[phase_idx][FEATURE1_START_IDX];
-    __m256i res256 =                  gather_eval(start_addr, _mm256_cvtepu16_epi32(features->f128[0]));    // hv4 corner9
-    res256 = _mm256_add_epi32(res256, gather_eval(start_addr, _mm256_cvtepu16_epi32(features->f128[1])));   // hv2 hv3
-    res256 = _mm256_add_epi32(res256, gather_eval(start_addr2, _mm256_cvtepu16_epi32(features->f128[2])));  // d7 d8+2C
-    res256 = _mm256_add_epi32(res256, gather_eval(start_addr2, _mm256_cvtepu16_epi32(features->f128[3])));  // d5 d6
-    res256 = _mm256_add_epi32(res256, gather_eval(start_addr, calc_idx8_comp(features->f128[4], 0)));       // corner+block cross
-    res256 = _mm256_add_epi32(res256, gather_eval(start_addr, calc_idx8_comp(features->f128[5], 1)));       // edge+2X triangle
-    res256 = _mm256_add_epi32(res256, gather_eval(start_addr, calc_idx8_comp(features->f128[6], 2)));       // fish kite
-    res256 = _mm256_add_epi32(res256, gather_eval(start_addr, calc_idx8_comp(features->f128[7], 3)));       // edge+2Y narrow_triangle
+    const int *start_addr0 = (int*)pattern_arr[phase_idx];
+    const int *start_addr4 = (int*)&pattern_arr[phase_idx][PATTERN4_START_IDX];
+    const int *start_addr6 = (int*)&pattern_arr[phase_idx][PATTERN6_START_IDX];
+    __m256i res256 =                  gather_eval(start_addr0, _mm256_cvtepu16_epi32(features->f128[0]));   // hv3 d7+2Corner
+    res256 = _mm256_add_epi32(res256, gather_eval(start_addr0, _mm256_cvtepu16_epi32(features->f128[1])));  // hv2 d6+2C+X
+    res256 = _mm256_add_epi32(res256, gather_eval(start_addr6, _mm256_cvtepu16_epi32(features->f128[2])));  // d5+2X d8+wC
+    res256 = _mm256_add_epi32(res256, gather_eval(start_addr4, _mm256_cvtepu16_epi32(features->f128[3])));  // hv4 corner9
+    res256 = _mm256_add_epi32(res256, gather_eval(start_addr0, calc_idx8_comp(features->f128[4], 0)));      // corner+block cross
+    res256 = _mm256_add_epi32(res256, gather_eval(start_addr0, calc_idx8_comp(features->f128[5], 1)));      // edge+2X triangle
+    res256 = _mm256_add_epi32(res256, gather_eval(start_addr0, calc_idx8_comp(features->f128[6], 2)));      // fish kite
+    res256 = _mm256_add_epi32(res256, gather_eval(start_addr0, calc_idx8_comp(features->f128[7], 3)));      // edge+2Y narrow_triangle
     res256 = _mm256_and_si256(res256, eval_lower_mask);
     __m128i res128 = _mm_add_epi32(_mm256_castsi256_si128(res256), _mm256_extracti128_si256(res256, 1));
     res128 = _mm_hadd_epi32(res128, res128);
