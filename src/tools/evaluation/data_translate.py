@@ -62,7 +62,7 @@ board_sub_dir_nums = [
 ]
 board_sub_dir_nums.sort()
 '''
-#'''
+'''
 # 7.4
 bin_root_dir = './../../../train_data/bin_data/20240925_1/'
 exe = 'data_board_to_idx_20240925_1_7_4.out'
@@ -83,6 +83,25 @@ board_sub_dir_nums = [
 #board_sub_dir_nums = [65, 66, 67, 68, 69, 70, 71, 72, 73, 74]
 #board_sub_dir_nums = [75]
 board_sub_dir_nums = [76]
+board_sub_dir_nums.sort()
+#'''
+
+#'''
+# 7.5
+bin_root_dir = './../../../train_data/bin_data/20241125_1/'
+exe = 'data_board_to_idx_20241125_1_7_5.out'
+N_PHASES = 60
+board_sub_dir_nums = [
+    18, 19, 20, 21, 24, 25, 27, 28, 29, 30, 31, # old data
+    34, 35, # mid-endgame data 1
+    36, 37, # book data
+    38, # test data
+    39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 57, 60, 61, 62, 63, # mid-endgame data 2
+    64,
+    65, 66, 67, 68, 69, 70, 71, 72, 73, 74, # Egaroucid 7.4.0 1000000 data
+    75, 
+    77
+]
 board_sub_dir_nums.sort()
 #'''
 
@@ -191,7 +210,9 @@ board_n_moves['74'] = [19, 59] # random19         100000 games
 
 board_n_moves['75'] = [12, 59] # random12         7800000 games
 
-board_n_moves['76'] = [12, 59] # random11 all cut 8000000 games
+#board_n_moves['76'] = [12, 59] # random11 all cut 8000000 games
+
+board_n_moves['77'] = [14, 59] # random 18 discs
 
 
 procs = []
