@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 from matplotlib.patches import Rectangle
 
 
-duplication = [[0 for _ in range(8)] for _ in range(8)]
+s_arr = []
 while True:
     s = input()
     for i in range(30):
@@ -12,11 +12,18 @@ while True:
     s = s.replace('}', '')
     s = s.replace('//', ', //')
     s = s.replace(' ', '')
-    print(s)
-    if s == '':
-        continue
     if s == 'quit':
         break
+    if s == '' or s.find('COORD') == -1:
+        continue
+    print(s)
+    s_arr.append(s)
+
+
+print('n_features', len(s_arr))
+
+duplication = [[0 for _ in range(8)] for _ in range(8)]
+for s in s_arr:
     coords = s.split(',')
     plt.figure(figsize=(8, 8))
     ax = plt.gca()
