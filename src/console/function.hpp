@@ -99,9 +99,9 @@ void solve_problems_transcript_parallel(std::vector<std::string> arg, Options *o
     }
     Search_result result;
     if (thread_pool.size() == 0) {
-        for (Board &board: board_list) {
-            result = ai(board, options->level, true, 0, false, options->show_log);
-            std::cout << result.value << std::endl;
+        for (int i = 0; i < (int)board_list.size(); ++i) {
+            result = ai(board_list[i], options->level, true, 0, false, options->show_log);
+            std::cout << board_list[i].to_str() << " " << result.value << std::endl;
         }
     } else{
         int print_task_idx = 0;
@@ -122,7 +122,7 @@ void solve_problems_transcript_parallel(std::vector<std::string> arg, Options *o
                     if (tasks[print_task_idx].valid()) {
                         if (tasks[print_task_idx].wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
                             result = tasks[print_task_idx].get();
-                            std::cout << result.value << std::endl;
+                            std::cout << board_list[print_task_idx].to_str() << " " << result.value << std::endl;
                             ++print_task_idx;
                         }
                     } else {
@@ -135,7 +135,7 @@ void solve_problems_transcript_parallel(std::vector<std::string> arg, Options *o
         while (print_task_idx < tasks.size()) {
             if (tasks[print_task_idx].valid()) {
                 result = tasks[print_task_idx].get();
-                std::cout << result.value << std::endl;
+                std::cout << board_list[print_task_idx].to_str() << " " << result.value << std::endl;
                 ++print_task_idx;
             } else {
                 std::cerr << "[ERROR] task not valid" << std::endl;
