@@ -4,7 +4,7 @@ import os
 import sys
 
 line_dr = './../problem/etc/first11_all'
-out_dr = './../transcript/first11_all_values_lv21'
+out_dr = './../transcript/first11_all_values_lv17'
 
 exe = './../versions/Egaroucid_for_Console_beta/Egaroucid_for_Console.exe'
 
@@ -18,7 +18,7 @@ IDX_END = int(sys.argv[2])
 print(IDX_START, IDX_END)
 
 
-LEVEL = 21
+LEVEL = 17
 N_GAMES_PER_FILE = 10000
 N_THREAD = 15
 
