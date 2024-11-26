@@ -62,6 +62,90 @@ void solve_problems(std::vector<std::string> arg, Options *options, State *state
     std::cout << "total " << total.nodes << " nodes in " << ((double)total.time / 1000) << "s NPS " << (total.nodes * 1000 / total.time) << std::endl;
 }
 
+void solve_problems_transcript_parallel(std::vector<std::string> arg, Options *options, State *state) {
+    if (arg.size() < 1) {
+        std::cerr << "[ERROR] [FATAL] please input problem file" << std::endl;
+        return;
+    }
+    std::string file = arg[0];
+    std::ifstream ifs(file);
+    if (ifs.fail()) {
+        std::cerr << "[ERROR] [FATAL] no problem file found" << std::endl;
+        return;
+    }
+    uint64_t strt = tim();
+    std::string line;
+    std::vector<Board> board_list;
+    Flip flip;
+    Board board_start;
+    while (std::getline(ifs, line)) {
+        /*
+        std::pair<Board, int> board_player = convert_board_from_str(line);
+        if (board_player.second != BLACK && board_player.second != WHITE) {
+            std::cerr << "[ERROR] can't convert board " << line << std::endl;
+            std::exit(1);
+        }
+        board_list.emplace_back(board_player.first);
+        */
+        board_start.reset();
+        for (int i = 0; i < (int)line.size() - 1; i += 2) {
+            int x = line[i] - 'a';
+            int y = line[i + 1] - '1';
+            int coord = HW2_M1 - (y * HW + x);
+            calc_flip(&flip, &board_start, coord);
+            board_start.move_board(&flip);
+        }
+        board_list.emplace_back(board_start);
+    }
+    Search_result result;
+    if (thread_pool.size() == 0) {
+        for (Board &board: board_list) {
+            result = ai(board, options->level, true, 0, false, options->show_log);
+            std::cout << result.value << std::endl;
+        }
+    } else{
+        int print_task_idx = 0;
+        std::vector<std::future<Search_result>> tasks;
+        for (Board &board: board_list) {
+            bool go_to_next_task = false;
+            while (!go_to_next_task) {
+                if (thread_pool.get_n_idle() && tasks.size() < board_list.size()) {
+                    bool pushed = false;
+                    tasks.emplace_back(thread_pool.push(&pushed, std::bind(&ai, board, options->level, true, 0, false, options->show_log)));
+                    if (pushed) {
+                        go_to_next_task = true;
+                    } else {
+                        tasks.pop_back();
+                    }
+                }
+                if (tasks.size() > print_task_idx) {
+                    if (tasks[print_task_idx].valid()) {
+                        if (tasks[print_task_idx].wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
+                            result = tasks[print_task_idx].get();
+                            std::cout << result.value << std::endl;
+                            ++print_task_idx;
+                        }
+                    } else {
+                        std::cerr << "[ERROR] task not valid" << std::endl;
+                        std::exit(1);
+                    }
+                }
+            }
+        }
+        while (print_task_idx < tasks.size()) {
+            if (tasks[print_task_idx].valid()) {
+                result = tasks[print_task_idx].get();
+                std::cout << result.value << std::endl;
+                ++print_task_idx;
+            } else {
+                std::cerr << "[ERROR] task not valid" << std::endl;
+                std::exit(1);
+            }
+        }
+    }
+    std::cerr << "done in " << tim() - strt << " ms" << std::endl;
+}
+
 void execute_special_tasks(Options options) {
     // move ordering tuning
     #if TUNE_MOVE_ORDERING
