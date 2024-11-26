@@ -94,6 +94,9 @@ void solve_problems_transcript_parallel(std::vector<std::string> arg, Options *o
             int coord = HW2_M1 - (y * HW + x);
             calc_flip(&flip, &board_start, coord);
             board_start.move_board(&flip);
+            if (board_start.get_legal() == 0) {
+                board_start.pass();
+            }
         }
         board_list.emplace_back(board_start);
     }
@@ -320,6 +323,9 @@ void self_play_line(std::vector<std::string> arg, Options *options, State *state
             int coord = HW2_M1 - (y * HW + x);
             calc_flip(&flip, &board_start, coord);
             board_start.move_board(&flip);
+            if (board_start.get_legal() == 0) {
+                board_start.pass();
+            }
         }
         board_list.emplace_back(std::make_pair(line, board_start));
     }
