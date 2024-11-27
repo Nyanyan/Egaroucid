@@ -24,7 +24,7 @@ struct Trs_Convert_transcript_info{
     int8_t policy;
 };
 
-void trs_convert_transcript(std::string transcript, std::ofstream *fout){
+void trs_convert_transcript(std::string transcript, std::ofstream *fout, int ignore_pass_depth){
     int8_t y, x;
     std::vector<Trs_Convert_transcript_info> boards;
     Trs_Convert_transcript_info board;
@@ -33,6 +33,9 @@ void trs_convert_transcript(std::string transcript, std::ofstream *fout){
     board.player = BLACK;
     for (int i = 0; i < (int)transcript.size(); i += 2){
         if (board.board.get_legal() == 0){
+            if (i < ignore_pass_depth) { // ignore pass before ignore_pass_depth
+                return;
+            }
             board.board.pass();
             board.player ^= 1;
         }
@@ -74,8 +77,8 @@ void trs_convert_transcript(std::string transcript, std::ofstream *fout){
 }
 
 int main(int argc, char* argv[]){
-    if (argc < 5){
-        std::cerr << "input [in_dir] [start_file_num] [end_file_num] [out_file]" << std::endl;
+    if (argc < 5) {
+        std::cerr << "input [in_dir] [start_file_num] [end_file_num] [out_file] [ignore_pass_depth=-1]" << std::endl;
         return 1;
     }
     trs_init();
@@ -83,6 +86,10 @@ int main(int argc, char* argv[]){
     int strt_file_num = atoi(argv[2]);
     int end_file_num = atoi(argv[3]);
     std::string out_file = std::string(argv[4]);
+    int ignore_pass_depth = -1;
+    if (argc == 6) {
+        ignore_pass_depth = atoi(argv[5]);
+    }
     std::ofstream fout;
     fout.open(out_file, std::ios::out|std::ios::binary|std::ios::trunc);
     if (!fout){
@@ -100,7 +107,7 @@ int main(int argc, char* argv[]){
         }
         std::string line;
         while (std::getline(ifs, line)){
-            trs_convert_transcript(line, &fout);
+            trs_convert_transcript(line, &fout, ignore_pass_depth);
             ++t;
         }
     }
