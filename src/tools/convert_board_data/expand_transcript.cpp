@@ -33,7 +33,7 @@ int trs_convert_transcript(std::string transcript, std::ofstream *fout, int igno
     board.player = BLACK;
     for (int i = 0; i < (int)transcript.size(); i += 2){
         if (board.board.get_legal() == 0){
-            if (i < ignore_pass_depth) { // ignore pass before ignore_pass_depth
+            if (i / 2 <= ignore_pass_depth) { // ignore pass before ignore_pass_depth
                 return 0;
             }
             board.board.pass();
