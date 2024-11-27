@@ -24,7 +24,7 @@ struct Trs_Convert_transcript_info{
     int8_t policy;
 };
 
-void trs_convert_transcript(std::string transcript, std::ofstream *fout, int ignore_pass_depth){
+int trs_convert_transcript(std::string transcript, std::ofstream *fout, int ignore_pass_depth){
     int8_t y, x;
     std::vector<Trs_Convert_transcript_info> boards;
     Trs_Convert_transcript_info board;
@@ -34,7 +34,7 @@ void trs_convert_transcript(std::string transcript, std::ofstream *fout, int ign
     for (int i = 0; i < (int)transcript.size(); i += 2){
         if (board.board.get_legal() == 0){
             if (i < ignore_pass_depth) { // ignore pass before ignore_pass_depth
-                return;
+                return 0;
             }
             board.board.pass();
             board.player ^= 1;
@@ -48,18 +48,18 @@ void trs_convert_transcript(std::string transcript, std::ofstream *fout, int ign
         calc_flip(&flip, &board.board, board.policy);
         if (flip.flip == 0ULL){
             std::cerr << "illegal move found in move " << i / 2 << " in " << transcript << std::endl;
-            return;
+            return 0;
         }
         board.board.move_board(&flip);
         board.player ^= 1;
     }
     if (board.board.get_legal()){
-        return;
+        return 0;
     }
     board.board.pass();
     board.player ^= 1;
     if (board.board.get_legal()){
-        return;
+        return 0;
     }
     int8_t score = board.board.score_player();
     int8_t rev_score = -score;
@@ -74,6 +74,7 @@ void trs_convert_transcript(std::string transcript, std::ofstream *fout, int ign
             fout->write((char*)&rev_score, 1);
         }
     }
+    return 1;
 }
 
 int main(int argc, char* argv[]){
@@ -107,8 +108,7 @@ int main(int argc, char* argv[]){
         }
         std::string line;
         while (std::getline(ifs, line)){
-            trs_convert_transcript(line, &fout, ignore_pass_depth);
-            ++t;
+            t += trs_convert_transcript(line, &fout, ignore_pass_depth);
         }
     }
     std::cerr << std::endl;
