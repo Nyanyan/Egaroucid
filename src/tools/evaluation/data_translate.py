@@ -91,7 +91,6 @@ board_sub_dir_nums.sort()
 bin_root_dir = './../../../train_data/bin_data/20241125_1/'
 exe = 'data_board_to_idx_20241125_1_7_5.out'
 N_PHASES = 60
-'''
 board_sub_dir_nums = [
     18, 19, 20, 21, 24, 25, 28, 29, 30, 31, # old data (without records27)
     34, 35, # mid-endgame data 1
@@ -101,13 +100,6 @@ board_sub_dir_nums = [
     65, 66, 67, 68, 69, 70, 71, 72, 73, 74, # Egaroucid 7.4.0 1000000 data
     77,  # random 18 discs (GGS)
     78, 79 # random 11 & 12 (bug fixed)
-]
-'''
-board_sub_dir_nums = [
-    #18, 19, 20, 21, 24, 25, 28, 29, 30, 31, # old data
-    #39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 57, 60, 61, 62, 63, # mid-endgame data 2
-    #77,
-    #78, 79 # random 11 & 12 (bug fixed)
 ]
 board_sub_dir_nums.sort()
 #'''
@@ -200,7 +192,7 @@ board_n_moves['61'] = [57, 59] # random57        3000000 games
 board_n_moves['62'] = [56, 59] # random56        3000000 games
 board_n_moves['63'] = [55, 59] # random55        3000000 games
 
-board_n_moves['64'] = [12, 59] # random11 all cut 5000000 games
+#board_n_moves['64'] = [12, 59] # random11 all cut 5000000 games with bug
 
 
 ### Egaroucid 7.4.0 lv.11 data
@@ -215,11 +207,14 @@ board_n_moves['72'] = [17, 59] # random17         100000 games
 board_n_moves['73'] = [18, 59] # random18         100000 games
 board_n_moves['74'] = [19, 59] # random19         100000 games
 
-board_n_moves['75'] = [12, 59] # random12         7800000 games
+#board_n_moves['75'] = [12, 59] # random12         7800000 games with bug
 
-#board_n_moves['76'] = [12, 59] # random11 all cut 8000000 games
+#board_n_moves['76'] = [12, 59] # random11 all cut 8000000 games with bug
 
 board_n_moves['77'] = [14, 59] # random 18 discs
+
+board_n_moves['78'] = [12, 59] # random11 all cut 5999816 games bug fixed (records27)
+board_n_moves['79'] = [12, 59] # random12 all cut 7799640 games bug fixed (records75)
 
 
 procs = []
