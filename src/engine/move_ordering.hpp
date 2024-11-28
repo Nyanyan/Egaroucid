@@ -111,12 +111,12 @@ inline bool transposition_table_get_value(Search *search, uint32_t hash, int *l,
 #if USE_SIMD
 __m256i eval_surround_mask;
 __m256i eval_surround_shift1879;
-inline void init_move_ordering() {
+inline void move_ordering_init() {
     eval_surround_mask = _mm256_set_epi64x(0x7E7E7E7E7E7E7E7EULL, 0x00FFFFFFFFFFFF00ULL, 0x007E7E7E7E7E7E00ULL, 0x007E7E7E7E7E7E00ULL);
     eval_surround_shift1879 = _mm256_set_epi64x(1, HW, HW_M1, HW_P1);
 }
 #else
-inline void init_move_ordering() {
+inline void move_ordering_init() {
 }
 #endif
 

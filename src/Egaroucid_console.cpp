@@ -30,6 +30,7 @@ void init_console(Options options, std::string binary_path) {
     #if USE_MPC_PRE_CALCULATION
         mpc_init();
     #endif
+    move_ordering_init();
     #if USE_CHANGEABLE_HASH_LEVEL
         hash_resize(DEFAULT_HASH_LEVEL, options.hash_level, options.binary_path, options.show_log);
     #else
