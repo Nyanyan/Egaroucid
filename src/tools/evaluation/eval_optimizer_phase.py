@@ -5,11 +5,10 @@ phase = str(sys.argv[1])
 hour = '0'
 minute = '7'
 second = '0'
-alpha = '400.0'
+alpha = '500.0'
 n_patience = '500'
 
 model_dir = './../../../model/nomodel/'
-#model_dir = './../../../model/20241107_1_dl_128_5/'
 
 
 '''
@@ -103,7 +102,7 @@ train_data_nums = [
     18, 19, 20, 21, 24, 25, 28, 29, 30, 31, # old data (without records27)
     34, 35, # mid-endgame data 1
     36, 37, # book data
-    38, # test data
+    #38, # test data
     39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 57, 60, 61, 62, 63, # mid-endgame data 2
     65, 66, 67, 68, 69, 70, 71, 72, 73, 74, # Egaroucid 7.4.0 1000000 data
     77,  # random 18 discs (GGS)
