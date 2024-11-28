@@ -14,7 +14,8 @@ import math
 #data_files = ['data/probcut_end19.txt']
 #data_files = ['data/probcut_end0.txt']
 #data_files = ['data/20240925_1_7_4/probcut_end0.txt']
-data_files = ['data/20241118_1_7_5/probcut_end0.txt']
+#data_files = ['data/20241118_1_7_5/probcut_end0.txt']
+data_files = ['data/20241128_1_7_5/probcut_end0.txt']
 
 data = [[[] for _ in range(61)] for _ in range(65)] # n_discs, depth, error (exact - predict)
 for data_file in data_files:
@@ -65,7 +66,7 @@ for n_discs in range(15):
     for depth in range(5):
         x_n_discs_sd.append(n_discs)
         y_depth_sd.append(depth)
-        z_sd.append(8.0 - n_discs / 60 * 1.5 - depth * 0.2)
+        z_sd.append(8.0 - n_discs / 60 * 1.0 - depth * 0.1)
         weight_sd.append(0.01)
 
 for n_discs in range(45):
