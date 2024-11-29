@@ -208,10 +208,16 @@ def print_all_result():
                 print('-', end='\t')
             else:
                 avg_discs = result[j] / n_played[j]
-                print("{:.2f}".format(avg_discs), end='\t')
+                s = "{:.2f}".format(avg_discs)
+                if avg_discs >= 0:
+                    s = '+' + s
+                print(s, end='\t')
         # all
         avg_discs_all = sum(result) / sum(n_played)
-        print("{:.2f}".format(avg_discs_all))
+        s = "{:.2f}".format(avg_discs_all)
+        if avg_discs >= 0:
+            s = '+' + s
+        print(s)
 
 
 plot_data = [[] for _ in range(len(players))]
