@@ -215,7 +215,7 @@ def print_all_result():
         # all
         avg_discs_all = sum(result) / sum(n_played)
         s = "{:.2f}".format(avg_discs_all)
-        if avg_discs >= 0:
+        if avg_discs_all >= 0:
             s = '+' + s
         print(s)
 
