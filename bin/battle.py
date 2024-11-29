@@ -33,6 +33,8 @@ player_info = [
 NAME_IDX = 0
 SUBPROCESS_IDX = 1
 RESULT_IDX = 2
+RESULT_DISC_IDX = 3
+N_PLAYED_IDX = 4
 
 players = []
 for name, cmd in player_info:
@@ -46,8 +48,12 @@ for name, cmd in player_info:
             subprocess.Popen(cmd_with_level.split(), stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL),
             subprocess.Popen(cmd_with_level.split(), stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
         ],
-        # W D L
-        [[0, 0, 0] for _ in range(len(player_info))]
+        # W D L (vs other players)
+        [[0, 0, 0] for _ in range(len(player_info))],
+        # sum of disc differences (vs other players)
+        [0 for _ in range(len(player_info))],
+        # n_played
+        [0 for _ in range(len(player_info))]
     ])
 
 with open('problem/xot_small_shuffled.txt', 'r') as f:
@@ -120,17 +126,28 @@ def play_battle(p0_idx, p1_idx, opening_idx):
                 print(o.player, player)
                 print(coord)
                 print(y, x)
+        # update win/draw/loss
         if o.n_stones[player] > o.n_stones[1 - player]:
-            players[p0_idx][RESULT_IDX][p1_idx][0] += 1
-            players[p1_idx][RESULT_IDX][p0_idx][2] += 1
+            players[p0_idx][RESULT_IDX][p1_idx][0] += 1 # win
+            players[p1_idx][RESULT_IDX][p0_idx][2] += 1 # loss
         elif o.n_stones[player] < o.n_stones[1 - player]:
-            players[p1_idx][RESULT_IDX][p0_idx][0] += 1
-            players[p0_idx][RESULT_IDX][p1_idx][2] += 1
+            players[p1_idx][RESULT_IDX][p0_idx][0] += 1 # win
+            players[p0_idx][RESULT_IDX][p1_idx][2] += 1 # loss
         else:
-            players[p0_idx][RESULT_IDX][p1_idx][1] += 1
-            players[p1_idx][RESULT_IDX][p0_idx][1] += 1
+            players[p0_idx][RESULT_IDX][p1_idx][1] += 1 # draw
+            players[p1_idx][RESULT_IDX][p0_idx][1] += 1 # draw
+        # update disc difference
+        disc_difference = 0 # from player
+        if o.n_stones[player] > o.n_stones[1 - player]: # player win
+            disc_difference = o.n_stones[player] - o.n_stones[1 - player] + (64 - (o.n_stones[player] + o.n_stones[1 - player]))
+        elif o.n_stones[player] < o.n_stones[1 - player]: # player lose
+            disc_difference = o.n_stones[player] - o.n_stones[1 - player] - (64 - (o.n_stones[player] + o.n_stones[1 - player]))
+        players[p0_idx][RESULT_DISC_IDX][p1_idx] += disc_difference
+        players[p1_idx][RESULT_DISC_IDX][p0_idx] -= disc_difference
+        players[p0_idx][N_PLAYED_IDX][p1_idx] += 1
+        players[p1_idx][N_PLAYED_IDX][p0_idx] += 1
 
-
+'''
 def print_result():
     for i in range(len(players)):
         w = 0
@@ -142,8 +159,10 @@ def print_result():
             l += ll
         r = (w + d * 0.5) / (w + d + l)
         print(i, players[i][NAME_IDX], w + d + l, w, d, l, r, sep='\t')
+'''
 
 def print_all_result():
+    print('Winning Rate')
     print('vs >', end='\t')
     for i in range(len(players)):
         name = players[i][NAME_IDX]
@@ -171,6 +190,28 @@ def print_all_result():
             l += ll
         r = (w + d * 0.5) / (w + d + l)
         print("{:.4f}".format(r))
+
+    print('Average Disc Difference')
+    print('vs >', end='\t')
+    for i in range(len(players)):
+        name = players[i][NAME_IDX]
+        print(name, end='\t')
+    print('all')
+    for i in range(len(players)):
+        name = players[i][NAME_IDX]
+        result = players[i][RESULT_DISC_IDX]
+        n_played = players[i][N_PLAYED_IDX]
+        print(name, end='\t')
+        # each
+        for j in range(len(players)):
+            if i == j:
+                print('-', end='\t')
+            else:
+                avg_discs = result[j] / n_played[j]
+                print("{:.2f}".format(avg_discs), end='\t')
+        # all
+        avg_discs_all = sum(result) / sum(n_played)
+        print("{:.2f}".format(avg_discs_all))
 
 
 plot_data = [[] for _ in range(len(players))]
@@ -202,7 +243,7 @@ for i in range(N_SET_GAMES):
         for p1 in range(p0 + 1, len(players)):
             play_battle(p0, p1, i)
     print(i)
-    print_result()
+    #print_result()
     print_all_result()
     #output_plt()
 
