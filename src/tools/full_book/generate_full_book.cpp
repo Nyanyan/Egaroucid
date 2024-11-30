@@ -59,6 +59,10 @@ void generate_full_book(Board board, int depth, int level, bool passed) {
     uint64_t legal = board.get_legal();
     if (legal == 0) { // pass or game over
         if (passed) { // game over
+            //book_elem.value = board.score_player();
+            //book_elem.level = MAX_LEVEL;
+            //book.reg(&board, book_elem);
+            board.pass();
             book_elem.value = board.score_player();
             book_elem.level = MAX_LEVEL;
             book.reg(&board, book_elem);
