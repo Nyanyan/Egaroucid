@@ -16,6 +16,9 @@
 #include "last_flip.hpp"
 #include "hash.hpp"
 
+inline bool is_black_like_char(char c);
+inline bool is_white_like_char(char c);
+
 /*
     @brief Board class
 
