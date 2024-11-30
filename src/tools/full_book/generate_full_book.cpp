@@ -13,16 +13,20 @@ void full_book_init(){
 std::unordered_map<Board, int, Book_hash> data;
 
 void load_data(std::string data_dir) {
-    std::stringstream ss;
     std::string file_name, line;
     std::string board_str, val_str;
     int val;
     Board board;
+    std::cerr << "loading data" << std::endl;
     for (int file_idx = 0; file_idx < 1000000; ++file_idx) {
-        ss.clear();
+        if (file_idx % 100 == 99) {
+            std::cerr << file_idx << std::endl;
+        }
+        std::stringstream ss;
         ss << std::setfill('0') << std::setw(7) << file_idx << ".txt";
         file_name = ss.str();
-        std::ifstream ifs(file_name);
+        
+        std::ifstream ifs(data_dir + "/" + file_name);
         if (!ifs) {
             break;
         }
@@ -36,14 +40,16 @@ void load_data(std::string data_dir) {
             data[board] = val;
             ++n_data_file;
         }
-        std::cerr << file_name << " " << n_data_file << " data found" << std::endl;
+        //std::cerr << file_name << " " << n_data_file << " data found" << std::endl;
     }
     std::cerr << data.size() << " data found" << std::endl;
 }
 
 void generate_full_book(Board board, int depth, int level) {
-    if (book.contain(&board)) { // already searched
-        return;
+    if (board.n_discs() > 4) {
+        if (book.contain(&board)) { // already searched
+            return;
+        }
     }
     Book_elem book_elem;
     book_elem.level = level;
@@ -89,7 +95,7 @@ int main(int argc, char* argv[]){
     Board board;
     board.reset();
     generate_full_book(board, depth, level);
-    std::cerr << "dgenerated" << std::endl;
+    std::cerr << "generated" << std::endl;
     bool stop = false;
     book.negamax_book(&stop);
     std::cerr << "negamaxed" << std::endl;
