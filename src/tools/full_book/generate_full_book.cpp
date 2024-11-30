@@ -93,13 +93,15 @@ void load_data(std::string data_dir) {
         int n_data_file = 0;
         while (getline(ifs, line)) {
             board_str = line.substr(0, 66);
+            board.from_str(board_str);
             val_str = line.substr(67);
             val = stoi(val_str);
-            
+            data[board] = val;
             ++n_data_file;
         }
-        std::cerr << file_name << std::endl;
+        std::cerr << file_name << " " << n_data_file << " data found" << std::endl;
     }
+    std::cerr << data.size() << " data found" << std::endl;
 }
 
 int main(int argc, char* argv[]){

@@ -456,6 +456,30 @@ class Board {
             res += " X";
             return res;
         }
+
+        inline bool from_str(std::string board_str) { // returns OK: true NG: false
+            board_str.erase(std::remove_if(board_str.begin(), board_str.end(), ::isspace), board_str.end());
+            if (board_str.length() != HW2 + 1) {
+                std::cerr << "[ERROR] invalid argument got length " << board_str.length() << " expected " << HW2 + 1 << std::endl;
+                return false;
+            }
+            player = 0ULL;
+            opponent = 0ULL;
+            for (int i = 0; i < HW2; ++i) {
+                if (is_black_like_char(board_str[i])) {
+                    player |= 1ULL << (HW2_M1 - i);
+                } else if (is_white_like_char(board_str[i])) {
+                    opponent |= 1ULL << (HW2_M1 - i);
+                }
+            }
+            if (is_white_like_char(board_str[HW2])) {
+                std::swap(player, opponent);
+            } else if (!is_black_like_char(board_str[HW2])) {
+                std::cerr << "[ERROR] invalid player argument" << std::endl;
+                return false;
+            }
+            return true;
+        }
 };
 
 bool operator==(const Board& a, const Board& b) {
