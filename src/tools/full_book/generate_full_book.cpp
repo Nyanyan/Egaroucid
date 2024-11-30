@@ -30,6 +30,7 @@ void load_data(std::string data_dir) {
         while (getline(ifs, line)) {
             board_str = line.substr(0, 66);
             board.from_str(board_str);
+            board = get_representative_board(board);
             val_str = line.substr(67);
             val = stoi(val_str);
             data[board] = val;
@@ -41,8 +42,37 @@ void load_data(std::string data_dir) {
 }
 
 void generate_full_book(Board board, int depth, int level) {
-    if (depth == 0) {
-        if ()
+    if (book.contain(&board)) { // already searched
+        return;
+    }
+    Book_elem book_elem;
+    book_elem.level = level;
+    if (board.is_end()) { // game over
+        book_elem.value = board.score_player();
+        book_elem.level = MAX_LEVEL;
+        book.reg(&board, book_elem);
+    }
+    if (depth == 0) { // leaf
+        Board unique_board = get_representative_board(board);
+        if (data.find(unique_board) == data.end()) { // no data found
+            std::cerr << "[ERROR] " << board.to_str() << std::endl;
+        } else {
+            book_elem.value = data[unique_board];
+            book.reg(&board, book_elem);
+        }
+    }
+    uint64_t legal = board.get_legal();
+    if (legal == 0) { // pass
+        board.pass();
+        legal = board.get_legal();
+    }
+    book.reg(&board, book_elem); // register data (no value)
+    Flip flip;
+    for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)) {
+        calc_flip(&flip, &board, cell);
+        board.move_board(&flip);
+            generate_full_book(board, depth - 1, level);
+        board.undo_board(&flip);
     }
 }
 
@@ -59,5 +89,10 @@ int main(int argc, char* argv[]){
     Board board;
     board.reset();
     generate_full_book(board, depth, level);
-    book.negamax_book();
+    std::cerr << "dgenerated" << std::endl;
+    bool stop = false;
+    book.negamax_book(&stop);
+    std::cerr << "negamaxed" << std::endl;
+    book.save_egbk3("data/book.egbk3", "data/book.egbk3.bak");
+    std::cerr << "saved" << std::endl;
 }
