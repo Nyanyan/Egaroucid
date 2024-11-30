@@ -24,32 +24,15 @@ inline bool is_white_like_char(char c) {
 }
 
 std::pair<Board, int> convert_board_from_str(std::string board_str) {
-    board_str.erase(std::remove_if(board_str.begin(), board_str.end(), ::isspace), board_str.end());
     Board board;
-    if (board_str.length() != HW2 + 1) {
-        std::cerr << "[ERROR] invalid argument got length " << board_str.length() << " expected " << HW2 + 1 << std::endl;
+    if (!board.from_str(board_str)) {
         return std::make_pair(board, -1);
     }
     int player = BLACK;
-    board.player = 0ULL;
-    board.opponent = 0ULL;
-    for (int i = 0; i < HW2; ++i) {
-        if (is_black_like_char(board_str[i])) {
-            board.player |= 1ULL << (HW2_M1 - i);
-        } else if (is_white_like_char(board_str[i])) {
-            board.opponent |= 1ULL << (HW2_M1 - i);
-        }
-    }
     if (is_black_like_char(board_str[HW2])) {
         player = BLACK;
     } else if (is_white_like_char(board_str[HW2])) {
         player = WHITE;
-    } else {
-        std::cerr << "[ERROR] invalid player argument" << std::endl;
-        return std::make_pair(board, -1);
-    }
-    if (player == WHITE) {
-        std::swap(board.player, board.opponent);
     }
     return std::make_pair(board, player);
 }
