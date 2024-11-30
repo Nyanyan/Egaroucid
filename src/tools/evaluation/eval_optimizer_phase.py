@@ -3,9 +3,9 @@ import sys
 
 phase = str(sys.argv[1])
 hour = '0'
-minute = '8'
+minute = '11'
 second = '0'
-alpha = '350.0'
+alpha = '500.0'
 n_patience = '500'
 
 model_dir = './../../../model/nomodel/'
