@@ -26,7 +26,7 @@ inline bool is_white_like_char(char c) {
 std::pair<Board, int> convert_board_from_str(std::string board_str) {
     Board board;
     if (!board.from_str(board_str)) {
-        return std::make_pair(board, -1);
+        return std::make_pair(board, -1); // error
     }
     int player = BLACK;
     if (is_black_like_char(board_str[HW2])) {
