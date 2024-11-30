@@ -7,7 +7,8 @@ void full_book_init(){
     bit_init();
     mobility_init();
     flip_init();
-    book_init("data/empty_book.egbk3", true);
+    book_hash_init_rand();
+    book.delete_all();
 }
 
 std::unordered_map<Board, int, Book_hash> data;
@@ -45,18 +46,29 @@ void load_data(std::string data_dir) {
     std::cerr << data.size() << " data found" << std::endl;
 }
 
-void generate_full_book(Board board, int depth, int level) {
+void generate_full_book(Board board, int depth, int level, bool passed) {
     if (board.n_discs() > 4) {
         if (book.contain(&board)) { // already searched
             return;
         }
     }
+    //board.print();
+    //std::cerr << std::endl;
     Book_elem book_elem;
     book_elem.level = level;
-    if (board.is_end()) { // game over
-        book_elem.value = board.score_player();
-        book_elem.level = MAX_LEVEL;
-        book.reg(&board, book_elem);
+    uint64_t legal = board.get_legal();
+    if (legal == 0) { // pass or game over
+        if (passed) { // game over
+            book_elem.value = board.score_player();
+            book_elem.level = MAX_LEVEL;
+            book.reg(&board, book_elem);
+            return;
+        } else {
+            board.pass();
+                generate_full_book(board, depth, level, true);
+            board.pass();
+            return;
+        }
     }
     if (depth == 0) { // leaf
         Board unique_board = get_representative_board(board);
@@ -66,18 +78,15 @@ void generate_full_book(Board board, int depth, int level) {
             book_elem.value = data[unique_board];
             book.reg(&board, book_elem);
         }
+        return;
     }
-    uint64_t legal = board.get_legal();
-    if (legal == 0) { // pass
-        board.pass();
-        legal = board.get_legal();
-    }
+    book_elem.value = -64;
     book.reg(&board, book_elem); // register data (no value)
     Flip flip;
     for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)) {
         calc_flip(&flip, &board, cell);
         board.move_board(&flip);
-            generate_full_book(board, depth - 1, level);
+            generate_full_book(board, depth - 1, level, false);
         board.undo_board(&flip);
     }
 }
@@ -94,11 +103,10 @@ int main(int argc, char* argv[]){
     load_data(data_dir);
     Board board;
     board.reset();
-    generate_full_book(board, depth, level);
+    generate_full_book(board, depth, level, false);
     std::cerr << "generated" << std::endl;
-    bool stop = false;
-    book.negamax_book(&stop);
-    std::cerr << "negamaxed" << std::endl;
+    book.fix();
+    std::cerr << "fixed" << std::endl;
     book.save_egbk3("data/book.egbk3", "data/book.egbk3.bak");
     std::cerr << "saved" << std::endl;
 }
