@@ -161,6 +161,7 @@ int init_ai(Settings* settings, const Directories* directories, bool *stop_loadi
     #if USE_MPC_PRE_CALCULATION
         mpc_init();
     #endif
+    move_ordering_init();
     #ifndef __APPLE__
         MEMORYSTATUSEX msex = { sizeof(MEMORYSTATUSEX) };
         GlobalMemoryStatusEx( &msex );

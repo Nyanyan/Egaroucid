@@ -15,6 +15,14 @@
 #include <string>
 #include "board.hpp"
 
+inline bool is_black_like_char(char c) {
+    return c == 'B' || c == 'b' || c == 'X' || c == 'x' || c == '0' || c == '*';
+}
+
+inline bool is_white_like_char(char c) {
+    return c == 'W' || c == 'w' || c == 'O' || c == 'o' || c == '1';
+}
+
 std::pair<Board, int> convert_board_from_str(std::string board_str) {
     board_str.erase(std::remove_if(board_str.begin(), board_str.end(), ::isspace), board_str.end());
     Board board;
@@ -26,15 +34,15 @@ std::pair<Board, int> convert_board_from_str(std::string board_str) {
     board.player = 0ULL;
     board.opponent = 0ULL;
     for (int i = 0; i < HW2; ++i) {
-        if (board_str[i] == 'B' || board_str[i] == 'b' || board_str[i] == 'X' || board_str[i] == 'x' || board_str[i] == '0' || board_str[i] == '*') {
+        if (is_black_like_char(board_str[i])) {
             board.player |= 1ULL << (HW2_M1 - i);
-        } else if (board_str[i] == 'W' || board_str[i] == 'w' || board_str[i] == 'O' || board_str[i] == 'o' || board_str[i] == '1') {
+        } else if (is_white_like_char(board_str[i])) {
             board.opponent |= 1ULL << (HW2_M1 - i);
         }
     }
-    if (board_str[HW2] == 'B' || board_str[HW2] == 'b' || board_str[HW2] == 'X' || board_str[HW2] == 'x' || board_str[HW2] == '0' || board_str[HW2] == '*') {
+    if (is_black_like_char(board_str[HW2])) {
         player = BLACK;
-    } else if (board_str[HW2] == 'W' || board_str[HW2] == 'w' || board_str[HW2] == 'O' || board_str[HW2] == 'o' || board_str[HW2] == '1') {
+    } else if (is_white_like_char(board_str[HW2])) {
         player = WHITE;
     } else {
         std::cerr << "[ERROR] invalid player argument" << std::endl;

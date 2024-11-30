@@ -106,6 +106,20 @@ inline int nega_alpha_eval1_move_ordering_mid(Search *search, int alpha, int bet
 int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, uint64_t legal, bool is_end_search, bool *searching);
 inline bool transposition_table_get_value(Search *search, uint32_t hash, int *l, int *u);
 
+
+
+#if USE_SIMD
+__m256i eval_surround_mask;
+__m256i eval_surround_shift1879;
+inline void move_ordering_init() {
+    eval_surround_mask = _mm256_set_epi64x(0x7E7E7E7E7E7E7E7EULL, 0x00FFFFFFFFFFFF00ULL, 0x007E7E7E7E7E7E00ULL, 0x007E7E7E7E7E7E00ULL);
+    eval_surround_shift1879 = _mm256_set_epi64x(1, HW, HW_M1, HW_P1);
+}
+#else
+inline void move_ordering_init() {
+}
+#endif
+
 /*
     @brief Get number of corner mobility
 
@@ -166,8 +180,6 @@ inline int get_n_moves_cornerX2(uint64_t legal) {
     #define get_potential_mobility(discs, empties) calc_surround(discs, empties)
 #elif USE_SIMD
     inline int get_potential_mobility(uint64_t discs, uint64_t empties) {
-        const __m256i eval_surround_mask = _mm256_set_epi64x(0x7E7E7E7E7E7E7E7EULL, 0x00FFFFFFFFFFFF00ULL, 0x007E7E7E7E7E7E00ULL, 0x007E7E7E7E7E7E00ULL);
-        const __m256i eval_surround_shift1879 = _mm256_set_epi64x(1, HW, HW_M1, HW_P1);
         __m256i pl = _mm256_set1_epi64x(discs);
         pl = _mm256_and_si256(pl, eval_surround_mask);
         pl = _mm256_or_si256(_mm256_sllv_epi64(pl, eval_surround_shift1879), _mm256_srlv_epi64(pl, eval_surround_shift1879));
