@@ -103,7 +103,6 @@ board_sub_dir_nums = [
     78, 79, # random 11 & 12 (bug fixed)
     80 # new first11 book
 ]
-board_sub_dir_nums = [80]
 board_sub_dir_nums.sort()
 #'''
 

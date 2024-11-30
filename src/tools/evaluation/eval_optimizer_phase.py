@@ -101,15 +101,17 @@ executable = 'eval_optimizer_cuda_12_2_0_20240925_1_7_4.exe'
 train_data_nums = [
     18, 19, 20, 21, 24, 25, 28, 29, 30, 31, # old data (without records27)
     34, 35, # mid-endgame data 1
-    36, 37, # book data
+    #36, # old first11 book
+    37, # book data
     #38, # test data
     39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 57, 60, 61, 62, 63, # mid-endgame data 2
     65, 66, 67, 68, 69, 70, 71, 72, 73, 74, # Egaroucid 7.4.0 1000000 data
     77,  # random 18 discs (GGS)
-    78, 79 # random 11 & 12 (bug fixed)
+    78, 79, # random 11 & 12 (bug fixed)
+    80 # new first11 book
 ]
 if int(phase) <= 11:
-    train_data_nums = [36, 37] # use only book with phase <= 11
+    train_data_nums = [37, 80] # use only book with phase <= 11
 train_data_nums.sort()
 train_root_dir = './../../../train_data/bin_data/20241125_1/'
 executable = 'eval_optimizer_cuda_12_2_0_20241125_1_7_5.exe'
