@@ -83,7 +83,7 @@ void get_book_recalculate_leaf_todo(Book_deviate_todo_elem todo_elem, int book_d
     // check depth
     if (todo_elem.board.n_discs() > book_depth + 4)
         return;
-    todo_elem.board = book.get_representative_board(todo_elem.board);
+    todo_elem.board = get_representative_board(todo_elem.board);
     // already searched?
     if (todo_list.find(todo_elem) != todo_list.end())
         return;
@@ -268,7 +268,7 @@ void get_book_deviate_todo(Book_deviate_todo_elem todo_elem, int best_move_only_
     // already searched?
     if (book_deviate_todo.find(todo_elem) != book_deviate_todo.end())
         return;
-    todo_elem.board = book.get_representative_board(todo_elem.board);
+    todo_elem.board = get_representative_board(todo_elem.board);
     *board_copy = todo_elem.board;
     *player = todo_elem.player;
     Book_elem book_elem = book.get(todo_elem.board);
