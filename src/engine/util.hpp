@@ -215,3 +215,157 @@ std::string ms_to_time_short(uint64_t t) {
     res += second_s.str();
     return res;
 }
+
+
+inline int convert_coord_from_representative_board(int cell, int idx) {
+    int res;
+    int y = cell / HW;
+    int x = cell % HW;
+    switch (idx) {
+        case 0:
+            res = cell;
+            break;
+        case 1:
+            res = (HW_M1 - y) * HW + x; // vertical
+            break;
+        case 2:
+            res = (HW_M1 - x) * HW + (HW_M1 - y); // black line
+            break;
+        case 3:
+            res = (HW_M1 - x) * HW + y; // black line + vertical ( = rotate 90 clockwise)
+            break;
+        case 4:
+            res = x * HW + (HW_M1 - y); // black line + horizontal ( = rotate 90 counterclockwise)
+            break;
+        case 5:
+            res = x * HW + y; // black line + horizontal + vertical ( = white line)
+            break;
+        case 6:
+            res = y * HW + (HW_M1 - x); // horizontal
+            break;
+        case 7:
+            res = (HW_M1 - y) * HW + (HW_M1 - x); // horizontal + vertical ( = rotate180)
+            break;
+        default:
+            std::cerr << "converting coord error in book" << std::endl;
+            break;
+    }
+    return res;
+}
+
+inline int convert_coord_to_representative_board(int cell, int idx) {
+    int res;
+    int y = cell / HW;
+    int x = cell % HW;
+    switch (idx) {
+        case 0:
+            res = cell;
+            break;
+        case 1:
+            res = (HW_M1 - y) * HW + x; // vertical
+            break;
+        case 2:
+            res = (HW_M1 - x) * HW + (HW_M1 - y); // black line
+            break;
+        case 3:
+            res = x * HW + (HW_M1 - y); // black line + vertical ( = rotate 90 clockwise)
+            break;
+        case 4:
+            res = (HW_M1 - x) * HW + y; // black line + horizontal ( = rotate 90 counterclockwise)
+            break;
+        case 5:
+            res = x * HW + y; // black line + horizontal + vertical ( = white line)
+            break;
+        case 6:
+            res = y * HW + (HW_M1 - x); // horizontal
+            break;
+        case 7:
+            res = (HW_M1 - y) * HW + (HW_M1 - x); // horizontal + vertical ( = rotate180)
+            break;
+        default:
+            std::cerr << "converting coord error in book" << std::endl;
+            break;
+    }
+    return res;
+}
+
+inline void first_update_representative_board(Board *res, Board *sym) {
+    uint64_t vp = vertical_mirror(sym->player);
+    uint64_t vo = vertical_mirror(sym->opponent);
+    if (res->player > vp || (res->player == vp && res->opponent > vo)) {
+        res->player = vp;
+        res->opponent = vo;
+    }
+}
+
+inline void update_representative_board(Board *res, Board *sym) {
+    if (res->player > sym->player || (res->player == sym->player && res->opponent > sym->opponent))
+        sym->copy(res);
+    uint64_t vp = vertical_mirror(sym->player);
+    uint64_t vo = vertical_mirror(sym->opponent);
+    if (res->player > vp || (res->player == vp && res->opponent > vo)) {
+        res->player = vp;
+        res->opponent = vo;
+    }
+}
+
+inline void first_update_representative_board(Board *res, Board *sym, int *idx, int *cnt) {
+    uint64_t vp = vertical_mirror(sym->player);
+    uint64_t vo = vertical_mirror(sym->opponent);
+    ++(*cnt);
+    if (res->player > vp || (res->player == vp && res->opponent > vo)) {
+        res->player = vp;
+        res->opponent = vo;
+        *idx = *cnt;
+    }
+}
+
+inline void update_representative_board(Board *res, Board *sym, int *idx, int *cnt) {
+    ++(*cnt);
+    if (res->player > sym->player || (res->player == sym->player && res->opponent > sym->opponent)) {
+        sym->copy(res);
+        *idx = *cnt;
+    }
+    uint64_t vp = vertical_mirror(sym->player);
+    uint64_t vo = vertical_mirror(sym->opponent);
+    ++(*cnt);
+    if (res->player > vp || (res->player == vp && res->opponent > vo)) {
+        res->player = vp;
+        res->opponent = vo;
+        *idx = *cnt;
+    }
+}
+
+inline Board get_representative_board(Board b) {
+    Board res = b;
+    first_update_representative_board(&res, &b);
+    b.board_black_line_mirror();
+    update_representative_board(&res, &b);
+    b.board_horizontal_mirror();
+    update_representative_board(&res, &b);
+    b.board_white_line_mirror();
+    update_representative_board(&res, &b);
+    return res;
+}
+
+inline Board get_representative_board(Board b, int *idx) {
+    Board res = b;
+    *idx = 0;
+    int cnt = 0;
+    first_update_representative_board(&res, &b, idx, &cnt);
+    b.board_black_line_mirror();
+    update_representative_board(&res, &b, idx, &cnt);
+    b.board_horizontal_mirror();
+    update_representative_board(&res, &b, idx, &cnt);
+    b.board_white_line_mirror();
+    update_representative_board(&res, &b, idx, &cnt);
+    return res;
+}
+
+inline Board get_representative_board(Board *b, int *idx) {
+    return get_representative_board(b->copy(), idx);
+}
+
+inline Board get_representative_board(Board *b) {
+    return get_representative_board(b->copy());
+}
