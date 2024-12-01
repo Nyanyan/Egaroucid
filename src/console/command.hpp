@@ -214,11 +214,14 @@ Search_result go_noprint(Board_info *board, Options *options, State *state) {
     if (options->time_allocated_seconds == TIME_NOT_ALLOCATED) {
         result = ai(board->board, options->level, true, 0, true, options->show_log);
     } else {
-        uint64_t remaining_time_msec = 0;
+        uint64_t remaining_time_msec = 10;
         if (board->player == BLACK) {
             remaining_time_msec = state->remaining_time_msec_black;
         } else {
             remaining_time_msec = state->remaining_time_msec_white;
+        }
+        if (options->show_log) {
+            std::cerr << "remaining time b " << state->remaining_time_msec_black << " w " << state->remaining_time_msec_white << " player " << remaining_time_msec << std::endl;
         }
         result = ai_time_limit(board->board, options->level, true, 0, true, options->show_log, remaining_time_msec);
     }
@@ -261,6 +264,9 @@ void setboard(Board_info *board, Options *options, State *state, std::string boa
     int player = board_player.second;
     if (player != BLACK && player != WHITE) {
         return;
+    }
+    if (options->show_log) {
+        std::cerr << "setboard info player " << player << " board (player=X) " << new_board.to_str() << std::endl;
     }
     board->board = new_board.copy();
     board->player = player;
@@ -391,17 +397,20 @@ void settime(State *state, Options *options, std::string arg) {
     int pos = arg.find(' ');
     if (pos == std::string::npos) {
         std::cerr << "[ERROR] please input <color> <time>" << std::endl;
-    }else{
+    } else {
         std::string color = arg.substr(0, pos);
         std::string time_sec_str = arg.substr(pos + 1);
+        if (options->show_log) {
+            std::cerr << "settime info color " << color << " time_sec " << time_sec_str << std::endl;
+        }
         try{
             uint64_t time_msec = 1000ULL * (uint64_t)std::stoi(time_sec_str);
-            if (is_black_like_char(color)) {
+            if (is_black_like_char(color[0])) {
                 if (options->time_allocated_seconds == TIME_NOT_ALLOCATED) {
                     options->time_allocated_seconds = 0;
                 }
                 state->remaining_time_msec_black = time_msec;
-            } else if (is_white_like_char(color)) {
+            } else if (is_white_like_char(color[0])) {
                 if (options->time_allocated_seconds == TIME_NOT_ALLOCATED) {
                     options->time_allocated_seconds = 0;
                 }

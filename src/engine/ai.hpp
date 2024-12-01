@@ -538,7 +538,7 @@ Search_result ai_common(Board board, int alpha, int beta, int level, bool use_bo
         bool is_mid_search;
         uint_fast8_t mpc_level;
         get_level(level, board.n_discs() - 4, &is_mid_search, &depth, &mpc_level);
-        if (show_log) {
+        if (show_log && time_limit == TIME_LIMIT_INF) {
             std::cerr << "level status " << level << " " << board.n_discs() - 4 << " discs depth " << depth << "@" << SELECTIVITY_PERCENTAGE[mpc_level] << "%" << std::endl;
         }
         //thread_pool.tell_start_using();

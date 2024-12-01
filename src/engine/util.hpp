@@ -23,20 +23,17 @@ inline bool is_white_like_char(char c) {
     return c == 'W' || c == 'w' || c == 'O' || c == 'o' || c == '1';
 }
 
-inline bool is_black_like_char(std::string s) {
-    return s == "B" || s == "b" || s == "X" || s == "x" || s == "0" || s == "*";
-}
-
-inline bool is_white_like_char(std::string s) {
-    return s == "W" || s == "w" || s == "O" || s == "o" || s == "1";
-}
-
 std::pair<Board, int> convert_board_from_str(std::string board_str) {
     Board board;
+    board_str.erase(std::remove_if(board_str.begin(), board_str.end(), ::isspace), board_str.end());
+    if (board_str.length() != HW2 + 1) {
+        std::cerr << "[ERROR] invalid argument got length " << board_str.length() << " expected " << HW2 + 1 << std::endl;
+        return std::make_pair(board, -1); // error
+    }
     if (!board.from_str(board_str)) {
         return std::make_pair(board, -1); // error
     }
-    int player = BLACK;
+    int player = -1;
     if (is_black_like_char(board_str[HW2])) {
         player = BLACK;
     } else if (is_white_like_char(board_str[HW2])) {

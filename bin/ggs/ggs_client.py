@@ -353,7 +353,7 @@ while True:
                     f.write('egaroucid_remaining_time ' + str(me_remaining_time) + '\n')
                     f.write('initial_board' + board + '\n')
                 else:
-                    f.write(last_move + '\n')
+                    f.write(last_move)
             if me_color == color_to_move:
                 me_remaining_time_proc = max(1, me_remaining_time - 10)
                 egaroucid_settime(me_color, me_remaining_time_proc)
