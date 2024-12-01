@@ -223,7 +223,7 @@ def ggs_os_is_synchro(game_id):
     return len(game_id.split('.')) == 3
 
 def ggs_os_get_synchro_id(game_id):
-    return game_id.split('.')[2]
+    return int(game_id.split('.')[2])
 
 
 
