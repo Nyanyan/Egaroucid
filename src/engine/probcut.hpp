@@ -16,7 +16,7 @@
 #include "midsearch.hpp"
 #include "util.hpp"
 
-#define USE_MPC_DEPTH 3
+#define USE_MPC_MIN_DEPTH 3
 #define MAX_MPC_DEPTH_PRESEARCH 22
 
 #if USE_ALL_NODE_PREDICTION
@@ -147,8 +147,12 @@ int nega_alpha_ordering_nws(Search *search, int alpha, int depth, bool skipped, 
     @return cutoff occurred?
 */
 inline bool mpc(Search* search, int alpha, int beta, int depth, uint64_t legal, const bool is_end_search, int* v, bool *searching) {
-    if (search->mpc_level == MPC_100_LEVEL || depth < USE_MPC_DEPTH || (search->is_presearch && depth >= MAX_MPC_DEPTH_PRESEARCH))
+    //if (search->mpc_level == MPC_100_LEVEL || depth < USE_MPC_DEPTH || (search->is_presearch && depth >= MAX_MPC_DEPTH_PRESEARCH)) {
+    //    return false;
+    //}
+    if (search->mpc_level == MPC_100_LEVEL || depth < USE_MPC_MIN_DEPTH) {
         return false;
+    }
     int search_depth = mpc_search_depth_arr[is_end_search][depth];
     if (search_depth == 0) {
         int error;
