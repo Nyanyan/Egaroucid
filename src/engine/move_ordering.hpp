@@ -29,7 +29,7 @@
 #include "transposition_table.hpp"
 
 /*
-    @brief if wipeout found, it must be searched first.
+    @brief constant
 */
 #define W_WIPEOUT 100000000
 #define W_1ST_MOVE 10000000
@@ -254,7 +254,7 @@ inline void move_evaluate_nws(Search *search, Flip_value *flip_value, int alpha,
     search->move(&flip_value->flip);
         flip_value->n_legal = search->board.get_legal();
         flip_value->value += (MO_OFFSET_L_PM - get_weighted_n_moves(flip_value->n_legal)) * W_NWS_MOBILITY;
-        flip_value->value += (MO_OFFSET_L_PM - get_potential_mobility(search->board.opponent, ~(search->board.player | search->board.opponent))) * W_NWS_POTENTIAL_MOBILITY;
+        //flip_value->value += (MO_OFFSET_L_PM - get_potential_mobility(search->board.opponent, ~(search->board.player | search->board.opponent))) * W_NWS_POTENTIAL_MOBILITY;
         switch (depth) {
             case 0:
                 flip_value->value += (SCORE_MAX - mid_evaluate_diff(search)) * W_NWS_VALUE;
