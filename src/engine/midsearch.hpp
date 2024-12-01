@@ -29,7 +29,7 @@
 #include "etc.hpp"
 #include "book.hpp"
 
-inline int aspiration_search(Search *search, int alpha, int beta, int predicted_value, int depth, bool skipped, uint64_t legal, const bool is_end_search, bool *searching);
+inline int aspiration_search(Search *search, int alpha, int beta, int predicted_value, int depth, const bool skipped, uint64_t legal, const bool is_end_search, bool *searching);
 
 /*
     @brief Get a value with last move with Nega-Alpha algorithm
@@ -43,7 +43,7 @@ inline int aspiration_search(Search *search, int alpha, int beta, int predicted_
     @param searching            flag for terminating this search
     @return the value
 */
-inline int nega_alpha_eval1(Search *search, int alpha, int beta, bool skipped) {
+inline int nega_alpha_eval1(Search *search, int alpha, int beta, const bool skipped) {
     ++search->n_nodes;
     #if USE_SEARCH_STATISTICS
         ++search->n_nodes_discs[search->n_discs];
@@ -94,7 +94,7 @@ inline int nega_alpha_eval1(Search *search, int alpha, int beta, bool skipped) {
     @param searching            flag for terminating this search
     @return the value
 */
-int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, uint64_t legal, const bool is_end_search, bool *searching) {
+int nega_scout(Search *search, int alpha, int beta, int depth, const bool skipped, uint64_t legal, const bool is_end_search, bool *searching) {
     if (!global_searching || !(*searching)) {
         return SCORE_UNDEFINED;
     }
@@ -264,7 +264,7 @@ int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, uin
         @param legal                legal moves in bitboard
         @return pair of value and best move
     */
-    inline int aspiration_search(Search *search, int alpha, int beta, int predicted_value, int depth, bool skipped, uint64_t legal, const bool is_end_search, bool *searching) {
+    inline int aspiration_search(Search *search, int alpha, int beta, int predicted_value, int depth, const bool skipped, uint64_t legal, const bool is_end_search, bool *searching) {
         int pred_alpha = predicted_value - 1;
         int pred_beta = predicted_value + 1;
         int g = nega_scout(search, pred_alpha, pred_beta, depth, false, LEGAL_UNDEFINED, is_end_search, searching);

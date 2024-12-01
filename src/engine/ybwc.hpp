@@ -30,7 +30,7 @@
 #define YBWC_NOT_PUSHED -126
 #define YBWC_PUSHED 126
 
-int nega_alpha_ordering_nws(Search *search, int alpha, int depth, bool skipped, uint64_t legal, const bool is_end_search, bool *searching);
+int nega_alpha_ordering_nws(Search *search, int alpha, int depth, const bool skipped, uint64_t legal, const bool is_end_search, bool *searching);
 
 /*
     @brief Wrapper for parallel NWS (Null Window Search)

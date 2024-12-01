@@ -45,7 +45,7 @@
     @param skipped              already passed?
     @return the final score
 */
-int nega_alpha_end_fast_nws(Search *search, int alpha, bool skipped) {
+int nega_alpha_end_fast_nws(Search *search, int alpha, const bool skipped) {
     ++search->n_nodes;
     #if USE_SEARCH_STATISTICS
         ++search->n_nodes_discs[search->n_discs];
@@ -164,7 +164,7 @@ inline LocalTTEntry *get_ltt(Board *board, uint32_t n_discs)
     @param legal                for use of previously calculated legal bitboard
     @return the final score
 */
-int nega_alpha_end_simple_nws(Search *search, int alpha, bool skipped, uint64_t legal) {
+int nega_alpha_end_simple_nws(Search *search, int alpha, const bool skipped, uint64_t legal) {
     if (search->n_discs >= HW2 - END_FAST_DEPTH)
         return nega_alpha_end_fast_nws(search, alpha, skipped);
     ++search->n_nodes;
@@ -281,7 +281,7 @@ int nega_alpha_end_simple_nws(Search *search, int alpha, bool skipped, uint64_t 
     @param legal                for use of previously calculated legal bitboard
     @return the final score
 */
-int nega_alpha_end_nws(Search *search, int alpha, bool skipped, uint64_t legal) {
+int nega_alpha_end_nws(Search *search, int alpha, const bool skipped, uint64_t legal) {
     if (search->n_discs >= HW2 - END_SIMPLE_DEPTH)
         return nega_alpha_end_simple_nws(search, alpha, skipped, legal);
     ++search->n_nodes;
