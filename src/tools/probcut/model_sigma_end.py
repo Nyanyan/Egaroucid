@@ -16,7 +16,7 @@ import math
 #data_files = ['data/20240925_1_7_4/probcut_end0.txt']
 #data_files = ['data/20241118_1_7_5/probcut_end0.txt']
 #data_files = ['data/20241128_1_7_5/probcut_end0.txt']
-data_files = ['data/20241130_1_7_5/probcut_end0.txt']
+data_files = ['data/20241130_1_7_5/probcut_end0.txt', 'data/20241130_1_7_5/probcut_end1.txt']
 
 data = [[[] for _ in range(61)] for _ in range(65)] # n_discs, depth, error (exact - predict)
 for data_file in data_files:

@@ -129,9 +129,9 @@ inline double probcut_sigma_end_depth0(int n_discs) {
 }
 
 #if USE_NEGA_ALPHA_ORDERING
-    int nega_alpha_ordering(Search *search, int alpha, int beta, int depth, bool skipped, uint64_t legal, bool is_end_search, bool *searching);
+    int nega_alpha_ordering(Search *search, int alpha, int beta, int depth, bool skipped, uint64_t legal, const bool is_end_search, bool *searching);
 #endif
-int nega_alpha_ordering_nws(Search *search, int alpha, int depth, bool skipped, uint64_t legal, bool is_end_search, bool *searching);
+int nega_alpha_ordering_nws(Search *search, int alpha, int depth, bool skipped, uint64_t legal, const bool is_end_search, bool *searching);
 
 /*
     @brief Multi-ProbCut for normal search
@@ -146,7 +146,7 @@ int nega_alpha_ordering_nws(Search *search, int alpha, int depth, bool skipped, 
     @param searching            flag for terminating this search
     @return cutoff occurred?
 */
-inline bool mpc(Search* search, int alpha, int beta, int depth, uint64_t legal, bool is_end_search, int* v, bool *searching) {
+inline bool mpc(Search* search, int alpha, int beta, int depth, uint64_t legal, const bool is_end_search, int* v, bool *searching) {
     if (search->mpc_level == MPC_100_LEVEL || depth < USE_MPC_DEPTH || (search->is_presearch && depth >= MAX_MPC_DEPTH_PRESEARCH))
         return false;
     int search_depth = mpc_search_depth_arr[is_end_search][depth];
@@ -233,7 +233,7 @@ inline bool mpc(Search* search, int alpha, int beta, int depth, uint64_t legal, 
 
 
 #if USE_ALL_NODE_PREDICTION_NWS
-    inline bool predict_all_node(Search* search, int alpha, int depth, uint64_t legal, bool is_end_search, bool *searching) {
+    inline bool predict_all_node(Search* search, int alpha, int depth, uint64_t legal, const bool is_end_search, bool *searching) {
         uint_fast8_t mpc_level = MPC_93_LEVEL;
         int search_depth = mpc_search_depth_arr[is_end_search][depth];
         int error_search, error_0;
@@ -341,7 +341,7 @@ inline bool mpc(Search* search, int alpha, int beta, int depth, uint64_t legal, 
         Flip flip;
         Search_result short_ans, long_ans;
         for (int i = 0; i < 1000; ++i) {
-            for (int depth = 6; depth < 24; ++depth) {
+            for (int depth = 24; depth < 26; ++depth) {
                 board.reset();
                 for (int j = 0; j < HW2 - 4 - depth && board.check_pass(); ++j) { // random move
                     uint64_t legal = board.get_legal();
