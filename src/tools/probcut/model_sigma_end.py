@@ -42,7 +42,7 @@ weight_mean = []
 for n_discs in range(len(data)):
     if n_discs >= 59:
         continue
-    for depth in range(2, len(data[n_discs])):
+    for depth in range(3, len(data[n_discs])):
         if len(data[n_discs][depth]) >= 3:
             '''
             mean = statistics.mean(data[n_discs][depth])
@@ -65,7 +65,7 @@ for n_discs in range(len(data)):
             weight_mean.append(1 / len(data[n_discs][depth]))
 
 for n_discs in range(7):
-    for depth in range(10):
+    for depth in range(5):
         x_n_discs_sd.append(n_discs)
         y_depth_sd.append(depth)
         z_sd.append(8.0 - n_discs / 60 * 1.0 - depth * 0.1)

@@ -42,12 +42,12 @@ constexpr double SELECTIVITY_MPCT_MULTI[N_SELECTIVITY_LEVEL] = {0.75, 1.21, 1.49
 #define probcut_f 3.0554301965778063
 #define probcut_g 2.0942574977708674
 
-#define probcut_end_a 1.0991215402719048
-#define probcut_end_b 2.1818828716953917
-#define probcut_end_c -5.222054343259216
-#define probcut_end_d 5.266556448300817
-#define probcut_end_e -3.406095066993692
-#define probcut_end_f 8.038123155263888
+#define probcut_end_a 1.1919399325679816
+#define probcut_end_b 1.963428096686115
+#define probcut_end_c -5.307704287022464
+#define probcut_end_d 7.090319279010543
+#define probcut_end_e -5.271757002847477
+#define probcut_end_f 8.25738935619712
 
 #if USE_MPC_PRE_CALCULATION
     int mpc_error_single0[N_SELECTIVITY_LEVEL][HW2 + 1][HW2 - 3];
