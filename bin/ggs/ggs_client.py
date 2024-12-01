@@ -52,6 +52,7 @@ def fill0(n, r):
 
 def ggs_wait_ready(timeout=None):
     output = tn.read_until(b"READY", timeout=timeout).decode("utf-8")
+    output = output.replace('\r', '').replace('\n\n', '\n')
     if len(output):
         print_log(output)
     return output
@@ -66,7 +67,10 @@ def ggs_os_ask_game(tl1, tl2, tl3, game_type, user):
     print_log_color('[INFO] ask game ' + cmd, color='green')
     tn.write((cmd + '\n').encode('utf-8'))
 
-
+def ggs_os_resume_stored_game(game_id):
+    cmd = 'ts ask ' + game_id
+    print_log_color('[INFO] ask stored game ' + cmd, color='green')
+    tn.write((cmd + '\n').encode('utf-8'))
 
 
 def ggs_os_get_info(s):
@@ -92,11 +96,12 @@ def ggs_os_get_received_game_info(s):
         else:
             raw_tls = data[10].split('/')
         tls = [0, 0, 0]
-        for i in range(3):
-            if raw_tls[i] != '':
-                tls[i] = int(raw_tls[i].split(':')[0]) * 60 + int(raw_tls[i].split(':')[1]) # seconds
-            else:
-                tls[i] = 0
+        if len(raw_tls) == 3:
+            for i in range(3):
+                if raw_tls[i] != '':
+                    tls[i] = int(raw_tls[i].split(':')[0]) * 60 + int(raw_tls[i].split(':')[1]) # seconds
+                else:
+                    tls[i] = 0
         game_type = data[6]
         return game_id, tls[0], tls[1], tls[2], opponent, game_type
     print_log_color('[ERROR] cannot receive game : ' + s, color='red')
@@ -108,26 +113,30 @@ def ggs_os_accept_game(request_id):
 
 def ggs_os_is_game_end(s):
     ss = s.split()
-    if len(ss) >= 2:
-        return ss[1] == 'end'
+    if ggs_id in ss:
+        if len(ss) >= 2:
+            return ss[1] == 'end'
     return False
 
 def ggs_os_is_start_game(s):
     ss = s.split()
-    if len(ss) > 3:
-        return ss[1] == '+' and ss[2] == 'match'
+    if ggs_id in ss:
+        if len(ss) > 3:
+            return ss[1] == '+' and ss[2] == 'match'
     return False
 
 def ggs_os_is_game_terminated(s):
     ss = s.split()
-    if len(ss) > 3:
-        return ss[1] == '-'
+    if ggs_id in ss:
+        if len(ss) > 3:
+            return ss[1] == '-'
     return False
 
 def ggs_os_start_game_get_id(s):
     ss = s.split()
-    if len(ss) > 4:
-        return ss[3]
+    if ggs_id in ss:
+        if len(ss) > 4:
+            return ss[3]
     print_log_color('[ERROR] cannot receive game id: ' + s, color='red')
 
 
