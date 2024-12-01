@@ -214,13 +214,13 @@ Search_result go_noprint(Board_info *board, Options *options, State *state) {
     if (options->time_allocated_seconds == TIME_NOT_ALLOCATED) {
         result = ai(board->board, options->level, true, 0, true, options->show_log);
     } else {
-        uint64_t *remaining_time_msec;
+        uint64_t remaining_time_msec = 0;
         if (board->player == BLACK) {
-            remaining_time_msec = &state->remaining_time_msec_black;
+            remaining_time_msec = state->remaining_time_msec_black;
         } else {
-            remaining_time_msec = &state->remaining_time_msec_white;
+            remaining_time_msec = state->remaining_time_msec_white;
         }
-        result = ai_time_limit(board->board, options->level, true, 0, true, options->show_log, *remaining_time_msec);
+        result = ai_time_limit(board->board, options->level, true, 0, true, options->show_log, remaining_time_msec);
     }
     Flip flip;
     calc_flip(&flip, &board->board, result.policy);
@@ -396,12 +396,12 @@ void settime(State *state, Options *options, std::string arg) {
         std::string time_sec_str = arg.substr(pos + 1);
         try{
             uint64_t time_msec = 1000ULL * (uint64_t)std::stoi(time_sec_str);
-            if (color == "X" || color == "x" || color == "B" || color == "b" || color == "0" || color == "*") {
+            if (is_black_like_char(color)) {
                 if (options->time_allocated_seconds == TIME_NOT_ALLOCATED) {
                     options->time_allocated_seconds = 0;
                 }
                 state->remaining_time_msec_black = time_msec;
-            } else if (color == "O" || color == "o" || color == "W" || color == "w" || color == "1") {
+            } else if (is_white_like_char(color)) {
                 if (options->time_allocated_seconds == TIME_NOT_ALLOCATED) {
                     options->time_allocated_seconds = 0;
                 }

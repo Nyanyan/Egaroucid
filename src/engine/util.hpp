@@ -23,6 +23,14 @@ inline bool is_white_like_char(char c) {
     return c == 'W' || c == 'w' || c == 'O' || c == 'o' || c == '1';
 }
 
+inline bool is_black_like_char(std::string s) {
+    return s == "B" || s == "b" || s == "X" || s == "x" || s == "0" || s == "*";
+}
+
+inline bool is_white_like_char(std::string s) {
+    return s == "W" || s == "w" || s == "O" || s == "o" || s == "1";
+}
+
 std::pair<Board, int> convert_board_from_str(std::string board_str) {
     Board board;
     if (!board.from_str(board_str)) {
