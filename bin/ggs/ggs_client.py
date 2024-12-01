@@ -354,7 +354,7 @@ while True:
                     f.write('initial_board' + board + '\n')
                 else:
                     f.write(last_move)
-            if me_color == color_to_move:
+            if me_color == color_to_move and '-' in board:
                 me_remaining_time_proc = max(1, me_remaining_time - 10)
                 egaroucid_settime(me_color, me_remaining_time_proc)
                 print_log_color('[INFO] Egaroucid thinking... game_id : ' + game_id, color='green')
