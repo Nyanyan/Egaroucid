@@ -55,7 +55,7 @@
     #define W_VALUE_DEEP_ADDITIONAL     move_ordering_param_array[4]
 
     #define W_NWS_MOBILITY              move_ordering_param_array[5]
-    #define W_NWS_POTENTIAL_MOBILITY    move_ordering_param_array[6]
+    //#define W_NWS_POTENTIAL_MOBILITY    move_ordering_param_array[6]
     #define W_NWS_TT_BONUS              move_ordering_param_array[7]
     #define W_NWS_VALUE                 move_ordering_param_array[8]
     #define W_NWS_VALUE_DEEP_ADDITIONAL move_ordering_param_array[9]
@@ -79,7 +79,7 @@
 
     // midgame null window search
     #define W_NWS_MOBILITY 17
-    #define W_NWS_POTENTIAL_MOBILITY 8
+    //#define W_NWS_POTENTIAL_MOBILITY 8
     #define W_NWS_TT_BONUS 204
     #define W_NWS_VALUE 7
     #define W_NWS_VALUE_DEEP_ADDITIONAL 25
