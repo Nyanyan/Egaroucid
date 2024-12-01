@@ -320,6 +320,7 @@ void iterative_deepening_search_time_limit(Board board, int alpha, int beta, boo
                 result->value = id_result.first;
             }
             bool policy_changed = result->policy != id_result.second;
+            bool score_changed = abs(before_raw_value - id_result.first) > 0;
             result->policy = id_result.second;
             result->depth = main_depth;
             result->is_end_search = main_is_end_search;
@@ -335,11 +336,11 @@ void iterative_deepening_search_time_limit(Board board, int alpha, int beta, boo
 #else
                 std::cerr << "depth " << result->depth << "@" << SELECTIVITY_PERCENTAGE[main_mpc_level] << "%" << " value " << result->value << " (raw " << id_result.first << ") policy " << idx_to_coord(id_result.second) << " n_nodes " << result->nodes << " time " << result->time << " NPS " << result->nps << std::endl;
 #endif
+                //std::cerr << "main_depth " << main_depth << " main_is_end_search " << main_is_end_search << " policy_changed_before " << policy_changed_before << " policy_changed " << policy_changed << " score_changed_before " << score_changed_before << " score_changed " << score_changed << std::endl;
             }
-            bool score_changed = abs(before_raw_value - id_result.first) > 0;
             if (
-                !main_is_end_search && 
                 main_depth >= 25 && 
+                !main_is_end_search && 
                 tim() - strt > time_limit * 0.4 && 
                 result->nodes >= 100000000ULL && 
                 !policy_changed && 
