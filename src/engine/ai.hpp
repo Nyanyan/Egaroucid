@@ -336,8 +336,8 @@ void iterative_deepening_search_time_limit(Board board, int alpha, int beta, boo
             }
             if (
                 !main_is_end_search && 
-                main_depth >= 23 && 
-                tim() - strt > time_limit * 0.35 && 
+                main_depth >= 26 && 
+                tim() - strt > time_limit * 0.5 && 
                 result->nodes >= 100000000ULL && 
                 !policy_changed && 
                 abs(before_raw_value - id_result.first) <= 0
