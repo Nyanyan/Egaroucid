@@ -42,12 +42,12 @@ constexpr double SELECTIVITY_MPCT_MULTI[N_SELECTIVITY_LEVEL] = {0.75, 1.21, 1.49
 #define probcut_f 3.0554301965778063
 #define probcut_g 2.0942574977708674
 
-#define probcut_end_a 1.1418656779496374
-#define probcut_end_b 2.2226541432373264
-#define probcut_end_c -5.179383223534515
-#define probcut_end_d 5.775113969126839
-#define probcut_end_e -3.6819689934900164
-#define probcut_end_f 8.072715846965446
+#define probcut_end_a 1.0991215402719048
+#define probcut_end_b 2.1818828716953917
+#define probcut_end_c -5.222054343259216
+#define probcut_end_d 5.266556448300817
+#define probcut_end_e -3.406095066993692
+#define probcut_end_f 8.038123155263888
 
 #if USE_MPC_PRE_CALCULATION
     int mpc_error_single0[N_SELECTIVITY_LEVEL][HW2 + 1][HW2 - 3];
@@ -66,7 +66,7 @@ constexpr int mpc_search_depth_arr[2][61] = {
         24, 25, 26, 27, 26, 27, 28, 29, 28, 29, 
         30
     }, { // endgame
-         0,  1,  0,  1,  0,  1,  0,  1,  2,  3, 
+         0,  1,  0,  1,  2,  3,  2,  3,  2,  3, 
          2,  3,  2,  3,  2,  3,  4,  5,  4,  5, 
          4,  5,  4,  5,  6,  7,  6,  7,  6,  7, 
          6,  7,  8,  9,  8,  9,  8,  9,  8,  9, 
@@ -357,7 +357,7 @@ inline bool mpc(Search* search, int alpha, int beta, int depth, uint64_t legal, 
                     board.move_board(&flip);
                 }
                 if (board.check_pass()) {
-                    int short_depth = myrandrange(1, std::min(15, depth - 1));
+                    int short_depth = myrandrange(2, std::min(15, depth - 1));
                     short_depth &= 0xfffffffe;
                     short_depth |= depth & 1;
                     //int short_depth = mpc_search_depth_arr[1][depth];
