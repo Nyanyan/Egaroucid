@@ -212,6 +212,8 @@ void iterative_deepening_search_time_limit(Board board, int alpha, int beta, boo
     std::vector<Search> searches(thread_pool.size() + 1);
 #endif
     int before_raw_value = -100;
+    bool policy_changed_before = true;
+    bool score_changed_before = true;
     while (global_searching && ((tim() - strt < time_limit) || main_depth <= 1)) {
 #if USE_LAZY_SMP
         for (Search &search: searches) {
@@ -334,13 +336,16 @@ void iterative_deepening_search_time_limit(Board board, int alpha, int beta, boo
                 std::cerr << "depth " << result->depth << "@" << SELECTIVITY_PERCENTAGE[main_mpc_level] << "%" << " value " << result->value << " (raw " << id_result.first << ") policy " << idx_to_coord(id_result.second) << " n_nodes " << result->nodes << " time " << result->time << " NPS " << result->nps << std::endl;
 #endif
             }
+            bool score_changed = abs(before_raw_value - id_result.first) > 0;
             if (
                 !main_is_end_search && 
                 main_depth >= 25 && 
-                tim() - strt > time_limit * 0.5 && 
+                tim() - strt > time_limit * 0.4 && 
                 result->nodes >= 100000000ULL && 
                 !policy_changed && 
-                abs(before_raw_value - id_result.first) <= 0
+                !policy_changed_before && 
+                !score_changed && 
+                !score_changed_before
             ) {
                 if (show_log) {
                     std::cerr << "early break" << std::endl;
@@ -348,6 +353,8 @@ void iterative_deepening_search_time_limit(Board board, int alpha, int beta, boo
                 break;
             }
             before_raw_value = id_result.first;
+            policy_changed_before = policy_changed;
+            score_changed_before = score_changed;
         }
         if (main_depth < max_depth - IDSEARCH_ENDSEARCH_PRESEARCH_OFFSET) { // next: midgame search
             if (main_depth <= 15 && main_depth < max_depth - 3) {
