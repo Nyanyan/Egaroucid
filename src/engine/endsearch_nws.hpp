@@ -378,13 +378,6 @@ int nega_alpha_end_nws(Search *search, int alpha, const bool skipped, uint64_t l
         }
     }
     for (int move_idx = 0; move_idx < canput; ++move_idx) {
-        /*
-        if (search->need_to_see_tt_loop) {
-            if (transposition_cutoff_nws(search, hash_code, HW2 - search->n_discs, alpha, &v, moves)) {
-                return v;
-            }
-        }
-        */
         swap_next_best_move(move_list, move_idx, canput);
         if ((1ull << move_list[move_idx].flip.pos) & done) {
             continue;

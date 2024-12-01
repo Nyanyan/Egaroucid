@@ -158,11 +158,6 @@ int nega_alpha_ordering_nws_simple(Search *search, int alpha, const int depth, c
                 break;
             }
         #endif
-        if (search->need_to_see_tt_loop) {
-            if (transposition_cutoff_nws_bestmove(search, hash_code, depth, alpha, &v, &best_move)) {
-                break;
-            }
-        }
         search->move(&move_list[move_idx].flip);
             g = -nega_alpha_ordering_nws_simple(search, -alpha - 1, depth - 1, false, move_list[move_idx].n_legal, searching);
         search->undo(&move_list[move_idx].flip);
@@ -290,11 +285,6 @@ int nega_alpha_ordering_nws(Search *search, int alpha, const int depth, const bo
                         break;
                     }
                 #endif
-                if (search->need_to_see_tt_loop) {
-                    if (transposition_cutoff_nws_bestmove(search, hash_code, depth, alpha, &v, &best_move)) {
-                        break;
-                    }
-                }
                 search->move(&move_list[move_idx].flip);
                     g = -nega_alpha_ordering_nws(search, -alpha - 1, depth - 1, false, move_list[move_idx].n_legal, is_end_search, searching);
                 search->undo(&move_list[move_idx].flip);

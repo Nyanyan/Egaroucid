@@ -156,7 +156,7 @@ Search_result human_like_ai(Board board, int level, bool show_log) {
     bool is_mid_search;
     uint_fast8_t mpc_level;
     get_level(level, board.n_discs() - 4, &is_mid_search, &depth, &mpc_level);
-    Search search(&board, mpc_level, false, false, false);
+    Search search(&board, mpc_level, false, false);
     bool searching = true;
     uint64_t strt = tim();
     res = nega_alpha_human_like_root(&search, -SCORE_MAX, SCORE_MAX, depth, !is_mid_search, &searching);

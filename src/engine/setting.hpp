@@ -147,7 +147,8 @@
 // flip SIMD / AVX512 optimization for each compiler
 #define AUTO_FLIP_OPT_BY_COMPILER true
 
-
+// Lazy-SMP-like search
+#define USE_LAZY_SMP true
 
 
 

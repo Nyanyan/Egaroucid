@@ -58,23 +58,28 @@ void iterative_deepening_search(Board board, int alpha, int beta, int depth, uin
     if (show_log) {
         std::cerr << "thread pool size " << thread_pool.size() << " n_idle " << thread_pool.get_n_idle() << std::endl;
     }
+#if USE_LAZY_SMP
     std::vector<Search> searches(thread_pool.size() + 1);
+#endif
     while (main_depth <= depth && main_mpc_level <= mpc_level && global_searching) {
+#if USE_LAZY_SMP
         for (Search &search: searches) {
             search.n_nodes = 0;
         }
+#endif
         bool main_is_end_search = false;
         if (main_depth >= max_depth) {
             main_is_end_search = true;
             main_depth = max_depth;
         }
         bool is_last_search = (main_depth == depth) && (main_mpc_level == mpc_level);
+#if USE_LAZY_SMP
         std::vector<std::future<int>> parallel_tasks;
         std::vector<int> sub_depth_arr;
         int sub_max_mpc_level[61];
         bool sub_searching = true;
         int sub_depth = main_depth;
-        if (use_multi_thread && !(is_end_search && main_depth == depth) && main_depth <= 10 && false) {
+        if (use_multi_thread && !(is_end_search && main_depth == depth) && main_depth <= 10) {
             int max_thread_size = thread_pool.size();
             for (int i = 0; i < main_depth - 14; ++i) {
                 max_thread_size *= 0.9;
@@ -90,7 +95,7 @@ void iterative_deepening_search(Board board, int alpha, int beta, int depth, uin
                 bool sub_is_end_search = (sub_depth == max_depth);
                 if (sub_mpc_level <= MPC_100_LEVEL) {
                     //std::cerr << sub_thread_idx << " " << sub_depth << " " << SELECTIVITY_PERCENTAGE[sub_mpc_level] << std::endl;
-                    searches[sub_thread_idx] = Search{&board, sub_mpc_level, false, true, true};
+                    searches[sub_thread_idx] = Search{&board, sub_mpc_level, false, true};
                     bool pushed = false;
                     parallel_tasks.emplace_back(thread_pool.push(&pushed, std::bind(&nega_scout, &searches[sub_thread_idx], alpha, beta, sub_depth, false, LEGAL_UNDEFINED, sub_is_end_search, &sub_searching)));
                     sub_depth_arr.emplace_back(sub_depth);
@@ -116,17 +121,12 @@ void iterative_deepening_search(Board board, int alpha, int beta, int depth, uin
                     max_is_only_one = false;
                 }
             }
-            if (max_is_only_one) {
-                for (int i = 0; i < (int)parallel_tasks.size(); ++i) {
-                    if (sub_depth_arr[i] == max_sub_search_depth && searches[i].mpc_level == max_sub_main_mpc_level) {
-                        searches[i].need_to_see_tt_loop = false; // off the inside-loop tt lookup in the max level thread
-                    }
-                }
-            }
         }
-        Search main_search(&board, main_mpc_level, use_multi_thread, parallel_tasks.size() != 0, !is_last_search);
+#endif
+        Search main_search(&board, main_mpc_level, use_multi_thread, !is_last_search);        
         bool searching = true;
         std::pair<int, int> id_result = first_nega_scout_legal(&main_search, alpha, beta, main_depth, main_is_end_search, clogs, use_legal, strt, &searching);
+#if USE_LAZY_SMP
         sub_searching = false;
         for (std::future<int> &task: parallel_tasks) {
             task.get();
@@ -134,6 +134,7 @@ void iterative_deepening_search(Board board, int alpha, int beta, int depth, uin
         for (Search &search: searches) {
             result->nodes += search.n_nodes;
         }
+#endif
         result->nodes += main_search.n_nodes;
         if (result->value != SCORE_UNDEFINED && !main_is_end_search) {
             double n_value = (0.9 * result->value + 1.1 * id_result.first) / 2.0;
@@ -158,7 +159,11 @@ void iterative_deepening_search(Board board, int alpha, int beta, int depth, uin
             } else{
                 std::cerr << "mid ";
             }
+#if USE_LAZY_SMP
             std::cerr << "depth " << result->depth << "@" << SELECTIVITY_PERCENTAGE[main_mpc_level] << "%" << " value " << result->value << " (raw " << id_result.first << ") policy " << idx_to_coord(id_result.second) << " n_worker " << parallel_tasks.size() << " n_nodes " << result->nodes << " time " << result->time << " NPS " << result->nps << std::endl;
+#else
+            std::cerr << "depth " << result->depth << "@" << SELECTIVITY_PERCENTAGE[main_mpc_level] << "%" << " value " << result->value << " (raw " << id_result.first << ") policy " << idx_to_coord(id_result.second) << " n_nodes " << result->nodes << " time " << result->time << " NPS " << result->nps << std::endl;
+#endif
         }
         if (is_end_search && (main_depth >= IDSEARCH_ENDSEARCH_PRESEARCH_MAX_DEPTH || main_depth >= depth - IDSEARCH_ENDSEARCH_PRESEARCH_OFFSET)) {
             if (main_depth < depth) {
@@ -203,17 +208,22 @@ void iterative_deepening_search_time_limit(Board board, int alpha, int beta, boo
     if (show_log) {
         std::cerr << "thread pool size " << thread_pool.size() << " n_idle " << thread_pool.get_n_idle() << std::endl;
     }
+#if USE_LAZY_SMP
     std::vector<Search> searches(thread_pool.size() + 1);
+#endif
     int before_raw_value = -100;
     while (global_searching && ((tim() - strt < time_limit) || main_depth <= 1)) {
+#if USE_LAZY_SMP
         for (Search &search: searches) {
             search.n_nodes = 0;
         }
+#endif
         bool main_is_end_search = false;
         if (main_depth >= max_depth) {
             main_is_end_search = true;
             main_depth = max_depth;
         }
+#if USE_LAZY_SMP
         std::vector<std::future<int>> parallel_tasks;
         std::vector<int> sub_depth_arr;
         int sub_max_mpc_level[61];
@@ -235,7 +245,7 @@ void iterative_deepening_search_time_limit(Board board, int alpha, int beta, boo
                 bool sub_is_end_search = (sub_depth == max_depth);
                 if (sub_mpc_level <= MPC_100_LEVEL) {
                     //std::cerr << sub_thread_idx << " " << sub_depth << " " << SELECTIVITY_PERCENTAGE[sub_mpc_level] << std::endl;
-                    searches[sub_thread_idx] = Search{&board, sub_mpc_level, false, true, true};
+                    searches[sub_thread_idx] = Search{&board, sub_mpc_level, false, true};
                     bool pushed = false;
                     parallel_tasks.emplace_back(thread_pool.push(&pushed, std::bind(&nega_scout, &searches[sub_thread_idx], alpha, beta, sub_depth, false, LEGAL_UNDEFINED, sub_is_end_search, &sub_searching)));
                     sub_depth_arr.emplace_back(sub_depth);
@@ -261,15 +271,9 @@ void iterative_deepening_search_time_limit(Board board, int alpha, int beta, boo
                     max_is_only_one = false;
                 }
             }
-            if (max_is_only_one) {
-                for (int i = 0; i < (int)parallel_tasks.size(); ++i) {
-                    if (sub_depth_arr[i] == max_sub_search_depth && searches[i].mpc_level == max_sub_main_mpc_level) {
-                        searches[i].need_to_see_tt_loop = false; // off the inside-loop tt lookup in the max level thread
-                    }
-                }
-            }
         }
-        Search main_search(&board, main_mpc_level, use_multi_thread, parallel_tasks.size() != 0, false);
+#endif
+        Search main_search(&board, main_mpc_level, use_multi_thread, false);
         bool searching = true;
         std::pair<int, int> id_result;
         bool search_success = true;
@@ -294,6 +298,7 @@ void iterative_deepening_search_time_limit(Board board, int alpha, int beta, boo
                 }
             }
         }
+#if USE_LAZY_SMP
         sub_searching = false;
         for (std::future<int> &task: parallel_tasks) {
             task.get();
@@ -301,6 +306,7 @@ void iterative_deepening_search_time_limit(Board board, int alpha, int beta, boo
         for (Search &search: searches) {
             result->nodes += search.n_nodes;
         }
+#endif
         result->nodes += main_search.n_nodes;
         result->time = tim() - strt;
         result->nps = calc_nps(result->nodes, result->time);
@@ -322,7 +328,11 @@ void iterative_deepening_search_time_limit(Board board, int alpha, int beta, boo
                 } else{
                     std::cerr << "mid ";
                 }
+#if USE_LAZY_SMP
                 std::cerr << "depth " << result->depth << "@" << SELECTIVITY_PERCENTAGE[main_mpc_level] << "%" << " value " << result->value << " (raw " << id_result.first << ") policy " << idx_to_coord(id_result.second) << " n_worker " << parallel_tasks.size() << " n_nodes " << result->nodes << " time " << result->time << " NPS " << result->nps << std::endl;
+#else
+                std::cerr << "depth " << result->depth << "@" << SELECTIVITY_PERCENTAGE[main_mpc_level] << "%" << " value " << result->value << " (raw " << id_result.first << ") policy " << idx_to_coord(id_result.second) << " n_nodes " << result->nodes << " time " << result->time << " NPS " << result->nps << std::endl;
+#endif
             }
             if (
                 !main_is_end_search && 
@@ -616,7 +626,7 @@ Analyze_result ai_analyze(Board board, int level, bool use_multi_thread, uint_fa
         clogs = first_clog_search(board, &clog_nodes, clog_depth, board.get_legal());
         clog_time = tim() - clog_strt;
     }
-    Search search(&board, mpc_level, use_multi_thread, false, false);
+    Search search(&board, mpc_level, use_multi_thread, false);
     uint64_t strt = tim();
     bool searching = true;
     //thread_pool.tell_start_using();
@@ -769,7 +779,7 @@ void ai_ponder(Board board, bool show_log, bool *searching) {
         uint_fast8_t mpc_level;
         get_level(new_level, n_board.n_discs() - 4, &is_mid_search, &depth, &mpc_level);
         depth = std::min(HW2 - board.n_discs(), depth);
-        Search search(&n_board, mpc_level, true, false, false);
+        Search search(&n_board, mpc_level, true, false);
         int v = -nega_scout(&search, -SCORE_MAX, SCORE_MAX, depth, false, LEGAL_UNDEFINED, !is_mid_search, searching);
         if (move_list[selected_idx].value == INF || !is_mid_search) {
             move_list[selected_idx].value = v;

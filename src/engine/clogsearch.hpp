@@ -57,7 +57,7 @@
         @return search result in Parallel_clog_task structure
     */
     Parallel_clog_task clog_do_task(uint64_t player, uint64_t opponent, int depth, bool *searching) {
-        Search search(player, opponent, MPC_100_LEVEL, true, false, false);
+        Search search(player, opponent, MPC_100_LEVEL, true, false);
         Parallel_clog_task task;
         task.val = clog_search(&search, depth, searching);
         task.n_nodes = search.n_nodes;
@@ -195,7 +195,7 @@ int clog_search(Search *search, int depth, bool *searching) {
     @return vector of all moves and scores that leads early game over
 */
 std::vector<Clog_result> first_clog_search(Board board, uint64_t *n_nodes, int depth, uint64_t legal) {
-    Search search(&board, MPC_100_LEVEL, true, false, false);
+    Search search(&board, MPC_100_LEVEL, true, false);
     std::vector<Clog_result> res;
     Flip flip;
     int g;
