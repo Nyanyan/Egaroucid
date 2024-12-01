@@ -29,7 +29,7 @@
 #include "etc.hpp"
 #include "book.hpp"
 
-inline int aspiration_search(Search *search, int alpha, int beta, int predicted_value, int depth, const bool skipped, uint64_t legal, const bool is_end_search, bool *searching);
+inline int aspiration_search(Search *search, int alpha, int beta, int predicted_value, const int depth, const bool skipped, uint64_t legal, const bool is_end_search, bool *searching);
 
 /*
     @brief Get a value with last move with Nega-Alpha algorithm
@@ -94,7 +94,7 @@ inline int nega_alpha_eval1(Search *search, int alpha, int beta, const bool skip
     @param searching            flag for terminating this search
     @return the value
 */
-int nega_scout(Search *search, int alpha, int beta, int depth, const bool skipped, uint64_t legal, const bool is_end_search, bool *searching) {
+int nega_scout(Search *search, int alpha, int beta, const int depth, const bool skipped, uint64_t legal, const bool is_end_search, bool *searching) {
     if (!global_searching || !(*searching)) {
         return SCORE_UNDEFINED;
     }
@@ -264,7 +264,7 @@ int nega_scout(Search *search, int alpha, int beta, int depth, const bool skippe
         @param legal                legal moves in bitboard
         @return pair of value and best move
     */
-    inline int aspiration_search(Search *search, int alpha, int beta, int predicted_value, int depth, const bool skipped, uint64_t legal, const bool is_end_search, bool *searching) {
+    inline int aspiration_search(Search *search, int alpha, int beta, int predicted_value, const int depth, const bool skipped, uint64_t legal, const bool is_end_search, bool *searching) {
         int pred_alpha = predicted_value - 1;
         int pred_beta = predicted_value + 1;
         int g = nega_scout(search, pred_alpha, pred_beta, depth, false, LEGAL_UNDEFINED, is_end_search, searching);
@@ -301,7 +301,7 @@ int nega_scout(Search *search, int alpha, int beta, int depth, const bool skippe
     @param legal                legal moves in bitboard
     @return pair of value and best move
 */
-std::pair<int, int> first_nega_scout_legal(Search *search, int alpha, int beta, int depth, const bool is_end_search, const std::vector<Clog_result> clogs, uint64_t legal, uint64_t strt, bool *searching) {
+std::pair<int, int> first_nega_scout_legal(Search *search, int alpha, int beta, const int depth, const bool is_end_search, const std::vector<Clog_result> clogs, uint64_t legal, uint64_t strt, bool *searching) {
     ++search->n_nodes;
     #if USE_SEARCH_STATISTICS
         ++search->n_nodes_discs[search->n_discs];
@@ -410,11 +410,11 @@ std::pair<int, int> first_nega_scout_legal(Search *search, int alpha, int beta, 
     @param clogs                previously found clog moves
     @return pair of value and best move
 */
-std::pair<int, int> first_nega_scout(Search *search, int alpha, int beta, int depth, const bool is_end_search, const std::vector<Clog_result> clogs, uint64_t strt, bool *searching) {
+std::pair<int, int> first_nega_scout(Search *search, int alpha, int beta, const int depth, const bool is_end_search, const std::vector<Clog_result> clogs, uint64_t strt, bool *searching) {
     return first_nega_scout_legal(search, alpha, beta, depth, is_end_search, clogs, search->board.get_legal(), strt, searching);
 }
 
-Analyze_result first_nega_scout_analyze(Search *search, int alpha, int beta, int depth, const bool is_end_search, const std::vector<Clog_result> clogs, int clog_depth, uint_fast8_t played_move, uint64_t strt, bool *searching) {
+Analyze_result first_nega_scout_analyze(Search *search, int alpha, int beta, const int depth, const bool is_end_search, const std::vector<Clog_result> clogs, int clog_depth, uint_fast8_t played_move, uint64_t strt, bool *searching) {
     ++search->n_nodes;
     #if USE_SEARCH_STATISTICS
         ++search->n_nodes_discs[search->n_discs];

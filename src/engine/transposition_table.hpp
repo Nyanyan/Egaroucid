@@ -568,7 +568,7 @@ class Transposition_table {
             @param upper                upper bound to store
             @param moves                best moves to store
         */
-        inline void get(const Search *search, uint32_t hash, const int depth, int *lower, int *upper, uint_fast8_t moves[]) {
+        inline void get(const Search *search, const uint32_t hash, const int depth, int *lower, int *upper, uint_fast8_t moves[]) {
             Hash_node *node = get_node(hash);
             const uint32_t level = get_level_common(depth, search->mpc_level);
             for (uint_fast8_t i = 0; i < TRANSPOSITION_TABLE_N_LOOP; ++i) {
@@ -584,8 +584,7 @@ class Transposition_table {
                         }
                     node->lock.unlock();
                 }
-                ++hash;
-                node = get_node(hash);
+                node = get_node(hash + i + 1);
             }
         }
 
@@ -745,7 +744,7 @@ class Transposition_table {
         }
 
     private:
-        inline Hash_node* get_node(uint32_t hash) {
+        inline Hash_node* get_node(const uint32_t hash) {
             #if TT_USE_STACK
                 #if USE_CHANGEABLE_HASH_LEVEL
                     if (hash < TRANSPOSITION_TABLE_STACK_SIZE)
@@ -866,7 +865,7 @@ void transposition_table_init() {
     }
 #endif
 
-inline bool transposition_cutoff(Search *search, uint32_t hash_code, int depth, int *alpha, int *beta, int *v, uint_fast8_t moves[]) {
+inline bool transposition_cutoff(Search *search, const uint32_t hash_code, int depth, int *alpha, int *beta, int *v, uint_fast8_t moves[]) {
     //if (depth >= USE_TT_DEPTH_THRESHOLD) {
     int lower = -SCORE_MAX, upper = SCORE_MAX;
     transposition_table.get(search, hash_code, depth, &lower, &upper, moves);
@@ -888,7 +887,7 @@ inline bool transposition_cutoff(Search *search, uint32_t hash_code, int depth, 
     return false;
 }
 
-inline bool transposition_cutoff_bestmove(Search *search, uint32_t hash_code, int depth, int *alpha, int *beta, int *v, int *best_move) {
+inline bool transposition_cutoff_bestmove(Search *search, const uint32_t hash_code, int depth, int *alpha, int *beta, int *v, int *best_move) {
     //if (depth >= USE_TT_DEPTH_THRESHOLD) {
     int lower = -SCORE_MAX, upper = SCORE_MAX;
     uint_fast8_t moves[N_TRANSPOSITION_MOVES];
@@ -913,7 +912,7 @@ inline bool transposition_cutoff_bestmove(Search *search, uint32_t hash_code, in
     return false;
 }
 
-inline bool transposition_cutoff_nws(Search *search, uint32_t hash_code, int depth, int alpha, int *v, uint_fast8_t moves[]) {
+inline bool transposition_cutoff_nws(Search *search, const uint32_t hash_code, int depth, int alpha, int *v, uint_fast8_t moves[]) {
     //if (depth >= USE_TT_DEPTH_THRESHOLD) {
     int lower = -SCORE_MAX, upper = SCORE_MAX;
     transposition_table.get(search, hash_code, depth, &lower, &upper, moves);
@@ -929,7 +928,7 @@ inline bool transposition_cutoff_nws(Search *search, uint32_t hash_code, int dep
     return false;
 }
 
-inline bool transposition_cutoff_nws(Search *search, uint32_t hash_code, int depth, int alpha, int *v) {
+inline bool transposition_cutoff_nws(Search *search, const uint32_t hash_code, int depth, int alpha, int *v) {
     //if (depth >= USE_TT_DEPTH_THRESHOLD) {
     int lower = -SCORE_MAX, upper = SCORE_MAX;
     transposition_table.get_bounds(search, hash_code, depth, &lower, &upper);
@@ -945,7 +944,7 @@ inline bool transposition_cutoff_nws(Search *search, uint32_t hash_code, int dep
     return false;
 }
 
-inline bool transposition_cutoff_nws_bestmove(Search *search, uint32_t hash_code, int depth, int alpha, int *v, int *best_move) {
+inline bool transposition_cutoff_nws_bestmove(Search *search, const uint32_t hash_code, int depth, int alpha, int *v, int *best_move) {
     //if (depth >= USE_TT_DEPTH_THRESHOLD) {
     int lower = -SCORE_MAX, upper = SCORE_MAX;
     uint_fast8_t moves[N_TRANSPOSITION_MOVES];
