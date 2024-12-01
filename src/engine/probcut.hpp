@@ -300,7 +300,7 @@ inline bool mpc(Search* search, int alpha, int beta, int depth, uint64_t legal, 
         Flip flip;
         Search_result short_ans, long_ans;
         for (int i = 0; i < 1000; ++i) {
-            for (int depth = 2; depth < 15; ++depth) {
+            for (int depth = 0; depth < 15; ++depth) {
                 for (int n_discs = 4; n_discs < HW2 - depth - 5; ++n_discs) {
                     board.reset();
                     for (int j = 4; j < n_discs && board.check_pass(); ++j) { // random move
@@ -345,7 +345,7 @@ inline bool mpc(Search* search, int alpha, int beta, int depth, uint64_t legal, 
         Flip flip;
         Search_result short_ans, long_ans;
         for (int i = 0; i < 1000; ++i) {
-            for (int depth = 24; depth < 26; ++depth) {
+            for (int depth = 0; depth < 25; ++depth) {
                 board.reset();
                 for (int j = 0; j < HW2 - 4 - depth && board.check_pass(); ++j) { // random move
                     uint64_t legal = board.get_legal();
