@@ -7,7 +7,7 @@ import sys
 
 start = 40
 end = 59
-n_threads = 42
+n_threads = 36
 hash_level = 25
 exe = 'versions/Egaroucid_for_Console_beta/Egaroucid_for_Console.exe'
 try:

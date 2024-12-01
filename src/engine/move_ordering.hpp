@@ -29,7 +29,7 @@
 #include "transposition_table.hpp"
 
 /*
-    @brief if wipeout found, it must be searched first.
+    @brief constant
 */
 #define W_WIPEOUT 100000000
 #define W_1ST_MOVE 10000000
@@ -40,10 +40,10 @@
     @brief constants for move ordering
 */
 #if TUNE_MOVE_ORDERING
-    #define N_MOVE_ORDERING_PARAM 15
+    #define N_MOVE_ORDERING_PARAM 14
     int move_ordering_param_array[N_MOVE_ORDERING_PARAM] = {
         35, 17, 485, 269, 94, 
-        17, 8, 204, 7, 25, 
+        17, 204, 7, 25, 
         40, 12, 
         18, 17, 300
     };
@@ -55,20 +55,19 @@
     #define W_VALUE_DEEP_ADDITIONAL     move_ordering_param_array[4]
 
     #define W_NWS_MOBILITY              move_ordering_param_array[5]
-    #define W_NWS_POTENTIAL_MOBILITY    move_ordering_param_array[6]
-    #define W_NWS_TT_BONUS              move_ordering_param_array[7]
-    #define W_NWS_VALUE                 move_ordering_param_array[8]
-    #define W_NWS_VALUE_DEEP_ADDITIONAL move_ordering_param_array[9]
+    #define W_NWS_TT_BONUS              move_ordering_param_array[6]
+    #define W_NWS_VALUE                 move_ordering_param_array[7]
+    #define W_NWS_VALUE_DEEP_ADDITIONAL move_ordering_param_array[8]
 
-    #define W_END_NWS_MOBILITY          move_ordering_param_array[10]
-    #define W_END_NWS_VALUE             move_ordering_param_array[11]
+    #define W_END_NWS_MOBILITY          move_ordering_param_array[9]
+    #define W_END_NWS_VALUE             move_ordering_param_array[10]
 
-    #define W_END_NWS_SIMPLE_MOBILITY   move_ordering_param_array[12]
-    #define W_END_NWS_SIMPLE_PARITY     move_ordering_param_array[13]
-    #define W_END_NWS_SIMPLE_TT_BONUS   move_ordering_param_array[14]
+    #define W_END_NWS_SIMPLE_MOBILITY   move_ordering_param_array[11]
+    #define W_END_NWS_SIMPLE_PARITY     move_ordering_param_array[12]
+    #define W_END_NWS_SIMPLE_TT_BONUS   move_ordering_param_array[13]
 
-    #define MOVE_ORDERING_PARAM_START 10
-    #define MOVE_ORDERING_PARAM_END 14
+    #define MOVE_ORDERING_PARAM_START 9
+    #define MOVE_ORDERING_PARAM_END 13
 #else
     // midgame search
     #define W_MOBILITY 35
@@ -79,7 +78,6 @@
 
     // midgame null window search
     #define W_NWS_MOBILITY 17
-    #define W_NWS_POTENTIAL_MOBILITY 8
     #define W_NWS_TT_BONUS 204
     #define W_NWS_VALUE 7
     #define W_NWS_VALUE_DEEP_ADDITIONAL 25
@@ -254,7 +252,6 @@ inline void move_evaluate_nws(Search *search, Flip_value *flip_value, int alpha,
     search->move(&flip_value->flip);
         flip_value->n_legal = search->board.get_legal();
         flip_value->value += (MO_OFFSET_L_PM - get_weighted_n_moves(flip_value->n_legal)) * W_NWS_MOBILITY;
-        flip_value->value += (MO_OFFSET_L_PM - get_potential_mobility(search->board.opponent, ~(search->board.player | search->board.opponent))) * W_NWS_POTENTIAL_MOBILITY;
         switch (depth) {
             case 0:
                 flip_value->value += (SCORE_MAX - mid_evaluate_diff(search)) * W_NWS_VALUE;
