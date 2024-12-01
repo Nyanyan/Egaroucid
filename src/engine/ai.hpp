@@ -596,7 +596,7 @@ Search_result ai_specified(Board board, int level, bool use_book, int book_acc_l
 Search_result ai_time_limit(Board board, int level, bool use_book, int book_acc_level, bool use_multi_thread, bool show_log, uint64_t remaining_time_msec) {
     uint64_t time_limit = calc_time_limit_ply(board, remaining_time_msec, show_log);
     if (show_log) {
-        std::cerr << "time limit: " << time_limit << std::endl;
+        std::cerr << "time limit: " << time_limit << " remaining " << remaining_time_msec << std::endl;
     }
     return ai_common(board, -SCORE_MAX, SCORE_MAX, level, use_book, book_acc_level, use_multi_thread, show_log, board.get_legal(), false, time_limit);
 }

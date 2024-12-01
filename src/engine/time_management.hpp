@@ -23,9 +23,6 @@ uint64_t calc_time_limit_ply(const Board board, uint64_t remaining_time_msec, bo
     if (remaining_time_msec > 3000) {
         remaining_time_msec_margin -= 2000;
     }
-    if (show_log) {
-        std::cerr << "remaining time " << remaining_time_msec << " margined " << remaining_time_msec_margin << std::endl;
-    }
     int n_empties = HW2 - board.n_discs();
 
     // try complete search

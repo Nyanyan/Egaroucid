@@ -220,9 +220,6 @@ Search_result go_noprint(Board_info *board, Options *options, State *state) {
         } else {
             remaining_time_msec = state->remaining_time_msec_white;
         }
-        if (options->show_log) {
-            std::cerr << "remaining time b " << state->remaining_time_msec_black << " w " << state->remaining_time_msec_white << " player " << remaining_time_msec << std::endl;
-        }
         result = ai_time_limit(board->board, options->level, true, 0, true, options->show_log, remaining_time_msec);
     }
     Flip flip;
@@ -264,9 +261,6 @@ void setboard(Board_info *board, Options *options, State *state, std::string boa
     int player = board_player.second;
     if (player != BLACK && player != WHITE) {
         return;
-    }
-    if (options->show_log) {
-        std::cerr << "setboard info player " << player << " board (player=X) " << new_board.to_str() << std::endl;
     }
     board->board = new_board.copy();
     board->player = player;
@@ -400,9 +394,6 @@ void settime(State *state, Options *options, std::string arg) {
     } else {
         std::string color = arg.substr(0, pos);
         std::string time_sec_str = arg.substr(pos + 1);
-        if (options->show_log) {
-            std::cerr << "settime info color " << color << " time_sec " << time_sec_str << std::endl;
-        }
         try{
             uint64_t time_msec = 1000ULL * (uint64_t)std::stoi(time_sec_str);
             if (is_black_like_char(color[0])) {
