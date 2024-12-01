@@ -24,6 +24,8 @@ print(egaroucid_cmd, file=sys.stderr)
 egaroucid_win = [0, 0]
 edax_win = [0, 0]
 draw = [0, 0]
+egaroucid_disc_diff_sum = 0
+egaroucid_n_played = 0
 
 print('time_limit', time_limit, file=sys.stderr)
 print('openings', len(tactic), file=sys.stderr)
@@ -159,17 +161,27 @@ for num in range(max_num):
             draw[player] += 1
         else:
             edax_win[player] += 1
+        egaroucid_disc_diff = o.n_stones[player] - o.n_stones[1 - player]
+        if o.n_stones[player] > o.n_stones[1 - player]:
+            egaroucid_disc_diff += 64 - o.n_stones[player] - o.n_stones[1 - player]
+        elif o.n_stones[player] < o.n_stones[1 - player]:
+            egaroucid_disc_diff -= 64 - o.n_stones[player] - o.n_stones[1 - player]
+        egaroucid_disc_diff_sum += egaroucid_disc_diff
+        egaroucid_n_played += 1
         egaroucid.kill()
         edax.kill()
         print('')
         print(record)
         print('egaroucid', egaroucid_used_time, 's', 'edax', edax_used_time, 's')
         print(num, max_num, ' ', egaroucid_win, draw, edax_win, sum(egaroucid_win) + sum(draw) * 0.5, sum(edax_win) + sum(draw) * 0.5, 
-              (sum(egaroucid_win) + sum(draw) * 0.5) / max(1, sum(egaroucid_win) + sum(edax_win) + sum(draw)), file=sys.stderr)
+              round((sum(egaroucid_win) + sum(draw) * 0.5) / max(1, sum(egaroucid_win) + sum(edax_win) + sum(draw)), 4), 
+              round(egaroucid_disc_diff_sum / egaroucid_n_played, 4), end='                ', file=sys.stderr)
 
 print('', file=sys.stderr)
 
 print('time_limit: ', time_limit, 
       ' Egaroucid plays black WDL: ', egaroucid_win[0], '-', draw[0], '-', edax_win[0], ' ', (egaroucid_win[0] + draw[0] * 0.5) / (egaroucid_win[0] + edax_win[0] + draw[0]), 
       ' Egaroucid plays white WDL: ', egaroucid_win[1], '-', draw[1], '-', edax_win[1], ' ', (egaroucid_win[1] + draw[1] * 0.5) / (egaroucid_win[1] + edax_win[1] + draw[1]), 
-      ' Egaroucid win rate: ', (sum(egaroucid_win) + sum(draw) * 0.5) / max(1, sum(egaroucid_win) + sum(edax_win) + sum(draw)), sep='')
+      ' Egaroucid win rate: ', (sum(egaroucid_win) + sum(draw) * 0.5) / max(1, sum(egaroucid_win) + sum(edax_win) + sum(draw)), 
+      ' Egaroucid average discs earned: ', round(egaroucid_disc_diff_sum / egaroucid_n_played, 4), 
+      sep='')
