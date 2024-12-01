@@ -351,7 +351,7 @@ while True:
                     f.write('game_id ' + game_id + '\n')
                     f.write('egaroucid_color ' + me_color + '\n')
                     f.write('egaroucid_remaining_time ' + str(me_remaining_time) + '\n')
-                    f.write('initial_board' + board + '\n')
+                    f.write('initial_board ' + board + '\n')
                 else:
                     f.write(last_move)
             if me_color == color_to_move and '-' in board:
