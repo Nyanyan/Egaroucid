@@ -34,13 +34,13 @@ constexpr double SELECTIVITY_MPCT_MULTI[N_SELECTIVITY_LEVEL] = {0.75, 1.21, 1.49
 /*
     @brief constants for ProbCut error calculation
 */
-#define probcut_a 0.6631360832134467
-#define probcut_b -5.348861841670177
-#define probcut_c 1.1309613549160096
-#define probcut_d 0.4695405470775266
-#define probcut_e 5.1210611818487335
-#define probcut_f 4.2371479284919635
-#define probcut_g 1.909070334614221
+#define probcut_a 1.1762848139444415
+#define probcut_b -9.268541930801826
+#define probcut_c 1.5983991101052806
+#define probcut_d 0.619250680227897
+#define probcut_e 1.7515900541563392
+#define probcut_f 2.193396314016174
+#define probcut_g 2.0243398879685834
 
 #define probcut_end_a 0.9488801666878249
 #define probcut_end_b 2.059591480194046
