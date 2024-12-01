@@ -78,6 +78,110 @@ inline int nega_alpha_eval1_nws(Search *search, int alpha, const bool skipped) {
 }
 
 
+
+/*
+    @brief Get a value with given depth with Nega-Alpha algorithm (NWS)
+
+    Search with move ordering for midgame NWS (no YBWC)
+
+    @param search               search information
+    @param alpha                alpha value (beta value is alpha + 1)
+    @param depth                remaining depth
+    @param skipped              already passed?
+    @param legal                for use of previously calculated legal bitboard
+    @param searching            flag for terminating this search
+    @return the value
+*/
+int nega_alpha_ordering_nws_simple(Search *search, int alpha, const int depth, const bool skipped, uint64_t legal, bool *searching) {
+    if (!global_searching || !(*searching)) {
+        return SCORE_UNDEFINED;
+    }
+    if (depth == 1) {
+        return nega_alpha_eval1_nws(search, alpha, skipped);
+    }
+    if (depth == 0) {
+        ++search->n_nodes;
+        return mid_evaluate_diff(search);
+    }
+    ++search->n_nodes;
+    #if USE_SEARCH_STATISTICS
+        ++search->n_nodes_discs[search->n_discs];
+    #endif
+    if (legal == LEGAL_UNDEFINED) {
+        legal = search->board.get_legal();
+    }
+    int v = -SCORE_INF;
+    if (legal == 0ULL) {
+        if (skipped) {
+            return end_evaluate(&search->board);
+        }
+        search->pass();
+            v = -nega_alpha_ordering_nws_simple(search, -alpha - 1, depth, true, LEGAL_UNDEFINED, searching);
+        search->pass();
+        return v;
+    }
+    uint32_t hash_code = search->board.hash();
+    uint_fast8_t moves[N_TRANSPOSITION_MOVES] = {TRANSPOSITION_TABLE_UNDEFINED, TRANSPOSITION_TABLE_UNDEFINED};
+    if (transposition_cutoff_nws(search, hash_code, depth, alpha, &v, moves)) {
+        return v;
+    }
+    #if USE_MID_MPC && MID_MPC_MIN_DEPTH <= MID_SIMPLE_DEPTH
+        if (mpc(search, alpha, alpha + 1, depth, legal, false, &v, searching)) {
+            return v;
+        }
+    #endif
+    int best_move = TRANSPOSITION_TABLE_UNDEFINED;
+    int g;
+    const int canput = pop_count_ull(legal);
+    std::vector<Flip_value> move_list(canput);
+    int idx = 0;
+    for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)) {
+        calc_flip(&move_list[idx].flip, &search->board, cell);
+        if (move_list[idx].flip.flip == search->board.opponent) {
+            return SCORE_MAX;
+        }
+        ++idx;
+    }
+    int etc_done_idx = 0;
+    #if USE_MID_ETC && MID_ETC_DEPTH <= MID_SIMPLE_DEPTH
+        if (depth >= MID_ETC_DEPTH) {
+            if (etc_nws(search, move_list, depth, alpha, &v, &etc_done_idx)) {
+                return v;
+            }
+        }
+    #endif
+    move_list_evaluate_nws(search, move_list, moves, depth, alpha, searching);
+    for (int move_idx = 0; move_idx < canput - etc_done_idx && *searching; ++move_idx) {
+        swap_next_best_move(move_list, move_idx, canput);
+        #if USE_MID_ETC && MID_ETC_DEPTH <= MID_SIMPLE_DEPTH
+            if (move_list[move_idx].flip.flip == 0) {
+                break;
+            }
+        #endif
+        if (search->need_to_see_tt_loop) {
+            if (transposition_cutoff_nws_bestmove(search, hash_code, depth, alpha, &v, &best_move)) {
+                break;
+            }
+        }
+        search->move(&move_list[move_idx].flip);
+            g = -nega_alpha_ordering_nws_simple(search, -alpha - 1, depth - 1, false, move_list[move_idx].n_legal, searching);
+        search->undo(&move_list[move_idx].flip);
+        if (v < g) {
+            v = g;
+            best_move = move_list[move_idx].flip.pos;
+            if (alpha < v) {
+                break;
+            }
+        }
+    }
+    if (*searching && global_searching) {
+        transposition_table.reg(search, hash_code, depth, alpha, alpha + 1, v, best_move);
+    }
+    return v;
+}
+
+
+
 /*
     @brief Get a value with given depth with Nega-Alpha algorithm (NWS)
 
@@ -101,6 +205,10 @@ int nega_alpha_ordering_nws(Search *search, int alpha, const int depth, const bo
         return nega_alpha_end_nws(search, alpha, skipped, legal);
     }
     if (!is_end_search) {
+        if (depth <= MID_SIMPLE_DEPTH) {
+            return nega_alpha_ordering_nws_simple(search, alpha, depth, skipped, legal, searching);
+        }
+        /*
         if (depth == 1) {
             return nega_alpha_eval1_nws(search, alpha, skipped);
         }
@@ -108,6 +216,7 @@ int nega_alpha_ordering_nws(Search *search, int alpha, const int depth, const bo
             ++search->n_nodes;
             return mid_evaluate_diff(search);
         }
+        */
     }
     ++search->n_nodes;
     #if USE_SEARCH_STATISTICS
@@ -118,8 +227,9 @@ int nega_alpha_ordering_nws(Search *search, int alpha, const int depth, const bo
     }
     int v = -SCORE_INF;
     if (legal == 0ULL) {
-        if (skipped)
+        if (skipped) {
             return end_evaluate(&search->board);
+        }
         search->pass();
             v = -nega_alpha_ordering_nws(search, -alpha - 1, depth, true, LEGAL_UNDEFINED, is_end_search, searching);
         search->pass();
