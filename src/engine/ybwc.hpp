@@ -108,7 +108,6 @@ inline int ybwc_split_nws(Search *search, int alpha, const int depth, uint64_t l
     inline void ybwc_search_young_brothers_nws(Search *search, int alpha, int *v, int *best_move, const uint32_t hash_code, const int depth, const bool is_end_search, std::vector<Flip_value> &move_list, bool *searching) {
         std::vector<std::future<Parallel_task>> parallel_tasks;
         bool *n_searching = searching;
-        bool not_searching = false;
         int canput = (int)move_list.size();
         int running_count = 0;
         int g;
@@ -195,7 +194,6 @@ inline int ybwc_split_nws(Search *search, int alpha, const int depth, uint64_t l
     void ybwc_search_young_brothers(Search *search, int *alpha, int *beta, int *v, int *best_move, const uint32_t hash_code, const int depth, const bool is_end_search, std::vector<Flip_value> &move_list, bool need_best_move, bool *searching) {
         std::vector<std::future<Parallel_task>> parallel_tasks;
         bool *n_searching = searching;
-        bool not_searching = false;
         int canput = (int)move_list.size();
         int running_count = 0;
         int g;

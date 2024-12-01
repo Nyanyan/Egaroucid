@@ -124,6 +124,12 @@ constexpr uint64_t parity_table[16] = {
     0xFFFFFFFF00000000ULL, 0xFFFFFFFF0F0F0F0FULL, 0xFFFFFFFFF0F0F0F0ULL, 0xFFFFFFFFFFFFFFFFULL
 };
 
+
+#if USE_YBWC_NWS || USE_YBWC_NEGASCOUT
+    bool not_searching = false;
+#endif
+
+
 /*
     @brief Search result structure
 

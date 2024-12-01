@@ -74,7 +74,7 @@ void iterative_deepening_search(Board board, int alpha, int beta, int depth, uin
         int sub_max_mpc_level[61];
         bool sub_searching = true;
         int sub_depth = main_depth;
-        if (use_multi_thread && !(is_end_search && main_depth == depth) && main_depth <= 10) {
+        if (use_multi_thread && !(is_end_search && main_depth == depth) && main_depth <= 10 && false) {
             int max_thread_size = thread_pool.size();
             for (int i = 0; i < main_depth - 14; ++i) {
                 max_thread_size *= 0.9;
