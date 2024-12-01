@@ -90,7 +90,7 @@ for n_discs in range(61):
         x_depth1_sd.append(depth1)
         y_depth2_sd.append(depth2)
         z_sd.append(z)
-        weight_sd.append(0.001)
+        weight_sd.append(0.01)
 
 
 def f(wxy, probcut_a, probcut_b, probcut_c, probcut_d, probcut_e, probcut_f, probcut_g):

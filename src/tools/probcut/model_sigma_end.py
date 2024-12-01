@@ -15,7 +15,8 @@ import math
 #data_files = ['data/probcut_end0.txt']
 #data_files = ['data/20240925_1_7_4/probcut_end0.txt']
 #data_files = ['data/20241118_1_7_5/probcut_end0.txt']
-data_files = ['data/20241128_1_7_5/probcut_end0.txt']
+#data_files = ['data/20241128_1_7_5/probcut_end0.txt']
+data_files = ['data/20241130_1_7_5/probcut_end0.txt']
 
 data = [[[] for _ in range(61)] for _ in range(65)] # n_discs, depth, error (exact - predict)
 for data_file in data_files:
@@ -43,15 +44,16 @@ for n_discs in range(len(data)):
         continue
     for depth in range(2, len(data[n_discs])):
         if len(data[n_discs][depth]) >= 3:
-            #mean = statistics.mean(data[n_discs][depth])
-            #sd = statistics.stdev(data[n_discs][depth])
+            '''
+            mean = statistics.mean(data[n_discs][depth])
+            sd = statistics.stdev(data[n_discs][depth])
+            '''
             mean = 0.0
             sd = 0.0
             for elem in data[n_discs][depth]:
                 sd += (elem - mean) ** 2
             sd = math.sqrt(sd / len(data[n_discs][depth]))
             print('n_discs', n_discs, 'depth', depth, 'mean', mean, 'sd', sd, 'n_data', len(data[n_discs][depth]))
-
             x_n_discs_sd.append(n_discs)
             y_depth_sd.append(depth)
             z_sd.append(sd)
@@ -62,19 +64,13 @@ for n_discs in range(len(data)):
             z_mean.append(mean)
             weight_mean.append(1 / len(data[n_discs][depth]))
 
-for n_discs in range(15):
-    for depth in range(5):
+for n_discs in range(7):
+    for depth in range(10):
         x_n_discs_sd.append(n_discs)
         y_depth_sd.append(depth)
         z_sd.append(8.0 - n_discs / 60 * 1.0 - depth * 0.1)
         weight_sd.append(0.01)
 
-for n_discs in range(45):
-    depth = 0
-    x_n_discs_mean.append(n_discs)
-    y_depth_mean.append(depth)
-    z_mean.append(0.0)
-    weight_mean.append(0.01)
 
 def f(xy, probcut_a, probcut_b, probcut_c, probcut_d, probcut_e, probcut_f):
     x, y = xy
