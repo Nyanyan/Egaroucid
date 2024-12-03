@@ -215,7 +215,7 @@ void iterative_deepening_search_time_limit(Board board, int alpha, int beta, boo
 #endif
     int before_raw_value = -100;
     bool policy_changed_before = true;
-    bool score_changed_before = true;
+    //bool score_changed_before = true;
     while (global_searching && ((tim() - strt < time_limit) || main_depth <= 1)) {
 #if USE_LAZY_SMP
         for (Search &search: searches) {
@@ -325,7 +325,7 @@ void iterative_deepening_search_time_limit(Board board, int alpha, int beta, boo
                 result->value = id_result.first;
             }
             bool policy_changed = result->policy != id_result.second;
-            bool score_changed = abs(before_raw_value - id_result.first) > 0;
+            //bool score_changed = abs(before_raw_value - id_result.first) > 0;
             result->policy = id_result.second;
             result->depth = main_depth;
             result->is_end_search = main_is_end_search;
@@ -340,21 +340,53 @@ void iterative_deepening_search_time_limit(Board board, int alpha, int beta, boo
             if (
                 main_depth >= 25 && 
                 !main_is_end_search && 
-                tim() - strt > time_limit * 0.4 && 
+                tim() - strt > time_limit * 0.05 && 
                 result->nodes >= 100000000ULL && 
                 !policy_changed && 
-                !policy_changed_before && 
-                !score_changed && 
-                !score_changed_before
+                !policy_changed_before //&& 
+                //!score_changed && 
+                //!score_changed_before
             ) {
-                if (show_log) {
-                    std::cerr << "early break" << std::endl;
+                int nws_alpha = result->value - 4;
+                if (nws_alpha >= -SCORE_MAX) {
+                    std::cerr << "check early break best score " << result->value << " nws_alpha " << nws_alpha << " ignore " << idx_to_coord(result->policy) << std::endl;
+                    Search nws_search(&board, main_mpc_level, use_multi_thread, false);
+                    bool nws_searching = true;
+                    uint64_t nws_use_legal = use_legal ^ (1ULL << result->policy);
+                    std::future<std::pair<int, int>> nws_f = std::async(std::launch::async, first_nega_scout_legal, &main_search, nws_alpha, nws_alpha + 1, main_depth, main_is_end_search, clogs, nws_use_legal, strt, &nws_searching);
+                    int nws_value = SCORE_INF;
+                    int nws_move = MOVE_NOMOVE;
+                    for (;;) {
+                        if (nws_f.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
+                            std::pair<int, int> nws_result = nws_f.get();
+                            nws_value = nws_result.first;
+                            nws_move = nws_result.second;
+                            break;
+                        }
+                        if (tim() - strt >= time_limit) {
+                            if (show_log) {
+                                std::cerr << "terminate early cut nws by time limit " << tim() - strt << " ms" << std::endl;
+                            }
+                            nws_searching = false;
+                            nws_f.get();
+                            break;
+                        }
+                    }
+                    result->nodes += main_search.n_nodes;
+                    result->time = tim() - strt;
+                    result->nps = calc_nps(result->nodes, result->time);
+                    //std::cerr << "got " << nws_value << std::endl;
+                    if (nws_value <= nws_alpha) {
+                        if (show_log) {
+                            std::cerr << "early break second best " << idx_to_coord(nws_move) << " value <= " << nws_value << std::endl;
+                        }
+                        break;
+                    }
                 }
-                break;
             }
             before_raw_value = id_result.first;
             policy_changed_before = policy_changed;
-            score_changed_before = score_changed;
+            //score_changed_before = score_changed;
         }
         if (main_depth < max_depth - IDSEARCH_ENDSEARCH_PRESEARCH_OFFSET_TIMELIMIT && (main_depth < max_depth - IDSEARCH_ENDSEARCH_PRESEARCH_OFFSET || tim() - strt < time_limit * 0.1)) { // next: midgame search
             if (main_depth <= 15 && main_depth < max_depth - 3) {
