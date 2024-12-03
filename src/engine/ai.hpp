@@ -26,6 +26,7 @@
 #define AI_TYPE_BOOK 1000
 
 #define IDSEARCH_ENDSEARCH_PRESEARCH_OFFSET 10
+#define IDSEARCH_ENDSEARCH_PRESEARCH_OFFSET_TIMELIMIT 8
 #define IDSEARCH_ENDSEARCH_PRESEARCH_MAX_DEPTH 25
 
 #define NOBOOK_SEARCH_LEVEL 10
@@ -357,7 +358,7 @@ void iterative_deepening_search_time_limit(Board board, int alpha, int beta, boo
             policy_changed_before = policy_changed;
             score_changed_before = score_changed;
         }
-        if (main_depth < max_depth - IDSEARCH_ENDSEARCH_PRESEARCH_OFFSET) { // next: midgame search
+        if (main_depth < max_depth - IDSEARCH_ENDSEARCH_PRESEARCH_OFFSET_TIMELIMIT) { // next: midgame search
             if (main_depth <= 15 && main_depth < max_depth - 3) {
                 main_depth += 3;
             } else{
