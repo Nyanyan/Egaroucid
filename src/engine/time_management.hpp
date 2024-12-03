@@ -13,7 +13,7 @@
 
 
 
-#define TIME_MANAGEMENT_REMAINING_TIME_OFFSET 20 // ms / move
+#define TIME_MANAGEMENT_REMAINING_TIME_OFFSET 10 // ms / move
 #define TIME_MANAGEMENT_REMAINING_MOVES_OFFSET 15 // 15 * 2 = 30 moves
 
 Search_result ai(Board board, int level, bool use_book, int book_acc_level, bool use_multi_thread, bool show_log);
