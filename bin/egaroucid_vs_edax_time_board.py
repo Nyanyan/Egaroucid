@@ -59,14 +59,7 @@ for num in range(max_num):
         o = othello()
         egaroucid_used_time = 0
         edax_used_time = 0
-        for i in range(0, len(tactic[tactic_idx]), 2):
-            if not o.check_legal():
-                o.player = 1 - o.player
-                o.check_legal()
-            x = ord(tactic[tactic_idx][i].lower()) - ord('a')
-            y = int(tactic[tactic_idx][i + 1]) - 1
-            record += tactic[tactic_idx][i] + tactic[tactic_idx][i + 1]
-            o.move(y, x)
+        record = tactic[tactic_idx] + ' '
         for yy in range(8):
             for xx in range(8):
                 coord = yy * 8 + xx
