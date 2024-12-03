@@ -15,7 +15,7 @@
 
 #define TIME_MANAGEMENT_REMAINING_TIME_OFFSET 10 // ms / move
 #define TIME_MANAGEMENT_REMAINING_MOVES_OFFSET 14 // 14 * 2 = 28 moves
-#define TIME_MANAGEMENT_N_MOVES_COE 0.8 // 20% early break
+#define TIME_MANAGEMENT_N_MOVES_COE 0.9 // 10% early break
 
 Search_result ai(Board board, int level, bool use_book, int book_acc_level, bool use_multi_thread, bool show_log);
 
@@ -42,7 +42,7 @@ uint64_t calc_time_limit_ply(const Board board, uint64_t remaining_time_msec, bo
     constexpr double endgame_const_a = 0.04; //1.8654;
     constexpr double endgame_const_b = 0.62;
     constexpr double endgame_nps = 3.5e8;
-    double endgame_use_time = (double)remaining_time_msec_margin * 0.2;
+    double endgame_use_time = (double)remaining_time_msec_margin * 0.3;
     double endgame_search_depth = log(endgame_use_time / 1000.0 * endgame_nps / endgame_const_a) / endgame_const_b;
 
 

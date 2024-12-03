@@ -347,9 +347,9 @@ void iterative_deepening_search_time_limit(Board board, int alpha, int beta, boo
                 //!score_changed && 
                 //!score_changed_before
             ) {
-                int nws_alpha = result->value - 5;
+                int nws_alpha = result->value - 6;
                 if (main_is_end_search) {
-                    nws_alpha = result->value - 3;
+                    nws_alpha = result->value - 4;
                 }
                 if (nws_alpha >= -SCORE_MAX) {
                     //std::cerr << "check early break best score " << result->value << " nws_alpha " << nws_alpha << " ignore " << idx_to_coord(result->policy) << std::endl;
