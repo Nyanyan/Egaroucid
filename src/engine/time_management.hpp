@@ -13,17 +13,20 @@
 
 
 
-#define TIME_MANAGEMENT_REMAINING_TIME_OFFSET 10 // ms / move
+#define TIME_MANAGEMENT_REMAINING_TIME_OFFSET 20 // ms / move
 #define TIME_MANAGEMENT_REMAINING_MOVES_OFFSET 15 // 15 * 2 = 30 moves
 
 Search_result ai(Board board, int level, bool use_book, int book_acc_level, bool use_multi_thread, bool show_log);
 
 uint64_t calc_time_limit_ply(const Board board, uint64_t remaining_time_msec, bool show_log) {
-    uint64_t remaining_time_msec_margin = remaining_time_msec;
-    if (remaining_time_msec > 3000) {
-        remaining_time_msec_margin -= 2000;
-    }
     int n_empties = HW2 - board.n_discs();
+    int remaining_moves = (n_empties + 1) / 2;
+    uint64_t remaining_time_msec_margin = remaining_time_msec;
+    if (remaining_time_msec > TIME_MANAGEMENT_REMAINING_TIME_OFFSET * remaining_moves) {
+        remaining_time_msec_margin -= TIME_MANAGEMENT_REMAINING_TIME_OFFSET * remaining_moves;
+    } else {
+        remaining_time_msec_margin = 1;
+    }
 
     // try complete search
     // Nodes(depth) = a * exp(b * depth)
@@ -59,13 +62,8 @@ uint64_t calc_time_limit_ply(const Board board, uint64_t remaining_time_msec, bo
     }
 
     // midgame search
-    int remaining_moves = (n_empties + 1) / 2;
-    if (remaining_time_msec_margin > TIME_MANAGEMENT_REMAINING_TIME_OFFSET * remaining_moves) {
-        uint64_t remaining_time_msec_proc = remaining_time_msec - TIME_MANAGEMENT_REMAINING_TIME_OFFSET * remaining_moves;
-        int remaining_moves_proc = std::max(2, remaining_moves - TIME_MANAGEMENT_REMAINING_MOVES_OFFSET);
-        return remaining_time_msec_proc / remaining_moves_proc;
-    }
-    return 1;
+    int remaining_moves_proc = std::max(2, remaining_moves - TIME_MANAGEMENT_REMAINING_MOVES_OFFSET); // at least 2 moves
+    return std::max(1ULL, remaining_time_msec_margin / remaining_moves_proc);
 }
 
 

@@ -340,8 +340,8 @@ void iterative_deepening_search_time_limit(Board board, int alpha, int beta, boo
             if (
                 main_depth >= 25 && 
                 !main_is_end_search && 
-                tim() - strt > time_limit * 0.05 && 
-                result->nodes >= 100000000ULL && 
+                //tim() - strt > time_limit * 0.05 && 
+                //result->nodes >= 100000000ULL && 
                 !policy_changed && 
                 !policy_changed_before //&& 
                 //!score_changed && 
@@ -349,7 +349,7 @@ void iterative_deepening_search_time_limit(Board board, int alpha, int beta, boo
             ) {
                 int nws_alpha = result->value - 4;
                 if (nws_alpha >= -SCORE_MAX) {
-                    std::cerr << "check early break best score " << result->value << " nws_alpha " << nws_alpha << " ignore " << idx_to_coord(result->policy) << std::endl;
+                    //std::cerr << "check early break best score " << result->value << " nws_alpha " << nws_alpha << " ignore " << idx_to_coord(result->policy) << std::endl;
                     Search nws_search(&board, main_mpc_level, use_multi_thread, false);
                     bool nws_searching = true;
                     uint64_t nws_use_legal = use_legal ^ (1ULL << result->policy);
@@ -383,7 +383,7 @@ void iterative_deepening_search_time_limit(Board board, int alpha, int beta, boo
                         break;
                     } else if (nws_searching) {
                         if (show_log) {
-                            std::cerr << "second best " << idx_to_coord(nws_move) << " value >= " << nws_value << std::endl;
+                            std::cerr << "no early break second best " << idx_to_coord(nws_move) << " value >= " << nws_value << std::endl;
                         }
                     }
                 }
