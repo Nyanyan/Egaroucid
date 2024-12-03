@@ -212,21 +212,18 @@ inline bool mpc(Search* search, int alpha, int beta, int depth, uint64_t legal, 
         #if USE_MPC_PRE_CALCULATION
             if (is_end_search) {
                 error_search = mpc_error_end[mpc_level][search->n_discs][search_depth];
-                error_0 = -2; //mpc_error_end_multi[mpc_level][search->n_discs][0];
-            } else{
+            } else {
                 error_search = mpc_error[mpc_level][search->n_discs][search_depth][depth];
-                error_0 = -2; //mpc_error_multi[mpc_level][search->n_discs][0][depth];
             }
         #else
             double mpct = SELECTIVITY_MPCT[mpc_level];
             if (is_end_search) {
                 error_search = ceil(mpct * probcut_sigma_end(search->n_discs, search_depth));
-                error_0 = -2; //ceil(mpct * probcut_sigma_end(search->n_discs, 0));
-            }else{
+            } else {
                 error_search = ceil(mpct * probcut_sigma(search->n_discs, search_depth, depth));
-                error_0 = -2; //ceil(mpct * probcut_sigma(search->n_discs, 0, depth));
             }
         #endif
+        error_0 = error_search - 4;
         search->mpc_level = MPC_100_LEVEL;
         if (d0value >= beta + error_0) {
             int pc_beta = beta + error_search;
