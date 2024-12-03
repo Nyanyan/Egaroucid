@@ -138,10 +138,10 @@ struct LocalTTEntry {
     }
 };
 
-//#define LOCAL_TT_SIZE 1024
-//#define LOCAL_TT_SIZE_BIT 10
-#define LOCAL_TT_SIZE 2048
-#define LOCAL_TT_SIZE_BIT 11
+#define LOCAL_TT_SIZE 1024
+#define LOCAL_TT_SIZE_BIT 10
+//#define LOCAL_TT_SIZE 2048
+//#define LOCAL_TT_SIZE_BIT 11
 
 static thread_local LocalTTEntry lttable[MID_TO_END_DEPTH - END_FAST_DEPTH][LOCAL_TT_SIZE];
 
@@ -197,8 +197,9 @@ int nega_alpha_end_simple_nws(Search *search, int alpha, const bool skipped, uin
     int idx = 0;
     for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)) {
         calc_flip(&move_list[idx].flip, &search->board, cell);
-        if (move_list[idx].flip.flip == search->board.opponent)
+        if (move_list[idx].flip.flip == search->board.opponent) {
             return SCORE_MAX;
+        }
         ++idx;
     }
     int g;
@@ -302,20 +303,14 @@ int nega_alpha_end_nws(Search *search, int alpha, const bool skipped, uint64_t l
         legal = search->board.get_legal();
     int v = -SCORE_INF;
     if (legal == 0ULL) {
-        if (skipped)
+        if (skipped) {
             return end_evaluate(&search->board);
+        }
         search->pass_endsearch();
             v = -nega_alpha_end_nws(search, -alpha - 1, true, LEGAL_UNDEFINED);
         search->pass_endsearch();
         return v;
     }
-    uint_fast8_t moves[N_TRANSPOSITION_MOVES] = {TRANSPOSITION_TABLE_UNDEFINED, TRANSPOSITION_TABLE_UNDEFINED};
-    /*
-    uint32_t hash_code = search->board.hash();
-    if (transposition_cutoff_nws(search, hash_code, HW2 - search->n_discs, alpha, &v, moves)) {
-        return v;
-    }
-    */
     int best_move = TRANSPOSITION_TABLE_UNDEFINED;
     int g;
     const int canput = pop_count_ull(legal);
@@ -323,65 +318,60 @@ int nega_alpha_end_nws(Search *search, int alpha, const bool skipped, uint64_t l
     int idx = 0;
     for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)) {
         calc_flip(&move_list[idx].flip, &search->board, cell);
-        if (move_list[idx].flip.flip == search->board.opponent)
+        if (move_list[idx].flip.flip == search->board.opponent) {
             return SCORE_MAX;
+        }
         ++idx;
     }
     uint64_t done = 0;
     if (move_list.size() > 1) {
         for (int i = 0; i < canput; ++i) {
             Flip_value *flip_value = &move_list[i];
-            if (flip_value->flip.pos == moves[0])
-                flip_value->value = W_1ST_MOVE;
-            else if (flip_value->flip.pos == moves[1])
-                flip_value->value = W_2ND_MOVE;
-            else {
-                flip_value->value = 0;
-                search->move_endsearch(&flip_value->flip);
-                    Board nboard = search->board;
-                    LocalTTEntry *tt = get_ltt(&nboard, search->n_discs);
-                    if (tt->cmp(&nboard)) {
-                        if (alpha < tt->lower) {
-                            best_move = flip_value->flip.pos;
-                            v = tt->lower;
-                            search->undo_endsearch(&flip_value->flip);
-                            return v;
-                        }
-                        if (tt->upper <= alpha) {
-                            if (v < tt->upper) {
-                                v = tt->upper;
-                            }
-                            done |= (1ull << flip_value->flip.pos);
-                            search->undo_endsearch(&flip_value->flip);
-                            continue;
-                        }
-                    }
-                    flip_value->n_legal = search->board.get_legal();
-                    int nm = get_n_moves_cornerX2(flip_value->n_legal);
-                    if (nm <= 1) {
-                        g = -nega_alpha_end_nws(search, -alpha - 1, false, flip_value->n_legal);
+            flip_value->value = 0;
+            search->move_endsearch(&flip_value->flip);
+                Board nboard = search->board;
+                LocalTTEntry *tt = get_ltt(&nboard, search->n_discs);
+                if (tt->cmp(&nboard)) {
+                    if (alpha < tt->lower) {
+                        best_move = flip_value->flip.pos;
+                        v = tt->lower;
                         search->undo_endsearch(&flip_value->flip);
-                        if (v < g) {
-                            v = g;
-                            best_move = flip_value->flip.pos;
-                            if (alpha < v) {
-                                tt->set_score(&nboard, v, 64);
-                                return v;
-                            }
+                        return v;
+                    }
+                    if (tt->upper <= alpha) {
+                        if (v < tt->upper) {
+                            v = tt->upper;
                         }
-                        tt->set_score(&nboard, -64, g);
-                        done |= (1ull << flip_value->flip.pos);
+                        done |= (1ULL << flip_value->flip.pos);
+                        search->undo_endsearch(&flip_value->flip);
                         continue;
                     }
-                    flip_value->value += (MO_OFFSET_L_PM - nm) * W_END_NWS_MOBILITY;
-                    flip_value->value += (MO_OFFSET_L_PM - mid_evaluate_move_ordering_end(search)) * W_END_NWS_VALUE;
-                search->undo_endsearch(&flip_value->flip);
-            }
+                }
+                flip_value->n_legal = search->board.get_legal();
+                int nm = get_n_moves_cornerX2(flip_value->n_legal);
+                if (nm <= 1) {
+                    g = -nega_alpha_end_nws(search, -alpha - 1, false, flip_value->n_legal);
+                    search->undo_endsearch(&flip_value->flip);
+                    if (v < g) {
+                        v = g;
+                        best_move = flip_value->flip.pos;
+                        if (alpha < v) {
+                            tt->set_score(&nboard, v, 64);
+                            return v;
+                        }
+                    }
+                    tt->set_score(&nboard, -64, g);
+                    done |= (1ULL << flip_value->flip.pos);
+                    continue;
+                }
+                flip_value->value += (MO_OFFSET_L_PM - nm) * W_END_NWS_MOBILITY;
+                flip_value->value += (MO_OFFSET_L_PM - mid_evaluate_move_ordering_end(search)) * W_END_NWS_VALUE;
+            search->undo_endsearch(&flip_value->flip);
         }
     }
     for (int move_idx = 0; move_idx < canput; ++move_idx) {
         swap_next_best_move(move_list, move_idx, canput);
-        if ((1ull << move_list[move_idx].flip.pos) & done) {
+        if ((1ULL << move_list[move_idx].flip.pos) & done) {
             continue;
         }
         search->move_endsearch(&move_list[move_idx].flip);
