@@ -14,7 +14,7 @@ time_limit = int(sys.argv[1])
 n_games = int(sys.argv[2])
 
 file = None
-egaroucid_cmd = 'versions/Egaroucid_for_Console_beta/Egaroucid_for_console_clang.exe -quiet -noise -nobook -ponder -t 8 -hash 27 -time ' + str(time_limit)
+egaroucid_cmd = 'versions/Egaroucid_for_Console_beta/Egaroucid_for_console_clang.exe -quiet -noise -nobook -t 8 -hash 27 -time ' + str(time_limit)
 if len(sys.argv) == 4:
     file = sys.argv[3]
     print('egaroucid eval ', file, file=sys.stderr)

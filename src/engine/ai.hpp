@@ -43,6 +43,8 @@ struct Ponder_elem {
     double value;
     int level;
     int count;
+    bool is_endgame_search;
+    bool is_complete_search;
 };
 
 void iterative_deepening_search(Board board, int alpha, int beta, int depth, uint_fast8_t mpc_level, bool show_log, std::vector<Clog_result> clogs, uint64_t use_legal, bool use_multi_thread, Search_result *result) {
@@ -750,6 +752,8 @@ void ai_ponder(Board board, bool show_log, bool *searching) {
         move_list[idx].value = INF;
         move_list[idx].level = 0;
         move_list[idx].count = 0;
+        move_list[idx].is_endgame_search = false;
+        move_list[idx].is_complete_search = false;
         ++idx;
     }
     const int max_depth = HW2 - board.n_discs() - 1;
@@ -799,6 +803,12 @@ void ai_ponder(Board board, bool show_log, bool *searching) {
         if (*searching) {
             if (move_list[selected_idx].value == INF || !is_mid_search) {
                 move_list[selected_idx].value = v;
+                if (!is_mid_search) {
+                    move_list[selected_idx].is_endgame_search = true;
+                    if (get_level_complete_depth(move_list[selected_idx].level) >= max_depth) {
+                        move_list[selected_idx].is_complete_search = true;
+                    }
+                }
             } else {
                 move_list[selected_idx].value = (0.9 * move_list[selected_idx].value + 1.1 * v) / 2.0;
             }
@@ -812,7 +822,13 @@ void ai_ponder(Board board, bool show_log, bool *searching) {
         std::sort(move_list.begin(), move_list.end(), comp_ponder_elem);
         for (int i = 0; i < canput; ++i) {
             std::cerr << "pd " << idx_to_coord(move_list[i].flip.pos) << " value " << std::fixed << std::setprecision(2) << move_list[i].value;
-            std::cerr << " level " << move_list[i].level << " count " << move_list[i].count << std::endl;
+            std::cerr << " level " << move_list[i].level << " count " << move_list[i].count;
+            if (move_list[i].is_complete_search) {
+                std::cerr << " complete";
+            } else if (move_list[i].is_endgame_search) {
+                std::cerr << " endgame";
+            }
+            std::cerr << std::endl;
         }
     }
 }
