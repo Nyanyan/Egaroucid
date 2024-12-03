@@ -26,7 +26,7 @@
 #define AI_TYPE_BOOK 1000
 
 #define IDSEARCH_ENDSEARCH_PRESEARCH_OFFSET 10
-#define IDSEARCH_ENDSEARCH_PRESEARCH_OFFSET_TIMELIMIT 8
+#define IDSEARCH_ENDSEARCH_PRESEARCH_OFFSET_TIMELIMIT 7
 #define IDSEARCH_ENDSEARCH_PRESEARCH_MAX_DEPTH 25
 
 #define NOBOOK_SEARCH_LEVEL 10
@@ -358,7 +358,7 @@ void iterative_deepening_search_time_limit(Board board, int alpha, int beta, boo
             policy_changed_before = policy_changed;
             score_changed_before = score_changed;
         }
-        if (main_depth < max_depth - IDSEARCH_ENDSEARCH_PRESEARCH_OFFSET_TIMELIMIT) { // next: midgame search
+        if (main_depth < max_depth - IDSEARCH_ENDSEARCH_PRESEARCH_OFFSET_TIMELIMIT && (main_depth < max_depth - IDSEARCH_ENDSEARCH_PRESEARCH_OFFSET || tim() - strt < time_limit * 0.1)) { // next: midgame search
             if (main_depth <= 15 && main_depth < max_depth - 3) {
                 main_depth += 3;
             } else{
@@ -368,7 +368,7 @@ void iterative_deepening_search_time_limit(Board board, int alpha, int beta, boo
                 main_mpc_level = MPC_74_LEVEL;
             }
             if (main_depth > 23) {
-                if (main_mpc_level < MPC_93_LEVEL) {
+                if (main_mpc_level < MPC_88_LEVEL) {
                     --main_depth;
                     ++main_mpc_level;
                 } else {
