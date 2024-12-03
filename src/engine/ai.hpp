@@ -796,14 +796,16 @@ void ai_ponder(Board board, bool show_log, bool *searching) {
         depth = std::min(HW2 - board.n_discs(), depth);
         Search search(&n_board, mpc_level, true, false);
         int v = -nega_scout(&search, -SCORE_MAX, SCORE_MAX, depth, false, LEGAL_UNDEFINED, !is_mid_search, searching);
-        if (move_list[selected_idx].value == INF || !is_mid_search) {
-            move_list[selected_idx].value = v;
-        } else {
-            move_list[selected_idx].value = (0.9 * move_list[selected_idx].value + 1.1 * v) / 2.0;
+        if (*searching) {
+            if (move_list[selected_idx].value == INF || !is_mid_search) {
+                move_list[selected_idx].value = v;
+            } else {
+                move_list[selected_idx].value = (0.9 * move_list[selected_idx].value + 1.1 * v) / 2.0;
+            }
+            move_list[selected_idx].level = new_level;
+            ++move_list[selected_idx].count;
+            ++n_searched_all;
         }
-        move_list[selected_idx].level = new_level;
-        ++move_list[selected_idx].count;
-        ++n_searched_all;
     }
     if (show_log && n_searched_all) {
         std::cerr << "ponder loop " << n_searched_all << std::endl;
