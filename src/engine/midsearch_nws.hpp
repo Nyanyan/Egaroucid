@@ -212,11 +212,13 @@ int nega_alpha_ordering_nws(Search *search, int alpha, const int depth, const bo
     }
     int v = -SCORE_INF;
     if (is_end_search && depth <= MID_TO_END_DEPTH) {
+        /*
         #if USE_MID_MPC
             if (mpc(search, alpha, alpha + 1, depth, legal, is_end_search, &v, searching)) {
                 return v;
             }
         #endif
+        */
         return nega_alpha_end_nws(search, alpha, skipped, legal);
     }
     ++search->n_nodes;
