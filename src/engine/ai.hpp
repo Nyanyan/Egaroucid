@@ -811,7 +811,7 @@ void ai_ponder(Board board, bool show_log, bool *searching) {
                 ucb = -INF;
             } else {
                 double depth_weight = 1.0 - (double)(max_depth - move_list[i].depth) / (double)max_depth + (double)move_list[i].mpc_level / 8.0;
-                ucb = move_list[i].value * depth_weight + 0.75 * sqrt(log(2.0 * (double)n_searched_all) / (double)move_list[i].count) * (1.0 - depth_weight);
+                ucb = move_list[i].value * depth_weight + 1.0 * sqrt(log(2.0 * (double)n_searched_all) / (double)move_list[i].count) * (1.0 - depth_weight);
             }
             if (ucb > max_ucb) {
                 selected_idx = i;
@@ -838,6 +838,8 @@ void ai_ponder(Board board, bool show_log, bool *searching) {
         if (new_depth > max_depth) {
             new_depth = max_depth;
             ++new_mpc_level;
+        } else if (new_depth > max_depth - PONDER_ENDSEARCH_PRESEARCH_OFFSET_TIMELIMIT) {
+            new_depth = max_depth;
         }
         bool new_is_end_search = (new_depth == max_depth);
         bool new_is_complete_search = new_is_end_search && new_mpc_level == MPC_100_LEVEL;
