@@ -27,8 +27,7 @@
 #define MPC_ERROR0_OFFSET 3
 
 // constants from standard normal distribution table
-// constexpr int SELECTIVITY_PERCENTAGE[N_SELECTIVITY_LEVEL] = {74, 88, 93, 98, 99, 100};
-// two-sided test                                         74.0  88.0  93.0  98.0  99.0  inf
+// two-sided test                                         74.0  88.0  93.0  98.0  99.0  inf (%)
 constexpr double SELECTIVITY_MPCT[N_SELECTIVITY_LEVEL] = {1.13, 1.55, 1.81, 2.32, 2.57, 9.99};
 
 /*
@@ -53,35 +52,6 @@ constexpr double SELECTIVITY_MPCT[N_SELECTIVITY_LEVEL] = {1.13, 1.55, 1.81, 2.32
     int mpc_error[N_SELECTIVITY_LEVEL][HW2 + 1][HW2 - 3][HW2 - 3];
     int mpc_error_end[N_SELECTIVITY_LEVEL][HW2 + 1][HW2 - 3];
 #endif
-
-/*
-constexpr int mpc_search_depth_arr[2][61] = {
-    { // midgame
-        // 0,  1,  0,  1,  2,  3,  2,  3,  4,  5, 
-        // 4,  5,  6,  7,  6,  7,  8,  9,  8,  9, 
-        //10, 11, 10, 11, 12, 13, 12, 13, 14, 15, 
-        //14, 15, 16, 17, 16, 17, 18, 19, 18, 19, 
-        //20, 21, 20, 21, 22, 23, 22, 23, 24, 25, 
-        //24, 25, 26, 27, 26, 27, 28, 29, 28, 29, 
-        //30
-         0,  1,  0,  1,  0,  1,  0,  1,  2,  3, 
-         2,  3,  2,  3,  2,  3,  4,  5,  4,  5, 
-         4,  5,  4,  5,  6,  7,  6,  7,  6,  7, 
-         6,  7,  8,  9,  8,  9,  8,  9,  8,  9, 
-        10, 11, 10, 11, 10, 11, 10, 11, 12, 13, 
-        12, 13, 12, 13, 12, 13, 14, 15, 14, 15, 
-        14
-    }, { // endgame
-         0,  1,  0,  1,  0,  1,  0,  1,  2,  3, 
-         2,  3,  2,  3,  2,  3,  4,  5,  4,  5, 
-         4,  5,  4,  5,  6,  7,  6,  7,  6,  7, 
-         6,  7,  8,  9,  8,  9,  8,  9,  8,  9, 
-        10, 11, 10, 11, 10, 11, 10, 11, 12, 13, 
-        12, 13, 12, 13, 12, 13, 14, 15, 14, 15, 
-        14
-    }
-};
-*/
 
 /*
     @brief ProbCut error calculation for midgame
@@ -161,7 +131,6 @@ inline bool mpc(Search* search, int alpha, int beta, int depth, uint64_t legal, 
         return false;
     }
     int d0value = mid_evaluate_diff(search);
-    //int search_depth = mpc_search_depth_arr[is_end_search][depth];
     int search_depth = ((depth >> 2) & 0b11111110) + (depth & 1); // depth / 8 * 2 + depth % 2
     if (alpha - MPC_ADD_DEPTH_VALUE_THRESHOLD < d0value && d0value < beta + MPC_ADD_DEPTH_VALUE_THRESHOLD) {
         search_depth += 2; // if value is near [alpha, beta], increase search_depth
