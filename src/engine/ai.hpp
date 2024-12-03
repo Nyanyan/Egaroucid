@@ -26,7 +26,7 @@
 #define AI_TYPE_BOOK 1000
 
 #define IDSEARCH_ENDSEARCH_PRESEARCH_OFFSET 10
-#define IDSEARCH_ENDSEARCH_PRESEARCH_OFFSET_TIMELIMIT 7
+#define IDSEARCH_ENDSEARCH_PRESEARCH_OFFSET_TIMELIMIT 5
 #define IDSEARCH_ENDSEARCH_PRESEARCH_MAX_DEPTH 25
 
 #define NOBOOK_SEARCH_LEVEL 10
@@ -276,6 +276,14 @@ void iterative_deepening_search_time_limit(Board board, int alpha, int beta, boo
             }
         }
 #endif
+        if (show_log) {
+            if (main_is_end_search) {
+                std::cerr << "end ";
+            } else{
+                std::cerr << "mid ";
+            }
+            std::cerr << "depth " << result->depth << "@" << SELECTIVITY_PERCENTAGE[main_mpc_level] << "% " << std::flush;
+        }
         Search main_search(&board, main_mpc_level, use_multi_thread, false);
         bool searching = true;
         std::pair<int, int> id_result;
@@ -327,17 +335,11 @@ void iterative_deepening_search_time_limit(Board board, int alpha, int beta, boo
             result->is_end_search = main_is_end_search;
             result->probability = SELECTIVITY_PERCENTAGE[main_mpc_level];
             if (show_log) {
-                if (main_is_end_search) {
-                    std::cerr << "end ";
-                } else{
-                    std::cerr << "mid ";
-                }
 #if USE_LAZY_SMP
-                std::cerr << "depth " << result->depth << "@" << SELECTIVITY_PERCENTAGE[main_mpc_level] << "%" << " value " << result->value << " (raw " << id_result.first << ") policy " << idx_to_coord(id_result.second) << " n_worker " << parallel_tasks.size() << " n_nodes " << result->nodes << " time " << result->time << " NPS " << result->nps << std::endl;
+                std::cerr << "value " << result->value << " (raw " << id_result.first << ") policy " << idx_to_coord(id_result.second) << " n_worker " << parallel_tasks.size() << " n_nodes " << result->nodes << " time " << result->time << " NPS " << result->nps << std::endl;
 #else
-                std::cerr << "depth " << result->depth << "@" << SELECTIVITY_PERCENTAGE[main_mpc_level] << "%" << " value " << result->value << " (raw " << id_result.first << ") policy " << idx_to_coord(id_result.second) << " n_nodes " << result->nodes << " time " << result->time << " NPS " << result->nps << std::endl;
+                std::cerr << "value " << result->value << " (raw " << id_result.first << ") policy " << idx_to_coord(id_result.second) << " n_nodes " << result->nodes << " time " << result->time << " NPS " << result->nps << std::endl;
 #endif
-                //std::cerr << "main_depth " << main_depth << " main_is_end_search " << main_is_end_search << " policy_changed_before " << policy_changed_before << " policy_changed " << policy_changed << " score_changed_before " << score_changed_before << " score_changed " << score_changed << std::endl;
             }
             if (
                 main_depth >= 25 && 
