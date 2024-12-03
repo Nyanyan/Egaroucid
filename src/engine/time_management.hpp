@@ -15,6 +15,7 @@
 
 #define TIME_MANAGEMENT_REMAINING_TIME_OFFSET 10 // ms / move
 #define TIME_MANAGEMENT_REMAINING_MOVES_OFFSET 15 // 15 * 2 = 30 moves
+#define TIME_MANAGEMENT_N_MOVES_COE 0.75 // 25% early break
 
 Search_result ai(Board board, int level, bool use_book, int book_acc_level, bool use_multi_thread, bool show_log);
 
@@ -62,7 +63,7 @@ uint64_t calc_time_limit_ply(const Board board, uint64_t remaining_time_msec, bo
     }
 
     // midgame search
-    int remaining_moves_proc = std::max(2, remaining_moves - TIME_MANAGEMENT_REMAINING_MOVES_OFFSET); // at least 2 moves
+    int remaining_moves_proc = std::max(2, (int)round((remaining_moves - TIME_MANAGEMENT_REMAINING_MOVES_OFFSET) * TIME_MANAGEMENT_N_MOVES_COE)); // at least 2 moves
     return std::max(1ULL, remaining_time_msec_margin / remaining_moves_proc);
 }
 
