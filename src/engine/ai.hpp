@@ -381,6 +381,10 @@ void iterative_deepening_search_time_limit(Board board, int alpha, int beta, boo
                             std::cerr << "early break second best " << idx_to_coord(nws_move) << " value <= " << nws_value << std::endl;
                         }
                         break;
+                    } else if (nws_searching) {
+                        if (show_log) {
+                            std::cerr << "second best " << idx_to_coord(nws_move) << " value >= " << nws_value << std::endl;
+                        }
                     }
                 }
             }
