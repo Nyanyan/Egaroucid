@@ -27,6 +27,7 @@
 
 #define IDSEARCH_ENDSEARCH_PRESEARCH_OFFSET 10
 #define IDSEARCH_ENDSEARCH_PRESEARCH_OFFSET_TIMELIMIT 6
+#define PONDER_ENDSEARCH_PRESEARCH_OFFSET_TIMELIMIT 6
 
 #define NOBOOK_SEARCH_LEVEL 10
 #define NOBOOK_SEARCH_MARGIN 1
@@ -40,8 +41,9 @@ struct Lazy_SMP_task {
 struct Ponder_elem {
     Flip flip;
     double value;
-    int level;
     int count;
+    int depth;
+    uint_fast8_t mpc_level;
     bool is_endgame_search;
     bool is_complete_search;
 };
@@ -787,8 +789,9 @@ void ai_ponder(Board board, bool show_log, bool *searching) {
     for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)) {
         calc_flip(&move_list[idx].flip, &board, cell);
         move_list[idx].value = INF;
-        move_list[idx].level = 0;
         move_list[idx].count = 0;
+        move_list[idx].depth = 0;
+        move_list[idx].mpc_level = MPC_74_LEVEL;
         move_list[idx].is_endgame_search = false;
         move_list[idx].is_complete_search = false;
         ++idx;
@@ -804,11 +807,11 @@ void ai_ponder(Board board, bool show_log, bool *searching) {
                 ucb = move_list[i].value;
             } else if (move_list[i].count == 0) { // this node is not searched
                 ucb = INF;
-            } else if (get_level_complete_depth(move_list[i].level) >= max_depth) { // fully searched
+            } else if (move_list[i].is_complete_search) { // fully searched
                 ucb = -INF;
             } else {
-                double level_weight = (double)move_list[i].level / 60.0;
-                ucb = move_list[i].value * level_weight + 0.75 * sqrt(log(2.0 * (double)n_searched_all) / (double)move_list[i].count) * (1.0 - level_weight);
+                double depth_weight = 1.0 - (double)(max_depth - move_list[i].depth) / (double)max_depth + (double)move_list[i].mpc_level / 8.0;
+                ucb = move_list[i].value * depth_weight + 0.75 * sqrt(log(2.0 * (double)n_searched_all) / (double)move_list[i].count) * (1.0 - depth_weight);
             }
             if (ucb > max_ucb) {
                 selected_idx = i;
@@ -821,7 +824,7 @@ void ai_ponder(Board board, bool show_log, bool *searching) {
             }
             break;
         }
-        if (get_level_complete_depth(move_list[selected_idx].level) >= max_depth) {
+        if (move_list[selected_idx].is_complete_search) {
             if (show_log) {
                 std::cerr << "ponder completely searched" << std::endl;
             }
@@ -830,43 +833,26 @@ void ai_ponder(Board board, bool show_log, bool *searching) {
         Board n_board = board.copy();
         n_board.move_board(&move_list[selected_idx].flip);
         int max_depth = HW2 - board.n_discs();
-        int new_level = std::min(MAX_LEVEL, move_list[selected_idx].level + 1);
-        int depth;
-        bool is_mid_search;
-        uint_fast8_t mpc_level;
-        get_level(new_level, n_board.n_discs() - 4, &is_mid_search, &depth, &mpc_level);
-        if (is_mid_search && max_depth - depth < 8) {
-            while (is_mid_search && new_level < MAX_LEVEL) {
-                ++new_level;
-                get_level(new_level, n_board.n_discs() - 4, &is_mid_search, &depth, &mpc_level);
-            }
-        } else if (!is_mid_search) {
-            int pre_depth;
-            bool pre_is_mid_search;
-            uint_fast8_t pre_mpc_level;
-            get_level(move_list[selected_idx].level, n_board.n_discs() - 4, &pre_is_mid_search, &pre_depth, &pre_mpc_level);
-            if (!pre_is_mid_search) {
-                while (mpc_level <= pre_mpc_level && new_level < MAX_LEVEL) {
-                    ++new_level;
-                    get_level(new_level, n_board.n_discs() - 4, &is_mid_search, &depth, &mpc_level);
-                }
-            }
+        int new_depth = move_list[selected_idx].depth + 1;
+        uint_fast8_t new_mpc_level = move_list[selected_idx].mpc_level;
+        if (new_depth > max_depth) {
+            new_depth = max_depth;
+            ++new_mpc_level;
         }
-        Search search(&n_board, mpc_level, true, false);
-        int v = -nega_scout(&search, -SCORE_MAX, SCORE_MAX, depth, false, LEGAL_UNDEFINED, !is_mid_search, searching);
+        bool new_is_end_search = (new_depth == max_depth);
+        bool new_is_complete_search = new_is_end_search && new_mpc_level == MPC_100_LEVEL;
+        Search search(&n_board, new_mpc_level, true, false);
+        int v = -nega_scout(&search, -SCORE_MAX, SCORE_MAX, new_depth, false, LEGAL_UNDEFINED, new_is_end_search, searching);
         if (*searching) {
-            if (move_list[selected_idx].value == INF || !is_mid_search) {
+            if (move_list[selected_idx].value == INF || new_is_end_search) {
                 move_list[selected_idx].value = v;
-                if (!is_mid_search) {
-                    move_list[selected_idx].is_endgame_search = true;
-                    if (get_level_complete_depth(move_list[selected_idx].level) >= max_depth) {
-                        move_list[selected_idx].is_complete_search = true;
-                    }
-                }
             } else {
                 move_list[selected_idx].value = (0.9 * move_list[selected_idx].value + 1.1 * v) / 2.0;
             }
-            move_list[selected_idx].level = new_level;
+            move_list[selected_idx].depth = new_depth;
+            move_list[selected_idx].mpc_level = new_mpc_level;
+            move_list[selected_idx].is_endgame_search = new_is_end_search;
+            move_list[selected_idx].is_complete_search = new_is_complete_search;
             ++move_list[selected_idx].count;
             ++n_searched_all;
         }
@@ -877,7 +863,7 @@ void ai_ponder(Board board, bool show_log, bool *searching) {
         std::sort(move_list.begin(), move_list.end(), comp_ponder_elem);
         for (int i = 0; i < canput; ++i) {
             std::cerr << "pd " << idx_to_coord(move_list[i].flip.pos) << " value " << std::fixed << std::setprecision(2) << move_list[i].value;
-            std::cerr << " level " << move_list[i].level << " count " << move_list[i].count;
+            std::cerr << " count " << move_list[i].count << " depth " << move_list[i].depth << "@" << SELECTIVITY_PERCENTAGE[move_list[i].mpc_level] << "%";
             if (move_list[i].is_complete_search) {
                 std::cerr << " complete";
             } else if (move_list[i].is_endgame_search) {
