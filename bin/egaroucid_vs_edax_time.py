@@ -47,19 +47,8 @@ for num in range(max_num):
     for player in range(2):
         logfile = 'egaroucid_vs_edax_time_log/' + 'log_' + d_today.replace('-', '') + '_' + t_now.split('.')[0].replace(':', '') + '_' + str(num) + '_' + str(player) + '.txt'
         egaroucid_cmd_log = egaroucid_cmd + ' -logfile ' + logfile
-        #edax_cmd_player = edax_cmd + ' -mode ' + str(player)
-        #print(egaroucid_cmd_player)
-        #print(edax_cmd_player)
         egaroucid = subprocess.Popen(egaroucid_cmd_log.split(), stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
         edax = subprocess.Popen(edax_cmd.split(), stdin=subprocess.PIPE, stdout=subprocess.PIPE)
-        '''
-        if player == 0: # ignore first move
-            egaroucid.stdout.readline()
-        else:
-            line = ''
-            while len(line) < 3:
-                line = edax.stdout.readline().decode().replace('\r', '').replace('\n', '')
-        '''
         print('player', player)
         if player == 0:
             print('Egaroucid plays black')
