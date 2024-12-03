@@ -40,12 +40,12 @@ constexpr double probcut_e = 2.662003673678691;
 constexpr double probcut_f = 3.0554301965778063;
 constexpr double probcut_g = 2.0942574977708674;
 
-constexpr double probcut_end_a = 0.8516964782529516;
-constexpr double probcut_end_b = 1.4863405504292442;
-constexpr double probcut_end_c = -0.5027497199084221;
-constexpr double probcut_end_d = -7.311630721361076;
-constexpr double probcut_end_e = -0.24971876397176915;
-constexpr double probcut_end_f = 8.985005697033559;
+constexpr double probcut_end_a = 0.8422753065986806;
+constexpr double probcut_end_b = 1.4641906100079805;
+constexpr double probcut_end_c = -1.9701810080689428;
+constexpr double probcut_end_d = -4.994178005079958;
+constexpr double probcut_end_e = -1.4151278997895347;
+constexpr double probcut_end_f = 9.064985464696694;
 
 #if USE_MPC_PRE_CALCULATION
     int mpc_error[N_SELECTIVITY_LEVEL][HW2 + 1][HW2 - 3][HW2 - 3];

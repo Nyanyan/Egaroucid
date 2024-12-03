@@ -65,7 +65,7 @@ for n_discs in range(len(data)):
             weight_mean.append(1 / len(data[n_discs][depth]))
 
 for n_discs in range(15):
-    for depth in range(5):
+    for depth in range(min(5, 15 - n_discs)):
         x_n_discs_sd.append(n_discs)
         y_depth_sd.append(depth)
         z_sd.append(9.0 - n_discs / 60 * 1.0 - depth * 0.05)
