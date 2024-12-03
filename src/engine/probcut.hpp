@@ -24,6 +24,7 @@
 #endif
 
 #define MPC_ADD_DEPTH_VALUE_THRESHOLD 10
+#define MPC_ERROR0_OFFSET 3
 
 // constants from standard normal distribution table
 // constexpr int SELECTIVITY_PERCENTAGE[N_SELECTIVITY_LEVEL] = {74, 88, 93, 98, 99, 100};
@@ -53,17 +54,16 @@ constexpr double SELECTIVITY_MPCT[N_SELECTIVITY_LEVEL] = {1.13, 1.55, 1.81, 2.32
     int mpc_error_end[N_SELECTIVITY_LEVEL][HW2 + 1][HW2 - 3];
 #endif
 
+/*
 constexpr int mpc_search_depth_arr[2][61] = {
     { // midgame
-        /*
-         0,  1,  0,  1,  2,  3,  2,  3,  4,  5, 
-         4,  5,  6,  7,  6,  7,  8,  9,  8,  9, 
-        10, 11, 10, 11, 12, 13, 12, 13, 14, 15, 
-        14, 15, 16, 17, 16, 17, 18, 19, 18, 19, 
-        20, 21, 20, 21, 22, 23, 22, 23, 24, 25, 
-        24, 25, 26, 27, 26, 27, 28, 29, 28, 29, 
-        30
-        */
+        // 0,  1,  0,  1,  2,  3,  2,  3,  4,  5, 
+        // 4,  5,  6,  7,  6,  7,  8,  9,  8,  9, 
+        //10, 11, 10, 11, 12, 13, 12, 13, 14, 15, 
+        //14, 15, 16, 17, 16, 17, 18, 19, 18, 19, 
+        //20, 21, 20, 21, 22, 23, 22, 23, 24, 25, 
+        //24, 25, 26, 27, 26, 27, 28, 29, 28, 29, 
+        //30
          0,  1,  0,  1,  0,  1,  0,  1,  2,  3, 
          2,  3,  2,  3,  2,  3,  4,  5,  4,  5, 
          4,  5,  4,  5,  6,  7,  6,  7,  6,  7, 
@@ -79,17 +79,9 @@ constexpr int mpc_search_depth_arr[2][61] = {
         10, 11, 10, 11, 10, 11, 10, 11, 12, 13, 
         12, 13, 12, 13, 12, 13, 14, 15, 14, 15, 
         14
-        /*
-         0,  1,  0,  1,  0,  1,  0,  1,  0,  1, 
-         2,  3,  2,  3,  2,  3,  2,  3,  4,  5, 
-         4,  5,  4,  5,  4,  5,  6,  7,  6,  7, 
-         6,  7,  6,  7,  8,  9,  8,  9,  8,  9, 
-         8,  9, 10, 11, 10, 11, 10, 11, 10, 11, 
-        12, 13, 12, 13, 12, 13, 12, 13, 14, 15, 
-        14
-        */
     }
 };
+*/
 
 /*
     @brief ProbCut error calculation for midgame
@@ -169,9 +161,10 @@ inline bool mpc(Search* search, int alpha, int beta, int depth, uint64_t legal, 
         return false;
     }
     int d0value = mid_evaluate_diff(search);
-    int search_depth = mpc_search_depth_arr[is_end_search][depth];
+    //int search_depth = mpc_search_depth_arr[is_end_search][depth];
+    int search_depth = ((depth >> 2) & 0b11111110) + (depth & 1); // depth / 8 * 2 + depth % 2
     if (alpha - MPC_ADD_DEPTH_VALUE_THRESHOLD < d0value && d0value < beta + MPC_ADD_DEPTH_VALUE_THRESHOLD) {
-        search_depth += 2;
+        search_depth += 2; // if value is near [alpha, beta], increase search_depth
     }
     if (search_depth >= depth) {
         return false;
@@ -207,7 +200,7 @@ inline bool mpc(Search* search, int alpha, int beta, int depth, uint64_t legal, 
             return true;
         }
     } else{
-        int error_search, error_0;
+        int error_search;
         uint_fast8_t mpc_level = search->mpc_level;
         #if USE_MPC_PRE_CALCULATION
             if (is_end_search) {
@@ -223,7 +216,7 @@ inline bool mpc(Search* search, int alpha, int beta, int depth, uint64_t legal, 
                 error_search = ceil(mpct * probcut_sigma(search->n_discs, search_depth, depth));
             }
         #endif
-        error_0 = error_search - 4;
+        int error_0 = error_search - MPC_ERROR0_OFFSET;
         search->mpc_level = MPC_100_LEVEL;
         if (d0value >= beta + error_0) {
             int pc_beta = beta + error_search;
