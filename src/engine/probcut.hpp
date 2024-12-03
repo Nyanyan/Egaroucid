@@ -123,13 +123,13 @@ inline bool mpc(Search* search, int alpha, int beta, int depth, uint64_t legal, 
     if (search->mpc_level == MPC_100_LEVEL || depth < USE_MPC_MIN_DEPTH) {
         return false;
     }
-    int d0value = mid_evaluate_diff(search);
     int search_depth = ((depth >> 2) & 0b11111110) + (depth & 1); // depth / 8 * 2 + depth % 2
+    int d0value = mid_evaluate_diff(search);
     if (alpha - MPC_ADD_DEPTH_VALUE_THRESHOLD < d0value && d0value < beta + MPC_ADD_DEPTH_VALUE_THRESHOLD) {
         search_depth += 2; // if value is near [alpha, beta], increase search_depth
-    }
-    if (search_depth >= depth) {
-        return false;
+        if (search_depth >= depth) {
+            return false;
+        }
     }
     if (search_depth == 0) {
         int error;
@@ -161,7 +161,7 @@ inline bool mpc(Search* search, int alpha, int beta, int depth, uint64_t legal, 
             }
             return true;
         }
-    } else{
+    } else {
         int error_search;
         uint_fast8_t mpc_level = search->mpc_level;
         #if USE_MPC_PRE_CALCULATION
