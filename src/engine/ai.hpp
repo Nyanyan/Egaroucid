@@ -338,7 +338,7 @@ void iterative_deepening_search_time_limit(Board board, int alpha, int beta, boo
 #endif
             }
             if (
-                (main_is_end_search && main_mpc_level < MPC_100_LEVEL) || (!main_is_end_search && main_depth >= 30 && main_depth <= 34) && 
+                (!main_is_end_search && main_depth >= 30 && main_depth <= 34) && 
                 //!main_is_end_search && 
                 //tim() - strt > time_limit * 0.05 && 
                 //result->nodes >= 100000000ULL && 
