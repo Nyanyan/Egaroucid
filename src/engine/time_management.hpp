@@ -43,7 +43,7 @@ uint64_t calc_time_limit_ply(const Board board, uint64_t remaining_time_msec, bo
 
 
     if (show_log) {
-        std::cerr << "complete search depth " << complete_search_depth << " endgame search depth " << endgame_search_depth << std::endl;
+        std::cerr << "complete search depth " << complete_search_depth << " endgame search depth " << endgame_search_depth << " n_empties " << n_empties << std::endl;
     }
     if (n_empties <= complete_search_depth) {
         if (show_log) {
