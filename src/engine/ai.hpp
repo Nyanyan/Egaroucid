@@ -794,12 +794,29 @@ void ai_ponder(Board board, bool show_log, bool *searching) {
         }
         Board n_board = board.copy();
         n_board.move_board(&move_list[selected_idx].flip);
-        int new_level = std::min(60, move_list[selected_idx].level + 1);
+        int max_depth = HW2 - board.n_discs();
+        int new_level = std::min(MAX_LEVEL, move_list[selected_idx].level + 1);
         int depth;
         bool is_mid_search;
         uint_fast8_t mpc_level;
         get_level(new_level, n_board.n_discs() - 4, &is_mid_search, &depth, &mpc_level);
-        depth = std::min(HW2 - board.n_discs(), depth);
+        if (is_mid_search && max_depth - depth < 8) {
+            while (is_mid_search && new_level < MAX_LEVEL) {
+                ++new_level;
+                get_level(new_level, n_board.n_discs() - 4, &is_mid_search, &depth, &mpc_level);
+            }
+        } else if (!is_mid_search) {
+            int pre_depth;
+            bool pre_is_mid_search;
+            uint_fast8_t pre_mpc_level;
+            get_level(move_list[selected_idx].level, n_board.n_discs() - 4, &pre_is_mid_search, &pre_depth, &pre_mpc_level);
+            if (!pre_is_mid_search) {
+                while (mpc_level <= pre_mpc_level && new_level < MAX_LEVEL) {
+                    ++new_level;
+                    get_level(new_level, n_board.n_discs() - 4, &is_mid_search, &depth, &mpc_level);
+                }
+            }
+        }
         Search search(&n_board, mpc_level, true, false);
         int v = -nega_scout(&search, -SCORE_MAX, SCORE_MAX, depth, false, LEGAL_UNDEFINED, !is_mid_search, searching);
         if (*searching) {
