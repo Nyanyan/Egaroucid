@@ -309,14 +309,16 @@ std::pair<int, int> first_nega_scout_legal(Search *search, int alpha, int beta, 
     int best_move = TRANSPOSITION_TABLE_UNDEFINED;
     const int canput_all = pop_count_ull(legal);
     for (const Clog_result clog: clogs) {
-        if (v < clog.val) {
-            v = clog.val;
-            best_move = clog.pos;
-            if (alpha < v) {
-                alpha = v;
+        if (legal & (1ULL << clog.pos)) {
+            if (v < clog.val) {
+                v = clog.val;
+                best_move = clog.pos;
+                if (alpha < v) {
+                    alpha = v;
+                }
             }
+            legal &= ~(1ULL << clog.pos);
         }
-        legal &= ~(1ULL << clog.pos);
     }
     uint32_t hash_code = search->board.hash();
     if (alpha < beta && legal) {
