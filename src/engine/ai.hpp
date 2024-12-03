@@ -289,25 +289,20 @@ void iterative_deepening_search_time_limit(Board board, int alpha, int beta, boo
         bool searching = true;
         std::pair<int, int> id_result;
         bool search_success = true;
-        if (time_limit == TIME_LIMIT_INF) {
-            id_result = first_nega_scout_legal(&main_search, alpha, beta, main_depth, main_is_end_search, clogs, use_legal, strt, &searching);
-        } else {
-            std::future<std::pair<int, int>> f = std::async(std::launch::async, first_nega_scout_legal, &main_search, alpha, beta, main_depth, main_is_end_search, clogs, use_legal, strt, &searching);
-            for (;;) {
-                if (f.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
-                    id_result = f.get();
-                    break;
+        std::future<std::pair<int, int>> f = std::async(std::launch::async, first_nega_scout_legal, &main_search, alpha, beta, main_depth, main_is_end_search, clogs, use_legal, strt, &searching);
+        for (;;) {
+            if (f.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
+                id_result = f.get();
+                break;
+            }
+            if (tim() - strt >= time_limit && main_depth > 1) {
+                if (show_log) {
+                    std::cerr << "terminate search by time limit " << tim() - strt << " ms" << std::endl;
                 }
-                if (tim() - strt >= time_limit && main_depth > 1) {
-                    if (show_log) {
-                        std::cerr << "terminate search by time limit " << tim() - strt << " ms" << std::endl;
-                    }
-                    searching = false;
-                    f.get();
-                    search_success = false;
-                    //std::cerr << "got main " << tim() - strt << " ms" << std::endl;
-                    break;
-                }
+                searching = false;
+                f.get();
+                search_success = false;
+                break;
             }
         }
 #if USE_LAZY_SMP

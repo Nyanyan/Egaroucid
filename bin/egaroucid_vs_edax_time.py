@@ -42,7 +42,7 @@ edax_cmd = 'versions/edax_4_5_2/wEdax-x64-modern.exe -q -l 50 -ponder on -n 8 -g
 d_today = str(datetime.date.today())
 t_now = str(datetime.datetime.now().time())
 
-for num in range(max_num):
+for num in range(1, max_num):
     tactic_idx = smpl[num % len(tactic)]
     for player in range(2):
         logfile = 'egaroucid_vs_edax_time_log/' + 'log_' + d_today.replace('-', '') + '_' + t_now.split('.')[0].replace(':', '') + '_' + str(num) + '_' + str(player) + '.txt'
