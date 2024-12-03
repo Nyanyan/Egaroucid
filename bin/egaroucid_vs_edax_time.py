@@ -3,6 +3,7 @@ from othello_py import *
 import sys
 from random import shuffle
 from time import time
+import datetime
 
 with open('problem/xot_small_shuffled.txt', 'r') as f:
     tactic = [elem for elem in f.read().splitlines()]
@@ -38,10 +39,14 @@ print('play', max_num, 'games', file=sys.stderr)
 #edax_cmd = 'versions/edax_4_4/edax-4.4 -q -l 50 -ponder on -n 8 -game-time ' + str(time_limit)
 edax_cmd = 'versions/edax_4_5_2/wEdax-x64-modern.exe -q -l 50 -ponder on -n 8 -game-time ' + str(time_limit)
 
+d_today = str(datetime.date.today())
+t_now = str(datetime.datetime.now().time())
+
 for num in range(max_num):
     tactic_idx = smpl[num % len(tactic)]
     for player in range(2):
-        egaroucid_cmd_player = egaroucid_cmd + ' -mode ' + str(1 - player)
+        logfile = 'egaroucid_vs_edax_time_log/' + 'log_' + d_today.replace('-', '') + '_' + t_now.split('.')[0].replace(':', '') + '_' + str(num) + '_' + str(player) + '.txt'
+        egaroucid_cmd_player = egaroucid_cmd + ' -mode ' + str(1 - player) + ' -logfile ' + logfile
         edax_cmd_player = edax_cmd + ' -mode ' + str(player)
         #print(egaroucid_cmd_player)
         #print(edax_cmd_player)
