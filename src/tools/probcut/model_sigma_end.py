@@ -102,7 +102,7 @@ def plot_fit_result(x, y, z, params):
 popt_sd, pcov_sd = curve_fit(f, (x_n_discs_sd, y_depth_sd), z_sd, np.ones(6), sigma=weight_sd, absolute_sigma=True)
 print([float(elem) for elem in popt_sd])
 for i in range(len(popt_sd)):
-    print('#define probcut_end_' + chr(ord('a') + i), popt_sd[i])
+    print('constexpr double probcut_end_' + chr(ord('a') + i) + ' = ' + str(popt_sd[i]) + ';')
 
 '''
 popt_mean, pcov_mean = curve_fit(f, (x_n_discs_mean, y_depth_mean), z_mean, np.ones(6), sigma=weight_mean, absolute_sigma=True)

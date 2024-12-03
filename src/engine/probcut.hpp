@@ -16,15 +16,14 @@
 #include "midsearch.hpp"
 #include "util.hpp"
 
-#define USE_MPC_MIN_DEPTH 3
-//#define MAX_MPC_DEPTH_PRESEARCH 22
+constexpr int USE_MPC_MIN_DEPTH = 3;
 
 #if USE_ALL_NODE_PREDICTION
     #define ALL_NODE_CHECK_MPCT 1.8
 #endif
 
-#define MPC_ADD_DEPTH_VALUE_THRESHOLD 10
-#define MPC_ERROR0_OFFSET 3
+constexpr int MPC_ADD_DEPTH_VALUE_THRESHOLD = 10;
+constexpr int MPC_ERROR0_OFFSET = 3;
 
 // constants from standard normal distribution table
 // two-sided test                                         74.0  88.0  93.0  98.0  99.0  inf (%)
@@ -33,20 +32,20 @@ constexpr double SELECTIVITY_MPCT[N_SELECTIVITY_LEVEL] = {1.13, 1.55, 1.81, 2.32
 /*
     @brief constants for ProbCut error calculation
 */
-#define probcut_a 0.93740805837003
-#define probcut_b -7.340323137961951
-#define probcut_c 1.1401695320187872
-#define probcut_d 0.700567733735339
-#define probcut_e 2.662003673678691
-#define probcut_f 3.0554301965778063
-#define probcut_g 2.0942574977708674
+constexpr double probcut_a = 0.93740805837003;
+constexpr double probcut_b = -7.340323137961951;
+constexpr double probcut_c = 1.1401695320187872;
+constexpr double probcut_d = 0.700567733735339;
+constexpr double probcut_e = 2.662003673678691;
+constexpr double probcut_f = 3.0554301965778063;
+constexpr double probcut_g = 2.0942574977708674;
 
-#define probcut_end_a 1.1919399325679816
-#define probcut_end_b 1.963428096686115
-#define probcut_end_c -5.307704287022464
-#define probcut_end_d 7.090319279010543
-#define probcut_end_e -5.271757002847477
-#define probcut_end_f 8.25738935619712
+constexpr double probcut_end_a = 1.1919399325679816;
+constexpr double probcut_end_b = 1.963428096686115;
+constexpr double probcut_end_c = -5.307704287022464;
+constexpr double probcut_end_d = 7.090319279010543;
+constexpr double probcut_end_e = -5.271757002847477;
+constexpr double probcut_end_f = 8.25738935619712;
 
 #if USE_MPC_PRE_CALCULATION
     int mpc_error[N_SELECTIVITY_LEVEL][HW2 + 1][HW2 - 3][HW2 - 3];
@@ -124,9 +123,6 @@ int nega_alpha_ordering_nws(Search *search, int alpha, int depth, bool skipped, 
     @return cutoff occurred?
 */
 inline bool mpc(Search* search, int alpha, int beta, int depth, uint64_t legal, const bool is_end_search, int* v, bool *searching) {
-    //if (search->mpc_level == MPC_100_LEVEL || depth < USE_MPC_DEPTH || (search->is_presearch && depth >= MAX_MPC_DEPTH_PRESEARCH)) {
-    //    return false;
-    //}
     if (search->mpc_level == MPC_100_LEVEL || depth < USE_MPC_MIN_DEPTH) {
         return false;
     }

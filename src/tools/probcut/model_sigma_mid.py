@@ -123,7 +123,7 @@ def plot_fit_result_onephase(w, x, y, z, n_discs, params):
 popt_sd, pcov_sd = curve_fit(f, (w_n_discs_sd, x_depth1_sd, y_depth2_sd), z_sd, np.ones(7), sigma=weight_sd, absolute_sigma=True)
 print([float(elem) for elem in popt_sd])
 for i in range(len(popt_sd)):
-    print('#define probcut_' + chr(ord('a') + i), popt_sd[i])
+    print('constexpr double probcut_' + chr(ord('a') + i) + ' = ' + str(popt_sd[i]) + ';')
 
 for i in [10, 20, 30, 40, 50]:
     plot_fit_result_onephase(w_n_discs_sd, x_depth1_sd, y_depth2_sd, z_sd, i, popt_sd)
