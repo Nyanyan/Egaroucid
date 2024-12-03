@@ -509,12 +509,9 @@ inline int mid_evaluate(Board *board) {
     Search search(board);
     calc_eval_features(&(search.board), &(search.eval));
     int phase_idx, sur0, sur1, num0;
-    uint64_t empties;
     phase_idx = search.phase();
-    empties = ~(search.board.player | search.board.opponent);
     num0 = pop_count_ull(search.board.player);
-    int res = calc_pattern(phase_idx, &search.eval.features[search.eval.feature_idx]) + 
-        eval_num_arr[phase_idx][num0];
+    int res = calc_pattern(phase_idx, &search.eval.features[search.eval.feature_idx]) + eval_num_arr[phase_idx][num0];
     res += res >= 0 ? STEP_2 : -STEP_2;
     res /= STEP;
     res = std::clamp(res, -SCORE_MAX, SCORE_MAX);
@@ -529,12 +526,9 @@ inline int mid_evaluate(Board *board) {
 */
 inline int mid_evaluate_diff(Search *search) {
     int phase_idx, sur0, sur1, num0;
-    uint64_t empties;
     phase_idx = search->phase();
-    empties = ~(search->board.player | search->board.opponent);
     num0 = pop_count_ull(search->board.player);
-    int res = calc_pattern(phase_idx, &search->eval.features[search->eval.feature_idx]) + 
-        eval_num_arr[phase_idx][num0];
+    int res = calc_pattern(phase_idx, &search->eval.features[search->eval.feature_idx]) + eval_num_arr[phase_idx][num0];
     res += res >= 0 ? STEP_2 : -STEP_2;
     res /= STEP;
     res = std::clamp(res, -SCORE_MAX, SCORE_MAX);
