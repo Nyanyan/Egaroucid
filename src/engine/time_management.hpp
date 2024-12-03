@@ -14,8 +14,8 @@
 
 
 #define TIME_MANAGEMENT_REMAINING_TIME_OFFSET 10 // ms / move
-#define TIME_MANAGEMENT_REMAINING_MOVES_OFFSET 15 // 15 * 2 = 30 moves
-#define TIME_MANAGEMENT_N_MOVES_COE 0.75 // 25% early break
+#define TIME_MANAGEMENT_REMAINING_MOVES_OFFSET 14 // 14 * 2 = 28 moves
+#define TIME_MANAGEMENT_N_MOVES_COE 0.8 // 20% early break
 
 Search_result ai(Board board, int level, bool use_book, int book_acc_level, bool use_multi_thread, bool show_log);
 

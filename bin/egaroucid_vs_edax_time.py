@@ -37,7 +37,7 @@ print('play', max_num, 'games', file=sys.stderr)
 
 
 #edax_cmd = 'versions/edax_4_4/edax-4.4 -q -l 50 -ponder on -n 8 -game-time ' + str(time_limit)
-edax_cmd = 'versions/edax_4_5_2/wEdax-x64-modern.exe -q -l 50 -ponder on -n 8 -game-time ' + str(time_limit)
+edax_cmd = 'versions/edax_4_5_2/wEdax-x64-modern.exe -q -l 50 -ponder on -n 8 -h 28 -game-time ' + str(time_limit)
 
 d_today = str(datetime.date.today())
 t_now = str(datetime.datetime.now().time())
