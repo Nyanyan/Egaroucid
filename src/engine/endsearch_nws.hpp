@@ -138,8 +138,10 @@ struct LocalTTEntry {
     }
 };
 
-#define LOCAL_TT_SIZE 1024
-#define LOCAL_TT_SIZE_BIT 10
+//#define LOCAL_TT_SIZE 1024
+//#define LOCAL_TT_SIZE_BIT 10
+#define LOCAL_TT_SIZE 2048
+#define LOCAL_TT_SIZE_BIT 11
 
 static thread_local LocalTTEntry lttable[MID_TO_END_DEPTH - END_FAST_DEPTH][LOCAL_TT_SIZE];
 
