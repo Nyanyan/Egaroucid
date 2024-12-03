@@ -282,7 +282,7 @@ void iterative_deepening_search_time_limit(Board board, int alpha, int beta, boo
             } else{
                 std::cerr << "mid ";
             }
-            std::cerr << "depth " << result->depth << "@" << SELECTIVITY_PERCENTAGE[main_mpc_level] << "% " << std::flush;
+            std::cerr << "depth " << main_depth << "@" << SELECTIVITY_PERCENTAGE[main_mpc_level] << "% " << std::flush;
         }
         Search main_search(&board, main_mpc_level, use_multi_thread, false);
         bool searching = true;
@@ -363,21 +363,25 @@ void iterative_deepening_search_time_limit(Board board, int alpha, int beta, boo
         if (main_depth < max_depth - IDSEARCH_ENDSEARCH_PRESEARCH_OFFSET_TIMELIMIT && (main_depth < max_depth - IDSEARCH_ENDSEARCH_PRESEARCH_OFFSET || tim() - strt < time_limit * 0.1)) { // next: midgame search
             if (main_depth <= 15 && main_depth < max_depth - 3) {
                 main_depth += 3;
-            } else{
-                ++main_depth;
-            }
-            if (main_depth > 13 && main_mpc_level == MPC_100_LEVEL) {
-                main_mpc_level = MPC_74_LEVEL;
-            }
-            if (main_depth > 23) {
-                if (main_mpc_level < MPC_88_LEVEL) {
-                    --main_depth;
-                    ++main_mpc_level;
-                } else {
+                if (main_depth > 13 && main_mpc_level == MPC_100_LEVEL) {
                     main_mpc_level = MPC_74_LEVEL;
                 }
+            } else {
+                if (main_depth + 1 < 23) {
+                    ++main_depth;
+                    if (main_depth > 13 && main_mpc_level == MPC_100_LEVEL) {
+                        main_mpc_level = MPC_74_LEVEL;
+                    }
+                } else {
+                    if (main_mpc_level < MPC_88_LEVEL) {
+                        ++main_mpc_level;
+                    } else {
+                        ++main_depth;
+                        main_mpc_level = MPC_74_LEVEL;
+                    }
+                }
             }
-        } else{ // next: endgame search
+        } else { // next: endgame search
             if (main_depth < max_depth) {
                 main_depth = max_depth;
                 main_mpc_level = MPC_74_LEVEL;
