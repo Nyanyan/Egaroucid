@@ -26,7 +26,7 @@
 #define AI_TYPE_BOOK 1000
 
 #define IDSEARCH_ENDSEARCH_PRESEARCH_OFFSET 10
-#define IDSEARCH_ENDSEARCH_PRESEARCH_OFFSET_TIMELIMIT 8
+#define IDSEARCH_ENDSEARCH_PRESEARCH_OFFSET_TIMELIMIT 4
 
 #define NOBOOK_SEARCH_LEVEL 10
 #define NOBOOK_SEARCH_MARGIN 1
@@ -767,6 +767,7 @@ bool comp_ponder_elem(Ponder_elem &a, Ponder_elem &b) {
 }
 
 void ai_ponder(Board board, bool show_log, bool *searching) {
+    uint64_t strt = tim();
     uint64_t legal = board.get_legal();
     if (legal == 0) {
         board.pass();
@@ -871,7 +872,7 @@ void ai_ponder(Board board, bool show_log, bool *searching) {
         }
     }
     if (show_log && n_searched_all) {
-        std::cerr << "ponder loop " << n_searched_all << std::endl;
+        std::cerr << "ponder loop " << n_searched_all << " in " << tim() - strt << " ms" << std::endl;
         std::cerr << "ponder board " << board.to_str() << std::endl;
         std::sort(move_list.begin(), move_list.end(), comp_ponder_elem);
         for (int i = 0; i < canput; ++i) {
