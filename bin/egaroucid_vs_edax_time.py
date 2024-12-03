@@ -13,7 +13,7 @@ time_limit = int(sys.argv[1])
 n_games = int(sys.argv[2])
 
 file = None
-egaroucid_cmd = 'versions/Egaroucid_for_Console_beta/Egaroucid_for_console.exe -quiet -nobook -ponder -t 8 -hash 27 -time ' + str(time_limit)
+egaroucid_cmd = 'versions/Egaroucid_for_Console_beta/Egaroucid_for_console_clang.exe -quiet -nobook -ponder -t 8 -hash 27 -time ' + str(time_limit)
 if len(sys.argv) == 4:
     file = sys.argv[3]
     print('egaroucid eval ', file, file=sys.stderr)
@@ -35,7 +35,8 @@ smpl = range(len(tactic))
 print('play', max_num, 'games', file=sys.stderr)
 
 
-edax_cmd = 'versions/edax_4_4/edax-4.4 -q -l 50 -ponder on -n 8 -game-time ' + str(time_limit)
+#edax_cmd = 'versions/edax_4_4/edax-4.4 -q -l 50 -ponder on -n 8 -game-time ' + str(time_limit)
+edax_cmd = 'versions/edax_4_5_2/wEdax-x64-modern.exe -q -l 50 -ponder on -n 8 -game-time ' + str(time_limit)
 
 for num in range(max_num):
     tactic_idx = smpl[num % len(tactic)]
