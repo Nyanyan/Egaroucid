@@ -810,14 +810,16 @@ void ai_ponder(Board board, bool show_log, bool *searching) {
             } else if (move_list[i].is_complete_search) { // fully searched
                 ucb = -INF;
             } else {
-                double depth_weight = (double)move_list[i].depth / (double)max_depth + (double)move_list[i].mpc_level / 8.0;
-                ucb = move_list[i].value * depth_weight + 0.5 * sqrt(log(2.0 * (double)n_searched_all) / (double)move_list[i].count);
+                double depth_weight = (double)std::min(10, move_list[i].depth) / (double)std::min(10, max_depth);
+                ucb = (double)(move_list[i].value + SCORE_MAX) / (double)(SCORE_MAX * 2) * depth_weight + 0.5 * sqrt(log(2.0 * (double)n_searched_all) / (double)move_list[i].count) * (1.5 - depth_weight);
+                //std::cerr << move_list[i].value << "," << move_list[i].count << "," << sqrt(log(2.0 * (double)n_searched_all) / (double)move_list[i].count) << "," << ucb << " ";
             }
             if (ucb > max_ucb) {
                 selected_idx = i;
                 max_ucb = ucb;
             }
         }
+        //std::cerr << std::endl;
         if (selected_idx == -1) {
             if (show_log) {
                 std::cerr << "ponder: no move selected n_moves " << canput << std::endl;
