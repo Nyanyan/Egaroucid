@@ -26,7 +26,7 @@
 #define AI_TYPE_BOOK 1000
 
 #define IDSEARCH_ENDSEARCH_PRESEARCH_OFFSET 10
-#define IDSEARCH_ENDSEARCH_PRESEARCH_OFFSET_TIMELIMIT 6
+#define IDSEARCH_ENDSEARCH_PRESEARCH_OFFSET_TIMELIMIT 10
 #define PONDER_ENDSEARCH_PRESEARCH_OFFSET_TIMELIMIT 6
 
 #define NOBOOK_SEARCH_LEVEL 10
@@ -371,12 +371,12 @@ void iterative_deepening_search_time_limit(Board board, int alpha, int beta, boo
                     result->nps = calc_nps(result->nodes, result->time);
                     if (nws_value <= nws_alpha) {
                         if (show_log) {
-                            std::cerr << "early break second best " << idx_to_coord(nws_move) << " value <= " << nws_value << std::endl;
+                            std::cerr << "early break second best " << idx_to_coord(nws_move) << " value <= " << nws_value << " time " << tim() - strt << std::endl;
                         }
                         break;
                     } else if (nws_searching) {
                         if (show_log) {
-                            std::cerr << "no early break second best " << idx_to_coord(nws_move) << " value >= " << nws_value << std::endl;
+                            std::cerr << "no early break second best " << idx_to_coord(nws_move) << " value >= " << nws_value << " time " << tim() - strt << std::endl;
                         }
                     }
                 }
@@ -397,15 +397,12 @@ void iterative_deepening_search_time_limit(Board board, int alpha, int beta, boo
                         main_mpc_level = MPC_74_LEVEL;
                     }
                 } else {
-                    ++main_depth;
-                    /*
                     if (main_mpc_level < MPC_88_LEVEL) {
                         ++main_mpc_level;
                     } else {
                         ++main_depth;
                         main_mpc_level = MPC_74_LEVEL;
                     }
-                    */
                 }
             }
         } else { // next: endgame search
