@@ -44,7 +44,8 @@ t_now = str(datetime.datetime.now().time())
 
 for num in range(max_num):
     tactic_idx = smpl[num % len(tactic)]
-    for player in range(2):
+    #for player in [black, white]:
+    for player in [white, black]:
         logfile = 'egaroucid_vs_edax_time_log/' + 'log_' + d_today.replace('-', '') + '_' + t_now.split('.')[0].replace(':', '') + '_board_' + str(num) + '_' + str(player) + '.txt'
         egaroucid_cmd_log = egaroucid_cmd + ' -logfile ' + logfile
         egaroucid = subprocess.Popen(egaroucid_cmd_log.split(), stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
