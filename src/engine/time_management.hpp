@@ -33,7 +33,7 @@ uint64_t calc_time_limit_ply(const Board board, uint64_t remaining_time_msec, bo
     // Nodes(depth) = a * exp(b * depth)
     constexpr double complete_const_a = 0.40; //2.1747;
     constexpr double complete_const_b = 0.76;
-    constexpr double complete_nps = 3.5e8;
+    constexpr double complete_nps = 6.5e8;
     double complete_use_time = (double)remaining_time_msec_margin * 0.9;
     double complete_search_depth = log(complete_use_time / 1000.0 * complete_nps / complete_const_a) / complete_const_b;
 
