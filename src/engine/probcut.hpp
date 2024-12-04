@@ -114,6 +114,9 @@ inline bool mpc(Search* search, int alpha, int beta, int depth, uint64_t legal, 
             double mpct = SELECTIVITY_MPCT[mpc_level];
             int error_search = ceil(mpct * probcut_sigma(search->n_discs, search_depth, depth));
         #endif
+        if (is_end_search) {
+            error_search += 1.5;
+        }
         int error_0 = error_search - MPC_ERROR0_OFFSET;
         search->mpc_level = MPC_100_LEVEL;
         if (d0value >= beta + error_0) {
