@@ -228,6 +228,12 @@ void iterative_deepening_search_time_limit(Board board, int alpha, int beta, boo
             main_is_end_search = true;
             main_depth = max_depth;
         }
+        if (main_is_end_search && main_mpc_level == MPC_100_LEVEL && tim() - strt > time_limit * 0.6 && time_limit > 10000ULL) {
+            if (show_log) {
+                std::cerr << "give up complete search" << std::endl;
+            }
+            break;
+        }
 #if USE_LAZY_SMP
         std::vector<std::future<int>> parallel_tasks;
         std::vector<int> sub_depth_arr;

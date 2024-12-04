@@ -50,7 +50,7 @@ def write_log(*args, end='\n', sep=' '):
     with open(whole_log_file, 'a') as f:
         f.write(s)
 
-GAME_OFFSET = 0
+GAME_OFFSET = 2
 
 for num in range(GAME_OFFSET, max_num + GAME_OFFSET):
     tactic_idx = smpl[num % len(tactic)]
