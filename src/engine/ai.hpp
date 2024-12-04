@@ -834,7 +834,7 @@ void ai_ponder(Board board, bool show_log, bool *searching) {
         }
         Board n_board = board.copy();
         n_board.move_board(&move_list[selected_idx].flip);
-        int max_depth = HW2 - board.n_discs();
+        int max_depth = HW2 - n_board.n_discs();
         int new_depth = move_list[selected_idx].depth + 1;
         uint_fast8_t new_mpc_level = move_list[selected_idx].mpc_level;
         if (new_depth > max_depth) {
