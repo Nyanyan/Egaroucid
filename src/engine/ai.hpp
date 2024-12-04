@@ -342,7 +342,7 @@ void iterative_deepening_search_time_limit(Board board, int alpha, int beta, boo
                 !policy_changed && 
                 !policy_changed_before
             ) {
-                int nws_alpha = result->value - 5;
+                int nws_alpha = result->value - 6;
                 if (nws_alpha >= -SCORE_MAX) {
                     Search nws_search(&board, main_mpc_level, use_multi_thread, false);
                     bool nws_searching = true;
