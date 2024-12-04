@@ -217,7 +217,6 @@ void iterative_deepening_search_time_limit(Board board, int alpha, int beta, boo
 #endif
     int before_raw_value = -100;
     bool policy_changed_before = true;
-    //bool score_changed_before = true;
     while (global_searching && ((tim() - strt < time_limit) || main_depth <= 1)) {
 #if USE_LAZY_SMP
         for (Search &search: searches) {
@@ -327,7 +326,6 @@ void iterative_deepening_search_time_limit(Board board, int alpha, int beta, boo
                 result->value = id_result.first;
             }
             bool policy_changed = result->policy != id_result.second;
-            //bool score_changed = abs(before_raw_value - id_result.first) > 0;
             result->policy = id_result.second;
             result->depth = main_depth;
             result->is_end_search = main_is_end_search;
@@ -341,20 +339,11 @@ void iterative_deepening_search_time_limit(Board board, int alpha, int beta, boo
             }
             if (
                 (!main_is_end_search && main_depth >= 28 && main_depth <= 31) && 
-                //!main_is_end_search && 
-                //tim() - strt > time_limit * 0.05 && 
-                //result->nodes >= 100000000ULL && 
                 !policy_changed && 
-                !policy_changed_before //&& 
-                //!score_changed && 
-                //!score_changed_before
+                !policy_changed_before
             ) {
                 int nws_alpha = result->value - 5;
-                //if (main_is_end_search) {
-                //    nws_alpha = result->value - 4;
-                //}
                 if (nws_alpha >= -SCORE_MAX) {
-                    //std::cerr << "check early break best score " << result->value << " nws_alpha " << nws_alpha << " ignore " << idx_to_coord(result->policy) << std::endl;
                     Search nws_search(&board, main_mpc_level, use_multi_thread, false);
                     bool nws_searching = true;
                     uint64_t nws_use_legal = use_legal ^ (1ULL << result->policy);
@@ -380,7 +369,6 @@ void iterative_deepening_search_time_limit(Board board, int alpha, int beta, boo
                     result->nodes += main_search.n_nodes;
                     result->time = tim() - strt;
                     result->nps = calc_nps(result->nodes, result->time);
-                    //std::cerr << "got " << nws_value << std::endl;
                     if (nws_value <= nws_alpha) {
                         if (show_log) {
                             std::cerr << "early break second best " << idx_to_coord(nws_move) << " value <= " << nws_value << std::endl;
@@ -395,7 +383,6 @@ void iterative_deepening_search_time_limit(Board board, int alpha, int beta, boo
             }
             before_raw_value = id_result.first;
             policy_changed_before = policy_changed;
-            //score_changed_before = score_changed;
         }
         if (main_depth < max_depth - IDSEARCH_ENDSEARCH_PRESEARCH_OFFSET_TIMELIMIT) { // next: midgame search
             if (main_depth <= 15 && main_depth < max_depth - 3) {
