@@ -42,9 +42,9 @@ edax = [
 
 for num in range(max_num):
     tactic_idx = smpl[num % len(tactic)]
-    shuffled_range2 = [0, 1]
-    shuffle(shuffled_range2)
-    for player in shuffled_range2:
+    shuffled_black_white = [black, white]
+    shuffle(shuffled_black_white)
+    for player in shuffled_black_white:
         record = ''
         boards = []
         o = othello()
