@@ -346,7 +346,8 @@ void iterative_deepening_search_time_limit(Board board, int alpha, int beta, boo
             if (
                 (!main_is_end_search && main_depth >= 30 && main_depth <= 31) && 
                 !policy_changed && 
-                !policy_changed_before
+                !policy_changed_before && 
+                main_mpc_level == MPC_74_LEVEL
             ) {
                 int nws_alpha = result->value - 6;
                 if (nws_alpha >= -SCORE_MAX) {
