@@ -5,8 +5,14 @@ from random import shuffle
 from time import time
 import datetime
 
-with open('problem/random18_boards/0000000.txt', 'r') as f:
-    tactic = [elem for elem in f.read().splitlines()]
+USE_DIFFICULT_DATASET = True
+
+if USE_DIFFICULT_DATASET:
+    with open('problem/random18_boards/difficult.txt', 'r') as f:
+        tactic = [elem for elem in f.read().splitlines()]
+else:
+    with open('problem/random18_boards/0000000.txt', 'r') as f:
+        tactic = [elem for elem in f.read().splitlines()]
 #tactic = ['']
 print(len(tactic), 'openings found', file=sys.stderr)
 
@@ -42,7 +48,10 @@ edax_cmd = 'versions/edax_4_5_2/wEdax-x64-modern.exe -q -l 50 -ponder on -n 8 -h
 d_today = str(datetime.date.today())
 t_now = str(datetime.datetime.now().time())
 
-whole_log_file = 'egaroucid_vs_edax_time_log/' + 'log_' + d_today.replace('-', '') + '_' + t_now.split('.')[0].replace(':', '') + '_board_' + 'whole' + '.txt'
+if USE_DIFFICULT_DATASET:
+    whole_log_file = 'egaroucid_vs_edax_time_log/' + 'log_' + d_today.replace('-', '') + '_' + t_now.split('.')[0].replace(':', '') + '_board_difficult_' + 'whole' + '.txt'
+else:
+    whole_log_file = 'egaroucid_vs_edax_time_log/' + 'log_' + d_today.replace('-', '') + '_' + t_now.split('.')[0].replace(':', '') + '_board_' + 'whole' + '.txt'
 
 def write_log(*args, end='\n', sep=' '):
     s = sep.join([str(elem) for elem in args])
@@ -55,7 +64,10 @@ GAME_OFFSET = 2
 for num in range(GAME_OFFSET, max_num + GAME_OFFSET):
     tactic_idx = smpl[num % len(tactic)]
     for player in [black, white]:
-        logfile = 'egaroucid_vs_edax_time_log/' + 'log_' + d_today.replace('-', '') + '_' + t_now.split('.')[0].replace(':', '') + '_board_' + str(num) + '_' + str(player) + '.txt'
+        if USE_DIFFICULT_DATASET:
+            logfile = 'egaroucid_vs_edax_time_log/' + 'log_' + d_today.replace('-', '') + '_' + t_now.split('.')[0].replace(':', '') + '_board_difficult_' + str(num) + '_' + str(player) + '.txt'
+        else:
+            logfile = 'egaroucid_vs_edax_time_log/' + 'log_' + d_today.replace('-', '') + '_' + t_now.split('.')[0].replace(':', '') + '_board_' + str(num) + '_' + str(player) + '.txt'
         egaroucid_cmd_log = egaroucid_cmd + ' -logfile ' + logfile
         egaroucid = subprocess.Popen(egaroucid_cmd_log.split(), stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
         edax = subprocess.Popen(edax_cmd.split(), stdin=subprocess.PIPE, stdout=subprocess.PIPE)
