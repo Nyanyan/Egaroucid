@@ -50,7 +50,9 @@ def write_log(*args, end='\n', sep=' '):
     with open(whole_log_file, 'a') as f:
         f.write(s)
 
-for num in range(max_num):
+GAME_OFFSET = 2
+
+for num in range(GAME_OFFSET, max_num + GAME_OFFSET):
     tactic_idx = smpl[num % len(tactic)]
     for player in [black, white]:
         logfile = 'egaroucid_vs_edax_time_log/' + 'log_' + d_today.replace('-', '') + '_' + t_now.split('.')[0].replace(':', '') + '_board_' + str(num) + '_' + str(player) + '.txt'
