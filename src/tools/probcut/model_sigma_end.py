@@ -92,7 +92,7 @@ def plot_fit_result(x, y, z, params):
     ax.plot(x, y, z, ms=3, marker="o",linestyle='None')
     mx, my = np.meshgrid(range(65), range(16))
     ax.plot_wireframe(mx, my, f_max((mx, my), *params), rstride=5, cstride=5)
-    ax.set_xlabel('n_discs(=long_depth)')
+    ax.set_xlabel('n_discs(=64-long_depth)')
     ax.set_ylabel('search_depth')
     ax.set_zlabel('error')
     ax.set_xlim(0, 64)
