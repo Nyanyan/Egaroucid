@@ -57,8 +57,8 @@ z_mean = []
 weight_mean = []
 
 for n_discs in range(len(data)):
-    for depth1 in range(len(data[n_discs])):
-        for depth2 in range(len(data[n_discs][depth1])):
+    for depth1 in range(len(data[n_discs])): # short
+        for depth2 in range(len(data[n_discs][depth1])): # long
             if len(data[n_discs][depth1][depth2]) >= 3:
                 #mean = statistics.mean(data[n_discs][depth1][depth2])
                 #sd = statistics.stdev(data[n_discs][depth1][depth2])
