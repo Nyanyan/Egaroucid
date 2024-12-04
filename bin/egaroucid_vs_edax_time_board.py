@@ -169,7 +169,7 @@ for num in range(max_num):
         egaroucid_n_played += 1
         egaroucid.kill()
         edax.kill()
-        print(' ', o.n_stones[player], '-', o.n_stones[1 - player], 'eg', egaroucid_disc_diff)
+        print(' ', str(o.n_stones[black]) + '-' + str(o.n_stones[white]), 'eg', egaroucid_disc_diff)
         print('egaroucid', egaroucid_used_time, 's', 'edax', edax_used_time, 's')
         print(num, max_num, ' ', egaroucid_win, draw, edax_win, sum(egaroucid_win) + sum(draw) * 0.5, sum(edax_win) + sum(draw) * 0.5, 
               round((sum(egaroucid_win) + sum(draw) * 0.5) / max(1, sum(egaroucid_win) + sum(edax_win) + sum(draw)), 6), 
