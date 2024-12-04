@@ -196,31 +196,19 @@ int nega_alpha_ordering_nws(Search *search, int alpha, const int depth, const bo
     if (!global_searching || !(*searching)) {
         return SCORE_UNDEFINED;
     }
-    if (!is_end_search) {
+    if (is_end_search) {
+        if (depth <= MID_TO_END_DEPTH && search->mpc_level == MPC_100_LEVEL) {
+            return nega_alpha_end_nws(search, alpha, skipped, legal);
+        }
+        if (depth <= MID_TO_END_DEPTH_MPC && search->mpc_level < MPC_100_LEVEL) {
+            return nega_alpha_end_nws(search, alpha, skipped, legal);
+        }
+    } else {
         if (depth <= MID_SIMPLE_DEPTH) {
             return nega_alpha_ordering_nws_simple(search, alpha, depth, skipped, legal, searching);
         }
-        /*
-        if (depth == 1) {
-            return nega_alpha_eval1_nws(search, alpha, skipped);
-        }
-        if (depth == 0) {
-            ++search->n_nodes;
-            return mid_evaluate_diff(search);
-        }
-        */
     }
     int v = -SCORE_INF;
-    if (is_end_search && depth <= MID_TO_END_DEPTH) {
-        /*
-        #if USE_MID_MPC
-            if (mpc(search, alpha, alpha + 1, depth, legal, is_end_search, &v, searching)) {
-                return v;
-            }
-        #endif
-        */
-        return nega_alpha_end_nws(search, alpha, skipped, legal);
-    }
     ++search->n_nodes;
     #if USE_SEARCH_STATISTICS
         ++search->n_nodes_discs[search->n_discs];
