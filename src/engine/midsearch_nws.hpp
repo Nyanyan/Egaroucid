@@ -197,12 +197,17 @@ int nega_alpha_ordering_nws(Search *search, int alpha, const int depth, const bo
         return SCORE_UNDEFINED;
     }
     if (is_end_search) {
+        if (depth <= MID_TO_END_DEPTH) {
+            return nega_alpha_end_nws(search, alpha, skipped, legal);
+        }
+        /*
         if (depth <= MID_TO_END_DEPTH && search->mpc_level == MPC_100_LEVEL) {
             return nega_alpha_end_nws(search, alpha, skipped, legal);
         }
         if (depth <= MID_TO_END_DEPTH_MPC && search->mpc_level < MPC_100_LEVEL) {
             return nega_alpha_end_nws(search, alpha, skipped, legal);
         }
+        */
     } else {
         if (depth <= MID_SIMPLE_DEPTH) {
             return nega_alpha_ordering_nws_simple(search, alpha, depth, skipped, legal, searching);
