@@ -42,6 +42,14 @@ edax_cmd = 'versions/edax_4_5_2/wEdax-x64-modern.exe -q -l 50 -ponder on -n 8 -h
 d_today = str(datetime.date.today())
 t_now = str(datetime.datetime.now().time())
 
+whole_log_file = 'egaroucid_vs_edax_time_log/' + 'log_' + d_today.replace('-', '') + '_' + t_now.split('.')[0].replace(':', '') + '_board_' + 'whole' + '.txt'
+
+def write_log(*args, end='\n', sep=' '):
+    s = sep.join([str(elem) for elem in args])
+    s += end
+    with open(whole_log_file, 'a') as f:
+        f.write(s)
+
 for num in range(max_num):
     tactic_idx = smpl[num % len(tactic)]
     for player in [black, white]:
@@ -52,14 +60,15 @@ for num in range(max_num):
         print('player', player)
         if player == 0:
             print('Egaroucid plays black')
+            write_log('Egaroucid plays black')
         else:
             print('Egaroucid plays white')
+            write_log('Egaroucid plays white')
         record = ''
         boards = []
         o = othello()
         egaroucid_used_time = 0
         edax_used_time = 0
-        record = tactic[tactic_idx] + ' '
         o.n_stones[black] = 0
         o.n_stones[white] = 0
         for yy in range(8):
@@ -81,7 +90,8 @@ for num in range(max_num):
         egaroucid.stdin.flush()
         edax.stdin.write(('mode ' + str(player) + '\n').encode('utf-8'))
         edax.stdin.flush()
-        print('\r' + record, end='')
+        print(tactic[tactic_idx])
+        write_log(tactic[tactic_idx])
         while True:
             if not o.check_legal():
                 o.player = 1 - o.player
@@ -146,6 +156,7 @@ for num in range(max_num):
                 egaroucid.stdin.flush()
             record += chr(ord('a') + x) + str(y + 1)
             print('\r' + record, end='')
+            write_log(chr(ord('a') + x) + str(y + 1), end='')
             if not o.move(y, x):
                 print('')
                 print(o.player == player)
@@ -169,14 +180,26 @@ for num in range(max_num):
         egaroucid_n_played += 1
         egaroucid.kill()
         edax.kill()
-        print(' ', str(o.n_stones[black]) + '-' + str(o.n_stones[white]), 'eg', egaroucid_disc_diff)
+        write_log('')
+        write_log(str(o.n_stones[black]) + '-' + str(o.n_stones[white]), 'eg', egaroucid_disc_diff)
+        write_log('egaroucid', egaroucid_used_time, 's', 'edax', edax_used_time, 's')
+        write_log(num, max_num, ' ', egaroucid_win, draw, edax_win, sum(egaroucid_win) + sum(draw) * 0.5, sum(edax_win) + sum(draw) * 0.5, 
+              round((sum(egaroucid_win) + sum(draw) * 0.5) / max(1, sum(egaroucid_win) + sum(edax_win) + sum(draw)), 6), 
+              round(egaroucid_disc_diff_sum / egaroucid_n_played, 6))
+        print('')
+        print(str(o.n_stones[black]) + '-' + str(o.n_stones[white]), 'eg', egaroucid_disc_diff)
         print('egaroucid', egaroucid_used_time, 's', 'edax', edax_used_time, 's')
         print(num, max_num, ' ', egaroucid_win, draw, edax_win, sum(egaroucid_win) + sum(draw) * 0.5, sum(edax_win) + sum(draw) * 0.5, 
               round((sum(egaroucid_win) + sum(draw) * 0.5) / max(1, sum(egaroucid_win) + sum(edax_win) + sum(draw)), 6), 
               round(egaroucid_disc_diff_sum / egaroucid_n_played, 6))
 
 print('', file=sys.stderr)
-
+write_log('time_limit: ', time_limit, 
+      ' Egaroucid plays black WDL: ', egaroucid_win[0], '-', draw[0], '-', edax_win[0], ' ', (egaroucid_win[0] + draw[0] * 0.5) / (egaroucid_win[0] + edax_win[0] + draw[0]), 
+      ' Egaroucid plays white WDL: ', egaroucid_win[1], '-', draw[1], '-', edax_win[1], ' ', (egaroucid_win[1] + draw[1] * 0.5) / (egaroucid_win[1] + edax_win[1] + draw[1]), 
+      ' Egaroucid win rate: ', round((sum(egaroucid_win) + sum(draw) * 0.5) / max(1, sum(egaroucid_win) + sum(edax_win) + sum(draw)), 6), 
+      ' Egaroucid average discs earned: ', round(egaroucid_disc_diff_sum / egaroucid_n_played, 6), 
+      sep='')
 print('time_limit: ', time_limit, 
       ' Egaroucid plays black WDL: ', egaroucid_win[0], '-', draw[0], '-', edax_win[0], ' ', (egaroucid_win[0] + draw[0] * 0.5) / (egaroucid_win[0] + edax_win[0] + draw[0]), 
       ' Egaroucid plays white WDL: ', egaroucid_win[1], '-', draw[1], '-', edax_win[1], ' ', (egaroucid_win[1] + draw[1] * 0.5) / (egaroucid_win[1] + edax_win[1] + draw[1]), 
