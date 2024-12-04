@@ -68,7 +68,7 @@ for num in range(max_num):
                 elif tactic[tactic_idx][coord] == 'O':
                     o.grid[yy][xx] = white
         o.player = black if tactic[tactic_idx][65] == 'X' else white
-        grid_str = 'setboard ' + tactic[tactic_idx]
+        grid_str = 'setboard ' + tactic[tactic_idx] + '\n'
         egaroucid.stdin.write(grid_str.encode('utf-8'))
         egaroucid.stdin.flush()
         edax.stdin.write(grid_str.encode('utf-8'))
