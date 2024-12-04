@@ -5,7 +5,7 @@ from random import shuffle
 from time import time
 import datetime
 
-USE_DIFFICULT_DATASET = True
+USE_DIFFICULT_DATASET = False
 
 if USE_DIFFICULT_DATASET:
     with open('problem/random18_boards/difficult.txt', 'r') as f:
@@ -59,7 +59,7 @@ def write_log(*args, end='\n', sep=' '):
     with open(whole_log_file, 'a') as f:
         f.write(s)
 
-GAME_OFFSET = 2
+GAME_OFFSET = 6
 
 for num in range(GAME_OFFSET, max_num + GAME_OFFSET):
     tactic_idx = smpl[num % len(tactic)]
