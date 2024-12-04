@@ -811,7 +811,7 @@ void ai_ponder(Board board, bool show_log, bool *searching) {
                 ucb = -INF;
             } else {
                 double depth_weight = (double)move_list[i].depth / (double)max_depth + (double)move_list[i].mpc_level / 8.0;
-                ucb = move_list[i].value * depth_weight + 1.0 * sqrt(log(2.0 * (double)n_searched_all) / (double)move_list[i].count) * (1.0 - depth_weight);
+                ucb = move_list[i].value * depth_weight + 1.0 * sqrt(log(2.0 * (double)n_searched_all) / (double)move_list[i].count) * (2.0 - depth_weight);
             }
             if (ucb > max_ucb) {
                 selected_idx = i;
