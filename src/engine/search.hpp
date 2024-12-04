@@ -27,7 +27,7 @@
 #define END_FAST_DEPTH 6
 #define END_SIMPLE_DEPTH 10
 #define MID_TO_END_DEPTH 13
-#define MID_TO_END_DEPTH_MPC 11
+#define MID_TO_END_DEPTH_MPC 10
 #define MID_SIMPLE_DEPTH 5
 
 /*
