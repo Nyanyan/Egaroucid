@@ -195,13 +195,13 @@ for num in range(GAME_OFFSET, max_num + GAME_OFFSET):
         egaroucid.kill()
         edax.kill()
         print('')
-        print(str(o.n_stones[black]) + '-' + str(o.n_stones[white]), 'eg', egaroucid_disc_diff)
+        print('eg', egaroucid_disc_diff, str(o.n_stones[black]) + '-' + str(o.n_stones[white]))
         print('egaroucid', egaroucid_used_time, 's', 'edax', edax_used_time, 's')
         print(num, max_num, ' ', egaroucid_win, draw, edax_win, sum(egaroucid_win) + sum(draw) * 0.5, sum(edax_win) + sum(draw) * 0.5, 
               round((sum(egaroucid_win) + sum(draw) * 0.5) / max(1, sum(egaroucid_win) + sum(edax_win) + sum(draw)), 6), 
               round(egaroucid_disc_diff_sum / egaroucid_n_played, 6))
         write_log('')
-        write_log(str(o.n_stones[black]) + '-' + str(o.n_stones[white]), 'eg', egaroucid_disc_diff)
+        write_log('eg', egaroucid_disc_diff, str(o.n_stones[black]) + '-' + str(o.n_stones[white]))
         write_log('egaroucid', egaroucid_used_time, 's', 'edax', edax_used_time, 's')
         write_log(num, max_num, ' ', egaroucid_win, draw, edax_win, sum(egaroucid_win) + sum(draw) * 0.5, sum(edax_win) + sum(draw) * 0.5, 
               round((sum(egaroucid_win) + sum(draw) * 0.5) / max(1, sum(egaroucid_win) + sum(edax_win) + sum(draw)), 6), 
