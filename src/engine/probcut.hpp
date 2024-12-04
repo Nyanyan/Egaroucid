@@ -40,12 +40,12 @@ constexpr double probcut_e = 2.662003673678691;
 constexpr double probcut_f = 3.0554301965778063;
 constexpr double probcut_g = 2.0942574977708674;
 
-constexpr double probcut_end_a = -1.0856614404721479;
-constexpr double probcut_end_b = -5.649480243606357;
-constexpr double probcut_end_c = -0.379736446304032;
-constexpr double probcut_end_d = -1.096716583573059;
-constexpr double probcut_end_e = 2.330988350964735;
-constexpr double probcut_end_f = 8.441447346024383;
+constexpr double probcut_end_a = -1.221364027321646;
+constexpr double probcut_end_b = -5.799727834086589;
+constexpr double probcut_end_c = -0.04584272434934945;
+constexpr double probcut_end_d = 0.5440227334256478;
+constexpr double probcut_end_e = 5.226168407038195;
+constexpr double probcut_end_f = 9.959717337983216;
 
 #if USE_MPC_PRE_CALCULATION
     int mpc_error[N_SELECTIVITY_LEVEL][HW2 + 1][HW2 - 3][HW2 - 3];
@@ -134,18 +134,24 @@ inline bool mpc(Search* search, int alpha, int beta, int depth, uint64_t legal, 
     if (search_depth == 0) {
         int error;
         #if USE_MPC_PRE_CALCULATION
+            /*
             if (is_end_search) {
                 error = mpc_error_end[search->mpc_level][search->n_discs][0];
             } else {
                 error = mpc_error[search->mpc_level][search->n_discs][0][depth];
             }
+            */
+            error = mpc_error[search->mpc_level][search->n_discs][0][depth];
         #else
             double mpct = SELECTIVITY_MPCT[search->mpc_level];
+            /*
             if (is_end_search) {
                 error = ceil(mpct * probcut_sigma_end(search->n_discs, 0));
             } else {
                 error = ceil(mpct * probcut_sigma(search->n_discs, 0, depth));
             }
+            */
+            error = ceil(mpct * probcut_sigma(search->n_discs, 0, depth));
         #endif
         if (d0value >= beta + error) {
             *v = beta;
@@ -165,18 +171,24 @@ inline bool mpc(Search* search, int alpha, int beta, int depth, uint64_t legal, 
         int error_search;
         uint_fast8_t mpc_level = search->mpc_level;
         #if USE_MPC_PRE_CALCULATION
+            /*
             if (is_end_search) {
                 error_search = mpc_error_end[mpc_level][search->n_discs][search_depth];
             } else {
                 error_search = mpc_error[mpc_level][search->n_discs][search_depth][depth];
             }
+            */
+            error_search = mpc_error[mpc_level][search->n_discs][search_depth][depth];
         #else
             double mpct = SELECTIVITY_MPCT[mpc_level];
+            /*
             if (is_end_search) {
                 error_search = ceil(mpct * probcut_sigma_end(search->n_discs, search_depth));
             } else {
                 error_search = ceil(mpct * probcut_sigma(search->n_discs, search_depth, depth));
             }
+            */
+            error_search = ceil(mpct * probcut_sigma(search->n_discs, search_depth, depth));
         #endif
         int error_0 = error_search - MPC_ERROR0_OFFSET;
         search->mpc_level = MPC_100_LEVEL;
