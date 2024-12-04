@@ -40,7 +40,7 @@ weight_mean = []
 
 
 for n_discs in range(len(data)):
-    if n_discs >= 59:
+    if n_discs >= 64 - 13:
         continue
     for depth in range(3, len(data[n_discs])):
         if len(data[n_discs][depth]) >= 3:
@@ -64,13 +64,14 @@ for n_discs in range(len(data)):
             z_mean.append(mean)
             weight_mean.append(1 / len(data[n_discs][depth]))
 
+'''
 for n_discs in range(15):
     for depth in range(min(15, 15 - n_discs)):
         x_n_discs_sd.append(n_discs)
         y_depth_sd.append(depth)
         z_sd.append(6.5 - n_discs / 60 * 1.0 - depth * 0.05)
         weight_sd.append(0.01)
-
+'''
 
 def f(xy, probcut_a, probcut_b, probcut_c, probcut_d, probcut_e, probcut_f):
     x, y = xy
