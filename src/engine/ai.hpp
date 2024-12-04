@@ -404,12 +404,15 @@ void iterative_deepening_search_time_limit(Board board, int alpha, int beta, boo
                         main_mpc_level = MPC_74_LEVEL;
                     }
                 } else {
+                    ++main_depth;
+                    /*
                     if (main_mpc_level < MPC_88_LEVEL) {
                         ++main_mpc_level;
                     } else {
                         ++main_depth;
                         main_mpc_level = MPC_74_LEVEL;
                     }
+                    */
                 }
             }
         } else { // next: endgame search
