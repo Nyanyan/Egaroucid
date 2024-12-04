@@ -60,13 +60,17 @@ for num in range(max_num):
         egaroucid_used_time = 0
         edax_used_time = 0
         record = tactic[tactic_idx] + ' '
+        o.n_stones[black] = 0
+        o.n_stones[white] = 0
         for yy in range(8):
             for xx in range(8):
                 coord = yy * 8 + xx
                 if tactic[tactic_idx][coord] == 'X':
                     o.grid[yy][xx] = black
+                    o.n_stones[black] += 1
                 elif tactic[tactic_idx][coord] == 'O':
                     o.grid[yy][xx] = white
+                    o.n_stones[white] += 1
         o.player = black if tactic[tactic_idx][65] == 'X' else white
         grid_str = 'setboard ' + tactic[tactic_idx] + '\n'
         egaroucid.stdin.write(grid_str.encode('utf-8'))
@@ -156,15 +160,16 @@ for num in range(max_num):
         else:
             edax_win[player] += 1
         egaroucid_disc_diff = o.n_stones[player] - o.n_stones[1 - player]
+        n_empties = 64 - (o.n_stones[player] + o.n_stones[1 - player])
         if o.n_stones[player] > o.n_stones[1 - player]:
-            egaroucid_disc_diff += 64 - o.n_stones[player] - o.n_stones[1 - player]
+            egaroucid_disc_diff += n_empties
         elif o.n_stones[player] < o.n_stones[1 - player]:
-            egaroucid_disc_diff -= 64 - o.n_stones[player] - o.n_stones[1 - player]
+            egaroucid_disc_diff -= n_empties
         egaroucid_disc_diff_sum += egaroucid_disc_diff
         egaroucid_n_played += 1
         egaroucid.kill()
         edax.kill()
-        print(' ', egaroucid_disc_diff)
+        print(' ', o.n_stones[player], '-', o.n_stones[1 - player], 'eg', egaroucid_disc_diff)
         print('egaroucid', egaroucid_used_time, 's', 'edax', edax_used_time, 's')
         print(num, max_num, ' ', egaroucid_win, draw, edax_win, sum(egaroucid_win) + sum(draw) * 0.5, sum(edax_win) + sum(draw) * 0.5, 
               round((sum(egaroucid_win) + sum(draw) * 0.5) / max(1, sum(egaroucid_win) + sum(edax_win) + sum(draw)), 6), 
