@@ -69,10 +69,6 @@ for num in range(max_num):
                     o.grid[yy][xx] = white
         o.player = black if tactic[tactic_idx][65] == 'X' else white
         grid_str = 'setboard ' + tactic[tactic_idx]
-        if o.player == black:
-            grid_str += ' X\n'
-        else:
-            grid_str += ' O\n'
         egaroucid.stdin.write(grid_str.encode('utf-8'))
         egaroucid.stdin.flush()
         edax.stdin.write(grid_str.encode('utf-8'))
