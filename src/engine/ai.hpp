@@ -48,6 +48,8 @@ struct Ponder_elem {
     bool is_complete_search;
 };
 
+void ai_ponder(Board board, bool show_log, bool *searching);
+
 void iterative_deepening_search(Board board, int alpha, int beta, int depth, uint_fast8_t mpc_level, bool show_log, std::vector<Clog_result> clogs, uint64_t use_legal, bool use_multi_thread, Search_result *result) {
     uint64_t strt = tim();
     result->value = SCORE_UNDEFINED;
@@ -641,6 +643,19 @@ Search_result ai_time_limit(Board board, int level, bool use_book, int book_acc_
     if (show_log) {
         std::cerr << "time limit " << time_limit << " remaining " << remaining_time_msec << std::endl;
     }
+    /*
+    int n_empties = HW2 - board.n_discs();
+    if (time_limit > 10000ULL && n_empties >= 36) {
+        bool ponder_searching = true;
+        uint64_t ponder_tl = time_limit * 0.1;
+        uint64_t strt = tim();
+        std::future<void> ponder_future = std::async(std::launch::async, ai_ponder, board, show_log, &ponder_searching);
+        while (tim() - strt < ponder_tl);
+        ponder_searching = false;
+        ponder_future.get();
+        time_limit -= tim() - strt;
+    }
+    */
     return ai_common(board, -SCORE_MAX, SCORE_MAX, level, use_book, book_acc_level, use_multi_thread, show_log, board.get_legal(), false, time_limit);
 }
 
