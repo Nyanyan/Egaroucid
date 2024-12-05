@@ -127,8 +127,9 @@ for num in range(GAME_OFFSET, max_num + GAME_OFFSET):
                     y = int(coord[1]) - 1
                     x = ord(coord[0]) - ord('a')
                 except:
+                    print('')
                     print('error')
-                    print(grid_str[:-1])
+                    o.print_info()
                     print(o.player, player)
                     print(line)
                     print(coord)
@@ -155,7 +156,9 @@ for num in range(GAME_OFFSET, max_num + GAME_OFFSET):
                             x = ord(coord[0]) - ord('A')
                             break
                     except:
+                        print('')
                         print('error')
+                        o.print_info()
                         print(o.player, player)
                         print(line)
                         print(coord)
