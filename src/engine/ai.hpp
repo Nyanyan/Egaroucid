@@ -32,7 +32,7 @@
 #define NOBOOK_SEARCH_LEVEL 10
 #define NOBOOK_SEARCH_MARGIN 1
 
-#define AI_TIMELIMIT_SELFPLAY_INITIAL_LEVEL 15
+#define AI_TIMELIMIT_SELFPLAY_INITIAL_LEVEL 21
 #define AI_TIMELIMIT_SELFPLAY_MAX_LEVEL 30
 
 struct Lazy_SMP_task {
@@ -52,7 +52,7 @@ struct Ponder_elem {
 };
 
 std::vector<Ponder_elem> ai_ponder(Board board, bool show_log, bool *searching);
-void self_play_and_analyze(Board board_start, int level, bool show_log, bool use_multi_thread, bool *searching);
+int self_play_and_analyze(Board board_start, int level, bool show_log, bool use_multi_thread, bool *searching);
 
 void iterative_deepening_search(Board board, int alpha, int beta, int depth, uint_fast8_t mpc_level, bool show_log, std::vector<Clog_result> clogs, uint64_t use_legal, bool use_multi_thread, Search_result *result, bool *searching) {
     uint64_t strt = tim();
@@ -711,7 +711,7 @@ Search_result ai_time_limit(Board board, int level, bool use_book, int book_acc_
                     if (show_log) {
                         std::cerr << idx_to_coord(ponder_move_list[board_idx].flip.pos) << " ";
                     }
-                    std::future<void> self_play_future = std::async(std::launch::async, self_play_and_analyze, boards[board_idx], level, show_log, true, &self_play_searching);
+                    std::future<int> self_play_future = std::async(std::launch::async, self_play_and_analyze, boards[board_idx], level, show_log, true, &self_play_searching);
                     while (tim() - strt < self_play_tl && self_play_future.wait_for(std::chrono::seconds(0)) != std::future_status::ready);
                     self_play_searching = false;
                     self_play_future.get();
@@ -862,6 +862,55 @@ void ai_hint(Board board, int level, bool use_book, int book_acc_level, bool use
     //thread_pool.tell_finish_using();
 }
 
+int self_play_and_analyze(Board board_start, int level, bool show_log, bool use_multi_thread, bool *searching) {
+    Flip flip;
+    Search_result result;
+    Board board = board_start.copy();
+    std::vector<Board> boards;
+    if (show_log) {
+        std::cerr << "level " << level << " " << board_start.to_str() << " ";
+    }
+    bool is_player = true;
+    while (*searching) { // self play
+        if (board.get_legal() == 0) {
+            board.pass();
+            is_player ^= 1;
+            if (board.get_legal() == 0) {
+                break;
+            }
+        }
+        if (HW2 - board.n_discs() >= 22) {
+            boards.emplace_back(board);
+        }
+        result = ai_searching(board, level, true, 0, use_multi_thread, false, searching);
+        if (show_log) {
+            std::cerr << idx_to_coord(result.policy);
+        }
+        calc_flip(&flip, &board, result.policy);
+        board.move_board(&flip);
+        is_player ^= 1;
+    }
+    int score = SCORE_UNDEFINED;
+    if (*searching) {
+        score = board.score_player();
+        if (!is_player) {
+            score *= -1;
+        }
+    }
+    if (show_log) {
+        if (!(*searching)) {
+            std::cerr << " terminated";
+        } else {
+            std::cerr << " " << score;
+        }
+        std::cerr << std::endl;
+    }
+    for (int i = (int)boards.size() - 1; i >= 0 && (*searching); --i) { // analyze
+        result = ai_searching(boards[i], level, true, 0, use_multi_thread, false, searching);
+    }
+    return score;
+}
+
 bool comp_ponder_elem(Ponder_elem &a, Ponder_elem &b) {
     if (a.count == b.count) {
         return a.value > b.value;
@@ -949,6 +998,14 @@ std::vector<Ponder_elem> ai_ponder(Board board, bool show_log, bool *searching) 
         bool new_is_complete_search = new_is_end_search && new_mpc_level == MPC_100_LEVEL;
         Search search(&n_board, new_mpc_level, true, false);
         int v = -nega_scout(&search, -SCORE_MAX, SCORE_MAX, new_depth, false, LEGAL_UNDEFINED, new_is_end_search, searching);
+        if (new_depth >= 27) { // additional search (selfplay)
+            int v2 = -self_play_and_analyze(n_board, 21, false, true, searching);
+            if (*searching) {
+                double nv = ((double)v * 1.1 + (double)v2 * 0.9) / 2.0;
+                std::cerr << idx_to_coord(move_list[selected_idx].flip.pos) << " v " << v << " v2 " << v2 << " new_v " << nv << std::endl;
+                v = nv;
+            }
+        }
         if (*searching) {
             if (move_list[selected_idx].value == INF || new_is_end_search) {
                 move_list[selected_idx].value = v;
@@ -979,50 +1036,4 @@ std::vector<Ponder_elem> ai_ponder(Board board, bool show_log, bool *searching) 
         }
     }
     return move_list;
-}
-
-
-
-void self_play_and_analyze(Board board_start, int level, bool show_log, bool use_multi_thread, bool *searching) {
-    Flip flip;
-    Search_result result;
-    Board board = board_start.copy();
-    std::vector<Board> boards;
-    if (show_log) {
-        std::cerr << "level " << level << " " << board_start.to_str() << " ";
-    }
-    bool is_player = true;
-    while (*searching) { // self play
-        if (board.get_legal() == 0) {
-            board.pass();
-            is_player ^= 1;
-            if (board.get_legal() == 0) {
-                break;
-            }
-        }
-        if (HW2 - board.n_discs() >= 22) {
-            boards.emplace_back(board);
-        }
-        result = ai_searching(board, level, true, 0, use_multi_thread, false, searching);
-        if (show_log) {
-            std::cerr << idx_to_coord(result.policy);
-        }
-        calc_flip(&flip, &board, result.policy);
-        board.move_board(&flip);
-    }
-    if (show_log) {
-        if (!(*searching)) {
-            std::cerr << " terminated";
-        } else {
-            int score = board.score_player();
-            if (!is_player) {
-                score *= -1;
-            }
-            std::cerr << " " << score;
-        }
-        std::cerr << std::endl;
-    }
-    for (int i = (int)boards.size() - 1; i >= 0 && (*searching); --i) { // analyze
-        result = ai_searching(boards[i], level, true, 0, use_multi_thread, false, searching);
-    }
 }
