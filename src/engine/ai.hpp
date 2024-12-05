@@ -670,7 +670,7 @@ Search_result ai_time_limit(Board board, bool use_book, int book_acc_level, bool
         uint64_t strt = tim();
         bool need_request_more_time = false;
         bool ponder_searching = true;
-        uint64_t ponder_tl = 4000ULL;
+        uint64_t ponder_tl = 5000ULL;
         std::cerr << "pre search by ponder tl " << ponder_tl << std::endl;
         std::future<std::vector<Ponder_elem>> ponder_future = std::async(std::launch::async, ai_ponder, board, show_log, &ponder_searching);
         while (tim() - strt < ponder_tl && ponder_future.wait_for(std::chrono::seconds(0)) != std::future_status::ready);
@@ -682,15 +682,15 @@ Search_result ai_time_limit(Board board, bool use_book, int book_acc_level, bool
             for (const Ponder_elem &elem: ponder_move_list) {
                 if (elem.value >= best_value - 2.0) {
                     ++n_good_moves;
-                    if (n_good_moves == 3) { // up to 3 moves
-                        break;
-                    }
+                    //if (n_good_moves == 3) { // up to 3 moves
+                    //    break;
+                    //}
                 } else {
                     break; // because sorted
                 }
             }
             if (n_good_moves >= 2) {
-                uint64_t self_play_tl = std::max(25000ULL + ponder_tl, (uint64_t)(time_limit * 0.6));
+                uint64_t self_play_tl = std::max(20000ULL + ponder_tl, (uint64_t)(time_limit * 0.6));
                 std::vector<Board> self_play_boards;
                 std::vector<int> self_play_depth_arr;
                 for (int i = 0; i < n_good_moves; ++i) {
@@ -720,10 +720,10 @@ Search_result ai_time_limit(Board board, bool use_book, int book_acc_level, bool
                     }
                 }
                 int self_play_n_finished = 0;
-                while (tim() - strt < self_play_tl && self_play_n_finished < (int)self_play_boards.size()) {
+                int n_all_looped = 0;
+                while (tim() - strt < self_play_tl && self_play_n_finished < (int)self_play_boards.size() && n_all_looped < 20) {
                     int self_play_depth = self_play_depth_arr[board_idx];
-                    //self_play_depth = std::min(35, self_play_depth);
-                    if (self_play_depth <= n_empties - 1) {
+                    if ((self_play_depth < n_empties - 1) || (self_play_depth == n_empties - 1 && n_empties - 1 <= 37)) {
                         if (show_log) {
                             std::cerr << idx_to_coord(ponder_move_list[board_idx].flip.pos) << " ";
                         }
@@ -732,7 +732,9 @@ Search_result ai_time_limit(Board board, bool use_book, int book_acc_level, bool
                         while (tim() - strt < self_play_tl && self_play_future.wait_for(std::chrono::seconds(0)) != std::future_status::ready);
                         self_play_searching = false;
                         self_play_future.get();
-                        ++self_play_depth_arr[board_idx];
+                        if (self_play_depth_arr[board_idx] + 1 <= 35) {
+                            ++self_play_depth_arr[board_idx];
+                        }
                         ++n_searched;
                     } else {
                         ++self_play_n_finished;
@@ -740,6 +742,7 @@ Search_result ai_time_limit(Board board, bool use_book, int book_acc_level, bool
                     ++board_idx;
                     if (board_idx >= n_good_moves) {
                         board_idx = 0;
+                        ++n_all_looped;
                     }
                 }
                 if (show_log) {
@@ -950,7 +953,7 @@ std::pair<int, int> ai_self_play_random(Board board_start, int mid_depth, bool s
                 Search search_pre(&board, MPC_100_LEVEL, use_multi_thread, false);
                 std::pair<int, int> presearch_masked_result = first_nega_scout_legal(&search_pre, -SCORE_MAX, SCORE_MAX, 9, 9 == n_empties, clogs, legal & ~(1ULL << moves[0]), tim(), searching);
                 std::pair<int, int> presearch_result = first_nega_scout_legal(&search_pre, -SCORE_MAX, SCORE_MAX, 9, 9 == n_empties, clogs, legal, tim(), searching);
-                if (presearch_masked_result.first >= presearch_result.first - 4) {
+                if (presearch_masked_result.first >= presearch_result.first - 6) {
                     if (myrandom() < 0.5) {
                         use_legal &= ~(1ULL << moves[0]);
                         move_masked = true;
