@@ -666,7 +666,7 @@ Search_result ai_time_limit(Board board, bool use_book, int book_acc_level, bool
         std::cerr << "time limit " << time_limit << " remaining " << remaining_time_msec << std::endl;
     }
     int n_empties = HW2 - board.n_discs();
-    if (time_limit > 30000ULL && n_empties >= 34) {
+    if (time_limit > 30000ULL && n_empties >= 34) { // additional search
         uint64_t strt = tim();
         bool need_request_more_time = false;
         bool ponder_searching = true;
@@ -902,7 +902,7 @@ std::pair<int, int> ai_self_play_random(Board board_start, int mid_depth, bool s
     int start_n_discs = board_start.n_discs();
     for (int n_discs = 4; n_discs < HW2; ++n_discs) {
         int n_empties = HW2 - n_discs;
-        if (n_empties <= 20) { // complete
+        if (n_empties <= 22) { // complete
             depth_arr[n_discs] = n_empties;
             mpc_level_arr[n_discs] = MPC_100_LEVEL;
         } /*else if (n_empties <= 26) { // 99%
@@ -942,15 +942,19 @@ std::pair<int, int> ai_self_play_random(Board board_start, int mid_depth, bool s
         }
         Search search(&board, mpc_level_arr[n_discs], use_multi_thread, false);
         uint64_t use_legal = legal;
-        if (pop_count_ull(use_legal) > 1 && !is_player && mpc_level_arr[n_discs] < MPC_100_LEVEL && myrandom() < 0.5) {
-            // off opponent's best move randomly
+        bool is_complete_search = (depth_arr[n_discs] == n_empties) && (mpc_level_arr[n_discs] == MPC_100_LEVEL);
+        bool is_end_search = (depth_arr[n_discs] == n_empties);
+        if (pop_count_ull(use_legal) > 1 && !is_player && is_end_search && !is_complete_search) { // off opponent's best move randomly
             uint_fast8_t moves[2];
             if (transposition_table.get_moves_any_level(&board, board.hash(), moves)) {
-                std::pair<int, int> presearch_result = first_nega_scout_legal(&search, -SCORE_MAX, SCORE_MAX, 10, 10 == n_empties, clogs, legal, tim(), searching);
-                std::pair<int, int> presearch_masked_result = first_nega_scout_legal(&search, -SCORE_MAX, SCORE_MAX, 10, 10 == n_empties, clogs, legal & ~(1ULL << moves[0]), tim(), searching);
-                if (presearch_masked_result.first >= presearch_result.first - 3) {
-                    use_legal &= ~(1ULL << moves[0]);
-                    move_masked = true;
+                Search search_pre(&board, MPC_100_LEVEL, use_multi_thread, false);
+                std::pair<int, int> presearch_masked_result = first_nega_scout_legal(&search_pre, -SCORE_MAX, SCORE_MAX, 9, 9 == n_empties, clogs, legal & ~(1ULL << moves[0]), tim(), searching);
+                std::pair<int, int> presearch_result = first_nega_scout_legal(&search_pre, -SCORE_MAX, SCORE_MAX, 9, 9 == n_empties, clogs, legal, tim(), searching);
+                if (presearch_masked_result.first >= presearch_result.first - 4) {
+                    if (myrandom() < 0.5) {
+                        use_legal &= ~(1ULL << moves[0]);
+                        move_masked = true;
+                    }
                 }
             }
         }
