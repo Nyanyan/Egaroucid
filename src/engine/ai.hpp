@@ -870,7 +870,7 @@ int self_play_and_analyze(Board board_start, int level, bool show_log, bool use_
     if (show_log) {
         std::cerr << "level " << level << " " << board_start.to_str() << " ";
     }
-    bool is_player = true;
+    bool is_player = false; // opponent first
     while (*searching) { // self play
         if (board.get_legal() == 0) {
             board.pass();
@@ -999,7 +999,7 @@ std::vector<Ponder_elem> ai_ponder(Board board, bool show_log, bool *searching) 
         Search search(&n_board, new_mpc_level, true, false);
         int v = -nega_scout(&search, -SCORE_MAX, SCORE_MAX, new_depth, false, LEGAL_UNDEFINED, new_is_end_search, searching);
         if (new_depth >= 27) { // additional search (selfplay)
-            int v2 = -self_play_and_analyze(n_board, 21, false, true, searching);
+            int v2 = self_play_and_analyze(n_board, 21, false, true, searching); // no -1 (opponent first)
             if (*searching) {
                 double nv = ((double)v * 1.1 + (double)v2 * 0.9) / 2.0;
                 std::cerr << idx_to_coord(move_list[selected_idx].flip.pos) << " v " << v << " v2 " << v2 << " new_v " << nv << std::endl;

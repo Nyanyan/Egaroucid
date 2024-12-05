@@ -79,7 +79,7 @@ uint64_t request_more_time(Board board, uint64_t remaining_time_msec, uint64_t t
     std::cerr << "requesting more time remaining " << remaining_time_msec << " remaining_margin " << remaining_time_msec_margin << " now tl " << time_limit << std::endl;
     if (remaining_time_msec_margin > time_limit) {
         int remaining_moves_proc = std::max(2, (int)round((remaining_moves - TIME_MANAGEMENT_REMAINING_MOVES_OFFSET) * TIME_MANAGEMENT_N_MOVES_COE)); // at least 2 moves
-        uint64_t additional_time = (remaining_time_msec_margin - time_limit) / remaining_moves_proc * 0.7;
+        uint64_t additional_time = (remaining_time_msec_margin - time_limit) / remaining_moves_proc * 0.5;
         if (show_log) {
             std::cerr << "additional time " << additional_time << std::endl;
         }
