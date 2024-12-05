@@ -28,7 +28,8 @@
 #define IDSEARCH_ENDSEARCH_PRESEARCH_OFFSET 10
 #define IDSEARCH_ENDSEARCH_PRESEARCH_OFFSET_TIMELIMIT 10
 #define PONDER_ENDSEARCH_PRESEARCH_OFFSET_TIMELIMIT 6
-#define PONDER_SELFPLAY_LEVEL_DEFAULT 20
+#define PONDER_SELFPLAY_LEVEL_DEFAULT 20 // start with level 21 (endsearch: 30 empties)
+#define PONDER_SELFPLAY_LEVEL_MAX 23 // end with level 23 (endsearch: 32 empties)
 
 #define NOBOOK_SEARCH_LEVEL 10
 #define NOBOOK_SEARCH_MARGIN 1
@@ -700,9 +701,9 @@ Search_result ai_time_limit(Board board, int level, bool use_book, int book_acc_
                 int board_idx = 0;
                 int n_searched = 0;
                 if (show_log) {
-                    std::cerr << "need to see good moves tl " << self_play_tl << " : ";
+                    std::cerr << "need to see good moves tl " << self_play_tl << " " << n_good_moves << " moves :";
                     for (int i = 0; i < n_good_moves; ++i) {
-                        std::cerr << idx_to_coord(ponder_move_list[i].flip.pos) << "@" << ponder_move_list[i].value << " ";
+                        std::cerr << " " << idx_to_coord(ponder_move_list[i].flip.pos);
                     }
                     std::cerr << std::endl;
                 }
@@ -1002,7 +1003,7 @@ std::vector<Ponder_elem> ai_ponder(Board board, bool show_log, bool *searching) 
         Search search(&n_board, new_mpc_level, true, false);
         int v = -nega_scout(&search, -SCORE_MAX, SCORE_MAX, new_depth, false, LEGAL_UNDEFINED, new_is_end_search, searching);
         if (new_depth >= 27) { // additional search (selfplay)
-            int new_selfplay_level = std::min(60, move_list[selected_idx].selfplay_level + 1);
+            int new_selfplay_level = std::min(PONDER_SELFPLAY_LEVEL_MAX, move_list[selected_idx].selfplay_level + 1);
             int v2 = self_play_and_analyze(n_board, new_selfplay_level, false, true, searching); // no -1 (opponent first)
             if (*searching) {
                 //double nv = ((double)v * 1.1 + (double)v2 * 0.9) / 2.0;
@@ -1032,13 +1033,13 @@ std::vector<Ponder_elem> ai_ponder(Board board, bool show_log, bool *searching) 
         for (int i = 0; i < canput; ++i) {
             std::cerr << "pd " << idx_to_coord(move_list[i].flip.pos) << " value " << std::fixed << std::setprecision(2) << move_list[i].value;
             std::cerr << " count " << move_list[i].count << " depth " << move_list[i].depth << "@" << SELECTIVITY_PERCENTAGE[move_list[i].mpc_level] << "%";
-            if (move_list[i].selfplay_level > PONDER_SELFPLAY_LEVEL_DEFAULT) {
-                std::cerr << " selfplay_level " << move_list[i].selfplay_level;
-            }
             if (move_list[i].is_complete_search) {
                 std::cerr << " complete";
             } else if (move_list[i].is_endgame_search) {
                 std::cerr << " endgame";
+            }
+            if (move_list[i].selfplay_level > PONDER_SELFPLAY_LEVEL_DEFAULT) {
+                std::cerr << " selfplay_level " << move_list[i].selfplay_level;
             }
             std::cerr << std::endl;
         }
