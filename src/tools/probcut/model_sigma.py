@@ -75,7 +75,10 @@ for n_discs in range(len(data)):
                 x_depth1_sd.append(depth1)
                 y_depth2_sd.append(depth2)
                 z_sd.append(sd)
-                weight_sd.append(0.001)
+                if depth2 == 64 - n_discs:
+                    weight_sd.append(0.0005)
+                else:
+                    weight_sd.append(0.001)
 
                 w_n_discs_mean.append(n_discs)
                 x_depth1_mean.append(depth1)
@@ -122,12 +125,12 @@ def plot_fit_result_onephase(w, x, y, z, n_discs, params):
             y_depth2_phase.append(yy)
             z_error_phase.append(zz)
     ax.plot(x_depth1_phase, y_depth2_phase, z_error_phase, ms=3, marker="o",linestyle='None')
-    mx, my = np.meshgrid(range(13), range(30))
+    mx, my = np.meshgrid(range(16), range(30))
     ax.plot_wireframe(mx, my, f_max((n_discs, mx, my), *params), rstride=4, cstride=2)
     ax.set_xlabel('depth1_short')
     ax.set_ylabel('depth2_long')
     ax.set_zlabel('error')
-    ax.set_xlim((0, 12))
+    ax.set_xlim((0, 16))
     ax.set_ylim((0, 30))
     ax.set_zlim((0, 12))
     plt.show()
