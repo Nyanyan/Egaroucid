@@ -28,6 +28,7 @@
 #define IDSEARCH_ENDSEARCH_PRESEARCH_OFFSET 10
 #define IDSEARCH_ENDSEARCH_PRESEARCH_OFFSET_TIMELIMIT 10
 #define PONDER_ENDSEARCH_PRESEARCH_OFFSET_TIMELIMIT 6
+#define PONDER_START_SELFPLAY_DEPTH 27
 #define PONDER_SELFPLAY_LEVEL_DEFAULT 20 // start with level 21 (endsearch: 30 empties)
 #define PONDER_SELFPLAY_LEVEL_MAX 23 // end with level 23 (endsearch: 32 empties)
 
@@ -1002,7 +1003,7 @@ std::vector<Ponder_elem> ai_ponder(Board board, bool show_log, bool *searching) 
         bool new_is_complete_search = new_is_end_search && new_mpc_level == MPC_100_LEVEL;
         Search search(&n_board, new_mpc_level, true, false);
         int v = -nega_scout(&search, -SCORE_MAX, SCORE_MAX, new_depth, false, LEGAL_UNDEFINED, new_is_end_search, searching);
-        if (new_depth >= 27) { // additional search (selfplay)
+        if (new_depth >= PONDER_START_SELFPLAY_DEPTH) { // additional search (selfplay)
             int new_selfplay_level = std::min(PONDER_SELFPLAY_LEVEL_MAX, move_list[selected_idx].selfplay_level + 1);
             int v2 = self_play_and_analyze(n_board, new_selfplay_level, false, true, searching); // no -1 (opponent first)
             if (*searching) {
