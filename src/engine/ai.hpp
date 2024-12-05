@@ -713,7 +713,7 @@ Search_result ai_time_limit(Board board, bool use_book, int book_acc_level, bool
                     while (depth_updated && self_play_depth_arr[i] < n_empties - 1) {
                         depth_updated = false;
                         Search tt_search(&self_play_boards[i], MPC_74_LEVEL, true, false);
-                        if (transposition_table.has_node(&tt_search, self_play_boards[i].hash(), self_play_depth_arr[i] + 1)) {
+                        if (transposition_table.has_node(&tt_search, self_play_boards[i].hash(), self_play_depth_arr[i] + 2)) {
                             ++self_play_depth_arr[i];
                             depth_updated = true;
                         }
@@ -732,9 +732,9 @@ Search_result ai_time_limit(Board board, bool use_book, int book_acc_level, bool
                         while (tim() - strt < self_play_tl && self_play_future.wait_for(std::chrono::seconds(0)) != std::future_status::ready);
                         self_play_searching = false;
                         self_play_future.get();
-                        if (self_play_depth_arr[board_idx] + 1 <= 35) {
-                            ++self_play_depth_arr[board_idx];
-                        }
+                        //if (self_play_depth_arr[board_idx] + 1 <= 35) {
+                        //    ++self_play_depth_arr[board_idx];
+                        //}
                         ++n_searched;
                     } else {
                         ++self_play_n_finished;
@@ -946,13 +946,12 @@ std::pair<int, int> ai_self_play_random(Board board_start, int mid_depth, bool s
         Search search(&board, mpc_level_arr[n_discs], use_multi_thread, false);
         uint64_t use_legal = legal;
         bool is_complete_search = (depth_arr[n_discs] == n_empties) && (mpc_level_arr[n_discs] == MPC_100_LEVEL);
-        bool is_end_search = (depth_arr[n_discs] == n_empties);
-        if (pop_count_ull(use_legal) > 1 && !is_player && is_end_search && !is_complete_search) { // off opponent's best move randomly
+        //bool is_end_search = (depth_arr[n_discs] == n_empties);
+        if (pop_count_ull(use_legal) > 1 && !is_player && !is_complete_search) { // off opponent's best move randomly
             uint_fast8_t moves[2];
             if (transposition_table.get_moves_any_level(&board, board.hash(), moves)) {
-                Search search_pre(&board, MPC_100_LEVEL, use_multi_thread, false);
-                std::pair<int, int> presearch_masked_result = first_nega_scout_legal(&search_pre, -SCORE_MAX, SCORE_MAX, 9, 9 == n_empties, clogs, legal & ~(1ULL << moves[0]), tim(), searching);
-                std::pair<int, int> presearch_result = first_nega_scout_legal(&search_pre, -SCORE_MAX, SCORE_MAX, 9, 9 == n_empties, clogs, legal, tim(), searching);
+                std::pair<int, int> presearch_masked_result = first_nega_scout_legal(&search, -SCORE_MAX, SCORE_MAX, 9, (9 == n_empties), clogs, legal & ~(1ULL << moves[0]), tim(), searching);
+                std::pair<int, int> presearch_result = first_nega_scout_legal(&search, -SCORE_MAX, SCORE_MAX, 9, (9 == n_empties), clogs, legal, tim(), searching);
                 if (presearch_masked_result.first >= presearch_result.first - 6) {
                     if (myrandom() < 0.5) {
                         use_legal &= ~(1ULL << moves[0]);
