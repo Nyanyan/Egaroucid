@@ -710,7 +710,7 @@ Search_result ai_time_limit(Board board, bool use_book, int book_acc_level, bool
                 }
                 for (int i = 0; i < (int)self_play_boards.size(); ++i) {
                     bool depth_updated = true;
-                    while (depth_updated && self_play_depth_arr[i] < n_empties - 1) {
+                    while (depth_updated && self_play_depth_arr[i] < n_empties - 1 && self_play_depth_arr[i] < 25) {
                         depth_updated = false;
                         Search tt_search(&self_play_boards[i], MPC_74_LEVEL, true, false);
                         if (transposition_table.has_node(&tt_search, self_play_boards[i].hash(), self_play_depth_arr[i] + 2)) {
@@ -735,6 +735,7 @@ Search_result ai_time_limit(Board board, bool use_book, int book_acc_level, bool
                         //if (self_play_depth_arr[board_idx] + 1 <= 35) {
                         //    ++self_play_depth_arr[board_idx];
                         //}
+                        ++self_play_depth_arr[board_idx];
                         ++n_searched;
                     } else {
                         ++self_play_n_finished;
@@ -986,8 +987,12 @@ std::pair<int, int> ai_self_play_random(Board board_start, int mid_depth, bool s
     for (int i = (int)boards.size() - 1; i >= 0 && (*searching); --i) { // analyze
         int n_discs = boards[i].n_discs();
         int n_empties = HW2 - n_discs;
+        int n_depth = depth_arr[n_discs];
+        //if (n_depth + 1 < n_empties && i == 0) {
+        //    ++n_depth;
+        //}
         Search search(&boards[i], mpc_level_arr[n_discs], use_multi_thread, false);
-        std::pair<int, int> result = first_nega_scout(&search, -SCORE_MAX, SCORE_MAX, depth_arr[n_discs], depth_arr[n_discs] == n_empties, clogs, tim(), searching);
+        std::pair<int, int> result = first_nega_scout(&search, -SCORE_MAX, SCORE_MAX, n_depth, n_depth == n_empties, clogs, tim(), searching);
         analyzed_value = -result.first;
         if (show_log) {
             if (i == 0) {
