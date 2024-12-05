@@ -9,6 +9,7 @@ USE_DIFFICULT_DATASET = True
 
 if USE_DIFFICULT_DATASET:
     with open('problem/random18_boards/difficult.txt', 'r') as f:
+        #with open('problem/r18_difficult1_board.txt', 'r') as f:
         tactic = [elem for elem in f.read().splitlines()]
 else:
     with open('problem/random18_boards/0000000.txt', 'r') as f:
@@ -20,7 +21,7 @@ time_limit = int(sys.argv[1])
 n_games = int(sys.argv[2])
 
 file = None
-egaroucid_cmd = 'versions/Egaroucid_for_Console_beta/Egaroucid_for_console_clang.exe -quiet -noise -nobook -ponder -t 8 -hash 28 -time ' + str(time_limit)
+egaroucid_cmd = 'versions/Egaroucid_for_Console_beta/Egaroucid_for_console_clang.exe -quiet -noise -nobook -ponder -t 8 -hash 30 -time ' + str(time_limit)
 if len(sys.argv) == 4:
     file = sys.argv[3]
     print('egaroucid eval ', file, file=sys.stderr)
@@ -43,7 +44,7 @@ print('play', max_num, 'games', file=sys.stderr)
 
 
 #edax_cmd = 'versions/edax_4_4/edax-4.4 -q -l 50 -ponder on -n 8 -game-time ' + str(time_limit)
-edax_cmd = 'versions/edax_4_5_2/wEdax-x64-modern.exe -q -l 50 -ponder on -n 8 -h 28 -game-time ' + str(time_limit)
+edax_cmd = 'versions/edax_4_5_2/wEdax-x64-modern.exe -q -l 50 -ponder on -n 8 -h 30 -game-time ' + str(time_limit)
 
 d_today = str(datetime.date.today())
 t_now = str(datetime.datetime.now().time())
