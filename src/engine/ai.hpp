@@ -52,9 +52,9 @@ struct Ponder_elem {
 };
 
 std::vector<Ponder_elem> ai_ponder(Board board, bool show_log, bool *searching);
-void self_play_and_analyze(Board board_start, int level, bool show_log, bool use_multi_thread);
+void self_play_and_analyze(Board board_start, int level, bool show_log, bool use_multi_thread, bool *searching);
 
-void iterative_deepening_search(Board board, int alpha, int beta, int depth, uint_fast8_t mpc_level, bool show_log, std::vector<Clog_result> clogs, uint64_t use_legal, bool use_multi_thread, Search_result *result) {
+void iterative_deepening_search(Board board, int alpha, int beta, int depth, uint_fast8_t mpc_level, bool show_log, std::vector<Clog_result> clogs, uint64_t use_legal, bool use_multi_thread, Search_result *result, bool *searching) {
     uint64_t strt = tim();
     result->value = SCORE_UNDEFINED;
     int main_depth = 1;
@@ -71,7 +71,7 @@ void iterative_deepening_search(Board board, int alpha, int beta, int depth, uin
 #if USE_LAZY_SMP
     std::vector<Search> searches(thread_pool.size() + 1);
 #endif
-    while (main_depth <= depth && main_mpc_level <= mpc_level && global_searching) {
+    while (main_depth <= depth && main_mpc_level <= mpc_level && global_searching && *searching) {
 #if USE_LAZY_SMP
         for (Search &search: searches) {
             search.n_nodes = 0;
@@ -87,7 +87,7 @@ void iterative_deepening_search(Board board, int alpha, int beta, int depth, uin
         std::vector<std::future<int>> parallel_tasks;
         std::vector<int> sub_depth_arr;
         int sub_max_mpc_level[61];
-        bool sub_searching = true;
+        bool *sub_searching = searching;
         int sub_depth = main_depth;
         if (use_multi_thread && !(is_end_search && main_depth == depth) && main_depth <= 10) {
             int max_thread_size = thread_pool.size();
@@ -98,7 +98,7 @@ void iterative_deepening_search(Board board, int alpha, int beta, int depth, uin
             for (int i = main_depth + 1; i < 61; ++i) {
                 sub_max_mpc_level[i] = MPC_74_LEVEL;
             }
-            for (int sub_thread_idx = 0; sub_thread_idx < max_thread_size && sub_thread_idx < searches.size() && global_searching; ++sub_thread_idx) {
+            for (int sub_thread_idx = 0; sub_thread_idx < max_thread_size && sub_thread_idx < searches.size() && global_searching && *searching; ++sub_thread_idx) {
                 int ntz = ctz_uint32(sub_thread_idx + 1);
                 int sub_depth = std::min(max_depth, main_depth + ntz);
                 uint_fast8_t sub_mpc_level = sub_max_mpc_level[sub_depth];
@@ -107,7 +107,7 @@ void iterative_deepening_search(Board board, int alpha, int beta, int depth, uin
                     //std::cerr << sub_thread_idx << " " << sub_depth << " " << SELECTIVITY_PERCENTAGE[sub_mpc_level] << std::endl;
                     searches[sub_thread_idx] = Search{&board, sub_mpc_level, false, true};
                     bool pushed = false;
-                    parallel_tasks.emplace_back(thread_pool.push(&pushed, std::bind(&nega_scout, &searches[sub_thread_idx], alpha, beta, sub_depth, false, LEGAL_UNDEFINED, sub_is_end_search, &sub_searching)));
+                    parallel_tasks.emplace_back(thread_pool.push(&pushed, std::bind(&nega_scout, &searches[sub_thread_idx], alpha, beta, sub_depth, false, LEGAL_UNDEFINED, sub_is_end_search, sub_searching)));
                     sub_depth_arr.emplace_back(sub_depth);
                     ++sub_max_mpc_level[sub_depth];
                     if (!pushed) {
@@ -134,10 +134,9 @@ void iterative_deepening_search(Board board, int alpha, int beta, int depth, uin
         }
 #endif
         Search main_search(&board, main_mpc_level, use_multi_thread, !is_last_search);        
-        bool searching = true;
-        std::pair<int, int> id_result = first_nega_scout_legal(&main_search, alpha, beta, main_depth, main_is_end_search, clogs, use_legal, strt, &searching);
+        std::pair<int, int> id_result = first_nega_scout_legal(&main_search, alpha, beta, main_depth, main_is_end_search, clogs, use_legal, strt, searching);
 #if USE_LAZY_SMP
-        sub_searching = false;
+        sub_searching = &not_searching;
         for (std::future<int> &task: parallel_tasks) {
             task.get();
         }
@@ -146,18 +145,20 @@ void iterative_deepening_search(Board board, int alpha, int beta, int depth, uin
         }
 #endif
         result->nodes += main_search.n_nodes;
-        if (result->value != SCORE_UNDEFINED && !main_is_end_search) {
-            double n_value = (0.9 * result->value + 1.1 * id_result.first) / 2.0;
-            result->value = round(n_value);
-        } else{
-            result->value = id_result.first;
+        if (*searching) {
+            if (result->value != SCORE_UNDEFINED && !main_is_end_search) {
+                double n_value = (0.9 * result->value + 1.1 * id_result.first) / 2.0;
+                result->value = round(n_value);
+            } else{
+                result->value = id_result.first;
+            }
+            result->policy = id_result.second;
+            result->depth = main_depth;
+            result->is_end_search = main_is_end_search;
+            result->probability = SELECTIVITY_PERCENTAGE[main_mpc_level];
         }
-        result->policy = id_result.second;
-        result->depth = main_depth;
         result->time = tim() - strt;
         result->nps = calc_nps(result->nodes, result->time);
-        result->is_end_search = main_is_end_search;
-        result->probability = SELECTIVITY_PERCENTAGE[main_mpc_level];
         if (show_log) {
             if (is_last_search) {
                 std::cerr << "main ";
@@ -209,7 +210,7 @@ void iterative_deepening_search(Board board, int alpha, int beta, int depth, uin
     }
 }
 
-void iterative_deepening_search_time_limit(Board board, int alpha, int beta, bool show_log, std::vector<Clog_result> clogs, uint64_t use_legal, bool use_multi_thread, Search_result *result, uint64_t time_limit) {
+void iterative_deepening_search_time_limit(Board board, int alpha, int beta, bool show_log, std::vector<Clog_result> clogs, uint64_t use_legal, bool use_multi_thread, Search_result *result, uint64_t time_limit, bool *searching) {
     uint64_t strt = tim();
     result->value = SCORE_UNDEFINED;
     int main_depth = 1;
@@ -223,7 +224,7 @@ void iterative_deepening_search_time_limit(Board board, int alpha, int beta, boo
 #endif
     int before_raw_value = -100;
     bool policy_changed_before = true;
-    while (global_searching && ((tim() - strt < time_limit) || main_depth <= 1)) {
+    while (global_searching && (*searching) && ((tim() - strt < time_limit) || main_depth <= 1)) {
 #if USE_LAZY_SMP
         for (Search &search: searches) {
             search.n_nodes = 0;
@@ -238,7 +239,7 @@ void iterative_deepening_search_time_limit(Board board, int alpha, int beta, boo
         std::vector<std::future<int>> parallel_tasks;
         std::vector<int> sub_depth_arr;
         int sub_max_mpc_level[61];
-        bool sub_searching = true;
+        bool *sub_searching = searching;
         int sub_depth = main_depth;
         if (use_multi_thread && main_depth <= 10) {
             int max_thread_size = thread_pool.size();
@@ -249,7 +250,7 @@ void iterative_deepening_search_time_limit(Board board, int alpha, int beta, boo
             for (int i = main_depth + 1; i < 61; ++i) {
                 sub_max_mpc_level[i] = MPC_74_LEVEL;
             }
-            for (int sub_thread_idx = 0; sub_thread_idx < max_thread_size && sub_thread_idx < searches.size() && global_searching; ++sub_thread_idx) {
+            for (int sub_thread_idx = 0; sub_thread_idx < max_thread_size && sub_thread_idx < searches.size() && global_searching && (*searching); ++sub_thread_idx) {
                 int ntz = ctz_uint32(sub_thread_idx + 1);
                 int sub_depth = std::min(max_depth, main_depth + ntz);
                 uint_fast8_t sub_mpc_level = sub_max_mpc_level[sub_depth];
@@ -258,7 +259,7 @@ void iterative_deepening_search_time_limit(Board board, int alpha, int beta, boo
                     //std::cerr << sub_thread_idx << " " << sub_depth << " " << SELECTIVITY_PERCENTAGE[sub_mpc_level] << std::endl;
                     searches[sub_thread_idx] = Search{&board, sub_mpc_level, false, true};
                     bool pushed = false;
-                    parallel_tasks.emplace_back(thread_pool.push(&pushed, std::bind(&nega_scout, &searches[sub_thread_idx], alpha, beta, sub_depth, false, LEGAL_UNDEFINED, sub_is_end_search, &sub_searching)));
+                    parallel_tasks.emplace_back(thread_pool.push(&pushed, std::bind(&nega_scout, &searches[sub_thread_idx], alpha, beta, sub_depth, false, LEGAL_UNDEFINED, sub_is_end_search, sub_searching)));
                     sub_depth_arr.emplace_back(sub_depth);
                     ++sub_max_mpc_level[sub_depth];
                     if (!pushed) {
@@ -293,27 +294,27 @@ void iterative_deepening_search_time_limit(Board board, int alpha, int beta, boo
             std::cerr << "depth " << main_depth << "@" << SELECTIVITY_PERCENTAGE[main_mpc_level] << "% " << std::flush;
         }
         Search main_search(&board, main_mpc_level, use_multi_thread, false);
-        bool searching = true;
         std::pair<int, int> id_result;
         bool search_success = true;
-        std::future<std::pair<int, int>> f = std::async(std::launch::async, first_nega_scout_legal, &main_search, alpha, beta, main_depth, main_is_end_search, clogs, use_legal, strt, &searching);
+        bool *main_searching = searching;
+        std::future<std::pair<int, int>> f = std::async(std::launch::async, first_nega_scout_legal, &main_search, alpha, beta, main_depth, main_is_end_search, clogs, use_legal, strt, main_searching);
         for (;;) {
             if (f.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
                 id_result = f.get();
                 break;
             }
-            if (tim() - strt >= time_limit && main_depth > 1) {
+            if ((tim() - strt >= time_limit && main_depth > 1) || !(*searching) || !global_searching) {
                 if (show_log) {
-                    std::cerr << "terminate search by time limit " << tim() - strt << " ms" << std::endl;
+                    std::cerr << "terminated " << tim() - strt << " ms" << std::endl;
                 }
-                searching = false;
+                main_searching = &not_searching;
                 f.get();
                 search_success = false;
                 break;
             }
         }
 #if USE_LAZY_SMP
-        sub_searching = false;
+        sub_searching = &not_searching;
         for (std::future<int> &task: parallel_tasks) {
             task.get();
         }
@@ -352,23 +353,25 @@ void iterative_deepening_search_time_limit(Board board, int alpha, int beta, boo
                 int nws_alpha = result->value - 6;
                 if (nws_alpha >= -SCORE_MAX) {
                     Search nws_search(&board, main_mpc_level, use_multi_thread, false);
-                    bool nws_searching = true;
+                    bool *nws_searching = searching;
                     uint64_t nws_use_legal = use_legal ^ (1ULL << result->policy);
-                    std::future<std::pair<int, int>> nws_f = std::async(std::launch::async, first_nega_scout_legal, &main_search, nws_alpha, nws_alpha + 1, main_depth, main_is_end_search, clogs, nws_use_legal, strt, &nws_searching);
+                    std::future<std::pair<int, int>> nws_f = std::async(std::launch::async, first_nega_scout_legal, &main_search, nws_alpha, nws_alpha + 1, main_depth, main_is_end_search, clogs, nws_use_legal, strt, nws_searching);
                     int nws_value = SCORE_INF;
                     int nws_move = MOVE_NOMOVE;
+                    bool nws_success = false;
                     for (;;) {
                         if (nws_f.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
                             std::pair<int, int> nws_result = nws_f.get();
                             nws_value = nws_result.first;
                             nws_move = nws_result.second;
+                            nws_success = true;
                             break;
                         }
                         if (tim() - strt >= time_limit) {
                             if (show_log) {
                                 std::cerr << "terminate early cut nws by time limit " << tim() - strt << " ms" << std::endl;
                             }
-                            nws_searching = false;
+                            nws_searching = &not_searching;
                             nws_f.get();
                             break;
                         }
@@ -376,14 +379,16 @@ void iterative_deepening_search_time_limit(Board board, int alpha, int beta, boo
                     result->nodes += main_search.n_nodes;
                     result->time = tim() - strt;
                     result->nps = calc_nps(result->nodes, result->time);
-                    if (nws_value <= nws_alpha) {
-                        if (show_log) {
-                            std::cerr << "early break second best " << idx_to_coord(nws_move) << " value <= " << nws_value << " time " << tim() - strt << std::endl;
-                        }
-                        break;
-                    } else if (nws_searching) {
-                        if (show_log) {
-                            std::cerr << "no early break second best " << idx_to_coord(nws_move) << " value >= " << nws_value << " time " << tim() - strt << std::endl;
+                    if (nws_success) {
+                        if (nws_value <= nws_alpha) {
+                            if (show_log) {
+                                std::cerr << "early break second best " << idx_to_coord(nws_move) << " value <= " << nws_value << " time " << tim() - strt << std::endl;
+                            }
+                            break;
+                        } else if (nws_searching) {
+                            if (show_log) {
+                                std::cerr << "no early break second best " << idx_to_coord(nws_move) << " value >= " << nws_value << " time " << tim() - strt << std::endl;
+                            }
                         }
                     }
                 }
@@ -447,7 +452,7 @@ void iterative_deepening_search_time_limit(Board board, int alpha, int beta, boo
     @param use_multi_thread     search in multi thread?
     @return the result in Search_result structure
 */
-inline Search_result tree_search_legal(Board board, int alpha, int beta, int depth, uint_fast8_t mpc_level, bool show_log, uint64_t use_legal, bool use_multi_thread, uint64_t time_limit) {
+inline Search_result tree_search_legal(Board board, int alpha, int beta, int depth, uint_fast8_t mpc_level, bool show_log, uint64_t use_legal, bool use_multi_thread, uint64_t time_limit, bool *searching) {
     //thread_pool.tell_start_using();
     Search_result res;
     depth = std::min(HW2 - board.n_discs(), depth);
@@ -491,9 +496,9 @@ inline Search_result tree_search_legal(Board board, int alpha, int beta, int dep
                 time_limit_proc -= tim() - strt_selfplay;
             }
             */
-            iterative_deepening_search_time_limit(board, alpha, beta, show_log, clogs, use_legal, use_multi_thread, &res, time_limit_proc);
+            iterative_deepening_search_time_limit(board, alpha, beta, show_log, clogs, use_legal, use_multi_thread, &res, time_limit_proc, searching);
         } else {
-            iterative_deepening_search(board, alpha, beta, depth, mpc_level, show_log, clogs, use_legal, use_multi_thread, &res);
+            iterative_deepening_search(board, alpha, beta, depth, mpc_level, show_log, clogs, use_legal, use_multi_thread, &res, searching);
         }
     }
     //thread_pool.tell_finish_using();
@@ -518,7 +523,7 @@ inline Search_result tree_search_legal(Board board, int alpha, int beta, int dep
     @param show_log             show log?
     @return the result in Search_result structure
 */
-Search_result ai_common(Board board, int alpha, int beta, int level, bool use_book, int book_acc_level, bool use_multi_thread, bool show_log, uint64_t use_legal, bool use_specified_move_book, uint64_t time_limit) {
+Search_result ai_common(Board board, int alpha, int beta, int level, bool use_book, int book_acc_level, bool use_multi_thread, bool show_log, uint64_t use_legal, bool use_specified_move_book, uint64_t time_limit, bool *searching) {
     Search_result res;
     int value_sign = 1;
     if (board.get_legal() == 0ULL) {
@@ -559,11 +564,13 @@ Search_result ai_common(Board board, int alpha, int beta, int level, bool use_bo
                 uint_fast8_t nobook_search_mpc_level;
                 bool nobook_search_is_mid_search;
                 get_level(nobook_search_level, board.n_discs() - 4, &nobook_search_is_mid_search, &nobook_search_depth, &nobook_search_mpc_level);
-                Search_result nobook_search_result = tree_search_legal(board, alpha, beta, nobook_search_depth, nobook_search_mpc_level, show_log, use_legal, use_multi_thread, TIME_LIMIT_INF);
-                if (nobook_search_result.value >= book_result.value + NOBOOK_SEARCH_MARGIN) {
-                    better_move_maybe_found = true;
-                    if (show_log) {
-                        std::cerr << "book used but better move can be found book " << book_result.value << " best move " << nobook_search_result.value << " at level " << nobook_search_level << std::endl;
+                Search_result nobook_search_result = tree_search_legal(board, alpha, beta, nobook_search_depth, nobook_search_mpc_level, show_log, use_legal, use_multi_thread, TIME_LIMIT_INF, searching);
+                if (*searching) {
+                    if (nobook_search_result.value >= book_result.value + NOBOOK_SEARCH_MARGIN) {
+                        better_move_maybe_found = true;
+                        if (show_log) {
+                            std::cerr << "book used but better move can be found book " << book_result.value << " best move " << nobook_search_result.value << " at level " << nobook_search_level << std::endl;
+                        }
                     }
                 }
             }
@@ -591,7 +598,7 @@ Search_result ai_common(Board board, int alpha, int beta, int level, bool use_bo
             std::cerr << "level status " << level << " " << board.n_discs() - 4 << " discs depth " << depth << "@" << SELECTIVITY_PERCENTAGE[mpc_level] << "%" << std::endl;
         }
         //thread_pool.tell_start_using();
-        res = tree_search_legal(board, alpha, beta, depth, mpc_level, show_log, use_legal, use_multi_thread, time_limit);
+        res = tree_search_legal(board, alpha, beta, depth, mpc_level, show_log, use_legal, use_multi_thread, time_limit, searching);
         //thread_pool.tell_finish_using();
         res.level = level;
         res.value *= value_sign;
@@ -627,19 +634,28 @@ Search_result ai_common(Board board, int alpha, int beta, int level, bool use_bo
     @return the result in Search_result structure
 */
 Search_result ai(Board board, int level, bool use_book, int book_acc_level, bool use_multi_thread, bool show_log) {
-    return ai_common(board, -SCORE_MAX, SCORE_MAX, level, use_book, book_acc_level, use_multi_thread, show_log, board.get_legal(), false, TIME_LIMIT_INF);
+    bool searching = true;
+    return ai_common(board, -SCORE_MAX, SCORE_MAX, level, use_book, book_acc_level, use_multi_thread, show_log, board.get_legal(), false, TIME_LIMIT_INF, &searching);
 }
 
+Search_result ai_searching(Board board, int level, bool use_book, int book_acc_level, bool use_multi_thread, bool show_log, bool *searching) {
+    return ai_common(board, -SCORE_MAX, SCORE_MAX, level, use_book, book_acc_level, use_multi_thread, show_log, board.get_legal(), false, TIME_LIMIT_INF, searching);
+}
+
+
 Search_result ai_legal(Board board, int level, bool use_book, int book_acc_level, bool use_multi_thread, bool show_log, uint64_t use_legal) {
-    return ai_common(board, -SCORE_MAX, SCORE_MAX, level, use_book, book_acc_level, use_multi_thread, show_log, use_legal, false, TIME_LIMIT_INF);
+    bool searching = true;
+    return ai_common(board, -SCORE_MAX, SCORE_MAX, level, use_book, book_acc_level, use_multi_thread, show_log, use_legal, false, TIME_LIMIT_INF, &searching);
 }
 
 Search_result ai_legal_window(Board board, int alpha, int beta, int level, bool use_book, int book_acc_level, bool use_multi_thread, bool show_log, uint64_t use_legal) {
-    return ai_common(board, alpha, beta, level, use_book, book_acc_level, use_multi_thread, show_log, use_legal, false, TIME_LIMIT_INF);
+    bool searching = true;
+    return ai_common(board, alpha, beta, level, use_book, book_acc_level, use_multi_thread, show_log, use_legal, false, TIME_LIMIT_INF, &searching);
 }
 
 Search_result ai_specified(Board board, int level, bool use_book, int book_acc_level, bool use_multi_thread, bool show_log) {
-    return ai_common(board, -SCORE_MAX, SCORE_MAX, level, use_book, book_acc_level, use_multi_thread, show_log, board.get_legal(), true, TIME_LIMIT_INF);
+    bool searching = true;
+    return ai_common(board, -SCORE_MAX, SCORE_MAX, level, use_book, book_acc_level, use_multi_thread, show_log, board.get_legal(), true, TIME_LIMIT_INF, &searching);
 }
 
 Search_result ai_time_limit(Board board, int level, bool use_book, int book_acc_level, bool use_multi_thread, bool show_log, uint64_t remaining_time_msec) {
@@ -654,7 +670,7 @@ Search_result ai_time_limit(Board board, int level, bool use_book, int book_acc_
         uint64_t ponder_tl = 1000ULL; //time_limit * 0.1;
         std::cerr << "pre search by ponder tl " << ponder_tl << std::endl;
         std::future<std::vector<Ponder_elem>> ponder_future = std::async(std::launch::async, ai_ponder, board, show_log, &ponder_searching);
-        while (tim() - strt < ponder_tl);
+        while (tim() - strt < ponder_tl && ponder_future.wait_for(std::chrono::seconds(0)) != std::future_status::ready);
         ponder_searching = false;
         std::vector<Ponder_elem> ponder_move_list = ponder_future.get();
         if (ponder_move_list.size()) {
@@ -685,8 +701,12 @@ Search_result ai_time_limit(Board board, int level, bool use_book, int book_acc_
                     std::cerr << std::endl;
                 }
                 int level = AI_TIMELIMIT_SELFPLAY_INITIAL_LEVEL;
+                bool self_play_searching = true;
                 while (tim() - strt < self_play_tl && level <= AI_TIMELIMIT_SELFPLAY_MAX_LEVEL) {
-                    self_play_and_analyze(boards[board_idx], level, false, true);
+                    std::future<void> self_play_future = std::async(std::launch::async, self_play_and_analyze, boards[board_idx], level, false, true, &self_play_searching);
+                    while (tim() - strt < self_play_tl && self_play_future.wait_for(std::chrono::seconds(0)) != std::future_status::ready);
+                    self_play_searching = false;
+                    self_play_future.get();
                     ++n_searched;
                     ++board_idx;
                     if (board_idx >= n_good_moves) {
@@ -709,7 +729,8 @@ Search_result ai_time_limit(Board board, int level, bool use_book, int book_acc_
             std::cerr << "elapsed " << elapsed << " reduced time limit " << time_limit << std::endl;
         }
     }
-    return ai_common(board, -SCORE_MAX, SCORE_MAX, level, use_book, book_acc_level, use_multi_thread, show_log, board.get_legal(), false, time_limit);
+    bool searching = true;
+    return ai_common(board, -SCORE_MAX, SCORE_MAX, level, use_book, book_acc_level, use_multi_thread, show_log, board.get_legal(), false, time_limit, &searching);
 }
 
 /*
@@ -938,18 +959,18 @@ std::vector<Ponder_elem> ai_ponder(Board board, bool show_log, bool *searching) 
 
 
 
-void self_play_and_analyze(Board board_start, int level, bool show_log, bool use_multi_thread) {
+void self_play_and_analyze(Board board_start, int level, bool show_log, bool use_multi_thread, bool *searching) {
     Flip flip;
     Search_result result;
     Board board = board_start.copy();
     std::vector<Board> boards;
-    while (board.check_pass()) { // self play
+    while (board.check_pass() && (*searching)) { // self play
         boards.emplace_back(board);
-        result = ai(board, level, true, 0, use_multi_thread, show_log);
+        result = ai_searching(board, level, true, 0, use_multi_thread, show_log, searching);
         calc_flip(&flip, &board, result.policy);
         board.move_board(&flip);
     }
-    for (int i = (int)boards.size() - 1; i >= 0; --i) { // analyze
-        result = ai(boards[i], level, true, 0, use_multi_thread, show_log);
+    for (int i = (int)boards.size() - 1; i >= 0 && (*searching); --i) { // analyze
+        result = ai_searching(boards[i], level, true, 0, use_multi_thread, show_log, searching);
     }
 }
