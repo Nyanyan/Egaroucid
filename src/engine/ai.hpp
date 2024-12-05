@@ -745,7 +745,7 @@ Search_result ai_time_limit(Board board, bool use_book, int book_acc_level, bool
                         Search tt_search(&self_play_boards[i], MPC_74_LEVEL, true, false);
                         int l = -SCORE_MAX, u = SCORE_MAX;
                         transposition_table.get_bounds(&tt_search, self_play_boards[i].hash(), self_play_depth_copy, &l, &u);
-                        std::cerr << idx_to_coord(ponder_move_list[i].flip.pos) << " " << l << " " << u << std::endl;
+                        std::cerr << idx_to_coord(ponder_move_list[i].flip.pos) << " [" << -u << "," << -l << "]" << std::endl;
                     }
                 }
 
@@ -892,6 +892,7 @@ int ai_self_play_and_analyze(Board board_start, int mid_depth, bool show_log, bo
     std::vector<Board> boards;
     int depth_arr[HW2];
     uint_fast8_t mpc_level_arr[HW2];
+    int start_n_discs = board_start.n_discs();
     for (int n_discs = 4; n_discs < HW2; ++n_discs) {
         int n_empties = HW2 - n_discs;
         if (n_empties <= 24) { // complete
@@ -907,7 +908,7 @@ int ai_self_play_and_analyze(Board board_start, int mid_depth, bool show_log, bo
             depth_arr[n_discs] = n_empties;
             mpc_level_arr[n_discs] = MPC_93_LEVEL;
         } else {
-            depth_arr[n_discs] = std::min(n_empties, mid_depth);
+            depth_arr[n_discs] = std::min(n_empties, std::max(21, mid_depth - (n_discs - start_n_discs)));
             mpc_level_arr[n_discs] = MPC_74_LEVEL;
         }
     }
