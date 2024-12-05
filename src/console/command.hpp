@@ -220,7 +220,7 @@ Search_result go_noprint(Board_info *board, Options *options, State *state) {
         } else {
             remaining_time_msec = state->remaining_time_msec_white;
         }
-        result = ai_time_limit(board->board, options->level, true, 0, true, options->show_log, remaining_time_msec);
+        result = ai_time_limit(board->board, true, 0, true, options->show_log, remaining_time_msec);
     }
     Flip flip;
     calc_flip(&flip, &board->board, result.policy);

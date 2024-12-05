@@ -27,16 +27,16 @@
 
 #define IDSEARCH_ENDSEARCH_PRESEARCH_OFFSET 10
 #define IDSEARCH_ENDSEARCH_PRESEARCH_OFFSET_TIMELIMIT 10
-#define PONDER_ENDSEARCH_PRESEARCH_OFFSET_TIMELIMIT 6
-#define PONDER_START_SELFPLAY_DEPTH 27
-#define PONDER_SELFPLAY_LEVEL_DEFAULT 20 // start with level 21 (endsearch: 30 empties)
-#define PONDER_SELFPLAY_LEVEL_MAX 23 // end with level 23 (endsearch: 32 empties)
 
 #define NOBOOK_SEARCH_LEVEL 10
 #define NOBOOK_SEARCH_MARGIN 1
 
-#define AI_TIMELIMIT_SELFPLAY_INITIAL_LEVEL 21
-#define AI_TIMELIMIT_SELFPLAY_MAX_LEVEL 30
+#define PONDER_ENDSEARCH_PRESEARCH_OFFSET_TIMELIMIT 6
+#define PONDER_START_SELFPLAY_DEPTH 21
+
+#define AI_TIMELIMIT_SELFPLAY_INITIAL_LEVEL 30
+#define AI_TIMELIMIT_SELFPLAY_MAX_LEVEL 45
+#define AI_TIMELIMIT_SELFPLAY_COMPLETE_SEARCH_LEVEL 23
 
 struct Lazy_SMP_task {
     uint_fast8_t mpc_level;
@@ -52,11 +52,10 @@ struct Ponder_elem {
     uint_fast8_t mpc_level;
     bool is_endgame_search;
     bool is_complete_search;
-    int selfplay_level;
 };
 
 std::vector<Ponder_elem> ai_ponder(Board board, bool show_log, bool *searching);
-int self_play_and_analyze(Board board_start, int level, bool show_log, bool use_multi_thread, bool *searching);
+int ai_self_play_and_analyze(Board board_start, int mid_depth, bool show_log, bool use_multi_thread, bool *searching);
 
 void iterative_deepening_search(Board board, int alpha, int beta, int depth, uint_fast8_t mpc_level, bool show_log, std::vector<Clog_result> clogs, uint64_t use_legal, bool use_multi_thread, Search_result *result, bool *searching) {
     uint64_t strt = tim();
@@ -665,7 +664,7 @@ Search_result ai_specified(Board board, int level, bool use_book, int book_acc_l
     return ai_common(board, -SCORE_MAX, SCORE_MAX, level, use_book, book_acc_level, use_multi_thread, show_log, board.get_legal(), true, TIME_LIMIT_INF, &searching);
 }
 
-Search_result ai_time_limit(Board board, int level, bool use_book, int book_acc_level, bool use_multi_thread, bool show_log, uint64_t remaining_time_msec) {
+Search_result ai_time_limit(Board board, bool use_book, int book_acc_level, bool use_multi_thread, bool show_log, uint64_t remaining_time_msec) {
     uint64_t time_limit = calc_time_limit_ply(board, remaining_time_msec, show_log);
     if (show_log) {
         std::cerr << "time limit " << time_limit << " remaining " << remaining_time_msec << std::endl;
@@ -692,7 +691,7 @@ Search_result ai_time_limit(Board board, int level, bool use_book, int book_acc_
                 }
             }
             if (n_good_moves >= 2) {
-                uint64_t self_play_tl = 25000ULL + ponder_tl;
+                uint64_t self_play_tl = std::max(25000ULL + ponder_tl, (uint64_t)(time_limit * 0.6));
                 std::vector<Board> boards;
                 for (int i = 0; i < n_good_moves; ++i) {
                     Board n_board = board.copy();
@@ -708,31 +707,31 @@ Search_result ai_time_limit(Board board, int level, bool use_book, int book_acc_
                     }
                     std::cerr << std::endl;
                 }
-                int level = AI_TIMELIMIT_SELFPLAY_INITIAL_LEVEL;
                 bool self_play_searching = true;
-                while (tim() - strt < self_play_tl && level <= AI_TIMELIMIT_SELFPLAY_MAX_LEVEL) {
+                while (tim() - strt < self_play_tl) {
                     self_play_searching = true;
                     if (show_log) {
                         std::cerr << idx_to_coord(ponder_move_list[board_idx].flip.pos) << " ";
                     }
-                    std::future<int> self_play_future = std::async(std::launch::async, self_play_and_analyze, boards[board_idx], level, show_log, true, &self_play_searching);
+                    int self_play_depth = ponder_move_list[board_idx].depth;
+                    std::future<int> self_play_future = std::async(std::launch::async, ai_self_play_and_analyze, boards[board_idx], self_play_depth, show_log, true, &self_play_searching);
                     while (tim() - strt < self_play_tl && self_play_future.wait_for(std::chrono::seconds(0)) != std::future_status::ready);
                     self_play_searching = false;
                     self_play_future.get();
+                    ++ponder_move_list[board_idx].depth;
                     ++n_searched;
                     ++board_idx;
                     if (board_idx >= n_good_moves) {
                         board_idx = 0;
-                        ++level;
                     }
                 }
                 if (show_log) {
-                    std::cerr << "self played " << n_searched << " level " << level << " time " << tim() - strt << std::endl;
+                    std::cerr << "self played " << n_searched << " time " << tim() - strt << std::endl;
                 }
                 need_request_more_time = true;
                 
                 bool ponder_searching2 = true;
-                uint64_t ponder_tl2 = 100ULL + self_play_tl;
+                uint64_t ponder_tl2 = std::max(100ULL + self_play_tl, (uint64_t)(time_limit * 0.65));
                 std::cerr << "pre search by ponder 2 tl " << ponder_tl2 << std::endl;
                 std::future<std::vector<Ponder_elem>> ponder_future2 = std::async(std::launch::async, ai_ponder, board, show_log, &ponder_searching2);
                 while (tim() - strt < ponder_tl2 && ponder_future2.wait_for(std::chrono::seconds(0)) != std::future_status::ready);
@@ -758,7 +757,7 @@ Search_result ai_time_limit(Board board, int level, bool use_book, int book_acc_
         }
     }
     bool searching = true;
-    return ai_common(board, -SCORE_MAX, SCORE_MAX, level, use_book, book_acc_level, use_multi_thread, show_log, board.get_legal(), false, time_limit, &searching);
+    return ai_common(board, -SCORE_MAX, SCORE_MAX, MAX_LEVEL, use_book, book_acc_level, use_multi_thread, show_log, board.get_legal(), false, time_limit, &searching);
 }
 
 /*
@@ -866,14 +865,35 @@ void ai_hint(Board board, int level, bool use_book, int book_acc_level, bool use
     //thread_pool.tell_finish_using();
 }
 
-int self_play_and_analyze(Board board_start, int level, bool show_log, bool use_multi_thread, bool *searching) {
+int ai_self_play_and_analyze(Board board_start, int mid_depth, bool show_log, bool use_multi_thread, bool *searching) { // used for ponder
     Flip flip;
-    Search_result result;
     Board board = board_start.copy();
     std::vector<Board> boards;
-    if (show_log) {
-        std::cerr << "level " << level << " " << board_start.to_str() << " ";
+    int depth_arr[HW2];
+    uint_fast8_t mpc_level_arr[HW2];
+    for (int n_discs = 4; n_discs < HW2; ++n_discs) {
+        int n_empties = HW2 - n_discs;
+        if (n_empties <= 24) { // complete
+            depth_arr[n_discs] = n_empties;
+            mpc_level_arr[n_discs] = MPC_100_LEVEL;
+        } else if (n_empties <= 26) { // 99%
+            depth_arr[n_discs] = n_empties;
+            mpc_level_arr[n_discs] = MPC_99_LEVEL;
+        } else if (n_empties <= 28) { // 98%
+            depth_arr[n_discs] = n_empties;
+            mpc_level_arr[n_discs] = MPC_98_LEVEL;
+        } else if (n_empties <= 30) { // 93%
+            depth_arr[n_discs] = n_empties;
+            mpc_level_arr[n_discs] = MPC_93_LEVEL;
+        } else {
+            depth_arr[n_discs] = std::min(n_empties, mid_depth);
+            mpc_level_arr[n_discs] = MPC_74_LEVEL;
+        }
     }
+    if (show_log) {
+        std::cerr << "mid_depth " << mid_depth << " " << board_start.to_str() << " ";
+    }
+    std::vector<Clog_result> clogs;
     bool is_player = false; // opponent first
     while (*searching) { // self play
         if (board.get_legal() == 0) {
@@ -883,14 +903,17 @@ int self_play_and_analyze(Board board_start, int level, bool show_log, bool use_
                 break;
             }
         }
-        if (HW2 - board.n_discs() >= 22) {
+        int n_discs = board.n_discs();
+        int n_empties = HW2 - n_discs;
+        if (n_empties >= 22) {
             boards.emplace_back(board);
         }
-        result = ai_searching(board, level, true, 0, use_multi_thread, false, searching);
+        Search search(&board, mpc_level_arr[n_discs], use_multi_thread, false);
+        std::pair<int, int> result = first_nega_scout(&search, -SCORE_MAX, SCORE_MAX, depth_arr[n_discs], depth_arr[n_discs] == n_empties, clogs, tim(), searching);
         if (show_log) {
-            std::cerr << idx_to_coord(result.policy);
+            std::cerr << idx_to_coord(result.second);
         }
-        calc_flip(&flip, &board, result.policy);
+        calc_flip(&flip, &board, result.second);
         board.move_board(&flip);
         is_player ^= 1;
     }
@@ -910,7 +933,10 @@ int self_play_and_analyze(Board board_start, int level, bool show_log, bool use_
         std::cerr << std::endl;
     }
     for (int i = (int)boards.size() - 1; i >= 0 && (*searching); --i) { // analyze
-        result = ai_searching(boards[i], level, true, 0, use_multi_thread, false, searching);
+        int n_discs = board.n_discs();
+        int n_empties = HW2 - n_discs;
+        Search search(&board, mpc_level_arr[n_discs], use_multi_thread, false);
+        first_nega_scout(&search, -SCORE_MAX, SCORE_MAX, depth_arr[n_discs], depth_arr[n_discs] == n_empties, clogs, tim(), searching);
     }
     return score;
 }
@@ -949,7 +975,6 @@ std::vector<Ponder_elem> ai_ponder(Board board, bool show_log, bool *searching) 
         move_list[idx].mpc_level = MPC_74_LEVEL;
         move_list[idx].is_endgame_search = false;
         move_list[idx].is_complete_search = false;
-        move_list[idx].selfplay_level = PONDER_SELFPLAY_LEVEL_DEFAULT; // start level 21
         ++idx;
     }
     const int max_depth = HW2 - board.n_discs() - 1;
@@ -1004,13 +1029,11 @@ std::vector<Ponder_elem> ai_ponder(Board board, bool show_log, bool *searching) 
         Search search(&n_board, new_mpc_level, true, false);
         int v = -nega_scout(&search, -SCORE_MAX, SCORE_MAX, new_depth, false, LEGAL_UNDEFINED, new_is_end_search, searching);
         if (new_depth >= PONDER_START_SELFPLAY_DEPTH) { // additional search (selfplay)
-            int new_selfplay_level = std::min(PONDER_SELFPLAY_LEVEL_MAX, move_list[selected_idx].selfplay_level + 1);
-            int v2 = self_play_and_analyze(n_board, new_selfplay_level, false, true, searching); // no -1 (opponent first)
+            int v2 = ai_self_play_and_analyze(n_board, move_list[selected_idx].depth, false, true, searching); // no -1 (opponent first)
             if (*searching) {
                 //double nv = ((double)v * 1.1 + (double)v2 * 0.9) / 2.0;
                 //std::cerr << idx_to_coord(move_list[selected_idx].flip.pos) << " depth " << new_depth << "@" << SELECTIVITY_PERCENTAGE[new_mpc_level] << "%" << " selfplay_level " << new_selfplay_level << " v " << v << " v2 " << v2 << " new_v " << nv << std::endl;
                 v = ((double)v * 1.1 + (double)v2 * 0.9) / 2.0;
-                move_list[selected_idx].selfplay_level = new_selfplay_level;
             }
         }
         if (*searching) {
@@ -1038,9 +1061,6 @@ std::vector<Ponder_elem> ai_ponder(Board board, bool show_log, bool *searching) 
                 std::cerr << " complete";
             } else if (move_list[i].is_endgame_search) {
                 std::cerr << " endgame";
-            }
-            if (move_list[i].selfplay_level > PONDER_SELFPLAY_LEVEL_DEFAULT) {
-                std::cerr << " selfplay_level " << move_list[i].selfplay_level;
             }
             std::cerr << std::endl;
         }
