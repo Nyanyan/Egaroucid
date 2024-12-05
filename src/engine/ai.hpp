@@ -32,8 +32,8 @@
 #define NOBOOK_SEARCH_LEVEL 10
 #define NOBOOK_SEARCH_MARGIN 1
 
-#define AI_TIMELIMIT_SELFPLAY_INITIAL_LEVEL 19
-#define AI_TIMELIMIT_SELFPLAY_MAX_LEVEL 22
+#define AI_TIMELIMIT_SELFPLAY_INITIAL_LEVEL 15
+#define AI_TIMELIMIT_SELFPLAY_MAX_LEVEL 26
 
 struct Lazy_SMP_task {
     uint_fast8_t mpc_level;
@@ -666,6 +666,7 @@ Search_result ai_time_limit(Board board, int level, bool use_book, int book_acc_
     int n_empties = HW2 - board.n_discs();
     if (time_limit > 20000ULL && n_empties >= 33) {
         uint64_t strt = tim();
+        bool need_request_more_time = false;
         bool ponder_searching = true;
         uint64_t ponder_tl = 1000ULL; //time_limit * 0.1;
         std::cerr << "pre search by ponder tl " << ponder_tl << std::endl;
@@ -684,7 +685,7 @@ Search_result ai_time_limit(Board board, int level, bool use_book, int book_acc_
                 }
             }
             if (n_good_moves >= 2) {
-                uint64_t self_play_tl = 10000ULL;
+                uint64_t self_play_tl = 15000ULL;
                 std::vector<Board> boards;
                 for (int i = 0; i < n_good_moves; ++i) {
                     Board n_board;
@@ -717,13 +718,21 @@ Search_result ai_time_limit(Board board, int level, bool use_book, int book_acc_
                 if (show_log) {
                     std::cerr << "self played " << n_searched << " level " << level << " time " << tim() - strt << std::endl;
                 }
+                need_request_more_time = true;
             }
         }
         uint64_t elapsed = tim() - strt;
         if (time_limit > elapsed) {
-            time_limit -= tim() - strt;
+            time_limit -= elapsed;
         } else {
             time_limit = 1;
+        }
+        if (need_request_more_time) {
+            uint64_t remaining_time_msec_p = 1;
+            if (remaining_time_msec > elapsed) {
+                remaining_time_msec_p = remaining_time_msec - elapsed;
+            }
+            time_limit = request_more_time(board, remaining_time_msec_p, time_limit, show_log);
         }
         if (show_log) {
             std::cerr << "additional calculation elapsed " << elapsed << " reduced time limit " << time_limit << std::endl;
