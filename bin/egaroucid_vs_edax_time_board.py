@@ -9,7 +9,7 @@ d_today = str(datetime.date.today())
 t_now = str(datetime.datetime.now().time())
 
 
-'''
+#'''
 # difficult
 with open('problem/random18_boards/difficult.txt', 'r') as f:
     tactic = [elem for elem in f.read().splitlines()]
@@ -17,7 +17,7 @@ whole_log_file = 'egaroucid_vs_edax_time_log/' + 'log_' + d_today.replace('-', '
 logfile_format = 'egaroucid_vs_edax_time_log/' + 'log_' + d_today.replace('-', '') + '_' + t_now.split('.')[0].replace(':', '') + '_board_difficult_'
 #'''
 
-#'''
+'''
 # special
 with open('problem/r18_difficult1_board.txt', 'r') as f:
     tactic = [elem for elem in f.read().splitlines()]
@@ -32,6 +32,8 @@ with open('problem/random18_boards/0000000.txt', 'r') as f:
 whole_log_file = 'egaroucid_vs_edax_time_log/' + 'log_' + d_today.replace('-', '') + '_' + t_now.split('.')[0].replace(':', '') + '_board_' + 'whole' + '.txt'
 logfile_format = 'egaroucid_vs_edax_time_log/' + 'log_' + d_today.replace('-', '') + '_' + t_now.split('.')[0].replace(':', '') + '_board_'
 #'''
+
+GAME_OFFSET = 0
 
 print(len(tactic), 'openings found', file=sys.stderr)
 
@@ -71,12 +73,10 @@ def write_log(*args, end='\n', sep=' '):
     with open(whole_log_file, 'a') as f:
         f.write(s)
 
-GAME_OFFSET = 1
-
 for num in range(GAME_OFFSET, max_num + GAME_OFFSET):
     tactic_idx = smpl[num % len(tactic)]
-    #for player in [black, white]:
-    for player in [white, black]:
+    for player in [black, white]:
+        #for player in [white, black]:
         logfile = logfile_format + str(num) + '_' + str(player) + '.txt'
         egaroucid_cmd_log = egaroucid_cmd + ' -logfile ' + logfile
         egaroucid = subprocess.Popen(egaroucid_cmd_log.split(), stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
