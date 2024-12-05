@@ -741,7 +741,7 @@ Search_result ai_time_limit(Board board, bool use_book, int book_acc_level, bool
                     std::cerr << "self played " << n_searched << " time " << tim() - strt << std::endl;
                 }
                 if (show_log) {
-                    std::cerr << "after self play scores" << std::endl;
+                    std::cerr << "after self play tt data" << std::endl;
                     for (int i = 0; i < (int)self_play_boards.size(); ++i) {
                         Search tt_search(&self_play_boards[i], MPC_74_LEVEL, true, false);
                         int l = -SCORE_MAX, u = SCORE_MAX;
@@ -952,15 +952,22 @@ int ai_self_play_and_analyze(Board board_start, int mid_depth, bool show_log, bo
         if (!(*searching)) {
             std::cerr << " terminated";
         } else {
-            std::cerr << " " << score;
+            std::cerr << " score " << score;
         }
-        std::cerr << std::endl;
     }
     for (int i = (int)boards.size() - 1; i >= 0 && (*searching); --i) { // analyze
-        int n_discs = board.n_discs();
+        int n_discs = boards[i].n_discs();
         int n_empties = HW2 - n_discs;
-        Search search(&board, mpc_level_arr[n_discs], use_multi_thread, false);
-        first_nega_scout(&search, -SCORE_MAX, SCORE_MAX, depth_arr[n_discs], depth_arr[n_discs] == n_empties, clogs, tim(), searching);
+        Search search(&boards[i], mpc_level_arr[n_discs], use_multi_thread, false);
+        std::pair<int, int> result = first_nega_scout(&search, -SCORE_MAX, SCORE_MAX, depth_arr[n_discs], depth_arr[n_discs] == n_empties, clogs, tim(), searching);
+        if (show_log) {
+            if (i == 0) {
+                std::cerr << " analyzed " << -result.first;
+            }
+        }
+    }
+    if (show_log) {
+        std::cerr << std::endl;
     }
     return score;
 }
