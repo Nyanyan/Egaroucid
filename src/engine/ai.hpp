@@ -664,11 +664,11 @@ Search_result ai_time_limit(Board board, int level, bool use_book, int book_acc_
         std::cerr << "time limit " << time_limit << " remaining " << remaining_time_msec << std::endl;
     }
     int n_empties = HW2 - board.n_discs();
-    if (time_limit > 25000ULL && n_empties >= 33) {
+    if (time_limit > 35000ULL && n_empties >= 33) {
         uint64_t strt = tim();
         bool need_request_more_time = false;
         bool ponder_searching = true;
-        uint64_t ponder_tl = 1000ULL; //time_limit * 0.1;
+        uint64_t ponder_tl = 1000ULL;
         std::cerr << "pre search by ponder tl " << ponder_tl << std::endl;
         std::future<std::vector<Ponder_elem>> ponder_future = std::async(std::launch::async, ai_ponder, board, show_log, &ponder_searching);
         while (tim() - strt < ponder_tl && ponder_future.wait_for(std::chrono::seconds(0)) != std::future_status::ready);
@@ -685,7 +685,7 @@ Search_result ai_time_limit(Board board, int level, bool use_book, int book_acc_
                 }
             }
             if (n_good_moves >= 2) {
-                uint64_t self_play_tl = 20000ULL + ponder_tl;
+                uint64_t self_play_tl = 25000ULL + ponder_tl;
                 std::vector<Board> boards;
                 for (int i = 0; i < n_good_moves; ++i) {
                     Board n_board = board.copy();
@@ -725,7 +725,7 @@ Search_result ai_time_limit(Board board, int level, bool use_book, int book_acc_
                 need_request_more_time = true;
 
                 bool ponder_searching2 = true;
-                uint64_t ponder_tl2 = 500ULL + self_play_tl; //time_limit * 0.1;
+                uint64_t ponder_tl2 = 500ULL + self_play_tl;
                 std::cerr << "pre search by ponder 2 tl " << ponder_tl2 << std::endl;
                 std::future<std::vector<Ponder_elem>> ponder_future2 = std::async(std::launch::async, ai_ponder, board, show_log, &ponder_searching2);
                 while (tim() - strt < ponder_tl2 && ponder_future2.wait_for(std::chrono::seconds(0)) != std::future_status::ready);
