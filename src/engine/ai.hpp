@@ -396,6 +396,9 @@ void iterative_deepening_search_time_limit(Board board, int alpha, int beta, boo
             before_raw_value = id_result.first;
             policy_changed_before = policy_changed;
         }
+        //if (main_depth > 10 && pop_count_ull(board.get_legal()) == 1) { // not use_legal
+        //    break; // there is only 1 move
+        //}
         if (main_depth < max_depth - IDSEARCH_ENDSEARCH_PRESEARCH_OFFSET_TIMELIMIT) { // next: midgame search
             if (main_depth <= 15 && main_depth < max_depth - 3) {
                 main_depth += 3;
