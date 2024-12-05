@@ -126,7 +126,9 @@ constexpr uint64_t parity_table[16] = {
 };
 
 
-bool not_searching = false;
+#if USE_YBWC_NWS || USE_YBWC_NEGASCOUT
+    bool not_searching = false;
+#endif
 
 
 /*
