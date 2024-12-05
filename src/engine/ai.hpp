@@ -87,7 +87,7 @@ void iterative_deepening_search(Board board, int alpha, int beta, int depth, uin
         std::vector<std::future<int>> parallel_tasks;
         std::vector<int> sub_depth_arr;
         int sub_max_mpc_level[61];
-        bool *sub_searching = searching;
+        bool sub_searching = true;
         int sub_depth = main_depth;
         if (use_multi_thread && !(is_end_search && main_depth == depth) && main_depth <= 10) {
             int max_thread_size = thread_pool.size();
@@ -107,7 +107,7 @@ void iterative_deepening_search(Board board, int alpha, int beta, int depth, uin
                     //std::cerr << sub_thread_idx << " " << sub_depth << " " << SELECTIVITY_PERCENTAGE[sub_mpc_level] << std::endl;
                     searches[sub_thread_idx] = Search{&board, sub_mpc_level, false, true};
                     bool pushed = false;
-                    parallel_tasks.emplace_back(thread_pool.push(&pushed, std::bind(&nega_scout, &searches[sub_thread_idx], alpha, beta, sub_depth, false, LEGAL_UNDEFINED, sub_is_end_search, sub_searching)));
+                    parallel_tasks.emplace_back(thread_pool.push(&pushed, std::bind(&nega_scout, &searches[sub_thread_idx], alpha, beta, sub_depth, false, LEGAL_UNDEFINED, sub_is_end_search, &sub_searching)));
                     sub_depth_arr.emplace_back(sub_depth);
                     ++sub_max_mpc_level[sub_depth];
                     if (!pushed) {
@@ -136,7 +136,7 @@ void iterative_deepening_search(Board board, int alpha, int beta, int depth, uin
         Search main_search(&board, main_mpc_level, use_multi_thread, !is_last_search);        
         std::pair<int, int> id_result = first_nega_scout_legal(&main_search, alpha, beta, main_depth, main_is_end_search, clogs, use_legal, strt, searching);
 #if USE_LAZY_SMP
-        sub_searching = &not_searching;
+        sub_searching = false;
         for (std::future<int> &task: parallel_tasks) {
             task.get();
         }
@@ -239,7 +239,7 @@ void iterative_deepening_search_time_limit(Board board, int alpha, int beta, boo
         std::vector<std::future<int>> parallel_tasks;
         std::vector<int> sub_depth_arr;
         int sub_max_mpc_level[61];
-        bool *sub_searching = searching;
+        bool sub_searching = true;
         int sub_depth = main_depth;
         if (use_multi_thread && main_depth <= 10) {
             int max_thread_size = thread_pool.size();
@@ -259,7 +259,7 @@ void iterative_deepening_search_time_limit(Board board, int alpha, int beta, boo
                     //std::cerr << sub_thread_idx << " " << sub_depth << " " << SELECTIVITY_PERCENTAGE[sub_mpc_level] << std::endl;
                     searches[sub_thread_idx] = Search{&board, sub_mpc_level, false, true};
                     bool pushed = false;
-                    parallel_tasks.emplace_back(thread_pool.push(&pushed, std::bind(&nega_scout, &searches[sub_thread_idx], alpha, beta, sub_depth, false, LEGAL_UNDEFINED, sub_is_end_search, sub_searching)));
+                    parallel_tasks.emplace_back(thread_pool.push(&pushed, std::bind(&nega_scout, &searches[sub_thread_idx], alpha, beta, sub_depth, false, LEGAL_UNDEFINED, sub_is_end_search, &sub_searching)));
                     sub_depth_arr.emplace_back(sub_depth);
                     ++sub_max_mpc_level[sub_depth];
                     if (!pushed) {
@@ -296,8 +296,8 @@ void iterative_deepening_search_time_limit(Board board, int alpha, int beta, boo
         Search main_search(&board, main_mpc_level, use_multi_thread, false);
         std::pair<int, int> id_result;
         bool search_success = true;
-        bool *main_searching = searching;
-        std::future<std::pair<int, int>> f = std::async(std::launch::async, first_nega_scout_legal, &main_search, alpha, beta, main_depth, main_is_end_search, clogs, use_legal, strt, main_searching);
+        bool main_searching = true;
+        std::future<std::pair<int, int>> f = std::async(std::launch::async, first_nega_scout_legal, &main_search, alpha, beta, main_depth, main_is_end_search, clogs, use_legal, strt, &main_searching);
         for (;;) {
             if (f.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
                 id_result = f.get();
@@ -307,14 +307,14 @@ void iterative_deepening_search_time_limit(Board board, int alpha, int beta, boo
                 if (show_log) {
                     std::cerr << "terminated " << tim() - strt << " ms" << std::endl;
                 }
-                main_searching = &not_searching;
+                main_searching = false;
                 f.get();
                 search_success = false;
                 break;
             }
         }
 #if USE_LAZY_SMP
-        sub_searching = &not_searching;
+        sub_searching = false;
         for (std::future<int> &task: parallel_tasks) {
             task.get();
         }
@@ -353,9 +353,9 @@ void iterative_deepening_search_time_limit(Board board, int alpha, int beta, boo
                 int nws_alpha = result->value - 6;
                 if (nws_alpha >= -SCORE_MAX) {
                     Search nws_search(&board, main_mpc_level, use_multi_thread, false);
-                    bool *nws_searching = searching;
+                    bool nws_searching = true;
                     uint64_t nws_use_legal = use_legal ^ (1ULL << result->policy);
-                    std::future<std::pair<int, int>> nws_f = std::async(std::launch::async, first_nega_scout_legal, &main_search, nws_alpha, nws_alpha + 1, main_depth, main_is_end_search, clogs, nws_use_legal, strt, nws_searching);
+                    std::future<std::pair<int, int>> nws_f = std::async(std::launch::async, first_nega_scout_legal, &main_search, nws_alpha, nws_alpha + 1, main_depth, main_is_end_search, clogs, nws_use_legal, strt, &nws_searching);
                     int nws_value = SCORE_INF;
                     int nws_move = MOVE_NOMOVE;
                     bool nws_success = false;
@@ -367,11 +367,11 @@ void iterative_deepening_search_time_limit(Board board, int alpha, int beta, boo
                             nws_success = true;
                             break;
                         }
-                        if (tim() - strt >= time_limit) {
+                        if (tim() - strt >= time_limit || !global_hash_level || !(*searching)) {
                             if (show_log) {
                                 std::cerr << "terminate early cut nws by time limit " << tim() - strt << " ms" << std::endl;
                             }
-                            nws_searching = &not_searching;
+                            nws_searching = false;
                             nws_f.get();
                             break;
                         }
@@ -726,7 +726,7 @@ Search_result ai_time_limit(Board board, int level, bool use_book, int book_acc_
             time_limit = 1;
         }
         if (show_log) {
-            std::cerr << "elapsed " << elapsed << " reduced time limit " << time_limit << std::endl;
+            std::cerr << "additional calculation elapsed " << elapsed << " reduced time limit " << time_limit << std::endl;
         }
     }
     bool searching = true;
