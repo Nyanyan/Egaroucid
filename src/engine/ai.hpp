@@ -27,16 +27,14 @@
 
 #define IDSEARCH_ENDSEARCH_PRESEARCH_OFFSET 10
 #define IDSEARCH_ENDSEARCH_PRESEARCH_OFFSET_TIMELIMIT 10
+#define PONDER_ENDSEARCH_PRESEARCH_OFFSET_TIMELIMIT 6
 
 #define NOBOOK_SEARCH_LEVEL 10
 #define NOBOOK_SEARCH_MARGIN 1
 
-#define PONDER_ENDSEARCH_PRESEARCH_OFFSET_TIMELIMIT 6
-#define PONDER_START_SELFPLAY_DEPTH 21
+#define PONDER_START_SELFPLAY_DEPTH 25
 
-#define AI_TIMELIMIT_SELFPLAY_INITIAL_LEVEL 30
-#define AI_TIMELIMIT_SELFPLAY_MAX_LEVEL 45
-#define AI_TIMELIMIT_SELFPLAY_COMPLETE_SEARCH_LEVEL 23
+#define AI_TIME_LIMIT_SELFPLAY_START_DEPTH 35
 
 struct Lazy_SMP_task {
     uint_fast8_t mpc_level;
@@ -670,7 +668,7 @@ Search_result ai_time_limit(Board board, bool use_book, int book_acc_level, bool
         std::cerr << "time limit " << time_limit << " remaining " << remaining_time_msec << std::endl;
     }
     int n_empties = HW2 - board.n_discs();
-    if (time_limit > 35000ULL && n_empties >= 33) {
+    if (time_limit > 30000ULL && n_empties >= 34) {
         uint64_t strt = tim();
         bool need_request_more_time = false;
         bool ponder_searching = true;
@@ -684,7 +682,7 @@ Search_result ai_time_limit(Board board, bool use_book, int book_acc_level, bool
             double best_value = ponder_move_list[0].value;
             int n_good_moves = 0;
             for (const Ponder_elem &elem: ponder_move_list) {
-                if (elem.value >= best_value - 2.5) {
+                if (elem.value >= best_value - 1.5) {
                     ++n_good_moves;
                 } else {
                     break; // because sorted
@@ -708,21 +706,21 @@ Search_result ai_time_limit(Board board, bool use_book, int book_acc_level, bool
                     std::cerr << std::endl;
                 }
                 bool self_play_searching = true;
-                while (tim() - strt < self_play_tl) {
+                int self_play_depth = std::min(n_empties, AI_TIME_LIMIT_SELFPLAY_START_DEPTH);
+                while (tim() - strt < self_play_tl && self_play_depth <= n_empties) {
                     self_play_searching = true;
                     if (show_log) {
                         std::cerr << idx_to_coord(ponder_move_list[board_idx].flip.pos) << " ";
                     }
-                    int self_play_depth = ponder_move_list[board_idx].depth;
                     std::future<int> self_play_future = std::async(std::launch::async, ai_self_play_and_analyze, boards[board_idx], self_play_depth, show_log, true, &self_play_searching);
                     while (tim() - strt < self_play_tl && self_play_future.wait_for(std::chrono::seconds(0)) != std::future_status::ready);
                     self_play_searching = false;
                     self_play_future.get();
-                    ++ponder_move_list[board_idx].depth;
                     ++n_searched;
                     ++board_idx;
                     if (board_idx >= n_good_moves) {
                         board_idx = 0;
+                        ++self_play_depth;
                     }
                 }
                 if (show_log) {
@@ -1028,11 +1026,12 @@ std::vector<Ponder_elem> ai_ponder(Board board, bool show_log, bool *searching) 
         bool new_is_complete_search = new_is_end_search && new_mpc_level == MPC_100_LEVEL;
         Search search(&n_board, new_mpc_level, true, false);
         int v = -nega_scout(&search, -SCORE_MAX, SCORE_MAX, new_depth, false, LEGAL_UNDEFINED, new_is_end_search, searching);
-        if (new_depth >= PONDER_START_SELFPLAY_DEPTH) { // additional search (selfplay)
+        if (new_depth >= PONDER_START_SELFPLAY_DEPTH && !new_is_complete_search) { // additional search (selfplay)
             int v2 = ai_self_play_and_analyze(n_board, move_list[selected_idx].depth, false, true, searching); // no -1 (opponent first)
             if (*searching) {
                 //double nv = ((double)v * 1.1 + (double)v2 * 0.9) / 2.0;
-                //std::cerr << idx_to_coord(move_list[selected_idx].flip.pos) << " depth " << new_depth << "@" << SELECTIVITY_PERCENTAGE[new_mpc_level] << "%" << " selfplay_level " << new_selfplay_level << " v " << v << " v2 " << v2 << " new_v " << nv << std::endl;
+                //std::cerr << idx_to_coord(move_list[selected_idx].flip.pos) << " depth " << new_depth << "@" << SELECTIVITY_PERCENTAGE[new_mpc_level] << "%" << " v " << v << " v2 " << v2 << " new_v " << nv << std::endl;
+                //v = nv;
                 v = ((double)v * 1.1 + (double)v2 * 0.9) / 2.0;
             }
         }
