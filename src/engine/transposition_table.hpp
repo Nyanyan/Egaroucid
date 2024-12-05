@@ -89,10 +89,18 @@ class Hash_data {
             @param policy               best move
         */
         inline void reg_same_level(const int alpha, const int beta, const int value, const int policy) {
-            if (value < beta && value < upper)
+            if (value < beta && value < upper) {
                 upper = (int8_t)value;
-            if (alpha < value && lower < value)
+                if (alpha < value && value < lower) {
+                    lower = value;
+                }
+            }
+            if (alpha < value && lower < value) {
                 lower = (int8_t)value;
+                if (value < beta && upper < value) {
+                    upper = value;
+                }
+            }
             if ((alpha < value || value == -SCORE_MAX) && moves[0] != policy && policy != TRANSPOSITION_TABLE_UNDEFINED) {
                 moves[1] = moves[0];
                 moves[0] = (uint8_t)policy;
