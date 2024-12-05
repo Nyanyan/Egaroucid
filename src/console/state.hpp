@@ -14,7 +14,7 @@ struct State {
     bool book_changed;
     uint64_t remaining_time_msec_black;
     uint64_t remaining_time_msec_white;
-    std::future<void> ponder_future;
+    std::future<std::vector<Ponder_elem>> ponder_future;
     bool ponder_searching;
 
     State() {
