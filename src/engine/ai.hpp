@@ -670,7 +670,7 @@ Search_result ai_time_limit(Board board, bool use_book, int book_acc_level, bool
         uint64_t strt = tim();
         bool need_request_more_time = false;
         bool ponder_searching = true;
-        uint64_t ponder_tl = 1000ULL;
+        uint64_t ponder_tl = 4000ULL;
         std::cerr << "pre search by ponder tl " << ponder_tl << std::endl;
         std::future<std::vector<Ponder_elem>> ponder_future = std::async(std::launch::async, ai_ponder, board, show_log, &ponder_searching);
         while (tim() - strt < ponder_tl && ponder_future.wait_for(std::chrono::seconds(0)) != std::future_status::ready);
@@ -722,7 +722,7 @@ Search_result ai_time_limit(Board board, bool use_book, int book_acc_level, bool
                 int self_play_n_finished = 0;
                 while (tim() - strt < self_play_tl && self_play_n_finished < (int)self_play_boards.size()) {
                     int self_play_depth = self_play_depth_arr[board_idx];
-                    self_play_depth = std::min(35, self_play_depth);
+                    //self_play_depth = std::min(35, self_play_depth);
                     if (self_play_depth <= n_empties - 1) {
                         if (show_log) {
                             std::cerr << idx_to_coord(ponder_move_list[board_idx].flip.pos) << " ";
