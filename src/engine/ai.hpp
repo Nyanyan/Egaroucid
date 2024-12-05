@@ -28,6 +28,7 @@
 #define IDSEARCH_ENDSEARCH_PRESEARCH_OFFSET 10
 #define IDSEARCH_ENDSEARCH_PRESEARCH_OFFSET_TIMELIMIT 10
 #define PONDER_ENDSEARCH_PRESEARCH_OFFSET_TIMELIMIT 6
+#define PONDER_SELFPLAY_LEVEL_DEFAULT 20
 
 #define NOBOOK_SEARCH_LEVEL 10
 #define NOBOOK_SEARCH_MARGIN 1
@@ -49,6 +50,7 @@ struct Ponder_elem {
     uint_fast8_t mpc_level;
     bool is_endgame_search;
     bool is_complete_search;
+    int selfplay_level;
 };
 
 std::vector<Ponder_elem> ai_ponder(Board board, bool show_log, bool *searching);
@@ -945,6 +947,7 @@ std::vector<Ponder_elem> ai_ponder(Board board, bool show_log, bool *searching) 
         move_list[idx].mpc_level = MPC_74_LEVEL;
         move_list[idx].is_endgame_search = false;
         move_list[idx].is_complete_search = false;
+        move_list[idx].selfplay_level = PONDER_SELFPLAY_LEVEL_DEFAULT; // start level 21
         ++idx;
     }
     const int max_depth = HW2 - board.n_discs() - 1;
@@ -999,11 +1002,13 @@ std::vector<Ponder_elem> ai_ponder(Board board, bool show_log, bool *searching) 
         Search search(&n_board, new_mpc_level, true, false);
         int v = -nega_scout(&search, -SCORE_MAX, SCORE_MAX, new_depth, false, LEGAL_UNDEFINED, new_is_end_search, searching);
         if (new_depth >= 27) { // additional search (selfplay)
-            int v2 = self_play_and_analyze(n_board, 21, false, true, searching); // no -1 (opponent first)
+            int new_selfplay_level = std::min(60, move_list[selected_idx].selfplay_level + 1);
+            int v2 = self_play_and_analyze(n_board, new_selfplay_level, false, true, searching); // no -1 (opponent first)
             if (*searching) {
-                double nv = ((double)v * 1.1 + (double)v2 * 0.9) / 2.0;
-                std::cerr << idx_to_coord(move_list[selected_idx].flip.pos) << " v " << v << " v2 " << v2 << " new_v " << nv << std::endl;
-                v = nv;
+                //double nv = ((double)v * 1.1 + (double)v2 * 0.9) / 2.0;
+                //std::cerr << idx_to_coord(move_list[selected_idx].flip.pos) << " depth " << new_depth << "@" << SELECTIVITY_PERCENTAGE[new_mpc_level] << "%" << " selfplay_level " << new_selfplay_level << " v " << v << " v2 " << v2 << " new_v " << nv << std::endl;
+                v = ((double)v * 1.1 + (double)v2 * 0.9) / 2.0;
+                move_list[selected_idx].selfplay_level = new_selfplay_level;
             }
         }
         if (*searching) {
@@ -1027,6 +1032,9 @@ std::vector<Ponder_elem> ai_ponder(Board board, bool show_log, bool *searching) 
         for (int i = 0; i < canput; ++i) {
             std::cerr << "pd " << idx_to_coord(move_list[i].flip.pos) << " value " << std::fixed << std::setprecision(2) << move_list[i].value;
             std::cerr << " count " << move_list[i].count << " depth " << move_list[i].depth << "@" << SELECTIVITY_PERCENTAGE[move_list[i].mpc_level] << "%";
+            if (move_list[i].selfplay_level > PONDER_SELFPLAY_LEVEL_DEFAULT) {
+                std::cerr << " selfplay_level " << move_list[i].selfplay_level;
+            }
             if (move_list[i].is_complete_search) {
                 std::cerr << " complete";
             } else if (move_list[i].is_endgame_search) {
