@@ -63,7 +63,8 @@ GAME_OFFSET = 3
 
 for num in range(GAME_OFFSET, max_num + GAME_OFFSET):
     tactic_idx = smpl[num % len(tactic)]
-    for player in [black, white]:
+    #for player in [black, white]:
+    for player in [white, black]:
         if USE_DIFFICULT_DATASET:
             logfile = 'egaroucid_vs_edax_time_log/' + 'log_' + d_today.replace('-', '') + '_' + t_now.split('.')[0].replace(':', '') + '_board_difficult_' + str(num) + '_' + str(player) + '.txt'
         else:

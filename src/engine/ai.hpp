@@ -33,7 +33,7 @@
 #define NOBOOK_SEARCH_MARGIN 1
 
 #define AI_TIMELIMIT_SELFPLAY_INITIAL_LEVEL 15
-#define AI_TIMELIMIT_SELFPLAY_MAX_LEVEL 26
+#define AI_TIMELIMIT_SELFPLAY_MAX_LEVEL 30
 
 struct Lazy_SMP_task {
     uint_fast8_t mpc_level;
@@ -664,7 +664,7 @@ Search_result ai_time_limit(Board board, int level, bool use_book, int book_acc_
         std::cerr << "time limit " << time_limit << " remaining " << remaining_time_msec << std::endl;
     }
     int n_empties = HW2 - board.n_discs();
-    if (time_limit > 20000ULL && n_empties >= 33) {
+    if (time_limit > 25000ULL && n_empties >= 33) {
         uint64_t strt = tim();
         bool need_request_more_time = false;
         bool ponder_searching = true;
@@ -685,10 +685,10 @@ Search_result ai_time_limit(Board board, int level, bool use_book, int book_acc_
                 }
             }
             if (n_good_moves >= 2) {
-                uint64_t self_play_tl = 15000ULL;
+                uint64_t self_play_tl = 20000ULL + ponder_tl;
                 std::vector<Board> boards;
                 for (int i = 0; i < n_good_moves; ++i) {
-                    Board n_board;
+                    Board n_board = board.copy();
                     n_board.move_board(&ponder_move_list[i].flip);
                     boards.emplace_back(n_board);
                 }
@@ -704,7 +704,11 @@ Search_result ai_time_limit(Board board, int level, bool use_book, int book_acc_
                 int level = AI_TIMELIMIT_SELFPLAY_INITIAL_LEVEL;
                 bool self_play_searching = true;
                 while (tim() - strt < self_play_tl && level <= AI_TIMELIMIT_SELFPLAY_MAX_LEVEL) {
-                    std::future<void> self_play_future = std::async(std::launch::async, self_play_and_analyze, boards[board_idx], level, false, true, &self_play_searching);
+                    self_play_searching = true;
+                    if (show_log) {
+                        std::cerr << idx_to_coord(ponder_move_list[board_idx].flip.pos) << " ";
+                    }
+                    std::future<void> self_play_future = std::async(std::launch::async, self_play_and_analyze, boards[board_idx], level, show_log, true, &self_play_searching);
                     while (tim() - strt < self_play_tl && self_play_future.wait_for(std::chrono::seconds(0)) != std::future_status::ready);
                     self_play_searching = false;
                     self_play_future.get();
@@ -719,6 +723,14 @@ Search_result ai_time_limit(Board board, int level, bool use_book, int book_acc_
                     std::cerr << "self played " << n_searched << " level " << level << " time " << tim() - strt << std::endl;
                 }
                 need_request_more_time = true;
+
+                bool ponder_searching2 = true;
+                uint64_t ponder_tl2 = 500ULL + self_play_tl; //time_limit * 0.1;
+                std::cerr << "pre search by ponder 2 tl " << ponder_tl2 << std::endl;
+                std::future<std::vector<Ponder_elem>> ponder_future2 = std::async(std::launch::async, ai_ponder, board, show_log, &ponder_searching2);
+                while (tim() - strt < ponder_tl2 && ponder_future2.wait_for(std::chrono::seconds(0)) != std::future_status::ready);
+                ponder_searching2 = false;
+                ponder_future2.get();
             }
         }
         uint64_t elapsed = tim() - strt;
@@ -973,13 +985,39 @@ void self_play_and_analyze(Board board_start, int level, bool show_log, bool use
     Search_result result;
     Board board = board_start.copy();
     std::vector<Board> boards;
-    while (board.check_pass() && (*searching)) { // self play
+    if (show_log) {
+        std::cerr << "level " << level << " " << board_start.to_str() << " ";
+    }
+    bool is_player = true;
+    while (*searching) { // self play
+        if (board.get_legal() == 0) {
+            board.pass();
+            is_player ^= 1;
+            if (board.get_legal() == 0) {
+                break;
+            }
+        }
         boards.emplace_back(board);
-        result = ai_searching(board, level, true, 0, use_multi_thread, show_log, searching);
+        result = ai_searching(board, level, true, 0, use_multi_thread, false, searching);
+        if (show_log) {
+            std::cerr << idx_to_coord(result.policy);
+        }
         calc_flip(&flip, &board, result.policy);
         board.move_board(&flip);
     }
+    if (show_log) {
+        if (!(*searching)) {
+            std::cerr << " terminated";
+        } else {
+            int score = board.score_player();
+            if (!is_player) {
+                score *= -1;
+            }
+            std::cerr << " " << score;
+        }
+        std::cerr << std::endl;
+    }
     for (int i = (int)boards.size() - 1; i >= 0 && (*searching); --i) { // analyze
-        result = ai_searching(boards[i], level, true, 0, use_multi_thread, show_log, searching);
+        result = ai_searching(boards[i], level, true, 0, use_multi_thread, false, searching);
     }
 }
