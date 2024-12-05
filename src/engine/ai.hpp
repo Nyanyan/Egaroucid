@@ -675,10 +675,10 @@ Search_result ai_time_limit(Board board, int level, bool use_book, int book_acc_
         ponder_searching = false;
         std::vector<Ponder_elem> ponder_move_list = ponder_future.get();
         if (ponder_move_list.size()) {
-            int best_value = ponder_move_list[0].value;
+            double best_value = ponder_move_list[0].value;
             int n_good_moves = 0;
             for (const Ponder_elem &elem: ponder_move_list) {
-                if (elem.value >= best_value - 2) {
+                if (elem.value >= best_value - 2.5) {
                     ++n_good_moves;
                 } else {
                     break; // because sorted
@@ -723,9 +723,9 @@ Search_result ai_time_limit(Board board, int level, bool use_book, int book_acc_
                     std::cerr << "self played " << n_searched << " level " << level << " time " << tim() - strt << std::endl;
                 }
                 need_request_more_time = true;
-
+                
                 bool ponder_searching2 = true;
-                uint64_t ponder_tl2 = 500ULL + self_play_tl;
+                uint64_t ponder_tl2 = 100ULL + self_play_tl;
                 std::cerr << "pre search by ponder 2 tl " << ponder_tl2 << std::endl;
                 std::future<std::vector<Ponder_elem>> ponder_future2 = std::async(std::launch::async, ai_ponder, board, show_log, &ponder_searching2);
                 while (tim() - strt < ponder_tl2 && ponder_future2.wait_for(std::chrono::seconds(0)) != std::future_status::ready);
@@ -997,7 +997,9 @@ void self_play_and_analyze(Board board_start, int level, bool show_log, bool use
                 break;
             }
         }
-        boards.emplace_back(board);
+        if (HW2 - board.n_discs() >= 22) {
+            boards.emplace_back(board);
+        }
         result = ai_searching(board, level, true, 0, use_multi_thread, false, searching);
         if (show_log) {
             std::cerr << idx_to_coord(result.policy);
