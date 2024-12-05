@@ -8,15 +8,6 @@ import datetime
 d_today = str(datetime.date.today())
 t_now = str(datetime.datetime.now().time())
 
-
-#'''
-# difficult
-with open('problem/random18_boards/difficult.txt', 'r') as f:
-    tactic = [elem for elem in f.read().splitlines()]
-whole_log_file = 'egaroucid_vs_edax_time_log/' + 'log_' + d_today.replace('-', '') + '_' + t_now.split('.')[0].replace(':', '') + '_board_difficult_' + 'whole' + '.txt'
-logfile_format = 'egaroucid_vs_edax_time_log/' + 'log_' + d_today.replace('-', '') + '_' + t_now.split('.')[0].replace(':', '') + '_board_difficult_'
-#'''
-
 '''
 # special
 with open('problem/r18_difficult1_board.txt', 'r') as f:
@@ -26,6 +17,14 @@ logfile_format = 'egaroucid_vs_edax_time_log/' + 'log_' + d_today.replace('-', '
 #'''
 
 '''
+# difficult
+with open('problem/random18_boards/difficult.txt', 'r') as f:
+    tactic = [elem for elem in f.read().splitlines()]
+whole_log_file = 'egaroucid_vs_edax_time_log/' + 'log_' + d_today.replace('-', '') + '_' + t_now.split('.')[0].replace(':', '') + '_board_difficult_' + 'whole' + '.txt'
+logfile_format = 'egaroucid_vs_edax_time_log/' + 'log_' + d_today.replace('-', '') + '_' + t_now.split('.')[0].replace(':', '') + '_board_difficult_'
+#'''
+
+#'''
 # default
 with open('problem/random18_boards/0000000.txt', 'r') as f:
     tactic = [elem for elem in f.read().splitlines()]
@@ -33,7 +32,8 @@ whole_log_file = 'egaroucid_vs_edax_time_log/' + 'log_' + d_today.replace('-', '
 logfile_format = 'egaroucid_vs_edax_time_log/' + 'log_' + d_today.replace('-', '') + '_' + t_now.split('.')[0].replace(':', '') + '_board_'
 #'''
 
-GAME_OFFSET = 0
+GAME_OFFSET = 12
+#GAME_OFFSET = 1
 
 print(len(tactic), 'openings found', file=sys.stderr)
 
