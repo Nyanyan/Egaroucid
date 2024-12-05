@@ -688,11 +688,11 @@ Search_result ai_time_limit(Board board, bool use_book, int book_acc_level, bool
             }
             if (n_good_moves >= 2) {
                 uint64_t self_play_tl = std::max(25000ULL + ponder_tl, (uint64_t)(time_limit * 0.6));
-                std::vector<Board> boards;
+                std::vector<Board> self_play_boards;
                 for (int i = 0; i < n_good_moves; ++i) {
                     Board n_board = board.copy();
                     n_board.move_board(&ponder_move_list[i].flip);
-                    boards.emplace_back(n_board);
+                    self_play_boards.emplace_back(n_board);
                 }
                 int board_idx = 0;
                 int n_searched = 0;
@@ -708,23 +708,24 @@ Search_result ai_time_limit(Board board, bool use_book, int book_acc_level, bool
                 bool depth_updated = true;
                 while (depth_updated && self_play_depth < n_empties) {
                     depth_updated = false;
-                    for (Board &board: boards) {
-                        Search tt_search(&board, MPC_74_LEVEL, true, false);
-                        if (transposition_table.has_node(&tt_search, board.hash(), self_play_depth + 1)) {
-                            depth_updated = true;
+                    for (Board &self_play_board: self_play_boards) {
+                        Search tt_search(&self_play_board, MPC_74_LEVEL, true, false);
+                        if (transposition_table.has_node(&tt_search, self_play_board.hash(), self_play_depth + 1)) {
                             ++self_play_depth;
+                            depth_updated = true;
                         }
                         if (self_play_depth == n_empties) {
                             break;
                         }
                     }
                 }
+                int self_play_depth_copy = self_play_depth;
                 while (tim() - strt < self_play_tl && self_play_depth <= n_empties) {
                     self_play_searching = true;
                     if (show_log) {
                         std::cerr << idx_to_coord(ponder_move_list[board_idx].flip.pos) << " ";
                     }
-                    std::future<int> self_play_future = std::async(std::launch::async, ai_self_play_and_analyze, boards[board_idx], self_play_depth, show_log, true, &self_play_searching);
+                    std::future<int> self_play_future = std::async(std::launch::async, ai_self_play_and_analyze, self_play_boards[board_idx], self_play_depth, show_log, true, &self_play_searching);
                     while (tim() - strt < self_play_tl && self_play_future.wait_for(std::chrono::seconds(0)) != std::future_status::ready);
                     self_play_searching = false;
                     self_play_future.get();
@@ -738,6 +739,16 @@ Search_result ai_time_limit(Board board, bool use_book, int book_acc_level, bool
                 if (show_log) {
                     std::cerr << "self played " << n_searched << " time " << tim() - strt << std::endl;
                 }
+                if (show_log) {
+                    std::cerr << "after self play scores" << std::endl;
+                    for (int i = 0; i < (int)self_play_boards.size(); ++i) {
+                        Search tt_search(&self_play_boards[i], MPC_74_LEVEL, true, false);
+                        int l = -SCORE_MAX, u = SCORE_MAX;
+                        transposition_table.get_bounds(&tt_search, self_play_boards[i].hash(), self_play_depth_copy, &l, &u);
+                        std::cerr << idx_to_coord(ponder_move_list[i].flip.pos) << " " << l << " " << u << std::endl;
+                    }
+                }
+
                 need_request_more_time = true;
                 
                 bool ponder_searching2 = true;
