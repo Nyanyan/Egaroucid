@@ -42,7 +42,7 @@ uint64_t calc_time_limit_ply(const Board board, uint64_t remaining_time_msec, bo
     constexpr double endgame_const_a = 0.03; //1.8654;
     constexpr double endgame_const_b = 0.61;
     constexpr double endgame_nps = 3.5e8;
-    double endgame_use_time = (double)remaining_time_msec_margin * 0.1;
+    double endgame_use_time = (double)remaining_time_msec_margin * 0.15;
     double endgame_search_depth = log(endgame_use_time / 1000.0 * endgame_nps / endgame_const_a) / endgame_const_b;
 
 
@@ -65,6 +65,27 @@ uint64_t calc_time_limit_ply(const Board board, uint64_t remaining_time_msec, bo
     // midgame search
     int remaining_moves_proc = std::max(2, (int)round((remaining_moves - TIME_MANAGEMENT_REMAINING_MOVES_OFFSET) * TIME_MANAGEMENT_N_MOVES_COE)); // at least 2 moves
     return std::max(1ULL, remaining_time_msec_margin / remaining_moves_proc);
+}
+
+uint64_t request_more_time(Board board, uint64_t remaining_time_msec, uint64_t time_limit, bool show_log) {
+    int n_empties = HW2 - board.n_discs();
+    int remaining_moves = (n_empties + 1) / 2;
+    uint64_t remaining_time_msec_margin = remaining_time_msec;
+    if (remaining_time_msec > TIME_MANAGEMENT_REMAINING_TIME_OFFSET * remaining_moves) {
+        remaining_time_msec_margin -= TIME_MANAGEMENT_REMAINING_TIME_OFFSET * remaining_moves;
+    } else {
+        remaining_time_msec_margin = 1;
+    }
+    std::cerr << "requesting more time remaining " << remaining_time_msec << " remaining_margin " << remaining_time_msec_margin << " now tl " << time_limit << std::endl;
+    if (remaining_time_msec_margin > time_limit) {
+        int remaining_moves_proc = std::max(2, (int)round((remaining_moves - TIME_MANAGEMENT_REMAINING_MOVES_OFFSET) * TIME_MANAGEMENT_N_MOVES_COE)); // at least 2 moves
+        uint64_t additional_time = (remaining_time_msec_margin - time_limit) / remaining_moves_proc * 0.2;
+        if (show_log) {
+            std::cerr << "additional time " << additional_time << std::endl;
+        }
+        time_limit += additional_time;
+    }
+    return time_limit;
 }
 
 
