@@ -690,7 +690,7 @@ Search_result ai_time_limit(Board board, bool use_book, int book_acc_level, bool
                 }
             }
             if (n_good_moves >= 2) {
-                uint64_t self_play_tl = std::max(20000ULL + ponder_tl, (uint64_t)(time_limit * 0.6));
+                uint64_t self_play_tl = std::max(20000ULL + ponder_tl, (uint64_t)(time_limit * std::min(0.6, 0.1 * n_good_moves)));
                 std::vector<Board> self_play_boards;
                 std::vector<int> self_play_depth_arr;
                 for (int i = 0; i < n_good_moves; ++i) {
@@ -710,7 +710,7 @@ Search_result ai_time_limit(Board board, bool use_book, int book_acc_level, bool
                 }
                 for (int i = 0; i < (int)self_play_boards.size(); ++i) {
                     bool depth_updated = true;
-                    while (depth_updated && self_play_depth_arr[i] < n_empties - 1 && self_play_depth_arr[i] < 25) {
+                    while (depth_updated && self_play_depth_arr[i] < n_empties - 1 && self_play_depth_arr[i] < 27) {
                         depth_updated = false;
                         Search tt_search(&self_play_boards[i], MPC_74_LEVEL, true, false);
                         if (transposition_table.has_node(&tt_search, self_play_boards[i].hash(), self_play_depth_arr[i] + 2)) {
