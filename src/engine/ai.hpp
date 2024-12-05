@@ -34,8 +34,6 @@
 
 #define PONDER_START_SELFPLAY_DEPTH 25
 
-#define AI_TIME_LIMIT_SELFPLAY_START_DEPTH 35
-
 struct Lazy_SMP_task {
     uint_fast8_t mpc_level;
     int depth;
@@ -706,7 +704,21 @@ Search_result ai_time_limit(Board board, bool use_book, int book_acc_level, bool
                     std::cerr << std::endl;
                 }
                 bool self_play_searching = true;
-                int self_play_depth = std::min(n_empties, AI_TIME_LIMIT_SELFPLAY_START_DEPTH);
+                int self_play_depth = 21;
+                bool depth_updated = true;
+                while (depth_updated && self_play_depth < n_empties) {
+                    depth_updated = false;
+                    for (Board &board: boards) {
+                        Search tt_search(&board, MPC_74_LEVEL, true, false);
+                        if (transposition_table.has_node(&tt_search, board.hash(), self_play_depth + 1)) {
+                            depth_updated = true;
+                            ++self_play_depth;
+                        }
+                        if (self_play_depth == n_empties) {
+                            break;
+                        }
+                    }
+                }
                 while (tim() - strt < self_play_tl && self_play_depth <= n_empties) {
                     self_play_searching = true;
                     if (show_log) {
