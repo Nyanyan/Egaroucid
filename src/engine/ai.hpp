@@ -1013,10 +1013,17 @@ std::pair<int, int> ai_self_play_random(Board board_start, int mid_depth, bool s
         }
         Search search(&boards[i], mpc_level_arr[n_discs], use_multi_thread, false);
         std::pair<int, int> result = first_nega_scout(&search, -SCORE_MAX, SCORE_MAX, n_depth, n_depth == n_empties, clogs, tim(), searching);
-        analyzed_value = -result.first;
-        if (show_log) {
-            if (i == 0) {
+        if (i == 0 && (*searching) && global_searching) {
+            analyzed_value = -result.first;
+            if (show_log) {
                 std::cerr << " analyzed " << analyzed_value;
+            }
+            if (n_depth < n_empties && score < analyzed_value) {
+                int v = round((double)score * 0.4 + (double)analyzed_value * 0.6);
+                transposition_table.reg(&search, boards[i].hash(), n_depth, -SCORE_MAX, SCORE_MAX, -v, TRANSPOSITION_TABLE_UNDEFINED);
+                if (show_log) {
+                    std::cerr << " tt " << v;
+                }
             }
         }
     }
