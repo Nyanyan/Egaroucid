@@ -156,7 +156,7 @@ class Board {
 
             @return a bitboard with bits of legal cells set
         */
-        inline uint64_t get_legal() {
+        inline uint64_t get_legal() const {
             return calc_legal(player, opponent);
         }
 
