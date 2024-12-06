@@ -35,9 +35,9 @@ constexpr int TIMELIMIT_SEARCH_TRY_ENDGAME_MAX_N_EMPTIES = 42;
 #define NOBOOK_SEARCH_MARGIN 1
 
 #define PONDER_MAX_N_NODES 2000
-#define PONDER_EXPAND_COUNT 15
+#define PONDER_EXPAND_COUNT 5
 
-//#define PONDER_START_SELFPLAY_DEPTH 21
+//#define PONDER_START_SELFPLAY_DEPTH 0
 
 struct Lazy_SMP_task {
     uint_fast8_t mpc_level;
@@ -49,7 +49,7 @@ struct Ponder_elem {
     Board board;
     double value{SCORE_UNDEFINED};
     int count{0};
-    int depth{10}; // start depth=11
+    int depth{0}; // start depth+1
     uint_fast8_t mpc_level{MPC_74_LEVEL};
     bool is_endgame_search{false};
     bool is_complete_search{false};
@@ -1025,9 +1025,83 @@ std::pair<int, int> ai_self_play_random(Board board_start, int mid_depth, bool s
     return std::make_pair(score, analyzed_value);
 }
 
+
+int ai_self_play(Board board_start, int mid_depth, bool show_log, bool use_multi_thread, bool *searching) { // used for ponder
+    Flip flip;
+    Board board = board_start.copy();
+    int depth_arr[HW2];
+    uint_fast8_t mpc_level_arr[HW2];
+    int start_n_discs = board_start.n_discs();
+    for (int n_discs = 4; n_discs < HW2; ++n_discs) {
+        int n_empties = HW2 - n_discs;
+        if (n_empties <= 16) { // complete
+            depth_arr[n_discs] = n_empties;
+            mpc_level_arr[n_discs] = MPC_100_LEVEL;
+        } /*else if (n_empties <= 26) { // 99%
+            depth_arr[n_discs] = n_empties;
+            mpc_level_arr[n_discs] = MPC_99_LEVEL;
+        } else if (n_empties <= 28) { // 98%
+            depth_arr[n_discs] = n_empties;
+            mpc_level_arr[n_discs] = MPC_98_LEVEL;
+        } else if (n_empties <= 30) { // 93%
+            depth_arr[n_discs] = n_empties;
+            mpc_level_arr[n_discs] = MPC_93_LEVEL;
+        }*/ else {
+            depth_arr[n_discs] = std::min(n_empties, std::max(15, mid_depth - (n_discs - start_n_discs)));
+            mpc_level_arr[n_discs] = MPC_74_LEVEL;
+        }
+    }
+    if (show_log) {
+        std::cerr << "mid_depth " << mid_depth << " " << board_start.to_str() << " ";
+    }
+    std::vector<Clog_result> clogs;
+    bool is_player = false; // opponent first
+    bool move_masked = false;
+    while (*searching) { // self play
+        uint64_t legal = board.get_legal();
+        if (legal == 0) {
+            board.pass();
+            is_player ^= 1;
+            legal = board.get_legal();
+            if (legal == 0) {
+                break;
+            }
+        }
+        int n_discs = board.n_discs();
+        int n_empties = HW2 - n_discs;
+        Search search(&board, mpc_level_arr[n_discs], use_multi_thread, false);
+        uint64_t use_legal = legal;
+        std::pair<int, int> result = first_nega_scout_legal(&search, -SCORE_MAX, SCORE_MAX, depth_arr[n_discs], depth_arr[n_discs] == n_empties, clogs, use_legal, tim(), searching);
+        if (show_log) {
+            std::cerr << idx_to_coord(result.second);
+        }
+        calc_flip(&flip, &board, result.second);
+        board.move_board(&flip);
+        is_player ^= 1;
+    }
+    int score = SCORE_UNDEFINED;
+    if (*searching) {
+        score = board.score_player();
+        if (!is_player) {
+            score *= -1;
+        }
+    }
+    if (show_log) {
+        if (!(*searching)) {
+            std::cerr << " terminated";
+        } else {
+            std::cerr << " score " << score;
+        }
+    }
+    return score;
+}
+
+
+
+
 bool comp_ponder_elem(Ponder_elem &a, Ponder_elem &b) {
     if (a.count == b.count) {
-        return a.value > b.value;
+        return -a.value > -b.value;
     }
     return a.count > b.count;
 }
@@ -1095,6 +1169,7 @@ void ponder_update_nodes(Ponder_elem *node, Ponder_elem ponder_elem_arr[], int *
         for (int i = 0; i < node->n_children; ++i) {
             Ponder_elem *child = node->children[i];
             if (child->depth >= node->depth - 1) {
+            //if (child->count) {
                 ++n_accurate_values;
                 nv = std::max(nv, -child->value);
             }
@@ -1157,21 +1232,17 @@ std::vector<Ponder_elem> ai_ponder(Board board, bool show_log, bool *searching) 
         }
         bool new_is_end_search = (new_depth == HW2 - node->board.n_discs());
         bool new_is_complete_search = new_is_end_search && new_mpc_level == MPC_100_LEVEL;
-        Search search(&node->board, new_mpc_level, true, false);
-        //std::cerr << "searching " << new_depth << "@" << SELECTIVITY_PERCENTAGE[new_mpc_level] << "%" << std::endl;
-        int v = nega_scout(&search, -SCORE_MAX, SCORE_MAX, new_depth, false, LEGAL_UNDEFINED, new_is_end_search, searching);
-        /*
-        if (node->board.n_discs() == 23) {
-            std::cerr << "searched " << idx_to_coord(node->played_move) << " " << node->board.to_str() << " " << v << std::endl;
-        }
-        */
+        //Search search(&node->board, new_mpc_level, true, false);
+        //int v = nega_scout(&search, -SCORE_MAX, SCORE_MAX, new_depth, false, LEGAL_UNDEFINED, new_is_end_search, searching);
+        int v = -ai_self_play(node->board, new_depth, false, true, searching);
+        //double v = -(0.3 * self_play_result.first + 1.7 * self_play_result.second) / 2.0;
         //std::cerr << "searched " << node->board.to_str() << " " << v << std::endl;
         /*
         if (new_depth >= PONDER_START_SELFPLAY_DEPTH && !new_is_complete_search) { // additional search (selfplay)
             int self_play_n_played = 0;
             double nv = 0;
             for (int i = 0; i < 2 && (*searching); ++i) {
-                std::pair<int, int> random_played_scores = ai_self_play_random(n_board, root_children[selected_idx].depth, false, true, searching); // no -1 (opponent first)
+                std::pair<int, int> random_played_scores = ai_self_play_random(node->board, new_depth, false, true, searching); // no -1 (opponent first)
                 if (*searching) {
                     nv += random_played_scores.second;
                     ++self_play_n_played;
