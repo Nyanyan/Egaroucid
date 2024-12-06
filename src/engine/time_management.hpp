@@ -33,6 +33,9 @@ uint64_t calc_time_limit_ply(const Board board, uint64_t remaining_time_msec, bo
 
     // first move
     if (n_empties == TIME_MANAGEMENT_INITIAL_N_EMPTIES) {
+        if (show_log) {
+            std::cerr << "first move time limit" << std::endl;
+        }
         return remaining_time_msec_margin * 0.2;
     }
 
