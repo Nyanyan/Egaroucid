@@ -21,6 +21,8 @@
 #include "clogsearch.hpp"
 #include "time_management.hpp"
 
+constexpr int TIMELIMIT_SEARCH_TRY_ENDGAME_MAX_N_EMPTIES = 42;
+
 #define SEARCH_BOOK -1
 
 #define AI_TYPE_BOOK 1000
@@ -423,6 +425,12 @@ void iterative_deepening_search_time_limit(Board board, int alpha, int beta, boo
                 }
             }
         } else { // next: endgame search
+            if (max_depth > TIMELIMIT_SEARCH_TRY_ENDGAME_MAX_N_EMPTIES) {
+                if (show_log) {
+                    std::cerr << "no endgame search here" << std::endl;
+                }
+                break;
+            }
             if (main_depth < max_depth) {
                 main_depth = max_depth;
                 main_mpc_level = MPC_74_LEVEL;

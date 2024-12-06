@@ -12,6 +12,8 @@
 #include "ai.hpp"
 
 
+constexpr int TIME_MANAGEMENT_INITIAL_N_EMPTIES = 46;
+
 
 #define TIME_MANAGEMENT_REMAINING_TIME_OFFSET 10 // ms / move
 #define TIME_MANAGEMENT_REMAINING_MOVES_OFFSET 13 // 13 * 2 = 26 moves
@@ -29,8 +31,8 @@ uint64_t calc_time_limit_ply(const Board board, uint64_t remaining_time_msec, bo
         remaining_time_msec_margin = 1;
     }
 
-    // first move (46 empties)
-    if (n_empties == 46) {
+    // first move
+    if (n_empties == TIME_MANAGEMENT_INITIAL_N_EMPTIES) {
         return remaining_time_msec_margin * 0.2;
     }
 
