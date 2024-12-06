@@ -31,6 +31,7 @@ uint64_t calc_time_limit_ply(const Board board, uint64_t remaining_time_msec, bo
         remaining_time_msec_margin = 1;
     }
 
+#if IS_GGS_TOURNAMENT
     // first move
     if (n_empties == TIME_MANAGEMENT_INITIAL_N_EMPTIES) {
         if (show_log) {
@@ -38,6 +39,7 @@ uint64_t calc_time_limit_ply(const Board board, uint64_t remaining_time_msec, bo
         }
         return remaining_time_msec_margin * 0.2;
     }
+#endif
 
     // try complete search
     // Nodes(depth) = a * exp(b * depth)

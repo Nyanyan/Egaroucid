@@ -432,12 +432,14 @@ void iterative_deepening_search_time_limit(Board board, int alpha, int beta, boo
                 }
             }
         } else { // next: endgame search
+#if IS_GGS_TOURNAMENT
             if (max_depth > TIMELIMIT_SEARCH_TRY_ENDGAME_MAX_N_EMPTIES) {
                 if (show_log) {
                     std::cerr << "no endgame search here" << std::endl;
                 }
                 break;
             }
+#endif
             if (main_depth < max_depth) {
                 main_depth = max_depth;
                 main_mpc_level = MPC_74_LEVEL;

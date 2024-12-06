@@ -19,6 +19,8 @@
 #pragma once
 #include <string>
 
+#define IS_GGS_TOURNAMENT true
+
 /*
     @brief Option
 */
