@@ -49,7 +49,7 @@ struct Ponder_elem {
     Board board;
     double value{SCORE_UNDEFINED};
     int count{0};
-    int depth{0};
+    int depth{10}; // start depth=11
     uint_fast8_t mpc_level{MPC_74_LEVEL};
     bool is_endgame_search{false};
     bool is_complete_search{false};
@@ -694,10 +694,10 @@ Search_result ai_time_limit(Board board, bool use_book, int book_acc_level, bool
         ponder_searching = false;
         std::vector<Ponder_elem> ponder_children = ponder_future.get();
         if (ponder_children.size()) {
-            double best_value = ponder_children[0].value;
+            double best_value = -ponder_children[0].value;
             int n_good_moves = 0;
             for (const Ponder_elem &elem: ponder_children) {
-                if (elem.value >= best_value - 2.0) {
+                if (-elem.value >= best_value - 2.0) {
                     ++n_good_moves;
                 } else {
                     break; // because sorted
@@ -1043,7 +1043,7 @@ Ponder_elem* ponder_get_node(Ponder_elem *parent) {
         if (child->is_complete_search) {
             ucb = -INF;
         } else if (child->count > 0) {
-            ucb = (double)(-child->value + SCORE_MAX) / (double)(SCORE_MAX * 2) + 0.5 * sqrt(log(2.0 * (double)parent->count) / (double)child->count);
+            ucb = (double)(-child->value + SCORE_MAX) / (double)(SCORE_MAX * 2) + 0.75 * sqrt(log(2.0 * (double)parent->count) / (double)child->count);
         }
         //std::cerr << "child " << child->board.n_discs() << " " << child->board.to_str() << " " << ucb << " " << child << std::endl;
         if (ucb > max_ucb) {
@@ -1098,9 +1098,11 @@ void ponder_update_nodes(Ponder_elem *node, Ponder_elem ponder_elem_arr[], int *
             }
         }
         if (n_accurate_values == node->n_children) {
+            /*
             if (node->board.n_discs() == 23 && node->parent != nullptr) {
                 std::cerr << "score_update " << idx_to_coord(node->played_move) << " " << node->board.to_str() << " " << node->value << " to " << nv << std::endl;
             }
+            */
             node->value = nv;
         }
     }
@@ -1156,9 +1158,11 @@ std::vector<Ponder_elem> ai_ponder(Board board, bool show_log, bool *searching) 
         Search search(&node->board, new_mpc_level, true, false);
         //std::cerr << "searching " << new_depth << "@" << SELECTIVITY_PERCENTAGE[new_mpc_level] << "%" << std::endl;
         int v = nega_scout(&search, -SCORE_MAX, SCORE_MAX, new_depth, false, LEGAL_UNDEFINED, new_is_end_search, searching);
+        /*
         if (node->board.n_discs() == 23) {
             std::cerr << "searched " << idx_to_coord(node->played_move) << " " << node->board.to_str() << " " << v << std::endl;
         }
+        */
         //std::cerr << "searched " << node->board.to_str() << " " << v << std::endl;
         /*
         if (new_depth >= PONDER_START_SELFPLAY_DEPTH && !new_is_complete_search) { // additional search (selfplay)
