@@ -49,7 +49,7 @@ struct Ponder_elem {
     Board board;
     double value{SCORE_UNDEFINED};
     int count{0};
-    int depth{0}; // start with depth 21
+    int depth{0};
     uint_fast8_t mpc_level{MPC_74_LEVEL};
     bool is_endgame_search{false};
     bool is_complete_search{false};
@@ -1087,25 +1087,23 @@ void ponder_update_nodes(Ponder_elem *node, Ponder_elem ponder_elem_arr[], int *
         //std::cerr << "expand " << node->board.n_discs() << " " << node->board.to_str() << std::endl;
         ponder_expand_node(node, ponder_elem_arr, n_ponder_elem);
     }
-    /*
     if (node->n_children) {
         double nv = -INF;
-        bool score_updated = false;
+        int n_accurate_values = 0;
         for (int i = 0; i < node->n_children; ++i) {
             Ponder_elem *child = node->children[i];
-            if (child->count) {
+            if (child->depth >= node->depth - 1) {
+                ++n_accurate_values;
                 nv = std::max(nv, -child->value);
-                score_updated = true;
             }
         }
-        if (score_updated) {
-            if (node->board.n_discs() == 23) {
-                std::cerr << "score_update " << node->board.to_str() << " " << node->value << " to " << nv << std::endl;
+        if (n_accurate_values == node->n_children) {
+            if (node->board.n_discs() == 23 && node->parent != nullptr) {
+                std::cerr << "score_update " << idx_to_coord(node->played_move) << " " << node->board.to_str() << " " << node->value << " to " << nv << std::endl;
             }
             node->value = nv;
         }
     }
-    */
     if (node->parent != nullptr) {
         //std::cerr << "updating next " << node->board.n_discs() << " " << node->board.to_str() << " to " << node->parent->board.n_discs() << " " << node->parent->board.to_str() << std::endl;
         ponder_update_nodes(node->parent, ponder_elem_arr, n_ponder_elem);
@@ -1159,7 +1157,7 @@ std::vector<Ponder_elem> ai_ponder(Board board, bool show_log, bool *searching) 
         //std::cerr << "searching " << new_depth << "@" << SELECTIVITY_PERCENTAGE[new_mpc_level] << "%" << std::endl;
         int v = nega_scout(&search, -SCORE_MAX, SCORE_MAX, new_depth, false, LEGAL_UNDEFINED, new_is_end_search, searching);
         if (node->board.n_discs() == 23) {
-            std::cerr << "searched " << node->board.to_str() << " " << v << std::endl;
+            std::cerr << "searched " << idx_to_coord(node->played_move) << " " << node->board.to_str() << " " << v << std::endl;
         }
         //std::cerr << "searched " << node->board.to_str() << " " << v << std::endl;
         /*
