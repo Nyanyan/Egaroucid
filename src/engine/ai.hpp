@@ -424,7 +424,7 @@ void iterative_deepening_search_time_limit(Board board, int alpha, int beta, boo
             }
         } else { // next: endgame search
 #if IS_GGS_TOURNAMENT
-            if (max_depth > 42) {
+            if (max_depth > 43) {
                 if (show_log) {
                     std::cerr << "no endgame search here" << std::endl;
                 }
