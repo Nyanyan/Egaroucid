@@ -952,17 +952,17 @@ std::pair<int, int> ai_self_play_random(Board board_start, int mid_depth, bool s
         uint64_t use_legal = legal;
         bool is_complete_search = (depth_arr[n_discs] == n_empties) && (mpc_level_arr[n_discs] == MPC_100_LEVEL);
         //bool is_end_search = (depth_arr[n_discs] == n_empties);
-        if (pop_count_ull(use_legal) > 1 && !is_player && !is_complete_search) { // off opponent's best move randomly
-            uint_fast8_t moves[2];
-            if (transposition_table.get_moves_any_level(&board, board.hash(), moves)) {
-                std::pair<int, int> presearch_masked_result = first_nega_scout_legal(&search, -SCORE_MAX, SCORE_MAX, 9, (9 == n_empties), clogs, legal & ~(1ULL << moves[0]), tim(), searching);
-                std::pair<int, int> presearch_result = first_nega_scout_legal(&search, -SCORE_MAX, SCORE_MAX, 9, (9 == n_empties), clogs, legal, tim(), searching);
+        for (int i = 0; i < 2; ++i) {
+            if (pop_count_ull(use_legal) > 1 && !is_player && !is_complete_search && myrandom() < 0.5) { // off opponent's best move randomly
+                std::pair<int, int> presearch_result = first_nega_scout_legal(&search, -SCORE_MAX, SCORE_MAX, 9, (9 == n_empties), clogs, use_legal, tim(), searching);
+                uint64_t n_legal = use_legal & ~(1ULL << presearch_result.second); // off best move
+                std::pair<int, int> presearch_masked_result = first_nega_scout_legal(&search, -SCORE_MAX, SCORE_MAX, 9, (9 == n_empties), clogs, n_legal, tim(), searching);
                 if (presearch_masked_result.first >= presearch_result.first - 6) {
-                    if (myrandom() < 0.5) {
-                        use_legal &= ~(1ULL << moves[0]);
-                        move_masked = true;
-                    }
+                    use_legal = n_legal;
+                    move_masked = true;
                 }
+            } else {
+                break;
             }
         }
         std::pair<int, int> result = first_nega_scout_legal(&search, -SCORE_MAX, SCORE_MAX, depth_arr[n_discs], depth_arr[n_discs] == n_empties, clogs, use_legal, tim(), searching);
