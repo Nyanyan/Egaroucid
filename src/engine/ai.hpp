@@ -671,16 +671,17 @@ Search_result ai_specified(Board board, int level, bool use_book, int book_acc_l
 }
 
 Search_result ai_time_limit(Board board, bool use_book, int book_acc_level, bool use_multi_thread, bool show_log, uint64_t remaining_time_msec) {
+    transposition_table.reset_importance();
     uint64_t time_limit = calc_time_limit_ply(board, remaining_time_msec, show_log);
     if (show_log) {
         std::cerr << "time limit " << time_limit << " remaining " << remaining_time_msec << std::endl;
     }
     int n_empties = HW2 - board.n_discs();
-    if (time_limit > 30000ULL && n_empties >= 34) { // additional search
+    if (time_limit > 35000ULL && n_empties >= 34) { // additional search
         uint64_t strt = tim();
         bool need_request_more_time = false;
         bool ponder_searching = true;
-        uint64_t ponder_tl = 7000ULL;
+        uint64_t ponder_tl = 10000ULL;
         std::cerr << "pre search by ponder tl " << ponder_tl << std::endl;
         std::future<std::vector<Ponder_elem>> ponder_future = std::async(std::launch::async, ai_ponder, board, show_log, &ponder_searching);
         while (tim() - strt < ponder_tl && ponder_future.wait_for(std::chrono::seconds(0)) != std::future_status::ready);
@@ -700,7 +701,7 @@ Search_result ai_time_limit(Board board, bool use_book, int book_acc_level, bool
                 }
             }
             if (n_good_moves >= 2) {
-                uint64_t self_play_tl = std::max(20000ULL + ponder_tl, (uint64_t)(time_limit * std::min(0.7, 0.15 * n_good_moves)));
+                uint64_t self_play_tl = std::max(20000ULL + ponder_tl, (uint64_t)(time_limit * std::min(0.8, 0.2 * n_good_moves)));
                 std::vector<Board> self_play_boards;
                 std::vector<int> self_play_depth_arr;
                 for (int i = 0; i < n_good_moves; ++i) {
@@ -720,7 +721,7 @@ Search_result ai_time_limit(Board board, bool use_book, int book_acc_level, bool
                 }
                 for (int i = 0; i < (int)self_play_boards.size(); ++i) {
                     bool depth_updated = true;
-                    while (depth_updated && self_play_depth_arr[i] < n_empties - 1 && self_play_depth_arr[i] < 27) {
+                    while (depth_updated && self_play_depth_arr[i] < n_empties - 1) {
                         depth_updated = false;
                         Search tt_search(&self_play_boards[i], MPC_74_LEVEL, true, false);
                         if (transposition_table.has_node(&tt_search, self_play_boards[i].hash(), self_play_depth_arr[i] + 1)) {
@@ -1106,10 +1107,11 @@ std::vector<Ponder_elem> ai_ponder(Board board, bool show_log, bool *searching) 
         bool new_is_complete_search = new_is_end_search && new_mpc_level == MPC_100_LEVEL;
         Search search(&n_board, new_mpc_level, true, false);
         int v = -nega_scout(&search, -SCORE_MAX, SCORE_MAX, new_depth, false, LEGAL_UNDEFINED, new_is_end_search, searching);
+        /*
         if (new_depth >= PONDER_START_SELFPLAY_DEPTH && !new_is_complete_search) { // additional search (selfplay)
             int self_play_n_played = 0;
             double nv = 0;
-            for (int i = 0; i < 3 && (*searching); ++i) {
+            for (int i = 0; i < 2 && (*searching); ++i) {
                 std::pair<int, int> random_played_scores = ai_self_play_random(n_board, move_list[selected_idx].depth, false, true, searching); // no -1 (opponent first)
                 if (*searching) {
                     nv += random_played_scores.second;
@@ -1121,6 +1123,7 @@ std::vector<Ponder_elem> ai_ponder(Board board, bool show_log, bool *searching) 
                 v = ((double)v * 0.9 + (double)nv * 1.1) / 2.0;
             }
         }
+        */
         if (*searching) {
             if (move_list[selected_idx].value == INF || new_is_end_search) {
                 move_list[selected_idx].value = v;
