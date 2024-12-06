@@ -405,14 +405,6 @@ void iterative_deepening_search_time_limit(Board board, int alpha, int beta, boo
                     main_mpc_level = MPC_74_LEVEL;
                 }
             } else {
-#if IS_GGS_TOURNAMENT
-                if (max_depth > 42) {
-                    if (show_log) {
-                        std::cerr << "no endgame search here" << std::endl;
-                    }
-                    break;
-                }
-#endif
                 if (main_depth + 1 < 23) {
                     ++main_depth;
                     if (main_depth > 13 && main_mpc_level == MPC_100_LEVEL) {
@@ -431,6 +423,14 @@ void iterative_deepening_search_time_limit(Board board, int alpha, int beta, boo
                 }
             }
         } else { // next: endgame search
+#if IS_GGS_TOURNAMENT
+            if (max_depth > 42) {
+                if (show_log) {
+                    std::cerr << "no endgame search here" << std::endl;
+                }
+                break;
+            }
+#endif
             if (main_depth < max_depth) {
                 main_depth = max_depth;
                 main_mpc_level = MPC_74_LEVEL;
@@ -931,7 +931,11 @@ std::pair<int, int> ai_self_play_random(Board board_start, int mid_depth, bool s
             depth_arr[n_discs] = n_empties;
             mpc_level_arr[n_discs] = MPC_93_LEVEL;
         }*/ else {
-            depth_arr[n_discs] = std::min(n_empties, std::max(21, mid_depth - (n_discs - start_n_discs)));
+            if (n_discs == board_start.n_discs()) {
+                depth_arr[n_discs] = std::min(n_empties, std::max(21, mid_depth - (n_discs - start_n_discs)));
+            } else {
+                depth_arr[n_discs] = 21;
+            }
             mpc_level_arr[n_discs] = MPC_74_LEVEL;
         }
     }
@@ -960,17 +964,17 @@ std::pair<int, int> ai_self_play_random(Board board_start, int mid_depth, bool s
         uint64_t use_legal = legal;
         bool is_complete_search = (depth_arr[n_discs] == n_empties) && (mpc_level_arr[n_discs] == MPC_100_LEVEL);
         //bool is_end_search = (depth_arr[n_discs] == n_empties);
-        if (pop_count_ull(use_legal) > 1 && !is_player && !is_complete_search) { // off opponent's best move randomly
-            uint_fast8_t moves[2];
-            if (transposition_table.get_moves_any_level(&board, board.hash(), moves)) {
-                std::pair<int, int> presearch_masked_result = first_nega_scout_legal(&search, -SCORE_MAX, SCORE_MAX, 9, (9 == n_empties), clogs, legal & ~(1ULL << moves[0]), tim(), searching);
-                std::pair<int, int> presearch_result = first_nega_scout_legal(&search, -SCORE_MAX, SCORE_MAX, 9, (9 == n_empties), clogs, legal, tim(), searching);
+        for (int i = 0; i < 2; ++i) {
+            if (pop_count_ull(use_legal) > 1 && !is_player && !is_complete_search && myrandom() < 0.33) { // off opponent's best move randomly
+                std::pair<int, int> presearch_result = first_nega_scout_legal(&search, -SCORE_MAX, SCORE_MAX, 9, (9 == n_empties), clogs, use_legal, tim(), searching);
+                uint64_t n_legal = use_legal & ~(1ULL << presearch_result.second); // off best move
+                std::pair<int, int> presearch_masked_result = first_nega_scout_legal(&search, -SCORE_MAX, SCORE_MAX, 9, (9 == n_empties), clogs, n_legal, tim(), searching);
                 if (presearch_masked_result.first >= presearch_result.first - 6) {
-                    if (myrandom() < 0.5) {
-                        use_legal &= ~(1ULL << moves[0]);
-                        move_masked = true;
-                    }
+                    use_legal = n_legal;
+                    move_masked = true;
                 }
+            } else {
+                break;
             }
         }
         std::pair<int, int> result = first_nega_scout_legal(&search, -SCORE_MAX, SCORE_MAX, depth_arr[n_discs], depth_arr[n_discs] == n_empties, clogs, use_legal, tim(), searching);
@@ -999,12 +1003,8 @@ std::pair<int, int> ai_self_play_random(Board board_start, int mid_depth, bool s
     for (int i = (int)boards.size() - 1; i >= 0 && (*searching); --i) { // analyze
         int n_discs = boards[i].n_discs();
         int n_empties = HW2 - n_discs;
-        int n_depth = depth_arr[n_discs];
-        //if (n_depth + 1 < n_empties && i == 0) {
-        //    ++n_depth;
-        //}
         Search search(&boards[i], mpc_level_arr[n_discs], use_multi_thread, false);
-        std::pair<int, int> result = first_nega_scout(&search, -SCORE_MAX, SCORE_MAX, n_depth, n_depth == n_empties, clogs, tim(), searching);
+        std::pair<int, int> result = first_nega_scout(&search, -SCORE_MAX, SCORE_MAX, depth_arr[n_discs], depth_arr[n_discs] == n_empties, clogs, tim(), searching);
         analyzed_value = -result.first;
         if (show_log) {
             if (i == 0) {
