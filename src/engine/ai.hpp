@@ -429,9 +429,11 @@ void iterative_deepening_search_time_limit(Board board, int alpha, int beta, boo
             } else{
                 if (main_mpc_level < MPC_100_LEVEL) {
                     ++main_mpc_level;
-                } else{
-                    if (show_log) {
-                        std::cerr << "completely searched" << std::endl;
+                } else {
+                    if (search_success) {
+                        if (show_log) {
+                            std::cerr << "completely searched" << std::endl;
+                        }
                     }
                     break;
                 }
