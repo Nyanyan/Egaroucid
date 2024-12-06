@@ -931,11 +931,14 @@ std::pair<int, int> ai_self_play_random(Board board_start, int mid_depth, bool s
             depth_arr[n_discs] = n_empties;
             mpc_level_arr[n_discs] = MPC_93_LEVEL;
         }*/ else {
-            if (n_discs == board_start.n_discs()) {
+            /*
+            if (n_discs == start_n_discs) {
                 depth_arr[n_discs] = std::min(n_empties, std::max(21, mid_depth - (n_discs - start_n_discs)));
             } else {
                 depth_arr[n_discs] = 21;
             }
+            */
+            depth_arr[n_discs] = 21;
             mpc_level_arr[n_discs] = MPC_74_LEVEL;
         }
     }
@@ -1003,8 +1006,13 @@ std::pair<int, int> ai_self_play_random(Board board_start, int mid_depth, bool s
     for (int i = (int)boards.size() - 1; i >= 0 && (*searching); --i) { // analyze
         int n_discs = boards[i].n_discs();
         int n_empties = HW2 - n_discs;
+        int n_depth = depth_arr[n_discs];
+        if (i == 0) {
+            //n_depth = std::min(n_empties, std::max(21, mid_depth - (n_discs - start_n_discs)));
+            n_depth = std::min(n_empties, std::max(21, mid_depth));
+        }
         Search search(&boards[i], mpc_level_arr[n_discs], use_multi_thread, false);
-        std::pair<int, int> result = first_nega_scout(&search, -SCORE_MAX, SCORE_MAX, depth_arr[n_discs], depth_arr[n_discs] == n_empties, clogs, tim(), searching);
+        std::pair<int, int> result = first_nega_scout(&search, -SCORE_MAX, SCORE_MAX, n_depth, n_depth == n_empties, clogs, tim(), searching);
         analyzed_value = -result.first;
         if (show_log) {
             if (i == 0) {
