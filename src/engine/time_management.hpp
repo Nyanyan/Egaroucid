@@ -29,6 +29,11 @@ uint64_t calc_time_limit_ply(const Board board, uint64_t remaining_time_msec, bo
         remaining_time_msec_margin = 1;
     }
 
+    // first move (46 empties)
+    if (n_empties == 46) {
+        return remaining_time_msec_margin * 0.2;
+    }
+
     // try complete search
     // Nodes(depth) = a * exp(b * depth)
     constexpr double complete_const_a = 0.70; //2.1747;
