@@ -49,8 +49,8 @@ uint64_t calc_time_limit_ply(const Board board, uint64_t remaining_time_msec, bo
 
     // try endgame search
     // Nodes(depth) = a * exp(b * depth)
-    constexpr double endgame_const_a = 0.03; //1.8654;
-    constexpr double endgame_const_b = 0.61;
+    constexpr double endgame_const_a = 0.05; //1.8654;
+    constexpr double endgame_const_b = 0.62;
     constexpr double endgame_nps = 3.5e8;
     double endgame_use_time = (double)remaining_time_msec_margin * 0.15;
     double endgame_search_depth = log(endgame_use_time / 1000.0 * endgame_nps / endgame_const_a) / endgame_const_b;

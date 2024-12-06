@@ -34,7 +34,7 @@ constexpr int TIMELIMIT_SEARCH_TRY_ENDGAME_MAX_N_EMPTIES = 42;
 #define NOBOOK_SEARCH_LEVEL 10
 #define NOBOOK_SEARCH_MARGIN 1
 
-#define PONDER_START_SELFPLAY_DEPTH 27
+#define PONDER_START_SELFPLAY_DEPTH 21
 
 struct Lazy_SMP_task {
     uint_fast8_t mpc_level;
@@ -720,7 +720,7 @@ Search_result ai_time_limit(Board board, bool use_book, int book_acc_level, bool
                 }
                 for (int i = 0; i < (int)self_play_boards.size(); ++i) {
                     bool depth_updated = true;
-                    while (depth_updated && self_play_depth_arr[i] < n_empties - 1) {
+                    while (depth_updated && self_play_depth_arr[i] < n_empties - 1 && self_play_depth_arr[i] < 27) {
                         depth_updated = false;
                         Search tt_search(&self_play_boards[i], MPC_74_LEVEL, true, false);
                         if (transposition_table.has_node(&tt_search, self_play_boards[i].hash(), self_play_depth_arr[i] + 1)) {
@@ -1107,12 +1107,18 @@ std::vector<Ponder_elem> ai_ponder(Board board, bool show_log, bool *searching) 
         Search search(&n_board, new_mpc_level, true, false);
         int v = -nega_scout(&search, -SCORE_MAX, SCORE_MAX, new_depth, false, LEGAL_UNDEFINED, new_is_end_search, searching);
         if (new_depth >= PONDER_START_SELFPLAY_DEPTH && !new_is_complete_search) { // additional search (selfplay)
-            std::pair<int, int> random_played_scores = ai_self_play_random(n_board, move_list[selected_idx].depth, false, true, searching); // no -1 (opponent first)
+            int self_play_n_played = 0;
+            double nv = 0;
+            for (int i = 0; i < 3 && (*searching); ++i) {
+                std::pair<int, int> random_played_scores = ai_self_play_random(n_board, move_list[selected_idx].depth, false, true, searching); // no -1 (opponent first)
+                if (*searching) {
+                    nv += random_played_scores.second;
+                    ++self_play_n_played;
+                }
+            }
             if (*searching) {
-                //double nv = ((double)v * 1.1 + (double)v2 * 0.9) / 2.0;
-                //std::cerr << idx_to_coord(move_list[selected_idx].flip.pos) << " depth " << new_depth << "@" << SELECTIVITY_PERCENTAGE[new_mpc_level] << "%" << " v " << v << " v2 " << v2 << " new_v " << nv << std::endl;
-                //v = nv;
-                v = ((double)v * 1.1 + (double)random_played_scores.second * 0.9) / 2.0;
+                nv /= self_play_n_played;
+                v = ((double)v * 0.9 + (double)nv * 1.1) / 2.0;
             }
         }
         if (*searching) {
