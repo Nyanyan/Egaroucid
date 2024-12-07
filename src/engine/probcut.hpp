@@ -32,6 +32,7 @@ constexpr double SELECTIVITY_MPCT[N_SELECTIVITY_LEVEL] = {1.13, 1.55, 1.81, 2.32
 /*
     @brief constants for ProbCut error calculation
 */
+/*
 constexpr double probcut_a = 0.9356624692682063;
 constexpr double probcut_b = -6.722694156011038;
 constexpr double probcut_c = 1.2405664710104887;
@@ -39,6 +40,14 @@ constexpr double probcut_d = 0.4534655399486707;
 constexpr double probcut_e = 2.6718081516048797;
 constexpr double probcut_f = 3.00563773728134;
 constexpr double probcut_g = 1.9735093734031988;
+*/
+constexpr double probcut_a = 0.7308488452189136;
+constexpr double probcut_b = -4.5708322989025865;
+constexpr double probcut_c = 1.096319765006055;
+constexpr double probcut_d = -0.8362251801219095;
+constexpr double probcut_e = 4.610017383697701;
+constexpr double probcut_f = 3.818582623595395;
+constexpr double probcut_g = 1.7775013664098447;
 
 #if USE_MPC_PRE_CALCULATION
 int mpc_error[N_SELECTIVITY_LEVEL][HW2 + 1][HW2 - 3][HW2 - 3];
@@ -79,12 +88,14 @@ inline bool mpc(Search* search, int alpha, int beta, int depth, uint64_t legal, 
     }
     int search_depth = ((depth / 3) & 0b11111110) + (depth & 1); // depth / 3 + parity
     int d0value = mid_evaluate_diff(search);
+    /*
     if (alpha - MPC_ADD_DEPTH_VALUE_THRESHOLD < d0value && d0value < beta + MPC_ADD_DEPTH_VALUE_THRESHOLD) {
         search_depth += 2; // if value is near [alpha, beta], increase search_depth
         if (search_depth >= depth) {
             return false;
         }
     }
+    */
     if (search_depth == 0) {
         #if USE_MPC_PRE_CALCULATION
             int error = mpc_error[search->mpc_level][search->n_discs][0][depth];
