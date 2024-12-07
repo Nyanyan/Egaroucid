@@ -77,7 +77,7 @@ inline bool mpc(Search* search, int alpha, int beta, int depth, uint64_t legal, 
     if (search->mpc_level == MPC_100_LEVEL || depth < USE_MPC_MIN_DEPTH) {
         return false;
     }
-    int search_depth = ((depth >> 2) & 0b11111110) + (depth & 1); // depth / 8 * 2 + depth % 2
+    int search_depth = ((depth / 3) & 0b11111110) + (depth & 1); // depth / 3 + parity
     int d0value = mid_evaluate_diff(search);
     if (alpha - MPC_ADD_DEPTH_VALUE_THRESHOLD < d0value && d0value < beta + MPC_ADD_DEPTH_VALUE_THRESHOLD) {
         search_depth += 2; // if value is near [alpha, beta], increase search_depth

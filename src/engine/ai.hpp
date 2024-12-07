@@ -424,6 +424,7 @@ void iterative_deepening_search_time_limit(Board board, int alpha, int beta, boo
                 }
             }
         } else { // next: endgame search
+            /*
 #if IS_GGS_TOURNAMENT
             if (max_depth > 43) {
                 if (show_log) {
@@ -432,6 +433,7 @@ void iterative_deepening_search_time_limit(Board board, int alpha, int beta, boo
                 break;
             }
 #endif
+            */
             if (main_depth < max_depth) {
                 main_depth = max_depth;
                 main_mpc_level = MPC_74_LEVEL;
