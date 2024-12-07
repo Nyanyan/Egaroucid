@@ -30,6 +30,7 @@
 #endif
 #define N_TRANSPOSITION_MOVES 2
 #define TT_REGISTER_THRESHOLD_RATE 4.0
+#define TT_REG_LOWER_LEVEL_WINDOW_WIDTH_OFFSET 3
 
 bool transposition_table_auto_reset_importance = true;
 
@@ -506,7 +507,14 @@ class Transposition_table {
             Hash_node *node = get_node(hash);
             const uint32_t level = get_level_common(depth, search->mpc_level);
             uint32_t node_level;
-            int node_window_width;
+            int node_window_width, new_window = INF;
+            if (alpha < value && value < beta) {
+                new_window = 0;
+            } else if (value < alpha) {
+                new_window = value - (-SCORE_MAX);
+            } else if (beta < value) {
+                new_window = SCORE_MAX - value;
+            }
             #if TT_REGISTER_MIN_LEVEL
                 Hash_node *min_level_node = nullptr;
                 uint32_t min_level = 0x4fffffff;
@@ -544,9 +552,9 @@ class Transposition_table {
                                     break;
                                 #endif
                             }
-                        } else if (node->board.player == search->board.player && node->board.opponent == search->board.opponent) {
+                        } else if (node->board.player == search->board.player && node->board.opponent == search->board.opponent) { // lower level
                             node_window_width = node->data.get_window_width();
-                            if (beta - alpha <= node_window_width - 3) {
+                            if (new_window <= node_window_width - TT_REG_LOWER_LEVEL_WINDOW_WIDTH_OFFSET) {
                                 node->data.reg_new_level(depth, search->mpc_level, alpha, beta, value, policy);
                                 node->lock.unlock();
                                 break;
