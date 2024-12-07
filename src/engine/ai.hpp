@@ -716,7 +716,7 @@ Search_result ai_time_limit(Board board, bool use_book, int book_acc_level, bool
                 }
                 for (int i = 0; i < (int)self_play_boards.size(); ++i) {
                     bool depth_updated = true;
-                    while (depth_updated && self_play_depth_arr[i] < std::max(25, n_empties - 1)) {
+                    while (depth_updated && self_play_depth_arr[i] < std::min(25, n_empties - 1)) {
                         depth_updated = false;
                         Search tt_search(&self_play_boards[i], MPC_74_LEVEL, true, false);
                         int l = -SCORE_MAX, u = SCORE_MAX;
@@ -1064,6 +1064,12 @@ std::vector<Ponder_elem> ai_ponder(Board board, bool show_log, bool *searching) 
                     depth_updated = true;
                 }
             }
+        }
+    }
+    if (show_log) {
+        std::cerr << "starting depth" << std::endl;
+        for (Ponder_elem &elem: move_list) {
+            std::cerr << idx_to_coord(elem.flip.pos) << " " << elem.depth << std::endl;
         }
     }
     int n_searched_all = 0;
