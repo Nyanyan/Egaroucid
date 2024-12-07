@@ -705,7 +705,7 @@ Search_result ai_time_limit(Board board, bool use_book, int book_acc_level, bool
                     Board n_board = board.copy();
                     n_board.move_board(&ponder_move_list[i].flip);
                     self_play_boards.emplace_back(n_board);
-                    self_play_depth_arr.emplace_back(21); // initial depth
+                    self_play_depth_arr.emplace_back(23); // initial depth
                 }
                 int board_idx = 0;
                 int n_searched = 0;
@@ -716,7 +716,7 @@ Search_result ai_time_limit(Board board, bool use_book, int book_acc_level, bool
                     }
                     std::cerr << std::endl;
                 }
-                
+                /*
                 for (int i = 0; i < (int)self_play_boards.size(); ++i) {
                     bool depth_updated = true;
                     while (depth_updated && self_play_depth_arr[i] < std::min(30, n_empties - 1)) {
@@ -731,7 +731,7 @@ Search_result ai_time_limit(Board board, bool use_book, int book_acc_level, bool
                         }
                     }
                 }
-                
+                */
                 int self_play_n_finished = 0;
                 int n_all_looped = 0;
                 while (tim() - strt < self_play_tl && self_play_n_finished < (int)self_play_boards.size() && n_all_looped < 20) {
@@ -911,6 +911,13 @@ void ai_hint(Board board, int level, bool use_book, int book_acc_level, bool use
 }
 
 std::pair<int, int> ai_self_play_random(Board board_start, int root_depth, bool show_log, bool use_multi_thread, bool *searching) { // used for ponder
+    int l = -SCORE_MAX, u = SCORE_MAX, former_val = SCORE_UNDEFINED;
+    Search ttsearch(&board_start, MPC_74_LEVEL, use_multi_thread, false);
+    transposition_table.get_bounds(&ttsearch, board_start.hash(), root_depth - 1, &l, &u);
+    if (l == u) {
+        former_val = -l;
+        //std::cerr << "former " << root_depth - 1 << " " << l << " " << u << " " << former_val << std::endl;
+    }
     Flip flip;
     Board board = board_start.copy();
     std::vector<Board> boards;
@@ -952,17 +959,16 @@ std::pair<int, int> ai_self_play_random(Board board_start, int root_depth, bool 
         uint64_t use_legal = legal;
         bool is_complete_search = (depth_arr[n_discs] == n_empties) && (mpc_level_arr[n_discs] == MPC_100_LEVEL);
         //bool is_end_search = (depth_arr[n_discs] == n_empties);
-        for (int i = 0; i < 2; ++i) {
-            if (pop_count_ull(use_legal) > 1 && !is_player && !is_complete_search && myrandom() < 0.33) { // off opponent's best move randomly
-                std::pair<int, int> presearch_result = first_nega_scout_legal(&search, -SCORE_MAX, SCORE_MAX, 9, (9 == n_empties), clogs, use_legal, tim(), searching);
+        if (pop_count_ull(use_legal) > 1 && !is_player && !is_complete_search && myrandom() < 0.5) {
+            int n_off = myrandrange(0, 3);
+            for (int i = 0; i < n_off; ++i) {
+                std::pair<int, int> presearch_result = first_nega_scout_legal(&search, -SCORE_MAX, SCORE_MAX, 11, (11 == n_empties), clogs, use_legal, tim(), searching);
                 uint64_t n_legal = use_legal & ~(1ULL << presearch_result.second); // off best move
-                std::pair<int, int> presearch_masked_result = first_nega_scout_legal(&search, -SCORE_MAX, SCORE_MAX, 9, (9 == n_empties), clogs, n_legal, tim(), searching);
-                if (presearch_masked_result.first >= presearch_result.first - 6) {
+                std::pair<int, int> presearch_masked_result = first_nega_scout_legal(&search, -SCORE_MAX, SCORE_MAX, 11, (11 == n_empties), clogs, n_legal, tim(), searching);
+                if (presearch_masked_result.first >= presearch_result.first - 4) {
                     use_legal = n_legal;
                     move_masked = true;
                 }
-            } else {
-                break;
             }
         }
         std::pair<int, int> result = first_nega_scout_legal(&search, -SCORE_MAX, SCORE_MAX, depth_arr[n_discs], depth_arr[n_discs] == n_empties, clogs, use_legal, tim(), searching);
@@ -1002,14 +1008,18 @@ std::pair<int, int> ai_self_play_random(Board board_start, int root_depth, bool 
             if (show_log) {
                 std::cerr << " analyzed " << analyzed_value;
             }
-            int registered_value = analyzed_value;
+            double registered_value = analyzed_value;
             if (score < analyzed_value && n_depth < n_empties) {
-                registered_value = round((double)score * 0.6 + (double)analyzed_value * 0.4);
+                registered_value = (double)score * 0.6 + (double)analyzed_value * 0.4;
             }
-            transposition_table.reg_overwrite(&search, boards[i].hash(), n_depth, -SCORE_MAX, SCORE_MAX, -registered_value, TRANSPOSITION_TABLE_UNDEFINED);
+            if (former_val < registered_value && former_val != SCORE_UNDEFINED) {
+                registered_value = (double)former_val * 0.5 + (double)registered_value * 0.5;
+            }
+            int registered_value_int = round(registered_value);
+            transposition_table.reg_overwrite(&search, boards[i].hash(), n_depth, -SCORE_MAX, SCORE_MAX, -registered_value_int, TRANSPOSITION_TABLE_UNDEFINED);
             if (show_log) {
-                std::cerr << " tt " << registered_value;
-                if (analyzed_value != registered_value) {
+                std::cerr << " tt " << registered_value_int;
+                if (analyzed_value != registered_value_int) {
                     std::cerr << " updated";
                 }
             }

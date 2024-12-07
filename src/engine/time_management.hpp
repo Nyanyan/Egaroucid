@@ -57,7 +57,6 @@ uint64_t calc_time_limit_ply(const Board board, uint64_t remaining_time_msec, bo
     double endgame_use_time = (double)remaining_time_msec_margin * 0.15;
     double endgame_search_depth = log(endgame_use_time / 1000.0 * endgame_nps / endgame_const_a) / endgame_const_b;
 
-
     if (show_log) {
         std::cerr << "complete search depth " << complete_search_depth << " endgame search depth " << endgame_search_depth << " n_empties " << n_empties << std::endl;
     }
