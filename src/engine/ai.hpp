@@ -1050,6 +1050,7 @@ std::vector<Ponder_elem> ai_ponder(Board board, bool show_log, bool *searching) 
         ++idx;
     }
     const int max_depth = HW2 - board.n_discs() - 1;
+    /*
     for (Ponder_elem &elem: move_list) {
         bool depth_updated = true;
         while (depth_updated && elem.depth < std::min(21, max_depth)) {
@@ -1072,6 +1073,7 @@ std::vector<Ponder_elem> ai_ponder(Board board, bool show_log, bool *searching) 
             std::cerr << idx_to_coord(elem.flip.pos) << " " << elem.depth << std::endl;
         }
     }
+    */
     int n_searched_all = 0;
     while (*searching) {
         int selected_idx = -1;
