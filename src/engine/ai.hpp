@@ -679,7 +679,7 @@ Search_result ai_time_limit(Board board, bool use_book, int book_acc_level, bool
         uint64_t strt = tim();
         bool need_request_more_time = false;
         bool get_values_searching = true;
-        uint64_t get_values_tl = 3000ULL;
+        uint64_t get_values_tl = 2000ULL;
         std::cerr << "getting values tl " << get_values_tl << std::endl;
         std::vector<Ponder_elem> ponder_move_list = ai_get_values(board, show_log, get_values_tl);
         if (ponder_move_list.size()) {
@@ -998,11 +998,15 @@ std::pair<int, int> ai_self_play_random(Board board_start, int root_depth, bool 
             if (show_log) {
                 std::cerr << " analyzed " << analyzed_value;
             }
-            if (n_depth < n_empties && score < analyzed_value) {
-                int v = round((double)score * 0.4 + (double)analyzed_value * 0.6);
-                transposition_table.reg(&search, boards[i].hash(), n_depth, -SCORE_MAX, SCORE_MAX, -v, TRANSPOSITION_TABLE_UNDEFINED);
-                if (show_log) {
-                    std::cerr << " tt " << v;
+            int registered_value = analyzed_value;
+            if (score < analyzed_value && n_depth < n_empties) {
+                registered_value = round((double)score * 0.6 + (double)analyzed_value * 0.4);
+            }
+            transposition_table.reg_overwrite(&search, boards[i].hash(), n_depth, -SCORE_MAX, SCORE_MAX, -registered_value, TRANSPOSITION_TABLE_UNDEFINED);
+            if (show_log) {
+                std::cerr << " tt " << registered_value;
+                if (analyzed_value != registered_value) {
+                    std::cerr << " updated";
                 }
             }
         }
@@ -1122,14 +1126,18 @@ std::vector<Ponder_elem> ai_ponder(Board board, bool show_log, bool *searching) 
         bool new_is_end_search = (new_depth == max_depth);
         bool new_is_complete_search = new_is_end_search && new_mpc_level == MPC_100_LEVEL;
         Search search(&n_board, new_mpc_level, true, false);
-        int v = -nega_scout(&search, -SCORE_MAX, SCORE_MAX, new_depth, false, LEGAL_UNDEFINED, new_is_end_search, searching);
-        if (new_depth >= PONDER_START_SELFPLAY_DEPTH && !new_is_complete_search) { // additional search (selfplay)
+        int v = SCORE_UNDEFINED;
+        if (new_depth < PONDER_START_SELFPLAY_DEPTH || new_is_end_search) {
+            v = -nega_scout(&search, -SCORE_MAX, SCORE_MAX, new_depth, false, LEGAL_UNDEFINED, new_is_end_search, searching);
+        }
+        if (new_depth >= PONDER_START_SELFPLAY_DEPTH && !new_is_complete_search) { // selfplay
             std::pair<int, int> random_played_scores = ai_self_play_random(n_board, move_list[selected_idx].depth, false, true, searching); // no -1 (opponent first)
             if (*searching) {
-                //double nv = ((double)v * 1.1 + (double)v2 * 0.9) / 2.0;
-                //std::cerr << idx_to_coord(move_list[selected_idx].flip.pos) << " depth " << new_depth << "@" << SELECTIVITY_PERCENTAGE[new_mpc_level] << "%" << " v " << v << " v2 " << v2 << " new_v " << nv << std::endl;
-                //v = nv;
-                v = ((double)v * 1.1 + (double)random_played_scores.second * 0.9) / 2.0;
+                if (v == SCORE_UNDEFINED) {
+                    v = random_played_scores.second;
+                } else {
+                    v = ((double)v * 1.1 + (double)random_played_scores.second * 0.9) / 2.0;
+                }
             }
         }
         if (*searching) {

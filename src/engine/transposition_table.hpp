@@ -507,14 +507,6 @@ class Transposition_table {
             Hash_node *node = get_node(hash);
             const uint32_t level = get_level_common(depth, search->mpc_level);
             uint32_t node_level;
-            int node_window_width, new_window = INF;
-            if (alpha < value && value < beta) {
-                new_window = 0;
-            } else if (value < alpha) {
-                new_window = value - (-SCORE_MAX);
-            } else if (beta < value) {
-                new_window = SCORE_MAX - value;
-            }
             #if TT_REGISTER_MIN_LEVEL
                 Hash_node *min_level_node = nullptr;
                 uint32_t min_level = 0x4fffffff;
@@ -552,13 +544,6 @@ class Transposition_table {
                                     break;
                                 #endif
                             }
-                        } else if (node->board.player == search->board.player && node->board.opponent == search->board.opponent) { // lower level
-                            node_window_width = node->data.get_window_width();
-                            if (new_window <= node_window_width - TT_REG_LOWER_LEVEL_WINDOW_WIDTH_OFFSET) {
-                                node->data.reg_new_level(depth, search->mpc_level, alpha, beta, value, policy);
-                                node->lock.unlock();
-                                break;
-                            }
                         }
                     node->lock.unlock();
                 }
@@ -577,6 +562,39 @@ class Transposition_table {
                     min_level_node->lock.unlock();
                 }
             #endif
+            if (n_registered >= n_registered_threshold && transposition_table_auto_reset_importance) {
+                std::lock_guard lock(mtx);
+                if (n_registered >= n_registered_threshold) {
+                    //std::cerr << "resetting transposition importance" << std::endl;
+                    reset_importance_proc();
+                }
+            }
+        }
+
+
+        inline void reg_overwrite(const Search *search, uint32_t hash, const int depth, int alpha, int beta, int value, int policy) {
+            Hash_node *node = get_node(hash);
+            //const uint32_t level = get_level_common(depth, search->mpc_level);
+            uint32_t node_level;
+            #if TT_REGISTER_MIN_LEVEL
+                Hash_node *min_level_node = nullptr;
+                uint32_t min_level = 0x4fffffff;
+                bool registered = false;
+            #endif
+            for (uint_fast8_t i = 0; i < TRANSPOSITION_TABLE_N_LOOP; ++i) {
+                node->lock.lock();
+                    if (node->board.player == search->board.player && node->board.opponent == search->board.opponent) {
+                        node->data.reg_new_level(depth, search->mpc_level, alpha, beta, value, policy);
+                        node->lock.unlock();
+                        #if TT_REGISTER_MIN_LEVEL
+                            registered = true;
+                        #endif
+                        break;
+                    }
+                node->lock.unlock();
+                ++hash;
+                node = get_node(hash);
+            }
             if (n_registered >= n_registered_threshold && transposition_table_auto_reset_importance) {
                 std::lock_guard lock(mtx);
                 if (n_registered >= n_registered_threshold) {
