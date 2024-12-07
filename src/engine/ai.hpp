@@ -696,7 +696,7 @@ Search_result ai_time_limit(Board board, bool use_book, int book_acc_level, bool
                 }
             }
             if (n_good_moves >= 2) {
-                uint64_t self_play_tl = std::max(20000ULL + get_values_tl, (uint64_t)(time_limit * std::min(0.7, 0.15 * n_good_moves)));
+                uint64_t self_play_tl = std::max(20000ULL + get_values_tl, (uint64_t)(time_limit * std::min(0.8, 0.2 * n_good_moves)));
                 std::vector<Board> self_play_boards;
                 std::vector<int> self_play_depth_arr;
                 for (int i = 0; i < n_good_moves; ++i) {
@@ -714,9 +714,10 @@ Search_result ai_time_limit(Board board, bool use_book, int book_acc_level, bool
                     }
                     std::cerr << std::endl;
                 }
+                
                 for (int i = 0; i < (int)self_play_boards.size(); ++i) {
                     bool depth_updated = true;
-                    while (depth_updated && self_play_depth_arr[i] < std::min(25, n_empties - 1)) {
+                    while (depth_updated && self_play_depth_arr[i] < std::min(30, n_empties - 1)) {
                         depth_updated = false;
                         Search tt_search(&self_play_boards[i], MPC_74_LEVEL, true, false);
                         int l = -SCORE_MAX, u = SCORE_MAX;
@@ -728,6 +729,7 @@ Search_result ai_time_limit(Board board, bool use_book, int book_acc_level, bool
                         }
                     }
                 }
+                
                 int self_play_n_finished = 0;
                 int n_all_looped = 0;
                 while (tim() - strt < self_play_tl && self_play_n_finished < (int)self_play_boards.size() && n_all_looped < 20) {
