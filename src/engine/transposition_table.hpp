@@ -191,6 +191,10 @@ class Hash_data {
             return get_level_common(depth, mpc_level);
         }
 
+        inline int get_window_width() {
+            return upper - lower;
+        }
+
         /*
             @brief Get moves
 
@@ -502,6 +506,7 @@ class Transposition_table {
             Hash_node *node = get_node(hash);
             const uint32_t level = get_level_common(depth, search->mpc_level);
             uint32_t node_level;
+            int node_window_width;
             #if TT_REGISTER_MIN_LEVEL
                 Hash_node *min_level_node = nullptr;
                 uint32_t min_level = 0x4fffffff;
@@ -538,6 +543,13 @@ class Transposition_table {
                                     }
                                     break;
                                 #endif
+                            }
+                        } else if (node->board.player == search->board.player && node->board.opponent == search->board.opponent) {
+                            node_window_width = node->data.get_window_width();
+                            if (beta - alpha <= node_window_width - 3) {
+                                node->data.reg_new_level(depth, search->mpc_level, alpha, beta, value, policy);
+                                node->lock.unlock();
+                                break;
                             }
                         }
                     node->lock.unlock();
