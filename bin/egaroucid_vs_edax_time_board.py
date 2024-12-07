@@ -23,7 +23,7 @@ with open('problem/random18_boards/difficult.txt', 'r') as f:
     tactic = [elem for elem in f.read().splitlines()]
 whole_log_file = 'egaroucid_vs_edax_time_log/' + 'log_' + d_today.replace('-', '') + '_' + t_now.split('.')[0].replace(':', '') + '_board_difficult_' + 'whole' + '.txt'
 logfile_format = 'egaroucid_vs_edax_time_log/' + 'log_' + d_today.replace('-', '') + '_' + t_now.split('.')[0].replace(':', '') + '_board_difficult_'
-GAME_OFFSET = 4
+GAME_OFFSET = 1
 #'''
 
 '''
@@ -32,7 +32,7 @@ with open('problem/random18_boards/0000000.txt', 'r') as f:
     tactic = [elem for elem in f.read().splitlines()]
 whole_log_file = 'egaroucid_vs_edax_time_log/' + 'log_' + d_today.replace('-', '') + '_' + t_now.split('.')[0].replace(':', '') + '_board_' + 'whole' + '.txt'
 logfile_format = 'egaroucid_vs_edax_time_log/' + 'log_' + d_today.replace('-', '') + '_' + t_now.split('.')[0].replace(':', '') + '_board_'
-GAME_OFFSET = 36
+GAME_OFFSET = 62
 #'''
 
 print(len(tactic), 'openings found', file=sys.stderr)
