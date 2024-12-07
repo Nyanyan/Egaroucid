@@ -679,7 +679,7 @@ Search_result ai_time_limit(Board board, bool use_book, int book_acc_level, bool
         uint64_t strt = tim();
         bool need_request_more_time = false;
         bool get_values_searching = true;
-        uint64_t get_values_tl = 5000ULL;
+        uint64_t get_values_tl = 3000ULL;
         std::cerr << "getting values tl " << get_values_tl << std::endl;
         std::vector<Ponder_elem> ponder_move_list = ai_get_values(board, show_log, get_values_tl);
         if (ponder_move_list.size()) {
@@ -716,13 +716,12 @@ Search_result ai_time_limit(Board board, bool use_book, int book_acc_level, bool
                 }
                 for (int i = 0; i < (int)self_play_boards.size(); ++i) {
                     bool depth_updated = true;
-                    while (depth_updated && self_play_depth_arr[i] < n_empties - 1) {
+                    while (depth_updated && self_play_depth_arr[i] < std::max(25, n_empties - 1)) {
                         depth_updated = false;
                         Search tt_search(&self_play_boards[i], MPC_74_LEVEL, true, false);
-                        if (transposition_table.has_node(&tt_search, self_play_boards[i].hash(), self_play_depth_arr[i] + 1)) {
-                            uint_fast8_t moves[2];
-                            transposition_table.get_moves_any_level(&self_play_boards[i], self_play_boards[i].hash(), moves);
-                            if (is_valid_policy(moves[0])) {
+                        int l = -SCORE_MAX, u = SCORE_MAX;
+                        if (transposition_table.get_bounds(&tt_search, self_play_boards[i].hash(), self_play_depth_arr[i] + 1, &l, &u)) {
+                            if (u - l < 5) {
                                 ++self_play_depth_arr[i];
                                 depth_updated = true;
                             }
@@ -1051,6 +1050,22 @@ std::vector<Ponder_elem> ai_ponder(Board board, bool show_log, bool *searching) 
         ++idx;
     }
     const int max_depth = HW2 - board.n_discs() - 1;
+    for (Ponder_elem &elem: move_list) {
+        bool depth_updated = true;
+        while (depth_updated && elem.depth < std::min(21, max_depth)) {
+            depth_updated = false;
+            Board n_board = board.copy();
+            n_board.move_board(&elem.flip);
+            Search tt_search(&n_board, MPC_74_LEVEL, true, false);
+            int l = -SCORE_MAX, u = SCORE_MAX;
+            if (transposition_table.get_bounds(&tt_search, n_board.hash(), elem.depth + 1, &l, &u)) {
+                if (u - l < 5) {
+                    ++elem.depth;
+                    depth_updated = true;
+                }
+            }
+        }
+    }
     int n_searched_all = 0;
     while (*searching) {
         int selected_idx = -1;
