@@ -1141,6 +1141,15 @@ std::vector<Ponder_elem> ai_ponder(Board board, bool show_log, bool *searching) 
     return move_list;
 }
 
+bool comp_get_values_elem(Ponder_elem &a, Ponder_elem &b) {
+    if (a.value == b.value) {
+        if (a.depth == b.depth) {
+            return a.mpc_level > b.mpc_level;
+        }
+        return a.depth > b.depth;
+    }
+    return a.value > b.value;
+}
 
 std::vector<Ponder_elem> ai_get_values(Board board, bool show_log, uint64_t time_limit) {
     uint64_t strt = tim();
@@ -1150,12 +1159,12 @@ std::vector<Ponder_elem> ai_get_values(Board board, bool show_log, uint64_t time
         legal = board.get_legal();
         if (legal == 0) {
             if (show_log) {
-                std::cerr << "game overgame over" << std::endl;
+                std::cerr << "get values game overgame over" << std::endl;
             }
             std::vector<Ponder_elem> empty_list;
             return empty_list;
         } else {
-            std::cerr << "pass found" << std::endl;
+            std::cerr << "get values pass found" << std::endl;
         }
     }
     const int canput = pop_count_ull(legal);
@@ -1172,6 +1181,9 @@ std::vector<Ponder_elem> ai_get_values(Board board, bool show_log, uint64_t time
         ++idx;
     }
     uint64_t tl_per_move = time_limit / canput;
+    if (show_log) {
+        std::cerr << "get values tl per move " << tl_per_move << std::endl;
+    }
     const int max_depth = HW2 - board.n_discs() - 1;
     for (Ponder_elem &elem: move_list) {
         uint64_t elem_strt = tim();
@@ -1192,7 +1204,7 @@ std::vector<Ponder_elem> ai_get_values(Board board, bool show_log, uint64_t time
             Search search(&n_board, new_mpc_level, true, false);
             bool n_searching = true;
             std::future<int> v_future = std::async(std::launch::async, nega_scout, &search, -SCORE_MAX, SCORE_MAX, new_depth, false, LEGAL_UNDEFINED, new_is_end_search, &n_searching);
-            while (tim() < elem_strt < tl_per_move) {
+            while (tim() - elem_strt < tl_per_move && global_searching) {
                 if (v_future.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
                     int v = -v_future.get();
                     if (global_searching) {
@@ -1211,12 +1223,15 @@ std::vector<Ponder_elem> ai_get_values(Board board, bool show_log, uint64_t time
                 }
             }
             n_searching = false;
+            if (v_future.valid()) {
+                v_future.get();
+            }
         }
     }
     if (show_log) {
         std::cerr << "ai_get_values searched in " << tim() - strt << " ms" << std::endl;
         std::cerr << "ai_get_values board " << board.to_str() << std::endl;
-        std::sort(move_list.begin(), move_list.end(), comp_ponder_elem);
+        std::sort(move_list.begin(), move_list.end(), comp_get_values_elem);
         for (int i = 0; i < canput; ++i) {
             std::cerr << "gb " << idx_to_coord(move_list[i].flip.pos) << " value " << std::fixed << std::setprecision(2) << move_list[i].value;
             std::cerr << " count " << move_list[i].count << " depth " << move_list[i].depth << "@" << SELECTIVITY_PERCENTAGE[move_list[i].mpc_level] << "%";
