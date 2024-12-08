@@ -54,6 +54,13 @@ std::vector<Ponder_elem> ai_ponder(Board board, bool show_log, bool *searching);
 std::vector<Ponder_elem> ai_get_values(Board board, bool show_log, uint64_t time_limit);
 std::pair<int, int> ai_self_play_random(Board board_start, int mid_depth, bool show_log, bool use_multi_thread, bool *searching);
 
+inline uint64_t get_this_search_time_limit(uint64_t time_limit, uint64_t elapsed) {
+    if (time_limit <= elapsed) {
+        return 0;
+    }
+    return time_limit - elapsed;
+}
+
 void iterative_deepening_search(Board board, int alpha, int beta, int depth, uint_fast8_t mpc_level, bool show_log, std::vector<Clog_result> clogs, uint64_t use_legal, bool use_multi_thread, Search_result *result, bool *searching) {
     uint64_t strt = tim();
     result->value = SCORE_UNDEFINED;
@@ -297,11 +304,7 @@ void iterative_deepening_search_time_limit(Board board, int alpha, int beta, boo
         std::pair<int, int> id_result;
         bool search_success = false;
         bool main_searching = true;
-        uint64_t time_limit_this_search = 0;
-        uint64_t reduced = tim() - strt;
-        if (time_limit > reduced) {
-            time_limit_this_search = time_limit - reduced;
-        }
+        uint64_t time_limit_this_search = get_this_search_time_limit(time_limit, tim() - strt);
         std::future<std::pair<int, int>> f = std::async(std::launch::async, first_nega_scout_legal, &main_search, alpha, beta, main_depth, main_is_end_search, clogs, use_legal, strt, &main_searching);
         if (f.wait_for(std::chrono::milliseconds(time_limit_this_search)) == std::future_status::ready) {
             id_result = f.get();
@@ -356,11 +359,7 @@ void iterative_deepening_search_time_limit(Board board, int alpha, int beta, boo
                     Search nws_search(&board, main_mpc_level, use_multi_thread, false);
                     bool nws_searching = true;
                     uint64_t nws_use_legal = use_legal ^ (1ULL << result->policy);
-                    uint64_t time_limit_nws = 0;
-                    uint64_t nws_reduced = tim() - strt;
-                    if (time_limit > nws_reduced) {
-                        time_limit_nws = time_limit - nws_reduced;
-                    }
+                    uint64_t time_limit_nws = get_this_search_time_limit(time_limit, tim() - strt);
                     std::future<std::pair<int, int>> nws_f = std::async(std::launch::async, first_nega_scout_legal, &nws_search, nws_alpha, nws_alpha + 1, main_depth, main_is_end_search, clogs, nws_use_legal, strt, &nws_searching);
                     int nws_value = SCORE_INF;
                     int nws_move = MOVE_NOMOVE;
@@ -1249,11 +1248,7 @@ std::vector<Ponder_elem> ai_get_values(Board board, bool show_log, uint64_t time
             bool new_is_complete_search = new_is_end_search && new_mpc_level == MPC_100_LEVEL;
             Search search(&n_board, new_mpc_level, true, false);
             bool n_searching = true;
-            uint64_t time_limit_this_search = 0;
-            uint64_t reduced = tim() - elem_strt;
-            if (tl_per_move > reduced) {
-                time_limit_this_search = tl_per_move - reduced;
-            }
+            uint64_t time_limit_this_search = get_this_search_time_limit(tl_per_move, tim() - elem_strt);
             std::future<int> v_future = std::async(std::launch::async, nega_scout, &search, -SCORE_MAX, SCORE_MAX, new_depth, false, LEGAL_UNDEFINED, new_is_end_search, &n_searching);
             if (v_future.wait_for(std::chrono::milliseconds(time_limit_this_search)) == std::future_status::ready) {
                 int v = -v_future.get();
