@@ -295,22 +295,18 @@ void iterative_deepening_search_time_limit(Board board, int alpha, int beta, boo
         }
         Search main_search(&board, main_mpc_level, use_multi_thread, false);
         std::pair<int, int> id_result;
-        bool search_success = true;
+        bool search_success = false;
         bool main_searching = true;
+        uint64_t time_limit_this_search = time_limit - (tim() - strt);
         std::future<std::pair<int, int>> f = std::async(std::launch::async, first_nega_scout_legal, &main_search, alpha, beta, main_depth, main_is_end_search, clogs, use_legal, strt, &main_searching);
-        for (;;) {
-            if (f.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
-                id_result = f.get();
-                break;
-            }
-            if ((tim() - strt >= time_limit && main_depth > 1) || !(*searching) || !global_searching) {
-                if (show_log) {
-                    std::cerr << "terminated " << tim() - strt << " ms" << std::endl;
-                }
-                main_searching = false;
-                f.get();
-                search_success = false;
-                break;
+        if (f.wait_for(std::chrono::milliseconds(time_limit_this_search)) == std::future_status::ready) {
+            id_result = f.get();
+            search_success = true;
+        } else {
+            main_searching = false;
+            f.get();
+            if (show_log) {
+                std::cerr << "terminated " << tim() - strt << " ms" << std::endl;
             }
         }
 #if USE_LAZY_SMP
@@ -355,25 +351,21 @@ void iterative_deepening_search_time_limit(Board board, int alpha, int beta, boo
                     Search nws_search(&board, main_mpc_level, use_multi_thread, false);
                     bool nws_searching = true;
                     uint64_t nws_use_legal = use_legal ^ (1ULL << result->policy);
+                    uint64_t time_limit_nws = time_limit - (tim() - strt);
                     std::future<std::pair<int, int>> nws_f = std::async(std::launch::async, first_nega_scout_legal, &main_search, nws_alpha, nws_alpha + 1, main_depth, main_is_end_search, clogs, nws_use_legal, strt, &nws_searching);
                     int nws_value = SCORE_INF;
                     int nws_move = MOVE_NOMOVE;
                     bool nws_success = false;
-                    for (;;) {
-                        if (nws_f.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
-                            std::pair<int, int> nws_result = nws_f.get();
-                            nws_value = nws_result.first;
-                            nws_move = nws_result.second;
-                            nws_success = true;
-                            break;
-                        }
-                        if (tim() - strt >= time_limit || !global_hash_level || !(*searching)) {
-                            if (show_log) {
-                                std::cerr << "terminate early cut nws by time limit " << tim() - strt << " ms" << std::endl;
-                            }
-                            nws_searching = false;
-                            nws_f.get();
-                            break;
+                    if (f.wait_for(std::chrono::milliseconds(time_limit_nws)) == std::future_status::ready) {
+                        std::pair<int, int> nws_result = nws_f.get();
+                        nws_value = nws_result.first;
+                        nws_move = nws_result.second;
+                        nws_success = true;
+                    } else {
+                        nws_searching = false;
+                        nws_f.get();
+                        if (show_log) {
+                            std::cerr << "terminate early cut nws by time limit " << tim() - strt << " ms" << std::endl;
                         }
                     }
                     result->nodes += main_search.n_nodes;
