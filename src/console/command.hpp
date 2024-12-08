@@ -423,7 +423,7 @@ void check_command(Board_info *board, State *state, Options *options) {
     if (options->show_log) {
         std::cerr << "received cmd: " << cmd_line << std::endl;
     }
-    if (options->ponder) {
+    if (options->ponder && state->ponder_searching && state->ponder_future.valid()) {
         state->ponder_searching = false;
         state->ponder_future.get();
     }
