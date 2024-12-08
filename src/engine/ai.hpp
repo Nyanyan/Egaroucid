@@ -1249,27 +1249,28 @@ std::vector<Ponder_elem> ai_get_values(Board board, bool show_log, uint64_t time
             bool new_is_complete_search = new_is_end_search && new_mpc_level == MPC_100_LEVEL;
             Search search(&n_board, new_mpc_level, true, false);
             bool n_searching = true;
-            std::future<int> v_future = std::async(std::launch::async, nega_scout, &search, -SCORE_MAX, SCORE_MAX, new_depth, false, LEGAL_UNDEFINED, new_is_end_search, &n_searching);
-            while (tim() - elem_strt < tl_per_move && global_searching) {
-                if (v_future.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
-                    int v = -v_future.get();
-                    if (global_searching) {
-                        if (elem.value == INF || new_is_end_search) {
-                            elem.value = v;
-                        } else {
-                            elem.value = (0.9 * elem.value + 1.1 * v) / 2.0;
-                        }
-                        elem.depth = new_depth;
-                        elem.mpc_level = new_mpc_level;
-                        elem.is_endgame_search = new_is_end_search;
-                        elem.is_complete_search = new_is_complete_search;
-                        ++elem.count;
-                    }
-                    break;
-                }
+            uint64_t time_limit_this_search = 0;
+            uint64_t reduced = tim() - elem_strt;
+            if (tl_per_move > reduced) {
+                time_limit_this_search = tl_per_move - reduced;
             }
-            n_searching = false;
-            if (v_future.valid()) {
+            std::future<int> v_future = std::async(std::launch::async, nega_scout, &search, -SCORE_MAX, SCORE_MAX, new_depth, false, LEGAL_UNDEFINED, new_is_end_search, &n_searching);
+            if (v_future.wait_for(std::chrono::milliseconds(time_limit_this_search)) == std::future_status::ready) {
+                int v = -v_future.get();
+                if (global_searching) {
+                    if (elem.value == INF || new_is_end_search) {
+                        elem.value = v;
+                    } else {
+                        elem.value = (0.9 * elem.value + 1.1 * v) / 2.0;
+                    }
+                    elem.depth = new_depth;
+                    elem.mpc_level = new_mpc_level;
+                    elem.is_endgame_search = new_is_end_search;
+                    elem.is_complete_search = new_is_complete_search;
+                    ++elem.count;
+                }
+            } else {
+                n_searching = false;
                 v_future.get();
             }
         }
