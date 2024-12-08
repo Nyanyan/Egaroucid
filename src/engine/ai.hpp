@@ -26,7 +26,7 @@
 #define AI_TYPE_BOOK 1000
 
 #define IDSEARCH_ENDSEARCH_PRESEARCH_OFFSET 10
-#define IDSEARCH_ENDSEARCH_PRESEARCH_OFFSET_TIMELIMIT 10
+#define IDSEARCH_ENDSEARCH_PRESEARCH_OFFSET_TIMELIMIT 8
 #define PONDER_ENDSEARCH_PRESEARCH_OFFSET_TIMELIMIT 2
 
 #define NOBOOK_SEARCH_LEVEL 10
@@ -1097,9 +1097,9 @@ std::vector<Ponder_elem> ai_ponder(Board board, bool show_log, bool *searching) 
         bool new_is_complete_search = new_is_end_search && new_mpc_level == MPC_100_LEVEL;
         Search search(&n_board, new_mpc_level, true, false);
         int v = SCORE_UNDEFINED;
-        if (new_depth < PONDER_START_SELFPLAY_DEPTH || new_is_end_search) {
-            v = -nega_scout(&search, -SCORE_MAX, SCORE_MAX, new_depth, false, LEGAL_UNDEFINED, new_is_end_search, searching);
-        }
+        //if (new_depth < PONDER_START_SELFPLAY_DEPTH || new_is_end_search) {
+        v = -nega_scout(&search, -SCORE_MAX, SCORE_MAX, new_depth, false, LEGAL_UNDEFINED, new_is_end_search, searching);
+        //}
         /*
         if (new_depth >= PONDER_START_SELFPLAY_DEPTH && !new_is_complete_search) { // selfplay
             std::pair<int, int> random_played_scores = ai_self_play_random(n_board, move_list[selected_idx].depth, false, true, searching); // no -1 (opponent first)

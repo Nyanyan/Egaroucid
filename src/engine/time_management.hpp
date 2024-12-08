@@ -37,7 +37,7 @@ uint64_t calc_time_limit_ply(const Board board, uint64_t remaining_time_msec, bo
         if (show_log) {
             std::cerr << "first move time limit" << std::endl;
         }
-        return remaining_time_msec_margin * 0.2;
+        return remaining_time_msec_margin * 0.15;
     }
 #endif
 
