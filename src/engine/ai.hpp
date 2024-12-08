@@ -226,72 +226,14 @@ void iterative_deepening_search_time_limit(Board board, int alpha, int beta, boo
     if (show_log) {
         std::cerr << "thread pool size " << thread_pool.size() << " n_idle " << thread_pool.get_n_idle() << std::endl;
     }
-#if USE_LAZY_SMP
-    std::vector<Search> searches(thread_pool.size() + 1);
-#endif
     int before_raw_value = -100;
     bool policy_changed_before = true;
     while (global_searching && (*searching) && ((tim() - strt < time_limit) || main_depth <= 1)) {
-#if USE_LAZY_SMP
-        for (Search &search: searches) {
-            search.n_nodes = 0;
-        }
-#endif
         bool main_is_end_search = false;
         if (main_depth >= max_depth) {
             main_is_end_search = true;
             main_depth = max_depth;
         }
-#if USE_LAZY_SMP
-        std::vector<std::future<int>> parallel_tasks;
-        std::vector<int> sub_depth_arr;
-        int sub_max_mpc_level[61];
-        bool sub_searching = true;
-        int sub_depth = main_depth;
-        if (use_multi_thread && main_depth <= 10) {
-            int max_thread_size = thread_pool.size();
-            for (int i = 0; i < main_depth - 14; ++i) {
-                max_thread_size *= 0.9;
-            }
-            sub_max_mpc_level[main_depth] = main_mpc_level + 1;
-            for (int i = main_depth + 1; i < 61; ++i) {
-                sub_max_mpc_level[i] = MPC_74_LEVEL;
-            }
-            for (int sub_thread_idx = 0; sub_thread_idx < max_thread_size && sub_thread_idx < searches.size() && global_searching && (*searching); ++sub_thread_idx) {
-                int ntz = ctz_uint32(sub_thread_idx + 1);
-                int sub_depth = std::min(max_depth, main_depth + ntz);
-                uint_fast8_t sub_mpc_level = sub_max_mpc_level[sub_depth];
-                bool sub_is_end_search = (sub_depth == max_depth);
-                if (sub_mpc_level <= MPC_100_LEVEL) {
-                    //std::cerr << sub_thread_idx << " " << sub_depth << " " << SELECTIVITY_PERCENTAGE[sub_mpc_level] << std::endl;
-                    searches[sub_thread_idx] = Search{&board, sub_mpc_level, false, true};
-                    bool pushed = false;
-                    parallel_tasks.emplace_back(thread_pool.push(&pushed, std::bind(&nega_scout, &searches[sub_thread_idx], alpha, beta, sub_depth, false, LEGAL_UNDEFINED, sub_is_end_search, &sub_searching)));
-                    sub_depth_arr.emplace_back(sub_depth);
-                    ++sub_max_mpc_level[sub_depth];
-                    if (!pushed) {
-                        parallel_tasks.pop_back();
-                        sub_depth_arr.pop_back();
-                    }
-                }
-            }
-            int max_sub_search_depth = -1;
-            int max_sub_main_mpc_level = 0;
-            bool max_is_only_one = false;
-            for (int i = 0; i < (int)parallel_tasks.size(); ++i) {
-                if (sub_depth_arr[i] > max_sub_search_depth) {
-                    max_sub_search_depth = sub_depth_arr[i];
-                    max_sub_main_mpc_level = searches[i].mpc_level;
-                    max_is_only_one = true;
-                } else if (sub_depth_arr[i] == max_sub_search_depth && max_sub_main_mpc_level < searches[i].mpc_level) {
-                    max_sub_main_mpc_level = searches[i].mpc_level;
-                    max_is_only_one = true;
-                } else if (sub_depth_arr[i] == max_sub_search_depth && searches[i].mpc_level == max_sub_main_mpc_level) {
-                    max_is_only_one = false;
-                }
-            }
-        }
-#endif
         if (show_log) {
             if (main_is_end_search) {
                 std::cerr << "end ";
@@ -316,15 +258,6 @@ void iterative_deepening_search_time_limit(Board board, int alpha, int beta, boo
                 std::cerr << "terminated " << tim() - strt << " ms" << std::endl;
             }
         }
-#if USE_LAZY_SMP
-        sub_searching = false;
-        for (std::future<int> &task: parallel_tasks) {
-            task.get();
-        }
-        for (Search &search: searches) {
-            result->nodes += search.n_nodes;
-        }
-#endif
         result->nodes += main_search.n_nodes;
         result->time = tim() - strt;
         result->nps = calc_nps(result->nodes, result->time);
@@ -341,11 +274,7 @@ void iterative_deepening_search_time_limit(Board board, int alpha, int beta, boo
             result->is_end_search = main_is_end_search;
             result->probability = SELECTIVITY_PERCENTAGE[main_mpc_level];
             if (show_log) {
-#if USE_LAZY_SMP
-                std::cerr << "value " << result->value << " (raw " << id_result.first << ") policy " << idx_to_coord(id_result.second) << " n_worker " << parallel_tasks.size() << " n_nodes " << result->nodes << " time " << result->time << " NPS " << result->nps << std::endl;
-#else
                 std::cerr << "value " << result->value << " (raw " << id_result.first << ") policy " << idx_to_coord(id_result.second) << " n_nodes " << result->nodes << " time " << result->time << " NPS " << result->nps << std::endl;
-#endif
             }
             if (
                 (!main_is_end_search && main_depth >= 30 && main_depth <= 31) && 
