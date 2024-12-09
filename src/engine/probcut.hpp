@@ -67,7 +67,7 @@ inline double probcut_sigma(int n_discs, int depth1, int depth2) {
     return res;
 }
 
-int nega_alpha_ordering_nws(Search *search, int alpha, int depth, bool skipped, uint64_t legal, const bool is_end_search, bool *searching);
+int nega_alpha_ordering_nws(Search *search, int alpha, int depth, bool skipped, uint64_t legal, const bool is_end_search, const bool *searching);
 
 /*
     @brief Multi-ProbCut for normal search
@@ -82,7 +82,7 @@ int nega_alpha_ordering_nws(Search *search, int alpha, int depth, bool skipped, 
     @param searching            flag for terminating this search
     @return cutoff occurred?
 */
-inline bool mpc(Search* search, int alpha, int beta, int depth, uint64_t legal, const bool is_end_search, int* v, bool *searching) {
+inline bool mpc(Search* search, int alpha, int beta, int depth, uint64_t legal, const bool is_end_search, int* v, const bool *searching) {
     if (search->mpc_level == MPC_100_LEVEL || depth < USE_MPC_MIN_DEPTH) {
         return false;
     }
@@ -163,7 +163,7 @@ inline bool mpc(Search* search, int alpha, int beta, int depth, uint64_t legal, 
 
 
 #if USE_ALL_NODE_PREDICTION_NWS
-    inline bool predict_all_node(Search* search, int alpha, int depth, uint64_t legal, const bool is_end_search, bool *searching) {
+    inline bool predict_all_node(Search* search, int alpha, int depth, uint64_t legal, const bool is_end_search, const bool *searching) {
         uint_fast8_t mpc_level = MPC_93_LEVEL;
         int search_depth = mpc_search_depth_arr[is_end_search][depth];
         int error_search, error_0;

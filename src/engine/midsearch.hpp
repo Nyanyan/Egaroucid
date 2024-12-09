@@ -94,7 +94,7 @@ inline int nega_alpha_eval1(Search *search, int alpha, int beta, const bool skip
     @param searching            flag for terminating this search
     @return the value
 */
-int nega_scout(Search *search, int alpha, int beta, const int depth, const bool skipped, uint64_t legal, const bool is_end_search, bool *searching) {
+int nega_scout(Search *search, int alpha, int beta, const int depth, const bool skipped, uint64_t legal, const bool is_end_search, const bool *searching) {
     if (!global_searching || !(*searching)) {
         return SCORE_UNDEFINED;
     }

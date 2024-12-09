@@ -285,8 +285,9 @@ int nega_alpha_end_simple_nws(Search *search, int alpha, const bool skipped, uin
     @return the final score
 */
 int nega_alpha_end_nws(Search *search, int alpha, const bool skipped, uint64_t legal) {
-    if (search->n_discs >= HW2 - END_SIMPLE_DEPTH)
+    if (search->n_discs >= HW2 - END_SIMPLE_DEPTH) {
         return nega_alpha_end_simple_nws(search, alpha, skipped, legal);
+    }
     ++search->n_nodes;
     #if USE_SEARCH_STATISTICS
         ++search->n_nodes_discs[search->n_discs];

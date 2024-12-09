@@ -101,9 +101,10 @@
 
 int nega_alpha_eval1(Search *search, int alpha, int beta, bool skipped);
 inline int nega_alpha_eval1_move_ordering_mid(Search *search, int alpha, int beta, bool skipped);
-int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, uint64_t legal, bool is_end_search, bool *searching);
+int nega_scout(Search *search, int alpha, int beta, int depth, bool skipped, uint64_t legal, bool is_end_search, const bool *searching);
 inline bool transposition_table_get_value(Search *search, uint32_t hash, int *l, int *u);
-
+inline int mid_evaluate_diff(Search *search);
+inline int mid_evaluate_move_ordering_end(Search *search);
 
 
 #if USE_SIMD
@@ -210,7 +211,7 @@ inline int get_n_moves_cornerX2(uint64_t legal) {
     @param searching            flag for terminating this search
     @return true if wipeout found else false
 */
-inline void move_evaluate(Search *search, Flip_value *flip_value, int alpha, int beta, int depth, bool *searching) {
+inline void move_evaluate(Search *search, Flip_value *flip_value, int alpha, int beta, int depth, const bool *searching) {
     flip_value->value = 0;
     search->move(&flip_value->flip);
         flip_value->n_legal = search->board.get_legal();
@@ -247,7 +248,7 @@ inline void move_evaluate(Search *search, Flip_value *flip_value, int alpha, int
     @param searching            flag for terminating this search
     @return true if wipeout found else false
 */
-inline void move_evaluate_nws(Search *search, Flip_value *flip_value, int alpha, int beta, int depth, bool *searching) {
+inline void move_evaluate_nws(Search *search, Flip_value *flip_value, int alpha, int beta, int depth, const bool *searching) {
     flip_value->value = 0;
     search->move(&flip_value->flip);
         flip_value->n_legal = search->board.get_legal();
@@ -365,7 +366,7 @@ inline void swap_next_best_move(Flip_value move_list[], const int strt, const in
     @param beta                 beta value
     @param searching            flag for terminating this search
 */
-inline void move_list_evaluate(Search *search, std::vector<Flip_value> &move_list, uint_fast8_t moves[], int depth, int alpha, int beta, bool *searching) {
+inline void move_list_evaluate(Search *search, std::vector<Flip_value> &move_list, uint_fast8_t moves[], int depth, int alpha, int beta, const bool *searching) {
     if (move_list.size() == 1) {
         return;
     }
@@ -414,7 +415,7 @@ inline void move_list_evaluate(Search *search, std::vector<Flip_value> &move_lis
     @param alpha                alpha value (beta = alpha + 1)
     @param searching            flag for terminating this search
 */
-inline void move_list_evaluate_nws(Search *search, std::vector<Flip_value> &move_list, uint_fast8_t moves[], int depth, int alpha, bool *searching) {
+inline void move_list_evaluate_nws(Search *search, std::vector<Flip_value> &move_list, uint_fast8_t moves[], int depth, int alpha, const bool *searching) {
     if (move_list.size() <= 1) {
         return;
     }
@@ -452,7 +453,7 @@ inline void move_list_evaluate_nws(Search *search, std::vector<Flip_value> &move
     @param search               search information
     @param move_list            list of moves
 */
-inline void move_list_evaluate_end_nws(Search *search, std::vector<Flip_value> &move_list, uint_fast8_t moves[], bool *searching) {
+inline void move_list_evaluate_end_nws(Search *search, std::vector<Flip_value> &move_list, uint_fast8_t moves[], const bool *searching) {
     if (move_list.size() <= 1) {
         return;
     }

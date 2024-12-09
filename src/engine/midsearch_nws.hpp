@@ -28,9 +28,9 @@
 #include "stability.hpp"
 #include "etc.hpp"
 
-inline bool ybwc_split_nws(const Search *search, int alpha, const int depth, uint64_t legal, const bool is_end_search, bool *searching, uint_fast8_t policy, const int pv_idx, const int move_idx, const int canput, const int running_count, std::vector<std::future<Parallel_task>> &parallel_tasks);
+inline bool ybwc_split_nws(const Search *search, int alpha, const int depth, uint64_t legal, const bool is_end_search, const bool *searching, uint_fast8_t policy, const int pv_idx, const int move_idx, const int canput, const int running_count, std::vector<std::future<Parallel_task>> &parallel_tasks);
 inline void ybwc_get_end_tasks(Search *search, std::vector<std::future<Parallel_task>> &parallel_tasks, int *v, int *best_move, int *running_count);
-inline void ybwc_wait_all_nws(Search *search, std::vector<std::future<Parallel_task>> &parallel_tasks, int *v, int *best_move, int *running_count, int alpha, bool *searching, bool *n_searching);
+inline void ybwc_wait_all_nws(Search *search, std::vector<std::future<Parallel_task>> &parallel_tasks, int *v, int *best_move, int *running_count, int alpha, const bool *searching, bool *n_searching);
 inline bool mpc(Search* search, int alpha, int beta, const int depth, uint64_t legal, const bool is_end_search, int* v, const bool* searching);
 
 /*
@@ -92,7 +92,7 @@ inline int nega_alpha_eval1_nws(Search *search, int alpha, const bool skipped) {
     @param searching            flag for terminating this search
     @return the value
 */
-int nega_alpha_ordering_nws_simple(Search *search, int alpha, const int depth, const bool skipped, uint64_t legal, bool *searching) {
+int nega_alpha_ordering_nws_simple(Search *search, int alpha, const int depth, const bool skipped, uint64_t legal, const bool *searching) {
     if (!global_searching || !(*searching)) {
         return SCORE_UNDEFINED;
     }
@@ -192,7 +192,7 @@ int nega_alpha_ordering_nws_simple(Search *search, int alpha, const int depth, c
     @param searching            flag for terminating this search
     @return the value
 */
-int nega_alpha_ordering_nws(Search *search, int alpha, const int depth, const bool skipped, uint64_t legal, const bool is_end_search, bool *searching) {
+int nega_alpha_ordering_nws(Search *search, int alpha, const int depth, const bool skipped, uint64_t legal, const bool is_end_search, const bool *searching) {
     if (!global_searching || !(*searching)) {
         return SCORE_UNDEFINED;
     }
