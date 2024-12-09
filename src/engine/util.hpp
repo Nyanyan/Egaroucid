@@ -303,72 +303,7 @@ inline bool compare_representative_board(Board *res, Board *cmp) {
     return false;
 }
 
-inline void first_update_representative_board(Board *res, Board *sym) {
-    uint64_t vp = vertical_mirror(sym->player);
-    uint64_t vo = vertical_mirror(sym->opponent);
-    if (res->player > vp || (res->player == vp && res->opponent > vo)) {
-        res->player = vp;
-        res->opponent = vo;
-    }
-}
-
-inline void update_representative_board(Board *res, Board *sym) {
-    if (res->player > sym->player || (res->player == sym->player && res->opponent > sym->opponent))
-        sym->copy(res);
-    uint64_t vp = vertical_mirror(sym->player);
-    uint64_t vo = vertical_mirror(sym->opponent);
-    if (res->player > vp || (res->player == vp && res->opponent > vo)) {
-        res->player = vp;
-        res->opponent = vo;
-    }
-}
-
-inline void first_update_representative_board(Board *res, Board *sym, int *idx, int *cnt) {
-    uint64_t vp = vertical_mirror(sym->player);
-    uint64_t vo = vertical_mirror(sym->opponent);
-    ++(*cnt);
-    if (res->player > vp || (res->player == vp && res->opponent > vo)) {
-        res->player = vp;
-        res->opponent = vo;
-        *idx = *cnt;
-    }
-}
-
-inline void update_representative_board(Board *res, Board *sym, int *idx, int *cnt) {
-    ++(*cnt);
-    if (res->player > sym->player || (res->player == sym->player && res->opponent > sym->opponent)) {
-        sym->copy(res);
-        *idx = *cnt;
-    }
-    uint64_t vp = vertical_mirror(sym->player);
-    uint64_t vo = vertical_mirror(sym->opponent);
-    ++(*cnt);
-    if (res->player > vp || (res->player == vp && res->opponent > vo)) {
-        res->player = vp;
-        res->opponent = vo;
-        *idx = *cnt;
-    }
-}
-
-inline Board representive_board_former(Board b, int *idx) {
-    Board res = b;
-    *idx = 0;
-    int cnt = 0;
-    first_update_representative_board(&res, &b, idx, &cnt);
-    b.board_black_line_mirror();
-    update_representative_board(&res, &b, idx, &cnt);
-    b.board_horizontal_mirror();
-    update_representative_board(&res, &b, idx, &cnt);
-    b.board_white_line_mirror();
-    update_representative_board(&res, &b, idx, &cnt);
-    return res;
-}
-
 inline Board representative_board(Board b) {
-    Board b_cpy = b;
-    int fidx;
-    Board fb = representive_board_former(b, &fidx);
-
     Board res = b;
     Board bt = b;   bt.board_black_line_mirror();       compare_representative_board(&res, &bt);
     Board bh =      b.get_horizontal_mirror();          compare_representative_board(&res, &bh);
@@ -377,19 +312,10 @@ inline Board representative_board(Board b) {
                     bt.board_vertical_mirror();         compare_representative_board(&res, &bt);
                     b.board_horizontal_mirror();        compare_representative_board(&res, &b);
                     bt.board_horizontal_mirror();       compare_representative_board(&res, &bt);
-
-    if (fb != res) {
-        std::cerr << "ERROR" << " " << b_cpy.to_str() << " " << fb.to_str() << " " << res.to_str() << std::endl;
-    }
-
     return res;
 }
 
 inline Board representative_board(Board b, int *idx) {
-    Board b_cpy = b;
-    int fidx;
-    Board fb = representive_board_former(b, &fidx);
-
     Board res = b;                                                                                      *idx = 0; // default
     Board bt = b;   bt.board_black_line_mirror();       if (compare_representative_board(&res, &bt))    *idx = 2; // black line
     Board bh =      b.get_horizontal_mirror();          if (compare_representative_board(&res, &bh))    *idx = 6; // horizontal
@@ -398,10 +324,6 @@ inline Board representative_board(Board b, int *idx) {
                     bt.board_vertical_mirror();         if (compare_representative_board(&res, &bt))    *idx = 3; // black line + vertical
                     b.board_horizontal_mirror();        if (compare_representative_board(&res, &b))     *idx = 7; // vertical + horizontal
                     bt.board_horizontal_mirror();       if (compare_representative_board(&res, &bt))    *idx = 5; // black line + vertical + horizontal
-    
-    if (fb != res || fidx != *idx) {
-        std::cerr << "ERROR" << " " << b_cpy.to_str() << " " << fb.to_str() << " " << res.to_str() << " " << fidx << " " << *idx << std::endl;
-    }
     return res;
 }
 
