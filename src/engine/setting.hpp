@@ -19,7 +19,7 @@
 #pragma once
 #include <string>
 
-#define IS_GGS_TOURNAMENT true
+#define IS_GGS_TOURNAMENT false
 
 /*
     @brief Option
