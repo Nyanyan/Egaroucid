@@ -126,8 +126,6 @@ constexpr uint64_t parity_table[16] = {
 };
 
 
-bool not_searching = false;
-
 
 /*
     @brief Search result structure
