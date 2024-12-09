@@ -8,8 +8,6 @@
 
 Egaroucidは世界最強クラスのオセロAIを搭載した無料のオセロ研究・対戦用アプリです。発音は [ɪɡɑɻˈəʊsid] (えがろーしっ＼ど　えがろ＼うしっど) を想定しています。
 
-作者はオセロAIのコンテスト"[CodinGame Othello](https://www.codingame.com/multiplayer/bot-programming/othello-1)"で世界1位です(2023年9月4日現在)
-
 
 REPLACE_DOWNLOAD_BUTTON_HERE
 
@@ -42,6 +40,14 @@ REPLACE_DOWNLOAD_BUTTON_HERE
 <div class="centering_box">
 	<img class="pic" src="img/egaroucid_family_ja.png" alt="Egaroucid Family">
 </div>
+
+
+## 対戦実績
+
+<ul>
+    <li>オセロAI大会 優勝 @[Generic Game Server](https://skatgame.net/mburo/ggs/) (2024/12/08)</li>
+    <li>[CodinGame Othello](https://www.codingame.com/multiplayer/bot-programming/othello-1) 世界1位 (2021/11/22)</li>
+</ul>
 
 
 

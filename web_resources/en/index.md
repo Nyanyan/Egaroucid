@@ -8,8 +8,6 @@
 
 Egaroucid [ɪɡɑɻˈəʊsid] is an Othello app with one of the strongest othello solver AI. 
 
-The author is World No.1 in [CodinGame Othello](https://www.codingame.com/multiplayer/bot-programming/othello-1), Othello AI contest (as of 2023/09/04).
-
 
 REPLACE_DOWNLOAD_BUTTON_HERE
 
@@ -43,6 +41,15 @@ Completely free software. Egaroucid and Egaroucid for Console use the same (stro
 <div class="centering_box">
 	<img class="pic" src="img/egaroucid_family_en.png" alt="Egaroucid Family">
 </div>
+
+
+## Competitive Results
+
+<ul>
+    <li>Othello AI Tournament Champion @[Generic Game Server](https://skatgame.net/mburo/ggs/) (2024/12/08)</li>
+    <li>[CodinGame Othello](https://www.codingame.com/multiplayer/bot-programming/othello-1) World Champion (2021/11/22)</li>
+</ul>
+
 
 
 
