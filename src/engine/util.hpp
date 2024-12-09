@@ -294,6 +294,15 @@ inline int convert_coord_to_representative_board(int cell, int idx) {
     return res;
 }
 
+inline bool compare_representative_board(Board *res, Board *cmp) {
+    if (res->player > cmp->player || (res->player == cmp->player && res->opponent > cmp->opponent)) {
+        res->player = cmp->player;
+        res->opponent = cmp->opponent;
+        return true;
+    }
+    return false;
+}
+
 inline void first_update_representative_board(Board *res, Board *sym) {
     uint64_t vp = vertical_mirror(sym->player);
     uint64_t vo = vertical_mirror(sym->opponent);
@@ -341,19 +350,7 @@ inline void update_representative_board(Board *res, Board *sym, int *idx, int *c
     }
 }
 
-inline Board get_representative_board(Board b) {
-    Board res = b;
-    first_update_representative_board(&res, &b);
-    b.board_black_line_mirror();
-    update_representative_board(&res, &b);
-    b.board_horizontal_mirror();
-    update_representative_board(&res, &b);
-    b.board_white_line_mirror();
-    update_representative_board(&res, &b);
-    return res;
-}
-
-inline Board get_representative_board(Board b, int *idx) {
+inline Board representive_board_former(Board b, int *idx) {
     Board res = b;
     *idx = 0;
     int cnt = 0;
@@ -367,10 +364,51 @@ inline Board get_representative_board(Board b, int *idx) {
     return res;
 }
 
-inline Board get_representative_board(Board *b, int *idx) {
-    return get_representative_board(b->copy(), idx);
+inline Board representative_board(Board b) {
+    Board b_cpy = b;
+    int fidx;
+    Board fb = representive_board_former(b, &fidx);
+
+    Board res = b;
+    Board bt = b;   bt.board_black_line_mirror();       compare_representative_board(&res, &bt);
+    Board bh =      b.get_horizontal_mirror();          compare_representative_board(&res, &bh);
+    Board bth =     bt.get_horizontal_mirror();         compare_representative_board(&res, &bth);
+                    b.board_vertical_mirror();          compare_representative_board(&res, &b);
+                    bt.board_vertical_mirror();         compare_representative_board(&res, &bt);
+                    b.board_horizontal_mirror();        compare_representative_board(&res, &b);
+                    bt.board_horizontal_mirror();       compare_representative_board(&res, &bt);
+
+    if (fb != res) {
+        std::cerr << "ERROR" << " " << b_cpy.to_str() << " " << fb.to_str() << " " << res.to_str() << std::endl;
+    }
+
+    return res;
 }
 
-inline Board get_representative_board(Board *b) {
-    return get_representative_board(b->copy());
+inline Board representative_board(Board b, int *idx) {
+    Board b_cpy = b;
+    int fidx;
+    Board fb = representive_board_former(b, &fidx);
+
+    Board res = b;                                                                                      *idx = 0; // default
+    Board bt = b;   bt.board_black_line_mirror();       if (compare_representative_board(&res, &bt))    *idx = 2; // black line
+    Board bh =      b.get_horizontal_mirror();          if (compare_representative_board(&res, &bh))    *idx = 6; // horizontal
+    Board bth =     bt.get_horizontal_mirror();         if (compare_representative_board(&res, &bth))   *idx = 4; // black line + horizontal
+                    b.board_vertical_mirror();          if (compare_representative_board(&res, &b))     *idx = 1; // vertical
+                    bt.board_vertical_mirror();         if (compare_representative_board(&res, &bt))    *idx = 3; // black line + vertical
+                    b.board_horizontal_mirror();        if (compare_representative_board(&res, &b))     *idx = 7; // vertical + horizontal
+                    bt.board_horizontal_mirror();       if (compare_representative_board(&res, &bt))    *idx = 5; // black line + vertical + horizontal
+    
+    if (fb != res || fidx != *idx) {
+        std::cerr << "ERROR" << " " << b_cpy.to_str() << " " << fb.to_str() << " " << res.to_str() << " " << fidx << " " << *idx << std::endl;
+    }
+    return res;
+}
+
+inline Board representative_board(Board *b, int *idx) {
+    return representative_board(b->copy(), idx);
+}
+
+inline Board representative_board(Board *b) {
+    return representative_board(b->copy());
 }

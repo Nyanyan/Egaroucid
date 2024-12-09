@@ -907,7 +907,7 @@ class Book {
         }
 
         void get_pass_boards(Board board, std::unordered_set<Board, Book_hash> &pass_boards) {
-            board = get_representative_board(board);
+            board = representative_board(board);
             if (contain_representative(board)) {
                 if (book[board].seen)
                     return;
@@ -1131,11 +1131,11 @@ class Book {
         }
 
         inline bool contain(Board b) {
-            return contain_representative(get_representative_board(b));
+            return contain_representative(representative_board(b));
         }
 
         inline bool contain(Board *b) {
-            return contain_representative(get_representative_board(b));
+            return contain_representative(representative_board(b));
         }
 
         /*
@@ -1162,7 +1162,7 @@ class Book {
         */
         inline Book_elem get(Board *b) {
             int rotate_idx;
-            Board representive_board = get_representative_board(b, &rotate_idx);
+            Board representive_board = representative_board(b, &rotate_idx);
             return get_representative(representive_board, rotate_idx);
         }
 
@@ -1174,7 +1174,7 @@ class Book {
         */
         inline Book_elem get(Board b) {
             int rotate_idx;
-            Board representive_board = get_representative_board(b, &rotate_idx);
+            Board representive_board = representative_board(b, &rotate_idx);
             return get_representative(representive_board, rotate_idx);
         }
 
@@ -1399,13 +1399,13 @@ class Book {
             if (-HW2 <= value && value <= HW2) {
                 if (b.is_end()) { // game over
                     if (contain(b)) {
-                        Board bb = get_representative_board(b);
+                        Board bb = representative_board(b);
                         book[bb].value = value;
                         book[bb].level = level;
                     } else{
                         b.pass();
                         if (contain(b)) {
-                            Board bb = get_representative_board(b);
+                            Board bb = representative_board(b);
                             book[bb].value = -value;
                             book[bb].level = level;
                         } else{
@@ -1425,7 +1425,7 @@ class Book {
                         value *= -1;
                     }
                     if (contain(b)) {
-                        Board bb = get_representative_board(b);
+                        Board bb = representative_board(b);
                         book[bb].value = value;
                         book[bb].level = level;
                     } else{
@@ -1521,7 +1521,7 @@ class Book {
                     return res;
                 }
             }
-            board = get_representative_board(&board);
+            board = representative_board(&board);
             Book_elem res = book[board];
             if (res.seen)
                 return res;
@@ -1597,7 +1597,7 @@ class Book {
             if (board.get_legal() == 0) { // just pass
                 board.pass();
                 if (board.get_legal() == 0) { // game over
-                    if (keep_list.find(get_representative_board(board)) != keep_list.end())
+                    if (keep_list.find(representative_board(board)) != keep_list.end())
                         return;
                     if (contain(&board)) {
                         Book_elem book_elem = get(board);
@@ -1605,19 +1605,19 @@ class Book {
                             return;
                     } else{
                         board.pass();
-                        if (keep_list.find(get_representative_board(board)) != keep_list.end())
+                        if (keep_list.find(representative_board(board)) != keep_list.end())
                             return;
                         Book_elem book_elem = get(board);
                         if (book_elem.seen)
                             return;
                     }
                     flag_book_elem(board);
-                    keep_list.emplace(get_representative_board(board));
+                    keep_list.emplace(representative_board(board));
                     ++(*n_flags);
                     return;
                 }
             }
-            Board unique_board = get_representative_board(board);
+            Board unique_board = representative_board(board);
             // already seen
             if (keep_list.find(unique_board) != keep_list.end())
                 return;
@@ -1662,7 +1662,7 @@ class Book {
             flag_book_elem(board);
             std::vector<Book_value> links = get_all_moves_with_value(&board);
             Flip flip;
-            if (keep_list.find(get_representative_board(board)) != keep_list.end()) {
+            if (keep_list.find(representative_board(board)) != keep_list.end()) {
                 bool leaf_updated = false;
                 for (Book_value &link: links) {
                     calc_flip(&flip, &board, link.policy);
@@ -1671,13 +1671,13 @@ class Book {
                         bool passed = board.get_legal() == 0;
                         bool will_be_deleted = false;
                         if (is_end) {
-                            will_be_deleted = keep_list.find(get_representative_board(board)) == keep_list.end();
+                            will_be_deleted = keep_list.find(representative_board(board)) == keep_list.end();
                             board.pass();
-                                will_be_deleted |= keep_list.find(get_representative_board(board)) == keep_list.end();
+                                will_be_deleted |= keep_list.find(representative_board(board)) == keep_list.end();
                             board.pass();
                         } else if (passed) {
                             board.pass();
-                                will_be_deleted = keep_list.find(get_representative_board(board)) == keep_list.end();
+                                will_be_deleted = keep_list.find(representative_board(board)) == keep_list.end();
                             board.pass();
                         }
                         if (will_be_deleted) {
@@ -1708,9 +1708,9 @@ class Book {
             if (board.get_legal() == 0) {
                 board.pass();
                 if (board.get_legal() == 0) { // game over
-                    bool keep_board = keep_list.find(get_representative_board(board)) != keep_list.end();
+                    bool keep_board = keep_list.find(representative_board(board)) != keep_list.end();
                     board.pass();
-                    keep_board |= keep_list.find(get_representative_board(board)) != keep_list.end();
+                    keep_board |= keep_list.find(representative_board(board)) != keep_list.end();
                     if (!keep_board) {
                         delete_elem(board);
                         board.pass();
@@ -1735,7 +1735,7 @@ class Book {
                     delete_unflagged_moves(board, n_delete, keep_list, doing);
                 board.undo_board(&flip);
             }
-            if (keep_list.find(get_representative_board(board)) == keep_list.end()) {
+            if (keep_list.find(representative_board(board)) == keep_list.end()) {
                 delete_elem(board);
                 ++(*n_delete);
                 if ((*n_delete) % 100 == 0)
@@ -1811,7 +1811,7 @@ class Book {
                 if (board.get_legal() == 0)
                     return 1;
             }
-            board = get_representative_board(&board);
+            board = representative_board(&board);
             Book_elem book_elem = get(board);
             // already seen
             if (book_elem.seen)
@@ -1853,13 +1853,13 @@ class Book {
         }
 
         void flag_book_elem(Board board) {
-            book[get_representative_board(board)].seen = true;
+            book[representative_board(board)].seen = true;
         }
 
         void add_leaf(Board *board, int8_t value, int8_t policy, int8_t level) {
             std::lock_guard<std::mutex> lock(mtx);
             int rotate_idx;
-            Board representive_board = get_representative_board(board, &rotate_idx);
+            Board representive_board = representative_board(board, &rotate_idx);
             int8_t rotated_policy = policy;
             if (is_valid_policy(policy))
                 rotated_policy = convert_coord_from_representative_board((int)policy, rotate_idx);
@@ -2085,7 +2085,7 @@ class Book {
         */
         inline int register_symmetric_book(Board b, Book_elem elem) {
             int idx;
-            Board representive_board = get_representative_board(b, &idx);
+            Board representive_board = representative_board(b, &idx);
             if (elem.leaf.move != MOVE_UNDEFINED)
                 elem.leaf.move = convert_coord_to_representative_board(elem.leaf.move, idx);
             return register_representative(representive_board, elem);
@@ -2098,7 +2098,7 @@ class Book {
             @return 1 if board is deleted (board found) else 0
         */
         inline int delete_symmetric_book(Board b) {
-            Board representive_board = get_representative_board(b);
+            Board representive_board = representative_board(b);
             return delete_representative_board(representive_board);
         }
 

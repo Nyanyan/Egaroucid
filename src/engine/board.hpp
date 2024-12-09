@@ -136,6 +136,38 @@ class Board {
         }
 
         /*
+            @brief mirroring in white line
+        */
+        inline Board get_white_line_mirror() {
+            Board res(white_line_mirror(player), white_line_mirror(opponent));
+            return res;
+        }
+
+        /*
+            @brief mirroring in black line
+        */
+        inline Board get_black_line_mirror() {
+            Board res(black_line_mirror(player), black_line_mirror(opponent));
+            return res;
+        }
+
+        /*
+            @brief mirroring in vertical
+        */
+        inline Board get_vertical_mirror() {
+            Board res(vertical_mirror(player), vertical_mirror(opponent));
+            return res;
+        }
+
+        /*
+            @brief mirroring in horizontal
+        */
+        inline Board get_horizontal_mirror() {
+            Board res(horizontal_mirror(player), horizontal_mirror(opponent));
+            return res;
+        }
+
+        /*
             @brief print the board
         */
         inline void print() const{
