@@ -29,7 +29,7 @@
     constexpr size_t TRANSPOSITION_TABLE_STACK_SIZE = hash_sizes[DEFAULT_HASH_LEVEL] + TRANSPOSITION_TABLE_N_LOOP - 1;
 #endif
 #define N_TRANSPOSITION_MOVES 2
-#define TT_REGISTER_THRESHOLD_RATE 0.5
+#define TT_REGISTER_THRESHOLD_RATE 0.3
 #define TT_REG_LOWER_LEVEL_WINDOW_WIDTH_OFFSET 3
 
 bool transposition_table_auto_reset_importance = true;
