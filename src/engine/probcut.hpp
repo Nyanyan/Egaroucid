@@ -22,7 +22,8 @@ constexpr int USE_MPC_MIN_DEPTH = 3;
     #define ALL_NODE_CHECK_MPCT 1.8
 #endif
 
-constexpr int MPC_ADD_DEPTH_VALUE_THRESHOLD = 10;
+//constexpr int MPC_ADD_DEPTH_VALUE_THRESHOLD = 5;
+//constexpr int MPC_SUB_DEPTH_VALUE_THRESHOLD = 20;
 constexpr int MPC_ERROR0_OFFSET = 3;
 
 // constants from standard normal distribution table
@@ -31,15 +32,6 @@ constexpr double SELECTIVITY_MPCT[N_SELECTIVITY_LEVEL] = {1.13, 1.55, 1.81, 2.32
 
 /*
     @brief constants for ProbCut error calculation
-*/
-/*
-constexpr double probcut_a = 0.9356624692682063;
-constexpr double probcut_b = -6.722694156011038;
-constexpr double probcut_c = 1.2405664710104887;
-constexpr double probcut_d = 0.4534655399486707;
-constexpr double probcut_e = 2.6718081516048797;
-constexpr double probcut_f = 3.00563773728134;
-constexpr double probcut_g = 1.9735093734031988;
 */
 constexpr double probcut_a = 0.7308488452189136;
 constexpr double probcut_b = -4.5708322989025865;
@@ -89,13 +81,19 @@ inline bool mpc(Search* search, int alpha, int beta, int depth, uint64_t legal, 
     int search_depth = ((depth / 3) & 0b11111110) + (depth & 1); // depth / 3 + parity
     int d0value = mid_evaluate_diff(search);
     /*
-    if (alpha - MPC_ADD_DEPTH_VALUE_THRESHOLD < d0value && d0value < beta + MPC_ADD_DEPTH_VALUE_THRESHOLD) {
+    if (alpha - MPC_ADD_DEPTH_VALUE_THRESHOLD < d0value && d0value < beta + MPC_ADD_DEPTH_VALUE_THRESHOLD && depth >= 20 && search_depth < depth - 2) {
         search_depth += 2; // if value is near [alpha, beta], increase search_depth
-        if (search_depth >= depth) {
-            return false;
-        }
+        //if (search_depth >= depth) {
+        //    return false;
+        //}
     }
     */
+    /*
+    if ((d0value < alpha - MPC_SUB_DEPTH_VALUE_THRESHOLD || beta + MPC_SUB_DEPTH_VALUE_THRESHOLD < d0value) && search_depth >= 2) {
+        search_depth -= 2; // if value is far from [alpha, beta], decrease search_depth
+    }
+    */
+    
     if (search_depth == 0) {
         #if USE_MPC_PRE_CALCULATION
             int error = mpc_error[search->mpc_level][search->n_discs][0][depth];
