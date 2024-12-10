@@ -129,13 +129,13 @@ inline int ybwc_split_nws(Search *search, int alpha, const int depth, uint64_t l
                         ++running_count;
                     } else {
                         if (ybwc_split_state == YBWC_NOT_PUSHED) {
-                            g = -nega_alpha_ordering_nws(search, -alpha - 1, depth - 1, false, move_list[move_idx].n_legal, is_end_search, &n_searching);
+                            g = -nega_alpha_ordering_nws(search, -alpha - 1, depth - 1, false, move_list[move_idx].n_legal, is_end_search, searching);
                             serial_searched = true;
                         } else{
                             g = ybwc_split_state;
                             ++search->n_nodes;
                         }
-                        if (n_searching) {
+                        if (*searching) {
                             if (*v < g) {
                                 *v = g;
                                 *best_move = move_list[move_idx].flip.pos;
@@ -146,7 +146,6 @@ inline int ybwc_split_nws(Search *search, int alpha, const int depth, uint64_t l
                         }
                     }
                 search->undo(&move_list[move_idx].flip);
-                /*
                 if (running_count && serial_searched) {
                     n_searching &= *searching;
                     Parallel_task got_task;
@@ -169,7 +168,6 @@ inline int ybwc_split_nws(Search *search, int alpha, const int depth, uint64_t l
                         }
                     }
                 }
-                */
             }
         }
         //n_searching &= *searching;
@@ -215,13 +213,14 @@ inline int ybwc_split_nws(Search *search, int alpha, const int depth, uint64_t l
                         ++running_count;
                     } else{
                         if (ybwc_split_state == YBWC_NOT_PUSHED) {
-                            g = -nega_alpha_ordering_nws(search, -(*alpha) - 1, depth - 1, false, move_list[move_idx].n_legal, is_end_search, &n_searching);
+                            n_searching &= *searching;
+                            g = -nega_alpha_ordering_nws(search, -(*alpha) - 1, depth - 1, false, move_list[move_idx].n_legal, is_end_search, searching);
                             serial_searched = true;
                         } else{
                             g = ybwc_split_state;
                             ++search->n_nodes;
                         }
-                        if (n_searching) {
+                        if (*searching) {
                             if (*v < g) {
                                 *v = g;
                                 *best_move = move_list[move_idx].flip.pos;
