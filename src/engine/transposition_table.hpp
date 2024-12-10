@@ -29,7 +29,7 @@
     constexpr size_t TRANSPOSITION_TABLE_STACK_SIZE = hash_sizes[DEFAULT_HASH_LEVEL] + TRANSPOSITION_TABLE_N_LOOP - 1;
 #endif
 #define N_TRANSPOSITION_MOVES 2
-#define TT_REGISTER_THRESHOLD_RATE 4.0
+#define TT_REGISTER_THRESHOLD_RATE 0.5
 #define TT_REG_LOWER_LEVEL_WINDOW_WIDTH_OFFSET 3
 
 bool transposition_table_auto_reset_importance = true;
@@ -226,6 +226,10 @@ class Hash_data {
 
         inline uint8_t get_mpc_level() {
             return mpc_level;
+        }
+
+        inline uint8_t get_importance() const {
+            return importance;
         }
 };
 
@@ -534,13 +538,16 @@ class Transposition_table {
                                         min_level_node = node;
                                     }
                                 #else
+                                    if (node->data.get_importance() == 0) {
+                                        n_registered.fetch_add(1);
+                                    }
                                     node->board.player = search->board.player;
                                     node->board.opponent = search->board.opponent;
                                     node->data.reg_new_data(depth, search->mpc_level, alpha, beta, value, policy);
                                     node->lock.unlock();
-                                    if (node_level > 0) {
-                                        n_registered.fetch_add(1);
-                                    }
+                                    //if (node_level > 0) {
+                                    //    n_registered.fetch_add(1);
+                                    //}
                                     break;
                                 #endif
                             }
