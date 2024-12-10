@@ -29,7 +29,7 @@
 #include "etc.hpp"
 #include "book.hpp"
 
-inline int aspiration_search(Search *search, int alpha, int beta, int predicted_value, const int depth, const bool skipped, uint64_t legal, const bool is_end_search, bool *searching);
+inline int aspiration_search(Search *search, int alpha, int beta, int predicted_value, const int depth, const bool skipped, uint64_t legal, const bool is_end_search, const bool *searching);
 
 /*
     @brief Get a value with last move with Nega-Alpha algorithm
@@ -259,7 +259,7 @@ int nega_scout(Search *search, int alpha, int beta, const int depth, const bool 
         @param legal                legal moves in bitboard
         @return pair of value and best move
     */
-    inline int aspiration_search(Search *search, int alpha, int beta, int predicted_value, const int depth, const bool skipped, uint64_t legal, const bool is_end_search, bool *searching) {
+    inline int aspiration_search(Search *search, int alpha, int beta, int predicted_value, const int depth, const bool skipped, uint64_t legal, const bool is_end_search, const bool *searching) {
         int pred_alpha = predicted_value - 1;
         int pred_beta = predicted_value + 1;
         int g = nega_scout(search, pred_alpha, pred_beta, depth, false, LEGAL_UNDEFINED, is_end_search, searching);
