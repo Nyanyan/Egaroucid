@@ -154,7 +154,7 @@ inline int ybwc_split_nws(Search *search, int parent_alpha, const int depth, uin
             }
         }
         Parallel_task task_result;
-        if (n_searching && *searching && running_count >= 3 && depth >= 30) {
+        if (n_searching && *searching && running_count >= 2 && depth >= 30) {
             for (std::future<Parallel_task> &task: parallel_tasks) {
                 if (task.valid()) {
                     if (task.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
@@ -172,7 +172,7 @@ inline int ybwc_split_nws(Search *search, int parent_alpha, const int depth, uin
                     }
                 }
             }
-            if (running_count >= 2) {
+            if (running_count) {
                 n_searching = false;
                 for (std::future<Parallel_task> &task: parallel_tasks) {
                     if (task.valid()) {
@@ -206,7 +206,6 @@ inline int ybwc_split_nws(Search *search, int parent_alpha, const int depth, uin
                                         }
                                     }
                                 search->undo(&move_list[move_idx].flip);
-                                //++n_searched;
                             }
                         }
                     } else {
