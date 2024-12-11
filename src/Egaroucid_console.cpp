@@ -13,7 +13,7 @@
 #include "engine/engine_all.hpp"
 #include "console/console_all.hpp"
 #if TEST_ENDGAME_ACCURACY
-    #include "test.hpp"
+    #include "engine/test.hpp"
 #endif
 
 
