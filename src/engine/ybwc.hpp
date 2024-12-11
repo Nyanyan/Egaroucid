@@ -111,20 +111,20 @@ inline int ybwc_split_nws(Search *search, int parent_alpha, const int depth, uin
 #if USE_YBWC_NWS
     inline void ybwc_search_young_brothers_nws(Search *search, int alpha, int *v, int *best_move, uint32_t hash_code, int depth, bool is_end_search, std::vector<Flip_value> &move_list, const bool *searching) {
         std::vector<std::future<Parallel_task>> parallel_tasks;
-        bool n_searching = true;
+        const bool *n_searching = searching;
+        const bool not_searching = false;
         int canput = (int)move_list.size();
         int running_count = 0;
         int g;
-        for (int move_idx = 1; move_idx < canput && n_searching  && *searching; ++move_idx) {
+        for (int move_idx = 1; move_idx < canput && *n_searching; ++move_idx) {
             if (move_list[move_idx].flip.flip) {
                 bool serial_searched = false;
                 search->move(&move_list[move_idx].flip);
-                    int ybwc_split_state = ybwc_split_nws(search, alpha, depth - 1, move_list[move_idx].n_legal, is_end_search, &n_searching, move_list[move_idx].flip.pos, move_idx, canput, running_count, parallel_tasks);
+                    int ybwc_split_state = ybwc_split_nws(search, alpha, depth - 1, move_list[move_idx].n_legal, is_end_search, n_searching, move_list[move_idx].flip.pos, move_idx, canput, running_count, parallel_tasks);
                     if (ybwc_split_state == YBWC_PUSHED) {
                         ++running_count;
                     } else {
                         if (ybwc_split_state == YBWC_NOT_PUSHED) {
-                            n_searching &= *searching;
                             g = -nega_alpha_ordering_nws(search, -alpha - 1, depth - 1, false, move_list[move_idx].n_legal, is_end_search, searching);
                             serial_searched = true;
                         } else{
@@ -136,14 +136,13 @@ inline int ybwc_split_nws(Search *search, int parent_alpha, const int depth, uin
                                 *v = g;
                                 *best_move = move_list[move_idx].flip.pos;
                                 if (alpha < g) {
-                                    n_searching = false;
+                                    n_searching = &not_searching;
                                 }
                             }
                         }
                     }
                 search->undo(&move_list[move_idx].flip);
                 if (running_count && serial_searched) {
-                    n_searching &= *searching;
                     Parallel_task got_task;
                     for (std::future<Parallel_task> &task: parallel_tasks) {
                         if (task.valid()) {
@@ -156,7 +155,7 @@ inline int ybwc_split_nws(Search *search, int parent_alpha, const int depth, uin
                                         *v = got_task.value;
                                         *best_move = move_list[got_task.move_idx].flip.pos;
                                         if (alpha < got_task.value) {
-                                            n_searching = false;
+                                            n_searching = &not_searching;
                                         }
                                     }
                                 }
@@ -169,7 +168,6 @@ inline int ybwc_split_nws(Search *search, int parent_alpha, const int depth, uin
         if (running_count) {
             Parallel_task got_task;
             for (std::future<Parallel_task> &task: parallel_tasks) {
-                n_searching &= *searching;
                 if (task.valid()) {
                     got_task = task.get();
                     --running_count;
@@ -179,7 +177,7 @@ inline int ybwc_split_nws(Search *search, int parent_alpha, const int depth, uin
                             *v = got_task.value;
                             *best_move = move_list[got_task.move_idx].flip.pos;
                             if (alpha < got_task.value) {
-                                n_searching = false;
+                                n_searching = &not_searching;
                             }
                         }
                     }
