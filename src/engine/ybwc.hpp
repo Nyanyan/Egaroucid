@@ -195,25 +195,7 @@ inline int ybwc_split_nws(Search *search, int parent_alpha, const int depth, uin
                 int n_to_be_searched = n_moves_seen - n_searched;
                 searchings.pop_back();
                 if (*v <= alpha && n_to_be_searched && is_searching(searchings)) {
-                    /*
-                    if (n_to_be_searched <= 1) {
-                        for (int move_idx = 1; move_idx < canput && is_searching(searchings); ++move_idx) {
-                            if (move_list[move_idx].flip.flip) {
-                                search->move(&move_list[move_idx].flip);
-                                    g = -nega_alpha_ordering_nws(search, -alpha - 1, depth - 1, false, move_list[move_idx].n_legal, is_end_search, searchings);
-                                    if (is_searching(searchings)) {
-                                        if (*v < g) {
-                                            *v = g;
-                                            *best_move = move_list[move_idx].flip.pos;
-                                        }
-                                    }
-                                search->undo(&move_list[move_idx].flip);
-                            }
-                        }
-                    } else {
-                    */
                     ybwc_search_young_brothers_nws(search, alpha, v, best_move, n_to_be_searched, hash_code, depth, is_end_search, move_list, searchings);
-                    //}
                 }
                 return;
             }
