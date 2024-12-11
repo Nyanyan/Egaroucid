@@ -115,7 +115,7 @@ inline int ybwc_split_nws(Search *search, int alpha, const int depth, uint64_t l
         int canput = (int)move_list.size();
         int running_count = 0;
         int g;
-        for (int move_idx = 1; move_idx < canput && n_searching && *searching; ++move_idx) {
+        for (int move_idx = 1; move_idx < canput && n_searching  && *searching; ++move_idx) {
             if (move_list[move_idx].flip.flip) {
                 bool serial_searched = false;
                 search->move(&move_list[move_idx].flip);
@@ -150,6 +150,7 @@ inline int ybwc_split_nws(Search *search, int alpha, const int depth, uint64_t l
                             if (task.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
                                 got_task = task.get();
                                 --running_count;
+                                search->n_nodes += got_task.n_nodes;
                                 if (got_task.value != SCORE_UNDEFINED) {
                                     if (*v < got_task.value) {
                                         *v = got_task.value;
@@ -159,14 +160,12 @@ inline int ybwc_split_nws(Search *search, int alpha, const int depth, uint64_t l
                                         }
                                     }
                                 }
-                                search->n_nodes += got_task.n_nodes;
                             }
                         }
                     }
                 }
             }
         }
-        //n_searching &= *searching;
         if (running_count) {
             Parallel_task got_task;
             for (std::future<Parallel_task> &task: parallel_tasks) {
@@ -174,6 +173,7 @@ inline int ybwc_split_nws(Search *search, int alpha, const int depth, uint64_t l
                 if (task.valid()) {
                     got_task = task.get();
                     --running_count;
+                    search->n_nodes += got_task.n_nodes;
                     if (got_task.value != SCORE_UNDEFINED) {
                         if (*v < got_task.value) {
                             *v = got_task.value;
@@ -183,7 +183,6 @@ inline int ybwc_split_nws(Search *search, int alpha, const int depth, uint64_t l
                             }
                         }
                     }
-                    search->n_nodes += got_task.n_nodes;
                 }
             }
         }
@@ -241,6 +240,7 @@ inline int ybwc_split_nws(Search *search, int alpha, const int depth, uint64_t l
                             if (task.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
                                 got_task = task.get();
                                 --running_count;
+                                search->n_nodes += got_task.n_nodes;
                                 if (got_task.value != SCORE_UNDEFINED) {
                                     if (*v < got_task.value) {
                                         *v = got_task.value;
@@ -254,7 +254,6 @@ inline int ybwc_split_nws(Search *search, int alpha, const int depth, uint64_t l
                                         move_list[got_task.move_idx].flip.flip = 0;
                                     }
                                 }
-                                search->n_nodes += got_task.n_nodes;
                             }
                         }
                     }
@@ -268,6 +267,7 @@ inline int ybwc_split_nws(Search *search, int alpha, const int depth, uint64_t l
                 if (task.valid()) {
                     got_task = task.get();
                     --running_count;
+                    search->n_nodes += got_task.n_nodes;
                     if (got_task.value != SCORE_UNDEFINED) {
                         if (*v < got_task.value) {
                             *v = got_task.value;
@@ -281,7 +281,6 @@ inline int ybwc_split_nws(Search *search, int alpha, const int depth, uint64_t l
                             move_list[got_task.move_idx].flip.flip = 0;
                         }
                     }
-                    search->n_nodes += got_task.n_nodes;
                 }
             }
         }
