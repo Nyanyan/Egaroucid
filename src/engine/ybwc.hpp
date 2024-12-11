@@ -153,24 +153,24 @@ inline int ybwc_split_nws(Search *search, int parent_alpha, const int depth, uin
                 }
             }
         }
-        Parallel_task got_task;
+        Parallel_task task_result;
         if (n_searching && *searching && running_count >= 3 && depth >= 30) {
             int max_not_done_move_idx = -1;
             for (std::future<Parallel_task> &task: parallel_tasks) {
                 if (task.valid()) {
                     if (task.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
-                        got_task = task.get();
+                        task_result = task.get();
                         --running_count;
-                        search->n_nodes += got_task.n_nodes;
-                        if (got_task.value != SCORE_UNDEFINED) {
-                            if (*v < got_task.value) {
-                                *v = got_task.value;
-                                *best_move = move_list[got_task.move_idx].flip.pos;
+                        search->n_nodes += task_result.n_nodes;
+                        if (task_result.value != SCORE_UNDEFINED) {
+                            if (*v < task_result.value) {
+                                *v = task_result.value;
+                                *best_move = move_list[task_result.move_idx].flip.pos;
                             }
-                            move_list[got_task.move_idx].flip.flip = 0;
+                            move_list[task_result.move_idx].flip.flip = 0;
                             --n_to_be_searched;
                         } else {
-                            max_not_done_move_idx = std::max(max_not_done_move_idx, got_task.move_idx);
+                            max_not_done_move_idx = std::max(max_not_done_move_idx, task_result.move_idx);
                         }
                     }
                 }
@@ -179,18 +179,18 @@ inline int ybwc_split_nws(Search *search, int parent_alpha, const int depth, uin
                 n_searching = false;
                 for (std::future<Parallel_task> &task: parallel_tasks) {
                     if (task.valid()) {
-                        got_task = task.get();
+                        task_result = task.get();
                         --running_count;
-                        search->n_nodes += got_task.n_nodes;
-                        if (got_task.value != SCORE_UNDEFINED) {
-                            if (*v < got_task.value) {
-                                *v = got_task.value;
-                                *best_move = move_list[got_task.move_idx].flip.pos;
+                        search->n_nodes += task_result.n_nodes;
+                        if (task_result.value != SCORE_UNDEFINED) {
+                            if (*v < task_result.value) {
+                                *v = task_result.value;
+                                *best_move = move_list[task_result.move_idx].flip.pos;
                             }
-                            move_list[got_task.move_idx].flip.flip = 0;
+                            move_list[task_result.move_idx].flip.flip = 0;
                             --n_to_be_searched;
                         } else {
-                            max_not_done_move_idx = std::max(max_not_done_move_idx, got_task.move_idx);
+                            max_not_done_move_idx = std::max(max_not_done_move_idx, task_result.move_idx);
                         }
                     }
                 }
@@ -223,12 +223,12 @@ inline int ybwc_split_nws(Search *search, int parent_alpha, const int depth, uin
         for (std::future<Parallel_task> &task: parallel_tasks) {
             n_searching &= *searching;
             if (task.valid()) {
-                got_task = task.get();
-                search->n_nodes += got_task.n_nodes;
-                if (got_task.value != SCORE_UNDEFINED) {
-                    if (*v < got_task.value) {
-                        *v = got_task.value;
-                        *best_move = move_list[got_task.move_idx].flip.pos;
+                task_result = task.get();
+                search->n_nodes += task_result.n_nodes;
+                if (task_result.value != SCORE_UNDEFINED) {
+                    if (*v < task_result.value) {
+                        *v = task_result.value;
+                        *best_move = move_list[task_result.move_idx].flip.pos;
                     }
                 }
             }
@@ -281,23 +281,23 @@ inline int ybwc_split_nws(Search *search, int parent_alpha, const int depth, uin
             }
         }
         if (running_count) {
-            Parallel_task got_task;
+            Parallel_task task_result;
             for (std::future<Parallel_task> &task: parallel_tasks) {
                 n_searching &= *searching;
                 if (task.valid()) {
-                    got_task = task.get();
+                    task_result = task.get();
                     --running_count;
-                    search->n_nodes += got_task.n_nodes;
-                    if (got_task.value != SCORE_UNDEFINED) {
-                        if (*v < got_task.value) {
-                            *v = got_task.value;
-                            *best_move = move_list[got_task.move_idx].flip.pos;
+                    search->n_nodes += task_result.n_nodes;
+                    if (task_result.value != SCORE_UNDEFINED) {
+                        if (*v < task_result.value) {
+                            *v = task_result.value;
+                            *best_move = move_list[task_result.move_idx].flip.pos;
                         }
-                        if (*alpha < got_task.value) {
-                            next_alpha = std::max(next_alpha, got_task.value);
-                            research_idxes.emplace_back(got_task.move_idx);
+                        if (*alpha < task_result.value) {
+                            next_alpha = std::max(next_alpha, task_result.value);
+                            research_idxes.emplace_back(task_result.move_idx);
                         } else {
-                            move_list[got_task.move_idx].flip.flip = 0;
+                            move_list[task_result.move_idx].flip.flip = 0;
                         }
                     }
                 }
