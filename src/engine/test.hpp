@@ -37,7 +37,11 @@ void endgame_accuracy_test() {
         }
         ifs >> line;
         Board board;
-        if (input_board_base81(line, &board)) {
+        //if (input_board_base81(line, &board)) {
+        //    std::cerr << "input file format error at idx " << i << " " << line << std::endl;
+        //    return;
+        //}
+        if (!board.from_str(line)) {
             std::cerr << "input file format error at idx " << i << " " << line << std::endl;
             return;
         }
