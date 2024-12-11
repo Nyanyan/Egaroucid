@@ -50,7 +50,7 @@ void endgame_accuracy_test() {
         ans >> v_ans;
         if (v != v_ans) {
             ++n_error;
-            std::cerr << "[ERROR] endgame value wrong idx " << i << " got " << v << " expected " << v_ans << std::endl;
+            std::cerr << "[ERROR] endgame value wrong idx " << i << " " << line << " got " << v << " expected " << v_ans << std::endl;
         }
     }
     std::cerr << std::endl;
