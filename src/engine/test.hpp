@@ -32,7 +32,7 @@ void endgame_accuracy_test() {
     const uint64_t n_data = stoi(line);
     uint64_t n_error = 0;
     for (uint64_t i = 0; i < n_data; ++i) {
-        if ((i & 0xff) == 0xff) {
+        if ((i & 0b111111) == 0b111111) {
             std::cerr << '\r' << i;
         }
         ifs >> line;
@@ -50,7 +50,7 @@ void endgame_accuracy_test() {
         ans >> v_ans;
         if (v != v_ans) {
             ++n_error;
-            std::cerr << "[ERROR] endgame value wrong idx " << i << " " << line << " got " << v << " expected " << v_ans << std::endl;
+            std::cerr << "\r[ERROR] endgame value wrong idx " << i << " " << line << " got " << v << " expected " << v_ans << std::endl;
         }
     }
     std::cerr << std::endl;
