@@ -158,10 +158,10 @@ int nega_scout(Search *search, int alpha, int beta, const int depth, const bool 
         }
         ++idx;
     }
-    int etc_done_idx = 0;
+    int n_etc_done = 0;
     #if USE_MID_ETC
         if (depth >= MID_ETC_DEPTH) {
-            if (etc(search, move_list, depth, &alpha, &beta, &v, &etc_done_idx)) {
+            if (etc(search, move_list, depth, &alpha, &beta, &v, &n_etc_done)) {
                 return v;
             }
         }
@@ -198,12 +198,12 @@ int nega_scout(Search *search, int alpha, int beta, const int depth, const bool 
                     }
                 }
                 if (alpha < beta) {
-                    ybwc_search_young_brothers(search, &alpha, &beta, &v, &best_move, canput - 1, hash_code, depth, is_end_search, move_list, false, searching);
+                    ybwc_search_young_brothers(search, &alpha, &beta, &v, &best_move, canput - n_etc_done - 1, hash_code, depth, is_end_search, move_list, false, searching);
                 }
             }
         } else{
     #endif
-            for (int move_idx = 0; move_idx < canput - etc_done_idx && *searching; ++move_idx) {
+            for (int move_idx = 0; move_idx < canput - n_etc_done && *searching; ++move_idx) {
                 swap_next_best_move(move_list, move_idx, canput);
                 #if USE_MID_ETC
                     if (move_list[move_idx].flip.flip == 0) {

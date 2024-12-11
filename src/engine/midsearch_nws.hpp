@@ -140,16 +140,20 @@ int nega_alpha_ordering_nws_simple(Search *search, int alpha, const int depth, c
         }
         ++idx;
     }
-    int etc_done_idx = 0;
     #if USE_MID_ETC && MID_ETC_DEPTH <= MID_SIMPLE_DEPTH
+        int n_etc_done = 0;
         if (depth >= MID_ETC_DEPTH) {
-            if (etc_nws(search, move_list, depth, alpha, &v, &etc_done_idx)) {
+            if (etc_nws(search, move_list, depth, alpha, &v, &n_etc_done)) {
                 return v;
             }
         }
     #endif
     move_list_evaluate_nws(search, move_list, moves, depth, alpha, searching);
-    for (int move_idx = 0; move_idx < canput - etc_done_idx && *searching; ++move_idx) {
+    #if USE_MID_ETC && MID_ETC_DEPTH <= MID_SIMPLE_DEPTH
+    for (int move_idx = 0; move_idx < canput - n_etc_done && *searching; ++move_idx) {
+    #else
+    for (int move_idx = 0; move_idx < canput && *searching; ++move_idx) {
+    #endif
         swap_next_best_move(move_list, move_idx, canput);
         #if USE_MID_ETC && MID_ETC_DEPTH <= MID_SIMPLE_DEPTH
             if (move_list[move_idx].flip.flip == 0) {
@@ -262,10 +266,10 @@ int nega_alpha_ordering_nws(Search *search, int alpha, const int depth, const bo
         }
         ++idx;
     }
-    int etc_done_idx = 0;
+    int n_etc_done = 0;
     #if USE_MID_ETC
         if (depth >= MID_ETC_DEPTH) {
-            if (etc_nws(search, move_list, depth, alpha, &v, &etc_done_idx)) {
+            if (etc_nws(search, move_list, depth, alpha, &v, &n_etc_done)) {
                 return v;
             }
         }
@@ -287,12 +291,12 @@ int nega_alpha_ordering_nws(Search *search, int alpha, const int depth, const bo
                     best_move = move_list[0].flip.pos;
                 }
                 if (v <= alpha) {
-                    ybwc_search_young_brothers_nws(search, alpha, &v, &best_move, canput - 1, hash_code, depth, is_end_search, move_list, searchings);
+                    ybwc_search_young_brothers_nws(search, alpha, &v, &best_move, canput - n_etc_done - 1, hash_code, depth, is_end_search, move_list, searchings);
                 }
             }
         } else{
     #endif
-            for (int move_idx = 0; move_idx < canput - etc_done_idx && is_searching(searchings); ++move_idx) {
+            for (int move_idx = 0; move_idx < canput - n_etc_done && is_searching(searchings); ++move_idx) {
                 swap_next_best_move(move_list, move_idx, canput);
                 #if USE_MID_ETC
                     if (move_list[move_idx].flip.flip == 0) {
