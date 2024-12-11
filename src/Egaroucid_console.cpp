@@ -12,9 +12,6 @@
 #include <fstream>
 #include "engine/engine_all.hpp"
 #include "console/console_all.hpp"
-#if TEST_ENDGAME_ACCURACY
-    #include "engine/test.hpp"
-#endif
 
 
 void init_console(Options options, std::string binary_path) {
@@ -65,10 +62,6 @@ int main(int argc, char* argv[]) {
     init_console(options, binary_path);
     execute_special_tasks(options);
     execute_special_commandline_tasks(commandline_options, &options, &state);
-    #if TEST_ENDGAME_ACCURACY
-        endgame_accuracy_test();
-        return 0;
-    #endif
     Board_info board;
     init_board(&board, &options, &state);
     while (true) {

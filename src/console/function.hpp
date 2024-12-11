@@ -168,6 +168,11 @@ void execute_special_tasks(Options options) {
         get_data_probcut_end();
         std::exit(0);
     #endif
+
+    #if TEST_ENDGAME_ACCURACY
+        endgame_accuracy_test();
+        std::exit(0);
+    #endif
 }
 
 bool execute_special_tasks_loop(Board_info *board, State *state, Options *options) {

@@ -19,3 +19,6 @@
 #include "problem_generator.hpp"
 #include "umigame.hpp"
 #include "version.hpp"
+#if TEST_ENDGAME_ACCURACY
+#include "test.hpp"
+#endif
