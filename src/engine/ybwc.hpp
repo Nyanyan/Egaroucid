@@ -195,6 +195,7 @@ inline int ybwc_split_nws(Search *search, int parent_alpha, const int depth, uin
                 int n_to_be_searched = n_moves_seen - n_searched;
                 if (*v <= alpha && n_to_be_searched && is_searching(searchings)) {
                     searchings.pop_back();
+                    /*
                     if (n_to_be_searched <= 1) {
                         for (int move_idx = 1; move_idx < canput && is_searching(searchings); ++move_idx) {
                             if (move_list[move_idx].flip.flip) {
@@ -210,8 +211,9 @@ inline int ybwc_split_nws(Search *search, int parent_alpha, const int depth, uin
                             }
                         }
                     } else {
-                        ybwc_search_young_brothers_nws(search, alpha, v, best_move, n_to_be_searched, hash_code, depth, is_end_search, move_list, searchings);
-                    }
+                    */
+                    ybwc_search_young_brothers_nws(search, alpha, v, best_move, n_to_be_searched, hash_code, depth, is_end_search, move_list, searchings);
+                    //}
                     return;
                 }
             }
