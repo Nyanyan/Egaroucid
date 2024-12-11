@@ -141,6 +141,9 @@ inline int ybwc_split_nws(Search *search, int parent_alpha, const int depth, uin
                             if (*v < g) {
                                 *v = g;
                                 *best_move = move_list[move_idx].flip.pos;
+                                if (alpha < g) {
+                                    n_searching = false;
+                                }
                             }
                         }
                     }
@@ -262,6 +265,7 @@ inline int ybwc_split_nws(Search *search, int parent_alpha, const int depth, uin
                             }
                             if (*alpha < g) {
                                 next_alpha = std::max(next_alpha, g);
+                                n_searching = false;
                                 research_idxes.emplace_back(move_idx);
                             } else{
                                 move_done = true;
@@ -278,6 +282,7 @@ inline int ybwc_split_nws(Search *search, int parent_alpha, const int depth, uin
         if (running_count) {
             Parallel_task task_result;
             for (std::future<Parallel_task> &task: parallel_tasks) {
+                n_searching &= *searching;
                 if (task.valid()) {
                     task_result = task.get();
                     --running_count;
