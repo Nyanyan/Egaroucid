@@ -274,8 +274,7 @@ int nega_alpha_ordering_nws(Search *search, int alpha, const int depth, const bo
     #if USE_YBWC_NWS
         if (
             search->use_multi_thread && 
-            ((!is_end_search && depth - 1 >= YBWC_MID_SPLIT_MIN_DEPTH) || (is_end_search && depth - 1 >= YBWC_END_SPLIT_MIN_DEPTH)) && 
-            ((!is_end_search && depth - 1 <= YBWC_MID_SPLIT_MAX_DEPTH) || (is_end_search && depth - 1 <= YBWC_END_SPLIT_MAX_DEPTH))
+            ((!is_end_search && depth - 1 >= YBWC_MID_SPLIT_MIN_DEPTH) || (is_end_search && depth - 1 >= YBWC_END_SPLIT_MIN_DEPTH))
         ) {
             move_list_sort(move_list);
             if (move_list[0].flip.flip) {
