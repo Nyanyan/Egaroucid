@@ -31,7 +31,7 @@
 inline bool ybwc_split_nws(const Search *search, int alpha, const int depth, uint64_t legal, const bool is_end_search, const bool *searching, uint_fast8_t policy, const int pv_idx, const int move_idx, const int canput, const int running_count, std::vector<std::future<Parallel_task>> &parallel_tasks);
 inline void ybwc_get_end_tasks(Search *search, std::vector<std::future<Parallel_task>> &parallel_tasks, int *v, int *best_move, int *running_count);
 inline void ybwc_wait_all_nws(Search *search, std::vector<std::future<Parallel_task>> &parallel_tasks, int *v, int *best_move, int *running_count, int alpha, const bool *searching, bool *n_searching);
-inline bool mpc(Search* search, int alpha, int beta, const int depth, uint64_t legal, const bool is_end_search, int* v, const bool* searching);
+inline bool mpc(Search* search, int alpha, int beta, const int depth, uint64_t legal, const bool is_end_search, int* v, const bool* searching, const bool* searching2);
 
 /*
     @brief Get a value with last move with Nega-Alpha algorithm (NWS)
@@ -126,7 +126,7 @@ int nega_alpha_ordering_nws_simple(Search *search, int alpha, const int depth, c
         return v;
     }
     #if USE_MID_MPC && MID_MPC_MIN_DEPTH <= MID_SIMPLE_DEPTH
-        if (mpc(search, alpha, alpha + 1, depth, legal, false, &v, searching)) {
+        if (mpc(search, alpha, alpha + 1, depth, legal, false, &v, searching, searching)) {
             return v;
         }
     #endif
@@ -192,8 +192,8 @@ int nega_alpha_ordering_nws_simple(Search *search, int alpha, const int depth, c
     @param searching            flag for terminating this search
     @return the value
 */
-int nega_alpha_ordering_nws(Search *search, int alpha, const int depth, const bool skipped, uint64_t legal, const bool is_end_search, const bool *searching) {
-    if (!global_searching || !(*searching)) {
+int nega_alpha_ordering_nws(Search *search, int alpha, const int depth, const bool skipped, uint64_t legal, const bool is_end_search, const bool *searching, const bool *searching2) {
+    if (!global_searching || !(*searching) || !(*searching2)) {
         return SCORE_UNDEFINED;
     }
     if (is_end_search) {
@@ -210,7 +210,7 @@ int nega_alpha_ordering_nws(Search *search, int alpha, const int depth, const bo
         */
     } else {
         if (depth <= MID_SIMPLE_DEPTH) {
-            return nega_alpha_ordering_nws_simple(search, alpha, depth, skipped, legal, searching);
+            return nega_alpha_ordering_nws_simple(search, alpha, depth, skipped, legal, searching2);
         }
     }
     int v = -SCORE_INF;
@@ -226,7 +226,7 @@ int nega_alpha_ordering_nws(Search *search, int alpha, const int depth, const bo
             return end_evaluate(&search->board);
         }
         search->pass();
-            v = -nega_alpha_ordering_nws(search, -alpha - 1, depth, true, LEGAL_UNDEFINED, is_end_search, searching);
+            v = -nega_alpha_ordering_nws(search, -alpha - 1, depth, true, LEGAL_UNDEFINED, is_end_search, searching, searching2);
         search->pass();
         return v;
     }
@@ -236,7 +236,7 @@ int nega_alpha_ordering_nws(Search *search, int alpha, const int depth, const bo
         return v;
     }
     #if USE_MID_MPC
-        if (mpc(search, alpha, alpha + 1, depth, legal, is_end_search, &v, searching)) {
+        if (mpc(search, alpha, alpha + 1, depth, legal, is_end_search, &v, searching, searching2)) {
             return v;
         }
     #endif
@@ -260,17 +260,18 @@ int nega_alpha_ordering_nws(Search *search, int alpha, const int depth, const bo
             }
         }
     #endif
-    move_list_evaluate_nws(search, move_list, moves, depth, alpha, searching);
+    move_list_evaluate_nws(search, move_list, moves, depth, alpha, searching2);
     #if USE_YBWC_NWS
         if (
             search->use_multi_thread && 
             ((!is_end_search && depth - 1 >= YBWC_MID_SPLIT_MIN_DEPTH) || (is_end_search && depth - 1 >= YBWC_END_SPLIT_MIN_DEPTH)) && 
-            ((!is_end_search && depth - 1 <= YBWC_MID_SPLIT_MAX_DEPTH) || (is_end_search && depth - 1 <= YBWC_END_SPLIT_MAX_DEPTH))
+            ((!is_end_search && depth - 1 <= YBWC_MID_SPLIT_MAX_DEPTH) || (is_end_search && depth - 1 <= YBWC_END_SPLIT_MAX_DEPTH)) && 
+            searching == searching2
         ) {
             move_list_sort(move_list);
             if (move_list[0].flip.flip) {
                 search->move(&move_list[0].flip);
-                    g = -nega_alpha_ordering_nws(search, -alpha - 1, depth - 1, false, move_list[0].n_legal, is_end_search, searching);
+                    g = -nega_alpha_ordering_nws(search, -alpha - 1, depth - 1, false, move_list[0].n_legal, is_end_search, searching, searching2);
                 search->undo(&move_list[0].flip);
                 if (v < g) {
                     v = g;
@@ -282,7 +283,7 @@ int nega_alpha_ordering_nws(Search *search, int alpha, const int depth, const bo
             }
         } else{
     #endif
-            for (int move_idx = 0; move_idx < canput - etc_done_idx && *searching; ++move_idx) {
+            for (int move_idx = 0; move_idx < canput - etc_done_idx && *searching && *searching2; ++move_idx) {
                 swap_next_best_move(move_list, move_idx, canput);
                 #if USE_MID_ETC
                     if (move_list[move_idx].flip.flip == 0) {
@@ -290,7 +291,7 @@ int nega_alpha_ordering_nws(Search *search, int alpha, const int depth, const bo
                     }
                 #endif
                 search->move(&move_list[move_idx].flip);
-                    g = -nega_alpha_ordering_nws(search, -alpha - 1, depth - 1, false, move_list[move_idx].n_legal, is_end_search, searching);
+                    g = -nega_alpha_ordering_nws(search, -alpha - 1, depth - 1, false, move_list[move_idx].n_legal, is_end_search, searching, searching2);
                 search->undo(&move_list[move_idx].flip);
                 if (v < g) {
                     v = g;
@@ -303,7 +304,7 @@ int nega_alpha_ordering_nws(Search *search, int alpha, const int depth, const bo
     #if USE_YBWC_NWS
         }
     #endif
-    if (*searching && global_searching) {
+    if (global_searching && *searching && *searching2) {
         transposition_table.reg(search, hash_code, depth, alpha, alpha + 1, v, best_move);
     }
     return v;
