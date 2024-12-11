@@ -339,7 +339,8 @@ std::pair<int, int> first_nega_scout_legal(Search *search, int alpha, int beta, 
         #if USE_YBWC_NEGASCOUT
             if (
                 search->use_multi_thread && 
-                ((!is_end_search && depth - 1 >= YBWC_MID_SPLIT_MIN_DEPTH) || (is_end_search && depth - 1 >= YBWC_END_SPLIT_MIN_DEPTH))
+                ((!is_end_search && depth - 1 >= YBWC_MID_SPLIT_MIN_DEPTH) || (is_end_search && depth - 1 >= YBWC_END_SPLIT_MIN_DEPTH)) //&& 
+                //((!is_end_search && depth - 1 <= YBWC_MID_SPLIT_MAX_DEPTH) || (is_end_search && depth - 1 <= YBWC_END_SPLIT_MAX_DEPTH))
             ) {
                 move_list_sort(move_list);
                 if (move_list[0].flip.flip) {

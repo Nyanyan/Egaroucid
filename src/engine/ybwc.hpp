@@ -23,7 +23,9 @@
     @brief YBWC parameters
 */
 #define YBWC_MID_SPLIT_MIN_DEPTH 5
+//#define YBWC_MID_SPLIT_MAX_DEPTH 26
 #define YBWC_END_SPLIT_MIN_DEPTH 15
+//#define YBWC_END_SPLIT_MAX_DEPTH 29
 #define YBWC_N_ELDER_CHILD 1
 #define YBWC_N_YOUNGER_CHILD 2
 // #define YBWC_MAX_RUNNING_COUNT 5
@@ -56,7 +58,7 @@ Parallel_task ybwc_do_task_nws(uint64_t player, uint64_t opponent, int_fast8_t n
     if (!is_searching(searchings)) {
         task.value = SCORE_UNDEFINED;
     } else if (task.value > parent_alpha) {
-        *n_searching = false;
+        *n_searching = false; // means: *searchings.back() = false;
     }
     task.n_nodes = search.n_nodes;
     task.cell = policy;
@@ -155,7 +157,8 @@ inline int ybwc_split_nws(Search *search, int parent_alpha, const int depth, uin
             }
         }
         Parallel_task task_result;
-        if (is_searching(searchings) && running_count && ((is_end_search && depth >= 30) || (!is_end_search && depth >= 26))) {
+#if USE_YBWC_SPLITTED_TASK_TERMINATION
+        if (is_searching(searchings) && running_count >= 2 && ((is_end_search && depth >= 28) || (!is_end_search && depth >= 24))) {
             for (std::future<Parallel_task> &task: parallel_tasks) {
                 if (task.valid()) {
                     if (task.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
@@ -173,7 +176,7 @@ inline int ybwc_split_nws(Search *search, int parent_alpha, const int depth, uin
                     }
                 }
             }
-            if (running_count) {
+            if (running_count >= 2) {
                 n_searching = false;
                 for (std::future<Parallel_task> &task: parallel_tasks) {
                     if (task.valid()) {
@@ -214,6 +217,7 @@ inline int ybwc_split_nws(Search *search, int parent_alpha, const int depth, uin
                 }
             }
         }
+#endif
         for (std::future<Parallel_task> &task: parallel_tasks) {
             if (task.valid()) {
                 task_result = task.get();
