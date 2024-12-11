@@ -99,7 +99,7 @@ int nega_scout(Search *search, int alpha, int beta, const int depth, const bool 
         return SCORE_UNDEFINED;
     }
     if (alpha + 1 == beta) {
-        return nega_alpha_ordering_nws(search, alpha, depth, skipped, legal, is_end_search, searching, searching);
+        return nega_alpha_ordering_nws(search, alpha, depth, skipped, legal, is_end_search, searching, searching, searching);
     }
     if (is_end_search && search->n_discs == HW2 - 4) {
         return -last4(search, -beta, -alpha);
@@ -167,7 +167,7 @@ int nega_scout(Search *search, int alpha, int beta, const int depth, const bool 
         }
     #endif
     #if USE_MID_MPC
-        if (mpc(search, alpha, beta, depth, legal, is_end_search, &v, searching, searching)) {
+        if (mpc(search, alpha, beta, depth, legal, is_end_search, &v, searching)) {
             return v;
         }
     #endif
@@ -214,7 +214,7 @@ int nega_scout(Search *search, int alpha, int beta, const int depth, const bool 
                     if (v == -SCORE_INF) {
                         g = -nega_scout(search, -beta, -alpha, depth - 1, false, move_list[move_idx].n_legal, is_end_search, searching);
                     } else{
-                        g = -nega_alpha_ordering_nws(search, -alpha - 1, depth - 1, false, move_list[move_idx].n_legal, is_end_search, searching, searching);
+                        g = -nega_alpha_ordering_nws(search, -alpha - 1, depth - 1, false, move_list[move_idx].n_legal, is_end_search, searching, searching, searching);
                         if (alpha < g && g < beta) {
                             g = -nega_scout(search, -beta, -g, depth - 1, false, move_list[move_idx].n_legal, is_end_search, searching);
                         }
@@ -368,7 +368,7 @@ std::pair<int, int> first_nega_scout_legal(Search *search, int alpha, int beta, 
                         if (v == -SCORE_INF) {
                             g = -nega_scout(search, -beta, -alpha, depth - 1, false, move_list[move_idx].n_legal, is_end_search, searching);
                         } else{
-                            g = -nega_alpha_ordering_nws(search, -alpha - 1, depth - 1, false, move_list[move_idx].n_legal, is_end_search, searching, searching);
+                            g = -nega_alpha_ordering_nws(search, -alpha - 1, depth - 1, false, move_list[move_idx].n_legal, is_end_search, searching, searching, searching);
                             if (alpha < g && g < beta) {
                                 g = -nega_scout(search, -beta, -g, depth - 1, false, move_list[move_idx].n_legal, is_end_search, searching);
                             }
@@ -514,7 +514,7 @@ Analyze_result first_nega_scout_analyze(Search *search, int alpha, int beta, con
                             if (res.alt_score == -SCORE_INF) {
                                 g = -nega_scout(search, -beta, -alpha, depth - 1, false, move_list[move_idx].n_legal, is_end_search, searching);
                             } else{
-                                g = -nega_alpha_ordering_nws(search, -alpha - 1, depth - 1, false, move_list[move_idx].n_legal, is_end_search, searching, searching);
+                                g = -nega_alpha_ordering_nws(search, -alpha - 1, depth - 1, false, move_list[move_idx].n_legal, is_end_search, searching, searching, searching);
                                 if (alpha < g && g < beta) {
                                     g = -nega_scout(search, -beta, -g, depth - 1, false, move_list[move_idx].n_legal, is_end_search, searching);
                                 }
