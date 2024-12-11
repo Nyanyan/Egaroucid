@@ -182,7 +182,7 @@ inline bool is_searching(std::vector<bool*> &searchings) {
         }
         ++idx;
     }
-    return false;
+    return true;
 }
 
 

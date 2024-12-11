@@ -336,7 +336,6 @@ std::pair<int, int> first_nega_scout_legal(Search *search, int alpha, int beta, 
         uint_fast8_t moves[N_TRANSPOSITION_MOVES] = {TRANSPOSITION_TABLE_UNDEFINED, TRANSPOSITION_TABLE_UNDEFINED};
         transposition_table.get_moves_any_level(&search->board, hash_code, moves);
         move_list_evaluate(search, move_list, moves, depth, alpha, beta, searching);
-
         #if USE_YBWC_NEGASCOUT
             if (
                 search->use_multi_thread && 
