@@ -193,7 +193,7 @@ inline int ybwc_split_nws(Search *search, int parent_alpha, const int depth, uin
                     }
                 }
                 int n_to_be_searched = n_moves_seen - n_searched;
-                searchings.pop_back();
+                searchings.pop_back(); // pop n_searching
                 if (*v <= alpha && n_to_be_searched && is_searching(searchings)) {
                     ybwc_search_young_brothers_nws(search, alpha, v, best_move, n_to_be_searched, hash_code, depth, is_end_search, move_list, searchings);
                 }
