@@ -47,13 +47,13 @@ void solve_problems(std::vector<std::string> arg, Options *options, State *state
     total.nodes = 0;
     total.time = 0;
     while (std::getline(ifs, line)) {
+        transposition_table.init();
         setboard(&board, options, state, line);
         #if USE_THREAD_MONITOR
             start_thread_monitor();
         #endif
         Search_result res = go_noprint(&board, options, state);
         print_search_result_body(res, options, state);
-        transposition_table.init();
         total.nodes += res.nodes;
         total.time += res.time;
     }
