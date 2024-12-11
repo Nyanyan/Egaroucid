@@ -288,6 +288,7 @@ int nega_alpha_ordering_nws(Search *search, int alpha, const int depth, const bo
                 }
                 if (v <= alpha) {
                     ybwc_search_young_brothers_nws(search, alpha, &v, &best_move, canput - 1, hash_code, depth, is_end_search, move_list, searchings);
+                    
                 }
             }
         } else{
