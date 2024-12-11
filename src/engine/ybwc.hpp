@@ -181,7 +181,6 @@ inline int ybwc_split_nws(Search *search, int parent_alpha, const int depth, uin
                 for (std::future<Parallel_task> &task: parallel_tasks) {
                     if (task.valid()) {
                         task_result = task.get();
-                        --running_count;
                         search->n_nodes += task_result.n_nodes;
                         if (task_result.value != SCORE_UNDEFINED) {
                             if (*v < task_result.value) {
@@ -194,8 +193,8 @@ inline int ybwc_split_nws(Search *search, int parent_alpha, const int depth, uin
                     }
                 }
                 int n_to_be_searched = n_moves_seen - n_searched;
-                searchings.pop_back();
                 if (*v <= alpha && n_to_be_searched && is_searching(searchings)) {
+                    searchings.pop_back();
                     if (n_to_be_searched <= 1) {
                         for (int move_idx = 1; move_idx < canput && is_searching(searchings); ++move_idx) {
                             if (move_list[move_idx].flip.flip) {
