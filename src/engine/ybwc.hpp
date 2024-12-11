@@ -157,7 +157,6 @@ inline int ybwc_split_nws(Search *search, int parent_alpha, const int depth, uin
             }
         }
         Parallel_task task_result;
-        /*
         if (is_searching(searchings) && running_count && ((is_end_search && depth >= 28) || (!is_end_search && depth >= 24))) {
             for (std::future<Parallel_task> &task: parallel_tasks) {
                 if (task.valid()) {
@@ -220,7 +219,6 @@ inline int ybwc_split_nws(Search *search, int parent_alpha, const int depth, uin
                 }
             }
         }
-        */
         for (std::future<Parallel_task> &task: parallel_tasks) {
             if (task.valid()) {
                 task_result = task.get();
