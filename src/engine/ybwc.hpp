@@ -158,7 +158,7 @@ inline int ybwc_split_nws(Search *search, int parent_alpha, const int depth, uin
         }
         Parallel_task task_result;
 #if USE_YBWC_SPLITTED_TASK_TERMINATION
-        if (is_searching(searchings) && *v <= alpha && running_count >= 2 && ((is_end_search && depth >= 28) || (!is_end_search && depth >= 24))) {
+        if (is_searching(searchings) && *v <= alpha && running_count >= 2 && ((is_end_search && depth >= 28 - 28) || (!is_end_search && depth >= 24 - 24))) {
             for (std::future<Parallel_task> &task: parallel_tasks) {
                 if (task.valid()) {
                     if (task.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
@@ -176,7 +176,7 @@ inline int ybwc_split_nws(Search *search, int parent_alpha, const int depth, uin
                     }
                 }
             }
-            if (*v <= alpha && running_count >= 2) {
+            if (is_searching(searchings) && *v <= alpha && running_count >= 2) {
                 n_searching = false; // terminate splitted tasks
                 for (std::future<Parallel_task> &task: parallel_tasks) {
                     if (task.valid()) {
