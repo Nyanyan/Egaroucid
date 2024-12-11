@@ -277,7 +277,7 @@ int nega_alpha_ordering_nws(Search *search, int alpha, const int depth, const bo
                     best_move = move_list[0].flip.pos;
                 }
                 if (v <= alpha) {
-                    ybwc_search_young_brothers_nws(search, alpha, &v, &best_move, hash_code, depth, is_end_search, move_list, searching);
+                    ybwc_search_young_brothers_nws(search, alpha, &v, &best_move, canput, hash_code, depth, is_end_search, move_list, searching);
                 }
             }
         } else{

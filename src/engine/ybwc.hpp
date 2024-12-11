@@ -111,14 +111,18 @@ inline int ybwc_split_nws(Search *search, int parent_alpha, const int depth, uin
 
 
 #if USE_YBWC_NWS
-    inline void ybwc_search_young_brothers_nws(Search *search, int alpha, int *v, int *best_move, uint32_t hash_code, int depth, bool is_end_search, std::vector<Flip_value> &move_list, const bool *searching) {
+    inline void ybwc_search_young_brothers_nws(Search *search, int alpha, int *v, int *best_move, int canput, uint32_t hash_code, int depth, bool is_end_search, std::vector<Flip_value> &move_list, const bool *searching) {
         std::vector<std::future<Parallel_task>> parallel_tasks;
         bool n_searching = true;
-        int canput = (int)move_list.size();
+        //int canput = (int)move_list.size();
         int running_count = 0;
         int g;
-        for (int move_idx = 1; move_idx < canput && n_searching  && *searching; ++move_idx) {
+        bool searched;
+        int n_to_be_searched = 0;
+        for (int move_idx = 1; move_idx < canput && n_searching && *searching; ++move_idx) {
             if (move_list[move_idx].flip.flip) {
+                ++n_to_be_searched;
+                searched = false;
                 search->move(&move_list[move_idx].flip);
                     int ybwc_split_state = ybwc_split_nws(search, alpha, depth - 1, move_list[move_idx].n_legal, is_end_search, &n_searching, move_list[move_idx].flip.pos, move_idx, canput, running_count, parallel_tasks);
                     if (ybwc_split_state == YBWC_PUSHED) {
@@ -132,6 +136,7 @@ inline int ybwc_split_nws(Search *search, int parent_alpha, const int depth, uin
                             ++search->n_nodes;
                         }
                         if (*searching) {
+                            searched = true;
                             if (*v < g) {
                                 *v = g;
                                 *best_move = move_list[move_idx].flip.pos;
@@ -142,21 +147,88 @@ inline int ybwc_split_nws(Search *search, int parent_alpha, const int depth, uin
                         }
                     }
                 search->undo(&move_list[move_idx].flip);
+                if (searched) {
+                    move_list[move_idx].flip.flip = 0;
+                    --n_to_be_searched;
+                }
             }
         }
-        if (running_count) {
-            Parallel_task got_task;
+        Parallel_task got_task;
+        if (n_searching && *searching && running_count >= 3 && depth >= 30) {
+            int max_not_done_move_idx = -1;
             for (std::future<Parallel_task> &task: parallel_tasks) {
-                n_searching &= *searching;
                 if (task.valid()) {
-                    got_task = task.get();
-                    --running_count;
-                    search->n_nodes += got_task.n_nodes;
-                    if (got_task.value != SCORE_UNDEFINED) {
-                        if (*v < got_task.value) {
-                            *v = got_task.value;
-                            *best_move = move_list[got_task.move_idx].flip.pos;
+                    if (task.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
+                        got_task = task.get();
+                        --running_count;
+                        search->n_nodes += got_task.n_nodes;
+                        if (got_task.value != SCORE_UNDEFINED) {
+                            if (*v < got_task.value) {
+                                *v = got_task.value;
+                                *best_move = move_list[got_task.move_idx].flip.pos;
+                            }
+                            move_list[got_task.move_idx].flip.flip = 0;
+                            --n_to_be_searched;
+                        } else {
+                            max_not_done_move_idx = std::max(max_not_done_move_idx, got_task.move_idx);
                         }
+                    }
+                }
+            }
+            if (running_count >= 3) {
+                n_searching = false;
+                for (std::future<Parallel_task> &task: parallel_tasks) {
+                    if (task.valid()) {
+                        got_task = task.get();
+                        --running_count;
+                        search->n_nodes += got_task.n_nodes;
+                        if (got_task.value != SCORE_UNDEFINED) {
+                            if (*v < got_task.value) {
+                                *v = got_task.value;
+                                *best_move = move_list[got_task.move_idx].flip.pos;
+                            }
+                            move_list[got_task.move_idx].flip.flip = 0;
+                            --n_to_be_searched;
+                        } else {
+                            max_not_done_move_idx = std::max(max_not_done_move_idx, got_task.move_idx);
+                        }
+                    }
+                }
+                if (*v <= alpha && n_to_be_searched && *searching) {
+                    if (n_to_be_searched <= 1) {
+                        for (int move_idx = 1; move_idx < canput && *searching; ++move_idx) {
+                            if (move_list[move_idx].flip.flip) {
+                                search->move(&move_list[move_idx].flip);
+                                    g = -nega_alpha_ordering_nws(search, -alpha - 1, depth - 1, false, move_list[move_idx].n_legal, is_end_search, searching);
+                                    if (*searching) {
+                                        if (*v < g) {
+                                            *v = g;
+                                            *best_move = move_list[move_idx].flip.pos;
+                                            if (alpha < g) {
+                                                n_searching = false;
+                                            }
+                                        }
+                                    }
+                                search->undo(&move_list[move_idx].flip);
+                                //++n_searched;
+                            }
+                        }
+                    } else {
+                        ybwc_search_young_brothers_nws(search, alpha, v, best_move, max_not_done_move_idx + 1, hash_code, depth, is_end_search, move_list, searching);
+                    }
+                    return;
+                }
+            }
+        }
+        for (std::future<Parallel_task> &task: parallel_tasks) {
+            n_searching &= *searching;
+            if (task.valid()) {
+                got_task = task.get();
+                search->n_nodes += got_task.n_nodes;
+                if (got_task.value != SCORE_UNDEFINED) {
+                    if (*v < got_task.value) {
+                        *v = got_task.value;
+                        *best_move = move_list[got_task.move_idx].flip.pos;
                     }
                 }
             }
