@@ -8,7 +8,7 @@ def fill0(n, r):
         n = '0' + n
     return n
 
-cmd = 'versions/Egaroucid_for_Console_beta/Egaroucid_for_Console_clang2.exe -l 23 -nobook -thread 32 -solve problem/midgame_test.txt'
+cmd = 'versions/Egaroucid_for_Console_beta/Egaroucid_for_Console_clang.exe -l 23 -nobook -thread 32 -solve problem/midgame_test.txt'
 
 print(cmd)
 egaroucid = subprocess.Popen((cmd).split(), stdin=subprocess.PIPE, stdout=subprocess.PIPE)
