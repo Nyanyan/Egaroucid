@@ -444,6 +444,7 @@ class Transposition_table {
                 for (std::future<void> &task: tasks)
                     task.get();
             }
+            n_registered.store(0);
         }
 
         /*
