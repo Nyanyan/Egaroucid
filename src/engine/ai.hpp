@@ -632,7 +632,9 @@ Search_result ai_time_limit(Board board, bool use_book, int book_acc_level, bool
         bool need_request_more_time = false;
         bool get_values_searching = true;
         uint64_t get_values_tl = 2000ULL;
-        std::cerr << "getting values tl " << get_values_tl << std::endl;
+        if (show_log) {
+            std::cerr << "getting values tl " << get_values_tl << std::endl;
+        }
         std::vector<Ponder_elem> ponder_move_list = ai_get_values(board, show_log, get_values_tl);
         if (ponder_move_list.size()) {
             double best_value = ponder_move_list[0].value;
