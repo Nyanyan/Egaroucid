@@ -480,7 +480,7 @@ inline void calc_eval_features(Board *board, Eval_search *eval);
 inline int mid_evaluate(Board *board) {
     Search search(board);
     calc_eval_features(board, &search.eval);
-    int phase_idx, sur0, sur1, num0;
+    int phase_idx, num0;
     phase_idx = search.phase();
     num0 = pop_count_ull(search.board.player);
     int res = calc_pattern(phase_idx, &search.eval) + eval_num_arr[phase_idx][num0];
@@ -497,7 +497,7 @@ inline int mid_evaluate(Board *board) {
     @return evaluation value
 */
 inline int mid_evaluate_diff(Search *search) {
-    int phase_idx, sur0, sur1, num0;
+    int phase_idx, num0;
     phase_idx = search->phase();
     num0 = pop_count_ull(search->board.player);
     int res = calc_pattern(phase_idx, &search->eval) + eval_num_arr[phase_idx][num0];
