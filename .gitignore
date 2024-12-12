@@ -34,6 +34,10 @@ bin/document/games/*.json
 bin/document/games/summary.csv
 bin/document/screenshots/*.png
 
+# Egaroucid duplicated resources
+bin/LICENSE
+bin/document/book.egbk3
+
 # bin directory
 bin/data
 bin/problem
