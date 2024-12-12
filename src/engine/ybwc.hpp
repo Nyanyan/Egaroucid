@@ -57,7 +57,7 @@ Parallel_task ybwc_do_task_nws(uint64_t player, uint64_t opponent, int_fast8_t n
     task.value = -nega_alpha_ordering_nws(&search, -parent_alpha - 1, depth, false, legal, is_end_search, searchings);
     if (!is_searching(searchings)) {
         task.value = SCORE_UNDEFINED;
-    } else if (task.value > parent_alpha) {
+    } else if (parent_alpha < task.value) {
         *n_searching = false; // means: *searchings.back() = false;
     }
     task.n_nodes = search.n_nodes;
@@ -220,7 +220,7 @@ inline int ybwc_split_nws(Search *search, int parent_alpha, const int depth, uin
         int next_alpha = *alpha;
         int n_searched = 0;
         int n_moves_seen = 0;
-        for (int move_idx = 1; move_idx < canput && n_searching && *searching; ++move_idx) {
+        for (int move_idx = 1; move_idx < canput && *searching && n_searching; ++move_idx) {
             if (move_list[move_idx].flip.flip) {
                 ++n_moves_seen;
                 bool move_done = false;
@@ -230,13 +230,12 @@ inline int ybwc_split_nws(Search *search, int parent_alpha, const int depth, uin
                         ++running_count;
                     } else{
                         if (ybwc_split_state == YBWC_NOT_PUSHED) {
-                            n_searching &= *searching;
                             g = -nega_alpha_ordering_nws(search, -(*alpha) - 1, depth - 1, false, move_list[move_idx].n_legal, is_end_search, searchings);
                         } else{
                             g = ybwc_split_state;
                             ++search->n_nodes;
                         }
-                        if (*searching) {
+                        if (*searching && n_searching) {
                             if (*v < g) {
                                 *v = g;
                                 *best_move = move_list[move_idx].flip.pos;
@@ -260,7 +259,6 @@ inline int ybwc_split_nws(Search *search, int parent_alpha, const int depth, uin
         if (running_count) {
             Parallel_task task_result;
             for (std::future<Parallel_task> &task: parallel_tasks) {
-                n_searching &= *searching;
                 if (task.valid()) {
                     task_result = task.get();
                     --running_count;
