@@ -34,7 +34,7 @@ void endgame_accuracy_test() {
     uint64_t n = 0;
     while (getline(ifs, line)) {
         if ((n & 0b111111) == 0b111111) {
-            std::cerr << '\r' << i;
+            std::cerr << '\r' << n;
         }
         Board board;
         //if (input_board_base81(line, &board)) {
@@ -42,7 +42,7 @@ void endgame_accuracy_test() {
         //    return;
         //}
         if (!board.from_str(line)) {
-            std::cerr << "input file format error at idx " << i << " " << line << std::endl;
+            std::cerr << "input file format error at idx " << n << " " << line << std::endl;
             return;
         }
         int v = ai(board, 60, false, 0, true, false).value;
