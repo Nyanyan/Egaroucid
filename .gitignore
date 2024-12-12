@@ -3,6 +3,8 @@
 **/*.exe
 **/*.pdb
 **/*.ilk
+**/*.exp
+**/*.lib
 **/__pycache__
 **/legacy
 **/data
@@ -22,6 +24,14 @@ build
 build_Egaroucid_for_Console
 .vs
 *.vcxproj.user
+
+# Egaroucid user resources
+bin/appdata/setting.json
+bin/appdata/shortcut_key.json
+bin/appdata/version.json
+bin/document/games/*.json
+bin/document/games/summary.csv
+bin/document/screenshots/*.png
 
 # bin directory
 bin/data
