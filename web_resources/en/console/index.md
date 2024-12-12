@@ -130,13 +130,13 @@ Change directory.
 
 
 
-Then compile it with <code>g++</code> or <code>clang</code>command. You can change the output name.
+Then compile it with <code>g++</code> or <code>clang</code>command. You can change the output name. In my environment, Egaroucid for Console can be faster with ```clang```.
 
 
 
-<code>$ g++ -O2 ./src/Egaroucid_console.cpp -o ./bin/Egaroucid_for_Console.out -mtune=native -march=native -mfpmath=both -pthread -std=c++20 [options]</code>
+<code>$ g++ -O2 ./src/Egaroucid_for_Console.cpp -o ./bin/Egaroucid_for_Console.out -mtune=native -march=native -mfpmath=both -pthread -std=c++20 [options]</code>
 
-<code>$ clang++ -O2 ./src/Egaroucid_console.cpp -o ./bin/Egaroucid_for_Console.out -mtune=native -march=native -pthread -std=c++20 [options]</code>
+<code>$ clang++ -O2 ./src/Egaroucid_for_Console.cpp -o ./bin/Egaroucid_for_Console.out -mtune=native -march=native -pthread -std=c++20 [options]</code>
 
 
 
