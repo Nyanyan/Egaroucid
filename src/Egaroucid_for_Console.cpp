@@ -1,7 +1,7 @@
 ﻿/*
 	Egaroucid Project
 
-	@file Egaroucid_console.cpp
+	@file Egaroucid_for_Console.cpp
 		Main file for Console application
 	@date 2021-2024
 	@author Takuto Yamana
