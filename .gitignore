@@ -30,7 +30,7 @@ App
 # Egaroucid user resources
 bin/appdata/setting.json
 bin/appdata/shortcut_key.json
-bin/appdata/version.json
+bin/appdata/version.txt
 bin/document/games/*.json
 bin/document/games/summary.csv
 bin/document/screenshots/*.png
