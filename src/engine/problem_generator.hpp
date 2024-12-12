@@ -8,9 +8,9 @@ void problem_generator(int n_empties, int n_problems, int level) {
     std::ofstream prob_ofs(problem_file);
     std::ofstream ans_ofs(answer_file);
     std::ofstream move_ofs(move_file);
-    prob_ofs << n_problems << std::endl;
-    ans_ofs << n_problems << std::endl;
-    move_ofs << n_problems << std::endl;
+    //prob_ofs << n_problems << std::endl;
+    //ans_ofs << n_problems << std::endl;
+    //move_ofs << n_problems << std::endl;
     Board board;
     Flip flip;
     for (int i = 0; i < n_problems; ++i) {
