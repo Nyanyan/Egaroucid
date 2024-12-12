@@ -43,6 +43,17 @@ Totally free application
 
 
 
+## Get Egaroucid Now!
+
+- Egaroucid
+  - Windows: Download & Install it from [Website](https://www.egaroucid.nyanyan.dev/en/download/) or [GitHub Releases](https://github.com/Nyanyan/Egaroucid/releases)
+  - MacOS / Linux: Please build by yourself!
+- Egaroucid for Console
+  - Windows: Download & Unzip it from [Website](https://www.egaroucid.nyanyan.dev/en/console/) or [GitHub Releases](https://github.com/Nyanyan/Egaroucid/releases)
+  - MacOS / Linux: Please build by yourself using g++ or clang! [Build Instruction](https://www.egaroucid.nyanyan.dev/en/console/#Linux%20/%20MacOS)
+
+
+
 ## Looking for Your Voice
 
 **Please contact me [here](https://docs.google.com/forms/d/e/1FAIpQLSd6ML1T1fc707luPEefBXuImMnlM9cQP8j-YHKiSyFoS-8rmQ/viewform)!**
