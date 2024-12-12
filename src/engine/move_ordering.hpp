@@ -372,11 +372,16 @@ inline void move_list_evaluate(Search *search, std::vector<Flip_value> &move_lis
     }
     int eval_alpha = -std::min(SCORE_MAX, beta + MOVE_ORDERING_VALUE_OFFSET_BETA);
     int eval_beta = -std::max(-SCORE_MAX, alpha - MOVE_ORDERING_VALUE_OFFSET_ALPHA);
-    //int eval_depth = depth >> 2;
+    int eval_depth = depth >> 3;
+    if (depth >= 25 && search->mpc_level < MPC_100_LEVEL) {
+        eval_depth = ((depth / 3) & 0b11111110) + (depth & 1); // depth / 3 + parity
+    }
+    /*
     int eval_depth = 0;
     if (depth >= 5) {
-        eval_depth = ((depth / 3) & 0b11111110) + (depth & 1); // depth / 2 + parity
+        eval_depth = ((depth / 3) & 0b11111110) + (depth & 1); // depth / 3 + parity
     }
+    */
     /*
     int l, u = SCORE_MAX;
     transposition_table.get_value_any_level(search, search->board.hash(), &l, &u);
