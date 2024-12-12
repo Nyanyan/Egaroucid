@@ -7,7 +7,7 @@ line_dr = './../problem/etc/first12_all_shuffled'
 out_dr = './../transcript/first12_all_shuffled_after800'
 
 #exe = './../versions/Egaroucid_for_Console_beta/Egaroucid_for_Console_clang.exe'
-exe = './../Egaroucid_for_Console.exe'
+exe = './../Egaroucid_for_Console_clang.exe'
 
 
 IDX_START = int(sys.argv[1])
