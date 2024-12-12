@@ -28,14 +28,14 @@ void endgame_accuracy_test() {
         return;
     }
     std::string line;
-    ifs >> line;
-    const uint64_t n_data = stoi(line);
+    //ifs >> line;
+    //const uint64_t n_data = stoi(line);
     uint64_t n_error = 0;
-    for (uint64_t i = 0; i < n_data; ++i) {
-        if ((i & 0b111111) == 0b111111) {
+    uint64_t n = 0;
+    while (getline(ifs, line)) {
+        if ((n & 0b111111) == 0b111111) {
             std::cerr << '\r' << i;
         }
-        ifs >> line;
         Board board;
         //if (input_board_base81(line, &board)) {
         //    std::cerr << "input file format error at idx " << i << " " << line << std::endl;
@@ -50,9 +50,10 @@ void endgame_accuracy_test() {
         ans >> v_ans;
         if (v != v_ans) {
             ++n_error;
-            std::cerr << "\r[ERROR] endgame value wrong idx " << i << " " << line << " got " << v << " expected " << v_ans << std::endl;
+            std::cerr << "\r[ERROR] endgame value wrong idx " << n << " " << line << " got " << v << " expected " << v_ans << std::endl;
         }
+        ++n;
     }
     std::cerr << std::endl;
-    std::cerr << n_error << " endgame error found" << std::endl;
+    std::cerr << n_error << " endgame error found in " << n << " boards" << std::endl;
 }
