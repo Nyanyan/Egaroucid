@@ -20,6 +20,7 @@ train_data
 build
 build_Egaroucid_for_Console
 .vs
+*.vcxproj.user
 
 # bin directory
 bin/data
