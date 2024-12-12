@@ -92,8 +92,8 @@
     #define W_END_NWS_SIMPLE_TT_BONUS 300
 #endif
 
-#define MOVE_ORDERING_VALUE_OFFSET_ALPHA 18
-#define MOVE_ORDERING_VALUE_OFFSET_BETA 12
+#define MOVE_ORDERING_VALUE_OFFSET_ALPHA 14
+#define MOVE_ORDERING_VALUE_OFFSET_BETA 8
 #define MOVE_ORDERING_NWS_VALUE_OFFSET_ALPHA 16
 #define MOVE_ORDERING_NWS_VALUE_OFFSET_BETA 6
 
@@ -228,10 +228,10 @@ inline void move_evaluate(Search *search, Flip_value *flip_value, int alpha, int
                 if (transposition_table.has_node_any_level(search, search->board.hash())) {
                     flip_value->value += W_TT_BONUS;
                 }
-                uint_fast8_t mpc_level = search->mpc_level;
-                search->mpc_level = MOVE_ORDERING_MPC_LEVEL;
+                //uint_fast8_t mpc_level = search->mpc_level;
+                //search->mpc_level = MOVE_ORDERING_MPC_LEVEL;
                     flip_value->value += (SCORE_MAX - nega_scout(search, alpha, beta, depth, false, flip_value->n_legal, false, searching)) * (W_VALUE + depth * W_VALUE_DEEP_ADDITIONAL);
-                search->mpc_level = mpc_level;
+                //search->mpc_level = mpc_level;
                 break;
         }
     search->undo(&flip_value->flip);
@@ -264,10 +264,10 @@ inline void move_evaluate_nws(Search *search, Flip_value *flip_value, int alpha,
                 if (transposition_table.has_node_any_level(search, search->board.hash())) {
                     flip_value->value += W_NWS_TT_BONUS;
                 }
-                uint_fast8_t mpc_level = search->mpc_level;
-                search->mpc_level = MOVE_ORDERING_MPC_LEVEL;
+                //uint_fast8_t mpc_level = search->mpc_level;
+                //search->mpc_level = MOVE_ORDERING_MPC_LEVEL;
                     flip_value->value += (SCORE_MAX - nega_scout(search, alpha, beta, depth, false, flip_value->n_legal, false, searching)) * (W_NWS_VALUE + depth * W_NWS_VALUE_DEEP_ADDITIONAL);
-                search->mpc_level = mpc_level;
+                //search->mpc_level = mpc_level;
                 break;
         }
     search->undo(&flip_value->flip);
@@ -373,7 +373,10 @@ inline void move_list_evaluate(Search *search, std::vector<Flip_value> &move_lis
     int eval_alpha = -std::min(SCORE_MAX, beta + MOVE_ORDERING_VALUE_OFFSET_BETA);
     int eval_beta = -std::max(-SCORE_MAX, alpha - MOVE_ORDERING_VALUE_OFFSET_ALPHA);
     //int eval_depth = depth >> 2;
-    int eval_depth = ((depth / 3) & 0b11111110) + (depth & 1); // depth / 3 + parity
+    int eval_depth = 0;
+    if (depth >= 5) {
+        eval_depth = ((depth / 3) & 0b11111110) + (depth & 1); // depth / 2 + parity
+    }
     /*
     int l, u = SCORE_MAX;
     transposition_table.get_value_any_level(search, search->board.hash(), &l, &u);

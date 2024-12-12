@@ -187,7 +187,7 @@ void iterative_deepening_search(Board board, int alpha, int beta, int depth, uin
         if (is_end_search && main_depth >= depth - IDSEARCH_ENDSEARCH_PRESEARCH_OFFSET) {
             if (main_depth < depth) {
                 main_depth = depth;
-                if (depth <= 30 && mpc_level >= MPC_88_LEVEL) {
+                if (depth <= 27 && mpc_level >= MPC_88_LEVEL) {
                     main_mpc_level = MPC_88_LEVEL;
                 } else {
                     main_mpc_level = MPC_74_LEVEL;
