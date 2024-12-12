@@ -2,6 +2,7 @@
 **/*.out
 **/*.exe
 **/*.pdb
+**/*.ilk
 **/__pycache__
 **/legacy
 **/data
