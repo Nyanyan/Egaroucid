@@ -21,7 +21,6 @@ build
 build_Egaroucid_for_Console
 .vs
 
-
 # bin directory
 bin/data
 bin/problem
