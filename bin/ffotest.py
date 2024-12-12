@@ -9,7 +9,8 @@ start = 40
 end = 59
 n_threads = 42
 hash_level = 25
-exe = 'versions/Egaroucid_for_Console_beta/Egaroucid_for_Console.exe'
+#exe = 'versions/Egaroucid_for_Console_beta/Egaroucid_for_Console.exe'
+exe = 'Egaroucid_for_Console.exe'
 try:
     if len(sys.argv) >= 2:
         start = int(sys.argv[1])

@@ -2,7 +2,7 @@ import subprocess
 import sys
 
 mode = 2
-exe = 'versions/Egaroucid_for_Console_beta/Egaroucid_for_Console.exe'
+exe = 'Egaroucid_for_Console.exe'
 
 ans = [
     [],
