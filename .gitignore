@@ -1,6 +1,7 @@
 # common
 **/*.out
 **/*.exe
+**/*.pdb
 **/__pycache__
 **/legacy
 **/data
@@ -11,10 +12,15 @@
 **/trained_data
 
 # special directories
-build
 model
 release
 train_data
+
+# build, VS Project
+build
+build_Egaroucid_for_Console
+.vs
+
 
 # bin directory
 bin/data
