@@ -22,31 +22,30 @@
     PRAGMATIC_MAX_LEVEL - ACCURATE_MAX_LEVEL    : accurate
     ACCURATE_MAX_LEVEL  - 60                    : danger
 */
-#define ACCURATE_MAX_LEVEL 40
-#define PRAGMATIC_MAX_LEVEL 25
-#define STANDARD_MAX_LEVEL 21
-#define LIGHT_LEVEL 15
+constexpr int ACCURATE_MAX_LEVEL = 40;
+constexpr int PRAGMATIC_MAX_LEVEL = 25;
+constexpr int STANDARD_MAX_LEVEL = 21;
+constexpr int LIGHT_LEVEL = 15;
 
-#define DEFAULT_LEVEL 21
+constexpr int DEFAULT_LEVEL = 21;
 
 /*
     @brief constants for level definition
 */
-#define N_LEVEL 61
-#define N_MOVES 60
-#define MPC_74_LEVEL 0
-#define MPC_88_LEVEL 1
-#define MPC_93_LEVEL 2
-#define MPC_98_LEVEL 3
-#define MPC_99_LEVEL 4
-#define MPC_100_LEVEL 5
-#define NODEPTH 100
+constexpr int N_LEVEL = 61; // [0, 60] (0 is not used)
+constexpr int MPC_74_LEVEL = 0;
+constexpr int MPC_88_LEVEL = 1;
+constexpr int MPC_93_LEVEL = 2;
+constexpr int MPC_98_LEVEL = 3;
+constexpr int MPC_99_LEVEL = 4;
+constexpr int MPC_100_LEVEL = 5;
+constexpr int NODEPTH = 100;
 
-#define N_SELECTIVITY_LEVEL 6
-constexpr int SELECTIVITY_PERCENTAGE[N_SELECTIVITY_LEVEL] = {74, 88, 93, 98, 99, 100};
+constexpr int N_SELECTIVITY_LEVEL = 6;
+constexpr int SELECTIVITY_PERCENTAGE[N_SELECTIVITY_LEVEL] = {74, 88, 93, 98, 99, 100}; // percent
 
-#define MAX_LEVEL (N_LEVEL - 1)
-#define LEVEL_TYPE_BOOK 1000
+constexpr int MAX_LEVEL = (N_LEVEL - 1);
+constexpr int LEVEL_TYPE_BOOK = 1000;
 
 /*
     @brief structure of level definition
@@ -170,10 +169,7 @@ constexpr Level level_definition[N_LEVEL] = {
     @param mpc_level            MPC level
 */
 void get_level(int level, int n_moves, bool *is_mid_search, int *depth, uint_fast8_t *mpc_level) {
-    if (level < 1)
-        level = 1;
-    if (level > 60)
-        level = 60;
+    level = std::clamp(level, 1, 60);
     Level level_status = level_definition[level];
     int n_empties = 60 - n_moves;
     if (n_empties > level_status.complete0) {
@@ -183,16 +179,17 @@ void get_level(int level, int n_moves, bool *is_mid_search, int *depth, uint_fas
     } else {
         *is_mid_search = false;
         *depth = n_empties;
-        if (n_empties > level_status.complete1)
+        if (n_empties > level_status.complete1) {
             *mpc_level = level_status.complete0_mpc_level;
-        else if (n_empties > level_status.complete2)
+        } else if (n_empties > level_status.complete2) {
             *mpc_level = level_status.complete1_mpc_level;
-        else if (n_empties > level_status.complete3)
+        } else if (n_empties > level_status.complete3) {
             *mpc_level = level_status.complete2_mpc_level;
-        else if (n_empties > level_status.complete4)
+        } else if (n_empties > level_status.complete4) {
             *mpc_level = level_status.complete3_mpc_level;
-        else
+        } else {
             *mpc_level = level_status.complete4_mpc_level;
+        }
     }
 }
 
@@ -206,10 +203,7 @@ void get_level(int level, int n_moves, bool *is_mid_search, int *depth, uint_fas
     @return use MPC (Multi-ProbCut)?
 */
 bool get_level_use_mpc(int level, int n_moves) {
-    if (level < 1)
-        level = 1;
-    if (level > 60)
-        level = 60;
+    level = std::clamp(level, 1, 60);
     Level level_status = level_definition[level];
     int n_empties = 60 - n_moves;
     if (n_empties < level_status.complete0) {
@@ -223,7 +217,7 @@ bool get_level_use_mpc(int level, int n_moves) {
             return level_status.complete2_mpc_level != MPC_100_LEVEL;
         } else if (n_empties > level_status.complete4) {
             return level_status.complete3_mpc_level != MPC_100_LEVEL;
-        } else{
+        } else {
             return level_status.complete4_mpc_level != MPC_100_LEVEL;
         }
     }
@@ -239,10 +233,7 @@ bool get_level_use_mpc(int level, int n_moves) {
     @param end_depth            integer to store endgame lookahead depth
 */
 void get_level_depth(int level, int *mid_depth, int *end_depth) {
-    if (level < 1)
-        level = 1;
-    if (level > 60)
-        level = 60;
+    level = std::clamp(level, 1, 60);
     *mid_depth = level_definition[level].mid_lookahead;
     *end_depth = level_definition[level].complete0;
 }
@@ -257,10 +248,7 @@ void get_level_depth(int level, int *mid_depth, int *end_depth) {
     @return midgame search?
 */
 bool get_level_midsearch(int level, int n_moves) {
-    if (level < 1)
-        level = 1;
-    if (level > 60)
-        level = 60;
+    level = std::clamp(level, 1, 60);
     Level level_status = level_definition[level];
     int n_empties = 60 - n_moves;
     if (n_empties > level_status.complete0) {
@@ -291,14 +279,18 @@ int get_level_endsearch_depth(int level) {
     @return endgame complete search depth
 */
 int get_level_complete_depth(int level) {
-    if (level_definition[level].complete0_mpc_level == MPC_100_LEVEL)
+    if (level_definition[level].complete0_mpc_level == MPC_100_LEVEL) {
         return level_definition[level].complete0;
-    if (level_definition[level].complete1_mpc_level == MPC_100_LEVEL)
+    }
+    if (level_definition[level].complete1_mpc_level == MPC_100_LEVEL) {
         return level_definition[level].complete1;
-    if (level_definition[level].complete2_mpc_level == MPC_100_LEVEL)
+    }
+    if (level_definition[level].complete2_mpc_level == MPC_100_LEVEL) {
         return level_definition[level].complete2;
-    if (level_definition[level].complete3_mpc_level == MPC_100_LEVEL)
+    }
+    if (level_definition[level].complete3_mpc_level == MPC_100_LEVEL) {
         return level_definition[level].complete3;
+    }
     return level_definition[level].complete4;
 }
 
