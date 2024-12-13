@@ -24,9 +24,9 @@
 #include "stability.hpp"
 #include "evaluate.hpp"
 
-#define CLOG_NOT_FOUND -127
+constexpr int CLOG_NOT_FOUND = -127;
 
-#define CLOG_SEARCH_MAX_DEPTH 5
+constexpr int CLOG_SEARCH_MAX_DEPTH = 5;
 
 #if USE_PARALLEL_CLOG_SEARCH
 
