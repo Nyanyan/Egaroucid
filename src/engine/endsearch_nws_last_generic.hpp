@@ -147,7 +147,7 @@ static int last3_nws(Search *search, int alpha, uint_fast8_t p0, uint_fast8_t p1
         alpha = -alpha - 1;
     } while ((pol = -pol) < 0);
 
-    return end_evaluate_odd(&board, 3);	// gameover
+    return end_evaluate_odd(&board, 3); // gameover
 }
 
 /*
@@ -213,7 +213,7 @@ int last4_nws(Search *search, int alpha) {
     Flip flip;
     Board board3, board4;
     search->board.copy(&board4);
-    int v = SCORE_INF;	// min stage
+    int v = SCORE_INF; // min stage
     int pol = 1;
     do {
         ++search->n_nodes;
@@ -268,5 +268,5 @@ int last4_nws(Search *search, int alpha) {
         alpha = -alpha - 1;
     } while ((pol = -pol) < 0);
 
-    return -end_evaluate(&search->board, 4);	// gameover
+    return -end_evaluate(&search->board, 4); // gameover
 }
