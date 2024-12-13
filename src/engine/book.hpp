@@ -407,23 +407,23 @@ class Book {
                 if (-HW2 <= value && value <= HW2 && (p & o) == 0) {
                     board.player = p;
                     board.opponent = o;
-                    #if FORCE_BOOK_DEPTH
-                        if (board.n_discs() <= 4 + 30) {
-                    #endif
-                            book_elem.value = value;
-                            book_elem.level = level;
-                            //if (board.n_discs() >= 32 + 4)
-                            //    book_elem.level = 27;
-                            //else
-                            //    book_elem.level = 17;
-                            book_elem.n_lines = n_lines;
-                            book_elem.leaf.value = leaf_value;
-                            book_elem.leaf.move = leaf_move;
-                            book_elem.leaf.level = leaf_level;
-                            merge(board, book_elem);
-                    #if FORCE_BOOK_DEPTH
-                        }
-                    #endif
+#if FORCE_BOOK_DEPTH
+                    if (board.n_discs() <= 4 + 30) {
+#endif
+                        book_elem.value = value;
+                        book_elem.level = level;
+                        //if (board.n_discs() >= 32 + 4)
+                        //    book_elem.level = 27;
+                        //else
+                        //    book_elem.level = 17;
+                        book_elem.n_lines = n_lines;
+                        book_elem.leaf.value = leaf_value;
+                        book_elem.leaf.move = leaf_move;
+                        book_elem.leaf.level = leaf_level;
+                        merge(board, book_elem);
+#if FORCE_BOOK_DEPTH
+                    }
+#endif
                 }
             }
             if (*stop_loading) {
@@ -559,17 +559,17 @@ class Book {
                 }
                 board.player = p;
                 board.opponent = o;
-                #if FORCE_BOOK_DEPTH
-                    if (b.n_discs() <= 4 + 30) {
-                #endif
-                        book_elem.value = value;
-                        book_elem.level = level;
-                        book_elem.leaf.value = SCORE_UNDEFINED;
-                        book_elem.leaf.move = MOVE_UNDEFINED;
-                        merge(board, book_elem);
-                #if FORCE_BOOK_DEPTH
-                    }
-                #endif
+#if FORCE_BOOK_DEPTH
+                if (b.n_discs() <= 4 + 30) {
+#endif
+                    book_elem.value = value;
+                    book_elem.level = level;
+                    book_elem.leaf.value = SCORE_UNDEFINED;
+                    book_elem.leaf.move = MOVE_UNDEFINED;
+                    merge(board, book_elem);
+#if FORCE_BOOK_DEPTH
+                }
+#endif
             }
             // check_add_leaf_all_undefined();
             // bool stop = false;
@@ -656,20 +656,20 @@ class Book {
                 }
                 board.player = p;
                 board.opponent = o;
-                #if FORCE_BOOK_DEPTH
-                    if (b.n_discs() <= 4 + 30) {
-                #endif
-                        book_elem.value = value;
-                        if (level != LEVEL_UNDEFINED)
-                            book_elem.level = level;
-                        else
-                            book_elem.level = 1;
-                        book_elem.leaf.value = SCORE_UNDEFINED;
-                        book_elem.leaf.move = MOVE_UNDEFINED;
-                        merge(board, book_elem);
-                #if FORCE_BOOK_DEPTH
-                    }
-                #endif
+#if FORCE_BOOK_DEPTH
+                if (b.n_discs() <= 4 + 30) {
+#endif
+                    book_elem.value = value;
+                    if (level != LEVEL_UNDEFINED)
+                        book_elem.level = level;
+                    else
+                        book_elem.level = 1;
+                    book_elem.leaf.value = SCORE_UNDEFINED;
+                    book_elem.leaf.move = MOVE_UNDEFINED;
+                    merge(board, book_elem);
+#if FORCE_BOOK_DEPTH
+                }
+#endif
             }
             // check_add_leaf_all_undefined();
             // bool stop = false;
