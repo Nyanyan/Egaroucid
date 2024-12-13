@@ -15,13 +15,13 @@
 /*
     @brief definition of maximum hash level
 */
-#define N_HASH_LEVEL 34
-#define DEFAULT_HASH_LEVEL 25
+constexpr int N_HASH_LEVEL = 32;
+constexpr int DEFAULT_HASH_LEVEL = 25;
 
 #if USE_CHANGEABLE_HASH_LEVEL
-    int global_hash_level = DEFAULT_HASH_LEVEL;
-    #define MIN_HASH_LEVEL 25
-    int MAX_HASH_LEVEL = 30; // adjustable for environment (GUI)
+int global_hash_level = DEFAULT_HASH_LEVEL;
+constexpr int MIN_HASH_LEVEL = 25;
+int MAX_HASH_LEVEL = 30; // adjustable for environment (GUI)
 #endif
 
 /*
