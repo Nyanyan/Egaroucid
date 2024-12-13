@@ -102,6 +102,11 @@
 
 // use fast join_h_line
 #define USE_FAST_JOIN_H_LINE true
+
+#if USE_AVX512
+#define USE_AVX512_STABILITY true
+#endif
+
 #endif
 #else
 // NTZ
