@@ -501,35 +501,6 @@ inline void move_list_sort(std::vector<Flip_value> &move_list) {
 #include "ai.hpp"
 inline Search_result tree_search_legal(Board board, int depth, uint_fast8_t mpc_level, bool show_log, uint64_t use_legal, bool use_multi_thread, uint64_t time_limit);
 
-Board get_board(std::string board_str) {
-    board_str.erase(std::remove_if(board_str.begin(), board_str.end(), ::isspace), board_str.end());
-    Board new_board;
-    int player = BLACK;
-    new_board.player = 0ULL;
-    new_board.opponent = 0ULL;
-    if (board_str.length() != HW2 + 1) {
-        std::cerr << "[ERROR] invalid argument" << std::endl;
-        return new_board;
-    }
-    for (int i = 0; i < HW2; ++i) {
-        if (board_str[i] == 'B' || board_str[i] == 'b' || board_str[i] == 'X' || board_str[i] == 'x' || board_str[i] == '0' || board_str[i] == '*')
-            new_board.player |= 1ULL << (HW2_M1 - i);
-        else if (board_str[i] == 'W' || board_str[i] == 'w' || board_str[i] == 'O' || board_str[i] == 'o' || board_str[i] == '1')
-            new_board.opponent |= 1ULL << (HW2_M1 - i);
-    }
-    if (board_str[HW2] == 'B' || board_str[HW2] == 'b' || board_str[HW2] == 'X' || board_str[HW2] == 'x' || board_str[HW2] == '0' || board_str[HW2] == '*')
-        player = BLACK;
-    else if (board_str[HW2] == 'W' || board_str[HW2] == 'w' || board_str[HW2] == 'O' || board_str[HW2] == 'o' || board_str[HW2] == '1')
-        player = WHITE;
-    else{
-        std::cerr << "[ERROR] invalid player argument" << std::endl;
-        return new_board;
-    }
-    if (player == WHITE)
-        std::swap(new_board.player, new_board.opponent);
-    return new_board;
-}
-
 uint64_t n_nodes_test(int level, std::vector<Board> testcase_arr) {
     uint64_t n_nodes = 0;
     for (Board &board: testcase_arr) {
@@ -557,7 +528,8 @@ void tune_move_ordering(int level) {
     std::vector<Board> testcase_arr;
     std::string line;
     while (std::getline(ifs, line)) {
-        testcase_arr.emplace_back(get_board(line));
+        Board b(line);
+        testcase_arr.emplace_back(b);
     }
     std::cerr << testcase_arr.size() << " testcases loaded" << std::endl;
     int minute = 10;
@@ -575,10 +547,12 @@ void tune_move_ordering(int level) {
         // update parameter randomly
         int idx = myrandrange(MOVE_ORDERING_PARAM_START, MOVE_ORDERING_PARAM_END + 1); // midgame search
         int delta = myrandrange(-5, 6);
-        while (delta == 0)
+        while (delta == 0) {
             delta = myrandrange(-5, 6);
-        if (move_ordering_param_array[idx] + delta < 0)
+        }
+        if (move_ordering_param_array[idx] + delta < 0) {
             continue;
+        }
         move_ordering_param_array[idx] += delta;
         uint64_t n_nodes = n_nodes_test(level, testcase_arr);
         double percentage = 100.0 * n_nodes / first_n_nodes;
@@ -592,7 +566,7 @@ void tune_move_ordering(int level) {
             min_n_nodes = n_nodes;
             min_percentage = percentage;
             ++n_updated;
-        } else{
+        } else {
             move_ordering_param_array[idx] -= delta;
         }
         ++n_try;

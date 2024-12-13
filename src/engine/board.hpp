@@ -38,6 +38,10 @@ class Board {
     public:
         Board(uint64_t player_, uint64_t opponent_)
             : player(player_), opponent(opponent_) {}
+        
+        Board(std::string board_str) {
+            from_str(board_str);
+        }
     
         Board() {}
         /*
