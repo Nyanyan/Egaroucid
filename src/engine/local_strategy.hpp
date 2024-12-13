@@ -44,7 +44,7 @@ void print_local_strategy(const double arr[]) {
     for (int y = 0; y < HW; ++y) {
         for (int x = 0; x < HW; ++x) {
             int cell = HW2_M1 - (y * HW + x);
-            std::cout << arr[cell] << " ";
+            std::cout << std::fixed << std::setprecision(2) << arr[cell] << " ";
         }
         std::cout << std::endl;
     }
