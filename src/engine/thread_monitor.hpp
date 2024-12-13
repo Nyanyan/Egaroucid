@@ -29,6 +29,7 @@ void start_thread_monitor() {
     thread_pool.resize(n_thread + 1);
     std::cerr << "thread pool resized for monitor from " << n_thread << " to " << n_thread + 1 << std::endl;
     bool pushed = false;
-    while (!pushed)
+    while (!pushed) {
         thread_pool.push(&pushed, &thread_monitor);
+    }
 }
