@@ -150,50 +150,58 @@ static int vectorcall last3(Search *search, __m128i OP, int alpha, int beta, uin
     uint64_t opponent;
 
     uint64_t empties = ~(search->board.player | search->board.opponent);
-    if (is_1empty(p2, empties))
+    if (is_1empty(p2, empties)) {
         std::swap(p2, p0);
-    else if (is_1empty(p1, empties))
+    } else if (is_1empty(p1, empties)) {
         std::swap(p1, p0);
+    }
 
     int v = -SCORE_INF;
     int pol = 1;
     do {
         ++search->n_nodes;
-        #if USE_SEARCH_STATISTICS
-            ++search->n_nodes_discs[61];
-        #endif
+#if USE_SEARCH_STATISTICS
+        ++search->n_nodes_discs[61];
+#endif
         opponent = _mm_extract_epi64(OP, 1);
         int x = p0;
         if ((bit_around[x] & opponent) && !TESTZ_FLIP(flipped = Flip::calc_flip(OP, x))) {
             v = last2(search, board_flip_next(OP, x, flipped), alpha, beta, p1, p2);
-            if (beta <= v)
+            if (beta <= v) {
                 return v * pol;
-            if (alpha < v)
+            }
+            if (alpha < v) {
                 alpha = v;
+            }
         }
 
         int g;
         x = p1;
         if ((bit_around[x] & opponent) && !TESTZ_FLIP(flipped = Flip::calc_flip(OP, x))) {
             g = last2(search, board_flip_next(OP, x, flipped), alpha, beta, p2, p0);	// (d3d1)d2d0
-            if (beta <= g)
+            if (beta <= g) {
                 return g * pol;
-            if (v < g)
+            }
+            if (v < g) {
                 v = g;
-            if (alpha < g)
+            }
+            if (alpha < g) {
                 alpha = g;
+            }
         }
 
         x = p2;
         if ((bit_around[x] & opponent) && !TESTZ_FLIP(flipped = Flip::calc_flip(OP, x))) {
             g = last2(search, board_flip_next(OP, x, flipped), alpha, beta, p1, p0);	// (d3d0)d2d1
-            if (v < g)
+            if (v < g) {
                 v = g;
+            }
             return v * pol;
         }
 
-        if (v > -SCORE_INF)
+        if (v > -SCORE_INF) {
             return v * pol;
+        }
 
         OP = _mm_shuffle_epi32(OP, SWAP64);	// pass
         int t = alpha;  alpha = -beta;  beta = -t;
@@ -232,29 +240,33 @@ int last4(Search *search, int alpha, int beta) {
     uint64_t empties = ~(search->board.player | search->board.opponent);
     uint_fast8_t p0, p1, p2, p3;
 
-    #if USE_LAST4_SC
-        int stab_res = stability_cut_last4(search, &alpha, beta);
-        if (stab_res != SCORE_UNDEFINED) {
-            return stab_res;
-        }
-    #endif
+#if USE_LAST4_SC
+    int stab_res = stability_cut_last4(search, &alpha, beta);
+    if (stab_res != SCORE_UNDEFINED) {
+        return stab_res;
+    }
+#endif
     #if USE_END_PO
         uint64_t e1 = empty1_bb(search->board.player, search->board.opponent);
-        if (!e1)
+        if (!e1) {
             e1 = empties;
+        }
         empties &= ~e1;
     
         p0 = first_bit(&e1);
-        if (!(e1 &= e1 - 1))
+        if (!(e1 &= e1 - 1)) {
             e1 = empties;
+        }
         p1 = first_bit(&e1);
-        if (!(e1 &= e1 - 1))
+        if (!(e1 &= e1 - 1)) {
             e1 = empties;
+        }
         p2 = first_bit(&e1);
-        if ((e1 &= e1 - 1))
+        if ((e1 &= e1 - 1)) {
             p3 = first_bit(&e1);
-        else
+        } else {
             p3 = first_bit(&empties);
+        }
     #else
         p0 = first_bit(&empties);
         p1 = next_bit(&empties);
@@ -266,48 +278,58 @@ int last4(Search *search, int alpha, int beta) {
     int pol = 1;
     do {
         ++search->n_nodes;
-        #if USE_SEARCH_STATISTICS
-            ++search->n_nodes_discs[60];
-        #endif
+#if USE_SEARCH_STATISTICS
+        ++search->n_nodes_discs[60];
+#endif
         opponent = _mm_extract_epi64(OP, 1);
         if ((bit_around[p0] & opponent) && !TESTZ_FLIP(flipped = Flip::calc_flip(OP, p0))) {
             v = last3(search, board_flip_next(OP, p0, flipped), alpha, beta, p1, p2, p3);
-            if (alpha >= v)
+            if (alpha >= v) {
                 return v * pol;
-            if (beta > v)
+            }
+            if (beta > v) {
                 beta = v;
+            }
         }
 
         int g;
         if ((bit_around[p1] & opponent) && !TESTZ_FLIP(flipped = Flip::calc_flip(OP, p1))) {
             g = last3(search, board_flip_next(OP, p1, flipped), alpha, beta, p0, p2, p3);
-            if (alpha >= g)
+            if (alpha >= g) {
                 return g * pol;
-            if (v > g)
+            }
+            if (v > g) {
                 v = g;
-            if (beta > g)
+            }
+            if (beta > g) {
                 beta = g;
+            }
         }
  
         if ((bit_around[p2] & opponent) && !TESTZ_FLIP(flipped = Flip::calc_flip(OP, p2))) {
             g = last3(search, board_flip_next(OP, p2, flipped), alpha, beta, p0, p1, p3);
-            if (alpha >= g)
+            if (alpha >= g) {
                 return g * pol;
-            if (v > g)
+            }
+            if (v > g) {
                 v = g;
-            if (beta > g)
+            }
+            if (beta > g) {
                 beta = g;
+            }
         }
  
         if ((bit_around[p3] & opponent) && !TESTZ_FLIP(flipped = Flip::calc_flip(OP, p3))) {
             g = last3(search, board_flip_next(OP, p3, flipped), alpha, beta, p0, p1, p2);
-            if (v > g)
+            if (v > g) {
                 v = g;
+            }
             return v * pol;
         }
 
-        if (v < SCORE_INF)
+        if (v < SCORE_INF) {
             return v * pol;
+        }
 
         OP = _mm_shuffle_epi32(OP, SWAP64);	// pass
         int t = alpha;  alpha = -beta;  beta = -t;
