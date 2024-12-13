@@ -31,7 +31,7 @@ constexpr int CLOG_SEARCH_MAX_DEPTH = 5;
 #if USE_PARALLEL_CLOG_SEARCH
 
     // Do parallel clog search until depth CLOG_SEARCH_SPLIT_DEPTH
-    #define CLOG_SEARCH_SPLIT_DEPTH 2
+    constexpr int CLOG_SEARCH_SPLIT_DEPTH = 2;
 
     /*
         @brief Structure for parallel clog search
