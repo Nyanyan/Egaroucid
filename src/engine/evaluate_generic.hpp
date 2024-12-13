@@ -19,10 +19,10 @@
 #include "util.hpp"
 #include "evaluate_common.hpp"
 
-#define EVAL_IDX_START_MOVE_ORDERING_END 32
-#define EVAL_IDX_END_MOVE_ORDERING_END 48
-#define EVAL_FEATURE_START_MOVE_ORDERING_END 8
-#define MAX_CELL_PATTERNS_MOVE_ORDERING_END 6
+constexpr int EVAL_IDX_START_MOVE_ORDERING_END = 32;
+constexpr int EVAL_IDX_END_MOVE_ORDERING_END = 48;
+constexpr int EVAL_FEATURE_START_MOVE_ORDERING_END = 8;
+constexpr int MAX_CELL_PATTERNS_MOVE_ORDERING_END = 6;
 
 
 constexpr Feature_to_coord feature_to_coord[N_PATTERN_FEATURES] = {
