@@ -146,69 +146,70 @@ inline uint64_t full_stability_v(uint64_t full) {
 }
 
 #if USE_SIMD
-    inline void full_stability(uint64_t discs, uint64_t *h, uint64_t *v, uint64_t *d7, uint64_t *d9) {
-        /* // need AVX512
-        // horizontal & vertical
-        __m128i hv = _mm_set1_epi64x(discs);
-        hv = _mm_and_si128(hv, _mm_srlv_epi64(hv, stability_e180));
-        hv = _mm_and_si128(hv, _mm_srlv_epi64(hv, stability_e181));
-        hv = _mm_and_si128(hv, _mm_srlv_epi64(hv, stability_e182));
-        hv = _mm_and_si128(hv, stability_e183);
-        hv = _mm_mullo_epi64(hv, stability_e184);
-        *v = _mm_cvtsi128_si64(hv);
-        *h = _mm_cvtsi128_si64(_mm_unpackhi_epi64(hv, hv));
-        */
-        *h = full_stability_h(discs);
-        *v = full_stability_v(discs);
-        // diagonal
-        __m128i l79, r79;
-        l79 = r79 = _mm_unpacklo_epi64(_mm_cvtsi64_si128(discs), _mm_cvtsi64_si128(vertical_mirror(discs)));
-        l79 = _mm_and_si128(l79, _mm_or_si128(stability_e790, _mm_srli_epi64(l79, 9)));
-        r79 = _mm_and_si128(r79, _mm_or_si128(stability_e791, _mm_slli_epi64(r79, 9)));
-        l79 = _mm_andnot_si128(_mm_andnot_si128(_mm_srli_epi64(l79, 18), stability_e792), l79);
-        r79 = _mm_andnot_si128(_mm_slli_epi64(_mm_andnot_si128(r79, stability_e792), 18), r79);
-        l79 = _mm_and_si128(_mm_and_si128(l79, r79), _mm_or_si128(stability_e793,
-            _mm_or_si128(_mm_srli_epi64(l79, 36), _mm_slli_epi64(r79, 36))));
-        *d9 = _mm_cvtsi128_si64(l79);
-        *d7 = vertical_mirror(_mm_cvtsi128_si64(_mm_unpackhi_epi64(l79, l79)));
-    }
+inline void full_stability(uint64_t discs, uint64_t *h, uint64_t *v, uint64_t *d7, uint64_t *d9) {
+    // horizontal & vertical
+#if USE_AVX512_STABILITY
+    __m128i hv = _mm_set1_epi64x(discs);
+    hv = _mm_and_si128(hv, _mm_srlv_epi64(hv, stability_e180));
+    hv = _mm_and_si128(hv, _mm_srlv_epi64(hv, stability_e181));
+    hv = _mm_and_si128(hv, _mm_srlv_epi64(hv, stability_e182));
+    hv = _mm_and_si128(hv, stability_e183);
+    hv = _mm_mullo_epi64(hv, stability_e184);
+    *v = _mm_cvtsi128_si64(hv);
+    *h = _mm_cvtsi128_si64(_mm_unpackhi_epi64(hv, hv));
 #else
-    /*
-        @brief Calculate full stability in diagonal direction
+    *h = full_stability_h(discs);
+    *v = full_stability_v(discs);
+#endif
+    // diagonal
+    __m128i l79, r79;
+    l79 = r79 = _mm_unpacklo_epi64(_mm_cvtsi64_si128(discs), _mm_cvtsi64_si128(vertical_mirror(discs)));
+    l79 = _mm_and_si128(l79, _mm_or_si128(stability_e790, _mm_srli_epi64(l79, 9)));
+    r79 = _mm_and_si128(r79, _mm_or_si128(stability_e791, _mm_slli_epi64(r79, 9)));
+    l79 = _mm_andnot_si128(_mm_andnot_si128(_mm_srli_epi64(l79, 18), stability_e792), l79);
+    r79 = _mm_andnot_si128(_mm_slli_epi64(_mm_andnot_si128(r79, stability_e792), 18), r79);
+    l79 = _mm_and_si128(_mm_and_si128(l79, r79), _mm_or_si128(stability_e793,
+        _mm_or_si128(_mm_srli_epi64(l79, 36), _mm_slli_epi64(r79, 36))));
+    *d9 = _mm_cvtsi128_si64(l79);
+    *d7 = vertical_mirror(_mm_cvtsi128_si64(_mm_unpackhi_epi64(l79, l79)));
+}
+#else
+/*
+    @brief Calculate full stability in diagonal direction
 
-        @param full                 a bitboard representing discs
-        @param full_d7              an integer to store result of d7 line
-        @param full_d9              an integer to store result of d9 line
-    */
-    inline void full_stability_d(uint64_t full, uint64_t *full_d7, uint64_t *full_d9) {
-        constexpr uint64_t edge = 0xFF818181818181FFULL;
-        uint64_t l7, r7, l9, r9;
-        l7 = r7 = full;
-        l7 &= edge | (l7 >> 7);        r7 &= edge | (r7 << 7);
-        l7 &= 0xFFFF030303030303ULL | (l7 >> 14);    r7 &= 0xC0C0C0C0C0C0FFFFULL | (r7 << 14);
-        l7 &= 0xFFFFFFFF0F0F0F0FULL | (l7 >> 28);    r7 &= 0xF0F0F0F0FFFFFFFFULL | (r7 << 28);
-        *full_d7 = l7 & r7;
+    @param full                 a bitboard representing discs
+    @param full_d7              an integer to store result of d7 line
+    @param full_d9              an integer to store result of d9 line
+*/
+inline void full_stability_d(uint64_t full, uint64_t *full_d7, uint64_t *full_d9) {
+    constexpr uint64_t edge = 0xFF818181818181FFULL;
+    uint64_t l7, r7, l9, r9;
+    l7 = r7 = full;
+    l7 &= edge | (l7 >> 7);        r7 &= edge | (r7 << 7);
+    l7 &= 0xFFFF030303030303ULL | (l7 >> 14);    r7 &= 0xC0C0C0C0C0C0FFFFULL | (r7 << 14);
+    l7 &= 0xFFFFFFFF0F0F0F0FULL | (l7 >> 28);    r7 &= 0xF0F0F0F0FFFFFFFFULL | (r7 << 28);
+    *full_d7 = l7 & r7;
 
-        l9 = r9 = full;
-        l9 &= edge | (l9 >> 9);        r9 &= edge | (r9 << 9);
-        l9 &= 0xFFFFC0C0C0C0C0C0ULL | (l9 >> 18);    r9 &= 0x030303030303FFFFULL | (r9 << 18);
-        *full_d9 = l9 & r9 & (0x0F0F0F0FF0F0F0F0ULL | (l9 >> 36) | (r9 << 36));
-    }
+    l9 = r9 = full;
+    l9 &= edge | (l9 >> 9);        r9 &= edge | (r9 << 9);
+    l9 &= 0xFFFFC0C0C0C0C0C0ULL | (l9 >> 18);    r9 &= 0x030303030303FFFFULL | (r9 << 18);
+    *full_d9 = l9 & r9 & (0x0F0F0F0FF0F0F0F0ULL | (l9 >> 36) | (r9 << 36));
+}
 
-    /*
-        @brief Calculate full stability in all direction
+/*
+    @brief Calculate full stability in all direction
 
-        @param discs                a bitboard representing discs
-        @param h                    an integer to store result of h line
-        @param v                    an integer to store result of h line
-        @param d7                   an integer to store result of d7 line
-        @param d9                   an integer to store result of d9 line
-    */
-    inline void full_stability(uint64_t discs, uint64_t *h, uint64_t *v, uint64_t *d7, uint64_t *d9) {
-        *h = full_stability_h(discs);
-        *v = full_stability_v(discs);
-        full_stability_d(discs, d7, d9);
-    }
+    @param discs                a bitboard representing discs
+    @param h                    an integer to store result of h line
+    @param v                    an integer to store result of h line
+    @param d7                   an integer to store result of d7 line
+    @param d9                   an integer to store result of d9 line
+*/
+inline void full_stability(uint64_t discs, uint64_t *h, uint64_t *v, uint64_t *d7, uint64_t *d9) {
+    *h = full_stability_h(discs);
+    *v = full_stability_v(discs);
+    full_stability_d(discs, d7, d9);
+}
 #endif
 // end of modification
 
@@ -233,30 +234,30 @@ inline uint64_t calc_stability(uint64_t player, uint64_t opponent) {
     full_stability(player | opponent, &full_h, &full_v, &full_d7, &full_d9);
     n_stability |= full_h & full_v & full_d7 & full_d9;
     n_stability &= player;
-    #if USE_SIMD
-        __m256i hvd7d9, p256;
-        const __m256i shift = _mm256_set_epi64x(1, HW, HW_M1, HW_P1);
-        __m128i and_tmp;
-        while (n_stability & ~player_stability) {
-            player_stability |= n_stability;
-            p256 = _mm256_set1_epi64x(player_stability);
-            hvd7d9 = _mm256_set_epi64x(full_h, full_v, full_d7, full_d9);
-            hvd7d9 = _mm256_or_si256(hvd7d9, _mm256_srlv_epi64(p256, shift));
-            hvd7d9 = _mm256_or_si256(hvd7d9, _mm256_sllv_epi64(p256, shift));
-            and_tmp = _mm_and_si128(_mm256_castsi256_si128(hvd7d9), _mm256_extractf128_si256(hvd7d9, 1));
-            n_stability =  _mm_extract_epi64(and_tmp, 0) & _mm_extract_epi64(and_tmp, 1) & player_mask;
-        }
-    #else
-        uint64_t h, v, d7, d9;
-        while (n_stability & ~player_stability) {
-            player_stability |= n_stability;
-            h = (player_stability >> 1) | (player_stability << 1) | full_h;
-            v = (player_stability >> HW) | (player_stability << HW) | full_v;
-            d7 = (player_stability >> HW_M1) | (player_stability << HW_M1) | full_d7;
-            d9 = (player_stability >> HW_P1) | (player_stability << HW_P1) | full_d9;
-            n_stability = h & v & d7 & d9 & player_mask;
-        }
-    #endif
+#if USE_SIMD
+    __m256i hvd7d9, p256;
+    const __m256i shift = _mm256_set_epi64x(1, HW, HW_M1, HW_P1);
+    __m128i and_tmp;
+    while (n_stability & ~player_stability) {
+        player_stability |= n_stability;
+        p256 = _mm256_set1_epi64x(player_stability);
+        hvd7d9 = _mm256_set_epi64x(full_h, full_v, full_d7, full_d9);
+        hvd7d9 = _mm256_or_si256(hvd7d9, _mm256_srlv_epi64(p256, shift));
+        hvd7d9 = _mm256_or_si256(hvd7d9, _mm256_sllv_epi64(p256, shift));
+        and_tmp = _mm_and_si128(_mm256_castsi256_si128(hvd7d9), _mm256_extractf128_si256(hvd7d9, 1));
+        n_stability =  _mm_extract_epi64(and_tmp, 0) & _mm_extract_epi64(and_tmp, 1) & player_mask;
+    }
+#else
+    uint64_t h, v, d7, d9;
+    while (n_stability & ~player_stability) {
+        player_stability |= n_stability;
+        h = (player_stability >> 1) | (player_stability << 1) | full_h;
+        v = (player_stability >> HW) | (player_stability << HW) | full_v;
+        d7 = (player_stability >> HW_M1) | (player_stability << HW_M1) | full_d7;
+        d9 = (player_stability >> HW_P1) | (player_stability << HW_P1) | full_d9;
+        n_stability = h & v & d7 & d9 & player_mask;
+    }
+#endif
     return player_stability;
 }
 
