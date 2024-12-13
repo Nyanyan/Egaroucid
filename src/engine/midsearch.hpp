@@ -19,6 +19,7 @@
 #include "evaluate.hpp"
 #include "search.hpp"
 #include "transposition_table.hpp"
+#include "transposition_cutoff.hpp"
 #include "move_ordering.hpp"
 #include "probcut.hpp"
 #include "thread_pool.hpp"
@@ -26,7 +27,6 @@
 #include "stability.hpp"
 #include "endsearch.hpp"
 #include "midsearch_nws.hpp"
-#include "etc.hpp"
 #include "book.hpp"
 
 inline int aspiration_search(Search *search, int alpha, int beta, int predicted_value, const int depth, const bool skipped, uint64_t legal, const bool is_end_search, bool *searching);

@@ -19,6 +19,7 @@
 #include "evaluate.hpp"
 #include "search.hpp"
 #include "transposition_table.hpp"
+#include "transposition_cutoff.hpp"
 #include "endsearch.hpp"
 #include "move_ordering.hpp"
 #include "probcut.hpp"
@@ -26,7 +27,6 @@
 #include "ybwc.hpp"
 #include "util.hpp"
 #include "stability.hpp"
-#include "etc.hpp"
 
 inline bool mpc(Search* search, int alpha, int beta, int depth, uint64_t legal, const bool is_end_search, int* v, std::vector<bool*> &searchings);
 inline bool mpc(Search* search, int alpha, int beta, const int depth, uint64_t legal, const bool is_end_search, int* v, const bool* searching);

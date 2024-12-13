@@ -17,7 +17,7 @@
 #include "endsearch.hpp"
 #include "parallel.hpp"
 #include "thread_pool.hpp"
-#include "transposition_table.hpp"
+#include "transposition_cutoff.hpp"
 
 /*
     @brief YBWC parameters
