@@ -21,8 +21,6 @@
 #include "clogsearch.hpp"
 #include "time_management.hpp"
 
-constexpr int SEARCH_BOOK = -1;
-
 constexpr int AI_TYPE_BOOK = 1000;
 
 constexpr int IDSEARCH_ENDSEARCH_PRESEARCH_OFFSET = 10;

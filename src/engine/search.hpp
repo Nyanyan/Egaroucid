@@ -30,10 +30,6 @@
 //#define MID_TO_END_DEPTH_MPC 12
 #define MID_SIMPLE_DEPTH 5
 
-/*
-    @brief Search hyperparameters
-*/
-#define MID_ETC_DEPTH 16
 
 
 
@@ -47,9 +43,7 @@
 #define MOVE_UNDEFINED 127
 #define MOVE_NOMOVE 65
 #define MOVE_PASS 64
-#ifndef SEARCH_BOOK
-    #define SEARCH_BOOK -1
-#endif
+constexpr int SEARCH_BOOK = -1;
 
 inline void calc_eval_features(Board *board, Eval_search *eval);
 #if USE_SIMD
