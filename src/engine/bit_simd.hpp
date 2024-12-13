@@ -12,9 +12,9 @@
 #pragma once
 #include <iostream>
 #ifdef _MSC_VER
-    #include <intrin.h>
+#include <intrin.h>
 #else
-    #include <x86intrin.h>
+#include <x86intrin.h>
 #endif
 #include "common.hpp"
 
@@ -138,42 +138,19 @@ void mm256_print_epu16(__m256i v) {
     @param x                    an integer
 */
 #if USE_BUILTIN_POPCOUNT
-    #ifdef __GNUC__
-        #define	pop_count_ull(x) (int)__builtin_popcountll(x)
-        #define pop_count_uint(x) (int)__builtin_popcount(x)
-        #define pop_count_uchar(x) (int)__builtin_popcount(x)
-    #else
-        #define	pop_count_ull(x) (int)__popcnt64(x)
-        #define pop_count_uint(x) (int)__popcnt(x)
-        #define pop_count_uchar(x) (int)__popcnt(x)
-    #endif
+#ifdef __GNUC__
+#define	pop_count_ull(x) (int)__builtin_popcountll(x)
+#define pop_count_uint(x) (int)__builtin_popcount(x)
+#define pop_count_uchar(x) (int)__builtin_popcount(x)
 #else
-    #define	pop_count_ull(x) std::popcount(x)
-    #define pop_count_uint(x) std::popcount(x)
-    #define pop_count_uchar(x) std::popcount(x)
-    /*
-    inline int pop_count_ull(uint64_t x) {
-        x = x - ((x >> 1) & 0x5555555555555555ULL);
-        x = (x & 0x3333333333333333ULL) + ((x >> 2) & 0x3333333333333333ULL);
-        x = (x + (x >> 4)) & 0x0F0F0F0F0F0F0F0FULL;
-        x = (x * 0x0101010101010101ULL) >> 56;
-        return x;
-    }
-
-    inline int pop_count_uint(uint32_t x) {
-        x = (x & 0x55555555) + ((x & 0xAAAAAAAA) >> 1);
-        x = (x & 0x33333333) + ((x & 0xCCCCCCCC) >> 2);
-        x = (x & 0x0F0F0F0F) + ((x & 0xF0F0F0F0) >> 4);
-        x = (x & 0x00FF00FF) + ((x & 0xFF00FF00) >> 8);
-        return (x & 0x0000FFFF) + ((x & 0xFFFF0000) >> 16);
-    }
-
-    inline int pop_count_uchar(uint8_t x) {
-        x = (x & 0b01010101) + ((x & 0b10101010) >> 1);
-        x = (x & 0b00110011) + ((x & 0b11001100) >> 2);
-        return (x & 0b00001111) + ((x & 0b11110000) >> 4);
-    }
-    */
+#define	pop_count_ull(x) (int)__popcnt64(x)
+#define pop_count_uint(x) (int)__popcnt(x)
+#define pop_count_uchar(x) (int)__popcnt(x)
+#endif
+#else
+#define	pop_count_ull(x) std::popcount(x)
+#define pop_count_uint(x) std::popcount(x)
+#define pop_count_uchar(x) std::popcount(x)
 #endif
 
 /*
@@ -274,43 +251,43 @@ inline uint64_t rotate_180(uint64_t x) {
     @param x                    a pointer of a bitboard
 */
 #if USE_BUILTIN_NTZ
-    inline uint_fast8_t ctz(uint64_t *x) {
-        return _tzcnt_u64(*x);
-    }
+inline uint_fast8_t ctz(uint64_t *x) {
+    return _tzcnt_u64(*x);
+}
 
-    inline uint_fast8_t ctz(uint64_t x) {
-        return _tzcnt_u64(x);
-    }
+inline uint_fast8_t ctz(uint64_t x) {
+    return _tzcnt_u64(x);
+}
 
-    inline uint_fast8_t ctz_uint32(uint32_t x) {
-        return _tzcnt_u32(x);
-    }
+inline uint_fast8_t ctz_uint32(uint32_t x) {
+    return _tzcnt_u32(x);
+}
 #elif USE_MINUS_NTZ
-    inline uint_fast8_t ctz(uint64_t *x) {
-        return pop_count_ull((*x & (-(*x))) - 1);
-    }
+inline uint_fast8_t ctz(uint64_t *x) {
+    return pop_count_ull((*x & (-(*x))) - 1);
+}
 
-    inline uint_fast8_t ctz(uint64_t x) {
-        return pop_count_ull((x & (-x)) - 1);
-    }
+inline uint_fast8_t ctz(uint64_t x) {
+    return pop_count_ull((x & (-x)) - 1);
+}
 
-    inline uint_fast8_t ctz_uint32(uint32_t x) {
-        return pop_count_uint((x & (-x)) - 1);
-    }
+inline uint_fast8_t ctz_uint32(uint32_t x) {
+    return pop_count_uint((x & (-x)) - 1);
+}
 #else
-    inline uint_fast8_t ctz(uint64_t *x) {
-        //return pop_count_ull(_blsi_u64(*x) - 1);
-        return pop_count_ull((~(*x)) & ((*x) - 1));
-        //return pop_count_ull((*x & (~(*x) + 1)) - 1);
-    }
+inline uint_fast8_t ctz(uint64_t *x) {
+    //return pop_count_ull(_blsi_u64(*x) - 1);
+    return pop_count_ull((~(*x)) & ((*x) - 1));
+    //return pop_count_ull((*x & (~(*x) + 1)) - 1);
+}
 
-    inline uint_fast8_t ctz(uint64_t x) {
-        return pop_count_ull((~x) & (x - 1));
-    }
+inline uint_fast8_t ctz(uint64_t x) {
+    return pop_count_ull((~x) & (x - 1));
+}
 
-    inline uint_fast8_t ctz_uint32(uint32_t x) {
-        return pop_count_uint((~x) & (x - 1));
-    }
+inline uint_fast8_t ctz_uint32(uint32_t x) {
+    return pop_count_uint((~x) & (x - 1));
+}
 #endif
 
 /*
@@ -339,187 +316,187 @@ inline uint_fast8_t next_bit(uint64_t *x) {
 }
 
 #if USE_BIT_GATHER_OPTIMIZE
-    /*
-        @brief create a board from a h line and the type of the line
+/*
+    @brief create a board from a h line and the type of the line
 
-        @param x                    an integer representing a line
-        @param t                    a type of the line
-    */
-    inline uint64_t split_h_line(uint_fast8_t x, int_fast8_t t) {
-        return (uint64_t)x << (HW * t);
-    }
+    @param x                    an integer representing a line
+    @param t                    a type of the line
+*/
+inline uint64_t split_h_line(uint_fast8_t x, int_fast8_t t) {
+    return (uint64_t)x << (HW * t);
+}
 
-    /*
-        @brief create a board from a v line and the type of the line
+/*
+    @brief create a board from a v line and the type of the line
 
-        @param x                    an integer representing a line
-        @param t                    a type of the line
-    */
-    inline uint64_t split_v_line(uint_fast8_t x, int_fast8_t t) {
-        return _pdep_u64((uint64_t)x, 0x0101010101010101ULL) << t;
-    }
+    @param x                    an integer representing a line
+    @param t                    a type of the line
+*/
+inline uint64_t split_v_line(uint_fast8_t x, int_fast8_t t) {
+    return _pdep_u64((uint64_t)x, 0x0101010101010101ULL) << t;
+}
 
-    /*
-        @brief extract a h line from a board
+/*
+    @brief extract a h line from a board
 
-        @param x                    a bitboard
-        @param t                    a type of the line
-    */
-    inline uint_fast8_t join_h_line(uint64_t x, int t) {
-        #if USE_FAST_JOIN_H_LINE
-            return _bextr_u64(x, HW * t, 8);
-        #else
-            return (x >> (HW * t)) & 0b11111111U;
-        #endif
-    }
-
-    /*
-        @brief extract a v line from a board
-
-        @param x                    a bitboard
-        @param t                    a type of the line
-    */
-    inline uint8_t join_v_line(uint64_t x, int_fast8_t t) {
-        //return (uint8_t)_mm_movemask_epi8(_mm_set_epi64x(0ULL, x << (7 - t)));
-        x = (x >> t) & 0x0101010101010101ULL;
-        return (x * 0x0102040810204080ULL) >> 56;
-    }
-
-    /*
-        @brief create a board from a d7 line and the type of the line
-
-        @param x                    an integer representing a line
-        @param t                    a type of the line
-    */
-    inline uint64_t split_d7_line(uint8_t x, int_fast8_t t) {
-        return _pdep_u64((uint64_t)x, 0x0002040810204081ULL) << t;
-    }
-
-    /*
-        @brief create a board from a d9 line and the type of the line
-
-        @param x                    an integer representing a line
-        @param t                    a type of the line
-    */
-    inline uint64_t split_d9_line(uint8_t x, int_fast8_t t) {
-        uint64_t res = _pdep_u64((uint64_t)x, 0x8040201008040201ULL);
-        return t > 0 ? res << t : res >> (-t);
-    }
-
-    constexpr uint64_t join_d7_line_mask[15] = {
-        0ULL, 0ULL, 0x0000000000010204ULL, 0x0000000001020408ULL, 
-        0x0000000102040810ULL, 0x0000010204081020ULL, 0x0001020408102040ULL, 0x0102040810204080ULL, 
-        0x0204081020408000ULL, 0x0408102040800000ULL, 0x0810204080000000ULL, 0x1020408000000000ULL, 
-        0x2040800000000000ULL, 0ULL, 0ULL
-    };
-
-    /*
-        @brief extract a d7 line from a board
-
-        @param x                    a bitboard
-        @param t                    a type of the line
-    */
-    inline uint_fast8_t join_d7_line(const uint64_t x, const uint_fast8_t t) {
-        return _pext_u64(x, join_d7_line_mask[t]);
-    }
-
-    constexpr uint64_t join_d9_line_mask[15] = {
-        0ULL, 0ULL, 0x0402010000000000ULL, 0x0804020100000000ULL, 
-        0x1008040201000000ULL, 0x2010080402010000ULL, 0x4020100804020100ULL, 0x8040201008040201ULL, 
-        0x0080402010080402ULL, 0x0000804020100804ULL, 0x0000008040201008ULL, 0x0000000080402010ULL, 
-        0x0000000000804020ULL, 0ULL, 0ULL
-    };
-
-    /*
-        @brief extract a d9 line from a board
-
-        @param x                    a bitboard
-        @param t                    a type of the line
-    */
-    inline uint_fast8_t join_d9_line(const uint64_t x, const uint_fast8_t t) {
-        return _pext_u64(x, join_d9_line_mask[t]);
-    }
-#else
-    inline uint_fast8_t join_h_line(uint64_t x, int t) {
+    @param x                    a bitboard
+    @param t                    a type of the line
+*/
+inline uint_fast8_t join_h_line(uint64_t x, int t) {
+    #if USE_FAST_JOIN_H_LINE
+        return _bextr_u64(x, HW * t, 8);
+    #else
         return (x >> (HW * t)) & 0b11111111U;
-    }
+    #endif
+}
 
-    inline uint64_t split_h_line(uint_fast8_t x, int_fast8_t t) {
-        return (uint64_t)x << (HW * t);
-    }
+/*
+    @brief extract a v line from a board
 
-    inline int join_v_line(uint64_t x, int c) {
-        x = (x >> c) & 0x0101010101010101ULL;
-        return (x * 0x0102040810204080ULL) >> 56;
-    }
+    @param x                    a bitboard
+    @param t                    a type of the line
+*/
+inline uint8_t join_v_line(uint64_t x, int_fast8_t t) {
+    //return (uint8_t)_mm_movemask_epi8(_mm_set_epi64x(0ULL, x << (7 - t)));
+    x = (x >> t) & 0x0101010101010101ULL;
+    return (x * 0x0102040810204080ULL) >> 56;
+}
 
-    inline uint64_t split_v_line(uint8_t x, int c) {
-        uint64_t res = ((uint64_t)x * 0x0002040810204081ULL) & 0x0101010101010101ULL;
-        return res << c;
-    }
+/*
+    @brief create a board from a d7 line and the type of the line
 
-    constexpr uint64_t join_d7_line_mask[15] = {
-        0ULL, 0ULL, 0x0000000000010204ULL, 0x0000000001020408ULL, 
-        0x0000000102040810ULL, 0x0000010204081020ULL, 0x0001020408102040ULL, 0x0102040810204080ULL, 
-        0x0204081020408000ULL, 0x0408102040800000ULL, 0x0810204080000000ULL, 0x1020408000000000ULL, 
-        0x2040800000000000ULL, 0ULL, 0ULL
-    };
+    @param x                    an integer representing a line
+    @param t                    a type of the line
+*/
+inline uint64_t split_d7_line(uint8_t x, int_fast8_t t) {
+    return _pdep_u64((uint64_t)x, 0x0002040810204081ULL) << t;
+}
 
-    constexpr uint8_t join_d7_line_leftshift[15] = {
-        0, 0, 5, 4, 
-        3, 2, 1, 0, 
-        0, 0, 0, 0, 
-        0, 0, 0
-    };
+/*
+    @brief create a board from a d9 line and the type of the line
 
-    constexpr uint8_t join_d7_line_rightshift[15] = {
-        0, 0, 0, 0, 
-        0, 0, 0, 0, 
-        8, 16, 24, 32, 
-        40, 0, 0
-    };
+    @param x                    an integer representing a line
+    @param t                    a type of the line
+*/
+inline uint64_t split_d9_line(uint8_t x, int_fast8_t t) {
+    uint64_t res = _pdep_u64((uint64_t)x, 0x8040201008040201ULL);
+    return t > 0 ? res << t : res >> (-t);
+}
 
-    inline int join_d7_line(uint64_t x, const int t) {
-        x = (x & join_d7_line_mask[t]);
-        x <<= join_d7_line_leftshift[t];
-        x >>= join_d7_line_rightshift[t];
-        uint64_t res = ((x * 0x0002082080000000ULL) & 0x0F00000000000000ULL) | ((x * 0x0000000002082080ULL) & 0xF000000000000000ULL);
-        return res >> 56;
-    }
+constexpr uint64_t join_d7_line_mask[15] = {
+    0ULL, 0ULL, 0x0000000000010204ULL, 0x0000000001020408ULL, 
+    0x0000000102040810ULL, 0x0000010204081020ULL, 0x0001020408102040ULL, 0x0102040810204080ULL, 
+    0x0204081020408000ULL, 0x0408102040800000ULL, 0x0810204080000000ULL, 0x1020408000000000ULL, 
+    0x2040800000000000ULL, 0ULL, 0ULL
+};
 
-    inline uint64_t split_d7_line(uint8_t x, const int t) {
-        uint64_t res = ((uint64_t)(x & 0b00001111) * 0x0000000002082080ULL) & 0x0000000010204080ULL;
-        res |= ((uint64_t)(x & 0b11110000) * 0x0002082080000000ULL) & 0x0102040800000000ULL;
-        res >>= join_d7_line_leftshift[t];
-        res <<= join_d7_line_rightshift[t];
-        return res;
-    }
+/*
+    @brief extract a d7 line from a board
 
-    constexpr uint64_t join_d9_line_mask[15] = {
-        0ULL, 0ULL, 0x0402010000000000ULL, 0x0804020100000000ULL, 
-        0x1008040201000000ULL, 0x2010080402010000ULL, 0x4020100804020100ULL, 0x8040201008040201ULL, 
-        0x0080402010080402ULL, 0x0000804020100804ULL, 0x0000008040201008ULL, 0x0000000080402010ULL, 
-        0x0000000000804020ULL, 0ULL, 0ULL
-    };
+    @param x                    a bitboard
+    @param t                    a type of the line
+*/
+inline uint_fast8_t join_d7_line(const uint64_t x, const uint_fast8_t t) {
+    return _pext_u64(x, join_d7_line_mask[t]);
+}
 
-    constexpr uint8_t join_d9_line_rightshift[15] = {
-        0, 0, 40, 32, 
-        24, 16, 8, 0, 
-        1, 2, 3, 4, 
-        5, 0, 0
-    };
+constexpr uint64_t join_d9_line_mask[15] = {
+    0ULL, 0ULL, 0x0402010000000000ULL, 0x0804020100000000ULL, 
+    0x1008040201000000ULL, 0x2010080402010000ULL, 0x4020100804020100ULL, 0x8040201008040201ULL, 
+    0x0080402010080402ULL, 0x0000804020100804ULL, 0x0000008040201008ULL, 0x0000000080402010ULL, 
+    0x0000000000804020ULL, 0ULL, 0ULL
+};
 
-    inline int join_d9_line(uint64_t x, int t) {
-        x = x & join_d9_line_mask[t];
-        x >>= join_d9_line_rightshift[t];
-        return (x * 0x0101010101010101ULL) >> 56;
-    }
+/*
+    @brief extract a d9 line from a board
 
-    inline uint64_t split_d9_line(uint8_t x, int t) {
-        uint64_t res = ((uint64_t)x * 0x0101010101010101ULL) & 0x8040201008040201ULL;
-        res <<= join_d9_line_rightshift[t];
-        return res;
-    }
+    @param x                    a bitboard
+    @param t                    a type of the line
+*/
+inline uint_fast8_t join_d9_line(const uint64_t x, const uint_fast8_t t) {
+    return _pext_u64(x, join_d9_line_mask[t]);
+}
+#else
+inline uint_fast8_t join_h_line(uint64_t x, int t) {
+    return (x >> (HW * t)) & 0b11111111U;
+}
+
+inline uint64_t split_h_line(uint_fast8_t x, int_fast8_t t) {
+    return (uint64_t)x << (HW * t);
+}
+
+inline int join_v_line(uint64_t x, int c) {
+    x = (x >> c) & 0x0101010101010101ULL;
+    return (x * 0x0102040810204080ULL) >> 56;
+}
+
+inline uint64_t split_v_line(uint8_t x, int c) {
+    uint64_t res = ((uint64_t)x * 0x0002040810204081ULL) & 0x0101010101010101ULL;
+    return res << c;
+}
+
+constexpr uint64_t join_d7_line_mask[15] = {
+    0ULL, 0ULL, 0x0000000000010204ULL, 0x0000000001020408ULL, 
+    0x0000000102040810ULL, 0x0000010204081020ULL, 0x0001020408102040ULL, 0x0102040810204080ULL, 
+    0x0204081020408000ULL, 0x0408102040800000ULL, 0x0810204080000000ULL, 0x1020408000000000ULL, 
+    0x2040800000000000ULL, 0ULL, 0ULL
+};
+
+constexpr uint8_t join_d7_line_leftshift[15] = {
+    0, 0, 5, 4, 
+    3, 2, 1, 0, 
+    0, 0, 0, 0, 
+    0, 0, 0
+};
+
+constexpr uint8_t join_d7_line_rightshift[15] = {
+    0, 0, 0, 0, 
+    0, 0, 0, 0, 
+    8, 16, 24, 32, 
+    40, 0, 0
+};
+
+inline int join_d7_line(uint64_t x, const int t) {
+    x = (x & join_d7_line_mask[t]);
+    x <<= join_d7_line_leftshift[t];
+    x >>= join_d7_line_rightshift[t];
+    uint64_t res = ((x * 0x0002082080000000ULL) & 0x0F00000000000000ULL) | ((x * 0x0000000002082080ULL) & 0xF000000000000000ULL);
+    return res >> 56;
+}
+
+inline uint64_t split_d7_line(uint8_t x, const int t) {
+    uint64_t res = ((uint64_t)(x & 0b00001111) * 0x0000000002082080ULL) & 0x0000000010204080ULL;
+    res |= ((uint64_t)(x & 0b11110000) * 0x0002082080000000ULL) & 0x0102040800000000ULL;
+    res >>= join_d7_line_leftshift[t];
+    res <<= join_d7_line_rightshift[t];
+    return res;
+}
+
+constexpr uint64_t join_d9_line_mask[15] = {
+    0ULL, 0ULL, 0x0402010000000000ULL, 0x0804020100000000ULL, 
+    0x1008040201000000ULL, 0x2010080402010000ULL, 0x4020100804020100ULL, 0x8040201008040201ULL, 
+    0x0080402010080402ULL, 0x0000804020100804ULL, 0x0000008040201008ULL, 0x0000000080402010ULL, 
+    0x0000000000804020ULL, 0ULL, 0ULL
+};
+
+constexpr uint8_t join_d9_line_rightshift[15] = {
+    0, 0, 40, 32, 
+    24, 16, 8, 0, 
+    1, 2, 3, 4, 
+    5, 0, 0
+};
+
+inline int join_d9_line(uint64_t x, int t) {
+    x = x & join_d9_line_mask[t];
+    x >>= join_d9_line_rightshift[t];
+    return (x * 0x0101010101010101ULL) >> 56;
+}
+
+inline uint64_t split_d9_line(uint8_t x, int t) {
+    uint64_t res = ((uint64_t)x * 0x0101010101010101ULL) & 0x8040201008040201ULL;
+    res <<= join_d9_line_rightshift[t];
+    return res;
+}
 #endif
 
 /*
