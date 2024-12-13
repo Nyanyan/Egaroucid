@@ -305,10 +305,11 @@ int16_t pattern_arr_move_ordering_end[2][N_PATTERNS][MAX_EVALUATE_IDX];
 inline int swap_player_idx(int i, int pattern_size) {
     int j, ri = i;
     for (j = 0; j < pattern_size; ++j) {
-        if ((i / pow3[j]) % 3 == 0)
+        if ((i / pow3[j]) % 3 == 0) {
             ri += pow3[j];
-        else if ((i / pow3[j]) % 3 == 1)
+        } else if ((i / pow3[j]) % 3 == 1) {
             ri -= pow3[j];
+        }
     }
     return ri;
 }
@@ -334,8 +335,9 @@ void init_pattern_arr_rev(int phase_idx, int pattern_idx, int siz) {
     @return evaluation function conpletely initialized?
 */
 inline bool load_eval_file(const char* file, bool show_log) {
-    if (show_log)
+    if (show_log) {
         std::cerr << "evaluation file " << file << std::endl;
+    }
     bool failed = false;
     std::vector<int16_t> unzipped_params = load_unzip_egev2(file, show_log, &failed);
     if (failed) {
@@ -362,8 +364,9 @@ inline bool load_eval_file(const char* file, bool show_log) {
                 ++i;
             }
         }
-        for (std::future<void> &task: tasks)
+        for (std::future<void> &task: tasks) {
             task.get();
+        }
     } else{
         for (int phase_idx = 0; phase_idx < N_PHASES; ++phase_idx) {
             for (int pattern_idx = 0; pattern_idx < N_PATTERNS; ++pattern_idx) {
@@ -375,8 +378,9 @@ inline bool load_eval_file(const char* file, bool show_log) {
 }
 
 inline bool load_eval_move_ordering_end_file(const char* file, bool show_log) {
-    if (show_log)
+    if (show_log) {
         std::cerr << "evaluation for move ordering end file " << file << std::endl;
+    }
     FILE* fp;
     if (!file_open(&fp, file, "rb")) {
         std::cerr << "[ERROR] [FATAL] can't open eval " << file << std::endl;
@@ -417,8 +421,9 @@ inline bool evaluate_init(const char* file, const char* mo_end_nws_file, bool sh
         std::cerr << "[ERROR] [FATAL] evaluation file for move ordering end not loaded" << std::endl;
         return false;
     }
-    if (show_log)
+    if (show_log) {
         std::cerr << "evaluation function initialized" << std::endl;
+    }
     return true;
 }
 
@@ -450,8 +455,9 @@ bool evaluate_init(bool show_log) {
 */
 inline int calc_pattern(const int phase_idx, Eval_search *eval) {
     int res = 0;
-    for (int i = 0; i < N_PATTERN_FEATURES; ++i)
+    for (int i = 0; i < N_PATTERN_FEATURES; ++i) {
         res += pattern_arr[eval->reversed[eval->feature_idx]][phase_idx][feature_to_pattern[i]][eval->features[eval->feature_idx][i]];
+    }
     return res;
 }
 
@@ -464,8 +470,9 @@ inline int calc_pattern(const int phase_idx, Eval_search *eval) {
 */
 inline int calc_pattern_move_ordering_end(Eval_search *eval) {
     int res = 0;
-    for (int i = EVAL_IDX_START_MOVE_ORDERING_END; i < EVAL_IDX_END_MOVE_ORDERING_END; ++i)
+    for (int i = EVAL_IDX_START_MOVE_ORDERING_END; i < EVAL_IDX_END_MOVE_ORDERING_END; ++i) {
         res += pattern_arr_move_ordering_end[eval->reversed[eval->feature_idx]][feature_to_pattern[i] - EVAL_FEATURE_START_MOVE_ORDERING_END][eval->features[eval->feature_idx][i]];
+    }
     return res;
 }
 
@@ -532,8 +539,9 @@ inline uint_fast16_t pick_pattern_idx(const uint_fast8_t b_arr[], const Feature_
 inline void calc_eval_features(Board *board, Eval_search *eval) {
     uint_fast8_t b_arr[HW2];
     board->translate_to_arr_player(b_arr);
-    for (int i = 0; i < N_PATTERN_FEATURES; ++i)
+    for (int i = 0; i < N_PATTERN_FEATURES; ++i) {
         eval->features[0][i] = pick_pattern_idx(b_arr, &feature_to_coord[i]);
+    }
     eval->reversed[0] = 0;
     eval->feature_idx = 0;
 }
@@ -545,20 +553,24 @@ inline void eval_move(Eval_search *eval, const Flip *flip) {
         eval->features[eval->feature_idx + 1][i] = eval->features[eval->feature_idx][i];
     }
     if (eval->reversed[eval->feature_idx]) {
-        for (i = 0; i < MAX_CELL_PATTERNS && coord_to_feature[flip->pos].features[i].x; ++i)
+        for (i = 0; i < MAX_CELL_PATTERNS && coord_to_feature[flip->pos].features[i].x; ++i) {
             eval->features[eval->feature_idx + 1][coord_to_feature[flip->pos].features[i].feature] -= coord_to_feature[flip->pos].features[i].x;
+        }
         f = flip->flip;
         for (cell = first_bit(&f); f; cell = next_bit(&f)) {
-            for (i = 0; i < MAX_CELL_PATTERNS && coord_to_feature[cell].features[i].x; ++i)
+            for (i = 0; i < MAX_CELL_PATTERNS && coord_to_feature[cell].features[i].x; ++i) {
                 eval->features[eval->feature_idx + 1][coord_to_feature[cell].features[i].feature] += coord_to_feature[cell].features[i].x;
+            }
         }
     } else{
-        for (i = 0; i < MAX_CELL_PATTERNS && coord_to_feature[flip->pos].features[i].x; ++i)
+        for (i = 0; i < MAX_CELL_PATTERNS && coord_to_feature[flip->pos].features[i].x; ++i) {
             eval->features[eval->feature_idx + 1][coord_to_feature[flip->pos].features[i].feature] -= 2 * coord_to_feature[flip->pos].features[i].x;
+        }
         f = flip->flip;
         for (cell = first_bit(&f); f; cell = next_bit(&f)) {
-            for (i = 0; i < MAX_CELL_PATTERNS && coord_to_feature[cell].features[i].x; ++i)
+            for (i = 0; i < MAX_CELL_PATTERNS && coord_to_feature[cell].features[i].x; ++i) {
                 eval->features[eval->feature_idx + 1][coord_to_feature[cell].features[i].feature] -= coord_to_feature[cell].features[i].x;
+            }
         }
     }
     eval->reversed[eval->feature_idx + 1] = eval->reversed[eval->feature_idx] ^ 1;
@@ -587,20 +599,24 @@ inline void eval_move_endsearch(Eval_search *eval, const Flip *flip) {
         eval->features[eval->feature_idx + 1][i] = eval->features[eval->feature_idx][i];
     }
     if (eval->reversed[eval->feature_idx]) {
-        for (i = 0; i < MAX_CELL_PATTERNS_MOVE_ORDERING_END && coord_to_feature_move_ordering_end[flip->pos].features[i].x; ++i)
+        for (i = 0; i < MAX_CELL_PATTERNS_MOVE_ORDERING_END && coord_to_feature_move_ordering_end[flip->pos].features[i].x; ++i) {
             eval->features[eval->feature_idx + 1][coord_to_feature_move_ordering_end[flip->pos].features[i].feature + EVAL_IDX_START_MOVE_ORDERING_END] -= coord_to_feature_move_ordering_end[flip->pos].features[i].x;
+        }
         f = flip->flip;
         for (cell = first_bit(&f); f; cell = next_bit(&f)) {
-            for (i = 0; i < MAX_CELL_PATTERNS_MOVE_ORDERING_END && coord_to_feature_move_ordering_end[cell].features[i].x; ++i)
+            for (i = 0; i < MAX_CELL_PATTERNS_MOVE_ORDERING_END && coord_to_feature_move_ordering_end[cell].features[i].x; ++i) {
                 eval->features[eval->feature_idx + 1][coord_to_feature_move_ordering_end[cell].features[i].feature + EVAL_IDX_START_MOVE_ORDERING_END] += coord_to_feature_move_ordering_end[cell].features[i].x;
+            }
         }
     } else{
-        for (i = 0; i < MAX_CELL_PATTERNS_MOVE_ORDERING_END && coord_to_feature_move_ordering_end[flip->pos].features[i].x; ++i)
+        for (i = 0; i < MAX_CELL_PATTERNS_MOVE_ORDERING_END && coord_to_feature_move_ordering_end[flip->pos].features[i].x; ++i) {
             eval->features[eval->feature_idx + 1][coord_to_feature_move_ordering_end[flip->pos].features[i].feature + EVAL_IDX_START_MOVE_ORDERING_END] -= 2 * coord_to_feature_move_ordering_end[flip->pos].features[i].x;
+        }
         f = flip->flip;
         for (cell = first_bit(&f); f; cell = next_bit(&f)) {
-            for (i = 0; i < MAX_CELL_PATTERNS_MOVE_ORDERING_END && coord_to_feature_move_ordering_end[cell].features[i].x; ++i)
+            for (i = 0; i < MAX_CELL_PATTERNS_MOVE_ORDERING_END && coord_to_feature_move_ordering_end[cell].features[i].x; ++i) {
                 eval->features[eval->feature_idx + 1][coord_to_feature_move_ordering_end[cell].features[i].feature + EVAL_IDX_START_MOVE_ORDERING_END] -= coord_to_feature_move_ordering_end[cell].features[i].x;
+            }
         }
     }
     eval->reversed[eval->feature_idx + 1] = eval->reversed[eval->feature_idx] ^ 1;
