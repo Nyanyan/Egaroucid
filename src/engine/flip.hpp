@@ -11,11 +11,11 @@
 #pragma once
 #include "setting.hpp"
 #if USE_SIMD
-    #if USE_AVX512
-        #include "flip_avx512.hpp"
-    #else
-        #include "flip_simd.hpp"
-    #endif
+#if USE_AVX512
+#include "flip_avx512.hpp"
 #else
-    #include "flip_generic.hpp"
+#include "flip_simd.hpp"
+#endif
+#else
+#include "flip_generic.hpp"
 #endif
