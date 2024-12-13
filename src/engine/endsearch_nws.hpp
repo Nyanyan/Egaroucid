@@ -26,13 +26,16 @@
 #include "endsearch_common.hpp"
 #include "parallel.hpp"
 #include "ybwc.hpp"
-
-
 #if USE_SIMD
-    #include "endsearch_nws_last_simd.hpp"
+#include "endsearch_nws_last_simd.hpp"
 #else
-    #include "endsearch_nws_last_generic.hpp"
+#include "endsearch_nws_last_generic.hpp"
 #endif
+
+constexpr int LOCAL_TT_SIZE = 1024;
+constexpr int LOCAL_TT_SIZE_BIT = 10;
+//constexpr int LOCAL_TT_SIZE = 2048;
+//constexpr int LOCAL_TT_SIZE_BIT = 11;
 
 /*
     @brief Get a final score with few empties (NWS)
@@ -47,21 +50,22 @@
 */
 int nega_alpha_end_fast_nws(Search *search, int alpha, const bool skipped) {
     ++search->n_nodes;
-    #if USE_SEARCH_STATISTICS
-        ++search->n_nodes_discs[search->n_discs];
-    #endif
-    #if USE_END_SC
-        if (!skipped) {
-            int stab_res = stability_cut_nws(search, alpha);
-            if (stab_res != SCORE_UNDEFINED) {
-                return stab_res;
-            }
+#if USE_SEARCH_STATISTICS
+    ++search->n_nodes_discs[search->n_discs];
+#endif
+#if USE_END_SC
+    if (!skipped) {
+        int stab_res = stability_cut_nws(search, alpha);
+        if (stab_res != SCORE_UNDEFINED) {
+            return stab_res;
         }
-    #endif
+    }
+#endif
     uint64_t legal = search->board.get_legal();
     if (legal == 0ULL) {
-        if (skipped)
+        if (skipped) {
             return end_evaluate(&search->board);
+        }
         search->pass_noeval();
             int v = -nega_alpha_end_fast_nws(search, -alpha - 1, true);
         search->pass_noeval();
@@ -75,13 +79,14 @@ int nega_alpha_end_fast_nws(Search *search, int alpha, const bool skipped) {
     Flip flip;
     uint_fast8_t cell;
     uint64_t prioritymoves = legal;
-    #if USE_END_PO
-        prioritymoves &= empty1_bb(search->board.player, search->board.opponent);
-        if (prioritymoves == 0)
-            prioritymoves = legal;
-    #endif
+#if USE_END_PO
+    prioritymoves &= empty1_bb(search->board.player, search->board.opponent);
+    if (prioritymoves == 0) {
+        prioritymoves = legal;
+    }
+#endif
     
-    if (search->n_discs == 59)      // transfer to lastN, no longer uses n_discs, parity
+    if (search->n_discs == 59) {     // transfer to lastN, no longer uses n_discs, parity
         do {
             legal ^= prioritymoves;
             for (cell = first_bit(&prioritymoves); prioritymoves; cell = next_bit(&prioritymoves)) {
@@ -92,12 +97,12 @@ int nega_alpha_end_fast_nws(Search *search, int alpha, const bool skipped) {
                     board0.copy(&search->board);
                     return g;
                 }
-                if (v < g)
+                if (v < g) {
                     v = g;
+                }
             }
         } while ((prioritymoves = legal));
-
-    else {
+    } else {
         ++search->n_discs;  // for next depth
         do {
             legal ^= prioritymoves;
@@ -110,8 +115,9 @@ int nega_alpha_end_fast_nws(Search *search, int alpha, const bool skipped) {
                     board0.copy(&search->board);
                     return g;
                 }
-                if (v < g)
+                if (v < g) {
                     v = g;
+                }
             }
         } while ((prioritymoves = legal));
         --search->n_discs;
@@ -138,11 +144,6 @@ struct LocalTTEntry {
     }
 };
 
-#define LOCAL_TT_SIZE 1024
-#define LOCAL_TT_SIZE_BIT 10
-//#define LOCAL_TT_SIZE 2048
-//#define LOCAL_TT_SIZE_BIT 11
-
 static thread_local LocalTTEntry lttable[MID_TO_END_DEPTH - END_FAST_DEPTH][LOCAL_TT_SIZE];
 
 inline uint32_t hash_bb(Board *board)
@@ -167,26 +168,29 @@ inline LocalTTEntry *get_ltt(Board *board, uint32_t n_discs)
     @return the final score
 */
 int nega_alpha_end_simple_nws(Search *search, int alpha, const bool skipped, uint64_t legal) {
-    if (search->n_discs >= HW2 - END_FAST_DEPTH)
+    if (search->n_discs >= HW2 - END_FAST_DEPTH) {
         return nega_alpha_end_fast_nws(search, alpha, skipped);
+    }
     ++search->n_nodes;
-    #if USE_SEARCH_STATISTICS
-        ++search->n_nodes_discs[search->n_discs];
-    #endif
-    #if USE_END_SC
-        if (!skipped) {
-            int stab_res = stability_cut_nws(search, alpha);
-            if (stab_res != SCORE_UNDEFINED) {
-                return stab_res;
-            }
+#if USE_SEARCH_STATISTICS
+    ++search->n_nodes_discs[search->n_discs];
+#endif
+#if USE_END_SC
+    if (!skipped) {
+        int stab_res = stability_cut_nws(search, alpha);
+        if (stab_res != SCORE_UNDEFINED) {
+            return stab_res;
         }
-    #endif
-    if (legal == LEGAL_UNDEFINED)
+    }
+#endif
+    if (legal == LEGAL_UNDEFINED) {
         legal = search->board.get_legal();
+    }
     int v = -SCORE_INF;
     if (legal == 0ULL) {
-        if (skipped)
+        if (skipped) {
             return end_evaluate(&search->board);
+        }
         search->pass_noeval();
             v = -nega_alpha_end_simple_nws(search, -alpha - 1, true, LEGAL_UNDEFINED);
         search->pass_noeval();
@@ -300,8 +304,9 @@ int nega_alpha_end_nws(Search *search, int alpha, const bool skipped, uint64_t l
             }
         }
     #endif
-    if (legal == LEGAL_UNDEFINED)
+    if (legal == LEGAL_UNDEFINED) {
         legal = search->board.get_legal();
+    }
     int v = -SCORE_INF;
     if (legal == 0ULL) {
         if (skipped) {
