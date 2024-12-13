@@ -37,13 +37,13 @@ static int last2(Search *search, int alpha, int beta, uint_fast8_t p0, uint_fast
     if ((bit_around[p0] & board.opponent) && calc_flip(&flip, &board, p0)) { // p0
         v = last1(search, board.opponent ^ flip.flip, alpha, p1);
 
-        if ((v > alpha) && (bit_around[p1] & board.opponent) && calc_flip(&flip, &board, p1)) {
+        if ((v > alpha) && (bit_around[p1] & board.opponent) && calc_flip(&flip, &board, p1)) { // p1
             int g = last1(search, board.opponent ^ flip.flip, alpha, p0);
             if (v > g) {
                 v = g;
             }
         }
-    } else if ((bit_around[p1] & board.opponent) && calc_flip(&flip, &board, p1)) { // p1
+    } else if ((bit_around[p1] & board.opponent) && calc_flip(&flip, &board, p1)) { // p1 only
         v = last1(search, board.opponent ^ flip.flip, alpha, p0);
     } else {	// pass
         ++search->n_nodes;
@@ -54,13 +54,13 @@ static int last2(Search *search, int alpha, int beta, uint_fast8_t p0, uint_fast
         if (flip.calc_flip(board.opponent, board.player, p0)) { // p0
             v = last1(search, board.player ^ flip.flip, alpha, p1);
 
-            if ((v > alpha) && (flip.calc_flip(board.opponent, board.player, p1))) {
+            if ((v > alpha) && (flip.calc_flip(board.opponent, board.player, p1))) { // p1
                 int g = last1(search, board.player ^ flip.flip, alpha, p0);
                 if (v > g) {
                     v = g;
                 }
             }
-        } else if (flip.calc_flip(board.opponent, board.player, p1)) { // p1
+        } else if (flip.calc_flip(board.opponent, board.player, p1)) { // p1 only
             v = last1(search, board.player ^ flip.flip, alpha, p0);
         } else { // gameover
             v = end_evaluate(&board, 2);
