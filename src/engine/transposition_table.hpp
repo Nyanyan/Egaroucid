@@ -23,25 +23,22 @@
 /*
     @brief constants
 */
-#define TRANSPOSITION_TABLE_UNDEFINED SCORE_INF
-#define TRANSPOSITION_TABLE_N_LOOP 3
+constexpr int TRANSPOSITION_TABLE_UNDEFINED = 127;
+constexpr int TRANSPOSITION_TABLE_N_LOOP = 3;
 #if TT_USE_STACK
-    constexpr size_t TRANSPOSITION_TABLE_STACK_SIZE = hash_sizes[DEFAULT_HASH_LEVEL] + TRANSPOSITION_TABLE_N_LOOP - 1;
+constexpr size_t TRANSPOSITION_TABLE_STACK_SIZE = hash_sizes[DEFAULT_HASH_LEVEL] + TRANSPOSITION_TABLE_N_LOOP - 1;
 #endif
-#define N_TRANSPOSITION_MOVES 2
-#define TT_REGISTER_THRESHOLD_RATE 0.3
-#define TT_REG_LOWER_LEVEL_WINDOW_WIDTH_OFFSET 3
+constexpr int N_TRANSPOSITION_MOVES = 2;
+constexpr double TT_REGISTER_THRESHOLD_RATE = 0.3;
 
 bool transposition_table_auto_reset_importance = true;
 
 inline uint32_t get_level_common(uint8_t depth, uint8_t mpc_level) {
     return ((uint32_t)depth << 8) | mpc_level;
-    //return depth + mpc_level;
 }
 
 inline uint32_t get_level_common(int depth, uint_fast8_t mpc_level) {
     return ((uint32_t)depth << 8) | mpc_level;
-    //return depth + mpc_level;
 }
 
 /*
@@ -123,14 +120,16 @@ class Hash_data {
             @param policy               best move
         */
         inline void reg_new_level(const int d, const uint_fast8_t ml, const int alpha, const int beta, const int value, const int policy) {
-            if (value < beta)
+            if (value < beta) {
                 upper = (int8_t)value;
-            else
+            } else {
                 upper = SCORE_MAX;
-            if (alpha < value)
+            }
+            if (alpha < value) {
                 lower = (int8_t)value;
-            else
+            } else {
                 lower = -SCORE_MAX;
+            }
             if ((alpha < value || value == -SCORE_MAX) && moves[0] != policy && policy != TRANSPOSITION_TABLE_UNDEFINED) {
                 moves[1] = moves[0];
                 moves[0] = policy;
@@ -154,18 +153,21 @@ class Hash_data {
             @param policy               best move
         */
         inline void reg_new_data(const int d, const uint_fast8_t ml, const int alpha, const int beta, const int value, const int policy) {
-            if (value < beta)
+            if (value < beta) {
                 upper = (int8_t)value;
-            else
+            } else {
                 upper = SCORE_MAX;
-            if (alpha < value)
+            }
+            if (alpha < value) {
                 lower = (int8_t)value;
-            else
+            } else {
                 lower = -SCORE_MAX;
-            if ((alpha < value || value == -SCORE_MAX) && moves[0] != policy)
+            }
+            if ((alpha < value || value == -SCORE_MAX) && moves[0] != policy) {
                 moves[0] = policy;
-            else
+            } else {
                 moves[0] = TRANSPOSITION_TABLE_UNDEFINED;
+            }
             moves[1] = TRANSPOSITION_TABLE_UNDEFINED;
             depth = d;
             mpc_level = ml;
@@ -178,8 +180,9 @@ class Hash_data {
             @return level
         */
         inline uint32_t get_level() {
-            if (importance)
+            if (importance) {
                 return get_level_common(depth, mpc_level);
+            }
             return 0;
         }
 
@@ -316,12 +319,12 @@ class Transposition_table{
 class Transposition_table {
     private:
         std::mutex mtx;
-        #if TT_USE_STACK
-            Hash_node table_stack[TRANSPOSITION_TABLE_STACK_SIZE];
-        #endif
-        #if USE_CHANGEABLE_HASH_LEVEL || !TT_USE_STACK
-            Hash_node *table_heap;
-        #endif
+#if TT_USE_STACK
+        Hash_node table_stack[TRANSPOSITION_TABLE_STACK_SIZE];
+#endif
+#if USE_CHANGEABLE_HASH_LEVEL || !TT_USE_STACK
+        Hash_node *table_heap;
+#endif
         size_t table_size;
         std::atomic<uint64_t> n_registered;
         uint64_t n_registered_threshold;
@@ -331,50 +334,50 @@ class Transposition_table {
             @brief Constructor of transposition table
         */
         Transposition_table() 
-        #if USE_CHANGEABLE_HASH_LEVEL || !TT_USE_STACK
+#if USE_CHANGEABLE_HASH_LEVEL || !TT_USE_STACK
             : table_heap(nullptr), table_size(0), n_registered(0), n_registered_threshold(0) {}
-        #else
+#else
             : table_size(0), n_registered(0), n_registered_threshold(0) {}
-        #endif
+#endif
 
-        #if USE_CHANGEABLE_HASH_LEVEL
-            /*
-                @brief Resize transposition table
+#if USE_CHANGEABLE_HASH_LEVEL
+        /*
+            @brief Resize transposition table
 
-                @param hash_level           hash level representing the size
-                @return table initialized?
-            */
-            inline bool resize(int hash_level) {
-                size_t n_table_size = hash_sizes[hash_level] + TRANSPOSITION_TABLE_N_LOOP - 1;
-                table_size = 0;
-                if (table_heap != nullptr) {
-                    free(table_heap);
-                    table_heap = nullptr;
-                }
-                #if TT_USE_STACK
-                    if (n_table_size > TRANSPOSITION_TABLE_STACK_SIZE) {
-                        table_heap = (Hash_node*)malloc(sizeof(Hash_node) * (n_table_size - TRANSPOSITION_TABLE_STACK_SIZE));
-                        if (table_heap == nullptr)
-                            return false;
-                    }
-                #else
-                    table_heap = (Hash_node*)malloc(sizeof(Hash_node) * n_table_size);
+            @param hash_level           hash level representing the size
+            @return table initialized?
+        */
+        inline bool resize(int hash_level) {
+            size_t n_table_size = hash_sizes[hash_level] + TRANSPOSITION_TABLE_N_LOOP - 1;
+            table_size = 0;
+            if (table_heap != nullptr) {
+                free(table_heap);
+                table_heap = nullptr;
+            }
+            #if TT_USE_STACK
+                if (n_table_size > TRANSPOSITION_TABLE_STACK_SIZE) {
+                    table_heap = (Hash_node*)malloc(sizeof(Hash_node) * (n_table_size - TRANSPOSITION_TABLE_STACK_SIZE));
                     if (table_heap == nullptr)
                         return false;
-                #endif
-                table_size = n_table_size;
-                n_registered_threshold = table_size * TT_REGISTER_THRESHOLD_RATE;
-                init();
-                return true;
-            }
-        #else
-            inline bool set_size() {
-                table_size = TRANSPOSITION_TABLE_STACK_SIZE;
-                n_registered_threshold = table_size * TT_REGISTER_THRESHOLD_RATE;
-                init();
-                return true;
-            }
-        #endif
+                }
+            #else
+                table_heap = (Hash_node*)malloc(sizeof(Hash_node) * n_table_size);
+                if (table_heap == nullptr)
+                    return false;
+            #endif
+            table_size = n_table_size;
+            n_registered_threshold = table_size * TT_REGISTER_THRESHOLD_RATE;
+            init();
+            return true;
+        }
+#else // USE_CHANGEABLE_HASH_LEVEL
+        inline bool set_size() {
+            table_size = TRANSPOSITION_TABLE_STACK_SIZE;
+            n_registered_threshold = table_size * TT_REGISTER_THRESHOLD_RATE;
+            init();
+            return true;
+        }
+#endif // USE_CHANGEABLE_HASH_LEVEL
 
         /*
             @brief Initialize transposition table
@@ -382,23 +385,24 @@ class Transposition_table {
         inline void init() {
             int thread_size = thread_pool.size();
             if (thread_size == 0) {
-                #if TT_USE_STACK
-                    for (size_t i = 0; i < std::min(table_size, (size_t)TRANSPOSITION_TABLE_STACK_SIZE); ++i)
-                        table_stack[i].init();
-                    #if USE_CHANGEABLE_HASH_LEVEL
-                        if (table_size > TRANSPOSITION_TABLE_STACK_SIZE) {
-                            for (size_t i = 0; i < table_size - (size_t)TRANSPOSITION_TABLE_STACK_SIZE; ++i)
-                                table_heap[i].init();
-                        }
-                    #endif
-                #else
-                    for (size_t i = 0; i < table_size; ++i)
+#if TT_USE_STACK
+                for (size_t i = 0; i < std::min(table_size, (size_t)TRANSPOSITION_TABLE_STACK_SIZE); ++i) {
+                    table_stack[i].init();
+                }
+#if USE_CHANGEABLE_HASH_LEVEL
+                if (table_size > TRANSPOSITION_TABLE_STACK_SIZE) {
+                    for (size_t i = 0; i < table_size - (size_t)TRANSPOSITION_TABLE_STACK_SIZE; ++i)
                         table_heap[i].init();
-                #endif
-            } else{
+                }
+#endif // USE_CHANGEABLE_HASH_LEVEL
+#else // TT_USE_STACK
+                for (size_t i = 0; i < table_size; ++i)
+                    table_heap[i].init();
+#endif // TT_USE_STACK
+            } else {
                 size_t s, e;
                 std::vector<std::future<void>> tasks;
-                #if TT_USE_STACK
+#if TT_USE_STACK
                     size_t delta = (std::min(table_size, (size_t)TRANSPOSITION_TABLE_STACK_SIZE) + thread_size - 1) / thread_size;
                     s = 0;
                     for (int i = 0; i < thread_size; ++i) {
@@ -411,38 +415,39 @@ class Transposition_table {
                         }
                         s = e;
                     }
-                    #if USE_CHANGEABLE_HASH_LEVEL
-                        if (table_size > TRANSPOSITION_TABLE_STACK_SIZE) {
-                            delta = (table_size - (size_t)TRANSPOSITION_TABLE_STACK_SIZE + thread_size - 1) / thread_size;
-                            s = 0;
-                            for (int i = 0; i < thread_size; ++i) {
-                                e = std::min(table_size - (size_t)TRANSPOSITION_TABLE_STACK_SIZE, s + delta);
-                                bool pushed = false;
-                                while (!pushed) {
-                                    tasks.emplace_back(thread_pool.push(&pushed, std::bind(&init_transposition_table, table_heap, s, e)));
-                                    if (!pushed)
-                                        tasks.pop_back();
-                                }
-                                s = e;
+#if USE_CHANGEABLE_HASH_LEVEL
+                    if (table_size > TRANSPOSITION_TABLE_STACK_SIZE) {
+                        delta = (table_size - (size_t)TRANSPOSITION_TABLE_STACK_SIZE + thread_size - 1) / thread_size;
+                        s = 0;
+                        for (int i = 0; i < thread_size; ++i) {
+                            e = std::min(table_size - (size_t)TRANSPOSITION_TABLE_STACK_SIZE, s + delta);
+                            bool pushed = false;
+                            while (!pushed) {
+                                tasks.emplace_back(thread_pool.push(&pushed, std::bind(&init_transposition_table, table_heap, s, e)));
+                                if (!pushed)
+                                    tasks.pop_back();
                             }
+                            s = e;
                         }
-                    #endif
-                #else
-                    size_t delta = (table_size + thread_size - 1) / thread_size;
-                    s = 0;
-                    for (int i = 0; i < thread_size; ++i) {
-                        e = std::min(table_size, s + delta);
-                        bool pushed = false;
-                        while (!pushed) {
-                            tasks.emplace_back(thread_pool.push(&pushed, std::bind(&init_transposition_table, table_heap, s, e)));
-                            if (!pushed)
-                                tasks.pop_back();
-                        }
-                        s = e;
                     }
-                #endif
-                for (std::future<void> &task: tasks)
+#endif // USE_CHANGEABLE_HASH_LEVEL
+#else // TT_USE_STACK
+                size_t delta = (table_size + thread_size - 1) / thread_size;
+                s = 0;
+                for (int i = 0; i < thread_size; ++i) {
+                    e = std::min(table_size, s + delta);
+                    bool pushed = false;
+                    while (!pushed) {
+                        tasks.emplace_back(thread_pool.push(&pushed, std::bind(&init_transposition_table, table_heap, s, e)));
+                        if (!pushed)
+                            tasks.pop_back();
+                    }
+                    s = e;
+                }
+#endif // TT_USE_STACK
+                for (std::future<void> &task: tasks) {
                     task.get();
+                }
             }
             n_registered.store(0);
         }
@@ -463,34 +468,34 @@ class Transposition_table {
         inline void reset_importance_new_thread(int thread_size) {
             size_t s, e;
             std::vector<std::future<void>> tasks;
-            #if TT_USE_STACK
-                size_t delta = (std::min(table_size, (size_t)TRANSPOSITION_TABLE_STACK_SIZE) + thread_size - 1) / thread_size;
+#if TT_USE_STACK
+            size_t delta = (std::min(table_size, (size_t)TRANSPOSITION_TABLE_STACK_SIZE) + thread_size - 1) / thread_size;
+            s = 0;
+            for (int i = 0; i < thread_size; ++i) {
+                e = std::min(std::min(table_size, (size_t)TRANSPOSITION_TABLE_STACK_SIZE), s + delta);
+                tasks.emplace_back(std::async(std::launch::async, std::bind(&set_importance_zero_transposition_table, table_stack, s, e)));
+                s = e;
+            }
+#if USE_CHANGEABLE_HASH_LEVEL
+            if (table_size > TRANSPOSITION_TABLE_STACK_SIZE) {
+                delta = (table_size - (size_t)TRANSPOSITION_TABLE_STACK_SIZE + thread_size - 1) / thread_size;
                 s = 0;
                 for (int i = 0; i < thread_size; ++i) {
-                    e = std::min(std::min(table_size, (size_t)TRANSPOSITION_TABLE_STACK_SIZE), s + delta);
-                    tasks.emplace_back(std::async(std::launch::async, std::bind(&set_importance_zero_transposition_table, table_stack, s, e)));
-                    s = e;
-                }
-                #if USE_CHANGEABLE_HASH_LEVEL
-                    if (table_size > TRANSPOSITION_TABLE_STACK_SIZE) {
-                        delta = (table_size - (size_t)TRANSPOSITION_TABLE_STACK_SIZE + thread_size - 1) / thread_size;
-                        s = 0;
-                        for (int i = 0; i < thread_size; ++i) {
-                            e = std::min(table_size - (size_t)TRANSPOSITION_TABLE_STACK_SIZE, s + delta);
-                            tasks.emplace_back(std::async(std::launch::async, std::bind(&set_importance_zero_transposition_table, table_heap, s, e)));
-                            s = e;
-                        }
-                    }
-                #endif
-            #else
-                size_t delta = (table_size + thread_size - 1) / thread_size;
-                s = 0;
-                for (int i = 0; i < thread_size; ++i) {
-                    e = std::min(table_size, s + delta);
+                    e = std::min(table_size - (size_t)TRANSPOSITION_TABLE_STACK_SIZE, s + delta);
                     tasks.emplace_back(std::async(std::launch::async, std::bind(&set_importance_zero_transposition_table, table_heap, s, e)));
                     s = e;
                 }
-            #endif
+            }
+#endif // USE_CHANGEABLE_HASH_LEVEL
+#else // TT_USE_STACK
+            size_t delta = (table_size + thread_size - 1) / thread_size;
+            s = 0;
+            for (int i = 0; i < thread_size; ++i) {
+                e = std::min(table_size, s + delta);
+                tasks.emplace_back(std::async(std::launch::async, std::bind(&set_importance_zero_transposition_table, table_heap, s, e)));
+                s = e;
+            }
+#endif // TT_USE_STACK
             for (std::future<void> &task: tasks)
                 task.get();
             n_registered = 0;
@@ -512,11 +517,11 @@ class Transposition_table {
             Hash_node *node = get_node(hash);
             const uint32_t level = get_level_common(depth, search->mpc_level);
             uint32_t node_level;
-            #if TT_REGISTER_MIN_LEVEL
-                Hash_node *min_level_node = nullptr;
-                uint32_t min_level = 0x4fffffff;
-                bool registered = false;
-            #endif
+#if TT_REGISTER_MIN_LEVEL
+            Hash_node *min_level_node = nullptr;
+            uint32_t min_level = 0x4fffffff;
+            bool registered = false;
+#endif
             for (uint_fast8_t i = 0; i < TRANSPOSITION_TABLE_N_LOOP; ++i) {
                 if (node->data.get_level() <= level) {
                     node->lock.lock();
@@ -528,29 +533,29 @@ class Transposition_table {
                                 else
                                     node->data.reg_new_level(depth, search->mpc_level, alpha, beta, value, policy);
                                 node->lock.unlock();
-                                #if TT_REGISTER_MIN_LEVEL
-                                    registered = true;
-                                #endif
+#if TT_REGISTER_MIN_LEVEL
+                                registered = true;
+#endif
                                 break;
                             } else{
-                                #if TT_REGISTER_MIN_LEVEL
-                                    if (node_level < min_level) {
-                                        min_level = node_level;
-                                        min_level_node = node;
-                                    }
-                                #else
-                                    if (node->data.get_importance() == 0) {
-                                        n_registered.fetch_add(1);
-                                    }
-                                    node->board.player = search->board.player;
-                                    node->board.opponent = search->board.opponent;
-                                    node->data.reg_new_data(depth, search->mpc_level, alpha, beta, value, policy);
-                                    node->lock.unlock();
-                                    //if (node_level > 0) {
-                                    //    n_registered.fetch_add(1);
-                                    //}
-                                    break;
-                                #endif
+#if TT_REGISTER_MIN_LEVEL
+                                if (node_level < min_level) {
+                                    min_level = node_level;
+                                    min_level_node = node;
+                                }
+#else
+                                if (node->data.get_importance() == 0) {
+                                    n_registered.fetch_add(1);
+                                }
+                                node->board.player = search->board.player;
+                                node->board.opponent = search->board.opponent;
+                                node->data.reg_new_data(depth, search->mpc_level, alpha, beta, value, policy);
+                                node->lock.unlock();
+                                //if (node_level > 0) {
+                                //    n_registered.fetch_add(1);
+                                //}
+                                break;
+#endif
                             }
                         }
                     node->lock.unlock();
@@ -558,18 +563,18 @@ class Transposition_table {
                 ++hash;
                 node = get_node(hash);
             }
-            #if TT_REGISTER_MIN_LEVEL
-                if (!registered && min_level_node != nullptr) {
-                    min_level_node->lock.lock();
-                        min_level_node->board.player = search->board.player;
-                        min_level_node->board.opponent = search->board.opponent;
-                        min_level_node->data.reg_new_data(depth, search->mpc_level, alpha, beta, value, policy);
-                        if (min_level_node->data.get_level() > 0) {
-                            n_registered.fetch_add(1);
-                        }
-                    min_level_node->lock.unlock();
-                }
-            #endif
+#if TT_REGISTER_MIN_LEVEL
+            if (!registered && min_level_node != nullptr) {
+                min_level_node->lock.lock();
+                    min_level_node->board.player = search->board.player;
+                    min_level_node->board.opponent = search->board.opponent;
+                    min_level_node->data.reg_new_data(depth, search->mpc_level, alpha, beta, value, policy);
+                    if (min_level_node->data.get_level() > 0) {
+                        n_registered.fetch_add(1);
+                    }
+                min_level_node->lock.unlock();
+            }
+#endif
             if (n_registered >= n_registered_threshold && transposition_table_auto_reset_importance) {
                 std::lock_guard lock(mtx);
                 if (n_registered >= n_registered_threshold) {
@@ -584,19 +589,19 @@ class Transposition_table {
             Hash_node *node = get_node(hash);
             //const uint32_t level = get_level_common(depth, search->mpc_level);
             uint32_t node_level;
-            #if TT_REGISTER_MIN_LEVEL
-                Hash_node *min_level_node = nullptr;
-                uint32_t min_level = 0x4fffffff;
-                bool registered = false;
-            #endif
+#if TT_REGISTER_MIN_LEVEL
+            Hash_node *min_level_node = nullptr;
+            uint32_t min_level = 0x4fffffff;
+            bool registered = false;
+#endif
             for (uint_fast8_t i = 0; i < TRANSPOSITION_TABLE_N_LOOP; ++i) {
                 node->lock.lock();
                     if (node->board.player == search->board.player && node->board.opponent == search->board.opponent) {
                         node->data.reg_new_level(depth, search->mpc_level, alpha, beta, value, policy);
                         node->lock.unlock();
-                        #if TT_REGISTER_MIN_LEVEL
-                            registered = true;
-                        #endif
+#if TT_REGISTER_MIN_LEVEL
+                        registered = true;
+#endif
                         break;
                     }
                 node->lock.unlock();
@@ -799,34 +804,37 @@ class Transposition_table {
 
     private:
         inline Hash_node* get_node(const uint32_t hash) {
-            #if TT_USE_STACK
-                #if USE_CHANGEABLE_HASH_LEVEL
-                    if (hash < TRANSPOSITION_TABLE_STACK_SIZE)
-                        return &table_stack[hash];
-                    return &table_heap[hash - TRANSPOSITION_TABLE_STACK_SIZE];
-                #else
-                    return &table_stack[hash];
-                #endif
-            #else
-                return &table_heap[hash];
-            #endif
+#if TT_USE_STACK
+#if USE_CHANGEABLE_HASH_LEVEL
+            if (hash < TRANSPOSITION_TABLE_STACK_SIZE) {
+                return &table_stack[hash];
+            }
+            return &table_heap[hash - TRANSPOSITION_TABLE_STACK_SIZE];
+#else // USE_CHANGEABLE_HASH_LEVEL
+            return &table_stack[hash];
+#endif // USE_CHANGEABLE_HASH_LEVEL
+#else // TT_USE_STACK
+            return &table_heap[hash];
+#endif // TT_USE_STACK
         }
 
         inline void reset_importance_proc() {
             //std::cerr << "importance reset n_registered " << n_registered << " threshold " << n_registered_threshold << " table_size " << table_size << std::endl;
-            #if TT_USE_STACK
-                for (size_t i = 0; i < std::min(table_size, (size_t)TRANSPOSITION_TABLE_STACK_SIZE); ++i)
-                    table_stack[i].data.set_importance_zero();
-                #if USE_CHANGEABLE_HASH_LEVEL
-                    if (table_size > TRANSPOSITION_TABLE_STACK_SIZE) {
-                        for (size_t i = 0; i < table_size - (size_t)TRANSPOSITION_TABLE_STACK_SIZE; ++i)
-                            table_heap[i].data.set_importance_zero();
-                    }
-                #endif
-            #else
-                for (size_t i = 0; i < table_size; ++i)
+#if TT_USE_STACK
+            for (size_t i = 0; i < std::min(table_size, (size_t)TRANSPOSITION_TABLE_STACK_SIZE); ++i) {
+                table_stack[i].data.set_importance_zero();
+            }
+#if USE_CHANGEABLE_HASH_LEVEL
+            if (table_size > TRANSPOSITION_TABLE_STACK_SIZE) {
+                for (size_t i = 0; i < table_size - (size_t)TRANSPOSITION_TABLE_STACK_SIZE; ++i)
                     table_heap[i].data.set_importance_zero();
-            #endif
+            }
+#endif // USE_CHANGEABLE_HASH_LEVEL
+#else // TT_USE_STACK
+            for (size_t i = 0; i < table_size; ++i) {
+                table_heap[i].data.set_importance_zero();
+            }
+#endif // TT_USE_STACK
             n_registered.store(0);
         }
 };
@@ -839,84 +847,84 @@ void transposition_table_init() {
 }
 
 #if USE_CHANGEABLE_HASH_LEVEL
-    /*
-        @brief Resize hash and transposition tables
+/*
+    @brief Resize hash and transposition tables
 
-        @param hash_level_failed    hash level used when failed
-        @param hash_level           new hash level
-        @return hash resized?
-    */
-    bool hash_resize(int hash_level_failed, int hash_level, bool show_log) {
-        if (!transposition_table.resize(hash_level)) {
-            std::cerr << "[ERROR] hash table resize failed. resize to level " << hash_level_failed << std::endl;
-            transposition_table.resize(hash_level_failed);
-            if (!hash_init(hash_level_failed)) {
-                std::cerr << "[ERROR] can't get hash. you can ignore this error" << std::endl;
-                hash_init_rand(hash_level_failed);
-            }
-            global_hash_level = hash_level_failed;
-            return false;
-        }
-        if (!hash_init(hash_level)) {
+    @param hash_level_failed    hash level used when failed
+    @param hash_level           new hash level
+    @return hash resized?
+*/
+bool hash_resize(int hash_level_failed, int hash_level, bool show_log) {
+    if (!transposition_table.resize(hash_level)) {
+        std::cerr << "[ERROR] hash table resize failed. resize to level " << hash_level_failed << std::endl;
+        transposition_table.resize(hash_level_failed);
+        if (!hash_init(hash_level_failed)) {
             std::cerr << "[ERROR] can't get hash. you can ignore this error" << std::endl;
-            hash_init_rand(hash_level);
+            hash_init_rand(hash_level_failed);
         }
-        global_hash_level = hash_level;
-        if (show_log) {
-            double size_mb = (double)sizeof(Hash_node) / 1024 / 1024 * hash_sizes[hash_level];
-            std::cerr << "hash resized to level " << hash_level << " elements " << hash_sizes[hash_level] << " size " << size_mb << " MB" << std::endl;
-        }
-        return true;
+        global_hash_level = hash_level_failed;
+        return false;
     }
+    if (!hash_init(hash_level)) {
+        std::cerr << "[ERROR] can't get hash. you can ignore this error" << std::endl;
+        hash_init_rand(hash_level);
+    }
+    global_hash_level = hash_level;
+    if (show_log) {
+        double size_mb = (double)sizeof(Hash_node) / 1024 / 1024 * hash_sizes[hash_level];
+        std::cerr << "hash resized to level " << hash_level << " elements " << hash_sizes[hash_level] << " size " << size_mb << " MB" << std::endl;
+    }
+    return true;
+}
 
-    /*
-        @brief Resize hash and transposition tables
+/*
+    @brief Resize hash and transposition tables
 
-        @param hash_level_failed    hash level used when failed
-        @param hash_level           new hash level
-        @param binary_path          path to binary
-        @return hash resized?
-    */
-    bool hash_resize(int hash_level_failed, int hash_level, std::string binary_path, bool show_log) {
-        if (!transposition_table.resize(hash_level)) {
-            std::cerr << "[ERROR] hash table resize failed. resize to level " << hash_level_failed << std::endl;
-            transposition_table.resize(hash_level_failed);
-            if (!hash_init(hash_level_failed, binary_path)) {
-                std::cerr << "[ERROR] can't get hash. you can ignore this error" << std::endl;
-                hash_init_rand(hash_level_failed);
-            }
-            global_hash_level = hash_level_failed;
-            return false;
-        }
-        if (!hash_init(hash_level, binary_path)) {
+    @param hash_level_failed    hash level used when failed
+    @param hash_level           new hash level
+    @param binary_path          path to binary
+    @return hash resized?
+*/
+bool hash_resize(int hash_level_failed, int hash_level, std::string binary_path, bool show_log) {
+    if (!transposition_table.resize(hash_level)) {
+        std::cerr << "[ERROR] hash table resize failed. resize to level " << hash_level_failed << std::endl;
+        transposition_table.resize(hash_level_failed);
+        if (!hash_init(hash_level_failed, binary_path)) {
             std::cerr << "[ERROR] can't get hash. you can ignore this error" << std::endl;
-            hash_init_rand(hash_level);
+            hash_init_rand(hash_level_failed);
         }
-        global_hash_level = hash_level;
-        if (show_log) {
-            double size_mb = (double)sizeof(Hash_node) / 1024 / 1024 * hash_sizes[hash_level];
-            std::cerr << "hash resized to level " << hash_level << " elements " << hash_sizes[hash_level] << " size " << size_mb << " MB" << std::endl;
-        }
-        return true;
+        global_hash_level = hash_level_failed;
+        return false;
     }
+    if (!hash_init(hash_level, binary_path)) {
+        std::cerr << "[ERROR] can't get hash. you can ignore this error" << std::endl;
+        hash_init_rand(hash_level);
+    }
+    global_hash_level = hash_level;
+    if (show_log) {
+        double size_mb = (double)sizeof(Hash_node) / 1024 / 1024 * hash_sizes[hash_level];
+        std::cerr << "hash resized to level " << hash_level << " elements " << hash_sizes[hash_level] << " size " << size_mb << " MB" << std::endl;
+    }
+    return true;
+}
 #else
-    bool hash_tt_init(std::string binary_path, bool show_log) {
-        transposition_table.set_size();
-        if (!hash_init(DEFAULT_HASH_LEVEL, binary_path)) {
-            std::cerr << "[ERROR] can't get hash. you can ignore this error" << std::endl;
-            hash_init_rand(DEFAULT_HASH_LEVEL);
-        }
-        return true;
+bool hash_tt_init(std::string binary_path, bool show_log) {
+    transposition_table.set_size();
+    if (!hash_init(DEFAULT_HASH_LEVEL, binary_path)) {
+        std::cerr << "[ERROR] can't get hash. you can ignore this error" << std::endl;
+        hash_init_rand(DEFAULT_HASH_LEVEL);
     }
+    return true;
+}
 
-    bool hash_tt_init(bool show_log) {
-        transposition_table.set_size();
-        if (!hash_init(DEFAULT_HASH_LEVEL)) {
-            std::cerr << "[ERROR] can't get hash. you can ignore this error" << std::endl;
-            hash_init_rand(DEFAULT_HASH_LEVEL);
-        }
-        return true;
+bool hash_tt_init(bool show_log) {
+    transposition_table.set_size();
+    if (!hash_init(DEFAULT_HASH_LEVEL)) {
+        std::cerr << "[ERROR] can't get hash. you can ignore this error" << std::endl;
+        hash_init_rand(DEFAULT_HASH_LEVEL);
     }
+    return true;
+}
 #endif
 
 void delete_tt(Board *board, int depth) {
