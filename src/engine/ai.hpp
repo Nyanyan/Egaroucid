@@ -972,7 +972,7 @@ std::pair<int, int> ai_self_play_random(Board board_start, int root_depth, bool 
                 registered_value = (double)former_val * 0.5 + (double)registered_value * 0.5;
             }
             int registered_value_int = round(registered_value);
-            transposition_table.reg_overwrite(&search, boards[i].hash(), n_depth, -SCORE_MAX, SCORE_MAX, -registered_value_int, TRANSPOSITION_TABLE_UNDEFINED);
+            transposition_table.reg_overwrite(&search, boards[i].hash(), n_depth, -SCORE_MAX, SCORE_MAX, -registered_value_int, MOVE_UNDEFINED);
             if (show_log) {
                 std::cerr << " tt " << registered_value_int;
                 if (analyzed_value != registered_value_int) {

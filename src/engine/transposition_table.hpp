@@ -23,7 +23,6 @@
 /*
     @brief constants
 */
-constexpr int TRANSPOSITION_TABLE_UNDEFINED = 127;
 constexpr int TRANSPOSITION_TABLE_N_LOOP = 3;
 #if TT_USE_STACK
 constexpr size_t TRANSPOSITION_TABLE_STACK_SIZE = hash_sizes[DEFAULT_HASH_LEVEL] + TRANSPOSITION_TABLE_N_LOOP - 1;
@@ -63,7 +62,7 @@ class Hash_data {
     public:
 
         //Hash_data()
-        //    : lower(-SCORE_MAX), upper(SCORE_MAX), moves({TRANSPOSITION_TABLE_UNDEFINED, TRANSPOSITION_TABLE_UNDEFINED}), mpc_level(0), depth(0), importance(0) {}
+        //    : lower(-SCORE_MAX), upper(SCORE_MAX), moves({MOVE_UNDEFINED, MOVE_UNDEFINED}), mpc_level(0), depth(0), importance(0) {}
         
         /*
             @brief Initialize a node
@@ -71,8 +70,8 @@ class Hash_data {
         inline void init() {
             lower = -SCORE_MAX;
             upper = SCORE_MAX;
-            moves[0] = TRANSPOSITION_TABLE_UNDEFINED;
-            moves[1] = TRANSPOSITION_TABLE_UNDEFINED;
+            moves[0] = MOVE_UNDEFINED;
+            moves[1] = MOVE_UNDEFINED;
             mpc_level = 0;
             depth = 0;
             importance = 0;
@@ -99,7 +98,7 @@ class Hash_data {
                     upper = value;
                 }
             }
-            if ((alpha < value || value == -SCORE_MAX) && moves[0] != policy && policy != TRANSPOSITION_TABLE_UNDEFINED) {
+            if ((alpha < value || value == -SCORE_MAX) && moves[0] != policy && is_valid_policy(policy)) {
                 moves[1] = moves[0];
                 moves[0] = (uint8_t)policy;
             }
@@ -130,7 +129,7 @@ class Hash_data {
             } else {
                 lower = -SCORE_MAX;
             }
-            if ((alpha < value || value == -SCORE_MAX) && moves[0] != policy && policy != TRANSPOSITION_TABLE_UNDEFINED) {
+            if ((alpha < value || value == -SCORE_MAX) && moves[0] != policy && is_valid_policy(policy)) {
                 moves[1] = moves[0];
                 moves[0] = policy;
             }
@@ -166,9 +165,9 @@ class Hash_data {
             if ((alpha < value || value == -SCORE_MAX) && moves[0] != policy) {
                 moves[0] = policy;
             } else {
-                moves[0] = TRANSPOSITION_TABLE_UNDEFINED;
+                moves[0] = MOVE_UNDEFINED;
             }
-            moves[1] = TRANSPOSITION_TABLE_UNDEFINED;
+            moves[1] = MOVE_UNDEFINED;
             depth = d;
             mpc_level = ml;
             importance = 1;
@@ -301,7 +300,7 @@ class Transposition_table{
         inline void get(const Search *search, uint32_t hash, const int depth, int *lower, int *upper) {
         }
         inline int get_best_move(const Board *board, uint32_t hash) {
-            return TRANSPOSITION_TABLE_UNDEFINED;
+            return MOVE_UNDEFINED;
         }
         inline bool get_if_perfect(const Board *board, uint32_t hash, int *val, int *best_move) {
             return false;

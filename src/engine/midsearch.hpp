@@ -145,11 +145,11 @@ int nega_scout(Search *search, int alpha, int beta, const int depth, const bool 
         return v;
     }
     uint32_t hash_code = search->board.hash();
-    uint_fast8_t moves[N_TRANSPOSITION_MOVES] = {TRANSPOSITION_TABLE_UNDEFINED, TRANSPOSITION_TABLE_UNDEFINED};
+    uint_fast8_t moves[N_TRANSPOSITION_MOVES] = {MOVE_UNDEFINED, MOVE_UNDEFINED};
     if (transposition_cutoff(search, hash_code, depth, &alpha, &beta, &v, moves)) {
         return v;
     }
-    int best_move = TRANSPOSITION_TABLE_UNDEFINED;
+    int best_move = MOVE_UNDEFINED;
     const int canput = pop_count_ull(legal);
     std::vector<Flip_value> move_list(canput);
     int idx = 0;
@@ -310,7 +310,7 @@ std::pair<int, int> first_nega_scout_legal(Search *search, int alpha, int beta, 
         return std::make_pair(SCORE_UNDEFINED, -1);
     }
     bool is_all_legal = legal == search->board.get_legal();
-    int best_move = TRANSPOSITION_TABLE_UNDEFINED;
+    int best_move = MOVE_UNDEFINED;
     const int canput_all = pop_count_ull(legal);
     for (const Clog_result clog: clogs) {
         if (legal & (1ULL << clog.pos)) {
@@ -337,7 +337,7 @@ std::pair<int, int> first_nega_scout_legal(Search *search, int alpha, int beta, 
             }
             ++idx;
         }
-        uint_fast8_t moves[N_TRANSPOSITION_MOVES] = {TRANSPOSITION_TABLE_UNDEFINED, TRANSPOSITION_TABLE_UNDEFINED};
+        uint_fast8_t moves[N_TRANSPOSITION_MOVES] = {MOVE_UNDEFINED, MOVE_UNDEFINED};
         transposition_table.get_moves_any_level(&search->board, hash_code, moves);
         move_list_evaluate(search, move_list, moves, depth, alpha, beta, searching);
 #if USE_YBWC_NEGASCOUT
@@ -426,7 +426,7 @@ Analyze_result first_nega_scout_analyze(Search *search, int alpha, int beta, con
     Analyze_result res;
     res.played_move = played_move;
     res.alt_score = -SCORE_INF;
-    res.alt_move = TRANSPOSITION_TABLE_UNDEFINED;
+    res.alt_move = MOVE_UNDEFINED;
     int g, first_alpha = alpha;
     uint64_t legal = search->board.get_legal();
     const int canput_all = pop_count_ull(legal);
@@ -471,7 +471,7 @@ Analyze_result first_nega_scout_analyze(Search *search, int alpha, int beta, con
             calc_flip(&move_list[idx].flip, &search->board, cell);
             ++idx;
         }
-        uint_fast8_t moves[N_TRANSPOSITION_MOVES] = {TRANSPOSITION_TABLE_UNDEFINED, TRANSPOSITION_TABLE_UNDEFINED};
+        uint_fast8_t moves[N_TRANSPOSITION_MOVES] = {MOVE_UNDEFINED, MOVE_UNDEFINED};
         transposition_table.get_moves_any_level(&search->board, hash_code, moves);
         move_list_evaluate(search, move_list, moves, depth, alpha, beta, searching);
 #if USE_YBWC_NEGASCOUT_ANALYZE

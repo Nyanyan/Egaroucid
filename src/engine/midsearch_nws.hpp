@@ -120,7 +120,7 @@ int nega_alpha_ordering_nws_simple(Search *search, int alpha, const int depth, c
         return v;
     }
     uint32_t hash_code = search->board.hash();
-    uint_fast8_t moves[N_TRANSPOSITION_MOVES] = {TRANSPOSITION_TABLE_UNDEFINED, TRANSPOSITION_TABLE_UNDEFINED};
+    uint_fast8_t moves[N_TRANSPOSITION_MOVES] = {MOVE_UNDEFINED, MOVE_UNDEFINED};
     if (transposition_cutoff_nws(search, hash_code, depth, alpha, &v, moves)) {
         return v;
     }
@@ -131,7 +131,7 @@ int nega_alpha_ordering_nws_simple(Search *search, int alpha, const int depth, c
         }
     }
 #endif
-    int best_move = TRANSPOSITION_TABLE_UNDEFINED;
+    int best_move = MOVE_UNDEFINED;
     int g;
     const int canput = pop_count_ull(legal);
     std::vector<Flip_value> move_list(canput);
@@ -240,7 +240,7 @@ int nega_alpha_ordering_nws(Search *search, int alpha, const int depth, const bo
         return v;
     }
     uint32_t hash_code = search->board.hash();
-    uint_fast8_t moves[N_TRANSPOSITION_MOVES] = {TRANSPOSITION_TABLE_UNDEFINED, TRANSPOSITION_TABLE_UNDEFINED};
+    uint_fast8_t moves[N_TRANSPOSITION_MOVES] = {MOVE_UNDEFINED, MOVE_UNDEFINED};
     if (transposition_cutoff_nws(search, hash_code, depth, alpha, &v, moves)) {
         return v;
     }
@@ -251,7 +251,7 @@ int nega_alpha_ordering_nws(Search *search, int alpha, const int depth, const bo
         }
     }
 #endif
-    int best_move = TRANSPOSITION_TABLE_UNDEFINED;
+    int best_move = MOVE_UNDEFINED;
     int g;
     const int canput = pop_count_ull(legal);
     std::vector<Flip_value> move_list(canput);

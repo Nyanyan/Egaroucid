@@ -189,7 +189,7 @@ int get_localtime(tm* a, time_t* b) {
 #endif
 }
 
-std::string calc_date() {
+inline std::string calc_date() {
     time_t now;
     tm newtime;
     time(&now);
@@ -217,7 +217,7 @@ std::string calc_date() {
     return year + "_" + month + "_" + day + "_" + hour + "_" + minute + "_" + second;
 }
 
-void calc_date(int *year, int *month, int *day, int *hour, int *minute, int *second) {
+inline void calc_date(int *year, int *month, int *day, int *hour, int *minute, int *second) {
     time_t now;
     tm newtime;
     time(&now);
@@ -230,6 +230,6 @@ void calc_date(int *year, int *month, int *day, int *hour, int *minute, int *sec
     *second = newtime.tm_sec;
 }
 
-bool is_valid_policy(int policy) {
+inline bool is_valid_policy(int policy) {
     return 0 <= policy && policy < HW2;
 }

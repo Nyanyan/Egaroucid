@@ -131,7 +131,7 @@ int clog_search(Search *search, int depth, bool *searching) {
         }
         ++idx;
     }
-    uint_fast8_t moves[N_TRANSPOSITION_MOVES] = {TRANSPOSITION_TABLE_UNDEFINED, TRANSPOSITION_TABLE_UNDEFINED};
+    uint_fast8_t moves[N_TRANSPOSITION_MOVES] = {MOVE_UNDEFINED, MOVE_UNDEFINED};
     transposition_table.get_moves_any_level(&search->board, search->board.hash(), moves);
     move_list_evaluate(search, move_list, moves, depth, -SCORE_MAX, SCORE_MAX, searching);
     int g;

@@ -317,7 +317,7 @@ int nega_alpha_end_nws(Search *search, int alpha, const bool skipped, uint64_t l
         search->pass_endsearch();
         return v;
     }
-    int best_move = TRANSPOSITION_TABLE_UNDEFINED;
+    int best_move = MOVE_UNDEFINED;
     int g;
     const int canput = pop_count_ull(legal);
     std::vector<Flip_value> move_list(canput);
