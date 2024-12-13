@@ -29,33 +29,33 @@
 */
 // use SIMD
 #ifndef HAS_NO_AVX2 // SIMD build
-#define USE_SIMD true
-// #define HAS_AVX512
-#ifdef HAS_AVX512 // AVX512 build
-#define USE_AVX512 true
-#endif
+    #define USE_SIMD true
+    // #define HAS_AVX512
+    #ifdef HAS_AVX512 // AVX512 build
+        #define USE_AVX512 true
+    #endif
 #endif
 
 // use ARM
 #ifdef HAS_ARM_PROCESSOR
-#define USE_ARM true
+    #define USE_ARM true
 #endif
 
 // optimize for AMD processors
 #if HAS_AMD_PROCESSOR
-#define USE_AMD true
+    #define USE_AMD true
 #endif
 
 #ifndef HAS_32_BIT_OS
-#ifdef _WIN32
-#ifdef _WIN64
-#define USE_64_BIT true
-#else
-#define USE_64_BIT false
-#endif
-#else
-#define USE_64_BIT true
-#endif
+    #ifdef _WIN32
+        #ifdef _WIN64
+            #define USE_64_BIT true
+        #else
+            #define USE_64_BIT false
+        #endif
+    #else
+        #define USE_64_BIT true
+    #endif
 #endif
 
 
@@ -66,51 +66,51 @@
 */
 
 #if USE_SIMD
-#if USE_ARM
-// vertical mirror
-#define USE_FAST_VERTICAL_MIRROR true
+    #if USE_ARM
+        // vertical mirror
+        #define USE_FAST_VERTICAL_MIRROR true
 
-// pop_count
-#define USE_BUILTIN_POPCOUNT true
+        // pop_count
+        #define USE_BUILTIN_POPCOUNT true
 
-// NTZ
-#define USE_MINUS_NTZ false
+        // NTZ
+        #define USE_MINUS_NTZ false
 
-// use SIMD in evaluation (pattern) function
-#define USE_SIMD_EVALUATION true
+        // use SIMD in evaluation (pattern) function
+        #define USE_SIMD_EVALUATION true
+    #else
+        // vertical mirror
+        #define USE_FAST_VERTICAL_MIRROR true
+
+        // pop_count
+        #define USE_BUILTIN_POPCOUNT true
+
+        // NTZ
+        #define USE_BUILTIN_NTZ true
+
+        // next bit
+        #define USE_FAST_NEXT_BIT true
+
+        // use SIMD in evaluation (pattern) function
+        #define USE_SIMD_EVALUATION true
+
+        // use bit gather optimization
+        #define USE_BIT_GATHER_OPTIMIZE true
+
+        // use bit gather optimization for last flip (a little slow)
+        #define USE_BIT_GATHER_OPTIMIZE_LAST_FLIP true
+
+        // use fast join_h_line
+        #define USE_FAST_JOIN_H_LINE true
+
+        #if USE_AVX512
+            #define USE_AVX512_STABILITY true
+        #endif
+
+    #endif
 #else
-// vertical mirror
-#define USE_FAST_VERTICAL_MIRROR true
-
-// pop_count
-#define USE_BUILTIN_POPCOUNT true
-
-// NTZ
-#define USE_BUILTIN_NTZ true
-
-// next bit
-#define USE_FAST_NEXT_BIT true
-
-// use SIMD in evaluation (pattern) function
-#define USE_SIMD_EVALUATION true
-
-// use bit gather optimization
-#define USE_BIT_GATHER_OPTIMIZE true
-
-// use bit gather optimization for last flip (a little slow)
-#define USE_BIT_GATHER_OPTIMIZE_LAST_FLIP true
-
-// use fast join_h_line
-#define USE_FAST_JOIN_H_LINE true
-
-#if USE_AVX512
-#define USE_AVX512_STABILITY true
-#endif
-
-#endif
-#else
-// NTZ
-#define USE_MINUS_NTZ false
+    // NTZ
+    #define USE_MINUS_NTZ false
 #endif
 
 
@@ -205,12 +205,12 @@
     @brief path definition
 */
 #ifdef __APPLE__
-#ifdef GUI_BUILD
-#include <Siv3D.hpp>
-const std::string EXE_DIRECTORY_PATH = FileSystem::RelativePath(Resource(U"")).narrow();
-#else
-const std::string EXE_DIRECTORY_PATH = "./";
-#endif
+    #ifdef GUI_BUILD
+        #include <Siv3D.hpp>
+        const std::string EXE_DIRECTORY_PATH = FileSystem::RelativePath(Resource(U"")).narrow();
+    #else
+        const std::string EXE_DIRECTORY_PATH = "./";
+    #endif
 #else // Windows
-const std::string EXE_DIRECTORY_PATH = "./";
+    const std::string EXE_DIRECTORY_PATH = "./";
 #endif
