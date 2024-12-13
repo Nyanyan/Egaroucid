@@ -59,16 +59,16 @@ void mm256_print_epu16(__m256i v) {
 */
 #if USE_BUILTIN_POPCOUNT
 #ifdef __GNUC__
-#define	pop_count_ull(x) (int)__builtin_popcountll(x)
+#define pop_count_ull(x) (int)__builtin_popcountll(x)
 #define pop_count_uint(x) (int)__builtin_popcount(x)
 #define pop_count_uchar(x) (int)__builtin_popcount(x)
 #else
-#define	pop_count_ull(x) (int)__popcnt64(x)
+#define pop_count_ull(x) (int)__popcnt64(x)
 #define pop_count_uint(x) (int)__popcnt(x)
 #define pop_count_uchar(x) (int)__popcnt(x)
 #endif
 #else
-#define	pop_count_ull(x) std::popcount(x)
+#define pop_count_ull(x) std::popcount(x)
 #define pop_count_uint(x) std::popcount(x)
 #define pop_count_uchar(x) std::popcount(x)
 #endif

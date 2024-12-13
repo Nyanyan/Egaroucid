@@ -17,7 +17,7 @@
 
     @param x                    an integer
 */
-#define	pop_count_ull(x) std::popcount(x)
+#define pop_count_ull(x) std::popcount(x)
 #define pop_count_uint(x) std::popcount(x)
 #define pop_count_uchar(x) std::popcount(x)
 
