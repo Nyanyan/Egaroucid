@@ -19,7 +19,7 @@
 #include "evaluate.hpp"
 #include "search.hpp"
 #include "move_ordering.hpp"
-#include "probcut.hpp"
+#include "multi_probcut.hpp"
 #include "transposition_table.hpp"
 #include "util.hpp"
 #include "stability.hpp"

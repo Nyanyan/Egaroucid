@@ -21,7 +21,7 @@
 #include "transposition_table.hpp"
 #include "transposition_cutoff.hpp"
 #include "move_ordering.hpp"
-#include "probcut.hpp"
+#include "multi_probcut.hpp"
 #include "thread_pool.hpp"
 #include "util.hpp"
 #include "stability.hpp"

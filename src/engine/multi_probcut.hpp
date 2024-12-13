@@ -1,7 +1,7 @@
 /*
     Egaroucid Project
 
-    @file probcut.hpp
+    @file multi_probcut.hpp
         MPC (Multi-ProbCut)
     @date 2021-2024
     @author Takuto Yamana

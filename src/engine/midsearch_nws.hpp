@@ -22,7 +22,7 @@
 #include "transposition_cutoff.hpp"
 #include "endsearch.hpp"
 #include "move_ordering.hpp"
-#include "probcut.hpp"
+#include "multi_probcut.hpp"
 #include "thread_pool.hpp"
 #include "ybwc.hpp"
 #include "util.hpp"
