@@ -179,21 +179,21 @@ struct Coord_to_feature {
 };
 
 #if USE_SIMD
-    union Eval_features {
-        __m256i f256[N_SIMD_EVAL_FEATURES];
-        __m128i f128[N_SIMD_EVAL_FEATURES * 2];
-    };
+union Eval_features {
+    __m256i f256[N_SIMD_EVAL_FEATURES];
+    __m128i f128[N_SIMD_EVAL_FEATURES * 2];
+};
 
-    struct Eval_search {
-        Eval_features features[HW2 - 4];
-        uint_fast8_t feature_idx;
-    };
+struct Eval_search {
+    Eval_features features[HW2 - 4];
+    uint_fast8_t feature_idx;
+};
 #else
-    struct Eval_search {
-        uint_fast16_t features[HW2 - 4][N_PATTERN_FEATURES];
-        bool reversed[HW2 - 4];
-        uint_fast8_t feature_idx;
-    };
+struct Eval_search {
+    uint_fast16_t features[HW2 - 4][N_PATTERN_FEATURES];
+    bool reversed[HW2 - 4];
+    uint_fast8_t feature_idx;
+};
 #endif
 
 /*
