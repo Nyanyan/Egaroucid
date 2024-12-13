@@ -41,103 +41,103 @@ constexpr int N_PATTERN_FEATURES_MO_END = 16; // 16 features are used for move o
 
     Raw score is STEP times larger than the real score.
 */
-#define STEP 32
-#define STEP_2 16
+constexpr int STEP = 32; // 1 disc = 32
+constexpr int STEP_2 = 16; // STEP / 2
 
 /*
     @brief 3 ^ N definition
 */
-#define PNO 0
-#define P30 1
-#define P31 3
-#define P32 9
-#define P33 27
-#define P34 81
-#define P35 243
-#define P36 729
-#define P37 2187
-#define P38 6561
-#define P39 19683
-#define P310 59049
+constexpr int PNO = 0;
+constexpr int P30 = 1;
+constexpr int P31 = 3;
+constexpr int P32 = 9;
+constexpr int P33 = 27;
+constexpr int P34 = 81;
+constexpr int P35 = 243;
+constexpr int P36 = 729;
+constexpr int P37 = 2187;
+constexpr int P38 = 6561;
+constexpr int P39 = 19683;
+constexpr int P310 = 59049;
 
 /*
     @brief coordinate definition
 */
-#define COORD_A1 63
-#define COORD_B1 62
-#define COORD_C1 61
-#define COORD_D1 60
-#define COORD_E1 59
-#define COORD_F1 58
-#define COORD_G1 57
-#define COORD_H1 56
+constexpr int COORD_A1 = 63;
+constexpr int COORD_B1 = 62;
+constexpr int COORD_C1 = 61;
+constexpr int COORD_D1 = 60;
+constexpr int COORD_E1 = 59;
+constexpr int COORD_F1 = 58;
+constexpr int COORD_G1 = 57;
+constexpr int COORD_H1 = 56;
 
-#define COORD_A2 55
-#define COORD_B2 54
-#define COORD_C2 53
-#define COORD_D2 52
-#define COORD_E2 51
-#define COORD_F2 50
-#define COORD_G2 49
-#define COORD_H2 48
+constexpr int COORD_A2 = 55;
+constexpr int COORD_B2 = 54;
+constexpr int COORD_C2 = 53;
+constexpr int COORD_D2 = 52;
+constexpr int COORD_E2 = 51;
+constexpr int COORD_F2 = 50;
+constexpr int COORD_G2 = 49;
+constexpr int COORD_H2 = 48;
 
-#define COORD_A3 47
-#define COORD_B3 46
-#define COORD_C3 45
-#define COORD_D3 44
-#define COORD_E3 43
-#define COORD_F3 42
-#define COORD_G3 41
-#define COORD_H3 40
+constexpr int COORD_A3 = 47;
+constexpr int COORD_B3 = 46;
+constexpr int COORD_C3 = 45;
+constexpr int COORD_D3 = 44;
+constexpr int COORD_E3 = 43;
+constexpr int COORD_F3 = 42;
+constexpr int COORD_G3 = 41;
+constexpr int COORD_H3 = 40;
 
-#define COORD_A4 39
-#define COORD_B4 38
-#define COORD_C4 37
-#define COORD_D4 36
-#define COORD_E4 35
-#define COORD_F4 34
-#define COORD_G4 33
-#define COORD_H4 32
+constexpr int COORD_A4 = 39;
+constexpr int COORD_B4 = 38;
+constexpr int COORD_C4 = 37;
+constexpr int COORD_D4 = 36;
+constexpr int COORD_E4 = 35;
+constexpr int COORD_F4 = 34;
+constexpr int COORD_G4 = 33;
+constexpr int COORD_H4 = 32;
 
-#define COORD_A5 31
-#define COORD_B5 30
-#define COORD_C5 29
-#define COORD_D5 28
-#define COORD_E5 27
-#define COORD_F5 26
-#define COORD_G5 25
-#define COORD_H5 24
+constexpr int COORD_A5 = 31;
+constexpr int COORD_B5 = 30;
+constexpr int COORD_C5 = 29;
+constexpr int COORD_D5 = 28;
+constexpr int COORD_E5 = 27;
+constexpr int COORD_F5 = 26;
+constexpr int COORD_G5 = 25;
+constexpr int COORD_H5 = 24;
 
-#define COORD_A6 23
-#define COORD_B6 22
-#define COORD_C6 21
-#define COORD_D6 20
-#define COORD_E6 19
-#define COORD_F6 18
-#define COORD_G6 17
-#define COORD_H6 16
+constexpr int COORD_A6 = 23;
+constexpr int COORD_B6 = 22;
+constexpr int COORD_C6 = 21;
+constexpr int COORD_D6 = 20;
+constexpr int COORD_E6 = 19;
+constexpr int COORD_F6 = 18;
+constexpr int COORD_G6 = 17;
+constexpr int COORD_H6 = 16;
 
-#define COORD_A7 15
-#define COORD_B7 14
-#define COORD_C7 13
-#define COORD_D7 12
-#define COORD_E7 11
-#define COORD_F7 10
-#define COORD_G7 9
-#define COORD_H7 8
+constexpr int COORD_A7 = 15;
+constexpr int COORD_B7 = 14;
+constexpr int COORD_C7 = 13;
+constexpr int COORD_D7 = 12;
+constexpr int COORD_E7 = 11;
+constexpr int COORD_F7 = 10;
+constexpr int COORD_G7 = 9;
+constexpr int COORD_H7 = 8;
 
-#define COORD_A8 7
-#define COORD_B8 6
-#define COORD_C8 5
-#define COORD_D8 4
-#define COORD_E8 3
-#define COORD_F8 2
-#define COORD_G8 1
-#define COORD_H8 0
+constexpr int COORD_A8 = 7;
+constexpr int COORD_B8 = 6;
+constexpr int COORD_C8 = 5;
+constexpr int COORD_D8 = 4;
+constexpr int COORD_E8 = 3;
+constexpr int COORD_F8 = 2;
+constexpr int COORD_G8 = 1;
+constexpr int COORD_H8 = 0;
 
-#define COORD_NO 64
+constexpr int COORD_NO = 64;
 
-#define N_ZEROS_PLUS (1 << 12) // for egev2 compression, 4096
+constexpr int N_ZEROS_PLUS = 1 << 12; // for egev2 compression, 4096
 
 /*
     @brief definition of patterns in evaluation function
