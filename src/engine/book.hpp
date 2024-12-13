@@ -34,8 +34,8 @@ constexpr int LEVEL_HUMAN = 70;
 constexpr int BOOK_LOSS_IGNORE_THRESHOLD = 8;
 constexpr int LEAF_CALCULATE_LEVEL = 5;
 
-constexpr std::string BOOK_EXTENSION = (std::string)".egbk3";
-constexpr std::string BOOK_EXTENSION_NODOT = (std::string)"egbk3";
+#define BOOK_EXTENSION ".egbk3";
+#define BOOK_EXTENSION_NODOT "egbk3";
 
 constexpr int ADD_LEAF_SPECIAL_LEVEL = -1;
 
