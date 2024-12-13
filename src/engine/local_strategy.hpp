@@ -15,43 +15,94 @@ void print_local_strategy(const double arr[]) {
     for (int y = 0; y < HW; ++y) {
         for (int x = 0; x < HW; ++x) {
             int cell = HW2_M1 - (y * HW + x);
-            std::cout << std::fixed << std::setprecision(2) << arr[cell] << " ";
+            std::cout << std::fixed << std::setprecision(3) << arr[cell] << " ";
         }
         std::cout << std::endl;
     }
 }
 
 void calc_local_strategy(Board board, int level, double res[], bool show_log) {
-    int value_diff[HW2];
+    double value_diff_player[HW2]; // something -> player
+    double value_diff_opponent[HW2]; // something -> opponent
+    double value_diff_empty[HW2]; // something -> empty
     for (int cell = 0; cell < HW2; ++cell) {
-        value_diff[cell] = 0;
+        value_diff_player[cell] = 0;
+        value_diff_opponent[cell] = 0;
+        value_diff_empty[cell] = 0;
     }
     Search_result complete_result = ai(board, level, true, 0, true, false);
     if (show_log) {
         std::cerr << "complete result " << complete_result.value << std::endl;
     }
-    int n = 0;
-    int diff_sum = 0;
     for (int cell = 0; cell < HW2; ++cell) {
         uint64_t bit = 1ULL << cell;
-        if ((board.player | board.opponent) & bit) { // flip disc
+        if (board.player & bit) { // player
+            // player -> opponent
             board.player ^= bit;
             board.opponent ^= bit;
-                Search_result result = ai(board, level, true, 0, true, false);
-                value_diff[cell] = std::abs(result.value - complete_result.value);
+                Search_result result1 = ai(board, level, true, 0, true, false);
+                value_diff_opponent[cell] = std::abs(result1.value - complete_result.value);
             board.player ^= bit;
             board.opponent ^= bit;
-            ++n;
-            diff_sum += value_diff[cell];
-            if (show_log) {
-                std::cerr << idx_to_coord(cell) << " " << result.value << " " << result.value - complete_result.value << std::endl;
-            }
+            // player -> empty
+            board.player ^= bit;
+                Search_result result2 = ai(board, level, true, 0, true, false);
+                value_diff_empty[cell] = std::abs(result2.value - complete_result.value);
+            board.player ^= bit;
+        } else if (board.opponent & bit) {
+            // opponent -> player
+            board.player ^= bit;
+            board.opponent ^= bit;
+                Search_result result1 = ai(board, level, true, 0, true, false);
+                value_diff_player[cell] = std::abs(result1.value - complete_result.value);
+            board.player ^= bit;
+            board.opponent ^= bit;
+            // opponent -> empty
+            board.opponent ^= bit;
+                Search_result result2 = ai(board, level, true, 0, true, false);
+                value_diff_empty[cell] = std::abs(result2.value - complete_result.value);
+            board.opponent ^= bit;
         } else {
-
+            // empty -> player
+            board.player ^= bit;
+                Search_result result1 = ai(board, level, true, 0, true, false);
+                value_diff_player[cell] = std::abs(result1.value - complete_result.value);
+            board.player ^= bit;
+            // empty -> opponent
+            board.opponent ^= bit;
+                Search_result result2 = ai(board, level, true, 0, true, false);
+                value_diff_opponent[cell] = std::abs(result2.value - complete_result.value);
+            board.opponent ^= bit;
         }
     }
+    if (show_log) {
+        std::cerr << "?->player" << std::endl;
+        print_local_strategy(value_diff_player);
+        std::cerr << "?->opponent" << std::endl;
+        print_local_strategy(value_diff_opponent);
+        std::cerr << "?->empty" << std::endl;
+        print_local_strategy(value_diff_empty);
+        std::cerr << std::endl;
+    }
+    double max_diffs[HW2];
+    double min_diffs[HW2];
+    double diff_sum = 0;
+    double max_max_diff = 0;
     for (int cell = 0; cell < HW2; ++cell) {
-        res[cell] = (double)value_diff[cell] / diff_sum;
+        double max_diff = std::max(value_diff_player[cell], value_diff_opponent[cell]);
+        max_diff = std::max(max_diff, value_diff_empty[cell]);
+        max_diffs[cell] = max_diff;
+        diff_sum += max_diff;
+        max_max_diff = std::max(max_max_diff, max_diff);
+    }
+    double denominator = 0.0;
+    for (int cell = 0; cell < HW2; ++cell) {
+        //res[cell] = (double)max_diffs[cell] / diff_sum;
+        res[cell] = std::exp(max_diffs[cell] - max_max_diff); // softmax
+        denominator += res[cell];
+    }
+    for (int cell = 0; cell < HW2; ++cell) {
+        res[cell] /= denominator;
     }
     print_local_strategy(res);
 }
