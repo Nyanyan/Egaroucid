@@ -48,26 +48,26 @@ constexpr int MO_OFFSET_L_PM = 38;
         18, 17, 300
     };
 
-    constexpr int W_MOBILITY                  = move_ordering_param_array[0];
-    constexpr int W_POTENTIAL_MOBILITY        = move_ordering_param_array[1];
-    constexpr int W_TT_BONUS                  = move_ordering_param_array[2];
-    constexpr int W_VALUE                     = move_ordering_param_array[3];
-    constexpr int W_VALUE_DEEP_ADDITIONAL     = move_ordering_param_array[4];
+    int W_MOBILITY                  = move_ordering_param_array[0];
+    int W_POTENTIAL_MOBILITY        = move_ordering_param_array[1];
+    int W_TT_BONUS                  = move_ordering_param_array[2];
+    int W_VALUE                     = move_ordering_param_array[3];
+    int W_VALUE_DEEP_ADDITIONAL     = move_ordering_param_array[4];
 
-    constexpr int W_NWS_MOBILITY              = move_ordering_param_array[5];
-    constexpr int W_NWS_TT_BONUS              = move_ordering_param_array[6];
-    constexpr int W_NWS_VALUE                 = move_ordering_param_array[7];
-    constexpr int W_NWS_VALUE_DEEP_ADDITIONAL = move_ordering_param_array[8];
+    int W_NWS_MOBILITY              = move_ordering_param_array[5];
+    int W_NWS_TT_BONUS              = move_ordering_param_array[6];
+    int W_NWS_VALUE                 = move_ordering_param_array[7];
+    int W_NWS_VALUE_DEEP_ADDITIONAL = move_ordering_param_array[8];
 
-    constexpr int W_END_NWS_MOBILITY          = move_ordering_param_array[9];
-    constexpr int W_END_NWS_VALUE             = move_ordering_param_array[10];
+    int W_END_NWS_MOBILITY          = move_ordering_param_array[9];
+    int W_END_NWS_VALUE             = move_ordering_param_array[10];
 
-    constexpr int W_END_NWS_SIMPLE_MOBILITY   = move_ordering_param_array[11];
-    constexpr int W_END_NWS_SIMPLE_PARITY     = move_ordering_param_array[12];
-    constexpr int W_END_NWS_SIMPLE_TT_BONUS   = move_ordering_param_array[13];
+    int W_END_NWS_SIMPLE_MOBILITY   = move_ordering_param_array[11];
+    int W_END_NWS_SIMPLE_PARITY     = move_ordering_param_array[12];
+    int W_END_NWS_SIMPLE_TT_BONUS   = move_ordering_param_array[13];
 
-    constexpr int MOVE_ORDERING_PARAM_START = 9;
-    constexpr int MOVE_ORDERING_PARAM_END = 13;
+    int MOVE_ORDERING_PARAM_START = 9;
+    int MOVE_ORDERING_PARAM_END = 13;
 #else
     // midgame search
     constexpr int W_MOBILITY = 35;
@@ -499,7 +499,7 @@ inline void move_list_sort(std::vector<Flip_value> &move_list) {
 */
 #if TUNE_MOVE_ORDERING
 #include "ai.hpp"
-inline Search_result tree_search_legal(Board board, int depth, uint_fast8_t mpc_level, bool show_log, uint64_t use_legal, bool use_multi_thread, uint64_t time_limit);
+inline Search_result tree_search_legal(Board board, int alpha, int beta, int depth, uint_fast8_t mpc_level, bool show_log, uint64_t use_legal, bool use_multi_thread, uint64_t time_limit, bool *searching);
 
 uint64_t n_nodes_test(int level, std::vector<Board> testcase_arr) {
     uint64_t n_nodes = 0;
@@ -509,7 +509,8 @@ uint64_t n_nodes_test(int level, std::vector<Board> testcase_arr) {
         uint_fast8_t mpc_level;
         get_level(level, board.n_discs() - 4, &is_mid_search, &depth, &mpc_level);
         transposition_table.init();
-        Search_result result = tree_search_legal(board, depth, mpc_level, false, board.get_legal(), true, TIME_LIMIT_INF);
+        bool searching = true;
+        Search_result result = tree_search_legal(board, -SCORE_MAX, SCORE_MAX, depth, mpc_level, false, board.get_legal(), true, TIME_LIMIT_INF, &searching);
         n_nodes += result.nodes;
     }
     transposition_table.reset_importance();
