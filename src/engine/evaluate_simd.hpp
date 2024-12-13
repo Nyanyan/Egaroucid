@@ -29,7 +29,7 @@
 */
 constexpr int CEIL_N_PATTERN_FEATURES = 64;     // ceil2^n(N_PATTERN_FEATURES)
 constexpr int N_PATTERN_PARAMS_RAW = 612360;    // sum of pattern parameters for 1 phase
-constexpr int N_PATTERN_PARAMS = (N_PATTERN_PARAMS_RAW + 1); // +1 for byte bound
+constexpr int N_PATTERN_PARAMS = N_PATTERN_PARAMS_RAW + 1; // +1 for byte bound
 constexpr int PATTERN4_START_IDX = 52488;       // special case
 constexpr int PATTERN6_START_IDX = 78732;       // special case
 constexpr int SIMD_EVAL_MAX_VALUE = 4092;       // evaluate range [-4092, 4092]
@@ -37,17 +37,15 @@ constexpr int N_SIMD_EVAL_FEATURES_SIMPLE = 2;
 constexpr int N_SIMD_EVAL_FEATURES_COMP = 2;
 constexpr int N_SIMD_EVAL_FEATURE_CELLS = 16;
 constexpr int N_SIMD_EVAL_FEATURE_GROUP = 4;
-
-// number of cells included in the group
-constexpr int MAX_N_CELLS_GROUP[4] = {9, 10, 10, 10};
+constexpr int MAX_N_CELLS_GROUP[4] = {9, 10, 10, 10}; // number of cells included in the group
 
 
 /*
     @brief evaluation pattern definition for SIMD move ordering end
 */
-#define N_PATTERN_PARAMS_MO_END (236196 + 1) // +1 for byte bound
-#define SIMD_EVAL_MAX_VALUE_MO_END 16380
-#define SHIFT_EVAL_MO_END 139968 // pattern_starts[8] - 1
+constexpr int N_PATTERN_PARAMS_MO_END = 236196 + 1; // +1 for byte bound
+constexpr int SIMD_EVAL_MAX_VALUE_MO_END = 16380;
+constexpr int SHIFT_EVAL_MO_END = 139968; // pattern_starts[8] - 1
 
 constexpr Feature_to_coord feature_to_coord[CEIL_N_PATTERN_FEATURES] = {
     // 0 hv2
@@ -215,11 +213,11 @@ constexpr Coord_to_feature coord_to_feature[HW2] = {
 };
 
 constexpr int pattern_starts[N_PATTERNS] = {
-    1, 6562, 26245, 32806, // features[0] h2, d6+2C+X, h3, d7+2corner (from 0)
-    1, 6562, // features[1] h4, corner9 (from PATTERN4_START_IDX)
-    1, 2188, // features[1] d5+2X, d8+2C (from PATTERN6_START_IDX)
-    139969, 199018, 258067, 317116, // features[2] (from 0)
-    376165, 435214, 494263, 553312 // features[3] (from 0)
+    1, 6562, 26245, 32806,              // features[0] h2, d6+2C+X, h3, d7+2corner (from 0)
+    1, 6562,                            // features[1] h4, corner9 (from PATTERN4_START_IDX)
+    1, 2188,                            // features[1] d5+2X, d8+2C (from PATTERN6_START_IDX)
+    139969, 199018, 258067, 317116,     // features[2] (from 0)
+    376165, 435214, 494263, 553312      // features[3] (from 0)
 };
 
 /*
@@ -278,8 +276,9 @@ inline bool load_eval_file(const char* file, bool show_log) {
 }
 
 inline bool load_eval_move_ordering_end_file(const char* file, bool show_log) {
-    if (show_log)
+    if (show_log) {
         std::cerr << "evaluation for move ordering end file " << file << std::endl;
+    }
     FILE* fp;
     if (!file_open(&fp, file, "rb")) {
         std::cerr << "[ERROR] [FATAL] can't open eval " << file << std::endl;
@@ -325,14 +324,16 @@ inline void pre_calculate_eval_constant() {
         int32_t f2c32[8];
         for (int i = 0; i < N_SIMD_EVAL_FEATURES; ++i) {
             for (int j = 0; j < MAX_PATTERN_CELLS; ++j) {
-                for (int k = 0; k < 8; ++k)
+                for (int k = 0; k < 8; ++k) {
                     f2c32[k] = feature_to_coord[i * 16 + k * 2 + 1].cells[j];
+                }
                 feature_to_coord_simd_cell[i][j][0] = _mm256_set_epi32(
                     f2c32[0], f2c32[1], f2c32[2], f2c32[3], 
                     f2c32[4], f2c32[5], f2c32[6], f2c32[7]
                 );
-                for (int k = 0; k < 8; ++k)
+                for (int k = 0; k < 8; ++k) {
                     f2c32[k] = feature_to_coord[i * 16 + k * 2].cells[j];
+                }
                 feature_to_coord_simd_cell[i][j][1] = _mm256_set_epi32(
                     f2c32[0], f2c32[1], f2c32[2], f2c32[3], 
                     f2c32[4], f2c32[5], f2c32[6], f2c32[7]
@@ -355,10 +356,12 @@ inline void pre_calculate_eval_constant() {
     { // eval_move initialization
         uint16_t c2f[CEIL_N_PATTERN_FEATURES];
         for (int cell = 0; cell < HW2; ++cell) { // 0 for h8, 63 for a1
-            for (int i = 0; i < CEIL_N_PATTERN_FEATURES; ++i)
+            for (int i = 0; i < CEIL_N_PATTERN_FEATURES; ++i) {
                 c2f[i] = 0;
-            for (int i = 0; i < coord_to_feature[cell].n_features; ++i)
+            }
+            for (int i = 0; i < coord_to_feature[cell].n_features; ++i) {
                 c2f[coord_to_feature[cell].features[i].feature] = coord_to_feature[cell].features[i].x;
+            }
             for (int i = 0; i < N_SIMD_EVAL_FEATURES; ++i) {
                 int idx = i * 16;
                 coord_to_feature_simd[cell][i] = _mm256_set_epi16(
@@ -371,8 +374,9 @@ inline void pre_calculate_eval_constant() {
         }
         for (int bits = 0; bits < N_16BIT; ++bits) { // 1: unflipped discs, 0: others
             for (int group = 0; group < N_SIMD_EVAL_FEATURE_GROUP; ++group) { // a1-h2, a3-h4, ..., a7-h8
-                for (int i = 0; i < CEIL_N_PATTERN_FEATURES; ++i)
+                for (int i = 0; i < CEIL_N_PATTERN_FEATURES; ++i) {
                     c2f[i] = 0;
+                }
                 for (int cell = 0; cell < N_SIMD_EVAL_FEATURE_CELLS; ++cell) {
                     if (1 & (bits >> cell)) {
                         int global_cell = group * N_SIMD_EVAL_FEATURE_CELLS + cell;
@@ -426,8 +430,9 @@ inline bool evaluate_init(const char* file, const char* mo_end_nws_file, bool sh
         return false;
     }
     pre_calculate_eval_constant();
-    if (show_log)
+    if (show_log) {
         std::cerr << "evaluation function initialized" << std::endl;
+    }
     return true;
 }
 
