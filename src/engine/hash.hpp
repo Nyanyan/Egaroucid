@@ -15,7 +15,7 @@
 /*
     @brief definition of maximum hash level
 */
-constexpr int N_HASH_LEVEL = 32;
+constexpr int N_HASH_LEVEL = 33; // level 32 is maximim because hash is 32 bit
 constexpr int DEFAULT_HASH_LEVEL = 25;
 
 #if USE_CHANGEABLE_HASH_LEVEL
@@ -68,8 +68,7 @@ constexpr size_t hash_sizes[N_HASH_LEVEL] = {
     536870912,
     1073741824,
     2147483648,
-    4294967296,
-    8589934592
+    4294967296
 };
 
 /*
@@ -82,11 +81,13 @@ void hash_init_rand(int hash_level) {
     for (i = 0; i < 4; ++i) {
         for (j = 0; j < 65536; ++j) {
             hash_rand_player[i][j] = 0;
-            while (pop_count_uint(hash_rand_player[i][j]) < hash_level / 6)
+            while (pop_count_uint(hash_rand_player[i][j]) < hash_level / 6) {
                 hash_rand_player[i][j] = myrand_uint_rev() & (hash_sizes[hash_level] - 1);
+            }
             hash_rand_opponent[i][j] = 0;
-            while (pop_count_uint(hash_rand_opponent[i][j]) < hash_level / 6)
+            while (pop_count_uint(hash_rand_opponent[i][j]) < hash_level / 6) {
                 hash_rand_opponent[i][j] = myrand_uint_rev() & (hash_sizes[hash_level] - 1);
+            }
         }
     }
 }
