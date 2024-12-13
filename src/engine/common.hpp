@@ -42,13 +42,37 @@ constexpr int SCORE_MAX = 64;
 // undefined legal bitboard: set bit on d4, d5, e4, and e5
 constexpr uint64_t LEGAL_UNDEFINED = 0x0000001818000000ULL;
 
-struct Value_policy {
-    int value;
-    int policy;
-    bool operator<( const Value_policy other ) const {
-        return value > other.value;
-    }
+/*
+    @brief bits around the cell are set
+    from https://eukaryote.hateblo.jp/entry/2020/04/26/031246
+*/
+constexpr uint64_t bit_around[HW2] = {
+    0x0000000000000302ULL, 0x0000000000000604ULL, 0x0000000000000e0aULL, 0x0000000000001c14ULL, 0x0000000000003828ULL, 0x0000000000007050ULL, 0x0000000000006020ULL, 0x000000000000c040ULL,
+    0x0000000000030200ULL, 0x0000000000060400ULL, 0x00000000000e0a00ULL, 0x00000000001c1400ULL, 0x0000000000382800ULL, 0x0000000000705000ULL, 0x0000000000602000ULL, 0x0000000000c04000ULL,
+    0x0000000003020300ULL, 0x0000000006040600ULL, 0x000000000e0a0e00ULL, 0x000000001c141c00ULL, 0x0000000038283800ULL, 0x0000000070507000ULL, 0x0000000060206000ULL, 0x00000000c040c000ULL,
+    0x0000000302030000ULL, 0x0000000604060000ULL, 0x0000000e0a0e0000ULL, 0x0000001c141c0000ULL, 0x0000003828380000ULL, 0x0000007050700000ULL, 0x0000006020600000ULL, 0x000000c040c00000ULL,
+    0x0000030203000000ULL, 0x0000060406000000ULL, 0x00000e0a0e000000ULL, 0x00001c141c000000ULL, 0x0000382838000000ULL, 0x0000705070000000ULL, 0x0000602060000000ULL, 0x0000c040c0000000ULL,
+    0x0003020300000000ULL, 0x0006040600000000ULL, 0x000e0a0e00000000ULL, 0x001c141c00000000ULL, 0x0038283800000000ULL, 0x0070507000000000ULL, 0x0060206000000000ULL, 0x00c040c000000000ULL,
+    0x0002030000000000ULL, 0x0004060000000000ULL, 0x000a0e0000000000ULL, 0x00141c0000000000ULL, 0x0028380000000000ULL, 0x0050700000000000ULL, 0x0020600000000000ULL, 0x0040c00000000000ULL,
+    0x0203000000000000ULL, 0x0406000000000000ULL, 0x0a0e000000000000ULL, 0x141c000000000000ULL, 0x2838000000000000ULL, 0x5070000000000000ULL, 0x2060000000000000ULL, 0x40c0000000000000ULL
 };
+
+/*
+    @brief bits radiating the cell are set
+*/
+constexpr uint64_t bit_radiation[HW2] = {
+    0x81412111090503FEULL, 0x02824222120A07FDULL, 0x0404844424150EFBULL, 0x08080888492A1CF7ULL, 0x10101011925438EFULL, 0x2020212224A870DFULL, 0x404142444850E0BFULL, 0x8182848890A0C07FULL, 
+    0x412111090503FE03ULL, 0x824222120A07FD07ULL, 0x04844424150EFB0EULL, 0x080888492A1CF71CULL, 0x101011925438EF38ULL, 0x20212224A870DF70ULL, 0x4142444850E0BFE0ULL, 0x82848890A0C07FC0ULL, 
+    0x2111090503FE0305ULL, 0x4222120A07FD070AULL, 0x844424150EFB0E15ULL, 0x0888492A1CF71C2AULL, 0x1011925438EF3854ULL, 0x212224A870DF70A8ULL, 0x42444850E0BFE050ULL, 0x848890A0C07FC0A0ULL,
+    0x11090503FE030509ULL, 0x22120A07FD070A12ULL, 0x4424150EFB0E1524ULL, 0x88492A1CF71C2A49ULL, 0x11925438EF385492ULL, 0x2224A870DF70A824ULL, 0x444850E0BFE05048ULL, 0x8890A0C07FC0A090ULL,
+    0x090503FE03050911ULL, 0x120A07FD070A1222ULL, 0x24150EFB0E152444ULL, 0x492A1CF71C2A4988ULL, 0x925438EF38549211ULL, 0x24A870DF70A82422ULL, 0x4850E0BFE0504844ULL, 0x90A0C07FC0A09088ULL,
+    0x0503FE0305091121ULL, 0x0A07FD070A122242ULL, 0x150EFB0E15244484ULL, 0x2A1CF71C2A498808ULL, 0x5438EF3854921110ULL, 0xA870DF70A8242221ULL, 0x50E0BFE050484442ULL, 0xA0C07FC0A0908884ULL,
+    0x03FE030509112141ULL, 0x07FD070A12224282ULL, 0x0EFB0E1524448404ULL, 0x1CF71C2A49880808ULL, 0x38EF385492111010ULL, 0x70DF70A824222120ULL, 0xE0BFE05048444241ULL, 0xC07FC0A090888482ULL,
+    0xFE03050911214181ULL, 0xFD070A1222428202ULL, 0xFB0E152444840404ULL, 0xF71C2A4988080808ULL, 0xEF38549211101010ULL, 0xDF70A82422212020ULL, 0xBFE0504844424140ULL, 0x7FC0A09088848281ULL
+};
+
+// set false to stop all search immediately
+bool global_searching = true;
 
 /*
     @brief timing function
@@ -148,38 +172,6 @@ inline uint64_t calc_nps(uint64_t n_nodes, uint64_t elapsed) {
     return n_nodes * 1000ULL / elapsed;
 }
 
-// set false to stop all search immediately
-bool global_searching = true;
-
-/*
-    @brief bits around the cell are set
-    from https://eukaryote.hateblo.jp/entry/2020/04/26/031246
-*/
-constexpr uint64_t bit_around[HW2] = {
-    0x0000000000000302ULL, 0x0000000000000604ULL, 0x0000000000000e0aULL, 0x0000000000001c14ULL, 0x0000000000003828ULL, 0x0000000000007050ULL, 0x0000000000006020ULL, 0x000000000000c040ULL,
-    0x0000000000030200ULL, 0x0000000000060400ULL, 0x00000000000e0a00ULL, 0x00000000001c1400ULL, 0x0000000000382800ULL, 0x0000000000705000ULL, 0x0000000000602000ULL, 0x0000000000c04000ULL,
-    0x0000000003020300ULL, 0x0000000006040600ULL, 0x000000000e0a0e00ULL, 0x000000001c141c00ULL, 0x0000000038283800ULL, 0x0000000070507000ULL, 0x0000000060206000ULL, 0x00000000c040c000ULL,
-    0x0000000302030000ULL, 0x0000000604060000ULL, 0x0000000e0a0e0000ULL, 0x0000001c141c0000ULL, 0x0000003828380000ULL, 0x0000007050700000ULL, 0x0000006020600000ULL, 0x000000c040c00000ULL,
-    0x0000030203000000ULL, 0x0000060406000000ULL, 0x00000e0a0e000000ULL, 0x00001c141c000000ULL, 0x0000382838000000ULL, 0x0000705070000000ULL, 0x0000602060000000ULL, 0x0000c040c0000000ULL,
-    0x0003020300000000ULL, 0x0006040600000000ULL, 0x000e0a0e00000000ULL, 0x001c141c00000000ULL, 0x0038283800000000ULL, 0x0070507000000000ULL, 0x0060206000000000ULL, 0x00c040c000000000ULL,
-    0x0002030000000000ULL, 0x0004060000000000ULL, 0x000a0e0000000000ULL, 0x00141c0000000000ULL, 0x0028380000000000ULL, 0x0050700000000000ULL, 0x0020600000000000ULL, 0x0040c00000000000ULL,
-    0x0203000000000000ULL, 0x0406000000000000ULL, 0x0a0e000000000000ULL, 0x141c000000000000ULL, 0x2838000000000000ULL, 0x5070000000000000ULL, 0x2060000000000000ULL, 0x40c0000000000000ULL
-};
-
-/*
-    @brief bits radiating the cell are set
-*/
-constexpr uint64_t bit_radiation[HW2] = {
-    0x81412111090503FEULL, 0x02824222120A07FDULL, 0x0404844424150EFBULL, 0x08080888492A1CF7ULL, 0x10101011925438EFULL, 0x2020212224A870DFULL, 0x404142444850E0BFULL, 0x8182848890A0C07FULL, 
-    0x412111090503FE03ULL, 0x824222120A07FD07ULL, 0x04844424150EFB0EULL, 0x080888492A1CF71CULL, 0x101011925438EF38ULL, 0x20212224A870DF70ULL, 0x4142444850E0BFE0ULL, 0x82848890A0C07FC0ULL, 
-    0x2111090503FE0305ULL, 0x4222120A07FD070AULL, 0x844424150EFB0E15ULL, 0x0888492A1CF71C2AULL, 0x1011925438EF3854ULL, 0x212224A870DF70A8ULL, 0x42444850E0BFE050ULL, 0x848890A0C07FC0A0ULL,
-    0x11090503FE030509ULL, 0x22120A07FD070A12ULL, 0x4424150EFB0E1524ULL, 0x88492A1CF71C2A49ULL, 0x11925438EF385492ULL, 0x2224A870DF70A824ULL, 0x444850E0BFE05048ULL, 0x8890A0C07FC0A090ULL,
-    0x090503FE03050911ULL, 0x120A07FD070A1222ULL, 0x24150EFB0E152444ULL, 0x492A1CF71C2A4988ULL, 0x925438EF38549211ULL, 0x24A870DF70A82422ULL, 0x4850E0BFE0504844ULL, 0x90A0C07FC0A09088ULL,
-    0x0503FE0305091121ULL, 0x0A07FD070A122242ULL, 0x150EFB0E15244484ULL, 0x2A1CF71C2A498808ULL, 0x5438EF3854921110ULL, 0xA870DF70A8242221ULL, 0x50E0BFE050484442ULL, 0xA0C07FC0A0908884ULL,
-    0x03FE030509112141ULL, 0x07FD070A12224282ULL, 0x0EFB0E1524448404ULL, 0x1CF71C2A49880808ULL, 0x38EF385492111010ULL, 0x70DF70A824222120ULL, 0xE0BFE05048444241ULL, 0xC07FC0A090888482ULL,
-    0xFE03050911214181ULL, 0xFD070A1222428202ULL, 0xFB0E152444840404ULL, 0xF71C2A4988080808ULL, 0xEF38549211101010ULL, 0xDF70A82422212020ULL, 0xBFE0504844424140ULL, 0x7FC0A09088848281ULL
-};
-
 int get_localtime(tm* a, time_t* b) {
 #if _WIN64 || _WIN32
     return localtime_s(a, b);
@@ -232,4 +224,161 @@ inline void calc_date(int *year, int *month, int *day, int *hour, int *minute, i
 
 inline bool is_valid_policy(int policy) {
     return 0 <= policy && policy < HW2;
+}
+
+inline bool is_black_like_char(char c) {
+    return c == 'B' || c == 'b' || c == 'X' || c == 'x' || c == '0' || c == '*';
+}
+
+inline bool is_white_like_char(char c) {
+    return c == 'W' || c == 'w' || c == 'O' || c == 'o' || c == '1';
+}
+
+
+/*
+    @brief Generate coordinate in string
+
+    @param idx                  index of the coordinate
+    @return coordinate as string
+*/
+std::string idx_to_coord(int idx) {
+    if (idx < 0 || HW2 <= idx)
+        return "??";
+    int y = HW_M1 - idx / HW;
+    int x = HW_M1 - idx % HW;
+    const std::string x_coord = "abcdefgh";
+    return x_coord[x] + std::to_string(y + 1);
+}
+
+/*
+    @brief Generate time in string
+
+    @param t                    time in [ms]
+    @return time with ms as string
+*/
+std::string ms_to_time(uint64_t t) {
+    std::string res;
+    uint64_t hour = t / (1000 * 60 * 60);
+    t %= 1000 * 60 * 60;
+    uint64_t minute = t / (1000 * 60);
+    t %= 1000 * 60;
+    uint64_t second = t / 1000;
+    uint64_t msecond = t % 1000;
+    std::ostringstream hour_s;
+    hour_s << std::right << std::setw(3) << std::setfill('0') << hour;
+    res += hour_s.str();
+    res += ":";
+    std::ostringstream minute_s;
+    minute_s << std::right << std::setw(2) << std::setfill('0') << minute;
+    res += minute_s.str();
+    res += ":";
+    std::ostringstream second_s;
+    second_s << std::right << std::setw(2) << std::setfill('0') << second;
+    res += second_s.str();
+    res += ".";
+    std::ostringstream msecond_s;
+    msecond_s << std::right << std::setw(3) << std::setfill('0') << msecond;
+    res += msecond_s.str();
+    return res;
+}
+
+/*
+    @brief Generate time in string
+
+    @param t                    time in [ms]
+    @return time as string
+*/
+std::string ms_to_time_short(uint64_t t) {
+    std::string res;
+    uint64_t hour = t / (1000 * 60 * 60);
+    t -= hour * 1000 * 60 * 60;
+    uint64_t minute = t / (1000 * 60);
+    t -= minute * 1000 * 60;
+    uint64_t second = t / 1000;
+    t -= second * 1000;
+    std::ostringstream hour_s;
+    hour_s << std::right << std::setw(3) << std::setfill('0') << hour;
+    res += hour_s.str();
+    res += ":";
+    std::ostringstream minute_s;
+    minute_s << std::right << std::setw(2) << std::setfill('0') << minute;
+    res += minute_s.str();
+    res += ":";
+    std::ostringstream second_s;
+    second_s << std::right << std::setw(2) << std::setfill('0') << second;
+    res += second_s.str();
+    return res;
+}
+
+
+inline int convert_coord_from_representative_board(int cell, int idx) {
+    int res;
+    int y = cell / HW;
+    int x = cell % HW;
+    switch (idx) {
+        case 0:
+            res = cell;
+            break;
+        case 1:
+            res = (HW_M1 - y) * HW + x; // vertical
+            break;
+        case 2:
+            res = (HW_M1 - x) * HW + (HW_M1 - y); // black line
+            break;
+        case 3:
+            res = (HW_M1 - x) * HW + y; // black line + vertical ( = rotate 90 clockwise)
+            break;
+        case 4:
+            res = x * HW + (HW_M1 - y); // black line + horizontal ( = rotate 90 counterclockwise)
+            break;
+        case 5:
+            res = x * HW + y; // black line + horizontal + vertical ( = white line)
+            break;
+        case 6:
+            res = y * HW + (HW_M1 - x); // horizontal
+            break;
+        case 7:
+            res = (HW_M1 - y) * HW + (HW_M1 - x); // horizontal + vertical ( = rotate180)
+            break;
+        default:
+            std::cerr << "converting coord error in book" << std::endl;
+            break;
+    }
+    return res;
+}
+
+inline int convert_coord_to_representative_board(int cell, int idx) {
+    int res;
+    int y = cell / HW;
+    int x = cell % HW;
+    switch (idx) {
+        case 0:
+            res = cell;
+            break;
+        case 1:
+            res = (HW_M1 - y) * HW + x; // vertical
+            break;
+        case 2:
+            res = (HW_M1 - x) * HW + (HW_M1 - y); // black line
+            break;
+        case 3:
+            res = x * HW + (HW_M1 - y); // black line + vertical ( = rotate 90 clockwise)
+            break;
+        case 4:
+            res = (HW_M1 - x) * HW + y; // black line + horizontal ( = rotate 90 counterclockwise)
+            break;
+        case 5:
+            res = x * HW + y; // black line + horizontal + vertical ( = white line)
+            break;
+        case 6:
+            res = y * HW + (HW_M1 - x); // horizontal
+            break;
+        case 7:
+            res = (HW_M1 - y) * HW + (HW_M1 - x); // horizontal + vertical ( = rotate180)
+            break;
+        default:
+            std::cerr << "converting coord error in book" << std::endl;
+            break;
+    }
+    return res;
 }
