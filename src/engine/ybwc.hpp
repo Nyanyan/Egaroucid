@@ -93,7 +93,7 @@ inline int ybwc_split_nws(Search *search, int parent_alpha, const int depth, uin
         if (transposition_cutoff_nws(search, search->board.hash(), depth, -parent_alpha - 1, &v)) {
             return -v;
         }
-        if (!is_end_search && search->mpc_level < MPC_100_LEVEL) {
+        if (!is_end_search && search->mpc_level < MPC_100_LEVEL && depth >= USE_MPC_MIN_DEPTH) {
             if (mpc(search, -parent_alpha - 1, -parent_alpha, depth, legal, is_end_search, &v, searchings)) {
                 return -v;
             }

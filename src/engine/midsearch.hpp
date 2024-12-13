@@ -169,8 +169,10 @@ int nega_scout(Search *search, int alpha, int beta, const int depth, const bool 
     }
 #endif
 #if USE_MID_MPC
-    if (mpc(search, alpha, beta, depth, legal, is_end_search, &v, searching)) {
-        return v;
+    if (search->mpc_level < MPC_100_LEVEL && depth >= USE_MPC_MIN_DEPTH) {
+        if (mpc(search, alpha, beta, depth, legal, is_end_search, &v, searching)) {
+            return v;
+        }
     }
 #endif
     int g;

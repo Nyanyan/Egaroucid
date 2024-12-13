@@ -124,9 +124,11 @@ int nega_alpha_ordering_nws_simple(Search *search, int alpha, const int depth, c
         return v;
     }
     #if USE_MID_MPC && MID_MPC_MIN_DEPTH <= MID_SIMPLE_DEPTH
+    if (search->mpc_level < MPC_100_LEVEL && depth >= USE_MPC_MIN_DEPTH) {
         if (mpc(search, alpha, alpha + 1, depth, legal, false, &v, searching)) {
             return v;
         }
+    }
     #endif
     int best_move = TRANSPOSITION_TABLE_UNDEFINED;
     int g;
@@ -250,9 +252,11 @@ int nega_alpha_ordering_nws(Search *search, int alpha, const int depth, const bo
         return v;
     }
     #if USE_MID_MPC
+    if (search->mpc_level < MPC_100_LEVEL && depth >= USE_MPC_MIN_DEPTH) {
         if (mpc(search, alpha, alpha + 1, depth, legal, is_end_search, &v, searchings)) {
             return v;
         }
+    }
     #endif
     int best_move = TRANSPOSITION_TABLE_UNDEFINED;
     int g;
