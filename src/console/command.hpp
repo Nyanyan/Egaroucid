@@ -222,10 +222,10 @@ Search_result go_noprint(Board_info *board, Options *options, State *state) {
         }
         result = ai_time_limit(board->board, true, 0, true, options->show_log, remaining_time_msec);
     }
-
+    /*
     double local_strategy[HW2];
     calc_local_strategy(board->board, 10, local_strategy, true);
-
+    */
     Flip flip;
     calc_flip(&flip, &board->board, result.policy);
     board->board.move_board(&flip);
