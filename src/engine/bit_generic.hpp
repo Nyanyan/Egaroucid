@@ -223,29 +223,29 @@ inline uint64_t rotate_180(uint64_t x) {
     @param x                    a pointer of a bitboard
 */
 #if USE_MINUS_NTZ
-    inline uint_fast8_t ctz(uint64_t *x) {
-        return pop_count_ull((*x & (-(*x))) - 1);
-    }
+inline uint_fast8_t ctz(uint64_t *x) {
+    return pop_count_ull((*x & (-(*x))) - 1);
+}
 
-    inline uint_fast8_t ctz(uint64_t x) {
-        return pop_count_ull((x & (-x)) - 1);
-    }
+inline uint_fast8_t ctz(uint64_t x) {
+    return pop_count_ull((x & (-x)) - 1);
+}
 
-    inline uint_fast8_t ctz_uint32(uint32_t x) {
-        return pop_count_uint((x & (-x)) - 1);
-    }
+inline uint_fast8_t ctz_uint32(uint32_t x) {
+    return pop_count_uint((x & (-x)) - 1);
+}
 #else
-    inline uint_fast8_t ctz(uint64_t *x) {
-        return pop_count_ull((~(*x)) & ((*x) - 1));
-    }
+inline uint_fast8_t ctz(uint64_t *x) {
+    return pop_count_ull((~(*x)) & ((*x) - 1));
+}
 
-    inline uint_fast8_t ctz(uint64_t x) {
-        return pop_count_ull((~x) & (x - 1));
-    }
+inline uint_fast8_t ctz(uint64_t x) {
+    return pop_count_ull((~x) & (x - 1));
+}
 
-    inline uint_fast8_t ctz_uint32(uint32_t x) {
-        return pop_count_uint((~x) & (x - 1));
-    }
+inline uint_fast8_t ctz_uint32(uint32_t x) {
+    return pop_count_uint((~x) & (x - 1));
+}
 #endif
 
 /*
