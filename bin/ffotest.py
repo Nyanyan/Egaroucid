@@ -23,7 +23,7 @@ try:
     if len(sys.argv) >= 6:
         exe = sys.argv[5]
 except:
-    print('usage: python ffotest.py [start=40] [end=59] [n_threads=42] [hash_level=25] [exe=versions/Egaroucid_for_Console_beta/Egaroucid_for_Console.exe]')
+    print('usage: python ffotest.py [start=40] [end=59] [n_threads=42] [hash_level=25] [exe=Egaroucid_for_Console.exe]')
     exit()
 
 cmd = exe + ' -l 60 -hash ' + str(hash_level) + ' -nobook -solve problem/ffo' + str(start) + '-' + str(end) + '.txt -thread ' + str(n_threads)
