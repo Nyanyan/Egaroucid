@@ -94,6 +94,9 @@
         // use bit gather optimization
         #define USE_BIT_GATHER_OPTIMIZE true
 
+        // use bit gather optimization for last flip (a little slow)
+        #define USE_BIT_GATHER_OPTIMIZE_LAST_FLIP true
+
         // use fast join_h_line
         #define USE_FAST_JOIN_H_LINE true
     #endif
