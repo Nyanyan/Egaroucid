@@ -22,7 +22,7 @@
 #include "multi_probcut.hpp"
 #include "transposition_table.hpp"
 #include "util.hpp"
-#include "stability.hpp"
+#include "stability_cutoff.hpp"
 #include "endsearch_common.hpp"
 #include "parallel.hpp"
 #include "ybwc.hpp"

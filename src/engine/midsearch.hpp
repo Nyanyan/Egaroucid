@@ -24,7 +24,7 @@
 #include "multi_probcut.hpp"
 #include "thread_pool.hpp"
 #include "util.hpp"
-#include "stability.hpp"
+#include "stability_cutoff.hpp"
 #include "endsearch.hpp"
 #include "midsearch_nws.hpp"
 #include "book.hpp"
