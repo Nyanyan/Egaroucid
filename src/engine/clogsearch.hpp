@@ -137,52 +137,52 @@ int clog_search(Search *search, int depth, bool *searching) {
     int g;
     bool uncertain_value_found = false;
     int beta = HW2 - 2 * pop_count_ull(calc_stability(search->board.opponent, search->board.player));
-    #if USE_PARALLEL_CLOG_SEARCH
-        std::vector<std::future<Parallel_clog_task>> parallel_tasks;
-        bool n_searching = true;
-        for (int move_idx = 0; move_idx < canput && res < beta && *searching; ++move_idx) {
-            swap_next_best_move(move_list, move_idx, canput);
-            search->move(&move_list[move_idx].flip);
-                if (!clog_split(search, canput, move_idx, depth - 1, &n_searching, parallel_tasks)) {
-                    g = clog_search(search, depth - 1, searching);
-                    if (g != CLOG_NOT_FOUND) {
-                        res = std::max(res, -g);
-                    } else {
-                        uncertain_value_found = true;
-                    }
-                }
-            search->undo(&move_list[move_idx].flip);
-        }
-        if (res < beta && *searching) {
-            Parallel_clog_task got_task;
-            for (std::future<Parallel_clog_task> &task: parallel_tasks) {
-                got_task = task.get();
-                if (got_task.val != CLOG_NOT_FOUND) {
-                    res = std::max(res, -got_task.val);
+#if USE_PARALLEL_CLOG_SEARCH
+    std::vector<std::future<Parallel_clog_task>> parallel_tasks;
+    bool n_searching = true;
+    for (int move_idx = 0; move_idx < canput && res < beta && *searching; ++move_idx) {
+        swap_next_best_move(move_list, move_idx, canput);
+        search->move(&move_list[move_idx].flip);
+            if (!clog_split(search, canput, move_idx, depth - 1, &n_searching, parallel_tasks)) {
+                g = clog_search(search, depth - 1, searching);
+                if (g != CLOG_NOT_FOUND) {
+                    res = std::max(res, -g);
                 } else {
                     uncertain_value_found = true;
                 }
-                search->n_nodes += got_task.n_nodes;
             }
-        } else {
-            n_searching = false;
-            for (std::future<Parallel_clog_task> &task: parallel_tasks) {
-                search->n_nodes += task.get().n_nodes;
-            }
-        }
-    #else
-        for (int move_idx = 0; move_idx < canput && res < beta && *searching; ++move_idx) {
-            swap_next_best_move(move_list, move_idx, canput);
-            search->move(&move_list[move_idx].flip);
-                g = clog_search(search, depth - 1, searching);
-            search->undo(&move_list[move_idx].flip);
-            if (g != CLOG_NOT_FOUND) {
-                res = std::max(res, -g);
+        search->undo(&move_list[move_idx].flip);
+    }
+    if (res < beta && *searching) {
+        Parallel_clog_task got_task;
+        for (std::future<Parallel_clog_task> &task: parallel_tasks) {
+            got_task = task.get();
+            if (got_task.val != CLOG_NOT_FOUND) {
+                res = std::max(res, -got_task.val);
             } else {
                 uncertain_value_found = true;
             }
+            search->n_nodes += got_task.n_nodes;
         }
-    #endif
+    } else {
+        n_searching = false;
+        for (std::future<Parallel_clog_task> &task: parallel_tasks) {
+            search->n_nodes += task.get().n_nodes;
+        }
+    }
+#else
+    for (int move_idx = 0; move_idx < canput && res < beta && *searching; ++move_idx) {
+        swap_next_best_move(move_list, move_idx, canput);
+        search->move(&move_list[move_idx].flip);
+            g = clog_search(search, depth - 1, searching);
+        search->undo(&move_list[move_idx].flip);
+        if (g != CLOG_NOT_FOUND) {
+            res = std::max(res, -g);
+        } else {
+            uncertain_value_found = true;
+        }
+    }
+#endif
     if (uncertain_value_found && res < beta) {
         res = CLOG_NOT_FOUND;
     }
