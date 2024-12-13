@@ -13,7 +13,7 @@
 #include "setting.hpp"
 #include "common.hpp"
 #if USE_SIMD
-    #include "bit_simd.hpp"
+#include "bit_simd.hpp"
 #else
-    #include "bit_generic.hpp"
+#include "bit_generic.hpp"
 #endif
