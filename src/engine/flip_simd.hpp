@@ -16,22 +16,22 @@
 #include "bit.hpp"
 
 #if AUTO_FLIP_OPT_BY_COMPILER
-    #ifdef __clang_version__
-        #define ACEPCK_RIGHT true
-        #define ACEPCK_LEFT true
-    #elif defined __GNUC__
-        #define ACEPCK_RIGHT false
-        #define ACEPCK_LEFT true
-    #elif defined _MSC_VER
-        #define ACEPCK_RIGHT true
-        #define ACEPCK_LEFT false
-    #else
-        #define ACEPCK_RIGHT false
-        #define ACEPCK_LEFT false
-    #endif
+#ifdef __clang_version__
+#define ACEPCK_RIGHT true
+#define ACEPCK_LEFT true
+#elif defined __GNUC__
+#define ACEPCK_RIGHT false
+#define ACEPCK_LEFT true
+#elif defined _MSC_VER
+#define ACEPCK_RIGHT true
+#define ACEPCK_LEFT false
 #else
-    #define ACEPCK_RIGHT false
-    #define ACEPCK_LEFT false
+#define ACEPCK_RIGHT false
+#define ACEPCK_LEFT false
+#endif
+#else
+#define ACEPCK_RIGHT false
+#define ACEPCK_LEFT false
 #endif
 
 union V8DI {
@@ -58,14 +58,14 @@ class Flip {
 
         static inline __m128i calc_flip(__m128i OP, const uint_fast8_t place) {
             __m256i PP = _mm256_broadcastq_epi64(OP);
-        #if USE_AMD
+#if USE_AMD
             __m256i OO = _mm256_broadcastq_epi64(_mm_unpackhi_epi64(OP, OP)); // fast with AMD
-        #else
+#else
             __m256i OO = _mm256_permute4x64_epi64(_mm256_castsi128_si256(OP), 0x55); // fast with Intel
-        #endif
+#endif
             __m256i mask = lrmask[place].v4[1];
         
-        #if ACEPCK_RIGHT
+#if ACEPCK_RIGHT
               // right: shadow mask lower than leftmost P
             __m256i rP = _mm256_and_si256(PP, mask);
             __m256i rS = _mm256_or_si256(rP, _mm256_srlv_epi64(rP, _mm256_set_epi64x(7, 9, 8, 1)));
@@ -74,7 +74,7 @@ class Flip {
               // erase if non-opponent MS1B is not P
             __m256i rE = _mm256_xor_si256(_mm256_andnot_si256(OO, mask), rP);	// masked Empty
             __m256i F4 = _mm256_and_si256(_mm256_andnot_si256(rS, mask), _mm256_cmpgt_epi64(rP, rE));
-        #else
+#else
               // right: isolate non-opponent MS1B by clearing lower bits
             __m256i eraser = _mm256_andnot_si256(OO, mask);
             __m256i rO = _mm256_sllv_epi64(_mm256_and_si256(PP, mask), _mm256_set_epi64x(7, 9, 8, 1));
@@ -84,25 +84,25 @@ class Flip {
             rO = _mm256_andnot_si256(_mm256_srlv_epi64(eraser, _mm256_set_epi64x(28, 36, 32, 4)), rO);
               // set mask bits higher than outflank
             __m256i F4 = _mm256_and_si256(mask, _mm256_sub_epi64(_mm256_setzero_si256(), rO));
-        #endif
+#endif
 
-        mask = lrmask[place].v4[0];
-        __m256i lO = _mm256_andnot_si256(OO, mask);
-        #if ACEPCK_LEFT
+            mask = lrmask[place].v4[0];
+            __m256i lO = _mm256_andnot_si256(OO, mask);
+#if ACEPCK_LEFT
               // left: non-opponent BLSMSK
             lO = _mm256_and_si256(_mm256_xor_si256(_mm256_add_epi64(lO, _mm256_set1_epi64x(-1)), lO), mask);
               // clear MSB of BLSMSK if it is P
             __m256i lF = _mm256_andnot_si256(PP, lO);
               // erase lF if lO = lF (i.e. MSB is not P)
             F4 = _mm256_or_si256(F4, _mm256_andnot_si256(_mm256_cmpeq_epi64(lF, lO), lF));
-        #else
+#else
               // left: look for non-opponent LS1B
             lO = _mm256_and_si256(lO, _mm256_sub_epi64(_mm256_setzero_si256(), lO));  // LS1B
             lO = _mm256_and_si256(lO, PP);
               // set all bits if outflank = 0, otherwise higher bits than outflank
             __m256i lF = _mm256_sub_epi64(_mm256_cmpeq_epi64(lO, _mm256_setzero_si256()), lO);
             F4 = _mm256_or_si256(F4, _mm256_andnot_si256(lF, mask));
-        #endif
+#endif
 
             __m128i F2 = _mm_or_si128(_mm256_castsi256_si128(F4), _mm256_extracti128_si256(F4, 1));
             return _mm_or_si128(F2, _mm_shuffle_epi32(F2, 0x4e));	// SWAP64

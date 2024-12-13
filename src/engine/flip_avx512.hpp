@@ -16,23 +16,23 @@
 #include "bit.hpp"
 
 #if AUTO_FLIP_OPT_BY_COMPILER
-    #ifdef __clang_version__
-        #define ACEPCK_RIGHT true
-        #define ACEPCK_LEFT false
-    #elif defined __GNUC__
-        #define ACEPCK_RIGHT true
-        #define ACEPCK_LEFT false
-    #elif defined _MSC_VER
-        // Do not set both true, it brings a bug with MSVC
-        #define ACEPCK_RIGHT true
-        #define ACEPCK_LEFT false
-    #else
-        #define ACEPCK_RIGHT false
-        #define ACEPCK_LEFT false
-    #endif
+#ifdef __clang_version__
+#define ACEPCK_RIGHT true
+#define ACEPCK_LEFT false
+#elif defined __GNUC__
+#define ACEPCK_RIGHT true
+#define ACEPCK_LEFT false
+#elif defined _MSC_VER
+// Do not set both true, it brings a bug with MSVC
+#define ACEPCK_RIGHT true
+#define ACEPCK_LEFT false
 #else
-    #define ACEPCK_RIGHT false
-    #define ACEPCK_LEFT false
+#define ACEPCK_RIGHT false
+#define ACEPCK_LEFT false
+#endif
+#else
+#define ACEPCK_RIGHT false
+#define ACEPCK_LEFT false
 #endif
 
 union V8DI {
@@ -60,16 +60,16 @@ class Flip {
 
         static inline __m128i calc_flip(__m128i OP, const uint_fast8_t place) {
             __m256i PP = _mm256_broadcastq_epi64(OP);
-        #if USE_AMD
+#if USE_AMD
             __m256i OO = _mm256_broadcastq_epi64(_mm_unpackhi_epi64(OP, OP)); // fast with AMD
-        #else
+#else
             __m256i OO = _mm256_permute4x64_epi64(_mm256_castsi128_si256(OP), 0x55); // fast with Intel
-        #endif
+#endif
             __m256i rM = lrmask[place].v4[1];
             __m256i lM = lrmask[place].v4[0];
             __m256i lO = _mm256_andnot_si256(OO, lM);
 
-        #if ACEPCK_RIGHT
+#if ACEPCK_RIGHT
               // shadow mask lower than leftmost P
             __m256i rP = _mm256_and_si256(PP, rM);
             __m256i t0 = _mm256_srlv_epi64(_mm256_set1_epi64x(-1), _mm256_lzcnt_epi64(rP));
@@ -77,23 +77,23 @@ class Flip {
             // __m256i rE = _mm256_andnot_si256(OO, _mm256_andnot_si256(rP, rM));
             __m256i rE = _mm256_ternarylogic_epi64(OO, rM, rP, 0x04);	// masked empty
             __m256i F4 = _mm256_maskz_andnot_epi64(_mm256_cmpgt_epi64_mask(rP, rE), t0, rM);
-        #else
+#else
               // look for non-opponent (or edge) bit with lzcnt
             __m256i t0 = _mm256_lzcnt_epi64(_mm256_andnot_si256(OO, rM));
             t0 = _mm256_and_si256(_mm256_srlv_epi64(_mm256_set1_epi64x(0x8000000000000000), t0), PP);
               // clear masked OO lower than outflank
             // __m256i F4 = _mm256_and_si256(_mm256_xor_si256(_mm256_sub_epi64(_mm256_setzero_si256(), tO), tO), rM);
             __m256i F4 = _mm256_ternarylogic_epi64(_mm256_sub_epi64(_mm256_setzero_si256(), t0), t0, rM, 0x28);
-        #endif
+#endif
 
-        #if ACEPCK_LEFT
+#if ACEPCK_LEFT
             // __m256i t2 = _mm256_xor_si256(_mm256_add_epi64(lO, _mm256_set1_epi64x(-1)), lO);	// BLSMSK
             // t2 = _mm256_and_si256(lM, t2);	// non-opponent LS1B and opponent inbetween
             __m256i t2 = _mm256_ternarylogic_epi64(lM, _mm256_add_epi64(lO, _mm256_set1_epi64x(-1)), lO, 0x60);
               // apply flip if P is in BLSMSK, i.e. LS1B is P
             // F4 = _mm256_mask_or_epi64(F4, _mm256_test_epi64_mask(PP, t2), F4, _mm256_andnot_si256(PP, t2));
             F4 = _mm256_mask_ternarylogic_epi64(F4, _mm256_test_epi64_mask(PP, t2), PP, t2, 0xf2);
-        #else
+#else
             // lO = _mm256_and_si256(lO, _mm256_sub_epi64(_mm256_setzero_si256(), lO));     // LS1B
             // lO = _mm256_and_si256(lO, PP);
             lO = _mm256_ternarylogic_epi64(lO, _mm256_sub_epi64(_mm256_setzero_si256(), lO), PP, 0x80);
@@ -101,7 +101,7 @@ class Flip {
             __m256i lE = _mm256_sub_epi64(_mm256_cmpeq_epi64(lO, _mm256_setzero_si256()), lO);
             // F4 = _mm256_or_si256(F4, _mm256_andnot_si256(lE, lM));
             F4 = _mm256_ternarylogic_epi64(F4, lE, lM, 0xf2);
-        #endif
+#endif
 
             __m128i F2 = _mm_or_si128(_mm256_castsi256_si128(F4), _mm256_extracti128_si256(F4, 1));
             return _mm_or_si128(F2, _mm_shuffle_epi32(F2, 0x4e));	// SWAP64
