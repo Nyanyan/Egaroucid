@@ -21,18 +21,18 @@
 #include "clogsearch.hpp"
 #include "time_management.hpp"
 
-#define SEARCH_BOOK -1
+constexpr int SEARCH_BOOK = -1;
 
-#define AI_TYPE_BOOK 1000
+constexpr int AI_TYPE_BOOK = 1000;
 
-#define IDSEARCH_ENDSEARCH_PRESEARCH_OFFSET 10
-#define IDSEARCH_ENDSEARCH_PRESEARCH_OFFSET_TIMELIMIT 8
-#define PONDER_ENDSEARCH_PRESEARCH_OFFSET_TIMELIMIT 2
+constexpr int IDSEARCH_ENDSEARCH_PRESEARCH_OFFSET = 10;
+constexpr int IDSEARCH_ENDSEARCH_PRESEARCH_OFFSET_TIMELIMIT = 8;
+constexpr int PONDER_ENDSEARCH_PRESEARCH_OFFSET_TIMELIMIT = 2;
 
-#define NOBOOK_SEARCH_LEVEL 10
-#define NOBOOK_SEARCH_MARGIN 1
+constexpr int NOBOOK_SEARCH_LEVEL = 10;
+constexpr int NOBOOK_SEARCH_MARGIN = 1;
 
-#define PONDER_START_SELFPLAY_DEPTH 21
+constexpr int  PONDER_START_SELFPLAY_DEPTH = 21;
 
 struct Lazy_SMP_task {
     uint_fast8_t mpc_level;
