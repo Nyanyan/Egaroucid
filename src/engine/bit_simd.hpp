@@ -18,86 +18,6 @@
 #endif
 #include "common.hpp"
 
-/*
-    @brief print bits in reverse
-
-    @param x                    an integer to print
-*/
-inline void bit_print_reverse(uint64_t x) {
-    for (uint32_t i = 0; i < HW2; ++i)
-        std::cerr << (1 & (x >> i));
-    std::cerr << std::endl;
-}
-
-/*
-    @brief print bits
-
-    @param x                    an integer to print
-*/
-inline void bit_print(uint64_t x) {
-    for (uint32_t i = 0; i < HW2; ++i)
-        std::cerr << (1 & (x >> (HW2_M1 - i)));
-    std::cerr << std::endl;
-}
-
-/*
-    @brief print bits of uint8_t
-
-    @param x                    an integer to print
-*/
-inline void bit_print_uchar(uint8_t x) {
-    for (uint32_t i = 0; i < HW; ++i)
-        std::cerr << (1 & (x >> (HW_M1 - i)));
-    std::cerr << std::endl;
-}
-
-/*
-    @brief print a board in reverse
-
-    @param x                    an integer to print
-*/
-inline void bit_print_board_reverse(uint64_t x) {
-    for (uint32_t i = 0; i < HW2; ++i) {
-        std::cerr << (1 & (x >> i));
-        if (i % HW == HW_M1)
-            std::cerr << std::endl;
-    }
-    std::cerr << std::endl;
-}
-
-/*
-    @brief print a board
-
-    @param x                    an integer to print
-*/
-inline void bit_print_board(uint64_t x) {
-    for (uint32_t i = 0; i < HW2; ++i) {
-        std::cerr << (1 & (x >> (HW2_M1 - i)));
-        if (i % HW == HW_M1)
-            std::cerr << std::endl;
-    }
-    std::cerr << std::endl;
-}
-
-/*
-    @brief print a board
-
-    @param p                    an integer representing the player
-    @param o                    an integer representing the opponent
-*/
-void print_board(uint64_t p, uint64_t o) {
-    for (int i = 0; i < HW2; ++i) {
-        if (1 & (p >> (HW2_M1 - i)))
-            std::cerr << '0';
-        else if (1 & (o >> (HW2_M1 - i)))
-            std::cerr << '1';
-        else
-            std::cerr << '.';
-        if (i % HW == HW_M1)
-            std::cerr << std::endl;
-    }
-}
-
 void mm_print_epi32(__m128i v) {
     int* varray = (int*)&v;
     for (int i = 0; i < 4; ++i) {
@@ -307,11 +227,11 @@ inline uint_fast8_t first_bit(uint64_t *x) {
     @param x                    a pointer of a bitboard
 */
 inline uint_fast8_t next_bit(uint64_t *x) {
-    #if USE_FAST_NEXT_BIT
-        *x = _blsr_u64(*x);
-    #else
-        *x &= *x - 1;
-    #endif
+#if USE_FAST_NEXT_BIT
+    *x = _blsr_u64(*x);
+#else
+    *x &= *x - 1;
+#endif
     return ctz(x);
 }
 
@@ -343,11 +263,11 @@ inline uint64_t split_v_line(uint_fast8_t x, int_fast8_t t) {
     @param t                    a type of the line
 */
 inline uint_fast8_t join_h_line(uint64_t x, int t) {
-    #if USE_FAST_JOIN_H_LINE
-        return _bextr_u64(x, HW * t, 8);
-    #else
-        return (x >> (HW * t)) & 0b11111111U;
-    #endif
+#if USE_FAST_JOIN_H_LINE
+    return _bextr_u64(x, HW * t, 8);
+#else
+    return (x >> (HW * t)) & 0b11111111U;
+#endif
 }
 
 /*
