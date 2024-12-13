@@ -24,48 +24,25 @@
 /*
     @brief Search switch parameters
 */
-#define END_FAST_DEPTH 6
-#define END_SIMPLE_DEPTH 10
-#define MID_TO_END_DEPTH 13
-//#define MID_TO_END_DEPTH_MPC 12
-#define MID_SIMPLE_DEPTH 5
+constexpr int END_FAST_DEPTH = 6;
+constexpr int END_SIMPLE_DEPTH = 10;
+constexpr int MID_TO_END_DEPTH = 13;
+constexpr int MID_SIMPLE_DEPTH = 5;
 
 
 
 
-#define TIME_LIMIT_INF 18446744073709551615ULL
+constexpr uint64_t TIME_LIMIT_INF = 18446744073709551615ULL;
 
 
 /*
     @brief Search constant
 */
-#define SCORE_UNDEFINED -SCORE_INF
-#define MOVE_UNDEFINED 127
-#define MOVE_NOMOVE 65
-#define MOVE_PASS 64
+constexpr int SCORE_UNDEFINED = -126;
+constexpr int MOVE_UNDEFINED = 125;
+constexpr int MOVE_NOMOVE = 65;
+constexpr int MOVE_PASS = 64;
 constexpr int SEARCH_BOOK = -1;
-
-inline void calc_eval_features(Board *board, Eval_search *eval);
-#if USE_SIMD
-    inline void eval_move(Eval_search *eval, const Flip *flip, const Board *board);
-    inline void eval_undo(Eval_search *eval);
-    inline void eval_pass(Eval_search *eval, const Board *board);
-    #if USE_LIGHT_EVALUATION
-    inline void eval_move_light(Eval_search *eval, const Flip *flip, const Board *board);
-    inline void eval_undo_light(Eval_search *eval);
-    inline void eval_pass_light(Eval_search *eval, const Board *board);
-    #endif
-    inline void eval_move_endsearch(Eval_search *eval, const Flip *flip, const Board *board);
-    inline void eval_undo_endsearch(Eval_search *eval);
-    inline void eval_pass_endsearch(Eval_search *eval, const Board *board);
-#else
-    inline void eval_move(Eval_search *eval, const Flip *flip);
-    inline void eval_undo(Eval_search *eval, const Flip *flip);
-    inline void eval_pass(Eval_search *eval);
-    inline void eval_move_endsearch(Eval_search *eval, const Flip *flip);
-    inline void eval_undo_endsearch(Eval_search *eval, const Flip *flip);
-    inline void eval_pass_endsearch(Eval_search *eval);
-#endif
 
 /*
     @brief Stability cutoff threshold
@@ -120,6 +97,24 @@ constexpr uint64_t parity_table[16] = {
 };
 
 
+inline void calc_eval_features(Board *board, Eval_search *eval);
+#if USE_SIMD
+inline void eval_move(Eval_search *eval, const Flip *flip, const Board *board);
+inline void eval_undo(Eval_search *eval);
+inline void eval_pass(Eval_search *eval, const Board *board);
+inline void eval_move_endsearch(Eval_search *eval, const Flip *flip, const Board *board);
+inline void eval_undo_endsearch(Eval_search *eval);
+inline void eval_pass_endsearch(Eval_search *eval, const Board *board);
+#else
+inline void eval_move(Eval_search *eval, const Flip *flip);
+inline void eval_undo(Eval_search *eval, const Flip *flip);
+inline void eval_pass(Eval_search *eval);
+inline void eval_move_endsearch(Eval_search *eval, const Flip *flip);
+inline void eval_undo_endsearch(Eval_search *eval, const Flip *flip);
+inline void eval_pass_endsearch(Eval_search *eval);
+#endif
+
+
 
 /*
     @brief Search result structure
@@ -154,18 +149,20 @@ struct Search_result {
         : level(0), policy(MOVE_UNDEFINED), value(SCORE_UNDEFINED), depth(-1), time(0), nodes(0), clog_time(0), clog_nodes(0), nps(0), is_end_search(false), probability(0) {}
 
     bool operator<(const Search_result &another) const {
-        if (depth == SEARCH_BOOK && another.depth != SEARCH_BOOK)
+        if (depth == SEARCH_BOOK && another.depth != SEARCH_BOOK) {
             return false;
-        else if (depth != SEARCH_BOOK && another.depth == SEARCH_BOOK)
+        } else if (depth != SEARCH_BOOK && another.depth == SEARCH_BOOK) {
             return true;
+        }
         return value < another.value;
     }
 
     bool operator>(const Search_result &another) const {
-        if (another.depth == SEARCH_BOOK && depth != SEARCH_BOOK)
+        if (another.depth == SEARCH_BOOK && depth != SEARCH_BOOK) {
             return false;
-        else if (another.depth != SEARCH_BOOK && depth == SEARCH_BOOK)
+        } else if (another.depth != SEARCH_BOOK && depth == SEARCH_BOOK) {
             return true;
+        }
         return value > another.value;
     }
 };
@@ -275,11 +272,11 @@ class Search {
             @param flip                 Flip information
         */
         inline void move(const Flip *flip) {
-            #if USE_SIMD
-                eval_move(&eval, flip, &board);
-            #else
-                eval_move(&eval, flip);
-            #endif
+#if USE_SIMD
+            eval_move(&eval, flip, &board);
+#else
+            eval_move(&eval, flip);
+#endif
             board.move_board(flip);
             ++n_discs;
             parity ^= cell_div4[flip->pos];
@@ -291,11 +288,11 @@ class Search {
             @param flip                 Flip information
         */
         inline void undo(const Flip *flip) {
-            #if USE_SIMD
-                eval_undo(&eval);
-            #else
-                eval_undo(&eval, flip);
-            #endif
+#if USE_SIMD
+            eval_undo(&eval);
+#else
+            eval_undo(&eval, flip);
+#endif
             board.undo_board(flip);
             --n_discs;
             parity ^= cell_div4[flip->pos];
@@ -305,62 +302,13 @@ class Search {
             @brief pass board
         */
         inline void pass() {
-            #if USE_SIMD
-                eval_pass(&eval, &board);
-            #else
-                eval_pass(&eval);
-            #endif
+#if USE_SIMD
+            eval_pass(&eval, &board);
+#else
+            eval_pass(&eval);
+#endif
             board.pass();
         }
-
-        #if USE_LIGHT_EVALUATION
-        /*
-            @brief Move board and other variables
-
-            @param flip                 Flip information
-        */
-        inline void move_light(const Flip *flip) {
-            #if USE_SIMD
-                eval_move_light(&eval, flip, &board);
-            #else
-                TODO
-                eval_move(&eval, flip);
-            #endif
-            board.move_board(flip);
-            ++n_discs;
-            parity ^= cell_div4[flip->pos];
-        }
-
-        /*
-            @brief Undo board and other variables
-
-            @param flip                 Flip information
-        */
-        inline void undo_light(const Flip *flip) {
-            #if USE_SIMD
-                eval_undo_light(&eval);
-            #else
-                TODO
-                eval_undo(&eval, flip);
-            #endif
-            board.undo_board(flip);
-            --n_discs;
-            parity ^= cell_div4[flip->pos];
-        }
-
-        /*
-            @brief pass board
-        */
-        inline void pass_light() {
-            #if USE_SIMD
-                eval_pass_light(&eval, &board);
-            #else
-                TODO
-                eval_pass(&eval);
-            #endif
-            board.pass();
-        }
-        #endif
 
         /*
             @brief Move board and other variables
@@ -368,11 +316,11 @@ class Search {
             @param flip                 Flip information
         */
         inline void move_endsearch(const Flip *flip) {
-            #if USE_SIMD
-                eval_move_endsearch(&eval, flip, &board);
-            #else
-                eval_move_endsearch(&eval, flip);
-            #endif
+#if USE_SIMD
+            eval_move_endsearch(&eval, flip, &board);
+#else
+            eval_move_endsearch(&eval, flip);
+#endif
             board.move_board(flip);
             ++n_discs;
             parity ^= cell_div4[flip->pos];
@@ -384,11 +332,11 @@ class Search {
             @param flip                 Flip information
         */
         inline void undo_endsearch(const Flip *flip) {
-            #if USE_SIMD
-                eval_undo_endsearch(&eval);
-            #else
-                eval_undo_endsearch(&eval, flip);
-            #endif
+#if USE_SIMD
+            eval_undo_endsearch(&eval);
+#else
+            eval_undo_endsearch(&eval, flip);
+#endif
             board.undo_board(flip);
             --n_discs;
             parity ^= cell_div4[flip->pos];
@@ -398,11 +346,11 @@ class Search {
             @brief pass board
         */
         inline void pass_endsearch() {
-            #if USE_SIMD
-                eval_pass_endsearch(&eval, &board);
-            #else
-                eval_pass_endsearch(&eval);
-            #endif
+#if USE_SIMD
+            eval_pass_endsearch(&eval, &board);
+#else
+            eval_pass_endsearch(&eval);
+#endif
             board.pass();
         }
 
@@ -454,9 +402,9 @@ class Search {
         */
         inline void undo_lastN(const Flip *flip) {
             board.undo_board(flip);
-            #if !USE_SIMD
-                parity ^= cell_div4[flip->pos];
-            #endif
+#if !USE_SIMD
+            parity ^= cell_div4[flip->pos];
+#endif
         }
 
         /*
