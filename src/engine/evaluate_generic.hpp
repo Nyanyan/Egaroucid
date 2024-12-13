@@ -577,7 +577,7 @@ inline void eval_move(Eval_search *eval, const Flip *flip) {
     ++eval->feature_idx;
 }
 
-inline void eval_undo(Eval_search *eval, const Flip *flip) {
+inline void eval_undo(Eval_search *eval) {
     --eval->feature_idx;
 }
 
@@ -623,7 +623,7 @@ inline void eval_move_endsearch(Eval_search *eval, const Flip *flip) {
     ++eval->feature_idx;
 }
 
-inline void eval_undo_endsearch(Eval_search *eval, const Flip *flip) {
+inline void eval_undo_endsearch(Eval_search *eval) {
     --eval->feature_idx;
 }
 

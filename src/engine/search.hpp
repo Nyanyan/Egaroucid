@@ -98,19 +98,17 @@ constexpr uint64_t parity_table[16] = {
 
 
 inline void calc_eval_features(Board *board, Eval_search *eval);
+inline void eval_undo(Eval_search *eval);
+inline void eval_undo_endsearch(Eval_search *eval);
 #if USE_SIMD
 inline void eval_move(Eval_search *eval, const Flip *flip, const Board *board);
-inline void eval_undo(Eval_search *eval);
 inline void eval_pass(Eval_search *eval, const Board *board);
 inline void eval_move_endsearch(Eval_search *eval, const Flip *flip, const Board *board);
-inline void eval_undo_endsearch(Eval_search *eval);
 inline void eval_pass_endsearch(Eval_search *eval, const Board *board);
 #else
 inline void eval_move(Eval_search *eval, const Flip *flip);
-inline void eval_undo(Eval_search *eval, const Flip *flip);
 inline void eval_pass(Eval_search *eval);
 inline void eval_move_endsearch(Eval_search *eval, const Flip *flip);
-inline void eval_undo_endsearch(Eval_search *eval, const Flip *flip);
 inline void eval_pass_endsearch(Eval_search *eval);
 #endif
 
@@ -288,11 +286,7 @@ class Search {
             @param flip                 Flip information
         */
         inline void undo(const Flip *flip) {
-#if USE_SIMD
             eval_undo(&eval);
-#else
-            eval_undo(&eval, flip);
-#endif
             board.undo_board(flip);
             --n_discs;
             parity ^= cell_div4[flip->pos];
@@ -332,11 +326,7 @@ class Search {
             @param flip                 Flip information
         */
         inline void undo_endsearch(const Flip *flip) {
-#if USE_SIMD
             eval_undo_endsearch(&eval);
-#else
-            eval_undo_endsearch(&eval, flip);
-#endif
             board.undo_board(flip);
             --n_discs;
             parity ^= cell_div4[flip->pos];

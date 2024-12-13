@@ -38,7 +38,6 @@ constexpr int N_16BIT = 65536; // 2 ^ 16
 constexpr int INF = 100000000;
 constexpr int SCORE_INF = 127;
 constexpr int SCORE_MAX = 64;
-constexpr int MOVE_PASS = 64;
 
 // undefined legal bitboard: set bit on d4, d5, e4, and e5
 constexpr uint64_t LEGAL_UNDEFINED = 0x0000001818000000ULL;
