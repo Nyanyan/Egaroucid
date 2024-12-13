@@ -20,28 +20,28 @@
 #include "setting.hpp"
 
 // board size definition
-#define HW 8
-#define HW_M1 7
-#define HW_P1 9
-#define HW2 64
-#define HW2_M1 63
-#define HW2_P1 65
+constexpr int HW = 8;
+constexpr int HW_M1 = 7;
+constexpr int HW_P1 = 9;
+constexpr int HW2 = 64;
+constexpr int HW2_M1 = 63;
+constexpr int HW2_P1 = 65;
 
 // color definition
-#define BLACK 0
-#define WHITE 1
-#define VACANT 2
+constexpr int BLACK = 0;
+constexpr int WHITE = 1;
+constexpr int VACANT = 2;
 
 // constant
-#define N_8BIT 256 // 2 ^ 8
-#define N_16BIT 65536 // 2 ^ 16
-#define INF 100000000
-#define SCORE_INF 127
-#define SCORE_MAX 64
-#define MOVE_PASS 64
+constexpr int N_8BIT = 256; // 2 ^ 8
+constexpr int N_16BIT = 65536; // 2 ^ 16
+constexpr int INF = 100000000;
+constexpr int SCORE_INF = 127;
+constexpr int SCORE_MAX = 64;
+constexpr int MOVE_PASS = 64;
 
 // undefined legal bitboard: set bit on d4, d5, e4, and e5
-#define LEGAL_UNDEFINED 0x0000001818000000ULL
+constexpr uint64_t LEGAL_UNDEFINED = 0x0000001818000000ULL;
 
 struct Value_policy {
     int value;
