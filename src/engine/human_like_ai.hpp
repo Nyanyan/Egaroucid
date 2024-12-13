@@ -148,7 +148,7 @@ Search_result human_like_ai(Board board, int level, bool show_log) {
             res.is_end_search = true;
             res.probability = 100;
             return res;
-        } else{
+        } else {
             value_sign = -1;
         }
     }
