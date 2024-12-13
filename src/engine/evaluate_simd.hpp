@@ -27,7 +27,7 @@
 /*
     @brief evaluation pattern definition for SIMD
 */
-#define CEIL_N_SYMMETRY_PATTERNS 64         // N_SYMMETRY_PATTRENS
+#define CEIL_N_PATTERN_FEATURES 64         // N_SYMMETRY_PATTRENS
 #define N_PATTERN_PARAMS_RAW 612360
 #define N_PATTERN_PARAMS (N_PATTERN_PARAMS_RAW + 1) // +1 for byte bound
 #define PATTERN4_START_IDX 52488            // special case
@@ -52,7 +52,7 @@
 #define SIMD_EVAL_MAX_VALUE_MO_END 16380
 #define SHIFT_EVAL_MO_END 139968 // pattern_starts[8] - 1
 
-constexpr Feature_to_coord feature_to_coord[CEIL_N_SYMMETRY_PATTERNS] = {
+constexpr Feature_to_coord feature_to_coord[CEIL_N_PATTERN_FEATURES] = {
     // 0 hv2
     {8, {COORD_A2, COORD_B2, COORD_C2, COORD_D2, COORD_E2, COORD_F2, COORD_G2, COORD_H2, COORD_NO, COORD_NO}},
     {8, {COORD_B1, COORD_B2, COORD_B3, COORD_B4, COORD_B5, COORD_B6, COORD_B7, COORD_B8, COORD_NO, COORD_NO}},
@@ -356,9 +356,9 @@ inline void pre_calculate_eval_constant() {
         );
     }
     { // eval_move initialization
-        uint16_t c2f[CEIL_N_SYMMETRY_PATTERNS];
+        uint16_t c2f[CEIL_N_PATTERN_FEATURES];
         for (int cell = 0; cell < HW2; ++cell) { // 0 for h8, 63 for a1
-            for (int i = 0; i < CEIL_N_SYMMETRY_PATTERNS; ++i)
+            for (int i = 0; i < CEIL_N_PATTERN_FEATURES; ++i)
                 c2f[i] = 0;
             for (int i = 0; i < coord_to_feature[cell].n_features; ++i)
                 c2f[coord_to_feature[cell].features[i].feature] = coord_to_feature[cell].features[i].x;
@@ -374,7 +374,7 @@ inline void pre_calculate_eval_constant() {
         }
         for (int bits = 0; bits < N_16BIT; ++bits) { // 1: unflipped discs, 0: others
             for (int group = 0; group < N_SIMD_EVAL_FEATURE_GROUP; ++group) { // a1-h2, a3-h4, ..., a7-h8
-                for (int i = 0; i < CEIL_N_SYMMETRY_PATTERNS; ++i)
+                for (int i = 0; i < CEIL_N_PATTERN_FEATURES; ++i)
                     c2f[i] = 0;
                 for (int cell = 0; cell < N_SIMD_EVAL_FEATURE_CELLS; ++cell) {
                     if (1 & (bits >> cell)) {
@@ -484,7 +484,7 @@ inline int calc_pattern(const int phase_idx, Eval_features *features) {
     res256 = _mm256_and_si256(res256, eval_lower_mask);
     __m128i res128 = _mm_add_epi32(_mm256_castsi256_si128(res256), _mm256_extracti128_si256(res256, 1));
     res128 = _mm_hadd_epi32(res128, res128);
-    return _mm_cvtsi128_si32(res128) + _mm_extract_epi32(res128, 1) - SIMD_EVAL_MAX_VALUE * N_SYMMETRY_PATTERNS;
+    return _mm_cvtsi128_si32(res128) + _mm_extract_epi32(res128, 1) - SIMD_EVAL_MAX_VALUE * N_PATTERN_FEATURES;
 }
 
 inline int calc_pattern_move_ordering_end(Eval_features *features) {
@@ -494,7 +494,7 @@ inline int calc_pattern_move_ordering_end(Eval_features *features) {
     res256 = _mm256_and_si256(res256, eval_lower_mask);
     __m128i res128 = _mm_add_epi32(_mm256_castsi256_si128(res256), _mm256_extracti128_si256(res256, 1));
     res128 = _mm_hadd_epi32(res128, res128);
-    return _mm_cvtsi128_si32(res128) + _mm_extract_epi32(res128, 1) - SIMD_EVAL_MAX_VALUE_MO_END * N_SYMMETRY_PATTERNS_MO_END;
+    return _mm_cvtsi128_si32(res128) + _mm_extract_epi32(res128, 1) - SIMD_EVAL_MAX_VALUE_MO_END * N_PATTERN_FEATURES_MO_END;
 }
 
 inline void calc_eval_features(Board *board, Eval_search *eval);

@@ -25,7 +25,7 @@
 #define MAX_CELL_PATTERNS_MOVE_ORDERING_END 6
 
 
-constexpr Feature_to_coord feature_to_coord[N_SYMMETRY_PATTERNS] = {
+constexpr Feature_to_coord feature_to_coord[N_PATTERN_FEATURES] = {
     // 0 hv2
     {8, {COORD_A2, COORD_B2, COORD_C2, COORD_D2, COORD_E2, COORD_F2, COORD_G2, COORD_H2, COORD_NO, COORD_NO}},
     {8, {COORD_B1, COORD_B2, COORD_B3, COORD_B4, COORD_B5, COORD_B6, COORD_B7, COORD_B8, COORD_NO, COORD_NO}},
@@ -267,7 +267,7 @@ constexpr int pattern_sizes[N_PATTERNS] = {
 /*
     @brief feature to pattern
 */
-constexpr int feature_to_pattern[N_SYMMETRY_PATTERNS] = {
+constexpr int feature_to_pattern[N_PATTERN_FEATURES] = {
     0, 0, 0, 0,
     1, 1, 1, 1,
     2, 2, 2, 2,
@@ -450,7 +450,7 @@ bool evaluate_init(bool show_log) {
 */
 inline int calc_pattern(const int phase_idx, Eval_search *eval) {
     int res = 0;
-    for (int i = 0; i < N_SYMMETRY_PATTERNS; ++i)
+    for (int i = 0; i < N_PATTERN_FEATURES; ++i)
         res += pattern_arr[eval->reversed[eval->feature_idx]][phase_idx][feature_to_pattern[i]][eval->features[eval->feature_idx][i]];
     return res;
 }
@@ -532,7 +532,7 @@ inline uint_fast16_t pick_pattern_idx(const uint_fast8_t b_arr[], const Feature_
 inline void calc_eval_features(Board *board, Eval_search *eval) {
     uint_fast8_t b_arr[HW2];
     board->translate_to_arr_player(b_arr);
-    for (int i = 0; i < N_SYMMETRY_PATTERNS; ++i)
+    for (int i = 0; i < N_PATTERN_FEATURES; ++i)
         eval->features[0][i] = pick_pattern_idx(b_arr, &feature_to_coord[i]);
     eval->reversed[0] = 0;
     eval->feature_idx = 0;
@@ -541,7 +541,7 @@ inline void calc_eval_features(Board *board, Eval_search *eval) {
 inline void eval_move(Eval_search *eval, const Flip *flip) {
     uint_fast8_t i, cell;
     uint64_t f;
-    for (i = 0; i < N_SYMMETRY_PATTERNS; ++i) {
+    for (i = 0; i < N_PATTERN_FEATURES; ++i) {
         eval->features[eval->feature_idx + 1][i] = eval->features[eval->feature_idx][i];
     }
     if (eval->reversed[eval->feature_idx]) {

@@ -15,26 +15,26 @@
     @brief evaluation pattern definition
 */
 // disc patterns
-#define N_PATTERNS 16
-#define MAX_PATTERN_CELLS 10
-#define MAX_CELL_PATTERNS 15
-#define MAX_EVALUATE_IDX 59049
-#define N_SYMMETRY_PATTERNS 64
+constexpr int N_PATTERNS = 16;
+constexpr int MAX_CELL_PATTERNS = 15; // 1 cell belongs up to 15 patterns
+constexpr int MAX_PATTERN_CELLS = 10; // up to 10 cells for pattern
+constexpr int MAX_EVALUATE_IDX = 59049; // 3^10: up to 10 cells for pattern
+constexpr int N_PATTERN_FEATURES = 64; // 64 features are used
 #if USE_SIMD_EVALUATION
-    #define N_SIMD_EVAL_FEATURES 4 // 16 (elems per 256 bit vector) * N_SIMD_EVAL_FEATURES >= N_SYMMETRY_PATTERNS
+constexpr int N_SIMD_EVAL_FEATURES = 4; // 16 (elems per 256 bit vector) * N_SIMD_EVAL_FEATURES >= N_PATTERN_FEATURES
 #endif
 
 // additional features
-#define MAX_STONE_NUM 65
+constexpr int MAX_STONE_NUM = 65; // [0,64]
 
 // evaluation phase definition
-#define N_PHASES 60
-#define PHASE_N_DISCS 1
+constexpr int N_PHASES = 60;
+constexpr int PHASE_N_DISCS = 1; // 60 (moves) / N_PHASES
 
 // move ordering evaluation function
-#define MAX_EVALUATE_IDX_MO 59049
-#define N_PATTERNS_MO_END 4
-#define N_SYMMETRY_PATTERNS_MO_END 16
+constexpr int MAX_EVALUATE_IDX_MO = 59049; // 3^10: up to 10 cells for pattern
+constexpr int N_PATTERNS_MO_END = 4; // only 4 patterns are used for move ordering end
+constexpr int N_PATTERN_FEATURES_MO_END = 16; // 16 features are used for move ordering end
 
 /*
     @brief value definition
@@ -190,7 +190,7 @@ struct Coord_to_feature {
     };
 #else
     struct Eval_search {
-        uint_fast16_t features[HW2 - 4][N_SYMMETRY_PATTERNS];
+        uint_fast16_t features[HW2 - 4][N_PATTERN_FEATURES];
         bool reversed[HW2 - 4];
         uint_fast8_t feature_idx;
     };
