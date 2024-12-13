@@ -23,24 +23,23 @@ Search_result ai(Board board, int level, bool use_book, int book_acc_level, bool
 Search_result ai_legal(Board board, int level, bool use_book, int book_acc_level, bool use_multi_thread, bool show_log, uint64_t use_legal);
 void search_new_leaf(Board board, int level, int book_elem_value, bool use_multi_thread);
 
-#define BOOK_N_ACCEPT_LEVEL 11
-#define BOOK_ACCURACY_LEVEL_INF 10
-#define BOOK_LEAF_LEVEL 5
-
-#define LEVEL_UNDEFINED -1
-#define LEVEL_HUMAN 70
-#define BOOK_LOSS_IGNORE_THRESHOLD 8
-#define LEAF_CALCULATE_LEVEL 5
-
-#define FORCE_BOOK_LEVEL false
 #define FORCE_BOOK_DEPTH false
 
-#define BOOK_EXTENSION ".egbk3"
-#define BOOK_EXTENSION_NODOT "egbk3"
+constexpr int BOOK_N_ACCEPT_LEVEL = 11;
+constexpr int BOOK_ACCURACY_LEVEL_INF = 10;
+constexpr int BOOK_LEAF_LEVEL = 5;
 
-#define ADD_LEAF_SPECIAL_LEVEL -1
+constexpr int LEVEL_UNDEFINED = -1;
+constexpr int LEVEL_HUMAN = 70;
+constexpr int BOOK_LOSS_IGNORE_THRESHOLD = 8;
+constexpr int LEAF_CALCULATE_LEVEL = 5;
 
-#define MAX_N_LINES 4000000000
+constexpr std::string BOOK_EXTENSION = (std::string)".egbk3";
+constexpr std::string BOOK_EXTENSION_NODOT = (std::string)"egbk3";
+
+constexpr int ADD_LEAF_SPECIAL_LEVEL = -1;
+
+constexpr uint64_t MAX_N_LINES = 4000000000; // < 2^32
 
 /*
     @brief book result structure
