@@ -45,13 +45,15 @@ void calc_local_strategy(Board board, int level, double res[], bool show_log) {
             board.player ^= bit;
             board.opponent ^= bit;
                 Search_result result1 = ai(board, level, true, 0, true, false);
-                value_diff_opponent[cell] = std::max(0, complete_result.value - result1.value);
+                value_diff_opponent[cell] = std::max(0, result1.value - complete_result.value);
+                //value_diff_opponent[cell] = std::abs(result1.value - complete_result.value);
             board.player ^= bit;
             board.opponent ^= bit;
             // player -> empty
             board.player ^= bit;
                 Search_result result2 = ai(board, level, true, 0, true, false);
-                value_diff_empty[cell] = std::max(0, complete_result.value - result2.value);
+                value_diff_empty[cell] = std::max(0, result2.value - complete_result.value);
+                //value_diff_empty[cell] = std::abs(result2.value - complete_result.value);
             board.player ^= bit;
             max_diffs[cell] = std::max(value_diff_opponent[cell], value_diff_empty[cell]);
             min_diffs[cell] = std::min(value_diff_opponent[cell], value_diff_empty[cell]);
@@ -61,25 +63,29 @@ void calc_local_strategy(Board board, int level, double res[], bool show_log) {
             board.opponent ^= bit;
                 Search_result result1 = ai(board, level, true, 0, true, false);
                 value_diff_player[cell] = std::max(0, result1.value - complete_result.value);
+                //value_diff_player[cell] = std::abs(result1.value - complete_result.value);
             board.player ^= bit;
             board.opponent ^= bit;
             // opponent -> empty
             board.opponent ^= bit;
                 Search_result result2 = ai(board, level, true, 0, true, false);
                 value_diff_empty[cell] = std::max(0, result2.value - complete_result.value);
+                //value_diff_empty[cell] = std::abs(result2.value - complete_result.value);
             board.opponent ^= bit;
             max_diffs[cell] = std::max(value_diff_player[cell], value_diff_empty[cell]);
             min_diffs[cell] = std::min(value_diff_player[cell], value_diff_empty[cell]);
-        } else {
+        } else if ((board.player | board.opponent) & bit_around[cell]){ // next to disc
             // empty -> player
             board.player ^= bit;
                 Search_result result1 = ai(board, level, true, 0, true, false);
                 value_diff_player[cell] = std::max(0, result1.value - complete_result.value);
+                //value_diff_player[cell] = std::abs(result1.value - complete_result.value);
             board.player ^= bit;
             // empty -> opponent
             board.opponent ^= bit;
                 Search_result result2 = ai(board, level, true, 0, true, false);
                 value_diff_opponent[cell] = std::max(0, result2.value - complete_result.value);
+                //value_diff_opponent[cell] = std::abs(result2.value - complete_result.value);
             board.opponent ^= bit;
             max_diffs[cell] = std::min(value_diff_player[cell], value_diff_opponent[cell]);
             min_diffs[cell] = std::min(value_diff_player[cell], value_diff_opponent[cell]);
