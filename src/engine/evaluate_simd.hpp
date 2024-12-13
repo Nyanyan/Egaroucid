@@ -27,22 +27,19 @@
 /*
     @brief evaluation pattern definition for SIMD
 */
-#define CEIL_N_PATTERN_FEATURES 64         // N_SYMMETRY_PATTRENS
-#define N_PATTERN_PARAMS_RAW 612360
-#define N_PATTERN_PARAMS (N_PATTERN_PARAMS_RAW + 1) // +1 for byte bound
-#define PATTERN4_START_IDX 52488            // special case
-#define PATTERN6_START_IDX 78732            // special case
-#define SIMD_EVAL_MAX_VALUE 4092            // evaluate range [-4092, 4092]
-#define N_SIMD_EVAL_FEATURES_SIMPLE 2
-#define N_SIMD_EVAL_FEATURES_COMP 2
-#define N_SIMD_EVAL_FEATURE_CELLS 16
-#define N_SIMD_EVAL_FEATURE_GROUP 4
+constexpr int CEIL_N_PATTERN_FEATURES = 64;     // ceil2^n(N_PATTERN_FEATURES)
+constexpr int N_PATTERN_PARAMS_RAW = 612360;    // sum of pattern parameters for 1 phase
+constexpr int N_PATTERN_PARAMS = (N_PATTERN_PARAMS_RAW + 1); // +1 for byte bound
+constexpr int PATTERN4_START_IDX = 52488;       // special case
+constexpr int PATTERN6_START_IDX = 78732;       // special case
+constexpr int SIMD_EVAL_MAX_VALUE = 4092;       // evaluate range [-4092, 4092]
+constexpr int N_SIMD_EVAL_FEATURES_SIMPLE = 2;
+constexpr int N_SIMD_EVAL_FEATURES_COMP = 2;
+constexpr int N_SIMD_EVAL_FEATURE_CELLS = 16;
+constexpr int N_SIMD_EVAL_FEATURE_GROUP = 4;
 
 // number of cells included in the group
-#define MAX_N_CELLS_GROUP0 9
-#define MAX_N_CELLS_GROUP1 10
-#define MAX_N_CELLS_GROUP2 10
-#define MAX_N_CELLS_GROUP3 10
+constexpr int MAX_N_CELLS_GROUP[4] = {9, 10, 10, 10};
 
 
 /*
