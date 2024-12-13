@@ -16,23 +16,23 @@
 #include "board.hpp"
 #include "book.hpp"
 
-#define BOOK_ACCURACY_LEVEL_UNDEFINED -127
-#define N_BOOK_ACCURACY_LEVEL 6
-#define BOOK_ACCURACY_A_SHIFT 5
+constexpr int BOOK_ACCURACY_LEVEL_UNDEFINED = -127;
+constexpr int N_BOOK_ACCURACY_LEVEL = 6;
+constexpr int BOOK_ACCURACY_A_SHIFT = 5;
 // [-2, 2] range
-#define BOOK_ACCURACY_LEVEL_AA (0 - BOOK_ACCURACY_A_SHIFT)
-#define BOOK_ACCURACY_LEVEL_AB (1 - BOOK_ACCURACY_A_SHIFT)
-#define BOOK_ACCURACY_LEVEL_AC (2 - BOOK_ACCURACY_A_SHIFT)
-#define BOOK_ACCURACY_LEVEL_AD (3 - BOOK_ACCURACY_A_SHIFT)
-#define BOOK_ACCURACY_LEVEL_AE (4 - BOOK_ACCURACY_A_SHIFT)
-#define BOOK_ACCURACY_LEVEL_AF (5 - BOOK_ACCURACY_A_SHIFT)
+constexpr int BOOK_ACCURACY_LEVEL_AA = (0 - BOOK_ACCURACY_A_SHIFT);
+constexpr int BOOK_ACCURACY_LEVEL_AB = (1 - BOOK_ACCURACY_A_SHIFT);
+constexpr int BOOK_ACCURACY_LEVEL_AC = (2 - BOOK_ACCURACY_A_SHIFT);
+constexpr int BOOK_ACCURACY_LEVEL_AD = (3 - BOOK_ACCURACY_A_SHIFT);
+constexpr int BOOK_ACCURACY_LEVEL_AE = (4 - BOOK_ACCURACY_A_SHIFT);
+constexpr int BOOK_ACCURACY_LEVEL_AF = (5 - BOOK_ACCURACY_A_SHIFT);
 // [-1, 1] range
-#define BOOK_ACCURACY_LEVEL_A 0 // A: all lines calculated with perfect search line
-#define BOOK_ACCURACY_LEVEL_B 1 // B: at least one perfect search line found and other all lines calculated with endgame search line
-#define BOOK_ACCURACY_LEVEL_C 2 // C: all lines calculated with endgame search
-#define BOOK_ACCURACY_LEVEL_D 3 // D: at least one perfect search line found
-#define BOOK_ACCURACY_LEVEL_E 4 // E: at least one endgame search line found
-#define BOOK_ACCURACY_LEVEL_F 5 // F: other
+constexpr int BOOK_ACCURACY_LEVEL_A = 0; // A: all lines calculated with perfect search line
+constexpr int BOOK_ACCURACY_LEVEL_B = 1; // B: at least one perfect search line found and other all lines calculated with endgame search line
+constexpr int BOOK_ACCURACY_LEVEL_C = 2; // C: all lines calculated with endgame search
+constexpr int BOOK_ACCURACY_LEVEL_D = 3; // D: at least one perfect search line found
+constexpr int BOOK_ACCURACY_LEVEL_E = 4; // E: at least one endgame search line found
+constexpr int BOOK_ACCURACY_LEVEL_F = 5; // F: other
 
 class Book_accuracy {
     private:
@@ -71,14 +71,16 @@ class Book_accuracy {
 
     private:
         int book_accuracy_search(Board board, bool is_high_level) {
-            if (!global_searching)
+            if (!global_searching) {
                 return BOOK_ACCURACY_LEVEL_UNDEFINED;
+            }
             int res = get_raw(&board, is_high_level);
             if (res != BOOK_ACCURACY_LEVEL_UNDEFINED) {
                 return res;
             }
-            if (board.get_legal() == 0ULL)
+            if (board.get_legal() == 0ULL) {
                 board.pass();
+            }
             Book_elem book_elem = book.get(board);
             std::vector<Book_value> links = book.get_all_moves_with_value(&board);
             if (links.size() == 0) {
@@ -88,16 +90,18 @@ class Book_accuracy {
                     endgame_depth = get_level_endsearch_depth(book_elem.level);
                 }
                 int res = BOOK_ACCURACY_LEVEL_F;
-                if (complete_depth >= HW2 - board.n_discs())
+                if (complete_depth >= HW2 - board.n_discs()) {
                     res = BOOK_ACCURACY_LEVEL_A;
-                else if (endgame_depth >= HW2 - board.n_discs())
+                } else if (endgame_depth >= HW2 - board.n_discs()) {
                     res = BOOK_ACCURACY_LEVEL_C;
+                }
                 reg(board, res, is_high_level);
                 return res;
             }
             int best_score = -INF;
-            for (Book_value &link: links)
+            for (Book_value &link: links) {
                 best_score = std::max(best_score, link.value);
+            }
             bool is_end = true;
             uint32_t identifier = 0;
             Flip flip;
@@ -111,10 +115,12 @@ class Book_accuracy {
                     board.move_board(&flip);
                         int child_book_acc = book_accuracy_search(board, is_high_level);
                     board.undo_board(&flip);
-                    if (child_book_acc == BOOK_ACCURACY_LEVEL_UNDEFINED)
+                    if (child_book_acc == BOOK_ACCURACY_LEVEL_UNDEFINED) {
                         return BOOK_ACCURACY_LEVEL_UNDEFINED;
-                    for (int i = 0; i < N_BOOK_ACCURACY_LEVEL; ++i)
+                    }
+                    for (int i = 0; i < N_BOOK_ACCURACY_LEVEL; ++i) {
                         identifier |= (child_book_acc == i) << i;
+                    }
                 }
             }
             if (book_elem.leaf.value >= best_score - accept_loss) {
@@ -143,23 +149,26 @@ class Book_accuracy {
             // else:      RES = best_level
             res = BOOK_ACCURACY_LEVEL_F;
             if (identifier & (1 << BOOK_ACCURACY_LEVEL_A)) { // A found
-                if ((identifier & ~((1 << BOOK_ACCURACY_LEVEL_B) - 1)) == 0) // B-F not found -> RES = A
+                if ((identifier & ~((1 << BOOK_ACCURACY_LEVEL_B) - 1)) == 0) { // B-F not found -> RES = A
                     res = BOOK_ACCURACY_LEVEL_A;
-                else if ((identifier & ~((1 << BOOK_ACCURACY_LEVEL_D) - 1)) == 0) // D-F not found (and B or C found) -> RES = B
+                } else if ((identifier & ~((1 << BOOK_ACCURACY_LEVEL_D) - 1)) == 0) { // D-F not found (and B or C found) -> RES = B
                     res = BOOK_ACCURACY_LEVEL_B;
-                else // B and C not found, D-F found -> RES = D
+                } else { // B and C not found, D-F found -> RES = D
                     res = BOOK_ACCURACY_LEVEL_D;
+                }
             } else if (identifier & (1 << BOOK_ACCURACY_LEVEL_B)) { // B found (A not found)
-                if ((identifier & ~((1 << BOOK_ACCURACY_LEVEL_D) - 1)) == 0) // D-F not found -> RES = B
+                if ((identifier & ~((1 << BOOK_ACCURACY_LEVEL_D) - 1)) == 0) { // D-F not found -> RES = B
                     res = BOOK_ACCURACY_LEVEL_B;
-                else // D-F found -> RES = D
+                } else { // D-F found -> RES = D
                     res = BOOK_ACCURACY_LEVEL_D;
+                }
             } else if (identifier & (1 << BOOK_ACCURACY_LEVEL_C)) { // C found (A and B not found)
-                if ((identifier & ~((1 << BOOK_ACCURACY_LEVEL_D) - 1)) == 0) // D-F not found -> RES = C
+                if ((identifier & ~((1 << BOOK_ACCURACY_LEVEL_D) - 1)) == 0) { // D-F not found -> RES = C
                     res = BOOK_ACCURACY_LEVEL_C;
-                else // D-F found -> RES = D
+                } else { // D-F found -> RES = D
                     res = BOOK_ACCURACY_LEVEL_D;
-            } else{ // D-F found (A-C not found)
+                }
+            } else { // D-F found (A-C not found)
                 uint32_t lsb = (identifier >> 3); // bit: FED
                 lsb = pop_count_uint(~lsb & (lsb - 1)); // least bit is D: 0 E: 1 F: 2
                 res = BOOK_ACCURACY_LEVEL_D + lsb; // best accuracy level
