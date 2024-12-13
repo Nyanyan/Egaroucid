@@ -222,6 +222,10 @@ Search_result go_noprint(Board_info *board, Options *options, State *state) {
         }
         result = ai_time_limit(board->board, true, 0, true, options->show_log, remaining_time_msec);
     }
+
+    double local_strategy[HW2];
+    calc_local_strategy(board->board, 10, local_strategy, true);
+
     Flip flip;
     calc_flip(&flip, &board->board, result.policy);
     board->board.move_board(&flip);
@@ -245,10 +249,6 @@ void go(Board_info *board, Options *options, State *state, uint64_t start_time) 
     int before_player = board->player;
     Search_result result = go_noprint(board, options, state);
     update_time(before_player, state, options, tim() - start_time);
-    
-    double local_strategy[HW2];
-    calc_local_strategy(board->board, 10, local_strategy, true);
-
     if (options->show_log) {
         print_search_result_debug(result, options, state);
     }
