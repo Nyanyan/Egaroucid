@@ -11,12 +11,25 @@
 #pragma once
 #include "ai.hpp"
 
+void print_local_strategy(const double arr[]) {
+    for (int y = 0; y < HW; ++y) {
+        for (int x = 0; x < HW; ++x) {
+            int cell = HW2_M1 - (y * HW + x);
+            std::cout << std::fixed << std::setprecision(2) << arr[cell] << " ";
+        }
+        std::cout << std::endl;
+    }
+}
+
 void calc_local_strategy(Board board, int level, double res[], bool show_log) {
     int value_diff[HW2];
     for (int cell = 0; cell < HW2; ++cell) {
         value_diff[cell] = 0;
     }
     Search_result complete_result = ai(board, level, true, 0, true, false);
+    if (show_log) {
+        std::cerr << "complete result " << complete_result.value << std::endl;
+    }
     int n = 0;
     int diff_sum = 0;
     for (int cell = 0; cell < HW2; ++cell) {
@@ -30,6 +43,9 @@ void calc_local_strategy(Board board, int level, double res[], bool show_log) {
             board.opponent ^= bit;
             ++n;
             diff_sum += value_diff[cell];
+            if (show_log) {
+                std::cerr << idx_to_coord(cell) << " " << result.value << " " << result.value - complete_result.value << std::endl;
+            }
         } else {
 
         }
@@ -38,14 +54,4 @@ void calc_local_strategy(Board board, int level, double res[], bool show_log) {
         res[cell] = (double)value_diff[cell] / diff_sum;
     }
     print_local_strategy(res);
-}
-
-void print_local_strategy(const double arr[]) {
-    for (int y = 0; y < HW; ++y) {
-        for (int x = 0; x < HW; ++x) {
-            int cell = HW2_M1 - (y * HW + x);
-            std::cout << std::fixed << std::setprecision(2) << arr[cell] << " ";
-        }
-        std::cout << std::endl;
-    }
 }

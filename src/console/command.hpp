@@ -253,6 +253,8 @@ void go(Board_info *board, Options *options, State *state, uint64_t start_time) 
     } else {
         print_search_result(result, options, state);
     }
+    double local_strategy[HW2];
+    calc_local_strategy(board->board, 10, local_strategy, true);
 }
 
 void setboard(Board_info *board, Options *options, State *state, std::string board_str) {
