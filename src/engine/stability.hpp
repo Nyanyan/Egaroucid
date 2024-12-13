@@ -289,10 +289,11 @@ inline uint64_t calc_stability_bits(Board *board) {
 inline int stability_cut(Search *search, int *alpha, int *beta) {
     if (*beta >= stability_threshold[search->n_discs]) {
         int n_beta = HW2 - 2 * pop_count_ull(calc_stability(search->board.opponent, search->board.player));
-        if (n_beta <= *alpha)
+        if (n_beta <= *alpha) {
             return n_beta;
-        else if (n_beta < *beta)
+        } else if (n_beta < *beta) {
             *beta = n_beta;
+        }
     }
     return SCORE_UNDEFINED;
 }
@@ -301,10 +302,11 @@ inline int stability_cut(Search *search, int *alpha, int *beta) {
 inline int stability_cut_last4(Search *search, int *alpha, int beta) {
     if (*alpha <= -stability_threshold[60]) {
         int n_alpha = 2 * pop_count_ull(calc_stability(search->board.opponent, search->board.player)) - HW2;
-        if (n_alpha >= beta)
+        if (n_alpha >= beta) {
             return n_alpha;
-        else if (n_alpha > *alpha)
+        } else if (n_alpha > *alpha) {
             *alpha = n_alpha;
+        }
     }
     return SCORE_UNDEFINED;
 }
@@ -323,8 +325,9 @@ inline int stability_cut_last4(Search *search, int *alpha, int beta) {
 inline int stability_cut_nws(Search *search, int alpha) {
     if (alpha >= stability_threshold_nws[search->n_discs]) {
         int n_beta = HW2 - 2 * pop_count_ull(calc_stability(search->board.opponent, search->board.player));
-        if (n_beta <= alpha)
+        if (n_beta <= alpha) {
             return n_beta;
+        }
     }
     return SCORE_UNDEFINED;
 }
@@ -333,8 +336,9 @@ inline int stability_cut_nws(Search *search, int alpha) {
 inline int stability_cut_last4_nws(Search *search, int alpha) {
     if (alpha < -stability_threshold_nws[60]) {
         int n_alpha = 2 * pop_count_ull(calc_stability(search->board.opponent, search->board.player)) - HW2;
-        if (n_alpha > alpha)
+        if (n_alpha > alpha) {
             return n_alpha;
+        }
     }
     return SCORE_UNDEFINED;
 }
