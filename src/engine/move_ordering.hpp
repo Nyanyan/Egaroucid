@@ -31,16 +31,16 @@
 /*
     @brief constant
 */
-#define W_WIPEOUT 100000000
-#define W_1ST_MOVE 10000000
-#define W_2ND_MOVE 1000000
-#define MO_OFFSET_L_PM 38
+constexpr int W_WIPEOUT = 100000000;
+constexpr int W_1ST_MOVE = 10000000;
+constexpr int W_2ND_MOVE = 1000000;
+constexpr int MO_OFFSET_L_PM = 38;
 
 /*
     @brief constants for move ordering
 */
 #if TUNE_MOVE_ORDERING
-    #define N_MOVE_ORDERING_PARAM 14
+    constexpr int N_MOVE_ORDERING_PARAM = 14;
     int move_ordering_param_array[N_MOVE_ORDERING_PARAM] = {
         35, 17, 485, 269, 94, 
         17, 204, 7, 25, 
@@ -48,56 +48,56 @@
         18, 17, 300
     };
 
-    #define W_MOBILITY                  move_ordering_param_array[0]
-    #define W_POTENTIAL_MOBILITY        move_ordering_param_array[1]
-    #define W_TT_BONUS                  move_ordering_param_array[2]
-    #define W_VALUE                     move_ordering_param_array[3]
-    #define W_VALUE_DEEP_ADDITIONAL     move_ordering_param_array[4]
+    constexpr int W_MOBILITY                  = move_ordering_param_array[0];
+    constexpr int W_POTENTIAL_MOBILITY        = move_ordering_param_array[1];
+    constexpr int W_TT_BONUS                  = move_ordering_param_array[2];
+    constexpr int W_VALUE                     = move_ordering_param_array[3];
+    constexpr int W_VALUE_DEEP_ADDITIONAL     = move_ordering_param_array[4];
 
-    #define W_NWS_MOBILITY              move_ordering_param_array[5]
-    #define W_NWS_TT_BONUS              move_ordering_param_array[6]
-    #define W_NWS_VALUE                 move_ordering_param_array[7]
-    #define W_NWS_VALUE_DEEP_ADDITIONAL move_ordering_param_array[8]
+    constexpr int W_NWS_MOBILITY              = move_ordering_param_array[5];
+    constexpr int W_NWS_TT_BONUS              = move_ordering_param_array[6];
+    constexpr int W_NWS_VALUE                 = move_ordering_param_array[7];
+    constexpr int W_NWS_VALUE_DEEP_ADDITIONAL = move_ordering_param_array[8];
 
-    #define W_END_NWS_MOBILITY          move_ordering_param_array[9]
-    #define W_END_NWS_VALUE             move_ordering_param_array[10]
+    constexpr int W_END_NWS_MOBILITY          = move_ordering_param_array[9];
+    constexpr int W_END_NWS_VALUE             = move_ordering_param_array[10];
 
-    #define W_END_NWS_SIMPLE_MOBILITY   move_ordering_param_array[11]
-    #define W_END_NWS_SIMPLE_PARITY     move_ordering_param_array[12]
-    #define W_END_NWS_SIMPLE_TT_BONUS   move_ordering_param_array[13]
+    constexpr int W_END_NWS_SIMPLE_MOBILITY   = move_ordering_param_array[11];
+    constexpr int W_END_NWS_SIMPLE_PARITY     = move_ordering_param_array[12];
+    constexpr int W_END_NWS_SIMPLE_TT_BONUS   = move_ordering_param_array[13];
 
-    #define MOVE_ORDERING_PARAM_START 9
-    #define MOVE_ORDERING_PARAM_END 13
+    constexpr int MOVE_ORDERING_PARAM_START = 9;
+    constexpr int MOVE_ORDERING_PARAM_END = 13;
 #else
     // midgame search
-    #define W_MOBILITY 35
-    #define W_POTENTIAL_MOBILITY 17
-    #define W_TT_BONUS 485
-    #define W_VALUE 269
-    #define W_VALUE_DEEP_ADDITIONAL 94
+    constexpr int W_MOBILITY = 35;
+    constexpr int W_POTENTIAL_MOBILITY = 17;
+    constexpr int W_TT_BONUS = 485;
+    constexpr int W_VALUE = 269;
+    constexpr int W_VALUE_DEEP_ADDITIONAL = 94;
 
     // midgame null window search
-    #define W_NWS_MOBILITY 17
-    #define W_NWS_TT_BONUS 204
-    #define W_NWS_VALUE 7
-    #define W_NWS_VALUE_DEEP_ADDITIONAL 25
+    constexpr int W_NWS_MOBILITY = 17;
+    constexpr int W_NWS_TT_BONUS = 204;
+    constexpr int W_NWS_VALUE = 7;
+    constexpr int W_NWS_VALUE_DEEP_ADDITIONAL = 25;
 
     // endgame null window search
-    #define W_END_NWS_MOBILITY 40
-    #define W_END_NWS_VALUE 12
+    constexpr int W_END_NWS_MOBILITY = 40;
+    constexpr int W_END_NWS_VALUE = 12;
 
     // endgame simple null window search
-    #define W_END_NWS_SIMPLE_MOBILITY 18
-    #define W_END_NWS_SIMPLE_PARITY 17
-    #define W_END_NWS_SIMPLE_TT_BONUS 300
+    constexpr int W_END_NWS_SIMPLE_MOBILITY = 18;
+    constexpr int W_END_NWS_SIMPLE_PARITY = 17;
+    constexpr int W_END_NWS_SIMPLE_TT_BONUS = 300;
 #endif
 
-#define MOVE_ORDERING_VALUE_OFFSET_ALPHA 12
-#define MOVE_ORDERING_VALUE_OFFSET_BETA 8
-#define MOVE_ORDERING_NWS_VALUE_OFFSET_ALPHA 16
-#define MOVE_ORDERING_NWS_VALUE_OFFSET_BETA 6
+constexpr int MOVE_ORDERING_VALUE_OFFSET_ALPHA = 12;
+constexpr int MOVE_ORDERING_VALUE_OFFSET_BETA = 8;
+constexpr int MOVE_ORDERING_NWS_VALUE_OFFSET_ALPHA = 16;
+constexpr int MOVE_ORDERING_NWS_VALUE_OFFSET_BETA = 6;
 
-#define MOVE_ORDERING_MPC_LEVEL MPC_88_LEVEL
+constexpr int MOVE_ORDERING_MPC_LEVEL = MPC_88_LEVEL;
 
 int nega_alpha_eval1(Search *search, int alpha, int beta, bool skipped);
 inline int nega_alpha_eval1_move_ordering_mid(Search *search, int alpha, int beta, bool skipped);
