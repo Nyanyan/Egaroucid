@@ -181,16 +181,14 @@ constexpr uint64_t bit_radiation[HW2] = {
     0xFE03050911214181ULL, 0xFD070A1222428202ULL, 0xFB0E152444840404ULL, 0xF71C2A4988080808ULL, 0xEF38549211101010ULL, 0xDF70A82422212020ULL, 0xBFE0504844424140ULL, 0x7FC0A09088848281ULL
 };
 
+int get_localtime(tm* a, time_t* b) {
 #if _WIN64 || _WIN32
-int get_localtime(tm* a, time_t* b) {
     return localtime_s(a, b);
-}
 #else
-int get_localtime(tm* a, time_t* b) {
     a = localtime(b);
     return 0;
-}
 #endif
+}
 
 std::string calc_date() {
     time_t now;
