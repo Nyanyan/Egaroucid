@@ -13,8 +13,8 @@
 #pragma once
 
 #if USE_SIMD
-    #include "endsearch_last_simd.hpp"
+#include "endsearch_last_simd.hpp"
 #else
-    #include "endsearch_last_generic.hpp"
+#include "endsearch_last_generic.hpp"
 #endif
 #include "endsearch_nws.hpp"

@@ -125,14 +125,14 @@ inline uint64_t myrand_ull() {
     @return file opened?
 */
 inline bool file_open(FILE **fp, const char *file, const char *mode) {
-    #ifdef _WIN64
-        return fopen_s(fp, file, mode) == 0;
-    #elif _WIN32
-        return fopen_s(fp, file, mode) == 0;
-    #else
-        *fp = fopen(file, mode);
-        return *fp != NULL;
-    #endif
+#ifdef _WIN64
+    return fopen_s(fp, file, mode) == 0;
+#elif _WIN32
+    return fopen_s(fp, file, mode) == 0;
+#else
+    *fp = fopen(file, mode);
+    return *fp != NULL;
+#endif
 }
 
 /*
@@ -143,8 +143,9 @@ inline bool file_open(FILE **fp, const char *file, const char *mode) {
     @return NPS
 */
 inline uint64_t calc_nps(uint64_t n_nodes, uint64_t elapsed) {
-    if (elapsed == 0ULL)
+    if (elapsed == 0ULL) {
         elapsed = 1ULL;
+    }
     return n_nodes * 1000ULL / elapsed;
 }
 
@@ -181,14 +182,14 @@ constexpr uint64_t bit_radiation[HW2] = {
 };
 
 #if _WIN64 || _WIN32
-    int get_localtime(tm* a, time_t* b) {
-        return localtime_s(a, b);
-    }
+int get_localtime(tm* a, time_t* b) {
+    return localtime_s(a, b);
+}
 #else
-    int get_localtime(tm* a, time_t* b) {
-        a = localtime(b);
-        return 0;
-    }
+int get_localtime(tm* a, time_t* b) {
+    a = localtime(b);
+    return 0;
+}
 #endif
 
 std::string calc_date() {
