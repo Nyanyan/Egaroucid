@@ -29,63 +29,63 @@ constexpr int CLOG_NOT_FOUND = -127;
 constexpr int CLOG_SEARCH_MAX_DEPTH = 5;
 
 #if USE_PARALLEL_CLOG_SEARCH
+// Do parallel clog search until depth CLOG_SEARCH_SPLIT_DEPTH
+constexpr int CLOG_SEARCH_SPLIT_DEPTH = 2;
 
-    // Do parallel clog search until depth CLOG_SEARCH_SPLIT_DEPTH
-    constexpr int CLOG_SEARCH_SPLIT_DEPTH = 2;
+/*
+    @brief Structure for parallel clog search
 
-    /*
-        @brief Structure for parallel clog search
+    @param n_nodes              number of nodes seen
+    @param val                  the score
+*/
+struct Parallel_clog_task {
+    uint64_t n_nodes;
+    int val;
+};
 
-        @param n_nodes              number of nodes seen
-        @param val                  the score
-    */
-    struct Parallel_clog_task {
-        uint64_t n_nodes;
-        int val;
-    };
+int clog_search(Search *search, int depth, bool *searching);
 
-    int clog_search(Search *search, int depth, bool *searching);
+/*
+    @brief Wrapper for parallel clog search
 
-    /*
-        @brief Wrapper for parallel clog search
+    @param player               a bitboard representing the player
+    @param opponent             a bitboard representing the opponent
+    @param is_enduring          true if player is enduring from opponent's atack, else false
+    @param depth                remaining depth
+    @return search result in Parallel_clog_task structure
+*/
+Parallel_clog_task clog_do_task(uint64_t player, uint64_t opponent, int depth, bool *searching) {
+    Search search(player, opponent, MPC_100_LEVEL, true, false);
+    Parallel_clog_task task;
+    task.val = clog_search(&search, depth, searching);
+    task.n_nodes = search.n_nodes;
+    return task;
+}
 
-        @param player               a bitboard representing the player
-        @param opponent             a bitboard representing the opponent
-        @param is_enduring          true if player is enduring from opponent's atack, else false
-        @param depth                remaining depth
-        @return search result in Parallel_clog_task structure
-    */
-    Parallel_clog_task clog_do_task(uint64_t player, uint64_t opponent, int depth, bool *searching) {
-        Search search(player, opponent, MPC_100_LEVEL, true, false);
-        Parallel_clog_task task;
-        task.val = clog_search(&search, depth, searching);
-        task.n_nodes = search.n_nodes;
-        return task;
+/*
+    @brief Try to do parallel clog search
+
+    @param search               searching information
+    @param canput               number of legal moves of parent node
+    @param pv_idx               number of searched child nodes
+    @param depth                remaining depth
+    @param searching            used to stop searching
+    @param parallel_tasks       if task splitted, push the task in this vector
+    @return task splitted?
+*/
+inline bool clog_split(const Search *search, const int canput, const int pv_idx, int depth, bool *searching, std::vector<std::future<Parallel_clog_task>> &parallel_tasks) {
+    if (thread_pool.get_n_idle() &&
+        pv_idx < canput - 1 && 
+        depth >= CLOG_SEARCH_SPLIT_DEPTH) {
+            bool pushed;
+            parallel_tasks.emplace_back(thread_pool.push(&pushed, std::bind(&clog_do_task, search->board.player, search->board.opponent, depth, searching)));
+            if (!pushed) {
+                parallel_tasks.pop_back();
+            }
+            return pushed;
     }
-
-    /*
-        @brief Try to do parallel clog search
-
-        @param search               searching information
-        @param canput               number of legal moves of parent node
-        @param pv_idx               number of searched child nodes
-        @param depth                remaining depth
-        @param searching            used to stop searching
-        @param parallel_tasks       if task splitted, push the task in this vector
-        @return task splitted?
-    */
-    inline bool clog_split(const Search *search, const int canput, const int pv_idx, int depth, bool *searching, std::vector<std::future<Parallel_clog_task>> &parallel_tasks) {
-        if (thread_pool.get_n_idle() &&
-            pv_idx < canput - 1 && 
-            depth >= CLOG_SEARCH_SPLIT_DEPTH) {
-                bool pushed;
-                parallel_tasks.emplace_back(thread_pool.push(&pushed, std::bind(&clog_do_task, search->board.player, search->board.opponent, depth, searching)));
-                if (!pushed)
-                    parallel_tasks.pop_back();
-                return pushed;
-        }
-        return false;
-    }
+    return false;
+}
 #endif
 
 /*
@@ -96,8 +96,9 @@ constexpr int CLOG_SEARCH_MAX_DEPTH = 5;
     @return best score
 */
 int clog_search(Search *search, int depth, bool *searching) {
-    if (!global_searching)
+    if (!global_searching) {
         return CLOG_NOT_FOUND;
+    }
     ++search->n_nodes;
     if (depth == 0) {
         if (search->board.is_end()) {
@@ -115,8 +116,9 @@ int clog_search(Search *search, int depth, bool *searching) {
                 res = clog_search(search, depth, searching);
             }
         search->pass();
-        if (res != CLOG_NOT_FOUND)
+        if (res != CLOG_NOT_FOUND) {
             return -res;
+        }
         return CLOG_NOT_FOUND;
     }
     const int canput = pop_count_ull(legal);
@@ -124,8 +126,9 @@ int clog_search(Search *search, int depth, bool *searching) {
     int idx = 0;
     for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)) {
         calc_flip(&move_list[idx].flip, &search->board, cell);
-        if (move_list[idx].flip.flip == search->board.opponent)
+        if (move_list[idx].flip.flip == search->board.opponent) {
             return SCORE_MAX;
+        }
         ++idx;
     }
     uint_fast8_t moves[N_TRANSPOSITION_MOVES] = {TRANSPOSITION_TABLE_UNDEFINED, TRANSPOSITION_TABLE_UNDEFINED};
@@ -144,7 +147,7 @@ int clog_search(Search *search, int depth, bool *searching) {
                     g = clog_search(search, depth - 1, searching);
                     if (g != CLOG_NOT_FOUND) {
                         res = std::max(res, -g);
-                    } else{
+                    } else {
                         uncertain_value_found = true;
                     }
                 }
@@ -156,12 +159,12 @@ int clog_search(Search *search, int depth, bool *searching) {
                 got_task = task.get();
                 if (got_task.val != CLOG_NOT_FOUND) {
                     res = std::max(res, -got_task.val);
-                } else{
+                } else {
                     uncertain_value_found = true;
                 }
                 search->n_nodes += got_task.n_nodes;
             }
-        } else{
+        } else {
             n_searching = false;
             for (std::future<Parallel_clog_task> &task: parallel_tasks) {
                 search->n_nodes += task.get().n_nodes;
@@ -175,7 +178,7 @@ int clog_search(Search *search, int depth, bool *searching) {
             search->undo(&move_list[move_idx].flip);
             if (g != CLOG_NOT_FOUND) {
                 res = std::max(res, -g);
-            } else{
+            } else {
                 uncertain_value_found = true;
             }
         }
