@@ -8,9 +8,6 @@ void problem_generator(int n_empties, int n_problems, int level) {
     std::ofstream prob_ofs(problem_file);
     std::ofstream ans_ofs(answer_file);
     std::ofstream move_ofs(move_file);
-    //prob_ofs << n_problems << std::endl;
-    //ans_ofs << n_problems << std::endl;
-    //move_ofs << n_problems << std::endl;
     Board board;
     Flip flip;
     for (int i = 0; i < n_problems; ++i) {
@@ -22,12 +19,14 @@ void problem_generator(int n_empties, int n_problems, int level) {
             if (legal == 0) {
                 board.pass();
                 legal = board.get_legal();
-                if (legal == 0)
+                if (legal == 0) {
                     break;
+                }
             }
             std::vector<uint_fast8_t> legals;
-            for (uint_fast8_t c = first_bit(&legal); legal; c = next_bit(&legal))
+            for (uint_fast8_t c = first_bit(&legal); legal; c = next_bit(&legal)) {
                 legals.emplace_back(c);
+            }
             uint_fast8_t cell = legals[myrandrange(0, (int)legals.size())];
             calc_flip(&flip, &board, cell);
             board.move_board(&flip);
@@ -35,8 +34,9 @@ void problem_generator(int n_empties, int n_problems, int level) {
         if (board.is_end()) {
             --i;
         } else{
-            if (board.get_legal() == 0)
+            if (board.get_legal() == 0) {
                 board.pass();
+            }
             for (int i = 0; i < HW2; ++i) {
                 if (1 & (board.player >> i)) {
                     prob_ofs << "X";
