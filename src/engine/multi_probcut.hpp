@@ -18,10 +18,6 @@
 
 constexpr int USE_MPC_MIN_DEPTH = 3;
 
-#if USE_ALL_NODE_PREDICTION
-#define ALL_NODE_CHECK_MPCT 1.8
-#endif
-
 //constexpr int MPC_ADD_DEPTH_VALUE_THRESHOLD = 5;
 //constexpr int MPC_SUB_DEPTH_VALUE_THRESHOLD = 20;
 constexpr int MPC_ERROR0_OFFSET = 3;
