@@ -30,6 +30,8 @@ void calc_local_strategy(Board board, int level, double res[], bool show_log) {
         value_diff_opponent[cell] = 0;
         value_diff_empty[cell] = 0;
     }
+    double max_diffs[HW2];
+    double min_diffs[HW2];
     Search_result complete_result = ai(board, level, true, 0, true, false);
     if (show_log) {
         std::cerr << "complete result " << complete_result.value << std::endl;
@@ -49,6 +51,8 @@ void calc_local_strategy(Board board, int level, double res[], bool show_log) {
                 Search_result result2 = ai(board, level, true, 0, true, false);
                 value_diff_empty[cell] = std::abs(result2.value - complete_result.value);
             board.player ^= bit;
+            max_diffs[cell] = std::max(value_diff_opponent[cell], value_diff_empty[cell]);
+            min_diffs[cell] = std::max(value_diff_opponent[cell], value_diff_empty[cell]);
         } else if (board.opponent & bit) {
             // opponent -> player
             board.player ^= bit;
@@ -62,6 +66,8 @@ void calc_local_strategy(Board board, int level, double res[], bool show_log) {
                 Search_result result2 = ai(board, level, true, 0, true, false);
                 value_diff_empty[cell] = std::abs(result2.value - complete_result.value);
             board.opponent ^= bit;
+            max_diffs[cell] = std::max(value_diff_player[cell], value_diff_empty[cell]);
+            min_diffs[cell] = std::max(value_diff_player[cell], value_diff_empty[cell]);
         } else {
             // empty -> player
             board.player ^= bit;
@@ -73,6 +79,8 @@ void calc_local_strategy(Board board, int level, double res[], bool show_log) {
                 Search_result result2 = ai(board, level, true, 0, true, false);
                 value_diff_opponent[cell] = std::abs(result2.value - complete_result.value);
             board.opponent ^= bit;
+            max_diffs[cell] = std::max(value_diff_player[cell], value_diff_opponent[cell]);
+            min_diffs[cell] = std::max(value_diff_player[cell], value_diff_opponent[cell]);
         }
     }
     if (show_log) {
@@ -82,23 +90,23 @@ void calc_local_strategy(Board board, int level, double res[], bool show_log) {
         print_local_strategy(value_diff_opponent);
         std::cerr << "?->empty" << std::endl;
         print_local_strategy(value_diff_empty);
+        std::cerr << "max_diffs" << std::endl;
+        print_local_strategy(max_diffs);
+        std::cerr << "min_diffs" << std::endl;
+        print_local_strategy(min_diffs);
         std::cerr << std::endl;
     }
-    double max_diffs[HW2];
-    double min_diffs[HW2];
-    double diff_sum = 0;
     double max_max_diff = 0;
+    double max_min_diff = 0;
     for (int cell = 0; cell < HW2; ++cell) {
-        double max_diff = std::max(value_diff_player[cell], value_diff_opponent[cell]);
-        max_diff = std::max(max_diff, value_diff_empty[cell]);
-        max_diffs[cell] = max_diff;
-        diff_sum += max_diff;
-        max_max_diff = std::max(max_max_diff, max_diff);
+        max_max_diff = std::max(max_max_diff, max_diffs[cell]);
+        max_min_diff = std::max(max_min_diff, min_diffs[cell]);
     }
     double denominator = 0.0;
     for (int cell = 0; cell < HW2; ++cell) {
         //res[cell] = (double)max_diffs[cell] / diff_sum;
         res[cell] = std::exp(max_diffs[cell] - max_max_diff); // softmax
+        //res[cell] = std::exp(min_diffs[cell] - max_min_diff); // softmax
         denominator += res[cell];
     }
     for (int cell = 0; cell < HW2; ++cell) {
