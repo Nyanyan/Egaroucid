@@ -75,7 +75,7 @@ uint64_t calc_time_limit_ply(const Board board, uint64_t remaining_time_msec, bo
 
     // midgame search
     int remaining_moves_proc = std::max(2, (int)round((remaining_moves - TIME_MANAGEMENT_REMAINING_MOVES_OFFSET) * TIME_MANAGEMENT_N_MOVES_COE)); // at least 2 moves
-    return std::max(1ULL, remaining_time_msec_margin / remaining_moves_proc);
+    return std::max<uint64_t>(1ULL, remaining_time_msec_margin / remaining_moves_proc);
 }
 
 uint64_t request_more_time(Board board, uint64_t remaining_time_msec, uint64_t time_limit, bool show_log) {

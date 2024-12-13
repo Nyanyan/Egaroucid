@@ -651,7 +651,7 @@ Search_result ai_time_limit(Board board, bool use_book, int book_acc_level, bool
             }
             if (n_good_moves >= 2) {
                 /*
-                uint64_t self_play_tl = std::max(20000ULL + get_values_tl, (uint64_t)(time_limit * std::min(0.8, 0.2 * n_good_moves)));
+                uint64_t self_play_tl = std::max<uint64_t>(20000ULL + get_values_tl, (uint64_t)(time_limit * std::min(0.8, 0.2 * n_good_moves)));
                 std::vector<Board> self_play_boards;
                 std::vector<int> self_play_depth_arr;
                 for (int i = 0; i < n_good_moves; ++i) {
@@ -727,13 +727,13 @@ Search_result ai_time_limit(Board board, bool use_book, int book_acc_level, bool
                     }
                 }
                 */
-                uint64_t search_moves_tl = std::max(20000ULL + get_values_tl, (uint64_t)(time_limit * std::min(0.7, 0.1 * n_good_moves)));
+                uint64_t search_moves_tl = std::max<uint64_t>(20000ULL + get_values_tl, (uint64_t)(time_limit * std::min(0.7, 0.1 * n_good_moves)));
                 std::vector<Ponder_elem> after_move_list = ai_search_moves(board, show_log, ponder_move_list, n_good_moves, search_moves_tl);
                 need_request_more_time = true;
 
                 /*
                 bool ponder_searching2 = true;
-                uint64_t ponder_tl2 = std::max(100ULL + self_play_tl, (uint64_t)(time_limit * 0.65));
+                uint64_t ponder_tl2 = std::max<uint64_t>(100ULL + self_play_tl, (uint64_t)(time_limit * 0.65));
                 std::cerr << "pre search by ponder 2 tl " << ponder_tl2 << std::endl;
                 std::future<std::vector<Ponder_elem>> ponder_future2 = std::async(std::launch::async, ai_ponder, board, show_log, &ponder_searching2);
                 while (tim() - strt < ponder_tl2 && ponder_future2.wait_for(std::chrono::seconds(0)) != std::future_status::ready);
