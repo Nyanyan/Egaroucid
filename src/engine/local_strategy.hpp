@@ -71,7 +71,7 @@ void calc_local_strategy(Board board, int level, double res[], bool *searching, 
                         int beta = -complete_result.value; // just want to know better move than complete_result
                         Search_result result = ai_window_searching(board, alpha, beta, level, true, 0, true, false, searching);
                         int result_value = -result.value; // need -1 because it's opponent move
-                        value_diffs[cell] = std::max(0, result_value - complete_result.value); // need max because if the move is bad, just don't put it
+                        value_diffs[cell] = -std::max(0, result_value - complete_result.value); // need max because if the move is bad, just don't put it
                     board.pass();
                     board.player ^= bit;
                 }
