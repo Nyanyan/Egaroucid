@@ -21,7 +21,7 @@ void print_local_strategy(const double arr[]) {
     }
 }
 
-void calc_local_strategy(Board board, int level, double res[], bool *searching, bool show_log) {
+void calc_local_strategy(Board board, int level, double res[], int player, bool *searching, bool show_log) {
     Search_result complete_result = ai_searching(board, level, true, 0, true, false, searching);
     if (show_log) {
         board.print();
@@ -52,7 +52,7 @@ void calc_local_strategy(Board board, int level, double res[], bool *searching, 
                     value_diffs[cell] = complete_result.value - result.value;
                     uint64_t legal_diff = ~board.get_legal() & legal;
                     for (uint_fast8_t nolegal_cell = first_bit(&legal_diff); legal_diff; nolegal_cell = next_bit(&legal_diff)) {
-                        value_diffs[nolegal_cell] = value_diffs[cell];
+                        value_diffs[nolegal_cell] = value_diffs[cell]; // nolegal_cell belongs to actual legal
                     }
                 board.player ^= bit;
                 board.opponent ^= bit;
@@ -78,14 +78,22 @@ void calc_local_strategy(Board board, int level, double res[], bool *searching, 
         print_local_strategy(value_diffs);
         std::cerr << std::endl;
     }
-    double max_value_diff = 0;
-    double min_value_diff = 0;
+    double max_value_diff = 0.0;
+    double min_value_diff = 0.0;
+    double max_abs_value_diff = 0.0;
     for (int cell = 0; cell < HW2; ++cell) {
         max_value_diff = std::max(max_value_diff, value_diffs[cell]);
         min_value_diff = std::min(min_value_diff, value_diffs[cell]);
+        max_abs_value_diff = std::max(max_abs_value_diff, std::abs(value_diffs[cell]));
     }
     double denominator = 0.0;
     for (int cell = 0; cell < HW2; ++cell) {
+        if (max_abs_value_diff > 0.0001) {
+            res[cell] = value_diffs[cell] / max_abs_value_diff;
+        } else {
+            res[cell] = 0.0;
+        }
+        /*
         if (value_diffs[cell] > 0) {
             res[cell] = (double)value_diffs[cell] / max_value_diff;
         } else if (value_diffs[cell] < 0) {
@@ -93,6 +101,7 @@ void calc_local_strategy(Board board, int level, double res[], bool *searching, 
         } else { // 0
             res[cell] = 0;
         }
+        */
     }
     print_local_strategy(res);
 }
