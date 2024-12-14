@@ -32,6 +32,8 @@ void calc_local_strategy(Board board, int level, double res[], bool *searching, 
     double value_diffs[HW2];
     for (int cell = 0; cell < HW2; ++cell) {
         value_diffs[cell] = 0;
+    }
+    for (int cell = 0; cell < HW2; ++cell) {
         uint64_t bit = 1ULL << cell;
         if (board.player & bit) { // player
             if ((stability & bit) == 0) {
@@ -50,9 +52,12 @@ void calc_local_strategy(Board board, int level, double res[], bool *searching, 
                 board.opponent ^= bit;
                     Search_result result = ai_searching(board, level, true, 0, true, false, searching);
                     value_diffs[cell] = complete_result.value - result.value;
+                    std::cerr << idx_to_coord(cell) << " " << value_diffs[cell] << std::endl;
                     uint64_t legal_diff = ~board.get_legal() & legal;
+                    bit_print_board(legal_diff);
                     for (uint_fast8_t nolegal_cell = first_bit(&legal_diff); legal_diff; nolegal_cell = next_bit(&legal_diff)) {
                         value_diffs[nolegal_cell] = value_diffs[cell]; // nolegal_cell belongs to actual legal
+                        std::cerr << "legal " << idx_to_coord(nolegal_cell) << " " << value_diffs[nolegal_cell] << std::endl;
                     }
                 board.player ^= bit;
                 board.opponent ^= bit;
