@@ -21,7 +21,7 @@ void print_local_strategy(const double arr[]) {
     }
 }
 
-void calc_local_strategy(Board board, int level, double res[], int player, bool *searching, bool show_log) {
+void calc_local_strategy(Board board, int level, double res[], bool *searching, bool show_log) {
     Search_result complete_result = ai_searching(board, level, true, 0, true, false, searching);
     if (show_log) {
         board.print();
