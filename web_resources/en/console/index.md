@@ -53,6 +53,10 @@ Then use <code>cmake</code> command to build.
 
 
 
+<code>$ cmake -S . -B build -DCMAKE_CXX_COMPILER=clang++　[options]</code>
+
+Egaroucid is faster when compiled with Clang, so I recommend you to use it. If you want to use GCC, please build with:
+
 <code>$ cmake -S . -B build [options]</code>
 
 

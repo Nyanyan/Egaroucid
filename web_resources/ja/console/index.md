@@ -51,10 +51,11 @@ CONSOLE_SOURCE_TABLE_HERE
 
 <code>cmake</code>でビルドします。
 
+<code>$ cmake -S . -B build -DCMAKE_CXX_COMPILER=clang++　[options]</code>
 
+EgaroucidはClangでコンパイルした方が高速に動く場合が多いため、Clangでのコンパイルをおすすめします。GCCを使いたい場合は以下を入力してください。
 
 <code>$ cmake -S . -B build [options]</code>
-
 
 
 このとき、<code>[options]</code>には以下のオプションを入れられます。
