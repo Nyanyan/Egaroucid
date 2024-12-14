@@ -27,6 +27,9 @@ for datum in data:
         datum = 'date-released: ' + date
     data_proc.append(datum)
 
+for datum in data_proc:
+    print(datum)
+
 with open(citation_file, 'w') as f:
-    for datum in data:
+    for datum in data_proc:
         f.write(datum + '\n')
