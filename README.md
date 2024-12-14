@@ -6,10 +6,6 @@ See also https://www.egaroucid.nyanyan.dev/en/ for detail
 
 
 
-Light version of this Othello AI got 1st place in the world ([CodinGame Othello](https://www.codingame.com/multiplayer/bot-programming/othello-1/leaderboard))
-
-
-
 ## Lineup
 
 Totally free application
@@ -51,6 +47,9 @@ Totally free application
 - Egaroucid for Console
   - Windows: Download & Unzip it from [Website](https://www.egaroucid.nyanyan.dev/en/console/) or [GitHub Releases](https://github.com/Nyanyan/Egaroucid/releases)
   - MacOS / Linux: Please build by yourself using g++ or clang! [Build Instruction](https://www.egaroucid.nyanyan.dev/en/console/#Linux%20/%20MacOS)
+- Egaroucid for Web
+  - Visit [Website](https://www.egaroucid.nyanyan.dev/en/web/) and play now!
+
 
 
 
