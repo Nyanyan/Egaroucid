@@ -28,7 +28,6 @@ constexpr int IDSEARCH_ENDSEARCH_PRESEARCH_OFFSET_TIMELIMIT = 8;
 constexpr int PONDER_ENDSEARCH_PRESEARCH_OFFSET_TIMELIMIT = 2;
 
 constexpr int NOBOOK_SEARCH_LEVEL = 10;
-constexpr int NOBOOK_SEARCH_MARGIN = 1;
 
 constexpr int  PONDER_START_SELFPLAY_DEPTH = 21;
 
@@ -527,10 +526,11 @@ Search_result ai_common(Board board, int alpha, int beta, int level, bool use_bo
                 get_level(nobook_search_level, board.n_discs() - 4, &nobook_search_is_mid_search, &nobook_search_depth, &nobook_search_mpc_level);
                 Search_result nobook_search_result = tree_search_legal(board, alpha, beta, nobook_search_depth, nobook_search_mpc_level, show_log, use_legal, use_multi_thread, TIME_LIMIT_INF, searching);
                 if (*searching) {
-                    if (nobook_search_result.value >= book_result.value + NOBOOK_SEARCH_MARGIN) {
+                    int margin = mpc_error[MPC_99_LEVEL][board.n_discs()][nobook_search_depth][HW2 - board.n_discs()];
+                    if (nobook_search_result.value >= book_result.value + margin) {
                         better_move_maybe_found = true;
                         if (show_log) {
-                            std::cerr << "book used but better move can be found book " << book_result.value << " best move " << nobook_search_result.value << " at level " << nobook_search_level << std::endl;
+                            std::cerr << "book used but better move can be found book " << book_result.value << " best move " << nobook_search_result.value << " at level " << nobook_search_level << " margin " << margin << std::endl;
                         }
                     }
                 }
