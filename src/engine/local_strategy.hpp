@@ -22,18 +22,16 @@ void print_local_strategy(const double arr[]) {
 }
 
 void calc_local_strategy(Board board, int level, double res[], bool *searching, bool show_log) {
-    double value_diffs[HW2];
-    for (int cell = 0; cell < HW2; ++cell) {
-        value_diffs[cell] = 0;
-    }
     Search_result complete_result = ai_searching(board, level, true, 0, true, false, searching);
     if (show_log) {
         board.print();
         std::cerr << "complete result " << complete_result.value << std::endl;
     }
     uint64_t legal = board.get_legal();
-    uint64_t stability = calc_stability_bits(&board);
+    uint64_t stability = calc_stability_bits(&board) & 0xFF818181818181FFULL; // edge stability
+    double value_diffs[HW2];
     for (int cell = 0; cell < HW2; ++cell) {
+        value_diffs[cell] = 0;
         uint64_t bit = 1ULL << cell;
         if (board.player & bit) { // player
             if ((stability & bit) == 0) {
@@ -52,6 +50,10 @@ void calc_local_strategy(Board board, int level, double res[], bool *searching, 
                 board.opponent ^= bit;
                     Search_result result = ai_searching(board, level, true, 0, true, false, searching);
                     value_diffs[cell] = std::max(0, complete_result.value - result.value);
+                    uint64_t legal_diff = ~board.get_legal() & legal;
+                    for (uint_fast8_t nolegal_cell = first_bit(&legal_diff); legal_diff; nolegal_cell = next_bit(&legal_diff)) {
+                        value_diffs[nolegal_cell] = value_diffs[cell];
+                    }
                 board.player ^= bit;
                 board.opponent ^= bit;
             }
