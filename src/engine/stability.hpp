@@ -261,6 +261,15 @@ inline uint64_t calc_stability(uint64_t player, uint64_t opponent) {
     return player_stability;
 }
 
+uint64_t calc_edge_stability(uint64_t player, uint64_t opponent) {
+    uint64_t n_stability;
+    n_stability = stability_edge_arr[player & 0xFFU][opponent & 0xFFU][0];
+    n_stability |= stability_edge_arr[player >> 56][opponent >> 56][0] << 56;
+    n_stability |= stability_edge_arr[join_v_line(player, 0)][join_v_line(opponent, 0)][1];
+    n_stability |= stability_edge_arr[join_v_line(player, 7)][join_v_line(opponent, 7)][1] << 7;
+    return n_stability;
+}
+
 /*
     @brief Calculate stable discs as a bitboard
 
@@ -273,3 +282,9 @@ inline uint64_t calc_stability(uint64_t player, uint64_t opponent) {
 inline uint64_t calc_stability_bits(Board *board) {
     return calc_stability(board->player, board->opponent) | calc_stability(board->opponent, board->player);
 }
+
+
+inline uint64_t calc_edge_stability_bits(Board *board) {
+    return calc_edge_stability(board->player, board->opponent);
+}
+

@@ -1398,7 +1398,12 @@ private:
         for (uint_fast8_t cell = 0; cell < HW2; ++cell) {
             int sx = BOARD_SX + ((HW2_M1 - cell) % HW) * BOARD_CELL_SIZE;
             int sy = BOARD_SY + ((HW2_M1 - cell) / HW) * BOARD_CELL_SIZE;
-            Color cell_color = ColorF{ 52.0 / 255.0, 152.0 / 255.0, 219.0 / 255.0, ai_status.local_strategy[cell] };
+            Color cell_color;
+            if (ai_status.local_strategy[cell] > 0) {
+                cell_color = ColorF{ 52.0 / 255.0, 152.0 / 255.0, 219.0 / 255.0, ai_status.local_strategy[cell] };
+            } else {
+                cell_color = ColorF{ 241.0 / 255.0, 196.0 / 255.0, 15.0 / 255.0, -ai_status.local_strategy[cell] };
+            }
             Rect{ sx, sy,  BOARD_CELL_SIZE, BOARD_CELL_SIZE}.draw(cell_color);
         }
     }
