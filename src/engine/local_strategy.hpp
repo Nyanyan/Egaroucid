@@ -73,23 +73,29 @@ void calc_local_strategy(Board board, int level, double res[], bool *searching, 
             }
         }
     }
+    double values[HW2];
+    for (int cell = 0; cell < HW2; ++cell) {
+        values[cell] = std::tanh(0.2 * value_diffs[cell]);
+    }
     if (show_log) {
         std::cerr << "value_diffs" << std::endl;
         print_local_strategy(value_diffs);
+        std::cerr << "values" << std::endl;
+        print_local_strategy(values);
         std::cerr << std::endl;
     }
-    double max_value_diff = 0.0;
-    double min_value_diff = 0.0;
-    double max_abs_value_diff = 0.0;
+    //double max_value = 0.0;
+    //double min_value = 0.0;
+    double max_abs_value = 0.0;
     for (int cell = 0; cell < HW2; ++cell) {
-        max_value_diff = std::max(max_value_diff, value_diffs[cell]);
-        min_value_diff = std::min(min_value_diff, value_diffs[cell]);
-        max_abs_value_diff = std::max(max_abs_value_diff, std::abs(value_diffs[cell]));
+        //max_value = std::max(max_value, values[cell]);
+        //min_value = std::min(min_value, values[cell]);
+        max_abs_value = std::max(max_abs_value, std::abs(values[cell]));
     }
     double denominator = 0.0;
     for (int cell = 0; cell < HW2; ++cell) {
-        if (max_abs_value_diff > 0.0001) {
-            res[cell] = value_diffs[cell] / max_abs_value_diff;
+        if (max_abs_value > 0.0001) {
+            res[cell] = values[cell] / max_abs_value;
         } else {
             res[cell] = 0.0;
         }
