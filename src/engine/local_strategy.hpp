@@ -52,12 +52,9 @@ void calc_local_strategy(Board board, int level, double res[], bool *searching, 
                 board.opponent ^= bit;
                     Search_result result = ai_searching(board, level, true, 0, true, false, searching);
                     value_diffs[cell] = complete_result.value - result.value;
-                    std::cerr << idx_to_coord(cell) << " " << value_diffs[cell] << std::endl;
                     uint64_t legal_diff = ~board.get_legal() & legal;
-                    bit_print_board(legal_diff);
                     for (uint_fast8_t nolegal_cell = first_bit(&legal_diff); legal_diff; nolegal_cell = next_bit(&legal_diff)) {
                         value_diffs[nolegal_cell] = value_diffs[cell]; // nolegal_cell belongs to actual legal
-                        std::cerr << "legal " << idx_to_coord(nolegal_cell) << " " << value_diffs[nolegal_cell] << std::endl;
                     }
                 board.player ^= bit;
                 board.opponent ^= bit;
@@ -89,12 +86,8 @@ void calc_local_strategy(Board board, int level, double res[], bool *searching, 
         print_local_strategy(values);
         std::cerr << std::endl;
     }
-    //double max_value = 0.0;
-    //double min_value = 0.0;
     double max_abs_value = 0.0;
     for (int cell = 0; cell < HW2; ++cell) {
-        //max_value = std::max(max_value, values[cell]);
-        //min_value = std::min(min_value, values[cell]);
         max_abs_value = std::max(max_abs_value, std::abs(values[cell]));
     }
     double denominator = 0.0;
@@ -104,15 +97,6 @@ void calc_local_strategy(Board board, int level, double res[], bool *searching, 
         } else {
             res[cell] = 0.0;
         }
-        /*
-        if (value_diffs[cell] > 0) {
-            res[cell] = (double)value_diffs[cell] / max_value_diff;
-        } else if (value_diffs[cell] < 0) {
-            res[cell] = (double)value_diffs[cell] / -min_value_diff;
-        } else { // 0
-            res[cell] = 0;
-        }
-        */
     }
     print_local_strategy(res);
 }
