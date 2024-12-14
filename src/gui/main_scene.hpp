@@ -1380,7 +1380,7 @@ private:
         ai_status.local_strategy_calculating = true;
         ai_status.local_strategy_calculated = false;
         std::cerr << "start local strategy calculation" << std::endl;
-        ai_status.local_strategy_future = std::async(std::launch::async, std::bind(calc_local_strategy, getData().history_elem.board, 10, ai_status.local_strategy, &ai_status.local_strategy_calculating, true));
+        ai_status.local_strategy_future = std::async(std::launch::async, std::bind(calc_local_strategy, getData().history_elem.board, 10, ai_status.local_strategy, &ai_status.local_strategy_calculating, false));
     }
 
     void try_local_strategy_get() {
