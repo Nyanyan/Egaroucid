@@ -1,0 +1,11 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+authors:
+- family-names: "Yamana"
+  given-names: "Takuto"
+  orcid: "https://orcid.org/0009-0009-0615-3693"
+title: "Egaroucid"
+license: GPLv3
+version: 7.4.0
+date-released: 2024-10-03
+url: "https://www.egaroucid.nyanyan.dev/"
