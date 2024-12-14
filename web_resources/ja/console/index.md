@@ -132,10 +132,9 @@ EgaroucidはClangでコンパイルした方が高速に動く場合が多いた
 <code>g++</code>または<code>clang</code>コマンドにてコンパイルします。出力ファイルは任意の名前で構いません。私の手元の環境では、```clang```のほうが高速に動きました。
 
 
+<code>$ clang++ -O2 ./src/Egaroucid_for_Console.cpp -o ./bin/Egaroucid_for_Console.out -mtune=native -march=native -pthread -std=c++20 [options]</code>
 
 <code>$ g++ -O2 ./src/Egaroucid_for_Console.cpp -o ./bin/Egaroucid_for_Console.out -mtune=native -march=native -mfpmath=both -pthread -std=c++20 [options]</code>
-
-<code>$ clang++ -O2 ./src/Egaroucid_for_Console.cpp -o ./bin/Egaroucid_for_Console.out -mtune=native -march=native -pthread -std=c++20 [options]</code>
 
 
 
