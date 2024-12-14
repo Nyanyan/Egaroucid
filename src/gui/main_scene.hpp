@@ -254,6 +254,7 @@ public:
                     stop_calculating();
                     reset_hint();
                     reset_pv();
+                    reset_local_strategy();
                     resume_calculating();
                 }
                 if (!ai_status.hint_calculating && !ai_status.hint_calculated) {
@@ -272,6 +273,18 @@ public:
                 pv_calculate();
             } else if (ai_status.pv_calculating && !ai_status.pv_calculated) {
                 try_pv_get();
+            }
+        }
+
+        // local strategy calculating & drawing
+        bool local_strategy_ignore = ai_should_move || ai_status.analyzing || need_start_game_button || pausing_in_pass || changing_scene;
+        if (!local_strategy_ignore) {
+            if (!ai_status.local_strategy_calculating && !ai_status.local_strategy_calculated) {
+                local_strategy_calculate();
+            } else if (ai_status.local_strategy_calculating && !ai_status.local_strategy_calculated) {
+                try_local_strategy_get();
+            } else if (ai_status.local_strategy_calculated) {
+                draw_local_strategy();
             }
         }
 
@@ -357,6 +370,11 @@ private:
         principal_variation = "";
     }
 
+    void reset_local_strategy() {
+        ai_status.local_strategy_calculating = false;
+        ai_status.local_strategy_calculated = false;
+    }
+
     void reset_analyze() {
         ai_status.analyzing = false;
         ai_status.analyze_task_stack.clear();
@@ -406,6 +424,7 @@ private:
         reset_ai();
         reset_hint();
         reset_pv();
+        reset_local_strategy();
         reset_analyze();
         reset_book_additional_features();
         std::cerr << "reset all calculations" << std::endl;
@@ -566,6 +585,7 @@ private:
             stop_calculating();
             reset_hint();
             reset_pv();
+            reset_local_strategy();
             resume_calculating();
         }
         if (!ai_status.analyzing) {
@@ -585,6 +605,7 @@ private:
                 stop_calculating();
                 reset_hint();
                 reset_pv();
+                reset_local_strategy();
                 resume_calculating();
                 int n_discs_before = getData().history_elem.board.n_discs();
                 while (getData().graph_resources.nodes[getData().graph_resources.branch].back().board.n_discs() >= n_discs_before && 
@@ -604,6 +625,7 @@ private:
                     getData().graph_resources.n_discs = getData().history_elem.board.n_discs();
                     reset_hint();
                     reset_pv();
+                    reset_local_strategy();
                 }
                 need_start_game_button_calculation();
             }
@@ -638,6 +660,7 @@ private:
                         getData().graph_resources.n_discs = getData().history_elem.board.n_discs();
                         reset_hint();
                         reset_pv();
+                        reset_local_strategy();
                     }
                 }
                 resume_calculating();
@@ -1063,6 +1086,7 @@ private:
         }
         reset_hint();
         reset_pv();
+        reset_local_strategy();
         reset_book_additional_features();
     }
 
@@ -1346,6 +1370,33 @@ private:
                 ai_status.pv_calculated = true;
                 std::cerr << "finish pv calculation" << std::endl;
             }
+        }
+    }
+
+    void local_strategy_calculate() {
+        ai_status.local_strategy_calculating = true;
+        ai_status.local_strategy_calculated = false;
+        std::cerr << "start local strategy calculation" << std::endl;
+        ai_status.local_strategy_future = std::async(std::launch::async, std::bind(calc_local_strategy, getData().history_elem.board, 10, ai_status.local_strategy, &ai_status.local_strategy_calculating, true));
+    }
+
+    void try_local_strategy_get() {
+        if (ai_status.local_strategy_future.valid()) {
+            if (ai_status.local_strategy_future.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
+                ai_status.local_strategy_future.get();
+                ai_status.local_strategy_calculating = false;
+                ai_status.local_strategy_calculated = true;
+                std::cerr << "finish local strategy calculation" << std::endl;
+            }
+        }
+    }
+
+    void draw_local_strategy() {
+        for (uint_fast8_t cell = 0; cell < HW2; ++cell) {
+            int sx = BOARD_SX + ((HW2_M1 - cell) % HW) * BOARD_CELL_SIZE;
+            int sy = BOARD_SY + ((HW2_M1 - cell) / HW) * BOARD_CELL_SIZE;
+            Color cell_color = ColorF{ 52, 152, 219, ai_status.local_strategy[cell] };
+            Rect{ sx, sy,  BOARD_CELL_SIZE, BOARD_CELL_SIZE}.draw(cell_color);
         }
     }
 

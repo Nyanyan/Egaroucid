@@ -725,6 +725,11 @@ struct AI_status {
     std::future<void> pv_future;
 
     bool book_learning{ false };
+
+    bool local_strategy_calculating{ false };
+    bool local_strategy_calculated{ false };
+    std::future<void> local_strategy_future;
+    double local_strategy[HW2];
 };
 
 struct Game_abstract {
