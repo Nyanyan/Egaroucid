@@ -124,7 +124,7 @@ void calc_local_strategy(Board board, int level, double res[], bool *searching, 
     }
     double denominator = 0.0;
     for (int cell = 0; cell < HW2; ++cell) {
-        res[cell] = (double)max_diffs[cell] / sum_max_diff;
+        res[cell] = (double)max_diffs[cell] / max_max_diff; //sum_max_diff;
         //res[cell] = (double)min_diffs[cell] / sum_min_diff;
         //res[cell] = std::exp(max_diffs[cell] - max_max_diff); // softmax
         //res[cell] = std::exp(min_diffs[cell] - max_min_diff); // softmax

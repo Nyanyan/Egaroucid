@@ -219,6 +219,11 @@ public:
             change_book_by_right_click();
         }
 
+        // local strategy drawing
+        if (ai_status.local_strategy_calculated) {
+            draw_local_strategy();
+        }
+
         // board drawing
         draw_board(getData().fonts, getData().colors, getData().history_elem);
 
@@ -246,7 +251,7 @@ public:
 
         uint64_t legal_ignore = 0ULL;
 
-        // hint calculating & drawing
+        // hint calculating
         bool hint_ignore = ai_should_move || ai_status.analyzing || need_start_game_button || pausing_in_pass || changing_scene;
         if (!hint_ignore) {
             if (getData().menu_elements.use_disc_hint) {
@@ -283,8 +288,6 @@ public:
                 local_strategy_calculate();
             } else if (ai_status.local_strategy_calculating && !ai_status.local_strategy_calculated) {
                 try_local_strategy_get();
-            } else if (ai_status.local_strategy_calculated) {
-                draw_local_strategy();
             }
         }
 
@@ -1395,7 +1398,7 @@ private:
         for (uint_fast8_t cell = 0; cell < HW2; ++cell) {
             int sx = BOARD_SX + ((HW2_M1 - cell) % HW) * BOARD_CELL_SIZE;
             int sy = BOARD_SY + ((HW2_M1 - cell) / HW) * BOARD_CELL_SIZE;
-            Color cell_color = ColorF{ 52, 152, 219, ai_status.local_strategy[cell] };
+            Color cell_color = ColorF{ 52.0 / 255.0, 152.0 / 255.0, 219.0 / 255.0, ai_status.local_strategy[cell] };
             Rect{ sx, sy,  BOARD_CELL_SIZE, BOARD_CELL_SIZE}.draw(cell_color);
         }
     }
