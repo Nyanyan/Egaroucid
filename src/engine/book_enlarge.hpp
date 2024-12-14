@@ -18,6 +18,8 @@
 // automatically save book in this time (milliseconds)
 constexpr uint64_t AUTO_BOOK_SAVE_TIME = 3600000ULL; // 1 hour
 
+constexpr int BOOK_DEVIATE_MAX_N_LOOPS_INF = 100000000;
+
 Search_result ai(Board board, int level, bool use_book, int book_acc_level, bool use_multi_thread, bool show_log);
 
 struct Book_deviate_todo_elem {
