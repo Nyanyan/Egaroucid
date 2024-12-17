@@ -141,7 +141,6 @@ int nega_alpha_ordering_nws_simple(Search *search, int alpha, const int depth, c
         if (move_list[idx].flip.flip == search->board.opponent) {
             return SCORE_MAX;
         }
-        move_list[idx].value = 0;
         ++idx;
     }
 #if USE_MID_ETC && MID_ETC_DEPTH_NWS <= MID_SIMPLE_DEPTH
@@ -264,7 +263,6 @@ int nega_alpha_ordering_nws(Search *search, int alpha, const int depth, const bo
         if (move_list[idx].flip.flip == search->board.opponent) {
             return SCORE_MAX;
         }
-        move_list[idx].value = 0;
         ++idx;
     }
     int n_etc_done = 0;

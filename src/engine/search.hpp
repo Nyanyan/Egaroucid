@@ -430,7 +430,7 @@ struct Flip_value {
     uint64_t n_legal;
 
     Flip_value() 
-        : n_legal(LEGAL_UNDEFINED) {}
+        : n_legal(LEGAL_UNDEFINED), value(0) {}
 
     bool operator<(const Flip_value &another) const{
         return value < another.value;

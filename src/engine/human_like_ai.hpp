@@ -66,7 +66,6 @@ int nega_alpha_human_like(Search *search, int alpha, int beta, int depth, bool s
     for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)) {
         calc_flip(&move_list[idx].flip, &search->board, cell);
         noise_flip(&move_list[idx].flip, depth);
-        move_list[idx].value = 0;
         ++idx;
     }
     uint_fast8_t moves[N_TRANSPOSITION_MOVES] = {MOVE_UNDEFINED, MOVE_UNDEFINED};
@@ -112,7 +111,6 @@ Search_result nega_alpha_human_like_root(Search *search, int alpha, int beta, in
     for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)) {
         calc_flip(&move_list[idx].flip, &search->board, cell);
         //noise_flip(&move_list[idx].flip, depth);
-        move_list[idx].value = 0;
         ++idx;
     }
     uint_fast8_t moves[N_TRANSPOSITION_MOVES] = {MOVE_UNDEFINED, MOVE_UNDEFINED};
