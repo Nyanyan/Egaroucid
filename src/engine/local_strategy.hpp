@@ -137,7 +137,7 @@ void calc_local_strategy_player(Board board, int level, double res[], int player
 #if TUNE_LOCAL_STRATEGY
 
 void tune_local_strategy() {
-    int n = 100; // n per n_discs per cell
+    int n = 100; // n per n_discs per cell_type
     int level = 10;
 
     constexpr int N_CELL_TYPES = 10;
@@ -167,8 +167,10 @@ void tune_local_strategy() {
     Board board;
     Flip flip;
     for (int n_discs = 4; n_discs <= HW2; ++n_discs) {
-        std::cerr << '\r' << n_discs;
+        std::cerr << '\r' << "                                                                   ";
+        std::cerr << '\r' << "n_discs " << n_discs << " type ";
         for (int cell_type = 0; cell_type < N_CELL_TYPES; ++cell_type) {
+            std::cerr << cell_type << " ";
             for (int i = 0; i < n; ++i) {
                 board.reset();
                 while (board.n_discs() < n_discs && board.check_pass()) {
@@ -213,7 +215,20 @@ void tune_local_strategy() {
                     }
                 }
             }
+            if (count[n_discs][cell_type]) {
+                res[n_discs][cell_type] /= count[n_discs][cell_type];
+            }
         }
+        std::cerr << '\r';
+        std::cout << "{";
+        for (int j = 0; j < N_CELL_TYPES; ++j) {
+            std::cout << res[n_discs][j];
+            if (j < N_CELL_TYPES - 1) {
+                std::cout << ", ";
+            }
+        }
+        std::cout << "}," << std::endl;
+
     }
     std::cerr << std::endl;
 
@@ -234,10 +249,11 @@ void tune_local_strategy() {
     }
 
     for (int i = 0; i < HW2; ++i) {
+        std::cout << "{";
         for (int j = 0; j < N_CELL_TYPES; ++j) {
             std::cout << res[i][j] << ", ";
         }
-        std::cout << std::endl;
+        std::cout << "}," << std::endl;
     }
 }
 
