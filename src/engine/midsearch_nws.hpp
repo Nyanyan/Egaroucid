@@ -157,7 +157,7 @@ int nega_alpha_ordering_nws_simple(Search *search, int alpha, const int depth, c
 #endif
     if (tt_moves_idx0 != -1 && move_list[tt_moves_idx0].flip.flip) {
         search->move(&move_list[tt_moves_idx0].flip);
-            g = -nega_alpha_ordering_nws(search, -alpha - 1, depth - 1, false, move_list[tt_moves_idx0].n_legal, is_end_search, searchings);
+            g = -nega_alpha_ordering_nws_simple(search, -alpha - 1, depth - 1, false, move_list[tt_moves_idx0].n_legal, searching);
         search->undo(&move_list[tt_moves_idx0].flip);
         if (v < g) {
             v = g;
@@ -319,6 +319,7 @@ int nega_alpha_ordering_nws(Search *search, int alpha, const int depth, const bo
                     search->move(&move_list[0].flip);
                         g = -nega_alpha_ordering_nws(search, -alpha - 1, depth - 1, false, move_list[0].n_legal, is_end_search, searchings);
                     search->undo(&move_list[0].flip);
+                    move_list[0].flip.flip = 0;
                     if (v < g) {
                         v = g;
                         best_move = move_list[0].flip.pos;

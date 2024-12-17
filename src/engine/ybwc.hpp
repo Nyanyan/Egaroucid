@@ -123,7 +123,7 @@ inline void ybwc_search_young_brothers_nws(Search *search, int alpha, int *v, in
     bool searched;
     int n_searched = 0;
     int n_moves_seen = 0;
-    for (int move_idx = 1; move_idx < canput && is_searching(searchings); ++move_idx) {
+    for (int move_idx = 0; move_idx < canput && is_searching(searchings); ++move_idx) {
         if (move_list[move_idx].flip.flip) {
             ++n_moves_seen;
             searched = false;
@@ -220,7 +220,7 @@ void ybwc_search_young_brothers(Search *search, int *alpha, int *beta, int *v, i
     int next_alpha = *alpha;
     int n_searched = 0;
     int n_moves_seen = 0;
-    for (int move_idx = 1; move_idx < canput && *searching && n_searching; ++move_idx) {
+    for (int move_idx = 0; move_idx < canput && *searching && n_searching; ++move_idx) {
         if (move_list[move_idx].flip.flip) {
             ++n_moves_seen;
             bool move_done = false;

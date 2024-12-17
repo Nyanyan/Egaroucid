@@ -69,7 +69,7 @@ int nega_alpha_human_like(Search *search, int alpha, int beta, int depth, bool s
         ++idx;
     }
     uint_fast8_t moves[N_TRANSPOSITION_MOVES] = {MOVE_UNDEFINED, MOVE_UNDEFINED};
-    move_list_evaluate_nottcutoff(search, move_list, moves, depth, alpha, beta, searching);
+    move_list_evaluate(search, move_list, moves, depth, alpha, beta, searching);
     if (beta <= alpha) {
         return alpha;
     }
@@ -114,7 +114,7 @@ Search_result nega_alpha_human_like_root(Search *search, int alpha, int beta, in
         ++idx;
     }
     uint_fast8_t moves[N_TRANSPOSITION_MOVES] = {MOVE_UNDEFINED, MOVE_UNDEFINED};
-    move_list_evaluate_nottcutoff(search, move_list, moves, depth, alpha, beta, searching);
+    move_list_evaluate(search, move_list, moves, depth, alpha, beta, searching);
     int g;
     res.value = -SCORE_INF;
     res.policy = MOVE_NOMOVE;
