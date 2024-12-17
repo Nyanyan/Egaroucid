@@ -133,11 +133,13 @@ inline bool etc(Search *search, std::vector<Flip_value> &move_list, int depth, i
             *v = -u;
             if (-l <= *v || u == l) { // better move already found or this move is already done
                 flip_value.flip.flip = 0ULL; // make this move invalid
+                flip_value.value = -INF;
                 ++(*etc_done_idx);
             }
         } else if (-l <= *alpha) { // -u <= -l <= alpha < beta
             *v = std::max(*v, -l); // this move is worse than alpha
             flip_value.flip.flip = 0ULL; // make this move invalid
+            flip_value.value = -INF;
             ++(*etc_done_idx);
         }
     }
@@ -171,6 +173,7 @@ inline bool etc_nws(Search *search, std::vector<Flip_value> &move_list, int dept
             if (*v < -l)
                 *v = -l;
             flip_value.flip.flip = 0ULL; // make this move invalid
+            flip_value.value = -INF;
             ++(*etc_done_idx);
         }
     }

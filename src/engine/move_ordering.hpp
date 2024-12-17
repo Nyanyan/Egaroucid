@@ -431,8 +431,6 @@ inline bool move_list_evaluate(Search *search, std::vector<Flip_value> &move_lis
                 move_evaluate(search, &flip_value, eval_alpha, eval_beta, eval_depth, searching);
             }
 #if USE_MID_ETC
-        } else {
-            flip_value.value = -INF;
         }
 #endif
     }
@@ -461,8 +459,6 @@ inline void move_list_evaluate_nottcutoff(Search *search, std::vector<Flip_value
                 move_evaluate(search, &flip_value, eval_alpha, eval_beta, eval_depth, searching);
             }
 #if USE_MID_ETC
-        } else {
-            flip_value.value = -INF;
         }
 #endif
     }
