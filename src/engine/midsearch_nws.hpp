@@ -151,7 +151,9 @@ int nega_alpha_ordering_nws_simple(Search *search, int alpha, const int depth, c
         }
     }
 #endif
-    move_list_evaluate_nws(search, move_list, moves, depth, alpha, searching);
+    if (move_list_evaluate_nws(search, move_list, moves, depth, alpha, searching, &best_move, &v)) {
+        return v;
+    }
 #if USE_MID_ETC && MID_ETC_DEPTH <= MID_SIMPLE_DEPTH
     for (int move_idx = 0; move_idx < canput - n_etc_done && *searching; ++move_idx) {
 #else
@@ -271,7 +273,9 @@ int nega_alpha_ordering_nws(Search *search, int alpha, const int depth, const bo
         }
     }
 #endif
-    move_list_evaluate_nws(search, move_list, moves, depth, alpha, searchings.back());
+    if (move_list_evaluate_nws(search, move_list, moves, depth, alpha, searchings.back(), &best_move, &v)) {
+        return v;
+    }
 #if USE_YBWC_NWS
     if (
         search->use_multi_thread && 
