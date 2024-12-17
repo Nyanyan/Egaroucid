@@ -106,3 +106,13 @@ void calc_local_strategy(Board board, int level, double res[], bool *searching, 
         print_local_strategy(res);
     }
 }
+
+
+void calc_local_strategy_player(Board board, int level, double res[], int player, bool *searching, bool show_log) {
+    calc_local_strategy(board, level, res, searching, show_log);
+    if (player == WHITE) {
+        for (int cell = 0; cell < HW2; ++cell) {
+            res[cell] *= -1;
+        }
+    }
+}

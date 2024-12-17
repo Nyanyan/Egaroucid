@@ -1380,7 +1380,7 @@ private:
         ai_status.local_strategy_calculating = true;
         ai_status.local_strategy_calculated = false;
         std::cerr << "start local strategy calculation" << std::endl;
-        ai_status.local_strategy_future = std::async(std::launch::async, std::bind(calc_local_strategy, getData().history_elem.board, 10, ai_status.local_strategy, &ai_status.local_strategy_calculating, false));
+        ai_status.local_strategy_future = std::async(std::launch::async, std::bind(calc_local_strategy_player, getData().history_elem.board, 10, ai_status.local_strategy, getData().history_elem.player, &ai_status.local_strategy_calculating, false));
     }
 
     void try_local_strategy_get() {
@@ -1401,7 +1401,7 @@ private:
             Color cell_color;
             if (ai_status.local_strategy[cell] > 0) { // black
                 cell_color = ColorF{ 52.0 / 255.0, 152.0 / 255.0, 219.0 / 255.0, ai_status.local_strategy[cell] };
-            } else {
+            } else { // white
                 cell_color = ColorF{ 241.0 / 255.0, 196.0 / 255.0, 15.0 / 255.0, -ai_status.local_strategy[cell] };
             }
             Rect{ sx, sy,  BOARD_CELL_SIZE, BOARD_CELL_SIZE}.draw(cell_color);
