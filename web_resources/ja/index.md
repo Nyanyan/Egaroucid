@@ -121,12 +121,14 @@ Egaroucidに関連するその他の資料です。読み物が多めです。
 
 <ul>
     <li>[オセロAI世界1位になってオセロAIをｶﾝｾﾞﾝﾆﾘｶｲｼﾀ話](https://qiita.com/Nyanyan_Cube/items/195bdc47bb1d7c6f8b24): オセロAI制作の初期にコンテストで1位になった話です</li>
+    <li>[オセロAI世界大会で優勝した話](https://qiita.com/Nyanyan_Cube/items/e104595c48e6ac67475b): コンテスト側による制約の少ないオセロAI大会で優勝した話です。ｶﾝｾﾞﾝﾆﾘｶｲｼﾀ話で「真の世界最強」と書いたオセロAIに、3年かけてほぼたどり着きました</li>
     <li>[みんな、とにかくオセロAIを作るんだ](https://qiita.com/Nyanyan_Cube/items/1839732d7bdf74caff21): オセロAIを作ると何が良いのかを解説しています</li>
     <li>[オセロAIの教科書](https://note.com/nyanyan_cubetech/m/m54104c8d2f12): オセロAI制作を初歩から解説したマガジンです。全編無料です。サンプルコードもあります。ちょっと古い記事なので、近々更新したいです…</li>
 	<li>[オセロAI世界1位が最弱オセロAIを作った話(読み物編)](https://note.com/nyanyan_cubetech/n/n2674dd6f5973): 負けオセロAI [Egaroucen](https://www.egaroucen.nyanyan.dev/)(自分調べで世界最弱)制作の物語です</li>
     <li>[オセロAI世界1位が最弱オセロAIを作った話(技術編)](https://qiita.com/Nyanyan_Cube/items/43d8627539c73459635c): 負けオセロAI [Egaroucen](https://www.egaroucen.nyanyan.dev/)(自分調べで世界最弱)の技術解説です</li>
     <li>[世界1位のオセロAIをSiv3Dで人生初アプリ化した話](https://qiita.com/Nyanyan_Cube/items/bfb2bc3ba7a93c83f2d1): オセロAIを実際に画面上で動くソフトウェアとして公開した話です</li>
 </ul>
+
 ### Othello is Solvedに関する資料
 
 2023年10月30日付で、[Othello is Solved](https://doi.org/10.48550/arXiv.2310.19387)という論文がarXivに投稿されました。私はこの論文の著者ではありませんが、専門ど真ん中なこともあり、この論文を読んで勝手に解説を書きました。Egaroucidに直接関係するものではありませんが、論文の読解にはEgaroucid開発の経験が役立ちましたのでここで紹介します。おそらく日本語でアクセスできる解説の中では一番正確かつ詳しいと思います。
