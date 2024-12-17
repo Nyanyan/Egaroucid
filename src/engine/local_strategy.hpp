@@ -193,7 +193,7 @@ void calc_local_strategy_player(Board board, int level, double res[], int player
 #if TUNE_LOCAL_STRATEGY
 
 void tune_local_strategy() {
-    int n_max = 1000000; // n per n_discs per cell_type
+    int n_max = 10000000; // n per n_discs per cell_type
     int n_min = 10000;
     int level = 10;
 
