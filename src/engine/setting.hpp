@@ -191,7 +191,7 @@
 #define TUNE_PROBCUT_END false
 
 // local strategy
-#define TUNE_LOCAL_STRATEGY false
+#define TUNE_LOCAL_STRATEGY true
 
 
 /*

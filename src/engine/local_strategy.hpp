@@ -193,11 +193,12 @@ void calc_local_strategy_player(Board board, int level, double res[], int player
 #if TUNE_LOCAL_STRATEGY
 
 void tune_local_strategy() {
-    int n = 1000; // n per n_discs per cell_type
+    int n_max = 100000; // n per n_discs per cell_type
+    int n_min = 1000;
     int level = 10;
 
-    double res[HW2][N_CELL_TYPE];
-    int count[HW2][N_CELL_TYPE];
+    double res[HW2_P1][N_CELL_TYPE];
+    int count[HW2_P1][N_CELL_TYPE];
 
     for (int i = 0; i < HW2; ++i) {
         for (int j = 0; j < N_CELL_TYPE; ++j) {
@@ -213,7 +214,7 @@ void tune_local_strategy() {
         std::cerr << '\r' << "n_discs " << n_discs << " type ";
         for (int cell_type = 0; cell_type < N_CELL_TYPE; ++cell_type) {
             std::cerr << cell_type << " ";
-            for (int i = 0; i < n; ++i) {
+            for (int i = 0; i < n_max && count[n_discs][cell_type] < n_min; ++i) {
                 board.reset();
                 while (board.n_discs() < n_discs && board.check_pass()) {
                     uint64_t legal = board.get_legal();
@@ -228,34 +229,34 @@ void tune_local_strategy() {
                     }
                     board.move_board(&flip);
                 }
-                if (board.check_pass()) {
-                    if ((board.player | board.opponent) & cell_type_mask[cell_type]) {
-                        uint64_t can_be_masked = (board.player | board.opponent) & cell_type_mask[cell_type];
-                        int random_idx = myrandrange(0, pop_count_ull(can_be_masked));
-                        int t = 0;
-                        uint64_t flipped = 0;
-                        for (uint_fast8_t cell = first_bit(&can_be_masked); can_be_masked; cell = next_bit(&can_be_masked)) {
-                            if (t == random_idx) {
-                                flipped = 1ULL << cell;
-                                break;
-                            }
-                            ++t;
+                //if (board.check_pass()) {
+                if ((board.player | board.opponent) & cell_type_mask[cell_type]) {
+                    uint64_t can_be_masked = (board.player | board.opponent) & cell_type_mask[cell_type];
+                    int random_idx = myrandrange(0, pop_count_ull(can_be_masked));
+                    int t = 0;
+                    uint64_t flipped = 0;
+                    for (uint_fast8_t cell = first_bit(&can_be_masked); can_be_masked; cell = next_bit(&can_be_masked)) {
+                        if (t == random_idx) {
+                            flipped = 1ULL << cell;
+                            break;
                         }
-                        Search_result complete_result = ai(board, level, true, 0, true, false);
-                        int sgn = -1; // opponent -> player
-                        if (board.player & flipped) { // player -> opponent
-                            sgn = 1;
-                        }
-                        board.player ^= flipped;
-                        board.opponent ^= flipped;
-                            Search_result flipped_result = ai(board, level, true, 0, true, false);
-                        board.player ^= flipped;
-                        board.opponent ^= flipped;
-                        double diff = sgn * (complete_result.value - flipped_result.value);
-                        res[n_discs][cell_type] += diff;
-                        ++count[n_discs][cell_type];
+                        ++t;
                     }
+                    Search_result complete_result = ai(board, level, true, 0, true, false);
+                    int sgn = -1; // opponent -> player
+                    if (board.player & flipped) { // player -> opponent
+                        sgn = 1;
+                    }
+                    board.player ^= flipped;
+                    board.opponent ^= flipped;
+                        Search_result flipped_result = ai(board, level, true, 0, true, false);
+                    board.player ^= flipped;
+                    board.opponent ^= flipped;
+                    double diff = sgn * (complete_result.value - flipped_result.value);
+                    res[n_discs][cell_type] += diff;
+                    ++count[n_discs][cell_type];
                 }
+                //}
             }
             if (count[n_discs][cell_type]) {
                 res[n_discs][cell_type] /= count[n_discs][cell_type];
@@ -275,7 +276,7 @@ void tune_local_strategy() {
     std::cerr << std::endl;
 
     std::cerr << "count" << std::endl;
-    for (int i = 0; i < HW2; ++i) {
+    for (int i = 0; i <= HW2; ++i) {
         std::cout << "{";
         for (int j = 0; j < N_CELL_TYPE; ++j) {
             std::cerr << count[i][j];
@@ -285,8 +286,8 @@ void tune_local_strategy() {
         }
         std::cout << "}," << std::endl;
     }
-
-    for (int i = 0; i < HW2; ++i) {
+    std::cerr << "res" << std::endl;
+    for (int i = 0; i <= HW2; ++i) {
         std::cout << "{";
         for (int j = 0; j < N_CELL_TYPE; ++j) {
             std::cout << std::fixed << std::setprecision(4) << res[i][j];
