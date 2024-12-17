@@ -169,6 +169,13 @@ void execute_special_tasks(Options options) {
         std::exit(0);
     #endif
 
+    // local strategy
+    #if TUNE_LOCAL_STRATEGY
+        std::cout << "tune local strategy" << std::endl;
+        tune_local_strategy();
+        std::exit(0);
+    #endif
+
     #if TEST_ENDGAME_ACCURACY
         endgame_accuracy_test();
         std::exit(0);

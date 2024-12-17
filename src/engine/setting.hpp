@@ -190,6 +190,9 @@
 #define TUNE_PROBCUT_MID false
 #define TUNE_PROBCUT_END false
 
+// local strategy
+#define TUNE_LOCAL_STRATEGY true
+
 
 /*
     @brief test
