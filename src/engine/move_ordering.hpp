@@ -364,12 +364,12 @@ inline void swap_next_best_move(Flip_value move_list[], const int strt, const in
     @param beta                 beta value
     @param searching            flag for terminating this search
 */
-inline void move_list_evaluate(Search *search, std::vector<Flip_value> &move_list, uint_fast8_t moves[], int depth, int alpha, int beta, bool *searching) {
+inline int move_list_evaluate(Search *search, std::vector<Flip_value> &move_list, uint_fast8_t moves[], int depth, int *alpha, int beta, bool *searching) {
     if (move_list.size() == 1) {
-        return;
+        return MOVE_UNDEFINED;
     }
     int eval_alpha = -std::min(SCORE_MAX, beta + MOVE_ORDERING_VALUE_OFFSET_BETA);
-    int eval_beta = -std::max(-SCORE_MAX, alpha - MOVE_ORDERING_VALUE_OFFSET_ALPHA);
+    int eval_beta = -std::max(-SCORE_MAX, *alpha - MOVE_ORDERING_VALUE_OFFSET_ALPHA);
     int eval_depth = depth >> 3;
     if (depth >= 25 && search->mpc_level < MPC_100_LEVEL) {
         eval_depth = ((depth / 3) & 0b11111110) + (depth & 1); // depth / 3 + parity
@@ -388,16 +388,37 @@ inline void move_list_evaluate(Search *search, std::vector<Flip_value> &move_lis
     }
     */
     if (eval_depth >= 2) {
+        bool disable_move;
         for (Flip_value &flip_value: move_list) {
 #if USE_MID_ETC
             if (flip_value.flip.flip) {
 #endif
                 flip_value.value = 0;
+                disable_move = false;
                 search->board.move_board(&flip_value.flip);
+                    /*
                     if (transposition_table.has_node_any_level(search, search->board.hash())) {
                         flip_value.value += W_TT_BONUS;
                     }
+                    */
+                    int tt_v = transposition_table.has_node_any_level_cutoff(search, search->board.hash(), depth - 1, -beta, -(*alpha));
+                    if (tt_v == TRANSPOSITION_TABLE_HAS_NODE) { // node found
+                        flip_value.value += W_TT_BONUS;
+                    } else if (tt_v != TRANSPOSITION_TABLE_NOT_HAS_NODE) { // cutoff
+                        if (*alpha < -tt_v) {
+                            //std::cerr << *alpha << " " << -tt_v << std::endl;
+                            *alpha = -tt_v;
+                        }
+                        disable_move = true;
+                    }
                 search->board.undo_board(&flip_value.flip);
+                if (disable_move) {
+                    flip_value.flip.flip = 0;
+                    flip_value.value = -INF;
+                    if (beta <= *alpha) {
+                        return flip_value.flip.pos;
+                    }
+                }
 #if USE_MID_ETC
             } else {
                 flip_value.value = -INF;
@@ -418,9 +439,7 @@ inline void move_list_evaluate(Search *search, std::vector<Flip_value> &move_lis
         }
     }
     for (Flip_value &flip_value: move_list) {
-#if USE_MID_ETC
         if (flip_value.flip.flip) {
-#endif
             if (flip_value.flip.pos == moves[0]) {
                 flip_value.value = W_1ST_MOVE;
             } else if (flip_value.flip.pos == moves[1]) {
@@ -428,10 +447,9 @@ inline void move_list_evaluate(Search *search, std::vector<Flip_value> &move_lis
             } else {
                 move_evaluate(search, &flip_value, eval_alpha, eval_beta, eval_depth, searching);
             }
-#if USE_MID_ETC
         }
-#endif
     }
+    return MOVE_UNDEFINED;
 }
 
 /*
@@ -482,9 +500,7 @@ inline void move_list_evaluate_nws(Search *search, std::vector<Flip_value> &move
         }
     }
     for (Flip_value &flip_value: move_list) {
-#if USE_MID_ETC
         if (flip_value.flip.flip) {
-#endif
             if (flip_value.flip.pos == moves[0]) {
                 flip_value.value = W_1ST_MOVE;
             } else if (flip_value.flip.pos == moves[1]) {
@@ -492,9 +508,7 @@ inline void move_list_evaluate_nws(Search *search, std::vector<Flip_value> &move
             } else{
                 move_evaluate_nws(search, &flip_value, eval_alpha, eval_beta, eval_depth, searching);
             }
-#if USE_MID_ETC
         }
-#endif
     }
 }
 

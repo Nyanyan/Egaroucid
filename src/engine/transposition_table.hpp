@@ -30,6 +30,9 @@ constexpr size_t TRANSPOSITION_TABLE_STACK_SIZE = hash_sizes[DEFAULT_HASH_LEVEL]
 constexpr int N_TRANSPOSITION_MOVES = 2;
 constexpr double TT_REGISTER_THRESHOLD_RATE = 0.3;
 
+constexpr int TRANSPOSITION_TABLE_HAS_NODE = 100;
+constexpr int TRANSPOSITION_TABLE_NOT_HAS_NODE = -100;
+
 bool transposition_table_auto_reset_importance = true;
 
 inline uint32_t get_level_common(uint8_t depth, uint8_t mpc_level) {
@@ -799,6 +802,35 @@ class Transposition_table {
                 node = get_node(hash);
             }
             return false;
+        }
+
+        inline int has_node_any_level_cutoff(const Search *search, uint32_t hash, int depth, int alpha, int beta) {
+            Hash_node *node = get_node(hash);
+            const uint32_t level = get_level_common(depth, search->mpc_level);
+            int res = TRANSPOSITION_TABLE_NOT_HAS_NODE;
+            int l, u;
+            for (uint_fast8_t i = 0; i < TRANSPOSITION_TABLE_N_LOOP; ++i) {
+                if (node->board.player == search->board.player && node->board.opponent == search->board.opponent) {
+                    node->lock.lock();
+                        if (node->board.player == search->board.player && node->board.opponent == search->board.opponent) {
+                            res = TRANSPOSITION_TABLE_HAS_NODE;
+                            if (node->data.get_level_no_importance() >= level) {
+                                node->data.get_bounds(&l, &u);
+                                if (u <= alpha) {
+                                    res = u;
+                                } else if (beta <= l) {
+                                    res = l;
+                                }
+                            }
+                        }
+                    node->lock.unlock();
+                    break;
+                }
+                ++hash;
+                node = get_node(hash);
+            }
+            return res;
+
         }
 
     private:
