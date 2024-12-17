@@ -409,7 +409,7 @@ inline bool move_list_tt_check(Search *search, std::vector<Flip_value> &move_lis
     @param beta                 beta value
     @param searching            flag for terminating this search
 */
-inline bool move_list_evaluate(Search *search, std::vector<Flip_value> &move_list, uint_fast8_t moves[], int depth, int alpha, int beta, bool *searching, int *best_move, int *best_score) {
+inline bool move_list_evaluate(Search *search, std::vector<Flip_value> &move_list, uint_fast8_t moves[], int depth, int alpha, int beta, bool *searching) {
     if (move_list.size() == 1) {
         return false;
     }
@@ -437,33 +437,6 @@ inline bool move_list_evaluate(Search *search, std::vector<Flip_value> &move_lis
     return false;
 }
 
-inline void move_list_evaluate_nottcutoff(Search *search, std::vector<Flip_value> &move_list, uint_fast8_t moves[], int depth, int alpha, int beta, bool *searching) {
-    if (move_list.size() == 1) {
-        return;
-    }
-    int eval_alpha = -std::min(SCORE_MAX, beta + MOVE_ORDERING_VALUE_OFFSET_BETA);
-    int eval_beta = -std::max(-SCORE_MAX, alpha - MOVE_ORDERING_VALUE_OFFSET_ALPHA);
-    int eval_depth = depth >> 3;
-    if (depth >= 25 && search->mpc_level < MPC_100_LEVEL) {
-        eval_depth = ((depth / 3) & 0b11111110) + (depth & 1); // depth / 3 + parity
-    }
-    for (Flip_value &flip_value: move_list) {
-#if USE_MID_ETC
-        if (flip_value.flip.flip) {
-#endif
-            if (flip_value.flip.pos == moves[0]) {
-                flip_value.value = W_1ST_MOVE;
-            } else if (flip_value.flip.pos == moves[1]) {
-                flip_value.value = W_2ND_MOVE;
-            } else {
-                move_evaluate(search, &flip_value, eval_alpha, eval_beta, eval_depth, searching);
-            }
-#if USE_MID_ETC
-        }
-#endif
-    }
-}
-
 /*
     @brief Evaluate all legal moves for midgame NWS
 
@@ -474,7 +447,7 @@ inline void move_list_evaluate_nottcutoff(Search *search, std::vector<Flip_value
     @param alpha                alpha value (beta = alpha + 1)
     @param searching            flag for terminating this search
 */
-inline bool move_list_evaluate_nws(Search *search, std::vector<Flip_value> &move_list, uint_fast8_t moves[], int depth, int alpha, bool *searching, int *best_move, int *best_score) {
+inline bool move_list_evaluate_nws(Search *search, std::vector<Flip_value> &move_list, uint_fast8_t moves[], int depth, int alpha, bool *searching) {
     if (move_list.size() <= 1) {
         return false;
     }

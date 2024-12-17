@@ -136,10 +136,14 @@ int nega_alpha_ordering_nws_simple(Search *search, int alpha, const int depth, c
     const int canput = pop_count_ull(legal);
     std::vector<Flip_value> move_list(canput);
     int idx = 0;
+    int tt_moves_idx0 = -1;
     for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)) {
         calc_flip(&move_list[idx].flip, &search->board, cell);
         if (move_list[idx].flip.flip == search->board.opponent) {
             return SCORE_MAX;
+        }
+        if (cell == moves[0]) {
+            tt_moves_idx0 = idx;
         }
         ++idx;
     }
@@ -151,28 +155,39 @@ int nega_alpha_ordering_nws_simple(Search *search, int alpha, const int depth, c
         }
     }
 #endif
-    if (move_list_evaluate_nws(search, move_list, moves, depth, alpha, searching, &best_move, &v)) {
-        return v;
-    }
-#if USE_MID_ETC && MID_ETC_DEPTH_NWS <= MID_SIMPLE_DEPTH
-    for (int move_idx = 0; move_idx < canput - n_etc_done && *searching; ++move_idx) {
-#else
-    for (int move_idx = 0; move_idx < canput && *searching; ++move_idx) {
-#endif
-        swap_next_best_move(move_list, move_idx, canput);
-#if USE_MID_ETC && MID_ETC_DEPTH_NWS <= MID_SIMPLE_DEPTH
-        if (move_list[move_idx].flip.flip == 0) {
-            break;
-        }
-#endif
-        search->move(&move_list[move_idx].flip);
-            g = -nega_alpha_ordering_nws_simple(search, -alpha - 1, depth - 1, false, move_list[move_idx].n_legal, searching);
-        search->undo(&move_list[move_idx].flip);
+    if (tt_moves_idx0 != -1 && move_list[tt_moves_idx0].flip.flip) {
+        search->move(&move_list[tt_moves_idx0].flip);
+            g = -nega_alpha_ordering_nws(search, -alpha - 1, depth - 1, false, move_list[tt_moves_idx0].n_legal, is_end_search, searchings);
+        search->undo(&move_list[tt_moves_idx0].flip);
         if (v < g) {
             v = g;
-            best_move = move_list[move_idx].flip.pos;
-            if (alpha < v) {
+            best_move = move_list[tt_moves_idx0].flip.pos;
+        }
+        move_list[tt_moves_idx0].flip.flip = 0;
+        move_list[tt_moves_idx0].value = -INF;
+    }
+    if (v <= alpha) {
+        move_list_evaluate_nws(search, move_list, moves, depth, alpha, searching);
+#if USE_MID_ETC && MID_ETC_DEPTH_NWS <= MID_SIMPLE_DEPTH
+        for (int move_idx = 0; move_idx < canput - n_etc_done && *searching; ++move_idx) {
+#else
+        for (int move_idx = 0; move_idx < canput && *searching; ++move_idx) {
+#endif
+            swap_next_best_move(move_list, move_idx, canput);
+#if USE_MID_ETC && MID_ETC_DEPTH_NWS <= MID_SIMPLE_DEPTH
+            if (move_list[move_idx].flip.flip == 0) {
                 break;
+            }
+#endif
+            search->move(&move_list[move_idx].flip);
+                g = -nega_alpha_ordering_nws_simple(search, -alpha - 1, depth - 1, false, move_list[move_idx].n_legal, searching);
+            search->undo(&move_list[move_idx].flip);
+            if (v < g) {
+                v = g;
+                best_move = move_list[move_idx].flip.pos;
+                if (alpha < v) {
+                    break;
+                }
             }
         }
     }
@@ -258,10 +273,14 @@ int nega_alpha_ordering_nws(Search *search, int alpha, const int depth, const bo
     const int canput = pop_count_ull(legal);
     std::vector<Flip_value> move_list(canput);
     int idx = 0;
+    int tt_moves_idx0 = -1;
     for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)) {
         calc_flip(&move_list[idx].flip, &search->board, cell);
         if (move_list[idx].flip.flip == search->board.opponent) {
             return SCORE_MAX;
+        }
+        if (cell == moves[0]) {
+            tt_moves_idx0 = idx;
         }
         ++idx;
     }
@@ -273,51 +292,66 @@ int nega_alpha_ordering_nws(Search *search, int alpha, const int depth, const bo
         }
     }
 #endif
-    if (move_list_evaluate_nws(search, move_list, moves, depth, alpha, searchings.back(), &best_move, &v)) {
-        return v;
-    }
-#if USE_YBWC_NWS
-    if (
-        search->use_multi_thread && 
-        ((!is_end_search && depth - 1 >= YBWC_MID_SPLIT_MIN_DEPTH) || (is_end_search && depth - 1 >= YBWC_END_SPLIT_MIN_DEPTH)) //&& 
-        //((!is_end_search && depth - 1 <= YBWC_MID_SPLIT_MAX_DEPTH) || (is_end_search && depth - 1 <= YBWC_END_SPLIT_MAX_DEPTH))
-    ) {
-        move_list_sort(move_list);
-        if (move_list[0].flip.flip) {
-            search->move(&move_list[0].flip);
-                g = -nega_alpha_ordering_nws(search, -alpha - 1, depth - 1, false, move_list[0].n_legal, is_end_search, searchings);
-            search->undo(&move_list[0].flip);
-            if (v < g) {
-                v = g;
-                best_move = move_list[0].flip.pos;
-            }
-            if (v <= alpha) {
-                ybwc_search_young_brothers_nws(search, alpha, &v, &best_move, canput - n_etc_done - 1, hash_code, depth, is_end_search, move_list, searchings);
-            }
+    bool serial_searched = false;
+    if (tt_moves_idx0 != -1 && move_list[tt_moves_idx0].flip.flip) {
+        search->move(&move_list[tt_moves_idx0].flip);
+            g = -nega_alpha_ordering_nws(search, -alpha - 1, depth - 1, false, move_list[tt_moves_idx0].n_legal, is_end_search, searchings);
+        search->undo(&move_list[tt_moves_idx0].flip);
+        if (v < g) {
+            v = g;
+            best_move = move_list[tt_moves_idx0].flip.pos;
         }
-    } else{
+        serial_searched = true;
+        move_list[tt_moves_idx0].flip.flip = 0;
+        move_list[tt_moves_idx0].value = -INF;
+    }
+    if (v <= alpha) {
+        move_list_evaluate_nws(search, move_list, moves, depth, alpha, searchings.back());
+#if USE_YBWC_NWS
+        if (
+            search->use_multi_thread && 
+            ((!is_end_search && depth - 1 >= YBWC_MID_SPLIT_MIN_DEPTH) || (is_end_search && depth - 1 >= YBWC_END_SPLIT_MIN_DEPTH)) //&& 
+            //((!is_end_search && depth - 1 <= YBWC_MID_SPLIT_MAX_DEPTH) || (is_end_search && depth - 1 <= YBWC_END_SPLIT_MAX_DEPTH))
+        ) {
+            move_list_sort(move_list);
+            if (move_list[0].flip.flip) {
+                if (!serial_searched) {
+                    search->move(&move_list[0].flip);
+                        g = -nega_alpha_ordering_nws(search, -alpha - 1, depth - 1, false, move_list[0].n_legal, is_end_search, searchings);
+                    search->undo(&move_list[0].flip);
+                    if (v < g) {
+                        v = g;
+                        best_move = move_list[0].flip.pos;
+                    }
+                }
+                if (v <= alpha) {
+                    ybwc_search_young_brothers_nws(search, alpha, &v, &best_move, canput - n_etc_done - 1, hash_code, depth, is_end_search, move_list, searchings);
+                }
+            }
+        } else{
 #endif
-        for (int move_idx = 0; move_idx < canput - n_etc_done && is_searching(searchings); ++move_idx) {
-            swap_next_best_move(move_list, move_idx, canput);
-            #if USE_MID_ETC
+            for (int move_idx = 0; move_idx < canput - n_etc_done && is_searching(searchings); ++move_idx) {
+                swap_next_best_move(move_list, move_idx, canput);
+#if USE_MID_ETC
                 if (move_list[move_idx].flip.flip == 0) {
                     break;
                 }
-            #endif
-            search->move(&move_list[move_idx].flip);
-                g = -nega_alpha_ordering_nws(search, -alpha - 1, depth - 1, false, move_list[move_idx].n_legal, is_end_search, searchings);
-            search->undo(&move_list[move_idx].flip);
-            if (v < g) {
-                v = g;
-                best_move = move_list[move_idx].flip.pos;
-                if (alpha < v) {
-                    break;
+#endif
+                search->move(&move_list[move_idx].flip);
+                    g = -nega_alpha_ordering_nws(search, -alpha - 1, depth - 1, false, move_list[move_idx].n_legal, is_end_search, searchings);
+                search->undo(&move_list[move_idx].flip);
+                if (v < g) {
+                    v = g;
+                    best_move = move_list[move_idx].flip.pos;
+                    if (alpha < v) {
+                        break;
+                    }
                 }
             }
-        }
 #if USE_YBWC_NWS
-    }
+        }
 #endif
+    }
     if (global_searching && is_searching(searchings)) {
         transposition_table.reg(search, hash_code, depth, alpha, alpha + 1, v, best_move);
     }
