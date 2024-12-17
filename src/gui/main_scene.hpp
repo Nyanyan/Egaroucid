@@ -1399,6 +1399,7 @@ private:
             int sx = BOARD_SX + ((HW2_M1 - cell) % HW) * BOARD_CELL_SIZE;
             int sy = BOARD_SY + ((HW2_M1 - cell) / HW) * BOARD_CELL_SIZE;
             Color cell_color = HSV{160.0, 0.76 - 0.24 * ai_status.local_strategy[cell], 0.60 - 0.30 * ai_status.local_strategy[cell]};
+            // normal green = HSV{160.0, 0.76, 0.60}
             /*
             if (ai_status.local_strategy[cell] > 0) { // black
                 cell_color = ColorF{ 52.0 / 255.0, 152.0 / 255.0, 219.0 / 255.0, ai_status.local_strategy[cell] };
