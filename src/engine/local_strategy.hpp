@@ -64,6 +64,7 @@ void calc_local_strategy(Board board, int level, double res[], bool *searching, 
                 board.opponent ^= bit;
             }
         } else { // empty
+            /*
             if ((board.player | board.opponent) & bit_around[cell]) { // next to disc
                 if ((legal & bit) == 0) { // can't put there
                     board.player ^= bit; // put there (no flip)
@@ -77,6 +78,7 @@ void calc_local_strategy(Board board, int level, double res[], bool *searching, 
                     board.player ^= bit;
                 }
             }
+            */
         }
     }
     /*
