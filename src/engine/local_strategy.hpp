@@ -22,7 +22,7 @@ void print_local_strategy(const double arr[]) {
 }
 
 void calc_local_strategy(Board board, int level, double res[], bool *searching, bool show_log) {
-    constexpr double cell_weight[HW2] = {
+    constexpr double cell_weight[HW2][N_CELL_TYPE] = {
         2714,  147,   69,  -18,  -18,   69,  147, 2714, 
          147, -577, -186, -153, -153, -186, -577,  147, 
           69, -186, -379, -122, -122, -379, -186,   69, 
@@ -140,22 +140,8 @@ void tune_local_strategy() {
     int n = 100; // n per n_discs per cell_type
     int level = 10;
 
-    constexpr int N_CELL_TYPES = 10;
-    constexpr uint64_t cell_type_mask[N_CELL_TYPES] = {
-        0x8100000000000081ULL, // corner
-        0x4281000000008142ULL, // C
-        0x2400810000810024ULL, // A
-        0x1800008181000018ULL, // B
-        0x0042000000004200ULL, // X
-        0x0024420000422400ULL, // a
-        0x0018004242001800ULL, // b
-        0x0000240000240000ULL, // box corner
-        0x0000182424180000ULL, // box edge
-        0x0000001818000000ULL  // center
-    };
-
-    double res[HW2][N_CELL_TYPES];
-    int count[HW2][N_CELL_TYPES];
+    double res[HW2][N_CELL_TYPE];
+    int count[HW2][N_CELL_TYPE];
 
     for (int i = 0; i < HW2; ++i) {
         for (int j = 0; j < N_CELL_TYPES; ++j) {
@@ -169,7 +155,7 @@ void tune_local_strategy() {
     for (int n_discs = 4; n_discs <= HW2; ++n_discs) {
         std::cerr << '\r' << "                                                                   ";
         std::cerr << '\r' << "n_discs " << n_discs << " type ";
-        for (int cell_type = 0; cell_type < N_CELL_TYPES; ++cell_type) {
+        for (int cell_type = 0; cell_type < N_CELL_TYPE; ++cell_type) {
             std::cerr << cell_type << " ";
             for (int i = 0; i < n; ++i) {
                 board.reset();
@@ -221,9 +207,9 @@ void tune_local_strategy() {
         }
         std::cerr << '\r';
         std::cout << "{";
-        for (int j = 0; j < N_CELL_TYPES; ++j) {
+        for (int j = 0; j < N_CELL_TYPE; ++j) {
             std::cout << res[n_discs][j];
-            if (j < N_CELL_TYPES - 1) {
+            if (j < N_CELL_TYPE - 1) {
                 std::cout << ", ";
             }
         }
@@ -233,7 +219,7 @@ void tune_local_strategy() {
     std::cerr << std::endl;
 
     for (int i = 0; i < HW2; ++i) {
-        for (int j = 0; j < N_CELL_TYPES; ++j) {
+        for (int j = 0; j < N_CELL_TYPE; ++j) {
             if (count[i][j]) {
                 res[i][j] /= count[i][j];
             }
@@ -242,16 +228,23 @@ void tune_local_strategy() {
 
     std::cerr << "count" << std::endl;
     for (int i = 0; i < HW2; ++i) {
-        for (int j = 0; j < N_CELL_TYPES; ++j) {
-            std::cerr << count[i][j] << ", ";
+        std::cout << "{";
+        for (int j = 0; j < N_CELL_TYPE; ++j) {
+            std::cerr << count[i][j];
+            if (j < N_CELL_TYPE - 1) {
+                std::cerr << ", ";
+            }
         }
-        std::cerr << std::endl;
+        std::cout << "}," << std::endl;
     }
 
     for (int i = 0; i < HW2; ++i) {
         std::cout << "{";
-        for (int j = 0; j < N_CELL_TYPES; ++j) {
-            std::cout << res[i][j] << ", ";
+        for (int j = 0; j < N_CELL_TYPE; ++j) {
+            std::cout << res[i][j];
+            if (j < N_CELL_TYPE - 1) {
+                std::cout << ", ";
+            }
         }
         std::cout << "}," << std::endl;
     }

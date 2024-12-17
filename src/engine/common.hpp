@@ -42,6 +42,20 @@ constexpr int SCORE_MAX = 64;
 // undefined legal bitboard: set bit on d4, d5, e4, and e5
 constexpr uint64_t LEGAL_UNDEFINED = 0x0000001818000000ULL;
 
+constexpr int N_CELL_TYPE = 10;
+constexpr uint64_t cell_type_mask[N_CELL_TYPE] = {
+    0x8100000000000081ULL, // corner
+    0x4281000000008142ULL, // C
+    0x2400810000810024ULL, // A
+    0x1800008181000018ULL, // B
+    0x0042000000004200ULL, // X
+    0x0024420000422400ULL, // a
+    0x0018004242001800ULL, // b
+    0x0000240000240000ULL, // box corner
+    0x0000182424180000ULL, // box edge
+    0x0000001818000000ULL  // center
+};
+
 /*
     @brief bits around the cell are set
     from https://eukaryote.hateblo.jp/entry/2020/04/26/031246
@@ -381,4 +395,14 @@ inline int convert_coord_to_representative_board(int cell, int idx) {
             break;
     }
     return res;
+}
+
+int cell_type(int cell) {
+    uint64_t cell_bit = 1ULL << cell;
+    for (int i = 0; i < N_CELL_TYPE; ++i) {
+        if (cell_type_mask[i] & cell_bit) {
+            return i;
+        }
+    }
+    return -1;
 }
