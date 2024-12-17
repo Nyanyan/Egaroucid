@@ -56,6 +56,17 @@ constexpr uint64_t cell_type_mask[N_CELL_TYPE] = {
     0x0000001818000000ULL  // center
 };
 
+constexpr int cell_type[HW2] = {
+    0, 1, 2, 3, 3, 2, 1, 0, 
+    1, 4, 5, 6, 6, 5, 4, 1, 
+    2, 5, 7, 8, 8, 7, 5, 2, 
+    3, 6, 8, 9, 9, 8, 6, 3, 
+    3, 6, 8, 9, 9, 8, 6, 3, 
+    2, 5, 7, 8, 8, 7, 5, 2, 
+    1, 4, 5, 6, 6, 5, 4, 1, 
+    0, 1, 2, 3, 3, 2, 1, 0
+};
+
 /*
     @brief bits around the cell are set
     from https://eukaryote.hateblo.jp/entry/2020/04/26/031246
@@ -395,14 +406,4 @@ inline int convert_coord_to_representative_board(int cell, int idx) {
             break;
     }
     return res;
-}
-
-int cell_type(int cell) {
-    uint64_t cell_bit = 1ULL << cell;
-    for (int i = 0; i < N_CELL_TYPE; ++i) {
-        if (cell_type_mask[i] & cell_bit) {
-            return i;
-        }
-    }
-    return -1;
 }
