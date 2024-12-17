@@ -353,6 +353,51 @@ inline void swap_next_best_move(Flip_value move_list[], const int strt, const in
     }
 }
 
+inline bool move_list_tt_check(Search *search, std::vector<Flip_value> &move_list, uint_fast8_t moves[], int depth, int alpha, int beta, int tt_bonus, int *best_move, int *best_score) {
+    bool disable_move;
+    *best_score = -SCORE_INF;
+    for (Flip_value &flip_value: move_list) {
+#if USE_MID_ETC
+        if (flip_value.flip.flip) {
+#endif
+            flip_value.value = 0;
+            disable_move = false;
+            search->board.move_board(&flip_value.flip);
+                /*
+                if (transposition_table.has_node_any_level(search, search->board.hash())) {
+                    flip_value.value += W_TT_BONUS;
+                }
+                */
+                int tt_v = transposition_table.has_node_any_level_cutoff(search, search->board.hash(), depth - 1, -beta, -alpha);
+                if (tt_v == TRANSPOSITION_TABLE_HAS_NODE) { // node found
+                    flip_value.value += tt_bonus;
+                } else if (tt_v != TRANSPOSITION_TABLE_NOT_HAS_NODE) { // cutoff
+                    if (alpha < -tt_v) {
+                        alpha = -tt_v;
+                    }
+                    disable_move = true;
+                }
+            search->board.undo_board(&flip_value.flip);
+            if (disable_move) {
+                flip_value.flip.flip = 0;
+                flip_value.value = -INF;
+                if (*best_score < -tt_v) {
+                    *best_score = -tt_v;
+                    *best_move = flip_value.flip.pos;
+                    if (beta <= alpha) {
+                        return true;
+                    }
+                }
+            }
+#if USE_MID_ETC
+        } else {
+            flip_value.value = -INF;
+        }
+#endif
+    }
+    return false;
+}
+
 /*
     @brief Evaluate all legal moves for midgame
 
@@ -364,66 +409,20 @@ inline void swap_next_best_move(Flip_value move_list[], const int strt, const in
     @param beta                 beta value
     @param searching            flag for terminating this search
 */
-inline int move_list_evaluate(Search *search, std::vector<Flip_value> &move_list, uint_fast8_t moves[], int depth, int *alpha, int beta, bool *searching) {
+inline bool move_list_evaluate(Search *search, std::vector<Flip_value> &move_list, uint_fast8_t moves[], int depth, int alpha, int beta, bool *searching, int *best_move, int *best_score) {
     if (move_list.size() == 1) {
-        return MOVE_UNDEFINED;
+        return false;
     }
     int eval_alpha = -std::min(SCORE_MAX, beta + MOVE_ORDERING_VALUE_OFFSET_BETA);
-    int eval_beta = -std::max(-SCORE_MAX, *alpha - MOVE_ORDERING_VALUE_OFFSET_ALPHA);
+    int eval_beta = -std::max(-SCORE_MAX, alpha - MOVE_ORDERING_VALUE_OFFSET_ALPHA);
     int eval_depth = depth >> 3;
     if (depth >= 25 && search->mpc_level < MPC_100_LEVEL) {
         eval_depth = ((depth / 3) & 0b11111110) + (depth & 1); // depth / 3 + parity
     }
-    /*
-    int eval_depth = 0;
-    if (depth >= 5) {
-        eval_depth = ((depth / 3) & 0b11111110) + (depth & 1); // depth / 3 + parity
-    }
-    */
-    /*
-    int l, u = SCORE_MAX;
-    transposition_table.get_value_any_level(search, search->board.hash(), &l, &u);
-    if (u <= alpha) {
-        eval_depth = std::max(0, eval_depth - 4);
-    }
-    */
+
     if (eval_depth >= 2) {
-        bool disable_move;
-        for (Flip_value &flip_value: move_list) {
-#if USE_MID_ETC
-            if (flip_value.flip.flip) {
-#endif
-                flip_value.value = 0;
-                disable_move = false;
-                search->board.move_board(&flip_value.flip);
-                    /*
-                    if (transposition_table.has_node_any_level(search, search->board.hash())) {
-                        flip_value.value += W_TT_BONUS;
-                    }
-                    */
-                    int tt_v = transposition_table.has_node_any_level_cutoff(search, search->board.hash(), depth - 1, -beta, -(*alpha));
-                    if (tt_v == TRANSPOSITION_TABLE_HAS_NODE) { // node found
-                        flip_value.value += W_TT_BONUS;
-                    } else if (tt_v != TRANSPOSITION_TABLE_NOT_HAS_NODE) { // cutoff
-                        if (*alpha < -tt_v) {
-                            //std::cerr << *alpha << " " << -tt_v << std::endl;
-                            *alpha = -tt_v;
-                        }
-                        disable_move = true;
-                    }
-                search->board.undo_board(&flip_value.flip);
-                if (disable_move) {
-                    flip_value.flip.flip = 0;
-                    flip_value.value = -INF;
-                    if (beta <= *alpha) {
-                        return flip_value.flip.pos;
-                    }
-                }
-#if USE_MID_ETC
-            } else {
-                flip_value.value = -INF;
-            }
-#endif
+        if (move_list_tt_check(search, move_list, moves, depth, alpha, beta, W_TT_BONUS, best_move, best_score)) {
+            return true;
         }
     } else {
         for (Flip_value &flip_value: move_list) {
@@ -449,7 +448,42 @@ inline int move_list_evaluate(Search *search, std::vector<Flip_value> &move_list
             }
         }
     }
-    return MOVE_UNDEFINED;
+    return false;
+}
+
+inline void move_list_evaluate_nottcutoff(Search *search, std::vector<Flip_value> &move_list, uint_fast8_t moves[], int depth, int alpha, int beta, bool *searching) {
+    if (move_list.size() == 1) {
+        return;
+    }
+    int eval_alpha = -std::min(SCORE_MAX, beta + MOVE_ORDERING_VALUE_OFFSET_BETA);
+    int eval_beta = -std::max(-SCORE_MAX, alpha - MOVE_ORDERING_VALUE_OFFSET_ALPHA);
+    int eval_depth = depth >> 3;
+    if (depth >= 25 && search->mpc_level < MPC_100_LEVEL) {
+        eval_depth = ((depth / 3) & 0b11111110) + (depth & 1); // depth / 3 + parity
+    }
+
+    for (Flip_value &flip_value: move_list) {
+#if USE_MID_ETC
+        if (flip_value.flip.flip) {
+#endif
+            flip_value.value = 0;
+#if USE_MID_ETC
+        } else {
+            flip_value.value = -INF;
+        }
+#endif
+    }
+    for (Flip_value &flip_value: move_list) {
+        if (flip_value.flip.flip) {
+            if (flip_value.flip.pos == moves[0]) {
+                flip_value.value = W_1ST_MOVE;
+            } else if (flip_value.flip.pos == moves[1]) {
+                flip_value.value = W_2ND_MOVE;
+            } else {
+                move_evaluate(search, &flip_value, eval_alpha, eval_beta, eval_depth, searching);
+            }
+        }
+    }
 }
 
 /*

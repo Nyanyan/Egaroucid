@@ -133,11 +133,7 @@ int clog_search(Search *search, int depth, bool *searching) {
     }
     uint_fast8_t moves[N_TRANSPOSITION_MOVES] = {MOVE_UNDEFINED, MOVE_UNDEFINED};
     transposition_table.get_moves_any_level(&search->board, search->board.hash(), moves);
-    int alpha = -SCORE_MAX;
-    move_list_evaluate(search, move_list, moves, depth, &alpha, SCORE_MAX, searching);
-    if (SCORE_MAX <= alpha) {
-        return alpha;
-    }
+    move_list_evaluate_nottcutoff(search, move_list, moves, depth, -SCORE_MAX, SCORE_MAX, searching);
     int g;
     bool uncertain_value_found = false;
     int beta = HW2 - 2 * pop_count_ull(calc_stability(search->board.opponent, search->board.player));

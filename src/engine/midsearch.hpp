@@ -185,9 +185,11 @@ int nega_scout(Search *search, int alpha, int beta, const int depth, const bool 
         }
     }
 #endif
-    move_list_evaluate(search, move_list, moves, depth, &alpha, beta, searching);
-    if (beta <= alpha) {
-        return alpha;
+    if (move_list_evaluate(search, move_list, moves, depth, alpha, beta, searching, &best_move, &v)) {
+        return v;
+    }
+    if (alpha < v) {
+        alpha = v;
     }
 #if USE_YBWC_NEGASCOUT
     if (search->use_multi_thread && ((!is_end_search && depth - 1 >= YBWC_MID_SPLIT_MIN_DEPTH) || (is_end_search && depth - 1 >= YBWC_END_SPLIT_MIN_DEPTH))) {
@@ -342,9 +344,11 @@ std::pair<int, int> first_nega_scout_legal(Search *search, int alpha, int beta, 
         }
         uint_fast8_t moves[N_TRANSPOSITION_MOVES] = {MOVE_UNDEFINED, MOVE_UNDEFINED};
         transposition_table.get_moves_any_level(&search->board, hash_code, moves);
-        int mo_best_move = move_list_evaluate(search, move_list, moves, depth, &alpha, beta, searching);
-        if (beta <= alpha) {
-            return std::make_pair(alpha, mo_best_move);
+        if (move_list_evaluate(search, move_list, moves, depth, alpha, beta, searching, &best_move, &v)) {
+            return std::make_pair(v, best_move);
+        }
+        if (alpha < v) {
+            alpha = v;
         }
 #if USE_YBWC_NEGASCOUT
         if (
@@ -479,11 +483,7 @@ Analyze_result first_nega_scout_analyze(Search *search, int alpha, int beta, con
         }
         uint_fast8_t moves[N_TRANSPOSITION_MOVES] = {MOVE_UNDEFINED, MOVE_UNDEFINED};
         transposition_table.get_moves_any_level(&search->board, hash_code, moves);
-        int mo_best_move = move_list_evaluate(search, move_list, moves, depth, &alpha, beta, searching);
-        if (mo_best_move != MOVE_UNDEFINED) {
-            res.alt_score = alpha;
-            res.alt_move = mo_best_move;
-        }
+        move_list_evaluate_nottcutoff(search, move_list, moves, depth, alpha, beta, searching);
 #if USE_YBWC_NEGASCOUT_ANALYZE
         if (search->use_multi_thread && depth - 1 >= YBWC_MID_SPLIT_MIN_DEPTH) {
             move_list_sort(move_list);
