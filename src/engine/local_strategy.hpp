@@ -193,7 +193,7 @@ void calc_local_strategy_player(Board board, int level, double res[], int player
 #if TUNE_LOCAL_STRATEGY
 
 void tune_local_strategy() {
-    int n_max = 100000; // n per n_discs per cell_type
+    int n_max = 1000000; // n per n_discs per cell_type
     int n_min = 10000;
     int level = 10;
 
@@ -262,7 +262,11 @@ void tune_local_strategy() {
                 res[n_discs][cell_type] /= count[n_discs][cell_type];
             }
         }
-        std::cerr << '\r';
+        std::cerr << '\r' << n_discs << " ";
+        for (int j = 0; j < N_CELL_TYPE; ++j) {
+            std::cerr << count[n_discs][j] << " ";
+        }
+        std::cerr << std::endl;
         std::cout << "{";
         for (int j = 0; j < N_CELL_TYPE; ++j) {
             std::cout << std::fixed << std::setprecision(4) << res[n_discs][j];
@@ -271,12 +275,6 @@ void tune_local_strategy() {
             }
         }
         std::cout << "}," << std::endl;
-
-        for (int j = 0; j < N_CELL_TYPE; ++j) {
-            std::cerr << count[n_discs][j] << " ";
-        }
-        std::cerr << std::endl;
-
     }
     std::cerr << std::endl;
 
