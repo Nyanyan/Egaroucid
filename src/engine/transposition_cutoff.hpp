@@ -11,8 +11,10 @@
 #include "setting.hpp"
 #include "search.hpp"
 #include "transposition_table.hpp"
+#include "move_ordering.hpp"
 
 constexpr int MID_ETC_DEPTH = 16;
+constexpr int MID_ETC_DEPTH_NWS = 16;
 
 inline bool transposition_cutoff(Search *search, const uint32_t hash_code, int depth, int *alpha, int *beta, int *v, uint_fast8_t moves[]) {
     int lower = -SCORE_MAX, upper = SCORE_MAX;
@@ -118,7 +120,10 @@ inline bool etc(Search *search, std::vector<Flip_value> &move_list, int depth, i
         l = -SCORE_MAX;
         u = SCORE_MAX;
         search->move(&flip_value.flip);
-            transposition_table.get_bounds(search, search->board.hash(), depth - 1, &l, &u);
+            if (transposition_table.has_node_any_level_get_bounds(search, search->board.hash(), depth - 1, &l, &u)) {
+                flip_value.value = W_TT_BONUS;
+            }
+            //transposition_table.get_bounds(search, search->board.hash(), depth - 1, &l, &u);
         search->undo(&flip_value.flip);
         if (*beta <= -u) { // alpha < beta <= -u <= -l
             *v = -u;
@@ -153,7 +158,10 @@ inline bool etc_nws(Search *search, std::vector<Flip_value> &move_list, int dept
         l = -SCORE_MAX;
         u = SCORE_MAX;
         search->move(&flip_value.flip);
-            transposition_table.get_bounds(search, search->board.hash(), depth - 1, &l, &u);
+            if (transposition_table.has_node_any_level_get_bounds(search, search->board.hash(), depth - 1, &l, &u)) {
+                flip_value.value = W_NWS_TT_BONUS;
+            }
+            //transposition_table.get_bounds(search, search->board.hash(), depth - 1, &l, &u);
         search->undo(&flip_value.flip);
         if (alpha < -u) { // fail high at parent node
             *v = -u;

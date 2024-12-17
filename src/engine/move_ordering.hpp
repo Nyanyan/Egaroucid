@@ -353,6 +353,7 @@ inline void swap_next_best_move(Flip_value move_list[], const int strt, const in
     }
 }
 
+/*
 inline bool move_list_tt_check(Search *search, std::vector<Flip_value> &move_list, uint_fast8_t moves[], int depth, int alpha, int beta, int tt_bonus, int *best_move, int *best_score) {
     bool disable_move;
     *best_score = -SCORE_INF;
@@ -363,11 +364,9 @@ inline bool move_list_tt_check(Search *search, std::vector<Flip_value> &move_lis
             flip_value.value = 0;
             disable_move = false;
             search->board.move_board(&flip_value.flip);
-                /*
-                if (transposition_table.has_node_any_level(search, search->board.hash())) {
-                    flip_value.value += W_TT_BONUS;
-                }
-                */
+                //if (transposition_table.has_node_any_level(search, search->board.hash())) {
+                //    flip_value.value += W_TT_BONUS;
+                //}
                 int tt_v = transposition_table.has_node_any_level_cutoff(search, search->board.hash(), depth - 1, -beta, -alpha);
                 if (tt_v == TRANSPOSITION_TABLE_HAS_NODE) { // node found
                     flip_value.value += tt_bonus;
@@ -397,6 +396,7 @@ inline bool move_list_tt_check(Search *search, std::vector<Flip_value> &move_lis
     }
     return false;
 }
+*/
 
 /*
     @brief Evaluate all legal moves for midgame
@@ -419,26 +419,10 @@ inline bool move_list_evaluate(Search *search, std::vector<Flip_value> &move_lis
     if (depth >= 25 && search->mpc_level < MPC_100_LEVEL) {
         eval_depth = ((depth / 3) & 0b11111110) + (depth & 1); // depth / 3 + parity
     }
-
-    if (eval_depth >= 2) {
-        if (move_list_tt_check(search, move_list, moves, depth, alpha, beta, W_TT_BONUS, best_move, best_score)) {
-            return true;
-        }
-    } else {
-        for (Flip_value &flip_value: move_list) {
-#if USE_MID_ETC
-            if (flip_value.flip.flip) {
-#endif
-                flip_value.value = 0;
-#if USE_MID_ETC
-            } else {
-                flip_value.value = -INF;
-            }
-#endif
-        }
-    }
     for (Flip_value &flip_value: move_list) {
+#if USE_MID_ETC
         if (flip_value.flip.flip) {
+#endif
             if (flip_value.flip.pos == moves[0]) {
                 flip_value.value = W_1ST_MOVE;
             } else if (flip_value.flip.pos == moves[1]) {
@@ -446,7 +430,11 @@ inline bool move_list_evaluate(Search *search, std::vector<Flip_value> &move_lis
             } else {
                 move_evaluate(search, &flip_value, eval_alpha, eval_beta, eval_depth, searching);
             }
+#if USE_MID_ETC
+        } else {
+            flip_value.value = -INF;
         }
+#endif
     }
     return false;
 }
@@ -461,20 +449,10 @@ inline void move_list_evaluate_nottcutoff(Search *search, std::vector<Flip_value
     if (depth >= 25 && search->mpc_level < MPC_100_LEVEL) {
         eval_depth = ((depth / 3) & 0b11111110) + (depth & 1); // depth / 3 + parity
     }
-
     for (Flip_value &flip_value: move_list) {
 #if USE_MID_ETC
         if (flip_value.flip.flip) {
 #endif
-            flip_value.value = 0;
-#if USE_MID_ETC
-        } else {
-            flip_value.value = -INF;
-        }
-#endif
-    }
-    for (Flip_value &flip_value: move_list) {
-        if (flip_value.flip.flip) {
             if (flip_value.flip.pos == moves[0]) {
                 flip_value.value = W_1ST_MOVE;
             } else if (flip_value.flip.pos == moves[1]) {
@@ -482,7 +460,11 @@ inline void move_list_evaluate_nottcutoff(Search *search, std::vector<Flip_value
             } else {
                 move_evaluate(search, &flip_value, eval_alpha, eval_beta, eval_depth, searching);
             }
+#if USE_MID_ETC
+        } else {
+            flip_value.value = -INF;
         }
+#endif
     }
 }
 
@@ -503,6 +485,7 @@ inline bool move_list_evaluate_nws(Search *search, std::vector<Flip_value> &move
     const int eval_alpha = -std::min(SCORE_MAX, alpha + MOVE_ORDERING_NWS_VALUE_OFFSET_BETA);
     const int eval_beta = -std::max(-SCORE_MAX, alpha - MOVE_ORDERING_NWS_VALUE_OFFSET_ALPHA);
     int eval_depth = depth >> 4;
+    /*
     if (eval_depth >= 2) {
         if (move_list_tt_check(search, move_list, moves, depth, alpha, alpha + 1, W_NWS_TT_BONUS, best_move, best_score)) {
             return true;
@@ -520,6 +503,7 @@ inline bool move_list_evaluate_nws(Search *search, std::vector<Flip_value> &move
 #endif
         }
     }
+    */
     for (Flip_value &flip_value: move_list) {
         if (flip_value.flip.flip) {
             if (flip_value.flip.pos == moves[0]) {

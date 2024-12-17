@@ -129,6 +129,7 @@ int clog_search(Search *search, int depth, bool *searching) {
         if (move_list[idx].flip.flip == search->board.opponent) {
             return SCORE_MAX;
         }
+        move_list[idx].value = 0;
         ++idx;
     }
     uint_fast8_t moves[N_TRANSPOSITION_MOVES] = {MOVE_UNDEFINED, MOVE_UNDEFINED};

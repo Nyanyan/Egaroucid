@@ -141,11 +141,12 @@ int nega_alpha_ordering_nws_simple(Search *search, int alpha, const int depth, c
         if (move_list[idx].flip.flip == search->board.opponent) {
             return SCORE_MAX;
         }
+        move_list[idx].value = 0;
         ++idx;
     }
-#if USE_MID_ETC && MID_ETC_DEPTH <= MID_SIMPLE_DEPTH
+#if USE_MID_ETC && MID_ETC_DEPTH_NWS <= MID_SIMPLE_DEPTH
     int n_etc_done = 0;
-    if (depth >= MID_ETC_DEPTH) {
+    if (depth >= MID_ETC_DEPTH_NWS) {
         if (etc_nws(search, move_list, depth, alpha, &v, &n_etc_done)) {
             return v;
         }
@@ -154,13 +155,13 @@ int nega_alpha_ordering_nws_simple(Search *search, int alpha, const int depth, c
     if (move_list_evaluate_nws(search, move_list, moves, depth, alpha, searching, &best_move, &v)) {
         return v;
     }
-#if USE_MID_ETC && MID_ETC_DEPTH <= MID_SIMPLE_DEPTH
+#if USE_MID_ETC && MID_ETC_DEPTH_NWS <= MID_SIMPLE_DEPTH
     for (int move_idx = 0; move_idx < canput - n_etc_done && *searching; ++move_idx) {
 #else
     for (int move_idx = 0; move_idx < canput && *searching; ++move_idx) {
 #endif
         swap_next_best_move(move_list, move_idx, canput);
-#if USE_MID_ETC && MID_ETC_DEPTH <= MID_SIMPLE_DEPTH
+#if USE_MID_ETC && MID_ETC_DEPTH_NWS <= MID_SIMPLE_DEPTH
         if (move_list[move_idx].flip.flip == 0) {
             break;
         }
@@ -263,11 +264,12 @@ int nega_alpha_ordering_nws(Search *search, int alpha, const int depth, const bo
         if (move_list[idx].flip.flip == search->board.opponent) {
             return SCORE_MAX;
         }
+        move_list[idx].value = 0;
         ++idx;
     }
     int n_etc_done = 0;
 #if USE_MID_ETC
-    if (depth >= MID_ETC_DEPTH) {
+    if (depth >= MID_ETC_DEPTH_NWS) {
         if (etc_nws(search, move_list, depth, alpha, &v, &n_etc_done)) {
             return v;
         }

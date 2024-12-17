@@ -158,6 +158,7 @@ int nega_scout(Search *search, int alpha, int beta, const int depth, const bool 
         if (move_list[idx].flip.flip == search->board.opponent) {
             return SCORE_MAX;
         }
+        move_list[idx].value = 0;
         ++idx;
     }
     int n_etc_done = 0;
@@ -340,6 +341,7 @@ std::pair<int, int> first_nega_scout_legal(Search *search, int alpha, int beta, 
             if (move_list[idx].flip.flip == search->board.opponent) {
                 return std::make_pair(SCORE_MAX, (int)cell);
             }
+            move_list[idx].value = 0;
             ++idx;
         }
         uint_fast8_t moves[N_TRANSPOSITION_MOVES] = {MOVE_UNDEFINED, MOVE_UNDEFINED};
@@ -479,6 +481,7 @@ Analyze_result first_nega_scout_analyze(Search *search, int alpha, int beta, con
         int idx = 0;
         for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)) {
             calc_flip(&move_list[idx].flip, &search->board, cell);
+            move_list[idx].value = 0;
             ++idx;
         }
         uint_fast8_t moves[N_TRANSPOSITION_MOVES] = {MOVE_UNDEFINED, MOVE_UNDEFINED};
