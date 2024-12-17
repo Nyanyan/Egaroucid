@@ -106,9 +106,8 @@ void calc_local_strategy(Board board, int level, double res[], bool *searching, 
             board.player ^= bit;
             board.opponent ^= bit;
                 Search_result result = ai_searching(board, level, true, 0, true, false, searching);
-                value_diffs[cell] = -(result.value - complete_result.value + 2.0 * local_strategy_cell_weight[board.n_discs()][cell_type[cell]]);
-                //value_diffs[cell] = (complete_result.value - result.value) - 2.0 * cell_weight[cell] / 256.0;
-                std::cerr << idx_to_coord(cell) << " " << complete_result.value << " " << result.value << " " << 2.0 * local_strategy_cell_weight[board.n_discs()][cell_type[cell]] << " " << value_diffs[cell] << std::endl;
+                value_diffs[cell] = -(result.value - complete_result.value + local_strategy_cell_weight[board.n_discs()][cell_type[cell]]);
+                std::cerr << idx_to_coord(cell) << " " << complete_result.value << " " << result.value << " " << local_strategy_cell_weight[board.n_discs()][cell_type[cell]] << " " << value_diffs[cell] << std::endl;
             board.player ^= bit;
             board.opponent ^= bit;
         } else if (board.opponent & bit) {
@@ -116,9 +115,8 @@ void calc_local_strategy(Board board, int level, double res[], bool *searching, 
             board.player ^= bit;
             board.opponent ^= bit;
                 Search_result result = ai_searching(board, level, true, 0, true, false, searching);
-                value_diffs[cell] = -(result.value - complete_result.value - 2.0 * local_strategy_cell_weight[board.n_discs()][cell_type[cell]]);
-                //value_diffs[cell] = (complete_result.value - result.value) + 2.0 * cell_weight[cell] / 256.0;
-                std::cerr << idx_to_coord(cell) << " " << complete_result.value << " " << result.value << " " << 2.0 * local_strategy_cell_weight[board.n_discs()][cell_type[cell]] << " " << value_diffs[cell] << std::endl;
+                value_diffs[cell] = -(result.value - complete_result.value - local_strategy_cell_weight[board.n_discs()][cell_type[cell]]);
+                std::cerr << idx_to_coord(cell) << " " << complete_result.value << " " << result.value << " " << local_strategy_cell_weight[board.n_discs()][cell_type[cell]] << " " << value_diffs[cell] << std::endl;
                 /*
                 uint64_t legal_diff = ~board.get_legal() & legal;
                 for (uint_fast8_t nolegal_cell = first_bit(&legal_diff); legal_diff; nolegal_cell = next_bit(&legal_diff)) {
@@ -265,7 +263,7 @@ void tune_local_strategy() {
         std::cerr << '\r';
         std::cout << "{";
         for (int j = 0; j < N_CELL_TYPE; ++j) {
-            std::cout << res[n_discs][j];
+            std::cout << std::fixed << std::setprecision(4) << res[n_discs][j];
             if (j < N_CELL_TYPE - 1) {
                 std::cout << ", ";
             }
@@ -290,7 +288,7 @@ void tune_local_strategy() {
     for (int i = 0; i < HW2; ++i) {
         std::cout << "{";
         for (int j = 0; j < N_CELL_TYPE; ++j) {
-            std::cout << res[i][j];
+            std::cout << std::fixed << std::setprecision(4) << res[i][j];
             if (j < N_CELL_TYPE - 1) {
                 std::cout << ", ";
             }
