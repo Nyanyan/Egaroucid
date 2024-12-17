@@ -210,7 +210,7 @@ inline int get_potential_mobility(uint64_t discs, uint64_t empties) {
     @return true if wipeout found else false
 */
 inline void move_evaluate(Search *search, Flip_value *flip_value, int alpha, int beta, int depth, bool *searching) {
-    flip_value->value = 0;
+    //flip_value->value = 0;
     search->move(&flip_value->flip);
         flip_value->n_legal = search->board.get_legal();
         flip_value->value += (MO_OFFSET_L_PM - get_weighted_n_moves(flip_value->n_legal)) * W_MOBILITY;
@@ -223,9 +223,9 @@ inline void move_evaluate(Search *search, Flip_value *flip_value, int alpha, int
                 flip_value->value += (SCORE_MAX - nega_alpha_eval1(search, alpha, beta, false)) * (W_VALUE + W_VALUE_DEEP_ADDITIONAL);
                 break;
             default:
-                if (transposition_table.has_node_any_level(search, search->board.hash())) {
-                    flip_value->value += W_TT_BONUS;
-                }
+                //if (transposition_table.has_node_any_level(search, search->board.hash())) {
+                //    flip_value->value += W_TT_BONUS;
+                //}
                 //uint_fast8_t mpc_level = search->mpc_level;
                 //search->mpc_level = MOVE_ORDERING_MPC_LEVEL;
                     flip_value->value += (SCORE_MAX - nega_scout(search, alpha, beta, depth, false, flip_value->n_legal, false, searching)) * (W_VALUE + depth * W_VALUE_DEEP_ADDITIONAL);
@@ -247,7 +247,7 @@ inline void move_evaluate(Search *search, Flip_value *flip_value, int alpha, int
     @return true if wipeout found else false
 */
 inline void move_evaluate_nws(Search *search, Flip_value *flip_value, int alpha, int beta, int depth, bool *searching) {
-    flip_value->value = 0;
+    //flip_value->value = 0;
     search->move(&flip_value->flip);
         flip_value->n_legal = search->board.get_legal();
         flip_value->value += (MO_OFFSET_L_PM - get_weighted_n_moves(flip_value->n_legal)) * W_NWS_MOBILITY;
@@ -259,9 +259,9 @@ inline void move_evaluate_nws(Search *search, Flip_value *flip_value, int alpha,
                 flip_value->value += (SCORE_MAX - nega_alpha_eval1(search, alpha, beta, false)) * (W_NWS_VALUE + W_NWS_VALUE_DEEP_ADDITIONAL);
                 break;
             default:
-                if (transposition_table.has_node_any_level(search, search->board.hash())) {
-                    flip_value->value += W_NWS_TT_BONUS;
-                }
+                //if (transposition_table.has_node_any_level(search, search->board.hash())) {
+                //    flip_value->value += W_NWS_TT_BONUS;
+                //}
                 //uint_fast8_t mpc_level = search->mpc_level;
                 //search->mpc_level = MOVE_ORDERING_MPC_LEVEL;
                     flip_value->value += (SCORE_MAX - nega_scout(search, alpha, beta, depth, false, flip_value->n_legal, false, searching)) * (W_NWS_VALUE + depth * W_NWS_VALUE_DEEP_ADDITIONAL);
@@ -387,6 +387,20 @@ inline void move_list_evaluate(Search *search, std::vector<Flip_value> &move_lis
         eval_depth = std::max(0, eval_depth - 4);
     }
     */
+    if (eval_depth >= 2) {
+        for (Flip_value &flip_value: move_list) {
+            flip_value.value = 0;
+            search->board.move_board(&flip_value.flip);
+                if (transposition_table.has_node_any_level(search, search->board.hash())) {
+                    flip_value.value += W_TT_BONUS;
+                }
+            search->board.undo_board(&flip_value.flip);
+        }
+    } else {
+        for (Flip_value &flip_value: move_list) {
+            flip_value.value = 0;
+        }
+    }
     for (Flip_value &flip_value: move_list) {
 #if USE_MID_ETC
         if (flip_value.flip.flip) {
@@ -429,6 +443,20 @@ inline void move_list_evaluate_nws(Search *search, std::vector<Flip_value> &move
     const int eval_alpha = -std::min(SCORE_MAX, alpha + MOVE_ORDERING_NWS_VALUE_OFFSET_BETA);
     const int eval_beta = -std::max(-SCORE_MAX, alpha - MOVE_ORDERING_NWS_VALUE_OFFSET_ALPHA);
     int eval_depth = depth >> 4;
+    if (eval_depth >= 2) {
+        for (Flip_value &flip_value: move_list) {
+            flip_value.value = 0;
+            search->board.move_board(&flip_value.flip);
+                if (transposition_table.has_node_any_level(search, search->board.hash())) {
+                    flip_value.value += W_NWS_TT_BONUS;
+                }
+            search->board.undo_board(&flip_value.flip);
+        }
+    } else {
+        for (Flip_value &flip_value: move_list) {
+            flip_value.value = 0;
+        }
+    }
     for (Flip_value &flip_value: move_list) {
 #if USE_MID_ETC
         if (flip_value.flip.flip) {
