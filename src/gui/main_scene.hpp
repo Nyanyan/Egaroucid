@@ -1403,10 +1403,9 @@ private:
             // normal green = HSV{160.0, 0.76, 0.60}
             Color cell_color;
             if (ai_status.local_strategy[cell] > 0) { // black
-                //cell_color = ColorF{ 52.0 / 255.0, 152.0 / 255.0, 219.0 / 255.0, ai_status.local_strategy[cell] };
-                cell_color = ColorF{ 97.0 / 255.0, 177.0 / 255.0, 230.0 / 255.0, ai_status.local_strategy[cell] };
+                cell_color = ColorF{ 241.0 / 255.0, 196.0 / 255.0, 15.0 / 255.0, ai_status.local_strategy[cell] }; // orange
             } else { // white
-                cell_color = ColorF{ 241.0 / 255.0, 196.0 / 255.0, 15.0 / 255.0, -ai_status.local_strategy[cell] };
+                cell_color = ColorF{ 119.0 / 255.0, 186.0 / 255.0, 230.0 / 255.0, -ai_status.local_strategy[cell] }; // blue
             }
             Rect{ sx, sy,  BOARD_CELL_SIZE, BOARD_CELL_SIZE}.draw(cell_color);
         }
