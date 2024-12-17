@@ -389,21 +389,38 @@ inline void move_list_evaluate(Search *search, std::vector<Flip_value> &move_lis
     */
     if (eval_depth >= 2) {
         for (Flip_value &flip_value: move_list) {
-            flip_value.value = 0;
-            search->board.move_board(&flip_value.flip);
-                if (transposition_table.has_node_any_level(search, search->board.hash())) {
-                    flip_value.value += W_TT_BONUS;
-                }
-            search->board.undo_board(&flip_value.flip);
+#if USE_MID_ETC
+            if (flip_value.flip.flip) {
+#endif
+                flip_value.value = 0;
+                search->board.move_board(&flip_value.flip);
+                    if (transposition_table.has_node_any_level(search, search->board.hash())) {
+                        flip_value.value += W_TT_BONUS;
+                    }
+                search->board.undo_board(&flip_value.flip);
+#if USE_MID_ETC
+            } else {
+                flip_value.value = -INF;
+            }
+#endif
         }
     } else {
         for (Flip_value &flip_value: move_list) {
-            flip_value.value = 0;
+#if USE_MID_ETC
+            if (flip_value.flip.flip) {
+#endif
+                flip_value.value = 0;
+#if USE_MID_ETC
+            } else {
+                flip_value.value = -INF;
+            }
+#endif
         }
     }
     for (Flip_value &flip_value: move_list) {
 #if USE_MID_ETC
         if (flip_value.flip.flip) {
+#endif
             if (flip_value.flip.pos == moves[0]) {
                 flip_value.value = W_1ST_MOVE;
             } else if (flip_value.flip.pos == moves[1]) {
@@ -411,16 +428,7 @@ inline void move_list_evaluate(Search *search, std::vector<Flip_value> &move_lis
             } else {
                 move_evaluate(search, &flip_value, eval_alpha, eval_beta, eval_depth, searching);
             }
-        } else{
-            flip_value.value = -INF;
-        }
-#else
-        if (flip_value.flip.pos == moves[0]) {
-            flip_value.value = W_1ST_MOVE;
-        } else if (flip_value.flip.pos == moves[1]) {
-            flip_value.value = W_2ND_MOVE;
-        } else{
-            move_evaluate(search, &flip_value, eval_alpha, eval_beta, eval_depth, searching);
+#if USE_MID_ETC
         }
 #endif
     }
@@ -445,21 +453,38 @@ inline void move_list_evaluate_nws(Search *search, std::vector<Flip_value> &move
     int eval_depth = depth >> 4;
     if (eval_depth >= 2) {
         for (Flip_value &flip_value: move_list) {
-            flip_value.value = 0;
-            search->board.move_board(&flip_value.flip);
-                if (transposition_table.has_node_any_level(search, search->board.hash())) {
-                    flip_value.value += W_NWS_TT_BONUS;
-                }
-            search->board.undo_board(&flip_value.flip);
+#if USE_MID_ETC
+            if (flip_value.flip.flip) {
+#endif
+                flip_value.value = 0;
+                search->board.move_board(&flip_value.flip);
+                    if (transposition_table.has_node_any_level(search, search->board.hash())) {
+                        flip_value.value += W_NWS_TT_BONUS;
+                    }
+                search->board.undo_board(&flip_value.flip);
+#if USE_MID_ETC
+            } else {
+                flip_value.value = -INF;
+            }
+#endif
         }
     } else {
         for (Flip_value &flip_value: move_list) {
-            flip_value.value = 0;
+#if USE_MID_ETC
+            if (flip_value.flip.flip) {
+#endif
+                flip_value.value = 0;
+#if USE_MID_ETC
+            } else {
+                flip_value.value = -INF;
+            }
+#endif
         }
     }
     for (Flip_value &flip_value: move_list) {
 #if USE_MID_ETC
         if (flip_value.flip.flip) {
+#endif
             if (flip_value.flip.pos == moves[0]) {
                 flip_value.value = W_1ST_MOVE;
             } else if (flip_value.flip.pos == moves[1]) {
@@ -467,16 +492,7 @@ inline void move_list_evaluate_nws(Search *search, std::vector<Flip_value> &move
             } else{
                 move_evaluate_nws(search, &flip_value, eval_alpha, eval_beta, eval_depth, searching);
             }
-        } else{
-            flip_value.value = -INF;
-        }
-#else
-        if (flip_value.flip.pos == moves[0]) {
-            flip_value.value = W_1ST_MOVE;
-        } else if (flip_value.flip.pos == moves[1]) {
-            flip_value.value = W_2ND_MOVE;
-        } else{
-            move_evaluate_nws(search, &flip_value, eval_alpha, eval_beta, eval_depth, searching);
+#if USE_MID_ETC
         }
 #endif
     }
