@@ -22,6 +22,16 @@ void print_local_strategy(const double arr[]) {
 }
 
 void calc_local_strategy(Board board, int level, double res[], bool *searching, bool show_log) {
+    constexpr double cell_weight[HW2] = {
+        2714,  147,   69,  -18,  -18,   69,  147, 2714, 
+         147, -577, -186, -153, -153, -186, -577,  147, 
+          69, -186, -379, -122, -122, -379, -186,   69, 
+         -18, -153, -122, -169, -169, -122, -153,  -18, 
+         -18, -153, -122, -169, -169, -122, -153,  -18, 
+          69, -186, -379, -122, -122, -379, -186,   69, 
+         147, -577, -186, -153, -153, -186, -577,  147, 
+        2714,  147,   69,  -18,  -18,   69,  147, 2714
+    };
     Search_result complete_result = ai_searching(board, level, true, 0, true, false, searching);
     if (show_log) {
         board.print();
@@ -39,7 +49,8 @@ void calc_local_strategy(Board board, int level, double res[], bool *searching, 
             board.player ^= bit;
             board.opponent ^= bit;
                 Search_result result = ai_searching(board, level, true, 0, true, false, searching);
-                value_diffs[cell] = complete_result.value - result.value;
+                value_diffs[cell] = (complete_result.value - result.value) - 2.0 * cell_weight[cell] / 256.0;
+                std::cerr << idx_to_coord(cell) << " " << complete_result.value << " " << result.value << " " << 2.0 * cell_weight[cell] / 256.0 << " " << value_diffs[cell] << std::endl;
             board.player ^= bit;
             board.opponent ^= bit;
         } else if (board.opponent & bit) {
@@ -47,7 +58,8 @@ void calc_local_strategy(Board board, int level, double res[], bool *searching, 
             board.player ^= bit;
             board.opponent ^= bit;
                 Search_result result = ai_searching(board, level, true, 0, true, false, searching);
-                value_diffs[cell] = complete_result.value - result.value;
+                value_diffs[cell] = (complete_result.value - result.value) + 2.0 * cell_weight[cell] / 256.0;
+                std::cerr << idx_to_coord(cell) << " " << complete_result.value << " " << result.value << " " << 2.0 * cell_weight[cell] / 256.0 << " " << value_diffs[cell] << std::endl;
                 /*
                 uint64_t legal_diff = ~board.get_legal() & legal;
                 for (uint_fast8_t nolegal_cell = first_bit(&legal_diff); legal_diff; nolegal_cell = next_bit(&legal_diff)) {
