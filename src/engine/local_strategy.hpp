@@ -272,6 +272,11 @@ void tune_local_strategy() {
         }
         std::cout << "}," << std::endl;
 
+        for (int j = 0; j < N_CELL_TYPE; ++j) {
+            std::cerr << count[n_discs][j] << " ";
+        }
+        std::cerr << std::endl;
+
     }
     std::cerr << std::endl;
 
