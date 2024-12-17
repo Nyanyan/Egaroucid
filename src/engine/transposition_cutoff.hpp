@@ -113,8 +113,8 @@ inline bool transposition_cutoff_nws_bestmove(Search *search, const uint32_t has
     @param hash_level           new hash level
     @return hash resized?
 */
-inline bool etc(Search *search, std::vector<Flip_value> &move_list, int depth, int *alpha, int *beta, int *v, int *etc_done_idx) {
-    *etc_done_idx = 0;
+inline bool etc(Search *search, std::vector<Flip_value> &move_list, int depth, int *alpha, int *beta, int *v, int *n_etc_done) {
+    *n_etc_done = 0;
     int l, u, n_beta = *alpha;
     for (Flip_value &flip_value: move_list) {
         l = -SCORE_MAX;
@@ -134,13 +134,13 @@ inline bool etc(Search *search, std::vector<Flip_value> &move_list, int depth, i
             if (-l <= *v || u == l) { // better move already found or this move is already done
                 flip_value.flip.flip = 0ULL; // make this move invalid
                 flip_value.value = -INF;
-                ++(*etc_done_idx);
+                ++(*n_etc_done);
             }
         } else if (-l <= *alpha) { // -u <= -l <= alpha < beta
             *v = std::max(*v, -l); // this move is worse than alpha
             flip_value.flip.flip = 0ULL; // make this move invalid
             flip_value.value = -INF;
-            ++(*etc_done_idx);
+            ++(*n_etc_done);
         }
     }
     return false;
@@ -153,8 +153,8 @@ inline bool etc(Search *search, std::vector<Flip_value> &move_list, int depth, i
     @param hash_level           new hash level
     @return hash resized?
 */
-inline bool etc_nws(Search *search, std::vector<Flip_value> &move_list, int depth, int alpha, int *v, int *etc_done_idx) {
-    *etc_done_idx = 0;
+inline bool etc_nws(Search *search, std::vector<Flip_value> &move_list, int depth, int alpha, int *v, int *n_etc_done) {
+    *n_etc_done = 0;
     int l, u;
     for (Flip_value &flip_value: move_list) {
         l = -SCORE_MAX;
@@ -174,7 +174,7 @@ inline bool etc_nws(Search *search, std::vector<Flip_value> &move_list, int dept
                 *v = -l;
             flip_value.flip.flip = 0ULL; // make this move invalid
             flip_value.value = -INF;
-            ++(*etc_done_idx);
+            ++(*n_etc_done);
         }
     }
     return false;
