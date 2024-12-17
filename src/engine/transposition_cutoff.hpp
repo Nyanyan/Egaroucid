@@ -123,7 +123,6 @@ inline bool etc(Search *search, std::vector<Flip_value> &move_list, int depth, i
             if (transposition_table.has_node_any_level_get_bounds(search, search->board.hash(), depth - 1, &l, &u)) {
                 flip_value.value = W_TT_BONUS;
             }
-            //transposition_table.get_bounds(search, search->board.hash(), depth - 1, &l, &u);
         search->undo(&flip_value.flip);
         if (*beta <= -u) { // alpha < beta <= -u <= -l
             *v = -u;
@@ -163,7 +162,6 @@ inline bool etc_nws(Search *search, std::vector<Flip_value> &move_list, int dept
             if (transposition_table.has_node_any_level_get_bounds(search, search->board.hash(), depth - 1, &l, &u)) {
                 flip_value.value = W_NWS_TT_BONUS;
             }
-            //transposition_table.get_bounds(search, search->board.hash(), depth - 1, &l, &u);
         search->undo(&flip_value.flip);
         if (alpha < -u) { // fail high at parent node
             *v = -u;
