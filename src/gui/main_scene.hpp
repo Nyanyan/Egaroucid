@@ -1398,7 +1398,8 @@ private:
         for (uint_fast8_t cell = 0; cell < HW2; ++cell) {
             int sx = BOARD_SX + ((HW2_M1 - cell) % HW) * BOARD_CELL_SIZE;
             int sy = BOARD_SY + ((HW2_M1 - cell) / HW) * BOARD_CELL_SIZE;
-            Color cell_color = HSV{160.0, 0.76 - 0.24 * ai_status.local_strategy[cell], 0.60 - 0.30 * ai_status.local_strategy[cell]};
+            //Color cell_color = HSV{160.0, 0.76 - 0.24 * ai_status.local_strategy[cell], 0.60 - 0.30 * ai_status.local_strategy[cell]};
+            Color cell_color = HSV{160.0 + 10.0 * ai_status.local_strategy[cell], 0.76 - 0.20 * ai_status.local_strategy[cell], 0.60 - 0.20 * ai_status.local_strategy[cell]};
             // normal green = HSV{160.0, 0.76, 0.60}
             /*
             if (ai_status.local_strategy[cell] > 0) { // black

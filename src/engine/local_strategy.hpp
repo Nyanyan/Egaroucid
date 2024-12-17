@@ -79,17 +79,20 @@ void calc_local_strategy(Board board, int level, double res[], bool *searching, 
             }
         }
     }
+    /*
     double values[HW2];
     for (int cell = 0; cell < HW2; ++cell) {
         values[cell] = std::tanh(0.2 * value_diffs[cell]);
     }
+    */
     if (show_log) {
         std::cerr << "value_diffs" << std::endl;
         print_local_strategy(value_diffs);
-        std::cerr << "values" << std::endl;
-        print_local_strategy(values);
+        //std::cerr << "values" << std::endl;
+        //print_local_strategy(values);
         std::cerr << std::endl;
     }
+    /*
     double max_abs_value = 0.0;
     for (int cell = 0; cell < HW2; ++cell) {
         max_abs_value = std::max(max_abs_value, std::abs(values[cell]));
@@ -101,6 +104,10 @@ void calc_local_strategy(Board board, int level, double res[], bool *searching, 
         } else {
             res[cell] = 0.0;
         }
+    }
+    */
+    for (int cell = 0; cell < HW2; ++cell) {
+        res[cell] = std::tanh(0.2 * value_diffs[cell]); // 10 discs ~ 1.0
     }
     if (show_log) {
         print_local_strategy(res);
