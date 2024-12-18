@@ -141,11 +141,11 @@ public:
         }
     }
 
-    int get_strt_idx_int() const{
+    int get_strt_idx_int() const {
         return (int)strt_idx_double;
     }
 
-    bool is_dragged() const{
+    bool is_dragged() const {
         return dragged;
     }
 };
