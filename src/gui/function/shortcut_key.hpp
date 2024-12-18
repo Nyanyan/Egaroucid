@@ -63,6 +63,7 @@ std::vector<Shortcut_key_elem> shortcut_keys_default = {
     {U"show_graph_value",       {U"D"},                 {{"display", "display"}, {"display", "graph", "graph"}, {"display", "graph", "value"}}},
     {U"show_graph_sum_of_loss", {U"S"},                 {{"display", "display"}, {"display", "graph", "graph"}, {"display", "graph", "sum_of_loss"}}},
     // others
+    {U"show_ai_focus",          {},                     {{"display", "display"}, {"display", "ai_focus"}}},
     {U"show_laser_pointer",     {U"P"},                 {{"display", "display"}, {"display", "laser_pointer"}}},
     {U"show_log",               {},                     {{"display", "display"}, {"display", "log"}}},
     {U"change_color_type",      {},                     {{"display", "display"}, {"display", "change_color_type"}}},

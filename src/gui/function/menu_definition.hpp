@@ -127,6 +127,9 @@ Menu create_menu(Menu_elements* menu_elements, Resources *resources, Font font) 
     side_menu.init_radio(language.get("display", "graph", "sum_of_loss") + get_shortcut_key_info(U"show_graph_sum_of_loss"), &menu_elements->show_graph_sum_of_loss, menu_elements->show_graph_sum_of_loss);
     menu_e.push(side_menu);
     title.push(menu_e);
+
+    menu_e.init_check(language.get("display", "ai_focus") + get_shortcut_key_info(U"show_ai_focus"), &menu_elements->show_ai_focus, menu_elements->show_ai_focus);
+    title.push(menu_e);
     menu_e.init_check(language.get("display", "laser_pointer") + get_shortcut_key_info(U"show_laser_pointer"), &menu_elements->show_laser_pointer, menu_elements->show_laser_pointer);
     title.push(menu_e);
     menu_e.init_check(language.get("display", "log") + get_shortcut_key_info(U"show_log"), &menu_elements->show_log, menu_elements->show_log);
