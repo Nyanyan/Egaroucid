@@ -34,12 +34,13 @@ public:
         Board b;
         while (getline(ifs, line)) {
             for (i = 0; i < HW2; ++i) {
-                if (line[i] == '0')
+                if (is_black_like_char(line[i])) {
                     board_arr[i] = BLACK;
-                else if (line[i] == '1')
+                } else if (is_white_like_char(line[i])) {
                     board_arr[i] = WHITE;
-                else
+                } else {
                     board_arr[i] = VACANT;
+                }
             }
             b.translate_from_arr(board_arr, BLACK);
             name = line.substr(65, line.size());
@@ -58,10 +59,12 @@ public:
         int i, j;
         bool flag;
         for (i = 0; i < (int)arr.size(); ++i) {
-            if (p == BLACK && arr[i].first.player == b.opponent && arr[i].first.opponent == b.player)
+            if (p == BLACK && arr[i].first.player == b.opponent && arr[i].first.opponent == b.player) {
                 return arr[i].second;
-            if (p == WHITE && arr[i].first.player == b.player && arr[i].first.opponent == b.opponent)
+            }
+            if (p == WHITE && arr[i].first.player == b.player && arr[i].first.opponent == b.opponent) {
                 return arr[i].second;
+            }
         }
         return "";
     }
@@ -73,6 +76,6 @@ Opening opening_many;
 
 bool opening_init(std::string lang) {
     return 
-    opening.init(EXE_DIRECTORY_PATH + "resources/openings/" + lang + "/openings.txt") && 
-    opening_many.init(EXE_DIRECTORY_PATH + "resources/openings/" + lang + "/openings_fork.txt");
+        opening.init(EXE_DIRECTORY_PATH + "resources/openings/" + lang + "/openings.txt") && 
+        opening_many.init(EXE_DIRECTORY_PATH + "resources/openings/" + lang + "/openings_fork.txt");
 }
