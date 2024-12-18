@@ -107,7 +107,7 @@ public:
             if (ext == BOOK_EXTENSION_NODOT || ext == "egbk2" || ext == "egbk" || ext == "dat") {
                 go_button.enable();
                 formatted_file = true;
-            } else{
+            } else {
                 go_button.disable();
                 getData().fonts.font(language.get("book", "wrong_extension") + U" " + language.get("book", "legal_extension3")).draw(15, Arg::topCenter(X_CENTER, sy + 170), getData().colors.white);
             }
@@ -117,7 +117,7 @@ public:
             }
             if (level_bar.is_changeable()) {
                 back_button.disable_notransparent();
-            } else{
+            } else {
                 back_button.enable();
             }
             back_button.draw();
@@ -128,7 +128,7 @@ public:
             }
             if (level_bar.is_changeable()) {
                 go_button.disable_notransparent();
-            } else{
+            } else {
                 go_button.enable();
             }
             go_button.draw();
@@ -138,29 +138,27 @@ public:
                 delete_book_future = std::async(std::launch::async, delete_book);
                 book_deleting = true;
             }
-        }
-        else if (book_deleting || book_importing) {
+        } else if (book_deleting || book_importing) {
             getData().fonts.font(language.get("book", "loading")).draw(25, Arg::topCenter(X_CENTER, sy), getData().colors.white);
             if (book_deleting) {
                 if (delete_book_future.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
                     delete_book_future.get();
                     book_deleting = false;
-                    if (need_level)
+                    if (need_level) {
                         import_book_future = std::async(std::launch::async, import_book_with_level, book_file, level);
-                    else
+                    } else {
                         import_book_future = std::async(std::launch::async, import_book, book_file);
+                    }
                     book_importing = true;
                 }
-            }
-            else if (book_importing) {
+            } else if (book_importing) {
                 if (import_book_future.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
                     failed = !import_book_future.get();
                     book_importing = false;
                     done = true;
                 }
             }
-        }
-        else if (done) {
+        } else if (done) {
             if (failed) {
                 getData().fonts.font(language.get("book", "import_failed")).draw(25, Arg::topCenter(X_CENTER, sy), getData().colors.white);
                 single_back_button.draw();
@@ -169,8 +167,7 @@ public:
                     getData().graph_resources.need_init = false;
                     changeScene(U"Main_scene", SCENE_FADE_TIME);
                 }
-            }
-            else {
+            } else {
                 reset_book_additional_information();
                 getData().graph_resources.need_init = false;
                 changeScene(U"Main_scene", SCENE_FADE_TIME);
@@ -243,7 +240,7 @@ public:
                 go_button.enable();
                 go_with_level_button.enable();
                 button_enabled = true;
-            } else{
+            } else {
                 book_format_str = language.get("book", "undefined_format");
                 go_button.disable();
                 go_with_level_button.disable();
@@ -256,7 +253,7 @@ public:
                 back_button.disable_notransparent();
                 go_with_level_button.disable_notransparent();
                 go_button.disable_notransparent();
-            } else{
+            } else {
                 back_button.enable();
                 go_with_level_button.enable();
                 go_button.enable();
@@ -269,20 +266,21 @@ public:
                 changeScene(U"Main_scene", SCENE_FADE_TIME);
             }
             if (go_with_level_button.clicked()) {
-                if (ext == BOOK_EXTENSION_NODOT)
+                if (ext == BOOK_EXTENSION_NODOT) {
                     save_book_edax_future = std::async(std::launch::async, book_save_as_egaroucid, book_file, level);
-                else if (ext == "dat")
+                } else if (ext == "dat") {
                     save_book_edax_future = std::async(std::launch::async, book_save_as_edax, book_file, level);
+                }
                 book_exporting = true;
             } else if (go_button.clicked() || (return_pressed && button_enabled)) {
-                if (ext == BOOK_EXTENSION_NODOT)
+                if (ext == BOOK_EXTENSION_NODOT) {
                     save_book_edax_future = std::async(std::launch::async, book_save_as_egaroucid, book_file, LEVEL_UNDEFINED);
-                else if (ext == "dat")
+                } else if (ext == "dat") {
                     save_book_edax_future = std::async(std::launch::async, book_save_as_edax, book_file, LEVEL_UNDEFINED);
+                }
                 book_exporting = true;
             }
-        }
-        else {
+        } else {
             getData().fonts.font(language.get("book", "exporting")).draw(25, Arg::topCenter(X_CENTER, sy), getData().colors.white);
             if (save_book_edax_future.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
                 save_book_edax_future.get();
@@ -352,7 +350,7 @@ public:
             if (ext == BOOK_EXTENSION_NODOT || ext == "dat") {
                 go_button.enable();
                 formatted_file = true;
-            } else{
+            } else {
                 go_button.disable();
                 getData().fonts.font(language.get("book", "wrong_extension") + U" " + language.get("book", "legal_extension2")).draw(15, Arg::topCenter(X_CENTER, sy + 190), getData().colors.white);
             }
@@ -367,15 +365,13 @@ public:
                 import_book_future = std::async(std::launch::async, import_book, book_file);
                 importing = true;
             }
-        }
-        else if (!imported) {
+        } else if (!imported) {
             getData().fonts.font(language.get("book", "loading")).draw(25, Arg::topCenter(X_CENTER, sy), getData().colors.white);
             if (import_book_future.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
                 failed = !import_book_future.get();
                 imported = true;
             }
-        }
-        else {
+        } else {
             if (failed) {
                 getData().fonts.font(language.get("book", "import_failed")).draw(25, Arg::topCenter(X_CENTER, sy), getData().colors.white);
                 back_button.draw();
@@ -384,8 +380,7 @@ public:
                     getData().graph_resources.need_init = false;
                     changeScene(U"Main_scene", SCENE_FADE_TIME);
                 }
-            }
-            else {
+            } else {
                 reset_book_additional_information();
                 getData().book_information.changed = true;
                 getData().graph_resources.need_init = false;
@@ -463,7 +458,7 @@ public:
             if (ext == BOOK_EXTENSION_NODOT) {
                 go_button.enable();
                 formatted_book = true;
-            } else{
+            } else {
                 go_button.disable();
                 getData().fonts.font(language.get("book", "wrong_extension") + U" " + language.get("book", "legal_extension1")).draw(15, Arg::topCenter(X_CENTER, sy + 190), getData().colors.white);
             }
@@ -488,8 +483,7 @@ public:
                 delete_book_future = std::async(std::launch::async, delete_book);
                 book_deleting = true;
             }
-        }
-        else if (book_deleting || book_importing) {
+        } else if (book_deleting || book_importing) {
             getData().fonts.font(language.get("book", "loading")).draw(25, Arg::topCenter(X_CENTER, sy), getData().colors.white);
             if (book_deleting) {
                 if (delete_book_future.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
@@ -498,8 +492,7 @@ public:
                     import_book_future = std::async(std::launch::async, import_book, getData().settings.book_file);
                     book_importing = true;
                 }
-            }
-            else if (book_importing) {
+            } else if (book_importing) {
                 if (import_book_future.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
                     failed = !import_book_future.get();
                     //if (getData().settings.book_file.size() < 6 || getData().settings.book_file.substr(getData().settings.book_file.size() - 6, 6) != BOOK_EXTENSION)
@@ -508,8 +501,7 @@ public:
                     done = true;
                 }
             }
-        }
-        else if (done) {
+        } else if (done) {
             if (failed) {
                 getData().fonts.font(language.get("book", "import_failed")).draw(25, Arg::topCenter(X_CENTER, sy), getData().colors.white);
                 single_back_button.draw();
@@ -518,8 +510,7 @@ public:
                     getData().graph_resources.need_init = false;
                     changeScene(U"Main_scene", SCENE_FADE_TIME);
                 }
-            }
-            else {
+            } else {
                 reset_book_additional_information();
                 getData().graph_resources.need_init = false;
                 changeScene(U"Main_scene", SCENE_FADE_TIME);
@@ -564,17 +555,21 @@ public:
         done = false;
         before_start = true;
         depth = getData().menu_elements.book_learn_depth;
-        if (!getData().menu_elements.use_book_learn_depth)
+        if (!getData().menu_elements.use_book_learn_depth) {
             depth = BOOK_DEPTH_INF;
+        }
         error_per_move = getData().menu_elements.book_learn_error_per_move;
-        if (!getData().menu_elements.use_book_learn_error_per_move)
+        if (!getData().menu_elements.use_book_learn_error_per_move) {
             error_per_move = BOOK_ERROR_INF;
+        }
         error_sum = getData().menu_elements.book_learn_error_sum;
-        if (!getData().menu_elements.use_book_learn_error_sum)
+        if (!getData().menu_elements.use_book_learn_error_sum) {
             error_sum = BOOK_ERROR_INF;
+        }
         error_leaf = getData().menu_elements.book_learn_error_leaf;
-        if (!getData().menu_elements.use_book_learn_error_leaf)
+        if (!getData().menu_elements.use_book_learn_error_leaf) {
             error_leaf = BOOK_ERROR_INF;
+        }
     }
 
     void update() override {
@@ -586,20 +581,24 @@ public:
         draw_info(getData().colors, history_elem, getData().fonts, getData().menu_elements, false, "");
         getData().fonts.font(language.get("book", "book_deviate")).draw(25, 480, 200, getData().colors.white);
         String depth_str = Format(depth);
-        if (depth == BOOK_DEPTH_INF)
+        if (depth == BOOK_DEPTH_INF) {
             depth_str = language.get("book", "unlimited");
+        }
         getData().fonts.font(language.get("book", "depth") + U": " + depth_str).draw(15, 480, 260, getData().colors.white);
         String error_per_move_str = Format(error_per_move);
-        if (error_per_move == BOOK_ERROR_INF)
+        if (error_per_move == BOOK_ERROR_INF) {
             error_per_move_str = language.get("book", "unlimited");
+        }
         getData().fonts.font(language.get("book", "error_per_move") + U": " + error_per_move_str).draw(15, 480, 280, getData().colors.white);
         String error_sum_str = Format(error_sum);
-        if (error_sum == BOOK_ERROR_INF)
+        if (error_sum == BOOK_ERROR_INF) {
             error_sum_str = language.get("book", "unlimited");
+        }
         getData().fonts.font(language.get("book", "error_sum") + U": " + error_sum_str).draw(15, 480, 300, getData().colors.white);
         String error_leaf_str = Format(error_leaf);
-        if (error_leaf == BOOK_ERROR_INF)
+        if (error_leaf == BOOK_ERROR_INF) {
             error_leaf_str = language.get("book", "unlimited");
+        }
         getData().fonts.font(language.get("book", "error_leaf") + U": " + error_leaf_str).draw(15, 480, 320, getData().colors.white);
         if (book_learning) {
             getData().fonts.font(language.get("book", "learning")).draw(20, 480, 230, getData().colors.white);
@@ -630,7 +629,7 @@ public:
                         if (history_elem.player == WHITE) {
                             registered_value *= -1;
                         }
-                    } else{
+                    } else {
                         if (history_elem.player == BLACK) {
                             book.change(&history_elem.board, registered_value, getData().menu_elements.level);
                         } else if (history_elem.player == WHITE) {
@@ -648,7 +647,7 @@ public:
                             if (history_elem.player == WHITE) {
                                 registered_value *= -1;
                             }
-                        } else{
+                        } else {
                             if (history_elem.player == BLACK) {
                                 book.change(&history_elem.board, registered_value, getData().menu_elements.level);
                             } else if (history_elem.player == WHITE) {
@@ -735,7 +734,7 @@ public:
                 done = true;
                 global_searching = true;
             }
-        } else{
+        } else {
             reset_book_additional_information();
             getData().book_information.changed = true;
             getData().graph_resources.need_init = false;
@@ -878,14 +877,17 @@ public:
         done = false;
         before_start = true;
         depth = getData().menu_elements.book_learn_depth;
-        if (!getData().menu_elements.use_book_learn_depth)
+        if (!getData().menu_elements.use_book_learn_depth) {
             depth = BOOK_DEPTH_INF;
+        }
         error_per_move = getData().menu_elements.book_learn_error_per_move;
-        if (!getData().menu_elements.use_book_learn_error_per_move)
+        if (!getData().menu_elements.use_book_learn_error_per_move) {
             error_per_move = BOOK_ERROR_INF;
+        }
         error_sum = getData().menu_elements.book_learn_error_sum;
-        if (!getData().menu_elements.use_book_learn_error_sum)
+        if (!getData().menu_elements.use_book_learn_error_sum) {
             error_sum = BOOK_ERROR_INF;
+        }
     }
 
     void update() override {
@@ -897,16 +899,19 @@ public:
         draw_info(getData().colors, history_elem, getData().fonts, getData().menu_elements, false, "");
         getData().fonts.font(language.get("book", "book_recalculate_leaf")).draw(25, 480, 200, getData().colors.white);
         String depth_str = Format(depth);
-        if (depth == BOOK_DEPTH_INF)
+        if (depth == BOOK_DEPTH_INF) {
             depth_str = language.get("book", "unlimited");
+        }
         getData().fonts.font(language.get("book", "depth") + U": " + depth_str).draw(15, 480, 280, getData().colors.white);
         String error_per_move_str = Format(error_per_move);
-        if (error_per_move == BOOK_ERROR_INF)
+        if (error_per_move == BOOK_ERROR_INF) {
             error_per_move_str = language.get("book", "unlimited");
+        }
         getData().fonts.font(language.get("book", "error_per_move") + U": " + error_per_move_str).draw(15, 480, 300, getData().colors.white);
         String error_sum_str = Format(error_sum);
-        if (error_sum == BOOK_ERROR_INF)
+        if (error_sum == BOOK_ERROR_INF) {
             error_sum_str = language.get("book", "unlimited");
+        }
         getData().fonts.font(language.get("book", "error_sum") + U": " + error_sum_str).draw(15, 480, 320, getData().colors.white);
         if (book_learning) {
             getData().fonts.font(language.get("book", "learning")).draw(20, 480, 230, getData().colors.white);
@@ -1002,7 +1007,7 @@ public:
                 done = true;
                 global_searching = true;
             }
-        } else{
+        } else {
             reset_book_additional_information();
             getData().book_information.changed = true;
             getData().graph_resources.need_init = false;
@@ -1044,7 +1049,7 @@ public:
                 book_info = book_info_future.get();
                 book_info_calculating = false;
             }
-        } else{
+        } else {
             getData().fonts.font(language.get("book", "n_registered") + U": " + Format(book_info.n_boards)).draw(15, 50, 67, getData().colors.white);
             int sy = 90;
             int sx = 50;
@@ -1148,17 +1153,21 @@ public:
         learning_done = false;
         stop_button_pressed = false;
         depth = getData().menu_elements.book_learn_depth;
-        if (!getData().menu_elements.use_book_learn_depth)
+        if (!getData().menu_elements.use_book_learn_depth) {
             depth = BOOK_DEPTH_INF;
+        }
         error_per_move = getData().menu_elements.book_learn_error_per_move;
-        if (!getData().menu_elements.use_book_learn_error_per_move)
+        if (!getData().menu_elements.use_book_learn_error_per_move) {
             error_per_move = BOOK_ERROR_INF;
+        }
         error_sum = getData().menu_elements.book_learn_error_sum;
-        if (!getData().menu_elements.use_book_learn_error_sum)
+        if (!getData().menu_elements.use_book_learn_error_sum) {
             error_sum = BOOK_ERROR_INF;
+        }
         error_leaf = getData().menu_elements.book_learn_error_leaf;
-        if (!getData().menu_elements.use_book_learn_error_leaf)
+        if (!getData().menu_elements.use_book_learn_error_leaf) {
             error_leaf = BOOK_ERROR_INF;
+        }
         max_n_loops = 15;
         n_loops_bar.init(X_CENTER - 220, 345, 440, 20, language.get("book", "max_n_loops"), 15, getData().colors.white, getData().fonts.font, 1, 30, &max_n_loops);
     }
@@ -1179,7 +1188,7 @@ public:
                 std::ifstream ifs(path);
                 if (ifs.fail()) {
                     std::cerr << "can't open " << path << std::endl;
-                } else{
+                } else {
                     std::istreambuf_iterator<char> it(ifs);
                     std::istreambuf_iterator<char> last;
                     std::string str(it, last);
@@ -1196,7 +1205,7 @@ public:
                     if (!getline(ss, line_preview)) {
                         need_to_write_more = false;
                         break;
-                    } else{
+                    } else {
                         preview += line_preview + "\n";
                     }
                 }
@@ -1204,7 +1213,7 @@ public:
                     preview += "...";
                 }
                 getData().fonts.font(Unicode::Widen(preview)).draw(15, X_CENTER - 350, sy, getData().colors.white);
-            } else{
+            } else {
                 text_area.active = true;
                 SimpleGUI::TextArea(text_area, Vec2{X_CENTER - 350, sy}, SizeF{700, 270}, TEXTBOX_MAX_CHARS);
                 raw_transcripts = text_area.text.narrow();
@@ -1221,7 +1230,7 @@ public:
                 back_button.disable_notransparent();
                 start_button.disable_notransparent();
                 start_with_max_n_loops_button.disable_notransparent();
-            } else{
+            } else {
                 back_button.enable();
                 start_button.enable();
                 start_with_max_n_loops_button.enable();
@@ -1235,7 +1244,7 @@ public:
             if ((start_button.clicked() || start_with_max_n_loops_button.clicked()) && raw_transcripts.size() && !n_loops_bar.is_changeable()) {
                 if (start_button.clicked()) {
                     max_n_loops_used = BOOK_DEVIATE_MAX_N_LOOPS_INF;
-                } else{
+                } else {
                     max_n_loops_used = max_n_loops;
                 }
                 failed = import_transcript_processing();
@@ -1247,8 +1256,7 @@ public:
                 }
                 done = true;
             }
-        }
-        else if (failed) { // error in transcript list
+        } else if (failed) { // error in transcript list
             int sy = 20;
             getData().fonts.font(language.get("book", "book_deviate_with_transcript")).draw(25, Arg::topCenter(X_CENTER, sy), getData().colors.white);
             sy += 45;
@@ -1276,26 +1284,29 @@ public:
                 failed = false;
                 file_dragged = false;
             }
-        }
-        else { // training
+        } else { // training
             draw_board(getData().fonts, getData().colors, history_elem);
             draw_info(getData().colors, history_elem, getData().fonts, getData().menu_elements, false, "");
             getData().fonts.font(language.get("book", "book_deviate_with_transcript")).draw(20, 480, 200, getData().colors.white);
             String depth_str = Format(depth);
-            if (depth == BOOK_DEPTH_INF)
+            if (depth == BOOK_DEPTH_INF) {
                 depth_str = language.get("book", "unlimited");
+            }
             getData().fonts.font(language.get("book", "depth") + U": " + depth_str).draw(15, 480, 260, getData().colors.white);
             String error_per_move_str = Format(error_per_move);
-            if (error_per_move == BOOK_ERROR_INF)
+            if (error_per_move == BOOK_ERROR_INF) {
                 error_per_move_str = language.get("book", "unlimited");
+            }
             getData().fonts.font(language.get("book", "error_per_move") + U": " + error_per_move_str).draw(15, 480, 280, getData().colors.white);
             String error_sum_str = Format(error_sum);
-            if (error_sum == BOOK_ERROR_INF)
+            if (error_sum == BOOK_ERROR_INF) {
                 error_sum_str = language.get("book", "unlimited");
+            }
             getData().fonts.font(language.get("book", "error_sum") + U": " + error_sum_str).draw(15, 480, 300, getData().colors.white);
             String error_leaf_str = Format(error_leaf);
-            if (error_leaf == BOOK_ERROR_INF)
+            if (error_leaf == BOOK_ERROR_INF) {
                 error_leaf_str = language.get("book", "unlimited");
+            }
             getData().fonts.font(language.get("book", "error_leaf") + U": " + error_leaf_str).draw(15, 480, 320, getData().colors.white);
             if (book_learning) { // learning
                 getData().fonts.font(language.get("book", "learning")).draw(20, 480, 230, getData().colors.white);
@@ -1330,7 +1341,7 @@ public:
                         book_learn_future = std::async(std::launch::async, book_deviate, board_list[board_idx], getData().menu_elements.level, depth, error_per_move, error_sum, error_leaf, max_n_loops_used, &history_elem.board, &history_elem.player, getData().settings.book_file, getData().settings.book_file + ".bak", &book_learning);
                         book_learning = true;
                         learning_done = false;
-                    } else{ // all boards done
+                    } else { // all boards done
                         book_learning = false;
                         learning_done = true;
                     }
