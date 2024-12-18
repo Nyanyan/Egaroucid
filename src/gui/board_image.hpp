@@ -16,18 +16,20 @@
 #include "draw.hpp"
 #include "screen_shot.hpp"
 
-#define BOARD_IMAGE_COLOR_DEFAULT 0
-#define BOARD_IMAGE_COLOR_MONOCHROME 1
-#define BOARD_IMAGE_BRECT 0
-#define BOARD_IMAGE_BSTAR 1
-#define BOARD_IMAGE_WRECT 2
-#define BOARD_IMAGE_WSTAR 3
-#define BOARD_IMAGE_NOMARK 4
-#define BOARD_IMAGE_MARK_DELETED -1
-#define BOARD_IMAGE_NOT_CLICKED 2
-#define BOARD_IMAGE_RECT_SIZE 20
-#define BOARD_IMAGE_STAR_SIZE 15
-#define BOARD_IMAGE_FRAME_WIDTH 2
+constexpr int BOARD_IMAGE_COLOR_DEFAULT = 0;
+constexpr int BOARD_IMAGE_COLOR_MONOCHROME = 1;
+
+constexpr int BOARD_IMAGE_BRECT = 0;
+constexpr int BOARD_IMAGE_BSTAR = 1;
+constexpr int BOARD_IMAGE_WRECT = 2;
+constexpr int BOARD_IMAGE_WSTAR = 3;
+constexpr int BOARD_IMAGE_NOMARK = 4;
+
+constexpr int BOARD_IMAGE_MARK_DELETED = -1;
+constexpr int BOARD_IMAGE_NOT_CLICKED = 2;
+constexpr int BOARD_IMAGE_RECT_SIZE = 20;
+constexpr int BOARD_IMAGE_STAR_SIZE = 15;
+constexpr int BOARD_IMAGE_FRAME_WIDTH = 2;
 
 class Board_image : public App::Scene {
 private:
@@ -88,13 +90,11 @@ public:
                 if (marks[cell] == mark_radio.checked && last_marked[cell] != mark_radio.checked) {
                     marks[cell] = BOARD_IMAGE_NOMARK;
                     last_marked[cell] = BOARD_IMAGE_MARK_DELETED;
-                }
-                else if (last_marked[cell] != BOARD_IMAGE_MARK_DELETED) {
+                } else if (last_marked[cell] != BOARD_IMAGE_MARK_DELETED) {
                     marks[cell] = mark_radio.checked;
                     last_marked[cell] = mark_radio.checked;
                 }
-            }
-            else {
+            } else {
                 last_marked[cell] = BOARD_IMAGE_NOT_CLICKED;
             }
         }
@@ -126,25 +126,26 @@ public:
                 Rect rect(Arg::center(x_center, y_center), BOARD_IMAGE_RECT_SIZE, BOARD_IMAGE_RECT_SIZE);
                 if (marks[cell] == BOARD_IMAGE_BRECT) {
                     rect.draw(getData().colors.black);
-                    if (board_arr[cell] == BLACK)
+                    if (board_arr[cell] == BLACK) {
                         rect.drawFrame(BOARD_IMAGE_FRAME_WIDTH / 2, BOARD_IMAGE_FRAME_WIDTH / 2, getData().colors.white);
-                }
-                else if (marks[cell] == BOARD_IMAGE_WRECT) {
+                    }
+                } else if (marks[cell] == BOARD_IMAGE_WRECT) {
                     rect.draw(getData().colors.white);
-                    if (board_arr[cell] == WHITE || (board_arr[cell] == VACANT && color_radio.checked == BOARD_IMAGE_COLOR_MONOCHROME))
+                    if (board_arr[cell] == WHITE || (board_arr[cell] == VACANT && color_radio.checked == BOARD_IMAGE_COLOR_MONOCHROME)) {
                         rect.drawFrame(BOARD_IMAGE_FRAME_WIDTH / 2, BOARD_IMAGE_FRAME_WIDTH / 2, getData().colors.black);
+                    }
                 }
-            }
-            else if (marks[cell] == BOARD_IMAGE_BSTAR || marks[cell] == BOARD_IMAGE_WSTAR) {
+            } else if (marks[cell] == BOARD_IMAGE_BSTAR || marks[cell] == BOARD_IMAGE_WSTAR) {
                 if (marks[cell] == BOARD_IMAGE_BSTAR) {
                     Shape2D::Star(BOARD_IMAGE_STAR_SIZE, Vec2{ x_center, y_center }).draw(getData().colors.black);
-                    if (board_arr[cell] == BLACK)
+                    if (board_arr[cell] == BLACK) {
                         Shape2D::Star(BOARD_IMAGE_STAR_SIZE, Vec2{ x_center, y_center }).drawFrame(BOARD_IMAGE_FRAME_WIDTH, getData().colors.white);
-                }
-                else if (marks[cell] == BOARD_IMAGE_WSTAR) {
+                    }
+                } else if (marks[cell] == BOARD_IMAGE_WSTAR) {
                     Shape2D::Star(BOARD_IMAGE_STAR_SIZE, Vec2{ x_center, y_center }).draw(getData().colors.white);
-                    if (board_arr[cell] == WHITE || (board_arr[cell] == VACANT && color_radio.checked == BOARD_IMAGE_COLOR_MONOCHROME))
+                    if (board_arr[cell] == WHITE || (board_arr[cell] == VACANT && color_radio.checked == BOARD_IMAGE_COLOR_MONOCHROME)) {
                         Shape2D::Star(BOARD_IMAGE_STAR_SIZE, Vec2{ x_center, y_center }).drawFrame(BOARD_IMAGE_FRAME_WIDTH, getData().colors.black);
+                    }
                 }
             }
         }
