@@ -331,9 +331,9 @@ struct Settings {
     bool change_book_by_right_click;
     bool show_last_move;
     bool show_next_move;
-    #if USE_CHANGEABLE_HASH_LEVEL
-        int hash_level;
-    #endif
+#if USE_CHANGEABLE_HASH_LEVEL
+    int hash_level;
+#endif
     int book_acc_level;
     bool pause_when_pass;
     bool show_next_move_change_view;
@@ -369,7 +369,7 @@ struct Fonts {
             font = font_SC;
             font_bold = font_bold_SC;
             font_heavy = font_heavy_SC;
-        } else{ // japanese / english
+        } else { // japanese / english
             font = font_default;
             font_bold = font_bold_default;
             font_heavy = font_heavy_default;
@@ -408,9 +408,9 @@ struct Menu_elements {
     int book_acc_level;
     int level;
     int n_threads;
-    #if USE_CHANGEABLE_HASH_LEVEL
-        int hash_level;
-    #endif
+#if USE_CHANGEABLE_HASH_LEVEL
+    int hash_level;
+#endif
     // player
     bool ai_put_black;
     bool ai_put_white;
@@ -517,9 +517,9 @@ struct Menu_elements {
         book_acc_level = settings->book_acc_level;
         level = settings->level;
         n_threads = settings->n_threads;
-        #if USE_CHANGEABLE_HASH_LEVEL
-            hash_level = settings->hash_level;
-        #endif
+#if USE_CHANGEABLE_HASH_LEVEL
+        hash_level = settings->hash_level;
+#endif
         ai_put_black = settings->ai_put_black;
         ai_put_white = settings->ai_put_white;
         pause_when_pass = settings->pause_when_pass;
@@ -605,8 +605,7 @@ struct Menu_elements {
             if (resources->language_names[i] == settings->lang_name) {
                 lang_found = true;
                 languages[i] = true;
-            }
-            else {
+            } else {
                 languages[i] = false;
             }
         }
