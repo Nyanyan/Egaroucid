@@ -17,17 +17,17 @@
 #include "url.hpp"
 
 // graph definition
-#define GRAPH_IGNORE_VALUE INF
+constexpr int GRAPH_IGNORE_VALUE = INF;
 
 // scene definition
-#define SCENE_FADE_TIME 100
+constexpr int SCENE_FADE_TIME = 100;
 
 // coordinate definition
-#define WINDOW_SIZE_X 800
-#define WINDOW_SIZE_Y 500
-#define WINDOW_SIZE_X_MIN 8
-#define WINDOW_SIZE_Y_MIN 5
-#define PADDING 20
+constexpr int WINDOW_SIZE_X = 800;
+constexpr int WINDOW_SIZE_Y = 500;
+constexpr int WINDOW_SIZE_X_MIN = 8;
+constexpr int WINDOW_SIZE_Y_MIN = 5;
+constexpr int PADDING = 20;
 constexpr int LEFT_LEFT = PADDING;
 constexpr int LEFT_RIGHT = WINDOW_SIZE_X / 2 - PADDING;
 constexpr int LEFT_CENTER = (LEFT_LEFT + LEFT_RIGHT) / 2;
@@ -38,134 +38,134 @@ constexpr int X_CENTER = WINDOW_SIZE_X / 2;
 constexpr int Y_CENTER = WINDOW_SIZE_Y / 2;
 
 // icon width
-#define SCENE_ICON_WIDTH 120
+constexpr int SCENE_ICON_WIDTH = 120;
 
 // error definition
-#define ERR_OK 0
-#define ERR_IMPORT_SETTINGS 1
+constexpr int ERR_OK = 0;
+constexpr int ERR_IMPORT_SETTINGS = 1;
 // silent load
-#define ERR_SILENT_LOAD_TERMINATED 100
-#define ERR_SILENT_LOAD_LANG_LIST_NOT_LOADED 101
-#define ERR_SILENT_LOAD_LANG_JSON_NOT_LOADED 102
-#define ERR_SILENT_LOAD_LANG_NOT_LOADED 103
-#define ERR_SILENT_LOAD_TEXTURE_NOT_LOADED 104
+constexpr int ERR_SILENT_LOAD_TERMINATED = 100;
+constexpr int ERR_SILENT_LOAD_LANG_LIST_NOT_LOADED = 101;
+constexpr int ERR_SILENT_LOAD_LANG_JSON_NOT_LOADED = 102;
+constexpr int ERR_SILENT_LOAD_LANG_NOT_LOADED = 103;
+constexpr int ERR_SILENT_LOAD_TEXTURE_NOT_LOADED = 104;
 // load (resources)
-#define ERR_LOAD_TERMINATED 200
-#define ERR_LOAD_TEXTURE_NOT_LOADED 201
-#define ERR_LOAD_OPENING_NOT_LOADED 202
-#define ERR_LOAD_LICENSE_FILE_NOT_LOADED 203
+constexpr int ERR_LOAD_TERMINATED = 200;
+constexpr int ERR_LOAD_TEXTURE_NOT_LOADED = 201;
+constexpr int ERR_LOAD_OPENING_NOT_LOADED = 202;
+constexpr int ERR_LOAD_LICENSE_FILE_NOT_LOADED = 203;
 // load (ai)
-#define ERR_LOAD_EVAL_FILE_NOT_IMPORTED 301
-#define ERR_LOAD_BOOK_FILE_NOT_IMPORTED 302
-#define ERR_LOAD_HASH_NOT_RESIZED 303
+constexpr int ERR_LOAD_EVAL_FILE_NOT_IMPORTED = 301;
+constexpr int ERR_LOAD_BOOK_FILE_NOT_IMPORTED = 302;
+constexpr int ERR_LOAD_HASH_NOT_RESIZED = 303;
 
 // constant definition
-#define UPDATE_CHECK_ALREADY_UPDATED 0
-#define UPDATE_CHECK_UPDATE_FOUND 1
-#define SHOW_ALL_HINT 35
+constexpr int UPDATE_CHECK_ALREADY_UPDATED = 0;
+constexpr int UPDATE_CHECK_UPDATE_FOUND = 1;
+constexpr int SHOW_ALL_HINT = 35;
 
 // board drawing constants
-#define BOARD_SIZE 400
-#define BOARD_COORD_SIZE 20
-#define DISC_SIZE 20
-#define LEGAL_SIZE 7
-#define STABLE_SIZE 4
-#define BOARD_CELL_FRAME_WIDTH 2
-#define BOARD_DOT_SIZE 5
-#define BOARD_ROUND_FRAME_WIDTH 10
-#define BOARD_ROUND_DIAMETER 20
-#define BOARD_SY 60
-#define BOARD_DISC_FRAME_WIDTH 2
+constexpr int BOARD_SIZE = 400;
+constexpr int BOARD_COORD_SIZE = 20;
+constexpr int DISC_SIZE = 20;
+constexpr int LEGAL_SIZE = 7;
+constexpr int STABLE_SIZE = 4;
+constexpr int BOARD_CELL_FRAME_WIDTH = 2;
+constexpr int BOARD_DOT_SIZE = 5;
+constexpr int BOARD_ROUND_FRAME_WIDTH = 10;
+constexpr int BOARD_ROUND_DIAMETER = 20;
+constexpr int BOARD_SY = 60;
+constexpr int BOARD_DISC_FRAME_WIDTH = 2;
 constexpr int BOARD_SX = LEFT_LEFT + BOARD_COORD_SIZE;
 constexpr int BOARD_CELL_SIZE = BOARD_SIZE / HW;
 
-// main start game button constants
-#define START_GAME_BUTTON_SX 700
-#define START_GAME_BUTTON_SY 11
-#define START_GAME_BUTTON_WIDTH 90
-#define START_GAME_BUTTON_HEIGHT 30
-#define START_GAME_BUTTON_RADIUS 10
+// main scene start game button constants
+constexpr int START_GAME_BUTTON_SX = 700;
+constexpr int START_GAME_BUTTON_SY = 11;
+constexpr int START_GAME_BUTTON_WIDTH = 90;
+constexpr int START_GAME_BUTTON_HEIGHT = 30;
+constexpr int START_GAME_BUTTON_RADIUS = 10;
 
-// main pass button constants
-#define PASS_BUTTON_SX 700
-#define PASS_BUTTON_SY 11
-#define PASS_BUTTON_WIDTH 90
-#define PASS_BUTTON_HEIGHT 30
-#define PASS_BUTTON_RADIUS 10
+// main scene pass button constants
+constexpr int PASS_BUTTON_SX = 700;
+constexpr int PASS_BUTTON_SY = 11;
+constexpr int PASS_BUTTON_WIDTH = 90;
+constexpr int PASS_BUTTON_HEIGHT = 30;
+constexpr int PASS_BUTTON_RADIUS = 10;
 
 // graph drawing constants
-#define GRAPH_RESOLUTION 4
+constexpr int GRAPH_RESOLUTION = 4;
 constexpr int GRAPH_SX = BOARD_SX + BOARD_SIZE + 65;
 constexpr int GRAPH_SY = Y_CENTER + 20;
 constexpr int GRAPH_WIDTH = WINDOW_SIZE_X - GRAPH_SX - 35;
 constexpr int GRAPH_HEIGHT = WINDOW_SIZE_Y - GRAPH_SY - 60;
 
 // level drawing constants
-#define LEVEL_DEPTH_DY -15
-#define LEVEL_INFO_DX -14
-#define LEVEL_INFO_DY -56
-#define LEVEL_INFO_WIDTH 37
-#define LEVEL_INFO_HEIGHT 20
-#define LEVEL_PROB_WIDTH 80
+constexpr int LEVEL_DEPTH_DY = -15;
+constexpr int LEVEL_INFO_DX = -14;
+constexpr int LEVEL_INFO_DY = -56;
+constexpr int LEVEL_INFO_WIDTH = 37;
+constexpr int LEVEL_INFO_HEIGHT = 20;
+constexpr int LEVEL_PROB_WIDTH = 80;
 
 // level graph roundrect constants
-#define GRAPH_RECT_DY -70
-#define GRAPH_RECT_DX -45
-#define GRAPH_RECT_RADIUS 20
-#define GRAPH_RECT_THICKNESS 5
+constexpr int GRAPH_RECT_DY = -70;
+constexpr int GRAPH_RECT_DX = -45;
+constexpr int GRAPH_RECT_RADIUS = 20;
+constexpr int GRAPH_RECT_THICKNESS = 5;
 constexpr int GRAPH_RECT_WIDTH = WINDOW_SIZE_X - (GRAPH_SX + GRAPH_RECT_DX) - 10;
 constexpr int GRAPH_RECT_HEIGHT = GRAPH_HEIGHT - GRAPH_RECT_DY + 27;
-#define N_GRPAPH_COLOR_TYPES 2
+constexpr int N_GRPAPH_COLOR_TYPES = 2;
 
 // info drawing constants
-#define INFO_SY 53
-#define INFO_DISC_RADIUS 12
-#define INFO_SX 460
-#define INFO_RECT_RADIUS 20
-#define INFO_RECT_THICKNESS 5
+constexpr int INFO_SY = 53;
+constexpr int INFO_DISC_RADIUS = 12;
+constexpr int INFO_SX = 460;
+constexpr int INFO_RECT_RADIUS = 20;
+constexpr int INFO_RECT_THICKNESS = 5;
 constexpr int INFO_WIDTH = WINDOW_SIZE_X - 10 - INFO_SX;
 constexpr int INFO_HEIGHT = 200 - INFO_SY - 12;
 
 // graph mode constants
-#define GRAPH_MODE_NORMAL 0
-#define GRAPH_MODE_INSPECT 1
+constexpr int GRAPH_MODE_NORMAL = 0;
+constexpr int GRAPH_MODE_INSPECT = 1;
 
 // button press constants
-#define BUTTON_NOT_PUSHED 0
-#define BUTTON_LONG_PRESS_THRESHOLD 500
+constexpr int BUTTON_NOT_PUSHED = 0;
+constexpr int BUTTON_LONG_PRESS_THRESHOLD = 500;
 
 // hint constants
-#define HINT_NOT_CALCULATING -1
-#define HINT_INIT_VALUE -INF
-#define HINT_INF_LEVEL 100
-#define HINT_MAX_LEVEL 60
+constexpr int HINT_NOT_CALCULATING = -1;
+constexpr int HINT_INIT_VALUE = -INF;
+constexpr int HINT_INF_LEVEL = 100;
+constexpr int HINT_MAX_LEVEL = 60;
 
 // analyze constants
-#define ANALYZE_SIZE 62
+constexpr int ANALYZE_SIZE = 62;
 
 // export game constants
-#define EXPORT_GAME_PLAYER_WIDTH 300
-#define EXPORT_GAME_PLAYER_HEIGHT 30
-#define EXPORT_GAME_MEMO_WIDTH 600
-#define EXPORT_GAME_MEMO_HEIGHT 250
-#define EXPORT_GAME_RADIUS 15
+constexpr int EXPORT_GAME_PLAYER_WIDTH = 300;
+constexpr int EXPORT_GAME_PLAYER_HEIGHT = 30;
+constexpr int EXPORT_GAME_MEMO_WIDTH = 600;
+constexpr int EXPORT_GAME_MEMO_HEIGHT = 250;
+constexpr int EXPORT_GAME_RADIUS = 15;
 
 // import game constants
-#define IMPORT_GAME_N_GAMES_ON_WINDOW 7
-#define IMPORT_GAME_SX 30
-#define IMPORT_GAME_SY 65
-#define IMPORT_GAME_HEIGHT 45
-#define IMPORT_GAME_PLAYER_WIDTH 220
-#define IMPORT_GAME_PLAYER_HEIGHT 24
-#define IMPORT_GAME_SCORE_WIDTH 60
-#define IMPORT_GAME_WINNER_BLACK 0
-#define IMPORT_GAME_WINNER_WHITE 1
-#define IMPORT_GAME_WINNER_DRAW 2
-#define IMPORT_GAME_BUTTON_SX 660
-#define IMPORT_GAME_BUTTON_WIDTH 100
-#define IMPORT_GAME_BUTTON_HEIGHT 25
-#define IMPORT_GAME_BUTTON_RADIUS 7
-#define IMPORT_GAME_DATE_WIDTH 120
+constexpr int IMPORT_GAME_N_GAMES_ON_WINDOW = 7;
+constexpr int IMPORT_GAME_SX = 30;
+constexpr int IMPORT_GAME_SY = 65;
+constexpr int IMPORT_GAME_HEIGHT = 45;
+constexpr int IMPORT_GAME_PLAYER_WIDTH = 220;
+constexpr int IMPORT_GAME_PLAYER_HEIGHT = 24;
+constexpr int IMPORT_GAME_SCORE_WIDTH = 60;
+constexpr int IMPORT_GAME_WINNER_BLACK = 0;
+constexpr int IMPORT_GAME_WINNER_WHITE = 1;
+constexpr int IMPORT_GAME_WINNER_DRAW = 2;
+constexpr int IMPORT_GAME_BUTTON_SX = 660;
+constexpr int IMPORT_GAME_BUTTON_WIDTH = 100;
+constexpr int IMPORT_GAME_BUTTON_HEIGHT = 25;
+constexpr int IMPORT_GAME_BUTTON_RADIUS = 7;
+constexpr int IMPORT_GAME_DATE_WIDTH = 120;
 constexpr int IMPORT_GAME_BUTTON_SY = (IMPORT_GAME_HEIGHT - IMPORT_GAME_BUTTON_HEIGHT) / 2;
 constexpr int IMPORT_GAME_WIDTH = WINDOW_SIZE_X - IMPORT_GAME_SX * 2;
 
