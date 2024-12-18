@@ -28,14 +28,14 @@ constexpr int menu_child_offset = 2;
 constexpr int bar_additional_offset = 20;
 constexpr double radio_ratio = 0.2;
 
-#define button_mode 0
-#define bar_mode 1
-#define check_mode 2
-#define radio_mode 3
-#define bar_check_mode 4
-#define bar_size 140
-#define bar_height 14
-#define bar_radius 6
+#define MENU_MODE_BUTTON 0
+#define MENU_MODE_BAR 1
+#define MENU_MODE_CHECK 2
+#define MENU_MODE_RADIO 3
+#define MENU_MODE_BAR_CHECK 4
+#define MENU_BAR_SIZE 140
+#define MENU_BAR_HEIGHT 14
+#define MENU_BAR_RADIUS 6
 
 class menu_elem {
 private:
@@ -79,7 +79,7 @@ public:
     void init_button(String s, bool *c) {
         clear();
         click_supporter.init();
-        mode = button_mode;
+        mode = MENU_MODE_BUTTON;
         has_child = false;
         is_active = false;
         was_active = false;
@@ -94,7 +94,7 @@ public:
     void init_bar(String s, int *c, int d, int mn, int mx) {
         clear();
         click_supporter.init();
-        mode = bar_mode;
+        mode = MENU_MODE_BAR;
         has_child = false;
         is_active = false;
         was_active = false;
@@ -111,7 +111,7 @@ public:
     void init_check(String s, bool *c, bool d) {
         clear();
         click_supporter.init();
-        mode = check_mode;
+        mode = MENU_MODE_CHECK;
         has_child = false;
         is_active = false;
         was_active = false;
@@ -126,7 +126,7 @@ public:
     void init_radio(String s, bool* c, bool d) {
         clear();
         click_supporter.init();
-        mode = radio_mode;
+        mode = MENU_MODE_RADIO;
         has_child = false;
         is_active = false;
         str = s;
@@ -140,7 +140,7 @@ public:
     void init_radio(Texture t, bool* c, bool d) {
         clear();
         click_supporter.init();
-        mode = radio_mode;
+        mode = MENU_MODE_RADIO;
         has_child = false;
         is_active = false;
         bar_changeable = false;
@@ -154,7 +154,7 @@ public:
     void init_bar_check(String s, int *c, int d, int mn, int mx, bool *e, bool f, String u) {
         clear();
         click_supporter.init();
-        mode = bar_check_mode;
+        mode = MENU_MODE_BAR_CHECK;
         has_child = false;
         is_active = false;
         was_active = false;
@@ -207,23 +207,23 @@ public:
                 yy += height;
             }
         }
-        if (mode == bar_mode || mode == bar_check_mode) {
-            bar_sx = rect.x + rect.w - bar_size - bar_additional_offset;
+        if (mode == MENU_MODE_BAR || mode == MENU_MODE_BAR_CHECK) {
+            bar_sx = rect.x + rect.w - MENU_BAR_SIZE - bar_additional_offset;
             bar_center_y = rect.y + rect.h / 2;
             bar_rect.x = bar_sx;
-            bar_rect.y = bar_center_y - bar_height / 2;
-            bar_rect.w = bar_size;
-            bar_rect.h = bar_height;
-            bar_circle.x = bar_sx + bar_size * (*bar_elem - min_elem + 5) / (max_elem - min_elem + 10);
+            bar_rect.y = bar_center_y - MENU_BAR_HEIGHT / 2;
+            bar_rect.w = MENU_BAR_SIZE;
+            bar_rect.h = MENU_BAR_HEIGHT;
+            bar_circle.x = bar_sx + MENU_BAR_SIZE * (*bar_elem - min_elem + 5) / (max_elem - min_elem + 10);
             bar_circle.y = bar_center_y;
-            bar_circle.r = bar_radius;
+            bar_circle.r = MENU_BAR_RADIUS;
         }
     }
 
     void update() {
         was_active = is_active;
         is_active = rect.mouseOver();
-        if (mode == bar_mode || (mode == bar_check_mode && (*is_checked))) {
+        if (mode == MENU_MODE_BAR || (mode == MENU_MODE_BAR_CHECK && (*is_checked))) {
             // bar active?
             if (bar_rect.leftClicked()) {
                 bar_changeable = true;
@@ -251,7 +251,7 @@ public:
             is_active |= (child.active() && last_active());
         }
         // check clicked
-        if (mode == bar_check_mode) {
+        if (mode == MENU_MODE_BAR_CHECK) {
             Rect bar_check_rect = Rect(rect.x, rect.y, bar_sx - bar_value_offset - rect.x, rect.h);
             click_supporter.update(bar_check_rect);
             is_clicked = click_supporter.clicked();
@@ -260,12 +260,12 @@ public:
             is_clicked = click_supporter.clicked();
         }
         // set bar position
-        if ((mode == bar_mode || (mode == bar_check_mode && (*is_checked))) && bar_changeable) {
+        if ((mode == MENU_MODE_BAR || (mode == MENU_MODE_BAR_CHECK && (*is_checked))) && bar_changeable) {
             Cursor::RequestStyle(CursorStyle::ResizeLeftRight);
             int min_error = INF;
             int cursor_x = Cursor::Pos().x;
             for (int i = min_elem; i <= max_elem; ++i) {
-                int x = round((double)bar_sx + 10.0 + (double)(bar_size - 20) * (double)(i - min_elem) / (double)(max_elem - min_elem));
+                int x = round((double)bar_sx + 10.0 + (double)(MENU_BAR_SIZE - 20) * (double)(i - min_elem) / (double)(max_elem - min_elem));
                 if (abs(cursor_x - x) < min_error) {
                     min_error = abs(cursor_x - x);
                     *bar_elem = i;
@@ -275,16 +275,16 @@ public:
     }
 
     void update_button() {
-        if (mode == button_mode) {
+        if (mode == MENU_MODE_BUTTON) {
             *is_clicked_p = is_clicked;
         }
     }
 
     void draw_noupdate() {
-        if (mode == button_mode) {
+        if (mode == MENU_MODE_BUTTON) {
             *is_clicked_p = is_clicked;
         }
-        if (is_clicked && (mode == check_mode || mode == bar_check_mode)) {
+        if (is_clicked && (mode == MENU_MODE_CHECK || mode == MENU_MODE_BAR_CHECK)) {
             *is_checked = !(*is_checked);
         }
         if (is_active) {
@@ -298,18 +298,18 @@ public:
         } else{
             font(str).draw(font_size, rect.x + rect.h - menu_offset_y, rect.y + menu_offset_y, menu_font_color);
         }
-        if (mode == bar_mode || mode == bar_check_mode) {
-            if (mode == bar_check_mode && !(*is_checked)) {
+        if (mode == MENU_MODE_BAR || mode == MENU_MODE_BAR_CHECK) {
+            if (mode == MENU_MODE_BAR_CHECK && !(*is_checked)) {
                 font(unchecked_str).draw(font_size, bar_sx - menu_offset_x - menu_child_offset - font(unchecked_str).region(font_size, Point{ 0, 0 }).w, rect.y + menu_offset_y, menu_font_color);
             } else{
                 font(*bar_elem).draw(font_size, bar_sx - menu_offset_x - menu_child_offset - bar_value_offset, rect.y + menu_offset_y, menu_font_color);
             }
-            if (mode == bar_check_mode && !(*is_checked))
+            if (mode == MENU_MODE_BAR_CHECK && !(*is_checked))
                 bar_rect.draw(ColorF(bar_color, 0.5));
             else
                 bar_rect.draw(bar_color);
-            bar_circle.x = round((double)bar_sx + 10.0 + (double)(bar_size - 20) * (double)(*bar_elem - min_elem) / (double)(max_elem - min_elem));
-            if (mode == bar_check_mode && !(*is_checked))
+            bar_circle.x = round((double)bar_sx + 10.0 + (double)(MENU_BAR_SIZE - 20) * (double)(*bar_elem - min_elem) / (double)(max_elem - min_elem));
+            if (mode == MENU_MODE_BAR_CHECK && !(*is_checked))
                 Shape2D::Cross(1.5 * bar_circle.r, 6, Vec2{bar_circle.x, bar_circle.y}).draw(ColorF(bar_circle_color, 0.5));
             else
                 bar_circle.draw(bar_circle_color);
@@ -321,7 +321,7 @@ public:
                 int idx = 0;
                 for (menu_elem& child: children) {
                     if (child.clicked()) {
-                        if (child.menu_mode() == radio_mode && !child.checked()) {
+                        if (child.menu_mode() == MENU_MODE_RADIO && !child.checked()) {
                             radio_checked = idx;
                         }
                         is_clicked = true;
@@ -330,7 +330,7 @@ public:
                 }
                 idx = 0;
                 for (menu_elem& child: children) {
-                    if (child.menu_mode() == radio_mode && radio_checked != -1) {
+                    if (child.menu_mode() == MENU_MODE_RADIO && radio_checked != -1) {
                         child.set_checked(idx == radio_checked);
                     }
                     child.draw_noupdate();
@@ -338,7 +338,7 @@ public:
                 }
             }
         }
-        if (mode == check_mode || mode == bar_check_mode) {
+        if (mode == MENU_MODE_CHECK || mode == MENU_MODE_BAR_CHECK) {
             if (*is_checked) {
                 checkbox.scaled((double)(rect.h - 2 * menu_offset_y) / checkbox.width()).draw(rect.x + menu_offset_y, rect.y + menu_offset_y);
             }
@@ -346,7 +346,7 @@ public:
                 unchecked.scaled((double)(rect.h - 2 * menu_offset_y) / unchecked.width()).draw(rect.x + menu_offset_y, rect.y + menu_offset_y);
             }
         }
-        else if (mode == radio_mode) {
+        else if (mode == MENU_MODE_RADIO) {
             if (*is_checked) {
                 Circle(rect.x + rect.h / 2, rect.y + rect.h / 2, (int)(rect.h * radio_ratio)).draw(radio_color);
             }
@@ -389,8 +389,8 @@ public:
             res = font(str).region(font_size, Point{ 0, 0 });
         }
         res.w += res.h;
-        if (mode == bar_mode || mode == bar_check_mode) {
-            res.w += bar_size + bar_value_offset + bar_additional_offset;
+        if (mode == MENU_MODE_BAR || mode == MENU_MODE_BAR_CHECK) {
+            res.w += MENU_BAR_SIZE + bar_value_offset + bar_additional_offset;
         }
         return res;
     }
@@ -487,7 +487,7 @@ public:
             for (menu_elem& child: children) {
                 child.update();
                 // radio button check
-                if (child.clicked() && child.menu_mode() == radio_mode && !child.checked()) {
+                if (child.clicked() && child.menu_mode() == MENU_MODE_RADIO && !child.checked()) {
                     radio_checked = idx;
                 }
                 // active bar check
@@ -497,7 +497,7 @@ public:
             // radio button update
             idx = 0;
             for (menu_elem& child: children) {
-                if (child.menu_mode() == radio_mode && radio_checked != -1) {
+                if (child.menu_mode() == MENU_MODE_RADIO && radio_checked != -1) {
                     child.set_checked(idx == radio_checked);
                 }
                 ++idx;
