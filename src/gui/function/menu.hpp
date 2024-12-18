@@ -256,7 +256,7 @@ public:
             Rect bar_check_rect = Rect(rect.x, rect.y, bar_sx - bar_value_offset - rect.x, rect.h);
             click_supporter.update(bar_check_rect);
             is_clicked = click_supporter.clicked();
-        } else{
+        } else {
             click_supporter.update(rect);
             is_clicked = click_supporter.clicked();
         }
@@ -290,30 +290,31 @@ public:
         }
         if (is_active) {
             rect.draw(menu_active_color);
-        }
-        else {
+        } else {
             rect.draw(menu_select_color);
         }
         if (use_image) {
             image.scaled((double)(rect.h - 2 * menu_image_offset_y) / image.height()).draw(rect.x + rect.h - menu_offset_y, rect.y + menu_image_offset_y);
-        } else{
+        } else {
             font(str).draw(font_size, rect.x + rect.h - menu_offset_y, rect.y + menu_offset_y, menu_font_color);
         }
         if (mode == MENU_MODE_BAR || mode == MENU_MODE_BAR_CHECK) {
             if (mode == MENU_MODE_BAR_CHECK && !(*is_checked)) {
                 font(unchecked_str).draw(font_size, bar_sx - menu_offset_x - menu_child_offset - font(unchecked_str).region(font_size, Point{ 0, 0 }).w, rect.y + menu_offset_y, menu_font_color);
-            } else{
+            } else {
                 font(*bar_elem).draw(font_size, bar_sx - menu_offset_x - menu_child_offset - bar_value_offset, rect.y + menu_offset_y, menu_font_color);
             }
-            if (mode == MENU_MODE_BAR_CHECK && !(*is_checked))
+            if (mode == MENU_MODE_BAR_CHECK && !(*is_checked)) {
                 bar_rect.draw(ColorF(bar_color, 0.5));
-            else
+            } else {
                 bar_rect.draw(bar_color);
+            }
             bar_circle.x = round((double)bar_sx + 10.0 + (double)(MENU_BAR_SIZE - 20) * (double)(*bar_elem - min_elem) / (double)(max_elem - min_elem));
-            if (mode == MENU_MODE_BAR_CHECK && !(*is_checked))
+            if (mode == MENU_MODE_BAR_CHECK && !(*is_checked)) {
                 Shape2D::Cross(1.5 * bar_circle.r, 6, Vec2{bar_circle.x, bar_circle.y}).draw(ColorF(bar_circle_color, 0.5));
-            else
+            } else {
                 bar_circle.draw(bar_circle_color);
+            }
         }
         if (has_child) {
             font(U">").draw(font_size, rect.x + rect.w - menu_offset_x - menu_child_offset, rect.y + menu_offset_y, menu_font_color);
@@ -342,12 +343,10 @@ public:
         if (mode == MENU_MODE_CHECK || mode == MENU_MODE_BAR_CHECK) {
             if (*is_checked) {
                 checkbox.scaled((double)(rect.h - 2 * menu_offset_y) / checkbox.width()).draw(rect.x + menu_offset_y, rect.y + menu_offset_y);
-            }
-            else {
+            } else {
                 unchecked.scaled((double)(rect.h - 2 * menu_offset_y) / unchecked.width()).draw(rect.x + menu_offset_y, rect.y + menu_offset_y);
             }
-        }
-        else if (mode == MENU_MODE_RADIO) {
+        } else if (mode == MENU_MODE_RADIO) {
             if (*is_checked) {
                 Circle(rect.x + rect.h / 2, rect.y + rect.h / 2, (int)(rect.h * radio_ratio)).draw(radio_color);
             }
@@ -386,7 +385,7 @@ public:
             res.y = 0;
             res.h = rect.h - 2 * menu_image_offset_y;
             res.w = (double)res.h * image.width() / image.height();
-        } else{
+        } else {
             res = font(str).region(font_size, Point{ 0, 0 });
         }
         res.w += res.h;
@@ -518,8 +517,7 @@ public:
                 clicked = clicked || child.clicked();
                 ++idx;
             }
-        }
-        else {
+        } else {
             for (menu_elem& child: children) {
                 child.set_not_clicked();
                 child.update_button();
@@ -527,8 +525,7 @@ public:
         }
         if (is_open) {
             rect.draw(menu_select_color);
-        }
-        else {
+        } else {
             rect.draw(menu_color);
         }
         font(str).draw(font_size, Arg::topCenter(rect.x + rect.w / 2, rect.y + menu_offset_y), menu_font_color);
