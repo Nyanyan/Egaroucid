@@ -76,7 +76,7 @@ constexpr double local_strategy_cell_weight[HW2_P1][N_CELL_TYPE] = {
     {5.1758, 2.1170, 1.8724, 1.4832, 2.1156, 1.9396, 1.5902, 1.2552, 1.1616, 1.0056},
     {2.2740, 2.1902, 1.0258, 1.3252, 4.2662, 2.7912, 2.1468, 1.4662, 1.3404, 0.9242},
     {-2.1394, 2.2954, 0.2222, -0.6540, 8.4924, 3.8908, 2.6462, 1.2518, 1.3726, 0.3190},
-    {1.5772, 1.9274, 1.9266, 1.7418, 1.8490, 1.9600, 1.9512, 0.0000, 1.9486, 1.7082}
+    {2.0000, 2.0000, 2.0000, 2.0000, 2.0000, 2.0000, 2.0000, 2.0000, 2.0000, 2.0000}
 };
 
 void print_local_strategy(const double arr[]) {
@@ -107,7 +107,8 @@ void calc_local_strategy(Board board, int level, double res[], bool *searching, 
             board.player ^= bit;
             board.opponent ^= bit;
                 Search_result result = ai_searching(board, level, true, 0, true, false, searching);
-                value_diffs[cell] = -(result.value - complete_result.value + local_strategy_cell_weight[board.n_discs()][cell_type[cell]]);
+                //value_diffs[cell] = -(result.value - complete_result.value + local_strategy_cell_weight[board.n_discs()][cell_type[cell]]);
+                value_diffs[cell] = -(result.value - complete_result.value);
                 std::cerr << idx_to_coord(cell) << " " << complete_result.value << " " << result.value << " " << local_strategy_cell_weight[board.n_discs()][cell_type[cell]] << " " << value_diffs[cell] << std::endl;
             board.player ^= bit;
             board.opponent ^= bit;
@@ -116,7 +117,8 @@ void calc_local_strategy(Board board, int level, double res[], bool *searching, 
             board.player ^= bit;
             board.opponent ^= bit;
                 Search_result result = ai_searching(board, level, true, 0, true, false, searching);
-                value_diffs[cell] = -(result.value - complete_result.value - local_strategy_cell_weight[board.n_discs()][cell_type[cell]]);
+                //value_diffs[cell] = -(result.value - complete_result.value - local_strategy_cell_weight[board.n_discs()][cell_type[cell]]);
+                value_diffs[cell] = -(result.value - complete_result.value);
                 std::cerr << idx_to_coord(cell) << " " << complete_result.value << " " << result.value << " " << local_strategy_cell_weight[board.n_discs()][cell_type[cell]] << " " << value_diffs[cell] << std::endl;
                 /*
                 uint64_t legal_diff = ~board.get_legal() & legal;
