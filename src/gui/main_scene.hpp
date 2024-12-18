@@ -220,7 +220,7 @@ public:
         }
 
         // local strategy drawing
-        if (ai_status.local_strategy_calculated) {
+        if (ai_status.local_strategy_calculated && getData().menu_elements.show_ai_focus) {
             draw_local_strategy();
         }
 
@@ -283,7 +283,7 @@ public:
 
         // local strategy calculating & drawing
         bool local_strategy_ignore = ai_should_move || ai_status.analyzing || need_start_game_button || pausing_in_pass || changing_scene;
-        if (!local_strategy_ignore) {
+        if (getData().menu_elements.show_ai_focus && !local_strategy_ignore) {
             if (!ai_status.local_strategy_calculating && !ai_status.local_strategy_calculated) {
                 local_strategy_calculate();
             } else if (ai_status.local_strategy_calculating && !ai_status.local_strategy_calculated) {
