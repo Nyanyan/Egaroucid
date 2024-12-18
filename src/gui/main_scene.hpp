@@ -572,6 +572,9 @@ private:
             getData().menu_elements.show_graph_sum_of_loss = true;
         }
         // others
+        if (shortcut_key == U"show_ai_focus") {
+            getData().menu_elements.show_ai_focus = !getData().menu_elements.show_ai_focus;
+        }
         if (shortcut_key == U"show_laser_pointer") {
             getData().menu_elements.show_laser_pointer = !getData().menu_elements.show_laser_pointer;
         }
