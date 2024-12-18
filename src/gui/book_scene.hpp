@@ -15,8 +15,8 @@
 #include "function/function_all.hpp"
 #include "draw.hpp"
 
-#define BOOK_DEPTH_INF 80
-#define BOOK_ERROR_INF 100000
+constexpr int BOOK_DEPTH_INF = 80;
+constexpr int BOOK_ERROR_INF = 100000;
 
 void reset_book_additional_information() {
     umigame.delete_all();
