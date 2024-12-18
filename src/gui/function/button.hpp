@@ -55,10 +55,10 @@ public:
             if (rect.mouseOver()) {
                 Cursor::RequestStyle(CursorStyle::Hand);
             }
-        } else{
+        } else {
             if (transparent) {
                 rect.draw(ColorF(button_color, 0.7));
-            } else{
+            } else {
                 rect.draw(button_color);
             }
             font(str).drawAt(font_size, rect.x + rect.w / 2, rect.y + rect.h / 2, font_color);
@@ -99,6 +99,7 @@ public:
     Color font_color;
     Color frame_color;
     int frame_width;
+
 public:
     void init(int x, int y, int w, int h, int r, int fw, String s, int fs, Font f, Color c1, Color c2, Color c3) {
         rect.x = x;
@@ -118,15 +119,17 @@ public:
     void draw() {
         rect.draw(button_color).drawFrame(frame_width, frame_color);
         font(str).drawAt(font_size, rect.x + rect.w / 2, rect.y + rect.h / 2, font_color);
-        if (rect.mouseOver())
+        if (rect.mouseOver()) {
             Cursor::RequestStyle(CursorStyle::Hand);
+        }
     }
 
     void draw(double transparency) {
         rect.draw(ColorF(button_color, transparency)).drawFrame(frame_width, ColorF(frame_color, transparency));
         font(str).drawAt(font_size, rect.x + rect.w / 2, rect.y + rect.h / 2, ColorF(font_color, transparency));
-        if (rect.mouseOver())
+        if (rect.mouseOver()) {
             Cursor::RequestStyle(CursorStyle::Hand);
+        }
     }
 
     bool clicked() {
