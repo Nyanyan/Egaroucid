@@ -61,10 +61,10 @@ Menu create_menu(Menu_elements* menu_elements, Resources *resources, Font font) 
     title.push(menu_e);
     menu_e.init_bar(language.get("settings", "thread", "thread"), &menu_elements->n_threads, menu_elements->n_threads, 1, 48);
     title.push(menu_e);
-    #if USE_CHANGEABLE_HASH_LEVEL
-        menu_e.init_bar(language.get("settings", "hash_level"), &menu_elements->hash_level, menu_elements->hash_level, MIN_HASH_LEVEL, MAX_HASH_LEVEL);
-        title.push(menu_e);
-    #endif
+#if USE_CHANGEABLE_HASH_LEVEL
+    menu_e.init_bar(language.get("settings", "hash_level"), &menu_elements->hash_level, menu_elements->hash_level, MIN_HASH_LEVEL, MAX_HASH_LEVEL);
+    title.push(menu_e);
+#endif
 
     menu_e.init_check(language.get("settings", "play", "ai_put_black") + get_shortcut_key_info(U"ai_put_black"), &menu_elements->ai_put_black, menu_elements->ai_put_black);
     title.push(menu_e);
