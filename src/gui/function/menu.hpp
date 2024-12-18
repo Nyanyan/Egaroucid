@@ -28,14 +28,15 @@ constexpr int menu_child_offset = 2;
 constexpr int bar_additional_offset = 20;
 constexpr double radio_ratio = 0.2;
 
-#define MENU_MODE_BUTTON 0
-#define MENU_MODE_BAR 1
-#define MENU_MODE_CHECK 2
-#define MENU_MODE_RADIO 3
-#define MENU_MODE_BAR_CHECK 4
-#define MENU_BAR_SIZE 140
-#define MENU_BAR_HEIGHT 14
-#define MENU_BAR_RADIUS 6
+constexpr int MENU_MODE_BUTTON = 0;
+constexpr int MENU_MODE_BAR = 1;
+constexpr int MENU_MODE_CHECK = 2;
+constexpr int MENU_MODE_RADIO = 3;
+constexpr int MENU_MODE_BAR_CHECK = 4;
+
+constexpr int MENU_BAR_SIZE = 140;
+constexpr int MENU_BAR_HEIGHT = 14;
+constexpr int MENU_BAR_RADIUS = 6;
 
 class menu_elem {
 private:
