@@ -23,8 +23,9 @@ std::string get_extension(std::string file) {
         }
         res.insert(0, {file[i]});
     }
-    if (dot_found)
+    if (dot_found) {
         return res;
+    }
     return "";
 }
 
@@ -34,8 +35,7 @@ std::string get_transcript(Graph_resources graph_resources, History_elem current
     if (graph_resources.branch == GRAPH_MODE_INSPECT) {
         if (graph_resources.nodes[GRAPH_MODE_INSPECT].size()) {
             inspect_switch_n_discs = graph_resources.nodes[GRAPH_MODE_INSPECT][0].board.n_discs();
-        }
-        else {
+        } else {
             std::cerr << "no node found in inspect mode" << std::endl;
         }
     }
