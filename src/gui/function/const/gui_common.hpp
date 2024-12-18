@@ -183,56 +183,56 @@ constexpr int IMPORT_GAME_WIDTH = WINDOW_SIZE_X - IMPORT_GAME_SX * 2;
 #define GAME_LEVEL U"level"
 #define GAME_POLICY U"policy"
 #define GAME_NEXT_POLICY U"next_policy"
-#define GAME_DISCS_UNDEFINED -1
-#define GAME_MEMO_SUMMARY_SIZE 40
+constexpr int GAME_DISCS_UNDEFINED = -1;
+constexpr int GAME_MEMO_SUMMARY_SIZE = 40;
 
 // book modification
-#define BOOK_CHANGE_NO_CELL 64
-#define CHANGE_BOOK_ERR -1000
-#define CHANGE_BOOK_INFO_SX 660
-#define CHANGE_BOOK_INFO_SY 13
+constexpr int BOOK_CHANGE_NO_CELL = 64;
+constexpr int CHANGE_BOOK_ERR = -1000;
+constexpr int CHANGE_BOOK_INFO_SX = 660;
+constexpr int CHANGE_BOOK_INFO_SY = 13;
 
 // back button constants
-#define BACK_BUTTON_WIDTH 200
-#define BACK_BUTTON_HEIGHT 50
-#define BACK_BUTTON_SY 420
-#define BACK_BUTTON_RADIUS 20
+constexpr int BACK_BUTTON_WIDTH = 200;
+constexpr int BACK_BUTTON_HEIGHT = 50;
+constexpr int BACK_BUTTON_SY = 420;
+constexpr int BACK_BUTTON_RADIUS = 20;
 constexpr int BACK_BUTTON_SX = X_CENTER - BACK_BUTTON_WIDTH / 2;
 
 // go/back button constants
-#define GO_BACK_BUTTON_WIDTH 200
-#define GO_BACK_BUTTON_HEIGHT 50
-#define GO_BACK_BUTTON_SY 420
-#define GO_BACK_BUTTON_RADIUS 20
+constexpr int GO_BACK_BUTTON_WIDTH = 200;
+constexpr int GO_BACK_BUTTON_HEIGHT = 50;
+constexpr int GO_BACK_BUTTON_SY = 420;
+constexpr int GO_BACK_BUTTON_RADIUS = 20;
 constexpr int GO_BACK_BUTTON_GO_SX = X_CENTER + 10;
 constexpr int GO_BACK_BUTTON_BACK_SX = X_CENTER - GO_BACK_BUTTON_WIDTH - 10;
 
 // 3 buttons constants
-#define BUTTON3_WIDTH 200
-#define BUTTON3_HEIGHT 50
-#define BUTTON3_SY 420
-#define BUTTON3_RADIUS 20
+constexpr int BUTTON3_WIDTH = 200;
+constexpr int BUTTON3_HEIGHT = 50;
+constexpr int BUTTON3_SY = 420;
+constexpr int BUTTON3_RADIUS = 20;
 constexpr int BUTTON3_1_SX = X_CENTER - BUTTON3_WIDTH * 3 / 2 - 10;
 constexpr int BUTTON3_2_SX = X_CENTER - BUTTON3_WIDTH / 2;
 constexpr int BUTTON3_3_SX = X_CENTER + BUTTON3_WIDTH / 2 + 10;
 
 // 2 button vertical constants
-#define BUTTON2_VERTICAL_WIDTH 200
-#define BUTTON2_VERTICAL_HEIGHT 50
-#define BUTTON2_VERTICAL_1_SY 350
-#define BUTTON2_VERTICAL_2_SY 420
-#define BUTTON2_VERTICAL_SX 520
-#define BUTTON2_VERTICAL_RADIUS 20
+constexpr int BUTTON2_VERTICAL_WIDTH = 200;
+constexpr int BUTTON2_VERTICAL_HEIGHT = 50;
+constexpr int BUTTON2_VERTICAL_1_SY = 350;
+constexpr int BUTTON2_VERTICAL_2_SY = 420;
+constexpr int BUTTON2_VERTICAL_SX = 520;
+constexpr int BUTTON2_VERTICAL_RADIUS = 20;
 
 // font constant
-#define FONT_DEFAULT_SIZE 50
+constexpr int FONT_DEFAULT_SIZE = 50;
 
 // default language
 #define DEFAULT_LANGUAGE "english"
 #define DEFAULT_OPENING_LANG_NAME "english"
 
 // textbox constant
-#define TEXTBOX_MAX_CHARS 10000
+constexpr int TEXTBOX_MAX_CHARS = 10000;
 
 struct History_elem {
     Board board;
