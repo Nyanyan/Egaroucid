@@ -77,7 +77,7 @@ public:
             if (show_graph_sum_of_loss) {
                 calc_sum_of_loss_nodes(nodes1, nodes2, sum_of_loss_nodes1, sum_of_loss_nodes2);
                 calc_range_sum_of_loss(sum_of_loss_nodes1, sum_of_loss_nodes2);
-            } else{
+            } else {
                 calc_range(nodes1, nodes2);
             }
             while ((y_max - y_min) / resolution > 8) { // when range is too wide
@@ -89,12 +89,11 @@ public:
             if (y_max % resolution) {
                 y_max += resolution - y_max % resolution;
             }
-        }
-        else {
+        } else {
             if (show_graph_sum_of_loss) {
                 y_min = -GRAPH_RESOLUTION;
                 y_max = 0;
-            } else{
+            } else {
                 y_min = -GRAPH_RESOLUTION;
                 y_max = GRAPH_RESOLUTION;
             }
@@ -132,18 +131,15 @@ public:
                     first_endsearch_n_moves = x;
                 }
                 Line{ x_coord1, sy + LEVEL_DEPTH_DY, x_coord2, sy + LEVEL_DEPTH_DY }.draw(3, endsearch_color);
-            }
-            else {
+            } else {
                 Line{ x_coord1, sy + LEVEL_DEPTH_DY, x_coord2, sy + LEVEL_DEPTH_DY }.draw(3, midsearch_color);
             }
         }
         if (first_endsearch_n_moves == -1) {
             font(Format(level) + language.get("info", "lookahead")).draw(font_size, Arg::topCenter(sx + size_x / 2, sy + LEVEL_DEPTH_DY - 18), graph_color);
-        }
-        else if (first_endsearch_n_moves == 0) {
+        } else if (first_endsearch_n_moves == 0) {
             font(language.get("info", "to_last_move")).draw(font_size, Arg::topCenter(sx + size_x / 2, sy + LEVEL_DEPTH_DY - 18), graph_color);
-        }
-        else {
+        } else {
             int endsearch_bound_coord = sx + dx * first_endsearch_n_moves;
             font(Format(level) + language.get("info", "lookahead")).draw(font_size, Arg::topCenter((sx + endsearch_bound_coord) / 2, sy + LEVEL_DEPTH_DY - 18), graph_color);
             font(language.get("info", "to_last_move")).draw(font_size, Arg::topCenter((sx + size_x + endsearch_bound_coord) / 2, sy + LEVEL_DEPTH_DY - 18), graph_color);
@@ -152,17 +148,18 @@ public:
             int yy = sy + dy * y;
             if (show_graph_sum_of_loss) {
                 font(y_max - y).draw(font_size, sx - font(y_max - y).region(font_size, Point{ 0, 0 }).w - 10, yy - font(y_max - y).region(font_size, Point{ 0, 0 }).h / 2, graph_color);
-            } else{
+            } else {
                 if (y_max - y >= 0) {
                     font(y_max - y).draw(font_size, sx - font(y_max - y).region(font_size, Point{ 0, 0 }).w - 10, yy - font(y_max - y).region(font_size, Point{ 0, 0 }).h / 2, graph_color);
                 } else if (y_max - y < 0) {
                     font(std::abs(y_max - y)).draw(font_size, sx - font(std::abs(y_max - y)).region(font_size, Point{ 0, 0 }).w - 10, yy - font(y_max - y).region(font_size, Point{ 0, 0 }).h / 2, Palette::White);
                 }
             }
-            if (y_max - y == 0)
+            if (y_max - y == 0) {
                 Line{ sx, yy, sx + size_x, yy }.draw(2, graph_color);
-            else
+            } else {
                 Line{ sx, yy, sx + size_x, yy }.draw(1, graph_color);
+            }
         }
         for (int x = 0; x <= 60; x += 10) {
             font(x).draw(font_size, sx + dx * x - font(x).region(font_size, Point{0, 0}).w / 2, sy + size_y + 5, graph_color);
@@ -179,12 +176,11 @@ public:
                 draw_graph_sum_of_loss(sum_of_loss_nodes1[1], Palette::White, graph_history_not_calculated_color, max_ply1);
                 draw_graph_sum_of_loss(sum_of_loss_nodes2[0], Palette::Dimgray, graph_fork_not_calculated_color, max_ply2);
                 draw_graph_sum_of_loss(sum_of_loss_nodes2[1], Palette::Silver, graph_fork_not_calculated_color, max_ply2);
-            } else{
+            } else {
                 draw_graph(nodes1, graph_history_color, graph_history_not_calculated_color);
                 draw_graph(nodes2, graph_fork_color, graph_fork_not_calculated_color);
             }
-        }
-        else {
+        } else {
             draw_graph_not_calculated(nodes1, graph_history_not_calculated_color);
             draw_graph_not_calculated(nodes2, graph_fork_not_calculated_color);
         }
@@ -356,8 +352,7 @@ private:
                     int yy = sy + dy * (y_max - b.v);
                     values.emplace_back(std::make_pair(xx, yy));
                     Circle{ xx, yy, 3 }.draw(color);
-                }
-                else {
+                } else {
                     int xx = sx + dx * (b.board.n_discs() - 4);
                     int yy = sy + dy * y_max;
                     Circle{ xx, yy, 2.5 }.draw(color2);
