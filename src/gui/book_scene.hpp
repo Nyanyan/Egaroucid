@@ -42,6 +42,47 @@ bool import_book_with_level(std::string file, int level) {
     return result;
 }
 
+inline void draw_book_settings(Font &font, Color &color, int depth, int error_per_move, int error_sum, int error_leaf) {
+    String depth_str = Format(depth);
+    if (depth == BOOK_DEPTH_INF) {
+        depth_str = language.get("book", "unlimited");
+    }
+    font(language.get("book", "depth") + U": " + depth_str).draw(15, 480, 260, color);
+    String error_per_move_str = Format(error_per_move);
+    if (error_per_move == BOOK_ERROR_INF) {
+        error_per_move_str = language.get("book", "unlimited");
+    }
+    font(language.get("book", "error_per_move") + U": " + error_per_move_str).draw(15, 480, 280, color);
+    String error_sum_str = Format(error_sum);
+    if (error_sum == BOOK_ERROR_INF) {
+        error_sum_str = language.get("book", "unlimited");
+    }
+    font(language.get("book", "error_sum") + U": " + error_sum_str).draw(15, 480, 300, color);
+    String error_leaf_str = Format(error_leaf);
+    if (error_leaf == BOOK_ERROR_INF) {
+        error_leaf_str = language.get("book", "unlimited");
+    }
+    font(language.get("book", "error_leaf") + U": " + error_leaf_str).draw(15, 480, 320, color);
+}
+
+inline void draw_book_settings(Font &font, Color &color, int depth, int error_per_move, int error_sum) {
+    String depth_str = Format(depth);
+    if (depth == BOOK_DEPTH_INF) {
+        depth_str = language.get("book", "unlimited");
+    }
+    font(language.get("book", "depth") + U": " + depth_str).draw(15, 480, 270, color);
+    String error_per_move_str = Format(error_per_move);
+    if (error_per_move == BOOK_ERROR_INF) {
+        error_per_move_str = language.get("book", "unlimited");
+    }
+    font(language.get("book", "error_per_move") + U": " + error_per_move_str).draw(15, 480, 290, color);
+    String error_sum_str = Format(error_sum);
+    if (error_sum == BOOK_ERROR_INF) {
+        error_sum_str = language.get("book", "unlimited");
+    }
+    font(language.get("book", "error_sum") + U": " + error_sum_str).draw(15, 480, 310, color);
+}
+
 class Import_book : public App::Scene {
 private:
     std::future<bool> import_book_future;
@@ -580,26 +621,7 @@ public:
         draw_board(getData().fonts, getData().colors, history_elem);
         draw_info(getData().colors, history_elem, getData().fonts, getData().menu_elements, false, "");
         getData().fonts.font(language.get("book", "book_deviate")).draw(25, 480, 200, getData().colors.white);
-        String depth_str = Format(depth);
-        if (depth == BOOK_DEPTH_INF) {
-            depth_str = language.get("book", "unlimited");
-        }
-        getData().fonts.font(language.get("book", "depth") + U": " + depth_str).draw(15, 480, 260, getData().colors.white);
-        String error_per_move_str = Format(error_per_move);
-        if (error_per_move == BOOK_ERROR_INF) {
-            error_per_move_str = language.get("book", "unlimited");
-        }
-        getData().fonts.font(language.get("book", "error_per_move") + U": " + error_per_move_str).draw(15, 480, 280, getData().colors.white);
-        String error_sum_str = Format(error_sum);
-        if (error_sum == BOOK_ERROR_INF) {
-            error_sum_str = language.get("book", "unlimited");
-        }
-        getData().fonts.font(language.get("book", "error_sum") + U": " + error_sum_str).draw(15, 480, 300, getData().colors.white);
-        String error_leaf_str = Format(error_leaf);
-        if (error_leaf == BOOK_ERROR_INF) {
-            error_leaf_str = language.get("book", "unlimited");
-        }
-        getData().fonts.font(language.get("book", "error_leaf") + U": " + error_leaf_str).draw(15, 480, 320, getData().colors.white);
+        draw_book_settings(getData().fonts.font, getData().colors.white, depth, error_per_move, error_sum, error_leaf);
         if (book_learning) {
             getData().fonts.font(language.get("book", "learning")).draw(20, 480, 230, getData().colors.white);
             stop_button.draw();
@@ -794,18 +816,7 @@ public:
         draw_board(getData().fonts, getData().colors, history_elem);
         draw_info(getData().colors, history_elem, getData().fonts, getData().menu_elements, false, "");
         getData().fonts.font(language.get("book", "book_reduce")).draw(25, 480, 200, getData().colors.white);
-        String depth_str = Format(depth);
-        if (depth == BOOK_DEPTH_INF)
-            depth_str = language.get("book", "unlimited");
-        getData().fonts.font(language.get("book", "depth") + U": " + depth_str).draw(15, 480, 280, getData().colors.white);
-        String error_per_move_str = Format(error_per_move);
-        if (error_per_move == BOOK_ERROR_INF)
-            error_per_move_str = language.get("book", "unlimited");
-        getData().fonts.font(language.get("book", "error_per_move") + U": " + error_per_move_str).draw(15, 480, 300, getData().colors.white);
-        String error_sum_str = Format(error_sum);
-        if (error_sum == BOOK_ERROR_INF)
-            error_sum_str = language.get("book", "unlimited");
-        getData().fonts.font(language.get("book", "error_sum") + U": " + error_sum_str).draw(15, 480, 320, getData().colors.white);
+        draw_book_settings(getData().fonts.font, getData().colors.white, depth, error_per_move, error_sum);
         if (book_learning) {
             getData().fonts.font(language.get("book", "reducing")).draw(20, 480, 230, getData().colors.white);
             stop_button.draw();
@@ -898,21 +909,7 @@ public:
         draw_board(getData().fonts, getData().colors, history_elem);
         draw_info(getData().colors, history_elem, getData().fonts, getData().menu_elements, false, "");
         getData().fonts.font(language.get("book", "book_recalculate_leaf")).draw(25, 480, 200, getData().colors.white);
-        String depth_str = Format(depth);
-        if (depth == BOOK_DEPTH_INF) {
-            depth_str = language.get("book", "unlimited");
-        }
-        getData().fonts.font(language.get("book", "depth") + U": " + depth_str).draw(15, 480, 280, getData().colors.white);
-        String error_per_move_str = Format(error_per_move);
-        if (error_per_move == BOOK_ERROR_INF) {
-            error_per_move_str = language.get("book", "unlimited");
-        }
-        getData().fonts.font(language.get("book", "error_per_move") + U": " + error_per_move_str).draw(15, 480, 300, getData().colors.white);
-        String error_sum_str = Format(error_sum);
-        if (error_sum == BOOK_ERROR_INF) {
-            error_sum_str = language.get("book", "unlimited");
-        }
-        getData().fonts.font(language.get("book", "error_sum") + U": " + error_sum_str).draw(15, 480, 320, getData().colors.white);
+        draw_book_settings(getData().fonts.font, getData().colors.white, depth, error_per_move, error_sum);
         if (book_learning) {
             getData().fonts.font(language.get("book", "learning")).draw(20, 480, 230, getData().colors.white);
             stop_button.draw();
