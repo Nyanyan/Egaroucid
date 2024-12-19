@@ -33,6 +33,8 @@ bin/appdata/version.txt
 bin/document/games/*.json
 bin/document/games/summary.csv
 bin/document/screenshots/*.png
+bin/document/*.egbk3
+bin/document/*.egbk3.bak
 
 # Egaroucid duplicated resources
 bin/LICENSE
