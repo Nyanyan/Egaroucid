@@ -477,7 +477,7 @@ public:
             }
             go_button.draw();
             if (formatted_book && (go_button.clicked() || return_pressed || file_dragged)) {
-                getData().book_information.changed = true;
+                //getData().book_information.changed = true;
                 getData().settings.book_file = book_file;
                 std::cerr << "book reference changed to " << book_file << std::endl;
                 delete_book_future = std::async(std::launch::async, delete_book);
