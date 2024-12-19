@@ -614,7 +614,7 @@ public:
     }
 
     void update() override {
-        if (!book_learning && (System::GetUserActions() & UserAction::CloseButtonClicked)) {
+        if ((before_start || done) && (System::GetUserActions() & UserAction::CloseButtonClicked)) {
             changeScene(U"Close", SCENE_FADE_TIME);
         }
         Scene::SetBackground(getData().colors.green);
@@ -719,8 +719,8 @@ private:
     Button start_button;
     Button start_with_max_n_loops_button;
     Slidebar n_loops_bar;
-    bool done;
-    bool failed;
+    bool transcript_done;
+    bool transcript_failed;
     Board board;
     bool file_dragged;
     TextAreaEditState text_area;
@@ -745,6 +745,8 @@ private:
     int max_n_loops_used;
 	uint64_t last_saved_time;
 
+    bool all_done;
+
 public:
     Deviate_book_transcript(const InitData& init) : IScene{ init } {
         single_back_button.init(BACK_BUTTON_SX, BACK_BUTTON_SY, BACK_BUTTON_WIDTH, BACK_BUTTON_HEIGHT, BACK_BUTTON_RADIUS, language.get("common", "back"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
@@ -752,8 +754,8 @@ public:
         start_button.init(BUTTON3_2_SX, BUTTON3_SY, BUTTON3_WIDTH, BUTTON3_HEIGHT, BUTTON3_RADIUS, language.get("book", "start"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
         start_with_max_n_loops_button.init(BUTTON3_3_SX, BUTTON3_SY, BUTTON3_WIDTH, BUTTON3_HEIGHT, BUTTON3_RADIUS, language.get("book", "start_with_max_n_loops"), 15, getData().fonts.font, getData().colors.white, getData().colors.black);
         file_dragged = false;
-        done = false;
-        failed = false;
+        transcript_done = false;
+        transcript_failed = false;
 
         stop_button.init(BUTTON2_VERTICAL_SX, BUTTON2_VERTICAL_2_SY, BUTTON2_VERTICAL_WIDTH, BUTTON2_VERTICAL_HEIGHT, BUTTON2_VERTICAL_RADIUS, language.get("book", "stop_learn"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
         back_button_deviating.init(BUTTON2_VERTICAL_SX, BUTTON2_VERTICAL_2_SY, BUTTON2_VERTICAL_WIDTH, BUTTON2_VERTICAL_HEIGHT, BUTTON2_VERTICAL_RADIUS, language.get("common", "back"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
@@ -780,14 +782,16 @@ public:
         }
         max_n_loops = 15;
         n_loops_bar.init(X_CENTER - 220, 345, 440, 20, language.get("book", "max_n_loops"), 15, getData().colors.white, getData().fonts.font, 1, 30, &max_n_loops);
+
+        all_done = false;
     }
 
     void update() override {
-        if (!book_learning && System::GetUserActions() & UserAction::CloseButtonClicked) {
+        if ((!transcript_done || transcript_failed || all_done) && System::GetUserActions() & UserAction::CloseButtonClicked) {
             changeScene(U"Close", SCENE_FADE_TIME);
         }
         Scene::SetBackground(getData().colors.green);
-        if (!done) { // transcript
+        if (!transcript_done) { // transcript
             int sy = 20;
             getData().fonts.font(language.get("book", "book_deviate_with_transcript")).draw(25, Arg::topCenter(X_CENTER, sy), getData().colors.white);
             sy += 45;
@@ -855,16 +859,16 @@ public:
                 } else {
                     max_n_loops_used = max_n_loops;
                 }
-                failed = import_transcript_processing();
-                if (!failed) {
+                transcript_failed = import_transcript_processing();
+                if (!transcript_failed) {
                     board_idx = 0;
                     book_learn_future = std::async(std::launch::async, book_deviate, board_list[board_idx], getData().menu_elements.level, depth, error_per_move, error_sum, error_leaf, max_n_loops_used, &history_elem.board, &history_elem.player, getData().settings.book_file, getData().settings.book_file + ".bak", &book_learning);
 					last_saved_time = tim();
                     book_learning = true;
                 }
-                done = true;
+                transcript_done = true;
             }
-        } else if (failed) { // error in transcript list
+        } else if (transcript_failed) { // error in transcript list
             int sy = 20;
             getData().fonts.font(language.get("book", "book_deviate_with_transcript")).draw(25, Arg::topCenter(X_CENTER, sy), getData().colors.white);
             sy += 45;
@@ -888,8 +892,8 @@ public:
             if (single_back_button.clicked()) {
                 error_lines.clear();
                 board_list.clear();
-                done = false;
-                failed = false;
+                transcript_done = false;
+                transcript_failed = false;
                 file_dragged = false;
             }
         } else { // training
@@ -955,6 +959,7 @@ public:
                     }
                 }
             } else {
+                all_done = true;
                 getData().fonts.font(language.get("book", "complete")).draw(20, 480, 230, getData().colors.white);
                 back_button_deviating.draw();
                 if (back_button_deviating.clicked()) {
