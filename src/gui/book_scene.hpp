@@ -1166,7 +1166,7 @@ public:
     }
 
     void update() override {
-        if (!book_learning && (System::GetUserActions() & UserAction::CloseButtonClicked)) {
+        if ((before_start || done) && (System::GetUserActions() & UserAction::CloseButtonClicked)) {
             changeScene(U"Close", SCENE_FADE_TIME);
         }
         Scene::SetBackground(getData().colors.green);
@@ -1259,7 +1259,7 @@ public:
     }
 
     void update() override {
-        if (!book_learning && (System::GetUserActions() & UserAction::CloseButtonClicked)) {
+        if ((before_start || done) && (System::GetUserActions() & UserAction::CloseButtonClicked)) {
             changeScene(U"Close", SCENE_FADE_TIME);
         }
         Scene::SetBackground(getData().colors.green);
