@@ -41,12 +41,10 @@ void draw_board(Fonts fonts, Colors colors, History_elem history_elem, bool mono
         int y = BOARD_SY + (cell / HW) * BOARD_CELL_SIZE + BOARD_CELL_SIZE / 2;
         if (board_arr[cell] == BLACK) {
             Circle(x, y, DISC_SIZE).draw(colors.black);
-        }
-        else if (board_arr[cell] == WHITE) {
+        } else if (board_arr[cell] == WHITE) {
             if (monochrome) {
                 Circle(x, y, DISC_SIZE).draw(colors.white).drawFrame(BOARD_DISC_FRAME_WIDTH, 0, colors.black);
-            }
-            else {
+            } else {
                 Circle(x, y, DISC_SIZE).draw(colors.white);
             }
         }
@@ -77,8 +75,7 @@ void draw_info(Colors colors, History_elem history_elem, Fonts fonts, Menu_eleme
         } else {
             moves_line += U" (" + language.get("info", "human") + U")";
         }
-    }
-    else {
+    } else {
         moves_line = language.get("info", "game_end");
     }
     fonts.font(moves_line).draw(15, Arg::topCenter(INFO_SX + INFO_WIDTH / 2, INFO_SY + dy));
@@ -95,8 +92,7 @@ void draw_info(Colors colors, History_elem history_elem, Fonts fonts, Menu_eleme
     if (history_elem.player == BLACK) {
         black_discs = history_elem.board.count_player();
         white_discs = history_elem.board.count_opponent();
-    }
-    else {
+    } else {
         black_discs = history_elem.board.count_opponent();
         white_discs = history_elem.board.count_player();
     }
@@ -110,17 +106,13 @@ void draw_info(Colors colors, History_elem history_elem, Fonts fonts, Menu_eleme
     String level_info = language.get("common", "level") + U" " + Format(menu_elements.level) + U" (";
     if (menu_elements.level <= LIGHT_LEVEL) {
         level_info += language.get("info", "light");
-    }
-    else if (menu_elements.level <= STANDARD_MAX_LEVEL) {
+    } else if (menu_elements.level <= STANDARD_MAX_LEVEL) {
         level_info += language.get("info", "standard");
-    }
-    else if (menu_elements.level <= PRAGMATIC_MAX_LEVEL) {
+    } else if (menu_elements.level <= PRAGMATIC_MAX_LEVEL) {
         level_info += language.get("info", "pragmatic");
-    }
-    else if (menu_elements.level <= ACCURATE_MAX_LEVEL) {
+    } else if (menu_elements.level <= ACCURATE_MAX_LEVEL) {
         level_info += language.get("info", "accurate");
-    }
-    else {
+    } else {
         level_info += language.get("info", "danger");
     }
     level_info += U")";
