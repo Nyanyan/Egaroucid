@@ -710,6 +710,354 @@ public:
     }
 };
 
+
+
+class Deviate_book_transcript : public App::Scene {
+private:
+    Button single_back_button;
+    Button back_button;
+    Button start_button;
+    Button start_with_max_n_loops_button;
+    Slidebar n_loops_bar;
+    bool done;
+    bool failed;
+    Board board;
+    bool file_dragged;
+    TextAreaEditState text_area;
+    std::string raw_transcripts;
+    std::vector<Board> board_list;
+    std::vector<std::string> transcript_list;
+    std::vector<int> error_lines;
+
+    Button stop_button;
+    Button back_button_deviating;
+    History_elem history_elem;
+    bool book_learning;
+    bool learning_done;
+    bool stop_button_pressed;
+    int board_idx = 0;
+    std::future<void> book_learn_future;
+    int depth;
+    int error_per_move;
+    int error_sum;
+    int error_leaf;
+    int max_n_loops;
+    int max_n_loops_used;
+	uint64_t last_saved_time;
+
+public:
+    Deviate_book_transcript(const InitData& init) : IScene{ init } {
+        single_back_button.init(BACK_BUTTON_SX, BACK_BUTTON_SY, BACK_BUTTON_WIDTH, BACK_BUTTON_HEIGHT, BACK_BUTTON_RADIUS, language.get("common", "back"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
+        back_button.init(BUTTON3_1_SX, BUTTON3_SY, BUTTON3_WIDTH, BUTTON3_HEIGHT, BUTTON3_RADIUS, language.get("common", "back"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
+        start_button.init(BUTTON3_2_SX, BUTTON3_SY, BUTTON3_WIDTH, BUTTON3_HEIGHT, BUTTON3_RADIUS, language.get("book", "start"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
+        start_with_max_n_loops_button.init(BUTTON3_3_SX, BUTTON3_SY, BUTTON3_WIDTH, BUTTON3_HEIGHT, BUTTON3_RADIUS, language.get("book", "start_with_max_n_loops"), 15, getData().fonts.font, getData().colors.white, getData().colors.black);
+        file_dragged = false;
+        done = false;
+        failed = false;
+
+        stop_button.init(BUTTON2_VERTICAL_SX, BUTTON2_VERTICAL_2_SY, BUTTON2_VERTICAL_WIDTH, BUTTON2_VERTICAL_HEIGHT, BUTTON2_VERTICAL_RADIUS, language.get("book", "stop_learn"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
+        back_button_deviating.init(BUTTON2_VERTICAL_SX, BUTTON2_VERTICAL_2_SY, BUTTON2_VERTICAL_WIDTH, BUTTON2_VERTICAL_HEIGHT, BUTTON2_VERTICAL_RADIUS, language.get("common", "back"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
+        history_elem = getData().history_elem;
+        history_elem.policy = -1;
+        book_learning = false;
+        learning_done = false;
+        stop_button_pressed = false;
+        depth = getData().menu_elements.book_learn_depth;
+        if (!getData().menu_elements.use_book_learn_depth) {
+            depth = BOOK_DEPTH_INF;
+        }
+        error_per_move = getData().menu_elements.book_learn_error_per_move;
+        if (!getData().menu_elements.use_book_learn_error_per_move) {
+            error_per_move = BOOK_ERROR_INF;
+        }
+        error_sum = getData().menu_elements.book_learn_error_sum;
+        if (!getData().menu_elements.use_book_learn_error_sum) {
+            error_sum = BOOK_ERROR_INF;
+        }
+        error_leaf = getData().menu_elements.book_learn_error_leaf;
+        if (!getData().menu_elements.use_book_learn_error_leaf) {
+            error_leaf = BOOK_ERROR_INF;
+        }
+        max_n_loops = 15;
+        n_loops_bar.init(X_CENTER - 220, 345, 440, 20, language.get("book", "max_n_loops"), 15, getData().colors.white, getData().fonts.font, 1, 30, &max_n_loops);
+    }
+
+    void update() override {
+        if (!book_learning && System::GetUserActions() & UserAction::CloseButtonClicked) {
+            changeScene(U"Close", SCENE_FADE_TIME);
+        }
+        Scene::SetBackground(getData().colors.green);
+        if (!done) { // transcript
+            int sy = 20;
+            getData().fonts.font(language.get("book", "book_deviate_with_transcript")).draw(25, Arg::topCenter(X_CENTER, sy), getData().colors.white);
+            sy += 45;
+            if (DragDrop::HasNewFilePaths()) {
+                std::string path = DragDrop::GetDroppedFilePaths()[0].path.narrow();
+                std::ifstream ifs(path);
+                if (ifs.fail()) {
+                    std::cerr << "can't open " << path << std::endl;
+                } else {
+                    std::istreambuf_iterator<char> it(ifs);
+                    std::istreambuf_iterator<char> last;
+                    std::string str(it, last);
+                    raw_transcripts = str;
+                    file_dragged = true;
+                }
+            }
+            if (file_dragged) {
+                std::stringstream ss{raw_transcripts};
+                std::string line_preview;
+                bool need_to_write_more = true;
+                std::string preview;
+                for (int i = 0; i < 12; ++i) {
+                    if (!getline(ss, line_preview)) {
+                        need_to_write_more = false;
+                        break;
+                    } else {
+                        preview += line_preview + "\n";
+                    }
+                }
+                if (need_to_write_more) {
+                    preview += "...";
+                }
+                getData().fonts.font(Unicode::Widen(preview)).draw(15, X_CENTER - 350, sy, getData().colors.white);
+            } else {
+                text_area.active = true;
+                SimpleGUI::TextArea(text_area, Vec2{X_CENTER - 350, sy}, SizeF{700, 270}, TEXTBOX_MAX_CHARS);
+                raw_transcripts = text_area.text.narrow();
+            }
+            n_loops_bar.draw();
+            sy += 305;
+            getData().fonts.font(language.get("in_out", "you_can_paste_with_ctrl_v")).draw(13, Arg::topCenter(X_CENTER, sy), getData().colors.white);
+            if (!file_dragged) {
+                getData().fonts.font(Format(text_area.text.size()) + U"/" + Format(TEXTBOX_MAX_CHARS) + U" " + language.get("common", "characters")).draw(13, Arg::topRight(X_CENTER + 350, sy), getData().colors.white);
+            }
+            sy += 20;
+            getData().fonts.font(language.get("book", "input_transcripts_with_line_breaks")).draw(13, Arg::topCenter(X_CENTER, sy), getData().colors.white);
+            if (n_loops_bar.is_changeable()) {
+                back_button.disable_notransparent();
+                start_button.disable_notransparent();
+                start_with_max_n_loops_button.disable_notransparent();
+            } else {
+                back_button.enable();
+                start_button.enable();
+                start_with_max_n_loops_button.enable();
+            }
+            back_button.draw();
+            start_button.draw();
+            start_with_max_n_loops_button.draw();
+            if (back_button.clicked() || KeyEscape.pressed()) {
+                changeScene(U"Main_scene", SCENE_FADE_TIME);
+            }
+            if ((start_button.clicked() || start_with_max_n_loops_button.clicked()) && raw_transcripts.size() && !n_loops_bar.is_changeable()) {
+                if (start_button.clicked()) {
+                    max_n_loops_used = BOOK_DEVIATE_MAX_N_LOOPS_INF;
+                } else {
+                    max_n_loops_used = max_n_loops;
+                }
+                failed = import_transcript_processing();
+                if (!failed) {
+                    board_idx = 0;
+                    book_learn_future = std::async(std::launch::async, book_deviate, board_list[board_idx], getData().menu_elements.level, depth, error_per_move, error_sum, error_leaf, max_n_loops_used, &history_elem.board, &history_elem.player, getData().settings.book_file, getData().settings.book_file + ".bak", &book_learning);
+					last_saved_time = tim();
+                    book_learning = true;
+                }
+                done = true;
+            }
+        } else if (failed) { // error in transcript list
+            int sy = 20;
+            getData().fonts.font(language.get("book", "book_deviate_with_transcript")).draw(25, Arg::topCenter(X_CENTER, sy), getData().colors.white);
+            sy += 45;
+            getData().fonts.font(language.get("book", "transcript_error")).draw(25, Arg::topCenter(X_CENTER, sy), getData().colors.white);
+            sy += 45;
+            String error_lines_str = U"Line: ";
+            for (int i = 0; i < std::min(250, (int)error_lines.size()); ++i) {
+                error_lines_str += Format(error_lines[i]);
+                if (i != (int)error_lines.size() - 1) {
+                    error_lines_str += U", ";
+                }
+                if ((i + 1) % 20 == 0) {
+                    error_lines_str += U"\n";
+                }
+            }
+            if (error_lines.size() > 250) {
+                error_lines_str += U"...";
+            }
+            getData().fonts.font(error_lines_str).draw(15, Arg::topCenter(X_CENTER, sy), getData().colors.white);
+            single_back_button.draw();
+            if (single_back_button.clicked()) {
+                error_lines.clear();
+                board_list.clear();
+                done = false;
+                failed = false;
+                file_dragged = false;
+            }
+        } else { // training
+            draw_board(getData().fonts, getData().colors, history_elem);
+            draw_info(getData().colors, history_elem, getData().fonts, getData().menu_elements, false, "");
+            getData().fonts.font(language.get("book", "book_deviate_with_transcript")).draw(20, 480, 200, getData().colors.white);
+            String depth_str = Format(depth);
+            if (depth == BOOK_DEPTH_INF) {
+                depth_str = language.get("book", "unlimited");
+            }
+            getData().fonts.font(language.get("book", "depth") + U": " + depth_str).draw(15, 480, 260, getData().colors.white);
+            String error_per_move_str = Format(error_per_move);
+            if (error_per_move == BOOK_ERROR_INF) {
+                error_per_move_str = language.get("book", "unlimited");
+            }
+            getData().fonts.font(language.get("book", "error_per_move") + U": " + error_per_move_str).draw(15, 480, 280, getData().colors.white);
+            String error_sum_str = Format(error_sum);
+            if (error_sum == BOOK_ERROR_INF) {
+                error_sum_str = language.get("book", "unlimited");
+            }
+            getData().fonts.font(language.get("book", "error_sum") + U": " + error_sum_str).draw(15, 480, 300, getData().colors.white);
+            String error_leaf_str = Format(error_leaf);
+            if (error_leaf == BOOK_ERROR_INF) {
+                error_leaf_str = language.get("book", "unlimited");
+            }
+            getData().fonts.font(language.get("book", "error_leaf") + U": " + error_leaf_str).draw(15, 480, 320, getData().colors.white);
+            if (book_learning) { // learning
+                getData().fonts.font(language.get("book", "learning")).draw(20, 480, 230, getData().colors.white);
+                getData().fonts.font(U"Line: " + Format(board_idx + 1) + U"/" + Format(board_list.size())).draw(15, 480, 340, getData().colors.white);
+                std::string transcript_str = transcript_list[board_idx];
+                if (transcript_str.size() > 34) {
+                    if (transcript_str.size() > 34 * 2) {
+                        transcript_str = transcript_str.substr(0, 34 * 2 - 2) + "...";
+                    }
+                    transcript_str = transcript_str.substr(0, 34) + "\n" + transcript_str.substr(34, transcript_str.size() - 34);
+                }
+                getData().fonts.font(Unicode::Widen(transcript_str)).draw(15, 480, 360, getData().colors.white);
+                stop_button.draw();
+                if (stop_button.clicked()) {
+                    global_searching = false;
+                    book_learning = false;
+                    stop_button_pressed = true;
+                }
+            } else if (!learning_done) { // stop button pressed or completed
+                if (stop_button_pressed) {
+                    getData().fonts.font(language.get("book", "stopping")).draw(20, 480, 230, getData().colors.white);
+                }
+                if (book_learn_future.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
+                    book_learn_future.get();
+                    ++board_idx;
+                    global_searching = true;
+                    if (board_idx < (int)board_list.size() && !stop_button_pressed) { // next board
+						if (tim() - last_saved_time >= AUTO_BOOK_SAVE_TIME) {
+							book.save_egbk3(getData().settings.book_file, getData().settings.book_file + ".bak");
+							last_saved_time = tim();
+						}
+                        book_learn_future = std::async(std::launch::async, book_deviate, board_list[board_idx], getData().menu_elements.level, depth, error_per_move, error_sum, error_leaf, max_n_loops_used, &history_elem.board, &history_elem.player, getData().settings.book_file, getData().settings.book_file + ".bak", &book_learning);
+                        book_learning = true;
+                        learning_done = false;
+                    } else { // all boards done
+                        book_learning = false;
+                        learning_done = true;
+                    }
+                }
+            } else {
+                getData().fonts.font(language.get("book", "complete")).draw(20, 480, 230, getData().colors.white);
+                back_button_deviating.draw();
+                if (back_button_deviating.clicked()) {
+                    reset_book_additional_information();
+                    getData().book_information.changed = true;
+                    getData().graph_resources.need_init = false;
+                    changeScene(U"Main_scene", SCENE_FADE_TIME);
+                }
+            }
+        }
+    }
+
+    void draw() const override {
+
+    }
+
+private:
+    bool import_transcript_processing() {
+        bool error_found = false;
+        std::string str = raw_transcripts;
+        std::stringstream ss{str};
+        std::string transcript;
+        int line_idx = 1;
+        while (getline(ss, transcript)) {
+            if (transcript.size() == 0) {
+                continue;
+            }
+            Board board;
+            Flip flip;
+            bool error_found_line = false;
+            board.reset();
+            std::vector<std::pair<Board, int>> boards_to_be_registered;
+            int registered_value = 0;
+            for (int i = 0; i < transcript.size(); i += 2) {
+                if (book.contain(&board)) {
+                    registered_value = book.get(&board).value;
+                }
+                int x = (int)(transcript[i] - 'a');
+                if (x < 0 || HW <= x) {
+                    x = (int)(transcript[i] - 'A');
+                }
+                if (transcript.size() <= i + 1) {
+                    error_found = true;
+                    error_found_line = true;
+                    error_lines.emplace_back(line_idx);
+                    std::cerr << "transcript size error at line " << line_idx << " " << transcript << std::endl;
+                    break;
+                }
+                int y = (int)(transcript[i + 1] - '1');
+                if (x < 0 || HW <= x || y < 0 || HW <= y) {
+                    error_found = true;
+                    error_found_line = true;
+                    error_lines.emplace_back(line_idx);
+                    std::cerr << "coord out of range at line " << line_idx << " " << transcript << std::endl;
+                    break;
+                }
+                int policy = HW2_M1 - (y * HW + x);
+                if ((1 & (board.get_legal() >> policy)) == 0) {
+                    error_found = true;
+                    error_found_line = true;
+                    error_lines.emplace_back(line_idx);
+                    std::cerr << "illegal move at line " << line_idx << " " << transcript << std::endl;
+                    break;
+                }
+                calc_flip(&flip, &board, policy);
+                board.move_board(&flip);
+                registered_value *= -1;
+                if (board.get_legal() == 0) {
+                    if (board.is_end()) {
+                        error_found = true;
+                        error_found_line = true;
+                        error_lines.emplace_back(line_idx);
+                        std::cerr << "game over at line " << line_idx << " " << transcript << std::endl;
+                        break;
+                    }
+                    board.pass();
+                    registered_value *= -1;
+                }
+                if (!book.contain(&board)) {
+                    boards_to_be_registered.emplace_back(std::make_pair(board, registered_value));
+                }
+            }
+            if (!error_found_line) {
+                for (std::pair<Board, int> board_to_be_registered: boards_to_be_registered) {
+                    if (board_to_be_registered.first.n_discs() >= board.n_discs()) {
+                        break;
+                    }
+                    book.change(&board_to_be_registered.first, board_to_be_registered.second, getData().menu_elements.level);
+                }
+                board_list.emplace_back(board);
+                transcript_list.emplace_back(transcript);
+            }
+            //if (error_found_line) {
+            //    std::cerr << "error found in line " << line_idx << " " << transcript << std::endl;
+            //}
+            ++line_idx;
+        }
+        return error_found;
+    }
+};
+
+
+
 class Fix_book : public App::Scene {
 private:
     Button start_button;
@@ -1099,350 +1447,5 @@ public:
 
     void draw() const override {
 
-    }
-};
-
-
-class Deviate_book_transcript : public App::Scene {
-private:
-    Button single_back_button;
-    Button back_button;
-    Button start_button;
-    Button start_with_max_n_loops_button;
-    Slidebar n_loops_bar;
-    bool done;
-    bool failed;
-    Board board;
-    bool file_dragged;
-    TextAreaEditState text_area;
-    std::string raw_transcripts;
-    std::vector<Board> board_list;
-    std::vector<std::string> transcript_list;
-    std::vector<int> error_lines;
-
-    Button stop_button;
-    Button back_button_deviating;
-    History_elem history_elem;
-    bool book_learning;
-    bool learning_done;
-    bool stop_button_pressed;
-    int board_idx = 0;
-    std::future<void> book_learn_future;
-    int depth;
-    int error_per_move;
-    int error_sum;
-    int error_leaf;
-    int max_n_loops;
-    int max_n_loops_used;
-	uint64_t last_saved_time;
-
-public:
-    Deviate_book_transcript(const InitData& init) : IScene{ init } {
-        single_back_button.init(BACK_BUTTON_SX, BACK_BUTTON_SY, BACK_BUTTON_WIDTH, BACK_BUTTON_HEIGHT, BACK_BUTTON_RADIUS, language.get("common", "back"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
-        back_button.init(BUTTON3_1_SX, BUTTON3_SY, BUTTON3_WIDTH, BUTTON3_HEIGHT, BUTTON3_RADIUS, language.get("common", "back"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
-        start_button.init(BUTTON3_2_SX, BUTTON3_SY, BUTTON3_WIDTH, BUTTON3_HEIGHT, BUTTON3_RADIUS, language.get("book", "start"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
-        start_with_max_n_loops_button.init(BUTTON3_3_SX, BUTTON3_SY, BUTTON3_WIDTH, BUTTON3_HEIGHT, BUTTON3_RADIUS, language.get("book", "start_with_max_n_loops"), 15, getData().fonts.font, getData().colors.white, getData().colors.black);
-        file_dragged = false;
-        done = false;
-        failed = false;
-
-        stop_button.init(BUTTON2_VERTICAL_SX, BUTTON2_VERTICAL_2_SY, BUTTON2_VERTICAL_WIDTH, BUTTON2_VERTICAL_HEIGHT, BUTTON2_VERTICAL_RADIUS, language.get("book", "stop_learn"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
-        back_button_deviating.init(BUTTON2_VERTICAL_SX, BUTTON2_VERTICAL_2_SY, BUTTON2_VERTICAL_WIDTH, BUTTON2_VERTICAL_HEIGHT, BUTTON2_VERTICAL_RADIUS, language.get("common", "back"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
-        history_elem = getData().history_elem;
-        history_elem.policy = -1;
-        book_learning = false;
-        learning_done = false;
-        stop_button_pressed = false;
-        depth = getData().menu_elements.book_learn_depth;
-        if (!getData().menu_elements.use_book_learn_depth) {
-            depth = BOOK_DEPTH_INF;
-        }
-        error_per_move = getData().menu_elements.book_learn_error_per_move;
-        if (!getData().menu_elements.use_book_learn_error_per_move) {
-            error_per_move = BOOK_ERROR_INF;
-        }
-        error_sum = getData().menu_elements.book_learn_error_sum;
-        if (!getData().menu_elements.use_book_learn_error_sum) {
-            error_sum = BOOK_ERROR_INF;
-        }
-        error_leaf = getData().menu_elements.book_learn_error_leaf;
-        if (!getData().menu_elements.use_book_learn_error_leaf) {
-            error_leaf = BOOK_ERROR_INF;
-        }
-        max_n_loops = 15;
-        n_loops_bar.init(X_CENTER - 220, 345, 440, 20, language.get("book", "max_n_loops"), 15, getData().colors.white, getData().fonts.font, 1, 30, &max_n_loops);
-    }
-
-    void update() override {
-        if ((!done || failed) && System::GetUserActions() & UserAction::CloseButtonClicked) {
-            changeScene(U"Close", SCENE_FADE_TIME);
-        }
-        Scene::SetBackground(getData().colors.green);
-        if (!done) { // transcript
-            int sy = 20;
-            getData().fonts.font(language.get("book", "book_deviate_with_transcript")).draw(25, Arg::topCenter(X_CENTER, sy), getData().colors.white);
-            sy += 45;
-            if (DragDrop::HasNewFilePaths()) {
-                std::string path = DragDrop::GetDroppedFilePaths()[0].path.narrow();
-                std::ifstream ifs(path);
-                if (ifs.fail()) {
-                    std::cerr << "can't open " << path << std::endl;
-                } else {
-                    std::istreambuf_iterator<char> it(ifs);
-                    std::istreambuf_iterator<char> last;
-                    std::string str(it, last);
-                    raw_transcripts = str;
-                    file_dragged = true;
-                }
-            }
-            if (file_dragged) {
-                std::stringstream ss{raw_transcripts};
-                std::string line_preview;
-                bool need_to_write_more = true;
-                std::string preview;
-                for (int i = 0; i < 12; ++i) {
-                    if (!getline(ss, line_preview)) {
-                        need_to_write_more = false;
-                        break;
-                    } else {
-                        preview += line_preview + "\n";
-                    }
-                }
-                if (need_to_write_more) {
-                    preview += "...";
-                }
-                getData().fonts.font(Unicode::Widen(preview)).draw(15, X_CENTER - 350, sy, getData().colors.white);
-            } else {
-                text_area.active = true;
-                SimpleGUI::TextArea(text_area, Vec2{X_CENTER - 350, sy}, SizeF{700, 270}, TEXTBOX_MAX_CHARS);
-                raw_transcripts = text_area.text.narrow();
-            }
-            n_loops_bar.draw();
-            sy += 305;
-            getData().fonts.font(language.get("in_out", "you_can_paste_with_ctrl_v")).draw(13, Arg::topCenter(X_CENTER, sy), getData().colors.white);
-            if (!file_dragged) {
-                getData().fonts.font(Format(text_area.text.size()) + U"/" + Format(TEXTBOX_MAX_CHARS) + U" " + language.get("common", "characters")).draw(13, Arg::topRight(X_CENTER + 350, sy), getData().colors.white);
-            }
-            sy += 20;
-            getData().fonts.font(language.get("book", "input_transcripts_with_line_breaks")).draw(13, Arg::topCenter(X_CENTER, sy), getData().colors.white);
-            if (n_loops_bar.is_changeable()) {
-                back_button.disable_notransparent();
-                start_button.disable_notransparent();
-                start_with_max_n_loops_button.disable_notransparent();
-            } else {
-                back_button.enable();
-                start_button.enable();
-                start_with_max_n_loops_button.enable();
-            }
-            back_button.draw();
-            start_button.draw();
-            start_with_max_n_loops_button.draw();
-            if (back_button.clicked() || KeyEscape.pressed()) {
-                changeScene(U"Main_scene", SCENE_FADE_TIME);
-            }
-            if ((start_button.clicked() || start_with_max_n_loops_button.clicked()) && raw_transcripts.size() && !n_loops_bar.is_changeable()) {
-                if (start_button.clicked()) {
-                    max_n_loops_used = BOOK_DEVIATE_MAX_N_LOOPS_INF;
-                } else {
-                    max_n_loops_used = max_n_loops;
-                }
-                failed = import_transcript_processing();
-                if (!failed) {
-                    board_idx = 0;
-                    book_learn_future = std::async(std::launch::async, book_deviate, board_list[board_idx], getData().menu_elements.level, depth, error_per_move, error_sum, error_leaf, max_n_loops_used, &history_elem.board, &history_elem.player, getData().settings.book_file, getData().settings.book_file + ".bak", &book_learning);
-					last_saved_time = tim();
-                    book_learning = true;
-                }
-                done = true;
-            }
-        } else if (failed) { // error in transcript list
-            int sy = 20;
-            getData().fonts.font(language.get("book", "book_deviate_with_transcript")).draw(25, Arg::topCenter(X_CENTER, sy), getData().colors.white);
-            sy += 45;
-            getData().fonts.font(language.get("book", "transcript_error")).draw(25, Arg::topCenter(X_CENTER, sy), getData().colors.white);
-            sy += 45;
-            String error_lines_str = U"Line: ";
-            for (int i = 0; i < std::min(250, (int)error_lines.size()); ++i) {
-                error_lines_str += Format(error_lines[i]);
-                if (i != (int)error_lines.size() - 1) {
-                    error_lines_str += U", ";
-                }
-                if ((i + 1) % 20 == 0) {
-                    error_lines_str += U"\n";
-                }
-            }
-            if (error_lines.size() > 250) {
-                error_lines_str += U"...";
-            }
-            getData().fonts.font(error_lines_str).draw(15, Arg::topCenter(X_CENTER, sy), getData().colors.white);
-            single_back_button.draw();
-            if (single_back_button.clicked()) {
-                error_lines.clear();
-                board_list.clear();
-                done = false;
-                failed = false;
-                file_dragged = false;
-            }
-        } else { // training
-            draw_board(getData().fonts, getData().colors, history_elem);
-            draw_info(getData().colors, history_elem, getData().fonts, getData().menu_elements, false, "");
-            getData().fonts.font(language.get("book", "book_deviate_with_transcript")).draw(20, 480, 200, getData().colors.white);
-            String depth_str = Format(depth);
-            if (depth == BOOK_DEPTH_INF) {
-                depth_str = language.get("book", "unlimited");
-            }
-            getData().fonts.font(language.get("book", "depth") + U": " + depth_str).draw(15, 480, 260, getData().colors.white);
-            String error_per_move_str = Format(error_per_move);
-            if (error_per_move == BOOK_ERROR_INF) {
-                error_per_move_str = language.get("book", "unlimited");
-            }
-            getData().fonts.font(language.get("book", "error_per_move") + U": " + error_per_move_str).draw(15, 480, 280, getData().colors.white);
-            String error_sum_str = Format(error_sum);
-            if (error_sum == BOOK_ERROR_INF) {
-                error_sum_str = language.get("book", "unlimited");
-            }
-            getData().fonts.font(language.get("book", "error_sum") + U": " + error_sum_str).draw(15, 480, 300, getData().colors.white);
-            String error_leaf_str = Format(error_leaf);
-            if (error_leaf == BOOK_ERROR_INF) {
-                error_leaf_str = language.get("book", "unlimited");
-            }
-            getData().fonts.font(language.get("book", "error_leaf") + U": " + error_leaf_str).draw(15, 480, 320, getData().colors.white);
-            if (book_learning) { // learning
-                getData().fonts.font(language.get("book", "learning")).draw(20, 480, 230, getData().colors.white);
-                getData().fonts.font(U"Line: " + Format(board_idx + 1) + U"/" + Format(board_list.size())).draw(15, 480, 340, getData().colors.white);
-                std::string transcript_str = transcript_list[board_idx];
-                if (transcript_str.size() > 34) {
-                    if (transcript_str.size() > 34 * 2) {
-                        transcript_str = transcript_str.substr(0, 34 * 2 - 2) + "...";
-                    }
-                    transcript_str = transcript_str.substr(0, 34) + "\n" + transcript_str.substr(34, transcript_str.size() - 34);
-                }
-                getData().fonts.font(Unicode::Widen(transcript_str)).draw(15, 480, 360, getData().colors.white);
-                stop_button.draw();
-                if (stop_button.clicked()) {
-                    global_searching = false;
-                    book_learning = false;
-                    stop_button_pressed = true;
-                }
-            } else if (!learning_done) { // stop button pressed or completed
-                if (stop_button_pressed) {
-                    getData().fonts.font(language.get("book", "stopping")).draw(20, 480, 230, getData().colors.white);
-                }
-                if (book_learn_future.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
-                    book_learn_future.get();
-                    ++board_idx;
-                    global_searching = true;
-                    if (board_idx < (int)board_list.size() && !stop_button_pressed) { // next board
-						if (tim() - last_saved_time >= AUTO_BOOK_SAVE_TIME) {
-							book.save_egbk3(getData().settings.book_file, getData().settings.book_file + ".bak");
-							last_saved_time = tim();
-						}
-                        book_learn_future = std::async(std::launch::async, book_deviate, board_list[board_idx], getData().menu_elements.level, depth, error_per_move, error_sum, error_leaf, max_n_loops_used, &history_elem.board, &history_elem.player, getData().settings.book_file, getData().settings.book_file + ".bak", &book_learning);
-                        book_learning = true;
-                        learning_done = false;
-                    } else { // all boards done
-                        book_learning = false;
-                        learning_done = true;
-                    }
-                }
-            } else {
-                getData().fonts.font(language.get("book", "complete")).draw(20, 480, 230, getData().colors.white);
-                back_button_deviating.draw();
-                if (back_button_deviating.clicked()) {
-                    reset_book_additional_information();
-                    getData().book_information.changed = true;
-                    getData().graph_resources.need_init = false;
-                    changeScene(U"Main_scene", SCENE_FADE_TIME);
-                }
-            }
-        }
-    }
-
-    void draw() const override {
-
-    }
-
-private:
-    bool import_transcript_processing() {
-        bool error_found = false;
-        std::string str = raw_transcripts;
-        std::stringstream ss{str};
-        std::string transcript;
-        int line_idx = 1;
-        while (getline(ss, transcript)) {
-            if (transcript.size() == 0) {
-                continue;
-            }
-            Board board;
-            Flip flip;
-            bool error_found_line = false;
-            board.reset();
-            std::vector<std::pair<Board, int>> boards_to_be_registered;
-            int registered_value = 0;
-            for (int i = 0; i < transcript.size(); i += 2) {
-                if (book.contain(&board)) {
-                    registered_value = book.get(&board).value;
-                }
-                int x = (int)(transcript[i] - 'a');
-                if (x < 0 || HW <= x) {
-                    x = (int)(transcript[i] - 'A');
-                }
-                if (transcript.size() <= i + 1) {
-                    error_found = true;
-                    error_found_line = true;
-                    error_lines.emplace_back(line_idx);
-                    std::cerr << "transcript size error at line " << line_idx << " " << transcript << std::endl;
-                    break;
-                }
-                int y = (int)(transcript[i + 1] - '1');
-                if (x < 0 || HW <= x || y < 0 || HW <= y) {
-                    error_found = true;
-                    error_found_line = true;
-                    error_lines.emplace_back(line_idx);
-                    std::cerr << "coord out of range at line " << line_idx << " " << transcript << std::endl;
-                    break;
-                }
-                int policy = HW2_M1 - (y * HW + x);
-                if ((1 & (board.get_legal() >> policy)) == 0) {
-                    error_found = true;
-                    error_found_line = true;
-                    error_lines.emplace_back(line_idx);
-                    std::cerr << "illegal move at line " << line_idx << " " << transcript << std::endl;
-                    break;
-                }
-                calc_flip(&flip, &board, policy);
-                board.move_board(&flip);
-                registered_value *= -1;
-                if (board.get_legal() == 0) {
-                    if (board.is_end()) {
-                        error_found = true;
-                        error_found_line = true;
-                        error_lines.emplace_back(line_idx);
-                        std::cerr << "game over at line " << line_idx << " " << transcript << std::endl;
-                        break;
-                    }
-                    board.pass();
-                    registered_value *= -1;
-                }
-                if (!book.contain(&board)) {
-                    boards_to_be_registered.emplace_back(std::make_pair(board, registered_value));
-                }
-            }
-            if (!error_found_line) {
-                for (std::pair<Board, int> board_to_be_registered: boards_to_be_registered) {
-                    if (board_to_be_registered.first.n_discs() >= board.n_discs()) {
-                        break;
-                    }
-                    book.change(&board_to_be_registered.first, board_to_be_registered.second, getData().menu_elements.level);
-                }
-                board_list.emplace_back(board);
-                transcript_list.emplace_back(transcript);
-            }
-            //if (error_found_line) {
-            //    std::cerr << "error found in line " << line_idx << " " << transcript << std::endl;
-            //}
-            ++line_idx;
-        }
-        return error_found;
     }
 };
