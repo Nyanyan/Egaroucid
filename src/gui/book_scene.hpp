@@ -614,9 +614,9 @@ public:
     }
 
     void update() override {
-        //if (System::GetUserActions() & UserAction::CloseButtonClicked) {
-        //    changeScene(U"Close", SCENE_FADE_TIME);
-        //}
+        if (!book_learning && (System::GetUserActions() & UserAction::CloseButtonClicked)) {
+            changeScene(U"Close", SCENE_FADE_TIME);
+        }
         Scene::SetBackground(getData().colors.green);
         draw_board(getData().fonts, getData().colors, history_elem);
         draw_info(getData().colors, history_elem, getData().fonts, getData().menu_elements, false, "");
@@ -731,9 +731,9 @@ public:
     }
 
     void update() override {
-        //if (System::GetUserActions() & UserAction::CloseButtonClicked) {
-        //    changeScene(U"Close", SCENE_FADE_TIME);
-        //}
+        if ((before_start || done) && (System::GetUserActions() & UserAction::CloseButtonClicked)) {
+            changeScene(U"Close", SCENE_FADE_TIME);
+        }
         Scene::SetBackground(getData().colors.green);
         getData().fonts.font(language.get("book", "book_fix")).draw(25, 50, 50, getData().colors.white);
         if (before_start) {
@@ -813,9 +813,9 @@ public:
     }
 
     void update() override {
-        //if (System::GetUserActions() & UserAction::CloseButtonClicked) {
-        //    changeScene(U"Close", SCENE_FADE_TIME);
-        //}
+        if (!book_learning && (System::GetUserActions() & UserAction::CloseButtonClicked)) {
+            changeScene(U"Close", SCENE_FADE_TIME);
+        }
         Scene::SetBackground(getData().colors.green);
         draw_board(getData().fonts, getData().colors, history_elem);
         draw_info(getData().colors, history_elem, getData().fonts, getData().menu_elements, false, "");
@@ -906,9 +906,9 @@ public:
     }
 
     void update() override {
-        //if (System::GetUserActions() & UserAction::CloseButtonClicked) {
-        //    changeScene(U"Close", SCENE_FADE_TIME);
-        //}
+        if (!book_learning && (System::GetUserActions() & UserAction::CloseButtonClicked)) {
+            changeScene(U"Close", SCENE_FADE_TIME);
+        }
         Scene::SetBackground(getData().colors.green);
         draw_board(getData().fonts, getData().colors, history_elem);
         draw_info(getData().colors, history_elem, getData().fonts, getData().menu_elements, false, "");
@@ -983,9 +983,9 @@ public:
     }
 
     void update() override {
-        //if (System::GetUserActions() & UserAction::CloseButtonClicked) {
-        //    changeScene(U"Close", SCENE_FADE_TIME);
-        //}
+        if ((before_start || done) && (System::GetUserActions() & UserAction::CloseButtonClicked)) {
+            changeScene(U"Close", SCENE_FADE_TIME);
+        }
         Scene::SetBackground(getData().colors.green);
         getData().fonts.font(language.get("book", "book_recalculate_n_lines")).draw(25, 50, 50, getData().colors.white);
         if (before_start) {
@@ -1174,10 +1174,8 @@ public:
     }
 
     void update() override {
-        if (!done || failed) {
-            if (System::GetUserActions() & UserAction::CloseButtonClicked) {
-                changeScene(U"Close", SCENE_FADE_TIME);
-            }
+        if ((!done || failed) && System::GetUserActions() & UserAction::CloseButtonClicked) {
+            changeScene(U"Close", SCENE_FADE_TIME);
         }
         Scene::SetBackground(getData().colors.green);
         if (!done) { // transcript
