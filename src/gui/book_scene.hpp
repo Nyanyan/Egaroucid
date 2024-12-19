@@ -749,8 +749,9 @@ public:
             }
         } else if (!done) {
             stop_button.draw();
-            if (stop_button.clicked())
+            if (stop_button.clicked()) {
                 stop = true;
+            }
             if (task_future.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
                 task_future.get();
                 done = true;
@@ -798,14 +799,17 @@ public:
         done = false;
         before_start = true;
         depth = getData().menu_elements.book_learn_depth;
-        if (!getData().menu_elements.use_book_learn_depth)
+        if (!getData().menu_elements.use_book_learn_depth) {
             depth = BOOK_DEPTH_INF;
+        }
         error_per_move = getData().menu_elements.book_learn_error_per_move;
-        if (!getData().menu_elements.use_book_learn_error_per_move)
+        if (!getData().menu_elements.use_book_learn_error_per_move) {
             error_per_move = BOOK_ERROR_INF;
+        }
         error_sum = getData().menu_elements.book_learn_error_sum;
-        if (!getData().menu_elements.use_book_learn_error_sum)
+        if (!getData().menu_elements.use_book_learn_error_sum) {
             error_sum = BOOK_ERROR_INF;
+        }
     }
 
     void update() override {
