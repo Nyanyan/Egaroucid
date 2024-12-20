@@ -33,8 +33,6 @@ constexpr double TT_REGISTER_THRESHOLD_RATE = 0.3;
 constexpr int TRANSPOSITION_TABLE_HAS_NODE = 100;
 constexpr int TRANSPOSITION_TABLE_NOT_HAS_NODE = -100;
 
-constexpr int TRANSPOSITION_TABLE_REG_UNIQUE_BOARD_N_DISCS = 16;
-
 bool transposition_table_auto_reset_importance = true;
 
 inline uint32_t get_level_common(uint8_t depth, uint8_t mpc_level) {
@@ -518,13 +516,6 @@ class Transposition_table {
             @param cost                 search cost (log2(nodes))
         */
         inline void reg(const Search *search, uint32_t hash, const int depth, int alpha, int beta, int value, int policy) {
-            if (search->n_discs <= TRANSPOSITION_TABLE_REG_UNIQUE_BOARD_N_DISCS) {
-                int unique_idx = -1;
-                Board unique_board = representative_board(search->board, &unique_idx);
-                int unique_policy = convert_coord_to_representative_board(policy, unique_idx);
-                reg(&unique_board, search->mpc_level, unique_board.hash(), depth, alpha, beta, value, unique_policy);
-                return;
-            }
             Hash_node *node = get_node(hash);
             const uint32_t level = get_level_common(depth, search->mpc_level);
             uint32_t node_level;
@@ -596,80 +587,6 @@ class Transposition_table {
         }
 
 
-
-        inline void reg(const Board *board, uint_fast8_t mpc_level, uint32_t hash, const int depth, int alpha, int beta, int value, int policy) {
-            Hash_node *node = get_node(hash);
-            const uint32_t level = get_level_common(depth, mpc_level);
-            uint32_t node_level;
-#if TT_REGISTER_MIN_LEVEL
-            Hash_node *min_level_node = nullptr;
-            uint32_t min_level = 0x4fffffff;
-            bool registered = false;
-#endif
-            for (uint_fast8_t i = 0; i < TRANSPOSITION_TABLE_N_LOOP; ++i) {
-                if (node->data.get_level() <= level) {
-                    node->lock.lock();
-                        node_level = node->data.get_level();
-                        if (node_level <= level) {
-                            if (node->board.player == board->player && node->board.opponent == board->opponent) {
-                                if (node_level == level)
-                                    node->data.reg_same_level(alpha, beta, value, policy);
-                                else
-                                    node->data.reg_new_level(depth, mpc_level, alpha, beta, value, policy);
-                                node->lock.unlock();
-#if TT_REGISTER_MIN_LEVEL
-                                registered = true;
-#endif
-                                break;
-                            } else{
-#if TT_REGISTER_MIN_LEVEL
-                                if (node_level < min_level) {
-                                    min_level = node_level;
-                                    min_level_node = node;
-                                }
-#else
-                                if (node->data.get_importance() == 0) {
-                                    n_registered.fetch_add(1);
-                                }
-                                node->board.player = board->player;
-                                node->board.opponent = board->opponent;
-                                node->data.reg_new_data(depth, mpc_level, alpha, beta, value, policy);
-                                node->lock.unlock();
-                                //if (node_level > 0) {
-                                //    n_registered.fetch_add(1);
-                                //}
-                                break;
-#endif
-                            }
-                        }
-                    node->lock.unlock();
-                }
-                ++hash;
-                node = get_node(hash);
-            }
-#if TT_REGISTER_MIN_LEVEL
-            if (!registered && min_level_node != nullptr) {
-                min_level_node->lock.lock();
-                    min_level_node->board.player = board->player;
-                    min_level_node->board.opponent = board->opponent;
-                    min_level_node->data.reg_new_data(depth, search->mpc_level, alpha, beta, value, policy);
-                    if (min_level_node->data.get_level() > 0) {
-                        n_registered.fetch_add(1);
-                    }
-                min_level_node->lock.unlock();
-            }
-#endif
-            if (n_registered >= n_registered_threshold && transposition_table_auto_reset_importance) {
-                std::lock_guard lock(mtx);
-                if (n_registered >= n_registered_threshold) {
-                    //std::cerr << "resetting transposition importance" << std::endl;
-                    reset_importance_proc();
-                }
-            }
-        }
-
-
-
         inline void reg_overwrite(const Search *search, uint32_t hash, const int depth, int alpha, int beta, int value, int policy) {
             Hash_node *node = get_node(hash);
             //const uint32_t level = get_level_common(depth, search->mpc_level);
@@ -713,12 +630,6 @@ class Transposition_table {
             @param moves                best moves to store
         */
         inline void get(const Search *search, const uint32_t hash, const int depth, int *lower, int *upper, uint_fast8_t moves[]) {
-            if (search->n_discs <= TRANSPOSITION_TABLE_REG_UNIQUE_BOARD_N_DISCS) {
-                int unique_idx = -1;
-                Board unique_board = representative_board(search->board, &unique_idx);
-                get(&unique_board, search->mpc_level, unique_board.hash(), depth, lower, upper, moves, unique_idx);
-                return;
-            }
             Hash_node *node = get_node(hash);
             const uint32_t level = get_level_common(depth, search->mpc_level);
             for (uint_fast8_t i = 0; i < TRANSPOSITION_TABLE_N_LOOP; ++i) {
@@ -726,31 +637,6 @@ class Transposition_table {
                     node->lock.lock();
                         if (node->board.player == search->board.player && node->board.opponent == search->board.opponent) {
                             node->data.get_moves(moves);
-                            if (node->data.get_level_no_importance() >= level) {
-                                node->data.get_bounds(lower, upper);
-                            }
-                            node->lock.unlock();
-                            return;
-                        }
-                    node->lock.unlock();
-                }
-                node = get_node(hash + i + 1);
-            }
-        }
-
-        inline void get(const Board *board, const uint_fast8_t mpc_level, const uint32_t hash, const int depth, int *lower, int *upper, uint_fast8_t moves[], int unique_idx) {
-            Hash_node *node = get_node(hash);
-            const uint32_t level = get_level_common(depth, mpc_level);
-            for (uint_fast8_t i = 0; i < TRANSPOSITION_TABLE_N_LOOP; ++i) {
-                if (node->board.player == board->player && node->board.opponent == board->opponent) {
-                    node->lock.lock();
-                        if (node->board.player == board->player && node->board.opponent == board->opponent) {
-                            node->data.get_moves(moves);
-                            for (uint_fast8_t j = 0; j < N_TRANSPOSITION_MOVES; ++j) {
-                                if (moves[j] != MOVE_UNDEFINED) {
-                                    moves[j] = convert_coord_from_representative_board(moves[j], unique_idx);
-                                }
-                            }
                             if (node->data.get_level_no_importance() >= level) {
                                 node->data.get_bounds(lower, upper);
                             }
