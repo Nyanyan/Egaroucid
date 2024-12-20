@@ -7,26 +7,21 @@ n_random_moves = int(sys.argv[1])
 IDX_START = int(sys.argv[2])
 IDX_END = int(sys.argv[3])
 
-#IDX_START = 117
-#IDX_END = 200
-
-LEVEL = 11
+LEVEL = 30
 N_GAMES_PER_FILE = 10000
-N_THREAD = 30
+N_THREAD = 31
 
 def fill0(n, r):
     res = str(n)
     return '0' * (r - len(res)) + res
 
-#exe = './../versions/Egaroucid_for_Console_beta/Egaroucid_for_Console.exe'
-exe = './../versions/Egaroucid_for_Console_7_4_0_Windows_x64_SIMD/Egaroucid_for_Console_7_4_0_x64_SIMD.exe'
+exe = './../Egaroucid_for_Console_clang.exe'
 
 cmd = exe + ' -nobook -l ' + str(LEVEL) + ' -thread ' + str(N_THREAD) + ' -selfplay ' + str(N_GAMES_PER_FILE) + ' ' + str(n_random_moves)
 print(cmd)
 
 for idx in range(IDX_START, IDX_END + 1):
     print(fill0(idx, 7))
-    #with open('transcript/' + fill0(idx, 7) + '.txt', 'w') as f:
     dr = './../transcript/' + str(n_random_moves)
     try:
         os.mkdir(dr)

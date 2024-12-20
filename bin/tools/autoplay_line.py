@@ -5,8 +5,8 @@ import sys
 
 line_dr = './../problem/etc/first12_all_shuffled'
 out_dr = './../transcript/first12_all_shuffled_after800'
+#out_dr = './../transcript/first12_all_shuffled_after780'
 
-#exe = './../versions/Egaroucid_for_Console_beta/Egaroucid_for_Console_clang.exe'
 exe = './../Egaroucid_for_Console_clang.exe'
 
 
@@ -21,7 +21,9 @@ print(IDX_START, IDX_END)
 
 LEVEL = 11
 N_GAMES_PER_FILE = 10000
-N_THREAD = 30
+N_THREAD = 31
+
+IDX_SHIFT = 800
 
 def fill0(n, r):
     res = str(n)
@@ -32,7 +34,7 @@ for idx in range(IDX_START, IDX_END + 1):
     file = line_dr + '/' + fill0(idx, 7) + '.txt'
     cmd = exe + ' -nobook -l ' + str(LEVEL) + ' -thread ' + str(N_THREAD) + ' -selfplayline ' + file
     print(cmd)
-    with open(out_dr + '/' + fill0(idx - 800, 7) + '.txt', 'w') as f:
+    with open(out_dr + '/' + fill0(idx - IDX_SHIFT, 7) + '.txt', 'w') as f:
         egaroucid = subprocess.Popen(cmd.split(), stdout=subprocess.PIPE)
         for i in trange(N_GAMES_PER_FILE):
             line = egaroucid.stdout.readline().decode().replace('\r', '').replace('\n', '') + '\n'
