@@ -13,8 +13,10 @@
 #include <iostream>
 #ifdef _MSC_VER
 #include <intrin.h>
+#include <stdlib.h>
 #else
 #include <x86intrin.h>
+#include <immintrin.h>
 #endif
 #include "common.hpp"
 
@@ -116,11 +118,18 @@ inline uint64_t black_line_mirror(uint64_t x) {
 
     @param x                    a bitboard
 */
+#ifdef _MSC_VER
+#define vertical_mirror(x) _byteswap_uint64(x)
+#else
+#define vertical_mirror(x) _bswap64(x)
+#endif
+/*
 inline uint64_t vertical_mirror(uint64_t x) {
     x = ((x >> 8) & 0x00FF00FF00FF00FFULL) | ((x << 8) & 0xFF00FF00FF00FF00ULL);
     x = ((x >> 16) & 0x0000FFFF0000FFFFULL) | ((x << 16) & 0xFFFF0000FFFF0000ULL);
     return ((x >> 32) & 0x00000000FFFFFFFFULL) | ((x << 32) & 0xFFFFFFFF00000000ULL);
 }
+*/
 
 /*
     @brief mirroring a bitboard in horizontal
@@ -156,6 +165,9 @@ inline uint64_t rotate_270(uint64_t x) {
 
     @param x                    a bitboard
 */
+#ifdef __clang_version__
+#define rotate_180(x) __builtin_bitreverse64(x)
+#else
 inline uint64_t rotate_180(uint64_t x) {
     x = ((x & 0x5555555555555555ULL) << 1) | ((x & 0xAAAAAAAAAAAAAAAAULL) >> 1);
     x = ((x & 0x3333333333333333ULL) << 2) | ((x & 0xCCCCCCCCCCCCCCCCULL) >> 2);
@@ -164,6 +176,7 @@ inline uint64_t rotate_180(uint64_t x) {
     x = ((x & 0x0000FFFF0000FFFFULL) << 16) | ((x & 0xFFFF0000FFFF0000ULL) >> 16);
     return ((x & 0x00000000FFFFFFFFULL) << 32) | ((x & 0xFFFFFFFF00000000ULL) >> 32);
 }
+#endif
 
 /*
     @brief NTZ (number of trailing zero) algorithm
