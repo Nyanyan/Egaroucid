@@ -156,7 +156,7 @@ inline uint64_t rotate_270(uint64_t x) {
 
     @param x                    a bitboard
 */
-#ifdef __GNUC__ && __clang_version__
+#ifdef __clang_version__
 #define rotate_180(x) __builtin_bitreverse64(x)
 #else
 inline uint64_t rotate_180(uint64_t x) {
