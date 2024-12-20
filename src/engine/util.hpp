@@ -14,6 +14,7 @@
 #include <iomanip>
 #include <string>
 #include "board.hpp"
+#include "search.hpp"
 
 std::pair<Board, int> convert_board_from_str(std::string board_str) {
     Board board;
@@ -210,7 +211,8 @@ inline int convert_coord_from_representative_board(int cell, int idx) {
             res = (HW_M1 - y) * HW + (HW_M1 - x); // horizontal + vertical ( = rotate180)
             break;
         default:
-            std::cerr << "converting coord error in book" << std::endl;
+            res = MOVE_UNDEFINED;
+            std::cerr << "converting coord error" << std::endl;
             break;
     }
     return res;
@@ -246,7 +248,8 @@ inline int convert_coord_to_representative_board(int cell, int idx) {
             res = (HW_M1 - y) * HW + (HW_M1 - x); // horizontal + vertical ( = rotate180)
             break;
         default:
-            std::cerr << "converting coord error in book" << std::endl;
+            res = MOVE_UNDEFINED;
+            std::cerr << "converting coord error" << std::endl;
             break;
     }
     return res;
