@@ -13,8 +13,10 @@
 #include <iostream>
 #ifdef _MSC_VER
 #include <intrin.h>
+#include <stdlib.h>
 #else
 #include <x86intrin.h>
+#include <immintrin.h>
 #endif
 #include "common.hpp"
 
@@ -116,11 +118,18 @@ inline uint64_t black_line_mirror(uint64_t x) {
 
     @param x                    a bitboard
 */
+#ifdef _MSC_VER
+#define vertical_mirror(x) _byteswap_uint64(x)
+#else
+#define vertical_mirror(x) _bswap64(x)
+#endif
+/*
 inline uint64_t vertical_mirror(uint64_t x) {
     x = ((x >> 8) & 0x00FF00FF00FF00FFULL) | ((x << 8) & 0xFF00FF00FF00FF00ULL);
     x = ((x >> 16) & 0x0000FFFF0000FFFFULL) | ((x << 16) & 0xFFFF0000FFFF0000ULL);
     return ((x >> 32) & 0x00000000FFFFFFFFULL) | ((x << 32) & 0xFFFFFFFF00000000ULL);
 }
+*/
 
 /*
     @brief mirroring a bitboard in horizontal
