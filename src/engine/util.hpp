@@ -151,24 +151,24 @@ inline bool compare_representative_board(Board *res, Board *cmp) {
 inline Board representative_board(Board b) {
     Board res = b;
     Board bt = b;   bt.board_black_line_mirror();       compare_representative_board(&res, &bt);
-    Board bh =      b.get_horizontal_mirror();          compare_representative_board(&res, &bh);
-    Board bth =     bt.get_horizontal_mirror();         compare_representative_board(&res, &bth);
-                    b.board_vertical_mirror();          compare_representative_board(&res, &b);
-                    bt.board_vertical_mirror();         compare_representative_board(&res, &bt);
+    Board bv =      b.get_vertical_mirror();            compare_representative_board(&res, &bv);
+    Board btv =     bt.get_vertical_mirror();           compare_representative_board(&res, &btv);
                     b.board_horizontal_mirror();        compare_representative_board(&res, &b);
                     bt.board_horizontal_mirror();       compare_representative_board(&res, &bt);
+                    b.board_vertical_mirror();          compare_representative_board(&res, &b);
+                    bt.board_vertical_mirror();         compare_representative_board(&res, &bt);
     return res;
 }
 
 inline Board representative_board(Board b, int *idx) {
     Board res = b;                                                                                      *idx = 0; // default
     Board bt = b;   bt.board_black_line_mirror();       if (compare_representative_board(&res, &bt))    *idx = 2; // black line
-    Board bh =      b.get_horizontal_mirror();          if (compare_representative_board(&res, &bh))    *idx = 6; // horizontal
-    Board bth =     bt.get_horizontal_mirror();         if (compare_representative_board(&res, &bth))   *idx = 4; // black line + horizontal
-                    b.board_vertical_mirror();          if (compare_representative_board(&res, &b))     *idx = 1; // vertical
-                    bt.board_vertical_mirror();         if (compare_representative_board(&res, &bt))    *idx = 3; // black line + vertical
-                    b.board_horizontal_mirror();        if (compare_representative_board(&res, &b))     *idx = 7; // vertical + horizontal
-                    bt.board_horizontal_mirror();       if (compare_representative_board(&res, &bt))    *idx = 5; // black line + vertical + horizontal
+    Board bv =      b.get_vertical_mirror();            if (compare_representative_board(&res, &bv))    *idx = 1; // vertical
+    Board btv =     bt.get_vertical_mirror();           if (compare_representative_board(&res, &btv))   *idx = 3; // black line + vertical
+                    b.board_horizontal_mirror();        if (compare_representative_board(&res, &b))     *idx = 6; // horizontal
+                    bt.board_horizontal_mirror();       if (compare_representative_board(&res, &bt))    *idx = 4; // black line + horizontal
+                    b.board_vertical_mirror();          if (compare_representative_board(&res, &b))     *idx = 7; // horizontal + vertical
+                    bt.board_vertical_mirror();         if (compare_representative_board(&res, &bt))    *idx = 5; // black line + horizontal + vertical
     return res;
 }
 
