@@ -528,8 +528,7 @@ public:
                 } else {
                     rect.draw(getData().colors.green).drawFrame(1.0, getData().colors.white);
                 }
-                //getData().resources.unchecked.scaled(15.0 / getData().resources.unchecked.width()).draw(IMPORT_GAME_SX, sy);
-                delete_buttons[i].move(IMPORT_GAME_SX, sy);
+                delete_buttons[i].move(IMPORT_GAME_SX + 1, sy + 1);
                 delete_buttons[i].draw();
                 if (delete_buttons[i].clicked()) {
                     delete_game(i);
