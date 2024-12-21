@@ -159,6 +159,7 @@ public:
 
     void set_n_elem(int ne) {
         n_elem = ne;
+        rect_height = height;
         if (n_elem > n_elem_per_window) {
             rect_height = std::max(rect_min_height, (int)round((double)n_elem_per_window / (double)n_elem * (double)height));
         }
