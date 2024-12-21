@@ -483,7 +483,7 @@ public:
             button.init(0, 0, 15, delete_button_image);
             delete_buttons.emplace_back(button);
         }
-        scroll_manager.init(770, IMPORT_GAME_SY + 8, 10, IMPORT_GAME_HEIGHT * IMPORT_GAME_N_GAMES_ON_WINDOW, 20, (int)games.size(), IMPORT_GAME_N_GAMES_ON_WINDOW, IMPORT_GAME_SX, 73, IMPORT_GAME_WIDTH + 10, IMPORT_GAME_HEIGHT * IMPORT_GAME_N_GAMES_ON_WINDOW);
+        init_scroll_manager();
     }
 
     void update() override {
@@ -625,6 +625,10 @@ public:
     }
 
 private:
+    void init_scroll_manager() {
+        scroll_manager.init(770, IMPORT_GAME_SY + 8, 10, IMPORT_GAME_HEIGHT * IMPORT_GAME_N_GAMES_ON_WINDOW, 20, (int)games.size(), IMPORT_GAME_N_GAMES_ON_WINDOW, IMPORT_GAME_SX, 73, IMPORT_GAME_WIDTH + 10, IMPORT_GAME_HEIGHT * IMPORT_GAME_N_GAMES_ON_WINDOW);
+    }
+
     void import_game(int idx) {
         const String json_path = Unicode::Widen(getData().directories.document_dir) + U"games/" + games[idx].date + U".json";
         JSON game_json = JSON::Load(json_path);
@@ -723,11 +727,11 @@ private:
         import_buttons.erase(import_buttons.begin() + idx);
         delete_buttons.erase(delete_buttons.begin() + idx);
         double strt_idx_double = scroll_manager.get_strt_idx_double();
-        scroll_manager.set_n_elem((int)games.size());
+        init_scroll_manager();
         if ((int)strt_idx_double >= idx) {
             strt_idx_double -= 1.0;
-            scroll_manager.set_strt_idx(strt_idx_double);
         }
+        scroll_manager.set_strt_idx(strt_idx_double);
         std::cerr << "deleted game " << idx << std::endl;
     }
 };
