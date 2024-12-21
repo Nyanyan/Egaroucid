@@ -91,12 +91,14 @@ int init_resources_load(Resources* resources, Settings* settings, bool *stop_loa
     Texture checkbox(Unicode::Widen(EXE_DIRECTORY_PATH + "resources/img/checked.png"), TextureDesc::Mipped);
     Texture unchecked(Unicode::Widen(EXE_DIRECTORY_PATH + "resources/img/unchecked.png"), TextureDesc::Mipped);
     Texture laser_pointer(Unicode::Widen(EXE_DIRECTORY_PATH + "resources/img/laser_pointer.png"), TextureDesc::Mipped);
-    if (checkbox.isEmpty() || unchecked.isEmpty() || laser_pointer.isEmpty()) {
+    Texture cross(Unicode::Widen(EXE_DIRECTORY_PATH + "resources/img/cross.png"), TextureDesc::Mipped);
+    if (checkbox.isEmpty() || unchecked.isEmpty() || laser_pointer.isEmpty() || cross.isEmpty()) {
         return ERR_LOAD_TEXTURE_NOT_LOADED;
     }
     resources->checkbox = checkbox;
     resources->unchecked = unchecked;
     resources->laser_pointer = laser_pointer;
+    resources->cross = cross;
 
     if (*stop_loading) {
         return ERR_LOAD_TERMINATED;

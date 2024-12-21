@@ -477,7 +477,7 @@ public:
             button.init(0, 0, IMPORT_GAME_BUTTON_WIDTH, IMPORT_GAME_BUTTON_HEIGHT, IMPORT_GAME_BUTTON_RADIUS, language.get("in_out", "import"), 15, getData().fonts.font, getData().colors.white, getData().colors.black);
             import_buttons.emplace_back(button);
         }
-        Texture delete_button_image = getData().resources.unchecked;
+        Texture delete_button_image = getData().resources.cross;
         for (int i = 0; i < (int)games.size(); ++i) {
             ImageButton button;
             button.init(0, 0, 15, delete_button_image);

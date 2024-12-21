@@ -299,6 +299,7 @@ struct Resources {
     Texture checkbox;
     Texture unchecked;
     Texture laser_pointer;
+    Texture cross;
     std::vector<Texture> lang_img;
 };
 
