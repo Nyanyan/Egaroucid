@@ -17,10 +17,12 @@
 std::string get_default_language() {
     std::string default_language = System::DefaultLanguage().narrow();
     std::string res = "english";
-    if (default_language == "ja-JP") // japanese
+    if (default_language == "ja-JP") { // japanese
         res = "japanese";
-    if (default_language == "zh-CN" || default_language == "zh-cmn-Hans") // chinese
+    }
+    if (default_language == "zh-CN" || default_language == "zh-cmn-Hans") { // chinese
         res = "chinese";
+    }
     return res;
 }
 
@@ -48,9 +50,9 @@ void init_default_settings(const Directories* directories, const Resources* reso
     settings->change_book_by_right_click = false;
     settings->show_last_move = true;
     settings->show_next_move = true;
-    #if USE_CHANGEABLE_HASH_LEVEL
-        settings->hash_level = DEFAULT_HASH_LEVEL;
-    #endif
+#if USE_CHANGEABLE_HASH_LEVEL
+    settings->hash_level = DEFAULT_HASH_LEVEL;
+#endif
     settings->book_acc_level = 0;
     settings->pause_when_pass = false;
     settings->show_next_move_change_view = false;
@@ -73,22 +75,25 @@ void init_default_settings(const Directories* directories, const Resources* reso
 }
 
 int init_settings_import_int(JSON &json, String key, int* res) {
-    if (json[key].getType() != JSONValueType::Number)
+    if (json[key].getType() != JSONValueType::Number) {
         return ERR_IMPORT_SETTINGS;
+    }
     *res = (int)json[key].get<double>();
     return ERR_OK;
 }
 
 int init_settings_import_bool(JSON &json, String key, bool* res) {
-    if (json[key].getType() != JSONValueType::Bool)
+    if (json[key].getType() != JSONValueType::Bool) {
         return ERR_IMPORT_SETTINGS;
+    }
     *res = json[key].get<bool>();
     return ERR_OK;
 }
 
 int init_settings_import_str(JSON &json, String key, std::string* res) {
-    if (json[key].getType() != JSONValueType::String)
+    if (json[key].getType() != JSONValueType::String) {
         return ERR_IMPORT_SETTINGS;
+    }
     *res = json[key].getString().narrow();
     return ERR_OK;
 }
@@ -105,8 +110,7 @@ int init_settings_import_int(TextReader* reader, int* res) {
             *res = pre_res;
             return ERR_IMPORT_SETTINGS;
         }
-    }
-    else {
+    } else {
         *res = pre_res;
         return ERR_IMPORT_SETTINGS;
     }
@@ -126,8 +130,7 @@ int init_settings_import_bool(TextReader* reader, bool* res) {
         catch (const ParseError& e) {
             return ERR_IMPORT_SETTINGS;
         }
-    }
-    else {
+    } else {
         return ERR_IMPORT_SETTINGS;
     }
 }
@@ -137,8 +140,7 @@ int init_settings_import_str(TextReader* reader, std::string* res) {
     if (reader->readLine(line)) {
         *res = line.narrow();
         return ERR_OK;
-    }
-    else {
+    } else {
         return ERR_IMPORT_SETTINGS;
     }
 }
@@ -148,8 +150,7 @@ void import_text_settings(const Directories* directories, const Resources* resou
     if (!reader) {
         std::cerr << "err-1" << std::endl;
         return;
-    }
-    else {
+    } else {
         if (init_settings_import_int(&reader, &settings->n_threads) != ERR_OK) {
             std::cerr << "err0" << std::endl;
             return;
@@ -234,13 +235,14 @@ void import_text_settings(const Directories* directories, const Resources* resou
             std::cerr << "err21" << std::endl;
             return;
         }
-        #if USE_CHANGEABLE_HASH_LEVEL
-            if (init_settings_import_int(&reader, &settings->hash_level) != ERR_OK) {
-                std::cerr << "err22" << std::endl;
-                return;
-            } else
-                settings->hash_level = std::max(settings->hash_level, DEFAULT_HASH_LEVEL);
-        #endif
+#if USE_CHANGEABLE_HASH_LEVEL
+        if (init_settings_import_int(&reader, &settings->hash_level) != ERR_OK) {
+            std::cerr << "err22" << std::endl;
+            return;
+        } else {
+            settings->hash_level = std::max(settings->hash_level, DEFAULT_HASH_LEVEL);
+        }
+#endif
         if (init_settings_import_int(&reader, &settings->book_acc_level) != ERR_OK) {
             std::cerr << "err23" << std::endl;
             return;
@@ -343,12 +345,13 @@ void init_settings(const Directories* directories, const Resources* resources, S
     if (init_settings_import_bool(setting_json, U"show_next_move", &settings->show_next_move) != ERR_OK) {
         std::cerr << "err21" << std::endl;
     }
-    #if USE_CHANGEABLE_HASH_LEVEL
-        if (init_settings_import_int(setting_json, U"hash_level", &settings->hash_level) != ERR_OK) {
-            std::cerr << "err22" << std::endl;
-        } else
-            settings->hash_level = std::max(settings->hash_level, DEFAULT_HASH_LEVEL);
-    #endif
+#if USE_CHANGEABLE_HASH_LEVEL
+    if (init_settings_import_int(setting_json, U"hash_level", &settings->hash_level) != ERR_OK) {
+        std::cerr << "err22" << std::endl;
+    } else {
+        settings->hash_level = std::max(settings->hash_level, DEFAULT_HASH_LEVEL);
+    }
+#endif
     if (init_settings_import_int(setting_json, U"book_acc_level", &settings->book_acc_level) != ERR_OK) {
         std::cerr << "err23" << std::endl;
     }
@@ -413,13 +416,13 @@ void init_settings(const Directories* directories, const Resources* resources, S
 
 void init_directories(Directories* directories) {
     // system directory
-    #if GUI_PORTABLE_MODE
-        directories->document_dir = "./document/";
-        directories->appdata_dir = "./appdata/";
-    #else
-        directories->document_dir = FileSystem::GetFolderPath(SpecialFolder::Documents).narrow() + "Egaroucid/";
-        directories->appdata_dir = FileSystem::GetFolderPath(SpecialFolder::LocalAppData).narrow() + "Egaroucid/";
-    #endif
+#if GUI_PORTABLE_MODE
+    directories->document_dir = "./document/";
+    directories->appdata_dir = "./appdata/";
+#else
+    directories->document_dir = FileSystem::GetFolderPath(SpecialFolder::Documents).narrow() + "Egaroucid/";
+    directories->appdata_dir = FileSystem::GetFolderPath(SpecialFolder::LocalAppData).narrow() + "Egaroucid/";
+#endif
     std::cerr << "document_dir " << directories->document_dir << " appdata_dir " << directories->appdata_dir << std::endl;
 
     // file directories
@@ -445,8 +448,9 @@ int init_resources_silent_load(Resources* resources, Settings* settings, Fonts *
         std::cerr << "language file not found. use alternative language" << std::endl;
         settings->lang_name = DEFAULT_LANGUAGE;
         lang_file = EXE_DIRECTORY_PATH + "resources/languages/" + settings->lang_name + ".json";
-        if (!language.init(lang_file))
+        if (!language.init(lang_file)) {
             return ERR_SILENT_LOAD_LANG_NOT_LOADED;
+        }
     }
 
     if (*stop_loading) {
@@ -515,11 +519,11 @@ public:
                 loaded = load_code == ERR_OK;
                 loading = false;
             }
-        } else{
+        } else {
             if (loaded) {
                 std::cerr << "silent loaded" << std::endl;
                 changeScene(U"Load", SCENE_FADE_TIME);
-            } else{
+            } else {
                 String err_str = U"BASIC DATA NOT LOADED. PLEASE RE-INSTALL.\nERROR CODE: " + Format(load_code);
                 err_font(err_str).draw(20, Arg::leftCenter(LEFT_LEFT, Y_CENTER), Palette::White);
             }
