@@ -710,7 +710,7 @@ private:
         CSV csv{ csv_path };
         CSV new_csv;
         for (int i = 0; i < (int)games.size(); ++i) {
-            if (i != idx) {
+            if (i != games.size() - 1 - idx) {
                 for (int j = 0; j < 6; ++j) {
                     new_csv.write(csv[i][j]);
                 }
