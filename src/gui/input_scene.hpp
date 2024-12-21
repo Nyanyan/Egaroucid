@@ -532,7 +532,7 @@ public:
                 delete_buttons[i].move(IMPORT_GAME_SX, sy);
                 delete_buttons[i].draw();
                 if (delete_buttons[i].clicked()) {
-                    std::cerr << "deleting " << i << std::endl;
+                    delete_game(i);
                 }
                 String date = games[i].date.substr(0, 10).replace(U"_", U"/");
                 getData().fonts.font(date).draw(15, IMPORT_GAME_SX + IMPORT_GAME_LEFT_MARGIN + 10, sy + 2, getData().colors.white);
@@ -700,6 +700,35 @@ private:
         getData().graph_resources.need_init = false;
         getData().history_elem = getData().graph_resources.nodes[GRAPH_MODE_NORMAL].back();
         changeScene(U"Main_scene", SCENE_FADE_TIME);
+    }
+
+    void delete_game(int idx) {
+        const String json_path = Unicode::Widen(getData().directories.document_dir) + U"games/" + games[idx].date + U".json";
+        FileSystem::Remove(json_path);
+
+        const String csv_path = Unicode::Widen(getData().directories.document_dir) + U"games/summary.csv";
+        CSV csv{ csv_path };
+        CSV new_csv;
+        for (int i = 0; i < (int)games.size(); ++i) {
+            if (i != idx) {
+                for (int j = 0; j < 6; ++j) {
+                    new_csv.write(csv[i][j]);
+                }
+                new_csv.newLine();
+            }
+        }
+        new_csv.save(csv_path);
+
+        games.erase(games.begin() + idx);
+        import_buttons.erase(import_buttons.begin() + idx);
+        delete_buttons.erase(delete_buttons.begin() + idx);
+        double strt_idx_double = scroll_manager.get_strt_idx_double();
+        scroll_manager.set_n_elem((int)games.size());
+        if ((int)strt_idx_double >= idx) {
+            strt_idx_double -= 1.0;
+            scroll_manager.set_strt_idx(strt_idx_double);
+        }
+        std::cerr << "deleted game " << idx << std::endl;
     }
 };
 

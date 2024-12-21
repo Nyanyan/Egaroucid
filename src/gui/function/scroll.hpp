@@ -145,8 +145,24 @@ public:
         return (int)strt_idx_double;
     }
 
+    double get_strt_idx_double() const {
+        return strt_idx_double;
+    }
+
     bool is_dragged() const {
         return dragged;
+    }
+
+    void set_strt_idx(double idx_double) {
+        strt_idx_double = idx_double;
+    }
+
+    void set_n_elem(int ne) {
+        n_elem = ne;
+        if (n_elem > n_elem_per_window) {
+            rect_height = std::max(rect_min_height, (int)round((double)n_elem_per_window / (double)n_elem * (double)height));
+        }
+        max_strt_idx = std::max(n_elem - n_elem_per_window, 0);
     }
 };
 
