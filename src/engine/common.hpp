@@ -259,6 +259,10 @@ inline bool is_white_like_char(char c) {
     return c == 'W' || c == 'w' || c == 'O' || c == 'o' || c == '1';
 }
 
+inline bool is_vacant_like_char(char c) {
+    return c == '-' || c == '.';
+}
+
 
 /*
     @brief Generate coordinate in string

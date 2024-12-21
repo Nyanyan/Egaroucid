@@ -93,8 +93,7 @@ public:
                     getData().graph_resources.nodes[0] = n_history;
                     getData().graph_resources.n_discs = getData().graph_resources.nodes[0].back().board.n_discs();
                     getData().game_information.init();
-                }
-                else {
+                } else {
                     getData().graph_resources.nodes[getData().graph_resources.branch] = n_history;
                 }
                 std::string opening_name, n_opening_name;
@@ -110,8 +109,7 @@ public:
                 getData().graph_resources.need_init = false;
                 getData().history_elem = getData().graph_resources.nodes[getData().graph_resources.branch].back();
                 changeScene(U"Main_scene", SCENE_FADE_TIME);
-            }
-            else {
+            } else {
                 getData().fonts.font(language.get("in_out", "import_failed")).draw(25, Arg::topCenter(X_CENTER, sy), getData().colors.white);
                 single_back_button.draw();
                 if (single_back_button.clicked() || KeyEscape.pressed()) {
@@ -132,8 +130,7 @@ private:
         String transcript_str = Unicode::Widen(transcript).replace(U"\r", U"").replace(U"\n", U"").replace(U" ", U"");
         if (transcript_str.size() % 2 != 0 && transcript_str.size() >= 120) {
             *failed = true;
-        }
-        else {
+        } else {
             int y, x;
             uint64_t legal;
             Flip flip;
@@ -174,8 +171,7 @@ private:
                             }
                         }
                     }
-                }
-                else {
+                } else {
                     *failed = true;
                     break;
                 }
@@ -240,8 +236,7 @@ public:
                 failed = import_board_processing();
                 done = true;
             }
-        }
-        else {
+        } else {
             if (!failed) {
                 getData().graph_resources.init();
                 History_elem history_elem;
@@ -255,8 +250,7 @@ public:
                 getData().graph_resources.need_init = false;
                 getData().history_elem = getData().graph_resources.nodes[0].back();
                 changeScene(U"Main_scene", SCENE_FADE_TIME);
-            }
-            else {
+            } else {
                 getData().fonts.font(language.get("in_out", "import_failed")).draw(25, Arg::topCenter(X_CENTER, sy), getData().colors.white);
                 single_back_button.draw();
                 if (single_back_button.clicked() || KeyEscape.pressed()) {
@@ -278,26 +272,26 @@ private:
         Board bd;
         if (board_str_str.size() != HW2 + 1) {
             failed_res = true;
-        }
-        else {
+        } else {
             for (int i = 0; i < HW2; ++i) {
-                if (board_str_str[i] == '0' || board_str_str[i] == 'B' || board_str_str[i] == 'b' || board_str_str[i] == 'X' || board_str_str[i] == 'x' || board_str_str[i] == '*')
+                if (is_black_like_char(board_str_str[i])) {
                     bd_arr[i] = BLACK;
-                else if (board_str_str[i] == '1' || board_str_str[i] == 'W' || board_str_str[i] == 'w' || board_str_str[i] == 'O' || board_str_str[i] == 'o')
+                } else if (is_white_like_char(board_str_str[i])) {
                     bd_arr[i] = WHITE;
-                else if (board_str_str[i] == '.' || board_str_str[i] == '-')
+                } else if (is_vacant_like_char(board_str_str[i])) {
                     bd_arr[i] = VACANT;
-                else {
+                } else {
                     failed_res = true;
                     break;
                 }
             }
-            if (board_str_str[HW2] == '0' || board_str_str[HW2] == 'B' || board_str_str[HW2] == 'b' || board_str_str[HW2] == 'X' || board_str_str[HW2] == 'x' || board_str_str[HW2] == '*')
-                player = 0;
-            else if (board_str_str[HW2] == '1' || board_str_str[HW2] == 'W' || board_str_str[HW2] == 'w' || board_str_str[HW2] == 'O' || board_str_str[HW2] == 'o')
-                player = 1;
-            else
+            if (is_black_like_char(board_str_str[HW2])) {
+                player = BLACK;
+            } else if (is_white_like_char(board_str_str[HW2])) {
+                player = WHITE;
+            } else {
                 failed_res = true;
+            }
         }
         if (!failed_res) {
             board.translate_from_arr(bd_arr, player);
@@ -398,8 +392,7 @@ public:
                     replace_place = i;
                     insert_place = -1;
                     break;
-                }
-                else if (node_n_discs > n_discs) {
+                } else if (node_n_discs > n_discs) {
                     insert_place = i;
                     break;
                 }
@@ -419,7 +412,7 @@ public:
                     int last_policy = ctz(discs ^ f_discs);
                     history_elem.policy = last_policy;
                 }
-            } else{
+            } else {
                 for (int i = 0; i < (int)getData().graph_resources.nodes[0].size(); ++i) {
                     int node_n_discs = getData().graph_resources.nodes[0][i].board.n_discs();
                     if (node_n_discs + 1 == n_discs) {
@@ -435,8 +428,7 @@ public:
             if (replace_place != -1) {
                 std::cerr << "replace" << std::endl;
                 getData().graph_resources.nodes[getData().graph_resources.branch][replace_place] = history_elem;
-            }
-            else {
+            } else {
                 std::cerr << "insert" << std::endl;
                 getData().graph_resources.nodes[getData().graph_resources.branch].insert(getData().graph_resources.nodes[getData().graph_resources.branch].begin() + insert_place, history_elem);
             }
@@ -499,11 +491,9 @@ public:
         }
         if (failed) {
             getData().fonts.font(language.get("in_out", "import_failed")).draw(20, Arg::center(X_CENTER, Y_CENTER), getData().colors.white);
-        }
-        else if (games.size() == 0) {
+        } else if (games.size() == 0) {
             getData().fonts.font(language.get("in_out", "no_game_available")).draw(20, Arg::center(X_CENTER, Y_CENTER), getData().colors.white);
-        }
-        else {
+        } else {
             int sy = IMPORT_GAME_SY;
             int strt_idx_int = scroll_manager.get_strt_idx_int();
             if (strt_idx_int > 0) {
@@ -520,17 +510,15 @@ public:
                 if (games[i].black_score != GAME_DISCS_UNDEFINED && games[i].white_score != GAME_DISCS_UNDEFINED) {
                     if (games[i].black_score > games[i].white_score) {
                         winner = IMPORT_GAME_WINNER_BLACK;
-                    }
-                    else if (games[i].black_score < games[i].white_score) {
+                    } else if (games[i].black_score < games[i].white_score) {
                         winner = IMPORT_GAME_WINNER_WHITE;
-                    }
-                    else {
+                    } else {
                         winner = IMPORT_GAME_WINNER_DRAW;
                     }
                 }
                 if (i % 2) {
                     rect.draw(getData().colors.dark_green).drawFrame(1.0, getData().colors.white);
-                } else{
+                } else {
                     rect.draw(getData().colors.green).drawFrame(1.0, getData().colors.white);
                 }
                 String date = games[i].date.substr(0, 10).replace(U"_", U"/");
@@ -543,11 +531,9 @@ public:
                 black_player_rect.x = IMPORT_GAME_SX + IMPORT_GAME_DATE_WIDTH;
                 if (winner == IMPORT_GAME_WINNER_BLACK) {
                     black_player_rect.draw(getData().colors.darkred);
-                }
-                else if (winner == IMPORT_GAME_WINNER_WHITE) {
+                } else if (winner == IMPORT_GAME_WINNER_WHITE) {
                     black_player_rect.draw(getData().colors.darkblue);
-                }
-                else if (winner == IMPORT_GAME_WINNER_DRAW) {
+                } else if (winner == IMPORT_GAME_WINNER_DRAW) {
                     black_player_rect.draw(getData().colors.chocolate);
                 }
                 int upper_center_y = black_player_rect.y + black_player_rect.h / 2;
@@ -585,11 +571,9 @@ public:
                 white_player_rect.x = black_player_rect.x + IMPORT_GAME_PLAYER_WIDTH + IMPORT_GAME_SCORE_WIDTH;
                 if (winner == IMPORT_GAME_WINNER_BLACK) {
                     white_player_rect.draw(getData().colors.darkblue);
-                }
-                else if (winner == IMPORT_GAME_WINNER_WHITE) {
+                } else if (winner == IMPORT_GAME_WINNER_WHITE) {
                     white_player_rect.draw(getData().colors.darkred);
-                }
-                else if (winner == IMPORT_GAME_WINNER_DRAW) {
+                } else if (winner == IMPORT_GAME_WINNER_DRAW) {
                     white_player_rect.draw(getData().colors.chocolate);
                 }
                 for (int font_size = 15; font_size >= 12; --font_size) {
@@ -653,44 +637,37 @@ private:
             bool error_found = false;
             if (game_json[n_discs_str][GAME_BOARD_PLAYER].getType() == JSONValueType::Number) {
                 history_elem.board.player = game_json[n_discs_str][GAME_BOARD_PLAYER].get<uint64_t>();
-            }
-            else {
+            } else {
                 error_found = true;
             }
             if (game_json[n_discs_str][GAME_BOARD_OPPONENT].getType() == JSONValueType::Number) {
                 history_elem.board.opponent = game_json[n_discs_str][GAME_BOARD_OPPONENT].get<uint64_t>();
-            }
-            else {
+            } else {
                 error_found = true;
             }
             if (game_json[n_discs_str][GAME_LEVEL].getType() == JSONValueType::Number) {
                 history_elem.level = game_json[n_discs_str][GAME_LEVEL].get<int>();
-            }
-            else {
+            } else {
                 error_found = true;
             }
             if (game_json[n_discs_str][GAME_PLAYER].getType() == JSONValueType::Number) {
                 history_elem.player = game_json[n_discs_str][GAME_PLAYER].get<int>();
-            }
-            else {
+            } else {
                 error_found = true;
             }
             if (game_json[n_discs_str][GAME_POLICY].getType() == JSONValueType::Number) {
                 history_elem.policy = game_json[n_discs_str][GAME_POLICY].get<int>();
-            }
-            else {
+            } else {
                 error_found = true;
             }
             if (game_json[n_discs_str][GAME_NEXT_POLICY].getType() == JSONValueType::Number) {
                 history_elem.next_policy = game_json[n_discs_str][GAME_NEXT_POLICY].get<int>();
-            }
-            else {
+            } else {
                 error_found = true;
             }
             if (game_json[n_discs_str][GAME_VALUE].getType() == JSONValueType::Number) {
                 history_elem.v = game_json[n_discs_str][GAME_VALUE].get<int>();
-            }
-            else {
+            } else {
                 error_found = true;
             }
             if (!error_found) {
@@ -761,7 +738,7 @@ public:
                 SimpleGUI::TextArea(text_area[i], Vec2{X_CENTER - 300, text_area_y[i]}, SizeF{600, text_area_h}, SimpleGUI::PreferredTextAreaMaxChars);
                 if (player_radio.checked == i) {
                     Circle(X_CENTER + 330, text_area_y[i] + text_area_h / 2, circle_radius).draw(getData().colors.black);
-                } else{
+                } else {
                     Circle(X_CENTER + 330, text_area_y[i] + text_area_h / 2, circle_radius).draw(getData().colors.white);
                 }
             }
@@ -824,8 +801,7 @@ public:
                 getData().graph_resources.need_init = false;
                 getData().history_elem = getData().graph_resources.nodes[0].back();
                 changeScene(U"Main_scene", SCENE_FADE_TIME);
-            }
-            else {
+            } else {
                 getData().fonts.font(language.get("in_out", "import_failed")).draw(25, Arg::topCenter(X_CENTER, sy), getData().colors.white);
                 single_back_button.draw();
                 if (single_back_button.clicked() || KeyEscape.pressed()) {
