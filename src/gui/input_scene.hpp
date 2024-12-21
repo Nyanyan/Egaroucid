@@ -448,6 +448,7 @@ class Import_game : public App::Scene {
 private:
     std::vector<Game_abstract> games;
     std::vector<Button> import_buttons;
+    std::vector<ImageButton> delete_buttons;
     Scroll_manager scroll_manager;
     Button back_button;
     bool failed;
@@ -475,6 +476,12 @@ public:
             Button button;
             button.init(0, 0, IMPORT_GAME_BUTTON_WIDTH, IMPORT_GAME_BUTTON_HEIGHT, IMPORT_GAME_BUTTON_RADIUS, language.get("in_out", "import"), 15, getData().fonts.font, getData().colors.white, getData().colors.black);
             import_buttons.emplace_back(button);
+        }
+        Texture delete_button_image = getData().resources.unchecked;
+        for (int i = 0; i < (int)games.size(); ++i) {
+            ImageButton button;
+            button.init(0, 0, 15, delete_button_image);
+            delete_buttons.emplace_back(button);
         }
         scroll_manager.init(770, IMPORT_GAME_SY + 8, 10, IMPORT_GAME_HEIGHT * IMPORT_GAME_N_GAMES_ON_WINDOW, 20, (int)games.size(), IMPORT_GAME_N_GAMES_ON_WINDOW, IMPORT_GAME_SX, 73, IMPORT_GAME_WIDTH + 10, IMPORT_GAME_HEIGHT * IMPORT_GAME_N_GAMES_ON_WINDOW);
     }
@@ -521,7 +528,12 @@ public:
                 } else {
                     rect.draw(getData().colors.green).drawFrame(1.0, getData().colors.white);
                 }
-                getData().resources.unchecked.scaled(15.0 / getData().resources.unchecked.width()).draw(IMPORT_GAME_SX, sy);
+                //getData().resources.unchecked.scaled(15.0 / getData().resources.unchecked.width()).draw(IMPORT_GAME_SX, sy);
+                delete_buttons[i].move(IMPORT_GAME_SX, sy);
+                delete_buttons[i].draw();
+                if (delete_buttons[i].clicked()) {
+                    std::cerr << "deleting " << i << std::endl;
+                }
                 String date = games[i].date.substr(0, 10).replace(U"_", U"/");
                 getData().fonts.font(date).draw(15, IMPORT_GAME_SX + IMPORT_GAME_LEFT_MARGIN + 10, sy + 2, getData().colors.white);
                 // player (black)

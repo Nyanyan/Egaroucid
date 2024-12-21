@@ -143,7 +143,7 @@ class ImageButton {
 public:
     int x;
     int y;
-    int w;
+    double w;
     Texture texture;
 private:
     Rect texture_rect;
@@ -169,6 +169,8 @@ public:
     void move(int x_, int y_) {
         x = x_;
         y = y_;
+        texture_rect.x = x;
+        texture_rect.y = y;
     }
 
     void draw() {
