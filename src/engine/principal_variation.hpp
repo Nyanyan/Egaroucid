@@ -14,14 +14,14 @@
 #include "setting.hpp"
 #include "ai.hpp"
 
-#define PRINCIPAL_VARIATION_MAX_LEN 7
+//#define PRINCIPAL_VARIATION_MAX_LEN 7
 
-void get_principal_variation_str(Board board, int max_level, std::string *res) {
+void get_principal_variation_str(Board board, int depth, int max_level, std::string *res) {
     Flip flip;
     for (int level = 1; level <= max_level && global_searching; ++level) {
         std::string pv;
         Board board_cpy = board.copy();
-        for (int i = 0; i < PRINCIPAL_VARIATION_MAX_LEN && !board_cpy.is_end(); ++i) {
+        for (int i = 0; i < depth && !board_cpy.is_end(); ++i) {
             if (board_cpy.get_legal() == 0) {
                 board_cpy.pass();
             }

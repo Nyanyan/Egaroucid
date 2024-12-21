@@ -60,6 +60,7 @@ void save_settings(Menu_elements menu_elements, Settings settings, Directories d
     setting_json[U"show_principal_variation"] = menu_elements.show_principal_variation;
     setting_json[U"show_laser_pointer"] = menu_elements.show_laser_pointer;
     setting_json[U"show_ai_focus"] = menu_elements.show_ai_focus;
+    setting_json[U"pv_length"] = menu_elements.pv_length;
     setting_json.save(U"{}setting.json"_fmt(Unicode::Widen(directories.appdata_dir)));
 }
 

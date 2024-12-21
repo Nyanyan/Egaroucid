@@ -1368,7 +1368,7 @@ private:
         ai_status.pv_calculating = true;
         ai_status.pv_calculated = false;
         std::cerr << "start pv calculation" << std::endl;
-        ai_status.pv_future = std::async(std::launch::async, std::bind(get_principal_variation_str, getData().history_elem.board, getData().menu_elements.level, &principal_variation));
+        ai_status.pv_future = std::async(std::launch::async, std::bind(get_principal_variation_str, getData().history_elem.board, getData().menu_elements.pv_length, getData().menu_elements.level, &principal_variation));
     }
 
     void try_pv_get() {

@@ -72,6 +72,7 @@ void init_default_settings(const Directories* directories, const Resources* reso
     settings->show_principal_variation = true;
     settings->show_laser_pointer = false;
     settings->show_ai_focus = false;
+    settings->pv_length = 7;
 }
 
 int init_settings_import_int(JSON &json, String key, int* res) {
@@ -411,6 +412,9 @@ void init_settings(const Directories* directories, const Resources* resources, S
     }
     if (init_settings_import_bool(setting_json, U"show_ai_focus", &settings->show_ai_focus) != ERR_OK) {
         std::cerr << "err42" << std::endl;
+    }
+    if (init_settings_import_int(setting_json, U"pv_length", &settings->pv_length) != ERR_OK) {
+        std::cerr << "err43" << std::endl;
     }
 }
 

@@ -348,6 +348,7 @@ struct Settings {
     bool show_opening_name;
     bool show_principal_variation;
     bool show_ai_focus;
+    int pv_length;
 };
 
 struct Fonts {
@@ -441,6 +442,7 @@ struct Menu_elements {
     bool show_opening_name;
     bool show_principal_variation;
     bool show_ai_focus;
+    int pv_length;
 
     // book
     bool book_start_deviate;
@@ -548,6 +550,7 @@ struct Menu_elements {
         show_opening_name = settings->show_opening_name;
         show_principal_variation = settings->show_principal_variation;
         show_ai_focus = settings->show_ai_focus;
+        pv_length = settings->pv_length;
 
         book_start_deviate = false;
         book_start_deviate_with_transcript = false;
