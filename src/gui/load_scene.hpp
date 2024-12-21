@@ -15,45 +15,45 @@
 #include "function/function_all.hpp"
 
 #ifdef __APPLE__
-    #include <sys/types.h>
-    #include <sys/sysctl.h>
-    #include <mach/mach.h>
+#include <sys/types.h>
+#include <sys/sysctl.h>
+#include <mach/mach.h>
 
-    struct MacMemoryStatusEx {
-        uint64_t totalPhysicalMemory;
-        uint64_t freeMemory;
-        uint64_t usedMemory;
-        uint64_t activeMemory;
-        uint64_t inactiveMemory;
-        uint64_t wiredMemory;
+struct MacMemoryStatusEx {
+    uint64_t totalPhysicalMemory;
+    uint64_t freeMemory;
+    uint64_t usedMemory;
+    uint64_t activeMemory;
+    uint64_t inactiveMemory;
+    uint64_t wiredMemory;
 
-        MacMemoryStatusEx() {
-            totalPhysicalMemory = 0;
-            freeMemory = 0;
-            usedMemory = 0;
-            activeMemory = 0;
-            inactiveMemory = 0;
-            wiredMemory = 0;
+    MacMemoryStatusEx() {
+        totalPhysicalMemory = 0;
+        freeMemory = 0;
+        usedMemory = 0;
+        activeMemory = 0;
+        inactiveMemory = 0;
+        wiredMemory = 0;
+    }
+
+    void updateMemoryStatus() {
+        size_t length = sizeof(totalPhysicalMemory);
+        sysctlbyname("hw.memsize", &totalPhysicalMemory, &length, nullptr, 0);
+        
+        mach_msg_type_number_t count = HOST_VM_INFO_COUNT;
+        vm_statistics64_data_t vm_stat;
+        if (host_statistics64(mach_host_self(), HOST_VM_INFO, (host_info64_t)&vm_stat, &count) == KERN_SUCCESS) {
+            freeMemory = vm_stat.free_count * vm_page_size;
+            activeMemory = vm_stat.active_count * vm_page_size;
+            inactiveMemory = vm_stat.inactive_count * vm_page_size;
+            wiredMemory = vm_stat.wire_count * vm_page_size;
+            usedMemory = (activeMemory + inactiveMemory + wiredMemory);
         }
-
-        void updateMemoryStatus() {
-            size_t length = sizeof(totalPhysicalMemory);
-            sysctlbyname("hw.memsize", &totalPhysicalMemory, &length, nullptr, 0);
-            
-            mach_msg_type_number_t count = HOST_VM_INFO_COUNT;
-            vm_statistics64_data_t vm_stat;
-            if (host_statistics64(mach_host_self(), HOST_VM_INFO, (host_info64_t)&vm_stat, &count) == KERN_SUCCESS) {
-                freeMemory = vm_stat.free_count * vm_page_size;
-                activeMemory = vm_stat.active_count * vm_page_size;
-                inactiveMemory = vm_stat.inactive_count * vm_page_size;
-                wiredMemory = vm_stat.wire_count * vm_page_size;
-                usedMemory = (activeMemory + inactiveMemory + wiredMemory);
-            }
-        }
-    };
+    }
+};
 #else // Windows
-    #include <windows.h>
-    #include <shlwapi.h>
+#include <windows.h>
+#include <shlwapi.h>
 #endif
 
 
@@ -158,19 +158,19 @@ int init_ai(Settings* settings, const Directories* directories, bool *stop_loadi
     flip_init();
     last_flip_init();
     endsearch_init();
-    #if USE_MPC_PRE_CALCULATION
-        mpc_init();
-    #endif
+#if USE_MPC_PRE_CALCULATION
+    mpc_init();
+#endif
     move_ordering_init();
-    #ifndef __APPLE__
-        MEMORYSTATUSEX msex = { sizeof(MEMORYSTATUSEX) };
-        GlobalMemoryStatusEx( &msex );
-        double free_mb = (double)msex.ullAvailPhys / 1024 / 1024;
-    #else
-        MacMemoryStatusEx msex;
-        msex.updateMemoryStatus();
-        double free_mb = static_cast<double>(msex.freeMemory) / 1024 / 1024;
-    #endif
+#ifndef __APPLE__
+    MEMORYSTATUSEX msex = { sizeof(MEMORYSTATUSEX) };
+    GlobalMemoryStatusEx( &msex );
+    double free_mb = (double)msex.ullAvailPhys / 1024 / 1024;
+#else // Windows
+    MacMemoryStatusEx msex;
+    msex.updateMemoryStatus();
+    double free_mb = static_cast<double>(msex.freeMemory) / 1024 / 1024;
+#endif
     double size_mb = (double)sizeof(Hash_node) / 1024 / 1024 * hash_sizes[MAX_HASH_LEVEL];
     std::cerr << "memory " << free_mb << " " << size_mb << std::endl;
     while (free_mb <= size_mb && MAX_HASH_LEVEL > 26) {
@@ -179,14 +179,14 @@ int init_ai(Settings* settings, const Directories* directories, bool *stop_loadi
     }
     settings->hash_level = std::min(settings->hash_level, MAX_HASH_LEVEL);
     std::cerr << "max hash level " << MAX_HASH_LEVEL << std::endl;
-    #if USE_CHANGEABLE_HASH_LEVEL
-        if (!hash_resize(DEFAULT_HASH_LEVEL, settings->hash_level, true)) {
-            std::cerr << "hash resize failed. use default setting" << std::endl;
-            settings->hash_level = DEFAULT_HASH_LEVEL;
-        }
-    #else
-        hash_tt_init(true);
-    #endif
+#if USE_CHANGEABLE_HASH_LEVEL
+    if (!hash_resize(DEFAULT_HASH_LEVEL, settings->hash_level, true)) {
+        std::cerr << "hash resize failed. use default setting" << std::endl;
+        settings->hash_level = DEFAULT_HASH_LEVEL;
+    }
+#else
+    hash_tt_init(true);
+#endif
     stability_init();
     if (!evaluate_init(directories->eval_file, directories->eval_mo_end_file, true)) {
         return ERR_LOAD_EVAL_FILE_NOT_IMPORTED;
@@ -272,15 +272,13 @@ public:
             if (update_button.clicked() || KeyEnter.down()) {
                 if (language.get("lang_name") == U"日本語") {
                     System::LaunchBrowser(U"https://www.egaroucid.nyanyan.dev/ja/download/");
-                }
-                else {
+                } else {
                     System::LaunchBrowser(U"https://www.egaroucid.nyanyan.dev/en/download/");
                 }
                 changeScene(U"Close", SCENE_FADE_TIME);
                 return;
             }
-        }
-        else {
+        } else {
             const int icon_width = (LEFT_RIGHT - LEFT_LEFT);
             getData().resources.icon.scaled((double)icon_width / getData().resources.icon.width()).draw(LEFT_LEFT, Y_CENTER - icon_width / 2);
             getData().resources.logo.scaled((double)icon_width * 0.8 / getData().resources.logo.width()).draw(RIGHT_LEFT, Y_CENTER - 40);
@@ -292,8 +290,7 @@ public:
                         getData().menu_elements.init(&getData().settings, &getData().resources);
                         getData().window_state.loading = false;
                         changeScene(U"Main_scene", SCENE_FADE_TIME);
-                    }
-                    else {
+                    } else {
                         load_failed = true;
                     }
                 }
@@ -308,8 +305,7 @@ public:
                         getData().window_state.loading = false;
                         changeScene(U"Main_scene", SCENE_FADE_TIME);
                     }
-                }
-                else {
+                } else {
                     String err_str = language.get("loading", "load_failed") + U"\nERROR CODE: " + Format(load_code);
                     getData().fonts.font(err_str).draw(20, RIGHT_LEFT, Y_CENTER + 50, getData().colors.white);
                     if (System::GetUserActions() & UserAction::CloseButtonClicked) {
@@ -317,8 +313,7 @@ public:
                     }
                 }
 
-            }
-            else {
+            } else {
                 getData().fonts.font(language.get("loading", "loading")).draw(50, RIGHT_LEFT, Y_CENTER + 40, getData().colors.white);
                 getData().fonts.font(language.get("tips", "do_you_know")).draw(20, RIGHT_LEFT, Y_CENTER + 110, getData().colors.white);
                 getData().fonts.font(tips).draw(15, RIGHT_LEFT, Y_CENTER + 140, getData().colors.white);
