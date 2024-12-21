@@ -128,11 +128,13 @@ void book_hash_init_rand() {
     for (i = 0; i < 4; ++i) {
         for (j = 0; j < 65536; ++j) {
             hash_rand_player_book[i][j] = 0;
-            while (pop_count_uint(hash_rand_player_book[i][j]) < 9)
+            while (pop_count_uint(hash_rand_player_book[i][j]) < 9) {
                 hash_rand_player_book[i][j] = myrand_ull();
+            }
             hash_rand_opponent_book[i][j] = 0;
-            while (pop_count_uint(hash_rand_opponent_book[i][j]) < 9)
+            while (pop_count_uint(hash_rand_opponent_book[i][j]) < 9) {
                 hash_rand_opponent_book[i][j] = myrand_ull();
+            }
         }
     }
 }
@@ -161,8 +163,9 @@ void book_hash_init(bool show_log) {
             return;
         }
     }
-    if (show_log)
+    if (show_log) {
         std::cerr << "hash for book initialized" << std::endl;
+    }
     return;
 }
 
@@ -215,7 +218,7 @@ class Book {
             if (!import_file_egbk3(file, show_log, stop_loading)) { // try egbk3 format
                 std::cerr << "failed egbk3 formatted book. trying egbk2 format." << std::endl;
                 if (!import_file_egbk2(file, show_log, stop_loading)) { // try egbk2 format
-                std::cerr << "failed egbk2 formatted book. trying egbk format." << std::endl;
+                    std::cerr << "failed egbk2 formatted book. trying egbk format." << std::endl;
                     return import_file_egbk(file, 1, show_log, stop_loading); // try egbk format
                 }
             }
@@ -242,16 +245,13 @@ class Book {
             if (lst[lst.size() - 1] == "egbk2") {
                 std::cerr << "importing Egaroucid legacy book (.egbk2)" << std::endl;
                 result = import_file_egbk2(file, true, stop);
-            }
-            else if (lst[lst.size() - 1] == "egbk") {
+            } else if (lst[lst.size() - 1] == "egbk") {
                 std::cerr << "importing Egaroucid legacy book (.egbk)" << std::endl;
                 result = import_file_egbk(file, level, true, stop);
-            }
-            else if (lst[lst.size() - 1] == "dat") {
+            } else if (lst[lst.size() - 1] == "dat") {
                 std::cerr << "importing Edax book" << std::endl;
                 result = import_file_edax(file, true, stop);
-            }
-            else {
+            } else {
                 std::cerr << "this is not a book" << std::endl;
             }
             return result;
@@ -320,14 +320,16 @@ class Book {
                 fclose(fp);
                 return false;
             }
-            if (show_log)
+            if (show_log) {
                 std::cerr << n_boards << " boards to read" << std::endl;
+            }
             // for each board
             int percent = -1;
             char datum[25];
             for (int i = 0; i < n_boards; ++i) {
-                if (*stop_loading)
+                if (*stop_loading) {
                     break;
+                }
                 int n_percent = (double)i / n_boards * 100;
                 if (n_percent > percent && show_log) {
                     percent = n_percent;
@@ -431,8 +433,9 @@ class Book {
                 fclose(fp);
                 return false;
             }
-            if (show_log)
+            if (show_log) {
                 std::cerr << "imported " << book.size() << " boards to book" << std::endl;
+            }
             fclose(fp);
             return true;
         }
@@ -449,8 +452,9 @@ class Book {
             @return book completely imported?
         */
         inline bool import_file_egbk2(std::string file, bool show_log, bool *stop_loading) {
-            if (show_log)
+            if (show_log) {
                 std::cerr << "importing " << file << std::endl;
+            }
             FILE* fp;
             if (!file_open(&fp, file.c_str(), "rb")) {
                 std::cerr << "[ERROR] can't open Egaroucid book " << file << std::endl;
@@ -494,13 +498,15 @@ class Book {
                 fclose(fp);
                 return false;
             }
-            if (show_log)
+            if (show_log) {
                 std::cerr << n_boards << " boards to read" << std::endl;
+            }
             // for each board
             int percent = -1;
             for (int i = 0; i < n_boards; ++i) {
-                if (*stop_loading)
+                if (*stop_loading) {
                     break;
+                }
                 int n_percent = (double)i / n_boards * 100;
                 if (n_percent > percent && show_log) {
                     percent = n_percent;
@@ -618,13 +624,15 @@ class Book {
                 fclose(fp);
                 return false;
             }
-            if (show_log)
+            if (show_log) {
                 std::cerr << n_boards << " boards to read" << std::endl;
+            }
             // for each board
             int percent = -1;
             for (int i = 0; i < n_boards; ++i) {
-                if (*stop_loading)
+                if (*stop_loading) {
                     break;
+                }
                 int n_percent = (double)i / n_boards * 100;
                 if (n_percent > percent && show_log) {
                     percent = n_percent;
@@ -660,10 +668,11 @@ class Book {
                 if (b.n_discs() <= 4 + 30) {
 #endif
                     book_elem.value = value;
-                    if (level != LEVEL_UNDEFINED)
+                    if (level != LEVEL_UNDEFINED) {
                         book_elem.level = level;
-                    else
+                    } else {
                         book_elem.level = 1;
+                    }
                     book_elem.leaf.value = SCORE_UNDEFINED;
                     book_elem.leaf.move = MOVE_UNDEFINED;
                     merge(board, book_elem);
@@ -679,8 +688,9 @@ class Book {
             //     fclose(fp);
             //     return false;
             // }
-            if (show_log)
+            if (show_log) {
                 std::cerr << "imported " << book.size() << " boards to book" << std::endl;
+            }
             fclose(fp);
             return true;
         }
@@ -697,8 +707,9 @@ class Book {
             @return book completely imported?
         */
         inline bool import_file_edax(std::string file, bool show_log, bool *stop) {
-            if (show_log)
+            if (show_log) {
                 std::cerr << "importing " << file << std::endl;
+            }
             FILE* fp;
             if (!file_open(&fp, file.c_str(), "rb")) {
                 std::cerr << "[ERROR] can't open Edax book " << file << std::endl;
@@ -732,8 +743,9 @@ class Book {
             Book_elem book_elem;
             int percent = -1;
             for (int i = 0; i < n_boards; ++i) {
-                if (*stop)
+                if (*stop) {
                     return false;
+                }
                 int n_percent = (double)i / n_boards * 100;
                 if (n_percent > percent && show_log) {
                     percent = n_percent;
@@ -839,8 +851,9 @@ class Book {
                     merge(board, book_elem);
                 }
             }
-            if (show_log)
+            if (show_log) {
                 std::cerr << "imported " << book.size() << " boards to book" << std::endl;
+            }
             return true;
         }
 
@@ -852,8 +865,9 @@ class Book {
         */
         inline void save_egbk3(std::string file, std::string bak_file, bool use_backup, int level) {
             if (use_backup) {
-                if (remove(bak_file.c_str()) == -1)
+                if (remove(bak_file.c_str()) == -1) {
                     std::cerr << "cannot delete backup. you can ignore this error." << std::endl;
+                }
                 rename(file.c_str(), bak_file.c_str());
             }
             std::ofstream fout;
@@ -908,21 +922,23 @@ class Book {
         void get_pass_boards(Board board, std::unordered_set<Board, Book_hash> &pass_boards) {
             board = representative_board(board);
             if (contain_representative(board)) {
-                if (book[board].seen)
+                if (book[board].seen) {
                     return;
+                }
                 book[board].seen = true;
             }
             uint64_t legal = board.get_legal();
             if (legal == 0ULL) {
-                if (pass_boards.find(board) != pass_boards.end())
+                if (pass_boards.find(board) != pass_boards.end()) {
                     return;
+                }
                 Board passed_board = board.copy();
                 passed_board.pass();
                 if (!contain_representative(board) && contain(passed_board)) {
                     pass_boards.emplace(board);
                     get_pass_boards(passed_board, pass_boards);
                 }
-            } else{
+            } else {
                 std::vector<Book_value> links = get_all_moves_with_value(&board);
                 Flip flip;
                 for (Book_value &link: links) {
@@ -959,8 +975,9 @@ class Book {
             }
             std::cerr << "saving book..." << std::endl;
             char header[] = "XADEKOOB";
-            for (int i = 0; i < 8; ++i)
+            for (int i = 0; i < 8; ++i) {
                 fout.write((char*)&header[i], 1);
+            }
             char ver = 4;
             fout.write((char*)&ver, 1);
             char rel = 4;
@@ -977,8 +994,9 @@ class Book {
             fout.write((char*)&dummy, 1);
             fout.write((char*)&level, 4);
             int n_empties = HW2;
-            for (auto itr = book.begin(); itr != book.end(); ++itr)
+            for (auto itr = book.begin(); itr != book.end(); ++itr) {
                 n_empties = std::min(n_empties, HW2 + 1 - itr->first.n_discs());
+            }
             fout.write((char*)&n_empties, 4);
             int err_mid = 0;
             fout.write((char*)&err_mid, 4);
@@ -1012,13 +1030,15 @@ class Book {
                 if (level == LEVEL_UNDEFINED) {
                     Board b = pass_board.copy();
                     b.pass();
-                    if (contain(b))
+                    if (contain(b)) {
                         char_level = get(b).level;
-                    else
+                    } else {
                         char_level = 1;
+                    }
                 }
-                if (char_level > 60)
+                if (char_level > 60) {
                     char_level = 60;
+                }
                 n_link = 1;
                 link_value = (char)passed_elem.value;
                 link_move = MOVE_PASS;
@@ -1061,10 +1081,12 @@ class Book {
                     leaf_move = MOVE_NOMOVE;
                 }
                 n_lines = itr->second.n_lines;
-                if (level == LEVEL_UNDEFINED)
+                if (level == LEVEL_UNDEFINED) {
                     char_level = itr->second.level;
-                if (char_level > 60)
+                }
+                if (char_level > 60) {
                     char_level = 60;
+                }
                 fout.write((char*)&itr->first.player, 8);
                 fout.write((char*)&itr->first.opponent, 8);
                 fout.write((char*)&n_win, 4);
@@ -1145,11 +1167,13 @@ class Book {
         */
         inline Book_elem get_representative(Board b, int idx) {
             Book_elem res;
-            if (!contain_representative(b))
+            if (!contain_representative(b)) {
                 return res;
+            }
             res = book[b];
-            if (is_valid_policy(res.leaf.move))
+            if (is_valid_policy(res.leaf.move)) {
                 res.leaf.move = convert_coord_from_representative_board(res.leaf.move, idx);
+            }
             return res;
         }
 
@@ -1202,11 +1226,13 @@ class Book {
                             max_value = sgn * elem.value;
                             policies.clear();
                         }
-                        if (sgn * elem.value == max_value)
+                        if (sgn * elem.value == max_value) {
                             policies.emplace_back(cell);
+                        }
                     }
-                    if (sgn == 1)
+                    if (sgn == 1) {
                         b->pass();
+                    }
                 b->undo_board(&flip);
             }
             return policies;
@@ -1232,7 +1258,7 @@ class Book {
                             book_value.policy = cell;
                             book_value.value = -get(b).value;
                             policies.emplace_back(book_value);
-                        } else{
+                        } else {
                             b->pass();
                                 if (contain(b)) {
                                     Book_value book_value;
@@ -1251,7 +1277,7 @@ class Book {
                                 policies.emplace_back(book_value);
                             }
                         b->pass();
-                    } else{
+                    } else {
                         if (contain(b)) {
                             Book_value book_value;
                             book_value.policy = cell;
@@ -1289,8 +1315,9 @@ class Book {
                             value_policies.emplace_back(std::make_pair((double)book_value.value, cell));
                             value_policies_memo.emplace_back(std::make_pair(book_value.value, cell));
                         }
-                        if (sgn == 1)
+                        if (sgn == 1) {
                             b->pass();
+                        }
                     b->undo_board(&flip);
                 }
             }
@@ -1322,8 +1349,9 @@ class Book {
                 if (s >= rnd) {
                     res.policy = elem.second;
                     for (std::pair<int, int> elem: value_policies_memo) {
-                        if (elem.second == res.policy)
+                        if (elem.second == res.policy) {
                             res.value = elem.first;
+                        }
                     }
                     res_got = true;
                     break;
@@ -1332,8 +1360,9 @@ class Book {
             if (!res_got) {
                 res.policy = value_policies.back().second;
                 for (std::pair<int, int> elem: value_policies_memo) {
-                    if (elem.second == res.policy)
+                    if (elem.second == res.policy) {
                         res.value = elem.first;
+                    }
                 }
             }
             return res;
@@ -1371,8 +1400,9 @@ class Book {
                             res = book_value;
                         }
                     }
-                    if (sgn == 1)
+                    if (sgn == 1) {
                         b->pass();
+                    }
                 b->undo_board(&flip);
             }
             return res;
@@ -1401,13 +1431,13 @@ class Book {
                         Board bb = representative_board(b);
                         book[bb].value = value;
                         book[bb].level = level;
-                    } else{
+                    } else {
                         b.pass();
                         if (contain(b)) {
                             Board bb = representative_board(b);
                             book[bb].value = -value;
                             book[bb].level = level;
-                        } else{
+                        } else {
                             b.pass();
                             Book_elem elem;
                             elem.value = value;
@@ -1418,7 +1448,7 @@ class Book {
                             register_symmetric_book(b, elem);
                         }
                     }
-                } else{
+                } else {
                     if (b.get_legal() == 0) { // just pass
                         b.pass();
                         value *= -1;
@@ -1427,7 +1457,7 @@ class Book {
                         Board bb = representative_board(b);
                         book[bb].value = value;
                         book[bb].level = level;
-                    } else{
+                    } else {
                         Book_elem elem;
                         elem.value = value;
                         elem.level = level;
@@ -1501,18 +1531,18 @@ class Book {
                 if (board.get_legal() == 0) { // game over
                     if (contain(&board)) {
                         return get(board);
-                    } else{
+                    } else {
                         board.pass();
                         if (contain(&board)) {
                             return get(board);
-                        } else{
+                        } else {
                             Book_elem stop_res;
                             stop_res.value = SCORE_UNDEFINED;
                             stop_res.n_lines = 0;
                             return stop_res;
                         }
                     }
-                } else{ // just pass
+                } else { // just pass
                     Book_elem res = negamax_book_p(board, n_seen, n_fix, percent, stop);
                     if (res.value != SCORE_UNDEFINED) {
                         res.value *= -1;
@@ -1522,8 +1552,9 @@ class Book {
             }
             board = representative_board(&board);
             Book_elem res = book[board];
-            if (res.seen)
+            if (res.seen) {
                 return res;
+            }
             res.seen = true;
             book[board].seen = true;
             if (res.value < -HW2 || HW2 < res.value) {
@@ -1587,28 +1618,34 @@ class Book {
         }
 
         void reduce_book_flag_moves(Board board, int max_depth, int max_error_per_move, int remaining_error, uint64_t *n_flags, std::unordered_set<Board, Book_hash> &keep_list, bool *doing) {
-            if (!*(doing))
+            if (!*(doing)) {
                 return;
+            }
             // depth threshold
-            if (board.n_discs() > 4 + max_depth)
+            if (board.n_discs() > 4 + max_depth) {
                 return;
+            }
             // pass
             if (board.get_legal() == 0) { // just pass
                 board.pass();
                 if (board.get_legal() == 0) { // game over
-                    if (keep_list.find(representative_board(board)) != keep_list.end())
+                    if (keep_list.find(representative_board(board)) != keep_list.end()) {
                         return;
+                    }
                     if (contain(&board)) {
                         Book_elem book_elem = get(board);
-                        if (book_elem.seen)
+                        if (book_elem.seen) {
                             return;
-                    } else{
+                        }
+                    } else {
                         board.pass();
-                        if (keep_list.find(representative_board(board)) != keep_list.end())
+                        if (keep_list.find(representative_board(board)) != keep_list.end()) {
                             return;
+                        }
                         Book_elem book_elem = get(board);
-                        if (book_elem.seen)
+                        if (book_elem.seen) {
                             return;
+                        }
                     }
                     flag_book_elem(board);
                     keep_list.emplace(representative_board(board));
@@ -1618,19 +1655,23 @@ class Book {
             }
             Board unique_board = representative_board(board);
             // already seen
-            if (keep_list.find(unique_board) != keep_list.end())
+            if (keep_list.find(unique_board) != keep_list.end()) {
                 return;
-            if (!contain(&board))
+            }
+            if (!contain(&board)) {
                 return;
+            }
             Book_elem book_elem = get(board);
             // already seen?
-            if (book_elem.seen)
+            if (book_elem.seen) {
                 return;
+            }
             flag_book_elem(board);
             keep_list.emplace(unique_board);
             ++(*n_flags);
-            if ((*n_flags) % 100 == 0)
+            if ((*n_flags) % 100 == 0) {
                 std::cerr << "keep " << (*n_flags) << " boards of " << book.size() << std::endl;
+            }
             std::vector<Book_value> links = get_all_moves_with_value(&board);
             Flip flip;
             for (Book_value &link: links) {
@@ -1645,19 +1686,23 @@ class Book {
         }
 
         void update_flagged_leaves(Board board, std::unordered_set<Board, Book_hash> &keep_list, bool *doing) {
-            if (!(*doing))
+            if (!(*doing)) {
                 return;
-            if (!contain(board))
+            }
+            if (!contain(board)) {
                 return;
+            }
             if (board.get_legal() == 0) {
                 board.pass();
-                if (board.get_legal() == 0)
+                if (board.get_legal() == 0) {
                     return;
+                }
             }
             Book_elem book_elem = get(board);
             // already seen
-            if (book_elem.seen)
+            if (book_elem.seen) {
                 return;
+            }
             flag_book_elem(board);
             std::vector<Book_value> links = get_all_moves_with_value(&board);
             Flip flip;
@@ -1683,14 +1728,16 @@ class Book {
                             if (book_elem.leaf.value < link.value) {
                                 book_elem.leaf.value = link.value;
                                 book_elem.leaf.move = link.policy;
-                                if (passed)
+                                if (passed) {
                                     board.pass();
+                                }
                                 book_elem.leaf.level = get(board).level;
-                                if (passed)
+                                if (passed) {
                                     board.pass();
+                                }
                                 leaf_updated = true;
                             }
-                        } else{
+                        } else {
                             update_flagged_leaves(board, keep_list, doing);
                         }
                     board.undo_board(&flip);
@@ -1702,8 +1749,9 @@ class Book {
         }
 
         void delete_unflagged_moves(Board board, uint64_t *n_delete, std::unordered_set<Board, Book_hash> &keep_list, bool *doing) {
-            if (!(*doing))
+            if (!(*doing)) {
                 return;
+            }
             if (board.get_legal() == 0) {
                 board.pass();
                 if (board.get_legal() == 0) { // game over
@@ -1719,12 +1767,14 @@ class Book {
                     return;
                 }
             }
-            if (!contain(board))
+            if (!contain(board)) {
                 return;
+            }
             Book_elem book_elem = get(board);
             // already seen
-            if (book_elem.seen)
+            if (book_elem.seen) {
                 return;
+            }
             flag_book_elem(board);
             std::vector<Book_value> links = get_all_moves_with_value(&board);
             Flip flip;
@@ -1737,8 +1787,9 @@ class Book {
             if (keep_list.find(representative_board(board)) == keep_list.end()) {
                 delete_elem(board);
                 ++(*n_delete);
-                if ((*n_delete) % 100 == 0)
+                if ((*n_delete) % 100 == 0) {
                     std::cerr << "deleting " << (*n_delete) << " boards" << std::endl;
+                }
             }
         }
 
@@ -1764,19 +1815,23 @@ class Book {
         }
 
         void delete_terminal_midsearch_rec(Board board, bool *doing) {
-            if (!(*doing))
+            if (!(*doing)) {
                 return;
-            if (!contain(board))
+            }
+            if (!contain(board)) {
                 return;
+            }
             if (board.get_legal() == 0) {
                 board.pass();
-                if (board.get_legal() == 0)
+                if (board.get_legal() == 0) {
                     return;
+                }
             }
             Book_elem book_elem = get(board);
             // already seen
-            if (book_elem.seen)
+            if (book_elem.seen) {
                 return;
+            }
             flag_book_elem(board);
             std::vector<Book_value> links = get_all_moves_with_value(&board);
             if (links.size() == 0) {
@@ -1807,14 +1862,16 @@ class Book {
             }
             if (board.get_legal() == 0) {
                 board.pass();
-                if (board.get_legal() == 0)
+                if (board.get_legal() == 0) {
                     return 1;
+                }
             }
             board = representative_board(&board);
             Book_elem book_elem = get(board);
             // already seen
-            if (book_elem.seen)
+            if (book_elem.seen) {
                 return book_elem.n_lines;
+            }
             flag_book_elem(board);
             std::vector<Book_value> links = get_all_moves_with_value(&board);
             uint64_t n_lines = 1;
@@ -1844,11 +1901,13 @@ class Book {
 
         void reset_seen() {
             std::vector<Board> boards;
-            for (auto itr = book.begin(); itr != book.end(); ++itr)
+            for (auto itr = book.begin(); itr != book.end(); ++itr) {
                 boards.emplace_back(itr->first);
+            }
             Flip flip;
-            for (Board &board: boards)
+            for (Board &board: boards) {
                 book[board].seen = false;
+            }
         }
 
         void flag_book_elem(Board board) {
@@ -1860,8 +1919,9 @@ class Book {
             int rotate_idx;
             Board representive_board = representative_board(board, &rotate_idx);
             int8_t rotated_policy = policy;
-            if (is_valid_policy(policy))
+            if (is_valid_policy(policy)) {
                 rotated_policy = convert_coord_from_representative_board((int)policy, rotate_idx);
+            }
             Leaf leaf;
             leaf.value = value;
             leaf.move = rotated_policy;
@@ -1886,8 +1946,9 @@ class Book {
                         new_leaf_value = book_elem.value;
                     new_leaf_move = ai_result.policy;
                 }
-            } else // all move seen
+            } else { // all move seen
                 new_leaf_move = MOVE_NOMOVE;
+            }
             //std::cerr << (int)new_leaf_value << " " << idx_to_coord(new_leaf_move) << std::endl;
             add_leaf(&board, new_leaf_value, new_leaf_move, level);
         }
@@ -1898,8 +1959,9 @@ class Book {
 
         void check_add_leaf_all_undefined() {
             std::vector<Board> boards;
-            for (auto itr = book.begin(); itr != book.end(); ++itr)
+            for (auto itr = book.begin(); itr != book.end(); ++itr) {
                 boards.emplace_back(itr->first);
+            }
             Flip flip;
             for (Board &board: boards) {
                 int leaf_move = book[board].leaf.move;
@@ -1919,8 +1981,9 @@ class Book {
 
         void check_add_leaf_all_search(int level, bool *stop) {
             std::vector<Board> boards;
-            for (auto itr = book.begin(); itr != book.end(); ++itr)
+            for (auto itr = book.begin(); itr != book.end(); ++itr) {
                 boards.emplace_back(itr->first);
+            }
             Flip flip;
             std::cerr << "add leaf to book" << std::endl;
             int percent = -1, t = 0, n_boards = (int)boards.size();
@@ -1928,8 +1991,9 @@ class Book {
             std::vector<std::future<void>> tasks;
             int n_doing = 0, n_done = 0;
             for (Board &board: boards) {
-                if (!global_searching || *stop)
+                if (!global_searching || *stop) {
                     break;
+                }
                 int n_percent = (double)t++ / n_boards * 100;
                 if (n_percent > percent) {
                     percent = n_percent;
@@ -1945,8 +2009,9 @@ class Book {
                             board.pass();
                                 need_to_rewrite_leaf = contain(&board);
                             board.pass();
-                        } else
+                        } else {
                             need_to_rewrite_leaf = contain(&board);
+                        }
                     board.undo_board(&flip);
                 }
                 if (need_to_rewrite_leaf) {
@@ -1970,8 +2035,9 @@ class Book {
                     }
                 }
                 for (int i = 0; i < tasks_size; ++i) {
-                    if (i >= tasks.size())
+                    if (i >= tasks.size()) {
                         break;
+                    }
                     if (!tasks[i].valid()) {
                         tasks.erase(tasks.begin() + i);
                         --i;
@@ -1990,14 +2056,16 @@ class Book {
 
         void recalculate_leaf_all(int level, bool *stop) {
             std::vector<Board> boards;
-            for (auto itr = book.begin(); itr != book.end(); ++itr)
+            for (auto itr = book.begin(); itr != book.end(); ++itr) {
                 boards.emplace_back(itr->first);
+            }
             Flip flip;
             std::cerr << "add leaf to book" << std::endl;
             int percent = -1, t = 0, n_boards = (int)boards.size();
             for (Board &board: boards) {
-                if (!global_searching || *stop)
+                if (!global_searching || *stop) {
                     break;
+                }
                 int n_percent = (double)t / n_boards * 100;
                 if (n_percent > percent) {
                     percent = n_percent;
@@ -2016,8 +2084,9 @@ class Book {
                 int leaf_level = itr->second.leaf.level;
                 int leaf_ply = ply + 1;
                 ++res.n_boards;
-                if (0 <= level && level <= LEVEL_HUMAN)
+                if (0 <= level && level <= LEVEL_HUMAN) {
                     ++res.n_boards_in_level[level];
+                }
                 ++res.n_boards_in_ply[ply];
                 if (0 <= leaf_level && leaf_level <= LEVEL_HUMAN) {
                     ++res.n_leaves_in_level[leaf_level];
@@ -2085,8 +2154,9 @@ class Book {
         inline int register_symmetric_book(Board b, Book_elem elem) {
             int idx;
             Board representive_board = representative_board(b, &idx);
-            if (elem.leaf.move != MOVE_UNDEFINED)
+            if (elem.leaf.move != MOVE_UNDEFINED) {
                 elem.leaf.move = convert_coord_to_representative_board(elem.leaf.move, idx);
+            }
             return register_representative(representive_board, elem);
         }
 
@@ -2102,8 +2172,9 @@ class Book {
         }
 
         inline int merge(Board b, Book_elem elem) {
-            if (!contain(b))
+            if (!contain(b)) {
                 return register_symmetric_book(b, elem);
+            }
             Book_elem book_elem = get(b);
             if (elem.value != SCORE_UNDEFINED && book_elem.level <= elem.level) {
                 book_elem.value = elem.value;
@@ -2170,25 +2241,29 @@ void search_new_leaf(Board board, int level, int book_elem_value, bool use_multi
     int8_t new_leaf_value = SCORE_UNDEFINED, new_leaf_move = MOVE_UNDEFINED;
     std::vector<Book_value> links = book.get_all_moves_with_value(&board);
     uint64_t legal = board.get_legal();
-    for (Book_value &link: links)
+    for (Book_value &link: links) {
         legal &= ~(1ULL << link.policy);
+    }
     if (legal) {
         int use_level = level;
-        if (level == ADD_LEAF_SPECIAL_LEVEL)
+        if (level == ADD_LEAF_SPECIAL_LEVEL) {
             use_level = 1;
+        }
         Search_result ai_result = ai_legal(board, use_level, false, 0, use_multi_thread, false, legal);
         if (ai_result.value != SCORE_UNDEFINED) {
             new_leaf_value = ai_result.value;
-            if (level == ADD_LEAF_SPECIAL_LEVEL)
+            if (level == ADD_LEAF_SPECIAL_LEVEL) {
                 new_leaf_value = book_elem_value;
+            }
             new_leaf_move = ai_result.policy;
             //std::cerr << "recalc leaf " << (int)new_leaf_value << " " << (int)new_leaf_move << " " << idx_to_coord(new_leaf_move) << std::endl;
             //for (Book_value &link: links)
             //    std::cerr << "link " << idx_to_coord(link.policy) << std::endl;
             //board.print();
         }
-    } else
+    } else {
         new_leaf_move = MOVE_NOMOVE;
+    }
     book.add_leaf(&board, new_leaf_value, new_leaf_move, level);
 }
 
