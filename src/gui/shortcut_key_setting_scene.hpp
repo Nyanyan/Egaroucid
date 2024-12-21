@@ -70,7 +70,7 @@ public:
             rect.h = 30;
             if (i % 2) {
                 rect.draw(getData().colors.dark_green).drawFrame(1.0, getData().colors.white);
-            } else{
+            } else {
                 rect.draw(getData().colors.green).drawFrame(1.0, getData().colors.white);
             }
             String function_name = shortcut_keys.shortcut_keys[i].name;
@@ -79,7 +79,7 @@ public:
             String shortcut_key_str;
             if (changing_idx != i) {
                 shortcut_key_str = shortcut_keys.get_shortcut_key_str(function_name);
-            } else{
+            } else {
                 shortcut_key_str = generate_key_str(changed_keys);
             }
             bool shortcut_assigned = true;
@@ -106,7 +106,7 @@ public:
                 if (KeyEscape.down()) {
                     changed_keys.clear();
                     reset_changing_idx = true;
-                } else{
+                } else {
                     update_shortcut_key();
                     assign_button.move(680, sy + 4);
                     if (changed_keys.size()) {
@@ -137,7 +137,7 @@ public:
                             changed_keys.clear();
                             reset_changing_idx = true;
                         }
-                    } else{ // no keys
+                    } else { // no keys
                         assign_button.disable();
                         message = language.get("settings", "shortcut_keys", "changing_message");
                     }
