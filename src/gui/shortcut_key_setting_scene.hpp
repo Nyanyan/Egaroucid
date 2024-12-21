@@ -13,8 +13,8 @@
 #include <future>
 #include "function/function_all.hpp"
 
-#define SHORTCUT_KEY_SETTINGS_N_ON_WINDOW 10
-#define SHORTCUT_KEY_SETTINGS_IDX_NOT_CHANGING -1
+constexpr int SHORTCUT_KEY_SETTINGS_N_ON_WINDOW = 10;
+constexpr int SHORTCUT_KEY_SETTINGS_IDX_NOT_CHANGING = -1;
 
 std::vector<String> allow_multi_input_keys = {
     U"Ctrl",

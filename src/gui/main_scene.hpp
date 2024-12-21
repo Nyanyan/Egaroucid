@@ -16,7 +16,7 @@
 #include "draw.hpp"
 #include "screen_shot.hpp"
 
-#define HINT_PRIORITY 0.49
+constexpr double HINT_PRIORITY = 0.49;
 
 bool compare_value_cell(std::pair<int, int>& a, std::pair<int, int>& b) {
     return a.first > b.first;
