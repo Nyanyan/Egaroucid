@@ -136,3 +136,76 @@ public:
         return rect.leftClicked();
     }
 };
+
+
+
+class ImageButton {
+public:
+    int x;
+    int y;
+    int w;
+    Texture texture;
+private:
+    Rect texture_rect;
+    bool enabled;
+    bool transparent;
+    Click_supporter click_supporter;
+
+public:
+    void init(int x_, int y_, int w_, Texture texture_) {
+        x = x_;
+        y = y_;
+        w = w_;
+        texture = texture_;
+        enabled = true;
+        transparent = false;
+        click_supporter.init();
+        texture_rect.x = x;
+        texture_rect.y = y;
+        texture_rect.w = w_;
+        texture_rect.h = w_ * texture.height() / texture.width();
+    }
+
+    void move(int x_, int y_) {
+        x = x_;
+        y = y_;
+    }
+
+    void draw() {
+        if (enabled) {
+            texture.scaled(w / texture.width()).draw(x, y);
+            if (texture_rect.mouseOver()) {
+                Cursor::RequestStyle(CursorStyle::Hand);
+            }
+        } else {
+            if (transparent) {
+                texture.scaled(w / texture.width()).draw(x, y, ColorF{ 1.0, 0.7 });
+            } else {
+                texture.scaled(w / texture.width()).draw(x, y);
+            }
+        }
+        click_supporter.update(texture_rect);
+    }
+
+    bool clicked() {
+        return enabled && click_supporter.clicked();
+    }
+
+    void enable() {
+        enabled = true;
+    }
+
+    void disable() {
+        enabled = false;
+        transparent = true;
+    }
+
+    void disable_notransparent() {
+        enabled = false;
+        transparent = false;
+    }
+
+    bool is_enabled() const{
+        return enabled;
+    }
+};
