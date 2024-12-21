@@ -521,14 +521,15 @@ public:
                 } else {
                     rect.draw(getData().colors.green).drawFrame(1.0, getData().colors.white);
                 }
+                getData().resources.unchecked.scaled(15.0 / getData().resources.unchecked.width()).draw(IMPORT_GAME_SX, sy);
                 String date = games[i].date.substr(0, 10).replace(U"_", U"/");
-                getData().fonts.font(date).draw(15, IMPORT_GAME_SX + 10, sy + 2, getData().colors.white);
+                getData().fonts.font(date).draw(15, IMPORT_GAME_SX + IMPORT_GAME_LEFT_MARGIN + 10, sy + 2, getData().colors.white);
                 // player (black)
                 Rect black_player_rect;
                 black_player_rect.w = IMPORT_GAME_PLAYER_WIDTH;
                 black_player_rect.h = IMPORT_GAME_PLAYER_HEIGHT;
                 black_player_rect.y = sy + 1;
-                black_player_rect.x = IMPORT_GAME_SX + IMPORT_GAME_DATE_WIDTH;
+                black_player_rect.x = IMPORT_GAME_SX + IMPORT_GAME_LEFT_MARGIN + IMPORT_GAME_DATE_WIDTH;
                 if (winner == IMPORT_GAME_WINNER_BLACK) {
                     black_player_rect.draw(getData().colors.darkred);
                 } else if (winner == IMPORT_GAME_WINNER_WHITE) {
@@ -591,7 +592,7 @@ public:
                         getData().fonts.font(player).draw(font_size, Arg::leftCenter(white_player_rect.x + 2, upper_center_y), getData().colors.white);
                     }
                 }
-                getData().fonts.font(games[i].memo).draw(12, IMPORT_GAME_SX + 10, black_player_rect.y + black_player_rect.h, getData().colors.white);
+                getData().fonts.font(games[i].memo).draw(12, IMPORT_GAME_SX + IMPORT_GAME_LEFT_MARGIN + 10, black_player_rect.y + black_player_rect.h, getData().colors.white);
                 import_buttons[i].move(IMPORT_GAME_BUTTON_SX, sy + IMPORT_GAME_BUTTON_SY);
                 import_buttons[i].draw();
                 if (import_buttons[i].clicked()) {

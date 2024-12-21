@@ -152,7 +152,8 @@ constexpr int EXPORT_GAME_RADIUS = 15;
 
 // import game constants
 constexpr int IMPORT_GAME_N_GAMES_ON_WINDOW = 7;
-constexpr int IMPORT_GAME_SX = 30;
+constexpr int IMPORT_GAME_LEFT_MARGIN = 10;
+constexpr int IMPORT_GAME_SX = 30 - IMPORT_GAME_LEFT_MARGIN;
 constexpr int IMPORT_GAME_SY = 65;
 constexpr int IMPORT_GAME_HEIGHT = 45;
 constexpr int IMPORT_GAME_PLAYER_WIDTH = 220;
@@ -167,7 +168,7 @@ constexpr int IMPORT_GAME_BUTTON_HEIGHT = 25;
 constexpr int IMPORT_GAME_BUTTON_RADIUS = 7;
 constexpr int IMPORT_GAME_DATE_WIDTH = 120;
 constexpr int IMPORT_GAME_BUTTON_SY = (IMPORT_GAME_HEIGHT - IMPORT_GAME_BUTTON_HEIGHT) / 2;
-constexpr int IMPORT_GAME_WIDTH = WINDOW_SIZE_X - IMPORT_GAME_SX * 2;
+constexpr int IMPORT_GAME_WIDTH = WINDOW_SIZE_X - (IMPORT_GAME_SX + IMPORT_GAME_LEFT_MARGIN) * 2 + IMPORT_GAME_LEFT_MARGIN;
 
 // game saving constants
 #define GAME_DATE U"date"
