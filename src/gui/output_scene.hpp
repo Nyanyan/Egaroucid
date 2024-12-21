@@ -91,8 +91,7 @@ public:
             if (getData().graph_resources.branch == 1) {
                 if (getData().graph_resources.nodes[GRAPH_MODE_INSPECT].size()) {
                     inspect_switch_n_discs = getData().graph_resources.nodes[GRAPH_MODE_INSPECT][0].board.n_discs();
-                }
-                else {
+                } else {
                     std::cerr << "no node found in inspect mode" << std::endl;
                 }
             }
@@ -135,8 +134,7 @@ private:
             if (history.back().player == BLACK) {
                 black_discs = history.back().board.count_player();
                 white_discs = history.back().board.count_opponent();
-            }
-            else {
+            } else {
                 black_discs = history.back().board.count_opponent();
                 white_discs = history.back().board.count_player();
             }
@@ -153,8 +151,7 @@ private:
             json[n_discs][GAME_POLICY] = history_elem.policy;
             if (history_elem.board.n_discs() < history.back().board.n_discs()) {
                 json[n_discs][GAME_NEXT_POLICY] = history_elem.next_policy;
-            }
-            else {
+            } else {
                 json[n_discs][GAME_NEXT_POLICY] = -1;
             }
         }
