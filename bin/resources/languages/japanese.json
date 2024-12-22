@@ -68,6 +68,7 @@
         "input_transcripts_with_line_breaks": "改行区切りで棋譜を指定 / テキストファイルをドラッグ&ドロップ",
         "transcript_error": "棋譜エラー",
         "book_fix": "Book修正",
+        "book_fix_edax": "Book修正(Edax準拠)",
         "learning": "学習中...",
         "stop_learn": "学習停止",
         "force_stop": "強制停止",

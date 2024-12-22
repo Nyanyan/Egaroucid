@@ -68,6 +68,7 @@
         "input_transcripts_with_line_breaks": "Input transcripts with line breaks / Drag & Drop a text file",
         "transcript_error": "Transcript Error",
         "book_fix": "Book Fix",
+        "book_fix_edax": "Edax-like Book Fix",
         "learning": "Calculating...",
         "stop_learn": "Stop",
         "force_stop": "Stop",
