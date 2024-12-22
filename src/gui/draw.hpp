@@ -97,7 +97,8 @@ void draw_info(Colors colors, History_elem history_elem, Fonts fonts, Menu_eleme
         white_discs = history_elem.board.count_player();
     }
     if (menu_elements.show_ai_focus) {
-        Rect(INFO_SX + 70 - INFO_DISC_RADIUS, INFO_SY, INFO_DISC_RADIUS * 2, INFO_DISC_RADIUS * 2).draw(colors.black_advantage);
+        Rect(INFO_SX + 70 - INFO_DISC_RADIUS - 3, INFO_SY + dy - 3, INFO_DISC_RADIUS * 2 + 6, INFO_DISC_RADIUS * 2 + 6).draw(colors.black_advantage);
+        Rect(INFO_SX + INFO_WIDTH - 70 - INFO_DISC_RADIUS - 3, INFO_SY + dy - 3, INFO_DISC_RADIUS * 2 + 6, INFO_DISC_RADIUS * 2 + 6).draw(colors.white_advantage);
     }
     Circle(INFO_SX + 70, INFO_SY + dy + INFO_DISC_RADIUS, INFO_DISC_RADIUS).draw(colors.black);
     Circle(INFO_SX + INFO_WIDTH - 70, INFO_SY + dy + INFO_DISC_RADIUS, INFO_DISC_RADIUS).draw(colors.white);
