@@ -263,6 +263,10 @@ inline bool is_vacant_like_char(char c) {
     return c == '-' || c == '.';
 }
 
+inline bool is_pass_like_str(std::string s) {
+    return s == "PA" || s == "pa" || s == "PS" || s == "ps";
+}
+
 
 /*
     @brief Generate coordinate in string

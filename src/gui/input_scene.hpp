@@ -139,6 +139,9 @@ private:
             //history_elem.set(h_bd, player, GRAPH_IGNORE_VALUE, -1, -1, -1, "");
             //n_history.emplace_back(history_elem);
             for (int i = 0; i < (int)transcript_str.size(); i += 2) {
+                if (is_pass_like_str(transcript_str.substr(i, 2))) {
+                    continue;
+                }
                 x = (int)transcript_str[i] - (int)'a';
                 if (x < 0 || HW <= x) {
                     x = (int)transcript_str[i] - (int)'A';
