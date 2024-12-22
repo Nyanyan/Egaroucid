@@ -125,6 +125,7 @@ constexpr int INFO_RECT_RADIUS = 20;
 constexpr int INFO_RECT_THICKNESS = 5;
 constexpr int INFO_WIDTH = WINDOW_SIZE_X - 10 - INFO_SX;
 constexpr int INFO_HEIGHT = 200 - INFO_SY - 12;
+constexpr int AI_FOCUS_INFO_COLOR_RECT_WIDTH = 90 + INFO_DISC_RADIUS + 3;
 
 // graph mode constants
 constexpr int GRAPH_MODE_NORMAL = 0;
@@ -283,6 +284,8 @@ struct Colors {
     Color darkred{ Color(178, 34, 34) };
     Color darkblue{ Color(34, 34, 178) };
     Color burlywood{ Color(222, 184, 135) };
+    Color black_advantage{ Color(241, 196, 15) };
+    Color white_advantage{ Color(119, 186, 230) };
 };
 
 struct Directories {

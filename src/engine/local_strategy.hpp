@@ -11,6 +11,8 @@
 #pragma once
 #include "ai.hpp"
 
+constexpr int MAX_LOCAL_STRATEGY_LEVEL = 25;
+
 constexpr double local_strategy_cell_weight[HW2_P1][N_CELL_TYPE] = {
     {0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000},
     {0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000},

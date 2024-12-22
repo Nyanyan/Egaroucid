@@ -1412,7 +1412,7 @@ private:
         ai_status.local_strategy_calculated = false;
         ai_status.local_strategy_done_level = 0;
         std::cerr << "start local strategy calculation" << std::endl;
-        ai_status.local_strategy_future = std::async(std::launch::async, std::bind(calc_local_strategy_player, getData().history_elem.board, 10, ai_status.local_strategy, getData().history_elem.player, &ai_status.local_strategy_calculating, &ai_status.local_strategy_done_level, false));
+        ai_status.local_strategy_future = std::async(std::launch::async, std::bind(calc_local_strategy_player, getData().history_elem.board, std::min(MAX_LOCAL_STRATEGY_LEVEL, getData().menu_elements.level), ai_status.local_strategy, getData().history_elem.player, &ai_status.local_strategy_calculating, &ai_status.local_strategy_done_level, false));
     }
 
     void try_local_strategy_get() {
@@ -1435,9 +1435,9 @@ private:
             // normal green = HSV{160.0, 0.76, 0.60}
             Color cell_color;
             if (ai_status.local_strategy[cell] > 0) { // black
-                cell_color = ColorF{ 241.0 / 255.0, 196.0 / 255.0, 15.0 / 255.0, ai_status.local_strategy[cell] }; // orange
+                cell_color = ColorF{ getData().colors.black_advantage, ai_status.local_strategy[cell] }; // orange
             } else { // white
-                cell_color = ColorF{ 119.0 / 255.0, 186.0 / 255.0, 230.0 / 255.0, -ai_status.local_strategy[cell] }; // blue
+                cell_color = ColorF{ getData().colors.white_advantage, -ai_status.local_strategy[cell] }; // blue
             }
             Rect{ sx, sy,  BOARD_CELL_SIZE, BOARD_CELL_SIZE}.draw(cell_color);
         }

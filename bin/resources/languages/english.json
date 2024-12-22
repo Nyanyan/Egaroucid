@@ -223,6 +223,8 @@
         "pragmatic": "Pragmatic",
         "accurate": "Accurate",
         "danger": "Danger",
+        "black_advantage": "Black's Ad.",
+        "white_advantage": "White's Ad.",
         "probability": "Probability"
     },
     "edit_board": {

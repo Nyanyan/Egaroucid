@@ -223,6 +223,8 @@
         "pragmatic": "变通",
         "accurate": "精准",
         "danger": "危险",
+        "black_advantage": "黑有优势",
+        "white_advantage": "白有优势",
         "probability": "确定度"
     },
     "edit_board": {
