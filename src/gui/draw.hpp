@@ -101,7 +101,7 @@ void draw_info(Colors colors, History_elem history_elem, Fonts fonts, Menu_eleme
     Line(INFO_SX + INFO_WIDTH / 2, INFO_SY + dy, INFO_SX + INFO_WIDTH / 2, INFO_SY + dy + INFO_DISC_RADIUS * 2).draw(2, colors.dark_gray);
     fonts.font(black_discs).draw(20, Arg::leftCenter(INFO_SX + 100, INFO_SY + dy + INFO_DISC_RADIUS));
     fonts.font(white_discs).draw(20, Arg::rightCenter(INFO_SX + INFO_WIDTH - 100, INFO_SY + dy + INFO_DISC_RADIUS));
-    dy += 32;
+    dy += 30;
     // 4th line
     String level_info = language.get("common", "level") + U" " + Format(menu_elements.level) + U" (";
     if (menu_elements.level <= LIGHT_LEVEL) {
@@ -116,12 +116,28 @@ void draw_info(Colors colors, History_elem history_elem, Fonts fonts, Menu_eleme
         level_info += language.get("info", "danger");
     }
     level_info += U")";
-    fonts.font(level_info).draw(13, Arg::topCenter(INFO_SX + INFO_WIDTH / 2, INFO_SY + dy));
+    fonts.font(level_info).draw(12, Arg::topCenter(INFO_SX + INFO_WIDTH / 2, INFO_SY + dy));
     dy += 19;
     // 5th line
     String pv_info = language.get("info", "principal_variation") + U": ";
+    String pv_info2 = U"";
+    bool use_second_line = false;
     if (menu_elements.show_principal_variation) {
-        pv_info += Unicode::Widen(principal_variation);
+        if (principal_variation.size() > 15 * 2) { // 15 moves and more?
+            int center = principal_variation.size() / 2 / 2 * 2;
+            std::string pv1 = principal_variation.substr(0, center);
+            std::string pv2 = principal_variation.substr(center);
+            pv_info += Unicode::Widen(pv1);
+            pv_info2 = Unicode::Widen(pv2);
+            use_second_line = true;
+        } else {
+            pv_info += Unicode::Widen(principal_variation);
+        }
     }
-    fonts.font(pv_info).draw(13, Arg::topCenter(INFO_SX + INFO_WIDTH / 2, INFO_SY + dy));
+    if (use_second_line) {
+        fonts.font(pv_info).draw(11, Arg::topCenter(INFO_SX + INFO_WIDTH / 2, INFO_SY + dy - 3));
+        fonts.font(pv_info2).draw(11, Arg::topCenter(INFO_SX + INFO_WIDTH / 2, INFO_SY + dy - 3 + 12));
+    } else {
+        fonts.font(pv_info).draw(13, Arg::topCenter(INFO_SX + INFO_WIDTH / 2, INFO_SY + dy));
+    }
 }
