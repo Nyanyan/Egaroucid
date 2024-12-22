@@ -223,6 +223,8 @@
         "pragmatic": "実用的",
         "accurate": "正確",
         "danger": "危険",
+        "black_advantage": "黒有利",
+        "white_advantage": "白有利",
         "probability": "探索確率"
     },
     "edit_board": {

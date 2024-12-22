@@ -125,6 +125,7 @@ constexpr int INFO_RECT_RADIUS = 20;
 constexpr int INFO_RECT_THICKNESS = 5;
 constexpr int INFO_WIDTH = WINDOW_SIZE_X - 10 - INFO_SX;
 constexpr int INFO_HEIGHT = 200 - INFO_SY - 12;
+constexpr int AI_FOCUS_INFO_COLOR_RECT_WIDTH = 80 + INFO_DISC_RADIUS + 3;
 
 // graph mode constants
 constexpr int GRAPH_MODE_NORMAL = 0;
