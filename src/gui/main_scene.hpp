@@ -1412,7 +1412,7 @@ private:
         ai_status.local_strategy_calculated = false;
         ai_status.local_strategy_done_level = 0;
         std::cerr << "start local strategy calculation" << std::endl;
-        ai_status.local_strategy_future = std::async(std::launch::async, std::bind(calc_local_strategy_player, getData().history_elem.board, 10, ai_status.local_strategy, getData().history_elem.player, &ai_status.local_strategy_calculating, &ai_status.local_strategy_done_level, false));
+        ai_status.local_strategy_future = std::async(std::launch::async, std::bind(calc_local_strategy_player, getData().history_elem.board, std::min(MAX_LOCAL_STRATEGY_LEVEL, getData().menu_elements.level), ai_status.local_strategy, getData().history_elem.player, &ai_status.local_strategy_calculating, &ai_status.local_strategy_done_level, false));
     }
 
     void try_local_strategy_get() {
