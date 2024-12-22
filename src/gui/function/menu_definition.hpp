@@ -248,6 +248,8 @@ Menu create_menu(Menu_elements* menu_elements, Resources *resources, Font font) 
     menu_e.push(side_menu);
     side_menu.init_button(language.get("book", "book_recalculate_n_lines") + get_shortcut_key_info(U"book_start_recalculate_n_lines"), &menu_elements->book_start_recalculate_n_lines);
     menu_e.push(side_menu);
+    side_menu.init_button(language.get("book", "book_upgrade_better_leaves") + get_shortcut_key_info(U"book_start_upgrade_better_leaves"), &menu_elements->book_start_upgrade_better_leaves);
+    menu_e.push(side_menu);
     title.push(menu_e);
 
     menu_e.init_button(language.get("book", "file_operation"), &menu_elements->dummy);

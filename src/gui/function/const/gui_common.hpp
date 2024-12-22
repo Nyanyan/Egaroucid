@@ -465,6 +465,7 @@ struct Menu_elements {
     bool book_start_recalculate_leaf;
     bool show_book_info;
     bool book_start_recalculate_n_lines;
+    bool book_start_upgrade_better_leaves;
 
     // input / output
     // input
@@ -572,6 +573,7 @@ struct Menu_elements {
         export_book = false;
         show_book_info = false;
         book_start_recalculate_n_lines = false;
+        book_start_upgrade_better_leaves = false;
 
         input_transcript = false;
         input_board = false;
