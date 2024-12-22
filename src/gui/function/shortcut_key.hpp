@@ -107,7 +107,7 @@ std::vector<Shortcut_key_elem> shortcut_keys_default = {
     {U"book_start_reducing",    {},                     {{"book", "book"}, {"book", "book_operation"}, {"book", "book_reduce"}}},
     {U"book_start_recalculate_leaf",        {},         {{"book", "book"}, {"book", "book_operation"}, {"book", "book_recalculate_leaf"}}},
     {U"book_start_recalculate_n_lines",     {},         {{"book", "book"}, {"book", "book_operation"}, {"book", "book_recalculate_n_lines"}}},
-    {U"book_start_upgrade_better_leaves",   {},         {{"book", "book"}, {"book", "book_operation"}, {"book", "book_upgrade_better_leaves"}}},
+    //{U"book_start_upgrade_better_leaves",   {},         {{"book", "book"}, {"book", "book_operation"}, {"book", "book_upgrade_better_leaves"}}},
     // file operation
     {U"import_book",            {},                     {{"book", "book"}, {"book", "file_operation"}, {"book", "import_book"}}},
     {U"export_book",            {},                     {{"book", "book"}, {"book", "file_operation"}, {"book", "export_book"}}},

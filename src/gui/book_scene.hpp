@@ -1377,6 +1377,7 @@ public:
 
 
 
+/*
 class Upgrade_better_leaves_book : public App::Scene {
 private:
     Button start_button;
@@ -1435,7 +1436,7 @@ public:
 
     }
 };
-
+*/
 
 
 
