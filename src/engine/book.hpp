@@ -1576,6 +1576,9 @@ class Book {
             Flip flip;
             //int v = -INF, child_level = -INF;
             int v = -INF;
+            if (edax_compliant) {
+                v = res.leaf.value;
+            }
             //if (res.leaf.value != SCORE_UNDEFINED) {
             //    v = -res.leaf.value;
             //    child_level = res.leaf.level;
@@ -1586,25 +1589,13 @@ class Book {
                 board.move_board(&flip);
                     child_res = negamax_book_p(board, n_seen, n_fix, percent, edax_compliant, stop);
                     if (child_res.value != SCORE_UNDEFINED) {
-                        if (edax_compliant) {
-                            if (v < -child_res.value && res.level <= child_res.level) { // update parent value
-                                v = -child_res.value;
-                                //child_level = child_res.level;
-                            }
-                        } else {
-                            if (v < -child_res.value /*&& res.level <= child_res.level*/) { // update parent value
-                                v = -child_res.value;
-                                //child_level = child_res.level;
-                            }
+                        if (v < -child_res.value /*&& res.level <= child_res.level*/) { // update parent value
+                            v = -child_res.value;
+                            //child_level = child_res.level;
                         }
                         n_lines += child_res.n_lines;
                     }
                 board.undo_board(&flip);
-            }
-            if (edax_compliant) {
-                if (res.value < res.leaf.value && res.level <= res.leaf.level) {
-                    v = res.leaf.value;
-                }
             }
             if (v != -INF /*&& child_level >= res.level*/) {
                 //res.level = child_level;
