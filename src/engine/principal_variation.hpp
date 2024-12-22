@@ -14,7 +14,8 @@
 #include "setting.hpp"
 #include "ai.hpp"
 
-//#define PRINCIPAL_VARIATION_MAX_LEN 7
+constexpr int PV_LENGTH_SETTING_MIN = 2;
+constexpr int PV_LENGTH_SETTING_MAX = 17;
 
 void get_principal_variation_str(Board board, int depth, int max_level, std::string *res) {
     Flip flip;
