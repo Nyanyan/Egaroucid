@@ -97,9 +97,9 @@ void calc_local_strategy(Board board, int max_level, double res[], bool *searchi
     double value_diffs[HW2];
     for (int level = 1; level < max_level; ++level) {
         Search_result complete_result = ai_searching(board, level, true, 0, true, false, searching);
-        //if (show_log) {
-        //    std::cerr << "result " << complete_result.value << std::endl;
-        //}
+        if (show_log) {
+            std::cerr << "result " << complete_result.value << std::endl;
+        }
         for (int cell = 0; cell < HW2; ++cell) {
             value_diffs[cell] = 0;
         }
@@ -149,19 +149,21 @@ void calc_local_strategy(Board board, int max_level, double res[], bool *searchi
                 */
             }
         }
-        //if (show_log) {
-        //    std::cerr << "value_diffs" << std::endl;
-        //    print_local_strategy(value_diffs);
-        //    std::cerr << std::endl;
-        //}
+        if (show_log) {
+            std::cerr << "value_diffs" << std::endl;
+            print_local_strategy(value_diffs);
+            std::cerr << std::endl;
+        }
         for (int cell = 0; cell < HW2; ++cell) {
             res[cell] = std::tanh(0.2 * value_diffs[cell]); // 10 discs ~ 1.0
         }
-        //if (show_log) {
-        //    print_local_strategy(res);
-        //}
+        if (show_log) {
+            print_local_strategy(res);
+        }
         *done_level = level;
-        std::cerr << "local strategy level " << level << std::endl;
+        if (show_log) {
+            std::cerr << "local strategy level " << level << std::endl;
+        }
     }
 }
 
