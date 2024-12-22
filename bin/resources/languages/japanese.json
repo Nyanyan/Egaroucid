@@ -123,6 +123,7 @@
         "output_transcript": "現局面までの棋譜をコピー",
         "output_board": "盤面を文字列でコピー",
         "output_game": "対局保存",
+        "input_transcript_clipboard": "クリップボードから棋譜入力",
         "input_transcript": "棋譜入力",
         "input_board": "盤面入力",
         "edit_board": "盤面編集",

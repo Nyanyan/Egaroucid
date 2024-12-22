@@ -789,6 +789,13 @@ private:
     }
 
     void menu_in_out() {
+        if (getData().menu_elements.input_transcript_clipboard || shortcut_key == U"input_transcript_clipboard") {
+            changing_scene = true;
+            stop_calculating();
+            resume_calculating();
+            std::cerr << "import transcript clipboard" << std::endl;
+            return;
+        }
         if (getData().menu_elements.input_transcript || shortcut_key == U"input_transcript") {
             changing_scene = true;
             stop_calculating();

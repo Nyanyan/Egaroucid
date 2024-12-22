@@ -83,6 +83,7 @@ std::vector<Shortcut_key_elem> shortcut_keys_default = {
 
     // input / output
     // input
+    {U"input_transcript_clipboard", {U"Ctrl", U"V"},    {{"in_out", "in_out"}, {"in_out", "in"}, {"in_out", "input_transcript_clipboard"}}},
     {U"input_transcript",       {U"Ctrl", U"T"},        {{"in_out", "in_out"}, {"in_out", "in"}, {"in_out", "input_transcript"}}},
     {U"input_board",            {},                     {{"in_out", "in_out"}, {"in_out", "in"}, {"in_out", "input_board"}}},
     {U"edit_board",             {U"Ctrl", U"E"},        {{"in_out", "in_out"}, {"in_out", "in"}, {"in_out", "edit_board"}}},
