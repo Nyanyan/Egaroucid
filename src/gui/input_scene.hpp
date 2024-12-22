@@ -138,8 +138,9 @@ private:
             int player = strt_elem.player;
             //history_elem.set(h_bd, player, GRAPH_IGNORE_VALUE, -1, -1, -1, "");
             //n_history.emplace_back(history_elem);
+            bool passed = false;
             for (int i = 0; i < (int)transcript_str.size(); i += 2) {
-                if (is_pass_like_str(transcript_str.narrow().substr(i, 2))) {
+                if (is_pass_like_str(transcript_str.narrow().substr(i, 2)) && passed) {
                     continue;
                 }
                 x = (int)transcript_str[i] - (int)'a';
@@ -162,9 +163,11 @@ private:
                     calc_flip(&flip, &h_bd, y * HW + x);
                     h_bd.move_board(&flip);
                     player ^= 1;
+                    passed = false;
                     if (h_bd.get_legal() == 0ULL) {
                         h_bd.pass();
                         player ^= 1;
+                        passed = true;
                         if (h_bd.get_legal() == 0ULL) {
                             h_bd.pass();
                             player ^= 1;
