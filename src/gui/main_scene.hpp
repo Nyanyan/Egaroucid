@@ -905,6 +905,13 @@ private:
             changeScene(U"N_lines_recalculate_book", SCENE_FADE_TIME);
             return;
         }
+        if (getData().menu_elements.book_start_upgrade_better_leaves || shortcut_key == U"book_start_upgrade_better_leaves") {
+            changing_scene = true;
+            stop_calculating();
+            resume_calculating();
+            changeScene(U"Upgrade_better_leaves_book", SCENE_FADE_TIME);
+            return;
+        }
         // file operation
         if (getData().menu_elements.import_book || shortcut_key == U"import_book") {
             changing_scene = true;

@@ -1887,10 +1887,63 @@ class Book {
             return (uint32_t)n_lines;
         }
 
+        void upgrade_better_leaves_rec(Board board, bool *stop) {
+            if (*stop) {
+                return;
+            }
+            if (board.get_legal() == 0) {
+                board.pass();
+                if (board.get_legal() == 0) {
+                    return;
+                }
+            }
+            board = representative_board(&board);
+            Book_elem book_elem = get(board);
+            // already seen
+            if (book_elem.seen) {
+                return;
+            }
+            flag_book_elem(board);
+            std::vector<Book_value> links = get_all_moves_with_value(&board);
+            Flip flip;
+            if (board.get_legal() & (1ULL << book_elem.leaf.move)) {
+                int link_max = -SCORE_INF;
+                for (Book_value &link: links) {
+                    link_max = std::max(link_max, link.value);
+                }
+                if (book_elem.leaf.value > link_max) { // upgrade
+                    calc_flip(&flip, &board, book_elem.leaf.move);
+                    board.move_board(&flip);
+                        Book_elem new_elem;
+                        new_elem.level = book_elem.leaf.level;
+                        new_elem.seen = false;
+                        new_elem.value = book_elem.leaf.value;
+                        reg(&board, new_elem);
+                        upgrade_better_leaves(board, stop);
+                    board.undo_board(&flip);
+                }
+            }
+            for (Book_value &link: links) {
+                calc_flip(&flip, &board, link.policy);
+                board.move_board(&flip);
+                    upgrade_better_leaves(board, stop);
+                board.undo_board(&flip);
+            }
+            return;
+        }
+
         void recalculate_n_lines(Board root_board, bool *stop) {
             std::cerr << "recalculating n_lines..." << std::endl;
             reset_seen();
             recalculate_n_lines_rec(root_board, stop);
+            reset_seen();
+            std::cerr << "n_lines recalculated" << std::endl;
+        }
+
+        void upgrade_better_leaves(Board root_board, bool *stop) {
+            std::cerr << "recalculating n_lines..." << std::endl;
+            reset_seen();
+            upgrade_better_leaves_rec(root_board, stop);
             reset_seen();
             std::cerr << "n_lines recalculated" << std::endl;
         }
@@ -2235,6 +2288,12 @@ void book_recalculate_n_lines_all(bool *stop) {
     Board root_board;
     root_board.reset();
     book.recalculate_n_lines(root_board, stop);
+}
+
+void book_upgrade_better_leaves_all(bool *stop) {
+    Board root_board;
+    root_board.reset();
+    book.upgrade_better_leaves(root_board, stop);
 }
 
 void search_new_leaf(Board board, int level, int book_elem_value, bool use_multi_thread) {
