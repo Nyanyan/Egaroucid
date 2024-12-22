@@ -8,7 +8,8 @@ IDX_START = int(sys.argv[2])
 IDX_END = int(sys.argv[3])
 
 LEVEL = 30
-N_GAMES_PER_FILE = 300 #10000
+#N_GAMES_PER_FILE = 10000
+N_GAMES_PER_FILE = 300 - 65
 N_THREAD = 31
 
 def fill0(n, r):
