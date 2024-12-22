@@ -221,7 +221,8 @@ public:
         }
 
         // local strategy drawing
-        if (ai_status.local_strategy_calculated && getData().menu_elements.show_ai_focus) {
+        bool local_strategy_ignore = ai_should_move || ai_status.analyzing || need_start_game_button || pausing_in_pass || changing_scene;
+        if (ai_status.local_strategy_done_level > 0 && getData().menu_elements.show_ai_focus && !local_strategy_ignore) {
             draw_local_strategy();
         }
 
@@ -283,7 +284,6 @@ public:
         }
 
         // local strategy calculating & drawing
-        bool local_strategy_ignore = ai_should_move || ai_status.analyzing || need_start_game_button || pausing_in_pass || changing_scene;
         if (getData().menu_elements.show_ai_focus && !local_strategy_ignore) {
             if (!ai_status.local_strategy_calculating && !ai_status.local_strategy_calculated) {
                 local_strategy_calculate();
@@ -1385,8 +1385,9 @@ private:
     void local_strategy_calculate() {
         ai_status.local_strategy_calculating = true;
         ai_status.local_strategy_calculated = false;
+        ai_status.local_strategy_done_level = 0;
         std::cerr << "start local strategy calculation" << std::endl;
-        ai_status.local_strategy_future = std::async(std::launch::async, std::bind(calc_local_strategy_player, getData().history_elem.board, 10, ai_status.local_strategy, getData().history_elem.player, &ai_status.local_strategy_calculating, false));
+        ai_status.local_strategy_future = std::async(std::launch::async, std::bind(calc_local_strategy_player, getData().history_elem.board, 10, ai_status.local_strategy, getData().history_elem.player, &ai_status.local_strategy_calculating, &ai_status.local_strategy_done_level, true));
     }
 
     void try_local_strategy_get() {
