@@ -125,6 +125,9 @@ void draw_info(Colors colors, History_elem history_elem, Fonts fonts, Menu_eleme
     if (menu_elements.show_principal_variation) {
         if (principal_variation.size() > 15 * 2) { // 15 moves and more?
             int center = principal_variation.size() / 2 / 2 * 2;
+            if (center > 18 * 2) {
+                center = 18 * 2;
+            }
             std::string pv1 = principal_variation.substr(0, center);
             std::string pv2 = principal_variation.substr(center);
             pv_info += Unicode::Widen(pv1);
