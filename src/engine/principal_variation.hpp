@@ -15,7 +15,7 @@
 #include "ai.hpp"
 
 constexpr int PV_LENGTH_SETTING_MIN = 2;
-constexpr int PV_LENGTH_SETTING_MAX = 17;
+constexpr int PV_LENGTH_SETTING_MAX = 30;
 
 void get_principal_variation_str(Board board, int depth, int max_level, std::string *res) {
     Flip flip;
