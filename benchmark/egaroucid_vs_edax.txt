@@ -872,3 +872,8 @@ level: 5 Egaroucid plays black WDL: 679-46-275 0.702 Egaroucid plays white WDL: 
 level: 10 Egaroucid plays black WDL: 597-100-303 0.647 Egaroucid plays white WDL: 461-107-432 0.5145 Egaroucid win rate: 0.58075 Egaroucid average discs earned: 1.49
 level: 15 Egaroucid plays black WDL: 134-45-71 0.626 Egaroucid plays white WDL: 112-48-90 0.544 Egaroucid win rate: 0.585 Egaroucid average discs earned: 1.28
 level: 21 Egaroucid plays black WDL: 51-26-23 0.64 Egaroucid plays white WDL: 32-32-36 0.48 Egaroucid win rate: 0.56 Egaroucid average discs earned: 0.66
+
+
+2024/12/22 7.5.0 release
+
+
