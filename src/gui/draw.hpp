@@ -62,7 +62,7 @@ void draw_info(Colors colors, History_elem history_elem, Fonts fonts, Menu_eleme
     int dy = 6;
     String moves_line;
     if (history_elem.board.get_legal()) {
-        moves_line = Format(history_elem.board.n_discs() - 3) + language.get("info", "moves");
+        moves_line = language.get("info", "ply") + Format(history_elem.board.n_discs() - 3) + language.get("info", "moves");
         bool black_to_move = history_elem.player == BLACK;
         if (black_to_move ^ pausing_in_pass) {
             moves_line += U" " + language.get("info", "black");

@@ -207,6 +207,7 @@
         "info": "信息",
         "black": "黑棋",
         "white": "白棋",
+        "ply": "",
         "moves": " 步",
         "game_end": "对局结束",
         "opening_name": "定式",

@@ -207,6 +207,7 @@
         "info": "情報",
         "black": "黒番",
         "white": "白番",
+        "ply": "",
         "moves": "手目",
         "game_end": "終局",
         "opening_name": "定石",
