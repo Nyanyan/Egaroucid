@@ -85,8 +85,7 @@ public:
                 done = true;
                 imported_from_position = true;
             }
-        }
-        else {
+        } else {
             if (!failed) {
                 if (!imported_from_position) {
                     getData().graph_resources.init();
