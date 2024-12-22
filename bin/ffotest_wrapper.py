@@ -29,7 +29,7 @@ tasks = [ # is_egaroucid, start, end, n_threads, hash_level, exe, out_file
     [False, 40, 59, 16, 25, 'versions/edax_4_5_2/wEdax-x64-modern.exe',                                     'Core_i9-11900K', 'x64_modern',         '111_ffo40_59_Core_i9-11900K_edax_x64_modern.txt'],
     [False, 40, 59, 16, 25, 'versions/edax_4_5_2/wEdax-x64.exe',                                            'Core_i9-11900K', 'x64',                '112_ffo40_59_Core_i9-11900K_edax_x64.txt'],
 ]
-'''
+#'''
 
 import datetime
 now = str(datetime.datetime.now()).replace(' ', '_').replace(':', '-').split('.')[0]
