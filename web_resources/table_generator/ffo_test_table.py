@@ -7,14 +7,14 @@ if sys.argv[1] == 'ja':
     head = '''<div class="table_wrapper">
 <table>
 <tr>
-<th>CPU</th><th>版</th><th>時間(秒)</th><th>ノード数</th><th>NPS</th><th>ファイル</th>
+<th>AI</th><th>版</th><th>時間(秒)</th><th>ノード数</th><th>NPS</th><th>ファイル</th>
 </tr>
 '''
 else:
     head = '''<div class="table_wrapper">
 <table>
 <tr>
-<th>CPU</th><th>Edition</th><th>Time (sec)</th><th>Nodes</th><th>NPS</th><th>File</th>
+<th>AI</th><th>Edition</th><th>Time (sec)</th><th>Nodes</th><th>NPS</th><th>File</th>
 </tr>
 '''
 
@@ -28,14 +28,15 @@ with open(summary_file, 'r') as f:
     summary = f.read().splitlines()
 for line in summary:
     line_elem = line.split(',')
-    cpu = line_elem[1].replace('_', ' ')
+    engine = line_elem[0]
+    #cpu = line_elem[1].replace('_', ' ')
     edition = line_elem[2]
     time = line_elem[3]
     nodes = line_elem[4]
     nps = line_elem[5]
     file = line_elem[6]
-    print(cpu, edition, time, nodes, nps, file)
-    results.append([cpu, edition, time, nodes, nps, file])
+    print(engine, edition, time, nodes, nps, file)
+    results.append([engine, edition, time, nodes, nps, file])
 
 res = head
 for result in results:
