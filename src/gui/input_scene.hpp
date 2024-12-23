@@ -244,7 +244,7 @@ public:
         if (!done) {
             getData().fonts.font(language.get("in_out", "input_ggf")).draw(25, Arg::topCenter(X_CENTER, sy), getData().colors.white);
             text_area.active = true;
-            SimpleGUI::TextArea(text_area, Vec2{X_CENTER - 300, sy + 40}, SizeF{600, 130}, SimpleGUI::PreferredTextAreaMaxChars);
+            SimpleGUI::TextArea(text_area, Vec2{X_CENTER - 300, sy + 40}, SizeF{600, 130}, 10000);
             getData().fonts.font(language.get("in_out", "you_can_paste_with_ctrl_v")).draw(13, Arg::topCenter(X_CENTER, sy + 175), getData().colors.white);
             bool return_pressed = false;
             if (text_area.text.size()) {
@@ -337,7 +337,7 @@ public:
         if (!done) {
             getData().fonts.font(language.get("in_out", "input_othello_quest")).draw(25, Arg::topCenter(X_CENTER, sy), getData().colors.white);
             text_area.active = true;
-            SimpleGUI::TextArea(text_area, Vec2{X_CENTER - 300, sy + 40}, SizeF{600, 130}, SimpleGUI::PreferredTextAreaMaxChars);
+            SimpleGUI::TextArea(text_area, Vec2{X_CENTER - 300, sy + 40}, SizeF{600, 130}, 10000);
             getData().fonts.font(language.get("in_out", "you_can_paste_with_ctrl_v")).draw(13, Arg::topCenter(X_CENTER, sy + 175), getData().colors.white);
             bool return_pressed = false;
             if (text_area.text.size()) {
