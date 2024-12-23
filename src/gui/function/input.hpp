@@ -170,6 +170,20 @@ Game_import_t import_ggf_processing(std::string ggf, bool* failed) {
     }
     std::cerr << "import " << start_board_str << " " << transcript << std::endl;
     res.history = import_transcript_processing(res.history, start_board, transcript, failed);
+    int player_idx_start = ggf_str.indexOf(U"PB[");
+    if (player_idx_start != std::string::npos) {
+        player_idx_start += 3;
+        int b_player_idx_end = ggf_str.indexOf(U"]", player_idx_start);
+        std::cerr << player_idx_start << " " << b_player_idx_end << std::endl;
+        res.black_player_name = ggf_str.substr(player_idx_start, b_player_idx_end - player_idx_start);
+    }
+    player_idx_start = ggf_str.indexOf(U"PW[");
+    if (player_idx_start != std::string::npos) {
+        player_idx_start += 3;
+        int b_player_idx_end = ggf_str.indexOf(U"]", player_idx_start);
+        std::cerr << player_idx_start << " " << b_player_idx_end << std::endl;
+        res.white_player_name = ggf_str.substr(player_idx_start, b_player_idx_end - player_idx_start);
+    }
     return res;
 }
 

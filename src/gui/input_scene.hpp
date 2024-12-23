@@ -265,10 +265,10 @@ public:
             if (!failed) {
                 getData().graph_resources.init();
                 getData().graph_resources.nodes[0] = imported_game.history;
-                getData().game_information.black_player_name = imported_game.black_player_name;
-                getData().game_information.white_player_name = imported_game.white_player_name;
                 getData().graph_resources.n_discs = getData().graph_resources.nodes[0].back().board.n_discs();
                 getData().game_information.init();
+                getData().game_information.black_player_name = imported_game.black_player_name;
+                getData().game_information.white_player_name = imported_game.white_player_name;
                 std::string opening_name, n_opening_name;
                 for (int i = 0; i < (int)getData().graph_resources.nodes[getData().graph_resources.branch].size(); ++i) {
                     n_opening_name.clear();
@@ -355,10 +355,10 @@ public:
             if (!failed) {
                 getData().graph_resources.init();
                 getData().graph_resources.nodes[0] = imported_game.history;
-                getData().game_information.black_player_name = imported_game.black_player_name;
-                getData().game_information.white_player_name = imported_game.white_player_name;
                 getData().graph_resources.n_discs = getData().graph_resources.nodes[0].back().board.n_discs();
                 getData().game_information.init();
+                getData().game_information.black_player_name = imported_game.black_player_name;
+                getData().game_information.white_player_name = imported_game.white_player_name;
                 std::string opening_name, n_opening_name;
                 for (int i = 0; i < (int)getData().graph_resources.nodes[getData().graph_resources.branch].size(); ++i) {
                     n_opening_name.clear();
