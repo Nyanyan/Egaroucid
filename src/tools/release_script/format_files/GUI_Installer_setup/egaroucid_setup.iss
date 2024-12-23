@@ -5,13 +5,13 @@
 #define version_dot "REPLACE_VERSION_DOT"
 
 #define MyAppName "Egaroucid"
-#define MyAppVersion version_dot + " Windows x64"
+#define MyAppVersion version_dot + " Windows"
 #define MyAppPublisher "Takuto Yamana"
 #define MyAppURL "https://www.egaroucid.nyanyan.dev/"
 #define EGAROUCID_RELEASE_DIR "./../"
-#define EGAROUCID_SIMD_EXE "Egaroucid_" + version_dir + "_x64_SIMD.exe"
-#define EGAROUCID_GENERIC_EXE "Egaroucid_" + version_dir + "_x64_Generic.exe"
-#define EGAROUCID_AVX512_EXE "Egaroucid_" + version_dir + "_x64_AVX512.exe"
+#define EGAROUCID_SIMD_EXE "Egaroucid_" + version_dir + "_SIMD.exe"
+#define EGAROUCID_GENERIC_EXE "Egaroucid_" + version_dir + "_Generic.exe"
+#define EGAROUCID_AVX512_EXE "Egaroucid_" + version_dir + "_AVX512.exe"
 
 [Setup]
 PrivilegesRequired=none

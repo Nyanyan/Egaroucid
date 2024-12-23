@@ -68,6 +68,7 @@
         "input_transcripts_with_line_breaks": "改行区切りで棋譜を指定 / テキストファイルをドラッグ&ドロップ",
         "transcript_error": "棋譜エラー",
         "book_fix": "Book修正",
+        "book_fix_edax": "Book修正(Edax準拠)",
         "learning": "学習中...",
         "stop_learn": "学習停止",
         "force_stop": "強制停止",
@@ -122,8 +123,11 @@
         "output_transcript": "現局面までの棋譜をコピー",
         "output_board": "盤面を文字列でコピー",
         "output_game": "対局保存",
+        "input_from_clipboard": "クリップボードから形式を指定せず入力",
         "input_transcript": "棋譜入力",
         "input_board": "盤面入力",
+        "input_ggf": "GGF入力",
+        "input_othello_quest": "オセロクエスト形式で入力",
         "edit_board": "盤面編集",
         "input_bitboard": "ビットボード入力",
         "output_bitboard": "ビットボード出力",
@@ -174,6 +178,7 @@
             "value": "評価値",
             "sum_of_loss": "累積石損"
         },
+        "ai_focus": "AIの注目する場所",
         "laser_pointer": "レーザーポインタ",
         "log": "ログ",
         "change_color_type": "色調変更"
@@ -206,6 +211,7 @@
         "info": "情報",
         "black": "黒番",
         "white": "白番",
+        "ply": "",
         "moves": "手目",
         "game_end": "終局",
         "opening_name": "定石",
@@ -219,6 +225,8 @@
         "pragmatic": "実用的",
         "accurate": "正確",
         "danger": "危険",
+        "black_advantage": "黒有利",
+        "white_advantage": "白有利",
         "probability": "探索確率"
     },
     "edit_board": {

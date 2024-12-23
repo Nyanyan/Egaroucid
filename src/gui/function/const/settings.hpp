@@ -17,7 +17,7 @@
 #ifdef __APPLE__
     #define GUI_PORTABLE_MODE false
 #else
-    #define GUI_PORTABLE_MODE true
+    #define GUI_PORTABLE_MODE false
 #endif
 // GUI Open Console?
 #define GUI_OPEN_CONSOLE false

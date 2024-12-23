@@ -68,6 +68,7 @@
         "input_transcripts_with_line_breaks": "Input transcripts with line breaks / Drag & Drop a text file",
         "transcript_error": "Transcript Error",
         "book_fix": "Book Fix",
+        "book_fix_edax": "Edax-like Book Fix",
         "learning": "Calculating...",
         "stop_learn": "Stop",
         "force_stop": "Stop",
@@ -122,8 +123,11 @@
         "output_transcript": "Copy Transcript",
         "output_board": "Copy Board as String",
         "output_game": "Save Game",
+        "input_from_clipboard": "Input any Format from Clipboard",
         "input_transcript": "Input Transcript",
         "input_board": "Input Board",
+        "input_ggf": "Input GGF",
+        "input_othello_quest": "Input Othello Quest Format",
         "edit_board": "Edit Board",
         "input_bitboard": "Input Board as Bitboard",
         "output_bitboard": "Output Board as Bitboard",
@@ -174,6 +178,7 @@
             "value": "Evaluation",
             "sum_of_loss": "Sum of Loss"
         },
+        "ai_focus": "AI's Focus",
         "laser_pointer": "Laser Pointer",
         "log": "Log",
         "change_color_type": "Change Color Type"
@@ -206,7 +211,8 @@
         "info": "Info",
         "black": "Black",
         "white": "White",
-        "moves": " moves",
+        "ply": "Ply ",
+        "moves": "",
         "game_end": "Game Over",
         "opening_name": "Opening",
         "principal_variation": "Best Line",
@@ -219,6 +225,8 @@
         "pragmatic": "Pragmatic",
         "accurate": "Accurate",
         "danger": "Danger",
+        "black_advantage": "Black's Ad.",
+        "white_advantage": "White's Ad.",
         "probability": "Probability"
     },
     "edit_board": {
