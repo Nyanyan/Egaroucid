@@ -173,3 +173,5 @@ std::vector<History_elem> import_ggf_processing(std::string ggf, bool* failed) {
     n_history = import_transcript_processing(n_history, start_board, transcript, failed);
     return n_history;
 }
+
+
