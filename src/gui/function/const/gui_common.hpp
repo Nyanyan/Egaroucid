@@ -476,6 +476,7 @@ struct Menu_elements {
     bool input_transcript_clipboard;
     bool input_transcript;
     bool input_board;
+    bool input_ggf;
     bool edit_board;
     bool input_game;
     // output
@@ -584,6 +585,7 @@ struct Menu_elements {
         input_transcript_clipboard = false;
         input_transcript = false;
         input_board = false;
+        input_ggf = false;
         edit_board = false;
         input_game = false;
         copy_transcript = false;

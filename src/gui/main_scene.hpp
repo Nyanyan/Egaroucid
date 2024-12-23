@@ -814,6 +814,13 @@ private:
             changeScene(U"Import_board", SCENE_FADE_TIME);
             return;
         }
+        if (getData().menu_elements.input_ggf || shortcut_key == U"input_ggf") {
+            changing_scene = true;
+            stop_calculating();
+            resume_calculating();
+            changeScene(U"Import_GGF", SCENE_FADE_TIME);
+            return;
+        }
         if (getData().menu_elements.edit_board || shortcut_key == U"edit_board") {
             changing_scene = true;
             stop_calculating();

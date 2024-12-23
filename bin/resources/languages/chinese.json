@@ -126,6 +126,7 @@
         "input_transcript_clipboard": "从剪贴板导入棋谱",
         "input_transcript": "导入棋谱",
         "input_board": "字符串导入",
+        "input_ggf": "导入GGF",
         "edit_board": "编辑棋盘",
         "input_bitboard": "导入棋盘作为位板",
         "output_bitboard": "导出棋盘作为位板",

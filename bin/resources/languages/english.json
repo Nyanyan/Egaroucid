@@ -126,6 +126,7 @@
         "input_transcript_clipboard": "Input Transcript from Clipboard",
         "input_transcript": "Input Transcript",
         "input_board": "Input Board",
+        "input_ggf": "Input GGF",
         "edit_board": "Edit Board",
         "input_bitboard": "Input Board as Bitboard",
         "output_bitboard": "Output Board as Bitboard",

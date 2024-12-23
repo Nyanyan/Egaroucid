@@ -134,7 +134,7 @@ std::vector<History_elem> import_ggf_processing(std::string ggf, bool* failed) {
     }
     std::string start_board_str = ggf_str.substr(board_start_idx, 65).narrow();
     std::cerr << "start board " << start_board_str << std::endl;
-    std::pair<Board, player> board_player = import_board_processing(start_board_str, failed);
+    std::pair<Board, int> board_player = import_board_processing(start_board_str, failed);
     if (*failed) {
         return n_history;
     }
