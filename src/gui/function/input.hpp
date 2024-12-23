@@ -163,7 +163,34 @@ std::vector<History_elem> import_ggf_processing(std::string ggf, bool* failed) {
         transcript += coord;
         offset = coord_start_idx + 2;
     }
-    std::cerr << start_board_str << " " << transcript << std::endl;
+    std::cerr << "import " << start_board_str << " " << transcript << std::endl;
+    n_history = import_transcript_processing(n_history, start_board, transcript, failed);
+    return n_history;
+}
+
+
+std::vector<History_elem> import_othello_quest_processing(std::string s, bool* failed) {
+    std::vector<History_elem> n_history;
+    String str = Unicode::Widen(s).replace(U"\r", U"").replace(U"\n", U"").replace(U" ", U"");
+    History_elem start_board;
+    start_board.board.reset();
+    start_board.player = BLACK;
+    n_history.emplace_back(start_board);
+    std::string transcript;
+    int offset = 0;
+    while (true) {
+        int coord_start_idx = str.indexOf(U"\"m\":\"", offset);
+        if (coord_start_idx == std::string::npos) {
+            break;
+        }
+        coord_start_idx += 5;
+        std::string coord = str.substr(coord_start_idx, 2).narrow();
+        if (coord != "-\"") {
+            transcript += coord;
+        }
+        offset = coord_start_idx + 2;
+    }
+    std::cerr << "import " << transcript << std::endl;
     n_history = import_transcript_processing(n_history, start_board, transcript, failed);
     return n_history;
 }

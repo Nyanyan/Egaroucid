@@ -87,6 +87,7 @@ std::vector<Shortcut_key_elem> shortcut_keys_default = {
     {U"input_transcript",       {U"Ctrl", U"T"},        {{"in_out", "in_out"}, {"in_out", "in"}, {"in_out", "input_transcript"}}},
     {U"input_board",            {},                     {{"in_out", "in_out"}, {"in_out", "in"}, {"in_out", "input_board"}}},
     {U"input_ggf",              {},                     {{"in_out", "in_out"}, {"in_out", "in"}, {"in_out", "input_ggf"}}},
+    {U"input_othello_quest",    {},                     {{"in_out", "in_out"}, {"in_out", "in"}, {"in_out", "input_othello_quest"}}},
     {U"edit_board",             {U"Ctrl", U"E"},        {{"in_out", "in_out"}, {"in_out", "in"}, {"in_out", "edit_board"}}},
     {U"input_game",             {},                     {{"in_out", "in_out"}, {"in_out", "in"}, {"in_out", "input_game"}}},
     {U"input_bitboard",         {},                     {{"in_out", "in_out"}, {"in_out", "in"}, {"in_out", "input_bitboard"}}},

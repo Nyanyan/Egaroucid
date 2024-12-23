@@ -302,6 +302,101 @@ public:
 };
 
 
+
+
+class Import_othello_quest : public App::Scene {
+private:
+    Button single_back_button;
+    Button back_button;
+    Button import_button;
+    bool done;
+    bool failed;
+    std::string str;
+    std::vector<History_elem> n_history;
+    bool imported_from_position;
+    TextAreaEditState text_area;
+
+public:
+    Import_othello_quest(const InitData& init) : IScene{ init } {
+        single_back_button.init(BACK_BUTTON_SX, BACK_BUTTON_SY, BACK_BUTTON_WIDTH, BACK_BUTTON_HEIGHT, BACK_BUTTON_RADIUS, language.get("common", "back"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
+        back_button.init(GO_BACK_BUTTON_BACK_SX, GO_BACK_BUTTON_SY, GO_BACK_BUTTON_WIDTH, GO_BACK_BUTTON_HEIGHT, GO_BACK_BUTTON_RADIUS, language.get("common", "back"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
+        import_button.init(GO_BACK_BUTTON_GO_SX, GO_BACK_BUTTON_SY, GO_BACK_BUTTON_WIDTH, GO_BACK_BUTTON_HEIGHT, GO_BACK_BUTTON_RADIUS, language.get("in_out", "import"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);done = false;
+        failed = false;
+        str.clear();
+    }
+
+    void update() override {
+        if (System::GetUserActions() & UserAction::CloseButtonClicked) {
+            changeScene(U"Close", SCENE_FADE_TIME);
+        }
+        Scene::SetBackground(getData().colors.green);
+        const int icon_width = SCENE_ICON_WIDTH;
+        getData().resources.icon.scaled((double)icon_width / getData().resources.icon.width()).draw(X_CENTER - icon_width / 2, 20);
+        getData().resources.logo.scaled((double)icon_width / getData().resources.logo.width()).draw(X_CENTER - icon_width / 2, 20 + icon_width);
+        int sy = 20 + icon_width + 50;
+        if (!done) {
+            getData().fonts.font(language.get("in_out", "input_othello_quest")).draw(25, Arg::topCenter(X_CENTER, sy), getData().colors.white);
+            text_area.active = true;
+            SimpleGUI::TextArea(text_area, Vec2{X_CENTER - 300, sy + 40}, SizeF{600, 130}, SimpleGUI::PreferredTextAreaMaxChars);
+            getData().fonts.font(language.get("in_out", "you_can_paste_with_ctrl_v")).draw(13, Arg::topCenter(X_CENTER, sy + 175), getData().colors.white);
+            bool return_pressed = false;
+            if (text_area.text.size()) {
+                if (text_area.text[text_area.text.size() - 1] == '\n') {
+                    return_pressed = true;
+                }
+            }
+            str = text_area.text.replaced(U"\r", U"").replaced(U"\n", U"").replaced(U" ", U"").narrow();
+            back_button.draw();
+            import_button.draw();
+            if (back_button.clicked() || KeyEscape.pressed()) {
+                changeScene(U"Main_scene", SCENE_FADE_TIME);
+            }
+            if (import_button.clicked() || KeyEnter.pressed()) {
+                n_history = import_othello_quest_processing(str, &failed);
+                done = true;
+            }
+        } else {
+            if (!failed) {
+                if (!imported_from_position) {
+                    getData().graph_resources.init();
+                    getData().graph_resources.nodes[0] = n_history;
+                    getData().graph_resources.n_discs = getData().graph_resources.nodes[0].back().board.n_discs();
+                    getData().game_information.init();
+                } else {
+                    getData().graph_resources.nodes[getData().graph_resources.branch] = n_history;
+                }
+                std::string opening_name, n_opening_name;
+                for (int i = 0; i < (int)getData().graph_resources.nodes[getData().graph_resources.branch].size(); ++i) {
+                    n_opening_name.clear();
+                    n_opening_name = opening.get(getData().graph_resources.nodes[getData().graph_resources.branch][i].board, getData().graph_resources.nodes[getData().graph_resources.branch][i].player ^ 1);
+                    if (n_opening_name.size()) {
+                        opening_name = n_opening_name;
+                    }
+                    getData().graph_resources.nodes[getData().graph_resources.branch][i].opening_name = opening_name;
+                }
+                getData().graph_resources.n_discs = getData().graph_resources.nodes[getData().graph_resources.branch].back().board.n_discs();
+                getData().graph_resources.need_init = false;
+                getData().history_elem = getData().graph_resources.nodes[getData().graph_resources.branch].back();
+                changeScene(U"Main_scene", SCENE_FADE_TIME);
+            } else {
+                getData().fonts.font(language.get("in_out", "import_failed")).draw(25, Arg::topCenter(X_CENTER, sy), getData().colors.white);
+                single_back_button.draw();
+                if (single_back_button.clicked() || KeyEscape.pressed()) {
+                    getData().graph_resources.need_init = false;
+                    changeScene(U"Main_scene", SCENE_FADE_TIME);
+                }
+            }
+        }
+    }
+
+    void draw() const override {
+
+    }
+};
+
+
+
+
 class Edit_board : public App::Scene {
 private:
     Button back_button;
