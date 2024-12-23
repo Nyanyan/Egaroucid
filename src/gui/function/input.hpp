@@ -167,7 +167,6 @@ std::vector<History_elem> import_ggf_processing(std::string ggf, bool* failed) {
         coord_start_idx += 2;
         std::string coord = ggf_str.substr(coord_start_idx, 2).narrow();
         transcript += coord;
-        std::cerr << coord << std::endl;
         offset = coord_start_idx + 2;
     }
     std::cerr << start_board_str << " " << transcript << std::endl;
