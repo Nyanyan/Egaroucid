@@ -127,6 +127,7 @@
         "input_transcript": "棋譜入力",
         "input_board": "盤面入力",
         "input_ggf": "GGF入力",
+        "input_othello_quest": "オセロクエスト形式で入力",
         "edit_board": "盤面編集",
         "input_bitboard": "ビットボード入力",
         "output_bitboard": "ビットボード出力",
