@@ -473,7 +473,7 @@ struct Menu_elements {
 
     // input / output
     // input
-    bool input_transcript_clipboard;
+    bool input_from_clipboard;
     bool input_transcript;
     bool input_board;
     bool input_ggf;
@@ -583,7 +583,7 @@ struct Menu_elements {
         book_start_recalculate_n_lines = false;
         book_start_upgrade_better_leaves = false;
 
-        input_transcript_clipboard = false;
+        input_from_clipboard = false;
         input_transcript = false;
         input_board = false;
         input_ggf = false;

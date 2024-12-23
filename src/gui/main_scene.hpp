@@ -793,11 +793,11 @@ private:
     }
 
     void menu_in_out() {
-        if (getData().menu_elements.input_transcript_clipboard || shortcut_key == U"input_transcript_clipboard") {
+        if (getData().menu_elements.input_from_clipboard || shortcut_key == U"input_from_clipboard") {
             changing_scene = true;
             stop_calculating();
             resume_calculating();
-            input_transcript_clipboard();
+            input_from_clipboard();
             return;
         }
         if (getData().menu_elements.input_transcript || shortcut_key == U"input_transcript") {
@@ -1914,38 +1914,33 @@ private:
         return search_result.depth;
     }
 
-    bool input_transcript_clipboard() {
-        std::cerr << "import transcript clipboard" << std::endl;
-        String transcript_str;
+    bool input_from_clipboard() {
         bool res = false;
-        if (Clipboard::GetText(transcript_str)) {
-            std::string transcript = transcript_str.narrow();
-            std::vector<History_elem> n_history;
-            History_elem strt_elem;
-            Board h_bd;
-            h_bd.reset();
-            strt_elem.set(h_bd, BLACK, GRAPH_IGNORE_VALUE, -1, -1, -1, "");
-            n_history.emplace_back(strt_elem);
-            bool failed = false;
-            n_history = import_transcript_processing(n_history, strt_elem, transcript, &failed);
+        String s;
+        if (Clipboard::GetText(s)) {
+            std::string str = s.narrow();
+            std::cerr << "import from clipboard " << str << std::endl;
+            bool failed;
+            Game_import_t imported_game = import_any_format_processing(str, &failed);
             if (!failed) {
                 getData().graph_resources.init();
-                getData().graph_resources.branch = 0;
-                getData().graph_resources.nodes[0] = n_history;
+                getData().graph_resources.nodes[0] = imported_game.history;
                 getData().graph_resources.n_discs = getData().graph_resources.nodes[0].back().board.n_discs();
                 getData().game_information.init();
+                getData().game_information.black_player_name = imported_game.black_player_name;
+                getData().game_information.white_player_name = imported_game.white_player_name;
                 std::string opening_name, n_opening_name;
-                for (int i = 0; i < (int)getData().graph_resources.nodes[0].size(); ++i) {
+                for (int i = 0; i < (int)getData().graph_resources.nodes[getData().graph_resources.branch].size(); ++i) {
                     n_opening_name.clear();
-                    n_opening_name = opening.get(getData().graph_resources.nodes[0][i].board, getData().graph_resources.nodes[0][i].player ^ 1);
+                    n_opening_name = opening.get(getData().graph_resources.nodes[getData().graph_resources.branch][i].board, getData().graph_resources.nodes[getData().graph_resources.branch][i].player ^ 1);
                     if (n_opening_name.size()) {
                         opening_name = n_opening_name;
                     }
-                    getData().graph_resources.nodes[0][i].opening_name = opening_name;
+                    getData().graph_resources.nodes[getData().graph_resources.branch][i].opening_name = opening_name;
                 }
+                getData().graph_resources.n_discs = getData().graph_resources.nodes[getData().graph_resources.branch].back().board.n_discs();
                 getData().graph_resources.need_init = false;
-                getData().history_elem = getData().graph_resources.nodes[0].back();
-                std::cerr << "imported " << transcript << std::endl;
+                getData().history_elem = getData().graph_resources.nodes[getData().graph_resources.branch].back();
                 res = true;
             }
         }

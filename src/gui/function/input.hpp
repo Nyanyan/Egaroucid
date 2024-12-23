@@ -12,7 +12,8 @@
 #include "const/gui_common.hpp"
 
 
-std::vector<History_elem> import_transcript_processing(std::vector<History_elem> n_history, History_elem strt_elem, std::string transcript, bool* failed) {
+std::vector<History_elem> import_transcript_processing(std::vector<History_elem> n_history, History_elem strt_elem, std::string transcript, bool *failed) {
+    *failed = false;
     Board h_bd = strt_elem.board;
     String transcript_str = Unicode::Widen(transcript).replace(U"\r", U"").replace(U"\n", U"").replace(U" ", U"");
     if (transcript_str.size() % 2 != 0 && transcript_str.size() >= 120) {
@@ -78,8 +79,8 @@ std::vector<History_elem> import_transcript_processing(std::vector<History_elem>
 
 
 std::pair<Board, int> import_board_processing(std::string board_str, bool *failed) {
-    String board_str_str = Unicode::Widen(board_str).replace(U"\r", U"").replace(U"\n", U"").replace(U" ", U"");
     *failed = false;
+    String board_str_str = Unicode::Widen(board_str).replace(U"\r", U"").replace(U"\n", U"").replace(U" ", U"");
     int bd_arr[HW2];
     Board bd;
     int player = -1;
@@ -124,7 +125,8 @@ struct Game_import_t {
 };
 
 
-Game_import_t import_ggf_processing(std::string ggf, bool* failed) {
+Game_import_t import_ggf_processing(std::string ggf, bool *failed) {
+    *failed = false;
     Game_import_t res;
     String ggf_str = Unicode::Widen(ggf).replace(U"\r", U"").replace(U"\n", U"").replace(U" ", U"");
     int board_start_idx = ggf_str.indexOf(U"BO[8");
@@ -174,21 +176,20 @@ Game_import_t import_ggf_processing(std::string ggf, bool* failed) {
     if (player_idx_start != std::string::npos) {
         player_idx_start += 3;
         int player_idx_end = ggf_str.indexOf(U"]", player_idx_start);
-        std::cerr << player_idx_start << " " << player_idx_end << std::endl;
         res.black_player_name = ggf_str.substr(player_idx_start, player_idx_end - player_idx_start);
     }
     player_idx_start = ggf_str.indexOf(U"PW[");
     if (player_idx_start != std::string::npos) {
         player_idx_start += 3;
         int player_idx_end = ggf_str.indexOf(U"]", player_idx_start);
-        std::cerr << player_idx_start << " " << player_idx_end << std::endl;
         res.white_player_name = ggf_str.substr(player_idx_start, player_idx_end - player_idx_start);
     }
     return res;
 }
 
 
-Game_import_t import_othello_quest_processing(std::string s, bool* failed) {
+Game_import_t import_othello_quest_processing(std::string s, bool *failed) {
+    *failed = false;
     Game_import_t res;
     String str = Unicode::Widen(s).replace(U"\r", U"").replace(U"\n", U"").replace(U" ", U"");
     History_elem start_board;
@@ -216,7 +217,6 @@ Game_import_t import_othello_quest_processing(std::string s, bool* failed) {
     if (player_idx_start != std::string::npos) {
         player_idx_start += 8;
         int player_idx_end = str.indexOf(U"\"", player_idx_start);
-        std::cerr << player_idx_start << " " << player_idx_end << std::endl;
         res.black_player_name = str.substr(player_idx_start, player_idx_end - player_idx_start);
         player_idx_offset = player_idx_end;
     }
@@ -224,9 +224,49 @@ Game_import_t import_othello_quest_processing(std::string s, bool* failed) {
     if (player_idx_start != std::string::npos) {
         player_idx_start += 8;
         int player_idx_end = str.indexOf(U"\"", player_idx_start);
-        std::cerr << player_idx_start << " " << player_idx_end << std::endl;
         res.white_player_name = str.substr(player_idx_start, player_idx_end - player_idx_start);
     }
     return res;
 }
 
+Game_import_t import_any_format_processing(std::string s, bool *failed) {
+    Game_import_t res;
+    bool f;
+    *failed = true;
+    res = import_ggf_processing(s, &f);
+    if (!f) {
+        *failed = false;
+        std::cerr << "imported as GGF" << std::endl;
+        return res;
+    }
+    res = import_othello_quest_processing(s, &f);
+    if (!f) {
+        *failed = false;
+        std::cerr << "imported as Othello Quest" << std::endl;
+        return res;
+    }
+    History_elem history_elem;
+    Board h_bd;
+    h_bd.reset();
+    history_elem.set(h_bd, BLACK, GRAPH_IGNORE_VALUE, -1, -1, -1, "");
+    res.history.emplace_back(history_elem);
+    res.history = import_transcript_processing(res.history, history_elem, s, &f);
+    if (!f) {
+        *failed = false;
+        std::cerr << "imported as Transcript" << std::endl;
+        return res;
+    }
+    res.history.clear();
+    std::pair<Board, int> board_player = import_board_processing(s, &f);
+    if (!f) {
+        history_elem.reset();
+        res.history.emplace_back(history_elem);
+        history_elem.board = board_player.first;
+        history_elem.player = board_player.second;
+        res.history.emplace_back(history_elem);
+        *failed = false;
+        std::cerr << "imported as Board String" << std::endl;
+        return res;
+    }
+    return res;
+}
