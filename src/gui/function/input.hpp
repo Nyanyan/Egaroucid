@@ -211,6 +211,10 @@ Game_import_t import_othello_quest_processing(std::string s, bool *failed) {
         offset = coord_start_idx + 2;
     }
     std::cerr << "import " << transcript << std::endl;
+    if (transcript.size() == 0) {
+        *failed = true;
+        return res;
+    }
     res.history = import_transcript_processing(res.history, start_board, transcript, failed);
     int player_idx_offset = str.indexOf(U"\"players\":[{\"id\":\"");
     int player_idx_start = str.indexOf(U"\"name\":\"", player_idx_offset);
