@@ -173,16 +173,16 @@ Game_import_t import_ggf_processing(std::string ggf, bool* failed) {
     int player_idx_start = ggf_str.indexOf(U"PB[");
     if (player_idx_start != std::string::npos) {
         player_idx_start += 3;
-        int b_player_idx_end = ggf_str.indexOf(U"]", player_idx_start);
-        std::cerr << player_idx_start << " " << b_player_idx_end << std::endl;
-        res.black_player_name = ggf_str.substr(player_idx_start, b_player_idx_end - player_idx_start);
+        int player_idx_end = ggf_str.indexOf(U"]", player_idx_start);
+        std::cerr << player_idx_start << " " << player_idx_end << std::endl;
+        res.black_player_name = ggf_str.substr(player_idx_start, player_idx_end - player_idx_start);
     }
     player_idx_start = ggf_str.indexOf(U"PW[");
     if (player_idx_start != std::string::npos) {
         player_idx_start += 3;
-        int b_player_idx_end = ggf_str.indexOf(U"]", player_idx_start);
-        std::cerr << player_idx_start << " " << b_player_idx_end << std::endl;
-        res.white_player_name = ggf_str.substr(player_idx_start, b_player_idx_end - player_idx_start);
+        int player_idx_end = ggf_str.indexOf(U"]", player_idx_start);
+        std::cerr << player_idx_start << " " << player_idx_end << std::endl;
+        res.white_player_name = ggf_str.substr(player_idx_start, player_idx_end - player_idx_start);
     }
     return res;
 }
@@ -211,6 +211,22 @@ Game_import_t import_othello_quest_processing(std::string s, bool* failed) {
     }
     std::cerr << "import " << transcript << std::endl;
     res.history = import_transcript_processing(res.history, start_board, transcript, failed);
+    int player_idx_offset = str.indexOf(U"\"players\":[{\"id\":\"");
+    int player_idx_start = str.indexOf(U"\"name\":\"", player_idx_offset);
+    if (player_idx_start != std::string::npos) {
+        player_idx_start += 8;
+        int player_idx_end = str.indexOf(U"\"", player_idx_start);
+        std::cerr << player_idx_start << " " << player_idx_end << std::endl;
+        res.black_player_name = str.substr(player_idx_start, player_idx_end - player_idx_start);
+        player_idx_offset = player_idx_end;
+    }
+    player_idx_start = str.indexOf(U"\"name\":\"", player_idx_offset);
+    if (player_idx_start != std::string::npos) {
+        player_idx_start += 8;
+        int player_idx_end = str.indexOf(U"\"", player_idx_start);
+        std::cerr << player_idx_start << " " << player_idx_end << std::endl;
+        res.white_player_name = str.substr(player_idx_start, player_idx_end - player_idx_start);
+    }
     return res;
 }
 
