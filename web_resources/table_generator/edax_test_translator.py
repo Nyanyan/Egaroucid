@@ -11,7 +11,7 @@ else:
     BLACK = 'Black'
     WHITE = 'White'
     head = '''<div class="table_wrapper"><table>
-<tr><th>Level</th><th>Average Discs Earned</th><th>Winning Rate</th><th>Egaroucid Win</th><th>Draw</th><th>Edax Win</th></tr>
+<tr><th>Level</th><th>Avg. Discs Earned</th><th>Winning Rate</th><th>Egaroucid Win</th><th>Draw</th><th>Edax Win</th></tr>
 '''
 
 '''

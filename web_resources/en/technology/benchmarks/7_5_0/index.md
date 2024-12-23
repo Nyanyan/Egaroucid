@@ -84,7 +84,7 @@ The average number of discs earned indicates how many more discs Egaroucid was a
 I used [XOT](https://berg.earthlingz.de/xot/index.php) for its testcases. No opening books used.
 
 <div class="table_wrapper"><table>
-<tr><th>Level</th><th>Average Discs Earned</th><th>Winning Rate</th><th>Egaroucid Win</th><th>Draw</th><th>Edax Win</th></tr>
+<tr><th>Level</th><th>Avg. Discs Earned</th><th>Winning Rate</th><th>Egaroucid Win</th><th>Draw</th><th>Edax Win</th></tr>
 <tr><td>1</td><td>10.5</td><td>0.674</td><td>1330(Black: 644 White: 686)</td><td>35(Black: 18 White: 17)</td><td>635(Black: 338 White: 297)</td></tr>
 <tr><td>5</td><td>9.042</td><td>0.727</td><td>1399(Black: 719 White: 680)</td><td>108(Black: 52 White: 56)</td><td>493(Black: 229 White: 264)</td></tr>
 <tr><td>10</td><td>1.773</td><td>0.605</td><td>1109(Black: 616 White: 493)</td><td>203(Black: 88 White: 115)</td><td>688(Black: 296 White: 392)</td></tr>
