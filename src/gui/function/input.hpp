@@ -158,12 +158,6 @@ std::vector<History_elem> import_ggf_processing(std::string ggf, bool* failed) {
         } else {
             coord_start_idx = std::min(coord_start_idx1, coord_start_idx2);
         }
-        if (coord_start_idx == std::string::npos) {
-            coord_start_idx = ggf_str.indexOf(U"W[", offset);
-            if (coord_start_idx == std::string::npos) {
-                break;
-            }
-        }
         coord_start_idx += 2;
         std::string coord = ggf_str.substr(coord_start_idx, 2).narrow();
         transcript += coord;
@@ -173,5 +167,4 @@ std::vector<History_elem> import_ggf_processing(std::string ggf, bool* failed) {
     n_history = import_transcript_processing(n_history, start_board, transcript, failed);
     return n_history;
 }
-
 
