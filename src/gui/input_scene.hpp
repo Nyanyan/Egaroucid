@@ -219,8 +219,7 @@ private:
     bool done;
     bool failed;
     std::string ggf;
-    std::vector<History_elem> n_history;
-    bool imported_from_position;
+    Game_import_t imported_game;
     TextAreaEditState text_area;
 
 public:
@@ -259,19 +258,17 @@ public:
                 changeScene(U"Main_scene", SCENE_FADE_TIME);
             }
             if (import_button.clicked() || KeyEnter.pressed()) {
-                n_history = import_ggf_processing(ggf, &failed);
+                imported_game = import_ggf_processing(ggf, &failed);
                 done = true;
             }
         } else {
             if (!failed) {
-                if (!imported_from_position) {
-                    getData().graph_resources.init();
-                    getData().graph_resources.nodes[0] = n_history;
-                    getData().graph_resources.n_discs = getData().graph_resources.nodes[0].back().board.n_discs();
-                    getData().game_information.init();
-                } else {
-                    getData().graph_resources.nodes[getData().graph_resources.branch] = n_history;
-                }
+                getData().graph_resources.init();
+                getData().graph_resources.nodes[0] = imported_game.history;
+                getData().game_information.black_player_name = imported_game.black_player_name;
+                getData().game_information.white_player_name = imported_game.white_player_name;
+                getData().graph_resources.n_discs = getData().graph_resources.nodes[0].back().board.n_discs();
+                getData().game_information.init();
                 std::string opening_name, n_opening_name;
                 for (int i = 0; i < (int)getData().graph_resources.nodes[getData().graph_resources.branch].size(); ++i) {
                     n_opening_name.clear();
@@ -312,8 +309,7 @@ private:
     bool done;
     bool failed;
     std::string str;
-    std::vector<History_elem> n_history;
-    bool imported_from_position;
+    Game_import_t imported_game;
     TextAreaEditState text_area;
 
 public:
@@ -335,7 +331,7 @@ public:
         getData().resources.logo.scaled((double)icon_width / getData().resources.logo.width()).draw(X_CENTER - icon_width / 2, 20 + icon_width);
         int sy = 20 + icon_width + 50;
         if (!done) {
-            getData().fonts.font(language.get("in_out", "input_othello_quest")).draw(25, Arg::topCenter(X_CENTER, sy), getData().colors.white);
+            getData().fonts.font(language.get("in_out", "input_ggf")).draw(25, Arg::topCenter(X_CENTER, sy), getData().colors.white);
             text_area.active = true;
             SimpleGUI::TextArea(text_area, Vec2{X_CENTER - 300, sy + 40}, SizeF{600, 130}, 10000);
             getData().fonts.font(language.get("in_out", "you_can_paste_with_ctrl_v")).draw(13, Arg::topCenter(X_CENTER, sy + 175), getData().colors.white);
@@ -352,19 +348,17 @@ public:
                 changeScene(U"Main_scene", SCENE_FADE_TIME);
             }
             if (import_button.clicked() || KeyEnter.pressed()) {
-                n_history = import_othello_quest_processing(str, &failed);
+                imported_game = import_othello_quest_processing(str, &failed);
                 done = true;
             }
         } else {
             if (!failed) {
-                if (!imported_from_position) {
-                    getData().graph_resources.init();
-                    getData().graph_resources.nodes[0] = n_history;
-                    getData().graph_resources.n_discs = getData().graph_resources.nodes[0].back().board.n_discs();
-                    getData().game_information.init();
-                } else {
-                    getData().graph_resources.nodes[getData().graph_resources.branch] = n_history;
-                }
+                getData().graph_resources.init();
+                getData().graph_resources.nodes[0] = imported_game.history;
+                getData().game_information.black_player_name = imported_game.black_player_name;
+                getData().game_information.white_player_name = imported_game.white_player_name;
+                getData().graph_resources.n_discs = getData().graph_resources.nodes[0].back().board.n_discs();
+                getData().game_information.init();
                 std::string opening_name, n_opening_name;
                 for (int i = 0; i < (int)getData().graph_resources.nodes[getData().graph_resources.branch].size(); ++i) {
                     n_opening_name.clear();

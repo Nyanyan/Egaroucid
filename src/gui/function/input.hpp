@@ -117,31 +117,36 @@ std::pair<Board, int> import_board_processing(std::string board_str, bool *faile
 }
 
 
+struct Game_import_t {
+    std::vector<History_elem> history;
+    String black_player_name;
+    String white_player_name;
+};
 
 
-std::vector<History_elem> import_ggf_processing(std::string ggf, bool* failed) {
-    std::vector<History_elem> n_history;
+Game_import_t import_ggf_processing(std::string ggf, bool* failed) {
+    Game_import_t res;
     String ggf_str = Unicode::Widen(ggf).replace(U"\r", U"").replace(U"\n", U"").replace(U" ", U"");
     int board_start_idx = ggf_str.indexOf(U"BO[8");
     if (board_start_idx == std::string::npos) {
         *failed = true;
-        return n_history;
+        return res;
     }
     board_start_idx += 4;
     if (ggf_str.size() < board_start_idx + 65) {
         *failed = true;
-        return n_history;
+        return res;
     }
     std::string start_board_str = ggf_str.substr(board_start_idx, 65).narrow();
     std::cerr << "start board " << start_board_str << std::endl;
     std::pair<Board, int> board_player = import_board_processing(start_board_str, failed);
     if (*failed) {
-        return n_history;
+        return res;
     }
     History_elem start_board;
     start_board.board = board_player.first;
     start_board.player = board_player.second;
-    n_history.emplace_back(start_board);
+    res.history.emplace_back(start_board);
     std::string transcript;
     int offset = board_start_idx + 65;
     while (true) {
@@ -164,18 +169,18 @@ std::vector<History_elem> import_ggf_processing(std::string ggf, bool* failed) {
         offset = coord_start_idx + 2;
     }
     std::cerr << "import " << start_board_str << " " << transcript << std::endl;
-    n_history = import_transcript_processing(n_history, start_board, transcript, failed);
-    return n_history;
+    res.history = import_transcript_processing(res.history, start_board, transcript, failed);
+    return res;
 }
 
 
-std::vector<History_elem> import_othello_quest_processing(std::string s, bool* failed) {
-    std::vector<History_elem> n_history;
+Game_import_t import_othello_quest_processing(std::string s, bool* failed) {
+    Game_import_t res;
     String str = Unicode::Widen(s).replace(U"\r", U"").replace(U"\n", U"").replace(U" ", U"");
     History_elem start_board;
     start_board.board.reset();
     start_board.player = BLACK;
-    n_history.emplace_back(start_board);
+    res.history.emplace_back(start_board);
     std::string transcript;
     int offset = 0;
     while (true) {
@@ -191,7 +196,7 @@ std::vector<History_elem> import_othello_quest_processing(std::string s, bool* f
         offset = coord_start_idx + 2;
     }
     std::cerr << "import " << transcript << std::endl;
-    n_history = import_transcript_processing(n_history, start_board, transcript, failed);
-    return n_history;
+    res.history = import_transcript_processing(res.history, start_board, transcript, failed);
+    return res;
 }
 
