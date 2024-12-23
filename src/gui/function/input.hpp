@@ -144,9 +144,20 @@ std::vector<History_elem> import_ggf_processing(std::string ggf, bool* failed) {
     n_history.emplace_back(start_board);
     std::string transcript;
     int offset = board_start_idx + 65;
-    int coord_start_idx;
     while (true) {
-        coord_start_idx = ggf_str.indexOf(U"B[", offset);
+        int coord_start_idx1 = ggf_str.indexOf(U"B[", offset);
+        int coord_start_idx2 = ggf_str.indexOf(U"W[", offset);
+        if (coord_start_idx1 == std::string::npos && coord_start_idx2 == std::string::npos) {
+            break;
+        }
+        int coord_start_idx;
+        if (coord_start_idx1 == std::string::npos) {
+            coord_start_idx = coord_start_idx2;
+        } else if (coord_start_idx2 == std::string::npos) {
+            coord_start_idx = coord_start_idx1;
+        } else {
+            coord_start_idx = std::min(coord_start_idx1, coord_start_idx2);
+        }
         if (coord_start_idx == std::string::npos) {
             coord_start_idx = ggf_str.indexOf(U"W[", offset);
             if (coord_start_idx == std::string::npos) {
@@ -159,6 +170,7 @@ std::vector<History_elem> import_ggf_processing(std::string ggf, bool* failed) {
         std::cerr << coord << std::endl;
         offset = coord_start_idx + 2;
     }
+    std::cerr << start_board_str << " " << transcript << std::endl;
     n_history = import_transcript_processing(n_history, start_board, transcript, failed);
     return n_history;
 }
