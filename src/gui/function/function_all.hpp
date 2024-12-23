@@ -14,6 +14,7 @@
 
 #include "button.hpp"
 #include "graph.hpp"
+#include "input.hpp"
 #include "language.hpp"
 #include "menu.hpp"
 #include "menu_definition.hpp"
