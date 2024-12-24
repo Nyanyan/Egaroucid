@@ -137,7 +137,7 @@
 #define LAST_PO_OPTIMIZE true
 
 // use parallel clog search
-#define USE_PARALLEL_CLOG_SEARCH false
+#define USE_PARALLEL_CLOG_SEARCH true
 
 // MPC pre calculation
 #define USE_MPC_PRE_CALCULATION true
