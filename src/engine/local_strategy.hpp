@@ -91,7 +91,7 @@ void print_local_strategy(const double arr[]) {
     }
 }
 
-void calc_local_strategy_player(Board board, int level, double res[], int player, bool *searching, int *done_level, bool show_log) {
+void calc_local_strategy_player(Board board, int max_level, double res[], int player, bool *searching, int *done_level, bool show_log) {
     for (int cell = 0; cell < HW2; ++cell) {
         res[cell] = 0.0;
     }
