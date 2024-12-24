@@ -91,7 +91,7 @@ void print_local_strategy(const double arr[]) {
     }
 }
 
-void calc_local_strategy(Board board, int max_level, double res[], bool *searching, int *done_level, bool show_log) {
+void calc_local_strategy_player(Board board, int level, double res[], int player, bool *searching, int *done_level, bool show_log) {
     for (int cell = 0; cell < HW2; ++cell) {
         res[cell] = 0.0;
     }
@@ -162,6 +162,11 @@ void calc_local_strategy(Board board, int max_level, double res[], bool *searchi
             for (int cell = 0; cell < HW2; ++cell) {
                 res[cell] = std::tanh(0.2 * value_diffs[cell]); // 10 discs ~ 1.0
             }
+            if (player == WHITE) {
+                for (int cell = 0; cell < HW2; ++cell) {
+                    res[cell] *= -1;
+                }
+            }
             /*
             if (show_log) {
                 print_local_strategy(res);
@@ -176,14 +181,6 @@ void calc_local_strategy(Board board, int max_level, double res[], bool *searchi
 }
 
 
-void calc_local_strategy_player(Board board, int level, double res[], int player, bool *searching, int *done_level, bool show_log) {
-    calc_local_strategy(board, level, res, searching, done_level, show_log);
-    if (player == WHITE) {
-        for (int cell = 0; cell < HW2; ++cell) {
-            res[cell] *= -1;
-        }
-    }
-}
 
 
 #if TUNE_LOCAL_STRATEGY
