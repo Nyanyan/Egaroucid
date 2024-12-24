@@ -123,6 +123,7 @@ code {
     border-radius: 3px;
     border: solid 1px #d6dde4;
     font-family: Consolas, Menlo, Monaco, -apple-system, BlinkMacSystemFont, "Segoe UI", Meiryo, monospace;
+    word-break: break-all;
 }
 
 .footer{
