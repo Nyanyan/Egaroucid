@@ -23,6 +23,8 @@
 #include "util.hpp"
 #include "stability.hpp"
 #include "evaluate.hpp"
+#include "level.hpp"
+#include "transposition_table.hpp"
 
 constexpr int CLOG_NOT_FOUND = -127;
 
@@ -196,16 +198,15 @@ int clog_search(Search *search, int depth, bool *searching) {
     @param n_nodes              number of nodes visited
     @return vector of all moves and scores that leads early game over
 */
-std::vector<Clog_result> first_clog_search(Board board, uint64_t *n_nodes, int depth, uint64_t legal) {
+std::vector<Clog_result> first_clog_search(Board board, uint64_t *n_nodes, int depth, uint64_t legal, bool *searching) {
     Search search(&board, MPC_100_LEVEL, true, false);
     std::vector<Clog_result> res;
     Flip flip;
     int g;
-    bool searching = true;
     for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)) {
         calc_flip(&flip, &search.board, cell);
         search.move(&flip);
-            g = clog_search(&search, depth - 1, &searching);
+            g = clog_search(&search, depth - 1, searching);
             if (g != CLOG_NOT_FOUND) {
                 Clog_result result;
                 result.pos = cell;

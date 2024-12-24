@@ -427,7 +427,7 @@ inline Search_result tree_search_legal(Board board, int alpha, int beta, int dep
         if (use_time_limit) {
             clog_depth = CLOG_SEARCH_MAX_DEPTH;
         }
-        clogs = first_clog_search(board, &clog_nodes, clog_depth, use_legal);
+        clogs = first_clog_search(board, &clog_nodes, clog_depth, use_legal, searching);
         clog_time = tim() - strt;
         if (show_log) {
             std::cerr << "clog search depth " << clog_depth << " time " << clog_time << " nodes " << clog_nodes << " nps " << calc_nps(clog_nodes, clog_time) << std::endl;
@@ -789,18 +789,18 @@ Analyze_result ai_analyze(Board board, int level, bool use_multi_thread, uint_fa
     get_level(level, board.n_discs() - 4, &is_mid_search, &depth, &mpc_level);
     depth = std::min(HW2 - board.n_discs(), depth);
     bool is_end_search = (HW2 - board.n_discs() == depth);
+    bool searching = true;
     std::vector<Clog_result> clogs;
     uint64_t clog_nodes = 0;
     uint64_t clog_time = 0;
     int clog_depth = std::min(depth, CLOG_SEARCH_MAX_DEPTH);
     if (mpc_level != MPC_100_LEVEL) {
         uint64_t clog_strt = tim();
-        clogs = first_clog_search(board, &clog_nodes, clog_depth, board.get_legal());
+        clogs = first_clog_search(board, &clog_nodes, clog_depth, board.get_legal(), &searching);
         clog_time = tim() - clog_strt;
     }
     Search search(&board, mpc_level, use_multi_thread, false);
     uint64_t strt = tim();
-    bool searching = true;
     //thread_pool.tell_start_using();
     Analyze_result res = first_nega_scout_analyze(&search, -SCORE_MAX, SCORE_MAX, depth, is_end_search, clogs, clog_depth, played_move, strt, &searching);
     //thread_pool.tell_finish_using();

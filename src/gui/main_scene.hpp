@@ -594,29 +594,29 @@ private:
     void menu_manipulate() {
         if (getData().menu_elements.stop_calculating || shortcut_key == U"stop_calculating") {
             stop_calculating();
-            reset_hint();
-            reset_pv();
-            reset_local_strategy();
             resume_calculating();
         }
         if (!ai_status.analyzing) {
             if ((getData().menu_elements.put_1_move_by_ai || shortcut_key == U"put_1_move_by_ai") && !ai_status.ai_thinking) {
+                stop_calculating();
+                resume_calculating();
                 putting_1_move_by_ai = true;
                 ai_move();
             }
             if (getData().menu_elements.backward) {
+                stop_calculating();
                 --getData().graph_resources.n_discs;
                 getData().graph_resources.delta = -1;
+                resume_calculating();
             }
             if (getData().menu_elements.forward) {
+                stop_calculating();
                 ++getData().graph_resources.n_discs;
                 getData().graph_resources.delta = 1;
+                resume_calculating();
             }
             if ((getData().menu_elements.undo || shortcut_key == U"undo") && getData().book_information.changing == BOOK_CHANGE_NO_CELL) {
                 stop_calculating();
-                reset_hint();
-                reset_pv();
-                reset_local_strategy();
                 resume_calculating();
                 int n_discs_before = getData().history_elem.board.n_discs();
                 while (getData().graph_resources.nodes[getData().graph_resources.branch].back().board.n_discs() >= n_discs_before && 
