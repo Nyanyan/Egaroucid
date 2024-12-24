@@ -41,11 +41,12 @@ res = '<div class="table_wrapper"><table>\n'
 res += '<tr><th>' + VERSION + '</th>'
 for elem in table[0]:
     res += '<td>' + elem + '</td>'
+res += '</tr>'
 
 res += '<tr><th>' + RELEASE_DATE + '</th>'
 for elem in table[1]:
     res += '<td>' + elem + '</td>'
-
+res += '</tr>'
 res += '\n</table></div>'
 
 pyperclip.copy(res)
