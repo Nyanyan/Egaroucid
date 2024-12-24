@@ -97,7 +97,7 @@ void calc_local_strategy(Board board, int max_level, double res[], bool *searchi
     }
     uint64_t legal = board.get_legal();
     double value_diffs[HW2];
-    for (int level = 1; level < max_level; ++level) {
+    for (int level = 1; level < max_level && *searching && global_searching; ++level) {
         Search_result complete_result = ai_searching(board, level, true, 0, true, false, searching);
         if (show_log) {
             std::cerr << "result " << complete_result.value << std::endl;
