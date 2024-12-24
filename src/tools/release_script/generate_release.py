@@ -43,7 +43,7 @@ def copy_common_files(correct_task_type, dst_dir_root):
 print('\n')
 print('<<<<<<<< Egaroucid for Console >>>>>>>>')
 CONSOLE_DST_DIR = DST_ROOT + '/' + VERSION_UNDERBAR + '/console'
-CONSOLE_IN_EXES_DIR = FORMAT_FILES_DIR + '/console_exes'
+CONSOLE_IN_EXES_DIR = FORMAT_FILES_DIR + '/1_console_exes'
 CONSOLE_IN_FILES_DIR = FORMAT_FILES_DIR + '/console_files'
 os.mkdir(CONSOLE_DST_DIR)
 console_exes = glob.glob(CONSOLE_IN_EXES_DIR + '/*.exe')
@@ -70,7 +70,7 @@ print('<<<<<<<< Egaroucid Installer >>>>>>>>')
 INSTALLER_DST_DIR = DST_ROOT + '/' + VERSION_UNDERBAR + '/GUI_Installer'
 INSTALLER_DST_FILES_DIR = INSTALLER_DST_DIR + '/files'
 INSTALLER_DST_INSTALLER_DIR = INSTALLER_DST_DIR + '/installer'
-INSTALLER_IN_EXES_DIR = FORMAT_FILES_DIR + '/GUI_Installer_exes'
+INSTALLER_IN_EXES_DIR = FORMAT_FILES_DIR + '/2_GUI_Installer_exes'
 INSTALLER_IN_FILES_DIR = FORMAT_FILES_DIR + '/GUI_Installer_files'
 INSTALLER_IN_SETUP_FILE = FORMAT_FILES_DIR + '/GUI_Installer_setup/egaroucid_setup.iss'
 os.mkdir(INSTALLER_DST_DIR)
@@ -97,7 +97,7 @@ copy_common_files('installer', INSTALLER_DST_FILES_DIR) # copy common special fi
 print('\n')
 print('<<<<<<<< Egaroucid Portable >>>>>>>>')
 PORTABLE_DST_DIR = DST_ROOT + '/' + VERSION_UNDERBAR + '/GUI_Portable'
-PORTABLE_IN_EXES_DIR = FORMAT_FILES_DIR + '/GUI_Portable_exes'
+PORTABLE_IN_EXES_DIR = FORMAT_FILES_DIR + '/3_GUI_Portable_exes'
 PORTABLE_IN_FILES_DIR = FORMAT_FILES_DIR + '/GUI_Portable_files'
 os.mkdir(PORTABLE_DST_DIR)
 portable_exes = glob.glob(PORTABLE_IN_EXES_DIR + '/*.exe')
