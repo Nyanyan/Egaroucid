@@ -365,27 +365,44 @@ public:
 private:
     void reset_ai() {
         ai_status.ai_thinking = false;
+        if (ai_status.ai_future.valid()) {
+            ai_status.ai_future.get();
+        }
     }
 
     void reset_hint() {
         ai_status.hint_calculating = false;
         ai_status.hint_calculated = false;
+        if (ai_status.hint_future.valid()) {
+            ai_status.hint_future.get();
+        }
     }
 
     void reset_pv() {
         ai_status.pv_calculating = false;
         ai_status.pv_calculated = false;
+        if (ai_status.pv_future.valid()) {
+            ai_status.pv_future.get();
+        }
         principal_variation = "";
     }
 
     void reset_local_strategy() {
         ai_status.local_strategy_calculating = false;
         ai_status.local_strategy_calculated = false;
+        if (ai_status.local_strategy_future.valid()) {
+            ai_status.local_strategy_future.get();
+        }
     }
 
     void reset_analyze() {
         ai_status.analyzing = false;
         ai_status.analyze_task_stack.clear();
+        for (int i = 0; i < ANALYZE_SIZE; ++i) {
+            if (ai_status.analyze_future[i].valid()) {
+                ai_status.analyze_future[i].get();
+            }
+        }
     }
 
     void reset_book_additional_features() {

@@ -152,17 +152,21 @@ void calc_local_strategy(Board board, int max_level, double res[], bool *searchi
             }
         }
         if (*searching && global_searching) {
+            /*
             if (show_log) {
                 std::cerr << "value_diffs" << std::endl;
                 print_local_strategy(value_diffs);
                 std::cerr << std::endl;
             }
+            */
             for (int cell = 0; cell < HW2; ++cell) {
                 res[cell] = std::tanh(0.2 * value_diffs[cell]); // 10 discs ~ 1.0
             }
+            /*
             if (show_log) {
                 print_local_strategy(res);
             }
+            */
             *done_level = level;
             if (show_log) {
                 std::cerr << "local strategy level " << level << std::endl;

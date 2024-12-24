@@ -25,6 +25,7 @@
 #include "evaluate.hpp"
 #include "level.hpp"
 #include "transposition_table.hpp"
+#include "move_ordering.hpp"
 
 constexpr int CLOG_NOT_FOUND = -127;
 
@@ -173,7 +174,7 @@ int clog_search(Search *search, int depth, bool *searching) {
         }
     }
 #else
-    for (int move_idx = 0; move_idx < canput && res < beta && *searching; ++move_idx) {
+    for (int move_idx = 0; move_idx < canput && res < beta && *searching && global_searching; ++move_idx) {
         swap_next_best_move(move_list, move_idx, canput);
         search->move(&move_list[move_idx].flip);
             g = clog_search(search, depth - 1, searching);
@@ -203,7 +204,7 @@ std::vector<Clog_result> first_clog_search(Board board, uint64_t *n_nodes, int d
     std::vector<Clog_result> res;
     Flip flip;
     int g;
-    for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)) {
+    for (uint_fast8_t cell = first_bit(&legal); legal && *searching && global_searching; cell = next_bit(&legal)) {
         calc_flip(&flip, &search.board, cell);
         search.move(&flip);
             g = clog_search(&search, depth - 1, searching);
