@@ -39,14 +39,17 @@ res = '<div class="table_wrapper"><table>\n'
 res += '<tr><th>' + NAME + '</th>'
 for elem in table[0]:
     res += '<td>' + elem + '</td>'
+res += '</tr>'
 
 res += '<tr><th>' + WIN_RATE + '</th>'
 for elem in table[1]:
     res += '<td>' + elem + '</td>'
+res += '</tr>'
 
 res += '<tr><th>' + DISCS_EARNED + '</th>'
 for elem in table[2]:
     res += '<td>' + elem + '</td>'
+res += '</tr>'
 
 res += '\n</table></div>'
 

@@ -7,7 +7,6 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		2C17789A1CE0AA7C00BB8AD0 /* Main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C1778991CE0AA7C00BB8AD0 /* Main.cpp */; };
 		2C1778A31CE0B65500BB8AD0 /* icon.icns in Resources */ = {isa = PBXBuildFile; fileRef = 2C1778A21CE0B65500BB8AD0 /* icon.icns */; };
 		2C5C46DD26B4F00D005E8C85 /* libcurl.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = 2C5C46DC26B4F00D005E8C85 /* libcurl.tbd */; };
 		2C5C46DF26B4F014005E8C85 /* AudioToolbox.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 2C5C46DE26B4F014005E8C85 /* AudioToolbox.framework */; };
@@ -36,6 +35,7 @@
 		2C5C470F26B4F08A005E8C85 /* libopus.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 2C5C470D26B4F08A005E8C85 /* libopus.a */; };
 		2C5C471126B4F08E005E8C85 /* libzlib.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 2C5C471026B4F08E005E8C85 /* libzlib.a */; };
 		2CD8412C283263B2005013A6 /* libboost_filesystem.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 2CD8412B283263B2005013A6 /* libboost_filesystem.a */; };
+		5AAB240E2D1AF74700D81B94 /* Egaroucid.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 5AAB240D2D1AF74700D81B94 /* Egaroucid.cpp */; };
 		5AB111E12CE0787400CE501D /* engine in Resources */ = {isa = PBXBuildFile; fileRef = 5AB111E02CE0787400CE501D /* engine */; };
 		5AB111E72CE0847D00CE501D /* LICENSE in Resources */ = {isa = PBXBuildFile; fileRef = 5AB111E62CE0847D00CE501D /* LICENSE */; };
 /* End PBXBuildFile section */
@@ -43,7 +43,6 @@
 /* Begin PBXFileReference section */
 		2C1778841CE0A9EA00BB8AD0 /* Egaroucid.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Egaroucid.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		2C1778921CE0A9EA00BB8AD0 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
-		2C1778991CE0AA7C00BB8AD0 /* Main.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Main.cpp; sourceTree = "<group>"; };
 		2C1778A21CE0B65500BB8AD0 /* icon.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; path = icon.icns; sourceTree = "<group>"; };
 		2C5C46DC26B4F00D005E8C85 /* libcurl.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = libcurl.tbd; path = usr/lib/libcurl.tbd; sourceTree = SDKROOT; };
 		2C5C46DE26B4F014005E8C85 /* AudioToolbox.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AudioToolbox.framework; path = System/Library/Frameworks/AudioToolbox.framework; sourceTree = SDKROOT; };
@@ -72,10 +71,7 @@
 		2C5C470D26B4F08A005E8C85 /* libopus.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libopus.a; path = ../../lib/macOS/opus/libopus.a; sourceTree = "<group>"; };
 		2C5C471026B4F08E005E8C85 /* libzlib.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libzlib.a; path = ../../lib/macOS/zlib/libzlib.a; sourceTree = "<group>"; };
 		2CD8412B283263B2005013A6 /* libboost_filesystem.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libboost_filesystem.a; path = ../../lib/macOS/boost/libboost_filesystem.a; sourceTree = "<group>"; };
-		5AB10A032CE070D200CE501D /* Egaroucid_console.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = Egaroucid_console.cpp; sourceTree = "<group>"; };
-		5AB10A042CE070D200CE501D /* Egaroucid_light.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = Egaroucid_light.cpp; sourceTree = "<group>"; };
-		5AB10A052CE070D200CE501D /* Egaroucid_web.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = Egaroucid_web.cpp; sourceTree = "<group>"; };
-		5AB10A062CE070D200CE501D /* Egaroucid_web_compile_cmd.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = Egaroucid_web_compile_cmd.txt; sourceTree = "<group>"; };
+		5AAB240D2D1AF74700D81B94 /* Egaroucid.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = Egaroucid.cpp; sourceTree = "<group>"; };
 		5AB111E02CE0787400CE501D /* engine */ = {isa = PBXFileReference; lastKnownFileType = folder; name = engine; path = App/engine; sourceTree = "<group>"; };
 		5AB111E62CE0847D00CE501D /* LICENSE */ = {isa = PBXFileReference; lastKnownFileType = text; path = LICENSE; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -147,11 +143,7 @@
 		2C1778981CE0AA7C00BB8AD0 /* src */ = {
 			isa = PBXGroup;
 			children = (
-				2C1778991CE0AA7C00BB8AD0 /* Main.cpp */,
-				5AB10A032CE070D200CE501D /* Egaroucid_console.cpp */,
-				5AB10A042CE070D200CE501D /* Egaroucid_light.cpp */,
-				5AB10A052CE070D200CE501D /* Egaroucid_web.cpp */,
-				5AB10A062CE070D200CE501D /* Egaroucid_web_compile_cmd.txt */,
+				5AAB240D2D1AF74700D81B94 /* Egaroucid.cpp */,
 				5AB110B42CE0740200CE501D /* engine */,
 				5AB110D52CE0740200CE501D /* gui */,
 			);
@@ -273,7 +265,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "# Type a script or drag a script file from your workspace to insert its path.\nTARGET_RESOURCES=\"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/resources\"\n\nmkdir -p \"${TARGET_RESOURCES}\"\n\ncp -r ${SRCROOT}/src/tools/release_script/format_files/GUI_Installer_files/resources/* ${TARGET_RESOURCES}/\ncp -r ${SRCROOT}/src/tools/release_script/format_files/0_common_files/* ${TARGET_RESOURCES}/\n\n";
+			shellScript = "# Type a script or drag a script file from your workspace to insert its path.\nTARGET_RESOURCES=\"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}\"\n\n\ncp -r ${SRCROOT}/bin/resources ${TARGET_RESOURCES}/\n\n";
 		};
 /* End PBXShellScriptBuildPhase section */
 
@@ -282,7 +274,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				2C17789A1CE0AA7C00BB8AD0 /* Main.cpp in Sources */,
+				5AAB240E2D1AF74700D81B94 /* Egaroucid.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

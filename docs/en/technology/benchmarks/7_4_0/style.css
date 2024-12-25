@@ -123,6 +123,7 @@ code {
     border-radius: 3px;
     border: solid 1px #d6dde4;
     font-family: Consolas, Menlo, Monaco, -apple-system, BlinkMacSystemFont, "Segoe UI", Meiryo, monospace;
+    word-break: break-all;
 }
 
 .footer{
@@ -173,7 +174,7 @@ summary {
     text-decoration: none;
     background-color:  #2a7253;
     color: white;
-    font-size: min(16pt, 4vw);
+    font-size: min(17pt, 5vw);
     padding: 20px;
     border-radius: 13pt;
 }
@@ -181,6 +182,10 @@ summary {
 .download_button_container {
     margin: max(4%, 30px) auto;
     text-align: center;
+}
+
+.download_icon {
+    height: min(17pt, 5vw);
 }
 
 .util_wrapper {
