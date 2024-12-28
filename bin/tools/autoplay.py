@@ -9,7 +9,7 @@ IDX_END = int(sys.argv[3])
 
 LEVEL = 30
 #N_GAMES_PER_FILE = 10000
-N_GAMES_PER_FILE = 300
+N_GAMES_PER_FILE = 500
 N_THREAD = 31
 
 def fill0(n, r):
@@ -18,7 +18,8 @@ def fill0(n, r):
 
 exe = './../Egaroucid_for_Console_clang.exe'
 
-cmd = exe + ' -nobook -l ' + str(LEVEL) + ' -thread ' + str(N_THREAD) + ' -selfplay ' + str(N_GAMES_PER_FILE) + ' ' + str(n_random_moves)
+#cmd = exe + ' -nobook -l ' + str(LEVEL) + ' -thread ' + str(N_THREAD) + ' -selfplay ' + str(N_GAMES_PER_FILE) + ' ' + str(n_random_moves)
+cmd = exe + ' -l ' + str(LEVEL) + ' -thread ' + str(N_THREAD) + ' -selfplay ' + str(N_GAMES_PER_FILE) + ' ' + str(n_random_moves)
 print(cmd)
 
 for idx in range(IDX_START, IDX_END + 1):
