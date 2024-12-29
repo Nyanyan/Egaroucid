@@ -44,6 +44,13 @@ std::string get_str(Board board, int turn_color) {
     return res;
 }
 
+uint64_t shift(int cell, int n_shift) {
+    if (cell + n_shift < 0) {
+        return 1ULL >> -(cell + n_shift);
+    }
+    return 1ULL << (cell + n_shift);
+}
+
 int main(int argc, char *argv[]){
     if (argc < 3){
         std::cerr << "input [n_discs] [n_problems]" << std::endl;
@@ -85,25 +92,26 @@ int main(int argc, char *argv[]){
     for (int i = 0; i < n_problems; ++i) {
         board.player = 0;
         board.opponent = 0;
+        int n_shift = myrandrange(-27, 28);
         std::shuffle(cells.begin(), cells.end(), engine);
         for (int cell: cells_always) {
             if (myrandom() < 0.5) {
-                board.player |= 1ULL << cell;
+                board.player |= shift(cell, n_shift);
             } else {
-                board.opponent |= 1ULL << cell;
+                board.opponent |= shift(cell, n_shift);
             }
         }
         for (int j = 0; j < n_discs - (int)cells_always.size(); ++j) {
             if (myrandom() < 0.5) {
-                board.player |= 1ULL << cells[j];
+                board.player |= shift(cells[j], n_shift);
             } else {
-                board.opponent |= 1ULL << cells[j];
+                board.opponent |= shift(cells[j], n_shift);
             }
         }
         bool result_used = false;
         Search search(&board, MPC_100_LEVEL, true, false);
         bool searching = true;
-        int clog_result = clog_search(&search, 5, &searching);
+        int clog_result = clog_search(&search, 6, &searching);
         if (clog_result == CLOG_NOT_FOUND) {
             //Search_result search_result = ai(board, 21, false, 0, true, false);
             //if (std::abs(search_result.value) <= 10) {
