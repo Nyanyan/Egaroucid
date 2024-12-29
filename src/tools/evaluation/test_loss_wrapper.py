@@ -54,7 +54,7 @@ data_nums = [[] for _ in range(60)]
 for i in range(12):
     data_nums[i].append(80)
 for i in range(12, 60):
-    data_nums[i].append(38)
+    data_nums[i].append(81)
 #for i in range(60):
 #    data_nums[i].append(37)
 #'''

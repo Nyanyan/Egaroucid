@@ -67,7 +67,6 @@ board_sub_dir_nums.sort()
 bin_root_dir = './../../../train_data/bin_data/20240925_1/'
 exe = 'data_board_to_idx_20240925_1_7_4.out'
 N_PHASES = 60
-'''
 board_sub_dir_nums = [
     18, 19, 20, 21, 24, 25, 27, 28, 29, 30, 31, # old data
     34, 35, # mid-endgame data 1
@@ -79,10 +78,6 @@ board_sub_dir_nums = [
     75, 
     76,
 ]
-'''
-#board_sub_dir_nums = [65, 66, 67, 68, 69, 70, 71, 72, 73, 74]
-#board_sub_dir_nums = [75]
-board_sub_dir_nums = [76]
 board_sub_dir_nums.sort()
 #'''
 
@@ -96,13 +91,16 @@ board_sub_dir_nums = [
     34, 35, # mid-endgame data 1
     #36, # first11 book (old)
     37, # book data
-    38, # test data
+    38, # old test data
     39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 57, 60, 61, 62, 63, # mid-endgame data 2
     65, 66, 67, 68, 69, 70, 71, 72, 73, 74, # Egaroucid 7.4.0 1000000 data
     77,  # random 18 discs (GGS)
     78, 79, # random 11 & 12 (bug fixed)
-    80 # new first11 book
+    80, # new first11 book
+    81, # test data
+    82 # random 12
 ]
+board_sub_dir_nums = [82]
 board_sub_dir_nums.sort()
 #'''
 
@@ -219,6 +217,9 @@ board_n_moves['78'] = [12, 59] # random11 all cut 5999816 games bug fixed (recor
 board_n_moves['79'] = [12, 59] # random12 all cut 7799640 games bug fixed (records75)
 
 board_n_moves['80'] = [0, 11] # new first11 book book_size 23259291
+board_n_moves['81'] = [12, 59] # new test data      8702 games
+
+board_n_moves['82'] = [12, 59] # random12           6892063 games
 
 
 procs = []
