@@ -46,7 +46,9 @@ std::string get_str(Board board, int turn_color) {
 
 uint64_t shift(int cell, int n_shift) {
     if (cell + n_shift < 0) {
-        return 1ULL >> -(cell + n_shift);
+        return 1ULL << (cell + n_shift + 64);
+    } else if (cell + n_shift >= 64) {
+        return 1ULL << (cell + n_shift - 64);
     }
     return 1ULL << (cell + n_shift);
 }
@@ -108,17 +110,24 @@ int main(int argc, char *argv[]){
                 board.opponent |= shift(cells[j], n_shift);
             }
         }
+        if (board.n_discs() != n_discs) {
+            std::cerr << "ERR" << std::endl;
+            std::cerr << n_shift << " " << cells[0] << std::endl;
+            board.print();
+            return 1;
+        }
         bool result_used = false;
-        Search search(&board, MPC_100_LEVEL, true, false);
-        bool searching = true;
-        uint64_t n_nodes = 0;
-        int clog_size = first_clog_search(board, &n_nodes, 6, board.get_legal(), &searching).size();
-        if (clog_size == 0) {
-            //Search_result search_result = ai(board, 21, false, 0, true, false);
-            //if (std::abs(search_result.value) <= 10) {
-            std::cout << get_str(board, turn_color) << std::endl;
-            result_used = true;
-            //}
+        if (board.get_legal()) {
+            bool searching = true;
+            uint64_t n_nodes = 0;
+            int clog_size = first_clog_search(board, &n_nodes, 6, board.get_legal(), &searching).size();
+            if (clog_size == 0) {
+                //Search_result search_result = ai(board, 21, false, 0, true, false);
+                //if (std::abs(search_result.value) <= 10) {
+                std::cout << get_str(board, turn_color) << std::endl;
+                result_used = true;
+                //}
+            }
         }
         if (!result_used) {
             --i;
