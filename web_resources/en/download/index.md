@@ -6,6 +6,8 @@ There are Install version and Portable version. With Install version, you should
 
 ## Install Version
 
+<b>If you installed Egaroucid 7.5.0 until 2024/12/29, you may have a problem with saving screenshots. Please re-install it with new installer here!</b>
+
 Please download an installer from this button. Then run the installer and install it!
 
 REPLACE_DOWNLOAD_BUTTON_HERE
