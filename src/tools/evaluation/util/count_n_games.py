@@ -15,8 +15,9 @@ dirs = [
     #'records16',
     #'records17',
     #'records18',
-    'records19',
+    #'records19',
     #'records99',
+    'records81',
 ]
 
 n_all_lines = 0
