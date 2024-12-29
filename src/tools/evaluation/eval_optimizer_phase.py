@@ -109,7 +109,8 @@ train_data_nums = [
     77,  # random 18 discs (GGS)
     78, 79, # random 11 & 12 (bug fixed)
     80, # new first11 book
-    #81 # test data
+    #81, # test data
+    82 # random 12
 ]
 if int(phase) <= 11:
     train_data_nums = [37, 80] # use only book with phase <= 11
