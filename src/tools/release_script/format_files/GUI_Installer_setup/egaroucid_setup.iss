@@ -49,17 +49,9 @@ Source: "{#EGAROUCID_RELEASE_DIR}\installer\{#EGAROUCID_SIMD_EXE}"; DestDir: "{a
 Source: "{#EGAROUCID_RELEASE_DIR}\installer\{#EGAROUCID_GENERIC_EXE}"; DestDir: "{app}"; Flags: ignoreversion; Check: ShouldInstall_GENERIC
 Source: "{#EGAROUCID_RELEASE_DIR}\installer\{#EGAROUCID_AVX512_EXE}"; DestDir: "{app}"; Flags: ignoreversion; Check: ShouldInstall_AVX512
 Source: "{#EGAROUCID_RELEASE_DIR}\files\LICENSE"; DestDir: "{app}";
-Source: "{#EGAROUCID_RELEASE_DIR}\files\resources\*"; DestDir: "{app}\resources";
-Source: "{#EGAROUCID_RELEASE_DIR}\files\resources\img\*"; DestDir: "{app}\resources\img";
-Source: "{#EGAROUCID_RELEASE_DIR}\files\resources\languages\*"; DestDir: "{app}\resources\languages";
-Source: "{#EGAROUCID_RELEASE_DIR}\files\resources\hash\*"; DestDir: "{app}\resources\hash";
-Source: "{#EGAROUCID_RELEASE_DIR}\files\resources\openings\*"; DestDir: "{app}\resources\openings";
-Source: "{#EGAROUCID_RELEASE_DIR}\files\resources\openings\japanese\*"; DestDir: "{app}\resources\openings\japanese";
-Source: "{#EGAROUCID_RELEASE_DIR}\files\resources\openings\english\*"; DestDir: "{app}\resources\openings\english";
-Source: "{#EGAROUCID_RELEASE_DIR}\files\AppData\Egaroucid\*"; DestDir: "{userappdata}\Local\Egaroucid";
-Source: "{#EGAROUCID_RELEASE_DIR}\files\Documents\Egaroucid\*"; DestDir: "{userdocs}\Egaroucid";
-Source: "{#EGAROUCID_RELEASE_DIR}\files\Documents\Egaroucid\games\*"; DestDir: "{userdocs}\Egaroucid\records";
-Source: "{#EGAROUCID_RELEASE_DIR}\files\Documents\Egaroucid\screenshots\*"; DestDir: "{userdocs}\Egaroucid\records";
+Source: "{#EGAROUCID_RELEASE_DIR}\files\resources\*"; DestDir: "{app}\resources"; Flags: recursesubdirs;
+Source: "{#EGAROUCID_RELEASE_DIR}\files\AppData\Egaroucid\*"; DestDir: "{userappdata}\Local\Egaroucid"; Flags: recursesubdirs;
+Source: "{#EGAROUCID_RELEASE_DIR}\files\Documents\Egaroucid\*"; DestDir: "{userdocs}\Egaroucid"; Flags: recursesubdirs;
 ; NOTE: Don't use "Flags: ignoreversion" on any shared system files
 
 [Icons]
