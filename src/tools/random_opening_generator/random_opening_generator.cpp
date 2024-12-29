@@ -11,7 +11,7 @@
 #include <iterator>
 #include "./../../engine/ai.hpp"
 
-constexpr int THREAD_SIZE = 8;
+constexpr int THREAD_SIZE = 0;
 
 std::string get_str(Board board, int turn_color) {
     std::string res;
@@ -111,8 +111,9 @@ int main(int argc, char *argv[]){
         bool result_used = false;
         Search search(&board, MPC_100_LEVEL, true, false);
         bool searching = true;
-        int clog_result = clog_search(&search, 6, &searching);
-        if (clog_result == CLOG_NOT_FOUND) {
+        uint64_t n_nodes = 0;
+        int clog_size = first_clog_search(board, &n_nodes, 6, board.get_legal(), &searching).size();
+        if (clog_size == 0) {
             //Search_result search_result = ai(board, 21, false, 0, true, false);
             //if (std::abs(search_result.value) <= 10) {
             std::cout << get_str(board, turn_color) << std::endl;
