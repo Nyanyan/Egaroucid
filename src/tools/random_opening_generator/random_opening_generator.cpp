@@ -11,6 +11,8 @@
 #include <iterator>
 #include "./../../engine/ai.hpp"
 
+constexpr int THREAD_SIZE = 8;
+
 std::string get_str(Board board, int turn_color) {
     std::string res;
     for (int cell = HW2 - 1; cell >= 0; --cell) {
@@ -48,6 +50,7 @@ int main(int argc, char *argv[]){
         return 1;
     }
 
+    thread_pool.resize(THREAD_SIZE);
     bit_init();
     mobility_init();
     flip_init();
@@ -70,9 +73,12 @@ int main(int argc, char *argv[]){
 
     Board board;
 
+    std::vector<int> cells_always = {27, 28, 35, 36};
     std::vector<int> cells;
     for (int i = 0; i < HW2; ++i) {
-        cells.emplace_back(i);
+        if (std::find(cells_always.begin(), cells_always.end(), i) == cells_always.end()) {
+            cells.emplace_back(i);
+        }
     }
     std::random_device seed_gen;
     std::mt19937 engine(seed_gen());
@@ -80,7 +86,14 @@ int main(int argc, char *argv[]){
         board.player = 0;
         board.opponent = 0;
         std::shuffle(cells.begin(), cells.end(), engine);
-        for (int j = 0; j < n_discs; ++j) {
+        for (int cell: cells_always) {
+            if (myrandom() < 0.5) {
+                board.player |= 1ULL << cell;
+            } else {
+                board.opponent |= 1ULL << cell;
+            }
+        }
+        for (int j = 0; j < n_discs - (int)cells_always.size(); ++j) {
             if (myrandom() < 0.5) {
                 board.player |= 1ULL << cells[j];
             } else {
@@ -90,7 +103,7 @@ int main(int argc, char *argv[]){
         bool result_used = false;
         Search search(&board, MPC_100_LEVEL, true, false);
         bool searching = true;
-        int clog_result = clog_search(&search, 10, &searching);
+        int clog_result = clog_search(&search, 5, &searching);
         if (clog_result == CLOG_NOT_FOUND) {
             //Search_result search_result = ai(board, 21, false, 0, true, false);
             //if (std::abs(search_result.value) <= 10) {
