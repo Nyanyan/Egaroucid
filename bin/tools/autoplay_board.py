@@ -3,10 +3,13 @@ from tqdm import trange
 import os
 import sys
 
-line_dr = './../problem/etc/random18_boards'
-out_dr = './../transcript/random18_boards'
+#line_dr = './../problem/etc/random18_boards'
+#out_dr = './../transcript/random18_boards'
 
-exe = './../versions/Egaroucid_for_Console_beta/Egaroucid_for_Console.exe'
+line_dr = './../problem/etc/random_board/5'
+out_dr = './../transcript/random_board/5'
+
+exe = './../Egaroucid_for_Console_clang.exe'
 
 
 IDX_START = int(sys.argv[1])
@@ -18,9 +21,9 @@ IDX_END = int(sys.argv[2])
 print(IDX_START, IDX_END)
 
 
-LEVEL = 11
+LEVEL = 21
 N_GAMES_PER_FILE = 10000
-N_THREAD = 30
+N_THREAD = 15
 
 def fill0(n, r):
     res = str(n)
