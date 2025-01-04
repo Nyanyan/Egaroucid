@@ -233,6 +233,10 @@ Game_import_t import_othello_quest_processing(std::string s, bool *failed) {
     return res;
 }
 
+Game_import_t import_general_board_transcript_processing(std::string s, bool *failed) {
+    
+}
+
 Game_import_t import_any_format_processing(std::string s, bool *failed) {
     Game_import_t res;
     bool f;
