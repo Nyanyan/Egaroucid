@@ -22,10 +22,12 @@
 */
 uint64_t stability_edge_arr[N_8BIT][N_8BIT][2];
 
+#if USE_SIMD
 #if USE_AVX512_STABILITY
 __m128i stability_e180, stability_e181, stability_e182, stability_e183, stability_e184;
 #endif
 __m128i stability_e790, stability_e791, stability_e792, stability_e793; 
+#endif
 
 
 /*
@@ -104,6 +106,7 @@ inline void stability_init() {
             }
         }
     }
+#if USE_SIMD
 #if USE_AVX512_STABILITY
     stability_e180 = _mm_set_epi64x(1, 8);
     stability_e181 = _mm_set_epi64x(2, 16);
@@ -111,7 +114,6 @@ inline void stability_init() {
     stability_e183 = _mm_set_epi64x(0x0101010101010101ULL, 0x00000000000000FFULL);
     stability_e184 = _mm_set_epi64x(0x00000000000000FFULL, 0x0101010101010101ULL);
 #endif
-#if USE_SIMD
     stability_e790 = _mm_set1_epi64x(0xFF80808080808080);
     stability_e791 = _mm_set1_epi64x(0x01010101010101FF);
     stability_e792 = _mm_set1_epi64x(0x00003F3F3F3F3F3F);
