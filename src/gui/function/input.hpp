@@ -243,7 +243,7 @@ Game_import_t import_general_board_transcript_processing(std::string s, bool *fa
     for (int i = 0; i < len_str - 65; ++i) {
         bool is_board_format = true;
         for (int j = 0; j < 65; ++j) {
-            if (!is_black_like_char(str[i + j]) && !is_white_like_char(str[i + j]) && !is_empty_like_char(str[i + j])) {
+            if (!is_black_like_char(str[i + j]) && !is_white_like_char(str[i + j]) && !is_vacant_like_char(str[i + j])) {
                 is_board_format = false;
                 break;
             }
@@ -282,9 +282,12 @@ Game_import_t import_general_board_transcript_processing(std::string s, bool *fa
             int coord = get_coord_from_chars(str[i], str[i + 1]);
             uint64_t coord_bit = 1ULL << coord;
             uint64_t legal = history_elem.board.get_legal();
-            if (legal & cood_bit) {
+            if (legal & coord_bit) {
                 calc_flip(&flip, &history_elem.board, coord);
                 history_elem.board.move_board(&flip);
+                history_elem.player ^= 1;
+                history_elem.policy = coord;
+                res.history.back().next_policy = coord;
                 if (history_elem.board.get_legal() == 0) {
                     history_elem.board.pass();
                     history_elem.player ^= 1;
