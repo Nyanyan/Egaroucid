@@ -3,7 +3,7 @@
 
     @file stability.hpp
         Calculate stable discs
-    @date 2021-2024
+    @date 2021-2025
     @author Takuto Yamana
     @license GPL-3.0 license
     @notice I referred to codes written by others
@@ -289,4 +289,3 @@ inline uint64_t calc_stability_bits(Board *board) {
 inline uint64_t calc_edge_stability_bits(Board *board) {
     return calc_edge_stability(board->player, board->opponent);
 }
-

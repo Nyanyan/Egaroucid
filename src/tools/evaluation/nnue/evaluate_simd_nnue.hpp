@@ -3,7 +3,7 @@
 
     @file evaluate_simd.hpp
         NNUE Evaluation function with AVX2
-    @date 2021-2024
+    @date 2021-2025
     @author Takuto Yamana
     @license GPL-3.0 license
 */
@@ -107,4 +107,3 @@ inline void calc_eval_features(const Board *board, Eval_search *eval){
 inline void eval_move(Eval_search *eval, const Flip *flip, const Board *board){
     calc_eval_features(board, eval);
 }
-
