@@ -11,6 +11,8 @@
 #pragma once
 #include "const/gui_common.hpp"
 
+constexpr int INPUT_STR_MAX_SIZE = 100000;
+
 
 std::vector<History_elem> import_transcript_processing(std::vector<History_elem> n_history, History_elem strt_elem, std::string transcript, bool *failed) {
     *failed = false;
@@ -129,6 +131,10 @@ Game_import_t import_ggf_processing(std::string ggf, bool *failed) {
     *failed = false;
     Game_import_t res;
     String ggf_str = Unicode::Widen(ggf).replace(U"\r", U"").replace(U"\n", U"").replace(U" ", U"").replace(U"\t", U"");
+    if (ggf_str.size() > INPUT_STR_MAX_SIZE) {
+        *failed = true;
+        return res;
+    }
     int board_start_idx = ggf_str.indexOf(U"BO[8");
     if (board_start_idx == std::string::npos) {
         *failed = true;
@@ -192,6 +198,10 @@ Game_import_t import_othello_quest_processing(std::string s, bool *failed) {
     *failed = false;
     Game_import_t res;
     String str = Unicode::Widen(s).replace(U"\r", U"").replace(U"\n", U"").replace(U" ", U"").replace(U"\t", U"");
+    if (str.size() > INPUT_STR_MAX_SIZE) {
+        *failed = true;
+        return res;
+    }
     History_elem start_board;
     start_board.board.reset();
     start_board.player = BLACK;
@@ -238,6 +248,10 @@ Game_import_t import_general_board_transcript_processing(std::string s, bool *fa
     Game_import_t res;
     String str = Unicode::Widen(s).replace(U"\r", U"").replace(U"\n", U"").replace(U" ", U"").replace(U"\t", U"");
     int len_str = str.size();
+    if (len_str > INPUT_STR_MAX_SIZE) {
+        *failed = true;
+        return res;
+    }
     std::string board_str = "---------------------------OX------XO---------------------------X";
     int transcript_str_start_idx = 0;
     for (int i = 0; i < len_str - 65; ++i) {
