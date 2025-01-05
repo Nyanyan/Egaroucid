@@ -267,6 +267,18 @@ inline bool is_pass_like_str(std::string s) {
     return s == "PA" || s == "pa" || s == "PS" || s == "ps";
 }
 
+inline bool is_coord_like_chars(char c1, char c2) {
+    c1 = c1 | 0x20;
+    return 'a' <= c1 && c1 <= 'h' && '1' <= c2 && c2 <= '8';
+}
+
+inline int get_coord_from_chars(char c1, char c2) {
+    c1 = c1 | 0x20;
+    int y = c2 - '1';
+    int x = c1 - 'a';
+    return HW2_M1 - (y * HW + x);
+}
+
 
 /*
     @brief Generate coordinate in string

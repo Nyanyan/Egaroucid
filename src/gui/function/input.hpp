@@ -15,7 +15,7 @@
 std::vector<History_elem> import_transcript_processing(std::vector<History_elem> n_history, History_elem strt_elem, std::string transcript, bool *failed) {
     *failed = false;
     Board h_bd = strt_elem.board;
-    String transcript_str = Unicode::Widen(transcript).replace(U"\r", U"").replace(U"\n", U"").replace(U" ", U"");
+    String transcript_str = Unicode::Widen(transcript).replace(U"\r", U"").replace(U"\n", U"").replace(U" ", U"").replace(U"\t", U"");
     if (transcript_str.size() % 2 != 0 && transcript_str.size() >= 120) {
         *failed = true;
         return n_history;
@@ -80,7 +80,7 @@ std::vector<History_elem> import_transcript_processing(std::vector<History_elem>
 
 std::pair<Board, int> import_board_processing(std::string board_str, bool *failed) {
     *failed = false;
-    String board_str_str = Unicode::Widen(board_str).replace(U"\r", U"").replace(U"\n", U"").replace(U" ", U"");
+    String board_str_str = Unicode::Widen(board_str).replace(U"\r", U"").replace(U"\n", U"").replace(U" ", U"").replace(U"\t", U"");
     int bd_arr[HW2];
     Board bd;
     int player = -1;
@@ -128,7 +128,7 @@ struct Game_import_t {
 Game_import_t import_ggf_processing(std::string ggf, bool *failed) {
     *failed = false;
     Game_import_t res;
-    String ggf_str = Unicode::Widen(ggf).replace(U"\r", U"").replace(U"\n", U"").replace(U" ", U"");
+    String ggf_str = Unicode::Widen(ggf).replace(U"\r", U"").replace(U"\n", U"").replace(U" ", U"").replace(U"\t", U"");
     int board_start_idx = ggf_str.indexOf(U"BO[8");
     if (board_start_idx == std::string::npos) {
         *failed = true;
@@ -191,7 +191,7 @@ Game_import_t import_ggf_processing(std::string ggf, bool *failed) {
 Game_import_t import_othello_quest_processing(std::string s, bool *failed) {
     *failed = false;
     Game_import_t res;
-    String str = Unicode::Widen(s).replace(U"\r", U"").replace(U"\n", U"").replace(U" ", U"");
+    String str = Unicode::Widen(s).replace(U"\r", U"").replace(U"\n", U"").replace(U" ", U"").replace(U"\t", U"");
     History_elem start_board;
     start_board.board.reset();
     start_board.player = BLACK;
@@ -234,7 +234,71 @@ Game_import_t import_othello_quest_processing(std::string s, bool *failed) {
 }
 
 Game_import_t import_general_board_transcript_processing(std::string s, bool *failed) {
-    
+    *failed = true;
+    Game_import_t res;
+    String str = Unicode::Widen(s).replace(U"\r", U"").replace(U"\n", U"").replace(U" ", U"").replace(U"\t", U"");
+    int len_str = str.size();
+    std::string board_str = "---------------------------OX------XO---------------------------X";
+    int transcript_str_start_idx = 0;
+    for (int i = 0; i < len_str - 65; ++i) {
+        bool is_board_format = true;
+        for (int j = 0; j < 65; ++j) {
+            if (!is_black_like_char(str[i + j]) && !is_white_like_char(str[i + j]) && !is_empty_like_char(str[i + j])) {
+                is_board_format = false;
+                break;
+            }
+        }
+        if (is_board_format) {
+            board_str = str.substr(i, 65).narrow();
+            transcript_str_start_idx = i + 65;
+            std::cerr << "board_str " << board_str << std::endl;
+            *failed = false;
+            break;
+        }
+    }
+    History_elem history_elem;
+    if (transcript_str_start_idx != 0) {
+        history_elem.board.reset();
+        history_elem.player = BLACK;
+        res.history.emplace_back(history_elem);
+    }
+    history_elem.board.from_str(board_str);
+    history_elem.player = BLACK;
+    if (is_white_like_char(board_str[64])) {
+        history_elem.player = WHITE;
+    }
+    if (history_elem.board.get_legal() == 0) {
+        history_elem.board.pass();
+        history_elem.player ^= 1;
+        if (history_elem.board.get_legal() == 0) {
+            history_elem.board.pass();
+            history_elem.player ^= 1;
+        }
+    }
+    res.history.emplace_back(history_elem);
+    Flip flip;
+    for (int i = transcript_str_start_idx; i < len_str - 1; ++i) {
+        if (is_coord_like_chars(str[i], str[i + 1])) {
+            int coord = get_coord_from_chars(str[i], str[i + 1]);
+            uint64_t coord_bit = 1ULL << coord;
+            uint64_t legal = history_elem.board.get_legal();
+            if (legal & cood_bit) {
+                calc_flip(&flip, &history_elem.board, coord);
+                history_elem.board.move_board(&flip);
+                if (history_elem.board.get_legal() == 0) {
+                    history_elem.board.pass();
+                    history_elem.player ^= 1;
+                    if (history_elem.board.get_legal() == 0) {
+                        history_elem.board.pass();
+                        history_elem.player ^= 1;
+                    }
+                }
+                res.history.emplace_back(history_elem);
+                *failed = false;
+            }
+        }
+    }
+    return res;
 }
 
 Game_import_t import_any_format_processing(std::string s, bool *failed) {
@@ -274,6 +338,12 @@ Game_import_t import_any_format_processing(std::string s, bool *failed) {
         res.history.emplace_back(history_elem);
         *failed = false;
         std::cerr << "imported as Board String" << std::endl;
+        return res;
+    }
+    res = import_general_board_transcript_processing(s, &f);
+    if (!f) {
+        *failed = false;
+        std::cerr << "imported as General Board & Transcript" << std::endl;
         return res;
     }
     return res;
