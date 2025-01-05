@@ -6,14 +6,14 @@ import sys
 #line_dr = './../problem/etc/random18_boards'
 #out_dr = './../transcript/random18_boards'
 
-line_dr = './../problem/etc/random_board/5'
-out_dr = './../transcript/random_board/5'
+line_dr = sys.argv[1] #'./../problem/etc/random_board/5'
+out_dr = sys.argv[2] #'./../transcript/random_board/5'
 
 exe = './../Egaroucid_for_Console_clang.exe'
 
 
-IDX_START = int(sys.argv[1])
-IDX_END = int(sys.argv[2])
+IDX_START = int(sys.argv[3])
+IDX_END = int(sys.argv[4])
 
 # IDX_START = 10
 # IDX_END = 100
