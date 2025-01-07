@@ -151,9 +151,9 @@
         "player_name": "プレイヤー名",
         "memo": "メモ",
         "screen_shot": "スクリーンショット",
-                                                        "change_screenshot_saving_dir": "保存場所変更",
-                                                        "input_screenshot_saving_dir": "スクリーンショット保存ディレクトリを入力してください",
-                                                        "directory_not_found": "ディレクトリが見つかりません",
+        "change_screenshot_saving_dir": "保存場所変更",
+        "input_screenshot_saving_dir": "スクリーンショット保存ディレクトリを入力してください",
+        "directory_not_found": "ディレクトリが見つかりません",
         "board_image": "ボードの画像を編集",
         "you_can_paste_with_ctrl_v": "Ctrl+Vで貼り付け可能"
     },
