@@ -217,7 +217,12 @@ public:
                 return_pressed = true;
             }
         }
-        dir = text_area.text.replaced(U"\r", U"").replaced(U"\n", U"").narrow();
+        dir = text_area.text.replaced(U"\r", U"").replaced(U"\n", U"").replaced(U"\\", U"/").narrow();
+        if (dir.size()) {
+            if (dir[dir.size() - 1] != '/') {
+                dir += "/";
+            }
+        }
         if (text_changed) {
             is_valid_dir = FileSystem::Exists(Unicode::Widen(dir));
         }
