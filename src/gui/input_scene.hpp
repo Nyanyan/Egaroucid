@@ -442,10 +442,12 @@ public:
         text = text_area.text.replaced(U"\r", U"").replaced(U"\n", U"").replaced(U" ", U"").replace(U"\t", U"").narrow();
         if (text_changed) {
             bool failed;
-            imported_game = import_any_format_processing(text, history_until_now, &failed);
+            imported_game = import_any_format_processing(text, history_until_now, getData().history_elem, &failed);
         }
         String format_str = language.get("in_out", "format", "error");
-        if (imported_game.format == TEXT_INPUT_FORMAT_GGF) {
+        if (text.size() == 0) {
+            format_str = language.get("in_out", "format", "egaroucid_recognizes_format");
+        } else if (imported_game.format == TEXT_INPUT_FORMAT_GGF) {
             format_str = language.get("in_out", "format", "GGF");
         } else if (imported_game.format == TEXT_INPUT_FORMAT_OTHELLO_QUEST) {
             format_str = language.get("in_out", "format", "othello_quest");
@@ -458,10 +460,9 @@ public:
         } else if (imported_game.format == TEXT_INPUT_FORMAT_GENERAL_BOARD_TRANSCRIPT) {
             format_str = language.get("in_out", "format", "board_transcript");
         }
-        getData().fonts.font(format_str).draw(13, Arg::topCenter(X_CENTER, sy + 185), getData().colors.white);
+        getData().fonts.font(format_str).draw(13, Arg::topCenter(X_CENTER, sy + 190), getData().colors.white);
         back_button.draw();
         import_button.draw();
-        import_from_position_button.draw();
         if (back_button.clicked() || KeyEscape.pressed()) {
             changeScene(U"Main_scene", SCENE_FADE_TIME);
         }
@@ -473,7 +474,6 @@ public:
             }
         } else {
             import_button.disable();
-            import_from_position_button.disable();
         }
     }
 

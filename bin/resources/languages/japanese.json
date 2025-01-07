@@ -126,6 +126,7 @@
         "input_from_clipboard": "クリップボードから形式を指定せず入力",
         "input_text": "テキスト形式で入力",
         "format": {
+            "egaroucid_recognizes_format": "Egaroucidが形式を自動判定します",
             "error": "対応していない形式です",
             "GGF": "GGF形式",
             "othello_quest": "オセロクエスト形式",
