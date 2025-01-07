@@ -466,7 +466,7 @@ public:
         if (back_button.clicked() || KeyEscape.pressed()) {
             changeScene(U"Main_scene", SCENE_FADE_TIME);
         }
-        if (imported_game.format != TEXT_INPUT_FORMAT_NONE) {
+        if (imported_game.format != TEXT_INPUT_FORMAT_NONE && text.size()) {
             import_button.enable();
             if (import_button.clicked() || KeyEnter.pressed()) {
                 n_history = imported_game.history;
