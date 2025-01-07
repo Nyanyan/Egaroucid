@@ -206,6 +206,7 @@ public:
                     }
                 }
             }
+            /*
             for (int i = 0; i < (int)shortcut_keys.size(); ++i) {
                 if (shortcut_keys[i].keys.size()) {
                     for (int j = i + 1; j < (int)shortcut_keys.size(); ++j) {
@@ -224,6 +225,7 @@ public:
                     }
                 }
             }
+            */
         }
     }
 
