@@ -52,11 +52,11 @@ public:
         const int icon_width = SCENE_ICON_WIDTH;
         getData().resources.icon.scaled((double)icon_width / getData().resources.icon.width()).draw(X_CENTER - icon_width / 2, 20);
         getData().resources.logo.scaled((double)icon_width / getData().resources.logo.width()).draw(X_CENTER - icon_width / 2, 20 + icon_width);
-        int sy = 20 + icon_width + 50;
+        int sy = 20 + icon_width + 30;
         getData().fonts.font(language.get("in_out", "input_text")).draw(25, Arg::topCenter(X_CENTER, sy), getData().colors.white);
         text_area.active = true;
-        bool text_changed = SimpleGUI::TextArea(text_area, Vec2{X_CENTER - 300, sy + 40}, SizeF{600, 130}, INPUT_STR_MAX_SIZE);
-        getData().fonts.font(language.get("in_out", "you_can_paste_with_ctrl_v")).draw(13, Arg::topCenter(X_CENTER, sy + 175), getData().colors.white);
+        bool text_changed = SimpleGUI::TextArea(text_area, Vec2{X_CENTER - 300, sy + 40}, SizeF{600, 150}, INPUT_STR_MAX_SIZE);
+        getData().fonts.font(language.get("in_out", "you_can_paste_with_ctrl_v")).draw(13, Arg::topCenter(X_CENTER, sy + 195), getData().colors.white);
         bool return_pressed = false;
         if (text_area.text.size()) {
             if (text_area.text[text_area.text.size() - 1] == '\n') {
@@ -84,7 +84,7 @@ public:
         } else if (imported_game.format == TEXT_INPUT_FORMAT_GENERAL_BOARD_TRANSCRIPT) {
             format_str = language.get("in_out", "format", "board_transcript");
         }
-        getData().fonts.font(format_str).draw(13, Arg::topCenter(X_CENTER, sy + 190), getData().colors.white);
+        getData().fonts.font(format_str).draw(13, Arg::topCenter(X_CENTER, sy + 210), getData().colors.white);
         back_button.draw();
         import_button.draw();
         if (back_button.clicked() || KeyEscape.pressed()) {
