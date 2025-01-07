@@ -206,6 +206,24 @@ public:
                     }
                 }
             }
+            for (int i = 0; i < (int)shortcut_keys.size(); ++i) {
+                if (shortcut_keys[i].keys.size()) {
+                    for (int j = i + 1; j < (int)shortcut_keys.size(); ++j) {
+                        if (shortcut_keys[j].keys.size() == shortcut_keys[i].keys.size()) {
+                            bool duplicate = true;
+                            for (String &key: shortcut_keys[j].keys) {
+                                if (std::find(shortcut_keys[i].keys.begin(), shortcut_keys[i].keys.end(), key) == shortcut_keys[i].keys.end()) {
+                                    duplicate = false;
+                                }
+                            }
+                            if (duplicate) {
+                                shortcut_keys[j].keys.clear();
+                                std::cerr << "shortcut key duplication found: " << shortcut_keys[i].name.narrow() << " " << shortcut_keys[j].name.narrow() << " deleted " << shortcut_keys[j].name.narrow() << std::endl;
+                            }
+                        }
+                    }
+                }
+            }
         }
     }
 
