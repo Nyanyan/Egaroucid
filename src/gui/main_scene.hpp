@@ -855,6 +855,13 @@ private:
             taking_screen_shot = true;
             getData().menu_elements.screen_shot = false; // because skip drawing menu in next frame
         }
+        if (getData().menu_elements.change_screenshot_saving_dir || shortcut_key == U"change_screenshot_saving_dir") {
+            changing_scene = true;
+            stop_calculating();
+            resume_calculating();
+            changeScene(U"Change_screenshot_saving_dir", SCENE_FADE_TIME);
+            return;
+        }
         if (getData().menu_elements.board_image || shortcut_key == U"board_image") {
             changing_scene = true;
             stop_calculating();

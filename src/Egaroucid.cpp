@@ -91,6 +91,7 @@ void Main() {
     scene_manager.add <Export_game>(U"Export_game");
     scene_manager.add <Board_image>(U"Board_image");
     scene_manager.add <Import_bitboard>(U"Import_bitboard");
+    scene_manager.add <Change_screenshot_saving_dir>(U"Change_screenshot_saving_dir");
     scene_manager.add <Close>(U"Close");
     scene_manager.setFadeColor(Color(36, 153, 114));
     scene_manager.init(U"Silent_load", SCENE_FADE_TIME);

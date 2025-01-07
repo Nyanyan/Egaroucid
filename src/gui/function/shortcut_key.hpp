@@ -92,6 +92,7 @@ std::vector<Shortcut_key_elem> shortcut_keys_default = {
     {U"output_transcript",      {U"Ctrl", U"C"},        {{"in_out", "in_out"}, {"in_out", "out"}, {"in_out", "output_transcript"}}},
     {U"output_board",           {},                     {{"in_out", "in_out"}, {"in_out", "out"}, {"in_out", "output_board"}}},
     {U"screen_shot",            {U"Ctrl", U"S"},        {{"in_out", "in_out"}, {"in_out", "out"}, {"in_out", "screen_shot"}}},
+    {U"change_screenshot_saving_dir",       {},         {{"in_out", "in_out"}, {"in_out", "out"}, {"in_out", "screen_shot"}, {"in_out", "change_screenshot_saving_dir"}}},
     {U"board_image",            {},                     {{"in_out", "in_out"}, {"in_out", "out"}, {"in_out", "board_image"}}},
     {U"save_game",              {},                     {{"in_out", "in_out"}, {"in_out", "out"}, {"in_out", "output_game"}}},
     {U"output_bitboard_player_opponent",    {},         {{"in_out", "in_out"}, {"in_out", "out"}, {"in_out", "output_bitboard"}, {"in_out", "player_opponent"}}},

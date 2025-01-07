@@ -178,10 +178,8 @@ private:
     Button back_button;
     Button default_button;
     Button go_button;
-    std::string book_file;
-    std::future<void> delete_book_future;
-    std::future<bool> import_book_future;
-    bool valid_dir;
+    std::string dir;
+    bool is_valid_dir;
     TextAreaEditState text_area;
 
 public:
@@ -192,7 +190,12 @@ public:
         text_area.text = Unicode::Widen(getData().user_settings.screenshot_saving_dir);
         text_area.cursorPos = text_area.text.size();
         text_area.rebuildGlyphs();
-        valid_dir = false;
+        is_valid_dir = FileSystem::Exists(Unicode::Widen(getData().user_settings.screenshot_saving_dir));
+        if (is_valid_dir) {
+            go_button.enable();
+        } else {
+            go_button.disable();
+        }
     }
 
     void update() override {
@@ -204,88 +207,41 @@ public:
         getData().resources.icon.scaled((double)icon_width / getData().resources.icon.width()).draw(X_CENTER - icon_width / 2, 20);
         getData().resources.logo.scaled((double)icon_width / getData().resources.logo.width()).draw(X_CENTER - icon_width / 2, 20 + icon_width);
         int sy = 20 + icon_width + 40;
-        if (!book_deleting && !book_importing && !failed && !done) {
-            getData().fonts.font(language.get("in_out", "change_screenshot_saving_dir")).draw(25, Arg::topCenter(X_CENTER, sy), getData().colors.white);
-            getData().fonts.font(language.get("in_out", "input_screenshot_saving_dir")).draw(15, Arg::topCenter(X_CENTER, sy + 50), getData().colors.white);
-            text_area.active = true;
-            SimpleGUI::TextArea(text_area, Vec2{X_CENTER - 300, sy + 80}, SizeF{600, 100}, TEXTBOX_MAX_CHARS);
-            bool return_pressed = false;
-            if (text_area.text.size()) {
-                if (text_area.text[text_area.text.size() - 1] == '\n') {
-                    return_pressed = true;
-                }
+        getData().fonts.font(language.get("in_out", "change_screenshot_saving_dir")).draw(25, Arg::topCenter(X_CENTER, sy), getData().colors.white);
+        getData().fonts.font(language.get("in_out", "input_screenshot_saving_dir")).draw(15, Arg::topCenter(X_CENTER, sy + 50), getData().colors.white);
+        text_area.active = true;
+        bool text_changed = SimpleGUI::TextArea(text_area, Vec2{X_CENTER - 300, sy + 80}, SizeF{600, 100}, TEXTBOX_MAX_CHARS);
+        bool return_pressed = false;
+        if (text_area.text.size()) {
+            if (text_area.text[text_area.text.size() - 1] == '\n') {
+                return_pressed = true;
             }
-            bool file_dragged = false;
-            if (DragDrop::HasNewFilePaths()) {
-                text_area.text = DragDrop::GetDroppedFilePaths()[0].path;
-                text_area.cursorPos = 0;
-                text_area.scrollY = 0.0;
-                text_area.textChanged = true;
-                file_dragged = true;
-            }
-            book_file = text_area.text.replaced(U"\r", U"").replaced(U"\n", U"").narrow();
-            std::string ext = get_extension(book_file);
-            bool formatted_book = false;
-            if (ext == BOOK_EXTENSION_NODOT) {
-                go_button.enable();
-                formatted_book = true;
-            } else {
-                go_button.disable();
-                getData().fonts.font(language.get("book", "wrong_extension") + U" " + language.get("book", "legal_extension1")).draw(15, Arg::topCenter(X_CENTER, sy + 190), getData().colors.white);
-            }
-            back_button.draw();
-            if (back_button.clicked() || KeyEscape.pressed()) {
-                reset_book_additional_information();
-                getData().graph_resources.need_init = false;
-                changeScene(U"Main_scene", SCENE_FADE_TIME);
-            }
-            default_button.draw();
-            if (default_button.clicked()) {
-                text_area.text = Unicode::Widen(getData().directories.document_dir + "book" + BOOK_EXTENSION);
-                text_area.cursorPos = text_area.text.size();
-                text_area.scrollY = 0.0;
-                text_area.rebuildGlyphs();
-            }
-            go_button.draw();
-            if (formatted_book && (go_button.clicked() || return_pressed || file_dragged)) {
-                //getData().book_information.changed = true;
-                getData().settings.book_file = book_file;
-                std::cerr << "book reference changed to " << book_file << std::endl;
-                delete_book_future = std::async(std::launch::async, delete_book);
-                book_deleting = true;
-            }
-        } else if (book_deleting || book_importing) {
-            getData().fonts.font(language.get("book", "loading")).draw(25, Arg::topCenter(X_CENTER, sy), getData().colors.white);
-            if (book_deleting) {
-                if (delete_book_future.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
-                    delete_book_future.get();
-                    book_deleting = false;
-                    import_book_future = std::async(std::launch::async, import_book, getData().settings.book_file);
-                    book_importing = true;
-                }
-            } else if (book_importing) {
-                if (import_book_future.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
-                    failed = !import_book_future.get();
-                    //if (getData().settings.book_file.size() < 6 || getData().settings.book_file.substr(getData().settings.book_file.size() - 6, 6) != BOOK_EXTENSION)
-                    //    getData().settings.book_file += BOOK_EXTENSION;
-                    book_importing = false;
-                    done = true;
-                }
-            }
-        } else if (done) {
-            if (failed) {
-                getData().fonts.font(language.get("book", "import_failed")).draw(25, Arg::topCenter(X_CENTER, sy), getData().colors.white);
-                single_back_button.draw();
-                if (single_back_button.clicked() || KeyEscape.pressed()) {
-                    reset_book_additional_information();
-                    getData().graph_resources.need_init = false;
-                    changeScene(U"Main_scene", SCENE_FADE_TIME);
-                }
-            } else {
-                reset_book_additional_information();
-                getData().graph_resources.need_init = false;
-                changeScene(U"Main_scene", SCENE_FADE_TIME);
-            }
+        }
+        dir = text_area.text.replaced(U"\r", U"").replaced(U"\n", U"").narrow();
+        if (text_changed) {
+            is_valid_dir = FileSystem::Exists(Unicode::Widen(dir));
+        }
+        if (is_valid_dir) {
+            go_button.enable();
+        } else {
+            getData().fonts.font(language.get("in_out", "directory_not_found")).draw(15, Arg::topCenter(X_CENTER, sy + 190), getData().colors.white);
+            go_button.disable();
+        }
+        back_button.draw();
+        if (back_button.clicked() || KeyEscape.pressed()) {
+            changeScene(U"Main_scene", SCENE_FADE_TIME);
+        }
+        default_button.draw();
+        if (default_button.clicked()) {
+            text_area.text = Unicode::Widen(getData().directories.document_dir + "screenshots/");
+            text_area.cursorPos = text_area.text.size();
+            text_area.scrollY = 0.0;
+            text_area.rebuildGlyphs();
+        }
+        go_button.draw();
+        if (go_button.clicked()) {
+            getData().user_settings.screenshot_saving_dir = dir;
+            changeScene(U"Main_scene", SCENE_FADE_TIME);
         }
     }
 
