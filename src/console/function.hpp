@@ -57,7 +57,7 @@ void solve_problems(std::vector<std::string> arg, Options *options, State *state
         total.nodes += res.nodes;
         total.time += res.time;
     }
-    std::cout << "total " << total.nodes << " nodes in " << ((double)total.time / 1000) << "s NPS " << (total.nodes * 1000 / total.time) << std::endl;
+    std::cout << "total " << total.nodes << " nodes in " << ((double)total.time / 1000) << "s NPS " << calc_nps(total.nodes, total.time) << std::endl;
 }
 
 void solve_problems_transcript_parallel(std::vector<std::string> arg, Options *options, State *state) {
