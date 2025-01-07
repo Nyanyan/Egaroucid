@@ -2,7 +2,7 @@
 #include <iostream>
 #include "function/function_all.hpp"
 
-void take_screen_shot(double window_scale, std::string document_dir, std::string transcript) {
+void take_screen_shot(double window_scale, std::string screenshot_dir, std::string transcript) {
     Image image = ScreenCapture::GetFrame();
     const int clip_sx = BOARD_SX - BOARD_ROUND_FRAME_WIDTH - BOARD_COORD_SIZE;
     const int clip_sy = BOARD_SY - BOARD_ROUND_FRAME_WIDTH - BOARD_COORD_SIZE;
@@ -12,7 +12,7 @@ void take_screen_shot(double window_scale, std::string document_dir, std::string
     Image image_clip = image.clipped(clip_rect);
     Clipboard::SetImage(image_clip);
     String img_date = Unicode::Widen(calc_date());
-    String save_path = Unicode::Widen(document_dir) + U"screenshots/" + img_date + U"_" + Unicode::Widen(transcript) + U".png";
+    String save_path = Unicode::Widen(screenshot_dir) + img_date + U"_" + Unicode::Widen(transcript) + U".png";
     image_clip.save(save_path);
     std::cerr << "screen shot saved to " << save_path.narrow() << " and copied to clipboard" << std::endl;
 }

@@ -14,7 +14,7 @@
 #include "./../engine/engine_all.hpp"
 #include "function/function_all.hpp"
 
-void save_settings(Menu_elements menu_elements, Settings settings, Directories directories) {
+void save_settings(Menu_elements menu_elements, Settings settings, Directories directories, User_settings user_settings) {
     JSON setting_json;
     setting_json[U"n_threads"] = menu_elements.n_threads;
     setting_json[U"auto_update_check"] = menu_elements.auto_update_check;
@@ -61,12 +61,13 @@ void save_settings(Menu_elements menu_elements, Settings settings, Directories d
     setting_json[U"show_laser_pointer"] = menu_elements.show_laser_pointer;
     setting_json[U"show_ai_focus"] = menu_elements.show_ai_focus;
     setting_json[U"pv_length"] = menu_elements.pv_length;
+    setting_json[U"screenshot_saving_dir"] = user_settings.screenshot_saving_dir;
     setting_json.save(U"{}setting.json"_fmt(Unicode::Widen(directories.appdata_dir)));
 }
 
-void close_app(Menu_elements menu_elements, Settings settings, Directories directories, Book_information book_information, Window_state window_state) {
+void close_app(Menu_elements menu_elements, Settings settings, Directories directories, User_settings user_settings, Book_information book_information, Window_state window_state) {
     if (!window_state.loading) {
-        save_settings(menu_elements, settings, directories);
+        save_settings(menu_elements, settings, directories, user_settings);
         String shortcut_key_file = U"{}shortcut_key.json"_fmt(Unicode::Widen(directories.appdata_dir));
         shortcut_keys.save_settings(shortcut_key_file);
     }
@@ -81,7 +82,7 @@ private:
 
 public:
     Close(const InitData& init) : IScene{ init } {
-        close_future = std::async(std::launch::async, close_app, getData().menu_elements, getData().settings, getData().directories, getData().book_information, getData().window_state);
+        close_future = std::async(std::launch::async, close_app, getData().menu_elements, getData().settings, getData().directories, getData().user_settings, getData().book_information, getData().window_state);
     }
 
     void update() override {

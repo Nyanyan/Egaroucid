@@ -73,6 +73,7 @@ void init_default_settings(const Directories* directories, const Resources* reso
     settings->show_laser_pointer = false;
     settings->show_ai_focus = false;
     settings->pv_length = 7;
+    settings->screenshot_saving_dir = directories->document_dir + "screenshots/";
 }
 
 int init_settings_import_int(JSON &json, String key, int* res) {
@@ -416,6 +417,9 @@ void init_settings(const Directories* directories, const Resources* resources, S
     if (init_settings_import_int(setting_json, U"pv_length", &settings->pv_length) != ERR_OK) {
         std::cerr << "err43" << std::endl;
     }
+    if (init_settings_import_str(setting_json, U"screenshot_saving_dir", &settings->screenshot_saving_dir) != ERR_OK) {
+        std::cerr << "err44" << std::endl;
+    }
 }
 
 void init_directories(Directories* directories) {
@@ -487,9 +491,14 @@ int init_resources_silent_load(Resources* resources, Settings* settings, Fonts *
 
 }
 
-int silent_load(Directories* directories, Resources* resources, Settings* settings, Fonts *fonts, bool *stop_loading) {
+void init_user_settings(Settings* settings, User_settings *user_settings) {
+    user_settings->screenshot_saving_dir = settings->screenshot_saving_dir;
+}
+
+int silent_load(Directories* directories, Resources* resources, Settings* settings, User_settings *user_settings, Fonts *fonts, bool *stop_loading) {
     init_directories(directories);
     init_settings(directories, resources, settings);
+    init_user_settings(settings, user_settings);
     return init_resources_silent_load(resources, settings, fonts, stop_loading);
 }
 
@@ -504,7 +513,7 @@ private:
 public:
     Silent_load(const InitData& init) : IScene{ init } {
         stop_loading = false;
-        silent_load_future = std::async(std::launch::async, silent_load, &getData().directories, &getData().resources, &getData().settings, &getData().fonts, &stop_loading);
+        silent_load_future = std::async(std::launch::async, silent_load, &getData().directories, &getData().resources, &getData().settings, &getData().user_settings, &getData().fonts, &stop_loading);
         loading = true;
         loaded = false;
     }

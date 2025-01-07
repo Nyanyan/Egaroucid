@@ -75,7 +75,7 @@ public:
     void update() override {
         if (taking_screen_shot) {
             std::string transcript = get_transcript(getData().graph_resources, getData().history_elem);
-            take_screen_shot(getData().window_state.window_scale, getData().directories.document_dir, transcript);
+            take_screen_shot(getData().window_state.window_scale, getData().user_settings.screenshot_saving_dir, transcript);
             taking_screen_shot = false;
         }
 

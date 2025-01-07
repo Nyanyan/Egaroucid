@@ -352,6 +352,7 @@ struct Settings {
     bool show_principal_variation;
     bool show_ai_focus;
     int pv_length;
+    std::string screenshot_saving_dir;
 };
 
 struct Fonts {
@@ -678,6 +679,10 @@ struct Book_information {
     String val_str;
 };
 
+struct User_settings {
+    std::string screenshot_saving_dir;
+}
+
 struct Window_state {
     double window_scale;
     bool loading;
@@ -686,6 +691,7 @@ struct Window_state {
         loading = true;
     }
 };
+
 
 struct Common_resources {
     Colors colors;
@@ -699,6 +705,7 @@ struct Common_resources {
     Graph_resources graph_resources;
     Game_information game_information;
     Book_information book_information;
+    User_settings user_settings;
     Window_state window_state;
 };
 
