@@ -184,22 +184,25 @@ public:
     }
 
     void init(String file) {
-        set_default();
         JSON json = JSON::Load(file);
-        std::unordered_set<String> name_list;
-        for (Shortcut_key_elem &elem: shortcut_keys_default) {
-            name_list.emplace(elem.name);
-        }
-        for (const auto& object: json) {
-            if (name_list.find(object.key) == name_list.end()) {
-                std::cerr << "ERR shortcut key name not found " << object.key.narrow() << std::endl;
-                continue;
+        if (not json) {
+            set_default();
+        } else {
+            std::unordered_set<String> name_list;
+            for (Shortcut_key_elem &elem: shortcut_keys_default) {
+                name_list.emplace(elem.name);
             }
-            for (int i = 0; i < (int)shortcut_keys.size(); ++i) {
-                if (shortcut_keys[i].name == object.key) {
-                    shortcut_keys[i].keys.clear();
-                    for (const auto &key_name: object.value.arrayView()) {
-                        shortcut_keys[i].keys.emplace_back(key_name.getString());
+            for (const auto& object: json) {
+                if (name_list.find(object.key) == name_list.end()) {
+                    std::cerr << "ERR shortcut key name not found " << object.key.narrow() << std::endl;
+                    continue;
+                }
+                for (int i = 0; i < (int)shortcut_keys.size(); ++i) {
+                    if (shortcut_keys[i].name == object.key) {
+                        shortcut_keys[i].keys.clear();
+                        for (const auto &key_name: object.value.arrayView()) {
+                            shortcut_keys[i].keys.emplace_back(key_name.getString());
+                        }
                     }
                 }
             }
