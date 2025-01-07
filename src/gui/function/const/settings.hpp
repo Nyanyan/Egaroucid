@@ -15,6 +15,7 @@
 */
 // GUI portable mode
 #ifdef __APPLE__
+    // always false for Mac
     #define GUI_PORTABLE_MODE false
 #else
     #define GUI_PORTABLE_MODE true
