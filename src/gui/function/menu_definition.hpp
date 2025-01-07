@@ -202,6 +202,8 @@ Menu create_menu(Menu_elements* menu_elements, Resources *resources, Font font) 
     side_menu.init_button(language.get("in_out", "output_board") + get_shortcut_key_info(U"output_board"), &menu_elements->copy_board);
     menu_e.push(side_menu);
     side_menu.init_button(language.get("in_out", "screen_shot") + get_shortcut_key_info(U"screen_shot"), &menu_elements->screen_shot);
+    side_side_menu.init_button(language.get("in_out", "change_screen_shot_save_dir"), &menu_elements->change_screen_shot_save_dir);
+    side_menu.push(side_side_menu);
     menu_e.push(side_menu);
     side_menu.init_button(language.get("in_out", "board_image") + get_shortcut_key_info(U"board_image"), &menu_elements->board_image);
     menu_e.push(side_menu);

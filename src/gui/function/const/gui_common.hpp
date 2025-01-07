@@ -483,6 +483,7 @@ struct Menu_elements {
     bool input_bitboard;
     bool save_game;
     bool screen_shot;
+    bool change_screen_shot_save_dir;
     bool board_image;
     bool output_bitboard_player_opponent;
     bool output_bitboard_black_white;
@@ -589,6 +590,7 @@ struct Menu_elements {
         input_bitboard = false;
         save_game = false;
         screen_shot = false;
+        change_screen_shot_save_dir = false;
         board_image = false;
         output_bitboard_player_opponent = false;
         output_bitboard_black_white = false;

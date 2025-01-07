@@ -151,6 +151,7 @@
         "player_name": "Player Name",
         "memo": "Memo",
         "screen_shot": "Screen Shot",
+        "change_screen_shot_save_dir": "Change Saving Place",
         "board_image": "Edit and Save Board Image",
         "you_can_paste_with_ctrl_v": "You can paste with Ctrl+V"
     },
