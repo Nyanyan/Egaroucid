@@ -124,7 +124,7 @@
         "output_board": "Copy Board as String",
         "output_game": "Save Game",
         "input_from_clipboard": "Input any Format from Clipboard",
-        "input_text": "Input Text",
+        "input_text": "Input Text with any format",
         "format": {
             "egaroucid_recognizes_format": "Egaroucid recognizes the format!",
             "error": "Invalid Format",

@@ -124,7 +124,7 @@
         "output_board": "复制棋盘为字符串",
         "output_game": "保存对局",
         "input_from_clipboard": "从剪贴板输入任何格式",
-        "input_text": "以文本格式输入",
+        "input_text": "输入任意格式的文本",
         "format": {
             "egaroucid_recognizes_format": "Egaroucid 识别格式！",
             "error": "格式无效",
