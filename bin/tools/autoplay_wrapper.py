@@ -1,7 +1,7 @@
 import subprocess
 
 
-for n_random_moves in [5, 4, 3, 2, 1]:
+for n_random_moves in [9, 10, 11]:
     cmd = 'python autoplay.py ' + str(n_random_moves) + ' 0 0'
     print(cmd)
     subprocess.run(cmd)
