@@ -133,7 +133,7 @@
             "transcript": "棋譜",
             "transcript_from_this_position": "棋譜 (指定局面から)",
             "board": "ボード",
-            "board_transcript": "ボード+棋譜形式"
+            "board_transcript": "ボードと棋譜の汎用形式"
         },
         "edit_board": "盤面編集",
         "input_bitboard": "ビットボード入力",

@@ -133,7 +133,7 @@
             "transcript": "棋谱",
             "transcript_from_this_position": "棋谱从设定位置",
             "board": "棋盘",
-            "board_transcript": "棋盘 + 棋谱"
+            "board_transcript": "通用格式 (棋盘 + 棋谱)"
         },
         "edit_board": "编辑棋盘",
         "input_bitboard": "导入棋盘作为位板",

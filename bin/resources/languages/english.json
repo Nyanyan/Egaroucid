@@ -133,7 +133,7 @@
             "transcript": "Transcript",
             "transcript_from_this_position": "Transcript from set position",
             "board": "Board",
-            "board_transcript": "Board + Transcript"
+            "board_transcript": "General Format for Board and Transcript"
         },
         "edit_board": "Edit Board",
         "input_bitboard": "Input Board as Bitboard",
