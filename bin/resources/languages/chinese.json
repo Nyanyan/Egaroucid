@@ -146,7 +146,6 @@
         "input_game": "导入对局",
         "no_game_available": "无可用对局",
         "import": "导入",
-                                    "import_from_this_position": "从设定位置导入",
         "export_main": "保存到默认目录",
         "export_until_this_board": "保存到设定位置",
         "player_name": "棋手名称",
