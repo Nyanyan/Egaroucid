@@ -128,6 +128,7 @@
         "input_board": "字符串导入",
         "input_ggf": "导入GGF",
         "input_othello_quest": "输入Othello Quest格式",
+        "input_text": "以文本格式输入",
         "edit_board": "编辑棋盘",
         "input_bitboard": "导入棋盘作为位板",
         "output_bitboard": "导出棋盘作为位板",

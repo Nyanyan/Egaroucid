@@ -61,7 +61,7 @@ public:
                     return_pressed = true;
                 }
             }
-            transcript = text_area.text.replaced(U"\r", U"").replaced(U"\n", U"").replaced(U" ", U"").narrow();
+            transcript = text_area.text.replaced(U"\r", U"").replaced(U"\n", U"").replaced(U" ", U"").replace(U"\t", U"").narrow();
             back_button.draw();
             import_button.draw();
             import_from_position_button.draw();
@@ -168,7 +168,7 @@ public:
                     return_pressed = true;
                 }
             }
-            board_str = text_area.text.replaced(U"\r", U"").replaced(U"\n", U"").replaced(U" ", U"").narrow();
+            board_str = text_area.text.replaced(U"\r", U"").replaced(U"\n", U"").replaced(U" ", U"").replace(U"\t", U"").narrow();
             back_button.draw();
             import_button.draw();
             if (back_button.clicked() || KeyEscape.pressed()) {
@@ -251,7 +251,7 @@ public:
                     return_pressed = true;
                 }
             }
-            ggf = text_area.text.replaced(U"\r", U"").replaced(U"\n", U"").replaced(U" ", U"").narrow();
+            ggf = text_area.text.replaced(U"\r", U"").replaced(U"\n", U"").replaced(U" ", U"").replace(U"\t", U"").narrow();
             back_button.draw();
             import_button.draw();
             if (back_button.clicked() || KeyEscape.pressed()) {
@@ -341,7 +341,7 @@ public:
                     return_pressed = true;
                 }
             }
-            str = text_area.text.replaced(U"\r", U"").replaced(U"\n", U"").replaced(U" ", U"").narrow();
+            str = text_area.text.replaced(U"\r", U"").replaced(U"\n", U"").replaced(U" ", U"").replace(U"\t", U"").narrow();
             back_button.draw();
             import_button.draw();
             if (back_button.clicked() || KeyEscape.pressed()) {
@@ -387,6 +387,126 @@ public:
 
     }
 };
+
+
+
+
+
+class Import_text : public App::Scene {
+private:
+    Button back_button;
+    Button import_button;
+    bool done;
+    std::string text;
+    std::vector<History_elem> n_history;
+    std::vector<History_elem> history_until_now;
+    bool imported_from_position;
+    TextAreaEditState text_area;
+    int text_input_format;
+    Game_import_t imported_game;
+
+public:
+    Import_text(const InitData& init) : IScene{ init } {
+        back_button.init(GO_BACK_BUTTON_BACK_SX, GO_BACK_BUTTON_SY, GO_BACK_BUTTON_WIDTH, GO_BACK_BUTTON_HEIGHT, GO_BACK_BUTTON_RADIUS, language.get("common", "back"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
+        import_button.init(GO_BACK_BUTTON_GO_SX, GO_BACK_BUTTON_SY, GO_BACK_BUTTON_WIDTH, GO_BACK_BUTTON_HEIGHT, GO_BACK_BUTTON_RADIUS, language.get("in_out", "import"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);done = false;
+        import_button.disable();
+        imported_from_position = false;
+        text_input_format = TEXT_INPUT_FORMAT_NONE;
+        text.clear();
+        for (History_elem history_elem : getData().graph_resources.nodes[getData().graph_resources.branch]) {
+            if (getData().history_elem.board.n_discs() >= history_elem.board.n_discs()) {
+                history_until_now.emplace_back(history_elem);
+            }
+        }
+    }
+
+    void update() override {
+        if (System::GetUserActions() & UserAction::CloseButtonClicked) {
+            changeScene(U"Close", SCENE_FADE_TIME);
+        }
+        Scene::SetBackground(getData().colors.green);
+        const int icon_width = SCENE_ICON_WIDTH;
+        getData().resources.icon.scaled((double)icon_width / getData().resources.icon.width()).draw(X_CENTER - icon_width / 2, 20);
+        getData().resources.logo.scaled((double)icon_width / getData().resources.logo.width()).draw(X_CENTER - icon_width / 2, 20 + icon_width);
+        int sy = 20 + icon_width + 50;
+        getData().fonts.font(language.get("in_out", "input_text")).draw(25, Arg::topCenter(X_CENTER, sy), getData().colors.white);
+        text_area.active = true;
+        bool text_changed = SimpleGUI::TextArea(text_area, Vec2{X_CENTER - 300, sy + 40}, SizeF{600, 130}, INPUT_STR_MAX_SIZE);
+        getData().fonts.font(language.get("in_out", "you_can_paste_with_ctrl_v")).draw(13, Arg::topCenter(X_CENTER, sy + 175), getData().colors.white);
+        bool return_pressed = false;
+        if (text_area.text.size()) {
+            if (text_area.text[text_area.text.size() - 1] == '\n') {
+                return_pressed = true;
+            }
+        }
+        text = text_area.text.replaced(U"\r", U"").replaced(U"\n", U"").replaced(U" ", U"").replace(U"\t", U"").narrow();
+        if (text_changed) {
+            bool failed;
+            imported_game = import_any_format_processing(text, history_until_now, &failed);
+        }
+        String format_str = language.get("in_out", "format", "error");
+        if (imported_game.format == TEXT_INPUT_FORMAT_GGF) {
+            format_str = language.get("in_out", "format", "GGF");
+        } else if (imported_game.format == TEXT_INPUT_FORMAT_OTHELLO_QUEST) {
+            format_str = language.get("in_out", "format", "othello_quest");
+        } else if (imported_game.format == TEXT_INPUT_FORMAT_TRANSCRIPT) {
+            format_str = language.get("in_out", "format", "transcript");
+        } else if (imported_game.format == TEXT_INPUT_FORMAT_TRANSCRIPT_FROM_THIS_POSITION) {
+            format_str = language.get("in_out", "format", "transcript_from_this_position");
+        } else if (imported_game.format == TEXT_INPUT_FORMAT_BOARD) {
+            format_str = language.get("in_out", "format", "board");
+        } else if (imported_game.format == TEXT_INPUT_FORMAT_GENERAL_BOARD_TRANSCRIPT) {
+            format_str = language.get("in_out", "format", "board_transcript");
+        }
+        getData().fonts.font(format_str).draw(13, Arg::topCenter(X_CENTER, sy + 185), getData().colors.white);
+        back_button.draw();
+        import_button.draw();
+        import_from_position_button.draw();
+        if (back_button.clicked() || KeyEscape.pressed()) {
+            changeScene(U"Main_scene", SCENE_FADE_TIME);
+        }
+        if (imported_game.format != TEXT_INPUT_FORMAT_NONE) {
+            import_button.enable();
+            if (import_button.clicked() || KeyEnter.pressed()) {
+                n_history = imported_game.history;
+                go_to_main_scene();
+            }
+        } else {
+            import_button.disable();
+            import_from_position_button.disable();
+        }
+    }
+
+    void draw() const override {
+
+    }
+
+    void go_to_main_scene() {
+        if (!imported_from_position) {
+            getData().graph_resources.init();
+            getData().graph_resources.nodes[0] = n_history;
+            getData().graph_resources.n_discs = getData().graph_resources.nodes[0].back().board.n_discs();
+            getData().game_information.init();
+        } else {
+            getData().graph_resources.nodes[getData().graph_resources.branch] = n_history;
+        }
+        std::string opening_name, n_opening_name;
+        for (int i = 0; i < (int)getData().graph_resources.nodes[getData().graph_resources.branch].size(); ++i) {
+            n_opening_name.clear();
+            n_opening_name = opening.get(getData().graph_resources.nodes[getData().graph_resources.branch][i].board, getData().graph_resources.nodes[getData().graph_resources.branch][i].player ^ 1);
+            if (n_opening_name.size()) {
+                opening_name = n_opening_name;
+            }
+            getData().graph_resources.nodes[getData().graph_resources.branch][i].opening_name = opening_name;
+        }
+        getData().graph_resources.n_discs = getData().graph_resources.nodes[getData().graph_resources.branch].back().board.n_discs();
+        getData().graph_resources.need_init = false;
+        getData().history_elem = getData().graph_resources.nodes[getData().graph_resources.branch].back();
+        changeScene(U"Main_scene", SCENE_FADE_TIME);
+    }
+};
+
+
 
 
 
@@ -910,8 +1030,8 @@ public:
                     }
                 }
             }
-            player_string = text_area[0].text.replaced(U"\r", U"").replaced(U"\n", U"").replaced(U" ", U"").narrow();
-            opponent_string = text_area[1].text.replaced(U"\r", U"").replaced(U"\n", U"").replaced(U" ", U"").narrow();
+            player_string = text_area[0].text.replaced(U"\r", U"").replaced(U"\n", U"").replaced(U" ", U"").replace(U"\t", U"").narrow();
+            opponent_string = text_area[1].text.replaced(U"\r", U"").replaced(U"\n", U"").replaced(U" ", U"").replace(U"\t", U"").narrow();
             back_button.draw();
             import_button.draw();
             if (back_button.clicked() || KeyEscape.pressed()) {

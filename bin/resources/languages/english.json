@@ -128,6 +128,7 @@
         "input_board": "Input Board",
         "input_ggf": "Input GGF",
         "input_othello_quest": "Input Othello Quest Format",
+        "input_text": "Input Text",
         "edit_board": "Edit Board",
         "input_bitboard": "Input Board as Bitboard",
         "output_bitboard": "Output Board as Bitboard",

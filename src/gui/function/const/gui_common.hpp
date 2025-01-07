@@ -474,10 +474,7 @@ struct Menu_elements {
     // input / output
     // input
     bool input_from_clipboard;
-    bool input_transcript;
-    bool input_board;
-    bool input_ggf;
-    bool input_othello_quest;
+    bool input_text;
     bool edit_board;
     bool input_game;
     // output
@@ -584,10 +581,7 @@ struct Menu_elements {
         book_start_upgrade_better_leaves = false;
 
         input_from_clipboard = false;
-        input_transcript = false;
-        input_board = false;
-        input_ggf = false;
-        input_othello_quest = false;
+        input_text = false;
         edit_board = false;
         input_game = false;
         copy_transcript = false;

@@ -817,32 +817,11 @@ private:
             input_from_clipboard();
             return;
         }
-        if (getData().menu_elements.input_transcript || shortcut_key == U"input_transcript") {
+        if (getData().menu_elements.input_text || shortcut_key == U"input_text") {
             changing_scene = true;
             stop_calculating();
             resume_calculating();
-            changeScene(U"Import_transcript", SCENE_FADE_TIME);
-            return;
-        }
-        if (getData().menu_elements.input_board || shortcut_key == U"input_board") {
-            changing_scene = true;
-            stop_calculating();
-            resume_calculating();
-            changeScene(U"Import_board", SCENE_FADE_TIME);
-            return;
-        }
-        if (getData().menu_elements.input_ggf || shortcut_key == U"input_ggf") {
-            changing_scene = true;
-            stop_calculating();
-            resume_calculating();
-            changeScene(U"Import_GGF", SCENE_FADE_TIME);
-            return;
-        }
-        if (getData().menu_elements.input_othello_quest || shortcut_key == U"input_othello_quest") {
-            changing_scene = true;
-            stop_calculating();
-            resume_calculating();
-            changeScene(U"Import_othello_quest", SCENE_FADE_TIME);
+            changeScene(U"Import_text", SCENE_FADE_TIME);
             return;
         }
         if (getData().menu_elements.edit_board || shortcut_key == U"edit_board") {

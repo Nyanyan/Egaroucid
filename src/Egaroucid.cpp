@@ -85,10 +85,7 @@ void Main() {
     scene_manager.add <Import_book>(U"Import_book");
     scene_manager.add <Export_book>(U"Export_book");
     scene_manager.add <Show_book_info>(U"Show_book_info");
-    scene_manager.add <Import_transcript>(U"Import_transcript");
-    scene_manager.add <Import_board>(U"Import_board");
-    scene_manager.add <Import_GGF>(U"Import_GGF");
-    scene_manager.add <Import_othello_quest>(U"Import_othello_quest");
+    scene_manager.add <Import_text>(U"Import_text");
     scene_manager.add <Edit_board>(U"Edit_board");
     scene_manager.add <Import_game>(U"Import_game");
     scene_manager.add <Export_game>(U"Export_game");

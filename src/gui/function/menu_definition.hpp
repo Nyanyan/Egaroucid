@@ -186,13 +186,7 @@ Menu create_menu(Menu_elements* menu_elements, Resources *resources, Font font) 
     menu_e.init_button(language.get("in_out", "in"), &menu_elements->dummy);
     side_menu.init_button(language.get("in_out", "input_from_clipboard") + get_shortcut_key_info(U"input_from_clipboard"), &menu_elements->input_from_clipboard);
     menu_e.push(side_menu);
-    side_menu.init_button(language.get("in_out", "input_transcript") + get_shortcut_key_info(U"input_transcript"), &menu_elements->input_transcript);
-    menu_e.push(side_menu);
-    side_menu.init_button(language.get("in_out", "input_board") + get_shortcut_key_info(U"input_board"), &menu_elements->input_board);
-    menu_e.push(side_menu);
-    side_menu.init_button(language.get("in_out", "input_ggf") + get_shortcut_key_info(U"input_ggf"), &menu_elements->input_ggf);
-    menu_e.push(side_menu);
-    side_menu.init_button(language.get("in_out", "input_othello_quest") + get_shortcut_key_info(U"input_othello_quest"), &menu_elements->input_othello_quest);
+    side_menu.init_button(language.get("in_out", "input_text") + get_shortcut_key_info(U"input_text"), &menu_elements->input_text);
     menu_e.push(side_menu);
     side_menu.init_button(language.get("in_out", "edit_board") + get_shortcut_key_info(U"edit_board"), &menu_elements->edit_board);
     menu_e.push(side_menu);
