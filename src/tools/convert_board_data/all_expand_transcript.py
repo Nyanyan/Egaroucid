@@ -8,7 +8,7 @@ board_root_dir = './../../../train_data/board_data/'
 #board_sub_dir_nums = [39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51]
 #board_sub_dir_nums = [52, 53, 57, 60, 61, 62, 63]
 #board_sub_dir_nums = [65, 66, 67, 68, 69, 70, 71, 72, 73, 74]
-board_sub_dir_nums = [82]
+board_sub_dir_nums = [81]
 log_file = './../../../train_data/board_data/log.txt'
 
 FILE_INTERVAL = 100

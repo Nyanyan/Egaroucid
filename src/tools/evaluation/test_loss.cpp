@@ -3,7 +3,7 @@
 #include "evaluation_definition.hpp"
 
 #define ADJ_MAX_N_FILES 64
-#define ADJ_MAX_N_DATA 5000
+#define ADJ_MAX_N_DATA 1000000
 
 struct Adj_Data {
     int features[ADJ_N_FEATURES];
@@ -91,6 +91,8 @@ void test_loss(int phase, int n_data, Adj_Data *data, float *mse, float *mae){
     *mae /= n_data;
 }
 
+Adj_Data global_data[ADJ_MAX_N_DATA];
+
 int main(int argc, char *argv[]){
     if (argc < 4){
         std::cerr << "input [eval_file] [phase] [test_files]" << std::endl;
@@ -106,12 +108,11 @@ int main(int argc, char *argv[]){
     if (initialize_eval_arr(in_file)){
         return 1;
     }
-    
-    Adj_Data data[ADJ_MAX_N_DATA];
-    int n_data = import_data(n_files, test_files, data);
+
+    int n_data = import_data(n_files, test_files, global_data);
 
     float mse, mae;
-    test_loss(phase, n_data, data, &mse, &mae);
+    test_loss(phase, n_data, global_data, &mse, &mae);
     std::cerr << "phase " << phase << " n_data " << n_data << " mse " << mse << " mae " << mae << std::endl;
     std::cout << "phase " << phase << " n_data " << n_data << " mse " << mse << " mae " << mae << std::endl;
 

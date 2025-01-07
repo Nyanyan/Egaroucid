@@ -100,7 +100,7 @@ board_sub_dir_nums = [
     81, # test data
     82 # random 12
 ]
-board_sub_dir_nums = [82]
+board_sub_dir_nums = [81]
 board_sub_dir_nums.sort()
 #'''
 
