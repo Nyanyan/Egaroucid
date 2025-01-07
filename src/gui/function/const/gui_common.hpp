@@ -3,7 +3,7 @@
 
     @file gui_common.hpp
         Common things about GUI
-    @date 2021-2024
+    @date 2021-2025
     @author Takuto Yamana
     @license GPL-3.0 license
 */
@@ -285,7 +285,7 @@ struct Colors {
     Color darkblue{ Color(34, 34, 178) };
     Color burlywood{ Color(222, 184, 135) };
     Color black_advantage{ Color(241, 196, 15) };
-    Color white_advantage{ Color(119, 186, 230) };
+    Color white_advantage{ Color(94, 192, 255) };
 };
 
 struct Directories {

@@ -3,7 +3,7 @@
 
     @file version.hpp
         version information
-    @date 2021-2024
+    @date 2021-2025
     @author Takuto Yamana
     @license GPL-3.0 license
 */
@@ -15,7 +15,7 @@
     @brief version settings
 */
 #define EGAROUCID_ENGINE_VERSION "7.5"
-#define USE_BETA_VERSION false
+#define USE_BETA_VERSION true
 
 
 // OS

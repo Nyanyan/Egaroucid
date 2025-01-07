@@ -4,7 +4,7 @@
     @file endsearch_nws_last_simd.hpp
         Last N Moves Optimization on Null Windows Search
         imported from Edax AVX, (C) 1998 - 2018 Richard Delorme, 2014 - 24 Toshihiko Okuhara
-    @date 2021-2024
+    @date 2021-2025
     @author Takuto Yamana
     @author Toshihiko Okuhara
     @license GPL-3.0 license

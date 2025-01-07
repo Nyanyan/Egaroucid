@@ -3,7 +3,7 @@
 
     @file flip_avx512.hpp
         Flip calculation with AVX-512
-    @date 2021-2024
+    @date 2021-2025
     @author Takuto Yamana
     @author Toshihiko Okuhara
     @license GPL-3.0 license
