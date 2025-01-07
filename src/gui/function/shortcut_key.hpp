@@ -183,7 +183,15 @@ public:
         shortcut_keys = shortcut_keys_default;
     }
 
+    void set_empty() {
+        shortcut_keys = shortcut_keys_default;
+        for (Shortcut_key_elem &elem: shortcut_keys) {
+            elem.keys.clear();
+        }
+    }
+
     void init(String file) {
+        set_empty();
         JSON json = JSON::Load(file);
         if (not json) {
             set_default();
@@ -206,7 +214,6 @@ public:
                     }
                 }
             }
-            /*
             for (int i = 0; i < (int)shortcut_keys.size(); ++i) {
                 if (shortcut_keys[i].keys.size()) {
                     for (int j = i + 1; j < (int)shortcut_keys.size(); ++j) {
@@ -225,7 +232,6 @@ public:
                     }
                 }
             }
-            */
         }
     }
 
