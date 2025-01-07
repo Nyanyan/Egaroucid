@@ -155,7 +155,8 @@
         "input_screenshot_saving_dir": "Enter screenshot saving directory",
         "directory_not_found": "Directory not found",
         "board_image": "Edit and Save Board Image",
-        "you_can_paste_with_ctrl_v": "You can paste with Ctrl+V"
+        "you_can_paste_with_ctrl_v": "You can paste with Ctrl+V",
+        "you_can_drag_and_drop_game_file": "You can drag & drop game file"
     },
     "display": {
         "display": "Display",

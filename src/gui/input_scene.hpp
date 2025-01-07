@@ -56,11 +56,26 @@ public:
         getData().fonts.font(language.get("in_out", "input_text")).draw(25, Arg::topCenter(X_CENTER, sy), getData().colors.white);
         text_area.active = true;
         bool text_changed = SimpleGUI::TextArea(text_area, Vec2{X_CENTER - 300, sy + 40}, SizeF{600, 150}, INPUT_STR_MAX_SIZE);
-        getData().fonts.font(language.get("in_out", "you_can_paste_with_ctrl_v")).draw(13, Arg::topCenter(X_CENTER, sy + 195), getData().colors.white);
+        getData().fonts.font(language.get("in_out", "you_can_paste_with_ctrl_v") + U" / " + language.get("in_out", "you_can_drag_and_drop_game_file")).draw(13, Arg::topCenter(X_CENTER, sy + 195), getData().colors.white);
         bool return_pressed = false;
         if (text_area.text.size()) {
             if (text_area.text[text_area.text.size() - 1] == '\n') {
                 return_pressed = true;
+            }
+        }
+        if (DragDrop::HasNewFilePaths()) {
+            std::string path = DragDrop::GetDroppedFilePaths()[0].path.narrow();
+            std::ifstream ifs(path);
+            if (ifs.fail()) {
+                std::cerr << "can't open " << path << std::endl;
+            } else {
+                std::istreambuf_iterator<char> it(ifs);
+                std::istreambuf_iterator<char> last;
+                std::string str(it, last);
+                text_area.text = Unicode::Widen(str);
+                text_area.cursorPos = text_area.text.size();
+                text_area.rebuildGlyphs();
+                text_changed = true;
             }
         }
         text = text_area.text.replaced(U"\r", U"").replaced(U"\n", U"").replaced(U" ", U"").replace(U"\t", U"").narrow();

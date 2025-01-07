@@ -155,7 +155,8 @@
         "input_screenshot_saving_dir": "进入截图保存目录",
         "directory_not_found": "目录未找到",
         "board_image": "编辑和保存当前棋盘图片",
-        "you_can_paste_with_ctrl_v": "您可以使用 Ctrl+V 粘贴"
+        "you_can_paste_with_ctrl_v": "您可以使用 Ctrl+V 粘贴",
+        "you_can_drag_and_drop_game_file": "您可以拖放游戏文件"
     },
     "display": {
         "display": "显示",

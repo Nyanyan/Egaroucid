@@ -155,7 +155,8 @@
         "input_screenshot_saving_dir": "スクリーンショット保存ディレクトリを入力してください",
         "directory_not_found": "ディレクトリが見つかりません",
         "board_image": "ボードの画像を編集",
-        "you_can_paste_with_ctrl_v": "Ctrl+Vで貼り付け可能"
+        "you_can_paste_with_ctrl_v": "Ctrl+Vで貼り付け可能",
+        "you_can_drag_and_drop_game_file": "ゲームファイルをドラッグ&ドロップ可能"
     },
     "display": {
         "display": "表示",
