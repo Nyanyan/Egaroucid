@@ -4,7 +4,7 @@ import glob
 
 transcript_root_dir = './../../../train_data/transcript/'
 board_root_dir = './../../../train_data/board_data/'
-board_sub_dir_nums = [77]
+board_sub_dir_nums = [84, 85, 86, 87, 88]
 log_file = './../../../train_data/board_data/log.txt'
 
 FILE_INTERVAL = 100
