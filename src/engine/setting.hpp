@@ -111,7 +111,7 @@
         #define USE_CRC32C_HASH false
 
         // TT init with SIMD
-        #define USE_SIMD_TT_INIT true
+        #define USE_SIMD_TT_INIT false
 
     #endif
 #else

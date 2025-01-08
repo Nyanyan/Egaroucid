@@ -270,6 +270,7 @@ struct Hash_node {
 */
 void init_transposition_table(Hash_node table[], size_t s, size_t e) {
 #if USE_SIMD && USE_SIMD_TT_INIT
+    // UNDER CONSTRUCTION
     Hash_node HASH_NODE_INIT;
     HASH_NODE_INIT.init();
     __m256i init_data = _mm256_load_si256(((__m256i*)&HASH_NODE_INIT));
