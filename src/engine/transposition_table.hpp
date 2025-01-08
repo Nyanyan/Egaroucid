@@ -55,8 +55,14 @@ inline uint32_t get_level_common(int depth, uint_fast8_t mpc_level) {
 */
 class Hash_data {
     private:
-        uint8_t mpc_level;
-        uint8_t depth;
+        union {
+            // little endian
+            struct {
+                uint8_t mpc_level;
+                uint8_t depth;
+            } c;
+            uint16_t level;
+        } level;
         uint8_t importance;
         int8_t lower;
         int8_t upper;
@@ -75,8 +81,8 @@ class Hash_data {
             upper = SCORE_MAX;
             moves[0] = MOVE_UNDEFINED;
             moves[1] = MOVE_UNDEFINED;
-            mpc_level = 0;
-            depth = 0;
+            level.c.mpc_level = 0;
+            level.c.depth = 0;
             importance = 0;
         }
 
@@ -136,8 +142,8 @@ class Hash_data {
                 moves[1] = moves[0];
                 moves[0] = policy;
             }
-            depth = d;
-            mpc_level = ml;
+            level.c.depth = d;
+            level.c.mpc_level = ml;
             importance = 1;
         }
 
@@ -171,8 +177,8 @@ class Hash_data {
                 moves[0] = MOVE_UNDEFINED;
             }
             moves[1] = MOVE_UNDEFINED;
-            depth = d;
-            mpc_level = ml;
+            level.c.depth = d;
+            level.c.mpc_level = ml;
             importance = 1;
         }
 
@@ -183,7 +189,8 @@ class Hash_data {
         */
         inline uint32_t get_level() {
             if (importance) {
-                return get_level_common(depth, mpc_level);
+                //return get_level_common(depth, mpc_level);
+                return level.level;
             }
             return 0;
         }
@@ -194,7 +201,8 @@ class Hash_data {
             @return level
         */
         inline uint32_t get_level_no_importance() {
-            return get_level_common(depth, mpc_level);
+            //return get_level_common(depth, mpc_level);
+            return level.level;
         }
 
         inline int get_window_width() {
@@ -230,7 +238,7 @@ class Hash_data {
         }
 
         inline uint8_t get_mpc_level() {
-            return mpc_level;
+            return level.c.mpc_level;
         }
 
         inline uint8_t get_importance() const {
