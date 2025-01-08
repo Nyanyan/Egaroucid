@@ -855,6 +855,15 @@ class Transposition_table {
 
         }
 
+        inline void prefetch(uint32_t hash) {
+            // idea from http://www.amy.hi-ho.ne.jp/okuhara/edaxopt.htm#hashprefetch
+#if USE_SIMD // only SIMD version
+            Hash_node *node = get_node(hash);
+            _mm_prefetch((char const *)node, _MM_HINT_T0);
+            _mm_prefetch((char const *)(node + TRANSPOSITION_TABLE_N_LOOP - 1), _MM_HINT_T0);
+#endif
+        }
+
     private:
         inline Hash_node* get_node(const uint32_t hash) {
 #if TT_USE_STACK
