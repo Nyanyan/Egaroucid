@@ -112,9 +112,13 @@ train_data_nums = [
     #81, # test data
     82, # random 12
     #83, # book data (records80 minimum 10000 data)
+    84, 85, 86, 87, 88, 89, # non-regular random starting position
 ]
 if int(phase) <= 11:
-    train_data_nums = [37, 83] # use only book with phase <= 11
+    train_data_nums = [
+        37, 83, # use only book with phase <= 11
+        84, 85, 86, 87, 88, 89, # non-regular random starting position
+    ]
 train_data_nums.sort()
 train_root_dir = './../../../train_data/bin_data/20241125_1/'
 executable = 'eval_optimizer_cuda_12_2_0_20241125_1_7_5_full_val_data.exe'

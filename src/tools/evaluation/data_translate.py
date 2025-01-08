@@ -100,15 +100,19 @@ board_sub_dir_nums = [
     81, # test data
     82, # random 12
     83, # book data (records80 minimum 10000 data)
+    84, 85, 86, 87, 88, 89, # non-regular random starting position
 ]
-board_sub_dir_nums = [83]
+board_sub_dir_nums = [89]
 board_sub_dir_nums.sort()
-min_n_data_dct = {}
-min_n_data_dct['83'] = 10000
 #'''
 
 
+min_n_data_dct = {}
+min_n_data_dct['83'] = 10000
+
+
 input_root_dir = './../../../train_data/board_data/'
+
 
 board_n_moves = {}
 '''
@@ -225,6 +229,13 @@ board_n_moves['81'] = [12, 59] # new test data      8702 games
 board_n_moves['82'] = [12, 59] # random12           6892063 games
 
 board_n_moves['83'] = [0, 11] # new first11 book book_size 23259291 (at least 10000 data for phase)
+
+board_n_moves['84'] = [0, 59] # non-regular random board 4 discs    10000 games
+board_n_moves['85'] = [1, 59] # non-regular random board 5 discs    20000 games
+board_n_moves['86'] = [2, 59] # non-regular random board 6 discs    30000 games
+board_n_moves['87'] = [3, 59] # non-regular random board 7 discs    40000 games
+board_n_moves['88'] = [4, 59] # non-regular random board 8 discs    50000 games
+board_n_moves['89'] = [5, 59] # non-regular random board 9 discs    31273 games
 
 
 procs = []
