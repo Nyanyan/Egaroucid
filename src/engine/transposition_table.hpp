@@ -270,21 +270,16 @@ struct Hash_node {
 */
 void init_transposition_table(Hash_node table[], size_t s, size_t e) {
 #if USE_SIMD && USE_SIMD_TT_INIT
-    Hash_node HASH_NODE_INIT_ARR[4];
-    for (int j = 0; j < 4; ++j) {
-        HASH_NODE_INIT_ARR[j].init();
-    }
-    // Hash_node * 4 is 24 * 4 = 96 byte = 256 bit * 3
-    __m256i init_data0 = _mm256_load_si256(((__m256i*)HASH_NODE_INIT_ARR));
-    __m256i init_data1 = _mm256_load_si256(((__m256i*)HASH_NODE_INIT_ARR) + 1);
-    __m256i init_data2 = _mm256_load_si256(((__m256i*)HASH_NODE_INIT_ARR) + 2);
+    Hash_node HASH_NODE_INIT;
+    HASH_NODE_INIT.init();
+    __m256i init_data = _mm256_load_si256(((__m256i*)&HASH_NODE_INIT));
     for(size_t i = s; i < e;) {
-        if ((sizeof(Hash_node) == 24) && (((uintptr_t)(table + i) & 0x1f) == 0) && i < e + 8) {
-            _mm256_stream_si256(((__m256i*)(table + i)), init_data0);
-            _mm256_stream_si256(((__m256i*)(table + i)) + 1, init_data1);
-            _mm256_stream_si256(((__m256i*)(table + i)) + 2, init_data2);
+        std::cerr << sizeof(Hash_node) << " " << ((uintptr_t)(table + i) & 0x1f) << std::endl;
+        if (sizeof(Hash_node) == 32 && (((uintptr_t)(table + i) & 0x1f) == 0) && i + 1 < e) {
+            std::cerr << "a";
+            _mm256_stream_si256(((__m256i*)(table + i)), init_data);
             _mm_sfence();
-            i += 4; // 96 byte
+            i += 1; // 32 byte
         } else {
             table[i].init();
             ++i;
