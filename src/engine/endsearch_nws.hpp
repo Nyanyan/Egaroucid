@@ -146,14 +146,18 @@ struct LocalTTEntry {
 
 static thread_local LocalTTEntry lttable[MID_TO_END_DEPTH - END_FAST_DEPTH][LOCAL_TT_SIZE];
 
-inline uint32_t hash_bb(Board *board)
-{
-	return ((board->player * 0x9dda1c54cfe6b6e9ull) ^ (board->opponent * 0xa2e6c0300831e05aull)) >> (HW2 - LOCAL_TT_SIZE_BIT);
+inline uint32_t hash_bb(Board *board) {
+#if USE_SIMD && USE_CRC32C_HASH_LTT
+    uint64_t res = _mm_crc32_u64(0, board->player);
+    res = _mm_crc32_u64(res, board->opponent);
+    return res & (LOCAL_TT_SIZE - 1);
+#else
+    return ((board->player * 0x9dda1c54cfe6b6e9ull) ^ (board->opponent * 0xa2e6c0300831e05aull)) >> (HW2 - LOCAL_TT_SIZE_BIT);
+#endif
 }
 
-inline LocalTTEntry *get_ltt(Board *board, uint32_t n_discs)
-{
-	return lttable[HW2 - n_discs - END_FAST_DEPTH] + hash_bb(board);
+inline LocalTTEntry *get_ltt(Board *board, uint32_t n_discs) {
+    return lttable[HW2 - n_discs - END_FAST_DEPTH] + hash_bb(board);
 }
 
 /*
