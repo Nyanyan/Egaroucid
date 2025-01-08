@@ -860,7 +860,7 @@ class Transposition_table {
 #if USE_SIMD // only SIMD version
             Hash_node *node = get_node(hash);
             _mm_prefetch((char const *)node, _MM_HINT_T0);
-            _mm_prefetch((char const *)(node + TRANSPOSITION_TABLE_N_LOOP - 1), _MM_HINT_T0);
+            //_mm_prefetch((char const *)(node + TRANSPOSITION_TABLE_N_LOOP - 1), _MM_HINT_T0);
 #endif
         }
 

@@ -145,6 +145,7 @@ int nega_scout(Search *search, int alpha, int beta, const int depth, const bool 
         return v;
     }
     uint32_t hash_code = search->board.hash();
+    transposition_table.prefetch(hash_code);
     uint_fast8_t moves[N_TRANSPOSITION_MOVES] = {MOVE_UNDEFINED, MOVE_UNDEFINED};
     if (transposition_cutoff(search, hash_code, depth, &alpha, &beta, &v, moves)) {
         return v;
