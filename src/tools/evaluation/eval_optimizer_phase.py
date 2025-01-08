@@ -3,9 +3,9 @@ import sys
 
 phase = str(sys.argv[1])
 hour = '0'
-minute = '1'
+minute = str(sys.argv[2]) #'7'
 second = '0'
-alpha = '100.0'
+alpha = str(sys.argv[3]) #'300.0'
 n_patience = '500'
 
 model_dir = './../../../model/nomodel/'
@@ -121,7 +121,8 @@ train_data_nums = [
 #    ]
 train_data_nums.sort()
 train_root_dir = './../../../train_data/bin_data/20241125_1/'
-executable = 'eval_optimizer_cuda_12_2_0_20241125_1_7_5_full_val_data.exe'
+#executable = 'eval_optimizer_cuda_12_2_0_20241125_1_7_5_full_val_data.exe'
+executable = 'eval_optimizer_cuda_12_2_0_20241125_1_7_5.exe'
 #'''
 
 
