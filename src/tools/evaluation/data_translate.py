@@ -98,10 +98,13 @@ board_sub_dir_nums = [
     78, 79, # random 11 & 12 (bug fixed)
     80, # new first11 book
     81, # test data
-    82 # random 12
+    82, # random 12
+    83, # book data (records80 minimum 10000 data)
 ]
-board_sub_dir_nums = [81]
+board_sub_dir_nums = [83]
 board_sub_dir_nums.sort()
+min_n_data_dct = {}
+min_n_data_dct['83'] = 10000
 #'''
 
 
@@ -221,6 +224,8 @@ board_n_moves['81'] = [12, 59] # new test data      8702 games
 
 board_n_moves['82'] = [12, 59] # random12           6892063 games
 
+board_n_moves['83'] = [0, 11] # new first11 book book_size 23259291 (at least 10000 data for phase)
+
 
 procs = []
 for phase in range(N_PHASES):
@@ -233,7 +238,11 @@ for phase in range(N_PHASES):
         input_dir = input_root_dir + 'records' + str(board_sub_dir_num)
         n_files_str = str(len(glob.glob(input_dir + '/*.dat')))
         out_file = bin_dir + '/' + str(board_sub_dir_num) + '.dat'
-        cmd = exe + ' ' + input_dir + ' 0 ' + n_files_str + ' ' + out_file + ' ' + str(phase) + ' ' + str(board_n_moves[str(board_sub_dir_num)][0]) + ' ' + str(board_n_moves[str(board_sub_dir_num)][1])
+        if str(board_sub_dir_num) in min_n_data_dct:
+            min_n_data = min_n_data_dct[str(board_sub_dir_num)]
+        else:
+            min_n_data = 0
+        cmd = exe + ' ' + input_dir + ' 0 ' + n_files_str + ' ' + out_file + ' ' + str(phase) + ' ' + str(board_n_moves[str(board_sub_dir_num)][0]) + ' ' + str(board_n_moves[str(board_sub_dir_num)][1]) + ' ' + str(min_n_data)
         while True: # wait while cpu is busy
             cpu_percent = psutil.cpu_percent(percpu=False)
             if cpu_percent < 95.0:

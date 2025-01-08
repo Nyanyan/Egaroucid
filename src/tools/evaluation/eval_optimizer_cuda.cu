@@ -405,18 +405,18 @@ int main(int argc, char* argv[]) {
     // divide data
     int n_val_data, n_train_data;
     Adj_Data* host_val_data;
-    if (phase > 11){ // to phase 11, the all data available
-        n_val_data = n_all_data * 0.05; // use 5% as val data
-        if (n_val_data <= 0){
-            n_val_data = 1;
-        }
-        n_train_data  = n_all_data - n_val_data;
-        host_val_data = host_train_data + n_train_data;
-    } else{
-        n_val_data = n_all_data; // use 100% train data
-        n_train_data  = n_all_data; // use 100% val data
-        host_val_data = host_train_data;
+    //if (phase > 11){ // to phase 11, the all data available
+    n_val_data = n_all_data * 0.05; // use 5% as validation data
+    if (n_val_data <= 0){
+        n_val_data = 1;
     }
+    n_train_data  = n_all_data - n_val_data;
+    host_val_data = host_train_data + n_train_data;
+    //} else{
+    //    n_val_data = n_all_data; // use 100% train data
+    //    n_train_data  = n_all_data; // use 100% val data
+    //    host_val_data = host_train_data;
+    //}
     std::cerr << "n_train_data " << n_train_data << " n_val_data " << n_val_data << std::endl;
     // calculate n_appear of train data
     int host_start_idx_arr[ADJ_N_FEATURES];
