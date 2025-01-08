@@ -916,6 +916,7 @@ bool hash_resize(int hash_level_failed, int hash_level, bool show_log) {
             hash_init_rand(hash_level_failed);
         }
         global_hash_level = hash_level_failed;
+        global_hash_bit_mask = (1U << global_hash_level) - 1;
         return false;
     }
     if (!hash_init(hash_level)) {
@@ -923,6 +924,7 @@ bool hash_resize(int hash_level_failed, int hash_level, bool show_log) {
         hash_init_rand(hash_level);
     }
     global_hash_level = hash_level;
+    global_hash_bit_mask = (1U << global_hash_level) - 1;
     if (show_log) {
         double size_mb = (double)sizeof(Hash_node) / 1024 / 1024 * hash_sizes[hash_level];
         std::cerr << "hash resized to level " << hash_level << " elements " << hash_sizes[hash_level] << " size " << size_mb << " MB" << std::endl;
@@ -947,6 +949,7 @@ bool hash_resize(int hash_level_failed, int hash_level, std::string binary_path,
             hash_init_rand(hash_level_failed);
         }
         global_hash_level = hash_level_failed;
+        global_hash_bit_mask = (1U << global_hash_level) - 1;
         return false;
     }
     if (!hash_init(hash_level, binary_path)) {
@@ -954,6 +957,7 @@ bool hash_resize(int hash_level_failed, int hash_level, std::string binary_path,
         hash_init_rand(hash_level);
     }
     global_hash_level = hash_level;
+    global_hash_bit_mask = (1U << global_hash_level) - 1;
     if (show_log) {
         double size_mb = (double)sizeof(Hash_node) / 1024 / 1024 * hash_sizes[hash_level];
         std::cerr << "hash resized to level " << hash_level << " elements " << hash_sizes[hash_level] << " size " << size_mb << " MB" << std::endl;
@@ -967,6 +971,8 @@ bool hash_tt_init(std::string binary_path, bool show_log) {
         std::cerr << "[ERROR] can't get hash. you can ignore this error" << std::endl;
         hash_init_rand(DEFAULT_HASH_LEVEL);
     }
+    global_hash_level = DEFAULT_HASH_LEVEL;
+    global_hash_bit_mask = (1U << DEFAULT_HASH_LEVEL) - 1;
     return true;
 }
 
@@ -976,6 +982,8 @@ bool hash_tt_init(bool show_log) {
         std::cerr << "[ERROR] can't get hash. you can ignore this error" << std::endl;
         hash_init_rand(DEFAULT_HASH_LEVEL);
     }
+    global_hash_level = DEFAULT_HASH_LEVEL;
+    global_hash_bit_mask = (1U << DEFAULT_HASH_LEVEL) - 1;
     return true;
 }
 #endif

@@ -16,6 +16,10 @@
 #include "last_flip.hpp"
 #include "hash.hpp"
 
+#if USE_SIMD
+uint32_t global_hash_bit_mask = (1U << DEFAULT_HASH_LEVEL) - 1;
+#endif
+
 /*
     @brief Board class
 
@@ -66,7 +70,15 @@ class Board {
 
             @return hash code of this board
         */
-        inline uint32_t hash() const{
+#if USE_SIMD
+        // CRC32C Hash from http://www.amy.hi-ho.ne.jp/okuhara/edaxopt.htm#crc32hash
+        inline uint32_t hash() const {
+            uint64_t res = _mm_crc32_u64(0, player);
+            res = _mm_crc32_u64(res, opponent); // only 32 bits
+            return global_hash_bit_mask & res;
+        }
+#else
+        inline uint32_t hash() const {
             const uint16_t *p = (uint16_t*)&player;
             const uint16_t *o = (uint16_t*)&opponent;
             return 
@@ -79,6 +91,7 @@ class Board {
                 hash_rand_opponent[2][o[2]] ^ 
                 hash_rand_opponent[3][o[3]];
         }
+#endif
 
         /*
             @brief mirroring in white line
