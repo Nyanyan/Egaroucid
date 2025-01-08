@@ -3,9 +3,9 @@ import sys
 
 phase = str(sys.argv[1])
 hour = '0'
-minute = '11'
+minute = '1'
 second = '0'
-alpha = '500.0'
+alpha = '100.0'
 n_patience = '500'
 
 model_dir = './../../../model/nomodel/'
@@ -108,17 +108,17 @@ train_data_nums = [
     65, 66, 67, 68, 69, 70, 71, 72, 73, 74, # Egaroucid 7.4.0 1000000 data
     77,  # random 18 discs (GGS)
     78, 79, # random 11 & 12 (bug fixed)
-    80, # new first11 book
+    #80, # new first11 book
     #81, # test data
     82, # random 12
-    #83, # book data (records80 minimum 10000 data)
+    83, # book data (records80 minimum 200000 data)
     84, 85, 86, 87, 88, 89, # non-regular random starting position
 ]
-if int(phase) <= 11:
-    train_data_nums = [
-        37, 83, # use only book with phase <= 11
-        84, 85, 86, 87, 88, 89, # non-regular random starting position
-    ]
+#if int(phase) <= 11:
+#    train_data_nums = [
+#        37, 83, # use only book with phase <= 11
+#        84, 85, 86, 87, 88, 89, # non-regular random starting position
+#    ]
 train_data_nums.sort()
 train_root_dir = './../../../train_data/bin_data/20241125_1/'
 executable = 'eval_optimizer_cuda_12_2_0_20241125_1_7_5_full_val_data.exe'
