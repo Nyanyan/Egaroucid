@@ -107,6 +107,9 @@
             #define USE_AVX512_STABILITY true
         #endif
 
+        // CRC32C Hash
+        #define USE_CRC32C_HASH false
+
     #endif
 #else
     // NTZ

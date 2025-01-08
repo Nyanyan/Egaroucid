@@ -70,11 +70,11 @@ class Board {
 
             @return hash code of this board
         */
-#if USE_SIMD
+#if USE_SIMD && USE_CRC32C_HASH
         // CRC32C Hash idea from http://www.amy.hi-ho.ne.jp/okuhara/edaxopt.htm#crc32hash
         inline uint32_t hash() const {
-            uint64_t res = _mm_crc32_u64(0, player);
-            res = _mm_crc32_u64(res, opponent); // only 32 bits
+            uint32_t res = _mm_crc32_u64(0, player);
+            res = _mm_crc32_u64(res, opponent);
             return global_hash_bit_mask & res;
         }
 #else
