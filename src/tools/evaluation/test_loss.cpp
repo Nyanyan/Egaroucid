@@ -3,7 +3,7 @@
 #include "evaluation_definition.hpp"
 
 #define ADJ_MAX_N_FILES 64
-#define ADJ_MAX_N_DATA 20000000
+//#define ADJ_MAX_N_DATA 20000000
 
 struct Adj_Data {
     int features[ADJ_N_FEATURES];
@@ -37,22 +37,25 @@ int import_data(int n_files, char* files[], std::vector<Adj_Data> &data) {
     int16_t n_discs, score, player;
     uint16_t raw_features[ADJ_N_FEATURES];
     float score_avg = 0.0;
+    Adj_Data datum;
     for (int file_idx = 0; file_idx < n_files; ++file_idx) {
         std::cerr << files[file_idx] << std::endl;
         if (fopen_s(&fp, files[file_idx], "rb") != 0) {
             std::cerr << "can't open " << files[file_idx] << std::endl;
             continue;
         }
-        while (n_data < ADJ_MAX_N_DATA) {
+        //while (n_data < ADJ_MAX_N_DATA) {
+        while (true) {
             if (fread(&n_discs, 2, 1, fp) < 1)
                 break;
             fread(&player, 2, 1, fp);
             fread(raw_features, 2, ADJ_N_FEATURES, fp);
-            for (int i = 0; i < ADJ_N_FEATURES; ++i){
-                data[n_data].features[i] = raw_features[i];
-            }
             fread(&score, 2, 1, fp);
-            data[n_data].score = (float)score;
+            for (int i = 0; i < ADJ_N_FEATURES; ++i){
+                datum.features[i] = raw_features[i];
+            }
+            datum.score = (float)score;
+            data.emplace_back(datum);
             if ((n_data & 0xffff) == 0xffff)
                 std::cerr << '\r' << n_data;
             score_avg += score;
@@ -91,7 +94,7 @@ void test_loss(int phase, int n_data, std::vector<Adj_Data> &data, float *mse, f
     *mae /= n_data;
 }
 
-std::vector<Adj_Data> global_data(ADJ_MAX_N_DATA);
+std::vector<Adj_Data> global_data;
 
 int main(int argc, char *argv[]){
     if (argc < 4){
