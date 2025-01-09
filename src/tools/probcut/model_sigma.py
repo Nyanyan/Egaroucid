@@ -17,8 +17,10 @@ import math
 #data_files = ['data/20240925_1_7_4/probcut_mid0.txt']
 #data_files = ['data/20241118_1_7_5/probcut_mid0.txt']
 #data_files = ['data/20241128_1_7_5/probcut_mid0.txt']
-data_files = ['data/20241130_1_7_5/probcut_mid0.txt']
-data_files_end = ['data/20241130_1_7_5/probcut_end0.txt', 'data/20241130_1_7_5/probcut_end1.txt', 'data/20241130_1_7_5/probcut_end2.txt']
+#data_files = ['data/20241130_1_7_5/probcut_mid0.txt']
+#data_files_end = ['data/20241130_1_7_5/probcut_end0.txt', 'data/20241130_1_7_5/probcut_end1.txt', 'data/20241130_1_7_5/probcut_end2.txt']
+data_files = ['data/20250109_1_7_6/probcut_mid0.txt']
+data_files_end = ['data/20250109_1_7_6/probcut_end0.txt']
 
 
 data = [[[[] for _ in range(61)] for _ in range(61)] for _ in range(65)] # n_discs, depth1, depth2 (depth1 < depth2)
