@@ -18,7 +18,7 @@ for line in s:
     except:
         continue
 
-result = str(n_data) + ' data used for training, ' + str(n_val_data) + 'data used for validation, sum ' + str(n_data + n_val_data) +  ' for ' + str(n_count_phases) + ' phases'
+result = str(n_data) + ' data used for training, ' + str(n_val_data) + ' data used for validation, sum ' + str(n_data + n_val_data) +  ' for ' + str(n_count_phases) + ' phases'
 print(result)
 
 if input('write to info.txt?: ') == 'y':
