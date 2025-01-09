@@ -3,7 +3,7 @@
 #include "evaluation_definition.hpp"
 
 #define ADJ_MAX_N_FILES 64
-#define ADJ_MAX_N_DATA 1000000
+#define ADJ_MAX_N_DATA 20000000
 
 struct Adj_Data {
     int features[ADJ_N_FEATURES];
@@ -31,7 +31,7 @@ int initialize_eval_arr(char *in_file){
     return 0;
 }
 
-int import_data(int n_files, char* files[], Adj_Data* data) {
+int import_data(int n_files, char* files[], std::vector<Adj_Data> &data) {
     int n_data = 0;
     FILE* fp;
     int16_t n_discs, score, player;
@@ -68,7 +68,7 @@ int import_data(int n_files, char* files[], Adj_Data* data) {
     return n_data;
 }
 
-void test_loss(int phase, int n_data, Adj_Data *data, float *mse, float *mae){
+void test_loss(int phase, int n_data, std::vector<Adj_Data> &data, float *mse, float *mae){
     *mse = 0.0;
     *mae = 0.0;
     for (int i = 0; i < n_data; ++i){
@@ -91,7 +91,7 @@ void test_loss(int phase, int n_data, Adj_Data *data, float *mse, float *mae){
     *mae /= n_data;
 }
 
-Adj_Data global_data[ADJ_MAX_N_DATA];
+std::vector<Adj_Data> global_data(ADJ_MAX_N_DATA);
 
 int main(int argc, char *argv[]){
     if (argc < 4){
