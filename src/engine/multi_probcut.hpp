@@ -220,7 +220,7 @@ void get_data_probcut_mid() {
     Search_result short_ans, long_ans;
     bool searching = true;
     for (int i = 0; i < 1000; ++i) {
-        for (int depth = 0; depth < 15; ++depth) {
+        for (int depth = 2; depth < 15; ++depth) {
             for (int n_discs = 4; n_discs < HW2 - depth - 5; ++n_discs) {
                 board.reset();
                 for (int j = 4; j < n_discs && board.check_pass(); ++j) { // random move
@@ -243,7 +243,7 @@ void get_data_probcut_mid() {
                     //int short_depth = mpc_search_depth_arr[0][depth];
                     if (short_depth == 0) {
                         short_ans.value = mid_evaluate(&board);
-                    } else{
+                    } else {
                         short_ans = tree_search_legal(board, -SCORE_MAX, SCORE_MAX, short_depth, MPC_100_LEVEL, false, board.get_legal(), true, TIME_LIMIT_INF, &searching);
                     }
                     long_ans = tree_search_legal(board, -SCORE_MAX, SCORE_MAX, depth, MPC_100_LEVEL, false, board.get_legal(), true, TIME_LIMIT_INF, &searching);
@@ -288,7 +288,7 @@ void get_data_probcut_end() {
                 //int short_depth = mpc_search_depth_arr[1][depth];
                 if (short_depth == 0) {
                     short_ans.value = mid_evaluate(&board);
-                } else{
+                } else {
                     short_ans = tree_search_legal(board, -SCORE_MAX, SCORE_MAX, short_depth, MPC_100_LEVEL, false, board.get_legal(), true, TIME_LIMIT_INF, &searching);
                 }
                 long_ans = tree_search_legal(board, -SCORE_MAX, SCORE_MAX, depth, MPC_100_LEVEL, false, board.get_legal(), true, TIME_LIMIT_INF, &searching);

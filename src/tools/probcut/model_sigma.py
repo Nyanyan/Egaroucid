@@ -19,7 +19,7 @@ import math
 #data_files = ['data/20241128_1_7_5/probcut_mid0.txt']
 #data_files = ['data/20241130_1_7_5/probcut_mid0.txt']
 #data_files_end = ['data/20241130_1_7_5/probcut_end0.txt', 'data/20241130_1_7_5/probcut_end1.txt', 'data/20241130_1_7_5/probcut_end2.txt']
-data_files = ['data/20250109_1_7_6/probcut_mid0.txt']
+data_files = ['data/20250109_1_7_6/probcut_mid0.txt', 'data/20250109_1_7_6/probcut_mid1.txt']
 data_files_end = ['data/20250109_1_7_6/probcut_end0.txt']
 
 
@@ -31,7 +31,8 @@ for data_file in data_files:
             raw_data = f.read().splitlines()
         for datum in raw_data:
             n_discs, depth1, depth2, error = [int(elem) for elem in datum.split()]
-            data[n_discs][depth1][depth2].append(error)
+            if depth2 > 1:
+                data[n_discs][depth1][depth2].append(error)
     except:
         print('cannot open', data_file)
 
