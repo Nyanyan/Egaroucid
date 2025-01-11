@@ -79,7 +79,7 @@ for n_discs in range(len(data)):
                 y_depth2_sd.append(depth2)
                 z_sd.append(sd)
                 if depth2 == 64 - n_discs:
-                    weight_sd.append(0.0005)
+                    weight_sd.append(0.0001)
                 else:
                     weight_sd.append(0.001)
 
@@ -88,7 +88,7 @@ for n_discs in range(len(data)):
                 y_depth2_mean.append(depth2)
                 z_mean.append(mean)
                 weight_mean.append(0.001)
-'''
+
 for n_discs in range(4, 61):
     for depth2 in range(30, 31):
         depth1 = 0
@@ -98,7 +98,7 @@ for n_discs in range(4, 61):
         y_depth2_sd.append(depth2)
         z_sd.append(z)
         weight_sd.append(0.001)
-'''
+
 def f(wxy, probcut_a, probcut_b, probcut_c, probcut_d, probcut_e, probcut_f, probcut_g):
     w, x, y = wxy
     w = w / 64
