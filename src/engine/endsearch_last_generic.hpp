@@ -13,6 +13,64 @@
 #include "endsearch_common.hpp"
 
 /*
+    @brief Get a final score from bitboard with last 1 empty
+
+    Special optimization from an idea of https://github.com/abulmo/edax-reversi/blob/1ae7c9fe5322ac01975f1b3196e788b0d25c1e10/src/endgame.c#L85 ,
+    which has been adapted from Zebra by Gunnar Anderson.
+
+    @param search               search information (board ignored)
+    @param player               player bitboard
+    @param alpha                alpha value
+    @param p0                   last empty square
+    @return the final score
+*/
+inline int last1(Search *search, uint64_t player, int alpha, uint_fast8_t p0) {
+    ++search->n_nodes;
+#if USE_SEARCH_STATISTICS
+    ++search->n_nodes_discs[63];
+#endif
+    const int x = p0 & 7;
+    const int y = p0 >> 3;
+    const int d7t = std::min(y, 7 - x);
+    const int d9t = std::min(y, x);
+    uint_fast8_t d7 = join_d7_line(player, x + y);
+    uint_fast8_t d9 = join_d9_line(player, x + 7 - y);
+#if LAST_FLIP_PASS_OPT
+    int n_flip_both = 
+        N_LAST_FLIP_BOTH[join_h_line(player, y)][x] + // both h
+        N_LAST_FLIP_BOTH[join_v_line(player, x)][y] + // both v
+        N_LAST_FLIP[d7][d7t] + // player d7
+        N_LAST_FLIP[d9][d9t];  // player d9
+    int n_flip = n_flip_both & 0xff;
+#else
+    int n_flip = count_last_flip(player, p0);
+#endif
+    int score = 2 * (pop_count_ull(player) + n_flip + 1) - HW2;	// (P + n_flip + 1) - (HW2 - 1 - P - n_flip)
+    if (n_flip == 0) {
+        ++search->n_nodes;
+#if USE_SEARCH_STATISTICS
+        ++search->n_nodes_discs[63];
+#endif
+        int score2 = score - 2;	// empty for opponent
+        if (score <= 0)
+            score = score2;
+        if (score > alpha) {
+#if LAST_FLIP_PASS_OPT
+            n_flip = 
+                (n_flip_both >> 8) + // hv (calculated)
+                N_LAST_FLIP[(0xff >> -std::min((x + y) - 7, 7 - (x + y))) ^ d7][d7t] + // d7
+                N_LAST_FLIP[(0xff >> -std::min(x - y, y - x)) ^ d9][d9t]; // d9
+#else
+            n_flip = count_last_flip(~player, p0);
+#endif
+            if (n_flip)
+                score = score2 - 2 * n_flip;
+        }
+    }
+    return score;
+}
+
+/*
     @brief Get a final min score with last 2 empties
 
     No move ordering. Just search it.
