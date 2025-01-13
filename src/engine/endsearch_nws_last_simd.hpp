@@ -103,7 +103,7 @@ static inline int vectorcall last1_nws(Search *search, __m128i PO, int alpha, in
 #else // AVX2
 
 static inline int vectorcall last1_nws(Search *search, __m128i PO, int alpha, int place) {
-    uint_fast8_t n_flip;
+    uint_fast16_t n_flip;
     uint32_t t;
     uint64_t P = _mm_extract_epi64(PO, 1);
     __m256i PP = _mm256_permute4x64_epi64(_mm256_castsi128_si256(PO), 0x55);
@@ -131,22 +131,22 @@ static inline int vectorcall last1_nws(Search *search, __m128i PO, int alpha, in
                 // n_flip = count_last_flip(~P, place);
             t = ~_mm256_movemask_epi8(_mm256_cmpeq_epi8(lmO, rmO));    // eq only if l = r = 0
             const int y = place >> 3;
-            n_flip  = n_flip_pre_calc[(~P >> (y * 8)) & 0xFF][place & 7];    // h
-            n_flip += n_flip_pre_calc[(t >> 8) & 0xFF][y];    // v
-            n_flip += n_flip_pre_calc[(t >> 16) & 0xFF][y];    // d
-            n_flip += n_flip_pre_calc[t >> 24][y];    // d
+            n_flip  = N_LAST_FLIP[(~P >> (y * 8)) & 0xFF][place & 7];    // h (both)
+            n_flip += N_LAST_FLIP[(t >> 8) & 0xFF][y];    // v (both)
+            n_flip += N_LAST_FLIP[(t >> 16) & 0xFF][y];    // d
+            n_flip += N_LAST_FLIP[t >> 24][y];    // d
             score -= (n_flip + (int)((n_flip > 0) | (score <= 0))) * 2;
-        } else {
+        } else { // player can move (need only min flip because already score > alpha)
             score += 2;    // min flip
         }
     } else {    // if player cannot move, low cut-off will occur whether opponent can move.
             // n_flip = count_last_flip(P, place);
         const int y = place >> 3;
         t = _mm256_movemask_epi8(_mm256_sub_epi8(_mm256_setzero_si256(), _mm256_and_si256(PP, mask_dvhd[place].v4)));
-        n_flip  = n_flip_pre_calc[(P >> (y * 8)) & 0xFF][place & 7];    // h
-        n_flip += n_flip_pre_calc[t & 0xFF][y];    // d
-        n_flip += n_flip_pre_calc[(t >> 16) & 0xFF][y];    // v
-        n_flip += n_flip_pre_calc[t >> 24][y];    // d
+        n_flip  = N_LAST_FLIP[(P >> (y * 8)) & 0xFF][place & 7];    // h
+        n_flip += N_LAST_FLIP[t & 0xFF][y];    // d
+        n_flip += N_LAST_FLIP[(t >> 16) & 0xFF][y];    // v
+        n_flip += N_LAST_FLIP[t >> 24][y];    // d
         score += n_flip * 2;
             // if n_flip == 0, score <= alpha so lazy low cut-off
     }

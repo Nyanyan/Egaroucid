@@ -151,8 +151,8 @@ constexpr uint16_t N_LAST_FLIP_BOTH[N_8BIT][HW] = {
 };
 #endif
 
-// if (i & (1 << j))  n_flip_pre_calc[i][j] = n_flip_pre_calc[i ^ (1 << j)][j];	// to use ~player instead of opponent
-constexpr int_fast8_t n_flip_pre_calc[N_8BIT][HW] = {
+// if (i & (1 << j))  N_LAST_FLIP[i][j] = N_LAST_FLIP[i ^ (1 << j)][j];	// to use ~player instead of opponent
+constexpr int_fast8_t N_LAST_FLIP[N_8BIT][HW] = {
     {0, 0, 0, 0, 0, 0, 0, 0}, {0, 0, 1, 2, 3, 4, 5, 6}, {0, 0, 0, 1, 2, 3, 4, 5}, {0, 0, 0, 1, 2, 3, 4, 5}, {1, 0, 0, 0, 1, 2, 3, 4}, {1, 0, 1, 0, 1, 2, 3, 4}, {0, 0, 0, 0, 1, 2, 3, 4}, {0, 0, 0, 0, 1, 2, 3, 4},
     {2, 1, 0, 0, 0, 1, 2, 3}, {2, 1, 1, 2, 0, 1, 2, 3}, {0, 1, 0, 1, 0, 1, 2, 3}, {0, 1, 0, 1, 0, 1, 2, 3}, {1, 0, 0, 0, 0, 1, 2, 3}, {1, 0, 1, 0, 0, 1, 2, 3}, {0, 0, 0, 0, 0, 1, 2, 3}, {0, 0, 0, 0, 0, 1, 2, 3},
     {3, 2, 1, 0, 0, 0, 1, 2}, {3, 2, 2, 2, 3, 0, 1, 2}, {0, 2, 1, 1, 2, 0, 1, 2}, {0, 2, 1, 1, 2, 0, 1, 2}, {1, 0, 1, 0, 1, 0, 1, 2}, {1, 0, 2, 0, 1, 0, 1, 2}, {0, 0, 1, 0, 1, 0, 1, 2}, {0, 0, 1, 0, 1, 0, 1, 2},
@@ -205,16 +205,16 @@ inline int_fast8_t count_last_flip(uint64_t player, const uint_fast8_t place) {
     __m128i pp_128 = _mm_set1_epi64x(player);
     uint16_t d9_d7 = _mm_movemask_epi8(_mm_sub_epi8(_mm_setzero_si128(), _mm_and_si128(pp_128, last_flip_d9_d7_mask[place])));
     return
-        n_flip_pre_calc[join_h_line(player, t)][u] + 
-        n_flip_pre_calc[join_v_line(player, u)][t] + 
-        n_flip_pre_calc[d9_d7 & 0xFF][t] + 
-        n_flip_pre_calc[d9_d7 >> 8][t];
+        N_LAST_FLIP[join_h_line(player, t)][u] + 
+        N_LAST_FLIP[join_v_line(player, u)][t] + 
+        N_LAST_FLIP[d9_d7 & 0xFF][t] + 
+        N_LAST_FLIP[d9_d7 >> 8][t];
 #else
     return
-        n_flip_pre_calc[join_h_line(player, t)][u] + 
-        n_flip_pre_calc[join_v_line(player, u)][t] + 
-        n_flip_pre_calc[join_d7_line(player, u + t)][std::min(t, 7 - u)] + 
-        n_flip_pre_calc[join_d9_line(player, u + 7 - t)][std::min(t, u)];
+        N_LAST_FLIP[join_h_line(player, t)][u] + 
+        N_LAST_FLIP[join_v_line(player, u)][t] + 
+        N_LAST_FLIP[join_d7_line(player, u + t)][std::min(t, 7 - u)] + 
+        N_LAST_FLIP[join_d9_line(player, u + 7 - t)][std::min(t, u)];
 #endif
 }
 
