@@ -188,6 +188,7 @@ constexpr uint8_t N_LAST_FLIP[N_8BIT][HW] = {
     {2, 1, 0, 0, 0, 0, 0, 0}, {2, 1, 1, 2, 0, 0, 0, 0}, {0, 1, 0, 1, 0, 0, 0, 0}, {0, 1, 0, 1, 0, 0, 0, 0}, {1, 0, 0, 0, 0, 0, 0, 0}, {1, 0, 1, 0, 0, 0, 0, 0}, {0, 0, 0, 0, 0, 0, 0, 0}, {0, 0, 0, 0, 0, 0, 0, 0}
 };
 
+#if !LAST_FLIP_PASS_OPT
 /*
     @brief calculate number of flipped discs in the last move
 
@@ -204,6 +205,7 @@ inline int_fast8_t count_last_flip(uint64_t player, const uint_fast8_t place) {
         N_LAST_FLIP[join_d7_line(player, x + y)][std::min(y, 7 - x)] + 
         N_LAST_FLIP[join_d9_line(player, x + 7 - y)][std::min(y, x)];
 }
+#endif
 
 inline void last_flip_init() {
 }
