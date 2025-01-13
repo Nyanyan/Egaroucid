@@ -117,7 +117,12 @@ inline int last1(Search *search, uint64_t player, int alpha, uint_fast8_t p0) {
 #if USE_SEARCH_STATISTICS
     ++search->n_nodes_discs[63];
 #endif
+#if LAST_FLIP_PASS_OPT
+    int n_flip_both = count_last_flip_both(player, p0);
+    int n_flip = n_flip_both & 0xff;
+#else
     int n_flip = count_last_flip(player, p0);
+#endif
     int score = 2 * (pop_count_ull(player) + n_flip + 1) - HW2;	// (P + n_flip + 1) - (HW2 - 1 - P - n_flip)
     if (n_flip == 0) {
         ++search->n_nodes;
@@ -128,7 +133,11 @@ inline int last1(Search *search, uint64_t player, int alpha, uint_fast8_t p0) {
         if (score <= 0)
             score = score2;
         if (score > alpha) {
+#if LAST_FLIP_PASS_OPT
+            n_flip = (n_flip_both >> 8) + count_last_flip_diagonal(~player, p0);
+#else
             n_flip = count_last_flip(~player, p0);
+#endif
             if (n_flip)
                 score = score2 - 2 * n_flip;
         }

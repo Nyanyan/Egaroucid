@@ -44,8 +44,10 @@ for i in range(len(n_flip_pre_calc)):
     for j in range(len(n_flip_pre_calc[i])):
         p = i
         put_bit = 1 << j
-        if p & put_bit:
-            p ^= put_bit
+        if p & put_bit: # invalid
+            n_flip_pre_calc[i][j] = 0
+            rev_n_flip_pre_calc[i][j] = 0
+            continue
         o = 0xff ^ p ^ put_bit
         rev_n_flip_pre_calc[i][j] = n_flip_pre_calc[o][j]
 

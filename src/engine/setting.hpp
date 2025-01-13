@@ -173,6 +173,9 @@
 // YBWC splitted task termination (less idoling, more nodes)
 #define USE_YBWC_SPLITTED_TASK_TERMINATION false
 
+// last flip pass optimization
+#define LAST_FLIP_PASS_OPT true
+
 
 
 
