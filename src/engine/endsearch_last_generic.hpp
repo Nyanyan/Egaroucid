@@ -24,49 +24,71 @@
     @param p0                   last empty square
     @return the final score
 */
+#define LAST1_OBVIOUS_PASS_OPT true
 inline int last1(Search *search, uint64_t player, int alpha, uint_fast8_t p0) {
     ++search->n_nodes;
 #if USE_SEARCH_STATISTICS
     ++search->n_nodes_discs[63];
 #endif
-#if LAST_FLIP_PASS_OPT
-    const int x = p0 & 7;
-    const int y = p0 >> 3;
-    const int d7t = std::min(y, 7 - x);
-    const int d9t = std::min(y, x);
-    uint_fast8_t d7 = join_d7_line(player, x + y);
-    uint_fast8_t d9 = join_d9_line(player, x + 7 - y);
-    int n_flip_both = 
-        N_LAST_FLIP_BOTH[join_h_line(player, y)][x] + // both h
-        N_LAST_FLIP_BOTH[join_v_line(player, x)][y] + // both v
-        N_LAST_FLIP[d7][d7t] + // player d7
-        N_LAST_FLIP[d9][d9t];  // player d9
-    int n_flip = n_flip_both & 0xff;
-#else
-    int n_flip = count_last_flip(player, p0);
-#endif
-    int score = 2 * (pop_count_ull(player) + n_flip + 1) - HW2;	// (P + n_flip + 1) - (HW2 - 1 - P - n_flip)
-    if (n_flip == 0) {
+    int n_flip, score;
+#if LAST1_OBVIOUS_PASS_OPT
+    if ((~player & bit_around[p0]) == 0) { // obvious pass
         ++search->n_nodes;
 #if USE_SEARCH_STATISTICS
         ++search->n_nodes_discs[63];
 #endif
+        score = 2 * (pop_count_ull(player) + 1) - HW2;	// (P + n_flip + 1) - (HW2 - 1 - P - n_flip)
         int score2 = score - 2;	// empty for opponent
         if (score <= 0)
             score = score2;
         if (score > alpha) {
-#if LAST_FLIP_PASS_OPT
-            n_flip = 
-                (n_flip_both >> 8) + // hv (calculated)
-                N_LAST_FLIP[(0xff >> -std::min((x + y) - 7, 7 - (x + y))) ^ d7][d7t] + // d7
-                N_LAST_FLIP[(0xff >> -std::min(x - y, y - x)) ^ d9][d9t]; // d9
-#else
             n_flip = count_last_flip(~player, p0);
-#endif
             if (n_flip)
                 score = score2 - 2 * n_flip;
         }
+    } else {
+#endif
+#if LAST_FLIP_PASS_OPT
+        const int x = p0 & 7;
+        const int y = p0 >> 3;
+        const int d7t = std::min(y, 7 - x);
+        const int d9t = std::min(y, x);
+        uint_fast8_t d7 = join_d7_line(player, x + y);
+        uint_fast8_t d9 = join_d9_line(player, x + 7 - y);
+        int n_flip_both = 
+            N_LAST_FLIP_BOTH[join_h_line(player, y)][x] + // both h
+            N_LAST_FLIP_BOTH[join_v_line(player, x)][y] + // both v
+            N_LAST_FLIP[d7][d7t] + // player d7
+            N_LAST_FLIP[d9][d9t];  // player d9
+        n_flip = n_flip_both & 0xff;
+#else
+        n_flip = count_last_flip(player, p0);
+#endif
+        score = 2 * (pop_count_ull(player) + n_flip + 1) - HW2;	// (P + n_flip + 1) - (HW2 - 1 - P - n_flip)
+        if (n_flip == 0) {
+            ++search->n_nodes;
+#if USE_SEARCH_STATISTICS
+            ++search->n_nodes_discs[63];
+#endif
+            int score2 = score - 2;	// empty for opponent
+            if (score <= 0)
+                score = score2;
+            if (score > alpha) {
+#if LAST_FLIP_PASS_OPT
+                n_flip = 
+                    (n_flip_both >> 8) + // hv (calculated)
+                    N_LAST_FLIP[(0xff >> -std::min((x + y) - 7, 7 - (x + y))) ^ d7][d7t] + // d7
+                    N_LAST_FLIP[(0xff >> -std::min(x - y, y - x)) ^ d9][d9t]; // d9
+#else
+                n_flip = count_last_flip(~player, p0);
+#endif
+                if (n_flip)
+                    score = score2 - 2 * n_flip;
+            }
+        }
+#if LAST1_OBVIOUS_PASS_OPT
     }
+#endif
     return score;
 }
 
