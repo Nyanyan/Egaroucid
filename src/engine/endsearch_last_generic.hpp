@@ -29,13 +29,13 @@ inline int last1(Search *search, uint64_t player, int alpha, uint_fast8_t p0) {
 #if USE_SEARCH_STATISTICS
     ++search->n_nodes_discs[63];
 #endif
+#if LAST_FLIP_PASS_OPT
     const int x = p0 & 7;
     const int y = p0 >> 3;
     const int d7t = std::min(y, 7 - x);
     const int d9t = std::min(y, x);
     uint_fast8_t d7 = join_d7_line(player, x + y);
     uint_fast8_t d9 = join_d9_line(player, x + 7 - y);
-#if LAST_FLIP_PASS_OPT
     int n_flip_both = 
         N_LAST_FLIP_BOTH[join_h_line(player, y)][x] + // both h
         N_LAST_FLIP_BOTH[join_v_line(player, x)][y] + // both v
