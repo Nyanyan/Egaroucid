@@ -228,6 +228,22 @@ constexpr uint8_t join_d7_line_rightshift[15] = {
     40, 0, 0
 };
 
+/*
+    . . . . a . . .
+    . . . b . . . .
+    . . c . . . . .
+    . d . . . . . .
+    e . . . . . . .
+    . . . . . . . .
+    . . . . . . . .
+    . . . . . . . .
+
+    t = x + y = 10
+
+    to
+
+    0b 000abcde
+*/
 inline int join_d7_line(uint64_t x, const int t) {
     x = (x & join_d7_line_mask[t]);
     x <<= join_d7_line_leftshift[t];
@@ -258,6 +274,22 @@ constexpr uint8_t join_d9_line_rightshift[15] = {
     5, 0, 0
 };
 
+/*
+    . . . . . . . .
+    . . . . . . . .
+    . . . . . . . .
+    a . . . . . . .
+    . b . . . . . .
+    . . c . . . . .
+    . . . d . . . .
+    . . . . e . . .
+
+    t = x + 7 - y = 10
+
+    to
+
+    0b 000abcde
+*/
 inline int join_d9_line(uint64_t x, int t) {
     x = x & join_d9_line_mask[t];
     x >>= join_d9_line_rightshift[t];
