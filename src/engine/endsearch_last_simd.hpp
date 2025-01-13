@@ -42,7 +42,6 @@ static inline int vectorcall last1(Search *search, __m128i PO, int alpha, int pl
 #if LAST_FLIP_PASS_OPT
     const uint_fast8_t n_bits_d7 = N_BITS_IN_LINE_D7[place];
     const uint_fast8_t n_bits_d9 = N_BITS_IN_LINE_D9[place];
-    //std::cerr << place << " " << (int)n_bits_d7 << " " << (int)n_bits_d9 << std::endl;
     uint_fast16_t n_flip_both = N_LAST_FLIP_BOTH[0 + x * 256 + _mm_extract_epi16(II, 4)]; // both h
     n_flip_both += N_LAST_FLIP_BOTH[N_LAST_FLIP_OFFSET[n_bits_d7] + (x - N_BIT_SHIFT_D7[place]) * (1 << n_bits_d7) + (_mm_cvtsi128_si32(II) >> N_BIT_SHIFT_D7[place])]; // both d7
     int t = _mm_movemask_epi8(_mm_sub_epi8(_mm_setzero_si128(), _mm_and_si128(PP, M1)));
