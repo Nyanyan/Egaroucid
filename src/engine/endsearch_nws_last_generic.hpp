@@ -12,6 +12,64 @@
 #include "search.hpp"
 #include "endsearch_common.hpp"
 
+
+static inline int last1_nws(Search *search, uint64_t player, int alpha, int p0) {
+    int score = 2 * pop_count_ull(player) - HW2 + 2;    // = (pop_count_ull(P) + 1) - (HW2 - 1 - pop_count_ull(P))
+#if LAST_FLIP_PASS_OPT
+    const int x = p0 & 7;
+    const int y = p0 >> 3;
+    const int d7t = std::min(y, 7 - x);
+    const int d9t = std::min(y, x);
+    uint_fast8_t d7 = join_d7_line(player, x + y);
+    uint_fast8_t d9 = join_d9_line(player, x + 7 - y);
+    int n_flip, n_flip_both;
+#else
+    int n_flip;
+#endif
+    if ((~player & bit_around[p0]) == 0) { // obvious pass
+        ++search->n_nodes;
+#if USE_SEARCH_STATISTICS
+        ++search->n_nodes_discs[63];
+#endif
+#if LAST_FLIP_PASS_OPT
+        n_flip = 
+            N_LAST_FLIP[join_h_line(~player, y)][x] + // h
+            N_LAST_FLIP[join_v_line(~player, x)][y] + // v
+            N_LAST_FLIP[(0xff >> -std::min((x + y) - 7, 7 - (x + y))) ^ d7][d7t] + // d7
+            N_LAST_FLIP[(0xff >> -std::min(x - y, y - x)) ^ d9][d9t]; // d9
+#else
+        n_flip = count_last_flip(~player, p0);
+#endif
+        score -= (n_flip + (int)((n_flip > 0) | (score <= 0))) * 2;
+    } else {
+#if LAST_FLIP_PASS_OPT
+        n_flip_both = 
+            N_LAST_FLIP_BOTH[join_h_line(player, y)][x] + // both h
+            N_LAST_FLIP_BOTH[join_v_line(player, x)][y] + // both v
+            N_LAST_FLIP[d7][d7t] + // player d7
+            N_LAST_FLIP[d9][d9t];  // player d9
+        n_flip = n_flip_both & 0xff;
+#else
+        n_flip = count_last_flip(player, p0);
+#endif
+        if (n_flip) { // player moves
+            score += n_flip * 2;
+        } else { // pass
+#if LAST_FLIP_PASS_OPT
+            n_flip = 
+                (n_flip_both >> 8) + // hv (calculated)
+                N_LAST_FLIP[(0xff >> -std::min((x + y) - 7, 7 - (x + y))) ^ d7][d7t] + // d7
+                N_LAST_FLIP[(0xff >> -std::min(x - y, y - x)) ^ d9][d9t]; // d9
+#else
+            n_flip = count_last_flip(player, p0);
+#endif
+            score -= (n_flip + (int)((n_flip > 0) | (score <= 0))) * 2;
+        }
+    }
+    return score;
+}
+
+
 /*
     @brief Get a final min score with last 2 empties (NWS)
 
