@@ -103,7 +103,6 @@ static inline int vectorcall last1_nws(Search *search, __m128i PO, int alpha, in
 #else // AVX2
 
 static inline int vectorcall last1_nws(Search *search, __m128i PO, int alpha, int place) {
-    //return last1(search, PO, alpha, place);
     uint_fast16_t n_flip;
     uint32_t t;
     uint64_t P = _mm_extract_epi64(PO, 1);
