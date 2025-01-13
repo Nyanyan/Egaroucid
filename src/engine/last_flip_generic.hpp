@@ -293,7 +293,7 @@ uint8_t N_BIT_IDX_D9[HW2] = {
     6, 5, 4, 3, 2, 1, 0, 1, 
     6, 6, 5, 4, 3, 2, 1, 0
 };
-#endif
+#else
 
 // if (i & (1 << j))  N_LAST_FLIP[i][j] = N_LAST_FLIP[i ^ (1 << j)][j];	// to use ~player instead of opponent
 constexpr uint8_t N_LAST_FLIP[N_8BIT][HW] = {
@@ -347,6 +347,8 @@ inline int_fast8_t count_last_flip(uint64_t player, const uint_fast8_t place) {
         N_LAST_FLIP[join_d7_line(player, x + y)][std::min(y, 7 - x)] + 
         N_LAST_FLIP[join_d9_line(player, x + 7 - y)][std::min(y, x)];
 }
+
+#endif
 
 inline void last_flip_init() {
 }
