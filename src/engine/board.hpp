@@ -16,7 +16,7 @@
 #include "last_flip.hpp"
 #include "hash.hpp"
 
-#if USE_SIMD
+#if USE_CRC32C_HASH
 uint32_t global_hash_bit_mask = (1U << DEFAULT_HASH_LEVEL) - 1;
 #endif
 
@@ -70,7 +70,7 @@ class Board {
 
             @return hash code of this board
         */
-#if USE_SIMD && USE_CRC32C_HASH
+#if USE_CRC32C_HASH
         // CRC32C Hash idea from http://www.amy.hi-ho.ne.jp/okuhara/edaxopt.htm#crc32hash
         inline uint32_t hash() const {
             uint64_t res = _mm_crc32_u64(0, player);
