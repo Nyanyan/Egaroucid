@@ -57,7 +57,7 @@ print(sum([sum(elem) for elem in rev_n_flip_pre_calc]))
 for i in range(len(n_flip_pre_calc)):
     print('{', end='')
     for j in range(len(n_flip_pre_calc[i])):
-        print(str(rev_n_flip_pre_calc[i][j]) + '<<8|' + str(n_flip_pre_calc[i][j]), end='')
+        print('0x0' + str(rev_n_flip_pre_calc[i][j]) + '0' + str(n_flip_pre_calc[i][j]), end='')
         #print(rev_n_flip_pre_calc[i][j] << 8 | n_flip_pre_calc[i][j], end='')
         if j < len(n_flip_pre_calc[i]) - 1:
             print(', ', end='')
