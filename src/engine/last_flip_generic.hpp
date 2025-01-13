@@ -272,7 +272,7 @@ constexpr uint16_t N_LAST_FLIP_BOTH[N_BIT_LINES][N_8BIT][HW] = {
 }
 };
 
-uint8_t N_BIT_IDX_D7[HW2] = {
+constexpr uint8_t N_BIT_IDX_D7[HW2] = {
     6, 6, 5, 4, 3, 2, 1, 0, 
     6, 5, 4, 3, 2, 1, 0, 1, 
     5, 4, 3, 2, 1, 0, 1, 2,
@@ -283,7 +283,7 @@ uint8_t N_BIT_IDX_D7[HW2] = {
     0, 1, 2, 3, 4, 5, 6, 6
 };
 
-uint8_t N_BIT_IDX_D9[HW2] = {
+constexpr uint8_t N_BIT_IDX_D9[HW2] = {
     0, 1, 2, 3, 4, 5, 6, 6, 
     1, 0, 1, 2, 3, 4, 5, 6,
     2, 1, 0, 1, 2, 3, 4, 5,

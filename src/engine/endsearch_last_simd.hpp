@@ -41,19 +41,36 @@ static inline int vectorcall last1(Search *search, __m128i PO, int alpha, int pl
     ++search->n_nodes_discs[63];
 #endif
 #if LAST_FLIP_PASS_OPT
-    uint_fast16_t n_flip_both = N_LAST_FLIP_BOTH[_mm_extract_epi16(II, 4)][x];
-    n_flip_both += N_LAST_FLIP[_mm_cvtsi128_si32(II)][x];
+    /*
+    std::cerr << std::hex;
+    mm_print_epu64(PO);
+    std::cerr << std::dec << place << std::endl;
+    std::cerr << std::hex << _mm_extract_epi16(II, 4) << " " << _mm_cvtsi128_si32(II) << " ";
+    */
+    uint_fast16_t n_flip_both = N_LAST_FLIP_BOTH[0][_mm_extract_epi16(II, 4)][x]; // both h
+    n_flip_both += N_LAST_FLIP_BOTH[N_BIT_IDX_D7[place]][_mm_cvtsi128_si32(II) >> N_BIT_SHIFT_D7[place]][x - N_BIT_SHIFT_D7[place]]; // both d7 (lower)
     int t = _mm_movemask_epi8(_mm_sub_epi8(_mm_setzero_si128(), _mm_and_si128(PP, M1)));
-    n_flip_both += N_LAST_FLIP[t >> 8][y];
-    n_flip_both += N_LAST_FLIP_BOTH[t & 0xFF][y];
+    n_flip_both += N_LAST_FLIP_BOTH[N_BIT_IDX_D9[place]][t >> (8 + N_BIT_SHIFT_D9[place])][y - N_BIT_SHIFT_D9[place]]; // both d9
+    n_flip_both += N_LAST_FLIP_BOTH[0][t & 0xFF][y]; // both v
+    /*
+    std::cerr << (t >> 8) << " " << (t & 0xFF) << std::endl;
+    std::cerr << std::dec << x << " " << y << " " << (int)N_BIT_IDX_D7[place] << " " << (int)N_BIT_IDX_D9[place] << std::endl;
+    */
     uint_fast8_t n_flip = n_flip_both & 0xff;
+    int score = 2 * (pop_count_ull(_mm_cvtsi128_si64(PP)) + n_flip + 1) - HW2;	// (n_P + n_flip + 1) - (HW2 - 1 - n_P - n_flip)
+    if (n_flip == 0) { // pass
+        ++search->n_nodes;
+#if USE_SEARCH_STATISTICS
+        ++search->n_nodes_discs[63];
+#endif
+        score = score - 2 - 2 * (n_flip_both >> 8);
+    }
 #else
     uint_fast8_t n_flip = N_LAST_FLIP[_mm_extract_epi16(II, 4)][x];
     n_flip += N_LAST_FLIP[_mm_cvtsi128_si32(II)][x];
     int t = _mm_movemask_epi8(_mm_sub_epi8(_mm_setzero_si128(), _mm_and_si128(PP, M1)));
     n_flip += N_LAST_FLIP[t >> 8][y];
     n_flip += N_LAST_FLIP[t & 0xFF][y];
-#endif
     int score = 2 * (pop_count_ull(_mm_cvtsi128_si64(PP)) + n_flip + 1) - HW2;	// (n_P + n_flip + 1) - (HW2 - 1 - n_P - n_flip)
 
     if (n_flip == 0) {
@@ -67,23 +84,17 @@ static inline int vectorcall last1(Search *search, __m128i PO, int alpha, int pl
         }
         if (score > alpha) {	// lazy cut-off
             II = _mm_sad_epu8(_mm_andnot_si128(PP, M0), _mm_setzero_si128());
-#if LAST_FLIP_PASS_OPT
-            n_flip = n_flip_both >> 8;
-            n_flip += N_LAST_FLIP[_mm_cvtsi128_si32(II)][x];
-            t = _mm_movemask_epi8(_mm_sub_epi8(_mm_setzero_si128(), _mm_andnot_si128(PP, M1)));
-            n_flip += N_LAST_FLIP[t >> 8][y];
-#else
             n_flip = N_LAST_FLIP[_mm_extract_epi16(II, 4)][x];
             n_flip += N_LAST_FLIP[_mm_cvtsi128_si32(II)][x];
             t = _mm_movemask_epi8(_mm_sub_epi8(_mm_setzero_si128(), _mm_andnot_si128(PP, M1)));
             n_flip += N_LAST_FLIP[t >> 8][y];
             n_flip += N_LAST_FLIP[t & 0xFF][y];
-#endif
             if (n_flip != 0) {
                 score = score2 - 2 * n_flip;
             }
         }
     }
+#endif
 
     return score;
 }

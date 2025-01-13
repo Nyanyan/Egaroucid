@@ -42,6 +42,7 @@ for i in range(len(n_flip_pre_calc)):
         if p & put_bit: # invalid
             n_flip_pre_calc[i][j] = 0
 
+
 bit_masks = [0b11111111, 0b01111111, 0b00111111, 0b00011111, 0b00001111, 0b00000111, 0]
 
 for i in range(7):

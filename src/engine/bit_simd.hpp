@@ -28,6 +28,14 @@ void mm_print_epi32(__m128i v) {
     std::cerr << std::endl;
 }
 
+void mm_print_epu64(__m128i v) {
+    uint64_t* varray = (uint64_t*)&v;
+    for (int i = 0; i < 2; ++i) {
+        std::cerr << varray[i] << " ";
+    }
+    std::cerr << std::endl;
+}
+
 
 void mm256_print_epu64(__m256i v) {
     uint64_t* varray = (uint64_t*)&v;

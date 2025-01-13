@@ -103,6 +103,9 @@ static inline int vectorcall last1_nws(Search *search, __m128i PO, int alpha, in
 #else // AVX2
 
 static inline int vectorcall last1_nws(Search *search, __m128i PO, int alpha, int place) {
+#if LAST_FLIP_PASS_OPT
+    return last1(search, PO, alpha, place);
+#else
     uint_fast16_t n_flip;
     uint32_t t;
     uint64_t P = _mm_extract_epi64(PO, 1);
@@ -151,6 +154,7 @@ static inline int vectorcall last1_nws(Search *search, __m128i PO, int alpha, in
             // if n_flip == 0, score <= alpha so lazy low cut-off
     }
     return score;
+#endif
 }
 
 #endif
