@@ -33,7 +33,7 @@ n_flip_pre_calc = [
     [2, 1, 0, 0, 0, 0, 0, 0], [2, 1, 1, 2, 0, 0, 0, 0], [0, 1, 0, 1, 0, 0, 0, 0], [0, 1, 0, 1, 0, 0, 0, 0], [1, 0, 0, 0, 0, 0, 0, 0], [1, 0, 1, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0]
 ]
 
-res = [[[[-1, -1] for _ in range(8)] for _ in range(256)] for _ in range(7)]
+res = [[[[-1, -1] for _ in range(8)] for _ in range(256)] for _ in range(8)]
 
 for i in range(len(n_flip_pre_calc)):
     for j in range(len(n_flip_pre_calc[i])):
@@ -43,9 +43,9 @@ for i in range(len(n_flip_pre_calc)):
             n_flip_pre_calc[i][j] = 0
 
 
-bit_masks = [0b11111111, 0b01111111, 0b00111111, 0b00011111, 0b00001111, 0b00000111, 0]
+bit_masks = [0b11111111, 0b01111111, 0b00111111, 0b00011111, 0b00001111, 0b00000111, 0b00000011, 0b00000001]
 
-for i in range(7):
+for i in range(8): # n_bits
     for j in range(256):
         for k in range(8):
             p = j
@@ -56,17 +56,25 @@ for i in range(7):
             res[i][j][k][0] = n_flip_pre_calc[o][k]
             res[i][j][k][1] = n_flip_pre_calc[p][k]
 
-for i in range(7):
-    print('{')
-    for j in range(256):
-        print('{', end='')
-        for k in range(8):
-            print('0x0' + str(res[i][j][k][0]) + '0' + str(res[i][j][k][1]), end='')
-            if k < len(n_flip_pre_calc[i]) - 1:
-                print(', ', end='')
-        print('}', end='')
-        if j < 255:
-            print(', ', end='')
-        if j % 8 == 7:
-            print('')
-    print('}, ')
+n_bits = [8, 7, 6, 5, 4, 3, 2, 1]
+
+n_elems = [0 for _ in range(8)]
+
+n_output = 0
+for i in range(8):
+    print('')
+    n_elem = 0
+    for k in range(n_bits[i]):
+        ss = 'n_bits=' + str(n_bits[i]) + ' ' + ''.join(['-' if ii == n_bits[i] - 1 - k else 'b' for ii in range(n_bits[i])])
+        print('// ' + ss)
+        for j in range(2 ** n_bits[i]):
+            print('0x0' + str(res[i][j][k][0]) + '0' + str(res[i][j][k][1]), end=', ')
+            n_output += 1
+            n_elem += 1
+            if j % 8 == 7:
+                print('')
+    n_elems[i] = n_elem
+
+print('')
+print('size', n_output)
+print(n_elems)

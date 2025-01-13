@@ -40,11 +40,14 @@ static inline int vectorcall last1(Search *search, __m128i PO, int alpha, int pl
     ++search->n_nodes_discs[63];
 #endif
 #if LAST_FLIP_PASS_OPT
-    uint_fast16_t n_flip_both = N_LAST_FLIP_BOTH[0][_mm_extract_epi16(II, 4)][x]; // both h
-    n_flip_both += N_LAST_FLIP_BOTH[N_BIT_IDX_D7[place]][_mm_cvtsi128_si32(II) >> N_BIT_SHIFT_D7[place]][x - N_BIT_SHIFT_D7[place]]; // both d7 (lower)
+    const uint_fast8_t n_bits_d7 = N_BITS_IN_LINE_D7[place];
+    const uint_fast8_t n_bits_d9 = N_BITS_IN_LINE_D9[place];
+    //std::cerr << place << " " << (int)n_bits_d7 << " " << (int)n_bits_d9 << std::endl;
+    uint_fast16_t n_flip_both = N_LAST_FLIP_BOTH[0 + x * 256 + _mm_extract_epi16(II, 4)]; // both h
+    n_flip_both += N_LAST_FLIP_BOTH[N_LAST_FLIP_OFFSET[n_bits_d7] + (x - N_BIT_SHIFT_D7[place]) * (1 << n_bits_d7) + (_mm_cvtsi128_si32(II) >> N_BIT_SHIFT_D7[place])]; // both d7
     int t = _mm_movemask_epi8(_mm_sub_epi8(_mm_setzero_si128(), _mm_and_si128(PP, M1)));
-    n_flip_both += N_LAST_FLIP_BOTH[N_BIT_IDX_D9[place]][t >> (8 + N_BIT_SHIFT_D9[place])][y - N_BIT_SHIFT_D9[place]]; // both d9
-    n_flip_both += N_LAST_FLIP_BOTH[0][t & 0xFF][y]; // both v
+    n_flip_both += N_LAST_FLIP_BOTH[N_LAST_FLIP_OFFSET[n_bits_d9] + (y - N_BIT_SHIFT_D9[place]) * (1 << n_bits_d9) + (t >> (8 + N_BIT_SHIFT_D9[place]))]; // both d9
+    n_flip_both += N_LAST_FLIP_BOTH[0 + y * 256 + (t & 0xFF)]; // both v
     uint_fast8_t n_flip = n_flip_both & 0xff;
     int score = 2 * (pop_count_ull(_mm_cvtsi128_si64(PP)) + n_flip + 1) - HW2;	// (n_P + n_flip + 1) - (HW2 - 1 - n_P - n_flip)
     if (n_flip == 0) { // pass
