@@ -117,8 +117,18 @@ inline int last1(Search *search, uint64_t player, int alpha, uint_fast8_t p0) {
 #if USE_SEARCH_STATISTICS
     ++search->n_nodes_discs[63];
 #endif
+    const int x = p0 & 7;
+    const int y = p0 >> 3;
+    const int d7t = std::min(y, 7 - x);
+    const int d9t = std::min(y, x);
+    uint_fast8_t d7 = join_d7_line(player, x + y);
+    uint_fast8_t d9 = join_d9_line(player, x + 7 - y);
 #if LAST_FLIP_PASS_OPT
-    int n_flip_both = count_last_flip_both(player, p0);
+    int n_flip_both = 
+        N_LAST_FLIP_BOTH[join_h_line(player, y)][x] + // both h
+        N_LAST_FLIP_BOTH[join_v_line(player, x)][y] + // both v
+        N_LAST_FLIP[d7][d7t] + // player d7
+        N_LAST_FLIP[d9][d9t];  // player d9
     int n_flip = n_flip_both & 0xff;
 #else
     int n_flip = count_last_flip(player, p0);
@@ -134,7 +144,10 @@ inline int last1(Search *search, uint64_t player, int alpha, uint_fast8_t p0) {
             score = score2;
         if (score > alpha) {
 #if LAST_FLIP_PASS_OPT
-            n_flip = (n_flip_both >> 8) + count_last_flip_diagonal(~player, p0);
+            n_flip = 
+                (n_flip_both >> 8) + // hv (calculated)
+                N_LAST_FLIP[(0xff >> std::max((x + y) - 7, 7 - (x + y))) ^ d7][d7t] + // d7
+                N_LAST_FLIP[(0xff >> std::min(y - x, x - y)) ^ d9][d9t]; // d9
 #else
             n_flip = count_last_flip(~player, p0);
 #endif
