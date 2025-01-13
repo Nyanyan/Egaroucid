@@ -69,11 +69,9 @@ static inline int vectorcall last1(Search *search, __m128i PO, int alpha, int pl
             II = _mm_sad_epu8(_mm_andnot_si128(PP, M0), _mm_setzero_si128());
 #if LAST_FLIP_PASS_OPT
             n_flip = n_flip_both >> 8;
-            //n_flip += N_LAST_FLIP[_mm_extract_epi16(II, 4)][x];
             n_flip += N_LAST_FLIP[_mm_cvtsi128_si32(II)][x];
             t = _mm_movemask_epi8(_mm_sub_epi8(_mm_setzero_si128(), _mm_andnot_si128(PP, M1)));
             n_flip += N_LAST_FLIP[t >> 8][y];
-            //n_flip += N_LAST_FLIP[t & 0xFF][y];
 #else
             n_flip = N_LAST_FLIP[_mm_extract_epi16(II, 4)][x];
             n_flip += N_LAST_FLIP[_mm_cvtsi128_si32(II)][x];
