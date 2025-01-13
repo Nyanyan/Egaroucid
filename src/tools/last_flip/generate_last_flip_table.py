@@ -33,7 +33,12 @@ n_flip_pre_calc = [
     [2, 1, 0, 0, 0, 0, 0, 0], [2, 1, 1, 2, 0, 0, 0, 0], [0, 1, 0, 1, 0, 0, 0, 0], [0, 1, 0, 1, 0, 0, 0, 0], [1, 0, 0, 0, 0, 0, 0, 0], [1, 0, 1, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0]
 ]
 
-res = [[[[-1, -1] for _ in range(8)] for _ in range(256)] for _ in range(8)]
+rev_n_flip_pre_calc = []
+
+for i in range(len(n_flip_pre_calc)):
+    rev_n_flip_pre_calc.append([])
+    for j in range(len(n_flip_pre_calc[i])):
+        rev_n_flip_pre_calc[i].append(-1)
 
 for i in range(len(n_flip_pre_calc)):
     for j in range(len(n_flip_pre_calc[i])):
@@ -41,40 +46,21 @@ for i in range(len(n_flip_pre_calc)):
         put_bit = 1 << j
         if p & put_bit: # invalid
             n_flip_pre_calc[i][j] = 0
+            rev_n_flip_pre_calc[i][j] = 0
+            continue
+        o = 0xff ^ p ^ put_bit
+        rev_n_flip_pre_calc[i][j] = n_flip_pre_calc[o][j]
 
+print(sum([sum(elem) for elem in n_flip_pre_calc]))
+print(sum([sum(elem) for elem in rev_n_flip_pre_calc]))
 
-bit_masks = [0b11111111, 0b01111111, 0b00111111, 0b00011111, 0b00001111, 0b00000111, 0b00000011, 0b00000001]
-
-for i in range(8): # n_bits
-    for j in range(256):
-        for k in range(8):
-            p = j
-            put_bit = 1 << k
-            o = 0xff ^ p ^ put_bit
-            p = p & bit_masks[i]
-            o = o & bit_masks[i]
-            res[i][j][k][0] = n_flip_pre_calc[o][k]
-            res[i][j][k][1] = n_flip_pre_calc[p][k]
-
-n_bits = [8, 7, 6, 5, 4, 3, 2, 1]
-
-n_elems = [0 for _ in range(8)]
-
-n_output = 0
-for i in range(8):
-    print('')
-    n_elem = 0
-    for k in range(n_bits[i]):
-        ss = 'n_bits=' + str(n_bits[i]) + ' ' + ''.join(['-' if ii == n_bits[i] - 1 - k else 'b' for ii in range(n_bits[i])])
-        print('// ' + ss)
-        for j in range(2 ** n_bits[i]):
-            print('0x0' + str(res[i][j][k][0]) + '0' + str(res[i][j][k][1]), end=', ')
-            n_output += 1
-            n_elem += 1
-            if j % 8 == 7:
-                print('')
-    n_elems[i] = n_elem
-
-print('')
-print('size', n_output)
-print(n_elems)
+for i in range(len(n_flip_pre_calc)):
+    print('{', end='')
+    for j in range(len(n_flip_pre_calc[i])):
+        print(str(rev_n_flip_pre_calc[i][j]) + '<<8|' + str(n_flip_pre_calc[i][j]), end='')
+        #print(rev_n_flip_pre_calc[i][j] << 8 | n_flip_pre_calc[i][j], end='')
+        if j < len(n_flip_pre_calc[i]) - 1:
+            print(', ', end='')
+    print('}, ', end='')
+    if i % 2 == 1:
+        print('')
