@@ -103,7 +103,7 @@ static inline int vectorcall last1_nws(Search *search, __m128i PO, int alpha, in
 #else // AVX2
 
 static inline int vectorcall last1_nws(Search *search, __m128i PO, int alpha, int place) {
-#if LAST_FLIP_PASS_OPT
+#if LAST_FLIP_PASS_OPT && false
     return last1(search, PO, alpha, place);
 #else
     uint_fast16_t n_flip;
