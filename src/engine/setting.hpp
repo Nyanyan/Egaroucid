@@ -176,6 +176,9 @@
 // last flip pass optimization
 #define LAST_FLIP_PASS_OPT true
 
+// last1 Optimization for Generic version
+#define LAST1_OBVIOUS_PASS_OPT false
+
 
 
 

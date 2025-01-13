@@ -24,7 +24,6 @@
     @param p0                   last empty square
     @return the final score
 */
-#define LAST1_OBVIOUS_PASS_OPT false
 inline int last1(Search *search, uint64_t player, int alpha, uint_fast8_t p0) {
     ++search->n_nodes;
 #if USE_SEARCH_STATISTICS
