@@ -40,20 +40,14 @@ for i in range(len(n_flip_pre_calc)):
     for j in range(len(n_flip_pre_calc[i])):
         rev_n_flip_pre_calc[i].append(-1)
 
-for p in range(len(n_flip_pre_calc)):
-    for j in range(len(n_flip_pre_calc[p])):
+for i in range(len(n_flip_pre_calc)):
+    for j in range(len(n_flip_pre_calc[i])):
+        p = i
         put_bit = 1 << j
         if p & put_bit:
-            n_flip_pre_calc[p][j] = 0
-
-for p in range(len(n_flip_pre_calc)):
-    for j in range(len(n_flip_pre_calc[p])):
-        put_bit = 1 << j
-        if p & put_bit:
-            rev_n_flip_pre_calc[p][j] = 0
-            continue
+            p ^= put_bit
         o = 0xff ^ p ^ put_bit
-        rev_n_flip_pre_calc[p][j] = n_flip_pre_calc[o][j]
+        rev_n_flip_pre_calc[i][j] = n_flip_pre_calc[o][j]
 
 print(sum([sum(elem) for elem in n_flip_pre_calc]))
 print(sum([sum(elem) for elem in rev_n_flip_pre_calc]))
@@ -66,5 +60,5 @@ for i in range(len(n_flip_pre_calc)):
         if j < len(n_flip_pre_calc[i]) - 1:
             print(', ', end='')
     print('}, ', end='')
-    if i % 4 == 3:
+    if i % 2 == 1:
         print('')
