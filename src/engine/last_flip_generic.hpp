@@ -205,27 +205,5 @@ inline int_fast8_t count_last_flip(uint64_t player, const uint_fast8_t place) {
         N_LAST_FLIP[join_d9_line(player, x + 7 - y)][std::min(y, x)];
 }
 
-#if LAST_FLIP_PASS_OPT
-inline int_fast8_t count_last_flip_diagonal(uint64_t player, const uint_fast8_t place) {
-    const int x = place & 7;
-    const int y = place >> 3;
-    return
-        N_LAST_FLIP[join_d7_line(player, x + y)][std::min(y, 7 - x)] + 
-        N_LAST_FLIP[join_d9_line(player, x + 7 - y)][std::min(y, x)];
-}
-#endif
-
-#if LAST_FLIP_PASS_OPT
-inline int count_last_flip_both(uint64_t player, const uint_fast8_t place) {
-    const int x = place & 7;
-    const int y = place >> 3;
-    return 
-        N_LAST_FLIP_BOTH[join_h_line(player, y)][x] + 
-        N_LAST_FLIP_BOTH[join_v_line(player, x)][y] + 
-        N_LAST_FLIP[join_d7_line(player, x + y)][std::min(y, 7 - x)] + 
-        N_LAST_FLIP[join_d9_line(player, x + 7 - y)][std::min(y, x)];
-}
-#endif
-
 inline void last_flip_init() {
 }
