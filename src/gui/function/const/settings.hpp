@@ -10,6 +10,10 @@
 
 #pragma once
 
+/* Compile Options
+    -DGUI_PORTABLE      : Portable Mode
+*/
+
 /*
     @brief GUI settings
 */
@@ -18,7 +22,11 @@
     // always false for Mac
     #define GUI_PORTABLE_MODE false
 #else
-    #define GUI_PORTABLE_MODE true
+    #ifdef GUI_PORTABLE
+        #define GUI_PORTABLE_MODE true
+    #else
+        #define GUI_PORTABLE_MODE false
+    #endif
 #endif
 // GUI Open Console?
 #define GUI_OPEN_CONSOLE false
