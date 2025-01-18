@@ -16,6 +16,7 @@ GUI_VERSION_UNDERBAR = GUI_VERSION_DOT.replace('.', '_')
 CONSOLE_VERSION_UNDERBAR = CONSOLE_VERSION_DOT.replace('.', '_')
 
 GUI_RELEASE_IDENTIFIER = 'GUI_DOWNLOAD_TABLE_HERE'
+GUI_SOURCE_RELEASE_IDENTIFIER = 'GUI_SOURCE_TABLE_HERE'
 CONSOLE_RELEASE_IDENTIFIER = 'CONSOLE_DOWNLOAD_TABLE_HERE'
 CONSOLE_SOURCE_RELEASE_IDENTIFIER = 'CONSOLE_SOURCE_TABLE_HERE'
 
@@ -92,6 +93,9 @@ with open(elements_dir + '/meta_description.txt', 'r', encoding='utf-8') as f:
 
 with open(elements_dir + '/release_gui.html', 'r', encoding='utf-8') as f:
     release_gui_html = f.read().replace('DATE', GUI_DATE_STR).replace('VERSION_DOT', GUI_VERSION_DOT).replace('VERSION_UNDERBAR', GUI_VERSION_UNDERBAR)
+
+with open(elements_dir + '/release_gui_source.html', 'r', encoding='utf-8') as f:
+    release_gui_source_html = f.read().replace('DATE', GUI_DATE_STR).replace('VERSION_DOT', GUI_VERSION_DOT).replace('VERSION_UNDERBAR', GUI_VERSION_UNDERBAR)
 
 with open(elements_dir + '/release_console_zip.html', 'r', encoding='utf-8') as f:
     release_console_zip_html = f.read().replace('DATE', CONSOLE_DATE_STR).replace('VERSION_DOT', CONSOLE_VERSION_DOT).replace('VERSION_UNDERBAR', CONSOLE_VERSION_UNDERBAR)
@@ -203,6 +207,8 @@ def create_html(dr):
         # download tables
         if GUI_RELEASE_IDENTIFIER in elem:
             elem = elem.replace(GUI_RELEASE_IDENTIFIER, release_gui_html)
+        if GUI_SOURCE_RELEASE_IDENTIFIER in elem:
+            elem = elem.replace(GUI_SOURCE_RELEASE_IDENTIFIER, release_gui_source_html)
         if CONSOLE_RELEASE_IDENTIFIER in elem:
             elem = elem.replace(CONSOLE_RELEASE_IDENTIFIER, release_console_zip_html)
         if CONSOLE_SOURCE_RELEASE_IDENTIFIER in elem:
