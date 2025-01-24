@@ -7,21 +7,30 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Egaroucid", "Egaroucid.vcxp
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		AVX512_Portable|x64 = AVX512_Portable|x64
 		AVX512|x64 = AVX512|x64
 		Debug|x64 = Debug|x64
+		Generic_Portable|x64 = Generic_Portable|x64
 		Generic|x64 = Generic|x64
 		Release|x64 = Release|x64
+		SIMD_Portable|x64 = SIMD_Portable|x64
 		SIMD|x64 = SIMD|x64
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{4F8EE9C0-59CC-4FFF-ADD7-4EC8BA4CEE3C}.AVX512_Portable|x64.ActiveCfg = AVX512_Portable|x64
+		{4F8EE9C0-59CC-4FFF-ADD7-4EC8BA4CEE3C}.AVX512_Portable|x64.Build.0 = AVX512_Portable|x64
 		{4F8EE9C0-59CC-4FFF-ADD7-4EC8BA4CEE3C}.AVX512|x64.ActiveCfg = AVX512|x64
 		{4F8EE9C0-59CC-4FFF-ADD7-4EC8BA4CEE3C}.AVX512|x64.Build.0 = AVX512|x64
 		{4F8EE9C0-59CC-4FFF-ADD7-4EC8BA4CEE3C}.Debug|x64.ActiveCfg = Debug|x64
 		{4F8EE9C0-59CC-4FFF-ADD7-4EC8BA4CEE3C}.Debug|x64.Build.0 = Debug|x64
+		{4F8EE9C0-59CC-4FFF-ADD7-4EC8BA4CEE3C}.Generic_Portable|x64.ActiveCfg = Generic_Portable|x64
+		{4F8EE9C0-59CC-4FFF-ADD7-4EC8BA4CEE3C}.Generic_Portable|x64.Build.0 = Generic_Portable|x64
 		{4F8EE9C0-59CC-4FFF-ADD7-4EC8BA4CEE3C}.Generic|x64.ActiveCfg = Generic|x64
 		{4F8EE9C0-59CC-4FFF-ADD7-4EC8BA4CEE3C}.Generic|x64.Build.0 = Generic|x64
 		{4F8EE9C0-59CC-4FFF-ADD7-4EC8BA4CEE3C}.Release|x64.ActiveCfg = Release|x64
 		{4F8EE9C0-59CC-4FFF-ADD7-4EC8BA4CEE3C}.Release|x64.Build.0 = Release|x64
+		{4F8EE9C0-59CC-4FFF-ADD7-4EC8BA4CEE3C}.SIMD_Portable|x64.ActiveCfg = SIMD_Portable|x64
+		{4F8EE9C0-59CC-4FFF-ADD7-4EC8BA4CEE3C}.SIMD_Portable|x64.Build.0 = SIMD_Portable|x64
 		{4F8EE9C0-59CC-4FFF-ADD7-4EC8BA4CEE3C}.SIMD|x64.ActiveCfg = SIMD|x64
 		{4F8EE9C0-59CC-4FFF-ADD7-4EC8BA4CEE3C}.SIMD|x64.Build.0 = SIMD|x64
 	EndGlobalSection

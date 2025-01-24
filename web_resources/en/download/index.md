@@ -56,3 +56,40 @@ Book format is changed in Egaroucid 6.5.1 to ```.egbk3``` extension. If you used
 
 Book format is changed in Egaroucid 6.3.0. The new book's filename extension is ```.egbk2```. If you used version 6.2.0 or older and install 6.3.0, Egaroucid automatically convert book format in first execution. Also, you can use old ```.egbk``` book in "Book Reference" and "Book merge", but the save format is only new ```.egbk2```.
 
+
+
+
+
+## Build by Yourself
+
+Egaroucid can be built by yourself. You can use detailed optimization options to make it run faster on your PC, or you can modify it!
+
+### Windows
+
+You need:
+
+<ul>
+    <li>[Visual Studio](https://visualstudio.microsoft.com/en/vs/community/)</li>
+    <li>[Siv3D](https://siv3d.github.io/en-us/)</li>
+</ul>
+
+Download the source code of Egaroucid below
+
+GUI_SOURCE_TABLE_HERE
+
+Unzip the file, then double-click <code>Egaroucid.sln</code>, then Visual Studio opens. Press the <code>Debug>Run Without Debugging</code>, then you can build and run Egaroucid. You can change editions (SIMD, Generic, etc.) by changing Solution Configrations.
+
+Egaroucid's source codes are in <code>src/engine</code> (for AI calculation) and <code>src/gui</code> (for GUI). You can modify Egaroucid by changing these codes!
+
+<div class="centering_box">
+    <img class="pic2" src="img/build_windows_execute.png" alt="Run Without Debugging">
+    <img class="pic2" src="img/build_windows_change_edition.png" alt="Change Edition">
+</div>
+
+### Mac
+
+To Be Done
+
+### Linux
+
+To Be Done

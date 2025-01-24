@@ -2,6 +2,8 @@
 
 インストール版とポータブル版があります。インストール版はインストーラを実行すると自動的に最適な設定でインストールしてくれるものです。ポータブル版はzipファイルを解凍して使うものです。
 
+EgaroucidはWindows向けに作っていますが、Macでもビルド可能です(有志による貢献です)
+
 
 
 ## インストール版
@@ -54,3 +56,39 @@ Egaroucidはバージョン6.5.1からbook形式を変更し、拡張子が```.e
 ### egbk2形式への変更
 
 Egaroucidはバージョン6.3.0からbook形式を変更しました。新しいbookの拡張子は```.egbk2```です。6.2.0以前のバージョンをお使いで新しく6.3.0をインストールした場合、初回起動時に古い```.egbk```形式のbookを自動で変換します。また、古い形式もbookの参照および統合機能が使えます。ただし、保存形式は新しい```.egbk2```形式になります。
+
+
+
+## 自分でビルドする
+
+Egaroucidは自分でビルドすることもできます。自分のPCで高速に動くように細かい最適化オプションを使ったり、改造して遊んだりできます。
+
+### Windows
+
+必要なもの
+
+<ul>
+    <li>[Visual Studio](https://visualstudio.microsoft.com/ja/vs/community/)</li>
+    <li>[Siv3D](https://siv3d.github.io/ja-jp/)</li>
+</ul>
+
+Egaroucidのソースコードを以下からダウンロードします。
+
+GUI_SOURCE_TABLE_HERE
+
+Zipを解凍し、<code>Egaroucid.sln</code>をダブルクリックし、Visual StudioでEgaroucidプロジェクトを開きます。<code>デバッグ>デバッグなしで開始</code>ボタンを押して、ビルド・実行できます。ソリューション構成からエディション(SIMD版など)を選べます。
+
+Egaroucidのソースコードは<code>src/engine</code>内のもの(AI部分)と<code>src/gui</code>内のもの(GUI描画に関わる部分)です。こちらをいじると改造できます。
+
+<div class="centering_box">
+    <img class="pic2" src="img/build_windows_execute.png" alt="デバッグなしで開始">
+    <img class="pic2" src="img/build_windows_change_edition.png" alt="エディションを変更">
+</div>
+
+### Mac
+
+そのうち追記します
+
+### Linux
+
+そのうち追記します
