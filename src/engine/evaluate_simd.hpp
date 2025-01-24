@@ -603,7 +603,7 @@ inline void eval_move(Eval_search *eval, const Flip *flip, const Board *board) {
     f1 = _mm256_sub_epi16(eval->features[eval->feature_idx].f256[1], coord_to_feature_simd[flip->pos][1]);
     f2 = _mm256_sub_epi16(eval->features[eval->feature_idx].f256[2], coord_to_feature_simd[flip->pos][2]);
     f3 = _mm256_sub_epi16(eval->features[eval->feature_idx].f256[3], coord_to_feature_simd[flip->pos][3]);
-    for (int i = 0; i < N_SIMD_EVAL_FEATURE_GROUP; ++i) {
+    for (int i = 0; i < HW2 / 16; ++i) { // 64 bit / 16 bit = 4
         // player discs 0 -> 1
         unflipped_p = ~flipped_group[i] & player_group[i];
         f0 = _mm256_add_epi16(f0, eval_move_unflipped_16bit[unflipped_p][i][0]);
@@ -649,7 +649,7 @@ inline void eval_pass(Eval_search *eval, const Board *board) {
     f1 = eval->features[eval->feature_idx].f256[1];
     f2 = eval->features[eval->feature_idx].f256[2];
     f3 = eval->features[eval->feature_idx].f256[3];
-    for (int i = 0; i < N_SIMD_EVAL_FEATURE_GROUP; ++i) {
+    for (int i = 0; i < HW2 / 16; ++i) { // 64 bit / 16 bit = 4
         f0 = _mm256_add_epi16(f0, eval_move_unflipped_16bit[player_group[i]][i][0]);
         f1 = _mm256_add_epi16(f1, eval_move_unflipped_16bit[player_group[i]][i][1]);
         f2 = _mm256_add_epi16(f2, eval_move_unflipped_16bit[player_group[i]][i][2]);
