@@ -17,7 +17,7 @@ void board_to_line_print_transcript(std::vector<int> &transcript){
     std::cout << std::endl;
 }
 
-void board_to_line(Board board, int player, const int depth, const int error_per_moves[], int remaining_errors[], std::vector<int> &transcript, int umigame_min_player){
+void board_to_line(Board board, int player, const int depth, const int error_per_moves[], int remaining_errors[], std::vector<int> &transcript, int umigame_min_player, int n_lines_threshold, int level_threshold){
     if (board.n_discs() >= depth + 4){
         board_to_line_print_transcript(transcript);
         return;
@@ -68,25 +68,27 @@ void board_to_line(Board board, int player, const int depth, const int error_per
                     if (error <= error_per_moves[before_player] && n_remaining_error >= 0){
                         if (before_player != umigame_min_player) {
                             remaining_errors[before_player] -= error;
-                                board_to_line(board, player, depth, error_per_moves, remaining_errors, transcript, umigame_min_player);
+                                board_to_line(board, player, depth, error_per_moves, remaining_errors, transcript, umigame_min_player, n_lines_threshold, level_threshold);
                             remaining_errors[before_player] += error;
                         } else {
                             Umigame_result umigame = calculate_umigame(&board, player, 100);
-                            if (umigame_min_player == BLACK) {
-                                if (umigame.b < min_umigame) {
-                                    min_umigame = umigame.b;
-                                    min_umigame_cell = cell;
-                                    min_umigame_board = board;
-                                    min_umigame_player = player;
-                                    min_umigame_error = error;
-                                }
-                            } else {
-                                if (umigame.w < min_umigame) {
-                                    min_umigame = umigame.w;
-                                    min_umigame_cell = cell;
-                                    min_umigame_board = board;
-                                    min_umigame_player = player;
-                                    min_umigame_error = error;
+                            if (book_elem.n_lines >= n_lines_threshold || book_elem.level >= level_threshold || min_umigame_cell == -1) {
+                                if (umigame_min_player == BLACK) {
+                                    if (umigame.b < min_umigame) {
+                                        min_umigame = umigame.b;
+                                        min_umigame_cell = cell;
+                                        min_umigame_board = board;
+                                        min_umigame_player = player;
+                                        min_umigame_error = error;
+                                    }
+                                } else {
+                                    if (umigame.w < min_umigame) {
+                                        min_umigame = umigame.w;
+                                        min_umigame_cell = cell;
+                                        min_umigame_board = board;
+                                        min_umigame_player = player;
+                                        min_umigame_error = error;
+                                    }
                                 }
                             }
                         }
@@ -105,7 +107,7 @@ void board_to_line(Board board, int player, const int depth, const int error_per
     if (min_umigame_cell != -1) {
         transcript.emplace_back(min_umigame_cell);
             remaining_errors[before_player] -= min_umigame_error;
-                board_to_line(min_umigame_board, min_umigame_player, depth, error_per_moves, remaining_errors, transcript, umigame_min_player);
+                board_to_line(min_umigame_board, min_umigame_player, depth, error_per_moves, remaining_errors, transcript, umigame_min_player, n_lines_threshold, level_threshold);
             remaining_errors[before_player] += min_umigame_error;
         transcript.pop_back();
     }
@@ -124,8 +126,8 @@ void board_to_line(Board board, int player, const int depth, const int error_per
 // }
 
 int main(int argc, char* argv[]){
-    if (argc < 9){
-        std::cerr << "input [book_file] [depth] [error_per_move_black] [error_sum_black] [error_per_move_white] [error_sum_white] [init_transcript] [umigame_min_player 0 / 1]" << std::endl;
+    if (argc < 11){
+        std::cerr << "input [book_file] [depth] [error_per_move_black] [error_sum_black] [error_per_move_white] [error_sum_white] [init_transcript] [umigame_min_player 0 / 1] [n_lines threshold] [level_threshold]" << std::endl;
         return 1;
     }
     std::string book_file = std::string(argv[1]);
@@ -136,6 +138,8 @@ int main(int argc, char* argv[]){
     int error_sum_white = atoi(argv[6]);
     std::string init_transcript = argv[7];
     int umigame_min_player = atoi(argv[8]);
+    int n_lines_threshold = atoi(argv[9]);
+    int level_threshold = atoi(argv[10]);
     board_to_line_init(book_file);
     std::vector<int> transcript;
     Board board;
@@ -157,6 +161,6 @@ int main(int argc, char* argv[]){
     }
     int error_per_moves[2] = {error_per_move_black, error_per_move_white};
     int error_sums[2] = {error_sum_black, error_sum_white};
-    board_to_line(board, player, depth, error_per_moves, error_sums, transcript, umigame_min_player);
+    board_to_line(board, player, depth, error_per_moves, error_sums, transcript, umigame_min_player, n_lines_threshold, level_threshold);
     return 0;
 }
