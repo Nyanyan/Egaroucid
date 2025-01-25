@@ -37,6 +37,9 @@ struct Options {
     std::string log_file;
     bool noautopass;
     bool show_value;
+    bool play_loss;
+    double play_loss_ratio;
+    int play_loss_max;
 };
 
 Options get_options(std::vector<Commandline_option> commandline_options, std::string binary_path) {
@@ -160,5 +163,17 @@ Options get_options(std::vector<Commandline_option> commandline_options, std::st
     }
     res.noautopass = find_commandline_option(commandline_options, ID_NOAUTOPASS);
     res.show_value = find_commandline_option(commandline_options, ID_SHOWVALUE);
+    res.play_loss = find_commandline_option(commandline_options, ID_PLAY_LOSS);
+    if (res.play_loss) {
+        std::vector<std::string> arg = get_commandline_option_arg(commandline_options, ID_PLAY_LOSS);
+        try {
+            res.play_loss_ratio = std::stod(arg[0]);
+            res.play_loss_max = std::stoi(arg[1]);
+        } catch (const std::invalid_argument& e) {
+            std::cerr << "[ERROR] invalid play loss argument" << std::endl;
+        } catch (const std::out_of_range& e) {
+            std::cerr << "[ERROR] play loss argument out of range" << std::endl;
+        }
+    }
     return res;
 }
