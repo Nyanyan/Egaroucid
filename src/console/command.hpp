@@ -221,7 +221,7 @@ Search_result go_noprint(Board_info *board, Options *options, State *state) {
                 while (legal) {
                     Search_result result_loss = ai_legal(board->board, options->level, true, 0, true, options->show_log, legal);
                     legal ^= 1ULL << result_loss.policy;
-                    if (result_loss.value >= result.value - options->play_loss_max) {
+                    if (result_loss.value >= search_results[0].value - options->play_loss_max) {
                         search_results.emplace_back(result_loss);
                     } else {
                         break;
