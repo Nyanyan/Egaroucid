@@ -212,30 +212,10 @@ Search_result go_noprint(Board_info *board, Options *options, State *state) {
     }
     Search_result result;
     if (options->time_allocated_seconds == TIME_NOT_ALLOCATED) {
-        result = ai(board->board, options->level, true, 0, true, options->show_log);
-        if (options->play_loss) {
-            if (myrandom() < options->play_loss_ratio) {
-                std::vector<Search_result> search_results;
-                search_results.emplace_back(result);
-                uint64_t legal = board->board.get_legal() ^ (1ULL << result.policy);
-                while (legal) {
-                    Search_result result_loss = ai_legal(board->board, options->level, true, 0, true, options->show_log, legal);
-                    legal ^= 1ULL << result_loss.policy;
-                    if (result_loss.value >= search_results[0].value - options->play_loss_max) {
-                        search_results.emplace_back(result_loss);
-                    } else {
-                        break;
-                    }
-                }
-                if (options->show_log){
-                    std::cerr << "play loss candidate " << search_results.size() << " moves: ";
-                    for (const Search_result &elem: search_results) {
-                        std::cerr << idx_to_coord(elem.policy) << "@" << elem.value << " ";
-                    }
-                    std::cerr << std::endl;
-                }
-                result = search_results[myrandrange(0, (int)search_results.size())];
-            }
+        if (options->play_loss && myrandom() < options->play_loss_ratio) { // play with loss
+            result = ai_loss(board->board, options->level, true, 0, true, options->show_log, options->play_loss_max);
+        } else { // normal search
+            result = ai(board->board, options->level, true, 0, true, options->show_log);
         }
     } else {
         uint64_t remaining_time_msec = 10;

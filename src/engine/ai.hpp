@@ -631,6 +631,32 @@ Search_result ai_specified(Board board, int level, bool use_book, int book_acc_l
     return ai_common(board, -SCORE_MAX, SCORE_MAX, level, use_book, book_acc_level, use_multi_thread, show_log, board.get_legal(), true, TIME_LIMIT_INF, &searching);
 }
 
+Search_result ai_loss(Board board, int level, bool use_book, int book_acc_level, bool use_multi_thread, bool show_log, int loss_max) {
+    Search_result best = ai(board, level, true, 0, true, show_log);
+    std::vector<Search_result> search_results;
+    search_results.emplace_back(best);
+    int alpha = best.value - loss_max - 1;
+    int beta = best.value;
+    uint64_t legal = board.get_legal() ^ (1ULL << best.policy);
+    while (legal) {
+        Search_result result_loss = ai_window_legal(board, alpha, beta, level, true, 0, true, show_log, legal);
+        legal ^= 1ULL << result_loss.policy;
+        if (result_loss.value >= best.value - loss_max) {
+            search_results.emplace_back(result_loss);
+        } else {
+            break;
+        }
+    }
+    if (show_log){
+        std::cerr << "play loss candidate " << search_results.size() << " moves: ";
+        for (const Search_result &elem: search_results) {
+            std::cerr << idx_to_coord(elem.policy) << "@" << elem.value << " ";
+        }
+        std::cerr << std::endl;
+    }
+    return search_results[myrandrange(0, (int)search_results.size())];
+}
+
 Search_result ai_time_limit(Board board, bool use_book, int book_acc_level, bool use_multi_thread, bool show_log, uint64_t remaining_time_msec) {
     uint64_t time_limit = calc_time_limit_ply(board, remaining_time_msec, show_log);
     if (show_log) {
