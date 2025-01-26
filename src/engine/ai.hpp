@@ -27,8 +27,6 @@ constexpr int IDSEARCH_ENDSEARCH_PRESEARCH_OFFSET = 10;
 constexpr int IDSEARCH_ENDSEARCH_PRESEARCH_OFFSET_TIMELIMIT = 8;
 constexpr int PONDER_ENDSEARCH_PRESEARCH_OFFSET_TIMELIMIT = 2;
 
-constexpr int NOBOOK_SEARCH_LEVEL = 10;
-
 constexpr int  PONDER_START_SELFPLAY_DEPTH = 21;
 
 struct Lazy_SMP_task {
@@ -510,36 +508,8 @@ Search_result ai_common(Board board, int alpha, int beta, int level, bool use_bo
     } else{
         book_result = book.get_random(&board, book_acc_level, use_legal);
     }
-    bool book_move_found = false;
     if (is_valid_policy(book_result.policy) && use_book) {
-        bool better_move_maybe_found = false;
         if (book_acc_level == 0) { // accurate book level
-            std::vector<Book_value> book_moves = book.get_all_moves_with_value(&board);
-            for (const Book_value &move: book_moves) {
-                use_legal &= ~(1ULL << move.policy);
-            }
-            if (use_legal != 0) {
-                int nobook_search_level = std::min(level, NOBOOK_SEARCH_LEVEL);
-                int nobook_search_depth;
-                uint_fast8_t nobook_search_mpc_level;
-                bool nobook_search_is_mid_search;
-                get_level(nobook_search_level, board.n_discs() - 4, &nobook_search_is_mid_search, &nobook_search_depth, &nobook_search_mpc_level);
-                Search_result nobook_search_result = tree_search_legal(board, alpha, beta, nobook_search_depth, nobook_search_mpc_level, show_log, use_legal, use_multi_thread, TIME_LIMIT_INF, searching);
-                if (*searching) {
-                    int margin = mpc_error[MPC_99_LEVEL][board.n_discs()][nobook_search_depth][HW2 - board.n_discs()];
-                    if (nobook_search_result.value >= book_result.value + margin) {
-                        better_move_maybe_found = true;
-                        if (show_log) {
-                            std::cerr << "book used but better move can be found book " << book_result.value << " best move " << nobook_search_result.value << " at level " << nobook_search_level << " margin " << margin << std::endl;
-                        }
-                    }
-                }
-            }
-        }
-        if (!better_move_maybe_found) {
-            if (show_log) {
-                std::cerr << "book " << idx_to_coord(book_result.policy) << " " << book_result.value << " at book error level " << book_acc_level << std::endl;
-            }
             res.level = LEVEL_TYPE_BOOK;
             res.policy = book_result.policy;
             res.value = value_sign * book_result.value;
@@ -547,10 +517,48 @@ Search_result ai_common(Board board, int alpha, int beta, int level, bool use_bo
             res.nps = 0;
             res.is_end_search = false;
             res.probability = 100;
-            book_move_found = true;
+            std::vector<Book_value> book_moves = book.get_all_moves_with_value(&board);
+            for (const Book_value &move: book_moves) {
+                use_legal &= ~(1ULL << move.policy);
+            }
+            if (use_legal != 0) { // there is moves out of book
+                bool need_to_check = false;
+                Flip flip;
+                calc_flip(&flip, &board, book_result.policy);
+                board.move_board(&flip);
+                    bool passed = false;
+                    bool game_over = false;
+                    if (board.get_legal() == 0) {
+                        passed = true;
+                        board.pass();
+                        if (board.get_legal() == 0) {
+                            game_over = true;
+                        }
+                    }
+                    if (!game_over) {
+                        Book_elem book_elem = book.get(board);
+                        if (book_elem.level <= level) {
+                            need_to_check = true;
+                        }
+                    }
+                    if (passed) {
+                        board.pass();
+                    }
+                board.undo_board(&flip);
+                if (need_to_check) {
+                    Search_result additional_result = ai_legal(board, level, true, 0, true, false, use_legal);
+                    if (value_sign * additional_result.value >= res.value) {
+                        if (show_log) {
+                            std::cerr << "better move found out of book " << idx_to_coord(additional_result.policy) << "@" << value_sign * additional_result.value << " book " << idx_to_coord(res.policy) << "@" << res.value << std::endl;
+                        }
+                        res = additional_result;
+                        res.level = level;
+                        res.value *= value_sign;
+                    }
+                }
+            }
         }
-    }
-    if (!book_move_found) {
+    } else { // no move in book
         int depth;
         bool is_mid_search;
         uint_fast8_t mpc_level;
@@ -563,19 +571,6 @@ Search_result ai_common(Board board, int alpha, int beta, int level, bool use_bo
         //thread_pool.tell_finish_using();
         res.level = level;
         res.value *= value_sign;
-        if (is_valid_policy(book_result.policy) && use_book) { // check book
-            if (res.value <= book_result.value) { // book move is better
-                if (show_log) {
-                    std::cerr << "book " << idx_to_coord(book_result.policy) << " " << book_result.value << " at book error level " << book_acc_level << std::endl;
-                }
-                res.level = LEVEL_TYPE_BOOK;
-                res.policy = book_result.policy;
-                res.value = value_sign * book_result.value;
-                res.depth = SEARCH_BOOK;
-                res.is_end_search = false;
-                res.probability = 100;
-            }
-        }
     }
     return res;
 }
