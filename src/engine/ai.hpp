@@ -547,7 +547,7 @@ Search_result ai_common(Board board, int alpha, int beta, int level, bool use_bo
                 board.undo_board(&flip);
                 if (need_to_check) {
                     Search_result additional_result = ai_legal(board, level, true, 0, true, false, use_legal);
-                    if (value_sign * additional_result.value > res.value) {
+                    if (value_sign * additional_result.value >= res.value + 2) {
                         if (show_log) {
                             std::cerr << "better move found out of book " << idx_to_coord(additional_result.policy) << "@" << value_sign * additional_result.value << " book " << idx_to_coord(res.policy) << "@" << res.value << std::endl;
                         }
