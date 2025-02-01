@@ -271,7 +271,7 @@ class Search {
         */
         inline void move(const Flip *flip) {
 #if USE_SIMD
-            eval_move(&eval, flip, &board);
+            eval_move(&eval, flip, &board); // must be done before board move
 #else
             eval_move(&eval, flip);
 #endif
@@ -297,7 +297,7 @@ class Search {
         */
         inline void pass() {
 #if USE_SIMD
-            eval_pass(&eval, &board);
+            eval_pass(&eval, &board); // must be done before board pass
 #else
             eval_pass(&eval);
 #endif
@@ -311,7 +311,7 @@ class Search {
         */
         inline void move_endsearch(const Flip *flip) {
 #if USE_SIMD
-            eval_move_endsearch(&eval, flip, &board);
+            eval_move_endsearch(&eval, flip, &board); // must be done before board move
 #else
             eval_move_endsearch(&eval, flip);
 #endif
@@ -337,7 +337,7 @@ class Search {
         */
         inline void pass_endsearch() {
 #if USE_SIMD
-            eval_pass_endsearch(&eval, &board);
+            eval_pass_endsearch(&eval, &board); // must be done before board pass
 #else
             eval_pass_endsearch(&eval);
 #endif
