@@ -100,7 +100,7 @@ GitHubレポジトリ: [https://github.com/Nyanyan/Egaroucid](https://github.com
 </tr>
 <tr>
 	<td>合計</td>
-	<td>63249078</td>
+	<td>25514097</td>
 </tr>
     </table></div>
 
