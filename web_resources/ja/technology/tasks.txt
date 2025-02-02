@@ -1,4 +1,4 @@
 benchmarks
 explanation
-train_data
+train-data
 transcript

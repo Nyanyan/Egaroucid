@@ -67,5 +67,5 @@ There are detailed benchmarks for each version including older versions.
 
 ## Free Training Data
 
-Huge dataset played by Egaroucid for Othello AI is available. Please see [Free Training Data](./train_data) page.
+Huge dataset played by Egaroucid for Othello AI is available. Please see [Free Training Data](./train-data) page.
 

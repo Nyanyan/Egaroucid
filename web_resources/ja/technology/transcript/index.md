@@ -1,2 +1,2 @@
-<script>window.onload = function() {window.location.href = "./../train_data/";}</script>
+<script>window.onload = function() {window.location.href = "./../train-data/";}</script>
 
