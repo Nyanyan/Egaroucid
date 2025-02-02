@@ -65,7 +65,7 @@ There are detailed benchmarks for each version including older versions.
 
 
 
-## Download Transcript
+## Free Training Data
 
-Huge dataset of games played by Egaroucid is available. Please see [Download Transcript](./transcript) page.
+Huge dataset played by Egaroucid for Othello AI is available. Please see [Free Training Data](./train_data) page.
 
