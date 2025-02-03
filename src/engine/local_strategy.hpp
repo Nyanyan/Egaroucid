@@ -261,10 +261,12 @@ void calc_local_strategy_policy(Board board, int max_level, int policy_res[HW2][
                 for (int cell = 0; cell < HW2; ++cell) {
                     policy_res[policy][cell] = policy_changed[policy][cell];
                 }
-                *done_level = level;
-                if (show_log) {
-                    std::cerr << "local strategy policy " << idx_to_coord(policy) << " level " << level << std::endl;
-                }
+            }
+        }
+        if (*searching && global_searching) {
+            *done_level = level;
+            if (show_log) {
+                std::cerr << "local strategy policy level " << level << std::endl;
             }
         }
     }
@@ -363,7 +365,52 @@ uint64_t get_connected_bits_diagonal7(uint64_t candidate, uint64_t bits, uint64_
     return bits;
 }
 
+uint64_t get_left_bit(uint64_t cell_bit) {
+    return (cell_bit & 0x7F7F7F7F7F7F7F7FULL) << 1;
+}
 
+uint64_t get_right_bit(uint64_t cell_bit) {
+    return (cell_bit & 0xFEFEFEFEFEFEFEFEULL) >> 1;
+}
+
+uint64_t get_up_bit(uint64_t cell_bit) {
+    return cell_bit << 8;
+}
+
+uint64_t get_down_bit(uint64_t cell_bit) {
+    return cell_bit >> 8;
+}
+
+uint64_t get_d7up_bit(uint64_t cell_bit) {
+    return (cell_bit & 0x00FEFEFEFEFEFEFEULL) << 7;
+}
+
+uint64_t get_d7down_bit(uint64_t cell_bit) {
+    return (cell_bit & 0x7F7F7F7F7F7F7F00ULL) >> 7;
+}
+
+uint64_t get_d9up_bit(uint64_t cell_bit) {
+    return (cell_bit & 0x007F7F7F7F7F7F7FULL) << 9;
+}
+
+uint64_t get_d9down_bit(uint64_t cell_bit) {
+    return (cell_bit & 0xFEFEFEFEFEFEFE00ULL) >> 9;
+}
+
+uint64_t (*get_neighbour_bit[])(uint64_t) = {get_left_bit, get_right_bit, get_up_bit, get_down_bit, get_d7up_bit, get_d7down_bit, get_d9up_bit, get_d9down_bit};
+
+uint64_t get_connected_bits(uint64_t candidate, uint64_t bits, uint64_t cell_bit, uint64_t (*neighbour_bit_func)(uint64_t)) {
+    uint64_t neighbours = neighbour_bit_func(cell_bit);
+    neighbours &= candidate;
+    neighbours &= ~bits;
+    if (neighbours) {
+        bits |= neighbours;
+        for (uint_fast8_t cell = first_bit(&neighbours); neighbours; cell = next_bit(&neighbours)) {
+            bits |= get_connected_bits(candidate, bits, 1ULL << cell, neighbour_bit_func);
+        }
+    }
+    return bits;
+}
 
 // flip change
 void calc_local_strategy_policy(Board board, int max_level, int policy_res[HW2][HW2], bool *searching, int *done_level, bool show_log) {
@@ -373,8 +420,6 @@ void calc_local_strategy_policy(Board board, int max_level, int policy_res[HW2][
         }
     }
     int policy_changed[HW2][HW2]; // [policy][cell]
-    constexpr uint64_t edge_bits[4] = {0x7E00000000000000ULL, 0x0001010101010100ULL, 0x000000000000007EULL, 0x0080808080808000ULL};
-    constexpr uint64_t corner_bits_next_to_edge[4] = {0x8100000000000000ULL, 0x0100000000000001ULL, 0x0000000000000081ULL, 0x8000000000000080ULL};
     for (int level = 1; level < max_level && *searching && global_searching; ++level) {
         std::vector<Search_result> actual_results = ai_best_moves_loss_searching(board, level, true, 0, true, false, 1, searching); // best moves or best-1 moves
         std::vector<int> actual_best_moves;
@@ -389,39 +434,27 @@ void calc_local_strategy_policy(Board board, int max_level, int policy_res[HW2][
                 policy_changed[policy][cell] = LOCAL_STRATEGY_POLICY_NOT_CHANGED;
             }
             calc_flip(&flip, &board, policy);
-            uint64_t can_be_flipped = 
-                get_connected_bits_horizontal(board.opponent, 0, (1ULL << policy)) | 
-                get_connected_bits_vertical(board.opponent, 0, (1ULL << policy)) | 
-                get_connected_bits_diagonal9(board.opponent, 0, (1ULL << policy)) | 
-                get_connected_bits_diagonal7(board.opponent, 0, (1ULL << policy));
-            uint64_t drs[8] = {
-                can_be_flipped & bit_left[policy],
-                can_be_flipped & bit_right[policy],
-                can_be_flipped & bit_up[policy],
-                can_be_flipped & bit_down[policy],
-                can_be_flipped & bit_d7up[policy],
-                can_be_flipped & bit_d7down[policy],
-                can_be_flipped & bit_d9up[policy],
-                can_be_flipped & bit_d9down[policy]
-            };
-            for (int i = 0; i < 8; ++i) {
-                uint64_t dr = drs[i];
-                if (dr) {
-                    flip.flip ^= dr;
-                    board.move_board(&flip);
-                        int g = -ai_searching(board, level, true, 0, true, false, searching).value;
-                    board.undo_board(&flip);
-                    flip.flip ^= dr;
-                    if (g >= actual_results[0].value - 1) { // now policy becomes a good move
-                        if (!policy_is_good_move) { // policy is bad move in the actual board (bad -> good)
-                            for (uint_fast8_t c = first_bit(&dr); dr; c = next_bit(&dr)) {
-                                policy_changed[policy][c] |= LOCAL_STRATEGY_POLICY_CHANGED_BAD_MOVE_FLIP; // the policy is a good move if the cell was not flipped
+            uint64_t policy_bit = 1ULL << policy;
+            for (int dir = 0; dir < 8; ++dir) {
+                if ((board.player | board.opponent) & get_neighbour_bit[dir](get_neighbour_bit[dir](policy_bit))) { // there are at least 2 discs for the direction
+                    uint64_t can_be_flipped_1dir = get_connected_bits(board.opponent, 0, policy_bit, get_neighbour_bit[dir]);
+                    if (can_be_flipped_1dir) {
+                        flip.flip ^= can_be_flipped_1dir;
+                        board.move_board(&flip);
+                            int g = -ai_searching(board, level, true, 0, true, false, searching).value;
+                        board.undo_board(&flip);
+                        flip.flip ^= can_be_flipped_1dir;
+                        if (g >= actual_results[0].value - 1) { // now policy becomes a good move
+                            if (!policy_is_good_move) { // policy is bad move in the actual board (bad -> good)
+                                for (uint_fast8_t c = first_bit(&can_be_flipped_1dir); can_be_flipped_1dir; c = next_bit(&can_be_flipped_1dir)) {
+                                    policy_changed[policy][c] |= LOCAL_STRATEGY_POLICY_CHANGED_BAD_MOVE_FLIP; // the policy is a good move if the cell was not flipped
+                                }
                             }
-                        }
-                    } else { // now policy becomes a bad move
-                        if (policy_is_good_move) { // policy is good move in the actual board (good -> bad)
-                            for (uint_fast8_t c = first_bit(&dr); dr; c = next_bit(&dr)) {
-                                policy_changed[policy][c] |= LOCAL_STRATEGY_POLICY_CHANGED_GOOD_MOVE_FLIP; // the flipped cell is important for the policy to be a good move
+                        } else { // now policy becomes a bad move
+                            if (policy_is_good_move) { // policy is good move in the actual board (good -> bad)
+                                for (uint_fast8_t c = first_bit(&can_be_flipped_1dir); can_be_flipped_1dir; c = next_bit(&can_be_flipped_1dir)) {
+                                    policy_changed[policy][c] |= LOCAL_STRATEGY_POLICY_CHANGED_GOOD_MOVE_FLIP; // the flipped cell is important for the policy to be a good move
+                                }
                             }
                         }
                     }
@@ -450,10 +483,12 @@ void calc_local_strategy_policy(Board board, int max_level, int policy_res[HW2][
                 for (int cell = 0; cell < HW2; ++cell) {
                     policy_res[policy][cell] = policy_changed[policy][cell];
                 }
-                *done_level = level;
-                if (show_log) {
-                    std::cerr << "local strategy policy " << idx_to_coord(policy) << " level " << level << std::endl;
-                }
+            }
+        }
+        if (*searching && global_searching) {
+            *done_level = level;
+            if (show_log) {
+                std::cerr << "local strategy policy level " << level << std::endl;
             }
         }
     }
