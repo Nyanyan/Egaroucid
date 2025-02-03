@@ -178,6 +178,12 @@ void calc_local_strategy_player(Board board, int max_level, double res[], int pl
 
 
 
+
+
+
+
+
+
 #if TUNE_LOCAL_STRATEGY
 
 void tune_local_strategy() {

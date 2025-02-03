@@ -626,6 +626,21 @@ Search_result ai_specified(Board board, int level, bool use_book, int book_acc_l
     return ai_common(board, -SCORE_MAX, SCORE_MAX, level, use_book, book_acc_level, use_multi_thread, show_log, board.get_legal(), true, TIME_LIMIT_INF, &searching);
 }
 
+std::vector<Search_result> ai_best_n_moves(Board board, int level, bool use_book, int book_acc_level, bool use_multi_thread, bool show_log, int n_moves) {
+    Search_result best = ai(board, level, true, 0, true, show_log);
+    std::vector<Search_result> search_results;
+    search_results.emplace_back(best);
+    int alpha = -SCORE_MAX;
+    int beta = best.value;
+    uint64_t legal = board.get_legal() ^ (1ULL << best.policy);
+    while (legal && search_results.size() < n_moves) {
+        Search_result result_loss = ai_window_legal(board, alpha, beta, level, true, 0, true, show_log, legal);
+        legal ^= 1ULL << result_loss.policy;
+        search_results.emplace_back(result_loss);
+    }
+    return search_results;
+}
+
 Search_result ai_loss(Board board, int level, bool use_book, int book_acc_level, bool use_multi_thread, bool show_log, int loss_max) {
     Search_result best = ai(board, level, true, 0, true, show_log);
     std::vector<Search_result> search_results;
