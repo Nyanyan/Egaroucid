@@ -263,9 +263,6 @@ public:
             if (getData().menu_elements.use_disc_hint) {
                 if ((ai_status.hint_calculating || ai_status.hint_calculated) && getData().menu_elements.n_disc_hint > ai_status.n_hint_display) {
                     stop_calculating();
-                    reset_hint();
-                    reset_pv();
-                    reset_local_strategy();
                     resume_calculating();
                 }
                 if (!ai_status.hint_calculating && !ai_status.hint_calculated) {
@@ -674,10 +671,8 @@ private:
                     n_history_elem.next_policy = -1;
                     getData().history_elem = n_history_elem;
                     getData().graph_resources.n_discs = getData().history_elem.board.n_discs();
-                    reset_hint();
-                    reset_pv();
-                    reset_local_strategy();
-                    reset_local_strategy_policy();
+                    stop_calculating();
+                    resume_calculating();
                 }
                 need_start_game_button_calculation();
             }
@@ -710,10 +705,6 @@ private:
                         n_history_elem.next_policy = -1;
                         getData().history_elem = n_history_elem;
                         getData().graph_resources.n_discs = getData().history_elem.board.n_discs();
-                        reset_hint();
-                        reset_pv();
-                        reset_local_strategy();
-                        reset_local_strategy_policy();
                     }
                 }
                 resume_calculating();
@@ -1128,6 +1119,7 @@ private:
     }
 
     void move_processing(int_fast8_t cell) {
+        stop_calculating();
         int parent_idx = getData().graph_resources.node_find(getData().graph_resources.branch, getData().history_elem.board.n_discs());
         if (parent_idx != -1) {
             if (getData().graph_resources.nodes[getData().graph_resources.branch][parent_idx].next_policy == HW2_M1 - cell && parent_idx + 1 < (int)getData().graph_resources.nodes[getData().graph_resources.branch].size()) {
@@ -1158,11 +1150,7 @@ private:
             getData().graph_resources.nodes[getData().graph_resources.branch].back().v = sgn * getData().history_elem.board.score_player();
             getData().graph_resources.nodes[getData().graph_resources.branch].back().level = 100; // 100% search
         }
-        reset_hint();
-        reset_pv();
-        reset_local_strategy();
-        reset_local_strategy_policy();
-        reset_book_additional_features();
+        resume_calculating();
     }
 
     void interact_move() {
@@ -1522,7 +1510,7 @@ private:
                         } else if (ai_status.local_strategy_policy[policy][cell] == LOCAL_STRATEGY_POLICY_CHANGED_BAD_MOVE_DISC) {
                             frame_color = Palette::Red;
                         }
-                        Rect{ sx, sy,  BOARD_CELL_SIZE, BOARD_CELL_SIZE}.drawFrame(5, 0, frame_color);
+                        Rect{ sx, sy,  BOARD_CELL_SIZE, BOARD_CELL_SIZE}.drawFrame(2, 2, frame_color);
                     }
                 }
                 break;
