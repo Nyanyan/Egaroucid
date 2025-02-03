@@ -49,6 +49,7 @@ std::vector<Ponder_elem> ai_ponder(Board board, bool show_log, bool *searching);
 std::vector<Ponder_elem> ai_get_values(Board board, bool show_log, uint64_t time_limit);
 std::pair<int, int> ai_self_play_random(Board board_start, int mid_depth, bool show_log, bool use_multi_thread, bool *searching);
 std::vector<Ponder_elem> ai_search_moves(Board board, bool show_log, std::vector<Ponder_elem> move_list, int n_good_moves, uint64_t time_limit);
+Search_result ai_legal_window(Board board, int alpha, int beta, int level, bool use_book, int book_acc_level, bool use_multi_thread, bool show_log, uint64_t use_legal);
 
 inline uint64_t get_this_search_time_limit(uint64_t time_limit, uint64_t elapsed) {
     if (time_limit <= elapsed) {
@@ -546,7 +547,8 @@ Search_result ai_common(Board board, int alpha, int beta, int level, bool use_bo
                     }
                 board.undo_board(&flip);
                 if (need_to_check) {
-                    Search_result additional_result = ai_legal(board, level, true, 0, true, false, use_legal);
+                    int n_alpha = std::max(alpha, book_result.value + 1);
+                    Search_result additional_result = ai_legal_window(board, n_alpha, beta, level, true, 0, true, false, use_legal);
                     if (value_sign * additional_result.value >= res.value + 2) {
                         if (show_log) {
                             std::cerr << "better move found out of book " << idx_to_coord(additional_result.policy) << "@" << value_sign * additional_result.value << " book " << idx_to_coord(res.policy) << "@" << res.value << std::endl;
