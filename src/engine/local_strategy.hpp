@@ -113,7 +113,8 @@ void calc_local_strategy_player(Board board, int max_level, double res[], int pl
     }
     uint64_t legal = board.get_legal();
     double value_diffs[HW2];
-    constexpr uint64_t corner_edge_bits = 0xFF818181818181FFULL;
+    constexpr uint64_t edge_bits[4] = {0x7E00000000000000ULL, 0x0001010101010100ULL, 0x000000000000007EULL, 0x0080808080808000ULL};
+    constexpr uint64_t corner_bits_next_to_edge[4] = {0x8100000000000000ULL, 0x0100000000000001ULL, 0x0000000000000081ULL, 0x8000000000000080ULL};
     for (int level = 1; level < max_level && *searching && global_searching; ++level) {
         Search_result normal_result = ai_searching(board, level, true, 0, true, false, searching);
         if (show_log) {
@@ -128,17 +129,24 @@ void calc_local_strategy_player(Board board, int max_level, double res[], int pl
             if (done_cells & bit) {
                 continue;
             }
-            uint64_t bits = bit;
-            if (corner_edge_bits & bit & (board.player | board.opponent)) { // corner or edge
-                uint64_t used_player_bits = (board.player & bits) ? board.player : board.opponent;
-                used_player_bits &= corner_edge_bits;
-                bits = get_connected_bits_dir4(used_player_bits, bits, bit);
-                // std::cerr << idx_to_coord(cell) << std::endl;
-                // bit_print_board(used_player_bits);
-                // bit_print_board(bits);
-            }
-            if (board.player & bits) { // player
-                // player -> opponent
+            // if (edge_bits & bit & (board.player | board.opponent)) { // corner or edge
+            //     //uint64_t used_player_bits = (board.player & bits) ? board.player : board.opponent;
+            //     uint64_t used_player_bits = board.player | board.opponent;
+            //     used_player_bits &= edge_bits;
+            //     // bits = get_connected_bits_dir4(used_player_bits, bits, bit);
+            //     // std::cerr << idx_to_coord(cell) << std::endl;
+            //     // bit_print_board(used_player_bits);
+            //     // bit_print_board(bits);
+            // }
+            if ((board.player | board.opponent) & bit) { // discs
+                uint64_t bits = bit;
+                for (int i = 0; i < 4; ++i) {
+                    if ((edge_bits[i] & bit) && (corner_bits_next_to_edge[i] & (board.player | board.opponent)) == 0) {
+                        bits = edge_bits[i] & (board.player | board.opponent);
+                        break;
+                    }
+                }
+                // player -> opponent, opponent -> player
                 board.player ^= bits;
                 board.opponent ^= bits;
                     Search_result result = ai_searching(board, level, true, 0, true, false, searching);
@@ -146,27 +154,16 @@ void calc_local_strategy_player(Board board, int max_level, double res[], int pl
                     // value_diffs[cell] = -(result.value - normal_result.value);
                     uint64_t bits_cpy = bits;
                     int n_bits = pop_count_ull(bits);
+                    if (n_bits > 1) {
+                        std::cerr << idx_to_coord(cell) << " " << n_bits << " " << result.value << " " << normal_result.value << std::endl;
+                    }
                     for (uint_fast8_t c = first_bit(&bits_cpy); bits_cpy; c = next_bit(&bits_cpy)) {
                         value_diffs[c] = -(double)(result.value - normal_result.value) / (double)n_bits;
                     }
                     //std::cerr << idx_to_coord(cell) << " " << value_diffs[cell] << "  " << result.value << " " << normal_result.value << std::endl;
                 board.player ^= bits;
                 board.opponent ^= bits;
-            } else if (board.opponent & bits) {
-                // opponent -> player
-                board.player ^= bits;
-                board.opponent ^= bits;
-                    Search_result result = ai_searching(board, level, true, 0, true, false, searching);
-                    //value_diffs[cell] = -(result.value - normal_result.value - local_strategy_cell_weight[board.n_discs()][cell_type[cell]]);
-                    // value_diffs[cell] = -(result.value - normal_result.value);
-                    uint64_t bits_cpy = bits;
-                    int n_bits = pop_count_ull(bits);
-                    for (uint_fast8_t c = first_bit(&bits_cpy); bits_cpy; c = next_bit(&bits_cpy)) {
-                        value_diffs[c] = -(double)(result.value - normal_result.value) / (double)n_bits;
-                    }
-                    //std::cerr << idx_to_coord(cell) << " " << value_diffs[cell] << "  " << result.value << " " << normal_result.value << std::endl;
-                board.player ^= bits;
-                board.opponent ^= bits;
+                done_cells |= bits;
             } else { // empty
                 /*
                 if ((board.player | board.opponent) & bit_around[cell]) { // next to disc
@@ -183,8 +180,8 @@ void calc_local_strategy_player(Board board, int max_level, double res[], int pl
                     }
                 }
                 */
+                done_cells |= bit;
             }
-            done_cells |= bits;
         }
         if (*searching && global_searching) {
             // if (show_log) {
