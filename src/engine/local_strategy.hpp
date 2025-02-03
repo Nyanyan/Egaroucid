@@ -129,15 +129,6 @@ void calc_local_strategy_player(Board board, int max_level, double res[], int pl
             if (done_cells & bit) {
                 continue;
             }
-            // if (edge_bits & bit & (board.player | board.opponent)) { // corner or edge
-            //     //uint64_t used_player_bits = (board.player & bits) ? board.player : board.opponent;
-            //     uint64_t used_player_bits = board.player | board.opponent;
-            //     used_player_bits &= edge_bits;
-            //     // bits = get_connected_bits_dir4(used_player_bits, bits, bit);
-            //     // std::cerr << idx_to_coord(cell) << std::endl;
-            //     // bit_print_board(used_player_bits);
-            //     // bit_print_board(bits);
-            // }
             if ((board.player | board.opponent) & bit) { // discs
                 uint64_t bits = bit;
                 for (int i = 0; i < 4; ++i) {
@@ -150,33 +141,15 @@ void calc_local_strategy_player(Board board, int max_level, double res[], int pl
                 board.player ^= bits;
                 board.opponent ^= bits;
                     Search_result result = ai_searching(board, level, true, 0, true, false, searching);
-                    //value_diffs[cell] = -(result.value - normal_result.value + local_strategy_cell_weight[board.n_discs()][cell_type[cell]]);
-                    // value_diffs[cell] = -(result.value - normal_result.value);
                     uint64_t bits_cpy = bits;
                     int n_bits = pop_count_ull(bits);
                     for (uint_fast8_t c = first_bit(&bits_cpy); bits_cpy; c = next_bit(&bits_cpy)) {
                         value_diffs[c] = -(double)(result.value - normal_result.value) / (double)n_bits;
                     }
-                    //std::cerr << idx_to_coord(cell) << " " << value_diffs[cell] << "  " << result.value << " " << normal_result.value << std::endl;
                 board.player ^= bits;
                 board.opponent ^= bits;
                 done_cells |= bits;
             } else { // empty
-                /*
-                if ((board.player | board.opponent) & bit_around[cell]) { // next to disc
-                    if ((legal & bit) == 0) { // can't put there
-                        board.player ^= bit; // put there (no flip)
-                        board.pass(); // opponent's move
-                            int alpha = -SCORE_MAX; 
-                            int beta = -normal_result.value; // just want to know better move than normal_result
-                            Search_result result = ai_window_searching(board, alpha, beta, level, true, 0, true, false, searching);
-                            int result_value = -result.value; // need -1 because it's opponent move
-                            value_diffs[cell] = -std::max(0, result_value - normal_result.value); // need max because if the move is bad, just don't put it
-                        board.pass();
-                        board.player ^= bit;
-                    }
-                }
-                */
                 done_cells |= bit;
             }
         }
