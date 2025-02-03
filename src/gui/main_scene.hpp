@@ -1429,7 +1429,7 @@ private:
         ai_status.local_strategy_calculated = false;
         ai_status.local_strategy_done_level = 0;
         std::cerr << "start local strategy calculation" << std::endl;
-        ai_status.local_strategy_future = std::async(std::launch::async, std::bind(calc_local_strategy_player, getData().history_elem.board, std::min(MAX_LOCAL_STRATEGY_LEVEL, getData().menu_elements.level), ai_status.local_strategy, getData().history_elem.player, &ai_status.local_strategy_calculating, &ai_status.local_strategy_done_level, false));
+        ai_status.local_strategy_future = std::async(std::launch::async, std::bind(calc_local_strategy_player, getData().history_elem.board, std::min(MAX_LOCAL_STRATEGY_LEVEL, getData().menu_elements.level), ai_status.local_strategy, ai_status.local_strategy_policy, getData().history_elem.player, &ai_status.local_strategy_calculating, &ai_status.local_strategy_done_level, false));
     }
 
     void try_local_strategy_get() {
@@ -1457,6 +1457,15 @@ private:
                 cell_color = ColorF{ getData().colors.white_advantage, -ai_status.local_strategy[cell] }; // blue
             }
             Rect{ sx, sy,  BOARD_CELL_SIZE, BOARD_CELL_SIZE}.draw(cell_color);
+            if (ai_status.local_strategy_policy[cell] != LOCAL_STRATEGY_POLICY_NOT_CHANGED) {
+                Color frame_color;
+                if (ai_status.local_strategy_policy[cell] == LOCAL_STRATEGY_POLICY_CHANGED_DISC) {
+                    frame_color = Palette::Red;
+                } else {
+                    frame_color = Palette::Blue;
+                }
+                Rect{ sx, sy,  BOARD_CELL_SIZE, BOARD_CELL_SIZE}.drawFrame(4, 0, frame_color);
+            }
         }
     }
 
