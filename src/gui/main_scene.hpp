@@ -287,12 +287,21 @@ public:
             }
         }
 
-        // local strategy calculating & drawing
+        // local strategy calculating
         if (getData().menu_elements.show_ai_focus && !local_strategy_ignore) {
             if (!ai_status.local_strategy_calculating && !ai_status.local_strategy_calculated) {
                 local_strategy_calculate();
             } else if (ai_status.local_strategy_calculating && !ai_status.local_strategy_calculated) {
                 try_local_strategy_get();
+            }
+        }
+
+        // local strategy policy calculating
+        if (getData().menu_elements.show_ai_focus && !local_strategy_ignore) {
+            if (!ai_status.local_strategy_policy_calculating && !ai_status.local_strategy_policy_calculated) {
+                local_strategy_policy_calculate();
+            } else if (ai_status.local_strategy_policy_calculating && !ai_status.local_strategy_policy_calculated) {
+                try_local_strategy_policy_get();
             }
         }
 
@@ -334,6 +343,11 @@ public:
 
         // info drawing
         draw_info(getData().colors, getData().history_elem, getData().fonts, getData().menu_elements, pausing_in_pass, principal_variation);
+
+        // draw local strategy policy
+        if (ai_status.local_strategy_policy_done_level > 0 && getData().menu_elements.show_ai_focus && !local_strategy_ignore && !getData().menu.active()) {
+            draw_local_strategy_policy();
+        }
 
         // opening on cell drawing
         if (getData().menu_elements.show_opening_on_cell && !getData().menu.active()) {
@@ -395,6 +409,14 @@ private:
         }
     }
 
+    void reset_local_strategy_policy() {
+        ai_status.local_strategy_policy_calculating = false;
+        ai_status.local_strategy_policy_calculated = false;
+        if (ai_status.local_strategy_policy_future.valid()) {
+            ai_status.local_strategy_policy_future.get();
+        }
+    }
+
     void reset_analyze() {
         ai_status.analyzing = false;
         ai_status.analyze_task_stack.clear();
@@ -450,6 +472,7 @@ private:
         reset_hint();
         reset_pv();
         reset_local_strategy();
+        reset_local_strategy_policy();
         reset_analyze();
         reset_book_additional_features();
         std::cerr << "reset all calculations" << std::endl;
@@ -654,6 +677,7 @@ private:
                     reset_hint();
                     reset_pv();
                     reset_local_strategy();
+                    reset_local_strategy_policy();
                 }
                 need_start_game_button_calculation();
             }
@@ -689,6 +713,7 @@ private:
                         reset_hint();
                         reset_pv();
                         reset_local_strategy();
+                        reset_local_strategy_policy();
                     }
                 }
                 resume_calculating();
@@ -1136,6 +1161,7 @@ private:
         reset_hint();
         reset_pv();
         reset_local_strategy();
+        reset_local_strategy_policy();
         reset_book_additional_features();
     }
 
@@ -1428,8 +1454,16 @@ private:
         ai_status.local_strategy_calculating = true;
         ai_status.local_strategy_calculated = false;
         ai_status.local_strategy_done_level = 0;
+        ai_status.local_strategy_future = std::async(std::launch::async, std::bind(calc_local_strategy_player, getData().history_elem.board, std::min(MAX_LOCAL_STRATEGY_LEVEL, getData().menu_elements.level), ai_status.local_strategy, getData().history_elem.player, &ai_status.local_strategy_calculating, &ai_status.local_strategy_done_level, false));
         std::cerr << "start local strategy calculation" << std::endl;
-        ai_status.local_strategy_future = std::async(std::launch::async, std::bind(calc_local_strategy_player, getData().history_elem.board, std::min(MAX_LOCAL_STRATEGY_LEVEL, getData().menu_elements.level), ai_status.local_strategy, ai_status.local_strategy_policy, getData().history_elem.player, &ai_status.local_strategy_calculating, &ai_status.local_strategy_done_level, false));
+    }
+
+    void local_strategy_policy_calculate() {
+        ai_status.local_strategy_policy_calculating = true;
+        ai_status.local_strategy_policy_calculated = false;
+        ai_status.local_strategy_policy_done_level = 0;
+        ai_status.local_strategy_policy_future = std::async(std::launch::async, std::bind(calc_local_strategy_policy, getData().history_elem.board, std::min(MAX_LOCAL_STRATEGY_LEVEL, getData().menu_elements.level), ai_status.local_strategy_policy, &ai_status.local_strategy_policy_calculating, &ai_status.local_strategy_policy_done_level, false));
+        std::cerr << "start local strategy policy calculation" << std::endl;
     }
 
     void try_local_strategy_get() {
@@ -1439,6 +1473,17 @@ private:
                 ai_status.local_strategy_calculating = false;
                 ai_status.local_strategy_calculated = true;
                 std::cerr << "finish local strategy calculation" << std::endl;
+            }
+        }
+    }
+
+    void try_local_strategy_policy_get() {
+        if (ai_status.local_strategy_policy_future.valid()) {
+            if (ai_status.local_strategy_policy_future.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
+                ai_status.local_strategy_policy_future.get();
+                ai_status.local_strategy_policy_calculating = false;
+                ai_status.local_strategy_policy_calculated = true;
+                std::cerr << "finish local strategy policy calculation" << std::endl;
             }
         }
     }
@@ -1457,14 +1502,30 @@ private:
                 cell_color = ColorF{ getData().colors.white_advantage, -ai_status.local_strategy[cell] }; // blue
             }
             Rect{ sx, sy,  BOARD_CELL_SIZE, BOARD_CELL_SIZE}.draw(cell_color);
-            if (ai_status.local_strategy_policy[cell] != LOCAL_STRATEGY_POLICY_NOT_CHANGED) {
-                Color frame_color;
-                if (ai_status.local_strategy_policy[cell] == LOCAL_STRATEGY_POLICY_CHANGED_DISC) {
-                    frame_color = Palette::Red;
-                } else {
-                    frame_color = Palette::Blue;
+        }
+    }
+
+    void draw_local_strategy_policy() {
+        uint64_t legal = getData().history_elem.board.get_legal();
+        for (uint_fast8_t policy = first_bit(&legal); legal; policy = next_bit(&legal)) {
+            int x = HW_M1 - policy % HW;
+            int y = HW_M1 - policy / HW;
+            Rect cell_rect(BOARD_SX + x * BOARD_CELL_SIZE, BOARD_SY + y * BOARD_CELL_SIZE, BOARD_CELL_SIZE, BOARD_CELL_SIZE);
+            if (cell_rect.mouseOver()) {
+                for (uint_fast8_t cell = 0; cell < HW2; ++cell) {
+                    int sx = BOARD_SX + ((HW2_M1 - cell) % HW) * BOARD_CELL_SIZE;
+                    int sy = BOARD_SY + ((HW2_M1 - cell) / HW) * BOARD_CELL_SIZE;
+                    if (ai_status.local_strategy_policy[policy][cell] != LOCAL_STRATEGY_POLICY_NOT_CHANGED) {
+                        Color frame_color;
+                        if (ai_status.local_strategy_policy[policy][cell] == LOCAL_STRATEGY_POLICY_CHANGED_GOOD_MOVE_DISC) {
+                            frame_color = Palette::Blue;
+                        } else if (ai_status.local_strategy_policy[policy][cell] == LOCAL_STRATEGY_POLICY_CHANGED_BAD_MOVE_DISC) {
+                            frame_color = Palette::Red;
+                        }
+                        Rect{ sx, sy,  BOARD_CELL_SIZE, BOARD_CELL_SIZE}.drawFrame(5, 0, frame_color);
+                    }
                 }
-                Rect{ sx, sy,  BOARD_CELL_SIZE, BOARD_CELL_SIZE}.drawFrame(5, 0, frame_color);
+                break;
             }
         }
     }

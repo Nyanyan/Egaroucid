@@ -753,8 +753,13 @@ struct AI_status {
     bool local_strategy_calculated{ false };
     std::future<void> local_strategy_future;
     double local_strategy[HW2];
-    int local_strategy_policy[HW2];
     int local_strategy_done_level{ 0 };
+
+    bool local_strategy_policy_calculating{ false };
+    bool local_strategy_policy_calculated{ false };
+    std::future<void> local_strategy_policy_future;
+    int local_strategy_policy[HW2][HW2]; // [policy][cell]
+    int local_strategy_policy_done_level{ 0 };
 };
 
 struct Game_abstract {
