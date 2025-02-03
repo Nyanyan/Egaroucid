@@ -198,7 +198,7 @@ void calc_local_strategy_policy(Board board, int max_level, int policy_res[HW2][
             actual_best_moves.push_back(result.policy);
         }
         uint64_t legal = board.get_legal();
-        for (int policy = first_bit(&legal); legal; policy = next_bit(&legal)) {
+        for (int policy = first_bit(&legal); legal && *searching; policy = next_bit(&legal)) {
             for (int cell = 0; cell < HW2; ++cell) {
                 policy_changed[policy][cell] = LOCAL_STRATEGY_POLICY_NOT_CHANGED;
             }

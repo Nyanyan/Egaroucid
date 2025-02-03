@@ -652,13 +652,15 @@ std::vector<Search_result> ai_best_moves_loss_searching(Board board, int level, 
     int alpha = best.value - loss_max - 1;
     int beta = best.value;
     uint64_t legal = board.get_legal() ^ (1ULL << best.policy);
-    while (legal) {
+    while (legal && (*searching)) {
         Search_result result_loss = ai_window_legal_searching(board, alpha, beta, level, true, 0, true, show_log, legal, searching);
         legal ^= 1ULL << result_loss.policy;
-        if (result_loss.value >= best.value - loss_max) {
-            search_results.emplace_back(result_loss);
-        } else {
-            break;
+        if (*searching) {
+            if (result_loss.value >= best.value - loss_max) {
+                search_results.emplace_back(result_loss);
+            } else {
+                break;
+            }
         }
     }
     return search_results;
