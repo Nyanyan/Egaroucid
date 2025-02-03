@@ -97,6 +97,8 @@ void calc_local_strategy_player(Board board, int max_level, double res[], int pl
     }
     uint64_t legal = board.get_legal();
     double value_diffs[HW2];
+    constexpr uint64_t corner_edge_bits = 0xFF818181818181FFULL;
+    uint64_t done_cell = 0;
     for (int level = 1; level < max_level && *searching && global_searching; ++level) {
         Search_result complete_result = ai_searching(board, level, true, 0, true, false, searching);
         if (show_log) {
@@ -107,6 +109,9 @@ void calc_local_strategy_player(Board board, int max_level, double res[], int pl
         }
         for (int cell = 0; cell < HW2 && *searching && global_searching; ++cell) {
             uint64_t bit = 1ULL << cell;
+            if (done_cell & bit) {
+                continue;
+            }
             if (board.player & bit) { // player
                 // player -> opponent
                 board.player ^= bit;
@@ -150,6 +155,7 @@ void calc_local_strategy_player(Board board, int max_level, double res[], int pl
                 }
                 */
             }
+            done_cell |= bit;
         }
         if (*searching && global_searching) {
             /*
