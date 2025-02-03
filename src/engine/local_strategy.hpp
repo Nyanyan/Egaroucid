@@ -15,7 +15,7 @@
 #define LOCAL_STRATEGY_POLICY_CHANGED_GOOD_MOVE_DISC 1 // that is a good move because this disc is this color
 #define LOCAL_STRATEGY_POLICY_CHANGED_BAD_MOVE_DISC -1 // that move is NOT good because this disc is this color
 // #define LOCAL_STRATEGY_POLICY_CHANGE_N_THRESHOLD 3 // use best 3 moves to see policy changed
-#define LOCAL_STRATEGY_POLICY_CHANGE_LOSS_THRESHOLD 8 // use best moves until value loss is 3 or less than 3
+#define LOCAL_STRATEGY_POLICY_CHANGE_LOSS_THRESHOLD 2 // use best moves until value loss is 2 or less than 2
 
 constexpr int MAX_LOCAL_STRATEGY_LEVEL = 25;
 
@@ -116,9 +116,9 @@ void calc_local_strategy_player(Board board, int max_level, double res[], int pl
     constexpr uint64_t edge_bits[4] = {0x7E00000000000000ULL, 0x0001010101010100ULL, 0x000000000000007EULL, 0x0080808080808000ULL};
     constexpr uint64_t corner_bits_next_to_edge[4] = {0x8100000000000000ULL, 0x0100000000000001ULL, 0x0000000000000081ULL, 0x8000000000000080ULL};
     for (int level = 1; level < max_level && *searching && global_searching; ++level) {
-        Search_result normal_result = ai_searching(board, level, true, 0, true, false, searching);
+        Search_result actual_result = ai_searching(board, level, true, 0, true, false, searching);
         if (show_log) {
-            std::cerr << "level " << level << " result " << normal_result.value << std::endl;
+            std::cerr << "level " << level << " result " << actual_result.value << std::endl;
         }
         for (int cell = 0; cell < HW2; ++cell) {
             value_diffs[cell] = 0;
@@ -144,7 +144,7 @@ void calc_local_strategy_player(Board board, int max_level, double res[], int pl
                     uint64_t bits_cpy = bits;
                     int n_bits = pop_count_ull(bits);
                     for (uint_fast8_t c = first_bit(&bits_cpy); bits_cpy; c = next_bit(&bits_cpy)) {
-                        value_diffs[c] = -(double)(result.value - normal_result.value) / (double)n_bits;
+                        value_diffs[c] = -(double)(result.value - actual_result.value) / (double)n_bits;
                     }
                 board.player ^= bits;
                 board.opponent ^= bits;
@@ -323,7 +323,7 @@ void tune_local_strategy() {
                         }
                         ++t;
                     }
-                    Search_result normal_result = ai(board, level, true, 0, true, false);
+                    Search_result actual_result = ai(board, level, true, 0, true, false);
                     int sgn = -1; // opponent -> player
                     if (board.player & flipped) { // player -> opponent
                         sgn = 1;
@@ -333,7 +333,7 @@ void tune_local_strategy() {
                         Search_result flipped_result = ai(board, level, true, 0, true, false);
                     board.player ^= flipped;
                     board.opponent ^= flipped;
-                    double diff = sgn * (normal_result.value - flipped_result.value);
+                    double diff = sgn * (actual_result.value - flipped_result.value);
                     res[n_discs][cell_type] += diff;
                     ++count[n_discs][cell_type];
                 }
