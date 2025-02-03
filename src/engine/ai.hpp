@@ -617,6 +617,10 @@ Search_result ai_window_legal(Board board, int alpha, int beta, int level, bool 
     return ai_common(board, alpha, beta, level, use_book, book_acc_level, use_multi_thread, show_log, use_legal, false, TIME_LIMIT_INF, &searching);
 }
 
+Search_result ai_window_legal_searching(Board board, int alpha, int beta, int level, bool use_book, int book_acc_level, bool use_multi_thread, bool show_log, uint64_t use_legal, bool *searching) {
+    return ai_common(board, alpha, beta, level, use_book, book_acc_level, use_multi_thread, show_log, use_legal, false, TIME_LIMIT_INF, searching);
+}
+
 Search_result ai_window_searching(Board board, int alpha, int beta, int level, bool use_book, int book_acc_level, bool use_multi_thread, bool show_log, bool *searching) {
     return ai_common(board, alpha, beta, level, use_book, book_acc_level, use_multi_thread, show_log, board.get_legal(), false, TIME_LIMIT_INF, searching);
 }
@@ -626,15 +630,15 @@ Search_result ai_specified(Board board, int level, bool use_book, int book_acc_l
     return ai_common(board, -SCORE_MAX, SCORE_MAX, level, use_book, book_acc_level, use_multi_thread, show_log, board.get_legal(), true, TIME_LIMIT_INF, &searching);
 }
 
-std::vector<Search_result> ai_best_n_moves(Board board, int level, bool use_book, int book_acc_level, bool use_multi_thread, bool show_log, int n_moves) {
-    Search_result best = ai(board, level, true, 0, true, show_log);
+std::vector<Search_result> ai_best_n_moves_searching(Board board, int level, bool use_book, int book_acc_level, bool use_multi_thread, bool show_log, int n_moves, bool *searching) {
+    Search_result best = ai_searching(board, level, true, 0, true, show_log, searching);
     std::vector<Search_result> search_results;
     search_results.emplace_back(best);
     int alpha = -SCORE_MAX;
     int beta = best.value;
     uint64_t legal = board.get_legal() ^ (1ULL << best.policy);
     while (legal && search_results.size() < n_moves) {
-        Search_result result_loss = ai_window_legal(board, alpha, beta, level, true, 0, true, show_log, legal);
+        Search_result result_loss = ai_window_legal_searching(board, alpha, beta, level, true, 0, true, show_log, legal, searching);
         legal ^= 1ULL << result_loss.policy;
         search_results.emplace_back(result_loss);
     }
