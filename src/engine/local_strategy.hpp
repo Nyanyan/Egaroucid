@@ -154,9 +154,6 @@ void calc_local_strategy_player(Board board, int max_level, double res[], int pl
                     // value_diffs[cell] = -(result.value - normal_result.value);
                     uint64_t bits_cpy = bits;
                     int n_bits = pop_count_ull(bits);
-                    if (n_bits > 1) {
-                        std::cerr << idx_to_coord(cell) << " " << n_bits << " " << result.value << " " << normal_result.value << std::endl;
-                    }
                     for (uint_fast8_t c = first_bit(&bits_cpy); bits_cpy; c = next_bit(&bits_cpy)) {
                         value_diffs[c] = -(double)(result.value - normal_result.value) / (double)n_bits;
                     }
