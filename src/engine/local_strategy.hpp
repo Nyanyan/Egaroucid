@@ -13,10 +13,12 @@
 
 #define LOCAL_STRATEGY_POLICY_NOT_CHANGED 0
 #define LOCAL_STRATEGY_POLICY_CHANGED_GOOD_MOVE_DISC 1 // that is a good move because this disc is this color
-#define LOCAL_STRATEGY_POLICY_CHANGED_BAD_MOVE_DISC -1 // that move is NOT good because this disc is this color
+#define LOCAL_STRATEGY_POLICY_CHANGED_BAD_MOVE_DISC 2 // that move is NOT good because this disc is this color
+#define LOCAL_STRATEGY_POLICY_CHANGED_GOOD_MOVE_FLIP 4 // that is a good move because this disc is this color
+#define LOCAL_STRATEGY_POLICY_CHANGED_BAD_MOVE_FLIP 8 // that move is NOT good because this disc is this color
 // #define LOCAL_STRATEGY_POLICY_CHANGE_N_THRESHOLD 3 // use best 3 moves to see policy changed
 #define LOCAL_STRATEGY_POLICY_CHANGE_BAD_MOVE_LOSS_THRESHOLD 2 // use best moves until value loss is 2 or less than 2
-#define LOCAL_STRATEGY_POLICY_CHANGE_GOOD_MOVE_LOSS_THRESHOLD 2 // use best moves until value loss is 2 or less than 2
+#define LOCAL_STRATEGY_POLICY_CHANGE_GOOD_MOVE_LOSS_THRESHOLD 6 // use best moves until value loss is 6 or less than 6
 
 constexpr int MAX_LOCAL_STRATEGY_LEVEL = 25;
 
@@ -181,8 +183,8 @@ void calc_local_strategy_player(Board board, int max_level, double res[], int pl
 
 
 
-
-
+/*
+// disc change
 void calc_local_strategy_policy(Board board, int max_level, int policy_res[HW2][HW2], bool *searching, int *done_level, bool show_log) {
     for (int policy = 0; policy < HW2; ++policy) {
         for (int cell = 0; cell < HW2; ++cell) {
@@ -205,13 +207,6 @@ void calc_local_strategy_policy(Board board, int max_level, int policy_res[HW2][
                 policy_changed[policy][cell] = LOCAL_STRATEGY_POLICY_NOT_CHANGED;
             }
             uint64_t done_cells = 0;
-            bool move_found[HW2];
-            bool move_not_found[HW2];
-            int n_move_found = 0, n_move_not_found = 0;
-            for (int cell = 0; cell < HW2; ++cell) {
-                move_found[cell] = false;
-                move_not_found[cell] = false;
-            }
             for (int cell = 0; cell < HW2 && *searching && global_searching; ++cell) {
                 uint64_t bit = 1ULL << cell;
                 if (done_cells & bit) {
@@ -240,33 +235,19 @@ void calc_local_strategy_policy(Board board, int max_level, int policy_res[HW2][
                         //     std::cerr << idx_to_coord(result.policy) << "@" << result.value << " ";
                         // }
                         // std::cerr << std::endl;
-                        // if (policy_is_good_move) { // policy is good move in the actual board
-                        //     if (std::find(best_moves.begin(), best_moves.end(), policy) == best_moves.end()) { // good move is NOT selected now
-                        //         uint64_t bits_cpy = bits;
-                        //         for (uint_fast8_t c = first_bit(&bits_cpy); bits_cpy; c = next_bit(&bits_cpy)) {
-                        //             policy_changed[policy][c] = LOCAL_STRATEGY_POLICY_CHANGED_GOOD_MOVE_DISC;
-                        //         }
-                        //     }
-                        // } else { // policy is bad move in the actual board
-                        //     if (std::find(best_moves.begin(), best_moves.end(), policy) != best_moves.end()) { // bad move is selected now
-                        //         uint64_t bits_cpy = bits;
-                        //         for (uint_fast8_t c = first_bit(&bits_cpy); bits_cpy; c = next_bit(&bits_cpy)) {
-                        //             policy_changed[policy][c] = LOCAL_STRATEGY_POLICY_CHANGED_BAD_MOVE_DISC;
-                        //         }
-                        //     }
-                        // }
-
-                        if (std::find(best_moves.begin(), best_moves.end(), policy) != best_moves.end()) { // move found
-                            uint64_t bits_cpy = bits;
-                            for (uint_fast8_t c = first_bit(&bits_cpy); bits_cpy; c = next_bit(&bits_cpy)) {
-                                move_found[c] = true;
-                                ++n_move_found;
+                        if (policy_is_good_move) { // policy is good move in the actual board
+                            if (std::find(best_moves.begin(), best_moves.end(), policy) == best_moves.end()) { // good move is NOT selected now
+                                uint64_t bits_cpy = bits;
+                                for (uint_fast8_t c = first_bit(&bits_cpy); bits_cpy; c = next_bit(&bits_cpy)) {
+                                    policy_changed[policy][c] = LOCAL_STRATEGY_POLICY_CHANGED_GOOD_MOVE_DISC;
+                                }
                             }
-                        } else { // move not found
-                            uint64_t bits_cpy = bits;
-                            for (uint_fast8_t c = first_bit(&bits_cpy); bits_cpy; c = next_bit(&bits_cpy)) {
-                                move_not_found[c] = true;
-                                ++n_move_not_found;
+                        } else { // policy is bad move in the actual board
+                            if (std::find(best_moves.begin(), best_moves.end(), policy) != best_moves.end()) { // bad move is selected now
+                                uint64_t bits_cpy = bits;
+                                for (uint_fast8_t c = first_bit(&bits_cpy); bits_cpy; c = next_bit(&bits_cpy)) {
+                                    policy_changed[policy][c] = LOCAL_STRATEGY_POLICY_CHANGED_BAD_MOVE_DISC;
+                                }
                             }
                         }
                     board.player ^= bits;
@@ -276,16 +257,157 @@ void calc_local_strategy_policy(Board board, int max_level, int policy_res[HW2][
                     done_cells |= bit;
                 }
             }
-            if (n_move_not_found <= n_move_found) { // good move
+            if (*searching && global_searching) {
                 for (int cell = 0; cell < HW2; ++cell) {
-                    if (move_not_found[cell]) {
-                        policy_changed[policy][cell] = LOCAL_STRATEGY_POLICY_CHANGED_GOOD_MOVE_DISC;
-                    }
+                    policy_res[policy][cell] = policy_changed[policy][cell];
                 }
-            } else { // bad move
-                for (int cell = 0; cell < HW2; ++cell) {
-                    if (move_found[cell]) {
-                        policy_changed[policy][cell] = LOCAL_STRATEGY_POLICY_CHANGED_BAD_MOVE_DISC;
+                *done_level = level;
+                if (show_log) {
+                    std::cerr << "local strategy policy " << idx_to_coord(policy) << " level " << level << std::endl;
+                }
+            }
+        }
+    }
+}
+*/
+
+uint64_t get_connected_bits_dir4(uint64_t candidate, uint64_t bits, uint64_t cell_bit) {
+    uint64_t neighbours = (cell_bit & 0x7F7F7F7F7F7F7F7FULL) << 1;
+    neighbours |= (cell_bit & 0xFEFEFEFEFEFEFEFEULL) >> 1;
+    neighbours |= cell_bit << 8;
+    neighbours |= cell_bit >> 8;
+    neighbours &= candidate;
+    neighbours &= ~bits;
+    if (neighbours) {
+        bits |= neighbours;
+        for (uint_fast8_t cell = first_bit(&neighbours); neighbours; cell = next_bit(&neighbours)) {
+            bits |= get_connected_bits_dir4(candidate, bits, 1ULL << cell);
+        }
+    }
+    return bits;
+}
+
+uint64_t get_connected_bits_dir8(uint64_t candidate, uint64_t bits, uint64_t cell_bit) {
+    uint64_t neighbours = (cell_bit & 0x7F7F7F7F7F7F7F7FULL) << 1;
+    neighbours |= (cell_bit & 0xFEFEFEFEFEFEFEFEULL) >> 1;
+    neighbours |= cell_bit << 8;
+    neighbours |= cell_bit >> 8;
+    neighbours |= (cell_bit & 0x007F7F7F7F7F7F7FULL) << 9;
+    neighbours |= (cell_bit & 0xFEFEFEFEFEFEFE00ULL) >> 9;
+    neighbours |= (cell_bit & 0x00FEFEFEFEFEFEFEULL) << 7;
+    neighbours |= (cell_bit & 0x7F7F7F7F7F7F7F00ULL) >> 7;
+    neighbours &= candidate;
+    neighbours &= ~bits;
+    if (neighbours) {
+        bits |= neighbours;
+        for (uint_fast8_t cell = first_bit(&neighbours); neighbours; cell = next_bit(&neighbours)) {
+            bits |= get_connected_bits_dir8(candidate, bits, 1ULL << cell);
+        }
+    }
+    return bits;
+}
+
+uint64_t get_connected_bits_horizontal(uint64_t candidate, uint64_t bits, uint64_t cell_bit) {
+    uint64_t neighbours = (cell_bit & 0x7F7F7F7F7F7F7F7FULL) << 1;
+    neighbours |= (cell_bit & 0xFEFEFEFEFEFEFEFEULL) >> 1;
+    neighbours &= candidate;
+    neighbours &= ~bits;
+    if (neighbours) {
+        bits |= neighbours;
+        for (uint_fast8_t cell = first_bit(&neighbours); neighbours; cell = next_bit(&neighbours)) {
+            bits |= get_connected_bits_horizontal(candidate, bits, 1ULL << cell);
+        }
+    }
+    return bits;
+}
+
+uint64_t get_connected_bits_vertical(uint64_t candidate, uint64_t bits, uint64_t cell_bit) {
+    uint64_t neighbours = cell_bit << 8;
+    neighbours |= cell_bit >> 8;
+    neighbours &= candidate;
+    neighbours &= ~bits;
+    if (neighbours) {
+        bits |= neighbours;
+        for (uint_fast8_t cell = first_bit(&neighbours); neighbours; cell = next_bit(&neighbours)) {
+            bits |= get_connected_bits_vertical(candidate, bits, 1ULL << cell);
+        }
+    }
+    return bits;
+}
+
+uint64_t get_connected_bits_diagonal9(uint64_t candidate, uint64_t bits, uint64_t cell_bit) {
+    uint64_t neighbours = (cell_bit & 0x007F7F7F7F7F7F7FULL) << 9;
+    neighbours |= (cell_bit & 0xFEFEFEFEFEFEFE00ULL) >> 9;
+    neighbours &= candidate;
+    neighbours &= ~bits;
+    if (neighbours) {
+        bits |= neighbours;
+        for (uint_fast8_t cell = first_bit(&neighbours); neighbours; cell = next_bit(&neighbours)) {
+            bits |= get_connected_bits_diagonal9(candidate, bits, 1ULL << cell);
+        }
+    }
+    return bits;
+}
+
+uint64_t get_connected_bits_diagonal7(uint64_t candidate, uint64_t bits, uint64_t cell_bit) {
+    uint64_t neighbours = (cell_bit & 0x00FEFEFEFEFEFEFEULL) << 7;
+    neighbours |= (cell_bit & 0x7F7F7F7F7F7F7F00ULL) >> 7;
+    neighbours &= candidate;
+    neighbours &= ~bits;
+    if (neighbours) {
+        bits |= neighbours;
+        for (uint_fast8_t cell = first_bit(&neighbours); neighbours; cell = next_bit(&neighbours)) {
+            bits |= get_connected_bits_diagonal7(candidate, bits, 1ULL << cell);
+        }
+    }
+    return bits;
+}
+
+
+
+// flip change
+void calc_local_strategy_policy(Board board, int max_level, int policy_res[HW2][HW2], bool *searching, int *done_level, bool show_log) {
+    for (int policy = 0; policy < HW2; ++policy) {
+        for (int cell = 0; cell < HW2; ++cell) {
+            policy_res[policy][cell] = LOCAL_STRATEGY_POLICY_NOT_CHANGED;
+        }
+    }
+    int policy_changed[HW2][HW2]; // [policy][cell]
+    constexpr uint64_t edge_bits[4] = {0x7E00000000000000ULL, 0x0001010101010100ULL, 0x000000000000007EULL, 0x0080808080808000ULL};
+    constexpr uint64_t corner_bits_next_to_edge[4] = {0x8100000000000000ULL, 0x0100000000000001ULL, 0x0000000000000081ULL, 0x8000000000000080ULL};
+    for (int level = 1; level < max_level && *searching && global_searching; ++level) {
+        std::vector<Search_result> actual_results = ai_best_moves_loss_searching(board, level, true, 0, true, false, 1, searching); // best moves or best-1 moves
+        std::vector<int> actual_best_moves;
+        for (const Search_result &result: actual_results) {
+            actual_best_moves.push_back(result.policy);
+        }
+        uint64_t legal = board.get_legal();
+        Flip flip;
+        for (uint_fast8_t policy = first_bit(&legal); legal && *searching; policy = next_bit(&legal)) {
+            bool policy_is_good_move = std::find(actual_best_moves.begin(), actual_best_moves.end(), policy) != actual_best_moves.end();
+            for (int cell = 0; cell < HW2; ++cell) {
+                policy_changed[policy][cell] = LOCAL_STRATEGY_POLICY_NOT_CHANGED;
+            }
+            calc_flip(&flip, &board, policy);
+            uint64_t can_be_flipped = 
+                get_connected_bits_horizontal(board.opponent, 0, (1ULL << policy)) | 
+                get_connected_bits_vertical(board.opponent, 0, (1ULL << policy)) | 
+                get_connected_bits_diagonal9(board.opponent, 0, (1ULL << policy)) | 
+                get_connected_bits_diagonal7(board.opponent, 0, (1ULL << policy));
+            for (uint_fast8_t cell = first_bit(&can_be_flipped); can_be_flipped && (*searching); cell = next_bit(&can_be_flipped)) {
+                uint64_t bit = 1ULL << cell;
+                flip.flip ^= bit;
+                board.move_board(&flip);
+                    int g = -ai_searching(board, level, true, 0, true, false, searching).value;
+                board.undo_board(&flip);
+                flip.flip ^= bit;
+                if (g >= actual_results[0].value - 1) { // now policy becomes a good move
+                    if (!policy_is_good_move) { // policy is bad move in the actual board (bad -> good)
+                        policy_changed[policy][cell] |= LOCAL_STRATEGY_POLICY_CHANGED_BAD_MOVE_FLIP; // the policy is a good move if the cell was not flipped
+                    }
+                } else { // now policy becomes a bad move
+                    if (policy_is_good_move) { // policy is good move in the actual board (good -> bad)
+                        policy_changed[policy][cell] |= LOCAL_STRATEGY_POLICY_CHANGED_GOOD_MOVE_FLIP; // the flipped cell is important for the policy to be a good move
                     }
                 }
             }
@@ -301,7 +423,6 @@ void calc_local_strategy_policy(Board board, int max_level, int policy_res[HW2][
         }
     }
 }
-
 
 
 

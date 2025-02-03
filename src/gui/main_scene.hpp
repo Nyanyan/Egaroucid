@@ -1505,9 +1505,14 @@ private:
                     int sy = BOARD_SY + ((HW2_M1 - cell) / HW) * BOARD_CELL_SIZE;
                     if (ai_status.local_strategy_policy[policy][cell] != LOCAL_STRATEGY_POLICY_NOT_CHANGED) {
                         Color frame_color;
-                        if (ai_status.local_strategy_policy[policy][cell] == LOCAL_STRATEGY_POLICY_CHANGED_GOOD_MOVE_DISC) {
+                        // if (ai_status.local_strategy_policy[policy][cell] == LOCAL_STRATEGY_POLICY_CHANGED_GOOD_MOVE_DISC) {
+                        //     frame_color = Palette::Blue;
+                        // } else if (ai_status.local_strategy_policy[policy][cell] == LOCAL_STRATEGY_POLICY_CHANGED_BAD_MOVE_DISC) {
+                        //     frame_color = Palette::Red;
+                        // }
+                        if (ai_status.local_strategy_policy[policy][cell] == LOCAL_STRATEGY_POLICY_CHANGED_GOOD_MOVE_FLIP) {
                             frame_color = Palette::Blue;
-                        } else if (ai_status.local_strategy_policy[policy][cell] == LOCAL_STRATEGY_POLICY_CHANGED_BAD_MOVE_DISC) {
+                        } else if (ai_status.local_strategy_policy[policy][cell] == LOCAL_STRATEGY_POLICY_CHANGED_BAD_MOVE_FLIP) {
                             frame_color = Palette::Red;
                         }
                         Rect{ sx, sy,  BOARD_CELL_SIZE, BOARD_CELL_SIZE}.drawFrame(3, 3, frame_color);
