@@ -15,7 +15,8 @@
 #define LOCAL_STRATEGY_POLICY_CHANGED_GOOD_MOVE_DISC 1 // that is a good move because this disc is this color
 #define LOCAL_STRATEGY_POLICY_CHANGED_BAD_MOVE_DISC -1 // that move is NOT good because this disc is this color
 // #define LOCAL_STRATEGY_POLICY_CHANGE_N_THRESHOLD 3 // use best 3 moves to see policy changed
-#define LOCAL_STRATEGY_POLICY_CHANGE_LOSS_THRESHOLD 2 // use best moves until value loss is 2 or less than 2
+#define LOCAL_STRATEGY_POLICY_CHANGE_BAD_MOVE_LOSS_THRESHOLD 2 // use best moves until value loss is 2 or less than 2
+#define LOCAL_STRATEGY_POLICY_CHANGE_GOOD_MOVE_LOSS_THRESHOLD 6 // use best moves until value loss is 6 or less than 6
 
 constexpr int MAX_LOCAL_STRATEGY_LEVEL = 25;
 
@@ -192,13 +193,14 @@ void calc_local_strategy_policy(Board board, int max_level, int policy_res[HW2][
     constexpr uint64_t edge_bits[4] = {0x7E00000000000000ULL, 0x0001010101010100ULL, 0x000000000000007EULL, 0x0080808080808000ULL};
     constexpr uint64_t corner_bits_next_to_edge[4] = {0x8100000000000000ULL, 0x0100000000000001ULL, 0x0000000000000081ULL, 0x8000000000000080ULL};
     for (int level = 1; level < max_level && *searching && global_searching; ++level) {
-        std::vector<Search_result> actual_results = ai_best_moves_loss_searching(board, level, true, 0, true, false, 1, searching); // best moves or best - 1 moves
+        std::vector<Search_result> actual_results = ai_best_moves_loss_searching(board, level, true, 0, true, false, 1, searching); // best moves or best-1 moves
         std::vector<int> actual_best_moves;
         for (const Search_result &result: actual_results) {
             actual_best_moves.push_back(result.policy);
         }
         uint64_t legal = board.get_legal();
         for (int policy = first_bit(&legal); legal && *searching; policy = next_bit(&legal)) {
+            bool policy_is_good_move = std::find(actual_best_moves.begin(), actual_best_moves.end(), policy) != actual_best_moves.end();
             for (int cell = 0; cell < HW2; ++cell) {
                 policy_changed[policy][cell] = LOCAL_STRATEGY_POLICY_NOT_CHANGED;
             }
@@ -219,7 +221,8 @@ void calc_local_strategy_policy(Board board, int max_level, int policy_res[HW2][
                     // player -> opponent, opponent -> player
                     board.player ^= bits;
                     board.opponent ^= bits;
-                        std::vector<Search_result> results = ai_best_moves_loss_searching(board, level, true, 0, true, false, LOCAL_STRATEGY_POLICY_CHANGE_LOSS_THRESHOLD, searching);
+                        int accept_loss = policy_is_good_move ? LOCAL_STRATEGY_POLICY_CHANGE_GOOD_MOVE_LOSS_THRESHOLD : LOCAL_STRATEGY_POLICY_CHANGE_BAD_MOVE_LOSS_THRESHOLD;
+                        std::vector<Search_result> results = ai_best_moves_loss_searching(board, level, true, 0, true, false, accept_loss, searching);
                         //std::vector<Search_result> results = ai_best_n_moves_searching(board, level, true, 0, true, false, LOCAL_STRATEGY_POLICY_CHANGE_N_THRESHOLD, searching);
                         std::vector<int> best_moves;
                         for (const Search_result &result: results) {
@@ -230,8 +233,8 @@ void calc_local_strategy_policy(Board board, int max_level, int policy_res[HW2][
                         //     std::cerr << idx_to_coord(result.policy) << "@" << result.value << " ";
                         // }
                         // std::cerr << std::endl;
-                        if (std::find(actual_best_moves.begin(), actual_best_moves.end(), policy) != actual_best_moves.end()) { // policy is good move in the actual board
-                            if (std::find(best_moves.begin(), best_moves.end(), policy) == best_moves.end()) { // good move is not selected now
+                        if (policy_is_good_move) { // policy is good move in the actual board
+                            if (std::find(best_moves.begin(), best_moves.end(), policy) == best_moves.end()) { // good move is NOT selected now
                                 uint64_t bits_cpy = bits;
                                 for (uint_fast8_t c = first_bit(&bits_cpy); bits_cpy; c = next_bit(&bits_cpy)) {
                                     policy_changed[policy][c] = LOCAL_STRATEGY_POLICY_CHANGED_GOOD_MOVE_DISC;
