@@ -7,9 +7,8 @@ n_random_moves = int(sys.argv[1])
 IDX_START = int(sys.argv[2])
 IDX_END = int(sys.argv[3])
 
-LEVEL = 30
-#N_GAMES_PER_FILE = 10000
-N_GAMES_PER_FILE = 200
+LEVEL = 17
+N_GAMES_PER_FILE = 10000
 N_THREAD = 31
 
 def fill0(n, r):
