@@ -538,7 +538,7 @@ Search_result ai_common(Board board, int alpha, int beta, int level, bool use_bo
                     }
                     if (!game_over) {
                         Book_elem book_elem = book.get(board);
-                        if (book_elem.level <= level) {
+                        if (book_elem.level < level) {
                             need_to_check = true;
                         }
                     }
