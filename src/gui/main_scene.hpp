@@ -1464,7 +1464,7 @@ private:
                 } else {
                     frame_color = Palette::Blue;
                 }
-                Rect{ sx, sy,  BOARD_CELL_SIZE, BOARD_CELL_SIZE}.drawFrame(4, 0, frame_color);
+                Rect{ sx, sy,  BOARD_CELL_SIZE, BOARD_CELL_SIZE}.drawFrame(5, 0, frame_color);
             }
         }
     }

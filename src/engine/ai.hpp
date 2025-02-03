@@ -645,15 +645,15 @@ std::vector<Search_result> ai_best_n_moves_searching(Board board, int level, boo
     return search_results;
 }
 
-Search_result ai_loss(Board board, int level, bool use_book, int book_acc_level, bool use_multi_thread, bool show_log, int loss_max) {
-    Search_result best = ai(board, level, true, 0, true, show_log);
+std::vector<Search_result> ai_best_moves_loss_searching(Board board, int level, bool use_book, int book_acc_level, bool use_multi_thread, bool show_log, int loss_max, bool *searching) {
+    Search_result best = ai_searching(board, level, true, 0, true, show_log, searching);
     std::vector<Search_result> search_results;
     search_results.emplace_back(best);
     int alpha = best.value - loss_max - 1;
     int beta = best.value;
     uint64_t legal = board.get_legal() ^ (1ULL << best.policy);
     while (legal) {
-        Search_result result_loss = ai_window_legal(board, alpha, beta, level, true, 0, true, show_log, legal);
+        Search_result result_loss = ai_window_legal_searching(board, alpha, beta, level, true, 0, true, show_log, legal, searching);
         legal ^= 1ULL << result_loss.policy;
         if (result_loss.value >= best.value - loss_max) {
             search_results.emplace_back(result_loss);
@@ -661,6 +661,12 @@ Search_result ai_loss(Board board, int level, bool use_book, int book_acc_level,
             break;
         }
     }
+    return search_results;
+}
+
+Search_result ai_loss(Board board, int level, bool use_book, int book_acc_level, bool use_multi_thread, bool show_log, int loss_max) {
+    bool searching = true;
+    std::vector<Search_result> search_results = ai_best_moves_loss_searching(board, level, use_book, book_acc_level, use_multi_thread, show_log, loss_max, &searching);
     if (show_log){
         std::cerr << "play loss candidate " << search_results.size() << " moves: ";
         for (const Search_result &elem: search_results) {
