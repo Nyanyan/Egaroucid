@@ -394,6 +394,40 @@ void calc_local_strategy_policy(Board board, int max_level, int policy_res[HW2][
                 get_connected_bits_vertical(board.opponent, 0, (1ULL << policy)) | 
                 get_connected_bits_diagonal9(board.opponent, 0, (1ULL << policy)) | 
                 get_connected_bits_diagonal7(board.opponent, 0, (1ULL << policy));
+            uint64_t drs[8] = {
+                can_be_flipped & bit_left[policy],
+                can_be_flipped & bit_right[policy],
+                can_be_flipped & bit_up[policy],
+                can_be_flipped & bit_down[policy],
+                can_be_flipped & bit_d7up[policy],
+                can_be_flipped & bit_d7down[policy],
+                can_be_flipped & bit_d9up[policy],
+                can_be_flipped & bit_d9down[policy]
+            };
+            for (int i = 0; i < 8; ++i) {
+                uint64_t dr = drs[i];
+                if (dr) {
+                    flip.flip ^= dr;
+                    board.move_board(&flip);
+                        int g = -ai_searching(board, level, true, 0, true, false, searching).value;
+                    board.undo_board(&flip);
+                    flip.flip ^= dr;
+                    if (g >= actual_results[0].value - 1) { // now policy becomes a good move
+                        if (!policy_is_good_move) { // policy is bad move in the actual board (bad -> good)
+                            for (uint_fast8_t c = first_bit(&dr); dr; c = next_bit(&dr)) {
+                                policy_changed[policy][c] |= LOCAL_STRATEGY_POLICY_CHANGED_BAD_MOVE_FLIP; // the policy is a good move if the cell was not flipped
+                            }
+                        }
+                    } else { // now policy becomes a bad move
+                        if (policy_is_good_move) { // policy is good move in the actual board (good -> bad)
+                            for (uint_fast8_t c = first_bit(&dr); dr; c = next_bit(&dr)) {
+                                policy_changed[policy][c] |= LOCAL_STRATEGY_POLICY_CHANGED_GOOD_MOVE_FLIP; // the flipped cell is important for the policy to be a good move
+                            }
+                        }
+                    }
+                }
+            }
+            /*
             for (uint_fast8_t cell = first_bit(&can_be_flipped); can_be_flipped && (*searching); cell = next_bit(&can_be_flipped)) {
                 uint64_t bit = 1ULL << cell;
                 flip.flip ^= bit;
@@ -411,6 +445,7 @@ void calc_local_strategy_policy(Board board, int max_level, int policy_res[HW2][
                     }
                 }
             }
+            */
             if (*searching && global_searching) {
                 for (int cell = 0; cell < HW2; ++cell) {
                     policy_res[policy][cell] = policy_changed[policy][cell];
