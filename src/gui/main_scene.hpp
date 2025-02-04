@@ -1510,18 +1510,28 @@ private:
                         // } else if (ai_status.local_strategy_policy[policy][cell] == LOCAL_STRATEGY_POLICY_CHANGED_BAD_MOVE_DISC) {
                         //     frame_color = Palette::Red;
                         // }
+                        bool use_dotted_frame = false;
                         if (ai_status.local_strategy_policy[policy][cell] == LOCAL_STRATEGY_POLICY_CHANGED_GOOD_MOVE_FLIPPED) {
                             frame_color = Palette::Blue;
                         } else if (ai_status.local_strategy_policy[policy][cell] == LOCAL_STRATEGY_POLICY_CHANGED_GOOD_MOVE_UNFLIPPED) {
                             frame_color = Palette::Blue;
+                            use_dotted_frame = true;
                             //frame_color = Palette::Skyblue;
                         } else if (ai_status.local_strategy_policy[policy][cell] == LOCAL_STRATEGY_POLICY_CHANGED_BAD_MOVE_FLIPPED) {
                             frame_color = Palette::Red;
                         } else if (ai_status.local_strategy_policy[policy][cell] == LOCAL_STRATEGY_POLICY_CHANGED_BAD_MOVE_UNFLIPPED) {
                             frame_color = Palette::Red;
+                            use_dotted_frame = true;
                             //frame_color = Palette::Orange;
                         }
-                        Rect{ sx, sy,  BOARD_CELL_SIZE, BOARD_CELL_SIZE}.drawFrame(3, 3, frame_color);
+                        if (use_dotted_frame) {
+                            Line{ sx, sy, sx + BOARD_CELL_SIZE, sy }.draw(LineStyle::SquareDot, 6, frame_color);
+                            Line{ sx, sy + BOARD_CELL_SIZE, sx + BOARD_CELL_SIZE, sy + BOARD_CELL_SIZE }.draw(LineStyle::SquareDot, 6, frame_color);
+                            Line{ sx, sy, sx, sy + BOARD_CELL_SIZE }.draw(LineStyle::SquareDot, 6, frame_color);
+                            Line{ sx + BOARD_CELL_SIZE, sy, sx + BOARD_CELL_SIZE, sy + BOARD_CELL_SIZE }.draw(LineStyle::SquareDot, 6, frame_color);
+                        } else {
+                            Rect{ sx, sy,  BOARD_CELL_SIZE, BOARD_CELL_SIZE}.drawFrame(3, 3, frame_color);
+                        }
                     }
                 }
                 break;
