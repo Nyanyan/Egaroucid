@@ -299,7 +299,7 @@ float leaky_relu(float x){
 
 // predict
 float predict(float *h0r, int ps, float ph, float d0[][19], float dn[][ND][ND], float bn[][ND], float *d4, float b4){
-    float h0[ND], h1[ND], h2[ND];
+    float h0[ND], h1[ND];
     // dense 0 (phase)
     for (int i = 0; i < ND; ++i) {
         h0[i] = leaky_relu(h0r[i] + ph * d0[i][ps * 2]); // add phase, activate
@@ -312,22 +312,14 @@ float predict(float *h0r, int ps, float ph, float d0[][19], float dn[][ND][ND], 
         }
         h1[i] = leaky_relu(h1[i]); // activation
     }
-    // dense 2
+    // dense 2 + last layer
+    float h2, e = b4;
     for (int i = 0; i < ND; ++i) {
-        h2[i] = bn[1][i]; // bias
+        h2 = bn[1][i];
         for (int j = 0; j < ND; ++j) {
-            h2[i] += h1[j] * dn[1][i][j];
+            h2 += h1[j] * dn[1][i][j];
         }
-        h2[i] = leaky_relu(h2[i]); // activation
-    }
-    // dense 3 + last layer
-    float h3, e = b4;
-    for (int i = 0; i < ND; ++i) {
-        h3 = bn[2][i];
-        for (int j = 0; j < ND; ++j) {
-            h3 += h2[j] * dn[2][i][j];
-        }
-        e += leaky_relu(h3) * d4[i];
+        e += leaky_relu(h2) * d4[i];
     }
     e = tanh(e); // last activation
     return e * 4091; // multiply
@@ -341,15 +333,10 @@ int irp(int i, int s) {
     return r;
 }
 
-
-
-
-
-
 int irp_arr[2][MAX_EVALUATE_IDX];
 
 void evaluate_init() {
-    float in_arr[18], d0[ND][19], b0[ND], dn[3][ND][ND], bn[3][ND], d4[ND], b4, h0r[ND]; // in_arr max 9 cells, 18 input nodes
+    float in_arr[18], d0[ND][19], b0[ND], dn[3][ND][ND], bn[2][ND], d4[ND], b4, h0r[ND]; // in_arr max 9 cells, 18 input nodes
     constexpr int n_symmetry[N_PATTERNS] = {4, 4, 4, 4, 8, 8, 4, 4, 4, 4, 8, 8};
     for (int i = 0; i < 2; ++i) {
         for (int j = 0; j < pow3[8 + i]; ++j) {
@@ -370,23 +357,23 @@ void evaluate_init() {
         for (int j = 0; j < ND; ++j) {
             b0[j] = eval_params[param_ix++];
         }
-        // dense 1, 2, 3
-        for (int l = 0; l < 3; ++l) { // for each dence
+        // dense 1, 2
+        for (int l = 0; l < 2; ++l) { // for each dence
             for (int j = 0; j < ND; ++j) {
                 for (int k = 0; k < ND; ++k) {
                     dn[l][j][k] = eval_params[param_ix++];
                 }
             }
-            // bias 1
+            // bias 1, 2
             for (int j = 0; j < ND; ++j) {
                 bn[l][j] = eval_params[param_ix++];
             }
         }
-        // dense 4
+        // dense 3
         for (int j = 0; j < ND; ++j) {
             d4[j] = eval_params[param_ix++];
         }
-        // bias 4
+        // bias 3
         b4 = eval_params[param_ix++];
         // predict
         for (int j = 0; j < pow3[n_discs_in_pattern[i]]; ++j) {
@@ -408,14 +395,10 @@ void evaluate_init() {
                 }
             }
             // predict each phase
-            for (int k = 2; k < NP; ++k) {
-                pattern_arr[0][k][i][j] = round(predict(h0r, n_discs_in_pattern[i], (float)k / NP, d0, dn, bn, d4, b4));
+            for (int k = 0; k < N_PHASES; ++k) {
+                pattern_arr[0][k][i][j] = round(predict(h0r, n_discs_in_pattern[i], (float)k / N_PHASES, d0, dn, bn, d4, b4));
                 pattern_arr[1][k][i][irp_arr[n_discs_in_pattern[i] - 8][j]] = pattern_arr[0][k][i][j];
                 //pattern_arr[1][k][i][irp(j, n_discs_in_pattern[i])] = pattern_arr[0][k][i][j];
-            }
-            for (int k = 0; k < 2; ++k) { // use phase 2 for phase 0 & 1
-                pattern_arr[0][k][i][j] = pattern_arr[0][2][i][j];
-                pattern_arr[1][k][i][j] = pattern_arr[1][2][i][j];
             }
         }
     }
