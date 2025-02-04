@@ -53,6 +53,26 @@ int main() {
     while (true) {
         board = input_board_po();
         board.print();
+
+        // Search search;
+        // search.init_board(&board);
+        // calc_features(&search);
+        // print_features(&search);
+        // std::cerr << mid_evaluate_diff(&search) << std::endl;
+        // uint64_t legal = board.get_legal();
+        // Flip flip;
+        // for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)) {
+        //     calc_flip(&flip, &search.board, cell);
+        //     search.move(&flip);
+        //     eval_move(&search, &flip);
+        //         search.board.print();
+        //         print_features(&search);
+        //         std::cerr << idx_to_coord(cell) << " " << mid_evaluate_diff(&search) << std::endl;
+        //     eval_undo(&search, &flip);
+        //     search.undo(&flip);
+        // }
+        // return 0;
+        
         Search_result search_result = ai(board, level, use_book, false, show_log);
         std::cout << idx_to_coord(search_result.policy) << " " << search_result.value << std::endl;
     }

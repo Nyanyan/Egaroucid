@@ -17,9 +17,7 @@
 
 using namespace std;
 
-#ifndef N_SYMMETRY_PATTERNS
-    #define N_SYMMETRY_PATTERNS 46
-#endif
+#define N_SYMMETRY_PATTERNS 64
 #define MID_FAST_DEPTH 1
 #define END_FAST_DEPTH 7
 #define MID_TO_END_DEPTH 13
@@ -123,7 +121,7 @@ class Search{
         }
 
         inline int phase(){
-            return max(0, min(N_PHASES - 1, (n_discs - 24) / PHASE_N_STONES));
+            return max(0, min(N_PHASES - 1, (n_discs - 4) / PHASE_N_STONES));
         }
 };
 
