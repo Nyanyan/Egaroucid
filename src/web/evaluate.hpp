@@ -335,8 +335,9 @@ float predict(float *h0r, int ps, float ph, float d0[][19], float dn[][ND][ND], 
 
 int irp(int i, int s) {
     int j, r = i;
-    for (j = 0; j < s; ++j)
+    for (j = 0; j < s; ++j) {
         r += ((i / pow3[j] + 2) % 3 - 1) * pow3[j];
+    }
     return r;
 }
 
@@ -350,7 +351,12 @@ int irp(int i, int s) {
 void evaluate_init() {
     float in_arr[18], d0[ND][19], b0[ND], dn[3][ND][ND], bn[3][ND], d4[ND], b4, h0r[ND]; // in_arr max 9 cells, 18 input nodes
     constexpr int n_symmetry[N_PATTERNS] = {4, 4, 4, 4, 8, 8, 4, 4, 4, 4, 8, 8};
-
+    int irp_arr[2][MAX_EVALUATE_IDX];
+    for (int i = 0; i < 2; ++i) {
+        for (int j = 0; j < pow3[8 + i]; ++j) {
+            irp_arr[i][j] = irp(j, 8 + i);
+        }
+    }
     // read param & predict
     int param_ix = 0;
     for (int i = 0; i < N_PATTERNS; ++i) { // for each pattern
@@ -405,7 +411,8 @@ void evaluate_init() {
             // predict each phase
             for (int k = 0; k < NP; ++k) {
                 pattern_arr[0][k][i][j] = round(predict(h0r, n_discs_in_pattern[i], (float)k / NP, d0, dn, bn, d4, b4));
-                pattern_arr[1][k][i][irp(j, n_discs_in_pattern[i])] = pattern_arr[0][k][i][j];
+                pattern_arr[1][k][i][irp_arr[n_discs_in_pattern[i] - 8][j]] = pattern_arr[0][k][i][j];
+                //pattern_arr[1][k][i][irp(j, n_discs_in_pattern[i])] = pattern_arr[0][k][i][j];
             }
         }
     }
