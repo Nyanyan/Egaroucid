@@ -12,10 +12,12 @@
 #include "ai.hpp"
 
 #define LOCAL_STRATEGY_POLICY_NOT_CHANGED 0
-#define LOCAL_STRATEGY_POLICY_CHANGED_GOOD_MOVE_DISC 1 // that is a good move because this disc is this color
-#define LOCAL_STRATEGY_POLICY_CHANGED_BAD_MOVE_DISC 2 // that move is NOT good because this disc is this color
-#define LOCAL_STRATEGY_POLICY_CHANGED_GOOD_MOVE_FLIP 4 // that is a good move because this disc is this color
-#define LOCAL_STRATEGY_POLICY_CHANGED_BAD_MOVE_FLIP 8 // that move is NOT good because this disc is this color
+//#define LOCAL_STRATEGY_POLICY_CHANGED_GOOD_MOVE_DISC 16 // that is a good move because this disc is this color
+//#define LOCAL_STRATEGY_POLICY_CHANGED_BAD_MOVE_DISC 32 // that move is NOT good because this disc is this color
+#define LOCAL_STRATEGY_POLICY_CHANGED_GOOD_MOVE_FLIPPED 1
+#define LOCAL_STRATEGY_POLICY_CHANGED_GOOD_MOVE_UNFLIPPED 2
+#define LOCAL_STRATEGY_POLICY_CHANGED_BAD_MOVE_FLIPPED 4
+#define LOCAL_STRATEGY_POLICY_CHANGED_BAD_MOVE_UNFLIPPED 8
 // #define LOCAL_STRATEGY_POLICY_CHANGE_N_THRESHOLD 3 // use best 3 moves to see policy changed
 #define LOCAL_STRATEGY_POLICY_CHANGE_BAD_MOVE_LOSS_THRESHOLD 2 // use best moves until value loss is 2 or less than 2
 #define LOCAL_STRATEGY_POLICY_CHANGE_GOOD_MOVE_LOSS_THRESHOLD 6 // use best moves until value loss is 6 or less than 6
@@ -447,13 +449,21 @@ void calc_local_strategy_policy(Board board, int max_level, int policy_res[HW2][
                     if (g >= actual_results[0].value - 1) { // now policy becomes a good move
                         if (!policy_is_good_move) { // policy is bad move in the actual board (bad -> good)
                             for (uint_fast8_t c = first_bit(&can_be_flipped_1dir); can_be_flipped_1dir; c = next_bit(&can_be_flipped_1dir)) {
-                                policy_changed[policy][c] |= LOCAL_STRATEGY_POLICY_CHANGED_BAD_MOVE_FLIP; // the policy is a good move if the cell was not flipped
+                                if (flip.flip & can_be_flipped_1dir) {
+                                    policy_changed[policy][c] |= LOCAL_STRATEGY_POLICY_CHANGED_BAD_MOVE_FLIPPED; // the policy is a good move if the disc is flipped
+                                } else {
+                                    policy_changed[policy][c] |= LOCAL_STRATEGY_POLICY_CHANGED_BAD_MOVE_UNFLIPPED; // the policy is a good move if the disc is NOT flipped
+                                }
                             }
                         }
                     } else { // now policy becomes a bad move
                         if (policy_is_good_move) { // policy is good move in the actual board (good -> bad)
                             for (uint_fast8_t c = first_bit(&can_be_flipped_1dir); can_be_flipped_1dir; c = next_bit(&can_be_flipped_1dir)) {
-                                policy_changed[policy][c] |= LOCAL_STRATEGY_POLICY_CHANGED_GOOD_MOVE_FLIP; // the flipped cell is important for the policy to be a good move
+                                if (flip.flip & can_be_flipped_1dir) {
+                                    policy_changed[policy][c] |= LOCAL_STRATEGY_POLICY_CHANGED_GOOD_MOVE_FLIPPED; // the flipped cell is important for the policy to be a good move
+                                } else {
+                                    policy_changed[policy][c] |= LOCAL_STRATEGY_POLICY_CHANGED_GOOD_MOVE_UNFLIPPED; // the UNFLIPPED cell is important for the policy to be a good move
+                                }
                             }
                         }
                     }

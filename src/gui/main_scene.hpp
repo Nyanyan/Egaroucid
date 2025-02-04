@@ -1510,10 +1510,16 @@ private:
                         // } else if (ai_status.local_strategy_policy[policy][cell] == LOCAL_STRATEGY_POLICY_CHANGED_BAD_MOVE_DISC) {
                         //     frame_color = Palette::Red;
                         // }
-                        if (ai_status.local_strategy_policy[policy][cell] == LOCAL_STRATEGY_POLICY_CHANGED_GOOD_MOVE_FLIP) {
+                        if (ai_status.local_strategy_policy[policy][cell] == LOCAL_STRATEGY_POLICY_CHANGED_GOOD_MOVE_FLIPPED) {
                             frame_color = Palette::Blue;
-                        } else if (ai_status.local_strategy_policy[policy][cell] == LOCAL_STRATEGY_POLICY_CHANGED_BAD_MOVE_FLIP) {
+                        } else if (ai_status.local_strategy_policy[policy][cell] == LOCAL_STRATEGY_POLICY_CHANGED_GOOD_MOVE_UNFLIPPED) {
+                            frame_color = Palette::Blue;
+                            //frame_color = Palette::Skyblue;
+                        } else if (ai_status.local_strategy_policy[policy][cell] == LOCAL_STRATEGY_POLICY_CHANGED_BAD_MOVE_FLIPPED) {
                             frame_color = Palette::Red;
+                        } else if (ai_status.local_strategy_policy[policy][cell] == LOCAL_STRATEGY_POLICY_CHANGED_BAD_MOVE_UNFLIPPED) {
+                            frame_color = Palette::Red;
+                            //frame_color = Palette::Orange;
                         }
                         Rect{ sx, sy,  BOARD_CELL_SIZE, BOARD_CELL_SIZE}.drawFrame(3, 3, frame_color);
                     }
