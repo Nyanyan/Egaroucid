@@ -20,6 +20,7 @@ inline void init(int *percentage) {
     parent_transpose_table.first_init();
     child_transpose_table.first_init();
     *percentage = 80;
+    std::cerr << "eval init" << std::endl;
     evaluate_init();
     book_init();
     *percentage = 100;
