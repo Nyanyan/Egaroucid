@@ -1503,37 +1503,34 @@ private:
                 for (uint_fast8_t cell = 0; cell < HW2; ++cell) {
                     int sx = BOARD_SX + ((HW2_M1 - cell) % HW) * BOARD_CELL_SIZE;
                     int sy = BOARD_SY + ((HW2_M1 - cell) / HW) * BOARD_CELL_SIZE;
-                    if (ai_status.local_strategy_policy[policy][cell] != LOCAL_STRATEGY_POLICY_NOT_CHANGED) {
-                        Color frame_color;
-                        // if (ai_status.local_strategy_policy[policy][cell] == LOCAL_STRATEGY_POLICY_CHANGED_GOOD_MOVE_DISC) {
-                        //     frame_color = Palette::Blue;
-                        // } else if (ai_status.local_strategy_policy[policy][cell] == LOCAL_STRATEGY_POLICY_CHANGED_BAD_MOVE_DISC) {
-                        //     frame_color = Palette::Red;
-                        // }
-                        bool use_dotted_frame = false;
-                        if (ai_status.local_strategy_policy[policy][cell] & LOCAL_STRATEGY_POLICY_CHANGED_GOOD_MOVE_FLIPPED) {
-                            frame_color = Palette::Blue;
-                        } else if (ai_status.local_strategy_policy[policy][cell] & LOCAL_STRATEGY_POLICY_CHANGED_GOOD_MOVE_UNFLIPPED) {
-                            frame_color = Palette::Blue;
-                            use_dotted_frame = true;
-                            //frame_color = Palette::Skyblue;
-                        } else if (ai_status.local_strategy_policy[policy][cell] & LOCAL_STRATEGY_POLICY_CHANGED_BAD_MOVE_FLIPPED) {
-                            frame_color = Palette::Red;
-                        } else if (ai_status.local_strategy_policy[policy][cell] & LOCAL_STRATEGY_POLICY_CHANGED_BAD_MOVE_UNFLIPPED) {
-                            frame_color = Palette::Red;
-                            use_dotted_frame = true;
-                            //frame_color = Palette::Orange;
-                        } else if (ai_status.local_strategy_policy[policy][cell] & LOCAL_STRATEGY_POLICY_CHANGED_PLAYER_CANPUT) {
-                            frame_color = Palette::Skyblue;
-                        } else if (ai_status.local_strategy_policy[policy][cell] & LOCAL_STRATEGY_POLICY_CHANGED_PLAYER_CANNOTPUT) {
-                            frame_color = Palette::Skyblue;
-                            use_dotted_frame = true;
-                        } else if (ai_status.local_strategy_policy[policy][cell] & LOCAL_STRATEGY_POLICY_CHANGED_OPPONENT_CANPUT) {
-                            frame_color = Palette::Orange;
-                        } else if (ai_status.local_strategy_policy[policy][cell] & LOCAL_STRATEGY_POLICY_CHANGED_OPPONENT_CANNOTPUT) {
-                            frame_color = Palette::Orange;
-                            use_dotted_frame = true;
-                        }
+                    int cx = sx + BOARD_CELL_SIZE / 2;
+                    int cy = sy + BOARD_CELL_SIZE / 2;
+                    Color frame_color;
+                    // if (ai_status.local_strategy_policy[policy][cell] == LOCAL_STRATEGY_POLICY_CHANGED_GOOD_MOVE_DISC) {
+                    //     frame_color = Palette::Blue;
+                    // } else if (ai_status.local_strategy_policy[policy][cell] == LOCAL_STRATEGY_POLICY_CHANGED_BAD_MOVE_DISC) {
+                    //     frame_color = Palette::Red;
+                    // }
+                    bool use_dotted_frame = false;
+                    bool draw_square = false;
+                    if (ai_status.local_strategy_policy[policy][cell] & LOCAL_STRATEGY_POLICY_CHANGED_GOOD_MOVE_FLIPPED) {
+                        draw_square = true;
+                        frame_color = Palette::Blue;
+                    } else if (ai_status.local_strategy_policy[policy][cell] & LOCAL_STRATEGY_POLICY_CHANGED_GOOD_MOVE_UNFLIPPED) {
+                        draw_square = true;
+                        frame_color = Palette::Blue;
+                        use_dotted_frame = true;
+                        //frame_color = Palette::Skyblue;
+                    } else if (ai_status.local_strategy_policy[policy][cell] & LOCAL_STRATEGY_POLICY_CHANGED_BAD_MOVE_FLIPPED) {
+                        draw_square = true;
+                        frame_color = Palette::Red;
+                    } else if (ai_status.local_strategy_policy[policy][cell] & LOCAL_STRATEGY_POLICY_CHANGED_BAD_MOVE_UNFLIPPED) {
+                        draw_square = true;
+                        frame_color = Palette::Red;
+                        use_dotted_frame = true;
+                        //frame_color = Palette::Orange;
+                    }
+                    if (draw_square) {
                         if (use_dotted_frame) {
                             Line{ sx, sy, sx + BOARD_CELL_SIZE, sy }.draw(LineStyle::SquareDot, 6, frame_color);
                             Line{ sx, sy + BOARD_CELL_SIZE, sx + BOARD_CELL_SIZE, sy + BOARD_CELL_SIZE }.draw(LineStyle::SquareDot, 6, frame_color);
@@ -1542,6 +1539,18 @@ private:
                         } else {
                             Rect{ sx, sy,  BOARD_CELL_SIZE, BOARD_CELL_SIZE}.drawFrame(3, 3, frame_color);
                         }
+                    }
+                    Color player_legal_color = Palette::Blue;
+                    Color opponent_legal_color = Palette::Red;
+                    if (ai_status.local_strategy_policy[policy][cell] & LOCAL_STRATEGY_POLICY_CHANGED_PLAYER_CANPUT) {
+                        Circle(sx + BOARD_CELL_SIZE - 10, sy + BOARD_CELL_SIZE - 25, LEGAL_SIZE).draw(player_legal_color);
+                    } else if (ai_status.local_strategy_policy[policy][cell] & LOCAL_STRATEGY_POLICY_CHANGED_PLAYER_CANNOTPUT) {
+                        Circle(sx + BOARD_CELL_SIZE - 10, sy + BOARD_CELL_SIZE - 25, LEGAL_SIZE).drawFrame(2, 0, player_legal_color);
+                    }
+                    if (ai_status.local_strategy_policy[policy][cell] & LOCAL_STRATEGY_POLICY_CHANGED_OPPONENT_CANPUT) {
+                        Circle(sx + BOARD_CELL_SIZE - 10, sy + BOARD_CELL_SIZE - 10, LEGAL_SIZE).draw(opponent_legal_color);
+                    } else if (ai_status.local_strategy_policy[policy][cell] & LOCAL_STRATEGY_POLICY_CHANGED_OPPONENT_CANNOTPUT) {
+                        Circle(sx + BOARD_CELL_SIZE - 10, sy + BOARD_CELL_SIZE - 10, LEGAL_SIZE).drawFrame(2, 0, opponent_legal_color);
                     }
                 }
                 break;
