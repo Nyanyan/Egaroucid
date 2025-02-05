@@ -346,7 +346,7 @@ void evaluate_init() {
     // read param & predict
     int param_ix = 0;
     for (int i = 0; i < N_PATTERNS; ++i) { // for each pattern
-        std::cerr << "pattern " << i << std::endl;
+        //std::cerr << "pattern " << i << std::endl;
         // dense 0
         for (int j = 0; j < ND; ++j) {
             for (int k = 0; k < n_discs_in_pattern[i] * 2 + 1; ++k) {
@@ -402,7 +402,8 @@ void evaluate_init() {
             }
         }
     }
-    std::cerr << "eval initialized " << param_ix << std::endl;
+    //std::cerr << "eval initialized " << param_ix << std::endl;
+    std::cerr << "eval initialized" << std::endl;
 }
 
 
