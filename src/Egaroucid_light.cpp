@@ -57,7 +57,6 @@ int main() {
         // Search search;
         // search.init_board(&board);
         // calc_features(&search);
-        // print_features(&search);
         // std::cerr << mid_evaluate_diff(&search) << std::endl;
         // uint64_t legal = board.get_legal();
         // Flip flip;
@@ -66,7 +65,6 @@ int main() {
         //     search.move(&flip);
         //     eval_move(&search, &flip);
         //         search.board.print();
-        //         print_features(&search);
         //         std::cerr << idx_to_coord(cell) << " " << mid_evaluate_diff(&search) << std::endl;
         //     eval_undo(&search, &flip);
         //     search.undo(&flip);
