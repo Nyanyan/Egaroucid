@@ -1511,18 +1511,28 @@ private:
                         //     frame_color = Palette::Red;
                         // }
                         bool use_dotted_frame = false;
-                        if (ai_status.local_strategy_policy[policy][cell] == LOCAL_STRATEGY_POLICY_CHANGED_GOOD_MOVE_FLIPPED) {
+                        if (ai_status.local_strategy_policy[policy][cell] & LOCAL_STRATEGY_POLICY_CHANGED_GOOD_MOVE_FLIPPED) {
                             frame_color = Palette::Blue;
-                        } else if (ai_status.local_strategy_policy[policy][cell] == LOCAL_STRATEGY_POLICY_CHANGED_GOOD_MOVE_UNFLIPPED) {
+                        } else if (ai_status.local_strategy_policy[policy][cell] & LOCAL_STRATEGY_POLICY_CHANGED_GOOD_MOVE_UNFLIPPED) {
                             frame_color = Palette::Blue;
                             use_dotted_frame = true;
                             //frame_color = Palette::Skyblue;
-                        } else if (ai_status.local_strategy_policy[policy][cell] == LOCAL_STRATEGY_POLICY_CHANGED_BAD_MOVE_FLIPPED) {
+                        } else if (ai_status.local_strategy_policy[policy][cell] & LOCAL_STRATEGY_POLICY_CHANGED_BAD_MOVE_FLIPPED) {
                             frame_color = Palette::Red;
-                        } else if (ai_status.local_strategy_policy[policy][cell] == LOCAL_STRATEGY_POLICY_CHANGED_BAD_MOVE_UNFLIPPED) {
+                        } else if (ai_status.local_strategy_policy[policy][cell] & LOCAL_STRATEGY_POLICY_CHANGED_BAD_MOVE_UNFLIPPED) {
                             frame_color = Palette::Red;
                             use_dotted_frame = true;
                             //frame_color = Palette::Orange;
+                        } else if (ai_status.local_strategy_policy[policy][cell] & LOCAL_STRATEGY_POLICY_CHANGED_PLAYER_CANPUT) {
+                            frame_color = Palette::Skyblue;
+                        } else if (ai_status.local_strategy_policy[policy][cell] & LOCAL_STRATEGY_POLICY_CHANGED_PLAYER_CANNOTPUT) {
+                            frame_color = Palette::Skyblue;
+                            use_dotted_frame = true;
+                        } else if (ai_status.local_strategy_policy[policy][cell] & LOCAL_STRATEGY_POLICY_CHANGED_OPPONENT_CANPUT) {
+                            frame_color = Palette::Orange;
+                        } else if (ai_status.local_strategy_policy[policy][cell] & LOCAL_STRATEGY_POLICY_CHANGED_OPPONENT_CANNOTPUT) {
+                            frame_color = Palette::Orange;
+                            use_dotted_frame = true;
                         }
                         if (use_dotted_frame) {
                             Line{ sx, sy, sx + BOARD_CELL_SIZE, sy }.draw(LineStyle::SquareDot, 6, frame_color);

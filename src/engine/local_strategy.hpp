@@ -18,6 +18,10 @@
 #define LOCAL_STRATEGY_POLICY_CHANGED_GOOD_MOVE_UNFLIPPED 2
 #define LOCAL_STRATEGY_POLICY_CHANGED_BAD_MOVE_FLIPPED 4
 #define LOCAL_STRATEGY_POLICY_CHANGED_BAD_MOVE_UNFLIPPED 8
+#define LOCAL_STRATEGY_POLICY_CHANGED_PLAYER_CANPUT 16 // when unflipped
+#define LOCAL_STRATEGY_POLICY_CHANGED_PLAYER_CANNOTPUT 32 // when unflipped
+#define LOCAL_STRATEGY_POLICY_CHANGED_OPPONENT_CANPUT 64 // when flipped
+#define LOCAL_STRATEGY_POLICY_CHANGED_OPPONENT_CANNOTPUT 128 // when flipped
 // #define LOCAL_STRATEGY_POLICY_CHANGE_N_THRESHOLD 3 // use best 3 moves to see policy changed
 #define LOCAL_STRATEGY_POLICY_CHANGE_BAD_MOVE_LOSS_THRESHOLD 2 // use best moves until value loss is 2 or less than 2
 #define LOCAL_STRATEGY_POLICY_CHANGE_GOOD_MOVE_LOSS_THRESHOLD 6 // use best moves until value loss is 6 or less than 6
@@ -422,6 +426,10 @@ void calc_local_strategy_policy(Board board, int max_level, int policy_res[HW2][
         }
     }
     int policy_changed[HW2][HW2]; // [policy][cell]
+    const uint64_t actual_legal_player = board.get_legal();
+    board.pass();
+        const uint64_t actual_legal_opponent = board.get_legal();
+    board.pass();
     for (int level = 1; level < max_level && *searching && global_searching; ++level) {
         std::vector<Search_result> actual_results = ai_best_moves_loss_searching(board, level, true, 0, true, false, 1, searching); // best moves or best-1 moves
         std::vector<int> actual_best_moves;
@@ -446,8 +454,8 @@ void calc_local_strategy_policy(Board board, int max_level, int policy_res[HW2][
                         int g = -ai_searching(board, level, true, 0, true, false, searching).value;
                     board.undo_board(&flip);
                     flip.flip ^= can_be_flipped_1dir;
-                    if (g >= actual_results[0].value - 1) { // now policy becomes a good move
-                        if (!policy_is_good_move) { // policy is bad move in the actual board (bad -> good)
+                    if (g >= actual_results[0].value - 1) { // now policy becomes a GOOD move
+                        if (!policy_is_good_move) { // policy is BAD move in the actual board (bad -> good)
                             for (uint_fast8_t c = first_bit(&can_be_flipped_1dir); can_be_flipped_1dir; c = next_bit(&can_be_flipped_1dir)) {
                                 if (flip.flip & can_be_flipped_1dir) {
                                     policy_changed[policy][c] |= LOCAL_STRATEGY_POLICY_CHANGED_BAD_MOVE_FLIPPED; // the policy is a good move if the disc is flipped
@@ -456,8 +464,8 @@ void calc_local_strategy_policy(Board board, int max_level, int policy_res[HW2][
                                 }
                             }
                         }
-                    } else { // now policy becomes a bad move
-                        if (policy_is_good_move) { // policy is good move in the actual board (good -> bad)
+                    } else { // now policy becomes a BAD move
+                        if (policy_is_good_move) { // policy is GOOD move in the actual board (good -> bad)
                             for (uint_fast8_t c = first_bit(&can_be_flipped_1dir); can_be_flipped_1dir; c = next_bit(&can_be_flipped_1dir)) {
                                 if (flip.flip & can_be_flipped_1dir) {
                                     policy_changed[policy][c] |= LOCAL_STRATEGY_POLICY_CHANGED_GOOD_MOVE_FLIPPED; // the flipped cell is important for the policy to be a good move
@@ -469,6 +477,31 @@ void calc_local_strategy_policy(Board board, int max_level, int policy_res[HW2][
                     }
                 }
                 //}
+            }
+            board.move_board(&flip);
+                uint64_t modified_legal_opponent = board.get_legal();
+                board.pass();
+                    uint64_t modified_legal_player = board.get_legal();
+                board.pass();
+            board.undo_board(&flip);
+            uint64_t non_legal_to_legal_player = ~actual_legal_player & modified_legal_player; // player's non-legal -> legal
+            uint64_t legal_to_non_legal_player = (actual_legal_player & ~modified_legal_player) & ~(1ULL << policy); // player's legal -> non-legal
+            uint64_t non_legal_to_legal_opponent = ~actual_legal_opponent & modified_legal_opponent; // opponent's non-legal -> legal
+            uint64_t legal_to_non_legal_opponent = actual_legal_opponent & ~modified_legal_opponent; // opponent's legal -> non-legal
+            if (policy_is_good_move) {
+                for (uint_fast8_t c = first_bit(&non_legal_to_legal_player); non_legal_to_legal_player; c = next_bit(&non_legal_to_legal_player)) {
+                    policy_changed[policy][c] |= LOCAL_STRATEGY_POLICY_CHANGED_PLAYER_CANPUT; // player can put there because the cell's flip is changed
+                }
+                for (uint_fast8_t c = first_bit(&legal_to_non_legal_opponent); legal_to_non_legal_opponent; c = next_bit(&legal_to_non_legal_opponent)) {
+                    policy_changed[policy][c] |= LOCAL_STRATEGY_POLICY_CHANGED_OPPONENT_CANNOTPUT; // opponent can NOT put there because the cell's flip is changed
+                }
+            } else { // policy is BAD move
+                for (uint_fast8_t c = first_bit(&legal_to_non_legal_player); legal_to_non_legal_player; c = next_bit(&legal_to_non_legal_player)) {
+                    policy_changed[policy][c] |= LOCAL_STRATEGY_POLICY_CHANGED_PLAYER_CANNOTPUT; // player can NOT put there because the cell's flip is changed
+                }
+                for (uint_fast8_t c = first_bit(&non_legal_to_legal_opponent); non_legal_to_legal_opponent; c = next_bit(&non_legal_to_legal_opponent)) {
+                    policy_changed[policy][c] |= LOCAL_STRATEGY_POLICY_CHANGED_OPPONENT_CANPUT; // opponent can put there because the cell's flip is changed
+                }
             }
             /*
             for (uint_fast8_t cell = first_bit(&can_be_flipped); can_be_flipped && (*searching); cell = next_bit(&can_be_flipped)) {
