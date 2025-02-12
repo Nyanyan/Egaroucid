@@ -104,7 +104,7 @@ void solve_problems_transcript_parallel(std::vector<std::string> arg, Options *o
             result = ai(board_list[i], options->level, true, 0, false, options->show_log);
             std::cout << board_list[i].to_str() << " " << result.value << std::endl;
         }
-    } else{
+    } else {
         int print_task_idx = 0;
         std::vector<std::future<Search_result>> tasks;
         for (Board &board: board_list) {
@@ -231,7 +231,7 @@ std::string self_play_task(Board board_start, std::string pre_moves_transcript, 
         if (i < SELF_PLAY_N_TRY - 1) {
             if (prev_transcript.size() != transcript.size()) {
                 break_flag = false;
-            } else{
+            } else {
                 for (int i = 0; i < transcript.size(); ++i) {
                     if (transcript[i] != prev_transcript[i]) {
                         break_flag = false;
@@ -281,7 +281,7 @@ void self_play(std::vector<std::string> arg, Options *options, State *state) {
             std::string transcript = self_play_task(board_start, "", options, false, n_random_moves, SELF_PLAY_N_TRY);
             std::cout << transcript << std::endl;
         }
-    } else{
+    } else {
         int n_games_done = 0;
         std::vector<std::future<std::string>> tasks;
         while (n_games_done < n_games) {
@@ -344,7 +344,7 @@ void self_play_line(std::vector<std::string> arg, Options *options, State *state
             std::string transcript = self_play_task(start_position.second, start_position.first, options, false, 0, SELF_PLAY_N_TRY);
             std::cout << transcript << std::endl;
         }
-    } else{
+    } else {
         int print_task_idx = 0;
         std::vector<std::future<std::string>> tasks;
         for (std::pair<std::string, Board> start_position: board_list) {
@@ -418,7 +418,7 @@ void self_play_board(std::vector<std::string> arg, Options *options, State *stat
             std::string transcript = self_play_task(start_position.second, "", options, false, 0, SELF_PLAY_N_TRY);
             std::cout << start_position.first << " " << transcript << std::endl;
         }
-    } else{
+    } else {
         int print_task_idx = 0;
         std::vector<std::future<std::string>> tasks;
         for (std::pair<std::string, Board> start_position: board_list) {
@@ -600,7 +600,7 @@ void perft_commandline(std::vector<std::string> arg) {
     uint64_t res;
     if (mode == 1) {
         res = perft(&board, depth, false);
-    } else{
+    } else {
         res = perft_no_pass_count(&board, depth, false);
     }
     std::cout << "perft mode " << mode << " depth " << depth << " " << res << " leaves found in " << tim() - strt << " ms" << std::endl;
