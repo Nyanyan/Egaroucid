@@ -222,10 +222,17 @@ std::string self_play_task(Board board_start, std::string pre_moves_transcript, 
         Board board = board_start.copy();
         std::vector<int> transcript;
         while (board.check_pass()) {
-            result = ai(board, options->level, true, 0, false, options->show_log);
-            transcript.emplace_back(result.policy);
-            calc_flip(&flip, &board, result.policy);
-            board.move_board(&flip);
+            result = ai(board, options->level, true, 0, use_multi_thread, options->show_log);
+            if (global_searching && is_valid_policy(result.policy)) {
+                transcript.emplace_back(result.policy);
+                calc_flip(&flip, &board, result.policy);
+                board.move_board(&flip);
+            } else {
+                break;
+            }
+        }
+        if (!global_searching) {
+            break;
         }
         bool break_flag = true;
         if (i < SELF_PLAY_N_TRY - 1) {
@@ -287,7 +294,7 @@ void self_play(std::vector<std::string> arg, Options *options, State *state) {
         while (n_games_done < n_games) {
             if (thread_pool.get_n_idle() && (int)tasks.size() < n_games) {
                 bool pushed = false;
-                tasks.emplace_back(thread_pool.push(&pushed, std::bind(&self_play_task, board_start, "", options, true, n_random_moves, SELF_PLAY_N_TRY)));
+                tasks.emplace_back(thread_pool.push(&pushed, std::bind(&self_play_task, board_start, "", options, false, n_random_moves, SELF_PLAY_N_TRY)));
                 if (!pushed) {
                     tasks.pop_back();
                 }
@@ -299,6 +306,34 @@ void self_play(std::vector<std::string> arg, Options *options, State *state) {
                         std::cout << transcript << std::endl;
                         ++n_games_done;
                     }
+                }
+            }
+            if (n_games - n_games_done < thread_pool.size()) {
+                std::vector<std::string> transcripts_mid;
+                global_searching = false;
+                    for (std::future<std::string> &task: tasks) {
+                        if (task.valid()) {
+                            std::string transcript_mid = task.get();
+                            transcripts_mid.emplace_back(transcript_mid);
+                        }
+                    }
+                global_searching = true;
+                for (std::string &transcript_mid: transcripts_mid) {
+                    Board board_start_mid = board_start.copy();
+                    Flip flip;
+                    for (int i = 0; i < transcript_mid.size(); i += 2) {
+                        int x = transcript_mid[i] - 'a';
+                        int y = transcript_mid[i + 1] - '1';
+                        int coord = HW2_M1 - (y * HW + x);
+                        calc_flip(&flip, &board_start_mid, coord);
+                        board_start_mid.move_board(&flip);
+                        if (board_start_mid.get_legal() == 0) {
+                            board_start_mid.pass();
+                        }
+                    }
+                    int n_random_moves_additional = std::max(0, n_random_moves - transcript_mid.size() / 2);
+                    std::string transcript = self_play_task(board_start_mid, transcript_mid, options, true, n_random_moves_additional, SELF_PLAY_N_TRY);
+                    ++n_games_done;
                 }
             }
         }
@@ -352,7 +387,7 @@ void self_play_line(std::vector<std::string> arg, Options *options, State *state
             while (!go_to_next_task) {
                 if (thread_pool.get_n_idle() && tasks.size() < board_list.size()) {
                     bool pushed = false;
-                    tasks.emplace_back(thread_pool.push(&pushed, std::bind(&self_play_task, start_position.second, start_position.first, options, true, 0, SELF_PLAY_N_TRY)));
+                    tasks.emplace_back(thread_pool.push(&pushed, std::bind(&self_play_task, start_position.second, start_position.first, options, false, 0, SELF_PLAY_N_TRY)));
                     if (pushed) {
                         go_to_next_task = true;
                     } else {
@@ -426,7 +461,7 @@ void self_play_board(std::vector<std::string> arg, Options *options, State *stat
             while (!go_to_next_task) {
                 if (thread_pool.get_n_idle() && tasks.size() < board_list.size()) {
                     bool pushed = false;
-                    tasks.emplace_back(thread_pool.push(&pushed, std::bind(&self_play_task, start_position.second, "", options, true, 0, SELF_PLAY_N_TRY)));
+                    tasks.emplace_back(thread_pool.push(&pushed, std::bind(&self_play_task, start_position.second, "", options, false, 0, SELF_PLAY_N_TRY)));
                     if (pushed) {
                         go_to_next_task = true;
                     } else {
