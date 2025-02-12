@@ -232,10 +232,16 @@ std::string self_play_task(Board board_start, std::string pre_moves_transcript, 
             }
         }
         if (!global_searching) {
+            if (n_try == 1 || i == n_try - 1) {
+                prev_transcript.clear();
+                for (int &elem: transcript) {
+                    prev_transcript.emplace_back(elem);
+                }
+            }
             break;
         }
         bool break_flag = true;
-        if (i < SELF_PLAY_N_TRY - 1) {
+        if (i < n_try - 1) {
             if (prev_transcript.size() != transcript.size()) {
                 break_flag = false;
             } else {
@@ -308,7 +314,7 @@ void self_play(std::vector<std::string> arg, Options *options, State *state) {
                     }
                 }
             }
-            if (n_games - n_games_done < thread_pool.size()) {
+            if (0 < n_games - n_games_done && n_games - n_games_done < thread_pool.size()) {
                 std::vector<std::string> transcripts_mid;
                 global_searching = false;
                     for (std::future<std::string> &task: tasks) {
@@ -331,8 +337,9 @@ void self_play(std::vector<std::string> arg, Options *options, State *state) {
                             board_start_mid.pass();
                         }
                     }
-                    int n_random_moves_additional = std::max(0, n_random_moves - transcript_mid.size() / 2);
+                    int n_random_moves_additional = std::max(0, n_random_moves - (int)transcript_mid.size() / 2);
                     std::string transcript = self_play_task(board_start_mid, transcript_mid, options, true, n_random_moves_additional, SELF_PLAY_N_TRY);
+                    std::cout << transcript << std::endl;
                     ++n_games_done;
                 }
             }
