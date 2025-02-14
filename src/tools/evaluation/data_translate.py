@@ -18,8 +18,8 @@ board_sub_dir_nums = [48, 52]
 # cell weight phase 60
 bin_root_dir = './../../../train_data/bin_data/20250214_1_cell_weight_phase60/'
 exe = 'data_board_to_idx_20250214_cell_weight_phase60.out'
-N_PHASES = 1
-board_sub_dir_nums = []
+N_PHASES = 60
+board_sub_dir_nums = [97]
 #'''
 
 
@@ -197,6 +197,9 @@ board_n_moves['86'] = [2, 59] # non-regular random board 6 discs    30000 games
 board_n_moves['87'] = [3, 59] # non-regular random board 7 discs    40000 games
 board_n_moves['88'] = [4, 59] # non-regular random board 8 discs    50000 games
 board_n_moves['89'] = [5, 59] # non-regular random board 9 discs    31273 games
+
+
+board_n_moves['97'] = [0, 59] # https://github.com/Nyanyan/Egaroucid/releases/download/training_data/Egaroucid_Train_Data.zip
 
 
 procs = []

@@ -4,11 +4,32 @@ import sys
 phase = str(sys.argv[1])
 hour = '0'
 minute = str(sys.argv[2]) #'7'
-second = '0'
+second = '20'
 alpha = str(sys.argv[3]) #'300.0'
 n_patience = '500'
 
 model_dir = './../../../model/nomodel/'
+
+
+
+
+'''
+# cell weight
+#train_data_nums = [29]
+train_data_nums = [52]
+train_root_dir = './../../../train_data/bin_data/20240419_1_cell_weight/'
+executable = 'eval_optimizer_cuda_12_2_0_cell_weight.exe'
+#'''
+
+
+#'''
+# cell weight phase 60
+train_data_nums = [97]
+train_root_dir = './../../../train_data/bin_data/20250214_1_cell_weight_phase60/'
+executable = 'eval_optimizer_cuda_12_2_0_cell_weight.exe'
+#'''
+
+
 
 
 '''
@@ -19,15 +40,8 @@ train_root_dir = './../../../train_data/bin_data/20240304_1_move_ordering_end_nw
 executable = 'eval_optimizer_cuda_12_2_0_move_ordering_end_nws.exe'
 #'''
 
-'''
-# cell weight
-#train_data_nums = [29]
-train_data_nums = [52]
-train_root_dir = './../../../train_data/bin_data/20240419_1_cell_weight/'
-executable = 'eval_optimizer_cuda_12_2_0_cell_weight.exe'
-#'''
 
-#'''
+'''
 # 7.5
 train_data_nums = [
     18, 19, 20, 21, 24, 25, 28, 29, 30, 31, # old data (without records27)
