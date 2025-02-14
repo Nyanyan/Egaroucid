@@ -4,14 +4,6 @@ import glob
 import psutil
 import time
 
-'''
-# move ordering_end_nws
-bin_root_dir = './../../../train_data/bin_data/20240304_1_move_ordering_end_nws/'
-exe = 'data_board_to_idx_move_ordering_end_nws.out'
-N_PHASES = 1
-board_sub_dir_nums = [44, 45, 46]
-#'''
-
 
 '''
 # cell weight
@@ -22,8 +14,28 @@ N_PHASES = 1
 board_sub_dir_nums = [48, 52]
 #'''
 
-
 #'''
+# cell weight phase 60
+bin_root_dir = './../../../train_data/bin_data/20250214_1_cell_weight_phase60/'
+exe = 'data_board_to_idx_20250214_cell_weight_phase60.out'
+N_PHASES = 1
+board_sub_dir_nums = []
+#'''
+
+
+
+
+
+'''
+# move ordering_end_nws
+bin_root_dir = './../../../train_data/bin_data/20240304_1_move_ordering_end_nws/'
+exe = 'data_board_to_idx_move_ordering_end_nws.out'
+N_PHASES = 1
+board_sub_dir_nums = [44, 45, 46]
+#'''
+
+
+'''
 # 7.5
 bin_root_dir = './../../../train_data/bin_data/20241125_1/'
 exe = 'data_board_to_idx_20241125_1_7_5.out'
