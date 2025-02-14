@@ -11,7 +11,7 @@ n_patience = '500'
 model_dir = './../../../model/nomodel/'
 
 
-#'''
+'''
 # move ordering end nws
 # used in last 13, 12, 11 empties (random 47, 48, 49)
 train_data_nums = [44, 45, 46]
@@ -27,7 +27,7 @@ train_root_dir = './../../../train_data/bin_data/20240419_1_cell_weight/'
 executable = 'eval_optimizer_cuda_12_2_0_cell_weight.exe'
 #'''
 
-'''
+#'''
 # 7.5
 train_data_nums = [
     18, 19, 20, 21, 24, 25, 28, 29, 30, 31, # old data (without records27)
