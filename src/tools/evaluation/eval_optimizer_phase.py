@@ -4,7 +4,7 @@ import sys
 phase = str(sys.argv[1])
 hour = '0'
 minute = str(sys.argv[2]) #'7'
-second = '20'
+second = '0'
 alpha = str(sys.argv[3]) #'300.0'
 n_patience = '500'
 
@@ -22,7 +22,7 @@ executable = 'eval_optimizer_cuda_12_2_0_cell_weight.exe'
 #'''
 
 
-#'''
+'''
 # cell weight phase 60
 train_data_nums = [97]
 train_root_dir = './../../../train_data/bin_data/20250214_1_cell_weight_phase60/'
