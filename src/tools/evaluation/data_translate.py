@@ -4,27 +4,14 @@ import glob
 import psutil
 import time
 
-'''
-# 7.0
-bin_root_dir = './../../../train_data/bin_data/20240223_1/'
-exe = 'data_board_to_idx.out'
-N_PHASES = 60
-board_sub_dir_nums = [
-    18, 19, 20, 21, 24, 25, 27, 28, 29, 30, 31, # old data
-    34, 35, # mid-endgame data 1
-    36, 37, # book data
-    #38, # test data
-    39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 57, 60, 61, 62, 63 # mid-endgame data 2
-]
-board_sub_dir_nums.sort()
-'''
-'''
-# 7.0 move ordering_end_nws
+#'''
+# move ordering_end_nws
 bin_root_dir = './../../../train_data/bin_data/20240304_1_move_ordering_end_nws/'
 exe = 'data_board_to_idx_move_ordering_end_nws.out'
 N_PHASES = 1
-board_sub_dir_nums = [24, 28]
-'''
+board_sub_dir_nums = [44, 45, 46]
+#'''
+
 '''
 # cell weight
 bin_root_dir = './../../../train_data/bin_data/20240419_1_cell_weight/'
@@ -32,56 +19,10 @@ exe = 'data_board_to_idx_cell.out'
 N_PHASES = 1
 #board_sub_dir_nums = [26, 29] # used [0,10] with data 26
 board_sub_dir_nums = [48, 52]
-'''
-'''
-# 7.1 beta
-bin_root_dir = './../../../train_data/bin_data/20240525_1/'
-exe = 'data_board_to_idx_20240525_1_7_1.out'
-N_PHASES = 60
-board_sub_dir_nums = [27, 28, 29, 30, 31, 34, 35, 36, 37, 38]
-'''
-'''
-# move ordering end light
-bin_root_dir = './../../../train_data/bin_data/20240611_1_move_ordering_end/'
-exe = 'data_board_to_idx_20240611_1_move_ordering_end.out'
-N_PHASES = 1
-board_sub_dir_nums = [52]
-'''
-'''
-# 7.0 light
-bin_root_dir = './../../../train_data/bin_data/20240622_1_7_0_light/'
-exe = 'data_board_to_idx_20240622_1_7_0_light.out'
-N_PHASES = 60
-board_sub_dir_nums = [
-    18, 19, 20, 21, 24, 25, 28, 29, 30, 31, # old data
-    34, 35, # mid-endgame data 1
-    36, 37, # book data
-    38, # test data
-    39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 57, 60, 61, 62, 63, # mid-endgame data 2
-    64
-]
-board_sub_dir_nums.sort()
-'''
-'''
-# 7.4
-bin_root_dir = './../../../train_data/bin_data/20240925_1/'
-exe = 'data_board_to_idx_20240925_1_7_4.out'
-N_PHASES = 60
-board_sub_dir_nums = [
-    18, 19, 20, 21, 24, 25, 27, 28, 29, 30, 31, # old data
-    34, 35, # mid-endgame data 1
-    36, 37, # book data
-    38, # test data
-    39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 57, 60, 61, 62, 63, # mid-endgame data 2
-    #64,
-    65, 66, 67, 68, 69, 70, 71, 72, 73, 74, # Egaroucid 7.4.0 1000000 data
-    75, 
-    76,
-]
-board_sub_dir_nums.sort()
 #'''
 
-#'''
+
+'''
 # 7.5
 bin_root_dir = './../../../train_data/bin_data/20241125_1/'
 exe = 'data_board_to_idx_20241125_1_7_5.out'
@@ -183,9 +124,16 @@ board_n_moves['40'] = [53, 59] # random53        3000000 games
 board_n_moves['41'] = [52, 59] # random52        3000000 games
 board_n_moves['42'] = [51, 59] # random51        3000000 games
 board_n_moves['43'] = [50, 59] # random50        3000000 games
+#'''
 board_n_moves['44'] = [49, 59] # random49        3000000 games
 board_n_moves['45'] = [48, 59] # random48        3000000 games
 board_n_moves['46'] = [47, 59] # random47        3000000 games
+'''
+# for move ordering end nws to use more random boards
+board_n_moves['44'] = [49, 49] # random49        3000000 games
+board_n_moves['45'] = [48, 48] # random48        3000000 games
+board_n_moves['46'] = [47, 47] # random47        3000000 games
+#'''
 board_n_moves['47'] = [46, 59] # random46        3000000 games
 board_n_moves['48'] = [45, 59] # random45        3226023 games
 board_n_moves['49'] = [44, 59] # random44        3000000 games

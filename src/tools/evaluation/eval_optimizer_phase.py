@@ -13,7 +13,8 @@ model_dir = './../../../model/nomodel/'
 
 #'''
 # move ordering end nws
-train_data_nums = [24, 28]
+# used in last 13, 12, 11 empties (random 47, 48, 49)
+train_data_nums = [44, 45, 46]
 train_root_dir = './../../../train_data/bin_data/20240304_1_move_ordering_end_nws/'
 executable = 'eval_optimizer_cuda_12_2_0_move_ordering_end_nws.exe'
 #'''
