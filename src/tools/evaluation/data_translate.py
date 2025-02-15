@@ -26,7 +26,7 @@ board_sub_dir_nums = [97]
 
 
 
-#'''
+'''
 # move ordering_end_nws ((11 to 13) - 1 empties)
 bin_root_dir = './../../../train_data/bin_data/20240304_1_move_ordering_end_nws/'
 exe = 'data_board_to_idx_move_ordering_end_nws.out'
@@ -35,7 +35,7 @@ board_sub_dir_nums = [43, 44, 45]
 #'''
 
 
-'''
+#'''
 # 7.5
 bin_root_dir = './../../../train_data/bin_data/20241125_1/'
 exe = 'data_board_to_idx_20241125_1_7_5.out'
@@ -136,7 +136,7 @@ board_n_moves['39'] = [54, 59] # random54        3000000 games
 board_n_moves['40'] = [53, 59] # random53        3000000 games
 board_n_moves['41'] = [52, 59] # random52        3000000 games
 board_n_moves['42'] = [51, 59] # random51        3000000 games
-'''
+#'''
 board_n_moves['43'] = [50, 59] # random50        3000000 games
 board_n_moves['44'] = [49, 59] # random49        3000000 games
 board_n_moves['45'] = [48, 59] # random48        3000000 games

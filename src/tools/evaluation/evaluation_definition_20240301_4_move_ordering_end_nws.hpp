@@ -36,8 +36,8 @@
 #define ADJ_N_PHASE_DISCS 60 // 60 / ADJ_N_PHASES
 
 // for end nws
-#define ADJ_MIN_N_DISCS (64 - 12) // last (11 to 13) - 1 empties
-#define ADJ_MAX_N_DISCS (64 - 10)
+#define ADJ_MIN_N_DISCS (64 - 13) // last 11 to 13 empties
+#define ADJ_MAX_N_DISCS (64 - 11)
 
 /*
     @brief value definition
