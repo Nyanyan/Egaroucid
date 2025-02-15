@@ -32,10 +32,10 @@ executable = 'eval_optimizer_cuda_12_2_0_cell_weight.exe'
 
 
 
-'''
+#'''
 # move ordering end nws
-# used in last 13, 12, 11 empties (random 47, 48, 49)
-train_data_nums = [44, 45, 46]
+# used in last (13, 12, 11) - 1 empties (random 48, 49, 50)
+train_data_nums = [43, 44, 45, 46]
 train_root_dir = './../../../train_data/bin_data/20240304_1_move_ordering_end_nws/'
 executable = 'eval_optimizer_cuda_12_2_0_move_ordering_end_nws.exe'
 #'''
