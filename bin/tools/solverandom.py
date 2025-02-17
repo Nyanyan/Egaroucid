@@ -28,9 +28,6 @@ for idx in range(IDX_START, IDX_END + 1):
         os.mkdir(dr)
     except:
         pass
+    result = subprocess.run(cmd.split(), stdout=subprocess.PIPE).stdout.decode().replace('\r', '')
     with open(dr + '/' + fill0(idx, 7) + '.txt', 'w') as f:
-        egaroucid = subprocess.Popen(cmd.split(), stdout=subprocess.PIPE)
-        for i in trange(N_BOARDS_PER_FILE):
-            line = egaroucid.stdout.readline().decode().replace('\r', '').replace('\n', '') + '\n'
-            f.write(line)
-        egaroucid.kill()
+        f.write(result)
