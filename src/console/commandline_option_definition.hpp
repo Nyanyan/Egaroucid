@@ -12,7 +12,7 @@
 #include <string>
 #include <vector>
 
-#define N_COMMANDLINE_OPTIONS 29
+#define N_COMMANDLINE_OPTIONS 30
 
 #define ID_NONE -1
 #define ID_VERSION 0
@@ -46,6 +46,7 @@
 #define ID_MINIMAX 26
 #define ID_SOLVE_PARALLEL_TRANSCRIPT 27
 #define ID_PLAY_LOSS 28
+#define ID_SOLVE_RANDOM 29
 
 struct Commandline_option_info{
     int id;
@@ -89,4 +90,5 @@ const Commandline_option_info commandline_option_data[N_COMMANDLINE_OPTIONS] = {
     {ID_MINIMAX,            {"-minimax"},                                       1, "<depth>",           "Minimax search from root node for <depth>"},
     {ID_SOLVE_PARALLEL_TRANSCRIPT, {"-spt", "-solveparalleltranscript"},        1, "<file>",            "Solve problems in transcript file in parallel"},
     {ID_PLAY_LOSS,          {"-playloss"},                                      2, "<ratio> <max_loss>","Play with loss till <max_loss> with occurance ratio <ratio> (0.0 to 1.0) can't use with time allocated"},
+    {ID_SOLVE_RANDOM,       {"-sr", "-solverandom"},                            2, "<n> <m",            "Solve <n> boards (play randomly first <m> moves)"},
 };

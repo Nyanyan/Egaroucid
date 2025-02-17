@@ -610,6 +610,103 @@ void self_play_board_lossless_lines(std::vector<std::string> arg, Options *optio
 }
 
 
+
+Board get_random_board(int n_random_moves) {
+    Board board;
+    Flip flip;
+    for (;;) {
+        board.reset();
+        for (int j = 0; j < n_random_moves && board.check_pass(); ++j) {
+            uint64_t legal = board.get_legal();
+            int random_idx = myrandrange(0, pop_count_ull(legal));
+            int t = 0;
+            for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)) {
+                if (t == random_idx) {
+                    calc_flip(&flip, &board, cell);
+                    break;
+                }
+                ++t;
+            }
+            board.move_board(&flip);
+        }
+        if (board.check_pass()) {
+            return board;
+        }
+    }
+    return board; // error
+}
+
+
+void solve_random(std::vector<std::string> arg, Options *options, State *state) {
+    int n_boards, n_random_moves;
+    if (arg.size() < 2) {
+        std::cerr << "[ERROR] [FATAL] please input arguments" << std::endl;
+        std::exit(1);
+    }
+    std::string str_n_boards = arg[0];
+    std::string str_n_random_moves = arg[1];
+    try{
+        n_boards = std::stoi(str_n_boards);
+        n_random_moves = std::stoi(str_n_random_moves);
+    } catch (const std::invalid_argument& e) {
+        std::cout << str_n_boards << " " << str_n_random_moves << " invalid argument" << std::endl;
+        std::exit(1);
+    } catch (const std::out_of_range& e) {
+        std::cout << str_n_boards << " " << str_n_random_moves << " out of range" << std::endl;
+        std::exit(1);
+    }
+    std::cerr << n_boards << " boards with " << n_random_moves << " random moves" << std::endl;
+    uint64_t strt = tim();
+    if (thread_pool.size() == 0) {
+        for (int i = 0; i < n_boards; ++i) {
+            Board board = get_random_board(n_random_moves);
+            Search_result result = ai(board, options->level, true, 0, false, options->show_log);
+            std::cout << board.to_str().substr(0, 64) << " " << result.value << std::endl;
+        }
+    } else {
+        int n_boards_done = 0;
+        std::vector<std::pair<Board, std::future<Search_result>>> tasks;
+        while (n_boards_done < n_boards) {
+            if (thread_pool.get_n_idle() && (int)tasks.size() < n_boards) {
+                bool pushed = false;
+                Board board = get_random_board(n_random_moves);
+                tasks.emplace_back(std::make_pair(board, thread_pool.push(&pushed, std::bind(&ai, board, options->level, true, 0, false, options->show_log))));
+                if (!pushed) {
+                    tasks.pop_back();
+                }
+            }
+            for (std::pair<Board, std::future<Search_result>> &task: tasks) {
+                if (task.second.valid()) {
+                    if (task.second.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
+                        Search_result result = task.second.get();
+                        std::cout << task.first.to_str().substr(0, 64) << " " << result.value << std::endl;
+                        ++n_boards_done;
+                    }
+                }
+            }
+            if (0 < n_boards - n_boards_done && n_boards - n_boards_done < thread_pool.size()) {
+                std::vector<Board> boards_mid;
+                global_searching = false;
+                    for (std::pair<Board, std::future<Search_result>> &task: tasks) {
+                        if (task.second.valid()) {
+                            task.second.get();
+                            boards_mid.emplace_back(task.first);
+                        }
+                    }
+                global_searching = true;
+                for (Board &board: boards_mid) {
+                    Search_result result = ai(board, options->level, true, 0, true, options->show_log);
+                    std::cout << board.to_str().substr(0, 64) << " " << result.value << std::endl;
+                    ++n_boards_done;
+                }
+            }
+        }
+    }
+    global_searching = false;
+    std::cerr << "done in " << tim() - strt << " ms" << std::endl;
+}
+
+
 void perft_commandline(std::vector<std::string> arg) {
     if (arg.size() < 2) {
         std::cerr << "please input <depth> <mode>" << std::endl;

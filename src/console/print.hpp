@@ -512,5 +512,8 @@ void execute_special_commandline_tasks(std::vector<Commandline_option> commandli
     } else if (find_commandline_option(commandline_options, ID_SOLVE_PARALLEL_TRANSCRIPT)) {
         solve_problems_transcript_parallel(get_commandline_option_arg(commandline_options, ID_SOLVE_PARALLEL_TRANSCRIPT), options, state);
         std::exit(0);
+    } else if (find_commandline_option(commandline_options, ID_SOLVE_RANDOM)) {
+        solve_random(get_commandline_option_arg(commandline_options, ID_SOLVE_RANDOM), options, state);
+        std::exit(0);
     }
 }
