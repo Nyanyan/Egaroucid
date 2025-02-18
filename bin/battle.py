@@ -67,6 +67,7 @@ def play_battle(p0_idx, p1_idx, opening_idx):
     opening = openings[opening_idx]
     shuffled_range2 = [0, 1]
     shuffle(shuffled_range2)
+    sum_disc_diff_p0 = 0
     for player in shuffled_range2: # which plays black. p0 plays `player`, p1 plays `1 - player`
         record = ''
         o = othello()
@@ -128,25 +129,26 @@ def play_battle(p0_idx, p1_idx, opening_idx):
                 print(coord)
                 print(y, x)
         # update win/draw/loss
-        if o.n_stones[player] > o.n_stones[1 - player]:
-            players[p0_idx][RESULT_IDX][p1_idx][0] += 1 # win
-            players[p1_idx][RESULT_IDX][p0_idx][2] += 1 # loss
-        elif o.n_stones[player] < o.n_stones[1 - player]:
-            players[p1_idx][RESULT_IDX][p0_idx][0] += 1 # win
-            players[p0_idx][RESULT_IDX][p1_idx][2] += 1 # loss
+        if o.n_stones[player] > o.n_stones[1 - player]: # p0 win
+            sum_disc_diff_p0 += o.n_stones[player] - o.n_stones[1 - player] + (64 - (o.n_stones[player] + o.n_stones[1 - player]))
+        elif o.n_stones[player] < o.n_stones[1 - player]: # p0 lose
+            sum_disc_diff_p0 += o.n_stones[player] - o.n_stones[1 - player] - (64 - (o.n_stones[player] + o.n_stones[1 - player]))
         else:
-            players[p0_idx][RESULT_IDX][p1_idx][1] += 1 # draw
-            players[p1_idx][RESULT_IDX][p0_idx][1] += 1 # draw
-        # update disc difference
-        disc_difference = 0 # from player
-        if o.n_stones[player] > o.n_stones[1 - player]: # player win
-            disc_difference = o.n_stones[player] - o.n_stones[1 - player] + (64 - (o.n_stones[player] + o.n_stones[1 - player]))
-        elif o.n_stones[player] < o.n_stones[1 - player]: # player lose
-            disc_difference = o.n_stones[player] - o.n_stones[1 - player] - (64 - (o.n_stones[player] + o.n_stones[1 - player]))
-        players[p0_idx][RESULT_DISC_IDX][p1_idx] += disc_difference
-        players[p1_idx][RESULT_DISC_IDX][p0_idx] -= disc_difference
-        players[p0_idx][N_PLAYED_IDX][p1_idx] += 1
-        players[p1_idx][N_PLAYED_IDX][p0_idx] += 1
+            sum_disc_diff_p0 += 0
+    if sum_disc_diff_p0 > 0: # p0 win
+        players[p0_idx][RESULT_IDX][p1_idx][0] += 1 # win
+        players[p1_idx][RESULT_IDX][p0_idx][2] += 1 # loss
+    elif sum_disc_diff_p0 < 0: # p0 lose
+        players[p1_idx][RESULT_IDX][p0_idx][0] += 1 # win
+        players[p0_idx][RESULT_IDX][p1_idx][2] += 1 # loss
+    else:
+        players[p0_idx][RESULT_IDX][p1_idx][1] += 1 # draw
+        players[p1_idx][RESULT_IDX][p0_idx][1] += 1 # draw
+    # update disc difference
+    players[p0_idx][RESULT_DISC_IDX][p1_idx] += sum_disc_diff_p0 / 2
+    players[p1_idx][RESULT_DISC_IDX][p0_idx] -= sum_disc_diff_p0 / 2
+    players[p0_idx][N_PLAYED_IDX][p1_idx] += 1
+    players[p1_idx][N_PLAYED_IDX][p0_idx] += 1
 
 '''
 def print_result():
@@ -254,7 +256,7 @@ for i in range(N_SET_GAMES):
     print_all_result()
     #output_plt()
 
-print(N_SET_GAMES * 2, 'games played for each winning rate at level', LEVEL)
+print(N_SET_GAMES, 'matches played for each winning rate at level', LEVEL)
 print_all_result()
 
 
