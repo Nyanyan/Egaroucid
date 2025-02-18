@@ -624,41 +624,6 @@ inline void eval_move(Eval_search *eval, const Flip *flip, const Board *board) {
     eval->features[eval->feature_idx].f256[3] = f3;
 }
 
-inline void eval_move_after_moved(Eval_search *eval, const Flip *flip, const Board *board) {
-    const uint64_t player_before = (board->opponent ^ flip->flip) ^ (1ULL << flip->pos);
-    const uint64_t opponent_before = board->player ^ flip->flip;
-    const uint16_t *flipped_group = (uint16_t*)&(flip->flip);
-    const uint16_t *player_group = (uint16_t*)&(player_before);
-    const uint16_t *opponent_group = (uint16_t*)&(opponent_before);
-    __m256i f0, f1, f2, f3;
-    uint16_t unflipped_p;
-    uint16_t unflipped_o;
-    // put cell 2 -> 1
-    f0 = _mm256_sub_epi16(eval->features[eval->feature_idx].f256[0], coord_to_feature_simd[flip->pos][0]);
-    f1 = _mm256_sub_epi16(eval->features[eval->feature_idx].f256[1], coord_to_feature_simd[flip->pos][1]);
-    f2 = _mm256_sub_epi16(eval->features[eval->feature_idx].f256[2], coord_to_feature_simd[flip->pos][2]);
-    f3 = _mm256_sub_epi16(eval->features[eval->feature_idx].f256[3], coord_to_feature_simd[flip->pos][3]);
-    for (int i = 0; i < HW2 / 16; ++i) { // 64 bit / 16 bit = 4
-        // player discs 0 -> 1
-        unflipped_p = ~flipped_group[i] & player_group[i];
-        f0 = _mm256_add_epi16(f0, eval_move_unflipped_16bit[unflipped_p][i][0]);
-        f1 = _mm256_add_epi16(f1, eval_move_unflipped_16bit[unflipped_p][i][1]);
-        f2 = _mm256_add_epi16(f2, eval_move_unflipped_16bit[unflipped_p][i][2]);
-        f3 = _mm256_add_epi16(f3, eval_move_unflipped_16bit[unflipped_p][i][3]);
-        // opponent discs 1 -> 0
-        unflipped_o = ~flipped_group[i] & opponent_group[i];
-        f0 = _mm256_sub_epi16(f0, eval_move_unflipped_16bit[unflipped_o][i][0]);
-        f1 = _mm256_sub_epi16(f1, eval_move_unflipped_16bit[unflipped_o][i][1]);
-        f2 = _mm256_sub_epi16(f2, eval_move_unflipped_16bit[unflipped_o][i][2]);
-        f3 = _mm256_sub_epi16(f3, eval_move_unflipped_16bit[unflipped_o][i][3]);
-    }
-    ++eval->feature_idx;
-    eval->features[eval->feature_idx].f256[0] = f0;
-    eval->features[eval->feature_idx].f256[1] = f1;
-    eval->features[eval->feature_idx].f256[2] = f2;
-    eval->features[eval->feature_idx].f256[3] = f3;
-}
-
 /*
     @brief undo evaluation features
 
