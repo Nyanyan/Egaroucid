@@ -105,6 +105,7 @@ inline void eval_move(Eval_search *eval, const Flip *flip, const Board *board);
 inline void eval_pass(Eval_search *eval, const Board *board);
 inline void eval_move_endsearch(Eval_search *eval, const Flip *flip, const Board *board);
 inline void eval_pass_endsearch(Eval_search *eval, const Board *board);
+inline void eval_move_after_moved(Eval_search *eval, const Flip *flip, const Board *board);
 #else
 inline void eval_move(Eval_search *eval, const Flip *flip);
 inline void eval_pass(Eval_search *eval);
@@ -318,6 +319,14 @@ class Search {
             board.move_board(flip);
             ++n_discs;
             parity ^= cell_div4[flip->pos];
+        }
+
+        inline void move_endsearch_only_eval(const Flip *flip) {
+#if USE_SIMD
+            eval_move_after_moved(&eval, flip, &board);
+#else
+            eval_move_endsearch(&eval, flip);
+#endif
         }
 
         /*

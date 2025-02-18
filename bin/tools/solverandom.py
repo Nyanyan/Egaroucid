@@ -9,7 +9,7 @@ IDX_END = int(sys.argv[3])
 
 LEVEL = 13
 N_BOARDS_PER_FILE = 10000
-N_THREAD = 15
+N_THREAD = 31
 
 def fill0(n, r):
     res = str(n)

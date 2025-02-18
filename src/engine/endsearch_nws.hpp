@@ -338,14 +338,16 @@ int nega_alpha_end_nws(Search *search, int alpha, const bool skipped, uint64_t l
         for (int i = 0; i < canput; ++i) {
             Flip_value *flip_value = &move_list[i];
             flip_value->value = 0;
-            search->move_endsearch(&flip_value->flip);
+            //search->move_endsearch(&flip_value->flip);
+            search->move_noeval(&flip_value->flip);
                 Board nboard = search->board;
                 LocalTTEntry *tt = get_ltt(&nboard, search->n_discs);
                 if (tt->cmp(&nboard)) {
                     if (alpha < tt->lower) {
                         best_move = flip_value->flip.pos;
                         v = tt->lower;
-                        search->undo_endsearch(&flip_value->flip);
+                        //search->undo_endsearch(&flip_value->flip);
+                        search->undo_noeval(&flip_value->flip);
                         return v;
                     }
                     if (tt->upper <= alpha) {
@@ -353,12 +355,14 @@ int nega_alpha_end_nws(Search *search, int alpha, const bool skipped, uint64_t l
                             v = tt->upper;
                         }
                         done |= (1ULL << flip_value->flip.pos);
-                        search->undo_endsearch(&flip_value->flip);
+                        //search->undo_endsearch(&flip_value->flip);
+                        search->undo_noeval(&flip_value->flip);
                         continue;
                     }
                 }
                 flip_value->n_legal = search->board.get_legal();
                 int nm = get_n_moves_cornerX2(flip_value->n_legal);
+            search->move_endsearch_only_eval(&flip_value->flip);
                 if (nm <= 1) {
                     g = -nega_alpha_end_nws(search, -alpha - 1, false, flip_value->n_legal);
                     search->undo_endsearch(&flip_value->flip);
