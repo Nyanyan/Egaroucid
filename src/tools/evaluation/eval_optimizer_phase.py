@@ -6,7 +6,7 @@ hour = '0'
 minute = str(sys.argv[2]) #'7'
 second = '0'
 alpha = str(sys.argv[3]) #'300.0'
-n_patience = '500'
+n_patience = '300'
 
 model_dir = './../../../model/nomodel/'
 
@@ -73,10 +73,30 @@ executable = 'eval_optimizer_cuda_12_2_0_20241125_1_7_5.exe'
 
 #'''
 # 7.6
+'''
 train_data_nums = [
     37, 83, # use only book with phase <= 11
     84, 85, 86, 87, 88, 89, # non-regular random starting position
     99, 100, 101, # random boards
+]
+'''
+train_data_nums = [
+    18, 19, 20, 21, 24, 25, 28, 29, 30, 31, # old data (without records27)
+    34, 35, # mid-endgame data 1
+    #36, # old first11 book
+    37, # book data
+    38, # old test data
+    39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 57, 60, 61, 62, 63, # mid-endgame data 2
+    65, 66, 67, 68, 69, 70, 71, 72, 73, 74, # Egaroucid 7.4.0 1000000 data
+    77,  # random 18 discs (GGS)
+    78, 79, # random 11 & 12 (bug fixed)
+    #80, # new first11 book
+    #81, # test data
+    82, # random 12
+    83, # book data (records80 minimum 200000 data)
+    84, 85, 86, 87, 88, 89, # non-regular random starting position
+    97, # public data
+    98, 99, 100, 101, # random boards
 ]
 train_data_nums.sort()
 train_root_dir = './../../../train_data/bin_data/20241125_1/'

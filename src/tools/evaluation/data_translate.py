@@ -56,7 +56,7 @@ board_sub_dir_nums = [
     83, # book data (records80 minimum 200000 data)
     84, 85, 86, 87, 88, 89, # non-regular random starting position
 ]
-board_sub_dir_nums = [99, 100, 101]
+board_sub_dir_nums = [98]
 board_sub_dir_nums.sort()
 #'''
 
@@ -202,6 +202,7 @@ board_n_moves['89'] = [5, 59] # non-regular random board 9 discs    31273 games
 
 board_n_moves['97'] = [0, 59] # https://github.com/Nyanyan/Egaroucid/releases/download/training_data/Egaroucid_Train_Data.zip
 
+board_n_moves['98'] = [12, 12] # random 12 discs 10000000 boards
 board_n_moves['99'] = [13, 13] # random 13 discs 10000000 boards
 board_n_moves['100'] = [14, 14] # random 14 discs 10000000 boards
 board_n_moves['101'] = [15, 15] # random 15 discs 10000000 boards
