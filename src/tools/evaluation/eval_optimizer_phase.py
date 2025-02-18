@@ -41,7 +41,7 @@ executable = 'eval_optimizer_cuda_12_2_0_move_ordering_end_nws.exe'
 #'''
 
 
-#'''
+'''
 # 7.5
 train_data_nums = [
     18, 19, 20, 21, 24, 25, 28, 29, 30, 31, # old data (without records27)
@@ -64,6 +64,20 @@ train_data_nums = [
 #        37, 83, # use only book with phase <= 11
 #        84, 85, 86, 87, 88, 89, # non-regular random starting position
 #    ]
+train_data_nums.sort()
+train_root_dir = './../../../train_data/bin_data/20241125_1/'
+#executable = 'eval_optimizer_cuda_12_2_0_20241125_1_7_5_full_val_data.exe'
+executable = 'eval_optimizer_cuda_12_2_0_20241125_1_7_5.exe'
+#'''
+
+
+#'''
+# 7.6
+train_data_nums = [
+    37, 83, # use only book with phase <= 11
+    84, 85, 86, 87, 88, 89, # non-regular random starting position
+    99, 100, 101, # random boards
+]
 train_data_nums.sort()
 train_root_dir = './../../../train_data/bin_data/20241125_1/'
 #executable = 'eval_optimizer_cuda_12_2_0_20241125_1_7_5_full_val_data.exe'

@@ -47,13 +47,15 @@ void trs_convert_board(std::string line, std::ofstream *fout){
 }
 
 int main(int argc, char* argv[]){
-    if (argc < 3){
-        std::cerr << "input [out_file] [files]" << std::endl;
+    if (argc < 5){
+        std::cerr << "input [in_dir] [start_file_num] [end_file_num] [out_file]" << std::endl;
         return 1;
     }
     trs_init();
-    std::string out_file = std::string(argv[1]);
-    int n_files = argc - 2;
+    std::string in_dir = std::string(argv[1]);
+    int strt = atoi(argv[2]);
+    int end = atoi(argv[3]);
+    std::string out_file = std::string(argv[4]);
     std::ofstream fout;
     fout.open(out_file, std::ios::out|std::ios::binary|std::ios::trunc);
     if (!fout){
@@ -61,11 +63,12 @@ int main(int argc, char* argv[]){
         return 1;
     }
     int t = 0;
-    for (int file_num = 0; file_num < n_files; ++file_num){
+    for (int file_num = strt; file_num < end; ++file_num){
         std::cerr << "=";
-        std::ifstream ifs(argv[2 + file_num]);
+        std::string file = in_dir + trs_fill0(file_num, 7) + ".txt";
+        std::ifstream ifs(file);
         if (!ifs) {
-            std::cerr << "can't open " << argv[2 + file_num] << std::endl;
+            std::cerr << "can't open " << file << std::endl;
             return 1;
         }
         std::string line;
