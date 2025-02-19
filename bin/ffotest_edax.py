@@ -9,7 +9,7 @@ start = 40
 end = 59
 n_threads = 32
 hash_level = 25
-exe = 'versions/edax_4_5_2/wEdax-x64-modern.exe'
+exe = 'versions/edax_4_5_3/bin/wEdax-x64-modern.exe'
 try:
     if len(sys.argv) >= 2:
         start = int(sys.argv[1])

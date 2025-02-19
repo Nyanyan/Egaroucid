@@ -247,10 +247,15 @@ def output_plt():
 print('n_players', len(players))
 print('level', LEVEL)
 
+matches = []
+for p0 in range(len(players)):
+    for p1 in range(p0 + 1, len(players)):
+        matches.append([p0, p1])
+
 for i in range(N_SET_GAMES):
-    for p0 in range(len(players)):
-        for p1 in range(p0 + 1, len(players)):
-            play_battle(p0, p1, i)
+    shuffle(matches)
+    for p0, p1 in matches:
+        play_battle(p0, p1, i)
     print(i)
     #print_result()
     print_all_result()
