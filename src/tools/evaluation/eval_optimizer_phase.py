@@ -60,7 +60,7 @@ train_data_nums = [
     83, # book data (records80 minimum 200000 data)
     84, 85, 86, 87, 88, 89, # non-regular random starting position
     97, # public data
-    98, 99, 100, 101, 102, 103, 104, 105, 106, 107, # random boards
+    98, 99, 100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 112, 113, # random boards
 ]
 if int(phase) >= 40:
     train_data_nums = [
