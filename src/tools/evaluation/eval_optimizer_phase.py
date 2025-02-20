@@ -61,7 +61,9 @@ train_data_nums = [
     84, 85, 86, 87, 88, 89, # non-regular random starting position
     97, # public data
     98, 99, 100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 112, 113, # random boards
+    128, 129, 130, 131, 132, 133, 134, 135, 136, 137, 138, 139, 140, 141, 142, 143, # random boards
 ]
+'''
 if int(phase) >= 40:
     train_data_nums = [
         28, 
@@ -76,6 +78,7 @@ if int(phase) >= 40:
         97, # public data
         98, 99, 100, 101, 102, 103, 104, 105, 106, 107, # random boards
     ]
+'''
 train_data_nums.sort()
 train_root_dir = './../../../train_data/bin_data/20241125_1/'
 executable = 'eval_optimizer_cuda_12_2_0_20241125_1_7_5.exe'

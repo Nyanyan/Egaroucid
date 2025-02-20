@@ -40,7 +40,8 @@ board_sub_dir_nums = [43, 44, 45]
 bin_root_dir = './../../../train_data/bin_data/20241125_1/'
 exe = 'data_board_to_idx_20241125_1_7_5.out'
 N_PHASES = 60
-board_sub_dir_nums = [108, 109, 110, 111, 112, 113]
+#board_sub_dir_nums = [108, 109, 110, 111, 112, 113]
+board_sub_dir_nums = list(range(128, 144))
 board_sub_dir_nums.sort()
 #'''
 
@@ -202,6 +203,23 @@ board_n_moves['110'] = [24, 24] # random 24 discs 10000000 boards
 board_n_moves['111'] = [25, 25] # random 25 discs 10000000 boards
 board_n_moves['112'] = [26, 26] # random 26 discs 10000000 boards
 board_n_moves['113'] = [27, 27] # random 27 discs 10000000 boards
+
+board_n_moves['128'] = [42, 42] # random 42 discs 10000000 boards
+board_n_moves['129'] = [43, 43] # random 43 discs 10000000 boards
+board_n_moves['130'] = [44, 44] # random 44 discs 10000000 boards
+board_n_moves['131'] = [45, 45] # random 45 discs 10000000 boards
+board_n_moves['132'] = [46, 46] # random 46 discs 10000000 boards
+board_n_moves['133'] = [47, 47] # random 47 discs 10000000 boards
+board_n_moves['134'] = [48, 48] # random 48 discs 10000000 boards
+board_n_moves['135'] = [49, 49] # random 49 discs 10000000 boards
+board_n_moves['136'] = [50, 50] # random 50 discs 10000000 boards
+board_n_moves['137'] = [51, 51] # random 51 discs 10000000 boards
+board_n_moves['138'] = [52, 52] # random 52 discs 10000000 boards
+board_n_moves['139'] = [53, 53] # random 53 discs 10000000 boards
+board_n_moves['140'] = [54, 54] # random 54 discs 10000000 boards
+board_n_moves['141'] = [55, 55] # random 55 discs 10000000 boards
+board_n_moves['142'] = [56, 56] # random 56 discs 10000000 boards
+board_n_moves['143'] = [57, 57] # random 57 discs 10000000 boards
 
 
 
