@@ -519,7 +519,7 @@ int main(int argc, char* argv[]) {
         adj_calculate_residual <<<n_blocks_residual, N_THREADS_PER_BLOCK_RESIDUAL>>> (device_eval_arr, n_train_data, device_start_idx_arr, device_train_data, device_rev_idx_arr, device_residual_arr, device_error_monitor_arr);
         cudaMemcpy(host_error_monitor_arr, device_error_monitor_arr, sizeof(double) * N_ERROR_MONITOR, cudaMemcpyDeviceToHost);
 
-        std::cerr << "\rn_loop " << n_loop << " progress " << (tim() - strt) * 100 / msecond << "% MSE " << host_error_monitor_arr[0] << " MAE " << host_error_monitor_arr[1] << "  val_MSE " << host_val_error_monitor_arr[0] << " val_MAE " << host_val_error_monitor_arr[1] << " loss_inc " << n_val_loss_increase << "                    ";
+        std::cerr << "\rn_loop " << n_loop << " progress " << (tim() - strt) * 100 / msecond << "% MSE " << host_error_monitor_arr[0] << " MAE " << host_error_monitor_arr[1] << "  val_MSE " << host_val_error_monitor_arr[0] << " val_MAE " << host_val_error_monitor_arr[1] << " loss_inc " << n_val_loss_increase << " alpha " << alpha_stab << "                    ";
         
         // next step
         // gradient_descent <<<n_blocks_next_step, N_THREADS_PER_BLOCK_NEXT_STEP>>> (eval_size, device_eval_arr, device_n_appear_arr, device_residual_arr, alpha_stab);
