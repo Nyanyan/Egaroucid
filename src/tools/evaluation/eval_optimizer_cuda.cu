@@ -527,7 +527,7 @@ int main(int argc, char* argv[]) {
         // adagrad <<<n_blocks_next_step, N_THREADS_PER_BLOCK_NEXT_STEP>>> (eval_size, device_eval_arr, device_n_appear_arr, device_residual_arr, alpha_stab, device_v_arr, n_loop);
         adam <<<n_blocks_next_step, N_THREADS_PER_BLOCK_NEXT_STEP>>> (eval_size, device_eval_arr, device_n_appear_arr, device_residual_arr, alpha_stab, device_m_arr, device_v_arr, n_loop);
         if (alpha_stab < alpha) {
-            alpha_stab += alpha / 20.0;
+            alpha_stab += alpha / 40.0;
         }
         if (alpha_stab > alpha) {
             alpha_stab = alpha;
