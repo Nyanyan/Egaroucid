@@ -4,7 +4,7 @@ import sys
 strt_phase = int(sys.argv[1])
 end_phase = int(sys.argv[2])
 minute = int(sys.argv[3])
-alpha = int(sys.argv[4])
+alpha = float(sys.argv[4])
 
 for phase in range(strt_phase, end_phase + 1):
     print('optimizing phase', phase)

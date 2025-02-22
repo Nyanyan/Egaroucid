@@ -60,25 +60,10 @@ train_data_nums = [
     83, # book data (records80 minimum 200000 data)
     84, 85, 86, 87, 88, 89, # non-regular random starting position
     97, # public data
-    98, 99, 100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 112, 113, # random boards
-    128, 129, 130, 131, 132, 133, 134, 135, 136, 137, 138, 139, 140, 141, 142, 143, # random boards
+    98, 99, 100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 112, 113, 114, 115, 116, 117, 118, 119, # random boards
+    127, 128, 129, 130, 131, 132, 133, 134, 135, 136, 137, 138, 139, 140, 141, 142, 143, # random boards
 ]
-'''
-if int(phase) >= 40:
-    train_data_nums = [
-        28, 
-        37, # book data
-        38, # old test data
-        39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 57, 60, 61, 62, 63, # mid-endgame data 2
-        65, 66, 67, 68, 69, 70, 71, 72, 73, 74, # Egaroucid 7.4.0 1000000 data
-        77,  # random 18 discs (GGS)
-        82, # random 12
-        83, # book data (records80 minimum 200000 data)
-        84, 85, 86, 87, 88, 89, # non-regular random starting position
-        97, # public data
-        98, 99, 100, 101, 102, 103, 104, 105, 106, 107, # random boards
-    ]
-'''
+
 train_data_nums.sort()
 train_root_dir = './../../../train_data/bin_data/20241125_1/'
 executable = 'eval_optimizer_cuda_12_2_0_20241125_1_7_5.exe'
