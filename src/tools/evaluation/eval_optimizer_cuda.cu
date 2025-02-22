@@ -491,7 +491,6 @@ int main(int argc, char* argv[]) {
     const int n_blocks_next_step = (eval_size + N_THREADS_PER_BLOCK_NEXT_STEP - 1) / N_THREADS_PER_BLOCK_NEXT_STEP;
     std::cerr << "n_blocks_val " << n_blocks_val << " n_blocks_residual " << n_blocks_residual << " n_blocks_next_step " << n_blocks_next_step << std::endl;
     std::cerr << "phase " << phase << std::endl;
-    double alpha_stab = alpha; // / n_data;
     adj_calculate_residual <<<n_blocks_residual, N_THREADS_PER_BLOCK_RESIDUAL>>> (device_eval_arr, n_train_data, device_start_idx_arr, device_train_data, device_rev_idx_arr, device_residual_arr, device_error_monitor_arr);
     cudaMemcpy(host_error_monitor_arr, device_error_monitor_arr, sizeof(double) * N_ERROR_MONITOR, cudaMemcpyDeviceToHost);
     std::cerr << "before MSE " << host_error_monitor_arr[0] << " MAE " << host_error_monitor_arr[1] << std::endl;
@@ -499,7 +498,8 @@ int main(int argc, char* argv[]) {
     int n_loop = 0;
     double min_val_mse = 100000000.0, min_val_mae = 100000000.0;
     int n_val_loss_increase = 0;
-    while (tim() - strt < msecond){
+    double alpha_stab = alpha / 10.0; // warming up for Adam
+    while (tim() - strt < msecond) {
         ++n_loop;
 
         // val loss
@@ -526,6 +526,12 @@ int main(int argc, char* argv[]) {
         // momentum <<<n_blocks_next_step, N_THREADS_PER_BLOCK_NEXT_STEP>>> (eval_size, device_eval_arr, device_n_appear_arr, device_residual_arr, alpha_stab, device_m_arr, n_loop);
         // adagrad <<<n_blocks_next_step, N_THREADS_PER_BLOCK_NEXT_STEP>>> (eval_size, device_eval_arr, device_n_appear_arr, device_residual_arr, alpha_stab, device_v_arr, n_loop);
         adam <<<n_blocks_next_step, N_THREADS_PER_BLOCK_NEXT_STEP>>> (eval_size, device_eval_arr, device_n_appear_arr, device_residual_arr, alpha_stab, device_m_arr, device_v_arr, n_loop);
+        if (alpha_stab < alpha) {
+            alpha_stab += alpha / 20.0;
+        }
+        if (alpha_stab > alpha) {
+            alpha_stab = alpha;
+        }
     }
     std::cerr << std::endl;
 
