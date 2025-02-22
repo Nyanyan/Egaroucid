@@ -57,10 +57,9 @@ for name, cmd in player_info:
         [0 for _ in range(len(player_info))]
     ])
 
-with open('problem/xot_small_shuffled.txt', 'r') as f:
+with open('problem/xot/openingslarge.txt', 'r') as f:
     openings = [elem for elem in f.read().splitlines()]
-
-#shuffle(openings)
+shuffle(openings)
 
 def play_battle(p0_idx, p1_idx, opening_idx):
     player_idxes = [p0_idx, p1_idx]
@@ -252,10 +251,13 @@ for p0 in range(len(players)):
     for p1 in range(p0 + 1, len(players)):
         matches.append([p0, p1])
 
+problem_idx = 0
 for i in range(N_SET_GAMES):
     shuffle(matches)
     for p0, p1 in matches:
-        play_battle(p0, p1, i)
+        play_battle(p0, p1, problem_idx)
+        problem_idx += 1
+        problem_idx %= len(openings)
     print(i)
     #print_result()
     print_all_result()
