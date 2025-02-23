@@ -89,6 +89,7 @@ int ggs_connect(WSADATA &wsaData, struct sockaddr_in &server, SOCKET &sock) {
         return 1;
     }
 
+    /*
     const char* hostname = GGS_URL;
     struct hostent* he = gethostbyname(hostname);
     if (he == nullptr) {
@@ -101,6 +102,23 @@ int ggs_connect(WSADATA &wsaData, struct sockaddr_in &server, SOCKET &sock) {
     server.sin_addr.s_addr = *(u_long*)he->h_addr_list[0];
     server.sin_family = AF_INET;
     server.sin_port = htons(GGS_PORT);
+    */
+
+    const char* hostname = GGS_URL;
+    struct addrinfo hints, *result;
+    ZeroMemory(&hints, sizeof(hints));
+    hints.ai_family = AF_INET;
+    hints.ai_socktype = SOCK_STREAM;
+    hints.ai_protocol = IPPROTO_TCP;
+    if (getaddrinfo(hostname, std::to_string(GGS_PORT).c_str(), &hints, &result) != 0) {
+        std::cerr << "Failed to resolve hostname. Error Code: " << WSAGetLastError() << std::endl;
+        closesocket(sock);
+        WSACleanup();
+        return 1;
+    }
+
+    memcpy(&server, result->ai_addr, result->ai_addrlen);
+    freeaddrinfo(result);
 
     if (connect(sock, (struct sockaddr*)&server, sizeof(server)) < 0) {
         std::cerr << "Connection failed. Error Code: " << WSAGetLastError() << std::endl;
