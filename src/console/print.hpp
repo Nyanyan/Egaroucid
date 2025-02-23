@@ -18,6 +18,9 @@
 #include "command_definition.hpp"
 #include "commandline_option_definition.hpp"
 #include "function.hpp"
+#if INCLUDE_GGS
+    #include "ggs.hpp"
+#endif
 
 #define COUT_TAB "  "
 #define VERSION_TAB_SIZE 10

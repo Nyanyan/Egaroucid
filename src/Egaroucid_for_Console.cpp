@@ -7,7 +7,9 @@
 	@author Takuto Yamana
 	@license GPL-3.0 license
 */
-
+#if INCLUDE_GGS
+    #include <winsock2.h>
+#endif
 #include <iostream>
 #include <fstream>
 #include "engine/engine_all.hpp"
