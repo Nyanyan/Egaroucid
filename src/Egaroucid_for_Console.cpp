@@ -60,8 +60,8 @@ int main(int argc, char* argv[]) {
     }
     print_special_commandline_options(commandline_options);
     init_console(options, binary_path);
-    execute_special_tasks(options);
-    execute_special_commandline_tasks(commandline_options, &options, &state);
+    execute_special_tasks(options); // tuning etc.
+    execute_special_commandline_tasks(commandline_options, &options, &state); // solve problems etc.
     Board_info board;
     init_board(&board, &options, &state);
     while (true) {

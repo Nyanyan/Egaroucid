@@ -516,4 +516,10 @@ void execute_special_commandline_tasks(std::vector<Commandline_option> commandli
         solve_random(get_commandline_option_arg(commandline_options, ID_SOLVE_RANDOM), options, state);
         std::exit(0);
     }
+#if INCLUDE_GGS
+    else if (find_commandline_option(commandline_options, ID_GGS)) {
+        ggs_client(options);
+        std::exit(0);
+    }
+#endif
 }
