@@ -17,7 +17,9 @@
 #include "commandline_option_definition.hpp"
 #include "console_common.hpp"
 #include "function.hpp"
-#include "ggs.hpp"
+#ifdef INCLUDE_GGS
+    #include "ggs.hpp"
+#endif
 #include "gtp_command.hpp"
 #include "gtp_command_definition.hpp"
 #include "info.hpp"
