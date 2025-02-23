@@ -62,19 +62,32 @@ void ggs_close(SOCKET &sock) {
     WSACleanup();
 }
 
+void ggs_print_cyan(std::string str) {
+    std::stringstream ss(str);
+    std::string line;
+    std::cout << "\033[36m";
+    while (std::getline(ss, line, '\n')) {
+        std::cout << GGS_REPLY_HEADER << line << std::endl;
+    }
+    std::cout << "\033[0m";
+}
+
+void ggs_print_green(std::string str) {
+    std::stringstream ss(str);
+    std::string line;
+    std::cout << "\033[32m";
+    while (std::getline(ss, line, '\n')) {
+        std::cout << GGS_REPLY_HEADER << line << std::endl;
+    }
+    std::cout << "\033[0m";
+}
+
 int ggs_send_message(SOCKET &sock, std::string msg) {
     if (send(sock, msg.c_str(), msg.length(), 0) < 0) {
         return 1;
     }
+    ggs_print_cyan(msg);
     return 0;
-}
-
-void print_ggs_reply(std::string str) {
-    std::stringstream ss(str);
-    std::string line;
-    while (std::getline(ss, line, '\n')) {
-        std::cout << GGS_REPLY_HEADER << line << std::endl;
-    }
 }
 
 std::string ggs_receive_message(SOCKET &sock) {
@@ -88,7 +101,7 @@ std::string ggs_receive_message(SOCKET &sock) {
         server_reply[recv_size] = '\0';
         res = server_reply;
     }
-    print_ggs_reply(res);
+    ggs_print_green(res);
     return res;
 }
 
