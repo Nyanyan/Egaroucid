@@ -18,6 +18,16 @@
 #define GGS_PORT 5000
 #define GGS_REPLY_HEADER "GGS> "
 
+struct GGS_Board {
+    int last_move;
+    std::string player_black;
+    uint64_t remaining_seconds_black;
+    std::string player_white;
+    uint64_t remaining_seconds_white;
+    Board board;
+    int player_to_move;
+};
+
 int ggs_connect(WSADATA &wsaData, struct sockaddr_in &server, SOCKET &sock) {
     // Winsockの初期化
     if (WSAStartup(MAKEWORD(2, 2), &wsaData) != 0) {
@@ -149,6 +159,112 @@ std::string ggs_get_user_input() {
     return res;
 }
 
+std::vector<std::string> split_by_space(const std::string &str) {
+    std::vector<std::string> tokens;
+    std::istringstream iss(str);
+    std::string token;
+    while (iss >> token) {
+        tokens.push_back(token);
+    }
+    return tokens;
+}
+
+bool ggs_is_board_info(std::string line) {
+    std::vector<std::string> words = split_by_space(line);
+    if (words.size() >= 2) {
+        return words[1] == "update" || words[1] == "join";
+    }
+    return false;
+}
+
+std::string ggs_board_get_id(std::string line) {
+    std::vector<std::string> words = split_by_space(line);
+    if (words.size() >= 3) {
+        return words[2];
+    }
+    return "";
+}
+
+std::string remove_spaces(const std::string &str) {
+    std::string result = str;
+    result.erase(std::remove(result.begin(), result.end(), ' '), result.end());
+    return result;
+}
+
+GGS_Board ggs_get_board(std::string str) {
+    GGS_Board res;
+    std::string board_str;
+    std::stringstream ss(str);
+    std::string line;
+    int n_board_identifier_found = 0;
+    while (std::getline(ss, line, '\n')) {
+        std::vector<std::string> words = split_by_space(line);
+        if (line[0] == '|') {
+            if (line.substr(0, 10) == "|0 move(s)") {
+                continue;
+            }
+            // board
+            if (std::find(line.begin(), line.end(), "A B C D E F G H")) {
+                ++n_board_identifier_found;
+                continue;
+            }
+            if (n_board_identifier_found == 1) { // board info
+                std::string board_str_part = line.substr(3, 16);
+                board_str += remove_spaces(board_str_part);
+                continue;
+            }
+
+            // which to move
+            if (line == "|* to move") {
+                res.player_to_move = BLACK;
+                continue;
+            } else if (line == "|O to move") {
+                res.player_to_move = WHITE;
+                continue;
+            }
+
+            // last move
+            if (line.substr(0, 3) == "|  ") {
+                if (words.size() >= 3) {
+                    if (words[2].size() >= 2) {
+                        res.last_move = get_coord_from_chars(words[2][0], words[2][1]);
+                        continue;
+                    }
+                }
+            }
+
+            // users
+            if (words.size() >= 4) {
+                std::string player_id = words[0].substr(1, words[0].size() - 1);
+                std::string remaining_time_minute = words[3].substr(0, 2);
+                std::string remaining_time_second = words[3].substr(3, 2);
+                uint64_t remaining_seconds = std::stoi(remaining_time_minute) * 60 + std::stoi(remaining_time_second);
+                if (words[2][0] == '*') {
+                    res.player_black = player_id;
+                    res.remaining_seconds_black = remaining_seconds;
+                } else if (words[2][0] == 'O') {
+                    res.player_white = player_id;
+                    res.remaining_seconds_white = remaining_seconds;
+                }
+            }
+        }
+    }
+    if (res.player_to_move == BLACK) {
+        board_str += " *";
+    } else if (res.player_to_move == WHITE) {
+        board_str += " O";
+    }
+    res.board.from_str(board_str);
+
+    std::cerr << "black " << res.player_black << " " << res.remaining_seconds_black << std::endl;
+    std::cerr << "white " << res.player_white << " " << res.remaining_seconds_white << std::endl;
+    std::cerr << res.player_to_move << " to move" << std::endl;
+    std::cerr << board_str << std::endl;
+    res.board.print();
+
+    return res;
+}
+
 void ggs_client(Options *options) {
     WSADATA wsaData;
     SOCKET sock;
@@ -199,6 +315,9 @@ void ggs_client(Options *options) {
         if (server_reply.size()) {
             std::string os_info = ggs_get_os_info(server_reply);
             std::cout << os_info << std::endl;
+            if (ggs_is_board_info(os_info)) {
+                GGS_Board ggs_board = ggs_get_board(server_reply);
+            }
         }
     }
 
