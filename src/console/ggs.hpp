@@ -117,11 +117,11 @@ std::string ggs_receive_message_timeout(SOCKET &sock, int timeout) {
     return res;
 }
 
-std::string ggs_receive_message(SOCKET &sock) {
+std::string ggs_receive_message(SOCKET *sock) {
     char server_reply[2000];
     int recv_size;
     std::string res;
-    if ((recv_size = recv(sock, server_reply, 2000, 0)) == SOCKET_ERROR) {
+    if ((recv_size = recv(*sock, server_reply, 2000, 0)) == SOCKET_ERROR) {
         std::cerr << "Recv failed. Error Code: " << WSAGetLastError() << std::endl;
         res = "";
     } else {
@@ -143,11 +143,16 @@ std::string ggs_get_os_info(std::string str) {
     return "";
 }
 
+std::string ggs_get_user_input() {
+    std::string res;
+    std::getline(std::cin, res);
+    return res;
+}
+
 void ggs_client(Options *options) {
     WSADATA wsaData;
     SOCKET sock;
     struct sockaddr_in server;
-    std::string server_reply;
     
     // connect to GGS server
     if (ggs_connect(wsaData, server, sock) != 0) {
@@ -155,20 +160,48 @@ void ggs_client(Options *options) {
         return;
     }
     std::cout << "Connected to server!" << std::endl;
-    server_reply = ggs_receive_message(sock);
+    ggs_receive_message(&sock);
 
     // login
     ggs_send_message(sock, options->ggs_username + "\n");
-    server_reply = ggs_receive_message(sock);
+    ggs_receive_message(&sock);
     ggs_send_message(sock, options->ggs_password + "\n");
-    server_reply = ggs_receive_message(sock);
-    
-    // while (true) {
-    //     server_reply = ggs_receive_message(sock);
-    //     std::string os_info = ggs_get_os_info(server_reply);
-    //     std::cout << os_info << std::endl;
-    //     break;
-    // }
+    ggs_receive_message(&sock);
 
+    // initialize
+    ggs_send_message(sock, "ms /os\n");
+    ggs_receive_message(&sock);
+    ggs_send_message(sock, "ts client -\n");
+    ggs_receive_message(&sock);
+    
+    std::future<std::string> user_input_f;
+    std::future<std::string> ggs_message_f;
+    while (true) {
+        std::string server_reply;
+        if (user_input_f.valid()) {
+            if (user_input_f.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
+                std::string user_input = user_input_f.get();
+                if (user_input == "exit") {
+                    break;
+                }
+                ggs_send_message(sock, user_input + "\n");
+            }
+        } else {
+            user_input_f = std::async(std::launch::async, ggs_get_user_input);
+        }
+        if (ggs_message_f.valid()) {
+            if (ggs_message_f.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
+                server_reply = ggs_message_f.get();
+            }
+        } else {
+            ggs_message_f = std::async(std::launch::async, ggs_receive_message, &sock);
+        }
+        if (server_reply.size()) {
+            std::string os_info = ggs_get_os_info(server_reply);
+            std::cout << os_info << std::endl;
+        }
+    }
+
+    // close connection
     ggs_close(sock);
 }
