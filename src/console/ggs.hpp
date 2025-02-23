@@ -18,7 +18,7 @@
 #define GGS_PORT 5000
 #define GGS_REPLY_HEADER "GGS> "
 
-int ggs_init(WSADATA &wsaData, struct sockaddr_in &server, SOCKET &sock) {
+int ggs_connect(WSADATA &wsaData, struct sockaddr_in &server, SOCKET &sock) {
     // Winsockの初期化
     if (WSAStartup(MAKEWORD(2, 2), &wsaData) != 0) {
         std::cerr << "Failed to initialize Winsock. Error Code: " << WSAGetLastError() << std::endl;
@@ -99,7 +99,7 @@ void ggs_client(Options *options) {
     std::string server_reply;
     
     // connect to GGS server
-    if (ggs_init(wsaData, server, sock) != 0) {
+    if (ggs_connect(wsaData, server, sock) != 0) {
         std::cout << "[ERROR] [FATAL] Failed to Connect" << std::endl;
         return;
     }
