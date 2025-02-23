@@ -7,12 +7,6 @@
 	@author Takuto Yamana
 	@license GPL-3.0 license
 */
-#if INCLUDE_GGS
-    #include <winsock2.h>
-    #include <ws2tcpip.h>
-    #include <windows.h>
-    #pragma comment(lib, "ws2_32.lib")
-#endif
 #include <iostream>
 #include <fstream>
 #include "engine/engine_all.hpp"
