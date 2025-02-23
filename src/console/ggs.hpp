@@ -90,6 +90,33 @@ int ggs_send_message(SOCKET &sock, std::string msg) {
     return 0;
 }
 
+void set_socket_timeout(SOCKET &sock, int timeout) {
+    struct timeval tv;
+    tv.tv_sec = timeout / 1000;  // 秒
+    tv.tv_usec = (timeout % 1000) * 1000;  // マイクロ秒
+    setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, (const char*)&tv, sizeof(tv));
+}
+
+std::string ggs_receive_message_timeout(SOCKET &sock, int timeout) {
+    set_socket_timeout(sock, timeout);
+    char server_reply[2000];
+    int recv_size;
+    std::string res;
+    if ((recv_size = recv(sock, server_reply, sizeof(server_reply), 0)) == SOCKET_ERROR) {
+        if (WSAGetLastError() == WSAETIMEDOUT) {
+            //std::cerr << "Recv timed out." << std::endl;
+        } else {
+            std::cerr << "Recv failed. Error Code: " << WSAGetLastError() << std::endl;
+        }
+        res = "";
+    } else {
+        server_reply[recv_size] = '\0';
+        res = server_reply;
+        ggs_print_green(res);
+    }
+    return res;
+}
+
 std::string ggs_receive_message(SOCKET &sock) {
     char server_reply[2000];
     int recv_size;
@@ -100,9 +127,20 @@ std::string ggs_receive_message(SOCKET &sock) {
     } else {
         server_reply[recv_size] = '\0';
         res = server_reply;
+        ggs_print_green(res);
     }
-    ggs_print_green(res);
     return res;
+}
+
+std::string ggs_get_os_info(std::string str) {
+    std::stringstream ss(str);
+    std::string line;
+    while (std::getline(ss, line, '\n')) {
+        if (line.substr(0, 4) == "/os:") {
+            return line;
+        }
+    }
+    return "";
 }
 
 void ggs_client(Options *options) {
@@ -124,7 +162,13 @@ void ggs_client(Options *options) {
     server_reply = ggs_receive_message(sock);
     ggs_send_message(sock, options->ggs_password + "\n");
     server_reply = ggs_receive_message(sock);
-
+    
+    // while (true) {
+    //     server_reply = ggs_receive_message(sock);
+    //     std::string os_info = ggs_get_os_info(server_reply);
+    //     std::cout << os_info << std::endl;
+    //     break;
+    // }
 
     ggs_close(sock);
 }
