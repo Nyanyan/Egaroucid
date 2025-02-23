@@ -8,10 +8,8 @@
     @license GPL-3.0 license
 */
 #pragma once
-#include <ws2tcpip.h>
 #include "./../engine/engine_all.hpp"
 #include "option.hpp"
-#pragma comment(lib, "ws2_32.lib")
 
 #define GGS_URL "skatgame.net"
 #define GGS_PORT 5000
@@ -290,18 +288,24 @@ void ggs_client(Options *options) {
         if (ggs_message_f.valid()) {
             if (ggs_message_f.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
                 server_replies = ggs_message_f.get();
+                std::cerr << "server_replies.size() " << server_replies.size() << std::endl;
+                for (std::string server_reply: server_replies) {
+                    std::cerr << server_reply << std::endl;
+                }
             }
         } else {
             ggs_message_f = std::async(std::launch::async, ggs_receive_message, &sock);
         }
         if (server_replies.size()) {
             for (std::string server_reply: server_replies) {
-                std::cout << "see " << server_reply << std::endl;
-                std::string os_info = ggs_get_os_info(server_reply);
-                std::cout << "os_info " << os_info << std::endl;
-                if (ggs_is_board_info(os_info)) {
-                    std::cout << "getting board info" << std::endl;
-                    GGS_Board ggs_board = ggs_get_board(server_reply);
+                if (server_reply.size()) {
+                    std::cout << "see " << server_reply << std::endl;
+                    std::string os_info = ggs_get_os_info(server_reply);
+                    std::cout << "os_info " << os_info << std::endl;
+                    if (ggs_is_board_info(os_info)) {
+                        std::cout << "getting board info" << std::endl;
+                        GGS_Board ggs_board = ggs_get_board(server_reply);
+                    }
                 }
             }
         }
