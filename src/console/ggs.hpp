@@ -8,7 +8,6 @@
     @license GPL-3.0 license
 */
 #pragma once
-#include <winsock2.h>
 #include <ws2tcpip.h>
 #include "./../engine/engine_all.hpp"
 #include "option.hpp"
@@ -16,6 +15,7 @@
 
 #define GGS_URL "skatgame.net"
 #define GGS_PORT 5000
+#define GGS_READY "READY"
 #define GGS_REPLY_HEADER "GGS> "
 
 struct GGS_Board {
@@ -28,48 +28,35 @@ struct GGS_Board {
     int player_to_move;
 };
 
-int ggs_connect(WSADATA &wsaData, struct sockaddr_in &server, SOCKET &sock) {
-    // Winsockの初期化
-    if (WSAStartup(MAKEWORD(2, 2), &wsaData) != 0) {
-        std::cerr << "Failed to initialize Winsock. Error Code: " << WSAGetLastError() << std::endl;
-        return 1;
+std::vector<std::string> split_by_space(const std::string &str) {
+    std::vector<std::string> tokens;
+    std::istringstream iss(str);
+    std::string token;
+    while (iss >> token) {
+        tokens.push_back(token);
     }
-
-    // ソケットの作成
-    if ((sock = socket(AF_INET, SOCK_STREAM, 0)) == INVALID_SOCKET) {
-        std::cerr << "Could not create socket. Error Code: " << WSAGetLastError() << std::endl;
-        WSACleanup();
-        return 1;
-    }
-
-    // サーバーのURLをIPアドレスに解決
-    const char* hostname = "skatgame.net"; // サーバーのURLを指定
-    struct hostent* he = gethostbyname(hostname);
-    if (he == nullptr) {
-        std::cerr << "Failed to resolve hostname. Error Code: " << WSAGetLastError() << std::endl;
-        closesocket(sock);
-        WSACleanup();
-        return 1;
-    }
-
-    // サーバーのアドレスとポートの設定
-    server.sin_addr.s_addr = *(u_long*)he->h_addr_list[0];
-    server.sin_family = AF_INET;
-    server.sin_port = htons(5000); // Telnetのデフォルトポートを指定
-
-    // サーバーに接続
-    if (connect(sock, (struct sockaddr*)&server, sizeof(server)) < 0) {
-        std::cerr << "Connection failed. Error Code: " << WSAGetLastError() << std::endl;
-        closesocket(sock);
-        WSACleanup();
-        return 1;
-    }
-    return 0;
+    return tokens;
 }
 
-void ggs_close(SOCKET &sock) {
-    closesocket(sock);
-    WSACleanup();
+std::vector<std::string> split_by_delimiter(const std::string &str, const std::string &delimiter) {
+    std::vector<std::string> tokens;
+    size_t start = 0;
+    size_t end = str.find(delimiter);
+    
+    while (end != std::string::npos) {
+        tokens.push_back(str.substr(start, end - start));
+        start = end + delimiter.length();
+        end = str.find(delimiter, start);
+    }
+    
+    tokens.push_back(str.substr(start));
+    return tokens;
+}
+
+std::string remove_spaces(const std::string &str) {
+    std::string result = str;
+    result.erase(std::remove(result.begin(), result.end(), ' '), result.end());
+    return result;
 }
 
 void ggs_print_cyan(std::string str) {
@@ -92,6 +79,45 @@ void ggs_print_green(std::string str) {
     std::cout << "\033[0m";
 }
 
+int ggs_connect(WSADATA &wsaData, struct sockaddr_in &server, SOCKET &sock) {
+    if (WSAStartup(MAKEWORD(2, 2), &wsaData) != 0) {
+        std::cerr << "Failed to initialize Winsock. Error Code: " << WSAGetLastError() << std::endl;
+        return 1;
+    }
+
+    if ((sock = socket(AF_INET, SOCK_STREAM, 0)) == INVALID_SOCKET) {
+        std::cerr << "Could not create socket. Error Code: " << WSAGetLastError() << std::endl;
+        WSACleanup();
+        return 1;
+    }
+
+    const char* hostname = GGS_URL;
+    struct hostent* he = gethostbyname(hostname);
+    if (he == nullptr) {
+        std::cerr << "Failed to resolve hostname. Error Code: " << WSAGetLastError() << std::endl;
+        closesocket(sock);
+        WSACleanup();
+        return 1;
+    }
+
+    server.sin_addr.s_addr = *(u_long*)he->h_addr_list[0];
+    server.sin_family = AF_INET;
+    server.sin_port = htons(GGS_PORT);
+
+    if (connect(sock, (struct sockaddr*)&server, sizeof(server)) < 0) {
+        std::cerr << "Connection failed. Error Code: " << WSAGetLastError() << std::endl;
+        closesocket(sock);
+        WSACleanup();
+        return 1;
+    }
+    return 0;
+}
+
+void ggs_close(SOCKET &sock) {
+    closesocket(sock);
+    WSACleanup();
+}
+
 int ggs_send_message(SOCKET &sock, std::string msg) {
     if (send(sock, msg.c_str(), msg.length(), 0) < 0) {
         return 1;
@@ -100,44 +126,16 @@ int ggs_send_message(SOCKET &sock, std::string msg) {
     return 0;
 }
 
-void set_socket_timeout(SOCKET &sock, int timeout) {
-    struct timeval tv;
-    tv.tv_sec = timeout / 1000;  // 秒
-    tv.tv_usec = (timeout % 1000) * 1000;  // マイクロ秒
-    setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, (const char*)&tv, sizeof(tv));
-}
-
-std::string ggs_receive_message_timeout(SOCKET &sock, int timeout) {
-    set_socket_timeout(sock, timeout);
+std::vector<std::string> ggs_receive_message(SOCKET *sock) {
     char server_reply[2000];
     int recv_size;
-    std::string res;
-    if ((recv_size = recv(sock, server_reply, sizeof(server_reply), 0)) == SOCKET_ERROR) {
-        if (WSAGetLastError() == WSAETIMEDOUT) {
-            //std::cerr << "Recv timed out." << std::endl;
-        } else {
-            std::cerr << "Recv failed. Error Code: " << WSAGetLastError() << std::endl;
-        }
-        res = "";
-    } else {
-        server_reply[recv_size] = '\0';
-        res = server_reply;
-        ggs_print_green(res);
-    }
-    return res;
-}
-
-std::string ggs_receive_message(SOCKET *sock) {
-    char server_reply[2000];
-    int recv_size;
-    std::string res;
+    std::vector<std::string> res;
     if ((recv_size = recv(*sock, server_reply, 2000, 0)) == SOCKET_ERROR) {
         std::cerr << "Recv failed. Error Code: " << WSAGetLastError() << std::endl;
-        res = "";
     } else {
         server_reply[recv_size] = '\0';
-        res = server_reply;
-        ggs_print_green(res);
+        res = split_by_delimiter(server_reply, GGS_READY);
+        ggs_print_green(server_reply);
     }
     return res;
 }
@@ -159,16 +157,6 @@ std::string ggs_get_user_input() {
     return res;
 }
 
-std::vector<std::string> split_by_space(const std::string &str) {
-    std::vector<std::string> tokens;
-    std::istringstream iss(str);
-    std::string token;
-    while (iss >> token) {
-        tokens.push_back(token);
-    }
-    return tokens;
-}
-
 bool ggs_is_board_info(std::string line) {
     std::vector<std::string> words = split_by_space(line);
     if (words.size() >= 2) {
@@ -185,12 +173,6 @@ std::string ggs_board_get_id(std::string line) {
     return "";
 }
 
-std::string remove_spaces(const std::string &str) {
-    std::string result = str;
-    result.erase(std::remove(result.begin(), result.end(), ' '), result.end());
-    return result;
-}
-
 GGS_Board ggs_get_board(std::string str) {
     GGS_Board res;
     std::string board_str;
@@ -204,7 +186,7 @@ GGS_Board ggs_get_board(std::string str) {
                 continue;
             }
             // board
-            if (std::find(line.begin(), line.end(), "A B C D E F G H")) {
+            if (line.find("A B C D E F G H") != std::string::npos) {
                 ++n_board_identifier_found;
                 continue;
             }
@@ -291,9 +273,9 @@ void ggs_client(Options *options) {
     ggs_receive_message(&sock);
     
     std::future<std::string> user_input_f;
-    std::future<std::string> ggs_message_f;
+    std::future<std::vector<std::string>> ggs_message_f;
     while (true) {
-        std::string server_reply;
+        std::vector<std::string> server_replies;
         if (user_input_f.valid()) {
             if (user_input_f.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
                 std::string user_input = user_input_f.get();
@@ -307,16 +289,20 @@ void ggs_client(Options *options) {
         }
         if (ggs_message_f.valid()) {
             if (ggs_message_f.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
-                server_reply = ggs_message_f.get();
+                server_replies = ggs_message_f.get();
             }
         } else {
             ggs_message_f = std::async(std::launch::async, ggs_receive_message, &sock);
         }
-        if (server_reply.size()) {
-            std::string os_info = ggs_get_os_info(server_reply);
-            std::cout << os_info << std::endl;
-            if (ggs_is_board_info(os_info)) {
-                GGS_Board ggs_board = ggs_get_board(server_reply);
+        if (server_replies.size()) {
+            for (std::string server_reply: server_replies) {
+                std::cout << "see " << server_reply << std::endl;
+                std::string os_info = ggs_get_os_info(server_reply);
+                std::cout << "os_info " << os_info << std::endl;
+                if (ggs_is_board_info(os_info)) {
+                    std::cout << "getting board info" << std::endl;
+                    GGS_Board ggs_board = ggs_get_board(server_reply);
+                }
             }
         }
     }

@@ -8,7 +8,9 @@
 	@license GPL-3.0 license
 */
 #if INCLUDE_GGS
+    #define WIN32_LEAN_AND_MEAN
     #include <winsock2.h>
+    #include <windows.h>
 #endif
 #include <iostream>
 #include <fstream>
