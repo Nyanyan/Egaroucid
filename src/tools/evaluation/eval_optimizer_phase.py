@@ -7,6 +7,8 @@ minute = str(sys.argv[2]) #'7'
 second = '0'
 alpha = str(sys.argv[3]) #'300.0'
 n_patience = '100'
+reduce_lr_patience = '20'
+reduce_lr_ratio = '0.8'
 
 model_dir = './../../../model/nomodel/'
 
@@ -60,7 +62,7 @@ train_data_nums = [
     83, # book data (records80 minimum 200000 data)
     84, 85, 86, 87, 88, 89, # non-regular random starting position
     97, # public data
-    98, 99, 100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 112, 113, 114, 115, 116, 117, 118, 119, # random boards
+    98, 99, 100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 112, 113, 114, 115, 116, 117, 118, 119, 120, # random boards
     127, 128, 129, 130, 131, 132, 133, 134, 135, 136, 137, 138, 139, 140, 141, 142, 143, # random boards
 ]
 
@@ -79,7 +81,7 @@ for tfile in train_data:
     for train_dir in train_dirs:
         additional_params += ' ' + train_dir + tfile
 
-cmd = executable + ' ' + phase + ' ' + hour + ' ' + minute + ' ' + second + ' ' + alpha + ' ' + n_patience + ' ' + model_dir + phase + '.txt' + additional_params
+cmd = executable + ' ' + phase + ' ' + hour + ' ' + minute + ' ' + second + ' ' + alpha + ' ' + n_patience + ' ' + reduce_lr_patience + ' ' + reduce_lr_ratio + ' ' + model_dir + phase + '.txt' + additional_params
 print(cmd, file=sys.stderr)
 p = subprocess.Popen(cmd.split(), stdout=subprocess.PIPE)
 result = p.stdout.readline().decode().replace('\r\n', '\n').replace('\n', '')

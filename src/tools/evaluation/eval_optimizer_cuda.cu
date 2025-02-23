@@ -119,11 +119,11 @@ int adj_import_data(int n_files, char* files[], Adj_Data* host_train_data, int *
         start_idx_arr[i] = start_idx;
     }
     for (int file_idx = 0; file_idx < n_files; ++file_idx) {
-        std::cerr << files[file_idx] << std::endl;
         if (fopen_s(&fp, files[file_idx], "rb") != 0) {
             std::cerr << "can't open " << files[file_idx] << std::endl;
             continue;
         }
+        int n_data_before = n_data;
         while (n_data < ADJ_MAX_N_DATA) {
             if (fread(&n_discs, 2, 1, fp) < 1)
                 break;
@@ -131,16 +131,18 @@ int adj_import_data(int n_files, char* files[], Adj_Data* host_train_data, int *
             fread(host_train_data[n_data].features, 2, ADJ_N_FEATURES, fp);
             fread(&score, 2, 1, fp);
             host_train_data[n_data].score = (double)score * ADJ_STEP;
-            if ((n_data & 0xffff) == 0xffff)
-                std::cerr << '\r' << n_data;
+            //if ((n_data & 0xffff) == 0xffff)
+            //    std::cerr << '\r' << n_data;
             score_avg += score;
             ++n_data;
         }
         fclose(fp);
-        std::cerr << '\r' << n_data << std::endl;
+        if (n_data_before < n_data) {
+            std::cerr << files[file_idx] << " " << n_data << std::endl;
+        }
     }
     score_avg /= n_data;
-    std::cerr << std::endl;
+    //std::cerr << std::endl;
     //std::cerr << n_data << " data loaded" << std::endl;
     std::cerr << "score avg " << score_avg << std::endl;
     return n_data;
@@ -356,11 +358,11 @@ void adj_output_param(int eval_size, double *host_eval_arr) {
 int main(int argc, char* argv[]) {
     std::cerr << EVAL_DEFINITION_NAME << std::endl;
     std::cerr << EVAL_DEFINITION_DESCRIPTION << std::endl;
-    if (argc < 8) {
-        std::cerr << "input [phase] [hour] [minute] [second] [alpha] [n_patience] [in_file] [train_data...]" << std::endl;
+    if (argc < 10) {
+        std::cerr << "input [phase] [hour] [minute] [second] [alpha] [n_patience] [reduce_lr_patience] [reduce_lr_ratio] [in_file] [train_data...]" << std::endl;
         return 1;
     }
-    if (argc - 8 >= ADJ_MAX_N_FILES) {
+    if (argc - 10 >= ADJ_MAX_N_FILES) {
         std::cerr << "too many train files" << std::endl;
         return 1;
     }
@@ -370,11 +372,13 @@ int main(int argc, char* argv[]) {
     uint64_t second = atoi(argv[4]);
     double alpha = atof(argv[5]);
     int n_patience = atoi(argv[6]);
-    std::string in_file = (std::string)argv[7];
+    int reduce_lr_patience = atoi(argv[7]);
+    double reduce_lr_ratio = atof(argv[8]);
+    std::string in_file = (std::string)argv[9];
     char* train_files[ADJ_MAX_N_FILES];
-    int n_train_data_file = argc - 8;
+    int n_train_data_file = argc - 10;
     for (int i = 0; i < n_train_data_file; ++i)
-        train_files[i] = argv[i + 8];
+        train_files[i] = argv[i + 10];
     second += minute * 60 + hour * 3600;
     uint64_t msecond = second * 1000;
 
@@ -498,7 +502,8 @@ int main(int argc, char* argv[]) {
     int n_loop = 0;
     double min_val_mse = 100000000.0, min_val_mae = 100000000.0;
     int n_val_loss_increase = 0;
-    double alpha_stab = alpha / 10.0; // warming up for Adam
+    int n_val_loss_increase_reduce_lr = 0;
+    double alpha_stab = alpha / 5.0; // warming up for Adam
     while (tim() - strt < msecond) {
         ++n_loop;
 
@@ -508,8 +513,10 @@ int main(int argc, char* argv[]) {
         if (host_val_error_monitor_arr[0] <= min_val_mse){
             min_val_mse = host_val_error_monitor_arr[0];
             n_val_loss_increase = 0;
+            n_val_loss_increase_reduce_lr = 0;
         } else{
             ++n_val_loss_increase;
+            ++n_val_loss_increase_reduce_lr;
             if (n_val_loss_increase > n_patience){
                 break;
             }
@@ -519,7 +526,7 @@ int main(int argc, char* argv[]) {
         adj_calculate_residual <<<n_blocks_residual, N_THREADS_PER_BLOCK_RESIDUAL>>> (device_eval_arr, n_train_data, device_start_idx_arr, device_train_data, device_rev_idx_arr, device_residual_arr, device_error_monitor_arr);
         cudaMemcpy(host_error_monitor_arr, device_error_monitor_arr, sizeof(double) * N_ERROR_MONITOR, cudaMemcpyDeviceToHost);
 
-        std::cerr << "\rn_loop " << n_loop << " progress " << (tim() - strt) * 100 / msecond << "% MSE " << host_error_monitor_arr[0] << " MAE " << host_error_monitor_arr[1] << "  val_MSE " << host_val_error_monitor_arr[0] << " val_MAE " << host_val_error_monitor_arr[1] << " loss_inc " << n_val_loss_increase << " alpha " << alpha_stab << "                    ";
+        std::cerr << "\rn_loop " << n_loop << " progress " << (tim() - strt) * 100 / msecond << "% MSE " << host_error_monitor_arr[0] << " MAE " << host_error_monitor_arr[1] << "  val_MSE " << host_val_error_monitor_arr[0] << " val_MAE " << host_val_error_monitor_arr[1] << " val_loss_inc " << n_val_loss_increase << " alpha " << alpha_stab << "                    ";
         
         // next step
         // gradient_descent <<<n_blocks_next_step, N_THREADS_PER_BLOCK_NEXT_STEP>>> (eval_size, device_eval_arr, device_n_appear_arr, device_residual_arr, alpha_stab);
@@ -527,7 +534,11 @@ int main(int argc, char* argv[]) {
         // adagrad <<<n_blocks_next_step, N_THREADS_PER_BLOCK_NEXT_STEP>>> (eval_size, device_eval_arr, device_n_appear_arr, device_residual_arr, alpha_stab, device_v_arr, n_loop);
         adam <<<n_blocks_next_step, N_THREADS_PER_BLOCK_NEXT_STEP>>> (eval_size, device_eval_arr, device_n_appear_arr, device_residual_arr, alpha_stab, device_m_arr, device_v_arr, n_loop);
         if (alpha_stab < alpha) {
-            alpha_stab += alpha / 40.0;
+            alpha_stab += alpha / 50.0;
+        }
+        if (n_val_loss_increase_reduce_lr >= reduce_lr_patience) {
+            alpha *= reduce_lr_ratio;
+            n_val_loss_increase_reduce_lr = 0;
         }
         if (alpha_stab > alpha) {
             alpha_stab = alpha;
@@ -623,8 +634,8 @@ int main(int argc, char* argv[]) {
     cudaMemcpy(host_error_monitor_arr, device_error_monitor_arr, sizeof(double) * N_ERROR_MONITOR, cudaMemcpyDeviceToHost);
     adj_calculate_loss_round <<<n_blocks_val, N_THREADS_PER_BLOCK_TEST>>> (-1, -1, device_eval_arr_roundup, device_eval_arr_rounddown, device_round_arr, n_val_data, device_start_idx_arr, device_val_data, device_val_error_monitor_arr);
     cudaMemcpy(host_val_error_monitor_arr, device_val_error_monitor_arr, sizeof(double) * N_ERROR_MONITOR, cudaMemcpyDeviceToHost);
-    std::cerr << "phase " << phase << " time " << (tim() - strt) << " ms n_train_data " << n_train_data << " n_val_data " << n_val_data << " n_loop " << n_loop << " MSE " << host_error_monitor_arr[0] << " MAE " << host_error_monitor_arr[1] << " val_MSE " << host_val_error_monitor_arr[0] << " val_MAE " << host_val_error_monitor_arr[1] << " (with int) alpha " << alpha << " n_patience " << n_patience << std::endl;
-    std::cout << "phase " << phase << " time " << (tim() - strt) << " ms n_train_data " << n_train_data << " n_val_data " << n_val_data << " n_loop " << n_loop << " MSE " << host_error_monitor_arr[0] << " MAE " << host_error_monitor_arr[1] << " val_MSE " << host_val_error_monitor_arr[0] << " val_MAE " << host_val_error_monitor_arr[1] << " (with int) alpha " << alpha << " n_patience " << n_patience << std::endl;
+    std::cerr << "phase " << phase << " time " << (tim() - strt) << " ms n_train_data " << n_train_data << " n_val_data " << n_val_data << " n_loop " << n_loop << " MSE " << host_error_monitor_arr[0] << " MAE " << host_error_monitor_arr[1] << " val_MSE " << host_val_error_monitor_arr[0] << " val_MAE " << host_val_error_monitor_arr[1] << " (with int) alpha " << alpha << " n_patience " << n_patience << " reduce_lr_patience " << reduce_lr_patience << " reduce_lr_ratio " << reduce_lr_ratio << std::endl;
+    std::cout << "phase " << phase << " time " << (tim() - strt) << " ms n_train_data " << n_train_data << " n_val_data " << n_val_data << " n_loop " << n_loop << " MSE " << host_error_monitor_arr[0] << " MAE " << host_error_monitor_arr[1] << " val_MSE " << host_val_error_monitor_arr[0] << " val_MAE " << host_val_error_monitor_arr[1] << " (with int) alpha " << alpha << " n_patience " << n_patience << " reduce_lr_patience " << reduce_lr_patience << " reduce_lr_ratio " << reduce_lr_ratio << std::endl;
 
     // output param
     adj_output_param(eval_size, host_eval_arr);

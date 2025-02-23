@@ -8,7 +8,7 @@ transcript_root_dir = './../../../train_data/transcript/'
 board_root_dir = './../../../train_data/board_data/'
 log_file = './../../../train_data/board_data/log.txt'
 
-nums = [114, 115, 116, 117, 118, 119, 127]
+nums = [120]
 
 FILE_INTERVAL = 100 * 60
 
