@@ -25,6 +25,21 @@ struct GGS_Board {
     uint64_t remaining_seconds_white;
     Board board;
     int player_to_move;
+
+    GGS_Board() {
+        last_move = -1;
+        player_black = "";
+        remaining_seconds_black = 0;
+        player_white = "";
+        remaining_seconds_white = 0;
+        board.player = 0;
+        board.opponent = 0;
+        player_to_move = -1;
+    }
+
+    bool is_valid() {
+        return (board.player != 0 || board.opponent != 0) && player_to_move != -1;
+    }
 };
 
 std::vector<std::string> split_by_space(const std::string &str) {
@@ -325,6 +340,16 @@ void ggs_client(Options *options) {
                     if (ggs_is_board_info(os_info)) {
                         std::cout << "getting board info" << std::endl;
                         GGS_Board ggs_board = ggs_get_board(server_reply);
+                        if (ggs_board.is_valid()) {
+                            bool need_to_move = 
+                                (ggs_board.player_black == options->ggs_username && ggs_board.player_to_move == BLACK) || 
+                                (ggs_board.player_white == options->ggs_username && ggs_board.player_to_move == WHITE);
+                            if (need_to_move) {
+                                
+                            } else {
+                                
+                            }
+                        }
                     }
                 }
             }
