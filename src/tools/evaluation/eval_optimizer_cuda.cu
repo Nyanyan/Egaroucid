@@ -371,6 +371,7 @@ int main(int argc, char* argv[]) {
     uint64_t minute = atoi(argv[3]);
     uint64_t second = atoi(argv[4]);
     double alpha = atof(argv[5]);
+    double alpha_in = alpha;
     int n_patience = atoi(argv[6]);
     int reduce_lr_patience = atoi(argv[7]);
     double reduce_lr_ratio = atof(argv[8]);
@@ -634,8 +635,8 @@ int main(int argc, char* argv[]) {
     cudaMemcpy(host_error_monitor_arr, device_error_monitor_arr, sizeof(double) * N_ERROR_MONITOR, cudaMemcpyDeviceToHost);
     adj_calculate_loss_round <<<n_blocks_val, N_THREADS_PER_BLOCK_TEST>>> (-1, -1, device_eval_arr_roundup, device_eval_arr_rounddown, device_round_arr, n_val_data, device_start_idx_arr, device_val_data, device_val_error_monitor_arr);
     cudaMemcpy(host_val_error_monitor_arr, device_val_error_monitor_arr, sizeof(double) * N_ERROR_MONITOR, cudaMemcpyDeviceToHost);
-    std::cerr << "phase " << phase << " time " << (tim() - strt) << " ms n_train_data " << n_train_data << " n_val_data " << n_val_data << " n_loop " << n_loop << " MSE " << host_error_monitor_arr[0] << " MAE " << host_error_monitor_arr[1] << " val_MSE " << host_val_error_monitor_arr[0] << " val_MAE " << host_val_error_monitor_arr[1] << " (with int) alpha " << alpha << " n_patience " << n_patience << " reduce_lr_patience " << reduce_lr_patience << " reduce_lr_ratio " << reduce_lr_ratio << std::endl;
-    std::cout << "phase " << phase << " time " << (tim() - strt) << " ms n_train_data " << n_train_data << " n_val_data " << n_val_data << " n_loop " << n_loop << " MSE " << host_error_monitor_arr[0] << " MAE " << host_error_monitor_arr[1] << " val_MSE " << host_val_error_monitor_arr[0] << " val_MAE " << host_val_error_monitor_arr[1] << " (with int) alpha " << alpha << " n_patience " << n_patience << " reduce_lr_patience " << reduce_lr_patience << " reduce_lr_ratio " << reduce_lr_ratio << std::endl;
+    std::cerr << "phase " << phase << " time " << (tim() - strt) << " ms n_train_data " << n_train_data << " n_val_data " << n_val_data << " n_loop " << n_loop << " MSE " << host_error_monitor_arr[0] << " MAE " << host_error_monitor_arr[1] << " val_MSE " << host_val_error_monitor_arr[0] << " val_MAE " << host_val_error_monitor_arr[1] << " (with int) alpha " << alpha_in << " n_patience " << n_patience << " reduce_lr_patience " << reduce_lr_patience << " reduce_lr_ratio " << reduce_lr_ratio << std::endl;
+    std::cout << "phase " << phase << " time " << (tim() - strt) << " ms n_train_data " << n_train_data << " n_val_data " << n_val_data << " n_loop " << n_loop << " MSE " << host_error_monitor_arr[0] << " MAE " << host_error_monitor_arr[1] << " val_MSE " << host_val_error_monitor_arr[0] << " val_MAE " << host_val_error_monitor_arr[1] << " (with int) alpha " << alpha_in << " n_patience " << n_patience << " reduce_lr_patience " << reduce_lr_patience << " reduce_lr_ratio " << reduce_lr_ratio << std::endl;
 
     // output param
     adj_output_param(eval_size, host_eval_arr);
