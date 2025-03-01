@@ -18,6 +18,7 @@
 #define GGS_REPLY_HEADER "GGS> "
 
 struct GGS_Board {
+    std::string game_id;
     int last_move;
     std::string player_black;
     uint64_t remaining_seconds_black;
@@ -27,6 +28,7 @@ struct GGS_Board {
     int player_to_move;
 
     GGS_Board() {
+        game_id = "";
         last_move = -1;
         player_black = "";
         remaining_seconds_black = 0;
@@ -208,6 +210,13 @@ std::string ggs_board_get_id(std::string line) {
 
 GGS_Board ggs_get_board(std::string str) {
     GGS_Board res;
+    std::string os_info = ggs_get_os_info(str);
+    std::vector<std::string> os_info_words = split_by_space(os_info);
+    if (os_info_words.size() < 3) {
+        std::cerr << "ggs_get_board failed: id invalid" << std::endl;
+        return res;
+    }
+    res.game_id = os_info_words[2]; // /os: update .4.1 s8r18 K?
     std::string board_str;
     std::stringstream ss(str);
     std::string line;
@@ -230,13 +239,14 @@ GGS_Board ggs_get_board(std::string str) {
             }
 
             // which to move
-            if (line == "|* to move") {
+            if (line.substr(0, 10) == "|* to move") {
                 res.player_to_move = BLACK;
                 continue;
-            } else if (line == "|O to move") {
+            } else if (line.substr(0, 10) == "|O to move") {
                 res.player_to_move = WHITE;
                 continue;
             }
+            std::cerr << "a" << std::endl;
 
             // last move
             if (line.substr(0, 3) == "|  ") {
@@ -271,6 +281,7 @@ GGS_Board ggs_get_board(std::string str) {
     }
     res.board.from_str(board_str);
 
+    std::cerr << "game_id " << res.game_id << std::endl;
     std::cerr << "black " << res.player_black << " " << res.remaining_seconds_black << std::endl;
     std::cerr << "white " << res.player_white << " " << res.remaining_seconds_white << std::endl;
     std::cerr << res.player_to_move << " to move" << std::endl;
@@ -312,7 +323,7 @@ void ggs_client(Options *options) {
         if (user_input_f.valid()) {
             if (user_input_f.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
                 std::string user_input = user_input_f.get();
-                if (user_input == "exit") {
+                if (user_input == "exit" || user_input == "quit") {
                     break;
                 }
                 ggs_send_message(sock, user_input + "\n");
@@ -323,10 +334,10 @@ void ggs_client(Options *options) {
         if (ggs_message_f.valid()) {
             if (ggs_message_f.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
                 server_replies = ggs_message_f.get();
-                std::cerr << "server_replies.size() " << server_replies.size() << std::endl;
-                for (std::string server_reply: server_replies) {
-                    std::cerr << server_reply << std::endl;
-                }
+                // std::cerr << "server_replies.size() " << server_replies.size() << std::endl;
+                // for (std::string server_reply: server_replies) {
+                //     std::cerr << server_reply << std::endl;
+                // }
             }
         } else {
             ggs_message_f = std::async(std::launch::async, ggs_receive_message, &sock);
@@ -334,9 +345,11 @@ void ggs_client(Options *options) {
         if (server_replies.size()) {
             for (std::string server_reply: server_replies) {
                 if (server_reply.size()) {
-                    std::cout << "see " << server_reply << std::endl;
+                    //std::cout << "see " << server_reply << std::endl;
                     std::string os_info = ggs_get_os_info(server_reply);
-                    std::cout << "os_info " << os_info << std::endl;
+                    if (os_info.size()) {
+                        std::cout << "os_info " << os_info << std::endl;
+                    }
                     if (ggs_is_board_info(os_info)) {
                         std::cout << "getting board info" << std::endl;
                         GGS_Board ggs_board = ggs_get_board(server_reply);
@@ -345,16 +358,24 @@ void ggs_client(Options *options) {
                                 (ggs_board.player_black == options->ggs_username && ggs_board.player_to_move == BLACK) || 
                                 (ggs_board.player_white == options->ggs_username && ggs_board.player_to_move == WHITE);
                             if (need_to_move) { // Egaroucid should move
-                                uint64_t remaining_time_msec = 0;
-                                if (ggs_board.player_to_move == BLACK) {
-                                    remaining_time_msec = ggs_board.remaining_seconds_black * 1000;
-                                } else {
-                                    remaining_time_msec = ggs_board.remaining_seconds_white * 1000;
+                                if (ggs_board.board.get_legal()) {
+                                    uint64_t remaining_time_msec = 0;
+                                    if (ggs_board.player_to_move == BLACK) {
+                                        remaining_time_msec = ggs_board.remaining_seconds_black * 1000;
+                                    } else {
+                                        remaining_time_msec = ggs_board.remaining_seconds_white * 1000;
+                                    }
+                                    if (remaining_time_msec > 3000) {
+                                        remaining_time_msec -= 2000;
+                                    }
+                                    std::cerr << "Egaroucid thinking..." << std::endl;
+                                    Search_result search_result = ai_time_limit(ggs_board.board, true, 0, true, options->show_log, remaining_time_msec);
+                                    std::string ggs_move_cmd = "t /os play " + ggs_board.game_id + " " + idx_to_coord(search_result.policy) + "/" + std::to_string(search_result.value);
+                                    ggs_send_message(sock, ggs_move_cmd + "\n");
+                                } else { // pass
+                                    std::string ggs_move_cmd = "t /os play " + ggs_board.game_id + " pa";
+                                    ggs_send_message(sock, ggs_move_cmd + "\n");
                                 }
-                                if (remaining_time_msec > 3000) {
-                                    remaining_time_msec -= 2000;
-                                }
-                                Search_result search_result = ai_time_limit(ggs_board.board, true, 0, true, options->show_log, remaining_time_msec);
                             } else { // ponder
                             }
                         }
