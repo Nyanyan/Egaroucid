@@ -160,10 +160,10 @@ int ggs_send_message(SOCKET &sock, std::string msg) {
 }
 
 std::vector<std::string> ggs_receive_message(SOCKET *sock) {
-    char server_reply[2000];
+    char server_reply[10000];
     int recv_size;
     std::vector<std::string> res;
-    if ((recv_size = recv(*sock, server_reply, 2000, 0)) == SOCKET_ERROR) {
+    if ((recv_size = recv(*sock, server_reply, 10000, 0)) == SOCKET_ERROR) {
         std::cerr << "Recv failed. Error Code: " << WSAGetLastError() << std::endl;
     } else {
         server_reply[recv_size] = '\0';
@@ -344,10 +344,18 @@ void ggs_client(Options *options) {
                             bool need_to_move = 
                                 (ggs_board.player_black == options->ggs_username && ggs_board.player_to_move == BLACK) || 
                                 (ggs_board.player_white == options->ggs_username && ggs_board.player_to_move == WHITE);
-                            if (need_to_move) {
-                                
-                            } else {
-                                
+                            if (need_to_move) { // Egaroucid should move
+                                uint64_t remaining_time_msec = 0;
+                                if (ggs_board.player_to_move == BLACK) {
+                                    remaining_time_msec = ggs_board.remaining_seconds_black * 1000;
+                                } else {
+                                    remaining_time_msec = ggs_board.remaining_seconds_white * 1000;
+                                }
+                                if (remaining_time_msec > 3000) {
+                                    remaining_time_msec -= 2000;
+                                }
+                                Search_result search_result = ai_time_limit(ggs_board.board, true, 0, true, options->show_log, remaining_time_msec);
+                            } else { // ponder
                             }
                         }
                     }

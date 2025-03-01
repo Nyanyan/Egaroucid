@@ -11,9 +11,9 @@
 #pragma once
 #include "ai.hpp"
 
-
+#if IS_GGS_TOURNAMENT
 constexpr int TIME_MANAGEMENT_INITIAL_N_EMPTIES = 46;
-
+#endif
 
 #define TIME_MANAGEMENT_REMAINING_TIME_OFFSET 10 // ms / move
 #define TIME_MANAGEMENT_REMAINING_MOVES_OFFSET 13 // 13 * 2 = 26 moves
