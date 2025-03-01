@@ -19,6 +19,8 @@
 
 struct GGS_Board {
     std::string game_id;
+    bool is_synchro;
+    int synchro_id;
     int last_move;
     std::string player_black;
     uint64_t remaining_seconds_black;
@@ -29,6 +31,8 @@ struct GGS_Board {
 
     GGS_Board() {
         game_id = "";
+        is_synchro = false;
+        synchro_id = -1;
         last_move = -1;
         player_black = "";
         remaining_seconds_black = 0;
@@ -217,6 +221,23 @@ GGS_Board ggs_get_board(std::string str) {
         return res;
     }
     res.game_id = os_info_words[2]; // /os: update .4.1 s8r18 K?
+    int game_id_dot_count = 0;
+    for (int i = 0; (i = res.game_id.find('.', i)) != std::string::npos; i++) {
+        game_id_dot_count++;
+    }
+    res.is_synchro = game_id_dot_count == 2;
+    if (res.is_synchro) {
+        std::vector<std::string> ids = split_by_delimiter(res.game_id, ".");
+        try {
+            res.synchro_id = std::stoi(ids[ids.size() - 1]);
+        } catch (const std::invalid_argument& e) {
+            std::cerr << "ggs_get_board failed: synchro_id invalid" << std::endl;
+            res.synchro_id = -1;
+        } catch (const std::out_of_range& e) {
+            std::cerr << "ggs_get_board failed: synchro_id out of range" << std::endl;
+            res.synchro_id = -1;
+        }
+    }
     std::string board_str;
     std::stringstream ss(str);
     std::string line;
@@ -281,6 +302,8 @@ GGS_Board ggs_get_board(std::string str) {
     res.board.from_str(board_str);
 
     std::cerr << "game_id " << res.game_id << std::endl;
+    std::cerr << "is_synchro " << res.is_synchro << std::endl;
+    std::cerr << "synchro_id " << res.synchro_id << std::endl;
     std::cerr << "black " << res.player_black << " " << res.remaining_seconds_black << std::endl;
     std::cerr << "white " << res.player_white << " " << res.remaining_seconds_white << std::endl;
     std::cerr << res.player_to_move << " to move" << std::endl;
@@ -288,6 +311,27 @@ GGS_Board ggs_get_board(std::string str) {
     res.board.print();
 
     return res;
+}
+
+void ggs_play_move(GGS_Board &ggs_board, SOCKET &sock, Options *options) {
+    if (ggs_board.board.get_legal()) {
+        uint64_t remaining_time_msec = 0;
+        if (ggs_board.player_to_move == BLACK) {
+            remaining_time_msec = ggs_board.remaining_seconds_black * 1000;
+        } else {
+            remaining_time_msec = ggs_board.remaining_seconds_white * 1000;
+        }
+        if (remaining_time_msec > 6000) {
+            remaining_time_msec -= 5000;
+        }
+        std::cerr << "Egaroucid thinking... remaining " << remaining_time_msec << " ms" << std::endl;
+        Search_result search_result = ai_time_limit(ggs_board.board, true, 0, true, options->show_log, remaining_time_msec);
+        std::string ggs_move_cmd = "t /os play " + ggs_board.game_id + " " + idx_to_coord(search_result.policy) + "/" + std::to_string(search_result.value);
+        ggs_send_message(sock, ggs_move_cmd + "\n");
+    } else { // pass
+        std::string ggs_move_cmd = "t /os play " + ggs_board.game_id + " pa";
+        ggs_send_message(sock, ggs_move_cmd + "\n");
+    }
 }
 
 void ggs_client(Options *options) {
@@ -317,6 +361,8 @@ void ggs_client(Options *options) {
     
     std::future<std::string> user_input_f;
     std::future<std::vector<std::string>> ggs_message_f;
+    std::future<std::vector<Ponder_elem>> ponder_future;
+    bool ponder_searching = false;
     while (true) {
         std::vector<std::string> server_replies;
         if (user_input_f.valid()) {
@@ -342,6 +388,7 @@ void ggs_client(Options *options) {
             ggs_message_f = std::async(std::launch::async, ggs_receive_message, &sock);
         }
         if (server_replies.size()) {
+            std::vector<GGS_Board> ggs_boards;
             for (std::string server_reply: server_replies) {
                 if (server_reply.size()) {
                     //std::cout << "see " << server_reply << std::endl;
@@ -353,31 +400,61 @@ void ggs_client(Options *options) {
                         std::cout << "getting board info" << std::endl;
                         GGS_Board ggs_board = ggs_get_board(server_reply);
                         if (ggs_board.is_valid()) {
-                            bool need_to_move = 
-                                (ggs_board.player_black == options->ggs_username && ggs_board.player_to_move == BLACK) || 
-                                (ggs_board.player_white == options->ggs_username && ggs_board.player_to_move == WHITE);
-                            if (need_to_move) { // Egaroucid should move
-                                if (ggs_board.board.get_legal()) {
-                                    uint64_t remaining_time_msec = 0;
-                                    if (ggs_board.player_to_move == BLACK) {
-                                        remaining_time_msec = ggs_board.remaining_seconds_black * 1000;
-                                    } else {
-                                        remaining_time_msec = ggs_board.remaining_seconds_white * 1000;
-                                    }
-                                    if (remaining_time_msec > 6000) {
-                                        remaining_time_msec -= 5000;
-                                    }
-                                    std::cerr << "Egaroucid thinking... remaining " << remaining_time_msec << " ms" << std::endl;
-                                    Search_result search_result = ai_time_limit(ggs_board.board, true, 0, true, options->show_log, remaining_time_msec);
-                                    std::string ggs_move_cmd = "t /os play " + ggs_board.game_id + " " + idx_to_coord(search_result.policy) + "/" + std::to_string(search_result.value);
-                                    ggs_send_message(sock, ggs_move_cmd + "\n");
-                                } else { // pass
-                                    std::string ggs_move_cmd = "t /os play " + ggs_board.game_id + " pa";
-                                    ggs_send_message(sock, ggs_move_cmd + "\n");
-                                }
-                            } else { // ponder
+                            if (ggs_board.player_black == options->ggs_username || ggs_board.player_white == options->ggs_username) {
+                                ggs_boards.emplace_back(ggs_board);
                             }
                         }
+                    }
+                }
+            }
+            if (ggs_boards.size()) {
+                std::cout << "ggs boards size " << ggs_boards.size() << std::endl;
+            }
+            bool all_board_same = true;
+            for (int ggs_board_idx1 = 0; ggs_board_idx1 < (int)ggs_boards.size(); ++ggs_board_idx1) {
+                for (int ggs_board_idx2 = ggs_board_idx1; ggs_board_idx2 < (int)ggs_boards.size(); ++ggs_board_idx2) {
+                    if (ggs_boards[ggs_board_idx1].board != ggs_boards[ggs_board_idx2].board) {
+                        all_board_same = false;
+                    }
+                }
+            }
+            std::cerr << "all_board_same " << all_board_same << std::endl;
+            for (GGS_Board ggs_board: ggs_boards) {
+                bool need_to_move = 
+                    (ggs_board.player_black == options->ggs_username && ggs_board.player_to_move == BLACK) || 
+                    (ggs_board.player_white == options->ggs_username && ggs_board.player_to_move == WHITE);
+                if (ggs_board.is_synchro) { // synchro game
+                    if (all_board_same) { // playing same board
+                        if (need_to_move) { // Egaroucid should move
+                            ponder_searching = false; // terminate ponder
+                            if (ponder_future.valid()) {
+                                ponder_future.get();
+                            }
+                            ggs_play_move(ggs_board, sock, options); // play move
+                        } else { // Opponent's move
+                            ponder_searching = true;
+                            ponder_future = std::async(std::launch::async, ai_ponder, ggs_board.board, options->show_log, &ponder_searching); // set ponder
+                        }
+                    } else { // transcript separated
+                        if (need_to_move) { // Egaroucid should move
+                            ponder_searching = false; // terminate ponder
+                            if (ponder_future.valid()) {
+                                ponder_future.get();
+                            }
+                            ggs_play_move(ggs_board, sock, options); // play move
+                        } else { // Opponent's move
+                        }
+                    }
+                } else { // non synchro game
+                    if (need_to_move) { // Egaroucid should move
+                        ponder_searching = false; // terminate ponder
+                        if (ponder_future.valid()) {
+                            ponder_future.get();
+                        }
+                        ggs_play_move(ggs_board, sock, options); // play move
+                    } else { // Opponent's move
+                        ponder_searching = true;
+                        ponder_future = std::async(std::launch::async, ai_ponder, ggs_board.board, options->show_log, &ponder_searching); // set ponder
                     }
                 }
             }
