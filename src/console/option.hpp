@@ -21,9 +21,9 @@ struct Options {
     int level;
     int n_threads;
     bool show_log;
-    #if USE_CHANGEABLE_HASH_LEVEL
-        int hash_level;
-    #endif
+#if USE_CHANGEABLE_HASH_LEVEL
+    int hash_level;
+#endif
     std::string book_file;
     std::string eval_file;
     bool nobook;
@@ -40,6 +40,11 @@ struct Options {
     bool play_loss;
     double play_loss_ratio;
     int play_loss_max;
+#ifdef INCLUDE_GGS
+    bool ggs;
+    std::string ggs_username;
+    std::string ggs_password;
+#endif
 };
 
 Options get_options(std::vector<Commandline_option> commandline_options, std::string binary_path) {
@@ -175,5 +180,23 @@ Options get_options(std::vector<Commandline_option> commandline_options, std::st
             std::cerr << "[ERROR] play loss argument out of range" << std::endl;
         }
     }
+#ifdef INCLUDE_GGS
+    res.ggs = find_commandline_option(commandline_options, ID_GGS);
+    if (res.ggs) {
+        res.ggs_username = "";
+        res.ggs_password = "";
+        if (find_commandline_option(commandline_options, ID_GGS)) {
+            std::vector<std::string> arg = get_commandline_option_arg(commandline_options, ID_GGS);
+            try {
+                res.ggs_username = arg[0];
+                res.ggs_password = arg[1];
+            } catch (const std::invalid_argument& e) {
+                std::cerr << "[ERROR] invalid ggs argument" << std::endl;
+            } catch (const std::out_of_range& e) {
+                std::cerr << "[ERROR] ggs argument out of range" << std::endl;
+            }
+        }
+    }
+#endif
     return res;
 }
