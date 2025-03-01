@@ -12,7 +12,7 @@
 #include "ai.hpp"
 
 #if IS_GGS_TOURNAMENT
-constexpr int TIME_MANAGEMENT_INITIAL_N_EMPTIES = 46;
+constexpr int TIME_MANAGEMENT_INITIAL_N_EMPTIES = 50;
 #endif
 
 #define TIME_MANAGEMENT_REMAINING_TIME_OFFSET 10 // ms / move

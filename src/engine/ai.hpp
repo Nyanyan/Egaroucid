@@ -820,6 +820,9 @@ Search_result ai_time_limit(Board board, bool use_book, int book_acc_level, bool
         }
     }
     bool searching = true;
+    if (show_log) {
+        std::cerr << "ai_time_limit tl " << time_limit << std::endl;
+    }
     return ai_common(board, -SCORE_MAX, SCORE_MAX, MAX_LEVEL, use_book, book_acc_level, use_multi_thread, show_log, board.get_legal(), false, time_limit, &searching);
 }
 
