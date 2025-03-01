@@ -160,10 +160,10 @@ int ggs_send_message(SOCKET &sock, std::string msg) {
 }
 
 std::vector<std::string> ggs_receive_message(SOCKET *sock) {
-    char server_reply[10000];
+    char server_reply[20000];
     int recv_size;
     std::vector<std::string> res;
-    if ((recv_size = recv(*sock, server_reply, 10000, 0)) == SOCKET_ERROR) {
+    if ((recv_size = recv(*sock, server_reply, 20000, 0)) == SOCKET_ERROR) {
         std::cerr << "Recv failed. Error Code: " << WSAGetLastError() << std::endl;
     } else {
         server_reply[recv_size] = '\0';
