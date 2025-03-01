@@ -423,6 +423,7 @@ void ggs_client(Options *options) {
                                         }
                                     } else {
                                         std::cerr << "synchro game separated or opponent has not played" << std::endl;
+                                        // TBD
                                         if (need_to_move) { // Egaroucid should move
                                             ponder_searching = false; // terminate ponder
                                             if (ponder_future.valid()) {
