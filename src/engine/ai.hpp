@@ -510,19 +510,25 @@ Search_result ai_common(Board board, int alpha, int beta, int level, bool use_bo
         book_result = book.get_random(&board, book_acc_level, use_legal);
     }
     if (is_valid_policy(book_result.policy) && use_book) {
+        if (show_log) {
+            std::cerr << "book found " << value_sign * book_result.value << " " << idx_to_coord(book_result.policy) << std::endl;
+        }
+        res.level = LEVEL_TYPE_BOOK;
+        res.policy = book_result.policy;
+        res.value = value_sign * book_result.value;
+        res.depth = SEARCH_BOOK;
+        res.nps = 0;
+        res.is_end_search = false;
+        res.probability = 100;
         if (book_acc_level == 0) { // accurate book level
-            res.level = LEVEL_TYPE_BOOK;
-            res.policy = book_result.policy;
-            res.value = value_sign * book_result.value;
-            res.depth = SEARCH_BOOK;
-            res.nps = 0;
-            res.is_end_search = false;
-            res.probability = 100;
             std::vector<Book_value> book_moves = book.get_all_moves_with_value(&board);
             for (const Book_value &move: book_moves) {
                 use_legal &= ~(1ULL << move.policy);
             }
             if (use_legal != 0) { // there is moves out of book
+                if (show_log) {
+                    std::cerr << "there is moves out of book" << std::endl;
+                }
                 bool need_to_check = false;
                 Flip flip;
                 calc_flip(&flip, &board, book_result.policy);
@@ -548,7 +554,11 @@ Search_result ai_common(Board board, int alpha, int beta, int level, bool use_bo
                 board.undo_board(&flip);
                 if (need_to_check) {
                     int n_alpha = std::max(alpha, book_result.value + 1);
-                    Search_result additional_result = ai_legal_window(board, n_alpha, beta, level, true, 0, true, false, use_legal);
+                    int level_proc = level;
+                    if (time_limit != TIME_LIMIT_INF) {
+                        level_proc = 25;
+                    }
+                    Search_result additional_result = ai_legal_window(board, n_alpha, beta, level_proc, true, 0, true, false, use_legal);
                     if (value_sign * additional_result.value >= res.value + 2) {
                         if (show_log) {
                             std::cerr << "better move found out of book " << idx_to_coord(additional_result.policy) << "@" << value_sign * additional_result.value << " book " << idx_to_coord(res.policy) << "@" << res.value << std::endl;
@@ -557,6 +567,10 @@ Search_result ai_common(Board board, int alpha, int beta, int level, bool use_bo
                         res.level = level;
                         res.value *= value_sign;
                     }
+                }
+            } else {
+                if (show_log) {
+                    std::cerr << "all moves are in book" << std::endl;
                 }
             }
         }
