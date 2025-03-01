@@ -363,6 +363,7 @@ void ggs_client(Options *options) {
     std::future<std::vector<std::string>> ggs_message_f;
     std::future<std::vector<Ponder_elem>> ponder_future;
     bool ponder_searching = false;
+    GGS_Board ggs_boards[2][HW2];
     while (true) {
         std::vector<std::string> server_replies;
         if (user_input_f.valid()) {
@@ -388,7 +389,6 @@ void ggs_client(Options *options) {
             ggs_message_f = std::async(std::launch::async, ggs_receive_message, &sock);
         }
         if (server_replies.size()) {
-            std::vector<GGS_Board> ggs_boards;
             for (std::string server_reply: server_replies) {
                 if (server_reply.size()) {
                     //std::cout << "see " << server_reply << std::endl;
@@ -400,61 +400,54 @@ void ggs_client(Options *options) {
                         std::cout << "getting board info" << std::endl;
                         GGS_Board ggs_board = ggs_get_board(server_reply);
                         if (ggs_board.is_valid()) {
-                            if (ggs_board.player_black == options->ggs_username || ggs_board.player_white == options->ggs_username) {
-                                ggs_boards.emplace_back(ggs_board);
+                            if (ggs_board.player_black == options->ggs_username || ggs_board.player_white == options->ggs_username) { // related to me
+                                bool need_to_move = 
+                                    (ggs_board.player_black == options->ggs_username && ggs_board.player_to_move == BLACK) || 
+                                    (ggs_board.player_white == options->ggs_username && ggs_board.player_to_move == WHITE);
+                                if (ggs_board.is_synchro) { // synchro game
+                                    int n_discs = ggs_board.board.n_discs();
+                                    if (ggs_board.synchro_id == 0 || ggs_board.synchro_id == 1) {
+                                        ggs_boards[ggs_board.synchro_id][n_discs] = ggs_board;
+                                    }
+                                    if (ggs_boards[0][n_discs].board == ggs_boards[1][n_discs].board) {
+                                        std::cerr << "synchro playing same board" << std::endl;
+                                        if (need_to_move) { // Egaroucid should move
+                                            ponder_searching = false; // terminate ponder
+                                            if (ponder_future.valid()) {
+                                                ponder_future.get();
+                                            }
+                                            ggs_play_move(ggs_board, sock, options); // play move
+                                        } else { // Opponent's move
+                                            ponder_searching = true;
+                                            ponder_future = std::async(std::launch::async, ai_ponder, ggs_board.board, options->show_log, &ponder_searching); // set ponder
+                                        }
+                                    } else {
+                                        std::cerr << "synchro game separated or opponent has not played" << std::endl;
+                                        if (need_to_move) { // Egaroucid should move
+                                            ponder_searching = false; // terminate ponder
+                                            if (ponder_future.valid()) {
+                                                ponder_future.get();
+                                            }
+                                            ggs_play_move(ggs_board, sock, options); // play move
+                                        } else { // Opponent's move
+                                            ponder_searching = true;
+                                            ponder_future = std::async(std::launch::async, ai_ponder, ggs_board.board, options->show_log, &ponder_searching); // set ponder
+                                        }
+                                    }
+                                } else { // non-synchro game
+                                    if (need_to_move) { // Egaroucid should move
+                                        ponder_searching = false; // terminate ponder
+                                        if (ponder_future.valid()) {
+                                            ponder_future.get();
+                                        }
+                                        ggs_play_move(ggs_board, sock, options); // play move
+                                    } else { // Opponent's move
+                                        ponder_searching = true;
+                                        ponder_future = std::async(std::launch::async, ai_ponder, ggs_board.board, options->show_log, &ponder_searching); // set ponder
+                                    }
+                                }
                             }
                         }
-                    }
-                }
-            }
-            if (ggs_boards.size()) {
-                std::cout << "ggs boards size " << ggs_boards.size() << std::endl;
-            }
-            bool all_board_same = true;
-            for (int ggs_board_idx1 = 0; ggs_board_idx1 < (int)ggs_boards.size(); ++ggs_board_idx1) {
-                for (int ggs_board_idx2 = ggs_board_idx1; ggs_board_idx2 < (int)ggs_boards.size(); ++ggs_board_idx2) {
-                    if (ggs_boards[ggs_board_idx1].board != ggs_boards[ggs_board_idx2].board) {
-                        all_board_same = false;
-                    }
-                }
-            }
-            std::cerr << "all_board_same " << all_board_same << std::endl;
-            for (GGS_Board ggs_board: ggs_boards) {
-                bool need_to_move = 
-                    (ggs_board.player_black == options->ggs_username && ggs_board.player_to_move == BLACK) || 
-                    (ggs_board.player_white == options->ggs_username && ggs_board.player_to_move == WHITE);
-                if (ggs_board.is_synchro) { // synchro game
-                    if (all_board_same) { // playing same board
-                        if (need_to_move) { // Egaroucid should move
-                            ponder_searching = false; // terminate ponder
-                            if (ponder_future.valid()) {
-                                ponder_future.get();
-                            }
-                            ggs_play_move(ggs_board, sock, options); // play move
-                        } else { // Opponent's move
-                            ponder_searching = true;
-                            ponder_future = std::async(std::launch::async, ai_ponder, ggs_board.board, options->show_log, &ponder_searching); // set ponder
-                        }
-                    } else { // transcript separated
-                        if (need_to_move) { // Egaroucid should move
-                            ponder_searching = false; // terminate ponder
-                            if (ponder_future.valid()) {
-                                ponder_future.get();
-                            }
-                            ggs_play_move(ggs_board, sock, options); // play move
-                        } else { // Opponent's move
-                        }
-                    }
-                } else { // non synchro game
-                    if (need_to_move) { // Egaroucid should move
-                        ponder_searching = false; // terminate ponder
-                        if (ponder_future.valid()) {
-                            ponder_future.get();
-                        }
-                        ggs_play_move(ggs_board, sock, options); // play move
-                    } else { // Opponent's move
-                        ponder_searching = true;
-                        ponder_future = std::async(std::launch::async, ai_ponder, ggs_board.board, options->show_log, &ponder_searching); // set ponder
                     }
                 }
             }
