@@ -40,7 +40,7 @@ board_sub_dir_nums = [43, 44, 45]
 bin_root_dir = './../../../train_data/bin_data/20241125_1/'
 exe = 'data_board_to_idx_20241125_1_7_5.out'
 N_PHASES = 60
-board_sub_dir_nums = [120]
+board_sub_dir_nums = list(range(98, 126))
 board_sub_dir_nums.sort()
 #'''
 
@@ -209,6 +209,11 @@ board_n_moves['117'] = [31, 31] # random 31 discs 10000000 boards
 board_n_moves['118'] = [32, 32] # random 32 discs 10000000 boards
 board_n_moves['119'] = [33, 33] # random 33 discs 10000000 boards
 board_n_moves['120'] = [34, 34] # random 34 discs 10000000 boards
+board_n_moves['121'] = [35, 35] # random 35 discs 10000000 boards
+board_n_moves['122'] = [36, 36] # random 36 discs 10000000 boards
+board_n_moves['123'] = [37, 37] # random 37 discs 10000000 boards
+board_n_moves['124'] = [38, 38] # random 38 discs 10000000 boards
+board_n_moves['125'] = [39, 39] # random 39 discs 10000000 boards
 
 board_n_moves['127'] = [41, 41] # random 41 discs 10000000 boards
 board_n_moves['128'] = [42, 42] # random 42 discs 10000000 boards
