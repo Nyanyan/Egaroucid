@@ -44,7 +44,7 @@ class Thread_pool {
         std::unique_ptr<std::thread[]> threads;
         std::condition_variable condition;
         std::unordered_map<thread_id_t, int> max_thread_size;
-        std::unordered_map<thread_id_t, int> n_using_thread;
+        std::unordered_map<thread_id_t, std::atomic<int>> n_using_thread;
         //std::atomic<int> n_using_tasks;
 
     public:
@@ -158,9 +158,6 @@ class Thread_pool {
             });
             auto future = task->get_future();
             *pushed = push_task(THREAD_ID_NONE, [task]() {(*task)();});
-            // if (*pushed) {
-            //     ++n_using_thread[THREAD_ID_NONE];
-            // }
             return future;
         }
 
@@ -179,10 +176,6 @@ class Thread_pool {
         });
         auto future = task->get_future();
         *pushed = push_task(id, [task]() {(*task)();});
-        if (*pushed && id != THREAD_ID_NONE) {
-        //if (*pushed) {
-            ++n_using_thread[id];
-        }
         return future;
     }
 
@@ -212,6 +205,9 @@ class Thread_pool {
                         tasks.push(std::make_pair(id, std::function<void()>(task)));
                         --n_idle;
                         condition.notify_one();
+                        if (id != THREAD_ID_NONE) {
+                            ++n_using_thread[id];
+                        }
                     }
                 }
             }
@@ -235,7 +231,6 @@ class Thread_pool {
                 }
                 task();
                 if (id != THREAD_ID_NONE) {
-                    std::lock_guard<std::mutex> lock(mtx);
                     --n_using_thread[id];
                 }
             }
