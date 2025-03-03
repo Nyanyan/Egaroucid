@@ -151,6 +151,9 @@ class Thread_pool {
             });
             auto future = task->get_future();
             *pushed = push_task(THREAD_ID_NONE, [task]() {(*task)();});
+            // if (*pushed) {
+            //     ++n_using_thread[THREAD_ID_NONE];
+            // }
             return future;
         }
 
@@ -170,6 +173,7 @@ class Thread_pool {
         auto future = task->get_future();
         *pushed = push_task(id, [task]() {(*task)();});
         if (*pushed && id != THREAD_ID_NONE) {
+        //if (*pushed) {
             ++n_using_thread[id];
         }
         return future;
