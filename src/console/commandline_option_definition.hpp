@@ -12,10 +12,12 @@
 #include <string>
 #include <vector>
 
+#define N_COMMANDLINE_OPTIONS_BASE 30
+
 #ifdef INCLUDE_GGS
-    #define N_COMMANDLINE_OPTIONS 31
+    #define N_COMMANDLINE_OPTIONS (N_COMMANDLINE_OPTIONS_BASE + 2)
 #else
-    #define N_COMMANDLINE_OPTIONS 30
+    #define N_COMMANDLINE_OPTIONS N_COMMANDLINE_OPTIONS_BASE
 #endif
 
 #define ID_NONE -1
@@ -53,7 +55,8 @@
 #define ID_SOLVE_RANDOM 29
 
 #ifdef INCLUDE_GGS
-    #define ID_GGS (N_COMMANDLINE_OPTIONS - 1)
+    #define ID_GGS N_COMMANDLINE_OPTIONS_BASE
+    #define ID_GGS_LOGFILE (N_COMMANDLINE_OPTIONS_BASE + 1)
 #endif
 
 struct Commandline_option_info{
@@ -101,5 +104,6 @@ const Commandline_option_info commandline_option_data[N_COMMANDLINE_OPTIONS] = {
     {ID_SOLVE_RANDOM,       {"-sr", "-solverandom"},                            2, "<n> <m",            "Solve <n> boards (play randomly first <m> moves)"},
 #ifdef INCLUDE_GGS
     {ID_GGS,                {"-ggs"},                                           2, "<username> <password>", "Use GGS (Generic Game Server) mode"},
+    {ID_GGS_LOGFILE,        {"-ggslogfile"},                                    1, "<file>",            "file for GGS client log"},
 #endif
 };

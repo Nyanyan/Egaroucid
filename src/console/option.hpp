@@ -44,6 +44,8 @@ struct Options {
     bool ggs;
     std::string ggs_username;
     std::string ggs_password;
+    bool ggs_log_to_file;
+    std::string ggs_log_file;
 #endif
 };
 
@@ -195,6 +197,17 @@ Options get_options(std::vector<Commandline_option> commandline_options, std::st
             } catch (const std::out_of_range& e) {
                 std::cerr << "[ERROR] ggs argument out of range" << std::endl;
             }
+        }
+    }
+    res.ggs_log_to_file = find_commandline_option(commandline_options, ID_GGS_LOGFILE);
+    if (res.ggs_log_to_file) {
+        std::vector<std::string> arg = get_commandline_option_arg(commandline_options, ID_GGS_LOGFILE);
+        try {
+            res.ggs_log_file = arg[0];
+        } catch (const std::invalid_argument& e) {
+            std::cerr << "[ERROR] invalid ggs log file" << std::endl;
+        } catch (const std::out_of_range& e) {
+            std::cerr << "[ERROR] ggs log file out of range" << std::endl;
         }
     }
 #endif
