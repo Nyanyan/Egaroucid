@@ -359,7 +359,9 @@ Search_result ggs_search(GGS_Board ggs_board, Options *options, thread_id_t thre
         if (remaining_time_msec > 6000) {
             remaining_time_msec -= 5000;
         }
-        std::cerr << "Egaroucid thinking... remaining " << remaining_time_msec << " ms" << std::endl;
+        // std::cerr << "Egaroucid thinking... remaining " << remaining_time_msec << " ms" << std::endl;
+        // std::string msg = "Egaroucid thinking... remaining " + std::to_string(remaining_time_msec) + " ms";
+        // ggs_print_info(msg);
         search_result = ai_time_limit(ggs_board.board, true, 0, true, options->show_log, remaining_time_msec, thread_id, searching);
     } else { // pass
         search_result.policy = MOVE_PASS;
@@ -507,6 +509,7 @@ void ggs_client(Options *options) {
                     if (ggs_is_match_start(os_info, options->ggs_username)) {
                         ggs_print_info("match start!");
                         match_playing = true;
+                        playing_same_board = true;
                         for (int i = 0; i < 2; ++i) {
                             ai_searchings[i] = false;
                             ponder_searchings[i] = false;
@@ -535,13 +538,13 @@ void ggs_client(Options *options) {
                                 if (ggs_board.is_synchro) { // synchro game
                                     playing_synchro_game = true;
                                     int n_discs = ggs_board.board.n_discs();
-                                    if (ggs_boards[0][n_discs].board == ggs_boards[1][n_discs].board || ggs_boards_n_discs[ggs_board.synchro_id] > ggs_boards_n_discs[ggs_board.synchro_id ^ 1]) {
-                                        std::string msg = "synchro playing same board or opponent has not played " + ggs_board.board.to_str();
-                                        ggs_print_info(msg);
+                                    if (playing_same_board && ggs_boards[0][n_discs].board == ggs_boards[1][n_discs].board || ggs_boards_n_discs[ggs_board.synchro_id] > ggs_boards_n_discs[ggs_board.synchro_id ^ 1]) {
+                                        // std::string msg = "synchro playing same board or opponent has not played " + ggs_board.board.to_str();
+                                        // ggs_print_info(msg);
                                         playing_same_board = true;
                                     } else {
-                                        std::string msg = "synchro game separated " + ggs_board.board.to_str();
-                                        ggs_print_info(msg);
+                                        // std::string msg = "synchro game separated " + ggs_board.board.to_str();
+                                        // ggs_print_info(msg);
                                         playing_same_board = false;
                                     }
                                     if (need_to_move) { // Egaroucid should move
@@ -549,9 +552,13 @@ void ggs_client(Options *options) {
                                         ai_searchings[ggs_board.synchro_id] = true;
                                         ggs_boards_searching[ggs_board.synchro_id] = ggs_board;
                                         ai_futures[ggs_board.synchro_id] = std::async(std::launch::async, ggs_search, ggs_board, options, ggs_board.synchro_id, &ai_searchings[ggs_board.synchro_id]); // set search
+                                        std::string msg = "Egaroucid thinking... " + ggs_board.board.to_str();
+                                        ggs_print_info(msg);
                                     } else { // Opponent's move
                                         ponder_searchings[ggs_board.synchro_id] = true;
                                         ponder_futures[ggs_board.synchro_id] = std::async(std::launch::async, ai_ponder, ggs_board.board, options->show_log, ggs_board.synchro_id, &ponder_searchings[ggs_board.synchro_id]); // set ponder
+                                        std::string msg = "Egaroucid pondering... " + ggs_board.board.to_str();
+                                        ggs_print_info(msg);
                                     }
                                 } else { // non-synchro game
                                     playing_synchro_game = false;
