@@ -403,8 +403,15 @@ void ggs_client(Options *options) {
     GGS_Board ggs_boards[2][HW2];
     int ggs_boards_n_discs[2] = {0, 0};
     bool match_playing = false;
+    int thread_sizes[2];
+    int thread_sizes_before[2];
+    for (int i = 0; i < 2; ++i) {
+        thread_sizes[i] = 0;
+    }
+    bool playing_synchro_game = false;
+    bool playing_same_board = true;
     while (true) {
-        std::cerr << "ai " << ai_searchings[0] << " " << ai_searchings[1] << "  ponder " << ponder_searchings[0] << " " << ponder_searchings[1] << "  thread size " << thread_pool.get_max_thread_size(0) << " " << thread_pool.get_max_thread_size(1) << "  n_using " << thread_pool.get_n_using_thread(0) << " " << thread_pool.get_n_using_thread(1) << std::endl;
+        std::cerr << "ai " << ai_searchings[0] << " " << ai_searchings[1] << "  ponder " << ponder_searchings[0] << " " << ponder_searchings[1] << "  thread size " << thread_sizes[0] << " " << thread_sizes[1] << "  n_using " << thread_pool.get_n_using_thread(0) << " " << thread_pool.get_n_using_thread(1) << std::endl;
         // check user input
         if (user_input_f.valid()) {
             if (user_input_f.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
@@ -436,13 +443,9 @@ void ggs_client(Options *options) {
         if (ggs_message_f.valid()) {
             if (ggs_message_f.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
                 server_replies = ggs_message_f.get();
-                // std::cerr << "server_replies.size() " << server_replies.size() << std::endl;
-                // for (std::string server_reply: server_replies) {
-                //     std::cerr << server_reply << std::endl;
-                // }
             }
         } else {
-            ggs_message_f = std::async(std::launch::async, ggs_receive_message, &sock);
+            ggs_message_f = std::async(std::launch::async, ggs_receive_message, &sock); // ask ggs message
         }
         if (server_replies.size()) {
             // set board info
@@ -489,6 +492,7 @@ void ggs_client(Options *options) {
                             ai_searchings[i] = false;
                             ponder_searchings[i] = false;
                         }
+                        transposition_table.init();
                     }
                     // processing board
                     if (ggs_is_board_info(os_info)) {
@@ -500,41 +504,26 @@ void ggs_client(Options *options) {
                                     (ggs_board.player_black == options->ggs_username && ggs_board.player_to_move == BLACK) || 
                                     (ggs_board.player_white == options->ggs_username && ggs_board.player_to_move == WHITE);
                                 if (ggs_board.is_synchro) { // synchro game
+                                    playing_synchro_game = true;
                                     int n_discs = ggs_board.board.n_discs();
                                     if (ggs_boards[0][n_discs].board == ggs_boards[1][n_discs].board || ggs_boards_n_discs[ggs_board.synchro_id] > ggs_boards_n_discs[ggs_board.synchro_id ^ 1]) {
                                         std::cerr << "synchro playing same board or opponent has not played " << ggs_board.board.to_str() << std::endl;
-                                        int max_thread_size = thread_pool.size();
-                                        std::cerr << "max thread size " << max_thread_size << std::endl;
-                                        for (int i = 0; i < 2; ++i) {
-                                            thread_pool.set_max_thread_size(i, max_thread_size);
-                                        }
-                                        if (need_to_move) { // Egaroucid should move
-                                            ggs_terminate_ponder(ponder_futures, ponder_searchings, ggs_board.synchro_id);
-                                            ai_searchings[ggs_board.synchro_id] = true;
-                                            ggs_boards_searching[ggs_board.synchro_id] = ggs_board;
-                                            ai_futures[ggs_board.synchro_id] = std::async(std::launch::async, ggs_search, ggs_board, options, ggs_board.synchro_id, &ai_searchings[ggs_board.synchro_id]); // set search
-                                        } else { // Opponent's move
-                                            ponder_searchings[ggs_board.synchro_id] = true;
-                                            ponder_futures[ggs_board.synchro_id] = std::async(std::launch::async, ai_ponder, ggs_board.board, options->show_log, ggs_board.synchro_id, &ponder_searchings[ggs_board.synchro_id]); // set ponder
-                                        }
+                                        playing_same_board = true;
                                     } else {
                                         std::cerr << "synchro game separated " << ggs_board.board.to_str() << std::endl;
-                                        int max_thread_size = thread_pool.size() / 2;
-                                        std::cerr << "max thread size " << max_thread_size << std::endl;
-                                        for (int i = 0; i < 2; ++i) {
-                                            thread_pool.set_max_thread_size(i, max_thread_size);
-                                        }
-                                        if (need_to_move) { // Egaroucid should move
-                                            ggs_terminate_ponder(ponder_futures, ponder_searchings, ggs_board.synchro_id);
-                                            ai_searchings[ggs_board.synchro_id] = true;
-                                            ggs_boards_searching[ggs_board.synchro_id] = ggs_board;
-                                            ai_futures[ggs_board.synchro_id] = std::async(std::launch::async, ggs_search, ggs_board, options, ggs_board.synchro_id, &ai_searchings[ggs_board.synchro_id]); // set search
-                                        } else { // Opponent's move
-                                            ponder_searchings[ggs_board.synchro_id] = true;
-                                            ponder_futures[ggs_board.synchro_id] = std::async(std::launch::async, ai_ponder, ggs_board.board, options->show_log, ggs_board.synchro_id, &ponder_searchings[ggs_board.synchro_id]); // set ponder
-                                        }
+                                        playing_same_board = false;
+                                    }
+                                    if (need_to_move) { // Egaroucid should move
+                                        ggs_terminate_ponder(ponder_futures, ponder_searchings, ggs_board.synchro_id);
+                                        ai_searchings[ggs_board.synchro_id] = true;
+                                        ggs_boards_searching[ggs_board.synchro_id] = ggs_board;
+                                        ai_futures[ggs_board.synchro_id] = std::async(std::launch::async, ggs_search, ggs_board, options, ggs_board.synchro_id, &ai_searchings[ggs_board.synchro_id]); // set search
+                                    } else { // Opponent's move
+                                        ponder_searchings[ggs_board.synchro_id] = true;
+                                        ponder_futures[ggs_board.synchro_id] = std::async(std::launch::async, ai_ponder, ggs_board.board, options->show_log, ggs_board.synchro_id, &ponder_searchings[ggs_board.synchro_id]); // set ponder
                                     }
                                 } else { // non-synchro game
+                                    playing_synchro_game = false;
                                     if (need_to_move) { // Egaroucid should move
                                         ggs_terminate_ponder(ponder_futures, ponder_searchings, GGS_NON_SYNCHRO_ID);
                                         ai_searchings[GGS_NON_SYNCHRO_ID] = true;
@@ -550,6 +539,57 @@ void ggs_client(Options *options) {
                     }
                 }
             }
+        }
+        // thread manager
+        thread_sizes_before[0] = thread_sizes[0];
+        thread_sizes_before[1] = thread_sizes[1];
+        if (playing_synchro_game) {
+            int full_threads = thread_pool.size();
+            int reduced_threads = thread_pool.size() / 2;
+            if (playing_same_board) {
+                if (ai_searchings[0]) { // 0 is searching
+                    if (ai_searchings[1]) { // 1 is searching
+                        // not occurs
+                    } else if (ponder_searchings[1]) { // 1 is pondering
+                        thread_sizes[0] = full_threads; // full threads for 0
+                        thread_sizes[1] = 0; // off 1's ponder
+                    } else { // 1 is waiting
+                        thread_sizes[0] = full_threads; // full threads for 0
+                        thread_sizes[1] = 0; // off 1
+                    }
+                } else if (ponder_searchings[0]) { // 0 is pondering
+                    if (ai_searchings[1]) { // 1 is searching
+                        thread_sizes[0] = 0; // off 0's ponder
+                        thread_sizes[1] = full_threads; // full threads for 1
+                    } else if (ponder_searchings[1]) { // 1 is pondering
+                        thread_sizes[0] = reduced_threads; // half & half
+                        thread_sizes[1] = reduced_threads; // half & half
+                    } else { // 1 is waiting
+                        thread_sizes[0] = full_threads; // full threads for 0
+                        thread_sizes[1] = 0; // off 1
+                    }
+                } else { // 0 is waiting
+                    thread_sizes[0] = 0; // off 0
+                    thread_sizes[1] = full_threads; // full threads for 1
+                }
+            } else {
+                thread_sizes[0] = reduced_threads; // half & half
+                thread_sizes[1] = reduced_threads; // half & half
+                for (int i = 0; i < 2; ++i) {
+                    if (!ai_searchings[i] && !ponder_searchings[i]) { // i is waiting
+                        thread_sizes[i ^ 1] = full_threads; // full threads for i ^ 1
+                    }
+                }
+            }
+        } else {
+            thread_sizes[GGS_NON_SYNCHRO_ID] = thread_pool.size(); // full threads for non-synchro game
+        }
+        // update thread size
+        if (thread_sizes[0] != thread_sizes_before[0]) {
+            thread_pool.set_max_thread_size(0, thread_sizes[0]);
+        }
+        if (thread_sizes[1] != thread_sizes_before[1]) {
+            thread_pool.set_max_thread_size(1, thread_sizes[1]);
         }
     }
 
