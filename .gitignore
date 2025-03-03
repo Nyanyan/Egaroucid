@@ -25,6 +25,7 @@ build_Egaroucid_for_Console
 Intermediate
 .vs
 *.vcxproj.user
+enc_temp_folde
 
 # Egaroucid user resources
 bin/appdata/setting.json
