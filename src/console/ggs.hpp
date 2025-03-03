@@ -528,7 +528,7 @@ void ggs_client(Options *options) {
                     }
                     // processing board
                     if (ggs_is_board_info(os_info)) {
-                        std::cout << "getting board info" << std::endl;
+                        //std::cout << "getting board info" << std::endl;
                         GGS_Board ggs_board = ggs_get_board(server_reply);
                         if (ggs_board.is_valid()) {
                             if (ggs_board.player_black == options->ggs_username || ggs_board.player_white == options->ggs_username) { // related to me
