@@ -460,6 +460,7 @@ void ggs_client(Options *options) {
                         if (ponder_futures[i].wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
                             ponder_futures[i].get();
                             ponder_searchings[i] = false;
+                            ggs_print_info("ponder end " + std::to_string(i));
                         }
                     }
                 }
@@ -520,6 +521,7 @@ void ggs_client(Options *options) {
                             ponder_searchings[i] = false;
                         }
                         transposition_table.init();
+                        ggs_print_info("clearned TT up");
                     }
                     // processing board
                     if (ggs_is_board_info(os_info)) {
