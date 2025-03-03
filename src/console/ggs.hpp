@@ -313,7 +313,7 @@ GGS_Board ggs_get_board(std::string str) {
     return res;
 }
 
-void ggs_play_move(GGS_Board &ggs_board, SOCKET &sock, Options *options) {
+void ggs_play_move(GGS_Board &ggs_board, SOCKET &sock, Options *options, thread_id_t thread_id) {
     if (ggs_board.board.get_legal()) {
         uint64_t remaining_time_msec = 0;
         if (ggs_board.player_to_move == BLACK) {
@@ -325,7 +325,7 @@ void ggs_play_move(GGS_Board &ggs_board, SOCKET &sock, Options *options) {
             remaining_time_msec -= 5000;
         }
         std::cerr << "Egaroucid thinking... remaining " << remaining_time_msec << " ms" << std::endl;
-        Search_result search_result = ai_time_limit(ggs_board.board, true, 0, true, options->show_log, remaining_time_msec);
+        Search_result search_result = ai_time_limit(ggs_board.board, true, 0, true, options->show_log, remaining_time_msec, thread_id);
         std::string ggs_move_cmd = "t /os play " + ggs_board.game_id + " " + idx_to_coord(search_result.policy) + "/" + std::to_string(search_result.value);
         ggs_send_message(sock, ggs_move_cmd + "\n");
     } else { // pass
@@ -409,6 +409,7 @@ void ggs_client(Options *options) {
                                     if (ggs_board.synchro_id == 0 || ggs_board.synchro_id == 1) {
                                         ggs_boards[ggs_board.synchro_id][n_discs] = ggs_board;
                                     }
+                                    /*
                                     if (ggs_boards[0][n_discs].board == ggs_boards[1][n_discs].board) {
                                         std::cerr << "synchro playing same board" << std::endl;
                                         if (need_to_move) { // Egaroucid should move
@@ -435,16 +436,34 @@ void ggs_client(Options *options) {
                                             ponder_future = std::async(std::launch::async, ai_ponder, ggs_board.board, options->show_log, &ponder_searching); // set ponder
                                         }
                                     }
+                                    */
+                                    std::cerr << "synchro game separated or opponent has not played" << std::endl;
+                                    int max_thred_size = thread_pool.size() / 2;
+                                    std::cerr << "max thread size for synchro id " << ggs_board.synchro_id << " " << max_thread_size << std::endl;
+                                    thread_pool.set_max_thread_size(ggs_board.synchro_id, max_thread_size);
+                                    // TBD
+                                    if (need_to_move) { // Egaroucid should move
+                                        ponder_searching = false; // terminate ponder
+                                        if (ponder_future.valid()) {
+                                            ponder_future.get();
+                                        }
+                                        //ggs_play_move(ggs_board, sock, options, ggs_board.synchro_id); // play move
+                                        ggs_play_move(ggs_board, sock, options, THREAD_ID_NONE); // play move
+                                    } else { // Opponent's move
+                                        ponder_searching = true;
+                                        ponder_future = std::async(std::launch::async, ai_ponder, ggs_board.board, options->show_log, (thread_id_t)ggs_board.synchro_id, &ponder_searching); // set ponder
+                                    }
+
                                 } else { // non-synchro game
                                     if (need_to_move) { // Egaroucid should move
                                         ponder_searching = false; // terminate ponder
                                         if (ponder_future.valid()) {
                                             ponder_future.get();
                                         }
-                                        ggs_play_move(ggs_board, sock, options); // play move
+                                        ggs_play_move(ggs_board, sock, options, THREAD_ID_NONE); // play move
                                     } else { // Opponent's move
                                         ponder_searching = true;
-                                        ponder_future = std::async(std::launch::async, ai_ponder, ggs_board.board, options->show_log, &ponder_searching); // set ponder
+                                        ponder_future = std::async(std::launch::async, ai_ponder, ggs_board.board, options->show_log, (thread_id_t)THREAD_ID_NONE, &ponder_searching); // set ponder
                                     }
                                 }
                             }

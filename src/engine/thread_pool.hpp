@@ -18,7 +18,7 @@
 #include <functional>
 #include <unordered_map>
 
-#define THREAD_ID_NONE -1
+#define THREAD_ID_NONE -999999999
 #define THREAD_SIZE_INF 999999999
 
 using thread_id_t = int;
@@ -108,6 +108,10 @@ class Thread_pool {
 
         int get_n_idle() const {
             return n_idle;
+        }
+
+        int get_max_thread_size(thread_id_t id) {
+            return max_thread_size[id];
         }
 
         /*

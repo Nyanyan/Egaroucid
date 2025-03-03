@@ -67,7 +67,7 @@ int main(int argc, char* argv[]) {
         if (options.gtp) {
             if (options.ponder) {
                 state.ponder_searching = true;
-                state.ponder_future = std::async(std::launch::async, ai_ponder, board.board, options.show_log, &state.ponder_searching);
+                state.ponder_future = std::async(std::launch::async, ai_ponder, board.board, options.show_log, THREAD_ID_NONE, &state.ponder_searching);
             }
             gtp_check_command(&board, &state, &options);
         }else {
@@ -80,7 +80,7 @@ int main(int argc, char* argv[]) {
                 if (options.ponder) {
                     if (board.board.n_discs() > 4) {
                         state.ponder_searching = true;
-                        state.ponder_future = std::async(std::launch::async, ai_ponder, board.board, options.show_log, &state.ponder_searching);
+                        state.ponder_future = std::async(std::launch::async, ai_ponder, board.board, options.show_log, THREAD_ID_NONE, &state.ponder_searching);
                     } //else {
                     //    transposition_table.reset_importance();
                     //}
