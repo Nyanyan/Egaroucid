@@ -198,6 +198,22 @@ std::string ggs_get_user_input() {
     return res;
 }
 
+bool ggs_is_match_start(std::string line) {
+    std::vector<std::string> words = split_by_space(line);
+    if (words.size() >= 3) {
+        return words[1] == "+" && words[2] == "match";
+    }
+    return false;
+}
+
+bool ggs_is_match_end(std::string line) {
+    std::vector<std::string> words = split_by_space(line);
+    if (words.size() >= 3) {
+        return words[1] == "-" && words[2] == "match";
+    }
+    return false;
+}
+
 bool ggs_is_board_info(std::string line) {
     std::vector<std::string> words = split_by_space(line);
     if (words.size() >= 2) {
@@ -386,7 +402,9 @@ void ggs_client(Options *options) {
     bool ponder_searchings[2] = {false, false};
     GGS_Board ggs_boards[2][HW2];
     int ggs_boards_n_discs[2] = {0, 0};
+    bool match_playing = false;
     while (true) {
+        std::cerr << "ai " << ai_searchings[0] << " " << ai_searchings[1] << "  ponder " << ponder_searchings[0] << " " << ponder_searchings[1] << "  thread size " << thread_pool.get_max_thread_size(0) << " " << thread_pool.get_max_thread_size(1) << std::endl;
         // check user input
         if (user_input_f.valid()) {
             if (user_input_f.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
@@ -400,13 +418,15 @@ void ggs_client(Options *options) {
             user_input_f = std::async(std::launch::async, ggs_get_user_input);
         }
         // check ai search & send move
-        if (ai_searching) {
+        if (match_playing) {
             for (int i = 0; i < 2; ++i) {
-                if (ai_futures[i].valid()) {
-                    if (ai_futures[i].wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
-                        Search_result search_result = ai_futures[i].get();
-                        ai_searchings[i] = false;
-                        ggs_send_move(ggs_boards_searching[i], sock, search_result);
+                if (ai_searchings[i]) {
+                    if (ai_futures[i].valid()) {
+                        if (ai_futures[i].wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
+                            Search_result search_result = ai_futures[i].get();
+                            ai_searchings[i] = false;
+                            ggs_send_move(ggs_boards_searching[i], sock, search_result);
+                        }
                     }
                 }
             }
@@ -451,6 +471,24 @@ void ggs_client(Options *options) {
                     std::string os_info = ggs_get_os_info(server_reply);
                     if (os_info.size()) {
                         std::cout << "os_info " << os_info << std::endl;
+                    }
+                    // match start
+                    if (ggs_is_match_start(os_info)) {
+                        std::cerr << "match start!" << std::endl;
+                        match_playing = true;
+                        for (int i = 0; i < 2; ++i) {
+                            ai_searchings[i] = false;
+                            ponder_searchings[i] = false;
+                        }
+                    }
+                    // match end
+                    if (ggs_is_match_end(os_info)) {
+                        std::cerr << "match end!" << std::endl;
+                        match_playing = false;
+                        for (int i = 0; i < 2; ++i) {
+                            ai_searchings[i] = false;
+                            ponder_searchings[i] = false;
+                        }
                     }
                     // processing board
                     if (ggs_is_board_info(os_info)) {
