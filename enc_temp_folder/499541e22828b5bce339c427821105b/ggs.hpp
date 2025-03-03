@@ -17,8 +17,6 @@
 #define GGS_READY "READY"
 #define GGS_REPLY_HEADER "GGS> "
 
-#define GGS_NON_SYNCHRO_ID 0
-
 struct GGS_Board {
     std::string game_id;
     bool is_synchro;
@@ -315,7 +313,7 @@ GGS_Board ggs_get_board(std::string str) {
     return res;
 }
 
-Search_result ggs_search(GGS_Board ggs_board, Options *options, thread_id_t thread_id, bool *searching) {
+Search_result ggs_search(GGS_Board ggs_board, Options *options, thread_id_t thread_id) {
     Search_result search_result;
     if (ggs_board.board.get_legal()) {
         uint64_t remaining_time_msec = 0;
@@ -328,7 +326,7 @@ Search_result ggs_search(GGS_Board ggs_board, Options *options, thread_id_t thre
             remaining_time_msec -= 5000;
         }
         std::cerr << "Egaroucid thinking... remaining " << remaining_time_msec << " ms" << std::endl;
-        search_result = ai_time_limit(ggs_board.board, true, 0, true, options->show_log, remaining_time_msec, thread_id, searching);
+        search_result = ai_time_limit(ggs_board.board, true, 0, true, options->show_log, remaining_time_msec, thread_id);
     } else { // pass
         search_result.policy = MOVE_PASS;
     }
@@ -372,11 +370,11 @@ void ggs_client(Options *options) {
     
     std::future<std::string> user_input_f;
     std::future<std::vector<std::string>> ggs_message_f;
-    std::future<Search_result> ai_futures[2];
-    bool ai_searchings[2] = {false, false};
-    GGS_Board ggs_boards_searching[2];
-    std::future<std::vector<Ponder_elem>> ponder_futures[2];
-    bool ponder_searchings[2] = {false, false};
+    std::future<Search_result> ai_future;
+    bool ai_searching = false;
+    GGS_Board ggs_board_searching;
+    std::future<std::vector<Ponder_elem>> ponder_future;
+    bool ponder_searching = false;
     GGS_Board ggs_boards[2][HW2];
     int ggs_boards_n_discs[2] = {0, 0};
     while (true) {
@@ -394,13 +392,11 @@ void ggs_client(Options *options) {
         }
         // check ai search & send move
         if (ai_searching) {
-            for (int i = 0; i < 2; ++i) {
-                if (ai_futures[i].valid()) {
-                    if (ai_futures[i].wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
-                        Search_result search_result = ai_futures[i].get();
-                        ai_searchings[i] = false;
-                        ggs_send_move(ggs_boards_searching[i], sock, search_result);
-                    }
+            if (ai_future.valid()) {
+                if (ai_future.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
+                    Search_result search_result = ai_future.get();
+                    ai_searching = false;
+                    ggs_send_move(ggs_board_searching, sock, search_result);
                 }
             }
         }
@@ -457,50 +453,50 @@ void ggs_client(Options *options) {
                                 if (ggs_board.is_synchro) { // synchro game
                                     int n_discs = ggs_board.board.n_discs();
                                     if (ggs_boards[0][n_discs].board == ggs_boards[1][n_discs].board || ggs_boards_n_discs[ggs_board.synchro_id] > ggs_boards_n_discs[ggs_board.synchro_id ^ 1]) {
-                                        std::cerr << "synchro playing same board or opponent has not played " << ggs_board.board.to_str() << std::endl;
+                                        std::cerr << "synchro playing same board" << std::endl;
                                         if (need_to_move) { // Egaroucid should move
-                                            ponder_searchings[ggs_board.synchro_id] = false; // terminate ponder
-                                            if (ponder_futures[ggs_board.synchro_id].valid()) {
-                                                ponder_futures[ggs_board.synchro_id].get();
+                                            ponder_searching = false; // terminate ponder
+                                            if (ponder_future.valid()) {
+                                                ponder_future.get();
                                             }
-                                            ai_searchings[ggs_board.synchro_id] = true;
-                                            ggs_boards_searching[ggs_board.synchro_id] = ggs_board;
-                                            ai_futures[ggs_board.synchro_id] = std::async(std::launch::async, ggs_search, ggs_board, options, THREAD_ID_NONE, &ai_searchings[ggs_board.synchro_id]); // set search
+                                            ai_searching = true;
+                                            ggs_board_searching = ggs_board;
+                                            ai_future = std::async(std::launch::async, ggs_search, ggs_board, options, THREAD_ID_NONE); // set search
                                         } else { // Opponent's move
-                                            ponder_searchings[ggs_board.synchro_id] = true;
-                                            ponder_futures[ggs_board.synchro_id] = std::async(std::launch::async, ai_ponder, ggs_board.board, options->show_log, THREAD_ID_NONE, &ponder_searchings[ggs_board.synchro_id]); // set ponder
+                                            ponder_searching = true;
+                                            ponder_future = std::async(std::launch::async, ai_ponder, ggs_board.board, options->show_log, THREAD_ID_NONE, &ponder_searching); // set ponder
                                         }
                                     } else {
-                                        std::cerr << "synchro game separated " << ggs_board.board.to_str() << std::endl;
+                                        std::cerr << "synchro game separated or opponent has not played" << std::endl;
                                         int max_thread_size = thread_pool.size() / 2;
                                         std::cerr << "max thread size for synchro id " << ggs_board.synchro_id << " " << max_thread_size << std::endl;
                                         thread_pool.set_max_thread_size(ggs_board.synchro_id, max_thread_size);
                                         // TBD
                                         if (need_to_move) { // Egaroucid should move
-                                            ponder_searchings[ggs_board.synchro_id] = false; // terminate ponder
-                                            if (ponder_futures[ggs_board.synchro_id].valid()) {
-                                                ponder_futures[ggs_board.synchro_id].get();
+                                            ponder_searching = false; // terminate ponder
+                                            if (ponder_future.valid()) {
+                                                ponder_future.get();
                                             }
-                                            ai_searchings[ggs_board.synchro_id] = true;
-                                            ggs_boards_searching[ggs_board.synchro_id] = ggs_board;
-                                            ai_futures[ggs_board.synchro_id] = std::async(std::launch::async, ggs_search, ggs_board, options, ggs_board.synchro_id, &ai_searchings[ggs_board.synchro_id]); // set search
+                                            ai_searching = true;
+                                            ggs_board_searching = ggs_board;
+                                            ai_future = std::async(std::launch::async, ggs_search, ggs_board, options, ggs_board.synchro_id); // set search
                                         } else { // Opponent's move
-                                            ponder_searchings[ggs_board.synchro_id] = true;
-                                            ponder_futures[ggs_board.synchro_id] = std::async(std::launch::async, ai_ponder, ggs_board.board, options->show_log, ggs_board.synchro_id, &ponder_searchings[ggs_board.synchro_id]); // set ponder
+                                            ponder_searching = true;
+                                            ponder_future = std::async(std::launch::async, ai_ponder, ggs_board.board, options->show_log, ggs_board.synchro_id, &ponder_searching); // set ponder
                                         }
                                     }
                                 } else { // non-synchro game
                                     if (need_to_move) { // Egaroucid should move
-                                        ponder_searchings[GGS_NON_SYNCHRO_ID] = false; // terminate ponder
-                                        if (ponder_futures[GGS_NON_SYNCHRO_ID].valid()) {
-                                            ponder_futures[GGS_NON_SYNCHRO_ID].get();
+                                        ponder_searching = false; // terminate ponder
+                                        if (ponder_future.valid()) {
+                                            ponder_future.get();
                                         }
-                                        ai_searchings[GGS_NON_SYNCHRO_ID] = true;
-                                        ggs_boards_searching[GGS_NON_SYNCHRO_ID] = ggs_board;
-                                        ai_futures[GGS_NON_SYNCHRO_ID] = std::async(std::launch::async, ggs_search, ggs_board, options, THREAD_ID_NONE, &ai_searchings[GGS_NON_SYNCHRO_ID]); // set search
+                                        ai_searching = true;
+                                        ggs_board_searching = ggs_board;
+                                        ai_future = std::async(std::launch::async, ggs_search, ggs_board, options, THREAD_ID_NONE); // set search
                                     } else { // Opponent's move
-                                        ponder_searchings[GGS_NON_SYNCHRO_ID] = true;
-                                        ponder_futures[GGS_NON_SYNCHRO_ID] = std::async(std::launch::async, ai_ponder, ggs_board.board, options->show_log, THREAD_ID_NONE, &ponder_searchings[GGS_NON_SYNCHRO_ID]); // set ponder
+                                        ponder_searching = true;
+                                        ponder_future = std::async(std::launch::async, ai_ponder, ggs_board.board, options->show_log, THREAD_ID_NONE, &ponder_searching); // set ponder
                                     }
                                 }
                             }

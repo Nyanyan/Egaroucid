@@ -224,7 +224,8 @@ Search_result go_noprint(Board_info *board, Options *options, State *state) {
         } else {
             remaining_time_msec = state->remaining_time_msec_white;
         }
-        result = ai_time_limit(board->board, true, 0, true, options->show_log, remaining_time_msec, THREAD_ID_NONE);
+        bool searching = true;
+        result = ai_time_limit(board->board, true, 0, true, options->show_log, remaining_time_msec, THREAD_ID_NONE, &searching);
     }
     /*
     double local_strategy[HW2];

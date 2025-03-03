@@ -699,7 +699,7 @@ Search_result ai_loss(Board board, int level, bool use_book, int book_acc_level,
     return search_results[myrandrange(0, (int)search_results.size())];
 }
 
-Search_result ai_time_limit(Board board, bool use_book, int book_acc_level, bool use_multi_thread, bool show_log, uint64_t remaining_time_msec, thread_id_t thread_id) {
+Search_result ai_time_limit(Board board, bool use_book, int book_acc_level, bool use_multi_thread, bool show_log, uint64_t remaining_time_msec, thread_id_t thread_id, bool *searching) {
     uint64_t time_limit = calc_time_limit_ply(board, remaining_time_msec, show_log);
     if (show_log) {
         std::cerr << "time limit " << time_limit << " remaining " << remaining_time_msec << std::endl;
@@ -837,11 +837,10 @@ Search_result ai_time_limit(Board board, bool use_book, int book_acc_level, bool
             std::cerr << "additional calculation elapsed " << elapsed << " reduced time limit " << time_limit << std::endl;
         }
     }
-    bool searching = true;
     if (show_log) {
         std::cerr << "ai_time_limit tl " << time_limit << std::endl;
     }
-    return ai_common(board, -SCORE_MAX, SCORE_MAX, MAX_LEVEL, use_book, book_acc_level, use_multi_thread, show_log, board.get_legal(), false, time_limit, thread_id, &searching);
+    return ai_common(board, -SCORE_MAX, SCORE_MAX, MAX_LEVEL, use_book, book_acc_level, use_multi_thread, show_log, board.get_legal(), false, time_limit, thread_id, searching);
 }
 
 /*
