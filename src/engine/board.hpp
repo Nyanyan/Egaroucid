@@ -501,6 +501,35 @@ class Board {
             return res;
         }
 
+        inline std::string to_str(int player_to_move) const {
+            std::string res;
+            uint64_t cell_bit = 1ULL << (HW2 - 1);
+            for (int i = 0; i < HW2; ++i) {
+                if (player & cell_bit) {
+                    if (player_to_move == BLACK) {
+                        res += "X";
+                    } else {
+                        res += "O";
+                    }
+                } else if (opponent & cell_bit) {
+                    if (player_to_move == BLACK) {
+                        res += "O";
+                    } else {
+                        res += "X";
+                    }
+                } else {
+                    res += "-";
+                }
+                cell_bit >>= 1;
+            }
+            if (player_to_move == BLACK) {
+                res += " X";
+            } else {
+                res += " O";
+            }
+            return res;
+        }
+
         inline bool from_str(std::string board_str) { // returns OK: true NG: false
             board_str.erase(std::remove_if(board_str.begin(), board_str.end(), ::isspace), board_str.end());
             if (board_str.length() != HW2 + 1) {

@@ -52,6 +52,23 @@ struct GGS_Board {
     }
 };
 
+struct GGS_Match {
+    std::string game_id;
+    std::string initial_board;
+    std::string transcript;
+    int result_black;
+    std::string player_black;
+    std::string player_white;
+    
+    void init() {
+        game_id = "";
+    }
+
+    bool is_initialized() {
+        return game_id == "";
+    }
+};
+
 std::vector<std::string> split_by_space(const std::string &str) {
     std::vector<std::string> tokens;
     std::istringstream iss(str);
@@ -333,9 +350,9 @@ GGS_Board ggs_get_board(std::string str) {
             }
 
             // last move
-            if (line.substr(0, 3) == "|  ") {
+            if (line.substr(0, 2) == "| ") {
                 if (words.size() >= 3) {
-                    if (words[2].size() >= 2) {
+                    if (words[1][words[1].size() - 1] == ':' && words[2].size() >= 2) {
                         res.last_move = get_coord_from_chars(words[2][0], words[2][1]);
                         continue;
                     }
@@ -447,7 +464,7 @@ void ggs_client(Options *options) {
     GGS_Board ggs_boards_searching[2];
     std::future<std::vector<Ponder_elem>> ponder_futures[2];
     bool ponder_searchings[2] = {false, false};
-    GGS_Board ggs_boards[2][HW2];
+    GGS_Board ggs_boards[2][HW2 + 1];
     int ggs_boards_n_discs[2] = {0, 0};
     bool match_playing = false;
     int thread_sizes[2];
@@ -457,6 +474,10 @@ void ggs_client(Options *options) {
     }
     bool playing_synchro_game = false;
     bool playing_same_board = true;
+    GGS_Match matches[2];
+    for (int i = 0; i < 2; ++i) {
+        matches[i].init();
+    }
     while (true) {
         // check user input
         if (user_input_f.valid()) {
@@ -507,26 +528,7 @@ void ggs_client(Options *options) {
             ggs_message_f = std::async(std::launch::async, ggs_receive_message, &sock, options); // ask ggs message
         }
         if (server_replies.size()) {
-            // set board info
-            for (std::string server_reply: server_replies) {
-                if (server_reply.size()) {
-                    std::string os_info = ggs_get_os_info(server_reply);
-                    if (ggs_is_board_info(os_info)) {
-                        GGS_Board ggs_board = ggs_get_board(server_reply);
-                        if (ggs_board.is_valid()) {
-                            if (ggs_board.player_black == options->ggs_username || ggs_board.player_white == options->ggs_username) { // related to me
-                                if (ggs_board.is_synchro) { // synchro game
-                                    int n_discs = ggs_board.board.n_discs();
-                                    ggs_boards[ggs_board.synchro_id][n_discs] = ggs_board;
-                                    ggs_boards_n_discs[ggs_board.synchro_id] = n_discs;
-                                    //std::cerr << "synchro game memo " << "n_discs " << ggs_board.board.n_discs() << " " << ggs_board.board.to_str() << std::endl;
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-            // processing
+            // match start
             for (std::string server_reply: server_replies) {
                 if (server_reply.size()) {
                     //std::cout << "see " << server_reply << std::endl;
@@ -543,6 +545,9 @@ void ggs_client(Options *options) {
                             ai_searchings[i] = false;
                             ponder_searchings[i] = false;
                         }
+                        for (int i = 0; i < 2; ++i) {
+                            matches[i].init();
+                        }
                     }
                     // match end
                     if (ggs_is_match_end(os_info, options->ggs_username)) {
@@ -552,9 +557,73 @@ void ggs_client(Options *options) {
                             ai_searchings[i] = false;
                             ponder_searchings[i] = false;
                         }
+                        if (options->ggs_game_log_to_file) {
+                            for (int i = 0; i < 2; ++i) {
+                                if (!matches[i].is_initialized()) {
+                                    std::string filename = options->ggs_game_log_dir + "/" + matches[i].game_id + ".txt";
+                                    std::ofstream ofs(filename, std::ios::app);
+                                    if (!ofs) {
+                                        ggs_print_info("Can't open gamelog file " + filename, options);
+                                    } else {
+                                        ofs << matches[i].game_id << std::endl;
+                                        ofs << "black: " << matches[i].player_black << std::endl;
+                                        ofs << "white: " << matches[i].player_white << std::endl;
+                                        ofs << "initial board: " << matches[i].initial_board << std::endl;
+                                        ofs << "transcript: " << matches[i].transcript << std::endl;
+                                        //ofs << "result: " << matches[i].result_black << std::endl;
+                                        ofs.close();
+                                    }
+                                }
+                            }
+                        }
                         transposition_table.init();
                         ggs_print_info("clearned TT up", options);
                     }
+                }
+            }
+            // set board info & update match
+            for (std::string server_reply: server_replies) {
+                if (server_reply.size()) {
+                    std::string os_info = ggs_get_os_info(server_reply);
+                    if (ggs_is_board_info(os_info)) {
+                        GGS_Board ggs_board = ggs_get_board(server_reply);
+                        if (ggs_board.is_valid()) {
+                            if (ggs_board.player_black == options->ggs_username || ggs_board.player_white == options->ggs_username) { // related to me
+                                ggs_print_info("ggs board synchro id " + std::to_string(ggs_board.synchro_id), options);
+                                // set board info
+                                if (ggs_board.is_synchro) { // synchro game
+                                    int n_discs = ggs_board.board.n_discs();
+                                    ggs_boards[ggs_board.synchro_id][n_discs] = ggs_board;
+                                    ggs_boards_n_discs[ggs_board.synchro_id] = n_discs;
+                                    //std::cerr << "synchro game memo " << "n_discs " << ggs_board.board.n_discs() << " " << ggs_board.board.to_str() << std::endl;
+                                }
+                                // update match
+                                int match_idx = GGS_NON_SYNCHRO_ID;
+                                if (ggs_board.is_synchro) {
+                                    match_idx = ggs_board.synchro_id;
+                                }
+                                if (matches[match_idx].is_initialized()) {
+                                    matches[match_idx].game_id = ggs_board.game_id;
+                                    matches[match_idx].player_black = ggs_board.player_black;
+                                    matches[match_idx].player_white = ggs_board.player_white;
+                                    matches[match_idx].initial_board = ggs_board.board.to_str(ggs_board.player_to_move);
+                                    matches[match_idx].result_black = -99;
+                                    matches[match_idx].transcript = "";
+                                }
+                                ggs_print_info("match log received " + std::to_string(match_idx) + " " + std::to_string(ggs_board.last_move) + " " + idx_to_coord(ggs_board.last_move), options);
+                                if (is_valid_policy(ggs_board.last_move)) {
+                                    matches[match_idx].transcript += idx_to_coord(ggs_board.last_move);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            // board processing
+            for (std::string server_reply: server_replies) {
+                if (server_reply.size()) {
+                    //std::cout << "see " << server_reply << std::endl;
+                    std::string os_info = ggs_get_os_info(server_reply);
                     // processing board
                     if (ggs_is_board_info(os_info)) {
                         //std::cout << "getting board info" << std::endl;
@@ -578,27 +647,35 @@ void ggs_client(Options *options) {
                                     }
                                     if (need_to_move) { // Egaroucid should move
                                         ggs_terminate_ponder(ponder_futures, ponder_searchings, ggs_board.synchro_id);
-                                        ai_searchings[ggs_board.synchro_id] = true;
-                                        ggs_boards_searching[ggs_board.synchro_id] = ggs_board;
-                                        ai_futures[ggs_board.synchro_id] = std::async(std::launch::async, ggs_search, ggs_board, options, ggs_board.synchro_id, &ai_searchings[ggs_board.synchro_id]); // set search
-                                        std::string msg = "Egaroucid thinking... " + ggs_board.board.to_str();
-                                        ggs_print_info(msg, options);
+                                        if (!ggs_board.board.is_end()) {
+                                            ai_searchings[ggs_board.synchro_id] = true;
+                                            ggs_boards_searching[ggs_board.synchro_id] = ggs_board;
+                                            ai_futures[ggs_board.synchro_id] = std::async(std::launch::async, ggs_search, ggs_board, options, ggs_board.synchro_id, &ai_searchings[ggs_board.synchro_id]); // set search
+                                            std::string msg = "Egaroucid thinking... " + ggs_board.board.to_str();
+                                            ggs_print_info(msg, options);
+                                        }
                                     } else { // Opponent's move
-                                        ponder_searchings[ggs_board.synchro_id] = true;
-                                        ponder_futures[ggs_board.synchro_id] = std::async(std::launch::async, ai_ponder, ggs_board.board, options->show_log, ggs_board.synchro_id, &ponder_searchings[ggs_board.synchro_id]); // set ponder
-                                        std::string msg = "Egaroucid pondering... " + ggs_board.board.to_str();
-                                        ggs_print_info(msg, options);
+                                        if (!ggs_board.board.is_end()) {
+                                            ponder_searchings[ggs_board.synchro_id] = true;
+                                            ponder_futures[ggs_board.synchro_id] = std::async(std::launch::async, ai_ponder, ggs_board.board, options->show_log, ggs_board.synchro_id, &ponder_searchings[ggs_board.synchro_id]); // set ponder
+                                            std::string msg = "Egaroucid pondering... " + ggs_board.board.to_str();
+                                            ggs_print_info(msg, options);
+                                        }
                                     }
                                 } else { // non-synchro game
                                     playing_synchro_game = false;
                                     if (need_to_move) { // Egaroucid should move
                                         ggs_terminate_ponder(ponder_futures, ponder_searchings, GGS_NON_SYNCHRO_ID);
-                                        ai_searchings[GGS_NON_SYNCHRO_ID] = true;
-                                        ggs_boards_searching[GGS_NON_SYNCHRO_ID] = ggs_board;
-                                        ai_futures[GGS_NON_SYNCHRO_ID] = std::async(std::launch::async, ggs_search, ggs_board, options, THREAD_ID_NONE, &ai_searchings[GGS_NON_SYNCHRO_ID]); // set search
+                                        if (!ggs_board.board.is_end()) {
+                                            ai_searchings[GGS_NON_SYNCHRO_ID] = true;
+                                            ggs_boards_searching[GGS_NON_SYNCHRO_ID] = ggs_board;
+                                            ai_futures[GGS_NON_SYNCHRO_ID] = std::async(std::launch::async, ggs_search, ggs_board, options, THREAD_ID_NONE, &ai_searchings[GGS_NON_SYNCHRO_ID]); // set search
+                                        }
                                     } else { // Opponent's move
-                                        ponder_searchings[GGS_NON_SYNCHRO_ID] = true;
-                                        ponder_futures[GGS_NON_SYNCHRO_ID] = std::async(std::launch::async, ai_ponder, ggs_board.board, options->show_log, THREAD_ID_NONE, &ponder_searchings[GGS_NON_SYNCHRO_ID]); // set ponder
+                                        if (!ggs_board.board.is_end()) {
+                                            ponder_searchings[GGS_NON_SYNCHRO_ID] = true;
+                                            ponder_futures[GGS_NON_SYNCHRO_ID] = std::async(std::launch::async, ai_ponder, ggs_board.board, options->show_log, THREAD_ID_NONE, &ponder_searchings[GGS_NON_SYNCHRO_ID]); // set ponder
+                                        }
                                     }
                                 }
                             }

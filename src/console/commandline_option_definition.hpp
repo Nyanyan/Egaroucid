@@ -15,7 +15,7 @@
 #define N_COMMANDLINE_OPTIONS_BASE 30
 
 #ifdef INCLUDE_GGS
-    #define N_COMMANDLINE_OPTIONS (N_COMMANDLINE_OPTIONS_BASE + 2)
+    #define N_COMMANDLINE_OPTIONS (N_COMMANDLINE_OPTIONS_BASE + 3)
 #else
     #define N_COMMANDLINE_OPTIONS N_COMMANDLINE_OPTIONS_BASE
 #endif
@@ -57,6 +57,7 @@
 #ifdef INCLUDE_GGS
     #define ID_GGS N_COMMANDLINE_OPTIONS_BASE
     #define ID_GGS_LOGFILE (N_COMMANDLINE_OPTIONS_BASE + 1)
+    #define ID_GGS_GAMELOGDIR (N_COMMANDLINE_OPTIONS_BASE + 2)
 #endif
 
 struct Commandline_option_info{
@@ -105,5 +106,6 @@ const Commandline_option_info commandline_option_data[N_COMMANDLINE_OPTIONS] = {
 #ifdef INCLUDE_GGS
     {ID_GGS,                {"-ggs"},                                           2, "<username> <password>", "Use GGS (Generic Game Server) mode"},
     {ID_GGS_LOGFILE,        {"-ggslogfile"},                                    1, "<file>",            "file for GGS client log"},
+    {ID_GGS_GAMELOGDIR,     {"-ggsgamelogdir"},                                 1, "<dir>",             "directory for GGS game log"},
 #endif
 };

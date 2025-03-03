@@ -46,6 +46,8 @@ struct Options {
     std::string ggs_password;
     bool ggs_log_to_file;
     std::string ggs_log_file;
+    bool ggs_game_log_to_file;
+    std::string ggs_game_log_dir;
 #endif
 };
 
@@ -208,6 +210,17 @@ Options get_options(std::vector<Commandline_option> commandline_options, std::st
             std::cerr << "[ERROR] invalid ggs log file" << std::endl;
         } catch (const std::out_of_range& e) {
             std::cerr << "[ERROR] ggs log file out of range" << std::endl;
+        }
+    }
+    res.ggs_game_log_to_file = find_commandline_option(commandline_options, ID_GGS_GAMELOGDIR);
+    if (res.ggs_game_log_to_file) {
+        std::vector<std::string> arg = get_commandline_option_arg(commandline_options, ID_GGS_GAMELOGDIR);
+        try {
+            res.ggs_game_log_dir = arg[0];
+        } catch (const std::invalid_argument& e) {
+            std::cerr << "[ERROR] invalid ggs game log dir" << std::endl;
+        } catch (const std::out_of_range& e) {
+            std::cerr << "[ERROR] ggs game log dir out of range" << std::endl;
         }
     }
 #endif
