@@ -404,7 +404,7 @@ void ggs_client(Options *options) {
     int ggs_boards_n_discs[2] = {0, 0};
     bool match_playing = false;
     while (true) {
-        std::cerr << "ai " << ai_searchings[0] << " " << ai_searchings[1] << "  ponder " << ponder_searchings[0] << " " << ponder_searchings[1] << "  thread size " << thread_pool.get_max_thread_size(0) << " " << thread_pool.get_max_thread_size(1) << std::endl;
+        std::cerr << "ai " << ai_searchings[0] << " " << ai_searchings[1] << "  ponder " << ponder_searchings[0] << " " << ponder_searchings[1] << "  thread size " << thread_pool.get_max_thread_size(0) << " " << thread_pool.get_max_thread_size(1) << "  n_using " << thread_pool.get_n_using_thread(0) << " " << thread_pool.get_n_using_thread(1) << std::endl;
         // check user input
         if (user_input_f.valid()) {
             if (user_input_f.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
@@ -503,20 +503,27 @@ void ggs_client(Options *options) {
                                     int n_discs = ggs_board.board.n_discs();
                                     if (ggs_boards[0][n_discs].board == ggs_boards[1][n_discs].board || ggs_boards_n_discs[ggs_board.synchro_id] > ggs_boards_n_discs[ggs_board.synchro_id ^ 1]) {
                                         std::cerr << "synchro playing same board or opponent has not played " << ggs_board.board.to_str() << std::endl;
+                                        int max_thread_size = thread_pool.size();
+                                        std::cerr << "max thread size " << max_thread_size << std::endl;
+                                        for (int i = 0; i < 2; ++i) {
+                                            thread_pool.set_max_thread_size(i, max_thread_size);
+                                        }
                                         if (need_to_move) { // Egaroucid should move
                                             ggs_terminate_ponder(ponder_futures, ponder_searchings, ggs_board.synchro_id);
                                             ai_searchings[ggs_board.synchro_id] = true;
                                             ggs_boards_searching[ggs_board.synchro_id] = ggs_board;
-                                            ai_futures[ggs_board.synchro_id] = std::async(std::launch::async, ggs_search, ggs_board, options, THREAD_ID_NONE, &ai_searchings[ggs_board.synchro_id]); // set search
+                                            ai_futures[ggs_board.synchro_id] = std::async(std::launch::async, ggs_search, ggs_board, options, ggs_board.synchro_id, &ai_searchings[ggs_board.synchro_id]); // set search
                                         } else { // Opponent's move
                                             ponder_searchings[ggs_board.synchro_id] = true;
-                                            ponder_futures[ggs_board.synchro_id] = std::async(std::launch::async, ai_ponder, ggs_board.board, options->show_log, THREAD_ID_NONE, &ponder_searchings[ggs_board.synchro_id]); // set ponder
+                                            ponder_futures[ggs_board.synchro_id] = std::async(std::launch::async, ai_ponder, ggs_board.board, options->show_log, ggs_board.synchro_id, &ponder_searchings[ggs_board.synchro_id]); // set ponder
                                         }
                                     } else {
                                         std::cerr << "synchro game separated " << ggs_board.board.to_str() << std::endl;
                                         int max_thread_size = thread_pool.size() / 2;
-                                        std::cerr << "max thread size for synchro id " << ggs_board.synchro_id << " " << max_thread_size << std::endl;
-                                        thread_pool.set_max_thread_size(ggs_board.synchro_id, max_thread_size);
+                                        std::cerr << "max thread size " << max_thread_size << std::endl;
+                                        for (int i = 0; i < 2; ++i) {
+                                            thread_pool.set_max_thread_size(i, max_thread_size);
+                                        }
                                         if (need_to_move) { // Egaroucid should move
                                             ggs_terminate_ponder(ponder_futures, ponder_searchings, ggs_board.synchro_id);
                                             ai_searchings[ggs_board.synchro_id] = true;

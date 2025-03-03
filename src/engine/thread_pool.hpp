@@ -79,8 +79,11 @@ class Thread_pool {
         }
 
         void set_max_thread_size(uint64_t id, int new_max_thread_size) {
+            std::lock_guard<std::mutex> lock(mtx);
             max_thread_size[id] = new_max_thread_size;
-            n_using_thread[id] = 0;
+            if (n_using_thread.find(id) == n_using_thread.end()) {
+                n_using_thread[id] = 0;
+            }
         }
 
         Thread_pool() {
@@ -112,6 +115,10 @@ class Thread_pool {
 
         int get_max_thread_size(thread_id_t id) {
             return max_thread_size[id];
+        }
+
+        int get_n_using_thread(thread_id_t id) {
+            return n_using_thread[id];
         }
 
         /*
