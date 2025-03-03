@@ -7,56 +7,50 @@
 #include <algorithm>
 #include <ios>
 #include <iomanip>
-#include "./../../engine/board.hpp"
-#include "./../../engine/util.hpp"
+#include "./../../engine/engine_all.hpp"
+//#include "./../../engine/util.hpp"
 
-/*
-    @brief array for calculating hash code for book
-*/
-size_t hash_rand_player_book[4][65536];
-size_t hash_rand_opponent_book[4][65536];
+size_t hash_rand_player_enumerate[4][65536];
+size_t hash_rand_opponent_enumerate[4][65536];
 
-/*
-    @brief initialize hash array for book randomly
-*/
-void book_hash_init_rand(){
+void enumerate_hash_init_rand(){
     int i, j;
     for (i = 0; i < 4; ++i){
         for (j = 0; j < 65536; ++j){
-            hash_rand_player_book[i][j] = 0;
-            while (pop_count_uint(hash_rand_player_book[i][j]) < 9)
-                hash_rand_player_book[i][j] = myrand_ull();
-            hash_rand_opponent_book[i][j] = 0;
-            while (pop_count_uint(hash_rand_opponent_book[i][j]) < 9)
-                hash_rand_opponent_book[i][j] = myrand_ull();
+            hash_rand_player_enumerate[i][j] = 0;
+            while (pop_count_uint(hash_rand_player_enumerate[i][j]) < 9)
+                hash_rand_player_enumerate[i][j] = myrand_ull();
+            hash_rand_opponent_enumerate[i][j] = 0;
+            while (pop_count_uint(hash_rand_opponent_enumerate[i][j]) < 9)
+                hash_rand_opponent_enumerate[i][j] = myrand_ull();
         }
     }
 }
 
 /*
-    @brief Hash function for book
+    @brief Hash function
 
     @param board                board
     @return hash code
 */
-struct Book_hash {
+struct Enumerate_hash {
     size_t operator()(Board board) const{
         const uint16_t *p = (uint16_t*)&board.player;
         const uint16_t *o = (uint16_t*)&board.opponent;
         return 
-            hash_rand_player_book[0][p[0]] ^ 
-            hash_rand_player_book[1][p[1]] ^ 
-            hash_rand_player_book[2][p[2]] ^ 
-            hash_rand_player_book[3][p[3]] ^ 
-            hash_rand_opponent_book[0][o[0]] ^ 
-            hash_rand_opponent_book[1][o[1]] ^ 
-            hash_rand_opponent_book[2][o[2]] ^ 
-            hash_rand_opponent_book[3][o[3]];
+            hash_rand_player_enumerate[0][p[0]] ^ 
+            hash_rand_player_enumerate[1][p[1]] ^ 
+            hash_rand_player_enumerate[2][p[2]] ^ 
+            hash_rand_player_enumerate[3][p[3]] ^ 
+            hash_rand_opponent_enumerate[0][o[0]] ^ 
+            hash_rand_opponent_enumerate[1][o[1]] ^ 
+            hash_rand_opponent_enumerate[2][o[2]] ^ 
+            hash_rand_opponent_enumerate[3][o[3]];
     }
 };
 
 std::unordered_set<uint64_t> all_silhouettes;
-std::unordered_set<Board, Book_hash> all_boards;
+std::unordered_set<Board, Enumerate_hash> all_boards;
 
 inline void first_update_representative_board(Board *res, Board *sym){
     uint64_t vp = vertical_mirror(sym->player);
@@ -80,19 +74,27 @@ inline void update_representative_board(Board *res, Board *sym){
 
 inline uint64_t get_representative_silhouette(uint64_t silhouette){
     uint64_t res = silhouette;
-    res = std::min(res, vertical_mirror(silhouette));
+    uint64_t mirrored = vertical_mirror(silhouette);
+    res = std::min(res, mirrored);
+    //res = std::min(res, vertical_mirror(silhouette));
     
     silhouette = black_line_mirror(silhouette);
     res = std::min(res, silhouette);
-    res = std::min(res, vertical_mirror(silhouette));
+    mirrored = vertical_mirror(silhouette);
+    res = std::min(res, mirrored);
+    //res = std::min(res, vertical_mirror(silhouette));
 
     silhouette = horizontal_mirror(silhouette);
     res = std::min(res, silhouette);
-    res = std::min(res, vertical_mirror(silhouette));
+    mirrored = vertical_mirror(silhouette);
+    res = std::min(res, mirrored);
+    //res = std::min(res, vertical_mirror(silhouette));
 
     silhouette = white_line_mirror(silhouette);
     res = std::min(res, silhouette);
-    res = std::min(res, vertical_mirror(silhouette));
+    mirrored = vertical_mirror(silhouette);
+    res = std::min(res, mirrored);
+    //res = std::min(res, vertical_mirror(silhouette));
 
     return res;
 
@@ -193,7 +195,7 @@ int main(int argc, char *argv[]){
 
     mobility_init();
     flip_init();
-    book_hash_init_rand();
+    enumerate_hash_init_rand();
 
     int n_discs = atoi(argv[1]);
 
