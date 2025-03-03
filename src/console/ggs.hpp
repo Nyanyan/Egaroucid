@@ -15,7 +15,9 @@
 #define GGS_URL "skatgame.net"
 #define GGS_PORT 5000
 #define GGS_READY "READY"
-#define GGS_REPLY_HEADER "GGS> "
+#define GGS_REPLY_HEADER "GGS RECV> "
+#define GGS_SEND_HEADER "GGS SEND> "
+#define GGS_INFO_HEADER "GGS INFO> "
 
 #define GGS_NON_SYNCHRO_ID 0
 
@@ -81,22 +83,32 @@ std::string remove_spaces(const std::string &str) {
     return result;
 }
 
-void ggs_print_cyan(std::string str) {
+void ggs_print_send(std::string str) { // cyan
     std::stringstream ss(str);
     std::string line;
     std::cout << "\033[36m";
+    while (std::getline(ss, line, '\n')) {
+        std::cout << GGS_SEND_HEADER << line << std::endl;
+    }
+    std::cout << "\033[0m";
+}
+
+void ggs_print_receive(std::string str) { // green
+    std::stringstream ss(str);
+    std::string line;
+    std::cout << "\033[32m";
     while (std::getline(ss, line, '\n')) {
         std::cout << GGS_REPLY_HEADER << line << std::endl;
     }
     std::cout << "\033[0m";
 }
 
-void ggs_print_green(std::string str) {
+void ggs_print_info(std::string str) { // yellow
     std::stringstream ss(str);
     std::string line;
-    std::cout << "\033[32m";
+    std::cout << "\033[33m";
     while (std::getline(ss, line, '\n')) {
-        std::cout << GGS_REPLY_HEADER << line << std::endl;
+        std::cout << GGS_INFO_HEADER << line << std::endl;
     }
     std::cout << "\033[0m";
 }
@@ -163,7 +175,7 @@ int ggs_send_message(SOCKET &sock, std::string msg) {
     if (send(sock, msg.c_str(), msg.length(), 0) < 0) {
         return 1;
     }
-    ggs_print_cyan(msg);
+    ggs_print_send(msg);
     return 0;
 }
 
@@ -176,7 +188,7 @@ std::vector<std::string> ggs_receive_message(SOCKET *sock) {
     } else {
         server_reply[recv_size] = '\0';
         res = split_by_delimiter(server_reply, GGS_READY);
-        ggs_print_green(server_reply);
+        ggs_print_receive(server_reply);
     }
     return res;
 }
@@ -198,18 +210,22 @@ std::string ggs_get_user_input() {
     return res;
 }
 
-bool ggs_is_match_start(std::string line) {
+bool ggs_is_match_start(std::string line, std::string username) {
     std::vector<std::string> words = split_by_space(line);
-    if (words.size() >= 3) {
-        return words[1] == "+" && words[2] == "match";
+    if (std::find(words.begin(), words.end(), username) != words.end()) {
+        if (words.size() >= 3) {
+            return words[1] == "+" && words[2] == "match";
+        }
     }
     return false;
 }
 
-bool ggs_is_match_end(std::string line) {
+bool ggs_is_match_end(std::string line, std::string username) {
     std::vector<std::string> words = split_by_space(line);
-    if (words.size() >= 3) {
-        return words[1] == "-" && words[2] == "match";
+    if (std::find(words.begin(), words.end(), username) != words.end()) {
+        if (words.size() >= 3) {
+            return words[1] == "-" && words[2] == "match";
+        }
     }
     return false;
 }
@@ -471,7 +487,7 @@ void ggs_client(Options *options) {
                                     int n_discs = ggs_board.board.n_discs();
                                     ggs_boards[ggs_board.synchro_id][n_discs] = ggs_board;
                                     ggs_boards_n_discs[ggs_board.synchro_id] = n_discs;
-                                    std::cerr << "synchro game memo " << "n_discs " << ggs_board.board.n_discs() << " " << ggs_board.board.to_str() << std::endl;
+                                    //std::cerr << "synchro game memo " << "n_discs " << ggs_board.board.n_discs() << " " << ggs_board.board.to_str() << std::endl;
                                 }
                             }
                         }
@@ -483,12 +499,12 @@ void ggs_client(Options *options) {
                 if (server_reply.size()) {
                     //std::cout << "see " << server_reply << std::endl;
                     std::string os_info = ggs_get_os_info(server_reply);
-                    if (os_info.size()) {
-                        std::cout << "os_info " << os_info << std::endl;
-                    }
+                    // if (os_info.size()) {
+                    //     std::cout << "os_info " << os_info << std::endl;
+                    // }
                     // match start
-                    if (ggs_is_match_start(os_info)) {
-                        std::cerr << "match start!" << std::endl;
+                    if (ggs_is_match_start(os_info, options->ggs_username)) {
+                        ggs_print_info("match start!");
                         match_playing = true;
                         for (int i = 0; i < 2; ++i) {
                             ai_searchings[i] = false;
@@ -496,8 +512,8 @@ void ggs_client(Options *options) {
                         }
                     }
                     // match end
-                    if (ggs_is_match_end(os_info)) {
-                        std::cerr << "match end!" << std::endl;
+                    if (ggs_is_match_end(os_info, options->ggs_username)) {
+                        ggs_print_info("match end!");
                         match_playing = false;
                         for (int i = 0; i < 2; ++i) {
                             ai_searchings[i] = false;
@@ -518,10 +534,12 @@ void ggs_client(Options *options) {
                                     playing_synchro_game = true;
                                     int n_discs = ggs_board.board.n_discs();
                                     if (ggs_boards[0][n_discs].board == ggs_boards[1][n_discs].board || ggs_boards_n_discs[ggs_board.synchro_id] > ggs_boards_n_discs[ggs_board.synchro_id ^ 1]) {
-                                        std::cerr << "synchro playing same board or opponent has not played " << ggs_board.board.to_str() << std::endl;
+                                        std::string msg = "synchro playing same board or opponent has not played " + ggs_board.board.to_str();
+                                        ggs_print_info(msg);
                                         playing_same_board = true;
                                     } else {
-                                        std::cerr << "synchro game separated " << ggs_board.board.to_str() << std::endl;
+                                        std::string msg = "synchro game separated " + ggs_board.board.to_str();
+                                        ggs_print_info(msg);
                                         playing_same_board = false;
                                     }
                                     if (need_to_move) { // Egaroucid should move
@@ -623,7 +641,8 @@ void ggs_client(Options *options) {
             thread_pool.set_max_thread_size(1, thread_sizes[1]);
         }
         if (thread_sizes[0] != thread_sizes_before[0] || thread_sizes[1] != thread_sizes_before[1]) {
-            std::cerr << "ai " << ai_searchings[0] << " " << ai_searchings[1] << "  ponder " << ponder_searchings[0] << " " << ponder_searchings[1] << "  thread size " << thread_sizes[0] << " " << thread_sizes[1] << std::endl;
+            std::string msg = "thread info synchro " + std::to_string(playing_synchro_game) + " same " + std::to_string(playing_same_board) + " ai " + std::to_string(ai_searchings[0]) + " " + std::to_string(ai_searchings[1]) + " ponder " + std::to_string(ponder_searchings[0]) + " " + std::to_string(ponder_searchings[1]) + " thread size " + std::to_string(thread_sizes[0]) + " " + std::to_string(thread_sizes[1]);
+            ggs_print_info(msg);
         }
     }
 
