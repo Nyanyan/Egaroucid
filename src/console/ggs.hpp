@@ -651,14 +651,14 @@ void ggs_client(Options *options) {
                                             ai_searchings[ggs_board.synchro_id] = true;
                                             ggs_boards_searching[ggs_board.synchro_id] = ggs_board;
                                             ai_futures[ggs_board.synchro_id] = std::async(std::launch::async, ggs_search, ggs_board, options, ggs_board.synchro_id, &ai_searchings[ggs_board.synchro_id]); // set search
-                                            std::string msg = "Egaroucid thinking... " + ggs_board.board.to_str();
+                                            std::string msg = "Egaroucid thinking... " + ggs_board.game_id + " " + ggs_board.board.to_str(ggs_board.player_to_move);
                                             ggs_print_info(msg, options);
                                         }
                                     } else { // Opponent's move
                                         if (!ggs_board.board.is_end()) {
                                             ponder_searchings[ggs_board.synchro_id] = true;
                                             ponder_futures[ggs_board.synchro_id] = std::async(std::launch::async, ai_ponder, ggs_board.board, options->show_log, ggs_board.synchro_id, &ponder_searchings[ggs_board.synchro_id]); // set ponder
-                                            std::string msg = "Egaroucid pondering... " + ggs_board.board.to_str();
+                                            std::string msg = "Egaroucid pondering... " + ggs_board.game_id + " " + ggs_board.board.to_str(ggs_board.player_to_move);
                                             ggs_print_info(msg, options);
                                         }
                                     }
