@@ -18,8 +18,10 @@
 #include <functional>
 #include <unordered_map>
 
-#define THREAD_TASK_ID_NONE 0
+#define THREAD_ID_NONE -1
 #define THREAD_SIZE_INF 999999999
+
+using thread_id_t = int;
 
 // Original code based on
 //  * <https://github.com/bshoshany/thread-pool>
@@ -38,11 +40,11 @@ class Thread_pool {
         int n_thread;
         //std::atomic<int> n_idle;
         int n_idle;
-        std::queue<std::pair<uint64_t, std::function<void()>>> tasks{};
+        std::queue<std::pair<thread_id_t, std::function<void()>>> tasks{};
         std::unique_ptr<std::thread[]> threads;
         std::condition_variable condition;
-        std::unordered_map<uint64_t, int> max_thread_size;
-        std::unordered_map<uint64_t, int> n_using_thread;
+        std::unordered_map<thread_id_t, int> max_thread_size;
+        std::unordered_map<thread_id_t, int> n_using_thread;
         //std::atomic<int> n_using_tasks;
 
     public:
@@ -82,12 +84,12 @@ class Thread_pool {
         }
 
         Thread_pool() {
-            set_max_thread_size(THREAD_TASK_ID_NONE, THREAD_SIZE_INF);
+            set_max_thread_size(THREAD_ID_NONE, THREAD_SIZE_INF);
             set_thread(0);
         }
 
         Thread_pool(int new_n_thread) {
-            set_max_thread_size(THREAD_TASK_ID_NONE, THREAD_SIZE_INF);
+            set_max_thread_size(THREAD_ID_NONE, THREAD_SIZE_INF);
             set_thread(new_n_thread);
         }
 
@@ -144,16 +146,16 @@ class Thread_pool {
                 return func(args...);
             });
             auto future = task->get_future();
-            *pushed = push_task(THREAD_TASK_ID_NONE, [task]() {(*task)();});
+            *pushed = push_task(THREAD_ID_NONE, [task]() {(*task)();});
             return future;
         }
 
-        #if ((defined(_MSVC_LANG) && _MSVC_LANG >= 201703L) || __cplusplus >= 201703L)
+#if ((defined(_MSVC_LANG) && _MSVC_LANG >= 201703L) || __cplusplus >= 201703L)
         template<typename F, typename... Args, typename R = std::invoke_result_t<std::decay_t<F>, std::decay_t<Args>...>>
 #else
         template<typename F, typename... Args, typename R = typename std::result_of<std::decay_t<F>(std::decay_t<Args>...)>::type>
 #endif
-    std::future<R> push(uint64_t id, bool *pushed, F &&func, const Args &&...args) {
+    std::future<R> push(thread_id_t id, bool *pushed, F &&func, const Args &&...args) {
         if (n_using_thread[id] >= max_thread_size[id]) {
             *pushed = false;
             return std::future<R>();
@@ -163,7 +165,7 @@ class Thread_pool {
         });
         auto future = task->get_future();
         *pushed = push_task(id, [task]() {(*task)();});
-        if (*pushed) {
+        if (*pushed && id != THREAD_ID_NONE) {
             ++n_using_thread[id];
         }
         return future;
@@ -182,7 +184,7 @@ class Thread_pool {
     private:
 
         template<typename F>
-        inline bool push_task(uint64_t id, const F &task) {
+        inline bool push_task(thread_id_t id, const F &task) {
             if (!running) {
                 throw std::runtime_error("Cannot schedule new task after shutdown.");
             }
@@ -202,7 +204,7 @@ class Thread_pool {
         }
 
         void worker() {
-            uint64_t id;
+            thread_id_t id;
             std::function<void()> task;
             for (;;) {
                 {
@@ -217,7 +219,7 @@ class Thread_pool {
                     tasks.pop();
                 }
                 task();
-                if (id != THREAD_TASK_ID_NONE) {
+                if (id != THREAD_ID_NONE) {
                     std::lock_guard<std::mutex> lock(mtx);
                     --n_using_thread[id];
                 }
