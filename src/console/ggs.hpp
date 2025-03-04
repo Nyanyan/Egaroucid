@@ -403,8 +403,8 @@ Search_result ggs_search(GGS_Board ggs_board, Options *options, thread_id_t thre
         } else {
             remaining_time_msec = ggs_board.remaining_seconds_white * 1000;
         }
-        if (remaining_time_msec > 10000) {
-            remaining_time_msec -= 10000;
+        if (remaining_time_msec > 5000) {
+            remaining_time_msec -= 5000;
         } else {
             remaining_time_msec = std::max<uint64_t>(remaining_time_msec * 0.1, 1ULL);
         }

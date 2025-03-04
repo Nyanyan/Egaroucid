@@ -383,13 +383,15 @@ void iterative_deepening_search_time_limit(Board board, int alpha, int beta, boo
                 if (show_log) {
                     std::cerr << "no endgame search here" << std::endl;
                 }
-                break;
-            }
+                //++main_depth;
+                ++main_mpc_level;
+                //break;
+            } else
 #endif
             if (main_depth < max_depth) {
                 main_depth = max_depth;
                 main_mpc_level = MPC_74_LEVEL;
-            } else{
+            } else {
                 if (main_mpc_level < MPC_100_LEVEL) {
                     ++main_mpc_level;
                 } else{
@@ -707,11 +709,11 @@ Search_result ai_time_limit(Board board, bool use_book, int book_acc_level, bool
         std::cerr << "time limit " << time_limit << " remaining " << remaining_time_msec << std::endl;
     }
     int n_empties = HW2 - board.n_discs();
-    if (time_limit > 30000ULL && n_empties >= 34) { // additional search
+    if (time_limit > 10000ULL && n_empties >= 34) { // additional search
         uint64_t strt = tim();
         bool need_request_more_time = false;
         bool get_values_searching = true;
-        uint64_t get_values_tl = 2000ULL;
+        uint64_t get_values_tl = 100ULL;
         if (show_log) {
             std::cerr << "getting values tl " << get_values_tl << std::endl;
         }
@@ -807,7 +809,7 @@ Search_result ai_time_limit(Board board, bool use_book, int book_acc_level, bool
                     }
                 }
                 */
-                uint64_t search_moves_tl = std::max<uint64_t>(20000ULL + get_values_tl, (uint64_t)(time_limit * std::min(0.7, 0.1 * n_good_moves)));
+                uint64_t search_moves_tl = std::max<uint64_t>(8000ULL + get_values_tl, (uint64_t)(time_limit * std::min(0.7, 0.1 * n_good_moves)));
                 std::vector<Ponder_elem> after_move_list = ai_search_moves(board, show_log, ponder_move_list, n_good_moves, search_moves_tl);
                 need_request_more_time = true;
 
