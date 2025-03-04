@@ -20,11 +20,6 @@
 #include <string>
 
 /*
-    @brief Special Option
-*/
-#define IS_GGS_TOURNAMENT false
-
-/*
     @brief Option
 */
 // use SIMD

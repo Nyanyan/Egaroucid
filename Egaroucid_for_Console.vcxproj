@@ -365,7 +365,7 @@
       <OmitFramePointers>true</OmitFramePointers>
       <EnableFiberSafeOptimizations>true</EnableFiberSafeOptimizations>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalOptions> /D INCLUDE_GGS %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions> /D INCLUDE_GGS /D IS_GGS_TOURNAMENT %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
