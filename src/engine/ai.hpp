@@ -29,6 +29,8 @@ constexpr int PONDER_ENDSEARCH_PRESEARCH_OFFSET_TIMELIMIT = 2;
 
 constexpr int  PONDER_START_SELFPLAY_DEPTH = 21;
 
+constexpr int AI_TL_EARLY_BREAK_THRESHOLD = 4;
+
 struct Lazy_SMP_task {
     uint_fast8_t mpc_level;
     int depth;
@@ -285,7 +287,7 @@ void iterative_deepening_search_time_limit(Board board, int alpha, int beta, boo
                 main_mpc_level == MPC_74_LEVEL && 
                 legal_without_bestmove != 0
             ) {
-                int nws_alpha = result->value - 6;
+                int nws_alpha = result->value - AI_TL_EARLY_BREAK_THRESHOLD;
                 if (nws_alpha >= -SCORE_MAX) {
                     Search nws_search(&board, main_mpc_level, use_multi_thread, false);
                     nws_search.thread_id = thread_id;
