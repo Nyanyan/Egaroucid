@@ -689,9 +689,10 @@ void ggs_client(Options *options) {
         thread_sizes_before[1] = thread_sizes[1];
         if (playing_synchro_game) {
             int full_threads = thread_pool.size();
-            int reduced_threads = thread_pool.size() * 2 / 3;
-            int prioritized_threads = thread_pool.size() * 3 / 4;
-            int non_prioritized_threads = full_threads - prioritized_threads;
+            int full_threads_enhanced = full_threads * 1.2;
+            int reduced_threads = full_threads_enhanced / 2;
+            int prioritized_threads = full_threads_enhanced * 0.7;
+            int non_prioritized_threads = full_threads_enhanced - prioritized_threads;
             if (playing_same_board) {
                 if (ai_searchings[0]) { // 0 is searching
                     if (ai_searchings[1]) { // 1 is searching
