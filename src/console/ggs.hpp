@@ -532,11 +532,7 @@ void ggs_client(Options *options) {
             // match start
             for (std::string server_reply: server_replies) {
                 if (server_reply.size()) {
-                    //std::cout << "see " << server_reply << std::endl;
                     std::string os_info = ggs_get_os_info(server_reply);
-                    // if (os_info.size()) {
-                    //     std::cout << "os_info " << os_info << std::endl;
-                    // }
                     // match start
                     if (ggs_is_match_start(os_info, options->ggs_username)) {
                         ggs_print_info("match start!", options);
@@ -549,36 +545,6 @@ void ggs_client(Options *options) {
                         for (int i = 0; i < 2; ++i) {
                             matches[i].init();
                         }
-                    }
-                    // match end
-                    if (ggs_is_match_end(os_info, options->ggs_username)) {
-                        ggs_print_info("match end!", options);
-                        match_playing = false;
-                        for (int i = 0; i < 2; ++i) {
-                            ai_searchings[i] = false;
-                            ponder_searchings[i] = false;
-                        }
-                        if (options->ggs_game_log_to_file) {
-                            for (int i = 0; i < 2; ++i) {
-                                if (!matches[i].is_initialized()) {
-                                    std::string filename = options->ggs_game_log_dir + "/" + matches[i].game_id + ".txt";
-                                    std::ofstream ofs(filename, std::ios::app);
-                                    if (!ofs) {
-                                        ggs_print_info("Can't open gamelog file " + filename, options);
-                                    } else {
-                                        ofs << matches[i].game_id << std::endl;
-                                        ofs << "black: " << matches[i].player_black << std::endl;
-                                        ofs << "white: " << matches[i].player_white << std::endl;
-                                        ofs << "initial board: " << matches[i].initial_board << std::endl;
-                                        ofs << "transcript: " << matches[i].transcript << std::endl;
-                                        //ofs << "result: " << matches[i].result_black << std::endl;
-                                        ofs.close();
-                                    }
-                                }
-                            }
-                        }
-                        transposition_table.init();
-                        ggs_print_info("clearned TT up", options);
                     }
                 }
             }
@@ -617,6 +583,42 @@ void ggs_client(Options *options) {
                                 }
                             }
                         }
+                    }
+                }
+            }
+            // match end
+            for (std::string server_reply: server_replies) {
+                if (server_reply.size()) {
+                    std::string os_info = ggs_get_os_info(server_reply);
+                    // match end
+                    if (ggs_is_match_end(os_info, options->ggs_username)) {
+                        ggs_print_info("match end!", options);
+                        match_playing = false;
+                        for (int i = 0; i < 2; ++i) {
+                            ai_searchings[i] = false;
+                            ponder_searchings[i] = false;
+                        }
+                        if (options->ggs_game_log_to_file) {
+                            for (int i = 0; i < 2; ++i) {
+                                if (!matches[i].is_initialized()) {
+                                    std::string filename = options->ggs_game_log_dir + "/" + matches[i].game_id + ".txt";
+                                    std::ofstream ofs(filename, std::ios::app);
+                                    if (!ofs) {
+                                        ggs_print_info("Can't open gamelog file " + filename, options);
+                                    } else {
+                                        ofs << matches[i].game_id << std::endl;
+                                        ofs << "black: " << matches[i].player_black << std::endl;
+                                        ofs << "white: " << matches[i].player_white << std::endl;
+                                        ofs << "initial board: " << matches[i].initial_board << std::endl;
+                                        ofs << "transcript: " << matches[i].transcript << std::endl;
+                                        //ofs << "result: " << matches[i].result_black << std::endl;
+                                        ofs.close();
+                                    }
+                                }
+                            }
+                        }
+                        transposition_table.init();
+                        ggs_print_info("clearned TT up", options);
                     }
                 }
             }

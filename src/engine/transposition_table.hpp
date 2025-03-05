@@ -607,7 +607,6 @@ class Transposition_table {
             if (n_registered >= n_registered_threshold && transposition_table_auto_reset_importance) {
                 std::lock_guard lock(mtx);
                 if (n_registered >= n_registered_threshold) {
-                    //std::cerr << "resetting transposition importance" << std::endl;
                     reset_importance_proc();
                 }
             }
@@ -908,6 +907,7 @@ class Transposition_table {
         }
 
         inline void reset_importance_proc() {
+            std::cerr << "resetting transposition importance" << std::endl;
             //std::cerr << "importance reset n_registered " << n_registered << " threshold " << n_registered_threshold << " table_size " << table_size << std::endl;
 #if TT_USE_STACK
             for (size_t i = 0; i < std::min(table_size, (size_t)TRANSPOSITION_TABLE_STACK_SIZE); ++i) {

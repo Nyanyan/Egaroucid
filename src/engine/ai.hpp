@@ -1265,7 +1265,7 @@ std::vector<Ponder_elem> ai_get_values(Board board, bool show_log, uint64_t time
     return move_list;
 }
 
-/*
+
 std::vector<Ponder_elem> ai_search_moves(Board board, bool show_log, std::vector<Ponder_elem> move_list, int n_good_moves, uint64_t time_limit, thread_id_t thread_id) {
     uint64_t strt = tim();
     if (show_log) {
@@ -1277,6 +1277,10 @@ std::vector<Ponder_elem> ai_search_moves(Board board, bool show_log, std::vector
     for (int i = 0; i < n_good_moves; ++i) {
         levels.emplace_back(initial_level);
     }
+    int fixed_level = 21;
+    std::vector<Clog_result> clogs;
+    std::future<std::pair<int, int>> search_result_future;
+    bool searching = true;
     while (tim() - strt < time_limit) {
         int min_level = INF;
         int selected_idx = -1;
@@ -1294,7 +1298,6 @@ std::vector<Ponder_elem> ai_search_moves(Board board, bool show_log, std::vector
         }
         Board n_board = board.copy();
         n_board.move_board(&move_list[selected_idx].flip);
-        //constexpr int loss_max = 1;
         Flip flip;
         std::vector<Board> n_boards;
         // search with noise
@@ -1306,12 +1309,12 @@ std::vector<Ponder_elem> ai_search_moves(Board board, bool show_log, std::vector
                 bool is_mid_search;
                 int depth;
                 uint_fast8_t mpc_level;
-                get_level(levels[selected_idx], n_board.n_discs() - 4, &is_mid_search, &depth, &mpc_level);
+                //get_level(levels[selected_idx], n_board.n_discs() - 4, &is_mid_search, &depth, &mpc_level);
+                get_level(fixed_level, n_board.n_discs() - 4, &is_mid_search, &depth, &mpc_level);
                 Search search(&n_board, mpc_level, true, false);
                 search.thread_id = thread_id;
-                std::vector<Clog_result> clogs;
-                bool searching = true;
-                std::future<std::pair<int, int>> search_result_future = std::async(std::launch::async, first_nega_scout, &search, -SCORE_MAX, SCORE_MAX, depth, !is_mid_search, clogs, tim(), &searching);
+                searching = true;
+                search_result_future = std::async(std::launch::async, first_nega_scout, &search, -SCORE_MAX, SCORE_MAX, depth, !is_mid_search, clogs, tim(), &searching);
                 //std::future<Search_result> search_result_future = std::async(std::launch::async, ai_loss_searching, n_board, levels[selected_idx], true, 0, true, false, loss_max, &searching);
                 //std::future<Search_result> search_result_future = std::async(std::launch::async, ai_searching_thread_id, n_board, levels[selected_idx], true, 0, true, false, thread_id, &searching);
                 if (search_result_future.wait_for(std::chrono::milliseconds(tl_this_search)) == std::future_status::ready) {
@@ -1339,11 +1342,8 @@ std::vector<Ponder_elem> ai_search_moves(Board board, bool show_log, std::vector
                 get_level(levels[selected_idx], n_boards[i].n_discs() - 4, &is_mid_search, &depth, &mpc_level);
                 Search search(&n_boards[i], mpc_level, true, false);
                 search.thread_id = thread_id;
-                std::vector<Clog_result> clogs;
-                bool searching = true;
-                std::future<std::pair<int, int>> search_result_future = std::async(std::launch::async, first_nega_scout, &search, -SCORE_MAX, SCORE_MAX, depth, !is_mid_search, clogs, tim(), &searching);
-                // bool searching = true;
-                // std::future<Search_result> search_result_future = std::async(std::launch::async, ai_searching_thread_id, n_boards[i], levels[selected_idx], true, 0, true, false, thread_id, &searching);
+                searching = true;
+                search_result_future = std::async(std::launch::async, first_nega_scout, &search, -SCORE_MAX, SCORE_MAX, depth, !is_mid_search, clogs, tim(), &searching);
                 if (search_result_future.wait_for(std::chrono::milliseconds(tl_this_search)) == std::future_status::ready) {
                     std::pair<int, int> search_result = search_result_future.get();
                     if (i == 0) {
@@ -1390,10 +1390,10 @@ std::vector<Ponder_elem> ai_search_moves(Board board, bool show_log, std::vector
     }
     return move_list;
 }
-*/
 
 
 
+/*
 std::vector<Ponder_elem> ai_search_moves(Board board, bool show_log, std::vector<Ponder_elem> move_list, int n_good_moves, uint64_t time_limit, thread_id_t thread_id) {
     uint64_t strt = tim();
     if (show_log) {
@@ -1474,3 +1474,4 @@ std::vector<Ponder_elem> ai_search_moves(Board board, bool show_log, std::vector
     }
     return move_list;
 }
+*/
