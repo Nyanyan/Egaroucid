@@ -31,8 +31,9 @@ constexpr int  PONDER_START_SELFPLAY_DEPTH = 21;
 
 constexpr int AI_TL_EARLY_BREAK_THRESHOLD = 4;
 
-
 constexpr double AI_TL_ADDITIONAL_SEARCH_THRESHOLD = 1.5;
+
+constexpr int AI_PONDER_MID_TO_END_OFFSET = 4;
 
 struct Lazy_SMP_task {
     uint_fast8_t mpc_level;
@@ -1135,11 +1136,16 @@ std::vector<Ponder_elem> ai_ponder(Board board, bool show_log, thread_id_t threa
         int max_depth = HW2 - n_board.n_discs();
         int new_depth = move_list[selected_idx].depth + 1;
         uint_fast8_t new_mpc_level = move_list[selected_idx].mpc_level;
-        if (new_depth > max_depth) {
+        if (move_list[selected_idx].depth + AI_PONDER_MID_TO_END_OFFSET >= max_depth && move_list[selected_idx].mpc_level < max_depth) {
             new_depth = max_depth;
-            ++new_mpc_level;
-        } else if (new_depth > max_depth - PONDER_ENDSEARCH_PRESEARCH_OFFSET_TIMELIMIT) {
-            new_depth = max_depth;
+            new_mpc_level = MPC_74_LEVEL;
+        } else {
+            if (new_depth > max_depth) {
+                new_depth = max_depth;
+                ++new_mpc_level;
+            } else if (new_depth > max_depth - PONDER_ENDSEARCH_PRESEARCH_OFFSET_TIMELIMIT) {
+                new_depth = max_depth;
+            }
         }
         bool new_is_end_search = (new_depth == max_depth);
         bool new_is_complete_search = new_is_end_search && new_mpc_level == MPC_100_LEVEL;
@@ -1470,7 +1476,10 @@ std::vector<Ponder_elem> ai_search_moves(Board board, bool show_log, std::vector
                 int level_depth;
                 uint_fast8_t level_mpc_level;
                 get_level(levels[selected_idx], n_boards[i].n_discs() - 4, &level_is_mid_search, &level_depth, &level_mpc_level);
-                int new_depth = std::max(move_list[selected_idx].depth + 1 - i, level_depth);
+                int new_depth = std::max(move_list[selected_idx].depth - i, level_depth);
+                if (i == 0) {
+                    new_depth = move_list[selected_idx].depth + 1;
+                }
                 uint_fast8_t new_mpc_level = MPC_74_LEVEL;
                 if (i == 0) {
                     new_mpc_level = move_list[i].mpc_level;
