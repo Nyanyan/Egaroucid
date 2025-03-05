@@ -1523,10 +1523,10 @@ std::vector<Ponder_elem> ai_search_moves(Board board, bool show_log, std::vector
         }
         ++levels[selected_idx];
     }
+    std::sort(move_list.begin(), move_list.end(), comp_get_values_elem);
     if (show_log) {
         std::cerr << "ai_search_moves searched in " << tim() - strt << " ms" << std::endl;
         std::cerr << "ai_search_moves board " << board.to_str() << std::endl;
-        std::sort(move_list.begin(), move_list.end(), comp_get_values_elem);
         for (int i = 0; i < n_good_moves; ++i) {
             std::cerr << "sm " << idx_to_coord(move_list[i].flip.pos) << " value " << std::fixed << std::setprecision(2) << move_list[i].value;
             std::cerr << " count " << move_list[i].count << " depth " << move_list[i].depth << "@" << SELECTIVITY_PERCENTAGE[move_list[i].mpc_level] << "%";
@@ -1606,10 +1606,10 @@ std::vector<Ponder_elem> ai_search_moves(Board board, bool show_log, std::vector
             v_future.get();
         }
     }
+    std::sort(move_list.begin(), move_list.end(), comp_get_values_elem);
     if (show_log) {
         std::cerr << "ai_search_moves searched in " << tim() - strt << " ms" << std::endl;
         std::cerr << "ai_search_moves board " << board.to_str() << std::endl;
-        std::sort(move_list.begin(), move_list.end(), comp_get_values_elem);
         for (int i = 0; i < n_good_moves; ++i) {
             std::cerr << "sm " << idx_to_coord(move_list[i].flip.pos) << " value " << std::fixed << std::setprecision(2) << move_list[i].value;
             std::cerr << " count " << move_list[i].count << " depth " << move_list[i].depth << "@" << SELECTIVITY_PERCENTAGE[move_list[i].mpc_level] << "%";
