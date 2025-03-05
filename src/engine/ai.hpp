@@ -31,6 +31,9 @@ constexpr int  PONDER_START_SELFPLAY_DEPTH = 21;
 
 constexpr int AI_TL_EARLY_BREAK_THRESHOLD = 4;
 
+
+constexpr double AI_TL_ADDITIONAL_SEARCH_THRESHOLD = 1.5;
+
 struct Lazy_SMP_task {
     uint_fast8_t mpc_level;
     int depth;
@@ -50,6 +53,7 @@ struct Ponder_elem {
 std::vector<Ponder_elem> ai_ponder(Board board, bool show_log, thread_id_t thread_id, bool *searching);
 std::vector<Ponder_elem> ai_get_values(Board board, bool show_log, uint64_t time_limit, thread_id_t thread_id);
 std::pair<int, int> ai_self_play_random(Board board_start, int mid_depth, bool show_log, bool use_multi_thread, bool *searching);
+std::vector<Ponder_elem> ai_align_move_levels(Board board, bool show_log, std::vector<Ponder_elem> move_list, int n_good_moves, uint64_t time_limit, thread_id_t thread_id);
 std::vector<Ponder_elem> ai_search_moves(Board board, bool show_log, std::vector<Ponder_elem> move_list, int n_good_moves, uint64_t time_limit, thread_id_t thread_id);
 Search_result ai_legal_window(Board board, int alpha, int beta, int level, bool use_book, int book_acc_level, bool use_multi_thread, bool show_log, uint64_t use_legal);
 
@@ -739,7 +743,7 @@ Search_result ai_time_limit(Board board, bool use_book, int book_acc_level, bool
             double best_value = ponder_move_list[0].value;
             int n_good_moves = 0;
             for (const Ponder_elem &elem: ponder_move_list) {
-                if (elem.value >= best_value - 1.5) {
+                if (elem.value >= best_value - AI_TL_ADDITIONAL_SEARCH_THRESHOLD) {
                     ++n_good_moves;
                 } else {
                     break; // because sorted
@@ -754,8 +758,32 @@ Search_result ai_time_limit(Board board, bool use_book, int book_acc_level, bool
                     std::cerr << std::endl;
                 }
                 uint64_t search_moves_tl = std::max<uint64_t>(8000ULL - get_values_tl, (uint64_t)((time_limit - get_values_tl) * std::min(0.7, 0.25 * n_good_moves)));
-                std::vector<Ponder_elem> after_move_list = ai_search_moves(board, show_log, ponder_move_list, n_good_moves, search_moves_tl, thread_id);
+                std::vector<Ponder_elem> after_move_list = ai_align_move_levels(board, show_log, ponder_move_list, n_good_moves, time_limit, thread_id);
                 need_request_more_time = true;
+
+                double new_best_value = after_move_list[0].value;
+                int new_n_good_moves = 0;
+                for (const Ponder_elem &elem: after_move_list) {
+                    if (elem.value >= best_value - AI_TL_ADDITIONAL_SEARCH_THRESHOLD) {
+                        ++new_n_good_moves;
+                    } else {
+                        break; // because sorted
+                    }
+                }
+                if (new_n_good_moves >= 2) {
+                    uint64_t elapsed = tim() - strt;
+                    if (elapsed < time_limit) {
+                        if (show_log) {
+                            std::cerr << "need to search good moves2 :";
+                            for (int i = 0; i < new_n_good_moves; ++i) {
+                                std::cerr << " " << idx_to_coord(after_move_list[i].flip.pos);
+                            }
+                            std::cerr << std::endl;
+                        }
+                        uint64_t new_search_moves_tl = search_moves_tl - elapsed;
+                        std::vector<Ponder_elem> after_move_list2 = ai_search_moves(board, show_log, after_move_list, new_n_good_moves, new_search_moves_tl, thread_id);
+                    }
+                }
             }
         }
         uint64_t elapsed = tim() - strt;
@@ -1070,10 +1098,6 @@ std::vector<Ponder_elem> ai_ponder(Board board, bool show_log, thread_id_t threa
     */
     int n_searched_all = 0;
     while (*searching) {
-        double max_value = -INF;
-        for (int i = 0; i < canput; ++i) {
-            max_value = std::max(max_value, move_list[i].value);
-        }
         int selected_idx = -1;
         double max_ucb = -INF - 1;
         for (int i = 0; i < canput; ++i) {
@@ -1086,7 +1110,7 @@ std::vector<Ponder_elem> ai_ponder(Board board, bool show_log, thread_id_t threa
                 ucb = -INF;
             } else {
                 //double depth_weight = (double)std::min(10, move_list[i].depth) / (double)std::min(10, max_depth);
-                ucb = -(double)(max_value - move_list[i].value) / (double)(HW2 * 2) + 0.5 * sqrt(log(2.0 * (double)n_searched_all) / (double)move_list[i].count);
+                ucb = move_list[i].value / (double)HW2 + 0.6 * sqrt(log(2.0 * (double)n_searched_all) / (double)move_list[i].count);
             }
             if (ucb > max_ucb) {
                 selected_idx = i;
@@ -1151,10 +1175,10 @@ std::vector<Ponder_elem> ai_ponder(Board board, bool show_log, thread_id_t threa
             ++n_searched_all;
         }
     }
+    std::sort(move_list.begin(), move_list.end(), comp_ponder_elem);
     if (show_log && n_searched_all) {
         std::cerr << "ponder loop " << n_searched_all << " in " << tim() - strt << " ms" << std::endl;
         std::cerr << "ponder board " << board.to_str() << std::endl;
-        std::sort(move_list.begin(), move_list.end(), comp_ponder_elem);
         for (int i = 0; i < canput; ++i) {
             std::cerr << "pd " << idx_to_coord(move_list[i].flip.pos) << " value " << std::fixed << std::setprecision(2) << move_list[i].value;
             std::cerr << " count " << move_list[i].count << " depth " << move_list[i].depth << "@" << SELECTIVITY_PERCENTAGE[move_list[i].mpc_level] << "%";
@@ -1254,10 +1278,10 @@ std::vector<Ponder_elem> ai_get_values(Board board, bool show_log, uint64_t time
             }
         }
     }
+    std::sort(move_list.begin(), move_list.end(), comp_get_values_elem);
     if (show_log) {
         std::cerr << "ai_get_values searched in " << tim() - strt << " ms" << std::endl;
         std::cerr << "ai_get_values board " << board.to_str() << std::endl;
-        std::sort(move_list.begin(), move_list.end(), comp_get_values_elem);
         for (int i = 0; i < canput; ++i) {
             std::cerr << "gb " << idx_to_coord(move_list[i].flip.pos) << " value " << std::fixed << std::setprecision(2) << move_list[i].value;
             std::cerr << " count " << move_list[i].count << " depth " << move_list[i].depth << "@" << SELECTIVITY_PERCENTAGE[move_list[i].mpc_level] << "%";
@@ -1275,30 +1299,38 @@ std::vector<Ponder_elem> ai_get_values(Board board, bool show_log, uint64_t time
 std::vector<Ponder_elem> ai_align_move_levels(Board board, bool show_log, std::vector<Ponder_elem> move_list, int n_good_moves, uint64_t time_limit, thread_id_t thread_id) {
     uint64_t strt = tim();
     if (show_log) {
-        std::cerr << "search moves tl " << time_limit << std::endl;
+        std::cerr << "align levels tl " << time_limit << " n_good_moves " << n_good_moves << std::endl;
     }
     const int max_depth = HW2 - board.n_discs() - 1;
     while (tim() - strt < time_limit) {
-        bool all_same_level = true;
+        int min_depth = 100;
+        for (int i = 0; i < n_good_moves; ++i) {
+            min_depth = std::min(min_depth, move_list[i].depth);
+        }
+        if (min_depth >= 27) {
+            std::cerr << "depth is over 27" << std::endl;
+            break;
+        }
+        bool level_aligned = true;
         for (int i = 0; i < n_good_moves; ++i) {
             if (move_list[i].depth != move_list[0].depth || move_list[i].mpc_level != move_list[0].mpc_level) {
-                all_same_level = false;
+                level_aligned = false;
                 break;
             }
         }
-        if (all_same_level) {
+        if (level_aligned) {
             std::cerr << "level aligned" << std::endl;
             break;
         }
-        int min_depth = INF;
+        int min_depth2 = INF;
         uint_fast8_t min_mpc_level = 100;
         int selected_idx = -1;
         for (int i = 0; i < n_good_moves; ++i) {
-            if (move_list[i].depth < min_depth) {
-                min_depth = move_list[i].depth;
+            if (move_list[i].depth < min_depth2) {
+                min_depth2 = move_list[i].depth;
                 min_mpc_level = move_list[i].mpc_level;
                 selected_idx = i;
-            } else if (move_list[i].depth == min_depth && move_list[i].mpc_level < min_mpc_level) {
+            } else if (move_list[i].depth == min_depth2 && move_list[i].mpc_level < min_mpc_level) {
                 min_mpc_level = move_list[i].mpc_level;
                 selected_idx = i;
             }
@@ -1346,10 +1378,10 @@ std::vector<Ponder_elem> ai_align_move_levels(Board board, bool show_log, std::v
             v_future.get();
         }
     }
+    std::sort(move_list.begin(), move_list.end(), comp_get_values_elem);
     if (show_log) {
         std::cerr << "ai_align_move_levels searched in " << tim() - strt << " ms" << std::endl;
         std::cerr << "ai_align_move_levels board " << board.to_str() << std::endl;
-        std::sort(move_list.begin(), move_list.end(), comp_get_values_elem);
         for (int i = 0; i < n_good_moves; ++i) {
             std::cerr << "ag " << idx_to_coord(move_list[i].flip.pos) << " value " << std::fixed << std::setprecision(2) << move_list[i].value;
             std::cerr << " count " << move_list[i].count << " depth " << move_list[i].depth << "@" << SELECTIVITY_PERCENTAGE[move_list[i].mpc_level] << "%";
@@ -1367,9 +1399,8 @@ std::vector<Ponder_elem> ai_align_move_levels(Board board, bool show_log, std::v
 std::vector<Ponder_elem> ai_search_moves(Board board, bool show_log, std::vector<Ponder_elem> move_list, int n_good_moves, uint64_t time_limit, thread_id_t thread_id) {
     uint64_t strt = tim();
     if (show_log) {
-        std::cerr << "search moves tl " << time_limit << std::endl;
+        std::cerr << "search moves tl " << time_limit << " n_good_moves " << n_good_moves << std::endl;
     }
-    move_list = ai_align_move_levels(board, show_log, move_list, n_good_moves, time_limit, thread_id);
     const int max_depth = HW2 - board.n_discs() - 1;
     int initial_level = 21;
     std::vector<Clog_result> clogs;
@@ -1379,20 +1410,18 @@ std::vector<Ponder_elem> ai_search_moves(Board board, bool show_log, std::vector
     }
     // selfplay & analyze
     while (tim() - strt < time_limit) {
-        int min_depth = INF;
-        uint_fast8_t min_mpc_level = 100;
+        double max_val = -INF;
         int selected_idx = -1;
         for (int i = 0; i < n_good_moves; ++i) {
-            if (move_list[i].depth < min_depth) {
-                min_depth = move_list[i].depth;
-                min_mpc_level = move_list[i].mpc_level;
-                selected_idx = i;
-            } else if (move_list[i].depth == min_depth && move_list[i].mpc_level < min_mpc_level) {
-                min_mpc_level = move_list[i].mpc_level;
-                selected_idx = i;
+            if (!move_list[i].is_complete_search) {
+                double val = move_list[i].value + myrandom() * AI_TL_ADDITIONAL_SEARCH_THRESHOLD * 1.5;
+                if (val > max_val) {
+                    max_val = val;
+                    selected_idx = i;
+                }
             }
         }
-        if (move_list[selected_idx].is_complete_search) {
+        if (selected_idx == -1) {
             if (show_log) {
                 std::cerr << "completely searched" << std::endl;
             }
