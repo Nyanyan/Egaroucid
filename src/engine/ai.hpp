@@ -1265,6 +1265,7 @@ std::vector<Ponder_elem> ai_get_values(Board board, bool show_log, uint64_t time
     return move_list;
 }
 
+/*
 std::vector<Ponder_elem> ai_search_moves(Board board, bool show_log, std::vector<Ponder_elem> move_list, int n_good_moves, uint64_t time_limit, thread_id_t thread_id) {
     uint64_t strt = tim();
     if (show_log) {
@@ -1389,10 +1390,10 @@ std::vector<Ponder_elem> ai_search_moves(Board board, bool show_log, std::vector
     }
     return move_list;
 }
+*/
 
 
 
-/*
 std::vector<Ponder_elem> ai_search_moves(Board board, bool show_log, std::vector<Ponder_elem> move_list, int n_good_moves, uint64_t time_limit, thread_id_t thread_id) {
     uint64_t strt = tim();
     if (show_log) {
@@ -1473,4 +1474,3 @@ std::vector<Ponder_elem> ai_search_moves(Board board, bool show_log, std::vector
     }
     return move_list;
 }
-*/
