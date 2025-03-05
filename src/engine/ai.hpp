@@ -379,12 +379,15 @@ void iterative_deepening_search_time_limit(Board board, int alpha, int beta, boo
             }
         } else { // next: endgame search
 #if IS_GGS_TOURNAMENT
-            if (max_depth >= 41) {
+            if (max_depth >= 38) {
                 // if (show_log) {
                 //     std::cerr << "no endgame search jump here" << std::endl;
                 // }
-                if (main_depth < max_depth) {
+                if (main_depth < max_depth - 2) {
                     ++main_depth;
+                } else if (main_depth < max_depth) {
+                    main_depth = max_depth;
+                    main_mpc_level = MPC_74_LEVEL;
                 } else if (main_mpc_level < MPC_100_LEVEL) {
                     ++main_mpc_level;
                 } else {
@@ -1272,35 +1275,43 @@ std::vector<Ponder_elem> ai_search_moves(Board board, bool show_log, std::vector
         std::cerr << "search moves tl " << time_limit << std::endl;
     }
     const int max_depth = HW2 - board.n_discs() - 1;
-    std::vector<int> levels;
-    constexpr int initial_level = 21;
-    for (int i = 0; i < n_good_moves; ++i) {
-        levels.emplace_back(initial_level);
-    }
     int fixed_level = 21;
     std::vector<Clog_result> clogs;
-    std::future<std::pair<int, int>> search_result_future;
-    bool searching = true;
+    std::vector<bool> searched;
+    for (int i = 0; i < n_good_moves; ++i) {
+        searched.emplace_back(false);
+    }
     while (tim() - strt < time_limit) {
-        int min_level = INF;
+        int min_depth = INF;
+        uint_fast8_t min_mpc_level = 100;
         int selected_idx = -1;
         for (int i = 0; i < n_good_moves; ++i) {
-            if (levels[i] < min_level) {
-                min_level = levels[i];
+            if (!searched[i] && !move_list[i].is_complete_search) {
                 selected_idx = i;
+            } else {
+                if (move_list[i].depth < min_depth) {
+                    min_depth = move_list[i].depth;
+                    min_mpc_level = move_list[i].mpc_level;
+                    selected_idx = i;
+                } else if (move_list[i].depth == min_depth && move_list[i].mpc_level < min_mpc_level) {
+                    min_mpc_level = move_list[i].mpc_level;
+                    selected_idx = i;
+                }
             }
         }
-        if (levels[selected_idx] > initial_level && get_level_complete_depth(levels[selected_idx]) >= max_depth) {
+        if (move_list[selected_idx].is_complete_search) {
             if (show_log) {
                 std::cerr << "completely searched" << std::endl;
             }
             break;
         }
+        std::cerr << "selected " << selected_idx << " " << idx_to_coord(move_list[selected_idx].flip.pos) << " ";
         Board n_board = board.copy();
         n_board.move_board(&move_list[selected_idx].flip);
         Flip flip;
         std::vector<Board> n_boards;
-        // search with noise
+        bool searching = true;
+        // selfplay
         while (n_board.check_pass()) {
             n_boards.emplace_back(n_board);
             uint64_t elapsed = tim() - strt;
@@ -1314,64 +1325,84 @@ std::vector<Ponder_elem> ai_search_moves(Board board, bool show_log, std::vector
                 Search search(&n_board, mpc_level, true, false);
                 search.thread_id = thread_id;
                 searching = true;
-                search_result_future = std::async(std::launch::async, first_nega_scout, &search, -SCORE_MAX, SCORE_MAX, depth, !is_mid_search, clogs, tim(), &searching);
-                //std::future<Search_result> search_result_future = std::async(std::launch::async, ai_loss_searching, n_board, levels[selected_idx], true, 0, true, false, loss_max, &searching);
-                //std::future<Search_result> search_result_future = std::async(std::launch::async, ai_searching_thread_id, n_board, levels[selected_idx], true, 0, true, false, thread_id, &searching);
-                if (search_result_future.wait_for(std::chrono::milliseconds(tl_this_search)) == std::future_status::ready) {
-                    std::pair<int, int> search_result = search_result_future.get();
-                    std::cerr << idx_to_coord(search_result.second);
-                    calc_flip(&flip, &n_board, search_result.second);
+                std::future<int> policy_future = std::async(std::launch::async, nega_scout_policy, &search, -SCORE_MAX, SCORE_MAX, depth, false, LEGAL_UNDEFINED, !is_mid_search, &searching);
+                //std::future<std::pair<int, int>> search_result_future = std::async(std::launch::async, first_nega_scout, &search, -SCORE_MAX, SCORE_MAX, depth, !is_mid_search, clogs, tim(), &searching);
+                //if (search_result_future.wait_for(std::chrono::milliseconds(tl_this_search)) == std::future_status::ready) {
+                if (policy_future.wait_for(std::chrono::milliseconds(tl_this_search)) == std::future_status::ready) {
+                    //std::pair<int, int> search_result = search_result_future.get();
+                    //std::cerr << idx_to_coord(search_result.second);
+                    //calc_flip(&flip, &n_board, search_result.second);
+                    int policy = policy_future.get();
+                    std::cerr << idx_to_coord(policy);
+                    calc_flip(&flip, &n_board, policy);
                     n_board.move_board(&flip);
                 } else {
                     searching = false;
-                    search_result_future.get();
+                    policy_future.get();
+                    //search_result_future.get();
                     std::cerr << std::endl;
                     break;
                 }
             }
         }
         // analyze
-        //std::cerr << " analyze " << n_boards.size() << " boards";
         for (int i = n_boards.size() - 1; i >= 0; --i) {
             uint64_t elapsed = tim() - strt;
             if (elapsed < time_limit) {
                 uint64_t tl_this_search = time_limit - elapsed;
-                bool is_mid_search;
-                int depth;
-                uint_fast8_t mpc_level;
-                get_level(levels[selected_idx], n_boards[i].n_discs() - 4, &is_mid_search, &depth, &mpc_level);
-                Search search(&n_boards[i], mpc_level, true, false);
+                int max_depth = HW2 - n_boards[i].n_discs();
+                int new_depth = move_list[selected_idx].depth + 1;
+                uint_fast8_t new_mpc_level = move_list[selected_idx].mpc_level;
+                if (new_depth > max_depth) {
+                    new_depth = max_depth;
+                    ++new_mpc_level;
+                } else if (new_depth > max_depth - PONDER_ENDSEARCH_PRESEARCH_OFFSET_TIMELIMIT) {
+                    new_depth = max_depth;
+                }
+                bool fix_is_mid_search;
+                int fix_depth;
+                uint_fast8_t fix_mpc_level;
+                get_level(fixed_level, n_boards[i].n_discs() - 4, &fix_is_mid_search, &fix_depth, &fix_mpc_level);
+                if (fix_depth > new_depth) {
+                    new_depth = fix_depth;
+                    new_mpc_level = fix_mpc_level;
+                } else if (fix_depth == new_depth && fix_mpc_level > new_mpc_level) {
+                    new_mpc_level = fix_mpc_level;
+                }
+                bool new_is_end_search = (new_depth == max_depth);
+                bool new_is_complete_search = new_is_end_search && new_mpc_level == MPC_100_LEVEL;
+                Search search(&n_boards[i], new_mpc_level, true, false);
                 search.thread_id = thread_id;
                 searching = true;
-                search_result_future = std::async(std::launch::async, first_nega_scout, &search, -SCORE_MAX, SCORE_MAX, depth, !is_mid_search, clogs, tim(), &searching);
-                if (search_result_future.wait_for(std::chrono::milliseconds(tl_this_search)) == std::future_status::ready) {
-                    std::pair<int, int> search_result = search_result_future.get();
+                std::future<int> nega_scout_future = std::async(std::launch::async, nega_scout, &search, -SCORE_MAX, SCORE_MAX, new_depth, false, LEGAL_UNDEFINED, new_is_end_search, &searching);
+                if (nega_scout_future.wait_for(std::chrono::milliseconds(tl_this_search)) == std::future_status::ready) {
+                    int v = nega_scout_future.get();
                     if (i == 0) {
-                        if (is_mid_search) {
-                            move_list[selected_idx].value = (0.9 * move_list[selected_idx].value + 1.1 * -search_result.first) / 2.0;
-                            move_list[selected_idx].is_endgame_search = false;
-                            move_list[selected_idx].is_complete_search = false;
+                        if (new_is_end_search) {
+                            move_list[selected_idx].value = -v;
                         } else {
-                            move_list[selected_idx].value = -search_result.first;
-                            move_list[selected_idx].is_endgame_search = true;
-                            if (get_level_complete_depth(levels[selected_idx]) >= max_depth) {
-                                move_list[selected_idx].is_complete_search = true;
-                            }
+                            move_list[selected_idx].value = (0.9 * move_list[selected_idx].value + 1.1 * -v) / 2.0;
                         }
-                        move_list[selected_idx].depth = depth;
-                        move_list[selected_idx].mpc_level = mpc_level;
+                        move_list[selected_idx].depth = new_depth;
+                        move_list[selected_idx].mpc_level = new_mpc_level;
+                        move_list[selected_idx].is_endgame_search = new_is_end_search;
+                        move_list[selected_idx].is_complete_search = new_is_complete_search;
                         ++move_list[selected_idx].count;
-                        std::cerr << " move " << idx_to_coord(move_list[selected_idx].flip.pos) << " value " << move_list[selected_idx].value << " raw " << -search_result.first << " level " << levels[selected_idx] << std::endl;
-                        ++levels[selected_idx];
+                        std::cerr << " move " << idx_to_coord(move_list[selected_idx].flip.pos) << " value " << move_list[selected_idx].value << " raw " << -v << std::endl;
+                        //" depth " << new_depth << "@" << SELECTIVITY_PERCENTAGE[new_mpc_level] << "%" << std::endl;
                     }
                 } else {
                     searching = false;
-                    search_result_future.get();
+                    nega_scout_future.get();
                     std::cerr << std::endl;
                     break;
                 }
             }
         }
+        searched[selected_idx] = true;
+        // if (tim() - strt < time_limit) {
+        //     std::cerr << std::endl;
+        // }
     }
     if (show_log) {
         std::cerr << "ai_search_moves searched in " << tim() - strt << " ms" << std::endl;
