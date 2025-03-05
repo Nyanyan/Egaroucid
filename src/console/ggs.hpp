@@ -527,6 +527,7 @@ void ggs_client(Options *options) {
         } else {
             ggs_message_f = std::async(std::launch::async, ggs_receive_message, &sock, options); // ask ggs message
         }
+        bool new_calculation_start = false;
         if (server_replies.size()) {
             // match start
             for (std::string server_reply: server_replies) {
@@ -651,6 +652,7 @@ void ggs_client(Options *options) {
                                             ai_searchings[ggs_board.synchro_id] = true;
                                             ggs_boards_searching[ggs_board.synchro_id] = ggs_board;
                                             ai_futures[ggs_board.synchro_id] = std::async(std::launch::async, ggs_search, ggs_board, options, ggs_board.synchro_id, &ai_searchings[ggs_board.synchro_id]); // set search
+                                            new_calculation_start = true;
                                             std::string msg = "Egaroucid thinking... " + ggs_board.game_id + " " + ggs_board.board.to_str(ggs_board.player_to_move);
                                             ggs_print_info(msg, options);
                                         }
@@ -658,6 +660,7 @@ void ggs_client(Options *options) {
                                         if (!ggs_board.board.is_end()) {
                                             ponder_searchings[ggs_board.synchro_id] = true;
                                             ponder_futures[ggs_board.synchro_id] = std::async(std::launch::async, ai_ponder, ggs_board.board, options->show_log, ggs_board.synchro_id, &ponder_searchings[ggs_board.synchro_id]); // set ponder
+                                            new_calculation_start = true;
                                             std::string msg = "Egaroucid pondering... " + ggs_board.game_id + " " + ggs_board.board.to_str(ggs_board.player_to_move);
                                             ggs_print_info(msg, options);
                                         }
@@ -756,7 +759,7 @@ void ggs_client(Options *options) {
         if (thread_sizes[1] != thread_sizes_before[1]) {
             thread_pool.set_max_thread_size(1, thread_sizes[1]);
         }
-        if (thread_sizes[0] != thread_sizes_before[0] || thread_sizes[1] != thread_sizes_before[1]) {
+        if (new_calculation_start || thread_sizes[0] != thread_sizes_before[0] || thread_sizes[1] != thread_sizes_before[1]) {
             std::string msg = "thread info synchro " + std::to_string(playing_synchro_game) + " same " + std::to_string(playing_same_board) + " ai " + std::to_string(ai_searchings[0]) + " " + std::to_string(ai_searchings[1]) + " ponder " + std::to_string(ponder_searchings[0]) + " " + std::to_string(ponder_searchings[1]) + " thread size " + std::to_string(thread_sizes[0]) + " " + std::to_string(thread_sizes[1]);
             ggs_print_info(msg, options);
         }

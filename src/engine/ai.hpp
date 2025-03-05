@@ -378,14 +378,20 @@ void iterative_deepening_search_time_limit(Board board, int alpha, int beta, boo
                 }
             }
         } else { // next: endgame search
-#if IS_GGS_TOURNAMENT && false
-            if (max_depth > 43) {
-                if (show_log) {
-                    std::cerr << "no endgame search here" << std::endl;
+#if IS_GGS_TOURNAMENT
+            if (max_depth >= 41) {
+                // if (show_log) {
+                //     std::cerr << "no endgame search jump here" << std::endl;
+                // }
+                if (main_depth < max_depth) {
+                    ++main_depth;
+                } else if (main_mpc_level < MPC_100_LEVEL) {
+                    ++main_mpc_level;
+                } else {
+                    break;
                 }
-                //++main_depth;
                 //++main_mpc_level;
-                break;
+                //break;
             } else
 #endif
             if (main_depth < max_depth) {
@@ -1321,6 +1327,7 @@ std::vector<Ponder_elem> ai_search_moves(Board board, bool show_log, std::vector
             }
         }
         // analyze
+        //std::cerr << " analyze " << n_boards.size() << " boards";
         for (int i = n_boards.size() - 1; i >= 0; --i) {
             uint64_t elapsed = tim() - strt;
             if (elapsed < time_limit) {
@@ -1353,7 +1360,7 @@ std::vector<Ponder_elem> ai_search_moves(Board board, bool show_log, std::vector
                         move_list[selected_idx].depth = depth;
                         move_list[selected_idx].mpc_level = mpc_level;
                         ++move_list[selected_idx].count;
-                        std::cerr << "move " << idx_to_coord(move_list[selected_idx].flip.pos) << " value " << move_list[selected_idx].value << " raw " << -search_result.first << " level " << levels[selected_idx] << std::endl;
+                        std::cerr << " move " << idx_to_coord(move_list[selected_idx].flip.pos) << " value " << move_list[selected_idx].value << " raw " << -search_result.first << " level " << levels[selected_idx] << std::endl;
                         ++levels[selected_idx];
                     }
                 } else {
