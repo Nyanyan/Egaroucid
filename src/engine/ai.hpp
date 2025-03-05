@@ -1275,11 +1275,13 @@ std::vector<Ponder_elem> ai_search_moves(Board board, bool show_log, std::vector
         std::cerr << "search moves tl " << time_limit << std::endl;
     }
     const int max_depth = HW2 - board.n_discs() - 1;
-    int fixed_level = 21;
+    int initial_level = 21;
     std::vector<Clog_result> clogs;
     std::vector<bool> searched;
+    std::vector<int> levels;
     for (int i = 0; i < n_good_moves; ++i) {
         searched.emplace_back(false);
+        levels.emplace_back(initial_level);
     }
     while (tim() - strt < time_limit) {
         int min_depth = INF;
@@ -1305,7 +1307,7 @@ std::vector<Ponder_elem> ai_search_moves(Board board, bool show_log, std::vector
             }
             break;
         }
-        std::cerr << "selected " << selected_idx << " " << idx_to_coord(move_list[selected_idx].flip.pos) << " ";
+        std::cerr << "selected " << selected_idx << " " << idx_to_coord(move_list[selected_idx].flip.pos) << " selfplay lv." << levels[selected_idx] << " ";
         Board n_board = board.copy();
         n_board.move_board(&move_list[selected_idx].flip);
         Flip flip;
@@ -1320,7 +1322,7 @@ std::vector<Ponder_elem> ai_search_moves(Board board, bool show_log, std::vector
                 bool is_mid_search;
                 int depth;
                 uint_fast8_t mpc_level;
-                get_level(fixed_level, n_board.n_discs() - 4, &is_mid_search, &depth, &mpc_level);
+                get_level(levels[selected_idx], n_board.n_discs() - 4, &is_mid_search, &depth, &mpc_level);
                 Search search(&n_board, mpc_level, true, false);
                 search.thread_id = thread_id;
                 searching = true;
@@ -1357,7 +1359,7 @@ std::vector<Ponder_elem> ai_search_moves(Board board, bool show_log, std::vector
                 bool fix_is_mid_search;
                 int fix_depth;
                 uint_fast8_t fix_mpc_level;
-                get_level(fixed_level, n_boards[i].n_discs() - 4, &fix_is_mid_search, &fix_depth, &fix_mpc_level);
+                get_level(levels[selected_idx], n_boards[i].n_discs() - 4, &fix_is_mid_search, &fix_depth, &fix_mpc_level);
                 if (fix_depth > new_depth) {
                     new_depth = fix_depth;
                     new_mpc_level = fix_mpc_level;
@@ -1394,6 +1396,7 @@ std::vector<Ponder_elem> ai_search_moves(Board board, bool show_log, std::vector
             }
         }
         searched[selected_idx] = true;
+        ++levels[selected_idx];
     }
     if (show_log) {
         std::cerr << "ai_search_moves searched in " << tim() - strt << " ms" << std::endl;
