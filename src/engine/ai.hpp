@@ -739,7 +739,7 @@ Search_result ai_time_limit(Board board, bool use_book, int book_acc_level, bool
             double best_value = ponder_move_list[0].value;
             int n_good_moves = 0;
             for (const Ponder_elem &elem: ponder_move_list) {
-                if (elem.value >= best_value - 2.0) {
+                if (elem.value >= best_value - 1.5) {
                     ++n_good_moves;
                 } else {
                     break; // because sorted
@@ -1070,6 +1070,10 @@ std::vector<Ponder_elem> ai_ponder(Board board, bool show_log, thread_id_t threa
     */
     int n_searched_all = 0;
     while (*searching) {
+        double max_value = -INF;
+        for (int i = 0; i < canput; ++i) {
+            max_value = std::max(max_value, move_list[i].value);
+        }
         int selected_idx = -1;
         double max_ucb = -INF - 1;
         for (int i = 0; i < canput; ++i) {
@@ -1082,7 +1086,7 @@ std::vector<Ponder_elem> ai_ponder(Board board, bool show_log, thread_id_t threa
                 ucb = -INF;
             } else {
                 double depth_weight = (double)std::min(10, move_list[i].depth) / (double)std::min(10, max_depth);
-                ucb = (double)(move_list[i].value + SCORE_MAX) / (double)(SCORE_MAX * 2) * depth_weight + 0.75 * sqrt(log(2.0 * (double)n_searched_all) / (double)move_list[i].count) * (1.5 - depth_weight);
+                ucb = -(double)(max_value - move_list[i].value) / (double)(HW2 * 2) * depth_weight + 0.75 * sqrt(log(2.0 * (double)n_searched_all) / (double)move_list[i].count);
             }
             if (ucb > max_ucb) {
                 selected_idx = i;
@@ -1268,7 +1272,7 @@ std::vector<Ponder_elem> ai_get_values(Board board, bool show_log, uint64_t time
     return move_list;
 }
 
-
+/*
 std::vector<Ponder_elem> ai_search_moves(Board board, bool show_log, std::vector<Ponder_elem> move_list, int n_good_moves, uint64_t time_limit, thread_id_t thread_id) {
     uint64_t strt = tim();
     if (show_log) {
@@ -1281,7 +1285,7 @@ std::vector<Ponder_elem> ai_search_moves(Board board, bool show_log, std::vector
     for (int i = 0; i < n_good_moves; ++i) {
         levels.emplace_back(initial_level);
     }
-    // align level
+    // level alignment
     while (tim() - strt < time_limit) {
         bool all_same_level = true;
         for (int i = 0; i < n_good_moves; ++i) {
@@ -1496,10 +1500,10 @@ std::vector<Ponder_elem> ai_search_moves(Board board, bool show_log, std::vector
     }
     return move_list;
 }
+*/
 
 
 
-/*
 std::vector<Ponder_elem> ai_search_moves(Board board, bool show_log, std::vector<Ponder_elem> move_list, int n_good_moves, uint64_t time_limit, thread_id_t thread_id) {
     uint64_t strt = tim();
     if (show_log) {
@@ -1580,4 +1584,3 @@ std::vector<Ponder_elem> ai_search_moves(Board board, bool show_log, std::vector
     }
     return move_list;
 }
-*/
