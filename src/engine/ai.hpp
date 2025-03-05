@@ -1480,10 +1480,10 @@ std::vector<Ponder_elem> ai_search_moves(Board board, bool show_log, std::vector
                 int level_depth;
                 uint_fast8_t level_mpc_level;
                 get_level(levels[selected_idx], n_boards[i].n_discs() - 4, &level_is_mid_search, &level_depth, &level_mpc_level);
-                int new_depth = std::max(move_list[selected_idx].depth - i, level_depth);
-                if (i == 0 && !is_first_searches[selected_idx]) {
-                    new_depth = move_list[selected_idx].depth + 1;
-                }
+                int new_depth = std::max(move_list[selected_idx].depth + (!is_first_searches[selected_idx]) - i, level_depth);
+                // if (i == 0 && !is_first_searches[selected_idx]) {
+                //     new_depth = move_list[selected_idx].depth + 1;
+                // }
                 uint_fast8_t new_mpc_level = MPC_74_LEVEL;
                 if (i == 0) {
                     new_mpc_level = move_list[i].mpc_level;
