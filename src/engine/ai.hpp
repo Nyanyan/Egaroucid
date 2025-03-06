@@ -1490,7 +1490,7 @@ std::vector<Ponder_elem> ai_search_moves(Board board, bool show_log, std::vector
                 if (i != 0) {
                     new_depth = std::min(new_depth, 27); // limit depth for non-root
                 }
-                uint_fast8_t new_mpc_level = MPC_74_LEVEL;
+                uint_fast8_t new_mpc_level = level_mpc_level;
                 if (i == 0) {
                     new_mpc_level = move_list[i].mpc_level;
                 }
@@ -1504,13 +1504,14 @@ std::vector<Ponder_elem> ai_search_moves(Board board, bool show_log, std::vector
                 } else {
                     if (new_depth >= max_depth) {
                         new_depth = max_depth;
-                        new_mpc_level = MPC_74_LEVEL;
-                        if (move_list[i].is_endgame_search) {
-                            new_mpc_level = move_list[i].mpc_level;
-                            // if (new_mpc_level < MPC_100_LEVEL) {
-                            //     ++new_mpc_level;
-                            // }
-                        }
+                        // new_mpc_level = MPC_74_LEVEL;
+                        // new_mpc_level = move_list[i].mpc_level;
+                        // if (move_list[i].is_endgame_search) {
+                        //     new_mpc_level = move_list[i].mpc_level;
+                        //     // if (new_mpc_level < MPC_100_LEVEL) {
+                        //     //     ++new_mpc_level;
+                        //     // }
+                        // }
                     }
                 }
                 //}
