@@ -1321,7 +1321,7 @@ std::vector<Ponder_elem> ai_align_move_levels(Board board, bool show_log, std::v
                 break;
             }
         }
-        if (level_aligned && min_depth >= 25) {
+        if (level_aligned && min_depth >= 27) {
             std::cerr << "level aligned & min depth >= 25" << std::endl;
             break;
         }
