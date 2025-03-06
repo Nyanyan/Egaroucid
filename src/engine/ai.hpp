@@ -1402,11 +1402,10 @@ std::vector<Ponder_elem> ai_align_move_levels(Board board, bool show_log, std::v
 std::vector<Ponder_elem> ai_search_moves(Board board, bool show_log, std::vector<Ponder_elem> move_list, int n_good_moves, uint64_t time_limit, thread_id_t thread_id) {
     uint64_t strt = tim();
     if (show_log) {
-        std::cerr << "search moves tl " << time_limit << " n_good_moves " << n_good_moves << std::endl;
+        std::cerr << "search moves tl " << time_limit << " n_good_moves " << n_good_moves << " out of " << move_list.size() << std::endl;
     }
     const int max_depth = HW2 - board.n_discs() - 1;
     int initial_level = 21;
-    std::vector<Clog_result> clogs;
     std::vector<int> levels;
     for (int i = 0; i < n_good_moves; ++i) {
         levels.emplace_back(initial_level);
@@ -1416,6 +1415,9 @@ std::vector<Ponder_elem> ai_search_moves(Board board, bool show_log, std::vector
         is_first_searches.emplace_back(true);
     }
     // selfplay & analyze
+    std::vector<Clog_result> clogs;
+    std::vector<Board> n_boards;
+    Flip flip;
     while (tim() - strt < time_limit) {
         double max_val = -INF;
         int selected_idx = -1;
@@ -1431,17 +1433,16 @@ std::vector<Ponder_elem> ai_search_moves(Board board, bool show_log, std::vector
         }
         if (selected_idx == -1) {
             if (show_log) {
-                std::cerr << "completely searched" << std::endl;
+                std::cerr << "enough searched" << std::endl;
             }
             break;
         }
         std::cerr << "move " << idx_to_coord(move_list[selected_idx].flip.pos) << " selfplay lv." << levels[selected_idx] << " ";
         Board n_board = board.copy();
         n_board.move_board(&move_list[selected_idx].flip);
-        Flip flip;
-        std::vector<Board> n_boards;
         bool searching = true;
         // selfplay
+        n_boards.clear();
         while (n_board.check_pass()) {
             if (n_board.n_discs() >= HW2 - 23 && n_boards.size()) { // complete search with last 24 empties in lv.21
                 break;
@@ -1457,15 +1458,18 @@ std::vector<Ponder_elem> ai_search_moves(Board board, bool show_log, std::vector
                 Search search(&n_board, mpc_level, true, false);
                 search.thread_id = thread_id;
                 searching = true;
-                std::future<int> policy_future = std::async(std::launch::async, nega_scout_policy, &search, -SCORE_MAX, SCORE_MAX, depth, false, LEGAL_UNDEFINED, !is_mid_search, &searching);
-                if (policy_future.wait_for(std::chrono::milliseconds(tl_this_search)) == std::future_status::ready) {
-                    int policy = policy_future.get();
+                //std::future<int> policy_future = std::async(std::launch::async, nega_scout_policy, &search, -SCORE_MAX, SCORE_MAX, depth, false, LEGAL_UNDEFINED, !is_mid_search, &searching);
+                std::future<std::pair<int, int>> sp_future = std::async(std::launch::async, first_nega_scout, &search, -SCORE_MAX, SCORE_MAX, depth, !is_mid_search, clogs, strt, &searching);
+                //if (policy_future.wait_for(std::chrono::milliseconds(tl_this_search)) == std::future_status::ready) {
+                if (sp_future.wait_for(std::chrono::milliseconds(tl_this_search)) == std::future_status::ready) {
+                    int policy = sp_future.get().second;
                     std::cerr << idx_to_coord(policy);
                     calc_flip(&flip, &n_board, policy);
                     n_board.move_board(&flip);
                 } else {
                     searching = false;
-                    policy_future.get();
+                    //policy_future.get();
+                    sp_future.get();
                     std::cerr << std::endl;
                     break;
                 }
