@@ -260,7 +260,7 @@ bool ggs_is_board_info(std::string line) {
 bool ggs_is_match_request(std::string line, std::string username) {
     std::vector<std::string> words = split_by_space(line);
     if (words.size() >= 10) {
-        return words[1] == "+" && words[7] == "R" && (words[4] == username || words[9] == username);
+        return words[1] == "+" && (words[7] == "R" || words[7] == "S") && (words[4] == username || words[9] == username);
     }
     return false;
 }
