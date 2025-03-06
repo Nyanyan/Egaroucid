@@ -1521,8 +1521,7 @@ std::vector<Ponder_elem> ai_search_moves(Board board, bool show_log, std::vector
                         // }
                     }
                 }
-                //}
-                std::cerr << i << "-" << new_depth << "@" << SELECTIVITY_PERCENTAGE[new_mpc_level] << "% ";
+                // std::cerr << i << "-" << new_depth << "@" << SELECTIVITY_PERCENTAGE[new_mpc_level] << "% ";
                 bool new_is_end_search = (new_depth == max_depth);
                 bool new_is_complete_search = new_is_end_search && new_mpc_level == MPC_100_LEVEL;
                 Search search(&n_boards[i], new_mpc_level, true, false);
