@@ -244,7 +244,7 @@ Options get_options(std::vector<Commandline_option> commandline_options, std::st
     if (res.ggs_game_log_to_file) {
         std::vector<std::string> arg = get_commandline_option_arg(commandline_options, ID_GGS_GAMELOGDIR);
         try {
-            res.ggs_game_log_dir = datetime + "_" + arg[0];
+            res.ggs_game_log_dir = arg[0];
         } catch (const std::invalid_argument& e) {
             std::cerr << "[ERROR] invalid ggs game log dir" << std::endl;
         } catch (const std::out_of_range& e) {
