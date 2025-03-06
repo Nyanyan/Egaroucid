@@ -93,7 +93,7 @@ class Thread_pool {
             std::lock_guard<std::mutex> lock(mtx);
             max_thread_size[id] = new_max_thread_size;
             if (n_using_thread[id] == THREAD_SIZE_DEFAULT) {
-                n_using_thread[id] = 0;
+                n_using_thread[id] = 0; // first enable this id
             }
         }
 
