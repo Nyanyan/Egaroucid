@@ -726,7 +726,7 @@ Search_result ai_loss(Board board, int level, bool use_book, int book_acc_level,
 Search_result ai_time_limit(Board board, bool use_book, int book_acc_level, bool use_multi_thread, bool show_log, uint64_t remaining_time_msec, thread_id_t thread_id, bool *searching) {
     uint64_t time_limit = calc_time_limit_ply(board, remaining_time_msec, show_log);
     if (show_log) {
-        std::cerr << "time limit " << time_limit << " remaining " << remaining_time_msec << std::endl;
+        std::cerr << "ai time limit start! tl " << time_limit << " remaining " << remaining_time_msec << " " << board.to_str() << std::endl;
     }
     int n_empties = HW2 - board.n_discs();
     if (time_limit > 10000ULL && n_empties >= 30) { // additional search
@@ -803,9 +803,13 @@ Search_result ai_time_limit(Board board, bool use_book, int book_acc_level, bool
         }
     }
     if (show_log) {
-        std::cerr << "ai_time_limit tl " << time_limit << std::endl;
+        std::cerr << "ai_common main search tl " << time_limit << std::endl;
     }
-    return ai_common(board, -SCORE_MAX, SCORE_MAX, MAX_LEVEL, use_book, book_acc_level, use_multi_thread, show_log, board.get_legal(), false, time_limit, thread_id, searching);
+    Search_result search_result = ai_common(board, -SCORE_MAX, SCORE_MAX, MAX_LEVEL, use_book, book_acc_level, use_multi_thread, show_log, board.get_legal(), false, time_limit, thread_id, searching);
+    if (show_log) {
+        std::cerr << "ai time limit selected " << idx_to_coord(search_result.policy) << " value " << search_result.value << " depth " << search_result.depth << "@" << SELECTIVITY_PERCENTAGE[search_result.probability] << "%" << std::endl;
+    }
+    return search_result;
 }
 
 /*
@@ -1307,7 +1311,7 @@ std::vector<Ponder_elem> ai_align_move_levels(Board board, bool show_log, std::v
             min_depth = std::min(min_depth, move_list[i].depth);
         }
         if (min_depth >= 27) {
-            std::cerr << "depth is over 27" << std::endl;
+            std::cerr << "min depth >= 27" << std::endl;
             break;
         }
         bool level_aligned = true;
@@ -1317,8 +1321,8 @@ std::vector<Ponder_elem> ai_align_move_levels(Board board, bool show_log, std::v
                 break;
             }
         }
-        if (level_aligned) {
-            std::cerr << "level aligned" << std::endl;
+        if (level_aligned && min_depth >= 25) {
+            std::cerr << "level aligned & min depth >= 25" << std::endl;
             break;
         }
         int min_depth2 = INF;
@@ -1401,7 +1405,7 @@ std::vector<Ponder_elem> ai_search_moves(Board board, bool show_log, std::vector
         std::cerr << "search moves tl " << time_limit << " n_good_moves " << n_good_moves << std::endl;
     }
     const int max_depth = HW2 - board.n_discs() - 1;
-    int initial_level = 21;
+    int initial_level = 20;
     std::vector<Clog_result> clogs;
     std::vector<int> levels;
     for (int i = 0; i < n_good_moves; ++i) {
