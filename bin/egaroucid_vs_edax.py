@@ -22,9 +22,8 @@ egaroucid = [
     subprocess.Popen(cmd.split(), stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL),
     subprocess.Popen(cmd.split(), stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
 ]
-egaroucid_win = [0, 0]
-edax_win = [0, 0]
-draw = [0, 0]
+
+wdl_sum = [0, 0, 0]
 egaroucid_disc_diff_sum = 0
 egaroucid_n_played = 0
 
@@ -42,9 +41,8 @@ edax = [
 
 for num in range(max_num):
     tactic_idx = smpl[num % len(tactic)]
-    shuffled_black_white = [black, white]
-    shuffle(shuffled_black_white)
-    for player in shuffled_black_white:
+    egaroucid_disc_diff = 0
+    for player in range(2):
         record = ''
         boards = []
         o = othello()
@@ -125,30 +123,32 @@ for num in range(max_num):
                 print(o.player, player)
                 print(coord)
                 print(y, x)
+        n_empties = 64 - (o.n_stones[0] + o.n_stones[1])
         if o.n_stones[player] > o.n_stones[1 - player]:
-            egaroucid_win[player] += 1
+            egaroucid_disc_diff += o.n_stones[player] - o.n_stones[1 - player] + n_empties
         elif o.n_stones[player] == o.n_stones[1 - player]:
-            draw[player] += 1
+            egaroucid_disc_diff += n_empties
         else:
-            edax_win[player] += 1
-            #print(record)
-        egaroucid_disc_diff = o.n_stones[player] - o.n_stones[1 - player]
-        if o.n_stones[player] > o.n_stones[1 - player]:
-            egaroucid_disc_diff += 64 - o.n_stones[player] - o.n_stones[1 - player]
-        elif o.n_stones[player] < o.n_stones[1 - player]:
-            egaroucid_disc_diff -= 64 - o.n_stones[player] - o.n_stones[1 - player]
-        egaroucid_disc_diff_sum += egaroucid_disc_diff
-        egaroucid_n_played += 1
-        print('\r', num, max_num, ' ', egaroucid_win, draw, edax_win, sum(egaroucid_win) + sum(draw) * 0.5, sum(edax_win) + sum(draw) * 0.5, 
-              round((sum(egaroucid_win) + sum(draw) * 0.5) / max(1, sum(egaroucid_win) + sum(edax_win) + sum(draw)), 6), 
-              round(egaroucid_disc_diff_sum / egaroucid_n_played, 6), end='                ', file=sys.stderr)
+            egaroucid_disc_diff += o.n_stones[player] - o.n_stones[1 - player] - n_empties
+    if egaroucid_disc_diff > 0:
+        wdl_sum[0] += 1 # win
+    elif egaroucid_disc_diff == 0:
+        wdl_sum[1] += 1 # draw
+    else:
+        wdl_sum[2] += 1 # lose
+    egaroucid_disc_diff_sum += egaroucid_disc_diff / 2
+    egaroucid_n_played += 1
+    print('\r', num, max_num, ' ', wdl_sum, 
+            wdl_sum[0] + wdl_sum[1] * 0.5, wdl_sum[2] + wdl_sum[1] * 0.5, 
+            round((wdl_sum[0] + wdl_sum[1] * 0.5) / max(1, sum(wdl_sum)), 6), 
+            round(egaroucid_disc_diff_sum / egaroucid_n_played, 6), 
+            end='                ', file=sys.stderr)
 
 print('', file=sys.stderr)
 
 print('level: ', level, 
-      ' Egaroucid plays black WDL: ', egaroucid_win[0], '-', draw[0], '-', edax_win[0], ' ', (egaroucid_win[0] + draw[0] * 0.5) / (egaroucid_win[0] + edax_win[0] + draw[0]), 
-      ' Egaroucid plays white WDL: ', egaroucid_win[1], '-', draw[1], '-', edax_win[1], ' ', (egaroucid_win[1] + draw[1] * 0.5) / (egaroucid_win[1] + edax_win[1] + draw[1]), 
-      ' Egaroucid win rate: ', round((sum(egaroucid_win) + sum(draw) * 0.5) / max(1, sum(egaroucid_win) + sum(edax_win) + sum(draw)), 6), 
+      ' Egaroucid WDL: ', wdl_sum[0], '-', wdl_sum[1], '-', wdl_sum[2],
+      ' Egaroucid win rate: ', round((wdl_sum[0] + wdl_sum[1] * 0.5) / max(1, sum(wdl_sum)), 6), 
       ' Egaroucid average discs earned: ', round(egaroucid_disc_diff_sum / egaroucid_n_played, 6), 
       sep='')
 

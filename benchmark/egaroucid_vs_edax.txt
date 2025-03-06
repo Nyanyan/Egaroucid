@@ -881,3 +881,9 @@ level: 10 Egaroucid plays black WDL: 616-88-296 0.66 Egaroucid plays white WDL: 
 level: 15 Egaroucid plays black WDL: 129-34-87 0.584 Egaroucid plays white WDL: 120-43-87 0.566 Egaroucid win rate: 0.575 Egaroucid average discs earned: 1.072
 level: 21 Egaroucid plays black WDL: 48-26-26 0.61 Egaroucid plays white WDL: 34-30-36 0.49 Egaroucid win rate: 0.55 Egaroucid average discs earned: 0.43
 
+
+2025/03/06 7.6.0 beta for GGS tournament
+level: 1 Egaroucid WDL: 737-11-252 Egaroucid win rate: 0.7425 Egaroucid average discs earned: 11.94
+
+
+level: 15 Egaroucid WDL: 147-31-72 Egaroucid win rate: 0.65 Egaroucid average discs earned: 1.22
