@@ -29,30 +29,13 @@ constexpr double SELECTIVITY_MPCT[N_SELECTIVITY_LEVEL] = {1.13, 1.55, 1.81, 2.32
 /*
     @brief constants for ProbCut error calculation
 */
-// constexpr double probcut_a = 0.7556873444619888;
-// constexpr double probcut_b = -2.5146788690245927;
-// constexpr double probcut_c = 1.4897542811182043;
-// constexpr double probcut_d = 2.69397735108921;
-// constexpr double probcut_e = 0.2720592067772076;
-// constexpr double probcut_f = 1.8730852606500277;
-// constexpr double probcut_g = 1.2077364381232625;
-
-
-// constexpr double probcut_a = 0.7127207950995584;
-// constexpr double probcut_b = -1.7223851380215887;
-// constexpr double probcut_c = 1.0439100412642575;
-// constexpr double probcut_d = 2.7350549608357078;
-// constexpr double probcut_e = 6.51905988011711;
-// constexpr double probcut_f = -1.3580227170724146;
-// constexpr double probcut_g = 1.462807566031591;
-
 constexpr double probcut_a = 1.3639355445024388;
 constexpr double probcut_b = -3.2947310138509973;
 constexpr double probcut_c = 1.2930122678018827;
 constexpr double probcut_d = -0.7413325540776744;
 constexpr double probcut_e = 5.114065894638987;
 constexpr double probcut_f = -2.0943019604295534;
-constexpr double probcut_g = 1.9375125532449624;
+constexpr double probcut_g = 2.0375125532449624;
 
 #if USE_MPC_PRE_CALCULATION
 int mpc_error[N_SELECTIVITY_LEVEL][HW2 + 1][HW2 - 3][HW2 - 3];
