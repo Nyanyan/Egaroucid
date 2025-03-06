@@ -83,7 +83,9 @@ class Thread_pool {
             }
             condition.notify_all();
             for (int i = 0; i < n_thread; ++i) {
-                threads[i].join();
+                if (threads[i].joinable()) {
+                    threads[i].join();
+                }
             }
             n_thread = 0;
             n_idle = 0;
@@ -219,7 +221,7 @@ class Thread_pool {
                         --n_idle;
                         condition.notify_one();
                         if (id != THREAD_ID_NONE) {
-                            ++n_using_thread[id];
+                            n_using_thread[id].fetch_add(1);
                         }
                     }
                 }
@@ -234,18 +236,21 @@ class Thread_pool {
                 {
                     std::unique_lock<std::mutex> lock(mtx);
                     ++n_idle;
-                    condition.wait(lock, [&] {return !tasks.empty() || !running;});
-                    if (!running) {
+                    condition.wait(lock, [&] { return !tasks.empty() || !running; });
+                    if (!running && tasks.empty()) {
                         return;
                     }
-                    id = tasks.front().first;
-                    task = std::move(tasks.front().second);
-                    tasks.pop();
+                    if (!tasks.empty()) {
+                        id = tasks.front().first;
+                        task = std::move(tasks.front().second);
+                        tasks.pop();
+                    }
                 }
-                task();
-                if (id != THREAD_ID_NONE) {
-                    //std::unique_lock<std::mutex> lock(mtx); // no need for atomic
-                    --n_using_thread[id];
+                if (task) {
+                    task();
+                    if (id != THREAD_ID_NONE) {
+                        n_using_thread[id].fetch_sub(1);
+                    }
                 }
             }
         }
