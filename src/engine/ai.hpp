@@ -745,7 +745,7 @@ Search_result ai_time_limit(Board board, bool use_book, int book_acc_level, bool
         if (show_log) {
             std::cerr << "level align tl " << level_align_tl << std::endl;
         }
-        std::vector<Ponder_elem> second_move_list = ai_align_move_levels(board, show_log, first_move_list, first_move_list.size(), level_align_tl, thread_id, 19);
+        std::vector<Ponder_elem> second_move_list = ai_align_move_levels(board, show_log, first_move_list, first_move_list.size(), level_align_tl, thread_id, 21);
         if (second_move_list.size()) {
             double best_value = second_move_list[0].value;
             int n_good_moves = 0;
@@ -768,8 +768,8 @@ Search_result ai_time_limit(Board board, bool use_book, int book_acc_level, bool
                 if (elapsed_till_second > 8000) {
                     elapsed_till_second = 8000;
                 }
-                uint64_t search_moves_tl = std::max<uint64_t>(8000ULL - elapsed_till_second, (uint64_t)((time_limit - elapsed_till_second) * std::min(0.8, 0.3 * n_good_moves)));
-                std::vector<Ponder_elem> after_move_list = ai_align_move_levels(board, show_log, second_move_list, n_good_moves, time_limit, thread_id, 27);
+                uint64_t search_moves_tl = std::max<uint64_t>(8000ULL - elapsed_till_second, (uint64_t)((time_limit - elapsed_till_second) * std::min(0.5, 0.2 * n_good_moves)));
+                std::vector<Ponder_elem> after_move_list = ai_align_move_levels(board, show_log, second_move_list, n_good_moves, time_limit, thread_id, 30);
                 need_request_more_time = true;
 
                 double new_best_value = after_move_list[0].value;
