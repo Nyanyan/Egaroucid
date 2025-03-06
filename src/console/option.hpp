@@ -13,6 +13,7 @@
 #include "./../engine/engine_all.hpp"
 #include "commandline_option.hpp"
 #include "console_common.hpp"
+#include "util.hpp"
 
 #define TIME_NOT_ALLOCATED -1
 
@@ -53,6 +54,7 @@ struct Options {
 
 Options get_options(std::vector<Commandline_option> commandline_options, std::string binary_path) {
     Options res;
+    std::string datetime = get_current_datetime_for_file();
     res.binary_path = binary_path;
     res.level = DEFAULT_LEVEL;
     if (find_commandline_option(commandline_options, ID_LEVEL)) {
@@ -184,6 +186,19 @@ Options get_options(std::vector<Commandline_option> commandline_options, std::st
             std::cerr << "[ERROR] play loss argument out of range" << std::endl;
         }
     }
+    if (!res.log_to_file) {
+        if (find_commandline_option(commandline_options, ID_LOGDIR)) {
+            res.log_to_file = true;
+            std::vector<std::string> arg = get_commandline_option_arg(commandline_options, ID_LOGDIR);
+            try {
+                res.log_file = arg[0] + "/" + datetime + "_search.log";
+            } catch (const std::invalid_argument& e) {
+                std::cerr << "[ERROR] invalid log dir" << std::endl;
+            } catch (const std::out_of_range& e) {
+                std::cerr << "[ERROR] log dir out of range" << std::endl;
+            }
+        }
+    }
 #ifdef INCLUDE_GGS
     res.ggs = find_commandline_option(commandline_options, ID_GGS);
     if (res.ggs) {
@@ -212,11 +227,24 @@ Options get_options(std::vector<Commandline_option> commandline_options, std::st
             std::cerr << "[ERROR] ggs log file out of range" << std::endl;
         }
     }
+    if (!res.ggs_log_to_file) {
+        if (find_commandline_option(commandline_options, ID_GGS_LOGDIR)) {
+            res.ggs_log_to_file = true;
+            std::vector<std::string> arg = get_commandline_option_arg(commandline_options, ID_GGS_LOGDIR);
+            try {
+                res.ggs_log_file = arg[0] + "/" + datetime + "_ggs.log";
+            } catch (const std::invalid_argument& e) {
+                std::cerr << "[ERROR] invalid ggs log dir" << std::endl;
+            } catch (const std::out_of_range& e) {
+                std::cerr << "[ERROR] ggs log dir out of range" << std::endl;
+            }
+        }
+    }
     res.ggs_game_log_to_file = find_commandline_option(commandline_options, ID_GGS_GAMELOGDIR);
     if (res.ggs_game_log_to_file) {
         std::vector<std::string> arg = get_commandline_option_arg(commandline_options, ID_GGS_GAMELOGDIR);
         try {
-            res.ggs_game_log_dir = arg[0];
+            res.ggs_game_log_dir = datetime + "_" + arg[0];
         } catch (const std::invalid_argument& e) {
             std::cerr << "[ERROR] invalid ggs game log dir" << std::endl;
         } catch (const std::out_of_range& e) {

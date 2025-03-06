@@ -10,6 +10,7 @@
 #pragma once
 #include "./../engine/engine_all.hpp"
 #include "option.hpp"
+#include "util.hpp"
 #pragma comment(lib, "ws2_32.lib")
 
 #define GGS_URL "skatgame.net"
@@ -68,37 +69,6 @@ struct GGS_Match {
         return game_id == "";
     }
 };
-
-std::vector<std::string> split_by_space(const std::string &str) {
-    std::vector<std::string> tokens;
-    std::istringstream iss(str);
-    std::string token;
-    while (iss >> token) {
-        tokens.push_back(token);
-    }
-    return tokens;
-}
-
-std::vector<std::string> split_by_delimiter(const std::string &str, const std::string &delimiter) {
-    std::vector<std::string> tokens;
-    size_t start = 0;
-    size_t end = str.find(delimiter);
-    
-    while (end != std::string::npos) {
-        tokens.push_back(str.substr(start, end - start));
-        start = end + delimiter.length();
-        end = str.find(delimiter, start);
-    }
-    
-    tokens.push_back(str.substr(start));
-    return tokens;
-}
-
-std::string remove_spaces(const std::string &str) {
-    std::string result = str;
-    result.erase(std::remove(result.begin(), result.end(), ' '), result.end());
-    return result;
-}
 
 void ggs_print_send(std::string str, Options *options) { // cyan
     std::stringstream ss(str);
@@ -601,7 +571,8 @@ void ggs_client(Options *options) {
                         if (options->ggs_game_log_to_file) {
                             for (int i = 0; i < 2; ++i) {
                                 if (!matches[i].is_initialized()) {
-                                    std::string filename = options->ggs_game_log_dir + "/" + matches[i].game_id + ".txt";
+                                    std::string datetime = get_current_datetime_for_file();
+                                    std::string filename = options->ggs_game_log_dir + "/" + datetime + "_" + matches[i].game_id + ".txt";
                                     std::ofstream ofs(filename, std::ios::app);
                                     if (!ofs) {
                                         ggs_print_info("Can't open gamelog file " + filename, options);
