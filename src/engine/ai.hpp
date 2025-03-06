@@ -807,7 +807,7 @@ Search_result ai_time_limit(Board board, bool use_book, int book_acc_level, bool
     }
     Search_result search_result = ai_common(board, -SCORE_MAX, SCORE_MAX, MAX_LEVEL, use_book, book_acc_level, use_multi_thread, show_log, board.get_legal(), false, time_limit, thread_id, searching);
     if (show_log) {
-        std::cerr << "ai time limit selected " << idx_to_coord(search_result.policy) << " value " << search_result.value << " depth " << search_result.depth << "@" << SELECTIVITY_PERCENTAGE[search_result.probability] << "%" << std::endl;
+        std::cerr << "ai time limit selected " << idx_to_coord(search_result.policy) << " value " << search_result.value << " depth " << search_result.depth << "@" << search_result.probability << "%" << std::endl;
     }
     return search_result;
 }
