@@ -1479,7 +1479,7 @@ std::vector<Ponder_elem> ai_search_moves(Board board, bool show_log, std::vector
                 uint_fast8_t level_mpc_level;
                 get_level(levels[selected_idx], n_boards[i].n_discs() - 4, &level_is_mid_search, &level_depth, &level_mpc_level);
                 int new_depth = move_list[selected_idx].depth - i;
-                if (!is_first_searches[selected_idx] || move_list[selected_idx].depth < 33) {
+                if (!is_first_searches[selected_idx] || move_list[selected_idx].depth < 30) {
                     ++new_depth; // increase depth
                 }
                 new_depth = std::max(new_depth, level_depth);
@@ -1500,6 +1500,9 @@ std::vector<Ponder_elem> ai_search_moves(Board board, bool show_log, std::vector
                 //} else if (new_depth > max_depth - PONDER_ENDSEARCH_PRESEARCH_OFFSET_TIMELIMIT) {
                 //     new_depth = max_depth;
                 // }
+                
+                std::cerr << n_boards[i].n_discs() - 4 << "-" << new_depth << "@" << SELECTIVITY_PERCENTAGE[new_mpc_level] << "% ";
+
                 bool new_is_end_search = (new_depth == max_depth);
                 bool new_is_complete_search = new_is_end_search && new_mpc_level == MPC_100_LEVEL;
                 Search search(&n_boards[i], new_mpc_level, true, false);
