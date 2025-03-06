@@ -22,6 +22,8 @@
 
 #define GGS_NON_SYNCHRO_ID 0
 
+#define GGS_SEND_EMPTY_INTERVAL 180000ULL // 3 minutes
+
 struct GGS_Board {
     std::string game_id;
     bool is_synchro;
@@ -255,6 +257,22 @@ bool ggs_is_board_info(std::string line) {
     return false;
 }
 
+bool ggs_is_match_request(std::string line, std::string username) {
+    std::vector<std::string> words = split_by_space(line);
+    if (words.size() >= 10) {
+        return words[1] == "+" && words[7] == "R" && (words[4] == username || words[9] == username);
+    }
+    return false;
+}
+
+std::string ggs_match_request_get_id(std::string line) {
+    std::vector<std::string> words = split_by_space(line);
+    if (words.size() >= 3) {
+        return words[2];
+    }
+    return "";
+}
+
 std::string ggs_board_get_id(std::string line) {
     std::vector<std::string> words = split_by_space(line);
     if (words.size() >= 3) {
@@ -448,12 +466,18 @@ void ggs_client(Options *options) {
     for (int i = 0; i < 2; ++i) {
         matches[i].init();
     }
+    uint64_t last_sent_time = tim();
     while (true) {
+        if (tim() - last_sent_time > GGS_SEND_EMPTY_INTERVAL) {
+            ggs_send_message(sock, "\n", options);
+            last_sent_time = tim();
+        }
         // check user input
         if (user_input_f.valid()) {
             if (user_input_f.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
                 std::string user_input = user_input_f.get();
                 ggs_send_message(sock, user_input + "\n", options);
+                last_sent_time = tim();
                 if (user_input == "exit" || user_input == "quit") {
                     break;
                 }
@@ -471,6 +495,7 @@ void ggs_client(Options *options) {
                             Search_result search_result = ai_futures[i].get();
                             ai_searchings[i] = false;
                             ggs_send_move(ggs_boards_searching[i], sock, search_result, options);
+                            last_sent_time = tim();
                         }
                     }
                 }
@@ -590,6 +615,22 @@ void ggs_client(Options *options) {
                         }
                         transposition_table.init();
                         ggs_print_info("clearned TT up", options);
+                    }
+                }
+            }
+            // receive match request
+            if (!match_playing) {
+                for (std::string server_reply: server_replies) {
+                    if (server_reply.size()) {
+                        std::string os_info = ggs_get_os_info(server_reply);
+                        // match end
+                        if (ggs_is_match_request(os_info, options->ggs_username)) {
+                            std::string request_id = ggs_match_request_get_id(os_info);
+                            std::string accept_cmd = "ts accept " + request_id;
+                            ggs_send_message(sock, accept_cmd + "\n", options);
+                            last_sent_time = tim();
+                            ggs_print_info("match request accepted " + request_id, options);
+                        }
                     }
                 }
             }
