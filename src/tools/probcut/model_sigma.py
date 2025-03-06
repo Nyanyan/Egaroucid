@@ -61,7 +61,8 @@ y_depth2_mean = []
 z_mean = []
 weight_mean = []
 
-for n_discs in range(len(data)):
+#for n_discs in range(len(data)):
+for n_discs in range(4 + 12, 51):
     for depth1 in range(len(data[n_discs])): # short
         for depth2 in range(len(data[n_discs][depth1])): # long
             if len(data[n_discs][depth1][depth2]) >= 3:
@@ -94,7 +95,7 @@ for n_discs in range(len(data)):
 for n_discs in range(4, 61):
     for depth2 in range(30, 31):
         depth1 = 0
-        z = 2.0 + 12.0 * ((n_discs - 4) / 60)
+        z = 2.0 + 10.0 * ((n_discs - 4) / 60)
         w_n_discs_sd.append(n_discs)
         x_depth1_sd.append(depth1)
         y_depth2_sd.append(depth2)
