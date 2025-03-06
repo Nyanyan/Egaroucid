@@ -639,10 +639,10 @@ void ggs_client(Options *options) {
                                 if (ggs_board.is_synchro) { // synchro game
                                     playing_synchro_game = true;
                                     int n_discs = ggs_board.board.n_discs();
-                                    if (playing_same_board && ggs_boards[0][n_discs].board == ggs_boards[1][n_discs].board || ggs_boards_n_discs[ggs_board.synchro_id] > ggs_boards_n_discs[ggs_board.synchro_id ^ 1]) {
+                                    if (playing_same_board && (ggs_boards[0][n_discs].board == ggs_boards[1][n_discs].board || ggs_boards_n_discs[ggs_board.synchro_id] != ggs_boards_n_discs[ggs_board.synchro_id ^ 1])) {
                                         // std::string msg = "synchro playing same board or opponent has not played " + ggs_board.board.to_str();
                                         // ggs_print_info(msg);
-                                        playing_same_board = true;
+                                        // playing_same_board = true;
                                     } else {
                                         // std::string msg = "synchro game separated " + ggs_board.board.to_str();
                                         // ggs_print_info(msg);
