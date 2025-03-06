@@ -1405,7 +1405,7 @@ std::vector<Ponder_elem> ai_search_moves(Board board, bool show_log, std::vector
         std::cerr << "search moves tl " << time_limit << " n_good_moves " << n_good_moves << std::endl;
     }
     const int max_depth = HW2 - board.n_discs() - 1;
-    int initial_level = 20;
+    int initial_level = 21;
     std::vector<Clog_result> clogs;
     std::vector<int> levels;
     for (int i = 0; i < n_good_moves; ++i) {
@@ -1443,6 +1443,9 @@ std::vector<Ponder_elem> ai_search_moves(Board board, bool show_log, std::vector
         bool searching = true;
         // selfplay
         while (n_board.check_pass()) {
+            if (n_board.n_discs() >= HW2 - 23 && n_boards.size()) { // complete search with last 24 empties in lv.21
+                break;
+            }
             n_boards.emplace_back(n_board);
             uint64_t elapsed = tim() - strt;
             if (elapsed < time_limit) {
@@ -1478,29 +1481,39 @@ std::vector<Ponder_elem> ai_search_moves(Board board, bool show_log, std::vector
                 int level_depth;
                 uint_fast8_t level_mpc_level;
                 get_level(levels[selected_idx], n_boards[i].n_discs() - 4, &level_is_mid_search, &level_depth, &level_mpc_level);
-                int new_depth = level_depth;
-                uint_fast8_t new_mpc_level = level_mpc_level;
+                int new_depth = move_list[selected_idx].depth - i;
+                //new_depth = move_list[selected_idx].depth;
+                if (!is_first_searches[selected_idx] || move_list[selected_idx].depth < 30) {
+                    ++new_depth; // increase depth
+                }
+                new_depth = std::max(new_depth, level_depth);
+                if (i != 0) {
+                    new_depth = std::min(new_depth, 27); // limit depth for non-root
+                }
+                uint_fast8_t new_mpc_level = MPC_74_LEVEL;
                 if (i == 0) {
-                    //new_depth = move_list[selected_idx].depth - i;
-                    new_depth = move_list[selected_idx].depth;
-                    if (!is_first_searches[selected_idx] || move_list[selected_idx].depth < 30) {
-                        ++new_depth; // increase depth
-                    }
-                    new_depth = std::max(new_depth, level_depth);
-                    new_mpc_level = MPC_74_LEVEL;
-                    if (i == 0 || move_list[i].is_endgame_search) {
-                        new_mpc_level = move_list[i].mpc_level;
-                    }
+                    new_mpc_level = move_list[i].mpc_level;
+                }
+                if (i == 0) {
                     if (new_depth > max_depth) {
                         new_depth = max_depth;
                         if (new_mpc_level < MPC_100_LEVEL) {
                             ++new_mpc_level;
                         }
                     }
+                } else {
+                    if (new_depth >= max_depth) {
+                        new_depth = max_depth;
+                        if (move_list[i].is_endgame_search) {
+                            new_mpc_level = move_list[i].mpc_level;
+                            if (new_mpc_level < MPC_100_LEVEL) {
+                                ++new_mpc_level;
+                            }
+                        }
+                    }
                 }
-                
-                std::cerr << i << "-" << new_depth << "@" << (int)new_mpc_level << " ";
-
+                //}
+                std::cerr << i << "-" << new_depth << "@" << SELECTIVITY_PERCENTAGE[new_mpc_level] << "% ";
                 bool new_is_end_search = (new_depth == max_depth);
                 bool new_is_complete_search = new_is_end_search && new_mpc_level == MPC_100_LEVEL;
                 Search search(&n_boards[i], new_mpc_level, true, false);
