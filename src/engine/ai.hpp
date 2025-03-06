@@ -768,8 +768,8 @@ Search_result ai_time_limit(Board board, bool use_book, int book_acc_level, bool
                 if (elapsed_till_second_search > 8000) {
                     elapsed_till_second_search = 8000;
                 }
-                uint64_t search_moves_tl = std::max<uint64_t>(8000ULL - elapsed_till_second_search, (uint64_t)((time_limit - elapsed_till_second_search) * std::min(0.3, 0.1 * n_good_moves)));
-                std::vector<Ponder_elem> after_move_list = ai_align_move_levels(board, show_log, second_move_list, n_good_moves, time_limit, thread_id, 30);
+                uint64_t align_moves_tl = std::max<uint64_t>(8000ULL - elapsed_till_second_search, (uint64_t)((time_limit - elapsed_till_second_search) * std::min(0.3, 0.1 * n_good_moves)));
+                std::vector<Ponder_elem> after_move_list = ai_align_move_levels(board, show_log, second_move_list, n_good_moves, align_moves_tl, thread_id, 27);
                 need_request_more_time = true;
 
                 double new_best_value = after_move_list[0].value;
@@ -783,16 +783,16 @@ Search_result ai_time_limit(Board board, bool use_book, int book_acc_level, bool
                 }
                 if (new_n_good_moves >= 2) {
                     uint64_t elapsed = tim() - strt;
-                    if (elapsed < search_moves_tl) {
+                    if (time_limit > elapsed) {
+                        uint64_t self_play_tl = (uint64_t)((time_limit - elapsed) * std::min(0.8, 0.3 * new_n_good_moves));
                         if (show_log) {
-                            std::cerr << "need to search good moves 2 :";
+                            std::cerr << "need to search good moves (self play) :";
                             for (int i = 0; i < new_n_good_moves; ++i) {
                                 std::cerr << " " << idx_to_coord(after_move_list[i].flip.pos);
                             }
                             std::cerr << std::endl;
                         }
-                        uint64_t new_search_moves_tl = search_moves_tl - elapsed;
-                        std::vector<Ponder_elem> after_move_list2 = ai_search_moves(board, show_log, after_move_list, new_n_good_moves, new_search_moves_tl, thread_id);
+                        std::vector<Ponder_elem> after_move_list2 = ai_search_moves(board, show_log, after_move_list, new_n_good_moves, self_play_tl, thread_id);
                     }
                 }
             }
@@ -1470,9 +1470,7 @@ std::vector<Ponder_elem> ai_search_moves(Board board, bool show_log, std::vector
                 Search search(&n_board, mpc_level, true, false);
                 search.thread_id = thread_id;
                 searching = true;
-                //std::future<int> policy_future = std::async(std::launch::async, nega_scout_policy, &search, -SCORE_MAX, SCORE_MAX, depth, false, LEGAL_UNDEFINED, !is_mid_search, &searching);
                 std::future<std::pair<int, int>> sp_future = std::async(std::launch::async, first_nega_scout, &search, -SCORE_MAX, SCORE_MAX, depth, !is_mid_search, clogs, strt, &searching);
-                //if (policy_future.wait_for(std::chrono::milliseconds(tl_this_search)) == std::future_status::ready) {
                 if (sp_future.wait_for(std::chrono::milliseconds(tl_this_search)) == std::future_status::ready) {
                     int policy = sp_future.get().second;
                     std::cerr << idx_to_coord(policy);
@@ -1480,7 +1478,6 @@ std::vector<Ponder_elem> ai_search_moves(Board board, bool show_log, std::vector
                     n_board.move_board(&flip);
                 } else {
                     searching = false;
-                    //policy_future.get();
                     sp_future.get();
                     std::cerr << std::endl;
                     break;

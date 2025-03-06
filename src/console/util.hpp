@@ -13,20 +13,25 @@
 #include <chrono>
 #include <iomanip>
 #include <sstream>
+#include <vector>
 
 std::string get_current_datetime() {
     auto now = std::chrono::system_clock::now();
     auto in_time_t = std::chrono::system_clock::to_time_t(now);
+    std::tm tm;
+    localtime_s(&tm, &in_time_t);
     std::stringstream ss;
-    ss << std::put_time(std::localtime(&in_time_t), "%Y-%m-%d %X");
+    ss << std::put_time(&tm, "%Y-%m-%d %X");
     return ss.str();
 }
 
 std::string get_current_datetime_for_file() {
     auto now = std::chrono::system_clock::now();
     auto in_time_t = std::chrono::system_clock::to_time_t(now);
+    std::tm tm;
+    localtime_s(&tm, &in_time_t);
     std::stringstream ss;
-    ss << std::put_time(std::localtime(&in_time_t), "%Y-%m-%d-%H=%M=%S");
+    ss << std::put_time(&tm, "%Y-%m-%d-%H=%M=%S");
     return ss.str();
 }
 
