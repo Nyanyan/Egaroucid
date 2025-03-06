@@ -453,10 +453,10 @@ void ggs_client(Options *options) {
         if (user_input_f.valid()) {
             if (user_input_f.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
                 std::string user_input = user_input_f.get();
+                ggs_send_message(sock, user_input + "\n", options);
                 if (user_input == "exit" || user_input == "quit") {
                     break;
                 }
-                ggs_send_message(sock, user_input + "\n", options);
             }
         } else {
             user_input_f = std::async(std::launch::async, ggs_get_user_input);
