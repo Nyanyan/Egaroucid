@@ -18,8 +18,10 @@
 #include <functional>
 #include <unordered_map>
 
-#define THREAD_ID_NONE -999999999
+#define THREAD_ID_SIZE 100
+#define THREAD_ID_NONE 99 // reserved
 #define THREAD_SIZE_INF 999999999
+#define THREAD_SIZE_DEFAULT -1
 
 using thread_id_t = int;
 
@@ -43,8 +45,11 @@ class Thread_pool {
         std::queue<std::pair<thread_id_t, std::function<void()>>> tasks{};
         std::unique_ptr<std::thread[]> threads;
         std::condition_variable condition;
-        std::unordered_map<thread_id_t, int> max_thread_size;
-        std::unordered_map<thread_id_t, std::atomic<int>> n_using_thread;
+
+        int max_thread_size[THREAD_ID_SIZE];
+        std::atomic<int> n_using_thread[THREAD_ID_SIZE];
+        //std::unordered_map<thread_id_t, int> max_thread_size;
+        //std::unordered_map<thread_id_t, std::atomic<int>> n_using_thread;
         //std::atomic<int> n_using_tasks;
 
     public:
@@ -62,6 +67,12 @@ class Thread_pool {
                 }
                 running = true;
                 n_idle = 0;
+                for (int i = 0; i < THREAD_ID_SIZE; ++i) {
+                    max_thread_size[i] = THREAD_SIZE_DEFAULT;
+                    n_using_thread[i] = THREAD_SIZE_DEFAULT;
+                }
+                max_thread_size[THREAD_ID_NONE] = THREAD_SIZE_INF;
+                n_using_thread[THREAD_ID_NONE] = 0;
             }
         }
 
@@ -81,7 +92,7 @@ class Thread_pool {
         void set_max_thread_size(uint64_t id, int new_max_thread_size) {
             std::lock_guard<std::mutex> lock(mtx);
             max_thread_size[id] = new_max_thread_size;
-            if (n_using_thread.find(id) == n_using_thread.end()) {
+            if (n_using_thread[id] == THREAD_SIZE_DEFAULT) {
                 n_using_thread[id] = 0;
             }
         }
@@ -167,12 +178,12 @@ class Thread_pool {
         template<typename F, typename... Args, typename R = typename std::result_of<std::decay_t<F>(std::decay_t<Args>...)>::type>
 #endif
     std::future<R> push(thread_id_t id, bool *pushed, F &&func, const Args &&...args) {
-        if (id != THREAD_ID_NONE) {
-            if (n_using_thread[id] >= max_thread_size[id]) {
-                *pushed = false;
-                return std::future<R>();
-            }
+        //if (id != THREAD_ID_NONE) {
+        if (n_using_thread[id] >= max_thread_size[id]) {
+            *pushed = false;
+            return std::future<R>();
         }
+        //}
         auto task = std::make_shared<std::packaged_task<R()>>([func, args...]() {
             return func(args...);
         });
@@ -199,10 +210,10 @@ class Thread_pool {
                 throw std::runtime_error("Cannot schedule new task after shutdown.");
             }
             bool pushed = false;
-            if (n_idle > 0 && (id == THREAD_ID_NONE || n_using_thread[id] < max_thread_size[id])) {
+            if (n_idle > 0 && n_using_thread[id] < max_thread_size[id]) {
                 {
                     std::unique_lock<std::mutex> lock(mtx);
-                    if (n_idle > 0 && (id == THREAD_ID_NONE || n_using_thread[id] < max_thread_size[id])) {
+                    if (n_idle > 0 && n_using_thread[id] < max_thread_size[id]) {
                         pushed = true;
                         tasks.push(std::make_pair(id, std::function<void()>(task)));
                         --n_idle;
@@ -233,7 +244,7 @@ class Thread_pool {
                 }
                 task();
                 if (id != THREAD_ID_NONE) {
-                    std::unique_lock<std::mutex> lock(mtx);
+                    //std::unique_lock<std::mutex> lock(mtx); // no need for atomic
                     --n_using_thread[id];
                 }
             }
