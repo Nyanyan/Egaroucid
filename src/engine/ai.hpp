@@ -259,7 +259,10 @@ void iterative_deepening_search_time_limit(Board board, int alpha, int beta, boo
             search_success = true;
         } else {
             main_searching = false;
-            f.get();
+            try {
+                f.get();
+            } catch (const std::exception &e) {
+            }
             if (show_log) {
                 std::cerr << "terminated " << tim() - strt << " ms" << std::endl;
             }
@@ -307,7 +310,10 @@ void iterative_deepening_search_time_limit(Board board, int alpha, int beta, boo
                         nws_success = true;
                     } else {
                         nws_searching = false;
-                        nws_f.get();
+                        try {
+                            nws_f.get();
+                        } catch (const std::exception &e) {
+                        }
                         if (show_log) {
                             std::cerr << "terminate early cut nws by time limit " << tim() - strt << " ms" << std::endl;
                         }
@@ -1289,7 +1295,10 @@ std::vector<Ponder_elem> ai_get_values(Board board, bool show_log, uint64_t time
                 }
             } else {
                 n_searching = false;
-                v_future.get();
+                try {
+                    v_future.get();
+                } catch (const std::exception &e) {
+                }
             }
         }
     }
@@ -1390,7 +1399,10 @@ std::vector<Ponder_elem> ai_align_move_levels(Board board, bool show_log, std::v
             }
         } else {
             n_searching = false;
-            v_future.get();
+            try {
+                v_future.get();
+            } catch (const std::exception &e) {
+            }
         }
     }
     std::sort(move_list.begin(), move_list.end(), comp_get_values_elem);
@@ -1479,7 +1491,10 @@ std::vector<Ponder_elem> ai_search_moves(Board board, bool show_log, std::vector
                     n_board.move_board(&flip);
                 } else {
                     searching = false;
-                    sp_future.get();
+                    try {
+                        sp_future.get();
+                    } catch (const std::exception &e) {
+                    }
                     std::cerr << std::endl;
                     break;
                 }
@@ -1552,7 +1567,10 @@ std::vector<Ponder_elem> ai_search_moves(Board board, bool show_log, std::vector
                     }
                 } else {
                     searching = false;
-                    nega_scout_future.get();
+                    try {
+                        nega_scout_future.get();
+                    } catch (const std::exception &e) {
+                    }
                     std::cerr << std::endl;
                     break;
                 }
