@@ -1427,7 +1427,7 @@ std::vector<Ponder_elem> ai_search_moves(Board board, bool show_log, std::vector
         for (int i = 0; i < n_good_moves; ++i) {
             //if (!move_list[i].is_complete_search) {
             if (!(move_list[i].is_endgame_search && move_list[i].mpc_level >= MPC_99_LEVEL)) {
-                double val = move_list[i].value + myrandom() * AI_TL_ADDITIONAL_SEARCH_THRESHOLD * 1.5;
+                double val = move_list[i].value + myrandom() * AI_TL_ADDITIONAL_SEARCH_THRESHOLD * 2.0;
                 if (val > max_val) {
                     max_val = val;
                     selected_idx = i;
