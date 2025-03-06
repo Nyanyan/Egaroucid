@@ -167,9 +167,11 @@ class Thread_pool {
         template<typename F, typename... Args, typename R = typename std::result_of<std::decay_t<F>(std::decay_t<Args>...)>::type>
 #endif
     std::future<R> push(thread_id_t id, bool *pushed, F &&func, const Args &&...args) {
-        if (n_using_thread[id] >= max_thread_size[id]) {
-            *pushed = false;
-            return std::future<R>();
+        if (id != THREAD_ID_NONE) {
+            if (n_using_thread[id] >= max_thread_size[id]) {
+                *pushed = false;
+                return std::future<R>();
+            }
         }
         auto task = std::make_shared<std::packaged_task<R()>>([func, args...]() {
             return func(args...);
@@ -197,10 +199,10 @@ class Thread_pool {
                 throw std::runtime_error("Cannot schedule new task after shutdown.");
             }
             bool pushed = false;
-            if (n_idle > 0 && n_using_thread[id] < max_thread_size[id]) {
+            if (n_idle > 0 && (id == THREAD_ID_NONE || n_using_thread[id] < max_thread_size[id])) {
                 {
                     std::unique_lock<std::mutex> lock(mtx);
-                    if (n_idle > 0 && n_using_thread[id] < max_thread_size[id]) {
+                    if (n_idle > 0 && (id == THREAD_ID_NONE || n_using_thread[id] < max_thread_size[id])) {
                         pushed = true;
                         tasks.push(std::make_pair(id, std::function<void()>(task)));
                         --n_idle;
