@@ -1480,23 +1480,27 @@ std::vector<Ponder_elem> ai_search_moves(Board board, bool show_log, std::vector
                 int depth;
                 uint_fast8_t mpc_level;
                 get_level(level, n_board.n_discs() - 4, &is_mid_search, &depth, &mpc_level);
-                Search search(&n_board, mpc_level, true, false);
-                search.thread_id = thread_id;
-                searching = true;
-                std::future<std::pair<int, int>> sp_future = std::async(std::launch::async, first_nega_scout, &search, -SCORE_MAX, SCORE_MAX, depth, !is_mid_search, clogs, strt, &searching);
-                if (sp_future.wait_for(std::chrono::milliseconds(tl_this_search)) == std::future_status::ready) {
-                    int policy = sp_future.get().second;
-                    std::cerr << idx_to_coord(policy);
-                    calc_flip(&flip, &n_board, policy);
-                    n_board.move_board(&flip);
-                } else {
-                    searching = false;
-                    try {
-                        sp_future.get();
-                    } catch (const std::exception &e) {
+                {
+                    Search search(&n_board, mpc_level, true, false);
+                    search.thread_id = thread_id;
+                    searching = true;
+                    std::future<std::pair<int, int>> sp_future = std::async(std::launch::async, first_nega_scout, &search, -SCORE_MAX, SCORE_MAX, depth, !is_mid_search, clogs, strt, &searching);
+                    if (sp_future.wait_for(std::chrono::milliseconds(tl_this_search)) == std::future_status::ready) {
+                        int policy = sp_future.get().second;
+                        if (is_valid_policy(policy)) {
+                            std::cerr << idx_to_coord(policy);
+                            calc_flip(&flip, &n_board, policy);
+                            n_board.move_board(&flip);
+                        }
+                    } else {
+                        searching = false;
+                        try {
+                            sp_future.get();
+                        } catch (const std::exception &e) {
+                        }
+                        std::cerr << std::endl;
+                        break;
                     }
-                    std::cerr << std::endl;
-                    break;
                 }
             }
         }
