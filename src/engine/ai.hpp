@@ -783,7 +783,7 @@ Search_result ai_time_limit(Board board, bool use_book, int book_acc_level, bool
                 }
                 if (new_n_good_moves >= 2) {
                     uint64_t elapsed = tim() - strt;
-                    if (elapsed < time_limit) {
+                    if (elapsed < search_moves_tl) {
                         if (show_log) {
                             std::cerr << "need to search good moves 2 :";
                             for (int i = 0; i < new_n_good_moves; ++i) {
