@@ -1491,6 +1491,9 @@ std::vector<Ponder_elem> ai_search_moves(Board board, bool show_log, std::vector
                             std::cerr << idx_to_coord(policy);
                             calc_flip(&flip, &n_board, policy);
                             n_board.move_board(&flip);
+                        } else {
+                            std::cerr << " ERR " << policy << " ";
+                            break;
                         }
                     } else {
                         searching = false;
