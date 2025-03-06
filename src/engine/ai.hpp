@@ -27,11 +27,11 @@ constexpr int IDSEARCH_ENDSEARCH_PRESEARCH_OFFSET = 10;
 constexpr int IDSEARCH_ENDSEARCH_PRESEARCH_OFFSET_TIMELIMIT = 8;
 constexpr int PONDER_ENDSEARCH_PRESEARCH_OFFSET_TIMELIMIT = 4;
 
-constexpr int  PONDER_START_SELFPLAY_DEPTH = 21;
+//constexpr int PONDER_START_SELFPLAY_DEPTH = 21;
 
-constexpr int AI_TL_EARLY_BREAK_THRESHOLD = 4;
+constexpr int AI_TL_EARLY_BREAK_THRESHOLD = 5;
 
-constexpr double AI_TL_ADDITIONAL_SEARCH_THRESHOLD = 1.5;
+constexpr double AI_TL_ADDITIONAL_SEARCH_THRESHOLD = 1.9;
 
 struct Lazy_SMP_task {
     uint_fast8_t mpc_level;
@@ -756,7 +756,7 @@ Search_result ai_time_limit(Board board, bool use_book, int book_acc_level, bool
                     }
                     std::cerr << std::endl;
                 }
-                uint64_t search_moves_tl = std::max<uint64_t>(8000ULL - get_values_tl, (uint64_t)((time_limit - get_values_tl) * std::min(0.7, 0.25 * n_good_moves)));
+                uint64_t search_moves_tl = std::max<uint64_t>(8000ULL - get_values_tl, (uint64_t)((time_limit - get_values_tl) * std::min(0.8, 0.3 * n_good_moves)));
                 std::vector<Ponder_elem> after_move_list = ai_align_move_levels(board, show_log, ponder_move_list, n_good_moves, time_limit, thread_id);
                 need_request_more_time = true;
 
@@ -773,7 +773,7 @@ Search_result ai_time_limit(Board board, bool use_book, int book_acc_level, bool
                     uint64_t elapsed = tim() - strt;
                     if (elapsed < time_limit) {
                         if (show_log) {
-                            std::cerr << "need to search good moves2 :";
+                            std::cerr << "need to search good moves 2 :";
                             for (int i = 0; i < new_n_good_moves; ++i) {
                                 std::cerr << " " << idx_to_coord(after_move_list[i].flip.pos);
                             }
