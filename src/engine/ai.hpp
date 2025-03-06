@@ -764,11 +764,11 @@ Search_result ai_time_limit(Board board, bool use_book, int book_acc_level, bool
                     }
                     std::cerr << std::endl;
                 }
-                uint64_t elapsed_till_second = tim() - strt;
-                if (elapsed_till_second > 8000) {
-                    elapsed_till_second = 8000;
+                uint64_t elapsed_till_second_search = tim() - strt;
+                if (elapsed_till_second_search > 8000) {
+                    elapsed_till_second_search = 8000;
                 }
-                uint64_t search_moves_tl = std::max<uint64_t>(8000ULL - elapsed_till_second, (uint64_t)((time_limit - elapsed_till_second) * std::min(0.5, 0.2 * n_good_moves)));
+                uint64_t search_moves_tl = std::max<uint64_t>(8000ULL - elapsed_till_second_search, (uint64_t)((time_limit - elapsed_till_second_search) * std::min(0.3, 0.1 * n_good_moves)));
                 std::vector<Ponder_elem> after_move_list = ai_align_move_levels(board, show_log, second_move_list, n_good_moves, time_limit, thread_id, 30);
                 need_request_more_time = true;
 
