@@ -19,8 +19,10 @@ import math
 #data_files = ['data/20241128_1_7_5/probcut_mid0.txt']
 #data_files = ['data/20241130_1_7_5/probcut_mid0.txt']
 #data_files_end = ['data/20241130_1_7_5/probcut_end0.txt', 'data/20241130_1_7_5/probcut_end1.txt', 'data/20241130_1_7_5/probcut_end2.txt']
-data_files = ['data/20250109_1_7_6/probcut_mid0.txt', 'data/20250109_1_7_6/probcut_mid1.txt', 'data/20250109_1_7_6/probcut_mid2.txt']
-data_files_end = ['data/20250109_1_7_6/probcut_end0.txt', 'data/20250109_1_7_6/probcut_end1.txt']
+#data_files = ['data/20250109_1_7_6/probcut_mid0.txt', 'data/20250109_1_7_6/probcut_mid1.txt', 'data/20250109_1_7_6/probcut_mid2.txt']
+#data_files_end = ['data/20250109_1_7_6/probcut_end0.txt', 'data/20250109_1_7_6/probcut_end1.txt']
+data_files = ['data/20250306_1_7_6_20250305_1/probcut_mid0.txt', 'data/20250306_1_7_6_20250305_1/probcut_mid1.txt', 'data/20250306_1_7_6_20250305_1/probcut_mid2.txt']
+data_files_end = ['data/20250306_1_7_6_20250305_1/probcut_end0.txt', 'data/20250306_1_7_6_20250305_1/probcut_end1.txt']
 
 
 data = [[[[] for _ in range(61)] for _ in range(61)] for _ in range(65)] # n_discs, depth1, depth2 (depth1 < depth2)
@@ -92,7 +94,7 @@ for n_discs in range(len(data)):
 for n_discs in range(4, 61):
     for depth2 in range(30, 31):
         depth1 = 0
-        z = 3.0 + 10.0 * ((n_discs - 4) / 60)
+        z = 2.0 + 12.0 * ((n_discs - 4) / 60)
         w_n_discs_sd.append(n_discs)
         x_depth1_sd.append(depth1)
         y_depth2_sd.append(depth2)
@@ -146,8 +148,8 @@ for i in [10, 20, 30, 40, 50]:
     plot_fit_result_onephase(w_n_discs_sd, x_depth1_sd, y_depth2_sd, z_sd, i, popt_sd)
 
 '''
-#popt_mean, pcov_mean = curve_fit(f, (w_n_discs_mean, x_depth1_mean, y_depth2_mean), z_mean, np.ones(7), sigma=weight_mean, absolute_sigma=True)
-popt_mean = [0 for _ in range(7)]
+popt_mean, pcov_mean = curve_fit(f, (w_n_discs_mean, x_depth1_mean, y_depth2_mean), z_mean, np.ones(7), sigma=weight_mean, absolute_sigma=True)
+#popt_mean = [0 for _ in range(7)]
 print([float(elem) for elem in popt_mean])
 for i in range(len(popt_mean)):
     print('#define probcut_mean_' + chr(ord('a') + i), popt_mean[i])
