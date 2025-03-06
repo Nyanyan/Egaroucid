@@ -1532,7 +1532,7 @@ std::vector<Ponder_elem> ai_search_moves(Board board, bool show_log, std::vector
                 bool new_is_end_search = (new_depth == max_depth);
                 bool new_is_complete_search = new_is_end_search && new_mpc_level == MPC_100_LEVEL;
                 Search search(&n_boards[i], new_mpc_level, true, false);
-                search.thread_id = thread_id;
+                //search.thread_id = thread_id;
                 searching = true;
                 std::future<int> nega_scout_future = std::async(std::launch::async, nega_scout, &search, -SCORE_MAX, SCORE_MAX, new_depth, false, LEGAL_UNDEFINED, new_is_end_search, &searching);
                 if (nega_scout_future.wait_for(std::chrono::milliseconds(tl_this_search)) == std::future_status::ready) {

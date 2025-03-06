@@ -197,10 +197,10 @@ class Thread_pool {
                 throw std::runtime_error("Cannot schedule new task after shutdown.");
             }
             bool pushed = false;
-            if (n_idle > 0) {
+            if (n_idle > 0 && n_using_thread[id] < max_thread_size[id]) {
                 {
                     std::unique_lock<std::mutex> lock(mtx);
-                    if (n_idle > 0) {
+                    if (n_idle > 0 && n_using_thread[id] < max_thread_size[id]) {
                         pushed = true;
                         tasks.push(std::make_pair(id, std::function<void()>(task)));
                         --n_idle;
@@ -231,6 +231,7 @@ class Thread_pool {
                 }
                 task();
                 if (id != THREAD_ID_NONE) {
+                    std::unique_lock<std::mutex> lock(mtx);
                     --n_using_thread[id];
                 }
             }
