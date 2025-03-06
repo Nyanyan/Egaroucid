@@ -741,7 +741,11 @@ Search_result ai_time_limit(Board board, bool use_book, int book_acc_level, bool
             std::cerr << "getting values tl " << get_values_tl << std::endl;
         }
         std::vector<Ponder_elem> first_move_list = ai_get_values(board, show_log, get_values_tl, thread_id);
-        std::vector<Ponder_elem> second_move_list = ai_align_move_levels(board, show_log, first_move_list, first_move_list.size(), get_values_tl, thread_id, 19);
+        uint64_t level_align_tl = 300ULL;
+        if (show_log) {
+            std::cerr << "level align tl " << level_align_tl << std::endl;
+        }
+        std::vector<Ponder_elem> second_move_list = ai_align_move_levels(board, show_log, first_move_list, first_move_list.size(), level_align_tl, thread_id, 19);
         if (second_move_list.size()) {
             double best_value = second_move_list[0].value;
             int n_good_moves = 0;
