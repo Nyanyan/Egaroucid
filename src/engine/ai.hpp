@@ -730,7 +730,7 @@ Search_result ai_time_limit(Board board, bool use_book, int book_acc_level, bool
     }
     uint64_t strt = tim();
     int n_empties = HW2 - board.n_discs();
-    if (time_limit > 10000ULL && n_empties >= 30) { // additional search
+    if (time_limit > 10000ULL && n_empties >= 33) { // additional search
         bool need_request_more_time = false;
         bool get_values_searching = true;
         uint64_t get_values_tl = 100ULL;
