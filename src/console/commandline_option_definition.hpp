@@ -15,7 +15,7 @@
 #define N_COMMANDLINE_OPTIONS_BASE 31
 
 #ifdef INCLUDE_GGS
-    #define N_COMMANDLINE_OPTIONS (N_COMMANDLINE_OPTIONS_BASE + 4)
+    #define N_COMMANDLINE_OPTIONS (N_COMMANDLINE_OPTIONS_BASE + 5)
 #else
     #define N_COMMANDLINE_OPTIONS N_COMMANDLINE_OPTIONS_BASE
 #endif
@@ -60,6 +60,7 @@
     #define ID_GGS_LOGFILE (N_COMMANDLINE_OPTIONS_BASE + 1)
     #define ID_GGS_LOGDIR (N_COMMANDLINE_OPTIONS_BASE + 2)
     #define ID_GGS_GAMELOGDIR (N_COMMANDLINE_OPTIONS_BASE + 3)
+    #define ID_GGS_ACCEPT_REQUEST (N_COMMANDLINE_OPTIONS_BASE + 4)
 #endif
 
 struct Commandline_option_info{
@@ -109,7 +110,8 @@ const Commandline_option_info commandline_option_data[N_COMMANDLINE_OPTIONS] = {
 #ifdef INCLUDE_GGS
     {ID_GGS,                {"-ggs"},                                           2, "<username> <password>", "Use GGS (Generic Game Server) mode"},
     {ID_GGS_LOGFILE,        {"-ggslogfile"},                                    1, "<file>",            "file for GGS client log"},
-    {ID_GGS_LOGDIR,         {"-ggslogdir"},                                    1, "<dir>",              "directory for GGS client log (-ggslogfile is prioritized)"},
+    {ID_GGS_LOGDIR,         {"-ggslogdir"},                                     1, "<dir>",             "directory for GGS client log (-ggslogfile is prioritized)"},
     {ID_GGS_GAMELOGDIR,     {"-ggsgamelogdir"},                                 1, "<dir>",             "directory for GGS game log"},
+    {ID_GGS_ACCEPT_REQUEST, {"-ggsacceptrequest"},                              0, "",                  "Accept GGS request"},
 #endif
 };

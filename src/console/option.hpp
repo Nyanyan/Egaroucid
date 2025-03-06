@@ -49,6 +49,7 @@ struct Options {
     std::string ggs_log_file;
     bool ggs_game_log_to_file;
     std::string ggs_game_log_dir;
+    bool ggs_accept_request;
 #endif
 };
 
@@ -251,6 +252,7 @@ Options get_options(std::vector<Commandline_option> commandline_options, std::st
             std::cerr << "[ERROR] ggs game log dir out of range" << std::endl;
         }
     }
+    res.ggs_accept_request = find_commandline_option(commandline_options, ID_GGS_ACCEPT_REQUEST);
 #endif
     return res;
 }

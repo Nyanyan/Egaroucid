@@ -619,17 +619,19 @@ void ggs_client(Options *options) {
                 }
             }
             // receive match request
-            if (!match_playing) {
-                for (std::string server_reply: server_replies) {
-                    if (server_reply.size()) {
-                        std::string os_info = ggs_get_os_info(server_reply);
-                        // match end
-                        if (ggs_is_match_request(os_info, options->ggs_username)) {
-                            std::string request_id = ggs_match_request_get_id(os_info);
-                            std::string accept_cmd = "ts accept " + request_id;
-                            ggs_send_message(sock, accept_cmd + "\n", options);
-                            last_sent_time = tim();
-                            ggs_print_info("match request accepted " + request_id, options);
+            if (options->ggs_accept_request) {
+                if (!match_playing) {
+                    for (std::string server_reply: server_replies) {
+                        if (server_reply.size()) {
+                            std::string os_info = ggs_get_os_info(server_reply);
+                            // match end
+                            if (ggs_is_match_request(os_info, options->ggs_username)) {
+                                std::string request_id = ggs_match_request_get_id(os_info);
+                                std::string accept_cmd = "ts accept " + request_id;
+                                ggs_send_message(sock, accept_cmd + "\n", options);
+                                last_sent_time = tim();
+                                ggs_print_info("match request accepted " + request_id, options);
+                            }
                         }
                     }
                 }
