@@ -728,9 +728,9 @@ Search_result ai_time_limit(Board board, bool use_book, int book_acc_level, bool
     if (show_log) {
         std::cerr << "ai time limit start! tl " << time_limit << " remaining " << remaining_time_msec << " " << board.to_str() << std::endl;
     }
+    uint64_t strt = tim();
     int n_empties = HW2 - board.n_discs();
     if (time_limit > 10000ULL && n_empties >= 30) { // additional search
-        uint64_t strt = tim();
         bool need_request_more_time = false;
         bool get_values_searching = true;
         uint64_t get_values_tl = 100ULL;
@@ -807,7 +807,7 @@ Search_result ai_time_limit(Board board, bool use_book, int book_acc_level, bool
     }
     Search_result search_result = ai_common(board, -SCORE_MAX, SCORE_MAX, MAX_LEVEL, use_book, book_acc_level, use_multi_thread, show_log, board.get_legal(), false, time_limit, thread_id, searching);
     if (show_log) {
-        std::cerr << "ai time limit selected " << idx_to_coord(search_result.policy) << " value " << search_result.value << " depth " << search_result.depth << "@" << search_result.probability << "%" << " " << board.to_str() << std::endl;
+        std::cerr << "ai time limit selected " << idx_to_coord(search_result.policy) << " value " << search_result.value << " depth " << search_result.depth << "@" << search_result.probability << "%" << " time " << tim() - strt << " " << board.to_str() << std::endl;
     }
     return search_result;
 }
