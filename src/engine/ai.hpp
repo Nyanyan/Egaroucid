@@ -31,7 +31,7 @@ constexpr int PONDER_ENDSEARCH_PRESEARCH_OFFSET_TIMELIMIT = 4;
 
 constexpr int AI_TL_EARLY_BREAK_THRESHOLD = 5;
 
-constexpr double AI_TL_ADDITIONAL_SEARCH_THRESHOLD = 1.9;
+constexpr double AI_TL_ADDITIONAL_SEARCH_THRESHOLD = 2.5;
 
 struct Lazy_SMP_task {
     uint_fast8_t mpc_level;
