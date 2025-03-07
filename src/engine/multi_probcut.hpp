@@ -61,13 +61,21 @@ constexpr double SELECTIVITY_MPCT[N_SELECTIVITY_LEVEL] = {1.13, 1.55, 1.81, 2.32
 // constexpr double probcut_f = 3.522061673894723;
 // constexpr double probcut_g = 1.4807792395725898;
 
-constexpr double probcut_a = 1.2600723607074058;
-constexpr double probcut_b = -5.446439344394328;
-constexpr double probcut_c = 2.6329438886601246;
-constexpr double probcut_d = 2.237247786681378;
-constexpr double probcut_e = -3.4120568140550875;
-constexpr double probcut_f = 3.307747790437551;
-constexpr double probcut_g = 1.6603733455625373;
+// constexpr double probcut_a = 1.2600723607074058;
+// constexpr double probcut_b = -5.446439344394328;
+// constexpr double probcut_c = 2.6329438886601246;
+// constexpr double probcut_d = 2.237247786681378;
+// constexpr double probcut_e = -3.4120568140550875;
+// constexpr double probcut_f = 3.307747790437551;
+// constexpr double probcut_g = 1.6603733455625373;
+
+constexpr double probcut_a = 0.7709130560719686;
+constexpr double probcut_b = -3.202871229020261;
+constexpr double probcut_c = 1.6706393628759117;
+constexpr double probcut_d = 4.862350382612879;
+constexpr double probcut_e = 1.0517405793996117;
+constexpr double probcut_f = -0.926521221396226;
+constexpr double probcut_g = 2.647495430526794;
 
 
 
