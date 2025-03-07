@@ -737,7 +737,7 @@ Search_result ai_time_limit(Board board, bool use_book, int book_acc_level, bool
     if (time_limit > 10000ULL && n_empties >= 33) { // additional search
         bool need_request_more_time = false;
         bool get_values_searching = true;
-        uint64_t get_values_tl = 400ULL;
+        uint64_t get_values_tl = 1000ULL;
         if (show_log) {
             std::cerr << "getting values tl " << get_values_tl << std::endl;
         }
@@ -761,10 +761,10 @@ Search_result ai_time_limit(Board board, bool use_book, int book_acc_level, bool
                     std::cerr << std::endl;
                 }
                 uint64_t elapsed_till_get_values = tim() - strt;
-                if (elapsed_till_get_values > 8000) {
-                    elapsed_till_get_values = 8000;
+                if (elapsed_till_get_values > 7500) {
+                    elapsed_till_get_values = 7500;
                 }
-                uint64_t align_moves_tl = std::max<uint64_t>(8000ULL - elapsed_till_get_values, (uint64_t)((time_limit - elapsed_till_get_values) * std::min(0.3, 0.1 * n_good_moves)));
+                uint64_t align_moves_tl = std::max<uint64_t>(7500ULL - elapsed_till_get_values, (uint64_t)((time_limit - elapsed_till_get_values) * std::min(0.3, 0.1 * n_good_moves)));
                 std::vector<Ponder_elem> after_move_list = ai_align_move_levels(board, show_log, get_values_move_list, n_good_moves, align_moves_tl, thread_id, 27);
                 need_request_more_time = true;
 
