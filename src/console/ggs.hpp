@@ -290,6 +290,7 @@ GGS_Board ggs_get_board(std::string str) {
         std::cerr << "ggs_get_board failed: id invalid" << std::endl;
         return res;
     }
+    bool is_join = os_info_words[1] == "join"; // /os: join .4.1 s8r18 K?
     res.game_id = os_info_words[2]; // /os: update .4.1 s8r18 K?
     int game_id_dot_count = 0;
     for (int i = 0; (i = res.game_id.find('.', i)) != std::string::npos; i++) {
@@ -312,10 +313,17 @@ GGS_Board ggs_get_board(std::string str) {
     std::stringstream ss(str);
     std::string line;
     int n_board_identifier_found = 0;
+    int n_board_identifier_used = 1;
     while (std::getline(ss, line, '\n')) {
         std::vector<std::string> words = split_by_space(line);
         if (line[0] == '|') {
-            if (line.substr(0, 10) == "|0 move(s)") {
+            if (line.find(" move(s)") != std::string::npos) {
+                if (line.substr(0, 10) != "|0 move(s)") { // happened in stored game
+                    std::string line2;
+                    while (line2.substr(0, 10) == "|* to move" || line2.substr(0, 10) == "|O to move") {
+                        std::getline(ss, line2, '\n'); // skip starting board
+                    }
+                }
                 continue;
             }
             // board
@@ -339,11 +347,13 @@ GGS_Board ggs_get_board(std::string str) {
             }
 
             // last move
-            if (line.substr(0, 2) == "| ") {
-                if (words.size() >= 3) {
-                    if (words[1][words[1].size() - 1] == ':' && words[2].size() >= 2) {
-                        res.last_move = get_coord_from_chars(words[2][0], words[2][1]);
-                        continue;
+            if (!is_join) {
+                if (line.substr(0, 2) == "| ") {
+                    if (words.size() >= 3) {
+                        if (words[1][words[1].size() - 1] == ':' && words[2].size() >= 2) {
+                            res.last_move = get_coord_from_chars(words[2][0], words[2][1]);
+                            continue;
+                        }
                     }
                 }
             }
