@@ -490,7 +490,7 @@ void ggs_client(Options *options) {
                 std::string user_input = user_input_f.get();
                 ggs_send_message(sock, user_input + "\n", options);
                 last_sent_time = tim();
-                if (user_input == "exit" || user_input == "quit") {
+                if (user_input == "quit") {
                     break;
                 }
             }
