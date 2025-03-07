@@ -37,13 +37,30 @@ constexpr double SELECTIVITY_MPCT[N_SELECTIVITY_LEVEL] = {1.13, 1.55, 1.81, 2.32
 // constexpr double probcut_f = -2.0943019604295534;
 // constexpr double probcut_g = 2.8375125532449624;
 
-constexpr double probcut_a = 0.8974862529122071;
-constexpr double probcut_b = -3.4204629143599714;
-constexpr double probcut_c = 1.7567119593469644;
-constexpr double probcut_d = 1.8526171292686353;
-constexpr double probcut_e = -0.6143473457923314;
-constexpr double probcut_f = 2.984629073235461;
-constexpr double probcut_g = 1.623523462126328;
+// constexpr double probcut_a = 0.8974862529122071;
+// constexpr double probcut_b = -3.4204629143599714;
+// constexpr double probcut_c = 1.7567119593469644;
+// constexpr double probcut_d = 1.8526171292686353;
+// constexpr double probcut_e = -0.6143473457923314;
+// constexpr double probcut_f = 2.984629073235461;
+// constexpr double probcut_g = 1.623523462126328;
+
+// constexpr double probcut_a = 0.7976476366824274;
+// constexpr double probcut_b = -3.8130887099275412;
+// constexpr double probcut_c = 1.8991779711896992;
+// constexpr double probcut_d = 2.6657068394188324;
+// constexpr double probcut_e = -2.1452709960773446;
+// constexpr double probcut_f = 4.007759164168399;
+// constexpr double probcut_g = 1.2519954474102286;
+
+constexpr double probcut_a = 1.1260396533009502;
+constexpr double probcut_b = -5.529136416301218;
+constexpr double probcut_c = 2.5846996721443882;
+constexpr double probcut_d = 2.4542571318037063;
+constexpr double probcut_e = -3.520583405122576;
+constexpr double probcut_f = 3.522061673894723;
+constexpr double probcut_g = 1.4807792395725898;
+
 
 #if USE_MPC_PRE_CALCULATION
 int mpc_error[N_SELECTIVITY_LEVEL][HW2 + 1][HW2 - 3][HW2 - 3];
