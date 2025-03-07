@@ -319,7 +319,7 @@ GGS_Board ggs_get_board(std::string str) {
         if (line[0] == '|') {
             if (line.find(" move(s)") != std::string::npos) {
                 if (line.substr(0, 10) != "|0 move(s)") { // happens in stored game
-                    std::cout << "stored game" << std::endl;
+                    //std::cout << "stored game" << std::endl;
                     std::string line2;
                     while (line2.substr(0, 10) != "|* to move" && line2.substr(0, 10) != "|O to move") {
                         std::getline(ss, line2, '\n'); // skip starting board

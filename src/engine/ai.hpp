@@ -29,7 +29,7 @@ constexpr int PONDER_ENDSEARCH_PRESEARCH_OFFSET_TIMELIMIT = 4;
 
 //constexpr int PONDER_START_SELFPLAY_DEPTH = 21;
 
-constexpr int AI_TL_EARLY_BREAK_THRESHOLD = 5;
+constexpr int AI_TL_EARLY_BREAK_THRESHOLD = 6;
 
 constexpr double AI_TL_ADDITIONAL_SEARCH_THRESHOLD = 2.25;
 
@@ -1516,7 +1516,7 @@ std::vector<Ponder_elem> ai_search_moves(Board board, bool show_log, std::vector
                 get_level(level, n_boards[i].n_discs() - 4, &level_is_mid_search, &level_depth, &level_mpc_level);
                 int new_depth = move_list[selected_idx].depth - i;
                 //new_depth = move_list[selected_idx].depth;
-                if (!is_first_searches[selected_idx] && move_list[selected_idx].depth < 31) { // limit root depth min(31, move_list[selected_idx].depth)
+                if (!is_first_searches[selected_idx] && move_list[selected_idx].depth < 34) { // limit root depth min(34, move_list[selected_idx].depth)
                     ++new_depth; // increase depth
                 }
                 new_depth = std::max(new_depth, level_depth);
