@@ -12,7 +12,8 @@ n_games = int(sys.argv[2])
 
 file = None
 #cmd = 'versions/Egaroucid_for_Console_beta/Egaroucid_for_console.exe -quiet -nobook -level ' + str(level)
-cmd = 'Egaroucid_for_console.exe -quiet -nobook -level ' + str(level)
+#cmd = 'Egaroucid_for_console.exe -quiet -nobook -level ' + str(level)
+cmd = 'versions/Egaroucid_for_Console_7_5_1_Windows_SIMD/Egaroucid_for_Console_7_5_1_SIMD.exe -quiet -nobook -level ' + str(level)
 if len(sys.argv) == 4:
     file = sys.argv[3]
     print('egaroucid eval ', file, file=sys.stderr)
