@@ -11,7 +11,8 @@ level = int(sys.argv[1])
 n_games = int(sys.argv[2])
 
 file = None
-cmd = 'versions/Egaroucid_for_Console_beta/Egaroucid_for_console.exe -quiet -nobook -level ' + str(level)
+#cmd = 'versions/Egaroucid_for_Console_beta/Egaroucid_for_console.exe -quiet -nobook -level ' + str(level)
+cmd = 'Egaroucid_for_console.exe -quiet -nobook -level ' + str(level)
 if len(sys.argv) == 4:
     file = sys.argv[3]
     print('egaroucid eval ', file, file=sys.stderr)
@@ -34,12 +35,12 @@ max_num = min(len(tactic), n_games)
 smpl = range(len(tactic))
 print('play', max_num, 'games', file=sys.stderr)
 
-edax_exe = 'versions/edax_4_6/wEdax-x86-64-v3.exe'
-print(edax_exe, file=sys.stderr)
+edax_cmd = 'versions/edax_4_6/wEdax-x86-64-v3.exe -q -level ' + str(level)
+print(edax_cmd, file=sys.stderr)
 
 edax = [
-    subprocess.Popen((edax_exe + ' -q -level ' + str(level)).split(), stdin=subprocess.PIPE, stdout=subprocess.PIPE),
-    subprocess.Popen((edax_exe + ' -q -level ' + str(level)).split(), stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+    subprocess.Popen(edax_cmd.split(), stdin=subprocess.PIPE, stdout=subprocess.PIPE),
+    subprocess.Popen(edax_cmd.split(), stdin=subprocess.PIPE, stdout=subprocess.PIPE)
 ]
 
 for num in range(max_num):
