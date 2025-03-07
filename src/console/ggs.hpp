@@ -314,9 +314,9 @@ GGS_Board ggs_get_board(std::string str) {
     std::string line;
     int n_board_identifier_found = 0;
     int n_board_identifier_used = 1;
-    std::cout << "getting board info" << std::endl;
+    //std::cout << "getting board info" << std::endl;
     while (std::getline(ss, line, '\n')) {
-        std::cout << line << std::endl;
+        //std::cout << line << std::endl;
         std::vector<std::string> words = split_by_space(line);
         if (line[0] == '|') {
             if (line.find(" move(s)") != std::string::npos) {
@@ -326,7 +326,7 @@ GGS_Board ggs_get_board(std::string str) {
                     std::string line2;
                     while (line2.substr(0, 10) != "|* to move" && line2.substr(0, 10) != "|O to move") {
                         std::getline(ss, line2, '\n'); // skip starting board
-                        std::cout << "skip " << line2 << std::endl;
+                        //std::cout << "skip " << line2 << std::endl;
                     }
                 }
                 continue;
