@@ -34,9 +34,12 @@ max_num = min(len(tactic), n_games)
 smpl = range(len(tactic))
 print('play', max_num, 'games', file=sys.stderr)
 
+edax_exe = 'versions/edax_4_6/wEdax-x86-64-v3.exe'
+print(edax_exe, file=sys.stderr)
+
 edax = [
-    subprocess.Popen(('versions/edax_4_4/edax-4.4 -q -level ' + str(level)).split(), stdin=subprocess.PIPE, stdout=subprocess.PIPE),
-    subprocess.Popen(('versions/edax_4_4/edax-4.4 -q -level ' + str(level)).split(), stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+    subprocess.Popen((edax_exe + ' -q -level ' + str(level)).split(), stdin=subprocess.PIPE, stdout=subprocess.PIPE),
+    subprocess.Popen((edax_exe + ' -q -level ' + str(level)).split(), stdin=subprocess.PIPE, stdout=subprocess.PIPE)
 ]
 
 for num in range(max_num):
