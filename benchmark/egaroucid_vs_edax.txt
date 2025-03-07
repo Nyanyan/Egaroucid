@@ -898,3 +898,8 @@ versions/edax_4_6/wEdax-x86-64-v3.exe -q -level 15
 level: 1 Egaroucid WDL: 730-20-250 Egaroucid win rate: 0.74 Egaroucid average discs earned: 11.475
 level: 15 Egaroucid WDL: 139-31-80 Egaroucid win rate: 0.618 Egaroucid average discs earned: 0.956
 
+
+2025/03/08 Egaroucid 7.5.1 vs Edax 4.6
+level: 1 Egaroucid WDL: 727-14-259 Egaroucid win rate: 0.734 Egaroucid average discs earned: 10.929
+level: 11 Egaroucid WDL: 145-20-85 Egaroucid win rate: 0.62 Egaroucid average discs earned: 1.328
+level: 15 Egaroucid WDL: 133-35-82 Egaroucid win rate: 0.602 Egaroucid average discs earned: 0.916
