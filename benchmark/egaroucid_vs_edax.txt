@@ -884,6 +884,17 @@ level: 21 Egaroucid plays black WDL: 48-26-26 0.61 Egaroucid plays white WDL: 34
 
 2025/03/06 7.6.0 beta for GGS tournament
 level: 1 Egaroucid WDL: 737-11-252 Egaroucid win rate: 0.7425 Egaroucid average discs earned: 11.94
-
-
 level: 15 Egaroucid WDL: 147-31-72 Egaroucid win rate: 0.65 Egaroucid average discs earned: 1.22
+
+
+2025/03/07 update mpc
+3623 openings found
+Egaroucid_for_console.exe -quiet -nobook -level 15
+level 15
+openings 3623
+play 250 games
+versions/edax_4_6/wEdax-x86-64-v3.exe -q -level 15
+---
+level: 1 Egaroucid WDL: 730-20-250 Egaroucid win rate: 0.74 Egaroucid average discs earned: 11.475
+level: 15 Egaroucid WDL: 139-31-80 Egaroucid win rate: 0.618 Egaroucid average discs earned: 0.956
+

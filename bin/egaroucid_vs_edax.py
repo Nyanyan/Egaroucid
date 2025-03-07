@@ -36,6 +36,7 @@ smpl = range(len(tactic))
 print('play', max_num, 'games', file=sys.stderr)
 
 edax_cmd = 'versions/edax_4_6/wEdax-x86-64-v3.exe -q -level ' + str(level)
+#edax_cmd = 'versions/edax_4_4/edax-4.4 -q -level ' + str(level)
 print(edax_cmd, file=sys.stderr)
 
 edax = [
