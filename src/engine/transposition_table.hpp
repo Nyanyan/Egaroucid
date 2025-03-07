@@ -28,7 +28,7 @@ constexpr int TRANSPOSITION_TABLE_N_LOOP = 3;
 constexpr size_t TRANSPOSITION_TABLE_STACK_SIZE = hash_sizes[DEFAULT_HASH_LEVEL] + TRANSPOSITION_TABLE_N_LOOP - 1;
 #endif
 constexpr int N_TRANSPOSITION_MOVES = 2;
-constexpr double TT_REGISTER_THRESHOLD_RATE = 0.4;
+constexpr double TT_REGISTER_THRESHOLD_RATE = 0.1; // 0.4
 
 constexpr int TRANSPOSITION_TABLE_HAS_NODE = 100;
 constexpr int TRANSPOSITION_TABLE_NOT_HAS_NODE = -100;
@@ -907,7 +907,7 @@ class Transposition_table {
         }
 
         inline void reset_importance_proc() {
-            //std::cerr << "resetting transposition importance" << std::endl;
+            std::cerr << "resetting transposition importance" << std::endl;
             //std::cerr << "importance reset n_registered " << n_registered << " threshold " << n_registered_threshold << " table_size " << table_size << std::endl;
 #if TT_USE_STACK
             for (size_t i = 0; i < std::min(table_size, (size_t)TRANSPOSITION_TABLE_STACK_SIZE); ++i) {

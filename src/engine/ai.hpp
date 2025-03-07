@@ -31,7 +31,7 @@ constexpr int PONDER_ENDSEARCH_PRESEARCH_OFFSET_TIMELIMIT = 4;
 
 constexpr int AI_TL_EARLY_BREAK_THRESHOLD = 5;
 
-constexpr double AI_TL_ADDITIONAL_SEARCH_THRESHOLD = 2.5;
+constexpr double AI_TL_ADDITIONAL_SEARCH_THRESHOLD = 5.0; // 2.5;
 
 struct Lazy_SMP_task {
     uint_fast8_t mpc_level;
@@ -1469,6 +1469,7 @@ std::vector<Ponder_elem> ai_search_moves(Board board, bool show_log, std::vector
         // selfplay
         n_boards.clear();
         while (n_board.check_pass()) {
+            std::cerr << "X";
             if (n_board.n_discs() >= HW2 - 23 && n_boards.size()) { // complete search with last 24 empties in lv.21
                 break;
             }
@@ -1480,10 +1481,12 @@ std::vector<Ponder_elem> ai_search_moves(Board board, bool show_log, std::vector
                 int depth;
                 uint_fast8_t mpc_level;
                 get_level(level, n_board.n_discs() - 4, &is_mid_search, &depth, &mpc_level);
+                std::cerr << "Y";
                 {
                     Search search(&n_board, mpc_level, true, false);
                     search.thread_id = thread_id;
                     searching = true;
+                    std::cerr << "Z";
                     std::future<std::pair<int, int>> sp_future = std::async(std::launch::async, first_nega_scout, &search, -SCORE_MAX, SCORE_MAX, depth, !is_mid_search, clogs, strt, &searching);
                     if (sp_future.wait_for(std::chrono::milliseconds(tl_this_search)) == std::future_status::ready) {
                         int policy = sp_future.get().second;
@@ -1505,9 +1508,13 @@ std::vector<Ponder_elem> ai_search_moves(Board board, bool show_log, std::vector
                         break;
                     }
                 }
+            } else { // time limit
+                break;
             }
         }
+        std::cerr << std::endl;
         // analyze
+        /*
         for (int i = n_boards.size() - 1; i >= 0; --i) {
             uint64_t elapsed = tim() - strt;
             if (elapsed < time_limit) {
@@ -1583,6 +1590,7 @@ std::vector<Ponder_elem> ai_search_moves(Board board, bool show_log, std::vector
                 }
             }
         }
+        */
         is_first_searches[selected_idx] = false;
         ++levels[selected_idx];
     }
