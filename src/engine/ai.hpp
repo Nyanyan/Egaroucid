@@ -1521,7 +1521,7 @@ std::vector<Ponder_elem> ai_search_moves(Board board, bool show_log, std::vector
                 get_level(level, n_boards[i].n_discs() - 4, &level_is_mid_search, &level_depth, &level_mpc_level);
                 int new_depth = move_list[selected_idx].depth - i;
                 //new_depth = move_list[selected_idx].depth;
-                if (!is_first_searches[selected_idx] && move_list[selected_idx].depth < 31) { // limit root depth min(32, move_list[selected_idx].depth)
+                if (!is_first_searches[selected_idx] && move_list[selected_idx].depth < 33) { // limit root depth min(33, move_list[selected_idx].depth)
                     ++new_depth; // increase depth
                 }
                 new_depth = std::max(new_depth, level_depth);
