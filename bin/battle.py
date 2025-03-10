@@ -4,13 +4,14 @@ from random import shuffle
 import matplotlib.pyplot as plt
 from othello_py import *
 
-LEVEL = 1
+LEVEL = 10
 
-N_SET_GAMES = 250
+N_SET_GAMES = 25000
 
 # name, cmd
 player_info = [
-    ['beta', 'versions/Egaroucid_for_Console_beta/Egaroucid_for_Console.exe -quiet -nobook -t 32'],
+    #['beta', 'versions/Egaroucid_for_Console_beta/Egaroucid_for_Console.exe -quiet -nobook -t 32'],
+    ['latest',  'Egaroucid_for_Console.exe -quiet -nobook -t 32'],
     ['7.5.0', 'versions/Egaroucid_for_Console_7_5_0_Windows_SIMD/Egaroucid_for_Console_7_5_0_SIMD.exe -quiet -nobook -t 32'],
     ['7.4.0', 'versions/Egaroucid_for_Console_7_4_0_Windows_x64_SIMD/Egaroucid_for_Console_7_4_0_x64_SIMD.exe -quiet -nobook -t 32'],
     ['7.3.0', 'versions/Egaroucid_for_Console_7_3_0_Windows_x64_SIMD/Egaroucid_for_Console_7_3_0_x64_SIMD.exe -quiet -nobook -t 32'],
@@ -180,7 +181,7 @@ def print_all_result():
                 print('-', end='\t')
             else:
                 w, d, l = result[j]
-                r = (w + d * 0.5) / (w + d + l)
+                r = (w + d * 0.5) / max(1, w + d + l)
                 print("{:.4f}".format(r), end='\t')
         # all
         w = 0
@@ -190,7 +191,7 @@ def print_all_result():
             w += ww
             d += dd
             l += ll
-        r = (w + d * 0.5) / (w + d + l)
+        r = (w + d * 0.5) / max(1, w + d + l)
         print("{:.4f}".format(r))
 
     print('Average Disc Difference')
@@ -209,13 +210,13 @@ def print_all_result():
             if i == j:
                 print('-', end='\t')
             else:
-                avg_discs = result[j] / n_played[j]
+                avg_discs = result[j] / max(1, n_played[j])
                 s = "{:.2f}".format(avg_discs)
                 if avg_discs >= 0:
                     s = '+' + s
                 print(s, end='\t')
         # all
-        avg_discs_all = sum(result) / sum(n_played)
+        avg_discs_all = sum(result) / max(1, sum(n_played))
         s = "{:.2f}".format(avg_discs_all)
         if avg_discs_all >= 0:
             s = '+' + s
@@ -233,7 +234,7 @@ def output_plt():
             w += ww
             d += dd
             l += ll
-        r = (w + d * 0.5) / (w + d + l)
+        r = (w + d * 0.5) / max(1, w + d + l)
         plot_data[i].append(r)
         name = players[i][NAME_IDX]
         plt.plot(plot_data[i], label=name)
@@ -246,10 +247,18 @@ def output_plt():
 print('n_players', len(players))
 print('level', LEVEL)
 
+
 matches = []
 for p0 in range(len(players)):
     for p1 in range(p0 + 1, len(players)):
         matches.append([p0, p1])
+
+'''
+matches = []
+p0 = 0
+for p1 in range(p0 + 1, len(players)):
+    matches.append([p0, p1])
+'''
 
 problem_idx = 0
 for i in range(N_SET_GAMES):
