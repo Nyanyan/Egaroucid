@@ -2,9 +2,11 @@ import subprocess
 from tqdm import trange
 from random import shuffle
 import matplotlib.pyplot as plt
+import sys
 from othello_py import *
 
-LEVEL = 10
+
+LEVEL = int(sys.argv[1])
 
 N_SET_GAMES = 25000
 
@@ -268,7 +270,7 @@ for i in range(N_SET_GAMES):
         play_battle(p0, p1, problem_idx)
         problem_idx += 1
         problem_idx %= len(openings)
-    print(i)
+    print(i, 'level', LEVEL)
     #print_result()
     print_all_result()
     #output_plt()
