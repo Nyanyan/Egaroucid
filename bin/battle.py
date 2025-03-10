@@ -31,7 +31,7 @@ player_info = [
     ['6.1.X', 'versions/Egaroucid_for_Console_6_1_X/Egaroucid_for_Console.exe -quiet -nobook -t 32'],
         #['6.1.0', 'versions/Egaroucid_for_Console_6_1_0_Windows_x64_SIMD/Egaroucid_for_Console.exe -quiet -nobook'],
     ['6.0.X', 'versions/Egaroucid_for_Console_6_0_X/Egaroucid_for_Console_test.exe q'],
-    ['Edax ', 'versions/edax_4_4/edax-4.4 -q -t 16'],
+    ['Edax ', 'versions/edax_4_4/edax-4.4 -q -n 32'],
 ]
 
 NAME_IDX = 0
@@ -167,7 +167,7 @@ def print_result():
 '''
 
 def print_all_result():
-    print('Winning Rate')
+    print('Win Rate')
     print('vs >', end='\t')
     for i in range(len(players)):
         name = players[i][NAME_IDX]
@@ -274,7 +274,7 @@ for i in range(N_SET_GAMES):
     print_all_result()
     #output_plt()
 
-print(N_SET_GAMES, 'matches played for each winning rate at level', LEVEL)
+print(N_SET_GAMES, 'matches played for each win rate at level', LEVEL)
 print_all_result()
 
 
