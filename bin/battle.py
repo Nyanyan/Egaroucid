@@ -7,8 +7,7 @@ from othello_py import *
 
 
 LEVEL = int(sys.argv[1])
-
-N_SET_GAMES = 25000
+N_SET_GAMES = int(sys.argv[2])
 
 # name, cmd
 player_info = [
