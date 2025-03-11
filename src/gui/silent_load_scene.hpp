@@ -53,7 +53,10 @@ void init_default_settings(const Directories* directories, const Resources* reso
 #if USE_CHANGEABLE_HASH_LEVEL
     settings->hash_level = DEFAULT_HASH_LEVEL;
 #endif
-    settings->book_acc_level = 0;
+    //settings->book_acc_level = 0;
+    settings->accept_ai_loss = false;
+    settings->max_loss = 2;
+    settings->loss_percentage = 30;
     settings->pause_when_pass = false;
     settings->show_next_move_change_view = false;
     settings->change_color_type = false;
@@ -245,10 +248,10 @@ void import_text_settings(const Directories* directories, const Resources* resou
             settings->hash_level = std::max(settings->hash_level, DEFAULT_HASH_LEVEL);
         }
 #endif
-        if (init_settings_import_int(&reader, &settings->book_acc_level) != ERR_OK) {
-            std::cerr << "err23" << std::endl;
-            return;
-        }
+        // if (init_settings_import_int(&reader, &settings->book_acc_level) != ERR_OK) {
+        //     std::cerr << "err23" << std::endl;
+        //     return;
+        // }
         if (init_settings_import_bool(&reader, &settings->pause_when_pass) != ERR_OK) {
             std::cerr << "err24" << std::endl;
             return;
@@ -354,9 +357,9 @@ void init_settings(const Directories* directories, const Resources* resources, S
         settings->hash_level = std::max(settings->hash_level, DEFAULT_HASH_LEVEL);
     }
 #endif
-    if (init_settings_import_int(setting_json, U"book_acc_level", &settings->book_acc_level) != ERR_OK) {
-        std::cerr << "err23" << std::endl;
-    }
+    // if (init_settings_import_int(setting_json, U"book_acc_level", &settings->book_acc_level) != ERR_OK) {
+    //     std::cerr << "err23" << std::endl;
+    // }
     if (init_settings_import_bool(setting_json, U"pause_when_pass", &settings->pause_when_pass) != ERR_OK) {
         std::cerr << "err24" << std::endl;
     }
@@ -419,6 +422,15 @@ void init_settings(const Directories* directories, const Resources* resources, S
     }
     if (init_settings_import_str(setting_json, U"screenshot_saving_dir", &settings->screenshot_saving_dir) != ERR_OK) {
         std::cerr << "err44" << std::endl;
+    }
+    if (init_settings_import_bool(setting_json, U"accept_ai_loss", &settings->accept_ai_loss) != ERR_OK) {
+        std::cerr << "err45" << std::endl;
+    }
+    if (init_settings_import_int(setting_json, U"max_loss", &settings->max_loss) != ERR_OK) {
+        std::cerr << "err46" << std::endl;
+    }
+    if (init_settings_import_int(setting_json, U"loss_percentage", &settings->loss_percentage) != ERR_OK) {
+        std::cerr << "err47" << std::endl;
     }
 }
 

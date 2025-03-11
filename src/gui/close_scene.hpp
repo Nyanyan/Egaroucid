@@ -40,7 +40,7 @@ void save_settings(Menu_elements menu_elements, Settings settings, Directories d
 #if USE_CHANGEABLE_HASH_LEVEL
     setting_json[U"hash_level"] = menu_elements.hash_level;
 #endif
-    setting_json[U"book_acc_level"] = menu_elements.book_acc_level;
+    //setting_json[U"book_acc_level"] = menu_elements.book_acc_level;
     setting_json[U"pause_when_pass"] = menu_elements.pause_when_pass;
     setting_json[U"book_learn_error_sum"] = menu_elements.book_learn_error_sum;
     setting_json[U"show_next_move_change_view"] = menu_elements.show_next_move_change_view;
@@ -62,6 +62,9 @@ void save_settings(Menu_elements menu_elements, Settings settings, Directories d
     setting_json[U"show_ai_focus"] = menu_elements.show_ai_focus;
     setting_json[U"pv_length"] = menu_elements.pv_length;
     setting_json[U"screenshot_saving_dir"] = Unicode::Widen(user_settings.screenshot_saving_dir);
+    setting_json[U"accept_ai_loss"] = menu_elements.accept_ai_loss;
+    setting_json[U"max_loss"] = menu_elements.max_loss;
+    setting_json[U"loss_percentage"] = menu_elements.loss_percentage;
     setting_json.save(U"{}setting.json"_fmt(Unicode::Widen(directories.appdata_dir)));
 }
 

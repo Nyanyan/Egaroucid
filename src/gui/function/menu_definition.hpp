@@ -24,6 +24,9 @@ String get_shortcut_key_info(String key) {
     return U" (" + res + U")";
 }
 
+constexpr int AI_MAX_LOSS_INF = 129;
+constexpr int AI_LOSS_PERCENTAGE_INF = 100;
+
 Menu create_menu(Menu_elements* menu_elements, Resources *resources, Font font) {
     Menu menu;
     menu_title title;
@@ -55,7 +58,13 @@ Menu create_menu(Menu_elements* menu_elements, Resources *resources, Font font) 
 
     menu_e.init_check(language.get("ai_settings", "use_book") + get_shortcut_key_info(U"use_book"), &menu_elements->use_book, menu_elements->use_book);
     title.push(menu_e);
-    menu_e.init_bar(language.get("ai_settings", "book_accuracy_level"), &menu_elements->book_acc_level, menu_elements->book_acc_level, 0, BOOK_ACCURACY_LEVEL_INF);
+    //menu_e.init_bar(language.get("ai_settings", "book_accuracy_level"), &menu_elements->book_acc_level, menu_elements->book_acc_level, 0, BOOK_ACCURACY_LEVEL_INF);
+    //title.push(menu_e);
+    menu_e.init_check(language.get("ai_settings", "accept_ai_loss") + get_shortcut_key_info(U"accept_ai_loss"), &menu_elements->accept_ai_loss, menu_elements->accept_ai_loss);
+    side_menu.init_bar(language.get("ai_settings", "max_loss"), &menu_elements->max_loss, menu_elements->max_loss, 1, AI_MAX_LOSS_INF);
+    menu_e.push(side_menu);
+    side_menu.init_bar(language.get("ai_settings", "loss_percentage"), &menu_elements->loss_percentage, menu_elements->loss_percentage, 1, AI_LOSS_PERCENTAGE_INF);
+    menu_e.push(side_menu);
     title.push(menu_e);
     menu_e.init_bar(language.get("ai_settings", "level"), &menu_elements->level, menu_elements->level, 1, 60);
     title.push(menu_e);

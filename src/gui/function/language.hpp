@@ -25,7 +25,7 @@ public:
         lang.clear();
         lang = JSON::Load(Unicode::Widen(file));
         if (not lang) {
-            std::cerr << "can't open `language_name`.json" << std::endl;
+            std::cerr << "can't open " << file << std::endl;
             return false;
         }
         return true;

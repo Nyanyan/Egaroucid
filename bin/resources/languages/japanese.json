@@ -56,7 +56,10 @@
     "ai_settings": {
         "use_book": "book使用",
         "book_accuracy_level": "book変化レベル",
-        "level": "レベル"
+        "level": "レベル",
+        "accept_ai_loss": "AIに石損させる",
+        "max_loss": "最大石損",
+        "loss_percentage": "石損率(%)"
     },
     "book": {
         "book": "Book",

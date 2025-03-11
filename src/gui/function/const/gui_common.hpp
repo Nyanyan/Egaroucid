@@ -339,7 +339,10 @@ struct Settings {
 #if USE_CHANGEABLE_HASH_LEVEL
     int hash_level;
 #endif
-    int book_acc_level;
+    //int book_acc_level;
+    bool accept_ai_loss;
+    int max_loss;
+    int loss_percentage;
     bool pause_when_pass;
     bool show_next_move_change_view;
     bool change_color_type;
@@ -412,7 +415,10 @@ struct Menu_elements {
     // settings
     // AI settings
     bool use_book;
-    int book_acc_level;
+    //int book_acc_level;
+    bool accept_ai_loss;
+    int max_loss;
+    int loss_percentage;
     int level;
     int n_threads;
 #if USE_CHANGEABLE_HASH_LEVEL
@@ -525,7 +531,10 @@ struct Menu_elements {
         game_information = false;
 
         use_book = settings->use_book;
-        book_acc_level = settings->book_acc_level;
+        //book_acc_level = settings->book_acc_level;
+        accept_ai_loss = settings->accept_ai_loss;
+        max_loss = settings->max_loss;
+        loss_percentage = settings->loss_percentage;
         level = settings->level;
         n_threads = settings->n_threads;
 #if USE_CHANGEABLE_HASH_LEVEL

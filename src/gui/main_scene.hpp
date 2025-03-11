@@ -1190,7 +1190,16 @@ private:
                 if (legal) {
                     stop_calculating();
                     resume_calculating();
-                    ai_status.ai_future = std::async(std::launch::async, ai, getData().history_elem.board, getData().menu_elements.level, getData().menu_elements.use_book, getData().menu_elements.book_acc_level, true, true);
+                    if (getData().menu_elements.accept_ai_loss) {
+                        double loss_ratio = 0.01 * getData().menu_elements.loss_percentage;
+                        if (myrandom() <= loss_ratio) {
+                            ai_status.ai_future = std::async(std::launch::async, ai_loss, getData().history_elem.board, getData().menu_elements.level, getData().menu_elements.use_book, 0, true, true, getData().menu_elements.max_loss);
+                        } else {
+                            ai_status.ai_future = std::async(std::launch::async, ai, getData().history_elem.board, getData().menu_elements.level, getData().menu_elements.use_book, 0, true, true);
+                        }
+                    } else {
+                        ai_status.ai_future = std::async(std::launch::async, ai, getData().history_elem.board, getData().menu_elements.level, getData().menu_elements.use_book, 0, true, true);
+                    }
                     //ai_status.ai_future = std::async(std::launch::async, human_like_ai, getData().history_elem.board, getData().menu_elements.level, true);
                     ai_status.ai_thinking = true;
                 }
