@@ -546,6 +546,9 @@ private:
         if (shortcut_key == U"use_book") {
             getData().menu_elements.use_book = !getData().menu_elements.use_book;
         }
+        if (shortcut_key == U"accept_ai_loss") {
+            getData().menu_elements.accept_ai_loss = !getData().menu_elements.accept_ai_loss;
+        }
         if (shortcut_key == U"ai_put_black") {
             getData().menu_elements.ai_put_black = !getData().menu_elements.ai_put_black;
         }

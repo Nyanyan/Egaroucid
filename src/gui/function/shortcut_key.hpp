@@ -38,6 +38,7 @@ std::vector<Shortcut_key_elem> shortcut_keys_default = {
 
     // settings
     {U"use_book",               {},                     {{"settings", "settings"}, {"ai_settings", "use_book"}}},
+    {U"accept_ai_loss",         {},                     {{"settings", "settings"}, {"ai_settings", "accept_ai_loss"}}}, 
     {U"ai_put_black",           {U"B"},                 {{"settings", "settings"}, {"settings", "play", "ai_put_black"}}},
     {U"ai_put_white",           {U"W"},                 {{"settings", "settings"}, {"settings", "play", "ai_put_white"}}},
     {U"pause_when_pass",        {},                     {{"settings", "settings"}, {"settings", "play", "pause_when_pass"}}},
