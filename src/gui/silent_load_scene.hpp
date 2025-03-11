@@ -58,6 +58,7 @@ void init_default_settings(const Directories* directories, const Resources* reso
     settings->max_loss = 2;
     settings->loss_percentage = 30;
     settings->pause_when_pass = false;
+    settings->force_specified_openings = false;
     settings->show_next_move_change_view = false;
     settings->change_color_type = false;
     settings->show_play_ordering = false;
@@ -431,6 +432,9 @@ void init_settings(const Directories* directories, const Resources* resources, S
     }
     if (init_settings_import_int(setting_json, U"loss_percentage", &settings->loss_percentage) != ERR_OK) {
         std::cerr << "err47" << std::endl;
+    }
+    if (init_settings_import_bool(setting_json, U"force_specified_openings", &settings->force_specified_openings) != ERR_OK) {
+        std::cerr << "err48" << std::endl;
     }
 }
 

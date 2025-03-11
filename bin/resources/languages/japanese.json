@@ -35,7 +35,8 @@
         "play": {
             "ai_put_black": "AIが黒に着手",
             "ai_put_white": "AIが白に着手",
-            "pause_when_pass": "パスで一時停止"
+            "pause_when_pass": "パスで一時停止",
+            "force_specified_openings": "AIの進行を強制"
         },
         "thread": {
             "thread": "スレッド数"

@@ -35,7 +35,8 @@
         "play": {
             "ai_put_black": "AI执黑",
             "ai_put_white": "AI执白",
-            "pause_when_pass": "当pass时暂停"
+            "pause_when_pass": "当pass时暂停",
+            "force_specified_openings": "强制指定开局"
         },
         "thread": {
             "thread": "线程"

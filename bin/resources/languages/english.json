@@ -35,7 +35,8 @@
         "play": {
             "ai_put_black": "AI as Black",
             "ai_put_white": "AI as White",
-            "pause_when_pass": "Pause when Pass"
+            "pause_when_pass": "Pause when Pass",
+            "force_specified_openings": "Force AI's Opening"
         },
         "thread": {
             "thread": "Threads"

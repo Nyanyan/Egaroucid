@@ -344,6 +344,7 @@ struct Settings {
     int max_loss;
     int loss_percentage;
     bool pause_when_pass;
+    bool force_specified_openings;
     bool show_next_move_change_view;
     bool change_color_type;
     bool show_play_ordering;
@@ -428,6 +429,8 @@ struct Menu_elements {
     bool ai_put_black;
     bool ai_put_white;
     bool pause_when_pass;
+    bool force_specified_openings;
+    bool opening_setting;
     bool shortcut_key_setting;
 
     // display
@@ -543,6 +546,8 @@ struct Menu_elements {
         ai_put_black = settings->ai_put_black;
         ai_put_white = settings->ai_put_white;
         pause_when_pass = settings->pause_when_pass;
+        force_specified_openings = settings->force_specified_openings;
+        opening_setting = false;
         shortcut_key_setting = false;
 
         use_disc_hint = settings->use_disc_hint;
@@ -692,6 +697,47 @@ struct User_settings {
     std::string screenshot_saving_dir;
 };
 
+struct Forced_openings {
+    std::vector<std::string> openings_str;
+    std::unordered_map<Board, std::vector<int>, Book_hash> selected_moves;
+
+    void init() {
+        openings_str = {
+            "f5d6c3d3c4f4f6", // stephenson
+            "f5d6c3d3c4f4e3", // brightwell
+            "f5d6c3d3c4f4e6", // leader's tiger
+        };
+        Board board;
+        Flip flip;
+        for (const std::string& opening_str : openings_str) {
+            board.reset();
+            for (int i = 0; i < opening_str.size() - 1; i += 2) {
+                int policy = get_coord_from_chars(opening_str[i], opening_str[i + 1]);
+                selected_moves[board].emplace_back(policy);
+                calc_flip(&flip, &board, policy);
+                board.move_board(&flip);
+                if (board.check_pass()) {
+                    break;
+                }
+            }
+        }
+    }
+
+    Forced_openings() {
+        init();
+    }
+
+    int get_one(Board board) {
+        int selected_policy = MOVE_UNDEFINED;
+        if (selected_moves.find(board) != selected_moves.end()) {
+            std::vector<int> policies = selected_moves[board];
+            int rand_idx = myrandrange(0, policies.size());
+            selected_policy = policies[rand_idx];
+        }
+        return selected_policy;
+    }
+};
+
 struct Window_state {
     double window_scale;
     bool loading;
@@ -715,6 +761,7 @@ struct Common_resources {
     Game_information game_information;
     Book_information book_information;
     User_settings user_settings;
+    Forced_openings forced_openings;
     Window_state window_state;
 };
 

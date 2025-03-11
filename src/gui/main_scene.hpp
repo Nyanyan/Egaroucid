@@ -1193,18 +1193,34 @@ private:
                 if (legal) {
                     stop_calculating();
                     resume_calculating();
-                    if (getData().menu_elements.accept_ai_loss) {
-                        double loss_ratio = 0.01 * getData().menu_elements.loss_percentage;
-                        if (myrandom() <= loss_ratio) {
-                            ai_status.ai_future = std::async(std::launch::async, ai_loss, getData().history_elem.board, getData().menu_elements.level, getData().menu_elements.use_book, 0, true, true, getData().menu_elements.max_loss);
+                    bool specified_opening_moved = false;
+                    if (getData().menu_elements.force_specified_openings) {
+                        int selected_policy = getData().forced_openings.get_one(getData().history_elem.board);
+                        if (selected_policy != MOVE_UNDEFINED) {
+                            int player_bef = getData().history_elem.player;
+                            int sgn = getData().history_elem.player == BLACK ? 1 : -1;
+                            //getData().graph_resources.nodes[getData().graph_resources.branch].back().v = sgn * search_result.value;
+                            //getData().graph_resources.nodes[getData().graph_resources.branch].back().level = calc_ai_type(search_result);
+                            move_processing(HW2_M1 - selected_policy);
+                            if (getData().history_elem.player == player_bef && (getData().menu_elements.ai_put_black ^ getData().menu_elements.ai_put_white) && getData().menu_elements.pause_when_pass && !getData().history_elem.board.is_end()) {
+                                pausing_in_pass = true;
+                            }
+                            specified_opening_moved = true;
+                        }
+                    }
+                    if (!specified_opening_moved) {
+                        if (getData().menu_elements.accept_ai_loss) {
+                            double loss_ratio = 0.01 * getData().menu_elements.loss_percentage;
+                            if (myrandom() <= loss_ratio) {
+                                ai_status.ai_future = std::async(std::launch::async, ai_loss, getData().history_elem.board, getData().menu_elements.level, getData().menu_elements.use_book, 0, true, true, getData().menu_elements.max_loss);
+                            } else {
+                                ai_status.ai_future = std::async(std::launch::async, ai, getData().history_elem.board, getData().menu_elements.level, getData().menu_elements.use_book, 0, true, true);
+                            }
                         } else {
                             ai_status.ai_future = std::async(std::launch::async, ai, getData().history_elem.board, getData().menu_elements.level, getData().menu_elements.use_book, 0, true, true);
                         }
-                    } else {
-                        ai_status.ai_future = std::async(std::launch::async, ai, getData().history_elem.board, getData().menu_elements.level, getData().menu_elements.use_book, 0, true, true);
+                        ai_status.ai_thinking = true;
                     }
-                    //ai_status.ai_future = std::async(std::launch::async, human_like_ai, getData().history_elem.board, getData().menu_elements.level, true);
-                    ai_status.ai_thinking = true;
                 }
             }
             else if (ai_status.ai_future.valid()) {

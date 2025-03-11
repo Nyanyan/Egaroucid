@@ -74,15 +74,16 @@ Menu create_menu(Menu_elements* menu_elements, Resources *resources, Font font) 
     menu_e.init_bar(language.get("settings", "hash_level"), &menu_elements->hash_level, menu_elements->hash_level, MIN_HASH_LEVEL, MAX_HASH_LEVEL);
     title.push(menu_e);
 #endif
-
     menu_e.init_check(language.get("settings", "play", "ai_put_black") + get_shortcut_key_info(U"ai_put_black"), &menu_elements->ai_put_black, menu_elements->ai_put_black);
     title.push(menu_e);
     menu_e.init_check(language.get("settings", "play", "ai_put_white") + get_shortcut_key_info(U"ai_put_white"), &menu_elements->ai_put_white, menu_elements->ai_put_white);
     title.push(menu_e);
-
     menu_e.init_check(language.get("settings", "play", "pause_when_pass") + get_shortcut_key_info(U"pause_when_pass"), &menu_elements->pause_when_pass, menu_elements->pause_when_pass);
     title.push(menu_e);
-
+    menu_e.init_check(language.get("settings", "play", "force_specified_openings") + get_shortcut_key_info(U"force_specified_openings"), &menu_elements->force_specified_openings, menu_elements->force_specified_openings);
+    title.push(menu_e);
+    menu_e.init_button(language.get("settings", "play", "opening_setting") + get_shortcut_key_info(U"opening_setting"), &menu_elements->opening_setting);
+    title.push(menu_e);
     menu_e.init_button(language.get("settings", "shortcut_keys", "settings") + get_shortcut_key_info(U"shortcut_key_setting"), &menu_elements->shortcut_key_setting);
     title.push(menu_e);
 
