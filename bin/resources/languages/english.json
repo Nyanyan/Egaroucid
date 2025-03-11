@@ -56,7 +56,10 @@
     "ai_settings": {
         "use_book": "Book Use",
         "book_accuracy_level": "Book Loss Level",
-        "level": "Level"
+        "level": "Level",
+        "accept_ai_loss": "Accept AI's Loss",
+        "max_loss": "Max Loss per Move",
+        "loss_percentage": "Occurring Ratio (%)"
     },
     "book": {
         "book": "Book",

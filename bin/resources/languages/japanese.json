@@ -58,7 +58,7 @@
         "book_accuracy_level": "book変化レベル",
         "level": "レベル",
         "accept_ai_loss": "AIに石損させる",
-        "max_loss": "最大石損",
+        "max_loss": "1手の最大石損",
         "loss_percentage": "石損率(%)"
     },
     "book": {

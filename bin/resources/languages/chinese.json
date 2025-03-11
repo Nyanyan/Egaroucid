@@ -56,7 +56,10 @@
     "ai_settings": {
         "use_book": "开局库使用",
         "book_accuracy_level": "开局库丢失等级",
-        "level": "级别"
+        "level": "级别",
+        "accept_ai_loss": "接受AI的损失",
+        "max_loss": "每步最大损失",
+        "loss_percentage": "发生率 (%)"
     },
     "book": {
         "book": "开局库",
