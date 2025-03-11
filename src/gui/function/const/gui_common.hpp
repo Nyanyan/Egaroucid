@@ -711,20 +711,15 @@ struct Forced_openings {
         Flip flip;
         for (const std::string& opening_str : openings_str) {
             board.reset();
-            for (int i = 0; i < opening_str.size() - 1; i += 2) {
+            for (int i = 0; i < opening_str.size() - 1 && board.check_pass(); i += 2) {
                 int policy = get_coord_from_chars(opening_str[i], opening_str[i + 1]);
+                std::cerr << idx_to_coord(policy) << std::endl;
+                board.print();
                 selected_moves[board].emplace_back(policy);
                 calc_flip(&flip, &board, policy);
                 board.move_board(&flip);
-                if (board.check_pass()) {
-                    break;
-                }
             }
         }
-    }
-
-    Forced_openings() {
-        init();
     }
 
     int get_one(Board board) {

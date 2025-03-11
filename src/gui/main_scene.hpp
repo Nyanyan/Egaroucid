@@ -1196,6 +1196,7 @@ private:
                     bool specified_opening_moved = false;
                     if (getData().menu_elements.force_specified_openings) {
                         int selected_policy = getData().forced_openings.get_one(getData().history_elem.board);
+                        std::cerr << "getting opening " << idx_to_coord(selected_policy) << std::endl;
                         if (selected_policy != MOVE_UNDEFINED) {
                             int player_bef = getData().history_elem.player;
                             int sgn = getData().history_elem.player == BLACK ? 1 : -1;

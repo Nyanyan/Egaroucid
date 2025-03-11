@@ -207,7 +207,7 @@ int init_ai(Settings* settings, const Directories* directories, bool *stop_loadi
     return ERR_OK;
 }
 
-int load_app(Directories* directories, Resources* resources, Settings* settings, bool* update_found, String *new_version, bool *stop_loading) {
+int load_app(Directories* directories, Resources* resources, Settings* settings, Forced_openings *forced_openings, bool* update_found, String *new_version, bool *stop_loading) {
     if (settings->auto_update_check) {
         if (check_update(directories, new_version) == UPDATE_CHECK_UPDATE_FOUND) {
             *update_found = true;
@@ -218,6 +218,7 @@ int load_app(Directories* directories, Resources* resources, Settings* settings,
     if (code == ERR_OK) {
         code = init_ai(settings, directories, stop_loading);
     }
+    forced_openings->init();
     return code;
 }
 
@@ -245,7 +246,7 @@ public:
         tips = language.get_random("tips", "tips");
         update_found = false;
         stop_loading = false;
-        load_future = std::async(std::launch::async, load_app, &getData().directories, &getData().resources, &getData().settings, &update_found, &new_version, &stop_loading);
+        load_future = std::async(std::launch::async, load_app, &getData().directories, &getData().resources, &getData().settings, &getData().forced_openings, &update_found, &new_version, &stop_loading);
     }
 
     void update() override {
