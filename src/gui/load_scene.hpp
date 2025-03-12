@@ -218,7 +218,8 @@ int load_app(Directories* directories, Resources* resources, Settings* settings,
     if (code == ERR_OK) {
         code = init_ai(settings, directories, stop_loading);
     }
-    forced_openings->init();
+    std::string forced_openings_file = directories->appdata_dir + "/forced_openings.txt";
+    forced_openings->load(forced_openings_file);
     return code;
 }
 

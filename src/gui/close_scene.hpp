@@ -69,11 +69,13 @@ void save_settings(Menu_elements menu_elements, Settings settings, Directories d
     setting_json.save(U"{}setting.json"_fmt(Unicode::Widen(directories.appdata_dir)));
 }
 
-void close_app(Menu_elements menu_elements, Settings settings, Directories directories, User_settings user_settings, Book_information book_information, Window_state window_state) {
+void close_app(Menu_elements menu_elements, Settings settings, Directories directories, User_settings user_settings, Book_information book_information, Forced_openings forced_openings, Window_state window_state) {
     if (!window_state.loading) {
         save_settings(menu_elements, settings, directories, user_settings);
         String shortcut_key_file = U"{}shortcut_key.json"_fmt(Unicode::Widen(directories.appdata_dir));
         shortcut_keys.save_settings(shortcut_key_file);
+        std::string forced_openings_file = directories.appdata_dir + "/forced_openings.txt";
+        forced_openings.save(forced_openings_file);
     }
     if (book_information.changed) {
         book.save_egbk3(settings.book_file, settings.book_file + ".bak");
@@ -86,7 +88,7 @@ private:
 
 public:
     Close(const InitData& init) : IScene{ init } {
-        close_future = std::async(std::launch::async, close_app, getData().menu_elements, getData().settings, getData().directories, getData().user_settings, getData().book_information, getData().window_state);
+        close_future = std::async(std::launch::async, close_app, getData().menu_elements, getData().settings, getData().directories, getData().user_settings, getData().book_information, getData().forced_openings, getData().window_state);
     }
 
     void update() override {

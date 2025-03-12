@@ -718,13 +718,13 @@ struct Forced_openings {
     std::vector<std::pair<std::string, double>> openings;
     std::unordered_map<Board, std::vector<std::pair<int, double>>, Book_hash> selected_moves;
 
-    Forced_openings() {
-        openings = {
-            {"f5d6c3d3c4f4f6", 1}, // stephenson
-            {"f5d6c3d3c4f4e3", 1}, // brightwell
-            {"f5d6c3d3c4f4e6", 1}, // leader's tiger
-        };
-    }
+    // Forced_openings() {
+    //     openings = {
+    //         {"f5d6c3d3c4f4f6", 1}, // stephenson
+    //         {"f5d6c3d3c4f4e3", 1}, // brightwell
+    //         {"f5d6c3d3c4f4e6", 1}, // leader's tiger
+    //     };
+    // }
 
     void init() {
         Board board;
@@ -768,6 +768,14 @@ struct Forced_openings {
             }
         }
         init();
+    }
+
+    void save(std::string file) {
+        std::ofstream ofs(file);
+        for (const std::pair<std::string, double> opening : openings) {
+            ofs << opening.first << " " << std::round(opening.second) << std::endl;
+        }
+        ofs.close();
     }
 
     int get_one(Board board) {
