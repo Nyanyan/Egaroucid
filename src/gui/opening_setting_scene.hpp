@@ -24,17 +24,23 @@ class Opening_setting : public App::Scene {
         Scroll_manager scroll_manager;
         Button add_button;
         Button ok_button;
+        Button back_button;
+        Button confirm_button;
+        bool adding_elem;
     
     public:
         Opening_setting(const InitData& init) : IScene{ init } {
             add_button.init(GO_BACK_BUTTON_BACK_SX, GO_BACK_BUTTON_SY, GO_BACK_BUTTON_WIDTH, GO_BACK_BUTTON_HEIGHT, GO_BACK_BUTTON_RADIUS, language.get("opening_setting", "add"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
             ok_button.init(GO_BACK_BUTTON_GO_SX, GO_BACK_BUTTON_SY, GO_BACK_BUTTON_WIDTH, GO_BACK_BUTTON_HEIGHT, GO_BACK_BUTTON_RADIUS, language.get("common", "ok"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
+            back_button.init(GO_BACK_BUTTON_BACK_SX, GO_BACK_BUTTON_SY, GO_BACK_BUTTON_WIDTH, GO_BACK_BUTTON_HEIGHT, GO_BACK_BUTTON_RADIUS, language.get("common", "back"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
+            confirm_button.init(GO_BACK_BUTTON_GO_SX, GO_BACK_BUTTON_SY, GO_BACK_BUTTON_WIDTH, GO_BACK_BUTTON_HEIGHT, GO_BACK_BUTTON_RADIUS, language.get("common", "ok"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
             Texture delete_button_image = getData().resources.cross;
             for (int i = 0; i < (int)getData().forced_openings.openings.size(); ++i) {
                 ImageButton button;
                 button.init(0, 0, 15, delete_button_image);
                 delete_buttons.emplace_back(button);
             }
+            adding_elem = false;
             init_scroll_manager();
         }
     
@@ -43,13 +49,33 @@ class Opening_setting : public App::Scene {
                 changeScene(U"Close", SCENE_FADE_TIME);
             }
             getData().fonts.font(language.get("settings", "play", "opening_setting")).draw(25, Arg::topCenter(X_CENTER, 10), getData().colors.white);
-            ok_button.draw();
-            if (ok_button.clicked()) {
-                getData().graph_resources.need_init = false;
-                changeScene(U"Main_scene", SCENE_FADE_TIME);
+            if (adding_elem) {
+                back_button.draw();
+                if (back_button.clicked()) {
+                    adding_elem = false;
+                }
+                confirm_button.draw();
+                if (confirm_button.clicked()) {
+                    adding_elem = false;
+                }
+            } else {
+                add_button.draw();
+                if (add_button.clicked()) {
+                    adding_elem = true;
+                }
+                ok_button.draw();
+                if (ok_button.clicked()) {
+                    getData().graph_resources.need_init = false;
+                    changeScene(U"Main_scene", SCENE_FADE_TIME);
+                }
             }
             int sy = OPENING_SETTING_SY;
             int strt_idx_int = scroll_manager.get_strt_idx_int();
+            if (adding_elem) {
+                if (getData().forced_openings.openings.size() + 1 > OPENING_SETTING_N_GAMES_ON_WINDOW) {
+                    strt_idx_int = getData().forced_openings.openings.size() - OPENING_SETTING_N_GAMES_ON_WINDOW - 1;
+                }
+            }
             if (strt_idx_int > 0) {
                 getData().fonts.font(U"︙").draw(15, Arg::bottomCenter = Vec2{ X_CENTER, sy }, getData().colors.white);
             }
@@ -67,20 +93,40 @@ class Opening_setting : public App::Scene {
                 } else {
                     rect.draw(getData().colors.green).drawFrame(1.0, getData().colors.white);
                 }
-                delete_buttons[i].move(OPENING_SETTING_SX + 1, sy + 1);
-                delete_buttons[i].draw();
-                if (delete_buttons[i].clicked()) {
-                    delete_opening(i);
+                if (adding_elem) {
+                    rect.draw(ColorF{1.0, 1.0, 1.0, 0.5});
+                }
+                if (!adding_elem) {
+                    delete_buttons[i].move(OPENING_SETTING_SX + 1, sy + 1);
+                    delete_buttons[i].draw();
+                    if (delete_buttons[i].clicked()) {
+                        delete_opening(i);
+                    }
                 }
                 getData().fonts.font(Unicode::Widen(opening_str)).draw(15, Arg::leftCenter(OPENING_SETTING_SX + OPENING_SETTING_LEFT_MARGIN + 10, sy + OPENING_SETTING_HEIGHT / 2), getData().colors.white);
                 getData().fonts.font(language.get("opening_setting", "weight") + U": " + Format(std::round(weight))).draw(15, Arg::leftCenter(OPENING_SETTING_SX + OPENING_SETTING_LEFT_MARGIN + OPENING_SETTING_WIDTH - 100, sy + OPENING_SETTING_HEIGHT / 2), getData().colors.white);
                 sy += OPENING_SETTING_HEIGHT;
             }
+            if (adding_elem) {
+                Rect rect;
+                rect.y = sy;
+                rect.x = OPENING_SETTING_SX;
+                rect.w = OPENING_SETTING_WIDTH;
+                rect.h = OPENING_SETTING_HEIGHT;
+                if (getData().forced_openings.openings.size() % 2) {
+                    rect.draw(getData().colors.dark_green).drawFrame(1.0, getData().colors.white);
+                } else {
+                    rect.draw(getData().colors.green).drawFrame(1.0, getData().colors.white);
+                }
+                
+            }
             if (strt_idx_int + OPENING_SETTING_N_GAMES_ON_WINDOW < (int)getData().forced_openings.openings.size()) {
                 getData().fonts.font(U"︙").draw(15, Arg::bottomCenter = Vec2{ X_CENTER, 415}, getData().colors.white);
             }
-            scroll_manager.draw();
-            scroll_manager.update();
+            if (!adding_elem) {
+                scroll_manager.draw();
+                scroll_manager.update();
+            }
         }
     
         void draw() const override {
