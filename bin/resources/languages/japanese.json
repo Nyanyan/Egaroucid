@@ -275,7 +275,9 @@
     },
     "opening_setting": {
         "add": "追加",
-        "weight": "重み"
+        "weight": "重み",
+        "register": "登録",
+        "no_opening_found": "登録されている進行はありません"
     },
     "tips": {
         "do_you_know": "ご存知ですか？",

@@ -25,7 +25,7 @@ class Opening_setting : public App::Scene {
         Button add_button;
         Button ok_button;
         Button back_button;
-        Button confirm_button;
+        Button register_button;
         bool adding_elem;
         TextAreaEditState text_area[2];
     
@@ -34,7 +34,7 @@ class Opening_setting : public App::Scene {
             add_button.init(GO_BACK_BUTTON_BACK_SX, GO_BACK_BUTTON_SY, GO_BACK_BUTTON_WIDTH, GO_BACK_BUTTON_HEIGHT, GO_BACK_BUTTON_RADIUS, language.get("opening_setting", "add"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
             ok_button.init(GO_BACK_BUTTON_GO_SX, GO_BACK_BUTTON_SY, GO_BACK_BUTTON_WIDTH, GO_BACK_BUTTON_HEIGHT, GO_BACK_BUTTON_RADIUS, language.get("common", "ok"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
             back_button.init(GO_BACK_BUTTON_BACK_SX, GO_BACK_BUTTON_SY, GO_BACK_BUTTON_WIDTH, GO_BACK_BUTTON_HEIGHT, GO_BACK_BUTTON_RADIUS, language.get("common", "back"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
-            confirm_button.init(GO_BACK_BUTTON_GO_SX, GO_BACK_BUTTON_SY, GO_BACK_BUTTON_WIDTH, GO_BACK_BUTTON_HEIGHT, GO_BACK_BUTTON_RADIUS, language.get("common", "ok"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
+            register_button.init(GO_BACK_BUTTON_GO_SX, GO_BACK_BUTTON_SY, GO_BACK_BUTTON_WIDTH, GO_BACK_BUTTON_HEIGHT, GO_BACK_BUTTON_RADIUS, language.get("opening_setting", "register"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
             for (int i = 0; i < (int)getData().forced_openings.openings.size(); ++i) {
                 ImageButton button;
                 button.init(0, 0, 15, getData().resources.cross);
@@ -54,8 +54,8 @@ class Opening_setting : public App::Scene {
                 if (back_button.clicked()) {
                     adding_elem = false;
                 }
-                confirm_button.draw();
-                if (confirm_button.clicked()) {
+                register_button.draw();
+                if (register_button.clicked()) {
                     std::string transcript = text_area[0].text.narrow();
                     double weight = stoi(text_area[1].text.narrow());
                     getData().forced_openings.add(transcript, weight);
