@@ -558,6 +558,9 @@ private:
         if (shortcut_key == U"pause_when_pass") {
             getData().menu_elements.pause_when_pass = !getData().menu_elements.pause_when_pass;
         }
+        if (shortcut_key == U"force_specified_openings") {
+            getData().menu_elements.force_specified_openings = !getData().menu_elements.force_specified_openings;
+        }
         if (getData().menu_elements.opening_setting || shortcut_key == U"opening_setting") {
             changing_scene = true;
             stop_calculating();

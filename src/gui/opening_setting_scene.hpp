@@ -48,10 +48,10 @@ class Opening_setting : public App::Scene {
             if (System::GetUserActions() & UserAction::CloseButtonClicked) {
                 changeScene(U"Close", SCENE_FADE_TIME);
             }
-            getData().fonts.font(language.get("settings", "play", "opening_setting")).draw(25, Arg::topCenter(X_CENTER, 10), getData().colors.white);
+            getData().fonts.font(language.get("opening_setting", "opening_setting")).draw(25, Arg::topCenter(X_CENTER, 10), getData().colors.white);
             if (adding_elem) {
                 back_button.draw();
-                if (back_button.clicked()) {
+                if (back_button.clicked() || KeyEscape.down()) {
                     adding_elem = false;
                 }
                 std::string transcript = text_area[0].text.narrow();
@@ -73,7 +73,7 @@ class Opening_setting : public App::Scene {
                     register_button.disable();
                 }
                 register_button.draw();
-                if (register_button.clicked()) {
+                if (register_button.clicked() || (can_be_registered && KeyEnter.down())) {
                     getData().forced_openings.add(transcript, weight);
                     ImageButton button;
                     button.init(0, 0, 15, getData().resources.cross);
@@ -97,7 +97,7 @@ class Opening_setting : public App::Scene {
                     text_area[1].active = false;
                 }
                 ok_button.draw();
-                if (ok_button.clicked()) {
+                if (ok_button.clicked() || KeyEnter.down()) {
                     getData().graph_resources.need_init = false;
                     changeScene(U"Main_scene", SCENE_FADE_TIME);
                 }
@@ -105,8 +105,8 @@ class Opening_setting : public App::Scene {
             int sy = OPENING_SETTING_SY;
             int strt_idx_int = scroll_manager.get_strt_idx_int();
             if (adding_elem) {
-                if (getData().forced_openings.openings.size() + 1 > OPENING_SETTING_N_GAMES_ON_WINDOW) {
-                    strt_idx_int = getData().forced_openings.openings.size() - OPENING_SETTING_N_GAMES_ON_WINDOW - 1;
+                if (getData().forced_openings.openings.size() >= OPENING_SETTING_N_GAMES_ON_WINDOW) {
+                    strt_idx_int = getData().forced_openings.openings.size() - OPENING_SETTING_N_GAMES_ON_WINDOW + 1;
                 }
             }
             if (strt_idx_int > 0) {

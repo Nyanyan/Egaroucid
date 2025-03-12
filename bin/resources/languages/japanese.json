@@ -274,6 +274,7 @@
         "color": "色"
     },
     "opening_setting": {
+        "opening_setting": "強制する進行の設定",
         "add": "追加",
         "weight": "重み",
         "register": "登録",
