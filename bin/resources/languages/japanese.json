@@ -274,7 +274,8 @@
         "color": "色"
     },
     "opening_setting": {
-        "add": "追加"
+        "add": "追加",
+        "weight": "重み"
     },
     "tips": {
         "do_you_know": "ご存知ですか？",

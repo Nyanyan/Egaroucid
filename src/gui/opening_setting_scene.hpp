@@ -70,10 +70,17 @@ class Opening_setting : public App::Scene {
                 delete_buttons[i].move(OPENING_SETTING_SX + 1, sy + 1);
                 delete_buttons[i].draw();
                 if (delete_buttons[i].clicked()) {
-                    // todo
+                    delete_opening(i);
                 }
                 getData().fonts.font(Unicode::Widen(opening_str)).draw(15, Arg::leftCenter(OPENING_SETTING_SX + OPENING_SETTING_LEFT_MARGIN + 10, sy + OPENING_SETTING_HEIGHT / 2), getData().colors.white);
+                getData().fonts.font(language.get("opening_setting", "weight") + U": " + Format(std::round(weight))).draw(15, Arg::leftCenter(OPENING_SETTING_SX + OPENING_SETTING_LEFT_MARGIN + OPENING_SETTING_WIDTH - 100, sy + OPENING_SETTING_HEIGHT / 2), getData().colors.white);
+                sy += OPENING_SETTING_HEIGHT;
             }
+            if (strt_idx_int + OPENING_SETTING_N_GAMES_ON_WINDOW < (int)getData().forced_openings.openings.size()) {
+                getData().fonts.font(U"︙").draw(15, Arg::bottomCenter = Vec2{ X_CENTER, 415}, getData().colors.white);
+            }
+            scroll_manager.draw();
+            scroll_manager.update();
         }
     
         void draw() const override {
@@ -83,6 +90,18 @@ class Opening_setting : public App::Scene {
     private:
         void init_scroll_manager() {
             scroll_manager.init(770, OPENING_SETTING_SY + 8, 10, OPENING_SETTING_HEIGHT * OPENING_SETTING_N_GAMES_ON_WINDOW, 20, (int)getData().forced_openings.openings.size(), OPENING_SETTING_N_GAMES_ON_WINDOW, OPENING_SETTING_SX, 73, OPENING_SETTING_WIDTH + 10, OPENING_SETTING_HEIGHT * OPENING_SETTING_N_GAMES_ON_WINDOW);
+        }
+
+        void delete_opening(int idx) {
+            getData().forced_openings.openings.erase(getData().forced_openings.openings.begin() + idx);
+            delete_buttons.erase(delete_buttons.begin() + idx);
+            double strt_idx_double = scroll_manager.get_strt_idx_double();
+            init_scroll_manager();
+            if ((int)strt_idx_double >= idx) {
+                strt_idx_double -= 1.0;
+            }
+            scroll_manager.set_strt_idx(strt_idx_double);
+            std::cerr << "deleted opening " << idx << std::endl;
         }
 };
 
