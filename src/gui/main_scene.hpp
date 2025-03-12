@@ -1313,7 +1313,7 @@ private:
         int history_elem_n_discs = getData().history_elem.board.n_discs();
         for (History_elem &elem: getData().graph_resources.nodes[getData().graph_resources.branch]) {
             int n_discs = elem.board.n_discs();
-            if (n_discs <= history_elem_n_discs) {
+            if (n_discs <= history_elem_n_discs && n_discs > 4) {
                 for (History_elem &elem2: getData().graph_resources.nodes[getData().graph_resources.branch]) {
                     if (elem2.board.n_discs() == n_discs - 1) {
                         uint64_t put_bit = (elem.board.player | elem.board.opponent) & ~(elem2.board.player | elem2.board.opponent);
