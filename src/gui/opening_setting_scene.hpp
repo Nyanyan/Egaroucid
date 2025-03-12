@@ -94,6 +94,9 @@ class Opening_setting : public App::Scene {
                 getData().fonts.font(U"︙").draw(15, Arg::bottomCenter = Vec2{ X_CENTER, sy }, getData().colors.white);
             }
             sy += 8;
+            if (!adding_elem && getData().forced_openings.openings.size() == 0) {
+                getData().fonts.font(language.get("opening_setting", "no_opening_found")).draw(20, Arg::center(X_CENTER, Y_CENTER), getData().colors.white);
+            }
             for (int i = strt_idx_int; i < std::min((int)getData().forced_openings.openings.size(), strt_idx_int + OPENING_SETTING_N_GAMES_ON_WINDOW); ++i) {
                 std::string opening_str = getData().forced_openings.openings[i].first;
                 double weight = getData().forced_openings.openings[i].second;
