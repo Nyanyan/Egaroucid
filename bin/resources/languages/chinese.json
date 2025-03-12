@@ -36,7 +36,8 @@
             "ai_put_black": "AI执黑",
             "ai_put_white": "AI执白",
             "pause_when_pass": "当pass时暂停",
-            "force_specified_openings": "强制指定开局"
+            "force_specified_openings": "强制指定开局",
+            "opening_setting": "开局设置"
         },
         "thread": {
             "thread": "线程"
