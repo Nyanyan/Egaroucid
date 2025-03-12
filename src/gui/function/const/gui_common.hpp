@@ -763,6 +763,11 @@ struct Forced_openings {
         }
         return selected_policy;
     }
+
+    void add(std::string str, double weight) {
+        openings.emplace_back(std::make_pair(str, weight));
+        init();
+    }
 };
 
 struct Common_resources {

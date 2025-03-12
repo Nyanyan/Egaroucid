@@ -35,10 +35,9 @@ class Opening_setting : public App::Scene {
             ok_button.init(GO_BACK_BUTTON_GO_SX, GO_BACK_BUTTON_SY, GO_BACK_BUTTON_WIDTH, GO_BACK_BUTTON_HEIGHT, GO_BACK_BUTTON_RADIUS, language.get("common", "ok"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
             back_button.init(GO_BACK_BUTTON_BACK_SX, GO_BACK_BUTTON_SY, GO_BACK_BUTTON_WIDTH, GO_BACK_BUTTON_HEIGHT, GO_BACK_BUTTON_RADIUS, language.get("common", "back"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
             confirm_button.init(GO_BACK_BUTTON_GO_SX, GO_BACK_BUTTON_SY, GO_BACK_BUTTON_WIDTH, GO_BACK_BUTTON_HEIGHT, GO_BACK_BUTTON_RADIUS, language.get("common", "ok"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
-            Texture delete_button_image = getData().resources.cross;
             for (int i = 0; i < (int)getData().forced_openings.openings.size(); ++i) {
                 ImageButton button;
-                button.init(0, 0, 15, delete_button_image);
+                button.init(0, 0, 15, getData().resources.cross);
                 delete_buttons.emplace_back(button);
             }
             adding_elem = false;
@@ -57,6 +56,13 @@ class Opening_setting : public App::Scene {
                 }
                 confirm_button.draw();
                 if (confirm_button.clicked()) {
+                    std::string transcript = text_area[0].text.narrow();
+                    double weight = stoi(text_area[1].text.narrow());
+                    getData().forced_openings.add(transcript, weight);
+                    ImageButton button;
+                    button.init(0, 0, 15, getData().resources.cross);
+                    delete_buttons.emplace_back(button);
+                    init_scroll_manager();
                     adding_elem = false;
                 }
             } else {
@@ -130,6 +136,28 @@ class Opening_setting : public App::Scene {
                 SimpleGUI::TextArea(text_area[0], Vec2{OPENING_SETTING_SX + OPENING_SETTING_LEFT_MARGIN + 5, sy + OPENING_SETTING_HEIGHT / 2 - 17}, SizeF{600, 30}, SimpleGUI::PreferredTextAreaMaxChars);
                 getData().fonts.font(language.get("opening_setting", "weight") + U": ").draw(15, Arg::rightCenter(OPENING_SETTING_SX + OPENING_SETTING_LEFT_MARGIN + OPENING_SETTING_WIDTH - 70, sy + OPENING_SETTING_HEIGHT / 2), getData().colors.white);
                 SimpleGUI::TextArea(text_area[1], Vec2{OPENING_SETTING_SX + OPENING_SETTING_LEFT_MARGIN + OPENING_SETTING_WIDTH - 70, sy + OPENING_SETTING_HEIGHT / 2 - 17}, SizeF{20, 30}, SimpleGUI::PreferredTextAreaMaxChars);
+                for (int i = 0; i < 2; ++i) {
+                    std::string str = text_area[i].text.narrow();
+                    if (str.find("\t") != std::string::npos) {
+                        text_area[i].active = false;
+                        text_area[(i + 1) % 2].active = true;
+                        int tab_place = str.find("\t");
+                        std::string txt0;
+                        for (int j = 0; j < tab_place; ++j) {
+                            txt0 += str[j];
+                        }
+                        std::string txt1;
+                        for (int j = tab_place + 1; j < (int)str.size(); ++j) {
+                            txt1 += str[j];
+                        }
+                        text_area[i].text = Unicode::Widen(txt0);
+                        text_area[i].cursorPos = text_area[i].text.size();
+                        text_area[i].rebuildGlyphs();
+                        text_area[(i + 1) % 2].text += Unicode::Widen(txt1);
+                        text_area[(i + 1) % 2].cursorPos = text_area[(i + 1) % 2].text.size();
+                        text_area[(i + 1) % 2].rebuildGlyphs();
+                    }
+                }
             }
             if (strt_idx_int + OPENING_SETTING_N_GAMES_ON_WINDOW < (int)getData().forced_openings.openings.size()) {
                 getData().fonts.font(U"︙").draw(15, Arg::bottomCenter = Vec2{ X_CENTER, 415}, getData().colors.white);
