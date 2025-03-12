@@ -1310,18 +1310,28 @@ private:
     }
 
     void draw_play_ordering() {
+        int history_elem_n_discs = getData().history_elem.board.n_discs();
         for (History_elem &elem: getData().graph_resources.nodes[getData().graph_resources.branch]) {
-            int cell = elem.policy;
-            if (0 <= cell && cell < HW2 && ((getData().history_elem.board.player | getData().history_elem.board.opponent) & (1ULL << cell))) {
-                int x = BOARD_SX + ((HW2_M1 - cell) % HW) * BOARD_CELL_SIZE + BOARD_CELL_SIZE / 2;
-                int y = BOARD_SY + ((HW2_M1 - cell) / HW) * BOARD_CELL_SIZE + BOARD_CELL_SIZE / 2;
-                bool is_black_disc = getData().history_elem.player == BLACK && (getData().history_elem.board.player & (1ULL << cell)) != 0;
-                is_black_disc |= getData().history_elem.player == WHITE && (getData().history_elem.board.opponent & (1ULL << cell)) != 0;
-                Color color = getData().colors.black;
-                if (is_black_disc) {
-                    color = getData().colors.white;
+            int n_discs = elem.board.n_discs();
+            if (n_discs <= history_elem_n_discs) {
+                for (History_elem &elem2: getData().graph_resources.nodes[getData().graph_resources.branch]) {
+                    if (elem2.board.n_discs() == n_discs - 1) {
+                        uint64_t put_bit = (elem.board.player | elem.board.opponent) & ~(elem2.board.player | elem2.board.opponent);
+                        if (pop_count_ull(put_bit) == 1) {
+                            int cell = ctz(put_bit);
+                            int x = BOARD_SX + ((HW2_M1 - cell) % HW) * BOARD_CELL_SIZE + BOARD_CELL_SIZE / 2;
+                            int y = BOARD_SY + ((HW2_M1 - cell) / HW) * BOARD_CELL_SIZE + BOARD_CELL_SIZE / 2;
+                            bool is_black_disc = getData().history_elem.player == BLACK && (getData().history_elem.board.player & (1ULL << cell)) != 0;
+                            is_black_disc |= getData().history_elem.player == WHITE && (getData().history_elem.board.opponent & (1ULL << cell)) != 0;
+                            Color color = getData().colors.black;
+                            if (is_black_disc) {
+                                color = getData().colors.white;
+                            }
+                            getData().fonts.font_bold(elem.board.n_discs() - 4).draw(24, Arg::center(x, y), color);
+                        }
+                        break;
+                    }
                 }
-                getData().fonts.font_bold(elem.board.n_discs() - 4).draw(24, Arg::center(x, y), color);
             }
         }
     }
