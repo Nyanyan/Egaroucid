@@ -273,6 +273,13 @@
         "mark": "Mark",
         "color": "Color"
     },
+    "opening_setting": {
+        "opening_setting": "Forced Opening Settings",
+        "add": "Add",
+        "weight": "Weight",
+        "register": "Register",
+        "no_opening_found": "No Opening Registered"
+    },
     "tips": {
         "do_you_know": "Do you know?",
         "tips": [
