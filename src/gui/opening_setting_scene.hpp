@@ -27,6 +27,7 @@ class Opening_setting : public App::Scene {
         Button back_button;
         Button confirm_button;
         bool adding_elem;
+        TextAreaEditState text_area[2];
     
     public:
         Opening_setting(const InitData& init) : IScene{ init } {
@@ -62,6 +63,13 @@ class Opening_setting : public App::Scene {
                 add_button.draw();
                 if (add_button.clicked()) {
                     adding_elem = true;
+                    for (int i = 0; i < 2; ++i) {
+                        text_area[i].text = U"";
+                        text_area[i].cursorPos = text_area[i].text.size();
+                        text_area[i].rebuildGlyphs();
+                    }
+                    text_area[0].active = true;
+                    text_area[1].active = false;
                 }
                 ok_button.draw();
                 if (ok_button.clicked()) {
@@ -103,8 +111,9 @@ class Opening_setting : public App::Scene {
                         delete_opening(i);
                     }
                 }
-                getData().fonts.font(Unicode::Widen(opening_str)).draw(15, Arg::leftCenter(OPENING_SETTING_SX + OPENING_SETTING_LEFT_MARGIN + 10, sy + OPENING_SETTING_HEIGHT / 2), getData().colors.white);
-                getData().fonts.font(language.get("opening_setting", "weight") + U": " + Format(std::round(weight))).draw(15, Arg::leftCenter(OPENING_SETTING_SX + OPENING_SETTING_LEFT_MARGIN + OPENING_SETTING_WIDTH - 100, sy + OPENING_SETTING_HEIGHT / 2), getData().colors.white);
+                getData().fonts.font(Unicode::Widen(opening_str)).draw(15, Arg::leftCenter(OPENING_SETTING_SX + OPENING_SETTING_LEFT_MARGIN + 5, sy + OPENING_SETTING_HEIGHT / 2), getData().colors.white);
+                getData().fonts.font(language.get("opening_setting", "weight") + U": ").draw(15, Arg::rightCenter(OPENING_SETTING_SX + OPENING_SETTING_LEFT_MARGIN + OPENING_SETTING_WIDTH - 70, sy + OPENING_SETTING_HEIGHT / 2), getData().colors.white);
+                getData().fonts.font(Format(std::round(weight))).draw(15, Arg::leftCenter(OPENING_SETTING_SX + OPENING_SETTING_LEFT_MARGIN + OPENING_SETTING_WIDTH - 70, sy + OPENING_SETTING_HEIGHT / 2), getData().colors.white);
                 sy += OPENING_SETTING_HEIGHT;
             }
             if (adding_elem) {
@@ -118,7 +127,9 @@ class Opening_setting : public App::Scene {
                 } else {
                     rect.draw(getData().colors.green).drawFrame(1.0, getData().colors.white);
                 }
-                
+                SimpleGUI::TextArea(text_area[0], Vec2{OPENING_SETTING_SX + OPENING_SETTING_LEFT_MARGIN + 5, sy + OPENING_SETTING_HEIGHT / 2 - 17}, SizeF{600, 30}, SimpleGUI::PreferredTextAreaMaxChars);
+                getData().fonts.font(language.get("opening_setting", "weight") + U": ").draw(15, Arg::rightCenter(OPENING_SETTING_SX + OPENING_SETTING_LEFT_MARGIN + OPENING_SETTING_WIDTH - 70, sy + OPENING_SETTING_HEIGHT / 2), getData().colors.white);
+                SimpleGUI::TextArea(text_area[1], Vec2{OPENING_SETTING_SX + OPENING_SETTING_LEFT_MARGIN + OPENING_SETTING_WIDTH - 70, sy + OPENING_SETTING_HEIGHT / 2 - 17}, SizeF{20, 30}, SimpleGUI::PreferredTextAreaMaxChars);
             }
             if (strt_idx_int + OPENING_SETTING_N_GAMES_ON_WINDOW < (int)getData().forced_openings.openings.size()) {
                 getData().fonts.font(U"︙").draw(15, Arg::bottomCenter = Vec2{ X_CENTER, 415}, getData().colors.white);
