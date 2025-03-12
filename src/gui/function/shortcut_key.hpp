@@ -43,6 +43,7 @@ std::vector<Shortcut_key_elem> shortcut_keys_default = {
     {U"ai_put_white",           {U"W"},                 {{"settings", "settings"}, {"settings", "play", "ai_put_white"}}},
     {U"pause_when_pass",        {},                     {{"settings", "settings"}, {"settings", "play", "pause_when_pass"}}},
     {U"force_specified_openings", {},                   {{"settings", "settings"}, {"settings", "play", "force_specified_openings"}}},
+    {U"opening_setting",        {},                     {{"settings", "settings"}, {"settings", "play", "opening_setting"}}},
     {U"shortcut_key_setting",   {},                     {{"settings", "settings"}, {"settings", "shortcut_keys", "settings"}}},
 
     // display

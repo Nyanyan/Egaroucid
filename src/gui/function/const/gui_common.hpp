@@ -171,6 +171,14 @@ constexpr int IMPORT_GAME_DATE_WIDTH = 120;
 constexpr int IMPORT_GAME_BUTTON_SY = (IMPORT_GAME_HEIGHT - IMPORT_GAME_BUTTON_HEIGHT) / 2;
 constexpr int IMPORT_GAME_WIDTH = WINDOW_SIZE_X - (IMPORT_GAME_SX + IMPORT_GAME_LEFT_MARGIN) * 2 + IMPORT_GAME_LEFT_MARGIN;
 
+// opening setting
+constexpr int OPENING_SETTING_N_GAMES_ON_WINDOW = 7;
+constexpr int OPENING_SETTING_LEFT_MARGIN = 10;
+constexpr int OPENING_SETTING_SX = 30 - OPENING_SETTING_LEFT_MARGIN;
+constexpr int OPENING_SETTING_SY = 65;
+constexpr int OPENING_SETTING_HEIGHT = 45;
+constexpr int OPENING_SETTING_WIDTH = WINDOW_SIZE_X - (OPENING_SETTING_SX + OPENING_SETTING_LEFT_MARGIN) * 2 + OPENING_SETTING_LEFT_MARGIN;
+
 // game saving constants
 #define GAME_DATE U"date"
 #define GAME_BLACK_PLAYER U"black_player"
@@ -697,42 +705,6 @@ struct User_settings {
     std::string screenshot_saving_dir;
 };
 
-struct Forced_openings {
-    std::vector<std::string> openings_str;
-    std::unordered_map<Board, std::vector<int>, Book_hash> selected_moves;
-
-    void init() {
-        openings_str = {
-            "f5d6c3d3c4f4f6", // stephenson
-            "f5d6c3d3c4f4e3", // brightwell
-            "f5d6c3d3c4f4e6", // leader's tiger
-        };
-        Board board;
-        Flip flip;
-        for (const std::string& opening_str : openings_str) {
-            board.reset();
-            for (int i = 0; i < opening_str.size() - 1 && board.check_pass(); i += 2) {
-                int policy = get_coord_from_chars(opening_str[i], opening_str[i + 1]);
-                std::cerr << idx_to_coord(policy) << std::endl;
-                board.print();
-                selected_moves[board].emplace_back(policy);
-                calc_flip(&flip, &board, policy);
-                board.move_board(&flip);
-            }
-        }
-    }
-
-    int get_one(Board board) {
-        int selected_policy = MOVE_UNDEFINED;
-        if (selected_moves.find(board) != selected_moves.end()) {
-            std::vector<int> policies = selected_moves[board];
-            int rand_idx = myrandrange(0, policies.size());
-            selected_policy = policies[rand_idx];
-        }
-        return selected_policy;
-    }
-};
-
 struct Window_state {
     double window_scale;
     bool loading;
@@ -742,6 +714,56 @@ struct Window_state {
     }
 };
 
+struct Forced_openings {
+    std::vector<std::pair<std::string, double>> openings;
+    std::unordered_map<Board, std::vector<std::pair<int, double>>, Book_hash> selected_moves;
+
+    Forced_openings() {
+        openings = {
+            {"f5d6c3d3c4f4f6", 1}, // stephenson
+            {"f5d6c3d3c4f4e3", 1}, // brightwell
+            {"f5d6c3d3c4f4e6", 1}, // leader's tiger
+        };
+    }
+
+    void init() {
+        Board board;
+        Flip flip;
+        for (const std::pair<std::string, double> opening : openings) {
+            board.reset();
+            std::string opening_str = opening.first;
+            double weight = opening.second;
+            for (int i = 0; i < opening_str.size() - 1 && board.check_pass(); i += 2) {
+                int policy = get_coord_from_chars(opening_str[i], opening_str[i + 1]);
+                // std::cerr << idx_to_coord(policy) << std::endl;
+                // board.print();
+                selected_moves[board].emplace_back(std::make_pair(policy, weight));
+                calc_flip(&flip, &board, policy);
+                board.move_board(&flip);
+            }
+        }
+    }
+
+    int get_one(Board board) {
+        int selected_policy = MOVE_UNDEFINED;
+        if (selected_moves.find(board) != selected_moves.end()) {
+            double sum_weight = 0.0;
+            for (std::pair<int, double> &elem: selected_moves[board]) {
+                sum_weight += elem.second;
+            }
+            double rnd = myrandom() * sum_weight;
+            double s = 0.0;
+            for (std::pair<int, double> &elem: selected_moves[board]) {
+                s += elem.second;
+                if (s >= rnd) {
+                    selected_policy = elem.first;
+                    break;
+                }
+            }
+        }
+        return selected_policy;
+    }
+};
 
 struct Common_resources {
     Colors colors;

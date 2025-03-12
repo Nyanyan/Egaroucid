@@ -273,6 +273,9 @@
         "mark": "マーク",
         "color": "色"
     },
+    "opening_setting": {
+        "add": "追加"
+    },
     "tips": {
         "do_you_know": "ご存知ですか？",
         "tips": [
