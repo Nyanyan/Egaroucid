@@ -744,6 +744,32 @@ struct Forced_openings {
         }
     }
 
+    void load(std::string file) {
+        std::ifstream ifs(file);
+        if (!ifs) {
+            return;
+        }
+        openings.clear();
+        std::string line;
+        while (std::getline(ifs, line)) {
+            std::istringstream iss(line);
+            std::string transcript, weight_str;
+            iss >> transcript >> weight_str;
+            double weight;
+            try {
+                weight = stoi(weight_str);
+                if (is_valid_transcript(transcript)) {
+                    openings.emplace_back(std::make_pair(transcript, weight));
+                }
+            } catch (const std::invalid_argument& e) {
+                std::cerr << "Invalid argument: " << e.what() << std::endl;
+            } catch (const std::out_of_range& e) {
+                std::cerr << "Out of range: " << e.what() << std::endl;
+            }
+        }
+        init();
+    }
+
     int get_one(Board board) {
         int selected_policy = MOVE_UNDEFINED;
         if (selected_moves.find(board) != selected_moves.end()) {

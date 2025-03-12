@@ -54,10 +54,26 @@ class Opening_setting : public App::Scene {
                 if (back_button.clicked()) {
                     adding_elem = false;
                 }
+                std::string transcript = text_area[0].text.narrow();
+                std::string weight_str = text_area[1].text.narrow();
+                bool can_be_registered = is_valid_transcript(transcript);
+                double weight;
+                try {
+                    weight = stoi(weight_str);
+                } catch (const std::invalid_argument& e) {
+                    //std::cerr << "Invalid argument: " << e.what() << std::endl;
+                    can_be_registered = false;
+                } catch (const std::out_of_range& e) {
+                    //std::cerr << "Out of range: " << e.what() << std::endl;
+                    can_be_registered = false;
+                }
+                if (can_be_registered) {
+                    register_button.enable();
+                } else {
+                    register_button.disable();
+                }
                 register_button.draw();
                 if (register_button.clicked()) {
-                    std::string transcript = text_area[0].text.narrow();
-                    double weight = stoi(text_area[1].text.narrow());
                     getData().forced_openings.add(transcript, weight);
                     ImageButton button;
                     button.init(0, 0, 15, getData().resources.cross);
@@ -71,6 +87,9 @@ class Opening_setting : public App::Scene {
                     adding_elem = true;
                     for (int i = 0; i < 2; ++i) {
                         text_area[i].text = U"";
+                        if (i == 1) {
+                            text_area[i].text = U"1";
+                        }
                         text_area[i].cursorPos = text_area[i].text.size();
                         text_area[i].rebuildGlyphs();
                     }

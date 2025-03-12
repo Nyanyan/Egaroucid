@@ -254,3 +254,23 @@ inline int convert_coord_to_representative_board(int cell, int idx) {
     }
     return res;
 }
+
+bool is_valid_transcript(std::string transcript) {
+    if (transcript.size() % 2) {
+        return false;
+    }
+    Board board;
+    Flip flip;
+    board.reset();
+    for (int i = 0; i < transcript.size() - 1 && board.check_pass(); i += 2) {
+        if (!is_coord_like_chars(transcript[i], transcript[i + 1])) {
+            return false;
+        }
+        int coord = get_coord_from_chars(transcript[i], transcript[i + 1]);
+        if ((board.get_legal() & (1ULL << coord)) == 0) {
+            return false;
+        }
+        calc_flip(&flip, &board, coord);
+        board.move_board(&flip);
+    }
+}
