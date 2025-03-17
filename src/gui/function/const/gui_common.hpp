@@ -235,7 +235,7 @@ constexpr int BUTTON2_VERTICAL_SX = 520;
 constexpr int BUTTON2_VERTICAL_RADIUS = 20;
 
 // font constant
-constexpr int FONT_DEFAULT_SIZE = 50;
+constexpr int FONT_DEFAULT_SIZE = 48;
 
 // default language
 #define DEFAULT_LANGUAGE "english"
