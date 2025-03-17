@@ -38,7 +38,17 @@ constexpr int MENU_BAR_SIZE = 140;
 constexpr int MENU_BAR_HEIGHT = 14;
 constexpr int MENU_BAR_RADIUS = 6;
 
-constexpr double MENU_WSIZE_ROUGH_MARGIN = 0.5;
+constexpr double MENU_WSIZE_ROUGH_MARGIN = 0.7;
+
+int count_ascii(const String& str) {
+	int count = 0;
+	for (const auto& ch : str) {
+		if (InRange<int32>(ch, 0, 127)) {
+			++count;
+		}
+	}
+	return count;
+}
 
 class menu_elem {
 private:
@@ -421,7 +431,10 @@ public:
             w = (double)h * image.width() / image.height();
         } else {
             h = rect.h;
-            w = str.size() * font_size;
+            //w = str.size() * font_size;
+            int count = count_ascii(str);
+            w = (str.size() - count) * font_size; // zenkaku
+            w += count * font_size * 0.6; // hankaku
         }
         w += h;
         if (mode == MENU_MODE_BAR || mode == MENU_MODE_BAR_CHECK) {
