@@ -195,9 +195,11 @@ public:
             int height = h - menu_offset_y * 2, width = 0;
             for (menu_elem& child : children) {
                 child.pre_init(font_size, font, checkbox, unchecked, height, bar_value_offset);
-                std::pair<int, int> child_size = child.size();
-                height = std::max(height, child_size.first);
-                width = std::max(width, child_size.second);
+                if (width <= child.wsize_rough()) {
+                    std::pair<int, int> child_size = child.size();
+                    height = std::max(height, child_size.first);
+                    width = std::max(width, child_size.second);
+                }
             }
             height += menu_offset_y * 2;
             width += menu_offset_x * 2;
@@ -395,6 +397,22 @@ public:
         return std::make_pair(h, w);
     }
 
+    int wsize_rough() {
+        int h, w;
+        if (use_image) {
+            h = rect.h - 2 * menu_image_offset_y;
+            w = (double)h * image.width() / image.height();
+        } else {
+            h = rect.h;
+            w = str.size() * font_size;
+        }
+        w += h;
+        if (mode == MENU_MODE_BAR || mode == MENU_MODE_BAR_CHECK) {
+            w += MENU_BAR_SIZE + bar_value_offset + bar_additional_offset;
+        }
+        return w;
+    }
+
     void set_not_clicked() {
         is_clicked = false;
         if (has_child) {
@@ -459,9 +477,11 @@ public:
         int bar_value_offset = font(U"88").region(font_size, Point{ 0, 0 }).w;
         for (menu_elem &child: children) {
             child.pre_init(font_size, font, checkbox, unchecked, height, bar_value_offset);
-            std::pair<int, int> child_size = child.size();
-            height = std::max(height, child_size.first);
-            width = std::max(width, child_size.second);
+            if (width <= child.wsize_rough()) {
+                std::pair<int, int> child_size = child.size();
+                height = std::max(height, child_size.first);
+                width = std::max(width, child_size.second);
+            }
         }
         height += menu_offset_y * 2;
         width += menu_offset_x * 2;
