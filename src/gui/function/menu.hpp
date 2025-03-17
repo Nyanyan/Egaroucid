@@ -476,8 +476,8 @@ public:
     }
 
     void init_inside(int x, int y, int w, int h, int bar_value_offset) {
-        uint64_t strt = tim();
-        std::cerr << "a";
+        // uint64_t strt = tim();
+        // std::cerr << "a";
         rect.x = x;
         rect.y = y;
         rect.w = w;
@@ -493,12 +493,12 @@ public:
         width += menu_offset_x * 2;
         int xx = rect.x;
         int yy = rect.y + rect.h;
-        std::cerr << "b " << tim() - strt << " ";
+        // std::cerr << "b " << tim() - strt << " ";
         for (menu_elem &child: children) {
             child.init_inside(xx, yy, width, height);
             yy += height;
         }
-        std::cerr << "c " << tim() - strt << std::endl;
+        // std::cerr << "c " << tim() - strt << std::endl;
     }
 
     void push(menu_elem elem) {
