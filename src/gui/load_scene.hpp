@@ -208,21 +208,26 @@ int init_ai(Settings* settings, const Directories* directories, bool *stop_loadi
 }
 
 int load_app(Directories* directories, Resources* resources, Settings* settings, Forced_openings *forced_openings, Menu *menu, Menu_elements *menu_elements, Font font, bool* update_found, String *new_version, bool *stop_loading) {
+    // auto update check
     if (settings->auto_update_check) {
         if (check_update(directories, new_version) == UPDATE_CHECK_UPDATE_FOUND) {
             *update_found = true;
         }
     }
+    // resources
     int code = init_resources_load(resources, settings, stop_loading);
     if (code == ERR_OK) {
-        code = init_ai(settings, directories, stop_loading);
-    }
-    if (code == ERR_OK) {
+        // shortcut keys
         init_shortcut_keys(directories);
+        // forced openings for AI
         std::string forced_openings_file = directories->appdata_dir + "/forced_openings.txt";
         forced_openings->load(forced_openings_file);
+        // settings -> menu elements
         menu_elements->init(settings, resources);
+        // menu
         //*menu = create_menu(menu_elements, resources, font);
+        // AI
+        code = init_ai(settings, directories, stop_loading);
     }
     return code;
 }
@@ -309,7 +314,6 @@ public:
                     book_ignore_button.draw();
                     if (book_ignore_button.clicked()) {
                         std::cerr << "loaded" << std::endl;
-                        getData().menu_elements.init(&getData().settings, &getData().resources);
                         getData().window_state.loading = false;
                         changeScene(U"Main_scene", SCENE_FADE_TIME);
                     }
