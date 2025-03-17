@@ -216,7 +216,7 @@ int load_app(Directories* directories, Resources* resources, Settings* settings,
     }
     // resources
     int code = init_resources_load(resources, settings, stop_loading);
-    if (code == ERR_OK) {
+    if (code == ERR_OK) { // when resources initialized
         // shortcut keys
         init_shortcut_keys(directories);
         // forced openings for AI
@@ -224,8 +224,6 @@ int load_app(Directories* directories, Resources* resources, Settings* settings,
         forced_openings->load(forced_openings_file);
         // settings -> menu elements
         menu_elements->init(settings, resources);
-        // menu
-        //*menu = create_menu(menu_elements, resources, font);
         // AI
         code = init_ai(settings, directories, stop_loading);
     }

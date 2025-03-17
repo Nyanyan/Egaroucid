@@ -38,7 +38,7 @@ constexpr int MENU_BAR_SIZE = 140;
 constexpr int MENU_BAR_HEIGHT = 14;
 constexpr int MENU_BAR_RADIUS = 6;
 
-constexpr double MENU_WSIZE_ROUGH_MARGIN = 0.8;
+constexpr double MENU_WSIZE_ROUGH_MARGIN = 0.9;
 
 int count_ascii(const String& str) {
 	int count = 0;
@@ -432,9 +432,9 @@ public:
         } else {
             h = rect.h;
             //w = str.size() * font_size;
-            int count = count_ascii(str);
-            w = (str.size() - count) * font_size; // zenkaku
-            w += count * font_size * 0.6; // hankaku
+            int ascii_count = count_ascii(str);
+            w = (str.size() - ascii_count) * font_size; // zenkaku
+            w += ascii_count * font_size * 0.55; // hankaku
         }
         w += h;
         if (mode == MENU_MODE_BAR || mode == MENU_MODE_BAR_CHECK) {
@@ -638,6 +638,7 @@ public:
     }
 
     void init(int x, int y, int fs, Font f, Texture c, Texture u) {
+        uint64_t strt = tim();
         int height = 0, width = 0;
         for (menu_title &title : menu) {
             title.pre_init(fs, f, c, u);
@@ -656,6 +657,7 @@ public:
             elem.init_inside(xx, yy, width, height);
             xx += width;
         }
+        std::cerr << "menu init elapsed " << tim() - strt << " ms" << std::endl;
     }
 
     void draw() {
