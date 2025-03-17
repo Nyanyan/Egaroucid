@@ -177,12 +177,12 @@ public:
         children.emplace_back(ch);
     }
 
-    void pre_init(int fs, Font f, Texture c, Texture u, int h) {
+    void pre_init(int fs, Font f, Texture c, Texture u, int h, int bvo) {
         font_size = fs;
         font = f;
         checkbox = c;
         unchecked = u;
-        bar_value_offset = font(U"88").region(font_size, Point{ 0, 0 }).w;
+        bar_value_offset = bvo; //font(U"88").region(font_size, Point{ 0, 0 }).w;
         rect.h = h;
     }
 
@@ -194,7 +194,7 @@ public:
         if (has_child) {
             int height = h - menu_offset_y * 2, width = 0;
             for (menu_elem& elem : children) {
-                elem.pre_init(font_size, font, checkbox, unchecked, height);
+                elem.pre_init(font_size, font, checkbox, unchecked, height, bar_value_offset);
                 RectF r = elem.size();
                 height = std::max(height, (int)r.h);
                 width = std::max(width, (int)r.w);
@@ -449,13 +449,16 @@ public:
     }
 
     void init_inside(int x, int y, int w, int h) {
+        uint64_t strt = tim();
+        std::cerr << "a";
         rect.x = x;
         rect.y = y;
         rect.w = w;
         rect.h = h;
         int height = h - menu_offset_y * 2, width = w - menu_offset_x * 2;
+        int bar_value_offset = font(U"88").region(font_size, Point{ 0, 0 }).w;
         for (menu_elem &child: children) {
-            child.pre_init(font_size, font, checkbox, unchecked, height);
+            child.pre_init(font_size, font, checkbox, unchecked, height, bar_value_offset);
             RectF r = child.size();
             height = std::max(height, (int)r.h);
             width = std::max(width, (int)r.w);
@@ -464,10 +467,12 @@ public:
         width += menu_offset_x * 2;
         int xx = rect.x;
         int yy = rect.y + rect.h;
+        std::cerr << "b " << tim() - strt << " ";
         for (menu_elem &child: children) {
             child.init_inside(xx, yy, width, height);
             yy += height;
         }
+        std::cerr << "c " << tim() - strt << std::endl;
     }
 
     void push(menu_elem elem) {
