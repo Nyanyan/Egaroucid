@@ -38,6 +38,8 @@ constexpr int MENU_BAR_SIZE = 140;
 constexpr int MENU_BAR_HEIGHT = 14;
 constexpr int MENU_BAR_RADIUS = 6;
 
+constexpr double MENU_WSIZE_ROUGH_MARGIN = 0.5;
+
 class menu_elem {
 private:
     String str;
@@ -193,14 +195,29 @@ public:
         rect.h = h;
         if (has_child) {
             int height = h - menu_offset_y * 2, width = 0;
+            std::vector<int> wsizes_rough;
+            int max_wsize_rough = 0;
             for (menu_elem& child : children) {
                 child.pre_init(font_size, font, checkbox, unchecked, height, bar_value_offset);
-                if (width <= child.wsize_rough()) {
-                    std::pair<int, int> child_size = child.size();
+                int rw = child.wsize_rough();
+                max_wsize_rough = std::max(max_wsize_rough, rw);
+                wsizes_rough.emplace_back(rw);
+            }
+            for (int i = 0; i < children.size(); ++i) {
+                if (width <= wsizes_rough[i] && max_wsize_rough * MENU_WSIZE_ROUGH_MARGIN <= wsizes_rough[i]) {
+                    std::pair<int, int> child_size = children[i].size();
                     height = std::max(height, child_size.first);
                     width = std::max(width, child_size.second);
                 }
             }
+            // for (menu_elem& child : children) {
+            //     child.pre_init(font_size, font, checkbox, unchecked, height, bar_value_offset);
+            //     if (width <= child.wsize_rough()) {
+            //         std::pair<int, int> child_size = child.size();
+            //         height = std::max(height, child_size.first);
+            //         width = std::max(width, child_size.second);
+            //     }
+            // }
             height += menu_offset_y * 2;
             width += menu_offset_x * 2;
             int xx = rect.x + rect.w;
@@ -475,14 +492,29 @@ public:
         rect.h = h;
         int height = h - menu_offset_y * 2, width = w - menu_offset_x * 2;
         int bar_value_offset = font(U"88").region(font_size, Point{ 0, 0 }).w;
-        for (menu_elem &child: children) {
+        std::vector<int> wsizes_rough;
+        int max_wsize_rough = 0;
+        for (menu_elem& child : children) {
             child.pre_init(font_size, font, checkbox, unchecked, height, bar_value_offset);
-            if (width <= child.wsize_rough()) {
-                std::pair<int, int> child_size = child.size();
+            int rw = child.wsize_rough();
+            max_wsize_rough = std::max(max_wsize_rough, rw);
+            wsizes_rough.emplace_back(rw);
+        }
+        for (int i = 0; i < children.size(); ++i) {
+            if (width <= wsizes_rough[i] && max_wsize_rough * MENU_WSIZE_ROUGH_MARGIN <= wsizes_rough[i]) {
+                std::pair<int, int> child_size = children[i].size();
                 height = std::max(height, child_size.first);
                 width = std::max(width, child_size.second);
             }
         }
+        // for (menu_elem &child: children) {
+        //     child.pre_init(font_size, font, checkbox, unchecked, height, bar_value_offset);
+        //     if (width <= child.wsize_rough()) {
+        //         std::pair<int, int> child_size = child.size();
+        //         height = std::max(height, child_size.first);
+        //         width = std::max(width, child_size.second);
+        //     }
+        // }
         height += menu_offset_y * 2;
         width += menu_offset_x * 2;
         int xx = rect.x;
