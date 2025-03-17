@@ -297,7 +297,6 @@ public:
                 if (load_future.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
                     load_code = load_future.get();
                     if (load_code == ERR_OK) {
-                        //getData().menu = create_menu(&getData().menu_elements, &getData().resources, getData().fonts.font);
                         std::cerr << "loaded" << std::endl;
                         getData().window_state.loading = false;
                         changeScene(U"Main_scene", SCENE_FADE_TIME);
