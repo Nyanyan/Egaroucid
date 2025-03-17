@@ -80,6 +80,7 @@ public:
         umigame_value_depth_before = 0;
         shortcut_key = SHORTCUT_KEY_UNDEFINED;
         shortcut_key_pressed = SHORTCUT_KEY_UNDEFINED;
+        std::cerr << "main scene loaded" << std::endl;
     }
 
     Main_scene(const InitData& init) : IScene{ init } {
@@ -128,9 +129,9 @@ public:
 
         // shortcut
         shortcut_keys.check_shortcut_key(&shortcut_key, &shortcut_key_pressed);
-        if (shortcut_key != SHORTCUT_KEY_UNDEFINED) {
-            std::cerr << "shortcut key found: " << shortcut_key.narrow() << std::endl;
-        }
+        // if (shortcut_key != SHORTCUT_KEY_UNDEFINED) {
+        //     std::cerr << "shortcut key found: " << shortcut_key.narrow() << std::endl;
+        // }
 
         // opening
         update_opening();
