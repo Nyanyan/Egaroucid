@@ -42,13 +42,23 @@ constexpr int MENU_BAR_RADIUS = 6;
 constexpr double MENU_WSIZE_ROUGH_MARGIN = 0.9;
 
 int count_ascii(const String& str) {
-	int count = 0;
-	for (const auto& ch : str) {
-		if (InRange<int32>(ch, 0, 127)) {
-			++count;
-		}
-	}
-	return count;
+    int count = 0;
+    for (const auto& ch : str) {
+        if (InRange<int32>(ch, 0, 127)) {
+            ++count;
+        }
+    }
+    return count;
+}
+
+double region_ascii(const String& str, int font_size, Font font) {
+    double width = 0.0;
+    for (const auto& ch : str) {
+        if (InRange<int32>(ch, 0, 127)) {
+            width += font(ch).region(font_size, Point{0, 0}).w;
+        }
+    }
+    return width;
 }
 
 class menu_elem {
@@ -424,9 +434,13 @@ public:
             h = rect.h - 2 * menu_image_offset_y;
             w = (double)h * image.width() / image.height();
         } else {
-            RectF rect = font(str).region(font_size, Point{ 0, 0 });
-            h = rect.h;
-            w = rect.w;
+            // RectF r = font(str).region(font_size, Point{ 0, 0 }); // slow
+            // h = r.h;
+            // w = r.w;
+            h = font_size;
+            int ascii_count = count_ascii(str);
+            w = (str.size() - ascii_count) * font_size; // zenkaku
+            w += region_ascii(str, font_size, font); // hankaku
         }
         w += h;
         if (mode == MENU_MODE_BAR || mode == MENU_MODE_BAR_CHECK) {
@@ -662,11 +676,11 @@ public:
         menu.emplace_back(elem);
     }
 
-    void init(int x, int y, int fs, Font f, Texture c, Texture u) {
+    void init(int x, int y, int font_size, Font font, Texture checkbox, Texture unchecked) {
         uint64_t strt = tim();
         int height = 0, width = 0;
         for (menu_title &title : menu) {
-            title.pre_init(fs, f, c, u);
+            title.pre_init(font_size, font, checkbox, unchecked);
             RectF r = title.size();
             height = std::max(height, (int)r.h);
             width = std::max(width, (int)r.w);
@@ -678,7 +692,7 @@ public:
         width += menu_offset_x * 2;
         int xx = x;
         int yy = y;
-        int bar_value_offset = f(U"88").region(fs, Point{ 0, 0 }).w;
+        int bar_value_offset = font(U"88").region(font_size, Point{ 0, 0 }).w;
         // if (thread_pool.size() == 0) {
         for (menu_title &title : menu) {
             title.init_inside(xx, yy, width, height, bar_value_offset);
