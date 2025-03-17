@@ -61,6 +61,7 @@ public:
     void init_main_scene() {
         std::cerr << "main scene loading" << std::endl;
         getData().menu = create_menu(&getData().menu_elements, &getData().resources, getData().fonts.font);
+        std::cerr << "menu loaded" << std::endl;
         graph.sx = GRAPH_SX;
         graph.sy = GRAPH_SY;
         graph.size_x = GRAPH_WIDTH;
