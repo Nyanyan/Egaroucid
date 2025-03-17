@@ -207,19 +207,23 @@ int init_ai(Settings* settings, const Directories* directories, bool *stop_loadi
     return ERR_OK;
 }
 
-int load_app(Directories* directories, Resources* resources, Settings* settings, Forced_openings *forced_openings, bool* update_found, String *new_version, bool *stop_loading) {
+int load_app(Directories* directories, Resources* resources, Settings* settings, Forced_openings *forced_openings, Menu *menu, Menu_elements *menu_elements, Font font, bool* update_found, String *new_version, bool *stop_loading) {
     if (settings->auto_update_check) {
         if (check_update(directories, new_version) == UPDATE_CHECK_UPDATE_FOUND) {
             *update_found = true;
         }
     }
-    init_shortcut_keys(directories);
     int code = init_resources_load(resources, settings, stop_loading);
     if (code == ERR_OK) {
         code = init_ai(settings, directories, stop_loading);
     }
-    std::string forced_openings_file = directories->appdata_dir + "/forced_openings.txt";
-    forced_openings->load(forced_openings_file);
+    if (code == ERR_OK) {
+        init_shortcut_keys(directories);
+        std::string forced_openings_file = directories->appdata_dir + "/forced_openings.txt";
+        forced_openings->load(forced_openings_file);
+        menu_elements->init(settings, resources);
+        //*menu = create_menu(menu_elements, resources, font);
+    }
     return code;
 }
 
@@ -247,7 +251,7 @@ public:
         tips = language.get_random("tips", "tips");
         update_found = false;
         stop_loading = false;
-        load_future = std::async(std::launch::async, load_app, &getData().directories, &getData().resources, &getData().settings, &getData().forced_openings, &update_found, &new_version, &stop_loading);
+        load_future = std::async(std::launch::async, load_app, &getData().directories, &getData().resources, &getData().settings, &getData().forced_openings, &getData().menu, &getData().menu_elements, getData().fonts.font, &update_found, &new_version, &stop_loading);
     }
 
     void update() override {
@@ -290,8 +294,8 @@ public:
                 if (load_future.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
                     load_code = load_future.get();
                     if (load_code == ERR_OK) {
+                        //getData().menu = create_menu(&getData().menu_elements, &getData().resources, getData().fonts.font);
                         std::cerr << "loaded" << std::endl;
-                        getData().menu_elements.init(&getData().settings, &getData().resources);
                         getData().window_state.loading = false;
                         changeScene(U"Main_scene", SCENE_FADE_TIME);
                     } else {
