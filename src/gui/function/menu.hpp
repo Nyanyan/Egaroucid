@@ -216,31 +216,6 @@ public:
         rect.h = h;
         if (has_child) {
             int height = h - menu_offset_y * 2, width = 0;
-            // std::vector<int> wsizes_rough;
-            // int max_wsize_rough = 0;
-            // int max_wsize_rough_idx = -1;
-            // for (int i = 0; i < children.size(); ++i) {
-            //     children[i].pre_init(font_size, font, checkbox, unchecked, height, bar_value_offset);
-            //     int rw = children[i].wsize_rough();
-            //     if (rw > max_wsize_rough) {
-            //         max_wsize_rough = rw;
-            //         max_wsize_rough_idx = i;
-            //     }
-            //     wsizes_rough.emplace_back(rw);
-            // }
-            // std::pair<int, int> max_child_size = children[max_wsize_rough_idx].size();
-            // height = std::max(height, max_child_size.first);
-            // width = std::max(width, max_child_size.second);
-            // for (int i = 0; i < children.size(); ++i) {
-            //     if (i == max_wsize_rough_idx) {
-            //         continue;
-            //     }
-            //     if (width <= wsizes_rough[i] && max_wsize_rough * MENU_WSIZE_ROUGH_MARGIN <= wsizes_rough[i]) {
-            //         std::pair<int, int> child_size = children[i].size();
-            //         height = std::max(height, child_size.first);
-            //         width = std::max(width, child_size.second);
-            //     }
-            // }
             for (menu_elem& child : children) {
                 child.pre_init(font_size, font, checkbox, unchecked, height, bar_value_offset);
                 std::pair<int, int> child_size = child.size();
@@ -527,31 +502,6 @@ public:
         rect.w = w;
         rect.h = h;
         int height = h - menu_offset_y * 2, width = w - menu_offset_x * 2;
-        // std::vector<int> wsizes_rough;
-        // int max_wsize_rough = 0;
-        // int max_wsize_rough_idx = -1;
-        // for (int i = 0; i < children.size(); ++i) {
-        //     children[i].pre_init(font_size, font, checkbox, unchecked, height, bar_value_offset);
-        //     int rw = children[i].wsize_rough();
-        //     if (rw > max_wsize_rough) {
-        //         max_wsize_rough = rw;
-        //         max_wsize_rough_idx = i;
-        //     }
-        //     wsizes_rough.emplace_back(rw);
-        // }
-        // std::pair<int, int> max_child_size = children[max_wsize_rough_idx].size();
-        // height = std::max(height, max_child_size.first);
-        // width = std::max(width, max_child_size.second);
-        // for (int i = 0; i < children.size(); ++i) {
-        //     if (i == max_wsize_rough_idx) {
-        //         continue;
-        //     }
-        //     if (width <= wsizes_rough[i] && max_wsize_rough * MENU_WSIZE_ROUGH_MARGIN <= wsizes_rough[i]) {
-        //         std::pair<int, int> child_size = children[i].size();
-        //         height = std::max(height, child_size.first);
-        //         width = std::max(width, child_size.second);
-        //     }
-        // }
         for (menu_elem &child: children) {
             child.pre_init(font_size, font, checkbox, unchecked, height, bar_value_offset);
             if (width <= child.wsize_rough()) {
@@ -679,9 +629,6 @@ public:
         int height = 0, width = 0;
         for (menu_title &title : menu) {
             title.pre_init(font_size, font, checkbox, unchecked);
-            // RectF r = title.size();
-            // height = std::max(height, (int)r.h);
-            // width = std::max(width, (int)r.w);
             std::pair<int, int> title_size = title.size();
             height = std::max(height, title_size.first);
             width = std::max(width, title_size.second);
@@ -691,28 +638,10 @@ public:
         int xx = x;
         int yy = y;
         int bar_value_offset = font(U"88").region(font_size, Point{ 0, 0 }).w;
-        // if (thread_pool.size() == 0) {
         for (menu_title &title : menu) {
             title.init_inside(xx, yy, width, height, bar_value_offset);
             xx += width;
         }
-        // } else {
-        //     std::vector<std::future<void>> futures;
-        //     bool pushed;
-        //     for (menu_title &title : menu) {
-        //         futures.emplace_back(thread_pool.push(&pushed, std::bind(menu_title_init_inside, &title, xx, yy, width, height, bar_value_offset)));
-        //         if (!pushed) {
-        //             futures.pop_back();
-        //             title.init_inside(xx, yy, width, height, bar_value_offset);
-        //         }
-        //         xx += width;
-        //     }
-        //     for (std::future<void> &ft: futures) {
-        //         if (ft.valid()) {
-        //             ft.get();
-        //         }
-        //     }
-        // }
         std::cerr << "menu init elapsed " << tim() - strt << " ms" << std::endl;
     }
 
