@@ -13,6 +13,7 @@
 #include <iostream>
 #include <vector>
 #include "click.hpp"
+#include "./../../engine/engine_all.hpp"
 
 constexpr Color menu_color = Palette::Gainsboro;
 constexpr Color menu_active_color = Palette::Lightblue;
@@ -215,7 +216,6 @@ public:
                     max_wsize_rough = rw;
                     max_wsize_rough_idx = i;
                 }
-                //max_wsize_rough = std::max(max_wsize_rough, rw);
                 wsizes_rough.emplace_back(rw);
             }
             std::pair<int, int> max_child_size = children[max_wsize_rough_idx].size();
@@ -507,7 +507,7 @@ public:
         unchecked = u;
     }
 
-    void init_inside(int x, int y, int w, int h) {
+    void init_inside(int x, int y, int w, int h, int bar_value_offset) {
         uint64_t strt = tim();
         std::cerr << "a";
         rect.x = x;
@@ -515,7 +515,7 @@ public:
         rect.w = w;
         rect.h = h;
         int height = h - menu_offset_y * 2, width = w - menu_offset_x * 2;
-        int bar_value_offset = font(U"88").region(font_size, Point{ 0, 0 }).w;
+        //int bar_value_offset = font(U"88").region(font_size, Point{ 0, 0 }).w;
         std::vector<int> wsizes_rough;
         int max_wsize_rough = 0;
         int max_wsize_rough_idx = -1;
@@ -526,7 +526,6 @@ public:
                 max_wsize_rough = rw;
                 max_wsize_rough_idx = i;
             }
-            //max_wsize_rough = std::max(max_wsize_rough, rw);
             wsizes_rough.emplace_back(rw);
         }
         std::pair<int, int> max_child_size = children[max_wsize_rough_idx].size();
@@ -649,6 +648,10 @@ public:
     }
 };
 
+void menu_title_init_inside(menu_title *title, int x, int y, int width, int height, int bar_value_offset) {
+    title->init_inside(x, y, width, height, bar_value_offset);
+}
+
 class Menu {
 private:
     bool is_open;
@@ -675,10 +678,29 @@ public:
         width += menu_offset_x * 2;
         int xx = x;
         int yy = y;
-        for (menu_title &elem : menu) {
-            elem.init_inside(xx, yy, width, height);
-            xx += width;
-        }
+        int bar_value_offset = f(U"88").region(fs, Point{ 0, 0 }).w;
+        // if (thread_pool.size() == 0) {
+            for (menu_title &title : menu) {
+                title.init_inside(xx, yy, width, height, bar_value_offset);
+                xx += width;
+            }
+        // } else {
+        //     std::vector<std::future<void>> futures;
+        //     bool pushed;
+        //     for (menu_title &title : menu) {
+        //         futures.emplace_back(thread_pool.push(&pushed, std::bind(menu_title_init_inside, &title, xx, yy, width, height, bar_value_offset)));
+        //         if (!pushed) {
+        //             futures.pop_back();
+        //             title.init_inside(xx, yy, width, height, bar_value_offset);
+        //         }
+        //         xx += width;
+        //     }
+        //     for (std::future<void> &ft: futures) {
+        //         if (ft.valid()) {
+        //             ft.get();
+        //         }
+        //     }
+        // }
         std::cerr << "menu init elapsed " << tim() - strt << " ms" << std::endl;
     }
 
