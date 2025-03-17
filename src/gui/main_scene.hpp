@@ -60,8 +60,9 @@ public:
 public:
     void init_main_scene() {
         std::cerr << "main scene loading" << std::endl;
+        uint64_t strt = tim();
         getData().menu = create_menu(&getData().menu_elements, &getData().resources, getData().fonts.font);
-        std::cerr << "menu loaded" << std::endl;
+        std::cerr << "menu loaded in " << tim() - strt << " ms" << std::endl;
         graph.sx = GRAPH_SX;
         graph.sy = GRAPH_SY;
         graph.size_x = GRAPH_WIDTH;
@@ -81,7 +82,7 @@ public:
         umigame_value_depth_before = 0;
         shortcut_key = SHORTCUT_KEY_UNDEFINED;
         shortcut_key_pressed = SHORTCUT_KEY_UNDEFINED;
-        std::cerr << "main scene loaded" << std::endl;
+        std::cerr << "main scene loaded in " << tim() - strt << " ms" << std::endl;
     }
 
     Main_scene(const InitData& init) : IScene{ init } {
