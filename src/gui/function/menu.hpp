@@ -195,12 +195,9 @@ public:
             int height = h - menu_offset_y * 2, width = 0;
             for (menu_elem& child : children) {
                 child.pre_init(font_size, font, checkbox, unchecked, height, bar_value_offset);
-                // RectF r = child.size();
-                // height = std::max(height, (int)r.h);
-                // width = std::max(width, (int)r.w);
                 std::pair<int, int> child_size = child.size();
-                height = std::max(height, (int)child_size.first);
-                width = std::max(width, (int)child_size.second);
+                height = std::max(height, child_size.first);
+                width = std::max(width, child_size.second);
             }
             height += menu_offset_y * 2;
             width += menu_offset_x * 2;
@@ -381,23 +378,6 @@ public:
         return was_active;
     }
 
-    // RectF size() {
-    //     RectF res;
-    //     if (use_image) {
-    //         res.x = 0;
-    //         res.y = 0;
-    //         res.h = rect.h - 2 * menu_image_offset_y;
-    //         res.w = (double)res.h * image.width() / image.height();
-    //     } else {
-    //         res = font(str).region(font_size, Point{ 0, 0 });
-    //     }
-    //     res.w += res.h;
-    //     if (mode == MENU_MODE_BAR || mode == MENU_MODE_BAR_CHECK) {
-    //         res.w += MENU_BAR_SIZE + bar_value_offset + bar_additional_offset;
-    //     }
-    //     return res;
-    // }
-
     std::pair<int, int> size() {
         int h, w;
         if (use_image) {
@@ -479,12 +459,9 @@ public:
         int bar_value_offset = font(U"88").region(font_size, Point{ 0, 0 }).w;
         for (menu_elem &child: children) {
             child.pre_init(font_size, font, checkbox, unchecked, height, bar_value_offset);
-            //RectF r = child.size();
-            //height = std::max(height, (int)r.h);
-            //width = std::max(width, (int)r.w);
             std::pair<int, int> child_size = child.size();
-            height = std::max(height, (int)child_size.first);
-            width = std::max(width, (int)child_size.second);
+            height = std::max(height, child_size.first);
+            width = std::max(width, child_size.second);
         }
         height += menu_offset_y * 2;
         width += menu_offset_x * 2;
@@ -567,6 +544,11 @@ public:
         font(str).draw(font_size, Arg::topCenter(rect.x + rect.w / 2, rect.y + menu_offset_y), menu_font_color);
     }
 
+    // std::pair<int, int> size() {
+    //     RectF rect = font(str).region(font_size, Point{ 0, 0 });
+    //     return std::make_pair(rect.h, rect.w);
+    // }
+
     RectF size() {
         return font(str).region(font_size, Point{ 0, 0 });
     }
@@ -592,11 +574,14 @@ public:
 
     void init(int x, int y, int fs, Font f, Texture c, Texture u) {
         int height = 0, width = 0;
-        for (menu_title &elem : menu) {
-            elem.pre_init(fs, f, c, u);
-            RectF r = elem.size();
+        for (menu_title &title : menu) {
+            title.pre_init(fs, f, c, u);
+            RectF r = title.size();
             height = std::max(height, (int)r.h);
             width = std::max(width, (int)r.w);
+            // std::pair<int, int> title_size = title.size();
+            // height = std::max(height, title_size.first);
+            // width = std::max(width, title_size.second);
         }
         height += menu_offset_y * 2;
         width += menu_offset_x * 2;
