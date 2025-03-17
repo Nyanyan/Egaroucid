@@ -680,10 +680,10 @@ public:
         int yy = y;
         int bar_value_offset = f(U"88").region(fs, Point{ 0, 0 }).w;
         // if (thread_pool.size() == 0) {
-            for (menu_title &title : menu) {
-                title.init_inside(xx, yy, width, height, bar_value_offset);
-                xx += width;
-            }
+        for (menu_title &title : menu) {
+            title.init_inside(xx, yy, width, height, bar_value_offset);
+            xx += width;
+        }
         // } else {
         //     std::vector<std::future<void>> futures;
         //     bool pushed;
