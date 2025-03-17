@@ -38,7 +38,7 @@ constexpr int MENU_BAR_SIZE = 140;
 constexpr int MENU_BAR_HEIGHT = 14;
 constexpr int MENU_BAR_RADIUS = 6;
 
-constexpr double MENU_WSIZE_ROUGH_MARGIN = 0.7;
+constexpr double MENU_WSIZE_ROUGH_MARGIN = 0.8;
 
 int count_ascii(const String& str) {
 	int count = 0;
