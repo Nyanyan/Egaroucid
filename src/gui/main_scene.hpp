@@ -70,6 +70,7 @@ public:
         //     std::cerr << size << ", ";
         // }
         // std::cerr << std::endl;
+        // uint64_t strt = tim();
         std::cerr << "main scene loading" << std::endl;
         getData().menu = create_menu(&getData().menu_elements, &getData().resources, getData().fonts.font, getData().settings.lang_name);
         graph.sx = GRAPH_SX;
@@ -92,6 +93,7 @@ public:
         shortcut_key = SHORTCUT_KEY_UNDEFINED;
         shortcut_key_pressed = SHORTCUT_KEY_UNDEFINED;
         std::cerr << "main scene loaded" << std::endl;
+        // std::cerr << tim() - strt << " ms" << std::endl;
     }
 
     Main_scene(const InitData& init) : IScene{ init } {
