@@ -1602,18 +1602,19 @@ private:
                             Rect{ sx, sy,  BOARD_CELL_SIZE, BOARD_CELL_SIZE}.drawFrame(3, 3, frame_color);
                         }
                     }
-                    Color player_legal_color = Palette::Blue;
-                    Color opponent_legal_color = Palette::Red;
-                    if (ai_status.local_strategy_policy[policy][cell] & LOCAL_STRATEGY_POLICY_CHANGED_PLAYER_CANPUT) {
-                        Circle(sx + BOARD_CELL_SIZE - 10, sy + BOARD_CELL_SIZE - 25, LEGAL_SIZE).draw(player_legal_color);
-                    } else if (ai_status.local_strategy_policy[policy][cell] & LOCAL_STRATEGY_POLICY_CHANGED_PLAYER_CANNOTPUT) {
-                        Circle(sx + BOARD_CELL_SIZE - 10, sy + BOARD_CELL_SIZE - 25, LEGAL_SIZE).drawFrame(2, 0, player_legal_color);
-                    }
-                    if (ai_status.local_strategy_policy[policy][cell] & LOCAL_STRATEGY_POLICY_CHANGED_OPPONENT_CANPUT) {
-                        Circle(sx + BOARD_CELL_SIZE - 10, sy + BOARD_CELL_SIZE - 10, LEGAL_SIZE).draw(opponent_legal_color);
-                    } else if (ai_status.local_strategy_policy[policy][cell] & LOCAL_STRATEGY_POLICY_CHANGED_OPPONENT_CANNOTPUT) {
-                        Circle(sx + BOARD_CELL_SIZE - 10, sy + BOARD_CELL_SIZE - 10, LEGAL_SIZE).drawFrame(2, 0, opponent_legal_color);
-                    }
+                    // disabled for Egaroucid 7.6.0
+                    // Color player_legal_color = Palette::Blue;
+                    // Color opponent_legal_color = Palette::Red;
+                    // if (ai_status.local_strategy_policy[policy][cell] & LOCAL_STRATEGY_POLICY_CHANGED_PLAYER_CANPUT) {
+                    //     Circle(sx + BOARD_CELL_SIZE - 10, sy + BOARD_CELL_SIZE - 25, LEGAL_SIZE).draw(player_legal_color);
+                    // } else if (ai_status.local_strategy_policy[policy][cell] & LOCAL_STRATEGY_POLICY_CHANGED_PLAYER_CANNOTPUT) {
+                    //     Circle(sx + BOARD_CELL_SIZE - 10, sy + BOARD_CELL_SIZE - 25, LEGAL_SIZE).drawFrame(2, 0, player_legal_color);
+                    // }
+                    // if (ai_status.local_strategy_policy[policy][cell] & LOCAL_STRATEGY_POLICY_CHANGED_OPPONENT_CANPUT) {
+                    //     Circle(sx + BOARD_CELL_SIZE - 10, sy + BOARD_CELL_SIZE - 10, LEGAL_SIZE).draw(opponent_legal_color);
+                    // } else if (ai_status.local_strategy_policy[policy][cell] & LOCAL_STRATEGY_POLICY_CHANGED_OPPONENT_CANNOTPUT) {
+                    //     Circle(sx + BOARD_CELL_SIZE - 10, sy + BOARD_CELL_SIZE - 10, LEGAL_SIZE).drawFrame(2, 0, opponent_legal_color);
+                    // }
                 }
                 break;
             }
