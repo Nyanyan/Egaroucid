@@ -61,22 +61,31 @@ int count_ascii(const String& str) {
     return count;
 }
 
-double region_ascii(const String& str, int font_size, Font font) {
-    double width = 0.0;
-    for (const auto& ch : str) {
-        if (InRange<int32>(ch, 0, 127)) {
-            width += font(ch).region(font_size, Point{0, 0}).w;
-        }
-    }
-    return width;
-}
+// double region_ascii(const String& str, int font_size, Font font) {
+//     double width = 0.0;
+//     for (const auto& ch : str) {
+//         if (InRange<int32>(ch, 0, 127)) {
+//             width += font(ch).region(font_size, Point{0, 0}).w;
+//         }
+//     }
+//     return width;
+// }
 
-double region_ascii(const String& str, int font_size, std::string lang_name) {
+double region_ascii(const String& str, int font_size, std::string lang_name, Font font) {
     double width = 0.0;
+    std::vector<double> ratio;
+    bool ratio_found = false;
+    if (text_width_size_ratio.find(lang_name) != text_width_size_ratio.end()) {
+        ratio = text_width_size_ratio[lang_name];
+        ratio_found = true;
+    }
     for (const auto& ch : str) {
         if (InRange<int32>(ch, 0, 127)) {
-            //std::cerr << static_cast<int>(ch) << std::endl;
-            width += text_width_size_ratio[lang_name][static_cast<int>(ch)] * font_size;
+            if (ratio_found) {
+                width += ratio[static_cast<int>(ch)] * font_size;
+            } else {
+                width += font(ch).region(font_size, Point{0, 0}).w;
+            }
         }
     }
     return width;
@@ -422,26 +431,26 @@ public:
         return was_active;
     }
 
-    std::pair<int, int> size() {
-        int h, w;
-        if (use_image) {
-            h = rect.h - 2 * menu_image_offset_y;
-            w = (double)h * image.width() / image.height();
-        } else {
-            // RectF r = font(str).region(font_size, Point{ 0, 0 }); // slow
-            // h = r.h;
-            // w = r.w;
-            h = font_size;
-            int ascii_count = count_ascii(str);
-            w = (str.size() - ascii_count) * font_size; // zenkaku
-            w += region_ascii(str, font_size, font); // hankaku
-        }
-        w += h;
-        if (mode == MENU_MODE_BAR || mode == MENU_MODE_BAR_CHECK) {
-            w += MENU_BAR_SIZE + bar_value_offset + bar_additional_offset;
-        }
-        return std::make_pair(h, w);
-    }
+    // std::pair<int, int> size() {
+    //     int h, w;
+    //     if (use_image) {
+    //         h = rect.h - 2 * menu_image_offset_y;
+    //         w = (double)h * image.width() / image.height();
+    //     } else {
+    //         // RectF r = font(str).region(font_size, Point{ 0, 0 }); // slow
+    //         // h = r.h;
+    //         // w = r.w;
+    //         h = font_size;
+    //         int ascii_count = count_ascii(str);
+    //         w = (str.size() - ascii_count) * font_size; // zenkaku
+    //         w += region_ascii(str, font_size, font); // hankaku
+    //     }
+    //     w += h;
+    //     if (mode == MENU_MODE_BAR || mode == MENU_MODE_BAR_CHECK) {
+    //         w += MENU_BAR_SIZE + bar_value_offset + bar_additional_offset;
+    //     }
+    //     return std::make_pair(h, w);
+    // }
 
     std::pair<int, int> size(std::string lang_name) {
         int h, w;
@@ -455,7 +464,7 @@ public:
             h = font_size;
             int ascii_count = count_ascii(str);
             w = (str.size() - ascii_count) * font_size; // zenkaku
-            w += region_ascii(str, font_size, lang_name); // hankaku
+            w += region_ascii(str, font_size, lang_name, font); // hankaku
         }
         w += h;
         if (mode == MENU_MODE_BAR || mode == MENU_MODE_BAR_CHECK) {
@@ -608,21 +617,21 @@ public:
         font(str).draw(font_size, Arg::topCenter(rect.x + rect.w / 2, rect.y + menu_offset_y), menu_font_color);
     }
 
-    std::pair<int, int> size() {
-        int h = font(U"A").region(font_size, Point{ 0, 0 }).h; //font_size;
-        int ascii_count = count_ascii(str);
-        int w = (str.size() - ascii_count) * font_size; // zenkaku
-        w += region_ascii(str, font_size, font); // hankaku
-        return std::make_pair(h, w);
-        // RectF rect = font(str).region(font_size, Point{ 0, 0 }); // slow
-        // return std::make_pair(rect.h, rect.w);
-    }
+    // std::pair<int, int> size() {
+    //     int h = font(U"A").region(font_size, Point{ 0, 0 }).h; //font_size;
+    //     int ascii_count = count_ascii(str);
+    //     int w = (str.size() - ascii_count) * font_size; // zenkaku
+    //     w += region_ascii(str, font_size, font); // hankaku
+    //     return std::make_pair(h, w);
+    //     // RectF rect = font(str).region(font_size, Point{ 0, 0 }); // slow
+    //     // return std::make_pair(rect.h, rect.w);
+    // }
 
     std::pair<int, int> size(std::string lang_name) {
         int h = font(U"A").region(font_size, Point{ 0, 0 }).h; //font_size;
         int ascii_count = count_ascii(str);
         int w = (str.size() - ascii_count) * font_size; // zenkaku
-        w += region_ascii(str, font_size, lang_name); // hankaku
+        w += region_ascii(str, font_size, lang_name, font); // hankaku
         return std::make_pair(h, w);
         // RectF rect = font(str).region(font_size, Point{ 0, 0 }); // slow
         // return std::make_pair(rect.h, rect.w);
