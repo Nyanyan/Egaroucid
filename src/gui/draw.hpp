@@ -86,7 +86,11 @@ void draw_info(Colors colors, History_elem history_elem, Fonts fonts, Menu_eleme
         opening_info += Unicode::FromUTF8(history_elem.opening_name);
     }
     fonts.font(opening_info).draw(12, Arg::topCenter(INFO_SX + INFO_WIDTH / 2, INFO_SY + dy));
-    dy += 27;
+    if (menu_elements.show_ai_focus) {
+        dy += 24;
+    } else {
+        dy += 27;
+    }
     // 3rd line
     int black_discs, white_discs;
     if (history_elem.player == BLACK) {
@@ -98,37 +102,62 @@ void draw_info(Colors colors, History_elem history_elem, Fonts fonts, Menu_eleme
     }
     Line(INFO_SX + INFO_WIDTH / 2, INFO_SY + dy, INFO_SX + INFO_WIDTH / 2, INFO_SY + dy + INFO_DISC_RADIUS * 2).draw(2, colors.dark_gray);
     if (menu_elements.show_ai_focus) {
-        Rect(INFO_SX + 10, INFO_SY + dy - 3, AI_FOCUS_INFO_COLOR_RECT_WIDTH, INFO_DISC_RADIUS * 2 + 6).draw(colors.black_advantage);
-        Rect(INFO_SX + INFO_WIDTH - 10 - AI_FOCUS_INFO_COLOR_RECT_WIDTH, INFO_SY + dy - 3, AI_FOCUS_INFO_COLOR_RECT_WIDTH, INFO_DISC_RADIUS * 2 + 6).draw(colors.white_advantage);
+        Rect(INFO_SX + 10, INFO_SY + dy - 2, AI_FOCUS_INFO_COLOR_RECT_WIDTH, INFO_DISC_RADIUS * 2 + 4).draw(colors.black_advantage);
+        Rect(INFO_SX + INFO_WIDTH - 10 - AI_FOCUS_INFO_COLOR_RECT_WIDTH, INFO_SY + dy - 2, AI_FOCUS_INFO_COLOR_RECT_WIDTH, INFO_DISC_RADIUS * 2 + 4).draw(colors.white_advantage);
         fonts.font(black_discs).draw(20, Arg::center(INFO_SX + 138, INFO_SY + dy + INFO_DISC_RADIUS));
         Circle(INFO_SX + 100, INFO_SY + dy + INFO_DISC_RADIUS, INFO_DISC_RADIUS).draw(colors.black);
         Circle(INFO_SX + INFO_WIDTH - 100, INFO_SY + dy + INFO_DISC_RADIUS, INFO_DISC_RADIUS).draw(colors.white);
         fonts.font(language.get("info", "black_advantage")).draw(12, Arg::center(INFO_SX + 10 + (AI_FOCUS_INFO_COLOR_RECT_WIDTH - INFO_DISC_RADIUS * 2 - 6) / 2, INFO_SY + dy + INFO_DISC_RADIUS), colors.black);
         fonts.font(language.get("info", "white_advantage")).draw(12, Arg::center(INFO_SX + INFO_WIDTH - 10 - (AI_FOCUS_INFO_COLOR_RECT_WIDTH - INFO_DISC_RADIUS * 2 - 6) / 2, INFO_SY + dy + INFO_DISC_RADIUS), colors.black);
         fonts.font(white_discs).draw(20, Arg::center(INFO_SX + INFO_WIDTH - 138, INFO_SY + dy + INFO_DISC_RADIUS));
+        dy += 28;
     } else {
         Circle(INFO_SX + 70, INFO_SY + dy + INFO_DISC_RADIUS, INFO_DISC_RADIUS).draw(colors.black);
         Circle(INFO_SX + INFO_WIDTH - 70, INFO_SY + dy + INFO_DISC_RADIUS, INFO_DISC_RADIUS).draw(colors.white);
         fonts.font(black_discs).draw(20, Arg::center(INFO_SX + 110, INFO_SY + dy + INFO_DISC_RADIUS));
         fonts.font(white_discs).draw(20, Arg::center(INFO_SX + INFO_WIDTH - 110, INFO_SY + dy + INFO_DISC_RADIUS));
+        dy += 30;
     }
-    dy += 30;
     // 4th line
-    String level_info = language.get("common", "level") + U" " + Format(menu_elements.level) + U" (";
-    if (menu_elements.level <= LIGHT_LEVEL) {
-        level_info += language.get("info", "light");
-    } else if (menu_elements.level <= STANDARD_MAX_LEVEL) {
-        level_info += language.get("info", "standard");
-    } else if (menu_elements.level <= PRAGMATIC_MAX_LEVEL) {
-        level_info += language.get("info", "pragmatic");
-    } else if (menu_elements.level <= ACCURATE_MAX_LEVEL) {
-        level_info += language.get("info", "accurate");
+    if (menu_elements.show_ai_focus) {
+        const double linewidth = 3;
+        const double width = AI_FOCUS_INFO_COLOR_RECT_WIDTH - linewidth;
+        const double height = 20;
+        const double lleft = INFO_SX + 10 + linewidth / 2;
+        const double rright = INFO_SX + INFO_WIDTH - 10 - AI_FOCUS_INFO_COLOR_RECT_WIDTH + linewidth / 2 + width;
+        const double up = INFO_SY + dy - 2 + linewidth / 2;
+        Line{ lleft, up, lleft + width / 2, up }.draw(LineStyle::SquareDot, linewidth, colors.blue);
+        Line{ lleft, up + height, lleft + width / 2, up + height }.draw(LineStyle::SquareDot, linewidth, colors.blue);
+        Line{ lleft, up, lleft, up + height }.draw(LineStyle::SquareDot, linewidth, colors.blue);
+        Line{ lleft + width, up, lleft + width, up + height }.draw(linewidth, colors.blue);
+        Line{ lleft + width / 2, up, lleft + width, up }.draw(linewidth, colors.blue);
+        Line{ lleft + width / 2, up + height, lleft + width, up + height }.draw(linewidth, colors.blue);
+        fonts.font(language.get("info", "good_point")).draw(12, Arg::center(lleft + width / 2, up + height / 2));
+        Line{ rright, up, rright - width / 2, up }.draw(LineStyle::SquareDot, linewidth, colors.red);
+        Line{ rright, up + height, rright - width / 2, up + height }.draw(LineStyle::SquareDot, linewidth, colors.red);
+        Line{ rright, up, rright, up + height }.draw(LineStyle::SquareDot, linewidth, colors.red);
+        Line{ rright - width, up, rright - width, up + height }.draw(linewidth, colors.red);
+        Line{ rright - width / 2, up, rright - width, up }.draw(linewidth, colors.red);
+        Line{ rright - width / 2, up + height, rright - width, up + height }.draw(linewidth, colors.red);
+        fonts.font(language.get("info", "bad_point")).draw(12, Arg::center(rright - width / 2, up + height / 2));
+        dy += 23;
     } else {
-        level_info += language.get("info", "danger");
+        String level_info = language.get("common", "level") + U" " + Format(menu_elements.level) + U" (";
+        if (menu_elements.level <= LIGHT_LEVEL) {
+            level_info += language.get("info", "light");
+        } else if (menu_elements.level <= STANDARD_MAX_LEVEL) {
+            level_info += language.get("info", "standard");
+        } else if (menu_elements.level <= PRAGMATIC_MAX_LEVEL) {
+            level_info += language.get("info", "pragmatic");
+        } else if (menu_elements.level <= ACCURATE_MAX_LEVEL) {
+            level_info += language.get("info", "accurate");
+        } else {
+            level_info += language.get("info", "danger");
+        }
+        level_info += U")";
+        fonts.font(level_info).draw(12, Arg::topCenter(INFO_SX + INFO_WIDTH / 2, INFO_SY + dy));
+        dy += 18;
     }
-    level_info += U")";
-    fonts.font(level_info).draw(12, Arg::topCenter(INFO_SX + INFO_WIDTH / 2, INFO_SY + dy));
-    dy += 19;
     // 5th line
     String pv_info = language.get("info", "principal_variation") + U": ";
     String pv_info2 = U"";
@@ -149,9 +178,9 @@ void draw_info(Colors colors, History_elem history_elem, Fonts fonts, Menu_eleme
         }
     }
     if (use_second_line) {
-        fonts.font(pv_info).draw(11, Arg::topCenter(INFO_SX + INFO_WIDTH / 2, INFO_SY + dy - 3));
-        fonts.font(pv_info2).draw(11, Arg::topCenter(INFO_SX + INFO_WIDTH / 2, INFO_SY + dy - 3 + 12));
+        fonts.font(pv_info).draw(11, Arg::topCenter(INFO_SX + INFO_WIDTH / 2, INFO_SY + dy));
+        fonts.font(pv_info2).draw(11, Arg::topCenter(INFO_SX + INFO_WIDTH / 2, INFO_SY + dy + 12));
     } else {
-        fonts.font(pv_info).draw(13, Arg::topCenter(INFO_SX + INFO_WIDTH / 2, INFO_SY + dy));
+        fonts.font(pv_info).draw(13, Arg::center(INFO_SX + INFO_WIDTH / 2, ((INFO_SY + dy) + (INFO_SY + INFO_HEIGHT - INFO_RECT_THICKNESS / 2)) / 2));
     }
 }

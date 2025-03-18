@@ -242,6 +242,8 @@
         "danger": "Danger",
         "black_advantage": "Black's Ad.",
         "white_advantage": "White's Ad.",
+        "good_point": "Good Point",
+        "bad_point": "Bad Point",
         "probability": "Probability"
     },
     "edit_board": {

@@ -1569,26 +1569,26 @@ private:
                     int cy = sy + BOARD_CELL_SIZE / 2;
                     Color frame_color;
                     // if (ai_status.local_strategy_policy[policy][cell] == LOCAL_STRATEGY_POLICY_CHANGED_GOOD_MOVE_DISC) {
-                    //     frame_color = Palette::Blue;
+                    //     frame_color = getData().colors.blue;
                     // } else if (ai_status.local_strategy_policy[policy][cell] == LOCAL_STRATEGY_POLICY_CHANGED_BAD_MOVE_DISC) {
-                    //     frame_color = Palette::Red;
+                    //     frame_color = getData().colors.red;
                     // }
                     bool use_dotted_frame = false;
                     bool draw_square = false;
                     if (ai_status.local_strategy_policy[policy][cell] & LOCAL_STRATEGY_POLICY_CHANGED_GOOD_MOVE_FLIPPED) {
                         draw_square = true;
-                        frame_color = Palette::Blue;
+                        frame_color = getData().colors.blue;
                     } else if (ai_status.local_strategy_policy[policy][cell] & LOCAL_STRATEGY_POLICY_CHANGED_GOOD_MOVE_UNFLIPPED) {
                         draw_square = true;
-                        frame_color = Palette::Blue;
+                        frame_color = getData().colors.blue;
                         use_dotted_frame = true;
                         //frame_color = Palette::Skyblue;
                     } else if (ai_status.local_strategy_policy[policy][cell] & LOCAL_STRATEGY_POLICY_CHANGED_BAD_MOVE_FLIPPED) {
                         draw_square = true;
-                        frame_color = Palette::Red;
+                        frame_color = getData().colors.red;
                     } else if (ai_status.local_strategy_policy[policy][cell] & LOCAL_STRATEGY_POLICY_CHANGED_BAD_MOVE_UNFLIPPED) {
                         draw_square = true;
-                        frame_color = Palette::Red;
+                        frame_color = getData().colors.red;
                         use_dotted_frame = true;
                         //frame_color = Palette::Orange;
                     }
@@ -1603,8 +1603,8 @@ private:
                         }
                     }
                     // disabled for Egaroucid 7.6.0
-                    // Color player_legal_color = Palette::Blue;
-                    // Color opponent_legal_color = Palette::Red;
+                    // Color player_legal_color = getData().colors.blue;
+                    // Color opponent_legal_color = getData().colors.red;
                     // if (ai_status.local_strategy_policy[policy][cell] & LOCAL_STRATEGY_POLICY_CHANGED_PLAYER_CANPUT) {
                     //     Circle(sx + BOARD_CELL_SIZE - 10, sy + BOARD_CELL_SIZE - 25, LEGAL_SIZE).draw(player_legal_color);
                     // } else if (ai_status.local_strategy_policy[policy][cell] & LOCAL_STRATEGY_POLICY_CHANGED_PLAYER_CANNOTPUT) {

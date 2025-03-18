@@ -242,6 +242,8 @@
         "danger": "危险",
         "black_advantage": "黑有优势",
         "white_advantage": "白有优势",
+        "good_point": "优点",
+        "bad_point": "缺点",
         "probability": "确定度"
     },
     "edit_board": {

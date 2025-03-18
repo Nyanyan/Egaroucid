@@ -242,6 +242,8 @@
         "danger": "危険",
         "black_advantage": "黒有利",
         "white_advantage": "白有利",
+        "good_point": "良いところ",
+        "bad_point": "悪いところ",
         "probability": "探索確率"
     },
     "edit_board": {
