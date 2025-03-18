@@ -299,7 +299,8 @@ public:
                     if (load_code == ERR_OK) {
                         std::cerr << "loaded" << std::endl;
                         getData().window_state.loading = false;
-                        changeScene(U"Main_scene", SCENE_FADE_TIME);
+                        // changeScene(U"Main_scene", SCENE_FADE_TIME);
+                        changeScene(U"Main_scene", 0);
                     } else {
                         load_failed = true;
                     }
@@ -312,7 +313,8 @@ public:
                     if (book_ignore_button.clicked()) {
                         std::cerr << "loaded" << std::endl;
                         getData().window_state.loading = false;
-                        changeScene(U"Main_scene", SCENE_FADE_TIME);
+                        // changeScene(U"Main_scene", SCENE_FADE_TIME);
+                        changeScene(U"Main_scene", 0);
                     }
                 } else {
                     String err_str = language.get("loading", "load_failed") + U"\nERROR CODE: " + Format(load_code);
