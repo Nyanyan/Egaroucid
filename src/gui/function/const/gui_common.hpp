@@ -244,6 +244,10 @@ constexpr int FONT_DEFAULT_SIZE = 48;
 // textbox constant
 constexpr int TEXTBOX_MAX_CHARS = 10000;
 
+
+
+
+
 struct History_elem {
     Board board;
     int player;

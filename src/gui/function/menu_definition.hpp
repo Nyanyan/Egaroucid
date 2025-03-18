@@ -27,7 +27,7 @@ String get_shortcut_key_info(String key) {
 constexpr int AI_MAX_LOSS_INF = 129;
 constexpr int AI_LOSS_PERCENTAGE_INF = 100;
 
-Menu create_menu(Menu_elements* menu_elements, Resources *resources, Font font) {
+Menu create_menu(Menu_elements* menu_elements, Resources *resources, Font font, std::string lang_name) {
     Menu menu;
     menu_title title;
     menu_elem menu_e, side_menu, side_side_menu;
@@ -290,6 +290,6 @@ Menu create_menu(Menu_elements* menu_elements, Resources *resources, Font font) 
 
 
 
-    menu.init(0, 0, 12, font, resources->checkbox, resources->unchecked);
+    menu.init(0, 0, 12, font, resources->checkbox, resources->unchecked, lang_name);
     return menu;
 }

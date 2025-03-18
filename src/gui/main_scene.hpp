@@ -59,8 +59,19 @@ public:
 
 public:
     void init_main_scene() {
+        // for (char c = 0; c < 127; ++c) {
+        //     String s = Unicode::Widen(std::string(1, c));
+        //     double size = (double)getData().fonts.font(s).region(100, Point{ 0, 0 }).w / 100.0;
+        //     std::cerr << (int)c << " " << c << " " << size << std::endl;
+        // }
+        // for (char c = 0; c < 127; ++c) {
+        //     String s = Unicode::Widen(std::string(1, c));
+        //     double size = (double)getData().fonts.font(s).region(100, Point{ 0, 0 }).w / 100.0;
+        //     std::cerr << size << ", ";
+        // }
+        // std::cerr << std::endl;
         std::cerr << "main scene loading" << std::endl;
-        getData().menu = create_menu(&getData().menu_elements, &getData().resources, getData().fonts.font);
+        getData().menu = create_menu(&getData().menu_elements, &getData().resources, getData().fonts.font, getData().settings.lang_name);
         graph.sx = GRAPH_SX;
         graph.sy = GRAPH_SY;
         graph.size_x = GRAPH_WIDTH;
@@ -1056,7 +1067,7 @@ private:
                     }
                     getData().settings.lang_name = getData().resources.language_names[i];
                     getData().fonts.init(getData().settings.lang_name);
-                    getData().menu = create_menu(&getData().menu_elements, &getData().resources, getData().fonts.font);
+                    getData().menu = create_menu(&getData().menu_elements, &getData().resources, getData().fonts.font, getData().resources.language_names[i]);
                     start_game_button.init(START_GAME_BUTTON_SX, START_GAME_BUTTON_SY, START_GAME_BUTTON_WIDTH, START_GAME_BUTTON_HEIGHT, START_GAME_BUTTON_RADIUS, language.get("play", "start_game"), 15, getData().fonts.font, getData().colors.white, getData().colors.black);
                     pass_button.init(PASS_BUTTON_SX, PASS_BUTTON_SY, PASS_BUTTON_WIDTH, PASS_BUTTON_HEIGHT, PASS_BUTTON_RADIUS, language.get("play", "pass"), 15, getData().fonts.font, getData().colors.white, getData().colors.black);
                     re_calculate_openings();
