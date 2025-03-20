@@ -12,7 +12,7 @@ Totally free application
 
 * **[Egaroucid](https://www.egaroucid.nyanyan.dev/en/) - GUI application**
   
-  * Desktop application for Windows
+  * Desktop application for Windows/ macOS
   * Japanese / English / Chinese
   * GUI with [Siv3D](https://github.com/Siv3D)
   
