@@ -273,4 +273,5 @@ bool is_valid_transcript(std::string transcript) {
         calc_flip(&flip, &board, coord);
         board.move_board(&flip);
     }
+    return true;
 }

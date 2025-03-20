@@ -1,4 +1,4 @@
-﻿/*
+/*
     Egaroucid Project
 
     @file shortcut_key_setting.hpp
@@ -20,6 +20,14 @@ std::vector<String> allow_multi_input_keys = {
     U"Ctrl",
     U"Shift",
     U"Alt"
+#ifdef __APPLE__
+    , U"Command",
+    U"Left Command",
+    U"Right Command",
+    U"Left Ctrl",
+    U"Left Shift",
+    U"Right Shift",
+#endif
 };
 
 class Shortcut_key_setting : public App::Scene {
