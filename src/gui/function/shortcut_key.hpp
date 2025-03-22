@@ -130,7 +130,7 @@ std::vector<Shortcut_key_elem> shortcut_keys_default = {
 };
 
 // Enter and Left / Right keys are ignored
-HashSet<String> ignore_keys = {
+const HashSet<String> ignore_keys = {
     U"Enter",
     U"Left Command",
     U"Right Command",
@@ -167,9 +167,6 @@ std::vector<String> get_all_inputs(bool *down_found) {
         if (ignore_keys.contains(key.name())) {
             continue;
         }
-        // if (key.name() == U"Enter") { // prohibited
-        //     continue;
-        // }
         *down_found |= key.down();
         keys.emplace(key.name());
     }
