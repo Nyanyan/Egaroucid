@@ -52,7 +52,9 @@
             "changing_message": "Push keys to assign (Esc to turn back)",
             "key_duplicate_message": "This key is already assigned",
             "multi_input_error_message": "Only Ctrl/Shift/Alt are supported for simultaneous input",
-            "special_key_error_message": "Ctrl/Shift/Alt keys alone cannot be assigned"
+            "special_key_error_message": "Ctrl/Shift/Alt keys alone cannot be assigned",
+            "multi_input_error_message_mac": "Only Ctrl/Shift/Alt/Command are supported for simultaneous input",
+            "special_key_error_message_mac": "Ctrl/Shift/Alt/Command keys alone cannot be assigned"
         }
     },
     "ai_settings": {

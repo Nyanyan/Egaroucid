@@ -52,7 +52,9 @@
             "changing_message": "按下按键进行分配 (Esc 返回)",
             "key_duplicate_message": "此键已分配",
             "multi_input_error_message": "仅支持 Ctrl/Shift/Alt 同时输入",
-            "special_key_error_message": "无法单独分配 Ctrl/Shift/Alt 键"
+            "special_key_error_message": "无法单独分配 Ctrl/Shift/Alt 键",
+            "multi_input_error_message_mac": "仅支持 Ctrl/Shift/Alt/Command 同时输入",
+            "special_key_error_message_mac": "无法单独分配 Ctrl/Shift/Alt/Command 键"
         }
     },
     "ai_settings": {
