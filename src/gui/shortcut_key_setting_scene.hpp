@@ -22,11 +22,11 @@ std::vector<String> allow_multi_input_keys = {
     U"Alt"
 #ifdef __APPLE__
     , U"Command",
-    U"Left Command",
-    U"Right Command",
-    U"Left Ctrl",
-    U"Left Shift",
-    U"Right Shift",
+    // U"Left Command",
+    // U"Right Command",
+    // U"Left Ctrl",
+    // U"Left Shift",
+    // U"Right Shift",
 #endif
 };
 

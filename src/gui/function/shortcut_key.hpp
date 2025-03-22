@@ -129,6 +129,16 @@ std::vector<Shortcut_key_elem> shortcut_keys_default = {
     {U"license",                {},                     {{"help", "help"}, {"help", "license"}}},
 };
 
+// Enter and Left / Right keys are ignored
+HashSet<String> ignore_keys = {
+    U"Enter",
+    U"Left Command",
+    U"Right Command",
+    U"Left Ctrl",
+    U"Left Shift",
+    U"Right Shift",
+};
+
 String generate_key_str(std::vector<String> keys) {
     String res;
     for (int i = 0; i < (int)keys.size(); ++i) {
@@ -153,9 +163,13 @@ std::vector<String> get_all_inputs(bool *down_found) {
     *down_found = false;
     std::unordered_set<String> keys;
     for (const auto& key : raw_keys) {
-        if (key.name() == U"Enter") { // prohibited
+        // ignored keys
+        if (ignore_keys.contains(key.name())) {
             continue;
         }
+        // if (key.name() == U"Enter") { // prohibited
+        //     continue;
+        // }
         *down_found |= key.down();
         keys.emplace(key.name());
     }
