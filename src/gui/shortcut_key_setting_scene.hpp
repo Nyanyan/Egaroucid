@@ -129,10 +129,18 @@ public:
                         }
                         if (n_other_keys == 0) { // Ctrl/Shift/Alt only
                             assign_button.disable();
+#ifdef __APPLE__
+                            message = language.get("settings", "shortcut_keys", "special_key_error_message_mac");
+#else
                             message = language.get("settings", "shortcut_keys", "special_key_error_message");
+#endif
                         } else if (n_other_keys > 1) { // too many keys
                             assign_button.disable();
+#ifdef __APPLE__
+                            message = language.get("settings", "shortcut_keys", "multi_input_error_message_mac");
+#else
                             message = language.get("settings", "shortcut_keys", "multi_input_error_message");
+#endif
                         }
                         // key duplicate?
                         if (check_duplicate()) {
