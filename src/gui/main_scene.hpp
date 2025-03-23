@@ -1044,6 +1044,13 @@ private:
             shortcut_key = SHORTCUT_KEY_UNDEFINED;
             System::LaunchBrowser(U"https://docs.google.com/forms/d/e/1FAIpQLSd6ML1T1fc707luPEefBXuImMnlM9cQP8j-YHKiSyFoS-8rmQ/viewform?usp=sf_link");
         }
+        if (getData().menu_elements.update_check || shortcut_key == U"update_check") {
+            shortcut_key = SHORTCUT_KEY_UNDEFINED;
+            changing_scene = true;
+            stop_calculating();
+            resume_calculating();
+            changeScene(U"Update_check", SCENE_FADE_TIME);
+        }
         if (shortcut_key == U"auto_update_check") {
             getData().menu_elements.auto_update_check = !getData().menu_elements.auto_update_check;
         }

@@ -270,6 +270,8 @@ Menu create_menu(Menu_elements* menu_elements, Resources *resources, Font font, 
         title.push(menu_e);
         menu_e.init_button(language.get("help", "bug_report") + get_shortcut_key_info(U"bug_report"), &menu_elements->bug_report);
         title.push(menu_e);
+        menu_e.init_button(language.get("help", "update_check") + get_shortcut_key_info(U"update_check"), &menu_elements->update_check);
+        title.push(menu_e);
         menu_e.init_check(language.get("help", "auto_update_check") + get_shortcut_key_info(U"auto_update_check"), &menu_elements->auto_update_check, menu_elements->auto_update_check);
         title.push(menu_e);
         menu_e.init_button(language.get("help", "license") + get_shortcut_key_info(U"license"), &menu_elements->license);

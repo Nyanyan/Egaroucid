@@ -530,6 +530,7 @@ struct Menu_elements {
     bool usage;
     bool website;
     bool bug_report;
+    bool update_check;
     bool auto_update_check;
     bool license;
 
@@ -639,6 +640,7 @@ struct Menu_elements {
         usage = false;
         website = false;
         bug_report = false;
+        update_check = false;
         auto_update_check = settings->auto_update_check;
         license = false;
 

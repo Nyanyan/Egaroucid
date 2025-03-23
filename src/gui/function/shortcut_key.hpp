@@ -125,6 +125,7 @@ std::vector<Shortcut_key_elem> shortcut_keys_default = {
     {U"open_usage",             {},                     {{"help", "help"}, {"help", "usage"}}},
     {U"open_website",           {},                     {{"help", "help"}, {"help", "website"}}},
     {U"bug_report",             {},                     {{"help", "help"}, {"help", "bug_report"}}},
+    {U"update_check",           {},                     {{"help", "help"}, {"help", "update_check"}}},
     {U"auto_update_check",      {},                     {{"help", "help"}, {"help", "auto_update_check"}}},
     {U"license",                {},                     {{"help", "help"}, {"help", "license"}}},
 };

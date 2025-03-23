@@ -260,6 +260,7 @@
         "usage": "使い方",
         "website": "Webサイト",
         "bug_report": "バグレポート",
+        "update_check": "更新確認",
         "auto_update_check": "自動更新確認",
         "new_version_available": "新しいバージョンがダウンロードできます。",
         "download?": "ダウンロードページを開きますか？",
