@@ -74,15 +74,17 @@ int check_update(const Directories* directories, String *new_version) {
                     reader.readLine(*new_version);
                     if (EGAROUCID_NUM_VERSION != *new_version) { // new version found
                         return UPDATE_CHECK_UPDATE_FOUND;
+                    } else {
+                        return UPDATE_CHECK_ALREADY_UPDATED; // already latest
                     }
                 }
             }
         }
     }
-    if (task.getStatus() == HTTPAsyncStatus::Downloading) { // cancel task
+    if (task.getStatus() != HTTPAsyncStatus::Succeeded) { // cancel task
         task.cancel();
     }
-    return UPDATE_CHECK_ALREADY_UPDATED;
+    return UPDATE_CHECK_FAILED; // update check failed
 }
 
 int init_resources_load(Resources* resources, Settings* settings, bool *stop_loading) {

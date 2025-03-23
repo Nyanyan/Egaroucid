@@ -262,8 +262,11 @@
         "bug_report": "バグレポート",
         "update_check": "更新確認",
         "auto_update_check": "自動更新確認",
+        "checking_updates": "更新確認中...",
         "new_version_available": "新しいバージョンがダウンロードできます。",
         "download?": "ダウンロードページを開きますか？",
+        "already_latest_version": "すでに最新版がインストールされています。",
+        "update_check_failed": "更新確認に失敗しました。",
         "download": "ダウンロード",
         "skip": "スキップ",
         "license": "ライセンス"

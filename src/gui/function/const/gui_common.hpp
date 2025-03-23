@@ -60,8 +60,10 @@ constexpr int ERR_LOAD_BOOK_FILE_NOT_IMPORTED = 302;
 constexpr int ERR_LOAD_HASH_NOT_RESIZED = 303;
 
 // constant definition
+constexpr int UPDATE_CHECK_NONE = -1;
 constexpr int UPDATE_CHECK_ALREADY_UPDATED = 0;
 constexpr int UPDATE_CHECK_UPDATE_FOUND = 1;
+constexpr int UPDATE_CHECK_FAILED = 2;
 constexpr int SHOW_ALL_HINT = 35;
 
 // board drawing constants

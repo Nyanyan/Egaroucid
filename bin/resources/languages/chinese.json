@@ -262,8 +262,11 @@
         "bug_report": "Bug反馈",
         "update_check": "检查更新",
         "auto_update_check": "自动检查更新",
+        "checking_updates": "正在检查更新...",
         "new_version_available": "新版本可用.",
         "download?": "您想访问下载页吗?",
+        "already_latest_version": "您已经安装最新版本！",
+        "update_check_failed": "更新检查失败",
         "download": "下载",
         "skip": "跳过",
         "license": "许可协议"

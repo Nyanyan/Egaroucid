@@ -262,8 +262,11 @@
         "bug_report": "Report Bugs",
         "update_check": "Check Updates",
         "auto_update_check": "Auto Check Updates",
+        "checking_updates": "Checking updates...",
         "new_version_available": "New Version Available.",
         "download?": "Do you want to visit download page?",
+        "already_latest_version": "You have already installed the latest version!",
+        "update_check_failed": "Update Check Failed",
         "download": "Download",
         "skip": "Skip",
         "license": "Licenses"
