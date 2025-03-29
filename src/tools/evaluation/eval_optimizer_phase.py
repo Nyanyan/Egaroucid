@@ -1,5 +1,6 @@
 import subprocess
 import sys
+import os
 
 phase = str(sys.argv[1])
 hour = '0'
@@ -19,7 +20,7 @@ model_dir = './../../../model/nomodel/'
 # cell weight
 #train_data_nums = [29]
 train_data_nums = [52]
-train_root_dir = './../../../train_data/bin_data/20240419_1_cell_weight/'
+train_root_dir = os.environ['EGAROUCID_DATA'] + '/train_data/bin_data/20240419_1_cell_weight/'
 executable = 'eval_optimizer_cuda_12_2_0_cell_weight.exe'
 #'''
 
@@ -27,7 +28,7 @@ executable = 'eval_optimizer_cuda_12_2_0_cell_weight.exe'
 '''
 # cell weight phase 60
 train_data_nums = [97]
-train_root_dir = './../../../train_data/bin_data/20250214_1_cell_weight_phase60/'
+train_root_dir = os.environ['EGAROUCID_DATA'] + '/train_data/bin_data/20250214_1_cell_weight_phase60/'
 executable = 'eval_optimizer_cuda_12_2_0_cell_weight.exe'
 #'''
 
@@ -38,7 +39,7 @@ executable = 'eval_optimizer_cuda_12_2_0_cell_weight.exe'
 # move ordering end nws
 # used in last (13, 12, 11) - 1 empties (random 48, 49, 50)
 train_data_nums = [44, 45, 46]
-train_root_dir = './../../../train_data/bin_data/20240304_1_move_ordering_end_nws/'
+train_root_dir = os.environ['EGAROUCID_DATA'] + '/train_data/bin_data/20240304_1_move_ordering_end_nws/'
 executable = 'eval_optimizer_cuda_12_2_0_move_ordering_end_nws.exe'
 #'''
 
@@ -69,10 +70,10 @@ train_data_nums = [
          127, 128, 129, 130, 131, 132, 133, 134, 135, # random boards 41-49
     136, 137, 138, 139, 140, 141, 142, 143,           # random boards 50-57
     144, 145, 146, 147, 148, 149, 150, 151, 152, 153, 154, 155, 156, # randomN
+    158, 159, 160, 161, 162, 163, 164, 165, # randomN
 ]
-
 train_data_nums.sort()
-train_root_dir = './../../../train_data/bin_data/20241125_1/'
+train_root_dir = os.environ['EGAROUCID_DATA'] + '/train_data/bin_data/20241125_1/'
 executable = 'eval_optimizer_cuda_12_2_0_20241125_1_7_5.exe'
 #'''
 
