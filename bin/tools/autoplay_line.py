@@ -3,9 +3,8 @@ from tqdm import trange
 import os
 import sys
 
-line_dr = './../problem/etc/first12_all_shuffled'
-out_dr = './../transcript/first12_all_shuffled_after800'
-#out_dr = './../transcript/first12_all_shuffled_after780'
+line_dr = './../problem/book_check/joined_146'
+out_dr = './../transcript/joined_146'
 
 exe = './../Egaroucid_for_Console_clang.exe'
 
@@ -19,11 +18,11 @@ IDX_END = int(sys.argv[2])
 print(IDX_START, IDX_END)
 
 
-LEVEL = 11
+LEVEL = 18
 N_GAMES_PER_FILE = 10000
-N_THREAD = 31
+N_THREAD = 15
 
-IDX_SHIFT = 800
+IDX_SHIFT = 0
 
 def fill0(n, r):
     res = str(n)
