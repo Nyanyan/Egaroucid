@@ -427,18 +427,20 @@ void self_play_line(std::vector<std::string> arg, Options *options, State *state
                 }
             }
             // special case
-            if (task_idx >= n_games - thread_pool.size() && 0 < n_running_task && n_running_task < thread_pool.size()) {
+            if (task_idx == n_games && 0 < n_running_task && n_running_task < thread_pool.size()) {
                 std::vector<std::pair<int, std::string>> mid_tasks;
                 global_searching = false;
                     for (int i = 0; i < tasks.size(); ++i) {
                         if (tasks[i].valid()) {
                             std::string transcript_mid = tasks[i].get();
+                            //std::cerr << "mid task " << i << " " << transcript_mid << std::endl;
                             mid_tasks.emplace_back(std::make_pair(i, transcript_mid));
                         }
                     }
                 global_searching = true;
                 for (std::pair<int, std::string> &mid_task: mid_tasks) {
-                    Board board_start_mid = board_list[mid_task.first].second;
+                    Board board_start_mid;
+                    board_start_mid.reset();
                     Flip flip;
                     for (int i = 0; i < mid_task.second.size(); i += 2) {
                         int x = mid_task.second[i] - 'a';
@@ -450,7 +452,9 @@ void self_play_line(std::vector<std::string> arg, Options *options, State *state
                             board_start_mid.pass();
                         }
                     }
+                    //std::cerr << "additional " << mid_task.first << " " << mid_task.second << " " << board_start_mid.to_str() << std::endl;
                     std::string transcript = self_play_task(board_start_mid, mid_task.second, options, true, 0, SELF_PLAY_N_TRY);
+                    //std::cerr << "additional got " << mid_task.first << " " << transcript << std::endl;
                     results[mid_task.first] = transcript;
                     --n_running_task;
                     for (int i = print_idx; i < results.size(); ++i) {
@@ -463,17 +467,6 @@ void self_play_line(std::vector<std::string> arg, Options *options, State *state
                     }
                 }
             }
-        }
-        for (int i = 0; i < tasks.size(); ++i) {
-            if (tasks[i].valid()) {
-                if (tasks[i].wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
-                    --n_running_task;
-                    results[i] = tasks[i].get();
-                }
-            }
-        }
-        for (int i = print_idx; i < results.size(); ++i) {
-            std::cout << results[i] << std::endl;
         }
     }
     std::cerr << "done in " << tim() - strt << " ms" << std::endl;
