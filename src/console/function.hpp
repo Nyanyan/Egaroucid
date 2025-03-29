@@ -464,6 +464,17 @@ void self_play_line(std::vector<std::string> arg, Options *options, State *state
                 }
             }
         }
+        for (int i = 0; i < tasks.size(); ++i) {
+            if (tasks[i].valid()) {
+                if (tasks[i].wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
+                    --n_running_task;
+                    results[i] = tasks[i].get();
+                }
+            }
+        }
+        for (int i = print_idx; i < results.size(); ++i) {
+            std::cout << results[i] << std::endl;
+        }
     }
     std::cerr << "done in " << tim() - strt << " ms" << std::endl;
 }

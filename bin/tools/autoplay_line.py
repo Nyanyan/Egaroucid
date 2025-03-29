@@ -18,7 +18,7 @@ IDX_END = int(sys.argv[2])
 print(IDX_START, IDX_END)
 
 
-LEVEL = 18
+LEVEL = 11
 N_GAMES_PER_FILE = 10000
 N_THREAD = 15
 
