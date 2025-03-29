@@ -551,7 +551,8 @@ public:
         } else {
             if (loaded) {
                 std::cerr << "silent loaded" << std::endl;
-                changeScene(U"Load", SCENE_FADE_TIME);
+                // changeScene(U"Load", SCENE_FADE_TIME);
+                changeScene(U"Load", 0);
             } else {
                 String err_str = U"BASIC DATA NOT LOADED. PLEASE RE-INSTALL.\nERROR CODE: " + Format(load_code);
                 err_font(err_str).draw(20, Arg::leftCenter(LEFT_LEFT, Y_CENTER), Palette::White);

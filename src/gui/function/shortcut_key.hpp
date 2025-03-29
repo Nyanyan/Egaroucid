@@ -43,6 +43,7 @@ std::vector<Shortcut_key_elem> shortcut_keys_default = {
     {U"ai_put_white",           {U"W"},                 {{"settings", "settings"}, {"settings", "play", "ai_put_white"}}},
     {U"pause_when_pass",        {},                     {{"settings", "settings"}, {"settings", "play", "pause_when_pass"}}},
     {U"force_specified_openings", {},                   {{"settings", "settings"}, {"settings", "play", "force_specified_openings"}}},
+    {U"opening_setting",        {},                     {{"settings", "settings"}, {"settings", "play", "opening_setting"}}},
     {U"shortcut_key_setting",   {},                     {{"settings", "settings"}, {"settings", "shortcut_keys", "settings"}}},
 
     // display
@@ -124,8 +125,19 @@ std::vector<Shortcut_key_elem> shortcut_keys_default = {
     {U"open_usage",             {},                     {{"help", "help"}, {"help", "usage"}}},
     {U"open_website",           {},                     {{"help", "help"}, {"help", "website"}}},
     {U"bug_report",             {},                     {{"help", "help"}, {"help", "bug_report"}}},
+    {U"update_check",           {},                     {{"help", "help"}, {"help", "update_check"}}},
     {U"auto_update_check",      {},                     {{"help", "help"}, {"help", "auto_update_check"}}},
     {U"license",                {},                     {{"help", "help"}, {"help", "license"}}},
+};
+
+// Enter and Left / Right keys are ignored
+const HashSet<String> ignore_keys = {
+    U"Enter",
+    U"Left Command",
+    U"Right Command",
+    U"Left Ctrl",
+    U"Left Shift",
+    U"Right Shift",
 };
 
 String generate_key_str(std::vector<String> keys) {
@@ -152,7 +164,8 @@ std::vector<String> get_all_inputs(bool *down_found) {
     *down_found = false;
     std::unordered_set<String> keys;
     for (const auto& key : raw_keys) {
-        if (key.name() == U"Enter") { // prohibited
+        // ignored keys
+        if (ignore_keys.contains(key.name())) {
             continue;
         }
         *down_found |= key.down();

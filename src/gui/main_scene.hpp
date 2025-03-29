@@ -59,8 +59,20 @@ public:
 
 public:
     void init_main_scene() {
+        // for (char c = 0; c < 127; ++c) {
+        //     String s = Unicode::Widen(std::string(1, c));
+        //     double size = (double)getData().fonts.font(s).region(100, Point{ 0, 0 }).w / 100.0;
+        //     std::cerr << (int)c << " " << c << " " << size << std::endl;
+        // }
+        // for (char c = 0; c < 127; ++c) {
+        //     String s = Unicode::Widen(std::string(1, c));
+        //     double size = (double)getData().fonts.font(s).region(100, Point{ 0, 0 }).w / 100.0;
+        //     std::cerr << size << ", ";
+        // }
+        // std::cerr << std::endl;
+        // uint64_t strt = tim();
         std::cerr << "main scene loading" << std::endl;
-        getData().menu = create_menu(&getData().menu_elements, &getData().resources, getData().fonts.font);
+        getData().menu = create_menu(&getData().menu_elements, &getData().resources, getData().fonts.font, getData().settings.lang_name);
         graph.sx = GRAPH_SX;
         graph.sy = GRAPH_SY;
         graph.size_x = GRAPH_WIDTH;
@@ -81,6 +93,7 @@ public:
         shortcut_key = SHORTCUT_KEY_UNDEFINED;
         shortcut_key_pressed = SHORTCUT_KEY_UNDEFINED;
         std::cerr << "main scene loaded" << std::endl;
+        // std::cerr << tim() - strt << " ms" << std::endl;
     }
 
     Main_scene(const InitData& init) : IScene{ init } {
@@ -129,9 +142,9 @@ public:
 
         // shortcut
         shortcut_keys.check_shortcut_key(&shortcut_key, &shortcut_key_pressed);
-        if (shortcut_key != SHORTCUT_KEY_UNDEFINED) {
-            std::cerr << "shortcut key found: " << shortcut_key.narrow() << std::endl;
-        }
+        // if (shortcut_key != SHORTCUT_KEY_UNDEFINED) {
+        //     std::cerr << "shortcut key found: " << shortcut_key.narrow() << std::endl;
+        // }
 
         // opening
         update_opening();
@@ -557,6 +570,16 @@ private:
         }
         if (shortcut_key == U"pause_when_pass") {
             getData().menu_elements.pause_when_pass = !getData().menu_elements.pause_when_pass;
+        }
+        if (shortcut_key == U"force_specified_openings") {
+            getData().menu_elements.force_specified_openings = !getData().menu_elements.force_specified_openings;
+        }
+        if (getData().menu_elements.opening_setting || shortcut_key == U"opening_setting") {
+            changing_scene = true;
+            stop_calculating();
+            resume_calculating();
+            changeScene(U"Opening_setting", SCENE_FADE_TIME);
+            return;
         }
         if (getData().menu_elements.shortcut_key_setting || shortcut_key == U"shortcut_key_setting") {
             changing_scene = true;
@@ -1021,6 +1044,13 @@ private:
             shortcut_key = SHORTCUT_KEY_UNDEFINED;
             System::LaunchBrowser(U"https://docs.google.com/forms/d/e/1FAIpQLSd6ML1T1fc707luPEefBXuImMnlM9cQP8j-YHKiSyFoS-8rmQ/viewform?usp=sf_link");
         }
+        if (getData().menu_elements.update_check || shortcut_key == U"update_check") {
+            shortcut_key = SHORTCUT_KEY_UNDEFINED;
+            changing_scene = true;
+            stop_calculating();
+            resume_calculating();
+            changeScene(U"Update_check", SCENE_FADE_TIME);
+        }
         if (shortcut_key == U"auto_update_check") {
             getData().menu_elements.auto_update_check = !getData().menu_elements.auto_update_check;
         }
@@ -1046,7 +1076,7 @@ private:
                     }
                     getData().settings.lang_name = getData().resources.language_names[i];
                     getData().fonts.init(getData().settings.lang_name);
-                    getData().menu = create_menu(&getData().menu_elements, &getData().resources, getData().fonts.font);
+                    getData().menu = create_menu(&getData().menu_elements, &getData().resources, getData().fonts.font, getData().resources.language_names[i]);
                     start_game_button.init(START_GAME_BUTTON_SX, START_GAME_BUTTON_SY, START_GAME_BUTTON_WIDTH, START_GAME_BUTTON_HEIGHT, START_GAME_BUTTON_RADIUS, language.get("play", "start_game"), 15, getData().fonts.font, getData().colors.white, getData().colors.black);
                     pass_button.init(PASS_BUTTON_SX, PASS_BUTTON_SY, PASS_BUTTON_WIDTH, PASS_BUTTON_HEIGHT, PASS_BUTTON_RADIUS, language.get("play", "pass"), 15, getData().fonts.font, getData().colors.white, getData().colors.black);
                     re_calculate_openings();
@@ -1300,18 +1330,28 @@ private:
     }
 
     void draw_play_ordering() {
+        int history_elem_n_discs = getData().history_elem.board.n_discs();
         for (History_elem &elem: getData().graph_resources.nodes[getData().graph_resources.branch]) {
-            int cell = elem.policy;
-            if (0 <= cell && cell < HW2 && ((getData().history_elem.board.player | getData().history_elem.board.opponent) & (1ULL << cell))) {
-                int x = BOARD_SX + ((HW2_M1 - cell) % HW) * BOARD_CELL_SIZE + BOARD_CELL_SIZE / 2;
-                int y = BOARD_SY + ((HW2_M1 - cell) / HW) * BOARD_CELL_SIZE + BOARD_CELL_SIZE / 2;
-                bool is_black_disc = getData().history_elem.player == BLACK && (getData().history_elem.board.player & (1ULL << cell)) != 0;
-                is_black_disc |= getData().history_elem.player == WHITE && (getData().history_elem.board.opponent & (1ULL << cell)) != 0;
-                Color color = getData().colors.black;
-                if (is_black_disc) {
-                    color = getData().colors.white;
+            int n_discs = elem.board.n_discs();
+            if (n_discs <= history_elem_n_discs && n_discs > 4) {
+                for (History_elem &elem2: getData().graph_resources.nodes[getData().graph_resources.branch]) {
+                    if (elem2.board.n_discs() == n_discs - 1) {
+                        uint64_t put_bit = (elem.board.player | elem.board.opponent) & ~(elem2.board.player | elem2.board.opponent);
+                        if (pop_count_ull(put_bit) == 1) {
+                            int cell = ctz(put_bit);
+                            int x = BOARD_SX + ((HW2_M1 - cell) % HW) * BOARD_CELL_SIZE + BOARD_CELL_SIZE / 2;
+                            int y = BOARD_SY + ((HW2_M1 - cell) / HW) * BOARD_CELL_SIZE + BOARD_CELL_SIZE / 2;
+                            bool is_black_disc = getData().history_elem.player == BLACK && (getData().history_elem.board.player & (1ULL << cell)) != 0;
+                            is_black_disc |= getData().history_elem.player == WHITE && (getData().history_elem.board.opponent & (1ULL << cell)) != 0;
+                            Color color = getData().colors.black;
+                            if (is_black_disc) {
+                                color = getData().colors.white;
+                            }
+                            getData().fonts.font_bold(elem.board.n_discs() - 4).draw(24, Arg::center(x, y), color);
+                        }
+                        break;
+                    }
                 }
-                getData().fonts.font_bold(elem.board.n_discs() - 4).draw(24, Arg::center(x, y), color);
             }
         }
     }
@@ -1536,26 +1576,26 @@ private:
                     int cy = sy + BOARD_CELL_SIZE / 2;
                     Color frame_color;
                     // if (ai_status.local_strategy_policy[policy][cell] == LOCAL_STRATEGY_POLICY_CHANGED_GOOD_MOVE_DISC) {
-                    //     frame_color = Palette::Blue;
+                    //     frame_color = getData().colors.blue;
                     // } else if (ai_status.local_strategy_policy[policy][cell] == LOCAL_STRATEGY_POLICY_CHANGED_BAD_MOVE_DISC) {
-                    //     frame_color = Palette::Red;
+                    //     frame_color = getData().colors.red;
                     // }
                     bool use_dotted_frame = false;
                     bool draw_square = false;
                     if (ai_status.local_strategy_policy[policy][cell] & LOCAL_STRATEGY_POLICY_CHANGED_GOOD_MOVE_FLIPPED) {
                         draw_square = true;
-                        frame_color = Palette::Blue;
+                        frame_color = getData().colors.blue;
                     } else if (ai_status.local_strategy_policy[policy][cell] & LOCAL_STRATEGY_POLICY_CHANGED_GOOD_MOVE_UNFLIPPED) {
                         draw_square = true;
-                        frame_color = Palette::Blue;
+                        frame_color = getData().colors.blue;
                         use_dotted_frame = true;
                         //frame_color = Palette::Skyblue;
                     } else if (ai_status.local_strategy_policy[policy][cell] & LOCAL_STRATEGY_POLICY_CHANGED_BAD_MOVE_FLIPPED) {
                         draw_square = true;
-                        frame_color = Palette::Red;
+                        frame_color = getData().colors.red;
                     } else if (ai_status.local_strategy_policy[policy][cell] & LOCAL_STRATEGY_POLICY_CHANGED_BAD_MOVE_UNFLIPPED) {
                         draw_square = true;
-                        frame_color = Palette::Red;
+                        frame_color = getData().colors.red;
                         use_dotted_frame = true;
                         //frame_color = Palette::Orange;
                     }
@@ -1569,18 +1609,19 @@ private:
                             Rect{ sx, sy,  BOARD_CELL_SIZE, BOARD_CELL_SIZE}.drawFrame(3, 3, frame_color);
                         }
                     }
-                    Color player_legal_color = Palette::Blue;
-                    Color opponent_legal_color = Palette::Red;
-                    if (ai_status.local_strategy_policy[policy][cell] & LOCAL_STRATEGY_POLICY_CHANGED_PLAYER_CANPUT) {
-                        Circle(sx + BOARD_CELL_SIZE - 10, sy + BOARD_CELL_SIZE - 25, LEGAL_SIZE).draw(player_legal_color);
-                    } else if (ai_status.local_strategy_policy[policy][cell] & LOCAL_STRATEGY_POLICY_CHANGED_PLAYER_CANNOTPUT) {
-                        Circle(sx + BOARD_CELL_SIZE - 10, sy + BOARD_CELL_SIZE - 25, LEGAL_SIZE).drawFrame(2, 0, player_legal_color);
-                    }
-                    if (ai_status.local_strategy_policy[policy][cell] & LOCAL_STRATEGY_POLICY_CHANGED_OPPONENT_CANPUT) {
-                        Circle(sx + BOARD_CELL_SIZE - 10, sy + BOARD_CELL_SIZE - 10, LEGAL_SIZE).draw(opponent_legal_color);
-                    } else if (ai_status.local_strategy_policy[policy][cell] & LOCAL_STRATEGY_POLICY_CHANGED_OPPONENT_CANNOTPUT) {
-                        Circle(sx + BOARD_CELL_SIZE - 10, sy + BOARD_CELL_SIZE - 10, LEGAL_SIZE).drawFrame(2, 0, opponent_legal_color);
-                    }
+                    // disabled for Egaroucid 7.6.0
+                    // Color player_legal_color = getData().colors.blue;
+                    // Color opponent_legal_color = getData().colors.red;
+                    // if (ai_status.local_strategy_policy[policy][cell] & LOCAL_STRATEGY_POLICY_CHANGED_PLAYER_CANPUT) {
+                    //     Circle(sx + BOARD_CELL_SIZE - 10, sy + BOARD_CELL_SIZE - 25, LEGAL_SIZE).draw(player_legal_color);
+                    // } else if (ai_status.local_strategy_policy[policy][cell] & LOCAL_STRATEGY_POLICY_CHANGED_PLAYER_CANNOTPUT) {
+                    //     Circle(sx + BOARD_CELL_SIZE - 10, sy + BOARD_CELL_SIZE - 25, LEGAL_SIZE).drawFrame(2, 0, player_legal_color);
+                    // }
+                    // if (ai_status.local_strategy_policy[policy][cell] & LOCAL_STRATEGY_POLICY_CHANGED_OPPONENT_CANPUT) {
+                    //     Circle(sx + BOARD_CELL_SIZE - 10, sy + BOARD_CELL_SIZE - 10, LEGAL_SIZE).draw(opponent_legal_color);
+                    // } else if (ai_status.local_strategy_policy[policy][cell] & LOCAL_STRATEGY_POLICY_CHANGED_OPPONENT_CANNOTPUT) {
+                    //     Circle(sx + BOARD_CELL_SIZE - 10, sy + BOARD_CELL_SIZE - 10, LEGAL_SIZE).drawFrame(2, 0, opponent_legal_color);
+                    // }
                 }
                 break;
             }

@@ -28,6 +28,7 @@ Intermediate
 enc_temp_folde
 
 # Egaroucid user resources
+bin/appdata/forced_openings.txt
 bin/appdata/setting.json
 bin/appdata/shortcut_key.json
 bin/appdata/version.txt

@@ -60,8 +60,10 @@ constexpr int ERR_LOAD_BOOK_FILE_NOT_IMPORTED = 302;
 constexpr int ERR_LOAD_HASH_NOT_RESIZED = 303;
 
 // constant definition
+constexpr int UPDATE_CHECK_NONE = -1;
 constexpr int UPDATE_CHECK_ALREADY_UPDATED = 0;
 constexpr int UPDATE_CHECK_UPDATE_FOUND = 1;
+constexpr int UPDATE_CHECK_FAILED = 2;
 constexpr int SHOW_ALL_HINT = 35;
 
 // board drawing constants
@@ -171,6 +173,14 @@ constexpr int IMPORT_GAME_DATE_WIDTH = 120;
 constexpr int IMPORT_GAME_BUTTON_SY = (IMPORT_GAME_HEIGHT - IMPORT_GAME_BUTTON_HEIGHT) / 2;
 constexpr int IMPORT_GAME_WIDTH = WINDOW_SIZE_X - (IMPORT_GAME_SX + IMPORT_GAME_LEFT_MARGIN) * 2 + IMPORT_GAME_LEFT_MARGIN;
 
+// opening setting
+constexpr int OPENING_SETTING_N_GAMES_ON_WINDOW = 7;
+constexpr int OPENING_SETTING_LEFT_MARGIN = 10;
+constexpr int OPENING_SETTING_SX = 30 - OPENING_SETTING_LEFT_MARGIN;
+constexpr int OPENING_SETTING_SY = 65;
+constexpr int OPENING_SETTING_HEIGHT = 45;
+constexpr int OPENING_SETTING_WIDTH = WINDOW_SIZE_X - (OPENING_SETTING_SX + OPENING_SETTING_LEFT_MARGIN) * 2 + OPENING_SETTING_LEFT_MARGIN;
+
 // game saving constants
 #define GAME_DATE U"date"
 #define GAME_BLACK_PLAYER U"black_player"
@@ -227,7 +237,7 @@ constexpr int BUTTON2_VERTICAL_SX = 520;
 constexpr int BUTTON2_VERTICAL_RADIUS = 20;
 
 // font constant
-constexpr int FONT_DEFAULT_SIZE = 50;
+constexpr int FONT_DEFAULT_SIZE = 48;
 
 // default language
 #define DEFAULT_LANGUAGE "english"
@@ -235,6 +245,10 @@ constexpr int FONT_DEFAULT_SIZE = 50;
 
 // textbox constant
 constexpr int TEXTBOX_MAX_CHARS = 10000;
+
+
+
+
 
 struct History_elem {
     Board board;
@@ -279,6 +293,7 @@ struct Colors {
     Color cyan{ Color(100, 255, 255) };
     Color purple{ Color(142, 68, 173) };
     Color red{ Palette::Red };
+    Color blue{ Palette::Blue };
     Color light_cyan{ Palette::Lightcyan };
     Color chocolate{ Color(210, 105, 30) };
     Color darkred{ Color(178, 34, 34) };
@@ -517,6 +532,7 @@ struct Menu_elements {
     bool usage;
     bool website;
     bool bug_report;
+    bool update_check;
     bool auto_update_check;
     bool license;
 
@@ -626,6 +642,7 @@ struct Menu_elements {
         usage = false;
         website = false;
         bug_report = false;
+        update_check = false;
         auto_update_check = settings->auto_update_check;
         license = false;
 
@@ -697,42 +714,6 @@ struct User_settings {
     std::string screenshot_saving_dir;
 };
 
-struct Forced_openings {
-    std::vector<std::string> openings_str;
-    std::unordered_map<Board, std::vector<int>, Book_hash> selected_moves;
-
-    void init() {
-        openings_str = {
-            "f5d6c3d3c4f4f6", // stephenson
-            "f5d6c3d3c4f4e3", // brightwell
-            "f5d6c3d3c4f4e6", // leader's tiger
-        };
-        Board board;
-        Flip flip;
-        for (const std::string& opening_str : openings_str) {
-            board.reset();
-            for (int i = 0; i < opening_str.size() - 1 && board.check_pass(); i += 2) {
-                int policy = get_coord_from_chars(opening_str[i], opening_str[i + 1]);
-                std::cerr << idx_to_coord(policy) << std::endl;
-                board.print();
-                selected_moves[board].emplace_back(policy);
-                calc_flip(&flip, &board, policy);
-                board.move_board(&flip);
-            }
-        }
-    }
-
-    int get_one(Board board) {
-        int selected_policy = MOVE_UNDEFINED;
-        if (selected_moves.find(board) != selected_moves.end()) {
-            std::vector<int> policies = selected_moves[board];
-            int rand_idx = myrandrange(0, policies.size());
-            selected_policy = policies[rand_idx];
-        }
-        return selected_policy;
-    }
-};
-
 struct Window_state {
     double window_scale;
     bool loading;
@@ -742,6 +723,95 @@ struct Window_state {
     }
 };
 
+struct Forced_openings {
+    std::vector<std::pair<std::string, double>> openings;
+    std::unordered_map<Board, std::vector<std::pair<int, double>>, Book_hash> selected_moves;
+
+    // Forced_openings() {
+    //     openings = {
+    //         {"f5d6c3d3c4f4f6", 1}, // stephenson
+    //         {"f5d6c3d3c4f4e3", 1}, // brightwell
+    //         {"f5d6c3d3c4f4e6", 1}, // leader's tiger
+    //     };
+    // }
+
+    void init() {
+        Board board;
+        Flip flip;
+        for (const std::pair<std::string, double> opening : openings) {
+            board.reset();
+            std::string opening_str = opening.first;
+            double weight = opening.second;
+            for (int i = 0; i < opening_str.size() - 1 && board.check_pass(); i += 2) {
+                int policy = get_coord_from_chars(opening_str[i], opening_str[i + 1]);
+                // std::cerr << idx_to_coord(policy) << std::endl;
+                // board.print();
+                selected_moves[board].emplace_back(std::make_pair(policy, weight));
+                calc_flip(&flip, &board, policy);
+                board.move_board(&flip);
+            }
+        }
+    }
+
+    void load(std::string file) {
+        std::ifstream ifs(file);
+        if (!ifs) {
+            return;
+        }
+        openings.clear();
+        std::string line;
+        while (std::getline(ifs, line)) {
+            std::istringstream iss(line);
+            std::string transcript, weight_str;
+            iss >> transcript >> weight_str;
+            double weight;
+            try {
+                weight = stoi(weight_str);
+                if (is_valid_transcript(transcript)) {
+                    openings.emplace_back(std::make_pair(transcript, weight));
+                }
+            } catch (const std::invalid_argument& e) {
+                std::cerr << "Invalid argument: " << e.what() << std::endl;
+            } catch (const std::out_of_range& e) {
+                std::cerr << "Out of range: " << e.what() << std::endl;
+            }
+        }
+        init();
+    }
+
+    void save(std::string file) {
+        std::ofstream ofs(file);
+        for (const std::pair<std::string, double> opening : openings) {
+            ofs << opening.first << " " << std::round(opening.second) << std::endl;
+        }
+        ofs.close();
+    }
+
+    int get_one(Board board) {
+        int selected_policy = MOVE_UNDEFINED;
+        if (selected_moves.find(board) != selected_moves.end()) {
+            double sum_weight = 0.0;
+            for (std::pair<int, double> &elem: selected_moves[board]) {
+                sum_weight += elem.second;
+            }
+            double rnd = myrandom() * sum_weight;
+            double s = 0.0;
+            for (std::pair<int, double> &elem: selected_moves[board]) {
+                s += elem.second;
+                if (s >= rnd) {
+                    selected_policy = elem.first;
+                    break;
+                }
+            }
+        }
+        return selected_policy;
+    }
+
+    void add(std::string str, double weight) {
+        openings.emplace_back(std::make_pair(str, weight));
+        init();
+    }
+};
 
 struct Common_resources {
     Colors colors;

@@ -74,15 +74,17 @@ int check_update(const Directories* directories, String *new_version) {
                     reader.readLine(*new_version);
                     if (EGAROUCID_NUM_VERSION != *new_version) { // new version found
                         return UPDATE_CHECK_UPDATE_FOUND;
+                    } else {
+                        return UPDATE_CHECK_ALREADY_UPDATED; // already latest
                     }
                 }
             }
         }
     }
-    if (task.getStatus() == HTTPAsyncStatus::Downloading) { // cancel task
+    if (task.getStatus() != HTTPAsyncStatus::Succeeded) { // cancel task
         task.cancel();
     }
-    return UPDATE_CHECK_ALREADY_UPDATED;
+    return UPDATE_CHECK_FAILED; // update check failed
 }
 
 int init_resources_load(Resources* resources, Settings* settings, bool *stop_loading) {
@@ -207,18 +209,26 @@ int init_ai(Settings* settings, const Directories* directories, bool *stop_loadi
     return ERR_OK;
 }
 
-int load_app(Directories* directories, Resources* resources, Settings* settings, Forced_openings *forced_openings, bool* update_found, String *new_version, bool *stop_loading) {
+int load_app(Directories* directories, Resources* resources, Settings* settings, Forced_openings *forced_openings, Menu_elements *menu_elements, bool* update_found, String *new_version, bool *stop_loading) {
+    // auto update check
     if (settings->auto_update_check) {
         if (check_update(directories, new_version) == UPDATE_CHECK_UPDATE_FOUND) {
             *update_found = true;
         }
     }
-    init_shortcut_keys(directories);
+    // resources
     int code = init_resources_load(resources, settings, stop_loading);
-    if (code == ERR_OK) {
+    if (code == ERR_OK) { // when resources initialized
+        // shortcut keys
+        init_shortcut_keys(directories);
+        // forced openings for AI
+        std::string forced_openings_file = directories->appdata_dir + "/forced_openings.txt";
+        forced_openings->load(forced_openings_file);
+        // settings -> menu elements
+        menu_elements->init(settings, resources);
+        // AI
         code = init_ai(settings, directories, stop_loading);
     }
-    forced_openings->init();
     return code;
 }
 
@@ -246,7 +256,7 @@ public:
         tips = language.get_random("tips", "tips");
         update_found = false;
         stop_loading = false;
-        load_future = std::async(std::launch::async, load_app, &getData().directories, &getData().resources, &getData().settings, &getData().forced_openings, &update_found, &new_version, &stop_loading);
+        load_future = std::async(std::launch::async, load_app, &getData().directories, &getData().resources, &getData().settings, &getData().forced_openings, &getData().menu_elements, &update_found, &new_version, &stop_loading);
     }
 
     void update() override {
@@ -290,9 +300,9 @@ public:
                     load_code = load_future.get();
                     if (load_code == ERR_OK) {
                         std::cerr << "loaded" << std::endl;
-                        getData().menu_elements.init(&getData().settings, &getData().resources);
                         getData().window_state.loading = false;
-                        changeScene(U"Main_scene", SCENE_FADE_TIME);
+                        // changeScene(U"Main_scene", SCENE_FADE_TIME);
+                        changeScene(U"Main_scene", 0);
                     } else {
                         load_failed = true;
                     }
@@ -304,9 +314,9 @@ public:
                     book_ignore_button.draw();
                     if (book_ignore_button.clicked()) {
                         std::cerr << "loaded" << std::endl;
-                        getData().menu_elements.init(&getData().settings, &getData().resources);
                         getData().window_state.loading = false;
-                        changeScene(U"Main_scene", SCENE_FADE_TIME);
+                        // changeScene(U"Main_scene", SCENE_FADE_TIME);
+                        changeScene(U"Main_scene", 0);
                     }
                 } else {
                     String err_str = language.get("loading", "load_failed") + U"\nERROR CODE: " + Format(load_code);
@@ -315,7 +325,6 @@ public:
                         System::Exit();
                     }
                 }
-
             } else {
                 getData().fonts.font(language.get("loading", "loading")).draw(50, RIGHT_LEFT, Y_CENTER + 40, getData().colors.white);
                 getData().fonts.font(language.get("tips", "do_you_know")).draw(20, RIGHT_LEFT, Y_CENTER + 110, getData().colors.white);

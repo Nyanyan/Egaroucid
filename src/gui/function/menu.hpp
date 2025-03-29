@@ -13,6 +13,8 @@
 #include <iostream>
 #include <vector>
 #include "click.hpp"
+// #include "const/gui_common.hpp"
+#include "./../../engine/engine_all.hpp"
 
 constexpr Color menu_color = Palette::Gainsboro;
 constexpr Color menu_active_color = Palette::Lightblue;
@@ -37,6 +39,47 @@ constexpr int MENU_MODE_BAR_CHECK = 4;
 constexpr int MENU_BAR_SIZE = 140;
 constexpr int MENU_BAR_HEIGHT = 14;
 constexpr int MENU_BAR_RADIUS = 6;
+
+constexpr double MENU_WSIZE_ROUGH_MARGIN = 0.9;
+
+
+// text width size ratio
+std::unordered_map<std::string, std::vector<double>> text_width_size_ratio = {
+    {"japanese",    {0, 0, 0, 0, 0, 0, 0, 0, 0, 2.32031, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.290039, 0.362956, 0.400065, 0.67806, 0.605143, 0.847005, 0.711914, 0.236979, 0.385091, 0.385091, 0.527018, 0.733073, 0.304036, 0.457031, 0.282878, 0.507161, 0.620117, 0.620117, 0.620117, 0.620117, 0.620117, 0.620117, 0.620117, 0.620117, 0.620117, 0.620117, 0.362956, 0.384115, 0.666992, 0.75293, 0.666992, 0.611003, 0.822917, 0.693034, 0.597982, 0.694987, 0.681966, 0.586914, 0.57194, 0.745117, 0.709961, 0.317057, 0.527018, 0.633138, 0.584961, 0.857096, 0.712891, 0.792969, 0.599935, 0.785156, 0.620117, 0.572917, 0.652995, 0.682943, 0.693034, 0.953125, 0.650065, 0.669922, 0.637044, 0.470052, 0.507161, 0.470052, 0.652995, 0.583008, 0.277995, 0.547852, 0.578125, 0.522135, 0.578125, 0.552083, 0.522135, 0.572917, 0.572917, 0.306966, 0.347005, 0.561849, 0.306966, 0.805013, 0.568034, 0.569987, 0.572917, 0.572917, 0.453125, 0.49707, 0.512044, 0.557943, 0.556966, 0.809896, 0.55306, 0.556966, 0.546875, 0.513021, 0.343099, 0.513021, 0.690104, 0.0}},
+    {"english",     {0, 0, 0, 0, 0, 0, 0, 0, 0, 2.32031, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.290039, 0.362956, 0.400065, 0.67806, 0.605143, 0.847005, 0.711914, 0.236979, 0.385091, 0.385091, 0.527018, 0.733073, 0.304036, 0.457031, 0.282878, 0.507161, 0.620117, 0.620117, 0.620117, 0.620117, 0.620117, 0.620117, 0.620117, 0.620117, 0.620117, 0.620117, 0.362956, 0.384115, 0.666992, 0.75293, 0.666992, 0.611003, 0.822917, 0.693034, 0.597982, 0.694987, 0.681966, 0.586914, 0.57194, 0.745117, 0.709961, 0.317057, 0.527018, 0.633138, 0.584961, 0.857096, 0.712891, 0.792969, 0.599935, 0.785156, 0.620117, 0.572917, 0.652995, 0.682943, 0.693034, 0.953125, 0.650065, 0.669922, 0.637044, 0.470052, 0.507161, 0.470052, 0.652995, 0.583008, 0.277995, 0.547852, 0.578125, 0.522135, 0.578125, 0.552083, 0.522135, 0.572917, 0.572917, 0.306966, 0.347005, 0.561849, 0.306966, 0.805013, 0.568034, 0.569987, 0.572917, 0.572917, 0.453125, 0.49707, 0.512044, 0.557943, 0.556966, 0.809896, 0.55306, 0.556966, 0.546875, 0.513021, 0.343099, 0.513021, 0.690104, 0.0}},
+    {"chinese",     {0, 0, 0, 0, 0, 0, 0, 0, 0, 1.79167, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.223958, 0.322917, 0.474935, 0.555013, 0.555013, 0.920898, 0.680013, 0.277995, 0.337891, 0.337891, 0.467122, 0.555013, 0.277995, 0.347005, 0.277995, 0.391927, 0.555013, 0.555013, 0.555013, 0.555013, 0.555013, 0.555013, 0.555013, 0.555013, 0.555013, 0.555013, 0.277995, 0.277995, 0.555013, 0.555013, 0.555013, 0.473958, 0.945964, 0.607096, 0.656901, 0.638021, 0.686849, 0.587891, 0.552083, 0.689128, 0.727865, 0.292969, 0.536133, 0.646159, 0.542969, 0.811849, 0.722005, 0.741862, 0.632161, 0.741862, 0.636068, 0.597005, 0.598958, 0.721029, 0.57487, 0.87793, 0.572917, 0.530924, 0.602865, 0.337891, 0.391927, 0.337891, 0.555013, 0.558919, 0.60612, 0.564128, 0.617839, 0.509115, 0.620117, 0.554036, 0.32487, 0.563151, 0.607096, 0.275065, 0.276042, 0.552083, 0.285156, 0.926107, 0.611003, 0.60612, 0.620117, 0.620117, 0.388021, 0.468099, 0.376953, 0.607096, 0.521159, 0.802083, 0.498047, 0.521159, 0.473958, 0.337891, 0.26888, 0.337891, 0.555013, 0.0}}
+};
+
+
+int count_ascii(const String& str) {
+    int count = 0;
+    for (const auto& ch : str) {
+        if (InRange<int32>(ch, 0, 127)) {
+            ++count;
+        }
+    }
+    return count;
+}
+
+double region_ascii(const String& str, int font_size, std::string lang_name, Font font) {
+    double width = 0.0;
+    std::vector<double> ratio;
+    bool ratio_found = false;
+    if (text_width_size_ratio.find(lang_name) != text_width_size_ratio.end()) {
+        ratio = text_width_size_ratio[lang_name];
+        ratio_found = true;
+    }
+    for (const auto& ch : str) {
+        if (InRange<int32>(ch, 0, 127)) {
+            if (ratio_found) {
+                width += ratio[static_cast<int>(ch)] * font_size;
+            } else {
+                width += font(ch).region(font_size, Point{0, 0}).w;
+            }
+        }
+    }
+    return width;
+}
 
 class menu_elem {
 private:
@@ -177,34 +220,34 @@ public:
         children.emplace_back(ch);
     }
 
-    void pre_init(int fs, Font f, Texture c, Texture u, int h) {
+    void pre_init(int fs, Font f, Texture c, Texture u, int h, int bvo) {
         font_size = fs;
         font = f;
         checkbox = c;
         unchecked = u;
-        bar_value_offset = font(U"88").region(font_size, Point{ 0, 0 }).w;
+        bar_value_offset = bvo; //font(U"88").region(font_size, Point{ 0, 0 }).w;
         rect.h = h;
     }
 
-    void init_inside(int x, int y, int w, int h) {
+    void init_inside(int x, int y, int w, int h, std::string lang_name) {
         rect.x = x;
         rect.y = y;
         rect.w = w;
         rect.h = h;
         if (has_child) {
             int height = h - menu_offset_y * 2, width = 0;
-            for (menu_elem& elem : children) {
-                elem.pre_init(font_size, font, checkbox, unchecked, height);
-                RectF r = elem.size();
-                height = std::max(height, (int)r.h);
-                width = std::max(width, (int)r.w);
+            for (menu_elem& child : children) {
+                child.pre_init(font_size, font, checkbox, unchecked, height, bar_value_offset);
+                std::pair<int, int> child_size = child.size(lang_name);
+                height = std::max(height, child_size.first);
+                width = std::max(width, child_size.second);
             }
             height += menu_offset_y * 2;
             width += menu_offset_x * 2;
             int xx = rect.x + rect.w;
             int yy = rect.y;
             for (menu_elem& elem : children) {
-                elem.init_inside(xx, yy, width, height);
+                elem.init_inside(xx, yy, width, height, lang_name);
                 yy += height;
             }
         }
@@ -378,21 +421,25 @@ public:
         return was_active;
     }
 
-    RectF size() {
-        RectF res;
+    std::pair<int, int> size(std::string lang_name) {
+        int h, w;
         if (use_image) {
-            res.x = 0;
-            res.y = 0;
-            res.h = rect.h - 2 * menu_image_offset_y;
-            res.w = (double)res.h * image.width() / image.height();
+            h = rect.h - 2 * menu_image_offset_y;
+            w = (double)h * image.width() / image.height();
         } else {
-            res = font(str).region(font_size, Point{ 0, 0 });
+            // RectF r = font(str).region(font_size, Point{ 0, 0 }); // slow
+            // h = r.h;
+            // w = r.w;
+            h = font_size;
+            int ascii_count = count_ascii(str);
+            w = (str.size() - ascii_count) * font_size; // zenkaku
+            w += region_ascii(str, font_size, lang_name, font); // hankaku
         }
-        res.w += res.h;
+        w += h;
         if (mode == MENU_MODE_BAR || mode == MENU_MODE_BAR_CHECK) {
-            res.w += MENU_BAR_SIZE + bar_value_offset + bar_additional_offset;
+            w += MENU_BAR_SIZE + bar_value_offset + bar_additional_offset;
         }
-        return res;
+        return std::make_pair(h, w);
     }
 
     void set_not_clicked() {
@@ -448,24 +495,24 @@ public:
         unchecked = u;
     }
 
-    void init_inside(int x, int y, int w, int h) {
+    void init_inside(int x, int y, int w, int h, int bar_value_offset, std::string lang_name) {
         rect.x = x;
         rect.y = y;
         rect.w = w;
         rect.h = h;
         int height = h - menu_offset_y * 2, width = w - menu_offset_x * 2;
         for (menu_elem &child: children) {
-            child.pre_init(font_size, font, checkbox, unchecked, height);
-            RectF r = child.size();
-            height = std::max(height, (int)r.h);
-            width = std::max(width, (int)r.w);
+            child.pre_init(font_size, font, checkbox, unchecked, height, bar_value_offset);
+            std::pair<int, int> child_size = child.size(lang_name);
+            height = std::max(height, child_size.first);
+            width = std::max(width, child_size.second);
         }
         height += menu_offset_y * 2;
         width += menu_offset_x * 2;
         int xx = rect.x;
         int yy = rect.y + rect.h;
         for (menu_elem &child: children) {
-            child.init_inside(xx, yy, width, height);
+            child.init_inside(xx, yy, width, height, lang_name);
             yy += height;
         }
     }
@@ -539,8 +586,14 @@ public:
         font(str).draw(font_size, Arg::topCenter(rect.x + rect.w / 2, rect.y + menu_offset_y), menu_font_color);
     }
 
-    RectF size() {
-        return font(str).region(font_size, Point{ 0, 0 });
+    std::pair<int, int> size(std::string lang_name) {
+        // RectF rect = font(str).region(font_size, Point{ 0, 0 }); // slow
+        // return std::make_pair(rect.h, rect.w);
+        int h = font(U"A").region(font_size, Point{ 0, 0 }).h; //font_size;
+        int ascii_count = count_ascii(str);
+        int w = (str.size() - ascii_count) * font_size; // zenkaku
+        w += region_ascii(str, font_size, lang_name, font); // hankaku
+        return std::make_pair(h, w);
     }
 
     bool open() {
@@ -562,22 +615,25 @@ public:
         menu.emplace_back(elem);
     }
 
-    void init(int x, int y, int fs, Font f, Texture c, Texture u) {
+    void init(int x, int y, int font_size, Font font, Texture checkbox, Texture unchecked, std::string lang_name) {
+        uint64_t strt = tim();
         int height = 0, width = 0;
-        for (menu_title &elem : menu) {
-            elem.pre_init(fs, f, c, u);
-            RectF r = elem.size();
-            height = std::max(height, (int)r.h);
-            width = std::max(width, (int)r.w);
+        for (menu_title &title : menu) {
+            title.pre_init(font_size, font, checkbox, unchecked);
+            std::pair<int, int> title_size = title.size(lang_name);
+            height = std::max(height, title_size.first);
+            width = std::max(width, title_size.second);
         }
         height += menu_offset_y * 2;
         width += menu_offset_x * 2;
         int xx = x;
         int yy = y;
-        for (menu_title &elem : menu) {
-            elem.init_inside(xx, yy, width, height);
+        int bar_value_offset = font(U"88").region(font_size, Point{ 0, 0 }).w;
+        for (menu_title &title : menu) {
+            title.init_inside(xx, yy, width, height, bar_value_offset, lang_name);
             xx += width;
         }
+        std::cerr << "menu init elapsed " << tim() - strt << " ms" << std::endl;
     }
 
     void draw() {

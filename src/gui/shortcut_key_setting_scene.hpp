@@ -1,4 +1,4 @@
-﻿/*
+/*
     Egaroucid Project
 
     @file shortcut_key_setting.hpp
@@ -16,10 +16,13 @@
 constexpr int SHORTCUT_KEY_SETTINGS_N_ON_WINDOW = 10;
 constexpr int SHORTCUT_KEY_SETTINGS_IDX_NOT_CHANGING = -1;
 
-std::vector<String> allow_multi_input_keys = {
+const std::vector<String> allow_multi_input_keys = {
     U"Ctrl",
     U"Shift",
-    U"Alt"
+    U"Alt",
+#ifdef __APPLE__
+    U"Command",
+#endif
 };
 
 class Shortcut_key_setting : public App::Scene {
@@ -121,10 +124,18 @@ public:
                         }
                         if (n_other_keys == 0) { // Ctrl/Shift/Alt only
                             assign_button.disable();
+#ifdef __APPLE__
+                            message = language.get("settings", "shortcut_keys", "special_key_error_message_mac");
+#else
                             message = language.get("settings", "shortcut_keys", "special_key_error_message");
+#endif
                         } else if (n_other_keys > 1) { // too many keys
                             assign_button.disable();
+#ifdef __APPLE__
+                            message = language.get("settings", "shortcut_keys", "multi_input_error_message_mac");
+#else
                             message = language.get("settings", "shortcut_keys", "multi_input_error_message");
+#endif
                         }
                         // key duplicate?
                         if (check_duplicate()) {
