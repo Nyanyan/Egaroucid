@@ -387,42 +387,81 @@ void self_play_line(std::vector<std::string> arg, Options *options, State *state
             std::cout << transcript << std::endl;
         }
     } else {
-        int print_task_idx = 0;
+        int task_idx = 0;
+        int print_idx = 0;
+        int n_running_task = 0;
         std::vector<std::future<std::string>> tasks;
-        for (std::pair<std::string, Board> start_position: board_list) {
-            bool go_to_next_task = false;
-            while (!go_to_next_task) {
-                if (thread_pool.get_n_idle() && tasks.size() < board_list.size()) {
-                    bool pushed = false;
-                    tasks.emplace_back(thread_pool.push(&pushed, std::bind(&self_play_task, start_position.second, start_position.first, options, false, 0, SELF_PLAY_N_TRY)));
-                    if (pushed) {
-                        go_to_next_task = true;
-                    } else {
-                        tasks.pop_back();
-                    }
+        std::vector<std::string> results;
+        int n_games = board_list.size();
+        while (print_idx < n_games) {
+            // add task
+            if (thread_pool.get_n_idle() && tasks.size() < n_games) {
+                bool pushed = false;
+                tasks.emplace_back(thread_pool.push(&pushed, std::bind(&self_play_task, board_list[task_idx].second, board_list[task_idx].first, options, false, 0, SELF_PLAY_N_TRY)));
+                if (pushed) {
+                    ++task_idx;
+                    ++n_running_task;
+                    results.emplace_back("");
+                } else {
+                    tasks.pop_back();
                 }
-                if (tasks.size() > print_task_idx) {
-                    if (tasks[print_task_idx].valid()) {
-                        if (tasks[print_task_idx].wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
-                            std::string transcript = tasks[print_task_idx].get();
-                            std::cout << transcript << std::endl;
-                            ++print_task_idx;
-                        }
-                    } else {
-                        std::cerr << "[ERROR] task not valid" << std::endl;
-                        std::exit(1);
+            }
+            // check if task ends
+            for (int i = 0; i < tasks.size(); ++i) {
+                if (tasks[i].valid()) {
+                    if (tasks[i].wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
+                        --n_running_task;
+                        results[i] = tasks[i].get();
                     }
                 }
             }
-        }
-        while (print_task_idx < tasks.size()) {
-            if (tasks[print_task_idx].valid()) {
-                std::string transcript = tasks[print_task_idx].get();
-                std::cout << transcript << std::endl;
-                ++print_task_idx;
-            } else {
-                std::cerr << "[ERROR] task not valid" << std::endl;
-                std::exit(1);
+            // print result
+            if (tasks.size() > print_idx) {
+                for (int i = print_idx; i < results.size(); ++i) {
+                    if (results[i] != "") {
+                        std::cout << results[i] << std::endl;
+                        ++print_idx;
+                    } else {
+                        break;
+                    }
+                }
+            }
+            // special case
+            if (task_idx >= n_games - thread_pool.size() && 0 < n_running_task && n_running_task < thread_pool.size()) {
+                std::vector<std::pair<int, std::string>> mid_tasks;
+                global_searching = false;
+                    for (int i = 0; i < tasks.size(); ++i) {
+                        if (tasks[i].valid()) {
+                            std::string transcript_mid = tasks[i].get();
+                            mid_tasks.emplace_back(std::make_pair(i, transcript_mid));
+                        }
+                    }
+                global_searching = true;
+                for (std::pair<int, std::string> &mid_task: mid_tasks) {
+                    Board board_start_mid = board_list[mid_task.first].second;
+                    Flip flip;
+                    for (int i = 0; i < mid_task.second.size(); i += 2) {
+                        int x = mid_task.second[i] - 'a';
+                        int y = mid_task.second[i + 1] - '1';
+                        int coord = HW2_M1 - (y * HW + x);
+                        calc_flip(&flip, &board_start_mid, coord);
+                        board_start_mid.move_board(&flip);
+                        if (board_start_mid.get_legal() == 0) {
+                            board_start_mid.pass();
+                        }
+                    }
+                    std::string transcript = self_play_task(board_start_mid, mid_task.second, options, true, 0, SELF_PLAY_N_TRY);
+                    results[mid_task.first] = transcript;
+                    --n_running_task;
+                    for (int i = print_idx; i < results.size(); ++i) {
+                        if (results[i] != "") {
+                            std::cout << results[i] << std::endl;
+                            ++print_idx;
+                        } else {
+                            break;
+                        }
+                    }
+                }
             }
         }
     }
