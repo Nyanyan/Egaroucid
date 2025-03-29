@@ -5,8 +5,8 @@ import os
 import glob
 
 transcript_root_dir = './../../../train_data/transcript/'
-board_root_dir = './../../../train_data/board_data/'
-log_file = './../../../train_data/board_data/log.txt'
+board_root_dir = os.environ['EGAROUCID_DATA'] + '/train_data/board_data/'
+log_file = os.environ['EGAROUCID_DATA'] + '/train_data/board_data/log.txt'
 
 nums = [123]
 

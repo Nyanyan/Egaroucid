@@ -3,9 +3,9 @@ import os
 import glob
 
 transcript_root_dir = './../../../train_data/transcript/'
-board_root_dir = './../../../train_data/board_data/'
+board_root_dir = os.environ['EGAROUCID_DATA'] + '/train_data/board_data/'
 board_sub_dir_nums = [89]
-log_file = './../../../train_data/board_data/log.txt'
+log_file = os.environ['EGAROUCID_DATA'] + '/train_data/board_data/log.txt'
 
 FILE_INTERVAL = 100
 
