@@ -7,7 +7,7 @@ import time
 
 '''
 # cell weight
-bin_root_dir = './../../../train_data/bin_data/20240419_1_cell_weight/'
+bin_root_dir = os.environ['EGAROUCID_DATA'] + '/train_data/bin_data/20240419_1_cell_weight/'
 exe = 'data_board_to_idx_cell.out'
 N_PHASES = 1
 #board_sub_dir_nums = [26, 29] # used [0,10] with data 26
@@ -16,7 +16,7 @@ board_sub_dir_nums = [48, 52]
 
 '''
 # cell weight phase 60
-bin_root_dir = './../../../train_data/bin_data/20250214_1_cell_weight_phase60/'
+bin_root_dir = os.environ['EGAROUCID_DATA'] + '/train_data/bin_data/20250214_1_cell_weight_phase60/'
 exe = 'data_board_to_idx_20250214_cell_weight_phase60.out'
 N_PHASES = 60
 board_sub_dir_nums = [97]
@@ -28,7 +28,7 @@ board_sub_dir_nums = [97]
 
 '''
 # move ordering_end_nws ((11 to 13) - 1 empties)
-bin_root_dir = './../../../train_data/bin_data/20240304_1_move_ordering_end_nws/'
+bin_root_dir = os.environ['EGAROUCID_DATA'] + '/train_data/bin_data/20240304_1_move_ordering_end_nws/'
 exe = 'data_board_to_idx_move_ordering_end_nws.out'
 N_PHASES = 1
 board_sub_dir_nums = [43, 44, 45]
@@ -37,10 +37,10 @@ board_sub_dir_nums = [43, 44, 45]
 
 #'''
 # 7.5
-bin_root_dir = './../../../train_data/bin_data/20241125_1/'
+bin_root_dir = os.environ['EGAROUCID_DATA'] + '/train_data/bin_data/20241125_1/'
 exe = 'data_board_to_idx_20241125_1_7_5.out'
 N_PHASES = 60
-board_sub_dir_nums = [149]
+board_sub_dir_nums = list(range(144, 166))
 board_sub_dir_nums.sort()
 #'''
 
@@ -49,7 +49,7 @@ min_n_data_dct = {}
 min_n_data_dct['83'] = 200000
 
 
-input_root_dir = './../../../train_data/board_data/'
+input_root_dir = os.environ['EGAROUCID_DATA'] + '/train_data/board_data/'
 
 
 board_n_moves = {}
@@ -234,10 +234,9 @@ board_n_moves['142'] = [56, 56] # random 56 discs 10000000 boards
 board_n_moves['143'] = [57, 57] # random 57 discs 10000000 boards
 
 
-
 board_n_moves['144'] = [13, 59] # random13       941832 games
 board_n_moves['145'] = [14, 59] # random14       1016514 games
-board_n_moves['146'] = [15, 59] # random15       895703 games
+board_n_moves['146'] = [15, 59] # random15       1465703 games
 board_n_moves['147'] = [16, 59] # random16       1001891 games
 board_n_moves['148'] = [17, 59] # random17       1016310 games
 board_n_moves['149'] = [19, 59] # random19       705853 games
@@ -248,8 +247,15 @@ board_n_moves['153'] = [35, 59] # random35       874287 games
 board_n_moves['154'] = [36, 59] # random36       984333 games
 board_n_moves['155'] = [37, 59] # random37       1009163 games
 board_n_moves['156'] = [38, 59] # random38       1029202 games
-board_n_moves['157'] = [45, 59] # random45       
-
+board_n_moves['157'] = [45, 59] # random45       10010000 games
+board_n_moves['158'] = [20, 59] # random20       1028888 games
+board_n_moves['159'] = [22, 59] # random22       1000000 games
+board_n_moves['160'] = [23, 59] # random23       1496683 games
+board_n_moves['161'] = [24, 59] # random24       1500000 games
+board_n_moves['162'] = [26, 59] # random26       1500000 games
+board_n_moves['163'] = [27, 59] # random27       1396358 games
+board_n_moves['164'] = [29, 59] # random29       1000000 games
+board_n_moves['165'] = [33, 59] # random33       1004834 games
 
 
 procs = []
