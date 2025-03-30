@@ -220,7 +220,7 @@ void get_data_probcut_mid() {
     Flip flip;
     Search_result short_ans, long_ans;
     bool searching = true;
-    for (int i = 0; i < 1000; ++i) {
+    for (int i = 0; i < 10000; ++i) {
         for (int depth = 2; depth <= 15; ++depth) {
             for (int n_discs = 4; n_discs < HW2 - depth - 5; ++n_discs) {
                 board.reset();
@@ -266,7 +266,7 @@ void get_data_probcut_end() {
     Flip flip;
     Search_result short_ans, long_ans;
     bool searching = true;
-    for (int i = 0; i < 1000; ++i) {
+    for (int i = 0; i < 10000; ++i) {
         for (int depth = 2; depth <= 25; ++depth) {
             board.reset();
             for (int j = 0; j < HW2 - 4 - depth && board.check_pass(); ++j) { // random move
