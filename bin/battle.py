@@ -9,6 +9,10 @@ from othello_py import *
 LEVEL = int(sys.argv[1])
 N_SET_GAMES = int(sys.argv[2])
 
+with open('problem/xot/openingslarge.txt', 'r') as f:
+    openings = [elem for elem in f.read().splitlines()]
+shuffle(openings)
+
 # name, cmd
 player_info = [
     ['beta', 'versions/Egaroucid_for_Console_beta/Egaroucid_for_Console.exe -quiet -nobook -t 32'],
@@ -59,10 +63,6 @@ for name, cmd in player_info:
         # n_played
         [0 for _ in range(len(player_info))]
     ])
-
-with open('problem/xot/openingslarge.txt', 'r') as f:
-    openings = [elem for elem in f.read().splitlines()]
-shuffle(openings)
 
 def play_battle(p0_idx, p1_idx, opening_idx):
     player_idxes = [p0_idx, p1_idx]
