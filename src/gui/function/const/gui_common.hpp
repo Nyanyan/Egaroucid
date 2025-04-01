@@ -741,8 +741,9 @@ struct Forced_openings {
         for (const std::pair<std::string, double> opening : openings) {
             board.reset();
             std::string opening_str = opening.first;
+            // std::cerr << opening_str << std::endl;
             double weight = opening.second;
-            for (int i = 0; i < opening_str.size() - 1 && board.check_pass(); i += 2) {
+            for (int i = 0; i < opening_str.size() - 1 && !board.check_pass(); i += 2) {
                 int policy = get_coord_from_chars(opening_str[i], opening_str[i + 1]);
                 // std::cerr << idx_to_coord(policy) << std::endl;
                 // board.print();
@@ -751,11 +752,13 @@ struct Forced_openings {
                 board.move_board(&flip);
             }
         }
+        std::cerr << "forced openings initialized " << selected_moves.size() << std::endl;
     }
 
     void load(std::string file) {
         std::ifstream ifs(file);
         if (!ifs) {
+            std::cerr << "forced openings file " << file << " not found" << std::endl;
             return;
         }
         openings.clear();
