@@ -504,7 +504,7 @@ int main(int argc, char* argv[]) {
     double min_val_mse = 100000000.0, min_val_mae = 100000000.0;
     int n_val_loss_increase = 0;
     int n_val_loss_increase_reduce_lr = 0;
-    double alpha_stab = alpha / 5.0; // warming up for Adam
+    // double alpha_stab = alpha / 5.0; // warming up for Adam
     while (tim() - strt < msecond) {
         ++n_loop;
 
@@ -527,23 +527,25 @@ int main(int argc, char* argv[]) {
         adj_calculate_residual <<<n_blocks_residual, N_THREADS_PER_BLOCK_RESIDUAL>>> (device_eval_arr, n_train_data, device_start_idx_arr, device_train_data, device_rev_idx_arr, device_residual_arr, device_error_monitor_arr);
         cudaMemcpy(host_error_monitor_arr, device_error_monitor_arr, sizeof(double) * N_ERROR_MONITOR, cudaMemcpyDeviceToHost);
 
-        std::cerr << "\rn_loop " << n_loop << " progress " << (tim() - strt) * 100 / msecond << "% MSE " << host_error_monitor_arr[0] << " MAE " << host_error_monitor_arr[1] << "  val_MSE " << host_val_error_monitor_arr[0] << " val_MAE " << host_val_error_monitor_arr[1] << " val_loss_inc " << n_val_loss_increase << " alpha " << alpha_stab << "                    ";
+        // std::cerr << "\rn_loop " << n_loop << " progress " << (tim() - strt) * 100 / msecond << "% MSE " << host_error_monitor_arr[0] << " MAE " << host_error_monitor_arr[1] << "  val_MSE " << host_val_error_monitor_arr[0] << " val_MAE " << host_val_error_monitor_arr[1] << " val_loss_inc " << n_val_loss_increase << " alpha " << alpha_stab << "                    ";
+        std::cerr << "\rn_loop " << n_loop << " progress " << (tim() - strt) * 100 / msecond << "% MSE " << host_error_monitor_arr[0] << " MAE " << host_error_monitor_arr[1] << "  val_MSE " << host_val_error_monitor_arr[0] << " val_MAE " << host_val_error_monitor_arr[1] << " val_loss_inc " << n_val_loss_increase << "                    ";
         
         // next step
         // gradient_descent <<<n_blocks_next_step, N_THREADS_PER_BLOCK_NEXT_STEP>>> (eval_size, device_eval_arr, device_n_appear_arr, device_residual_arr, alpha_stab);
         // momentum <<<n_blocks_next_step, N_THREADS_PER_BLOCK_NEXT_STEP>>> (eval_size, device_eval_arr, device_n_appear_arr, device_residual_arr, alpha_stab, device_m_arr, n_loop);
         // adagrad <<<n_blocks_next_step, N_THREADS_PER_BLOCK_NEXT_STEP>>> (eval_size, device_eval_arr, device_n_appear_arr, device_residual_arr, alpha_stab, device_v_arr, n_loop);
-        adam <<<n_blocks_next_step, N_THREADS_PER_BLOCK_NEXT_STEP>>> (eval_size, device_eval_arr, device_n_appear_arr, device_residual_arr, alpha_stab, device_m_arr, device_v_arr, n_loop);
-        if (alpha_stab < alpha) {
-            alpha_stab += alpha / 50.0;
-        }
-        if (n_val_loss_increase_reduce_lr >= reduce_lr_patience) {
-            alpha *= reduce_lr_ratio;
-            n_val_loss_increase_reduce_lr = 0;
-        }
-        if (alpha_stab > alpha) {
-            alpha_stab = alpha;
-        }
+        // adam <<<n_blocks_next_step, N_THREADS_PER_BLOCK_NEXT_STEP>>> (eval_size, device_eval_arr, device_n_appear_arr, device_residual_arr, alpha_stab, device_m_arr, device_v_arr, n_loop);
+        adam <<<n_blocks_next_step, N_THREADS_PER_BLOCK_NEXT_STEP>>> (eval_size, device_eval_arr, device_n_appear_arr, device_residual_arr, alpha, device_m_arr, device_v_arr, n_loop);
+        // if (alpha_stab < alpha) {
+        //     alpha_stab += alpha / 50.0;
+        // }
+        // if (n_val_loss_increase_reduce_lr >= reduce_lr_patience) {
+        //     alpha *= reduce_lr_ratio;
+        //     n_val_loss_increase_reduce_lr = 0;
+        // }
+        // if (alpha_stab > alpha) {
+        //     alpha_stab = alpha;
+        // }
     }
     std::cerr << std::endl;
 
