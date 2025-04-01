@@ -57,11 +57,11 @@ train_data_nums = [
     65, 66, 67, 68, 69, 70, 71, 72, 73, 74, # Egaroucid 7.4.0 1000000 data
     77,  # random 18 discs (GGS)
     78, 79, # random 11 & 12 (bug fixed)
-            80, # new first11 book
+    #80, # new first11 book
     #81, # test data
     82, # random 12
-            #83, # book data (records80 minimum 200000 data)
-            #84, 85, 86, 87, 88, 89, # non-regular random starting position
+    83, # book data (records80 minimum 200000 data)
+    84, 85, 86, 87, 88, 89, # non-regular random starting position
     97, # public data
     #           98,  99, 100, 101, 102, 103, 104, 105, # random boards 12-19
     #106, 107, 108, 109, 110, 111, 112, 113, 114, 115, # random boards 20-29
