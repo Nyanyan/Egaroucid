@@ -551,7 +551,7 @@ Search_result ai_common(Board board, int alpha, int beta, int level, bool use_bo
             }
             if (use_legal != 0) { // there is moves out of book
                 if (show_log) {
-                    std::cerr << "there is moves out of book" << std::endl;
+                    std::cerr << "there are good moves out of book" << std::endl;
                 }
                 bool need_to_check = false;
                 Flip flip;
