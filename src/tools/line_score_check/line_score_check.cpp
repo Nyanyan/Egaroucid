@@ -92,7 +92,9 @@ int main(int argc, char* argv[]){
         std::string line;
         while (std::getline(ifs, line)){
             trs_convert_transcript(line, expected_score_black);
+            ++t;
         }
     }
+    std::cerr << t << " transcript processed" << std::endl;
     return 0;
 }

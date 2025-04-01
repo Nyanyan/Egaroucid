@@ -3,8 +3,8 @@ from tqdm import trange
 import os
 import sys
 
-line_dr = './../problem/book_check/joined_146'
-out_dr = './../transcript/joined_146'
+line_dr = './../problem/book_check/joined_146/d32_lv27'
+out_dr = './../transcript/joined_146/d32_lv27'
 
 exe = './../Egaroucid_for_Console_clang.exe'
 
@@ -18,7 +18,7 @@ IDX_END = int(sys.argv[2])
 print(IDX_START, IDX_END)
 
 
-LEVEL = 18
+LEVEL = 27
 #N_GAMES_PER_FILE = 10000
 N_THREAD = 14
 
