@@ -8,6 +8,7 @@ from othello_py import *
 
 LEVEL = int(sys.argv[1])
 N_SET_GAMES = int(sys.argv[2])
+N_THREADS = 1
 
 with open('problem/xot/openingslarge.txt', 'r') as f:
     openings = [elem for elem in f.read().splitlines()]
@@ -15,27 +16,27 @@ shuffle(openings)
 
 # name, cmd
 player_info = [
-    ['beta', 'versions/Egaroucid_for_Console_beta/Egaroucid_for_Console.exe -quiet -nobook -t 32'],
-    #['latest',  'Egaroucid_for_Console.exe -quiet -nobook -t 32'],
-    #['clang',  'Egaroucid_for_Console_clang.exe -quiet -nobook -t 32'],
-    ['7.5.0', 'versions/Egaroucid_for_Console_7_5_0_Windows_SIMD/Egaroucid_for_Console_7_5_0_SIMD.exe -quiet -nobook -t 32'],
-    ['7.4.0', 'versions/Egaroucid_for_Console_7_4_0_Windows_x64_SIMD/Egaroucid_for_Console_7_4_0_x64_SIMD.exe -quiet -nobook -t 32'],
-    ['7.3.0', 'versions/Egaroucid_for_Console_7_3_0_Windows_x64_SIMD/Egaroucid_for_Console_7_3_0_x64_SIMD.exe -quiet -nobook -t 32'],
-    ['7.2.0', 'versions/Egaroucid_for_Console_7_2_0_Windows_x64_SIMD/Egaroucid_for_Console_7_2_0_x64_SIMD.exe -quiet -nobook -t 32'],
-    ['7.1.0', 'versions/Egaroucid_for_Console_7_1_0_Windows_x64_SIMD/Egaroucid_for_Console_7_1_0_x64_SIMD.exe -quiet -nobook -t 32'],
-    ['7.0.0', 'versions/Egaroucid_for_Console_7_0_0_Windows_x64_SIMD/Egaroucid_for_Console_7_0_0_x64_SIMD.exe -quiet -nobook -t 32'],
-    #['6.5.X', 'versions/Egaroucid_for_Console_6_5_X/Egaroucid_for_Console.exe -quiet -nobook -t 32'],
+    ['beta', 'versions/Egaroucid_for_Console_beta/Egaroucid_for_Console.exe -quiet -nobook'],
+    #['latest',  'Egaroucid_for_Console.exe -quiet -nobook'],
+    #['clang',  'Egaroucid_for_Console_clang.exe -quiet -nobook'],
+    ['7.5.0', 'versions/Egaroucid_for_Console_7_5_0_Windows_SIMD/Egaroucid_for_Console_7_5_0_SIMD.exe -quiet -nobook'],
+    ['7.4.0', 'versions/Egaroucid_for_Console_7_4_0_Windows_x64_SIMD/Egaroucid_for_Console_7_4_0_x64_SIMD.exe -quiet -nobook'],
+    ['7.3.0', 'versions/Egaroucid_for_Console_7_3_0_Windows_x64_SIMD/Egaroucid_for_Console_7_3_0_x64_SIMD.exe -quiet -nobook'],
+    ['7.2.0', 'versions/Egaroucid_for_Console_7_2_0_Windows_x64_SIMD/Egaroucid_for_Console_7_2_0_x64_SIMD.exe -quiet -nobook'],
+    ['7.1.0', 'versions/Egaroucid_for_Console_7_1_0_Windows_x64_SIMD/Egaroucid_for_Console_7_1_0_x64_SIMD.exe -quiet -nobook'],
+    ['7.0.0', 'versions/Egaroucid_for_Console_7_0_0_Windows_x64_SIMD/Egaroucid_for_Console_7_0_0_x64_SIMD.exe -quiet -nobook'],
+    #['6.5.X', 'versions/Egaroucid_for_Console_6_5_X/Egaroucid_for_Console.exe -quiet -nobook'],
         #['6.5.0', 'versions/Egaroucid_for_Console_6_5_0_Windows_x64_SIMD/Egaroucid_for_Console_6_5_0_x64_SIMD.exe -quiet -nobook'],
-    #['6.4.X', 'versions/Egaroucid_for_Console_6_4_X/Egaroucid_for_Console.exe -quiet -nobook -t 32'],
+    #['6.4.X', 'versions/Egaroucid_for_Console_6_4_X/Egaroucid_for_Console.exe -quiet -nobook'],
         #['6.4.0', 'versions/Egaroucid_for_Console_6_4_0_Windows_x64_SIMD/Egaroucid_for_Console_6_4_0_x64_SIMD.exe -quiet -nobook'],
-    #['6.3.X', 'versions/Egaroucid_for_Console_6_3_X/Egaroucid_for_Console.exe -quiet -nobook -t 32'],
+    #['6.3.X', 'versions/Egaroucid_for_Console_6_3_X/Egaroucid_for_Console.exe -quiet -nobook'],
         #['6.3.0', 'versions/Egaroucid_for_Console_6_3_0_Windows_x64_SIMD/Egaroucid_for_Console_6_3_0_x64_SIMD.exe -quiet -nobook'],
         #['6.2.X', 'versions/Egaroucid_for_Console_6_2_X/Egaroucid_for_Console.exe -quiet -nobook'],
         #['6.2.0', 'versions/Egaroucid_for_Console_6_2_0_Windows_x64_SIMD/Egaroucid_for_Console.exe -quiet -nobook'], # same as 6.3.0
-    #['6.1.X', 'versions/Egaroucid_for_Console_6_1_X/Egaroucid_for_Console.exe -quiet -nobook -t 32'],
+    #['6.1.X', 'versions/Egaroucid_for_Console_6_1_X/Egaroucid_for_Console.exe -quiet -nobook'],
         #['6.1.0', 'versions/Egaroucid_for_Console_6_1_0_Windows_x64_SIMD/Egaroucid_for_Console.exe -quiet -nobook'],
     #['6.0.X', 'versions/Egaroucid_for_Console_6_0_X/Egaroucid_for_Console_test.exe q'],
-    ['Edax ', 'versions/edax_4_4/edax-4.4 -q -n 32'],
+    ['Edax ', 'versions/edax_4_4/edax-4.4 -q'],
 ]
 
 NAME_IDX = 0
@@ -46,15 +47,19 @@ N_PLAYED_IDX = 4
 
 players = []
 for name, cmd in player_info:
-    cmd_with_level = cmd + ' -l ' + str(LEVEL)
+    cmd_with_options = cmd + ' -l ' + str(LEVEL)
     if name == '6.0.X':
-        cmd_with_level = cmd + ' ' + str(LEVEL)
-    print(name, cmd_with_level)
+        cmd_with_options = cmd + ' ' + str(LEVEL)
+    if name == 'Edax ':
+        cmd_with_options += ' -n ' + str(N_THREADS)
+    else:
+        cmd_with_options += ' -t ' + str(N_THREADS)
+    print(name, cmd_with_options)
     players.append([
         name,
         [
-            subprocess.Popen(cmd_with_level.split(), stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL),
-            subprocess.Popen(cmd_with_level.split(), stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
+            subprocess.Popen(cmd_with_options.split(), stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL),
+            subprocess.Popen(cmd_with_options.split(), stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
         ],
         # W D L (vs other players)
         [[0, 0, 0] for _ in range(len(player_info))],
@@ -269,12 +274,12 @@ for i in range(N_SET_GAMES):
         play_battle(p0, p1, problem_idx)
         problem_idx += 1
         problem_idx %= len(openings)
-    print(i, 'level', LEVEL)
+    print(i, 'level', LEVEL, 'threads', N_THREADS)
     #print_result()
     print_all_result()
     #output_plt()
 
-print(N_SET_GAMES, 'matches played for each win rate at level', LEVEL)
+print(N_SET_GAMES, 'matches played for each win rate at level', LEVEL, N_THREADS, 'threads')
 print_all_result()
 
 
