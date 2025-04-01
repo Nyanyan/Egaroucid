@@ -1404,9 +1404,9 @@ private:
                 } else if (hint_infos[i].type > HINT_MAX_LEVEL) {
                     getData().fonts.font_bold(Format(hint_infos[i].type) + U"%").draw(10, sx + 3, sy + 19, color);
                 } else {
-                    RectF lv_rect = getData().fonts.font(U"Lv.").region(8, sx + 3, sy + 21);
-                    getData().fonts.font_bold(U"Lv").draw(8, sx + 3, sy + 21, color);
-                    getData().fonts.font_bold(Format(hint_infos[i].type)).draw(10, lv_rect.x + lv_rect.w, sy + 19, color);
+                    RectF lv_rect = getData().fonts.font(U"Lv.").region(8, sx + 3, sy + 25);
+                    getData().fonts.font_bold(U"Lv").draw(8, sx + 3, sy + 25, color);
+                    getData().fonts.font_bold(Format(hint_infos[i].type)).draw(10, lv_rect.x + lv_rect.w, sy + 23, color);
                 }
                 res |= 1ULL << (HW2_M1 - hint_infos[i].cell);
             }
@@ -1802,8 +1802,8 @@ private:
                 int sx = BOARD_SX + ((HW2_M1 - cell) % HW) * BOARD_CELL_SIZE;
                 int sy = BOARD_SY + ((HW2_M1 - cell) / HW) * BOARD_CELL_SIZE;
                 if (umigame_status.umigame[cell].b != UMIGAME_UNDEFINED) {
-                    getData().fonts.font_heavy(umigame_status.umigame[cell].b).draw(11, Arg::bottomRight(sx + BOARD_CELL_SIZE - 3, sy + BOARD_CELL_SIZE - 16), getData().colors.black);
-                    getData().fonts.font_heavy(umigame_status.umigame[cell].w).draw(11, Arg::bottomRight(sx + BOARD_CELL_SIZE - 3, sy + BOARD_CELL_SIZE - 2), getData().colors.white);
+                    getData().fonts.font_heavy(umigame_status.umigame[cell].b).draw(10, Arg::topRight(sx + BOARD_CELL_SIZE - 4, sy + 23), getData().colors.black);
+                    getData().fonts.font_heavy(umigame_status.umigame[cell].w).draw(10, Arg::topRight(sx + BOARD_CELL_SIZE - 4, sy + 35), getData().colors.white);
                 }
             }
         }
@@ -1850,7 +1850,7 @@ private:
                             n_lines_str = Format(n_lines / 1000) + U"K";
                         }
                     }
-                    getData().fonts.font_heavy(n_lines_str).draw(9, sx + 4, sy + 21, getData().colors.white);
+                    getData().fonts.font_heavy(n_lines_str).draw(10, sx + 4, sy + 23, getData().colors.white);
                 }
             }
         }
@@ -1921,7 +1921,7 @@ private:
                     if (book_level == LEVEL_HUMAN) {
                         book_level_info = U"S";
                     }
-                    getData().fonts.font_heavy(Unicode::Widen(judge) + U" " + book_level_info).draw(9, sx + 4, sy + 33, getData().colors.white);
+                    getData().fonts.font_heavy(Unicode::Widen(judge) + U" " + book_level_info).draw(10, sx + 4, sy + 35, getData().colors.white);
                 }
             }
         }
