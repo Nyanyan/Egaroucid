@@ -1,8 +1,8 @@
 from glob import glob
 
-dr = './../../../train_data/transcript/records19/*.txt'
+dr = 'data/*.txt'
 
-N_MOVES = 30
+N_MOVES = 31
 
 files = glob(dr)
 
