@@ -202,7 +202,7 @@
 */
 
 // endgame accuracy test
-#define TEST_ENDGAME_ACCURACY false
+#define TEST_ENDGAME_ACCURACY true
 
 
 
