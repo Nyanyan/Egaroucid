@@ -140,6 +140,8 @@ void draw_info(Colors colors, History_elem history_elem, Fonts fonts, Menu_eleme
         Line{ rright - width / 2, up, rright - width, up }.draw(linewidth, colors.red);
         Line{ rright - width / 2, up + height, rright - width, up + height }.draw(linewidth, colors.red);
         fonts.font(language.get("info", "bad_point")).draw(12, Arg::center(rright - width / 2, up + height / 2));
+        String level_info = language.get("common", "level") + U" " + Format(menu_elements.level);
+        fonts.font(level_info).draw(12, Arg::center(INFO_SX + INFO_WIDTH / 2, up + height / 2));
         dy += 23;
     } else {
         String level_info = language.get("common", "level") + U" " + Format(menu_elements.level) + U" (";
