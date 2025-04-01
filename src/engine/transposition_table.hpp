@@ -28,7 +28,7 @@ constexpr int TRANSPOSITION_TABLE_N_LOOP = 3;
 constexpr size_t TRANSPOSITION_TABLE_STACK_SIZE = hash_sizes[DEFAULT_HASH_LEVEL] + TRANSPOSITION_TABLE_N_LOOP - 1;
 #endif
 constexpr int N_TRANSPOSITION_MOVES = 2;
-constexpr double TT_REGISTER_THRESHOLD_RATE = 0.4;
+constexpr double TT_REGISTER_THRESHOLD_RATE = 0.3;
 
 constexpr int TRANSPOSITION_TABLE_HAS_NODE = 100;
 constexpr int TRANSPOSITION_TABLE_NOT_HAS_NODE = -100;
@@ -55,14 +55,8 @@ inline uint32_t get_level_common(int depth, uint_fast8_t mpc_level) {
 */
 class Hash_data {
     private:
-        union {
-            // little endian
-            struct {
-                uint8_t mpc_level;
-                uint8_t depth;
-            } c;
-            uint16_t level;
-        } level;
+        uint8_t mpc_level;
+        uint8_t depth;
         uint8_t importance;
         int8_t lower;
         int8_t upper;
@@ -71,7 +65,7 @@ class Hash_data {
     public:
 
         //Hash_data()
-        //    : lower(-SCORE_MAX), upper(SCORE_MAX), moves({MOVE_UNDEFINED, MOVE_UNDEFINED}), level({0, 0}), importance(0) {}
+        //    : lower(-SCORE_MAX), upper(SCORE_MAX), moves({MOVE_UNDEFINED, MOVE_UNDEFINED}), mpc_level(0), depth(0), importance(0) {}
         
         /*
             @brief Initialize a node
@@ -81,8 +75,8 @@ class Hash_data {
             upper = SCORE_MAX;
             moves[0] = MOVE_UNDEFINED;
             moves[1] = MOVE_UNDEFINED;
-            level.c.mpc_level = 0;
-            level.c.depth = 0;
+            mpc_level = 0;
+            depth = 0;
             importance = 0;
         }
 
@@ -142,8 +136,8 @@ class Hash_data {
                 moves[1] = moves[0];
                 moves[0] = policy;
             }
-            level.c.depth = d;
-            level.c.mpc_level = ml;
+            depth = d;
+            mpc_level = ml;
             importance = 1;
         }
 
@@ -177,8 +171,8 @@ class Hash_data {
                 moves[0] = MOVE_UNDEFINED;
             }
             moves[1] = MOVE_UNDEFINED;
-            level.c.depth = d;
-            level.c.mpc_level = ml;
+            depth = d;
+            mpc_level = ml;
             importance = 1;
         }
 
@@ -189,8 +183,7 @@ class Hash_data {
         */
         inline uint32_t get_level() {
             if (importance) {
-                //return get_level_common(depth, mpc_level);
-                return level.level;
+                return get_level_common(depth, mpc_level);
             }
             return 0;
         }
@@ -201,8 +194,7 @@ class Hash_data {
             @return level
         */
         inline uint32_t get_level_no_importance() {
-            //return get_level_common(depth, mpc_level);
-            return level.level;
+            return get_level_common(depth, mpc_level);
         }
 
         inline int get_window_width() {
@@ -238,7 +230,7 @@ class Hash_data {
         }
 
         inline uint8_t get_mpc_level() {
-            return level.c.mpc_level;
+            return mpc_level;
         }
 
         inline uint8_t get_importance() const {
@@ -269,28 +261,9 @@ struct Hash_node {
     @param e                    end index
 */
 void init_transposition_table(Hash_node table[], size_t s, size_t e) {
-#if USE_SIMD && USE_SIMD_TT_INIT
-    // UNDER CONSTRUCTION
-    Hash_node HASH_NODE_INIT;
-    HASH_NODE_INIT.init();
-    __m256i init_data = _mm256_load_si256(((__m256i*)&HASH_NODE_INIT));
-    for(size_t i = s; i < e;) {
-        std::cerr << sizeof(Hash_node) << " " << ((uintptr_t)(table + i) & 0x1f) << std::endl;
-        if (sizeof(Hash_node) == 32 && (((uintptr_t)(table + i) & 0x1f) == 0) && i + 1 < e) {
-            std::cerr << "a";
-            _mm256_stream_si256(((__m256i*)(table + i)), init_data);
-            _mm_sfence();
-            i += 1; // 32 byte
-        } else {
-            table[i].init();
-            ++i;
-        }
-    }
-#else
     for(size_t i = s; i < e; ++i) {
         table[i].init();
     }
-#endif
 }
 
 /*
@@ -607,6 +580,7 @@ class Transposition_table {
             if (n_registered >= n_registered_threshold && transposition_table_auto_reset_importance) {
                 std::lock_guard lock(mtx);
                 if (n_registered >= n_registered_threshold) {
+                    //std::cerr << "resetting transposition importance" << std::endl;
                     reset_importance_proc();
                 }
             }
@@ -907,7 +881,6 @@ class Transposition_table {
         }
 
         inline void reset_importance_proc() {
-            //std::cerr << "resetting transposition importance" << std::endl;
             //std::cerr << "importance reset n_registered " << n_registered << " threshold " << n_registered_threshold << " table_size " << table_size << std::endl;
 #if TT_USE_STACK
             for (size_t i = 0; i < std::min(table_size, (size_t)TRANSPOSITION_TABLE_STACK_SIZE); ++i) {
@@ -952,9 +925,6 @@ bool hash_resize(int hash_level_failed, int hash_level, bool show_log) {
             hash_init_rand(hash_level_failed);
         }
         global_hash_level = hash_level_failed;
-#if USE_CRC32C_HASH
-        global_hash_bit_mask = (1U << global_hash_level) - 1;
-#endif
         return false;
     }
     if (!hash_init(hash_level)) {
@@ -962,9 +932,6 @@ bool hash_resize(int hash_level_failed, int hash_level, bool show_log) {
         hash_init_rand(hash_level);
     }
     global_hash_level = hash_level;
-#if USE_CRC32C_HASH
-    global_hash_bit_mask = (1U << global_hash_level) - 1;
-#endif
     if (show_log) {
         double size_mb = (double)sizeof(Hash_node) / 1024 / 1024 * hash_sizes[hash_level];
         std::cerr << "hash resized to level " << hash_level << " elements " << hash_sizes[hash_level] << " size " << size_mb << " MB" << std::endl;
@@ -989,9 +956,6 @@ bool hash_resize(int hash_level_failed, int hash_level, std::string binary_path,
             hash_init_rand(hash_level_failed);
         }
         global_hash_level = hash_level_failed;
-#if USE_CRC32C_HASH
-        global_hash_bit_mask = (1U << global_hash_level) - 1;
-#endif
         return false;
     }
     if (!hash_init(hash_level, binary_path)) {
@@ -999,9 +963,6 @@ bool hash_resize(int hash_level_failed, int hash_level, std::string binary_path,
         hash_init_rand(hash_level);
     }
     global_hash_level = hash_level;
-#if USE_CRC32C_HASH
-    global_hash_bit_mask = (1U << global_hash_level) - 1;
-#endif
     if (show_log) {
         double size_mb = (double)sizeof(Hash_node) / 1024 / 1024 * hash_sizes[hash_level];
         std::cerr << "hash resized to level " << hash_level << " elements " << hash_sizes[hash_level] << " size " << size_mb << " MB" << std::endl;
@@ -1015,10 +976,6 @@ bool hash_tt_init(std::string binary_path, bool show_log) {
         std::cerr << "[ERROR] can't get hash. you can ignore this error" << std::endl;
         hash_init_rand(DEFAULT_HASH_LEVEL);
     }
-    global_hash_level = DEFAULT_HASH_LEVEL;
-#if USE_CRC32C_HASH
-    global_hash_bit_mask = (1U << DEFAULT_HASH_LEVEL) - 1;
-#endif
     return true;
 }
 
@@ -1028,10 +985,6 @@ bool hash_tt_init(bool show_log) {
         std::cerr << "[ERROR] can't get hash. you can ignore this error" << std::endl;
         hash_init_rand(DEFAULT_HASH_LEVEL);
     }
-    global_hash_level = DEFAULT_HASH_LEVEL;
-#if USE_CRC32C_HASH
-    global_hash_bit_mask = (1U << DEFAULT_HASH_LEVEL) - 1;
-#endif
     return true;
 }
 #endif
