@@ -221,13 +221,13 @@ int load_app(Directories* directories, Resources* resources, Settings* settings,
     if (code == ERR_OK) { // when resources initialized
         // shortcut keys
         init_shortcut_keys(directories);
-        // forced openings for AI
-        std::string forced_openings_file = directories->appdata_dir + "/forced_openings.txt";
-        forced_openings->load(forced_openings_file);
         // settings -> menu elements
         menu_elements->init(settings, resources);
         // AI
         code = init_ai(settings, directories, stop_loading);
+        // forced openings for AI
+        std::string forced_openings_file = directories->appdata_dir + "/forced_openings.txt";
+        forced_openings->load(forced_openings_file);
     }
     return code;
 }
