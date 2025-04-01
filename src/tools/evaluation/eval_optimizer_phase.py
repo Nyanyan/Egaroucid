@@ -8,7 +8,7 @@ minute = str(sys.argv[2]) #'7'
 second = '0'
 alpha = str(sys.argv[3]) #'300.0'
 n_patience = '100'
-reduce_lr_patience = '1000' #'10'
+reduce_lr_patience = '10'
 reduce_lr_ratio = '0.7'
 
 model_dir = './../../../model/nomodel/'
@@ -74,7 +74,7 @@ train_data_nums = [
 ]
 train_data_nums.sort()
 train_root_dir = os.environ['EGAROUCID_DATA'] + '/train_data/bin_data/20241125_1/'
-executable = 'eval_optimizer_cuda_12_2_0_20241125_1_7_5_nowarmingup.exe'
+executable = 'eval_optimizer_cuda_12_2_0_20241125_1_7_5.exe'
 #'''
 
 
