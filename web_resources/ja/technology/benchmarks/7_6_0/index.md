@@ -8,7 +8,7 @@
 
 Core i9-13900KではAVX512版が動かないため、SIMD版、Generic版、x86版の結果を掲載します。
 
-Egaroucidの結果は以下の通りです。また、比較としてオープンソースで最速クラスのオセロAI [Edax 4.5.2](https://github.com/okuhara/edax-reversi-AVX/releases/tag/v4.5.2)の結果も掲載します (Edaxはバージョン4.6が最新ですが、手元で実行したところ4.6よりも4.5.2の方が速かったため、4.5.2を採用しました)。
+Egaroucidの結果は以下の通りです。また、比較としてオープンソースで最速クラスのオセロAI [Edax 4.5.3](https://github.com/okuhara/edax-reversi-AVX/releases/tag/v4.5.3)の結果も掲載します (Edaxはバージョン4.6が最新ですが、手元で実行したところ4.6よりも4.5.3の方が速かったため、4.5.3を採用しました)。
 
 <div class="table_wrapper">
 <table>
@@ -22,26 +22,48 @@ Egaroucidの結果は以下の通りです。また、比較としてオープ�
 <td>Egaroucid</td><td>Generic</td><td>30.346</td><td>14290308977</td><td>470912442</td><td><a href="./files/001_ffo40_59_Core_i9-13900K_Generic.txt">001_ffo40_59_Core_i9-13900K_Generic.txt</a></td>
 </tr>
 <tr>
-<td>Edax</td><td>x64_modern</td><td>26.124</td><td>28067613584</td><td>1074399540</td><td><a href="./files/010_ffo40_59_Core_i9-13900K_edax_x64_modern.txt">010_ffo40_59_Core_i9-13900K_edax_x64_modern.txt</a></td>
+<td>Edax</td><td>x64_modern</td><td>26.093</td><td>28087572364</td><td>1076440898</td><td><a href="./files/010_ffo40_59_Core_i9-13900K_edax_x64_modern.txt">010_ffo40_59_Core_i9-13900K_edax_x64_modern.txt</a></td>
 </tr>
 <tr>
-<td>Edax</td><td>x64</td><td>30.138</td><td>27759979840</td><td>921095621</td><td><a href="./files/011_ffo40_59_Core_i9-13900K_edax_x64.txt">011_ffo40_59_Core_i9-13900K_edax_x64.txt</a></td>
+<td>Edax</td><td>x64</td><td>30.299</td><td>27886392112</td><td>920373349</td><td><a href="./files/011_ffo40_59_Core_i9-13900K_edax_x64.txt">011_ffo40_59_Core_i9-13900K_edax_x64.txt</a></td>
 </tr>
 </table>
 </div>
+
 
 
 ### Core i9-11900K
 
 Core i9-11900KではAVX512版が動きます。
 
-Egaroucidおよび[Edax 4.5.2](https://github.com/okuhara/edax-reversi-AVX/releases/tag/v4.5.2)の結果は以下の通りです。
+Egaroucidおよび[Edax 4.5.3](https://github.com/okuhara/edax-reversi-AVX/releases/tag/v4.5.3)の結果は以下の通りです。
 
 <div class="table_wrapper">
 <table>
-<tr><td>TABLE</td></tr>
+<tr>
+<th>AI</th><th>版</th><th>時間(秒)</th><th>ノード数</th><th>NPS</th><th>ファイル</th>
+</tr>
+<tr>
+<td>Egaroucid</td><td>AVX512</td><td>34.272</td><td>13061469404</td><td>381111969</td><td><a href="./files/100_ffo40_59_Core_i9-11900K_AVX512.txt">100_ffo40_59_Core_i9-11900K_AVX512.txt</a></td>
+</tr>
+<tr>
+<td>Egaroucid</td><td>SIMD</td><td>35.089</td><td>13275458500</td><td>378336757</td><td><a href="./files/101_ffo40_59_Core_i9-11900K_SIMD.txt">101_ffo40_59_Core_i9-11900K_SIMD.txt</a></td>
+</tr>
+<tr>
+<td>Egaroucid</td><td>Generic</td><td>62.678</td><td>13403862190</td><td>213852742</td><td><a href="./files/102_ffo40_59_Core_i9-11900K_Generic.txt">102_ffo40_59_Core_i9-11900K_Generic.txt</a></td>
+</tr>
+<tr>
+<td>Edax</td><td>x64_avx512</td><td>39.046</td><td>27252069199</td><td>697947785</td><td><a href="./files/110_ffo40_59_Core_i9-11900K_edax_x64_avx512.txt">110_ffo40_59_Core_i9-11900K_edax_x64_avx512.txt</a></td>
+</tr>
+<tr>
+<td>Edax</td><td>x64_modern</td><td>40.718</td><td>26747187985</td><td>656888550</td><td><a href="./files/111_ffo40_59_Core_i9-11900K_edax_x64_modern.txt">111_ffo40_59_Core_i9-11900K_edax_x64_modern.txt</a></td>
+</tr>
+<tr>
+<td>Edax</td><td>x64</td><td>48.263</td><td>26602214755</td><td>551192731</td><td><a href="./files/112_ffo40_59_Core_i9-11900K_edax_x64.txt">112_ffo40_59_Core_i9-11900K_edax_x64.txt</a></td>
+</tr>
 </table>
 </div>
+
 
 
 ## Edax 4.6との対戦
@@ -64,6 +86,5 @@ Egaroucidおよび[Edax 4.5.2](https://github.com/okuhara/edax-reversi-AVX/relea
 <tr><td>15</td><td>+0.89</td><td>0.614</td><td>138</td><td>31</td><td>81</td></tr>
 <tr><td>21</td><td>+0.45</td><td>0.565</td><td>50</td><td>13</td><td>37</td></tr>
 </table></div>
-
 
 
