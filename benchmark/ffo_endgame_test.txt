@@ -26179,7 +26179,7 @@ Egaroucid_for_Console_clang.exe -l 60 -hash 25 -nobook -solve problem/ffo40-59.t
 #59 |             60|        34@100%|             h4|            +64|  000:00:00.072|       12093362|      167963361|
 total 14644283928 nodes in 19.345s NPS 757006147
 
-2025/04.02 new eval, mpc
+2025/04/02 new eval, mpc
 Egaroucid_for_Console.exe -l 60 -hash 25 -nobook -solve problem/ffo40-59.txt -thread 42
 #   |          Level|          Depth|           Move|          Score|           Time|          Nodes|            NPS|
 #40 |             60|        20@100%|             a2|            +38|  000:00:00.017|       11011939|      647761117|
