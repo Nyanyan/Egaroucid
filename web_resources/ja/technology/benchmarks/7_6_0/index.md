@@ -1,4 +1,4 @@
-# Egaroucid !!VERSION!! ベンチマーク
+# Egaroucid 7.6.0 ベンチマーク
 
 ## The FFO endgame test suite
 
@@ -12,9 +12,24 @@ Egaroucidの結果は以下の通りです。また、比較としてオープ�
 
 <div class="table_wrapper">
 <table>
-<tr><td>TABLE</td></tr>
+<tr>
+<th>AI</th><th>版</th><th>時間(秒)</th><th>ノード数</th><th>NPS</th><th>ファイル</th>
+</tr>
+<tr>
+<td>Egaroucid</td><td>SIMD</td><td>20.547</td><td>14035262270</td><td>683080852</td><td><a href="./files/000_ffo40_59_Core_i9-13900K_SIMD.txt">000_ffo40_59_Core_i9-13900K_SIMD.txt</a></td>
+</tr>
+<tr>
+<td>Egaroucid</td><td>Generic</td><td>30.346</td><td>14290308977</td><td>470912442</td><td><a href="./files/001_ffo40_59_Core_i9-13900K_Generic.txt">001_ffo40_59_Core_i9-13900K_Generic.txt</a></td>
+</tr>
+<tr>
+<td>Edax</td><td>x64_modern</td><td>26.124</td><td>28067613584</td><td>1074399540</td><td><a href="./files/010_ffo40_59_Core_i9-13900K_edax_x64_modern.txt">010_ffo40_59_Core_i9-13900K_edax_x64_modern.txt</a></td>
+</tr>
+<tr>
+<td>Edax</td><td>x64</td><td>30.138</td><td>27759979840</td><td>921095621</td><td><a href="./files/011_ffo40_59_Core_i9-13900K_edax_x64.txt">011_ffo40_59_Core_i9-13900K_edax_x64.txt</a></td>
+</tr>
 </table>
 </div>
+
 
 ### Core i9-11900K
 
@@ -41,10 +56,14 @@ Egaroucidおよび[Edax 4.5.2](https://github.com/okuhara/edax-reversi-AVX/relea
 
 テストには[XOT](https://berg.earthlingz.de/xot/index.php)に収録されている局面を使用しました。bookは双方未使用です。
 
-<div class="table_wrapper">
-<table>
-<tr><td>TABLE</td></tr>
-</table>
-</div>
+<div class="table_wrapper"><table>
+<tr><th>レベル</th><th>平均獲得石数</th><th>勝率</th><th>Egaroucid勝ち</th><th>引分</th><th>Edax勝ち</th></tr>
+<tr><td>1</td><td>+11.27</td><td>0.742</td><td>734</td><td>15</td><td>251</td></tr>
+<tr><td>5</td><td>+8.37</td><td>0.793</td><td>781</td><td>25</td><td>194</td></tr>
+<tr><td>10</td><td>+1.72</td><td>0.633</td><td>590</td><td>87</td><td>323</td></tr>
+<tr><td>15</td><td>+0.89</td><td>0.614</td><td>138</td><td>31</td><td>81</td></tr>
+<tr><td>21</td><td>+0.45</td><td>0.565</td><td>50</td><td>13</td><td>37</td></tr>
+</table></div>
+
 
 
