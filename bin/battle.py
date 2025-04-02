@@ -36,7 +36,8 @@ player_info = [
     #['6.1.X', 'versions/Egaroucid_for_Console_6_1_X/Egaroucid_for_Console.exe -quiet -nobook'],
         #['6.1.0', 'versions/Egaroucid_for_Console_6_1_0_Windows_x64_SIMD/Egaroucid_for_Console.exe -quiet -nobook'],
     #['6.0.X', 'versions/Egaroucid_for_Console_6_0_X/Egaroucid_for_Console_test.exe q'],
-    ['Edax ', 'versions/edax_4_4/edax-4.4 -q'],
+    #['Edax4.4', 'versions/edax_4_4/edax-4.4 -q'],
+    ['Edax4.6', 'versions/edax_4_6/wEdax-x86-64-v3.exe -q'],
 ]
 
 NAME_IDX = 0
@@ -50,7 +51,7 @@ for name, cmd in player_info:
     cmd_with_options = cmd + ' -l ' + str(LEVEL)
     if name == '6.0.X':
         cmd_with_options = cmd + ' ' + str(LEVEL)
-    if name == 'Edax ':
+    if 'Edax' in name:
         cmd_with_options += ' -n ' + str(N_THREADS)
     else:
         cmd_with_options += ' -t ' + str(N_THREADS)
