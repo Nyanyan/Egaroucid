@@ -41,16 +41,15 @@ Egaroucidの性能の確認として2種類のベンチマークを使用して�
 
 オセロAIの強さを評価するためには、対戦するのが一番でしょう。ここでは、各バージョンに[Edax 4.4](https://github.com/abulmo/edax-reversi/releases/tag/v4.4)を加え、総当たり戦をした結果を掲載します。
 
-対戦はレベル1(中盤1手読み、終盤2手完全読み)で行いました。
+対戦はレベル1(中盤1手読み、終盤2手完全読み)およびレベル5(中盤5手読み、終盤10手完全読み)で行いました。
 
 対戦にはそれぞれ[XOT](https://berg.earthlingz.de/xot/aboutxot.php?lang=en)の進行を初期盤面として使い、各進行では先手後手それぞれ1回ずつ対戦させています。
 
 <div class="table_wrapper"><table>
-<tr><th>名称</th><td>7.5.0</td><td>7.4.0</td><td>7.3.0</td><td>7.2.0</td><td>7.1.0</td><td>7.0.0</td><td>6.5.X</td><td>6.4.X</td><td>6.3.X</td><td>6.1.X</td><td>6.0.X</td><td>Edax</td></tr><tr><th>勝率</th><td>0.5790</td><td>0.5716</td><td>0.5405</td><td>0.5359</td><td>0.5385</td><td>0.5339</td><td>0.5002</td><td>0.4724</td><td>0.4403</td><td>0.4781</td><td>0.4135</td><td>0.3963</td></tr><tr><th>平均獲得石数</th><td>+4.92</td><td>+3.98</td><td>+2.75</td><td>+2.62</td><td>+2.69</td><td>+2.29</td><td>+0.49</td><td>-1.72</td><td>-4.03</td><td>-1.44</td><td>-5.71</td><td>-6.84</td></tr>
+<tr><th>名称</th><td>7.6.0</td><td>7.5.0</td><td>7.4.0</td><td>7.3.0</td><td>7.2.0</td><td>7.1.0</td><td>7.0.0</td><td>Edax4.6</td></tr><tr><th>レベル1 勝率</th><td>0.5711</td><td>0.5514</td><td>0.5354</td><td>0.5289</td><td>0.5049</td><td>0.4943</td><td>0.5366</td><td>0.2774</td></tr><tr><th>レベル1 平均獲得石数</th><td>+3.36</td><td>+2.10</td><td>+1.59</td><td>+1.21</td><td>+0.44</td><td>+0.08</td><td>+1.41</td><td>-10.19</td></tr><tr><th>レベル5 勝率</th><td>0.6151</td><td>0.5580</td><td>0.5291</td><td>0.5154</td><td>0.5211</td><td>0.5260</td><td>0.5011</td><td>0.2340</td></tr><tr><th>レベル5 平均獲得石数</th><td>+2.51</td><td>+1.63</td><td>+1.15</td><td>+0.49</td><td>+0.52</td><td>+0.92</td><td>+0.11</td><td>-7.33</td></tr>
 </table></div>
-対戦の詳細は[こちら](./battle.txt)をご覧ください。
 
-Egaroucid 6.2.0はEgaroucid 6.3.0と同一の評価関数のため、省いています。
+対戦の詳細は[こちら](./battle.txt)をご覧ください。
 
 
 

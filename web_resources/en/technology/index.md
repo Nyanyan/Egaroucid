@@ -42,11 +42,10 @@ It is the best way to evaluate the strength of Othello AI that we have battles w
 To avoid same lines, I used [XOT](https://berg.earthlingz.de/xot/aboutxot.php?lang=en) as the beginning board. Each battle is done in level 1 (lookahead depth is 1 for the midgame, 2 for the endgame).
 
 <div class="table_wrapper"><table>
-<tr><th>Name</th><td>7.5.0</td><td>7.4.0</td><td>7.3.0</td><td>7.2.0</td><td>7.1.0</td><td>7.0.0</td><td>6.5.X</td><td>6.4.X</td><td>6.3.X</td><td>6.1.X</td><td>6.0.X</td><td>Edax</td></tr><tr><th>Winning Rate</th><td>0.5790</td><td>0.5716</td><td>0.5405</td><td>0.5359</td><td>0.5385</td><td>0.5339</td><td>0.5002</td><td>0.4724</td><td>0.4403</td><td>0.4781</td><td>0.4135</td><td>0.3963</td></tr><tr><th>Avg. Discs Earned</th><td>+4.92</td><td>+3.98</td><td>+2.75</td><td>+2.62</td><td>+2.69</td><td>+2.29</td><td>+0.49</td><td>-1.72</td><td>-4.03</td><td>-1.44</td><td>-5.71</td><td>-6.84</td></tr>
+<tr><th>Name</th><td>7.6.0</td><td>7.5.0</td><td>7.4.0</td><td>7.3.0</td><td>7.2.0</td><td>7.1.0</td><td>7.0.0</td><td>Edax4.6</td></tr><tr><th>Level 1 Winning Rate</th><td>0.5711</td><td>0.5514</td><td>0.5354</td><td>0.5289</td><td>0.5049</td><td>0.4943</td><td>0.5366</td><td>0.2774</td></tr><tr><th>Level 1 Avg. Discs Earned</th><td>+3.36</td><td>+2.10</td><td>+1.59</td><td>+1.21</td><td>+0.44</td><td>+0.08</td><td>+1.41</td><td>-10.19</td></tr><tr><th>Level 5 Winning Rate</th><td>0.6151</td><td>0.5580</td><td>0.5291</td><td>0.5154</td><td>0.5211</td><td>0.5260</td><td>0.5011</td><td>0.2340</td></tr><tr><th>Level 5 Avg. Discs Earned</th><td>+2.51</td><td>+1.63</td><td>+1.15</td><td>+0.49</td><td>+0.52</td><td>+0.92</td><td>+0.11</td><td>-7.33</td></tr>
 </table></div>
-The further log is available [here](./battle.txt).
 
-Egaroucid 6.2.0 is omitted because it has the same evaluation function as 6.3.0.
+The further log is available [here](./battle.txt).
 
 
 
