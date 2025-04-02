@@ -21,8 +21,10 @@ import math
 #data_files_end = ['data/20241130_1_7_5/probcut_end0.txt', 'data/20241130_1_7_5/probcut_end1.txt', 'data/20241130_1_7_5/probcut_end2.txt']
 #data_files = ['data/20250109_1_7_6/probcut_mid0.txt', 'data/20250109_1_7_6/probcut_mid1.txt', 'data/20250109_1_7_6/probcut_mid2.txt']
 #data_files_end = ['data/20250109_1_7_6/probcut_end0.txt', 'data/20250109_1_7_6/probcut_end1.txt']
-data_files = ['data/20250306_1_7_6_20250305_1/probcut_mid0.txt', 'data/20250306_1_7_6_20250305_1/probcut_mid1.txt', 'data/20250306_1_7_6_20250305_1/probcut_mid2.txt']
-data_files_end = ['data/20250306_1_7_6_20250305_1/probcut_end0.txt', 'data/20250306_1_7_6_20250305_1/probcut_end1.txt']
+#data_files = ['data/20250306_1_7_6_20250305_1/probcut_mid0.txt', 'data/20250306_1_7_6_20250305_1/probcut_mid1.txt', 'data/20250306_1_7_6_20250305_1/probcut_mid2.txt']
+#data_files_end = ['data/20250306_1_7_6_20250305_1/probcut_end0.txt', 'data/20250306_1_7_6_20250305_1/probcut_end1.txt']
+data_files = ['data/20250402_1_7_6_20250330_1/probcut_mid0.txt']
+data_files_end = ['data/20250402_1_7_6_20250330_1/probcut_end0.txt']
 
 
 data = [[[[] for _ in range(61)] for _ in range(61)] for _ in range(65)] # n_discs, depth1, depth2 (depth1 < depth2)
@@ -101,7 +103,7 @@ for n_discs in range(4, 61):
         y_depth2_sd.append(depth2)
         z_sd.append(z)
         weight_sd.append(0.0001)
-
+'''
 for n_discs in range(4, 61):
     for depth2 in range(30, 31):
         depth1 = depth2 - 2
@@ -111,7 +113,7 @@ for n_discs in range(4, 61):
         y_depth2_sd.append(depth2)
         z_sd.append(z)
         weight_sd.append(0.0001)
-
+'''
 def f(wxy, probcut_a, probcut_b, probcut_c, probcut_d, probcut_e, probcut_f, probcut_g):
     w, x, y = wxy
     w = w / 64
