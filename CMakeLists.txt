@@ -34,7 +34,7 @@ if (HAS_32_BIT_OS)
 endif(HAS_32_BIT_OS)
 
 # AVX512 option
-option(HAS_AVX512 "turn on Generic build" OFF)
+option(HAS_AVX512 "turn on AVX-512 build" OFF)
 if (HAS_AVX512)
     add_compile_options(-DHAS_AVX512)
 endif(HAS_AVX512)
