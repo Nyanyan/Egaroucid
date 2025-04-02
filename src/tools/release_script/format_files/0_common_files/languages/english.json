@@ -35,7 +35,9 @@
         "play": {
             "ai_put_black": "AI as Black",
             "ai_put_white": "AI as White",
-            "pause_when_pass": "Pause when Pass"
+            "pause_when_pass": "Pause when Pass",
+            "force_specified_openings": "Force AI's Opening",
+            "opening_setting": "Opening Setting"
         },
         "thread": {
             "thread": "Threads"
@@ -50,13 +52,18 @@
             "changing_message": "Push keys to assign (Esc to turn back)",
             "key_duplicate_message": "This key is already assigned",
             "multi_input_error_message": "Only Ctrl/Shift/Alt are supported for simultaneous input",
-            "special_key_error_message": "Ctrl/Shift/Alt keys alone cannot be assigned"
+            "special_key_error_message": "Ctrl/Shift/Alt keys alone cannot be assigned",
+            "multi_input_error_message_mac": "Only Ctrl/Shift/Alt/Command are supported for simultaneous input",
+            "special_key_error_message_mac": "Ctrl/Shift/Alt/Command keys alone cannot be assigned"
         }
     },
     "ai_settings": {
         "use_book": "Book Use",
         "book_accuracy_level": "Book Loss Level",
-        "level": "Level"
+        "level": "Level",
+        "accept_ai_loss": "Accept AI's Loss",
+        "max_loss": "Max Loss per Move",
+        "loss_percentage": "Occurring Ratio (%)"
     },
     "book": {
         "book": "Book",
@@ -237,6 +244,8 @@
         "danger": "Danger",
         "black_advantage": "Black's Ad.",
         "white_advantage": "White's Ad.",
+        "good_point": "Good Point",
+        "bad_point": "Bad Point",
         "probability": "Probability"
     },
     "edit_board": {
@@ -251,9 +260,13 @@
         "usage": "Usage (Japanese)",
         "website": "Website",
         "bug_report": "Report Bugs",
+        "update_check": "Check Updates",
         "auto_update_check": "Auto Check Updates",
+        "checking_updates": "Checking updates...",
         "new_version_available": "New Version Available.",
         "download?": "Do you want to visit download page?",
+        "already_latest_version": "You have already installed the latest version!",
+        "update_check_failed": "Update Check Failed",
         "download": "Download",
         "skip": "Skip",
         "license": "Licenses"
@@ -267,6 +280,13 @@
         "monochrome": "Monochrome",
         "mark": "Mark",
         "color": "Color"
+    },
+    "opening_setting": {
+        "opening_setting": "Forced Opening Settings",
+        "add": "Add",
+        "weight": "Weight",
+        "register": "Register",
+        "no_opening_found": "No Opening Registered"
     },
     "tips": {
         "do_you_know": "Do you know?",

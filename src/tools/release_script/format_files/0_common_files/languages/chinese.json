@@ -35,7 +35,9 @@
         "play": {
             "ai_put_black": "AI执黑",
             "ai_put_white": "AI执白",
-            "pause_when_pass": "当pass时暂停"
+            "pause_when_pass": "当pass时暂停",
+            "force_specified_openings": "强制指定开局",
+            "opening_setting": "开局设置"
         },
         "thread": {
             "thread": "线程"
@@ -50,13 +52,18 @@
             "changing_message": "按下按键进行分配 (Esc 返回)",
             "key_duplicate_message": "此键已分配",
             "multi_input_error_message": "仅支持 Ctrl/Shift/Alt 同时输入",
-            "special_key_error_message": "无法单独分配 Ctrl/Shift/Alt 键"
+            "special_key_error_message": "无法单独分配 Ctrl/Shift/Alt 键",
+            "multi_input_error_message_mac": "仅支持 Ctrl/Shift/Alt/Command 同时输入",
+            "special_key_error_message_mac": "无法单独分配 Ctrl/Shift/Alt/Command 键"
         }
     },
     "ai_settings": {
         "use_book": "开局库使用",
         "book_accuracy_level": "开局库丢失等级",
-        "level": "级别"
+        "level": "级别",
+        "accept_ai_loss": "接受AI的损失",
+        "max_loss": "每步最大损失",
+        "loss_percentage": "发生率 (%)"
     },
     "book": {
         "book": "开局库",
@@ -237,6 +244,8 @@
         "danger": "危险",
         "black_advantage": "黑有优势",
         "white_advantage": "白有优势",
+        "good_point": "优点",
+        "bad_point": "缺点",
         "probability": "确定度"
     },
     "edit_board": {
@@ -251,9 +260,13 @@
         "usage": "使用教程 (仅日文)",
         "website": "网站",
         "bug_report": "Bug反馈",
+        "update_check": "检查更新",
         "auto_update_check": "自动检查更新",
+        "checking_updates": "正在检查更新...",
         "new_version_available": "新版本可用.",
         "download?": "您想访问下载页吗?",
+        "already_latest_version": "您已经安装最新版本！",
+        "update_check_failed": "更新检查失败",
         "download": "下载",
         "skip": "跳过",
         "license": "许可协议"
@@ -267,6 +280,13 @@
         "monochrome": "单色",
         "mark": "标记",
         "color": "颜色"
+    },
+    "opening_setting": {
+        "opening_setting": "强制开局设置",
+        "add": "添加",
+        "weight": "重量",
+        "register": "登记",
+        "no_opening_found": "沒有登记開放"
     },
     "tips": {
         "do_you_know": "你知道吗?",

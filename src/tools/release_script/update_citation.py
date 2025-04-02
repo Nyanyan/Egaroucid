@@ -2,7 +2,7 @@ import sys
 import datetime
 
 if len(sys.argv) < 2:
-    print('please input [version] [date]')
+    print('please input [version] [date (YYYY-MM-DD)]')
     exit(1)
 version = sys.argv[1]
 

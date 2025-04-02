@@ -35,7 +35,9 @@
         "play": {
             "ai_put_black": "AIが黒に着手",
             "ai_put_white": "AIが白に着手",
-            "pause_when_pass": "パスで一時停止"
+            "pause_when_pass": "パスで一時停止",
+            "force_specified_openings": "AIの進行を強制",
+            "opening_setting": "進行設定"
         },
         "thread": {
             "thread": "スレッド数"
@@ -50,13 +52,18 @@
             "changing_message": "登録したいキーを押してください (Escで戻る)",
             "key_duplicate_message": "そのキーはすでに登録されています",
             "multi_input_error_message": "同時押しに対応しているのはCtrl/Shift/Altのみです",
-            "special_key_error_message": "Ctrl/Shift/Altのみのキーは登録できません"
+            "special_key_error_message": "Ctrl/Shift/Altのみのキーは登録できません",
+            "multi_input_error_message_mac": "同時押しに対応しているのはCtrl/Shift/Alt/Commandのみです",
+            "special_key_error_message_mac": "Ctrl/Shift/Alt/Commandのみのキーは登録できません"
         }
     },
     "ai_settings": {
         "use_book": "book使用",
         "book_accuracy_level": "book変化レベル",
-        "level": "レベル"
+        "level": "レベル",
+        "accept_ai_loss": "AIに石損させる",
+        "max_loss": "1手の最大石損",
+        "loss_percentage": "石損率(%)"
     },
     "book": {
         "book": "Book",
@@ -237,6 +244,8 @@
         "danger": "危険",
         "black_advantage": "黒有利",
         "white_advantage": "白有利",
+        "good_point": "良いところ",
+        "bad_point": "悪いところ",
         "probability": "探索確率"
     },
     "edit_board": {
@@ -251,9 +260,13 @@
         "usage": "使い方",
         "website": "Webサイト",
         "bug_report": "バグレポート",
+        "update_check": "更新確認",
         "auto_update_check": "自動更新確認",
+        "checking_updates": "更新確認中...",
         "new_version_available": "新しいバージョンがダウンロードできます。",
         "download?": "ダウンロードページを開きますか？",
+        "already_latest_version": "すでに最新版がインストールされています。",
+        "update_check_failed": "更新確認に失敗しました。",
         "download": "ダウンロード",
         "skip": "スキップ",
         "license": "ライセンス"
@@ -267,6 +280,13 @@
         "monochrome": "モノクロ",
         "mark": "マーク",
         "color": "色"
+    },
+    "opening_setting": {
+        "opening_setting": "強制する進行の設定",
+        "add": "追加",
+        "weight": "重み",
+        "register": "登録",
+        "no_opening_found": "登録されている進行はありません"
     },
     "tips": {
         "do_you_know": "ご存知ですか？",
