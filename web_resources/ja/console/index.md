@@ -177,7 +177,7 @@ EgaroucidはClangでコンパイルした方が高速に動く場合が多いた
 
 
 
-<code>$ ./bin/Egaroucid_for_console.out</code>
+<code>$ ./bin/Egaroucid_for_Console.out</code>
 
 
 
