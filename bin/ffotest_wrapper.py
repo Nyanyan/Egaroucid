@@ -9,6 +9,10 @@ tasks = [ # is_egaroucid, start, end, n_threads, hash_level, exe, CPU, revision,
 
     [False, 40, 59, 32, 25, 'versions/edax_4_5_2/wEdax-x64-modern.exe',                                     'Core_i9-13900K', 'x64_modern',     '010_ffo40_59_Core_i9-13900K_edax_x64_modern.txt'],
     [False, 40, 59, 32, 25, 'versions/edax_4_5_2/wEdax-x64.exe',                                            'Core_i9-13900K', 'x64',            '011_ffo40_59_Core_i9-13900K_edax_x64.txt'],
+    
+    #[False, 40, 59, 32, 25, 'versions/edax_4_6/wEdax-x86-64-v3.exe',                                     'Core_i9-13900K', 'v3',        '010_ffo40_59_Core_i9-13900K_edax_v3.txt'],
+    #[False, 40, 59, 32, 25, 'versions/edax_4_6/wEdax-x86-64-v2.exe',                                     'Core_i9-13900K', 'v2',        '011_ffo40_59_Core_i9-13900K_edax_v2.txt'],
+    #[False, 40, 59, 32, 25, 'versions/edax_4_6/wEdax-x86-64.exe',                                        'Core_i9-13900K', '-',        '012_ffo40_59_Core_i9-13900K_edax.txt'],
 
     #60-79
     #[True,  60, 79, 42, 30, 'versions/Egaroucid_for_Console_beta/Egaroucid_for_Console_SIMD.exe',      'Core_i9-13900K', 'x64_SIMD',       '020_ffo60_79_Core_i9-13900K_x64_SIMD.txt'],

@@ -37,6 +37,8 @@ bin/document/games/summary.csv
 bin/document/screenshots/*.png
 bin/document/*.egbk3
 bin/document/*.egbk3.bak
+bin/data_44
+bin/data_46
 
 # Egaroucid duplicated resources
 bin/LICENSE
