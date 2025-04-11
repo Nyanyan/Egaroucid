@@ -8,7 +8,7 @@
 
 AVX512 edition do not works with Core i9-13900K, so there are only SIMD, Generic, and x86 editions.
 
-Egaroucid's result are here. As a comparison, I also show [Edax 4.5.2](https://github.com/okuhara/edax-reversi-AVX/releases/tag/v4.5.2)'s result. Although Edax 4.6 is the latest, but on my environment, I found that 4.5.2 is faster than 4.6.
+Egaroucid's result are here. As a comparison, I also show [Edax 4.5.3](https://github.com/okuhara/edax-reversi-AVX/releases/tag/v4.5.3)'s result. Although Edax 4.6 is the latest, but on my environment, I found that 4.5.3 is faster than 4.6.
 
 <div class="table_wrapper">
 <table>
@@ -22,13 +22,14 @@ Egaroucid's result are here. As a comparison, I also show [Edax 4.5.2](https://g
 <td>Egaroucid</td><td>Generic</td><td>30.346</td><td>14290308977</td><td>470912442</td><td><a href="./files/001_ffo40_59_Core_i9-13900K_Generic.txt">001_ffo40_59_Core_i9-13900K_Generic.txt</a></td>
 </tr>
 <tr>
-<td>Edax</td><td>x64_modern</td><td>26.124</td><td>28067613584</td><td>1074399540</td><td><a href="./files/010_ffo40_59_Core_i9-13900K_edax_x64_modern.txt">010_ffo40_59_Core_i9-13900K_edax_x64_modern.txt</a></td>
+<td>Edax</td><td>x64_modern</td><td>26.093</td><td>28087572364</td><td>1076440898</td><td><a href="./files/010_ffo40_59_Core_i9-13900K_edax_x64_modern.txt">010_ffo40_59_Core_i9-13900K_edax_x64_modern.txt</a></td>
 </tr>
 <tr>
-<td>Edax</td><td>x64</td><td>30.138</td><td>27759979840</td><td>921095621</td><td><a href="./files/011_ffo40_59_Core_i9-13900K_edax_x64.txt">011_ffo40_59_Core_i9-13900K_edax_x64.txt</a></td>
+<td>Edax</td><td>x64</td><td>30.299</td><td>27886392112</td><td>920373349</td><td><a href="./files/011_ffo40_59_Core_i9-13900K_edax_x64.txt">011_ffo40_59_Core_i9-13900K_edax_x64.txt</a></td>
 </tr>
 </table>
 </div>
+
 
 
 
@@ -36,13 +37,34 @@ Egaroucid's result are here. As a comparison, I also show [Edax 4.5.2](https://g
 
 With Core i9-11900K, you can run AVX512 edition.
 
-Egaroucid's result and [Edax 4.5.2](https://github.com/okuhara/edax-reversi-AVX/releases/tag/v4.5.2)'s result are:
+Egaroucid's result and [Edax 4.5.3](https://github.com/okuhara/edax-reversi-AVX/releases/tag/v4.5.3)'s result are:
 
 <div class="table_wrapper">
 <table>
-<tr><td>TABLE</td></tr>
+<tr>
+<th>AI</th><th>Edition</th><th>Time (sec)</th><th>Nodes</th><th>NPS</th><th>File</th>
+</tr>
+<tr>
+<td>Egaroucid</td><td>AVX512</td><td>34.272</td><td>13061469404</td><td>381111969</td><td><a href="./files/100_ffo40_59_Core_i9-11900K_AVX512.txt">100_ffo40_59_Core_i9-11900K_AVX512.txt</a></td>
+</tr>
+<tr>
+<td>Egaroucid</td><td>SIMD</td><td>35.089</td><td>13275458500</td><td>378336757</td><td><a href="./files/101_ffo40_59_Core_i9-11900K_SIMD.txt">101_ffo40_59_Core_i9-11900K_SIMD.txt</a></td>
+</tr>
+<tr>
+<td>Egaroucid</td><td>Generic</td><td>62.678</td><td>13403862190</td><td>213852742</td><td><a href="./files/102_ffo40_59_Core_i9-11900K_Generic.txt">102_ffo40_59_Core_i9-11900K_Generic.txt</a></td>
+</tr>
+<tr>
+<td>Edax</td><td>x64_avx512</td><td>39.046</td><td>27252069199</td><td>697947785</td><td><a href="./files/110_ffo40_59_Core_i9-11900K_edax_x64_avx512.txt">110_ffo40_59_Core_i9-11900K_edax_x64_avx512.txt</a></td>
+</tr>
+<tr>
+<td>Edax</td><td>x64_modern</td><td>40.718</td><td>26747187985</td><td>656888550</td><td><a href="./files/111_ffo40_59_Core_i9-11900K_edax_x64_modern.txt">111_ffo40_59_Core_i9-11900K_edax_x64_modern.txt</a></td>
+</tr>
+<tr>
+<td>Edax</td><td>x64</td><td>48.263</td><td>26602214755</td><td>551192731</td><td><a href="./files/112_ffo40_59_Core_i9-11900K_edax_x64.txt">112_ffo40_59_Core_i9-11900K_edax_x64.txt</a></td>
+</tr>
 </table>
 </div>
+
 
 
 
@@ -72,6 +94,5 @@ I used [XOT](https://berg.earthlingz.de/xot/index.php) for its testcases. No ope
 <tr><td>15</td><td>+0.89</td><td>0.614</td><td>138</td><td>31</td><td>81</td></tr>
 <tr><td>21</td><td>+0.45</td><td>0.565</td><td>50</td><td>13</td><td>37</td></tr>
 </table></div>
-
 
 
