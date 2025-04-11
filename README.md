@@ -69,7 +69,7 @@ I would like to hear your opinion.
 
 ## License
 
-GPL 3.0 License
+GNU General Public License v3.0 or later
 
 **If you want to use Egaroucid in your project, I can customize and build Egaroucid for you to avoid GPL-infection to your project. Please feel free to contact me [here](https://docs.google.com/forms/d/e/1FAIpQLSd6ML1T1fc707luPEefBXuImMnlM9cQP8j-YHKiSyFoS-8rmQ/viewform).**
 
