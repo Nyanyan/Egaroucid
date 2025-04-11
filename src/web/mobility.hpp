@@ -3,7 +3,7 @@
 
     @date 2021-2025
     @author Takuto Yamana
-    @license GPL-3.0 license
+    @license GPL-3.0-or-later
     @notice I referred to codes written by others
 */
 

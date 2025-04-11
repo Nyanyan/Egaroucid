@@ -5,7 +5,7 @@
         calculate number of flipped discs in the last move with SIMD
     @date 2021-2025
     @author Takuto Yamana
-    @license GPL-3.0 license
+    @license GPL-3.0-or-later
 */
 
 #pragma once

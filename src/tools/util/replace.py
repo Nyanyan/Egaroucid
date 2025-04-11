@@ -1,11 +1,12 @@
 import glob
 
 str_replaces = [
-    ['put_order', 'play_ordering']
+    ['before', 'after']
 ]
 
 files = glob.glob('./../../**/*.cpp', recursive=True)
 files.extend(glob.glob('./../../**/*.hpp', recursive=True))
+files.extend(glob.glob('./../../*.cpp', recursive=True))
 
 for file in files:
     with open(file, 'r', encoding='utf-8') as f:

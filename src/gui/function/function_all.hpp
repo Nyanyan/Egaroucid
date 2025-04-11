@@ -5,7 +5,7 @@
         Include all things about Egaroucid's GUI functions
     @date 2021-2025
     @author Takuto Yamana
-    @license GPL-3.0 license
+    @license GPL-3.0-or-later
 */
 #include "const/gui_common.hpp"
 #include "const/info.hpp"
