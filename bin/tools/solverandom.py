@@ -8,7 +8,7 @@ IDX_START = int(sys.argv[2])
 IDX_END = int(sys.argv[3])
 
 LEVEL = int(sys.argv[4])
-N_BOARDS_PER_FILE = 10000
+N_BOARDS_PER_FILE = 1000
 N_THREAD = 31
 
 def fill0(n, r):
@@ -29,6 +29,11 @@ for idx in range(IDX_START, IDX_END + 1):
         os.mkdir(dr)
     except:
         pass
-    result = subprocess.run(cmd.split(), stdout=subprocess.PIPE).stdout.decode().replace('\r', '')
+    #result = subprocess.run(cmd.split(), stdout=subprocess.PIPE).stdout.decode().replace('\r', '')
+    #with open(dr + '/' + fill0(idx, 7) + '.txt', 'w') as f:
+    #    f.write(result)
+    p = subprocess.Popen(cmd.split(), stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
     with open(dr + '/' + fill0(idx, 7) + '.txt', 'w') as f:
-        f.write(result)
+        for i in trange(N_BOARDS_PER_FILE):
+            line = p.stdout.readline().decode().replace('\r', '')
+            f.write(line)
