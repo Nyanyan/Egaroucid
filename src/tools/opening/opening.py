@@ -3,17 +3,20 @@ from othello_py import *
 data = []
 with open('data/openings_japanese.txt', 'r', encoding='utf-8') as f:
     for datum in f.read().splitlines():
-        if datum.replace(' ', '').replace('　', '')[:2] == '//':
-            continue
-        n_spaces = 0
-        for i in range(100):
-            if datum[i] != ' ' and datum[i] != '　':
-                n_spaces = i
-                break
-        datum = datum.replace(' ', '').replace('　', '')
-        name, record = datum.split('=')
-        print(n_spaces, name, record)
-        data.append([n_spaces, name, record])
+        if len(datum.replace(' ', '').replace('　', '')):
+            if datum.replace(' ', '').replace('　', '')[:2] == '//':
+                continue
+            n_spaces = 0
+            for i in range(100):
+                if datum[i] != ' ' and datum[i] != '　':
+                    n_spaces = i
+                    break
+            datum = datum.replace(' ', '').replace('　', '')
+            name, record = datum.split('=')
+            print(n_spaces, name, record)
+            data.append([n_spaces, name, record])
+
+data.sort(key=lambda x: x[2])
 
 joseki = {}
 joseki_many = {}
