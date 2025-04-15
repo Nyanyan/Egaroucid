@@ -52,13 +52,18 @@ data_root_dir = os.environ['EGAROUCID_DATA'] + '/train_data/bin_data/20241125_1/
 exe = 'test_loss_20241125_1_7_5.out'
 eval_file = 'trained/eval.egev'
 data_nums = [[] for _ in range(60)]
+'''
 for i in range(12):
     data_nums[i].append(80)
 for i in range(12, 60):
     data_nums[i].append(81)
+'''
 #for i in range(60):
 #    data_nums[i].append(37)
 #'''
+
+for i in range(60):
+    data_nums[i].append(166)
 
 res = ''
 for phase in range(N_PHASES):
