@@ -6,7 +6,7 @@ with open('data/openings_japanese.txt', 'r', encoding='utf-8') as f:
         if len(datum.replace(' ', '').replace('　', '')):
             if datum.replace(' ', '').replace('　', '')[:2] == '//':
                 continue
-            datum = datum.replace(' ', '').replace('　', '')
+            datum = datum.replace(' =', '=').replace('= ', '=').replace('　', '')
             name, record = datum.split('=')
             record = record.lower()
             print(name, record)
@@ -68,11 +68,7 @@ for board in joseki_many.keys():
         for name, record, children in data:
             if name == child:
                 joseki_children -= set(children)
-    #if board == '...........................10......000..........................':
-    #    print(board, joseki_many[board], joseki_children)
     joseki_many[board] = list(joseki_children)
-
-print(joseki_many['...........................10......000..........................'])
 
 print(len(joseki))
 print(len(joseki_many))
