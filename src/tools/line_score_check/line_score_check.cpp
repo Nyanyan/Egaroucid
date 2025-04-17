@@ -24,7 +24,10 @@ struct Trs_Convert_transcript_info{
     int8_t policy;
 };
 
-void trs_convert_transcript(std::string transcript, int expected_score_black){
+#define MODE_OUTPUT_ERROR 0
+#define MODE_OUTPUT_OK 1
+
+void trs_convert_transcript(std::string transcript, int expected_score_black, int mode){
     int8_t y, x;
     std::vector<Trs_Convert_transcript_info> boards;
     Trs_Convert_transcript_info board;
@@ -65,14 +68,16 @@ void trs_convert_transcript(std::string transcript, int expected_score_black){
         board.player ^= 1;
         score_black = -score_black;
     }
-    if (score_black != expected_score_black){
+    if (mode == MODE_OUTPUT_OK && score_black == expected_score_black){
+        std::cout << transcript << std::endl;
+    } else if (mode == MODE_OUTPUT_ERROR && score_black != expected_score_black){
         std::cout << transcript << " " << (int)score_black << std::endl;
     }
 }
 
 int main(int argc, char* argv[]){
-    if (argc < 5) {
-        std::cerr << "input [in_dir] [start_file_num] [end_file_num] [expected_score_black]" << std::endl;
+    if (argc < 6) {
+        std::cerr << "input [in_dir] [start_file_num] [end_file_num] [expected_score_black] [0: output error 1: output OK]" << std::endl;
         return 1;
     }
     trs_init();
@@ -80,6 +85,7 @@ int main(int argc, char* argv[]){
     int strt_file_num = atoi(argv[2]);
     int end_file_num = atoi(argv[3]);
     int expected_score_black = atoi(argv[4]);
+    int mode = atoi(argv[5]);
     int t = 0;
     for (int file_num = strt_file_num; file_num < end_file_num; ++file_num){
         std::cerr << "=";
@@ -91,7 +97,7 @@ int main(int argc, char* argv[]){
         }
         std::string line;
         while (std::getline(ifs, line)){
-            trs_convert_transcript(line, expected_score_black);
+            trs_convert_transcript(line, expected_score_black, mode);
             ++t;
         }
     }
