@@ -761,10 +761,10 @@ Search_result ai_time_limit(Board board, bool use_book, int book_acc_level, bool
                     std::cerr << std::endl;
                 }
                 uint64_t elapsed_till_get_values = tim() - strt;
-                if (elapsed_till_get_values > 7500) {
-                    elapsed_till_get_values = 7500;
+                if (elapsed_till_get_values > 3000) {
+                    elapsed_till_get_values = 3000;
                 }
-                uint64_t align_moves_tl = std::max<uint64_t>(7500ULL - elapsed_till_get_values, (uint64_t)((time_limit - elapsed_till_get_values) * std::min(0.3, 0.1 * n_good_moves)));
+                uint64_t align_moves_tl = std::max<uint64_t>(3000ULL - elapsed_till_get_values, (uint64_t)((time_limit - elapsed_till_get_values) * std::min(0.3, 0.1 * n_good_moves)));
                 std::vector<Ponder_elem> after_move_list = ai_align_move_levels(board, show_log, get_values_move_list, n_good_moves, align_moves_tl, thread_id, 27);
                 need_request_more_time = true;
 
@@ -1499,6 +1499,7 @@ std::vector<Ponder_elem> ai_search_moves(Board board, bool show_log, std::vector
                 break;
             }
         }
+        std::cerr << tim() - strt << " ms ";
         // analyze
         for (int i = n_boards.size() - 1; i >= 0; --i) {
             uint64_t elapsed = tim() - strt;
@@ -1562,7 +1563,7 @@ std::vector<Ponder_elem> ai_search_moves(Board board, bool show_log, std::vector
                         move_list[selected_idx].is_endgame_search = new_is_end_search;
                         move_list[selected_idx].is_complete_search = new_is_complete_search;
                         ++move_list[selected_idx].count;
-                        std::cerr << " value " << move_list[selected_idx].value << " raw " << -v << " depth " << new_depth << "@" << SELECTIVITY_PERCENTAGE[new_mpc_level] << "%" << std::endl;
+                        std::cerr << " value " << move_list[selected_idx].value << " raw " << -v << " depth " << new_depth << "@" << SELECTIVITY_PERCENTAGE[new_mpc_level] << "% " << tim() - strt << " ms" << std::endl;
                     }
                 } else {
                     searching = false;
