@@ -246,7 +246,7 @@ int nega_alpha_ordering_nws(Search *search, int alpha, const int depth, const bo
         return SCORE_UNDEFINED;
     }
     if (is_end_search) {
-        if (depth <= MID_TO_END_DEPTH) {
+        if (depth <= MID_TO_END_DEPTH_MPC || (search->mpc_level == MPC_100_LEVEL && depth <= MID_TO_END_DEPTH)) {
             return nega_alpha_end_nws(search, alpha, skipped, legal);
         }
     } else {

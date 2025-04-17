@@ -389,12 +389,12 @@ void iterative_deepening_search_time_limit(Board board, int alpha, int beta, boo
         } else { // next: endgame search
 //#if IS_GGS_TOURNAMENT
             if (max_depth >= 38) {
-                if (main_depth < max_depth - 2) {
+                if (main_depth < max_depth - 8) { // midgame -> midgame
                     ++main_depth;
-                } else if (main_depth < max_depth) {
+                } else if (main_depth < max_depth) { // midgame -> endgame
                     main_depth = max_depth;
                     main_mpc_level = MPC_74_LEVEL;
-                } else if (main_mpc_level < MPC_100_LEVEL) {
+                } else if (main_mpc_level < MPC_100_LEVEL) { // endgame -> endgame
                     ++main_mpc_level;
                 } else {
                     break;
@@ -730,7 +730,7 @@ Search_result ai_loss(Board board, int level, bool use_book, int book_acc_level,
 Search_result ai_time_limit(Board board, bool use_book, int book_acc_level, bool use_multi_thread, bool show_log, uint64_t remaining_time_msec, thread_id_t thread_id, bool *searching) {
     uint64_t time_limit = calc_time_limit_ply(board, remaining_time_msec, show_log);
     if (show_log) {
-        std::cerr << "ai_time_limit start! tl " << time_limit << " remaining " << remaining_time_msec << " " << board.to_str() << std::endl;
+        std::cerr << "ai_time_limit start! tl " << time_limit << " remaining " << remaining_time_msec << " n_empties " << HW2 - board.n_discs() << " " << board.to_str() << std::endl;
     }
     uint64_t strt = tim();
     int n_empties = HW2 - board.n_discs();
@@ -780,7 +780,7 @@ Search_result ai_time_limit(Board board, bool use_book, int book_acc_level, bool
                 if (new_n_good_moves >= 2) {
                     uint64_t elapsed_till_align_level = tim() - strt;
                     if (time_limit > elapsed_till_align_level) {
-                        uint64_t self_play_tl = (uint64_t)((time_limit - elapsed_till_align_level) * std::min(0.8, 0.3 * new_n_good_moves));
+                        uint64_t self_play_tl = (uint64_t)((time_limit - elapsed_till_align_level) * std::min(0.7, 0.3 * new_n_good_moves));
                         if (show_log) {
                             std::cerr << "need to search good moves (self play) :";
                             for (int i = 0; i < new_n_good_moves; ++i) {
@@ -1121,7 +1121,7 @@ std::vector<Ponder_elem> ai_ponder(Board board, bool show_log, thread_id_t threa
                 ucb = -INF;
             } else {
                 //double depth_weight = (double)std::min(10, move_list[i].depth) / (double)std::min(10, max_depth);
-                ucb = move_list[i].value / (double)HW2 + 0.6 * sqrt(log(2.0 * (double)n_searched_all) / (double)move_list[i].count);
+                ucb = move_list[i].value / (double)HW2 + 1.0 * sqrt(log(2.0 * (double)n_searched_all) / (double)move_list[i].count);
             }
             if (ucb > max_ucb) {
                 selected_idx = i;
@@ -1419,7 +1419,7 @@ std::vector<Ponder_elem> ai_search_moves(Board board, bool show_log, std::vector
         std::cerr << "search moves tl " << time_limit << " n_good_moves " << n_good_moves << " out of " << move_list.size() << std::endl;
     }
     const int max_depth = HW2 - board.n_discs() - 1;
-    int initial_level = 21;
+    int initial_level = 19;
     std::vector<int> levels;
     for (int i = 0; i < n_good_moves; ++i) {
         levels.emplace_back(initial_level);
@@ -1458,6 +1458,7 @@ std::vector<Ponder_elem> ai_search_moves(Board board, bool show_log, std::vector
         bool searching = true;
         // selfplay
         n_boards.clear();
+        bool terminated = false;
         while (n_board.check_pass()) {
             if (n_board.n_discs() >= HW2 - 23 && n_boards.size()) { // complete search with last 24 empties in lv.21
                 break;
@@ -1491,7 +1492,8 @@ std::vector<Ponder_elem> ai_search_moves(Board board, bool show_log, std::vector
                             sp_future.get();
                         } catch (const std::exception &e) {
                         }
-                        std::cerr << std::endl;
+                        std::cerr << " selfplay " << tim() - strt << " ms" << std::endl;
+                        terminated = true;
                         break;
                     }
                 }
@@ -1499,7 +1501,10 @@ std::vector<Ponder_elem> ai_search_moves(Board board, bool show_log, std::vector
                 break;
             }
         }
-        std::cerr << tim() - strt << " ms ";
+        if (terminated) {
+            break;
+        }
+        std::cerr << " selfplay " << tim() - strt << " ms";
         // analyze
         for (int i = n_boards.size() - 1; i >= 0; --i) {
             uint64_t elapsed = tim() - strt;

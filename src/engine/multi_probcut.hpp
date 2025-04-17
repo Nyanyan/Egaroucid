@@ -36,7 +36,7 @@ constexpr double probcut_c = 2.7907656975166057;
 constexpr double probcut_d = 2.228763499230016;
 constexpr double probcut_e = -3.276227419557784;
 constexpr double probcut_f = 2.994283839182209;
-constexpr double probcut_g = 2.5772336326411698;
+constexpr double probcut_g = 1.8772336326411698;
 
 #if USE_MPC_PRE_CALCULATION
 int mpc_error[N_SELECTIVITY_LEVEL][HW2 + 1][HW2 - 3][HW2 - 3];
