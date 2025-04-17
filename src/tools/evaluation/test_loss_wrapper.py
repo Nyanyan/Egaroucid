@@ -51,35 +51,23 @@ N_PHASES = 60
 data_root_dir = os.environ['EGAROUCID_DATA'] + '/train_data/bin_data/20241125_1/'
 exe = 'test_loss_20241125_1_7_5.out'
 eval_file = 'trained/eval.egev'
-data_nums = [[] for _ in range(60)]
-'''
-for i in range(12):
-    data_nums[i].append(80)
-for i in range(12, 60):
-    data_nums[i].append(81)
-'''
-#for i in range(60):
-#    data_nums[i].append(37)
-#'''
-'''
-for i in range(60):
-    data_nums[i].append(166)
-'''
-for i in range(60):
-    data_nums[i].append(167)
 
+for data_num in [166, 167]:
+    data_nums = [[] for _ in range(60)]
+    for i in range(60):
+        data_nums[i].append(data_num)
 
-res = ''
-for phase in range(N_PHASES):
-    cmd = exe + ' ' + eval_file + ' ' + str(phase)
-    for num in data_nums[phase]:
-        cmd += ' ' + data_root_dir + str(phase) + '/' + str(num) + '.dat'
-    print(cmd)
-    p = subprocess.run(cmd, stdout=subprocess.PIPE)
-    out = p.stdout.decode().replace('\r', '').replace('\n', '')
-    res += out + '\n'
-print('')
-print('all done')
-print(res)
-with open('trained/test.txt', 'w') as f:
-    f.write(res)
+    res = ''
+    for phase in range(N_PHASES):
+        cmd = exe + ' ' + eval_file + ' ' + str(phase)
+        for num in data_nums[phase]:
+            cmd += ' ' + data_root_dir + str(phase) + '/' + str(num) + '.dat'
+        print(cmd)
+        p = subprocess.run(cmd, stdout=subprocess.PIPE)
+        out = p.stdout.decode().replace('\r', '').replace('\n', '')
+        res += out + '\n'
+    print('')
+    print('all done')
+    print(res)
+    with open('trained/test_' + str(data_num) + '.txt', 'w') as f:
+        f.write(res)

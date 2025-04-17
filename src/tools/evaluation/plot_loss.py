@@ -1,15 +1,24 @@
 import matplotlib.pyplot as plt
 
 opt_log_file = 'trained/opt_log.txt'
-test_file = 'trained/test.txt'
+test_files = ['trained/test_166.txt', 'trained/test_167.txt']
+test_labels = ['test_random', 'test_drawline']
+test_markers = ['^', '1']
+test_colors = [
+    ['blue', 'green'],
+    ['purple', 'hotpink'],
+]
+
 
 with open(opt_log_file, 'r') as f:
     s = f.read()
 s = s.splitlines()
 
-with open(test_file, 'r') as f:
-    t = f.read()
-t = t.splitlines()
+tests = []
+
+for test_file in test_files:
+    with open(test_file, 'r') as f:
+        tests.append(f.read().splitlines())
 
 PHASE_IDX = 1
 MSE_IDX = 12
@@ -27,9 +36,9 @@ mae_arr = []
 val_phase_arr = []
 val_mse_arr = []
 val_mae_arr = []
-test_phase_arr = []
-test_mse_arr = []
-test_mae_arr = []
+tests_phase_arr = []
+tests_mse_arr = []
+tests_mae_arr = []
 
 for ss in s:
     try:
@@ -48,21 +57,26 @@ for ss in s:
     except:
         pass
 
-for tt in t:
-    try:
-        ttt = tt.split()
-        phase = int(ttt[TEST_PHASE_IDX])
-        mse = float(ttt[TEST_MSE_IDX])
-        mae = float(ttt[TEST_MAE_IDX])
-        test_phase_arr.append(phase)
-        test_mse_arr.append(mse)
-        test_mae_arr.append(mae)
-    except:
-        pass
+for t in tests:
+    tests_phase_arr.append([])
+    tests_mse_arr.append([])
+    tests_mae_arr.append([])
+    for tt in t:
+        try:
+            ttt = tt.split()
+            phase = int(ttt[TEST_PHASE_IDX])
+            mse = float(ttt[TEST_MSE_IDX])
+            mae = float(ttt[TEST_MAE_IDX])
+            tests_phase_arr[-1].append(phase)
+            tests_mse_arr[-1].append(mse)
+            tests_mae_arr[-1].append(mae)
+        except:
+            pass
 
 plt.plot(phase_arr, mae_arr, label='train_MAE', color='red', marker='s', linewidth=4)
 plt.plot(val_phase_arr, val_mae_arr, label='val_MAE', color='lightseagreen', marker='o', linewidth=2)
-plt.plot(test_phase_arr, test_mae_arr, label='test_MAE', color='blue', marker='^', linestyle="dashed")
+for i in range(len(tests_phase_arr)):
+    plt.plot(tests_phase_arr[i], tests_mae_arr[i], label=test_labels[i], color=test_colors[0][i], marker=test_markers[i], linestyle="dashed")
 plt.xlabel('phase')
 plt.ylabel('MAE')
 plt.xlim(-1, 60)
@@ -77,11 +91,12 @@ print('saved')
 plt.clf()
 plt.plot(phase_arr, mse_arr, label='train_MSE', color='orange', marker='s', linewidth=4)
 plt.plot(val_phase_arr, val_mse_arr, label='val_MSE', color='limegreen', marker='o', linewidth=2)
-plt.plot(test_phase_arr, test_mse_arr, label='test_MSE', color='purple', marker='^', linestyle="dashed")
+for i in range(len(tests_phase_arr)):
+    plt.plot(tests_phase_arr[i], tests_mse_arr[i], label=test_labels[i], color=test_colors[1][i], marker=test_markers[i], linestyle="dashed")
 plt.xlabel('phase')
 plt.ylabel('MSE')
 plt.xlim(-1, 60)
-plt.ylim(-5, 70)
+plt.ylim(-5, 80)
 plt.grid(True)
 plt.legend()
 #plt.show()
