@@ -40,7 +40,7 @@ board_sub_dir_nums = [43, 44, 45]
 bin_root_dir = os.environ['EGAROUCID_DATA'] + '/train_data/bin_data/20241125_1/'
 exe = 'data_board_to_idx_20241125_1_7_5.out'
 N_PHASES = 60
-board_sub_dir_nums = [166]
+board_sub_dir_nums = [167]
 board_sub_dir_nums.sort()
 #'''
 
@@ -258,6 +258,7 @@ board_n_moves['164'] = [29, 59] # random29       1000000 games
 board_n_moves['165'] = [33, 59] # random33       1004834 games
 
 board_n_moves['166'] = [0, 59] # test data lv.27 60000 boards
+board_n_moves['167'] = [0, 59] # test data lv.27 8341 games
 
 
 procs = []

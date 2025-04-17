@@ -61,9 +61,13 @@ for i in range(12, 60):
 #for i in range(60):
 #    data_nums[i].append(37)
 #'''
-
+'''
 for i in range(60):
     data_nums[i].append(166)
+'''
+for i in range(60):
+    data_nums[i].append(167)
+
 
 res = ''
 for phase in range(N_PHASES):
