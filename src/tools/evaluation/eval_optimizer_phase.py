@@ -48,7 +48,6 @@ executable = 'eval_optimizer_cuda_12_2_0_move_ordering_end_nws.exe'
 #'''
 # 7.5
 train_data_nums = [
-    18, 19, 20, 21, 24, 25, 28, 29, 30, 31, # old data (without records27)
     34, 35, # mid-endgame data 1
     #36, # old first11 book
     37, # book data
@@ -71,7 +70,16 @@ train_data_nums = [
     136, 137, 138, 139, 140, 141, 142, 143,           # random boards 50-57
     144, 145, 146, 147, 148, 149, 150, 151, 152, 153, 154, 155, 156, # 157, # randomN
     158, 159, 160, 161, 162, 163, 164, 165, # randomN
+                   168, 169, 170, 171, 172, 173, 174, # random13-19
+    175, 176, 177, 178, 179, 180, 181, 182, 183, 184, # random20-29
+    185,                          191, 192, 193, 194, # random30-39
+    195, 196, 197, 198, 199, 200, 201, 202, 203, 204, # random40-49
+    205, 206, 207, 208, 209, 210, 211, 212, 213, # random50-58
 ]
+if int(phase) < 43:
+    train_data_nums.extend([
+        18, 19, 20, 21, 24, 25, 28, 29, 30, 31, # old data (without records27)
+    ])
 train_data_nums.sort()
 train_root_dir = os.environ['EGAROUCID_DATA'] + '/train_data/bin_data/20241125_1/'
 executable = 'eval_optimizer_cuda_12_2_0_20241125_1_7_5.exe'

@@ -40,7 +40,7 @@ board_sub_dir_nums = [43, 44, 45]
 bin_root_dir = os.environ['EGAROUCID_DATA'] + '/train_data/bin_data/20241125_1/'
 exe = 'data_board_to_idx_20241125_1_7_5.out'
 N_PHASES = 60
-board_sub_dir_nums = [167]
+board_sub_dir_nums = [199, 198, 197]
 board_sub_dir_nums.sort()
 #'''
 
@@ -260,6 +260,52 @@ board_n_moves['165'] = [33, 59] # random33       1004834 games
 board_n_moves['166'] = [0, 59] # test data lv.27 60000 boards
 board_n_moves['167'] = [0, 59] # test data lv.27 8341 games
 
+board_n_moves['168'] = [13, 13] # random 13 discs
+board_n_moves['169'] = [14, 14] # random 14 discs
+board_n_moves['170'] = [15, 15] # random 15 discs
+board_n_moves['171'] = [16, 16] # random 16 discs
+board_n_moves['172'] = [17, 17] # random 17 discs
+board_n_moves['173'] = [18, 18] # random 18 discs
+board_n_moves['174'] = [19, 19] # random 19 discs
+board_n_moves['175'] = [20, 20] # random 20 discs
+board_n_moves['176'] = [21, 21] # random 21 discs
+board_n_moves['177'] = [22, 22] # random 22 discs
+board_n_moves['178'] = [23, 23] # random 23 discs
+board_n_moves['179'] = [24, 24] # random 24 discs
+board_n_moves['180'] = [25, 25] # random 25 discs
+board_n_moves['181'] = [26, 26] # random 26 discs
+board_n_moves['182'] = [27, 27] # random 27 discs
+board_n_moves['183'] = [28, 28] # random 28 discs
+board_n_moves['184'] = [29, 29] # random 29 discs
+board_n_moves['185'] = [30, 30] # random 30 discs
+board_n_moves['186'] = [31, 31] # random 31 discs
+board_n_moves['187'] = [32, 32] # random 32 discs
+board_n_moves['188'] = [33, 33] # random 33 discs
+board_n_moves['189'] = [34, 34] # random 34 discs
+board_n_moves['190'] = [35, 35] # random 35 discs
+board_n_moves['191'] = [36, 36] # random 36 discs
+board_n_moves['192'] = [37, 37] # random 37 discs
+board_n_moves['193'] = [38, 38] # random 38 discs
+board_n_moves['194'] = [39, 39] # random 39 discs
+board_n_moves['195'] = [40, 40] # random 40 discs
+board_n_moves['196'] = [41, 41] # random 41 discs
+board_n_moves['197'] = [42, 42] # random 42 discs
+board_n_moves['198'] = [43, 43] # random 43 discs
+board_n_moves['199'] = [44, 44] # random 44 discs
+board_n_moves['200'] = [45, 45] # random 45 discs
+board_n_moves['201'] = [46, 46] # random 46 discs
+board_n_moves['202'] = [47, 47] # random 47 discs
+board_n_moves['203'] = [48, 48] # random 48 discs
+board_n_moves['204'] = [49, 49] # random 49 discs
+board_n_moves['205'] = [50, 50] # random 50 discs
+board_n_moves['206'] = [51, 51] # random 51 discs
+board_n_moves['207'] = [52, 52] # random 52 discs
+board_n_moves['208'] = [53, 53] # random 53 discs
+board_n_moves['209'] = [54, 54] # random 54 discs
+board_n_moves['210'] = [55, 55] # random 55 discs
+board_n_moves['211'] = [56, 56] # random 56 discs
+board_n_moves['212'] = [57, 57] # random 57 discs
+board_n_moves['213'] = [58, 58] # random 58 discs
 
 procs = []
 for phase in range(N_PHASES):
