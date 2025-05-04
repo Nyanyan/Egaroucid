@@ -1,6 +1,7 @@
 import subprocess
 import sys
 import os
+from data_range import *
 
 phase = str(sys.argv[1])
 hour = '0'
@@ -47,7 +48,12 @@ executable = 'eval_optimizer_cuda_12_2_0_move_ordering_end_nws.exe'
 
 #'''
 # 7.5
-train_data_nums = [
+def calc_random_board_used_n_moves(n_random_moves):
+    if n_random_moves < 25:
+        return n_random_moves
+    return n_random_moves + 3
+train_data_nums_all = [
+    18, 19, 20, 21, 24, 25, 28, 29, 30, 31, # old data (without records27)
     34, 35, # mid-endgame data 1
     #36, # old first11 book
     37, # book data
@@ -65,21 +71,21 @@ train_data_nums = [
     #           98,  99, 100, 101, 102, 103, 104, 105, # random boards 12-19
     #106, 107, 108, 109, 110, 111, 112, 113, 114, 115, # random boards 20-29
     #116, 117, 118, 119, 120, 121, 122, 123,           # random boards 30-37
-                                            124, 125, # random boards 38-39
-         127, 128, 129, 130, 131, 132, 133, 134, 135, # random boards 41-49
-    136, 137, 138, 139, 140, 141, 142, 143,           # random boards 50-57
-    144, 145, 146, 147, 148, 149, 150, 151, 152, 153, 154, 155, 156, # 157, # randomN
-    158, 159, 160, 161, 162, 163, 164, 165, # randomN
-                   168, 169, 170, 171, 172, 173, 174, # random13-19
-    175, 176, 177, 178, 179, 180, 181, 182, 183, 184, # random20-29
-    185,                          191, 192, 193, 194, # random30-39
-    195, 196, 197, 198, 199, 200, 201, 202, 203, 204, # random40-49
-    205, 206, 207, 208, 209, 210, 211, 212, 213, # random50-58
+    #                                        124, 125, # random boards 38-39
+    #     127, 128, 129, 130, 131, 132, 133, 134, 135, # random boards 41-49
+    #136, 137, 138, 139, 140, 141, 142, 143,           # random boards 50-57
+    144, 145, 146, 147, 148, 149, 150, 151, 152, 153, 154, 155, 156, # 157, # random N selfplay
+    158, 159, 160, 161, 162, 163, 164, 165, # random N selfplay
+    #               168, 169, 170, 171, 172, 173, 174, # random boards 13-19
+    #175, 176, 177, 178, 179, 180, 181, 182, 183, 184, # random boards 20-29
+    #185,                          191, 192, 193, 194, # random boards 30-39
+    #195, 196, 197, 198, 199, 200, 201, 202, 203, 204, # random boards 40-49
+    #205, 206, 207, 208, 209, 210, 211, 212, 213, # random boards 50-58
 ]
-if int(phase) < 43:
-    train_data_nums.extend([
-        18, 19, 20, 21, 24, 25, 28, 29, 30, 31, # old data (without records27)
-    ])
+train_data_nums = []
+for elem in train_data_nums_all:
+    if calc_random_board_used_n_moves(board_n_moves[str(elem)][0]) >= int(phase):
+        train_data_nums.append(elem)
 train_data_nums.sort()
 train_root_dir = os.environ['EGAROUCID_DATA'] + '/train_data/bin_data/20241125_1/'
 executable = 'eval_optimizer_cuda_12_2_0_20241125_1_7_5.exe'
