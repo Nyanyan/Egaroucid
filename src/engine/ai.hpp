@@ -51,7 +51,7 @@ struct Ponder_elem {
 
 std::vector<Ponder_elem> ai_ponder(Board board, bool show_log, thread_id_t thread_id, bool *searching);
 std::vector<Ponder_elem> ai_get_values(Board board, bool show_log, uint64_t time_limit, thread_id_t thread_id);
-std::pair<int, int> ponder_selfplay(Board board_start, int mid_depth, bool show_log, bool use_multi_thread, bool *searching);
+std::pair<int, int> ponder_selfplay(Board board_start, int root_depth, uint_fast8_t root_mpc_level, bool show_log, bool use_multi_thread, bool *searching);
 std::vector<Ponder_elem> ai_align_move_levels(Board board, bool show_log, std::vector<Ponder_elem> move_list, int n_good_moves, uint64_t time_limit, thread_id_t thread_id, int aligned_min_level);
 std::vector<Ponder_elem> ai_search_moves(Board board, bool show_log, std::vector<Ponder_elem> move_list, int n_good_moves, uint64_t time_limit, thread_id_t thread_id);
 Search_result ai_legal_window(Board board, int alpha, int beta, int level, bool use_book, int book_acc_level, bool use_multi_thread, bool show_log, uint64_t use_legal);
@@ -925,7 +925,7 @@ void ai_hint(Board board, int level, bool use_book, int book_acc_level, bool use
     //thread_pool.tell_finish_using();
 }
 
-std::pair<int, int> ponder_selfplay(Board board_start, int root_depth, bool show_log, bool use_multi_thread, bool *searching) { // used for ponder
+std::pair<int, int> ponder_selfplay(Board board_start, int root_depth, uint_fast8_t root_mpc_level, bool show_log, bool use_multi_thread, bool *searching) { // used for ponder
     int l = -SCORE_MAX, u = SCORE_MAX, former_val = SCORE_UNDEFINED;
     Search ttsearch(&board_start, MPC_74_LEVEL, use_multi_thread, false);
     transposition_table.get_bounds(&ttsearch, board_start.hash(), root_depth - 1, &l, &u);
@@ -947,7 +947,11 @@ std::pair<int, int> ponder_selfplay(Board board_start, int root_depth, bool show
             mpc_level_arr[n_discs] = MPC_100_LEVEL;
         } else {
             depth_arr[n_discs] = std::max(root_depth - (n_discs - root_n_discs), 21); // depth 21 or more
-            mpc_level_arr[n_discs] = MPC_74_LEVEL;
+            if (depth_arr[n_discs] == root_depth - (n_discs - root_n_discs)) {
+                mpc_level_arr[n_discs] = root_mpc_level;
+            } else {
+                mpc_level_arr[n_discs] = MPC_74_LEVEL;
+            }
         }
     }
     if (show_log) {
@@ -1164,7 +1168,7 @@ std::vector<Ponder_elem> ai_ponder(Board board, bool show_log, thread_id_t threa
         //}
         if (new_depth >= PONDER_START_SELFPLAY_DEPTH && !new_is_complete_search) { // selfplay
             std::cerr << "ponder selfplay " << idx_to_coord(move_list[selected_idx].flip.pos) << " depth " << new_depth << std::endl;
-            std::pair<int, int> random_played_scores = ponder_selfplay(n_board, new_depth, false, true, searching); // no -1 (opponent first)
+            std::pair<int, int> random_played_scores = ponder_selfplay(n_board, new_depth, new_mpc_level, false, true, searching); // no -1 (opponent first)
             if (*searching) {
                 if (v == SCORE_UNDEFINED) {
                     v = random_played_scores.second;
