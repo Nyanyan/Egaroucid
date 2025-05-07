@@ -24,7 +24,7 @@
 constexpr int AI_TYPE_BOOK = 1000;
 
 constexpr int IDSEARCH_ENDSEARCH_PRESEARCH_OFFSET = 10;
-constexpr int IDSEARCH_ENDSEARCH_PRESEARCH_OFFSET_TIMELIMIT = 8;
+constexpr int IDSEARCH_ENDSEARCH_PRESEARCH_OFFSET_TIMELIMIT = 10;
 constexpr int PONDER_ENDSEARCH_PRESEARCH_OFFSET_TIMELIMIT = 4;
 
 constexpr int PONDER_START_SELFPLAY_DEPTH = 19;
@@ -388,18 +388,18 @@ void iterative_deepening_search_time_limit(Board board, int alpha, int beta, boo
             }
         } else { // next: endgame search
 //#if IS_GGS_TOURNAMENT
-            if (max_depth >= 38) {
-                if (main_depth < max_depth - 8) { // midgame -> midgame
-                    ++main_depth;
-                } else if (main_depth < max_depth) { // midgame -> endgame
-                    main_depth = max_depth;
-                    main_mpc_level = MPC_74_LEVEL;
-                } else if (main_mpc_level < MPC_100_LEVEL) { // endgame -> endgame
-                    ++main_mpc_level;
-                } else {
-                    break;
-                }
-            } else
+            // if (max_depth >= 38) {
+            //     if (main_depth < max_depth - 10) { // midgame -> midgame
+            //         ++main_depth;
+            //     } else if (main_depth < max_depth) { // midgame -> endgame
+            //         main_depth = max_depth;
+            //         main_mpc_level = MPC_74_LEVEL;
+            //     } else if (main_mpc_level < MPC_100_LEVEL) { // endgame -> endgame
+            //         ++main_mpc_level;
+            //     } else {
+            //         break;
+            //     }
+            // } else
 //#endif
             if (main_depth < max_depth) {
                 main_depth = max_depth;
@@ -764,7 +764,7 @@ Search_result ai_time_limit(Board board, bool use_book, int book_acc_level, bool
                 if (elapsed_till_get_values > 3000) {
                     elapsed_till_get_values = 3000;
                 }
-                uint64_t align_moves_tl = std::max<uint64_t>(3000ULL - elapsed_till_get_values, (uint64_t)((time_limit - elapsed_till_get_values) * std::min(0.3, 0.1 * n_good_moves)));
+                uint64_t align_moves_tl = 3000ULL - elapsed_till_get_values;
                 std::vector<Ponder_elem> after_move_list = ai_align_move_levels(board, show_log, get_values_move_list, n_good_moves, align_moves_tl, thread_id, 27);
                 need_request_more_time = true;
 
@@ -780,7 +780,7 @@ Search_result ai_time_limit(Board board, bool use_book, int book_acc_level, bool
                 if (new_n_good_moves >= 2) {
                     uint64_t elapsed_till_align_level = tim() - strt;
                     if (time_limit > elapsed_till_align_level) {
-                        uint64_t self_play_tl = (uint64_t)((time_limit - elapsed_till_align_level) * std::min(0.7, 0.3 * new_n_good_moves));
+                        uint64_t self_play_tl = (uint64_t)((time_limit - elapsed_till_align_level) * std::min(0.4, 0.2 * new_n_good_moves));
                         if (show_log) {
                             std::cerr << "need to search good moves (self play) :";
                             for (int i = 0; i < new_n_good_moves; ++i) {
@@ -1163,17 +1163,21 @@ std::vector<Ponder_elem> ai_ponder(Board board, bool show_log, thread_id_t threa
         Search search(&n_board, new_mpc_level, true, false);
         search.thread_id = thread_id;
         int v = SCORE_UNDEFINED;
-        //if (new_depth < PONDER_START_SELFPLAY_DEPTH || new_is_end_search) {
         v = -nega_scout(&search, -SCORE_MAX, SCORE_MAX, new_depth, false, LEGAL_UNDEFINED, new_is_end_search, searching);
-        //}
         if (new_depth >= PONDER_START_SELFPLAY_DEPTH && !new_is_complete_search) { // selfplay
-            std::cerr << "ponder selfplay " << idx_to_coord(move_list[selected_idx].flip.pos) << " depth " << new_depth << std::endl;
-            std::pair<int, int> random_played_scores = ponder_selfplay(n_board, new_depth, new_mpc_level, false, true, searching); // no -1 (opponent first)
-            if (*searching) {
-                if (v == SCORE_UNDEFINED) {
-                    v = random_played_scores.second;
-                } else {
-                    v = ((double)v * 1.1 + (double)random_played_scores.second * 0.9) / 2.0;
+            double max_value = -INF;
+            for (int i = 0; i < canput; ++i) {
+                max_value = std::max(max_value, move_list[i].value);
+            }
+            if (v >= max_value - 2.0) {
+                // std::cerr << "ponder selfplay " << idx_to_coord(move_list[selected_idx].flip.pos) << " depth " << new_depth << std::endl;
+                std::pair<int, int> random_played_scores = ponder_selfplay(n_board, new_depth, new_mpc_level, false, true, searching); // no -1 (opponent first)
+                if (*searching) {
+                    if (v == SCORE_UNDEFINED) {
+                        v = random_played_scores.second;
+                    } else {
+                        v = ((double)v * 1.1 + (double)random_played_scores.second * 0.9) / 2.0;
+                    }
                 }
             }
         }
