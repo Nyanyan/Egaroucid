@@ -61,7 +61,7 @@ train_data_nums_all = [
     #81, # test data
     82, # random 12
     83, # book data (records80 minimum 200000 data)
-    84, 85, 86, 87, 88, 89, # non-regular random starting position
+    #84, 85, 86, 87, 88, 89, # non-regular random starting position
     97, # public data
     #           98,  99, 100, 101, 102, 103, 104, 105, # random boards 12-19
     #106, 107, 108, 109, 110, 111, 112, 113, 114, 115, # random boards 20-29
@@ -76,10 +76,10 @@ train_data_nums_all = [
     #185,                          191, 192, 193, 194, # random boards 30-39
     #195, 196, 197, 198, 199, 200, 201, 202, 203, 204, # random boards 40-49
     #205, 206, 207, 208, 209, 210, 211, 212, 213, # random boards 50-58
-    214,
+    214, # random 11 (first11_all)
 ]
 def calc_random_board_used_n_moves(n_random_moves):
-    if n_random_moves < 25:
+    if n_random_moves < 20:
         return n_random_moves
     return n_random_moves + 3
 train_data_nums = []
