@@ -37,7 +37,7 @@ constexpr double probcut_d = -0.8362251801219095;
 constexpr double probcut_e = 4.610017383697701;
 constexpr double probcut_f = 3.818582623595395;
 #ifdef INCLUDE_GGS
-    constexpr double probcut_g = 1.6775013664098447;
+    constexpr double probcut_g = 1.7775013664098447;
 #else
     constexpr double probcut_g = 1.7775013664098447;
 #endif

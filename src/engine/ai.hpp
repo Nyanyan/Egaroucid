@@ -24,14 +24,14 @@
 constexpr int AI_TYPE_BOOK = 1000;
 
 constexpr int IDSEARCH_ENDSEARCH_PRESEARCH_OFFSET = 10;
-constexpr int IDSEARCH_ENDSEARCH_PRESEARCH_OFFSET_TIMELIMIT = 10;
+constexpr int IDSEARCH_ENDSEARCH_PRESEARCH_OFFSET_TIMELIMIT = 8;
 constexpr int PONDER_ENDSEARCH_PRESEARCH_OFFSET_TIMELIMIT = 4;
 
-constexpr int PONDER_START_SELFPLAY_DEPTH = 19;
+constexpr int PONDER_START_SELFPLAY_DEPTH = 21;
 
 constexpr int AI_TL_EARLY_BREAK_THRESHOLD = 6;
 
-constexpr double AI_TL_ADDITIONAL_SEARCH_THRESHOLD = 2.25;
+constexpr double AI_TL_ADDITIONAL_SEARCH_THRESHOLD = 1.8;
 
 struct Lazy_SMP_task {
     uint_fast8_t mpc_level;
@@ -1127,7 +1127,7 @@ std::vector<Ponder_elem> ai_ponder(Board board, bool show_log, thread_id_t threa
                 ucb = -INF;
             } else {
                 //double depth_weight = (double)std::min(10, move_list[i].depth) / (double)std::min(10, max_depth);
-                ucb = move_list[i].value / (double)HW2 + 1.0 * sqrt(log(2.0 * (double)n_searched_all) / (double)move_list[i].count);
+                ucb = move_list[i].value / (double)HW2 + 0.7 * sqrt(log(2.0 * (double)n_searched_all) / (double)move_list[i].count);
             }
             if (ucb > max_ucb) {
                 selected_idx = i;
