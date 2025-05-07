@@ -26,11 +26,7 @@
 */
 constexpr int END_FAST_DEPTH = 6;
 constexpr int END_SIMPLE_DEPTH = 10;
-#ifdef INCLUDE_GGS
-    constexpr int MID_TO_END_DEPTH = 12;
-#else
-    constexpr int MID_TO_END_DEPTH = 13;
-#endif
+constexpr int MID_TO_END_DEPTH = 13;
 constexpr int MID_TO_END_DEPTH_MPC = 9;
 constexpr int MID_SIMPLE_DEPTH = 5;
 

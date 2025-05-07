@@ -734,7 +734,7 @@ Search_result ai_time_limit(Board board, bool use_book, int book_acc_level, bool
     }
     uint64_t strt = tim();
     int n_empties = HW2 - board.n_discs();
-    if (time_limit > 10000ULL && n_empties >= 33) { // additional search
+    if (time_limit > 10000ULL && n_empties >= 35) { // additional search
         bool need_request_more_time = false;
         bool get_values_searching = true;
         uint64_t get_values_tl = 1000ULL;
@@ -780,7 +780,7 @@ Search_result ai_time_limit(Board board, bool use_book, int book_acc_level, bool
                 if (new_n_good_moves >= 2) {
                     uint64_t elapsed_till_align_level = tim() - strt;
                     if (time_limit > elapsed_till_align_level) {
-                        uint64_t self_play_tl = (uint64_t)((time_limit - elapsed_till_align_level) * std::min(0.4, 0.2 * new_n_good_moves));
+                        uint64_t self_play_tl = (uint64_t)((time_limit - elapsed_till_align_level) * std::min(0.6, 0.3 * new_n_good_moves));
                         if (show_log) {
                             std::cerr << "need to search good moves (self play) :";
                             for (int i = 0; i < new_n_good_moves; ++i) {
