@@ -175,8 +175,10 @@ I would like to thank these people for great contributions.
             <li>Jon Marc Hornstein</li>
         </ul>
     </li>
-    <li>Opening names Provision
+    <li>Opening names Organize / Provision
         <ul>
+            <li>Kyrin</li>
+            <li>Wanryu</li>
             <li>Uenon</li>
             <li>Matthias Berg</li>
         </ul>
@@ -204,6 +206,7 @@ I would like to thank these people for great contributions.
         </ul>
     </li>
 </ul>
+
 
 
 

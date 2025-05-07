@@ -205,8 +205,10 @@ GPL-3.0ライセンスの下で自由に使っていただいて構いません�
             <li>Jon Marc Hornstein</li>
         </ul>
     </li>
-    <li>定石名提供
+    <li>定石名整理・提供
         <ul>
+            <li>Kyrin</li>
+            <li>わんりゅー</li>
             <li>うえのん</li>
             <li>Matthias Berg</li>
         </ul>
@@ -234,6 +236,7 @@ GPL-3.0ライセンスの下で自由に使っていただいて構いません�
         </ul>
     </li>
 </ul>
+
 
 
 
