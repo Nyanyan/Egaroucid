@@ -31,7 +31,7 @@ constexpr int PONDER_START_SELFPLAY_DEPTH = 21;
 
 constexpr int AI_TL_EARLY_BREAK_THRESHOLD = 6;
 
-constexpr double AI_TL_ADDITIONAL_SEARCH_THRESHOLD = 1.25;
+constexpr double AI_TL_ADDITIONAL_SEARCH_THRESHOLD = 1.75;
 
 struct Lazy_SMP_task {
     uint_fast8_t mpc_level;
