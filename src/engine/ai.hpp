@@ -749,8 +749,6 @@ Search_result ai_time_limit(Board board, bool use_book, int book_acc_level, bool
             for (const Ponder_elem &elem: get_values_move_list) {
                 if (elem.value >= best_value - AI_TL_ADDITIONAL_SEARCH_THRESHOLD * 2.0) {
                     ++n_good_moves;
-                } else {
-                    break; // because sorted
                 }
             }
             if (n_good_moves >= 2) {
@@ -774,8 +772,6 @@ Search_result ai_time_limit(Board board, bool use_book, int book_acc_level, bool
                 for (const Ponder_elem &elem: after_move_list) {
                     if (elem.value >= best_value - AI_TL_ADDITIONAL_SEARCH_THRESHOLD) {
                         ++new_n_good_moves;
-                    } else {
-                        break; // because sorted
                     }
                 }
                 if (new_n_good_moves >= 2) {
@@ -1025,6 +1021,7 @@ double selfplay_and_analyze(Board board, int level, bool show_log, uint64_t time
         if (elapsed < time_limit) {
             uint64_t tl_this_search = time_limit - elapsed;
             searching = true;
+            transposition_table.del(&boards[i], boards[i].hash());
             std::future<Search_result> ai_future = std::async(std::launch::async, ai_searching_thread_id, boards[i], level, false, 0, true, false, thread_id, &searching);
             if (ai_future.wait_for(std::chrono::milliseconds(tl_this_search)) == std::future_status::ready) {
                 Search_result search_result = ai_future.get();
@@ -1272,7 +1269,9 @@ std::vector<Ponder_elem> ai_ponder(Board board, bool show_log, thread_id_t threa
             if (v >= max_value - 3.0) {
                 // std::cerr << "ponder selfplay " << idx_to_coord(move_list[selected_idx].flip.pos) << " depth " << new_depth << std::endl;
                 double selfplay_val = selfplay_and_analyze(n_board, level, false, TIME_LIMIT_INF, thread_id, v);
-                v = selfplay_val;
+                if (selfplay_val != SCORE_UNDEFINED) {
+                    v = selfplay_val;
+                }
             }
         }
         if (*searching) {
