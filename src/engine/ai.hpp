@@ -966,14 +966,12 @@ double selfplay_and_analyze(Board board, int level, bool show_log, thread_id_t t
                 calc_flip(&flip, &board, search_result.policy);
                 board.move_board(&flip);
                 score_sgn *= -1;
-            } else {
-                if (show_log) {
-                    std::cerr << " terminated" << std::endl;
-                }
-                // std::cerr << " ERR " << (int)search_result.policy << " ";
-                break;
             }
-        } else { // time limit
+        }
+        if (!(*searching)) {
+            if (show_log) {
+                std::cerr << " terminated" << std::endl;
+            }
             break;
         }
     }
@@ -1002,7 +1000,11 @@ double selfplay_and_analyze(Board board, int level, bool show_log, thread_id_t t
                     }
                 }
             }
-        } else { // time limit
+        }
+        if (!(*searching)) {
+            if (show_log) {
+                std::cerr << " terminated" << std::endl;
+            }
             break;
         }
     }
@@ -1496,10 +1498,15 @@ std::vector<Ponder_elem> ai_additional_selfplay(Board board, bool show_log, std:
         for (int i = 0; i < n_good_moves; ++i) {
             //if (!move_list[i].is_complete_search) {
             if (!(move_list[i].is_endgame_search && move_list[i].mpc_level >= MPC_99_LEVEL)) {
-                double val = move_list[i].value + myrandom() * AI_TL_ADDITIONAL_SEARCH_THRESHOLD * 8.0;
-                if (val > max_val) {
-                    max_val = val;
+                if (levels[i] == initial_level) {
                     selected_idx = i;
+                    break;
+                } else {
+                    double val = move_list[i].value + myrandom() * AI_TL_ADDITIONAL_SEARCH_THRESHOLD * 4.0;
+                    if (val > max_val) {
+                        max_val = val;
+                        selected_idx = i;
+                    }
                 }
             }
         }
