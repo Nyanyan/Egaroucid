@@ -964,7 +964,7 @@ double selfplay_and_analyze(Board board, int level, bool show_log, thread_id_t t
                 if (show_log) {
                     std::cerr << idx_to_coord(search_result.policy);
                 }
-                if (board.n_discs() >= HW2 - 23 && boards.size()) { // complete search with last 24 empties in lv.21 (initial level)
+                if (board.n_discs() >= HW2 - 21 && boards.size()) { // complete search with last 21 empties in lv.17- (initial level)
                     if (show_log) {
                         std::cerr << "... result " << score_sgn * search_result.value;
                     }
@@ -1486,7 +1486,7 @@ std::vector<Ponder_elem> ai_additional_selfplay(Board board, bool show_log, std:
         std::cerr << "search moves tl " << time_limit << " n_good_moves " << n_good_moves << " out of " << move_list.size() << std::endl;
     }
     const int max_depth = HW2 - board.n_discs() - 1;
-    const int initial_level = 21;
+    const int initial_level = 23;
     std::vector<int> levels;
     for (int i = 0; i < n_good_moves; ++i) {
         levels.emplace_back(initial_level);
