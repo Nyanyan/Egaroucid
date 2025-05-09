@@ -723,7 +723,7 @@ Search_result ai_loss(Board board, int level, bool use_book, int book_acc_level,
 Search_result ai_time_limit(Board board, bool use_book, int book_acc_level, bool use_multi_thread, bool show_log, uint64_t remaining_time_msec, thread_id_t thread_id, bool *searching) {
     uint64_t time_limit = calc_time_limit_ply(board, remaining_time_msec, show_log);
     if (show_log) {
-        std::cerr << "ai_time_limit start! tl " << time_limit << " remaining " << remaining_time_msec << " n_empties " << HW2 - board.n_discs() << " " << board.to_str() << std::endl;
+        std::cerr << std::endl << "ai_time_limit start! tl " << time_limit << " remaining " << remaining_time_msec << " n_empties " << HW2 - board.n_discs() << " " << board.to_str() << std::endl;
     }
     uint64_t strt = tim();
     int n_empties = HW2 - board.n_discs();
@@ -822,7 +822,7 @@ Search_result ai_time_limit(Board board, bool use_book, int book_acc_level, bool
     }
     Search_result search_result = ai_common(board, -SCORE_MAX, SCORE_MAX, MAX_LEVEL, use_book, book_acc_level, use_multi_thread, show_log, board.get_legal(), false, time_limit, thread_id, searching);
     if (show_log) {
-        std::cerr << "ai_time_limit selected " << idx_to_coord(search_result.policy) << " value " << search_result.value << " depth " << search_result.depth << "@" << search_result.probability << "%" << " time " << tim() - strt << " " << board.to_str() << std::endl;
+        std::cerr << "ai_time_limit selected " << idx_to_coord(search_result.policy) << " value " << search_result.value << " depth " << search_result.depth << "@" << search_result.probability << "%" << " time " << tim() - strt << " " << board.to_str() << std::endl << std::endl;
     }
     return search_result;
 }
@@ -1501,7 +1501,7 @@ std::vector<Ponder_elem> ai_additional_selfplay(Board board, bool show_log, std:
                     selected_idx = i;
                     break;
                 } else {
-                    double val = move_list[i].value + myrandom() * AI_TL_ADDITIONAL_SEARCH_THRESHOLD * 4.0 + (double)(60 - initial_level - levels[i]) * 0.5;
+                    double val = move_list[i].value + myrandom() * AI_TL_ADDITIONAL_SEARCH_THRESHOLD * 2.0 + (double)(60 - initial_level - levels[i]) * 0.5;
                     if (val > max_val) {
                         max_val = val;
                         selected_idx = i;
