@@ -722,8 +722,9 @@ void ggs_client(Options *options) {
             int full_threads = thread_pool.size();
             int full_threads_enhanced = std::max((int)(full_threads * 1.2), full_threads + 2);
             int reduced_threads = full_threads_enhanced / 2;
-            int prioritized_threads = full_threads_enhanced * 0.7;
+            int prioritized_threads = full_threads_enhanced * 0.75;
             int non_prioritized_threads = full_threads_enhanced - prioritized_threads;
+            prioritized_threads = std::min(prioritized_threads, full_threads);
             if (playing_same_board) {
                 if (ai_searchings[0]) { // 0 is searching
                     if (ai_searchings[1]) { // 1 is searching

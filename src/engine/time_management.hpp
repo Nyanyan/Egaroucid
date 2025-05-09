@@ -16,14 +16,14 @@ constexpr int TIME_MANAGEMENT_INITIAL_N_EMPTIES = 50;
 #endif
 
 #define TIME_MANAGEMENT_REMAINING_TIME_OFFSET 100 // ms / move
-#define TIME_MANAGEMENT_REMAINING_MOVES_OFFSET 14 // 14 * 2 = 28 moves
-#define TIME_MANAGEMENT_N_MOVES_COE 0.9 // 10% early break
+#define TIME_MANAGEMENT_REMAINING_MOVES_OFFSET 15 // 15 * 2 = 30 moves
+#define TIME_MANAGEMENT_N_MOVES_COE 1.0
 
 Search_result ai(Board board, int level, bool use_book, int book_acc_level, bool use_multi_thread, bool show_log);
 
 uint64_t calc_time_limit_ply(const Board board, uint64_t remaining_time_msec, bool show_log) {
     int n_empties = HW2 - board.n_discs();
-    int remaining_moves = (n_empties + 1) / 2;
+    double remaining_moves = (double)(n_empties + 1) / 2.0;
     uint64_t remaining_time_msec_margin = remaining_time_msec;
     if (remaining_time_msec > TIME_MANAGEMENT_REMAINING_TIME_OFFSET * remaining_moves) {
         remaining_time_msec_margin -= TIME_MANAGEMENT_REMAINING_TIME_OFFSET * remaining_moves;
@@ -80,7 +80,7 @@ uint64_t calc_time_limit_ply(const Board board, uint64_t remaining_time_msec, bo
 
 uint64_t request_more_time(Board board, uint64_t remaining_time_msec, uint64_t time_limit, bool show_log) {
     int n_empties = HW2 - board.n_discs();
-    int remaining_moves = (n_empties + 1) / 2;
+    double remaining_moves = (double)(n_empties + 1) / 2.0;
     uint64_t remaining_time_msec_margin = remaining_time_msec;
     if (remaining_time_msec > TIME_MANAGEMENT_REMAINING_TIME_OFFSET * remaining_moves) {
         remaining_time_msec_margin -= TIME_MANAGEMENT_REMAINING_TIME_OFFSET * remaining_moves;
@@ -90,7 +90,7 @@ uint64_t request_more_time(Board board, uint64_t remaining_time_msec, uint64_t t
     std::cerr << "requesting more time remaining " << remaining_time_msec << " remaining_margin " << remaining_time_msec_margin << " now tl " << time_limit << std::endl;
     if (remaining_time_msec_margin > time_limit) {
         int remaining_moves_proc = std::max(2, (int)round((remaining_moves - TIME_MANAGEMENT_REMAINING_MOVES_OFFSET) * TIME_MANAGEMENT_N_MOVES_COE)); // at least 2 moves
-        uint64_t additional_time = (remaining_time_msec_margin - time_limit) / remaining_moves_proc * 0.9;
+        uint64_t additional_time = (remaining_time_msec_margin - time_limit) / remaining_moves_proc * 1.0;
         if (show_log) {
             std::cerr << "additional time " << additional_time << std::endl;
         }
