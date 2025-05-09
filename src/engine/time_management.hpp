@@ -17,7 +17,8 @@ constexpr int TIME_MANAGEMENT_INITIAL_N_EMPTIES = 50;
 
 #define TIME_MANAGEMENT_REMAINING_TIME_OFFSET 100 // ms / move
 #define TIME_MANAGEMENT_REMAINING_MOVES_OFFSET 15 // 15 * 2 = 30 moves
-#define TIME_MANAGEMENT_N_MOVES_COE 1.0
+#define TIME_MANAGEMENT_N_MOVES_COE 1.3
+#define TIME_MANAGEMENT_N_MOVES_COE_ADDITIONAL_TIME 1.0
 
 Search_result ai(Board board, int level, bool use_book, int book_acc_level, bool use_multi_thread, bool show_log);
 
@@ -89,7 +90,7 @@ uint64_t request_more_time(Board board, uint64_t remaining_time_msec, uint64_t t
     }
     std::cerr << "requesting more time remaining " << remaining_time_msec << " remaining_margin " << remaining_time_msec_margin << " now tl " << time_limit << std::endl;
     if (remaining_time_msec_margin > time_limit) {
-        int remaining_moves_proc = std::max(2, (int)round((remaining_moves - TIME_MANAGEMENT_REMAINING_MOVES_OFFSET) * TIME_MANAGEMENT_N_MOVES_COE)); // at least 2 moves
+        int remaining_moves_proc = std::max(2, (int)round((remaining_moves - TIME_MANAGEMENT_REMAINING_MOVES_OFFSET) * TIME_MANAGEMENT_N_MOVES_COE_ADDITIONAL_TIME)); // at least 2 moves
         uint64_t additional_time = (remaining_time_msec_margin - time_limit) / remaining_moves_proc * 1.0;
         if (show_log) {
             std::cerr << "additional time " << additional_time << std::endl;
