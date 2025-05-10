@@ -1480,8 +1480,8 @@ std::vector<Ponder_elem> ai_additional_selfplay(Board board, bool show_log, std:
         std::cerr << "search moves tl " << time_limit << " n_good_moves " << n_good_moves << " out of " << move_list.size() << std::endl;
     }
     const int max_depth = HW2 - board.n_discs() - 1;
-    const int initial_level = 22;
-    constexpr int n_same_level = 2;
+    const int initial_level = 21;
+    constexpr int n_same_level = 1;
     std::vector<int> levels;
     for (int i = 0; i < n_good_moves; ++i) {
         levels.emplace_back(initial_level * n_same_level);
