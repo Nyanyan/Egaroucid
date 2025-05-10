@@ -16,10 +16,11 @@ constexpr int TIME_MANAGEMENT_INITIAL_N_EMPTIES = 50;
 #endif
 
 #define TIME_MANAGEMENT_REMAINING_TIME_OFFSET 100 // ms / move
+#define TIME_MANAGEMENT_REMAINING_TIME_OFFSET_BASE 5000 // ms
 #define TIME_MANAGEMENT_REMAINING_MOVES_OFFSET 15 // 15 * 2 = 30 moves
-#define TIME_MANAGEMENT_N_MOVES_COE_30_OR_MORE 1.0
+#define TIME_MANAGEMENT_N_MOVES_COE_30_OR_MORE 1.05
 #define TIME_MANAGEMENT_N_MOVES_COE_40_OR_MORE_ADDITIONAL 0.5 // additional search
-#define TIME_MANAGEMENT_N_MOVES_COE_ADDITIONAL_TIME 1.0
+#define TIME_MANAGEMENT_N_MOVES_COE_ADDITIONAL_TIME 0.97
 
 Search_result ai(Board board, int level, bool use_book, int book_acc_level, bool use_multi_thread, bool show_log);
 
@@ -27,8 +28,8 @@ uint64_t calc_time_limit_ply(const Board board, uint64_t remaining_time_msec, bo
     int n_empties = HW2 - board.n_discs();
     double remaining_moves = (double)(n_empties + 1) / 2.0;
     uint64_t remaining_time_msec_margin = remaining_time_msec;
-    if (remaining_time_msec > TIME_MANAGEMENT_REMAINING_TIME_OFFSET * remaining_moves) {
-        remaining_time_msec_margin -= TIME_MANAGEMENT_REMAINING_TIME_OFFSET * remaining_moves;
+    if (remaining_time_msec > TIME_MANAGEMENT_REMAINING_TIME_OFFSET * remaining_moves + TIME_MANAGEMENT_REMAINING_TIME_OFFSET_BASE) {
+        remaining_time_msec_margin -= TIME_MANAGEMENT_REMAINING_TIME_OFFSET * remaining_moves + TIME_MANAGEMENT_REMAINING_TIME_OFFSET_BASE;
     } else {
         remaining_time_msec_margin = 1;
     }
@@ -92,8 +93,8 @@ uint64_t request_more_time(Board board, uint64_t remaining_time_msec, uint64_t t
     int n_empties = HW2 - board.n_discs();
     double remaining_moves = (double)(n_empties + 1) / 2.0;
     uint64_t remaining_time_msec_margin = remaining_time_msec;
-    if (remaining_time_msec > TIME_MANAGEMENT_REMAINING_TIME_OFFSET * remaining_moves) {
-        remaining_time_msec_margin -= TIME_MANAGEMENT_REMAINING_TIME_OFFSET * remaining_moves;
+    if (remaining_time_msec > TIME_MANAGEMENT_REMAINING_TIME_OFFSET * remaining_moves + TIME_MANAGEMENT_REMAINING_TIME_OFFSET_BASE) {
+        remaining_time_msec_margin -= TIME_MANAGEMENT_REMAINING_TIME_OFFSET * remaining_moves + TIME_MANAGEMENT_REMAINING_TIME_OFFSET_BASE;
     } else {
         remaining_time_msec_margin = 1;
     }
