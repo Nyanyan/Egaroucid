@@ -18,8 +18,8 @@ constexpr int TIME_MANAGEMENT_INITIAL_N_EMPTIES = 50;
 #define TIME_MANAGEMENT_REMAINING_TIME_OFFSET 100 // ms / move
 #define TIME_MANAGEMENT_REMAINING_TIME_OFFSET_BASE 20000 // ms
 #define TIME_MANAGEMENT_REMAINING_MOVES_OFFSET 15 // 15 * 2 = 30 moves
-#define TIME_MANAGEMENT_N_MOVES_COE_30_OR_MORE 1.1
-#define TIME_MANAGEMENT_N_MOVES_COE_40_OR_MORE_ADDITIONAL 0.6 // additional search
+#define TIME_MANAGEMENT_N_MOVES_COE_30_OR_MORE 1.2
+#define TIME_MANAGEMENT_N_MOVES_COE_40_OR_MORE_ADDITIONAL 0.5 // additional search
 #define TIME_MANAGEMENT_N_MOVES_COE_30_OR_MORE_NOTIME 1.2
 #define TIME_MANAGEMENT_ADDITIONAL_TIME_COE 1.8
 //#define TIME_MANAGEMENT_N_MOVES_COE_ADDITIONAL_TIME 0.97
@@ -50,9 +50,9 @@ uint64_t calc_time_limit_ply(const Board board, uint64_t remaining_time_msec, bo
 
     // try complete search
     // Nodes(depth) = a * exp(b * depth)
-    constexpr double complete_const_a = 0.68; //2.1747;
-    constexpr double complete_const_b = 0.76;
-    constexpr double complete_nps = 6.0e8;
+    constexpr double complete_const_a = 0.60; //2.1747;
+    constexpr double complete_const_b = 0.75;
+    constexpr double complete_nps = 7.0e8;
     double complete_use_time = (double)remaining_time_msec_margin * 0.9;
     double complete_search_depth = log(complete_use_time / 1000.0 * complete_nps / complete_const_a) / complete_const_b;
 
