@@ -1479,9 +1479,10 @@ std::vector<Ponder_elem> ai_additional_selfplay(Board board, bool show_log, std:
     }
     const int max_depth = HW2 - board.n_discs() - 1;
     const int initial_level = 22;
+    constexpr int n_same_level = 2;
     std::vector<int> levels;
     for (int i = 0; i < n_good_moves; ++i) {
-        levels.emplace_back(initial_level);
+        levels.emplace_back(initial_level * n_same_level);
     }
     std::vector<bool> is_first_searches;
     for (int i = 0; i < n_good_moves; ++i) {
@@ -1497,11 +1498,11 @@ std::vector<Ponder_elem> ai_additional_selfplay(Board board, bool show_log, std:
         for (int i = 0; i < n_good_moves; ++i) {
             //if (!move_list[i].is_complete_search) {
             if (!(move_list[i].is_endgame_search && move_list[i].mpc_level >= MPC_99_LEVEL)) {
-                if (levels[i] == initial_level) {
+                if (levels[i] == initial_level * n_same_level) {
                     selected_idx = i;
                     break;
                 } else {
-                    double val = move_list[i].value + myrandom() * AI_TL_ADDITIONAL_SEARCH_THRESHOLD * 2.0 + (double)(60 - initial_level - levels[i]) * 0.5;
+                    double val = move_list[i].value + myrandom() * AI_TL_ADDITIONAL_SEARCH_THRESHOLD * 2.0 + (double)(60 - initial_level - levels[i] / n_same_level) * 0.5;
                     if (val > max_val) {
                         max_val = val;
                         selected_idx = i;
@@ -1515,7 +1516,7 @@ std::vector<Ponder_elem> ai_additional_selfplay(Board board, bool show_log, std:
             }
             break;
         }
-        int level = levels[selected_idx];
+        int level = levels[selected_idx] / n_same_level;
         std::cerr << "move " << idx_to_coord(move_list[selected_idx].flip.pos) << " selfplay lv." << level << " ";
         Board n_board = board.copy();
         n_board.move_board(&move_list[selected_idx].flip);
