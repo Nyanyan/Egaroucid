@@ -22,7 +22,7 @@ constexpr int TIME_MANAGEMENT_INITIAL_N_EMPTIES = 50;
 #define TIME_MANAGEMENT_N_MOVES_COE_40_OR_MORE_ADDITIONAL 0.5 // additional search
 #define TIME_MANAGEMENT_N_MOVES_COE_30_OR_MORE_NOTIME 1.2
 #define TIME_MANAGEMENT_ADDITIONAL_TIME_COE_BASE 1.7
-#define TIME_MANAGEMENT_ADDITIONAL_TIME_COE_ADD 1.4
+#define TIME_MANAGEMENT_ADDITIONAL_TIME_COE_ADD 2.0
 //#define TIME_MANAGEMENT_N_MOVES_COE_ADDITIONAL_TIME 0.97
 
 Search_result ai(Board board, int level, bool use_book, int book_acc_level, bool use_multi_thread, bool show_log);
