@@ -18,9 +18,10 @@ constexpr int TIME_MANAGEMENT_INITIAL_N_EMPTIES = 50;
 #define TIME_MANAGEMENT_REMAINING_TIME_OFFSET 100 // ms / move
 #define TIME_MANAGEMENT_REMAINING_TIME_OFFSET_BASE 5000 // ms
 #define TIME_MANAGEMENT_REMAINING_MOVES_OFFSET 15 // 15 * 2 = 30 moves
-#define TIME_MANAGEMENT_N_MOVES_COE_30_OR_MORE 1.05
-#define TIME_MANAGEMENT_N_MOVES_COE_40_OR_MORE_ADDITIONAL 0.5 // additional search
-#define TIME_MANAGEMENT_N_MOVES_COE_ADDITIONAL_TIME 0.97
+#define TIME_MANAGEMENT_N_MOVES_COE_30_OR_MORE 0.95 // 5% early break
+#define TIME_MANAGEMENT_N_MOVES_COE_40_OR_MORE_ADDITIONAL 0.6 // additional search
+#define TIME_MANAGEMENT_N_MOVES_COE_30_OR_MORE_NOTIME 1.2
+//#define TIME_MANAGEMENT_N_MOVES_COE_ADDITIONAL_TIME 0.97
 
 Search_result ai(Board board, int level, bool use_book, int book_acc_level, bool use_multi_thread, bool show_log);
 
@@ -31,7 +32,9 @@ uint64_t calc_time_limit_ply(const Board board, uint64_t remaining_time_msec, bo
     if (remaining_time_msec > TIME_MANAGEMENT_REMAINING_TIME_OFFSET * remaining_moves + TIME_MANAGEMENT_REMAINING_TIME_OFFSET_BASE) {
         remaining_time_msec_margin -= TIME_MANAGEMENT_REMAINING_TIME_OFFSET * remaining_moves + TIME_MANAGEMENT_REMAINING_TIME_OFFSET_BASE;
     } else {
-        remaining_time_msec_margin = 1;
+        if (show_log) {
+            std::cerr << "don't have enough time! remaining " << remaining_time_msec_margin << std::endl;
+        }
     }
 
 #if IS_GGS_TOURNAMENT
@@ -77,13 +80,16 @@ uint64_t calc_time_limit_ply(const Board board, uint64_t remaining_time_msec, bo
     }
 
     // midgame search
-    // int remaining_moves_proc = std::max(2, (int)round((remaining_moves - TIME_MANAGEMENT_REMAINING_MOVES_OFFSET) * TIME_MANAGEMENT_N_MOVES_COE)); // at least 2 moves
     int remaining_moves_proc = 0;
-    if (remaining_moves >= 30 / 2) { // 30 or more
-        remaining_moves_proc += std::round((remaining_moves - (30 / 2)) * TIME_MANAGEMENT_N_MOVES_COE_30_OR_MORE);
-    }
-    if (remaining_moves >= 40 / 2) { // 40 or more
-        remaining_moves_proc += std::round((remaining_moves - (40 / 2)) * TIME_MANAGEMENT_N_MOVES_COE_40_OR_MORE_ADDITIONAL);
+    if (remaining_time_msec_margin < remaining_time_msec) {
+        if (remaining_moves >= 30 / 2) { // 30 or more
+            remaining_moves_proc += std::round((remaining_moves - (30 / 2)) * TIME_MANAGEMENT_N_MOVES_COE_30_OR_MORE);
+        }
+        if (remaining_moves >= 40 / 2) { // 40 or more
+            remaining_moves_proc += std::round((remaining_moves - (40 / 2)) * TIME_MANAGEMENT_N_MOVES_COE_40_OR_MORE_ADDITIONAL);
+        }
+    } else {
+        remaining_moves_proc += std::round((remaining_moves - (30 / 2)) * TIME_MANAGEMENT_N_MOVES_COE_30_OR_MORE_NOTIME);
     }
     remaining_moves_proc = std::max(2, remaining_moves_proc); // at least 2 moves
     return std::max<uint64_t>(1ULL, remaining_time_msec_margin / remaining_moves_proc);
@@ -99,7 +105,7 @@ uint64_t request_more_time(Board board, uint64_t remaining_time_msec, uint64_t t
         remaining_time_msec_margin = 1;
     }
     std::cerr << "requesting more time remaining " << remaining_time_msec << " remaining_margin " << remaining_time_msec_margin << " now tl " << time_limit << std::endl;
-    if (remaining_time_msec_margin > time_limit) {
+    if (remaining_time_msec_margin > time_limit && remaining_time_msec_margin > 60000ULL) {
         // int remaining_moves_proc = std::max(2, (int)round((remaining_moves - TIME_MANAGEMENT_REMAINING_MOVES_OFFSET) * TIME_MANAGEMENT_N_MOVES_COE_ADDITIONAL_TIME)); // at least 2 moves
         int remaining_moves_proc = 0;
         if (remaining_moves >= 30 / 2) { // 30 or more
