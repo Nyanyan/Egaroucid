@@ -723,7 +723,7 @@ Search_result ai_loss(Board board, int level, bool use_book, int book_acc_level,
 Search_result ai_time_limit(Board board, bool use_book, int book_acc_level, bool use_multi_thread, bool show_log, uint64_t remaining_time_msec, thread_id_t thread_id, bool *searching) {
     uint64_t time_limit = calc_time_limit_ply(board, remaining_time_msec, show_log);
     if (show_log) {
-        std::cerr << std::endl << "ai_time_limit start! tl " << time_limit << " remaining " << remaining_time_msec << " n_empties " << HW2 - board.n_discs() << " " << board.to_str() << std::endl;
+        std::cerr << "ai_time_limit start! tl " << time_limit << " remaining " << remaining_time_msec << " n_empties " << HW2 - board.n_discs() << " " << board.to_str() << std::endl;
     }
     uint64_t strt = tim();
     int n_empties = HW2 - board.n_discs();
@@ -1260,6 +1260,7 @@ std::vector<Ponder_elem> ai_ponder(Board board, bool show_log, thread_id_t threa
             }
             std::cerr << std::endl;
         }
+        std::cerr << std::endl;
     }
     return move_list;
 }
