@@ -22,7 +22,7 @@ constexpr int TIME_MANAGEMENT_INITIAL_N_EMPTIES = 50;
 #define TIME_MANAGEMENT_N_MOVES_COE_40_OR_MORE_ADDITIONAL 0.5 // additional search
 #define TIME_MANAGEMENT_N_MOVES_COE_30_OR_MORE_NOTIME 1.2
 #define TIME_MANAGEMENT_ADDITIONAL_TIME_COE_BASE 1.6
-#define TIME_MANAGEMENT_ADDITIONAL_TIME_COE_ADD 0.7
+#define TIME_MANAGEMENT_ADDITIONAL_TIME_COE_ADD 1.0
 //#define TIME_MANAGEMENT_N_MOVES_COE_ADDITIONAL_TIME 0.97
 
 Search_result ai(Board board, int level, bool use_book, int book_acc_level, bool use_multi_thread, bool show_log);
@@ -106,7 +106,9 @@ uint64_t request_more_time(Board board, uint64_t remaining_time_msec, uint64_t t
     } else {
         remaining_time_msec_margin = 1;
     }
-    std::cerr << "requesting more time remaining " << remaining_time_msec << " remaining_margin " << remaining_time_msec_margin << " now tl " << time_limit << std::endl;
+    if (show_log) {
+        std::cerr << "requesting more time remaining " << remaining_time_msec << " remaining_margin " << remaining_time_msec_margin << " now tl " << time_limit << std::endl;
+    }
     if (remaining_time_msec_margin > time_limit && remaining_time_msec_margin > 60000ULL) {
         // int remaining_moves_proc = std::max(2, (int)round((remaining_moves - TIME_MANAGEMENT_REMAINING_MOVES_OFFSET) * TIME_MANAGEMENT_N_MOVES_COE_ADDITIONAL_TIME)); // at least 2 moves
         int remaining_moves_proc = 0;
@@ -120,6 +122,9 @@ uint64_t request_more_time(Board board, uint64_t remaining_time_msec, uint64_t t
         double coe = TIME_MANAGEMENT_ADDITIONAL_TIME_COE_BASE;
         if (remaining_moves >= 40 / 2) { // 40 or more
             coe += TIME_MANAGEMENT_ADDITIONAL_TIME_COE_ADD * (double)(remaining_moves - (40.0 / 2.0)) / (60.0 / 2.0 - 40.0 / 2.0);
+        }
+        if (show_log) {
+            std::cerr << "coe " << coe << std::endl;
         }
         uint64_t additional_time = (remaining_time_msec_margin - time_limit) / remaining_moves_proc * coe;
         additional_time = std::min(additional_time, remaining_time_msec_margin / 2);
