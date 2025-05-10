@@ -16,12 +16,12 @@ constexpr int TIME_MANAGEMENT_INITIAL_N_EMPTIES = 50;
 #endif
 
 #define TIME_MANAGEMENT_REMAINING_TIME_OFFSET 100 // ms / move
-#define TIME_MANAGEMENT_REMAINING_TIME_OFFSET_BASE 5000 // ms
+#define TIME_MANAGEMENT_REMAINING_TIME_OFFSET_BASE 20000 // ms
 #define TIME_MANAGEMENT_REMAINING_MOVES_OFFSET 15 // 15 * 2 = 30 moves
 #define TIME_MANAGEMENT_N_MOVES_COE_30_OR_MORE 1.1
 #define TIME_MANAGEMENT_N_MOVES_COE_40_OR_MORE_ADDITIONAL 0.6 // additional search
 #define TIME_MANAGEMENT_N_MOVES_COE_30_OR_MORE_NOTIME 1.2
-#define TIME_MANAGEMENT_ADDITIONAL_TIME_COE 1.6
+#define TIME_MANAGEMENT_ADDITIONAL_TIME_COE 2.0
 //#define TIME_MANAGEMENT_N_MOVES_COE_ADDITIONAL_TIME 0.97
 
 Search_result ai(Board board, int level, bool use_book, int book_acc_level, bool use_multi_thread, bool show_log);
@@ -90,7 +90,7 @@ uint64_t calc_time_limit_ply(const Board board, uint64_t remaining_time_msec, bo
             remaining_moves_proc += std::round((remaining_moves - (40 / 2)) * TIME_MANAGEMENT_N_MOVES_COE_40_OR_MORE_ADDITIONAL);
         }
     } else {
-        remaining_moves_proc += std::round((remaining_moves - (30 / 2)) * TIME_MANAGEMENT_N_MOVES_COE_30_OR_MORE_NOTIME);
+        remaining_moves_proc += std::round((remaining_moves - (26 / 2)) * TIME_MANAGEMENT_N_MOVES_COE_30_OR_MORE_NOTIME);
     }
     remaining_moves_proc = std::max(2, remaining_moves_proc); // at least 2 moves
     return std::max<uint64_t>(1ULL, remaining_time_msec_margin / remaining_moves_proc);

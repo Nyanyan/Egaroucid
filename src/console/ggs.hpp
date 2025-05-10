@@ -614,12 +614,31 @@ void ggs_client(Options *options) {
                                     if (!ofs) {
                                         ggs_print_info("Can't open gamelog file " + filename, options);
                                     } else {
+                                        int black_score = 0;
+                                        Board board(matches[i].initial_board);
+                                        int player_sgn = matches[i].initial_board[matches[i].initial_board.size() - 1] == 'X' ? 1 : -1;
+                                        Flip flip;
+                                        for (int j = 0; j < matches[i].transcript.size(); j += 2) {
+                                            if (board.get_legal() == 0) {
+                                                board.pass();
+                                                player_sgn *= -1;
+                                            }
+                                            int coord = get_coord_from_chars(matches[i].transcript[j], matches[i].transcript[j + 1]);
+                                            calc_flip(&flip, &board, coord);
+                                            board.move_board(&flip);
+                                            player_sgn *= -1;
+                                        }
+                                        if (board.is_end()) {
+                                            matches[i].result_black = player_sgn * board.score_player();
+                                        } else {
+                                            matches[i].result_black = -99;
+                                        }
                                         ofs << matches[i].game_id << std::endl;
                                         ofs << "black: " << matches[i].player_black << std::endl;
                                         ofs << "white: " << matches[i].player_white << std::endl;
                                         ofs << "initial board: " << matches[i].initial_board << std::endl;
                                         ofs << "transcript: " << matches[i].transcript << std::endl;
-                                        //ofs << "result: " << matches[i].result_black << std::endl;
+                                        ofs << "black's score: " << matches[i].result_black << std::endl;
                                         ofs.close();
                                     }
                                 }
