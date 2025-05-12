@@ -3,7 +3,7 @@ s = input()
 
 s = s.split(', ')
 
-N_SYMMETRY = 8
+N_SYMMETRY = 4
 
 res = [[] for _ in range(N_SYMMETRY)]
 

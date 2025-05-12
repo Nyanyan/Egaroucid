@@ -46,10 +46,23 @@ for _ in range(12):
 for _ in range(12, 61):
     data_nums.append([38])
 #'''
-#''' # 7.5
+
+
+''' # 7.5
 N_PHASES = 60
 data_root_dir = os.environ['EGAROUCID_DATA'] + '/train_data/bin_data/20241125_1/'
 exe = 'test_loss_20241125_1_7_5.out'
+#'''
+
+
+
+#''' # 7.7
+N_PHASES = 60
+data_root_dir = os.environ['EGAROUCID_DATA'] + '/train_data/bin_data/20250511_1/'
+exe = 'test_loss_20250511_1_7_7.out'
+#'''
+
+
 eval_file = 'trained/eval.egev'
 
 for data_num in [166, 167]:

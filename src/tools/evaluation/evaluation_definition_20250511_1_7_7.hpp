@@ -14,8 +14,8 @@
 #endif
 #include "evaluation_definition_common.hpp"
 
-#define EVAL_DEFINITION_NAME "20241125_1"
-#define EVAL_DEFINITION_DESCRIPTION "pattern (7.5-) + n_discs_of_player"
+#define EVAL_DEFINITION_NAME "20250511_1"
+#define EVAL_DEFINITION_DESCRIPTION "pattern (7.7) + n_discs_of_player"
 
 /*
     @brief evaluation pattern definition
@@ -45,8 +45,8 @@
 
     Raw score is STEP times larger than the real score.
 */
-#define ADJ_STEP 32
-#define ADJ_STEP_2 16
+#define ADJ_STEP 64
+#define ADJ_STEP_2 32
 
 /*
     @brief definition of patterns in evaluation function
@@ -92,11 +92,11 @@ constexpr Adj_Feature_to_coord adj_feature_to_coord[ADJ_N_SYMMETRY_PATTERNS] = {
     {10, {COORD_B7, COORD_A8, COORD_B8, COORD_C8, COORD_D8, COORD_E8, COORD_F8, COORD_G8, COORD_H8, COORD_G7}},
     {10, {COORD_G2, COORD_H1, COORD_H2, COORD_H3, COORD_H4, COORD_H5, COORD_H6, COORD_H7, COORD_H8, COORD_G7}},
 
-    // 5 triangle
-    {10, {COORD_A1, COORD_B1, COORD_C1, COORD_D1, COORD_A2, COORD_B2, COORD_C2, COORD_A3, COORD_B3, COORD_A4}},
-    {10, {COORD_H1, COORD_G1, COORD_F1, COORD_E1, COORD_H2, COORD_G2, COORD_F2, COORD_H3, COORD_G3, COORD_H4}},
-    {10, {COORD_A8, COORD_B8, COORD_C8, COORD_D8, COORD_A7, COORD_B7, COORD_C7, COORD_A6, COORD_B6, COORD_A5}},
-    {10, {COORD_H8, COORD_G8, COORD_F8, COORD_E8, COORD_H7, COORD_G7, COORD_F7, COORD_H6, COORD_G6, COORD_H5}},
+    // 5 d7+2corner+X
+    {10, {COORD_A1, COORD_B1, COORD_C2, COORD_D3, COORD_E4, COORD_F5, COORD_G6, COORD_H7, COORD_H8, COORD_B7}},
+    {10, {COORD_H1, COORD_H2, COORD_G3, COORD_F4, COORD_E5, COORD_D6, COORD_C7, COORD_B8, COORD_A8, COORD_B2}},
+    {10, {COORD_H8, COORD_G8, COORD_F7, COORD_E6, COORD_D5, COORD_C4, COORD_B3, COORD_A2, COORD_A1, COORD_G2}},
+    {10, {COORD_A8, COORD_A7, COORD_B6, COORD_C5, COORD_D4, COORD_E3, COORD_F2, COORD_G1, COORD_H1, COORD_G7}},
 
     // 6 corner + block
     {10, {COORD_A1, COORD_C1, COORD_D1, COORD_E1, COORD_F1, COORD_H1, COORD_C2, COORD_D2, COORD_E2, COORD_F2}},
@@ -179,7 +179,7 @@ constexpr int adj_rev_patterns[ADJ_N_PATTERNS][ADJ_MAX_PATTERN_CELLS] = {
     {7, 6, 5, 4, 3, 2, 1, 0}, // 2 hv4
     {0, 3, 6, 1, 4, 7, 2, 5, 8}, // 3 corner9
     {9, 8, 7, 6, 5, 4, 3, 2, 1, 0}, // 4 edge + 2x
-    {0, 4, 7, 9, 1, 5, 8, 2, 6, 3}, // 5 triangle
+    {8, 7, 6, 5, 4, 3, 2, 1, 0, 9}, // 5 d7+2corner+X
     {5, 4, 3, 2, 1, 0, 9, 8, 7, 6}, // 6 corner + block
     {0, 1, 2, 3, 7, 8, 9, 4, 5, 6}, // 7 cross
     {-1}, // 8 d4+d5+BC

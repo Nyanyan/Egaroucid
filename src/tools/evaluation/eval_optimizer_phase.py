@@ -45,7 +45,20 @@ executable = 'eval_optimizer_cuda_12_2_0_move_ordering_end_nws.exe'
 
 
 
-#'''
+'''
+def calc_random_board_used_n_moves(n_random_moves):
+    if n_random_moves < 20:
+        return n_random_moves
+    return n_random_moves + 3
+train_data_nums = []
+for elem in train_data_nums_all:
+    #print(elem, board_n_moves[str(elem)][0], file=sys.stderr)
+    if calc_random_board_used_n_moves(board_n_moves[str(elem)][0]) <= int(phase):
+        train_data_nums.append(elem)
+'''
+
+
+'''
 # 7.5
 train_data_nums = [
     18, 19, 20, 21, 24, 25, 28, 29, 30, 31, # old data (without records27)
@@ -78,21 +91,22 @@ train_data_nums = [
     #205, 206, 207, 208, 209, 210, 211, 212, 213, # random boards 50-58
     214, # random 11 (first11_all)
 ]
-'''
-def calc_random_board_used_n_moves(n_random_moves):
-    if n_random_moves < 20:
-        return n_random_moves
-    return n_random_moves + 3
-train_data_nums = []
-for elem in train_data_nums_all:
-    #print(elem, board_n_moves[str(elem)][0], file=sys.stderr)
-    if calc_random_board_used_n_moves(board_n_moves[str(elem)][0]) <= int(phase):
-        train_data_nums.append(elem)
-'''
 train_data_nums.sort()
 #print(train_data_nums, file=sys.stderr)
 train_root_dir = os.environ['EGAROUCID_DATA'] + '/train_data/bin_data/20241125_1/'
 executable = 'eval_optimizer_cuda_12_2_0_20241125_1_7_5.exe'
+#'''
+
+
+#'''
+# 7.7
+train_data_nums = [
+    97, # public data
+]
+train_data_nums.sort()
+#print(train_data_nums, file=sys.stderr)
+train_root_dir = os.environ['EGAROUCID_DATA'] + '/train_data/bin_data/20250511_1/'
+executable = 'eval_optimizer_cuda_12_2_0_20250511_1_7_7.exe'
 #'''
 
 
