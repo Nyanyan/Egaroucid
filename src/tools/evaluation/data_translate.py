@@ -55,6 +55,15 @@ board_sub_dir_nums = [166, 167]
 board_sub_dir_nums.sort()
 #'''
 
+'''
+# 7.7 move ordering end
+bin_root_dir = os.environ['EGAROUCID_DATA'] + '/train_data/bin_data/20250512_1_move_ordering_end_nws/'
+exe = 'data_board_to_idx_20250512_1_7_7_move_ordering_end.out'
+N_PHASES = 1
+board_sub_dir_nums = [202]
+board_sub_dir_nums.sort()
+#'''
+
 
 min_n_data_dct = {}
 min_n_data_dct['83'] = 200000

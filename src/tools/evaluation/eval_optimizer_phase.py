@@ -98,7 +98,7 @@ executable = 'eval_optimizer_cuda_12_2_0_20241125_1_7_5.exe'
 #'''
 
 
-#'''
+'''
 # 7.7
 train_data_nums = [
     97, # public data
@@ -107,6 +107,16 @@ train_data_nums.sort()
 #print(train_data_nums, file=sys.stderr)
 train_root_dir = os.environ['EGAROUCID_DATA'] + '/train_data/bin_data/20250511_1/'
 executable = 'eval_optimizer_cuda_12_2_0_20250511_1_7_7.exe'
+#'''
+
+
+#'''
+# 7.7 move ordering end nws
+# used in last (13, 12, 11) - 1 empties (random 48, 49, 50)
+#train_data_nums = [44, 45, 46] # random 48, 49, 50
+train_data_nums = [202, 203, 204] # random boards
+train_root_dir = os.environ['EGAROUCID_DATA'] + '/train_data/bin_data/20250512_1_move_ordering_end_nws/'
+executable = 'eval_optimizer_cuda_12_2_0_20250512_1_7_7_move_ordering_end.exe'
 #'''
 
 
