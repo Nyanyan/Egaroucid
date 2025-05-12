@@ -32,7 +32,7 @@ constexpr int N_PATTERN_PARAMS_RAW = 629921 - 65;           // sum of pattern pa
 constexpr int N_PATTERN_PARAMS = N_PATTERN_PARAMS_RAW + 1;  // +1 for byte bound
 constexpr int SIMD_EVAL_MAX_VALUE = 3275;                   // evaluate range [-3275, 3275]
 constexpr int N_SIMD_EVAL_FEATURE_CELLS = 16;               // 16 cells
-constexpr int N_SIMD_EVAL_FEATURE_GROUP = HW2 / 4;          // 64 / 16 discs
+constexpr int N_SIMD_EVAL_FEATURE_GROUP = HW2 / N_SIMD_EVAL_FEATURE_CELLS;  // 64 / 16 discs
 constexpr int N_EVAL_VECTORS_SIMPLE = 1;                    // n_vectors for simple eval
 constexpr int N_EVAL_VECTORS_COMP = N_EVAL_VECTORS - N_EVAL_VECTORS_SIMPLE;
 constexpr int MAX_N_CELLS_GROUP[N_EVAL_VECTORS] = {9, 10, 10, 10, 10}; // number of cells included in the group
@@ -400,6 +400,8 @@ inline void pre_calculate_eval_constant() {
                 }
             }
         }
+        std::cerr << "a";
+        // 4 symmetries
         eval_simd_offsets_comp[0] = _mm256_set_epi32(
             pattern_starts[6], pattern_starts[6], pattern_starts[6], pattern_starts[6], 
             pattern_starts[7], pattern_starts[7], pattern_starts[7], pattern_starts[7]
@@ -408,15 +410,16 @@ inline void pre_calculate_eval_constant() {
             pattern_starts[4], pattern_starts[4], pattern_starts[4], pattern_starts[4], 
             pattern_starts[5], pattern_starts[5], pattern_starts[5], pattern_starts[5]
         );
-        for (int i = 2; i < N_EVAL_VECTORS_COMP; ++i) {
-            int i2 = i * 2;
+        // 8 symmetries
+        for (int i = 1; i < N_EVAL_VECTORS_COMP; ++i) {
+            int i2 = (i - 1) * 2;
             eval_simd_offsets_comp[i * 2] = _mm256_set_epi32(
-                pattern_starts[5 + i2], pattern_starts[5 + i2], pattern_starts[5 + i2], pattern_starts[5 + i2], 
-                pattern_starts[5 + i2], pattern_starts[5 + i2], pattern_starts[5 + i2], pattern_starts[5 + i2]
+                pattern_starts[9 + i2], pattern_starts[9 + i2], pattern_starts[9 + i2], pattern_starts[9 + i2], 
+                pattern_starts[9 + i2], pattern_starts[9 + i2], pattern_starts[9 + i2], pattern_starts[9 + i2]
             );
             eval_simd_offsets_comp[i * 2 + 1] = _mm256_set_epi32(
-                pattern_starts[4 + i2], pattern_starts[4 + i2], pattern_starts[4 + i2], pattern_starts[4 + i2], 
-                pattern_starts[4 + i2], pattern_starts[4 + i2], pattern_starts[4 + i2], pattern_starts[4 + i2]
+                pattern_starts[8 + i2], pattern_starts[8 + i2], pattern_starts[8 + i2], pattern_starts[8 + i2], 
+                pattern_starts[8 + i2], pattern_starts[8 + i2], pattern_starts[8 + i2], pattern_starts[8 + i2]
             );
         }
         eval_lower_mask = _mm256_set1_epi32(0x0000FFFF);
@@ -484,17 +487,17 @@ inline __m256i gather_eval(const int *start_addr, const __m256i idx8) {
 }
 
 inline int calc_pattern(const int phase_idx, Eval_features *features) {
-    const int *start_addr0 = (int*)pattern_arr[phase_idx];
-    __m256i res256 =                  gather_eval(start_addr0, _mm256_cvtepu16_epi32(features->f128[0]));
-    res256 = _mm256_add_epi32(res256, gather_eval(start_addr0, _mm256_cvtepu16_epi32(features->f128[1])));
-    res256 = _mm256_add_epi32(res256, gather_eval(start_addr0, calc_idx8_comp(features->f128[2], 0)));
-    res256 = _mm256_add_epi32(res256, gather_eval(start_addr0, calc_idx8_comp(features->f128[3], 1)));
-    res256 = _mm256_add_epi32(res256, gather_eval(start_addr0, calc_idx8_comp(features->f128[4], 2)));
-    res256 = _mm256_add_epi32(res256, gather_eval(start_addr0, calc_idx8_comp(features->f128[5], 3)));
-    res256 = _mm256_add_epi32(res256, gather_eval(start_addr0, calc_idx8_comp(features->f128[6], 4)));
-    res256 = _mm256_add_epi32(res256, gather_eval(start_addr0, calc_idx8_comp(features->f128[7], 5)));
-    res256 = _mm256_add_epi32(res256, gather_eval(start_addr0, calc_idx8_comp(features->f128[8], 6)));
-    res256 = _mm256_add_epi32(res256, gather_eval(start_addr0, calc_idx8_comp(features->f128[9], 7)));
+    const int *start_addr = (int*)pattern_arr[phase_idx];
+    __m256i res256 =                  gather_eval(start_addr, _mm256_cvtepu16_epi32(features->f128[0]));
+    res256 = _mm256_add_epi32(res256, gather_eval(start_addr, _mm256_cvtepu16_epi32(features->f128[1])));
+    res256 = _mm256_add_epi32(res256, gather_eval(start_addr, calc_idx8_comp(features->f128[2], 0)));
+    res256 = _mm256_add_epi32(res256, gather_eval(start_addr, calc_idx8_comp(features->f128[3], 1)));
+    res256 = _mm256_add_epi32(res256, gather_eval(start_addr, calc_idx8_comp(features->f128[4], 2)));
+    res256 = _mm256_add_epi32(res256, gather_eval(start_addr, calc_idx8_comp(features->f128[5], 3)));
+    res256 = _mm256_add_epi32(res256, gather_eval(start_addr, calc_idx8_comp(features->f128[6], 4)));
+    res256 = _mm256_add_epi32(res256, gather_eval(start_addr, calc_idx8_comp(features->f128[7], 5)));
+    res256 = _mm256_add_epi32(res256, gather_eval(start_addr, calc_idx8_comp(features->f128[8], 6)));
+    res256 = _mm256_add_epi32(res256, gather_eval(start_addr, calc_idx8_comp(features->f128[9], 7)));
     res256 = _mm256_and_si256(res256, eval_lower_mask);
     __m128i res128 = _mm_add_epi32(_mm256_castsi256_si128(res256), _mm256_extracti128_si256(res256, 1));
     res128 = _mm_hadd_epi32(res128, res128);
