@@ -20,6 +20,14 @@
 #endif
 #include "common.hpp"
 
+void mm_print_epu16(__m128i v) {
+    uint16_t* varray = (uint16_t*)&v;
+    for (int i = 0; i < 8; ++i) {
+        std::cerr << (int)varray[i] << " ";
+    }
+    std::cerr << std::endl;
+}
+
 void mm_print_epi32(__m128i v) {
     int* varray = (int*)&v;
     for (int i = 0; i < 4; ++i) {
