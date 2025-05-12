@@ -109,7 +109,13 @@ plt.clf()
 # pattern image
 fig = plt.figure(figsize=(10, 10))
 for idx, yx_list in enumerate(pattern_list):
-    ax = fig.add_subplot((len(pattern_list) + 3) // 4, 4, idx + 1)
+    if len(pattern_list) % 4 == 0 or idx < len(pattern_list) - 4:
+        ax = fig.add_subplot((len(pattern_list) + 3) // 4, 4, idx + 1)
+    elif len(pattern_list) % 4 == 2:
+        if idx < len(pattern_list) - 2:
+            ax = fig.add_subplot((len(pattern_list) + 3) // 4, 4, idx + 1)
+        else:
+            ax = fig.add_subplot((len(pattern_list) + 3) // 4, 4, idx + 2)
     ax.set_aspect("equal", adjustable="box")
     for x in range(9):
         p = plt.Line2D(xdata=(x, x), ydata=(0, 8), color='k', linewidth= 3 if x == 0 or x == 8 else 1)
