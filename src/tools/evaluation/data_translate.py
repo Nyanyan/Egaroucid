@@ -49,8 +49,8 @@ board_sub_dir_nums.sort()
 
 #'''
 # 7.7
-bin_root_dir = os.environ['EGAROUCID_DATA'] + '/train_data/bin_data/20250511_1/'
-exe = 'data_board_to_idx_20250511_1_7_7.out'
+bin_root_dir = os.environ['EGAROUCID_DATA'] + '/train_data/bin_data/20250513_1/'
+exe = 'data_board_to_idx_20250513_1_7_7.out'
 N_PHASES = 60
 board_sub_dir_nums = [
     18, 19, 20, 21, 24, 25, 28, 29, 30, 31, # old data (without records27)
@@ -85,6 +85,7 @@ board_sub_dir_nums = [
 
     166, 167, # test data
 ]
+board_sub_dir_nums = [97]
 board_sub_dir_nums.sort()
 #'''
 

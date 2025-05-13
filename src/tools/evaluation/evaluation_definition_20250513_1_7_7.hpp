@@ -195,7 +195,7 @@ constexpr int adj_eval_sizes[ADJ_N_EVAL] = {
     P310, P310, P310, P310, 
     P310, P310, P310, P310, 
     P310, P310, P310, P310, 
-    P310, P310, 
+    P310, P310, P310, P310, 
     ADJ_MAX_STONE_NUM
 };
 
