@@ -40,7 +40,7 @@ constexpr int N_SIMD_EVAL_FEATURE_GROUP = 4;
 */
 constexpr int N_PATTERN_PARAMS_MO_END = 236196 + 1; // +1 for byte bound
 constexpr int SIMD_EVAL_MAX_VALUE_MO_END = 16380;
-constexpr int SHIFT_EVAL_MO_END = 139968; // pattern_starts[8] - 1
+constexpr int SHIFT_EVAL_MO_END = 472392; // pattern_starts[8] - 1
 
 constexpr Feature_to_coord feature_to_coord[CEIL_N_PATTERN_FEATURES] = {
     // 0 hv2 + 2corners

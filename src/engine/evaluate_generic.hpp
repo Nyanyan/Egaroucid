@@ -258,8 +258,8 @@ constexpr Coord_to_feature coord_to_feature_move_ordering_end[HW2] = {
 };
 
 constexpr int pattern_sizes[N_PATTERNS] = {
-    8, 9, 8, 9,
-    8, 9, 7, 10, 
+    10, 10, 10, 10, 
+    10, 10, 10, 10, 
     10, 10, 10, 10, 
     10, 10, 10, 10
 };

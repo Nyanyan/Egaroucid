@@ -58,8 +58,8 @@ exe = 'test_loss_20241125_1_7_5.out'
 
 #''' # 7.7
 N_PHASES = 60
-data_root_dir = os.environ['EGAROUCID_DATA'] + '/train_data/bin_data/20250511_1/'
-exe = 'test_loss_20250511_1_7_7.out'
+data_root_dir = os.environ['EGAROUCID_DATA'] + '/train_data/bin_data/20250513_1/'
+exe = 'test_loss_20250513_1_7_7.out'
 #'''
 
 

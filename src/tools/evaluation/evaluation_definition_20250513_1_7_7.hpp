@@ -170,7 +170,12 @@ constexpr Adj_Feature_to_coord adj_feature_to_coord[ADJ_N_SYMMETRY_PATTERNS] = {
     {10, {COORD_F6, COORD_F5, COORD_G5, COORD_H5, COORD_H6, COORD_H3, COORD_H4, COORD_G4, COORD_F4, COORD_F3}}
 };
 
-constexpr int adj_pattern_n_cells[ADJ_N_PATTERNS] = {10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10};
+constexpr int adj_pattern_n_cells[ADJ_N_PATTERNS] = {
+    10, 10, 10, 10, 
+    10, 10, 10, 10, 
+    10, 10, 10, 10, 
+    10, 10, 10, 10
+};
 
 constexpr int adj_rev_patterns[ADJ_N_PATTERNS][ADJ_MAX_PATTERN_CELLS] = {
     {9, 8, 7, 6, 5, 4, 3, 2, 1, 0}, // 0 hv2 + alpha

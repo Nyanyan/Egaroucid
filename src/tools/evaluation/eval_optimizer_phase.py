@@ -159,7 +159,7 @@ for tfile in train_data:
         additional_params += ' ' + train_dir + tfile
 
 cmd = executable + ' ' + phase + ' ' + hour + ' ' + minute + ' ' + second + ' ' + alpha + ' ' + n_patience + ' ' + reduce_lr_patience + ' ' + reduce_lr_ratio + ' ' + model_dir + phase + '.txt' + additional_params
-print(cmd, file=sys.stderr)
+#print(cmd, file=sys.stderr)
 p = subprocess.Popen(cmd.split(), stdout=subprocess.PIPE)
 result = p.stdout.readline().decode().replace('\r\n', '\n').replace('\n', '')
 print(result)

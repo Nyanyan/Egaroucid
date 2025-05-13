@@ -67,7 +67,7 @@ board_sub_dir_nums = [
     82, # random 12
     #83, # new first11 book data (records80 minimum 200000 data)
     #84, 85, 86, 87, 88, 89, # non-regular random starting position
-    97, # public data
+    #97, # public data
     #           98,  99, 100, 101, 102, 103, 104, 105, # random boards 12-19
     #106, 107, 108, 109, 110, 111, 112, 113, 114, 115, # random boards 20-29
     #116, 117, 118, 119, 120, 121, 122, 123,           # random boards 30-37
@@ -83,9 +83,9 @@ board_sub_dir_nums = [
     #205, 206, 207, 208, 209, 210, 211, 212, 213, # random boards 50-58
     214, # random 11 (first11_all)
 
-    166, 167, # test data
+    #166, 167, # test data
 ]
-board_sub_dir_nums = [97]
+board_sub_dir_nums = [97, 166, 167]
 board_sub_dir_nums.sort()
 #'''
 
