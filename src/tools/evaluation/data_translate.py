@@ -85,7 +85,7 @@ board_sub_dir_nums = [
 
     #166, 167, # test data
 ]
-board_sub_dir_nums = [97, 166, 167]
+#board_sub_dir_nums = [97, 166, 167]
 board_sub_dir_nums.sort()
 #'''
 
