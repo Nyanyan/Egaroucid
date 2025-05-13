@@ -8,7 +8,11 @@ transcript_root_dir = './../../../train_data/transcript/'
 board_root_dir = os.environ['EGAROUCID_DATA'] + '/train_data/board_data/'
 log_file = os.environ['EGAROUCID_DATA'] + '/train_data/board_data/log.txt'
 
-nums = [190, 191]
+nums = [
+    97, # public data
+
+    166, #167, # test data
+]
 
 FILE_INTERVAL = 100 * 60
 

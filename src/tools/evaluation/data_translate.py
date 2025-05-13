@@ -3,6 +3,7 @@ import os
 import glob
 import psutil
 import time
+from tqdm import tqdm
 from data_range import *
 
 
@@ -51,7 +52,8 @@ board_sub_dir_nums.sort()
 bin_root_dir = os.environ['EGAROUCID_DATA'] + '/train_data/bin_data/20250511_1/'
 exe = 'data_board_to_idx_20250511_1_7_7.out'
 N_PHASES = 60
-board_sub_dir_nums = [18, 19, 20, 21, 24, 25, 28, 29, 30, 31, # old data (without records27)
+board_sub_dir_nums = [
+    18, 19, 20, 21, 24, 25, 28, 29, 30, 31, # old data (without records27)
     34, 35, # mid-endgame data 1
     #36, # old first11 book
     37, # book data
@@ -60,12 +62,12 @@ board_sub_dir_nums = [18, 19, 20, 21, 24, 25, 28, 29, 30, 31, # old data (withou
     65, 66, 67, 68, 69, 70, 71, 72, 73, 74, # Egaroucid 7.4.0 1000000 data
     77,  # random 18 discs (GGS)
     78, 79, # random 11 & 12 (bug fixed)
-    #80, # new first11 book
+    80, # new first11 book
     #81, # test data
     82, # random 12
-    83, # new first11 book data (records80 minimum 200000 data)
+    #83, # new first11 book data (records80 minimum 200000 data)
     #84, 85, 86, 87, 88, 89, # non-regular random starting position
-    #97, # public data
+    97, # public data
     #           98,  99, 100, 101, 102, 103, 104, 105, # random boards 12-19
     #106, 107, 108, 109, 110, 111, 112, 113, 114, 115, # random boards 20-29
     #116, 117, 118, 119, 120, 121, 122, 123,           # random boards 30-37
@@ -79,7 +81,9 @@ board_sub_dir_nums = [18, 19, 20, 21, 24, 25, 28, 29, 30, 31, # old data (withou
     #185,                          191, 192, 193, 194, # random boards 30-39
     #195, 196, 197, 198, 199, 200, 201, 202, 203, 204, # random boards 40-49
     #205, 206, 207, 208, 209, 210, 211, 212, 213, # random boards 50-58
-    #214, # random 11 (first11_all)
+    214, # random 11 (first11_all)
+
+    166, 167, # test data
 ]
 board_sub_dir_nums.sort()
 #'''
@@ -119,13 +123,16 @@ for phase in range(N_PHASES):
             min_n_data = 0
         cmd = exe + ' ' + input_dir + ' 0 ' + n_files_str + ' ' + out_file + ' ' + str(phase) + ' ' + str(board_n_moves[str(board_sub_dir_num)][0]) + ' ' + str(board_n_moves[str(board_sub_dir_num)][1]) + ' ' + str(min_n_data)
         while True: # wait while cpu is busy
-            cpu_percent = psutil.cpu_percent(percpu=False)
-            if cpu_percent < 95.0:
+            cpu_percent = 0
+            for _ in range(10):
+                cpu_percent = max(cpu_percent, psutil.cpu_percent(percpu=False))
+            #cpu_percent /= 10
+            if cpu_percent < 50.0:
                 break
-        print(phase, board_sub_dir_num, cmd)
+        print(phase, board_sub_dir_num, cpu_percent, cmd)
         procs.append(subprocess.Popen(cmd.split(), stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL))
         if board_n_moves[str(board_sub_dir_num)][0] <= phase <= board_n_moves[str(board_sub_dir_num)][1]:
             time.sleep(0.5)
 
-for proc in procs:
+for proc in tqdm(procs):
     proc.wait()
