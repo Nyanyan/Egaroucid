@@ -15,13 +15,13 @@
     @brief evaluation pattern definition
 */
 // disc patterns
-constexpr int N_PATTERNS = 14;          // number of patterns used
-constexpr int MAX_CELL_PATTERNS = 20;   // 1 cell belongs up to 20 patterns
+constexpr int N_PATTERNS = 16;          // number of patterns used
+constexpr int MAX_CELL_PATTERNS = 17;   // 1 cell belongs up to 17 patterns
 constexpr int MAX_PATTERN_CELLS = 10;   // up to 10 cells for a pattern
 constexpr int MAX_EVALUATE_IDX = 59049; // 3^10: up to 10 cells for pattern
-constexpr int N_PATTERN_FEATURES = 80;  // 80 features are used
+constexpr int N_PATTERN_FEATURES = 64;  // 64 features are used
 #if USE_SIMD_EVALUATION
-constexpr int N_EVAL_VECTORS = 5; // 16 (elems per 256 bit vector) * N_EVAL_VECTORS >= N_PATTERN_FEATURES
+constexpr int N_EVAL_VECTORS = 4; // 16 (elems per 256 bit vector) * N_EVAL_VECTORS >= N_PATTERN_FEATURES
 #endif
 
 // additional features

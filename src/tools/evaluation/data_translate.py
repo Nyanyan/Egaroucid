@@ -127,13 +127,15 @@ for phase in range(N_PHASES):
             cpu_percent = 0
             for _ in range(10):
                 cpu_percent = max(cpu_percent, psutil.cpu_percent(percpu=False))
+                time.sleep(0.1)
             #cpu_percent /= 10
             if cpu_percent < 50.0:
                 break
         print(phase, board_sub_dir_num, cpu_percent, cmd)
         procs.append(subprocess.Popen(cmd.split(), stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL))
         if board_n_moves[str(board_sub_dir_num)][0] <= phase <= board_n_moves[str(board_sub_dir_num)][1]:
-            time.sleep(0.5)
+            #time.sleep(1)
+            pass
 
 for proc in tqdm(procs):
     proc.wait()
