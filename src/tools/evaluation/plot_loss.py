@@ -96,7 +96,7 @@ for i in range(len(tests_phase_arr)):
 plt.xlabel('phase')
 plt.ylabel('MSE')
 plt.xlim(-1, 60)
-plt.ylim(-5, 80)
+plt.ylim(-5, 90)
 plt.grid(True)
 plt.legend()
 #plt.show()
