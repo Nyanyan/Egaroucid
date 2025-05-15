@@ -156,7 +156,7 @@ def plot_fit_result_allphases(w, x, y, z, params):
                 y_depth2_phase.append(yy)
                 z_error_phase.append(zz)
         color = next(ax._get_lines.prop_cycler)['color']  # Get the next color in the cycle
-        ax.plot(x_depth1_phase, y_depth2_phase, z_error_phase, ms=5, marker="o", linestyle='None', label=f'n_discs={n_discs}', color=color)
+        ax.plot(x_depth1_phase, y_depth2_phase, z_error_phase, ms=5, marker="o", linestyle='None', label=f'n_moves={n_moves}', color=color)
         mx, my = np.meshgrid(range(16), range(30))
         ax.plot_wireframe(mx, my, f_max((n_discs, mx, my), *params), rstride=4, cstride=2, alpha=0.5, color=color)
 
