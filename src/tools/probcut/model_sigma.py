@@ -78,7 +78,7 @@ for n_discs in range(len(data)):
                 for elem in data[n_discs][depth1][depth2]:
                     sd += elem ** 2
                 sd = math.sqrt(sd / len(data[n_discs][depth1][depth2]))
-                '''
+                #'''
                 #print('n_discs', n_discs, 'depth1', depth1, 'depth2', depth2, 'mean', mean, 'sd', sd, 'n_data', len(data[n_discs][depth1][depth2]))
 
                 w_n_discs_sd.append(n_discs)
@@ -134,41 +134,40 @@ def f_max(wxy, probcut_a, probcut_b, probcut_c, probcut_d, probcut_e, probcut_f,
 
 
 
-popt_sd, pcov_sd = curve_fit(f, (w_n_discs_sd, x_depth1_sd, y_depth2_sd), z_sd, np.ones(13), sigma=weight_sd, absolute_sigma=True)
+popt_sd, pcov_sd = curve_fit(f, (w_n_discs_sd, x_depth1_sd, y_depth2_sd), z_sd, np.ones(13), sigma=weight_sd, absolute_sigma=True, maxfev=500000)
 print([float(elem) for elem in popt_sd])
 for i in range(len(popt_sd)):
     print('constexpr double probcut_' + chr(ord('a') + i) + ' = ' + str(popt_sd[i]) + ';')
 
 
-def plot_fit_result_onephase(w, x, y, z, n_discs, params):
+def plot_fit_result_allphases(w, x, y, z, params):
     fig = plt.figure()
-    #ax = Axes3D(fig)
     ax = fig.add_subplot(111, projection='3d')
-    #ax.plot(xs, ys, zs, ms=3, marker="o",linestyle='None')
-    #ax.plot(sdxs, sdys, sdzs, ms=3, marker="o",linestyle='None')
-    phase = n_discs
-    x_depth1_phase = []
-    y_depth2_phase = []
-    z_error_phase = []
-    for ww, xx, yy, zz in zip(w, x, y, z):
-        if ww == phase:
-            x_depth1_phase.append(xx)
-            y_depth2_phase.append(yy)
-            z_error_phase.append(zz)
-    ax.plot(x_depth1_phase, y_depth2_phase, z_error_phase, ms=3, marker="o",linestyle='None')
-    mx, my = np.meshgrid(range(16), range(30))
-    ax.plot_wireframe(mx, my, f_max((n_discs, mx, my), *params), rstride=4, cstride=2)
+    for n_moves in range(10, 51, 10):
+        n_discs = 4 + n_moves
+        x_depth1_phase = []
+        y_depth2_phase = []
+        z_error_phase = []
+        for ww, xx, yy, zz in zip(w, x, y, z):
+            if ww == n_discs:
+                x_depth1_phase.append(xx)
+                y_depth2_phase.append(yy)
+                z_error_phase.append(zz)
+        color = next(ax._get_lines.prop_cycler)['color']  # Get the next color in the cycle
+        ax.plot(x_depth1_phase, y_depth2_phase, z_error_phase, ms=5, marker="o", linestyle='None', label=f'n_discs={n_discs}', color=color)
+        mx, my = np.meshgrid(range(16), range(30))
+        ax.plot_wireframe(mx, my, f_max((n_discs, mx, my), *params), rstride=4, cstride=2, alpha=0.5, color=color)
+
     ax.set_xlabel('depth1_short')
     ax.set_ylabel('depth2_long')
     ax.set_zlabel('error')
     ax.set_xlim((0, 16))
     ax.set_ylim((0, 30))
-    ax.set_zlim((0, 12))
+    ax.set_zlim((0, 8))
+    ax.legend()
     plt.show()
 
-for n_moves in [10, 20, 30, 40, 50]:
-    n_discs = 4 + n_moves
-    plot_fit_result_onephase(w_n_discs_sd, x_depth1_sd, y_depth2_sd, z_sd, n_discs, popt_sd)
+plot_fit_result_allphases(w_n_discs_sd, x_depth1_sd, y_depth2_sd, z_sd, popt_sd)
 
 '''
 popt_mean, pcov_mean = curve_fit(f, (w_n_discs_mean, x_depth1_mean, y_depth2_mean), z_mean, np.ones(7), sigma=weight_mean, absolute_sigma=True)
