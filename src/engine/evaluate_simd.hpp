@@ -470,8 +470,8 @@ inline int calc_pattern(const int phase_idx, Eval_features *features) {
 
 inline int calc_pattern_move_ordering_end(Eval_features *features) {
     const int *start_addr = (int*)(pattern_move_ordering_end_arr - SHIFT_EVAL_MO_END);
-    __m256i res256 =                  gather_eval(start_addr, calc_idx8_comp(features->f128[4], 0));        // corner+block cross
-    res256 = _mm256_add_epi32(res256, gather_eval(start_addr, calc_idx8_comp(features->f128[5], 1)));       // edge+2X triangle
+    __m256i res256 =                  gather_eval(start_addr, calc_idx8_comp(features->f128[4], 4));        // corner+block cross
+    res256 = _mm256_add_epi32(res256, gather_eval(start_addr, calc_idx8_comp(features->f128[5], 5)));       // edge+2X triangle
     res256 = _mm256_and_si256(res256, eval_lower_mask);
     __m128i res128 = _mm_add_epi32(_mm256_castsi256_si128(res256), _mm256_extracti128_si256(res256, 1));
     res128 = _mm_hadd_epi32(res128, res128);
