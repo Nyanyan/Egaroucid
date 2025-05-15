@@ -522,8 +522,8 @@ inline int mid_evaluate_diff(Search *search) {
 */
 inline int mid_evaluate_move_ordering_end(Search *search) {
     int res = calc_pattern_move_ordering_end(&search->eval);
-    res += res >= 0 ? STEP_2 : -STEP_2;
-    res /= STEP;
+    res += res >= 0 ? STEP_2_MO_END : -STEP_2_MO_END;
+    res /= STEP_MO_END;
     return res;
 }
 

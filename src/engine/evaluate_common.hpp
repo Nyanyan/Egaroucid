@@ -44,6 +44,9 @@ constexpr int N_PATTERN_FEATURES_MO_END = 16; // 16 features are used for move o
 constexpr int STEP = 64; // 1 disc = 64
 constexpr int STEP_2 = 32; // STEP / 2
 
+constexpr int STEP_MO_END = 32; // 1 disc = 64
+constexpr int STEP_2_MO_END = 16; // STEP / 2
+
 /*
     @brief 3 ^ N definition
 */
