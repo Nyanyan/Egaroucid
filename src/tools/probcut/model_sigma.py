@@ -23,8 +23,10 @@ import math
 #data_files_end = ['data/20250109_1_7_6/probcut_end0.txt', 'data/20250109_1_7_6/probcut_end1.txt']
 #data_files = ['data/20250306_1_7_6_20250305_1/probcut_mid0.txt', 'data/20250306_1_7_6_20250305_1/probcut_mid1.txt', 'data/20250306_1_7_6_20250305_1/probcut_mid2.txt']
 #data_files_end = ['data/20250306_1_7_6_20250305_1/probcut_end0.txt', 'data/20250306_1_7_6_20250305_1/probcut_end1.txt']
-data_files = ['data/20250402_1_7_6_20250330_1/probcut_mid0.txt']
-data_files_end = ['data/20250402_1_7_6_20250330_1/probcut_end0.txt']
+#data_files = ['data/20250402_1_7_6_20250330_1/probcut_mid0.txt']
+#data_files_end = ['data/20250402_1_7_6_20250330_1/probcut_end0.txt']
+data_files = ['data/20250514_1_7_7/probcut_mid0.txt']
+data_files_end = ['data/20250514_1_7_7/probcut_end0.txt']
 
 
 data = [[[[] for _ in range(61)] for _ in range(61)] for _ in range(65)] # n_discs, depth1, depth2 (depth1 < depth2)
@@ -68,16 +70,16 @@ for n_discs in range(len(data)):
     for depth1 in range(len(data[n_discs])): # short
         for depth2 in range(len(data[n_discs][depth1])): # long
             if len(data[n_discs][depth1][depth2]) >= 3:
-                #mean = statistics.mean(data[n_discs][depth1][depth2])
-                #sd = statistics.stdev(data[n_discs][depth1][depth2])
-                
+                mean = statistics.mean(data[n_discs][depth1][depth2])
+                sd = statistics.stdev(data[n_discs][depth1][depth2])
+                '''
                 mean = 0.0
                 sd = 0.0
                 for elem in data[n_discs][depth1][depth2]:
                     sd += elem ** 2
                 sd = math.sqrt(sd / len(data[n_discs][depth1][depth2]))
-                
-                print('n_discs', n_discs, 'depth1', depth1, 'depth2', depth2, 'mean', mean, 'sd', sd, 'n_data', len(data[n_discs][depth1][depth2]))
+                '''
+                #print('n_discs', n_discs, 'depth1', depth1, 'depth2', depth2, 'mean', mean, 'sd', sd, 'n_data', len(data[n_discs][depth1][depth2]))
 
                 w_n_discs_sd.append(n_discs)
                 x_depth1_sd.append(depth1)
@@ -93,16 +95,17 @@ for n_discs in range(len(data)):
                 y_depth2_mean.append(depth2)
                 z_mean.append(mean)
                 weight_mean.append(0.001)
-
+'''
 for n_discs in range(4, 61):
     for depth2 in range(30, 31):
         depth1 = 0
-        z = 4.0 + 18.0 * ((n_discs - 4) / 60)
+        z = 4.0 + 12.0 * ((n_discs - 4) / 60)
         w_n_discs_sd.append(n_discs)
         x_depth1_sd.append(depth1)
         y_depth2_sd.append(depth2)
         z_sd.append(z)
         weight_sd.append(0.0001)
+'''
 '''
 for n_discs in range(4, 61):
     for depth2 in range(30, 31):
@@ -114,17 +117,28 @@ for n_discs in range(4, 61):
         z_sd.append(z)
         weight_sd.append(0.0001)
 '''
-def f(wxy, probcut_a, probcut_b, probcut_c, probcut_d, probcut_e, probcut_f, probcut_g):
+def f(wxy, probcut_a, probcut_b, probcut_c, probcut_d, probcut_e, probcut_f, probcut_g, probcut_h, probcut_i, probcut_j, probcut_k, probcut_l, probcut_m):
     w, x, y = wxy
-    w = w / 64
-    x = x / 60
-    y = y / 60
-    res = probcut_a * w + probcut_b * x + probcut_c * y
-    res = probcut_d * res * res * res + probcut_e * res * res + probcut_f * res + probcut_g
+    w = w / 64 # n_discs
+    x = x / 60 # depth 1 short
+    y = y / 60 # depth 2 long
+    res =  probcut_a * w + probcut_b * np.exp(probcut_c * w)
+    res += probcut_d * x + probcut_e * np.exp(probcut_f * x)
+    res += probcut_g * y + probcut_h * np.exp(probcut_i * y)
+    # res = probcut_a * w + probcut_b * x + probcut_c * y + probcut_h * np.exp(probcut_i * x)
+    res = probcut_j * res * res * res + probcut_k * res * res + probcut_l * res + probcut_m
     return res
 
-def f_max(wxy, probcut_a, probcut_b, probcut_c, probcut_d, probcut_e, probcut_f, probcut_g):
-    return np.minimum(30.0, np.maximum(-2.0, f(wxy, probcut_a, probcut_b, probcut_c, probcut_d, probcut_e, probcut_f, probcut_g)))
+def f_max(wxy, probcut_a, probcut_b, probcut_c, probcut_d, probcut_e, probcut_f, probcut_g, probcut_h, probcut_i, probcut_j, probcut_k, probcut_l, probcut_m):
+    return np.minimum(30.0, np.maximum(-2.0, f(wxy, probcut_a, probcut_b, probcut_c, probcut_d, probcut_e, probcut_f, probcut_g, probcut_h, probcut_i, probcut_j, probcut_k, probcut_l, probcut_m)))
+
+
+
+popt_sd, pcov_sd = curve_fit(f, (w_n_discs_sd, x_depth1_sd, y_depth2_sd), z_sd, np.ones(13), sigma=weight_sd, absolute_sigma=True)
+print([float(elem) for elem in popt_sd])
+for i in range(len(popt_sd)):
+    print('constexpr double probcut_' + chr(ord('a') + i) + ' = ' + str(popt_sd[i]) + ';')
+
 
 def plot_fit_result_onephase(w, x, y, z, n_discs, params):
     fig = plt.figure()
@@ -152,13 +166,9 @@ def plot_fit_result_onephase(w, x, y, z, n_discs, params):
     ax.set_zlim((0, 12))
     plt.show()
 
-popt_sd, pcov_sd = curve_fit(f, (w_n_discs_sd, x_depth1_sd, y_depth2_sd), z_sd, np.ones(7), sigma=weight_sd, absolute_sigma=True)
-print([float(elem) for elem in popt_sd])
-for i in range(len(popt_sd)):
-    print('constexpr double probcut_' + chr(ord('a') + i) + ' = ' + str(popt_sd[i]) + ';')
-
-for i in [10, 20, 30, 40, 50]:
-    plot_fit_result_onephase(w_n_discs_sd, x_depth1_sd, y_depth2_sd, z_sd, i, popt_sd)
+for n_moves in [10, 20, 30, 40, 50]:
+    n_discs = 4 + n_moves
+    plot_fit_result_onephase(w_n_discs_sd, x_depth1_sd, y_depth2_sd, z_sd, n_discs, popt_sd)
 
 '''
 popt_mean, pcov_mean = curve_fit(f, (w_n_discs_mean, x_depth1_mean, y_depth2_mean), z_mean, np.ones(7), sigma=weight_mean, absolute_sigma=True)
