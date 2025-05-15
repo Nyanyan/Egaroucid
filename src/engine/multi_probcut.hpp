@@ -30,13 +30,19 @@ constexpr double SELECTIVITY_MPCT[N_SELECTIVITY_LEVEL] = {1.13, 1.55, 1.81, 2.32
     @brief constants for ProbCut error calculation
 */
 // for model 20250330_1
-constexpr double probcut_a = 0.7308488452189136;
-constexpr double probcut_b = -4.5708322989025865;
-constexpr double probcut_c = 1.096319765006055;
-constexpr double probcut_d = -0.8362251801219095;
-constexpr double probcut_e = 4.610017383697701;
-constexpr double probcut_f = 3.818582623595395;
-constexpr double probcut_g = 1.8775013664098447;
+constexpr double probcut_a = 0.03955992680357229;
+constexpr double probcut_b = 1.4094784476505218;
+constexpr double probcut_c = -2.886927078288626e-07;
+constexpr double probcut_d = -3.480266395381148;
+constexpr double probcut_e = 3.219684562724084;
+constexpr double probcut_f = 0.886188783278602;
+constexpr double probcut_g = 1.7186665180327303;
+constexpr double probcut_h = -1.9860144167325706;
+constexpr double probcut_i = 0.6632585004969513;
+constexpr double probcut_j = 1.6367645941380455;
+constexpr double probcut_k = -2.2394933078458723;
+constexpr double probcut_l = 42.80931775756412;
+constexpr double probcut_m = -127.5602573674762;
 
 #if USE_MPC_PRE_CALCULATION
 int mpc_error[N_SELECTIVITY_LEVEL][HW2 + 1][HW2 - 3][HW2 - 3];
@@ -51,8 +57,16 @@ int mpc_error[N_SELECTIVITY_LEVEL][HW2 + 1][HW2 - 3][HW2 - 3];
     @return expected error
 */
 inline double probcut_sigma(int n_discs, int depth1, int depth2) {
-    double res = probcut_a * ((double)n_discs / 64.0) + probcut_b * ((double)depth1 / 60.0) + probcut_c * ((double)depth2 / 60.0);
-    res = probcut_d * res * res * res + probcut_e * res * res + probcut_f * res + probcut_g;
+    double w = n_discs / 64; // n_discs
+    double x = depth1 / 60; // depth 1 short
+    double y = depth2 / 60; // depth 2 long
+    double  res =  probcut_a * w + probcut_b * exp(probcut_c * w);
+            res += probcut_d * x + probcut_e * exp(probcut_f * x);
+            res += probcut_g * y + probcut_h * exp(probcut_i * y);
+    res = probcut_j * res * res * res + probcut_k * res * res + probcut_l * res + probcut_m;
+
+    // double res = probcut_a * ((double)n_discs / 64.0) + probcut_b * ((double)depth1 / 60.0) + probcut_c * ((double)depth2 / 60.0);
+    // res = probcut_d * res * res * res + probcut_e * res * res + probcut_f * res + probcut_g;
     return res;
 }
 
