@@ -70,9 +70,11 @@ for n_discs in range(len(data)):
     for depth1 in range(len(data[n_discs])): # short
         for depth2 in range(len(data[n_discs][depth1])): # long
             if len(data[n_discs][depth1][depth2]) >= 3:
+                '''
                 mean = statistics.mean(data[n_discs][depth1][depth2])
                 sd = statistics.stdev(data[n_discs][depth1][depth2])
-                '''
+                #'''
+                #'''
                 mean = 0.0
                 sd = 0.0
                 for elem in data[n_discs][depth1][depth2]:
@@ -117,24 +119,24 @@ for n_discs in range(4, 61):
         z_sd.append(z)
         weight_sd.append(0.0001)
 '''
-def f(wxy, probcut_a, probcut_b, probcut_c, probcut_d, probcut_e, probcut_f, probcut_g, probcut_h, probcut_i, probcut_j, probcut_k, probcut_l, probcut_m):
+def f(wxy, probcut_a, probcut_b, probcut_c, probcut_d, probcut_e, probcut_f, probcut_g, probcut_h, probcut_i, probcut_j, probcut_k, probcut_l, probcut_m, probcut_o, probcut_p, probcut_q):
     w, x, y = wxy
     w = w / 64 # n_discs
     x = x / 60 # depth 1 short
     y = y / 60 # depth 2 long
-    res =  probcut_a * w + probcut_b * np.exp(probcut_c * w)
-    res += probcut_d * x + probcut_e * np.exp(probcut_f * x)
-    res += probcut_g * y + probcut_h * np.exp(probcut_i * y)
-    # res = probcut_a * w + probcut_b * x + probcut_c * y + probcut_h * np.exp(probcut_i * x)
-    res = probcut_j * res * res * res + probcut_k * res * res + probcut_l * res + probcut_m
+    w = w * np.exp(probcut_a * w)
+    x = x * np.exp(probcut_b * x)
+    y = y * np.exp(probcut_c * y)
+    res =  probcut_d * w + probcut_e * x + probcut_f * y
+    res = probcut_g * res * res * res + probcut_h * res * res + probcut_i * res + probcut_j
     return res
 
-def f_max(wxy, probcut_a, probcut_b, probcut_c, probcut_d, probcut_e, probcut_f, probcut_g, probcut_h, probcut_i, probcut_j, probcut_k, probcut_l, probcut_m):
-    return np.minimum(30.0, np.maximum(-2.0, f(wxy, probcut_a, probcut_b, probcut_c, probcut_d, probcut_e, probcut_f, probcut_g, probcut_h, probcut_i, probcut_j, probcut_k, probcut_l, probcut_m)))
+def f_max(wxy, probcut_a, probcut_b, probcut_c, probcut_d, probcut_e, probcut_f, probcut_g, probcut_h, probcut_i, probcut_j, probcut_k, probcut_l, probcut_m, probcut_o, probcut_p, probcut_q):
+    return np.minimum(30.0, np.maximum(-2.0, f(wxy, probcut_a, probcut_b, probcut_c, probcut_d, probcut_e, probcut_f, probcut_g, probcut_h, probcut_i, probcut_j, probcut_k, probcut_l, probcut_m, probcut_o, probcut_p, probcut_q)))
 
 
 
-popt_sd, pcov_sd = curve_fit(f, (w_n_discs_sd, x_depth1_sd, y_depth2_sd), z_sd, np.ones(13), sigma=weight_sd, absolute_sigma=True, maxfev=500000)
+popt_sd, pcov_sd = curve_fit(f, (w_n_discs_sd, x_depth1_sd, y_depth2_sd), z_sd, np.ones(16), sigma=weight_sd, absolute_sigma=True, maxfev=500000)
 print([float(elem) for elem in popt_sd])
 for i in range(len(popt_sd)):
     print('constexpr double probcut_' + chr(ord('a') + i) + ' = ' + str(popt_sd[i]) + ';')
