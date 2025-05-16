@@ -30,16 +30,16 @@ constexpr double SELECTIVITY_MPCT[N_SELECTIVITY_LEVEL] = {1.13, 1.55, 1.81, 2.32
     @brief constants for ProbCut error calculation
 */
 // for model 20250330_1
-constexpr double probcut_a = -1.354776135556228;
-constexpr double probcut_b = -4.206802200680804;
-constexpr double probcut_c = -2.3492116611595604;
-constexpr double probcut_d = 3.364382902832781;
-constexpr double probcut_e = -9.774158322863403;
-constexpr double probcut_f = 5.4486148890112265;
-constexpr double probcut_g = -6.422242079881993;
-constexpr double probcut_h = 19.25946531111663;
-constexpr double probcut_i = -12.233004515419386;
-constexpr double probcut_j = 2.7509355102837545;
+constexpr double probcut_a = -1.3416226118418655;
+constexpr double probcut_b = -4.13457218970445;
+constexpr double probcut_c = -2.3159343387854214;
+constexpr double probcut_d = 3.6087468655612476;
+constexpr double probcut_e = -9.896092165462269;
+constexpr double probcut_f = 5.487073039917123;
+constexpr double probcut_g = -4.92533460006962;
+constexpr double probcut_h = 16.260204188840234;
+constexpr double probcut_i = -11.311204254749185;
+constexpr double probcut_j = 2.833592874804147;
 
 #if USE_MPC_PRE_CALCULATION
 int mpc_error[N_SELECTIVITY_LEVEL][HW2 + 1][HW2 - 3][HW2 - 3];
@@ -230,7 +230,8 @@ void get_data_probcut_mid() {
     Search_result short_ans, long_ans;
     bool searching = true;
     for (int i = 0; i < 10000; ++i) {
-        for (int depth = 2; depth <= 15; ++depth) {
+        // for (int depth = 16; depth <= 17; ++depth) {
+        for (int depth = 4; depth <= 16; ++depth) {
             for (int n_discs = 4; n_discs < HW2 - depth - 2; ++n_discs) {
                 board.reset();
                 for (int j = 4; j < n_discs && board.check_pass(); ++j) { // random move
@@ -276,7 +277,8 @@ void get_data_probcut_end() {
     Search_result short_ans, long_ans;
     bool searching = true;
     for (int i = 0; i < 10000; ++i) {
-        for (int depth = 2; depth <= 25; ++depth) {
+        // for (int depth = 2; depth <= 26; ++depth) {
+        for (int depth = 28; depth <= 28; ++depth) {
             board.reset();
             for (int j = 0; j < HW2 - 4 - depth && board.check_pass(); ++j) { // random move
                 uint64_t legal = board.get_legal();
@@ -292,7 +294,7 @@ void get_data_probcut_end() {
                 board.move_board(&flip);
             }
             if (board.check_pass()) {
-                int short_depth = myrandrange(2, std::min(15, depth - 1));
+                int short_depth = myrandrange(2, std::min(18, depth - 1));
                 short_depth &= 0xfffffffe;
                 short_depth |= depth & 1;
                 //int short_depth = mpc_search_depth_arr[1][depth];

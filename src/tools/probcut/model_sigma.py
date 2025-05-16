@@ -25,7 +25,8 @@ import math
 #data_files_end = ['data/20250306_1_7_6_20250305_1/probcut_end0.txt', 'data/20250306_1_7_6_20250305_1/probcut_end1.txt']
 #data_files = ['data/20250402_1_7_6_20250330_1/probcut_mid0.txt']
 #data_files_end = ['data/20250402_1_7_6_20250330_1/probcut_end0.txt']
-data_files = ['data/20250514_1_7_7/probcut_mid0.txt', 'data/20250514_1_7_7/probcut_mid1.txt']
+data_files = ['data/20250514_1_7_7/probcut_mid0.txt', 'data/20250514_1_7_7/probcut_mid1.txt', 'data/20250514_1_7_7/probcut_mid2.txt', 'data/20250514_1_7_7/probcut_mid3.txt', 'data/20250514_1_7_7/probcut_mid4.txt']
+#data_files_end = ['data/20250514_1_7_7/probcut_end0.txt', 'data/20250514_1_7_7/probcut_end1.txt', 'data/20250514_1_7_7/probcut_end2.txt', 'data/20250514_1_7_7/probcut_end3.txt']
 data_files_end = ['data/20250514_1_7_7/probcut_end0.txt']
 
 
