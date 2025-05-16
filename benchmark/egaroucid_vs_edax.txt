@@ -911,3 +911,11 @@ level: 5 Egaroucid WDL: 781-25-194 Egaroucid win rate: 0.7935 Egaroucid average 
 level: 10 Egaroucid WDL: 590-87-323 Egaroucid win rate: 0.6335 Egaroucid average discs earned: 1.716
 level: 15 Egaroucid WDL: 138-31-81 Egaroucid win rate: 0.614 Egaroucid average discs earned: 0.892
 level: 21 Egaroucid WDL: 50-13-37 Egaroucid win rate: 0.565 Egaroucid average discs earned: 0.45
+
+
+2025/05/16 new eval with new mpc for 7.7
+level: 1 Egaroucid WDL: 738-31-231 Egaroucid win rate: 0.7535 Egaroucid average discs earned: 12.793
+level: 5 Egaroucid WDL: 818-29-153 Egaroucid win rate: 0.8325 Egaroucid average discs earned: 9.57
+level: 10 Egaroucid WDL: 633-77-290 Egaroucid win rate: 0.6715 Egaroucid average discs earned: 1.98
+level: 15 Egaroucid WDL: 146-30-74 Egaroucid win rate: 0.644 Egaroucid average discs earned: 1.016
+level: 21 Egaroucid WDL: 55-19-26 Egaroucid win rate: 0.645 Egaroucid average discs earned: 0.99
