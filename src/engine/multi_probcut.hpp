@@ -30,16 +30,13 @@ constexpr double SELECTIVITY_MPCT[N_SELECTIVITY_LEVEL] = {1.13, 1.55, 1.81, 2.32
     @brief constants for ProbCut error calculation
 */
 // for model 20250330_1
-constexpr double probcut_a = -1.3416226118418655;
-constexpr double probcut_b = -4.13457218970445;
-constexpr double probcut_c = -2.3159343387854214;
-constexpr double probcut_d = 3.6087468655612476;
-constexpr double probcut_e = -9.896092165462269;
-constexpr double probcut_f = 5.487073039917123;
-constexpr double probcut_g = -4.92533460006962;
-constexpr double probcut_h = 16.260204188840234;
-constexpr double probcut_i = -11.311204254749185;
-constexpr double probcut_j = 2.833592874804147;
+constexpr double probcut_a = 0.24656429657445694;
+constexpr double probcut_b = -1.7523566044473187;
+constexpr double probcut_c = 0.962435838988831;
+constexpr double probcut_d = -35.863936352037754;
+constexpr double probcut_e = 27.134617776691826;
+constexpr double probcut_f = 4.602278641290785;
+constexpr double probcut_g = 1.3002124046650227;
 
 #if USE_MPC_PRE_CALCULATION
 int mpc_error[N_SELECTIVITY_LEVEL][HW2 + 1][HW2 - 3][HW2 - 3];
@@ -54,14 +51,8 @@ int mpc_error[N_SELECTIVITY_LEVEL][HW2 + 1][HW2 - 3][HW2 - 3];
     @return expected error
 */
 inline double probcut_sigma(int n_discs, int depth1, int depth2) {
-    double w = n_discs / 64; // n_discs
-    double x = depth1 / 60; // depth 1 short
-    double y = depth2 / 60; // depth 2 long
-    w = w * exp(probcut_a * w);
-    x = x * exp(probcut_b * x);
-    y = y * exp(probcut_c * y);
-    double res =  probcut_d * w + probcut_e * x + probcut_f * y;
-    res = probcut_g * res * res * res + probcut_h * res * res + probcut_i * res + probcut_j;
+    double res = probcut_a * ((double)n_discs / 64.0) + probcut_b * ((double)depth1 / 60.0) + probcut_c * ((double)depth2 / 60.0);
+    res = probcut_d * res * res * res + probcut_e * res * res + probcut_f * res + probcut_g;
     return res;
 }
 
@@ -230,7 +221,7 @@ void get_data_probcut_mid() {
     Search_result short_ans, long_ans;
     bool searching = true;
     for (int i = 0; i < 10000; ++i) {
-        // for (int depth = 16; depth <= 17; ++depth) {
+        // for (int depth = 18; depth <= 18; ++depth) {
         for (int depth = 4; depth <= 16; ++depth) {
             for (int n_discs = 4; n_discs < HW2 - depth - 2; ++n_discs) {
                 board.reset();
@@ -277,8 +268,7 @@ void get_data_probcut_end() {
     Search_result short_ans, long_ans;
     bool searching = true;
     for (int i = 0; i < 10000; ++i) {
-        // for (int depth = 2; depth <= 26; ++depth) {
-        for (int depth = 28; depth <= 28; ++depth) {
+        for (int depth = 2; depth <= 26; ++depth) {
             board.reset();
             for (int j = 0; j < HW2 - 4 - depth && board.check_pass(); ++j) { // random move
                 uint64_t legal = board.get_legal();

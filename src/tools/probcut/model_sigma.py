@@ -25,7 +25,8 @@ import math
 #data_files_end = ['data/20250306_1_7_6_20250305_1/probcut_end0.txt', 'data/20250306_1_7_6_20250305_1/probcut_end1.txt']
 #data_files = ['data/20250402_1_7_6_20250330_1/probcut_mid0.txt']
 #data_files_end = ['data/20250402_1_7_6_20250330_1/probcut_end0.txt']
-data_files = ['data/20250514_1_7_7/probcut_mid0.txt', 'data/20250514_1_7_7/probcut_mid1.txt', 'data/20250514_1_7_7/probcut_mid2.txt', 'data/20250514_1_7_7/probcut_mid3.txt', 'data/20250514_1_7_7/probcut_mid4.txt']
+data_files = ['data/20250514_1_7_7/probcut_mid0.txt', 'data/20250514_1_7_7/probcut_mid1.txt', 'data/20250514_1_7_7/probcut_mid2.txt', 'data/20250514_1_7_7/probcut_mid3.txt', 'data/20250514_1_7_7/probcut_mid4.txt', 'data/20250514_1_7_7/probcut_mid5.txt']
+#data_files = ['data/20250514_1_7_7/probcut_mid0.txt', 'data/20250514_1_7_7/probcut_mid1.txt', 'data/20250514_1_7_7/probcut_mid2.txt', 'data/20250514_1_7_7/probcut_mid3.txt', 'data/20250514_1_7_7/probcut_mid4.txt']
 #data_files_end = ['data/20250514_1_7_7/probcut_end0.txt', 'data/20250514_1_7_7/probcut_end1.txt', 'data/20250514_1_7_7/probcut_end2.txt', 'data/20250514_1_7_7/probcut_end3.txt']
 data_files_end = ['data/20250514_1_7_7/probcut_end0.txt']
 
@@ -125,11 +126,8 @@ def f(wxy, probcut_a, probcut_b, probcut_c, probcut_d, probcut_e, probcut_f, pro
     w = w / 64 # n_discs
     x = x / 60 # depth 1 short
     y = y / 60 # depth 2 long
-    w = w * np.exp(probcut_a * w)
-    x = x * np.exp(probcut_b * x)
-    y = y * np.exp(probcut_c * y)
-    res =  probcut_d * w + probcut_e * x + probcut_f * y
-    res = probcut_g * res * res * res + probcut_h * res * res + probcut_i * res + probcut_j
+    res = probcut_a * w + probcut_b * x + probcut_c * y
+    res = probcut_d * res * res * res + probcut_e * res * res + probcut_f * res + probcut_g
     return res
 
 def f_max(wxy, probcut_a, probcut_b, probcut_c, probcut_d, probcut_e, probcut_f, probcut_g, probcut_h, probcut_i, probcut_j, probcut_k, probcut_l, probcut_m, probcut_o, probcut_p, probcut_q):
