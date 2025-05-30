@@ -7,7 +7,7 @@
    viewBox="0 0 210 297"
    version="1.1"
    id="svg5"
-   inkscape:version="1.3.2 (091e20e, 2023-11-25, custom)"
+   inkscape:version="1.4 (86a8ad7, 2024-10-11)"
    sodipodi:docname="language.svg"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
@@ -28,10 +28,10 @@
      inkscape:zoom="0.61656491"
      inkscape:cx="644.70098"
      inkscape:cy="975.56638"
-     inkscape:window-width="2560"
-     inkscape:window-height="1511"
-     inkscape:window-x="-9"
-     inkscape:window-y="-9"
+     inkscape:window-width="3840"
+     inkscape:window-height="2054"
+     inkscape:window-x="-11"
+     inkscape:window-y="1609"
      inkscape:window-maximized="1"
      inkscape:current-layer="layer1"
      inkscape:pageshadow="2"
@@ -82,11 +82,11 @@
        y="44.767529"
        id="text236"
        inkscape:export-filename="japanese.png"
-       inkscape:export-xdpi="26.120001"
-       inkscape:export-ydpi="26.120001"><tspan
+       inkscape:export-xdpi="51.446915"
+       inkscape:export-ydpi="51.446915"><tspan
          sodipodi:role="line"
          id="tspan234"
-         style="font-style:normal;font-variant:normal;font-weight:500;font-stretch:normal;font-family:'Noto Sans JP';-inkscape-font-specification:'Noto Sans JP Medium';fill:#000000;fill-opacity:1;stroke:none;stroke-width:5;stroke-dasharray:none"
+         style="font-style:normal;font-variant:normal;font-weight:600;font-stretch:normal;font-family:'Noto Sans JP';-inkscape-font-specification:'Noto Sans JP Semi-Bold';fill:#000000;fill-opacity:1;stroke:none;stroke-width:5;stroke-dasharray:none"
          x="-7.3571"
          y="44.767529">日本語</tspan></text>
     <text
@@ -110,12 +110,12 @@
        x="1.0940897"
        y="158.09863"
        id="text6248"
-       inkscape:export-filename=".\chinese.png"
-       inkscape:export-xdpi="25.92"
-       inkscape:export-ydpi="25.92"><tspan
+       inkscape:export-filename="simplified_chinese.png"
+       inkscape:export-xdpi="50.955383"
+       inkscape:export-ydpi="50.955383"><tspan
          sodipodi:role="line"
          id="tspan6246"
-         style="font-style:normal;font-variant:normal;font-weight:500;font-stretch:normal;font-family:'Noto Sans SC';-inkscape-font-specification:'Noto Sans SC Medium';fill:#000000;fill-opacity:1;stroke-width:5"
+         style="font-style:normal;font-variant:normal;font-weight:600;font-stretch:normal;font-family:'Noto Sans SC';-inkscape-font-specification:'Noto Sans SC Semi-Bold';fill:#000000;fill-opacity:1;stroke-width:5"
          x="1.0940897"
          y="158.09863">简体中文</tspan></text>
     <text
@@ -132,65 +132,65 @@
     <text
        xml:space="preserve"
        style="font-style:normal;font-weight:normal;font-size:10.5833px;line-height:1.25;font-family:sans-serif;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.264583"
-       x="220.11308"
+       x="-126.96516"
        y="145.76901"
        id="text11295-56"><tspan
          sodipodi:role="line"
          id="tspan11293-0"
          style="stroke-width:0.264583"
-         x="220.11308"
-         y="145.76901">Noto Sans SC Medium</tspan></text>
+         x="-126.96516"
+         y="145.76901">Noto Sans SC Semi Bold</tspan></text>
     <text
        xml:space="preserve"
        style="font-style:normal;font-weight:normal;font-size:10.5833px;line-height:1.25;font-family:sans-serif;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.264583"
-       x="157.4977"
-       y="27.701881"
+       x="-125.72472"
+       y="32.728951"
        id="text11295-5"><tspan
          sodipodi:role="line"
          id="tspan11293-2"
          style="stroke-width:0.264583"
-         x="157.4977"
-         y="27.701881">Noto Sans JP Medium</tspan></text>
+         x="-125.72472"
+         y="32.728951">Noto Sans JP Semi-Bold</tspan></text>
     <text
        xml:space="preserve"
        style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:52.9167px;line-height:0;font-family:'MS Gothic';-inkscape-font-specification:'MS Gothic';fill:#000000;fill-opacity:1;stroke:none;stroke-width:5;stroke-dasharray:none"
-       x="114.69269"
+       x="112.43275"
        y="99.063644"
        id="text6136-5"
-       inkscape:export-filename=".\english.png"
-       inkscape:export-xdpi="29.547787"
-       inkscape:export-ydpi="29.547787"><tspan
+       inkscape:export-filename="english.png"
+       inkscape:export-xdpi="57.936829"
+       inkscape:export-ydpi="57.936829"><tspan
          sodipodi:role="line"
          id="tspan6134-5"
          style="font-style:normal;font-variant:normal;font-weight:600;font-stretch:normal;line-height:0px;font-family:'Noto Sans';-inkscape-font-specification:'Noto Sans Semi-Bold';text-align:center;direction:ltr;text-anchor:middle;fill:#000000;fill-opacity:1;stroke:#ff0303;stroke-width:5;stroke-dasharray:none;stroke-opacity:0"
-         x="114.69269"
+         x="112.43275"
          y="99.063644">ENGLISH</tspan></text>
     <text
        xml:space="preserve"
        style="font-style:normal;font-weight:normal;font-size:10.5833px;line-height:1.25;font-family:sans-serif;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.264583"
-       x="252.88701"
-       y="90.754166"
+       x="-115.73125"
+       y="84.141121"
        id="text11295-6"><tspan
          sodipodi:role="line"
          id="tspan11293-04"
          style="stroke-width:0.264583"
-         x="252.88701"
-         y="90.754166">Noto Sans Semi-Bold</tspan></text>
+         x="-115.73125"
+         y="84.141121">Noto Sans Semi-Bold</tspan></text>
     <text
        xml:space="preserve"
        style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:52.9167px;font-family:'Yu Gothic UI';-inkscape-font-specification:'Yu Gothic UI';fill:#000000;fill-opacity:1;stroke:none;stroke-width:4.99999"
        x="-0.833395"
        y="219.2903"
        id="text6248-2"
-       inkscape:export-filename="traditional_chinese_taiwan"
-       inkscape:export-xdpi="23.269945"
-       inkscape:export-ydpi="23.269945"><tspan
+       inkscape:export-filename="traditional_chinese_taiwan.png"
+       inkscape:export-xdpi="49.947937"
+       inkscape:export-ydpi="49.947937"><tspan
          sodipodi:role="line"
          id="tspan6246-3"
-         style="font-style:normal;font-variant:normal;font-weight:500;font-stretch:normal;font-family:'Noto Sans TC';-inkscape-font-specification:'Noto Sans TC Medium';fill:#000000;fill-opacity:1;stroke-width:5"
+         style="font-style:normal;font-variant:normal;font-weight:600;font-stretch:normal;font-family:'Noto Sans TC';-inkscape-font-specification:'Noto Sans TC Semi-Bold';fill:#000000;fill-opacity:1;stroke-width:5"
          x="-0.833395"
          y="219.2903">繁體中<tspan
-   style="letter-spacing:0px"
+   style="font-style:normal;font-variant:normal;font-weight:600;font-stretch:normal;font-family:'Noto Sans TC';-inkscape-font-specification:'Noto Sans TC Semi-Bold';letter-spacing:0px"
    id="tspan2">文</tspan></tspan></text>
     <text
        xml:space="preserve"
@@ -203,21 +203,21 @@
        inkscape:export-ydpi="25.606668"><tspan
          sodipodi:role="line"
          id="tspan6246-3-1"
-         style="font-style:normal;font-variant:normal;font-weight:500;font-stretch:normal;font-family:'Noto Sans TC';-inkscape-font-specification:'Noto Sans TC Medium';fill:#000000;fill-opacity:1;stroke-width:5"
+         style="font-style:normal;font-variant:normal;font-weight:600;font-stretch:normal;font-family:'Noto Sans TC';-inkscape-font-specification:'Noto Sans TC Semi-Bold';fill:#000000;fill-opacity:1;stroke-width:5"
          x="183.89879"
          y="218.76112"><tspan
-   style="letter-spacing:0px"
+   style="font-style:normal;font-variant:normal;font-weight:600;font-stretch:normal;font-family:'Noto Sans TC';-inkscape-font-specification:'Noto Sans TC Semi-Bold';letter-spacing:0px"
    id="tspan2-1">（</tspan>台灣）</tspan></text>
     <text
        xml:space="preserve"
        style="font-style:normal;font-weight:normal;font-size:10.5833px;line-height:1.25;font-family:sans-serif;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.264583"
-       x="375.56537"
-       y="216.23689"
+       x="-126.82757"
+       y="206.53867"
        id="text11295-56-6"><tspan
          sodipodi:role="line"
          id="tspan11293-0-9"
          style="stroke-width:0.264583"
-         x="375.56537"
-         y="216.23689">Noto Sans TC Medium</tspan></text>
+         x="-126.82757"
+         y="206.53867">Noto Sans TC Semi Bold</tspan></text>
   </g>
 </svg>
