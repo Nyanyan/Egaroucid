@@ -337,7 +337,7 @@ public:
             rect.draw(menu_select_color);
         }
         if (use_image) {
-            image.scaled((double)(rect.h - 2 * menu_image_offset_y) / image.height()).draw(rect.x + rect.h - menu_offset_y, rect.y + menu_image_offset_y);
+            image.scaled((double)(rect.h - 2 * menu_image_offset_y) / (double)image.height()).draw(rect.x + rect.h - menu_offset_y, rect.y + menu_image_offset_y);
         } else {
             font(str).draw(font_size, rect.x + rect.h - menu_offset_y, rect.y + menu_offset_y, menu_font_color);
         }
@@ -425,7 +425,7 @@ public:
         int h, w;
         if (use_image) {
             h = rect.h - 2 * menu_image_offset_y;
-            w = (double)h * image.width() / image.height();
+            w = (double)h * (double)image.width() / (double)image.height() + menu_image_offset_y * 2;
         } else {
             // RectF r = font(str).region(font_size, Point{ 0, 0 }); // slow
             // h = r.h;
