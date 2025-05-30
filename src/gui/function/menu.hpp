@@ -425,7 +425,7 @@ public:
         int h, w;
         if (use_image) {
             h = rect.h - 2 * menu_image_offset_y;
-            w = (double)h * (double)image.width() / (double)image.height() + menu_image_offset_y * 2;
+            w = (double)h * (double)image.width() / (double)image.height() + menu_image_offset_y * 2; // margin: menu_image_offset_y * 2
         } else {
             // RectF r = font(str).region(font_size, Point{ 0, 0 }); // slow
             // h = r.h;
