@@ -167,7 +167,8 @@ I would like to thank these people for great contributions.
     </li>
     <li>Translation
         <ul>
-            <li>ZhangHengge (Chinese)</li>
+            <li>ZhangHengge (Simplified Chinese)</li>
+            <li>YuYutw123 (Traditional Chinese (Taiwan))</li>
         </ul>
     </li>
     <li>Technical Advice
@@ -206,6 +207,7 @@ I would like to thank these people for great contributions.
         </ul>
     </li>
 </ul>
+
 
 
 
