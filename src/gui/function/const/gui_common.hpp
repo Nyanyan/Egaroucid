@@ -384,17 +384,26 @@ struct Fonts {
     Font font_bold_default{ FontMethod::MSDF, FONT_DEFAULT_SIZE, Typeface::Bold };
     Font font_heavy_default{ FontMethod::MSDF, FONT_DEFAULT_SIZE, Typeface::Heavy };
 
-    // chinese
+    // simplified chinese
     Font font_SC{ FontMethod::MSDF, FONT_DEFAULT_SIZE, Typeface::CJK_Regular_SC };
     Font font_bold_SC{ FontMethod::MSDF, FONT_DEFAULT_SIZE, Typeface::CJK_Regular_SC, FontStyle::Bold };
     Font font_heavy_SC{ FontMethod::MSDF, FONT_DEFAULT_SIZE, Typeface::CJK_Regular_SC, FontStyle::Bold };
 
+    // traditional chinese (taiwan)
+    Font font_TC_taiwan{ FontMethod::MSDF, FONT_DEFAULT_SIZE, Typeface::CJK_Regular_TC };
+    Font font_bold_TC_taiwan{ FontMethod::MSDF, FONT_DEFAULT_SIZE, Typeface::CJK_Regular_TC, FontStyle::Bold };
+    Font font_heavy_TC_taiwan{ FontMethod::MSDF, FONT_DEFAULT_SIZE, Typeface::CJK_Regular_TC, FontStyle::Bold };
+
     void init(std::string lang) {
         std::cerr << "font init " << lang << std::endl;
-        if (lang == "chinese") {
+        if (lang == "simplified_chinese") {
             font = font_SC;
             font_bold = font_bold_SC;
             font_heavy = font_heavy_SC;
+        } else if (lang == "traditional_chinese_taiwan") {
+            font = font_TC_Taiwan;
+            font_bold = font_bold_TC_Taiwan;
+            font_heavy = font_heavy_TC_Taiwan;
         } else { // japanese / english
             font = font_default;
             font_bold = font_bold_default;

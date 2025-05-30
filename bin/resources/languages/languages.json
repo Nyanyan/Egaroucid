@@ -1,5 +1,6 @@
 {
     "japanese": "日本語",
     "english": "English",
-    "chinese": "简体中文"
+    "simplified_chinese": "简体中文",
+    "traditional_chinese_taiwan": "繁體中文(台灣)"
 }
