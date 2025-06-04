@@ -99,17 +99,18 @@ for n_discs in range(len(data)):
                 y_depth2_mean.append(depth2)
                 z_mean.append(mean)
                 weight_mean.append(0.001)
-
+'''
 for n_discs in range(4, 61):
     for depth2 in range(30, 31):
-        depth1 = 0
-        z = 6.0 + 2.0 * ((n_discs - 4) / 60)
-        w_n_discs_sd.append(n_discs)
-        x_depth1_sd.append(depth1)
-        y_depth2_sd.append(depth2)
-        z_sd.append(z)
-        weight_sd.append(0.0001)
-
+        if 64 - n_discs >= depth2:
+            depth1 = 0
+            z = 7.0 + 2.0 * ((n_discs - 4) / 60)
+            w_n_discs_sd.append(n_discs)
+            x_depth1_sd.append(depth1)
+            y_depth2_sd.append(depth2)
+            z_sd.append(z)
+            weight_sd.append(0.0008)
+'''
 '''
 for n_discs in range(4, 61):
     for depth2 in range(30, 31):
@@ -119,7 +120,7 @@ for n_discs in range(4, 61):
         x_depth1_sd.append(depth1)
         y_depth2_sd.append(depth2)
         z_sd.append(z)
-        weight_sd.append(0.0001)
+        weight_sd.append(0.001)
 '''
 def f(wxy, probcut_a, probcut_b, probcut_c, probcut_d, probcut_e, probcut_f, probcut_g, probcut_h, probcut_i, probcut_j, probcut_k, probcut_l, probcut_m, probcut_o, probcut_p, probcut_q):
     w, x, y = wxy
@@ -156,13 +157,13 @@ def plot_fit_result_allphases(w, x, y, z, params):
                 z_error_phase.append(zz)
         color = next(ax._get_lines.prop_cycler)['color']  # Get the next color in the cycle
         ax.plot(x_depth1_phase, y_depth2_phase, z_error_phase, ms=5, marker="o", linestyle='None', label=f'n_moves={n_moves}', color=color)
-        mx, my = np.meshgrid(range(16), range(30))
+        mx, my = np.meshgrid(range(20), range(30))
         ax.plot_wireframe(mx, my, f_max((n_discs, mx, my), *params), rstride=4, cstride=2, alpha=0.5, color=color)
 
     ax.set_xlabel('depth1_short')
     ax.set_ylabel('depth2_long')
     ax.set_zlabel('error')
-    ax.set_xlim((0, 16))
+    ax.set_xlim((0, 20))
     ax.set_ylim((0, 30))
     ax.set_zlim((0, 8))
     ax.legend()
