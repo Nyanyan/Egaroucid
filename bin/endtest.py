@@ -10,7 +10,10 @@ def fill0(n, r):
 
 N_PROBLEMS = 10
 
-cmd = 'Egaroucid_for_Console.exe -l 27 -nobook -thread 32 -solve problem/endgame_test_' + str(N_PROBLEMS) + '.txt'
+exe = 'Egaroucid_for_Console.exe'
+#exe = 'versions/Egaroucid_for_Console_7_5_1_Windows_SIMD/Egaroucid_for_Console_7_5_1_SIMD.exe'
+
+cmd = exe + ' -l 27 -nobook -thread 32 -solve problem/endgame_test_' + str(N_PROBLEMS) + '.txt'
 
 print(cmd)
 egaroucid = subprocess.Popen((cmd).split(), stdin=subprocess.PIPE, stdout=subprocess.PIPE)
