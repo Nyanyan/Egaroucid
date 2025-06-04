@@ -704,7 +704,7 @@ void solve_random(std::vector<std::string> arg, Options *options, State *state) 
         for (int i = 0; i < n_boards; ++i) {
             Board board = get_random_board(n_random_moves);
             Search_result result = ai(board, options->level, true, 0, false, options->show_log);
-            std::cout << board.to_str().substr(0, 64) << " " << result.value << '\n';
+            std::cout << board.to_str().substr(0, 64) << " " << result.value << std::endl;
         }
     } else {
         int n_boards_done = 0;
@@ -722,7 +722,7 @@ void solve_random(std::vector<std::string> arg, Options *options, State *state) 
                 if (task.second.valid()) {
                     if (task.second.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
                         Search_result result = task.second.get();
-                        std::cout << task.first.to_str().substr(0, 64) << " " << result.value << '\n';
+                        std::cout << task.first.to_str().substr(0, 64) << " " << result.value << std::endl;
                         ++n_boards_done;
                     }
                 }
@@ -739,7 +739,7 @@ void solve_random(std::vector<std::string> arg, Options *options, State *state) 
                 global_searching = true;
                 for (Board &board: boards_mid) {
                     Search_result result = ai(board, options->level, true, 0, true, options->show_log);
-                    std::cout << board.to_str().substr(0, 64) << " " << result.value << '\n';
+                    std::cout << board.to_str().substr(0, 64) << " " << result.value << std::endl;
                     ++n_boards_done;
                 }
             }
