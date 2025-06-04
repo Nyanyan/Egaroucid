@@ -255,3 +255,5 @@ board_n_moves['213'] = [58, 58] # random 58 discs
 
 
 board_n_moves['214'] = [11, 59] # first11_all
+
+board_n_moves['215'] = [0, 59] # test data

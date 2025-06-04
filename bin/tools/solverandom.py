@@ -8,7 +8,7 @@ IDX_START = int(sys.argv[2])
 IDX_END = int(sys.argv[3])
 
 LEVEL = int(sys.argv[4])
-N_BOARDS_PER_FILE = 10000
+N_BOARDS_PER_FILE = 1000
 N_THREAD = 31
 
 def fill0(n, r):

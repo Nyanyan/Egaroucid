@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
 
 opt_log_file = 'trained/opt_log.txt'
-test_files = ['trained/test_166.txt', 'trained/test_167.txt']
+test_files = ['trained/test_random.txt', 'trained/test_drawline.txt']
 test_labels = ['test_random', 'test_drawline']
 test_markers = ['^', '1']
 test_colors = [

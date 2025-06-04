@@ -65,10 +65,16 @@ exe = 'test_loss_20250513_1_7_7.out'
 
 eval_file = 'trained/eval.egev'
 
-for data_num in [166, 167]:
+tasks = [
+    ['random', [166, 215]],
+    ['drawline', [167]],
+]
+
+for task in tasks:
     data_nums = [[] for _ in range(60)]
     for i in range(60):
-        data_nums[i].append(data_num)
+        for data_num in task[1]:
+            data_nums[i].append(data_num)
 
     res = ''
     for phase in range(N_PHASES):
@@ -82,5 +88,5 @@ for data_num in [166, 167]:
     print('')
     print('all done')
     print(res)
-    with open('trained/test_' + str(data_num) + '.txt', 'w') as f:
+    with open('trained/test_' + task[0] + '.txt', 'w') as f:
         f.write(res)
