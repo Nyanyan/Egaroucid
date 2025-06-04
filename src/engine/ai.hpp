@@ -1477,7 +1477,7 @@ std::vector<Ponder_elem> ai_align_move_levels(Board board, bool show_log, std::v
 std::vector<Ponder_elem> ai_additional_selfplay(Board board, bool show_log, std::vector<Ponder_elem> move_list, int n_good_moves, uint64_t time_limit, thread_id_t thread_id) {
     uint64_t strt = tim();
     if (show_log) {
-        std::cerr << "search moves tl " << time_limit << " n_good_moves " << n_good_moves << " out of " << move_list.size() << std::endl;
+        std::cerr << "additional selfplay tl " << time_limit << " n_good_moves " << n_good_moves << " out of " << move_list.size() << std::endl;
     }
     const int max_depth = HW2 - board.n_discs() - 1;
     const int initial_level = 21;
