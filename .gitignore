@@ -52,6 +52,7 @@ bin/transcript
 bin/ffotest_result
 bin/ggs/id
 bin/ggs/log
+bin/ggs/cmd
 bin/egaroucid_vs_edax_time_log
 
 # img
