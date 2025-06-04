@@ -1374,7 +1374,7 @@ std::vector<Ponder_elem> ai_get_values(Board board, bool show_log, uint64_t time
 std::vector<Ponder_elem> ai_align_move_levels(Board board, bool show_log, std::vector<Ponder_elem> move_list, int n_good_moves, uint64_t time_limit, thread_id_t thread_id, int aligned_min_level) {
     uint64_t strt = tim();
     if (show_log) {
-        std::cerr << "align levels tl " << time_limit << " n_good_moves " << n_good_moves << std::endl;
+        std::cerr << "align levels tl " << time_limit << " n_good_moves " << n_good_moves << " out of " << move_list.size() << std::endl;
     }
     const int max_depth = HW2 - board.n_discs() - 1;
     while (tim() - strt < time_limit) {
