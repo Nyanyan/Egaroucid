@@ -9,7 +9,7 @@ board_root_dir = os.environ['EGAROUCID_DATA'] + '/train_data/board_data/'
 log_file = os.environ['EGAROUCID_DATA'] + '/train_data/board_data/log.txt'
 
 nums = [
-    215
+    195
 ]
 
 FILE_INTERVAL = 100 * 60
