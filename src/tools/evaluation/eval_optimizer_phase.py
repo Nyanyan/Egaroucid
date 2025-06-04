@@ -101,6 +101,7 @@ executable = 'eval_optimizer_cuda_12_2_0_20241125_1_7_5.exe'
 #'''
 # 7.7
 train_data_nums = [
+    18, 19, 20, 21, 24, 25, 28, 29, 30, 31, # old data (without records27)
     34, 35, # mid-endgame data 1
     #36, # old first11 book
     37, # book data
@@ -110,7 +111,7 @@ train_data_nums = [
     77,  # random 18 discs (GGS)
     78, 79, # random 11 & 12 (bug fixed)
     80, # new first11 book
-    #81, # test data
+    81, # test data
     82, # random 12
     #83, # new first11 book data (records80 minimum 200000 data)
     #84, 85, 86, 87, 88, 89, # non-regular random starting position
@@ -126,12 +127,12 @@ train_data_nums = [
                    168, 169, 170, 171, 172, 173, 174, # random boards 13-19
     175, 176, 177, # 178, 179, 180, 181, 182, 183, 184, # random boards 20-29
     #185,                          191, 192, 193, 194, # random boards 30-39
-    195, #196, 197, 198, 199, 200, 201, 202, 203, 204, # random boards 40-49
+    #195, 196, 197, 198, 199, 200, 201, 202, 203, 204, # random boards 40-49
     #205, 206, 207, 208, 209, 210, 211, 212, 213, # random boards 50-58
     214, # random 11 (first11_all)
 ]
-if int(phase) < 40:
-    train_data_nums.extend([18, 19, 20, 21, 24, 25, 28, 29, 30, 31]) # old data (without records27)
+#if int(phase) < 40:
+#    train_data_nums.extend([18, 19, 20, 21, 24, 25, 28, 29, 30, 31]) # old data (without records27)
 #train_data_nums = [97]
 train_data_nums.sort()
 #print(train_data_nums, file=sys.stderr)

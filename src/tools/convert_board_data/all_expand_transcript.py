@@ -6,6 +6,7 @@ transcript_root_dir = './../../../train_data/transcript/'
 board_root_dir = os.environ['EGAROUCID_DATA'] + '/train_data/board_data/'
 log_file = os.environ['EGAROUCID_DATA'] + '/train_data/board_data/log.txt'
 
+'''
 board_sub_dir_nums = [
     18, 19, 20, 21, 24, 25, 28, 29, 30, 31, # old data (without records27)
     34, 35, # mid-endgame data 1
@@ -17,7 +18,7 @@ board_sub_dir_nums = [
     77,  # random 18 discs (GGS)
     78, 79, # random 11 & 12 (bug fixed)
     #80, # new first11 book
-    #81, # test data
+    81, # test data
     82, # random 12
     #83, # new first11 book data (records80 minimum 200000 data)
     #84, 85, 86, 87, 88, 89, # non-regular random starting position
@@ -40,6 +41,8 @@ board_sub_dir_nums = [
     #166, 
     167, # test data
 ]
+'''
+board_sub_dir_nums = [81]
 
 
 FILE_INTERVAL = 100
