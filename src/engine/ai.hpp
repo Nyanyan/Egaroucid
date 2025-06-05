@@ -288,7 +288,7 @@ void iterative_deepening_search_time_limit(Board board, int alpha, int beta, boo
             }
             uint64_t legal_without_bestmove = use_legal ^ (1ULL << result->policy);
             if (
-                (!main_is_end_search && main_depth >= 30 && main_depth <= 31) && 
+                (!main_is_end_search && main_depth >= 29 && main_depth <= 30) && 
                 !policy_changed && 
                 !policy_changed_before && 
                 main_mpc_level == MPC_74_LEVEL && 
