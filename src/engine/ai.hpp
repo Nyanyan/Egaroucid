@@ -770,7 +770,7 @@ Search_result ai_time_limit(Board board, bool use_book, int book_acc_level, bool
                 }
                 if (new_n_good_moves >= 2) {
                     uint64_t elapsed_till_align_level = tim() - strt;
-                    if (time_limit > elapsed_till_align_level) {
+                    if (time_limit > elapsed_till_align_level + min_ai_common_tl) {
                         uint64_t remaining_time_msec_p = 1;
                         uint64_t elapsed_special_search = tim() - strt;
                         if (time_limit > elapsed_special_search) {
