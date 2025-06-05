@@ -1367,10 +1367,10 @@ std::vector<Ponder_elem> ai_additional_selfplay(Board board, bool show_log, std:
             if (move_list[i].value > first_val) {
                 second_val = first_val;
                 first_val = move_list[i].value;
-                first_level = move_list[i].level;
+                first_level = (levels[i] - 1) / n_same_level;
             } else if (move_list[i].value > second_val) {
                 second_val = move_list[i].value;
-                second_level = move_list[i].level;
+                second_level = (levels[i] - 1) / n_same_level;
             }
         }
         if (
