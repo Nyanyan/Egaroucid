@@ -1374,7 +1374,10 @@ std::vector<Ponder_elem> ai_additional_selfplay(Board board, bool show_log, std:
                 second_level = move_list[i].level;
             }
         }
-        if (first_val - second_val > 1.95 && first_level >= 25 && second_level >= 25) {
+        if (
+            (first_val - second_val > 1.95 && first_level >= 25 && second_level >= 25) || 
+            first_val - second_val > 2.95
+        ) {
             if (show_log) {
                 std::cerr << "enough differences found first " << first_val << "@lv." << first_level << " second " << second_val << "@lv." << second_level << std::endl;
             }
