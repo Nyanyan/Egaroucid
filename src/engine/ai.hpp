@@ -730,8 +730,8 @@ Search_result ai_time_limit(Board board, bool use_book, int book_acc_level, bool
     if (time_limit > 10000ULL && n_empties >= 35) { // additional search
         // bool need_request_more_time = false;
         bool get_values_searching = true;
-        uint64_t get_values_tl = 2000ULL;
-        uint64_t until_align_levels_tl = 4000ULL;
+        uint64_t get_values_tl = 3000ULL;
+        uint64_t until_align_levels_tl = 5000ULL;
         uint64_t min_ai_common_tl = 3000ULL;
         if (show_log) {
             std::cerr << "getting values tl " << get_values_tl << std::endl;
@@ -1096,7 +1096,7 @@ std::vector<Ponder_elem> ai_ponder(Board board, bool show_log, thread_id_t threa
             for (int i = 0; i < canput; ++i) {
                 max_value = std::max(max_value, move_list[i].value);
             }
-            if (v >= max_value - 3.5 && level >= 17) {
+            if (v >= max_value - 3.25 && level >= 19) {
                 // std::cerr << "ponder selfplay " << idx_to_coord(move_list[selected_idx].flip.pos) << " depth " << new_depth << std::endl;
                 double selfplay_val = selfplay_and_analyze(n_board, level, false, thread_id, v, searching);
                 if (selfplay_val != SCORE_UNDEFINED) {
