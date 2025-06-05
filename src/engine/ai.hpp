@@ -730,7 +730,9 @@ Search_result ai_time_limit(Board board, bool use_book, int book_acc_level, bool
     if (time_limit > 10000ULL && n_empties >= 35) { // additional search
         bool need_request_more_time = false;
         bool get_values_searching = true;
-        uint64_t get_values_tl = 1000ULL;
+        uint64_t get_values_tl = 2000ULL;
+        uint64_t until_align_levels_tl = 4000ULL;
+        uint64_t min_ai_common_tl = 3000ULL;
         if (show_log) {
             std::cerr << "getting values tl " << get_values_tl << std::endl;
         }
@@ -752,10 +754,10 @@ Search_result ai_time_limit(Board board, bool use_book, int book_acc_level, bool
                     std::cerr << std::endl;
                 }
                 uint64_t elapsed_till_get_values = tim() - strt;
-                if (elapsed_till_get_values > 2000) {
-                    elapsed_till_get_values = 2000;
+                if (elapsed_till_get_values > until_align_levels_tl) {
+                    elapsed_till_get_values = until_align_levels_tl;
                 }
-                uint64_t align_moves_tl = 2000ULL - elapsed_till_get_values;
+                uint64_t align_moves_tl = until_align_levels_tl - elapsed_till_get_values;
                 std::vector<Ponder_elem> after_move_list = ai_align_move_levels(board, show_log, get_values_move_list, n_good_moves, align_moves_tl, thread_id, 27);
                 need_request_more_time = true;
 
@@ -788,7 +790,7 @@ Search_result ai_time_limit(Board board, bool use_book, int book_acc_level, bool
                         //         self_play_tl = 10ULL;
                         //     }
                         // }
-                        uint64_t self_play_tl = time_limit - elapsed_till_align_level - 3000ULL;
+                        uint64_t self_play_tl = time_limit - elapsed_till_align_level - min_ai_common_tl;
                         if (show_log) {
                             std::cerr << "need to search good moves (self play) :";
                             for (int i = 0; i < new_n_good_moves; ++i) {
@@ -1375,7 +1377,7 @@ std::vector<Ponder_elem> ai_additional_selfplay(Board board, bool show_log, std:
                 second_val = move_list[i].value;
             }
         }
-        if (first_val - second_val > 3.0) {
+        if (first_val - second_val > 2.9) {
             if (show_log) {
                 std::cerr << "enough differences found first " << first_val << " second " << second_val << std::endl;
             }
