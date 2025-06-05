@@ -491,6 +491,15 @@ void ggs_client(Options *options) {
                 ggs_send_message(sock, user_input + "\n", options);
                 last_sent_time = tim();
                 if (user_input == "quit") {
+                    global_searching = false;
+                    for (int ai_i = 0; ai_i < 2; ++ai_i) {
+                        if (ai_futures[ai_i].valid()) {
+                            ai_futures[ai_i].get();
+                        }
+                        if (ponder_futures[ai_i].valid()) {
+                            ponder_futures[ai_i].get();
+                        }
+                    }
                     break;
                 }
             }
@@ -812,8 +821,6 @@ void ggs_client(Options *options) {
             ggs_print_info(msg, options);
         }
     }
-
-    global_searching = false;
 
     // close connection
     ggs_close(sock);
