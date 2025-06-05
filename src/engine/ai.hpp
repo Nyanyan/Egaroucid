@@ -728,10 +728,10 @@ Search_result ai_time_limit(Board board, bool use_book, int book_acc_level, bool
     uint64_t strt = tim();
     int n_empties = HW2 - board.n_discs();
     if (time_limit > 10000ULL && n_empties >= 35) { // additional search
-        bool need_request_more_time = false;
+        // bool need_request_more_time = false;
         bool get_values_searching = true;
-        uint64_t get_values_tl = 3000ULL;
-        uint64_t until_align_levels_tl = 5000ULL;
+        uint64_t get_values_tl = 2000ULL;
+        uint64_t until_align_levels_tl = 4000ULL;
         uint64_t min_ai_common_tl = 3000ULL;
         if (show_log) {
             std::cerr << "getting values tl " << get_values_tl << std::endl;
@@ -759,12 +759,12 @@ Search_result ai_time_limit(Board board, bool use_book, int book_acc_level, bool
                 }
                 uint64_t align_moves_tl = until_align_levels_tl - elapsed_till_get_values;
                 std::vector<Ponder_elem> after_move_list = ai_align_move_levels(board, show_log, get_values_move_list, n_good_moves, align_moves_tl, thread_id, 27);
-                need_request_more_time = true;
+                // need_request_more_time = true;
 
                 double new_best_value = after_move_list[0].value;
                 int new_n_good_moves = 0;
                 for (const Ponder_elem &elem: after_move_list) {
-                    if (elem.value >= best_value - AI_TL_ADDITIONAL_SEARCH_THRESHOLD) {
+                    if (elem.value >= new_best_value - AI_TL_ADDITIONAL_SEARCH_THRESHOLD) {
                         ++new_n_good_moves;
                     }
                 }
@@ -1065,7 +1065,7 @@ std::vector<Ponder_elem> ai_ponder(Board board, bool show_log, thread_id_t threa
                 ucb = -INF;
             } else {
                 //double depth_weight = (double)std::min(10, move_list[i].depth) / (double)std::min(10, max_depth);
-                ucb = move_list[i].value / (double)HW2 + 0.7 * sqrt(log(2.0 * (double)n_searched_all) / (double)move_list[i].count);
+                ucb = move_list[i].value / (double)HW2 + 0.6 * sqrt(log(2.0 * (double)n_searched_all) / (double)move_list[i].count);
             }
             if (ucb > max_ucb) {
                 selected_idx = i;
@@ -1096,7 +1096,7 @@ std::vector<Ponder_elem> ai_ponder(Board board, bool show_log, thread_id_t threa
             for (int i = 0; i < canput; ++i) {
                 max_value = std::max(max_value, move_list[i].value);
             }
-            if (v >= max_value - 3.5 && level >= 18) {
+            if (v >= max_value - 3.5 && level >= 17) {
                 // std::cerr << "ponder selfplay " << idx_to_coord(move_list[selected_idx].flip.pos) << " depth " << new_depth << std::endl;
                 double selfplay_val = selfplay_and_analyze(n_board, level, false, thread_id, v, searching);
                 if (selfplay_val != SCORE_UNDEFINED) {
