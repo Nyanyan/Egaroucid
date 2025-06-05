@@ -443,6 +443,7 @@ Search_result ggs_search(GGS_Board ggs_board, Options *options, thread_id_t thre
                 }
             }
             ai_additional_selfplay(ggs_board.board, true, move_list, n_good_moves, AI_TL_ADDITIONAL_SEARCH_THRESHOLD * 3.0, 20000, thread_id);
+            std::cerr << std::endl;
         }
         remaining_time_msec -= tim() - strt;
 
