@@ -15,13 +15,13 @@
 constexpr int TIME_MANAGEMENT_INITIAL_N_EMPTIES = 50;
 #endif
 
-#define TIME_MANAGEMENT_REMAINING_TIME_OFFSET 100 // ms / move
-#define TIME_MANAGEMENT_REMAINING_TIME_OFFSET_BASE 20000 // ms
-#define TIME_MANAGEMENT_REMAINING_MOVES_OFFSET 15 // 15 * 2 = 30 moves
+#define TIME_MANAGEMENT_REMAINING_TIME_OFFSET 200 // ms / move
+#define TIME_MANAGEMENT_REMAINING_TIME_OFFSET_BASE 10000 // ms
+// #define TIME_MANAGEMENT_REMAINING_MOVES_OFFSET 15 // 15 * 2 = 30 moves
 #define TIME_MANAGEMENT_N_MOVES_COE_30_OR_MORE 1.2
 #define TIME_MANAGEMENT_N_MOVES_COE_40_OR_MORE_ADDITIONAL 0.5 // additional search
 #define TIME_MANAGEMENT_N_MOVES_COE_30_OR_MORE_NOTIME 1.2
-#define TIME_MANAGEMENT_ADDITIONAL_TIME_COE_BASE 1.5
+#define TIME_MANAGEMENT_ADDITIONAL_TIME_COE_BASE 1.6
 #define TIME_MANAGEMENT_ADDITIONAL_TIME_COE_ADD 1.9
 //#define TIME_MANAGEMENT_N_MOVES_COE_ADDITIONAL_TIME 0.97
 
@@ -82,19 +82,19 @@ uint64_t calc_time_limit_ply(const Board board, uint64_t remaining_time_msec, bo
     }
 
     // midgame search
-    int remaining_moves_proc = 0;
+    double remaining_moves_proc = 0;
     if (remaining_time_msec_margin < remaining_time_msec) {
         if (remaining_moves >= 30 / 2) { // 30 or more
-            remaining_moves_proc += std::round((remaining_moves - (30 / 2)) * TIME_MANAGEMENT_N_MOVES_COE_30_OR_MORE);
+            remaining_moves_proc += (remaining_moves - (30 / 2)) * TIME_MANAGEMENT_N_MOVES_COE_30_OR_MORE;
         }
         if (remaining_moves >= 40 / 2) { // 40 or more
-            remaining_moves_proc += std::round((remaining_moves - (40 / 2)) * TIME_MANAGEMENT_N_MOVES_COE_40_OR_MORE_ADDITIONAL);
+            remaining_moves_proc += (remaining_moves - (40 / 2)) * TIME_MANAGEMENT_N_MOVES_COE_40_OR_MORE_ADDITIONAL;
         }
     } else {
-        remaining_moves_proc += std::round((remaining_moves - (26 / 2)) * TIME_MANAGEMENT_N_MOVES_COE_30_OR_MORE_NOTIME);
+        remaining_moves_proc += (remaining_moves - (26 / 2)) * TIME_MANAGEMENT_N_MOVES_COE_30_OR_MORE_NOTIME;
     }
-    remaining_moves_proc = std::max(2, remaining_moves_proc); // at least 2 moves
-    return std::max<uint64_t>(1ULL, remaining_time_msec_margin / remaining_moves_proc);
+    remaining_moves_proc = std::max(2.0, remaining_moves_proc); // at least 2 moves
+    return std::max<uint64_t>(1ULL, (uint64_t)(remaining_time_msec_margin / remaining_moves_proc));
 }
 
 uint64_t request_more_time(Board board, uint64_t remaining_time_msec, uint64_t time_limit, bool show_log) {
