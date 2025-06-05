@@ -924,3 +924,10 @@ level: 21 Egaroucid WDL: 55-19-26 Egaroucid win rate: 0.645 Egaroucid average di
 
 2025/06/04 update mpc
 level: 15 Egaroucid WDL: 132-39-79 Egaroucid win rate: 0.606 Egaroucid average discs earned: 0.68
+
+
+
+
+2025/06/05 update eval & mpc
+level: 15 Egaroucid WDL: 149-32-69 Egaroucid win rate: 0.66 Egaroucid average discs earned: 1.084
+
