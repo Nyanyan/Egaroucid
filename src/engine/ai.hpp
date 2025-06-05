@@ -54,7 +54,7 @@ std::vector<Ponder_elem> ai_ponder(Board board, bool show_log, thread_id_t threa
 std::vector<Ponder_elem> ai_get_values(Board board, bool show_log, uint64_t time_limit, thread_id_t thread_id);
 std::pair<int, int> ponder_selfplay(Board board_start, int root_depth, uint_fast8_t root_mpc_level, bool show_log, bool use_multi_thread, bool *searching);
 std::vector<Ponder_elem> ai_align_move_levels(Board board, bool show_log, std::vector<Ponder_elem> move_list, int n_good_moves, uint64_t time_limit, thread_id_t thread_id, int aligned_min_level);
-std::vector<Ponder_elem> ai_additional_selfplay(Board board, bool show_log, std::vector<Ponder_elem> move_list, int n_good_moves, uint64_t time_limit, thread_id_t thread_id);
+std::vector<Ponder_elem> ai_additional_selfplay(Board board, bool show_log, std::vector<Ponder_elem> move_list, int n_good_moves, double threshold, uint64_t time_limit, thread_id_t thread_id);
 Search_result ai_legal_window(Board board, int alpha, int beta, int level, bool use_book, int book_acc_level, bool use_multi_thread, bool show_log, uint64_t use_legal);
 
 inline uint64_t get_this_search_time_limit(uint64_t time_limit, uint64_t elapsed) {
@@ -790,7 +790,7 @@ Search_result ai_time_limit(Board board, bool use_book, int book_acc_level, bool
                                 }
                                 std::cerr << std::endl;
                             }
-                            std::vector<Ponder_elem> after_move_list2 = ai_additional_selfplay(board, show_log, after_move_list, new_n_good_moves, self_play_tl, thread_id);
+                            std::vector<Ponder_elem> after_move_list2 = ai_additional_selfplay(board, show_log, after_move_list, new_n_good_moves, AI_TL_ADDITIONAL_SEARCH_THRESHOLD, self_play_tl, thread_id);
                         }
                     }
                 }
@@ -1340,7 +1340,7 @@ std::vector<Ponder_elem> ai_align_move_levels(Board board, bool show_log, std::v
     return move_list;
 }
 
-std::vector<Ponder_elem> ai_additional_selfplay(Board board, bool show_log, std::vector<Ponder_elem> move_list, int n_good_moves, uint64_t time_limit, thread_id_t thread_id) {
+std::vector<Ponder_elem> ai_additional_selfplay(Board board, bool show_log, std::vector<Ponder_elem> move_list, int n_good_moves, double threshold, uint64_t time_limit, thread_id_t thread_id) {
     uint64_t strt = tim();
     if (show_log) {
         std::cerr << "additional selfplay tl " << time_limit << " n_good_moves " << n_good_moves << " out of " << move_list.size() << std::endl;
@@ -1374,8 +1374,8 @@ std::vector<Ponder_elem> ai_additional_selfplay(Board board, bool show_log, std:
             }
         }
         if (
-            (first_val - second_val > 1.95 && first_level >= 25 && second_level >= 25) || 
-            first_val - second_val > 2.95
+            (first_val - second_val > threshold * 1.114 && first_level >= 25 && second_level >= 25) || 
+            first_val - second_val > threshold * 1.686
         ) {
             if (show_log) {
                 std::cerr << "enough differences found first " << first_val << "@lv." << first_level << " second " << second_val << "@lv." << second_level << std::endl;
@@ -1391,7 +1391,7 @@ std::vector<Ponder_elem> ai_additional_selfplay(Board board, bool show_log, std:
                     selected_idx = i;
                     break;
                 } else {
-                    double val = move_list[i].value + myrandom() * AI_TL_ADDITIONAL_SEARCH_THRESHOLD * 2.0 + (double)(60 - initial_level - levels[i] / n_same_level) * 0.333; // 3 level for 1 score
+                    double val = move_list[i].value + myrandom() * threshold * 2.0 + (double)(60 - initial_level - levels[i] / n_same_level) * 0.333; // 3 level for 1 score
                     if (val > max_val) {
                         max_val = val;
                         selected_idx = i;

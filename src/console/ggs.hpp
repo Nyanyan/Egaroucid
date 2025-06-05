@@ -417,6 +417,7 @@ GGS_Board ggs_get_board(std::string str) {
 Search_result ggs_search(GGS_Board ggs_board, Options *options, thread_id_t thread_id, bool *searching) {
     Search_result search_result;
     if (ggs_board.board.get_legal()) {
+
         uint64_t remaining_time_msec = 0;
         if (ggs_board.player_to_move == BLACK) {
             remaining_time_msec = ggs_board.remaining_seconds_black * 1000;
@@ -428,6 +429,23 @@ Search_result ggs_search(GGS_Board ggs_board, Options *options, thread_id_t thre
         } else {
             remaining_time_msec = std::max<uint64_t>(remaining_time_msec * 0.1, 1ULL);
         }
+
+        // special code for s8r14
+        uint64_t strt = tim();
+        if (ggs_board.board.n_discs() == 14 && remaining_time_msec > 30000) {
+            std::cerr << "s8r14 first move special selfplay" << std::endl;
+            std::vector<Ponder_elem> move_list = ai_get_values(ggs_board.board, true, 4000, thread_id);
+            double best_value = move_list[0].value;
+            int n_good_moves = 0;
+            for (const Ponder_elem &elem: move_list) {
+                if (elem.value >= best_value - AI_TL_ADDITIONAL_SEARCH_THRESHOLD * 3.0) {
+                    ++n_good_moves;
+                }
+            }
+            ai_additional_selfplay(ggs_board.board, true, move_list, n_good_moves, 20000, AI_TL_ADDITIONAL_SEARCH_THRESHOLD * 3.0, thread_id);
+        }
+        remaining_time_msec -= tim() - strt;
+
         search_result = ai_time_limit(ggs_board.board, true, 0, true, options->show_log, remaining_time_msec, thread_id, searching);
     } else { // pass
         search_result.policy = MOVE_PASS;
