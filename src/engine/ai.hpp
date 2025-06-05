@@ -727,11 +727,11 @@ Search_result ai_time_limit(Board board, bool use_book, int book_acc_level, bool
     }
     uint64_t strt = tim();
     int n_empties = HW2 - board.n_discs();
-    if (time_limit > 10000ULL && n_empties >= 35) { // additional search
+    if (time_limit > 11000ULL && n_empties >= 35) { // additional search
         // bool need_request_more_time = false;
         bool get_values_searching = true;
-        uint64_t get_values_tl = 3000ULL;
-        uint64_t until_align_levels_tl = 5000ULL;
+        uint64_t get_values_tl = 4000ULL;
+        uint64_t until_align_levels_tl = 6000ULL;
         uint64_t min_ai_common_tl = 3000ULL;
         if (show_log) {
             std::cerr << "getting values tl " << get_values_tl << std::endl;
@@ -741,7 +741,7 @@ Search_result ai_time_limit(Board board, bool use_book, int book_acc_level, bool
             double best_value = get_values_move_list[0].value;
             int n_good_moves = 0;
             for (const Ponder_elem &elem: get_values_move_list) {
-                if (elem.value >= best_value - AI_TL_ADDITIONAL_SEARCH_THRESHOLD * 2.0) {
+                if (elem.value >= best_value - AI_TL_ADDITIONAL_SEARCH_THRESHOLD * 3.0) {
                     ++n_good_moves;
                 }
             }
@@ -1369,17 +1369,20 @@ std::vector<Ponder_elem> ai_additional_selfplay(Board board, bool show_log, std:
     Flip flip;
     while (tim() - strt < time_limit) {
         double first_val = -INF, second_val = -INF;
+        int first_level = -1, second_level = -1;
         for (int i = 0; i < n_good_moves; ++i) {
             if (move_list[i].value > first_val) {
                 second_val = first_val;
                 first_val = move_list[i].value;
+                first_level = move_list[i].level;
             } else if (move_list[i].value > second_val) {
                 second_val = move_list[i].value;
+                second_level = move_list[i].level;
             }
         }
-        if (first_val - second_val > 2.9) {
+        if (first_val - second_val > 1.95 && first_level >= 25 && second_level >= 25) {
             if (show_log) {
-                std::cerr << "enough differences found first " << first_val << " second " << second_val << std::endl;
+                std::cerr << "enough differences found first " << first_val << "@lv." << first_level << " second " << second_val << "@lv." << second_level << std::endl;
             }
             break;
         }
