@@ -770,7 +770,7 @@ Search_result ai_time_limit(Board board, bool use_book, int book_acc_level, bool
                 }
                 if (new_n_good_moves >= 2) {
                     uint64_t elapsed_till_align_level = tim() - strt;
-                    if (time_limit > elapsed_till_align_level + min_ai_common_tl) {
+                    if (time_limit > elapsed_till_align_level) {
                         uint64_t remaining_time_msec_p = 1;
                         uint64_t elapsed_special_search = tim() - strt;
                         if (time_limit > elapsed_special_search) {
@@ -782,23 +782,17 @@ Search_result ai_time_limit(Board board, bool use_book, int book_acc_level, bool
                             remaining_time_msec_p = remaining_time_msec - elapsed_special_search;
                         }
                         time_limit = request_more_time(board, remaining_time_msec_p, time_limit, show_log);
-                        // uint64_t self_play_tl = (uint64_t)((time_limit - elapsed_till_align_level) * std::min(0.95, 0.35 * new_n_good_moves));
-                        // if (time_limit - elapsed_till_align_level - self_play_tl < 3000ULL) {
-                        //     if (time_limit - elapsed_till_align_level > 3000ULL) {
-                        //         self_play_tl = time_limit - elapsed_till_align_level - 3000ULL;
-                        //     } else {
-                        //         self_play_tl = 10ULL;
-                        //     }
-                        // }
-                        uint64_t self_play_tl = time_limit - elapsed_till_align_level - min_ai_common_tl;
-                        if (show_log) {
-                            std::cerr << "need to search good moves (self play) :";
-                            for (int i = 0; i < new_n_good_moves; ++i) {
-                                std::cerr << " " << idx_to_coord(after_move_list[i].flip.pos);
+                        if (time_limit > elapsed_till_align_level + min_ai_common_tl) {
+                            uint64_t self_play_tl = time_limit - elapsed_till_align_level - min_ai_common_tl;
+                            if (show_log) {
+                                std::cerr << "need to search good moves (self play) :";
+                                for (int i = 0; i < new_n_good_moves; ++i) {
+                                    std::cerr << " " << idx_to_coord(after_move_list[i].flip.pos);
+                                }
+                                std::cerr << std::endl;
                             }
-                            std::cerr << std::endl;
+                            std::vector<Ponder_elem> after_move_list2 = ai_additional_selfplay(board, show_log, after_move_list, new_n_good_moves, self_play_tl, thread_id);
                         }
-                        std::vector<Ponder_elem> after_move_list2 = ai_additional_selfplay(board, show_log, after_move_list, new_n_good_moves, self_play_tl, thread_id);
                     }
                 }
             }

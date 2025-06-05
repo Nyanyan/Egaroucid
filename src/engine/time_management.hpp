@@ -135,6 +135,9 @@ uint64_t request_more_time(Board board, uint64_t remaining_time_msec, uint64_t t
         }
         time_limit += additional_time;
     }
+    if (show_log) {
+        std::cerr << "more time requested: new time limit " << time_limit << std::endl;
+    }
     return time_limit;
 }
 
