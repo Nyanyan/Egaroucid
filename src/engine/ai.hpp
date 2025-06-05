@@ -24,7 +24,7 @@
 constexpr int AI_TYPE_BOOK = 1000;
 
 constexpr int IDSEARCH_ENDSEARCH_PRESEARCH_OFFSET = 10;
-constexpr int IDSEARCH_ENDSEARCH_PRESEARCH_OFFSET_TIMELIMIT = 8;
+constexpr int IDSEARCH_ENDSEARCH_PRESEARCH_OFFSET_TIMELIMIT = 6;
 constexpr int PONDER_ENDSEARCH_PRESEARCH_OFFSET_TIMELIMIT = 4;
 
 constexpr int PONDER_START_SELFPLAY_DEPTH = 17;
@@ -1495,6 +1495,21 @@ std::vector<Ponder_elem> ai_additional_selfplay(Board board, bool show_log, std:
     std::vector<Board> n_boards;
     Flip flip;
     while (tim() - strt < time_limit) {
+        double first_val = -INF, second_val = -INF;
+        for (int i = 0; i < n_good_moves; ++i) {
+            if (move_list[i].value > first_val) {
+                second_val = first_val;
+                first_val = move_list[i].value;
+            } else if (move_list[i].value > second_val) {
+                second_val = move_list[i].value;
+            }
+        }
+        if (first_val - second_val > 3.0) {
+            if (show_log) {
+                std::cerr << "enough differences found first " << first_val << " second " << second_val << std::endl;
+            }
+            break;
+        }
         double max_val = -INF;
         int selected_idx = -1;
         for (int i = 0; i < n_good_moves; ++i) {
