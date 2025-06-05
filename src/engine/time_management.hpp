@@ -86,13 +86,13 @@ uint64_t calc_time_limit_ply(const Board board, uint64_t remaining_time_msec, bo
 
     if (n_empties <= complete_search_depth) {
         if (show_log) {
-            std::cerr << "try complete search tl " << complete_use_time << std::endl;
+            std::cerr << "try complete search tl max(" << complete_use_time << ", " << midgame_use_time << ")" << std::endl;
         }
         return std::max((uint64_t)complete_use_time, midgame_use_time);
     }
     if (n_empties <= endgame_search_depth) {
         if (show_log) {
-            std::cerr << "try endgame search tl " << endgame_use_time << std::endl;
+            std::cerr << "try endgame search tl max(" << endgame_use_time << ", " << midgame_use_time << ")" << std::endl;
         }
         return std::max((uint64_t)endgame_use_time, midgame_use_time);
     }
@@ -109,7 +109,7 @@ uint64_t request_more_time(Board board, uint64_t remaining_time_msec, uint64_t t
         remaining_time_msec_margin = 1;
     }
     if (show_log) {
-        std::cerr << "requesting more time remaining " << remaining_time_msec << " remaining_margin " << remaining_time_msec_margin << " now tl " << time_limit << std::endl;
+        std::cerr << "requesting more time remaining " << remaining_time_msec << " remaining_margin " << remaining_time_msec_margin << " tl before " << time_limit << std::endl;
     }
     if (remaining_time_msec_margin > time_limit && remaining_time_msec_margin > 60000ULL) {
         // int remaining_moves_proc = std::max(2, (int)round((remaining_moves - TIME_MANAGEMENT_REMAINING_MOVES_OFFSET) * TIME_MANAGEMENT_N_MOVES_COE_ADDITIONAL_TIME)); // at least 2 moves

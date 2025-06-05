@@ -771,13 +771,13 @@ Search_result ai_time_limit(Board board, bool use_book, int book_acc_level, bool
                 if (new_n_good_moves >= 2) {
                     uint64_t elapsed_till_align_level = tim() - strt;
                     if (time_limit > elapsed_till_align_level) {
-                        uint64_t remaining_time_msec_p = 1;
                         uint64_t elapsed_special_search = tim() - strt;
                         if (time_limit > elapsed_special_search) {
                             time_limit -= elapsed_special_search;
                         } else {
                             time_limit = 1;
                         }
+                        uint64_t remaining_time_msec_p = 1;
                         if (remaining_time_msec > elapsed_special_search) {
                             remaining_time_msec_p = remaining_time_msec - elapsed_special_search;
                         }
