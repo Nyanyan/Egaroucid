@@ -50,6 +50,7 @@ struct Options {
     bool ggs_game_log_to_file;
     std::string ggs_game_log_dir;
     bool ggs_accept_request;
+    bool ggs_route_join_tournament;
 #endif
 };
 
@@ -253,6 +254,7 @@ Options get_options(std::vector<Commandline_option> commandline_options, std::st
         }
     }
     res.ggs_accept_request = find_commandline_option(commandline_options, ID_GGS_ACCEPT_REQUEST);
+    res.ggs_route_join_tournament = find_commandline_option(commandline_options, ID_GGS_ROUTE_JOIN_TOURNAMENT);
 #endif
     return res;
 }

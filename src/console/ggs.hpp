@@ -274,6 +274,26 @@ std::string ggs_match_request_get_id(std::string line) {
     return "";
 }
 
+bool ggs_is_join_tournament_message(std::string line) {
+    // something like "nyanyan: tell /td join .1" or "nyanyan: t /td join .1"
+    std::vector<std::string> words = split_by_space(line);
+    if (words.size() >= 5) {
+        return (words[1] == "tell" || words[1] == "t") && words[2] == "/td" && words[3] == "join";
+    }
+    return false;
+}
+
+std::string ggs_join_tournament_get_cmd(std::string line) {
+    // something like "nyanyan: tell /td join .1" or "nyanyan: t /td join .1"
+    std::vector<std::string> words = split_by_space(line);
+    std::string res = "";
+    for (int i = 1; i < 5; ++i) {
+        res += words[i];
+        res += " ";
+    }
+    return res;
+}
+
 std::string ggs_board_get_id(std::string line) {
     std::vector<std::string> words = split_by_space(line);
     if (words.size() >= 3) {
@@ -672,6 +692,19 @@ void ggs_client(Options *options) {
                                 last_sent_time = tim();
                                 ggs_print_info("match request accepted " + request_id, options);
                             }
+                        }
+                    }
+                }
+            }
+            // join tournament
+            if (options->ggs_route_join_tournament) {
+                for (std::string server_reply: server_replies) {
+                    if (server_reply.size()) {
+                        if (ggs_is_join_tournament_message(server_reply)) {
+                            std::string join_tournament_cmd = ggs_join_tournament_get_cmd(server_reply);
+                            ggs_send_message(sock, join_tournament_cmd + "\n", options);
+                            last_sent_time = tim();
+                            ggs_print_info("join tournament " + join_tournament_cmd, options);
                         }
                     }
                 }
