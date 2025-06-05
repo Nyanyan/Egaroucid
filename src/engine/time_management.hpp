@@ -68,20 +68,8 @@ uint64_t calc_time_limit_ply(const Board board, uint64_t remaining_time_msec, bo
     if (show_log) {
         std::cerr << "complete search depth " << complete_search_depth << " endgame search depth " << endgame_search_depth << " n_empties " << n_empties << std::endl;
     }
-    if (n_empties <= complete_search_depth) {
-        if (show_log) {
-            std::cerr << "try complete search tl " << complete_use_time << std::endl;
-        }
-        return complete_use_time;
-    }
-    if (n_empties <= endgame_search_depth) {
-        if (show_log) {
-            std::cerr << "try endgame search tl " << endgame_use_time << std::endl;
-        }
-        return endgame_use_time;
-    }
 
-    // midgame search
+    // midgame search time
     double remaining_moves_proc = 0;
     if (remaining_time_msec_margin < remaining_time_msec) {
         if (remaining_moves >= 30 / 2) { // 30 or more
@@ -94,7 +82,21 @@ uint64_t calc_time_limit_ply(const Board board, uint64_t remaining_time_msec, bo
         remaining_moves_proc += (remaining_moves - (26 / 2)) * TIME_MANAGEMENT_N_MOVES_COE_30_OR_MORE_NOTIME;
     }
     remaining_moves_proc = std::max(2.0, remaining_moves_proc); // at least 2 moves
-    return std::max<uint64_t>(1ULL, (uint64_t)(remaining_time_msec_margin / remaining_moves_proc));
+    uint64_t midgame_use_time = std::max<uint64_t>(1ULL, (uint64_t)(remaining_time_msec_margin / remaining_moves_proc));
+
+    if (n_empties <= complete_search_depth) {
+        if (show_log) {
+            std::cerr << "try complete search tl " << complete_use_time << std::endl;
+        }
+        return std::max((uint64_t)complete_use_time, midgame_use_time);
+    }
+    if (n_empties <= endgame_search_depth) {
+        if (show_log) {
+            std::cerr << "try endgame search tl " << endgame_use_time << std::endl;
+        }
+        return std::max((uint64_t)endgame_use_time, midgame_use_time);
+    }
+    return midgame_use_time;
 }
 
 uint64_t request_more_time(Board board, uint64_t remaining_time_msec, uint64_t time_limit, bool show_log) {

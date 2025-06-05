@@ -1504,7 +1504,7 @@ std::vector<Ponder_elem> ai_additional_selfplay(Board board, bool show_log, std:
                     selected_idx = i;
                     break;
                 } else {
-                    double val = move_list[i].value + myrandom() * AI_TL_ADDITIONAL_SEARCH_THRESHOLD * 2.0 + (double)(60 - initial_level - levels[i] / n_same_level) * 0.5;
+                    double val = move_list[i].value + myrandom() * AI_TL_ADDITIONAL_SEARCH_THRESHOLD * 2.0 + (double)(60 - initial_level - levels[i] / n_same_level) * 0.333; // 3 level for 1 score
                     if (val > max_val) {
                         max_val = val;
                         selected_idx = i;
