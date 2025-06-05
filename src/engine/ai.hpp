@@ -769,8 +769,7 @@ Search_result ai_time_limit(Board board, bool use_book, int book_acc_level, bool
                     }
                 }
                 if (new_n_good_moves >= 2) {
-                    uint64_t elapsed_till_align_level = tim() - strt;
-                    if (time_limit > elapsed_till_align_level) {
+                    if (time_limit > tim() - strt) {
                         uint64_t elapsed_special_search = tim() - strt;
                         if (time_limit > elapsed_special_search) {
                             time_limit -= elapsed_special_search;
@@ -782,8 +781,8 @@ Search_result ai_time_limit(Board board, bool use_book, int book_acc_level, bool
                             remaining_time_msec_p = remaining_time_msec - elapsed_special_search;
                         }
                         time_limit = request_more_time(board, remaining_time_msec_p, time_limit, show_log);
-                        if (time_limit > elapsed_till_align_level + min_ai_common_tl) {
-                            uint64_t self_play_tl = time_limit - elapsed_till_align_level - min_ai_common_tl;
+                        if (time_limit > min_ai_common_tl) {
+                            uint64_t self_play_tl = time_limit - min_ai_common_tl;
                             if (show_log) {
                                 std::cerr << "need to search good moves (self play) :";
                                 for (int i = 0; i < new_n_good_moves; ++i) {
