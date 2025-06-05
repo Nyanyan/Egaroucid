@@ -43,7 +43,7 @@ constexpr double probcut_c = 1.096319765006055;
 constexpr double probcut_d = -0.8362251801219095;
 constexpr double probcut_e = 4.610017383697701;
 constexpr double probcut_f = 3.818582623595395;
-constexpr double probcut_g = 1.6575013664098447;
+constexpr double probcut_g = 1.7775013664098447;
 
 #if USE_MPC_PRE_CALCULATION
 int mpc_error[N_SELECTIVITY_LEVEL][HW2 + 1][HW2 - 3][HW2 - 3];
@@ -94,6 +94,15 @@ inline bool mpc(Search* search, int alpha, int beta, int depth, uint64_t legal, 
         search_depth -= 2; // if value is far from [alpha, beta], decrease search_depth
     }
     */
+
+    if (is_end_search) {
+        if ((alpha & 1) == 0) {
+            alpha += 1;
+        }
+        if ((beta & 1) == 0) {
+            beta -= 1;
+        }
+    }
     
     if (search_depth == 0) {
 #if USE_MPC_PRE_CALCULATION
