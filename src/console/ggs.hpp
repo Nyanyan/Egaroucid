@@ -813,6 +813,8 @@ void ggs_client(Options *options) {
         }
     }
 
+    global_searching = false;
+
     // close connection
     ggs_close(sock);
 }
