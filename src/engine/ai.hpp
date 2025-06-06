@@ -233,6 +233,7 @@ void iterative_deepening_search_time_limit(Board board, int alpha, int beta, boo
     }
     int before_raw_value = -100;
     bool policy_changed_before = true;
+    int n_early_break_success = 0;
     while (global_searching && (*searching) && ((tim() - strt < time_limit) || main_depth <= 1)) {
         bool main_is_end_search = false;
         if (main_depth >= max_depth) {
@@ -289,6 +290,7 @@ void iterative_deepening_search_time_limit(Board board, int alpha, int beta, boo
             uint64_t legal_without_bestmove = use_legal ^ (1ULL << result->policy);
             if (
                 (!main_is_end_search && main_depth >= 29 && main_depth <= 30) && 
+                !(main_depth == 30 && n_early_break_success < 1) && 
                 !policy_changed && 
                 !policy_changed_before && 
                 main_mpc_level == MPC_74_LEVEL && 
@@ -316,7 +318,7 @@ void iterative_deepening_search_time_limit(Board board, int alpha, int beta, boo
                         } catch (const std::exception &e) {
                         }
                         if (show_log) {
-                            std::cerr << "terminate early cut nws by time limit " << tim() - strt << " ms" << std::endl;
+                            std::cerr << "terminate early break nws by time limit " << tim() - strt << " ms" << std::endl;
                         }
                     }
                     result->nodes += nws_search.n_nodes;
@@ -325,9 +327,13 @@ void iterative_deepening_search_time_limit(Board board, int alpha, int beta, boo
                     if (nws_success) {
                         if (nws_value <= nws_alpha) {
                             if (show_log) {
+                                ++n_early_break_success;
                                 std::cerr << "early break succeeded second best " << idx_to_coord(nws_move) << " value <= " << nws_value << " time " << tim() - strt << std::endl;
                             }
-                            break;
+                            if (n_early_break_success == 2) {
+                                std::cerr << "early break!" << std::endl;
+                                break;
+                            }
                         } else if (nws_searching) {
                             if (show_log) {
                                 std::cerr << "early break failed second best " << idx_to_coord(nws_move) << " value >= " << nws_value << " time " << tim() - strt << std::endl;
