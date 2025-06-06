@@ -736,9 +736,9 @@ Search_result ai_time_limit(Board board, bool use_book, int book_acc_level, bool
     if (time_limit > 9000ULL && n_empties >= 35) { // additional search
         // bool need_request_more_time = false;
         bool get_values_searching = true;
-        uint64_t get_values_tl = 2000ULL;
-        uint64_t until_align_levels_tl = 5000ULL;
-        uint64_t min_ai_common_tl = 3000ULL;
+        uint64_t get_values_tl = 1000ULL;
+        uint64_t until_align_levels_tl = 3000ULL;
+        uint64_t min_ai_common_tl = 5000ULL;
         if (show_log) {
             std::cerr << "getting values tl " << get_values_tl << std::endl;
         }
@@ -1371,16 +1371,24 @@ std::vector<Ponder_elem> ai_additional_selfplay(Board board, bool show_log, std:
     Flip flip;
     while (tim() - strt < time_limit) {
         double first_val = -INF, second_val = -INF;
-        int first_level = -1, second_level = -1;
+        int first_idx = -1, second_idx = -1;
         for (int i = 0; i < n_good_moves; ++i) {
             if (move_list[i].value > first_val) {
                 second_val = first_val;
                 first_val = move_list[i].value;
-                first_level = (levels[i] - 1) / n_same_level;
+                first_idx = i;
             } else if (move_list[i].value > second_val) {
                 second_val = move_list[i].value;
-                second_level = (levels[i] - 1) / n_same_level;
+                second_idx = i;
             }
+        }
+        int first_level = (levels[first_idx] - 1) / n_same_level;
+        if (move_list[first_idx].is_endgame_search && move_list[first_idx].mpc_level >= MPC_99_LEVEL) {
+            first_level = 100;
+        }
+        int second_level = (levels[second_idx] - 1) / n_same_level;
+        if (move_list[second_idx].is_endgame_search && move_list[second_idx].mpc_level >= MPC_99_LEVEL) {
+            second_level = 100;
         }
         if (
             (first_val - second_val > threshold * 1.2 && first_level >= 25 && second_level >= 25) ||

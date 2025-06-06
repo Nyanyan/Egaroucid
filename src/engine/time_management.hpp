@@ -31,8 +31,14 @@ uint64_t calc_time_limit_ply(const Board board, uint64_t remaining_time_msec, bo
     int n_empties = HW2 - board.n_discs();
     double remaining_moves = (double)(n_empties + 1) / 2.0;
     uint64_t remaining_time_msec_margin = remaining_time_msec;
+    if (show_log) {
+        std::cerr << "remaining " << remaining_time_msec << std::endl;
+    }
     if (remaining_time_msec > TIME_MANAGEMENT_REMAINING_TIME_OFFSET * remaining_moves + TIME_MANAGEMENT_REMAINING_TIME_OFFSET_BASE) {
         remaining_time_msec_margin -= TIME_MANAGEMENT_REMAINING_TIME_OFFSET * remaining_moves + TIME_MANAGEMENT_REMAINING_TIME_OFFSET_BASE;
+        if (show_log) {
+            std::cerr << "remaining_margin " << remaining_time_msec_margin << std::endl;
+        }
     } else {
         if (show_log) {
             std::cerr << "don't have enough time! remaining " << remaining_time_msec_margin << std::endl;
