@@ -1001,7 +1001,7 @@ double selfplay_and_analyze(Board board, int level, bool show_log, thread_id_t t
                     } else {
                         res = (0.9 * before_val + 1.1 * -v) / 2.0;
                     }
-                    res = (0.2 * selfplay_result + 1.8 * res) / 2.0;
+                    res = 0.025 * selfplay_result + 0.975 * res;
                 }
             }
         }
