@@ -940,6 +940,7 @@ double selfplay_and_analyze(Board board, int level, bool show_log, thread_id_t t
     std::vector<Board> boards;
     Flip flip;
     int score_sgn = -1;
+    double selfplay_result;
     while (*searching) {
         if (board.get_legal() == 0ULL) {
             board.pass();
@@ -959,6 +960,7 @@ double selfplay_and_analyze(Board board, int level, bool show_log, thread_id_t t
                     std::cerr << idx_to_coord(search_result.policy);
                 }
                 if (board.n_discs() >= HW2 - 21 && boards.size()) { // complete search with last 21 empties in lv.17- (initial level)
+                    selfplay_result = score_sgn * search_result.value;
                     if (show_log) {
                         std::cerr << "... result " << score_sgn * search_result.value;
                     }
@@ -999,6 +1001,7 @@ double selfplay_and_analyze(Board board, int level, bool show_log, thread_id_t t
                     } else {
                         res = (0.9 * before_val + 1.1 * -v) / 2.0;
                     }
+                    res = (0.2 * selfplay_result + 1.8 * res) / 2.0;
                 }
             }
         }
