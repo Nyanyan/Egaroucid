@@ -31,7 +31,7 @@ constexpr int PONDER_START_SELFPLAY_DEPTH = 17;
 
 constexpr int AI_TL_EARLY_BREAK_THRESHOLD = 5;
 
-constexpr double AI_TL_ADDITIONAL_SEARCH_THRESHOLD = 1.75;
+constexpr double AI_TL_ADDITIONAL_SEARCH_THRESHOLD = 1.95;
 
 struct Lazy_SMP_task {
     uint_fast8_t mpc_level;
@@ -1383,8 +1383,8 @@ std::vector<Ponder_elem> ai_additional_selfplay(Board board, bool show_log, std:
             }
         }
         if (
-            (first_val - second_val > threshold * 1.114 && first_level >= 25 && second_level >= 25) || // 1.95 discs
-            (first_val - second_val > threshold * 1.714 && first_level >= 21 && second_level >= 21)    // 3.00 discs
+            (first_val - second_val > threshold * 1.2 && first_level >= 25 && second_level >= 25) ||
+            (first_val - second_val > threshold * 2.000 && first_level >= 22 && second_level >= 22)
         ) {
             if (show_log) {
                 std::cerr << "enough differences found first " << first_val << "@lv." << first_level << " second " << second_val << "@lv." << second_level << std::endl;
