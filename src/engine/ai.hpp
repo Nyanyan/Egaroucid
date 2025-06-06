@@ -1381,8 +1381,8 @@ std::vector<Ponder_elem> ai_additional_selfplay(Board board, bool show_log, std:
             }
         }
         if (
-            (first_val - second_val > threshold * 1.114 && first_level >= 25 && second_level >= 25) || 
-            first_val - second_val > threshold * 1.686
+            (first_val - second_val > threshold * 1.114 && first_level >= 25 && second_level >= 25) || // 1.95 discs
+            (first_val - second_val > threshold * 1.714 && first_level >= 21 && second_level >= 21)    // 3.00 discs
         ) {
             if (show_log) {
                 std::cerr << "enough differences found first " << first_val << "@lv." << first_level << " second " << second_val << "@lv." << second_level << std::endl;
