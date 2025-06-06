@@ -353,7 +353,12 @@ GGS_Board ggs_get_board(std::string str) {
                 continue;
             }
             if (n_board_identifier_found == 1) { // board info
-                std::string board_str_part = line.substr(3, 16);
+                std::string board_str_part;
+                for (char c : line) {
+                    if (c == '-' || c == '*' || c == 'O') {
+                        board_str_part += c;
+                    }
+                }
                 board_str += remove_spaces(board_str_part);
                 continue;
             }

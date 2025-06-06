@@ -534,7 +534,7 @@ class Board {
         inline bool from_str(std::string board_str) { // returns OK: true NG: false
             board_str.erase(std::remove_if(board_str.begin(), board_str.end(), ::isspace), board_str.end());
             if (board_str.length() != HW2 + 1) {
-                std::cerr << "[ERROR] invalid argument got length " << board_str.length() << " expected " << HW2 + 1 << std::endl;
+                std::cerr << "[ERROR] invalid argument got length " << board_str.length() << " expected " << HW2 + 1 << " " << board_str << std::endl;
                 return false;
             }
             player = 0ULL;
