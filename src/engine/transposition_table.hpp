@@ -176,11 +176,6 @@ class Hash_data {
             importance = 1;
         }
 
-        inline void reg_policy_overwrite(const int policy) {
-            moves[1] = moves[0];
-            moves[0] = policy;
-        }
-
         /*
             @brief Get level of the element
 
@@ -563,7 +558,7 @@ class Transposition_table {
                                 registered = true;
 #endif
                                 break;
-                            } else {
+                            } else{
 #if TT_REGISTER_MIN_LEVEL
                                 if (node_level < min_level) {
                                     min_level = node_level;
@@ -629,57 +624,6 @@ class Transposition_table {
 #endif
                         break;
                     }
-                node->lock.unlock();
-                ++hash;
-                node = get_node(hash);
-            }
-            if (n_registered >= n_registered_threshold && transposition_table_auto_reset_importance) {
-                std::lock_guard lock(mtx);
-                if (n_registered >= n_registered_threshold) {
-                    //std::cerr << "resetting transposition importance" << std::endl;
-                    reset_importance_proc();
-                }
-            }
-        }
-
-        inline void reg_bestmove(const Board *board, uint32_t hash, int policy) {
-            Hash_node *node = get_node(hash);
-            //const uint32_t level = get_level_common(depth, search->mpc_level);
-            uint32_t node_level;
-#if TT_REGISTER_MIN_LEVEL
-            Hash_node *min_level_node = nullptr;
-            uint32_t min_level = 0x4fffffff;
-            bool registered = false;
-#endif
-            for (uint_fast8_t i = 0; i < TRANSPOSITION_TABLE_N_LOOP; ++i) {
-                node->lock.lock();
-                    if (node->board.player == board->player && node->board.opponent == board->opponent) {
-                        node->data.reg_policy_overwrite(policy);
-                        node->lock.unlock();
-#if TT_REGISTER_MIN_LEVEL
-                        registered = true;
-#endif
-                        break;
-                    } else {
-#if TT_REGISTER_MIN_LEVEL
-                                if (node_level < min_level) {
-                                    min_level = node_level;
-                                    min_level_node = node;
-                                }
-#else
-                                if (node->data.get_importance() == 0) {
-                                    n_registered.fetch_add(1);
-                                }
-                                node->board.player = board->player;
-                                node->board.opponent = board->opponent;
-                                node->data.reg_policy_overwrite(policy);
-                                node->lock.unlock();
-                                //if (node_level > 0) {
-                                //    n_registered.fetch_add(1);
-                                //}
-                                break;
-#endif
-                            }
                 node->lock.unlock();
                 ++hash;
                 node = get_node(hash);

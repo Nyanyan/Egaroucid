@@ -21,8 +21,8 @@ constexpr int TIME_MANAGEMENT_INITIAL_N_EMPTIES = 50; // 64 - 14 (s8r14)
 #define TIME_MANAGEMENT_N_MOVES_COE_30_OR_MORE 1.2
 #define TIME_MANAGEMENT_N_MOVES_COE_40_OR_MORE_ADDITIONAL 0.5 // additional search
 #define TIME_MANAGEMENT_N_MOVES_COE_30_OR_MORE_NOTIME 1.2
-#define TIME_MANAGEMENT_ADDITIONAL_TIME_COE_BASE 1.9
-#define TIME_MANAGEMENT_ADDITIONAL_TIME_COE_ADD 1.5
+#define TIME_MANAGEMENT_ADDITIONAL_TIME_COE_BASE 1.8
+#define TIME_MANAGEMENT_ADDITIONAL_TIME_COE_ADD 1.8
 //#define TIME_MANAGEMENT_N_MOVES_COE_ADDITIONAL_TIME 0.97
 
 Search_result ai(Board board, int level, bool use_book, int book_acc_level, bool use_multi_thread, bool show_log);
@@ -31,14 +31,8 @@ uint64_t calc_time_limit_ply(const Board board, uint64_t remaining_time_msec, bo
     int n_empties = HW2 - board.n_discs();
     double remaining_moves = (double)(n_empties + 1) / 2.0;
     uint64_t remaining_time_msec_margin = remaining_time_msec;
-    if (show_log) {
-        std::cerr << "remaining " << remaining_time_msec << std::endl;
-    }
     if (remaining_time_msec > TIME_MANAGEMENT_REMAINING_TIME_OFFSET * remaining_moves + TIME_MANAGEMENT_REMAINING_TIME_OFFSET_BASE) {
         remaining_time_msec_margin -= TIME_MANAGEMENT_REMAINING_TIME_OFFSET * remaining_moves + TIME_MANAGEMENT_REMAINING_TIME_OFFSET_BASE;
-        if (show_log) {
-            std::cerr << "remaining_margin " << remaining_time_msec_margin << std::endl;
-        }
     } else {
         if (show_log) {
             std::cerr << "don't have enough time! remaining " << remaining_time_msec_margin << std::endl;
