@@ -816,6 +816,7 @@ Search_result ai_time_limit(Board board, bool use_book, int book_acc_level, bool
     if (show_log) {
         std::cerr << "ai_common main search tl " << time_limit << std::endl;
     }
+    transposition_table.del(&board, board.hash());
     Search_result search_result = ai_common(board, -SCORE_MAX, SCORE_MAX, MAX_LEVEL, use_book, book_acc_level, use_multi_thread, show_log, board.get_legal(), false, time_limit, thread_id, searching);
     if (show_log) {
         std::cerr << "ai_time_limit selected " << idx_to_coord(search_result.policy) << " value " << search_result.value << " depth " << search_result.depth << "@" << search_result.probability << "%" << " time " << tim() - strt << " " << board.to_str() << std::endl << std::endl;
