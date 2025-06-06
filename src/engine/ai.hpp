@@ -1096,7 +1096,7 @@ std::vector<Ponder_elem> ai_ponder(Board board, bool show_log, thread_id_t threa
             for (int i = 0; i < canput; ++i) {
                 max_value = std::max(max_value, move_list[i].value);
             }
-            if (v >= max_value - 3.25 && level >= 17) {
+            if (v >= max_value - 4.0 && level >= 19) {
                 // std::cerr << "ponder selfplay " << idx_to_coord(move_list[selected_idx].flip.pos) << " depth " << new_depth << std::endl;
                 double selfplay_val = selfplay_and_analyze(n_board, level, false, thread_id, v, searching);
                 if (selfplay_val != SCORE_UNDEFINED) {
