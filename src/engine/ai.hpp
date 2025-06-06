@@ -733,7 +733,7 @@ Search_result ai_time_limit(Board board, bool use_book, int book_acc_level, bool
     }
     uint64_t strt = tim();
     int n_empties = HW2 - board.n_discs();
-    if (time_limit > 10000ULL && n_empties >= 35) { // additional search
+    if (time_limit > 9000ULL && n_empties >= 35) { // additional search
         // bool need_request_more_time = false;
         bool get_values_searching = true;
         uint64_t get_values_tl = 2000ULL;
@@ -1448,7 +1448,7 @@ std::vector<Ponder_elem> ai_additional_selfplay(Board board, bool show_log, std:
         }
     }
     std::sort(move_list.begin(), move_list.end(), comp_get_values_elem);
-    transposition_table.reg_bestmove(&board, board.hash(), move_list[0].flip.pos);
+    // transposition_table.reg_bestmove(&board, board.hash(), move_list[0].flip.pos);
     if (show_log) {
         std::cerr << "ai_additional_selfplay searched in " << tim() - strt << " ms" << std::endl;
         std::cerr << "ai_additional_selfplay board " << board.to_str() << std::endl;
