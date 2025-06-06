@@ -27,11 +27,11 @@ constexpr int IDSEARCH_ENDSEARCH_PRESEARCH_OFFSET = 10;
 constexpr int IDSEARCH_ENDSEARCH_PRESEARCH_OFFSET_TIMELIMIT = 6;
 constexpr int PONDER_ENDSEARCH_PRESEARCH_OFFSET_TIMELIMIT = 4;
 
-constexpr int PONDER_START_SELFPLAY_DEPTH = 17;
+constexpr int PONDER_START_SELFPLAY_DEPTH = 19;
 
 constexpr int AI_TL_EARLY_BREAK_THRESHOLD = 5;
 
-constexpr double AI_TL_ADDITIONAL_SEARCH_THRESHOLD = 1.95;
+constexpr double AI_TL_ADDITIONAL_SEARCH_THRESHOLD = 1.9;
 
 struct Lazy_SMP_task {
     uint_fast8_t mpc_level;
@@ -1098,7 +1098,7 @@ std::vector<Ponder_elem> ai_ponder(Board board, bool show_log, thread_id_t threa
             for (int i = 0; i < canput; ++i) {
                 max_value = std::max(max_value, move_list[i].value);
             }
-            if (v >= max_value - 4.0 && level >= 19) {
+            if (v >= max_value - 4.0) {
                 // std::cerr << "ponder selfplay " << idx_to_coord(move_list[selected_idx].flip.pos) << " depth " << new_depth << std::endl;
                 double selfplay_val = selfplay_and_analyze(n_board, level, false, thread_id, v, searching);
                 if (selfplay_val != SCORE_UNDEFINED) {
