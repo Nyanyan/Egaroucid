@@ -147,7 +147,7 @@ uint64_t calc_time_limit_ply_MCTS(const Board board, uint64_t remaining_time_mse
         remaining_moves_proc += remaining_moves - 30 / 2;
     }
     remaining_moves_proc = std::max(2.0, remaining_moves_proc); // at least 2 moves
-    uint64_t midgame_use_time = std::max<uint64_t>(1ULL, (uint64_t)(2.0 * remaining_time_msec_margin / remaining_moves_proc));
+    uint64_t midgame_use_time = std::max<uint64_t>(1ULL, (uint64_t)(5.0 * remaining_time_msec_margin / remaining_moves_proc));
 
     if (n_empties <= complete_search_depth) {
         if (show_log) {
