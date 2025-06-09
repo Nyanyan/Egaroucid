@@ -951,6 +951,7 @@ struct AI_Time_Limit_Elem {
     int n_children;
     int n;
     double v;
+    double search_v;
     int last_move;
     bool is_complete_search;
     bool good_moves_already_searched;
@@ -960,16 +961,17 @@ struct AI_Time_Limit_Elem {
         n_children = 0;
         n = 0;
         v = SCORE_UNDEFINED;
+        search_v = -SCORE_MAX;
         last_move = MOVE_UNDEFINED;
         is_complete_search = false;
         good_moves_already_searched = false;
     }
 };
 
-constexpr int AI_TIME_LIMIT_LEVEL = 15;
+constexpr int AI_TIME_LIMIT_LEVEL = 21;
 constexpr int AI_TIME_LIMIT_LEVEL_ROOT = 21;
 constexpr int N_MAX_NODES_AI_TL = 1000000;
-constexpr int AI_TIME_LIMIT_EXPAND_THRESHOLD = 7;
+constexpr int AI_TIME_LIMIT_EXPAND_THRESHOLD = 4;
 AI_Time_Limit_Elem ai_time_limit_elems[N_MAX_NODES_AI_TL];
 
 Search_result ai_time_limit(Board board, bool use_book, int book_acc_level, bool use_multi_thread, bool show_log, uint64_t remaining_time_msec, thread_id_t thread_id, bool *searching) {
@@ -1061,10 +1063,11 @@ Search_result ai_time_limit(Board board, bool use_book, int book_acc_level, bool
             }
             Search_result next_move_search_result = ai_legal_searching_thread_id(selfplay_node->board, level, true, 0, true, false, legal, thread_id, searching);
             search_result.nodes += next_move_search_result.nodes;
-            if (next_move_search_result.value + AI_TIME_LIMIT_EXPAND_THRESHOLD < current_node_max_v) {
-                current_node->good_moves_already_searched = true;
+            if (next_move_search_result.value + AI_TIME_LIMIT_EXPAND_THRESHOLD < current_node_max_v && next_move_search_result.value + AI_TIME_LIMIT_EXPAND_THRESHOLD < selfplay_node->search_v) {
+                selfplay_node->good_moves_already_searched = true;
                 continue;
             }
+            selfplay_node->search_v = std::max(selfplay_node->search_v, (double)next_move_search_result.value);
             new_node = &ai_time_limit_elems[n_expanded_nodes++];
             new_node->reset();
             new_node->board = selfplay_node->board.copy();
@@ -1102,6 +1105,7 @@ Search_result ai_time_limit(Board board, bool use_book, int book_acc_level, bool
                 if (*searching) {
                     Search_result selfplay_search_result = ai_searching_thread_id(selfplay_node->board, AI_TIME_LIMIT_LEVEL, false, 0, true, false, thread_id, searching);
                     if (*searching && is_valid_policy(selfplay_search_result.policy)) {
+                        selfplay_node->search_v = selfplay_search_result.value;
                         if (show_log) {
                             // std::cerr << idx_to_coord(selfplay_search_result.policy);
                         }
@@ -1141,15 +1145,18 @@ Search_result ai_time_limit(Board board, bool use_book, int book_acc_level, bool
             if (!search_failed) {
                 AI_Time_Limit_Elem *node = selfplay_node->parent;
                 while (node != nullptr) {
-                    node->v = -INF;
+                    // node->v = -INF;
+                    double v = -INF;
                     node->is_complete_search = node->good_moves_already_searched;
                     node->n = 0;
                     for (int i = 0; i < node->n_children; ++i) {
                         AI_Time_Limit_Elem *child = node->children[i];
-                        node->v = std::max(node->v, -child->v);
+                        v = std::max(v, -child->v);
                         node->is_complete_search &= child->is_complete_search;
                         node->n += child->n;
                     }
+                    // node->v = 0.9 * v + 0.1 * node->v;
+                    node->v = v;
                     // std::cerr << "discs " << node->board.n_discs() << " " << node->board.to_str() << " n " << node->n << " v " << node->v << std::endl;
                     node = node->parent;
                 }
@@ -1169,7 +1176,7 @@ Search_result ai_time_limit(Board board, bool use_book, int book_acc_level, bool
             double second_value = -INF;
             for (int i = 0; i < root->n_children; ++i) {
                 AI_Time_Limit_Elem *child = root->children[i];
-                if (child->n > best_n || (child->n == best_n && child->v > best_value)) {
+                if (child->n > best_n || (child->n == best_n && -child->v > best_value)) {
                     second_best_n = best_n;
                     second_policy = best_policy;
                     second_value = best_value;
@@ -1183,12 +1190,12 @@ Search_result ai_time_limit(Board board, bool use_book, int book_acc_level, bool
                 }
             }
             std::cerr << "expanded " << n_expanded_nodes << " root n " << root->n << " n_children " << root->n_children << " best " << idx_to_coord(best_policy) << " " << best_value << " / " << best_n << " second " << idx_to_coord(second_policy) << " " << second_value << " / " << second_best_n << " time " << tim() - strt << std::endl;
-            if (best_n > second_best_n + 20 && root->n > 40) {
-                if (show_log) {
-                    std::cerr << "enough searched best_n " << best_n << " second_best_n " << second_best_n << std::endl;
-                }
-                break;
-            }
+            // if (best_n > second_best_n + 20 && root->n > 40) {
+            //     if (show_log) {
+            //         std::cerr << "enough searched best_n " << best_n << " second_best_n " << second_best_n << std::endl;
+            //     }
+            //     break;
+            // }
         }
         std::cerr << "level " << AI_TIME_LIMIT_LEVEL << " " << n_expanded_nodes << " nodes expanded in " << tim() - strt << " ms" << std::endl;
         int best_n = -1;
@@ -1196,7 +1203,7 @@ Search_result ai_time_limit(Board board, bool use_book, int book_acc_level, bool
         for (int i = 0; i < root->n_children; ++i) {
             AI_Time_Limit_Elem *child = root->children[i];
             std::cerr << idx_to_coord(child->last_move) << " " << child->n << " " << -child->v << std::endl;
-            if (child->n > best_n || (child->n == best_n && child->v > best_value)) {
+            if (child->n > best_n || (child->n == best_n && -child->v > best_value)) {
                 best_n = child->n;
                 best_value = -child->v;
                 search_result.policy = child->last_move;
