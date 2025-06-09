@@ -971,7 +971,7 @@ struct AI_Time_Limit_Elem {
 constexpr int AI_TIME_LIMIT_LEVEL = 21;
 constexpr int AI_TIME_LIMIT_LEVEL_ROOT = 21;
 constexpr int N_MAX_NODES_AI_TL = 1000000;
-constexpr int AI_TIME_LIMIT_EXPAND_THRESHOLD = 4;
+constexpr int AI_TIME_LIMIT_EXPAND_THRESHOLD = 5;
 AI_Time_Limit_Elem ai_time_limit_elems[N_MAX_NODES_AI_TL];
 
 Search_result ai_time_limit(Board board, bool use_book, int book_acc_level, bool use_multi_thread, bool show_log, uint64_t remaining_time_msec, thread_id_t thread_id, bool *searching) {
