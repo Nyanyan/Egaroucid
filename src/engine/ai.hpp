@@ -967,8 +967,9 @@ struct AI_Time_Limit_Elem {
 };
 
 constexpr int AI_TIME_LIMIT_LEVEL = 15;
+constexpr int AI_TIME_LIMIT_LEVEL_ROOT = 21;
 constexpr int N_MAX_NODES_AI_TL = 1000000;
-constexpr int AI_TIME_LIMIT_EXPAND_THRESHOLD = 6;
+constexpr int AI_TIME_LIMIT_EXPAND_THRESHOLD = 7;
 AI_Time_Limit_Elem ai_time_limit_elems[N_MAX_NODES_AI_TL];
 
 Search_result ai_time_limit(Board board, bool use_book, int book_acc_level, bool use_multi_thread, bool show_log, uint64_t remaining_time_msec, thread_id_t thread_id, bool *searching) {
@@ -1054,7 +1055,11 @@ Search_result ai_time_limit(Board board, bool use_book, int book_acc_level, bool
             }
 
             Flip flip;
-            Search_result next_move_search_result = ai_legal_searching_thread_id(selfplay_node->board, AI_TIME_LIMIT_LEVEL, true, 0, true, false, legal, thread_id, searching);
+            int level = AI_TIME_LIMIT_LEVEL;
+            if (selfplay_node == root) {
+                level = AI_TIME_LIMIT_LEVEL_ROOT;
+            }
+            Search_result next_move_search_result = ai_legal_searching_thread_id(selfplay_node->board, level, true, 0, true, false, legal, thread_id, searching);
             search_result.nodes += next_move_search_result.nodes;
             if (next_move_search_result.value + AI_TIME_LIMIT_EXPAND_THRESHOLD < current_node_max_v) {
                 current_node->good_moves_already_searched = true;
