@@ -99,6 +99,71 @@ uint64_t calc_time_limit_ply(const Board board, uint64_t remaining_time_msec, bo
     return midgame_use_time;
 }
 
+uint64_t calc_time_limit_ply_MCTS(const Board board, uint64_t remaining_time_msec, bool show_log) {
+    int n_empties = HW2 - board.n_discs();
+    double remaining_moves = (double)(n_empties + 1) / 2.0;
+    uint64_t remaining_time_msec_margin = remaining_time_msec;
+    if (remaining_time_msec > TIME_MANAGEMENT_REMAINING_TIME_OFFSET * remaining_moves + TIME_MANAGEMENT_REMAINING_TIME_OFFSET_BASE) {
+        remaining_time_msec_margin -= TIME_MANAGEMENT_REMAINING_TIME_OFFSET * remaining_moves + TIME_MANAGEMENT_REMAINING_TIME_OFFSET_BASE;
+    } else {
+        if (show_log) {
+            std::cerr << "don't have enough time! remaining " << remaining_time_msec_margin << std::endl;
+        }
+    }
+
+#if IS_GGS_TOURNAMENT
+    // first move
+    if (n_empties == TIME_MANAGEMENT_INITIAL_N_EMPTIES) {
+        if (show_log) {
+            std::cerr << "first move time limit" << std::endl;
+        }
+        return remaining_time_msec_margin * 0.15;
+    }
+#endif
+
+    // try complete search
+    // Nodes(depth) = a * exp(b * depth)
+    constexpr double complete_const_a = 0.60; //2.1747;
+    constexpr double complete_const_b = 0.75;
+    constexpr double complete_nps = 7.0e8;
+    double complete_use_time = (double)remaining_time_msec_margin * 0.9;
+    double complete_search_depth = log(complete_use_time / 1000.0 * complete_nps / complete_const_a) / complete_const_b;
+
+    // try endgame search
+    // Nodes(depth) = a * exp(b * depth)
+    constexpr double endgame_const_a = 0.05; //1.8654;
+    constexpr double endgame_const_b = 0.62;
+    constexpr double endgame_nps = 3.5e8;
+    double endgame_use_time = (double)remaining_time_msec_margin * 0.15;
+    double endgame_search_depth = log(endgame_use_time / 1000.0 * endgame_nps / endgame_const_a) / endgame_const_b;
+
+    if (show_log) {
+        std::cerr << "complete search depth " << complete_search_depth << " endgame search depth " << endgame_search_depth << " n_empties " << n_empties << std::endl;
+    }
+
+    // midgame search time
+    double remaining_moves_proc = 0;
+    if (remaining_moves > 30 / 2) {
+        remaining_moves_proc += remaining_moves - 30 / 2;
+    }
+    remaining_moves_proc = std::max(2.0, remaining_moves_proc); // at least 2 moves
+    uint64_t midgame_use_time = std::max<uint64_t>(1ULL, (uint64_t)(2.0 * remaining_time_msec_margin / remaining_moves_proc));
+
+    if (n_empties <= complete_search_depth) {
+        if (show_log) {
+            std::cerr << "try complete search tl max(" << complete_use_time << ", " << midgame_use_time << ")" << std::endl;
+        }
+        return std::max((uint64_t)complete_use_time, midgame_use_time);
+    }
+    if (n_empties <= endgame_search_depth) {
+        if (show_log) {
+            std::cerr << "try endgame search tl max(" << endgame_use_time << ", " << midgame_use_time << ")" << std::endl;
+        }
+        return std::max((uint64_t)endgame_use_time, midgame_use_time);
+    }
+    return midgame_use_time;
+}
+
 uint64_t request_more_time(Board board, uint64_t remaining_time_msec, uint64_t time_limit, bool show_log) {
     int n_empties = HW2 - board.n_discs();
     double remaining_moves = (double)(n_empties + 1) / 2.0;
