@@ -116,7 +116,7 @@ train_data_nums = [
     #83, # new first11 book data (records80 minimum 200000 data)
     #84, 85, 86, 87, 88, 89, # non-regular random starting position
     97, # public data
-               98,  99, 100, 101, 102, 103, 104, 105, # random boards 12-19
+    #           98,  99, 100, 101, 102, 103, 104, 105, # random boards 12-19
     #106, 107, 108, 109, 110, 111, 112, 113, 114, 115, # random boards 20-29
     #116, 117, 118, 119, 120, 121, 122, 123,           # random boards 30-37
     #                                        124, 125, # random boards 38-39
