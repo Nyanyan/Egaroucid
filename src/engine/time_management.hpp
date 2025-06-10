@@ -113,11 +113,11 @@ uint64_t calc_time_limit_ply_MCTS(const Board board, uint64_t remaining_time_mse
 
 #if IS_GGS_TOURNAMENT
     // first move
-    if (n_empties == TIME_MANAGEMENT_INITIAL_N_EMPTIES) {
+    if (n_empties == TIME_MANAGEMENT_INITIAL_N_EMPTIES || n_empties == TIME_MANAGEMENT_INITIAL_N_EMPTIES - 1) {
         if (show_log) {
             std::cerr << "first move time limit" << std::endl;
         }
-        return remaining_time_msec_margin * 0.15;
+        return remaining_time_msec_margin * 0.6;
     }
 #endif
 
@@ -147,7 +147,12 @@ uint64_t calc_time_limit_ply_MCTS(const Board board, uint64_t remaining_time_mse
         remaining_moves_proc += remaining_moves - 30 / 2;
     }
     remaining_moves_proc = std::max(2.0, remaining_moves_proc); // at least 2 moves
-    uint64_t midgame_use_time = std::max<uint64_t>(1ULL, (uint64_t)(2.5 * remaining_time_msec_margin / remaining_moves_proc));
+    double coe = 1.0;
+    if (n_empties >= 35) {
+        coe += 1.5 * (double)(n_empties - 35) / (60.0 - 35.0);
+    }
+    std::cerr << "n_empties " << n_empties << " coe " << coe << std::endl;
+    uint64_t midgame_use_time = std::max<uint64_t>(1ULL, (uint64_t)(coe * remaining_time_msec_margin / remaining_moves_proc));
 
     if (n_empties <= complete_search_depth) {
         if (show_log) {
