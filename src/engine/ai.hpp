@@ -955,6 +955,7 @@ struct AI_Time_Limit_Elem {
     int last_move;
     bool is_complete_search;
     bool good_moves_already_searched;
+    int sgn;
 
     void reset() {
         parent = nullptr;
@@ -965,13 +966,14 @@ struct AI_Time_Limit_Elem {
         last_move = MOVE_UNDEFINED;
         is_complete_search = false;
         good_moves_already_searched = false;
+        sgn = 1;
     }
 };
 
-constexpr int AI_TIME_LIMIT_LEVEL = 21;
+constexpr int AI_TIME_LIMIT_LEVEL = 19;
 constexpr int AI_TIME_LIMIT_LEVEL_ROOT = 21;
 constexpr int N_MAX_NODES_AI_TL = 1000000;
-constexpr int AI_TIME_LIMIT_EXPAND_THRESHOLD = 5;
+constexpr int AI_TIME_LIMIT_EXPAND_THRESHOLD = 4;
 AI_Time_Limit_Elem ai_time_limit_elems[N_MAX_NODES_AI_TL];
 
 Search_result ai_time_limit(Board board, bool use_book, int book_acc_level, bool use_multi_thread, bool show_log, uint64_t remaining_time_msec, thread_id_t thread_id, bool *searching) {
@@ -987,14 +989,19 @@ Search_result ai_time_limit(Board board, bool use_book, int book_acc_level, bool
     } else {
         AI_Time_Limit_Elem *root = &ai_time_limit_elems[0];
         root->reset();
+        root->sgn = 1;
         root->board = board;
         int n_expanded_nodes = 1;
         search_result.nodes = 0;
+        Search_result root_search_result = ai_searching_thread_id(board, AI_TIME_LIMIT_LEVEL_ROOT, true, 0, true, false, thread_id, searching);
+        search_result.nodes += root_search_result.nodes;
+        std::cerr << "root " << root_search_result.value << std::endl;
         while (tim() - strt < time_limit && *searching && n_expanded_nodes < N_MAX_NODES_AI_TL - 100) {
             // if (root->n_children == 1 && root->good_moves_already_searched) {
             //     break;
             // }
             AI_Time_Limit_Elem *current_node = root;
+            double sum_loss = 0.0;
             while (current_node->n_children) {
                 // if (current_node == root && !current_node->good_moves_already_searched) {
                 //     break;
@@ -1003,6 +1010,7 @@ Search_result ai_time_limit(Board board, bool use_book, int book_acc_level, bool
                     break;
                 }
                 double max_w = -INF;
+                double additional_loss = 0.0;
                 AI_Time_Limit_Elem *max_node = nullptr;
                 double max_v = -INF;
                 for (int i = 0; i < current_node->n_children; ++i) {
@@ -1011,20 +1019,24 @@ Search_result ai_time_limit(Board board, bool use_book, int book_acc_level, bool
                 }
                 for (int i = 0; i < current_node->n_children; ++i) {
                     AI_Time_Limit_Elem *child = current_node->children[i];
+                    double loss = max_v - (-child->v);
                     // double v = 1.0 - exp((max_v - (-child->v)) - 4.0);
                     // double v = -std::max(0.0, (max_v - (-child->v)) - 2) / 64.0;
                     double v = -child->v / 64.0;
                     double u = 0.2 * sqrt(current_node->n) / (1 + child->n);
-                    double w = v + u;
+                    double l = 1.5 * loss / 64.0;
+                    double w = v + u - l;
                     if (current_node == &ai_time_limit_elems[0]) {
                         w += myrandom() * 0.05;
                     }
                     if (w > max_w && !child->is_complete_search) {
                         max_w = w;
                         max_node = child;
+                        additional_loss = loss;
                     }
                 }
                 current_node = max_node;
+                sum_loss += additional_loss;
                 // if (myrandom() < 0.5 && !current_node->good_moves_already_searched) {
                 //     break;
                 // }
@@ -1070,6 +1082,7 @@ Search_result ai_time_limit(Board board, bool use_book, int book_acc_level, bool
             selfplay_node->search_v = std::max(selfplay_node->search_v, (double)next_move_search_result.value);
             new_node = &ai_time_limit_elems[n_expanded_nodes++];
             new_node->reset();
+            new_node->sgn = selfplay_node->sgn * -1;
             new_node->board = selfplay_node->board.copy();
             calc_flip(&flip, &new_node->board, next_move_search_result.policy);
             new_node->board.move_board(&flip);
@@ -1088,6 +1101,7 @@ Search_result ai_time_limit(Board board, bool use_book, int book_acc_level, bool
                     score_sgn *= -1;
                     new_node = &ai_time_limit_elems[n_expanded_nodes++];
                     new_node->reset();
+                    new_node->sgn = selfplay_node->sgn * -1;
                     new_node->board = selfplay_node->board.copy();
                     new_node->board.pass();
                     new_node->parent = selfplay_node;
@@ -1120,6 +1134,7 @@ Search_result ai_time_limit(Board board, bool use_book, int book_acc_level, bool
                         score_sgn *= -1;
                         new_node = &ai_time_limit_elems[n_expanded_nodes++];
                         new_node->reset();
+                        new_node->sgn = selfplay_node->sgn * -1;
                         new_node->board = selfplay_node->board.copy();
                         new_node->board.move_board(&flip);
                         new_node->parent = selfplay_node;
