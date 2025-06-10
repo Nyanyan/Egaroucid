@@ -760,10 +760,10 @@ struct AI_TL_Elem {
 
 
 
-constexpr int AI_TIME_LIMIT_LEVEL = 17;
-constexpr int AI_TIME_LIMIT_LEVEL_ROOT = 23;
+constexpr int AI_TIME_LIMIT_LEVEL = 21;
+constexpr int AI_TIME_LIMIT_LEVEL_ROOT = 25;
 constexpr int N_MAX_NODES_AI_TL = 1000000;
-constexpr int AI_TIME_LIMIT_EXPAND_THRESHOLD = 5;
+constexpr int AI_TIME_LIMIT_EXPAND_THRESHOLD = 4;
 constexpr int START_NORMAL_SEARCH_EMPTIES = 38;
 
 struct AI_TL_Array {
@@ -1020,6 +1020,11 @@ Search_result ai_time_limit(Board board, bool use_book, int book_acc_level, bool
                         }
                         // node->v = 0.9 * v + 0.1 * node->v;
                         node->v = v;
+                        // if (-HW2 <= node->v && node->v <= HW2) {
+                        //     node->v = 0.9 * v + 0.1 * node->v;
+                        // } else {
+                        //     node->v = v;
+                        // }
                         // std::cerr << "discs " << node->board.n_discs() << " " << node->board.to_str() << " n " << node->n << " v " << node->v << std::endl;
                         node = node->parent;
                     }
