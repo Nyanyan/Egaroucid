@@ -48,6 +48,8 @@
 #define ADJ_STEP 64
 #define ADJ_STEP_2 32
 
+#define ADJ_EVAL_PARAM_MAX 4092
+
 /*
     @brief definition of patterns in evaluation function
 
