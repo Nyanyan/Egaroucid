@@ -37,12 +37,14 @@ board_sub_dir_nums = [
     #195, 196, 197, 198, 199, 200, 201, 202, 203, 204, # random boards 40-49
     #205, 206, 207, 208, 209, 210, 211, 212, 213, # random boards 50-58
     214, # random 11 (first11_all)
-
+    216, 217, 218, 219, 220, # randomN
+    
     #166, 
     167, # test data
+    
 ]
 '''
-board_sub_dir_nums = [81]
+board_sub_dir_nums = [216, 217, 218, 219, 220]
 
 
 FILE_INTERVAL = 100

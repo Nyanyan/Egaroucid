@@ -130,6 +130,7 @@ train_data_nums = [
     195, 196, 197, 198, 199, 200, 201, 202, 203, 204, # random boards 40-49
     205, 206, 207, 208, 209, 210, 211, 212, 213, # random boards 50-58
     214, # random 11 (first11_all)
+    216, 217, 218, 219, 220, # randomN
 ]
 if int(phase) < 40:
     train_data_nums.extend([18, 19, 20, 21, 24, 25, 28, 29, 30, 31]) # old data (without records27)
