@@ -132,7 +132,7 @@ train_data_nums = [
     214, # random 11 (first11_all)
     216, 217, 218, 219, 220, # randomN
 ]
-if int(phase) < 40:
+if int(phase) < 38:
     train_data_nums.extend([18, 19, 20, 21, 24, 25, 28, 29, 30, 31]) # old data (without records27)
 train_data_nums.sort()
 #print(train_data_nums, file=sys.stderr)

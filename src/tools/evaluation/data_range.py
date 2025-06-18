@@ -260,7 +260,7 @@ board_n_moves['215'] = [0, 59] # test data
 
 
 board_n_moves['216'] = [39, 39] # random 39
-board_n_moves['217'] = [38, 38] # random 38
-board_n_moves['218'] = [37, 37] # random 37
-board_n_moves['219'] = [36, 36] # random 36
-board_n_moves['220'] = [35, 35] # random 35
+board_n_moves['217'] = [38, 39] # random 38
+board_n_moves['218'] = [37, 39] # random 37
+board_n_moves['219'] = [36, 39] # random 36
+board_n_moves['220'] = [35, 39] # random 35
