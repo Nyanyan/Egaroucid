@@ -18,6 +18,8 @@ constexpr int ADVICE_VALUE_LEVEL = 21;
 struct Advice_Move {
     int policy;
     int value;
+    int n_flipped_discs;
+    int n_flipped_direction;
     bool is_flip_inside;
     bool is_flip_inside_creation;
     bool is_op_flip_inside_creation;
@@ -107,6 +109,29 @@ void print_advice(Board_info *board_info) {
     uint64_t op_flip_inside_board = get_flip_inside_places(op_board);
 
     {
+        Flip flip;
+        for (Advice_Move &move: moves) {
+            calc_flip(&flip, &board, move.policy);
+            move.n_flipped_discs = pop_count_ull(flip.flip);
+            move.n_flipped_direction = 0;
+            constexpr int dy[8] = {-1, -1, -1, 0,  0,  1, 1, 1};
+            constexpr int dx[8] = {-1,  0,  1, 1, -1, -1, 0, 1};
+            int y = move.policy / HW;
+            int x = move.policy % HW;
+            for (int dr = 0; dr < 8; ++dr) {
+                int ny = y + dy[dr];
+                int nx = x + dx[dr];
+                if (0 <= ny && ny < HW && 0 <= nx && nx < HW) {
+                    int cell = ny * HW + nx;
+                    if (flip.flip & (1ULL << cell)) {
+                        ++move.n_flipped_direction;
+                    }
+                }
+            }
+        }
+    }
+
+    {
         for (Advice_Move &move: moves) {
             move.is_flip_inside = is_flip_inside(board, move.policy);
         }
@@ -153,6 +178,8 @@ void print_advice(Board_info *board_info) {
         nlohmann::json j = {
             {"move", idx_to_coord(move.policy)},
             {"value", move.value},
+            {"n_flipped_discs", move.n_flipped_discs},
+            {"n_flipped_direction", move.n_flipped_direction},
             {"is_flip_inside", move.is_flip_inside},
             {"is_flip_inside_creation", move.is_flip_inside_creation},
             {"is_op_flip_inside_creation", move.is_op_flip_inside_creation},
