@@ -21,6 +21,7 @@
 #include "close.hpp"
 #include "print.hpp"
 #include "command_definition.hpp"
+#include "advice.hpp"
 
 #define ANALYZE_MISTAKE_THRESHOLD 4
 
@@ -501,6 +502,9 @@ void check_command(Board_info *board, State *state, Options *options) {
             break;
         case CMD_ID_SETTIME:
             settime(state, options, arg);
+            break;
+        case CMD_ID_ADVISE:
+            print_advice(board->board);
             break;
         default:
             break;
