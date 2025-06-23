@@ -504,7 +504,7 @@ void check_command(Board_info *board, State *state, Options *options) {
             settime(state, options, arg);
             break;
         case CMD_ID_ADVISE:
-            print_advice(board->board);
+            print_advice(board);
             break;
         default:
             break;

@@ -11,6 +11,7 @@
 #pragma once
 #include "lib/json.hpp"
 #include "./../engine/engine_all.hpp"
+#include "board_info.hpp"
 
 constexpr int ADVICE_VALUE_LEVEL = 21;
 
@@ -18,6 +19,9 @@ struct Advice_Move {
     int policy;
     int value;
     bool is_flip_inside;
+    bool is_flip_inside_creation;
+    bool is_edge;
+    bool is_corner;
 };
 
 bool is_flip_inside(Board board, uint_fast8_t cell) {
@@ -35,8 +39,21 @@ bool is_flip_inside(Board board, uint_fast8_t cell) {
     return (discs & outside_flip) == outside_flip;
 }
 
-void print_advice(Board board) {
+bool has_flip_inside(Board board) {
+    bool has_flip_inside = false;
+    uint64_t legal = board.get_legal();
+    for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)) {
+        has_flip_inside |= is_flip_inside(board, cell);
+    }
+    return has_flip_inside;
+}
+
+void print_advice(Board_info *board_info) {
     nlohmann::json res;
+
+    Board board = board_info->board.copy();
+    res["board"] = board.to_str(board_info->player);
+
     uint64_t legal = board.get_legal();
     int n_legal = pop_count_ull(legal);
     res["n_legal"] = n_legal;
@@ -63,6 +80,12 @@ void print_advice(Board board) {
         res["n_good_moves"] = good_moves.size();
     }
 
+    res["has_flip_inside"] = has_flip_inside(board);
+
+    Board op_board = board.copy();
+    op_board.pass();
+    res["has_op_flip_inside"] = has_flip_inside(op_board);
+
     {
         for (Advice_Move &move: good_moves) {
             move.is_flip_inside = is_flip_inside(board, move.policy);
@@ -70,12 +93,23 @@ void print_advice(Board board) {
     }
 
     {
-        bool has_flip_inside = false;
-        uint64_t legal_cpy = legal;
-        for (uint_fast8_t cell = first_bit(&legal_cpy); legal_cpy; cell = next_bit(&legal_cpy)) {
-            has_flip_inside |= is_flip_inside(board, cell);
+        Flip flip;
+        for (Advice_Move &move: good_moves) {
+            calc_flip(&flip, &board, move.policy);
+            board.move_board(&flip);
+            board.pass();
+                move.is_flip_inside_creation = has_flip_inside(board);
+            board.pass();
+            board.undo_board(&flip);
         }
-        res["has_flip_inside"] = has_flip_inside;
+    }
+
+    for (Advice_Move &move: good_moves) {
+        move.is_edge = 0x7E8181818181817EULL & (1ULL << move.policy);
+    }
+
+    for (Advice_Move &move: good_moves) {
+        move.is_corner = 0x8100000000000081ULL & (1ULL << move.policy);
     }
 
     res["good_moves"] = nlohmann::json::array();
@@ -83,7 +117,10 @@ void print_advice(Board board) {
         nlohmann::json j = {
             {"move", idx_to_coord(move.policy)},
             {"value", move.value},
-            {"is_flip_inside", move.is_flip_inside}
+            {"is_flip_inside", move.is_flip_inside},
+            {"is_flip_inside_creation", move.is_flip_inside_creation},
+            {"is_edge", move.is_edge},
+            {"is_corner", move.is_corner}
         };
         res["good_moves"].push_back(j);
     }
