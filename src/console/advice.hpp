@@ -20,6 +20,8 @@ struct Advice_Move {
     int value;
     bool is_flip_inside;
     bool is_flip_inside_creation;
+    bool is_op_flip_inside_creation;
+    bool is_op_flip_inside_deletion;
     bool is_edge;
     bool is_corner;
 };
@@ -43,9 +45,26 @@ bool has_flip_inside(Board board) {
     bool has_flip_inside = false;
     uint64_t legal = board.get_legal();
     for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)) {
+        if ((1ULL << cell) & 0x0042000000004200ULL) { // exclude X
+            continue;
+        }
         has_flip_inside |= is_flip_inside(board, cell);
     }
     return has_flip_inside;
+}
+
+uint64_t get_flip_inside_places(Board board) {
+    uint64_t flip_inside_places = 0;
+    uint64_t legal = board.get_legal();
+    for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)) {
+        if ((1ULL << cell) & 0x0042000000004200ULL) { // exclude X
+            continue;
+        }
+        if (is_flip_inside(board, cell)) {
+            flip_inside_places |= 1ULL << cell;
+        }
+    }
+    return flip_inside_places;
 }
 
 void print_advice(Board_info *board_info) {
@@ -58,26 +77,26 @@ void print_advice(Board_info *board_info) {
     int n_legal = pop_count_ull(legal);
     res["n_legal"] = n_legal;
 
-    std::vector<Advice_Move> good_moves;
+    std::vector<Advice_Move> moves;
     {
         int best_value = -100;
         uint64_t legal_cpy = legal;
         while (legal_cpy) {
             Search_result search_result = ai_legal(board, ADVICE_VALUE_LEVEL, true, 0, true, false, legal_cpy);
-            if (search_result.value >= best_value - 2) {
+            // if (search_result.value >= best_value - 2) {
                 Advice_Move move;
                 move.policy = search_result.policy;
                 move.value = search_result.value;
-                good_moves.emplace_back(move);
+                moves.emplace_back(move);
                 best_value = std::max(best_value, search_result.value);
-            } else {
-                break;
-            }
+            // } else {
+            //     break;
+            // }
             legal_cpy ^= 1ULL << search_result.policy;
         }
-        std::cerr << "good moves size " << good_moves.size() << std::endl;
+        // std::cerr << "good moves size " << moves.size() << std::endl;
         res["best_value"] = best_value;
-        res["n_good_moves"] = good_moves.size();
+        // res["n_moves"] = moves.size();
     }
 
     res["has_flip_inside"] = has_flip_inside(board);
@@ -85,16 +104,17 @@ void print_advice(Board_info *board_info) {
     Board op_board = board.copy();
     op_board.pass();
     res["has_op_flip_inside"] = has_flip_inside(op_board);
+    uint64_t op_flip_inside_board = get_flip_inside_places(op_board);
 
     {
-        for (Advice_Move &move: good_moves) {
+        for (Advice_Move &move: moves) {
             move.is_flip_inside = is_flip_inside(board, move.policy);
         }
     }
 
     {
         Flip flip;
-        for (Advice_Move &move: good_moves) {
+        for (Advice_Move &move: moves) {
             calc_flip(&flip, &board, move.policy);
             board.move_board(&flip);
             board.pass();
@@ -104,25 +124,43 @@ void print_advice(Board_info *board_info) {
         }
     }
 
-    for (Advice_Move &move: good_moves) {
+    {
+        Flip flip;
+        for (Advice_Move &move: moves) {
+            calc_flip(&flip, &board, move.policy);
+            board.move_board(&flip);
+                uint64_t op_flip_inside_board_2 = get_flip_inside_places(board);
+                move.is_op_flip_inside_creation = (~op_flip_inside_board) & op_flip_inside_board_2;
+                if (res["has_op_flip_inside"]) {
+                    move.is_op_flip_inside_deletion = op_flip_inside_board & (~op_flip_inside_board_2);
+                } else {
+                    move.is_op_flip_inside_deletion = false;
+                }
+            board.undo_board(&flip);
+        }
+    }
+
+    for (Advice_Move &move: moves) {
         move.is_edge = 0x7E8181818181817EULL & (1ULL << move.policy);
     }
 
-    for (Advice_Move &move: good_moves) {
+    for (Advice_Move &move: moves) {
         move.is_corner = 0x8100000000000081ULL & (1ULL << move.policy);
     }
 
-    res["good_moves"] = nlohmann::json::array();
-    for (Advice_Move &move: good_moves) {
+    res["moves"] = nlohmann::json::array();
+    for (Advice_Move &move: moves) {
         nlohmann::json j = {
             {"move", idx_to_coord(move.policy)},
             {"value", move.value},
             {"is_flip_inside", move.is_flip_inside},
             {"is_flip_inside_creation", move.is_flip_inside_creation},
+            {"is_op_flip_inside_creation", move.is_op_flip_inside_creation},
+            {"is_op_flip_inside_deletion", move.is_op_flip_inside_deletion},
             {"is_edge", move.is_edge},
-            {"is_corner", move.is_corner}
+            {"is_corner", move.is_corner},
         };
-        res["good_moves"].push_back(j);
+        res["moves"].push_back(j);
     }
 
     std::cout << res.dump() << std::endl;
