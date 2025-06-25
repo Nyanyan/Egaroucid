@@ -53,7 +53,7 @@ bin_root_dir = os.environ['EGAROUCID_DATA'] + '/train_data/bin_data/20250513_1/'
 exe = 'data_board_to_idx_20250513_1_7_7.out'
 N_PHASES = 60
 board_sub_dir_nums = [
-    216, 217, 218, 219, 220
+    220
 ]
 board_sub_dir_nums.sort()
 #'''

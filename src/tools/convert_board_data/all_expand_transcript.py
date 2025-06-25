@@ -44,7 +44,7 @@ board_sub_dir_nums = [
     
 ]
 '''
-board_sub_dir_nums = [216, 217, 218, 219, 220]
+board_sub_dir_nums = [220]
 
 
 FILE_INTERVAL = 100

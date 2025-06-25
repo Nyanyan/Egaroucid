@@ -25,10 +25,12 @@ import math
 #data_files_end = ['data/20250306_1_7_6_20250305_1/probcut_end0.txt', 'data/20250306_1_7_6_20250305_1/probcut_end1.txt']
 #data_files = ['data/20250402_1_7_6_20250330_1/probcut_mid0.txt']
 #data_files_end = ['data/20250402_1_7_6_20250330_1/probcut_end0.txt']
-data_files = ['data/20250514_1_7_7/probcut_mid0.txt', 'data/20250514_1_7_7/probcut_mid1.txt', 'data/20250514_1_7_7/probcut_mid2.txt', 'data/20250514_1_7_7/probcut_mid3.txt', 'data/20250514_1_7_7/probcut_mid4.txt', 'data/20250514_1_7_7/probcut_mid5.txt']
+#data_files = ['data/20250514_1_7_7/probcut_mid0.txt', 'data/20250514_1_7_7/probcut_mid1.txt', 'data/20250514_1_7_7/probcut_mid2.txt', 'data/20250514_1_7_7/probcut_mid3.txt', 'data/20250514_1_7_7/probcut_mid4.txt', 'data/20250514_1_7_7/probcut_mid5.txt']
+data_files = ['data/20250625_1_7_7_20250618_2/probcut_mid0.txt', 'data/20250625_1_7_7_20250618_2/probcut_mid1.txt']
 #data_files = ['data/20250514_1_7_7/probcut_mid0.txt', 'data/20250514_1_7_7/probcut_mid1.txt', 'data/20250514_1_7_7/probcut_mid2.txt', 'data/20250514_1_7_7/probcut_mid3.txt', 'data/20250514_1_7_7/probcut_mid4.txt']
 #data_files_end = ['data/20250514_1_7_7/probcut_end0.txt', 'data/20250514_1_7_7/probcut_end1.txt', 'data/20250514_1_7_7/probcut_end2.txt', 'data/20250514_1_7_7/probcut_end3.txt']
-data_files_end = ['data/20250514_1_7_7/probcut_end0.txt']
+#data_files_end = ['data/20250514_1_7_7/probcut_end0.txt']
+data_files_end = ['data/20250625_1_7_7_20250618_2/probcut_end0.txt']
 
 
 data = [[[[] for _ in range(61)] for _ in range(61)] for _ in range(65)] # n_discs, depth1, depth2 (depth1 < depth2)
@@ -100,6 +102,7 @@ for n_discs in range(len(data)):
                 z_mean.append(mean)
                 weight_mean.append(0.001)
 
+'''
 for n_discs in range(4, 30):
     for depth2 in range(30, 31):
         #if 64 - n_discs >= depth2:
@@ -110,7 +113,7 @@ for n_discs in range(4, 30):
         y_depth2_sd.append(depth2)
         z_sd.append(z)
         weight_sd.append(0.0008)
-
+'''
 '''
 for n_discs in range(4, 61):
     for depth2 in range(30, 31):
@@ -157,7 +160,8 @@ def plot_fit_result_allphases(w, x, y, z, params):
                 z_error_phase.append(zz)
         color = next(ax._get_lines.prop_cycler)['color']  # Get the next color in the cycle
         ax.plot(x_depth1_phase, y_depth2_phase, z_error_phase, ms=5, marker="o", alpha=1.0, linestyle='None', label=f'n_moves={n_moves}', color=color)
-        mx, my = np.meshgrid(range(20), range(30))
+        n_remaining_moves = 60 - n_moves
+        mx, my = np.meshgrid(range(20), range(n_remaining_moves))
         ax.plot_wireframe(mx, my, f_max((n_discs, mx, my), *params), rstride=4, cstride=2, alpha=0.5, color=color)
 
     ax.set_xlabel('depth1_short')

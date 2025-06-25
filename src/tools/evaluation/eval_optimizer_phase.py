@@ -101,6 +101,7 @@ executable = 'eval_optimizer_cuda_12_2_0_20241125_1_7_5.exe'
 #'''
 # 7.7
 train_data_nums = [
+    25, #28, # old data (random 30 & 40)
     # 18, 19, 20, 21, 24, 25, 28, 29, 30, 31, # old data (without records27)
     34, 35, # mid-endgame data 1
     #36, # old first11 book
@@ -132,8 +133,8 @@ train_data_nums = [
     214, # random 11 (first11_all)
     216, 217, 218, 219, 220, # randomN
 ]
-if int(phase) < 38:
-    train_data_nums.extend([18, 19, 20, 21, 24, 25, 28, 29, 30, 31]) # old data (without records27)
+if int(phase) < 35:
+    train_data_nums.extend([18, 19, 20, 21, 24, 29, 30, 31]) # old data (without records27)
 train_data_nums.sort()
 #print(train_data_nums, file=sys.stderr)
 train_root_dir = os.environ['EGAROUCID_DATA'] + '/train_data/bin_data/20250513_1/'
