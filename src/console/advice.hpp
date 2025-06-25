@@ -110,6 +110,7 @@ void print_advice(Board_info *board_info) {
     }
 
     res["has_flip_inside"] = has_flip_inside(board);
+    uint64_t flip_inside_board = get_flip_inside_places(board);
 
     Board op_board = board.copy();
     op_board.pass();
@@ -160,7 +161,8 @@ void print_advice(Board_info *board_info) {
             calc_flip(&flip, &board, move.policy);
             board.move_board(&flip);
             board.pass();
-                move.is_flip_inside_creation = has_flip_inside(board);
+                uint64_t next_flip_insides = get_flip_inside_places(board);
+                move.is_flip_inside_creation = next_flip_insides & (~flip_inside_board);
             board.pass();
             board.undo_board(&flip);
         }
