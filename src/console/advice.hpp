@@ -15,17 +15,23 @@
 
 constexpr int ADVICE_VALUE_LEVEL = 21;
 
+constexpr uint64_t flip_inside_exclude_mask = 0xFFC381818181C3FFULL; //0xC3C300000000C3C3ULL;
+
 struct Advice_Move {
     int policy;
     int value;
     int n_flipped_discs;
     int n_flipped_direction;
+    Board board;
+    int player;
     bool is_flip_inside;
     bool is_flip_inside_creation;
     bool is_op_flip_inside_creation;
     bool is_op_flip_inside_deletion;
     bool is_edge;
     bool is_corner;
+    bool is_next_to_corner;
+    int next_op_n_legal;
 };
 
 bool is_flip_inside(Board board, uint_fast8_t cell) {
@@ -47,7 +53,7 @@ bool has_flip_inside(Board board) {
     bool has_flip_inside = false;
     uint64_t legal = board.get_legal();
     for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)) {
-        if ((1ULL << cell) & 0x0042000000004200ULL) { // exclude X
+        if ((1ULL << cell) & flip_inside_exclude_mask) { // exclude
             continue;
         }
         has_flip_inside |= is_flip_inside(board, cell);
@@ -59,7 +65,7 @@ uint64_t get_flip_inside_places(Board board) {
     uint64_t flip_inside_places = 0;
     uint64_t legal = board.get_legal();
     for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)) {
-        if ((1ULL << cell) & 0x0042000000004200ULL) { // exclude X
+        if ((1ULL << cell) & flip_inside_exclude_mask) { // exclude
             continue;
         }
         if (is_flip_inside(board, cell)) {
@@ -74,6 +80,8 @@ void print_advice(Board_info *board_info) {
 
     Board board = board_info->board.copy();
     res["board"] = board.to_str(board_info->player);
+    
+    res["n_discs"] = board.n_discs();
 
     uint64_t legal = board.get_legal();
     int n_legal = pop_count_ull(legal);
@@ -128,12 +136,21 @@ void print_advice(Board_info *board_info) {
                     }
                 }
             }
+            board.move_board(&flip);
+                move.board = board;
+                move.player = board_info->player ^ 1;
+                move.next_op_n_legal = pop_count_ull(board.get_legal());
+            board.undo_board(&flip);
         }
     }
 
     {
         for (Advice_Move &move: moves) {
-            move.is_flip_inside = is_flip_inside(board, move.policy);
+            if ((1ULL << move.policy) & flip_inside_exclude_mask) { // exclude
+                move.is_flip_inside = false;
+            } else {
+                move.is_flip_inside = is_flip_inside(board, move.policy);
+            }
         }
     }
 
@@ -168,9 +185,35 @@ void print_advice(Board_info *board_info) {
     for (Advice_Move &move: moves) {
         move.is_edge = 0x7E8181818181817EULL & (1ULL << move.policy);
     }
+    {
+        bool has_edge_move = false;
+        for (Advice_Move &move: moves) {
+            has_edge_move |= move.is_edge;
+        }
+        res["has_edge_move"] = has_edge_move;
+    }
+
 
     for (Advice_Move &move: moves) {
         move.is_corner = 0x8100000000000081ULL & (1ULL << move.policy);
+    }
+    {
+        bool has_corner_move = false;
+        for (Advice_Move &move: moves) {
+            has_corner_move |= move.is_corner;
+        }
+        res["has_corner_move"] = has_corner_move;
+    }
+
+    for (Advice_Move &move: moves) {
+        move.is_next_to_corner = 0x42C300000000C342ULL & (1ULL << move.policy);
+    }
+    {
+        bool has_next_to_corner_move = false;
+        for (Advice_Move &move: moves) {
+            has_next_to_corner_move |= move.is_next_to_corner;
+        }
+        res["has_next_to_corner_move"] = has_next_to_corner_move;
     }
 
     res["moves"] = nlohmann::json::array();
@@ -178,6 +221,7 @@ void print_advice(Board_info *board_info) {
         nlohmann::json j = {
             {"move", idx_to_coord(move.policy)},
             {"value", move.value},
+            {"board", move.board.to_str(move.player)},
             {"n_flipped_discs", move.n_flipped_discs},
             {"n_flipped_direction", move.n_flipped_direction},
             {"is_flip_inside", move.is_flip_inside},
@@ -186,6 +230,8 @@ void print_advice(Board_info *board_info) {
             {"is_op_flip_inside_deletion", move.is_op_flip_inside_deletion},
             {"is_edge", move.is_edge},
             {"is_corner", move.is_corner},
+            {"is_next_to_corner", move.is_next_to_corner},
+            {"next_op_n_legal", move.next_op_n_legal},
         };
         res["moves"].push_back(j);
     }
