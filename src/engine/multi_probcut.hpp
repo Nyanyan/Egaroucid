@@ -29,31 +29,6 @@ constexpr double SELECTIVITY_MPCT[N_SELECTIVITY_LEVEL] = {1.13, 1.55, 1.81, 2.32
 /*
     @brief constants for ProbCut error calculation
 */
-// for model 20250604_2
-// constexpr double probcut_a = 0.24656429657445694;
-// constexpr double probcut_b = -1.7523566044473187;
-// constexpr double probcut_c = 0.962435838988831;
-// constexpr double probcut_d = -35.863936352037754;
-// constexpr double probcut_e = 27.134617776691826;
-// constexpr double probcut_f = 4.602278641290785;
-// constexpr double probcut_g = 1.5002124046650227;
-
-// constexpr double probcut_a = 0.7308488452189136;
-// constexpr double probcut_b = -4.5708322989025865;
-// constexpr double probcut_c = 1.096319765006055;
-// constexpr double probcut_d = -0.8362251801219095;
-// constexpr double probcut_e = 4.610017383697701;
-// constexpr double probcut_f = 3.818582623595395;
-// constexpr double probcut_g = 1.8775013664098447;
-
-// model 20250618_2
-// constexpr double probcut_a = 0.26180840945496237;
-// constexpr double probcut_b = -1.9683212932147058;
-// constexpr double probcut_c = 1.1642335290840875;
-// constexpr double probcut_d = -27.41938632875739;
-// constexpr double probcut_e = 21.861629500636962;
-// constexpr double probcut_f = 3.40206697570507;
-// constexpr double probcut_g = 1.3970298376121546;
 constexpr double probcut_a = 0.33168751236513494;
 constexpr double probcut_b = -2.3367864788765806;
 constexpr double probcut_c = 1.3401934442047585;
