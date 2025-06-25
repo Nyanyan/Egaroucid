@@ -435,32 +435,32 @@ Search_result ggs_search(GGS_Board ggs_board, Options *options, thread_id_t thre
             remaining_time_msec = std::max<uint64_t>(remaining_time_msec * 0.1, 1ULL);
         }
 
-        // special code for s8r14
-        uint64_t strt = tim();
-        if (ggs_board.board.n_discs() == 14 && remaining_time_msec > 30000) {
-            std::cerr << "s8r14 first move special selfplay" << std::endl;
-            bool new_searching = true;
-            std::future<std::vector<Ponder_elem>> ponder_future = std::async(std::launch::async, ai_ponder, ggs_board.board, true, thread_id, &new_searching);
-            if (ponder_future.wait_for(std::chrono::seconds(10)) != std::future_status::ready) {
-                new_searching = false;
-            }
-            ponder_future.get();
-            /*
-            std::vector<Ponder_elem> move_list = ai_get_values(ggs_board.board, true, 4000, thread_id);
-            double best_value = move_list[0].value;
-            int n_good_moves = 0;
-            for (const Ponder_elem &elem: move_list) {
-                if (elem.value >= best_value - AI_TL_ADDITIONAL_SEARCH_THRESHOLD * 3.0) {
-                    ++n_good_moves;
-                }
-            }
-            if (n_good_moves >= 2) {
-                ai_additional_selfplay(ggs_board.board, true, move_list, n_good_moves, AI_TL_ADDITIONAL_SEARCH_THRESHOLD * 3.0, 10000, thread_id);
-            }
-            */
-            std::cerr << std::endl;
-        }
-        remaining_time_msec -= tim() - strt;
+        // // special code for s8r14
+        // uint64_t strt = tim();
+        // if (ggs_board.board.n_discs() == 14 && remaining_time_msec > 30000) {
+        //     std::cerr << "s8r14 first move special selfplay" << std::endl;
+        //     bool new_searching = true;
+        //     std::future<std::vector<Ponder_elem>> ponder_future = std::async(std::launch::async, ai_ponder, ggs_board.board, true, thread_id, &new_searching);
+        //     if (ponder_future.wait_for(std::chrono::seconds(10)) != std::future_status::ready) {
+        //         new_searching = false;
+        //     }
+        //     ponder_future.get();
+        //     /*
+        //     std::vector<Ponder_elem> move_list = ai_get_values(ggs_board.board, true, 4000, thread_id);
+        //     double best_value = move_list[0].value;
+        //     int n_good_moves = 0;
+        //     for (const Ponder_elem &elem: move_list) {
+        //         if (elem.value >= best_value - AI_TL_ADDITIONAL_SEARCH_THRESHOLD * 3.0) {
+        //             ++n_good_moves;
+        //         }
+        //     }
+        //     if (n_good_moves >= 2) {
+        //         ai_additional_selfplay(ggs_board.board, true, move_list, n_good_moves, AI_TL_ADDITIONAL_SEARCH_THRESHOLD * 3.0, 10000, thread_id);
+        //     }
+        //     */
+        //     std::cerr << std::endl;
+        // }
+        // remaining_time_msec -= tim() - strt;
 
         search_result = ai_time_limit(ggs_board.board, true, 0, true, options->show_log, remaining_time_msec, thread_id, searching);
     } else { // pass

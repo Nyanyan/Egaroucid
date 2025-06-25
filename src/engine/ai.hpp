@@ -1085,6 +1085,9 @@ Search_result ai_time_limit(Board board, bool use_book, int book_acc_level, bool
         search_result.time = tim() - strt;
         search_result.nps = calc_nps(search_result.nodes, search_result.time);
     }
+    if (show_log) {
+        std::cerr << "ai_time_limit selected " << idx_to_coord(search_result.policy) << " value " << search_result.value << " depth " << search_result.depth << "@" << search_result.probability << "%" << " time " << tim() - strt << " " << board.to_str() << std::endl << std::endl;
+    }
     return search_result;
 }
 
