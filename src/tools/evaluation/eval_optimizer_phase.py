@@ -132,8 +132,9 @@ train_data_nums = [
     205, 206, 207, 208, 209, 210, 211, 212, 213, # random boards 50-58
     214, # random 11 (first11_all)
     216, 217, 218, 219, 220, # randomN
+    222, # random0
 ]
-if int(phase) < 35:
+if int(phase) < 40:
     train_data_nums.extend([18, 19, 20, 21, 24, 29, 30, 31]) # old data (without records27)
 train_data_nums.sort()
 #print(train_data_nums, file=sys.stderr)

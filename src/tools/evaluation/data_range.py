@@ -264,3 +264,5 @@ board_n_moves['217'] = [38, 39] # random 38
 board_n_moves['218'] = [37, 39] # random 37
 board_n_moves['219'] = [36, 39] # random 36
 board_n_moves['220'] = [35, 39] # random 35
+
+board_n_moves['222'] = [3, 59] # random 0
