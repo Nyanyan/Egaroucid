@@ -33,8 +33,8 @@ constexpr int N_PATTERN_PARAMS = N_PATTERN_PARAMS_RAW + 1; // +1 for byte bound
 constexpr int PATTERN4_START_IDX = 52488;       // special case
 constexpr int PATTERN6_START_IDX = 78732;       // special case
 constexpr int SIMD_EVAL_MAX_VALUE = 4092;       // evaluate range [-4092, 4092]
-constexpr int N_SIMD_EVAL_FEATURES_SIMPLE = 2;
-constexpr int N_SIMD_EVAL_FEATURES_COMP = 2;
+constexpr int N_EVAL_VECTORS_SIMPLE = 2;
+constexpr int N_EVAL_VECTORS_COMP = 2;
 constexpr int N_SIMD_EVAL_FEATURE_CELLS = 16;
 constexpr int N_SIMD_EVAL_FEATURE_GROUP = 4;
 constexpr int MAX_N_CELLS_GROUP[4] = {9, 10, 10, 10}; // number of cells included in the group
@@ -224,12 +224,12 @@ constexpr int pattern_starts[N_PATTERNS] = {
     @brief constants used for evaluation function with SIMD
 */
 __m256i eval_lower_mask;
-__m256i feature_to_coord_simd_mul[N_SIMD_EVAL_FEATURES][MAX_PATTERN_CELLS - 1];
-__m256i feature_to_coord_simd_cell[N_SIMD_EVAL_FEATURES][MAX_PATTERN_CELLS][2];
-__m256i coord_to_feature_simd[HW2][N_SIMD_EVAL_FEATURES];
-__m256i eval_move_unflipped_16bit[N_16BIT][N_SIMD_EVAL_FEATURE_GROUP][N_SIMD_EVAL_FEATURES];
-__m256i eval_simd_offsets_simple[N_SIMD_EVAL_FEATURES_SIMPLE]; // 16bit * 16 * N
-__m256i eval_simd_offsets_comp[N_SIMD_EVAL_FEATURES_COMP * 2]; // 32bit * 8 * N
+__m256i feature_to_coord_simd_mul[N_EVAL_VECTORS][MAX_PATTERN_CELLS - 1];
+__m256i feature_to_coord_simd_cell[N_EVAL_VECTORS][MAX_PATTERN_CELLS][2];
+__m256i coord_to_feature_simd[HW2][N_EVAL_VECTORS];
+__m256i eval_move_unflipped_16bit[N_16BIT][N_SIMD_EVAL_FEATURE_GROUP][N_EVAL_VECTORS];
+__m256i eval_simd_offsets_simple[N_EVAL_VECTORS_SIMPLE]; // 16bit * 16 * N
+__m256i eval_simd_offsets_comp[N_EVAL_VECTORS_COMP * 2]; // 32bit * 8 * N
 
 
 /*
@@ -308,7 +308,7 @@ inline bool load_eval_move_ordering_end_file(const char* file, bool show_log) {
 inline void pre_calculate_eval_constant() {
     { // calc_eval_features initialization
         int16_t f2c[16];
-        for (int i = 0; i < N_SIMD_EVAL_FEATURES; ++i) {
+        for (int i = 0; i < N_EVAL_VECTORS; ++i) {
             for (int j = 0; j < MAX_PATTERN_CELLS - 1; ++j) {
                 for (int k = 0; k < 16; ++k) {
                     f2c[k] = (j < feature_to_coord[i * 16 + k].n_cells - 1) ? 3 : 1;
@@ -322,7 +322,7 @@ inline void pre_calculate_eval_constant() {
             }
         }
         int32_t f2c32[8];
-        for (int i = 0; i < N_SIMD_EVAL_FEATURES; ++i) {
+        for (int i = 0; i < N_EVAL_VECTORS; ++i) {
             for (int j = 0; j < MAX_PATTERN_CELLS; ++j) {
                 for (int k = 0; k < 8; ++k) {
                     f2c32[k] = feature_to_coord[i * 16 + k * 2 + 1].cells[j];
@@ -362,7 +362,7 @@ inline void pre_calculate_eval_constant() {
             for (int i = 0; i < coord_to_feature[cell].n_features; ++i) {
                 c2f[coord_to_feature[cell].features[i].feature] = coord_to_feature[cell].features[i].x;
             }
-            for (int i = 0; i < N_SIMD_EVAL_FEATURES; ++i) {
+            for (int i = 0; i < N_EVAL_VECTORS; ++i) {
                 int idx = i * 16;
                 coord_to_feature_simd[cell][i] = _mm256_set_epi16(
                     c2f[idx], c2f[idx + 1], c2f[idx + 2], c2f[idx + 3], 
@@ -385,7 +385,7 @@ inline void pre_calculate_eval_constant() {
                         }
                     }
                 }
-                for (int simd_feature_idx = 0; simd_feature_idx < N_SIMD_EVAL_FEATURES; ++simd_feature_idx) {
+                for (int simd_feature_idx = 0; simd_feature_idx < N_EVAL_VECTORS; ++simd_feature_idx) {
                     int idx = simd_feature_idx * 16;
                     eval_move_unflipped_16bit[bits][group][simd_feature_idx] = _mm256_set_epi16(
                         c2f[idx], c2f[idx + 1], c2f[idx + 2], c2f[idx + 3], 
@@ -396,7 +396,7 @@ inline void pre_calculate_eval_constant() {
                 }
             }
         }
-        for (int i = 0; i < N_SIMD_EVAL_FEATURES_COMP; ++i) {
+        for (int i = 0; i < N_EVAL_VECTORS_COMP; ++i) {
             int i4 = i * 4;
             eval_simd_offsets_comp[i * 2] = _mm256_set_epi32(
                 pattern_starts[10 + i4], pattern_starts[10 + i4], pattern_starts[10 + i4], pattern_starts[10 + i4], 
