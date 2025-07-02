@@ -41,11 +41,19 @@ CONSOLE_SOURCE_TABLE_HERE
 
 ### cmakeでビルド
 
+Macの場合、拡張属性によって実行できない不具合が発生することがあるので、Egaroucidフォルダ内すべての拡張属性を削除しておきます。このとき、フォルダの名前はバージョンによって変わります。
+
+
+
+<code>xattr -cr ./Egaroucid-console_vX.Y.Z</code>
+
+
+
 ディレクトリを移動します。
 
 
 
-<code>$ cd Egaroucid</code>
+<code>$ cd Egaroucid-console_vX.Y.Z</code>
 
 
 
@@ -120,12 +128,19 @@ EgaroucidはClangでコンパイルした方が高速に動く場合が多いた
     </li>
     <li>C++17の機能が必要</li>
 </ul>
+Macの場合、拡張属性によって実行できない不具合が発生することがあるので、Egaroucidフォルダ内すべての拡張属性を削除しておきます。このとき、フォルダの名前はバージョンによって変わります。
+
+
+
+<code>xattr -cr ./Egaroucid-console_vX.Y.Z</code>
+
+
 
 ディレクトリを移動します。
 
 
 
-<code>$ cd Egaroucid</code>
+<code>$ cd Egaroucid-console_vX.Y.Z</code>
 
 
 

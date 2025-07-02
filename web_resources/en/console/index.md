@@ -38,14 +38,21 @@ CONSOLE_SOURCE_TABLE_HERE
 
 
 
-
 ### Build with cmake
+
+For Mac, extended attributes can cause problems that prevent the program from running, so delete all extended attributes in the Egaroucid folder. The name of the folder will change depending on the version.
+
+
+
+<code>xattr -cr ./Egaroucid-console_vX.Y.Z</code>
+
+
 
 Change directory.
 
 
 
-<code>$ cd Egaroucid</code>
+<code>$ cd Egaroucid-console_vX.Y.Z</code>
 
 
 
@@ -125,12 +132,19 @@ Requirements are:
     </li>
     <li>C++17</li>
 </ul>
+For Mac, extended attributes can cause problems that prevent the program from running, so delete all extended attributes in the Egaroucid folder. The name of the folder will change depending on the version.
+
+
+
+<code>xattr -cr ./Egaroucid-console_vX.Y.Z</code>
+
+
 
 Change directory.
 
 
 
-<code>$ cd Egaroucid/src</code>
+<code>$ cd Egaroucid-console_vX.Y.Z</code>
 
 
 
