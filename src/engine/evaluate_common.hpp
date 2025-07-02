@@ -16,7 +16,7 @@
 */
 // disc patterns
 constexpr int N_PATTERNS = 16;          // number of patterns used
-constexpr int MAX_CELL_PATTERNS = 17;   // 1 cell belongs up to 17 patterns
+constexpr int MAX_CELL_PATTERNS = 15;   // 1 cell belongs up to 15 patterns
 constexpr int MAX_PATTERN_CELLS = 10;   // up to 10 cells for a pattern
 constexpr int MAX_EVALUATE_IDX = 59049; // 3^10: up to 10 cells for pattern
 constexpr int N_PATTERN_FEATURES = 64;  // 64 features are used
