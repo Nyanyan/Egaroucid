@@ -111,7 +111,7 @@ Then,
 
 
 
-That's all. You can see <code>Egaroucid_for_Console.out</code> in <code>Egaroucid/bin</code> directory. You can run with commands below.
+That's all. You can see <code>Egaroucid_for_Console.out</code> in <code>Egaroucid-console_vX.Y.Z/bin</code> directory. You can run with commands below.
 
 
 

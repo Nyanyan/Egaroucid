@@ -107,7 +107,7 @@ EgaroucidはClangでコンパイルした方が高速に動く場合が多いた
 
 
 
-これでビルドができます。<code>Egaroucid/bin</code>フォルダの中に<code>Egaroucid_for_Console.out</code>ができましたので、以下のコマンドで実行できます。
+これでビルドができます。<code>Egaroucid-console_vX.Y.Z/bin</code>フォルダの中に<code>Egaroucid_for_Console.out</code>ができましたので、以下のコマンドで実行できます。
 
 
 
