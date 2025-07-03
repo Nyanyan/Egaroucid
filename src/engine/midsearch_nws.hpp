@@ -125,7 +125,7 @@ int nega_alpha_ordering_nws_simple(Search *search, int alpha, const int depth, c
     if (transposition_cutoff_nws(search, hash_code, depth, alpha, &v, moves)) {
         return v;
     }
-#if USE_MID_MPC && MID_MPC_MIN_DEPTH <= MID_SIMPLE_DEPTH
+#if USE_MID_MPC && MID_MPC_MIN_DEPTH <= MID_SIMPLE_DEPTH && false
     if (search->mpc_level < MPC_100_LEVEL && depth >= USE_MPC_MIN_DEPTH) {
         if (mpc(search, alpha, alpha + 1, depth, legal, false, &v, searching)) {
             return v;
