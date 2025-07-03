@@ -138,7 +138,7 @@ int nega_alpha_ordering_nws_simple(Search *search, int alpha, const int depth, c
     std::vector<Flip_value> move_list(canput);
     int idx = 0;
     int tt_moves_idx0 = -1;
-    int tt_moves_idx1 = -1;
+    // int tt_moves_idx1 = -1;
     for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)) {
         calc_flip(&move_list[idx].flip, &search->board, cell);
         if (move_list[idx].flip.flip == search->board.opponent) {
@@ -146,9 +146,10 @@ int nega_alpha_ordering_nws_simple(Search *search, int alpha, const int depth, c
         }
         if (cell == moves[0]) {
             tt_moves_idx0 = idx;
-        } else if (cell == moves[1]) {
-            tt_moves_idx1 = idx;
         }
+        // else if (cell == moves[1]) {
+        //     tt_moves_idx1 = idx;
+        // }
         ++idx;
     }
 #if USE_MID_ETC && MID_ETC_DEPTH_NWS <= MID_SIMPLE_DEPTH
@@ -170,17 +171,17 @@ int nega_alpha_ordering_nws_simple(Search *search, int alpha, const int depth, c
         move_list[tt_moves_idx0].flip.flip = 0;
         move_list[tt_moves_idx0].value = -INF;
     }
-    if (tt_moves_idx1 != -1 && move_list[tt_moves_idx1].flip.flip && v <= alpha) {
-        search->move(&move_list[tt_moves_idx1].flip);
-            g = -nega_alpha_ordering_nws_simple(search, -alpha - 1, depth - 1, false, move_list[tt_moves_idx1].n_legal, searching);
-        search->undo(&move_list[tt_moves_idx1].flip);
-        if (v < g) {
-            v = g;
-            best_move = move_list[tt_moves_idx1].flip.pos;
-        }
-        move_list[tt_moves_idx1].flip.flip = 0;
-        move_list[tt_moves_idx1].value = -INF;
-    }
+    // if (tt_moves_idx1 != -1 && move_list[tt_moves_idx1].flip.flip && v <= alpha) {
+    //     search->move(&move_list[tt_moves_idx1].flip);
+    //         g = -nega_alpha_ordering_nws_simple(search, -alpha - 1, depth - 1, false, move_list[tt_moves_idx1].n_legal, searching);
+    //     search->undo(&move_list[tt_moves_idx1].flip);
+    //     if (v < g) {
+    //         v = g;
+    //         best_move = move_list[tt_moves_idx1].flip.pos;
+    //     }
+    //     move_list[tt_moves_idx1].flip.flip = 0;
+    //     move_list[tt_moves_idx1].value = -INF;
+    // }
     if (v <= alpha) {
         move_list_evaluate_nws(search, move_list, moves, depth, alpha, searching);
 #if USE_MID_ETC && MID_ETC_DEPTH_NWS <= MID_SIMPLE_DEPTH

@@ -22,7 +22,7 @@
 /*
     @brief YBWC parameters
 */
-constexpr int YBWC_MID_SPLIT_MIN_DEPTH = 7;
+constexpr int YBWC_MID_SPLIT_MIN_DEPTH = 8;
 //constexpr int YBWC_MID_SPLIT_MAX_DEPTH = 26;
 constexpr int YBWC_END_SPLIT_MIN_DEPTH = 15;
 //constexpr int YBWC_END_SPLIT_MAX_DEPTH = 29;
