@@ -20,7 +20,7 @@ constexpr int USE_MPC_MIN_DEPTH = 3;
 
 //constexpr int MPC_ADD_DEPTH_VALUE_THRESHOLD = 5;
 //constexpr int MPC_SUB_DEPTH_VALUE_THRESHOLD = 20;
-constexpr int MPC_ERROR0_OFFSET = 3;
+constexpr int MPC_ERROR0_OFFSET = 2;
 
 // constants from standard normal distribution table
 // two-sided test                                         74.0  88.0  93.0  98.0  99.0  inf (%)
@@ -128,7 +128,7 @@ inline bool mpc(Search* search, int alpha, int beta, int depth, uint64_t legal, 
         // if (is_end_search) {
         //     error_search += 1.5;
         // }
-        int error_0 = error_search - MPC_ERROR0_OFFSET;
+        int error_0 = std::max(1, error_search - MPC_ERROR0_OFFSET);
         search->mpc_level = MPC_100_LEVEL;
         if (d0value >= beta + error_0) {
             int pc_beta = beta + error_search;

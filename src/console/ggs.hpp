@@ -486,6 +486,8 @@ void ggs_terminate_ponder(std::future<std::vector<Ponder_elem>> ponder_futures[]
     }
 }
 
+#define GGS_USE_PONDER false
+
 void ggs_client(Options *options) {
     WSADATA wsaData;
     SOCKET sock;
@@ -774,12 +776,17 @@ void ggs_client(Options *options) {
                                         if (!ggs_board.board.is_end()) {
                                             ai_searchings[ggs_board.synchro_id] = true;
                                             ggs_boards_searching[ggs_board.synchro_id] = ggs_board;
+#if GGS_USE_PONDER
                                             ai_futures[ggs_board.synchro_id] = std::async(std::launch::async, ggs_search, ggs_board, options, ggs_board.synchro_id, &ai_searchings[ggs_board.synchro_id]); // set search
+#else
+                                            ai_futures[ggs_board.synchro_id] = std::async(std::launch::async, ggs_search, ggs_board, options, THREAD_ID_NONE, &ai_searchings[ggs_board.synchro_id]); // set search
+#endif
                                             new_calculation_start = true;
                                             std::string msg = "Egaroucid thinking... " + ggs_board.game_id + " " + ggs_board.board.to_str(ggs_board.player_to_move);
                                             ggs_print_info(msg, options);
                                         }
                                     } else { // Opponent's move
+#if GGS_USE_PONDER
                                         if (!ggs_board.board.is_end()) {
                                             ponder_searchings[ggs_board.synchro_id] = true;
                                             ponder_futures[ggs_board.synchro_id] = std::async(std::launch::async, ai_ponder, ggs_board.board, options->show_log, ggs_board.synchro_id, &ponder_searchings[ggs_board.synchro_id]); // set ponder
@@ -787,6 +794,7 @@ void ggs_client(Options *options) {
                                             std::string msg = "Egaroucid pondering... " + ggs_board.game_id + " " + ggs_board.board.to_str(ggs_board.player_to_move);
                                             ggs_print_info(msg, options);
                                         }
+#endif
                                     }
                                 } else { // non-synchro game
                                     playing_synchro_game = false;
@@ -798,10 +806,12 @@ void ggs_client(Options *options) {
                                             ai_futures[GGS_NON_SYNCHRO_ID] = std::async(std::launch::async, ggs_search, ggs_board, options, THREAD_ID_NONE, &ai_searchings[GGS_NON_SYNCHRO_ID]); // set search
                                         }
                                     } else { // Opponent's move
+#if GGS_USE_PONDER
                                         if (!ggs_board.board.is_end()) {
                                             ponder_searchings[GGS_NON_SYNCHRO_ID] = true;
                                             ponder_futures[GGS_NON_SYNCHRO_ID] = std::async(std::launch::async, ai_ponder, ggs_board.board, options->show_log, THREAD_ID_NONE, &ponder_searchings[GGS_NON_SYNCHRO_ID]); // set ponder
                                         }
+#endif
                                     }
                                 }
                             }
@@ -810,6 +820,7 @@ void ggs_client(Options *options) {
                 }
             }
         }
+#if GGS_USE_PONDER
         // thread manager
         thread_sizes_before[0] = thread_sizes[0];
         thread_sizes_before[1] = thread_sizes[1];
@@ -887,6 +898,7 @@ void ggs_client(Options *options) {
             std::string msg = "thread info synchro " + std::to_string(playing_synchro_game) + " same " + std::to_string(playing_same_board) + " ai " + std::to_string(ai_searchings[0]) + " " + std::to_string(ai_searchings[1]) + " ponder " + std::to_string(ponder_searchings[0]) + " " + std::to_string(ponder_searchings[1]) + " thread size " + std::to_string(thread_sizes[0]) + " " + std::to_string(thread_sizes[1]);
             ggs_print_info(msg, options);
         }
+#endif
     }
 
     // close connection
