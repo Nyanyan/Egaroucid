@@ -7,16 +7,17 @@ n_random_moves = int(sys.argv[1])
 IDX_START = int(sys.argv[2])
 IDX_END = int(sys.argv[3])
 
-LEVEL = 17
+LEVEL = 15
 N_GAMES_PER_FILE = 10000
-N_THREAD = 31
+N_THREAD = 16
 
 def fill0(n, r):
     res = str(n)
     return '0' * (r - len(res)) + res
 
 #exe = './../Egaroucid_for_Console_clang.exe'
-exe = './../versions/Egaroucid_for_Console_7_6_0_Windows_SIMD/Egaroucid_for_Console_7_6_0_SIMD.exe'
+#exe = './../versions/Egaroucid_for_Console_7_6_0_Windows_SIMD/Egaroucid_for_Console_7_6_0_SIMD.exe'
+exe = './../versions/Egaroucid_for_Console_7_5_1_Windows_SIMD/Egaroucid_for_Console_7_5_1_SIMD.exe'
 
 #cmd = exe + ' -nobook -l ' + str(LEVEL) + ' -thread ' + str(N_THREAD) + ' -selfplay ' + str(N_GAMES_PER_FILE) + ' ' + str(n_random_moves)
 cmd = exe + ' -l ' + str(LEVEL) + ' -thread ' + str(N_THREAD) + ' -selfplay ' + str(N_GAMES_PER_FILE) + ' ' + str(n_random_moves)
