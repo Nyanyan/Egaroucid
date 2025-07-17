@@ -27,6 +27,7 @@
 #include "ybwc.hpp"
 #include "util.hpp"
 #include "stability_cutoff.hpp"
+#include "search_controller.hpp"
 
 inline bool mpc(Search* search, int alpha, int beta, int depth, uint64_t legal, const bool is_end_search, int* v, std::vector<bool*> &searchings);
 inline bool mpc(Search* search, int alpha, int beta, const int depth, uint64_t legal, const bool is_end_search, int* v, const bool* searching);
@@ -488,4 +489,245 @@ int nega_alpha_ordering_nws(Search *search, int alpha, const int depth, const bo
 inline int nega_alpha_ordering_nws(Search *search, int alpha, const int depth, const bool skipped, uint64_t legal, const bool is_end_search, bool *searching) {
     std::vector<bool*> searchings = {searching};
     return nega_alpha_ordering_nws(search, alpha, depth, skipped, legal, is_end_search, searchings);
+}
+
+/*
+    @brief Optimized NWS search using bitmask controller
+*/
+
+// Forward declarations for optimized functions
+int nega_alpha_ordering_nws_simple_optimized(Search *search, int alpha, const int depth, const bool skipped, uint64_t legal, int thread_index);
+void ybwc_search_young_brothers_nws_optimized(Search *search, int alpha, int *v, int *best_move, int n_available_moves, uint32_t hash_code, int depth, bool is_end_search, Flip_value move_list[], int canput);
+
+int nega_alpha_ordering_nws_optimized(Search *search, int alpha, const int depth, const bool skipped, uint64_t legal, const bool is_end_search, int thread_index) {
+    if (!global_searching || !g_search_controller.is_thread_searching(thread_index)) {
+        return SCORE_UNDEFINED;
+    }
+    if (is_end_search) {
+        if (depth <= MID_TO_END_DEPTH_MPC || (search->mpc_level == MPC_100_LEVEL && depth <= MID_TO_END_DEPTH)) {
+            return nega_alpha_end_nws(search, alpha, skipped, legal);
+        }
+    } else {
+        if (depth <= MID_SIMPLE_DEPTH) {
+            // For simple depth, use optimized simple version
+            return nega_alpha_ordering_nws_simple_optimized(search, alpha, depth, skipped, legal, thread_index);
+        }
+    }
+    int v = -SCORE_INF;
+    ++search->n_nodes;
+#if USE_SEARCH_STATISTICS
+    ++search->n_nodes_discs[search->n_discs];
+#endif
+    if (legal == LEGAL_UNDEFINED) {
+        legal = search->board.get_legal();
+    }
+    if (legal == 0ULL) {
+        if (skipped) {
+            return end_evaluate(&search->board);
+        }
+        search->pass();
+            v = -nega_alpha_ordering_nws_optimized(search, -alpha - 1, depth, true, LEGAL_UNDEFINED, is_end_search, thread_index);
+        search->pass();
+        return v;
+    }
+    uint32_t hash_code = search->board.hash();
+    transposition_table.prefetch(hash_code);
+    uint_fast8_t moves[N_TRANSPOSITION_MOVES] = {MOVE_UNDEFINED, MOVE_UNDEFINED};
+    if (transposition_cutoff_nws(search, hash_code, depth, alpha, &v, moves)) {
+        return v;
+    }
+#if USE_MID_MPC
+    if (search->mpc_level < MPC_100_LEVEL && depth >= USE_MPC_MIN_DEPTH) {
+        // Note: mpc would need to be updated for optimized version
+        // For now, skip mpc in optimized version
+    }
+#endif
+    int best_move = MOVE_UNDEFINED;
+    int g;
+    const int canput = pop_count_ull(legal);
+    Flip_value move_list[35];  // Array version
+    // Initialize array elements
+    for (int i = 0; i < canput; ++i) {
+        move_list[i].value = 0;
+        move_list[i].n_legal = 0;
+        move_list[i].flip.flip = 0;
+        move_list[i].flip.pos = 0;
+    }
+    int idx = 0;
+    int tt_moves_idx0 = -1;
+    for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)) {
+        calc_flip(&move_list[idx].flip, &search->board, cell);
+        if (move_list[idx].flip.flip == search->board.opponent) {
+            return SCORE_MAX;
+        }
+        if (cell == moves[0]) {
+            tt_moves_idx0 = idx;
+        }
+        ++idx;
+    }
+    int n_etc_done = 0;
+    // Note: etc_nws would need to be updated for optimized version
+    // For now, skip etc in optimized version
+    
+    bool serial_searched = false;
+    if (tt_moves_idx0 != -1 && move_list[tt_moves_idx0].flip.flip) {
+        search->move(&move_list[tt_moves_idx0].flip);
+            g = -nega_alpha_ordering_nws_optimized(search, -alpha - 1, depth - 1, false, move_list[tt_moves_idx0].n_legal, is_end_search, thread_index);
+        search->undo(&move_list[tt_moves_idx0].flip);
+        if (v < g) {
+            v = g;
+            best_move = move_list[tt_moves_idx0].flip.pos;
+        }
+        serial_searched = true;
+        move_list[tt_moves_idx0].flip.flip = 0;
+        move_list[tt_moves_idx0].value = -INF;
+    }
+    if (v <= alpha) {
+        bool thread_searching_flag = g_search_controller.is_thread_searching(thread_index);
+        move_list_evaluate_nws(search, move_list, canput, moves, depth, alpha, &thread_searching_flag);
+#if USE_YBWC_NWS
+        if (
+            search->use_multi_thread && 
+            ((!is_end_search && depth - 1 >= YBWC_MID_SPLIT_MIN_DEPTH) || (is_end_search && depth - 1 >= YBWC_END_SPLIT_MIN_DEPTH))
+        ) {
+            move_list_sort(move_list, canput);
+            if (move_list[0].flip.flip) {
+                if (!serial_searched) {
+                    search->move(&move_list[0].flip);
+                        g = -nega_alpha_ordering_nws_optimized(search, -alpha - 1, depth - 1, false, move_list[0].n_legal, is_end_search, thread_index);
+                    search->undo(&move_list[0].flip);
+                    move_list[0].flip.flip = 0;
+                    if (v < g) {
+                        v = g;
+                        best_move = move_list[0].flip.pos;
+                    }
+                }
+                if (v <= alpha) {
+                    ybwc_search_young_brothers_nws_optimized(search, alpha, &v, &best_move, canput - n_etc_done - 1, hash_code, depth, is_end_search, move_list, canput);
+                }
+            }
+        } else{
+#endif
+            for (int move_idx = 0; move_idx < canput - n_etc_done && g_search_controller.is_thread_searching(thread_index); ++move_idx) {
+                swap_next_best_move(move_list, move_idx, canput);
+                if (move_list[move_idx].flip.flip == 0) {
+                    break;
+                }
+                search->move(&move_list[move_idx].flip);
+                    g = -nega_alpha_ordering_nws_optimized(search, -alpha - 1, depth - 1, false, move_list[move_idx].n_legal, is_end_search, thread_index);
+                search->undo(&move_list[move_idx].flip);
+                if (v < g) {
+                    v = g;
+                    best_move = move_list[move_idx].flip.pos;
+                    if (alpha < v) {
+                        break;
+                    }
+                }
+            }
+#if USE_YBWC_NWS
+        }
+#endif
+    }
+    if (g_search_controller.is_thread_searching(thread_index) && global_searching) {
+        transposition_table.reg(search, hash_code, depth, alpha, alpha + 1, v, best_move);
+    }
+    return v;
+}
+
+int nega_alpha_ordering_nws_simple_optimized(Search *search, int alpha, const int depth, const bool skipped, uint64_t legal, int thread_index) {
+    if (!global_searching || !g_search_controller.is_thread_searching(thread_index)) {
+        return SCORE_UNDEFINED;
+    }
+    if (depth == 1) {
+        return nega_alpha_eval1_nws(search, alpha, skipped);
+    }
+    if (depth == 0) {
+        ++search->n_nodes;
+        return mid_evaluate_diff(search);
+    }
+    ++search->n_nodes;
+#if USE_SEARCH_STATISTICS
+    ++search->n_nodes_discs[search->n_discs];
+#endif
+    if (legal == LEGAL_UNDEFINED) {
+        legal = search->board.get_legal();
+    }
+    int v = -SCORE_INF;
+    if (legal == 0ULL) {
+        if (skipped) {
+            return end_evaluate(&search->board);
+        }
+        search->pass();
+            v = -nega_alpha_ordering_nws_simple_optimized(search, -alpha - 1, depth, true, LEGAL_UNDEFINED, thread_index);
+        search->pass();
+        return v;
+    }
+    uint32_t hash_code = search->board.hash();
+    transposition_table.prefetch(hash_code);
+    uint_fast8_t moves[N_TRANSPOSITION_MOVES] = {MOVE_UNDEFINED, MOVE_UNDEFINED};
+    if (transposition_cutoff_nws(search, hash_code, depth, alpha, &v, moves)) {
+        return v;
+    }
+    int best_move = MOVE_UNDEFINED;
+    int g;
+    const int canput = pop_count_ull(legal);
+    Flip_value move_list[35];  // Array version
+    // Initialize array elements
+    for (int i = 0; i < canput; ++i) {
+        move_list[i].value = 0;
+        move_list[i].n_legal = 0;
+        move_list[i].flip.flip = 0;
+        move_list[i].flip.pos = 0;
+    }
+    int idx = 0;
+    int tt_moves_idx0 = -1;
+    for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)) {
+        calc_flip(&move_list[idx].flip, &search->board, cell);
+        if (move_list[idx].flip.flip == search->board.opponent) {
+            return SCORE_MAX;
+        }
+        if (cell == moves[0]) {
+            tt_moves_idx0 = idx;
+        }
+        ++idx;
+    }
+    int n_etc_done = 0;
+    // Note: etc_nws would need to be updated for optimized version
+    // For now, skip etc in optimized version
+    
+    if (tt_moves_idx0 != -1 && move_list[tt_moves_idx0].flip.flip) {
+        search->move(&move_list[tt_moves_idx0].flip);
+            g = -nega_alpha_ordering_nws_simple_optimized(search, -alpha - 1, depth - 1, false, move_list[tt_moves_idx0].n_legal, thread_index);
+        search->undo(&move_list[tt_moves_idx0].flip);
+        if (v < g) {
+            v = g;
+            best_move = move_list[tt_moves_idx0].flip.pos;
+        }
+        move_list[tt_moves_idx0].flip.flip = 0;
+        move_list[tt_moves_idx0].value = -INF;
+    }
+    if (v <= alpha) {
+        bool thread_searching_flag = g_search_controller.is_thread_searching(thread_index);
+        move_list_evaluate_nws(search, move_list, canput, moves, depth, alpha, &thread_searching_flag);
+        for (int move_idx = 0; move_idx < canput - n_etc_done && g_search_controller.is_thread_searching(thread_index); ++move_idx) {
+            swap_next_best_move(move_list, move_idx, canput);
+            if (move_list[move_idx].flip.flip == 0) {
+                break;
+            }
+            search->move(&move_list[move_idx].flip);
+                g = -nega_alpha_ordering_nws_simple_optimized(search, -alpha - 1, depth - 1, false, move_list[move_idx].n_legal, thread_index);
+            search->undo(&move_list[move_idx].flip);
+            if (v < g) {
+                v = g;
+                best_move = move_list[move_idx].flip.pos;
+                if (alpha < v) {
+                    break;
+                }
+            }
+        }
+    }
+    if (g_search_controller.is_thread_searching(thread_index) && global_searching) {
+        transposition_table.reg(search, hash_code, depth, alpha, alpha + 1, v, best_move);
+    }
+    return v;
 }
