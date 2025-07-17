@@ -328,14 +328,8 @@ int nega_alpha_ordering_nws_simple(Search *search, int alpha, const int depth, c
 
 
 inline bool is_searching(std::vector<bool*> &searchings) {
-    int idx = 0;
-    for (bool* &elem: searchings) {
-        if (!(*elem)) {
-            return false;
-        }
-        ++idx;
-    }
-    return true;
+    return std::all_of(searchings.begin(), searchings.end(), 
+                       [](bool* elem) { return *elem; });
 }
 
 
