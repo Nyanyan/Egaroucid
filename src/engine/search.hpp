@@ -44,6 +44,7 @@ constexpr int MOVE_UNDEFINED = 125;
 constexpr int MOVE_NOMOVE = 65;
 constexpr int MOVE_PASS = 64;
 constexpr int SEARCH_BOOK = -1;
+constexpr int MAX_N_BRANCHES = 35;
 
 /*
     @brief Stability cutoff threshold

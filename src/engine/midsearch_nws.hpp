@@ -135,7 +135,8 @@ int nega_alpha_ordering_nws_simple(Search *search, int alpha, const int depth, c
     int best_move = MOVE_UNDEFINED;
     int g;
     const int canput = pop_count_ull(legal);
-    Flip_value move_list[35];
+    Flip_value move_list[MAX_N_BRANCHES];
+    // std::vector<Flip_value> move_list(canput);
     int idx = 0;
     int tt_moves_idx0 = -1;
     // int tt_moves_idx1 = -1;
@@ -155,7 +156,7 @@ int nega_alpha_ordering_nws_simple(Search *search, int alpha, const int depth, c
 #if USE_MID_ETC && MID_ETC_DEPTH_NWS <= MID_SIMPLE_DEPTH
     int n_etc_done = 0;
     if (depth >= MID_ETC_DEPTH_NWS) {
-        if (etc_nws(search, move_list, depth, alpha, &v, &n_etc_done, canput)) {
+        if (etc_nws(search, move_list, canput, depth, alpha, &v, &n_etc_done)) {
             return v;
         }
     }
@@ -183,7 +184,7 @@ int nega_alpha_ordering_nws_simple(Search *search, int alpha, const int depth, c
     //     move_list[tt_moves_idx1].value = -INF;
     // }
     if (v <= alpha) {
-        move_list_evaluate_nws(search, move_list, moves, depth, alpha, searching, canput);
+        move_list_evaluate_nws(search, move_list, canput, moves, depth, alpha, searching);
 #if USE_MID_ETC && MID_ETC_DEPTH_NWS <= MID_SIMPLE_DEPTH
         for (int move_idx = 0; move_idx < canput - n_etc_done && *searching; ++move_idx) {
 #else
@@ -400,7 +401,8 @@ int nega_alpha_ordering_nws(Search *search, int alpha, const int depth, const bo
     int best_move = MOVE_UNDEFINED;
     int g;
     const int canput = pop_count_ull(legal);
-    Flip_value move_list[35];
+    // std::vector<Flip_value> move_list(canput);
+    Flip_value move_list[MAX_N_BRANCHES];
     int idx = 0;
     int tt_moves_idx0 = -1;
     for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)) {
@@ -416,7 +418,7 @@ int nega_alpha_ordering_nws(Search *search, int alpha, const int depth, const bo
     int n_etc_done = 0;
 #if USE_MID_ETC
     if (depth >= MID_ETC_DEPTH_NWS) {
-        if (etc_nws(search, move_list, depth, alpha, &v, &n_etc_done, canput)) {
+        if (etc_nws(search, move_list, canput, depth, alpha, &v, &n_etc_done)) {
             return v;
         }
     }
@@ -435,7 +437,7 @@ int nega_alpha_ordering_nws(Search *search, int alpha, const int depth, const bo
         move_list[tt_moves_idx0].value = -INF;
     }
     if (v <= alpha) {
-        move_list_evaluate_nws(search, move_list, moves, depth, alpha, searchings.back(), canput);
+        move_list_evaluate_nws(search, move_list, canput, moves, depth, alpha, searchings.back());
 #if USE_YBWC_NWS
         if (
             search->use_multi_thread && 
@@ -456,7 +458,7 @@ int nega_alpha_ordering_nws(Search *search, int alpha, const int depth, const bo
                     }
                 }
                 if (v <= alpha) {
-                    ybwc_search_young_brothers_nws(search, alpha, &v, &best_move, canput - n_etc_done - 1, hash_code, depth, is_end_search, move_list, searchings);
+                    ybwc_search_young_brothers_nws(search, alpha, &v, &best_move, canput - n_etc_done - 1, hash_code, depth, is_end_search, move_list, canput, searchings);
                 }
             }
         } else{
