@@ -9,6 +9,7 @@ def fill0(n, r):
     return n
 
 exe = 'Egaroucid_for_Console.exe'
+#exe = 'Egaroucid_for_Console_20250717_before.exe'
 #exe = 'versions/Egaroucid_for_Console_7_5_1_Windows_SIMD/Egaroucid_for_Console_7_5_1_SIMD.exe'
 cmd = exe + ' -l 23 -nobook -thread 32 -solve problem/midgame_test.txt'
 

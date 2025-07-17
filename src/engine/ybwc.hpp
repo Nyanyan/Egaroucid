@@ -113,11 +113,11 @@ inline int ybwc_split_nws(Search *search, int parent_alpha, const int depth, uin
 
 
 #if USE_YBWC_NWS
-inline void ybwc_search_young_brothers_nws(Search *search, int alpha, int *v, int *best_move, int n_available_moves, uint32_t hash_code, int depth, bool is_end_search, std::vector<Flip_value> &move_list, std::vector<bool*> &searchings) {
+inline void ybwc_search_young_brothers_nws(Search *search, int alpha, int *v, int *best_move, int n_available_moves, uint32_t hash_code, int depth, bool is_end_search, Flip_value move_list[], std::vector<bool*> &searchings) {
     std::vector<std::future<Parallel_task>> parallel_tasks;
     bool n_searching = true;
     searchings.emplace_back(&n_searching);
-    int canput = (int)move_list.size();
+    int canput = n_available_moves;
     int running_count = 0;
     int g;
     bool searched;
@@ -210,11 +210,11 @@ inline void ybwc_search_young_brothers_nws(Search *search, int alpha, int *v, in
 #endif
 
 #if USE_YBWC_NEGASCOUT
-void ybwc_search_young_brothers(Search *search, int *alpha, int *beta, int *v, int *best_move, int n_available_moves, uint32_t hash_code, int depth, bool is_end_search, std::vector<Flip_value> &move_list, bool need_best_move, bool *searching) {
+void ybwc_search_young_brothers(Search *search, int *alpha, int *beta, int *v, int *best_move, int n_available_moves, uint32_t hash_code, int depth, bool is_end_search, Flip_value move_list[], bool need_best_move, bool *searching) {
     std::vector<std::future<Parallel_task>> parallel_tasks;
     bool n_searching = true;
     std::vector<bool*> searchings = {searching, &n_searching};
-    int canput = (int)move_list.size();
+    int canput = n_available_moves;
     int running_count = 0;
     int g;
     std::vector<int> research_idxes;

@@ -113,6 +113,42 @@ inline bool transposition_cutoff_nws_bestmove(Search *search, const uint32_t has
     @param hash_level           new hash level
     @return hash resized?
 */
+// Overload for fixed-size arrays
+inline bool etc(Search *search, Flip_value move_list[], int depth, int *alpha, int *beta, int *v, int *n_etc_done, int canput) {
+    *n_etc_done = 0;
+    int l, u, n_beta = *alpha;
+    for (int i = 0; i < canput; ++i) {
+        if (move_list[i].flip.flip == 0) {
+            continue;
+        }
+        l = -SCORE_MAX;
+        u = SCORE_MAX;
+        search->move(&move_list[i].flip);
+            if (transposition_table.has_node_any_level_get_bounds(search, search->board.hash(), depth - 1, &l, &u)) {
+                move_list[i].value = W_TT_BONUS;
+            }
+        search->undo(&move_list[i].flip);
+        if (*beta <= -u) { // alpha < beta <= -u <= -l
+            *v = -u;
+            return true; // fail high
+        } else if (*alpha <= -u && -u < *beta) { // alpha <= -u <= beta <= -l or alpha <= -u <= -l <= beta
+            *alpha = -u; // update alpha (alpha <= -u)
+            *v = -u;
+            if (-l <= *v || u == l) { // better move already found or this move is already done
+                move_list[i].flip.flip = 0ULL; // make this move invalid
+                move_list[i].value = -INF;
+                ++(*n_etc_done);
+            }
+        } else if (-l <= *alpha) { // -u <= -l <= alpha < beta
+            *v = std::max(*v, -l); // this move is worse than alpha
+            move_list[i].flip.flip = 0ULL; // make this move invalid
+            move_list[i].value = -INF;
+            ++(*n_etc_done);
+        }
+    }
+    return false;
+}
+
 inline bool etc(Search *search, std::vector<Flip_value> &move_list, int depth, int *alpha, int *beta, int *v, int *n_etc_done) {
     *n_etc_done = 0;
     int l, u, n_beta = *alpha;
@@ -152,6 +188,36 @@ inline bool etc(Search *search, std::vector<Flip_value> &move_list, int depth, i
     @param hash_level           new hash level
     @return hash resized?
 */
+// Overload for fixed-size arrays
+inline bool etc_nws(Search *search, Flip_value move_list[], int depth, int alpha, int *v, int *n_etc_done, int canput) {
+    *n_etc_done = 0;
+    int l, u;
+    for (int i = 0; i < canput; ++i) {
+        if (move_list[i].flip.flip == 0) {
+            continue;
+        }
+        l = -SCORE_MAX;
+        u = SCORE_MAX;
+        search->move(&move_list[i].flip);
+            if (transposition_table.has_node_any_level_get_bounds(search, search->board.hash(), depth - 1, &l, &u)) {
+                move_list[i].value = W_NWS_TT_BONUS;
+            }
+        search->undo(&move_list[i].flip);
+        if (alpha < -u) { // fail high at parent node
+            *v = -u;
+            return true;
+        }
+        if (-alpha <= l) { // fail high at child node
+            if (*v < -l)
+                *v = -l;
+            move_list[i].flip.flip = 0ULL; // make this move invalid
+            move_list[i].value = -INF;
+            ++(*n_etc_done);
+        }
+    }
+    return false;
+}
+
 inline bool etc_nws(Search *search, std::vector<Flip_value> &move_list, int depth, int alpha, int *v, int *n_etc_done) {
     *n_etc_done = 0;
     int l, u;

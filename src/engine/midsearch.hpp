@@ -152,7 +152,7 @@ int nega_scout(Search *search, int alpha, int beta, const int depth, const bool 
     }
     int best_move = MOVE_UNDEFINED;
     const int canput = pop_count_ull(legal);
-    std::vector<Flip_value> move_list(canput);
+    Flip_value move_list[35];
     int idx = 0;
     int tt_moves_idx0 = -1;
     for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)) {
@@ -168,7 +168,7 @@ int nega_scout(Search *search, int alpha, int beta, const int depth, const bool 
     int n_etc_done = 0;
 #if USE_MID_ETC
     if (depth >= MID_ETC_DEPTH) {
-        if (etc(search, move_list, depth, &alpha, &beta, &v, &n_etc_done)) {
+        if (etc(search, move_list, depth, &alpha, &beta, &v, &n_etc_done, canput)) {
             return v;
         }
     }
@@ -207,10 +207,10 @@ int nega_scout(Search *search, int alpha, int beta, const int depth, const bool 
         move_list[tt_moves_idx0].value = -INF;
     }
     if (alpha < beta) {
-        move_list_evaluate(search, move_list, moves, depth, alpha, beta, searching);
+        move_list_evaluate(search, move_list, moves, depth, alpha, beta, searching, canput);
 #if USE_YBWC_NEGASCOUT
         if (search->use_multi_thread && ((!is_end_search && depth - 1 >= YBWC_MID_SPLIT_MIN_DEPTH) || (is_end_search && depth - 1 >= YBWC_END_SPLIT_MIN_DEPTH))) {
-            move_list_sort(move_list);
+            move_list_sort(move_list, canput);
             if (move_list[0].flip.flip) {
                 if (!serial_searched) {
                     search->move(&move_list[0].flip);
@@ -301,7 +301,7 @@ int nega_scout_policy(Search *search, int alpha, int beta, const int depth, bool
     transposition_table.get_moves_any_level(&search->board, hash_code, moves);
     int best_move = MOVE_UNDEFINED;
     const int canput = pop_count_ull(legal);
-    std::vector<Flip_value> move_list(canput);
+    Flip_value move_list[35];
     int idx = 0;
     int tt_moves_idx0 = -1;
     for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)) {
@@ -333,10 +333,10 @@ int nega_scout_policy(Search *search, int alpha, int beta, const int depth, bool
         move_list[tt_moves_idx0].value = -INF;
     }
     if (alpha < beta) {
-        move_list_evaluate(search, move_list, moves, depth, alpha, beta, searching);
+        move_list_evaluate(search, move_list, moves, depth, alpha, beta, searching, canput);
 #if USE_YBWC_NEGASCOUT
         if (search->use_multi_thread && ((!is_end_search && depth - 1 >= YBWC_MID_SPLIT_MIN_DEPTH) || (is_end_search && depth - 1 >= YBWC_END_SPLIT_MIN_DEPTH))) {
-            move_list_sort(move_list);
+            move_list_sort(move_list, canput);
             if (move_list[0].flip.flip) {
                 if (!serial_searched) {
                     search->move(&move_list[0].flip);
@@ -483,7 +483,7 @@ std::pair<int, int> first_nega_scout_legal(Search *search, int alpha, int beta, 
     if (alpha < beta && legal) {
         int pv_idx = 1;
         const int canput = pop_count_ull(legal);
-        std::vector<Flip_value> move_list(canput);
+        Flip_value move_list[35];
         int idx = 0;
         for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)) {
             calc_flip(&move_list[idx].flip, &search->board, cell);
@@ -494,14 +494,14 @@ std::pair<int, int> first_nega_scout_legal(Search *search, int alpha, int beta, 
         }
         uint_fast8_t moves[N_TRANSPOSITION_MOVES] = {MOVE_UNDEFINED, MOVE_UNDEFINED};
         transposition_table.get_moves_any_level(&search->board, hash_code, moves);
-        move_list_evaluate(search, move_list, moves, depth, alpha, beta, searching);
+        move_list_evaluate(search, move_list, moves, depth, alpha, beta, searching, canput);
 #if USE_YBWC_NEGASCOUT
         if (
             search->use_multi_thread && 
             ((!is_end_search && depth - 1 >= YBWC_MID_SPLIT_MIN_DEPTH) || (is_end_search && depth - 1 >= YBWC_END_SPLIT_MIN_DEPTH)) //&& 
             //((!is_end_search && depth - 1 <= YBWC_MID_SPLIT_MAX_DEPTH) || (is_end_search && depth - 1 <= YBWC_END_SPLIT_MAX_DEPTH))
         ) {
-            move_list_sort(move_list);
+            move_list_sort(move_list, canput);
             if (move_list[0].flip.flip) {
                 search->move(&move_list[0].flip);
                     g = -nega_scout(search, -beta, -alpha, depth - 1, false, move_list[0].n_legal, is_end_search, searching);
@@ -620,7 +620,7 @@ Analyze_result first_nega_scout_analyze(Search *search, int alpha, int beta, con
     if (alpha < beta && legal) {
         int pv_idx = 1;
         const int canput = pop_count_ull(legal);
-        std::vector<Flip_value> move_list(canput);
+        Flip_value move_list[35];
         int idx = 0;
         for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)) {
             calc_flip(&move_list[idx].flip, &search->board, cell);
@@ -628,10 +628,10 @@ Analyze_result first_nega_scout_analyze(Search *search, int alpha, int beta, con
         }
         uint_fast8_t moves[N_TRANSPOSITION_MOVES] = {MOVE_UNDEFINED, MOVE_UNDEFINED};
         transposition_table.get_moves_any_level(&search->board, hash_code, moves);
-        move_list_evaluate(search, move_list, moves, depth, alpha, beta, searching);
+        move_list_evaluate(search, move_list, moves, depth, alpha, beta, searching, canput);
 #if USE_YBWC_NEGASCOUT_ANALYZE
         if (search->use_multi_thread && depth - 1 >= YBWC_MID_SPLIT_MIN_DEPTH) {
-            move_list_sort(move_list);
+            move_list_sort(move_list, canput);
             bool book_used = false;
             search->move(&move_list[0].flip);
                 if (book.contain(&search->board)) {
