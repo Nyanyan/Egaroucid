@@ -21,6 +21,7 @@ struct Advice_Move {
     int policy;
     int value;
     int n_flipped_discs;
+    int n_flipped_discs_except_edge;
     int n_flipped_direction;
     Board board;
     int player;
@@ -32,6 +33,7 @@ struct Advice_Move {
     bool is_corner;
     bool is_next_to_corner;
     int next_op_n_legal;
+    int next_pl_n_legal;
 };
 
 bool is_flip_inside(Board board, uint_fast8_t cell) {
@@ -122,6 +124,7 @@ void print_advice(Board_info *board_info) {
         for (Advice_Move &move: moves) {
             calc_flip(&flip, &board, move.policy);
             move.n_flipped_discs = pop_count_ull(flip.flip);
+            move.n_flipped_discs_except_edge = pop_count_ull(flip.flip & 0x007E7E7E7E7E7E00ULL);
             move.n_flipped_direction = 0;
             constexpr int dy[8] = {-1, -1, -1, 0,  0,  1, 1, 1};
             constexpr int dx[8] = {-1,  0,  1, 1, -1, -1, 0, 1};
@@ -141,6 +144,9 @@ void print_advice(Board_info *board_info) {
                 move.board = board;
                 move.player = board_info->player ^ 1;
                 move.next_op_n_legal = pop_count_ull(board.get_legal());
+                board.pass();
+                    move.next_pl_n_legal = pop_count_ull(board.get_legal());
+                board.pass();
             board.undo_board(&flip);
         }
     }
@@ -225,6 +231,7 @@ void print_advice(Board_info *board_info) {
             {"value", move.value},
             {"board", move.board.to_str(move.player)},
             {"n_flipped_discs", move.n_flipped_discs},
+            {"n_flipped_discs_except_edge", move.n_flipped_discs_except_edge},
             {"n_flipped_direction", move.n_flipped_direction},
             {"is_flip_inside", move.is_flip_inside},
             {"is_flip_inside_creation", move.is_flip_inside_creation},
@@ -234,6 +241,7 @@ void print_advice(Board_info *board_info) {
             {"is_corner", move.is_corner},
             {"is_next_to_corner", move.is_next_to_corner},
             {"next_op_n_legal", move.next_op_n_legal},
+            {"next_pl_n_legal", move.next_pl_n_legal},
         };
         res["moves"].push_back(j);
     }
