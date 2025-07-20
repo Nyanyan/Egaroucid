@@ -234,14 +234,14 @@ void print_advice(Board_info *board_info) {
         uint64_t bit = 1ULL << move.policy;
         for (int i = 0; i < HW2; ++i) {
             uint64_t n_bit = bit;
-            n_bit |= (bit & 0x7F7F7F7F7F7F7F7FULL << 1) & empties;
-            n_bit |= (bit & 0xFEFEFEFEFEFEFEFEULL >> 1) & empties;
-            n_bit |= (bit & 0x00FFFFFFFFFFFFFFULL << HW) & empties;
-            n_bit |= (bit & 0xFFFFFFFFFFFFFF00ULL >> HW) & empties;
-            n_bit |= (bit & 0x00FEFEFEFEFEFEFEULL << HW_M1) & empties;
-            n_bit |= (bit & 0x7F7F7F7F7F7F7F00ULL >> HW_M1) & empties;
-            n_bit |= (bit & 0x007F7F7F7F7F7F7FULL << HW_P1) & empties;
-            n_bit |= (bit & 0xFEFEFEFEFEFEFE00ULL >> HW_P1) & empties;
+            n_bit |= ((bit & 0x7F7F7F7F7F7F7F7FULL) << 1) & empties;
+            n_bit |= ((bit & 0xFEFEFEFEFEFEFEFEULL) >> 1) & empties;
+            n_bit |= ((bit & 0x00FFFFFFFFFFFFFFULL) << HW) & empties;
+            n_bit |= ((bit & 0xFFFFFFFFFFFFFF00ULL) >> HW) & empties;
+            n_bit |= ((bit & 0x00FEFEFEFEFEFEFEULL) << HW_M1) & empties;
+            n_bit |= ((bit & 0x7F7F7F7F7F7F7F00ULL) >> HW_M1) & empties;
+            n_bit |= ((bit & 0x007F7F7F7F7F7F7FULL) << HW_P1) & empties;
+            n_bit |= ((bit & 0xFEFEFEFEFEFEFE00ULL) >> HW_P1) & empties;
             if (n_bit == bit) {
                 break;
             }
