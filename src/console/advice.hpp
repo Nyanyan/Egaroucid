@@ -33,7 +33,11 @@ struct Advice_Move {
     bool is_corner;
     bool is_next_to_corner_with_empty_corner;
     bool is_corner_offer_avoidance;
+    int offering_avoid_corner;
+    bool is_corner_aiming;
+    int aiming_corner;
     bool offer_corner;
+    int offering_corner;
     int next_op_n_legal;
     int next_pl_n_legal;
     int n_connected_empty_squares;
@@ -233,11 +237,15 @@ void print_advice(Board_info *board_info) {
         };
         move.is_next_to_corner_with_empty_corner = next_corner[move.policy] != -1 && (~(board.player | board.opponent) & 1ULL << next_corner[move.policy]);
         move.offer_corner = false;
+        move.offering_corner = -1;
         if (move.is_next_to_corner_with_empty_corner & (~op_legal & (1ULL << next_corner[move.policy]))) {
             Flip flip;
             calc_flip(&flip, &board, move.policy);
             board.move_board(&flip);
                 move.offer_corner = board.get_legal() & (1ULL << next_corner[move.policy]);
+                if (move.offer_corner) {
+                    move.offering_corner = next_corner[move.policy];
+                }
             board.undo_board(&flip);
         }
     }
@@ -267,7 +275,29 @@ void print_advice(Board_info *board_info) {
         Flip flip;
         calc_flip(&flip, &board, move.policy);
         board.move_board(&flip);
-            move.is_corner_offer_avoidance = ~board.get_legal() & op_legal & 0x8100000000000081ULL;
+            move.is_corner_offer_avoidance = false;
+            move.offering_avoid_corner = -1;
+            uint64_t offering_avoid_corner_bit = ~board.get_legal() & op_legal & 0x8100000000000081ULL;
+            if (offering_avoid_corner_bit) {
+                move.is_corner_offer_avoidance = true;
+                move.offering_avoid_corner = first_bit(&offering_avoid_corner_bit);
+            }
+        board.undo_board(&flip);
+    }
+
+    for (Advice_Move &move: moves) {
+        Flip flip;
+        calc_flip(&flip, &board, move.policy);
+        board.move_board(&flip);
+        board.pass();
+            move.is_corner_aiming = false;
+            move.aiming_corner = -1;
+            uint64_t aiming_corner = board.get_legal() & ~legal & 0x8100000000000081ULL;
+            if (aiming_corner) {
+                move.is_corner_aiming = true;
+                move.aiming_corner = first_bit(&aiming_corner);
+            }
+        board.pass();
         board.undo_board(&flip);
     }
 
@@ -308,8 +338,12 @@ void print_advice(Board_info *board_info) {
             {"is_edge", move.is_edge},
             {"is_corner", move.is_corner},
             {"is_next_to_corner_with_empty_corner", move.is_next_to_corner_with_empty_corner},
-            {"is_is_corner_offer_avoidance", move.is_corner_offer_avoidance},
+            {"is_corner_offer_avoidance", move.is_corner_offer_avoidance},
+            {"offering_avoid_corner", idx_to_coord(move.offering_avoid_corner)},
+            {"is_corner_aiming", move.is_corner_aiming},
+            {"aiming_corner", idx_to_coord(move.aiming_corner)},
             {"offer_corner", move.offer_corner},
+            {"offering_corner", move.offering_corner},
             {"next_op_n_legal", move.next_op_n_legal},
             {"next_pl_n_legal", move.next_pl_n_legal},
             {"n_connected_empty_squares", move.n_connected_empty_squares},
