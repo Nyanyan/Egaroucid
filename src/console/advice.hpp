@@ -32,6 +32,7 @@ struct Advice_Move {
     bool is_edge;
     bool is_corner;
     bool is_next_to_corner_with_empty_corner;
+    bool is_corner_offer_avoidance;
     bool offer_corner;
     int next_op_n_legal;
     int next_pl_n_legal;
@@ -263,6 +264,14 @@ void print_advice(Board_info *board_info) {
     }
 
     for (Advice_Move &move: moves) {
+        Flip flip;
+        calc_flip(&flip, &board, move.policy);
+        board.move_board(&flip);
+            move.is_corner_offer_avoidance = ~board.get_legal() & op_legal & 0x8100000000000081ULL;
+        board.undo_board(&flip);
+    }
+
+    for (Advice_Move &move: moves) {
         move.op_canput = op_legal & (1ULL << move.policy);
     }
 
@@ -299,6 +308,7 @@ void print_advice(Board_info *board_info) {
             {"is_edge", move.is_edge},
             {"is_corner", move.is_corner},
             {"is_next_to_corner_with_empty_corner", move.is_next_to_corner_with_empty_corner},
+            {"is_is_corner_offer_avoidance", move.is_corner_offer_avoidance},
             {"offer_corner", move.offer_corner},
             {"next_op_n_legal", move.next_op_n_legal},
             {"next_pl_n_legal", move.next_pl_n_legal},
