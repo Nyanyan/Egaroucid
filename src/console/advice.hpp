@@ -345,7 +345,7 @@ void print_advice(Board_info *board_info) {
             {"is_corner_aiming", move.is_corner_aiming},
             {"aiming_corner", idx_to_coord(move.aiming_corner)},
             {"is_offer_corner", move.is_offer_corner},
-            {"offering_corner", move.offering_corner},
+            {"offering_corner", idx_to_coord(move.offering_corner)},
             {"next_op_n_legal", move.next_op_n_legal},
             {"next_pl_n_legal", move.next_pl_n_legal},
             {"n_connected_empty_squares", move.n_connected_empty_squares},
