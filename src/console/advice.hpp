@@ -36,7 +36,7 @@ struct Advice_Move {
     int offering_avoid_corner;
     bool is_corner_aiming;
     int aiming_corner;
-    bool offer_corner;
+    bool is_offer_corner;
     int offering_corner;
     int next_op_n_legal;
     int next_pl_n_legal;
@@ -224,6 +224,8 @@ void print_advice(Board_info *board_info) {
         res["has_corner_move"] = has_corner_move;
     }
 
+    bit_print_board(op_legal);
+
     for (Advice_Move &move: moves) {
         const int next_corner[HW2] = {
             -1,  0, -1, -1, -1, -1,  7, -1, 
@@ -236,14 +238,14 @@ void print_advice(Board_info *board_info) {
             -1, 56, -1, -1, -1, -1, 63, -1
         };
         move.is_next_to_corner_with_empty_corner = next_corner[move.policy] != -1 && (~(board.player | board.opponent) & 1ULL << next_corner[move.policy]);
-        move.offer_corner = false;
+        move.is_offer_corner = false;
         move.offering_corner = -1;
-        if (move.is_next_to_corner_with_empty_corner & (~op_legal & (1ULL << next_corner[move.policy]))) {
+        if (move.is_next_to_corner_with_empty_corner && (~op_legal & (1ULL << next_corner[move.policy]))) {
             Flip flip;
             calc_flip(&flip, &board, move.policy);
             board.move_board(&flip);
-                move.offer_corner = board.get_legal() & (1ULL << next_corner[move.policy]);
-                if (move.offer_corner) {
+                move.is_offer_corner = board.get_legal() & (1ULL << next_corner[move.policy]);
+                if (move.is_offer_corner) {
                     move.offering_corner = next_corner[move.policy];
                 }
             board.undo_board(&flip);
@@ -342,7 +344,7 @@ void print_advice(Board_info *board_info) {
             {"offering_avoid_corner", idx_to_coord(move.offering_avoid_corner)},
             {"is_corner_aiming", move.is_corner_aiming},
             {"aiming_corner", idx_to_coord(move.aiming_corner)},
-            {"offer_corner", move.offer_corner},
+            {"is_offer_corner", move.is_offer_corner},
             {"offering_corner", move.offering_corner},
             {"next_op_n_legal", move.next_op_n_legal},
             {"next_pl_n_legal", move.next_pl_n_legal},
