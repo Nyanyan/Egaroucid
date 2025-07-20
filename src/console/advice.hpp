@@ -31,9 +31,11 @@ struct Advice_Move {
     bool is_op_flip_inside_deletion;
     bool is_edge;
     bool is_corner;
-    bool is_next_to_corner;
+    bool is_next_to_corner_with_empty_corner;
     int next_op_n_legal;
     int next_pl_n_legal;
+    int n_connected_empty_squares;
+    bool op_canput;
 };
 
 bool is_flip_inside(Board board, uint_fast8_t cell) {
@@ -214,12 +216,49 @@ void print_advice(Board_info *board_info) {
     }
 
     for (Advice_Move &move: moves) {
-        move.is_next_to_corner = 0x42C300000000C342ULL & (1ULL << move.policy);
+        const int next_corner[HW2] = {
+            -1,  0, -1, -1, -1, -1,  7, -1, 
+             0,  0, -1, -1, -1, -1,  7,  7, 
+            -1, -1, -1, -1, -1, -1, -1, -1, 
+            -1, -1, -1, -1, -1, -1, -1, -1, 
+            -1, -1, -1, -1, -1, -1, -1, -1, 
+            -1, -1, -1, -1, -1, -1, -1, -1, 
+            56, 56, -1, -1, -1, -1, 63, 63, 
+            -1, 56, -1, -1, -1, -1, 63, -1
+        };
+        move.is_next_to_corner_with_empty_corner = next_corner[move.policy] != -1 && (~(board.player | board.opponent) & 1ULL << next_corner[move.policy]);
     }
+
+    for (Advice_Move &move: moves) {
+        uint64_t empties = ~(board.player | board.opponent);
+        uint64_t bit = 1ULL << move.policy;
+        for (int i = 0; i < HW2; ++i) {
+            uint64_t n_bit = bit;
+            n_bit |= (bit & 0x7F7F7F7F7F7F7F7FULL << 1) & empties;
+            n_bit |= (bit & 0xFEFEFEFEFEFEFEFEULL >> 1) & empties;
+            n_bit |= (bit & 0x00FFFFFFFFFFFFFFULL << HW) & empties;
+            n_bit |= (bit & 0xFFFFFFFFFFFFFF00ULL >> HW) & empties;
+            n_bit |= (bit & 0x00FEFEFEFEFEFEFEULL << HW_M1) & empties;
+            n_bit |= (bit & 0x7F7F7F7F7F7F7F00ULL >> HW_M1) & empties;
+            n_bit |= (bit & 0x007F7F7F7F7F7F7FULL << HW_P1) & empties;
+            n_bit |= (bit & 0xFEFEFEFEFEFEFE00ULL >> HW_P1) & empties;
+            if (n_bit == bit) {
+                break;
+            }
+            bit = n_bit;
+        }
+        move.n_connected_empty_squares = pop_count_ull(bit);
+    }
+
+    uint64_t op_legal = op_board.get_legal();
+    for (Advice_Move &move: moves) {
+        move.op_canput = op_legal & (1ULL << move.policy);
+    }
+
     {
         bool has_next_to_corner_move = false;
         for (Advice_Move &move: moves) {
-            has_next_to_corner_move |= move.is_next_to_corner;
+            has_next_to_corner_move |= move.is_next_to_corner_with_empty_corner;
         }
         res["has_next_to_corner_move"] = has_next_to_corner_move;
     }
@@ -239,9 +278,11 @@ void print_advice(Board_info *board_info) {
             {"is_op_flip_inside_deletion", move.is_op_flip_inside_deletion},
             {"is_edge", move.is_edge},
             {"is_corner", move.is_corner},
-            {"is_next_to_corner", move.is_next_to_corner},
+            {"is_next_to_corner_with_empty_corner", move.is_next_to_corner_with_empty_corner},
             {"next_op_n_legal", move.next_op_n_legal},
             {"next_pl_n_legal", move.next_pl_n_legal},
+            {"n_connected_empty_squares", move.n_connected_empty_squares},
+            {"op_canput", move.op_canput},
         };
         res["moves"].push_back(j);
     }
