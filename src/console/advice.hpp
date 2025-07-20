@@ -238,18 +238,6 @@ void print_advice(Board_info *board_info) {
             -1, 56, -1, -1, -1, -1, 63, -1
         };
         move.is_next_to_corner_with_empty_corner = next_corner[move.policy] != -1 && (~(board.player | board.opponent) & 1ULL << next_corner[move.policy]);
-        move.is_offer_corner = false;
-        move.offering_corner = -1;
-        if (move.is_next_to_corner_with_empty_corner && (~op_legal & (1ULL << next_corner[move.policy]))) {
-            Flip flip;
-            calc_flip(&flip, &board, move.policy);
-            board.move_board(&flip);
-                move.is_offer_corner = board.get_legal() & (1ULL << next_corner[move.policy]);
-                if (move.is_offer_corner) {
-                    move.offering_corner = next_corner[move.policy];
-                }
-            board.undo_board(&flip);
-        }
     }
 
     for (Advice_Move &move: moves) {
@@ -271,6 +259,20 @@ void print_advice(Board_info *board_info) {
             bit = n_bit;
         }
         move.n_connected_empty_squares = pop_count_ull(bit);
+    }
+
+    for (Advice_Move &move: moves) {
+        Flip flip;
+        calc_flip(&flip, &board, move.policy);
+        board.move_board(&flip);
+            move.is_offer_corner = false;
+            move.offering_corner = -1;
+            uint64_t offering_corner = board.get_legal() & ~op_legal & 0x8100000000000081ULL;
+            if (offering_corner) {
+                move.is_offer_corner = true;
+                move.offering_corner = first_bit(&offering_corner);
+            }
+        board.undo_board(&flip);
     }
 
     for (Advice_Move &move: moves) {
