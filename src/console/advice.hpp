@@ -32,10 +32,12 @@ struct Advice_Move {
     bool is_edge;
     bool is_corner;
     bool is_next_to_corner_with_empty_corner;
+    bool offer_corner;
     int next_op_n_legal;
     int next_pl_n_legal;
     int n_connected_empty_squares;
     bool op_canput;
+    int n_increased_stable_discs;
 };
 
 bool is_flip_inside(Board board, uint_fast8_t cell) {
@@ -120,6 +122,8 @@ void print_advice(Board_info *board_info) {
     op_board.pass();
     res["has_op_flip_inside"] = has_flip_inside(op_board);
     uint64_t op_flip_inside_board = get_flip_inside_places(op_board);
+    
+    uint64_t op_legal = op_board.get_legal();
 
     {
         Flip flip;
@@ -227,6 +231,14 @@ void print_advice(Board_info *board_info) {
             -1, 56, -1, -1, -1, -1, 63, -1
         };
         move.is_next_to_corner_with_empty_corner = next_corner[move.policy] != -1 && (~(board.player | board.opponent) & 1ULL << next_corner[move.policy]);
+        move.offer_corner = false;
+        if (move.is_next_to_corner_with_empty_corner & (~op_legal & (1ULL << next_corner[move.policy]))) {
+            Flip flip;
+            calc_flip(&flip, &board, move.policy);
+            board.move_board(&flip);
+                move.offer_corner = board.get_legal() & (1ULL << next_corner[move.policy]);
+            board.undo_board(&flip);
+        }
     }
 
     for (Advice_Move &move: moves) {
@@ -250,9 +262,17 @@ void print_advice(Board_info *board_info) {
         move.n_connected_empty_squares = pop_count_ull(bit);
     }
 
-    uint64_t op_legal = op_board.get_legal();
     for (Advice_Move &move: moves) {
         move.op_canput = op_legal & (1ULL << move.policy);
+    }
+
+    int n_stable = pop_count_ull(calc_stability(board.player, board.opponent));
+    for (Advice_Move &move: moves) {
+        Flip flip;
+        calc_flip(&flip, &board, move.policy);
+        board.move_board(&flip);
+            move.n_increased_stable_discs = pop_count_ull(calc_stability(board.opponent, board.player)) - n_stable;
+        board.undo_board(&flip);
     }
 
     {
@@ -279,10 +299,12 @@ void print_advice(Board_info *board_info) {
             {"is_edge", move.is_edge},
             {"is_corner", move.is_corner},
             {"is_next_to_corner_with_empty_corner", move.is_next_to_corner_with_empty_corner},
+            {"offer_corner", move.offer_corner},
             {"next_op_n_legal", move.next_op_n_legal},
             {"next_pl_n_legal", move.next_pl_n_legal},
             {"n_connected_empty_squares", move.n_connected_empty_squares},
             {"op_canput", move.op_canput},
+            {"n_increased_stable_discs", move.n_increased_stable_discs},
         };
         res["moves"].push_back(j);
     }
