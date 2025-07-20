@@ -224,8 +224,6 @@ void print_advice(Board_info *board_info) {
         res["has_corner_move"] = has_corner_move;
     }
 
-    bit_print_board(op_legal);
-
     for (Advice_Move &move: moves) {
         const int next_corner[HW2] = {
             -1,  0, -1, -1, -1, -1,  7, -1, 
