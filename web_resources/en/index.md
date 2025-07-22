@@ -225,6 +225,14 @@ I would like to thank these people for great contributions.
 </ul>
 
 
+## Third-Party Links
+
+<ul>
+    <li>[Egaroucid-formatted book (Japanese)](https://hasera.net/othello/Egaroucid-book.html)</li>
+</ul>
+
+
+
 ## Other Othello AIs
 
 Recent great Othello AIs:

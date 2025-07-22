@@ -255,6 +255,14 @@ GPL-3.0ライセンスの下で自由に使っていただいて構いません�
 </ul>
 
 
+## 第三者による関連資料
+
+<ul>
+    <li>[Egaroucid形式のbook配布](https://hasera.net/othello/Egaroucid-book.html)</li>
+</ul>
+
+
+
 
 ## 他のオセロAI
 
