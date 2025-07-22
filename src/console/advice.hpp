@@ -31,13 +31,17 @@ struct Advice_Move {
     bool is_op_flip_inside_deletion;
     bool is_edge;
     bool is_corner;
-    bool is_next_to_corner_with_empty_corner;
+    bool is_c;
+    bool is_x;
+    int next_corner_status;
+    int next_a_status;
     bool is_corner_offer_avoidance;
     int offering_avoid_corner;
     bool is_corner_aiming;
     int aiming_corner;
     bool is_offer_corner;
     int offering_corner;
+    bool is_mid_edge_side_flip;
     int next_op_n_legal;
     int next_pl_n_legal;
     int n_connected_empty_squares;
@@ -235,7 +239,45 @@ void print_advice(Board_info *board_info) {
             56, 56, -1, -1, -1, -1, 63, 63, 
             -1, 56, -1, -1, -1, -1, 63, -1
         };
-        move.is_next_to_corner_with_empty_corner = next_corner[move.policy] != -1 && (~(board.player | board.opponent) & 1ULL << next_corner[move.policy]);
+        /*
+         0,  1,  2,  3,  4,  5,  6,  7, 
+         8,  9, 10, 11, 12, 13, 14, 15,
+        16, 17, 18, 19, 20, 21, 22, 23,
+        24, 25, 26, 27, 28, 29, 30, 31,
+        32, 33, 34, 35, 36, 37, 38, 39,
+        40, 41, 42, 43, 44, 45, 46, 47,
+        48, 49, 50, 51, 52, 53, 54, 55, 
+        56, 57, 58, 59, 60, 61, 62, 63
+        */
+        const int next_a[HW2] = {
+            -1,  2, -1, -1, -1, -1,  5, -1, 
+            16, -1, -1, -1, -1, -1, -1, 23, 
+            -1, -1, -1, -1, -1, -1, -1, -1, 
+            -1, -1, -1, -1, -1, -1, -1, -1, 
+            -1, -1, -1, -1, -1, -1, -1, -1, 
+            -1, -1, -1, -1, -1, -1, -1, -1, 
+            40, -1, -1, -1, -1, -1, -1, 47, 
+            -1, 58, -1, -1, -1, -1, 61, -1
+        };
+        move.is_c = (1ULL << move.policy) & 0x4281000000008142ULL;
+        move.is_x = (1ULL << move.policy) & 0x0042000000004200ULL;
+        move.next_corner_status = -1;
+        move.next_a_status = -1;
+        if (move.is_c | move.is_x) {
+            if (board.player & (1ULL << next_corner[move.policy])) {
+                move.next_corner_status = 0;
+            } else if (board.opponent & (1ULL << next_corner[move.policy])){
+                move.next_corner_status = 1;
+            }
+
+            if (move.is_c) {
+                if (board.player & (1ULL << next_a[move.policy])) {
+                    move.next_a_status = 0;
+                } else if (board.opponent & (1ULL << next_a[move.policy])){
+                    move.next_a_status = 1;
+                }
+            }
+        }
     }
 
     for (Advice_Move &move: moves) {
@@ -271,6 +313,12 @@ void print_advice(Board_info *board_info) {
                 move.offering_corner = first_bit(&offering_corner);
             }
         board.undo_board(&flip);
+    }
+
+    for (Advice_Move &move: moves) {
+        Flip flip;
+        calc_flip(&flip, &board, move.policy);
+        move.is_mid_edge_side_flip = ((1ULL << move.policy) & 0x003C424242423C00ULL) && (flip.flip & 0x003C424242423C00ULL);
     }
 
     for (Advice_Move &move: moves) {
@@ -317,11 +365,14 @@ void print_advice(Board_info *board_info) {
     }
 
     {
-        bool has_next_to_corner_move = false;
+        bool has_c = false;
+        bool has_x = false;
         for (Advice_Move &move: moves) {
-            has_next_to_corner_move |= move.is_next_to_corner_with_empty_corner;
+            has_c |= move.is_c;
+            has_x |= move.is_x;
         }
-        res["has_next_to_corner_move"] = has_next_to_corner_move;
+        res["has_c"] = has_c;
+        res["has_x"] = has_x;
     }
 
     res["moves"] = nlohmann::json::array();
@@ -339,13 +390,17 @@ void print_advice(Board_info *board_info) {
             {"is_op_flip_inside_deletion", move.is_op_flip_inside_deletion},
             {"is_edge", move.is_edge},
             {"is_corner", move.is_corner},
-            {"is_next_to_corner_with_empty_corner", move.is_next_to_corner_with_empty_corner},
+            {"is_c", move.is_c},
+            {"is_x", move.is_x},
+            {"next_corner_status", move.next_corner_status},
+            {"next_a_status", move.next_a_status},
             {"is_corner_offer_avoidance", move.is_corner_offer_avoidance},
             {"offering_avoid_corner", idx_to_coord(move.offering_avoid_corner)},
             {"is_corner_aiming", move.is_corner_aiming},
             {"aiming_corner", idx_to_coord(move.aiming_corner)},
             {"is_offer_corner", move.is_offer_corner},
             {"offering_corner", idx_to_coord(move.offering_corner)},
+            {"is_mid_edge_side_flip", move.is_mid_edge_side_flip},
             {"next_op_n_legal", move.next_op_n_legal},
             {"next_pl_n_legal", move.next_pl_n_legal},
             {"n_connected_empty_squares", move.n_connected_empty_squares},
