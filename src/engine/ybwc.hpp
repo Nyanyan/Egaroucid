@@ -24,7 +24,7 @@
 */
 constexpr int YBWC_MID_SPLIT_MIN_DEPTH = 8;
 //constexpr int YBWC_MID_SPLIT_MAX_DEPTH = 26;
-constexpr int YBWC_END_SPLIT_MIN_DEPTH = 15;
+constexpr int YBWC_END_SPLIT_MIN_DEPTH = 16;
 //constexpr int YBWC_END_SPLIT_MAX_DEPTH = 29;
 // constexpr int YBWC_N_ELDER_CHILD = 1;
 constexpr int YBWC_N_YOUNGER_CHILD = 1;
