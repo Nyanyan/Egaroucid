@@ -201,7 +201,7 @@ constexpr int GAME_MEMO_SUMMARY_SIZE = 40;
 // book modification
 constexpr int BOOK_CHANGE_NO_CELL = 64;
 constexpr int CHANGE_BOOK_ERR = -1000;
-constexpr int CHANGE_BOOK_INFO_SX = 660;
+constexpr int CHANGE_BOOK_INFO_SX = 460;
 constexpr int CHANGE_BOOK_INFO_SY = 13;
 
 // back button constants

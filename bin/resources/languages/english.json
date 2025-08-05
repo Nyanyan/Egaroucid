@@ -86,6 +86,7 @@
         "error_per_move": "Errors per Move",
         "error_sum": "Integration Errors",
         "error_leaf": "Leaf Errors",
+        "modifying_book_by_right_click": "Editing Book (Esc to return)",
         "changed_value": "Value",
         "book_merge": "Merge Book",
         "merge": "Merge",

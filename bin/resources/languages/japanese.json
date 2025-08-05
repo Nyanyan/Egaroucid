@@ -86,6 +86,7 @@
         "error_per_move": "1手あたりの誤差",
         "error_sum": "積算誤差",
         "error_leaf": "リーフ誤差",
+        "modifying_book_by_right_click": "Book編集中 (Escで戻る)",
         "changed_value": "評価値",
         "book_merge": "Book統合",
         "merge": "統合",

@@ -156,16 +156,6 @@ public:
             taking_screen_shot = false;
         }
 
-        // menu
-        menu_game();
-        menu_setting();
-        menu_display();
-        menu_manipulate();
-        menu_in_out();
-        menu_book();
-        menu_help();
-        menu_language();
-
         // analyze
         if (ai_status.analyzing) {
             analyze_get_task();
@@ -232,11 +222,6 @@ public:
         }
         update_n_discs();
 
-        // book modifying by right-clicking
-        if (!ai_should_move && !need_start_game_button && getData().menu_elements.change_book_by_right_click) {
-            change_book_by_right_click();
-        }
-
         // local strategy drawing
         bool local_strategy_ignore = ai_should_move || ai_status.analyzing || need_start_game_button || pausing_in_pass || changing_scene;
         if (ai_status.local_strategy_done_level > 0 && getData().menu_elements.show_ai_focus && !local_strategy_ignore) {
@@ -245,6 +230,13 @@ public:
 
         // board drawing
         draw_board(getData().fonts, getData().colors, getData().history_elem);
+
+        // book modifying by right-clicking
+        bool changing_book_by_right_click = false;
+        if (!ai_should_move && !need_start_game_button && getData().menu_elements.change_book_by_right_click) {
+            change_book_by_right_click();
+            changing_book_by_right_click = (getData().book_information.changing != BOOK_CHANGE_NO_CELL);
+        }
 
         // draw on discs
         // last move drawing
@@ -364,10 +356,18 @@ public:
             draw_opening_on_cell();
         }
 
-        // menu drawing
-        bool draw_menu_flag = !taking_screen_shot;
+        // menu
+        bool draw_menu_flag = !taking_screen_shot && !changing_book_by_right_click;
         if (draw_menu_flag) {
             getData().menu.draw();
+            menu_game();
+            menu_setting();
+            menu_display();
+            menu_manipulate();
+            menu_in_out();
+            menu_book();
+            menu_help();
+            menu_language();
         }
 
         // laser pointer
@@ -2049,7 +2049,7 @@ private:
 
     void change_book_by_right_click() {
         if (getData().book_information.changing != BOOK_CHANGE_NO_CELL) {
-            getData().fonts.font(language.get("book", "changed_value") + U"(" + Unicode::Widen(idx_to_coord(getData().book_information.changing)) + U"): " + getData().book_information.val_str).draw(15, CHANGE_BOOK_INFO_SX, CHANGE_BOOK_INFO_SY, getData().colors.white);
+            getData().fonts.font(language.get("book", "modifying_book_by_right_click") + U"  " + language.get("book", "changed_value") + U"(" + Unicode::Widen(idx_to_coord(getData().book_information.changing)) + U"): " + getData().book_information.val_str).draw(15, CHANGE_BOOK_INFO_SX, CHANGE_BOOK_INFO_SY, getData().colors.white);
             if (KeyEscape.down()) {
                 getData().book_information.changing = BOOK_CHANGE_NO_CELL;
             } else if (Key0.down() || KeyNum0.down()) {

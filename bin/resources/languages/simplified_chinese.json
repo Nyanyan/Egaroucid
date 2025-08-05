@@ -86,6 +86,7 @@
         "error_per_move": "落子的误差",
         "error_sum": "积分误差",
         "error_leaf": "叶子误差",
+        "modifying_book_by_right_click": "編輯开局库（按 Esc 返回）",
         "changed_value": "数值",
         "book_merge": "开局库合并",
         "merge": "合并",
