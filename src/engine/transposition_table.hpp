@@ -197,6 +197,14 @@ class Hash_data {
             return get_level_common(depth, mpc_level);
         }
 
+        inline int get_depth() {
+            return depth;
+        }
+
+        inline int get_mpc_level() {
+            return mpc_level;
+        }
+
         inline int get_window_width() {
             return upper - lower;
         }
@@ -227,10 +235,6 @@ class Hash_data {
         */
         inline void set_importance_zero() {
             importance = 0;
-        }
-
-        inline uint8_t get_mpc_level() {
-            return mpc_level;
         }
 
         inline uint8_t get_importance() const {
@@ -774,6 +778,26 @@ class Transposition_table {
                 node = get_node(hash);
             }
             return false;
+        }
+
+        inline void get_info(Board board, int *lower, int *upper, uint_fast8_t moves[], int *depth, uint_fast8_t *mpc_level) {
+            uint32_t hash = board.hash();
+            Hash_node *node = get_node(hash);
+            for (uint_fast8_t i = 0; i < TRANSPOSITION_TABLE_N_LOOP; ++i) {
+                if (node->board.player == board.player && node->board.opponent == board.opponent) {
+                    node->lock.lock();
+                        if (node->board.player == board.player && node->board.opponent == board.opponent) {
+                            node->data.get_bounds(lower, upper);
+                            node->data.get_moves(moves);
+                            *depth = node->data.get_depth();
+                            *mpc_level = node->data.get_mpc_level();
+                            node->lock.unlock();
+                            return;
+                        }
+                    node->lock.unlock();
+                }
+                node = get_node(hash + i + 1);
+            }
         }
 
         inline void del(const Board *board, uint32_t hash) {

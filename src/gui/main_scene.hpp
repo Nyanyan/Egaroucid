@@ -264,6 +264,7 @@ public:
 
         // hint calculating
         bool hint_ignore = ai_should_move || ai_status.analyzing || need_start_game_button || pausing_in_pass || changing_scene;
+        bool show_value_ai_turn = (ai_should_move || ai_status.analyzing) && getData().menu_elements.show_value_when_ai_calculating;
         if (!hint_ignore) {
             if (getData().menu_elements.use_disc_hint) {
                 if ((ai_status.hint_calculating || ai_status.hint_calculated) && getData().menu_elements.n_disc_hint > ai_status.n_hint_display) {
@@ -274,9 +275,11 @@ public:
                     hint_calculate();
                 } else {
                     try_hint_get();
-                    legal_ignore = draw_hint(getData().menu_elements.use_book && getData().menu_elements.show_book_accuracy && !hint_ignore);
+                    legal_ignore = draw_hint(getData().menu_elements.use_book && getData().menu_elements.show_book_accuracy);
                 }
             }
+        } else if (show_value_ai_turn) {
+            legal_ignore = draw_hint_tt(getData().menu_elements.use_book, getData().menu_elements.use_book && getData().menu_elements.show_book_accuracy);
         }
 
         // principal variation calculating
@@ -315,7 +318,7 @@ public:
         // book information drawing
         if (getData().menu_elements.use_book) {
             // book accuracy drawing
-            if (getData().menu_elements.show_book_accuracy && !hint_ignore) {
+            if (getData().menu_elements.show_book_accuracy && (!hint_ignore || show_value_ai_turn)) {
                 draw_book_n_lines(legal_ignore);
                 if (book_accuracy_status.book_accuracy_calculated) {
                     draw_book_accuracy(legal_ignore);
@@ -1530,6 +1533,87 @@ private:
                 }
                 res |= 1ULL << (HW2_M1 - hint_infos[i].cell);
             }
+        }
+        return res;
+    }
+
+    // draw hint with transposition table
+    uint64_t draw_hint_tt(bool use_book, bool ignore_book_info) {
+        uint64_t legal = getData().history_elem.board.get_legal();
+        std::vector<Hint_info> hint_infos_tt;
+        Board board = getData().history_elem.board.copy();
+        for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)) {
+            Hint_info hint_info;
+            hint_info.cell = HW2_M1 - cell;
+            bool book_found = false;
+            bool value_found = false;
+            Flip flip;
+            calc_flip(&flip, &board, cell);
+            board.move_board(&flip);
+                if (use_book && book.contain(board)) {
+                    hint_info.type = AI_TYPE_BOOK;
+                    hint_info.value = -book.get(board).value;
+                    book_found = true;
+                    value_found = true;
+                }
+                if (!book_found) {
+                    int lower = -SCORE_MAX, upper = SCORE_MAX;
+                    uint_fast8_t moves[2];
+                    int depth;
+                    uint_fast8_t mpc_level;
+                    transposition_table.get_info(board, &lower, &upper, moves, &depth, &mpc_level);
+                    if (lower == upper) {
+                        hint_info.value = -lower;
+                        if (depth == HW2 - board.n_discs()) {
+                            hint_info.type = SELECTIVITY_PERCENTAGE[mpc_level];
+                        } else {
+                            hint_info.type = depth;
+                        }
+                        value_found = true;
+                    }
+                }
+            board.undo_board(&flip);
+            if (value_found) {
+                hint_infos_tt.emplace_back(hint_info);
+            }
+        }
+        uint64_t res = 0ULL;
+        sort(hint_infos_tt.begin(), hint_infos_tt.end(), compare_hint_info);
+        int n_disc_hint = hint_infos_tt.size(); //std::min((int)hint_infos_tt.size(), getData().menu_elements.n_disc_hint);
+        int best_level = -INF;
+        double best_score = -SCORE_INF;
+        for (int i = 0; i < n_disc_hint; ++i) {
+            if (best_level < hint_infos_tt[i].type) {
+                best_level = hint_infos_tt[i].type;
+                best_score = hint_infos_tt[i].value;
+            } else if (best_level == hint_infos_tt[i].type && best_score <= hint_infos_tt[i].value) {
+                best_score = hint_infos_tt[i].value;
+            }
+        }
+        for (int i = 0; i < n_disc_hint; ++i) {
+            //std::cerr << idx_to_coord(hint_infos_tt[i].cell) << " " << hint_infos_tt[i].value << std::endl;
+            int sx = BOARD_SX + (hint_infos_tt[i].cell % HW) * BOARD_CELL_SIZE;
+            int sy = BOARD_SY + (hint_infos_tt[i].cell / HW) * BOARD_CELL_SIZE;
+            Color color = getData().colors.white;
+            Font font = getData().fonts.font;
+            if (hint_infos_tt[i].type == best_level && hint_infos_tt[i].value == best_score) {
+                color = getData().colors.cyan;
+                font = getData().fonts.font_heavy;
+            }
+            font((int)round(hint_infos_tt[i].value)).draw(18, sx + 3, sy, color);
+            // std::cerr << idx_to_coord(HW2_M1 - hint_infos_tt[i].cell) << " " << hint_infos_tt[i].type << std::endl;
+            if (hint_infos_tt[i].type == AI_TYPE_BOOK) {
+                if (!ignore_book_info) {
+                    getData().fonts.font_bold(U"book").draw(10, sx + 3, sy + 21, color);
+                }
+            } else if (hint_infos_tt[i].type > HINT_MAX_LEVEL) {
+                getData().fonts.font_bold(Format(hint_infos_tt[i].type) + U"%").draw(10, sx + 3, sy + 21, color);
+            } else {
+                RectF lv_rect = getData().fonts.font(U"Lv.").region(8, sx + 3, sy + 25);
+                getData().fonts.font_bold(U"Lv").draw(8, sx + 3, sy + 22.5, color);
+                getData().fonts.font_bold(Format(hint_infos_tt[i].type)).draw(9.5, lv_rect.x + lv_rect.w, sy + 21, color);
+            }
+            res |= 1ULL << (HW2_M1 - hint_infos_tt[i].cell);
         }
         return res;
     }

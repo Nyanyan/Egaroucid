@@ -178,7 +178,8 @@
             "opening": "定石",
             "next_move": "下一步",
             "next_move_change_view": "切換顯示方式",
-            "show_book_accuracy": "開局庫準確度"
+            "show_book_accuracy": "開局庫準確度",
+            "show_value_when_ai_calculating": "在AI回合中顯示"
         },
         "disc": {
             "display_on_disc": "顯示於棋子上",

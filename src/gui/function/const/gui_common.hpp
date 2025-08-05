@@ -379,6 +379,7 @@ struct Settings {
     bool show_ai_focus;
     int pv_length;
     std::string screenshot_saving_dir;
+    bool show_value_when_ai_calculating;
 };
 
 struct Fonts {
@@ -487,6 +488,7 @@ struct Menu_elements {
     bool show_principal_variation;
     bool show_ai_focus;
     int pv_length;
+    bool show_value_when_ai_calculating;
 
     // book
     bool book_start_deviate;
@@ -608,6 +610,7 @@ struct Menu_elements {
         show_principal_variation = settings->show_principal_variation;
         show_ai_focus = settings->show_ai_focus;
         pv_length = settings->pv_length;
+        show_value_when_ai_calculating = settings->show_value_when_ai_calculating;
 
         book_start_deviate = false;
         book_start_deviate_with_transcript = false;
