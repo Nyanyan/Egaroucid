@@ -57,7 +57,7 @@ void init_default_settings(const Directories* directories, const Resources* reso
     settings->accept_ai_loss = false;
     settings->max_loss = 2;
     settings->loss_percentage = 30;
-    settings->pause_when_pass = false;
+    settings->pause_when_pass = true;
     settings->force_specified_openings = false;
     settings->show_next_move_change_view = false;
     settings->change_color_type = false;
