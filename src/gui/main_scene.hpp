@@ -264,7 +264,7 @@ public:
 
         // hint calculating
         bool hint_ignore = ai_should_move || ai_status.analyzing || need_start_game_button || pausing_in_pass || changing_scene;
-        bool show_value_ai_turn = (ai_should_move || ai_status.analyzing) && getData().menu_elements.show_value_when_ai_calculating;
+        bool show_value_ai_turn = (ai_should_move || ai_status.analyzing) && getData().menu_elements.show_value_when_ai_calculating && getData().menu_elements.use_disc_hint;
         if (!hint_ignore) {
             if (getData().menu_elements.use_disc_hint) {
                 if ((ai_status.hint_calculating || ai_status.hint_calculated) && getData().menu_elements.n_disc_hint > ai_status.n_hint_display) {
@@ -600,6 +600,9 @@ private:
         }
         if (shortcut_key == U"show_disc_hint") {
             getData().menu_elements.use_disc_hint = !getData().menu_elements.use_disc_hint;
+        }
+        if (shortcut_key == U"show_value_when_ai_calculating") {
+            getData().menu_elements.show_value_when_ai_calculating = !getData().menu_elements.show_value_when_ai_calculating;
         }
         if (shortcut_key == U"show_umigame_value") {
             getData().menu_elements.use_umigame_value = !getData().menu_elements.use_umigame_value;
