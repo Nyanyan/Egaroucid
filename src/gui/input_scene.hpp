@@ -225,15 +225,15 @@ public:
             changeScene(U"Main_scene", SCENE_FADE_TIME);
         }
         if (set_button.clicked() || KeyEnter.pressed()) {
-            // if (history_elem.player != player_radio.checked) {
-            //     // history_elem.board.pass();
-            //     history_elem.player = player_radio.checked;
-            // }
-            history_elem.player = player_radio.checked;
+            if (history_elem.player != player_radio.checked) {
+                history_elem.board.pass();
+                history_elem.player = player_radio.checked;
+            }
+            // history_elem.player = player_radio.checked;
             history_elem.v = GRAPH_IGNORE_VALUE;
             history_elem.level = -1;
             if (!history_elem.board.is_end() && history_elem.board.get_legal() == 0) {
-                // history_elem.board.pass();
+                history_elem.board.pass();
                 history_elem.player ^= 1;
             }
             int n_discs = history_elem.board.n_discs();
