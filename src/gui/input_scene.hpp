@@ -169,10 +169,15 @@ public:
         history_elem = getData().history_elem;
         Radio_button_element radio_button_elem;
         player_radio.init();
-        radio_button_elem.init(480, 120, getData().fonts.font, 15, language.get("common", "black"), true);
+        radio_button_elem.init(480, 120, getData().fonts.font, 15, language.get("common", "black"), false);
         player_radio.push(radio_button_elem);
-        radio_button_elem.init(480, 140, getData().fonts.font, 15, language.get("common", "white"), false);
+        radio_button_elem.init(480, 140, getData().fonts.font, 15, language.get("common", "white"), true);
         player_radio.push(radio_button_elem);
+        if (history_elem.player == WHITE) {
+            player_radio.set_checked(1);
+        } else {
+            player_radio.set_checked(0);
+        }
         disc_radio.init();
         radio_button_elem.init(480, 210, getData().fonts.font, 15, language.get("edit_board", "black"), true);
         disc_radio.push(radio_button_elem);
@@ -220,15 +225,16 @@ public:
             changeScene(U"Main_scene", SCENE_FADE_TIME);
         }
         if (set_button.clicked() || KeyEnter.pressed()) {
-            if (history_elem.player != player_radio.checked) {
-                history_elem.board.pass();
-                history_elem.player = player_radio.checked;
-            }
+            // if (history_elem.player != player_radio.checked) {
+            //     // history_elem.board.pass();
+            //     history_elem.player = player_radio.checked;
+            // }
+            history_elem.player = player_radio.checked;
             history_elem.v = GRAPH_IGNORE_VALUE;
             history_elem.level = -1;
-            getData().history_elem = history_elem;
             if (!history_elem.board.is_end() && history_elem.board.get_legal() == 0) {
-                history_elem.board.pass();
+                // history_elem.board.pass();
+                history_elem.player ^= 1;
             }
             int n_discs = history_elem.board.n_discs();
             int insert_place = (int)getData().graph_resources.nodes[getData().graph_resources.branch].size();
