@@ -218,7 +218,9 @@
             "rotate_90_clock": "90度時計回り",
             "rotate_90_anti_clock": "90度反時計回り",
             "white_line": "ホワイトライン",
-            "black_line": "ブラックライン"
+            "black_line": "ブラックライン",
+            "horizontal": "左右反転",
+            "vertical": "上下反転"
         },
         "ai_operation": {
             "ai_operation": "AI操作",

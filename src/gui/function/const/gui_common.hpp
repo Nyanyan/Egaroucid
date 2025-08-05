@@ -537,6 +537,8 @@ struct Menu_elements {
     bool convert_90_anti_clock;
     bool convert_blackline;
     bool convert_whiteline;
+    bool convert_horizontal;
+    bool convert_vertical;
     bool cache_clear;
 
     // help
@@ -650,6 +652,8 @@ struct Menu_elements {
         convert_90_anti_clock = false;
         convert_blackline = false;
         convert_whiteline = false;
+        convert_horizontal = false;
+        convert_vertical = false;
         cache_clear = false;
 
         usage = false;

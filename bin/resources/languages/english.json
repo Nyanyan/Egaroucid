@@ -218,7 +218,9 @@
             "rotate_90_clock": "Rotate 90 CW",
             "rotate_90_anti_clock": "Rotate 90 CCW",
             "white_line": "White Line",
-            "black_line": "Black Line"
+            "black_line": "Black Line",
+            "horizontal": "Horizontal",
+            "vertical": "Vertical"
         },
         "ai_operation": {
             "ai_operation": "AI Operation",

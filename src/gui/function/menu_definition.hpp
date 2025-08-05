@@ -170,6 +170,10 @@ Menu create_menu(Menu_elements* menu_elements, Resources *resources, Font font, 
             menu_e.push(side_menu);
             side_menu.init_button(language.get("operation", "convert", "white_line") + get_shortcut_key_info(U"convert_whiteline"), &menu_elements->convert_whiteline);
             menu_e.push(side_menu);
+            side_menu.init_button(language.get("operation", "convert", "horizontal") + get_shortcut_key_info(U"convert_horizontal"), &menu_elements->convert_horizontal);
+            menu_e.push(side_menu);
+            side_menu.init_button(language.get("operation", "convert", "vertical") + get_shortcut_key_info(U"convert_vertical"), &menu_elements->convert_vertical);
+            menu_e.push(side_menu);
         title.push(menu_e);
         menu_e.init_button(language.get("operation", "ai_operation", "ai_operation"), &menu_elements->dummy);
             side_menu.init_button(language.get("operation", "ai_operation", "stop_calculating") + get_shortcut_key_info(U"stop_calculating"), &menu_elements->stop_calculating);

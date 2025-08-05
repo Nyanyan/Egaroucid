@@ -904,6 +904,66 @@ private:
             }
             resume_calculating();
         }
+        if (getData().menu_elements.convert_horizontal || shortcut_key == U"convert_horizontal") {
+            stop_calculating();
+            getData().history_elem.board.board_horizontal_mirror();
+            if (0 <= getData().history_elem.policy && getData().history_elem.policy < HW2) {
+                int x = getData().history_elem.policy % HW;
+                int y = getData().history_elem.policy / HW;
+                getData().history_elem.policy = y * HW + (HW_M1 - x);
+            }
+            if (0 <= getData().history_elem.next_policy && getData().history_elem.next_policy < HW2) {
+                int x = getData().history_elem.next_policy % HW;
+                int y = getData().history_elem.next_policy / HW;
+                getData().history_elem.next_policy = y * HW + (HW_M1 - x);
+            }
+            for (int i = 0; i < 2; ++i) {
+                for (int j = 0; j < (int)getData().graph_resources.nodes[i].size(); ++j) {
+                    getData().graph_resources.nodes[i][j].board.board_horizontal_mirror();
+                    if (0 <= getData().graph_resources.nodes[i][j].policy && getData().graph_resources.nodes[i][j].policy < HW2) {
+                        int x = getData().graph_resources.nodes[i][j].policy % HW;
+                        int y = getData().graph_resources.nodes[i][j].policy / HW;
+                        getData().graph_resources.nodes[i][j].policy = y * HW + (HW_M1 - x);
+                    }
+                    if (0 <= getData().graph_resources.nodes[i][j].next_policy && getData().graph_resources.nodes[i][j].next_policy < HW2) {
+                        int x = getData().graph_resources.nodes[i][j].next_policy % HW;
+                        int y = getData().graph_resources.nodes[i][j].next_policy / HW;
+                        getData().graph_resources.nodes[i][j].next_policy = y * HW + (HW_M1 - x);
+                    }
+                }
+            }
+            resume_calculating();
+        }
+        if (getData().menu_elements.convert_vertical || shortcut_key == U"convert_vertical") {
+            stop_calculating();
+            getData().history_elem.board.board_vertical_mirror();
+            if (0 <= getData().history_elem.policy && getData().history_elem.policy < HW2) {
+                int x = getData().history_elem.policy % HW;
+                int y = getData().history_elem.policy / HW;
+                getData().history_elem.policy = (HW_M1 - y) * HW + x;
+            }
+            if (0 <= getData().history_elem.next_policy && getData().history_elem.next_policy < HW2) {
+                int x = getData().history_elem.next_policy % HW;
+                int y = getData().history_elem.next_policy / HW;
+                getData().history_elem.next_policy = (HW_M1 - y) * HW + x;
+            }
+            for (int i = 0; i < 2; ++i) {
+                for (int j = 0; j < (int)getData().graph_resources.nodes[i].size(); ++j) {
+                    getData().graph_resources.nodes[i][j].board.board_vertical_mirror();
+                    if (0 <= getData().graph_resources.nodes[i][j].policy && getData().graph_resources.nodes[i][j].policy < HW2) {
+                        int x = getData().graph_resources.nodes[i][j].policy % HW;
+                        int y = getData().graph_resources.nodes[i][j].policy / HW;
+                        getData().graph_resources.nodes[i][j].policy = (HW_M1 - y) * HW + x;
+                    }
+                    if (0 <= getData().graph_resources.nodes[i][j].next_policy && getData().graph_resources.nodes[i][j].next_policy < HW2) {
+                        int x = getData().graph_resources.nodes[i][j].next_policy % HW;
+                        int y = getData().graph_resources.nodes[i][j].next_policy / HW;
+                        getData().graph_resources.nodes[i][j].next_policy = (HW_M1 - y) * HW + x;
+                    }
+                }
+            }
+            resume_calculating();
+        }
         if (getData().menu_elements.cache_clear || shortcut_key == U"cache_clear") {
             stop_calculating();
             transposition_table.init();

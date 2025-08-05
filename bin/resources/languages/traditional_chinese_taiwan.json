@@ -218,7 +218,9 @@
             "rotate_90_clock": "旋轉90度順時針",
             "rotate_90_anti_clock": "旋轉90度逆時針",
             "white_line": "白棋視角",
-            "black_line": "黑棋視角"
+            "black_line": "黑棋視角",
+            "horizontal": "左右翻轉",
+            "vertical": "上下翻轉"
         },
         "ai_operation": {
             "ai_operation": "AI操作",
