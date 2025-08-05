@@ -79,6 +79,8 @@ std::vector<Shortcut_key_elem> shortcut_keys_default = {
     {U"save_this_branch",       {U"Ctrl", U"L"},        {{"operation", "operation"}, {"operation", "save_this_branch"}}},
     {U"generate_random_board",  {U"Ctrl", U"R"},        {{"operation", "operation"}, {"operation", "generate_random_board", "generate"}}},
     {U"convert_180",            {},                     {{"operation", "operation"}, {"operation", "convert", "convert"}, {"operation", "convert", "rotate_180"}}},
+    {U"convert_90_clock",       {},                     {{"operation", "operation"}, {"operation", "convert", "convert"}, {"operation", "convert", "convert_90_clock"}}},
+    {U"convert_90_anti_clock",  {},                     {{"operation", "operation"}, {"operation", "convert", "convert"}, {"operation", "convert", "convert_90_anti_clock"}}},
     {U"convert_blackline",      {},                     {{"operation", "operation"}, {"operation", "convert", "convert"}, {"operation", "convert", "black_line"}}},
     {U"convert_whiteline",      {},                     {{"operation", "operation"}, {"operation", "convert", "convert"}, {"operation", "convert", "white_line"}}},
     {U"stop_calculating",       {U"Q"},                 {{"operation", "operation"}, {"operation", "ai_operation", "ai_operation"}, {"operation", "ai_operation", "stop_calculating"}}},

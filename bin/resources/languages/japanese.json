@@ -215,6 +215,8 @@
         "convert": {
             "convert": "変換",
             "rotate_180": "180度回転",
+            "rotate_90_clock": "90度時計回り",
+            "rotate_90_anti_clock": "90度反時計回り",
             "white_line": "ホワイトライン",
             "black_line": "ブラックライン"
         },

@@ -533,6 +533,8 @@ struct Menu_elements {
     int generate_random_board_moves;
     // conversion
     bool convert_180;
+    bool convert_90_clock;
+    bool convert_90_anti_clock;
     bool convert_blackline;
     bool convert_whiteline;
     bool cache_clear;
@@ -644,6 +646,8 @@ struct Menu_elements {
         generate_random_board = false;
         generate_random_board_moves = settings->generate_random_board_moves;
         convert_180 = false;
+        convert_90_clock = false;
+        convert_90_anti_clock = false;
         convert_blackline = false;
         convert_whiteline = false;
         cache_clear = false;

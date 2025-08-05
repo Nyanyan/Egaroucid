@@ -215,6 +215,8 @@
         "convert": {
             "convert": "转换视角",
             "rotate_180": "旋转180度",
+            "rotate_90_clock": "旋转90度顺时针",
+            "rotate_90_anti_clock": "旋转90度逆时针",
             "white_line": "白棋视角",
             "black_line": "黑棋视角"
         },

@@ -784,6 +784,66 @@ private:
             }
             resume_calculating();
         }
+        if (getData().menu_elements.convert_90_clock || shortcut_key == U"convert_90_clock") {
+            stop_calculating();
+            getData().history_elem.board.board_rotate_270();
+            if (0 <= getData().history_elem.policy && getData().history_elem.policy < HW2) {
+                int y0 = getData().history_elem.policy / HW;
+                int x0 = getData().history_elem.policy % HW;
+                getData().history_elem.policy = x0 * HW + (HW_M1 - y0);
+            }
+            if (0 <= getData().history_elem.next_policy && getData().history_elem.next_policy < HW2) {
+                int y0 = getData().history_elem.next_policy / HW;
+                int x0 = getData().history_elem.next_policy % HW;
+                getData().history_elem.next_policy = x0 * HW + (HW_M1 - y0);
+            }
+            for (int i = 0; i < 2; ++i) {
+                for (int j = 0; j < (int)getData().graph_resources.nodes[i].size(); ++j) {
+                    getData().graph_resources.nodes[i][j].board.board_rotate_270();
+                    if (0 <= getData().graph_resources.nodes[i][j].policy && getData().graph_resources.nodes[i][j].policy < HW2) {
+                        int y0 = getData().graph_resources.nodes[i][j].policy / HW;
+                        int x0 = getData().graph_resources.nodes[i][j].policy % HW;
+                        getData().graph_resources.nodes[i][j].policy = x0 * HW + (HW_M1 - y0);
+                    }
+                    if (0 <= getData().graph_resources.nodes[i][j].next_policy && getData().graph_resources.nodes[i][j].next_policy < HW2) {
+                        int y0 = getData().graph_resources.nodes[i][j].next_policy / HW;
+                        int x0 = getData().graph_resources.nodes[i][j].next_policy % HW;
+                        getData().graph_resources.nodes[i][j].next_policy = x0 * HW + (HW_M1 - y0);
+                    }
+                }
+            }
+            resume_calculating();
+        }
+        if (getData().menu_elements.convert_90_anti_clock || shortcut_key == U"convert_90_anti_clock") {
+            stop_calculating();
+            getData().history_elem.board.board_rotate_90();
+            if (0 <= getData().history_elem.policy && getData().history_elem.policy < HW2) {
+                int y0 = getData().history_elem.policy / HW;
+                int x0 = getData().history_elem.policy % HW;
+                getData().history_elem.policy = (HW_M1 - x0) * HW + y0;
+            }
+            if (0 <= getData().history_elem.next_policy && getData().history_elem.next_policy < HW2) {
+                int y0 = getData().history_elem.next_policy / HW;
+                int x0 = getData().history_elem.next_policy % HW;
+                getData().history_elem.next_policy = (HW_M1 - x0) * HW + y0;
+            }
+            for (int i = 0; i < 2; ++i) {
+                for (int j = 0; j < (int)getData().graph_resources.nodes[i].size(); ++j) {
+                    getData().graph_resources.nodes[i][j].board.board_rotate_90();
+                    if (0 <= getData().graph_resources.nodes[i][j].policy && getData().graph_resources.nodes[i][j].policy < HW2) {
+                        int y0 = getData().graph_resources.nodes[i][j].policy / HW;
+                        int x0 = getData().graph_resources.nodes[i][j].policy % HW;
+                        getData().graph_resources.nodes[i][j].policy = (HW_M1 - x0) * HW + y0;
+                    }
+                    if (0 <= getData().graph_resources.nodes[i][j].next_policy && getData().graph_resources.nodes[i][j].next_policy < HW2) {
+                        int y0 = getData().graph_resources.nodes[i][j].next_policy / HW;
+                        int x0 = getData().graph_resources.nodes[i][j].next_policy % HW;
+                        getData().graph_resources.nodes[i][j].next_policy = (HW_M1 - x0) * HW + y0;
+                    }
+                }
+            }
+            resume_calculating();
+        }
         if (getData().menu_elements.convert_blackline || shortcut_key == U"convert_blackline") {
             stop_calculating();
             getData().history_elem.board.board_black_line_mirror();
