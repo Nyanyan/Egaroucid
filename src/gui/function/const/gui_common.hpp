@@ -318,6 +318,13 @@ struct Resources {
     Texture unchecked;
     Texture laser_pointer;
     Texture cross;
+    Texture flip_horizontal;
+    Texture flip_vertical;
+    Texture rotate_cw;
+    Texture rotate_ccw;
+    Texture rotate_180;
+    Texture mirror_white_line;
+    Texture mirror_black_line;
     std::vector<Texture> lang_img;
 };
 
