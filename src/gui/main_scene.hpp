@@ -264,8 +264,8 @@ public:
 
         // hint calculating
         bool hint_ignore = ai_should_move || ai_status.analyzing || need_start_game_button || pausing_in_pass || changing_scene;
-        bool show_value_ai_turn = (ai_should_move || ai_status.analyzing) && getData().menu_elements.show_value_when_ai_calculating && getData().menu_elements.use_disc_hint;
-        if (!hint_ignore) {
+        bool show_value_ai_turn = ai_should_move && getData().menu_elements.show_value_when_ai_calculating && getData().menu_elements.use_disc_hint;
+        if (!hint_ignore || show_value_ai_turn) {
             if (getData().menu_elements.use_disc_hint) {
                 if ((ai_status.hint_calculating || ai_status.hint_calculated) && getData().menu_elements.n_disc_hint > ai_status.n_hint_display) {
                     stop_calculating();
@@ -278,9 +278,10 @@ public:
                     legal_ignore = draw_hint(getData().menu_elements.use_book && getData().menu_elements.show_book_accuracy);
                 }
             }
-        } else if (show_value_ai_turn) {
-            legal_ignore = draw_hint_tt(getData().menu_elements.use_book, getData().menu_elements.use_book && getData().menu_elements.show_book_accuracy);
         }
+        //  else if (show_value_ai_turn) {
+        //     legal_ignore = draw_hint_tt(getData().menu_elements.use_book, getData().menu_elements.use_book && getData().menu_elements.show_book_accuracy);
+        // }
 
         // principal variation calculating
         // bool pv_ignore = ai_should_move || ai_status.analyzing || need_start_game_button || changing_scene;
@@ -300,6 +301,9 @@ public:
             } else if (ai_status.local_strategy_calculating && !ai_status.local_strategy_calculated) {
                 try_local_strategy_get();
             }
+        }
+        if (ai_status.analyzing) {
+            principal_variation = "";
         }
 
         // local strategy policy calculating
@@ -329,7 +333,7 @@ public:
             }
 
             // umigame calculating / drawing
-            if (getData().menu_elements.use_umigame_value && !hint_ignore) {
+            if (getData().menu_elements.use_umigame_value && (!hint_ignore || show_value_ai_turn)) {
                 if (umigame_value_depth_before != getData().menu_elements.umigame_value_depth) {
                     umigame_status.umigame_calculated = false;
                     umigame_status.umigame_calculating = false;
