@@ -283,16 +283,18 @@ public:
         }
 
         // principal variation calculating
-        bool pv_ignore = ai_should_move || ai_status.analyzing || need_start_game_button || changing_scene;
+        // bool pv_ignore = ai_should_move || ai_status.analyzing || need_start_game_button || changing_scene;
+        bool pv_ignore = need_start_game_button || changing_scene;
         if (!pv_ignore && getData().menu_elements.show_principal_variation) {
             if (!ai_status.pv_calculating && !ai_status.pv_calculated) {
                 pv_calculate();
             } else if (ai_status.pv_calculating && !ai_status.pv_calculated) {
                 try_pv_get();
             }
-        } else if (ai_should_move || ai_status.analyzing) {
-            principal_variation = get_principal_variation_str_tt(getData().history_elem.board, getData().menu_elements.pv_length);
         }
+        // } else if (ai_should_move || ai_status.analyzing) {
+        //     principal_variation = get_principal_variation_str_tt(getData().history_elem.board, getData().menu_elements.pv_length);
+        // }
 
         // local strategy calculating
         if (getData().menu_elements.show_ai_focus && !local_strategy_ignore) {
