@@ -440,6 +440,9 @@ void init_settings(const Directories* directories, const Resources* resources, S
     if (init_settings_import_bool(setting_json, U"show_value_when_ai_calculating", &settings->show_value_when_ai_calculating) != ERR_OK) {
         std::cerr << "err49" << std::endl;
     }
+    if (init_settings_import_int(setting_json, U"generate_random_board_score_range", &settings->generate_random_board_score_range) != ERR_OK) {
+        std::cerr << "err50" << std::endl;
+    }
 }
 
 void init_directories(Directories* directories) {

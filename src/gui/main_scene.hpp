@@ -749,7 +749,12 @@ private:
             }
             if (getData().menu_elements.generate_random_board || shortcut_key == U"generate_random_board") {
                 int max_n_moves = getData().menu_elements.generate_random_board_moves;
-                int level = 2;
+                int light_n_moves = std::max(0, max_n_moves - 2);
+                int adjustment_n_moves = max_n_moves - light_n_moves;
+                int light_level = 2;
+                int adjustment_level = 21;
+                ai_status.random_board_generator_future = std::async(std::launch::async, random_board_generator, getData().menu_elements.generate_random_board_score_range, light_n_moves, adjustment_n_moves, light_level, adjustment_level);
+                
                 std::random_device seed_gen;
                 std::default_random_engine engine(seed_gen());
                 std::normal_distribution<> dist(0.0, 4.0); // acceptable loss avg = 0.0, sd = 4.0 discs

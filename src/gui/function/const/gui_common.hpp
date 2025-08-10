@@ -380,6 +380,7 @@ struct Settings {
     int pv_length;
     std::string screenshot_saving_dir;
     bool show_value_when_ai_calculating;
+    int generate_random_board_score_range;
 };
 
 struct Fonts {
@@ -540,6 +541,7 @@ struct Menu_elements {
     bool save_this_branch;
     bool generate_random_board;
     int generate_random_board_moves;
+    int generate_random_board_score_range;
     // conversion
     bool convert_180;
     bool convert_90_clock;
@@ -657,6 +659,7 @@ struct Menu_elements {
         save_this_branch = false;
         generate_random_board = false;
         generate_random_board_moves = settings->generate_random_board_moves;
+        generate_random_board_score_range = settings->generate_random_board_score_range;
         convert_180 = false;
         convert_90_clock = false;
         convert_90_anti_clock = false;
@@ -911,6 +914,10 @@ struct AI_status {
     std::future<void> local_strategy_policy_future;
     int local_strategy_policy[HW2][HW2]; // [policy][cell]
     int local_strategy_policy_done_level{ 0 };
+
+    bool random_board_generator_calculating{ false };
+    bool random_board_generator_calculated{ false };
+    std::future<std::vector<int>> random_board_generator_future;
 };
 
 struct Game_abstract {
