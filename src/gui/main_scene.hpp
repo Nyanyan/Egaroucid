@@ -763,7 +763,7 @@ private:
             }
             if (getData().menu_elements.generate_random_board || shortcut_key == U"generate_random_board") {
                 int light_level = 2;
-                int adjustment_level = 17;
+                int adjustment_level = 15;
                 stop_calculating();
                 getData().history_elem.reset();
                 getData().graph_resources.init();
