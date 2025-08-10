@@ -1912,4 +1912,43 @@ std::vector<Ponder_elem> ai_additional_selfplay(Board board, bool show_log, std:
     return move_list;
 }
 
-
+Search_result ai_range(Board board, int level, int score_min, int score_max, bool *searching) {
+    std::vector<Search_result> moves_in_range;
+    uint64_t legal = board.get_legal();
+    for (uint_fast8_t cell = first_bit(&legal); legal && *searching; cell = next_bit(&legal)) {
+        Flip flip;
+        bool passed = false;
+        calc_flip(&flip, &board, cell);
+        board.move_board(&flip);
+            if (board.is_end()) {
+                board.undo_board(&flip);
+                continue;
+            }
+            if (board.get_legal() == 0) {
+                board.pass();
+                passed = true;
+            }
+            int alpha = passed ? score_min : -score_max;
+            int beta = passed ? score_max : -score_min;
+            alpha = std::min(-SCORE_MAX, alpha - 1);
+            beta = std::max(SCORE_MAX, beta + 1);
+            Search_result res = ai_window_legal_searching(board, alpha, beta, level, true, 0, true, false, board.get_legal(), searching);
+            if (res.value >= score_min && res.value <= score_max) {
+                Search_result move_res = res;
+                move_res.policy = cell;
+                moves_in_range.push_back(move_res);
+            }
+            if (passed) {
+                board.pass();
+            }
+        board.undo_board(&flip);
+    }
+    if (!moves_in_range.empty()) {
+        return moves_in_range[myrandrange(0, (int)moves_in_range.size())];
+    } else {
+        Search_result res;
+        res.value = SCORE_UNDEFINED;
+        res.policy = MOVE_UNDEFINED;
+        return res;
+    }
+}

@@ -18,6 +18,7 @@
 #include "perft.hpp"
 #include "principal_variation.hpp"
 #include "problem_generator.hpp"
+#include "random_board_generator.hpp"
 #include "umigame.hpp"
 #include "version.hpp"
 #if TEST_ENDGAME_ACCURACY

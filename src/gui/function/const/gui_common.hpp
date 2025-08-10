@@ -916,7 +916,6 @@ struct AI_status {
     int local_strategy_policy_done_level{ 0 };
 
     bool random_board_generator_calculating{ false };
-    bool random_board_generator_calculated{ false };
     std::future<std::vector<int>> random_board_generator_future;
 };
 

@@ -79,6 +79,7 @@ void init_default_settings(const Directories* directories, const Resources* reso
     settings->pv_length = 7;
     settings->screenshot_saving_dir = directories->document_dir + "screenshots/";
     settings->show_value_when_ai_calculating = false;
+    settings->generate_random_board_score_range = 64;
 }
 
 int init_settings_import_int(JSON &json, String key, int* res) {

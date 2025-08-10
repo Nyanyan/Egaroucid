@@ -161,6 +161,11 @@ public:
             analyze_get_task();
         }
 
+        // random board generator
+        if (ai_status.random_board_generator_calculating) {
+            check_random_board_generater();
+        }
+
         // move
         bool ai_should_move =
             !need_start_game_button &&
@@ -174,7 +179,8 @@ public:
             putting_1_move_by_ai;
         bool ignore_move = 
             (getData().book_information.changing != BOOK_CHANGE_NO_CELL) || 
-            ai_status.analyzing;
+            ai_status.analyzing || 
+            ai_status.random_board_generator_calculating;
         if (need_start_game_button) {
             need_start_game_button_calculation();
             if (getData().menu.active()) {
@@ -216,14 +222,14 @@ public:
         }
 
         // graph move
-        bool graph_interact_ignore = ai_status.analyzing || ai_should_move;
+        bool graph_interact_ignore = ai_status.analyzing || ai_status.random_board_generator_calculating || ai_should_move;
         if (!ignore_move && !graph_interact_ignore && !getData().menu.active()) {
             interact_graph();
         }
         update_n_discs();
 
         // local strategy drawing
-        bool local_strategy_ignore = ai_should_move || ai_status.analyzing || need_start_game_button || pausing_in_pass || changing_scene;
+        bool local_strategy_ignore = ai_should_move || ai_status.analyzing || ai_status.random_board_generator_calculating || need_start_game_button || pausing_in_pass || changing_scene;
         if (ai_status.local_strategy_done_level > 0 && getData().menu_elements.show_ai_focus && !local_strategy_ignore) {
             draw_local_strategy();
         }
@@ -263,7 +269,7 @@ public:
         uint64_t legal_ignore = 0ULL;
 
         // hint calculating
-        bool hint_ignore = ai_should_move || ai_status.analyzing || need_start_game_button || pausing_in_pass || changing_scene;
+        bool hint_ignore = ai_should_move || ai_status.analyzing || ai_status.random_board_generator_calculating || need_start_game_button || pausing_in_pass || changing_scene;
         bool show_value_ai_turn = ai_should_move && getData().menu_elements.show_value_when_ai_calculating && getData().menu_elements.use_disc_hint;
         if (!hint_ignore || show_value_ai_turn) {
             if (getData().menu_elements.use_disc_hint) {
@@ -302,7 +308,7 @@ public:
                 try_local_strategy_get();
             }
         }
-        if (ai_status.analyzing) {
+        if (ai_status.analyzing || ai_status.random_board_generator_calculating) {
             principal_variation = "";
         }
 
@@ -452,6 +458,13 @@ private:
         book_accuracy_status.book_accuracy_calculating = false;
     }
 
+    void reset_random_board_generator() {
+        ai_status.random_board_generator_calculating = false;
+        if (ai_status.random_board_generator_future.valid()) {
+            ai_status.random_board_generator_future.get();
+        }
+    }
+
     void stop_calculating() {
         std::cerr << "terminating calculation" << std::endl;
         global_searching = false;
@@ -493,6 +506,7 @@ private:
         reset_local_strategy_policy();
         reset_analyze();
         reset_book_additional_features();
+        reset_random_board_generator();
         std::cerr << "reset all calculations" << std::endl;
     }
 
@@ -748,16 +762,8 @@ private:
                 need_start_game_button_calculation();
             }
             if (getData().menu_elements.generate_random_board || shortcut_key == U"generate_random_board") {
-                int max_n_moves = getData().menu_elements.generate_random_board_moves;
-                int light_n_moves = std::max(0, max_n_moves - 2);
-                int adjustment_n_moves = max_n_moves - light_n_moves;
                 int light_level = 2;
-                int adjustment_level = 21;
-                ai_status.random_board_generator_future = std::async(std::launch::async, random_board_generator, getData().menu_elements.generate_random_board_score_range, light_n_moves, adjustment_n_moves, light_level, adjustment_level);
-                
-                std::random_device seed_gen;
-                std::default_random_engine engine(seed_gen());
-                std::normal_distribution<> dist(0.0, 4.0); // acceptable loss avg = 0.0, sd = 4.0 discs
+                int adjustment_level = 17;
                 stop_calculating();
                 getData().history_elem.reset();
                 getData().graph_resources.init();
@@ -765,17 +771,8 @@ private:
                 getData().game_information.init();
                 pausing_in_pass = false;
                 resume_calculating();
-                for (int i = 0; i < max_n_moves; ++i) {
-                    if (getData().history_elem.board.get_legal() == 0) {
-                        break;
-                    }
-                    int acceptable_loss = std::abs(std::round(dist(engine)));
-                    Search_result search_result = ai_accept_loss(getData().history_elem.board, level, acceptable_loss);
-                    int policy = search_result.policy;
-                    std::cerr << acceptable_loss << " " << idx_to_coord(policy) << " " << search_result.value << std::endl;
-                    move_processing(HW2_M1 - policy);
-                }
-                need_start_game_button_calculation();
+                ai_status.random_board_generator_calculating = true;
+                ai_status.random_board_generator_future = std::async(std::launch::async, random_board_generator, getData().menu_elements.generate_random_board_score_range, getData().menu_elements.generate_random_board_moves, light_level, adjustment_level, &ai_status.random_board_generator_calculating);
             }
         }
         if (getData().menu_elements.convert_180 || shortcut_key == U"convert_180") {
@@ -2334,5 +2331,26 @@ private:
         }
         init_main_scene();
         return res;
+    }
+
+    void check_random_board_generater() {
+        if (ai_status.random_board_generator_future.valid() && ai_status.random_board_generator_calculating) {
+            if (ai_status.random_board_generator_future.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
+                std::vector<int> moves = ai_status.random_board_generator_future.get();
+                ai_status.random_board_generator_calculating = false;
+                std::cerr << "finish random board generation" << std::endl;
+                stop_calculating();
+                getData().history_elem.reset();
+                getData().graph_resources.init();
+                getData().graph_resources.nodes[getData().graph_resources.branch].emplace_back(getData().history_elem);
+                getData().game_information.init();
+                pausing_in_pass = false;
+                resume_calculating();
+                for (int policy : moves) {
+                    move_processing(HW2_M1 - policy);
+                }
+                need_start_game_button_calculation();
+            }
+        }
     }
 };
