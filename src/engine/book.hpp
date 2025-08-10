@@ -1620,6 +1620,7 @@ class Book {
             std::cerr << "negamaxed book fixed " << n_fix << " boards seen " << n_seen << " boards size " << book.size() << std::endl;
         }
 
+        // flag keeped boards
         void reduce_book_flag_moves(Board board, int max_depth, int max_error_per_move, int remaining_error, uint64_t *n_flags, std::unordered_set<Board, Book_hash> &keep_list, bool *doing) {
             if (!*(doing)) {
                 return;
@@ -1661,6 +1662,7 @@ class Book {
             if (keep_list.find(unique_board) != keep_list.end()) {
                 return;
             }
+            // not in book
             if (!contain(&board)) {
                 return;
             }
@@ -1682,7 +1684,7 @@ class Book {
                 if (link_error <= max_error_per_move && link_error <= remaining_error) {
                     calc_flip(&flip, &board, link.policy);
                     board.move_board(&flip);
-                        reduce_book_flag_moves(board, max_depth, max_error_per_move, remaining_error - std::min(0, link_error), n_flags, keep_list, doing);
+                        reduce_book_flag_moves(board, max_depth, max_error_per_move, remaining_error - std::max(0, link_error), n_flags, keep_list, doing);
                     board.undo_board(&flip);
                 }
             }
