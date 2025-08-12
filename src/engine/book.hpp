@@ -1718,7 +1718,7 @@ class Book {
                     board.move_board(&flip);
                         bool is_end = board.is_end();
                         bool passed = board.get_legal() == 0;
-                        bool will_be_deleted = false;
+                        bool will_be_deleted = keep_list.find(representative_board(board)) == keep_list.end();
                         if (is_end) {
                             will_be_deleted = keep_list.find(representative_board(board)) == keep_list.end();
                             board.pass();
@@ -1733,12 +1733,19 @@ class Book {
                             if (book_elem.leaf.value < link.value) {
                                 book_elem.leaf.value = link.value;
                                 book_elem.leaf.move = link.policy;
-                                if (passed) {
+                                if (is_end) {
+                                    book_elem.leaf.level = get(board).level;
+                                    if (book_elem.leaf.level == LEVEL_UNDEFINED) {
+                                        board.pass();
+                                            book_elem.leaf.level = get(board).level;
+                                        board.pass();
+                                    }
+                                } else if (passed) {
                                     board.pass();
-                                }
-                                book_elem.leaf.level = get(board).level;
-                                if (passed) {
+                                        book_elem.leaf.level = get(board).level;
                                     board.pass();
+                                } else {
+                                    book_elem.leaf.level = get(board).level;
                                 }
                                 leaf_updated = true;
                             }
