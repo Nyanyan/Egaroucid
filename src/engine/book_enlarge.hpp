@@ -600,18 +600,17 @@ inline void book_store(std::vector<std::pair<Board, int>> tasks, int level, int 
             board.print();
             std::cerr << std::endl;
             book.change(board, search_result.value, level);
-            int child_value = -search_result.value;
             calc_flip(&flip, &board, search_result.policy);
             board.move_board(&flip);
                 bool passed = board.get_legal() == 0;
                 if (passed) {
                     board.pass();
-                    child_value *= -1;
                 }
-                std::cerr << "child " << child_value << std::endl;
+                Search_result child_search_result = ai_searching(board, level, true, 0, true, false, book_learning);
+                std::cerr << "child " << child_search_result.value << std::endl;
                 board.print();
                 std::cerr << std::endl;
-                book.change(board, child_value, level);
+                book.change(board, child_search_result.value, level);
                 if (passed) {
                     board.pass();
                 }
