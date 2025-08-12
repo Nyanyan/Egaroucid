@@ -589,6 +589,9 @@ inline void book_store(std::vector<std::pair<Board, int>> tasks, int level, int 
             break;
         }
         Board board = task.first;
+        if (board.n_discs() > 4 + book_depth) {
+            continue;
+        }
         board.copy(board_copy);
         *player = task.second;
         if (!book.contain(&board)) {
