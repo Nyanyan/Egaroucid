@@ -99,6 +99,8 @@ Menu create_menu(Menu_elements* menu_elements, Resources *resources, Font font, 
                 side_menu.push(side_side_menu);
                 side_side_menu.init_check(language.get("display", "cell", "show_value_when_ai_calculating") + get_shortcut_key_info(U"show_value_when_ai_calculating"), &menu_elements->show_value_when_ai_calculating, menu_elements->show_value_when_ai_calculating);
                 side_menu.push(side_side_menu);
+                side_side_menu.init_check(language.get("display", "cell", "show_book_accuracy") + get_shortcut_key_info(U"show_book_accuracy"), &menu_elements->show_book_accuracy, menu_elements->show_book_accuracy);
+                side_menu.push(side_side_menu);
             menu_e.push(side_menu);
             side_menu.init_check(language.get("display", "cell", "umigame_value") + get_shortcut_key_info(U"show_umigame_value"), &menu_elements->use_umigame_value, menu_elements->use_umigame_value);
             side_side_menu.init_bar(language.get("display", "cell", "depth"), &menu_elements->umigame_value_depth, menu_elements->umigame_value_depth, 1, 60);
@@ -109,8 +111,6 @@ Menu create_menu(Menu_elements* menu_elements, Resources *resources, Font font, 
             side_menu.init_check(language.get("display", "cell", "next_move") + get_shortcut_key_info(U"show_next_move"), &menu_elements->show_next_move, menu_elements->show_next_move);
             side_side_menu.init_check(language.get("display", "cell", "next_move_change_view"), &menu_elements->show_next_move_change_view, menu_elements->show_next_move_change_view);
             side_menu.push(side_side_menu);
-            menu_e.push(side_menu);
-            side_menu.init_check(language.get("display", "cell", "show_book_accuracy") + get_shortcut_key_info(U"show_book_accuracy"), &menu_elements->show_book_accuracy, menu_elements->show_book_accuracy);
             menu_e.push(side_menu);
         title.push(menu_e);
         menu_e.init_button(language.get("display", "disc", "display_on_disc"), &menu_elements->dummy);
