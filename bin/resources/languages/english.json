@@ -180,7 +180,8 @@
             "next_move": "Next Move",
             "next_move_change_view": "Change View",
             "show_book_accuracy": "Book Accuracy",
-            "show_value_when_ai_calculating": "Display on AI's turn"
+            "show_value_when_ai_calculating": "Display on AI's turn",
+            "show_hint_level": "Level"
         },
         "disc": {
             "display_on_disc": "On Disc",

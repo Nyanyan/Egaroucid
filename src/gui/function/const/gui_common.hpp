@@ -325,6 +325,7 @@ struct Resources {
     Texture rotate_180;
     Texture mirror_white_line;
     Texture mirror_black_line;
+    Texture check;
     std::vector<Texture> lang_img;
 };
 
@@ -381,6 +382,7 @@ struct Settings {
     std::string screenshot_saving_dir;
     bool show_value_when_ai_calculating;
     int generate_random_board_score_range;
+    bool show_hint_level;
 };
 
 struct Fonts {
@@ -469,6 +471,7 @@ struct Menu_elements {
     // display
     bool use_disc_hint;
     int n_disc_hint;
+    bool show_hint_level;
     bool use_umigame_value;
     int umigame_value_depth;
     bool show_legal;
@@ -593,6 +596,7 @@ struct Menu_elements {
 
         use_disc_hint = settings->use_disc_hint;
         n_disc_hint = settings->n_disc_hint;
+        show_hint_level = settings->show_hint_level;
         use_umigame_value = settings->use_umigame_value;
         umigame_value_depth = settings->umigame_value_depth;
         show_legal = settings->show_legal;

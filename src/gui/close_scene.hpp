@@ -68,6 +68,7 @@ void save_settings(Menu_elements menu_elements, Settings settings, Directories d
     setting_json[U"force_specified_openings"] = menu_elements.force_specified_openings;
     setting_json[U"show_value_when_ai_calculating"] = menu_elements.show_value_when_ai_calculating;
     setting_json[U"generate_random_board_score_range"] = menu_elements.generate_random_board_score_range;
+    setting_json[U"show_hint_level"] = menu_elements.show_hint_level;
     setting_json.save(U"{}setting.json"_fmt(Unicode::Widen(directories.appdata_dir)));
 }
 

@@ -101,9 +101,11 @@ int init_resources_load(Resources* resources, Settings* settings, bool *stop_loa
     Texture rotate_180(Unicode::Widen(EXE_DIRECTORY_PATH + "resources/img/rotate_180.png"), TextureDesc::Mipped);
     Texture mirror_white_line(Unicode::Widen(EXE_DIRECTORY_PATH + "resources/img/mirror_white_line.png"), TextureDesc::Mipped);
     Texture mirror_black_line(Unicode::Widen(EXE_DIRECTORY_PATH + "resources/img/mirror_black_line.png"), TextureDesc::Mipped);
+    Texture check(Unicode::Widen(EXE_DIRECTORY_PATH + "resources/img/check.png"), TextureDesc::Mipped);
     if (checkbox.isEmpty() || unchecked.isEmpty() || laser_pointer.isEmpty() || cross.isEmpty() ||
         flip_horizontal.isEmpty() || flip_vertical.isEmpty() || rotate_cw.isEmpty() || rotate_ccw.isEmpty() ||
-        rotate_180.isEmpty() || mirror_white_line.isEmpty() || mirror_black_line.isEmpty()
+        rotate_180.isEmpty() || mirror_white_line.isEmpty() || mirror_black_line.isEmpty() ||
+        check.isEmpty()
     ) {
         return ERR_LOAD_TEXTURE_NOT_LOADED;
     }
@@ -118,6 +120,7 @@ int init_resources_load(Resources* resources, Settings* settings, bool *stop_loa
     resources->rotate_180 = rotate_180;
     resources->mirror_white_line = mirror_white_line;
     resources->mirror_black_line = mirror_black_line;
+    resources->check = check;
 
     if (*stop_loading) {
         return ERR_LOAD_TERMINATED;

@@ -37,9 +37,9 @@
      inkscape:snap-bbox-edge-midpoints="true"
      inkscape:bbox-nodes="true"
      inkscape:bbox-paths="true"
-     inkscape:zoom="0.16"
-     inkscape:cx="-3896.875"
-     inkscape:cy="1150"
+     inkscape:zoom="0.32"
+     inkscape:cx="-229.6875"
+     inkscape:cy="550"
      inkscape:window-width="2104"
      inkscape:window-height="2041"
      inkscape:window-x="764"
@@ -1049,6 +1049,13 @@
        inkscape:export-filename="C:\github\egaroucid\Egaroucid5\src\resources\checked.png"
        inkscape:export-xdpi="35.549999"
        inkscape:export-ydpi="35.549999" />
+    <path
+       style="fill:none;stroke:#ffffff;stroke-width:20;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
+       d="m -176.06849,105.05478 22.4536,34.02055 70.76288,-77.566958"
+       id="path10948-0"
+       inkscape:export-filename="check.png"
+       inkscape:export-xdpi="59.682297"
+       inkscape:export-ydpi="59.682297" />
     <rect
        style="fill:#b4b4b4;fill-opacity:1;stroke-width:0.499999"
        id="rect10405-0"

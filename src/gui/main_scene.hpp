@@ -620,6 +620,9 @@ private:
         if (shortcut_key == U"show_disc_hint") {
             getData().menu_elements.use_disc_hint = !getData().menu_elements.use_disc_hint;
         }
+        if (shortcut_key == U"show_hint_level") {
+            getData().menu_elements.show_hint_level = !getData().menu_elements.show_hint_level;
+        }
         if (shortcut_key == U"show_value_when_ai_calculating") {
             getData().menu_elements.show_value_when_ai_calculating = !getData().menu_elements.show_value_when_ai_calculating;
         }
@@ -1499,6 +1502,7 @@ private:
     uint64_t draw_hint(bool ignore_book_info) {
         uint64_t res = 0ULL;
         if (ai_status.hint_calculating || ai_status.hint_calculated) {
+            bool simplified_hint_mode = !getData().menu_elements.show_hint_level && !getData().menu_elements.show_book_accuracy && !getData().menu_elements.use_umigame_value;
             std::vector<Hint_info> hint_infos;
             for (int cell = 0; cell < HW2; ++cell) {
                 if (ai_status.hint_use[HW2_M1 - cell] && -HW2 <= ai_status.hint_values[HW2_M1 - cell] && ai_status.hint_values[HW2_M1 - cell] <= (double)HW2 + HINT_PRIORITY + 0.009) {
@@ -1536,17 +1540,31 @@ private:
                     color = getData().colors.cyan;
                     font = getData().fonts.font_heavy;
                 }
-                font((int)round(hint_infos[i].value)).draw(18, sx + 3, sy, color);
-                if (hint_infos[i].type == AI_TYPE_BOOK) {
-                    if (!ignore_book_info) {
-                        getData().fonts.font_bold(U"book").draw(10, sx + 3, sy + 21, color);
+                if (simplified_hint_mode) {
+                    // main value
+                    font((int)round(hint_infos[i].value)).draw(25, Arg::center(sx + BOARD_CELL_SIZE / 2, sy + BOARD_CELL_SIZE / 2), color);
+                    // level info
+                    if (getData().menu_elements.show_hint_level) {
+                        if (hint_infos[i].type == AI_TYPE_BOOK) {
+                            if (!ignore_book_info) {
+                                getData().fonts.font_bold(U"book").draw(10, sx + 3, sy + 21, color);
+                            }
+                        } else if (hint_infos[i].type > HINT_MAX_LEVEL) {
+                            getData().fonts.font_bold(Format(hint_infos[i].type) + U"%").draw(10, sx + 3, sy + 21, color);
+                        } else {
+                            RectF lv_rect = getData().fonts.font(U"Lv.").region(8, sx + 3, sy + 25);
+                            getData().fonts.font_bold(U"Lv").draw(8, sx + 3, sy + 22.5, color);
+                            getData().fonts.font_bold(Format(hint_infos[i].type)).draw(9.5, lv_rect.x + lv_rect.w, sy + 21, color);
+                        }
                     }
-                } else if (hint_infos[i].type > HINT_MAX_LEVEL) {
-                    getData().fonts.font_bold(Format(hint_infos[i].type) + U"%").draw(10, sx + 3, sy + 21, color);
                 } else {
-                    RectF lv_rect = getData().fonts.font(U"Lv.").region(8, sx + 3, sy + 25);
-                    getData().fonts.font_bold(U"Lv").draw(8, sx + 3, sy + 22.5, color);
-                    getData().fonts.font_bold(Format(hint_infos[i].type)).draw(9.5, lv_rect.x + lv_rect.w, sy + 21, color);
+                    // main value
+                    font((int)round(hint_infos[i].value)).draw(18, sx + 3, sy, color);
+                    // level info for simple mode (only 100%)
+                    if (hint_infos[i].type == 100) {
+                        const double check_width = BOARD_CELL_SIZE * 0.25;
+                        getData().resources.check.scaled(check_width / (double)getData().resources.check.height()).draw(Arg::topRight(sx + BOARD_CELL_SIZE, sy + 1));
+                    }
                 }
                 res |= 1ULL << (HW2_M1 - hint_infos[i].cell);
             }

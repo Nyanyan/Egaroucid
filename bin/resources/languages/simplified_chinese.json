@@ -180,7 +180,8 @@
             "next_move": "落点提示",
             "next_move_change_view": "改变视图",
             "show_book_accuracy": "开局库评级",
-            "show_value_when_ai_calculating": "在AI回合中显示"
+            "show_value_when_ai_calculating": "在AI回合中显示",
+            "show_hint_level": "等级"
         },
         "disc": {
             "display_on_disc": "棋盘显示",

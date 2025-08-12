@@ -93,10 +93,12 @@ Menu create_menu(Menu_elements* menu_elements, Resources *resources, Font font, 
             side_menu.init_check(language.get("display", "cell", "legal") + get_shortcut_key_info(U"show_legal"), &menu_elements->show_legal, menu_elements->show_legal);
             menu_e.push(side_menu);
             side_menu.init_check(language.get("display", "cell", "disc_value") + get_shortcut_key_info(U"show_disc_hint"), &menu_elements->use_disc_hint, menu_elements->use_disc_hint);
-            side_side_menu.init_bar(language.get("display", "cell", "disc_value_number"), &menu_elements->n_disc_hint, menu_elements->n_disc_hint, 1, SHOW_ALL_HINT);
-            side_menu.push(side_side_menu);
-            side_side_menu.init_check(language.get("display", "cell", "show_value_when_ai_calculating") + get_shortcut_key_info(U"show_value_when_ai_calculating"), &menu_elements->show_value_when_ai_calculating, menu_elements->show_value_when_ai_calculating);
-            side_menu.push(side_side_menu);
+                side_side_menu.init_bar(language.get("display", "cell", "disc_value_number"), &menu_elements->n_disc_hint, menu_elements->n_disc_hint, 1, SHOW_ALL_HINT);
+                side_menu.push(side_side_menu);
+                side_side_menu.init_check(language.get("display", "cell", "show_hint_level") + get_shortcut_key_info(U"show_hint_level"), &menu_elements->show_hint_level, menu_elements->show_hint_level);
+                side_menu.push(side_side_menu);
+                side_side_menu.init_check(language.get("display", "cell", "show_value_when_ai_calculating") + get_shortcut_key_info(U"show_value_when_ai_calculating"), &menu_elements->show_value_when_ai_calculating, menu_elements->show_value_when_ai_calculating);
+                side_menu.push(side_side_menu);
             menu_e.push(side_menu);
             side_menu.init_check(language.get("display", "cell", "umigame_value") + get_shortcut_key_info(U"show_umigame_value"), &menu_elements->use_umigame_value, menu_elements->use_umigame_value);
             side_side_menu.init_bar(language.get("display", "cell", "depth"), &menu_elements->umigame_value_depth, menu_elements->umigame_value_depth, 1, 60);

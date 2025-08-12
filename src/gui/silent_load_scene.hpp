@@ -80,6 +80,7 @@ void init_default_settings(const Directories* directories, const Resources* reso
     settings->screenshot_saving_dir = directories->document_dir + "screenshots/";
     settings->show_value_when_ai_calculating = false;
     settings->generate_random_board_score_range = 64;
+    settings->show_hint_level = true;
 }
 
 int init_settings_import_int(JSON &json, String key, int* res) {
@@ -443,6 +444,9 @@ void init_settings(const Directories* directories, const Resources* resources, S
     }
     if (init_settings_import_int(setting_json, U"generate_random_board_score_range", &settings->generate_random_board_score_range) != ERR_OK) {
         std::cerr << "err50" << std::endl;
+    }
+    if (init_settings_import_bool(setting_json, U"show_hint_level", &settings->show_hint_level) != ERR_OK) {
+        std::cerr << "err51" << std::endl;
     }
 }
 
