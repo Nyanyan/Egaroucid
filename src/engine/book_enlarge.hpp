@@ -594,26 +594,32 @@ inline void book_store(std::vector<std::pair<Board, int>> tasks, int level, int 
         }
         board.copy(board_copy);
         *player = task.second;
-        if (!book.contain(&board)) {
-            Search_result search_result = ai_searching(board, level, true, 0, true, false, book_learning);
-            if (is_valid_policy(search_result.policy) && (board.get_legal() & (1ULL << search_result.policy)) && is_valid_score(search_result.value)) {
-                book.change(board, search_result.value, level);
-                int child_value = -search_result.value;
-                calc_flip(&flip, &board, search_result.policy);
-                board.move_board(&flip);
-                    bool passed = board.get_legal() == 0;
-                    if (passed) {
-                        board.pass();
-                        child_value *= -1;
-                    }
-                    book.change(board, child_value, level);
-                    if (passed) {
-                        board.pass();
-                    }
-                board.undo_board(&flip);
-                n_registered += 2;
-            }
+        // if (!book.contain(&board)) {
+        Search_result search_result = ai_searching(board, level, true, 0, true, false, book_learning);
+        if (is_valid_policy(search_result.policy) && (board.get_legal() & (1ULL << search_result.policy)) && is_valid_score(search_result.value)) {
+            std::cerr << idx_to_coord(search_result.policy) << " " << search_result.value << std::endl;
+            board.print();
+            std::cerr << std::endl;
+            book.change(board, search_result.value, level);
+            int child_value = -search_result.value;
+            calc_flip(&flip, &board, search_result.policy);
+            board.move_board(&flip);
+                bool passed = board.get_legal() == 0;
+                if (passed) {
+                    board.pass();
+                    child_value *= -1;
+                }
+                std::cerr << "child " << child_value << std::endl;
+                board.print();
+                std::cerr << std::endl;
+                book.change(board, child_value, level);
+                if (passed) {
+                    board.pass();
+                }
+            board.undo_board(&flip);
+            n_registered += 2;
         }
+        // }
     }
     *player = before_player;
     before_board.copy(board_copy);
