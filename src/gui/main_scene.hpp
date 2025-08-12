@@ -1080,6 +1080,13 @@ private:
             changeScene(U"Deviate_book_transcript", SCENE_FADE_TIME);
             return;
         }
+        if (getData().menu_elements.book_start_store || shortcut_key == U"book_start_store") {
+            changing_scene = true;
+            stop_calculating();
+            resume_calculating();
+            changeScene(U"Store_book", SCENE_FADE_TIME);
+            return;
+        }
         if (getData().menu_elements.book_start_fix || shortcut_key == U"book_start_fix") {
             changing_scene = true;
             stop_calculating();

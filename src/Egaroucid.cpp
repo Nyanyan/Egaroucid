@@ -76,6 +76,7 @@ void Main() {
     scene_manager.add <Refer_book>(U"Refer_book");
     scene_manager.add <Enhance_book>(U"Enhance_book");
     scene_manager.add <Deviate_book_transcript>(U"Deviate_book_transcript");
+    scene_manager.add <Store_book>(U"Store_book");
     scene_manager.add <Fix_book>(U"Fix_book");
     scene_manager.add <Fix_book_edax>(U"Fix_book_edax");
     scene_manager.add <Reduce_book>(U"Reduce_book");

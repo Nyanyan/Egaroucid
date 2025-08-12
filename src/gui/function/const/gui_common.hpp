@@ -494,6 +494,7 @@ struct Menu_elements {
     // book
     bool book_start_deviate;
     bool book_start_deviate_with_transcript;
+    bool book_start_store;
     bool book_start_fix;
     bool book_start_fix_edax;
     int book_learn_depth;
@@ -616,6 +617,7 @@ struct Menu_elements {
 
         book_start_deviate = false;
         book_start_deviate_with_transcript = false;
+        book_start_store = false;
         book_start_fix = false;
         book_start_fix_edax = false;
         book_learn_depth = settings->book_learn_depth;

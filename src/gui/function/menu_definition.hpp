@@ -245,6 +245,8 @@ Menu create_menu(Menu_elements* menu_elements, Resources *resources, Font font, 
             menu_e.push(side_menu);
             side_menu.init_button(language.get("book", "book_deviate_with_transcript") + get_shortcut_key_info(U"book_start_deviate_with_transcript"), &menu_elements->book_start_deviate_with_transcript);
             menu_e.push(side_menu);
+            side_menu.init_button(language.get("book", "book_store") + get_shortcut_key_info(U"book_start_store"), &menu_elements->book_start_store);
+            menu_e.push(side_menu);
             side_menu.init_button(language.get("book", "book_fix") + get_shortcut_key_info(U"book_start_fix"), &menu_elements->book_start_fix);
             menu_e.push(side_menu);
             side_menu.init_button(language.get("book", "book_fix_edax") + get_shortcut_key_info(U"book_start_fix_edax"), &menu_elements->book_start_fix_edax);
