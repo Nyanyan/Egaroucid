@@ -348,6 +348,10 @@ inline bool is_valid_policy(int policy) {
     return 0 <= policy && policy < HW2;
 }
 
+inline bool is_valid_score(int score) {
+    return -SCORE_MAX <= score && score <= SCORE_MAX;
+}
+
 inline bool is_black_like_char(char c) {
     return c == 'B' || c == 'b' || c == 'X' || c == 'x' || c == '0' || c == '*';
 }

@@ -275,3 +275,12 @@ bool is_valid_transcript(std::string transcript) {
     }
     return true;
 }
+
+std::vector<uint_fast8_t> transcript_to_arr(std::string transcript) {
+    std::vector<uint_fast8_t> res;
+    for (int i = 0; i < transcript.size() - 1; i += 2) {
+        uint_fast8_t x = transcript[i] - 'a';
+        res.emplace_back(get_coord_from_chars(transcript[i], transcript[i + 1]));
+    }
+    return res;
+}

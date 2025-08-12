@@ -1481,6 +1481,57 @@ class Book {
             change(nb, value, level);
         }
 
+        inline void change(Board b, int value, int level, int leaf_move, int leaf_value, int leaf_level) {
+            std::lock_guard<std::mutex> lock(mtx);
+            if (-HW2 <= value && value <= HW2) {
+                if (b.is_end()) { // game over
+                    if (contain(b)) {
+                        Board bb = representative_board(b);
+                        book[bb].value = value;
+                        book[bb].level = level;
+                    } else {
+                        b.pass();
+                        if (contain(b)) {
+                            Board bb = representative_board(b);
+                            book[bb].value = -value;
+                            book[bb].level = level;
+                        } else {
+                            b.pass();
+                            Book_elem elem;
+                            elem.value = value;
+                            elem.level = level;
+                            elem.leaf.move = MOVE_UNDEFINED;
+                            elem.leaf.value = SCORE_UNDEFINED;
+                            elem.leaf.level = LEVEL_UNDEFINED;
+                            register_symmetric_book(b, elem);
+                        }
+                    }
+                } else {
+                    if (b.get_legal() == 0) { // just pass
+                        b.pass();
+                        value *= -1;
+                    }
+                    if (contain(b)) {
+                        int idx;
+                        Board bb = representative_board(b, &idx);
+                        book[bb].value = value;
+                        book[bb].level = level;
+                        book[bb].leaf.move = convert_coord_from_representative_board(leaf_move, idx);
+                        book[bb].leaf.value = leaf_value;
+                        book[bb].leaf.level = leaf_level;
+                    } else {
+                        Book_elem elem;
+                        elem.value = value;
+                        elem.level = level;
+                        elem.leaf.move = leaf_move;
+                        elem.leaf.value = leaf_value;
+                        elem.leaf.level = leaf_level;
+                        register_symmetric_book(b, elem);
+                    }
+                }
+            }
+        }
+
         /*
             @brief delete a board
 

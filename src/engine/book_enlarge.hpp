@@ -573,3 +573,76 @@ inline void book_deviate(Board root_board, int level, int book_depth, int max_er
     std::cerr << "book deviate finished registered " << n_registered << " time " << ms_to_time_short(tim() - all_strt) << std::endl;
     *book_learning = false;
 }
+
+std::pair<int, int> book_store_search_leaf(Board board, int level, bool *searching) {
+    Leaf leaf = book.get(board).leaf;
+    if (is_valid_policy(leaf.move) && (board.get_legal() & (1ULL << leaf.move))) {
+
+    }
+
+    std::vector<Book_value> links = book.get_all_moves_with_value(&board);
+
+
+    uint64_t use_legal = board.get_legal();
+    for (Book_value link: links) {
+        use_legal &= ~(1ULL << link.policy);
+    }
+    use_legal &= ~(1ULL << leaf.move);
+    if (use_legal == 0) {
+        return std::make_pair(MOVE_UNDEFINED, SCORE_UNDEFINED);
+    }
+    Search_result search_result = ai_legal_searching(board, level, true, 0, true, false, use_legal, searching);
+    if (is_valid_policy(search_result.policy) && is_valid_score(search_result.value)) {
+        return std::make_pair(search_result.policy, search_result.value);
+    }
+    return std::make_pair(MOVE_UNDEFINED, SCORE_UNDEFINED);
+}
+
+
+
+inline void book_store(std::string transcript, int level, int book_depth, Board *board_copy, int *player, std::string book_file, std::string book_bak, bool *book_learning) {
+    uint64_t all_strt = tim();
+    uint64_t s = all_strt;
+    Board before_board = board_copy->copy();
+    int before_player = *player;
+    std::cerr << "book store started" << std::endl;
+    Board board;
+    Flip flip;
+    board.reset();
+    board.copy(board_copy);
+    *player = BLACK;
+    std::vector<uint_fast8_t> transcript_arr = transcript_to_arr(transcript);
+    int n_registered = 0;
+    for (uint_fast8_t cell: transcript_arr) {
+        if (!(*book_learning)) {
+            break;
+        }
+        if (board.get_legal() == 0) {
+            board.pass();
+            board.copy(board_copy);
+            *player ^= 1;
+        }
+        Leaf leaf = book.get(board).leaf;
+        if (is_valid_policy(leaf.move) && (board.get_legal() & (1ULL << leaf.move))) {
+            calc_flip(&flip, &board, leaf.move);
+            board.move_board(&flip);
+                Search_result search_result = ai_searching(board, level, true, 0, true, false, book_learning);
+                if (is_valid_policy(search_result.policy) && (board.get_legal() & (1ULL << search_result.policy)) && is_valid_score(search_result.value)) {
+                    book.change(board, search_result.value, level, search_result.policy, search_result.value, level);
+                    ++n_registered;
+                }
+            board.undo_board(&flip);
+            book.search_leaf(board, level);
+        }
+        calc_flip(&flip, &board, cell);
+        board.move_board(&flip);
+        board.copy(board_copy);
+        *player ^= 1;
+    }
+    *player = before_player;
+    before_board.copy(board_copy);
+    //book.fix();
+    //book.save_egbk3(book_file, book_bak);
+    std::cerr << "book store finished registered " << n_registered << " time " << ms_to_time_short(tim() - all_strt) << std::endl;
+    *book_learning = false;
+}
