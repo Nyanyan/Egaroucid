@@ -167,7 +167,8 @@
         "you_can_paste_with_ctrl_v": "Ctrl+Vで貼り付け可能",
         "you_can_drag_and_drop_game_file": "ゲームファイルをドラッグ&ドロップ可能",
         "save_subfolder": "保存先サブフォルダ (games/ 以下)",
-        "load_subfolder": "読み込みサブフォルダ (games/ 以下)"
+        "load_subfolder": "読み込みサブフォルダ (games/ 以下)",
+        "games_root": "(games 直下)"
     },
     "display": {
         "display": "表示",

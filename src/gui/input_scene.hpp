@@ -305,19 +305,19 @@ private:
     Scroll_manager scroll_manager;
     Button back_button;
     bool failed;
-    // Subfolder input (under games/)
-    TextAreaEditState folder_area;
-    std::string subfolder; // sanitized current folder
-    std::string prev_subfolder;
+    // Explorer-like folder view
+    std::vector<String> folders_display; // includes optional ".." at head
+    bool has_parent = false;
+    std::string subfolder; // current folder (narrow), may be ""
 
 public:
     Import_game(const InitData& init) : IScene{ init } {
         back_button.init(BACK_BUTTON_SX, BACK_BUTTON_SY, BACK_BUTTON_WIDTH, BACK_BUTTON_HEIGHT, BACK_BUTTON_RADIUS, language.get("common", "back"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
         failed = false;
-        // Initialize subfolder empty
-        subfolder.clear();
-        prev_subfolder = subfolder;
-        load_games();
+    // Initialize current dir and load games
+    subfolder.clear();
+    enumerate_current_dir();
+    load_games();
     }
 
     void update() override {
@@ -325,22 +325,9 @@ public:
             changeScene(U"Close", SCENE_FADE_TIME);
         }
         getData().fonts.font(language.get("in_out", "input_game")).draw(25, Arg::topCenter(X_CENTER, 10), getData().colors.white);
-        // Subfolder input UI
-    getData().fonts.font(language.get("in_out", "load_subfolder")).draw(13, Arg::topCenter(X_CENTER, 38), getData().colors.white);
-        folder_area.active = true;
-        SimpleGUI::TextArea(folder_area, Vec2{ X_CENTER - IMPORT_GAME_WIDTH / 2, 58 }, SizeF{ IMPORT_GAME_WIDTH, 26 }, TEXTBOX_MAX_CHARS);
-        // Sanitize and detect change
-        {
-            String s = folder_area.text.replaced(U"\r", U"").replaced(U"\n", U"").replaced(U"\\", U"/");
-            while (s.size() && s.front() == U'/') s.erase(s.begin());
-            while (s.size() && s.back() == U'/') s.pop_back();
-            s.replace(U"..", U"");
-            subfolder = s.narrow();
-        }
-        if (subfolder != prev_subfolder) {
-            prev_subfolder = subfolder;
-            load_games();
-        }
+        // Current path label
+        String path_label = U"games/" + Unicode::Widen(subfolder);
+        getData().fonts.font(path_label).draw(13, Arg::topCenter(X_CENTER, 38), getData().colors.white);
         back_button.draw();
         if (back_button.clicked() || KeyEscape.pressed()) {
             getData().graph_resources.need_init = false;
@@ -348,122 +335,153 @@ public:
         }
         if (failed) {
             getData().fonts.font(language.get("in_out", "import_failed")).draw(20, Arg::center(X_CENTER, Y_CENTER), getData().colors.white);
-        } else if (games.size() == 0) {
+        } else if (games.empty() && folders_display.empty()) {
             getData().fonts.font(language.get("in_out", "no_game_available")).draw(20, Arg::center(X_CENTER, Y_CENTER), getData().colors.white);
         } else {
-            int sy = IMPORT_GAME_SY;
-            // shift down if folder UI overlaps
-            sy = std::max(sy, 90);
+            int sy = std::max(IMPORT_GAME_SY, 100);
             int strt_idx_int = scroll_manager.get_strt_idx_int();
             if (strt_idx_int > 0) {
                 getData().fonts.font(U"︙").draw(15, Arg::bottomCenter = Vec2{ X_CENTER, sy }, getData().colors.white);
             }
             sy += 8;
-            for (int i = strt_idx_int; i < std::min((int)games.size(), strt_idx_int + IMPORT_GAME_N_GAMES_ON_WINDOW); ++i) {
+            int total_rows = (int)folders_display.size() + (int)games.size();
+            for (int row = strt_idx_int; row < std::min(total_rows, strt_idx_int + IMPORT_GAME_N_GAMES_ON_WINDOW); ++row) {
                 Rect rect;
                 rect.y = sy;
                 rect.x = IMPORT_GAME_SX;
                 rect.w = IMPORT_GAME_WIDTH;
                 rect.h = IMPORT_GAME_HEIGHT;
-                int winner = -1;
-                if (games[i].black_score != GAME_DISCS_UNDEFINED && games[i].white_score != GAME_DISCS_UNDEFINED) {
-                    if (games[i].black_score > games[i].white_score) {
-                        winner = IMPORT_GAME_WINNER_BLACK;
-                    } else if (games[i].black_score < games[i].white_score) {
-                        winner = IMPORT_GAME_WINNER_WHITE;
-                    } else {
-                        winner = IMPORT_GAME_WINNER_DRAW;
-                    }
-                }
-                if (i % 2) {
+                if (row % 2) {
                     rect.draw(getData().colors.dark_green).drawFrame(1.0, getData().colors.white);
                 } else {
                     rect.draw(getData().colors.green).drawFrame(1.0, getData().colors.white);
                 }
-                delete_buttons[i].move(IMPORT_GAME_SX + 1, sy + 1);
-                delete_buttons[i].draw();
-                if (delete_buttons[i].clicked()) {
-                    delete_game(i);
-                }
-                String date = games[i].date.substr(0, 10).replace(U"_", U"/");
-                getData().fonts.font(date).draw(15, IMPORT_GAME_SX + IMPORT_GAME_LEFT_MARGIN + 10, sy + 2, getData().colors.white);
-                // player (black)
-                Rect black_player_rect;
-                black_player_rect.w = IMPORT_GAME_PLAYER_WIDTH;
-                black_player_rect.h = IMPORT_GAME_PLAYER_HEIGHT;
-                black_player_rect.y = sy + 1;
-                black_player_rect.x = IMPORT_GAME_SX + IMPORT_GAME_LEFT_MARGIN + IMPORT_GAME_DATE_WIDTH;
-                if (winner == IMPORT_GAME_WINNER_BLACK) {
-                    black_player_rect.draw(getData().colors.darkred);
-                } else if (winner == IMPORT_GAME_WINNER_WHITE) {
-                    black_player_rect.draw(getData().colors.darkblue);
-                } else if (winner == IMPORT_GAME_WINNER_DRAW) {
-                    black_player_rect.draw(getData().colors.chocolate);
-                }
-                int upper_center_y = black_player_rect.y + black_player_rect.h / 2;
-                for (int font_size = 15; font_size >= 12; --font_size) {
-                    if (getData().fonts.font(games[i].black_player).region(font_size, Vec2{0, 0}).w <= IMPORT_GAME_PLAYER_WIDTH - 4) {
-                        getData().fonts.font(games[i].black_player).draw(font_size, Arg::rightCenter(black_player_rect.x + IMPORT_GAME_PLAYER_WIDTH - 2, upper_center_y), getData().colors.white);
-                        break;
-                    } else if (font_size == 12) {
-                        String player = games[i].black_player;
-                        while (getData().fonts.font(player).region(font_size, Vec2{0, 0}).w > IMPORT_GAME_PLAYER_WIDTH - 4) {
-                            for (int i = 0; i < 4; ++i) {
-                                player.pop_back();
+            
+                if (row < (int)folders_display.size()) {
+                    // Folder row
+                    String fname = folders_display[row];
+                    // Draw folder name (left)
+                    getData().fonts.font(fname).draw(15, IMPORT_GAME_SX + IMPORT_GAME_LEFT_MARGIN + 10, sy + IMPORT_GAME_PLAYER_HEIGHT / 2, getData().colors.white);
+                    // Click to navigate
+                    if (Rect(IMPORT_GAME_SX, sy, IMPORT_GAME_WIDTH, IMPORT_GAME_HEIGHT).leftClicked()) {
+                        if (fname == U"..") {
+                            // go up
+                            if (subfolder.size()) {
+                                // remove last component
+                                std::string s = subfolder;
+                                if (s.back() == '/') s.pop_back();
+                                size_t pos = s.find_last_of('/');
+                                if (pos == std::string::npos) subfolder.clear();
+                                else subfolder = s.substr(0, pos);
                             }
-                            player += U"...";
+                        } else {
+                            if (subfolder.size()) subfolder += "/";
+                            subfolder += fname.narrow();
                         }
-                        getData().fonts.font(player).draw(font_size, Arg::rightCenter(black_player_rect.x + IMPORT_GAME_PLAYER_WIDTH - 2, upper_center_y), getData().colors.white);
+                        enumerate_current_dir();
+                        load_games();
+                        init_scroll_manager();
+                        return;
                     }
-                }
-                // score
-                String black_score = U"??";
-                String white_score = U"??";
-                if (games[i].black_score != GAME_DISCS_UNDEFINED && games[i].white_score != GAME_DISCS_UNDEFINED) {
-                    black_score = Format(games[i].black_score);
-                    white_score = Format(games[i].white_score);
-                }
-                double hyphen_w = getData().fonts.font(U"-").region(15, Vec2{0, 0}).w;
-                getData().fonts.font(black_score).draw(15, Arg::rightCenter(black_player_rect.x + IMPORT_GAME_PLAYER_WIDTH + IMPORT_GAME_SCORE_WIDTH / 2 - hyphen_w / 2 - 1, upper_center_y), getData().colors.white);
-                getData().fonts.font(U"-").draw(15, Arg::center(black_player_rect.x + IMPORT_GAME_PLAYER_WIDTH + IMPORT_GAME_SCORE_WIDTH / 2, upper_center_y), getData().colors.white);
-                getData().fonts.font(white_score).draw(15, Arg::leftCenter(black_player_rect.x + IMPORT_GAME_PLAYER_WIDTH + IMPORT_GAME_SCORE_WIDTH / 2 + hyphen_w / 2 + 1, upper_center_y), getData().colors.white);
-                // player (white)
-                Rect white_player_rect;
-                white_player_rect.w = IMPORT_GAME_PLAYER_WIDTH;
-                white_player_rect.h = IMPORT_GAME_PLAYER_HEIGHT;
-                white_player_rect.y = sy + 1;
-                white_player_rect.x = black_player_rect.x + IMPORT_GAME_PLAYER_WIDTH + IMPORT_GAME_SCORE_WIDTH;
-                if (winner == IMPORT_GAME_WINNER_BLACK) {
-                    white_player_rect.draw(getData().colors.darkblue);
-                } else if (winner == IMPORT_GAME_WINNER_WHITE) {
-                    white_player_rect.draw(getData().colors.darkred);
-                } else if (winner == IMPORT_GAME_WINNER_DRAW) {
-                    white_player_rect.draw(getData().colors.chocolate);
-                }
-                for (int font_size = 15; font_size >= 12; --font_size) {
-                    if (getData().fonts.font(games[i].white_player).region(font_size, Vec2{0, 0}).w <= IMPORT_GAME_PLAYER_WIDTH - 4) {
-                        getData().fonts.font(games[i].white_player).draw(font_size, Arg::leftCenter(white_player_rect.x + 2, upper_center_y), getData().colors.white);
-                        break;
-                    } else if (font_size == 12) {
-                        String player = games[i].white_player;
-                        while (getData().fonts.font(player).region(font_size, Vec2{0, 0}).w > IMPORT_GAME_PLAYER_WIDTH - 4) {
-                            for (int i = 0; i < 4; ++i) {
-                                player.pop_back();
+                } else {
+                    // Game row
+                    int i = row - (int)folders_display.size();
+                    int winner = -1;
+                    if (games[i].black_score != GAME_DISCS_UNDEFINED && games[i].white_score != GAME_DISCS_UNDEFINED) {
+                        if (games[i].black_score > games[i].white_score) {
+                            winner = IMPORT_GAME_WINNER_BLACK;
+                        } else if (games[i].black_score < games[i].white_score) {
+                            winner = IMPORT_GAME_WINNER_WHITE;
+                        } else {
+                            winner = IMPORT_GAME_WINNER_DRAW;
+                        }
+                    }
+                    delete_buttons[i].move(IMPORT_GAME_SX + 1, sy + 1);
+                    delete_buttons[i].draw();
+                    if (delete_buttons[i].clicked()) {
+                        delete_game(i);
+                    }
+                    String date = games[i].date.substr(0, 10).replace(U"_", U"/");
+                    getData().fonts.font(date).draw(15, IMPORT_GAME_SX + IMPORT_GAME_LEFT_MARGIN + 10, sy + 2, getData().colors.white);
+                    // player (black)
+                    Rect black_player_rect;
+                    black_player_rect.w = IMPORT_GAME_PLAYER_WIDTH;
+                    black_player_rect.h = IMPORT_GAME_PLAYER_HEIGHT;
+                    black_player_rect.y = sy + 1;
+                    black_player_rect.x = IMPORT_GAME_SX + IMPORT_GAME_LEFT_MARGIN + IMPORT_GAME_DATE_WIDTH;
+                    if (winner == IMPORT_GAME_WINNER_BLACK) {
+                        black_player_rect.draw(getData().colors.darkred);
+                    } else if (winner == IMPORT_GAME_WINNER_WHITE) {
+                        black_player_rect.draw(getData().colors.darkblue);
+                    } else if (winner == IMPORT_GAME_WINNER_DRAW) {
+                        black_player_rect.draw(getData().colors.chocolate);
+                    }
+                    int upper_center_y = black_player_rect.y + black_player_rect.h / 2;
+                    for (int font_size = 15; font_size >= 12; --font_size) {
+                        if (getData().fonts.font(games[i].black_player).region(font_size, Vec2{0, 0}).w <= IMPORT_GAME_PLAYER_WIDTH - 4) {
+                            getData().fonts.font(games[i].black_player).draw(font_size, Arg::rightCenter(black_player_rect.x + IMPORT_GAME_PLAYER_WIDTH - 2, upper_center_y), getData().colors.white);
+                            break;
+                        } else if (font_size == 12) {
+                            String player = games[i].black_player;
+                            while (getData().fonts.font(player).region(font_size, Vec2{0, 0}).w > IMPORT_GAME_PLAYER_WIDTH - 4) {
+                                for (int i2 = 0; i2 < 4; ++i2) {
+                                    player.pop_back();
+                                }
+                                player += U"...";
                             }
-                            player += U"...";
+                            getData().fonts.font(player).draw(font_size, Arg::rightCenter(black_player_rect.x + IMPORT_GAME_PLAYER_WIDTH - 2, upper_center_y), getData().colors.white);
                         }
-                        getData().fonts.font(player).draw(font_size, Arg::leftCenter(white_player_rect.x + 2, upper_center_y), getData().colors.white);
                     }
-                }
-                getData().fonts.font(games[i].memo).draw(12, IMPORT_GAME_SX + IMPORT_GAME_LEFT_MARGIN + 10, black_player_rect.y + black_player_rect.h, getData().colors.white);
-                import_buttons[i].move(IMPORT_GAME_BUTTON_SX, sy + IMPORT_GAME_BUTTON_SY);
-                import_buttons[i].draw();
-                if (import_buttons[i].clicked()) {
-                    import_game(i);
+                    // score
+                    String black_score = U"??";
+                    String white_score = U"??";
+                    if (games[i].black_score != GAME_DISCS_UNDEFINED && games[i].white_score != GAME_DISCS_UNDEFINED) {
+                        black_score = Format(games[i].black_score);
+                        white_score = Format(games[i].white_score);
+                    }
+                    double hyphen_w = getData().fonts.font(U"-").region(15, Vec2{0, 0}).w;
+                    getData().fonts.font(black_score).draw(15, Arg::rightCenter(black_player_rect.x + IMPORT_GAME_PLAYER_WIDTH + IMPORT_GAME_SCORE_WIDTH / 2 - hyphen_w / 2 - 1, upper_center_y), getData().colors.white);
+                    getData().fonts.font(U"-").draw(15, Arg::center(black_player_rect.x + IMPORT_GAME_PLAYER_WIDTH + IMPORT_GAME_SCORE_WIDTH / 2, upper_center_y), getData().colors.white);
+                    getData().fonts.font(white_score).draw(15, Arg::leftCenter(black_player_rect.x + IMPORT_GAME_PLAYER_WIDTH + IMPORT_GAME_SCORE_WIDTH / 2 + hyphen_w / 2 + 1, upper_center_y), getData().colors.white);
+                    // player (white)
+                    Rect white_player_rect;
+                    white_player_rect.w = IMPORT_GAME_PLAYER_WIDTH;
+                    white_player_rect.h = IMPORT_GAME_PLAYER_HEIGHT;
+                    white_player_rect.y = sy + 1;
+                    white_player_rect.x = black_player_rect.x + IMPORT_GAME_PLAYER_WIDTH + IMPORT_GAME_SCORE_WIDTH;
+                    if (winner == IMPORT_GAME_WINNER_BLACK) {
+                        white_player_rect.draw(getData().colors.darkblue);
+                    } else if (winner == IMPORT_GAME_WINNER_WHITE) {
+                        white_player_rect.draw(getData().colors.darkred);
+                    } else if (winner == IMPORT_GAME_WINNER_DRAW) {
+                        white_player_rect.draw(getData().colors.chocolate);
+                    }
+                    for (int font_size = 15; font_size >= 12; --font_size) {
+                        if (getData().fonts.font(games[i].white_player).region(font_size, Vec2{0, 0}).w <= IMPORT_GAME_PLAYER_WIDTH - 4) {
+                            getData().fonts.font(games[i].white_player).draw(font_size, Arg::leftCenter(white_player_rect.x + 2, upper_center_y), getData().colors.white);
+                            break;
+                        } else if (font_size == 12) {
+                            String player = games[i].white_player;
+                            while (getData().fonts.font(player).region(font_size, Vec2{0, 0}).w > IMPORT_GAME_PLAYER_WIDTH - 4) {
+                                for (int i2 = 0; i2 < 4; ++i2) {
+                                    player.pop_back();
+                                }
+                                player += U"...";
+                            }
+                            getData().fonts.font(player).draw(font_size, Arg::leftCenter(white_player_rect.x + 2, upper_center_y), getData().colors.white);
+                        }
+                    }
+                    getData().fonts.font(games[i].memo).draw(12, IMPORT_GAME_SX + IMPORT_GAME_LEFT_MARGIN + 10, black_player_rect.y + black_player_rect.h, getData().colors.white);
+                    import_buttons[i].move(IMPORT_GAME_BUTTON_SX, sy + IMPORT_GAME_BUTTON_SY);
+                    import_buttons[i].draw();
+                    if (import_buttons[i].clicked()) {
+                        import_game(i);
+                    }
                 }
                 sy += IMPORT_GAME_HEIGHT;
             }
-            if (strt_idx_int + IMPORT_GAME_N_GAMES_ON_WINDOW < (int)games.size()) {
+            int total_rows2 = (int)folders_display.size() + (int)games.size();
+            if (strt_idx_int + IMPORT_GAME_N_GAMES_ON_WINDOW < total_rows2) {
                 getData().fonts.font(U"︙").draw(15, Arg::bottomCenter = Vec2{ X_CENTER, 415}, getData().colors.white);
             }
             scroll_manager.draw();
@@ -477,7 +495,8 @@ public:
 
 private:
     void init_scroll_manager() {
-        scroll_manager.init(770, IMPORT_GAME_SY + 8, 10, IMPORT_GAME_HEIGHT * IMPORT_GAME_N_GAMES_ON_WINDOW, 20, (int)games.size(), IMPORT_GAME_N_GAMES_ON_WINDOW, IMPORT_GAME_SX, 73, IMPORT_GAME_WIDTH + 10, IMPORT_GAME_HEIGHT * IMPORT_GAME_N_GAMES_ON_WINDOW);
+        int total = (int)folders_display.size() + (int)games.size();
+        scroll_manager.init(770, IMPORT_GAME_SY + 8, 10, IMPORT_GAME_HEIGHT * IMPORT_GAME_N_GAMES_ON_WINDOW, 20, total, IMPORT_GAME_N_GAMES_ON_WINDOW, IMPORT_GAME_SX, 73, IMPORT_GAME_WIDTH + 10, IMPORT_GAME_HEIGHT * IMPORT_GAME_N_GAMES_ON_WINDOW);
     }
 
     void import_game(int idx) {
@@ -626,6 +645,30 @@ private:
             button.init(0, 0, 15, delete_button_image);
             delete_buttons.emplace_back(button);
         }
+        init_scroll_manager();
+    }
+
+    // Enumerate current directory (folders_display and parent entry)
+    void enumerate_current_dir() {
+        folders_display.clear();
+        has_parent = !subfolder.empty();
+        if (has_parent) folders_display.emplace_back(U"..");
+        String base = Unicode::Widen(getData().directories.document_dir) + U"games/" + Unicode::Widen(subfolder);
+        if (base.size() && base.back() != U'/') base += U"/";
+        Array<FilePath> list = FileSystem::DirectoryContents(base);
+        Array<String> real_folders;
+        for (const auto& path : list) {
+            if (FileSystem::IsDirectory(path)) {
+                String name = path;
+                while (name.size() && (name.back() == U'/' || name.back() == U'\\')) name.pop_back();
+                size_t pos = name.lastIndexOf(U'/');
+                if (pos == String::npos) pos = name.lastIndexOf(U'\\');
+                if (pos != String::npos) name = name.substr(pos + 1);
+                if (name.size()) real_folders.emplace_back(name);
+            }
+        }
+        std::sort(real_folders.begin(), real_folders.end());
+        for (auto& n : real_folders) folders_display.emplace_back(n);
         init_scroll_manager();
     }
 };
