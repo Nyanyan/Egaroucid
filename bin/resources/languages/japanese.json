@@ -168,7 +168,11 @@
         "you_can_drag_and_drop_game_file": "ゲームファイルをドラッグ&ドロップ可能",
         "save_subfolder": "保存先サブフォルダ (games/ 以下)",
         "load_subfolder": "読み込みサブフォルダ (games/ 以下)",
-        "games_root": "(games 直下)"
+        "games_root": "(games 直下)",
+        "new_folder": "新しいフォルダ",
+        "create": "作成",
+        "save_here": "ここに保存",
+        "saving": "保存中..."
     },
     "display": {
         "display": "表示",

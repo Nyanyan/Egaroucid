@@ -168,7 +168,11 @@
         "you_can_drag_and_drop_game_file": "可拖放對局檔進行匯入",
         "save_subfolder": "儲存至子資料夾（位於 games/ 下）",
         "load_subfolder": "從子資料夾載入（位於 games/ 下）",
-        "games_root": "（games 根目錄）"
+    "games_root": "（games 根目錄）",
+    "new_folder": "新增資料夾",
+    "create": "建立",
+    "save_here": "儲存到這裡",
+    "saving": "正在儲存..."
     },
     "display": {
         "display": "顯示",
