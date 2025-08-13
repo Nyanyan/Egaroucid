@@ -16,6 +16,7 @@
 #include <sstream>
 #include "./../engine/engine_all.hpp"
 #include "function/function_all.hpp"
+#include "draw.hpp"
 
 class Export_game : public App::Scene {
 private:
@@ -67,9 +68,10 @@ public:
         if (System::GetUserActions() & UserAction::CloseButtonClicked) {
             changeScene(U"Close", SCENE_FADE_TIME);
         }
+        Scene::SetBackground(getData().colors.green);
+
         // Saving mode: handled first
         if (is_saving) {
-            Scene::SetBackground(getData().colors.green);
             getData().fonts.font(language.get("in_out", "saving")).draw(30, Arg::center(X_CENTER, Y_CENTER), getData().colors.white);
             if (!saving_started) {
                 saving_started = true; // ensure one frame shows
@@ -81,267 +83,134 @@ public:
             return;
         }
 
-        // Folder picker mode: draw exclusively and return
-        if (show_folder_picker) {
-            Scene::SetBackground(getData().colors.green);
-            // Path label
-            String path_label = U"games/" + Unicode::Widen(picker_subfolder);
-            getData().fonts.font(language.get("in_out", "save_subfolder")).draw(20, Arg::topCenter(X_CENTER, 10), getData().colors.white);
-            getData().fonts.font(path_label).draw(15, Arg::topCenter(X_CENTER, 40), getData().colors.white);
-            // List
-            int sy = IMPORT_GAME_SY;
-            int strt_idx_int = folder_scroll_manager.get_strt_idx_int();
-            if (strt_idx_int > 0) {
-                getData().fonts.font(U"︙").draw(15, Arg::bottomCenter = Vec2{ X_CENTER, sy }, getData().colors.white);
-            }
-            sy += 8;
-            for (int row = strt_idx_int; row < std::min((int)save_folders_display.size(), strt_idx_int + IMPORT_GAME_N_GAMES_ON_WINDOW); ++row) {
-                Rect rect;
-                rect.y = sy;
-                rect.x = IMPORT_GAME_SX;
-                rect.w = IMPORT_GAME_WIDTH;
-                rect.h = IMPORT_GAME_HEIGHT;
-                if (row % 2) {
-                    rect.draw(getData().colors.green).drawFrame(1.0, getData().colors.white);
-                } else {
-                    rect.draw(getData().colors.dark_green).drawFrame(1.0, getData().colors.white);
-                }
-                String fname = save_folders_display[row];
-                getData().fonts.font(fname).draw(15, IMPORT_GAME_SX + IMPORT_GAME_LEFT_MARGIN + 10, sy + IMPORT_GAME_PLAYER_HEIGHT / 2, getData().colors.white);
-                if (Rect(IMPORT_GAME_SX, sy, IMPORT_GAME_WIDTH, IMPORT_GAME_HEIGHT).leftClicked()) {
-                    if (fname == U"..") {
-                        if (!picker_subfolder.empty()) {
-                            std::string s = picker_subfolder;
-                            if (s.back() == '/') s.pop_back();
-                            size_t pos = s.find_last_of('/');
-                            if (pos == std::string::npos) picker_subfolder.clear();
-                            else picker_subfolder = s.substr(0, pos);
-                        }
-                    } else {
-                        if (!picker_subfolder.empty()) picker_subfolder += "/";
-                        picker_subfolder += fname.narrow();
-                    }
-                    enumerate_save_dir();
-                    init_folder_scroll_manager();
-                    return;
-                }
-                sy += IMPORT_GAME_HEIGHT;
-            }
-            if (folder_scroll_manager.get_strt_idx_int() + IMPORT_GAME_N_GAMES_ON_WINDOW < (int)save_folders_display.size()) {
-                getData().fonts.font(U"︙").draw(15, Arg::bottomCenter = Vec2{ X_CENTER, sy }, getData().colors.white);
-            }
-            folder_scroll_manager.draw();
-            folder_scroll_manager.update();
-
-            // New folder UI (label + textarea + button in one horizontal row)
-            const int labelX = IMPORT_GAME_SX;
-            const int labelW = 140;   // fixed column width for the label
-            const int rowTop = BUTTON3_SY - 115; // align with textarea top
-
-            // Label
-            getData().fonts.font(language.get("in_out", "new_folder")).draw(15, Arg::rightCenter(IMPORT_GAME_SX + 200, EXPORT_GAME_CREATE_FOLDER_Y_CENTER), getData().colors.white);
-            // TextArea to the right of the label
-            SimpleGUI::TextArea(new_folder_area, Vec2{ IMPORT_GAME_SX + 205, EXPORT_GAME_CREATE_FOLDER_Y_CENTER - 18 }, SizeF{ 300, 26 }, 64);
-
-            // Button to the right of the textarea
-            create_folder_button.draw();
-            if (create_folder_button.clicked()) {
-                String s = new_folder_area.text.replaced(U"\r", U"").replaced(U"\n", U"").replaced(U"\\", U"/");
-                while (s.size() && s.front() == U'/') s.erase(s.begin());
-                while (s.size() && s.back() == U'/') s.pop_back();
-                s.replace(U"..", U"");
-                if (s.size()) {
-                    String base = Unicode::Widen(getData().directories.document_dir) + U"games/" + Unicode::Widen(picker_subfolder);
-                    if (base.size() && base.back() != U'/') base += U"/";
-                    String target = base + s + U"/";
-                    FileSystem::CreateDirectories(target);
-                    new_folder_area.text.clear();
-                    new_folder_area.cursorPos = 0;
-                    new_folder_area.rebuildGlyphs();
-                    enumerate_save_dir();
-                    init_folder_scroll_manager();
-                }
-            }
-
-            // Action buttons
-            cancel_picker_button.draw();
-            if (cancel_picker_button.clicked() || KeyEscape.pressed()) {
-                show_folder_picker = false;
-                return;
-            }
-            save_here_button.draw();
-            if (save_here_button.clicked()) {
-                subfolder = picker_subfolder; // commit selection
-                show_folder_picker = false;
-                is_saving = true;
-                saving_started = false;
-                return;
-            }
-            return;
-        }
-        // Saving mode: full-screen, hide all other UI
-        if (is_saving) {
-            Scene::SetBackground(getData().colors.green);
-            getData().fonts.font(language.get("in_out", "saving")).draw(30, Arg::center(X_CENTER, Y_CENTER), getData().colors.white);
-            if (!saving_started) {
-                saving_started = true; // show at least one frame
-                return;
-            }
-            export_game(pending_history);
-            getData().graph_resources.need_init = false;
-            changeScene(U"Main_scene", SCENE_FADE_TIME);
-            return;
-        }
-        getData().fonts.font(language.get("in_out", "output_game")).draw(25, Arg::topCenter(X_CENTER, 10), getData().colors.white);
-        getData().fonts.font(language.get("in_out", "player_name")).draw(15, Arg::topCenter(X_CENTER, 47), getData().colors.white);
-        SimpleGUI::TextArea(text_area[BLACK_PLAYER_IDX], Vec2{X_CENTER - EXPORT_GAME_PLAYER_WIDTH, 70}, SizeF{EXPORT_GAME_PLAYER_WIDTH, EXPORT_GAME_PLAYER_HEIGHT}, SimpleGUI::PreferredTextAreaMaxChars);
-        SimpleGUI::TextArea(text_area[WHITE_PLAYER_IDX], Vec2{X_CENTER, 70}, SizeF{EXPORT_GAME_PLAYER_WIDTH, EXPORT_GAME_PLAYER_HEIGHT}, SimpleGUI::PreferredTextAreaMaxChars);
-        Circle(X_CENTER - EXPORT_GAME_PLAYER_WIDTH - EXPORT_GAME_RADIUS - 20, 70 + EXPORT_GAME_RADIUS, EXPORT_GAME_RADIUS).draw(getData().colors.black);
-        Circle(X_CENTER + EXPORT_GAME_PLAYER_WIDTH + EXPORT_GAME_RADIUS + 20, 70 + EXPORT_GAME_RADIUS, EXPORT_GAME_RADIUS).draw(getData().colors.white);
-        // Memo label / counter / textbox (slightly higher and smaller)
-        const int memo_label_y = 110;
-        const int memo_box_y = 130;
-        getData().fonts.font(language.get("in_out", "memo")).draw(15, Arg::topCenter(X_CENTER, memo_label_y), getData().colors.white);
-        getData().fonts.font(Format(text_area[MEMO_IDX].text.size()) + U"/" + Format(TEXTBOX_MAX_CHARS) + U" " + language.get("common", "characters")).draw(15, Arg::topRight(X_CENTER + EXPORT_GAME_MEMO_WIDTH / 2, memo_label_y), getData().colors.white);
-        SimpleGUI::TextArea(text_area[MEMO_IDX], Vec2{X_CENTER - EXPORT_GAME_MEMO_WIDTH / 2, memo_box_y}, SizeF{EXPORT_GAME_MEMO_WIDTH, EXPORT_GAME_MEMO_HEIGHT}, TEXTBOX_MAX_CHARS);
-        // Tab移動: black -> white -> memo -> black（フォルダ入力は使わない）
-        auto focus_next_from = [&](int idx) {
-            // deactivate current
-            text_area[idx].active = false;
-            text_area[(idx + 1) % 3].active = true;
-        };
-        for (int i = 0; i < 3; ++i) {
-            std::string str = text_area[i].text.narrow();
-            if (str.find('\t') != std::string::npos) {
-                text_area[i].text.replace(U"\t", U"");
-                text_area[i].cursorPos = text_area[i].text.size();
-                text_area[i].rebuildGlyphs();
-                focus_next_from(i);
-            }
-            if ((str.find('\n') != std::string::npos || str.find('\r') != std::string::npos) && i != MEMO_IDX) {
-                text_area[i].text.replace(U"\r", U"").replace(U"\n", U" ");
-                text_area[i].cursorPos = text_area[i].text.size();
-                text_area[i].rebuildGlyphs();
-            }
-        }
-        getData().game_information.black_player_name = text_area[BLACK_PLAYER_IDX].text;
-        getData().game_information.white_player_name = text_area[WHITE_PLAYER_IDX].text;
-        getData().game_information.memo = text_area[MEMO_IDX].text;
-        back_button.draw();
-        export_main_button.draw();
-        export_this_board_button.draw();
         if (!show_folder_picker) {
+            getData().fonts.font(language.get("in_out", "output_game")).draw(25, Arg::topCenter(X_CENTER, 10), getData().colors.white);
+            getData().fonts.font(language.get("in_out", "player_name")).draw(15, Arg::topCenter(X_CENTER, 47), getData().colors.white);
+            SimpleGUI::TextArea(text_area[BLACK_PLAYER_IDX], Vec2{X_CENTER - EXPORT_GAME_PLAYER_WIDTH, 70}, SizeF{EXPORT_GAME_PLAYER_WIDTH, EXPORT_GAME_PLAYER_HEIGHT}, SimpleGUI::PreferredTextAreaMaxChars);
+            SimpleGUI::TextArea(text_area[WHITE_PLAYER_IDX], Vec2{X_CENTER, 70}, SizeF{EXPORT_GAME_PLAYER_WIDTH, EXPORT_GAME_PLAYER_HEIGHT}, SimpleGUI::PreferredTextAreaMaxChars);
+            Circle(X_CENTER - EXPORT_GAME_PLAYER_WIDTH - EXPORT_GAME_RADIUS - 20, 70 + EXPORT_GAME_RADIUS, EXPORT_GAME_RADIUS).draw(getData().colors.black);
+            Circle(X_CENTER + EXPORT_GAME_PLAYER_WIDTH + EXPORT_GAME_RADIUS + 20, 70 + EXPORT_GAME_RADIUS, EXPORT_GAME_RADIUS).draw(getData().colors.white);
+            // Memo label / counter / textbox (slightly higher and smaller)
+            const int memo_label_y = 110;
+            const int memo_box_y = 130;
+            getData().fonts.font(language.get("in_out", "memo")).draw(15, Arg::topCenter(X_CENTER, memo_label_y), getData().colors.white);
+            getData().fonts.font(Format(text_area[MEMO_IDX].text.size()) + U"/" + Format(TEXTBOX_MAX_CHARS) + U" " + language.get("common", "characters")).draw(15, Arg::topRight(X_CENTER + EXPORT_GAME_MEMO_WIDTH / 2, memo_label_y), getData().colors.white);
+            SimpleGUI::TextArea(text_area[MEMO_IDX], Vec2{X_CENTER - EXPORT_GAME_MEMO_WIDTH / 2, memo_box_y}, SizeF{EXPORT_GAME_MEMO_WIDTH, EXPORT_GAME_MEMO_HEIGHT}, TEXTBOX_MAX_CHARS);
+            // Tab移動: black -> white -> memo -> black（フォルダ入力は使わない）
+            auto focus_next_from = [&](int idx) {
+                // deactivate current
+                text_area[idx].active = false;
+                text_area[(idx + 1) % 3].active = true;
+            };
+            for (int i = 0; i < 3; ++i) {
+                std::string str = text_area[i].text.narrow();
+                if (str.find('\t') != std::string::npos) {
+                    text_area[i].text.replace(U"\t", U"");
+                    text_area[i].cursorPos = text_area[i].text.size();
+                    text_area[i].rebuildGlyphs();
+                    focus_next_from(i);
+                }
+                if ((str.find('\n') != std::string::npos || str.find('\r') != std::string::npos) && i != MEMO_IDX) {
+                    text_area[i].text.replace(U"\r", U"").replace(U"\n", U" ");
+                    text_area[i].cursorPos = text_area[i].text.size();
+                    text_area[i].rebuildGlyphs();
+                }
+            }
+            getData().game_information.black_player_name = text_area[BLACK_PLAYER_IDX].text;
+            getData().game_information.white_player_name = text_area[WHITE_PLAYER_IDX].text;
+            getData().game_information.memo = text_area[MEMO_IDX].text;
+            back_button.draw();
+            export_main_button.draw();
+            export_this_board_button.draw();
             if (back_button.clicked() || KeyEscape.pressed()) {
                 getData().graph_resources.need_init = false;
                 changeScene(U"Main_scene", SCENE_FADE_TIME);
             }
-        } else {
-            if (KeyEscape.pressed()) {
-                show_folder_picker = false;
+            // Open folder picker after clicking save buttons
+            if ( export_main_button.clicked()) {
+                pending_history = getData().graph_resources.nodes[0];
+                picker_subfolder.clear();
+                enumerate_save_dir();
+                init_folder_scroll_manager();
+                new_folder_area.text.clear();
+                new_folder_area.cursorPos = 0;
+                new_folder_area.rebuildGlyphs();
+                show_folder_picker = true;
             }
-        }
-        // Open folder picker after clicking save buttons
-        if (!show_folder_picker && export_main_button.clicked()) {
-            pending_history = getData().graph_resources.nodes[0];
-            picker_subfolder.clear();
-            enumerate_save_dir();
-            init_folder_scroll_manager();
-            new_folder_area.text.clear();
-            new_folder_area.cursorPos = 0;
-            new_folder_area.rebuildGlyphs();
-            show_folder_picker = true;
-        }
-        if (!show_folder_picker && export_this_board_button.clicked()) {
-            std::vector<History_elem> history;
-            int inspect_switch_n_discs = INF;
-            if (getData().graph_resources.branch == 1) {
-                if (getData().graph_resources.nodes[GRAPH_MODE_INSPECT].size()) {
-                    inspect_switch_n_discs = getData().graph_resources.nodes[GRAPH_MODE_INSPECT][0].board.n_discs();
-                } else {
-                    std::cerr << "no node found in inspect mode" << std::endl;
+            if (export_this_board_button.clicked()) {
+                std::vector<History_elem> history;
+                int inspect_switch_n_discs = INF;
+                if (getData().graph_resources.branch == 1) {
+                    if (getData().graph_resources.nodes[GRAPH_MODE_INSPECT].size()) {
+                        inspect_switch_n_discs = getData().graph_resources.nodes[GRAPH_MODE_INSPECT][0].board.n_discs();
+                    } else {
+                        std::cerr << "no node found in inspect mode" << std::endl;
+                    }
                 }
-            }
-            for (History_elem& history_elem : getData().graph_resources.nodes[GRAPH_MODE_NORMAL]) {
-                if (history_elem.board.n_discs() >= inspect_switch_n_discs || history_elem.board.n_discs() > getData().history_elem.board.n_discs()) {
-                    break;
-                }
-                history.emplace_back(history_elem);
-            }
-            if (inspect_switch_n_discs != INF) {
-                for (History_elem& history_elem : getData().graph_resources.nodes[GRAPH_MODE_INSPECT]) {
-                    if (history_elem.board.n_discs() > getData().history_elem.board.n_discs()) {
+                for (History_elem& history_elem : getData().graph_resources.nodes[GRAPH_MODE_NORMAL]) {
+                    if (history_elem.board.n_discs() >= inspect_switch_n_discs || history_elem.board.n_discs() > getData().history_elem.board.n_discs()) {
                         break;
                     }
                     history.emplace_back(history_elem);
                 }
+                if (inspect_switch_n_discs != INF) {
+                    for (History_elem& history_elem : getData().graph_resources.nodes[GRAPH_MODE_INSPECT]) {
+                        if (history_elem.board.n_discs() > getData().history_elem.board.n_discs()) {
+                            break;
+                        }
+                        history.emplace_back(history_elem);
+                    }
+                }
+                pending_history.swap(history);
+                picker_subfolder.clear();
+                enumerate_save_dir();
+                init_folder_scroll_manager();
+                new_folder_area.text.clear();
+                new_folder_area.cursorPos = 0;
+                new_folder_area.rebuildGlyphs();
+                show_folder_picker = true;
             }
-            pending_history.swap(history);
-            picker_subfolder.clear();
-            enumerate_save_dir();
-            init_folder_scroll_manager();
-            new_folder_area.text.clear();
-            new_folder_area.cursorPos = 0;
-            new_folder_area.rebuildGlyphs();
-            show_folder_picker = true;
         }
 
         // Folder picker overlay UI
         if (show_folder_picker) {
-            // Dim background
-            Rect{0, 0, Scene::Width(), Scene::Height()}.draw(ColorF{0.0, 0.0, 0.0, 0.4});
-            // Panel
-            const int panelX = IMPORT_GAME_SX - 10;
-            const int panelY = 60;
-            const int panelW = IMPORT_GAME_WIDTH + 20;
-            const int panelH = IMPORT_GAME_HEIGHT * IMPORT_GAME_N_GAMES_ON_WINDOW + 120;
-            Rect{panelX, panelY, panelW, panelH}.draw(getData().colors.dark_green).drawFrame(2, 0, getData().colors.white);
             // Path label
+            getData().fonts.font(language.get("in_out", "save_subfolder")).draw(20, Arg::topCenter(X_CENTER, 10), getData().colors.white);
             String path_label = U"games/" + Unicode::Widen(picker_subfolder);
-            getData().fonts.font(path_label).draw(15, Arg::topCenter(X_CENTER, panelY + 8), getData().colors.white);
-            // List
-            int sy = IMPORT_GAME_SY;
-            int strt_idx_int = folder_scroll_manager.get_strt_idx_int();
-            if (strt_idx_int > 0) {
-                getData().fonts.font(U"︙").draw(15, Arg::bottomCenter = Vec2{ X_CENTER, sy }, getData().colors.white);
-            }
-            sy += 8;
-            for (int row = strt_idx_int; row < std::min((int)save_folders_display.size(), strt_idx_int + IMPORT_GAME_N_GAMES_ON_WINDOW); ++row) {
-                Rect rect;
-                rect.y = sy;
-                rect.x = IMPORT_GAME_SX;
-                rect.w = IMPORT_GAME_WIDTH;
-                rect.h = IMPORT_GAME_HEIGHT;
-                if (row % 2) {
-                    rect.draw(getData().colors.green).drawFrame(1.0, getData().colors.white);
-                } else {
-                    rect.draw(getData().colors.dark_green).drawFrame(1.0, getData().colors.white);
-                }
-                String fname = save_folders_display[row];
-                getData().fonts.font(fname).draw(15, IMPORT_GAME_SX + IMPORT_GAME_LEFT_MARGIN + 10, sy + IMPORT_GAME_PLAYER_HEIGHT / 2, getData().colors.white);
-                if (Rect(IMPORT_GAME_SX, sy, IMPORT_GAME_WIDTH, IMPORT_GAME_HEIGHT).leftClicked()) {
-                    if (fname == U"..") {
-                        if (!picker_subfolder.empty()) {
-                            std::string s = picker_subfolder;
-                            if (s.back() == '/') s.pop_back();
-                            size_t pos = s.find_last_of('/');
-                            if (pos == std::string::npos) picker_subfolder.clear();
-                            else picker_subfolder = s.substr(0, pos);
-                        }
-                    } else {
-                        if (!picker_subfolder.empty()) picker_subfolder += "/";
-                        picker_subfolder += fname.narrow();
-                    }
+            getData().fonts.font(path_label).draw(15, Arg::topCenter(X_CENTER, 30), getData().colors.white);
+            // Up button
+            if (!picker_subfolder.empty()) {
+                const Rect upRect(IMPORT_GAME_SX, 28, 28, 24);
+                upRect.rounded(4).draw(getData().colors.green).drawFrame(1.0, getData().colors.white);
+                getData().fonts.font(U"↑").draw(16, Arg::center(upRect.center()), getData().colors.white);
+                if (upRect.leftClicked()) {
+                    std::string s = picker_subfolder;
+                    if (!s.empty() && s.back() == '/') s.pop_back();
+                    size_t pos = s.find_last_of('/');
+                    if (pos == std::string::npos) picker_subfolder.clear();
+                    else picker_subfolder = s.substr(0, pos);
                     enumerate_save_dir();
                     init_folder_scroll_manager();
                     return;
                 }
-                sy += IMPORT_GAME_HEIGHT;
             }
-            if (folder_scroll_manager.get_strt_idx_int() + IMPORT_GAME_N_GAMES_ON_WINDOW < (int)save_folders_display.size()) {
-                getData().fonts.font(U"︙").draw(15, Arg::bottomCenter = Vec2{ X_CENTER, panelY + panelH - 60 }, getData().colors.white);
+
+            // List via shared helper (folders only)
+            static std::vector<Game_abstract> emptyGames; // not used
+            static std::vector<Button> dummyImportBtns;   // not used
+            static std::vector<ImageButton> dummyDeleteBtns; // not used
+            auto pickRes = DrawExplorerList(
+                save_folders_display, emptyGames, dummyImportBtns, dummyDeleteBtns,
+                folder_scroll_manager, /*showGames=*/false,
+                getData().fonts, getData().colors, getData().resources);
+            if (pickRes.folderClicked) {
+                String fname = pickRes.clickedFolder;
+                if (!picker_subfolder.empty()) picker_subfolder += "/";
+                picker_subfolder += fname.narrow();
+                enumerate_save_dir();
+                init_folder_scroll_manager();
+                return;
             }
-            folder_scroll_manager.draw();
-            folder_scroll_manager.update();
 
             // New folder UI
             getData().fonts.font(language.get("in_out", "new_folder")).draw(13, IMPORT_GAME_SX, BUTTON3_SY - 140, getData().colors.white);
@@ -389,7 +258,6 @@ private:
     void enumerate_save_dir() {
         save_folders_display.clear();
         picker_has_parent = !picker_subfolder.empty();
-        if (picker_has_parent) save_folders_display.emplace_back(U"..");
         String base = Unicode::Widen(getData().directories.document_dir) + U"games/" + Unicode::Widen(picker_subfolder);
         if (base.size() && base.back() != U'/') base += U"/";
         Array<FilePath> list = FileSystem::DirectoryContents(base);
