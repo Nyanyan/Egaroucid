@@ -32,6 +32,7 @@ inline ExplorerDrawResult DrawExplorerList(
     std::vector<Button>& import_buttons,
     std::vector<ImageButton>& delete_buttons,
     Scroll_manager& scroll_manager,
+    bool showGames,
     FontsT& fonts,
     ColorsT& colors,
     ResourcesT& resources
@@ -43,7 +44,7 @@ inline ExplorerDrawResult DrawExplorerList(
         fonts.font(U"︙").draw(15, Arg::bottomCenter = Vec2{ X_CENTER, sy }, colors.white);
     }
     sy += 8;
-    int total_rows = (int)folders_display.size() + (int)games.size();
+    int total_rows = (int)folders_display.size() + (showGames ? (int)games.size() : 0);
     for (int row = strt_idx_int; row < std::min(total_rows, strt_idx_int + IMPORT_GAME_N_GAMES_ON_WINDOW); ++row) {
         Rect rect;
         rect.y = sy;
@@ -66,7 +67,7 @@ inline ExplorerDrawResult DrawExplorerList(
                 res.clickedFolder = fname;
                 return res;
             }
-        } else {
+    } else if (showGames) {
             int i = row - (int)folders_display.size();
             int winner = -1;
             if (games[i].black_score != GAME_DISCS_UNDEFINED && games[i].white_score != GAME_DISCS_UNDEFINED) {
@@ -163,7 +164,7 @@ inline ExplorerDrawResult DrawExplorerList(
         }
         sy += IMPORT_GAME_HEIGHT;
     }
-    int total_rows2 = (int)folders_display.size() + (int)games.size();
+    int total_rows2 = (int)folders_display.size() + (showGames ? (int)games.size() : 0);
     if (strt_idx_int + IMPORT_GAME_N_GAMES_ON_WINDOW < total_rows2) {
         fonts.font(U"︙").draw(15, Arg::bottomCenter = Vec2{ X_CENTER, 415}, colors.white);
     }
@@ -519,7 +520,9 @@ public:
                 }
             }
 
-            auto res = DrawExplorerList(folders_display, games, import_buttons, delete_buttons, scroll_manager, getData().fonts, getData().colors, getData().resources);
+            auto res = DrawExplorerList(
+                folders_display, games, import_buttons, delete_buttons, scroll_manager,
+                /*showGames=*/true, getData().fonts, getData().colors, getData().resources);
             if (res.folderClicked) {
                 String fname = res.clickedFolder;
                 if (subfolder.size()) subfolder += "/";
