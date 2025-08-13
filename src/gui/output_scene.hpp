@@ -64,7 +64,7 @@ public:
         // Subfolder input UI (place just above buttons area to avoid overlap)
         const int folder_label_y = BUTTON3_SY - 86;
         const int folder_box_y   = BUTTON3_SY - 60;
-        getData().fonts.font(U"保存先サブフォルダ (games/ 以下)").draw(15, Arg::topCenter(X_CENTER, folder_label_y), getData().colors.white);
+        getData().fonts.font(language.get("in_out", "save_subfolder")).draw(15, Arg::topCenter(X_CENTER, folder_label_y), getData().colors.white);
         SimpleGUI::TextArea(folder_area, Vec2{ X_CENTER - EXPORT_GAME_MEMO_WIDTH / 2, folder_box_y }, SizeF{ EXPORT_GAME_MEMO_WIDTH, 26 }, TEXTBOX_MAX_CHARS);
         // Tab navigation across 4 fields: black -> white -> memo -> folder -> black
         auto focus_next_from = [&](int idx) {

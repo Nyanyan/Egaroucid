@@ -326,7 +326,7 @@ public:
         }
         getData().fonts.font(language.get("in_out", "input_game")).draw(25, Arg::topCenter(X_CENTER, 10), getData().colors.white);
         // Subfolder input UI
-        getData().fonts.font(U"読み込みサブフォルダ (games/ 以下)").draw(13, Arg::topCenter(X_CENTER, 38), getData().colors.white);
+    getData().fonts.font(language.get("in_out", "load_subfolder")).draw(13, Arg::topCenter(X_CENTER, 38), getData().colors.white);
         folder_area.active = true;
         SimpleGUI::TextArea(folder_area, Vec2{ X_CENTER - IMPORT_GAME_WIDTH / 2, 58 }, SizeF{ IMPORT_GAME_WIDTH, 26 }, TEXTBOX_MAX_CHARS);
         // Sanitize and detect change
