@@ -305,38 +305,19 @@ private:
     Scroll_manager scroll_manager;
     Button back_button;
     bool failed;
+    // Subfolder input (under games/)
+    TextAreaEditState folder_area;
+    std::string subfolder; // sanitized current folder
+    std::string prev_subfolder;
 
 public:
     Import_game(const InitData& init) : IScene{ init } {
         back_button.init(BACK_BUTTON_SX, BACK_BUTTON_SY, BACK_BUTTON_WIDTH, BACK_BUTTON_HEIGHT, BACK_BUTTON_RADIUS, language.get("common", "back"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
         failed = false;
-        const String csv_path = Unicode::Widen(getData().directories.document_dir) + U"games/summary.csv";
-        const CSV csv{ csv_path };
-        if (csv) {
-            for (size_t row = 0; row < csv.rows(); ++row) {
-                Game_abstract game_abstract;
-                game_abstract.date = csv[row][0];
-                game_abstract.black_player = csv[row][1];
-                game_abstract.white_player = csv[row][2];
-                game_abstract.memo = csv[row][3];
-                game_abstract.black_score = ParseOr<int32>(csv[row][4], GAME_DISCS_UNDEFINED);
-                game_abstract.white_score = ParseOr<int32>(csv[row][5], GAME_DISCS_UNDEFINED);
-                games.emplace_back(game_abstract);
-            }
-        }
-        reverse(games.begin(), games.end());
-        for (int i = 0; i < (int)games.size(); ++i) {
-            Button button;
-            button.init(0, 0, IMPORT_GAME_BUTTON_WIDTH, IMPORT_GAME_BUTTON_HEIGHT, IMPORT_GAME_BUTTON_RADIUS, language.get("in_out", "import"), 15, getData().fonts.font, getData().colors.white, getData().colors.black);
-            import_buttons.emplace_back(button);
-        }
-        Texture delete_button_image = getData().resources.cross;
-        for (int i = 0; i < (int)games.size(); ++i) {
-            ImageButton button;
-            button.init(0, 0, 15, delete_button_image);
-            delete_buttons.emplace_back(button);
-        }
-        init_scroll_manager();
+        // Initialize subfolder empty
+        subfolder.clear();
+        prev_subfolder = subfolder;
+        load_games();
     }
 
     void update() override {
@@ -344,6 +325,22 @@ public:
             changeScene(U"Close", SCENE_FADE_TIME);
         }
         getData().fonts.font(language.get("in_out", "input_game")).draw(25, Arg::topCenter(X_CENTER, 10), getData().colors.white);
+        // Subfolder input UI
+        getData().fonts.font(U"読み込みサブフォルダ (games/ 以下)").draw(13, Arg::topCenter(X_CENTER, 38), getData().colors.white);
+        folder_area.active = true;
+        SimpleGUI::TextArea(folder_area, Vec2{ X_CENTER - IMPORT_GAME_WIDTH / 2, 58 }, SizeF{ IMPORT_GAME_WIDTH, 26 }, TEXTBOX_MAX_CHARS);
+        // Sanitize and detect change
+        {
+            String s = folder_area.text.replaced(U"\r", U"").replaced(U"\n", U"").replaced(U"\\", U"/");
+            while (s.size() && s.front() == U'/') s.erase(s.begin());
+            while (s.size() && s.back() == U'/') s.pop_back();
+            s.replace(U"..", U"");
+            subfolder = s.narrow();
+        }
+        if (subfolder != prev_subfolder) {
+            prev_subfolder = subfolder;
+            load_games();
+        }
         back_button.draw();
         if (back_button.clicked() || KeyEscape.pressed()) {
             getData().graph_resources.need_init = false;
@@ -355,6 +352,8 @@ public:
             getData().fonts.font(language.get("in_out", "no_game_available")).draw(20, Arg::center(X_CENTER, Y_CENTER), getData().colors.white);
         } else {
             int sy = IMPORT_GAME_SY;
+            // shift down if folder UI overlaps
+            sy = std::max(sy, 90);
             int strt_idx_int = scroll_manager.get_strt_idx_int();
             if (strt_idx_int > 0) {
                 getData().fonts.font(U"︙").draw(15, Arg::bottomCenter = Vec2{ X_CENTER, sy }, getData().colors.white);
@@ -482,7 +481,7 @@ private:
     }
 
     void import_game(int idx) {
-        const String json_path = Unicode::Widen(getData().directories.document_dir) + U"games/" + games[idx].date + U".json";
+        const String json_path = get_base_dir() + games[idx].date + U".json";
         JSON game_json = JSON::Load(json_path);
         if (not game_json) {
             std::cerr << "can't open game" << std::endl;
@@ -559,10 +558,10 @@ private:
     }
 
     void delete_game(int idx) {
-        const String json_path = Unicode::Widen(getData().directories.document_dir) + U"games/" + games[idx].date + U".json";
+    const String json_path = get_base_dir() + games[idx].date + U".json";
         FileSystem::Remove(json_path);
 
-        const String csv_path = Unicode::Widen(getData().directories.document_dir) + U"games/summary.csv";
+    const String csv_path = get_base_dir() + U"summary.csv";
         CSV csv{ csv_path };
         CSV new_csv;
         for (int i = 0; i < (int)games.size(); ++i) {
@@ -585,6 +584,49 @@ private:
         }
         scroll_manager.set_strt_idx(strt_idx_double);
         std::cerr << "deleted game " << idx << std::endl;
+    }
+
+    // Helper: current base dir (games/ + optional subfolder + '/')
+    String get_base_dir() const {
+        String base = Unicode::Widen(getData().directories.document_dir) + U"games/";
+        if (subfolder.size()) {
+            base += Unicode::Widen(subfolder) + U"/";
+        }
+        return base;
+    }
+
+    // Reload games list from summary.csv in current folder
+    void load_games() {
+        games.clear();
+        import_buttons.clear();
+        delete_buttons.clear();
+        const String csv_path = get_base_dir() + U"summary.csv";
+        const CSV csv{ csv_path };
+        if (csv) {
+            for (size_t row = 0; row < csv.rows(); ++row) {
+                Game_abstract game_abstract;
+                game_abstract.date = csv[row][0];
+                game_abstract.black_player = csv[row][1];
+                game_abstract.white_player = csv[row][2];
+                game_abstract.memo = csv[row][3];
+                game_abstract.black_score = ParseOr<int32>(csv[row][4], GAME_DISCS_UNDEFINED);
+                game_abstract.white_score = ParseOr<int32>(csv[row][5], GAME_DISCS_UNDEFINED);
+                games.emplace_back(game_abstract);
+            }
+        }
+        reverse(games.begin(), games.end());
+        for (int i = 0; i < (int)games.size(); ++i) {
+            Button button;
+            button.init(0, 0, IMPORT_GAME_BUTTON_WIDTH, IMPORT_GAME_BUTTON_HEIGHT, IMPORT_GAME_BUTTON_RADIUS, language.get("in_out", "import"), 15, getData().fonts.font, getData().colors.white, getData().colors.black);
+            import_buttons.emplace_back(button);
+        }
+        Texture delete_button_image = getData().resources.cross;
+        for (int i = 0; i < (int)games.size(); ++i) {
+            ImageButton button;
+            button.init(0, 0, 15, delete_button_image);
+            delete_buttons.emplace_back(button);
+        }
+        init_scroll_manager();
     }
 };
 

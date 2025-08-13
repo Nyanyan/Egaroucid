@@ -26,6 +26,9 @@ private:
     static constexpr int BLACK_PLAYER_IDX = 0;
     static constexpr int WHITE_PLAYER_IDX = 1;
     static constexpr int MEMO_IDX = 2;
+    // Subfolder input (under games/)
+    TextAreaEditState folder_area; // relative path under games/
+    std::string subfolder; // cached sanitized folder string
 
 
 public:
@@ -52,27 +55,72 @@ public:
         SimpleGUI::TextArea(text_area[WHITE_PLAYER_IDX], Vec2{X_CENTER, 80}, SizeF{EXPORT_GAME_PLAYER_WIDTH, EXPORT_GAME_PLAYER_HEIGHT}, SimpleGUI::PreferredTextAreaMaxChars);
         Circle(X_CENTER - EXPORT_GAME_PLAYER_WIDTH - EXPORT_GAME_RADIUS - 20, 80 + EXPORT_GAME_RADIUS, EXPORT_GAME_RADIUS).draw(getData().colors.black);
         Circle(X_CENTER + EXPORT_GAME_PLAYER_WIDTH + EXPORT_GAME_RADIUS + 20, 80 + EXPORT_GAME_RADIUS, EXPORT_GAME_RADIUS).draw(getData().colors.white);
-        getData().fonts.font(language.get("in_out", "memo")).draw(15, Arg::topCenter(X_CENTER, 117), getData().colors.white);
-        getData().fonts.font(Format(text_area[MEMO_IDX].text.size()) + U"/" + Format(TEXTBOX_MAX_CHARS) + U" " + language.get("common", "characters")).draw(15, Arg::topRight(X_CENTER + EXPORT_GAME_MEMO_WIDTH / 2, 117), getData().colors.white);
-        SimpleGUI::TextArea(text_area[MEMO_IDX], Vec2{X_CENTER - EXPORT_GAME_MEMO_WIDTH / 2, 140}, SizeF{EXPORT_GAME_MEMO_WIDTH, EXPORT_GAME_MEMO_HEIGHT}, TEXTBOX_MAX_CHARS);
+    // Memo label / counter / textbox (slightly higher and smaller)
+    const int memo_label_y = 100; // move higher
+    const int memo_box_y = 120;   // move higher
+    const int memo_box_h = std::max(70, EXPORT_GAME_MEMO_HEIGHT - 120); // shrink more
+    getData().fonts.font(language.get("in_out", "memo")).draw(15, Arg::topCenter(X_CENTER, memo_label_y), getData().colors.white);
+    getData().fonts.font(Format(text_area[MEMO_IDX].text.size()) + U"/" + Format(TEXTBOX_MAX_CHARS) + U" " + language.get("common", "characters")).draw(15, Arg::topRight(X_CENTER + EXPORT_GAME_MEMO_WIDTH / 2, memo_label_y), getData().colors.white);
+    SimpleGUI::TextArea(text_area[MEMO_IDX], Vec2{X_CENTER - EXPORT_GAME_MEMO_WIDTH / 2, memo_box_y}, SizeF{EXPORT_GAME_MEMO_WIDTH, memo_box_h}, TEXTBOX_MAX_CHARS);
+    // Subfolder input UI (place just above buttons area to avoid overlap)
+    const int folder_label_y = BUTTON3_SY - 92; // raise further up
+    const int folder_box_y   = BUTTON3_SY - 66;
+    getData().fonts.font(U"保存先サブフォルダ (games/ 以下)").draw(13, Arg::topCenter(X_CENTER, folder_label_y), getData().colors.white);
+    SimpleGUI::TextArea(folder_area, Vec2{ X_CENTER - EXPORT_GAME_MEMO_WIDTH / 2, folder_box_y }, SizeF{ EXPORT_GAME_MEMO_WIDTH, 26 }, TEXTBOX_MAX_CHARS);
+        // Tab navigation across 4 fields: black -> white -> memo -> folder -> black
+        auto focus_next_from = [&](int idx) {
+            // deactivate current
+            text_area[idx].active = false;
+            if (idx == MEMO_IDX) {
+                folder_area.active = true;
+            } else {
+                text_area[(idx + 1) % 3].active = true;
+            }
+        };
         for (int i = 0; i < 3; ++i) {
             std::string str = text_area[i].text.narrow();
-            if (str.find("\t") != std::string::npos) {
-                text_area[i].active = false;
-                text_area[(i + 1) % 3].active = true;
+            if (str.find('\t') != std::string::npos) {
                 text_area[i].text.replace(U"\t", U"");
                 text_area[i].cursorPos = text_area[i].text.size();
                 text_area[i].rebuildGlyphs();
+                focus_next_from(i);
             }
-            if ((str.find("\n") != std::string::npos || str.find("\r") != std::string::npos) && i != MEMO_IDX) {
+            if ((str.find('\n') != std::string::npos || str.find('\r') != std::string::npos) && i != MEMO_IDX) {
                 text_area[i].text.replace(U"\r", U"").replace(U"\n", U" ");
                 text_area[i].cursorPos = text_area[i].text.size();
                 text_area[i].rebuildGlyphs();
             }
         }
+        // Folder field: sanitize newline, Tab moves to BLACK field
+        {
+            std::string fstr = folder_area.text.narrow();
+            bool tab_found = (fstr.find('\t') != std::string::npos);
+            if (tab_found) {
+                folder_area.text.replace(U"\t", U"");
+            }
+            if (fstr.find('\n') != std::string::npos || fstr.find('\r') != std::string::npos) {
+                folder_area.text.replace(U"\r", U"").replace(U"\n", U" ");
+            }
+            if (tab_found) {
+                folder_area.active = false;
+                text_area[BLACK_PLAYER_IDX].active = true;
+            }
+            folder_area.cursorPos = folder_area.text.size();
+            folder_area.rebuildGlyphs();
+        }
         getData().game_information.black_player_name = text_area[BLACK_PLAYER_IDX].text;
         getData().game_information.white_player_name = text_area[WHITE_PLAYER_IDX].text;
         getData().game_information.memo = text_area[MEMO_IDX].text;
+        // Sanitize folder input each frame
+        {
+            String s = folder_area.text.replaced(U"\r", U"").replaced(U"\n", U"").replaced(U"\\", U"/");
+            // trim leading and trailing '/'
+            while (s.size() && s.front() == U'/') s.erase(s.begin());
+            while (s.size() && s.back() == U'/') s.pop_back();
+            // very naive '..' removal for safety
+            s.replace(U"..", U"");
+            subfolder = s.narrow();
+        }
         back_button.draw();
         export_main_button.draw();
         export_this_board_button.draw();
@@ -155,10 +203,17 @@ private:
                 json[n_discs][GAME_NEXT_POLICY] = -1;
             }
         }
-        const String save_path = Unicode::Widen(getData().directories.document_dir) + U"games/" + date + U".json";
+        // Build directory path: appdata/games/(subfolder)/
+        String base_dir = Unicode::Widen(getData().directories.document_dir) + U"games/";
+        String folder = Unicode::Widen(subfolder);
+        if (folder.size()) {
+            base_dir += folder + U"/";
+        }
+        FileSystem::CreateDirectories(base_dir);
+        const String save_path = base_dir + date + U".json";
         json.save(save_path);
 
-        const String csv_path = Unicode::Widen(getData().directories.document_dir) + U"games/summary.csv";
+        const String csv_path = base_dir + U"summary.csv";
         CSV csv{ csv_path };
         String memo_summary_all = getData().game_information.memo.replaced(U"\r", U"").replaced(U"\n", U" ");
         String memo_summary;
