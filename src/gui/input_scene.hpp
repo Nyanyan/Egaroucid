@@ -360,8 +360,10 @@ public:
                 if (row < (int)folders_display.size()) {
                     // Folder row
                     String fname = folders_display[row];
-                    // Draw folder name (left)
-                    getData().fonts.font(fname).draw(15, IMPORT_GAME_SX + IMPORT_GAME_LEFT_MARGIN + 10, sy + IMPORT_GAME_PLAYER_HEIGHT / 2, getData().colors.white);
+                    // Draw folder name
+                    double folder_icon_scale = (double)(rect.h - 2 * 10) / (double)getData().resources.folder.height();
+                    getData().resources.folder.scaled(folder_icon_scale).draw(Arg::leftCenter(IMPORT_GAME_SX + IMPORT_GAME_LEFT_MARGIN + 10, sy + IMPORT_GAME_HEIGHT / 2));
+                    getData().fonts.font(fname).draw(15, Arg::leftCenter(IMPORT_GAME_SX + IMPORT_GAME_LEFT_MARGIN + 10 + 30, sy + IMPORT_GAME_HEIGHT / 2), getData().colors.white);
                     // Click to navigate
                     if (Rect(IMPORT_GAME_SX, sy, IMPORT_GAME_WIDTH, IMPORT_GAME_HEIGHT).leftClicked()) {
                         if (fname == U"..") {
