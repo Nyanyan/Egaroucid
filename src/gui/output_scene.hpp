@@ -50,23 +50,22 @@ public:
             changeScene(U"Close", SCENE_FADE_TIME);
         }
         getData().fonts.font(language.get("in_out", "output_game")).draw(25, Arg::topCenter(X_CENTER, 10), getData().colors.white);
-        getData().fonts.font(language.get("in_out", "player_name")).draw(15, Arg::topCenter(X_CENTER, 57), getData().colors.white);
-        SimpleGUI::TextArea(text_area[BLACK_PLAYER_IDX], Vec2{X_CENTER - EXPORT_GAME_PLAYER_WIDTH, 80}, SizeF{EXPORT_GAME_PLAYER_WIDTH, EXPORT_GAME_PLAYER_HEIGHT}, SimpleGUI::PreferredTextAreaMaxChars);
-        SimpleGUI::TextArea(text_area[WHITE_PLAYER_IDX], Vec2{X_CENTER, 80}, SizeF{EXPORT_GAME_PLAYER_WIDTH, EXPORT_GAME_PLAYER_HEIGHT}, SimpleGUI::PreferredTextAreaMaxChars);
-        Circle(X_CENTER - EXPORT_GAME_PLAYER_WIDTH - EXPORT_GAME_RADIUS - 20, 80 + EXPORT_GAME_RADIUS, EXPORT_GAME_RADIUS).draw(getData().colors.black);
-        Circle(X_CENTER + EXPORT_GAME_PLAYER_WIDTH + EXPORT_GAME_RADIUS + 20, 80 + EXPORT_GAME_RADIUS, EXPORT_GAME_RADIUS).draw(getData().colors.white);
-    // Memo label / counter / textbox (slightly higher and smaller)
-    const int memo_label_y = 100; // move higher
-    const int memo_box_y = 120;   // move higher
-    const int memo_box_h = std::max(70, EXPORT_GAME_MEMO_HEIGHT - 120); // shrink more
-    getData().fonts.font(language.get("in_out", "memo")).draw(15, Arg::topCenter(X_CENTER, memo_label_y), getData().colors.white);
-    getData().fonts.font(Format(text_area[MEMO_IDX].text.size()) + U"/" + Format(TEXTBOX_MAX_CHARS) + U" " + language.get("common", "characters")).draw(15, Arg::topRight(X_CENTER + EXPORT_GAME_MEMO_WIDTH / 2, memo_label_y), getData().colors.white);
-    SimpleGUI::TextArea(text_area[MEMO_IDX], Vec2{X_CENTER - EXPORT_GAME_MEMO_WIDTH / 2, memo_box_y}, SizeF{EXPORT_GAME_MEMO_WIDTH, memo_box_h}, TEXTBOX_MAX_CHARS);
-    // Subfolder input UI (place just above buttons area to avoid overlap)
-    const int folder_label_y = BUTTON3_SY - 92; // raise further up
-    const int folder_box_y   = BUTTON3_SY - 66;
-    getData().fonts.font(U"保存先サブフォルダ (games/ 以下)").draw(13, Arg::topCenter(X_CENTER, folder_label_y), getData().colors.white);
-    SimpleGUI::TextArea(folder_area, Vec2{ X_CENTER - EXPORT_GAME_MEMO_WIDTH / 2, folder_box_y }, SizeF{ EXPORT_GAME_MEMO_WIDTH, 26 }, TEXTBOX_MAX_CHARS);
+        getData().fonts.font(language.get("in_out", "player_name")).draw(15, Arg::topCenter(X_CENTER, 47), getData().colors.white);
+        SimpleGUI::TextArea(text_area[BLACK_PLAYER_IDX], Vec2{X_CENTER - EXPORT_GAME_PLAYER_WIDTH, 70}, SizeF{EXPORT_GAME_PLAYER_WIDTH, EXPORT_GAME_PLAYER_HEIGHT}, SimpleGUI::PreferredTextAreaMaxChars);
+        SimpleGUI::TextArea(text_area[WHITE_PLAYER_IDX], Vec2{X_CENTER, 70}, SizeF{EXPORT_GAME_PLAYER_WIDTH, EXPORT_GAME_PLAYER_HEIGHT}, SimpleGUI::PreferredTextAreaMaxChars);
+        Circle(X_CENTER - EXPORT_GAME_PLAYER_WIDTH - EXPORT_GAME_RADIUS - 20, 70 + EXPORT_GAME_RADIUS, EXPORT_GAME_RADIUS).draw(getData().colors.black);
+        Circle(X_CENTER + EXPORT_GAME_PLAYER_WIDTH + EXPORT_GAME_RADIUS + 20, 70 + EXPORT_GAME_RADIUS, EXPORT_GAME_RADIUS).draw(getData().colors.white);
+        // Memo label / counter / textbox (slightly higher and smaller)
+        const int memo_label_y = 110;
+        const int memo_box_y = 130;
+        getData().fonts.font(language.get("in_out", "memo")).draw(15, Arg::topCenter(X_CENTER, memo_label_y), getData().colors.white);
+        getData().fonts.font(Format(text_area[MEMO_IDX].text.size()) + U"/" + Format(TEXTBOX_MAX_CHARS) + U" " + language.get("common", "characters")).draw(15, Arg::topRight(X_CENTER + EXPORT_GAME_MEMO_WIDTH / 2, memo_label_y), getData().colors.white);
+        SimpleGUI::TextArea(text_area[MEMO_IDX], Vec2{X_CENTER - EXPORT_GAME_MEMO_WIDTH / 2, memo_box_y}, SizeF{EXPORT_GAME_MEMO_WIDTH, EXPORT_GAME_MEMO_HEIGHT}, TEXTBOX_MAX_CHARS);
+        // Subfolder input UI (place just above buttons area to avoid overlap)
+        const int folder_label_y = BUTTON3_SY - 86;
+        const int folder_box_y   = BUTTON3_SY - 60;
+        getData().fonts.font(U"保存先サブフォルダ (games/ 以下)").draw(15, Arg::topCenter(X_CENTER, folder_label_y), getData().colors.white);
+        SimpleGUI::TextArea(folder_area, Vec2{ X_CENTER - EXPORT_GAME_MEMO_WIDTH / 2, folder_box_y }, SizeF{ EXPORT_GAME_MEMO_WIDTH, 26 }, TEXTBOX_MAX_CHARS);
         // Tab navigation across 4 fields: black -> white -> memo -> folder -> black
         auto focus_next_from = [&](int idx) {
             // deactivate current

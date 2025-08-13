@@ -150,7 +150,7 @@ constexpr int ANALYZE_SIZE = 62;
 constexpr int EXPORT_GAME_PLAYER_WIDTH = 300;
 constexpr int EXPORT_GAME_PLAYER_HEIGHT = 30;
 constexpr int EXPORT_GAME_MEMO_WIDTH = 600;
-constexpr int EXPORT_GAME_MEMO_HEIGHT = 250;
+constexpr int EXPORT_GAME_MEMO_HEIGHT = 200;
 constexpr int EXPORT_GAME_RADIUS = 15;
 
 // import game constants
