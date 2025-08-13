@@ -338,7 +338,7 @@ public:
         } else if (games.empty() && folders_display.empty()) {
             getData().fonts.font(language.get("in_out", "no_game_available")).draw(20, Arg::center(X_CENTER, Y_CENTER), getData().colors.white);
         } else {
-            int sy = std::max(IMPORT_GAME_SY, 100);
+            int sy = IMPORT_GAME_SY;
             int strt_idx_int = scroll_manager.get_strt_idx_int();
             if (strt_idx_int > 0) {
                 getData().fonts.font(U"︙").draw(15, Arg::bottomCenter = Vec2{ X_CENTER, sy }, getData().colors.white);
