@@ -484,7 +484,7 @@ public:
         getData().fonts.font(language.get("in_out", "input_game")).draw(25, Arg::topCenter(X_CENTER, 10), getData().colors.white);
         // Current path label
         String path_label = U"games/" + Unicode::Widen(subfolder);
-        getData().fonts.font(path_label).draw(13, Arg::topCenter(X_CENTER, 38), getData().colors.white);
+        getData().fonts.font(path_label).draw(13, Arg::topCenter(X_CENTER, 45), getData().colors.white);
         back_button.draw();
         if (back_button.clicked() || KeyEscape.pressed()) {
             getData().graph_resources.need_init = false;
@@ -495,21 +495,35 @@ public:
         } else if (games.empty() && folders_display.empty()) {
             getData().fonts.font(language.get("in_out", "no_game_available")).draw(20, Arg::center(X_CENTER, Y_CENTER), getData().colors.white);
         } else {
-            auto res = DrawExplorerList(folders_display, games, import_buttons, delete_buttons, scroll_manager, getData().fonts, getData().colors, getData().resources);
-            if (res.folderClicked) {
-                String fname = res.clickedFolder;
-                if (fname == U"..") {
-                    if (subfolder.size()) {
+            // Up-to-parent icon above the list
+            if (has_parent) {
+                const int upBtnW = 28;
+                const int upBtnH = 24;
+                const int upBtnX = IMPORT_GAME_SX;
+                const int upBtnY = IMPORT_GAME_SY - upBtnH - 6;
+                const Rect upRect(upBtnX, upBtnY, upBtnW, upBtnH);
+                upRect.rounded(4).draw(getData().colors.dark_green).drawFrame(1.0, getData().colors.white);
+                getData().fonts.font(U"↑").draw(16, Arg::center(upRect.center()), getData().colors.white);
+                if (upRect.leftClicked()) {
+                    if (!subfolder.empty()) {
                         std::string s = subfolder;
                         if (!s.empty() && s.back() == '/') s.pop_back();
                         size_t pos = s.find_last_of('/');
                         if (pos == std::string::npos) subfolder.clear();
                         else subfolder = s.substr(0, pos);
+                        enumerate_current_dir();
+                        load_games();
+                        init_scroll_manager();
+                        return;
                     }
-                } else {
-                    if (subfolder.size()) subfolder += "/";
-                    subfolder += fname.narrow();
                 }
+            }
+
+            auto res = DrawExplorerList(folders_display, games, import_buttons, delete_buttons, scroll_manager, getData().fonts, getData().colors, getData().resources);
+            if (res.folderClicked) {
+                String fname = res.clickedFolder;
+                if (subfolder.size()) subfolder += "/";
+                subfolder += fname.narrow();
                 enumerate_current_dir();
                 load_games();
                 init_scroll_manager();
@@ -531,7 +545,7 @@ public:
 
 private:
     void init_scroll_manager() {
-        int total = (int)folders_display.size() + (int)games.size();
+    int total = (int)folders_display.size() + (int)games.size();
         scroll_manager.init(770, IMPORT_GAME_SY + 8, 10, IMPORT_GAME_HEIGHT * IMPORT_GAME_N_GAMES_ON_WINDOW, 20, total, IMPORT_GAME_N_GAMES_ON_WINDOW, IMPORT_GAME_SX, 73, IMPORT_GAME_WIDTH + 10, IMPORT_GAME_HEIGHT * IMPORT_GAME_N_GAMES_ON_WINDOW);
     }
 
@@ -684,11 +698,10 @@ private:
         init_scroll_manager();
     }
 
-    // Enumerate current directory (folders_display and parent entry)
+    // Enumerate current directory (folders_display only; parent is shown as a separate up icon)
     void enumerate_current_dir() {
         folders_display.clear();
         has_parent = !subfolder.empty();
-        if (has_parent) folders_display.emplace_back(U"..");
         String base = Unicode::Widen(getData().directories.document_dir) + U"games/" + Unicode::Widen(subfolder);
         if (base.size() && base.back() != U'/') base += U"/";
         Array<FilePath> list = FileSystem::DirectoryContents(base);
