@@ -324,8 +324,13 @@ inline ExplorerDrawResult DrawExplorerList(
                     folder_row < scroll_manager.get_strt_idx_int() + n_games_on_window) {
                     Rect folder_rect(IMPORT_GAME_SX, folder_sy, IMPORT_GAME_WIDTH, itemHeight);
                     if (folder_rect.contains(current_mouse_pos)) {
+                        String candidate_target = folders_display[folder_idx];
+                        // Don't allow dropping a folder on itself
+                        if (is_dragging_folder && dragged_folder_name == candidate_target) {
+                            continue;
+                        }
                         dropped_on_folder = true;
-                        target_folder = folders_display[folder_idx];
+                        target_folder = candidate_target;
                         break;
                     }
                 }
@@ -685,7 +690,7 @@ inline ExplorerDrawResult DrawExplorerList(
     }
     int total_rows2 = parent_offset + (int)folders_display.size() + (int)games.size();
     if (strt_idx_int + n_games_on_window < total_rows2) {
-        fonts.font(U"︙").draw(15, Arg::bottomCenter = Vec2{ X_CENTER, 415}, colors.white);
+        fonts.font(U"︙").draw(15, Arg::topCenter(X_CENTER, IMPORT_GAME_SY + itemHeight * n_games_on_window + 10), colors.white);
     }
     scroll_manager.draw();
     scroll_manager.update();

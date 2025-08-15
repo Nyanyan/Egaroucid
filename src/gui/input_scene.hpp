@@ -631,8 +631,54 @@ private:
         }
     }
     
-    // Move a game to a different folder
+    // Move a game to a different folder (relative to current subfolder)
     void move_game_to_folder(int game_index, const std::string& target_folder) {
+        if (game_index < 0 || game_index >= (int)games.size()) return;
+        
+        const Game_abstract& game = games[game_index];
+        
+        // Source and target paths
+        String source_base = get_base_dir();
+        String target_base = Unicode::Widen(getData().directories.document_dir) + U"games/";
+        if (!subfolder.empty()) {
+            target_base += Unicode::Widen(subfolder) + U"/";
+        }
+        if (!target_folder.empty()) {
+            target_base += Unicode::Widen(target_folder) + U"/";
+        }
+        
+        std::cerr << "Moving game (relative):" << std::endl;
+        std::cerr << "  Current subfolder: " << subfolder << std::endl;
+        std::cerr << "  Target folder: " << target_folder << std::endl;
+        std::cerr << "  Source base: " << source_base.narrow() << std::endl;
+        std::cerr << "  Target base: " << target_base.narrow() << std::endl;
+        
+        // Ensure target directory exists
+        if (!FileSystem::Exists(target_base)) {
+            FileSystem::CreateDirectories(target_base);
+        }
+        
+        // Move JSON file
+        String source_json = source_base + game.date + U".json";
+        String target_json = target_base + game.date + U".json";
+        if (FileSystem::Exists(source_json)) {
+            FileSystem::Copy(source_json, target_json);
+            FileSystem::Remove(source_json);
+        }
+        
+        // Update CSV files
+        remove_game_from_csv(game_index);
+        add_game_to_target_csv(game, target_base);
+        
+        // Refresh current view
+        load_games();
+        init_scroll_manager();
+        
+        std::cerr << "Moved game " << game.date.narrow() << " to " << target_folder << std::endl;
+    }
+
+    // Move a game to an absolute folder path (from root)
+    void move_game_to_absolute_folder(int game_index, const std::string& target_folder) {
         if (game_index < 0 || game_index >= (int)games.size()) return;
         
         const Game_abstract& game = games[game_index];
@@ -643,6 +689,12 @@ private:
         if (!target_folder.empty()) {
             target_base += Unicode::Widen(target_folder) + U"/";
         }
+        
+        std::cerr << "Moving game (absolute):" << std::endl;
+        std::cerr << "  Current subfolder: " << subfolder << std::endl;
+        std::cerr << "  Target folder: " << target_folder << std::endl;
+        std::cerr << "  Source base: " << source_base.narrow() << std::endl;
+        std::cerr << "  Target base: " << target_base.narrow() << std::endl;
         
         // Ensure target directory exists
         if (!FileSystem::Exists(target_base)) {
@@ -668,40 +720,143 @@ private:
         std::cerr << "Moved game " << game.date.narrow() << " to " << target_folder << std::endl;
     }
     
-    // Move a folder to a different folder
+    // Move a folder to a different folder (relative to current subfolder)
     void move_folder_to_folder(const std::string& source_folder, const std::string& target_folder) {
+        // Build source path: current subfolder + source_folder
         String source_path = Unicode::Widen(getData().directories.document_dir) + U"games/";
         if (!subfolder.empty()) {
             source_path += Unicode::Widen(subfolder) + U"/";
         }
         source_path += Unicode::Widen(source_folder);
         
-        String target_base = Unicode::Widen(getData().directories.document_dir) + U"games/";
-        if (!target_folder.empty()) {
-            target_base += Unicode::Widen(target_folder) + U"/";
+        // Build target parent path: current subfolder + target_folder
+        String target_parent = Unicode::Widen(getData().directories.document_dir) + U"games/";
+        if (!subfolder.empty()) {
+            target_parent += Unicode::Widen(subfolder) + U"/";
         }
-        String target_path = target_base + Unicode::Widen(source_folder);
+        if (!target_folder.empty()) {
+            target_parent += Unicode::Widen(target_folder) + U"/";
+        }
+        String target_path = target_parent + Unicode::Widen(source_folder);
         
-        // Ensure target directory exists
-        if (!FileSystem::Exists(target_base)) {
-            FileSystem::CreateDirectories(target_base);
+        std::cerr << "Moving folder (relative):" << std::endl;
+        std::cerr << "  Current subfolder: " << subfolder << std::endl;
+        std::cerr << "  Source folder: " << source_folder << std::endl;
+        std::cerr << "  Target folder: " << target_folder << std::endl;
+        std::cerr << "  Source path: " << source_path.narrow() << std::endl;
+        std::cerr << "  Target path: " << target_path.narrow() << std::endl;
+        
+        // Check if source and target are different
+        if (source_path == target_path) {
+            std::cerr << "  Source and target are the same, skipping move" << std::endl;
+            return;
+        }
+        
+        // Check if target folder would create a circular reference
+        String source_abs = FileSystem::FullPath(source_path);
+        String target_abs = FileSystem::FullPath(target_parent);
+        if (target_abs.starts_with(source_abs)) {
+            std::cerr << "  Cannot move folder into its own subdirectory" << std::endl;
+            return;
+        }
+        
+        // Ensure target parent directory exists
+        if (!FileSystem::Exists(target_parent)) {
+            FileSystem::CreateDirectories(target_parent);
         }
         
         // Move the entire folder
         if (FileSystem::Exists(source_path) && !FileSystem::Exists(target_path)) {
             // Use system command for folder move (more reliable)
             std::string cmd = "move \"" + source_path.narrow() + "\" \"" + target_path.narrow() + "\"";
-            system(cmd.c_str());
+            int result = system(cmd.c_str());
+            
+            if (result == 0) {
+                std::cerr << "  Successfully moved folder " << source_folder << " to " << target_folder << std::endl;
+            } else {
+                std::cerr << "  Failed to move folder (error code: " << result << ")" << std::endl;
+            }
             
             // Refresh current view
             enumerate_current_dir();
             load_games();
             init_scroll_manager();
-            
-            std::cerr << "Moved folder " << source_folder << " to " << target_folder << std::endl;
+        } else {
+            if (!FileSystem::Exists(source_path)) {
+                std::cerr << "  Source folder does not exist" << std::endl;
+            } else if (FileSystem::Exists(target_path)) {
+                std::cerr << "  Target folder already exists" << std::endl;
+            }
         }
     }
-    
+
+    // Move a folder to an absolute folder path (from root)
+    void move_folder_to_absolute_folder(const std::string& source_folder, const std::string& target_folder) {
+        // Build source path: current subfolder + source_folder
+        String source_path = Unicode::Widen(getData().directories.document_dir) + U"games/";
+        if (!subfolder.empty()) {
+            source_path += Unicode::Widen(subfolder) + U"/";
+        }
+        source_path += Unicode::Widen(source_folder);
+        
+        // Build target parent path based on target_folder
+        String target_parent = Unicode::Widen(getData().directories.document_dir) + U"games/";
+        if (!target_folder.empty()) {
+            target_parent += Unicode::Widen(target_folder) + U"/";
+        }
+        String target_path = target_parent + Unicode::Widen(source_folder);
+        
+        std::cerr << "Moving folder (absolute):" << std::endl;
+        std::cerr << "  Current subfolder: " << subfolder << std::endl;
+        std::cerr << "  Source folder: " << source_folder << std::endl;
+        std::cerr << "  Target folder: " << target_folder << std::endl;
+        std::cerr << "  Source path: " << source_path.narrow() << std::endl;
+        std::cerr << "  Target path: " << target_path.narrow() << std::endl;
+        
+        // Check if source and target are different
+        if (source_path == target_path) {
+            std::cerr << "  Source and target are the same, skipping move" << std::endl;
+            return;
+        }
+        
+        // Check if target folder would create a circular reference
+        String source_abs = FileSystem::FullPath(source_path);
+        String target_abs = FileSystem::FullPath(target_parent);
+        if (target_abs.starts_with(source_abs)) {
+            std::cerr << "  Cannot move folder into its own subdirectory" << std::endl;
+            return;
+        }
+        
+        // Ensure target parent directory exists
+        if (!FileSystem::Exists(target_parent)) {
+            FileSystem::CreateDirectories(target_parent);
+        }
+        
+        // Move the entire folder
+        if (FileSystem::Exists(source_path) && !FileSystem::Exists(target_path)) {
+            // Use system command for folder move (more reliable)
+            std::string cmd = "move \"" + source_path.narrow() + "\" \"" + target_path.narrow() + "\"";
+            int result = system(cmd.c_str());
+            
+            if (result == 0) {
+                std::cerr << "  Successfully moved folder " << source_folder << " to " << target_folder << std::endl;
+            } else {
+                std::cerr << "  Failed to move folder (error code: " << result << ")" << std::endl;
+            }
+            
+            // Refresh current view
+            enumerate_current_dir();
+            load_games();
+            init_scroll_manager();
+        } else {
+            if (!FileSystem::Exists(source_path)) {
+                std::cerr << "  Source folder does not exist" << std::endl;
+            } else if (FileSystem::Exists(target_path)) {
+                std::cerr << "  Target folder already exists" << std::endl;
+            }
+        }
+    }
+
     // Move a game to parent folder
     void move_game_to_parent(int game_index) {
         if (subfolder.empty()) return;  // Already at root
@@ -713,7 +868,7 @@ private:
         if (pos == std::string::npos) parent_folder.clear();
         else parent_folder = parent_folder.substr(0, pos);
         
-        move_game_to_folder(game_index, parent_folder);
+        move_game_to_absolute_folder(game_index, parent_folder);
     }
     
     // Move a folder to parent folder
@@ -727,7 +882,7 @@ private:
         if (pos == std::string::npos) parent_folder.clear();
         else parent_folder = parent_folder.substr(0, pos);
         
-        move_folder_to_folder(folder_name, parent_folder);
+        move_folder_to_absolute_folder(folder_name, parent_folder);
     }
     
     // Remove game from current CSV
