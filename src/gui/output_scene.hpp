@@ -42,6 +42,7 @@ private:
     Button save_here_button;
     Button cancel_picker_button;
     Button up_button;
+    Button open_explorer_button;
     // Saving state
     bool is_saving = false;
     bool saving_started = false;
@@ -64,7 +65,8 @@ public:
         save_here_button.init(BUTTON3_3_SX, BUTTON3_SY, BUTTON3_WIDTH, BUTTON3_HEIGHT, BUTTON3_RADIUS, language.get("in_out", "save_here"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
         cancel_picker_button.init(BUTTON3_1_SX, BUTTON3_SY, BUTTON3_WIDTH, BUTTON3_HEIGHT, BUTTON3_RADIUS, language.get("common", "back"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
         up_button.init(IMPORT_GAME_SX, IMPORT_GAME_SY - 30, 28, 24, 4, U"↑", 16, getData().fonts.font, getData().colors.white, getData().colors.black);
-        }
+        open_explorer_button.init(IMPORT_GAME_SX + IMPORT_GAME_WIDTH - 150, IMPORT_GAME_SY - 30, 150, 24, 5, language.get("in_out", "open_explorer"), 13, getData().fonts.font, getData().colors.white, getData().colors.black);
+    }
 
     void update() override {
         if (System::GetUserActions() & UserAction::CloseButtonClicked) {
@@ -188,8 +190,16 @@ public:
             bool has_parent_folder = !picker_subfolder.empty();
             auto pickRes = DrawExplorerList(
                 save_folders_display, emptyGames, dummyImportBtns, dummyDeleteBtns,
-                folder_scroll_manager, up_button, /*showGames=*/false, IMPORT_GAME_HEIGHT, EXPORT_GAME_N_GAMES_ON_WINDOW, 
+                folder_scroll_manager, up_button, open_explorer_button, /*showGames=*/false, IMPORT_GAME_HEIGHT, EXPORT_GAME_N_GAMES_ON_WINDOW, 
                 has_parent_folder, getData().fonts, getData().colors, getData().resources, language);
+            if (pickRes.openExplorerClicked) {
+                String path = Unicode::Widen(getData().directories.document_dir) + U"games/";
+                if (!picker_subfolder.empty()) {
+                    path += Unicode::Widen(picker_subfolder) + U"/";
+                }
+                System::LaunchFile(path);
+                return;
+            }
             if (pickRes.upButtonClicked) {
                 std::string s = picker_subfolder;
                 if (!s.empty() && s.back() == '/') s.pop_back();
@@ -213,11 +223,10 @@ public:
             getData().fonts.font(language.get("in_out", "new_folder")).draw(15, Arg::rightCenter(200, EXPORT_GAME_CREATE_FOLDER_Y_CENTER), getData().colors.white);
             SimpleGUI::TextArea(new_folder_area, Vec2{210, EXPORT_GAME_CREATE_FOLDER_Y_CENTER - 30 / 2 - 2}, SizeF{400, 30}, 64);
             
-            // Update create button position for horizontal layout
-            Button temp_create_button;
-            temp_create_button.init(620, EXPORT_GAME_CREATE_FOLDER_Y_CENTER - 30 / 2, 80, 30, 8, language.get("in_out", "create"), 14, getData().fonts.font, getData().colors.white, getData().colors.black);
-            temp_create_button.draw();
-            if (temp_create_button.clicked()) {
+            // Use member create_folder_button instead of temp button
+            create_folder_button.move(620, EXPORT_GAME_CREATE_FOLDER_Y_CENTER - 30 / 2);
+            create_folder_button.draw();
+            if (create_folder_button.clicked()) {
                 String s = new_folder_area.text.replaced(U"\r", U"").replaced(U"\n", U"").replaced(U"\\", U"/");
                 while (s.size() && s.front() == U'/') s.erase(s.begin());
                 while (s.size() && s.back() == U'/') s.pop_back();
@@ -226,12 +235,20 @@ public:
                     String base = Unicode::Widen(getData().directories.document_dir) + U"games/" + Unicode::Widen(picker_subfolder);
                     if (base.size() && base.back() != U'/') base += U"/";
                     String target = base + s + U"/";
-                    FileSystem::CreateDirectories(target);
-                    new_folder_area.text.clear();
-                    new_folder_area.cursorPos = 0;
-                    new_folder_area.rebuildGlyphs();
-                    enumerate_save_dir();
-                    init_folder_scroll_manager();
+                    bool created = FileSystem::CreateDirectories(target);
+                    if (created) {
+                        // Auto-navigate to the newly created folder
+                        if (!picker_subfolder.empty()) picker_subfolder += "/";
+                        picker_subfolder += s.narrow();
+                        new_folder_area.text.clear();
+                        new_folder_area.cursorPos = 0;
+                        new_folder_area.rebuildGlyphs();
+                        enumerate_save_dir();
+                        init_folder_scroll_manager();
+                        std::cerr << "Created and navigated to folder: " << picker_subfolder << std::endl;
+                    } else {
+                        std::cerr << "Failed to create folder: " << target.narrow() << std::endl;
+                    }
                 }
             }
 

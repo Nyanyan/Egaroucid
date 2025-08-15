@@ -168,11 +168,12 @@
         "you_can_drag_and_drop_game_file": "您可以拖放游戏文件",
         "save_subfolder": "保存到子文件夹（位于 games/ 下）",
         "load_subfolder": "从子文件夹加载（位于 games/ 下）",
-    "games_root": "（games 根目录）",
-    "new_folder": "新建資料夾",
-    "create": "建立",
-    "save_here": "儲存於此",
-    "saving": "正在儲存..."
+        "games_root": "（games 根目录）",
+        "new_folder": "新建資料夾",
+        "create": "建立",
+        "save_here": "儲存於此",
+        "saving": "正在儲存...",
+        "open_explorer": "在文件管理器中打开"
     },
     "display": {
         "display": "显示",

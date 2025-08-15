@@ -172,7 +172,8 @@
         "new_folder": "新しいフォルダ",
         "create": "作成",
         "save_here": "ここに保存",
-        "saving": "保存中..."
+        "saving": "保存中...",
+        "open_explorer": "エクスプローラで開く"
     },
     "display": {
         "display": "表示",

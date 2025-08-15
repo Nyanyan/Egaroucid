@@ -168,11 +168,12 @@
         "you_can_drag_and_drop_game_file": "You can drag & drop game file",
         "save_subfolder": "Save to subfolder (under games/)",
         "load_subfolder": "Load from subfolder (under games/)",
-    "games_root": "(games root)",
-    "new_folder": "New folder",
-    "create": "Create",
-    "save_here": "Save here",
-    "saving": "Saving..."
+        "games_root": "(games root)",
+        "new_folder": "New folder",
+        "create": "Create",
+        "save_here": "Save here",
+        "saving": "Saving...",
+        "open_explorer": "Open in Explorer"
     },
     "display": {
         "display": "Display",

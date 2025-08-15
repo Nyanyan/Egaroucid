@@ -197,6 +197,7 @@ struct ExplorerDrawResult {
     bool deleteClicked = false;
     int deleteIndex = -1;
     bool upButtonClicked = false;
+    bool openExplorerClicked = false;
 };
 
 template <class FontsT, class ColorsT, class ResourcesT, class LanguageT>
@@ -207,6 +208,7 @@ inline ExplorerDrawResult DrawExplorerList(
     std::vector<ImageButton>& delete_buttons,
     Scroll_manager& scroll_manager,
     Button& up_button,
+    Button& open_explorer_button,
     bool showGames,
     int itemHeight,
     int n_games_on_window,
@@ -228,6 +230,14 @@ inline ExplorerDrawResult DrawExplorerList(
     up_button.draw();
     if (up_button.clicked()) {
         res.upButtonClicked = true;
+        return res;
+    }
+    
+    // "Open in Explorer" button in the top-right area
+    // open_explorer_button.move(IMPORT_GAME_SX + IMPORT_GAME_WIDTH - 120, IMPORT_GAME_SY - 30);
+    open_explorer_button.draw();
+    if (open_explorer_button.clicked()) {
+        res.openExplorerClicked = true;
         return res;
     }
     

@@ -307,6 +307,7 @@ private:
     Scroll_manager scroll_manager;
     Button back_button;
     Button up_button;
+    Button open_explorer_button;
     bool failed;
     // Explorer-like folder view
     std::vector<String> folders_display; // includes optional ".." at head
@@ -317,11 +318,12 @@ public:
     Import_game(const InitData& init) : IScene{ init } {
         back_button.init(BACK_BUTTON_SX, BACK_BUTTON_SY, BACK_BUTTON_WIDTH, BACK_BUTTON_HEIGHT, BACK_BUTTON_RADIUS, language.get("common", "back"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
         up_button.init(IMPORT_GAME_SX, IMPORT_GAME_SY - 30, 28, 24, 4, U"↑", 16, getData().fonts.font, getData().colors.white, getData().colors.black);
+        open_explorer_button.init(IMPORT_GAME_SX + IMPORT_GAME_WIDTH - 150, IMPORT_GAME_SY - 30, 150, 24, 5, language.get("in_out", "open_explorer"), 13, getData().fonts.font, getData().colors.white, getData().colors.black);
         failed = false;
-    // Initialize current dir and load games
-    subfolder.clear();
-    enumerate_current_dir();
-    load_games();
+        // Initialize current dir and load games
+        subfolder.clear();
+        enumerate_current_dir();
+        load_games();
     }
 
     void update() override {
@@ -341,8 +343,16 @@ public:
             getData().fonts.font(language.get("in_out", "import_failed")).draw(20, Arg::center(X_CENTER, Y_CENTER), getData().colors.white);
         } else {
             auto res = DrawExplorerList(
-                folders_display, games, import_buttons, delete_buttons, scroll_manager, up_button,
+                folders_display, games, import_buttons, delete_buttons, scroll_manager, up_button, open_explorer_button,
                 /*showGames=*/true, IMPORT_GAME_HEIGHT, IMPORT_GAME_N_GAMES_ON_WINDOW, has_parent, getData().fonts, getData().colors, getData().resources, language);
+            if (res.openExplorerClicked) {
+                String path = Unicode::Widen(getData().directories.document_dir) + U"games/";
+                if (!subfolder.empty()) {
+                    path += Unicode::Widen(subfolder) + U"/";
+                }
+                System::LaunchFile(path);
+                return;
+            }
             if (res.upButtonClicked) {
                 if (!subfolder.empty()) {
                     std::string s = subfolder;
@@ -463,18 +473,32 @@ private:
     }
 
     void delete_game(int idx) {
-    const String json_path = get_base_dir() + games[idx].date + U".json";
+        if (idx < 0 || idx >= (int)games.size()) {
+            std::cerr << "delete_game: invalid index " << idx << std::endl;
+            return;
+        }
+        
+        const String json_path = get_base_dir() + games[idx].date + U".json";
         FileSystem::Remove(json_path);
 
-    const String csv_path = get_base_dir() + U"summary.csv";
+        const String csv_path = get_base_dir() + U"summary.csv";
         CSV csv{ csv_path };
         CSV new_csv;
-        for (int i = 0; i < (int)games.size(); ++i) {
-            if (i != games.size() - 1 - idx) {
-                for (int j = 0; j < 6; ++j) {
-                    new_csv.write(csv[i][j]);
+        
+        // games配列はreverseされているので、CSV行インデックスを正しく計算
+        int csv_row_to_delete = (int)games.size() - 1 - idx;
+        
+        for (int i = 0; i < (int)csv.rows(); ++i) {
+            if (i != csv_row_to_delete) {
+                // CSVの列数をチェックしてから書き込み
+                if (csv[i].size() >= 6) {
+                    for (int j = 0; j < 6; ++j) {
+                        new_csv.write(csv[i][j]);
+                    }
+                    new_csv.newLine();
+                } else {
+                    std::cerr << "Warning: CSV row " << i << " has insufficient columns" << std::endl;
                 }
-                new_csv.newLine();
             }
         }
         new_csv.save(csv_path);
