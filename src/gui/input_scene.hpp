@@ -354,7 +354,7 @@ public:
                 System::LaunchFile(path);
                 return;
             }
-            if (res.upButtonClicked) {
+            if (res.upButtonClicked || res.parentFolderDoubleClicked) {
                 if (!subfolder.empty()) {
                     std::string s = subfolder;
                     if (!s.empty() && s.back() == '/') s.pop_back();
@@ -395,7 +395,8 @@ public:
 
 private:
     void init_scroll_manager() {
-    int total = (int)folders_display.size() + (int)games.size();
+        int parent_offset = !subfolder.empty() ? 1 : 0;  // Add parent folder if not at root
+        int total = parent_offset + (int)folders_display.size() + (int)games.size();
         scroll_manager.init(770, IMPORT_GAME_SY + 8, 10, IMPORT_GAME_HEIGHT * IMPORT_GAME_N_GAMES_ON_WINDOW, 20, total, IMPORT_GAME_N_GAMES_ON_WINDOW, IMPORT_GAME_SX, 73, IMPORT_GAME_WIDTH + 10, IMPORT_GAME_HEIGHT * IMPORT_GAME_N_GAMES_ON_WINDOW);
     }
 
@@ -602,7 +603,9 @@ private:
         
         // Use the shared utility function
         std::vector<String> folders = enumerate_direct_subdirectories(getData().directories.document_dir, subfolder);
+        std::cerr << "Found " << folders.size() << " folders in " << subfolder << std::endl;
         for (auto& folder : folders) {
+            std::cerr << "  Folder: " << folder.narrow() << std::endl;
             folders_display.emplace_back(folder);
         }
         
@@ -611,12 +614,22 @@ private:
     
     // Handle drag and drop operations
     void handle_drop(const ExplorerDrawResult& res) {
-        if (res.isDraggingGame && res.draggedGameIndex >= 0 && res.draggedGameIndex < (int)games.size()) {
-            // Move game to target folder
-            move_game_to_folder(res.draggedGameIndex, res.dropTargetFolder.narrow());
-        } else if (res.isDraggingFolder && !res.draggedFolderName.empty()) {
-            // Move folder to target folder
-            move_folder_to_folder(res.draggedFolderName.narrow(), res.dropTargetFolder.narrow());
+        if (res.dropOnParent) {
+            // Handle drop on parent folder - move to parent directory
+            if (res.isDraggingGame && res.draggedGameIndex >= 0 && res.draggedGameIndex < (int)games.size()) {
+                move_game_to_parent(res.draggedGameIndex);
+            } else if (res.isDraggingFolder && !res.draggedFolderName.empty()) {
+                move_folder_to_parent(res.draggedFolderName.narrow());
+            }
+        } else {
+            // Handle normal folder drop
+            if (res.isDraggingGame && res.draggedGameIndex >= 0 && res.draggedGameIndex < (int)games.size()) {
+                // Move game to target folder
+                move_game_to_folder(res.draggedGameIndex, res.dropTargetFolder.narrow());
+            } else if (res.isDraggingFolder && !res.draggedFolderName.empty()) {
+                // Move folder to target folder
+                move_folder_to_folder(res.draggedFolderName.narrow(), res.dropTargetFolder.narrow());
+            }
         }
     }
     
@@ -689,6 +702,34 @@ private:
             
             std::cerr << "Moved folder " << source_folder << " to " << target_folder << std::endl;
         }
+    }
+    
+    // Move a game to parent folder
+    void move_game_to_parent(int game_index) {
+        if (subfolder.empty()) return;  // Already at root
+        
+        // Get parent folder path
+        std::string parent_folder = subfolder;
+        if (!parent_folder.empty() && parent_folder.back() == '/') parent_folder.pop_back();
+        size_t pos = parent_folder.find_last_of('/');
+        if (pos == std::string::npos) parent_folder.clear();
+        else parent_folder = parent_folder.substr(0, pos);
+        
+        move_game_to_folder(game_index, parent_folder);
+    }
+    
+    // Move a folder to parent folder
+    void move_folder_to_parent(const std::string& folder_name) {
+        if (subfolder.empty()) return;  // Already at root
+        
+        // Get parent folder path
+        std::string parent_folder = subfolder;
+        if (!parent_folder.empty() && parent_folder.back() == '/') parent_folder.pop_back();
+        size_t pos = parent_folder.find_last_of('/');
+        if (pos == std::string::npos) parent_folder.clear();
+        else parent_folder = parent_folder.substr(0, pos);
+        
+        move_folder_to_folder(folder_name, parent_folder);
     }
     
     // Remove game from current CSV

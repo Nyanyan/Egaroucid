@@ -237,6 +237,7 @@ struct ExplorerDrawResult {
     bool deleteClicked = false;
     int deleteIndex = -1;
     bool upButtonClicked = false;
+    bool parentFolderDoubleClicked = false;  // New: parent folder navigation
     bool openExplorerClicked = false;
     
     // Drag and drop functionality
@@ -247,6 +248,7 @@ struct ExplorerDrawResult {
     String dropTargetFolder;
     bool isDraggingGame = false;
     bool isDraggingFolder = false;
+    bool dropOnParent = false;  // New: drop on parent folder
 };
 
 template <class FontsT, class ColorsT, class ResourcesT, class LanguageT>
@@ -276,6 +278,7 @@ inline ExplorerDrawResult DrawExplorerList(
     static int dragged_game_index = -1;
     static String dragged_folder_name;
     static Vec2 drag_start_pos;
+    static Vec2 drag_offset;  // Offset from click position to maintain relative positioning
     static Vec2 current_mouse_pos;
     
     // Static variables for double-click detection
@@ -296,8 +299,9 @@ inline ExplorerDrawResult DrawExplorerList(
         bool dropped_on_folder = false;
         String target_folder;
         
+        int parent_offset = has_parent ? 1 : 0;
         for (int folder_idx = 0; folder_idx < (int)folders_display.size(); ++folder_idx) {
-            int folder_row = folder_idx;
+            int folder_row = parent_offset + folder_idx;  // Add parent offset
             int folder_sy = IMPORT_GAME_SY + 8 + (folder_row - scroll_manager.get_strt_idx_int()) * itemHeight;
             
             if (folder_row >= scroll_manager.get_strt_idx_int() && 
@@ -326,6 +330,7 @@ inline ExplorerDrawResult DrawExplorerList(
         dragged_game_index = -1;
         dragged_folder_name.clear();
         drag_start_pos = Vec2(0, 0);
+        drag_offset = Vec2(0, 0);
     }
     
     // Clean up drag preparation if mouse is released without drag
@@ -334,6 +339,7 @@ inline ExplorerDrawResult DrawExplorerList(
             dragged_game_index = -1;
             dragged_folder_name.clear();
             drag_start_pos = Vec2(0, 0);
+            drag_offset = Vec2(0, 0);
         }
     }
     
@@ -360,18 +366,7 @@ inline ExplorerDrawResult DrawExplorerList(
         }
     }
     
-    // Up-to-parent button above the list (always show/handle if has_parent)
-    if (has_parent) {
-        up_button.enable();
-    } else {
-        up_button.disable();
-    }
-    up_button.move(IMPORT_GAME_SX, IMPORT_GAME_SY - 30);
-    up_button.draw();
-    if (up_button.clicked()) {
-        res.upButtonClicked = true;
-        return res;
-    }
+    // Parent folder is handled as the first item in the list when has_parent is true
     
     // "Open in Explorer" button in the top-right area
     open_explorer_button.draw();
@@ -381,8 +376,14 @@ inline ExplorerDrawResult DrawExplorerList(
     }
     
     // Check if there are any items to display
-    int total_items = (int)folders_display.size() + (int)games.size();
-    if (total_items == 0) {
+    int parent_offset = has_parent ? 1 : 0;  // Add parent folder as first item if has_parent
+    int total_items = parent_offset + (int)folders_display.size() + (int)games.size();
+    
+    // Debug output
+    // std::cerr << "DrawExplorerList: has_parent=" << has_parent << ", parent_offset=" << parent_offset 
+    //           << ", folders=" << folders_display.size() << ", games=" << games.size() 
+    //           << ", total=" << total_items << std::endl;
+    if (total_items == parent_offset) {
         fonts.font(language.get("in_out", "no_game_available")).draw(20, Arg::center(X_CENTER, Y_CENTER), colors.white);
         return res;
     }
@@ -393,7 +394,7 @@ inline ExplorerDrawResult DrawExplorerList(
         fonts.font(U"︙").draw(15, Arg::bottomCenter = Vec2{ X_CENTER, sy }, colors.white);
     }
     sy += 8;
-    int total_rows = (int)folders_display.size() + (int)games.size();
+    int total_rows = parent_offset + (int)folders_display.size() + (int)games.size();
     for (int row = strt_idx_int; row < std::min(total_rows, strt_idx_int + n_games_on_window); ++row) {
         // Additional safety check: ensure row is within valid range
         if (row < 0 || row >= total_rows) {
@@ -411,10 +412,58 @@ inline ExplorerDrawResult DrawExplorerList(
             rect.draw(colors.green).drawFrame(1.0, colors.white);
         }
 
-        if (row < (int)folders_display.size()) {
+        // Handle parent folder as first item
+        if (has_parent && row == 0) {
+            // Draw parent folder (..) with special icon or styling
+            double folder_icon_scale = (double)(rect.h - 2 * 10) / (double)resources.folder.height();
+            resources.folder.scaled(folder_icon_scale).draw(Arg::leftCenter(IMPORT_GAME_SX + IMPORT_GAME_LEFT_MARGIN + 10, sy + itemHeight / 2));
+            fonts.font(U"↑..").draw(15, Arg::leftCenter(IMPORT_GAME_SX + IMPORT_GAME_LEFT_MARGIN + 10 + 30, sy + itemHeight / 2), colors.white);
+            
+            // Handle drop on parent folder
+            if (rect.contains(current_mouse_pos) && (is_dragging_game || is_dragging_folder)) {
+                rect.draw(colors.yellow.withAlpha(64));
+                if (MouseL.up()) {
+                    res.dropCompleted = true;
+                    res.dropOnParent = true;
+                    res.isDraggingGame = is_dragging_game;
+                    res.isDraggingFolder = is_dragging_folder;
+                    res.draggedGameIndex = dragged_game_index;
+                    res.draggedFolderName = dragged_folder_name;
+                    
+                    // Reset drag state
+                    is_dragging_game = false;
+                    is_dragging_folder = false;
+                    dragged_game_index = -1;
+                    dragged_folder_name.clear();
+                    drag_start_pos = Vec2(0, 0);
+                    drag_offset = Vec2(0, 0);
+                    return res;
+                }
+            }
+            
+            // Handle parent folder double-click
+            if (rect.leftClicked() && !is_dragging) {
+                static String last_clicked_parent;
+                static uint64 last_parent_click_time = 0;
+                uint64 current_time = Time::GetMillisec();
+                
+                if (last_clicked_parent == U"parent" && current_time - last_parent_click_time < DOUBLE_CLICK_TIME_MS) {
+                    // Double-click detected
+                    res.parentFolderDoubleClicked = true;
+                    last_clicked_parent.clear();
+                    last_parent_click_time = 0;
+                    return res;
+                } else {
+                    // Single click
+                    last_clicked_parent = U"parent";
+                    last_parent_click_time = current_time;
+                }
+            }
+        } else if (row - parent_offset < (int)folders_display.size()) {
             // Additional bounds check for folders_display access
-            if (row >= 0 && row < (int)folders_display.size()) {
-                String fname = folders_display[row];
+            int folder_idx = row - parent_offset;
+            if (folder_idx >= 0 && folder_idx < (int)folders_display.size()) {
+                String fname = folders_display[folder_idx];
                 double folder_icon_scale = (double)(rect.h - 2 * 10) / (double)resources.folder.height();
                 
                 // Drag and drop for folders
@@ -423,9 +472,9 @@ inline ExplorerDrawResult DrawExplorerList(
                                        (row % 2 ? colors.dark_green : colors.green);
                 
                 if (is_being_dragged) {
-                    // Draw dragged folder at mouse position with transparency
-                    Vec2 offset = current_mouse_pos - drag_start_pos;
-                    Rect drag_rect = rect.movedBy(offset.x, offset.y);
+                    // Draw dragged folder at mouse position with transparency - fix positioning
+                    Vec2 drag_pos = current_mouse_pos - drag_offset;
+                    Rect drag_rect(drag_pos.x, drag_pos.y, IMPORT_GAME_WIDTH, itemHeight);
                     drag_rect.draw(folder_bg_color).drawFrame(2.0, colors.white);
                     resources.folder.scaled(folder_icon_scale).draw(Arg::leftCenter(drag_rect.x + IMPORT_GAME_LEFT_MARGIN + 10, drag_rect.y + itemHeight / 2));
                     fonts.font(fname).draw(15, Arg::leftCenter(drag_rect.x + IMPORT_GAME_LEFT_MARGIN + 10 + 30, drag_rect.y + itemHeight / 2), colors.white);
@@ -436,15 +485,16 @@ inline ExplorerDrawResult DrawExplorerList(
                 
                 // Handle folder drag preparation and click
                 if (rect.leftPressed()) {
-                    // Prepare for potential drag
+                    // Prepare for potential drag - record relative position from click
                     dragged_folder_name = fname;
                     drag_start_pos = current_mouse_pos;
+                    drag_offset = current_mouse_pos - Vec2(rect.x, rect.y);  // Store relative position within rect
                 }
                 
                 // Handle folder click and double-click (only if not dragging)
                 if (rect.leftClicked() && !is_dragging) {
                     if (last_clicked_folder == fname && current_time - last_click_time < DOUBLE_CLICK_TIME_MS) {
-                        // Double-click detected
+                        // Double-click detected - prevent console window by not using System::LaunchFile
                         res.folderDoubleClicked = true;
                         res.clickedFolder = fname;
                         last_clicked_folder.clear();
@@ -452,6 +502,7 @@ inline ExplorerDrawResult DrawExplorerList(
                         // Clear drag state
                         dragged_folder_name.clear();
                         drag_start_pos = Vec2(0, 0);
+                        drag_offset = Vec2(0, 0);
                         return res;
                     } else {
                         // Single click
@@ -463,6 +514,7 @@ inline ExplorerDrawResult DrawExplorerList(
                         if (drag_start_pos.distanceFrom(current_mouse_pos) <= DRAG_THRESHOLD) {
                             dragged_folder_name.clear();
                             drag_start_pos = Vec2(0, 0);
+                            drag_offset = Vec2(0, 0);
                         }
                         return res;
                     }
@@ -470,7 +522,7 @@ inline ExplorerDrawResult DrawExplorerList(
             }
         } else {
             // Always show games, but conditionally show import buttons
-            int i = row - (int)folders_display.size();
+            int i = row - parent_offset - (int)folders_display.size();
             
             // Check bounds for games vector access
             if (i >= 0 && i < (int)games.size()) {
@@ -497,9 +549,10 @@ inline ExplorerDrawResult DrawExplorerList(
                 
                 // Handle game drag preparation
                 if (rect.leftPressed()) {
-                    // Prepare for potential drag
+                    // Prepare for potential drag - record relative position from click
                     dragged_game_index = i;
                     drag_start_pos = current_mouse_pos;
+                    drag_offset = current_mouse_pos - Vec2(rect.x, rect.y);  // Store relative position within rect
                 }
                 
                 // Show delete button only if delete_buttons vector has sufficient size
@@ -599,6 +652,7 @@ inline ExplorerDrawResult DrawExplorerList(
                         // Clear drag state
                         dragged_game_index = -1;
                         drag_start_pos = Vec2(0, 0);
+                        drag_offset = Vec2(0, 0);
                         return res;
                     } else {
                         // Single click
@@ -610,6 +664,7 @@ inline ExplorerDrawResult DrawExplorerList(
                         if (drag_start_pos.distanceFrom(current_mouse_pos) <= DRAG_THRESHOLD) {
                             dragged_game_index = -1;
                             drag_start_pos = Vec2(0, 0);
+                            drag_offset = Vec2(0, 0);
                         }
                     }
                 }
@@ -617,7 +672,7 @@ inline ExplorerDrawResult DrawExplorerList(
         }
         sy += itemHeight;
     }
-    int total_rows2 = (int)folders_display.size() + (int)games.size();
+    int total_rows2 = parent_offset + (int)folders_display.size() + (int)games.size();
     if (strt_idx_int + n_games_on_window < total_rows2) {
         fonts.font(U"︙").draw(15, Arg::bottomCenter = Vec2{ X_CENTER, 415}, colors.white);
     }
@@ -626,9 +681,9 @@ inline ExplorerDrawResult DrawExplorerList(
     
     // Draw dragged game at mouse position if dragging
     if (is_dragging_game && dragged_game_index >= 0 && dragged_game_index < (int)games.size()) {
-        Vec2 offset = current_mouse_pos - drag_start_pos;
-        Rect drag_rect(IMPORT_GAME_SX, IMPORT_GAME_SY + 50, IMPORT_GAME_WIDTH, itemHeight);
-        drag_rect = drag_rect.movedBy(offset.x, offset.y);
+        // Use drag_offset to maintain relative position from where user clicked
+        Vec2 drag_pos = current_mouse_pos - drag_offset;
+        Rect drag_rect(drag_pos.x, drag_pos.y, IMPORT_GAME_WIDTH, itemHeight);
         drag_rect.draw(colors.yellow.withAlpha(200)).drawFrame(2.0, colors.white);
         
         // Draw simplified game info
