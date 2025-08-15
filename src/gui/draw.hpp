@@ -32,7 +32,7 @@ void draw_board(Fonts fonts, Colors colors, History_elem history_elem, bool mono
     Circle(BOARD_SX + 2 * BOARD_CELL_SIZE, BOARD_SY + 6 * BOARD_CELL_SIZE, BOARD_DOT_SIZE).draw(dark_gray_color);
     Circle(BOARD_SX + 6 * BOARD_CELL_SIZE, BOARD_SY + 2 * BOARD_CELL_SIZE, BOARD_DOT_SIZE).draw(dark_gray_color);
     Circle(BOARD_SX + 6 * BOARD_CELL_SIZE, BOARD_SY + 6 * BOARD_CELL_SIZE, BOARD_DOT_SIZE).draw(dark_gray_color);
-    RoundRect(BOARD_SX, BOARD_SY, BOARD_CELL_SIZE * HW, BOARD_CELL_SIZE * HW, BOARD_ROUND_DIAMETER).drawFrame(0, BOARD_ROUND_FRAME_WIDTH, colors.white);
+    s3d::RoundRect(BOARD_SX, BOARD_SY, BOARD_CELL_SIZE * HW, BOARD_CELL_SIZE * HW, BOARD_ROUND_DIAMETER).drawFrame(0, BOARD_ROUND_FRAME_WIDTH, colors.white);
     Flip flip;
     int board_arr[HW2];
     history_elem.board.translate_to_arr(board_arr, history_elem.player);
@@ -94,7 +94,7 @@ inline std::vector<String> enumerate_direct_subdirectories(const std::string& do
 }
 
 void draw_info(Colors colors, History_elem history_elem, Fonts fonts, Menu_elements menu_elements, bool pausing_in_pass, std::string principal_variation) {
-    RoundRect round_rect{ INFO_SX, INFO_SY, INFO_WIDTH, INFO_HEIGHT, INFO_RECT_RADIUS };
+    s3d::RoundRect round_rect{ INFO_SX, INFO_SY, INFO_WIDTH, INFO_HEIGHT, INFO_RECT_RADIUS };
     round_rect.drawFrame(INFO_RECT_THICKNESS, colors.white);
     // 1st line
     int dy = 6;
@@ -497,8 +497,8 @@ inline ExplorerDrawResult DrawExplorerList(
         return list_result;
     }
     
-    // Draw dragged items
-    draw_dragged_items<FontsT, ColorsT>(drag_state, games, item_height, fonts, colors);
+    // Draw dragged items on top (最前面に描画)
+    draw_dragged_items<FontsT, ColorsT, ResourcesT>(drag_state, games, folders_display, item_height, fonts, colors, resources);
     
     return res;
 }
@@ -656,20 +656,13 @@ inline ExplorerDrawResult draw_folder_item(
     
     // Drag and drop for folders
     bool is_being_dragged = (drag_state.is_dragging_folder && drag_state.dragged_folder_name == fname);
-    Color folder_bg_color = is_being_dragged ? colors.yellow.withAlpha(128) : 
+    Color folder_bg_color = is_being_dragged ? colors.yellow.withAlpha(64) : // ドラッグ中は元の位置を半透明に
                            (row % 2 ? colors.dark_green : colors.green);
     
-    if (is_being_dragged) {
-        // Draw dragged folder at mouse position with transparency
-        Vec2 drag_pos = drag_state.current_mouse_pos - drag_state.drag_offset;
-        Rect drag_rect(drag_pos.x, drag_pos.y, IMPORT_GAME_WIDTH, item_height);
-        drag_rect.draw(folder_bg_color).drawFrame(2.0, colors.white);
-        resources.folder.scaled(folder_icon_scale).draw(Arg::leftCenter(drag_rect.x + IMPORT_GAME_LEFT_MARGIN + 10, drag_rect.y + item_height / 2));
-        fonts.font(fname).draw(15, Arg::leftCenter(drag_rect.x + IMPORT_GAME_LEFT_MARGIN + 10 + 30, drag_rect.y + item_height / 2), colors.white);
-    }
-    
-    resources.folder.scaled(folder_icon_scale).draw(Arg::leftCenter(IMPORT_GAME_SX + IMPORT_GAME_LEFT_MARGIN + 10, sy + item_height / 2));
-    fonts.font(fname).draw(15, Arg::leftCenter(IMPORT_GAME_SX + IMPORT_GAME_LEFT_MARGIN + 10 + 30, sy + item_height / 2), colors.white);
+    // Draw folder icon and name at original position (半透明でドラッグ中のアイテムを表示)
+    Color icon_alpha = is_being_dragged ? colors.white.withAlpha(128) : colors.white;
+    resources.folder.scaled(folder_icon_scale).draw(Arg::leftCenter(IMPORT_GAME_SX + IMPORT_GAME_LEFT_MARGIN + 10, sy + item_height / 2), icon_alpha);
+    fonts.font(fname).draw(15, Arg::leftCenter(IMPORT_GAME_SX + IMPORT_GAME_LEFT_MARGIN + 10 + 30, sy + item_height / 2), icon_alpha);
     
     // Handle folder drag preparation - only on initial press
     if (drag_state.mouse_just_pressed && rect.contains(drag_state.current_mouse_pos) && 
@@ -729,13 +722,14 @@ inline ExplorerDrawResult draw_game_item(
     
     // Drag and drop for games
     bool is_being_dragged = (drag_state.is_dragging_game && drag_state.dragged_game_index == game_index);
-    Color game_bg_color = is_being_dragged ? colors.yellow.withAlpha(128) : 
+    Color game_bg_color = is_being_dragged ? colors.yellow.withAlpha(64) : // ドラッグ中は元の位置を半透明に
                          (row % 2 ? colors.dark_green : colors.green);
     
-    // Override rect color for dragged items
-    if (is_being_dragged) {
-        rect.draw(game_bg_color).drawFrame(2.0, colors.white);
-    }
+    // Always draw background, but make it more transparent when being dragged
+    rect.draw(game_bg_color);
+    
+    // テキスト色をドラッグ状態に応じて調整
+    Color text_color = is_being_dragged ? colors.white.withAlpha(128) : colors.white;
     
     int winner = -1;
     if (game.black_score != GAME_DISCS_UNDEFINED && game.white_score != GAME_DISCS_UNDEFINED) {
@@ -768,7 +762,7 @@ inline ExplorerDrawResult draw_game_item(
     }
     
     String date = game.date.substr(0, 10).replace(U"_", U"/");
-    fonts.font(date).draw(15, IMPORT_GAME_SX + IMPORT_GAME_LEFT_MARGIN + 10, sy + 2, colors.white);
+    fonts.font(date).draw(15, IMPORT_GAME_SX + IMPORT_GAME_LEFT_MARGIN + 10, sy + 2, text_color);
     
     // Draw player rectangles and scores
     Rect black_player_rect;
@@ -790,7 +784,7 @@ inline ExplorerDrawResult draw_game_item(
     // Draw black player name with size adjustment
     for (int font_size = 15; font_size >= 12; --font_size) {
         if (fonts.font(game.black_player).region(font_size, Vec2{0, 0}).w <= IMPORT_GAME_PLAYER_WIDTH - 4) {
-            fonts.font(game.black_player).draw(font_size, Arg::rightCenter(black_player_rect.x + IMPORT_GAME_PLAYER_WIDTH - 2, upper_center_y), colors.white);
+            fonts.font(game.black_player).draw(font_size, Arg::rightCenter(black_player_rect.x + IMPORT_GAME_PLAYER_WIDTH - 2, upper_center_y), text_color);
             break;
         } else if (font_size == 12) {
             String player = game.black_player;
@@ -800,7 +794,7 @@ inline ExplorerDrawResult draw_game_item(
                 }
                 player += U"...";
             }
-            fonts.font(player).draw(font_size, Arg::rightCenter(black_player_rect.x + IMPORT_GAME_PLAYER_WIDTH - 2, upper_center_y), colors.white);
+            fonts.font(player).draw(font_size, Arg::rightCenter(black_player_rect.x + IMPORT_GAME_PLAYER_WIDTH - 2, upper_center_y), text_color);
         }
     }
     
@@ -812,9 +806,9 @@ inline ExplorerDrawResult draw_game_item(
         white_score = ToString(game.white_score);
     }
     double hyphen_w = fonts.font(U"-").region(15, Vec2{0, 0}).w;
-    fonts.font(black_score).draw(15, Arg::rightCenter(black_player_rect.x + IMPORT_GAME_PLAYER_WIDTH + IMPORT_GAME_SCORE_WIDTH / 2 - hyphen_w / 2 - 1, upper_center_y), colors.white);
-    fonts.font(U"-").draw(15, Arg::center(black_player_rect.x + IMPORT_GAME_PLAYER_WIDTH + IMPORT_GAME_SCORE_WIDTH / 2, upper_center_y), colors.white);
-    fonts.font(white_score).draw(15, Arg::leftCenter(black_player_rect.x + IMPORT_GAME_PLAYER_WIDTH + IMPORT_GAME_SCORE_WIDTH / 2 + hyphen_w / 2 + 1, upper_center_y), colors.white);
+    fonts.font(black_score).draw(15, Arg::rightCenter(black_player_rect.x + IMPORT_GAME_PLAYER_WIDTH + IMPORT_GAME_SCORE_WIDTH / 2 - hyphen_w / 2 - 1, upper_center_y), text_color);
+    fonts.font(U"-").draw(15, Arg::center(black_player_rect.x + IMPORT_GAME_PLAYER_WIDTH + IMPORT_GAME_SCORE_WIDTH / 2, upper_center_y), text_color);
+    fonts.font(white_score).draw(15, Arg::leftCenter(black_player_rect.x + IMPORT_GAME_PLAYER_WIDTH + IMPORT_GAME_SCORE_WIDTH / 2 + hyphen_w / 2 + 1, upper_center_y), text_color);
     
     // Draw white player rectangle
     Rect white_player_rect;
@@ -834,7 +828,7 @@ inline ExplorerDrawResult draw_game_item(
     // Draw white player name with size adjustment
     for (int font_size = 15; font_size >= 12; --font_size) {
         if (fonts.font(game.white_player).region(font_size, Vec2{0, 0}).w <= IMPORT_GAME_PLAYER_WIDTH - 4) {
-            fonts.font(game.white_player).draw(font_size, Arg::leftCenter(white_player_rect.x + 2, upper_center_y), colors.white);
+            fonts.font(game.white_player).draw(font_size, Arg::leftCenter(white_player_rect.x + 2, upper_center_y), text_color);
             break;
         } else if (font_size == 12) {
             String player = game.white_player;
@@ -844,7 +838,7 @@ inline ExplorerDrawResult draw_game_item(
                 }
                 player += U"...";
             }
-            fonts.font(player).draw(font_size, Arg::leftCenter(white_player_rect.x + 2, upper_center_y), colors.white);
+            fonts.font(player).draw(font_size, Arg::leftCenter(white_player_rect.x + 2, upper_center_y), text_color);
         }
     }
     
@@ -890,26 +884,53 @@ inline ExplorerDrawResult draw_game_item(
 }
 
 // Helper function to draw dragged items
-template <class FontsT, class ColorsT>
+template <class FontsT, class ColorsT, class ResourcesT>
 inline void draw_dragged_items(
     const ExplorerDragState& drag_state,
     const std::vector<Game_abstract>& games,
+    const std::vector<String>& folders_display,
     int item_height,
     FontsT& fonts,
-    ColorsT& colors
+    ColorsT& colors,
+    ResourcesT& resources
 ) {
     // Draw dragged game at mouse position if dragging
     if (drag_state.is_dragging_game && drag_state.dragged_game_index >= 0 && drag_state.dragged_game_index < (int)games.size()) {
         // Use drag_offset to maintain relative position from where user clicked
         Vec2 drag_pos = drag_state.current_mouse_pos - drag_state.drag_offset;
         Rect drag_rect(drag_pos.x, drag_pos.y, IMPORT_GAME_WIDTH, item_height);
-        drag_rect.draw(colors.yellow.withAlpha(200)).drawFrame(2.0, colors.white);
         
-        // Draw simplified game info
+        // Enhanced visual styling for dragged game - more prominent
+        drag_rect.draw(colors.yellow.withAlpha(220)).drawFrame(3.0, colors.white);
+        
+        // Draw simplified game info with better visibility
         const auto& game = games[drag_state.dragged_game_index];
         String date = game.date.substr(0, 10).replace(U"_", U"/");
         fonts.font(date).draw(12, drag_rect.x + 10, drag_rect.y + 2, colors.black);
         fonts.font(game.black_player + U" vs " + game.white_player).draw(10, drag_rect.x + 10, drag_rect.y + 15, colors.black);
+        
+        // Add a shadow effect for more depth
+        Rect shadow_rect(drag_pos.x + 2, drag_pos.y + 2, IMPORT_GAME_WIDTH, item_height);
+        shadow_rect.draw(colors.black.withAlpha(64));
+    }
+    
+    // Draw dragged folder at mouse position if dragging
+    if (drag_state.is_dragging_folder && !drag_state.dragged_folder_name.empty()) {
+        Vec2 drag_pos = drag_state.current_mouse_pos - drag_state.drag_offset;
+        Rect drag_rect(drag_pos.x, drag_pos.y, IMPORT_GAME_WIDTH, item_height);
+        
+        // Add shadow effect first
+        Rect shadow_rect(drag_pos.x + 2, drag_pos.y + 2, IMPORT_GAME_WIDTH, item_height);
+        shadow_rect.draw(colors.black.withAlpha(64));
+        
+        // Enhanced visual styling for dragged folder - more prominent
+        Color folder_bg_color = colors.blue.withAlpha(220);
+        drag_rect.draw(folder_bg_color).drawFrame(3.0, colors.white);
+        
+        // Draw folder icon and name
+        double folder_icon_scale = (double)(drag_rect.h - 2 * 10) / (double)resources.folder.height();
+        resources.folder.scaled(folder_icon_scale).draw(Arg::leftCenter(drag_rect.x + IMPORT_GAME_LEFT_MARGIN + 10, drag_rect.y + item_height / 2));
+        fonts.font(drag_state.dragged_folder_name).draw(15, Arg::leftCenter(drag_rect.x + IMPORT_GAME_LEFT_MARGIN + 10 + 30, drag_rect.y + item_height / 2), colors.white);
     }
 }
 
