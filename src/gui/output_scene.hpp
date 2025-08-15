@@ -178,31 +178,26 @@ public:
             getData().fonts.font(language.get("in_out", "save_subfolder")).draw(20, Arg::topCenter(X_CENTER, 10), getData().colors.white);
             String path_label = U"games/" + Unicode::Widen(picker_subfolder);
             getData().fonts.font(path_label).draw(15, Arg::topCenter(X_CENTER, 30), getData().colors.white);
-            // Up button
-            if (!picker_subfolder.empty()) {
-                const Rect upRect(IMPORT_GAME_SX, 28, 28, 24);
-                upRect.rounded(4).draw(getData().colors.green).drawFrame(1.0, getData().colors.white);
-                getData().fonts.font(U"↑").draw(16, Arg::center(upRect.center()), getData().colors.white);
-                if (upRect.leftClicked()) {
-                    std::string s = picker_subfolder;
-                    if (!s.empty() && s.back() == '/') s.pop_back();
-                    size_t pos = s.find_last_of('/');
-                    if (pos == std::string::npos) picker_subfolder.clear();
-                    else picker_subfolder = s.substr(0, pos);
-                    enumerate_save_dir();
-                    init_folder_scroll_manager();
-                    return;
-                }
-            }
 
             // List via shared helper (folders only)
             static std::vector<Game_abstract> emptyGames; // not used
             static std::vector<Button> dummyImportBtns;   // not used
             static std::vector<ImageButton> dummyDeleteBtns; // not used
+            bool has_parent_folder = !picker_subfolder.empty();
             auto pickRes = DrawExplorerList(
                 save_folders_display, emptyGames, dummyImportBtns, dummyDeleteBtns,
                 folder_scroll_manager, /*showGames=*/false, IMPORT_GAME_HEIGHT, EXPORT_GAME_N_GAMES_ON_WINDOW, 
-                getData().fonts, getData().colors, getData().resources);
+                has_parent_folder, getData().fonts, getData().colors, getData().resources);
+            if (pickRes.upButtonClicked) {
+                std::string s = picker_subfolder;
+                if (!s.empty() && s.back() == '/') s.pop_back();
+                size_t pos = s.find_last_of('/');
+                if (pos == std::string::npos) picker_subfolder.clear();
+                else picker_subfolder = s.substr(0, pos);
+                enumerate_save_dir();
+                init_folder_scroll_manager();
+                return;
+            }
             if (pickRes.folderClicked) {
                 String fname = pickRes.clickedFolder;
                 if (!picker_subfolder.empty()) picker_subfolder += "/";
@@ -283,7 +278,7 @@ private:
 
     void init_folder_scroll_manager() {
         int total = (int)save_folders_display.size();
-        folder_scroll_manager.init(770, IMPORT_GAME_SY + 8, 10, IMPORT_GAME_HEIGHT * IMPORT_GAME_N_GAMES_ON_WINDOW, 20, total, IMPORT_GAME_N_GAMES_ON_WINDOW, IMPORT_GAME_SX, 73, IMPORT_GAME_WIDTH + 10, IMPORT_GAME_HEIGHT * IMPORT_GAME_N_GAMES_ON_WINDOW);
+        folder_scroll_manager.init(770, IMPORT_GAME_SY + 8, 10, EXPORT_GAME_FOLDER_AREA_HEIGHT * EXPORT_GAME_N_GAMES_ON_WINDOW, 20, total, IMPORT_GAME_N_GAMES_ON_WINDOW, IMPORT_GAME_SX, 73, IMPORT_GAME_WIDTH + 10, IMPORT_GAME_HEIGHT * IMPORT_GAME_N_GAMES_ON_WINDOW);
     }
 
     void export_game(std::vector<History_elem> history) {

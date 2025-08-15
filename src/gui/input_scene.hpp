@@ -340,33 +340,22 @@ public:
         } else if (games.empty() && folders_display.empty()) {
             getData().fonts.font(language.get("in_out", "no_game_available")).draw(20, Arg::center(X_CENTER, Y_CENTER), getData().colors.white);
         } else {
-            // Up-to-parent icon above the list
-            if (has_parent) {
-                const int upBtnW = 28;
-                const int upBtnH = 24;
-                const int upBtnX = IMPORT_GAME_SX;
-                const int upBtnY = IMPORT_GAME_SY - upBtnH - 6;
-                const Rect upRect(upBtnX, upBtnY, upBtnW, upBtnH);
-                upRect.rounded(4).draw(getData().colors.dark_green).drawFrame(1.0, getData().colors.white);
-                getData().fonts.font(U"↑").draw(16, Arg::center(upRect.center()), getData().colors.white);
-                if (upRect.leftClicked()) {
-                    if (!subfolder.empty()) {
-                        std::string s = subfolder;
-                        if (!s.empty() && s.back() == '/') s.pop_back();
-                        size_t pos = s.find_last_of('/');
-                        if (pos == std::string::npos) subfolder.clear();
-                        else subfolder = s.substr(0, pos);
-                        enumerate_current_dir();
-                        load_games();
-                        init_scroll_manager();
-                        return;
-                    }
-                }
-            }
-
             auto res = DrawExplorerList(
                 folders_display, games, import_buttons, delete_buttons, scroll_manager,
-                /*showGames=*/true, IMPORT_GAME_HEIGHT, IMPORT_GAME_N_GAMES_ON_WINDOW, getData().fonts, getData().colors, getData().resources);
+                /*showGames=*/true, IMPORT_GAME_HEIGHT, IMPORT_GAME_N_GAMES_ON_WINDOW, has_parent, getData().fonts, getData().colors, getData().resources);
+            if (res.upButtonClicked) {
+                if (!subfolder.empty()) {
+                    std::string s = subfolder;
+                    if (!s.empty() && s.back() == '/') s.pop_back();
+                    size_t pos = s.find_last_of('/');
+                    if (pos == std::string::npos) subfolder.clear();
+                    else subfolder = s.substr(0, pos);
+                    enumerate_current_dir();
+                    load_games();
+                    init_scroll_manager();
+                    return;
+                }
+            }
             if (res.folderClicked) {
                 String fname = res.clickedFolder;
                 if (subfolder.size()) subfolder += "/";

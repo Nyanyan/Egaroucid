@@ -196,6 +196,7 @@ struct ExplorerDrawResult {
     int importIndex = -1;
     bool deleteClicked = false;
     int deleteIndex = -1;
+    bool upButtonClicked = false;
 };
 
 template <class FontsT, class ColorsT, class ResourcesT>
@@ -207,12 +208,29 @@ inline ExplorerDrawResult DrawExplorerList(
     Scroll_manager& scroll_manager,
     bool showGames,
     int itemHeight,
-    int n_games_on_window, 
+    int n_games_on_window,
+    bool has_parent,
     FontsT& fonts,
     ColorsT& colors,
     ResourcesT& resources
 ) {
     ExplorerDrawResult res;
+    
+    // Up-to-parent button above the list
+    if (has_parent) {
+        const int upBtnW = 28;
+        const int upBtnH = 24;
+        const int upBtnX = IMPORT_GAME_SX;
+        const int upBtnY = IMPORT_GAME_SY - upBtnH - 6;
+        const Rect upRect(upBtnX, upBtnY, upBtnW, upBtnH);
+        upRect.rounded(4).draw(colors.dark_green).drawFrame(1.0, colors.white);
+        fonts.font(U"↑").draw(16, Arg::center(upRect.center()), colors.white);
+        if (upRect.leftClicked()) {
+            res.upButtonClicked = true;
+            return res;
+        }
+    }
+    
     int sy = IMPORT_GAME_SY;
     int strt_idx_int = scroll_manager.get_strt_idx_int();
     if (strt_idx_int > 0) {
