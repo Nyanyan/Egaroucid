@@ -199,36 +199,43 @@ struct ExplorerDrawResult {
     bool upButtonClicked = false;
 };
 
-template <class FontsT, class ColorsT, class ResourcesT>
+template <class FontsT, class ColorsT, class ResourcesT, class LanguageT>
 inline ExplorerDrawResult DrawExplorerList(
     const std::vector<String>& folders_display,
     const std::vector<Game_abstract>& games,
     std::vector<Button>& import_buttons,
     std::vector<ImageButton>& delete_buttons,
     Scroll_manager& scroll_manager,
+    Button& up_button,
     bool showGames,
     int itemHeight,
     int n_games_on_window,
     bool has_parent,
     FontsT& fonts,
     ColorsT& colors,
-    ResourcesT& resources
+    ResourcesT& resources,
+    LanguageT& language
 ) {
     ExplorerDrawResult res;
     
-    // Up-to-parent button above the list
+    // Up-to-parent button above the list (always show/handle if has_parent)
     if (has_parent) {
-        const int upBtnW = 28;
-        const int upBtnH = 24;
-        const int upBtnX = IMPORT_GAME_SX;
-        const int upBtnY = IMPORT_GAME_SY - upBtnH - 6;
-        const Rect upRect(upBtnX, upBtnY, upBtnW, upBtnH);
-        upRect.rounded(4).draw(colors.dark_green).drawFrame(1.0, colors.white);
-        fonts.font(U"↑").draw(16, Arg::center(upRect.center()), colors.white);
-        if (upRect.leftClicked()) {
-            res.upButtonClicked = true;
-            return res;
-        }
+        up_button.enable();
+    } else {
+        up_button.disable();
+    }
+    up_button.move(IMPORT_GAME_SX, IMPORT_GAME_SY - 30);
+    up_button.draw();
+    if (up_button.clicked()) {
+        res.upButtonClicked = true;
+        return res;
+    }
+    
+    // Check if there are any items to display
+    int total_items = (int)folders_display.size() + (showGames ? (int)games.size() : 0);
+    if (total_items == 0) {
+        fonts.font(language.get("in_out", "no_game_available")).draw(20, Arg::center(X_CENTER, Y_CENTER), colors.white);
+        return res;
     }
     
     int sy = IMPORT_GAME_SY;

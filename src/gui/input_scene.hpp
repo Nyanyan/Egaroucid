@@ -306,6 +306,7 @@ private:
     std::vector<ImageButton> delete_buttons;
     Scroll_manager scroll_manager;
     Button back_button;
+    Button up_button;
     bool failed;
     // Explorer-like folder view
     std::vector<String> folders_display; // includes optional ".." at head
@@ -315,6 +316,7 @@ private:
 public:
     Import_game(const InitData& init) : IScene{ init } {
         back_button.init(BACK_BUTTON_SX, BACK_BUTTON_SY, BACK_BUTTON_WIDTH, BACK_BUTTON_HEIGHT, BACK_BUTTON_RADIUS, language.get("common", "back"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
+        up_button.init(IMPORT_GAME_SX, IMPORT_GAME_SY - 30, 28, 24, 4, U"↑", 16, getData().fonts.font, getData().colors.white, getData().colors.black);
         failed = false;
     // Initialize current dir and load games
     subfolder.clear();
@@ -337,12 +339,10 @@ public:
         }
         if (failed) {
             getData().fonts.font(language.get("in_out", "import_failed")).draw(20, Arg::center(X_CENTER, Y_CENTER), getData().colors.white);
-        } else if (games.empty() && folders_display.empty()) {
-            getData().fonts.font(language.get("in_out", "no_game_available")).draw(20, Arg::center(X_CENTER, Y_CENTER), getData().colors.white);
         } else {
             auto res = DrawExplorerList(
-                folders_display, games, import_buttons, delete_buttons, scroll_manager,
-                /*showGames=*/true, IMPORT_GAME_HEIGHT, IMPORT_GAME_N_GAMES_ON_WINDOW, has_parent, getData().fonts, getData().colors, getData().resources);
+                folders_display, games, import_buttons, delete_buttons, scroll_manager, up_button,
+                /*showGames=*/true, IMPORT_GAME_HEIGHT, IMPORT_GAME_N_GAMES_ON_WINDOW, has_parent, getData().fonts, getData().colors, getData().resources, language);
             if (res.upButtonClicked) {
                 if (!subfolder.empty()) {
                     std::string s = subfolder;
