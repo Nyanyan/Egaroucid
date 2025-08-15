@@ -75,3 +75,6 @@ book
 App
 Egaroucid.xcodeproj/xcuserdata
 Egaroucid.xcodeproj/project.xcworkspace/xcuserdata
+
+# temp folder
+enc_temp_folder
