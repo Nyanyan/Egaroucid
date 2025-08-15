@@ -154,6 +154,7 @@
         "color": "Color",
         "input_game": "Input Game",
         "no_game_available": "No Game Available",
+        "empty_folder": "This folder is empty",
         "import": "Import",
         "export_main": "Save main line",
         "export_until_this_board": "Save till set position",

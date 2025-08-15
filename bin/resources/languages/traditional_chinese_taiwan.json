@@ -154,6 +154,7 @@
         "color": "顏色",
         "input_game": "匯入對局",
         "no_game_available": "無可用對局",
+        "empty_folder": "此資料夾為空",
         "import": "匯入",
         "export_main": "儲存主線變化",
         "export_until_this_board": "儲存至當前局面",

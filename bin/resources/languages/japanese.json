@@ -154,6 +154,7 @@
         "color": "色",
         "input_game": "対局読み込み",
         "no_game_available": "対局が保存されていません",
+        "empty_folder": "このフォルダは空です",
         "import": "取り込む",
         "export_main": "本筋を保存",
         "export_until_this_board": "設定局面までを保存",

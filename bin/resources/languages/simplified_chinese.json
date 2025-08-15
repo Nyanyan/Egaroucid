@@ -154,6 +154,7 @@
         "color": "颜色",
         "input_game": "导入对局",
         "no_game_available": "无可用对局",
+        "empty_folder": "此文件夹为空",
         "import": "导入",
         "export_main": "保存到默认目录",
         "export_until_this_board": "保存到设定位置",

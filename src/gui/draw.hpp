@@ -412,7 +412,7 @@ inline ExplorerDrawResult DrawExplorerList(
     // If we only have parent folder (empty subfolder), show a message but still show parent folder
     bool empty_subfolder = has_parent && (folders_display.size() == 0 && games.size() == 0);
     if (empty_subfolder) {
-        fonts.font(U"このフォルダは空です").draw(16, Arg::center(X_CENTER, Y_CENTER + 50), colors.white);
+        fonts.font(language.get("in_out", "empty_folder")).draw(16, Arg::center(X_CENTER, Y_CENTER + 50), colors.white);
     }
     
     int sy = IMPORT_GAME_SY;
