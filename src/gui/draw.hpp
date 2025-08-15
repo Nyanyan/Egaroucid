@@ -241,14 +241,14 @@ struct ExplorerDrawResult {
     bool openExplorerClicked = false;
     
     // Drag and drop functionality
-    bool dragStarted = false;
-    bool dropCompleted = false;
-    int draggedGameIndex = -1;
-    String draggedFolderName;
-    String dropTargetFolder;
-    bool isDraggingGame = false;
-    bool isDraggingFolder = false;
-    bool dropOnParent = false;  // New: drop on parent folder
+    bool drag_started = false;
+    bool drop_completed = false;
+    int dragged_game_index = -1;
+    String dragged_folder_name;
+    String drop_target_folder;
+    bool is_dragging_game = false;
+    bool is_dragging_folder = false;
+    bool drop_on_parent = false;  // New: drop on parent folder
 };
 
 // Drag state management structure
@@ -301,11 +301,11 @@ struct ExplorerClickState {
 
 // Helper function to handle drag drop detection
 template <class FontsT, class ColorsT, class ResourcesT, class LanguageT>
-inline ExplorerDrawResult HandleDragDrop(
+inline ExplorerDrawResult handle_drag_drop(
     ExplorerDragState& drag_state,
     const std::vector<String>& folders_display,
     Scroll_manager& scroll_manager,
-    int itemHeight,
+    int item_height,
     int n_games_on_window,
     bool has_parent
 ) {
@@ -319,11 +319,11 @@ inline ExplorerDrawResult HandleDragDrop(
         bool dropped_on_parent = false;
         if (has_parent) {
             int parent_row = 0;
-            int parent_sy = IMPORT_GAME_SY + 8 + (parent_row - scroll_manager.get_strt_idx_int()) * itemHeight;
+            int parent_sy = IMPORT_GAME_SY + 8 + (parent_row - scroll_manager.get_strt_idx_int()) * item_height;
             
             if (parent_row >= scroll_manager.get_strt_idx_int() && 
                 parent_row < scroll_manager.get_strt_idx_int() + n_games_on_window) {
-                Rect parent_rect(IMPORT_GAME_SX, parent_sy, IMPORT_GAME_WIDTH, itemHeight);
+                Rect parent_rect(IMPORT_GAME_SX, parent_sy, IMPORT_GAME_WIDTH, item_height);
                 if (parent_rect.contains(drag_state.current_mouse_pos)) {
                     dropped_on_parent = true;
                 }
@@ -338,11 +338,11 @@ inline ExplorerDrawResult HandleDragDrop(
             int parent_offset = has_parent ? 1 : 0;
             for (int folder_idx = 0; folder_idx < (int)folders_display.size(); ++folder_idx) {
                 int folder_row = parent_offset + folder_idx;
-                int folder_sy = IMPORT_GAME_SY + 8 + (folder_row - scroll_manager.get_strt_idx_int()) * itemHeight;
+                int folder_sy = IMPORT_GAME_SY + 8 + (folder_row - scroll_manager.get_strt_idx_int()) * item_height;
                 
                 if (folder_row >= scroll_manager.get_strt_idx_int() && 
                     folder_row < scroll_manager.get_strt_idx_int() + n_games_on_window) {
-                    Rect folder_rect(IMPORT_GAME_SX, folder_sy, IMPORT_GAME_WIDTH, itemHeight);
+                    Rect folder_rect(IMPORT_GAME_SX, folder_sy, IMPORT_GAME_WIDTH, item_height);
                     if (folder_rect.contains(drag_state.current_mouse_pos)) {
                         String candidate_target = folders_display[folder_idx];
                         // Don't allow dropping a folder on itself
@@ -363,24 +363,24 @@ inline ExplorerDrawResult HandleDragDrop(
             } else if (drag_state.is_dragging_folder) {
                 std::cerr << "Moving folder '" << drag_state.dragged_folder_name.narrow() << "' to parent folder" << std::endl;
             }
-            res.dropCompleted = true;
-            res.dropOnParent = true;
-            res.isDraggingGame = drag_state.is_dragging_game;
-            res.isDraggingFolder = drag_state.is_dragging_folder;
-            res.draggedGameIndex = drag_state.dragged_game_index;
-            res.draggedFolderName = drag_state.dragged_folder_name;
+            res.drop_completed = true;
+            res.drop_on_parent = true;
+            res.is_dragging_game = drag_state.is_dragging_game;
+            res.is_dragging_folder = drag_state.is_dragging_folder;
+            res.dragged_game_index = drag_state.dragged_game_index;
+            res.dragged_folder_name = drag_state.dragged_folder_name;
         } else if (dropped_on_folder) {
             if (drag_state.is_dragging_game) {
                 std::cerr << "Moving game " << drag_state.dragged_game_index << " to folder '" << target_folder.narrow() << "'" << std::endl;
             } else if (drag_state.is_dragging_folder) {
                 std::cerr << "Moving folder '" << drag_state.dragged_folder_name.narrow() << "' to folder '" << target_folder.narrow() << "'" << std::endl;
             }
-            res.dropCompleted = true;
-            res.dropTargetFolder = target_folder;
-            res.isDraggingGame = drag_state.is_dragging_game;
-            res.isDraggingFolder = drag_state.is_dragging_folder;
-            res.draggedGameIndex = drag_state.dragged_game_index;
-            res.draggedFolderName = drag_state.dragged_folder_name;
+            res.drop_completed = true;
+            res.drop_target_folder = target_folder;
+            res.is_dragging_game = drag_state.is_dragging_game;
+            res.is_dragging_folder = drag_state.is_dragging_folder;
+            res.dragged_game_index = drag_state.dragged_game_index;
+            res.dragged_folder_name = drag_state.dragged_folder_name;
         }
         
         // Reset drag state
@@ -391,7 +391,7 @@ inline ExplorerDrawResult HandleDragDrop(
 }
 
 // Helper function to update mouse state and handle drag start
-inline void UpdateMouseStateAndDragStart(ExplorerDragState& drag_state, ExplorerDrawResult& res) {
+inline void update_mouse_state_and_drag_start(ExplorerDragState& drag_state, ExplorerDrawResult& res) {
     drag_state.update_mouse_state();
     
     // Reset drag state when mouse is released (but only if not dragging)
@@ -410,15 +410,15 @@ inline void UpdateMouseStateAndDragStart(ExplorerDragState& drag_state, Explorer
                 if (drag_state.dragged_game_index >= 0) {
                     drag_state.is_dragging = true;
                     drag_state.is_dragging_game = true;
-                    res.dragStarted = true;
-                    res.isDraggingGame = true;
-                    res.draggedGameIndex = drag_state.dragged_game_index;
+                    res.drag_started = true;
+                    res.is_dragging_game = true;
+                    res.dragged_game_index = drag_state.dragged_game_index;
                 } else if (!drag_state.dragged_folder_name.empty()) {
                     drag_state.is_dragging = true;
                     drag_state.is_dragging_folder = true;
-                    res.dragStarted = true;
-                    res.isDraggingFolder = true;
-                    res.draggedFolderName = drag_state.dragged_folder_name;
+                    res.drag_started = true;
+                    res.is_dragging_folder = true;
+                    res.dragged_folder_name = drag_state.dragged_folder_name;
                 }
             }
         }
@@ -433,7 +433,7 @@ inline ExplorerDrawResult DrawExplorerList(
     Scroll_manager& scroll_manager,
     Button& up_button,
     Button& open_explorer_button,
-    int itemHeight,
+    int item_height,
     int n_games_on_window,
     bool has_parent,
     FontsT& fonts,
@@ -452,12 +452,12 @@ inline ExplorerDrawResult DrawExplorerList(
     uint64_t current_time = Time::GetMillisec();
     
     // Update mouse state and handle drag operations
-    UpdateMouseStateAndDragStart(drag_state, res);
+    update_mouse_state_and_drag_start(drag_state, res);
     
     // Handle drag drop detection
-    ExplorerDrawResult drag_result = HandleDragDrop<FontsT, ColorsT, ResourcesT, LanguageT>(
-        drag_state, folders_display, scroll_manager, itemHeight, n_games_on_window, has_parent);
-    if (drag_result.dropCompleted) {
+    ExplorerDrawResult drag_result = handle_drag_drop<FontsT, ColorsT, ResourcesT, LanguageT>(
+        drag_state, folders_display, scroll_manager, item_height, n_games_on_window, has_parent);
+    if (drag_result.drop_completed) {
         return drag_result;
     }
     
@@ -485,9 +485,9 @@ inline ExplorerDrawResult DrawExplorerList(
     }
     
     // Draw list items
-    ExplorerDrawResult list_result = DrawExplorerListItems<FontsT, ColorsT, ResourcesT, LanguageT>(
+    ExplorerDrawResult list_result = draw_explorer_list_items<FontsT, ColorsT, ResourcesT, LanguageT>(
         folders_display, games, delete_buttons, scroll_manager, 
-        itemHeight, n_games_on_window, has_parent, fonts, colors, resources, language,
+        item_height, n_games_on_window, has_parent, fonts, colors, resources, language,
         drag_state, click_state, current_time
     );
     
@@ -498,19 +498,19 @@ inline ExplorerDrawResult DrawExplorerList(
     }
     
     // Draw dragged items
-    DrawDraggedItems<FontsT, ColorsT>(drag_state, games, itemHeight, fonts, colors);
+    draw_dragged_items<FontsT, ColorsT>(drag_state, games, item_height, fonts, colors);
     
     return res;
 }
 
 // Helper function to draw list items
 template <class FontsT, class ColorsT, class ResourcesT, class LanguageT>
-inline ExplorerDrawResult DrawExplorerListItems(
+inline ExplorerDrawResult draw_explorer_list_items(
     const std::vector<String>& folders_display,
     const std::vector<Game_abstract>& games,
     std::vector<ImageButton>& delete_buttons,
     Scroll_manager& scroll_manager,
-    int itemHeight,
+    int item_height,
     int n_games_on_window,
     bool has_parent,
     FontsT& fonts,
@@ -538,7 +538,7 @@ inline ExplorerDrawResult DrawExplorerListItems(
             continue;
         }
         
-        Rect rect(IMPORT_GAME_SX, sy, IMPORT_GAME_WIDTH, itemHeight);
+        Rect rect(IMPORT_GAME_SX, sy, IMPORT_GAME_WIDTH, item_height);
         if (row % 2) {
             rect.draw(colors.dark_green).drawFrame(1.0, colors.white);
         } else {
@@ -547,7 +547,7 @@ inline ExplorerDrawResult DrawExplorerListItems(
 
         // Handle parent folder
         if (has_parent && (row - strt_idx_int) == 0 && row == 0) {
-            ExplorerDrawResult parent_result = DrawParentFolder<FontsT, ColorsT>(rect, drag_state, fonts, colors, sy, itemHeight, click_state, current_time);
+            ExplorerDrawResult parent_result = draw_parent_folder<FontsT, ColorsT>(rect, drag_state, fonts, colors, sy, item_height, click_state, current_time);
             if (parent_result.parentFolderDoubleClicked) {
                 return parent_result;
             }
@@ -556,9 +556,9 @@ inline ExplorerDrawResult DrawExplorerListItems(
         else if (row - parent_offset < (int)folders_display.size()) {
             int folder_idx = row - parent_offset;
             if (folder_idx >= 0 && folder_idx < (int)folders_display.size()) {
-                ExplorerDrawResult folder_result = DrawFolderItem<FontsT, ColorsT, ResourcesT>(
+                ExplorerDrawResult folder_result = draw_folder_item<FontsT, ColorsT, ResourcesT>(
                     folders_display[folder_idx], rect, row, drag_state, fonts, colors, resources,
-                    sy, itemHeight, click_state, current_time
+                    sy, item_height, click_state, current_time
                 );
                 if (folder_result.folderClicked || folder_result.folderDoubleClicked) {
                     return folder_result;
@@ -569,20 +569,20 @@ inline ExplorerDrawResult DrawExplorerListItems(
         else {
             int i = row - parent_offset - (int)folders_display.size();
             if (i >= 0 && i < (int)games.size()) {
-                ExplorerDrawResult game_result = DrawGameItem<FontsT, ColorsT>(
+                ExplorerDrawResult game_result = draw_game_item<FontsT, ColorsT>(
                     games[i], i, rect, row, delete_buttons, drag_state, fonts, colors,
-                    sy, itemHeight, click_state, current_time
+                    sy, item_height, click_state, current_time
                 );
                 if (game_result.gameDoubleClicked || game_result.deleteClicked) {
                     return game_result;
                 }
             }
         }
-        sy += itemHeight;
+        sy += item_height;
     }
     
     if (strt_idx_int + n_games_on_window < total_rows) {
-        fonts.font(U"︙").draw(15, Arg::topCenter(X_CENTER, IMPORT_GAME_SY + itemHeight * n_games_on_window + 10), colors.white);
+        fonts.font(U"︙").draw(15, Arg::topCenter(X_CENTER, IMPORT_GAME_SY + item_height * n_games_on_window + 10), colors.white);
     }
     scroll_manager.draw();
     scroll_manager.update();
@@ -592,13 +592,13 @@ inline ExplorerDrawResult DrawExplorerListItems(
 
 // Helper function to draw parent folder
 template <class FontsT, class ColorsT>
-inline ExplorerDrawResult DrawParentFolder(
+inline ExplorerDrawResult draw_parent_folder(
     const Rect& rect,
     ExplorerDragState& drag_state,
     FontsT& fonts,
     ColorsT& colors,
     int sy,
-    int itemHeight,
+    int item_height,
     ExplorerClickState& click_state,
     uint64_t current_time
 ) {
@@ -610,7 +610,7 @@ inline ExplorerDrawResult DrawParentFolder(
     }
     
     // Draw parent folder (..) 
-    fonts.font(U"↑..").draw(15, Arg::leftCenter(IMPORT_GAME_SX + IMPORT_GAME_LEFT_MARGIN + 10, sy + itemHeight / 2), colors.white);
+    fonts.font(U"↑..").draw(15, Arg::leftCenter(IMPORT_GAME_SX + IMPORT_GAME_LEFT_MARGIN + 10, sy + item_height / 2), colors.white);
     
     // Handle parent folder double-click
     if (rect.leftClicked() && !drag_state.is_dragging) {
@@ -637,7 +637,7 @@ inline ExplorerDrawResult DrawParentFolder(
 
 // Helper function to draw folder item
 template <class FontsT, class ColorsT, class ResourcesT>
-inline ExplorerDrawResult DrawFolderItem(
+inline ExplorerDrawResult draw_folder_item(
     const String& fname,
     const Rect& rect,
     int row,
@@ -646,7 +646,7 @@ inline ExplorerDrawResult DrawFolderItem(
     ColorsT& colors,
     ResourcesT& resources,
     int sy,
-    int itemHeight,
+    int item_height,
     ExplorerClickState& click_state,
     uint64_t current_time
 ) {
@@ -662,14 +662,14 @@ inline ExplorerDrawResult DrawFolderItem(
     if (is_being_dragged) {
         // Draw dragged folder at mouse position with transparency
         Vec2 drag_pos = drag_state.current_mouse_pos - drag_state.drag_offset;
-        Rect drag_rect(drag_pos.x, drag_pos.y, IMPORT_GAME_WIDTH, itemHeight);
+        Rect drag_rect(drag_pos.x, drag_pos.y, IMPORT_GAME_WIDTH, item_height);
         drag_rect.draw(folder_bg_color).drawFrame(2.0, colors.white);
-        resources.folder.scaled(folder_icon_scale).draw(Arg::leftCenter(drag_rect.x + IMPORT_GAME_LEFT_MARGIN + 10, drag_rect.y + itemHeight / 2));
-        fonts.font(fname).draw(15, Arg::leftCenter(drag_rect.x + IMPORT_GAME_LEFT_MARGIN + 10 + 30, drag_rect.y + itemHeight / 2), colors.white);
+        resources.folder.scaled(folder_icon_scale).draw(Arg::leftCenter(drag_rect.x + IMPORT_GAME_LEFT_MARGIN + 10, drag_rect.y + item_height / 2));
+        fonts.font(fname).draw(15, Arg::leftCenter(drag_rect.x + IMPORT_GAME_LEFT_MARGIN + 10 + 30, drag_rect.y + item_height / 2), colors.white);
     }
     
-    resources.folder.scaled(folder_icon_scale).draw(Arg::leftCenter(IMPORT_GAME_SX + IMPORT_GAME_LEFT_MARGIN + 10, sy + itemHeight / 2));
-    fonts.font(fname).draw(15, Arg::leftCenter(IMPORT_GAME_SX + IMPORT_GAME_LEFT_MARGIN + 10 + 30, sy + itemHeight / 2), colors.white);
+    resources.folder.scaled(folder_icon_scale).draw(Arg::leftCenter(IMPORT_GAME_SX + IMPORT_GAME_LEFT_MARGIN + 10, sy + item_height / 2));
+    fonts.font(fname).draw(15, Arg::leftCenter(IMPORT_GAME_SX + IMPORT_GAME_LEFT_MARGIN + 10 + 30, sy + item_height / 2), colors.white);
     
     // Handle folder drag preparation - only on initial press
     if (drag_state.mouse_just_pressed && rect.contains(drag_state.current_mouse_pos) && 
@@ -711,7 +711,7 @@ inline ExplorerDrawResult DrawFolderItem(
 }
 // Helper function to draw game item
 template <class FontsT, class ColorsT>
-inline ExplorerDrawResult DrawGameItem(
+inline ExplorerDrawResult draw_game_item(
     const Game_abstract& game,
     int game_index,
     const Rect& rect,
@@ -721,7 +721,7 @@ inline ExplorerDrawResult DrawGameItem(
     FontsT& fonts,
     ColorsT& colors,
     int sy,
-    int itemHeight,
+    int item_height,
     ExplorerClickState& click_state,
     uint64_t current_time
 ) {
@@ -891,10 +891,10 @@ inline ExplorerDrawResult DrawGameItem(
 
 // Helper function to draw dragged items
 template <class FontsT, class ColorsT>
-inline void DrawDraggedItems(
+inline void draw_dragged_items(
     const ExplorerDragState& drag_state,
     const std::vector<Game_abstract>& games,
-    int itemHeight,
+    int item_height,
     FontsT& fonts,
     ColorsT& colors
 ) {
@@ -902,7 +902,7 @@ inline void DrawDraggedItems(
     if (drag_state.is_dragging_game && drag_state.dragged_game_index >= 0 && drag_state.dragged_game_index < (int)games.size()) {
         // Use drag_offset to maintain relative position from where user clicked
         Vec2 drag_pos = drag_state.current_mouse_pos - drag_state.drag_offset;
-        Rect drag_rect(drag_pos.x, drag_pos.y, IMPORT_GAME_WIDTH, itemHeight);
+        Rect drag_rect(drag_pos.x, drag_pos.y, IMPORT_GAME_WIDTH, item_height);
         drag_rect.draw(colors.yellow.withAlpha(200)).drawFrame(2.0, colors.white);
         
         // Draw simplified game info
@@ -924,7 +924,7 @@ inline ExplorerDrawResult DrawExplorerList(
     Button& up_button,
     Button& open_explorer_button,
     bool showImportButtons,
-    int itemHeight,
+    int item_height,
     int n_games_on_window,
     bool has_parent,
     FontsT& fonts,
@@ -935,7 +935,7 @@ inline ExplorerDrawResult DrawExplorerList(
     // Call the main function with empty document_dir and current_subfolder
     return DrawExplorerList(
         folders_display, games, delete_buttons, scroll_manager,
-        up_button, open_explorer_button, itemHeight,
+        up_button, open_explorer_button, item_height,
         n_games_on_window, has_parent, fonts, colors, resources, language,
         "", ""
     );

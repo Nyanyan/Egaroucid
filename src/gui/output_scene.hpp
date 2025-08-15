@@ -219,7 +219,7 @@ public:
                 init_folder_scroll_manager();
                 return;
             }
-            if (pickRes.dropCompleted) {
+            if (pickRes.drop_completed) {
                 handle_picker_drop(pickRes);
             }
 
@@ -321,21 +321,21 @@ private:
     
     // Handle drag and drop operations in folder picker
     void handle_picker_drop(const ExplorerDrawResult& res) {
-        if (res.dropOnParent) {
+        if (res.drop_on_parent) {
             // Handle drop on parent folder - move to parent directory
-            if (res.isDraggingGame && res.draggedGameIndex >= 0 && res.draggedGameIndex < (int)picker_games.size()) {
-                move_picker_game_to_parent(res.draggedGameIndex);
-            } else if (res.isDraggingFolder && !res.draggedFolderName.empty()) {
-                move_picker_folder_to_parent(res.draggedFolderName.narrow());
+            if (res.is_dragging_game && res.dragged_game_index >= 0 && res.dragged_game_index < (int)picker_games.size()) {
+                move_picker_game_to_parent(res.dragged_game_index);
+            } else if (res.is_dragging_folder && !res.dragged_folder_name.empty()) {
+                move_picker_folder_to_parent(res.dragged_folder_name.narrow());
             }
         } else {
             // Handle normal folder drop
-            if (res.isDraggingGame && res.draggedGameIndex >= 0 && res.draggedGameIndex < (int)picker_games.size()) {
+            if (res.is_dragging_game && res.dragged_game_index >= 0 && res.dragged_game_index < (int)picker_games.size()) {
                 // Move game to target folder
-                move_picker_game_to_folder(res.draggedGameIndex, res.dropTargetFolder.narrow());
-            } else if (res.isDraggingFolder && !res.draggedFolderName.empty()) {
+                move_picker_game_to_folder(res.dragged_game_index, res.drop_target_folder.narrow());
+            } else if (res.is_dragging_folder && !res.dragged_folder_name.empty()) {
                 // Move folder to target folder
-                move_picker_folder_to_folder(res.draggedFolderName.narrow(), res.dropTargetFolder.narrow());
+                move_picker_folder_to_folder(res.dragged_folder_name.narrow(), res.drop_target_folder.narrow());
             }
         }
     }
