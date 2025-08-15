@@ -201,7 +201,7 @@ public:
             static std::vector<ImageButton> dummyDeleteBtns; // not used
             auto pickRes = DrawExplorerList(
                 save_folders_display, emptyGames, dummyImportBtns, dummyDeleteBtns,
-                folder_scroll_manager, /*showGames=*/false,
+                folder_scroll_manager, /*showGames=*/false, IMPORT_GAME_HEIGHT,
                 getData().fonts, getData().colors, getData().resources);
             if (pickRes.folderClicked) {
                 String fname = pickRes.clickedFolder;
@@ -212,11 +212,16 @@ public:
                 return;
             }
 
-            // New folder UI
-            getData().fonts.font(language.get("in_out", "new_folder")).draw(13, IMPORT_GAME_SX, BUTTON3_SY - 140, getData().colors.white);
-            SimpleGUI::TextArea(new_folder_area, Vec2{ IMPORT_GAME_SX, BUTTON3_SY - 115 }, SizeF{ 200, 26 }, 64);
-            create_folder_button.draw();
-            if (create_folder_button.clicked()) {
+            // New folder UI - horizontal layout
+            const int newFolderY = 400;
+            getData().fonts.font(language.get("in_out", "new_folder")).draw(15, 50, newFolderY + 5, getData().colors.white);
+            SimpleGUI::TextArea(new_folder_area, Vec2{180, newFolderY}, SizeF{300, 30}, 64);
+            
+            // Update create button position for horizontal layout
+            Button temp_create_button;
+            temp_create_button.init(490, newFolderY, 80, 30, 4, language.get("in_out", "create"), 13, getData().fonts.font, getData().colors.white, getData().colors.black);
+            temp_create_button.draw();
+            if (temp_create_button.clicked()) {
                 String s = new_folder_area.text.replaced(U"\r", U"").replaced(U"\n", U"").replaced(U"\\", U"/");
                 while (s.size() && s.front() == U'/') s.erase(s.begin());
                 while (s.size() && s.back() == U'/') s.pop_back();

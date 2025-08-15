@@ -206,6 +206,7 @@ inline ExplorerDrawResult DrawExplorerList(
     std::vector<ImageButton>& delete_buttons,
     Scroll_manager& scroll_manager,
     bool showGames,
+    int itemHeight,
     FontsT& fonts,
     ColorsT& colors,
     ResourcesT& resources
@@ -223,7 +224,7 @@ inline ExplorerDrawResult DrawExplorerList(
         rect.y = sy;
         rect.x = IMPORT_GAME_SX;
         rect.w = IMPORT_GAME_WIDTH;
-        rect.h = IMPORT_GAME_HEIGHT;
+        rect.h = itemHeight;
         if (row % 2) {
             rect.draw(colors.dark_green).drawFrame(1.0, colors.white);
         } else {
@@ -233,9 +234,9 @@ inline ExplorerDrawResult DrawExplorerList(
         if (row < (int)folders_display.size()) {
             String fname = folders_display[row];
             double folder_icon_scale = (double)(rect.h - 2 * 10) / (double)resources.folder.height();
-            resources.folder.scaled(folder_icon_scale).draw(Arg::leftCenter(IMPORT_GAME_SX + IMPORT_GAME_LEFT_MARGIN + 10, sy + IMPORT_GAME_HEIGHT / 2));
-            fonts.font(fname).draw(15, Arg::leftCenter(IMPORT_GAME_SX + IMPORT_GAME_LEFT_MARGIN + 10 + 30, sy + IMPORT_GAME_HEIGHT / 2), colors.white);
-            if (Rect(IMPORT_GAME_SX, sy, IMPORT_GAME_WIDTH, IMPORT_GAME_HEIGHT).leftClicked()) {
+            resources.folder.scaled(folder_icon_scale).draw(Arg::leftCenter(IMPORT_GAME_SX + IMPORT_GAME_LEFT_MARGIN + 10, sy + itemHeight / 2));
+            fonts.font(fname).draw(15, Arg::leftCenter(IMPORT_GAME_SX + IMPORT_GAME_LEFT_MARGIN + 10 + 30, sy + itemHeight / 2), colors.white);
+            if (Rect(IMPORT_GAME_SX, sy, IMPORT_GAME_WIDTH, itemHeight).leftClicked()) {
                 res.folderClicked = true;
                 res.clickedFolder = fname;
                 return res;
@@ -335,7 +336,7 @@ inline ExplorerDrawResult DrawExplorerList(
                 return res;
             }
         }
-        sy += IMPORT_GAME_HEIGHT;
+        sy += itemHeight;
     }
     int total_rows2 = (int)folders_display.size() + (showGames ? (int)games.size() : 0);
     if (strt_idx_int + IMPORT_GAME_N_GAMES_ON_WINDOW < total_rows2) {
