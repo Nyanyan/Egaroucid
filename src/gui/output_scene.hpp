@@ -177,7 +177,7 @@ public:
             // Path label
             getData().fonts.font(language.get("in_out", "save_subfolder")).draw(20, Arg::topCenter(X_CENTER, 10), getData().colors.white);
             String path_label = U"games/" + Unicode::Widen(picker_subfolder);
-            getData().fonts.font(path_label).draw(15, Arg::topCenter(X_CENTER, 30), getData().colors.white);
+            getData().fonts.font(path_label).draw(15, Arg::topCenter(X_CENTER, 45), getData().colors.white);
 
             // List via shared helper (folders only)
             static std::vector<Game_abstract> emptyGames; // not used
@@ -208,13 +208,12 @@ public:
             }
 
             // New folder UI - horizontal layout
-            const int newFolderY = 350;
-            getData().fonts.font(language.get("in_out", "new_folder")).draw(15, 50, newFolderY + 5, getData().colors.white);
-            SimpleGUI::TextArea(new_folder_area, Vec2{180, newFolderY}, SizeF{300, 30}, 64);
+            getData().fonts.font(language.get("in_out", "new_folder")).draw(15, Arg::rightCenter(200, EXPORT_GAME_CREATE_FOLDER_Y_CENTER), getData().colors.white);
+            SimpleGUI::TextArea(new_folder_area, Vec2{210, EXPORT_GAME_CREATE_FOLDER_Y_CENTER - 30 / 2 - 2}, SizeF{400, 30}, 64);
             
             // Update create button position for horizontal layout
             Button temp_create_button;
-            temp_create_button.init(490, newFolderY, 80, 30, 4, language.get("in_out", "create"), 13, getData().fonts.font, getData().colors.white, getData().colors.black);
+            temp_create_button.init(620, EXPORT_GAME_CREATE_FOLDER_Y_CENTER - 30 / 2, 80, 30, 8, language.get("in_out", "create"), 14, getData().fonts.font, getData().colors.white, getData().colors.black);
             temp_create_button.draw();
             if (temp_create_button.clicked()) {
                 String s = new_folder_area.text.replaced(U"\r", U"").replaced(U"\n", U"").replaced(U"\\", U"/");
