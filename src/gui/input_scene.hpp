@@ -482,7 +482,21 @@ private:
         FileSystem::Remove(json_path);
 
         const String csv_path = get_base_dir() + U"summary.csv";
+        
+        // CSVファイルの存在確認
+        if (!FileSystem::Exists(csv_path)) {
+            std::cerr << "CSV file not found: " << csv_path << std::endl;
+            return;
+        }
+        
         CSV csv{ csv_path };
+        
+        // CSVの読み込み確認
+        if (csv.rows() == 0) {
+            std::cerr << "Warning: CSV file is empty" << std::endl;
+            return;
+        }
+        
         CSV new_csv;
         
         // games配列はreverseされているので、CSV行インデックスを正しく計算
@@ -493,15 +507,34 @@ private:
                 // CSVの列数をチェックしてから書き込み
                 if (csv[i].size() >= 6) {
                     for (int j = 0; j < 6; ++j) {
-                        new_csv.write(csv[i][j]);
+                        // 文字列の長さをチェックして制限する
+                        String data = csv[i][j];
+                        if (data.size() > 1000) { // 1000文字制限
+                            data = data.substr(0, 1000) + U"...";
+                            std::cerr << "Warning: Truncated long string in CSV row " << i << " column " << j << std::endl;
+                        }
+                        new_csv.write(data);
                     }
                     new_csv.newLine();
                 } else {
-                    std::cerr << "Warning: CSV row " << i << " has insufficient columns" << std::endl;
+                    std::cerr << "Warning: CSV row " << i << " has insufficient columns (" << csv[i].size() << ")" << std::endl;
                 }
             }
         }
-        new_csv.save(csv_path);
+        
+        // 一時ファイルに保存してから元ファイルを置き換える
+        String temp_csv_path = csv_path + U".tmp";
+        new_csv.save(temp_csv_path);
+        
+        // 一時ファイルの保存が成功したら元ファイルを置き換え
+        if (FileSystem::Exists(temp_csv_path)) {
+            FileSystem::Remove(csv_path);
+            FileSystem::Copy(temp_csv_path, csv_path);
+            FileSystem::Remove(temp_csv_path);
+        } else {
+            std::cerr << "Failed to save temporary CSV file" << std::endl;
+            return;
+        }
 
         games.erase(games.begin() + idx);
         import_buttons.erase(import_buttons.begin() + idx);
