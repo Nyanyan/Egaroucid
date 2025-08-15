@@ -212,8 +212,11 @@ public:
             }
             if (pickRes.folderClicked) {
                 String fname = pickRes.clickedFolder;
+                std::cerr << "Folder clicked: '" << fname.narrow() << "'" << std::endl;
+                std::cerr << "Before: picker_subfolder = '" << picker_subfolder << "'" << std::endl;
                 if (!picker_subfolder.empty()) picker_subfolder += "/";
                 picker_subfolder += fname.narrow();
+                std::cerr << "After: picker_subfolder = '" << picker_subfolder << "'" << std::endl;
                 enumerate_save_dir();
                 init_folder_scroll_manager();
                 return;
@@ -237,15 +240,16 @@ public:
                     String target = base + s + U"/";
                     bool created = FileSystem::CreateDirectories(target);
                     if (created) {
-                        // Auto-navigate to the newly created folder
+                        // Navigate to the newly created folder
                         if (!picker_subfolder.empty()) picker_subfolder += "/";
                         picker_subfolder += s.narrow();
+                        std::cerr << "Created and navigated to folder: " << picker_subfolder << std::endl;
+                        // Clear the input field after successful creation
                         new_folder_area.text.clear();
                         new_folder_area.cursorPos = 0;
                         new_folder_area.rebuildGlyphs();
                         enumerate_save_dir();
                         init_folder_scroll_manager();
-                        std::cerr << "Created and navigated to folder: " << picker_subfolder << std::endl;
                     } else {
                         std::cerr << "Failed to create folder: " << target.narrow() << std::endl;
                     }
@@ -259,7 +263,9 @@ public:
             }
             save_here_button.draw();
             if (save_here_button.clicked()) {
+                std::cerr << "Save here clicked: picker_subfolder = '" << picker_subfolder << "'" << std::endl;
                 subfolder = picker_subfolder; // commit selection
+                std::cerr << "Committed subfolder = '" << subfolder << "'" << std::endl;
                 show_folder_picker = false;
                 is_saving = true;
                 saving_started = false;
@@ -276,22 +282,12 @@ private:
     void enumerate_save_dir() {
         save_folders_display.clear();
         picker_has_parent = !picker_subfolder.empty();
-        String base = Unicode::Widen(getData().directories.document_dir) + U"games/" + Unicode::Widen(picker_subfolder);
-        if (base.size() && base.back() != U'/') base += U"/";
-        Array<FilePath> list = FileSystem::DirectoryContents(base);
-        Array<String> real_folders;
-        for (const auto& path : list) {
-            if (FileSystem::IsDirectory(path) && FileSystem::Exists(path)) {
-                String name = path;
-                while (name.size() && (name.back() == U'/' || name.back() == U'\\')) name.pop_back();
-                size_t pos = name.lastIndexOf(U'/');
-                if (pos == String::npos) pos = name.lastIndexOf(U'\\');
-                if (pos != String::npos) name = name.substr(pos + 1);
-                if (name.size()) real_folders.emplace_back(name);
-            }
+        
+        // Use the shared utility function
+        std::vector<String> folders = enumerate_direct_subdirectories(getData().directories.document_dir, picker_subfolder);
+        for (auto& folder : folders) {
+            save_folders_display.emplace_back(folder);
         }
-        std::sort(real_folders.begin(), real_folders.end());
-        for (auto& n : real_folders) save_folders_display.emplace_back(n);
     }
 
     void init_folder_scroll_manager() {

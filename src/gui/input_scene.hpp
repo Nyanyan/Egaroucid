@@ -562,22 +562,13 @@ private:
     void enumerate_current_dir() {
         folders_display.clear();
         has_parent = !subfolder.empty();
-        String base = Unicode::Widen(getData().directories.document_dir) + U"games/" + Unicode::Widen(subfolder);
-        if (base.size() && base.back() != U'/') base += U"/";
-        Array<FilePath> list = FileSystem::DirectoryContents(base);
-        Array<String> real_folders;
-        for (const auto& path : list) {
-            if (FileSystem::IsDirectory(path) && FileSystem::Exists(path)) {
-                String name = path;
-                while (name.size() && (name.back() == U'/' || name.back() == U'\\')) name.pop_back();
-                size_t pos = name.lastIndexOf(U'/');
-                if (pos == String::npos) pos = name.lastIndexOf(U'\\');
-                if (pos != String::npos) name = name.substr(pos + 1);
-                if (name.size()) real_folders.emplace_back(name);
-            }
+        
+        // Use the shared utility function
+        std::vector<String> folders = enumerate_direct_subdirectories(getData().directories.document_dir, subfolder);
+        for (auto& folder : folders) {
+            folders_display.emplace_back(folder);
         }
-        std::sort(real_folders.begin(), real_folders.end());
-        for (auto& n : real_folders) folders_display.emplace_back(n);
+        
         init_scroll_manager();
     }
 };
