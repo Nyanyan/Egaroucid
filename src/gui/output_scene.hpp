@@ -40,7 +40,6 @@ private:
     Button save_here_button;
     Button cancel_picker_button;
     Button up_button;
-    Button open_explorer_button;
     // Saving state
     bool is_saving = false;
     bool saving_started = false;
@@ -63,7 +62,6 @@ public:
         save_here_button.init(BUTTON3_3_SX, BUTTON3_SY, BUTTON3_WIDTH, BUTTON3_HEIGHT, BUTTON3_RADIUS, language.get("in_out", "save_here"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
         cancel_picker_button.init(BUTTON3_1_SX, BUTTON3_SY, BUTTON3_WIDTH, BUTTON3_HEIGHT, BUTTON3_RADIUS, language.get("common", "back"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
         up_button.init(IMPORT_GAME_SX, IMPORT_GAME_SY - 30, 28, 24, 4, U"↑", 16, getData().fonts.font, getData().colors.white, getData().colors.black);
-        open_explorer_button.init(IMPORT_GAME_SX + IMPORT_GAME_WIDTH - 150, IMPORT_GAME_SY - 30, 150, 24, 5, language.get("in_out", "open_explorer"), 13, getData().fonts.font, getData().colors.white, getData().colors.black);
     }
 
     void update() override {
@@ -177,9 +175,9 @@ public:
         // Folder picker overlay UI
         if (show_folder_picker) {
             // Path label
-            getData().fonts.font(language.get("in_out", "save_subfolder")).draw(20, Arg::topCenter(X_CENTER, 10), getData().colors.white);
+            getData().fonts.font(language.get("in_out", "save_subfolder")).draw(25, Arg::center(X_CENTER, 30), getData().colors.white);
             String path_label = U"games/" + Unicode::Widen(picker_subfolder);
-            getData().fonts.font(path_label).draw(15, Arg::topRight(IMPORT_GAME_SX + IMPORT_GAME_WIDTH, 10), getData().colors.white);
+            getData().fonts.font(path_label).draw(15, Arg::rightCenter(IMPORT_GAME_SX + IMPORT_GAME_WIDTH, 30), getData().colors.white);
 
             // List via shared helper (folders only)
             // Dummy variables for unused buttons in folder picker
@@ -187,17 +185,9 @@ public:
             bool has_parent_folder = !picker_subfolder.empty();
             auto pickRes = DrawExplorerList(
                 save_folders_display, picker_games, dummyDeleteBtns,
-                folder_scroll_manager, up_button, open_explorer_button, EXPORT_GAME_FOLDER_AREA_HEIGHT, EXPORT_GAME_N_GAMES_ON_WINDOW, 
+                folder_scroll_manager, up_button, EXPORT_GAME_FOLDER_AREA_HEIGHT, EXPORT_GAME_N_GAMES_ON_WINDOW, 
                 has_parent_folder, getData().fonts, getData().colors, getData().resources, language,
                 getData().directories.document_dir, picker_subfolder);
-            if (pickRes.openExplorerClicked) {
-                String path = Unicode::Widen(getData().directories.document_dir) + U"games/";
-                if (!picker_subfolder.empty()) {
-                    path += Unicode::Widen(picker_subfolder) + U"/";
-                }
-                System::LaunchFile(path);
-                return;
-            }
             if (pickRes.upButtonClicked || pickRes.parentFolderDoubleClicked) {
                 std::string s = picker_subfolder;
                 if (!s.empty() && s.back() == '/') s.pop_back();

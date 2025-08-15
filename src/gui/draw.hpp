@@ -238,7 +238,6 @@ struct ExplorerDrawResult {
     int deleteIndex = -1;
     bool upButtonClicked = false;
     bool parentFolderDoubleClicked = false;  // New: parent folder navigation
-    bool openExplorerClicked = false;
     
     // Drag and drop functionality
     bool drag_started = false;
@@ -432,7 +431,6 @@ inline ExplorerDrawResult DrawExplorerList(
     std::vector<ImageButton>& delete_buttons,
     Scroll_manager& scroll_manager,
     Button& up_button,
-    Button& open_explorer_button,
     int item_height,
     int n_games_on_window,
     bool has_parent,
@@ -459,13 +457,6 @@ inline ExplorerDrawResult DrawExplorerList(
         drag_state, folders_display, scroll_manager, item_height, n_games_on_window, has_parent);
     if (drag_result.drop_completed) {
         return drag_result;
-    }
-    
-    // "Open in Explorer" button in the top-right area
-    open_explorer_button.draw();
-    if (open_explorer_button.clicked()) {
-        res.openExplorerClicked = true;
-        return res;
     }
     
     // Check if there are any items to display
@@ -943,7 +934,6 @@ inline ExplorerDrawResult DrawExplorerList(
     std::vector<ImageButton>& delete_buttons,
     Scroll_manager& scroll_manager,
     Button& up_button,
-    Button& open_explorer_button,
     bool showImportButtons,
     int item_height,
     int n_games_on_window,
@@ -956,7 +946,7 @@ inline ExplorerDrawResult DrawExplorerList(
     // Call the main function with empty document_dir and current_subfolder
     return DrawExplorerList(
         folders_display, games, delete_buttons, scroll_manager,
-        up_button, open_explorer_button, item_height,
+        up_button, item_height,
         n_games_on_window, has_parent, fonts, colors, resources, language,
         "", ""
     );

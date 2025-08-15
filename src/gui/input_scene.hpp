@@ -307,7 +307,6 @@ private:
     Scroll_manager scroll_manager;
     Button back_button;
     Button up_button;
-    Button open_explorer_button;
     bool failed;
     // Explorer-like folder view
     std::vector<String> folders_display; // includes optional ".." at head
@@ -318,7 +317,6 @@ public:
     Import_game(const InitData& init) : IScene{ init } {
         back_button.init(BACK_BUTTON_SX, BACK_BUTTON_SY, BACK_BUTTON_WIDTH, BACK_BUTTON_HEIGHT, BACK_BUTTON_RADIUS, language.get("common", "back"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
         up_button.init(IMPORT_GAME_SX, IMPORT_GAME_SY - 30, 28, 24, 4, U"↑", 16, getData().fonts.font, getData().colors.white, getData().colors.black);
-        open_explorer_button.init(IMPORT_GAME_SX + IMPORT_GAME_WIDTH - 150, IMPORT_GAME_SY - 30, 150, 24, 5, language.get("in_out", "open_explorer"), 13, getData().fonts.font, getData().colors.white, getData().colors.black);
         failed = false;
         // Initialize current dir and load games
         subfolder.clear();
@@ -330,10 +328,10 @@ public:
         if (System::GetUserActions() & UserAction::CloseButtonClicked) {
             changeScene(U"Close", SCENE_FADE_TIME);
         }
-        getData().fonts.font(language.get("in_out", "input_game")).draw(25, Arg::topCenter(X_CENTER, 10), getData().colors.white);
+        getData().fonts.font(language.get("in_out", "input_game")).draw(25, Arg::center(X_CENTER, 30), getData().colors.white);
         // Current path label
         String path_label = U"games/" + Unicode::Widen(subfolder);
-        getData().fonts.font(path_label).draw(15, Arg::topRight(IMPORT_GAME_SX + IMPORT_GAME_WIDTH, 10), getData().colors.white);
+        getData().fonts.font(path_label).draw(15, Arg::rightCenter(IMPORT_GAME_SX + IMPORT_GAME_WIDTH, 30), getData().colors.white);
         back_button.draw();
         if (back_button.clicked() || KeyEscape.pressed()) {
             getData().graph_resources.need_init = false;
@@ -343,17 +341,9 @@ public:
             getData().fonts.font(language.get("in_out", "import_failed")).draw(20, Arg::center(X_CENTER, Y_CENTER), getData().colors.white);
         } else {
             auto res = DrawExplorerList(
-                folders_display, games, delete_buttons, scroll_manager, up_button, open_explorer_button,
+                folders_display, games, delete_buttons, scroll_manager, up_button,
                 IMPORT_GAME_HEIGHT, IMPORT_GAME_N_GAMES_ON_WINDOW, has_parent, getData().fonts, getData().colors, getData().resources, language,
                 getData().directories.document_dir, subfolder);
-            if (res.openExplorerClicked) {
-                String path = Unicode::Widen(getData().directories.document_dir) + U"games/";
-                if (!subfolder.empty()) {
-                    path += Unicode::Widen(subfolder) + U"/";
-                }
-                System::LaunchFile(path);
-                return;
-            }
             if (res.upButtonClicked || res.parentFolderDoubleClicked) {
                 if (!subfolder.empty()) {
                     std::string s = subfolder;
