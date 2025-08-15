@@ -74,7 +74,7 @@
         "book_deviate_with_transcript": "棋譜を指定してBook学習",
         "input_transcripts_with_line_breaks": "改行区切りで棋譜を指定 / テキストファイルをドラッグ&ドロップ",
         "transcript_error": "棋譜エラー",
-        "book_store": "棋譜をBookに追加",
+        "book_store": "現在の棋譜をBookに追加",
         "book_fix": "Book修正",
         "book_fix_edax": "Book修正(Edax準拠)",
         "learning": "学習中...",

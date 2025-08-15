@@ -74,7 +74,7 @@
         "book_deviate_with_transcript": "訓練特定棋譜到開局庫",
         "input_transcripts_with_line_breaks": "直接輸入棋譜 或 通過拖放添加",
         "transcript_error": "棋譜錯誤",
-        "book_store": "將遊戲記錄新增至開局庫",
+        "book_store": "將當前遊戲記錄新增至開局庫",
         "book_fix": "開局庫修正",
         "book_fix_edax": "類Edax開局庫修正機制",
         "learning": "計算中...",
