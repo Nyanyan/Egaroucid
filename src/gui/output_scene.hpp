@@ -240,16 +240,13 @@ public:
                     String target = base + s + U"/";
                     bool created = FileSystem::CreateDirectories(target);
                     if (created) {
-                        // Navigate to the newly created folder
-                        if (!picker_subfolder.empty()) picker_subfolder += "/";
-                        picker_subfolder += s.narrow();
-                        std::cerr << "Created and navigated to folder: " << picker_subfolder << std::endl;
                         // Clear the input field after successful creation
                         new_folder_area.text.clear();
                         new_folder_area.cursorPos = 0;
                         new_folder_area.rebuildGlyphs();
                         enumerate_save_dir();
                         init_folder_scroll_manager();
+                        std::cerr << "Created folder: " << target.narrow() << std::endl;
                     } else {
                         std::cerr << "Failed to create folder: " << target.narrow() << std::endl;
                     }
