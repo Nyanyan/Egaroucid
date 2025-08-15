@@ -344,7 +344,7 @@ public:
         } else {
             auto res = DrawExplorerList(
                 folders_display, games, import_buttons, delete_buttons, scroll_manager, up_button, open_explorer_button,
-                /*showGames=*/true, IMPORT_GAME_HEIGHT, IMPORT_GAME_N_GAMES_ON_WINDOW, has_parent, getData().fonts, getData().colors, getData().resources, language);
+                /*showImportButtons=*/true, IMPORT_GAME_HEIGHT, IMPORT_GAME_N_GAMES_ON_WINDOW, has_parent, getData().fonts, getData().colors, getData().resources, language);
             if (res.openExplorerClicked) {
                 String path = Unicode::Widen(getData().directories.document_dir) + U"games/";
                 if (!subfolder.empty()) {

@@ -247,7 +247,7 @@ inline ExplorerDrawResult DrawExplorerList(
     Scroll_manager& scroll_manager,
     Button& up_button,
     Button& open_explorer_button,
-    bool showGames,
+    bool showImportButtons,
     int itemHeight,
     int n_games_on_window,
     bool has_parent,
@@ -279,7 +279,7 @@ inline ExplorerDrawResult DrawExplorerList(
     }
     
     // Check if there are any items to display
-    int total_items = (int)folders_display.size() + (showGames ? (int)games.size() : 0);
+    int total_items = (int)folders_display.size() + (int)games.size();
     if (total_items == 0) {
         fonts.font(language.get("in_out", "no_game_available")).draw(20, Arg::center(X_CENTER, Y_CENTER), colors.white);
         return res;
@@ -291,7 +291,7 @@ inline ExplorerDrawResult DrawExplorerList(
         fonts.font(U"︙").draw(15, Arg::bottomCenter = Vec2{ X_CENTER, sy }, colors.white);
     }
     sy += 8;
-    int total_rows = (int)folders_display.size() + (showGames ? (int)games.size() : 0);
+    int total_rows = (int)folders_display.size() + (int)games.size();
     for (int row = strt_idx_int; row < std::min(total_rows, strt_idx_int + n_games_on_window); ++row) {
         Rect rect;
         rect.y = sy;
@@ -314,7 +314,8 @@ inline ExplorerDrawResult DrawExplorerList(
                 res.clickedFolder = fname;
                 return res;
             }
-    } else if (showGames) {
+        } else {
+            // Always show games, but conditionally show import buttons
             int i = row - (int)folders_display.size();
             int winner = -1;
             if (games[i].black_score != GAME_DISCS_UNDEFINED && games[i].white_score != GAME_DISCS_UNDEFINED) {
@@ -326,12 +327,16 @@ inline ExplorerDrawResult DrawExplorerList(
                     winner = IMPORT_GAME_WINNER_DRAW;
                 }
             }
-            delete_buttons[i].move(IMPORT_GAME_SX + 1, sy + 1);
-            delete_buttons[i].draw();
-            if (delete_buttons[i].clicked()) {
-                res.deleteClicked = true;
-                res.deleteIndex = i;
-                return res;
+            
+            // Show delete button only if delete_buttons vector has sufficient size
+            if (i < (int)delete_buttons.size()) {
+                delete_buttons[i].move(IMPORT_GAME_SX + 1, sy + 1);
+                delete_buttons[i].draw();
+                if (delete_buttons[i].clicked()) {
+                    res.deleteClicked = true;
+                    res.deleteIndex = i;
+                    return res;
+                }
             }
             String date = games[i].date.substr(0, 10).replace(U"_", U"/");
             fonts.font(date).draw(15, IMPORT_GAME_SX + IMPORT_GAME_LEFT_MARGIN + 10, sy + 2, colors.white);
@@ -401,17 +406,21 @@ inline ExplorerDrawResult DrawExplorerList(
                 }
             }
             fonts.font(games[i].memo).draw(12, IMPORT_GAME_SX + IMPORT_GAME_LEFT_MARGIN + 10, black_player_rect.y + black_player_rect.h, colors.white);
-            import_buttons[i].move(IMPORT_GAME_BUTTON_SX, sy + IMPORT_GAME_BUTTON_SY);
-            import_buttons[i].draw();
-            if (import_buttons[i].clicked()) {
-                res.importClicked = true;
-                res.importIndex = i;
-                return res;
+            
+            // Show import button only if showImportButtons is true and import_buttons vector has sufficient size
+            if (showImportButtons && i < (int)import_buttons.size()) {
+                import_buttons[i].move(IMPORT_GAME_BUTTON_SX, sy + IMPORT_GAME_BUTTON_SY);
+                import_buttons[i].draw();
+                if (import_buttons[i].clicked()) {
+                    res.importClicked = true;
+                    res.importIndex = i;
+                    return res;
+                }
             }
         }
         sy += itemHeight;
     }
-    int total_rows2 = (int)folders_display.size() + (showGames ? (int)games.size() : 0);
+    int total_rows2 = (int)folders_display.size() + (int)games.size();
     if (strt_idx_int + n_games_on_window < total_rows2) {
         fonts.font(U"︙").draw(15, Arg::bottomCenter = Vec2{ X_CENTER, 415}, colors.white);
     }

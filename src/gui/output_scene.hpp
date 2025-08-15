@@ -11,9 +11,6 @@
 #pragma once
 #include <iostream>
 #include <future>
-#include <chrono>
-#include <time.h>
-#include <sstream>
 #include "./../engine/engine_all.hpp"
 #include "function/function_all.hpp"
 #include "draw.hpp"
@@ -34,6 +31,7 @@ private:
     std::string subfolder; // final chosen subfolder used for saving
     std::string picker_subfolder; // navigating path during selection
     std::vector<String> save_folders_display; // includes optional ".."
+    std::vector<Game_abstract> picker_games; // games in current picker folder
     bool picker_has_parent = false;
     Scroll_manager folder_scroll_manager;
     // new folder UI
@@ -184,13 +182,13 @@ public:
             getData().fonts.font(path_label).draw(15, Arg::topCenter(X_CENTER, 45), getData().colors.white);
 
             // List via shared helper (folders only)
-            static std::vector<Game_abstract> emptyGames; // not used
-            static std::vector<Button> dummyImportBtns;   // not used
-            static std::vector<ImageButton> dummyDeleteBtns; // not used
+            // Dummy variables for unused buttons in folder picker
+            std::vector<Button> dummyImportBtns;   // not used in folder picker (showImportButtons=false)
+            std::vector<ImageButton> dummyDeleteBtns; // not used in folder picker
             bool has_parent_folder = !picker_subfolder.empty();
             auto pickRes = DrawExplorerList(
-                save_folders_display, emptyGames, dummyImportBtns, dummyDeleteBtns,
-                folder_scroll_manager, up_button, open_explorer_button, /*showGames=*/false, IMPORT_GAME_HEIGHT, EXPORT_GAME_N_GAMES_ON_WINDOW, 
+                save_folders_display, picker_games, dummyImportBtns, dummyDeleteBtns,
+                folder_scroll_manager, up_button, open_explorer_button, /*showImportButtons=*/false, IMPORT_GAME_HEIGHT, EXPORT_GAME_N_GAMES_ON_WINDOW, 
                 has_parent_folder, getData().fonts, getData().colors, getData().resources, language);
             if (pickRes.openExplorerClicked) {
                 String path = Unicode::Widen(getData().directories.document_dir) + U"games/";
@@ -285,10 +283,36 @@ private:
         for (auto& folder : folders) {
             save_folders_display.emplace_back(folder);
         }
+        
+        // Also load games in current picker folder
+        load_picker_games();
+    }
+
+    void load_picker_games() {
+        picker_games.clear();
+        String base = Unicode::Widen(getData().directories.document_dir) + U"games/";
+        if (picker_subfolder.size()) {
+            base += Unicode::Widen(picker_subfolder) + U"/";
+        }
+        const String csv_path = base + U"summary.csv";
+        const CSV csv{ csv_path };
+        if (csv) {
+            for (size_t row = 0; row < csv.rows(); ++row) {
+                Game_abstract game_abstract;
+                game_abstract.date = csv[row][0];
+                game_abstract.black_player = csv[row][1];
+                game_abstract.white_player = csv[row][2];
+                game_abstract.memo = csv[row][3];
+                game_abstract.black_score = ParseOr<int32>(csv[row][4], GAME_DISCS_UNDEFINED);
+                game_abstract.white_score = ParseOr<int32>(csv[row][5], GAME_DISCS_UNDEFINED);
+                picker_games.emplace_back(game_abstract);
+            }
+        }
+        reverse(picker_games.begin(), picker_games.end());
     }
 
     void init_folder_scroll_manager() {
-        int total = (int)save_folders_display.size();
+        int total = (int)save_folders_display.size() + (int)picker_games.size();
         folder_scroll_manager.init(770, IMPORT_GAME_SY + 8, 10, EXPORT_GAME_FOLDER_AREA_HEIGHT * EXPORT_GAME_N_GAMES_ON_WINDOW, 20, total, IMPORT_GAME_N_GAMES_ON_WINDOW, IMPORT_GAME_SX, 73, IMPORT_GAME_WIDTH + 10, IMPORT_GAME_HEIGHT * IMPORT_GAME_N_GAMES_ON_WINDOW);
     }
 
