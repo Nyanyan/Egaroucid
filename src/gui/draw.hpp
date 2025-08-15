@@ -229,34 +229,136 @@ void draw_info(Colors colors, History_elem history_elem, Fonts fonts, Menu_eleme
 
 struct ExplorerDrawResult {
     bool folderClicked = false;
+    bool folderDoubleClicked = false;
     String clickedFolder;
     bool importClicked = false;
+    bool gameDoubleClicked = false;
     int importIndex = -1;
     bool deleteClicked = false;
     int deleteIndex = -1;
     bool upButtonClicked = false;
     bool openExplorerClicked = false;
+    
+    // Drag and drop functionality
+    bool dragStarted = false;
+    bool dropCompleted = false;
+    int draggedGameIndex = -1;
+    String draggedFolderName;
+    String dropTargetFolder;
+    bool isDraggingGame = false;
+    bool isDraggingFolder = false;
 };
 
 template <class FontsT, class ColorsT, class ResourcesT, class LanguageT>
 inline ExplorerDrawResult DrawExplorerList(
     const std::vector<String>& folders_display,
     const std::vector<Game_abstract>& games,
-    std::vector<Button>& import_buttons,
     std::vector<ImageButton>& delete_buttons,
     Scroll_manager& scroll_manager,
     Button& up_button,
     Button& open_explorer_button,
-    bool showImportButtons,
     int itemHeight,
     int n_games_on_window,
     bool has_parent,
     FontsT& fonts,
     ColorsT& colors,
     ResourcesT& resources,
-    LanguageT& language
+    LanguageT& language,
+    const std::string& document_dir,
+    const std::string& current_subfolder
 ) {
     ExplorerDrawResult res;
+    
+    // Static variables for drag and drop state management
+    static bool is_dragging = false;
+    static bool is_dragging_game = false;
+    static bool is_dragging_folder = false;
+    static int dragged_game_index = -1;
+    static String dragged_folder_name;
+    static Vec2 drag_start_pos;
+    static Vec2 current_mouse_pos;
+    
+    // Static variables for double-click detection
+    static uint64_t last_click_time = 0;
+    static String last_clicked_folder;
+    static int last_clicked_game_index = -1;
+    static constexpr uint64_t DOUBLE_CLICK_TIME_MS = 300;
+    static constexpr double DRAG_THRESHOLD = 0.5; // Minimum distance to start drag
+    
+    current_mouse_pos = Cursor::Pos();
+    uint64_t current_time = Time::GetMillisec();
+    
+    // Handle drag end (mouse release)
+    if (is_dragging && !MouseL.pressed()) {
+        is_dragging = false;
+        
+        // Check if we're dropping on a folder
+        bool dropped_on_folder = false;
+        String target_folder;
+        
+        for (int folder_idx = 0; folder_idx < (int)folders_display.size(); ++folder_idx) {
+            int folder_row = folder_idx;
+            int folder_sy = IMPORT_GAME_SY + 8 + (folder_row - scroll_manager.get_strt_idx_int()) * itemHeight;
+            
+            if (folder_row >= scroll_manager.get_strt_idx_int() && 
+                folder_row < scroll_manager.get_strt_idx_int() + n_games_on_window) {
+                Rect folder_rect(IMPORT_GAME_SX, folder_sy, IMPORT_GAME_WIDTH, itemHeight);
+                if (folder_rect.contains(current_mouse_pos)) {
+                    dropped_on_folder = true;
+                    target_folder = folders_display[folder_idx];
+                    break;
+                }
+            }
+        }
+        
+        if (dropped_on_folder) {
+            res.dropCompleted = true;
+            res.dropTargetFolder = target_folder;
+            res.isDraggingGame = is_dragging_game;
+            res.isDraggingFolder = is_dragging_folder;
+            res.draggedGameIndex = dragged_game_index;
+            res.draggedFolderName = dragged_folder_name;
+        }
+        
+        // Reset drag state
+        is_dragging_game = false;
+        is_dragging_folder = false;
+        dragged_game_index = -1;
+        dragged_folder_name.clear();
+        drag_start_pos = Vec2(0, 0);
+    }
+    
+    // Clean up drag preparation if mouse is released without drag
+    if (!MouseL.pressed() && !is_dragging) {
+        if (dragged_game_index >= 0 || !dragged_folder_name.empty()) {
+            dragged_game_index = -1;
+            dragged_folder_name.clear();
+            drag_start_pos = Vec2(0, 0);
+        }
+    }
+    
+    // Check if mouse has moved enough to start dragging
+    if (MouseL.pressed() && !is_dragging) {
+        if (drag_start_pos.x != 0 && drag_start_pos.y != 0) {
+            double distance = drag_start_pos.distanceFrom(current_mouse_pos);
+            if (distance > DRAG_THRESHOLD) {
+                // Start dragging if we have a pending drag item
+                if (dragged_game_index >= 0) {
+                    is_dragging = true;
+                    is_dragging_game = true;
+                    res.dragStarted = true;
+                    res.isDraggingGame = true;
+                    res.draggedGameIndex = dragged_game_index;
+                } else if (!dragged_folder_name.empty()) {
+                    is_dragging = true;
+                    is_dragging_folder = true;
+                    res.dragStarted = true;
+                    res.isDraggingFolder = true;
+                    res.draggedFolderName = dragged_folder_name;
+                }
+            }
+        }
+    }
     
     // Up-to-parent button above the list (always show/handle if has_parent)
     if (has_parent) {
@@ -314,12 +416,56 @@ inline ExplorerDrawResult DrawExplorerList(
             if (row >= 0 && row < (int)folders_display.size()) {
                 String fname = folders_display[row];
                 double folder_icon_scale = (double)(rect.h - 2 * 10) / (double)resources.folder.height();
+                
+                // Drag and drop for folders
+                bool is_being_dragged = (is_dragging_folder && dragged_folder_name == fname);
+                Color folder_bg_color = is_being_dragged ? colors.yellow.withAlpha(128) : 
+                                       (row % 2 ? colors.dark_green : colors.green);
+                
+                if (is_being_dragged) {
+                    // Draw dragged folder at mouse position with transparency
+                    Vec2 offset = current_mouse_pos - drag_start_pos;
+                    Rect drag_rect = rect.movedBy(offset.x, offset.y);
+                    drag_rect.draw(folder_bg_color).drawFrame(2.0, colors.white);
+                    resources.folder.scaled(folder_icon_scale).draw(Arg::leftCenter(drag_rect.x + IMPORT_GAME_LEFT_MARGIN + 10, drag_rect.y + itemHeight / 2));
+                    fonts.font(fname).draw(15, Arg::leftCenter(drag_rect.x + IMPORT_GAME_LEFT_MARGIN + 10 + 30, drag_rect.y + itemHeight / 2), colors.white);
+                }
+                
                 resources.folder.scaled(folder_icon_scale).draw(Arg::leftCenter(IMPORT_GAME_SX + IMPORT_GAME_LEFT_MARGIN + 10, sy + itemHeight / 2));
                 fonts.font(fname).draw(15, Arg::leftCenter(IMPORT_GAME_SX + IMPORT_GAME_LEFT_MARGIN + 10 + 30, sy + itemHeight / 2), colors.white);
-                if (Rect(IMPORT_GAME_SX, sy, IMPORT_GAME_WIDTH, itemHeight).leftClicked()) {
-                    res.folderClicked = true;
-                    res.clickedFolder = fname;
-                    return res;
+                
+                // Handle folder drag preparation and click
+                if (rect.leftPressed()) {
+                    // Prepare for potential drag
+                    dragged_folder_name = fname;
+                    drag_start_pos = current_mouse_pos;
+                }
+                
+                // Handle folder click and double-click (only if not dragging)
+                if (rect.leftClicked() && !is_dragging) {
+                    if (last_clicked_folder == fname && current_time - last_click_time < DOUBLE_CLICK_TIME_MS) {
+                        // Double-click detected
+                        res.folderDoubleClicked = true;
+                        res.clickedFolder = fname;
+                        last_clicked_folder.clear();
+                        last_click_time = 0;
+                        // Clear drag state
+                        dragged_folder_name.clear();
+                        drag_start_pos = Vec2(0, 0);
+                        return res;
+                    } else {
+                        // Single click
+                        res.folderClicked = true;
+                        res.clickedFolder = fname;
+                        last_clicked_folder = fname;
+                        last_click_time = current_time;
+                        // Clear drag state if it was just a click
+                        if (drag_start_pos.distanceFrom(current_mouse_pos) <= DRAG_THRESHOLD) {
+                            dragged_folder_name.clear();
+                            drag_start_pos = Vec2(0, 0);
+                        }
+                        return res;
+                    }
                 }
             }
         } else {
@@ -328,6 +474,16 @@ inline ExplorerDrawResult DrawExplorerList(
             
             // Check bounds for games vector access
             if (i >= 0 && i < (int)games.size()) {
+                // Drag and drop for games
+                bool is_being_dragged = (is_dragging_game && dragged_game_index == i);
+                Color game_bg_color = is_being_dragged ? colors.yellow.withAlpha(128) : 
+                                     (row % 2 ? colors.dark_green : colors.green);
+                
+                // Override rect color for dragged items
+                if (is_being_dragged) {
+                    rect.draw(game_bg_color).drawFrame(2.0, colors.white);
+                }
+                
                 int winner = -1;
                 if (games[i].black_score != GAME_DISCS_UNDEFINED && games[i].white_score != GAME_DISCS_UNDEFINED) {
                     if (games[i].black_score > games[i].white_score) {
@@ -337,6 +493,13 @@ inline ExplorerDrawResult DrawExplorerList(
                     } else {
                         winner = IMPORT_GAME_WINNER_DRAW;
                     }
+                }
+                
+                // Handle game drag preparation
+                if (rect.leftPressed()) {
+                    // Prepare for potential drag
+                    dragged_game_index = i;
+                    drag_start_pos = current_mouse_pos;
                 }
                 
                 // Show delete button only if delete_buttons vector has sufficient size
@@ -418,14 +581,36 @@ inline ExplorerDrawResult DrawExplorerList(
                 }
                 fonts.font(games[i].memo).draw(12, IMPORT_GAME_SX + IMPORT_GAME_LEFT_MARGIN + 10, black_player_rect.y + black_player_rect.h, colors.white);
                 
-                // Show import button only if showImportButtons is true and import_buttons vector has sufficient size
-                if (showImportButtons && i < (int)import_buttons.size()) {
-                    import_buttons[i].move(IMPORT_GAME_BUTTON_SX, sy + IMPORT_GAME_BUTTON_SY);
-                    import_buttons[i].draw();
-                    if (import_buttons[i].clicked()) {
-                        res.importClicked = true;
+                // Handle game double-click for importing (avoiding delete button area)
+                Rect game_click_area = rect;
+                if (i < (int)delete_buttons.size()) {
+                    // Exclude delete button area (top-left corner)
+                    game_click_area.x += 20;
+                    game_click_area.w -= 20;
+                }
+                
+                if (game_click_area.leftClicked() && !is_dragging) {
+                    if (last_clicked_game_index == i && current_time - last_click_time < DOUBLE_CLICK_TIME_MS) {
+                        // Double-click detected
+                        res.gameDoubleClicked = true;
                         res.importIndex = i;
+                        last_clicked_game_index = -1;
+                        last_click_time = 0;
+                        // Clear drag state
+                        dragged_game_index = -1;
+                        drag_start_pos = Vec2(0, 0);
                         return res;
+                    } else {
+                        // Single click
+                        last_clicked_game_index = i;
+                        last_click_time = current_time;
+                        // Clear folder click state when clicking on game
+                        last_clicked_folder.clear();
+                        // Clear drag state if it was just a click
+                        if (drag_start_pos.distanceFrom(current_mouse_pos) <= DRAG_THRESHOLD) {
+                            dragged_game_index = -1;
+                            drag_start_pos = Vec2(0, 0);
+                        }
                     }
                 }
             } // End of bounds check
@@ -438,5 +623,48 @@ inline ExplorerDrawResult DrawExplorerList(
     }
     scroll_manager.draw();
     scroll_manager.update();
+    
+    // Draw dragged game at mouse position if dragging
+    if (is_dragging_game && dragged_game_index >= 0 && dragged_game_index < (int)games.size()) {
+        Vec2 offset = current_mouse_pos - drag_start_pos;
+        Rect drag_rect(IMPORT_GAME_SX, IMPORT_GAME_SY + 50, IMPORT_GAME_WIDTH, itemHeight);
+        drag_rect = drag_rect.movedBy(offset.x, offset.y);
+        drag_rect.draw(colors.yellow.withAlpha(200)).drawFrame(2.0, colors.white);
+        
+        // Draw simplified game info
+        const auto& game = games[dragged_game_index];
+        String date = game.date.substr(0, 10).replace(U"_", U"/");
+        fonts.font(date).draw(12, drag_rect.x + 10, drag_rect.y + 2, colors.black);
+        fonts.font(game.black_player + U" vs " + game.white_player).draw(10, drag_rect.x + 10, drag_rect.y + 15, colors.black);
+    }
+    
     return res;
+}
+
+// Backward compatibility overload for existing code
+template <class FontsT, class ColorsT, class ResourcesT, class LanguageT>
+inline ExplorerDrawResult DrawExplorerList(
+    const std::vector<String>& folders_display,
+    const std::vector<Game_abstract>& games,
+    std::vector<Button>& import_buttons,
+    std::vector<ImageButton>& delete_buttons,
+    Scroll_manager& scroll_manager,
+    Button& up_button,
+    Button& open_explorer_button,
+    bool showImportButtons,
+    int itemHeight,
+    int n_games_on_window,
+    bool has_parent,
+    FontsT& fonts,
+    ColorsT& colors,
+    ResourcesT& resources,
+    LanguageT& language
+) {
+    // Call the main function with empty document_dir and current_subfolder
+    return DrawExplorerList(
+        folders_display, games, delete_buttons, scroll_manager,
+        up_button, open_explorer_button, itemHeight,
+        n_games_on_window, has_parent, fonts, colors, resources, language,
+        "", ""
+    );
 }

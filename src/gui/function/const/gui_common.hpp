@@ -305,6 +305,7 @@ struct Colors {
     Color burlywood{ Color(222, 184, 135) };
     Color black_advantage{ Color(241, 196, 15) };
     Color white_advantage{ Color(94, 192, 255) };
+    Color yellow{ Palette::Yellow };
 };
 
 struct Directories {
