@@ -154,7 +154,7 @@ constexpr int EXPORT_GAME_MEMO_HEIGHT = 250;
 constexpr int EXPORT_GAME_RADIUS = 15;
 constexpr int EXPORT_GAME_FOLDER_AREA_HEIGHT = 45;
 constexpr int EXPORT_GAME_N_GAMES_ON_WINDOW = 5;
-constexpr int EXPORT_GAME_CREATE_FOLDER_Y_CENTER = 380;
+constexpr int EXPORT_GAME_CREATE_FOLDER_Y_CENTER = 370;
 
 
 // import game constants

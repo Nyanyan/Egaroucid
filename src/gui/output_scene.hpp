@@ -59,7 +59,7 @@ public:
             text_area[i].rebuildGlyphs();
         }
         // init folder picker buttons (positions used only in overlay)
-        create_folder_button.init(600, EXPORT_GAME_CREATE_FOLDER_Y_CENTER - 28 / 2, 120, 28, 8, language.get("in_out", "create"), 15, getData().fonts.font, getData().colors.white, getData().colors.black);
+        create_folder_button.init(620, EXPORT_GAME_CREATE_FOLDER_Y_CENTER - 30 / 2, 120, 30, 8, language.get("in_out", "create"), 15, getData().fonts.font, getData().colors.white, getData().colors.black);
         save_here_button.init(BUTTON3_3_SX, BUTTON3_SY, BUTTON3_WIDTH, BUTTON3_HEIGHT, BUTTON3_RADIUS, language.get("in_out", "save_here"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
         cancel_picker_button.init(BUTTON3_1_SX, BUTTON3_SY, BUTTON3_WIDTH, BUTTON3_HEIGHT, BUTTON3_RADIUS, language.get("common", "back"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
         up_button.init(IMPORT_GAME_SX, IMPORT_GAME_SY - 30, 28, 24, 4, U"↑", 16, getData().fonts.font, getData().colors.white, getData().colors.black);
@@ -228,7 +228,6 @@ public:
             SimpleGUI::TextArea(new_folder_area, Vec2{210, EXPORT_GAME_CREATE_FOLDER_Y_CENTER - 30 / 2 - 2}, SizeF{400, 30}, 64);
             
             // Use member create_folder_button instead of temp button
-            create_folder_button.move(620, EXPORT_GAME_CREATE_FOLDER_Y_CENTER - 30 / 2);
             create_folder_button.draw();
             if (create_folder_button.clicked()) {
                 String s = new_folder_area.text.replaced(U"\r", U"").replaced(U"\n", U"").replaced(U"\\", U"/");
