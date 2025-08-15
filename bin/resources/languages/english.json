@@ -167,7 +167,7 @@
         "board_image": "Edit and Save Board Image",
         "you_can_paste_with_ctrl_v": "You can paste with Ctrl+V",
         "you_can_drag_and_drop_game_file": "You can drag & drop game file",
-        "save_subfolder": "Save to subfolder (under games/)",
+        "save_subfolder": "Destination Folder",
         "load_subfolder": "Load from subfolder (under games/)",
         "games_root": "(games root)",
         "new_folder": "New folder",

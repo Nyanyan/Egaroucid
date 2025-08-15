@@ -167,7 +167,7 @@
         "board_image": "编辑和保存当前棋盘图片",
         "you_can_paste_with_ctrl_v": "您可以使用 Ctrl+V 粘贴",
         "you_can_drag_and_drop_game_file": "您可以拖放游戏文件",
-        "save_subfolder": "保存到子文件夹（位于 games/ 下）",
+        "save_subfolder": "目标文件夹",
         "load_subfolder": "从子文件夹加载（位于 games/ 下）",
         "games_root": "（games 根目录）",
         "new_folder": "新建資料夾",

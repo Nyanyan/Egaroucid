@@ -167,7 +167,7 @@
         "board_image": "編輯與儲存棋盤圖片",
         "you_can_paste_with_ctrl_v": "可使用 Ctrl+V 貼上",
         "you_can_drag_and_drop_game_file": "可拖放對局檔進行匯入",
-        "save_subfolder": "儲存至子資料夾（位於 games/ 下）",
+        "save_subfolder": "目標資料夾",
         "load_subfolder": "從子資料夾載入（位於 games/ 下）",
         "games_root": "（games 根目錄）",
         "new_folder": "新增資料夾",

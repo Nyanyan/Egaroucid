@@ -440,7 +440,7 @@ inline ExplorerDrawResult DrawExplorerList(
         }
 
         // Handle parent folder as first item
-        if (has_parent && row == 0) {
+        if (has_parent && (row - strt_idx_int) == 0 && row == 0) {
             // Handle drop on parent folder (visual feedback)
             if (rect.contains(current_mouse_pos) && (is_dragging_game || is_dragging_folder)) {
                 rect.draw(colors.yellow.withAlpha(64));

@@ -179,17 +179,17 @@ public:
             // Path label
             getData().fonts.font(language.get("in_out", "save_subfolder")).draw(20, Arg::topCenter(X_CENTER, 10), getData().colors.white);
             String path_label = U"games/" + Unicode::Widen(picker_subfolder);
-            getData().fonts.font(path_label).draw(15, Arg::topCenter(X_CENTER, 45), getData().colors.white);
+            getData().fonts.font(path_label).draw(15, Arg::topRight(IMPORT_GAME_SX + IMPORT_GAME_WIDTH, 10), getData().colors.white);
 
             // List via shared helper (folders only)
             // Dummy variables for unused buttons in folder picker
-            std::vector<Button> dummyImportBtns;   // not used in folder picker (showImportButtons=false)
             std::vector<ImageButton> dummyDeleteBtns; // not used in folder picker
             bool has_parent_folder = !picker_subfolder.empty();
             auto pickRes = DrawExplorerList(
-                save_folders_display, picker_games, dummyImportBtns, dummyDeleteBtns,
-                folder_scroll_manager, up_button, open_explorer_button, /*showImportButtons=*/false, IMPORT_GAME_HEIGHT, EXPORT_GAME_N_GAMES_ON_WINDOW, 
-                has_parent_folder, getData().fonts, getData().colors, getData().resources, language);
+                save_folders_display, picker_games, dummyDeleteBtns,
+                folder_scroll_manager, up_button, open_explorer_button, EXPORT_GAME_FOLDER_AREA_HEIGHT, EXPORT_GAME_N_GAMES_ON_WINDOW, 
+                has_parent_folder, getData().fonts, getData().colors, getData().resources, language,
+                getData().directories.document_dir, picker_subfolder);
             if (pickRes.openExplorerClicked) {
                 String path = Unicode::Widen(getData().directories.document_dir) + U"games/";
                 if (!picker_subfolder.empty()) {
@@ -198,7 +198,7 @@ public:
                 System::LaunchFile(path);
                 return;
             }
-            if (pickRes.upButtonClicked) {
+            if (pickRes.upButtonClicked || pickRes.parentFolderDoubleClicked) {
                 std::string s = picker_subfolder;
                 if (!s.empty() && s.back() == '/') s.pop_back();
                 size_t pos = s.find_last_of('/');
@@ -208,9 +208,9 @@ public:
                 init_folder_scroll_manager();
                 return;
             }
-            if (pickRes.folderClicked) {
+            if (pickRes.folderDoubleClicked) {
                 String fname = pickRes.clickedFolder;
-                std::cerr << "Folder clicked: '" << fname.narrow() << "'" << std::endl;
+                std::cerr << "Folder double-clicked: '" << fname.narrow() << "'" << std::endl;
                 std::cerr << "Before: picker_subfolder = '" << picker_subfolder << "'" << std::endl;
                 if (!picker_subfolder.empty()) picker_subfolder += "/";
                 picker_subfolder += fname.narrow();
@@ -218,6 +218,9 @@ public:
                 enumerate_save_dir();
                 init_folder_scroll_manager();
                 return;
+            }
+            if (pickRes.dropCompleted) {
+                handle_picker_drop(pickRes);
             }
 
             // New folder UI - horizontal layout
@@ -312,8 +315,181 @@ private:
     }
 
     void init_folder_scroll_manager() {
-        int total = (int)save_folders_display.size() + (int)picker_games.size();
-        folder_scroll_manager.init(770, IMPORT_GAME_SY + 8, 10, EXPORT_GAME_FOLDER_AREA_HEIGHT * EXPORT_GAME_N_GAMES_ON_WINDOW, 20, total, IMPORT_GAME_N_GAMES_ON_WINDOW, IMPORT_GAME_SX, 73, IMPORT_GAME_WIDTH + 10, IMPORT_GAME_HEIGHT * IMPORT_GAME_N_GAMES_ON_WINDOW);
+        int parent_offset = picker_has_parent ? 1 : 0;  // Add parent folder if not at root
+        int total = parent_offset + (int)save_folders_display.size() + (int)picker_games.size();
+        folder_scroll_manager.init(770, IMPORT_GAME_SY + 8, 10, EXPORT_GAME_FOLDER_AREA_HEIGHT * EXPORT_GAME_N_GAMES_ON_WINDOW, 20, total, EXPORT_GAME_N_GAMES_ON_WINDOW, IMPORT_GAME_SX, 73, IMPORT_GAME_WIDTH + 10, EXPORT_GAME_FOLDER_AREA_HEIGHT * EXPORT_GAME_N_GAMES_ON_WINDOW);
+    }
+    
+    // Handle drag and drop operations in folder picker
+    void handle_picker_drop(const ExplorerDrawResult& res) {
+        if (res.dropOnParent) {
+            // Handle drop on parent folder - move to parent directory
+            if (res.isDraggingGame && res.draggedGameIndex >= 0 && res.draggedGameIndex < (int)picker_games.size()) {
+                move_picker_game_to_parent(res.draggedGameIndex);
+            } else if (res.isDraggingFolder && !res.draggedFolderName.empty()) {
+                move_picker_folder_to_parent(res.draggedFolderName.narrow());
+            }
+        } else {
+            // Handle normal folder drop
+            if (res.isDraggingGame && res.draggedGameIndex >= 0 && res.draggedGameIndex < (int)picker_games.size()) {
+                // Move game to target folder
+                move_picker_game_to_folder(res.draggedGameIndex, res.dropTargetFolder.narrow());
+            } else if (res.isDraggingFolder && !res.draggedFolderName.empty()) {
+                // Move folder to target folder
+                move_picker_folder_to_folder(res.draggedFolderName.narrow(), res.dropTargetFolder.narrow());
+            }
+        }
+    }
+    
+    // Move a game to parent folder
+    void move_picker_game_to_parent(int game_index) {
+        if (picker_subfolder.empty()) return;  // Already at root
+        
+        // Get parent folder path
+        std::string parent_folder = picker_subfolder;
+        if (!parent_folder.empty() && parent_folder.back() == '/') parent_folder.pop_back();
+        size_t pos = parent_folder.find_last_of('/');
+        if (pos == std::string::npos) parent_folder.clear();
+        else parent_folder = parent_folder.substr(0, pos);
+        
+        move_picker_game_to_folder(game_index, parent_folder);
+    }
+    
+    // Move a folder to parent folder
+    void move_picker_folder_to_parent(const std::string& folder_name) {
+        if (picker_subfolder.empty()) return;  // Already at root
+        
+        // Get parent folder path
+        std::string parent_folder = picker_subfolder;
+        if (!parent_folder.empty() && parent_folder.back() == '/') parent_folder.pop_back();
+        size_t pos = parent_folder.find_last_of('/');
+        if (pos == std::string::npos) parent_folder.clear();
+        else parent_folder = parent_folder.substr(0, pos);
+        
+        move_picker_folder_to_folder(folder_name, parent_folder);
+    }
+    
+    // Move a game to a different folder
+    void move_picker_game_to_folder(int game_index, const std::string& target_folder) {
+        if (game_index < 0 || game_index >= (int)picker_games.size()) return;
+        
+        const Game_abstract& game = picker_games[game_index];
+        
+        // Source and target paths
+        String source_base = Unicode::Widen(getData().directories.document_dir) + U"games/";
+        if (!picker_subfolder.empty()) {
+            source_base += Unicode::Widen(picker_subfolder) + U"/";
+        }
+        String target_base = Unicode::Widen(getData().directories.document_dir) + U"games/";
+        if (!target_folder.empty()) {
+            target_base += Unicode::Widen(target_folder) + U"/";
+        }
+        
+        // Ensure target directory exists
+        if (!FileSystem::Exists(target_base)) {
+            FileSystem::CreateDirectories(target_base);
+        }
+        
+        // Move JSON file
+        String source_json = source_base + game.date + U".json";
+        String target_json = target_base + game.date + U".json";
+        if (FileSystem::Exists(source_json)) {
+            FileSystem::Copy(source_json, target_json);
+            FileSystem::Remove(source_json);
+        }
+        
+        // Update CSV files
+        remove_picker_game_from_csv(game_index);
+        add_picker_game_to_target_csv(game, target_base);
+        
+        // Refresh displays
+        enumerate_save_dir();
+        init_folder_scroll_manager();
+        
+        std::cerr << "Moved game " << game.date.narrow() << " to " << target_folder << std::endl;
+    }
+    
+    // Move a folder to a different folder
+    void move_picker_folder_to_folder(const std::string& folder_name, const std::string& target_folder) {
+        String source_folder = Unicode::Widen(getData().directories.document_dir) + U"games/";
+        if (!picker_subfolder.empty()) {
+            source_folder += Unicode::Widen(picker_subfolder) + U"/";
+        }
+        source_folder += Unicode::Widen(folder_name);
+        
+        String target_parent = Unicode::Widen(getData().directories.document_dir) + U"games/";
+        if (!target_folder.empty()) {
+            target_parent += Unicode::Widen(target_folder) + U"/";
+        }
+        String target_full = target_parent + Unicode::Widen(folder_name);
+        
+        // Ensure target parent directory exists
+        if (!FileSystem::Exists(target_parent)) {
+            FileSystem::CreateDirectories(target_parent);
+        }
+        
+        // Move the folder using system command
+        if (FileSystem::Exists(source_folder) && !FileSystem::Exists(target_full)) {
+            std::string cmd = "move \"" + source_folder.narrow() + "\" \"" + target_full.narrow() + "\"";
+            std::system(cmd.c_str());
+            
+            // Refresh displays
+            enumerate_save_dir();
+            init_folder_scroll_manager();
+            
+            std::cerr << "Moved folder " << folder_name << " to " << target_folder << std::endl;
+        }
+    }
+    
+    // Remove game from current CSV
+    void remove_picker_game_from_csv(int game_index) {
+        String source_base = Unicode::Widen(getData().directories.document_dir) + U"games/";
+        if (!picker_subfolder.empty()) {
+            source_base += Unicode::Widen(picker_subfolder) + U"/";
+        }
+        const String csv_path = source_base + U"summary.csv";
+        CSV csv{ csv_path };
+        CSV new_csv;
+        
+        int csv_row_to_remove = (int)picker_games.size() - 1 - game_index;
+        
+        for (int i = 0; i < (int)csv.rows(); ++i) {
+            if (i != csv_row_to_remove && csv[i].size() >= 6) {
+                for (int j = 0; j < 6; ++j) {
+                    new_csv.write(csv[i][j]);
+                }
+                new_csv.newLine();
+            }
+        }
+        new_csv.save(csv_path);
+    }
+    
+    // Add game to target folder's CSV
+    void add_picker_game_to_target_csv(const Game_abstract& game, const String& target_base) {
+        String target_csv = target_base + U"summary.csv";
+        CSV csv{ target_csv };
+        
+        // Create new CSV with existing data plus new game
+        CSV new_csv;
+        for (int i = 0; i < (int)csv.rows(); ++i) {
+            if (csv[i].size() >= 6) {
+                for (int j = 0; j < 6; ++j) {
+                    new_csv.write(csv[i][j]);
+                }
+                new_csv.newLine();
+            }
+        }
+        
+        // Add new game entry
+        new_csv.write(game.date);
+        new_csv.write(game.black_player);
+        new_csv.write(game.white_player);
+        new_csv.write(game.memo);
+        new_csv.write(game.black_score == GAME_DISCS_UNDEFINED ? U"" : ToString(game.black_score));
+        new_csv.write(game.white_score == GAME_DISCS_UNDEFINED ? U"" : ToString(game.white_score));
+        new_csv.newLine();
+        
+        new_csv.save(target_csv);
     }
 
     void export_game(std::vector<History_elem> history) {

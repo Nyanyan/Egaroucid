@@ -333,7 +333,7 @@ public:
         getData().fonts.font(language.get("in_out", "input_game")).draw(25, Arg::topCenter(X_CENTER, 10), getData().colors.white);
         // Current path label
         String path_label = U"games/" + Unicode::Widen(subfolder);
-        getData().fonts.font(path_label).draw(15, Arg::topCenter(X_CENTER, 45), getData().colors.white);
+        getData().fonts.font(path_label).draw(15, Arg::topRight(IMPORT_GAME_SX + IMPORT_GAME_WIDTH, 10), getData().colors.white);
         back_button.draw();
         if (back_button.clicked() || KeyEscape.pressed()) {
             getData().graph_resources.need_init = false;
