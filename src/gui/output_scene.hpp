@@ -201,7 +201,7 @@ public:
             static std::vector<ImageButton> dummyDeleteBtns; // not used
             auto pickRes = DrawExplorerList(
                 save_folders_display, emptyGames, dummyImportBtns, dummyDeleteBtns,
-                folder_scroll_manager, /*showGames=*/false, IMPORT_GAME_HEIGHT,
+                folder_scroll_manager, /*showGames=*/false, IMPORT_GAME_HEIGHT, EXPORT_GAME_N_GAMES_ON_WINDOW, 
                 getData().fonts, getData().colors, getData().resources);
             if (pickRes.folderClicked) {
                 String fname = pickRes.clickedFolder;
@@ -213,7 +213,7 @@ public:
             }
 
             // New folder UI - horizontal layout
-            const int newFolderY = 400;
+            const int newFolderY = 350;
             getData().fonts.font(language.get("in_out", "new_folder")).draw(15, 50, newFolderY + 5, getData().colors.white);
             SimpleGUI::TextArea(new_folder_area, Vec2{180, newFolderY}, SizeF{300, 30}, 64);
             

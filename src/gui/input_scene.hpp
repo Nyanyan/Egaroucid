@@ -366,7 +366,7 @@ public:
 
             auto res = DrawExplorerList(
                 folders_display, games, import_buttons, delete_buttons, scroll_manager,
-                /*showGames=*/true, IMPORT_GAME_HEIGHT, getData().fonts, getData().colors, getData().resources);
+                /*showGames=*/true, IMPORT_GAME_HEIGHT, IMPORT_GAME_N_GAMES_ON_WINDOW, getData().fonts, getData().colors, getData().resources);
             if (res.folderClicked) {
                 String fname = res.clickedFolder;
                 if (subfolder.size()) subfolder += "/";

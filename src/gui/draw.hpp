@@ -207,6 +207,7 @@ inline ExplorerDrawResult DrawExplorerList(
     Scroll_manager& scroll_manager,
     bool showGames,
     int itemHeight,
+    int n_games_on_window, 
     FontsT& fonts,
     ColorsT& colors,
     ResourcesT& resources
@@ -219,7 +220,7 @@ inline ExplorerDrawResult DrawExplorerList(
     }
     sy += 8;
     int total_rows = (int)folders_display.size() + (showGames ? (int)games.size() : 0);
-    for (int row = strt_idx_int; row < std::min(total_rows, strt_idx_int + IMPORT_GAME_N_GAMES_ON_WINDOW); ++row) {
+    for (int row = strt_idx_int; row < std::min(total_rows, strt_idx_int + n_games_on_window); ++row) {
         Rect rect;
         rect.y = sy;
         rect.x = IMPORT_GAME_SX;
@@ -339,7 +340,7 @@ inline ExplorerDrawResult DrawExplorerList(
         sy += itemHeight;
     }
     int total_rows2 = (int)folders_display.size() + (showGames ? (int)games.size() : 0);
-    if (strt_idx_int + IMPORT_GAME_N_GAMES_ON_WINDOW < total_rows2) {
+    if (strt_idx_int + n_games_on_window < total_rows2) {
         fonts.font(U"︙").draw(15, Arg::bottomCenter = Vec2{ X_CENTER, 415}, colors.white);
     }
     scroll_manager.draw();
