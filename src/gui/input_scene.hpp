@@ -603,9 +603,7 @@ private:
         
         // Use the shared utility function
         std::vector<String> folders = enumerate_direct_subdirectories(getData().directories.document_dir, subfolder);
-        std::cerr << "Found " << folders.size() << " folders in " << subfolder << std::endl;
         for (auto& folder : folders) {
-            std::cerr << "  Folder: " << folder.narrow() << std::endl;
             folders_display.emplace_back(folder);
         }
         

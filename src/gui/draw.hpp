@@ -285,7 +285,7 @@ inline ExplorerDrawResult DrawExplorerList(
     static uint64_t last_click_time = 0;
     static String last_clicked_folder;
     static int last_clicked_game_index = -1;
-    static constexpr uint64_t DOUBLE_CLICK_TIME_MS = 300;
+    static constexpr uint64_t DOUBLE_CLICK_TIME_MS = 400;
     static constexpr double DRAG_THRESHOLD = 0.5; // Minimum distance to start drag
     
     current_mouse_pos = Cursor::Pos();
@@ -295,27 +295,51 @@ inline ExplorerDrawResult DrawExplorerList(
     if (is_dragging && !MouseL.pressed()) {
         is_dragging = false;
         
-        // Check if we're dropping on a folder
-        bool dropped_on_folder = false;
-        String target_folder;
-        
-        int parent_offset = has_parent ? 1 : 0;
-        for (int folder_idx = 0; folder_idx < (int)folders_display.size(); ++folder_idx) {
-            int folder_row = parent_offset + folder_idx;  // Add parent offset
-            int folder_sy = IMPORT_GAME_SY + 8 + (folder_row - scroll_manager.get_strt_idx_int()) * itemHeight;
+        // Check if we're dropping on parent folder first
+        bool dropped_on_parent = false;
+        if (has_parent) {
+            int parent_row = 0;
+            int parent_sy = IMPORT_GAME_SY + 8 + (parent_row - scroll_manager.get_strt_idx_int()) * itemHeight;
             
-            if (folder_row >= scroll_manager.get_strt_idx_int() && 
-                folder_row < scroll_manager.get_strt_idx_int() + n_games_on_window) {
-                Rect folder_rect(IMPORT_GAME_SX, folder_sy, IMPORT_GAME_WIDTH, itemHeight);
-                if (folder_rect.contains(current_mouse_pos)) {
-                    dropped_on_folder = true;
-                    target_folder = folders_display[folder_idx];
-                    break;
+            if (parent_row >= scroll_manager.get_strt_idx_int() && 
+                parent_row < scroll_manager.get_strt_idx_int() + n_games_on_window) {
+                Rect parent_rect(IMPORT_GAME_SX, parent_sy, IMPORT_GAME_WIDTH, itemHeight);
+                if (parent_rect.contains(current_mouse_pos)) {
+                    dropped_on_parent = true;
                 }
             }
         }
         
-        if (dropped_on_folder) {
+        // Check if we're dropping on a folder
+        bool dropped_on_folder = false;
+        String target_folder;
+        
+        if (!dropped_on_parent) {
+            int parent_offset = has_parent ? 1 : 0;
+            for (int folder_idx = 0; folder_idx < (int)folders_display.size(); ++folder_idx) {
+                int folder_row = parent_offset + folder_idx;  // Add parent offset
+                int folder_sy = IMPORT_GAME_SY + 8 + (folder_row - scroll_manager.get_strt_idx_int()) * itemHeight;
+                
+                if (folder_row >= scroll_manager.get_strt_idx_int() && 
+                    folder_row < scroll_manager.get_strt_idx_int() + n_games_on_window) {
+                    Rect folder_rect(IMPORT_GAME_SX, folder_sy, IMPORT_GAME_WIDTH, itemHeight);
+                    if (folder_rect.contains(current_mouse_pos)) {
+                        dropped_on_folder = true;
+                        target_folder = folders_display[folder_idx];
+                        break;
+                    }
+                }
+            }
+        }
+        
+        if (dropped_on_parent) {
+            res.dropCompleted = true;
+            res.dropOnParent = true;
+            res.isDraggingGame = is_dragging_game;
+            res.isDraggingFolder = is_dragging_folder;
+            res.draggedGameIndex = dragged_game_index;
+            res.draggedFolderName = dragged_folder_name;
+        } else if (dropped_on_folder) {
             res.dropCompleted = true;
             res.dropTargetFolder = target_folder;
             res.isDraggingGame = is_dragging_game;
@@ -379,13 +403,16 @@ inline ExplorerDrawResult DrawExplorerList(
     int parent_offset = has_parent ? 1 : 0;  // Add parent folder as first item if has_parent
     int total_items = parent_offset + (int)folders_display.size() + (int)games.size();
     
-    // Debug output
-    // std::cerr << "DrawExplorerList: has_parent=" << has_parent << ", parent_offset=" << parent_offset 
-    //           << ", folders=" << folders_display.size() << ", games=" << games.size() 
-    //           << ", total=" << total_items << std::endl;
-    if (total_items == parent_offset) {
+    // Only show "no game available" if we're at root and have no items
+    if (total_items == 0) {
         fonts.font(language.get("in_out", "no_game_available")).draw(20, Arg::center(X_CENTER, Y_CENTER), colors.white);
         return res;
+    }
+    
+    // If we only have parent folder (empty subfolder), show a message but still show parent folder
+    bool empty_subfolder = has_parent && (folders_display.size() == 0 && games.size() == 0);
+    if (empty_subfolder) {
+        fonts.font(U"このフォルダは空です").draw(16, Arg::center(X_CENTER, Y_CENTER + 50), colors.white);
     }
     
     int sy = IMPORT_GAME_SY;
@@ -414,32 +441,16 @@ inline ExplorerDrawResult DrawExplorerList(
 
         // Handle parent folder as first item
         if (has_parent && row == 0) {
-            // Draw parent folder (..) with special icon or styling
-            double folder_icon_scale = (double)(rect.h - 2 * 10) / (double)resources.folder.height();
-            resources.folder.scaled(folder_icon_scale).draw(Arg::leftCenter(IMPORT_GAME_SX + IMPORT_GAME_LEFT_MARGIN + 10, sy + itemHeight / 2));
-            fonts.font(U"↑..").draw(15, Arg::leftCenter(IMPORT_GAME_SX + IMPORT_GAME_LEFT_MARGIN + 10 + 30, sy + itemHeight / 2), colors.white);
-            
-            // Handle drop on parent folder
+            // Handle drop on parent folder (visual feedback)
             if (rect.contains(current_mouse_pos) && (is_dragging_game || is_dragging_folder)) {
                 rect.draw(colors.yellow.withAlpha(64));
-                if (MouseL.up()) {
-                    res.dropCompleted = true;
-                    res.dropOnParent = true;
-                    res.isDraggingGame = is_dragging_game;
-                    res.isDraggingFolder = is_dragging_folder;
-                    res.draggedGameIndex = dragged_game_index;
-                    res.draggedFolderName = dragged_folder_name;
-                    
-                    // Reset drag state
-                    is_dragging_game = false;
-                    is_dragging_folder = false;
-                    dragged_game_index = -1;
-                    dragged_folder_name.clear();
-                    drag_start_pos = Vec2(0, 0);
-                    drag_offset = Vec2(0, 0);
-                    return res;
-                }
             }
+            
+            // Draw parent folder (..) with special icon or styling
+            double folder_icon_scale = (double)(rect.h - 2 * 10) / (double)resources.folder.height();
+            // resources.folder.scaled(folder_icon_scale).draw(Arg::leftCenter(IMPORT_GAME_SX + IMPORT_GAME_LEFT_MARGIN + 10, sy + itemHeight / 2));
+            // fonts.font(U"↑..").draw(15, Arg::leftCenter(IMPORT_GAME_SX + IMPORT_GAME_LEFT_MARGIN + 10 + 30, sy + itemHeight / 2), colors.white);
+            fonts.font(U"↑..").draw(15, Arg::leftCenter(IMPORT_GAME_SX + IMPORT_GAME_LEFT_MARGIN + 10, sy + itemHeight / 2), colors.white);
             
             // Handle parent folder double-click
             if (rect.leftClicked() && !is_dragging) {
@@ -484,7 +495,7 @@ inline ExplorerDrawResult DrawExplorerList(
                 fonts.font(fname).draw(15, Arg::leftCenter(IMPORT_GAME_SX + IMPORT_GAME_LEFT_MARGIN + 10 + 30, sy + itemHeight / 2), colors.white);
                 
                 // Handle folder drag preparation and click
-                if (rect.leftPressed()) {
+                if (rect.leftPressed() && !is_dragging && dragged_game_index == -1 && dragged_folder_name.empty()) {
                     // Prepare for potential drag - record relative position from click
                     dragged_folder_name = fname;
                     drag_start_pos = current_mouse_pos;
@@ -548,7 +559,7 @@ inline ExplorerDrawResult DrawExplorerList(
                 }
                 
                 // Handle game drag preparation
-                if (rect.leftPressed()) {
+                if (rect.leftPressed() && !is_dragging && dragged_game_index == -1 && dragged_folder_name.empty()) {
                     // Prepare for potential drag - record relative position from click
                     dragged_game_index = i;
                     drag_start_pos = current_mouse_pos;
