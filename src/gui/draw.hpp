@@ -234,7 +234,6 @@ inline ExplorerDrawResult DrawExplorerList(
     }
     
     // "Open in Explorer" button in the top-right area
-    // open_explorer_button.move(IMPORT_GAME_SX + IMPORT_GAME_WIDTH - 120, IMPORT_GAME_SY - 30);
     open_explorer_button.draw();
     if (open_explorer_button.clicked()) {
         res.openExplorerClicked = true;

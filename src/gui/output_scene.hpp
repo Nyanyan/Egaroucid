@@ -281,7 +281,7 @@ private:
         Array<FilePath> list = FileSystem::DirectoryContents(base);
         Array<String> real_folders;
         for (const auto& path : list) {
-            if (FileSystem::IsDirectory(path)) {
+            if (FileSystem::IsDirectory(path) && FileSystem::Exists(path)) {
                 String name = path;
                 while (name.size() && (name.back() == U'/' || name.back() == U'\\')) name.pop_back();
                 size_t pos = name.lastIndexOf(U'/');
