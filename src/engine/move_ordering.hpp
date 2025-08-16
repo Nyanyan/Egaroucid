@@ -73,6 +73,8 @@ constexpr int MO_OFFSET_L_PM = 38;
 #else
     // midgame search
     constexpr int W_KILLER = 10;
+    constexpr int W_HISTORY_MOVE = 6;
+    constexpr int W_COUNTER_MOVE = 3;
     constexpr int W_MOBILITY = 35;
     constexpr int W_POTENTIAL_MOBILITY = 17;
     constexpr int W_TT_BONUS = 485;
@@ -81,6 +83,8 @@ constexpr int MO_OFFSET_L_PM = 38;
 
     // midgame null window search
     constexpr int W_NWS_KILLER = 5;
+    constexpr int W_NWS_HISTORY_MOVE = 3;
+    constexpr int W_NWS_COUNTER_MOVE = 1;
     constexpr int W_NWS_MOBILITY = 17;
     constexpr int W_NWS_TT_BONUS = 204;
     constexpr int W_NWS_VALUE = 7;
@@ -217,6 +221,9 @@ inline void move_evaluate(Search *search, Flip_value *flip_value, int alpha, int
     flip_value->value = 0;
 #if USE_KILLER_MOVE_MO
     flip_value->value += search->get_killer_bonus(flip_value->flip.pos) * W_KILLER;
+    int prev_pos = search->get_prev_move();
+    flip_value->value += search->get_history_bonus(prev_pos, flip_value->flip.pos) * W_HISTORY_MOVE;
+    flip_value->value += search->get_counter_move_bonus(prev_pos, flip_value->flip.pos) * W_COUNTER_MOVE;
 #endif
     search->move(&flip_value->flip);
         flip_value->n_legal = search->board.get_legal();
@@ -257,6 +264,9 @@ inline void move_evaluate_nws(Search *search, Flip_value *flip_value, int alpha,
     flip_value->value = 0;
 #if USE_KILLER_MOVE_MO && USE_KILLER_MOVE_NWS_MO
     flip_value->value += search->get_killer_bonus(flip_value->flip.pos) * W_NWS_KILLER;
+    int prev_pos = search->get_prev_move();
+    flip_value->value += search->get_history_bonus(prev_pos, flip_value->flip.pos) * W_NWS_HISTORY_MOVE;
+    flip_value->value += search->get_counter_move_bonus(prev_pos, flip_value->flip.pos) * W_NWS_COUNTER_MOVE;
 #endif
     search->move(&flip_value->flip);
         flip_value->n_legal = search->board.get_legal();

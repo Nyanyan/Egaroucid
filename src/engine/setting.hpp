@@ -170,8 +170,8 @@
 #define LAST_FLIP_PASS_OPT true
 
 // killer move in move ordering
-#define USE_KILLER_MOVE_MO false
-#define USE_KILLER_MOVE_NWS_MO false
+#define USE_KILLER_MOVE_MO true
+#define USE_KILLER_MOVE_NWS_MO true
 
 
 

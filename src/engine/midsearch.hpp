@@ -255,7 +255,8 @@ int nega_scout(Search *search, int alpha, int beta, const int depth, const bool 
                     if (alpha < v) {
                         if (beta <= v) {
 #if USE_KILLER_MOVE_MO
-                            search->update_killer(move_list[move_idx].flip.pos);
+                            // Update all heuristics on beta cutoff
+                            search->update_heuristics_on_cutoff(move_list[move_idx].flip.pos, depth);
 #endif
                             break;
                         }
@@ -385,7 +386,7 @@ int nega_scout_policy(Search *search, int alpha, int beta, const int depth, bool
                     if (alpha < v) {
                         if (beta <= v) {
 #if USE_KILLER_MOVE_MO
-                            search->update_killer(move_list[move_idx].flip.pos);
+                            search->update_heuristics_on_cutoff(move_list[move_idx].flip.pos, depth);
 #endif
                             break;
                         }
@@ -548,7 +549,7 @@ std::pair<int, int> first_nega_scout_legal(Search *search, int alpha, int beta, 
                     if (alpha < v) {
                         if (beta <= v) {
 #if USE_KILLER_MOVE_MO
-                            search->update_killer(move_list[move_idx].flip.pos);
+                            search->update_heuristics_on_cutoff(move_list[move_idx].flip.pos, depth);
 #endif
                             break;
                         }

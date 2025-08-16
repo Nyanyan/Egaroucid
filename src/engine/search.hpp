@@ -104,6 +104,12 @@ constexpr uint64_t parity_table[16] = {
 */
 #if USE_KILLER_MOVE_MO
 constexpr int MAX_PLY = 65;
+
+/*
+    @brief History and Counter Move constants
+*/
+constexpr int HISTORY_MAX = 16384;  // Maximum history value
+constexpr int HISTORY_SCALE = 16;   // History aging factor
 #endif
 
 
@@ -234,6 +240,16 @@ class Search {
         // Killer move support
         int killer1[MAX_PLY];
         int killer2[MAX_PLY];
+        
+        // History heuristic (move ordering based on past performance)
+        // Use smaller history table to avoid stack overflow
+        int history[HW2];  // Simplified history for move positions only
+        
+        // Counter move heuristic (response to previous move)
+        int counter_moves[HW2];  // counter_moves[prev_move] = best_response
+        
+        // Move history for tracking previous moves
+        int move_history[MAX_PLY];  // move_history[ply] = move_position
 #endif
 
     public:
@@ -263,6 +279,9 @@ class Search {
             calc_eval_features(&board, &eval);
 #if USE_KILLER_MOVE_MO
             clear_killers();
+            clear_history();
+            clear_counter_moves();
+            clear_move_history();
 #endif
         }
 
@@ -271,6 +290,9 @@ class Search {
             calc_eval_features(&board, &eval);
 #if USE_KILLER_MOVE_MO
             clear_killers();
+            clear_history();
+            clear_counter_moves();
+            clear_move_history();
 #endif
         }
 
@@ -307,6 +329,10 @@ class Search {
             board.move_board(flip);
             ++n_discs;
             parity ^= cell_div4[flip->pos];
+#if USE_KILLER_MOVE_MO
+            // Record move in history
+            record_move(flip->pos);
+#endif
         }
 
         /*
@@ -457,7 +483,8 @@ class Search {
         */
         inline void update_killer(int pos) {
             int ply = get_ply();
-            if (ply < 0 || ply >= 128) return;
+            if (ply < 0 || ply >= MAX_PLY) return;  // Use MAX_PLY instead of hardcoded 128
+            if (pos < 0 || pos >= HW2) return;       // Check pos bounds
             if (pos == killer1[ply]) return;
             killer2[ply] = killer1[ply];
             killer1[ply] = pos;
@@ -472,6 +499,123 @@ class Search {
             if (pos == killer1[ply]) return 2;
             else if (pos == killer2[ply]) return 1;
             return 0;
+        }
+
+        /*
+            @brief Clear history table
+        */
+        inline void clear_history() {
+            for (int i = 0; i < HW2; ++i) {
+                history[i] = 0;
+            }
+        }
+
+        /*
+            @brief Clear counter moves table
+        */
+        inline void clear_counter_moves() {
+            for (int i = 0; i < HW2; ++i) {
+                counter_moves[i] = -1;
+            }
+        }
+
+        /*
+            @brief Clear move history
+        */
+        inline void clear_move_history() {
+            for (int i = 0; i < MAX_PLY; ++i) {
+                move_history[i] = -1;
+            }
+        }
+
+        /*
+            @brief Update history heuristic
+        */
+        inline void update_history(int from_pos, int to_pos, int depth) {
+            // Simplified: use only destination position for history
+            if (to_pos < 0 || to_pos >= HW2) {
+                return;
+            }
+            int bonus = depth * depth;
+            history[to_pos] += bonus;
+            // Prevent overflow
+            if (history[to_pos] > HISTORY_MAX) {
+                age_history();
+            }
+        }
+
+        /*
+            @brief Age history table to prevent overflow
+        */
+        inline void age_history() {
+            for (int i = 0; i < HW2; ++i) {
+                history[i] /= HISTORY_SCALE;
+            }
+        }
+
+        /*
+            @brief Update counter move
+        */
+        inline void update_counter_move(int prev_pos, int counter_pos) {
+            if (prev_pos >= 0 && prev_pos < HW2 && counter_pos >= 0 && counter_pos < HW2) {
+                counter_moves[prev_pos] = counter_pos;
+            }
+        }
+
+        /*
+            @brief Get history bonus for move ordering
+        */
+        inline int get_history_bonus(int from_pos, int to_pos) const {
+            // Simplified: use only destination position
+            if (to_pos < 0 || to_pos >= HW2) return 0;
+            return history[to_pos] / (HISTORY_MAX + 1);
+        }
+
+        /*
+            @brief Get counter move bonus
+        */
+        inline int get_counter_move_bonus(int prev_pos, int current_pos) const {
+            if (prev_pos < 0 || prev_pos >= HW2) return 0;
+            return (counter_moves[prev_pos] == current_pos);
+        }
+
+        /*
+            @brief Record move in history and update prev_pos
+        */
+        inline void record_move(int pos) {
+            int ply = get_ply();
+            if (ply >= 0 && ply < MAX_PLY && pos >= 0 && pos < HW2) {
+                move_history[ply] = pos;
+            }
+        }
+
+        /*
+            @brief Get previous move position
+        */
+        inline int get_prev_move() const {
+            int ply = get_ply();
+            if (ply > 0 && ply <= MAX_PLY) {
+                return move_history[ply - 1];
+            }
+            return -1;
+        }
+
+        /*
+            @brief Update heuristics after a beta cutoff
+        */
+        inline void update_heuristics_on_cutoff(int pos, int depth) {
+            int prev_pos = get_prev_move();
+            
+            // Update killer moves
+            update_killer(pos);
+            
+            // Update history
+            if (prev_pos >= 0) {
+                update_history(prev_pos, pos, depth);
+            }
+            
+            // Update counter move
+            update_counter_move(prev_pos, pos);
         }
 #endif
 };

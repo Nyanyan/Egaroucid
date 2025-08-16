@@ -204,7 +204,7 @@ int nega_alpha_ordering_nws_simple(Search *search, int alpha, const int depth, c
                 best_move = move_list[move_idx].flip.pos;
                 if (alpha < v) {
 #if USE_KILLER_MOVE_MO && USE_KILLER_MOVE_NWS_MO
-                    search->update_killer(move_list[move_idx].flip.pos);
+                    search->update_heuristics_on_cutoff(move_list[move_idx].flip.pos, depth);
 #endif
                     break;
                 }
@@ -475,7 +475,7 @@ int nega_alpha_ordering_nws(Search *search, int alpha, const int depth, const bo
                     best_move = move_list[move_idx].flip.pos;
                     if (alpha < v) {
 #if USE_KILLER_MOVE_MO && USE_KILLER_MOVE_NWS_MO
-                        search->update_killer(move_list[move_idx].flip.pos);
+                        search->update_heuristics_on_cutoff(move_list[move_idx].flip.pos, depth);
 #endif
                         break;
                     }
