@@ -20,7 +20,7 @@ constexpr int USE_MPC_MIN_DEPTH = 3;
 
 //constexpr int MPC_ADD_DEPTH_VALUE_THRESHOLD = 5;
 //constexpr int MPC_SUB_DEPTH_VALUE_THRESHOLD = 20;
-constexpr int MPC_ERROR0_OFFSET = 2;
+constexpr int MPC_ERROR0_OFFSET = 4;
 
 // constants from standard normal distribution table
 // two-sided test                                         74.0  88.0  93.0  98.0  99.0  inf (%)
@@ -35,7 +35,7 @@ constexpr double probcut_c = 1.096319765006055;
 constexpr double probcut_d = -0.8362251801219095;
 constexpr double probcut_e = 4.610017383697701;
 constexpr double probcut_f = 3.818582623595395;
-constexpr double probcut_g = 1.8775013664098447;
+constexpr double probcut_g = 1.7775013664098447;
 
 #if USE_MPC_PRE_CALCULATION
 int mpc_error[N_SELECTIVITY_LEVEL][HW2 + 1][HW2 - 3][HW2 - 3];
