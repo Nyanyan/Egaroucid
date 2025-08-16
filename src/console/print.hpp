@@ -54,7 +54,7 @@ void print_version() {
     std::cout << COUT_TAB << std::left << std::setw(VERSION_TAB_SIZE) << "@date ";
     std::cout << EGAROUCID_DATE << std::endl;
     std::cout << COUT_TAB << std::left << std::setw(VERSION_TAB_SIZE) << "@build ";
-    std::cout << __DATE__ << " " << __TIME__ << std::endl;
+    std::cout << __DATE__ << " " << __TIME__ << " JST" << std::endl;
     std::cout << COUT_TAB << std::left << std::setw(VERSION_TAB_SIZE) << "@author ";
     std::cout << EGAROUCID_AUTHOR << std::endl;
     std::cout << COUT_TAB << std::left << std::setw(VERSION_TAB_SIZE) << "@license ";
