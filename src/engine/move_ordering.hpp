@@ -40,36 +40,38 @@ constexpr int MO_OFFSET_L_PM = 38;
     @brief constants for move ordering
 */
 #if TUNE_MOVE_ORDERING
-    constexpr int N_MOVE_ORDERING_PARAM = 14;
+    constexpr int N_MOVE_ORDERING_PARAM = 15;
     int move_ordering_param_array[N_MOVE_ORDERING_PARAM] = {
-        35, 17, 485, 269, 94, 
+        20, 35, 17, 485, 269, 94, 
         17, 204, 7, 25, 
         40, 12, 
         18, 17, 300
     };
 
-    int W_MOBILITY                  = move_ordering_param_array[0];
-    int W_POTENTIAL_MOBILITY        = move_ordering_param_array[1];
-    int W_TT_BONUS                  = move_ordering_param_array[2];
-    int W_VALUE                     = move_ordering_param_array[3];
-    int W_VALUE_DEEP_ADDITIONAL     = move_ordering_param_array[4];
+    int W_KILLER                    = move_ordering_param_array[0];
+    int W_MOBILITY                  = move_ordering_param_array[1];
+    int W_POTENTIAL_MOBILITY        = move_ordering_param_array[2];
+    int W_TT_BONUS                  = move_ordering_param_array[3];
+    int W_VALUE                     = move_ordering_param_array[4];
+    int W_VALUE_DEEP_ADDITIONAL     = move_ordering_param_array[5];
 
-    int W_NWS_MOBILITY              = move_ordering_param_array[5];
-    int W_NWS_TT_BONUS              = move_ordering_param_array[6];
-    int W_NWS_VALUE                 = move_ordering_param_array[7];
-    int W_NWS_VALUE_DEEP_ADDITIONAL = move_ordering_param_array[8];
+    int W_NWS_MOBILITY              = move_ordering_param_array[6];
+    int W_NWS_TT_BONUS              = move_ordering_param_array[7];
+    int W_NWS_VALUE                 = move_ordering_param_array[8];
+    int W_NWS_VALUE_DEEP_ADDITIONAL = move_ordering_param_array[9];
 
-    int W_END_NWS_MOBILITY          = move_ordering_param_array[9];
-    int W_END_NWS_VALUE             = move_ordering_param_array[10];
+    int W_END_NWS_MOBILITY          = move_ordering_param_array[10];
+    int W_END_NWS_VALUE             = move_ordering_param_array[11];
 
-    int W_END_NWS_SIMPLE_MOBILITY   = move_ordering_param_array[11];
-    int W_END_NWS_SIMPLE_PARITY     = move_ordering_param_array[12];
-    int W_END_NWS_SIMPLE_TT_BONUS   = move_ordering_param_array[13];
+    int W_END_NWS_SIMPLE_MOBILITY   = move_ordering_param_array[12];
+    int W_END_NWS_SIMPLE_PARITY     = move_ordering_param_array[13];
+    int W_END_NWS_SIMPLE_TT_BONUS   = move_ordering_param_array[14];
 
     int MOVE_ORDERING_PARAM_START = 9;
     int MOVE_ORDERING_PARAM_END = 13;
 #else
     // midgame search
+    constexpr int W_KILLER = 15;
     constexpr int W_MOBILITY = 35;
     constexpr int W_POTENTIAL_MOBILITY = 17;
     constexpr int W_TT_BONUS = 485;
@@ -91,6 +93,7 @@ constexpr int MO_OFFSET_L_PM = 38;
     constexpr int W_END_NWS_SIMPLE_PARITY = 17;
     constexpr int W_END_NWS_SIMPLE_TT_BONUS = 300;
 #endif
+// constexpr int W_NWS_KILLER = 5;
 
 constexpr int MOVE_ORDERING_VALUE_OFFSET_ALPHA = 12;
 constexpr int MOVE_ORDERING_VALUE_OFFSET_BETA = 8;
@@ -210,7 +213,10 @@ inline int get_potential_mobility(uint64_t discs, uint64_t empties) {
     @return true if wipeout found else false
 */
 inline void move_evaluate(Search *search, Flip_value *flip_value, int alpha, int beta, int depth, bool *searching) {
-    //flip_value->value = 0;
+    flip_value->value = 0;
+#if USE_KILLER_MOVE_MO
+    flip_value->value += search->get_killer_bonus(flip_value->flip.pos) * W_KILLER;
+#endif
     search->move(&flip_value->flip);
         flip_value->n_legal = search->board.get_legal();
         flip_value->value += (MO_OFFSET_L_PM - get_weighted_n_moves(flip_value->n_legal)) * W_MOBILITY;
@@ -247,7 +253,8 @@ inline void move_evaluate(Search *search, Flip_value *flip_value, int alpha, int
     @return true if wipeout found else false
 */
 inline void move_evaluate_nws(Search *search, Flip_value *flip_value, int alpha, int beta, int depth, bool *searching) {
-    //flip_value->value = 0;
+    flip_value->value = 0;
+    // flip_value->value += search->get_killer_bonus(flip_value->flip.pos) * W_NWS_KILLER;
     search->move(&flip_value->flip);
         flip_value->n_legal = search->board.get_legal();
         flip_value->value += (MO_OFFSET_L_PM - get_weighted_n_moves(flip_value->n_legal)) * W_NWS_MOBILITY;
@@ -271,39 +278,41 @@ inline void move_evaluate_nws(Search *search, Flip_value *flip_value, int alpha,
     search->undo(&flip_value->flip);
 }
 
-/*
-    @brief Evaluate a move in endgame NWS
+// /*
+//     @brief Evaluate a move in endgame NWS
 
-    @param search               search information
-    @param flip_value           flip with value
-    @return true if wipeout found else false
-*/
-inline void move_evaluate_end_nws(Search *search, Flip_value *flip_value) {
-    flip_value->value = 0;
-    search->move_endsearch(&flip_value->flip);
-        flip_value->n_legal = search->board.get_legal();
-        flip_value->value += (MO_OFFSET_L_PM - get_n_moves_cornerX2(flip_value->n_legal)) * W_END_NWS_MOBILITY;
-        flip_value->value += (MO_OFFSET_L_PM - mid_evaluate_move_ordering_end(search)) * W_END_NWS_VALUE;
-    search->undo_endsearch(&flip_value->flip);
-}
+//     @param search               search information
+//     @param flip_value           flip with value
+//     @return true if wipeout found else false
+// */
+// inline void move_evaluate_end_nws(Search *search, Flip_value *flip_value) {
+//     flip_value->value = 0;
+//     // flip_value->value += search->get_killer_bonus(flip_value->flip.pos);
+//     search->move_endsearch(&flip_value->flip);
+//         flip_value->n_legal = search->board.get_legal();
+//         flip_value->value += (MO_OFFSET_L_PM - get_n_moves_cornerX2(flip_value->n_legal)) * W_END_NWS_MOBILITY;
+//         flip_value->value += (MO_OFFSET_L_PM - mid_evaluate_move_ordering_end(search)) * W_END_NWS_VALUE;
+//     search->undo_endsearch(&flip_value->flip);
+// }
 
-/*
-    @brief Evaluate a move in endgame NWS (simple)
+// /*
+//     @brief Evaluate a move in endgame NWS (simple)
 
-    @param search               search information
-    @param flip_value           flip with value
-    @return true if wipeout found else false
-*/
-inline void move_evaluate_end_simple_nws(Search *search, Flip_value *flip_value) {
-    flip_value->value = 0;
-    if (search->parity & cell_div4[flip_value->flip.pos]) {
-        flip_value->value += W_END_NWS_SIMPLE_PARITY;
-    }
-    search->move_noeval(&flip_value->flip);
-        flip_value->n_legal = search->board.get_legal();
-        flip_value->value += (MO_OFFSET_L_PM - get_n_moves_cornerX2(flip_value->n_legal)) * W_END_NWS_SIMPLE_MOBILITY;
-    search->undo_noeval(&flip_value->flip);
-}
+//     @param search               search information
+//     @param flip_value           flip with value
+//     @return true if wipeout found else false
+// */
+// inline void move_evaluate_end_simple_nws(Search *search, Flip_value *flip_value) {
+//     flip_value->value = 0;
+//     // flip_value->value += search->get_killer_bonus(flip_value->flip.pos);
+//     if (search->parity & cell_div4[flip_value->flip.pos]) {
+//         flip_value->value += W_END_NWS_SIMPLE_PARITY;
+//     }
+//     search->move_noeval(&flip_value->flip);
+//         flip_value->n_legal = search->board.get_legal();
+//         flip_value->value += (MO_OFFSET_L_PM - get_n_moves_cornerX2(flip_value->n_legal)) * W_END_NWS_SIMPLE_MOBILITY;
+//     search->undo_noeval(&flip_value->flip);
+// }
 
 /*
     @brief Set the best move to the first element
@@ -538,41 +547,41 @@ inline bool move_list_evaluate_nws(Search *search, Flip_value move_list[], int c
     return false;
 }
 
-/*
-    @brief Evaluate all legal moves for endgame NWS
+// /*
+//     @brief Evaluate all legal moves for endgame NWS
 
-    @param search               search information
-    @param move_list            list of moves
-*/
-inline void move_list_evaluate_end_nws(Search *search, std::vector<Flip_value> &move_list, uint_fast8_t moves[], bool *searching) {
-    if (move_list.size() <= 1) {
-        return;
-    }
-    for (Flip_value &flip_value: move_list) {
-        if (flip_value.flip.pos == moves[0]) {
-            flip_value.value = W_1ST_MOVE;
-        } else if (flip_value.flip.pos == moves[1]) {
-            flip_value.value = W_2ND_MOVE;
-        } else{
-            move_evaluate_end_nws(search, &flip_value);
-        }
-    }
-}
+//     @param search               search information
+//     @param move_list            list of moves
+// */
+// inline void move_list_evaluate_end_nws(Search *search, std::vector<Flip_value> &move_list, uint_fast8_t moves[], bool *searching) {
+//     if (move_list.size() <= 1) {
+//         return;
+//     }
+//     for (Flip_value &flip_value: move_list) {
+//         if (flip_value.flip.pos == moves[0]) {
+//             flip_value.value = W_1ST_MOVE;
+//         } else if (flip_value.flip.pos == moves[1]) {
+//             flip_value.value = W_2ND_MOVE;
+//         } else{
+//             move_evaluate_end_nws(search, &flip_value);
+//         }
+//     }
+// }
 
-/*
-    @brief Evaluate all legal moves for endgame NWS (simple)
+// /*
+//     @brief Evaluate all legal moves for endgame NWS (simple)
 
-    @param search               search information
-    @param move_list            list of moves
-*/
-inline void move_list_evaluate_end_simple_nws(Search *search, Flip_value move_list[], const int canput) {
-    if (canput <= 1) {
-        return;
-    }
-    for (int i = 0; i < canput; ++i) {
-        move_evaluate_end_simple_nws(search, &move_list[i]);
-    }
-}
+//     @param search               search information
+//     @param move_list            list of moves
+// */
+// inline void move_list_evaluate_end_simple_nws(Search *search, Flip_value move_list[], const int canput) {
+//     if (canput <= 1) {
+//         return;
+//     }
+//     for (int i = 0; i < canput; ++i) {
+//         move_evaluate_end_simple_nws(search, &move_list[i]);
+//     }
+// }
 
 inline void move_list_sort(std::vector<Flip_value> &move_list) {
     std::sort(move_list.begin(), move_list.end(), [](Flip_value &a, Flip_value &b) { return a.value > b.value; });

@@ -99,6 +99,13 @@ constexpr uint64_t parity_table[16] = {
 };
 
 
+/*
+    @brief Killer move constants
+*/
+constexpr int MAX_PLY = 65;
+
+
+
 inline void calc_eval_features(Board *board, Eval_search *eval);
 inline void eval_undo(Eval_search *eval);
 inline void eval_undo_endsearch(Eval_search *eval);
@@ -221,6 +228,10 @@ class Search {
         uint64_t n_nodes_discs[HW2];
 #endif
         bool is_presearch;
+        
+        // Killer move support
+        int killer1[MAX_PLY];
+        int killer2[MAX_PLY];
 
     public:
 
@@ -234,6 +245,7 @@ class Search {
             parity |= (1 & pop_count_ull(empty & 0x0F0F0F0F00000000ULL)) << 2;
             parity |= (1 & pop_count_ull(empty & 0xF0F0F0F000000000ULL)) << 3;
             calc_eval_features(&board, &eval);
+            clear_killers();
         }
 
         Search(uint64_t board_player, uint64_t board_opponent, uint_fast8_t mpc_level_, bool use_multi_thread_, bool is_presearch_)
@@ -244,11 +256,13 @@ class Search {
             parity |= (1 & pop_count_ull(empty & 0x0F0F0F0F00000000ULL)) << 2;
             parity |= (1 & pop_count_ull(empty & 0xF0F0F0F000000000ULL)) << 3;
             calc_eval_features(&board, &eval);
+            clear_killers();
         }
 
         Search(uint64_t board_player, uint64_t board_opponent, int_fast8_t n_discs_, uint_fast8_t parity_, uint_fast8_t mpc_level_, bool use_multi_thread_, bool is_presearch_, thread_id_t thread_id_)
             : board(Board(board_player, board_opponent)), n_discs(n_discs_), parity(parity_), mpc_level(mpc_level_), use_multi_thread(use_multi_thread_), n_nodes(0), is_presearch(is_presearch_), thread_id(thread_id_) {
             calc_eval_features(&board, &eval);
+            clear_killers();
         }
 
         /*
@@ -264,6 +278,7 @@ class Search {
             parity |= (1 & pop_count_ull(empty & 0x0F0F0F0F00000000ULL)) << 2;
             parity |= (1 & pop_count_ull(empty & 0xF0F0F0F000000000ULL)) << 3;
             calc_eval_features(&board, &eval);
+            clear_killers();
         }
         
 
@@ -406,6 +421,45 @@ class Search {
         inline int phase() {
             return (n_discs - 4) / PHASE_N_DISCS;
             //return std::min(N_PHASES - 1, (n_discs - 4) / PHASE_N_DISCS);
+        }
+
+        /*
+            @brief Clear killer moves table
+        */
+        inline void clear_killers() {
+            for (int i = 0; i < MAX_PLY; ++i) {
+                killer1[i] = -1;
+                killer2[i] = -1;
+            }
+        }
+
+        /*
+            @brief Get current ply (search depth from root)
+        */
+        inline int get_ply() const {
+            return n_discs - 4;
+        }
+
+        /*
+            @brief Update killer move
+        */
+        inline void update_killer(int pos) {
+            int ply = get_ply();
+            if (ply < 0 || ply >= 128) return;
+            if (pos == killer1[ply]) return;
+            killer2[ply] = killer1[ply];
+            killer1[ply] = pos;
+        }
+
+        /*
+            @brief Get killer bonus for move ordering
+        */
+        inline int get_killer_bonus(int pos) const {
+            int ply = get_ply();
+            if (ply < 0 || ply >= MAX_PLY) return 0;
+            if (pos == killer1[ply]) return 2;
+            else if (pos == killer2[ply]) return 1;
+            return 0;
         }
 };
 
