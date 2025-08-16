@@ -11,6 +11,7 @@ installer eval.egev2 resources
 installer eval_move_ordering_end.egev resources
 installer version.txt AppData/Egaroucid
 installer hash resources/hash
+installer openings resources/openings
 portable img resources/img
 portable languages resources/languages
 portable book.egbk3 document
@@ -19,3 +20,4 @@ portable eval.egev2 resources
 portable eval_move_ordering_end.egev resources
 portable version.txt appdata
 portable hash resources/hash
+portable openings resources/openings
