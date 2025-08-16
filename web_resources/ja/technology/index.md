@@ -46,8 +46,10 @@ Egaroucidの性能の確認として2種類のベンチマークを使用して�
 対戦にはそれぞれ[XOT](https://berg.earthlingz.de/xot/aboutxot.php?lang=en)の進行を初期盤面として使い、各進行では先手後手それぞれ1回ずつ対戦させています。
 
 <div class="table_wrapper"><table>
-<tr><th>名称</th><td>7.6.0</td><td>7.5.0</td><td>7.4.0</td><td>7.3.0</td><td>7.2.0</td><td>7.1.0</td><td>7.0.0</td><td>Edax4.6</td></tr><tr><th>レベル1 勝率</th><td>0.5711</td><td>0.5514</td><td>0.5354</td><td>0.5289</td><td>0.5049</td><td>0.4943</td><td>0.5366</td><td>0.2774</td></tr><tr><th>レベル1 平均獲得石数</th><td>+3.36</td><td>+2.10</td><td>+1.59</td><td>+1.21</td><td>+0.44</td><td>+0.08</td><td>+1.41</td><td>-10.19</td></tr><tr><th>レベル5 勝率</th><td>0.6151</td><td>0.5580</td><td>0.5291</td><td>0.5154</td><td>0.5211</td><td>0.5260</td><td>0.5011</td><td>0.2340</td></tr><tr><th>レベル5 平均獲得石数</th><td>+2.51</td><td>+1.63</td><td>+1.15</td><td>+0.49</td><td>+0.52</td><td>+0.92</td><td>+0.11</td><td>-7.33</td></tr>
+<tr><th>名称</th><td>7.7.0</td><td>7.6.0</td><td>7.5.0</td><td>7.4.0</td><td>7.3.0</td><td>7.2.0</td><td>7.1.0</td><td>7.0.0</td><td>Edax4.6</td></tr><tr><th>レベル1 勝率</th><td>0.5585</td><td>0.5550</td><td>0.5520</td><td>0.5170</td><td>0.4870</td><td>0.5110</td><td>0.5162</td><td>0.4990</td><td>0.3043</td></tr><tr><th>レベル1 平均獲得石数</th><td>+2.27</td><td>+2.53</td><td>+2.60</td><td>+1.10</td><td>-0.26</td><td>+0.66</td><td>+0.85</td><td>-0.10</td><td>-9.65</td></tr><tr><th>レベル5 勝率</th><td>0.5962</td><td>0.5703</td><td>0.5747</td><td>0.5343</td><td>0.5105</td><td>0.5278</td><td>0.4948</td><td>0.4447</td><td>0.2467</td></tr><tr><th>レベル5 平均獲得石数</th><td>+2.72</td><td>+1.64</td><td>+1.91</td><td>+1.16</td><td>+0.36</td><td>+0.76</td><td>+0.15</td><td>-1.33</td><td>-7.37</td></tr>
 </table></div>
+
+
 
 対戦の詳細は[こちら](./battle.txt)をご覧ください。
 

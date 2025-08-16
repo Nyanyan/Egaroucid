@@ -8,7 +8,7 @@
 
 AVX512 edition do not works with Core i9-13900K, so there are only SIMD, Generic, and x86 editions.
 
-Egaroucid's result are here. As a comparison, I also show [Edax 4.5.2](https://github.com/okuhara/edax-reversi-AVX/releases/tag/v4.5.2)'s result. Although Edax 4.6 is the latest, but on my environment, I found that 4.5.2 is faster than 4.6.
+Egaroucid's result are here. As a comparison, I also show [Edax 4.5.5](https://github.com/okuhara/edax-reversi-AVX/releases/tag/v4.5.5)'s result. Although Edax 4.6 is the latest, but on my environment, I found that 4.5.5 is faster than 4.6.
 
 <div class="table_wrapper">
 <table>
@@ -21,7 +21,7 @@ Egaroucid's result are here. As a comparison, I also show [Edax 4.5.2](https://g
 
 With Core i9-11900K, you can run AVX512 edition.
 
-Egaroucid's result and [Edax 4.5.2](https://github.com/okuhara/edax-reversi-AVX/releases/tag/v4.5.2)'s result are:
+Egaroucid's result and [Edax 4.5.5](https://github.com/okuhara/edax-reversi-AVX/releases/tag/v4.5.5)'s result are:
 
 <div class="table_wrapper">
 <table>
@@ -39,7 +39,7 @@ Egaroucid's result and [Edax 4.5.2](https://github.com/okuhara/edax-reversi-AVX/
 
 ## Play against Edax 4.6
 
-[Edax 4.6](https://github.com/abulmo/edax-reversi/releases/tag/v4.6) is one of the best Othello AI in the world.
+[Edax 4.6](https://github.com/abulmo/edax-reversi/releases/tag/v4.6) is one of the best open-source Othello AI in the world.
 
 If I set the game from the very beginning, same line appears a lot. To avoid this, I set the game from many different near-draw lines.
 

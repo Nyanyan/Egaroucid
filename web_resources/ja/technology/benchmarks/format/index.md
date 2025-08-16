@@ -8,7 +8,7 @@
 
 Core i9-13900KではAVX512版が動かないため、SIMD版、Generic版、x86版の結果を掲載します。
 
-Egaroucidの結果は以下の通りです。また、比較としてオープンソースで最速クラスのオセロAI [Edax 4.5.2](https://github.com/okuhara/edax-reversi-AVX/releases/tag/v4.5.2)の結果も掲載します (Edaxはバージョン4.6が最新ですが、手元で実行したところ4.6よりも4.5.2の方が速かったため、4.5.2を採用しました)。
+Egaroucidの結果は以下の通りです。また、比較としてオープンソースで最速クラスのオセロAI [Edax 4.5.5](https://github.com/okuhara/edax-reversi-AVX/releases/tag/v4.5.5)の結果も掲載します (Edaxはバージョン4.6が最新ですが、手元で実行したところ4.6よりも4.5.5の方が速かったため、4.5.5を採用しました)。
 
 <div class="table_wrapper">
 <table>
@@ -20,7 +20,7 @@ Egaroucidの結果は以下の通りです。また、比較としてオープ�
 
 Core i9-11900KではAVX512版が動きます。
 
-Egaroucidおよび[Edax 4.5.2](https://github.com/okuhara/edax-reversi-AVX/releases/tag/v4.5.2)の結果は以下の通りです。
+Egaroucidおよび[Edax 4.5.5](https://github.com/okuhara/edax-reversi-AVX/releases/tag/v4.5.5)の結果は以下の通りです。
 
 <div class="table_wrapper">
 <table>
@@ -31,7 +31,7 @@ Egaroucidおよび[Edax 4.5.2](https://github.com/okuhara/edax-reversi-AVX/relea
 
 ## Edax 4.6との対戦
 
-現状世界最強とも言われるオセロAI、[Edax 4.6](https://github.com/abulmo/edax-reversi/releases/tag/v4.6)との対戦結果です。
+世界最強クラスのオープンソースオセロAI、[Edax 4.6](https://github.com/abulmo/edax-reversi/releases/tag/v4.6)との対戦結果です。
 
 初手からの対戦では同じ進行ばかりになって評価関数の強さは計測できないので、初期局面から8手進めた互角に近いと言われる状態から打たせて勝敗を数えました。このとき、同じ進行に対して両者が必ず先手と後手の双方を1回ずつ持つようにし、2戦で獲得した石数が多い方が勝ちとしました。
 
