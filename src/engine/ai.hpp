@@ -33,13 +33,9 @@ constexpr int AI_TL_EARLY_BREAK_THRESHOLD = 5;
 
 constexpr double AI_TL_ADDITIONAL_SEARCH_THRESHOLD = 1.75;
 
+#if USE_LAZY_SMP
 constexpr int N_MAIN_SEARCH_THREADS = 25;
-
-struct Lazy_SMP_task {
-    uint_fast8_t mpc_level;
-    int depth;
-    bool is_end_search;
-};
+#endif
 
 struct Ponder_elem {
     Flip flip;
@@ -67,11 +63,11 @@ inline uint64_t get_this_search_time_limit(uint64_t time_limit, uint64_t elapsed
     return time_limit - elapsed;
 }
 
-inline std::pair<int, uint64_t> sub_search(Board board, int alpha, int beta, uint64_t use_legal, int n_threads, int thread_id, int main_depth, uint_fast8_t main_mpc_level, bool *searching) {
+#if USE_LAZY_SMP
+inline std::pair<int, uint64_t> lazy_smp(Board board, int alpha, int beta, uint64_t use_legal, int n_threads, int thread_id, int main_depth, uint_fast8_t main_mpc_level, bool *searching) {
     if (n_threads <= 0) {
         return std::make_pair(0, 0ULL);
     }
-    // std::cerr << "n_threads " << n_threads << std::endl;
     int n_worker = 0;
     uint64_t nodes = 0;
     std::vector<Search> searches(n_threads);
@@ -80,84 +76,53 @@ inline std::pair<int, uint64_t> sub_search(Board board, int alpha, int beta, uin
         search.thread_id = thread_id;
     }
     std::vector<std::future<int>> parallel_tasks;
-    int n_use_legal = pop_count_ull(use_legal);
-    std::vector<int> sub_depth_arr(n_use_legal);
-    std::vector<int> sub_mpc_level_arr(n_use_legal);
-    const int max_depth = HW2 - board.n_discs();
-    for (int i = 0; i < n_use_legal; ++i) {
-        sub_depth_arr[i] = main_depth; // std::min(max_depth, main_depth + 1);
-        sub_mpc_level_arr[i] = main_mpc_level;
-    }
-
-    // gen move list
-    uint32_t hash_code = board.hash();
-    transposition_table.prefetch(hash_code);
-    uint_fast8_t moves[N_TRANSPOSITION_MOVES] = {MOVE_UNDEFINED, MOVE_UNDEFINED};
-    transposition_table.get_moves_any_level(&board, hash_code, moves);
-    std::vector<Flip_value> move_list(n_use_legal);
-    int idx = 0;
-    uint64_t legal = use_legal;
-    for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)) {
-        calc_flip(&move_list[idx].flip, &board, cell);
-        ++idx;
-    }
-    // TT ordering
-    int moves_idx = 0;
-    for (int i = 0; i < N_TRANSPOSITION_MOVES && moves[i] != MOVE_UNDEFINED; ++i) {
-        for (int j = 0; j < idx; ++j) {
-            if (move_list[j].flip.pos == moves[i]) {
-                move_list[moves_idx].flip = move_list[j].flip;
-                move_list[j].flip = move_list[moves_idx].flip;
-                ++moves_idx;
-                break;
-            }
-        }
-    }
-    // Shallow search for move ordering
-    for (int i = moves_idx; i < idx; ++i) {
-        Search shallow_search(&board, MPC_74_LEVEL, false, true);
-        shallow_search.thread_id = thread_id;
-        Board temp_board = board.copy();
-        temp_board.move_board(&move_list[i].flip);
-        bool temp_is_end = (temp_board.n_discs() == HW2);
-        move_list[i].value = -nega_scout(&shallow_search, -beta, -alpha, std::min(3, max_depth - 1), false, LEGAL_UNDEFINED, temp_is_end, searching);
-    }
-    // Sort remaining moves by shallow search values
-    std::sort(move_list.begin(), move_list.end(), [](const Flip_value& a, const Flip_value& b) {
-        return a.value > b.value;
-    });
-
-    // std::cerr << "Move order: ";
-    // for (int i = 0; i < idx; ++i) {
-    //     std::cerr << idx_to_coord(move_list[i].flip.pos);
-    //     if (i < idx - 1) std::cerr << " ";
+    std::vector<int> sub_depth_arr;
+    int sub_max_mpc_level[61];
+    int sub_depth = main_depth;
+    int max_thread_size = n_threads;
+    // for (int i = 0; i < main_depth - 14; ++i) {
+    //     max_thread_size *= 0.9;
     // }
-    // std::cerr << std::endl;
-
-    for (int sub_thread_idx = 0; sub_thread_idx < n_threads && global_searching && *searching; ++sub_thread_idx) {
+    const int max_depth = HW2 - board.n_discs();
+    sub_max_mpc_level[main_depth] = main_mpc_level;
+    for (int i = main_depth + 1; i < 61; ++i) {
+        sub_max_mpc_level[i] = MPC_74_LEVEL;
+    }
+    for (int sub_thread_idx = 0; sub_thread_idx < max_thread_size && sub_thread_idx < searches.size() && global_searching && *searching; ++sub_thread_idx) {
         int ntz = ctz_uint32(sub_thread_idx + 1);
-        int move_idx = ntz % n_use_legal;
-        int sub_depth = sub_depth_arr[move_idx];
-        bool sub_is_end_search = (sub_depth == max_depth - 1);
-        uint_fast8_t sub_mpc_level = sub_mpc_level_arr[move_idx];
-        searches[sub_thread_idx] = Search{&board, sub_mpc_level, false, true};
-        searches[sub_thread_idx].board.move_board(&move_list[move_idx].flip);
-
-        // std::cerr << sub_thread_idx << " " << move_idx << " " << idx_to_coord(move_list[move_idx].flip.pos) << std::endl;
-        
-        bool pushed = false;
-        parallel_tasks.emplace_back(thread_pool.push(thread_id, &pushed, std::bind(&nega_scout, &searches[sub_thread_idx], -beta, -alpha, sub_depth, false, LEGAL_UNDEFINED, sub_is_end_search, searching)));
-        if (pushed) {
-            ++n_worker;
-            ++sub_depth_arr[move_idx];
-            if (sub_mpc_level_arr[move_idx] < MPC_100_LEVEL) {
-                ++sub_mpc_level_arr[move_idx];
+        int sub_depth = std::min(max_depth, main_depth + ntz);
+        uint_fast8_t sub_mpc_level = sub_max_mpc_level[sub_depth];
+        bool sub_is_end_search = (sub_depth == max_depth);
+        if (sub_mpc_level <= MPC_100_LEVEL) {
+            //std::cerr << sub_thread_idx << " " << sub_depth << " " << SELECTIVITY_PERCENTAGE[sub_mpc_level] << std::endl;
+            searches[sub_thread_idx] = Search{&board, sub_mpc_level, false, true};
+            bool pushed = false;
+            parallel_tasks.emplace_back(thread_pool.push(thread_id, &pushed, std::bind(&nega_scout, &searches[sub_thread_idx], alpha, beta, sub_depth, false, use_legal, sub_is_end_search, searching)));
+            sub_depth_arr.emplace_back(sub_depth);
+            if (!pushed) {
+                parallel_tasks.pop_back();
+                sub_depth_arr.pop_back();
+            } else {
+                ++sub_max_mpc_level[sub_depth];
+                ++n_worker;
             }
-        } else {
-            parallel_tasks.pop_back();
         }
     }
-
+    int max_sub_search_depth = -1;
+    int max_sub_main_mpc_level = 0;
+    bool max_is_only_one = false;
+    for (int i = 0; i < (int)parallel_tasks.size(); ++i) {
+        if (sub_depth_arr[i] > max_sub_search_depth) {
+            max_sub_search_depth = sub_depth_arr[i];
+            max_sub_main_mpc_level = searches[i].mpc_level;
+            max_is_only_one = true;
+        } else if (sub_depth_arr[i] == max_sub_search_depth && max_sub_main_mpc_level < searches[i].mpc_level) {
+            max_sub_main_mpc_level = searches[i].mpc_level;
+            max_is_only_one = true;
+        } else if (sub_depth_arr[i] == max_sub_search_depth && searches[i].mpc_level == max_sub_main_mpc_level) {
+            max_is_only_one = false;
+        }
+    }
     for (std::future<int> &task: parallel_tasks) {
         task.get();
     }
@@ -167,6 +132,7 @@ inline std::pair<int, uint64_t> sub_search(Board board, int alpha, int beta, uin
     std::cerr << n_threads << " " << n_worker << " " << nodes << std::endl;
     return std::make_pair(n_worker, nodes);
 }
+#endif
 
 void iterative_deepening_search(Board board, int alpha, int beta, int depth, uint_fast8_t mpc_level, bool show_log, std::vector<Clog_result> clogs, uint64_t use_legal, bool use_multi_thread, thread_id_t thread_id, Search_result *result, bool *searching) {
     const int n_usable_threads = std::min(thread_pool.size(), thread_pool.get_max_thread_size(thread_id)) + 1;
@@ -251,11 +217,11 @@ void iterative_deepening_search(Board board, int alpha, int beta, int depth, uin
 // #endif
 #if USE_LAZY_SMP
         bool sub_searching = true;
-        int n_sub_search_threads = n_usable_threads - N_MAIN_SEARCH_THREADS;
+        int n_lazy_smp_threads = n_usable_threads - N_MAIN_SEARCH_THREADS;
         if (is_end_search) {
-            n_sub_search_threads = 0;
+            n_lazy_smp_threads = 0;
         }
-        std::future<std::pair<int, uint64_t>> sub_search_future = std::async(std::launch::async, sub_search, board, alpha, beta, use_legal, n_sub_search_threads, thread_id, main_depth, main_mpc_level, &sub_searching);
+        std::future<std::pair<int, uint64_t>> lazy_smp_future = std::async(std::launch::async, lazy_smp, board, alpha, beta, use_legal, n_lazy_smp_threads, thread_id, main_depth, main_mpc_level, &sub_searching);
 #endif
         Search main_search(&board, main_mpc_level, use_multi_thread, !is_last_search);
         main_search.thread_id = thread_id;
@@ -271,10 +237,10 @@ void iterative_deepening_search(Board board, int alpha, int beta, int depth, uin
 // #endif
 #if USE_LAZY_SMP
         sub_searching = false;
-        std::pair<int, uint64_t> sub_search_result = sub_search_future.get();
-        int n_worker = sub_search_result.first;
-        uint64_t sub_search_nodes = sub_search_result.second;
-        result->nodes += sub_search_nodes;
+        std::pair<int, uint64_t> lazy_smp_result = lazy_smp_future.get();
+        int n_worker = lazy_smp_result.first;
+        uint64_t lazy_smp_nodes = lazy_smp_result.second;
+        result->nodes += lazy_smp_nodes;
 #endif
         result->nodes += main_search.n_nodes;
         if (*searching) {
@@ -304,7 +270,7 @@ void iterative_deepening_search(Board board, int alpha, int beta, int depth, uin
             }
 #if USE_LAZY_SMP
             // std::cerr << "depth " << result->depth << "@" << SELECTIVITY_PERCENTAGE[main_mpc_level] << "%" << " value " << result->value << " (raw " << id_result.first << ") policy " << idx_to_coord(id_result.second) << " n_worker " << parallel_tasks.size() << " n_nodes " << result->nodes << " time " << result->time << " NPS " << result->nps << std::endl;
-            std::cerr << "depth " << result->depth << "@" << SELECTIVITY_PERCENTAGE[main_mpc_level] << "%" << " value " << result->value << " (raw " << id_result.first << ") policy " << idx_to_coord(id_result.second) << " n_nodes " << result->nodes << " time " << result->time << " NPS " << result->nps << " n_worker " << n_worker << " worker_n_nodes " << sub_search_nodes << std::endl;
+            std::cerr << "depth " << result->depth << "@" << SELECTIVITY_PERCENTAGE[main_mpc_level] << "%" << " value " << result->value << " (raw " << id_result.first << ") policy " << idx_to_coord(id_result.second) << " n_nodes " << result->nodes << " time " << result->time << " NPS " << result->nps << " n_worker " << n_worker << " worker_n_nodes " << lazy_smp_nodes << std::endl;
 #else
             std::cerr << "depth " << result->depth << "@" << SELECTIVITY_PERCENTAGE[main_mpc_level] << "%" << " value " << result->value << " (raw " << id_result.first << ") policy " << idx_to_coord(id_result.second) << " n_nodes " << result->nodes << " time " << result->time << " NPS " << result->nps << std::endl;
 #endif
