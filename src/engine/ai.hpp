@@ -33,7 +33,7 @@ constexpr int AI_TL_EARLY_BREAK_THRESHOLD = 5;
 
 constexpr double AI_TL_ADDITIONAL_SEARCH_THRESHOLD = 1.75;
 
-constexpr int N_MAIN_SEARCH_THREADS = 30;
+constexpr int N_MAIN_SEARCH_THREADS = 25;
 
 struct Lazy_SMP_task {
     uint_fast8_t mpc_level;
@@ -78,42 +78,86 @@ inline std::pair<int, uint64_t> sub_search(Board board, int alpha, int beta, uin
     for (Search &search: searches) {
         search.n_nodes = 0;
         search.thread_id = thread_id;
-        search.use_multi_thread = false;
     }
     std::vector<std::future<int>> parallel_tasks;
-    std::vector<int> sub_depth_arr;
-    int sub_max_mpc_level[61];
-    bool sub_searching = true;
-    int sub_depth = main_depth;
-    int max_thread_size = n_threads;
-    // for (int i = 0; i < main_depth - 14; ++i) {
-    //     max_thread_size *= 0.9;
-    // }
+    int n_use_legal = pop_count_ull(use_legal);
+    std::vector<int> sub_depth_arr(n_use_legal);
+    std::vector<int> sub_mpc_level_arr(n_use_legal);
     const int max_depth = HW2 - board.n_discs();
-    sub_max_mpc_level[main_depth] = main_mpc_level;
-    for (int i = main_depth + 1; i < 61; ++i) {
-        sub_max_mpc_level[i] = MPC_74_LEVEL;
+    for (int i = 0; i < n_use_legal; ++i) {
+        sub_depth_arr[i] = main_depth; // std::min(max_depth, main_depth + 1);
+        sub_mpc_level_arr[i] = main_mpc_level;
     }
-    for (int sub_thread_idx = 0; sub_thread_idx < max_thread_size && sub_thread_idx < searches.size() && global_searching && *searching; ++sub_thread_idx) {
-        int ntz = ctz_uint32(sub_thread_idx + 1);
-        int sub_depth = std::min(max_depth, main_depth + ntz);
-        uint_fast8_t sub_mpc_level = sub_max_mpc_level[sub_depth];
-        bool sub_is_end_search = (sub_depth == max_depth);
-        if (sub_mpc_level <= MPC_100_LEVEL) {
-            //std::cerr << sub_thread_idx << " " << sub_depth << " " << SELECTIVITY_PERCENTAGE[sub_mpc_level] << std::endl;
-            searches[sub_thread_idx] = Search{&board, sub_mpc_level, false, true};
-            bool pushed = false;
-            parallel_tasks.emplace_back(thread_pool.push(thread_id, &pushed, std::bind(&nega_scout, &searches[sub_thread_idx], alpha, beta, sub_depth, false, use_legal, sub_is_end_search, &sub_searching)));
-            sub_depth_arr.emplace_back(sub_depth);
-            if (!pushed) {
-                parallel_tasks.pop_back();
-                sub_depth_arr.pop_back();
-            } else {
-                ++sub_max_mpc_level[sub_depth];
-                ++n_worker;
+
+    // gen move list
+    uint32_t hash_code = board.hash();
+    transposition_table.prefetch(hash_code);
+    uint_fast8_t moves[N_TRANSPOSITION_MOVES] = {MOVE_UNDEFINED, MOVE_UNDEFINED};
+    transposition_table.get_moves_any_level(&board, hash_code, moves);
+    std::vector<Flip_value> move_list(n_use_legal);
+    int idx = 0;
+    uint64_t legal = use_legal;
+    for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)) {
+        calc_flip(&move_list[idx].flip, &board, cell);
+        ++idx;
+    }
+    // TT ordering
+    int moves_idx = 0;
+    for (int i = 0; i < N_TRANSPOSITION_MOVES && moves[i] != MOVE_UNDEFINED; ++i) {
+        for (int j = 0; j < idx; ++j) {
+            if (move_list[j].flip.pos == moves[i]) {
+                move_list[moves_idx].flip = move_list[j].flip;
+                move_list[j].flip = move_list[moves_idx].flip;
+                ++moves_idx;
+                break;
             }
         }
     }
+    // Shallow search for move ordering
+    for (int i = moves_idx; i < idx; ++i) {
+        Search shallow_search(&board, MPC_74_LEVEL, false, true);
+        shallow_search.thread_id = thread_id;
+        Board temp_board = board.copy();
+        temp_board.move_board(&move_list[i].flip);
+        bool temp_is_end = (temp_board.n_discs() == HW2);
+        move_list[i].value = -nega_scout(&shallow_search, -beta, -alpha, std::min(3, max_depth - 1), false, LEGAL_UNDEFINED, temp_is_end, searching);
+    }
+    // Sort remaining moves by shallow search values
+    std::sort(move_list.begin(), move_list.end(), [](const Flip_value& a, const Flip_value& b) {
+        return a.value > b.value;
+    });
+
+    // std::cerr << "Move order: ";
+    // for (int i = 0; i < idx; ++i) {
+    //     std::cerr << idx_to_coord(move_list[i].flip.pos);
+    //     if (i < idx - 1) std::cerr << " ";
+    // }
+    // std::cerr << std::endl;
+
+    for (int sub_thread_idx = 0; sub_thread_idx < n_threads && global_searching && *searching; ++sub_thread_idx) {
+        int ntz = ctz_uint32(sub_thread_idx + 1);
+        int move_idx = ntz % n_use_legal;
+        int sub_depth = sub_depth_arr[move_idx];
+        bool sub_is_end_search = (sub_depth == max_depth - 1);
+        uint_fast8_t sub_mpc_level = sub_mpc_level_arr[move_idx];
+        searches[sub_thread_idx] = Search{&board, sub_mpc_level, false, true};
+        searches[sub_thread_idx].board.move_board(&move_list[move_idx].flip);
+
+        // std::cerr << sub_thread_idx << " " << move_idx << " " << idx_to_coord(move_list[move_idx].flip.pos) << std::endl;
+        
+        bool pushed = false;
+        parallel_tasks.emplace_back(thread_pool.push(thread_id, &pushed, std::bind(&nega_scout, &searches[sub_thread_idx], -beta, -alpha, sub_depth, false, LEGAL_UNDEFINED, sub_is_end_search, searching)));
+        if (pushed) {
+            ++n_worker;
+            ++sub_depth_arr[move_idx];
+            if (sub_mpc_level_arr[move_idx] < MPC_100_LEVEL) {
+                ++sub_mpc_level_arr[move_idx];
+            }
+        } else {
+            parallel_tasks.pop_back();
+        }
+    }
+
     for (std::future<int> &task: parallel_tasks) {
         task.get();
     }
