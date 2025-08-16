@@ -49,7 +49,7 @@ summary_file = 'ffotest_result/summary_' + now + '.txt'
 for is_egaroucid, start, end, n_threads, hash_level, exe, cpu, revision, out_file in tasks:
     if is_egaroucid:
         cmd = 'python ffotest.py ' + str(start) + ' ' + str(end) + ' ' + str(n_threads) + ' ' + str(hash_level) + ' ' + exe
-        n_lines = (end - start + 1) + 3
+        n_lines = (end - start + 1) + 3 + 6
     else:
         cmd = 'python ffotest_edax.py ' + str(start) + ' ' + str(end) + ' ' + str(n_threads) + ' ' + str(hash_level) + ' ' + exe
         n_lines = (end - start + 1) + 8
@@ -57,7 +57,7 @@ for is_egaroucid, start, end, n_threads, hash_level, exe, cpu, revision, out_fil
     p = subprocess.Popen(cmd.split(), stdout=subprocess.PIPE)
     res = ''
     for i in range(n_lines):
-        line = p.stdout.readline().decode().replace('\r\n', '\n')
+        line = p.stdout.readline().decode().replace('\r', '').replace('\n\n', '\n')
         print(line, end='')
         res += line
     summary = ''
