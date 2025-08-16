@@ -34,7 +34,7 @@ constexpr int AI_TL_EARLY_BREAK_THRESHOLD = 5;
 constexpr double AI_TL_ADDITIONAL_SEARCH_THRESHOLD = 1.75;
 
 #if USE_LAZY_SMP2
-constexpr int N_MAIN_SEARCH_THREADS = 28;
+constexpr int N_MAIN_SEARCH_THREADS = 25;
 #endif
 
 struct Ponder_elem {

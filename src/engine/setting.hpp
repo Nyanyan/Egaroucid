@@ -161,7 +161,7 @@
 
 // Lazy-SMP-like search
 #define USE_LAZY_SMP false
-#define USE_LAZY_SMP2 true
+#define USE_LAZY_SMP2 false
 
 // YBWC splitted task termination (less idoling, more nodes)
 #define USE_YBWC_SPLITTED_TASK_TERMINATION false
