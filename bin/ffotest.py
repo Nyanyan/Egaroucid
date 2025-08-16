@@ -26,6 +26,21 @@ except:
     print('usage: python ffotest.py [start=40] [end=59] [n_threads=42] [hash_level=25] [exe=Egaroucid_for_Console.exe]')
     exit()
 
+
+
+cmd_version = exe + ' -v'
+print(cmd_version)
+version = subprocess.run((cmd_version).split(), stdin=subprocess.PIPE, stdout=subprocess.PIPE).stdout.decode()
+
+def strip_newlines(s):
+    while s.endswith('\n') or s.endswith('\r'):
+        s = s[:-1]
+    return s
+
+version = strip_newlines(version)
+print(version)
+
+
 cmd = exe + ' -l 60 -hash ' + str(hash_level) + ' -nobook -solve problem/ffo' + str(start) + '-' + str(end) + '.txt -thread ' + str(n_threads)
 
 print(cmd)

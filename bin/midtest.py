@@ -14,6 +14,18 @@ exe = 'Egaroucid_for_Console.exe'
 # exe = 'versions/Egaroucid_for_Console_7_6_0_Windows_SIMD/Egaroucid_for_Console_7_6_0_SIMD.exe'
 
 
+cmd_version = exe + ' -v'
+print(cmd_version)
+version = subprocess.run((cmd_version).split(), stdin=subprocess.PIPE, stdout=subprocess.PIPE).stdout.decode()
+
+def strip_newlines(s):
+    while s.endswith('\n') or s.endswith('\r'):
+        s = s[:-1]
+    return s
+
+version = strip_newlines(version)
+print(version)
+
 cmd = exe + ' -l 23 -nobook -thread 32 -solve problem/midgame_test.txt'
 
 print(cmd)
