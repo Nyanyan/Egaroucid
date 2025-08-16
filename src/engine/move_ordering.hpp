@@ -40,10 +40,10 @@ constexpr int MO_OFFSET_L_PM = 38;
     @brief constants for move ordering
 */
 #if TUNE_MOVE_ORDERING
-    constexpr int N_MOVE_ORDERING_PARAM = 15;
+    constexpr int N_MOVE_ORDERING_PARAM = 16;
     int move_ordering_param_array[N_MOVE_ORDERING_PARAM] = {
-        20, 35, 17, 485, 269, 94, 
-        17, 204, 7, 25, 
+        10, 35, 17, 485, 269, 94, 
+        5, 17, 204, 7, 25, 
         40, 12, 
         18, 17, 300
     };
@@ -55,23 +55,24 @@ constexpr int MO_OFFSET_L_PM = 38;
     int W_VALUE                     = move_ordering_param_array[4];
     int W_VALUE_DEEP_ADDITIONAL     = move_ordering_param_array[5];
 
-    int W_NWS_MOBILITY              = move_ordering_param_array[6];
-    int W_NWS_TT_BONUS              = move_ordering_param_array[7];
-    int W_NWS_VALUE                 = move_ordering_param_array[8];
-    int W_NWS_VALUE_DEEP_ADDITIONAL = move_ordering_param_array[9];
+    int W_NWS_KILLER                = move_ordering_param_array[6];
+    int W_NWS_MOBILITY              = move_ordering_param_array[7];
+    int W_NWS_TT_BONUS              = move_ordering_param_array[8];
+    int W_NWS_VALUE                 = move_ordering_param_array[9];
+    int W_NWS_VALUE_DEEP_ADDITIONAL = move_ordering_param_array[10];
 
-    int W_END_NWS_MOBILITY          = move_ordering_param_array[10];
-    int W_END_NWS_VALUE             = move_ordering_param_array[11];
+    int W_END_NWS_MOBILITY          = move_ordering_param_array[11];
+    int W_END_NWS_VALUE             = move_ordering_param_array[12];
 
-    int W_END_NWS_SIMPLE_MOBILITY   = move_ordering_param_array[12];
-    int W_END_NWS_SIMPLE_PARITY     = move_ordering_param_array[13];
-    int W_END_NWS_SIMPLE_TT_BONUS   = move_ordering_param_array[14];
+    int W_END_NWS_SIMPLE_MOBILITY   = move_ordering_param_array[13];
+    int W_END_NWS_SIMPLE_PARITY     = move_ordering_param_array[14];
+    int W_END_NWS_SIMPLE_TT_BONUS   = move_ordering_param_array[15];
 
-    int MOVE_ORDERING_PARAM_START = 9;
-    int MOVE_ORDERING_PARAM_END = 13;
+    int MOVE_ORDERING_PARAM_START = 0;
+    int MOVE_ORDERING_PARAM_END = 10;
 #else
     // midgame search
-    constexpr int W_KILLER = 15;
+    constexpr int W_KILLER = 10;
     constexpr int W_MOBILITY = 35;
     constexpr int W_POTENTIAL_MOBILITY = 17;
     constexpr int W_TT_BONUS = 485;
@@ -79,6 +80,7 @@ constexpr int MO_OFFSET_L_PM = 38;
     constexpr int W_VALUE_DEEP_ADDITIONAL = 94;
 
     // midgame null window search
+    constexpr int W_NWS_KILLER = 5;
     constexpr int W_NWS_MOBILITY = 17;
     constexpr int W_NWS_TT_BONUS = 204;
     constexpr int W_NWS_VALUE = 7;
@@ -93,7 +95,6 @@ constexpr int MO_OFFSET_L_PM = 38;
     constexpr int W_END_NWS_SIMPLE_PARITY = 17;
     constexpr int W_END_NWS_SIMPLE_TT_BONUS = 300;
 #endif
-// constexpr int W_NWS_KILLER = 5;
 
 constexpr int MOVE_ORDERING_VALUE_OFFSET_ALPHA = 12;
 constexpr int MOVE_ORDERING_VALUE_OFFSET_BETA = 8;
@@ -254,7 +255,9 @@ inline void move_evaluate(Search *search, Flip_value *flip_value, int alpha, int
 */
 inline void move_evaluate_nws(Search *search, Flip_value *flip_value, int alpha, int beta, int depth, bool *searching) {
     flip_value->value = 0;
-    // flip_value->value += search->get_killer_bonus(flip_value->flip.pos) * W_NWS_KILLER;
+#if USE_KILLER_MOVE_MO && USE_KILLER_MOVE_NWS_MO
+    flip_value->value += search->get_killer_bonus(flip_value->flip.pos) * W_NWS_KILLER;
+#endif
     search->move(&flip_value->flip);
         flip_value->n_legal = search->board.get_legal();
         flip_value->value += (MO_OFFSET_L_PM - get_weighted_n_moves(flip_value->n_legal)) * W_NWS_MOBILITY;

@@ -102,8 +102,9 @@ constexpr uint64_t parity_table[16] = {
 /*
     @brief Killer move constants
 */
+#if USE_KILLER_MOVE_MO
 constexpr int MAX_PLY = 65;
-
+#endif
 
 
 inline void calc_eval_features(Board *board, Eval_search *eval);
@@ -228,10 +229,12 @@ class Search {
         uint64_t n_nodes_discs[HW2];
 #endif
         bool is_presearch;
-        
+
+#if USE_KILLER_MOVE_MO
         // Killer move support
         int killer1[MAX_PLY];
         int killer2[MAX_PLY];
+#endif
 
     public:
 
@@ -245,7 +248,9 @@ class Search {
             parity |= (1 & pop_count_ull(empty & 0x0F0F0F0F00000000ULL)) << 2;
             parity |= (1 & pop_count_ull(empty & 0xF0F0F0F000000000ULL)) << 3;
             calc_eval_features(&board, &eval);
+#if USE_KILLER_MOVE_MO
             clear_killers();
+#endif
         }
 
         Search(uint64_t board_player, uint64_t board_opponent, uint_fast8_t mpc_level_, bool use_multi_thread_, bool is_presearch_)
@@ -256,13 +261,17 @@ class Search {
             parity |= (1 & pop_count_ull(empty & 0x0F0F0F0F00000000ULL)) << 2;
             parity |= (1 & pop_count_ull(empty & 0xF0F0F0F000000000ULL)) << 3;
             calc_eval_features(&board, &eval);
+#if USE_KILLER_MOVE_MO
             clear_killers();
+#endif
         }
 
         Search(uint64_t board_player, uint64_t board_opponent, int_fast8_t n_discs_, uint_fast8_t parity_, uint_fast8_t mpc_level_, bool use_multi_thread_, bool is_presearch_, thread_id_t thread_id_)
             : board(Board(board_player, board_opponent)), n_discs(n_discs_), parity(parity_), mpc_level(mpc_level_), use_multi_thread(use_multi_thread_), n_nodes(0), is_presearch(is_presearch_), thread_id(thread_id_) {
             calc_eval_features(&board, &eval);
+#if USE_KILLER_MOVE_MO
             clear_killers();
+#endif
         }
 
         /*
@@ -278,7 +287,9 @@ class Search {
             parity |= (1 & pop_count_ull(empty & 0x0F0F0F0F00000000ULL)) << 2;
             parity |= (1 & pop_count_ull(empty & 0xF0F0F0F000000000ULL)) << 3;
             calc_eval_features(&board, &eval);
+#if USE_KILLER_MOVE_MO
             clear_killers();
+#endif
         }
         
 
@@ -423,6 +434,7 @@ class Search {
             //return std::min(N_PHASES - 1, (n_discs - 4) / PHASE_N_DISCS);
         }
 
+#if USE_KILLER_MOVE_MO
         /*
             @brief Clear killer moves table
         */
@@ -461,6 +473,7 @@ class Search {
             else if (pos == killer2[ply]) return 1;
             return 0;
         }
+#endif
 };
 
 /*

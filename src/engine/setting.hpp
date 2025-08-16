@@ -169,8 +169,9 @@
 // last flip pass optimization
 #define LAST_FLIP_PASS_OPT true
 
-// killer move
+// killer move in move ordering
 #define USE_KILLER_MOVE_MO false
+#define USE_KILLER_MOVE_NWS_MO false
 
 
 
