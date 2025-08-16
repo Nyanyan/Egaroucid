@@ -40,39 +40,43 @@ constexpr int MO_OFFSET_L_PM = 38;
     @brief constants for move ordering
 */
 #if TUNE_MOVE_ORDERING
-    constexpr int N_MOVE_ORDERING_PARAM = 16;
+    constexpr int N_MOVE_ORDERING_PARAM = 20;
     int move_ordering_param_array[N_MOVE_ORDERING_PARAM] = {
-        10, 35, 17, 485, 269, 94, 
-        5, 17, 204, 7, 25, 
+        10, 6, 3, 35, 17, 485, 269, 94, 
+        5, 3, 1, 17, 204, 7, 25, 
         40, 12, 
         18, 17, 300
     };
 
     int W_KILLER                    = move_ordering_param_array[0];
-    int W_MOBILITY                  = move_ordering_param_array[1];
-    int W_POTENTIAL_MOBILITY        = move_ordering_param_array[2];
-    int W_TT_BONUS                  = move_ordering_param_array[3];
-    int W_VALUE                     = move_ordering_param_array[4];
-    int W_VALUE_DEEP_ADDITIONAL     = move_ordering_param_array[5];
+    int W_HISTORY_MOVE              = move_ordering_param_array[1];
+    int W_COUNTER_MOVE              = move_ordering_param_array[2];
+    int W_MOBILITY                  = move_ordering_param_array[3];
+    int W_POTENTIAL_MOBILITY        = move_ordering_param_array[4];
+    int W_TT_BONUS                  = move_ordering_param_array[5];
+    int W_VALUE                     = move_ordering_param_array[6];
+    int W_VALUE_DEEP_ADDITIONAL     = move_ordering_param_array[7];
 
-    int W_NWS_KILLER                = move_ordering_param_array[6];
-    int W_NWS_MOBILITY              = move_ordering_param_array[7];
-    int W_NWS_TT_BONUS              = move_ordering_param_array[8];
-    int W_NWS_VALUE                 = move_ordering_param_array[9];
-    int W_NWS_VALUE_DEEP_ADDITIONAL = move_ordering_param_array[10];
+    int W_NWS_KILLER                = move_ordering_param_array[8];
+    int W_NWS_HISTORY_MOVE          = move_ordering_param_array[9];
+    int W_NWS_COUNTER_MOVE          = move_ordering_param_array[10];
+    int W_NWS_MOBILITY              = move_ordering_param_array[11];
+    int W_NWS_TT_BONUS              = move_ordering_param_array[12];
+    int W_NWS_VALUE                 = move_ordering_param_array[13];
+    int W_NWS_VALUE_DEEP_ADDITIONAL = move_ordering_param_array[14];
 
-    int W_END_NWS_MOBILITY          = move_ordering_param_array[11];
-    int W_END_NWS_VALUE             = move_ordering_param_array[12];
+    int W_END_NWS_MOBILITY          = move_ordering_param_array[15];
+    int W_END_NWS_VALUE             = move_ordering_param_array[16];
 
-    int W_END_NWS_SIMPLE_MOBILITY   = move_ordering_param_array[13];
-    int W_END_NWS_SIMPLE_PARITY     = move_ordering_param_array[14];
-    int W_END_NWS_SIMPLE_TT_BONUS   = move_ordering_param_array[15];
+    int W_END_NWS_SIMPLE_MOBILITY   = move_ordering_param_array[17];
+    int W_END_NWS_SIMPLE_PARITY     = move_ordering_param_array[18];
+    int W_END_NWS_SIMPLE_TT_BONUS   = move_ordering_param_array[19];
 
     int MOVE_ORDERING_PARAM_START = 0;
     int MOVE_ORDERING_PARAM_END = 10;
 #else
     // midgame search
-    constexpr int W_KILLER = 10;
+    constexpr int W_KILLER = 8;
     constexpr int W_HISTORY_MOVE = 6;
     constexpr int W_COUNTER_MOVE = 3;
     constexpr int W_MOBILITY = 35;
@@ -105,7 +109,7 @@ constexpr int MOVE_ORDERING_VALUE_OFFSET_BETA = 8;
 constexpr int MOVE_ORDERING_NWS_VALUE_OFFSET_ALPHA = 16;
 constexpr int MOVE_ORDERING_NWS_VALUE_OFFSET_BETA = 6;
 
-//constexpr int MOVE_ORDERING_MPC_LEVEL = MPC_88_LEVEL;
+constexpr int MOVE_ORDERING_MPC_LEVEL = MPC_74_LEVEL;
 
 int nega_alpha_eval1(Search *search, int alpha, int beta, bool skipped);
 inline int nega_alpha_eval1_move_ordering_mid(Search *search, int alpha, int beta, bool skipped);
@@ -240,10 +244,10 @@ inline void move_evaluate(Search *search, Flip_value *flip_value, int alpha, int
                 //if (transposition_table.has_node_any_level(search, search->board.hash())) {
                 //    flip_value->value += W_TT_BONUS;
                 //}
-                //uint_fast8_t mpc_level = search->mpc_level;
-                //search->mpc_level = MOVE_ORDERING_MPC_LEVEL;
+                uint_fast8_t mpc_level = search->mpc_level;
+                search->mpc_level = MOVE_ORDERING_MPC_LEVEL;
                     flip_value->value += (SCORE_MAX - nega_scout(search, alpha, beta, depth, false, flip_value->n_legal, false, searching)) * (W_VALUE + depth * W_VALUE_DEEP_ADDITIONAL);
-                //search->mpc_level = mpc_level;
+                search->mpc_level = mpc_level;
                 break;
         }
     search->undo(&flip_value->flip);
@@ -282,10 +286,10 @@ inline void move_evaluate_nws(Search *search, Flip_value *flip_value, int alpha,
                 //if (transposition_table.has_node_any_level(search, search->board.hash())) {
                 //    flip_value->value += W_NWS_TT_BONUS;
                 //}
-                //uint_fast8_t mpc_level = search->mpc_level;
-                //search->mpc_level = MOVE_ORDERING_MPC_LEVEL;
+                uint_fast8_t mpc_level = search->mpc_level;
+                search->mpc_level = MOVE_ORDERING_MPC_LEVEL;
                     flip_value->value += (SCORE_MAX - nega_scout(search, alpha, beta, depth, false, flip_value->n_legal, false, searching)) * (W_NWS_VALUE + depth * W_NWS_VALUE_DEEP_ADDITIONAL);
-                //search->mpc_level = mpc_level;
+                search->mpc_level = mpc_level;
                 break;
         }
     search->undo(&flip_value->flip);
