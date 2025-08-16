@@ -943,7 +943,11 @@ level: 15 Egaroucid WDL: 157-24-69 Egaroucid win rate: 0.676 Egaroucid average d
 
 
 2025/08/16 for 7.7.0 release
+level: 1 Egaroucid WDL: 720-12-268 Egaroucid win rate: 0.726 Egaroucid average discs earned: 10.92
+level: 5 Egaroucid WDL: 784-21-195 Egaroucid win rate: 0.7945 Egaroucid average discs earned: 8.983
 
 
 level: 21 Egaroucid WDL: 46-21-33 Egaroucid win rate: 0.565 Egaroucid average discs earned: 0.24
+
+
 
