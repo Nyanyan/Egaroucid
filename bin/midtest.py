@@ -33,7 +33,7 @@ print(version)
 
 cmd = exe + ' -l 23 -nobook -thread 32 -solve ' + os.path.join(script_dir, 'problem/midgame_test.txt')
 
-# print(cmd)
+print(cmd.replace(script_dir, 'script_dir'))
 egaroucid = subprocess.Popen((cmd).split(), stdin=subprocess.PIPE, stdout=subprocess.PIPE)
 
 res = ''

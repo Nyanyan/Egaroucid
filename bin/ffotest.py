@@ -46,8 +46,7 @@ print(version)
 
 cmd = exe + ' -l 60 -hash ' + str(hash_level) + ' -nobook -solve ' + os.path.join(script_dir, 'problem/ffo' + str(start) + '-' + str(end) + '.txt -thread ' + str(n_threads))
 
-# print(cmd)
-
+print(cmd.replace(script_dir, 'script_dir'))
 egaroucid = subprocess.Popen((cmd).split(), stdin=subprocess.PIPE, stdout=subprocess.PIPE)
 
 answers = [ # best score, [best move, best move...]
