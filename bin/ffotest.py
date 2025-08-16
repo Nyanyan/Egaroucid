@@ -4,6 +4,7 @@
 
 import subprocess
 import sys
+import os
 
 start = 40
 end = 59
@@ -26,10 +27,12 @@ except:
     print('usage: python ffotest.py [start=40] [end=59] [n_threads=42] [hash_level=25] [exe=Egaroucid_for_Console.exe]')
     exit()
 
-
+script_dir = os.path.dirname(os.path.abspath(__file__))
+if not os.path.isabs(exe):
+    exe = os.path.join(script_dir, exe)
 
 cmd_version = exe + ' -v'
-print(cmd_version)
+# print(cmd_version)
 version = subprocess.run((cmd_version).split(), stdin=subprocess.PIPE, stdout=subprocess.PIPE).stdout.decode()
 
 def strip_newlines(s):
@@ -41,9 +44,9 @@ version = strip_newlines(version)
 print(version)
 
 
-cmd = exe + ' -l 60 -hash ' + str(hash_level) + ' -nobook -solve problem/ffo' + str(start) + '-' + str(end) + '.txt -thread ' + str(n_threads)
+cmd = exe + ' -l 60 -hash ' + str(hash_level) + ' -nobook -solve ' + os.path.join(script_dir, 'problem/ffo' + str(start) + '-' + str(end) + '.txt -thread ' + str(n_threads))
 
-print(cmd)
+# print(cmd)
 
 egaroucid = subprocess.Popen((cmd).split(), stdin=subprocess.PIPE, stdout=subprocess.PIPE)
 

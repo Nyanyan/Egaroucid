@@ -1,5 +1,6 @@
 import subprocess
 import sys
+import os
 
 def fill0(n, r):
     n = str(n)
@@ -14,8 +15,12 @@ exe = 'Egaroucid_for_Console.exe'
 # exe = 'versions/Egaroucid_for_Console_7_6_0_Windows_SIMD/Egaroucid_for_Console_7_6_0_SIMD.exe'
 
 
+script_dir = os.path.dirname(os.path.abspath(__file__))
+if not os.path.isabs(exe):
+    exe = os.path.join(script_dir, exe)
+
 cmd_version = exe + ' -v'
-print(cmd_version)
+# print(cmd_version)
 version = subprocess.run((cmd_version).split(), stdin=subprocess.PIPE, stdout=subprocess.PIPE).stdout.decode()
 
 def strip_newlines(s):
@@ -26,9 +31,9 @@ def strip_newlines(s):
 version = strip_newlines(version)
 print(version)
 
-cmd = exe + ' -l 23 -nobook -thread 32 -solve problem/midgame_test.txt'
+cmd = exe + ' -l 23 -nobook -thread 32 -solve ' + os.path.join(script_dir, 'problem/midgame_test.txt')
 
-print(cmd)
+# print(cmd)
 egaroucid = subprocess.Popen((cmd).split(), stdin=subprocess.PIPE, stdout=subprocess.PIPE)
 
 res = ''
