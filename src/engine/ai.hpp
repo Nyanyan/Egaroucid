@@ -34,7 +34,7 @@ constexpr int AI_TL_EARLY_BREAK_THRESHOLD = 5;
 constexpr double AI_TL_ADDITIONAL_SEARCH_THRESHOLD = 1.75;
 
 #if USE_LAZY_SMP2
-constexpr int N_MAIN_SEARCH_THREADS = 20;
+constexpr int N_MAIN_SEARCH_THREADS = 28;
 #endif
 
 struct Ponder_elem {
@@ -152,12 +152,12 @@ void iterative_deepening_search(Board board, int alpha, int beta, int depth, uin
     std::vector<Search> searches(thread_pool.size() + 1);
 #endif
 #if USE_LAZY_SMP2
-        bool sub_searching = true;
-        int n_lazy_smp_threads = n_usable_threads - N_MAIN_SEARCH_THREADS;
-        if (is_end_search) {
-            n_lazy_smp_threads = 0;
-        }
-        std::future<std::pair<int, uint64_t>> lazy_smp_future = std::async(std::launch::async, lazy_smp, board, alpha, beta, use_legal, n_lazy_smp_threads, thread_id, depth, mpc_level, &sub_searching);
+    bool sub_searching = true;
+    int n_lazy_smp_threads = n_usable_threads - N_MAIN_SEARCH_THREADS;
+    if (is_end_search) {
+        n_lazy_smp_threads = 0;
+    }
+    std::future<std::pair<int, uint64_t>> lazy_smp_future = std::async(std::launch::async, lazy_smp, board, alpha, beta, use_legal, n_lazy_smp_threads, thread_id, depth, mpc_level, &sub_searching);
 #endif
     while (main_depth <= depth && main_mpc_level <= mpc_level && global_searching && *searching) {
 #if USE_LAZY_SMP
@@ -233,13 +233,6 @@ void iterative_deepening_search(Board board, int alpha, int beta, int depth, uin
         for (Search &search: searches) {
             result->nodes += search.n_nodes;
         }
-#endif
-#if USE_LAZY_SMP2
-        sub_searching = false;
-        std::pair<int, uint64_t> lazy_smp_result = lazy_smp_future.get();
-        int n_worker = lazy_smp_result.first;
-        uint64_t lazy_smp_nodes = lazy_smp_result.second;
-        result->nodes += lazy_smp_nodes;
 #endif
         result->nodes += main_search.n_nodes;
         if (*searching) {

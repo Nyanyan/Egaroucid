@@ -160,8 +160,8 @@
 #define AUTO_FLIP_OPT_BY_COMPILER true
 
 // Lazy-SMP-like search
-#define USE_LAZY_SMP true
-#define USE_LAZY_SMP2 false
+#define USE_LAZY_SMP false
+#define USE_LAZY_SMP2 true
 
 // YBWC splitted task termination (less idoling, more nodes)
 #define USE_YBWC_SPLITTED_TASK_TERMINATION false
