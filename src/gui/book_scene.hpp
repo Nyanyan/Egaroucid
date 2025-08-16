@@ -83,6 +83,14 @@ inline void draw_book_settings(Font &font, Color &color, int depth, int error_pe
     font(language.get("book", "error_sum") + U": " + error_sum_str).draw(15, 480, 310, color);
 }
 
+inline void draw_book_settings(Font &font, Color &color, int depth) {
+    String depth_str = Format(depth);
+    if (depth == BOOK_DEPTH_INF) {
+        depth_str = language.get("book", "unlimited");
+    }
+    font(language.get("book", "depth") + U": " + depth_str).draw(15, 480, 270, color);
+}
+
 class Import_book : public App::Scene {
 private:
     std::future<bool> import_book_future;
@@ -1060,6 +1068,102 @@ private:
         return error_found;
     }
 };
+
+
+
+
+
+
+class Store_book : public App::Scene {
+private:
+    Button start_button;
+    Button stop_button;
+    Button back_button;
+    History_elem history_elem;
+    bool book_learning;
+    bool done;
+    bool before_start;
+    std::future<void> book_learn_future;
+    std::vector<std::pair<Board, int>> tasks;
+    Board root_board;
+    int depth;
+
+public:
+    Store_book(const InitData& init) : IScene{ init } {
+        start_button.init(BUTTON2_VERTICAL_SX, BUTTON2_VERTICAL_2_SY - 65, BUTTON2_VERTICAL_WIDTH, BUTTON2_VERTICAL_HEIGHT, BUTTON2_VERTICAL_RADIUS, language.get("book", "start"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
+        stop_button.init(BUTTON2_VERTICAL_SX, BUTTON2_VERTICAL_2_SY, BUTTON2_VERTICAL_WIDTH, BUTTON2_VERTICAL_HEIGHT, BUTTON2_VERTICAL_RADIUS, language.get("book", "stop_learn"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
+        back_button.init(BUTTON2_VERTICAL_SX, BUTTON2_VERTICAL_2_SY, BUTTON2_VERTICAL_WIDTH, BUTTON2_VERTICAL_HEIGHT, BUTTON2_VERTICAL_RADIUS, language.get("common", "back"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
+        root_board = getData().history_elem.board;
+        history_elem = getData().history_elem;
+        history_elem.policy = -1;
+        book_learning = false;
+        done = false;
+        before_start = true;
+        depth = getData().menu_elements.book_learn_depth;
+        if (!getData().menu_elements.use_book_learn_depth) {
+            depth = BOOK_DEPTH_INF;
+        }
+        tasks = get_board_player_list(getData().graph_resources, getData().history_elem);
+    }
+
+    void update() override {
+        if ((before_start || done) && (System::GetUserActions() & UserAction::CloseButtonClicked)) {
+            changeScene(U"Close", SCENE_FADE_TIME);
+        }
+        Scene::SetBackground(getData().colors.green);
+        draw_board(getData().fonts, getData().colors, history_elem);
+        draw_info(getData().colors, history_elem, getData().fonts, getData().menu_elements, false, "");
+        getData().fonts.font(language.get("book", "book_store")).draw(25, 480, 200, getData().colors.white);
+        draw_book_settings(getData().fonts.font, getData().colors.white, depth);
+        if (book_learning) {
+            getData().fonts.font(language.get("book", "learning")).draw(20, 480, 230, getData().colors.white);
+            stop_button.draw();
+            if (stop_button.clicked()) {
+                global_searching = false;
+                book_learning = false;
+            }
+        } else if (before_start) {
+            start_button.draw();
+            if (start_button.clicked()) {
+                before_start = false;
+                book_learning = true;
+                int fork_n_discs = -1;
+                if (getData().graph_resources.branch == 1) {
+                    fork_n_discs = getData().graph_resources.nodes[1][0].board.n_discs();
+                }
+                book_learn_future = std::async(std::launch::async, book_store, tasks, getData().menu_elements.level, depth, &history_elem.board, &history_elem.player, getData().settings.book_file, getData().settings.book_file + ".bak", &book_learning);
+            }
+            back_button.draw();
+            if (back_button.clicked() || KeyEscape.pressed()) {
+                getData().graph_resources.need_init = false;
+                changeScene(U"Main_scene", SCENE_FADE_TIME);
+            }
+        } else if (!done) {
+            getData().fonts.font(language.get("book", "stopping")).draw(20, 480, 230, getData().colors.white);
+            if (book_learn_future.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
+                book_learn_future.get();
+                book_learning = false;
+                done = true;
+                global_searching = true;
+            }
+        } else {
+            getData().fonts.font(language.get("book", "complete")).draw(20, 480, 230, getData().colors.white);
+            back_button.draw();
+            if (back_button.clicked()) {
+                reset_book_additional_information();
+                getData().book_information.changed = true;
+                getData().graph_resources.need_init = false;
+                changeScene(U"Main_scene", SCENE_FADE_TIME);
+            }
+        }
+    }
+
+    void draw() const override {
+
+    }
+};
+
+
 
 
 

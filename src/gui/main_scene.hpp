@@ -156,19 +156,14 @@ public:
             taking_screen_shot = false;
         }
 
-        // menu
-        menu_game();
-        menu_setting();
-        menu_display();
-        menu_manipulate();
-        menu_in_out();
-        menu_book();
-        menu_help();
-        menu_language();
-
         // analyze
         if (ai_status.analyzing) {
             analyze_get_task();
+        }
+
+        // random board generator
+        if (ai_status.random_board_generator_calculating) {
+            check_random_board_generater();
         }
 
         // move
@@ -184,7 +179,8 @@ public:
             putting_1_move_by_ai;
         bool ignore_move = 
             (getData().book_information.changing != BOOK_CHANGE_NO_CELL) || 
-            ai_status.analyzing;
+            ai_status.analyzing || 
+            ai_status.random_board_generator_calculating;
         if (need_start_game_button) {
             need_start_game_button_calculation();
             if (getData().menu.active()) {
@@ -226,25 +222,27 @@ public:
         }
 
         // graph move
-        bool graph_interact_ignore = ai_status.analyzing || ai_should_move;
+        bool graph_interact_ignore = ai_status.analyzing || ai_status.random_board_generator_calculating || ai_should_move;
         if (!ignore_move && !graph_interact_ignore && !getData().menu.active()) {
             interact_graph();
         }
         update_n_discs();
 
-        // book modifying by right-clicking
-        if (!ai_should_move && !need_start_game_button && getData().menu_elements.change_book_by_right_click) {
-            change_book_by_right_click();
-        }
-
         // local strategy drawing
-        bool local_strategy_ignore = ai_should_move || ai_status.analyzing || need_start_game_button || pausing_in_pass || changing_scene;
+        bool local_strategy_ignore = ai_should_move || ai_status.analyzing || ai_status.random_board_generator_calculating || need_start_game_button || pausing_in_pass || changing_scene;
         if (ai_status.local_strategy_done_level > 0 && getData().menu_elements.show_ai_focus && !local_strategy_ignore) {
             draw_local_strategy();
         }
 
         // board drawing
         draw_board(getData().fonts, getData().colors, getData().history_elem);
+
+        // book modifying by right-clicking
+        bool changing_book_by_right_click = false;
+        if (!ai_should_move && !need_start_game_button && getData().menu_elements.change_book_by_right_click) {
+            change_book_by_right_click();
+            changing_book_by_right_click = (getData().book_information.changing != BOOK_CHANGE_NO_CELL);
+        }
 
         // draw on discs
         // last move drawing
@@ -271,8 +269,9 @@ public:
         uint64_t legal_ignore = 0ULL;
 
         // hint calculating
-        bool hint_ignore = ai_should_move || ai_status.analyzing || need_start_game_button || pausing_in_pass || changing_scene;
-        if (!hint_ignore) {
+        bool hint_ignore = ai_should_move || ai_status.analyzing || ai_status.random_board_generator_calculating || need_start_game_button || pausing_in_pass || changing_scene;
+        bool show_value_ai_turn = ai_should_move && getData().menu_elements.show_value_when_ai_calculating && getData().menu_elements.use_disc_hint;
+        if (!hint_ignore || show_value_ai_turn) {
             if (getData().menu_elements.use_disc_hint) {
                 if ((ai_status.hint_calculating || ai_status.hint_calculated) && getData().menu_elements.n_disc_hint > ai_status.n_hint_display) {
                     stop_calculating();
@@ -282,13 +281,17 @@ public:
                     hint_calculate();
                 } else {
                     try_hint_get();
-                    legal_ignore = draw_hint(getData().menu_elements.use_book && getData().menu_elements.show_book_accuracy && !hint_ignore);
+                    legal_ignore = draw_hint(getData().menu_elements.use_book && getData().menu_elements.show_book_accuracy);
                 }
             }
         }
+        //  else if (show_value_ai_turn) {
+        //     legal_ignore = draw_hint_tt(getData().menu_elements.use_book, getData().menu_elements.use_book && getData().menu_elements.show_book_accuracy);
+        // }
 
         // principal variation calculating
-        bool pv_ignore = ai_should_move || ai_status.analyzing || need_start_game_button || changing_scene;
+        // bool pv_ignore = ai_should_move || ai_status.analyzing || need_start_game_button || changing_scene;
+        bool pv_ignore = need_start_game_button || changing_scene;
         if (!pv_ignore && getData().menu_elements.show_principal_variation) {
             if (!ai_status.pv_calculating && !ai_status.pv_calculated) {
                 pv_calculate();
@@ -304,6 +307,9 @@ public:
             } else if (ai_status.local_strategy_calculating && !ai_status.local_strategy_calculated) {
                 try_local_strategy_get();
             }
+        }
+        if (ai_status.analyzing || ai_status.random_board_generator_calculating) {
+            principal_variation = "";
         }
 
         // local strategy policy calculating
@@ -323,7 +329,7 @@ public:
         // book information drawing
         if (getData().menu_elements.use_book) {
             // book accuracy drawing
-            if (getData().menu_elements.show_book_accuracy && !hint_ignore) {
+            if (getData().menu_elements.show_book_accuracy && (!hint_ignore || show_value_ai_turn)) {
                 draw_book_n_lines(legal_ignore);
                 if (book_accuracy_status.book_accuracy_calculated) {
                     draw_book_accuracy(legal_ignore);
@@ -333,7 +339,7 @@ public:
             }
 
             // umigame calculating / drawing
-            if (getData().menu_elements.use_umigame_value && !hint_ignore) {
+            if (getData().menu_elements.use_umigame_value && (!hint_ignore || show_value_ai_turn)) {
                 if (umigame_value_depth_before != getData().menu_elements.umigame_value_depth) {
                     umigame_status.umigame_calculated = false;
                     umigame_status.umigame_calculating = false;
@@ -364,10 +370,18 @@ public:
             draw_opening_on_cell();
         }
 
-        // menu drawing
-        bool draw_menu_flag = !taking_screen_shot;
+        // menu
+        bool draw_menu_flag = !taking_screen_shot && !changing_book_by_right_click;
         if (draw_menu_flag) {
             getData().menu.draw();
+            menu_game();
+            menu_setting();
+            menu_display();
+            menu_manipulate();
+            menu_in_out();
+            menu_book();
+            menu_help();
+            menu_language();
         }
 
         // laser pointer
@@ -444,6 +458,13 @@ private:
         book_accuracy_status.book_accuracy_calculating = false;
     }
 
+    void reset_random_board_generator() {
+        ai_status.random_board_generator_calculating = false;
+        if (ai_status.random_board_generator_future.valid()) {
+            ai_status.random_board_generator_future.get();
+        }
+    }
+
     void stop_calculating() {
         std::cerr << "terminating calculation" << std::endl;
         global_searching = false;
@@ -485,6 +506,7 @@ private:
         reset_local_strategy_policy();
         reset_analyze();
         reset_book_additional_features();
+        reset_random_board_generator();
         std::cerr << "reset all calculations" << std::endl;
     }
 
@@ -597,6 +619,12 @@ private:
         }
         if (shortcut_key == U"show_disc_hint") {
             getData().menu_elements.use_disc_hint = !getData().menu_elements.use_disc_hint;
+        }
+        if (shortcut_key == U"show_hint_level") {
+            getData().menu_elements.show_hint_level = !getData().menu_elements.show_hint_level;
+        }
+        if (shortcut_key == U"show_value_when_ai_calculating") {
+            getData().menu_elements.show_value_when_ai_calculating = !getData().menu_elements.show_value_when_ai_calculating;
         }
         if (shortcut_key == U"show_umigame_value") {
             getData().menu_elements.use_umigame_value = !getData().menu_elements.use_umigame_value;
@@ -737,11 +765,8 @@ private:
                 need_start_game_button_calculation();
             }
             if (getData().menu_elements.generate_random_board || shortcut_key == U"generate_random_board") {
-                int max_n_moves = getData().menu_elements.generate_random_board_moves;
-                int level = 2;
-                std::random_device seed_gen;
-                std::default_random_engine engine(seed_gen());
-                std::normal_distribution<> dist(0.0, 4.0); // acceptable loss avg = 0.0, sd = 4.0 discs
+                int light_level = 2;
+                int adjustment_level = 15;
                 stop_calculating();
                 getData().history_elem.reset();
                 getData().graph_resources.init();
@@ -749,17 +774,8 @@ private:
                 getData().game_information.init();
                 pausing_in_pass = false;
                 resume_calculating();
-                for (int i = 0; i < max_n_moves; ++i) {
-                    if (getData().history_elem.board.get_legal() == 0) {
-                        break;
-                    }
-                    int acceptable_loss = std::abs(std::round(dist(engine)));
-                    Search_result search_result = ai_accept_loss(getData().history_elem.board, level, acceptable_loss);
-                    int policy = search_result.policy;
-                    std::cerr << acceptable_loss << " " << idx_to_coord(policy) << " " << search_result.value << std::endl;
-                    move_processing(HW2_M1 - policy);
-                }
-                need_start_game_button_calculation();
+                ai_status.random_board_generator_calculating = true;
+                ai_status.random_board_generator_future = std::async(std::launch::async, random_board_generator, getData().menu_elements.generate_random_board_score_range, getData().menu_elements.generate_random_board_moves, light_level, adjustment_level, &ai_status.random_board_generator_calculating);
             }
         }
         if (getData().menu_elements.convert_180 || shortcut_key == U"convert_180") {
@@ -779,6 +795,66 @@ private:
                     }
                     if (0 <= getData().graph_resources.nodes[i][j].next_policy && getData().graph_resources.nodes[i][j].next_policy < HW2) {
                         getData().graph_resources.nodes[i][j].next_policy = HW2_M1 - getData().graph_resources.nodes[i][j].next_policy;
+                    }
+                }
+            }
+            resume_calculating();
+        }
+        if (getData().menu_elements.convert_90_clock || shortcut_key == U"convert_90_clock") {
+            stop_calculating();
+            getData().history_elem.board.board_rotate_270();
+            if (0 <= getData().history_elem.policy && getData().history_elem.policy < HW2) {
+                int y0 = getData().history_elem.policy / HW;
+                int x0 = getData().history_elem.policy % HW;
+                getData().history_elem.policy = x0 * HW + (HW_M1 - y0);
+            }
+            if (0 <= getData().history_elem.next_policy && getData().history_elem.next_policy < HW2) {
+                int y0 = getData().history_elem.next_policy / HW;
+                int x0 = getData().history_elem.next_policy % HW;
+                getData().history_elem.next_policy = x0 * HW + (HW_M1 - y0);
+            }
+            for (int i = 0; i < 2; ++i) {
+                for (int j = 0; j < (int)getData().graph_resources.nodes[i].size(); ++j) {
+                    getData().graph_resources.nodes[i][j].board.board_rotate_270();
+                    if (0 <= getData().graph_resources.nodes[i][j].policy && getData().graph_resources.nodes[i][j].policy < HW2) {
+                        int y0 = getData().graph_resources.nodes[i][j].policy / HW;
+                        int x0 = getData().graph_resources.nodes[i][j].policy % HW;
+                        getData().graph_resources.nodes[i][j].policy = x0 * HW + (HW_M1 - y0);
+                    }
+                    if (0 <= getData().graph_resources.nodes[i][j].next_policy && getData().graph_resources.nodes[i][j].next_policy < HW2) {
+                        int y0 = getData().graph_resources.nodes[i][j].next_policy / HW;
+                        int x0 = getData().graph_resources.nodes[i][j].next_policy % HW;
+                        getData().graph_resources.nodes[i][j].next_policy = x0 * HW + (HW_M1 - y0);
+                    }
+                }
+            }
+            resume_calculating();
+        }
+        if (getData().menu_elements.convert_90_anti_clock || shortcut_key == U"convert_90_anti_clock") {
+            stop_calculating();
+            getData().history_elem.board.board_rotate_90();
+            if (0 <= getData().history_elem.policy && getData().history_elem.policy < HW2) {
+                int y0 = getData().history_elem.policy / HW;
+                int x0 = getData().history_elem.policy % HW;
+                getData().history_elem.policy = (HW_M1 - x0) * HW + y0;
+            }
+            if (0 <= getData().history_elem.next_policy && getData().history_elem.next_policy < HW2) {
+                int y0 = getData().history_elem.next_policy / HW;
+                int x0 = getData().history_elem.next_policy % HW;
+                getData().history_elem.next_policy = (HW_M1 - x0) * HW + y0;
+            }
+            for (int i = 0; i < 2; ++i) {
+                for (int j = 0; j < (int)getData().graph_resources.nodes[i].size(); ++j) {
+                    getData().graph_resources.nodes[i][j].board.board_rotate_90();
+                    if (0 <= getData().graph_resources.nodes[i][j].policy && getData().graph_resources.nodes[i][j].policy < HW2) {
+                        int y0 = getData().graph_resources.nodes[i][j].policy / HW;
+                        int x0 = getData().graph_resources.nodes[i][j].policy % HW;
+                        getData().graph_resources.nodes[i][j].policy = (HW_M1 - x0) * HW + y0;
+                    }
+                    if (0 <= getData().graph_resources.nodes[i][j].next_policy && getData().graph_resources.nodes[i][j].next_policy < HW2) {
+                        int y0 = getData().graph_resources.nodes[i][j].next_policy / HW;
+                        int x0 = getData().graph_resources.nodes[i][j].next_policy % HW;
+                        getData().graph_resources.nodes[i][j].next_policy = (HW_M1 - x0) * HW + y0;
                     }
                 }
             }
@@ -839,6 +915,66 @@ private:
                         int x = getData().graph_resources.nodes[i][j].next_policy % HW;
                         int y = getData().graph_resources.nodes[i][j].next_policy / HW;
                         getData().graph_resources.nodes[i][j].next_policy = x * HW + y;
+                    }
+                }
+            }
+            resume_calculating();
+        }
+        if (getData().menu_elements.convert_horizontal || shortcut_key == U"convert_horizontal") {
+            stop_calculating();
+            getData().history_elem.board.board_horizontal_mirror();
+            if (0 <= getData().history_elem.policy && getData().history_elem.policy < HW2) {
+                int x = getData().history_elem.policy % HW;
+                int y = getData().history_elem.policy / HW;
+                getData().history_elem.policy = y * HW + (HW_M1 - x);
+            }
+            if (0 <= getData().history_elem.next_policy && getData().history_elem.next_policy < HW2) {
+                int x = getData().history_elem.next_policy % HW;
+                int y = getData().history_elem.next_policy / HW;
+                getData().history_elem.next_policy = y * HW + (HW_M1 - x);
+            }
+            for (int i = 0; i < 2; ++i) {
+                for (int j = 0; j < (int)getData().graph_resources.nodes[i].size(); ++j) {
+                    getData().graph_resources.nodes[i][j].board.board_horizontal_mirror();
+                    if (0 <= getData().graph_resources.nodes[i][j].policy && getData().graph_resources.nodes[i][j].policy < HW2) {
+                        int x = getData().graph_resources.nodes[i][j].policy % HW;
+                        int y = getData().graph_resources.nodes[i][j].policy / HW;
+                        getData().graph_resources.nodes[i][j].policy = y * HW + (HW_M1 - x);
+                    }
+                    if (0 <= getData().graph_resources.nodes[i][j].next_policy && getData().graph_resources.nodes[i][j].next_policy < HW2) {
+                        int x = getData().graph_resources.nodes[i][j].next_policy % HW;
+                        int y = getData().graph_resources.nodes[i][j].next_policy / HW;
+                        getData().graph_resources.nodes[i][j].next_policy = y * HW + (HW_M1 - x);
+                    }
+                }
+            }
+            resume_calculating();
+        }
+        if (getData().menu_elements.convert_vertical || shortcut_key == U"convert_vertical") {
+            stop_calculating();
+            getData().history_elem.board.board_vertical_mirror();
+            if (0 <= getData().history_elem.policy && getData().history_elem.policy < HW2) {
+                int x = getData().history_elem.policy % HW;
+                int y = getData().history_elem.policy / HW;
+                getData().history_elem.policy = (HW_M1 - y) * HW + x;
+            }
+            if (0 <= getData().history_elem.next_policy && getData().history_elem.next_policy < HW2) {
+                int x = getData().history_elem.next_policy % HW;
+                int y = getData().history_elem.next_policy / HW;
+                getData().history_elem.next_policy = (HW_M1 - y) * HW + x;
+            }
+            for (int i = 0; i < 2; ++i) {
+                for (int j = 0; j < (int)getData().graph_resources.nodes[i].size(); ++j) {
+                    getData().graph_resources.nodes[i][j].board.board_vertical_mirror();
+                    if (0 <= getData().graph_resources.nodes[i][j].policy && getData().graph_resources.nodes[i][j].policy < HW2) {
+                        int x = getData().graph_resources.nodes[i][j].policy % HW;
+                        int y = getData().graph_resources.nodes[i][j].policy / HW;
+                        getData().graph_resources.nodes[i][j].policy = (HW_M1 - y) * HW + x;
+                    }
+                    if (0 <= getData().graph_resources.nodes[i][j].next_policy && getData().graph_resources.nodes[i][j].next_policy < HW2) {
+                        int x = getData().graph_resources.nodes[i][j].next_policy % HW;
+                        int y = getData().graph_resources.nodes[i][j].next_policy / HW;
+                        getData().graph_resources.nodes[i][j].next_policy = (HW_M1 - y) * HW + x;
                     }
                 }
             }
@@ -945,6 +1081,13 @@ private:
             stop_calculating();
             resume_calculating();
             changeScene(U"Deviate_book_transcript", SCENE_FADE_TIME);
+            return;
+        }
+        if (getData().menu_elements.book_start_store || shortcut_key == U"book_start_store") {
+            changing_scene = true;
+            stop_calculating();
+            resume_calculating();
+            changeScene(U"Store_book", SCENE_FADE_TIME);
             return;
         }
         if (getData().menu_elements.book_start_fix || shortcut_key == U"book_start_fix") {
@@ -1359,6 +1502,7 @@ private:
     uint64_t draw_hint(bool ignore_book_info) {
         uint64_t res = 0ULL;
         if (ai_status.hint_calculating || ai_status.hint_calculated) {
+            bool simplified_hint_mode = !getData().menu_elements.show_hint_level && !getData().menu_elements.show_book_accuracy && !getData().menu_elements.use_umigame_value;
             std::vector<Hint_info> hint_infos;
             for (int cell = 0; cell < HW2; ++cell) {
                 if (ai_status.hint_use[HW2_M1 - cell] && -HW2 <= ai_status.hint_values[HW2_M1 - cell] && ai_status.hint_values[HW2_M1 - cell] <= (double)HW2 + HINT_PRIORITY + 0.009) {
@@ -1396,20 +1540,115 @@ private:
                     color = getData().colors.cyan;
                     font = getData().fonts.font_heavy;
                 }
-                font((int)round(hint_infos[i].value)).draw(18, sx + 3, sy, color);
-                if (hint_infos[i].type == AI_TYPE_BOOK) {
-                    if (!ignore_book_info) {
-                        getData().fonts.font_bold(U"book").draw(10, sx + 3, sy + 21, color);
+                if (simplified_hint_mode) {
+                    // main value
+                    font((int)round(hint_infos[i].value)).draw(23, Arg::center(sx + BOARD_CELL_SIZE / 2, sy + BOARD_CELL_SIZE / 2), color);
+                    // level info for simple mode (only 100%)
+                    if (hint_infos[i].type == 100) {
+                        const double check_width = BOARD_CELL_SIZE * 0.2;
+                        getData().resources.check.scaled(check_width / (double)getData().resources.check.height()).draw(Arg::topRight(sx + BOARD_CELL_SIZE - 2, sy + 2));
                     }
-                } else if (hint_infos[i].type > HINT_MAX_LEVEL) {
-                    getData().fonts.font_bold(Format(hint_infos[i].type) + U"%").draw(10, sx + 3, sy + 21, color);
                 } else {
-                    RectF lv_rect = getData().fonts.font(U"Lv.").region(8, sx + 3, sy + 25);
-                    getData().fonts.font_bold(U"Lv").draw(8, sx + 3, sy + 22.5, color);
-                    getData().fonts.font_bold(Format(hint_infos[i].type)).draw(9.5, lv_rect.x + lv_rect.w, sy + 21, color);
+                    // main value
+                    font((int)round(hint_infos[i].value)).draw(18, sx + 3, sy, color);
+                    // level info
+                    if (getData().menu_elements.show_hint_level) {
+                        if (hint_infos[i].type == AI_TYPE_BOOK) {
+                            if (!ignore_book_info) {
+                                getData().fonts.font_bold(U"book").draw(10, sx + 3, sy + 21, color);
+                            }
+                        } else if (hint_infos[i].type > HINT_MAX_LEVEL) {
+                            getData().fonts.font_bold(Format(hint_infos[i].type) + U"%").draw(10, sx + 3, sy + 21, color);
+                        } else {
+                            RectF lv_rect = getData().fonts.font(U"Lv.").region(8, sx + 3, sy + 25);
+                            getData().fonts.font_bold(U"Lv").draw(8, sx + 3, sy + 22.5, color);
+                            getData().fonts.font_bold(Format(hint_infos[i].type)).draw(9.5, lv_rect.x + lv_rect.w, sy + 21, color);
+                        }
+                    }
                 }
                 res |= 1ULL << (HW2_M1 - hint_infos[i].cell);
             }
+        }
+        return res;
+    }
+
+    // draw hint with transposition table
+    uint64_t draw_hint_tt(bool use_book, bool ignore_book_info) {
+        uint64_t legal = getData().history_elem.board.get_legal();
+        std::vector<Hint_info> hint_infos_tt;
+        Board board = getData().history_elem.board.copy();
+        for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)) {
+            Hint_info hint_info;
+            hint_info.cell = HW2_M1 - cell;
+            bool book_found = false;
+            bool value_found = false;
+            Flip flip;
+            calc_flip(&flip, &board, cell);
+            board.move_board(&flip);
+                if (use_book && book.contain(board)) {
+                    hint_info.type = AI_TYPE_BOOK;
+                    hint_info.value = -book.get(board).value;
+                    book_found = true;
+                    value_found = true;
+                }
+                if (!book_found) {
+                    int lower = -SCORE_MAX, upper = SCORE_MAX;
+                    uint_fast8_t moves[2];
+                    int depth;
+                    uint_fast8_t mpc_level;
+                    transposition_table.get_info(board, &lower, &upper, moves, &depth, &mpc_level);
+                    if (lower == upper) {
+                        hint_info.value = -lower;
+                        if (depth == HW2 - board.n_discs()) {
+                            hint_info.type = SELECTIVITY_PERCENTAGE[mpc_level];
+                        } else {
+                            hint_info.type = depth;
+                        }
+                        value_found = true;
+                    }
+                }
+            board.undo_board(&flip);
+            if (value_found) {
+                hint_infos_tt.emplace_back(hint_info);
+            }
+        }
+        uint64_t res = 0ULL;
+        sort(hint_infos_tt.begin(), hint_infos_tt.end(), compare_hint_info);
+        int n_disc_hint = hint_infos_tt.size(); //std::min((int)hint_infos_tt.size(), getData().menu_elements.n_disc_hint);
+        int best_level = -INF;
+        double best_score = -SCORE_INF;
+        for (int i = 0; i < n_disc_hint; ++i) {
+            if (best_level < hint_infos_tt[i].type) {
+                best_level = hint_infos_tt[i].type;
+                best_score = hint_infos_tt[i].value;
+            } else if (best_level == hint_infos_tt[i].type && best_score <= hint_infos_tt[i].value) {
+                best_score = hint_infos_tt[i].value;
+            }
+        }
+        for (int i = 0; i < n_disc_hint; ++i) {
+            //std::cerr << idx_to_coord(hint_infos_tt[i].cell) << " " << hint_infos_tt[i].value << std::endl;
+            int sx = BOARD_SX + (hint_infos_tt[i].cell % HW) * BOARD_CELL_SIZE;
+            int sy = BOARD_SY + (hint_infos_tt[i].cell / HW) * BOARD_CELL_SIZE;
+            Color color = getData().colors.white;
+            Font font = getData().fonts.font;
+            if (hint_infos_tt[i].type == best_level && hint_infos_tt[i].value == best_score) {
+                color = getData().colors.cyan;
+                font = getData().fonts.font_heavy;
+            }
+            font((int)round(hint_infos_tt[i].value)).draw(18, sx + 3, sy, color);
+            // std::cerr << idx_to_coord(HW2_M1 - hint_infos_tt[i].cell) << " " << hint_infos_tt[i].type << std::endl;
+            if (hint_infos_tt[i].type == AI_TYPE_BOOK) {
+                if (!ignore_book_info) {
+                    getData().fonts.font_bold(U"book").draw(10, sx + 3, sy + 21, color);
+                }
+            } else if (hint_infos_tt[i].type > HINT_MAX_LEVEL) {
+                getData().fonts.font_bold(Format(hint_infos_tt[i].type) + U"%").draw(10, sx + 3, sy + 21, color);
+            } else {
+                RectF lv_rect = getData().fonts.font(U"Lv.").region(8, sx + 3, sy + 25);
+                getData().fonts.font_bold(U"Lv").draw(8, sx + 3, sy + 22.5, color);
+                getData().fonts.font_bold(Format(hint_infos_tt[i].type)).draw(9.5, lv_rect.x + lv_rect.w, sy + 21, color);
+            }
+            res |= 1ULL << (HW2_M1 - hint_infos_tt[i].cell);
         }
         return res;
     }
@@ -1929,7 +2168,7 @@ private:
 
     void change_book_by_right_click() {
         if (getData().book_information.changing != BOOK_CHANGE_NO_CELL) {
-            getData().fonts.font(language.get("book", "changed_value") + U"(" + Unicode::Widen(idx_to_coord(getData().book_information.changing)) + U"): " + getData().book_information.val_str).draw(15, CHANGE_BOOK_INFO_SX, CHANGE_BOOK_INFO_SY, getData().colors.white);
+            getData().fonts.font(language.get("book", "modifying_book_by_right_click") + U"  " + language.get("book", "changed_value") + U"(" + Unicode::Widen(idx_to_coord(getData().book_information.changing)) + U"): " + getData().book_information.val_str).draw(15, CHANGE_BOOK_INFO_SX, CHANGE_BOOK_INFO_SY, getData().colors.white);
             if (KeyEscape.down()) {
                 getData().book_information.changing = BOOK_CHANGE_NO_CELL;
             } else if (Key0.down() || KeyNum0.down()) {
@@ -2117,5 +2356,26 @@ private:
         }
         init_main_scene();
         return res;
+    }
+
+    void check_random_board_generater() {
+        if (ai_status.random_board_generator_future.valid() && ai_status.random_board_generator_calculating) {
+            if (ai_status.random_board_generator_future.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
+                std::vector<int> moves = ai_status.random_board_generator_future.get();
+                ai_status.random_board_generator_calculating = false;
+                std::cerr << "finish random board generation" << std::endl;
+                stop_calculating();
+                getData().history_elem.reset();
+                getData().graph_resources.init();
+                getData().graph_resources.nodes[getData().graph_resources.branch].emplace_back(getData().history_elem);
+                getData().game_information.init();
+                pausing_in_pass = false;
+                resume_calculating();
+                for (int policy : moves) {
+                    move_processing(HW2_M1 - policy);
+                }
+                need_start_game_button_calculation();
+            }
+        }
     }
 };

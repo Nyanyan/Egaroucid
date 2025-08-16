@@ -89,4 +89,13 @@ public:
             elems[i].checked = (checked == i);
         }
     }
+
+    void set_checked(int idx) {
+        if (idx >= 0 && idx < elems.size()) {
+            for (int i = 0; i < (int)elems.size(); ++i) {
+                elems[i].checked = (i == idx);
+            }
+            checked = idx;
+        }
+    }
 };

@@ -573,3 +573,55 @@ inline void book_deviate(Board root_board, int level, int book_depth, int max_er
     std::cerr << "book deviate finished registered " << n_registered << " time " << ms_to_time_short(tim() - all_strt) << std::endl;
     *book_learning = false;
 }
+
+
+inline void book_store(std::vector<std::pair<Board, int>> tasks, int level, int book_depth, Board *board_copy, int *player, std::string book_file, std::string book_bak, bool *book_learning) {
+    uint64_t all_strt = tim();
+    uint64_t s = all_strt;
+    Board before_board = board_copy->copy();
+    int before_player = *player;
+    std::cerr << "book store started" << std::endl;
+    Flip flip;
+    *player = BLACK;
+    int n_registered = 0;
+    for (std::pair<Board, int> task: tasks) {
+        if (!(*book_learning)) {
+            break;
+        }
+        Board board = task.first;
+        if (board.n_discs() > 4 + book_depth) {
+            continue;
+        }
+        board.copy(board_copy);
+        *player = task.second;
+        Search_result search_result = ai_searching(board, level, true, 0, true, false, book_learning);
+        if (is_valid_policy(search_result.policy) && (board.get_legal() & (1ULL << search_result.policy)) && is_valid_score(search_result.value)) {
+            std::cerr << idx_to_coord(search_result.policy) << " " << search_result.value << std::endl;
+            board.print();
+            std::cerr << std::endl;
+            book.change(board, search_result.value, level);
+            calc_flip(&flip, &board, search_result.policy);
+            board.move_board(&flip);
+                bool passed = board.get_legal() == 0;
+                if (passed) {
+                    board.pass();
+                }
+                Search_result child_search_result = ai_searching(board, level, true, 0, true, false, book_learning);
+                std::cerr << "child " << child_search_result.value << std::endl;
+                board.print();
+                std::cerr << std::endl;
+                book.change(board, child_search_result.value, level);
+                if (passed) {
+                    board.pass();
+                }
+            board.undo_board(&flip);
+            n_registered += 2;
+        }
+    }
+    *player = before_player;
+    before_board.copy(board_copy);
+    //book.fix();
+    //book.save_egbk3(book_file, book_bak);
+    std::cerr << "book store finished registered " << n_registered << " time " << ms_to_time_short(tim() - all_strt) << std::endl;
+    *book_learning = false;
+}

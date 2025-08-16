@@ -24,9 +24,9 @@
 */
 constexpr int YBWC_MID_SPLIT_MIN_DEPTH = 8;
 //constexpr int YBWC_MID_SPLIT_MAX_DEPTH = 26;
-constexpr int YBWC_END_SPLIT_MIN_DEPTH = 15;
+constexpr int YBWC_END_SPLIT_MIN_DEPTH = 16;
 //constexpr int YBWC_END_SPLIT_MAX_DEPTH = 29;
-constexpr int YBWC_N_ELDER_CHILD = 1;
+// constexpr int YBWC_N_ELDER_CHILD = 1;
 constexpr int YBWC_N_YOUNGER_CHILD = 1;
 // constexpr int YBWC_MAX_RUNNING_COUNT = 5;
 constexpr int YBWC_NOT_PUSHED = -124;
@@ -85,7 +85,7 @@ Parallel_task ybwc_do_task_nws(uint64_t player, uint64_t opponent, int_fast8_t n
 */
 inline int ybwc_split_nws(Search *search, int parent_alpha, const int depth, uint64_t legal, const bool is_end_search, std::vector<bool*> &searchings, bool *n_searching, uint_fast8_t policy, const int n_remaining_moves, const int move_idx, const int running_count, std::vector<std::future<Parallel_task>> &parallel_tasks) {
     if (
-            thread_pool.get_n_idle() &&                 // There is an idle thread
+            // thread_pool.get_n_idle() &&                 // There is an idle thread
             n_remaining_moves >= YBWC_N_YOUNGER_CHILD    // This node is not the (some) youngest brother
             //running_count < YBWC_MAX_RUNNING_COUNT     // Do not split too many nodes
     ) {

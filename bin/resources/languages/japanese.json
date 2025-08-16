@@ -74,6 +74,7 @@
         "book_deviate_with_transcript": "棋譜を指定してBook学習",
         "input_transcripts_with_line_breaks": "改行区切りで棋譜を指定 / テキストファイルをドラッグ&ドロップ",
         "transcript_error": "棋譜エラー",
+        "book_store": "現在の棋譜をBookに追加",
         "book_fix": "Book修正",
         "book_fix_edax": "Book修正(Edax準拠)",
         "learning": "学習中...",
@@ -86,6 +87,7 @@
         "error_per_move": "1手あたりの誤差",
         "error_sum": "積算誤差",
         "error_leaf": "リーフ誤差",
+        "modifying_book_by_right_click": "Book編集中 (Escで戻る)",
         "changed_value": "評価値",
         "book_merge": "Book統合",
         "merge": "統合",
@@ -152,6 +154,7 @@
         "color": "色",
         "input_game": "対局読み込み",
         "no_game_available": "対局が保存されていません",
+        "empty_folder": "このフォルダは空です",
         "import": "取り込む",
         "export_main": "本筋を保存",
         "export_until_this_board": "設定局面までを保存",
@@ -163,7 +166,15 @@
         "directory_not_found": "ディレクトリが見つかりません",
         "board_image": "ボードの画像を編集",
         "you_can_paste_with_ctrl_v": "Ctrl+Vで貼り付け可能",
-        "you_can_drag_and_drop_game_file": "ゲームファイルをドラッグ&ドロップ可能"
+        "you_can_drag_and_drop_game_file": "ゲームファイルをドラッグ&ドロップ可能",
+        "save_subfolder": "保存先フォルダ",
+        "load_subfolder": "読み込みサブフォルダ (games/ 以下)",
+        "games_root": "(games 直下)",
+        "new_folder": "新しいフォルダ",
+        "create": "作成",
+        "save_here": "ここに保存",
+        "saving": "保存中...",
+        "open_explorer": "エクスプローラで開く"
     },
     "display": {
         "display": "表示",
@@ -177,7 +188,9 @@
             "opening": "定石",
             "next_move": "直後の手",
             "next_move_change_view": "表示変更",
-            "show_book_accuracy": "Book精度"
+            "show_book_accuracy": "Book精度",
+            "show_value_when_ai_calculating": "AIの手番でも表示",
+            "show_hint_level": "レベル"
         },
         "disc": {
             "display_on_disc": "石への表示",
@@ -210,13 +223,18 @@
         "generate_random_board": {
             "generate_random_board": "ランダム局面を生成",
             "generate": "生成",
-            "generate_n_moves": "生成手数"
+            "generate_n_moves": "生成手数",
+            "score_range": "スコア範囲 ±"
         },
         "convert": {
             "convert": "変換",
             "rotate_180": "180度回転",
+            "rotate_90_clock": "90度時計回り",
+            "rotate_90_anti_clock": "90度反時計回り",
             "white_line": "ホワイトライン",
-            "black_line": "ブラックライン"
+            "black_line": "ブラックライン",
+            "horizontal": "左右反転",
+            "vertical": "上下反転"
         },
         "ai_operation": {
             "ai_operation": "AI操作",

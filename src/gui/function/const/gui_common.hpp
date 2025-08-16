@@ -152,12 +152,16 @@ constexpr int EXPORT_GAME_PLAYER_HEIGHT = 30;
 constexpr int EXPORT_GAME_MEMO_WIDTH = 600;
 constexpr int EXPORT_GAME_MEMO_HEIGHT = 250;
 constexpr int EXPORT_GAME_RADIUS = 15;
+constexpr int EXPORT_GAME_FOLDER_AREA_HEIGHT = 45;
+constexpr int EXPORT_GAME_N_GAMES_ON_WINDOW = 5;
+constexpr int EXPORT_GAME_CREATE_FOLDER_Y_CENTER = 370;
+
 
 // import game constants
 constexpr int IMPORT_GAME_N_GAMES_ON_WINDOW = 7;
 constexpr int IMPORT_GAME_LEFT_MARGIN = 10;
 constexpr int IMPORT_GAME_SX = 30 - IMPORT_GAME_LEFT_MARGIN;
-constexpr int IMPORT_GAME_SY = 65;
+constexpr int IMPORT_GAME_SY = 70;
 constexpr int IMPORT_GAME_HEIGHT = 45;
 constexpr int IMPORT_GAME_PLAYER_WIDTH = 220;
 constexpr int IMPORT_GAME_PLAYER_HEIGHT = 24;
@@ -201,7 +205,7 @@ constexpr int GAME_MEMO_SUMMARY_SIZE = 40;
 // book modification
 constexpr int BOOK_CHANGE_NO_CELL = 64;
 constexpr int CHANGE_BOOK_ERR = -1000;
-constexpr int CHANGE_BOOK_INFO_SX = 660;
+constexpr int CHANGE_BOOK_INFO_SX = 460;
 constexpr int CHANGE_BOOK_INFO_SY = 13;
 
 // back button constants
@@ -301,6 +305,7 @@ struct Colors {
     Color burlywood{ Color(222, 184, 135) };
     Color black_advantage{ Color(241, 196, 15) };
     Color white_advantage{ Color(94, 192, 255) };
+    Color yellow{ Palette::Yellow };
 };
 
 struct Directories {
@@ -318,6 +323,15 @@ struct Resources {
     Texture unchecked;
     Texture laser_pointer;
     Texture cross;
+    Texture flip_horizontal;
+    Texture flip_vertical;
+    Texture rotate_cw;
+    Texture rotate_ccw;
+    Texture rotate_180;
+    Texture mirror_white_line;
+    Texture mirror_black_line;
+    Texture check;
+    Texture folder;
     std::vector<Texture> lang_img;
 };
 
@@ -372,6 +386,9 @@ struct Settings {
     bool show_ai_focus;
     int pv_length;
     std::string screenshot_saving_dir;
+    bool show_value_when_ai_calculating;
+    int generate_random_board_score_range;
+    bool show_hint_level;
 };
 
 struct Fonts {
@@ -460,6 +477,7 @@ struct Menu_elements {
     // display
     bool use_disc_hint;
     int n_disc_hint;
+    bool show_hint_level;
     bool use_umigame_value;
     int umigame_value_depth;
     bool show_legal;
@@ -480,10 +498,12 @@ struct Menu_elements {
     bool show_principal_variation;
     bool show_ai_focus;
     int pv_length;
+    bool show_value_when_ai_calculating;
 
     // book
     bool book_start_deviate;
     bool book_start_deviate_with_transcript;
+    bool book_start_store;
     bool book_start_fix;
     bool book_start_fix_edax;
     int book_learn_depth;
@@ -531,10 +551,15 @@ struct Menu_elements {
     bool save_this_branch;
     bool generate_random_board;
     int generate_random_board_moves;
+    int generate_random_board_score_range;
     // conversion
     bool convert_180;
+    bool convert_90_clock;
+    bool convert_90_anti_clock;
     bool convert_blackline;
     bool convert_whiteline;
+    bool convert_horizontal;
+    bool convert_vertical;
     bool cache_clear;
 
     // help
@@ -577,6 +602,7 @@ struct Menu_elements {
 
         use_disc_hint = settings->use_disc_hint;
         n_disc_hint = settings->n_disc_hint;
+        show_hint_level = settings->show_hint_level;
         use_umigame_value = settings->use_umigame_value;
         umigame_value_depth = settings->umigame_value_depth;
         show_legal = settings->show_legal;
@@ -597,9 +623,11 @@ struct Menu_elements {
         show_principal_variation = settings->show_principal_variation;
         show_ai_focus = settings->show_ai_focus;
         pv_length = settings->pv_length;
+        show_value_when_ai_calculating = settings->show_value_when_ai_calculating;
 
         book_start_deviate = false;
         book_start_deviate_with_transcript = false;
+        book_start_store = false;
         book_start_fix = false;
         book_start_fix_edax = false;
         book_learn_depth = settings->book_learn_depth;
@@ -643,9 +671,14 @@ struct Menu_elements {
         save_this_branch = false;
         generate_random_board = false;
         generate_random_board_moves = settings->generate_random_board_moves;
+        generate_random_board_score_range = settings->generate_random_board_score_range;
         convert_180 = false;
+        convert_90_clock = false;
+        convert_90_anti_clock = false;
         convert_blackline = false;
         convert_whiteline = false;
+        convert_horizontal = false;
+        convert_vertical = false;
         cache_clear = false;
 
         usage = false;
@@ -893,6 +926,9 @@ struct AI_status {
     std::future<void> local_strategy_policy_future;
     int local_strategy_policy[HW2][HW2]; // [policy][cell]
     int local_strategy_policy_done_level{ 0 };
+
+    bool random_board_generator_calculating{ false };
+    std::future<std::vector<int>> random_board_generator_future;
 };
 
 struct Game_abstract {

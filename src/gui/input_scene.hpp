@@ -13,6 +13,8 @@
 #include <future>
 #include "./../engine/engine_all.hpp"
 #include "function/function_all.hpp"
+#include "draw.hpp"
+
 
 
 
@@ -169,10 +171,15 @@ public:
         history_elem = getData().history_elem;
         Radio_button_element radio_button_elem;
         player_radio.init();
-        radio_button_elem.init(480, 120, getData().fonts.font, 15, language.get("common", "black"), true);
+        radio_button_elem.init(480, 120, getData().fonts.font, 15, language.get("common", "black"), false);
         player_radio.push(radio_button_elem);
-        radio_button_elem.init(480, 140, getData().fonts.font, 15, language.get("common", "white"), false);
+        radio_button_elem.init(480, 140, getData().fonts.font, 15, language.get("common", "white"), true);
         player_radio.push(radio_button_elem);
+        if (history_elem.player == WHITE) {
+            player_radio.set_checked(1);
+        } else {
+            player_radio.set_checked(0);
+        }
         disc_radio.init();
         radio_button_elem.init(480, 210, getData().fonts.font, 15, language.get("edit_board", "black"), true);
         disc_radio.push(radio_button_elem);
@@ -224,11 +231,12 @@ public:
                 history_elem.board.pass();
                 history_elem.player = player_radio.checked;
             }
+            // history_elem.player = player_radio.checked;
             history_elem.v = GRAPH_IGNORE_VALUE;
             history_elem.level = -1;
-            getData().history_elem = history_elem;
             if (!history_elem.board.is_end() && history_elem.board.get_legal() == 0) {
                 history_elem.board.pass();
+                history_elem.player ^= 1;
             }
             int n_discs = history_elem.board.n_discs();
             int insert_place = (int)getData().graph_resources.nodes[getData().graph_resources.branch].size();
@@ -298,46 +306,32 @@ private:
     std::vector<ImageButton> delete_buttons;
     Scroll_manager scroll_manager;
     Button back_button;
+    Button up_button;
     bool failed;
+    // Explorer-like folder view
+    std::vector<String> folders_display; // includes optional ".." at head
+    bool has_parent = false;
+    std::string subfolder; // current folder (narrow), may be ""
 
 public:
     Import_game(const InitData& init) : IScene{ init } {
         back_button.init(BACK_BUTTON_SX, BACK_BUTTON_SY, BACK_BUTTON_WIDTH, BACK_BUTTON_HEIGHT, BACK_BUTTON_RADIUS, language.get("common", "back"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
+        up_button.init(IMPORT_GAME_SX, IMPORT_GAME_SY - 30, 28, 24, 4, U"↑", 16, getData().fonts.font, getData().colors.white, getData().colors.black);
         failed = false;
-        const String csv_path = Unicode::Widen(getData().directories.document_dir) + U"games/summary.csv";
-        const CSV csv{ csv_path };
-        if (csv) {
-            for (size_t row = 0; row < csv.rows(); ++row) {
-                Game_abstract game_abstract;
-                game_abstract.date = csv[row][0];
-                game_abstract.black_player = csv[row][1];
-                game_abstract.white_player = csv[row][2];
-                game_abstract.memo = csv[row][3];
-                game_abstract.black_score = ParseOr<int32>(csv[row][4], GAME_DISCS_UNDEFINED);
-                game_abstract.white_score = ParseOr<int32>(csv[row][5], GAME_DISCS_UNDEFINED);
-                games.emplace_back(game_abstract);
-            }
-        }
-        reverse(games.begin(), games.end());
-        for (int i = 0; i < (int)games.size(); ++i) {
-            Button button;
-            button.init(0, 0, IMPORT_GAME_BUTTON_WIDTH, IMPORT_GAME_BUTTON_HEIGHT, IMPORT_GAME_BUTTON_RADIUS, language.get("in_out", "import"), 15, getData().fonts.font, getData().colors.white, getData().colors.black);
-            import_buttons.emplace_back(button);
-        }
-        Texture delete_button_image = getData().resources.cross;
-        for (int i = 0; i < (int)games.size(); ++i) {
-            ImageButton button;
-            button.init(0, 0, 15, delete_button_image);
-            delete_buttons.emplace_back(button);
-        }
-        init_scroll_manager();
+        // Initialize current dir and load games
+        subfolder.clear();
+        enumerate_current_dir();
+        load_games();
     }
 
     void update() override {
         if (System::GetUserActions() & UserAction::CloseButtonClicked) {
             changeScene(U"Close", SCENE_FADE_TIME);
         }
-        getData().fonts.font(language.get("in_out", "input_game")).draw(25, Arg::topCenter(X_CENTER, 10), getData().colors.white);
+        getData().fonts.font(language.get("in_out", "input_game")).draw(25, Arg::center(X_CENTER, 30), getData().colors.white);
+        // Current path label
+        String path_label = U"games/" + Unicode::Widen(subfolder);
+        getData().fonts.font(path_label).draw(15, Arg::rightCenter(IMPORT_GAME_SX + IMPORT_GAME_WIDTH, 30), getData().colors.white);
         back_button.draw();
         if (back_button.clicked() || KeyEscape.pressed()) {
             getData().graph_resources.need_init = false;
@@ -345,124 +339,43 @@ public:
         }
         if (failed) {
             getData().fonts.font(language.get("in_out", "import_failed")).draw(20, Arg::center(X_CENTER, Y_CENTER), getData().colors.white);
-        } else if (games.size() == 0) {
-            getData().fonts.font(language.get("in_out", "no_game_available")).draw(20, Arg::center(X_CENTER, Y_CENTER), getData().colors.white);
         } else {
-            int sy = IMPORT_GAME_SY;
-            int strt_idx_int = scroll_manager.get_strt_idx_int();
-            if (strt_idx_int > 0) {
-                getData().fonts.font(U"︙").draw(15, Arg::bottomCenter = Vec2{ X_CENTER, sy }, getData().colors.white);
+            auto res = DrawExplorerList(
+                folders_display, games, delete_buttons, scroll_manager, up_button,
+                IMPORT_GAME_HEIGHT, IMPORT_GAME_N_GAMES_ON_WINDOW, has_parent, getData().fonts, getData().colors, getData().resources, language,
+                getData().directories.document_dir, subfolder);
+            if (res.upButtonClicked || res.parentFolderDoubleClicked) {
+                if (!subfolder.empty()) {
+                    std::string s = subfolder;
+                    if (!s.empty() && s.back() == '/') s.pop_back();
+                    size_t pos = s.find_last_of('/');
+                    if (pos == std::string::npos) subfolder.clear();
+                    else subfolder = s.substr(0, pos);
+                    enumerate_current_dir();
+                    load_games();
+                    init_scroll_manager();
+                    return;
+                }
             }
-            sy += 8;
-            for (int i = strt_idx_int; i < std::min((int)games.size(), strt_idx_int + IMPORT_GAME_N_GAMES_ON_WINDOW); ++i) {
-                Rect rect;
-                rect.y = sy;
-                rect.x = IMPORT_GAME_SX;
-                rect.w = IMPORT_GAME_WIDTH;
-                rect.h = IMPORT_GAME_HEIGHT;
-                int winner = -1;
-                if (games[i].black_score != GAME_DISCS_UNDEFINED && games[i].white_score != GAME_DISCS_UNDEFINED) {
-                    if (games[i].black_score > games[i].white_score) {
-                        winner = IMPORT_GAME_WINNER_BLACK;
-                    } else if (games[i].black_score < games[i].white_score) {
-                        winner = IMPORT_GAME_WINNER_WHITE;
-                    } else {
-                        winner = IMPORT_GAME_WINNER_DRAW;
-                    }
-                }
-                if (i % 2) {
-                    rect.draw(getData().colors.dark_green).drawFrame(1.0, getData().colors.white);
-                } else {
-                    rect.draw(getData().colors.green).drawFrame(1.0, getData().colors.white);
-                }
-                delete_buttons[i].move(IMPORT_GAME_SX + 1, sy + 1);
-                delete_buttons[i].draw();
-                if (delete_buttons[i].clicked()) {
-                    delete_game(i);
-                }
-                String date = games[i].date.substr(0, 10).replace(U"_", U"/");
-                getData().fonts.font(date).draw(15, IMPORT_GAME_SX + IMPORT_GAME_LEFT_MARGIN + 10, sy + 2, getData().colors.white);
-                // player (black)
-                Rect black_player_rect;
-                black_player_rect.w = IMPORT_GAME_PLAYER_WIDTH;
-                black_player_rect.h = IMPORT_GAME_PLAYER_HEIGHT;
-                black_player_rect.y = sy + 1;
-                black_player_rect.x = IMPORT_GAME_SX + IMPORT_GAME_LEFT_MARGIN + IMPORT_GAME_DATE_WIDTH;
-                if (winner == IMPORT_GAME_WINNER_BLACK) {
-                    black_player_rect.draw(getData().colors.darkred);
-                } else if (winner == IMPORT_GAME_WINNER_WHITE) {
-                    black_player_rect.draw(getData().colors.darkblue);
-                } else if (winner == IMPORT_GAME_WINNER_DRAW) {
-                    black_player_rect.draw(getData().colors.chocolate);
-                }
-                int upper_center_y = black_player_rect.y + black_player_rect.h / 2;
-                for (int font_size = 15; font_size >= 12; --font_size) {
-                    if (getData().fonts.font(games[i].black_player).region(font_size, Vec2{0, 0}).w <= IMPORT_GAME_PLAYER_WIDTH - 4) {
-                        getData().fonts.font(games[i].black_player).draw(font_size, Arg::rightCenter(black_player_rect.x + IMPORT_GAME_PLAYER_WIDTH - 2, upper_center_y), getData().colors.white);
-                        break;
-                    } else if (font_size == 12) {
-                        String player = games[i].black_player;
-                        while (getData().fonts.font(player).region(font_size, Vec2{0, 0}).w > IMPORT_GAME_PLAYER_WIDTH - 4) {
-                            for (int i = 0; i < 4; ++i) {
-                                player.pop_back();
-                            }
-                            player += U"...";
-                        }
-                        getData().fonts.font(player).draw(font_size, Arg::rightCenter(black_player_rect.x + IMPORT_GAME_PLAYER_WIDTH - 2, upper_center_y), getData().colors.white);
-                    }
-                }
-                // score
-                String black_score = U"??";
-                String white_score = U"??";
-                if (games[i].black_score != GAME_DISCS_UNDEFINED && games[i].white_score != GAME_DISCS_UNDEFINED) {
-                    black_score = Format(games[i].black_score);
-                    white_score = Format(games[i].white_score);
-                }
-                double hyphen_w = getData().fonts.font(U"-").region(15, Vec2{0, 0}).w;
-                getData().fonts.font(black_score).draw(15, Arg::rightCenter(black_player_rect.x + IMPORT_GAME_PLAYER_WIDTH + IMPORT_GAME_SCORE_WIDTH / 2 - hyphen_w / 2 - 1, upper_center_y), getData().colors.white);
-                getData().fonts.font(U"-").draw(15, Arg::center(black_player_rect.x + IMPORT_GAME_PLAYER_WIDTH + IMPORT_GAME_SCORE_WIDTH / 2, upper_center_y), getData().colors.white);
-                getData().fonts.font(white_score).draw(15, Arg::leftCenter(black_player_rect.x + IMPORT_GAME_PLAYER_WIDTH + IMPORT_GAME_SCORE_WIDTH / 2 + hyphen_w / 2 + 1, upper_center_y), getData().colors.white);
-                // player (white)
-                Rect white_player_rect;
-                white_player_rect.w = IMPORT_GAME_PLAYER_WIDTH;
-                white_player_rect.h = IMPORT_GAME_PLAYER_HEIGHT;
-                white_player_rect.y = sy + 1;
-                white_player_rect.x = black_player_rect.x + IMPORT_GAME_PLAYER_WIDTH + IMPORT_GAME_SCORE_WIDTH;
-                if (winner == IMPORT_GAME_WINNER_BLACK) {
-                    white_player_rect.draw(getData().colors.darkblue);
-                } else if (winner == IMPORT_GAME_WINNER_WHITE) {
-                    white_player_rect.draw(getData().colors.darkred);
-                } else if (winner == IMPORT_GAME_WINNER_DRAW) {
-                    white_player_rect.draw(getData().colors.chocolate);
-                }
-                for (int font_size = 15; font_size >= 12; --font_size) {
-                    if (getData().fonts.font(games[i].white_player).region(font_size, Vec2{0, 0}).w <= IMPORT_GAME_PLAYER_WIDTH - 4) {
-                        getData().fonts.font(games[i].white_player).draw(font_size, Arg::leftCenter(white_player_rect.x + 2, upper_center_y), getData().colors.white);
-                        break;
-                    } else if (font_size == 12) {
-                        String player = games[i].white_player;
-                        while (getData().fonts.font(player).region(font_size, Vec2{0, 0}).w > IMPORT_GAME_PLAYER_WIDTH - 4) {
-                            for (int i = 0; i < 4; ++i) {
-                                player.pop_back();
-                            }
-                            player += U"...";
-                        }
-                        getData().fonts.font(player).draw(font_size, Arg::leftCenter(white_player_rect.x + 2, upper_center_y), getData().colors.white);
-                    }
-                }
-                getData().fonts.font(games[i].memo).draw(12, IMPORT_GAME_SX + IMPORT_GAME_LEFT_MARGIN + 10, black_player_rect.y + black_player_rect.h, getData().colors.white);
-                import_buttons[i].move(IMPORT_GAME_BUTTON_SX, sy + IMPORT_GAME_BUTTON_SY);
-                import_buttons[i].draw();
-                if (import_buttons[i].clicked()) {
-                    import_game(i);
-                }
-                sy += IMPORT_GAME_HEIGHT;
+            if (res.folderDoubleClicked) {
+                String fname = res.clickedFolder;
+                if (subfolder.size()) subfolder += "/";
+                subfolder += fname.narrow();
+                enumerate_current_dir();
+                load_games();
+                init_scroll_manager();
+                return;
             }
-            if (strt_idx_int + IMPORT_GAME_N_GAMES_ON_WINDOW < (int)games.size()) {
-                getData().fonts.font(U"︙").draw(15, Arg::bottomCenter = Vec2{ X_CENTER, 415}, getData().colors.white);
+            if (res.deleteClicked && res.deleteIndex >= 0) {
+                delete_game(res.deleteIndex);
             }
-            scroll_manager.draw();
-            scroll_manager.update();
+            if (res.gameDoubleClicked && res.importIndex >= 0) {
+                import_game(res.importIndex);
+                return;
+            }
+            if (res.drop_completed) {
+                handle_drop(res);
+            }
         }
     }
 
@@ -472,11 +385,13 @@ public:
 
 private:
     void init_scroll_manager() {
-        scroll_manager.init(770, IMPORT_GAME_SY + 8, 10, IMPORT_GAME_HEIGHT * IMPORT_GAME_N_GAMES_ON_WINDOW, 20, (int)games.size(), IMPORT_GAME_N_GAMES_ON_WINDOW, IMPORT_GAME_SX, 73, IMPORT_GAME_WIDTH + 10, IMPORT_GAME_HEIGHT * IMPORT_GAME_N_GAMES_ON_WINDOW);
+        int parent_offset = !subfolder.empty() ? 1 : 0;  // Add parent folder if not at root
+        int total = parent_offset + (int)folders_display.size() + (int)games.size();
+        scroll_manager.init(770, IMPORT_GAME_SY + 8, 10, IMPORT_GAME_HEIGHT * IMPORT_GAME_N_GAMES_ON_WINDOW, 20, total, IMPORT_GAME_N_GAMES_ON_WINDOW, IMPORT_GAME_SX, 73, IMPORT_GAME_WIDTH + 10, IMPORT_GAME_HEIGHT * IMPORT_GAME_N_GAMES_ON_WINDOW);
     }
 
     void import_game(int idx) {
-        const String json_path = Unicode::Widen(getData().directories.document_dir) + U"games/" + games[idx].date + U".json";
+        const String json_path = get_base_dir() + games[idx].date + U".json";
         JSON game_json = JSON::Load(json_path);
         if (not game_json) {
             std::cerr << "can't open game" << std::endl;
@@ -553,21 +468,68 @@ private:
     }
 
     void delete_game(int idx) {
-        const String json_path = Unicode::Widen(getData().directories.document_dir) + U"games/" + games[idx].date + U".json";
+        if (idx < 0 || idx >= (int)games.size()) {
+            std::cerr << "delete_game: invalid index " << idx << std::endl;
+            return;
+        }
+        
+        const String json_path = get_base_dir() + games[idx].date + U".json";
         FileSystem::Remove(json_path);
 
-        const String csv_path = Unicode::Widen(getData().directories.document_dir) + U"games/summary.csv";
+        const String csv_path = get_base_dir() + U"summary.csv";
+        
+        // CSVファイルの存在確認
+        if (!FileSystem::Exists(csv_path)) {
+            std::cerr << "CSV file not found: " << csv_path << std::endl;
+            return;
+        }
+        
         CSV csv{ csv_path };
+        
+        // CSVの読み込み確認
+        if (csv.rows() == 0) {
+            std::cerr << "Warning: CSV file is empty" << std::endl;
+            return;
+        }
+        
         CSV new_csv;
-        for (int i = 0; i < (int)games.size(); ++i) {
-            if (i != games.size() - 1 - idx) {
-                for (int j = 0; j < 6; ++j) {
-                    new_csv.write(csv[i][j]);
+        
+        // games配列はreverseされているので、CSV行インデックスを正しく計算
+        int csv_row_to_delete = (int)games.size() - 1 - idx;
+        
+        for (int i = 0; i < (int)csv.rows(); ++i) {
+            if (i != csv_row_to_delete) {
+                // CSVの列数をチェックしてから書き込み
+                if (csv[i].size() >= 6) {
+                    for (int j = 0; j < 6; ++j) {
+                        // 文字列の長さをチェックして制限する
+                        String data = csv[i][j];
+                        if (data.size() > 1000) { // 1000文字制限
+                            data = data.substr(0, 1000) + U"...";
+                            std::cerr << "Warning: Truncated long string in CSV row " << i << " column " << j << std::endl;
+                        }
+                        new_csv.write(data);
+                    }
+                    new_csv.newLine();
+                } else {
+                    std::cerr << "Warning: CSV row " << i << " has insufficient columns (" << csv[i].size() << ")" << std::endl;
                 }
-                new_csv.newLine();
             }
         }
-        new_csv.save(csv_path);
+        
+        // 一時ファイルに保存してから元ファイルを置き換える
+        String temp_csv_path = csv_path + U".tmp";
+        new_csv.save(temp_csv_path);
+        
+        // 一時ファイルの保存が成功したら元ファイルを置き換え
+        if (FileSystem::Exists(temp_csv_path)) {
+            FileSystem::Remove(csv_path);
+            FileSystem::Copy(temp_csv_path, csv_path);
+            FileSystem::Remove(temp_csv_path);
+        } else {
+            std::cerr << "Failed to save temporary CSV file" << std::endl;
+            return;
+        }
 
         games.erase(games.begin() + idx);
         import_buttons.erase(import_buttons.begin() + idx);
@@ -579,6 +541,385 @@ private:
         }
         scroll_manager.set_strt_idx(strt_idx_double);
         std::cerr << "deleted game " << idx << std::endl;
+    }
+
+    // Helper: current base dir (games/ + optional subfolder + '/')
+    String get_base_dir() const {
+        String base = Unicode::Widen(getData().directories.document_dir) + U"games/";
+        if (subfolder.size()) {
+            base += Unicode::Widen(subfolder) + U"/";
+        }
+        return base;
+    }
+
+    // Reload games list from summary.csv in current folder
+    void load_games() {
+        games.clear();
+        import_buttons.clear();
+        delete_buttons.clear();
+        const String csv_path = get_base_dir() + U"summary.csv";
+        const CSV csv{ csv_path };
+        if (csv) {
+            for (size_t row = 0; row < csv.rows(); ++row) {
+                Game_abstract game_abstract;
+                game_abstract.date = csv[row][0];
+                game_abstract.black_player = csv[row][1];
+                game_abstract.white_player = csv[row][2];
+                game_abstract.memo = csv[row][3];
+                game_abstract.black_score = ParseOr<int32>(csv[row][4], GAME_DISCS_UNDEFINED);
+                game_abstract.white_score = ParseOr<int32>(csv[row][5], GAME_DISCS_UNDEFINED);
+                games.emplace_back(game_abstract);
+            }
+        }
+        reverse(games.begin(), games.end());
+        for (int i = 0; i < (int)games.size(); ++i) {
+            Button button;
+            button.init(0, 0, IMPORT_GAME_BUTTON_WIDTH, IMPORT_GAME_BUTTON_HEIGHT, IMPORT_GAME_BUTTON_RADIUS, language.get("in_out", "import"), 15, getData().fonts.font, getData().colors.white, getData().colors.black);
+            import_buttons.emplace_back(button);
+        }
+        Texture delete_button_image = getData().resources.cross;
+        for (int i = 0; i < (int)games.size(); ++i) {
+            ImageButton button;
+            button.init(0, 0, 15, delete_button_image);
+            delete_buttons.emplace_back(button);
+        }
+        init_scroll_manager();
+    }
+
+    // Enumerate current directory (folders_display only; parent is shown as a separate up icon)
+    void enumerate_current_dir() {
+        folders_display.clear();
+        has_parent = !subfolder.empty();
+        
+        // Use the shared utility function
+        std::vector<String> folders = enumerate_direct_subdirectories(getData().directories.document_dir, subfolder);
+        for (auto& folder : folders) {
+            folders_display.emplace_back(folder);
+        }
+        
+        init_scroll_manager();
+    }
+    
+    // Handle drag and drop operations
+    void handle_drop(const ExplorerDrawResult& res) {
+        if (res.drop_on_parent) {
+            // Handle drop on parent folder - move to parent directory
+            if (res.is_dragging_game && res.dragged_game_index >= 0 && res.dragged_game_index < (int)games.size()) {
+                move_game_to_parent(res.dragged_game_index);
+            } else if (res.is_dragging_folder && !res.dragged_folder_name.empty()) {
+                move_folder_to_parent(res.dragged_folder_name.narrow());
+            }
+        } else {
+            // Handle normal folder drop
+            if (res.is_dragging_game && res.dragged_game_index >= 0 && res.dragged_game_index < (int)games.size()) {
+                // Move game to target folder
+                move_game_to_folder(res.dragged_game_index, res.drop_target_folder.narrow());
+            } else if (res.is_dragging_folder && !res.dragged_folder_name.empty()) {
+                // Move folder to target folder
+                move_folder_to_folder(res.dragged_folder_name.narrow(), res.drop_target_folder.narrow());
+            }
+        }
+    }
+    
+    // Move a game to a different folder (relative to current subfolder)
+    void move_game_to_folder(int game_index, const std::string& target_folder) {
+        if (game_index < 0 || game_index >= (int)games.size()) return;
+        
+        const Game_abstract& game = games[game_index];
+        
+        // Source and target paths
+        String source_base = get_base_dir();
+        String target_base = Unicode::Widen(getData().directories.document_dir) + U"games/";
+        if (!subfolder.empty()) {
+            target_base += Unicode::Widen(subfolder) + U"/";
+        }
+        if (!target_folder.empty()) {
+            target_base += Unicode::Widen(target_folder) + U"/";
+        }
+        
+        std::cerr << "Moving game (relative):" << std::endl;
+        std::cerr << "  Current subfolder: " << subfolder << std::endl;
+        std::cerr << "  Target folder: " << target_folder << std::endl;
+        std::cerr << "  Source base: " << source_base.narrow() << std::endl;
+        std::cerr << "  Target base: " << target_base.narrow() << std::endl;
+        
+        // Ensure target directory exists
+        if (!FileSystem::Exists(target_base)) {
+            FileSystem::CreateDirectories(target_base);
+        }
+        
+        // Move JSON file
+        String source_json = source_base + game.date + U".json";
+        String target_json = target_base + game.date + U".json";
+        if (FileSystem::Exists(source_json)) {
+            FileSystem::Copy(source_json, target_json);
+            FileSystem::Remove(source_json);
+        }
+        
+        // Update CSV files
+        remove_game_from_csv(game_index);
+        add_game_to_target_csv(game, target_base);
+        
+        // Refresh current view
+        load_games();
+        init_scroll_manager();
+        
+        std::cerr << "Moved game " << game.date.narrow() << " to " << target_folder << std::endl;
+    }
+
+    // Move a game to an absolute folder path (from root)
+    void move_game_to_absolute_folder(int game_index, const std::string& target_folder) {
+        if (game_index < 0 || game_index >= (int)games.size()) return;
+        
+        const Game_abstract& game = games[game_index];
+        
+        // Source and target paths
+        String source_base = get_base_dir();
+        String target_base = Unicode::Widen(getData().directories.document_dir) + U"games/";
+        if (!target_folder.empty()) {
+            target_base += Unicode::Widen(target_folder) + U"/";
+        }
+        
+        std::cerr << "Moving game (absolute):" << std::endl;
+        std::cerr << "  Current subfolder: " << subfolder << std::endl;
+        std::cerr << "  Target folder: " << target_folder << std::endl;
+        std::cerr << "  Source base: " << source_base.narrow() << std::endl;
+        std::cerr << "  Target base: " << target_base.narrow() << std::endl;
+        
+        // Ensure target directory exists
+        if (!FileSystem::Exists(target_base)) {
+            FileSystem::CreateDirectories(target_base);
+        }
+        
+        // Move JSON file
+        String source_json = source_base + game.date + U".json";
+        String target_json = target_base + game.date + U".json";
+        if (FileSystem::Exists(source_json)) {
+            FileSystem::Copy(source_json, target_json);
+            FileSystem::Remove(source_json);
+        }
+        
+        // Update CSV files
+        remove_game_from_csv(game_index);
+        add_game_to_target_csv(game, target_base);
+        
+        // Refresh current view
+        load_games();
+        init_scroll_manager();
+        
+        std::cerr << "Moved game " << game.date.narrow() << " to " << target_folder << std::endl;
+    }
+    
+    // Move a folder to a different folder (relative to current subfolder)
+    void move_folder_to_folder(const std::string& source_folder, const std::string& target_folder) {
+        // Build source path: current subfolder + source_folder
+        String source_path = Unicode::Widen(getData().directories.document_dir) + U"games/";
+        if (!subfolder.empty()) {
+            source_path += Unicode::Widen(subfolder) + U"/";
+        }
+        source_path += Unicode::Widen(source_folder);
+        
+        // Build target parent path: current subfolder + target_folder
+        String target_parent = Unicode::Widen(getData().directories.document_dir) + U"games/";
+        if (!subfolder.empty()) {
+            target_parent += Unicode::Widen(subfolder) + U"/";
+        }
+        if (!target_folder.empty()) {
+            target_parent += Unicode::Widen(target_folder) + U"/";
+        }
+        String target_path = target_parent + Unicode::Widen(source_folder);
+        
+        std::cerr << "Moving folder (relative):" << std::endl;
+        std::cerr << "  Current subfolder: " << subfolder << std::endl;
+        std::cerr << "  Source folder: " << source_folder << std::endl;
+        std::cerr << "  Target folder: " << target_folder << std::endl;
+        std::cerr << "  Source path: " << source_path.narrow() << std::endl;
+        std::cerr << "  Target path: " << target_path.narrow() << std::endl;
+        
+        // Check if source and target are different
+        if (source_path == target_path) {
+            std::cerr << "  Source and target are the same, skipping move" << std::endl;
+            return;
+        }
+        
+        // Check if target folder would create a circular reference
+        String source_abs = FileSystem::FullPath(source_path);
+        String target_abs = FileSystem::FullPath(target_parent);
+        if (target_abs.starts_with(source_abs)) {
+            std::cerr << "  Cannot move folder into its own subdirectory" << std::endl;
+            return;
+        }
+        
+        // Ensure target parent directory exists
+        if (!FileSystem::Exists(target_parent)) {
+            FileSystem::CreateDirectories(target_parent);
+        }
+        
+        // Move the entire folder
+        if (FileSystem::Exists(source_path) && !FileSystem::Exists(target_path)) {
+            // Use system command for folder move (more reliable)
+            std::string cmd = "move \"" + source_path.narrow() + "\" \"" + target_path.narrow() + "\"";
+            int result = system(cmd.c_str());
+            
+            if (result == 0) {
+                std::cerr << "  Successfully moved folder " << source_folder << " to " << target_folder << std::endl;
+            } else {
+                std::cerr << "  Failed to move folder (error code: " << result << ")" << std::endl;
+            }
+            
+            // Refresh current view
+            enumerate_current_dir();
+            load_games();
+            init_scroll_manager();
+        } else {
+            if (!FileSystem::Exists(source_path)) {
+                std::cerr << "  Source folder does not exist" << std::endl;
+            } else if (FileSystem::Exists(target_path)) {
+                std::cerr << "  Target folder already exists" << std::endl;
+            }
+        }
+    }
+
+    // Move a folder to an absolute folder path (from root)
+    void move_folder_to_absolute_folder(const std::string& source_folder, const std::string& target_folder) {
+        // Build source path: current subfolder + source_folder
+        String source_path = Unicode::Widen(getData().directories.document_dir) + U"games/";
+        if (!subfolder.empty()) {
+            source_path += Unicode::Widen(subfolder) + U"/";
+        }
+        source_path += Unicode::Widen(source_folder);
+        
+        // Build target parent path based on target_folder
+        String target_parent = Unicode::Widen(getData().directories.document_dir) + U"games/";
+        if (!target_folder.empty()) {
+            target_parent += Unicode::Widen(target_folder) + U"/";
+        }
+        String target_path = target_parent + Unicode::Widen(source_folder);
+        
+        std::cerr << "Moving folder (absolute):" << std::endl;
+        std::cerr << "  Current subfolder: " << subfolder << std::endl;
+        std::cerr << "  Source folder: " << source_folder << std::endl;
+        std::cerr << "  Target folder: " << target_folder << std::endl;
+        std::cerr << "  Source path: " << source_path.narrow() << std::endl;
+        std::cerr << "  Target path: " << target_path.narrow() << std::endl;
+        
+        // Check if source and target are different
+        if (source_path == target_path) {
+            std::cerr << "  Source and target are the same, skipping move" << std::endl;
+            return;
+        }
+        
+        // Check if target folder would create a circular reference
+        String source_abs = FileSystem::FullPath(source_path);
+        String target_abs = FileSystem::FullPath(target_parent);
+        if (target_abs.starts_with(source_abs)) {
+            std::cerr << "  Cannot move folder into its own subdirectory" << std::endl;
+            return;
+        }
+        
+        // Ensure target parent directory exists
+        if (!FileSystem::Exists(target_parent)) {
+            FileSystem::CreateDirectories(target_parent);
+        }
+        
+        // Move the entire folder
+        if (FileSystem::Exists(source_path) && !FileSystem::Exists(target_path)) {
+            // Use system command for folder move (more reliable)
+            std::string cmd = "move \"" + source_path.narrow() + "\" \"" + target_path.narrow() + "\"";
+            int result = system(cmd.c_str());
+            
+            if (result == 0) {
+                std::cerr << "  Successfully moved folder " << source_folder << " to " << target_folder << std::endl;
+            } else {
+                std::cerr << "  Failed to move folder (error code: " << result << ")" << std::endl;
+            }
+            
+            // Refresh current view
+            enumerate_current_dir();
+            load_games();
+            init_scroll_manager();
+        } else {
+            if (!FileSystem::Exists(source_path)) {
+                std::cerr << "  Source folder does not exist" << std::endl;
+            } else if (FileSystem::Exists(target_path)) {
+                std::cerr << "  Target folder already exists" << std::endl;
+            }
+        }
+    }
+
+    // Move a game to parent folder
+    void move_game_to_parent(int game_index) {
+        if (subfolder.empty()) return;  // Already at root
+        
+        // Get parent folder path
+        std::string parent_folder = subfolder;
+        if (!parent_folder.empty() && parent_folder.back() == '/') parent_folder.pop_back();
+        size_t pos = parent_folder.find_last_of('/');
+        if (pos == std::string::npos) parent_folder.clear();
+        else parent_folder = parent_folder.substr(0, pos);
+        
+        move_game_to_absolute_folder(game_index, parent_folder);
+    }
+    
+    // Move a folder to parent folder
+    void move_folder_to_parent(const std::string& folder_name) {
+        if (subfolder.empty()) return;  // Already at root
+        
+        // Get parent folder path
+        std::string parent_folder = subfolder;
+        if (!parent_folder.empty() && parent_folder.back() == '/') parent_folder.pop_back();
+        size_t pos = parent_folder.find_last_of('/');
+        if (pos == std::string::npos) parent_folder.clear();
+        else parent_folder = parent_folder.substr(0, pos);
+        
+        move_folder_to_absolute_folder(folder_name, parent_folder);
+    }
+    
+    // Remove game from current CSV
+    void remove_game_from_csv(int game_index) {
+        const String csv_path = get_base_dir() + U"summary.csv";
+        CSV csv{ csv_path };
+        CSV new_csv;
+        
+        int csv_row_to_remove = (int)games.size() - 1 - game_index;
+        
+        for (int i = 0; i < (int)csv.rows(); ++i) {
+            if (i != csv_row_to_remove && csv[i].size() >= 6) {
+                for (int j = 0; j < 6; ++j) {
+                    new_csv.write(csv[i][j]);
+                }
+                new_csv.newLine();
+            }
+        }
+        new_csv.save(csv_path);
+    }
+    
+    // Add game to target folder's CSV
+    void add_game_to_target_csv(const Game_abstract& game, const String& target_base) {
+        String target_csv = target_base + U"summary.csv";
+        CSV csv{ target_csv };
+        
+        // Create new CSV with existing data plus new game
+        CSV new_csv;
+        for (int i = 0; i < (int)csv.rows(); ++i) {
+            if (csv[i].size() >= 6) {
+                for (int j = 0; j < 6; ++j) {
+                    new_csv.write(csv[i][j]);
+                }
+                new_csv.newLine();
+            }
+        }
+        
+        // Add new game entry
+        new_csv.write(game.date);
+        new_csv.write(game.black_player);
+        new_csv.write(game.white_player);
+        new_csv.write(game.memo);
+        new_csv.write(game.black_score == GAME_DISCS_UNDEFINED ? U"" : ToString(game.black_score));
+        new_csv.write(game.white_score == GAME_DISCS_UNDEFINED ? U"" : ToString(game.white_score));
+        new_csv.newLine();
+        
+        new_csv.save(target_csv);
     }
 };
 

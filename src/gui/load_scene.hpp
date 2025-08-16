@@ -94,13 +94,35 @@ int init_resources_load(Resources* resources, Settings* settings, bool *stop_loa
     Texture unchecked(Unicode::Widen(EXE_DIRECTORY_PATH + "resources/img/unchecked.png"), TextureDesc::Mipped);
     Texture laser_pointer(Unicode::Widen(EXE_DIRECTORY_PATH + "resources/img/laser_pointer.png"), TextureDesc::Mipped);
     Texture cross(Unicode::Widen(EXE_DIRECTORY_PATH + "resources/img/cross.png"), TextureDesc::Mipped);
-    if (checkbox.isEmpty() || unchecked.isEmpty() || laser_pointer.isEmpty() || cross.isEmpty()) {
+    Texture flip_horizontal(Unicode::Widen(EXE_DIRECTORY_PATH + "resources/img/flip_horizontal.png"), TextureDesc::Mipped);
+    Texture flip_vertical(Unicode::Widen(EXE_DIRECTORY_PATH + "resources/img/flip_vertical.png"), TextureDesc::Mipped);
+    Texture rotate_cw(Unicode::Widen(EXE_DIRECTORY_PATH + "resources/img/rotate_cw.png"), TextureDesc::Mipped);
+    Texture rotate_ccw(Unicode::Widen(EXE_DIRECTORY_PATH + "resources/img/rotate_ccw.png"), TextureDesc::Mipped);
+    Texture rotate_180(Unicode::Widen(EXE_DIRECTORY_PATH + "resources/img/rotate_180.png"), TextureDesc::Mipped);
+    Texture mirror_white_line(Unicode::Widen(EXE_DIRECTORY_PATH + "resources/img/mirror_white_line.png"), TextureDesc::Mipped);
+    Texture mirror_black_line(Unicode::Widen(EXE_DIRECTORY_PATH + "resources/img/mirror_black_line.png"), TextureDesc::Mipped);
+    Texture check(Unicode::Widen(EXE_DIRECTORY_PATH + "resources/img/check.png"), TextureDesc::Mipped);
+    Texture folder(Unicode::Widen(EXE_DIRECTORY_PATH + "resources/img/folder.png"), TextureDesc::Mipped);
+    if (checkbox.isEmpty() || unchecked.isEmpty() || laser_pointer.isEmpty() || cross.isEmpty() ||
+        flip_horizontal.isEmpty() || flip_vertical.isEmpty() || rotate_cw.isEmpty() || rotate_ccw.isEmpty() ||
+        rotate_180.isEmpty() || mirror_white_line.isEmpty() || mirror_black_line.isEmpty() ||
+        check.isEmpty() || folder.isEmpty()
+    ) {
         return ERR_LOAD_TEXTURE_NOT_LOADED;
     }
     resources->checkbox = checkbox;
     resources->unchecked = unchecked;
     resources->laser_pointer = laser_pointer;
     resources->cross = cross;
+    resources->flip_horizontal = flip_horizontal;
+    resources->flip_vertical = flip_vertical;
+    resources->rotate_cw = rotate_cw;
+    resources->rotate_ccw = rotate_ccw;
+    resources->rotate_180 = rotate_180;
+    resources->mirror_white_line = mirror_white_line;
+    resources->mirror_black_line = mirror_black_line;
+    resources->check = check;
+    resources->folder = folder;
 
     if (*stop_loading) {
         return ERR_LOAD_TERMINATED;

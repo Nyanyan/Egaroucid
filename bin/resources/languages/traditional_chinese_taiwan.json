@@ -74,6 +74,7 @@
         "book_deviate_with_transcript": "訓練特定棋譜到開局庫",
         "input_transcripts_with_line_breaks": "直接輸入棋譜 或 通過拖放添加",
         "transcript_error": "棋譜錯誤",
+        "book_store": "將當前遊戲記錄新增至開局庫",
         "book_fix": "開局庫修正",
         "book_fix_edax": "類Edax開局庫修正機制",
         "learning": "計算中...",
@@ -86,6 +87,7 @@
         "error_per_move": "落子的誤差",
         "error_sum": "積分誤差",
         "error_leaf": "葉節點誤差",
+        "modifying_book_by_right_click": "編輯開局庫（按 Esc 返回）",
         "changed_value": "評分值",
         "book_merge": "開局庫合併",
         "merge": "合併",
@@ -152,6 +154,7 @@
         "color": "顏色",
         "input_game": "匯入對局",
         "no_game_available": "無可用對局",
+        "empty_folder": "此資料夾為空",
         "import": "匯入",
         "export_main": "儲存主線變化",
         "export_until_this_board": "儲存至當前局面",
@@ -163,7 +166,15 @@
         "directory_not_found": "找不到資料夾",
         "board_image": "編輯與儲存棋盤圖片",
         "you_can_paste_with_ctrl_v": "可使用 Ctrl+V 貼上",
-        "you_can_drag_and_drop_game_file": "可拖放對局檔進行匯入"
+        "you_can_drag_and_drop_game_file": "可拖放對局檔進行匯入",
+        "save_subfolder": "目標資料夾",
+        "load_subfolder": "從子資料夾載入（位於 games/ 下）",
+        "games_root": "（games 根目錄）",
+        "new_folder": "新增資料夾",
+        "create": "建立",
+        "save_here": "儲存到這裡",
+        "saving": "正在儲存...",
+        "open_explorer": "在檔案總管中開啟"
     },
     "display": {
         "display": "顯示",
@@ -177,7 +188,9 @@
             "opening": "定石",
             "next_move": "下一步",
             "next_move_change_view": "切換顯示方式",
-            "show_book_accuracy": "開局庫準確度"
+            "show_book_accuracy": "開局庫準確度",
+            "show_value_when_ai_calculating": "在AI回合中顯示",
+            "show_hint_level": "等級"
         },
         "disc": {
             "display_on_disc": "顯示於棋子上",
@@ -210,13 +223,18 @@
         "generate_random_board": {
             "generate_random_board": "生成隨機棋盤",
             "generate": "生成",
-            "generate_n_moves": "步數"
+            "generate_n_moves": "步數",
+            "score_range": "分數範圍 ±"
         },
         "convert": {
             "convert": "轉換視角",
             "rotate_180": "旋轉180度",
+            "rotate_90_clock": "旋轉90度順時針",
+            "rotate_90_anti_clock": "旋轉90度逆時針",
             "white_line": "白棋視角",
-            "black_line": "黑棋視角"
+            "black_line": "黑棋視角",
+            "horizontal": "左右翻轉",
+            "vertical": "上下翻轉"
         },
         "ai_operation": {
             "ai_operation": "AI操作",

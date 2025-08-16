@@ -37,9 +37,9 @@
      inkscape:snap-bbox-edge-midpoints="true"
      inkscape:bbox-nodes="true"
      inkscape:bbox-paths="true"
-     inkscape:zoom="0.45254834"
-     inkscape:cx="478.40193"
-     inkscape:cy="4205.0756"
+     inkscape:zoom="0.32"
+     inkscape:cx="-229.6875"
+     inkscape:cy="550"
      inkscape:window-width="2104"
      inkscape:window-height="2041"
      inkscape:window-x="764"
@@ -51,6 +51,46 @@
      inkscape:deskcolor="#d1d1d1" />
   <defs
      id="defs2">
+    <marker
+       style="overflow:visible"
+       id="marker4"
+       refX="0"
+       refY="0"
+       orient="auto-start-reverse"
+       inkscape:stockid="Wide arrow"
+       markerWidth="1"
+       markerHeight="1"
+       viewBox="0 0 1 1"
+       inkscape:isstock="true"
+       inkscape:collect="always"
+       preserveAspectRatio="xMidYMid">
+      <path
+         style="fill:none;stroke:context-stroke;stroke-width:1;stroke-linecap:butt"
+         d="M 3,-3 0,0 3,3"
+         transform="rotate(180,0.125,0)"
+         sodipodi:nodetypes="ccc"
+         id="path4" />
+    </marker>
+    <marker
+       style="overflow:visible"
+       id="ArrowWide"
+       refX="0"
+       refY="0"
+       orient="auto-start-reverse"
+       inkscape:stockid="Wide arrow"
+       markerWidth="1"
+       markerHeight="1"
+       viewBox="0 0 1 1"
+       inkscape:isstock="true"
+       inkscape:collect="always"
+       preserveAspectRatio="xMidYMid">
+      <path
+         style="fill:none;stroke:context-stroke;stroke-width:1;stroke-linecap:butt"
+         d="M 3,-3 0,0 3,3"
+         transform="rotate(180,0.125,0)"
+         sodipodi:nodetypes="ccc"
+         id="path3" />
+    </marker>
     <linearGradient
        id="linearGradient4"
        inkscape:collect="always">
@@ -84,7 +124,7 @@
        fx="91.445312"
        fy="1446.3542"
        r="74.999992"
-       gradientTransform="translate(0,-1.4713077e-4)"
+       gradientTransform="translate(-26.196747,-1004.3546)"
        gradientUnits="userSpaceOnUse"
        spreadMethod="pad" />
     <radialGradient
@@ -96,9 +136,189 @@
        fx="91.445312"
        fy="1446.3542"
        r="74.999992"
-       gradientTransform="matrix(1.4155687,0,0,1.4155687,-38.001814,-601.05975)"
+       gradientTransform="matrix(1.4155687,0,0,1.4155687,-64.198561,-1605.4142)"
        gradientUnits="userSpaceOnUse"
        spreadMethod="pad" />
+    <marker
+       style="overflow:visible"
+       id="marker4-5"
+       refX="0"
+       refY="0"
+       orient="auto-start-reverse"
+       inkscape:stockid="Wide arrow"
+       markerWidth="1"
+       markerHeight="1"
+       viewBox="0 0 1 1"
+       inkscape:isstock="true"
+       inkscape:collect="always"
+       preserveAspectRatio="xMidYMid">
+      <path
+         style="fill:none;stroke:context-stroke;stroke-width:1;stroke-linecap:butt"
+         d="M 3,-3 0,0 3,3"
+         transform="rotate(180,0.125,0)"
+         sodipodi:nodetypes="ccc"
+         id="path4-1" />
+    </marker>
+    <marker
+       style="overflow:visible"
+       id="marker4-5-6"
+       refX="0"
+       refY="0"
+       orient="auto-start-reverse"
+       inkscape:stockid="Wide arrow"
+       markerWidth="1"
+       markerHeight="1"
+       viewBox="0 0 1 1"
+       inkscape:isstock="true"
+       inkscape:collect="always"
+       preserveAspectRatio="xMidYMid">
+      <path
+         style="fill:none;stroke:context-stroke;stroke-width:1;stroke-linecap:butt"
+         d="M 3,-3 0,0 3,3"
+         transform="rotate(180,0.125,0)"
+         sodipodi:nodetypes="ccc"
+         id="path4-1-1" />
+    </marker>
+    <marker
+       style="overflow:visible"
+       id="ArrowWide-3"
+       refX="0"
+       refY="0"
+       orient="auto-start-reverse"
+       inkscape:stockid="Wide arrow"
+       markerWidth="1"
+       markerHeight="1"
+       viewBox="0 0 1 1"
+       inkscape:isstock="true"
+       inkscape:collect="always"
+       preserveAspectRatio="xMidYMid">
+      <path
+         style="fill:none;stroke:context-stroke;stroke-width:1;stroke-linecap:butt"
+         d="M 3,-3 0,0 3,3"
+         transform="rotate(180,0.125,0)"
+         sodipodi:nodetypes="ccc"
+         id="path3-2" />
+    </marker>
+    <marker
+       style="overflow:visible"
+       id="marker4-2"
+       refX="0"
+       refY="0"
+       orient="auto-start-reverse"
+       inkscape:stockid="Wide arrow"
+       markerWidth="1"
+       markerHeight="1"
+       viewBox="0 0 1 1"
+       inkscape:isstock="true"
+       inkscape:collect="always"
+       preserveAspectRatio="xMidYMid">
+      <path
+         style="fill:none;stroke:context-stroke;stroke-width:1;stroke-linecap:butt"
+         d="M 3,-3 0,0 3,3"
+         transform="rotate(180,0.125,0)"
+         sodipodi:nodetypes="ccc"
+         id="path4-16" />
+    </marker>
+    <marker
+       style="overflow:visible"
+       id="marker4-5-7"
+       refX="0"
+       refY="0"
+       orient="auto-start-reverse"
+       inkscape:stockid="Wide arrow"
+       markerWidth="1"
+       markerHeight="1"
+       viewBox="0 0 1 1"
+       inkscape:isstock="true"
+       inkscape:collect="always"
+       preserveAspectRatio="xMidYMid">
+      <path
+         style="fill:none;stroke:context-stroke;stroke-width:1;stroke-linecap:butt"
+         d="M 3,-3 0,0 3,3"
+         transform="rotate(180,0.125,0)"
+         sodipodi:nodetypes="ccc"
+         id="path4-1-6" />
+    </marker>
+    <marker
+       style="overflow:visible"
+       id="ArrowWide-3-9"
+       refX="0"
+       refY="0"
+       orient="auto-start-reverse"
+       inkscape:stockid="Wide arrow"
+       markerWidth="1"
+       markerHeight="1"
+       viewBox="0 0 1 1"
+       inkscape:isstock="true"
+       inkscape:collect="always"
+       preserveAspectRatio="xMidYMid">
+      <path
+         style="fill:none;stroke:context-stroke;stroke-width:1;stroke-linecap:butt"
+         d="M 3,-3 0,0 3,3"
+         transform="rotate(180,0.125,0)"
+         sodipodi:nodetypes="ccc"
+         id="path3-2-2" />
+    </marker>
+    <marker
+       style="overflow:visible"
+       id="marker4-2-7"
+       refX="0"
+       refY="0"
+       orient="auto-start-reverse"
+       inkscape:stockid="Wide arrow"
+       markerWidth="1"
+       markerHeight="1"
+       viewBox="0 0 1 1"
+       inkscape:isstock="true"
+       inkscape:collect="always"
+       preserveAspectRatio="xMidYMid">
+      <path
+         style="fill:none;stroke:context-stroke;stroke-width:1;stroke-linecap:butt"
+         d="M 3,-3 0,0 3,3"
+         transform="rotate(180,0.125,0)"
+         sodipodi:nodetypes="ccc"
+         id="path4-16-9" />
+    </marker>
+    <marker
+       style="overflow:visible"
+       id="ArrowWide-3-9-3"
+       refX="0"
+       refY="0"
+       orient="auto-start-reverse"
+       inkscape:stockid="Wide arrow"
+       markerWidth="1"
+       markerHeight="1"
+       viewBox="0 0 1 1"
+       inkscape:isstock="true"
+       inkscape:collect="always"
+       preserveAspectRatio="xMidYMid">
+      <path
+         style="fill:none;stroke:context-stroke;stroke-width:1;stroke-linecap:butt"
+         d="M 3,-3 0,0 3,3"
+         transform="rotate(180,0.125,0)"
+         sodipodi:nodetypes="ccc"
+         id="path3-2-2-1" />
+    </marker>
+    <marker
+       style="overflow:visible"
+       id="marker4-2-7-2"
+       refX="0"
+       refY="0"
+       orient="auto-start-reverse"
+       inkscape:stockid="Wide arrow"
+       markerWidth="1"
+       markerHeight="1"
+       viewBox="0 0 1 1"
+       inkscape:isstock="true"
+       inkscape:collect="always"
+       preserveAspectRatio="xMidYMid">
+      <path
+         style="fill:none;stroke:context-stroke;stroke-width:1;stroke-linecap:butt"
+         d="M 3,-3 0,0 3,3"
+         transform="rotate(180,0.125,0)"
+         sodipodi:nodetypes="ccc"
+         id="path4-16-9-3" />
+    </marker>
   </defs>
   <g
      inkscape:label="Layer 1"
@@ -107,8 +327,8 @@
     <ellipse
        style="fill:url(#radialGradient2-0);stroke:none;stroke-width:3.4697"
        id="path1-8"
-       cx="91.445312"
-       cy="1446.3542"
+       cx="65.248566"
+       cy="441.99979"
        rx="104.43279"
        ry="104.4328"
        inkscape:export-filename="laser_pointer.png"
@@ -119,8 +339,8 @@
        id="rect846"
        width="1000"
        height="720"
-       x="-8.8817842e-16"
-       y="3.5527137e-15"
+       x="886.35419"
+       y="-253.0002"
        inkscape:export-filename="C:\github\egaroucid\Egaroucid5\img\design.png"
        inkscape:export-xdpi="25.4"
        inkscape:export-ydpi="25.4" />
@@ -150,7 +370,7 @@
        transform="rotate(-90)" />
     <g
        id="g6106"
-       transform="matrix(0.85592715,0,0,0.8559275,133.95197,-335.47153)"
+       transform="matrix(0.85592715,0,0,0.8559275,1020.3061,-588.47173)"
        inkscape:export-filename="C:\github\egaroucid\Egaroucid5\img\design.png"
        inkscape:export-xdpi="25.4"
        inkscape:export-ydpi="25.4">
@@ -281,8 +501,8 @@
        id="rect6130-7-0-7-08"
        width="920"
        height="30"
-       x="40"
-       y="0"
+       x="926.35419"
+       y="-253.0002"
        inkscape:export-filename="C:\github\egaroucid\Egaroucid5\img\design.png"
        inkscape:export-xdpi="25.4"
        inkscape:export-ydpi="25.4" />
@@ -291,8 +511,8 @@
        id="rect6130-7-0-7-0-1"
        width="200"
        height="30"
-       x="10"
-       y="560"
+       x="896.35419"
+       y="306.99979"
        inkscape:export-filename="C:\github\egaroucid\Egaroucid5\img\design.png"
        inkscape:export-xdpi="25.4"
        inkscape:export-ydpi="25.4" />
@@ -301,8 +521,8 @@
        id="rect6130-7-0-7-0-1-8"
        width="200"
        height="30"
-       x="210"
-       y="560"
+       x="1096.3541"
+       y="306.99979"
        inkscape:export-filename="C:\github\egaroucid\Egaroucid5\img\design.png"
        inkscape:export-xdpi="25.4"
        inkscape:export-ydpi="25.4" />
@@ -311,8 +531,8 @@
        id="rect6130-7-0-7-0-1-8-9"
        width="580"
        height="30"
-       x="410"
-       y="560"
+       x="1296.3541"
+       y="306.99979"
        inkscape:export-filename="C:\github\egaroucid\Egaroucid5\img\design.png"
        inkscape:export-xdpi="25.4"
        inkscape:export-ydpi="25.4" />
@@ -321,8 +541,8 @@
        id="rect6130-1-3"
        width="480"
        height="40"
-       x="49.489498"
-       y="30"
+       x="935.84369"
+       y="-223.0002"
        inkscape:export-filename="C:\github\egaroucid\Egaroucid5\img\design.png"
        inkscape:export-xdpi="25.4"
        inkscape:export-ydpi="25.4" />
@@ -331,8 +551,8 @@
        id="rect6130-1-3-4"
        width="480"
        height="40"
-       x="-550.88959"
-       y="10"
+       x="-297.88937"
+       y="896.35419"
        transform="rotate(-90)"
        inkscape:export-filename="C:\github\egaroucid\Egaroucid5\img\design.png"
        inkscape:export-xdpi="25.4"
@@ -342,16 +562,16 @@
        id="rect8454"
        width="90"
        height="30"
-       x="0"
-       y="3.5527137e-15"
+       x="886.35419"
+       y="-253.0002"
        inkscape:export-filename="C:\github\egaroucid\Egaroucid5\img\design.png"
        inkscape:export-xdpi="25.4"
        inkscape:export-ydpi="25.4" />
     <text
        xml:space="preserve"
        style="font-style:normal;font-weight:normal;font-size:20px;line-height:1.25;font-family:sans-serif;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.264583"
-       x="3.75"
-       y="21.992188"
+       x="890.10419"
+       y="-231.00801"
        id="text9490"
        inkscape:export-filename="C:\github\egaroucid\Egaroucid5\img\design.png"
        inkscape:export-xdpi="25.4"
@@ -359,15 +579,15 @@
          sodipodi:role="line"
          id="tspan9488"
          style="font-size:20px;stroke-width:0.264583"
-         x="3.75"
-         y="21.992188">ファイル</tspan></text>
+         x="890.10419"
+         y="-231.00801">ファイル</tspan></text>
     <rect
        style="fill:#a3a3a3;fill-opacity:1;stroke:none;stroke-width:0.531092;stroke-opacity:1"
        id="rect8454-0"
        width="90"
        height="30"
-       x="90"
-       y="3.5527137e-15"
+       x="976.35419"
+       y="-253.0002"
        inkscape:export-filename="C:\github\egaroucid\Egaroucid5\img\design.png"
        inkscape:export-xdpi="25.4"
        inkscape:export-ydpi="25.4" />
@@ -376,8 +596,8 @@
        id="rect8454-0-2"
        width="90"
        height="30"
-       x="180"
-       y="3.5527137e-15"
+       x="1066.3541"
+       y="-253.0002"
        inkscape:export-filename="C:\github\egaroucid\Egaroucid5\img\design.png"
        inkscape:export-xdpi="25.4"
        inkscape:export-ydpi="25.4" />
@@ -386,8 +606,8 @@
        id="rect8454-0-2-6"
        width="90"
        height="30"
-       x="270"
-       y="3.5527137e-15"
+       x="1156.3541"
+       y="-253.0002"
        inkscape:export-filename="C:\github\egaroucid\Egaroucid5\img\design.png"
        inkscape:export-xdpi="25.4"
        inkscape:export-ydpi="25.4" />
@@ -396,8 +616,8 @@
        id="rect8454-0-2-6-7"
        width="90"
        height="30"
-       x="450"
-       y="3.5527137e-15"
+       x="1336.3541"
+       y="-253.0002"
        inkscape:export-filename="C:\github\egaroucid\Egaroucid5\img\design.png"
        inkscape:export-xdpi="25.4"
        inkscape:export-ydpi="25.4" />
@@ -406,8 +626,8 @@
        id="rect8454-0-2-6-7-2"
        width="90"
        height="30"
-       x="540"
-       y="3.5527137e-15"
+       x="1426.3541"
+       y="-253.0002"
        inkscape:export-filename="C:\github\egaroucid\Egaroucid5\img\design.png"
        inkscape:export-xdpi="25.4"
        inkscape:export-ydpi="25.4" />
@@ -416,16 +636,16 @@
        id="rect8454-0-2-6-7-2-9"
        width="90"
        height="30"
-       x="630"
-       y="3.5527137e-15"
+       x="1516.3541"
+       y="-253.0002"
        inkscape:export-filename="C:\github\egaroucid\Egaroucid5\img\design.png"
        inkscape:export-xdpi="25.4"
        inkscape:export-ydpi="25.4" />
     <text
        xml:space="preserve"
        style="font-style:normal;font-weight:normal;font-size:20px;line-height:1.25;font-family:sans-serif;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.264583"
-       x="115.19531"
-       y="22.109375"
+       x="1001.5495"
+       y="-230.89082"
        id="text9490-8"
        inkscape:export-filename="C:\github\egaroucid\Egaroucid5\img\design.png"
        inkscape:export-xdpi="25.4"
@@ -433,13 +653,13 @@
          sodipodi:role="line"
          id="tspan9488-6"
          style="font-size:20px;stroke-width:0.264583"
-         x="115.19531"
-         y="22.109375">対局</tspan></text>
+         x="1001.5495"
+         y="-230.89082">対局</tspan></text>
     <text
        xml:space="preserve"
        style="font-style:normal;font-weight:normal;font-size:20px;line-height:1.25;font-family:sans-serif;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.264583"
-       x="205.19531"
-       y="22.148438"
+       x="1091.5494"
+       y="-230.85176"
        id="text9490-8-2"
        inkscape:export-filename="C:\github\egaroucid\Egaroucid5\img\design.png"
        inkscape:export-xdpi="25.4"
@@ -447,13 +667,13 @@
          sodipodi:role="line"
          id="tspan9488-6-0"
          style="font-size:20px;stroke-width:0.264583"
-         x="205.19531"
-         y="22.148438">設定</tspan></text>
+         x="1091.5494"
+         y="-230.85176">設定</tspan></text>
     <text
        xml:space="preserve"
        style="font-style:normal;font-weight:normal;font-size:20px;line-height:1.25;font-family:sans-serif;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.264583"
-       x="295.19531"
-       y="22.148438"
+       x="1181.5494"
+       y="-230.85176"
        id="text9490-8-2-3"
        inkscape:export-filename="C:\github\egaroucid\Egaroucid5\img\design.png"
        inkscape:export-xdpi="25.4"
@@ -461,23 +681,23 @@
          sodipodi:role="line"
          id="tspan9488-6-0-8"
          style="font-size:20px;stroke-width:0.264583"
-         x="295.19531"
-         y="22.148438">学習</tspan></text>
+         x="1181.5494"
+         y="-230.85176">学習</tspan></text>
     <rect
        style="fill:#a3a3a3;fill-opacity:1;stroke:none;stroke-width:0.531092;stroke-opacity:1"
        id="rect8454-0-2-6-9"
        width="90"
        height="30"
-       x="360"
-       y="3.5527137e-15"
+       x="1246.3541"
+       y="-253.0002"
        inkscape:export-filename="C:\github\egaroucid\Egaroucid5\img\design.png"
        inkscape:export-xdpi="25.4"
        inkscape:export-ydpi="25.4" />
     <text
        xml:space="preserve"
        style="font-style:normal;font-weight:normal;font-size:20px;line-height:1.25;font-family:sans-serif;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.264583"
-       x="375.66406"
-       y="22.109375"
+       x="1262.0182"
+       y="-230.89082"
        id="text9490-8-2-3-0"
        inkscape:export-filename="C:\github\egaroucid\Egaroucid5\img\design.png"
        inkscape:export-xdpi="25.4"
@@ -485,13 +705,13 @@
          sodipodi:role="line"
          id="tspan9488-6-0-8-3"
          style="font-size:20px;stroke-width:0.264583"
-         x="375.66406"
-         y="22.109375">入出力</tspan></text>
+         x="1262.0182"
+         y="-230.89082">入出力</tspan></text>
     <text
        xml:space="preserve"
        style="font-style:normal;font-weight:normal;font-size:20px;line-height:1.25;font-family:sans-serif;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.264583"
-       x="485.07812"
-       y="22.148438"
+       x="1371.4323"
+       y="-230.85176"
        id="text9490-8-2-3-4"
        inkscape:export-filename="C:\github\egaroucid\Egaroucid5\img\design.png"
        inkscape:export-xdpi="25.4"
@@ -499,13 +719,13 @@
          sodipodi:role="line"
          id="tspan9488-6-0-8-5"
          style="font-size:20px;stroke-width:0.264583"
-         x="485.07812"
-         y="22.148438">←</tspan></text>
+         x="1371.4323"
+         y="-230.85176">←</tspan></text>
     <text
        xml:space="preserve"
        style="font-style:normal;font-weight:normal;font-size:20px;line-height:1.25;font-family:sans-serif;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.264583"
-       x="574.84375"
-       y="22.148438"
+       x="1461.1979"
+       y="-230.85176"
        id="text9490-8-2-3-4-7"
        inkscape:export-filename="C:\github\egaroucid\Egaroucid5\img\design.png"
        inkscape:export-xdpi="25.4"
@@ -513,13 +733,13 @@
          sodipodi:role="line"
          id="tspan9488-6-0-8-5-8"
          style="font-size:20px;stroke-width:0.264583"
-         x="574.84375"
-         y="22.148438">→</tspan></text>
+         x="1461.1979"
+         y="-230.85176">→</tspan></text>
     <text
        xml:space="preserve"
        style="font-style:normal;font-weight:normal;font-size:20px;line-height:1.25;font-family:sans-serif;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.264583"
-       x="654.25781"
-       y="22.109375"
+       x="1540.6119"
+       y="-230.89082"
        id="text32581"
        inkscape:export-filename="C:\github\egaroucid\Egaroucid5\img\design.png"
        inkscape:export-xdpi="25.4"
@@ -527,15 +747,15 @@
          sodipodi:role="line"
          id="tspan32579"
          style="font-size:20px;stroke-width:0.264583"
-         x="654.25781"
-         y="22.109375">中断</tspan></text>
+         x="1540.6119"
+         y="-230.89082">中断</tspan></text>
     <rect
        style="fill:#a3a3a3;fill-opacity:1;stroke:none;stroke-width:0.531092;stroke-opacity:1"
        id="rect8454-0-2-6-7-2-9-3"
        width="90"
        height="30"
-       x="720"
-       y="3.5527137e-15"
+       x="1606.3541"
+       y="-253.0002"
        inkscape:export-filename="C:\github\egaroucid\Egaroucid5\img\design.png"
        inkscape:export-xdpi="25.4"
        inkscape:export-ydpi="25.4" />
@@ -544,16 +764,16 @@
        id="rect8454-0-2-6-7-2-9-3-5"
        width="90"
        height="30"
-       x="900"
-       y="0"
+       x="1786.3541"
+       y="-253.0002"
        inkscape:export-filename="C:\github\egaroucid\Egaroucid5\img\design.png"
        inkscape:export-xdpi="25.4"
        inkscape:export-ydpi="25.4" />
     <text
        xml:space="preserve"
        style="font-style:normal;font-weight:normal;font-size:20px;line-height:1.25;font-family:sans-serif;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.264583"
-       x="724.64844"
-       y="22.1875"
+       x="1611.0026"
+       y="-230.8127"
        id="text32581-7"
        inkscape:export-filename="C:\github\egaroucid\Egaroucid5\img\design.png"
        inkscape:export-xdpi="25.4"
@@ -561,23 +781,23 @@
          sodipodi:role="line"
          id="tspan32579-0"
          style="font-size:20px;stroke-width:0.264583"
-         x="724.64844"
-         y="22.1875">変換1</tspan></text>
+         x="1611.0026"
+         y="-230.8127">変換1</tspan></text>
     <rect
        style="fill:#a3a3a3;fill-opacity:1;stroke:none;stroke-width:0.531092;stroke-opacity:1"
        id="rect8454-0-2-6-7-2-9-3-6"
        width="90"
        height="30"
-       x="810"
-       y="0"
+       x="1696.3541"
+       y="-253.0002"
        inkscape:export-filename="C:\github\egaroucid\Egaroucid5\img\design.png"
        inkscape:export-xdpi="25.4"
        inkscape:export-ydpi="25.4" />
     <text
        xml:space="preserve"
        style="font-style:normal;font-weight:normal;font-size:20px;line-height:1.25;font-family:sans-serif;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.264583"
-       x="814.64844"
-       y="22.1875"
+       x="1701.0026"
+       y="-230.8127"
        id="text32581-7-2"
        inkscape:export-filename="C:\github\egaroucid\Egaroucid5\img\design.png"
        inkscape:export-xdpi="25.4"
@@ -585,13 +805,13 @@
          sodipodi:role="line"
          id="tspan32579-0-8"
          style="font-size:20px;stroke-width:0.264583"
-         x="814.64844"
-         y="22.1875">変換2</tspan></text>
+         x="1701.0026"
+         y="-230.8127">変換2</tspan></text>
     <text
        xml:space="preserve"
        style="font-style:normal;font-weight:normal;font-size:20px;line-height:1.25;font-family:sans-serif;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.264583"
-       x="914.41406"
-       y="23.085938"
+       x="1800.7682"
+       y="-229.91426"
        id="text32581-7-9"
        inkscape:export-filename="C:\github\egaroucid\Egaroucid5\img\design.png"
        inkscape:export-xdpi="25.4"
@@ -599,21 +819,21 @@
          sodipodi:role="line"
          id="tspan32579-0-9"
          style="font-size:20px;stroke-width:0.264583"
-         x="914.41406"
-         y="23.085938">ヘルプ</tspan></text>
+         x="1800.7682"
+         y="-229.91426">ヘルプ</tspan></text>
     <rect
        style="fill:#a3a3a3;fill-opacity:1;stroke:none;stroke-width:0.484589;stroke-opacity:1"
        id="rect37745"
        width="450"
        height="305"
-       x="540"
-       y="245"
+       x="1426.3541"
+       y="-8.0002022"
        inkscape:export-filename="C:\github\egaroucid\Egaroucid5\img\design.png"
        inkscape:export-xdpi="25.4"
        inkscape:export-ydpi="25.4" />
     <g
        id="g5049"
-       transform="matrix(1.0425532,0,0,1,-21.276596,10)"
+       transform="matrix(1.0425532,0,0,1,865.07757,-243.0002)"
        inkscape:export-filename="C:\github\egaroucid\Egaroucid5\img\design.png"
        inkscape:export-xdpi="25.4"
        inkscape:export-ydpi="25.4">
@@ -650,8 +870,8 @@
     <text
        xml:space="preserve"
        style="font-size:20px;line-height:1.25;font-family:sans-serif;stroke-width:0.264583"
-       x="90.039062"
-       y="582.22656"
+       x="976.39325"
+       y="329.22635"
        id="text51069-4"
        inkscape:export-filename="C:\github\egaroucid\Egaroucid5\img\design.png"
        inkscape:export-xdpi="25.4"
@@ -659,13 +879,13 @@
          sodipodi:role="line"
          id="tspan51067-9"
          style="font-size:20px;stroke-width:0.264583"
-         x="90.039062"
-         y="582.22656">先手</tspan></text>
+         x="976.39325"
+         y="329.22635">先手</tspan></text>
     <text
        xml:space="preserve"
        style="font-size:20px;line-height:1.25;font-family:sans-serif;stroke-width:0.264583"
-       x="290.11719"
-       y="582.42188"
+       x="1176.4713"
+       y="329.42166"
        id="text51069-4-0"
        inkscape:export-filename="C:\github\egaroucid\Egaroucid5\img\design.png"
        inkscape:export-xdpi="25.4"
@@ -673,13 +893,13 @@
          sodipodi:role="line"
          id="tspan51067-9-7"
          style="font-size:20px;stroke-width:0.264583"
-         x="290.11719"
-         y="582.42188">後手</tspan></text>
+         x="1176.4713"
+         y="329.42166">後手</tspan></text>
     <text
        xml:space="preserve"
        style="font-size:20px;line-height:1.25;font-family:sans-serif;stroke-width:0.264583"
-       x="682.30469"
-       y="582.42188"
+       x="1568.6588"
+       y="329.42166"
        id="text51069-4-0-6"
        inkscape:export-filename="C:\github\egaroucid\Egaroucid5\img\design.png"
        inkscape:export-xdpi="25.4"
@@ -687,14 +907,14 @@
          sodipodi:role="line"
          id="tspan51067-9-7-1"
          style="font-size:20px;stroke-width:0.264583"
-         x="682.30469"
-         y="582.42188">メモ</tspan></text>
+         x="1568.6588"
+         y="329.42166">メモ</tspan></text>
     <g
        id="g5054"
        inkscape:export-filename="C:\github\egaroucid\Egaroucid5\img\design.png"
        inkscape:export-xdpi="25.4"
        inkscape:export-ydpi="25.4"
-       transform="matrix(1.0425532,0,0,1,-21.276596,0)">
+       transform="matrix(1.0425532,0,0,1,865.07757,-253.0002)">
       <rect
          style="fill:#7ea6c9;fill-opacity:1;stroke:none;stroke-width:0.41629;stroke-opacity:1"
          id="rect6130-7-0-7-0"
@@ -717,8 +937,8 @@
     <text
        xml:space="preserve"
        style="font-size:20px;line-height:1.25;font-family:sans-serif;stroke-width:0.264583"
-       x="734.04865"
-       y="398.82803"
+       x="1620.4028"
+       y="145.82784"
        id="text51069-5"
        inkscape:export-filename="C:\github\egaroucid\Egaroucid5\img\design.png"
        inkscape:export-xdpi="25.4"
@@ -726,13 +946,13 @@
          sodipodi:role="line"
          id="tspan51067-2"
          style="font-size:20px;stroke-width:0.264583"
-         x="734.04865"
-         y="398.82803">グラフ</tspan></text>
+         x="1620.4028"
+         y="145.82784">グラフ</tspan></text>
     <text
        xml:space="preserve"
        style="font-size:30px;line-height:1.25;font-family:sans-serif;stroke-width:0.264583"
-       x="578.00781"
-       y="73.789062"
+       x="1464.3619"
+       y="-179.21114"
        id="text63193"
        inkscape:export-filename="C:\github\egaroucid\Egaroucid5\img\design.png"
        inkscape:export-xdpi="25.4"
@@ -740,13 +960,13 @@
          sodipodi:role="line"
          id="tspan63191"
          style="stroke-width:0.264583"
-         x="578.00781"
-         y="73.789062">手番</tspan></text>
+         x="1464.3619"
+         y="-179.21114">手番</tspan></text>
     <text
        xml:space="preserve"
        style="font-size:30px;line-height:1.25;font-family:sans-serif;stroke-width:0.264583"
-       x="578.00781"
-       y="109.25781"
+       x="1464.3619"
+       y="-143.74239"
        id="text63193-9"
        inkscape:export-filename="C:\github\egaroucid\Egaroucid5\img\design.png"
        inkscape:export-xdpi="25.4"
@@ -754,13 +974,13 @@
          sodipodi:role="line"
          id="tspan63191-4"
          style="stroke-width:0.264583"
-         x="578.00781"
-         y="109.25781">定石名: X定石</tspan></text>
+         x="1464.3619"
+         y="-143.74239">定石名: X定石</tspan></text>
     <text
        xml:space="preserve"
        style="font-size:30px;line-height:1.25;font-family:sans-serif;stroke-width:0.264583"
-       x="578.00781"
-       y="142.96875"
+       x="1464.3619"
+       y="-110.03146"
        id="text63193-9-3"
        inkscape:export-filename="C:\github\egaroucid\Egaroucid5\img\design.png"
        inkscape:export-xdpi="25.4"
@@ -768,41 +988,41 @@
          sodipodi:role="line"
          id="tspan63191-4-5"
          style="stroke-width:0.264583"
-         x="578.00781"
-         y="142.96875">黒: N</tspan></text>
+         x="1464.3619"
+         y="-110.03146">黒: N</tspan></text>
     <text
        xml:space="preserve"
        style="font-size:30px;line-height:1.25;font-family:sans-serif;stroke-width:0.264583"
-       x="576.25"
-       y="179.49219"
+       x="1462.6041"
+       y="-73.508018"
        id="text63193-9-3-3"
        inkscape:export-filename="C:\github\egaroucid\Egaroucid5\img\design.png"
        inkscape:export-xdpi="25.4"
        inkscape:export-ydpi="25.4"><tspan
          sodipodi:role="line"
          style="stroke-width:0.264583"
-         x="576.25"
-         y="179.49219"
+         x="1462.6041"
+         y="-73.508018"
          id="tspan83999">中盤A手読み</tspan></text>
     <text
        xml:space="preserve"
        style="font-size:30px;line-height:1.25;font-family:sans-serif;stroke-width:0.264583"
-       x="578.47656"
-       y="214.49219"
+       x="1464.8307"
+       y="-38.508015"
        id="text63193-9-3-3-5"
        inkscape:export-filename="C:\github\egaroucid\Egaroucid5\img\design.png"
        inkscape:export-xdpi="25.4"
        inkscape:export-ydpi="25.4"><tspan
          sodipodi:role="line"
          style="stroke-width:0.264583"
-         x="578.47656"
-         y="214.49219"
+         x="1464.8307"
+         y="-38.508015"
          id="tspan83999-6">終盤A手読み</tspan></text>
     <text
        xml:space="preserve"
        style="font-size:30px;line-height:1.25;font-family:sans-serif;stroke-width:0.264583"
-       x="685.3125"
-       y="144.02344"
+       x="1571.6666"
+       y="-108.97677"
        id="text63193-9-3-8"
        inkscape:export-filename="C:\github\egaroucid\Egaroucid5\img\design.png"
        inkscape:export-xdpi="25.4"
@@ -810,45 +1030,52 @@
          sodipodi:role="line"
          id="tspan63191-4-5-0"
          style="stroke-width:0.264583"
-         x="685.3125"
-         y="144.02344">白: M</tspan></text>
+         x="1571.6666"
+         y="-108.97677">白: M</tspan></text>
     <rect
-       style="fill:#87ceeb;stroke-width:0.499999;fill-opacity:1"
+       style="fill:#87ceeb;fill-opacity:1;stroke-width:0.499999"
        id="rect10405"
        width="142.8866"
        height="142.8866"
-       x="32.659794"
-       y="914.47418"
+       x="4.1244383"
+       y="5.6134033"
        inkscape:export-filename="C:\github\egaroucid\Egaroucid5\src\resources\checked.png"
        inkscape:export-xdpi="35.549999"
        inkscape:export-ydpi="35.549999" />
     <path
        style="fill:none;stroke:#00008b;stroke-width:20;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
-       d="m 57.974062,985.93535 22.453607,34.02055 70.762881,-77.56696"
+       d="M 29.438706,77.074571 51.892313,111.09512 122.65519,33.528161"
        id="path10948"
        inkscape:export-filename="C:\github\egaroucid\Egaroucid5\src\resources\checked.png"
        inkscape:export-xdpi="35.549999"
        inkscape:export-ydpi="35.549999" />
+    <path
+       style="fill:none;stroke:#ffffff;stroke-width:20;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
+       d="m -176.06849,105.05478 22.4536,34.02055 70.76288,-77.566958"
+       id="path10948-0"
+       inkscape:export-filename="check.png"
+       inkscape:export-xdpi="59.682297"
+       inkscape:export-ydpi="59.682297" />
     <rect
        style="fill:#b4b4b4;fill-opacity:1;stroke-width:0.499999"
        id="rect10405-0"
        width="142.8866"
        height="142.8866"
-       x="-9.8593998"
-       y="1142.9142"
+       x="4.1244369"
+       y="157.59018"
        inkscape:export-filename="C:\Users\yaman\Desktop\unchecked.png"
        inkscape:export-xdpi="35.549999"
        inkscape:export-ydpi="35.549999" />
     <path
        style="fill:none;stroke:#dcdcdc;stroke-width:20;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
-       d="m 108.17218,1167.7692 -93.176563,93.1766"
+       d="m 122.15601,182.44519 -93.176558,93.1766"
        id="path1113-9"
        inkscape:export-filename="C:\Users\yaman\Desktop\unchecked.png"
        inkscape:export-xdpi="35.549999"
        inkscape:export-ydpi="35.549999" />
     <path
        style="fill:none;stroke:#dcdcdc;stroke-width:20;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
-       d="M 108.1722,1260.9458 14.995596,1167.7692"
+       d="M 122.15603,275.62179 28.979431,182.44519"
        id="path1113-9-8"
        inkscape:export-filename="C:\Users\yaman\Desktop\unchecked.png"
        inkscape:export-xdpi="35.549999"
@@ -858,21 +1085,21 @@
        id="rect10405-0-0"
        width="142.8866"
        height="142.8866"
-       x="251.08958"
-       y="1148.0271"
+       x="154.23602"
+       y="157.59019"
        inkscape:export-filename="cross.png"
        inkscape:export-xdpi="35.549999"
        inkscape:export-ydpi="35.549999" />
     <path
-       style="fill:#919191;stroke:#ffffff;stroke-width:20;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1;fill-opacity:1"
-       d="m 369.12116,1172.8821 -93.17656,93.1766"
+       style="fill:#919191;fill-opacity:1;stroke:#ffffff;stroke-width:20;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
+       d="m 272.2676,182.44519 -93.17656,93.1766"
        id="path1113-9-9"
        inkscape:export-filename="C:\Users\yaman\Desktop\unchecked.png"
        inkscape:export-xdpi="35.549999"
        inkscape:export-ydpi="35.549999" />
     <path
-       style="fill:#919191;stroke:#ffffff;stroke-width:20;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1;fill-opacity:1"
-       d="m 369.12118,1266.0587 -93.1766,-93.1766"
+       style="fill:#919191;fill-opacity:1;stroke:#ffffff;stroke-width:20;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
+       d="m 272.26762,275.62179 -93.1766,-93.1766"
        id="path1113-9-8-4"
        inkscape:export-filename="C:\Users\yaman\Desktop\unchecked.png"
        inkscape:export-xdpi="35.549999"
@@ -880,9 +1107,289 @@
     <ellipse
        style="fill:url(#radialGradient2);stroke:none;stroke-width:2.4511"
        id="path1"
-       cx="91.445312"
-       cy="1446.3542"
+       cx="65.248566"
+       cy="441.99979"
        rx="73.774445"
        ry="73.774452" />
+    <rect
+       style="fill:#ffffff;fill-opacity:0;stroke:none;stroke-width:0.325738"
+       id="rect1"
+       width="199.67426"
+       height="199.67426"
+       x="197.28549"
+       y="377.69812"
+       inkscape:export-filename="flip_horizontal.png"
+       inkscape:export-xdpi="36.482792"
+       inkscape:export-ydpi="36.482792" />
+    <path
+       style="fill:none;fill-opacity:1;stroke:#000000;stroke-width:15;stroke-dasharray:none;stroke-opacity:1;marker-start:url(#ArrowWide);marker-end:url(#marker4)"
+       d="m 216.44335,477.32854 161.35854,0.41341"
+       id="path2"
+       sodipodi:nodetypes="cc" />
+    <rect
+       style="fill:none;fill-opacity:1;stroke:none;stroke-width:0.325738"
+       id="rect1-82"
+       width="199.67426"
+       height="199.67426"
+       x="-298.18542"
+       y="592.93121"
+       inkscape:export-filename="flip_horizontal.png"
+       inkscape:export-xdpi="32.565041"
+       inkscape:export-ydpi="32.565041" />
+    <rect
+       style="fill:#ffffff;fill-opacity:0;stroke:none;stroke-width:0.325738"
+       id="rect1-8"
+       width="199.67426"
+       height="199.67426"
+       x="377.69812"
+       y="-608.94409"
+       transform="rotate(90)"
+       inkscape:export-filename="flip_vertical.png"
+       inkscape:export-xdpi="36.482792"
+       inkscape:export-ydpi="36.482792" />
+    <path
+       style="fill:none;fill-opacity:1;stroke:#000000;stroke-width:15;stroke-dasharray:none;stroke-opacity:1;marker-start:url(#ArrowWide-3);marker-end:url(#marker4-2)"
+       d="m 509.31369,396.85598 -0.41341,161.35854"
+       id="path2-5"
+       sodipodi:nodetypes="cc" />
+    <rect
+       style="fill:#ffffff;fill-opacity:0;stroke:none;stroke-width:0.325738"
+       id="rect1-8-5"
+       width="199.67426"
+       height="199.67426"
+       x="1019.3942"
+       y="-399.74457"
+       transform="rotate(90)"
+       inkscape:export-filename="mirror_white_line.png"
+       inkscape:export-xdpi="36.482792"
+       inkscape:export-ydpi="36.482792" />
+    <path
+       style="fill:none;fill-opacity:1;stroke:#000000;stroke-width:15;stroke-dasharray:none;stroke-opacity:1;marker-start:url(#ArrowWide-3-9);marker-end:url(#marker4-2-7)"
+       d="M 357.10252,1062.3287 242.71243,1176.1341"
+       id="path2-5-4"
+       sodipodi:nodetypes="cc" />
+    <rect
+       style="fill:#ffffff;fill-opacity:0;stroke:none;stroke-width:0.325738"
+       id="rect1-8-5-3"
+       width="199.67426"
+       height="199.67426"
+       x="1019.3942"
+       y="409.50885"
+       transform="matrix(0,1,1,0,0,0)"
+       inkscape:export-filename="mirror_black_line.png"
+       inkscape:export-xdpi="36.482792"
+       inkscape:export-ydpi="36.482792" />
+    <path
+       style="fill:none;fill-opacity:1;stroke:#000000;stroke-width:15;stroke-dasharray:none;stroke-opacity:1;marker-start:url(#ArrowWide-3-9-3);marker-end:url(#marker4-2-7-2)"
+       d="M 452.15091,1062.3287 566.541,1176.1341"
+       id="path2-5-4-4"
+       sodipodi:nodetypes="cc" />
+    <rect
+       style="fill:#ffffff;fill-opacity:0;stroke:none;stroke-width:0.325738"
+       id="rect1-7"
+       width="199.67426"
+       height="199.67426"
+       x="197.87326"
+       y="592.94354"
+       inkscape:export-filename="rotate_cw.png"
+       inkscape:export-xdpi="36.482792"
+       inkscape:export-ydpi="36.482792" />
+    <path
+       style="fill:none;fill-opacity:1;stroke:#000000;stroke-width:15;stroke-dasharray:none;stroke-opacity:1;marker-end:url(#marker4-5)"
+       d="m 212.33137,635.88164 c 120.45473,0 120.45473,0 120.45473,120.45474"
+       id="path2-1"
+       sodipodi:nodetypes="cc" />
+    <rect
+       style="fill:#ffffff;fill-opacity:0;stroke:none;stroke-width:0.325738"
+       id="rect1-7-1"
+       width="199.67426"
+       height="199.67426"
+       x="-610.7088"
+       y="592.94354"
+       transform="scale(-1,1)"
+       inkscape:export-filename="rotate_ccw.png"
+       inkscape:export-xdpi="36.482792"
+       inkscape:export-ydpi="36.482792" />
+    <path
+       style="fill:none;fill-opacity:1;stroke:#000000;stroke-width:15;stroke-dasharray:none;stroke-opacity:1;marker-end:url(#marker4-5-7)"
+       d="m 596.25071,635.88164 c -120.45473,0 -120.45473,0 -120.45473,120.45474"
+       id="path2-1-8"
+       sodipodi:nodetypes="cc" />
+    <rect
+       style="fill:#ffffff;fill-opacity:0;stroke:none;stroke-width:0.325738"
+       id="rect1-7-4"
+       width="199.67426"
+       height="199.67426"
+       x="197.87326"
+       y="806.16888"
+       inkscape:export-filename="rotate_180.png"
+       inkscape:export-xdpi="36.482792"
+       inkscape:export-ydpi="36.482792" />
+    <path
+       style="fill:none;fill-opacity:1;stroke:#000000;stroke-width:15;stroke-dasharray:none;stroke-opacity:1;marker-end:url(#marker4-5-6)"
+       d="m 245.23008,824.19945 c 155.2407,3e-5 154.65605,129.22371 0,129.22371"
+       id="path2-1-2"
+       sodipodi:nodetypes="cc" />
+    <path
+       style="fill:none;fill-opacity:1;stroke:#000000;stroke-width:25;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:none"
+       d="m -198.3483,692.76834 -82.95299,0 42.81,-42.81"
+       id="path5"
+       sodipodi:nodetypes="ccc" />
+    <path
+       style="fill:none;fill-opacity:1;stroke:#000000;stroke-width:25;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:none"
+       d="m -198.3483,692.76834 h 82.95299 l -42.81,42.81"
+       id="path5-7"
+       sodipodi:nodetypes="ccc" />
+    <rect
+       style="fill:none;fill-opacity:1;stroke:none;stroke-width:0.325738"
+       id="rect1-82-9"
+       width="199.67426"
+       height="199.67426"
+       x="-792.60547"
+       y="-86.488953"
+       inkscape:export-filename="flip_vertical.png"
+       inkscape:export-xdpi="32.565041"
+       inkscape:export-ydpi="32.565041"
+       transform="rotate(-90)" />
+    <path
+       style="fill:none;fill-opacity:1;stroke:#000000;stroke-width:25;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:none"
+       d="m 13.348174,692.76835 v 82.95299 l -42.81,-42.81"
+       id="path5-5"
+       sodipodi:nodetypes="ccc" />
+    <path
+       style="fill:none;fill-opacity:1;stroke:#000000;stroke-width:25;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:none"
+       d="m 13.348174,692.76835 v -82.95299 l 42.81,42.81"
+       id="path5-7-43"
+       sodipodi:nodetypes="ccc" />
+    <rect
+       style="fill:none;fill-opacity:1;stroke:none;stroke-width:0.325738"
+       id="rect1-82-2"
+       width="199.67426"
+       height="199.67426"
+       x="1263.9218"
+       y="-298.18542"
+       inkscape:export-filename="mirror_white.png"
+       inkscape:export-xdpi="36.482792"
+       inkscape:export-ydpi="36.482792"
+       transform="matrix(0,1,1,0,0,0)" />
+    <path
+       style="fill:none;fill-opacity:1;stroke:#000000;stroke-width:25;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:none"
+       d="m -198.34827,1363.7589 -73.2633,72.8499 v -60.5425"
+       id="path5-7-1"
+       sodipodi:nodetypes="ccc" />
+    <path
+       style="fill:none;fill-opacity:1;stroke:#000000;stroke-width:25;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:none"
+       d="m -198.34827,1363.7589 73.2633,-72.8499 v 60.5425"
+       id="path5-7-1-6"
+       sodipodi:nodetypes="ccc" />
+    <rect
+       style="fill:none;fill-opacity:1;stroke:none;stroke-width:0.325738"
+       id="rect1-82-2-8"
+       width="199.67426"
+       height="199.67426"
+       x="-1463.5959"
+       y="-83.143387"
+       inkscape:export-filename="mirror_black_line.png"
+       inkscape:export-xdpi="36.482792"
+       inkscape:export-ydpi="36.482792"
+       transform="rotate(-90)" />
+    <path
+       style="fill:none;fill-opacity:1;stroke:#000000;stroke-width:25;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:none"
+       d="m 16.69396,1363.7588 -73.2633,-72.8499 v 60.5425"
+       id="path5-7-1-5"
+       sodipodi:nodetypes="ccc" />
+    <path
+       style="fill:none;fill-opacity:1;stroke:#000000;stroke-width:25;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:none"
+       d="m 16.69396,1363.7588 73.2633,72.8499 v -60.5425"
+       id="path5-7-1-6-7"
+       sodipodi:nodetypes="ccc" />
+    <rect
+       style="fill:none;fill-opacity:1;stroke:none;stroke-width:0.325738"
+       id="rect1-82-1-6"
+       width="199.67426"
+       height="199.67426"
+       x="-298.18542"
+       y="805.34204"
+       inkscape:export-filename="rotate_cw.png"
+       inkscape:export-xdpi="36.482792"
+       inkscape:export-ydpi="36.482792" />
+    <path
+       style="fill:none;fill-opacity:1;stroke:#000000;stroke-width:25;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:none"
+       d="m -177.87961,924.05405 42.81,42.81 0.2923,-123.368 -129.73508,0"
+       id="path5-7-4"
+       sodipodi:nodetypes="cccc" />
+    <rect
+       style="fill:none;fill-opacity:1;stroke:none;stroke-width:0.325738"
+       id="rect1-82-1-6-6"
+       width="199.67426"
+       height="199.67426"
+       x="-129.03108"
+       y="805.34003"
+       inkscape:export-filename="rotate_ccw.png"
+       inkscape:export-xdpi="36.482792"
+       inkscape:export-ydpi="36.482792"
+       transform="scale(-1,1)" />
+    <path
+       style="fill:none;fill-opacity:1;stroke:#000000;stroke-width:25;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:none"
+       d="m 8.7252761,924.05204 -42.8100001,42.81 -0.2923,-123.368 H 95.358054"
+       id="path5-7-4-1"
+       sodipodi:nodetypes="cccc" />
+    <rect
+       style="fill:none;fill-opacity:1;stroke:none;stroke-width:0.325738"
+       id="rect1-82-1-6-2"
+       width="199.67426"
+       height="199.67426"
+       x="1027.4928"
+       y="99.807724"
+       inkscape:export-filename="rotate_180.png"
+       inkscape:export-xdpi="36.482792"
+       inkscape:export-ydpi="36.482792"
+       transform="rotate(90)" />
+    <path
+       style="fill:none;fill-opacity:1;stroke:#000000;stroke-width:25;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:none"
+       d="m -218.51975,1147.7986 -42.81,42.81 123.368,0.2923 v -129.7351 h -123.368"
+       id="path5-7-4-3"
+       sodipodi:nodetypes="ccccc" />
+    <rect
+       style="fill:none;fill-opacity:1;stroke:none;stroke-width:0.325738"
+       id="rect1-82-0"
+       width="199.67426"
+       height="199.67426"
+       x="-840.01923"
+       y="605.43121"
+       inkscape:export-filename="flip_horizontal.png"
+       inkscape:export-xdpi="32.565041"
+       inkscape:export-ydpi="32.565041" />
+    <path
+       style="fill:none;fill-opacity:1;stroke:#000000;stroke-width:25;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:none"
+       d="m -740.18207,705.26828 -82.95299,4.23334 42.81,-42.81"
+       id="path5-9"
+       sodipodi:nodetypes="ccc" />
+    <path
+       style="fill:none;fill-opacity:1;stroke:#000000;stroke-width:25;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:none"
+       d="m -740.18207,705.2683 82.95299,-4.23334 -42.81,42.81"
+       id="path5-7-48"
+       sodipodi:nodetypes="ccc" />
+    <rect
+       style="fill:none;fill-opacity:1;stroke:none;stroke-width:0.325738"
+       id="rect1-82-0-5"
+       width="199.67426"
+       height="199.67426"
+       x="615.03229"
+       y="369.42807"
+       inkscape:export-filename="flip_vertical.png"
+       inkscape:export-xdpi="32.565041"
+       inkscape:export-ydpi="32.565041"
+       transform="rotate(90)" />
+    <path
+       style="fill:none;fill-opacity:1;stroke:#000000;stroke-width:25;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:none"
+       d="m -469.26514,714.86943 -4.23334,-82.95299 42.81,42.81"
+       id="path5-9-5"
+       sodipodi:nodetypes="ccc" />
+    <path
+       style="fill:none;fill-opacity:1;stroke:#000000;stroke-width:25;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:none"
+       d="m -469.26516,714.86943 4.23334,82.95299 -42.81,-42.81"
+       id="path5-7-48-1"
+       sodipodi:nodetypes="ccc" />
   </g>
 </svg>

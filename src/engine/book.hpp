@@ -1481,6 +1481,57 @@ class Book {
             change(nb, value, level);
         }
 
+        inline void change(Board b, int value, int level, int leaf_move, int leaf_value, int leaf_level) {
+            std::lock_guard<std::mutex> lock(mtx);
+            if (-HW2 <= value && value <= HW2) {
+                if (b.is_end()) { // game over
+                    if (contain(b)) {
+                        Board bb = representative_board(b);
+                        book[bb].value = value;
+                        book[bb].level = level;
+                    } else {
+                        b.pass();
+                        if (contain(b)) {
+                            Board bb = representative_board(b);
+                            book[bb].value = -value;
+                            book[bb].level = level;
+                        } else {
+                            b.pass();
+                            Book_elem elem;
+                            elem.value = value;
+                            elem.level = level;
+                            elem.leaf.move = MOVE_UNDEFINED;
+                            elem.leaf.value = SCORE_UNDEFINED;
+                            elem.leaf.level = LEVEL_UNDEFINED;
+                            register_symmetric_book(b, elem);
+                        }
+                    }
+                } else {
+                    if (b.get_legal() == 0) { // just pass
+                        b.pass();
+                        value *= -1;
+                    }
+                    if (contain(b)) {
+                        int idx;
+                        Board bb = representative_board(b, &idx);
+                        book[bb].value = value;
+                        book[bb].level = level;
+                        book[bb].leaf.move = convert_coord_from_representative_board(leaf_move, idx);
+                        book[bb].leaf.value = leaf_value;
+                        book[bb].leaf.level = leaf_level;
+                    } else {
+                        Book_elem elem;
+                        elem.value = value;
+                        elem.level = level;
+                        elem.leaf.move = leaf_move;
+                        elem.leaf.value = leaf_value;
+                        elem.leaf.level = leaf_level;
+                        register_symmetric_book(b, elem);
+                    }
+                }
+            }
+        }
+
         /*
             @brief delete a board
 
@@ -1620,6 +1671,7 @@ class Book {
             std::cerr << "negamaxed book fixed " << n_fix << " boards seen " << n_seen << " boards size " << book.size() << std::endl;
         }
 
+        // flag keeped boards
         void reduce_book_flag_moves(Board board, int max_depth, int max_error_per_move, int remaining_error, uint64_t *n_flags, std::unordered_set<Board, Book_hash> &keep_list, bool *doing) {
             if (!*(doing)) {
                 return;
@@ -1661,6 +1713,7 @@ class Book {
             if (keep_list.find(unique_board) != keep_list.end()) {
                 return;
             }
+            // not in book
             if (!contain(&board)) {
                 return;
             }
@@ -1682,7 +1735,7 @@ class Book {
                 if (link_error <= max_error_per_move && link_error <= remaining_error) {
                     calc_flip(&flip, &board, link.policy);
                     board.move_board(&flip);
-                        reduce_book_flag_moves(board, max_depth, max_error_per_move, remaining_error - std::min(0, link_error), n_flags, keep_list, doing);
+                        reduce_book_flag_moves(board, max_depth, max_error_per_move, remaining_error - std::max(0, link_error), n_flags, keep_list, doing);
                     board.undo_board(&flip);
                 }
             }
@@ -1716,7 +1769,7 @@ class Book {
                     board.move_board(&flip);
                         bool is_end = board.is_end();
                         bool passed = board.get_legal() == 0;
-                        bool will_be_deleted = false;
+                        bool will_be_deleted = keep_list.find(representative_board(board)) == keep_list.end();
                         if (is_end) {
                             will_be_deleted = keep_list.find(representative_board(board)) == keep_list.end();
                             board.pass();
@@ -1731,12 +1784,19 @@ class Book {
                             if (book_elem.leaf.value < link.value) {
                                 book_elem.leaf.value = link.value;
                                 book_elem.leaf.move = link.policy;
-                                if (passed) {
+                                if (is_end) {
+                                    book_elem.leaf.level = get(board).level;
+                                    if (book_elem.leaf.level == LEVEL_UNDEFINED) {
+                                        board.pass();
+                                            book_elem.leaf.level = get(board).level;
+                                        board.pass();
+                                    }
+                                } else if (passed) {
                                     board.pass();
-                                }
-                                book_elem.leaf.level = get(board).level;
-                                if (passed) {
+                                        book_elem.leaf.level = get(board).level;
                                     board.pass();
+                                } else {
+                                    book_elem.leaf.level = get(board).level;
                                 }
                                 leaf_updated = true;
                             }

@@ -74,6 +74,7 @@
         "book_deviate_with_transcript": "Book Deviate with Transcripts",
         "input_transcripts_with_line_breaks": "Input transcripts with line breaks / Drag & Drop a text file",
         "transcript_error": "Transcript Error",
+        "book_store": "Add This Transcript to Book",
         "book_fix": "Book Fix",
         "book_fix_edax": "Edax-like Book Fix",
         "learning": "Calculating...",
@@ -86,6 +87,7 @@
         "error_per_move": "Errors per Move",
         "error_sum": "Integration Errors",
         "error_leaf": "Leaf Errors",
+        "modifying_book_by_right_click": "Editing Book (Esc to return)",
         "changed_value": "Value",
         "book_merge": "Merge Book",
         "merge": "Merge",
@@ -152,6 +154,7 @@
         "color": "Color",
         "input_game": "Input Game",
         "no_game_available": "No Game Available",
+        "empty_folder": "This folder is empty",
         "import": "Import",
         "export_main": "Save main line",
         "export_until_this_board": "Save till set position",
@@ -163,7 +166,15 @@
         "directory_not_found": "Directory not found",
         "board_image": "Edit and Save Board Image",
         "you_can_paste_with_ctrl_v": "You can paste with Ctrl+V",
-        "you_can_drag_and_drop_game_file": "You can drag & drop game file"
+        "you_can_drag_and_drop_game_file": "You can drag & drop game file",
+        "save_subfolder": "Destination Folder",
+        "load_subfolder": "Load from subfolder (under games/)",
+        "games_root": "(games root)",
+        "new_folder": "New folder",
+        "create": "Create",
+        "save_here": "Save here",
+        "saving": "Saving...",
+        "open_explorer": "Open in Explorer"
     },
     "display": {
         "display": "Display",
@@ -177,7 +188,9 @@
             "opening": "Opening",
             "next_move": "Next Move",
             "next_move_change_view": "Change View",
-            "show_book_accuracy": "Book Accuracy"
+            "show_book_accuracy": "Book Accuracy",
+            "show_value_when_ai_calculating": "Display on AI's turn",
+            "show_hint_level": "Level"
         },
         "disc": {
             "display_on_disc": "On Disc",
@@ -210,13 +223,18 @@
         "generate_random_board": {
             "generate_random_board": "Generate Random Board",
             "generate": "Generate",
-            "generate_n_moves": "Moves"
+            "generate_n_moves": "Moves",
+            "score_range": "Score Range ±"
         },
         "convert": {
             "convert": "Convert",
             "rotate_180": "Rotate 180",
+            "rotate_90_clock": "Rotate 90 CW",
+            "rotate_90_anti_clock": "Rotate 90 CCW",
             "white_line": "White Line",
-            "black_line": "Black Line"
+            "black_line": "Black Line",
+            "horizontal": "Horizontal",
+            "vertical": "Vertical"
         },
         "ai_operation": {
             "ai_operation": "AI Operation",

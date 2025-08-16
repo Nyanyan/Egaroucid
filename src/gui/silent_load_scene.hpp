@@ -57,7 +57,7 @@ void init_default_settings(const Directories* directories, const Resources* reso
     settings->accept_ai_loss = false;
     settings->max_loss = 2;
     settings->loss_percentage = 30;
-    settings->pause_when_pass = false;
+    settings->pause_when_pass = true;
     settings->force_specified_openings = false;
     settings->show_next_move_change_view = false;
     settings->change_color_type = false;
@@ -78,6 +78,9 @@ void init_default_settings(const Directories* directories, const Resources* reso
     settings->show_ai_focus = false;
     settings->pv_length = 7;
     settings->screenshot_saving_dir = directories->document_dir + "screenshots/";
+    settings->show_value_when_ai_calculating = false;
+    settings->generate_random_board_score_range = 64;
+    settings->show_hint_level = true;
 }
 
 int init_settings_import_int(JSON &json, String key, int* res) {
@@ -435,6 +438,15 @@ void init_settings(const Directories* directories, const Resources* resources, S
     }
     if (init_settings_import_bool(setting_json, U"force_specified_openings", &settings->force_specified_openings) != ERR_OK) {
         std::cerr << "err48" << std::endl;
+    }
+    if (init_settings_import_bool(setting_json, U"show_value_when_ai_calculating", &settings->show_value_when_ai_calculating) != ERR_OK) {
+        std::cerr << "err49" << std::endl;
+    }
+    if (init_settings_import_int(setting_json, U"generate_random_board_score_range", &settings->generate_random_board_score_range) != ERR_OK) {
+        std::cerr << "err50" << std::endl;
+    }
+    if (init_settings_import_bool(setting_json, U"show_hint_level", &settings->show_hint_level) != ERR_OK) {
+        std::cerr << "err51" << std::endl;
     }
 }
 

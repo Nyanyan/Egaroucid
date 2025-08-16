@@ -135,6 +135,22 @@ public:
         use_image = false;
     }
 
+    void init_button(Texture t, String s, bool *c) {
+        clear();
+        click_supporter.init();
+        mode = MENU_MODE_BUTTON;
+        has_child = false;
+        is_active = false;
+        was_active = false;
+        str = s;
+        bar_changeable = false;
+        is_clicked_p = c;
+        is_clicked = false;
+        *is_clicked_p = is_clicked;
+        use_image = true;
+        image = t;
+    }
+
     void init_bar(String s, int *c, int d, int mn, int mx) {
         clear();
         click_supporter.init();
@@ -338,6 +354,8 @@ public:
         }
         if (use_image) {
             image.scaled((double)(rect.h - 2 * menu_image_offset_y) / (double)image.height()).draw(rect.x + rect.h - menu_offset_y, rect.y + menu_image_offset_y);
+            double x_offset = (double)(rect.h - 2 * menu_image_offset_y) / (double)image.height() * (double)image.width();
+            font(str).draw(font_size, rect.x + rect.h - menu_offset_y + x_offset, rect.y + menu_offset_y, menu_font_color);
         } else {
             font(str).draw(font_size, rect.x + rect.h - menu_offset_y, rect.y + menu_offset_y, menu_font_color);
         }
@@ -426,6 +444,9 @@ public:
         if (use_image) {
             h = rect.h - 2 * menu_image_offset_y;
             w = (double)h * (double)image.width() / (double)image.height() + menu_image_offset_y * 2; // margin: menu_image_offset_y * 2
+            int ascii_count = count_ascii(str);
+            w += (str.size() - ascii_count) * font_size; // zenkaku
+            w += region_ascii(str, font_size, lang_name, font); // hankaku
         } else {
             // RectF r = font(str).region(font_size, Point{ 0, 0 }); // slow
             // h = r.h;
@@ -454,6 +475,7 @@ public:
     void clear() {
         has_child = false;
         children.clear();
+        str = U"";
     }
 
     int menu_mode() {
