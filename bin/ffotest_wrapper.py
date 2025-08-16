@@ -10,9 +10,12 @@ tasks = [ # is_egaroucid, start, end, n_threads, hash_level, exe, CPU, revision,
     #[False, 40, 59, 32, 25, 'versions/edax_4_5_2/wEdax-x64-modern.exe',                                     'Core_i9-13900K', 'x64_modern',     '010_ffo40_59_Core_i9-13900K_edax_x64_modern.txt'],
     #[False, 40, 59, 32, 25, 'versions/edax_4_5_2/wEdax-x64.exe',                                            'Core_i9-13900K', 'x64',            '011_ffo40_59_Core_i9-13900K_edax_x64.txt'],
 
-    [False, 40, 59, 32, 25, 'versions/edax_4_5_3/bin/wEdax-x64-modern.exe',                                     'Core_i9-13900K', 'x64_modern',     '010_ffo40_59_Core_i9-13900K_edax_x64_modern.txt'],
-    [False, 40, 59, 32, 25, 'versions/edax_4_5_3/bin/wEdax-x64.exe',                                            'Core_i9-13900K', 'x64',            '011_ffo40_59_Core_i9-13900K_edax_x64.txt'],
-    
+    # [False, 40, 59, 32, 25, 'versions/edax_4_5_3/bin/wEdax-x64-modern.exe',                                     'Core_i9-13900K', 'x64_modern',     '010_ffo40_59_Core_i9-13900K_edax_x64_modern.txt'],
+    # [False, 40, 59, 32, 25, 'versions/edax_4_5_3/bin/wEdax-x64.exe',                                            'Core_i9-13900K', 'x64',            '011_ffo40_59_Core_i9-13900K_edax_x64.txt'],
+
+    [False, 40, 59, 32, 25, 'versions/edax_4_5_5/bin/wEdax-x86-64-v3.exe',                                  'Core_i9-13900K', 'v3',     '010_ffo40_59_Core_i9-13900K_edax_x64_v3.txt'],
+    [False, 40, 59, 32, 25, 'versions/edax_4_5_5/bin/wEdax-x86-64.exe',                                     'Core_i9-13900K', '-',      '011_ffo40_59_Core_i9-13900K_edax_x64.txt'],
+
     #[False, 40, 59, 32, 25, 'versions/edax_4_6/wEdax-x86-64-v3.exe',                                     'Core_i9-13900K', 'v3',        '010_ffo40_59_Core_i9-13900K_edax_v3.txt'],
     #[False, 40, 59, 32, 25, 'versions/edax_4_6/wEdax-x86-64-v2.exe',                                     'Core_i9-13900K', 'v2',        '011_ffo40_59_Core_i9-13900K_edax_v2.txt'],
     #[False, 40, 59, 32, 25, 'versions/edax_4_6/wEdax-x86-64.exe',                                        'Core_i9-13900K', '-',        '012_ffo40_59_Core_i9-13900K_edax.txt'],
@@ -28,9 +31,9 @@ tasks = [ # is_egaroucid, start, end, n_threads, hash_level, exe, CPU, revision,
 # Core i9-11900K
 tasks = [ # is_egaroucid, start, end, n_threads, hash_level, exe, out_file
     #40-59
-    #[True,  40, 59, 26, 25, 'versions/Egaroucid_for_Console_beta/Egaroucid_for_Console_AVX512.exe',     'Core_i9-11900K', 'AVX512',         '100_ffo40_59_Core_i9-11900K_AVX512.txt'],
+    [True,  40, 59, 26, 25, 'versions/Egaroucid_for_Console_beta/Egaroucid_for_Console_AVX512.exe',     'Core_i9-11900K', 'AVX512',         '100_ffo40_59_Core_i9-11900K_AVX512.txt'],
     [True,  40, 59, 26, 25, 'versions/Egaroucid_for_Console_beta/Egaroucid_for_Console_SIMD.exe',       'Core_i9-11900K', 'SIMD',           '101_ffo40_59_Core_i9-11900K_SIMD.txt'],
-    #[True,  40, 59, 26, 25, 'versions/Egaroucid_for_Console_beta/Egaroucid_for_Console_Generic.exe',    'Core_i9-11900K', 'Generic',        '102_ffo40_59_Core_i9-11900K_Generic.txt'],
+    [True,  40, 59, 26, 25, 'versions/Egaroucid_for_Console_beta/Egaroucid_for_Console_Generic.exe',    'Core_i9-11900K', 'Generic',        '102_ffo40_59_Core_i9-11900K_Generic.txt'],
 
     #[False, 40, 59, 16, 25, 'versions/edax_4_5_2/wEdax-x64-avx512.exe',                                     'Core_i9-11900K', 'x64_avx512',         '110_ffo40_59_Core_i9-11900K_edax_x64_avx512.txt'],
     #[False, 40, 59, 16, 25, 'versions/edax_4_5_2/wEdax-x64-modern.exe',                                     'Core_i9-11900K', 'x64_modern',         '111_ffo40_59_Core_i9-11900K_edax_x64_modern.txt'],
@@ -39,6 +42,11 @@ tasks = [ # is_egaroucid, start, end, n_threads, hash_level, exe, out_file
     #[False, 40, 59, 16, 25, 'versions/edax_4_5_3/bin/wEdax-x64-avx512.exe',                                     'Core_i9-11900K', 'x64_avx512',         '110_ffo40_59_Core_i9-11900K_edax_x64_avx512.txt'],
     #[False, 40, 59, 16, 25, 'versions/edax_4_5_3/bin/wEdax-x64-modern.exe',                                     'Core_i9-11900K', 'x64_modern',         '111_ffo40_59_Core_i9-11900K_edax_x64_modern.txt'],
     #[False, 40, 59, 16, 25, 'versions/edax_4_5_3/bin/wEdax-x64.exe',                                            'Core_i9-11900K', 'x64',                '112_ffo40_59_Core_i9-11900K_edax_x64.txt'],
+
+    [False, 40, 59, 32, 25, 'versions/edax_4_5_5/bin/wEdax-x86-64-v4.exe',                                      'Core_i9-11900K', 'v4',     '110_ffo40_59_Core_i9-11900K_edax_x64_v4.txt'],
+    [False, 40, 59, 32, 25, 'versions/edax_4_5_5/bin/wEdax-x86-64-v3.exe',                                      'Core_i9-11900K', 'v3',     '110_ffo40_59_Core_i9-11900K_edax_x64_v3.txt'],
+    [False, 40, 59, 32, 25, 'versions/edax_4_5_5/bin/wEdax-x86-64.exe',                                         'Core_i9-11900K', '-',      '111_ffo40_59_Core_i9-11900K_edax_x64.txt'],
+
 ]
 #'''
 
