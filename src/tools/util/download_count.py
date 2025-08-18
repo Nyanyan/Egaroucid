@@ -1,6 +1,7 @@
 import requests
 from datetime import datetime, timezone
 import re
+from datetime import timedelta
 import matplotlib.pyplot as plt
 
 r = requests.get('https://api.github.com/repos/Nyanyan/Egaroucid/releases')
@@ -74,6 +75,8 @@ for ii in range(len(n_download_per_day_arr)):
         n_download_per_day_arr[ii].append(rate)
 # print(n_download_per_day_arr)
 
+jst = timezone(timedelta(hours=9))
+now_jst = datetime.now(timezone.utc).astimezone(jst)
 
 for ii in range(len(name_arr)):
     x = name_arr[ii]
@@ -134,7 +137,8 @@ for ii in range(len(name_arr)):
         ax.tick_params(axis='x', rotation=45)
 
     total_for_label = sum_download_counts[GUI_IDX] if ii == GUI_IDX else sum_download_counts[CONSOLE_IDX]
-    fig.text(0.01, 0.01, f'Total Downloads: {total_for_label:,}', ha='left', fontsize=10)
+    fig.text(0.01, 0.98, f'Total Downloads: {total_for_label:,}', ha='left', fontsize=10)
+    fig.text(0.99, 0.98, now_jst.strftime('%Y-%m-%d %H:%M:%S JST'), ha='right', fontsize=10)
 
     plt.tight_layout()
     plt.show()
