@@ -1,5 +1,6 @@
 import requests
 from datetime import datetime, timezone
+import re
 import matplotlib.pyplot as plt
 
 r = requests.get('https://api.github.com/repos/Nyanyan/Egaroucid/releases')
@@ -76,22 +77,33 @@ for ii in range(len(n_download_per_day_arr)):
 
 for ii in range(len(name_arr)):
     x = name_arr[ii]
+    x = [m.group(0) if (m := re.search(r'\d+\.\d+\.\d+', s)) else s for s in x]
     y_rate = n_download_per_day_arr[ii]
     y_total = subtotal_arr[ii]
 
     fig_width = max(6, len(x) * 0.6)
     fig, axes = plt.subplots(2, 1, figsize=(fig_width, 8), sharex=True)
 
-    axes[0].bar(x, y_rate, color='#4c72b0')
-    axes[0].set_ylabel('Downloads per day')
-    axes[0].set_title(f'{labels[ii]} - Downloads per day')
+    axes[0].bar(x, y_total, color='#55a868')
+    axes[0].set_ylabel('Total downloads')
+    axes[0].set_title(f'{labels[ii]} - Total downloads')
     axes[0].grid(True, axis='y', linestyle='--', alpha=0.4)
 
-    axes[1].bar(x, y_total, color='#55a868')
-    axes[1].set_ylabel('Total downloads')
-    axes[1].set_title(f'{labels[ii]} - Total downloads')
-    axes[1].set_xlabel('Release')
+    # show x tick labels on the bottom subplot and place the x-axis label at the bottom
+    axes[0].set_xticks(range(len(x)))
+    axes[0].set_xticklabels(x)
+    axes[0].xaxis.set_label_position('bottom')
+    axes[0].set_xlabel('Release')
+    axes[0].tick_params(axis='x', labeltop=False, labelbottom=True)
+
+    axes[1].bar(x, y_rate, color='#4c72b0')
+    axes[1].set_ylabel('Downloads per day')
+    axes[1].set_title(f'{labels[ii]} - Downloads per day')
     axes[1].grid(True, axis='y', linestyle='--', alpha=0.4)
+    axes[1].set_xlabel('Release')
+
+    total_for_label = sum_download_counts[GUI_IDX] if ii == GUI_IDX else sum_download_counts[CONSOLE_IDX]
+    fig.text(0.01, 0.01, f'Total Downloads: {total_for_label:,}', ha='left', fontsize=10)
 
     for ax in axes:
         ax.tick_params(axis='x', rotation=45)
