@@ -50,6 +50,7 @@ int adj_import_data(int n_files, char* files[], Adj_Data* host_train_data, int *
         while (n_data < ADJ_MAX_N_DATA && n_data < n_max_data) {
             if (fread(&n_discs, 2, 1, fp) < 1)
                 break;
+            fread(&player, 2, 1, fp);
             fread(host_train_data[n_data].features, 2, ADJ_N_FEATURES, fp);
             fread(&score, 2, 1, fp);
             // host_train_data[n_data].score = (double)score * ADJ_STEP;
@@ -108,6 +109,7 @@ int main(int argc, char* argv[]) {
         }
         host_start_idx_arr[i] = start_idx;
     }
+    std::cerr << "n_data " << n_all_data << std::endl;
     for (int data_idx = 0; data_idx < n_all_data; ++data_idx){
         for (int i = 0; i < ADJ_N_FEATURES; ++i){
             #if ADJ_CELL_WEIGHT
@@ -119,6 +121,7 @@ int main(int argc, char* argv[]) {
                     ++host_n_appear_arr[host_rev_idx_arr[host_train_data[data_idx].features[i] - 10]];
                 }
             #else
+                // std::cerr << data_idx << " " << i << " " << host_start_idx_arr[i] << " " << (int)host_train_data[data_idx].features[i] << std::endl;
                 ++host_n_appear_arr[host_start_idx_arr[i] + (int)host_train_data[data_idx].features[i]];
                 int rev_idx = host_rev_idx_arr[host_start_idx_arr[i] + (int)host_train_data[data_idx].features[i]];
                 //if (rev_idx != start_idx_arr[i] + (int)host_train_data[data_idx].features[i])
