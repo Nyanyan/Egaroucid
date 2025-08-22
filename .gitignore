@@ -78,3 +78,6 @@ Egaroucid.xcodeproj/project.xcworkspace/xcuserdata
 
 # temp folder
 enc_temp_folder
+
+# test
+src/tools/evaluation/dl_test
