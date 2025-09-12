@@ -42,13 +42,13 @@ board_sub_dir_nums = [43, 44, 45]
 bin_root_dir = os.environ['EGAROUCID_DATA'] + '/train_data/bin_data/20241125_1/'
 exe = 'data_board_to_idx_20241125_1_7_5.out'
 N_PHASES = 60
-board_sub_dir_nums = [hogehoge]
+board_sub_dir_nums = [223, 224, 225, 226, 234]
 board_sub_dir_nums.sort()
 #'''
 
 
 '''
-# 7.7
+# 7.7 (not used for 7.7)
 bin_root_dir = os.environ['EGAROUCID_DATA'] + '/train_data/bin_data/20250513_1/'
 exe = 'data_board_to_idx_20250513_1_7_7.out'
 N_PHASES = 60

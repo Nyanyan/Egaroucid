@@ -45,7 +45,7 @@ board_sub_dir_nums = [
     
 ]
 '''
-board_sub_dir_nums = [i for i in range(227, 233 + 1)]
+board_sub_dir_nums = [223, 224, 225, 226, 234]
 
 
 FILE_INTERVAL = 100

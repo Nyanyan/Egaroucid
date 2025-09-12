@@ -266,3 +266,17 @@ board_n_moves['219'] = [36, 39] # random 36
 board_n_moves['220'] = [35, 39] # random 35
 
 board_n_moves['222'] = [3, 59] # random 0
+
+board_n_moves['223'] = [12, 59] # random 12
+board_n_moves['224'] = [13, 59] # random 13
+board_n_moves['225'] = [14, 59] # random 14
+board_n_moves['226'] = [15, 59] # random 15
+board_n_moves['227'] = [16, 59] # random 16
+board_n_moves['228'] = [17, 59] # random 17
+board_n_moves['229'] = [18, 59] # random 18
+board_n_moves['230'] = [19, 59] # random 19
+board_n_moves['231'] = [20, 59] # random 20
+board_n_moves['232'] = [21, 59] # random 21
+board_n_moves['233'] = [22, 59] # random 22
+board_n_moves['234'] = [23, 59] # random 23
+
