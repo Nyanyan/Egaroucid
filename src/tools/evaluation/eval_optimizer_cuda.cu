@@ -344,13 +344,13 @@ __global__ void adagrad(const int eval_size, double *device_eval_arr, int *devic
 /*
     @brief Adam Optimizer
 */
-__global__ void adam(const int eval_size, double *device_eval_arr, int *device_n_appear_arr, double *device_residual_arr, double alpha_stab, double *device_m_arr, double *device_v_arr, const int n_loop){
+__global__ void adam(const int phase, const int eval_size, double *device_eval_arr, int *device_n_appear_arr, double *device_residual_arr, double alpha_stab, double *device_m_arr, double *device_v_arr, const int n_loop){
     const int eval_idx = blockIdx.x * blockDim.x + threadIdx.x;
     if (eval_idx >= eval_size){
         return;
     }
     double lr = 0.0;
-    if (device_n_appear_arr[eval_idx] > ADJ_IGNORE_N_APPEAR) {
+    if (device_n_appear_arr[eval_idx] > ADJ_IGNORE_N_APPEAR || phase <= 11) {
         double div = device_n_appear_arr[eval_idx];
         if (div < 50) {
             div = 50;
@@ -565,7 +565,7 @@ int main(int argc, char* argv[]) {
         // gradient_descent <<<n_blocks_next_step, N_THREADS_PER_BLOCK_NEXT_STEP>>> (eval_size, device_eval_arr, device_n_appear_arr, device_residual_arr, alpha_stab);
         // momentum <<<n_blocks_next_step, N_THREADS_PER_BLOCK_NEXT_STEP>>> (eval_size, device_eval_arr, device_n_appear_arr, device_residual_arr, alpha_stab, device_m_arr, n_loop);
         // adagrad <<<n_blocks_next_step, N_THREADS_PER_BLOCK_NEXT_STEP>>> (eval_size, device_eval_arr, device_n_appear_arr, device_residual_arr, alpha_stab, device_v_arr, n_loop);
-        adam <<<n_blocks_next_step, N_THREADS_PER_BLOCK_NEXT_STEP>>> (eval_size, device_eval_arr, device_n_appear_arr, device_residual_arr, alpha_stab, device_m_arr, device_v_arr, n_loop);
+        adam <<<n_blocks_next_step, N_THREADS_PER_BLOCK_NEXT_STEP>>> (phase, eval_size, device_eval_arr, device_n_appear_arr, device_residual_arr, alpha_stab, device_m_arr, device_v_arr, n_loop);
         if (alpha_stab < alpha) {
             alpha_stab += alpha / 50.0;
         }
