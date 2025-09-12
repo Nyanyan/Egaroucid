@@ -352,8 +352,7 @@ __global__ void adam(const int phase, const int eval_size, double *device_eval_a
     if (eval_idx >= eval_size){
         return;
     }
-    if (device_n_appear_arr[eval_idx] > ADJ_IGNORE_N_APPEAR || phase <= 11) {
-    // if (true) {
+    if (device_n_appear_arr[eval_idx] > ADJ_IGNORE_N_APPEAR || (phase <= 11 && device_n_appear_arr[eval_idx] > 0)) {
         double div = device_n_appear_arr[eval_idx];
         if (div > 50) {
             div = 50;
