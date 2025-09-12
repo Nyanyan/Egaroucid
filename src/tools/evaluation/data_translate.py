@@ -5,6 +5,7 @@ import psutil
 import time
 from tqdm import tqdm
 from data_range import *
+import sys
 
 
 '''
@@ -52,10 +53,10 @@ board_sub_dir_nums = [
     65, 66, 67, 68, 69, 70, 71, 72, 73, 74, # Egaroucid 7.4.0 1000000 data
     77,  # random 18 discs (GGS)
     78, 79, # random 11 & 12 (bug fixed)
-    #80, # new first11 book
+    80, # new first11 book
     #81, # test data
     82, # random 12
-    83, # new first11 book data (records80 minimum 200000 data)
+    # 83, # new first11 book data (records80 minimum 200000 data)
     #84, 85, 86, 87, 88, 89, # non-regular random starting position
     97, # public data
     #           98,  99, 100, 101, 102, 103, 104, 105, # random boards 12-19
@@ -118,6 +119,9 @@ for phase in range(N_PHASES):
         pass
     for board_sub_dir_num in board_sub_dir_nums:
         input_dir = input_root_dir + 'records' + str(board_sub_dir_num)
+        if not os.path.isdir(input_dir):
+            print(f'Error: 入力ディレクトリが存在しません: {input_dir}', file=sys.stderr)
+            continue
         n_files_str = str(len(glob.glob(input_dir + '/*.dat')))
         out_file = bin_dir + '/' + str(board_sub_dir_num) + '.dat'
         if str(board_sub_dir_num) in min_n_data_dct:

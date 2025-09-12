@@ -87,13 +87,14 @@ train_data_nums = [
     37, # book data
     38, # old test data
     39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 57, 60, 61, 62, 63, # mid-endgame data 2
-    65, 66, 67, 68, 69, 70, 71, 72, 73, 74, # Egaroucid 7.4.0 1000000 data
+    # 65, 66,  # Egaroucid 7.4.0 1000000 data (random 10 & 11)
+    67, 68, 69, 70, 71, 72, 73, 74, # Egaroucid 7.4.0 1000000 data
     77,  # random 18 discs (GGS)
     78, 79, # random 11 & 12 (bug fixed)
-    #80, # new first11 book
+    80, # new first11 book
     #81, # test data
     82, # random 12
-    83, # new first11 book data (records80 minimum 200000 data)
+    # 83, # new first11 book data (records80 minimum 200000 data)
     #84, 85, 86, 87, 88, 89, # non-regular random starting position
     97, # public data
     #           98,  99, 100, 101, 102, 103, 104, 105, # random boards 12-19
@@ -114,6 +115,8 @@ train_data_nums = [
     # 222, # random0
     223, 224, 225, 226, 227, 228, 229, 230, 231, 232, 233, 234, # randomN level 15
 ]
+if int(phase) >= 12:
+    train_data_nums.extend([65, 66])
 train_data_nums.sort()
 #print(train_data_nums, file=sys.stderr)
 train_root_dir = os.environ['EGAROUCID_DATA'] + '/train_data/bin_data/20241125_1/'

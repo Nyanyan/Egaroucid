@@ -349,16 +349,14 @@ __global__ void adam(const int phase, const int eval_size, double *device_eval_a
     if (eval_idx >= eval_size){
         return;
     }
-    double lr = 0.0;
     if (device_n_appear_arr[eval_idx] > ADJ_IGNORE_N_APPEAR || phase <= 11) {
+    // if (true) {
         double div = device_n_appear_arr[eval_idx];
-        if (div < 50) {
+        if (div > 50) {
             div = 50;
         }
-        lr = alpha_stab / div;
-    }
-    double grad = 2.0 * device_residual_arr[eval_idx];
-    if (grad != 0.0){
+        double lr = alpha_stab / div;
+        double grad = 2.0 * device_residual_arr[eval_idx];
         constexpr double beta1 = 0.9;
         constexpr double beta2 = 0.999;
         constexpr double epsilon = 1e-7;
