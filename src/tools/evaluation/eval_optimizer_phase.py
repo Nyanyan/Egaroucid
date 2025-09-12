@@ -78,7 +78,7 @@ for elem in train_data_nums_all:
 # if int(phase) <= 11:
 #     train_data_nums = [37, 80] # use only book with phase <= 11
 
-'''
+#'''
 # 7.5
 train_data_nums = [
     18, 19, 20, 21, 24, 25, 28, 29, 30, 31, # old data (without records27)
@@ -110,16 +110,20 @@ train_data_nums = [
     #195, 196, 197, 198, 199, 200, 201, 202, 203, 204, # random boards 40-49
     #205, 206, 207, 208, 209, 210, 211, 212, 213, # random boards 50-58
     214, # random 11 (first11_all)
+    216, 217, 218, 219, 220, # randomN
+    # 222, # random0
+    223, 224, 225, 226, 227, 228, 229, 230, 231, 232, 233, 234, # randomN level 15
 ]
 train_data_nums.sort()
 #print(train_data_nums, file=sys.stderr)
 train_root_dir = os.environ['EGAROUCID_DATA'] + '/train_data/bin_data/20241125_1/'
-executable = 'eval_optimizer_cuda_12_2_0_20241125_1_7_5.exe'
+# executable = 'eval_optimizer_cuda_12_2_0_20241125_1_7_5.exe'
+executable = 'eval_optimizer_cuda_12_2_0_20241125_1_7_5_ignore_rare.exe'
 #'''
 
 
-#'''
-# 7.7
+'''
+# 7.7 (not used in 7.7)
 train_data_nums = [
     25, #28, # old data (random 30 & 40)
     # 18, 19, 20, 21, 24, 25, 28, 29, 30, 31, # old data (without records27)
@@ -153,6 +157,7 @@ train_data_nums = [
     214, # random 11 (first11_all)
     216, 217, 218, 219, 220, # randomN
     222, # random0
+    223, 224, 225, 226, 227, 228, 229, 230, 231, 232, 233, 234, # randomN level 15
 ]
 if int(phase) < 40:
     train_data_nums.extend([18, 19, 20, 21, 24, 29, 30, 31]) # old data (without records27)
@@ -160,8 +165,7 @@ train_data_nums.sort()
 #print(train_data_nums, file=sys.stderr)
 train_root_dir = os.environ['EGAROUCID_DATA'] + '/train_data/bin_data/20250513_1/'
 #executable = 'eval_optimizer_cuda_12_2_0_20250513_1_7_7.exe'
-# executable = 'eval_optimizer_cuda_12_2_0_20250513_1_7_7_roundminmax.exe'
-executable = 'eval_optimizer_cuda_12_2_0_20241125_1_7_5_ignore_rare.exe'
+executable = 'eval_optimizer_cuda_12_2_0_20250513_1_7_7_roundminmax.exe'
 #'''
 
 
