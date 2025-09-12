@@ -35,6 +35,10 @@
 #endif
 #define ADJ_MAX_N_TEST_DATA 100000
 
+
+// training constant
+#define ADJ_IGNORE_N_APPEAR 3 // ignore features that appeared only 3 or less times
+
 // GPU constant
 #define N_THREADS_PER_BLOCK_TEST 1024
 #define N_THREADS_PER_BLOCK_RESIDUAL 1024
@@ -345,7 +349,14 @@ __global__ void adam(const int eval_size, double *device_eval_arr, int *device_n
     if (eval_idx >= eval_size){
         return;
     }
-    double lr = alpha_stab / device_n_appear_arr[eval_idx];
+    double lr = 0.0;
+    if (device_n_appear_arr[eval_idx] > ADJ_IGNORE_N_APPEAR) {
+        double div = device_n_appear_arr[eval_idx];
+        if (div < 50) {
+            div = 50;
+        }
+        lr = alpha_stab / div;
+    }
     double grad = 2.0 * device_residual_arr[eval_idx];
     if (grad != 0.0){
         constexpr double beta1 = 0.9;
@@ -473,9 +484,9 @@ int main(int argc, char* argv[]) {
             #endif
         }
     }
-    for (int i = 0; i < eval_size; ++i){
-        host_n_appear_arr[i] = std::min(50, host_n_appear_arr[i]);
-    }
+    // for (int i = 0; i < eval_size; ++i){
+    //     host_n_appear_arr[i] = std::min(50, host_n_appear_arr[i]);
+    // }
     std::cerr << "train data appearance calculated" << std::endl;
 
     double *device_eval_arr; // device eval array
