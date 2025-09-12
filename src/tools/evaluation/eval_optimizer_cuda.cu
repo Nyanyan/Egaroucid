@@ -89,7 +89,10 @@ void adj_init_arr(int eval_size, double *host_eval_arr, int *host_rev_idx_arr, i
 void adj_import_eval(std::string file, int eval_size, double *host_eval_arr) {
     std::ifstream ifs(file);
     if (ifs.fail()) {
-        std::cerr << "evaluation file " << file << " not exist" << std::endl;
+        std::cerr << "evaluation file " << file << " not exist, initialize with 0" << std::endl;
+        for (int i = 0; i < eval_size; ++i){
+            host_eval_arr[i] = 0;
+        }
         return;
     }
     std::cerr << "importing eval params " << file << std::endl;
