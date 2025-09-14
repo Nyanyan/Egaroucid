@@ -353,11 +353,7 @@ __global__ void adam(const int phase, const int eval_size, double *device_eval_a
         return;
     }
     if (device_n_appear_arr[eval_idx] > ADJ_IGNORE_N_APPEAR || (phase <= 11 && device_n_appear_arr[eval_idx] > 0)) {
-        double div = device_n_appear_arr[eval_idx];
-        if (div > 50) {
-            div = 50;
-        }
-        double lr = alpha_stab / div;
+        double lr = alpha_stab / (double)device_n_appear_arr[eval_idx];
         double grad = 2.0 * device_residual_arr[eval_idx];
         constexpr double beta1 = 0.9;
         constexpr double beta2 = 0.999;
@@ -379,11 +375,32 @@ __global__ void adam(const int phase, const int eval_size, double *device_eval_a
 /*
     @brief Output Parameters as integer
 */
-void adj_output_param(int eval_size, double *host_eval_arr) {
-    for (int i = 0; i < eval_size; ++i) {
-        std::cout << (int)round(host_eval_arr[i]) << std::endl;
+void adj_output_param(int phase, int eval_size, double *host_eval_arr) {
+    std::string filename = std::string("trained/") + std::to_string(phase) + ".txt";
+    std::ofstream ofs(filename);
+    if (!ofs.is_open()) {
+        std::cerr << "cannot open " << filename << ", output to stdout" << std::endl;
+    } else {
+        for (int i = 0; i < eval_size; ++i) {
+            ofs << (int)round(host_eval_arr[i]) << '\n';
+        }
+        ofs.close();
+        std::cerr << "data output to " << filename << std::endl;
     }
-    std::cerr << "output data fin" << std::endl;
+}
+
+void adj_output_weight(int phase, int eval_size, int *weight_arr) {
+    std::string filename = std::string("trained/weight_") + std::to_string(phase) + ".txt";
+    std::ofstream ofs(filename);
+    if (!ofs.is_open()) {
+        std::cerr << "cannot open " << filename << ", output to stdout" << std::endl;
+    } else {
+        for (int i = 0; i < eval_size; ++i) {
+            ofs << weight_arr[i] << '\n';
+        }
+        ofs.close();
+        std::cerr << "weight output to " << filename << std::endl;
+    }
 }
 
 
@@ -424,6 +441,7 @@ int main(int argc, char* argv[]) {
     int *host_rev_idx_arr = (int*)malloc(sizeof(int) * eval_size); // reversed index
     Adj_Data* host_train_data = (Adj_Data*)malloc(sizeof(Adj_Data) * ADJ_MAX_N_DATA); // train data
     int *host_n_appear_arr = (int*)malloc(sizeof(int) * eval_size);
+    int *weight_arr = (int*)malloc(sizeof(int) * eval_size);
     double *host_error_monitor_arr = (double*)malloc(sizeof(double) * N_ERROR_MONITOR);
     double *host_val_error_monitor_arr = (double*)malloc(sizeof(double) * N_TEST_ERROR_MONITOR);
     if (host_eval_arr == nullptr || host_rev_idx_arr == nullptr || host_train_data == nullptr || host_val_error_monitor_arr == nullptr){
@@ -484,9 +502,12 @@ int main(int argc, char* argv[]) {
             #endif
         }
     }
-    // for (int i = 0; i < eval_size; ++i){
-    //     host_n_appear_arr[i] = std::min(50, host_n_appear_arr[i]);
-    // }
+    for (int i = 0; i < eval_size; ++i) {
+        weight_arr[i] = host_n_appear_arr[i];
+    }
+    for (int i = 0; i < eval_size; ++i) {
+        host_n_appear_arr[i] = std::min(50, host_n_appear_arr[i]);
+    }
     std::cerr << "train data appearance calculated" << std::endl;
 
     double *device_eval_arr; // device eval array
@@ -667,10 +688,13 @@ int main(int argc, char* argv[]) {
     cudaMemcpy(host_error_monitor_arr, device_error_monitor_arr, sizeof(double) * N_ERROR_MONITOR, cudaMemcpyDeviceToHost);
     adj_calculate_loss_round <<<n_blocks_val, N_THREADS_PER_BLOCK_TEST>>> (-1, -1, device_eval_arr_roundup, device_eval_arr_rounddown, device_round_arr, n_val_data, device_start_idx_arr, device_val_data, device_val_error_monitor_arr);
     cudaMemcpy(host_val_error_monitor_arr, device_val_error_monitor_arr, sizeof(double) * N_ERROR_MONITOR, cudaMemcpyDeviceToHost);
+
+    // output param
+    adj_output_param(phase, eval_size, host_eval_arr);
+    adj_output_weight(phase, eval_size, weight_arr);
+
     std::cerr << "phase " << phase << " time " << (tim() - strt) << " ms n_train_data " << n_train_data << " n_val_data " << n_val_data << " n_loop " << n_loop << " MSE " << host_error_monitor_arr[0] << " MAE " << host_error_monitor_arr[1] << " val_MSE " << host_val_error_monitor_arr[0] << " val_MAE " << host_val_error_monitor_arr[1] << " (with int) alpha " << alpha_in << " n_patience " << n_patience << " reduce_lr_patience " << reduce_lr_patience << " reduce_lr_ratio " << reduce_lr_ratio << std::endl;
     std::cout << "phase " << phase << " time " << (tim() - strt) << " ms n_train_data " << n_train_data << " n_val_data " << n_val_data << " n_loop " << n_loop << " MSE " << host_error_monitor_arr[0] << " MAE " << host_error_monitor_arr[1] << " val_MSE " << host_val_error_monitor_arr[0] << " val_MAE " << host_val_error_monitor_arr[1] << " (with int) alpha " << alpha_in << " n_patience " << n_patience << " reduce_lr_patience " << reduce_lr_patience << " reduce_lr_ratio " << reduce_lr_ratio << std::endl;
 
-    // output param
-    adj_output_param(eval_size, host_eval_arr);
     return 0;
 }

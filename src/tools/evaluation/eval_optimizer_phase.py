@@ -123,7 +123,8 @@ train_data_nums.sort()
 #print(train_data_nums, file=sys.stderr)
 train_root_dir = os.environ['EGAROUCID_DATA'] + '/train_data/bin_data/20241125_1/'
 # executable = 'eval_optimizer_cuda_12_2_0_20241125_1_7_5.exe'
-executable = 'eval_optimizer_cuda_12_2_0_20241125_1_7_5_ignore_rare.exe'
+# executable = 'eval_optimizer_cuda_12_2_0_20241125_1_7_5_ignore_rare.exe'
+executable = 'eval_optimizer_cuda_12_2_0_20241125_1_7_5_20250914.exe'
 #'''
 
 
@@ -198,6 +199,6 @@ cmd = executable + ' ' + phase + ' ' + hour + ' ' + minute + ' ' + second + ' ' 
 p = subprocess.Popen(cmd.split(), stdout=subprocess.PIPE)
 result = p.stdout.readline().decode().replace('\r\n', '\n').replace('\n', '')
 print(result)
-param = p.stdout.read().decode().replace('\r\n', '\n')
-with open('trained/' + phase + '.txt', 'w') as f:
-    f.write(param)
+# param = p.stdout.read().decode().replace('\r\n', '\n')
+# with open('trained/' + phase + '.txt', 'w') as f:
+#     f.write(param)
