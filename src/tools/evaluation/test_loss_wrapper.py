@@ -48,7 +48,7 @@ for _ in range(12, 61):
 #'''
 
 
-''' # 7.5
+#''' # 7.5
 N_PHASES = 60
 data_root_dir = os.environ['EGAROUCID_DATA'] + '/train_data/bin_data/20241125_1/'
 exe = 'test_loss_20241125_1_7_5.out'
@@ -56,7 +56,7 @@ exe = 'test_loss_20241125_1_7_5.out'
 
 
 
-#''' # 7.7
+''' # 7.7
 N_PHASES = 60
 data_root_dir = os.environ['EGAROUCID_DATA'] + '/train_data/bin_data/20250513_1/'
 exe = 'test_loss_20250513_1_7_7.out'
