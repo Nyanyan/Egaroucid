@@ -8,7 +8,7 @@ from othello_py import *
 
 LEVEL = int(sys.argv[1])
 N_SET_GAMES = int(sys.argv[2])
-N_THREADS = 32
+N_THREADS = 1
 
 with open('problem/xot/openingslarge.txt', 'r') as f:
     openings = [elem for elem in f.read().splitlines()]
@@ -17,8 +17,8 @@ shuffle(openings)
 # name, cmd
 player_info = [
     # ['7.5-2', 'versions/Egaroucid_for_Console_7_5_0_Windows_SIMD/Egaroucid_for_Console_7_5_0_SIMD.exe -quiet -nobook'],
-    ['beta', 'versions/Egaroucid_for_Console_beta/Egaroucid_for_Console.exe -quiet -nobook'],
-    # ['latest',  'Egaroucid_for_Console.exe -quiet -nobook'],
+    # ['beta', 'versions/Egaroucid_for_Console_beta/Egaroucid_for_Console.exe -quiet -nobook'],
+    ['latest',  'Egaroucid_for_Console.exe -quiet -nobook'],
     # ['clang',  'Egaroucid_for_Console_clang.exe -quiet -nobook'],
     ['7.7.0', 'versions/Egaroucid_for_Console_7_7_0_Windows_SIMD/Egaroucid_for_Console_7_7_0_SIMD.exe -quiet -nobook'],
     ['7.6.0', 'versions/Egaroucid_for_Console_7_6_0_Windows_SIMD/Egaroucid_for_Console_7_6_0_SIMD.exe -quiet -nobook'],
