@@ -37,7 +37,7 @@
 
 
 // training constant
-#define ADJ_IGNORE_N_APPEAR 3 // ignore features that appeared only 3 or less times
+#define ADJ_IGNORE_N_APPEAR 0 // ignore features that appeared only 3 or less times
 
 // GPU constant
 #define N_THREADS_PER_BLOCK_TEST 1024
