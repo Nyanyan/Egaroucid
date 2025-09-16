@@ -78,6 +78,7 @@ board_sub_dir_nums = [
     223, 224, 225, 226, 227, 228, 229, 230, 231, 232, 233, 234, # randomN level 15
 ]
 # board_sub_dir_nums = [166, 167] # test data
+board_sub_dir_nums = [213] # random boards 58
 board_sub_dir_nums.sort()
 #'''
 
