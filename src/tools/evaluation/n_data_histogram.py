@@ -1,6 +1,5 @@
 import math
 import numpy as np
-from collections import Counter
 
 
 phase = 30
@@ -12,12 +11,9 @@ weights_without_zero = [w for w in weights if w != 0]
 
 ADJ_IGNORE_N_APPEAR = 3
 
-freq = Counter(weights_without_zero)
 total = len(weights_without_zero)
-
-rare_values = [v for v, c in freq.items() if c <= ADJ_IGNORE_N_APPEAR]
-rare_counts = sum(freq[v] for v in rare_values)
-
+rare_values = [w for w in weights_without_zero if w <= ADJ_IGNORE_N_APPEAR]
+rare_counts = len(rare_values)
 percent = (rare_counts / total * 100) if total else 0.0
 print(f"Elements with occurrences <= {ADJ_IGNORE_N_APPEAR}: {rare_counts}/{total} ({percent:.2f}%)")
 print(f"Unique values meeting condition: {len(rare_values)}")
@@ -71,6 +67,3 @@ else:
     # save and show
     # plt.savefig('trained/weights_histogram.png', dpi=150)
     plt.show()
-
-BAR_WIDTH = 100
-
