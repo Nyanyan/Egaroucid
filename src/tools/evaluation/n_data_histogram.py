@@ -16,7 +16,6 @@ rare_values = [w for w in weights_without_zero if w <= ADJ_IGNORE_N_APPEAR]
 rare_counts = len(rare_values)
 percent = (rare_counts / total * 100) if total else 0.0
 print(f"Elements with occurrences <= {ADJ_IGNORE_N_APPEAR}: {rare_counts}/{total} ({percent:.2f}%)")
-print(f"Unique values meeting condition: {len(rare_values)}")
 
 
 BAR_WIDTH = 100
