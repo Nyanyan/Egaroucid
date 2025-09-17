@@ -126,6 +126,7 @@ train_root_dir = os.environ['EGAROUCID_DATA'] + '/train_data/bin_data/20241125_1
 # executable = 'eval_optimizer_cuda_12_2_0_20241125_1_7_5_ignore_rare.exe'
 # executable = 'eval_optimizer_cuda_12_2_0_20241125_1_7_5_20250914.exe'
 executable = 'eval_optimizer_cuda_12_2_0_20241125_1_7_5_roundminmax.exe'
+# executable = 'eval_optimizer_cuda_12_2_0_20241125_1_7_5_new_alpha.exe'
 #'''
 
 
