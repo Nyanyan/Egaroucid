@@ -142,3 +142,56 @@ for ii in range(len(name_arr)):
 
     plt.tight_layout()
     plt.show()
+
+# ----- Cumulative downloads vs Date (separate windows per series) -----
+# For each series (GUI and Console), open a separate figure showing cumulative downloads over time
+series_indices = [GUI_IDX, CONSOLE_IDX]
+for idx in series_indices:
+    dates_ts = published_arr[idx]
+    totals = subtotal_arr[idx]
+    if not dates_ts:
+        # still create an empty figure with message
+        plt.figure(figsize=(8, 4))
+        plt.title(f'{labels[idx]} - No releases')
+        plt.text(0.5, 0.5, 'No data', ha='center', va='center')
+        plt.axis('off')
+        plt.show()
+        continue
+
+    # sort by timestamp to ensure chronological order
+    pairs = sorted(zip(dates_ts, totals), key=lambda x: x[0])
+    # For cumulative plot, place each release's cumulative total at the timestamp of the next release.
+    # For the last release, use current time (now_ts).
+    ts_list = [p[0] for p in pairs]
+    cum = []
+    s = 0
+    for _, v in pairs:
+        s += v
+        cum.append(s)
+    # build x timestamps shifted to next release; last point uses now_ts
+    x_ts = []
+    for i in range(len(ts_list)):
+        if i < len(ts_list) - 1:
+            x_ts.append(ts_list[i + 1])
+        else:
+            x_ts.append(now_ts)
+    dates_sorted = [datetime.fromtimestamp(ts, tz=timezone.utc).astimezone(jst) for ts in x_ts]
+
+    fig = plt.figure(figsize=(10, 5))
+    ax = fig.add_subplot(1, 1, 1)
+    ax.plot(dates_sorted, cum, marker='o', linestyle='-', color='#2a9d8f')
+    ax.set_xlabel('Date')
+    ax.set_ylabel('Downloads')
+    ax.set_title(f'{labels[idx]} - Cumulative downloads')
+    ax.grid(True, linestyle='--', alpha=0.4)
+    ax.xaxis.set_tick_params(rotation=45)
+
+    # annotate with current total downloads for this series and current JST datetime
+    total_for_label = sum_download_counts[idx]
+    now_jst_str = now_jst.strftime('%Y-%m-%d %H:%M:%S JST')
+    # place text in bottom right corner of the axes (axes coordinates)
+    ax.text(0.98, 0.02, f'Total: {total_for_label:,}\n{now_jst_str}', ha='right', va='bottom', transform=ax.transAxes, fontsize=10,
+        bbox=dict(boxstyle='round,pad=0.3', facecolor='white', alpha=0.7, edgecolor='gray'))
+
+    fig.tight_layout()
+    plt.show()
