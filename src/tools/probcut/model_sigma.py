@@ -153,7 +153,7 @@ for i in range(len(popt_sd)):
 def plot_fit_result_allphases(w, x, y, z, params):
     fig = plt.figure()
     ax = fig.add_subplot(111, projection='3d')
-    for n_moves in range(10, 51, 10):
+    for n_moves in range(10, 60, 10):
         n_discs = 4 + n_moves
         x_depth1_phase = []
         y_depth2_phase = []
