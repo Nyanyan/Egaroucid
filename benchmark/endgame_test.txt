@@ -341,3 +341,24 @@ script_dir\Egaroucid_for_Console.exe -l 27 -nobook -thread 32 -solve script_dir\
 total 6088169937 nodes in 15.899s NPS 382927853
 
 
+2025/09/20 update mpc
+Egaroucid for Console 7.7.0 Windows x64 SIMD (MSVC)
+  @date     2021-2025
+  @build    Sep 19 2025 00:23:10 JST
+  @author   Takuto Yamana
+  @license  GPL-3.0 license
+  @website  https://www.egaroucid.nyanyan.dev/
+script_dir\Egaroucid_for_Console.exe -l 27 -nobook -thread 32 -solve script_dir\problem/endgame_test_10.txt
+#   |          Level|          Depth|           Move|          Score|           Time|          Nodes|            NPS|
+#00 |             27|         30@99%|             h8|             -4|  000:00:00.651|      211932188|      325548675|
+#01 |             27|         30@99%|             c3|            -18|  000:00:01.237|      406064410|      328265489|
+#02 |             27|         30@99%|             c7|            +46|  000:00:00.239|       55648484|      232838845|
+#03 |             27|         30@99%|             a8|             +8|  000:00:06.870|     3141318545|      457251607|
+#04 |             27|         30@99%|             f6|            +12|  000:00:04.145|     2113891389|      509985859|
+#05 |             27|         30@99%|             a1|            +16|  000:00:00.797|      220153699|      276227978|
+#06 |             27|         30@99%|             b6|             +6|  000:00:01.492|      397233456|      266242262|
+#07 |             27|         30@99%|             a8|            +22|  000:00:00.917|      212563664|      231803341|
+#08 |             27|         30@99%|             g2|            -58|  000:00:01.313|      466875174|      355578959|
+#09 |             27|         30@99%|             a8|            -24|  000:00:02.377|      775554749|      326274610|
+total 8001235758 nodes in 20.038s NPS 399303111
+
