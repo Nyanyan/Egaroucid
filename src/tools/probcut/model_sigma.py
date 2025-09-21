@@ -112,7 +112,7 @@ for n_discs in range(len(data)):
 for n_discs in range(4, 30):
     depth2 = 64 - n_discs
     depth1 = 0
-    z = 9.0 + 2.0 * ((n_discs - 4) / 60)
+    z = 10.0 + 2.0 * ((n_discs - 4) / 60)
     w_n_discs_sd.append(n_discs)
     x_depth1_sd.append(depth1)
     y_depth2_sd.append(depth2)
