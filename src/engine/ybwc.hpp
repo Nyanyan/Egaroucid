@@ -89,15 +89,15 @@ inline int ybwc_split_nws(Search *search, int parent_alpha, const int depth, uin
             n_remaining_moves >= YBWC_N_YOUNGER_CHILD    // This node is not the (some) youngest brother
             //running_count < YBWC_MAX_RUNNING_COUNT     // Do not split too many nodes
     ) {
-        int v;
-        if (transposition_cutoff_nws(search, search->board.hash(), depth, -parent_alpha - 1, &v)) {
-            return -v;
-        }
-        if (!is_end_search && search->mpc_level < MPC_100_LEVEL && depth >= USE_MPC_MIN_DEPTH) {
-            if (mpc(search, -parent_alpha - 1, -parent_alpha, depth, legal, is_end_search, &v, searchings)) {
-                return -v;
-            }
-        }
+        // int v;
+        // if (transposition_cutoff_nws(search, search->board.hash(), depth, -parent_alpha - 1, &v)) {
+        //     return -v;
+        // }
+        // if (!is_end_search && search->mpc_level < MPC_100_LEVEL && depth >= USE_MPC_MIN_DEPTH) {
+        //     if (mpc(search, -parent_alpha - 1, -parent_alpha, depth, legal, is_end_search, &v, searchings)) {
+        //         return -v;
+        //     }
+        // }
         if (is_searching(searchings)) {
             bool pushed;
             parallel_tasks.emplace_back(thread_pool.push(search->thread_id, &pushed, std::bind(&ybwc_do_task_nws, search->board.player, search->board.opponent, search->n_discs, search->parity, search->mpc_level, search->is_presearch, search->thread_id, parent_alpha, depth, legal, is_end_search, policy, move_idx, searchings, n_searching)));
