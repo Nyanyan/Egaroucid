@@ -435,8 +435,8 @@ Search_result ggs_search(GGS_Board ggs_board, Options *options, thread_id_t thre
             remaining_time_msec = std::max<uint64_t>(remaining_time_msec * 0.1, 1ULL);
         }
 
-        // // special code for s8r14
-        // uint64_t strt = tim();
+        // // special code for s8r14 5 min
+        uint64_t strt = tim();
         // if (ggs_board.board.n_discs() == 14 && remaining_time_msec > 30000) {
         //     std::cerr << "s8r14 first move special selfplay" << std::endl;
         //     bool new_searching = true;
@@ -460,7 +460,7 @@ Search_result ggs_search(GGS_Board ggs_board, Options *options, thread_id_t thre
         //     */
         //     std::cerr << std::endl;
         // }
-        // remaining_time_msec -= tim() - strt;
+        remaining_time_msec -= tim() - strt;
 
         search_result = ai_time_limit(ggs_board.board, true, 0, true, options->show_log, remaining_time_msec, thread_id, searching);
     } else { // pass
@@ -486,7 +486,7 @@ void ggs_terminate_ponder(std::future<std::vector<Ponder_elem>> ponder_futures[]
     }
 }
 
-#define GGS_USE_PONDER false
+#define GGS_USE_PONDER true
 
 void ggs_client(Options *options) {
     WSADATA wsaData;
