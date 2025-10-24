@@ -72,7 +72,13 @@ int nega_alpha_ordering_nws(Search *search, int alpha, int depth, bool skipped, 
     @return cutoff occurred?
 */
 inline bool mpc(Search* search, int alpha, int beta, int depth, uint64_t legal, const bool is_end_search, int* v, std::vector<bool*> &searchings) {
-    int search_depth = ((depth / 2) & 0b11111110) + (depth & 1); // depth / 3 + parity
+    int search_depth;
+    if (is_end_search) {
+        search_depth = ((depth / 3) & 0b11111110) + (depth & 1); // depth / 3 + parity
+    } else {
+        search_depth = ((depth / 2) & 0b11111110) + (depth & 1); // depth / 2 + parity
+    }
+    // int search_depth = ((depth / 2) & 0b11111110) + (depth & 1); // depth / 3 + parity
     int d0value = mid_evaluate_diff(search);
     /*
     if (alpha - MPC_ADD_DEPTH_VALUE_THRESHOLD < d0value && d0value < beta + MPC_ADD_DEPTH_VALUE_THRESHOLD && depth >= 20 && search_depth < depth - 2) {
