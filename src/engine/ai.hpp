@@ -870,425 +870,425 @@ struct AI_TL_Array {
 AI_TL_Array ai_tl_array;
 
 
-// Search_result ai_time_limit(Board board, bool use_book, int book_acc_level, bool use_multi_thread, bool show_log, uint64_t remaining_time_msec, thread_id_t thread_id, bool *searching) {
-//     uint64_t time_limit = calc_time_limit_ply_MCTS(board, remaining_time_msec, show_log);
-//     if (show_log) {
-//         std::cerr << "ai_time_limit start! tl " << time_limit << " remaining " << remaining_time_msec << " n_empties " << HW2 - board.n_discs() << " " << board.to_str() << std::endl;
-//     }
-//     uint64_t strt = tim();
-//     int n_empties = HW2 - board.n_discs();
-//     Search_result search_result;
-//     // if (n_empties <= START_NORMAL_SEARCH_EMPTIES || time_limit < 20000ULL) { // normal search
-//         search_result = ai_common(board, -SCORE_MAX, SCORE_MAX, MAX_LEVEL, use_book, book_acc_level, use_multi_thread, show_log, board.get_legal(), false, time_limit, thread_id, searching);
-//     // } else {
-//     //     AI_TL_Elem *root = nullptr;
-//     //     for (int i = 0; i < ai_tl_array.n_expanded_nodes; ++i) {
-//     //         if (ai_tl_array.ai_time_limit_elems[i].board == board) {
-//     //             root = &ai_tl_array.ai_time_limit_elems[i];
-//     //             break;
-//     //         }
-//     //     }
-//     //     if (root == nullptr) {
-//     //         ai_tl_array.mtx.lock();
-//     //             ai_tl_array.n_expanded_nodes = 0;
-//     //             root = &ai_tl_array.ai_time_limit_elems[ai_tl_array.n_expanded_nodes++];
-//     //             root->reset();
-//     //             root->sgn = 1;
-//     //             root->board = board;
-//     //         ai_tl_array.mtx.unlock();
-//     //     }
-//     //     search_result.nodes = 0;
-//     //     // Search_result root_search_result = ai_searching_thread_id(board, AI_TIME_LIMIT_LEVEL_ROOT, true, 0, true, false, thread_id, searching);
-//     //     // search_result.nodes += root_search_result.nodes;
-//     //     // std::cerr << "root " << root_search_result.value << std::endl;
-//     //     while (tim() - strt < time_limit && *searching && ai_tl_array.n_expanded_nodes < N_MAX_NODES_AI_TL - 3000) {
-//     //         if (root->n_children == 1 && root->good_moves_already_searched && root->n >= 20) {
-//     //             break;
-//     //         }
-//     //         AI_TL_Elem *current_node = root;
-//     //         // double sum_loss = 0.0;
-//     //         ai_tl_array.mtx.lock();
-//     //             while (current_node->n_children) {
-//     //                 // if (current_node == root && !current_node->good_moves_already_searched) {
-//     //                 //     break;
-//     //                 // }
-//     //                 double current_node_w = -INF;
-//     //                 if (!current_node->good_moves_already_searched) {
-//     //                     double min_child_v = INF;
-//     //                     for (int i = 0; i < current_node->n_children; ++i) {
-//     //                         AI_TL_Elem *child = current_node->children[i];
-//     //                         if (-HW2 <= -child->v && -child->v <= HW2) {
-//     //                             double vv = -child->v;
-//     //                             if (-HW2 <= -child->search_v && -child->search_v <= HW2) {
-//     //                                 vv = std::max(vv, -child->search_v);
-//     //                             }
-//     //                             // std::cerr << -child->v << " " << -child->search_v << std::endl;
-//     //                             min_child_v = std::min(min_child_v, vv);
-//     //                         }
-//     //                     }
-//     //                     double v = min_child_v / 64.0;
-//     //                     double u = 0.2 * sqrt(current_node->n) / (1 + 0);
-//     //                     current_node_w = v + u - myrandom() * 0.15;
-//     //                     // break;
-//     //                 }
-//     //                 double max_w = -INF;
-//     //                 double additional_loss = 0.0;
-//     //                 AI_TL_Elem *max_node = nullptr;
-//     //                 // double max_v = -INF;
-//     //                 // for (int i = 0; i < current_node->n_children; ++i) {
-//     //                 //     AI_TL_Elem *child = current_node->children[i];
-//     //                 //     max_v = std::max(max_v, -child->v);
-//     //                 // }
-//     //                 for (int i = 0; i < current_node->n_children; ++i) {
-//     //                     AI_TL_Elem *child = current_node->children[i];
-//     //                     // double loss = max_v - (-child->v);
-//     //                     // double v = 1.0 - exp((max_v - (-child->v)) - 4.0);
-//     //                     // double v = -std::max(0.0, (max_v - (-child->v)) - 2) / 64.0;
-//     //                     double v = -child->v / 64.0;
-//     //                     double u = 0.2 * sqrt(current_node->n) / (1 + child->n);
-//     //                     // double l = 1.5 * loss / 64.0;
-//     //                     // double w = v + u - l;
-//     //                     double w = v + u;
-//     //                     if (current_node == &ai_tl_array.ai_time_limit_elems[0]) {
-//     //                         w += myrandom() * 0.05;
-//     //                     }
-//     //                     if (w > max_w && !child->is_complete_search) {
-//     //                         max_w = w;
-//     //                         max_node = child;
-//     //                         // additional_loss = loss;
-//     //                     }
-//     //                 }
-//     //                 if (current_node_w >= max_w) {
-//     //                     // std::cerr << "current node selected" << std::endl;
-//     //                     break;
-//     //                 } else if (current_node_w != -INF) {
-//     //                     std::cerr << "current node not selected" << std::endl;
-//     //                 }
-//     //                 current_node = max_node;
-//     //                 // sum_loss += additional_loss;
-//     //                 // if (myrandom() < 0.5 && !current_node->good_moves_already_searched) {
-//     //                 //     break;
-//     //                 // }
-//     //             }
-//     //         ai_tl_array.mtx.unlock();
-//     //         if (current_node == nullptr) {
-//     //             if (show_log) {
-//     //                 std::cerr << "no children found, breaking" << std::endl;
-//     //             }
-//     //             break;
-//     //         }
-//     //         // std::cerr << "START current node n_discs " << current_node->board.n_discs() << " " << current_node->board.to_str() << " " << idx_to_coord(current_node->last_move) << " n " << current_node->n << " v " << -current_node->v << " complete_search " << current_node->is_complete_search << std::endl;
-
-//     //         uint64_t legal = current_node->board.get_legal();
-//     //         for (int i = 0; i < current_node->n_children; ++i) {
-//     //             AI_TL_Elem *child = current_node->children[i];
-//     //             legal ^= 1ULL << child->last_move;
-//     //         }
-//     //         if (legal == 0) {
-//     //             current_node->good_moves_already_searched = true;
-//     //             continue;
-//     //         }
-            
-//     //         AI_TL_Elem *new_node;
-//     //         AI_TL_Elem *selfplay_node = current_node;
-
-//     //         double current_node_max_v = -INF;
-//     //         for (int i = 0; i < current_node->n_children; ++i) {
-//     //             AI_TL_Elem *child = current_node->children[i];
-//     //             current_node_max_v = std::max(current_node_max_v, -child->v);
-//     //         }
-
-//     //         Flip flip;
-//     //         int level = AI_TIME_LIMIT_LEVEL;
-//     //         if (selfplay_node == root) {
-//     //             level = AI_TIME_LIMIT_LEVEL_ROOT;
-//     //         }
-//     //         Search_result next_move_search_result = ai_legal_searching_thread_id(selfplay_node->board, level, true, 0, true, false, legal, thread_id, searching);
-//     //         search_result.nodes += next_move_search_result.nodes;
-//     //         if (next_move_search_result.value + AI_TIME_LIMIT_EXPAND_THRESHOLD < current_node_max_v && next_move_search_result.value + AI_TIME_LIMIT_EXPAND_THRESHOLD < selfplay_node->search_v) {
-//     //             selfplay_node->good_moves_already_searched = true;
-//     //             continue;
-//     //         }
-//     //         selfplay_node->search_v = std::max(selfplay_node->search_v, (double)next_move_search_result.value);
-//     //         ai_tl_array.mtx.lock();
-//     //             new_node = &ai_tl_array.ai_time_limit_elems[ai_tl_array.n_expanded_nodes++];
-//     //             new_node->reset();
-//     //             new_node->sgn = selfplay_node->sgn * -1;
-//     //             new_node->board = selfplay_node->board.copy();
-//     //             calc_flip(&flip, &new_node->board, next_move_search_result.policy);
-//     //             new_node->board.move_board(&flip);
-//     //             new_node->parent = selfplay_node;
-//     //             new_node->last_move = next_move_search_result.policy;
-//     //             selfplay_node->children[selfplay_node->n_children++] = new_node;
-//     //             selfplay_node = new_node;
-//     //         ai_tl_array.mtx.unlock();
-//     //         if (show_log) {
-//     //             // std::cerr << idx_to_coord(next_move_search_result.policy);
-//     //         }
-
-//     //         int score_sgn = -1;
-//     //         bool search_failed = false;
-//     //         while (*searching) {
-//     //             if (selfplay_node->board.get_legal() == 0ULL) {
-//     //                 score_sgn *= -1;
-//     //                 ai_tl_array.mtx.lock();
-//     //                     new_node = &ai_tl_array.ai_time_limit_elems[ai_tl_array.n_expanded_nodes++];
-//     //                     new_node->reset();
-//     //                     new_node->sgn = selfplay_node->sgn * -1;
-//     //                     new_node->board = selfplay_node->board.copy();
-//     //                     new_node->board.pass();
-//     //                     new_node->parent = selfplay_node;
-//     //                     new_node->last_move = MOVE_PASS;
-//     //                     new_node->v = SCORE_UNDEFINED;
-//     //                     new_node->search_v = SCORE_UNDEFINED;
-//     //                     selfplay_node->children[selfplay_node->n_children++] = new_node;
-//     //                     selfplay_node = new_node;
-//     //                 ai_tl_array.mtx.unlock();
-//     //                 if (board.get_legal() == 0ULL) {
-//     //                     selfplay_node->v = board.score_player();
-//     //                     if (show_log) {
-//     //                         // std::cerr << "... result " << score_sgn * selfplay_node->v;
-//     //                     }
-//     //                     break;
-//     //                 }
-//     //             }
-//     //             if (*searching) {
-//     //                 Search_result selfplay_search_result = ai_searching_thread_id(selfplay_node->board, AI_TIME_LIMIT_LEVEL, false, 0, true, false, thread_id, searching);
-//     //                 if (*searching && is_valid_policy(selfplay_search_result.policy)) {
-//     //                     selfplay_node->search_v = selfplay_search_result.value;
-//     //                     if (show_log) {
-//     //                         // std::cerr << idx_to_coord(selfplay_search_result.policy);
-//     //                     }
-//     //                     if (selfplay_node->board.n_discs() >= HW2 - 21) { // complete search with last 21 empties in lv.15- (initial level)
-//     //                         if (show_log) {
-//     //                             // std::cerr << "... result " << score_sgn * selfplay_search_result.value;
-//     //                         }
-//     //                         selfplay_node->v = selfplay_search_result.value;
-//     //                         break;
-//     //                     }
-//     //                     calc_flip(&flip, &selfplay_node->board, selfplay_search_result.policy);
-//     //                     score_sgn *= -1;
-//     //                     ai_tl_array.mtx.lock();
-//     //                         new_node = &ai_tl_array.ai_time_limit_elems[ai_tl_array.n_expanded_nodes++];
-//     //                         new_node->reset();
-//     //                         new_node->sgn = selfplay_node->sgn * -1;
-//     //                         new_node->board = selfplay_node->board.copy();
-//     //                         new_node->board.move_board(&flip);
-//     //                         new_node->parent = selfplay_node;
-//     //                         new_node->last_move = selfplay_search_result.policy;
-//     //                         selfplay_node->children[selfplay_node->n_children++] = new_node;
-//     //                         selfplay_node = new_node;
-//     //                     ai_tl_array.mtx.unlock();
-//     //                 }
-//     //             }
-//     //             if (!(*searching)) {
-//     //                 if (show_log) {
-//     //                     // std::cerr << " terminated";
-//     //                 }
-//     //                 search_failed = true;
-//     //                 break;
-//     //             }
-//     //         }
-//     //         if (show_log) {
-//     //             // std::cerr << std::endl;
-//     //         }
-
-//     //         // std::cerr << "FINISH current node n_discs " << current_node->board.n_discs() << " " << current_node->board.to_str() << " " << idx_to_coord(current_node->last_move) << " n " << current_node->n << " v " << -current_node->v << " complete_search " << current_node->is_complete_search << std::endl;
-//     //         ++selfplay_node->n;
-//     //         if (!search_failed) {
-//     //             ai_tl_array.mtx.lock();
-//     //                 AI_TL_Elem *node = selfplay_node->parent;
-//     //                 while (node != nullptr) {
-//     //                     // node->v = -INF;
-//     //                     double v = -INF;
-//     //                     node->is_complete_search = node->good_moves_already_searched;
-//     //                     node->n = 0;
-//     //                     for (int i = 0; i < node->n_children; ++i) {
-//     //                         AI_TL_Elem *child = node->children[i];
-//     //                         v = std::max(v, -child->v);
-//     //                         node->is_complete_search &= child->is_complete_search;
-//     //                         node->n += child->n;
-//     //                     }
-//     //                     // node->v = 0.9 * v + 0.1 * node->v;
-//     //                     node->v = v;
-//     //                     // if (-HW2 <= node->v && node->v <= HW2) {
-//     //                     //     node->v = 0.9 * v + 0.1 * node->v;
-//     //                     // } else {
-//     //                     //     node->v = v;
-//     //                     // }
-//     //                     // std::cerr << "discs " << node->board.n_discs() << " " << node->board.to_str() << " n " << node->n << " v " << node->v << std::endl;
-//     //                     node = node->parent;
-//     //                 }
-//     //             ai_tl_array.mtx.unlock();
-//     //         }
-//     //         // std::cerr << n_expanded_nodes << " nodes expanded" << std::endl;
-//     //         // for (int i = 0; i < n_expanded_nodes; ++i) {
-//     //         //     AI_TL_Elem elem = ai_time_limit_elems[i];
-//     //         //     std::cerr << "elem n_discs " << elem.board.n_discs() << " " << idx_to_coord(elem.last_move) << " n " << elem.n << " v " << -elem.v << " complete_search " << elem.is_complete_search << std::endl;
-//     //         // }
-//     //         // std::cerr << std::endl;
-
-//     //         int best_n = -1;
-//     //         int best_policy = -1;
-//     //         double best_value = -INF;
-//     //         int second_best_n = -1;
-//     //         int second_policy = -1;
-//     //         double second_value = -INF;
-//     //         for (int i = 0; i < root->n_children; ++i) {
-//     //             AI_TL_Elem *child = root->children[i];
-//     //             // if (child->n > best_n || (child->n == best_n && -child->v > best_value)) {
-//     //             if (-child->v > best_value || (-child->v == best_value && child->n > best_n)) {
-//     //                 second_best_n = best_n;
-//     //                 second_policy = best_policy;
-//     //                 second_value = best_value;
-//     //                 best_n = child->n;
-//     //                 best_policy = child->last_move;
-//     //                 best_value = -child->v;
-//     //             // } else if (child->n > second_best_n) {
-//     //             } else if (-child->v > second_value) {
-//     //                 second_best_n = child->n;
-//     //                 second_policy = child->last_move;
-//     //                 second_value = -child->v;
-//     //             }
-//     //         }
-//     //         std::cerr << "expanded " << ai_tl_array.n_expanded_nodes << " root n " << root->n << " n_children " << root->n_children << " best " << idx_to_coord(best_policy) << " " << best_value << " / " << best_n << " second " << idx_to_coord(second_policy) << " " << second_value << " / " << second_best_n << " time " << tim() - strt << std::endl;
-//     //         if (best_n > second_best_n * 2 && best_value > second_value && root->n > 40) {
-//     //             if (show_log) {
-//     //                 std::cerr << "enough searched best_n " << best_n << " second_best_n " << second_best_n << std::endl;
-//     //             }
-//     //             break;
-//     //         }
-//     //     }
-//     //     std::cerr << "level " << AI_TIME_LIMIT_LEVEL << " " << ai_tl_array.n_expanded_nodes << " nodes expanded in " << tim() - strt << " ms" << std::endl;
-//     //     int best_n = -1;
-//     //     double best_value = -INF;
-//     //     for (int i = 0; i < root->n_children; ++i) {
-//     //         AI_TL_Elem *child = root->children[i];
-//     //         std::cerr << idx_to_coord(child->last_move) << " " << -child->v << " " << child->n << std::endl;
-//     //         // if (child->n > best_n || (child->n == best_n && -child->v > best_value)) {
-//     //         if (-child->v > best_value || (-child->v == best_value && child->n > best_n)) {
-//     //             best_n = child->n;
-//     //             best_value = -child->v;
-//     //             search_result.policy = child->last_move;
-//     //             search_result.value = -child->v;
-//     //         }
-//     //     }
-//     //     search_result.time = tim() - strt;
-//     //     search_result.nps = calc_nps(search_result.nodes, search_result.time);
-//     // }
-//     if (show_log) {
-//         std::cerr << "ai_time_limit selected " << idx_to_coord(search_result.policy) << " value " << search_result.value << " depth " << search_result.depth << "@" << search_result.probability << "%" << " time " << tim() - strt << " " << board.to_str() << std::endl << std::endl;
-//     }
-//     return search_result;
-// }
-
-
-
-
-
-
 Search_result ai_time_limit(Board board, bool use_book, int book_acc_level, bool use_multi_thread, bool show_log, uint64_t remaining_time_msec, thread_id_t thread_id, bool *searching) {
-    uint64_t time_limit = calc_time_limit_ply(board, remaining_time_msec, show_log);
+    uint64_t time_limit = calc_time_limit_ply_MCTS(board, remaining_time_msec, show_log);
     if (show_log) {
         std::cerr << "ai_time_limit start! tl " << time_limit << " remaining " << remaining_time_msec << " n_empties " << HW2 - board.n_discs() << " " << board.to_str() << std::endl;
     }
     uint64_t strt = tim();
     int n_empties = HW2 - board.n_discs();
-    if (time_limit > 9000ULL && n_empties >= 38 /*35*/) { // additional search
-        // bool need_request_more_time = false;
-        bool get_values_searching = true;
-        uint64_t get_values_tl = 2000ULL;
-        uint64_t until_align_levels_tl = 4000ULL;
-        uint64_t min_ai_common_tl = 3000ULL;
-        if (show_log) {
-            std::cerr << "getting values tl " << get_values_tl << std::endl;
-        }
-        std::vector<Ponder_elem> get_values_move_list = ai_get_values(board, show_log, get_values_tl, thread_id);
-        if (get_values_move_list.size()) {
-            double best_value = get_values_move_list[0].value;
-            int n_good_moves = 0;
-            for (const Ponder_elem &elem: get_values_move_list) {
-                if (elem.value >= best_value - AI_TL_ADDITIONAL_SEARCH_THRESHOLD * 3.0) {
-                    ++n_good_moves;
-                }
-            }
-            if (n_good_moves >= 2) {
-                if (show_log) {
-                    std::cerr << "need to search good moves :";
-                    for (int i = 0; i < n_good_moves; ++i) {
-                        std::cerr << " " << idx_to_coord(get_values_move_list[i].flip.pos);
-                    }
-                    std::cerr << std::endl;
-                }
-                uint64_t elapsed_till_get_values = tim() - strt;
-                if (elapsed_till_get_values > until_align_levels_tl) {
-                    elapsed_till_get_values = until_align_levels_tl;
-                }
-                uint64_t align_moves_tl = until_align_levels_tl - elapsed_till_get_values;
-                std::vector<Ponder_elem> after_move_list = ai_align_move_levels(board, show_log, get_values_move_list, n_good_moves, align_moves_tl, thread_id, 27);
-                // need_request_more_time = true;
+    Search_result search_result;
+    // if (n_empties <= START_NORMAL_SEARCH_EMPTIES || time_limit < 20000ULL) { // normal search
+        search_result = ai_common(board, -SCORE_MAX, SCORE_MAX, MAX_LEVEL, use_book, book_acc_level, use_multi_thread, show_log, board.get_legal(), false, time_limit, thread_id, searching);
+    // } else {
+    //     AI_TL_Elem *root = nullptr;
+    //     for (int i = 0; i < ai_tl_array.n_expanded_nodes; ++i) {
+    //         if (ai_tl_array.ai_time_limit_elems[i].board == board) {
+    //             root = &ai_tl_array.ai_time_limit_elems[i];
+    //             break;
+    //         }
+    //     }
+    //     if (root == nullptr) {
+    //         ai_tl_array.mtx.lock();
+    //             ai_tl_array.n_expanded_nodes = 0;
+    //             root = &ai_tl_array.ai_time_limit_elems[ai_tl_array.n_expanded_nodes++];
+    //             root->reset();
+    //             root->sgn = 1;
+    //             root->board = board;
+    //         ai_tl_array.mtx.unlock();
+    //     }
+    //     search_result.nodes = 0;
+    //     // Search_result root_search_result = ai_searching_thread_id(board, AI_TIME_LIMIT_LEVEL_ROOT, true, 0, true, false, thread_id, searching);
+    //     // search_result.nodes += root_search_result.nodes;
+    //     // std::cerr << "root " << root_search_result.value << std::endl;
+    //     while (tim() - strt < time_limit && *searching && ai_tl_array.n_expanded_nodes < N_MAX_NODES_AI_TL - 3000) {
+    //         if (root->n_children == 1 && root->good_moves_already_searched && root->n >= 20) {
+    //             break;
+    //         }
+    //         AI_TL_Elem *current_node = root;
+    //         // double sum_loss = 0.0;
+    //         ai_tl_array.mtx.lock();
+    //             while (current_node->n_children) {
+    //                 // if (current_node == root && !current_node->good_moves_already_searched) {
+    //                 //     break;
+    //                 // }
+    //                 double current_node_w = -INF;
+    //                 if (!current_node->good_moves_already_searched) {
+    //                     double min_child_v = INF;
+    //                     for (int i = 0; i < current_node->n_children; ++i) {
+    //                         AI_TL_Elem *child = current_node->children[i];
+    //                         if (-HW2 <= -child->v && -child->v <= HW2) {
+    //                             double vv = -child->v;
+    //                             if (-HW2 <= -child->search_v && -child->search_v <= HW2) {
+    //                                 vv = std::max(vv, -child->search_v);
+    //                             }
+    //                             // std::cerr << -child->v << " " << -child->search_v << std::endl;
+    //                             min_child_v = std::min(min_child_v, vv);
+    //                         }
+    //                     }
+    //                     double v = min_child_v / 64.0;
+    //                     double u = 0.2 * sqrt(current_node->n) / (1 + 0);
+    //                     current_node_w = v + u - myrandom() * 0.15;
+    //                     // break;
+    //                 }
+    //                 double max_w = -INF;
+    //                 double additional_loss = 0.0;
+    //                 AI_TL_Elem *max_node = nullptr;
+    //                 // double max_v = -INF;
+    //                 // for (int i = 0; i < current_node->n_children; ++i) {
+    //                 //     AI_TL_Elem *child = current_node->children[i];
+    //                 //     max_v = std::max(max_v, -child->v);
+    //                 // }
+    //                 for (int i = 0; i < current_node->n_children; ++i) {
+    //                     AI_TL_Elem *child = current_node->children[i];
+    //                     // double loss = max_v - (-child->v);
+    //                     // double v = 1.0 - exp((max_v - (-child->v)) - 4.0);
+    //                     // double v = -std::max(0.0, (max_v - (-child->v)) - 2) / 64.0;
+    //                     double v = -child->v / 64.0;
+    //                     double u = 0.2 * sqrt(current_node->n) / (1 + child->n);
+    //                     // double l = 1.5 * loss / 64.0;
+    //                     // double w = v + u - l;
+    //                     double w = v + u;
+    //                     if (current_node == &ai_tl_array.ai_time_limit_elems[0]) {
+    //                         w += myrandom() * 0.05;
+    //                     }
+    //                     if (w > max_w && !child->is_complete_search) {
+    //                         max_w = w;
+    //                         max_node = child;
+    //                         // additional_loss = loss;
+    //                     }
+    //                 }
+    //                 if (current_node_w >= max_w) {
+    //                     // std::cerr << "current node selected" << std::endl;
+    //                     break;
+    //                 } else if (current_node_w != -INF) {
+    //                     std::cerr << "current node not selected" << std::endl;
+    //                 }
+    //                 current_node = max_node;
+    //                 // sum_loss += additional_loss;
+    //                 // if (myrandom() < 0.5 && !current_node->good_moves_already_searched) {
+    //                 //     break;
+    //                 // }
+    //             }
+    //         ai_tl_array.mtx.unlock();
+    //         if (current_node == nullptr) {
+    //             if (show_log) {
+    //                 std::cerr << "no children found, breaking" << std::endl;
+    //             }
+    //             break;
+    //         }
+    //         // std::cerr << "START current node n_discs " << current_node->board.n_discs() << " " << current_node->board.to_str() << " " << idx_to_coord(current_node->last_move) << " n " << current_node->n << " v " << -current_node->v << " complete_search " << current_node->is_complete_search << std::endl;
 
-                double new_best_value = after_move_list[0].value;
-                int new_n_good_moves = 0;
-                for (const Ponder_elem &elem: after_move_list) {
-                    if (elem.value >= new_best_value - AI_TL_ADDITIONAL_SEARCH_THRESHOLD) {
-                        ++new_n_good_moves;
-                    }
-                }
-                if (new_n_good_moves >= 2) {
-                    if (time_limit > tim() - strt) {
-                        uint64_t elapsed_special_search = tim() - strt;
-                        if (time_limit > elapsed_special_search) {
-                            time_limit -= elapsed_special_search;
-                        } else {
-                            time_limit = 1;
-                        }
-                        uint64_t remaining_time_msec_p = 1;
-                        if (remaining_time_msec > elapsed_special_search) {
-                            remaining_time_msec_p = remaining_time_msec - elapsed_special_search;
-                        }
-                        time_limit = request_more_time(board, remaining_time_msec_p, time_limit, show_log) + elapsed_special_search;
-                        if (time_limit > min_ai_common_tl + elapsed_special_search) {
-                            uint64_t self_play_tl = time_limit - min_ai_common_tl - elapsed_special_search;
-                            if (show_log) {
-                                std::cerr << "need to search good moves (self play) :";
-                                for (int i = 0; i < new_n_good_moves; ++i) {
-                                    std::cerr << " " << idx_to_coord(after_move_list[i].flip.pos);
-                                }
-                                std::cerr << std::endl;
-                            }
-                            std::vector<Ponder_elem> after_move_list2 = ai_additional_selfplay(board, show_log, after_move_list, new_n_good_moves, AI_TL_ADDITIONAL_SEARCH_THRESHOLD, self_play_tl, thread_id);
-                        }
-                    }
-                }
-            }
-        }
-        uint64_t elapsed_special_search2 = tim() - strt;
-        if (time_limit > elapsed_special_search2) {
-            time_limit -= elapsed_special_search2;
-        } else {
-            time_limit = 1;
-        }
-        // if (need_request_more_time) {
-        //     uint64_t remaining_time_msec_p = 1;
-        //     if (remaining_time_msec > elapsed_special_search) {
-        //         remaining_time_msec_p = remaining_time_msec - elapsed_special_search;
-        //     }
-        //     time_limit = request_more_time(board, remaining_time_msec_p, time_limit, show_log);
-        // }
-        if (show_log) {
-            std::cerr << "additional calculation elapsed " << elapsed_special_search2 << " reduced time limit " << time_limit << std::endl;
-        }
-    }
-    if (show_log) {
-        std::cerr << "ai_common main search tl " << time_limit << std::endl;
-    }
-    Search_result search_result = ai_common(board, -SCORE_MAX, SCORE_MAX, MAX_LEVEL, use_book, book_acc_level, use_multi_thread, show_log, board.get_legal(), false, time_limit, thread_id, searching);
+    //         uint64_t legal = current_node->board.get_legal();
+    //         for (int i = 0; i < current_node->n_children; ++i) {
+    //             AI_TL_Elem *child = current_node->children[i];
+    //             legal ^= 1ULL << child->last_move;
+    //         }
+    //         if (legal == 0) {
+    //             current_node->good_moves_already_searched = true;
+    //             continue;
+    //         }
+            
+    //         AI_TL_Elem *new_node;
+    //         AI_TL_Elem *selfplay_node = current_node;
+
+    //         double current_node_max_v = -INF;
+    //         for (int i = 0; i < current_node->n_children; ++i) {
+    //             AI_TL_Elem *child = current_node->children[i];
+    //             current_node_max_v = std::max(current_node_max_v, -child->v);
+    //         }
+
+    //         Flip flip;
+    //         int level = AI_TIME_LIMIT_LEVEL;
+    //         if (selfplay_node == root) {
+    //             level = AI_TIME_LIMIT_LEVEL_ROOT;
+    //         }
+    //         Search_result next_move_search_result = ai_legal_searching_thread_id(selfplay_node->board, level, true, 0, true, false, legal, thread_id, searching);
+    //         search_result.nodes += next_move_search_result.nodes;
+    //         if (next_move_search_result.value + AI_TIME_LIMIT_EXPAND_THRESHOLD < current_node_max_v && next_move_search_result.value + AI_TIME_LIMIT_EXPAND_THRESHOLD < selfplay_node->search_v) {
+    //             selfplay_node->good_moves_already_searched = true;
+    //             continue;
+    //         }
+    //         selfplay_node->search_v = std::max(selfplay_node->search_v, (double)next_move_search_result.value);
+    //         ai_tl_array.mtx.lock();
+    //             new_node = &ai_tl_array.ai_time_limit_elems[ai_tl_array.n_expanded_nodes++];
+    //             new_node->reset();
+    //             new_node->sgn = selfplay_node->sgn * -1;
+    //             new_node->board = selfplay_node->board.copy();
+    //             calc_flip(&flip, &new_node->board, next_move_search_result.policy);
+    //             new_node->board.move_board(&flip);
+    //             new_node->parent = selfplay_node;
+    //             new_node->last_move = next_move_search_result.policy;
+    //             selfplay_node->children[selfplay_node->n_children++] = new_node;
+    //             selfplay_node = new_node;
+    //         ai_tl_array.mtx.unlock();
+    //         if (show_log) {
+    //             // std::cerr << idx_to_coord(next_move_search_result.policy);
+    //         }
+
+    //         int score_sgn = -1;
+    //         bool search_failed = false;
+    //         while (*searching) {
+    //             if (selfplay_node->board.get_legal() == 0ULL) {
+    //                 score_sgn *= -1;
+    //                 ai_tl_array.mtx.lock();
+    //                     new_node = &ai_tl_array.ai_time_limit_elems[ai_tl_array.n_expanded_nodes++];
+    //                     new_node->reset();
+    //                     new_node->sgn = selfplay_node->sgn * -1;
+    //                     new_node->board = selfplay_node->board.copy();
+    //                     new_node->board.pass();
+    //                     new_node->parent = selfplay_node;
+    //                     new_node->last_move = MOVE_PASS;
+    //                     new_node->v = SCORE_UNDEFINED;
+    //                     new_node->search_v = SCORE_UNDEFINED;
+    //                     selfplay_node->children[selfplay_node->n_children++] = new_node;
+    //                     selfplay_node = new_node;
+    //                 ai_tl_array.mtx.unlock();
+    //                 if (board.get_legal() == 0ULL) {
+    //                     selfplay_node->v = board.score_player();
+    //                     if (show_log) {
+    //                         // std::cerr << "... result " << score_sgn * selfplay_node->v;
+    //                     }
+    //                     break;
+    //                 }
+    //             }
+    //             if (*searching) {
+    //                 Search_result selfplay_search_result = ai_searching_thread_id(selfplay_node->board, AI_TIME_LIMIT_LEVEL, false, 0, true, false, thread_id, searching);
+    //                 if (*searching && is_valid_policy(selfplay_search_result.policy)) {
+    //                     selfplay_node->search_v = selfplay_search_result.value;
+    //                     if (show_log) {
+    //                         // std::cerr << idx_to_coord(selfplay_search_result.policy);
+    //                     }
+    //                     if (selfplay_node->board.n_discs() >= HW2 - 21) { // complete search with last 21 empties in lv.15- (initial level)
+    //                         if (show_log) {
+    //                             // std::cerr << "... result " << score_sgn * selfplay_search_result.value;
+    //                         }
+    //                         selfplay_node->v = selfplay_search_result.value;
+    //                         break;
+    //                     }
+    //                     calc_flip(&flip, &selfplay_node->board, selfplay_search_result.policy);
+    //                     score_sgn *= -1;
+    //                     ai_tl_array.mtx.lock();
+    //                         new_node = &ai_tl_array.ai_time_limit_elems[ai_tl_array.n_expanded_nodes++];
+    //                         new_node->reset();
+    //                         new_node->sgn = selfplay_node->sgn * -1;
+    //                         new_node->board = selfplay_node->board.copy();
+    //                         new_node->board.move_board(&flip);
+    //                         new_node->parent = selfplay_node;
+    //                         new_node->last_move = selfplay_search_result.policy;
+    //                         selfplay_node->children[selfplay_node->n_children++] = new_node;
+    //                         selfplay_node = new_node;
+    //                     ai_tl_array.mtx.unlock();
+    //                 }
+    //             }
+    //             if (!(*searching)) {
+    //                 if (show_log) {
+    //                     // std::cerr << " terminated";
+    //                 }
+    //                 search_failed = true;
+    //                 break;
+    //             }
+    //         }
+    //         if (show_log) {
+    //             // std::cerr << std::endl;
+    //         }
+
+    //         // std::cerr << "FINISH current node n_discs " << current_node->board.n_discs() << " " << current_node->board.to_str() << " " << idx_to_coord(current_node->last_move) << " n " << current_node->n << " v " << -current_node->v << " complete_search " << current_node->is_complete_search << std::endl;
+    //         ++selfplay_node->n;
+    //         if (!search_failed) {
+    //             ai_tl_array.mtx.lock();
+    //                 AI_TL_Elem *node = selfplay_node->parent;
+    //                 while (node != nullptr) {
+    //                     // node->v = -INF;
+    //                     double v = -INF;
+    //                     node->is_complete_search = node->good_moves_already_searched;
+    //                     node->n = 0;
+    //                     for (int i = 0; i < node->n_children; ++i) {
+    //                         AI_TL_Elem *child = node->children[i];
+    //                         v = std::max(v, -child->v);
+    //                         node->is_complete_search &= child->is_complete_search;
+    //                         node->n += child->n;
+    //                     }
+    //                     // node->v = 0.9 * v + 0.1 * node->v;
+    //                     node->v = v;
+    //                     // if (-HW2 <= node->v && node->v <= HW2) {
+    //                     //     node->v = 0.9 * v + 0.1 * node->v;
+    //                     // } else {
+    //                     //     node->v = v;
+    //                     // }
+    //                     // std::cerr << "discs " << node->board.n_discs() << " " << node->board.to_str() << " n " << node->n << " v " << node->v << std::endl;
+    //                     node = node->parent;
+    //                 }
+    //             ai_tl_array.mtx.unlock();
+    //         }
+    //         // std::cerr << n_expanded_nodes << " nodes expanded" << std::endl;
+    //         // for (int i = 0; i < n_expanded_nodes; ++i) {
+    //         //     AI_TL_Elem elem = ai_time_limit_elems[i];
+    //         //     std::cerr << "elem n_discs " << elem.board.n_discs() << " " << idx_to_coord(elem.last_move) << " n " << elem.n << " v " << -elem.v << " complete_search " << elem.is_complete_search << std::endl;
+    //         // }
+    //         // std::cerr << std::endl;
+
+    //         int best_n = -1;
+    //         int best_policy = -1;
+    //         double best_value = -INF;
+    //         int second_best_n = -1;
+    //         int second_policy = -1;
+    //         double second_value = -INF;
+    //         for (int i = 0; i < root->n_children; ++i) {
+    //             AI_TL_Elem *child = root->children[i];
+    //             // if (child->n > best_n || (child->n == best_n && -child->v > best_value)) {
+    //             if (-child->v > best_value || (-child->v == best_value && child->n > best_n)) {
+    //                 second_best_n = best_n;
+    //                 second_policy = best_policy;
+    //                 second_value = best_value;
+    //                 best_n = child->n;
+    //                 best_policy = child->last_move;
+    //                 best_value = -child->v;
+    //             // } else if (child->n > second_best_n) {
+    //             } else if (-child->v > second_value) {
+    //                 second_best_n = child->n;
+    //                 second_policy = child->last_move;
+    //                 second_value = -child->v;
+    //             }
+    //         }
+    //         std::cerr << "expanded " << ai_tl_array.n_expanded_nodes << " root n " << root->n << " n_children " << root->n_children << " best " << idx_to_coord(best_policy) << " " << best_value << " / " << best_n << " second " << idx_to_coord(second_policy) << " " << second_value << " / " << second_best_n << " time " << tim() - strt << std::endl;
+    //         if (best_n > second_best_n * 2 && best_value > second_value && root->n > 40) {
+    //             if (show_log) {
+    //                 std::cerr << "enough searched best_n " << best_n << " second_best_n " << second_best_n << std::endl;
+    //             }
+    //             break;
+    //         }
+    //     }
+    //     std::cerr << "level " << AI_TIME_LIMIT_LEVEL << " " << ai_tl_array.n_expanded_nodes << " nodes expanded in " << tim() - strt << " ms" << std::endl;
+    //     int best_n = -1;
+    //     double best_value = -INF;
+    //     for (int i = 0; i < root->n_children; ++i) {
+    //         AI_TL_Elem *child = root->children[i];
+    //         std::cerr << idx_to_coord(child->last_move) << " " << -child->v << " " << child->n << std::endl;
+    //         // if (child->n > best_n || (child->n == best_n && -child->v > best_value)) {
+    //         if (-child->v > best_value || (-child->v == best_value && child->n > best_n)) {
+    //             best_n = child->n;
+    //             best_value = -child->v;
+    //             search_result.policy = child->last_move;
+    //             search_result.value = -child->v;
+    //         }
+    //     }
+    //     search_result.time = tim() - strt;
+    //     search_result.nps = calc_nps(search_result.nodes, search_result.time);
+    // }
     if (show_log) {
         std::cerr << "ai_time_limit selected " << idx_to_coord(search_result.policy) << " value " << search_result.value << " depth " << search_result.depth << "@" << search_result.probability << "%" << " time " << tim() - strt << " " << board.to_str() << std::endl << std::endl;
     }
     return search_result;
 }
+
+
+
+
+
+
+// Search_result ai_time_limit(Board board, bool use_book, int book_acc_level, bool use_multi_thread, bool show_log, uint64_t remaining_time_msec, thread_id_t thread_id, bool *searching) {
+//     uint64_t time_limit = calc_time_limit_ply(board, remaining_time_msec, show_log);
+//     if (show_log) {
+//         std::cerr << "ai_time_limit start! tl " << time_limit << " remaining " << remaining_time_msec << " n_empties " << HW2 - board.n_discs() << " " << board.to_str() << std::endl;
+//     }
+//     uint64_t strt = tim();
+//     int n_empties = HW2 - board.n_discs();
+//     if (time_limit > 9000ULL && n_empties >= 38 /*35*/) { // additional search
+//         // bool need_request_more_time = false;
+//         bool get_values_searching = true;
+//         uint64_t get_values_tl = 2000ULL;
+//         uint64_t until_align_levels_tl = 4000ULL;
+//         uint64_t min_ai_common_tl = 3000ULL;
+//         if (show_log) {
+//             std::cerr << "getting values tl " << get_values_tl << std::endl;
+//         }
+//         std::vector<Ponder_elem> get_values_move_list = ai_get_values(board, show_log, get_values_tl, thread_id);
+//         if (get_values_move_list.size()) {
+//             double best_value = get_values_move_list[0].value;
+//             int n_good_moves = 0;
+//             for (const Ponder_elem &elem: get_values_move_list) {
+//                 if (elem.value >= best_value - AI_TL_ADDITIONAL_SEARCH_THRESHOLD * 3.0) {
+//                     ++n_good_moves;
+//                 }
+//             }
+//             if (n_good_moves >= 2) {
+//                 if (show_log) {
+//                     std::cerr << "need to search good moves :";
+//                     for (int i = 0; i < n_good_moves; ++i) {
+//                         std::cerr << " " << idx_to_coord(get_values_move_list[i].flip.pos);
+//                     }
+//                     std::cerr << std::endl;
+//                 }
+//                 uint64_t elapsed_till_get_values = tim() - strt;
+//                 if (elapsed_till_get_values > until_align_levels_tl) {
+//                     elapsed_till_get_values = until_align_levels_tl;
+//                 }
+//                 uint64_t align_moves_tl = until_align_levels_tl - elapsed_till_get_values;
+//                 std::vector<Ponder_elem> after_move_list = ai_align_move_levels(board, show_log, get_values_move_list, n_good_moves, align_moves_tl, thread_id, 27);
+//                 // need_request_more_time = true;
+
+//                 double new_best_value = after_move_list[0].value;
+//                 int new_n_good_moves = 0;
+//                 for (const Ponder_elem &elem: after_move_list) {
+//                     if (elem.value >= new_best_value - AI_TL_ADDITIONAL_SEARCH_THRESHOLD) {
+//                         ++new_n_good_moves;
+//                     }
+//                 }
+//                 if (new_n_good_moves >= 2) {
+//                     if (time_limit > tim() - strt) {
+//                         uint64_t elapsed_special_search = tim() - strt;
+//                         if (time_limit > elapsed_special_search) {
+//                             time_limit -= elapsed_special_search;
+//                         } else {
+//                             time_limit = 1;
+//                         }
+//                         uint64_t remaining_time_msec_p = 1;
+//                         if (remaining_time_msec > elapsed_special_search) {
+//                             remaining_time_msec_p = remaining_time_msec - elapsed_special_search;
+//                         }
+//                         time_limit = request_more_time(board, remaining_time_msec_p, time_limit, show_log) + elapsed_special_search;
+//                         if (time_limit > min_ai_common_tl + elapsed_special_search) {
+//                             uint64_t self_play_tl = time_limit - min_ai_common_tl - elapsed_special_search;
+//                             if (show_log) {
+//                                 std::cerr << "need to search good moves (self play) :";
+//                                 for (int i = 0; i < new_n_good_moves; ++i) {
+//                                     std::cerr << " " << idx_to_coord(after_move_list[i].flip.pos);
+//                                 }
+//                                 std::cerr << std::endl;
+//                             }
+//                             std::vector<Ponder_elem> after_move_list2 = ai_additional_selfplay(board, show_log, after_move_list, new_n_good_moves, AI_TL_ADDITIONAL_SEARCH_THRESHOLD, self_play_tl, thread_id);
+//                         }
+//                     }
+//                 }
+//             }
+//         }
+//         uint64_t elapsed_special_search2 = tim() - strt;
+//         if (time_limit > elapsed_special_search2) {
+//             time_limit -= elapsed_special_search2;
+//         } else {
+//             time_limit = 1;
+//         }
+//         // if (need_request_more_time) {
+//         //     uint64_t remaining_time_msec_p = 1;
+//         //     if (remaining_time_msec > elapsed_special_search) {
+//         //         remaining_time_msec_p = remaining_time_msec - elapsed_special_search;
+//         //     }
+//         //     time_limit = request_more_time(board, remaining_time_msec_p, time_limit, show_log);
+//         // }
+//         if (show_log) {
+//             std::cerr << "additional calculation elapsed " << elapsed_special_search2 << " reduced time limit " << time_limit << std::endl;
+//         }
+//     }
+//     if (show_log) {
+//         std::cerr << "ai_common main search tl " << time_limit << std::endl;
+//     }
+//     Search_result search_result = ai_common(board, -SCORE_MAX, SCORE_MAX, MAX_LEVEL, use_book, book_acc_level, use_multi_thread, show_log, board.get_legal(), false, time_limit, thread_id, searching);
+//     if (show_log) {
+//         std::cerr << "ai_time_limit selected " << idx_to_coord(search_result.policy) << " value " << search_result.value << " depth " << search_result.depth << "@" << search_result.probability << "%" << " time " << tim() - strt << " " << board.to_str() << std::endl << std::endl;
+//     }
+//     return search_result;
+// }
 
 /*
     @brief Search for analyze command
