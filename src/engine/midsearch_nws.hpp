@@ -116,31 +116,31 @@ int nega_alpha_eval2_nws(Search *search, int alpha, const bool skipped, uint64_t
         search->pass();
         return v;
     }
-    uint32_t hash_code = search->board.hash();
-    transposition_table.prefetch(hash_code);
-    uint_fast8_t moves[N_TRANSPOSITION_MOVES] = {MOVE_UNDEFINED, MOVE_UNDEFINED};
-    if (transposition_cutoff_nws(search, hash_code, 2, alpha, &v, moves)) {
-        return v;
-    }
+    // uint32_t hash_code = search->board.hash();
+    // transposition_table.prefetch(hash_code);
+    // uint_fast8_t moves[N_TRANSPOSITION_MOVES] = {MOVE_UNDEFINED, MOVE_UNDEFINED};
+    // if (transposition_cutoff_nws(search, hash_code, 2, alpha, &v, moves)) {
+    //     return v;
+    // }
     int best_move = MOVE_UNDEFINED;
     int g;
     Flip flip;
-    for (int i = 0; i < N_TRANSPOSITION_MOVES && *searching; ++i) {
-        if (moves[i] != MOVE_UNDEFINED) {
-            calc_flip(&flip, &search->board, moves[i]);
-            search->move(&flip);
-                g = -nega_alpha_eval1_nws(search, -alpha - 1, false, searching);
-            search->undo(&flip);
-            legal ^= 1ULL << moves[i];
-            if (v < g) {
-                v = g;
-                best_move = moves[i];
-                if (alpha < g) {
-                    break;
-                }
-            }
-        }
-    }
+    // for (int i = 0; i < N_TRANSPOSITION_MOVES && *searching; ++i) {
+    //     if (moves[i] != MOVE_UNDEFINED) {
+    //         calc_flip(&flip, &search->board, moves[i]);
+    //         search->move(&flip);
+    //             g = -nega_alpha_eval1_nws(search, -alpha - 1, false, searching);
+    //         search->undo(&flip);
+    //         legal ^= 1ULL << moves[i];
+    //         if (v < g) {
+    //             v = g;
+    //             best_move = moves[i];
+    //             if (alpha < g) {
+    //                 break;
+    //             }
+    //         }
+    //     }
+    // }
     for (int i = 0; i < N_STATIC_CELL_PRIORITY && v <= alpha && *searching; ++i) {
         uint64_t l = legal & static_cell_priority[i];
         for (uint_fast8_t cell = first_bit(&l); l && *searching; cell = next_bit(&l)) {
