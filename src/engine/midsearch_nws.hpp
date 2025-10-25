@@ -125,7 +125,7 @@ int nega_alpha_eval2_nws(Search *search, int alpha, const bool skipped, uint64_t
     int best_move = MOVE_UNDEFINED;
     int g;
     Flip flip;
-    for (int i = 0; i < N_TRANSPOSITION_MOVES; ++i) {
+    for (int i = 0; i < N_TRANSPOSITION_MOVES && *searching; ++i) {
         if (moves[i] != MOVE_UNDEFINED) {
             calc_flip(&flip, &search->board, moves[i]);
             search->move(&flip);
@@ -143,7 +143,7 @@ int nega_alpha_eval2_nws(Search *search, int alpha, const bool skipped, uint64_t
     }
     for (int i = 0; i < N_STATIC_CELL_PRIORITY && v <= alpha; ++i) {
         uint64_t l = legal & static_cell_priority[i];
-        for (uint_fast8_t cell = first_bit(&l); l; cell = next_bit(&l)) {
+        for (uint_fast8_t cell = first_bit(&l); l && *searching; cell = next_bit(&l)) {
             calc_flip(&flip, &search->board, cell);
             search->move(&flip);
                 g = -nega_alpha_eval1_nws(search, -alpha - 1, false);
