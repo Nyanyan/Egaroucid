@@ -59,20 +59,37 @@ inline int nega_alpha_eval1_nws(Search *search, int alpha, const bool skipped) {
     }
     int g;
     Flip flip;
-    for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)) {
-        calc_flip(&flip, &search->board, cell);
-        search->move(&flip);
+    for (int i = 0; i < N_STATIC_CELL_PRIORITY; ++i) {
+        uint64_t l = legal & static_cell_priority[i];
+        for (uint_fast8_t cell = first_bit(&l); l; cell = next_bit(&l)) {
+            calc_flip(&flip, &search->board, cell);
+            search->move(&flip);
+                ++search->n_nodes;
+                g = -mid_evaluate_diff(search);
+            search->undo(&flip);
             ++search->n_nodes;
-            g = -mid_evaluate_diff(search);
-        search->undo(&flip);
-        ++search->n_nodes;
-        if (v < g) {
-            if (alpha < g) {
-                return g;
+            if (v < g) {
+                if (alpha < g) {
+                    return g;
+                }
+                v = g;
             }
-            v = g;
         }
     }
+    // for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)) {
+    //     calc_flip(&flip, &search->board, cell);
+    //     search->move(&flip);
+    //         ++search->n_nodes;
+    //         g = -mid_evaluate_diff(search);
+    //     search->undo(&flip);
+    //     ++search->n_nodes;
+    //     if (v < g) {
+    //         if (alpha < g) {
+    //             return g;
+    //         }
+    //         v = g;
+    //     }
+    // }
     return v;
 }
 
