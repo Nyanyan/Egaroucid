@@ -98,6 +98,18 @@ constexpr uint64_t parity_table[16] = {
     0xFFFFFFFF00000000ULL, 0xFFFFFFFF0F0F0F0FULL, 0xFFFFFFFFF0F0F0F0ULL, 0xFFFFFFFFFFFFFFFFULL
 };
 
+/*
+    @brief a table for cell-based move ordering
+*/
+constexpr int N_STATIC_CELL_PRIORITY = 4;
+constexpr uint64_t static_cell_priority[N_STATIC_CELL_PRIORITY] = {
+    0x8100000000000081ULL, // corner
+    0x00003C24243C0000ULL, // box
+    0x3C3CC3C3C3C33C3CULL, // block
+    0x42C300000000C342ULL  // X, C
+};
+
+
 
 /*
     @brief Killer move constants
