@@ -28,7 +28,7 @@ constexpr int END_FAST_DEPTH = 6;
 constexpr int END_SIMPLE_DEPTH = 10;
 constexpr int MID_TO_END_DEPTH = 13;
 constexpr int MID_TO_END_DEPTH_MPC = 9;
-constexpr int MID_SIMPLE_DEPTH = 4;
+constexpr int MID_SIMPLE_ORDERING_DEPTH = 4;
 
 
 

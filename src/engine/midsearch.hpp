@@ -69,7 +69,7 @@ inline int nega_alpha_eval1(Search *search, int alpha, int beta, const bool skip
                 ++search->n_nodes;
                 g = -mid_evaluate_diff(search);
             search->undo(&flip);
-            ++search->n_nodes;
+            // ++search->n_nodes;
             if (v < g) {
                 if (alpha < g) {
                     if (beta <= g) {
