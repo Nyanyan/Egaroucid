@@ -43,7 +43,7 @@ inline int aspiration_search(Search *search, int alpha, int beta, int predicted_
     @param searching            flag for terminating this search
     @return the value
 */
-inline int nega_alpha_eval1(Search *search, int alpha, int beta, const bool skipped) {
+inline int nega_alpha_eval1(Search *search, int alpha, int beta, const bool skipped, bool *searching) {
     ++search->n_nodes;
 #if USE_SEARCH_STATISTICS
     ++search->n_nodes_discs[search->n_discs];
@@ -55,15 +55,15 @@ inline int nega_alpha_eval1(Search *search, int alpha, int beta, const bool skip
             return end_evaluate(&search->board);
         }
         search->pass();
-            v = -nega_alpha_eval1(search, -beta, -alpha, true);
+            v = -nega_alpha_eval1(search, -beta, -alpha, true, searching);
         search->pass();
         return v;
     }
     int g;
     Flip flip;
-    for (int i = 0; i < N_STATIC_CELL_PRIORITY; ++i) {
+    for (int i = 0; i < N_STATIC_CELL_PRIORITY && *searching; ++i) {
         uint64_t l = legal & static_cell_priority[i];
-        for (uint_fast8_t cell = first_bit(&l); l; cell = next_bit(&l)) {
+        for (uint_fast8_t cell = first_bit(&l); l && *searching; cell = next_bit(&l)) {
             calc_flip(&flip, &search->board, cell);
             search->move(&flip);
                 ++search->n_nodes;
@@ -173,7 +173,7 @@ int nega_scout(Search *search, int alpha, int beta, const int depth, const bool 
     }
     if (!is_end_search) {
         if (depth == 1) {
-            return nega_alpha_eval1(search, alpha, beta, skipped);
+            return nega_alpha_eval1(search, alpha, beta, skipped, searching);
         }
         if (depth == 0) {
             ++search->n_nodes;

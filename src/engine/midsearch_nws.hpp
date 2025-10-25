@@ -41,7 +41,7 @@ inline bool mpc(Search* search, int alpha, int beta, const int depth, uint64_t l
     @param skipped              already passed?
     @return the value
 */
-inline int nega_alpha_eval1_nws(Search *search, int alpha, const bool skipped) {
+inline int nega_alpha_eval1_nws(Search *search, int alpha, const bool skipped, bool *searching) {
     ++search->n_nodes;
 #if USE_SEARCH_STATISTICS
     ++search->n_nodes_discs[search->n_discs];
@@ -53,15 +53,15 @@ inline int nega_alpha_eval1_nws(Search *search, int alpha, const bool skipped) {
             return end_evaluate(&search->board);
         }
         search->pass();
-            v = -nega_alpha_eval1_nws(search, -alpha - 1, true);
+            v = -nega_alpha_eval1_nws(search, -alpha - 1, true, searching);
         search->pass();
         return v;
     }
     int g;
     Flip flip;
-    for (int i = 0; i < N_STATIC_CELL_PRIORITY; ++i) {
+    for (int i = 0; i < N_STATIC_CELL_PRIORITY && *searching; ++i) {
         uint64_t l = legal & static_cell_priority[i];
-        for (uint_fast8_t cell = first_bit(&l); l; cell = next_bit(&l)) {
+        for (uint_fast8_t cell = first_bit(&l); l && *searching; cell = next_bit(&l)) {
             calc_flip(&flip, &search->board, cell);
             search->move(&flip);
                 ++search->n_nodes;
@@ -129,7 +129,7 @@ int nega_alpha_eval2_nws(Search *search, int alpha, const bool skipped, uint64_t
         if (moves[i] != MOVE_UNDEFINED) {
             calc_flip(&flip, &search->board, moves[i]);
             search->move(&flip);
-                g = -nega_alpha_eval1_nws(search, -alpha - 1, false);
+                g = -nega_alpha_eval1_nws(search, -alpha - 1, false, searching);
             search->undo(&flip);
             legal ^= 1ULL << moves[i];
             if (v < g) {
@@ -141,12 +141,12 @@ int nega_alpha_eval2_nws(Search *search, int alpha, const bool skipped, uint64_t
             }
         }
     }
-    for (int i = 0; i < N_STATIC_CELL_PRIORITY && v <= alpha; ++i) {
+    for (int i = 0; i < N_STATIC_CELL_PRIORITY && v <= alpha && *searching; ++i) {
         uint64_t l = legal & static_cell_priority[i];
         for (uint_fast8_t cell = first_bit(&l); l && *searching; cell = next_bit(&l)) {
             calc_flip(&flip, &search->board, cell);
             search->move(&flip);
-                g = -nega_alpha_eval1_nws(search, -alpha - 1, false);
+                g = -nega_alpha_eval1_nws(search, -alpha - 1, false, searching);
             search->undo(&flip);
             if (v < g) {
                 v = g;
@@ -185,7 +185,7 @@ int nega_alpha_ordering_nws_simple(Search *search, int alpha, const int depth, c
         return nega_alpha_eval2_nws(search, alpha, skipped, legal, searching);
     }
     if (depth == 1) {
-        return nega_alpha_eval1_nws(search, alpha, skipped);
+        return nega_alpha_eval1_nws(search, alpha, skipped, searching);
     }
     if (depth == 0) {
         ++search->n_nodes;
