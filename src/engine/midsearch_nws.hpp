@@ -41,7 +41,7 @@ inline bool mpc(Search* search, int alpha, int beta, const int depth, uint64_t l
     @param skipped              already passed?
     @return the value
 */
-inline int nega_alpha_eval1_nws(Search *search, int alpha, const bool skipped, bool *searching) {
+inline int nega_alpha_eval1_nws(Search *search, int alpha, const bool skipped) {
     ++search->n_nodes;
 #if USE_SEARCH_STATISTICS
     ++search->n_nodes_discs[search->n_discs];
@@ -53,21 +53,20 @@ inline int nega_alpha_eval1_nws(Search *search, int alpha, const bool skipped, b
             return end_evaluate(&search->board);
         }
         search->pass();
-            v = -nega_alpha_eval1_nws(search, -alpha - 1, true, searching);
+            v = -nega_alpha_eval1_nws(search, -alpha - 1, true);
         search->pass();
         return v;
     }
     int g;
     Flip flip;
-    for (int i = 0; i < N_STATIC_CELL_PRIORITY && *searching; ++i) {
+    for (int i = 0; i < N_STATIC_CELL_PRIORITY; ++i) {
         uint64_t l = legal & static_cell_priority[i];
-        for (uint_fast8_t cell = first_bit(&l); l && *searching; cell = next_bit(&l)) {
+        for (uint_fast8_t cell = first_bit(&l); l; cell = next_bit(&l)) {
             calc_flip(&flip, &search->board, cell);
             search->move(&flip);
                 ++search->n_nodes;
                 g = -mid_evaluate_diff(search);
             search->undo(&flip);
-            // ++search->n_nodes;
             if (v < g) {
                 if (alpha < g) {
                     return g;
@@ -116,38 +115,44 @@ int nega_alpha_eval2_nws(Search *search, int alpha, const bool skipped, uint64_t
         search->pass();
         return v;
     }
-    // uint32_t hash_code = search->board.hash();
-    // transposition_table.prefetch(hash_code);
-    // uint_fast8_t moves[N_TRANSPOSITION_MOVES] = {MOVE_UNDEFINED, MOVE_UNDEFINED};
-    // if (transposition_cutoff_nws(search, hash_code, 2, alpha, &v, moves)) {
-    //     return v;
-    // }
+    uint32_t hash_code = search->board.hash();
+    transposition_table.prefetch(hash_code);
+    uint_fast8_t moves[N_TRANSPOSITION_MOVES] = {MOVE_UNDEFINED, MOVE_UNDEFINED};
+    if (transposition_cutoff_nws(search, hash_code, 2, alpha, &v, moves)) {
+        return v;
+    }
     int best_move = MOVE_UNDEFINED;
     int g;
     Flip flip;
-    // for (int i = 0; i < N_TRANSPOSITION_MOVES && *searching; ++i) {
-    //     if (moves[i] != MOVE_UNDEFINED) {
-    //         calc_flip(&flip, &search->board, moves[i]);
-    //         search->move(&flip);
-    //             g = -nega_alpha_eval1_nws(search, -alpha - 1, false, searching);
-    //         search->undo(&flip);
-    //         legal ^= 1ULL << moves[i];
-    //         if (v < g) {
-    //             v = g;
-    //             best_move = moves[i];
-    //             if (alpha < g) {
-    //                 break;
-    //             }
-    //         }
-    //     }
-    // }
-    for (int i = 0; i < N_STATIC_CELL_PRIORITY && v <= alpha && *searching; ++i) {
+    for (int i = 0; i < N_TRANSPOSITION_MOVES; ++i) {
+        if (moves[i] != MOVE_UNDEFINED) {
+            calc_flip(&flip, &search->board, moves[i]);
+            search->move(&flip);
+                g = -nega_alpha_eval1_nws(search, -alpha - 1, false);
+            search->undo(&flip);
+            if (!(*searching)) {
+                return SCORE_UNDEFINED;
+            }
+            legal ^= 1ULL << moves[i];
+            if (v < g) {
+                v = g;
+                best_move = moves[i];
+                if (alpha < g) {
+                    break;
+                }
+            }
+        }
+    }
+    for (int i = 0; i < N_STATIC_CELL_PRIORITY && v <= alpha; ++i) {
         uint64_t l = legal & static_cell_priority[i];
-        for (uint_fast8_t cell = first_bit(&l); l && *searching; cell = next_bit(&l)) {
+        for (uint_fast8_t cell = first_bit(&l); l; cell = next_bit(&l)) {
             calc_flip(&flip, &search->board, cell);
             search->move(&flip);
-                g = -nega_alpha_eval1_nws(search, -alpha - 1, false, searching);
+                g = -nega_alpha_eval1_nws(search, -alpha - 1, false);
             search->undo(&flip);
+            if (!(*searching)) {
+                return SCORE_UNDEFINED;
+            }
             if (v < g) {
                 v = g;
                 best_move = cell;
@@ -158,7 +163,7 @@ int nega_alpha_eval2_nws(Search *search, int alpha, const bool skipped, uint64_t
         }
     }
     // if (*searching && global_searching) {
-    //     transposition_table.reg(search, hash_code, depth, alpha, alpha + 1, v, best_move);
+    //     transposition_table.reg(search, hash_code, 2, alpha, alpha + 1, v, best_move);
     // }
     return v;
 }
@@ -185,7 +190,7 @@ int nega_alpha_ordering_nws_simple(Search *search, int alpha, const int depth, c
         return nega_alpha_eval2_nws(search, alpha, skipped, legal, searching);
     }
     if (depth == 1) {
-        return nega_alpha_eval1_nws(search, alpha, skipped, searching);
+        return nega_alpha_eval1_nws(search, alpha, skipped);
     }
     if (depth == 0) {
         ++search->n_nodes;

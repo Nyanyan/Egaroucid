@@ -111,8 +111,7 @@ constexpr int MOVE_ORDERING_NWS_VALUE_OFFSET_BETA = 6;
 
 constexpr int MOVE_ORDERING_MPC_LEVEL = MPC_74_LEVEL;
 
-int nega_alpha_eval1(Search *search, int alpha, int beta, bool skipped, bool *searching);
-inline int nega_alpha_eval1_move_ordering_mid(Search *search, int alpha, int beta, bool skipped, bool *searching);
+int nega_alpha_eval1(Search *search, int alpha, int beta, bool skipped);
 int nega_scout(Search *search, int alpha, int beta, const int depth, const bool skipped, uint64_t legal, const bool is_end_search, bool *searching);
 inline bool transposition_table_get_value(Search *search, uint32_t hash, int *l, int *u);
 inline int mid_evaluate_diff(Search *search);
@@ -238,7 +237,7 @@ inline void move_evaluate(Search *search, Flip_value *flip_value, int alpha, int
                 flip_value->value += (SCORE_MAX - mid_evaluate_diff(search)) * W_VALUE;
                 break;
             case 1:
-                flip_value->value += (SCORE_MAX - nega_alpha_eval1(search, alpha, beta, false, searching)) * (W_VALUE + W_VALUE_DEEP_ADDITIONAL);
+                flip_value->value += (SCORE_MAX - nega_alpha_eval1(search, alpha, beta, false)) * (W_VALUE + W_VALUE_DEEP_ADDITIONAL);
                 break;
             default:
                 //if (transposition_table.has_node_any_level(search, search->board.hash())) {
@@ -280,7 +279,7 @@ inline void move_evaluate_nws(Search *search, Flip_value *flip_value, int alpha,
                 flip_value->value += (SCORE_MAX - mid_evaluate_diff(search)) * W_NWS_VALUE;
                 break;
             case 1:
-                flip_value->value += (SCORE_MAX - nega_alpha_eval1(search, alpha, beta, false, searching)) * (W_NWS_VALUE + W_NWS_VALUE_DEEP_ADDITIONAL);
+                flip_value->value += (SCORE_MAX - nega_alpha_eval1(search, alpha, beta, false)) * (W_NWS_VALUE + W_NWS_VALUE_DEEP_ADDITIONAL);
                 break;
             default:
                 //if (transposition_table.has_node_any_level(search, search->board.hash())) {
