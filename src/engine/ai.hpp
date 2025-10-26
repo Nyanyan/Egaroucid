@@ -31,7 +31,7 @@ constexpr int PONDER_START_SELFPLAY_DEPTH = 17;
 
 constexpr int AI_TL_EARLY_BREAK_THRESHOLD = 5;
 
-constexpr double AI_TL_ADDITIONAL_SEARCH_THRESHOLD = 1.75;
+constexpr double AI_TL_ADDITIONAL_SEARCH_THRESHOLD = 1.5;
 
 #if USE_LAZY_SMP2
 constexpr int N_MAIN_SEARCH_THREADS = 25;
@@ -1199,7 +1199,7 @@ Search_result ai_time_limit(Board board, bool use_book, int book_acc_level, bool
         bool get_values_searching = true;
         uint64_t get_values_tl = 100ULL;
         uint64_t until_align_levels_tl = 1000ULL;
-        uint64_t min_ai_common_tl = 10000ULL;
+        uint64_t min_ai_common_tl = 16000ULL;
         if (show_log) {
             std::cerr << "getting values tl " << get_values_tl << std::endl;
         }
