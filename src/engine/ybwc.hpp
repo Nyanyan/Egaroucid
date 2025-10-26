@@ -201,6 +201,9 @@ inline void ybwc_search_young_brothers_nws(Search *search, int alpha, int *v, in
                 if (*v < task_result.value) {
                     *v = task_result.value;
                     *best_move = move_list[task_result.move_idx].flip.pos;
+                    // if (alpha < task_result.value) {
+                    //     n_searching = false;
+                    // }
                 }
             }
         }
@@ -298,9 +301,9 @@ inline void ybwc_search_young_brothers_nws(Search *search, int alpha, int *v, in
                 if (*v < task_result.value) {
                     *v = task_result.value;
                     *best_move = move_list[task_result.move_idx].flip.pos;
-                    if (alpha < task_result.value) {
-                        n_searching = false;
-                    }
+                    // if (alpha < task_result.value) {
+                    //     n_searching = false;
+                    // }
                 }
             }
         }
