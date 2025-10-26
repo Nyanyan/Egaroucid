@@ -290,16 +290,39 @@ inline void ybwc_search_young_brothers_nws(Search *search, int alpha, int *v, in
         }
     }
 #endif
-    for (std::future<Parallel_task> &task: parallel_tasks) {
-        if (task.valid()) {
-            task_result = task.get();
-            search->n_nodes += task_result.n_nodes;
-            if (task_result.value != SCORE_UNDEFINED) {
-                if (*v < task_result.value) {
+    // for (std::future<Parallel_task> &task: parallel_tasks) {
+    //     if (task.valid()) {
+    //         task_result = task.get();
+    //         search->n_nodes += task_result.n_nodes;
+    //         if (task_result.value != SCORE_UNDEFINED) {
+    //             if (*v < task_result.value) {
+    //                 *v = task_result.value;
+    //                 *best_move = move_list[task_result.move_idx].flip.pos;
+    //             }
+    //         }
+    //     }
+    // }
+    while (!parallel_tasks.empty()) {
+        bool progress = false;
+        for (auto it = parallel_tasks.begin(); it != parallel_tasks.end();) {
+            if (it->valid() && it->wait_for(std::chrono::microseconds(0)) == std::future_status::ready) {
+                task_result = it->get();
+                search->n_nodes += task_result.n_nodes;
+                if (task_result.value != SCORE_UNDEFINED && *v < task_result.value) {
                     *v = task_result.value;
                     *best_move = move_list[task_result.move_idx].flip.pos;
+                    if (alpha < task_result.value) {
+                        n_searching = false;
+                    }
                 }
+                it = parallel_tasks.erase(it);
+                progress = true;
+            } else {
+                ++it;
             }
+        }
+        if (!progress) {
+            std::this_thread::yield();
         }
     }
     searchings.pop_back();
