@@ -1241,7 +1241,7 @@ Search_result ai_time_limit(Board board, bool use_book, int book_acc_level, bool
                     align_moves_tl = std::max<uint64_t>(10000ULL, time_limit * 0.8);
                 }
                 uint64_t strt_align_move_levels = tim();
-                    std::vector<Ponder_elem> after_move_list = ai_align_move_levels(board, show_log, get_values_move_list, n_good_moves, align_moves_tl, thread_id, 27);
+                    std::vector<Ponder_elem> after_move_list = ai_align_move_levels(board, show_log, get_values_move_list, n_good_moves, align_moves_tl, thread_id, 29);
                 uint64_t elapsed_align_move_levels = tim() - strt_align_move_levels;
                 if (time_limit > elapsed_align_move_levels) {
                     time_limit -= elapsed_align_move_levels;
@@ -1858,17 +1858,19 @@ std::vector<Ponder_elem> ai_align_move_levels(Board board, bool show_log, std::v
                 for (int i = 0; i < n_good_moves; ++i) {
                     max_value = std::max(max_value, move_list[i].value);
                 }
-                if (move_list[selected_idx].value >= max_value - 1.5) {
-                    int level = std::max(21, get_level_from_depth_mpc_level(n_board.n_discs(), new_depth, new_mpc_level));
+                // additional selfplay & analyze
+                if (move_list[selected_idx].value >= max_value - 1.0) {
+                    int level = std::min(21, get_level_from_depth_mpc_level(n_board.n_discs(), new_depth, new_mpc_level));
                     bool n_searching2 = true;
-                    std::future<double> selfplay_future = std::async(std::launch::async, selfplay_and_analyze, n_board, level, false, thread_id, v, &n_searching2);
+                    std::cerr << "try selfplay " << idx_to_coord(move_list[selected_idx].flip.pos) << " level " << level << " val " << move_list[selected_idx].value << " max " << max_value << std::endl;
+                    std::future<double> selfplay_future = std::async(std::launch::async, selfplay_and_analyze, n_board, level, true, thread_id, move_list[selected_idx].value, &n_searching2);
                     uint64_t time_limit_selfplay = get_this_search_time_limit(time_limit, tim() - strt);
-                    std::cerr << "try selfplay " << idx_to_coord(move_list[selected_idx].flip.pos) << " val " << move_list[selected_idx].value << " max " << max_value << std::endl;
                     if (selfplay_future.wait_for(std::chrono::milliseconds(time_limit_selfplay)) == std::future_status::ready) {
                         double selfplay_val = selfplay_future.get();
                         if (selfplay_val != SCORE_UNDEFINED) {
-                            std::cerr << "selfplay success " << move_list[selected_idx].value << " " << selfplay_val << std::endl;
+                            std::cerr << " selfplay success " << move_list[selected_idx].value << " & " << selfplay_val;
                             move_list[selected_idx].value = (0.9 * move_list[selected_idx].value + 1.1 * selfplay_val) / 2.0;
+                            std::cerr << " -> " << move_list[selected_idx].value << std::endl;
                         }
                     } else {
                         n_searching2 = false;
