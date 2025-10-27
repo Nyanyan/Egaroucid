@@ -1556,7 +1556,40 @@ bool comp_ponder_elem(Ponder_elem &a, Ponder_elem &b) {
     return a.count > b.count;
 }
 
+Ponder_elem ponder_task(Board board, Ponder_elem ponder_elem, thread_id_t thread_id, bool *searching, double max_value) {
+    Board n_board = board.copy();
+    n_board.move_board(&ponder_elem.flip);
+    int max_depth = HW2 - n_board.n_discs();
+    int level = ponder_elem.level + 1;
+    Search_result search_result = ai_searching_thread_id(n_board, level, false, 0, true, false, thread_id, searching);
+    double v = -search_result.value;
+    if (ponder_elem.depth >= PONDER_START_SELFPLAY_DEPTH && !ponder_elem.is_endgame_search && !ponder_elem.is_complete_search) { // selfplay
+        if (v >= max_value - 3.25) {
+            // std::cerr << "ponder selfplay " << idx_to_coord(ponder_elem.flip.pos) << " depth " << new_depth << std::endl;
+            double selfplay_val = selfplay_and_analyze(n_board, level, false, thread_id, v, searching);
+            if (selfplay_val != SCORE_UNDEFINED) {
+                v = selfplay_val;
+            }
+        }
+    }
+    if (*searching) {
+        ponder_elem.level = level;
+        bool is_mid_search;
+        get_level(ponder_elem.level, board.n_discs() - 4, &is_mid_search, &ponder_elem.depth, &ponder_elem.mpc_level);
+        ponder_elem.is_endgame_search = !is_mid_search;
+        ponder_elem.is_complete_search = !is_mid_search && ponder_elem.mpc_level == MPC_100_LEVEL;
+        ++ponder_elem.count;
+        if (ponder_elem.value == INF || !is_mid_search) {
+            ponder_elem.value = v;
+        } else {
+            ponder_elem.value = (0.9 * ponder_elem.value + 1.1 * v) / 2.0;
+        }
+    }
+    return ponder_elem;
+}
+
 std::vector<Ponder_elem> ai_ponder(Board board, bool show_log, thread_id_t thread_id, bool *searching) {
+    std::cerr << "start ponder" << std::endl;
     uint64_t strt = tim();
     uint64_t legal = board.get_legal();
     if (legal == 0) {
@@ -1588,74 +1621,93 @@ std::vector<Ponder_elem> ai_ponder(Board board, bool show_log, thread_id_t threa
     }
     const int max_depth = HW2 - board.n_discs() - 1;
     int n_searched_all = 0;
+    std::vector<std::pair<int, std::future<Ponder_elem>>> futures;
     while (*searching) {
-        int selected_idx = -1;
-        double max_ucb = -INF - 1;
-        for (int i = 0; i < canput; ++i) {
-            double ucb = -INF;
-            if (n_searched_all == 0) { // not searched at all
-                ucb = move_list[i].value;
-            } else if (move_list[i].count == 0) { // this node is not searched
-                ucb = INF;
-            } else if (move_list[i].is_complete_search) { // fully searched
-                ucb = -INF;
+        // get done tasks
+        bool empty_future_found = false;
+        for (int i = 0; i < futures.size(); ++i) {
+            if (futures[i].second.valid()) {
+                if (futures[i].second.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
+                    Ponder_elem elem = futures[i].second.get();
+                    if (*searching) {
+                        std::cerr << "ponder done " << futures[i].first << " " << idx_to_coord(elem.flip.pos) << std::endl;
+                        futures[i].first = -1;
+                        move_list[futures[i].first] = elem;
+                        empty_future_found = true;
+                        ++n_searched_all;
+                    }
+                }
             } else {
-                //double depth_weight = (double)std::min(10, move_list[i].depth) / (double)std::min(10, max_depth);
-                ucb = move_list[i].value / (double)HW2 + 0.6 * sqrt(log(2.0 * (double)n_searched_all) / (double)move_list[i].count);
-            }
-            if (move_list[idx].mpc_level == MPC_99_LEVEL) { // next: complete search
-                ucb -= 10;
-            }
-            if (ucb > max_ucb) {
-                selected_idx = i;
-                max_ucb = ucb;
+                empty_future_found = true;
             }
         }
-        //std::cerr << std::endl;
-        if (selected_idx == -1) {
-            if (show_log) {
-                std::cerr << "ponder: no move selected n_moves " << canput << std::endl;
-            }
+
+        if (!(*searching)) {
             break;
         }
-        if (move_list[selected_idx].is_complete_search) {
-            if (show_log) {
-                std::cerr << "ponder completely searched" << std::endl;
+
+        if (!empty_future_found) {
+            // std::this_thread::sleep_for(std::chrono::milliseconds(10));
+        } else {
+            // assign new task
+            bool all_is_complete_search = false;
+            for (int i = 0; i < canput; ++i) {
+                all_is_complete_search &= move_list[i].is_complete_search;
             }
-            break;
-        }
-        Board n_board = board.copy();
-        n_board.move_board(&move_list[selected_idx].flip);
-        int max_depth = HW2 - n_board.n_discs();
-        int level = move_list[selected_idx].level + 1;
-        Search_result search_result = ai_searching_thread_id(n_board, level, false, 0, true, false, thread_id, searching);
-        double v = -search_result.value;
-        if (move_list[selected_idx].depth >= PONDER_START_SELFPLAY_DEPTH && !move_list[selected_idx].is_endgame_search && !move_list[selected_idx].is_complete_search) { // selfplay
+            if (all_is_complete_search) {
+                if (show_log) {
+                    std::cerr << "ponder completely searched" << std::endl;
+                }
+                break;
+            }
+            int selected_idx = -1;
+            double max_ucb = -INF - 1;
+            for (int i = 0; i < canput; ++i) {
+                bool already_searching = false;
+                for (int j = 0; j < futures.size(); ++j) {
+                    if (i == futures[j].first) {
+                        already_searching = true;
+                    }
+                }
+                if (already_searching) {
+                    continue;
+                }
+                double ucb = -INF;
+                if (n_searched_all == 0) { // not searched at all
+                    ucb = move_list[i].value;
+                } else if (move_list[i].count == 0) { // this node is not searched
+                    ucb = INF;
+                } else if (move_list[i].is_complete_search) { // fully searched
+                    ucb = -INF;
+                } else {
+                    //double depth_weight = (double)std::min(10, move_list[i].depth) / (double)std::min(10, max_depth);
+                    ucb = move_list[i].value / (double)HW2 + 0.6 * sqrt(log(2.0 * (double)n_searched_all) / (double)move_list[i].count);
+                }
+                if (move_list[idx].mpc_level == MPC_99_LEVEL) { // next: complete search
+                    ucb -= 10;
+                }
+                if (ucb > max_ucb) {
+                    selected_idx = i;
+                    max_ucb = ucb;
+                }
+            }
+
             double max_value = -INF;
             for (int i = 0; i < canput; ++i) {
                 max_value = std::max(max_value, move_list[i].value);
             }
-            if (v >= max_value - 3.25) {
-                // std::cerr << "ponder selfplay " << idx_to_coord(move_list[selected_idx].flip.pos) << " depth " << new_depth << std::endl;
-                double selfplay_val = selfplay_and_analyze(n_board, level, false, thread_id, v, searching);
-                if (selfplay_val != SCORE_UNDEFINED) {
-                    v = selfplay_val;
+            for (int i = 0; i < futures.size(); ++i) {
+                if (!futures[i].second.valid()) {
+                    futures[i].first = selected_idx;
+                    futures[i].second = std::async(std::launch::async, ponder_task, board, move_list[idx], thread_id, searching, max_value);
+                    std::cerr << "ponder assign " << selected_idx << " " << idx_to_coord(move_list[idx].flip.pos) << std::endl;
                 }
             }
         }
-        if (*searching) {
-            move_list[selected_idx].level = level;
-            bool is_mid_search;
-            get_level(move_list[selected_idx].level, board.n_discs() - 4, &is_mid_search, &move_list[selected_idx].depth, &move_list[selected_idx].mpc_level);
-            move_list[selected_idx].is_endgame_search = !is_mid_search;
-            move_list[selected_idx].is_complete_search = !is_mid_search && move_list[selected_idx].mpc_level == MPC_100_LEVEL;
-            ++move_list[selected_idx].count;
-            if (move_list[selected_idx].value == INF || !is_mid_search) {
-                move_list[selected_idx].value = v;
-            } else {
-                move_list[selected_idx].value = (0.9 * move_list[selected_idx].value + 1.1 * v) / 2.0;
-            }
-            ++n_searched_all;
+    }
+    for (int i = 0; i < futures.size(); ++i) {
+        if (futures[i].second.valid()) {
+            futures[i].second.get();
         }
     }
     std::sort(move_list.begin(), move_list.end(), comp_ponder_elem);
