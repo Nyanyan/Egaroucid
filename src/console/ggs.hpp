@@ -25,7 +25,7 @@
 #define GGS_SEND_EMPTY_INTERVAL 180000ULL // 3 minutes
 
 #define GGS_USE_PONDER true
-#define GGS_N_PONDER_PARALLEL 2
+#define GGS_N_PONDER_PARALLEL 1
 
 
 struct GGS_Board {
