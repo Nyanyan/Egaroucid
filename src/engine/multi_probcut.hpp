@@ -23,8 +23,8 @@ constexpr int USE_MPC_MIN_DEPTH = 3;
 constexpr int MPC_ERROR0_OFFSET = 4;
 
 // constants from standard normal distribution table
-// two-sided test                                         74.0  88.0  93.0  98.0  99.0  inf (%)
-constexpr double SELECTIVITY_MPCT[N_SELECTIVITY_LEVEL] = {1.13, 1.55, 1.81, 2.32, 2.57, 9.99};
+// two-sided test                                         74.0  88.0  93.0  98.0  99.0  99.9 100 (%)
+constexpr double SELECTIVITY_MPCT[N_SELECTIVITY_LEVEL] = {1.13, 1.55, 1.81, 2.32, 2.57, 3.29, 9.99};
 
 /*
     @brief constants for ProbCut error calculation

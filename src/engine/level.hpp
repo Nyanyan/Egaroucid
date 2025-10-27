@@ -33,16 +33,17 @@ constexpr int DEFAULT_LEVEL = 21;
     @brief constants for level definition
 */
 constexpr int N_LEVEL = 61; // [0, 60] (0 is not used)
+constexpr int NODEPTH = 100;
+
+constexpr int N_SELECTIVITY_LEVEL = 7;
 constexpr int MPC_74_LEVEL = 0;
 constexpr int MPC_88_LEVEL = 1;
 constexpr int MPC_93_LEVEL = 2;
 constexpr int MPC_98_LEVEL = 3;
 constexpr int MPC_99_LEVEL = 4;
-constexpr int MPC_100_LEVEL = 5;
-constexpr int NODEPTH = 100;
-
-constexpr int N_SELECTIVITY_LEVEL = 6;
-constexpr int SELECTIVITY_PERCENTAGE[N_SELECTIVITY_LEVEL] = {74, 88, 93, 98, 99, 100}; // percent
+constexpr int MPC_999_LEVEL = 5;
+constexpr int MPC_100_LEVEL = 6;
+constexpr double SELECTIVITY_PERCENTAGE[N_SELECTIVITY_LEVEL] = {74, 88, 93, 98, 99, 99.9, 100}; // percent
 
 constexpr int MAX_LEVEL = (N_LEVEL - 1);
 constexpr int LEVEL_TYPE_BOOK = 1000;
