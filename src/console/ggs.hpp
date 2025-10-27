@@ -479,6 +479,11 @@ void ggs_send_move(GGS_Board &ggs_board, SOCKET &sock, Search_result search_resu
     ggs_send_message(sock, ggs_move_cmd + "\n", options);
 }
 
+void ggs_start_ponder(std::future<std::vector<Ponder_elem>> ponder_futures[], Board board, bool show_log, int synchro_id, bool ponder_searchings[]) {
+    ponder_searchings[synchro_id] = true;
+    ponder_futures[synchro_id] = std::async(std::launch::async, ai_ponder, board, show_log, synchro_id, &ponder_searchings[synchro_id]); // set ponder
+}
+
 void ggs_terminate_ponder(std::future<std::vector<Ponder_elem>> ponder_futures[], bool ponder_searchings[], int synchro_id) {
     ponder_searchings[synchro_id] = false; // terminate ponder
     if (ponder_futures[synchro_id].valid()) {
@@ -570,6 +575,7 @@ void ggs_client(Options *options) {
                     if (ai_futures[i].valid()) {
                         if (ai_futures[i].wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
                             Search_result search_result = ai_futures[i].get();
+                            ggs_terminate_ponder(ponder_futures, ponder_searchings, i);
                             ai_searchings[i] = false;
                             ggs_send_move(ggs_boards_searching[i], sock, search_result, options);
                             last_sent_time = tim();
@@ -787,6 +793,7 @@ void ggs_client(Options *options) {
 #else
                                             ai_futures[ggs_board.synchro_id] = std::async(std::launch::async, ggs_search, ggs_board, options, THREAD_ID_NONE, &ai_searchings[ggs_board.synchro_id]); // set search
 #endif
+                                            ggs_start_ponder(ponder_futures, ggs_board.board, options->show_log, ggs_board.synchro_id, ponder_searchings);
                                             new_calculation_start = true;
                                             std::string msg = "Egaroucid thinking... " + ggs_board.game_id + " " + ggs_board.board.to_str(ggs_board.player_to_move);
                                             ggs_print_info(msg, options);
@@ -794,8 +801,8 @@ void ggs_client(Options *options) {
                                     } else { // Opponent's move
 #if GGS_USE_PONDER
                                         if (!ggs_board.board.is_end()) {
-                                            ponder_searchings[ggs_board.synchro_id] = true;
-                                            ponder_futures[ggs_board.synchro_id] = std::async(std::launch::async, ai_ponder, ggs_board.board, options->show_log, ggs_board.synchro_id, &ponder_searchings[ggs_board.synchro_id]); // set ponder
+                                            ggs_start_ponder(ponder_futures, ggs_board.board, options->show_log, ggs_board.synchro_id, ponder_searchings);
+                                            // ponder_futures[ggs_board.synchro_id] = std::async(std::launch::async, ai_ponder, ggs_board.board, options->show_log, ggs_board.synchro_id, &ponder_searchings[ggs_board.synchro_id]); // set ponder
                                             new_calculation_start = true;
                                             std::string msg = "Egaroucid pondering... " + ggs_board.game_id + " " + ggs_board.board.to_str(ggs_board.player_to_move);
                                             ggs_print_info(msg, options);
@@ -810,12 +817,13 @@ void ggs_client(Options *options) {
                                             ai_searchings[GGS_NON_SYNCHRO_ID] = true;
                                             ggs_boards_searching[GGS_NON_SYNCHRO_ID] = ggs_board;
                                             ai_futures[GGS_NON_SYNCHRO_ID] = std::async(std::launch::async, ggs_search, ggs_board, options, THREAD_ID_NONE, &ai_searchings[GGS_NON_SYNCHRO_ID]); // set search
+                                            ggs_start_ponder(ponder_futures, ggs_board.board, options->show_log, GGS_NON_SYNCHRO_ID, ponder_searchings);
                                         }
                                     } else { // Opponent's move
 #if GGS_USE_PONDER
                                         if (!ggs_board.board.is_end()) {
-                                            ponder_searchings[GGS_NON_SYNCHRO_ID] = true;
-                                            ponder_futures[GGS_NON_SYNCHRO_ID] = std::async(std::launch::async, ai_ponder, ggs_board.board, options->show_log, THREAD_ID_NONE, &ponder_searchings[GGS_NON_SYNCHRO_ID]); // set ponder
+                                            ggs_start_ponder(ponder_futures, ggs_board.board, options->show_log, ggs_board.synchro_id, ponder_searchings);
+                                            // ponder_futures[GGS_NON_SYNCHRO_ID] = std::async(std::launch::async, ai_ponder, ggs_board.board, options->show_log, THREAD_ID_NONE, &ponder_searchings[GGS_NON_SYNCHRO_ID]); // set ponder
                                         }
 #endif
                                     }
