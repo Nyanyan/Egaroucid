@@ -1856,38 +1856,38 @@ std::vector<Ponder_elem> ai_align_move_levels(Board board, bool show_log, std::v
                 } else {
                     move_list[selected_idx].value = (0.9 * move_list[selected_idx].value + 1.1 * v) / 2.0;
                 }
-                double max_value = -INF;
-                for (int i = 0; i < n_good_moves; ++i) {
-                    max_value = std::max(max_value, move_list[i].value);
-                }
-                // additional selfplay & analyze
-                if (move_list[selected_idx].value >= max_value - 1.0) {
-                    int level = std::min(21, get_level_from_depth_mpc_level(n_board.n_discs(), new_depth, new_mpc_level));
-                    bool n_searching2 = true;
-                    if (show_log) {
-                        std::cerr << "try selfplay " << idx_to_coord(move_list[selected_idx].flip.pos) << " level " << level << " val " << move_list[selected_idx].value << " max " << max_value << " ";
-                    }
-                    std::future<double> selfplay_future = std::async(std::launch::async, selfplay_and_analyze, n_board, level, show_log, thread_id, move_list[selected_idx].value, &n_searching2);
-                    uint64_t time_limit_selfplay = get_this_search_time_limit(time_limit, tim() - strt);
-                    if (selfplay_future.wait_for(std::chrono::milliseconds(time_limit_selfplay)) == std::future_status::ready) {
-                        double selfplay_val = selfplay_future.get();
-                        if (selfplay_val != SCORE_UNDEFINED) {
-                            if (show_log) {
-                                std::cerr << " selfplay success " << move_list[selected_idx].value << " & " << selfplay_val;
-                            }
-                            move_list[selected_idx].value = (1.2 * move_list[selected_idx].value + 0.8 * selfplay_val) / 2.0;
-                            if (show_log) {
-                                std::cerr << " -> " << move_list[selected_idx].value << std::endl;
-                            }
-                        }
-                    } else {
-                        n_searching2 = false;
-                        try {
-                            selfplay_future.get();
-                        } catch (const std::exception &e) {
-                        }
-                    }
-                }
+                // double max_value = -INF;
+                // for (int i = 0; i < n_good_moves; ++i) {
+                //     max_value = std::max(max_value, move_list[i].value);
+                // }
+                // // additional selfplay & analyze
+                // if (move_list[selected_idx].value >= max_value - 1.0) {
+                //     int level = std::min(21, get_level_from_depth_mpc_level(n_board.n_discs(), new_depth, new_mpc_level));
+                //     bool n_searching2 = true;
+                //     if (show_log) {
+                //         std::cerr << "try selfplay " << idx_to_coord(move_list[selected_idx].flip.pos) << " level " << level << " val " << move_list[selected_idx].value << " max " << max_value << " ";
+                //     }
+                //     std::future<double> selfplay_future = std::async(std::launch::async, selfplay_and_analyze, n_board, level, show_log, thread_id, move_list[selected_idx].value, &n_searching2);
+                //     uint64_t time_limit_selfplay = get_this_search_time_limit(time_limit, tim() - strt);
+                //     if (selfplay_future.wait_for(std::chrono::milliseconds(time_limit_selfplay)) == std::future_status::ready) {
+                //         double selfplay_val = selfplay_future.get();
+                //         if (selfplay_val != SCORE_UNDEFINED) {
+                //             if (show_log) {
+                //                 std::cerr << " selfplay success " << move_list[selected_idx].value << " & " << selfplay_val;
+                //             }
+                //             move_list[selected_idx].value = (1.2 * move_list[selected_idx].value + 0.8 * selfplay_val) / 2.0;
+                //             if (show_log) {
+                //                 std::cerr << " -> " << move_list[selected_idx].value << std::endl;
+                //             }
+                //         }
+                //     } else {
+                //         n_searching2 = false;
+                //         try {
+                //             selfplay_future.get();
+                //         } catch (const std::exception &e) {
+                //         }
+                //     }
+                // }
                 move_list[selected_idx].depth = new_depth;
                 move_list[selected_idx].mpc_level = new_mpc_level;
                 move_list[selected_idx].is_endgame_search = new_is_end_search;
