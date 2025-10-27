@@ -1222,13 +1222,13 @@ Search_result ai_time_limit(Board board, bool use_book, int book_acc_level, bool
             double best_value = get_values_move_list[0].value;
             int n_good_moves = 0;
             if (show_log) {
-                std::cerr << "good moves: ";
+                std::cerr << "good moves (1):";
             }
             for (const Ponder_elem &elem: get_values_move_list) {
                 if (elem.value >= best_value - AI_TL_ADDITIONAL_SEARCH_THRESHOLD * 2.0) {
                     ++n_good_moves;
                     if (show_log) {
-                        std::cerr << idx_to_coord(elem.flip.pos) << " ";
+                        std::cerr << " " << idx_to_coord(elem.flip.pos);
                     }
                 }
             }
@@ -1236,19 +1236,12 @@ Search_result ai_time_limit(Board board, bool use_book, int book_acc_level, bool
                 std::cerr << std::endl;
             }
             if (n_good_moves >= 2) {
-                if (show_log) {
-                    std::cerr << "need to search good moves :";
-                    for (int i = 0; i < n_good_moves; ++i) {
-                        std::cerr << " " << idx_to_coord(get_values_move_list[i].flip.pos);
-                    }
-                    std::cerr << std::endl;
-                }
                 uint64_t align_moves_tl = 0;
                 if (remaining_time_msec > 40000) {
                     align_moves_tl = std::max<uint64_t>(10000ULL, time_limit * 0.8);
                 }
                 uint64_t strt_align_move_levels = tim();
-                    std::vector<Ponder_elem> after_move_list = ai_align_move_levels(board, show_log, get_values_move_list, n_good_moves, align_moves_tl, thread_id, 27);
+                    std::vector<Ponder_elem> after_move_list = ai_align_move_levels(board, show_log, get_values_move_list, n_good_moves, align_moves_tl, thread_id, 30);
                 uint64_t elapsed_align_move_levels = tim() - strt_align_move_levels;
                 if (time_limit > elapsed_align_move_levels) {
                     time_limit -= elapsed_align_move_levels;
@@ -1263,10 +1256,19 @@ Search_result ai_time_limit(Board board, bool use_book, int book_acc_level, bool
 
                 double new_best_value = after_move_list[0].value;
                 int new_n_good_moves = 0;
+                if (show_log) {
+                    std::cerr << "good moves (2):";
+                }
                 for (const Ponder_elem &elem: after_move_list) {
                     if (elem.value >= new_best_value - AI_TL_ADDITIONAL_SEARCH_THRESHOLD) {
                         ++new_n_good_moves;
+                        if (show_log) {
+                            std::cerr << " " << idx_to_coord(elem.flip.pos);
+                        }
                     }
+                }
+                if (show_log) {
+                    std::cerr << std::endl;
                 }
                 if (new_n_good_moves >= 2) {
                     time_limit = request_more_time(board, remaining_time_msec, time_limit, show_log);
