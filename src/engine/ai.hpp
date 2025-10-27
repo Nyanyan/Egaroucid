@@ -1589,6 +1589,17 @@ std::vector<Ponder_elem> ai_ponder(Board board, bool show_log, thread_id_t threa
     const int max_depth = HW2 - board.n_discs() - 1;
     int n_searched_all = 0;
     while (*searching) {
+        bool all_complete = true;
+        for (int i = 0; i < canput; ++i) {
+            all_complete &= move_list[i].is_complete_search;
+        }
+        if (all_complete) {
+            if (show_log) {
+                std::cerr << "ponder completely searched" << std::endl;
+            }
+            break;
+        }
+
         int selected_idx = -1;
         double max_ucb = -INF - 1;
         for (int i = 0; i < canput; ++i) {
@@ -1612,12 +1623,6 @@ std::vector<Ponder_elem> ai_ponder(Board board, bool show_log, thread_id_t threa
         if (selected_idx == -1) {
             if (show_log) {
                 std::cerr << "ponder: no move selected n_moves " << canput << std::endl;
-            }
-            break;
-        }
-        if (move_list[selected_idx].is_complete_search) {
-            if (show_log) {
-                std::cerr << "ponder completely searched" << std::endl;
             }
             break;
         }
