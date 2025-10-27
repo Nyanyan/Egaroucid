@@ -1865,7 +1865,7 @@ std::vector<Ponder_elem> ai_align_move_levels(Board board, bool show_log, std::v
                     int level = std::min(21, get_level_from_depth_mpc_level(n_board.n_discs(), new_depth, new_mpc_level));
                     bool n_searching2 = true;
                     if (show_log) {
-                        std::cerr << "try selfplay " << idx_to_coord(move_list[selected_idx].flip.pos) << " level " << level << " val " << move_list[selected_idx].value << " max " << max_value << std::endl;
+                        std::cerr << "try selfplay " << idx_to_coord(move_list[selected_idx].flip.pos) << " level " << level << " val " << move_list[selected_idx].value << " max " << max_value << " ";
                     }
                     std::future<double> selfplay_future = std::async(std::launch::async, selfplay_and_analyze, n_board, level, show_log, thread_id, move_list[selected_idx].value, &n_searching2);
                     uint64_t time_limit_selfplay = get_this_search_time_limit(time_limit, tim() - strt);
