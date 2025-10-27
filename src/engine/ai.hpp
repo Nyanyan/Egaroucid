@@ -1603,7 +1603,7 @@ std::vector<Ponder_elem> ai_ponder(Board board, bool show_log, thread_id_t threa
                 //double depth_weight = (double)std::min(10, move_list[i].depth) / (double)std::min(10, max_depth);
                 ucb = move_list[i].value / (double)HW2 + 0.6 * sqrt(log(2.0 * (double)n_searched_all) / (double)move_list[i].count);
             }
-            if (move_list[idx].mpc_level == MPC_100_LEVEL) { // next: complete search
+            if (move_list[idx].mpc_level == MPC_99_LEVEL) { // next: complete search
                 ucb -= 10;
             }
             if (ucb > max_ucb) {
@@ -1806,7 +1806,9 @@ std::vector<Ponder_elem> ai_align_move_levels(Board board, bool show_log, std::v
             }
         }
         if (level_aligned && min_depth >= aligned_min_level) {
-            std::cerr << "level aligned & min depth >= " << aligned_min_level << std::endl;
+            if (show_log) {
+                std::cerr << "level aligned & min depth >= " << aligned_min_level << std::endl;
+            }
             break;
         }
         int min_depth2 = INF;
@@ -1862,15 +1864,21 @@ std::vector<Ponder_elem> ai_align_move_levels(Board board, bool show_log, std::v
                 if (move_list[selected_idx].value >= max_value - 1.0) {
                     int level = std::min(21, get_level_from_depth_mpc_level(n_board.n_discs(), new_depth, new_mpc_level));
                     bool n_searching2 = true;
-                    std::cerr << "try selfplay " << idx_to_coord(move_list[selected_idx].flip.pos) << " level " << level << " val " << move_list[selected_idx].value << " max " << max_value << std::endl;
-                    std::future<double> selfplay_future = std::async(std::launch::async, selfplay_and_analyze, n_board, level, true, thread_id, move_list[selected_idx].value, &n_searching2);
+                    if (show_log) {
+                        std::cerr << "try selfplay " << idx_to_coord(move_list[selected_idx].flip.pos) << " level " << level << " val " << move_list[selected_idx].value << " max " << max_value << std::endl;
+                    }
+                    std::future<double> selfplay_future = std::async(std::launch::async, selfplay_and_analyze, n_board, level, show_log, thread_id, move_list[selected_idx].value, &n_searching2);
                     uint64_t time_limit_selfplay = get_this_search_time_limit(time_limit, tim() - strt);
                     if (selfplay_future.wait_for(std::chrono::milliseconds(time_limit_selfplay)) == std::future_status::ready) {
                         double selfplay_val = selfplay_future.get();
                         if (selfplay_val != SCORE_UNDEFINED) {
-                            std::cerr << " selfplay success " << move_list[selected_idx].value << " & " << selfplay_val;
-                            move_list[selected_idx].value = (0.9 * move_list[selected_idx].value + 1.1 * selfplay_val) / 2.0;
-                            std::cerr << " -> " << move_list[selected_idx].value << std::endl;
+                            if (show_log) {
+                                std::cerr << " selfplay success " << move_list[selected_idx].value << " & " << selfplay_val;
+                            }
+                            move_list[selected_idx].value = (1.2 * move_list[selected_idx].value + 0.8 * selfplay_val) / 2.0;
+                            if (show_log) {
+                                std::cerr << " -> " << move_list[selected_idx].value << std::endl;
+                            }
                         }
                     } else {
                         n_searching2 = false;
