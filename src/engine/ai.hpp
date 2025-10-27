@@ -1592,6 +1592,9 @@ std::vector<Ponder_elem> ai_ponder(Board board, bool show_log, thread_id_t threa
                 //double depth_weight = (double)std::min(10, move_list[i].depth) / (double)std::min(10, max_depth);
                 ucb = move_list[i].value / (double)HW2 + 0.6 * sqrt(log(2.0 * (double)n_searched_all) / (double)move_list[i].count);
             }
+            if (move_list[idx].mpc_level == MPC_100_LEVEL) { // next: complete search
+                ucb -= 1000000;
+            }
             if (ucb > max_ucb) {
                 selected_idx = i;
                 max_ucb = ucb;
@@ -1616,12 +1619,12 @@ std::vector<Ponder_elem> ai_ponder(Board board, bool show_log, thread_id_t threa
         int level = move_list[selected_idx].level + 1;
         Search_result search_result = ai_searching_thread_id(n_board, level, false, 0, true, false, thread_id, searching);
         double v = -search_result.value;
-        if (move_list[selected_idx].depth >= PONDER_START_SELFPLAY_DEPTH && !move_list[selected_idx].is_endgame_search) { // selfplay
+        if (move_list[selected_idx].depth >= PONDER_START_SELFPLAY_DEPTH && !move_list[selected_idx].is_endgame_search && !move_list[selected_idx].is_complete_search) { // selfplay
             double max_value = -INF;
             for (int i = 0; i < canput; ++i) {
                 max_value = std::max(max_value, move_list[i].value);
             }
-            if (v >= max_value - 3.25 && level >= 17) {
+            if (v >= max_value - 3.25) {
                 // std::cerr << "ponder selfplay " << idx_to_coord(move_list[selected_idx].flip.pos) << " depth " << new_depth << std::endl;
                 double selfplay_val = selfplay_and_analyze(n_board, level, false, thread_id, v, searching);
                 if (selfplay_val != SCORE_UNDEFINED) {
