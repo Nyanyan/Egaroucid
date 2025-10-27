@@ -1238,7 +1238,7 @@ Search_result ai_time_limit(Board board, bool use_book, int book_acc_level, bool
             if (n_good_moves >= 2) {
                 uint64_t align_moves_tl = 0;
                 if (remaining_time_msec > 40000) {
-                    align_moves_tl = std::max<uint64_t>(10000ULL, time_limit * 0.8);
+                    align_moves_tl = std::min<uint64_t>(10000ULL, time_limit * 0.8);
                 }
                 uint64_t strt_align_move_levels = tim();
                     std::vector<Ponder_elem> after_move_list = ai_align_move_levels(board, show_log, get_values_move_list, n_good_moves, align_moves_tl, thread_id, 29);
