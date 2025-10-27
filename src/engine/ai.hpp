@@ -381,6 +381,7 @@ void iterative_deepening_search_time_limit(Board board, int alpha, int beta, boo
             uint64_t legal_without_bestmove = use_legal ^ (1ULL << result->policy);
             if (
                 (!main_is_end_search && main_depth >= 29 && main_depth <= 30) && 
+                max_depth >= 44 && 
                 !policy_changed && 
                 !policy_changed_before && 
                 main_mpc_level == MPC_74_LEVEL && 
@@ -391,6 +392,9 @@ void iterative_deepening_search_time_limit(Board board, int alpha, int beta, boo
                     Search nws_search(&board, main_mpc_level, use_multi_thread, false);
                     nws_search.thread_id = thread_id;
                     bool nws_searching = true;
+                    if (show_log) {
+                        std::cerr << "trying early break [" << nws_alpha << ", " << nws_alpha + 1 << "] ";
+                    }
                     uint64_t time_limit_nws = get_this_search_time_limit(time_limit, tim() - strt);
                     std::future<std::pair<int, int>> nws_f = std::async(std::launch::async, first_nega_scout_legal, &nws_search, nws_alpha, nws_alpha + 1, main_depth, main_is_end_search, clogs, legal_without_bestmove, strt, &nws_searching);
                     int nws_value = SCORE_INF;
@@ -417,12 +421,12 @@ void iterative_deepening_search_time_limit(Board board, int alpha, int beta, boo
                     if (nws_success) {
                         if (nws_value <= nws_alpha) {
                             if (show_log) {
-                                std::cerr << "early break succeeded second best " << idx_to_coord(nws_move) << " value <= " << nws_value << " time " << tim() - strt << std::endl;
+                                std::cerr << "SUCCEEDED second best " << idx_to_coord(nws_move) << " value <= " << nws_value << " time " << tim() - strt << std::endl;
                             }
                             break;
                         } else if (nws_searching) {
                             if (show_log) {
-                                std::cerr << "early break failed second best " << idx_to_coord(nws_move) << " value >= " << nws_value << " time " << tim() - strt << std::endl;
+                                std::cerr << "FAILED second best " << idx_to_coord(nws_move) << " value >= " << nws_value << " time " << tim() - strt << std::endl;
                             }
                         }
                     }
@@ -1194,9 +1198,9 @@ Search_result ai_time_limit(Board board, bool use_book, int book_acc_level, bool
     }
     uint64_t strt = tim();
     int n_empties = HW2 - board.n_discs();
-    if (n_empties >= 38 /*35*/) {
+    if (n_empties >= 38 /*35*/ && time_limit >= 2000ULL) {
         bool get_values_searching = true;
-        uint64_t get_values_tl = 300ULL;
+        uint64_t get_values_tl = 600ULL;
         if (show_log) {
             std::cerr << "getting values tl " << get_values_tl << std::endl;
         }
@@ -1232,7 +1236,7 @@ Search_result ai_time_limit(Board board, bool use_book, int book_acc_level, bool
                 }
                 uint64_t align_moves_tl = 0;
                 if (remaining_time_msec > 40000) {
-                    align_moves_tl = 10000ULL;
+                    align_moves_tl = std::max<uint64_t>(10000ULL, time_limit * 0.8);
                 }
                 uint64_t strt_align_move_levels = tim();
                     std::vector<Ponder_elem> after_move_list = ai_align_move_levels(board, show_log, get_values_move_list, n_good_moves, align_moves_tl, thread_id, 27);
