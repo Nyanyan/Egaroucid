@@ -1656,22 +1656,37 @@ std::vector<Ponder_elem> ai_ponder(Board board, bool show_log, thread_id_t threa
         }
     }
     std::sort(move_list.begin(), move_list.end(), comp_ponder_elem);
-    if (show_log && n_searched_all) {
-        std::cerr << "ponder loop " << n_searched_all << " in " << tim() - strt << " ms" << std::endl;
-        std::cerr << "ponder board " << board.to_str() << std::endl;
-        for (int i = 0; i < canput; ++i) {
-            std::cerr << "pd " << idx_to_coord(move_list[i].flip.pos) << " value " << std::fixed << std::setprecision(2) << move_list[i].value;
-            std::cerr << " count " << move_list[i].count << " level " << move_list[i].level << " depth " << move_list[i].depth << "@" << SELECTIVITY_PERCENTAGE[move_list[i].mpc_level] << "%";
-            if (move_list[i].is_complete_search) {
-                std::cerr << " complete";
-            } else if (move_list[i].is_endgame_search) {
-                std::cerr << " endgame";
-            }
-            std::cerr << std::endl;
+    // if (show_log && n_searched_all) {
+    //     std::cerr << "ponder loop " << n_searched_all << " in " << tim() - strt << " ms" << std::endl;
+    //     std::cerr << "ponder board " << board.to_str() << std::endl;
+    //     for (int i = 0; i < canput; ++i) {
+    //         std::cerr << "pd " << idx_to_coord(move_list[i].flip.pos) << " value " << std::fixed << std::setprecision(2) << move_list[i].value;
+    //         std::cerr << " count " << move_list[i].count << " level " << move_list[i].level << " depth " << move_list[i].depth << "@" << SELECTIVITY_PERCENTAGE[move_list[i].mpc_level] << "%";
+    //         if (move_list[i].is_complete_search) {
+    //             std::cerr << " complete";
+    //         } else if (move_list[i].is_endgame_search) {
+    //             std::cerr << " endgame";
+    //         }
+    //         std::cerr << std::endl;
+    //     }
+    //     std::cerr << std::endl;
+    // }
+    return move_list;
+}
+
+void print_ponder_result(std::vector<Ponder_elem> move_list) {
+    std::cerr << "ponder result" << std::endl;
+    for (int i = 0; i < move_list.size(); ++i) {
+        std::cerr << "pd " << idx_to_coord(move_list[i].flip.pos) << " value " << std::fixed << std::setprecision(2) << move_list[i].value;
+        std::cerr << " count " << move_list[i].count << " level " << move_list[i].level << " depth " << move_list[i].depth << "@" << SELECTIVITY_PERCENTAGE[move_list[i].mpc_level] << "%";
+        if (move_list[i].is_complete_search) {
+            std::cerr << " complete";
+        } else if (move_list[i].is_endgame_search) {
+            std::cerr << " endgame";
         }
         std::cerr << std::endl;
     }
-    return move_list;
+    std::cerr << std::endl;
 }
 
 bool comp_get_values_elem(Ponder_elem &a, Ponder_elem &b) {

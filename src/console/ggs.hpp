@@ -492,10 +492,14 @@ void ggs_start_ponder(std::future<std::vector<Ponder_elem>> ponder_futures[][GGS
 
 void ggs_terminate_ponder(std::future<std::vector<Ponder_elem>> ponder_futures[][GGS_N_PONDER_PARALLEL], bool ponder_searchings[], int synchro_id) {
     ponder_searchings[synchro_id] = false; // terminate ponder
+    std::vector<Ponder_elem> result;
     for (int ponder_i = 0; ponder_i < GGS_N_PONDER_PARALLEL; ++ponder_i) {
         if (ponder_futures[synchro_id][ponder_i].valid()) {
-            ponder_futures[synchro_id][ponder_i].get();
+            result.emplace_back(ponder_futures[synchro_id][ponder_i].get());
         }
+    }
+    for (int ponder_i = 0; ponder_i < GGS_N_PONDER_PARALLEL; ++ponder_i) {
+        print_ponder_result(result[ponder_i]);
     }
 }
 
