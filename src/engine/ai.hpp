@@ -1221,10 +1221,19 @@ Search_result ai_time_limit(Board board, bool use_book, int book_acc_level, bool
         if (time_limit > 5000ULL && get_values_move_list.size() >= 2) {
             double best_value = get_values_move_list[0].value;
             int n_good_moves = 0;
+            if (show_log) {
+                std::cerr << "good moves: ";
+            }
             for (const Ponder_elem &elem: get_values_move_list) {
                 if (elem.value >= best_value - AI_TL_ADDITIONAL_SEARCH_THRESHOLD * 2.0) {
                     ++n_good_moves;
+                    if (show_log) {
+                        std::cerr << idx_to_coord(elem.flip.pos) << " ";
+                    }
                 }
+            }
+            if (show_log) {
+                std::cerr << std::endl;
             }
             if (n_good_moves >= 2) {
                 if (show_log) {
@@ -1593,7 +1602,7 @@ std::vector<Ponder_elem> ai_ponder(Board board, bool show_log, thread_id_t threa
                 ucb = move_list[i].value / (double)HW2 + 0.6 * sqrt(log(2.0 * (double)n_searched_all) / (double)move_list[i].count);
             }
             if (move_list[idx].mpc_level == MPC_100_LEVEL) { // next: complete search
-                ucb -= 1000000;
+                ucb -= 10;
             }
             if (ucb > max_ucb) {
                 selected_idx = i;
