@@ -1194,17 +1194,15 @@ Search_result ai_time_limit(Board board, bool use_book, int book_acc_level, bool
     }
     uint64_t strt = tim();
     int n_empties = HW2 - board.n_discs();
-    if (time_limit > 5000ULL && n_empties >= 38 /*35*/) { // additional search
-        // bool need_request_more_time = false;
+    if (n_empties >= 38 /*35*/) {
         bool get_values_searching = true;
-        uint64_t get_values_tl = 100ULL;
-        // uint64_t until_align_levels_tl = 10000ULL;
-        // uint64_t min_ai_common_tl = 16000ULL;
+        uint64_t get_values_tl = 300ULL;
         if (show_log) {
             std::cerr << "getting values tl " << get_values_tl << std::endl;
         }
         std::vector<Ponder_elem> get_values_move_list = ai_get_values(board, show_log, get_values_tl, thread_id);
-        if (get_values_move_list.size()) {
+
+        if (time_limit > 5000ULL && get_values_move_list.size() >= 2) {
             double best_value = get_values_move_list[0].value;
             int n_good_moves = 0;
             for (const Ponder_elem &elem: get_values_move_list) {
@@ -1240,32 +1238,18 @@ Search_result ai_time_limit(Board board, bool use_book, int book_acc_level, bool
                         if (time_limit > elapsed_special_search) {
                             time_limit -= elapsed_special_search;
                         } else {
-                            time_limit = 1;
+                            time_limit = 10;
                         }
                         uint64_t remaining_time_msec_p = 1;
                         if (remaining_time_msec > elapsed_special_search) {
                             remaining_time_msec_p = remaining_time_msec - elapsed_special_search;
                         }
                         time_limit = request_more_time(board, remaining_time_msec_p, time_limit, show_log) + elapsed_special_search;
+                    } else {
+                        time_limit = 10;
                     }
                 }
             }
-        }
-        uint64_t elapsed_special_search2 = tim() - strt;
-        if (time_limit > elapsed_special_search2) {
-            time_limit -= elapsed_special_search2;
-        } else {
-            time_limit = 1;
-        }
-        // if (need_request_more_time) {
-        //     uint64_t remaining_time_msec_p = 1;
-        //     if (remaining_time_msec > elapsed_special_search) {
-        //         remaining_time_msec_p = remaining_time_msec - elapsed_special_search;
-        //     }
-        //     time_limit = request_more_time(board, remaining_time_msec_p, time_limit, show_log);
-        // }
-        if (show_log) {
-            std::cerr << "additional calculation elapsed " << elapsed_special_search2 << " reduced time limit " << time_limit << std::endl;
         }
     }
     if (show_log) {
