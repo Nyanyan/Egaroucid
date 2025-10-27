@@ -24,6 +24,10 @@
 
 #define GGS_SEND_EMPTY_INTERVAL 180000ULL // 3 minutes
 
+#define GGS_USE_PONDER true
+#define GGS_N_PONDER_PARALLEL 2
+
+
 struct GGS_Board {
     std::string game_id;
     bool is_synchro;
@@ -479,19 +483,21 @@ void ggs_send_move(GGS_Board &ggs_board, SOCKET &sock, Search_result search_resu
     ggs_send_message(sock, ggs_move_cmd + "\n", options);
 }
 
-void ggs_start_ponder(std::future<std::vector<Ponder_elem>> ponder_futures[], Board board, bool show_log, int synchro_id, bool ponder_searchings[]) {
+void ggs_start_ponder(std::future<std::vector<Ponder_elem>> ponder_futures[][GGS_N_PONDER_PARALLEL], Board board, bool show_log, int synchro_id, bool ponder_searchings[]) {
     ponder_searchings[synchro_id] = true;
-    ponder_futures[synchro_id] = std::async(std::launch::async, ai_ponder, board, show_log, synchro_id, &ponder_searchings[synchro_id]); // set ponder
-}
-
-void ggs_terminate_ponder(std::future<std::vector<Ponder_elem>> ponder_futures[], bool ponder_searchings[], int synchro_id) {
-    ponder_searchings[synchro_id] = false; // terminate ponder
-    if (ponder_futures[synchro_id].valid()) {
-        ponder_futures[synchro_id].get();
+    for (int ponder_i = 0; ponder_i < GGS_N_PONDER_PARALLEL; ++ponder_i) {
+        ponder_futures[synchro_id][ponder_i] = std::async(std::launch::async, ai_ponder, board, show_log, synchro_id, &ponder_searchings[synchro_id]); // set ponder
     }
 }
 
-#define GGS_USE_PONDER true
+void ggs_terminate_ponder(std::future<std::vector<Ponder_elem>> ponder_futures[][GGS_N_PONDER_PARALLEL], bool ponder_searchings[], int synchro_id) {
+    ponder_searchings[synchro_id] = false; // terminate ponder
+    for (int ponder_i = 0; ponder_i < GGS_N_PONDER_PARALLEL; ++ponder_i) {
+        if (ponder_futures[synchro_id][ponder_i].valid()) {
+            ponder_futures[synchro_id][ponder_i].get();
+        }
+    }
+}
 
 void ggs_client(Options *options) {
     WSADATA wsaData;
@@ -523,7 +529,7 @@ void ggs_client(Options *options) {
     std::future<Search_result> ai_futures[2];
     bool ai_searchings[2] = {false, false};
     GGS_Board ggs_boards_searching[2];
-    std::future<std::vector<Ponder_elem>> ponder_futures[2];
+    std::future<std::vector<Ponder_elem>> ponder_futures[2][GGS_N_PONDER_PARALLEL];
     bool ponder_searchings[2] = {false, false};
     GGS_Board ggs_boards[2][HW2 + 1];
     int ggs_boards_n_discs[2] = {0, 0};
@@ -557,8 +563,10 @@ void ggs_client(Options *options) {
                         if (ai_futures[ai_i].valid()) {
                             ai_futures[ai_i].get();
                         }
-                        if (ponder_futures[ai_i].valid()) {
-                            ponder_futures[ai_i].get();
+                        for (int ponder_i = 0; ponder_i < GGS_N_PONDER_PARALLEL; ++ponder_i) {
+                            if (ponder_futures[ai_i][ponder_i].valid()) {
+                                ponder_futures[ai_i][ponder_i].get();
+                            }
                         }
                     }
                     break;
@@ -575,7 +583,6 @@ void ggs_client(Options *options) {
                     if (ai_futures[i].valid()) {
                         if (ai_futures[i].wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
                             Search_result search_result = ai_futures[i].get();
-                            // ggs_terminate_ponder(ponder_futures, ponder_searchings, i);
                             ai_searchings[i] = false;
                             ggs_send_move(ggs_boards_searching[i], sock, search_result, options);
                             last_sent_time = tim();
@@ -586,11 +593,13 @@ void ggs_client(Options *options) {
             // check ponder ends
             for (int i = 0; i < 2; ++i) {
                 if (ponder_searchings[i]) {
-                    if (ponder_futures[i].valid()) {
-                        if (ponder_futures[i].wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
-                            ponder_futures[i].get();
-                            ponder_searchings[i] = false;
-                            ggs_print_info("ponder end " + std::to_string(i), options);
+                    for (int ponder_i = 0; ponder_i < GGS_N_PONDER_PARALLEL; ++ponder_i) {
+                        if (ponder_futures[i][ponder_i].valid()) {
+                            if (ponder_futures[i][ponder_i].wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
+                                ponder_futures[i][ponder_i].get();
+                                ponder_searchings[i] = false;
+                                ggs_print_info("ponder end " + std::to_string(i), options);
+                            }
                         }
                     }
                 }
