@@ -1200,7 +1200,19 @@ Search_result ai_time_limit(Board board, bool use_book, int book_acc_level, bool
         if (show_log) {
             std::cerr << "getting values tl " << get_values_tl << std::endl;
         }
-        std::vector<Ponder_elem> get_values_move_list = ai_get_values(board, show_log, get_values_tl, thread_id);
+        uint64_t strt_get_values = tim();
+            std::vector<Ponder_elem> get_values_move_list = ai_get_values(board, show_log, get_values_tl, thread_id);
+        uint64_t elapsed_get_values = tim() - strt_get_values;
+        if (time_limit > elapsed_get_values) {
+            time_limit -= elapsed_get_values;
+        } else {
+            time_limit = 10;
+        }
+        if (remaining_time_msec > elapsed_get_values) {
+            remaining_time_msec -= elapsed_get_values;
+        } else {
+            remaining_time_msec = 0;
+        }
 
         if (time_limit > 5000ULL && get_values_move_list.size() >= 2) {
             double best_value = get_values_move_list[0].value;
@@ -1218,12 +1230,23 @@ Search_result ai_time_limit(Board board, bool use_book, int book_acc_level, bool
                     }
                     std::cerr << std::endl;
                 }
-                uint64_t elapsed_till_get_values = tim() - strt;
                 uint64_t align_moves_tl = 0;
-                if (remaining_time_msec > elapsed_till_get_values && remaining_time_msec - elapsed_till_get_values > 40000) {
-                    align_moves_tl = std::max<uint64_t>(10000ULL, (remaining_time_msec - elapsed_till_get_values) * 0.5);
+                if (remaining_time_msec > 40000) {
+                    align_moves_tl = 10000ULL;
                 }
-                std::vector<Ponder_elem> after_move_list = ai_align_move_levels(board, show_log, get_values_move_list, n_good_moves, align_moves_tl, thread_id, 27);
+                uint64_t strt_align_move_levels = tim();
+                    std::vector<Ponder_elem> after_move_list = ai_align_move_levels(board, show_log, get_values_move_list, n_good_moves, align_moves_tl, thread_id, 27);
+                uint64_t elapsed_align_move_levels = tim() - strt_align_move_levels;
+                if (time_limit > elapsed_align_move_levels) {
+                    time_limit -= elapsed_align_move_levels;
+                } else {
+                    time_limit = 10;
+                }
+                if (remaining_time_msec > elapsed_align_move_levels) {
+                    remaining_time_msec -= elapsed_align_move_levels;
+                } else {
+                    remaining_time_msec = 0;
+                }
 
                 double new_best_value = after_move_list[0].value;
                 int new_n_good_moves = 0;
@@ -1233,21 +1256,7 @@ Search_result ai_time_limit(Board board, bool use_book, int book_acc_level, bool
                     }
                 }
                 if (new_n_good_moves >= 2) {
-                    if (time_limit > tim() - strt) {
-                        uint64_t elapsed_special_search = tim() - strt;
-                        if (time_limit > elapsed_special_search) {
-                            time_limit -= elapsed_special_search;
-                        } else {
-                            time_limit = 10;
-                        }
-                        uint64_t remaining_time_msec_p = 1;
-                        if (remaining_time_msec > elapsed_special_search) {
-                            remaining_time_msec_p = remaining_time_msec - elapsed_special_search;
-                        }
-                        time_limit = request_more_time(board, remaining_time_msec_p, time_limit, show_log) + elapsed_special_search;
-                    } else {
-                        time_limit = 10;
-                    }
+                    time_limit = request_more_time(board, remaining_time_msec, time_limit, show_log);
                 }
             }
         }
