@@ -1198,8 +1198,8 @@ Search_result ai_time_limit(Board board, bool use_book, int book_acc_level, bool
         // bool need_request_more_time = false;
         bool get_values_searching = true;
         uint64_t get_values_tl = 100ULL;
-        uint64_t until_align_levels_tl = 1000ULL;
-        uint64_t min_ai_common_tl = 16000ULL;
+        uint64_t until_align_levels_tl = 10000ULL;
+        // uint64_t min_ai_common_tl = 16000ULL;
         if (show_log) {
             std::cerr << "getting values tl " << get_values_tl << std::endl;
         }
@@ -1208,7 +1208,7 @@ Search_result ai_time_limit(Board board, bool use_book, int book_acc_level, bool
             double best_value = get_values_move_list[0].value;
             int n_good_moves = 0;
             for (const Ponder_elem &elem: get_values_move_list) {
-                if (elem.value >= best_value - AI_TL_ADDITIONAL_SEARCH_THRESHOLD * 3.0) {
+                if (elem.value >= best_value - AI_TL_ADDITIONAL_SEARCH_THRESHOLD * 2.0) {
                     ++n_good_moves;
                 }
             }
@@ -1248,17 +1248,17 @@ Search_result ai_time_limit(Board board, bool use_book, int book_acc_level, bool
                             remaining_time_msec_p = remaining_time_msec - elapsed_special_search;
                         }
                         time_limit = request_more_time(board, remaining_time_msec_p, time_limit, show_log) + elapsed_special_search;
-                        if (time_limit > min_ai_common_tl + elapsed_special_search) {
-                            uint64_t self_play_tl = time_limit - min_ai_common_tl - elapsed_special_search;
-                            if (show_log) {
-                                std::cerr << "need to search good moves (self play) :";
-                                for (int i = 0; i < new_n_good_moves; ++i) {
-                                    std::cerr << " " << idx_to_coord(after_move_list[i].flip.pos);
-                                }
-                                std::cerr << std::endl;
-                            }
-                            std::vector<Ponder_elem> after_move_list2 = ai_additional_selfplay(board, show_log, after_move_list, new_n_good_moves, AI_TL_ADDITIONAL_SEARCH_THRESHOLD, self_play_tl, thread_id);
-                        }
+                        // if (time_limit > min_ai_common_tl + elapsed_special_search) {
+                        //     uint64_t self_play_tl = time_limit - min_ai_common_tl - elapsed_special_search;
+                        //     if (show_log) {
+                        //         std::cerr << "need to search good moves (self play) :";
+                        //         for (int i = 0; i < new_n_good_moves; ++i) {
+                        //             std::cerr << " " << idx_to_coord(after_move_list[i].flip.pos);
+                        //         }
+                        //         std::cerr << std::endl;
+                        //     }
+                        //     std::vector<Ponder_elem> after_move_list2 = ai_additional_selfplay(board, show_log, after_move_list, new_n_good_moves, AI_TL_ADDITIONAL_SEARCH_THRESHOLD, self_play_tl, thread_id);
+                        // }
                     }
                 }
             }
