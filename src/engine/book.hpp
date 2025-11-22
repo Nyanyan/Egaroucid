@@ -1702,7 +1702,6 @@ class Book {
                             return;
                         }
                     }
-                    // flag_book_elem(board);
                     keep_list[representative_board(board)] = 0;
                     ++(*n_flags);
                     return;
@@ -1724,11 +1723,6 @@ class Book {
                 return;
             }
             Book_elem book_elem = get(board);
-            // already seen?
-            // if (book_elem.seen) {
-            //     return;
-            // }
-            // flag_book_elem(board);
             keep_list[unique_board] = remaining_error; // update remaining error
             if (!keep_list_found) {
                 ++(*n_flags);
