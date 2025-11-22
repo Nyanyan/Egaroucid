@@ -65,7 +65,7 @@ class Thread_pool {
                 n_allocated_thread = n_thread * 2;
                 threads.reset(new std::thread[n_allocated_thread]);
                 for (int i = 0; i < n_allocated_thread; ++i) {
-                    threads[i] = std::thread(&Thread_pool::worker, this);
+                    threads[i] = std::thread(&Thread_pool::worker, this, i);
                 }
                 running = true;
                 n_idle = 0;
@@ -82,6 +82,7 @@ class Thread_pool {
             {
                 std::lock_guard<std::mutex> lock(mtx);
                 running = false;
+                n_thread = n_allocated_thread;
             }
             condition.notify_all();
             for (int i = 0; i < n_allocated_thread; ++i) {
@@ -221,24 +222,28 @@ class Thread_pool {
             return pushed;
         }
 
-        void worker() {
+        void worker(int thread_idx) {
             thread_id_t id;
             std::function<void()> task;
+            bool ignore_this_thread;
             for (;;) {
                 {
                     std::unique_lock<std::mutex> lock(mtx);
-                    ++n_idle;
-                    condition.wait(lock, [&] { return !tasks.empty() || !running; });
-                    if (!running && tasks.empty()) {
-                        return;
-                    }
-                    if (!tasks.empty()) {
-                        id = tasks.front().first;
-                        task = std::move(tasks.front().second);
-                        tasks.pop();
+                    ignore_this_thread = thread_idx >= n_thread;
+                    if (!ignore_this_thread) {
+                        ++n_idle;
+                        condition.wait(lock, [&] { return !tasks.empty() || !running; });
+                        if (!running && tasks.empty()) {
+                            return;
+                        }
+                        if (!tasks.empty()) {
+                            id = tasks.front().first;
+                            task = std::move(tasks.front().second);
+                            tasks.pop();
+                        }
                     }
                 }
-                if (task) {
+                if (task && !ignore_this_thread) {
                     task();
                     if (id != THREAD_ID_NONE) {
                         n_using_thread[id].fetch_sub(1);
