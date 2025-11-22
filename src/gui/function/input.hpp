@@ -35,8 +35,6 @@ std::vector<History_elem> import_transcript_processing(std::vector<History_elem>
     Flip flip;
     History_elem history_elem;
     int player = strt_elem.player;
-    //history_elem.set(h_bd, player, GRAPH_IGNORE_VALUE, -1, -1, -1, "");
-    //n_history.emplace_back(history_elem);
     bool passed = false;
     for (int i = 0; i < (int)transcript_str.size(); i += 2) {
         if (is_pass_like_str(transcript_str.narrow().substr(i, 2)) && passed) {
@@ -328,76 +326,90 @@ Game_import_t import_general_board_transcript_processing(std::string s, bool *fa
 }
 
 Game_import_t import_any_format_processing(std::string s, std::vector<History_elem> history_until_now, History_elem start_history_elem, bool *failed) {
-    Game_import_t res;
     bool f;
-    *failed = true;
 
     // GGF
-    res = import_ggf_processing(s, &f);
-    if (!f) {
-        *failed = false;
-        std::cerr << "imported as GGF" << std::endl;
-        res.format = TEXT_INPUT_FORMAT_GGF;
-        return res;
+    {
+        Game_import_t res_ggf = import_ggf_processing(s, &f);
+        if (!f) {
+            *failed = false;
+            std::cerr << "imported as GGF" << std::endl;
+            res_ggf.format = TEXT_INPUT_FORMAT_GGF;
+            return res_ggf;
+        }
     }
 
     // Othello Quest
-    res = import_othello_quest_processing(s, &f);
-    if (!f) {
-        *failed = false;
-        std::cerr << "imported as Othello Quest" << std::endl;
-        res.format = TEXT_INPUT_FORMAT_OTHELLO_QUEST;
-        return res;
+    {
+        Game_import_t res_othello_quest = import_othello_quest_processing(s, &f);
+        if (!f) {
+            *failed = false;
+            std::cerr << "imported as Othello Quest" << std::endl;
+            res_othello_quest.format = TEXT_INPUT_FORMAT_OTHELLO_QUEST;
+            return res_othello_quest;
+        }
     }
 
     // Transcript (from start)
-    History_elem history_elem;
-    Board h_bd;
-    h_bd.reset();
-    history_elem.set(h_bd, BLACK, GRAPH_IGNORE_VALUE, -1, -1, -1, "");
-    res.history.emplace_back(history_elem);
-    res.history = import_transcript_processing(res.history, history_elem, s, &f);
-    if (!f) {
-        *failed = false;
-        std::cerr << "imported as Transcript" << std::endl;
-        res.format = TEXT_INPUT_FORMAT_TRANSCRIPT;
-        return res;
+    {
+        History_elem history_elem;
+        Board h_bd;
+        history_elem.reset();
+        Game_import_t res_transcript;
+        res_transcript.history.emplace_back(history_elem);
+        res_transcript.history = import_transcript_processing(res_transcript.history, history_elem, s, &f);
+        if (!f) {
+            *failed = false;
+            std::cerr << "imported as Transcript" << std::endl;
+            res_transcript.format = TEXT_INPUT_FORMAT_TRANSCRIPT;
+            return res_transcript;
+        }
     }
-    res.history.clear();
 
     // Transcript (from this board)
-    res.history = import_transcript_processing(history_until_now, start_history_elem, s, &f);
-    if (!f) {
-        *failed = false;
-        std::cerr << "imported as Transcript from this Board" << std::endl;
-        res.format = TEXT_INPUT_FORMAT_TRANSCRIPT_FROM_THIS_POSITION;
-        return res;
+    {
+        Game_import_t res_transcript_from_board;
+        res_transcript_from_board.history = import_transcript_processing(history_until_now, start_history_elem, s, &f);
+        if (!f) {
+            *failed = false;
+            std::cerr << "imported as Transcript from this Board" << std::endl;
+            res_transcript_from_board.format = TEXT_INPUT_FORMAT_TRANSCRIPT_FROM_THIS_POSITION;
+            return res_transcript_from_board;
+        }
     }
-    res.history.clear();
 
     // Board
-    std::pair<Board, int> board_player = import_board_processing(s, &f);
-    if (!f) {
-        history_elem.reset();
-        res.history.emplace_back(history_elem);
-        history_elem.board = board_player.first;
-        history_elem.player = board_player.second;
-        res.history.emplace_back(history_elem);
-        *failed = false;
-        std::cerr << "imported as Board String" << std::endl;
-        res.format = TEXT_INPUT_FORMAT_BOARD;
-        return res;
+    {
+        Game_import_t res_board;
+        std::pair<Board, int> board_player = import_board_processing(s, &f);
+        if (!f) {
+            History_elem history_elem;
+            history_elem.reset();
+            res_board.history.emplace_back(history_elem);
+            history_elem.board = board_player.first;
+            history_elem.player = board_player.second;
+            res_board.history.emplace_back(history_elem);
+            *failed = false;
+            std::cerr << "imported as Board String" << std::endl;
+            res_board.format = TEXT_INPUT_FORMAT_BOARD;
+            return res_board;
+        }
     }
 
     // General Board + Transcript
-    res = import_general_board_transcript_processing(s, &f);
-    if (!f) {
-        *failed = false;
-        std::cerr << "imported as General Board & Transcript" << std::endl;
-        res.format = TEXT_INPUT_FORMAT_GENERAL_BOARD_TRANSCRIPT;
-        return res;
+    {
+        Game_import_t res_board_transcript = import_general_board_transcript_processing(s, &f);
+        if (!f) {
+            *failed = false;
+            std::cerr << "imported as General Board & Transcript" << std::endl;
+            res_board_transcript.format = TEXT_INPUT_FORMAT_GENERAL_BOARD_TRANSCRIPT;
+            return res_board_transcript;
+        }
     }
-    return res;
+
+    *failed = true;
+    Game_import_t res_empty;
+    return res_empty;
 }
 
 Game_import_t import_any_format_processing(std::string s, bool *failed) {
