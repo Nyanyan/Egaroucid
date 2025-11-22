@@ -39,7 +39,8 @@ class Thread_pool {
     private:
         mutable std::mutex mtx;
         bool running;
-        int n_thread;
+        // int n_thread;
+        std::atomic<int> n_thread;
         int n_allocated_thread;
         //std::atomic<int> n_idle;
         int n_idle;
@@ -139,17 +140,19 @@ class Thread_pool {
         }
 
         void notify_start_waiting() {
-            {
-                std::lock_guard<std::mutex> lock(mtx);
-                ++n_thread;
-            }
+            n_thread.fetch_add(1);
+            // {
+            //     std::lock_guard<std::mutex> lock(mtx);
+            //     ++n_thread;
+            // }
         }
 
         void notify_finish_waiting() {
-            {
-                std::lock_guard<std::mutex> lock(mtx);
-                --n_thread;
-            }
+            n_thread.fetch_sub(1);
+            // {
+            //     std::lock_guard<std::mutex> lock(mtx);
+            //     --n_thread;
+            // }
         }
 
 
@@ -227,10 +230,10 @@ class Thread_pool {
             std::function<void()> task;
             bool ignore_this_thread;
             for (;;) {
-                {
-                    std::unique_lock<std::mutex> lock(mtx);
-                    ignore_this_thread = thread_idx >= n_thread;
-                    if (!ignore_this_thread) {
+                ignore_this_thread = thread_idx >= n_thread;
+                if (!ignore_this_thread) {
+                    {
+                        std::unique_lock<std::mutex> lock(mtx);
                         ++n_idle;
                         condition.wait(lock, [&] { return !tasks.empty() || !running; });
                         if (!running && tasks.empty()) {
@@ -242,11 +245,11 @@ class Thread_pool {
                             tasks.pop();
                         }
                     }
-                }
-                if (task && !ignore_this_thread) {
-                    task();
-                    if (id != THREAD_ID_NONE) {
-                        n_using_thread[id].fetch_sub(1);
+                    if (task) {
+                        task();
+                        if (id != THREAD_ID_NONE) {
+                            n_using_thread[id].fetch_sub(1);
+                        }
                     }
                 }
             }
