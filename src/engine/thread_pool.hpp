@@ -40,6 +40,7 @@ class Thread_pool {
         mutable std::mutex mtx;
         bool running;
         int n_thread;
+        int n_allocated_thread;
         //std::atomic<int> n_idle;
         int n_idle;
         std::queue<std::pair<thread_id_t, std::function<void()>>> tasks{};
@@ -61,8 +62,9 @@ class Thread_pool {
                     new_n_thread = 0;
                 }
                 n_thread = new_n_thread;
-                threads.reset(new std::thread[n_thread]);
-                for (int i = 0; i < n_thread; ++i) {
+                n_allocated_thread = n_thread * 2;
+                threads.reset(new std::thread[n_allocated_thread]);
+                for (int i = 0; i < n_allocated_thread; ++i) {
                     threads[i] = std::thread(&Thread_pool::worker, this);
                 }
                 running = true;
@@ -82,12 +84,13 @@ class Thread_pool {
                 running = false;
             }
             condition.notify_all();
-            for (int i = 0; i < n_thread; ++i) {
+            for (int i = 0; i < n_allocated_thread; ++i) {
                 if (threads[i].joinable()) {
                     threads[i].join();
                 }
             }
             n_thread = 0;
+            n_allocated_thread = 0;
             n_idle = 0;
         }
 
@@ -134,31 +137,20 @@ class Thread_pool {
             return n_using_thread[id];
         }
 
-        /*
-        void reset_unavailable() {
-            if (n_idle == n_thread && n_using_tasks.load() == 0) {
-                bool start_flag = false;
-                std::vector<std::future<void>> futures;
-                bool need_to_reset = false;
-                for (int i = 0; i < n_thread; ++i) {
-                    bool pushed;
-                    futures.emplace_back(push(&pushed, std::bind(reset_unavailable_task, &start_flag)));
-                    if (!pushed) {
-                        futures.pop_back();
-                        need_to_reset = true;
-                    }
-                }
-                start_flag = true;
-                for (std::future<void> &f: futures) {
-                    f.get();
-                }
-                if (need_to_reset) {
-                    std::cerr << "reset unavailable threads" << std::endl;
-                    resize(n_thread);
-                }
+        void notify_start_waiting() {
+            {
+                std::lock_guard<std::mutex> lock(mtx);
+                ++n_thread;
             }
         }
-        */
+
+        void notify_finish_waiting() {
+            {
+                std::lock_guard<std::mutex> lock(mtx);
+                --n_thread;
+            }
+        }
+
 
 #if ((defined(_MSVC_LANG) && _MSVC_LANG >= 201703L) || __cplusplus >= 201703L)
         template<typename F, typename... Args, typename R = std::invoke_result_t<std::decay_t<F>, std::decay_t<Args>...>>

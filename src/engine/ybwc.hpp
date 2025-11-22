@@ -193,21 +193,23 @@ inline void ybwc_search_young_brothers_nws(Search *search, int alpha, int *v, in
         }
     }
 #endif
-    for (std::future<Parallel_task> &task: parallel_tasks) {
-        if (task.valid()) {
-            task_result = task.get();
-            search->n_nodes += task_result.n_nodes;
-            if (task_result.value != SCORE_UNDEFINED) {
-                if (*v < task_result.value) {
-                    *v = task_result.value;
-                    *best_move = move_list[task_result.move_idx].flip.pos;
-                    // if (alpha < task_result.value) {
-                    //     n_searching = false;
-                    // }
+    thread_pool.notify_start_waiting();
+        for (std::future<Parallel_task> &task: parallel_tasks) {
+            if (task.valid()) {
+                task_result = task.get();
+                search->n_nodes += task_result.n_nodes;
+                if (task_result.value != SCORE_UNDEFINED) {
+                    if (*v < task_result.value) {
+                        *v = task_result.value;
+                        *best_move = move_list[task_result.move_idx].flip.pos;
+                        // if (alpha < task_result.value) {
+                        //     n_searching = false;
+                        // }
+                    }
                 }
             }
         }
-    }
+    thread_pool.notify_finish_waiting();
     searchings.pop_back();
 }
 
@@ -293,21 +295,23 @@ inline void ybwc_search_young_brothers_nws(Search *search, int alpha, int *v, in
         }
     }
 #endif
-    for (std::future<Parallel_task> &task: parallel_tasks) {
-        if (task.valid()) {
-            task_result = task.get();
-            search->n_nodes += task_result.n_nodes;
-            if (task_result.value != SCORE_UNDEFINED) {
-                if (*v < task_result.value) {
-                    *v = task_result.value;
-                    *best_move = move_list[task_result.move_idx].flip.pos;
-                    // if (alpha < task_result.value) {
-                    //     n_searching = false;
-                    // }
+    thread_pool.notify_start_waiting();
+        for (std::future<Parallel_task> &task: parallel_tasks) {
+            if (task.valid()) {
+                task_result = task.get();
+                search->n_nodes += task_result.n_nodes;
+                if (task_result.value != SCORE_UNDEFINED) {
+                    if (*v < task_result.value) {
+                        *v = task_result.value;
+                        *best_move = move_list[task_result.move_idx].flip.pos;
+                        // if (alpha < task_result.value) {
+                        //     n_searching = false;
+                        // }
+                    }
                 }
             }
         }
-    }
+    thread_pool.notify_finish_waiting();
     // while (!parallel_tasks.empty()) {
     //     bool progress = false;
     //     for (auto it = parallel_tasks.begin(); it != parallel_tasks.end();) {
@@ -384,27 +388,29 @@ void ybwc_search_young_brothers(Search *search, int *alpha, int *beta, int *v, i
         }
     }
     if (running_count) {
-        Parallel_task task_result;
-        for (std::future<Parallel_task> &task: parallel_tasks) {
-            if (task.valid()) {
-                task_result = task.get();
-                --running_count;
-                search->n_nodes += task_result.n_nodes;
-                if (task_result.value != SCORE_UNDEFINED) {
-                    if (*v < task_result.value) {
-                        *v = task_result.value;
-                        *best_move = move_list[task_result.move_idx].flip.pos;
-                    }
-                    if (*alpha < task_result.value) {
-                        next_alpha = std::max(next_alpha, task_result.value);
-                        research_idxes.emplace_back(task_result.move_idx);
-                    } else {
-                        move_list[task_result.move_idx].flip.flip = 0;
-                        ++n_searched;
+        thread_pool.notify_start_waiting();
+            Parallel_task task_result;
+            for (std::future<Parallel_task> &task: parallel_tasks) {
+                if (task.valid()) {
+                    task_result = task.get();
+                    --running_count;
+                    search->n_nodes += task_result.n_nodes;
+                    if (task_result.value != SCORE_UNDEFINED) {
+                        if (*v < task_result.value) {
+                            *v = task_result.value;
+                            *best_move = move_list[task_result.move_idx].flip.pos;
+                        }
+                        if (*alpha < task_result.value) {
+                            next_alpha = std::max(next_alpha, task_result.value);
+                            research_idxes.emplace_back(task_result.move_idx);
+                        } else {
+                            move_list[task_result.move_idx].flip.flip = 0;
+                            ++n_searched;
+                        }
                     }
                 }
             }
-        }
+        thread_pool.notify_finish_waiting();
     }
     if (research_idxes.size() && next_alpha < *beta && *searching) {
         int prev_alpha = *alpha;
