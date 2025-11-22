@@ -30,6 +30,7 @@ constexpr Color color_selectivity[N_GRPAPH_COLOR_TYPES][N_SELECTIVITY_LEVEL] = {
         Color(240, 135, 20),  // oragne
         Color(247, 143, 179), // pink
         Color(82, 62, 212),   // blue
+        Color(255, 255, 255), // empty
         Color(51, 161, 255)   // light blue
     },
     {
@@ -38,9 +39,13 @@ constexpr Color color_selectivity[N_GRPAPH_COLOR_TYPES][N_SELECTIVITY_LEVEL] = {
         Color(214, 56, 248), // purple
         Color(18, 4, 171),   // blue
         Color(66, 109, 255), // light blue
+        Color(255, 255, 255), // empty
         Color(44, 166, 167)  // cyan
     }
 };
+
+constexpr bool selectivity_used_display[N_SELECTIVITY_LEVEL] = {1, 1, 1, 1, 1, 0, 1};
+
 constexpr Color midsearch_color = Color(51, 51, 51);
 constexpr Color endsearch_color = Palette::White;
 constexpr Color level_info_color = Palette::White;
@@ -109,10 +114,12 @@ public:
         font(language.get("info", "probability")).draw(font_size, Arg::center(info_x + LEVEL_PROB_WIDTH / 2, info_y + LEVEL_INFO_HEIGHT / 2), level_prob_color);
         info_x += LEVEL_PROB_WIDTH;
         for (int i = 0; i < N_SELECTIVITY_LEVEL; ++i) {
-            Rect rect_selectivity{ info_x, info_y, LEVEL_INFO_WIDTH, LEVEL_INFO_HEIGHT };
-            rect_selectivity.draw(color_selectivity[color_type][i]);
-            font(Format(SELECTIVITY_PERCENTAGE[i]) + U"%").draw(font_size, Arg::center(info_x + LEVEL_INFO_WIDTH / 2, info_y + LEVEL_INFO_HEIGHT / 2), level_info_color);
-            info_x += LEVEL_INFO_WIDTH;
+            if (selectivity_used_display[i]) {
+                Rect rect_selectivity{ info_x, info_y, LEVEL_INFO_WIDTH, LEVEL_INFO_HEIGHT };
+                rect_selectivity.draw(color_selectivity[color_type][i]);
+                font(Format(SELECTIVITY_PERCENTAGE[i]) + U"%").draw(font_size, Arg::center(info_x + LEVEL_INFO_WIDTH / 2, info_y + LEVEL_INFO_HEIGHT / 2), level_info_color);
+                info_x += LEVEL_INFO_WIDTH;
+            }
         }
         bool is_mid_search;
         int depth;
