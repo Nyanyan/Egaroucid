@@ -1672,7 +1672,7 @@ class Book {
         }
 
         // flag keeped boards
-        void reduce_book_flag_moves(Board board, int max_depth, int max_error_per_move, int remaining_error, uint64_t *n_flags, std::unordered_map<Board, int, Book_hash> &keep_list, bool *doing) {
+        void reduce_book_calculate_keeplist(Board board, int max_depth, int max_error_per_move, int remaining_error, uint64_t *n_flags, std::unordered_map<Board, int, Book_hash> &keep_list, bool *doing) {
             if (!*(doing)) {
                 return;
             }
@@ -1737,13 +1737,13 @@ class Book {
                 if (link_error <= max_error_per_move && link_error <= remaining_error) {
                     calc_flip(&flip, &board, link.policy);
                     board.move_board(&flip);
-                        reduce_book_flag_moves(board, max_depth, max_error_per_move, remaining_error - std::max(0, link_error), n_flags, keep_list, doing);
+                        reduce_book_calculate_keeplist(board, max_depth, max_error_per_move, remaining_error - std::max(0, link_error), n_flags, keep_list, doing);
                     board.undo_board(&flip);
                 }
             }
         }
 
-        void update_flagged_leaves(Board board, std::unordered_map<Board, int, Book_hash> &keep_list, bool *doing) {
+        void reduce_book_update_leaves(Board board, std::unordered_map<Board, int, Book_hash> &keep_list, bool *doing) {
             if (!(*doing)) {
                 return;
             }
@@ -1803,7 +1803,7 @@ class Book {
                                 leaf_updated = true;
                             }
                         } else {
-                            update_flagged_leaves(board, keep_list, doing);
+                            reduce_book_update_leaves(board, keep_list, doing);
                         }
                     board.undo_board(&flip);
                 }
@@ -1813,7 +1813,7 @@ class Book {
             }
         }
 
-        void delete_unflagged_moves(Board board, uint64_t *n_delete, std::unordered_map<Board, int, Book_hash> &keep_list, bool *doing) {
+        void reduce_book_delete_unflagged_moves(Board board, uint64_t *n_delete, std::unordered_map<Board, int, Book_hash> &keep_list, bool *doing) {
             if (!(*doing)) {
                 return;
             }
@@ -1846,7 +1846,7 @@ class Book {
             for (Book_value &link: links) {
                 calc_flip(&flip, &board, link.policy);
                 board.move_board(&flip);
-                    delete_unflagged_moves(board, n_delete, keep_list, doing);
+                    reduce_book_delete_unflagged_moves(board, n_delete, keep_list, doing);
                 board.undo_board(&flip);
             }
             if (keep_list.find(representative_board(board)) == keep_list.end()) {
@@ -1867,13 +1867,11 @@ class Book {
             uint64_t n_flags = 0, n_delete = 0;
             uint64_t book_size = book.size();
             std::unordered_map<Board, int, Book_hash> keep_list; // key-remaining_error
-            reset_seen();
-            reduce_book_flag_moves(root_board, max_depth, max_error_per_move, max_line_error, &n_flags, keep_list, doing);
-            reset_seen();
+            reduce_book_calculate_keeplist(root_board, max_depth, max_error_per_move, max_line_error, &n_flags, keep_list, doing);
             std::cerr << "updating leaves" << std::endl;
-            update_flagged_leaves(root_board, keep_list, doing);
+            reduce_book_update_leaves(root_board, keep_list, doing);
             reset_seen();
-            delete_unflagged_moves(root_board, &n_delete, keep_list, doing);
+            reduce_book_delete_unflagged_moves(root_board, &n_delete, keep_list, doing);
             reset_seen();
             std::cerr << "book reduced size before " << book_size << " n_keep " << n_flags << " n_delete " << n_delete << std::endl;
             *doing = false;
