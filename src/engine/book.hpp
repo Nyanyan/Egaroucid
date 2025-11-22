@@ -1672,7 +1672,7 @@ class Book {
         }
 
         // flag keeped boards
-        void reduce_book_flag_moves(Board board, int max_depth, int max_error_per_move, int remaining_error, uint64_t *n_flags, std::unordered_set<Board, Book_hash> &keep_list, bool *doing) {
+        void reduce_book_flag_moves(Board board, int max_depth, int max_error_per_move, int remaining_error, uint64_t *n_flags, std::unordered_map<Board, int, Book_hash> &keep_list, bool *doing) {
             if (!*(doing)) {
                 return;
             }
@@ -1702,16 +1702,20 @@ class Book {
                             return;
                         }
                     }
-                    flag_book_elem(board);
-                    keep_list.emplace(representative_board(board));
+                    // flag_book_elem(board);
+                    keep_list[representative_board(board)] = 0;
                     ++(*n_flags);
                     return;
                 }
             }
             Board unique_board = representative_board(board);
             // already seen
+            int pre_searched_remaining_error = -1;
             if (keep_list.find(unique_board) != keep_list.end()) {
-                return;
+                pre_searched_remaining_error = keep_list[unique_board];
+                if (remaining_error <= pre_searched_remaining_error) {
+                    return;
+                }
             }
             // not in book
             if (!contain(&board)) {
@@ -1719,19 +1723,28 @@ class Book {
             }
             Book_elem book_elem = get(board);
             // already seen?
-            if (book_elem.seen) {
-                return;
-            }
-            flag_book_elem(board);
-            keep_list.emplace(unique_board);
+            // if (book_elem.seen) {
+            //     return;
+            // }
+            // flag_book_elem(board);
+            keep_list[unique_board] = remaining_error; // update remaining error
             ++(*n_flags);
             if ((*n_flags) % 100 == 0) {
-                std::cerr << "keep " << (*n_flags) << " boards of " << book.size() << std::endl;
+                // std::cerr << "keep " << (*n_flags) << " boards of " << book.size() << std::endl;
             }
             std::vector<Book_value> links = get_all_moves_with_value(&board);
             Flip flip;
+            Board bb("------------------X-XX-----XXX-----OXOOO---OOXO----OXX-----X---- O");
+            Board bb_u = representative_board(bb);
+            if (unique_board == bb_u) {
+                std::cerr << "board found " << max_error_per_move << " " << remaining_error << std::endl;
+                board.print();
+            }
             for (Book_value &link: links) {
                 int link_error = book_elem.value - link.value;
+                if (unique_board == bb_u) {
+                    std::cerr << "move " << idx_to_coord(link.policy) << " " << link_error << std::endl;
+                }
                 if (link_error <= max_error_per_move && link_error <= remaining_error) {
                     calc_flip(&flip, &board, link.policy);
                     board.move_board(&flip);
@@ -1741,7 +1754,7 @@ class Book {
             }
         }
 
-        void update_flagged_leaves(Board board, std::unordered_set<Board, Book_hash> &keep_list, bool *doing) {
+        void update_flagged_leaves(Board board, std::unordered_map<Board, int, Book_hash> &keep_list, bool *doing) {
             if (!(*doing)) {
                 return;
             }
@@ -1811,7 +1824,7 @@ class Book {
             }
         }
 
-        void delete_unflagged_moves(Board board, uint64_t *n_delete, std::unordered_set<Board, Book_hash> &keep_list, bool *doing) {
+        void delete_unflagged_moves(Board board, uint64_t *n_delete, std::unordered_map<Board, int, Book_hash> &keep_list, bool *doing) {
             if (!(*doing)) {
                 return;
             }
@@ -1864,7 +1877,7 @@ class Book {
             }
             uint64_t n_flags = 0, n_delete = 0;
             uint64_t book_size = book.size();
-            std::unordered_set<Board, Book_hash> keep_list;
+            std::unordered_map<Board, int, Book_hash> keep_list; // key-remaining_error
             reset_seen();
             reduce_book_flag_moves(root_board, max_depth, max_error_per_move, max_line_error, &n_flags, keep_list, doing);
             reset_seen();
