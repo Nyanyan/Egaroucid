@@ -640,7 +640,7 @@ Search_result ai_common(Board board, int alpha, int beta, int level, bool use_bo
             }
             if (use_legal != 0) { // there is moves out of book
                 if (show_log) {
-                    std::cerr << "there are good moves out of book" << std::endl;
+                    std::cerr << "there are " << pop_count_ull(use_legal) << " moves out of book" << std::endl;
                 }
                 int n_alpha = book_result.value;
                 Search_result additional_res = tree_search_legal(board, n_alpha, n_alpha + 1, depth, mpc_level, show_log, use_legal, use_multi_thread, time_limit, thread_id, searching);
