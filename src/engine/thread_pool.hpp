@@ -140,7 +140,7 @@ class Thread_pool {
         }
 
         void notify_start_waiting() {
-            n_thread.fetch_add(1);
+            ++n_thread;
             // {
             //     std::lock_guard<std::mutex> lock(mtx);
             //     ++n_thread;
@@ -148,7 +148,7 @@ class Thread_pool {
         }
 
         void notify_finish_waiting() {
-            n_thread.fetch_sub(1);
+            --n_thread;
             // {
             //     std::lock_guard<std::mutex> lock(mtx);
             //     --n_thread;
@@ -225,7 +225,7 @@ class Thread_pool {
             return pushed;
         }
 
-        void worker(int thread_idx) {
+        void worker(const int thread_idx) {
             thread_id_t id;
             std::function<void()> task;
             bool ignore_this_thread;
