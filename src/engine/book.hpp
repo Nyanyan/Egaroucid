@@ -1711,7 +1711,9 @@ class Book {
             Board unique_board = representative_board(board);
             // already seen
             int pre_searched_remaining_error = -1;
+            bool keep_list_found = false;
             if (keep_list.find(unique_board) != keep_list.end()) {
+                keep_list_found = true;
                 pre_searched_remaining_error = keep_list[unique_board];
                 if (remaining_error <= pre_searched_remaining_error) {
                     return;
@@ -1728,23 +1730,16 @@ class Book {
             // }
             // flag_book_elem(board);
             keep_list[unique_board] = remaining_error; // update remaining error
-            ++(*n_flags);
-            if ((*n_flags) % 100 == 0) {
-                // std::cerr << "keep " << (*n_flags) << " boards of " << book.size() << std::endl;
+            if (!keep_list_found) {
+                ++(*n_flags);
+                if ((*n_flags) % 100 == 0) {
+                    std::cerr << "keep " << (*n_flags) << " boards of " << book.size() << std::endl;
+                }
             }
             std::vector<Book_value> links = get_all_moves_with_value(&board);
             Flip flip;
-            Board bb("------------------X-XX-----XXX-----OXOOO---OOXO----OXX-----X---- O");
-            Board bb_u = representative_board(bb);
-            if (unique_board == bb_u) {
-                std::cerr << "board found " << max_error_per_move << " " << remaining_error << std::endl;
-                board.print();
-            }
             for (Book_value &link: links) {
                 int link_error = book_elem.value - link.value;
-                if (unique_board == bb_u) {
-                    std::cerr << "move " << idx_to_coord(link.policy) << " " << link_error << std::endl;
-                }
                 if (link_error <= max_error_per_move && link_error <= remaining_error) {
                     calc_flip(&flip, &board, link.policy);
                     board.move_board(&flip);
