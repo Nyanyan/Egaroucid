@@ -82,3 +82,6 @@ enc_temp_folder
 
 # test
 src/tools/evaluation/dl_test
+
+# .github
+.github
