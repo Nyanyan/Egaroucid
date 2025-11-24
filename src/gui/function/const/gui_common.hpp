@@ -232,13 +232,22 @@ constexpr int BUTTON3_1_SX = X_CENTER - BUTTON3_WIDTH * 3 / 2 - 10;
 constexpr int BUTTON3_2_SX = X_CENTER - BUTTON3_WIDTH / 2;
 constexpr int BUTTON3_3_SX = X_CENTER + BUTTON3_WIDTH / 2 + 10;
 
-// 2 button vertical constants
+// 2 buttons vertical constants
 constexpr int BUTTON2_VERTICAL_WIDTH = 200;
 constexpr int BUTTON2_VERTICAL_HEIGHT = 50;
 constexpr int BUTTON2_VERTICAL_1_SY = 350;
 constexpr int BUTTON2_VERTICAL_2_SY = 420;
 constexpr int BUTTON2_VERTICAL_SX = 520;
 constexpr int BUTTON2_VERTICAL_RADIUS = 20;
+
+// 3 buttons vertical constants
+constexpr int BUTTON3_VERTICAL_WIDTH = 200;
+constexpr int BUTTON3_VERTICAL_HEIGHT = 50;
+constexpr int BUTTON3_VERTICAL_1_SY = 280;
+constexpr int BUTTON3_VERTICAL_2_SY = 350;
+constexpr int BUTTON3_VERTICAL_3_SY = 420;
+constexpr int BUTTON3_VERTICAL_SX = 520;
+constexpr int BUTTON3_VERTICAL_RADIUS = 20;
 
 // font constant
 constexpr int FONT_DEFAULT_SIZE = 48;

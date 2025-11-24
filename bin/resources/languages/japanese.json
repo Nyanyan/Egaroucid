@@ -174,7 +174,9 @@
         "create": "作成",
         "save_here": "ここに保存",
         "saving": "保存中...",
-        "open_explorer": "エクスプローラで開く"
+        "open_explorer": "エクスプローラで開く",
+        "import_as_black": "黒番で取り込み",
+        "import_as_white": "白番で取り込み"
     },
     "display": {
         "display": "表示",

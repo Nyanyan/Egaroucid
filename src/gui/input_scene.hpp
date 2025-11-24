@@ -155,8 +155,8 @@ public:
 class Edit_board : public App::Scene {
 private:
     Button back_button;
-    Button set_button;
-    Radio_button player_radio;
+    Button set_black_button;
+    Button set_white_button;
     Radio_button disc_radio;
     bool done;
     bool failed;
@@ -164,28 +164,19 @@ private:
 
 public:
     Edit_board(const InitData& init) : IScene{ init } {
-        back_button.init(BUTTON2_VERTICAL_SX, BUTTON2_VERTICAL_1_SY, BUTTON2_VERTICAL_WIDTH, BUTTON2_VERTICAL_HEIGHT, BUTTON2_VERTICAL_RADIUS, language.get("common", "back"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
-        set_button.init(BUTTON2_VERTICAL_SX, BUTTON2_VERTICAL_2_SY, BUTTON2_VERTICAL_WIDTH, BUTTON2_VERTICAL_HEIGHT, BUTTON2_VERTICAL_RADIUS, language.get("in_out", "import"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
+        set_black_button.init(BUTTON3_VERTICAL_SX, BUTTON3_VERTICAL_1_SY, BUTTON3_VERTICAL_WIDTH, BUTTON3_VERTICAL_HEIGHT, BUTTON3_VERTICAL_RADIUS, language.get("in_out", "import_as_black"), 20, getData().fonts.font, getData().colors.black, getData().colors.white);
+        set_white_button.init(BUTTON3_VERTICAL_SX, BUTTON3_VERTICAL_2_SY, BUTTON3_VERTICAL_WIDTH, BUTTON3_VERTICAL_HEIGHT, BUTTON3_VERTICAL_RADIUS, language.get("in_out", "import_as_white"), 20, getData().fonts.font, getData().colors.white, getData().colors.black);
+        back_button.init(BUTTON3_VERTICAL_SX, BUTTON3_VERTICAL_3_SY, BUTTON3_VERTICAL_WIDTH, BUTTON3_VERTICAL_HEIGHT, BUTTON3_VERTICAL_RADIUS, language.get("common", "back"), 20, getData().fonts.font, getData().colors.white, getData().colors.black);
         done = false;
         failed = false;
         history_elem = getData().history_elem;
         Radio_button_element radio_button_elem;
-        player_radio.init();
-        radio_button_elem.init(480, 120, getData().fonts.font, 15, language.get("common", "black"), false);
-        player_radio.push(radio_button_elem);
-        radio_button_elem.init(480, 140, getData().fonts.font, 15, language.get("common", "white"), true);
-        player_radio.push(radio_button_elem);
-        if (history_elem.player == WHITE) {
-            player_radio.set_checked(1);
-        } else {
-            player_radio.set_checked(0);
-        }
         disc_radio.init();
-        radio_button_elem.init(480, 210, getData().fonts.font, 15, language.get("edit_board", "black"), true);
+        radio_button_elem.init(480, 120, getData().fonts.font, 15, language.get("edit_board", "black"), true);
         disc_radio.push(radio_button_elem);
-        radio_button_elem.init(480, 230, getData().fonts.font, 15, language.get("edit_board", "white"), false);
+        radio_button_elem.init(480, 140, getData().fonts.font, 15, language.get("edit_board", "white"), false);
         disc_radio.push(radio_button_elem);
-        radio_button_elem.init(480, 250, getData().fonts.font, 15, language.get("edit_board", "empty"), false);
+        radio_button_elem.init(480, 160, getData().fonts.font, 15, language.get("edit_board", "empty"), false);
         disc_radio.push(radio_button_elem);
 
     }
@@ -216,86 +207,105 @@ public:
         }
         Scene::SetBackground(getData().colors.green);
         getData().fonts.font(language.get("in_out", "edit_board")).draw(25, 480, 20, getData().colors.white);
-        getData().fonts.font(language.get("in_out", "player")).draw(20, 480, 80, getData().colors.white);
-        getData().fonts.font(language.get("in_out", "color")).draw(20, 480, 170, getData().colors.white);
+        getData().fonts.font(language.get("in_out", "color")).draw(20, 480, 80, getData().colors.white);
         draw_board(getData().fonts, getData().colors, history_elem);
-        player_radio.draw();
         disc_radio.draw();
+        
+        // 盤上の石数を計算(偶数なら黒番、奇数なら白番)
+        int n_discs = history_elem.board.n_discs();
+        bool is_black_turn = (n_discs % 2 == 0);
+        
+        // ボタンの描画
+        set_black_button.draw();
+        set_white_button.draw();
         back_button.draw();
-        set_button.draw();
+        
+        // 手番に応じてボタンの周りを白線で囲う
+        if (is_black_turn) {
+            RoundRect(BUTTON3_VERTICAL_SX - 6, BUTTON3_VERTICAL_1_SY - 6, BUTTON3_VERTICAL_WIDTH + 12, BUTTON3_VERTICAL_HEIGHT + 12, BUTTON3_VERTICAL_RADIUS + 6)
+                .drawFrame(2, 0, getData().colors.black);
+        } else {
+            RoundRect(BUTTON3_VERTICAL_SX - 6, BUTTON3_VERTICAL_2_SY - 6, BUTTON3_VERTICAL_WIDTH + 12, BUTTON3_VERTICAL_HEIGHT + 12, BUTTON3_VERTICAL_RADIUS + 6)
+                .drawFrame(2, 0, getData().colors.white);
+        }
+        
         if (back_button.clicked() || KeyEscape.pressed()) {
             changeScene(U"Main_scene", SCENE_FADE_TIME);
         }
-        if (set_button.clicked() || KeyEnter.pressed()) {
-            if (history_elem.player != player_radio.checked) {
-                history_elem.board.pass();
-                history_elem.player = player_radio.checked;
-            }
-            // history_elem.player = player_radio.checked;
-            history_elem.v = GRAPH_IGNORE_VALUE;
-            history_elem.level = -1;
-            if (!history_elem.board.is_end() && history_elem.board.get_legal() == 0) {
-                history_elem.board.pass();
-                history_elem.player ^= 1;
-            }
-            int n_discs = history_elem.board.n_discs();
-            int insert_place = (int)getData().graph_resources.nodes[getData().graph_resources.branch].size();
-            int replace_place = -1;
-            for (int i = 0; i < (int)getData().graph_resources.nodes[getData().graph_resources.branch].size(); ++i) {
-                int node_n_discs = getData().graph_resources.nodes[getData().graph_resources.branch][i].board.n_discs();
-                if (node_n_discs == n_discs) {
-                    replace_place = i;
-                    insert_place = -1;
-                    break;
-                } else if (node_n_discs > n_discs) {
-                    insert_place = i;
-                    break;
-                }
-            }
-            history_elem.policy = -1; // reset last policy
-            if (replace_place - 1 >= 0) {
-                uint64_t f_discs = getData().graph_resources.nodes[getData().graph_resources.branch][replace_place - 1].board.player | getData().graph_resources.nodes[getData().graph_resources.branch][replace_place - 1].board.opponent;
-                uint64_t discs = history_elem.board.player | history_elem.board.opponent;
-                if (pop_count_ull(discs ^ f_discs) == 1) {
-                    int last_policy = ctz(discs ^ f_discs);
-                    history_elem.policy = last_policy;
-                }
-            } else if (insert_place - 1 >= 0 && insert_place - 1 < getData().graph_resources.nodes[getData().graph_resources.branch].size()) {
-                uint64_t f_discs = getData().graph_resources.nodes[getData().graph_resources.branch][insert_place - 1].board.player | getData().graph_resources.nodes[getData().graph_resources.branch][insert_place - 1].board.opponent;
-                uint64_t discs = history_elem.board.player | history_elem.board.opponent;
-                if (pop_count_ull(discs ^ f_discs) == 1) {
-                    int last_policy = ctz(discs ^ f_discs);
-                    history_elem.policy = last_policy;
-                }
-            } else {
-                for (int i = 0; i < (int)getData().graph_resources.nodes[0].size(); ++i) {
-                    int node_n_discs = getData().graph_resources.nodes[0][i].board.n_discs();
-                    if (node_n_discs + 1 == n_discs) {
-                        uint64_t f_discs = getData().graph_resources.nodes[0][i].board.player | getData().graph_resources.nodes[0][i].board.opponent;
-                        uint64_t discs = history_elem.board.player | history_elem.board.opponent;
-                        if (pop_count_ull(discs ^ f_discs) == 1) {
-                            int last_policy = ctz(discs ^ f_discs);
-                            history_elem.policy = last_policy;
-                        }
-                    }
-                }
-            }
-            if (replace_place != -1) {
-                std::cerr << "replace" << std::endl;
-                getData().graph_resources.nodes[getData().graph_resources.branch][replace_place] = history_elem;
-            } else {
-                std::cerr << "insert" << std::endl;
-                getData().graph_resources.nodes[getData().graph_resources.branch].insert(getData().graph_resources.nodes[getData().graph_resources.branch].begin() + insert_place, history_elem);
-            }
-            getData().graph_resources.n_discs = n_discs;
-            getData().graph_resources.need_init = false;
-            getData().history_elem = getData().graph_resources.nodes[getData().graph_resources.branch].back();
-            changeScene(U"Main_scene", SCENE_FADE_TIME);
+        if (set_black_button.clicked() || (KeyEnter.pressed() && is_black_turn)) {
+            process_import(BLACK);
+        }
+        if (set_white_button.clicked() || (KeyEnter.pressed() && !is_black_turn)) {
+            process_import(WHITE);
         }
     }
 
     void draw() const override {
 
+    }
+
+private:
+    void process_import(int player) {
+        history_elem.player = player;
+        history_elem.v = GRAPH_IGNORE_VALUE;
+        history_elem.level = -1;
+        if (!history_elem.board.is_end() && history_elem.board.get_legal() == 0) {
+            history_elem.board.pass();
+            history_elem.player ^= 1;
+        }
+        int n_discs = history_elem.board.n_discs();
+        int insert_place = (int)getData().graph_resources.nodes[getData().graph_resources.branch].size();
+        int replace_place = -1;
+        for (int i = 0; i < (int)getData().graph_resources.nodes[getData().graph_resources.branch].size(); ++i) {
+            int node_n_discs = getData().graph_resources.nodes[getData().graph_resources.branch][i].board.n_discs();
+            if (node_n_discs == n_discs) {
+                replace_place = i;
+                insert_place = -1;
+                break;
+            } else if (node_n_discs > n_discs) {
+                insert_place = i;
+                break;
+            }
+        }
+        history_elem.policy = -1; // reset last policy
+        if (replace_place - 1 >= 0) {
+            uint64_t f_discs = getData().graph_resources.nodes[getData().graph_resources.branch][replace_place - 1].board.player | getData().graph_resources.nodes[getData().graph_resources.branch][replace_place - 1].board.opponent;
+            uint64_t discs = history_elem.board.player | history_elem.board.opponent;
+            if (pop_count_ull(discs ^ f_discs) == 1) {
+                int last_policy = ctz(discs ^ f_discs);
+                history_elem.policy = last_policy;
+            }
+        } else if (insert_place - 1 >= 0 && insert_place - 1 < getData().graph_resources.nodes[getData().graph_resources.branch].size()) {
+            uint64_t f_discs = getData().graph_resources.nodes[getData().graph_resources.branch][insert_place - 1].board.player | getData().graph_resources.nodes[getData().graph_resources.branch][insert_place - 1].board.opponent;
+            uint64_t discs = history_elem.board.player | history_elem.board.opponent;
+            if (pop_count_ull(discs ^ f_discs) == 1) {
+                int last_policy = ctz(discs ^ f_discs);
+                history_elem.policy = last_policy;
+            }
+        } else {
+            for (int i = 0; i < (int)getData().graph_resources.nodes[0].size(); ++i) {
+                int node_n_discs = getData().graph_resources.nodes[0][i].board.n_discs();
+                if (node_n_discs + 1 == n_discs) {
+                    uint64_t f_discs = getData().graph_resources.nodes[0][i].board.player | getData().graph_resources.nodes[0][i].board.opponent;
+                    uint64_t discs = history_elem.board.player | history_elem.board.opponent;
+                    if (pop_count_ull(discs ^ f_discs) == 1) {
+                        int last_policy = ctz(discs ^ f_discs);
+                        history_elem.policy = last_policy;
+                    }
+                }
+            }
+        }
+        if (replace_place != -1) {
+            std::cerr << "replace" << std::endl;
+            getData().graph_resources.nodes[getData().graph_resources.branch][replace_place] = history_elem;
+        } else {
+            std::cerr << "insert" << std::endl;
+            getData().graph_resources.nodes[getData().graph_resources.branch].insert(getData().graph_resources.nodes[getData().graph_resources.branch].begin() + insert_place, history_elem);
+        }
+        getData().graph_resources.n_discs = n_discs;
+        getData().graph_resources.need_init = false;
+        getData().history_elem = getData().graph_resources.nodes[getData().graph_resources.branch].back();
+        changeScene(U"Main_scene", SCENE_FADE_TIME);
     }
 };
 
