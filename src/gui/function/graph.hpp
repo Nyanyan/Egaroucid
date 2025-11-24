@@ -107,13 +107,13 @@ public:
         dx = (double)size_x / 60;
         RoundRect round_rect{ sx + GRAPH_RECT_DX, sy + GRAPH_RECT_DY, GRAPH_RECT_WIDTH, GRAPH_RECT_HEIGHT, GRAPH_RECT_RADIUS };
         round_rect.drawFrame(GRAPH_RECT_THICKNESS, graph_rect_color);
-        int sum_n_selectivity_level_displayed = 0;
+        int n_selectivity_level_displayed = 0;
         for (int i = 0; i < N_SELECTIVITY_LEVEL; ++i) {
             if (selectivity_used_display[i]) {
-                ++sum_n_selectivity_level_displayed;
+                ++n_selectivity_level_displayed;
             }
         }
-        int info_x = sx + GRAPH_RECT_DX + GRAPH_RECT_WIDTH / 2 - (LEVEL_PROB_WIDTH + LEVEL_INFO_WIDTH * sum_n_selectivity_level_displayed) / 2;
+        int info_x = sx + GRAPH_RECT_DX + GRAPH_RECT_WIDTH / 2 - (LEVEL_PROB_WIDTH + LEVEL_INFO_WIDTH * n_selectivity_level_displayed) / 2;
         int info_y = sy + LEVEL_INFO_DY;
         Rect rect_prob{info_x, info_y, LEVEL_PROB_WIDTH, LEVEL_INFO_HEIGHT};
         rect_prob.draw(graph_color);
