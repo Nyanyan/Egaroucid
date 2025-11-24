@@ -685,6 +685,21 @@ private:
     void menu_manipulate() {
         if (getData().menu_elements.stop_calculating || shortcut_key == U"stop_calculating") {
             stop_calculating();
+            
+            // ignore recalculate hint
+            ai_status.hint_calculated = true;
+
+            // stop pv calculation
+            ai_status.pv_calculated = true;
+            
+            // If it's AI's turn, stop AI
+            reset_ai();
+            if (
+                (getData().history_elem.player == BLACK && getData().menu_elements.ai_put_black) || 
+                (getData().history_elem.player == WHITE && getData().menu_elements.ai_put_white)
+            ) {
+                need_start_game_button_calculation();
+            }
             resume_calculating();
         }
         if (!ai_status.analyzing) {
