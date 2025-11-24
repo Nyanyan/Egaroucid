@@ -691,6 +691,9 @@ private:
 
             // stop pv calculation
             ai_status.pv_calculated = true;
+
+            // stop local strategy
+            ai_status.local_strategy_calculated = true;
             
             // If it's AI's turn, stop AI
             if (
