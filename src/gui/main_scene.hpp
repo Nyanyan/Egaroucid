@@ -269,7 +269,7 @@ public:
         uint64_t legal_ignore = 0ULL;
 
         // hint calculating
-        bool hint_ignore = ai_should_move || ai_status.analyzing || ai_status.random_board_generator_calculating || need_start_game_button || pausing_in_pass || changing_scene;
+        bool hint_ignore = ai_should_move || ai_status.analyzing || ai_status.random_board_generator_calculating || (need_start_game_button && !getData().menu_elements.show_value_when_ai_calculating) || pausing_in_pass || changing_scene;
         bool show_value_ai_turn = ai_should_move && getData().menu_elements.show_value_when_ai_calculating && getData().menu_elements.use_disc_hint;
         if (!hint_ignore || show_value_ai_turn) {
             if (getData().menu_elements.use_disc_hint) {
