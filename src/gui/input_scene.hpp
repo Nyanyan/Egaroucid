@@ -246,6 +246,9 @@ public:
 
 private:
     void process_import(int player) {
+        if (history_elem.player = player) {
+            history_elem.board.pass();
+        }
         history_elem.player = player;
         history_elem.v = GRAPH_IGNORE_VALUE;
         history_elem.level = -1;
