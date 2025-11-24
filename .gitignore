@@ -85,3 +85,6 @@ src/tools/evaluation/dl_test
 
 # .github
 .github
+
+# workspace
+*.code-workspace
