@@ -164,8 +164,8 @@ private:
 
 public:
     Edit_board(const InitData& init) : IScene{ init } {
-        set_black_button.init(BUTTON3_VERTICAL_SX, BUTTON3_VERTICAL_1_SY, BUTTON3_VERTICAL_WIDTH, BUTTON3_VERTICAL_HEIGHT, BUTTON3_VERTICAL_RADIUS, language.get("in_out", "import_as_black"), 20, getData().fonts.font, getData().colors.black, getData().colors.white);
-        set_white_button.init(BUTTON3_VERTICAL_SX, BUTTON3_VERTICAL_2_SY, BUTTON3_VERTICAL_WIDTH, BUTTON3_VERTICAL_HEIGHT, BUTTON3_VERTICAL_RADIUS, language.get("in_out", "import_as_white"), 20, getData().fonts.font, getData().colors.white, getData().colors.black);
+        set_black_button.init(BUTTON3_VERTICAL_SX, BUTTON3_VERTICAL_1_SY, BUTTON3_VERTICAL_WIDTH, BUTTON3_VERTICAL_HEIGHT, BUTTON3_VERTICAL_RADIUS, language.get("in_out", "import_as_black"), 15, getData().fonts.font, getData().colors.black, getData().colors.white);
+        set_white_button.init(BUTTON3_VERTICAL_SX, BUTTON3_VERTICAL_2_SY, BUTTON3_VERTICAL_WIDTH, BUTTON3_VERTICAL_HEIGHT, BUTTON3_VERTICAL_RADIUS, language.get("in_out", "import_as_white"), 15, getData().fonts.font, getData().colors.white, getData().colors.black);
         back_button.init(BUTTON3_VERTICAL_SX, BUTTON3_VERTICAL_3_SY, BUTTON3_VERTICAL_WIDTH, BUTTON3_VERTICAL_HEIGHT, BUTTON3_VERTICAL_RADIUS, language.get("common", "back"), 20, getData().fonts.font, getData().colors.white, getData().colors.black);
         done = false;
         failed = false;
