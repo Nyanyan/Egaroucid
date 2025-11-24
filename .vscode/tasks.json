@@ -1,0 +1,41 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Terminal: Backend", // タブに表示される名前
+            "type": "shell",
+            "command": "${env:COMSPEC}", // Windowsのコマンドプロンプトを起動して常駐させる
+            "options": {
+                "cwd": "${workspaceFolder}" // ★ここで起動パスを指定
+            },
+            "presentation": {
+                "echo": false,
+                "reveal": "always",
+                "focus": false,
+                "panel": "new", // "new"にすると毎回新しいタブで開く（複数はこれで実現）
+                "close": false
+            },
+            "runOptions": {
+                "runOn": "folderOpen" // ★これでワークスペースを開いた時に自動起動
+            }
+        },
+        {
+            "label": "Terminal: Frontend",
+            "type": "shell",
+            "command": "${env:COMSPEC}",
+            "options": {
+                "cwd": "${workspaceFolder}\\bin" // ★別のパスを指定
+            },
+            "presentation": {
+                "echo": false,
+                "reveal": "always",
+                "focus": false,
+                "panel": "new",
+                "close": false
+            },
+            "runOptions": {
+                "runOn": "folderOpen"
+            }
+        }
+    ]
+}
