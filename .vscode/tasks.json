@@ -2,7 +2,7 @@
     "version": "2.0.0",
     "tasks": [
         {
-            "label": "Terminal: Backend", // タブに表示される名前
+            "label": "Root", // タブに表示される名前
             "type": "shell",
             "command": "${env:COMSPEC}", // Windowsのコマンドプロンプトを起動して常駐させる
             "options": {
@@ -20,7 +20,7 @@
             }
         },
         {
-            "label": "Terminal: Frontend",
+            "label": "Bin",
             "type": "shell",
             "command": "${env:COMSPEC}",
             "options": {
