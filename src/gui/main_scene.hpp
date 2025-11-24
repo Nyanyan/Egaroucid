@@ -693,7 +693,6 @@ private:
             ai_status.pv_calculated = true;
             
             // If it's AI's turn, stop AI
-            reset_ai();
             if (
                 (getData().history_elem.player == BLACK && getData().menu_elements.ai_put_black) || 
                 (getData().history_elem.player == WHITE && getData().menu_elements.ai_put_white)
