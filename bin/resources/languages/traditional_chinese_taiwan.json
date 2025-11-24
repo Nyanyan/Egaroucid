@@ -174,7 +174,9 @@
         "create": "建立",
         "save_here": "儲存到這裡",
         "saving": "正在儲存...",
-        "open_explorer": "在檔案總管中開啟"
+        "open_explorer": "在檔案總管中開啟",
+        "import_as_black": "導入為黑方回合",
+        "import_as_white": "導入為白方回合"
     },
     "display": {
         "display": "顯示",

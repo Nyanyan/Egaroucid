@@ -174,7 +174,9 @@
         "create": "Create",
         "save_here": "Save here",
         "saving": "Saving...",
-        "open_explorer": "Open in Explorer"
+        "open_explorer": "Open in Explorer",
+        "import_as_black": "Import as Black's Turn",
+        "import_as_white": "Import as White's Turn"
     },
     "display": {
         "display": "Display",
