@@ -41,6 +41,7 @@ public:
         enabled = true;
         transparent = false;
         click_supporter.init();
+        check_update_font_size();
     }
 
     void move(int x, int y) {
@@ -87,6 +88,25 @@ public:
     bool is_enabled() const{
         return enabled;
     }
+
+private:
+    void check_update_font_size() {
+        RectF region = font(str).region(font_size, 0, 0);
+        if (region.h > rect.h * 0.9 || region.w > rect.w * 0.8) {
+            int l = 1;
+            int r = font_size;
+            while (r - l > 1) {
+                int c = (l + r) / 2;
+                RectF c_region = font(str).region(c, 0, 0);
+                if (c_region.h > rect.h * 0.9 || c_region.w > rect.w * 0.8) {
+                    r = c;
+                } else {
+                    l = c;
+                }
+            }
+            font_size = l;
+        }
+    }
 };
 
 class FrameButton {
@@ -114,6 +134,7 @@ public:
         button_color = c1;
         font_color = c2;
         frame_color = c3;
+        check_update_font_size();
     }
 
     void draw() {
@@ -134,6 +155,24 @@ public:
 
     bool clicked() {
         return rect.leftClicked();
+    }
+private:
+    void check_update_font_size() {
+        RectF region = font(str).region(font_size, 0, 0);
+        if (region.h > rect.h * 0.9 || region.w > rect.w * 0.8) {
+            int l = 1;
+            int r = font_size;
+            while (r - l > 1) {
+                int c = (l + r) / 2;
+                RectF c_region = font(str).region(c, 0, 0);
+                if (c_region.h > rect.h * 0.9 || c_region.w > rect.w * 0.8) {
+                    r = c;
+                } else {
+                    l = c;
+                }
+            }
+            font_size = l;
+        }
     }
 };
 
