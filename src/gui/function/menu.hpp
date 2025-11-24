@@ -361,9 +361,9 @@ public:
         }
         if (mode == MENU_MODE_BAR || mode == MENU_MODE_BAR_CHECK) {
             if (mode == MENU_MODE_BAR_CHECK && !(*is_checked)) {
-                font(unchecked_str).draw(font_size, Arg::topRight(bar_sx - menu_child_offset, rect.y + menu_offset_y), menu_font_color);
+                font(unchecked_str).draw(font_size, Arg::topRight(bar_sx - menu_child_offset - 4, rect.y + menu_offset_y), menu_font_color);
             } else {
-                font(*bar_elem).draw(font_size, Arg::topRight(bar_sx - menu_child_offset, rect.y + menu_offset_y), menu_font_color);
+                font(*bar_elem).draw(font_size, Arg::topRight(bar_sx - menu_child_offset - 4, rect.y + menu_offset_y), menu_font_color);
             }
             if (mode == MENU_MODE_BAR_CHECK && !(*is_checked)) {
                 bar_rect.draw(ColorF(bar_color, 0.5));
