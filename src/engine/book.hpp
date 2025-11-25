@@ -375,7 +375,7 @@ class Book {
             }
             
             std::atomic<bool> processing_error(false);
-            std::mutex progress_mutex;
+            std::atomic<int> boards_processed(0);
             std::mutex book_mutex;
             int percent = -1;
             
@@ -406,11 +406,10 @@ class Book {
                 for (int j = 0; j < n_boards_in_chunk; ++j) {
                     int board_idx = chunk_start_board + j;
                     
-                    int n_percent = (double)board_idx / n_boards * 100;
-                    if (n_percent > percent && show_log) {
-                        std::lock_guard<std::mutex> lock(progress_mutex);
-                        n_percent = (double)board_idx / n_boards * 100;
-                        if (n_percent > percent && show_log) {
+                    // Update progress without locking (every 1024 boards)
+                    if (show_log && (j & 1023) == 0) {
+                        int n_percent = (double)board_idx / n_boards * 100;
+                        if (n_percent > percent) {
                             percent = n_percent;
                             std::cerr << "loading book " << percent << "%" << std::endl;
                         }
@@ -489,7 +488,7 @@ class Book {
                     }
                 }
                 
-                thread_busy[thread_idx].store(false);
+                thread_busy[thread_idx].store(false, std::memory_order_release);
             };
             
             // Main thread: file reading and work distribution
@@ -507,7 +506,7 @@ class Book {
                     return false;
                 }
                 
-                thread_busy[t].store(true);
+                thread_busy[t].store(true, std::memory_order_release);
                 bool pushed;
                 int chunk_start_copy = next_chunk_start;
                 int n_boards_copy = n_boards_chunk;
@@ -527,10 +526,7 @@ class Book {
                 // Find an idle thread
                 int idle_thread = -1;
                 for (int t = 0; t < n_threads; ++t) {
-                    if (!thread_busy[t].load()) {
-                        if (futures[t].valid()) {
-                            futures[t].wait(); // Ensure previous work is done
-                        }
+                    if (!thread_busy[t].load(std::memory_order_acquire)) {
                         idle_thread = t;
                         break;
                     }
@@ -546,7 +542,7 @@ class Book {
                         break;
                     }
                     
-                    thread_busy[idle_thread].store(true);
+                    thread_busy[idle_thread].store(true, std::memory_order_release);
                     bool pushed;
                     int chunk_start_copy = next_chunk_start;
                     int n_boards_copy = n_boards_chunk;
