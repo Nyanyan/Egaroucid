@@ -362,7 +362,7 @@ class Book {
                     return false;
                 }
             }
-            
+            std::cerr << "parallelized with " << n_threads << " threads" << std::endl;
             std::vector<std::unordered_map<Board, Book_elem, Book_hash>> thread_books(n_threads);
             std::atomic<bool> processing_error(false);
             std::mutex progress_mutex;
@@ -494,13 +494,9 @@ class Book {
                 std::cerr << "merging thread-local books..." << std::endl;
             }
             for (int t = 0; t < n_threads; ++t) {
-                for (auto &entry : thread_books[t]) {
-                    register_symmetric_book(entry.first, entry.second);
-                }
-            }
-            
-            for (int k = 0; k < n_threads; ++k) {
-                free(data_chunks[k]);
+                book.merge(thread_books[t]);
+                free(data_chunks[t]);
+                std::cerr << t << " book merged, size=" << book.size() << std::endl;
             }
             
             return !(*stop_loading);
@@ -566,15 +562,15 @@ class Book {
             }
             
             // Use parallel processing for large books (> 5M boards)
-            bool use_parallel = (n_boards > 5000000);
+            bool use_parallel = true; //(n_boards > 5000000);
             
-            if (!use_parallel) {
-                if (!import_egbk3_sequential(fp, n_boards, show_log, stop_loading)) {
+            if (use_parallel) {
+                if (!import_egbk3_parallel(fp, n_boards, show_log, stop_loading)) {
                     fclose(fp);
                     return false;
                 }
             } else {
-                if (!import_egbk3_parallel(fp, n_boards, show_log, stop_loading)) {
+                if (!import_egbk3_sequential(fp, n_boards, show_log, stop_loading)) {
                     fclose(fp);
                     return false;
                 }
