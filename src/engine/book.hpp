@@ -207,6 +207,20 @@ class Book {
         std::unordered_map<Board, Book_elem, Book_hash> book;
 
     public:
+        ~Book() {
+            // Parallel fast destruction
+            if (book.size() > 100000) {
+                // For large books, clear in background thread to avoid blocking
+                auto temp_book = new std::unordered_map<Board, Book_elem, Book_hash>();
+                temp_book->swap(book);
+                std::thread([temp_book]() {
+                    delete temp_book;
+                }).detach();
+            } else {
+                book.clear();
+            }
+        }
+        
         /*
             @brief initialize book
 
@@ -1770,7 +1784,16 @@ class Book {
         */
         inline void delete_all() {
             //std::cerr << "delete book" << std::endl;
-            book.clear();
+            // For large books, clear in background to avoid blocking
+            if (book.size() > 100000) {
+                auto temp_book = new std::unordered_map<Board, Book_elem, Book_hash>();
+                temp_book->swap(book);
+                std::thread([temp_book]() {
+                    delete temp_book;
+                }).detach();
+            } else {
+                book.clear();
+            }
             reg_first_board();
         }
 
