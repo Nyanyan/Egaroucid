@@ -341,7 +341,8 @@ class Book {
             @brief Parallel import for large books
         */
         inline bool import_egbk3_parallel(FILE* fp, int n_boards, bool show_log, bool *stop_loading) {
-            constexpr int n_chunk = 262144;
+            // constexpr int n_chunk = 262144;
+            constexpr int n_chunk = 131072;
             constexpr int n_bytes_per_board = 25;
             
             int n_threads = thread_pool.size();
