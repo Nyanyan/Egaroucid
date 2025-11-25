@@ -274,8 +274,10 @@ class Book {
             @return book completely imported?
         */
         inline bool import_file_egbk3(std::string file, bool show_log, bool *stop_loading) {
-            if (show_log)
+            uint64_t strt = tim();
+            if (show_log) {
                 std::cerr << "importing " << file << std::endl;
+            }
             FILE* fp;
             if (!file_open(&fp, file.c_str(), "rb")) {
                 std::cerr << "[ERROR] can't open Egaroucid book " << file << std::endl;
@@ -436,6 +438,7 @@ class Book {
             if (show_log) {
                 std::cerr << "imported " << book.size() << " boards to book" << std::endl;
             }
+            std::cerr << "elapsed " << tim() - strt << " ms" << std::endl;
             fclose(fp);
             return true;
         }
