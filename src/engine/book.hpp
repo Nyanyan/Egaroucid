@@ -343,7 +343,7 @@ class Book {
         inline bool import_egbk3_parallel(FILE* fp, int n_boards, bool show_log, bool *stop_loading) {
             constexpr int n_chunk = 262144;
             constexpr int n_bytes_per_board = 25;
-            constexpr int batch_size = 1024;
+            constexpr int batch_size = 8192;
             
             int n_threads = thread_pool.size();
             if (n_threads == 0) {
@@ -438,18 +438,17 @@ class Book {
                                 {
                                     std::lock_guard<std::mutex> lock(book_mutex);
                                     for (const auto &entry : batch) {
-                                        auto it = book.find(entry.first);
-                                        if (it == book.end()) {
-                                            book[entry.first] = entry.second;
-                                        } else {
-                                            if (entry.second.value != SCORE_UNDEFINED && it->second.level <= entry.second.level) {
-                                                it->second.value = entry.second.value;
-                                                it->second.level = entry.second.level;
+                                        auto result = book.insert(entry);
+                                        if (!result.second) {
+                                            auto &existing = result.first->second;
+                                            if (entry.second.value != SCORE_UNDEFINED && existing.level <= entry.second.level) {
+                                                existing.value = entry.second.value;
+                                                existing.level = entry.second.level;
                                             }
-                                            if (entry.second.leaf.value != SCORE_UNDEFINED && it->second.leaf.level <= entry.second.leaf.level) {
-                                                it->second.leaf.value = entry.second.leaf.value;
-                                                it->second.leaf.move = entry.second.leaf.move;
-                                                it->second.leaf.level = entry.second.leaf.level;
+                                            if (entry.second.leaf.value != SCORE_UNDEFINED && existing.leaf.level <= entry.second.leaf.level) {
+                                                existing.leaf.value = entry.second.leaf.value;
+                                                existing.leaf.move = entry.second.leaf.move;
+                                                existing.leaf.level = entry.second.leaf.level;
                                             }
                                         }
                                     }
@@ -466,18 +465,17 @@ class Book {
                 if (!batch.empty()) {
                     std::lock_guard<std::mutex> lock(book_mutex);
                     for (const auto &entry : batch) {
-                        auto it = book.find(entry.first);
-                        if (it == book.end()) {
-                            book[entry.first] = entry.second;
-                        } else {
-                            if (entry.second.value != SCORE_UNDEFINED && it->second.level <= entry.second.level) {
-                                it->second.value = entry.second.value;
-                                it->second.level = entry.second.level;
+                        auto result = book.insert(entry);
+                        if (!result.second) {
+                            auto &existing = result.first->second;
+                            if (entry.second.value != SCORE_UNDEFINED && existing.level <= entry.second.level) {
+                                existing.value = entry.second.value;
+                                existing.level = entry.second.level;
                             }
-                            if (entry.second.leaf.value != SCORE_UNDEFINED && it->second.leaf.level <= entry.second.leaf.level) {
-                                it->second.leaf.value = entry.second.leaf.value;
-                                it->second.leaf.move = entry.second.leaf.move;
-                                it->second.leaf.level = entry.second.leaf.level;
+                            if (entry.second.leaf.value != SCORE_UNDEFINED && existing.leaf.level <= entry.second.leaf.level) {
+                                existing.leaf.value = entry.second.leaf.value;
+                                existing.leaf.move = entry.second.leaf.move;
+                                existing.leaf.level = entry.second.leaf.level;
                             }
                         }
                     }
@@ -554,8 +552,8 @@ class Book {
                     
                     next_chunk_start += n_boards_chunk;
                 } else {
-                    // No idle thread, wait a bit
-                    std::this_thread::sleep_for(std::chrono::microseconds(100));
+                    // No idle thread, yield CPU
+                    std::this_thread::yield();
                 }
                 
                 if (processing_error.load()) {
