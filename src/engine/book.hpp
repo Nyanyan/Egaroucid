@@ -394,8 +394,8 @@ class Book {
                     return;
                 }
                 
-                std::vector<std::pair<Board, Book_elem>> batch;
-                batch.reserve(batch_size);
+                std::unordered_map<Board, Book_elem, Book_hash> local_book;
+                local_book.reserve(batch_size);
                 
                 Board local_board;
                 Book_elem local_book_elem;
@@ -439,15 +439,31 @@ class Book {
                             local_book_elem.leaf.level = local_leaf_level;
                             
                             Board rep_board = representative_board(local_board);
-                            batch.emplace_back(rep_board, local_book_elem);
                             
-                            if ((int)batch.size() >= batch_size) {
+                            // Insert or update in local_book
+                            auto result = local_book.insert({rep_board, local_book_elem});
+                            if (!result.second) {
+                                auto &existing = result.first->second;
+                                if (local_book_elem.value != SCORE_UNDEFINED && existing.level <= local_book_elem.level) {
+                                    existing.value = local_book_elem.value;
+                                    existing.level = local_book_elem.level;
+                                }
+                                if (local_book_elem.leaf.value != SCORE_UNDEFINED && existing.leaf.level <= local_book_elem.leaf.level) {
+                                    existing.leaf.value = local_book_elem.leaf.value;
+                                    existing.leaf.move = local_book_elem.leaf.move;
+                                    existing.leaf.level = local_book_elem.leaf.level;
+                                }
+                            }
+                            
+                            if ((int)local_book.size() >= batch_size) {
                                 {
                                     std::lock_guard<std::mutex> lock(book_mutex);
-                                    for (const auto &entry : batch) {
-                                        auto result = book.insert(entry);
-                                        if (!result.second) {
-                                            auto &existing = result.first->second;
+                                    book.merge(local_book);
+                                    // Handle nodes that couldn't be merged (duplicates)
+                                    for (auto &entry : local_book) {
+                                        auto it = book.find(entry.first);
+                                        if (it != book.end()) {
+                                            auto &existing = it->second;
                                             if (entry.second.value != SCORE_UNDEFINED && existing.level <= entry.second.level) {
                                                 existing.value = entry.second.value;
                                                 existing.level = entry.second.level;
@@ -460,7 +476,7 @@ class Book {
                                         }
                                     }
                                 }
-                                batch.clear();
+                                local_book.clear();
                             }
 #if FORCE_BOOK_DEPTH
                         }
@@ -468,13 +484,15 @@ class Book {
                     }
                 }
                 
-                // Process remaining boards in batch
-                if (!batch.empty()) {
+                // Process remaining boards in local_book
+                if (!local_book.empty()) {
                     std::lock_guard<std::mutex> lock(book_mutex);
-                    for (const auto &entry : batch) {
-                        auto result = book.insert(entry);
-                        if (!result.second) {
-                            auto &existing = result.first->second;
+                    book.merge(local_book);
+                    // Handle nodes that couldn't be merged (duplicates)
+                    for (auto &entry : local_book) {
+                        auto it = book.find(entry.first);
+                        if (it != book.end()) {
+                            auto &existing = it->second;
                             if (entry.second.value != SCORE_UNDEFINED && existing.level <= entry.second.level) {
                                 existing.value = entry.second.value;
                                 existing.level = entry.second.level;
