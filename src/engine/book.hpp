@@ -328,28 +328,61 @@ class Book {
             // for each board
             int percent = -1;
             // constexpr int n_chunk = 1024;
-            // constexpr int n_chunk = 2048;
-            constexpr int n_chunk = 1048576;
+            constexpr int n_chunk = 65536;
+            // constexpr int n_chunk = 1048576;
             constexpr int n_bytes_per_board = 25;
             size_t data_size = (size_t)n_chunk * n_bytes_per_board;
-            char *data_chunk = (char*)malloc(data_size);
-            if (!data_chunk) {
+            
+            // Double buffering for parallel I/O and processing
+            char *data_chunk[2];
+            data_chunk[0] = (char*)malloc(data_size);
+            data_chunk[1] = (char*)malloc(data_size);
+            if (!data_chunk[0] || !data_chunk[1]) {
                 std::cerr << "[ERROR] memory allocation failed" << std::endl;
+                if (data_chunk[0]) free(data_chunk[0]);
+                if (data_chunk[1]) free(data_chunk[1]);
                 fclose(fp);
                 return false;
             }
+            
+            std::mutex io_mutex;
+            std::atomic<bool> io_error(false);
+            std::atomic<int> current_buffer(0);
+            std::atomic<bool> io_finished(false);
+            
+            // Pre-read first chunk
+            int n_boards_chunk_preload = std::min(n_chunk, n_boards);
+            int n_data_preload = n_boards_chunk_preload * n_bytes_per_board;
+            if (fread(data_chunk[0], 1, n_data_preload, fp) < n_data_preload) {
+                std::cerr << "[ERROR] book NOT FULLY imported " << book.size() << " boards" << std::endl;
+                free(data_chunk[0]);
+                free(data_chunk[1]);
+                fclose(fp);
+                return false;
+            }
+            
             for (int i_start = 0; i_start < n_boards; i_start += n_chunk) {
                 if (*stop_loading) {
                     break;
                 }
-                // read data for a chunk of boards
+                
                 int n_boards_chunk = std::min(n_chunk, n_boards - i_start);
-                int n_data = n_boards_chunk * n_bytes_per_board;
-                if (fread(data_chunk, 1, n_data, fp) < n_data) {
-                    std::cerr << "[ERROR] book NOT FULLY imported " << book.size() << " boards" << std::endl;
-                    fclose(fp);
-                    return false;
+                int buffer_idx = (i_start / n_chunk) % 2;
+                int next_buffer_idx = 1 - buffer_idx;
+                
+                // Start async read for next chunk
+                std::future<void> io_future;
+                if (i_start + n_chunk < n_boards) {
+                    io_future = std::async(std::launch::async, [&, next_buffer_idx, i_start]() {
+                        int next_n_boards_chunk = std::min(n_chunk, n_boards - (i_start + n_chunk));
+                        int next_n_data = next_n_boards_chunk * n_bytes_per_board;
+                        if (fread(data_chunk[next_buffer_idx], 1, next_n_data, fp) < next_n_data) {
+                            io_error.store(true);
+                        }
+                    });
                 }
+                
+                // Process current chunk
                 for (int j = 0; j < n_boards_chunk; ++j) {
                     int board_idx = i_start + j;
                     int n_percent = (double)board_idx / n_boards * 100;
@@ -357,7 +390,7 @@ class Book {
                         percent = n_percent;
                         std::cerr << "loading book " << percent << "%" << std::endl;
                     }
-                    char *datum = &data_chunk[j * n_bytes_per_board];
+                    char *datum = &data_chunk[buffer_idx][j * n_bytes_per_board];
                     memcpy(&p, datum, 8); // 8 bytes
                     memcpy(&o, datum + 8, 8); // 8 bytes
                     value = datum[16];
@@ -385,7 +418,22 @@ class Book {
 #endif
                     }
                 }
+                
+                // Wait for async I/O to complete
+                if (io_future.valid()) {
+                    io_future.wait();
+                    if (io_error.load()) {
+                        std::cerr << "[ERROR] book NOT FULLY imported " << book.size() << " boards" << std::endl;
+                        free(data_chunk[0]);
+                        free(data_chunk[1]);
+                        fclose(fp);
+                        return false;
+                    }
+                }
             }
+            
+            free(data_chunk[0]);
+            free(data_chunk[1]);
             if (*stop_loading) {
                 std::cerr << "stop loading book" << std::endl;
                 fclose(fp);
