@@ -366,6 +366,14 @@ class Book {
             }
             std::cerr << "parallelized with " << n_threads << " threads" << std::endl;
             
+            // Reserve capacity for the book to avoid rehashing
+            // Add some overhead (1.5x) to account for symmetric positions
+            size_t estimated_capacity = static_cast<size_t>(n_boards * 1.5);
+            book.reserve(estimated_capacity);
+            if (show_log) {
+                std::cerr << "reserved capacity for " << estimated_capacity << " boards" << std::endl;
+            }
+            
             std::atomic<bool> processing_error(false);
             std::mutex progress_mutex;
             std::mutex book_mutex;
