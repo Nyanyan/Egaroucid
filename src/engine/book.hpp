@@ -327,107 +327,55 @@ class Book {
             }
             // for each board
             int percent = -1;
-            char datum[25];
-            for (int i = 0; i < n_boards; ++i) {
+            constexpr int n_chunk = 1024;
+            constexpr int n_byte_per_board = 25;
+            char data_chunk[n_chunk * n_byte_per_board];
+            for (int i_start = 0; i_start < n_boards; i_start += n_chunk) {
                 if (*stop_loading) {
                     break;
                 }
-                int n_percent = (double)i / n_boards * 100;
-                if (n_percent > percent && show_log) {
-                    percent = n_percent;
-                    std::cerr << "loading book " << percent << "%" << std::endl;
-                }
-                // read board, player
-                if (fread(datum, 1, 25, fp) < 25) {
+                // read data for a chunk of boards
+                int n_boards_chunk = std::min(n_chunk, n_boards - i_start);
+                int n_data = n_boards_chunk * n_byte_per_board;
+                if (fread(data_chunk, 1, n_data, fp) < n_data) {
                     std::cerr << "[ERROR] book NOT FULLY imported " << book.size() << " boards" << std::endl;
                     fclose(fp);
                     return false;
                 }
-                p = ((uint64_t*)datum)[0];
-                o = ((uint64_t*)datum)[1];
-                value = datum[16];
-                level = datum[17];
-                n_lines = ((uint32_t*)(datum + 18))[0];
-                leaf_value = datum[22];
-                leaf_move = datum[23];
-                leaf_level = datum[24];
-                /*
-                if (fread(&p, 8, 1, fp) < 1) {
-                    std::cerr << "[ERROR] book NOT FULLY imported 0 " << book.size() << " boards" << std::endl;
-                    fclose(fp);
-                    return false;
-                }
-                // read board, opponent
-                if (fread(&o, 8, 1, fp) < 1) {
-                    std::cerr << "[ERROR] book NOT FULLY imported 1 " << book.size() << " boards" << std::endl;
-                    fclose(fp);
-                    return false;
-                }
-                // read value
-                if (fread(&value, 1, 1, fp) < 1) {
-                    std::cerr << "[ERROR] book NOT FULLY imported 3 " << book.size() << " boards" << std::endl;
-                    fclose(fp);
-                    return false;
-                }
-                // read level
-                if (fread(&level, 1, 1, fp) < 1) {
-                    std::cerr << "[ERROR] book NOT FULLY imported 3 " << book.size() << " boards" << std::endl;
-                    fclose(fp);
-                    return false;
-                }
-                //if (value < -HW2 || HW2 < value) {
-                //    std::cerr << "[ERROR] book NOT FULLY imported 4 got value " << (int)value << " " << book.size() << " boards" << std::endl;
-                //    fclose(fp);
-                //    return false;
-                //    //std::cerr << "[WARNING] value error found " << (int)value << " " << book.size() << " boards" << std::endl;
-                //    //value = SCORE_UNDEFINED;
-                //}
-                // read n_lines
-                if (fread(&n_lines, 4, 1, fp) < 1) {
-                    std::cerr << "[ERROR] book NOT FULLY imported 5 " << book.size() << " boards" << std::endl;
-                    fclose(fp);
-                    return false;
-                }
-                // read leaf value
-                if (fread(&leaf_value, 1, 1, fp) < 1) {
-                    std::cerr << "[ERROR] book NOT FULLY imported 6 " << book.size() << " boards" << std::endl;
-                    fclose(fp);
-                    return false;
-                }
-                // read leaf move
-                if (fread(&leaf_move, 1, 1, fp) < 1) {
-                    std::cerr << "[ERROR] book NOT FULLY imported 7 " << book.size() << " boards" << std::endl;
-                    fclose(fp);
-                    return false;
-                }
-                // read leaf level
-                if (fread(&leaf_level, 1, 1, fp) < 1) {
-                    std::cerr << "[ERROR] book NOT FULLY imported 3 " << book.size() << " boards" << std::endl;
-                    fclose(fp);
-                    return false;
-                }
-                */
-                // push elem
-                if (-HW2 <= value && value <= HW2 && (p & o) == 0) {
-                    board.player = p;
-                    board.opponent = o;
-#if FORCE_BOOK_DEPTH
-                    if (board.n_discs() <= 4 + 30) {
-#endif
-                        book_elem.value = value;
-                        book_elem.level = level;
-                        //if (board.n_discs() >= 32 + 4)
-                        //    book_elem.level = 27;
-                        //else
-                        //    book_elem.level = 17;
-                        book_elem.n_lines = n_lines;
-                        book_elem.leaf.value = leaf_value;
-                        book_elem.leaf.move = leaf_move;
-                        book_elem.leaf.level = leaf_level;
-                        merge(board, book_elem);
-#if FORCE_BOOK_DEPTH
+                for (int j = 0; j < n_boards_chunk; ++j) {
+                    int board_idx = i_start + j;
+                    int n_percent = (double)board_idx / n_boards * 100;
+                    if (n_percent > percent && show_log) {
+                        percent = n_percent;
+                        std::cerr << "loading book " << percent << "%" << std::endl;
                     }
+                    char *datum = &data_chunk[j * n_byte_per_board];
+                    memcpy(&p, datum, 8); // 8 bytes
+                    memcpy(&o, datum + 8, 8); // 8 bytes
+                    value = datum[16];
+                    level = datum[17];
+                    memcpy(&n_lines, datum + 18, 4); // 4 bytes
+                    leaf_value = datum[22];
+                    leaf_move = datum[23];
+                    leaf_level = datum[24];
+                    // push elem
+                    if (-HW2 <= value && value <= HW2 && (p & o) == 0) {
+                        board.player = p;
+                        board.opponent = o;
+#if FORCE_BOOK_DEPTH
+                        if (board.n_discs() <= 4 + 30) {
 #endif
+                            book_elem.value = value;
+                            book_elem.level = level;
+                            book_elem.n_lines = n_lines;
+                            book_elem.leaf.value = leaf_value;
+                            book_elem.leaf.move = leaf_move;
+                            book_elem.leaf.level = leaf_level;
+                            merge(board, book_elem);
+#if FORCE_BOOK_DEPTH
+                        }
+#endif
+                    }
                 }
             }
             if (*stop_loading) {
