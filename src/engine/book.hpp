@@ -11,6 +11,13 @@
 #pragma once
 #include <iostream>
 #include <fstream>
+#include <vector>
+#include <cstddef>
+#include <utility>
+#include <algorithm>
+#include <memory>
+#include <atomic>
+#include <mutex>
 #include <unordered_map>
 #include <unordered_set>
 #include "evaluate.hpp"
@@ -395,7 +402,7 @@ class Book {
             std::atomic<int> boards_processed(0);
             std::mutex book_mutex;
             int percent = -1;
-            constexpr size_t LOCAL_FLUSH_THRESHOLD = n_chunk / 4; // keep merges short
+            constexpr size_t LOCAL_FLUSH_THRESHOLD = std::max<size_t>(1, n_chunk / 4); // keep merges short
             
             // Thread state management
             std::vector<std::atomic<bool>> thread_busy(n_threads);
@@ -507,7 +514,6 @@ class Book {
 
                             if (local_book.size() >= LOCAL_FLUSH_THRESHOLD) {
                                 flush_local_book(local_book);
-                                local_book.reserve(LOCAL_FLUSH_THRESHOLD);
                             }
 #if FORCE_BOOK_DEPTH
                         }
