@@ -363,9 +363,9 @@ class Book {
                 }
             }
             std::cerr << "parallelized with " << n_threads << " threads" << std::endl;
-            std::vector<std::unordered_map<Board, Book_elem, Book_hash>> thread_books(n_threads);
             std::atomic<bool> processing_error(false);
             std::mutex progress_mutex;
+            std::mutex book_mutex;
             int percent = -1;
             
             for (int i_start = 0; i_start < n_boards; i_start += n_chunk * n_threads) {
@@ -448,18 +448,21 @@ class Book {
                                     local_book_elem.leaf.level = local_leaf_level;
                                     
                                     Board rep_board = representative_board(local_board);
-                                    auto it = thread_books[t].find(rep_board);
-                                    if (it == thread_books[t].end()) {
-                                        thread_books[t][rep_board] = local_book_elem;
-                                    } else {
-                                        if (local_book_elem.value != SCORE_UNDEFINED && it->second.level <= local_book_elem.level) {
-                                            it->second.value = local_book_elem.value;
-                                            it->second.level = local_book_elem.level;
-                                        }
-                                        if (local_book_elem.leaf.value != SCORE_UNDEFINED && it->second.leaf.level <= local_book_elem.leaf.level) {
-                                            it->second.leaf.value = local_book_elem.leaf.value;
-                                            it->second.leaf.move = local_book_elem.leaf.move;
-                                            it->second.leaf.level = local_book_elem.leaf.level;
+                                    {
+                                        std::lock_guard<std::mutex> lock(book_mutex);
+                                        auto it = book.find(rep_board);
+                                        if (it == book.end()) {
+                                            book[rep_board] = local_book_elem;
+                                        } else {
+                                            if (local_book_elem.value != SCORE_UNDEFINED && it->second.level <= local_book_elem.level) {
+                                                it->second.value = local_book_elem.value;
+                                                it->second.level = local_book_elem.level;
+                                            }
+                                            if (local_book_elem.leaf.value != SCORE_UNDEFINED && it->second.leaf.level <= local_book_elem.leaf.level) {
+                                                it->second.leaf.value = local_book_elem.leaf.value;
+                                                it->second.leaf.move = local_book_elem.leaf.move;
+                                                it->second.leaf.level = local_book_elem.leaf.level;
+                                            }
                                         }
                                     }
 #if FORCE_BOOK_DEPTH
@@ -490,13 +493,8 @@ class Book {
                 }
             }
             
-            if (show_log) {
-                std::cerr << "merging thread-local books..." << std::endl;
-            }
-            for (int t = 0; t < n_threads; ++t) {
-                book.merge(thread_books[t]);
-                free(data_chunks[t]);
-                std::cerr << t << " book merged, size=" << book.size() << std::endl;
+            for (int k = 0; k < n_threads; ++k) {
+                free(data_chunks[k]);
             }
             
             return !(*stop_loading);
