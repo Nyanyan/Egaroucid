@@ -406,6 +406,10 @@ class Book {
                             return;
                         }
                         
+                        const int batch_size = 64 + t * 2;
+                        std::vector<std::pair<Board, Book_elem>> batch;
+                        batch.reserve(batch_size);
+                        
                         Board local_board;
                         Book_elem local_book_elem;
                         uint64_t local_p, local_o;
@@ -448,26 +452,52 @@ class Book {
                                     local_book_elem.leaf.level = local_leaf_level;
                                     
                                     Board rep_board = representative_board(local_board);
-                                    {
+                                    batch.emplace_back(rep_board, local_book_elem);
+                                    
+                                    if (batch.size() >= batch_size) {
                                         std::lock_guard<std::mutex> lock(book_mutex);
-                                        auto it = book.find(rep_board);
-                                        if (it == book.end()) {
-                                            book[rep_board] = local_book_elem;
-                                        } else {
-                                            if (local_book_elem.value != SCORE_UNDEFINED && it->second.level <= local_book_elem.level) {
-                                                it->second.value = local_book_elem.value;
-                                                it->second.level = local_book_elem.level;
-                                            }
-                                            if (local_book_elem.leaf.value != SCORE_UNDEFINED && it->second.leaf.level <= local_book_elem.leaf.level) {
-                                                it->second.leaf.value = local_book_elem.leaf.value;
-                                                it->second.leaf.move = local_book_elem.leaf.move;
-                                                it->second.leaf.level = local_book_elem.leaf.level;
+                                        for (auto &entry : batch) {
+                                            auto it = book.find(entry.first);
+                                            if (it == book.end()) {
+                                                book[entry.first] = entry.second;
+                                            } else {
+                                                if (entry.second.value != SCORE_UNDEFINED && it->second.level <= entry.second.level) {
+                                                    it->second.value = entry.second.value;
+                                                    it->second.level = entry.second.level;
+                                                }
+                                                if (entry.second.leaf.value != SCORE_UNDEFINED && it->second.leaf.level <= entry.second.leaf.level) {
+                                                    it->second.leaf.value = entry.second.leaf.value;
+                                                    it->second.leaf.move = entry.second.leaf.move;
+                                                    it->second.leaf.level = entry.second.leaf.level;
+                                                }
                                             }
                                         }
+                                        batch.clear();
                                     }
 #if FORCE_BOOK_DEPTH
                                 }
 #endif
+                            }
+                        }
+                        
+                        // Process remaining boards in batch
+                        if (!batch.empty()) {
+                            std::lock_guard<std::mutex> lock(book_mutex);
+                            for (auto &entry : batch) {
+                                auto it = book.find(entry.first);
+                                if (it == book.end()) {
+                                    book[entry.first] = entry.second;
+                                } else {
+                                    if (entry.second.value != SCORE_UNDEFINED && it->second.level <= entry.second.level) {
+                                        it->second.value = entry.second.value;
+                                        it->second.level = entry.second.level;
+                                    }
+                                    if (entry.second.leaf.value != SCORE_UNDEFINED && it->second.leaf.level <= entry.second.leaf.level) {
+                                        it->second.leaf.value = entry.second.leaf.value;
+                                        it->second.leaf.move = entry.second.leaf.move;
+                                        it->second.leaf.level = entry.second.leaf.level;
+                                    }
+                                }
                             }
                         }
                     };
