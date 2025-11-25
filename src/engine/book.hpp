@@ -327,16 +327,24 @@ class Book {
             }
             // for each board
             int percent = -1;
-            constexpr int n_chunk = 1024;
-            constexpr int n_byte_per_board = 25;
-            char data_chunk[n_chunk * n_byte_per_board];
+            // constexpr int n_chunk = 1024;
+            // constexpr int n_chunk = 2048;
+            constexpr int n_chunk = 1048576;
+            constexpr int n_bytes_per_board = 25;
+            size_t data_size = (size_t)n_chunk * n_bytes_per_board;
+            char *data_chunk = (char*)malloc(data_size);
+            if (!data_chunk) {
+                std::cerr << "[ERROR] memory allocation failed" << std::endl;
+                fclose(fp);
+                return false;
+            }
             for (int i_start = 0; i_start < n_boards; i_start += n_chunk) {
                 if (*stop_loading) {
                     break;
                 }
                 // read data for a chunk of boards
                 int n_boards_chunk = std::min(n_chunk, n_boards - i_start);
-                int n_data = n_boards_chunk * n_byte_per_board;
+                int n_data = n_boards_chunk * n_bytes_per_board;
                 if (fread(data_chunk, 1, n_data, fp) < n_data) {
                     std::cerr << "[ERROR] book NOT FULLY imported " << book.size() << " boards" << std::endl;
                     fclose(fp);
@@ -349,7 +357,7 @@ class Book {
                         percent = n_percent;
                         std::cerr << "loading book " << percent << "%" << std::endl;
                     }
-                    char *datum = &data_chunk[j * n_byte_per_board];
+                    char *datum = &data_chunk[j * n_bytes_per_board];
                     memcpy(&p, datum, 8); // 8 bytes
                     memcpy(&o, datum + 8, 8); // 8 bytes
                     value = datum[16];
