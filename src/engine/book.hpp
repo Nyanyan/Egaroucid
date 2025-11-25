@@ -368,6 +368,9 @@ class Book {
             // Reserve capacity for the book to avoid rehashing
             // Add some overhead (1.5x) to account for symmetric positions
             size_t estimated_capacity = static_cast<size_t>(n_boards * 1.5);
+            if (show_log) {
+                std::cerr << "reserving capacity for " << estimated_capacity << " boards..." << std::endl;
+            }
             book.reserve(estimated_capacity);
             if (show_log) {
                 std::cerr << "reserved capacity for " << estimated_capacity << " boards" << std::endl;
