@@ -270,72 +270,72 @@ class Book {
         /*
             @brief Sequential import for small books
         */
-        inline bool import_egbk3_sequential(FILE* fp, int n_boards, bool show_log, bool *stop_loading) {
-            constexpr int n_chunk = 65536;
-            constexpr int n_bytes_per_board = 25;
-            size_t data_size = (size_t)n_chunk * n_bytes_per_board;
-            char *data_chunk = (char*)malloc(data_size);
-            if (!data_chunk) {
-                std::cerr << "[ERROR] memory allocation failed" << std::endl;
-                return false;
-            }
+//         inline bool import_egbk3_sequential(FILE* fp, int n_boards, bool show_log, bool *stop_loading) {
+//             constexpr int n_chunk = 65536;
+//             constexpr int n_bytes_per_board = 25;
+//             size_t data_size = (size_t)n_chunk * n_bytes_per_board;
+//             char *data_chunk = (char*)malloc(data_size);
+//             if (!data_chunk) {
+//                 std::cerr << "[ERROR] memory allocation failed" << std::endl;
+//                 return false;
+//             }
             
-            Board board;
-            Book_elem book_elem;
-            uint64_t p, o;
-            char value, level, leaf_value, leaf_move, leaf_level;
-            uint32_t n_lines;
-            int percent = -1;
+//             Board board;
+//             Book_elem book_elem;
+//             uint64_t p, o;
+//             char value, level, leaf_value, leaf_move, leaf_level;
+//             uint32_t n_lines;
+//             int percent = -1;
             
-            for (int i_start = 0; i_start < n_boards; i_start += n_chunk) {
-                if (*stop_loading) {
-                    break;
-                }
-                int n_boards_chunk = std::min(n_chunk, n_boards - i_start);
-                int n_data = n_boards_chunk * n_bytes_per_board;
-                if (fread(data_chunk, 1, n_data, fp) < n_data) {
-                    std::cerr << "[ERROR] book NOT FULLY imported " << book.size() << " boards" << std::endl;
-                    free(data_chunk);
-                    return false;
-                }
-                for (int j = 0; j < n_boards_chunk; ++j) {
-                    int board_idx = i_start + j;
-                    int n_percent = (double)board_idx / n_boards * 100;
-                    if (n_percent > percent && show_log) {
-                        percent = n_percent;
-                        std::cerr << "loading book " << percent << "%" << std::endl;
-                    }
-                    char *datum = &data_chunk[j * n_bytes_per_board];
-                    memcpy(&p, datum, 8);
-                    memcpy(&o, datum + 8, 8);
-                    value = datum[16];
-                    level = datum[17];
-                    memcpy(&n_lines, datum + 18, 4);
-                    leaf_value = datum[22];
-                    leaf_move = datum[23];
-                    leaf_level = datum[24];
-                    if (-HW2 <= value && value <= HW2 && (p & o) == 0) {
-                        board.player = p;
-                        board.opponent = o;
-#if FORCE_BOOK_DEPTH
-                        if (board.n_discs() <= 4 + 30) {
-#endif
-                            book_elem.value = value;
-                            book_elem.level = level;
-                            book_elem.n_lines = n_lines;
-                            book_elem.leaf.value = leaf_value;
-                            book_elem.leaf.move = leaf_move;
-                            book_elem.leaf.level = leaf_level;
-                            merge(board, book_elem);
-#if FORCE_BOOK_DEPTH
-                        }
-#endif
-                    }
-                }
-            }
-            free(data_chunk);
-            return !(*stop_loading);
-        }
+//             for (int i_start = 0; i_start < n_boards; i_start += n_chunk) {
+//                 if (*stop_loading) {
+//                     break;
+//                 }
+//                 int n_boards_chunk = std::min(n_chunk, n_boards - i_start);
+//                 int n_data = n_boards_chunk * n_bytes_per_board;
+//                 if (fread(data_chunk, 1, n_data, fp) < n_data) {
+//                     std::cerr << "[ERROR] book NOT FULLY imported " << book.size() << " boards" << std::endl;
+//                     free(data_chunk);
+//                     return false;
+//                 }
+//                 for (int j = 0; j < n_boards_chunk; ++j) {
+//                     int board_idx = i_start + j;
+//                     int n_percent = (double)board_idx / n_boards * 100;
+//                     if (n_percent > percent && show_log) {
+//                         percent = n_percent;
+//                         std::cerr << "loading book " << percent << "%" << std::endl;
+//                     }
+//                     char *datum = &data_chunk[j * n_bytes_per_board];
+//                     memcpy(&p, datum, 8);
+//                     memcpy(&o, datum + 8, 8);
+//                     value = datum[16];
+//                     level = datum[17];
+//                     memcpy(&n_lines, datum + 18, 4);
+//                     leaf_value = datum[22];
+//                     leaf_move = datum[23];
+//                     leaf_level = datum[24];
+//                     if (-HW2 <= value && value <= HW2 && (p & o) == 0) {
+//                         board.player = p;
+//                         board.opponent = o;
+// #if FORCE_BOOK_DEPTH
+//                         if (board.n_discs() <= 4 + 30) {
+// #endif
+//                             book_elem.value = value;
+//                             book_elem.level = level;
+//                             book_elem.n_lines = n_lines;
+//                             book_elem.leaf.value = leaf_value;
+//                             book_elem.leaf.move = leaf_move;
+//                             book_elem.leaf.level = leaf_level;
+//                             merge(board, book_elem);
+// #if FORCE_BOOK_DEPTH
+//                         }
+// #endif
+//                     }
+//                 }
+//             }
+//             free(data_chunk);
+//             return !(*stop_loading);
+//         }
 
         /*
             @brief Parallel import for large books
@@ -626,21 +626,26 @@ class Book {
             if (show_log) {
                 std::cerr << n_boards << " boards to read" << std::endl;
             }
-            
-            // Use parallel processing for large books (> 5M boards)
-            bool use_parallel = true; //(n_boards > 5000000);
-            
-            if (use_parallel) {
-                if (!import_egbk3_parallel(fp, n_boards, show_log, stop_loading)) {
-                    fclose(fp);
-                    return false;
-                }
-            } else {
-                if (!import_egbk3_sequential(fp, n_boards, show_log, stop_loading)) {
-                    fclose(fp);
-                    return false;
-                }
+
+            if (!import_egbk3_parallel(fp, n_boards, show_log, stop_loading)) {
+                fclose(fp);
+                return false;
             }
+            
+            // // Use parallel processing for large books (> 5M boards)
+            // bool use_parallel = true; //(n_boards > 5000000);
+            
+            // if (use_parallel) {
+            //     if (!import_egbk3_parallel(fp, n_boards, show_log, stop_loading)) {
+            //         fclose(fp);
+            //         return false;
+            //     }
+            // } else {
+            //     if (!import_egbk3_sequential(fp, n_boards, show_log, stop_loading)) {
+            //         fclose(fp);
+            //         return false;
+            //     }
+            // }
             if (*stop_loading) {
                 std::cerr << "stop loading book" << std::endl;
                 fclose(fp);
