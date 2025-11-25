@@ -341,7 +341,8 @@ class Book {
             @brief Parallel import for large books
         */
         inline bool import_egbk3_parallel(FILE* fp, int n_boards, bool show_log, bool *stop_loading) {
-            constexpr int n_chunk = 65536;
+            // constexpr int n_chunk = 65536;
+            constexpr int n_chunk = 262144;
             constexpr int n_bytes_per_board = 25;
             
             int n_threads = thread_pool.size();
@@ -407,7 +408,7 @@ class Book {
                         }
                         
                         // const int batch_size = 64 + t * 2;
-                        const int batch_size = std::max(10, n_chunk / (t + 5));
+                        const int batch_size = std::max(10, n_chunk / (t + 3));
                         std::vector<std::pair<Board, Book_elem>> batch;
                         batch.reserve(batch_size);
                         
