@@ -392,7 +392,7 @@ class Book {
             
             // Lambda for processing a chunk
             auto process_chunk = [&](int thread_idx, int chunk_start_board, int n_boards_in_chunk) {
-                if (processing_error.load()) {
+                if (processing_error.load() || *stop_loading) {
                     return;
                 }
                 
@@ -406,6 +406,10 @@ class Book {
                 uint32_t local_n_lines;
                 
                 for (int j = 0; j < n_boards_in_chunk; ++j) {
+                    if (*stop_loading) {
+                        return;
+                    }
+                    
                     int board_idx = chunk_start_board + j;
                     
                     // Update progress without locking (every 1024 boards)
@@ -463,7 +467,7 @@ class Book {
                 }
                 
                 // Merge boards in local_book
-                if (!local_book.empty()) {
+                if (!local_book.empty() && !(*stop_loading)) {
                     std::lock_guard<std::mutex> lock(book_mutex);
                     book.merge(local_book);
                 }
@@ -475,7 +479,7 @@ class Book {
             int next_chunk_start = 0;
             
             // Initial distribution: load first n_threads chunks
-            for (int t = 0; t < n_threads && next_chunk_start < n_boards; ++t) {
+            for (int t = 0; t < n_threads && next_chunk_start < n_boards && !(*stop_loading); ++t) {
                 int n_boards_chunk = std::min(n_chunk, n_boards - next_chunk_start);
                 int n_data = n_boards_chunk * n_bytes_per_board;
                 if (fread(data_chunks[t], 1, n_data, fp) < n_data) {
