@@ -341,15 +341,16 @@ class Book {
             @brief Parallel import for large books
         */
         inline bool import_egbk3_parallel(FILE* fp, int n_boards, bool show_log, bool *stop_loading) {
-            // constexpr int n_chunk = 65536;
             constexpr int n_chunk = 262144;
             constexpr int n_bytes_per_board = 25;
+            constexpr int batch_size = 1024;
             
             int n_threads = thread_pool.size();
             if (n_threads == 0) {
                 n_threads = 1;
             }
             
+            // Allocate buffers for each thread
             std::vector<char*> data_chunks(n_threads);
             size_t data_size = (size_t)n_chunk * n_bytes_per_board;
             
@@ -364,171 +365,218 @@ class Book {
                 }
             }
             std::cerr << "parallelized with " << n_threads << " threads" << std::endl;
+            
             std::atomic<bool> processing_error(false);
             std::mutex progress_mutex;
             std::mutex book_mutex;
             int percent = -1;
             
-            for (int i_start = 0; i_start < n_boards; i_start += n_chunk * n_threads) {
-                if (*stop_loading) {
-                    break;
+            // Thread state management
+            std::vector<std::atomic<bool>> thread_busy(n_threads);
+            std::vector<std::future<void>> futures(n_threads);
+            std::vector<int> chunk_sizes(n_threads);
+            for (int i = 0; i < n_threads; ++i) {
+                thread_busy[i].store(false);
+                chunk_sizes[i] = 0;
+            }
+            
+            // Lambda for processing a chunk
+            auto process_chunk = [&](int thread_idx, int chunk_start_board, int n_boards_in_chunk) {
+                if (processing_error.load()) {
+                    return;
                 }
                 
-                std::vector<int> chunk_sizes(n_threads);
-                for (int t = 0; t < n_threads; ++t) {
-                    int chunk_start = i_start + t * n_chunk;
-                    if (chunk_start >= n_boards) {
-                        chunk_sizes[t] = 0;
-                        break;
-                    }
-                    int n_boards_chunk = std::min(n_chunk, n_boards - chunk_start);
-                    int n_data = n_boards_chunk * n_bytes_per_board;
-                    if (fread(data_chunks[t], 1, n_data, fp) < n_data) {
-                        std::cerr << "[ERROR] book NOT FULLY imported " << book.size() << " boards" << std::endl;
-                        for (int k = 0; k < n_threads; ++k) {
-                            free(data_chunks[k]);
-                        }
-                        return false;
-                    }
-                    chunk_sizes[t] = n_boards_chunk;
-                }
+                std::vector<std::pair<Board, Book_elem>> batch;
+                batch.reserve(batch_size);
                 
-                std::vector<std::future<void>> futures;
-                for (int t = 0; t < n_threads; ++t) {
-                    if (chunk_sizes[t] == 0) {
-                        break;
+                Board local_board;
+                Book_elem local_book_elem;
+                uint64_t local_p, local_o;
+                char local_value, local_level, local_leaf_value, local_leaf_move, local_leaf_level;
+                uint32_t local_n_lines;
+                
+                for (int j = 0; j < n_boards_in_chunk; ++j) {
+                    int board_idx = chunk_start_board + j;
+                    
+                    int n_percent = (double)board_idx / n_boards * 100;
+                    if (n_percent > percent && show_log) {
+                        std::lock_guard<std::mutex> lock(progress_mutex);
+                        n_percent = (double)board_idx / n_boards * 100;
+                        if (n_percent > percent && show_log) {
+                            percent = n_percent;
+                            std::cerr << "loading book " << percent << "%" << std::endl;
+                        }
                     }
                     
-                    int chunk_start = i_start + t * n_chunk;
-                    int n_boards_chunk = chunk_sizes[t];
+                    char *datum = &data_chunks[thread_idx][j * n_bytes_per_board];
+                    memcpy(&local_p, datum, 8);
+                    memcpy(&local_o, datum + 8, 8);
+                    local_value = datum[16];
+                    local_level = datum[17];
+                    memcpy(&local_n_lines, datum + 18, 4);
+                    local_leaf_value = datum[22];
+                    local_leaf_move = datum[23];
+                    local_leaf_level = datum[24];
                     
-                    auto process_chunk = [&, t, chunk_start, n_boards_chunk]() {
-                        if (processing_error.load()) {
-                            return;
-                        }
-                        
-                        const int batch_size = 1024;
-                        std::vector<std::pair<Board, Book_elem>> batch;
-                        batch.reserve(batch_size);
-                        
-                        Board local_board;
-                        Book_elem local_book_elem;
-                        uint64_t local_p, local_o;
-                        char local_value, local_level, local_leaf_value, local_leaf_move, local_leaf_level;
-                        uint32_t local_n_lines;
-                        
-                        for (int j = 0; j < n_boards_chunk; ++j) {
-                            int board_idx = chunk_start + j;
-                            
-                            int n_percent = (double)board_idx / n_boards * 100;
-                            if (n_percent > percent && show_log) {
-                                std::lock_guard<std::mutex> lock(progress_mutex);
-                                n_percent = (double)board_idx / n_boards * 100;
-                                if (n_percent > percent && show_log) {
-                                    percent = n_percent;
-                                    std::cerr << "loading book " << percent << "%" << std::endl;
-                                }
-                            }
-                            
-                            char *datum = &data_chunks[t][j * n_bytes_per_board];
-                            memcpy(&local_p, datum, 8);
-                            memcpy(&local_o, datum + 8, 8);
-                            local_value = datum[16];
-                            local_level = datum[17];
-                            memcpy(&local_n_lines, datum + 18, 4);
-                            local_leaf_value = datum[22];
-                            local_leaf_move = datum[23];
-                            local_leaf_level = datum[24];
-                            
-                            if (-HW2 <= local_value && local_value <= HW2 && (local_p & local_o) == 0) {
-                                local_board.player = local_p;
-                                local_board.opponent = local_o;
+                    if (-HW2 <= local_value && local_value <= HW2 && (local_p & local_o) == 0) {
+                        local_board.player = local_p;
+                        local_board.opponent = local_o;
 #if FORCE_BOOK_DEPTH
-                                if (local_board.n_discs() <= 4 + 30) {
+                        if (local_board.n_discs() <= 4 + 30) {
 #endif
-                                    local_book_elem.value = local_value;
-                                    local_book_elem.level = local_level;
-                                    local_book_elem.n_lines = local_n_lines;
-                                    local_book_elem.leaf.value = local_leaf_value;
-                                    local_book_elem.leaf.move = local_leaf_move;
-                                    local_book_elem.leaf.level = local_leaf_level;
-                                    
-                                    Board rep_board = representative_board(local_board);
-                                    batch.emplace_back(rep_board, local_book_elem);
-                                    
-                                    if ((int)batch.size() >= batch_size) {
-                                        {
-                                            std::lock_guard<std::mutex> lock(book_mutex);
-                                            for (const auto &entry : batch) {
-                                                auto it = book.find(entry.first);
-                                                if (it == book.end()) {
-                                                    book[entry.first] = entry.second;
-                                                } else {
-                                                    if (entry.second.value != SCORE_UNDEFINED && it->second.level <= entry.second.level) {
-                                                        it->second.value = entry.second.value;
-                                                        it->second.level = entry.second.level;
-                                                    }
-                                                    if (entry.second.leaf.value != SCORE_UNDEFINED && it->second.leaf.level <= entry.second.leaf.level) {
-                                                        it->second.leaf.value = entry.second.leaf.value;
-                                                        it->second.leaf.move = entry.second.leaf.move;
-                                                        it->second.leaf.level = entry.second.leaf.level;
-                                                    }
-                                                }
+                            local_book_elem.value = local_value;
+                            local_book_elem.level = local_level;
+                            local_book_elem.n_lines = local_n_lines;
+                            local_book_elem.leaf.value = local_leaf_value;
+                            local_book_elem.leaf.move = local_leaf_move;
+                            local_book_elem.leaf.level = local_leaf_level;
+                            
+                            Board rep_board = representative_board(local_board);
+                            batch.emplace_back(rep_board, local_book_elem);
+                            
+                            if ((int)batch.size() >= batch_size) {
+                                {
+                                    std::lock_guard<std::mutex> lock(book_mutex);
+                                    for (const auto &entry : batch) {
+                                        auto it = book.find(entry.first);
+                                        if (it == book.end()) {
+                                            book[entry.first] = entry.second;
+                                        } else {
+                                            if (entry.second.value != SCORE_UNDEFINED && it->second.level <= entry.second.level) {
+                                                it->second.value = entry.second.value;
+                                                it->second.level = entry.second.level;
+                                            }
+                                            if (entry.second.leaf.value != SCORE_UNDEFINED && it->second.leaf.level <= entry.second.leaf.level) {
+                                                it->second.leaf.value = entry.second.leaf.value;
+                                                it->second.leaf.move = entry.second.leaf.move;
+                                                it->second.leaf.level = entry.second.leaf.level;
                                             }
                                         }
-                                        batch.clear();
                                     }
+                                }
+                                batch.clear();
+                            }
 #if FORCE_BOOK_DEPTH
-                                }
+                        }
 #endif
-                            }
-                        }
-                        
-                        // Process remaining boards in batch
-                        if (!batch.empty()) {
-                            std::lock_guard<std::mutex> lock(book_mutex);
-                            for (const auto &entry : batch) {
-                                auto it = book.find(entry.first);
-                                if (it == book.end()) {
-                                    book[entry.first] = entry.second;
-                                } else {
-                                    if (entry.second.value != SCORE_UNDEFINED && it->second.level <= entry.second.level) {
-                                        it->second.value = entry.second.value;
-                                        it->second.level = entry.second.level;
-                                    }
-                                    if (entry.second.leaf.value != SCORE_UNDEFINED && it->second.leaf.level <= entry.second.leaf.level) {
-                                        it->second.leaf.value = entry.second.leaf.value;
-                                        it->second.leaf.move = entry.second.leaf.move;
-                                        it->second.leaf.level = entry.second.leaf.level;
-                                    }
-                                }
-                            }
-                        }
-                    };
-                    
-                    bool pushed;
-                    futures.emplace_back(thread_pool.push(&pushed, process_chunk));
-                    if (!pushed) {
-                        process_chunk();
                     }
                 }
                 
-                for (auto &future : futures) {
-                    if (future.valid()) {
-                        future.wait();
+                // Process remaining boards in batch
+                if (!batch.empty()) {
+                    std::lock_guard<std::mutex> lock(book_mutex);
+                    for (const auto &entry : batch) {
+                        auto it = book.find(entry.first);
+                        if (it == book.end()) {
+                            book[entry.first] = entry.second;
+                        } else {
+                            if (entry.second.value != SCORE_UNDEFINED && it->second.level <= entry.second.level) {
+                                it->second.value = entry.second.value;
+                                it->second.level = entry.second.level;
+                            }
+                            if (entry.second.leaf.value != SCORE_UNDEFINED && it->second.leaf.level <= entry.second.leaf.level) {
+                                it->second.leaf.value = entry.second.leaf.value;
+                                it->second.leaf.move = entry.second.leaf.move;
+                                it->second.leaf.level = entry.second.leaf.level;
+                            }
+                        }
                     }
                 }
                 
-                if (processing_error.load()) {
+                thread_busy[thread_idx].store(false);
+            };
+            
+            // Main thread: file reading and work distribution
+            int next_chunk_start = 0;
+            
+            // Initial distribution: load first n_threads chunks
+            for (int t = 0; t < n_threads && next_chunk_start < n_boards; ++t) {
+                int n_boards_chunk = std::min(n_chunk, n_boards - next_chunk_start);
+                int n_data = n_boards_chunk * n_bytes_per_board;
+                if (fread(data_chunks[t], 1, n_data, fp) < n_data) {
+                    std::cerr << "[ERROR] book NOT FULLY imported " << book.size() << " boards" << std::endl;
                     for (int k = 0; k < n_threads; ++k) {
                         free(data_chunks[k]);
                     }
                     return false;
                 }
+                
+                thread_busy[t].store(true);
+                bool pushed;
+                int chunk_start_copy = next_chunk_start;
+                int n_boards_copy = n_boards_chunk;
+                int thread_idx_copy = t;
+                futures[t] = thread_pool.push(&pushed, [&, thread_idx_copy, chunk_start_copy, n_boards_copy]() {
+                    process_chunk(thread_idx_copy, chunk_start_copy, n_boards_copy);
+                });
+                if (!pushed) {
+                    process_chunk(t, next_chunk_start, n_boards_chunk);
+                }
+                
+                next_chunk_start += n_boards_chunk;
             }
             
+            // Dynamic work distribution
+            while (next_chunk_start < n_boards && !(*stop_loading)) {
+                // Find an idle thread
+                int idle_thread = -1;
+                for (int t = 0; t < n_threads; ++t) {
+                    if (!thread_busy[t].load()) {
+                        if (futures[t].valid()) {
+                            futures[t].wait(); // Ensure previous work is done
+                        }
+                        idle_thread = t;
+                        break;
+                    }
+                }
+                
+                if (idle_thread != -1) {
+                    // Load next chunk and assign to idle thread
+                    int n_boards_chunk = std::min(n_chunk, n_boards - next_chunk_start);
+                    int n_data = n_boards_chunk * n_bytes_per_board;
+                    if (fread(data_chunks[idle_thread], 1, n_data, fp) < n_data) {
+                        std::cerr << "[ERROR] book NOT FULLY imported " << book.size() << " boards" << std::endl;
+                        processing_error.store(true);
+                        break;
+                    }
+                    
+                    thread_busy[idle_thread].store(true);
+                    bool pushed;
+                    int chunk_start_copy = next_chunk_start;
+                    int n_boards_copy = n_boards_chunk;
+                    int thread_idx_copy = idle_thread;
+                    futures[idle_thread] = thread_pool.push(&pushed, [&, thread_idx_copy, chunk_start_copy, n_boards_copy]() {
+                        process_chunk(thread_idx_copy, chunk_start_copy, n_boards_copy);
+                    });
+                    if (!pushed) {
+                        process_chunk(idle_thread, next_chunk_start, n_boards_chunk);
+                    }
+                    
+                    next_chunk_start += n_boards_chunk;
+                } else {
+                    // No idle thread, wait a bit
+                    std::this_thread::sleep_for(std::chrono::microseconds(100));
+                }
+                
+                if (processing_error.load()) {
+                    break;
+                }
+            }
+            
+            // Wait for all threads to complete
+            for (int t = 0; t < n_threads; ++t) {
+                if (futures[t].valid()) {
+                    futures[t].wait();
+                }
+            }
+            
+            // Free buffers
             for (int k = 0; k < n_threads; ++k) {
                 free(data_chunks[k]);
+            }
+            
+            if (processing_error.load()) {
+                return false;
             }
             
             return !(*stop_loading);
