@@ -395,6 +395,7 @@ class Book {
             std::atomic<int> boards_processed(0);
             std::mutex book_mutex;
             int percent = -1;
+            constexpr size_t LOCAL_FLUSH_THRESHOLD = n_chunk / 4; // keep merges short
             
             // Thread state management
             std::vector<std::atomic<bool>> thread_busy(n_threads);
@@ -405,6 +406,34 @@ class Book {
                 local_books[i].reserve(n_chunk);
             }
             
+            // Helper to merge local results into the global book while minimizing lock duration
+            auto flush_local_book = [&](std::unordered_map<Board, Book_elem, Book_hash> &local_book) {
+                if (local_book.empty()) {
+                    return;
+                }
+                std::lock_guard<std::mutex> lock(book_mutex);
+                book.merge(local_book);
+                if (!local_book.empty()) {
+                    for (auto &entry : local_book) {
+                        auto it = book.find(entry.first);
+                        if (it == book.end()) {
+                            book[entry.first] = entry.second;
+                        } else {
+                            if (entry.second.value != SCORE_UNDEFINED && it->second.level <= entry.second.level) {
+                                it->second.value = entry.second.value;
+                                it->second.level = entry.second.level;
+                            }
+                            if (entry.second.leaf.value != SCORE_UNDEFINED && it->second.leaf.level <= entry.second.leaf.level) {
+                                it->second.leaf.value = entry.second.leaf.value;
+                                it->second.leaf.move = entry.second.leaf.move;
+                                it->second.leaf.level = entry.second.leaf.level;
+                            }
+                        }
+                    }
+                    local_book.clear();
+                }
+            };
+
             // Lambda for processing a chunk
             auto process_chunk = [&](int thread_idx, int chunk_start_board, int n_boards_in_chunk) {
                 if (processing_error.load() || *stop_loading) {
@@ -475,6 +504,11 @@ class Book {
                                     existing.leaf.level = local_book_elem.leaf.level;
                                 }
                             }
+
+                            if (local_book.size() >= LOCAL_FLUSH_THRESHOLD) {
+                                flush_local_book(local_book);
+                                local_book.reserve(LOCAL_FLUSH_THRESHOLD);
+                            }
 #if FORCE_BOOK_DEPTH
                         }
 #endif
@@ -483,8 +517,7 @@ class Book {
                 
                 // Merge boards in local_book
                 if (!local_book.empty() && !(*stop_loading)) {
-                    std::lock_guard<std::mutex> lock(book_mutex);
-                    book.merge(local_book);
+                    flush_local_book(local_book);
                 }
                 
                 thread_busy[thread_idx].store(false, std::memory_order_release);
