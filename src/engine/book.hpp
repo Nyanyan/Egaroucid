@@ -407,8 +407,7 @@ class Book {
                             return;
                         }
                         
-                        // const int batch_size = 64 + t * 2;
-                        const int batch_size = std::max(10, n_chunk / (t + 3));
+                        const int batch_size = 1024;
                         std::vector<std::pair<Board, Book_elem>> batch;
                         batch.reserve(batch_size);
                         
@@ -457,21 +456,23 @@ class Book {
                                     Board rep_board = representative_board(local_board);
                                     batch.emplace_back(rep_board, local_book_elem);
                                     
-                                    if (batch.size() >= batch_size) {
-                                        std::lock_guard<std::mutex> lock(book_mutex);
-                                        for (auto &entry : batch) {
-                                            auto it = book.find(entry.first);
-                                            if (it == book.end()) {
-                                                book[entry.first] = entry.second;
-                                            } else {
-                                                if (entry.second.value != SCORE_UNDEFINED && it->second.level <= entry.second.level) {
-                                                    it->second.value = entry.second.value;
-                                                    it->second.level = entry.second.level;
-                                                }
-                                                if (entry.second.leaf.value != SCORE_UNDEFINED && it->second.leaf.level <= entry.second.leaf.level) {
-                                                    it->second.leaf.value = entry.second.leaf.value;
-                                                    it->second.leaf.move = entry.second.leaf.move;
-                                                    it->second.leaf.level = entry.second.leaf.level;
+                                    if ((int)batch.size() >= batch_size) {
+                                        {
+                                            std::lock_guard<std::mutex> lock(book_mutex);
+                                            for (const auto &entry : batch) {
+                                                auto it = book.find(entry.first);
+                                                if (it == book.end()) {
+                                                    book[entry.first] = entry.second;
+                                                } else {
+                                                    if (entry.second.value != SCORE_UNDEFINED && it->second.level <= entry.second.level) {
+                                                        it->second.value = entry.second.value;
+                                                        it->second.level = entry.second.level;
+                                                    }
+                                                    if (entry.second.leaf.value != SCORE_UNDEFINED && it->second.leaf.level <= entry.second.leaf.level) {
+                                                        it->second.leaf.value = entry.second.leaf.value;
+                                                        it->second.leaf.move = entry.second.leaf.move;
+                                                        it->second.leaf.level = entry.second.leaf.level;
+                                                    }
                                                 }
                                             }
                                         }
@@ -486,7 +487,7 @@ class Book {
                         // Process remaining boards in batch
                         if (!batch.empty()) {
                             std::lock_guard<std::mutex> lock(book_mutex);
-                            for (auto &entry : batch) {
+                            for (const auto &entry : batch) {
                                 auto it = book.find(entry.first);
                                 if (it == book.end()) {
                                     book[entry.first] = entry.second;
