@@ -421,9 +421,10 @@ class Book {
                         for (int j = 0; j < n_boards_chunk; ++j) {
                             int board_idx = chunk_start + j;
                             
-                            {
+                            int n_percent = (double)board_idx / n_boards * 100;
+                            if (n_percent > percent && show_log) {
                                 std::lock_guard<std::mutex> lock(progress_mutex);
-                                int n_percent = (double)board_idx / n_boards * 100;
+                                n_percent = (double)board_idx / n_boards * 100;
                                 if (n_percent > percent && show_log) {
                                     percent = n_percent;
                                     std::cerr << "loading book " << percent << "%" << std::endl;
