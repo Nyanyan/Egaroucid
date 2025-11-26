@@ -362,7 +362,13 @@ public:
             const bool circle1_clicked = handle_circle1.leftClicked();
             const bool circle2_clicked = handle_circle2.leftClicked();
             const bool bar_clicked = bar_rect.leftClicked();
-            if (circle1_clicked) {
+            if (circle1_clicked && circle2_clicked) {
+                bar_changeable = true;
+                const int center_x = (bar_rect.x + bar_rect.x + bar_rect.w) / 2;
+                const int dist1 = std::abs(handle1_x - center_x);
+                const int dist2 = std::abs(handle2_x - center_x);
+                bar_active_circle = (dist1 <= dist2) ? 1 : 2;
+            } else if (circle1_clicked) {
                 bar_changeable = true;
                 bar_active_circle = 1;
             } else if (circle2_clicked) {
