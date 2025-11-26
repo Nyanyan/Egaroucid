@@ -10,6 +10,7 @@
 
 #pragma once
 #include <Siv3D.hpp>
+#include <algorithm>
 #include <iostream>
 #include <vector>
 #include "click.hpp"
@@ -31,9 +32,10 @@ constexpr double radio_ratio = 0.2;
 
 constexpr int MENU_MODE_BUTTON = 0;
 constexpr int MENU_MODE_BAR = 1;
-constexpr int MENU_MODE_CHECK = 2;
-constexpr int MENU_MODE_RADIO = 3;
-constexpr int MENU_MODE_BAR_CHECK = 4;
+constexpr int MENU_MODE_2BARS = 2;
+constexpr int MENU_MODE_CHECK = 3;
+constexpr int MENU_MODE_RADIO = 4;
+constexpr int MENU_MODE_BAR_CHECK = 5;
 
 constexpr int MENU_BAR_SIZE = 140;
 constexpr int MENU_BAR_HEIGHT = 14;
@@ -119,6 +121,13 @@ private:
     int bar_center_y;
     bool bar_changeable;
 
+    // 2 bars mode
+    int *bar_elem1;
+    int *bar_elem2;
+    Circle bar_circle1;
+    Circle bar_circle2;
+    int bar_active_circle = 0;
+
     // button mode
     bool *is_clicked_p;
 
@@ -131,6 +140,40 @@ private:
     // display image on the menu (for language selection)
     bool use_image;
     Texture image;
+
+    int cursor_to_bar_value(int cursor_x) const {
+        if (max_elem == min_elem) {
+            return min_elem;
+        }
+        double ratio = (double)(cursor_x - (bar_sx + 10)) / (double)(MENU_BAR_SIZE - 20);
+        ratio = std::clamp(ratio, 0.0, 1.0);
+        int value = (int)round(ratio * (max_elem - min_elem)) + min_elem;
+        return std::clamp(value, min_elem, max_elem);
+    }
+
+    int value_to_bar_x(int value) const {
+        if (max_elem == min_elem) {
+            return bar_sx + (MENU_BAR_SIZE / 2);
+        }
+        double ratio = (double)(value - min_elem) / (double)(max_elem - min_elem);
+        ratio = std::clamp(ratio, 0.0, 1.0);
+        return (int)round(bar_sx + 10.0 + (double)(MENU_BAR_SIZE - 20) * ratio);
+    }
+
+    void refresh_bar_circles() {
+        if (mode == MENU_MODE_BAR || mode == MENU_MODE_BAR_CHECK) {
+            bar_circle.x = value_to_bar_x(*bar_elem);
+            bar_circle.y = bar_center_y;
+            bar_circle.r = MENU_BAR_RADIUS;
+        } else if (mode == MENU_MODE_2BARS) {
+            bar_circle1.x = value_to_bar_x(*bar_elem1);
+            bar_circle1.y = bar_center_y;
+            bar_circle1.r = MENU_BAR_RADIUS;
+            bar_circle2.x = value_to_bar_x(*bar_elem2);
+            bar_circle2.y = bar_center_y;
+            bar_circle2.r = MENU_BAR_RADIUS;
+        }
+    }
 
 public:
     void init_button(String s, bool *c) {
@@ -164,6 +207,26 @@ public:
         image = t;
     }
 
+    void init_2bars(String s, int *c1, int *c2, int d1, int d2, int mn, int mx) {
+        clear();
+        click_supporter.init();
+        mode = MENU_MODE_2BARS;
+        has_child = false;
+        is_active = false;
+        was_active = false;
+        str = s;
+        bar_elem1 = c1;
+        bar_elem2 = c2;
+        *bar_elem1 = d1;
+        *bar_elem2 = d2;
+        bar_changeable = false;
+        bar_active_circle = 0;
+        min_elem = mn;
+        max_elem = mx;
+        is_clicked = false;
+        use_image = false;
+    }
+
     void init_bar(String s, int *c, int d, int mn, int mx) {
         clear();
         click_supporter.init();
@@ -175,6 +238,7 @@ public:
         bar_elem = c;
         *bar_elem = d;
         bar_changeable = false;
+        bar_active_circle = 0;
         min_elem = mn;
         max_elem = mx;
         is_clicked = false;
@@ -280,31 +344,74 @@ public:
                 yy += height;
             }
         }
-        if (mode == MENU_MODE_BAR || mode == MENU_MODE_BAR_CHECK) {
+        if (mode == MENU_MODE_BAR || mode == MENU_MODE_2BARS || mode == MENU_MODE_BAR_CHECK) {
             bar_sx = rect.x + rect.w - MENU_BAR_SIZE - bar_additional_offset;
             bar_center_y = rect.y + rect.h / 2;
             bar_rect.x = bar_sx;
             bar_rect.y = bar_center_y - MENU_BAR_HEIGHT / 2;
             bar_rect.w = MENU_BAR_SIZE;
             bar_rect.h = MENU_BAR_HEIGHT;
-            bar_circle.x = bar_sx + MENU_BAR_SIZE * (*bar_elem - min_elem + 5) / (max_elem - min_elem + 10);
-            bar_circle.y = bar_center_y;
-            bar_circle.r = MENU_BAR_RADIUS;
+            refresh_bar_circles();
         }
     }
 
     void update() {
         was_active = is_active;
         is_active = rect.mouseOver();
-        if (mode == MENU_MODE_BAR || (mode == MENU_MODE_BAR_CHECK && (*is_checked))) {
-            // bar active?
+        if (mode == MENU_MODE_BAR || mode == MENU_MODE_2BARS || mode == MENU_MODE_BAR_CHECK) {
+            refresh_bar_circles();
+        }
+        if (mode == MENU_MODE_2BARS) {
+            const bool circle1_clicked = bar_circle1.leftClicked();
+            const bool circle2_clicked = bar_circle2.leftClicked();
+            const bool bar_clicked = bar_rect.leftClicked();
+            if (circle1_clicked) {
+                bar_changeable = true;
+                bar_active_circle = 1;
+            } else if (circle2_clicked) {
+                bar_changeable = true;
+                bar_active_circle = 2;
+            } else if (bar_clicked) {
+                bar_changeable = true;
+            }
+            if (!MouseL.pressed()) {
+                bar_changeable = false;
+                bar_active_circle = 0;
+            }
+            if (bar_changeable) {
+                Cursor::RequestStyle(CursorStyle::ResizeLeftRight);
+                const int cursor_x = Cursor::Pos().x;
+                const int circle1_x = value_to_bar_x(*bar_elem1);
+                const int circle2_x = value_to_bar_x(*bar_elem2);
+                const int cursor_value = cursor_to_bar_value(cursor_x);
+                if (cursor_x < circle1_x) {
+                    *bar_elem1 = std::min(cursor_value, *bar_elem2);
+                    bar_active_circle = 1;
+                } else if (cursor_x > circle2_x) {
+                    *bar_elem2 = std::max(cursor_value, *bar_elem1);
+                    bar_active_circle = 2;
+                } else if (bar_active_circle == 1) {
+                    *bar_elem1 = std::min(cursor_value, *bar_elem2);
+                } else if (bar_active_circle == 2) {
+                    *bar_elem2 = std::max(cursor_value, *bar_elem1);
+                }
+            }
+            is_active |= bar_changeable;
+        } else if (mode == MENU_MODE_BAR || (mode == MENU_MODE_BAR_CHECK && (*is_checked))) {
+            bar_active_circle = 0;
             if (bar_rect.leftClicked()) {
                 bar_changeable = true;
             } else if (!MouseL.pressed()) {
                 bar_changeable = false;
             }
-            // bar is active -> this element is active
+            if (bar_changeable) {
+                Cursor::RequestStyle(CursorStyle::ResizeLeftRight);
+                *bar_elem = cursor_to_bar_value(Cursor::Pos().x);
+            }
             is_active |= bar_changeable;
+        } else if (!MouseL.pressed()) {
+            bar_changeable = false;
+            bar_active_circle = 0;
         }
         // if a child bar is active, other children must be inactive
         bool active_child_bar_found = false;
@@ -333,18 +440,7 @@ public:
             is_clicked = click_supporter.clicked();
         }
         // set bar position
-        if ((mode == MENU_MODE_BAR || (mode == MENU_MODE_BAR_CHECK && (*is_checked))) && bar_changeable) {
-            Cursor::RequestStyle(CursorStyle::ResizeLeftRight);
-            int min_error = INF;
-            int cursor_x = Cursor::Pos().x;
-            for (int i = min_elem; i <= max_elem; ++i) {
-                int x = round((double)bar_sx + 10.0 + (double)(MENU_BAR_SIZE - 20) * (double)(i - min_elem) / (double)(max_elem - min_elem));
-                if (abs(cursor_x - x) < min_error) {
-                    min_error = abs(cursor_x - x);
-                    *bar_elem = i;
-                }
-            }
-        }
+        // set bar position handled above
     }
 
     void update_button() {
@@ -383,7 +479,7 @@ public:
             } else {
                 bar_rect.draw(bar_color);
             }
-            bar_circle.x = round((double)bar_sx + 10.0 + (double)(MENU_BAR_SIZE - 20) * (double)(*bar_elem - min_elem) / (double)(max_elem - min_elem));
+            bar_circle.x = value_to_bar_x(*bar_elem);
             if (mode == MENU_MODE_BAR_CHECK && !(*is_checked)) {
                 Shape2D::Cross(1.5 * bar_circle.r, 6, Vec2{bar_circle.x, bar_circle.y}).draw(ColorF(bar_circle_color, 0.5));
             } else {
@@ -489,6 +585,7 @@ public:
         has_child = false;
         children.clear();
         str = U"";
+        bar_active_circle = 0;
     }
 
     int menu_mode() {
