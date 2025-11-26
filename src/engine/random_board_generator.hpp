@@ -15,7 +15,7 @@ std::vector<int> random_board_generator(int score_range_min, int score_range_max
     int adjustment_n_moves = n_moves - light_n_moves;
     bool success = false;
     std::vector<int> res;
-    constexpr int MAX_N_TRY = 20;
+    constexpr int MAX_N_TRY = 40;
     for (int try_count = 0; try_count < MAX_N_TRY && !success && *searching; ++try_count) {
         std::cerr << "try " << try_count << std::endl;
         bool failed = false;
