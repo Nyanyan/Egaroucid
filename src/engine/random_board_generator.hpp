@@ -66,16 +66,28 @@ std::vector<int> random_board_generator(int score_range_min, int score_range_max
                     beta = -score_range_min;
                 }
                 Search_result search_result = ai_range(board, adjustment_level, alpha, beta, searching);
-                if (search_result.value == SCORE_UNDEFINED) {
-                    failed = true;
-                    break;
+                if (search_result.value == SCORE_UNDEFINED) { // adjust failed
+                    if (i == adjustment_n_moves - 1) { // last move
+                        failed = true;
+                        break;
+                    } else {
+                        // use accept_loss search
+                        int acceptable_loss = std::abs(std::round(dist(engine)));
+                        Search_result search_result2 = ai_accept_loss(board, light_level, acceptable_loss);
+                        int policy2 = search_result2.policy;
+                        res.emplace_back(policy2);
+                        calc_flip(&flip, &board, policy2);
+                        board.move_board(&flip);
+                        player ^= 1;
+                    }
+                } else { // adjusted
+                    int policy = search_result.policy;
+                    res.emplace_back(policy);
+                    // std::cerr << "adjust " << idx_to_coord(policy) << " " << search_result.value << std::endl;
+                    calc_flip(&flip, &board, policy);
+                    board.move_board(&flip);
+                    player ^= 1;
                 }
-                int policy = search_result.policy;
-                res.emplace_back(policy);
-                // std::cerr << "adjust " << idx_to_coord(policy) << " " << search_result.value << std::endl;
-                calc_flip(&flip, &board, policy);
-                board.move_board(&flip);
-                player ^= 1;
             }
         }
         if (!failed) {
