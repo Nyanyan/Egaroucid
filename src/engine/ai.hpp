@@ -713,7 +713,7 @@ Search_result ai_common(Board board, int alpha, int beta, int level, bool use_bo
     @return the result in Search_result structure
 */
 Search_result ai(Board board, int level, bool use_book, int book_acc_level, bool use_multi_thread, bool show_log) {
-    std::cerr << "ai " << (HW2 - board.n_discs()) << " empties level " << level << std::endl;
+    // std::cerr << "ai " << (HW2 - board.n_discs()) << " empties level " << level << std::endl;
     bool searching = true;
     return ai_common(board, -SCORE_MAX, SCORE_MAX, level, use_book, book_acc_level, use_multi_thread, show_log, board.get_legal(), false, TIME_LIMIT_INF, THREAD_ID_NONE, &searching);
 }
