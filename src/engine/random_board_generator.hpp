@@ -56,10 +56,10 @@ std::vector<int> random_board_generator(int score_range_min, int score_range_max
                     player ^= 1;
                 }
                 int alpha, beta;
-                if (player == BLACK) {
+                if (player == WHITE) { // next: black
                     alpha = score_range_min;
                     beta = score_range_max;
-                } else {
+                } else { // next: white
                     alpha = -score_range_max;
                     beta = -score_range_min;
                 }

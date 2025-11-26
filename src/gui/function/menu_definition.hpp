@@ -162,7 +162,7 @@ Menu create_menu(Menu_elements* menu_elements, Resources *resources, Font font, 
             menu_e.push(side_menu);
             side_menu.init_bar(language.get("operation", "generate_random_board", "generate_n_moves"), &menu_elements->generate_random_board_moves, menu_elements->generate_random_board_moves, 1, 60);
             menu_e.push(side_menu);
-            side_menu.init_2bars(language.get("operation", "generate_random_board", "score_range"), &menu_elements->generate_random_board_score_range_min, &menu_elements->generate_random_board_score_range_max, menu_elements->generate_random_board_score_range_min, menu_elements->generate_random_board_score_range_max, -64, 64);
+            side_menu.init_2bars(language.get("operation", "generate_random_board", "score_range"), &menu_elements->generate_random_board_score_range_min, &menu_elements->generate_random_board_score_range_max, menu_elements->generate_random_board_score_range_min, menu_elements->generate_random_board_score_range_max, -64, 64, resources->arrow_left);
             menu_e.push(side_menu);
         title.push(menu_e);
         menu_e.init_button(language.get("operation", "convert", "convert"), &menu_elements->dummy);

@@ -341,6 +341,7 @@ struct Resources {
     Texture mirror_black_line;
     Texture check;
     Texture folder;
+    Texture arrow_left;
     std::vector<Texture> lang_img;
 };
 

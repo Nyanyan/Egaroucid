@@ -124,8 +124,7 @@ private:
     // 2 bars mode
     int *bar_elem1;
     int *bar_elem2;
-    Circle bar_circle1;
-    Circle bar_circle2;
+    Texture arrow_left;
     int bar_active_circle = 0;
 
     // button mode
@@ -165,13 +164,6 @@ private:
             bar_circle.x = value_to_bar_x(*bar_elem);
             bar_circle.y = bar_center_y;
             bar_circle.r = MENU_BAR_RADIUS;
-        } else if (mode == MENU_MODE_2BARS) {
-            bar_circle1.x = value_to_bar_x(*bar_elem1);
-            bar_circle1.y = bar_center_y;
-            bar_circle1.r = MENU_BAR_RADIUS;
-            bar_circle2.x = value_to_bar_x(*bar_elem2);
-            bar_circle2.y = bar_center_y;
-            bar_circle2.r = MENU_BAR_RADIUS;
         }
     }
 
@@ -207,7 +199,7 @@ public:
         image = t;
     }
 
-    void init_2bars(String s, int *c1, int *c2, int d1, int d2, int mn, int mx) {
+    void init_2bars(String s, int *c1, int *c2, int d1, int d2, int mn, int mx, Texture al) {
         clear();
         click_supporter.init();
         mode = MENU_MODE_2BARS;
@@ -225,6 +217,7 @@ public:
         max_elem = mx;
         is_clicked = false;
         use_image = false;
+        arrow_left = al;
     }
 
     void init_bar(String s, int *c, int d, int mn, int mx) {
@@ -362,8 +355,12 @@ public:
             refresh_bar_circles();
         }
         if (mode == MENU_MODE_2BARS) {
-            const bool circle1_clicked = bar_circle1.leftClicked();
-            const bool circle2_clicked = bar_circle2.leftClicked();
+            const int handle1_x = value_to_bar_x(*bar_elem1);
+            const int handle2_x = value_to_bar_x(*bar_elem2);
+            const Circle handle_circle1(handle1_x, bar_center_y, MENU_BAR_RADIUS);
+            const Circle handle_circle2(handle2_x, bar_center_y, MENU_BAR_RADIUS);
+            const bool circle1_clicked = handle_circle1.leftClicked();
+            const bool circle2_clicked = handle_circle2.leftClicked();
             const bool bar_clicked = bar_rect.leftClicked();
             if (circle1_clicked) {
                 bar_changeable = true;
@@ -381,8 +378,8 @@ public:
             if (bar_changeable) {
                 Cursor::RequestStyle(CursorStyle::ResizeLeftRight);
                 const int cursor_x = Cursor::Pos().x;
-                const int circle1_x = value_to_bar_x(*bar_elem1);
-                const int circle2_x = value_to_bar_x(*bar_elem2);
+                const int circle1_x = handle1_x;
+                const int circle2_x = handle2_x;
                 const int cursor_value = cursor_to_bar_value(cursor_x);
                 if (cursor_x < circle1_x) {
                     *bar_elem1 = std::min(cursor_value, *bar_elem2);
@@ -490,10 +487,11 @@ public:
             Rect right_label(bar_rect.x + bar_rect.w / 2, bar_rect.y, bar_rect.w - bar_rect.w / 2, bar_rect.h);
             left_label.draw(Palette::White);
             right_label.draw(Palette::Black);
-            bar_circle1.x = value_to_bar_x(*bar_elem1);
-            bar_circle1.draw(bar_circle_color);
-            bar_circle2.x = value_to_bar_x(*bar_elem2);
-            bar_circle2.draw(bar_circle_color);
+            const Circle handle_circle1(value_to_bar_x(*bar_elem1), bar_center_y, MENU_BAR_RADIUS);
+            const Circle handle_circle2(value_to_bar_x(*bar_elem2), bar_center_y, MENU_BAR_RADIUS);
+            double scale = static_cast<double>(MENU_BAR_HEIGHT) / static_cast<double>(arrow_left.height());
+            arrow_left.scaled(scale).drawAt(handle_circle1.x, handle_circle1.y);
+            arrow_left.scaled(scale).rotated(180_deg).drawAt(handle_circle2.x, handle_circle2.y);
         }
         if (has_child) {
             font(U">").draw(font_size, rect.x + rect.w - menu_offset_x - menu_child_offset, rect.y + menu_offset_y, menu_font_color);

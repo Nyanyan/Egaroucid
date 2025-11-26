@@ -103,10 +103,11 @@ int init_resources_load(Resources* resources, Settings* settings, bool *stop_loa
     Texture mirror_black_line(Unicode::Widen(EXE_DIRECTORY_PATH + "resources/img/mirror_black_line.png"), TextureDesc::Mipped);
     Texture check(Unicode::Widen(EXE_DIRECTORY_PATH + "resources/img/check.png"), TextureDesc::Mipped);
     Texture folder(Unicode::Widen(EXE_DIRECTORY_PATH + "resources/img/folder.png"), TextureDesc::Mipped);
+    Texture arrow_left(Unicode::Widen(EXE_DIRECTORY_PATH + "resources/img/arrow_left.png"), TextureDesc::Mipped);
     if (checkbox.isEmpty() || unchecked.isEmpty() || laser_pointer.isEmpty() || cross.isEmpty() ||
         flip_horizontal.isEmpty() || flip_vertical.isEmpty() || rotate_cw.isEmpty() || rotate_ccw.isEmpty() ||
         rotate_180.isEmpty() || mirror_white_line.isEmpty() || mirror_black_line.isEmpty() ||
-        check.isEmpty() || folder.isEmpty()
+        check.isEmpty() || folder.isEmpty() || arrow_left.isEmpty()
     ) {
         return ERR_LOAD_TEXTURE_NOT_LOADED;
     }
@@ -123,6 +124,7 @@ int init_resources_load(Resources* resources, Settings* settings, bool *stop_loa
     resources->mirror_black_line = mirror_black_line;
     resources->check = check;
     resources->folder = folder;
+    resources->arrow_left = arrow_left;
 
     if (*stop_loading) {
         return ERR_LOAD_TERMINATED;
