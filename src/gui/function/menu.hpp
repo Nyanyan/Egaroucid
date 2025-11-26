@@ -439,8 +439,6 @@ public:
             click_supporter.update(rect);
             is_clicked = click_supporter.clicked();
         }
-        // set bar position
-        // set bar position handled above
     }
 
     void update_button() {
@@ -485,6 +483,14 @@ public:
             } else {
                 bar_circle.draw(bar_circle_color);
             }
+        } else if (mode == MENU_MODE_2BARS) {
+            String range_str = Format(*bar_elem1, U"~", *bar_elem2);
+            font(range_str).draw(font_size, Arg::topRight(bar_sx - menu_child_offset - 4, rect.y + menu_offset_y), menu_font_color);
+            bar_rect.draw(bar_color);
+            bar_circle1.x = value_to_bar_x(*bar_elem1);
+            bar_circle1.draw(bar_circle_color);
+            bar_circle2.x = value_to_bar_x(*bar_elem2);
+            bar_circle2.draw(bar_circle_color);
         }
         if (has_child) {
             font(U">").draw(font_size, rect.x + rect.w - menu_offset_x - menu_child_offset, rect.y + menu_offset_y, menu_font_color);

@@ -10,13 +10,9 @@
 #pragma once
 #include "ai.hpp"
 
-std::vector<int> random_board_generator(int score_range, int n_moves, int light_level, int adjustment_level, bool *searching) {
+std::vector<int> random_board_generator(int score_range_min, int score_range_max, int n_moves, int light_level, int adjustment_level, bool *searching) {
     int light_n_moves = std::max(0, n_moves - 2);
     int adjustment_n_moves = n_moves - light_n_moves;
-    if (score_range == SCORE_MAX) {
-        light_n_moves = n_moves;
-        adjustment_n_moves = 0;
-    }
     bool success = false;
     std::vector<int> res;
     while (!success && *searching) {
@@ -55,7 +51,7 @@ std::vector<int> random_board_generator(int score_range, int n_moves, int light_
                 if (board.get_legal() == 0) {
                     board.pass();
                 }
-                Search_result search_result = ai_range(board, adjustment_level, -score_range, score_range, searching);
+                Search_result search_result = ai_range(board, adjustment_level, score_range_min, score_range_max, searching);
                 if (search_result.value == SCORE_UNDEFINED) {
                     failed = true;
                     break;

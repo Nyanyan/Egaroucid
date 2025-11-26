@@ -79,7 +79,9 @@ void init_default_settings(const Directories* directories, const Resources* reso
     settings->pv_length = 7;
     settings->screenshot_saving_dir = directories->document_dir + "screenshots/";
     settings->show_value_when_ai_calculating = false;
-    settings->generate_random_board_score_range = 64;
+    // settings->generate_random_board_score_range = 64;
+    settings->generate_random_board_score_range_min = -64;
+    settings->generate_random_board_score_range_max = 64;
     settings->show_hint_level = true;
 }
 

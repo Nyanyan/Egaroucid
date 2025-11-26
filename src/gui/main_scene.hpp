@@ -792,7 +792,7 @@ private:
                 pausing_in_pass = false;
                 resume_calculating();
                 ai_status.random_board_generator_calculating = true;
-                ai_status.random_board_generator_future = std::async(std::launch::async, random_board_generator, getData().menu_elements.generate_random_board_score_range, getData().menu_elements.generate_random_board_moves, light_level, adjustment_level, &ai_status.random_board_generator_calculating);
+                ai_status.random_board_generator_future = std::async(std::launch::async, random_board_generator, getData().menu_elements.generate_random_board_score_range_min, getData().menu_elements.generate_random_board_score_range_max, getData().menu_elements.generate_random_board_moves, light_level, adjustment_level, &ai_status.random_board_generator_calculating);
             }
         }
         if (getData().menu_elements.convert_180 || shortcut_key == U"convert_180") {
