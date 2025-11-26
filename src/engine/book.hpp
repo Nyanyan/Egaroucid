@@ -2189,7 +2189,7 @@ class Book {
             ++n_flags;
             for (int depth = 0; depth < max_depth; ++depth) {
                 root_list = reduce_book_calculate_keeplist_bfs(root_list, max_error_per_move, &n_flags, keep_list, doing);
-                std::cerr << "done root depth " << depth << " next task " << root_list.size() << " keep " << keep_list.size() << std::endl;
+                std::cerr << "done depth " << depth << " next task " << root_list.size() << " keep " << keep_list.size() << std::endl;
             }
             std::cerr << "keep " << keep_list.size() << " boards, updating leaves" << std::endl;
             reduce_book_update_leaves(root_board, keep_list, doing);
