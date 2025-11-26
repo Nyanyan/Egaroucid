@@ -20,6 +20,7 @@ std::vector<int> random_board_generator(int score_range_min, int score_range_max
 
         Board board;
         board.reset();
+        int player = BLACK;
         res.clear();
         Flip flip;
 
@@ -33,6 +34,7 @@ std::vector<int> random_board_generator(int score_range_min, int score_range_max
             }
             if (board.get_legal() == 0) {
                 board.pass();
+                player ^= 1;
             }
             int acceptable_loss = std::abs(std::round(dist(engine)));
             Search_result search_result = ai_accept_loss(board, light_level, acceptable_loss);
@@ -41,6 +43,7 @@ std::vector<int> random_board_generator(int score_range_min, int score_range_max
             std::cerr << "light " << acceptable_loss << " " << idx_to_coord(policy) << " " << search_result.value << std::endl;
             calc_flip(&flip, &board, policy);
             board.move_board(&flip);
+            player ^= 1;
         }
         if (!failed) {
             for (int i = 0; i < adjustment_n_moves; ++i) {
@@ -50,8 +53,17 @@ std::vector<int> random_board_generator(int score_range_min, int score_range_max
                 }
                 if (board.get_legal() == 0) {
                     board.pass();
+                    player ^= 1;
                 }
-                Search_result search_result = ai_range(board, adjustment_level, score_range_min, score_range_max, searching);
+                int alpha, beta;
+                if (player == BLACK) {
+                    alpha = score_range_min;
+                    beta = score_range_max;
+                } else {
+                    alpha = -score_range_max;
+                    beta = -score_range_min;
+                }
+                Search_result search_result = ai_range(board, adjustment_level, alpha, beta, searching);
                 if (search_result.value == SCORE_UNDEFINED) {
                     failed = true;
                     break;
@@ -61,6 +73,7 @@ std::vector<int> random_board_generator(int score_range_min, int score_range_max
                 std::cerr << "adjust " << idx_to_coord(policy) << " " << search_result.value << std::endl;
                 calc_flip(&flip, &board, policy);
                 board.move_board(&flip);
+                player ^= 1;
             }
         }
         if (!failed) {

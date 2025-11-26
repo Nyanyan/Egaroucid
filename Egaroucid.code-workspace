@@ -88,7 +88,8 @@
 			"xtr1common": "cpp",
 			"xtree": "cpp",
 			"xutility": "cpp",
-			"memory_resource": "cpp"
+			"memory_resource": "cpp",
+			"codecvt": "cpp"
 		}
 	}
 }
