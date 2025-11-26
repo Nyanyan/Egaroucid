@@ -226,7 +226,7 @@
             "generate_random_board": "生成随机局面",
             "generate": "生成",
             "generate_n_moves": "生成的局面步数",
-            "score_range": "分数范围 ±"
+            "score_range": "分数范围"
         },
         "convert": {
             "convert": "转换视角",

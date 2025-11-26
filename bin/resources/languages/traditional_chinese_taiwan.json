@@ -226,7 +226,7 @@
             "generate_random_board": "生成隨機棋盤",
             "generate": "生成",
             "generate_n_moves": "步數",
-            "score_range": "分數範圍 ±"
+            "score_range": "分數範圍"
         },
         "convert": {
             "convert": "轉換視角",

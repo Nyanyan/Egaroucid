@@ -226,7 +226,7 @@
             "generate_random_board": "Generate Random Board",
             "generate": "Generate",
             "generate_n_moves": "Moves",
-            "score_range": "Score Range ±"
+            "score_range": "Score Range"
         },
         "convert": {
             "convert": "Convert",

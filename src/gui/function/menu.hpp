@@ -491,6 +491,11 @@ public:
             bar_circle1.draw(bar_circle_color);
             bar_circle2.x = value_to_bar_x(*bar_elem2);
             bar_circle2.draw(bar_circle_color);
+            // draw white rect at left end and black rect at right end of the bar
+            Rect left_label(bar_rect.x, bar_rect.y, MENU_BAR_HEIGHT, bar_rect.h);
+            Rect right_label(bar_rect.x + bar_rect.w - MENU_BAR_HEIGHT, bar_rect.y, MENU_BAR_HEIGHT, bar_rect.h);
+            left_label.draw(Palette::White);
+            right_label.draw(Palette::Black);
         }
         if (has_child) {
             font(U">").draw(font_size, rect.x + rect.w - menu_offset_x - menu_child_offset, rect.y + menu_offset_y, menu_font_color);
@@ -574,6 +579,8 @@ public:
         w += h;
         if (mode == MENU_MODE_BAR || mode == MENU_MODE_BAR_CHECK) {
             w += MENU_BAR_SIZE + bar_value_offset + bar_additional_offset;
+        } else if (mode == MENU_MODE_2BARS) {
+            w += MENU_BAR_SIZE + bar_value_offset * 3 + bar_additional_offset;
         }
         return std::make_pair(h, w);
     }
