@@ -2025,16 +2025,24 @@ class Book {
         //     }
         // }
 
-        std::unordered_map<Board, int, Book_hash> reduce_book_calculate_keeplist_bfs(std::unordered_map<Board, int, Book_hash> &root_list, int max_error_per_move, uint64_t *n_flags, std::unordered_map<Board, int, Book_hash> &keep_list, bool *doing) {
+        std::unordered_map<Board, int, Book_hash> reduce_book_calculate_keeplist_bfs(const int depth, std::unordered_map<Board, int, Book_hash> &root_list, int max_error_per_move, uint64_t *n_flags, std::unordered_map<Board, int, Book_hash> &keep_list, bool *doing) {
             std::unordered_map<Board, int, Book_hash> next_root_list;
             if (!(*doing)) {
                 return next_root_list;
             }
-
+            size_t root_list_size = root_list.size();
+            size_t entry_count = 0;
+            int last_percent = -1;
             for (const auto &entry: root_list) {
                 if (!(*doing)) {
                     break;
                 }
+                int percent = entry_count * 100 / root_list_size;
+                if (percent > last_percent) {
+                    last_percent = percent;
+                    std::cerr << "depth " << depth << " " << percent << "% " << "keep_list " << keep_list.size() + next_root_list.size() << std::endl;
+                }
+                ++entry_count;
                 Board board = entry.first.copy();
                 int remaining_error = entry.second;
                 Book_elem book_elem = get(board);
@@ -2050,26 +2058,27 @@ class Book {
                         board.move_board(&flip);
                             Board n_unique_board = representative_board(board);
                             int new_remaining_error = remaining_error - link_error;
-                            auto keep_itr = keep_list.find(n_unique_board);
-                            bool is_new_board = (keep_itr == keep_list.end());
-                            if (!is_new_board && keep_itr->second >= new_remaining_error) {
-                                // No improvement over existing keep_list entry
-                            } else {
-                                auto next_itr = next_root_list.find(n_unique_board);
-                                bool inserted = false;
-                                if (next_itr == next_root_list.end()) {
-                                    next_root_list.emplace(n_unique_board, new_remaining_error);
-                                    inserted = true;
-                                } else if (next_itr->second < new_remaining_error) {
-                                    next_itr->second = new_remaining_error;
-                                }
-                                if (is_new_board && inserted) {
-                                    ++(*n_flags);
-                                    if ((*n_flags) % 1000 == 0) {
-                                        // std::cerr << "keep " << (*n_flags) << " boards of " << book.size() << std::endl;
-                                    }
-                                }
+                            // auto keep_itr = keep_list.find(n_unique_board);
+                            // bool is_new_board = (keep_itr == keep_list.end());
+                            // if (!is_new_board && keep_itr->second >= new_remaining_error) {
+                            //     // No improvement over existing keep_list entry
+                            // } else {
+                            auto next_itr = next_root_list.find(n_unique_board);
+                            bool inserted = false;
+                            if (next_itr == next_root_list.end()) {
+                                next_root_list.emplace(n_unique_board, new_remaining_error);
+                                inserted = true;
+                            } else if (next_itr->second < new_remaining_error) {
+                                next_itr->second = new_remaining_error;
                             }
+                            // if (is_new_board && inserted) {
+                            if (inserted) {
+                                ++(*n_flags);
+                                // if ((*n_flags) % 1000 == 0) {
+                                //     std::cerr << "keep " << (*n_flags) << " boards of " << book.size() << std::endl;
+                                // }
+                            }
+                            // }
                         board.undo_board(&flip);
                     }
                 }
@@ -2209,7 +2218,7 @@ class Book {
             keep_list[root_unique] = max_line_error;
             ++n_flags;
             for (int depth = 0; depth < max_depth && !root_list.empty(); ++depth) {
-                std::unordered_map<Board, int, Book_hash> next_root_list = reduce_book_calculate_keeplist_bfs(root_list, max_error_per_move, &n_flags, keep_list, doing);
+                std::unordered_map<Board, int, Book_hash> next_root_list = reduce_book_calculate_keeplist_bfs(depth, root_list, max_error_per_move, &n_flags, keep_list, doing);
                 for (const auto &entry: next_root_list) {
                     auto keep_itr = keep_list.find(entry.first);
                     if (keep_itr == keep_list.end() || keep_itr->second < entry.second) {
