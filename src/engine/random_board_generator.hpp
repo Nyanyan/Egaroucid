@@ -11,7 +11,7 @@
 #include "ai.hpp"
 
 std::vector<int> random_board_generator(int score_range_min, int score_range_max, int n_moves, int light_level, int adjustment_level, bool *searching) {
-    int adjustment_n_moves = 1;
+    int adjustment_n_moves = std::min(2, n_moves);
     int light_n_moves = std::max(0, n_moves - adjustment_n_moves);
     std::cerr << "light_n_moves " << light_n_moves << std::endl;
     bool success = false;
@@ -48,6 +48,44 @@ std::vector<int> random_board_generator(int score_range_min, int score_range_max
             calc_flip(&flip, &board, policy);
             board.move_board(&flip);
             player ^= 1;
+        }
+        if (!failed) {
+            for (int i = 0; i < adjustment_n_moves - 1; ++i) {
+                if (board.is_end()) {
+                    failed = true;
+                    break;
+                }
+                if (board.get_legal() == 0) {
+                    board.pass();
+                    player ^= 1;
+                }
+                int alpha, beta;
+                if (player == WHITE) { // next: black
+                    alpha = score_range_min;
+                    beta = score_range_max;
+                } else { // next: white
+                    alpha = -score_range_max;
+                    beta = -score_range_min;
+                }
+                Search_result search_result = ai_range(board, adjustment_level, alpha, beta, searching);
+                int policy = search_result.policy;
+                if (!is_valid_policy(policy)) {
+                    std::cerr << "adjust failed, light " << idx_to_coord(policy) << " " << search_result.value << std::endl;
+                    int acceptable_loss = std::abs(std::round(dist(engine))) + 2;
+                    Search_result search_result2 = ai_accept_loss(board, light_level, acceptable_loss);
+                    int policy2 = search_result2.policy;
+                    res.emplace_back(policy2);
+                    calc_flip(&flip, &board, policy2);
+                    board.move_board(&flip);
+                    player ^= 1;
+                } else {
+                    std::cerr << "adjust " << idx_to_coord(policy) << " " << search_result.value << std::endl;
+                    res.emplace_back(policy);
+                    calc_flip(&flip, &board, policy);
+                    board.move_board(&flip);
+                    player ^= 1;
+                }
+            }
         }
         if (!failed) {
             if (board.is_end()) {
@@ -94,8 +132,8 @@ std::vector<int> random_board_generator(int score_range_min, int score_range_max
                     }
                 }
             } else {
-                res.emplace_back(policy);
                 std::cerr << "adjust " << idx_to_coord(policy) << " " << search_result.value << std::endl;
+                res.emplace_back(policy);
             }
         }
         if (!failed) {
