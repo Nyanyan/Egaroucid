@@ -396,7 +396,8 @@ struct Settings {
     int pv_length;
     std::string screenshot_saving_dir;
     bool show_value_when_ai_calculating;
-    int generate_random_board_score_range;
+    int generate_random_board_score_range_min;
+    int generate_random_board_score_range_max;
     bool show_hint_level;
 };
 
@@ -560,7 +561,8 @@ struct Menu_elements {
     bool save_this_branch;
     bool generate_random_board;
     int generate_random_board_moves;
-    int generate_random_board_score_range;
+    int generate_random_board_score_range_min;
+    int generate_random_board_score_range_max;
     // conversion
     bool convert_180;
     bool convert_90_clock;
@@ -680,7 +682,8 @@ struct Menu_elements {
         save_this_branch = false;
         generate_random_board = false;
         generate_random_board_moves = settings->generate_random_board_moves;
-        generate_random_board_score_range = settings->generate_random_board_score_range;
+        generate_random_board_score_range_min = settings->generate_random_board_score_range_min;
+        generate_random_board_score_range_max = settings->generate_random_board_score_range_max;
         convert_180 = false;
         convert_90_clock = false;
         convert_90_anti_clock = false;

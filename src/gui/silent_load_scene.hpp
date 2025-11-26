@@ -442,11 +442,18 @@ void init_settings(const Directories* directories, const Resources* resources, S
     if (init_settings_import_bool(setting_json, U"show_value_when_ai_calculating", &settings->show_value_when_ai_calculating) != ERR_OK) {
         std::cerr << "err49" << std::endl;
     }
-    if (init_settings_import_int(setting_json, U"generate_random_board_score_range", &settings->generate_random_board_score_range) != ERR_OK) {
-        std::cerr << "err50" << std::endl;
-    }
+    // not used
+    // if (init_settings_import_int(setting_json, U"generate_random_board_score_range", &settings->generate_random_board_score_range) != ERR_OK) {
+    //     std::cerr << "err50" << std::endl;
+    // }
     if (init_settings_import_bool(setting_json, U"show_hint_level", &settings->show_hint_level) != ERR_OK) {
         std::cerr << "err51" << std::endl;
+    }
+    if (init_settings_import_int(setting_json, U"generate_random_board_score_range_min", &settings->generate_random_board_score_range_min) != ERR_OK) {
+        std::cerr << "err52" << std::endl;
+    }
+    if (init_settings_import_int(setting_json, U"generate_random_board_score_range_max", &settings->generate_random_board_score_range_max) != ERR_OK) {
+        std::cerr << "err53" << std::endl;
     }
 }
 
