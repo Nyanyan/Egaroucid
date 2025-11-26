@@ -451,11 +451,20 @@ void init_settings(const Directories* directories, const Resources* resources, S
     if (init_settings_import_bool(setting_json, U"show_hint_level", &settings->show_hint_level) != ERR_OK) {
         std::cerr << "err51" << std::endl;
     }
+    int n_random_board_range_failed = 0;
     if (init_settings_import_int(setting_json, U"generate_random_board_score_range_min", &settings->generate_random_board_score_range_min) != ERR_OK) {
         std::cerr << "err52" << std::endl;
+        ++n_random_board_range_failed;
     }
     if (init_settings_import_int(setting_json, U"generate_random_board_score_range_max", &settings->generate_random_board_score_range_max) != ERR_OK) {
         std::cerr << "err53" << std::endl;
+        ++n_random_board_range_failed;
+    }
+    int generate_random_board_score_range;
+    if (n_random_board_range_failed == 2 && init_settings_import_int(setting_json, U"generate_random_board_score_range", &generate_random_board_score_range) == ERR_OK) {
+        settings->generate_random_board_score_range_min = -generate_random_board_score_range;
+        settings->generate_random_board_score_range_max = generate_random_board_score_range;
+        std::cerr << "use abs generate_random_board_score_range" << std::endl;
     }
 }
 
