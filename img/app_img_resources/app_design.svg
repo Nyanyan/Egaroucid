@@ -7,7 +7,7 @@
    viewBox="0 0 210 297"
    version="1.1"
    id="svg5"
-   inkscape:version="1.4 (86a8ad7, 2024-10-11)"
+   inkscape:version="1.4.2 (f4327f4, 2025-05-13)"
    sodipodi:docname="app_design.svg"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
@@ -37,9 +37,9 @@
      inkscape:snap-bbox-edge-midpoints="true"
      inkscape:bbox-nodes="true"
      inkscape:bbox-paths="true"
-     inkscape:zoom="0.32"
-     inkscape:cx="-229.6875"
-     inkscape:cy="550"
+     inkscape:zoom="0.64"
+     inkscape:cx="814.84375"
+     inkscape:cy="432.8125"
      inkscape:window-width="2104"
      inkscape:window-height="2041"
      inkscape:window-x="764"
@@ -1090,6 +1090,16 @@
        inkscape:export-filename="cross.png"
        inkscape:export-xdpi="35.549999"
        inkscape:export-ydpi="35.549999" />
+    <rect
+       style="fill:#5a577e;fill-opacity:0;stroke-width:0.499999"
+       id="rect10405-0-0-4"
+       width="142.8866"
+       height="142.8866"
+       x="154.23602"
+       y="5.6134028"
+       inkscape:export-filename="arrow_left.png"
+       inkscape:export-xdpi="35.549999"
+       inkscape:export-ydpi="35.549999" />
     <path
        style="fill:#919191;fill-opacity:1;stroke:#ffffff;stroke-width:20;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
        d="m 272.2676,182.44519 -93.17656,93.1766"
@@ -1391,5 +1401,25 @@
        d="m -469.26516,714.86943 4.23334,82.95299 -42.81,-42.81"
        id="path5-7-48-1"
        sodipodi:nodetypes="ccc" />
+    <g
+       id="g1"
+       transform="matrix(0,-0.26372197,0.26372197,0,158.1665,144.5694)"
+       style="fill:#aaaaaa;fill-opacity:1;stroke:#000000;stroke-width:29.8077;stroke-dasharray:none;stroke-opacity:1">
+	<polygon
+   class="st0"
+   points="345.774,512 345.774,340.624 464.1,340.624 256.015,88.146 47.916,340.624 166.242,340.624 166.242,512 "
+   style="fill:#aaaaaa;fill-opacity:1;stroke:#000000;stroke-width:29.8077;stroke-dasharray:none;stroke-opacity:1"
+   id="polygon1" />
+
+	<rect
+   x="23.573999"
+   class="st0"
+   width="464.85101"
+   height="72.132004"
+   style="fill:#aaaaaa;fill-opacity:1;stroke:#000000;stroke-width:29.8077;stroke-dasharray:none;stroke-opacity:1"
+   id="rect1-0"
+   y="0" />
+
+</g>
   </g>
 </svg>

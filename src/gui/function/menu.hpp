@@ -381,17 +381,36 @@ public:
                 const int circle1_x = handle1_x;
                 const int circle2_x = handle2_x;
                 const int cursor_value = cursor_to_bar_value(cursor_x);
-                if (cursor_x < circle1_x) {
-                    *bar_elem1 = std::min(cursor_value, *bar_elem2);
-                    bar_active_circle = 1;
-                } else if (cursor_x > circle2_x) {
-                    *bar_elem2 = std::max(cursor_value, *bar_elem1);
-                    bar_active_circle = 2;
-                } else if (bar_active_circle == 1) {
-                    *bar_elem1 = std::min(cursor_value, *bar_elem2);
+
+                // enforce minimum gap of 3 between bars and update only the active handle
+                const int MIN_BAR_GAP = 3;
+
+                if (bar_active_circle == 1) {
+                    // Move only the first handle, never modify bar_elem2 here
+                    int newv = std::clamp(cursor_value, min_elem, *bar_elem2 - MIN_BAR_GAP);
+                    *bar_elem1 = newv;
                 } else if (bar_active_circle == 2) {
-                    *bar_elem2 = std::max(cursor_value, *bar_elem1);
+                    // Move only the second handle, never modify bar_elem1 here
+                    int newv = std::clamp(cursor_value, *bar_elem1 + MIN_BAR_GAP, max_elem);
+                    *bar_elem2 = newv;
+                } else {
+                    // No specific handle active: pick the nearer handle and move only it
+                    int dist1 = cursor_x - circle1_x; if (dist1 < 0) dist1 = -dist1;
+                    int dist2 = cursor_x - circle2_x; if (dist2 < 0) dist2 = -dist2;
+                    if (dist1 <= dist2) {
+                        int newv = std::clamp(cursor_value, min_elem, *bar_elem2 - MIN_BAR_GAP);
+                        *bar_elem1 = newv;
+                        bar_active_circle = 1;
+                    } else {
+                        int newv = std::clamp(cursor_value, *bar_elem1 + MIN_BAR_GAP, max_elem);
+                        *bar_elem2 = newv;
+                        bar_active_circle = 2;
+                    }
                 }
+
+                // final clamp to ensure within [min_elem, max_elem]
+                *bar_elem1 = std::clamp(*bar_elem1, min_elem, max_elem);
+                *bar_elem2 = std::clamp(*bar_elem2, min_elem, max_elem);
             }
             is_active |= bar_changeable;
         } else if (mode == MENU_MODE_BAR || (mode == MENU_MODE_BAR_CHECK && (*is_checked))) {
