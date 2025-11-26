@@ -486,16 +486,14 @@ public:
         } else if (mode == MENU_MODE_2BARS) {
             String range_str = Format(*bar_elem1, U"~", *bar_elem2);
             font(range_str).draw(font_size, Arg::topRight(bar_sx - menu_child_offset - 4, rect.y + menu_offset_y), menu_font_color);
-            bar_rect.draw(bar_color);
+            Rect left_label(bar_rect.x, bar_rect.y, bar_rect.w / 2, bar_rect.h);
+            Rect right_label(bar_rect.x + bar_rect.w / 2, bar_rect.y, bar_rect.w - bar_rect.w / 2, bar_rect.h);
+            left_label.draw(Palette::White);
+            right_label.draw(Palette::Black);
             bar_circle1.x = value_to_bar_x(*bar_elem1);
             bar_circle1.draw(bar_circle_color);
             bar_circle2.x = value_to_bar_x(*bar_elem2);
             bar_circle2.draw(bar_circle_color);
-            // draw white rect at left end and black rect at right end of the bar
-            Rect left_label(bar_rect.x, bar_rect.y, MENU_BAR_HEIGHT, bar_rect.h);
-            Rect right_label(bar_rect.x + bar_rect.w - MENU_BAR_HEIGHT, bar_rect.y, MENU_BAR_HEIGHT, bar_rect.h);
-            left_label.draw(Palette::White);
-            right_label.draw(Palette::Black);
         }
         if (has_child) {
             font(U">").draw(font_size, rect.x + rect.w - menu_offset_x - menu_child_offset, rect.y + menu_offset_y, menu_font_color);
