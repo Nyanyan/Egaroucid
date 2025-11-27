@@ -74,7 +74,7 @@ private:
     double dx;
 
 public:
-    void draw(std::vector<History_elem> nodes1, std::vector<History_elem> nodes2, int n_discs, bool show_graph, int level, Font font, int color_type, bool show_graph_sum_of_loss) {
+    void draw(std::vector<History_elem> nodes1, std::vector<History_elem> nodes2, int n_discs, bool show_graph, int level, Font font, int color_type, bool show_graph_sum_of_loss, bool show_endgame_error) {
         std::vector<std::vector<Graph_loss_elem>> sum_of_loss_nodes1(2);
         std::vector<std::vector<Graph_loss_elem>> sum_of_loss_nodes2(2);
         resolution = GRAPH_RESOLUTION;
@@ -107,26 +107,31 @@ public:
         dx = (double)size_x / 60;
         RoundRect round_rect{ sx + GRAPH_RECT_DX, sy + GRAPH_RECT_DY, GRAPH_RECT_WIDTH, GRAPH_RECT_HEIGHT, GRAPH_RECT_RADIUS };
         round_rect.drawFrame(GRAPH_RECT_THICKNESS, graph_rect_color);
-        int n_selectivity_level_displayed = 0;
-        for (int i = 0; i < N_SELECTIVITY_LEVEL; ++i) {
-            if (selectivity_used_display[i]) {
-                ++n_selectivity_level_displayed;
+        if (!show_endgame_error) { // search probability
+            int n_selectivity_level_displayed = 0;
+            for (int i = 0; i < N_SELECTIVITY_LEVEL; ++i) {
+                if (selectivity_used_display[i]) {
+                    ++n_selectivity_level_displayed;
+                }
             }
-        }
-        int info_x = sx + GRAPH_RECT_DX + GRAPH_RECT_WIDTH / 2 - (LEVEL_PROB_WIDTH + LEVEL_INFO_WIDTH * n_selectivity_level_displayed) / 2;
-        int info_y = sy + LEVEL_INFO_DY;
-        Rect rect_prob{info_x, info_y, LEVEL_PROB_WIDTH, LEVEL_INFO_HEIGHT};
-        rect_prob.draw(graph_color);
-        font(language.get("info", "probability")).draw(font_size, Arg::center(info_x + LEVEL_PROB_WIDTH / 2, info_y + LEVEL_INFO_HEIGHT / 2), level_prob_color);
-        info_x += LEVEL_PROB_WIDTH;
-        for (int i = 0; i < N_SELECTIVITY_LEVEL; ++i) {
-            if (selectivity_used_display[i]) {
-                Rect rect_selectivity{ info_x, info_y, LEVEL_INFO_WIDTH, LEVEL_INFO_HEIGHT };
-                rect_selectivity.draw(color_selectivity[color_type][i]);
-                font(Format(SELECTIVITY_PERCENTAGE[i]) + U"%").draw(font_size, Arg::center(info_x + LEVEL_INFO_WIDTH / 2, info_y + LEVEL_INFO_HEIGHT / 2), level_info_color);
-                info_x += LEVEL_INFO_WIDTH;
+            int info_x = sx + GRAPH_RECT_DX + GRAPH_RECT_WIDTH / 2 - (LEVEL_PROB_WIDTH + LEVEL_INFO_WIDTH * n_selectivity_level_displayed) / 2;
+            int info_y = sy + LEVEL_INFO_DY;
+            Rect rect_prob{info_x, info_y, LEVEL_PROB_WIDTH, LEVEL_INFO_HEIGHT};
+            rect_prob.draw(graph_color);
+            font(language.get("info", "probability")).draw(font_size, Arg::center(info_x + LEVEL_PROB_WIDTH / 2, info_y + LEVEL_INFO_HEIGHT / 2), level_prob_color);
+            info_x += LEVEL_PROB_WIDTH;
+            for (int i = 0; i < N_SELECTIVITY_LEVEL; ++i) {
+                if (selectivity_used_display[i]) {
+                    Rect rect_selectivity{ info_x, info_y, LEVEL_INFO_WIDTH, LEVEL_INFO_HEIGHT };
+                    rect_selectivity.draw(color_selectivity[color_type][i]);
+                    font(Format(SELECTIVITY_PERCENTAGE[i]) + U"%").draw(font_size, Arg::center(info_x + LEVEL_INFO_WIDTH / 2, info_y + LEVEL_INFO_HEIGHT / 2), level_info_color);
+                    info_x += LEVEL_INFO_WIDTH;
+                }
             }
+        } else { // endgame error
+            
         }
+        // search depth
         bool is_mid_search;
         int depth;
         uint_fast8_t mpc_level;

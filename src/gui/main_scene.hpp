@@ -355,7 +355,7 @@ public:
         }
 
         // graph drawing
-        graph.draw(getData().graph_resources.nodes[0], getData().graph_resources.nodes[1], getData().graph_resources.n_discs, getData().menu_elements.show_graph, getData().menu_elements.level, getData().fonts.font, getData().menu_elements.change_color_type, getData().menu_elements.show_graph_sum_of_loss);
+        graph.draw(getData().graph_resources.nodes[0], getData().graph_resources.nodes[1], getData().graph_resources.n_discs, getData().menu_elements.show_graph, getData().menu_elements.level, getData().fonts.font, getData().menu_elements.change_color_type, getData().menu_elements.show_graph_sum_of_loss, getData().menu_elements.show_endgame_error);
 
         // info drawing
         draw_info(getData().colors, getData().history_elem, getData().fonts, getData().menu_elements, pausing_in_pass, principal_variation, getData().forced_openings.is_forced(getData().history_elem.board));
