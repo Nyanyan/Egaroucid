@@ -366,11 +366,16 @@ private:
                 }
             }
             if (nodes1[i].board.n_discs() >= HW2 - N_EMPTIES_ENDGAME_ERROR) {
+                if (nodes1[i].board.n_discs() - nodes1[i - 1].board.n_discs() != 1) {
+                    return false;
+                }
                 if (-SCORE_MAX <= nodes1[i].v && nodes1[i].v <= SCORE_MAX && -SCORE_MAX <= nodes1[i - 1].v && nodes1[i - 1].v <= SCORE_MAX) {
                     int error = nodes1[i].v - nodes1[i - 1].v;
                     *endgame_error_black += std::max(0, -error);
                     *endgame_error_white += std::max(0, error);
                     endgame_error_calculated = true;
+                } else {
+                    return false;
                 }
             }
         }
@@ -379,21 +384,31 @@ private:
                 if (i == 0) {
                     for (int j = (int)nodes1.size() - 1; j >= 0; --j) {
                         if (nodes1[j].board.n_discs() < nodes2[i].board.n_discs()) {
+                            if (nodes2[i].board.n_discs() - nodes1[j].board.n_discs() != 1) {
+                                return false;
+                            }
                             if (-SCORE_MAX <= nodes1[j].v && nodes1[j].v <= SCORE_MAX && -SCORE_MAX <= nodes2[i].v && nodes2[i].v <= SCORE_MAX) {
                                 int error = nodes2[i].v - nodes1[j].v;
                                 *endgame_error_black += std::max(0, -error);
                                 *endgame_error_white += std::max(0, error);
                                 endgame_error_calculated = true;
+                                break;
+                            } else {
+                                return false;
                             }
-                            break;
                         }
                     }
                 } else {
+                    if (nodes2[i].board.n_discs() - nodes2[i - 1].board.n_discs() != 1) {
+                        return false;
+                    }
                     if (-SCORE_MAX <= nodes2[i].v && nodes2[i].v <= SCORE_MAX && -SCORE_MAX <= nodes2[i - 1].v && nodes2[i - 1].v <= SCORE_MAX) {
                         int error = nodes2[i].v - nodes2[i - 1].v;
                         *endgame_error_black += std::max(0, -error);
                         *endgame_error_white += std::max(0, error);
                         endgame_error_calculated = true;
+                    } else {
+                        return false;
                     }
                 }
             }
