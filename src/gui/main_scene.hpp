@@ -667,6 +667,9 @@ private:
             getData().menu_elements.show_graph_value = false;
             getData().menu_elements.show_graph_sum_of_loss = true;
         }
+        if (shortcut_key == U"show_endgame_error") {
+            getData().menu_elements.show_endgame_error = !getData().menu_elements.show_endgame_error;
+        }
         // others
         if (shortcut_key == U"show_ai_focus") {
             getData().menu_elements.show_ai_focus = !getData().menu_elements.show_ai_focus;
