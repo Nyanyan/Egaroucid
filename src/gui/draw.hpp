@@ -158,12 +158,13 @@ void draw_info(Colors colors, History_elem history_elem, Fonts fonts, Menu_eleme
     }
     // 4th line
     if (menu_elements.show_ai_focus) {
+        // AI's focus Mode
         const double linewidth = 3;
         const double width = AI_FOCUS_INFO_COLOR_RECT_WIDTH - linewidth;
-        const double height = 20;
+        const double height = 22;
         const double lleft = INFO_SX + 10 + linewidth / 2;
         const double rright = INFO_SX + INFO_WIDTH - 10 - AI_FOCUS_INFO_COLOR_RECT_WIDTH + linewidth / 2 + width;
-        const double up = INFO_SY + dy - 2 + linewidth / 2;
+        const double up = INFO_SY + dy + linewidth / 2;
         Line{ lleft, up, lleft + width / 2, up }.draw(LineStyle::SquareDot, linewidth, colors.blue);
         Line{ lleft, up + height, lleft + width / 2, up + height }.draw(LineStyle::SquareDot, linewidth, colors.blue);
         Line{ lleft, up, lleft, up + height }.draw(LineStyle::SquareDot, linewidth, colors.blue);
@@ -179,9 +180,16 @@ void draw_info(Colors colors, History_elem history_elem, Fonts fonts, Menu_eleme
         Line{ rright - width / 2, up + height, rright - width, up + height }.draw(linewidth, colors.red);
         fonts.font(language.get("info", "bad_point")).draw(12, Arg::center(rright - width / 2, up + height / 2));
         String level_info = language.get("common", "level") + U" " + Format(menu_elements.level);
-        fonts.font(level_info).draw(12, Arg::center(INFO_SX + INFO_WIDTH / 2, up + height / 2));
+        bool is_forced = menu_elements.force_specified_openings && forced_opening_found;
+        if (is_forced) {
+            fonts.font(level_info).draw(11, Arg::center(INFO_SX + INFO_WIDTH / 2, up + height / 4));
+            fonts.font(language.get("info", "forced")).draw(11, Arg::center(INFO_SX + INFO_WIDTH / 2, up + height * 3 / 4));
+        } else {
+            fonts.font(level_info).draw(12, Arg::center(INFO_SX + INFO_WIDTH / 2, up + height / 2));
+        }
         dy += 23;
     } else {
+        // Normal Mode
         String level_info = language.get("common", "level") + U" " + Format(menu_elements.level) + U" (";
         if (menu_elements.level <= LIGHT_LEVEL) {
             level_info += language.get("info", "light");
