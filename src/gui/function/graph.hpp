@@ -129,7 +129,22 @@ public:
                 }
             }
         } else { // endgame error
-            
+            int endgame_error_black, endgame_error_white;
+            bool endgame_error_calculated = calc_endgame_error(nodes1, nodes2, &endgame_error_black, &endgame_error_white);
+            int endgame_error_cy = sy - 48;
+            int endgame_error_cx = sx + GRAPH_RECT_DX + GRAPH_RECT_WIDTH / 2;
+            constexpr int ENDGAME_ERROR_DISC_RADIUS = 7;
+            font(language.get("display", "graph", "endgame_error")).draw(12, Arg::leftCenter(sx + GRAPH_RECT_DX + 20, endgame_error_cy), Palette::White);
+            Line(endgame_error_cx, endgame_error_cy - 7, endgame_error_cx, endgame_error_cy + 7).draw(2, graph_color);
+            Circle(endgame_error_cx - 60, endgame_error_cy, ENDGAME_ERROR_DISC_RADIUS).draw(Palette::Black);
+            Circle(endgame_error_cx + 60, endgame_error_cy, ENDGAME_ERROR_DISC_RADIUS).draw(Palette::White);
+            if (endgame_error_calculated) {
+                font(-endgame_error_black).draw(16, Arg::rightCenter(endgame_error_cx - 10, endgame_error_cy), Palette::White);
+                font(-endgame_error_white).draw(16, Arg::leftCenter(endgame_error_cx + 10, endgame_error_cy), Palette::White);
+            } else {
+                font(U"-").draw(16, Arg::rightCenter(endgame_error_cx - 10, endgame_error_cy), Palette::White);
+                font(U"-").draw(16, Arg::leftCenter(endgame_error_cx + 10, endgame_error_cy), Palette::White);
+            }
         }
         // search depth
         bool is_mid_search;
@@ -337,6 +352,47 @@ private:
                 el.v *= -1;
             }
         }
+    }
+
+    bool calc_endgame_error(std::vector<History_elem> nodes1, std::vector<History_elem> nodes2, int *endgame_error_black, int *endgame_error_white) {
+        constexpr int N_EMPTIES_ENDGAME_ERROR = 20; // last 20 empties
+        *endgame_error_black = 0;
+        *endgame_error_white = 0;
+        bool endgame_error_calculated = false;
+        for (int i = 1; i < (int)nodes1.size(); ++i) {
+            if (nodes2.size()) {
+                if (nodes2[0].board.n_discs() <= nodes1[i].board.n_discs()) {
+                    break;
+                }
+            }
+            if (nodes1[i].board.n_discs() >= HW2 - N_EMPTIES_ENDGAME_ERROR) {
+                int error = nodes1[i].v - nodes1[i - 1].v;
+                *endgame_error_black += std::max(0, -error);
+                *endgame_error_white += std::max(0, error);
+                endgame_error_calculated = true;
+            }
+        }
+        for (int i = 0; i < (int)nodes2.size(); ++i) {
+            if (nodes2[i].board.n_discs() >= HW2 - N_EMPTIES_ENDGAME_ERROR) {
+                if (i == 0) {
+                    for (int j = (int)nodes1.size() - 1; j >= 0; --j) {
+                        if (nodes1[j].board.n_discs() < nodes2[i].board.n_discs()) {
+                            int error = nodes2[i].v - nodes1[j].v;
+                            *endgame_error_black += std::max(0, -error);
+                            *endgame_error_white += std::max(0, error);
+                            endgame_error_calculated = true;
+                            break;
+                        }
+                    }
+                } else {
+                    int error = nodes2[i].v - nodes2[i - 1].v;
+                    *endgame_error_black += std::max(0, -error);
+                    *endgame_error_white += std::max(0, error);
+                    endgame_error_calculated = true;
+                }
+            }
+        }
+        return endgame_error_calculated;
     }
 
     void calc_range(std::vector<History_elem> nodes1, std::vector<History_elem> nodes2) {
