@@ -93,7 +93,7 @@ inline std::vector<String> enumerate_direct_subdirectories(const std::string& do
     return result;
 }
 
-void draw_info(Colors colors, History_elem history_elem, Fonts fonts, Menu_elements menu_elements, bool pausing_in_pass, std::string principal_variation) {
+void draw_info(Colors colors, History_elem history_elem, Fonts fonts, Menu_elements menu_elements, bool pausing_in_pass, std::string principal_variation, bool forced_opening_found) {
     s3d::RoundRect round_rect{ INFO_SX, INFO_SY, INFO_WIDTH, INFO_HEIGHT, INFO_RECT_RADIUS };
     round_rect.drawFrame(INFO_RECT_THICKNESS, colors.white);
     // 1st line
@@ -195,6 +195,10 @@ void draw_info(Colors colors, History_elem history_elem, Fonts fonts, Menu_eleme
             level_info += language.get("info", "danger");
         }
         level_info += U")";
+        bool is_forced = menu_elements.force_specified_openings && forced_opening_found;
+        if (is_forced) {
+            level_info += U" " + language.get("info", "forced");
+        }
         fonts.font(level_info).draw(12, Arg::topCenter(INFO_SX + INFO_WIDTH / 2, INFO_SY + dy));
         dy += 18;
     }

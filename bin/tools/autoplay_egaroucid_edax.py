@@ -58,8 +58,8 @@ for idx in range(IDX_START, IDX_END + 1):
                 record += chr(ord('a') + x) + str(y + 1)
                 o.move(y, x)
             n_try += 1
-        if n_try > 1:
-            print(n_try, record)
+        # if n_try > 1:
+        #     print(n_try, record)
         while True:
             if not o.has_legal():
                 o.move_pass()

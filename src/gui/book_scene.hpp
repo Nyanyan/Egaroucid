@@ -627,7 +627,7 @@ public:
         }
         Scene::SetBackground(getData().colors.green);
         draw_board(getData().fonts, getData().colors, history_elem);
-        draw_info(getData().colors, history_elem, getData().fonts, getData().menu_elements, false, "");
+        draw_info(getData().colors, history_elem, getData().fonts, getData().menu_elements, false, "", false);
         getData().fonts.font(language.get("book", "book_deviate")).draw(25, 480, 200, getData().colors.white);
         draw_book_settings(getData().fonts.font, getData().colors.white, depth, error_per_move, error_sum, error_leaf);
         if (book_learning) {
@@ -906,7 +906,7 @@ public:
             }
         } else { // training
             draw_board(getData().fonts, getData().colors, history_elem);
-            draw_info(getData().colors, history_elem, getData().fonts, getData().menu_elements, false, "");
+            draw_info(getData().colors, history_elem, getData().fonts, getData().menu_elements, false, "", false);
             getData().fonts.font(language.get("book", "book_deviate_with_transcript")).draw(20, 480, 200, getData().colors.white);
             String depth_str = Format(depth);
             if (depth == BOOK_DEPTH_INF) {
@@ -1112,7 +1112,7 @@ public:
         }
         Scene::SetBackground(getData().colors.green);
         draw_board(getData().fonts, getData().colors, history_elem);
-        draw_info(getData().colors, history_elem, getData().fonts, getData().menu_elements, false, "");
+        draw_info(getData().colors, history_elem, getData().fonts, getData().menu_elements, false, "", false);
         getData().fonts.font(language.get("book", "book_store")).draw(25, 480, 200, getData().colors.white);
         draw_book_settings(getData().fonts.font, getData().colors.white, depth);
         if (book_learning) {
@@ -1338,7 +1338,7 @@ public:
         }
         Scene::SetBackground(getData().colors.green);
         draw_board(getData().fonts, getData().colors, history_elem);
-        draw_info(getData().colors, history_elem, getData().fonts, getData().menu_elements, false, "");
+        draw_info(getData().colors, history_elem, getData().fonts, getData().menu_elements, false, "", false);
         getData().fonts.font(language.get("book", "book_reduce")).draw(25, 480, 200, getData().colors.white);
         draw_book_settings(getData().fonts.font, getData().colors.white, depth, error_per_move, error_sum);
         if (book_learning) {
@@ -1431,7 +1431,7 @@ public:
         }
         Scene::SetBackground(getData().colors.green);
         draw_board(getData().fonts, getData().colors, history_elem);
-        draw_info(getData().colors, history_elem, getData().fonts, getData().menu_elements, false, "");
+        draw_info(getData().colors, history_elem, getData().fonts, getData().menu_elements, false, "", false);
         getData().fonts.font(language.get("book", "book_recalculate_leaf")).draw(25, 480, 200, getData().colors.white);
         draw_book_settings(getData().fonts.font, getData().colors.white, depth, error_per_move, error_sum);
         if (book_learning) {

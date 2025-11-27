@@ -266,7 +266,8 @@
         "white_advantage": "白有利",
         "good_point": "良いところ",
         "bad_point": "悪いところ",
-        "probability": "探索確率"
+        "probability": "探索確率",
+        "forced": "強制中"
     },
     "edit_board": {
         "player": "手番",

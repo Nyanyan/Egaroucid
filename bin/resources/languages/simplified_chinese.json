@@ -266,7 +266,8 @@
         "white_advantage": "白有优势",
         "good_point": "优点",
         "bad_point": "缺点",
-        "probability": "确定度"
+        "probability": "确定度",
+        "forced": "强制"
     },
     "edit_board": {
         "player": "玩家",

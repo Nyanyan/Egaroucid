@@ -266,7 +266,8 @@
         "white_advantage": "White's Ad.",
         "good_point": "Good Point",
         "bad_point": "Bad Point",
-        "probability": "Probability"
+        "probability": "Probability",
+        "forced": "Forced"
     },
     "edit_board": {
         "player": "Player",

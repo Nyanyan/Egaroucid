@@ -869,6 +869,10 @@ struct Forced_openings {
         openings.emplace_back(std::make_pair(str, weight));
         init();
     }
+
+    bool is_forced(Board board) {
+        return selected_moves.find(board) != selected_moves.end();
+    }
 };
 
 struct Common_resources {
