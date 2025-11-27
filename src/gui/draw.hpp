@@ -164,7 +164,7 @@ void draw_info(Colors colors, History_elem history_elem, Fonts fonts, Menu_eleme
         const double height = 22;
         const double lleft = INFO_SX + 10 + linewidth / 2;
         const double rright = INFO_SX + INFO_WIDTH - 10 - AI_FOCUS_INFO_COLOR_RECT_WIDTH + linewidth / 2 + width;
-        const double up = INFO_SY + dy + linewidth / 2;
+        const double up = INFO_SY + dy + linewidth / 2 + 2;
         Line{ lleft, up, lleft + width / 2, up }.draw(LineStyle::SquareDot, linewidth, colors.blue);
         Line{ lleft, up + height, lleft + width / 2, up + height }.draw(LineStyle::SquareDot, linewidth, colors.blue);
         Line{ lleft, up, lleft, up + height }.draw(LineStyle::SquareDot, linewidth, colors.blue);
