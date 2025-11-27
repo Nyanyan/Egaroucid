@@ -655,7 +655,7 @@ private:
         if (shortcut_key == U"show_principal_variation") {
             getData().menu_elements.show_principal_variation = !getData().menu_elements.show_principal_variation;
         }
-        // graph
+        // graph area
         if (shortcut_key == U"show_graph") {
             getData().menu_elements.show_graph = !getData().menu_elements.show_graph;
         }
