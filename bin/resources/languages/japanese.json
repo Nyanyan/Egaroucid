@@ -206,9 +206,11 @@
             "principal_variation": "最善筋"
         },
         "graph": {
+            "display_on_graph_area": "グラフエリアへの表示",
             "graph": "グラフ",
             "value": "評価値",
-            "sum_of_loss": "累積石損"
+            "sum_of_loss": "累積石損",
+            "endgame_error": "終盤石損"
         },
         "ai_focus": "AIの注目する場所",
         "laser_pointer": "レーザーポインタ",

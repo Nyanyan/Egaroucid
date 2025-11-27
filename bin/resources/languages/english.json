@@ -206,9 +206,11 @@
             "principal_variation": "Best Line"
         },
         "graph": {
+            "display_on_graph_area": "On Graph Area",
             "graph": "Graph",
             "value": "Evaluation",
-            "sum_of_loss": "Sum of Loss"
+            "sum_of_loss": "Sum of Loss",
+            "endgame_error": "Endgame Error"
         },
         "ai_focus": "AI's Focus",
         "laser_pointer": "Laser Pointer",

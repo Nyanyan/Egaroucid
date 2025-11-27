@@ -206,9 +206,11 @@
             "principal_variation": "AI推荐变化"
         },
         "graph": {
+            "display_on_graph_area": "图像显示",
             "graph": "图像",
             "value": "双方估值变化",
-            "sum_of_loss": "双方累计损子数"
+            "sum_of_loss": "双方累计损子数",
+            "endgame_error": "终局错误"
         },
         "ai_focus": "AI聚焦的领域",
         "laser_pointer": "激光笔",

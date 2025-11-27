@@ -63,10 +63,11 @@ std::vector<Shortcut_key_elem> shortcut_keys_default = {
     // info area
     {U"show_opening_name",      {},                     {{"display", "display"}, {"display", "info", "display_on_info_area"}, {"display", "info", "opening_name"}}},
     {U"show_principal_variation",   {},                 {{"display", "display"}, {"display", "info", "display_on_info_area"}, {"display", "info", "principal_variation"}}},
-    // graph
-    {U"show_graph",             {},                     {{"display", "display"}, {"display", "graph", "graph"}}},
-    {U"show_graph_value",       {U"D"},                 {{"display", "display"}, {"display", "graph", "graph"}, {"display", "graph", "value"}}},
-    {U"show_graph_sum_of_loss", {U"S"},                 {{"display", "display"}, {"display", "graph", "graph"}, {"display", "graph", "sum_of_loss"}}},
+    // graph area
+    {U"show_graph",             {},                     {{"display", "display"}, {"display", "graph", "display_on_graph_area"}, {"display", "graph", "graph"}}},
+    {U"show_graph_value",       {U"D"},                 {{"display", "display"}, {"display", "graph", "display_on_graph_area"}, {"display", "graph", "graph"}, {"display", "graph", "value"}}},
+    {U"show_graph_sum_of_loss", {U"S"},                 {{"display", "display"}, {"display", "graph", "display_on_graph_area"}, {"display", "graph", "graph"}, {"display", "graph", "sum_of_loss"}}},
+    {U"show_endgame_error",     {},                     {{"display", "display"}, {"display", "graph", "display_on_graph_area"}, {"display", "graph", "endgame_error"}}},
     // others
     {U"show_ai_focus",          {},                     {{"display", "display"}, {"display", "ai_focus"}}},
     {U"show_laser_pointer",     {U"P"},                 {{"display", "display"}, {"display", "laser_pointer"}}},

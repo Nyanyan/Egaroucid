@@ -83,6 +83,7 @@ void init_default_settings(const Directories* directories, const Resources* reso
     settings->generate_random_board_score_range_min = -64;
     settings->generate_random_board_score_range_max = 64;
     settings->show_hint_level = true;
+    settings->show_endgame_error = false;
 }
 
 int init_settings_import_int(JSON &json, String key, int* res) {
@@ -465,6 +466,9 @@ void init_settings(const Directories* directories, const Resources* resources, S
         settings->generate_random_board_score_range_min = -generate_random_board_score_range;
         settings->generate_random_board_score_range_max = generate_random_board_score_range;
         std::cerr << "use abs generate_random_board_score_range" << std::endl;
+    }
+    if (init_settings_import_bool(setting_json, U"show_endgame_error", &settings->show_endgame_error) != ERR_OK) {
+        std::cerr << "err54" << std::endl;
     }
 }
 

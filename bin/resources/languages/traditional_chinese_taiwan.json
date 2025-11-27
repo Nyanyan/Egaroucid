@@ -206,9 +206,11 @@
             "principal_variation": "最佳變化路線"
         },
         "graph": {
+            "display_on_graph_area": "顯示於圖表區",
             "graph": "圖表",
             "value": "評分值",
-            "sum_of_loss": "總損失值"
+            "sum_of_loss": "總損失值",
+            "endgame_error": "終局錯誤"
         },
         "ai_focus": "AI的注視點",
         "laser_pointer": "雷射筆",

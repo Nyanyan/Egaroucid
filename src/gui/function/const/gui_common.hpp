@@ -400,6 +400,7 @@ struct Settings {
     int generate_random_board_score_range_min;
     int generate_random_board_score_range_max;
     bool show_hint_level;
+    bool show_endgame_error;
 };
 
 struct Fonts {
@@ -510,6 +511,7 @@ struct Menu_elements {
     bool show_ai_focus;
     int pv_length;
     bool show_value_when_ai_calculating;
+    bool show_endgame_error;
 
     // book
     bool book_start_deviate;
@@ -636,6 +638,7 @@ struct Menu_elements {
         show_ai_focus = settings->show_ai_focus;
         pv_length = settings->pv_length;
         show_value_when_ai_calculating = settings->show_value_when_ai_calculating;
+        show_endgame_error = settings->show_endgame_error;
 
         book_start_deviate = false;
         book_start_deviate_with_transcript = false;

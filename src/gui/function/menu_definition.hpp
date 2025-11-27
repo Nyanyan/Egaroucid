@@ -127,10 +127,14 @@ Menu create_menu(Menu_elements* menu_elements, Resources *resources, Font font, 
             side_menu.init_bar_check(language.get("display", "info", "principal_variation") + get_shortcut_key_info(U"show_principal_variation"), &menu_elements->pv_length, menu_elements->pv_length, PV_LENGTH_SETTING_MIN, PV_LENGTH_SETTING_MAX, &menu_elements->show_principal_variation, menu_elements->show_principal_variation, U"-");
             menu_e.push(side_menu);
         title.push(menu_e);
-        menu_e.init_check(language.get("display", "graph", "graph") + get_shortcut_key_info(U"show_graph"), &menu_elements->show_graph, menu_elements->show_graph);
-            side_menu.init_radio(language.get("display", "graph", "value") + get_shortcut_key_info(U"show_graph_value"), &menu_elements->show_graph_value, menu_elements->show_graph_value);
+        menu_e.init_button(language.get("display", "graph", "display_on_graph_area"), &menu_elements->dummy);
+            side_menu.init_check(language.get("display", "graph", "graph") + get_shortcut_key_info(U"show_graph"), &menu_elements->show_graph, menu_elements->show_graph);
+                side_side_menu.init_radio(language.get("display", "graph", "value") + get_shortcut_key_info(U"show_graph_value"), &menu_elements->show_graph_value, menu_elements->show_graph_value);
+                side_menu.push(side_side_menu);
+                side_side_menu.init_radio(language.get("display", "graph", "sum_of_loss") + get_shortcut_key_info(U"show_graph_sum_of_loss"), &menu_elements->show_graph_sum_of_loss, menu_elements->show_graph_sum_of_loss);
+                side_menu.push(side_side_menu);
             menu_e.push(side_menu);
-            side_menu.init_radio(language.get("display", "graph", "sum_of_loss") + get_shortcut_key_info(U"show_graph_sum_of_loss"), &menu_elements->show_graph_sum_of_loss, menu_elements->show_graph_sum_of_loss);
+            side_menu.init_check(language.get("display", "graph", "endgame_error") + get_shortcut_key_info(U"show_endgame_error"), &menu_elements->show_endgame_error, menu_elements->show_endgame_error);
             menu_e.push(side_menu);
         title.push(menu_e);
         menu_e.init_check(language.get("display", "ai_focus") + get_shortcut_key_info(U"show_ai_focus"), &menu_elements->show_ai_focus, menu_elements->show_ai_focus);
