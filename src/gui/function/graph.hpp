@@ -157,23 +157,31 @@ public:
             font(Format(level) + language.get("info", "lookahead")).draw(font_size, Arg::topCenter((sx + endsearch_bound_coord) / 2, sy + LEVEL_DEPTH_DY - 18), graph_color);
             font(language.get("info", "to_last_move")).draw(font_size, Arg::topCenter((sx + size_x + endsearch_bound_coord) / 2, sy + LEVEL_DEPTH_DY - 18), graph_color);
         }
-        for (int y = 0; y <= y_max - y_min; y += resolution) {
-            int yy = sy + dy * y;
-            if (show_graph_sum_of_loss) {
-                font(y_max - y).draw(font_size, sx - font(y_max - y).region(font_size, Point{ 0, 0 }).w - 10, yy - font(y_max - y).region(font_size, Point{ 0, 0 }).h / 2, graph_color);
-            } else {
-                if (y_max - y >= 0) {
+        // y scale
+        if (show_graph) {
+            for (int y = 0; y <= y_max - y_min; y += resolution) {
+                int yy = sy + dy * y;
+                if (show_graph_sum_of_loss) {
                     font(y_max - y).draw(font_size, sx - font(y_max - y).region(font_size, Point{ 0, 0 }).w - 10, yy - font(y_max - y).region(font_size, Point{ 0, 0 }).h / 2, graph_color);
-                } else if (y_max - y < 0) {
-                    font(std::abs(y_max - y)).draw(font_size, sx - font(std::abs(y_max - y)).region(font_size, Point{ 0, 0 }).w - 10, yy - font(y_max - y).region(font_size, Point{ 0, 0 }).h / 2, Palette::White);
+                } else {
+                    if (y_max - y >= 0) {
+                        font(y_max - y).draw(font_size, sx - font(y_max - y).region(font_size, Point{ 0, 0 }).w - 10, yy - font(y_max - y).region(font_size, Point{ 0, 0 }).h / 2, graph_color);
+                    } else if (y_max - y < 0) {
+                        font(std::abs(y_max - y)).draw(font_size, sx - font(std::abs(y_max - y)).region(font_size, Point{ 0, 0 }).w - 10, yy - font(y_max - y).region(font_size, Point{ 0, 0 }).h / 2, Palette::White);
+                    }
+                }
+                if (y_max - y == 0) {
+                    Line{ sx, yy, sx + size_x, yy }.draw(2, graph_color);
+                } else {
+                    Line{ sx, yy, sx + size_x, yy }.draw(1, graph_color);
                 }
             }
-            if (y_max - y == 0) {
-                Line{ sx, yy, sx + size_x, yy }.draw(2, graph_color);
-            } else {
-                Line{ sx, yy, sx + size_x, yy }.draw(1, graph_color);
-            }
+        } else {
+            // graph frame
+            Line{ sx, sy, sx + size_x, sy }.draw(1, graph_color);
+            Line{ sx, sy + size_y, sx + size_x, sy + size_y }.draw(1, graph_color);
         }
+        // x scale
         for (int x = 0; x <= 60; x += 10) {
             font(x).draw(font_size, sx + dx * x - font(x).region(font_size, Point{0, 0}).w / 2, sy + size_y + 5, graph_color);
             Line{ sx + dx * x, sy, sx + dx * x, sy + size_y }.draw(1, graph_color);
@@ -197,7 +205,7 @@ public:
             draw_graph_not_calculated(nodes1, graph_history_not_calculated_color);
             draw_graph_not_calculated(nodes2, graph_fork_not_calculated_color);
         }
-        if (!show_graph_sum_of_loss) {
+        if (show_graph && !show_graph_sum_of_loss) {
             Circle(sx, sy, 6).draw(Palette::Black);
             Circle(sx, sy + size_y, 6).draw(Palette::White);
         }
