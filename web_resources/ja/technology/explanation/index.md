@@ -82,7 +82,14 @@ minimax系統のアルゴリズムでは、計算量の問題で終局まで読�
 
 MCTSはもともと囲碁のために発展したアルゴリズムでした。囲碁ではminimax系統のアルゴリズムが使いにくかったのです。その原因が囲碁の評価関数の作りにくさにあったといいます。将棋ではNNUEという評価関数が強いようで、NNUE+minimax系統の組み合わせとPV-MCTSが拮抗しているらしいです。
 
-オセロにおいては、Logistelloに関する論文「Experiments with Multi-ProbCut and a New High-Quality Evaluation Function for Othello」でパターンを用いた評価関数が提案されてから、(それなりに)手軽に高精度の評価関数が作れるようになりました。ですので、評価関数の精度は、オセロにおいてはあまり問題になりません。この点で、オセロでminimax系統が向いていると言えます。
+オセロにおいては、Logistelloに関する論文[(Buro 1997)](https://skatgame.net/mburo/ps/improve.pdf), [(Buro 1999)](https://skatgame.net/mburo/ps/pattern.pdf)でパターンを用いた評価関数が提案されてから、(それなりに)手軽に高精度の評価関数が作れるようになりました。ですので、評価関数の精度は、オセロにおいてはあまり問題になりません。この点で、オセロでminimax系統が向いていると言えます。
+
+参考文献
+
+- (Buro 1997): Michael Buro: [Experiments with Multi-ProbCut and a new high-quality eval-uation function for Othello](https://skatgame.net/mburo/ps/improve.pdf), NECI Tech. Rep. 96 (1997)
+- (Buro 1999): Michael Buro: [From simple features to sophisticated evaluation functions](https://doi.org/10.1007/3-540-48957-6_8), in Proc. 1st Int. Comput. Games (Lecture Notes in Computer Science), 1999, pp. 126–145, [PDF](https://skatgame.net/mburo/ps/pattern.pdf)
+
+最終更新: 2025/11/29
 
 ### 合法手数
 
@@ -96,7 +103,13 @@ MCTSは評価関数を必要としない以外にも利点があります。そ�
 
 経験的にMCTS系統ではスコアを最大化するゲームが苦手と言われます。そのため、オセロではこの点でminimax系統が良いと言えると思います。
 
-ただ、2024年にMCTSでスコアを最大化するゲームを扱う手法が提案され、この手法が非常によくできているという印象を受けました。もしかしたら、スコア最大化の問題はMCTS側の工夫で解消できる問題かもしれません。その手法を提案している論文はこちら: [Self-Playを用いた深層強化学習におけるスコア分布予測型モデルの提案](http://id.nii.ac.jp/1001/00232803/)
+ただ、2024年にMCTSでスコアを最大化するゲームを扱う手法が提案され[(神子島・坂地・野田 2024)](http://id.nii.ac.jp/1001/00232803/)、この手法が非常によくできているという印象を受けました。もしかしたら、スコア最大化の問題はMCTS側の工夫で解消できる問題かもしれません。
+
+参考文献
+
+- (神子島・坂地・野田 2024): 神子島一弥, 坂地泰紀, 野田五十樹: [Self-Playを用いた深層強化学習におけるスコア分布予測型モデルの提案](http://id.nii.ac.jp/1001/00232803/), 研究報告ゲーム情報学（GI）, Vol. 2024-GI-51, No. 29, pp. 1-8
+
+最終更新: 2025/11/29
 
 ### 完全読みの実装
 
@@ -120,19 +133,25 @@ MCTS系統のアルゴリズムは完全読みのような厳密な探索には�
 
 ## 評価関数のモデル
 
-既存の強豪オセロAIに広く使われているパターン評価は、[Logistelloで提案](https://skatgame.net/mburo/ps/improve.pdf)され、今日のEdaxまでほとんど形を変えずに受け継がれています。Egaroucidもこのパターン評価をベースにしていますが、少し特徴量を追加しました。
+既存の強豪オセロAIに広く使われているパターン評価は、Logistelloで提案され[(Buro 1997)](https://skatgame.net/mburo/ps/improve.pdf), [(Buro 1999)](https://skatgame.net/mburo/ps/pattern.pdf)、今日のEdaxまでほとんど形を変えずに受け継がれています。Egaroucidもこのパターン評価をベースにしていますが、少し特徴量を追加しました。
 
 Egaroucidでは石自体をパターンとして評価する既存手法に追加の特徴量を加え、全ての得点の和を評価値としました。評価関数は1手を1つのフェーズとして合計60フェーズ用意し、それぞれ大量の学習データ(全フェーズ合計で18億局面)を用意し、Adamで最適化しました。
 
+参考文献
+
+- (Buro 1997): Michael Buro: [Experiments with Multi-ProbCut and a new high-quality eval-uation function for Othello](https://skatgame.net/mburo/ps/improve.pdf), NECI Tech. Rep. 96 (1997)
+- (Buro 1999): Michael Buro: [From simple features to sophisticated evaluation functions](https://doi.org/10.1007/3-540-48957-6_8), in Proc. 1st Int. Comput. Games (Lecture Notes in Computer Science), 1999, pp. 126–145, [PDF](https://skatgame.net/mburo/ps/pattern.pdf)
+
+最終更新: 2025/11/29
+
 ### 石評価パターン
 
-Egaroucid 7.5.0で盤面のパターンとして使ったのは以下です。
+Egaroucid 7.7.0で盤面のパターンとして使ったのは以下です。
 
 <div class="centering_box">
     <img class="pic2" src="img/patterns.png">
 </div>
-
-オセロでは着手可能数が形勢の評価に有効に使えるため、石のパターンから着手可能数について潜在的に情報が得られるよう、全ての3マス以上の直線的な連続パターンを網羅していると良いです。([From Simple Features to Sophisticated Evaluation Functions](https://skatgame.net/mburo/ps/pattern.pdf)より)
+オセロでは着手可能数が形勢の評価に有効に使えるため、石のパターンから着手可能数について潜在的に情報が得られるよう、全ての3マス以上の直線的な連続パターンを網羅していると良いです[(Buro 1999)](https://skatgame.net/mburo/ps/pattern.pdf)。
 
 これらのパターンを回転や折り返しして、以下に示す64個の特徴量を生成し、これらの特徴量につけられた点数の合計を評価値としています。
 
@@ -145,8 +164,13 @@ Egaroucid 7.5.0で盤面のパターンとして使ったのは以下です。
 <div class="centering_box">
     <img class="pic2" src="img/heatmap.png">
 </div>
-
 オセロでは一般に隅や辺の形が形勢に強く影響すると言われています。そのため、隅や辺のマスは多くのパターンで含むようにしています。
+
+参考文献
+
+- (Buro 1999): Michael Buro: [From simple features to sophisticated evaluation functions](https://doi.org/10.1007/3-540-48957-6_8), in Proc. 1st Int. Comput. Games (Lecture Notes in Computer Science), 1999, pp. 126–145, [PDF](https://skatgame.net/mburo/ps/pattern.pdf)
+
+最終更新: 2025/11/29
 
 ### その他の特徴量
 
@@ -222,9 +246,17 @@ Egaroucidは「前回のバージョンを使って自己対戦させ、デー�
 
 ### 最急降下法
 
-評価関数、特にパターン評価の最適化には、古くから最急降下法が使われてきました。これは[Logistelloで考案](https://skatgame.net/mburo/ps/improve.pdf)されたものです。最急降下法による最適化については、オセロAI Thellの作者による[文書](https://sealsoft.jp/thell/learning.pdf)が詳しいです。
+評価関数、特にパターン評価の最適化には、古くから最急降下法が使われてきました。これはLogistelloで考案されたものです[(Buro 1997)](https://skatgame.net/mburo/ps/improve.pdf), [(Buro 1999)](https://skatgame.net/mburo/ps/pattern.pdf)。最急降下法による最適化については、オセロAI Thellの作者による文書[(Seal Software 2005)](https://sealsoft.jp/thell/learning.pdf)が詳しいです。
 
 Egaroucidでは、ただの最急降下法では収束が遅いので、最急降下法の改良アルゴリズムであるAdamをCUDAで自前実装したものを使っています。なお、GPUメモリ(私の環境は24GB)に全ての学習データを載せることができるため、バッチ化は行っていません。
+
+参考文献
+
+- (Buro 1997): Michael Buro: [Experiments with Multi-ProbCut and a new high-quality eval-uation function for Othello](https://skatgame.net/mburo/ps/improve.pdf), NECI Tech. Rep. 96 (1997)
+- (Buro 1999): Michael Buro: [From simple features to sophisticated evaluation functions](https://doi.org/10.1007/3-540-48957-6_8), in Proc. 1st Int. Comput. Games (Lecture Notes in Computer Science), 1999, pp. 126–145, [PDF](https://skatgame.net/mburo/ps/pattern.pdf)
+- (Seal Software 2005): Seal Software: [リバーシの評価関数の最適化](https://sealsoft.jp/thell/learning.pdf) (2005)
+
+最終更新: 2025/11/29
 
 #### 学習データと検証データ
 
@@ -461,13 +493,17 @@ Negascoutについては、[note](https://note.com/nyanyan_cubetech/n/nf810b043f
 
 ### Multi-ProbCut
 
-これは古くからある手法で、[Logistelloで採用](https://skatgame.net/mburo/ps/improve.pdf)されたものです。Logistello以降も現在まで様々なオセロAIで採用されています。こちらについては今後丁寧に追記予定です(2024/06/10)。
+これは古くからある手法で、Logistelloで考案[(Buro 1997)](https://skatgame.net/mburo/ps/improve.pdf)されたものです。Logistello以降も現在まで様々なオセロAIで採用されています。こちらについては今後丁寧に追記予定です(2024/06/10)。
 
+参考文献
 
+- (Buro 1997): Michael Buro: [Experiments with Multi-ProbCut and a new high-quality eval-uation function for Othello](https://skatgame.net/mburo/ps/improve.pdf), NECI Tech. Rep. 96 (1997)
+
+最終更新: 2025/11/29
 
 ## 実装上の工夫による高速化
 
-ある局面を探索する基本的な流れは、「置換表による枝刈り→合法手生成→拡張置換表枝刈り→Muti-ProbCut→手の並べ替え→並べ替えた順番に次の局面を探索」となるわけですが、実は実装上の工夫により様々な省略が可能です。このアイデアは[枝刈り手法について](https://eukaryote.hateblo.jp/entry/2020/04/27/110543)という記事から得たもので、内容をアレンジしてEgaroucidで実装したものを解説します。Egaroucidでは、合法手生成から次の局面の探索までを以下の順番で実行しています。実装順序の工夫により、数%程度の高速化が見込めます。
+ある局面を探索する基本的な流れは、「置換表による枝刈り→合法手生成→拡張置換表枝刈り→Muti-ProbCut→手の並べ替え→並べ替えた順番に次の局面を探索」となるわけですが、実は実装上の工夫により様々な省略が可能です。このアイデアはeukaryo氏による[枝刈り手法について](https://eukaryote.hateblo.jp/entry/2020/04/27/110543)という記事から得たもので、内容をアレンジしてEgaroucidで実装したものを解説します。Egaroucidでは、合法手生成から次の局面の探索までを以下の順番で実行しています。実装順序の工夫により、数%程度の高速化が見込めます。
 
 <ol>
     <li>置換表による枝刈り
@@ -519,9 +555,15 @@ YBWCは非常に便利な並列化アルゴリズムなのですが、並列化�
 
 チェスAIや将棋AIでYBWCからの乗り換え先として有効だとされているのが[Lazy SMP](https://www.chessprogramming.org/Lazy_SMP)です。これは、スレッド間で置換表を共有していることをうまく利用して、それぞれのスレッドで色々な深さの探索を一斉に走らせるという並列化アルゴリズムです。実装は非常に簡単なのですが、かなり有用だとされています。
 
-Lazy SMPは詳しい実装がまとまっているWebサイトがないのですが、私は個人的にチェスAIに関する学位論文[A Complete Chess Engine Parallelized Using Lazy SMP](http://urn.nb.no/URN:NBN:no-56882)を参考にしました。
+Lazy SMPは詳しい実装がまとまっているWebサイトがないのですが、私は個人的にチェスAIに関する学位論文[(Østensen, 2016)](http://urn.nb.no/URN:NBN:no-56882)を参考にしました。
 
 Egaroucidではバージョン7.0.0より、中盤探索にLazy SMPを用いています。ただ、Lazy SMPだけだと計算時間が遅くなりすぎる場合がある(多分時間あたりの強さは向上しているのですが、決まった深さを探索するのは遅くなる場合があります)ので、YBWCも併用しています。また、終盤の読み切り以降はLazy SMPの良さが活かせないのでYBWCのみを使うようにしています。
+
+参考文献
+
+- (Østensen, 2016): Østensen Emil Fredrik: [A complete chess engine parallelized using lazy smp](http://urn.nb.no/URN:NBN:no-56882), MS thesis (2016) (2025年11月現在、アクセスできなくなってしまっているようです)
+
+最終更新: 2025/11/29
 
 ### 分散メモリ環境向けの並列化アルゴリズム
 
@@ -602,10 +644,13 @@ Egaroucidは序盤で中盤探索を行います。これは終局まで読み�
 
 
 
-
 ## GPUを使った探索
 
-Egaroucidではバージョン6.5.2現在、CPUのみを使って探索を行っています。私のパソコンにはGPUが搭載されていることもあり、将来的にはGPUを有効活用してオセロAIを動かしたいと思っています。
+Egaroucidではバージョン7.7.0現在、CPUのみを使って探索を行っています。しかし、GPUを使って探索すればもっと高速化できるのではないかと考え、実験してみたことがあります。先人の取り組みも含めて軽く解説します。
+
+
+
+私のパソコンにはGPUが搭載されていることもあり、将来的にはGPUを有効活用してオセロAIを動かしたいと思っています。
 
 方針としては、GPUでオセロの探索ができないか…？ということをやってみているのですが、結構大変そうです。一応、RTX3090 (GPU)でCore-i913900K (CPU)の探索スピードを超えるようなことは、できないことはなさそうな気がしています。非常に大変そうなのですが…
 
