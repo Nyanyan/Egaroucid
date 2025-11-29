@@ -299,9 +299,9 @@ Egaroucidでは、ただの最急降下法では収束が遅いので、最急�
 
 参考文献
 
-- (山名・星野 2024): 山名琢翔, 星野准一: [小規模な深層学習による圧縮を利用した強力なオセロAIの開発と評価](https://doi.org/10.20729/00239899), 情報処理学会論文誌, Vol.65, No.10, pp.1545-1553 (2024)
 - (Yamana, Hoshino 2025): Takuto Yamana, and Junichi Hoshino: [Compressing the Evaluation Function With Small-Scale Deep Learning on Othello](https://doi.org/10.1109/TG.2025.3624825), IEEE Transactions on Games (2025)
-- (山名 2022): 山名琢翔: 深層学習による圧縮を利用した強力なオセロAIの制作](https://ipsj.ixsq.nii.ac.jp/records/218735), 研究報告ゲーム情報学（GI）, Vol. 2022-GI-48, No. 5, pp. 1-5 (2022)
+- (山名・星野 2024): 山名琢翔, 星野准一: [小規模な深層学習による圧縮を利用した強力なオセロAIの開発と評価](https://doi.org/10.20729/00239899), 情報処理学会論文誌, Vol.65, No.10, pp.1545-1553 (2024)
+- (山名 2022): 山名琢翔: [深層学習による圧縮を利用した強力なオセロAIの制作](https://ipsj.ixsq.nii.ac.jp/records/218735), 研究報告ゲーム情報学（GI）, Vol. 2022-GI-48, No. 5, pp. 1-5 (2022)
 - 山名琢翔: [オセロAIの教科書 7 【評価】 パターン評価など](https://note.com/nyanyan_cubetech/n/nb6067ce73ccd)
 
 最終更新: 2025/11/29
