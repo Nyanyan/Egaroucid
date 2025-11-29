@@ -122,30 +122,44 @@ link21 = '<a font-size="1.5em" href="'
 link22 = '">'
 link23 = '</a>'
 
-tex_js = '''
-<script type="text/javascript" async>
-    window.MathJax = {
-        chtml: {
-        matchFontHeight: false
-        },
-        tex: {
-        inlineMath: [['$', '$']]
-        },
-        svg: {
-        fontCache: 'global'
-        }
-    };
-    (function () {
-        const script = document.createElement('script');
-        if (navigator.userAgent.includes("Chrome") || navigator.userAgent.includes("Firefox"))
-            script.src = "https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js";
-        else
-            script.src = "https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js";
-        script.async = true;
-        document.head.appendChild(script);
-    })();
+tex_js = '''<script type="text/x-mathjax-config">
+  MathJax.Hub.Config({
+    tex2jax: {
+      inlineMath: [['$', '$']]
+    }
+  });
+</script>
+<script
+  src="https://cdn.jsdelivr.net/npm/mathjax@2/MathJax.js?config=TeX-AMS_CHTML">
 </script>
 '''
+
+
+
+# '''
+# <script type="text/javascript" async>
+#     window.MathJax = {
+#         chtml: {
+#         matchFontHeight: false
+#         },
+#         tex: {
+#         inlineMath: [['$', '$']]
+#         },
+#         svg: {
+#         fontCache: 'global'
+#         }
+#     };
+#     (function () {
+#         const script = document.createElement('script');
+#         if (navigator.userAgent.includes("Chrome") || navigator.userAgent.includes("Firefox"))
+#             script.src = "https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js";
+#         else
+#             script.src = "https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js";
+#         script.async = true;
+#         document.head.appendChild(script);
+#     })();
+# </script>
+# '''
 
 def judge_raw_html(html_elem):
     html_tags = ['table', 'tr', 'td', 'th', 'a', 'div', 'ul', 'li', 'p', 'span', 'canvas', 'details', 'summary', 'code', 'label', 'script']
