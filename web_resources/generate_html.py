@@ -246,6 +246,22 @@ def create_html(dr):
         for code in codes:
             html_code = '<code>' + code[3:-3] + '</code>'
             elem = elem.replace(code, html_code)
+        # bullet list
+        if elem[:2] == '- ':
+            # use the original markdown lines to decide list boundaries
+            orig_lines = md.splitlines()
+            prev_is_li = False
+            next_is_li = False
+            if i > 0:
+                prev_is_li = orig_lines[i-1].lstrip().startswith('- ')
+            if i < len(orig_lines) - 1:
+                next_is_li = orig_lines[i+1].lstrip().startswith('- ')
+            if not prev_is_li:
+                elem = '<ul>\n<li>' + elem[2:] + '</li>'
+            else:
+                elem = '<li>' + elem[2:] + '</li>'
+            if not next_is_li:
+                elem += '\n</ul>'
         # paragraph
         if raw_html == 0 and len(elem):
             elem = '<p>' + elem + '</p>'
