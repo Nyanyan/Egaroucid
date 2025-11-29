@@ -122,16 +122,21 @@ link21 = '<a font-size="1.5em" href="'
 link22 = '">'
 link23 = '</a>'
 
-tex_js = '''<script type="text/x-mathjax-config">
-  MathJax.Hub.Config({
-    tex2jax: {
-      inlineMath: [['$', '$']]
-    }
-  });
-</script>
-<script
-  src="https://cdn.jsdelivr.net/npm/mathjax@2/MathJax.js?config=TeX-AMS_CHTML">
-</script>
+tex_js = ''' <link rel="stylesheet"
+        href="https://cdn.jsdelivr.net/npm/katex@0.16.25/dist/katex.min.css">
+<script defer
+        src="https://cdn.jsdelivr.net/npm/katex@0.16.25/dist/katex.min.js"></script>
+<script defer
+        src="https://cdn.jsdelivr.net/npm/katex@0.16.25/dist/contrib/auto-render.min.js"
+        onload="renderMathInElement(document.body, {
+        delimiters: [
+            {left: '$', right: '$', display: false},
+            {left: '$$', right: '$$', display: true}
+        ]
+        });"></script>
+<script defer
+        src="https://cdn.jsdelivr.net/npm/katex@0.16.25/dist/contrib/copy-tex.min.js"></script>
+
 '''
 
 
