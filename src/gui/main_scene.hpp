@@ -1554,15 +1554,32 @@ private:
                 //std::cerr << idx_to_coord(hint_infos[i].cell) << " " << hint_infos[i].value << std::endl;
                 int sx = BOARD_SX + (hint_infos[i].cell % HW) * BOARD_CELL_SIZE;
                 int sy = BOARD_SY + (hint_infos[i].cell / HW) * BOARD_CELL_SIZE;
-                Color color = getData().colors.white;
+                Color color;
                 Font font = getData().fonts.font;
-                if (hint_infos[i].value == best_score) {
-                    color = getData().colors.cyan;
+                if (hint_infos[i].value == best_score) { // best move: heavy
                     font = getData().fonts.font_heavy;
+                }
+                int value = (int)round(hint_infos[i].value);
+                if (hint_infos[i].type == 100 || hint_infos[i].type == AI_TYPE_BOOK) { // 100% or book
+                    if (value > 0) {
+                        color = getData().colors.cyan;
+                    } else if (value == 0) {
+                        color = getData().colors.white;
+                    } else {
+                        // color = getData().colors.purple;
+                        color = Color{153, 0, 153};
+                    }
+                } else { // midgame or endgame with MPC
+                    if (value >= 0) {
+                        color = getData().colors.yellow;
+                    } else {
+                        // color = getData().colors.purple;
+                        color = Color{255, 255, 128};
+                    }
                 }
                 if (simplified_hint_mode) {
                     // main value
-                    font((int)round(hint_infos[i].value)).draw(23, Arg::center(sx + BOARD_CELL_SIZE / 2, sy + BOARD_CELL_SIZE / 2), color);
+                    font(value).draw(23, Arg::center(sx + BOARD_CELL_SIZE / 2, sy + BOARD_CELL_SIZE / 2), color);
                     // level info for simple mode (only 100%)
                     if (hint_infos[i].type == 100) {
                         const double check_width = BOARD_CELL_SIZE * 0.2;
@@ -1570,7 +1587,7 @@ private:
                     }
                 } else {
                     // main value
-                    font((int)round(hint_infos[i].value)).draw(18, sx + 3, sy, color);
+                    font(value).draw(18, sx + 3, sy, color);
                     // level info
                     if (getData().menu_elements.show_hint_level) {
                         if (hint_infos[i].type == AI_TYPE_BOOK) {
