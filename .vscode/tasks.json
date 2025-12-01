@@ -24,7 +24,25 @@
             "type": "shell",
             "command": "${env:COMSPEC}",
             "options": {
-                "cwd": "${workspaceFolder}\\bin" // ★別のパスを指定
+                "cwd": "${workspaceFolder}\\bin"
+            },
+            "presentation": {
+                "echo": false,
+                "reveal": "always",
+                "focus": false,
+                "panel": "new",
+                "close": false
+            },
+            "runOptions": {
+                "runOn": "folderOpen"
+            }
+        },
+        {
+            "label": "Web Resources",
+            "type": "shell",
+            "command": "${env:COMSPEC}",
+            "options": {
+                "cwd": "${workspaceFolder}\\web_resources"
             },
             "presentation": {
                 "echo": false,
