@@ -312,7 +312,8 @@
         "add": "新增",
         "weight": "權重",
         "register": "註冊",
-        "no_opening_found": "尚無開局設定"
+        "no_opening_found": "尚無開局設定",
+        "update": "更新"
     },
     "tips": {
         "do_you_know": "你知道嗎？",

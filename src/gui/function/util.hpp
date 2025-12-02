@@ -144,3 +144,78 @@ std::vector<std::pair<Board, int>> get_board_player_list(Graph_resources graph_r
     }
     return res;
 }
+
+// Create a new folder in the specified directory
+bool create_folder_in_directory(const String& base_dir, const String& folder_name) {
+    if (folder_name.empty() || folder_name.contains(U"/") || folder_name.contains(U"\\")) {
+        std::cerr << "Invalid folder name" << std::endl;
+        return false;
+    }
+    
+    String folder_path = base_dir;
+    if (!folder_path.ends_with(U"/") && !folder_path.ends_with(U"\\")) {
+        folder_path += U"/";
+    }
+    folder_path += folder_name;
+    
+    if (FileSystem::Exists(folder_path)) {
+        std::cerr << "Folder already exists: " << folder_path.narrow() << std::endl;
+        return false;
+    }
+    
+    bool created = FileSystem::CreateDirectories(folder_path);
+    if (created) {
+        std::cerr << "Created folder: " << folder_path.narrow() << std::endl;
+    } else {
+        std::cerr << "Failed to create folder: " << folder_path.narrow() << std::endl;
+    }
+    return created;
+}
+
+// Move a folder from source to target directory
+bool move_folder(const String& source_path, const String& target_parent_path, const String& folder_name) {
+    String full_source = source_path;
+    String full_target = target_parent_path;
+    
+    if (!full_target.ends_with(U"/") && !full_target.ends_with(U"\\")) {
+        full_target += U"/";
+    }
+    full_target += folder_name;
+    
+    // Check if source and target are the same
+    if (FileSystem::FullPath(full_source) == FileSystem::FullPath(full_target)) {
+        std::cerr << "Source and target are the same" << std::endl;
+        return false;
+    }
+    
+    // Check for circular reference
+    String source_abs = FileSystem::FullPath(full_source);
+    String target_abs = FileSystem::FullPath(full_target);
+    if (target_abs.starts_with(source_abs)) {
+        std::cerr << "Cannot move folder into its own subdirectory" << std::endl;
+        return false;
+    }
+    
+    // Ensure target parent exists
+    if (!FileSystem::Exists(target_parent_path)) {
+        FileSystem::CreateDirectories(target_parent_path);
+    }
+    
+    // Check if target already exists
+    if (FileSystem::Exists(full_target)) {
+        std::cerr << "Target folder already exists" << std::endl;
+        return false;
+    }
+    
+    // Use system command for folder move
+    std::string cmd = "move \"" + full_source.narrow() + "\" \"" + full_target.narrow() + "\"";
+    int result = system(cmd.c_str());
+    
+    if (result == 0) {
+        std::cerr << "Successfully moved folder" << std::endl;
+        return true;
+    } else {
+        std::cerr << "Failed to move folder (error code: " << result << ")" << std::endl;
+        return false;
+    }
+}

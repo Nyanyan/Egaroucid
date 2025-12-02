@@ -312,7 +312,8 @@
         "add": "Add",
         "weight": "Weight",
         "register": "Register",
-        "no_opening_found": "No Opening Registered"
+        "no_opening_found": "No Opening Registered",
+        "update": "Update"
     },
     "tips": {
         "do_you_know": "Do you know?",

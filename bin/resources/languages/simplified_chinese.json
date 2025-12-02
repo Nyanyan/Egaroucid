@@ -312,7 +312,8 @@
         "add": "添加",
         "weight": "重量",
         "register": "登记",
-        "no_opening_found": "沒有登记開放"
+        "no_opening_found": "沒有登记開放",
+        "update": "更新"
     },
     "tips": {
         "do_you_know": "你知道吗?",
