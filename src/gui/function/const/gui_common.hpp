@@ -416,12 +416,12 @@ struct Fonts {
     // simplified chinese
     Font font_SC{ FontMethod::MSDF, FONT_DEFAULT_SIZE, Typeface::CJK_Regular_SC };
     Font font_bold_SC{ FontMethod::MSDF, FONT_DEFAULT_SIZE, Typeface::CJK_Regular_SC, FontStyle::Bold };
-    Font font_heavy_SC{ FontMethod::MSDF, FONT_DEFAULT_SIZE, Typeface::CJK_Regular_SC, FontStyle::Bold };
+    Font font_heavy_SC{ FontMethod::MSDF, FONT_DEFAULT_SIZE, Typeface::CJK_Regular_SC, FontStyle::BoldItalic };
 
     // traditional chinese (taiwan)
     Font font_TC_Taiwan{ FontMethod::MSDF, FONT_DEFAULT_SIZE, Typeface::CJK_Regular_TC };
     Font font_bold_TC_Taiwan{ FontMethod::MSDF, FONT_DEFAULT_SIZE, Typeface::CJK_Regular_TC, FontStyle::Bold };
-    Font font_heavy_TC_Taiwan{ FontMethod::MSDF, FONT_DEFAULT_SIZE, Typeface::CJK_Regular_TC, FontStyle::Bold };
+    Font font_heavy_TC_Taiwan{ FontMethod::MSDF, FONT_DEFAULT_SIZE, Typeface::CJK_Regular_TC, FontStyle::BoldItalic };
 
     void init(std::string lang) {
         std::cerr << "font init " << lang << std::endl;
