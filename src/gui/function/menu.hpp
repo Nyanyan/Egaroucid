@@ -382,6 +382,7 @@ public:
                 bar_active_circle = 0;
             }
             if (bar_changeable) {
+                std::cerr << "a" << std::endl;
                 Cursor::RequestStyle(CursorStyle::ResizeLeftRight);
                 const int cursor_x = Cursor::Pos().x;
                 const int circle1_x = handle1_x;
@@ -436,10 +437,19 @@ public:
             bar_active_circle = 0;
         }
         // if a child bar is active, other children must be inactive
+        // Only update children when this element is currently active or was active
+        // (to allow smooth transitions). When the parent is inactive, avoid
+        // calling child.update() so children don't react while parent is closed.
         bool active_child_bar_found = false;
         for (menu_elem& child: children) {
-            child.update();
-            active_child_bar_found |= child.bar_active();
+            if (is_active || was_active) {
+                child.update();
+                active_child_bar_found |= child.bar_active();
+            } else {
+                // Make sure inactive parent's children remain inactive and don't
+                // keep stale states (like bar_changeable) from previous frames.
+                child.set_inactive();
+            }
         }
         if (active_child_bar_found) {
             for (menu_elem& child: children) {
@@ -622,7 +632,7 @@ public:
         bar_active_circle = 0;
     }
 
-    int menu_mode() {
+    int menu_mode() const {
         return mode;
     }
 
