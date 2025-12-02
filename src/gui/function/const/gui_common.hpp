@@ -182,7 +182,8 @@ constexpr int OPENING_SETTING_N_GAMES_ON_WINDOW = 7;
 constexpr int OPENING_SETTING_LEFT_MARGIN = 10;
 constexpr int OPENING_SETTING_SX = 30 - OPENING_SETTING_LEFT_MARGIN;
 constexpr int OPENING_SETTING_SY = 65;
-constexpr int OPENING_SETTING_HEIGHT = 45;
+constexpr int OPENING_SETTING_HEIGHT = 40;  // Reduced from 45 to make room for fixed header
+constexpr int OPENING_SETTING_HEADER_HEIGHT = 30;  // Small height for fixed header display
 constexpr int OPENING_SETTING_WIDTH = WINDOW_SIZE_X - (OPENING_SETTING_SX + OPENING_SETTING_LEFT_MARGIN) * 2 + OPENING_SETTING_LEFT_MARGIN;
 
 // game saving constants
