@@ -235,35 +235,55 @@ int init_ai(Settings* settings, const Directories* directories, bool *stop_loadi
     return ERR_OK;
 }
 
-// Helper function to recursively load openings from folder structure
-void load_openings_recursive(Forced_openings* forced_openings, const std::string& base_dir, const std::string& subfolder) {
-    String base = Unicode::Widen(base_dir) + U"/";
-    if (!subfolder.empty()) {
-        base += Unicode::Widen(subfolder) + U"/";
-    }
+// Helper function to load openings from CSV files in forced_openings directory
+void load_openings_from_csv_files(Forced_openings* forced_openings, const std::string& forced_openings_dir) {
+    String base_dir = Unicode::Widen(forced_openings_dir);
+    String settings_path = base_dir + U"/settings.txt";
     
-    // Load openings from current folder
-    const String csv_path = base + U"summary.csv";
-    const CSV csv{ csv_path };
-    if (csv) {
-        for (size_t row = 0; row < csv.rows(); ++row) {
-            String transcript = csv[row][0];
-            double weight = ParseOr<double>(csv[row][1], 1.0);
-            bool enabled = ParseOr<bool>(csv[row][2], true);
-            
-            if (enabled) {  // Only add enabled openings
-                forced_openings->openings.emplace_back(std::make_pair(transcript.narrow(), weight));
+    // Load enabled states from settings file
+    std::unordered_map<String, bool> enabled_map;
+    if (FileSystem::Exists(settings_path)) {
+        TextReader reader(settings_path);
+        if (reader) {
+            String line;
+            while (reader.readLine(line)) {
+                auto parts = line.split(U'\t');
+                if (parts.size() >= 2) {
+                    String filename = parts[0];
+                    bool enabled = ParseOr<bool>(parts[1], true);
+                    enabled_map[filename] = enabled;
+                }
             }
         }
     }
     
-    // Recursively load from subfolders
-    std::vector<String> folders = enumerate_subdirectories_generic(base_dir, subfolder);
-    for (const auto& folder : folders) {
-        std::string next_path = subfolder;
-        if (!next_path.empty()) next_path += "/";
-        next_path += folder.narrow();
-        load_openings_recursive(forced_openings, base_dir, next_path);
+    // Enumerate all CSV files
+    Array<FilePath> list = FileSystem::DirectoryContents(base_dir);
+    std::vector<String> csv_filenames;
+    for (const auto& path : list) {
+        if (FileSystem::IsFile(path) && path.ends_with(U".csv")) {
+            String filename = FileSystem::FileName(path);
+            csv_filenames.emplace_back(filename);
+        }
+    }
+    std::sort(csv_filenames.begin(), csv_filenames.end());
+    
+    // Load openings from enabled CSV files
+    for (const auto& filename : csv_filenames) {
+        bool enabled = enabled_map.count(filename) ? enabled_map[filename] : true;
+        if (enabled) {
+            String csv_path = base_dir + U"/" + filename;
+            const CSV csv{ csv_path };
+            if (csv) {
+                for (size_t row = 0; row < csv.rows(); ++row) {
+                    if (csv[row].size() >= 2) {
+                        String transcript = csv[row][0];
+                        double weight = ParseOr<double>(csv[row][1], 1.0);
+                        forced_openings->openings.emplace_back(std::make_pair(transcript.narrow(), weight));
+                    }
+                }
+            }
+        }
     }
 }
 
@@ -292,13 +312,13 @@ int load_app(Directories* directories, Resources* resources, Settings* settings,
             FileSystem::CreateDirectories(forced_openings_dir_wide);
         }
         
-        // Migrate from old forced_openings.txt in appdata to new folder structure in document
+        // Migrate from old forced_openings.txt in appdata to default.csv in document directory
         std::string old_forced_openings_file = directories->appdata_dir + "/forced_openings.txt";
         String old_file_wide = Unicode::Widen(old_forced_openings_file);
-        String new_csv_path = forced_openings_dir_wide + U"/summary.csv";
+        String new_csv_path = forced_openings_dir_wide + U"/default.csv";
         
         if (FileSystem::Exists(old_file_wide)) {
-            // Migrate old format to new CSV format in document directory
+            // Migrate old format to new CSV format (default.csv) in document directory
             if (!FileSystem::Exists(new_csv_path)) {
                 std::ifstream ifs(old_forced_openings_file);
                 if (ifs) {
@@ -314,7 +334,6 @@ int load_app(Directories* directories, Resources* resources, Settings* settings,
                             if (is_valid_transcript(transcript)) {
                                 csv.write(Unicode::Widen(transcript));
                                 csv.write(Format(weight));
-                                csv.write(U"true");  // enabled by default
                                 csv.newLine();
                             }
                         } catch (const std::exception& e) {
@@ -323,16 +342,23 @@ int load_app(Directories* directories, Resources* resources, Settings* settings,
                     }
                     csv.save(new_csv_path);
                     ifs.close();
+                    
+                    // Create settings.txt with default.csv enabled
+                    String settings_path = forced_openings_dir_wide + U"/settings.txt";
+                    TextWriter writer(settings_path);
+                    if (writer) {
+                        writer.writeln(U"default.csv\ttrue");
+                    }
                 }
             }
             // Delete old file after migration
             FileSystem::Remove(old_file_wide);
-            std::cerr << "Migrated forced_openings.txt from appdata to document directory" << std::endl;
+            std::cerr << "Migrated forced_openings.txt from appdata to default.csv in document directory" << std::endl;
         }
         
-        // Load openings from new folder structure
+        // Load openings from CSV files
         forced_openings->openings.clear();
-        load_openings_recursive(forced_openings, forced_openings_dir, "");
+        load_openings_from_csv_files(forced_openings, forced_openings_dir);
         forced_openings->init();
     }
     return code;
