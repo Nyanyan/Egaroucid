@@ -1555,7 +1555,7 @@ private:
                 int sx = BOARD_SX + (hint_infos[i].cell % HW) * BOARD_CELL_SIZE;
                 int sy = BOARD_SY + (hint_infos[i].cell / HW) * BOARD_CELL_SIZE;
                 Color color;
-                Font font = getData().fonts.font;
+                Font font = getData().fonts.font_bold;
                 if (hint_infos[i].value == best_score) { // best move: heavy
                     font = getData().fonts.font_heavy;
                 }
@@ -1567,14 +1567,21 @@ private:
                         color = getData().colors.white;
                     } else {
                         // color = getData().colors.purple;
-                        color = Color{153, 0, 153};
+                        // Color{153, 0, 153}; // purple
+                        color = getData().colors.yellow;
                     }
                 } else { // midgame or endgame with MPC
                     if (value >= 0) {
-                        color = getData().colors.yellow;
+                        // color = Color{153, 0, 153};
+                        // color = Color(25, 25, 130); //getData().colors.darkblue;
+                        color = Color{ 160, 255, 180 }; // light green
+                        // color = Color{ 255, 202, 191 }; // light pink (not good for T)
                     } else {
                         // color = getData().colors.purple;
-                        color = Color{255, 255, 128};
+                        // color = Color{255, 255, 128}; // cream
+                        // color = Color{170, 20, 0};
+                        // color = Color(100, 17, 17); //getData().colors.darkred;
+                        color = getData().colors.yellow;
                     }
                 }
                 if (simplified_hint_mode) {
