@@ -1,2 +1,2 @@
 ﻿default.csv	true
-てすと1.csv	true
+ななめ.csv	true

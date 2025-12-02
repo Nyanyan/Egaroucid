@@ -57,6 +57,7 @@ class Opening_setting : public App::Scene {
         bool editing_csv_name;
         int editing_index;
         int editing_csv_index;
+        int saved_scroll_position;  // Save scroll position when editing starts
         TextAreaEditState text_area[2];
         TextAreaEditState csv_name_area;
         TextAreaEditState csv_rename_area;
@@ -97,6 +98,7 @@ class Opening_setting : public App::Scene {
             editing_index = -1;
             editing_csv_index = -1;
             selected_csv_index = -1;
+            saved_scroll_position = 0;
             load_csv_files();
         }
     
@@ -207,6 +209,10 @@ class Opening_setting : public App::Scene {
             } else if (adding_elem || editing_elem) {
                 back_button.draw();
                 if (back_button.clicked() || KeyEscape.down()) {
+                    if (editing_elem) {
+                        // Restore scroll position when canceling edit
+                        scroll_manager.set_strt_idx((double)saved_scroll_position);
+                    }
                     adding_elem = false;
                     editing_elem = false;
                     editing_index = -1;
@@ -241,6 +247,8 @@ class Opening_setting : public App::Scene {
                         editing_elem = false;
                         editing_index = -1;
                         init_scroll_manager();  // Update scroll manager after editing
+                        // Restore scroll position after update
+                        scroll_manager.set_strt_idx((double)saved_scroll_position);
                     }
                 } else {
                     if (can_be_registered) {
@@ -709,39 +717,13 @@ class Opening_setting : public App::Scene {
             // Text color: dimmed for disabled categories
             Color text_color = csv_file.enabled ? getData().colors.white : Color(128, 128, 128);
             
-            // Edit button for CSV file name (top-left corner)
-            bool edit_button_clicked = false;
-            bool mouse_on_edit_button = false;
+            // Edit button for CSV file name (top-left corner) - check click first
+            bool should_enter_edit_mode = false;
             if (!(adding_elem || editing_elem || editing_csv_name)) {
                 csv_edit_button.move(OPENING_SETTING_SX + 1, sy + 1);
                 csv_edit_button.draw();
-                Rect edit_button_rect(OPENING_SETTING_SX + 1, sy + 1, 15, 15);
-                mouse_on_edit_button = edit_button_rect.contains(Cursor::Pos());
                 if (csv_edit_button.clicked()) {
-                    edit_button_clicked = true;
-                }
-            }
-            
-            // Handle double-click to select/deselect (but not if clicking on edit button)
-            if (!editing_csv_name && !mouse_on_edit_button) {
-                static uint64_t last_click_time = 0;
-                static int last_clicked_csv = -1;
-                uint64_t current_time = Time::GetMillisec();
-                constexpr uint64_t DOUBLE_CLICK_TIME_MS = 400;
-                
-                if (rect.leftClicked() && !(adding_elem || editing_elem)) {
-                    if (current_time - last_click_time < DOUBLE_CLICK_TIME_MS && last_clicked_csv == idx) {
-                        // Double-click: toggle selection
-                        if (selected_csv_index == idx) {
-                            selected_csv_index = -1;  // Deselect
-                        } else {
-                            selected_csv_index = idx;  // Select
-                            rebuild_opening_buttons();
-                        }
-                        init_scroll_manager();
-                    }
-                    last_click_time = current_time;
-                    last_clicked_csv = idx;
+                    should_enter_edit_mode = true;
                 }
             }
             
@@ -763,6 +745,32 @@ class Opening_setting : public App::Scene {
                 
                 getData().fonts.font(display_filename).draw(18, Arg::leftCenter(icon_x + 20, sy + OPENING_SETTING_HEIGHT / 2), text_color);
             }
+            
+            // Handle double-click to select/deselect
+            if (!editing_csv_name && !should_enter_edit_mode) {
+                Rect edit_button_rect(OPENING_SETTING_SX + 1, sy + 1, 15, 15);
+                bool mouse_on_edit_button = edit_button_rect.contains(Cursor::Pos());
+                
+                if (!mouse_on_edit_button && rect.leftClicked() && !(adding_elem || editing_elem)) {
+                    static uint64_t last_click_time = 0;
+                    static int last_clicked_csv = -1;
+                    uint64_t current_time = Time::GetMillisec();
+                    constexpr uint64_t DOUBLE_CLICK_TIME_MS = 400;
+                    
+                    if (current_time - last_click_time < DOUBLE_CLICK_TIME_MS && last_clicked_csv == idx) {
+                        // Double-click: toggle selection
+                        if (selected_csv_index == idx) {
+                            selected_csv_index = -1;  // Deselect
+                        } else {
+                            selected_csv_index = idx;  // Select
+                            rebuild_opening_buttons();
+                        }
+                        init_scroll_manager();
+                    }
+                    last_click_time = current_time;
+                    last_clicked_csv = idx;
+                }
+            }
 
             // Toggle enabled/disabled with checkbox
             if (!(adding_elem || editing_elem || editing_csv_name)) {
@@ -782,8 +790,8 @@ class Opening_setting : public App::Scene {
             String count_text = U"(" + Format((int)csv_file.openings.size()) + U")";
             getData().fonts.font(count_text).draw(15, Arg::rightCenter(OPENING_SETTING_SX + OPENING_SETTING_WIDTH - 30, sy + OPENING_SETTING_HEIGHT / 2), text_color);
             
-            // Handle edit button click at the end (after all drawing)
-            if (edit_button_clicked) {
+            // Enter edit mode if button was clicked (at the end, after all drawing)
+            if (should_enter_edit_mode) {
                 editing_csv_name = true;
                 editing_csv_index = idx;
                 String display_filename = csv_file.filename;
@@ -876,6 +884,9 @@ class Opening_setting : public App::Scene {
                     edit_buttons[idx].move(OPENING_SETTING_SX + 40, sy + 1);
                     edit_buttons[idx].draw();
                     if (edit_buttons[idx].clicked()) {
+                        // Save current scroll position
+                        saved_scroll_position = scroll_manager.get_strt_idx_int();
+                        
                         editing_elem = true;
                         editing_index = idx;
                         text_area[0].text = opening.transcript;
