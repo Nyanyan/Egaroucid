@@ -209,14 +209,15 @@ class Opening_setting : public App::Scene {
             } else if (adding_elem || editing_elem) {
                 back_button.draw();
                 if (back_button.clicked() || KeyEscape.down()) {
-                    if (editing_elem) {
-                        // Restore scroll position when canceling edit
-                        scroll_manager.set_strt_idx((double)saved_scroll_position);
-                    }
+                    bool was_editing = editing_elem;  // Save state before clearing
                     adding_elem = false;
                     editing_elem = false;
                     editing_index = -1;
                     init_scroll_manager();  // Update scroll manager when exiting edit mode
+                    if (was_editing) {
+                        // Restore scroll position when canceling edit (after init)
+                        scroll_manager.set_strt_idx((double)saved_scroll_position);
+                    }
                 }
                 
                 std::string transcript = text_area[0].text.narrow();
@@ -247,7 +248,7 @@ class Opening_setting : public App::Scene {
                         editing_elem = false;
                         editing_index = -1;
                         init_scroll_manager();  // Update scroll manager after editing
-                        // Restore scroll position after update
+                        // Restore scroll position after update (after init)
                         scroll_manager.set_strt_idx((double)saved_scroll_position);
                     }
                 } else {
