@@ -1087,6 +1087,7 @@ class Opening_setting : public App::Scene {
             getData().forced_openings.openings.clear();
             
             for (const auto& csv_file : csv_files) {
+                // std::cerr << csv_file.filename.narrow() << " " << csv_file.enabled << std::endl;
                 if (csv_file.enabled) {  // Only load from enabled CSV files
                     for (const auto& opening : csv_file.openings) {
                         getData().forced_openings.openings.emplace_back(std::make_pair(opening.transcript.narrow(), opening.weight));
