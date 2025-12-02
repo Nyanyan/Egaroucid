@@ -48,7 +48,7 @@ private:
     Umigame_status umigame_status;
     Book_accuracy_status book_accuracy_status;
     bool changing_scene;
-    bool taking_screen_shot;
+    int taking_screen_shot_state;
     bool pausing_in_pass;
     bool putting_1_move_by_ai;
     int umigame_value_depth_before;
@@ -86,7 +86,7 @@ public:
         pass_button.init(PASS_BUTTON_SX, PASS_BUTTON_SY, PASS_BUTTON_WIDTH, PASS_BUTTON_HEIGHT, PASS_BUTTON_RADIUS, language.get("play", "pass"), 15, getData().fonts.font, getData().colors.white, getData().colors.black);
         need_start_game_button_calculation();
         changing_scene = false;
-        taking_screen_shot = false;
+        taking_screen_shot_state = 0;
         pausing_in_pass = false;
         putting_1_move_by_ai = false;
         umigame_value_depth_before = 0;
@@ -148,13 +148,6 @@ public:
 
         // opening
         update_opening();
-
-        // screen shot
-        if (taking_screen_shot) {
-            std::string transcript = get_transcript(getData().graph_resources, getData().history_elem);
-            take_screen_shot(getData().window_state.window_scale, getData().user_settings.screenshot_saving_dir, transcript);
-            taking_screen_shot = false;
-        }
 
         // analyze
         if (ai_status.analyzing) {
@@ -371,7 +364,7 @@ public:
         }
 
         // menu
-        bool draw_menu_flag = !taking_screen_shot && !changing_book_by_right_click;
+        bool draw_menu_flag = (taking_screen_shot_state == 0) && !changing_book_by_right_click;
         if (draw_menu_flag) {
             getData().menu.draw();
             menu_game();
@@ -390,9 +383,16 @@ public:
             getData().resources.laser_pointer.scaled(30.0 / getData().resources.laser_pointer.width()).drawAt(Cursor::Pos());
         }
 
-        // for screen shot
-        if (taking_screen_shot) {
+        // screen shot
+        if (taking_screen_shot_state == 1) {
+            taking_screen_shot_state = 2;
+        } else if (taking_screen_shot_state == 2) {
             ScreenCapture::RequestCurrentFrame();
+            taking_screen_shot_state = 3;
+        } else if (taking_screen_shot_state == 3) {
+            std::string transcript = get_transcript(getData().graph_resources, getData().history_elem);
+            take_screen_shot(getData().window_state.window_scale, getData().user_settings.screenshot_saving_dir, transcript);
+            taking_screen_shot_state = 0;
         }
     }
 
@@ -1053,7 +1053,7 @@ private:
             copy_board();
         }
         if (getData().menu_elements.screen_shot || shortcut_key == U"screen_shot") {
-            taking_screen_shot = true;
+            taking_screen_shot_state = 1;
             getData().menu_elements.screen_shot = false; // because skip drawing menu in next frame
         }
         if (getData().menu_elements.change_screenshot_saving_dir || shortcut_key == U"change_screenshot_saving_dir") {
