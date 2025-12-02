@@ -721,9 +721,14 @@ class Opening_setting : public App::Scene {
             // Edit button for CSV file name (top-left corner) - check click first
             bool should_enter_edit_mode = false;
             if (!(adding_elem || editing_elem || editing_csv_name)) {
+                // Draw edit button and check if it was clicked
+                // Must check click AFTER drawing with the correct position for this item
                 csv_edit_button.move(OPENING_SETTING_SX + 1, sy + 1);
                 csv_edit_button.draw();
-                if (csv_edit_button.clicked()) {
+                
+                // Create a rect for this specific edit button to check clicks independently
+                Rect edit_button_rect(OPENING_SETTING_SX + 1, sy + 1, 15, 15);
+                if (edit_button_rect.leftClicked()) {
                     should_enter_edit_mode = true;
                 }
             }
@@ -748,9 +753,11 @@ class Opening_setting : public App::Scene {
             }
             
             // Handle double-click to select/deselect
+            // Only process rect clicks if edit button was NOT clicked
             if (!editing_csv_name && !should_enter_edit_mode) {
+                // Check if mouse is on edit button area to exclude it from rect clicks
                 Rect edit_button_rect(OPENING_SETTING_SX + 1, sy + 1, 15, 15);
-                bool mouse_on_edit_button = edit_button_rect.contains(Cursor::Pos());
+                bool mouse_on_edit_button = edit_button_rect.leftPressed() || edit_button_rect.leftClicked();
                 
                 if (!mouse_on_edit_button && rect.leftClicked() && !(adding_elem || editing_elem)) {
                     static uint64_t last_click_time = 0;

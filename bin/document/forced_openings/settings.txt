@@ -1,2 +1,2 @@
-﻿default.csv	true
-ななめ.csv	true
+﻿ななめ.csv	true
+縦.csv	true
