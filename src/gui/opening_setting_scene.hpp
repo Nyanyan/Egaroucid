@@ -166,10 +166,27 @@ class Opening_setting : public App::Scene {
                     editing_csv_index = -1;
                 }
                 
+                // Remove invalid characters from CSV filename
+                // Invalid characters: newline, /, \, :, *, ?, ", <, >, |
+                String filtered_text;
+                for (auto ch : csv_rename_area.text) {
+                    if (ch != U'\n' && ch != U'\r' && 
+                        ch != U'/' && ch != U'\\' && 
+                        ch != U':' && ch != U'*' && 
+                        ch != U'?' && ch != U'"' && 
+                        ch != U'<' && ch != U'>' && 
+                        ch != U'|') {
+                        filtered_text += ch;
+                    }
+                }
+                if (csv_rename_area.text != filtered_text) {
+                    csv_rename_area.text = filtered_text;
+                    csv_rename_area.cursorPos = std::min((size_t)csv_rename_area.cursorPos, filtered_text.size());
+                    csv_rename_area.rebuildGlyphs();
+                }
+                
                 std::string csv_name_str = csv_rename_area.text.narrow();
-                bool can_rename = !csv_name_str.empty() && 
-                                 csv_name_str.find("/") == std::string::npos && 
-                                 csv_name_str.find("\\") == std::string::npos;
+                bool can_rename = !csv_name_str.empty();
                 
                 // Add .csv extension if not present
                 String new_csv_filename = Unicode::Widen(csv_name_str);
@@ -183,7 +200,7 @@ class Opening_setting : public App::Scene {
                     update_button.disable();
                 }
                 update_button.draw();
-                if (update_button.clicked() || (can_rename && KeyEnter.down())) {
+                if (update_button.clicked()) {
                     if (editing_csv_index >= 0 && editing_csv_index < (int)csv_files.size()) {
                         // Rename CSV file
                         String old_path = get_base_dir() + csv_files[editing_csv_index].filename;

@@ -1,2 +1,2 @@
-﻿ななめ.csv	true
-縦.csv	true
+﻿斜め取り.csv	true
+縦取り.csv	false
