@@ -313,7 +313,9 @@
         "weight": "權重",
         "register": "註冊",
         "no_opening_found": "尚無開局設定",
-        "update": "更新"
+        "update": "更新",
+        "new_category": "新類別",
+        "category_name": "類別名稱"
     },
     "tips": {
         "do_you_know": "你知道嗎？",

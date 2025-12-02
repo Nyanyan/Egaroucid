@@ -313,7 +313,9 @@
         "weight": "Weight",
         "register": "Register",
         "no_opening_found": "No Opening Registered",
-        "update": "Update"
+        "update": "Update",
+        "new_category": "New Category",
+        "category_name": "Category Name"
     },
     "tips": {
         "do_you_know": "Do you know?",

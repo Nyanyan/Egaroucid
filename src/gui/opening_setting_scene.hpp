@@ -78,7 +78,7 @@ class Opening_setting : public App::Scene {
     public:
         Opening_setting(const InitData& init) : IScene{ init } {
             add_button.init(BUTTON3_1_SX, BUTTON3_SY, BUTTON3_WIDTH, BUTTON3_HEIGHT, BUTTON3_RADIUS, language.get("opening_setting", "add"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
-            add_csv_button.init(BUTTON3_2_SX, BUTTON3_SY, BUTTON3_WIDTH, BUTTON3_HEIGHT, BUTTON3_RADIUS, U"New CSV", 20, getData().fonts.font, getData().colors.white, getData().colors.black);
+            add_csv_button.init(BUTTON3_2_SX, BUTTON3_SY, BUTTON3_WIDTH, BUTTON3_HEIGHT, BUTTON3_RADIUS, language.get("opening_setting", "new_category"), 20, getData().fonts.font, getData().colors.white, getData().colors.black);
             ok_button.init(BUTTON3_3_SX, BUTTON3_SY, BUTTON3_WIDTH, BUTTON3_HEIGHT, BUTTON3_RADIUS, language.get("common", "ok"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
             back_button.init(GO_BACK_BUTTON_BACK_SX, GO_BACK_BUTTON_SY, GO_BACK_BUTTON_WIDTH, GO_BACK_BUTTON_HEIGHT, GO_BACK_BUTTON_RADIUS, language.get("common", "back"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
             register_button.init(GO_BACK_BUTTON_GO_SX, GO_BACK_BUTTON_SY, GO_BACK_BUTTON_WIDTH, GO_BACK_BUTTON_HEIGHT, GO_BACK_BUTTON_RADIUS, language.get("opening_setting", "register"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
@@ -142,7 +142,7 @@ class Opening_setting : public App::Scene {
                 
                 // Draw CSV name input area
                 int sy = OPENING_SETTING_SY + 8;
-                getData().fonts.font(U"CSV Filename:").draw(20, Arg::leftCenter(OPENING_SETTING_SX + OPENING_SETTING_LEFT_MARGIN + 8, sy + OPENING_SETTING_HEIGHT / 2), getData().colors.white);
+                getData().fonts.font(language.get("opening_setting", "category_name") + U":").draw(20, Arg::leftCenter(OPENING_SETTING_SX + OPENING_SETTING_LEFT_MARGIN + 8, sy + OPENING_SETTING_HEIGHT / 2), getData().colors.white);
                 SimpleGUI::TextArea(csv_name_area, Vec2{OPENING_SETTING_SX + OPENING_SETTING_LEFT_MARGIN + 150, sy + OPENING_SETTING_HEIGHT / 2 - 17}, SizeF{400, 30}, SimpleGUI::PreferredTextAreaMaxChars);
                 
             } else if (adding_elem || editing_elem) {
@@ -565,8 +565,15 @@ class Opening_setting : public App::Scene {
             Rect rect(OPENING_SETTING_SX, sy, OPENING_SETTING_WIDTH, OPENING_SETTING_HEIGHT);
             
             bool is_selected = (idx == selected_csv_index);
-            Color bg_color = is_selected ? getData().colors.yellow :
-                            (row_index % 2 ? getData().colors.dark_green : getData().colors.green);
+            Color bg_color;
+            if (is_selected) {
+                bg_color = getData().colors.darkblue;
+            } else if (!csv_file.enabled) {
+                // Grayed out for disabled categories
+                bg_color = (row_index % 2 ? ColorF(0.3, 0.3, 0.3) : ColorF(0.25, 0.25, 0.25));
+            } else {
+                bg_color = (row_index % 2 ? getData().colors.dark_green : getData().colors.green);
+            }
             
             rect.draw(bg_color).drawFrame(1.0, getData().colors.white);
             
@@ -605,16 +612,19 @@ class Opening_setting : public App::Scene {
                 return;
             }
             
+            // Text color: dimmed for disabled categories
+            Color text_color = csv_file.enabled ? getData().colors.white : Color(127, 127, 127);
+            
             // Draw CSV filename
             String display_text = U"📄 " + csv_file.filename;
             if (!csv_file.enabled) {
                 display_text = U"[OFF] " + display_text;
             }
-            getData().fonts.font(display_text).draw(18, Arg::leftCenter(OPENING_SETTING_SX + OPENING_SETTING_LEFT_MARGIN + 8, sy + OPENING_SETTING_HEIGHT / 2), getData().colors.white);
+            getData().fonts.font(display_text).draw(18, Arg::leftCenter(OPENING_SETTING_SX + OPENING_SETTING_LEFT_MARGIN + 8, sy + OPENING_SETTING_HEIGHT / 2), text_color);
             
             // Draw opening count
             String count_text = U"(" + Format((int)csv_file.openings.size()) + U")";
-            getData().fonts.font(count_text).draw(15, Arg::rightCenter(OPENING_SETTING_SX + OPENING_SETTING_WIDTH - 30, sy + OPENING_SETTING_HEIGHT / 2), getData().colors.white);
+            getData().fonts.font(count_text).draw(15, Arg::rightCenter(OPENING_SETTING_SX + OPENING_SETTING_WIDTH - 30, sy + OPENING_SETTING_HEIGHT / 2), text_color);
         }
         
         // Draw opening item

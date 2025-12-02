@@ -313,7 +313,9 @@
         "weight": "重み",
         "register": "登録",
         "no_opening_found": "登録されている進行はありません",
-        "update": "更新"
+        "update": "更新",
+        "new_category": "新しいカテゴリ",
+        "category_name": "カテゴリ名"
     },
     "tips": {
         "do_you_know": "ご存知ですか？",
