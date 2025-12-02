@@ -331,8 +331,8 @@ class Opening_setting : public App::Scene {
             }
             int total = (int)csv_files.size() + total_openings;
             
-            // Add 1 for input area if adding or editing
-            if (adding_elem || editing_elem) {
+            // Add 1 for input area only if adding (not editing)
+            if (adding_elem) {
                 total += 1;
             }
             
@@ -652,68 +652,38 @@ class Opening_setting : public App::Scene {
                     }
                     
                     for (int j = 0; j < (int)csv_files[i].openings.size(); ++j) {
-                        // Draw input area for editing at the position of the edited item
-                        if (editing_elem && editing_index == j) {
-                            bool should_draw = false;
-                            int item_sy;
-                            
-                            if (fixed_header_shown && csv_row_for_selected < strt_idx_int) {
-                                // Fixed header is shown (CSV is scrolled out)
-                                int offset_from_csv = row_index - csv_row_for_selected - 1;  // -1 for CSV row itself
-                                if (offset_from_csv >= 0) {
-                                    // Calculate which child is visible in the window
-                                    int visible_start = strt_idx_int - csv_row_for_selected - 1;  // First visible child index
-                                    int local_offset = offset_from_csv - visible_start;
-                                    
-                                    if (local_offset >= 0 && local_offset < OPENING_SETTING_N_GAMES_ON_WINDOW) {
-                                        should_draw = true;
-                                        item_sy = sy + local_offset * OPENING_SETTING_HEIGHT;
-                                    }
+                        bool should_draw = false;
+                        int item_sy;
+                        
+                        if (fixed_header_shown && csv_row_for_selected < strt_idx_int) {
+                            // Fixed header is shown (CSV is scrolled out)
+                            // All children of the CSV should be drawn from the top
+                            int offset_from_csv = row_index - csv_row_for_selected - 1;  // -1 for CSV row itself
+                            if (offset_from_csv >= 0) {
+                                // Calculate which child is visible in the window
+                                int visible_start = strt_idx_int - csv_row_for_selected - 1;  // First visible child index
+                                int local_offset = offset_from_csv - visible_start;
+                                
+                                if (local_offset >= 0 && local_offset < OPENING_SETTING_N_GAMES_ON_WINDOW) {
+                                    should_draw = true;
+                                    item_sy = sy + local_offset * OPENING_SETTING_HEIGHT;
                                 }
-                            } else if (row_index >= strt_idx_int && row_index < strt_idx_int + OPENING_SETTING_N_GAMES_ON_WINDOW) {
-                                should_draw = true;
-                                int display_row = row_index - strt_idx_int;
-                                item_sy = sy + display_row * OPENING_SETTING_HEIGHT;
                             }
-                            
-                            if (should_draw) {
-                                draw_input_area(item_sy, row_index);
-                            }
-                            row_index++;
-                        } else {
-                            bool should_draw = false;
-                            int item_sy;
-                            
-                            if (fixed_header_shown && csv_row_for_selected < strt_idx_int) {
-                                // Fixed header is shown (CSV is scrolled out)
-                                // All children of the CSV should be drawn from the top
-                                int offset_from_csv = row_index - csv_row_for_selected - 1;  // -1 for CSV row itself
-                                if (offset_from_csv >= 0) {
-                                    // Calculate which child is visible in the window
-                                    int visible_start = strt_idx_int - csv_row_for_selected - 1;  // First visible child index
-                                    int local_offset = offset_from_csv - visible_start;
-                                    
-                                    if (local_offset >= 0 && local_offset < OPENING_SETTING_N_GAMES_ON_WINDOW) {
-                                        should_draw = true;
-                                        item_sy = sy + local_offset * OPENING_SETTING_HEIGHT;
-                                    }
-                                }
-                            } else if (row_index >= strt_idx_int && row_index < strt_idx_int + OPENING_SETTING_N_GAMES_ON_WINDOW) {
-                                should_draw = true;
-                                int display_row = row_index - strt_idx_int;
-                                item_sy = sy + display_row * OPENING_SETTING_HEIGHT;
-                            }
-                            
-                            if (should_draw) {
-                                draw_opening_item(j, item_sy, row_index);
-                            }
-                            row_index++;
+                        } else if (row_index >= strt_idx_int && row_index < strt_idx_int + OPENING_SETTING_N_GAMES_ON_WINDOW) {
+                            should_draw = true;
+                            int display_row = row_index - strt_idx_int;
+                            item_sy = sy + display_row * OPENING_SETTING_HEIGHT;
                         }
+                        
+                        if (should_draw) {
+                            draw_opening_item(j, item_sy, row_index);
+                        }
+                        row_index++;
                     }
                 }
             }
             
-            if (strt_idx_int + OPENING_SETTING_N_GAMES_ON_WINDOW < total_items + (adding_elem || editing_elem ? 1 : 0)) {
+            if (strt_idx_int + OPENING_SETTING_N_GAMES_ON_WINDOW < total_items + (adding_elem ? 1 : 0)) {
                 getData().fonts.font(U"︙").draw(15, Arg::bottomCenter = Vec2{ X_CENTER, 395}, getData().colors.white);
             }
         }
@@ -736,13 +706,16 @@ class Opening_setting : public App::Scene {
             
             rect.draw(bg_color).drawFrame(1.0, getData().colors.white);
             
-            // Edit button for CSV file name (top-left corner) - draw and check before other interactions
-            Rect edit_button_rect(OPENING_SETTING_SX + 1, sy + 1, 15, 15);
+            // Text color: dimmed for disabled categories
+            Color text_color = csv_file.enabled ? getData().colors.white : Color(128, 128, 128);
+            
+            // Edit button for CSV file name (top-left corner)
             bool edit_button_clicked = false;
             bool mouse_on_edit_button = false;
             if (!(adding_elem || editing_elem || editing_csv_name)) {
                 csv_edit_button.move(OPENING_SETTING_SX + 1, sy + 1);
                 csv_edit_button.draw();
+                Rect edit_button_rect(OPENING_SETTING_SX + 1, sy + 1, 15, 15);
                 mouse_on_edit_button = edit_button_rect.contains(Cursor::Pos());
                 if (csv_edit_button.clicked()) {
                     edit_button_clicked = true;
@@ -750,28 +723,27 @@ class Opening_setting : public App::Scene {
             }
             
             // Handle double-click to select/deselect (but not if clicking on edit button)
-            static uint64_t last_click_time = 0;
-            static int last_clicked_csv = -1;
-            uint64_t current_time = Time::GetMillisec();
-            constexpr uint64_t DOUBLE_CLICK_TIME_MS = 400;
-            
-            if (!edit_button_clicked && !mouse_on_edit_button && rect.leftClicked() && !(adding_elem || editing_elem || editing_csv_name)) {
-                if (current_time - last_click_time < DOUBLE_CLICK_TIME_MS && last_clicked_csv == idx) {
-                    // Double-click: toggle selection
-                    if (selected_csv_index == idx) {
-                        selected_csv_index = -1;  // Deselect
-                    } else {
-                        selected_csv_index = idx;  // Select
-                        rebuild_opening_buttons();
+            if (!editing_csv_name && !mouse_on_edit_button) {
+                static uint64_t last_click_time = 0;
+                static int last_clicked_csv = -1;
+                uint64_t current_time = Time::GetMillisec();
+                constexpr uint64_t DOUBLE_CLICK_TIME_MS = 400;
+                
+                if (rect.leftClicked() && !(adding_elem || editing_elem)) {
+                    if (current_time - last_click_time < DOUBLE_CLICK_TIME_MS && last_clicked_csv == idx) {
+                        // Double-click: toggle selection
+                        if (selected_csv_index == idx) {
+                            selected_csv_index = -1;  // Deselect
+                        } else {
+                            selected_csv_index = idx;  // Select
+                            rebuild_opening_buttons();
+                        }
+                        init_scroll_manager();
                     }
-                    init_scroll_manager();
+                    last_click_time = current_time;
+                    last_clicked_csv = idx;
                 }
-                last_click_time = current_time;
-                last_clicked_csv = idx;
             }
-            
-            // Text color: dimmed for disabled categories
-            Color text_color = csv_file.enabled ? getData().colors.white : Color(128, 128, 128);
             
             // Draw CSV filename (without .csv extension) or edit mode
             if (editing_csv_name && editing_csv_index == idx) {
@@ -790,35 +762,39 @@ class Opening_setting : public App::Scene {
                 getData().resources.folder.resized(16, 16).draw(icon_x, icon_y, text_color);
                 
                 getData().fonts.font(display_filename).draw(18, Arg::leftCenter(icon_x + 20, sy + OPENING_SETTING_HEIGHT / 2), text_color);
-                
-                // Handle edit button click (button was already drawn above)
-                if (edit_button_clicked) {
-                    editing_csv_name = true;
-                    editing_csv_index = idx;
-                    csv_rename_area.text = display_filename;
-                    csv_rename_area.cursorPos = csv_rename_area.text.size();
-                    csv_rename_area.rebuildGlyphs();
-                    csv_rename_area.active = true;
-                    return;
-                }
             }
-            
+
             // Toggle enabled/disabled with checkbox
-            int checkbox_x = OPENING_SETTING_SX + OPENING_SETTING_WIDTH - 20;
-            int checkbox_y = sy + OPENING_SETTING_HEIGHT / 2 - 8;
-            Texture checkbox_icon = csv_file.enabled ? getData().resources.checkbox : getData().resources.unchecked;
-            checkbox_icon.resized(16, 16).draw(checkbox_x, checkbox_y);
-            
-            Rect checkbox_rect(checkbox_x, checkbox_y, 16, 16);
-            if (checkbox_rect.leftClicked()) {
-                csv_files[idx].enabled = !csv_files[idx].enabled;
-                save_all_csv_files();
-                return;
+            if (!(adding_elem || editing_elem || editing_csv_name)) {
+                int checkbox_x = OPENING_SETTING_SX + OPENING_SETTING_WIDTH - 20;
+                int checkbox_y = sy + OPENING_SETTING_HEIGHT / 2 - 8;
+                Texture checkbox_icon = csv_file.enabled ? getData().resources.checkbox : getData().resources.unchecked;
+                checkbox_icon.resized(16, 16).draw(checkbox_x, checkbox_y);
+                
+                Rect checkbox_rect(checkbox_x, checkbox_y, 16, 16);
+                if (checkbox_rect.leftClicked()) {
+                    csv_files[idx].enabled = !csv_files[idx].enabled;
+                    save_all_csv_files();
+                }
             }
             
             // Draw opening count
             String count_text = U"(" + Format((int)csv_file.openings.size()) + U")";
             getData().fonts.font(count_text).draw(15, Arg::rightCenter(OPENING_SETTING_SX + OPENING_SETTING_WIDTH - 30, sy + OPENING_SETTING_HEIGHT / 2), text_color);
+            
+            // Handle edit button click at the end (after all drawing)
+            if (edit_button_clicked) {
+                editing_csv_name = true;
+                editing_csv_index = idx;
+                String display_filename = csv_file.filename;
+                if (display_filename.ends_with(U".csv")) {
+                    display_filename = display_filename.substr(0, display_filename.size() - 4);
+                }
+                csv_rename_area.text = display_filename;
+                csv_rename_area.cursorPos = csv_rename_area.text.size();
+                csv_rename_area.rebuildGlyphs();
+                csv_rename_area.active = true;
+            }
         }
         
         // Draw CSV file item as fixed header (when scrolled out of view)
@@ -860,14 +836,17 @@ class Opening_setting : public App::Scene {
             
             Rect rect(OPENING_SETTING_SX + 20, sy, OPENING_SETTING_WIDTH - 20, OPENING_SETTING_HEIGHT);
             
+            bool is_being_edited = (editing_elem && editing_index == idx);
             bool is_being_dragged = (drag_state.is_dragging && drag_state.dragged_opening_index == idx);
+            
             Color bg_color = is_being_dragged ? getData().colors.yellow.withAlpha(64) : 
                             (row_index % 2 ? getData().colors.dark_green : getData().colors.green);
             Color text_color = is_being_dragged ? getData().colors.white.withAlpha(128) : getData().colors.white;
             
             rect.draw(bg_color).drawFrame(1.0, getData().colors.white);
             
-            if (adding_elem || editing_elem) {
+            // Grayout if adding or editing other element
+            if ((adding_elem || (editing_elem && !is_being_edited))) {
                 rect.draw(ColorF{1.0, 1.0, 1.0, 0.5});
             }
             
@@ -907,7 +886,6 @@ class Opening_setting : public App::Scene {
                         text_area[1].rebuildGlyphs();
                         text_area[0].active = true;
                         text_area[1].active = false;
-                        init_scroll_manager();  // Update scroll manager when entering edit mode
                         return;
                     }
                 }
@@ -919,6 +897,34 @@ class Opening_setting : public App::Scene {
             // Draw weight
             getData().fonts.font(language.get("opening_setting", "weight") + U": ").draw(15, Arg::rightCenter(OPENING_SETTING_SX + OPENING_SETTING_LEFT_MARGIN + OPENING_SETTING_WIDTH - 90, sy + OPENING_SETTING_HEIGHT / 2), text_color);
             getData().fonts.font(Format(std::round(opening.weight))).draw(15, Arg::leftCenter(OPENING_SETTING_SX + OPENING_SETTING_LEFT_MARGIN + OPENING_SETTING_WIDTH - 90, sy + OPENING_SETTING_HEIGHT / 2), text_color);
+            
+            // If this element is being edited, draw text boxes on top
+            if (is_being_edited) {
+                SimpleGUI::TextArea(text_area[0], Vec2{OPENING_SETTING_SX + OPENING_SETTING_LEFT_MARGIN + 78, sy + OPENING_SETTING_HEIGHT / 2 - 15}, SizeF{480, 30}, SimpleGUI::PreferredTextAreaMaxChars);
+                SimpleGUI::TextArea(text_area[1], Vec2{OPENING_SETTING_SX + OPENING_SETTING_LEFT_MARGIN + OPENING_SETTING_WIDTH - 70, sy + OPENING_SETTING_HEIGHT / 2 - 15}, SizeF{60, 30}, SimpleGUI::PreferredTextAreaMaxChars);
+                
+                // Handle tab key to switch between text areas
+                for (int i = 0; i < 2; ++i) {
+                    std::string str = text_area[i].text.narrow();
+                    if (str.find("\t") != std::string::npos) {
+                        text_area[i].active = false;
+                        text_area[(i + 1) % 2].active = true;
+                        int tab_place = str.find("\t");
+                        std::string txt0;
+                        for (int j = 0; j < tab_place; ++j) {
+                            txt0 += str[j];
+                        }
+                        std::string txt1;
+                        for (int j = tab_place + 1; j < (int)str.size(); ++j) {
+                            txt1 += str[j];
+                        }
+                        text_area[i].text = Unicode::Widen(txt0);
+                        text_area[(i + 1) % 2].text = Unicode::Widen(txt1);
+                        text_area[i].rebuildGlyphs();
+                        text_area[(i + 1) % 2].rebuildGlyphs();
+                    }
+                }
+            }
         }
         
         // Draw input area for adding/editing
