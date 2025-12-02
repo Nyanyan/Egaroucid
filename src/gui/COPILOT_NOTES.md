@@ -44,11 +44,6 @@ button.init(..., language.get("opening_setting", "new_category"), ...);
 
 ## UI実装のベストプラクティス
 
-### カラーコード
-- 選択中の項目: `getData().colors.dark_blue`
-- 無効化された項目: グレーアウト `ColorF(0.3, 0.3, 0.3)`
-- 通常の項目: `getData().colors.green` / `getData().colors.dark_green` (交互)
-
 ### ボタンとUI要素
 - 必ず`language.get()`を使用
 - アイコンと組み合わせる場合も多言語テキストを使用
