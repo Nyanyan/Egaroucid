@@ -258,7 +258,7 @@ void load_openings_recursive(Forced_openings* forced_openings, const std::string
     }
     
     // Recursively load from subfolders
-    std::vector<String> folders = enumerate_direct_subdirectories(base_dir, subfolder);
+    std::vector<String> folders = enumerate_subdirectories_generic(base_dir, subfolder);
     for (const auto& folder : folders) {
         std::string next_path = subfolder;
         if (!next_path.empty()) next_path += "/";
@@ -284,7 +284,7 @@ int load_app(Directories* directories, Resources* resources, Settings* settings,
         // AI
         code = init_ai(settings, directories, stop_loading);
         // forced openings for AI
-        std::string forced_openings_dir = directories->appdata_dir + "/forced_openings";
+        std::string forced_openings_dir = directories->document_dir + "/forced_openings";
         String forced_openings_dir_wide = Unicode::Widen(forced_openings_dir);
         
         // Create forced_openings directory if it doesn't exist
@@ -292,37 +292,42 @@ int load_app(Directories* directories, Resources* resources, Settings* settings,
             FileSystem::CreateDirectories(forced_openings_dir_wide);
         }
         
-        // Migrate from old forced_openings.txt to new folder structure
+        // Migrate from old forced_openings.txt in appdata to new folder structure in document
         std::string old_forced_openings_file = directories->appdata_dir + "/forced_openings.txt";
         String old_file_wide = Unicode::Widen(old_forced_openings_file);
         String new_csv_path = forced_openings_dir_wide + U"/summary.csv";
         
-        if (FileSystem::Exists(old_file_wide) && !FileSystem::Exists(new_csv_path)) {
-            // Migrate old format to new CSV format
-            std::ifstream ifs(old_forced_openings_file);
-            if (ifs) {
-                CSV csv;
-                std::string line;
-                while (std::getline(ifs, line)) {
-                    std::istringstream iss(line);
-                    std::string transcript, weight_str;
-                    iss >> transcript >> weight_str;
-                    double weight;
-                    try {
-                        weight = stoi(weight_str);
-                        if (is_valid_transcript(transcript)) {
-                            csv.write(Unicode::Widen(transcript));
-                            csv.write(Format(weight));
-                            csv.write(U"true");  // enabled by default
-                            csv.newLine();
+        if (FileSystem::Exists(old_file_wide)) {
+            // Migrate old format to new CSV format in document directory
+            if (!FileSystem::Exists(new_csv_path)) {
+                std::ifstream ifs(old_forced_openings_file);
+                if (ifs) {
+                    CSV csv;
+                    std::string line;
+                    while (std::getline(ifs, line)) {
+                        std::istringstream iss(line);
+                        std::string transcript, weight_str;
+                        iss >> transcript >> weight_str;
+                        double weight;
+                        try {
+                            weight = stoi(weight_str);
+                            if (is_valid_transcript(transcript)) {
+                                csv.write(Unicode::Widen(transcript));
+                                csv.write(Format(weight));
+                                csv.write(U"true");  // enabled by default
+                                csv.newLine();
+                            }
+                        } catch (const std::exception& e) {
+                            // Skip invalid lines
                         }
-                    } catch (const std::exception& e) {
-                        // Skip invalid lines
                     }
+                    csv.save(new_csv_path);
+                    ifs.close();
                 }
-                csv.save(new_csv_path);
-                ifs.close();
             }
+            // Delete old file after migration
+            FileSystem::Remove(old_file_wide);
+            std::cerr << "Migrated forced_openings.txt from appdata to document directory" << std::endl;
         }
         
         // Load openings from new folder structure

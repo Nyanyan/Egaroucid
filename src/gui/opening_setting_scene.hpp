@@ -139,8 +139,12 @@ class Opening_setting : public App::Scene {
                 if (create_folder_button.clicked() || (can_create && KeyEnter.down())) {
                     if (create_folder_in_directory(get_base_dir(), Unicode::Widen(folder_name_str))) {
                         enumerate_current_dir();
+                        load_openings();
                     }
                     creating_folder = false;
+                    folder_name_area.text = U"";
+                    folder_name_area.cursorPos = 0;
+                    folder_name_area.rebuildGlyphs();
                 }
                 
                 // Draw folder name input area
@@ -283,7 +287,7 @@ class Opening_setting : public App::Scene {
         
         // Get base directory for current folder
         String get_base_dir() const {
-            String base = Unicode::Widen(getData().directories.appdata_dir) + U"/forced_openings/";
+            String base = Unicode::Widen(getData().directories.document_dir) + U"/forced_openings/";
             if (subfolder.size()) {
                 base += Unicode::Widen(subfolder) + U"/";
             }
@@ -424,7 +428,8 @@ class Opening_setting : public App::Scene {
             folders_display.clear();
             has_parent = !subfolder.empty();
             
-            std::vector<String> folders = enumerate_direct_subdirectories(getData().directories.appdata_dir + "/forced_openings", subfolder);
+            std::string base_dir = getData().directories.document_dir + "/forced_openings";
+            std::vector<String> folders = enumerate_subdirectories_generic(base_dir, subfolder);
             for (auto& folder : folders) {
                 folders_display.emplace_back(folder);
             }
@@ -784,7 +789,7 @@ class Opening_setting : public App::Scene {
         
         // Recursively load all enabled openings from a folder and its subfolders
         void load_all_openings_recursive(const std::string& folder_path) {
-            String base = Unicode::Widen(getData().directories.appdata_dir) + U"/forced_openings/";
+            String base = Unicode::Widen(getData().directories.document_dir) + U"/forced_openings/";
             if (!folder_path.empty()) {
                 base += Unicode::Widen(folder_path) + U"/";
             }
@@ -805,7 +810,8 @@ class Opening_setting : public App::Scene {
             }
             
             // Recursively load from subfolders
-            std::vector<String> folders = enumerate_direct_subdirectories(getData().directories.appdata_dir + "/forced_openings", folder_path);
+            std::string base_dir = getData().directories.document_dir + "/forced_openings";
+            std::vector<String> folders = enumerate_subdirectories_generic(base_dir, folder_path);
             for (const auto& folder : folders) {
                 std::string next_path = folder_path;
                 if (!next_path.empty()) next_path += "/";
@@ -909,7 +915,7 @@ class Opening_setting : public App::Scene {
             const Opening_abstract& opening = openings[opening_index];
             
             // Build target path
-            String target_base = Unicode::Widen(getData().directories.appdata_dir) + U"/forced_openings/";
+            String target_base = Unicode::Widen(getData().directories.document_dir) + U"/forced_openings/";
             if (!subfolder.empty()) {
                 target_base += Unicode::Widen(subfolder) + U"/";
             }
@@ -971,7 +977,7 @@ class Opening_setting : public App::Scene {
             const Opening_abstract& opening = openings[opening_index];
             
             // Build target path
-            String target_base = Unicode::Widen(getData().directories.appdata_dir) + U"/forced_openings/";
+            String target_base = Unicode::Widen(getData().directories.document_dir) + U"/forced_openings/";
             if (!target_folder.empty()) {
                 target_base += Unicode::Widen(target_folder) + U"/";
             }
@@ -1012,14 +1018,14 @@ class Opening_setting : public App::Scene {
         // Move folder to target folder (relative to current subfolder)
         void move_folder_to_folder_target(const std::string& source_folder, const std::string& target_folder) {
             // Build source path
-            String source_path = Unicode::Widen(getData().directories.appdata_dir) + U"/forced_openings/";
+            String source_path = Unicode::Widen(getData().directories.document_dir) + U"/forced_openings/";
             if (!subfolder.empty()) {
                 source_path += Unicode::Widen(subfolder) + U"/";
             }
             source_path += Unicode::Widen(source_folder);
             
             // Build target parent path
-            String target_parent = Unicode::Widen(getData().directories.appdata_dir) + U"/forced_openings/";
+            String target_parent = Unicode::Widen(getData().directories.document_dir) + U"/forced_openings/";
             if (!subfolder.empty()) {
                 target_parent += Unicode::Widen(subfolder) + U"/";
             }
@@ -1038,14 +1044,14 @@ class Opening_setting : public App::Scene {
             if (subfolder.empty()) return;  // Already at root
             
             // Build source path
-            String source_path = Unicode::Widen(getData().directories.appdata_dir) + U"/forced_openings/";
+            String source_path = Unicode::Widen(getData().directories.document_dir) + U"/forced_openings/";
             if (!subfolder.empty()) {
                 source_path += Unicode::Widen(subfolder) + U"/";
             }
             source_path += Unicode::Widen(folder_name);
             
             // Get parent folder path
-            String parent_path = Unicode::Widen(getData().directories.appdata_dir) + U"/forced_openings/";
+            String parent_path = Unicode::Widen(getData().directories.document_dir) + U"/forced_openings/";
             std::string parent_folder = subfolder;
             if (!parent_folder.empty() && parent_folder.back() == '/') parent_folder.pop_back();
             size_t pos = parent_folder.find_last_of('/');
