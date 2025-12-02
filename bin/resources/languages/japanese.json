@@ -199,7 +199,9 @@
             "display_on_disc": "石への表示",
             "last_move": "直前の手",
             "stable": "確定石",
-            "play_ordering": "着手順"
+            "play_ordering": "着手順",
+            "play_ordering_board_format": "盤面形式",
+            "play_ordering_transcript_format": "棋譜形式"
         },
         "info": {
             "display_on_info_area": "情報エリアへの表示",

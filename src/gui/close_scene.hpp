@@ -72,6 +72,8 @@ void save_settings(Menu_elements menu_elements, Settings settings, Directories d
     setting_json[U"show_hint_level"] = menu_elements.show_hint_level;
     setting_json[U"show_endgame_error"] = menu_elements.show_endgame_error;
     setting_json[U"hint_colorize"] = menu_elements.hint_colorize;
+    setting_json[U"play_ordering_board_format"] = menu_elements.play_ordering_board_format;
+    setting_json[U"play_ordering_transcript_format"] = menu_elements.play_ordering_transcript_format;
     setting_json.save(U"{}setting.json"_fmt(Unicode::Widen(directories.appdata_dir)));
 }
 

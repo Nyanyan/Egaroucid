@@ -651,6 +651,14 @@ private:
         if (shortcut_key == U"show_play_ordering") {
             getData().menu_elements.show_play_ordering = !getData().menu_elements.show_play_ordering;
         }
+        if (shortcut_key == U"play_ordering_board_format") {
+            getData().menu_elements.play_ordering_board_format = true;
+            getData().menu_elements.play_ordering_transcript_format = false;
+        }
+        if (shortcut_key == U"play_ordering_transcript_format") {
+            getData().menu_elements.play_ordering_board_format = false;
+            getData().menu_elements.play_ordering_transcript_format = true;
+        }
         // info area
         if (shortcut_key == U"show_opening_name") {
             getData().menu_elements.show_opening_name = !getData().menu_elements.show_opening_name;

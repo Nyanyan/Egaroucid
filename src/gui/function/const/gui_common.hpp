@@ -403,6 +403,8 @@ struct Settings {
     bool show_hint_level;
     bool show_endgame_error;
     bool hint_colorize;
+    bool play_ordering_board_format;
+    bool play_ordering_transcript_format;
 };
 
 struct Fonts {
@@ -499,6 +501,8 @@ struct Menu_elements {
     bool show_opening_on_cell;
     bool show_stable_discs;
     bool show_play_ordering;
+    bool play_ordering_board_format;
+    bool play_ordering_transcript_format;
     bool show_laser_pointer;
     bool show_log;
     bool show_last_move;
@@ -627,6 +631,8 @@ struct Menu_elements {
         show_opening_on_cell = settings->show_opening_on_cell;
         show_stable_discs = settings->show_stable_discs;
         show_play_ordering = settings->show_play_ordering;
+        play_ordering_board_format = settings->play_ordering_board_format;
+        play_ordering_transcript_format = settings->play_ordering_transcript_format;
         show_laser_pointer = settings->show_laser_pointer;
         show_log = settings->show_log;
         show_last_move = settings->show_last_move;

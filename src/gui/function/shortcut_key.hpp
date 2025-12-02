@@ -61,6 +61,8 @@ std::vector<Shortcut_key_elem> shortcut_keys_default = {
     {U"show_last_move",         {},                     {{"display", "display"}, {"display", "disc", "display_on_disc"}, {"display", "disc", "last_move"}}},
     {U"show_stable_discs",      {},                     {{"display", "display"}, {"display", "disc", "display_on_disc"}, {"display", "disc", "stable"}}},
     {U"show_play_ordering",     {},                     {{"display", "display"}, {"display", "disc", "display_on_disc"}, {"display", "disc", "play_ordering"}}},
+    {U"play_ordering_board_format", {},                 {{"display", "display"}, {"display", "disc", "display_on_disc"}, {"display", "disc", "play_ordering"}, {"display", "disc", "play_ordering_board_format"}}},
+    {U"play_ordering_transcript_format",    {},         {{"display", "display"}, {"display", "disc", "display_on_disc"}, {"display", "disc", "play_ordering"}, {"display", "disc", "play_ordering_transcript_format"}}},
     // info area
     {U"show_opening_name",      {},                     {{"display", "display"}, {"display", "info", "display_on_info_area"}, {"display", "info", "opening_name"}}},
     {U"show_principal_variation",   {},                 {{"display", "display"}, {"display", "info", "display_on_info_area"}, {"display", "info", "principal_variation"}}},
