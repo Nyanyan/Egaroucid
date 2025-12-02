@@ -384,8 +384,8 @@ Game_import_t import_any_format_processing(std::string s, std::vector<History_el
         std::pair<Board, int> board_player = import_board_processing(s, &f);
         if (!f) {
             History_elem history_elem;
-            history_elem.reset();
-            res_board.history.emplace_back(history_elem);
+            // history_elem.reset();
+            // res_board.history.emplace_back(history_elem);
             history_elem.board = board_player.first;
             history_elem.player = board_player.second;
             res_board.history.emplace_back(history_elem);

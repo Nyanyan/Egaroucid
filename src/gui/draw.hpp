@@ -61,11 +61,10 @@ void draw_board(Fonts fonts, Colors colors, History_elem history_elem) {
 
 void draw_transcript_board(Fonts fonts, Colors colors, History_elem history_elem, Graph_resources graph_resources, bool monochrome) {
     draw_empty_board(fonts, colors, monochrome);
-    std::vector<int> put_order = get_put_order(graph_resources, history_elem);
-    Board board = graph_resources.nodes[0][0].board;
-    int player = graph_resources.nodes[0][0].player;
+    Board initial_board = graph_resources.nodes[0][0].board;
+    int initial_player = graph_resources.nodes[0][0].player;
     int initial_board_arr[HW2];
-    board.translate_to_arr(initial_board_arr, player);
+    initial_board.translate_to_arr(initial_board_arr, initial_player);
     for (int cell = 0; cell < HW2; ++cell) {
         int x = BOARD_SX + (cell % HW) * BOARD_CELL_SIZE + BOARD_CELL_SIZE / 2;
         int y = BOARD_SY + (cell / HW) * BOARD_CELL_SIZE + BOARD_CELL_SIZE / 2;
@@ -79,8 +78,11 @@ void draw_transcript_board(Fonts fonts, Colors colors, History_elem history_elem
             }
         }
     }
-    Flip flip;
-    for (int cell: put_order) {
+    std::vector<int> put_order = get_put_order(graph_resources, history_elem);
+    std::vector<int> put_player = get_put_player(initial_board, initial_player, put_order);
+    for (int i = 0; i < put_order.size(); ++i) {
+        int cell = put_order[i];
+        int player = put_player[i];
         int x = BOARD_SX + ((HW2_M1 - cell) % HW) * BOARD_CELL_SIZE + BOARD_CELL_SIZE / 2;
         int y = BOARD_SY + ((HW2_M1 - cell) / HW) * BOARD_CELL_SIZE + BOARD_CELL_SIZE / 2;
         if (player == BLACK) {
@@ -91,13 +93,6 @@ void draw_transcript_board(Fonts fonts, Colors colors, History_elem history_elem
             } else {
                 Circle(x, y, DISC_SIZE).draw(colors.white);
             }
-        }
-        calc_flip(&flip, &board, cell);
-        board.move_board(&flip);
-        player ^= 1;
-        if (board.get_legal() == 0) {
-            board.pass();
-            player ^= 1;
         }
     }
 }

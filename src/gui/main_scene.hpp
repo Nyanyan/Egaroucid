@@ -1511,12 +1511,18 @@ private:
     void draw_play_ordering() {
         int history_elem_n_discs = getData().history_elem.board.n_discs();
         std::vector<int> put_order = get_put_order(getData().graph_resources, getData().history_elem);
+        std::vector<int> put_player = get_put_player(getData().graph_resources.nodes[0][0].board, getData().graph_resources.nodes[0][0].player, put_order);
         for (int i = 0; i < put_order.size(); ++i) {
             int cell = put_order[i];
             int x = BOARD_SX + ((HW2_M1 - cell) % HW) * BOARD_CELL_SIZE + BOARD_CELL_SIZE / 2;
             int y = BOARD_SY + ((HW2_M1 - cell) / HW) * BOARD_CELL_SIZE + BOARD_CELL_SIZE / 2;
-            bool is_black_disc = getData().history_elem.player == BLACK && (getData().history_elem.board.player & (1ULL << cell)) != 0;
-            is_black_disc |= getData().history_elem.player == WHITE && (getData().history_elem.board.opponent & (1ULL << cell)) != 0;
+            bool is_black_disc;
+            if (getData().menu_elements.play_ordering_transcript_format) {
+                is_black_disc = put_player[i] == BLACK;
+            } else {
+                is_black_disc = getData().history_elem.player == BLACK && (getData().history_elem.board.player & (1ULL << cell)) != 0;
+                is_black_disc |= getData().history_elem.player == WHITE && (getData().history_elem.board.opponent & (1ULL << cell)) != 0;
+            }
             Color color = getData().colors.black;
             if (is_black_disc) {
                 color = getData().colors.white;

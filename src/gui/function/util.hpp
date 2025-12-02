@@ -64,6 +64,24 @@ std::vector<int> get_put_order(Graph_resources graph_resources, History_elem cur
     return put_order;
 }
 
+std::vector<int> get_put_player(Board initial_board, int initial_player, std::vector<int> put_order) {
+    Flip flip;
+    Board board = initial_board.copy();
+    int player = initial_player;
+    std::vector<int> put_player;
+    for (int cell: put_order) {
+        put_player.emplace_back(player);
+        calc_flip(&flip, &board, cell);
+        board.move_board(&flip);
+        player ^= 1;
+        if (board.get_legal() == 0) {
+            board.pass();
+            player ^= 1;
+        }
+    }
+    return put_player;
+}
+
 std::string get_transcript(Graph_resources graph_resources, History_elem current_history_elem) {
     std::vector<int> put_order = get_put_order(graph_resources, current_history_elem);
     std::string transcript;
