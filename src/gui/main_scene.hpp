@@ -2433,13 +2433,13 @@ private:
                 } else if (value == 0) {
                     color = getData().colors.white;
                 } else {
-                    color = getData().colors.yellow;
+                    color = getData().colors.light_green;
                 }
             } else { // midgame or endgame with MPC
                 if (value >= 0) {
-                    color = getData().colors.light_green;
-                } else {
                     color = getData().colors.yellow;
+                } else {
+                    color = getData().colors.light_green;
                 }
             }
         } else {
