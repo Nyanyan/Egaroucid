@@ -228,7 +228,12 @@ public:
         }
 
         // board drawing
-        draw_board(getData().fonts, getData().colors, getData().history_elem);
+        bool use_transcript_board = getData().menu_elements.show_play_ordering && getData().menu_elements.play_ordering_transcript_format;
+        if (use_transcript_board) {
+            draw_transcript_board(getData().fonts, getData().colors, getData().history_elem, getData().graph_resources, false);
+        } else {
+            draw_board(getData().fonts, getData().colors, getData().history_elem);
+        }
 
         // book modifying by right-clicking
         bool changing_book_by_right_click = false;

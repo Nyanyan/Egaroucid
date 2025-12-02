@@ -14,7 +14,7 @@
 #include "./../engine/engine_all.hpp"
 #include "function/function_all.hpp"
 
-void draw_board(Fonts fonts, Colors colors, History_elem history_elem, bool monochrome) {
+void draw_empty_board(Fonts fonts, Colors colors, bool monochrome) {
     String coord_x = U"abcdefgh";
     Color dark_gray_color = colors.dark_gray;
     if (monochrome) {
@@ -33,6 +33,10 @@ void draw_board(Fonts fonts, Colors colors, History_elem history_elem, bool mono
     Circle(BOARD_SX + 6 * BOARD_CELL_SIZE, BOARD_SY + 2 * BOARD_CELL_SIZE, BOARD_DOT_SIZE).draw(dark_gray_color);
     Circle(BOARD_SX + 6 * BOARD_CELL_SIZE, BOARD_SY + 6 * BOARD_CELL_SIZE, BOARD_DOT_SIZE).draw(dark_gray_color);
     s3d::RoundRect(BOARD_SX, BOARD_SY, BOARD_CELL_SIZE * HW, BOARD_CELL_SIZE * HW, BOARD_ROUND_DIAMETER).drawFrame(0, BOARD_ROUND_FRAME_WIDTH, colors.white);
+}
+
+void draw_board(Fonts fonts, Colors colors, History_elem history_elem, bool monochrome) {
+    draw_empty_board(fonts, colors, monochrome);
     Flip flip;
     int board_arr[HW2];
     history_elem.board.translate_to_arr(board_arr, history_elem.player);
@@ -53,6 +57,49 @@ void draw_board(Fonts fonts, Colors colors, History_elem history_elem, bool mono
 
 void draw_board(Fonts fonts, Colors colors, History_elem history_elem) {
     draw_board(fonts, colors, history_elem, false);
+}
+
+void draw_transcript_board(Fonts fonts, Colors colors, History_elem history_elem, Graph_resources graph_resources, bool monochrome) {
+    draw_empty_board(fonts, colors, monochrome);
+    std::vector<int> put_order = get_put_order(graph_resources, history_elem);
+    Board board = graph_resources.nodes[0][0].board;
+    int player = graph_resources.nodes[0][0].player;
+    int initial_board_arr[HW2];
+    board.translate_to_arr(initial_board_arr, player);
+    for (int cell = 0; cell < HW2; ++cell) {
+        int x = BOARD_SX + (cell % HW) * BOARD_CELL_SIZE + BOARD_CELL_SIZE / 2;
+        int y = BOARD_SY + (cell / HW) * BOARD_CELL_SIZE + BOARD_CELL_SIZE / 2;
+        if (initial_board_arr[cell] == BLACK) {
+            Circle(x, y, DISC_SIZE).draw(colors.black);
+        } else if (initial_board_arr[cell] == WHITE) {
+            if (monochrome) {
+                Circle(x, y, DISC_SIZE).draw(colors.white).drawFrame(BOARD_DISC_FRAME_WIDTH, 0, colors.black);
+            } else {
+                Circle(x, y, DISC_SIZE).draw(colors.white);
+            }
+        }
+    }
+    Flip flip;
+    for (int cell: put_order) {
+        int x = BOARD_SX + ((HW2_M1 - cell) % HW) * BOARD_CELL_SIZE + BOARD_CELL_SIZE / 2;
+        int y = BOARD_SY + ((HW2_M1 - cell) / HW) * BOARD_CELL_SIZE + BOARD_CELL_SIZE / 2;
+        if (player == BLACK) {
+            Circle(x, y, DISC_SIZE).draw(colors.black);
+        } else {
+            if (monochrome) {
+                Circle(x, y, DISC_SIZE).draw(colors.white).drawFrame(BOARD_DISC_FRAME_WIDTH, 0, colors.black);
+            } else {
+                Circle(x, y, DISC_SIZE).draw(colors.white);
+            }
+        }
+        calc_flip(&flip, &board, cell);
+        board.move_board(&flip);
+        player ^= 1;
+        if (board.get_legal() == 0) {
+            board.pass();
+            player ^= 1;
+        }
+    }
 }
 
 // Utility function to enumerate directories in a given path
