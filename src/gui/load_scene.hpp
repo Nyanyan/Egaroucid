@@ -233,6 +233,38 @@ int init_ai(Settings* settings, const Directories* directories, bool *stop_loadi
     return ERR_OK;
 }
 
+// Helper function to recursively load openings from folder structure
+void load_openings_recursive(Forced_openings* forced_openings, const std::string& base_dir, const std::string& subfolder) {
+    String base = Unicode::Widen(base_dir) + U"/";
+    if (!subfolder.empty()) {
+        base += Unicode::Widen(subfolder) + U"/";
+    }
+    
+    // Load openings from current folder
+    const String csv_path = base + U"summary.csv";
+    const CSV csv{ csv_path };
+    if (csv) {
+        for (size_t row = 0; row < csv.rows(); ++row) {
+            String transcript = csv[row][0];
+            double weight = ParseOr<double>(csv[row][1], 1.0);
+            bool enabled = ParseOr<bool>(csv[row][2], true);
+            
+            if (enabled) {  // Only add enabled openings
+                forced_openings->openings.emplace_back(std::make_pair(transcript.narrow(), weight));
+            }
+        }
+    }
+    
+    // Recursively load from subfolders
+    std::vector<String> folders = enumerate_direct_subdirectories(base_dir, subfolder);
+    for (const auto& folder : folders) {
+        std::string next_path = subfolder;
+        if (!next_path.empty()) next_path += "/";
+        next_path += folder.narrow();
+        load_openings_recursive(forced_openings, base_dir, next_path);
+    }
+}
+
 int load_app(Directories* directories, Resources* resources, Settings* settings, Forced_openings *forced_openings, Menu_elements *menu_elements, bool* update_found, String *new_version, bool *stop_loading) {
     // auto update check
     if (settings->auto_update_check) {
@@ -250,13 +282,54 @@ int load_app(Directories* directories, Resources* resources, Settings* settings,
         // AI
         code = init_ai(settings, directories, stop_loading);
         // forced openings for AI
-        std::string forced_openings_file = directories->appdata_dir + "/forced_openings.txt";
-        forced_openings->load(forced_openings_file);
+        std::string forced_openings_dir = directories->appdata_dir + "/forced_openings";
+        String forced_openings_dir_wide = Unicode::Widen(forced_openings_dir);
+        
+        // Create forced_openings directory if it doesn't exist
+        if (!FileSystem::Exists(forced_openings_dir_wide)) {
+            FileSystem::CreateDirectories(forced_openings_dir_wide);
+        }
+        
+        // Migrate from old forced_openings.txt to new folder structure
+        std::string old_forced_openings_file = directories->appdata_dir + "/forced_openings.txt";
+        String old_file_wide = Unicode::Widen(old_forced_openings_file);
+        String new_csv_path = forced_openings_dir_wide + U"/summary.csv";
+        
+        if (FileSystem::Exists(old_file_wide) && !FileSystem::Exists(new_csv_path)) {
+            // Migrate old format to new CSV format
+            std::ifstream ifs(old_forced_openings_file);
+            if (ifs) {
+                CSV csv;
+                std::string line;
+                while (std::getline(ifs, line)) {
+                    std::istringstream iss(line);
+                    std::string transcript, weight_str;
+                    iss >> transcript >> weight_str;
+                    double weight;
+                    try {
+                        weight = stoi(weight_str);
+                        if (is_valid_transcript(transcript)) {
+                            csv.write(Unicode::Widen(transcript));
+                            csv.write(Format(weight));
+                            csv.write(U"true");  // enabled by default
+                            csv.newLine();
+                        }
+                    } catch (const std::exception& e) {
+                        // Skip invalid lines
+                    }
+                }
+                csv.save(new_csv_path);
+                ifs.close();
+            }
+        }
+        
+        // Load openings from new folder structure
+        forced_openings->openings.clear();
+        load_openings_recursive(forced_openings, forced_openings_dir, "");
+        forced_openings->init();
     }
     return code;
 }
-
-
 
 class Load : public App::Scene {
 private:

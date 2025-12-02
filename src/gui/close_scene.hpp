@@ -82,8 +82,8 @@ void close_app(Menu_elements menu_elements, Settings settings, Directories direc
         save_settings(menu_elements, settings, directories, user_settings);
         String shortcut_key_file = U"{}shortcut_key.json"_fmt(Unicode::Widen(directories.appdata_dir));
         shortcut_keys.save_settings(shortcut_key_file);
-        std::string forced_openings_file = directories.appdata_dir + "/forced_openings.txt";
-        forced_openings.save(forced_openings_file);
+        // Note: forced_openings are now saved via the opening_setting scene to the folder structure
+        // No need to save here as the folder structure is already saved when OK is clicked
     }
     if (book_information.changed) {
         book.save_egbk3(settings.book_file, settings.book_file + ".bak");
