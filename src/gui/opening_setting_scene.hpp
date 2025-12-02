@@ -561,7 +561,6 @@ class Opening_setting : public App::Scene {
         
         // Draw CSV files and openings list
         void draw_list() {
-            int sy = OPENING_SETTING_SY;
             int strt_idx_int = scroll_manager.get_strt_idx_int();
             
             // First pass: determine if fixed header will be shown
@@ -584,13 +583,15 @@ class Opening_setting : public App::Scene {
                 }
             }
             
-            // Draw fixed header at top if scrolled (above scroll area)
+            // Draw fixed header at top if scrolled (ABOVE OPENING_SETTING_SY)
             if (fixed_header_shown) {
-                draw_csv_file_item_fixed_header(selected_csv_index, sy);
-                sy += OPENING_SETTING_HEADER_HEIGHT;  // Move down by header height
+                draw_csv_file_item_fixed_header(selected_csv_index, OPENING_SETTING_SY - OPENING_SETTING_HEADER_HEIGHT);
             }
             
-            if (strt_idx_int > 0) {
+            // Normal elements always start from OPENING_SETTING_SY
+            int sy = OPENING_SETTING_SY;
+            
+            if (strt_idx_int > 0 && !fixed_header_shown) {
                 getData().fonts.font(U"︙").draw(15, Arg::bottomCenter = Vec2{ X_CENTER, sy }, getData().colors.white);
             }
             sy += 8;
@@ -713,7 +714,7 @@ class Opening_setting : public App::Scene {
             }
             
             if (strt_idx_int + OPENING_SETTING_N_GAMES_ON_WINDOW < total_items + (adding_elem || editing_elem ? 1 : 0)) {
-                getData().fonts.font(U"︙").draw(15, Arg::bottomCenter = Vec2{ X_CENTER, 415}, getData().colors.white);
+                getData().fonts.font(U"︙").draw(15, Arg::bottomCenter = Vec2{ X_CENTER, 395}, getData().colors.white);
             }
         }
         
