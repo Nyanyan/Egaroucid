@@ -638,6 +638,9 @@ private:
         if (shortcut_key == U"show_book_accuracy") {
             getData().menu_elements.show_book_accuracy = !getData().menu_elements.show_book_accuracy;
         }
+        if (shortcut_key == U"hint_colorize") {
+            getData().menu_elements.hint_colorize = !getData().menu_elements.hint_colorize;
+        }
         // on discs
         if (shortcut_key == U"show_last_move") {
             getData().menu_elements.show_last_move = !getData().menu_elements.show_last_move;
