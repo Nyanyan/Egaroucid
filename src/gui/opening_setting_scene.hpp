@@ -102,7 +102,12 @@ class Opening_setting : public App::Scene {
             // Current path label
             String path_label = U"forced_openings/";
             if (selected_csv_index >= 0 && selected_csv_index < (int)csv_files.size()) {
-                path_label += csv_files[selected_csv_index].filename;
+                String filename = csv_files[selected_csv_index].filename;
+                // Remove .csv extension
+                if (filename.ends_with(U".csv")) {
+                    filename = filename.substr(0, filename.size() - 4);
+                }
+                path_label += filename;
             }
             getData().fonts.font(path_label).draw(15, Arg::rightCenter(OPENING_SETTING_SX + OPENING_SETTING_WIDTH, 30), getData().colors.white);
             
@@ -151,6 +156,7 @@ class Opening_setting : public App::Scene {
                     adding_elem = false;
                     editing_elem = false;
                     editing_index = -1;
+                    init_scroll_manager();  // Update scroll manager when exiting edit mode
                 }
                 
                 std::string transcript = text_area[0].text.narrow();
@@ -180,6 +186,7 @@ class Opening_setting : public App::Scene {
                         }
                         editing_elem = false;
                         editing_index = -1;
+                        init_scroll_manager();  // Update scroll manager after editing
                     }
                 } else {
                     if (can_be_registered) {
@@ -191,6 +198,7 @@ class Opening_setting : public App::Scene {
                     if (register_button.clicked() || (can_be_registered && KeyEnter.down())) {
                         add_opening(Unicode::Widen(transcript), weight);
                         adding_elem = false;
+                        init_scroll_manager();  // Update scroll manager after adding
                     }
                 }
             } else {
@@ -214,6 +222,7 @@ class Opening_setting : public App::Scene {
                     }
                     text_area[0].active = true;
                     text_area[1].active = false;
+                    init_scroll_manager();  // Update scroll manager for new row
                 }
                 
                 add_csv_button.draw();
@@ -267,6 +276,12 @@ class Opening_setting : public App::Scene {
                 total_openings = (int)csv_files[selected_csv_index].openings.size();
             }
             int total = (int)csv_files.size() + total_openings;
+            
+            // Add 1 for input area if adding or editing
+            if (adding_elem || editing_elem) {
+                total += 1;
+            }
+            
             scroll_manager.init(770, OPENING_SETTING_SY + 8, 10, OPENING_SETTING_HEIGHT * OPENING_SETTING_N_GAMES_ON_WINDOW, 20, total, OPENING_SETTING_N_GAMES_ON_WINDOW, OPENING_SETTING_SX, 73, OPENING_SETTING_WIDTH + 10, OPENING_SETTING_HEIGHT * OPENING_SETTING_N_GAMES_ON_WINDOW);
         }
         
@@ -495,16 +510,6 @@ class Opening_setting : public App::Scene {
             int sy = OPENING_SETTING_SY;
             int strt_idx_int = scroll_manager.get_strt_idx_int();
             
-            if (adding_elem || editing_elem) {
-                int total_items_before_input = (int)csv_files.size();
-                if (selected_csv_index >= 0 && selected_csv_index < (int)csv_files.size()) {
-                    total_items_before_input += (int)csv_files[selected_csv_index].openings.size();
-                }
-                if (total_items_before_input >= OPENING_SETTING_N_GAMES_ON_WINDOW) {
-                    strt_idx_int = total_items_before_input - OPENING_SETTING_N_GAMES_ON_WINDOW + 1;
-                }
-            }
-            
             if (strt_idx_int > 0) {
                 getData().fonts.font(U"︙").draw(15, Arg::bottomCenter = Vec2{ X_CENTER, sy }, getData().colors.white);
             }
@@ -521,9 +526,14 @@ class Opening_setting : public App::Scene {
             }
             
             int row_index = 0;
+            int csv_row_for_selected = -1;  // Row index of the selected CSV file
             
             // Draw CSV files
             for (int i = 0; i < (int)csv_files.size(); ++i) {
+                if (i == selected_csv_index) {
+                    csv_row_for_selected = row_index;
+                }
+                
                 if (row_index >= strt_idx_int && row_index < strt_idx_int + OPENING_SETTING_N_GAMES_ON_WINDOW) {
                     int display_row = row_index - strt_idx_int;
                     int item_sy = sy + display_row * OPENING_SETTING_HEIGHT;
@@ -533,24 +543,42 @@ class Opening_setting : public App::Scene {
                 
                 // Draw openings if this CSV is selected
                 if (i == selected_csv_index) {
-                    for (int j = 0; j < (int)csv_files[i].openings.size(); ++j) {
+                    // Draw input area for adding right after CSV file if adding
+                    if (adding_elem && !editing_elem) {
                         if (row_index >= strt_idx_int && row_index < strt_idx_int + OPENING_SETTING_N_GAMES_ON_WINDOW) {
                             int display_row = row_index - strt_idx_int;
                             int item_sy = sy + display_row * OPENING_SETTING_HEIGHT;
-                            draw_opening_item(j, item_sy, row_index);
+                            draw_input_area(item_sy, row_index);
                         }
                         row_index++;
+                    }
+                    
+                    for (int j = 0; j < (int)csv_files[i].openings.size(); ++j) {
+                        // Draw input area for editing at the position of the edited item
+                        if (editing_elem && editing_index == j) {
+                            if (row_index >= strt_idx_int && row_index < strt_idx_int + OPENING_SETTING_N_GAMES_ON_WINDOW) {
+                                int display_row = row_index - strt_idx_int;
+                                int item_sy = sy + display_row * OPENING_SETTING_HEIGHT;
+                                draw_input_area(item_sy, row_index);
+                            }
+                            row_index++;
+                        } else {
+                            if (row_index >= strt_idx_int && row_index < strt_idx_int + OPENING_SETTING_N_GAMES_ON_WINDOW) {
+                                int display_row = row_index - strt_idx_int;
+                                int item_sy = sy + display_row * OPENING_SETTING_HEIGHT;
+                                draw_opening_item(j, item_sy, row_index);
+                            }
+                            row_index++;
+                        }
                     }
                 }
             }
             
-            // Draw input area for adding/editing
-            if (adding_elem || editing_elem) {
-                int input_row = row_index;
-                if (input_row >= strt_idx_int && input_row < strt_idx_int + OPENING_SETTING_N_GAMES_ON_WINDOW) {
-                    int display_row = input_row - strt_idx_int;
-                    int item_sy = sy + display_row * OPENING_SETTING_HEIGHT;
-                    draw_input_area(item_sy, row_index);
+            // Draw fixed CSV file header at top if scrolled
+            if (selected_csv_index >= 0 && selected_csv_index < (int)csv_files.size() && csv_row_for_selected >= 0) {
+                if (csv_row_for_selected < strt_idx_int) {
+                    // CSV file is scrolled out of view, draw it fixed at the top
+                    draw_csv_file_item_fixed_header(selected_csv_index, OPENING_SETTING_SY + 8);
                 }
             }
             
@@ -570,7 +598,7 @@ class Opening_setting : public App::Scene {
                 bg_color = getData().colors.darkblue;
             } else if (!csv_file.enabled) {
                 // Grayed out for disabled categories
-                bg_color = (row_index % 2 ? ColorF(0.3, 0.3, 0.3) : ColorF(0.25, 0.25, 0.25));
+                bg_color = (row_index % 2 ? Color(77, 77, 77) : Color(64, 64, 64));
             } else {
                 bg_color = (row_index % 2 ? getData().colors.dark_green : getData().colors.green);
             }
@@ -613,14 +641,60 @@ class Opening_setting : public App::Scene {
             }
             
             // Text color: dimmed for disabled categories
-            Color text_color = csv_file.enabled ? getData().colors.white : Color(127, 127, 127);
+            Color text_color = csv_file.enabled ? getData().colors.white : Color(128, 128, 128);
             
-            // Draw CSV filename
-            String display_text = U"📄 " + csv_file.filename;
+            // Draw CSV filename (without .csv extension)
+            String display_filename = csv_file.filename;
+            if (display_filename.ends_with(U".csv")) {
+                display_filename = display_filename.substr(0, display_filename.size() - 4);
+            }
+            
+            String display_text = display_filename;
             if (!csv_file.enabled) {
                 display_text = U"[OFF] " + display_text;
             }
-            getData().fonts.font(display_text).draw(18, Arg::leftCenter(OPENING_SETTING_SX + OPENING_SETTING_LEFT_MARGIN + 8, sy + OPENING_SETTING_HEIGHT / 2), text_color);
+            
+            // Draw folder icon
+            int icon_x = OPENING_SETTING_SX + OPENING_SETTING_LEFT_MARGIN + 8;
+            int icon_y = sy + OPENING_SETTING_HEIGHT / 2 - 8;
+            getData().resources.folder.resized(16, 16).draw(icon_x, icon_y, text_color);
+            
+            getData().fonts.font(display_text).draw(18, Arg::leftCenter(icon_x + 20, sy + OPENING_SETTING_HEIGHT / 2), text_color);
+            
+            // Draw opening count
+            String count_text = U"(" + Format((int)csv_file.openings.size()) + U")";
+            getData().fonts.font(count_text).draw(15, Arg::rightCenter(OPENING_SETTING_SX + OPENING_SETTING_WIDTH - 30, sy + OPENING_SETTING_HEIGHT / 2), text_color);
+        }
+        
+        // Draw CSV file item as fixed header (when scrolled out of view)
+        void draw_csv_file_item_fixed_header(int idx, int sy) {
+            const auto& csv_file = csv_files[idx];
+            Rect rect(OPENING_SETTING_SX, sy, OPENING_SETTING_WIDTH, OPENING_SETTING_HEIGHT);
+            
+            // Always use selected color for fixed header
+            Color bg_color = getData().colors.darkblue;
+            rect.draw(bg_color).drawFrame(2.0, getData().colors.yellow);  // Yellow border to indicate it's fixed
+            
+            // Text color
+            Color text_color = csv_file.enabled ? getData().colors.white : Color(128, 128, 128);
+            
+            // Draw CSV filename (without .csv extension)
+            String display_filename = csv_file.filename;
+            if (display_filename.ends_with(U".csv")) {
+                display_filename = display_filename.substr(0, display_filename.size() - 4);
+            }
+            
+            String display_text = display_filename;
+            if (!csv_file.enabled) {
+                display_text = U"[OFF] " + display_text;
+            }
+            
+            // Draw folder icon
+            int icon_x = OPENING_SETTING_SX + OPENING_SETTING_LEFT_MARGIN + 8;
+            int icon_y = sy + OPENING_SETTING_HEIGHT / 2 - 8;
+            getData().resources.folder.resized(16, 16).draw(icon_x, icon_y, text_color);
+            
+            getData().fonts.font(display_text).draw(18, Arg::leftCenter(icon_x + 20, sy + OPENING_SETTING_HEIGHT / 2), text_color);
             
             // Draw opening count
             String count_text = U"(" + Format((int)csv_file.openings.size()) + U")";
@@ -681,6 +755,7 @@ class Opening_setting : public App::Scene {
                         text_area[1].rebuildGlyphs();
                         text_area[0].active = true;
                         text_area[1].active = false;
+                        init_scroll_manager();  // Update scroll manager when entering edit mode
                         return;
                     }
                 }
