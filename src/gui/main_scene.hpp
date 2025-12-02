@@ -1554,36 +1554,12 @@ private:
                 //std::cerr << idx_to_coord(hint_infos[i].cell) << " " << hint_infos[i].value << std::endl;
                 int sx = BOARD_SX + (hint_infos[i].cell % HW) * BOARD_CELL_SIZE;
                 int sy = BOARD_SY + (hint_infos[i].cell / HW) * BOARD_CELL_SIZE;
-                Color color;
                 Font font = getData().fonts.font_bold;
                 if (hint_infos[i].value == best_score) { // best move: heavy
                     font = getData().fonts.font_heavy;
                 }
                 int value = (int)round(hint_infos[i].value);
-                if (hint_infos[i].type == 100 || hint_infos[i].type == AI_TYPE_BOOK) { // 100% or book
-                    if (value > 0) {
-                        color = getData().colors.cyan;
-                    } else if (value == 0) {
-                        color = getData().colors.white;
-                    } else {
-                        // color = getData().colors.purple;
-                        // Color{153, 0, 153}; // purple
-                        color = getData().colors.yellow;
-                    }
-                } else { // midgame or endgame with MPC
-                    if (value >= 0) {
-                        // color = Color{153, 0, 153};
-                        // color = Color(25, 25, 130); //getData().colors.darkblue;
-                        color = Color{ 160, 255, 180 }; // light green
-                        // color = Color{ 255, 202, 191 }; // light pink (not good for T)
-                    } else {
-                        // color = getData().colors.purple;
-                        // color = Color{255, 255, 128}; // cream
-                        // color = Color{170, 20, 0};
-                        // color = Color(100, 17, 17); //getData().colors.darkred;
-                        color = getData().colors.yellow;
-                    }
-                }
+                Color color = get_hint_color(value, hint_infos[i].type);
                 if (simplified_hint_mode) {
                     // main value
                     font(value).draw(23, Arg::center(sx + BOARD_CELL_SIZE / 2, sy + BOARD_CELL_SIZE / 2), color);
@@ -2133,7 +2109,8 @@ private:
                             n_lines_str = Format(n_lines / 1000) + U"K";
                         }
                     }
-                    getData().fonts.font_bold(n_lines_str).draw(9.5, sx + 3, sy + 21, getData().colors.white);
+                    Color color = get_hint_color(-book_elem.value, AI_TYPE_BOOK);
+                    getData().fonts.font_bold(n_lines_str).draw(9.5, sx + 3, sy + 21, color);
                 }
             }
         }
@@ -2199,12 +2176,14 @@ private:
                     Flip flip;
                     calc_flip(&flip, &board, cell);
                     board.move_board(&flip);
-                    int book_level = book.get(board).level;
+                    Book_elem book_elem = book.get(board);
+                    int book_level = book_elem.level;
                     String book_level_info = Format(book_level);
                     if (book_level == LEVEL_HUMAN) {
                         book_level_info = U"S";
                     }
-                    getData().fonts.font_bold(Unicode::Widen(judge) + U" " + book_level_info).draw(9.5, sx + 3, sy + 33, getData().colors.white);
+                    Color color = get_hint_color(-book_elem.value, AI_TYPE_BOOK);
+                    getData().fonts.font_bold(Unicode::Widen(judge) + U" " + book_level_info).draw(9.5, sx + 3, sy + 33, color);
                 }
             }
         }
@@ -2421,5 +2400,25 @@ private:
                 need_start_game_button_calculation();
             }
         }
+    }
+
+    Color get_hint_color(int value, int hint_type) {
+        Color color;
+        if (hint_type == 100 || hint_type == AI_TYPE_BOOK) { // 100% or book
+            if (value > 0) {
+                color = getData().colors.cyan;
+            } else if (value == 0) {
+                color = getData().colors.white;
+            } else {
+                color = getData().colors.yellow;
+            }
+        } else { // midgame or endgame with MPC
+            if (value >= 0) {
+                color = getData().colors.light_green;
+            } else {
+                color = getData().colors.yellow;
+            }
+        }
+        return color;
     }
 };
