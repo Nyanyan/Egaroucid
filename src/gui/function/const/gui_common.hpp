@@ -343,6 +343,7 @@ struct Resources {
     Texture check;
     Texture folder;
     Texture arrow_left;
+    Texture pencil;
     std::vector<Texture> lang_img;
 };
 

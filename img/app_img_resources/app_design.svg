@@ -38,12 +38,12 @@
      inkscape:bbox-nodes="true"
      inkscape:bbox-paths="true"
      inkscape:zoom="0.64"
-     inkscape:cx="814.84375"
-     inkscape:cy="432.8125"
+     inkscape:cx="1741.4063"
+     inkscape:cy="825"
      inkscape:window-width="2104"
      inkscape:window-height="2041"
      inkscape:window-x="764"
-     inkscape:window-y="1620"
+     inkscape:window-y="0"
      inkscape:window-maximized="0"
      inkscape:current-layer="layer1"
      inkscape:snap-global="true"
@@ -1091,6 +1091,16 @@
        inkscape:export-xdpi="35.549999"
        inkscape:export-ydpi="35.549999" />
     <rect
+       style="fill:#919191;fill-opacity:1;stroke-width:0.499999"
+       id="rect10405-0-0-9"
+       width="142.8866"
+       height="142.8866"
+       x="312.60519"
+       y="0.099205017"
+       inkscape:export-filename="pencil.png"
+       inkscape:export-xdpi="35.549999"
+       inkscape:export-ydpi="35.549999" />
+    <rect
        style="fill:#5a577e;fill-opacity:0;stroke-width:0.499999"
        id="rect10405-0-0-4"
        width="142.8866"
@@ -1405,21 +1415,64 @@
        id="g1"
        transform="matrix(0,-0.26372197,0.26372197,0,158.1665,144.5694)"
        style="fill:#aaaaaa;fill-opacity:1;stroke:#000000;stroke-width:29.8077;stroke-dasharray:none;stroke-opacity:1">
+      <polygon
+         class="st0"
+         points="345.774,512 345.774,340.624 464.1,340.624 256.015,88.146 47.916,340.624 166.242,340.624 166.242,512 "
+         style="fill:#aaaaaa;fill-opacity:1;stroke:#000000;stroke-width:29.8077;stroke-dasharray:none;stroke-opacity:1"
+         id="polygon1" />
+      <rect
+         x="23.573999"
+         class="st0"
+         width="464.85101"
+         height="72.132004"
+         style="fill:#aaaaaa;fill-opacity:1;stroke:#000000;stroke-width:29.8077;stroke-dasharray:none;stroke-opacity:1"
+         id="rect1-0"
+         y="0" />
+    </g>
+    <g
+       id="g1-4"
+       transform="matrix(0.23470793,0,0,0.23470793,323.96319,11.457171)">
+	<path
+   class="st0"
+   d="M 494.56,55.774 456.216,17.446 c -23.253,-23.262 -60.965,-23.253 -84.226,0 l -35.878,35.878 122.563,122.563 35.886,-35.878 c 23.253,-23.262 23.253,-60.965 -10e-4,-84.235 z"
+   style="fill:#ffffff"
+   id="path1-88" />
+
 	<polygon
    class="st0"
-   points="345.774,512 345.774,340.624 464.1,340.624 256.015,88.146 47.916,340.624 166.242,340.624 166.242,512 "
-   style="fill:#aaaaaa;fill-opacity:1;stroke:#000000;stroke-width:29.8077;stroke-dasharray:none;stroke-opacity:1"
-   id="polygon1" />
-
-	<rect
-   x="23.573999"
-   class="st0"
-   width="464.85101"
-   height="72.132004"
-   style="fill:#aaaaaa;fill-opacity:1;stroke:#000000;stroke-width:29.8077;stroke-dasharray:none;stroke-opacity:1"
-   id="rect1-0"
-   y="0" />
+   points="0,511.998 122.571,511.998 425.246,209.314 302.691,86.751 0,389.435 "
+   style="fill:#ffffff"
+   id="polygon1-2" />
 
 </g>
+    <rect
+       style="fill:#919191;fill-opacity:1;stroke-width:0.499999"
+       id="rect10405-0-0-9-5"
+       width="142.8866"
+       height="142.8866"
+       x="312.57053"
+       y="157.65724"
+       inkscape:export-filename="cross.png"
+       inkscape:export-xdpi="35.549999"
+       inkscape:export-ydpi="35.549999" />
+    <path
+       style="fill:#ffffff;fill-opacity:1;stroke:none;stroke-width:4.58884"
+       d="m 384.01382,181.85393 -58.61138,87.08484 H 442.6252 Z"
+       id="path6" />
+    <rect
+       style="fill:#919191;fill-opacity:1;stroke-width:0.499999"
+       id="rect10405-0-0-9-5-1"
+       width="142.8866"
+       height="142.8866"
+       x="-616.94727"
+       y="-300.1304"
+       inkscape:export-filename="cross.png"
+       inkscape:export-xdpi="35.549999"
+       inkscape:export-ydpi="35.549999"
+       transform="scale(-1)" />
+    <path
+       style="fill:#ffffff;fill-opacity:1;stroke:none;stroke-width:4.58884"
+       d="m 545.50394,275.93372 58.61138,-87.08484 H 486.89256 Z"
+       id="path6-5" />
   </g>
 </svg>

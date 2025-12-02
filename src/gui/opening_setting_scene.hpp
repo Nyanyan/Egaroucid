@@ -312,7 +312,7 @@ class Opening_setting : public App::Scene {
             }
             
             Texture cross_image = getData().resources.cross;
-            Texture edit_image = getData().resources.check;  // Use check icon for edit
+            Texture edit_image = getData().resources.pencil;  // Use pencil icon for edit
             // We'll use buttons for move up/down instead of image buttons
             for (int i = 0; i < (int)openings.size(); ++i) {
                 ImageButton delete_btn;
@@ -363,7 +363,7 @@ class Opening_setting : public App::Scene {
             delete_buttons.emplace_back(delete_btn);
             
             ImageButton edit_btn;
-            edit_btn.init(0, 0, 15, getData().resources.check);  // Use check icon for edit
+            edit_btn.init(0, 0, 15, getData().resources.pencil);  // Use pencil icon for edit
             edit_buttons.emplace_back(edit_btn);
             
             ImageButton toggle_btn;
