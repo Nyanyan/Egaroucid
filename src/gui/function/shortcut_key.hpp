@@ -53,6 +53,7 @@ std::vector<Shortcut_key_elem> shortcut_keys_default = {
     {U"show_hint_level",        {},                     {{"display", "display"}, {"display", "cell", "display_on_cell"}, {"display", "cell", "disc_value"}, {"display", "cell", "show_hint_level"}}},
     {U"show_value_when_ai_calculating", {},             {{"display", "display"}, {"display", "cell", "display_on_cell"}, {"display", "cell", "disc_value"}, {"display", "cell", "show_value_when_ai_calculating"}}},
     {U"show_book_accuracy",     {},                     {{"display", "display"}, {"display", "cell", "display_on_cell"}, {"display", "cell", "disc_value"}, {"display", "cell", "show_book_accuracy"}}},
+    {U"hint_colorize",          {},                     {{"display", "display"}, {"display", "cell", "display_on_cell"}, {"display", "cell", "disc_value"}, {"display", "cell", "hint_colorize"}}},
     {U"show_umigame_value",     {U"U"},                 {{"display", "display"}, {"display", "cell", "display_on_cell"}, {"display", "cell", "umigame_value"}}},
     {U"show_opening_on_cell",   {},                     {{"display", "display"}, {"display", "cell", "display_on_cell"}, {"display", "cell", "opening"}}},
     {U"show_next_move",         {},                     {{"display", "display"}, {"display", "cell", "display_on_cell"}, {"display", "cell", "next_move"}}},

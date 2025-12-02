@@ -71,6 +71,7 @@ void save_settings(Menu_elements menu_elements, Settings settings, Directories d
     setting_json[U"generate_random_board_score_range_max"] = menu_elements.generate_random_board_score_range_max;
     setting_json[U"show_hint_level"] = menu_elements.show_hint_level;
     setting_json[U"show_endgame_error"] = menu_elements.show_endgame_error;
+    setting_json[U"hint_colorize"] = menu_elements.hint_colorize;
     setting_json.save(U"{}setting.json"_fmt(Unicode::Widen(directories.appdata_dir)));
 }
 

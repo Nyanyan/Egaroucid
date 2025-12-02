@@ -192,7 +192,8 @@
             "next_move_change_view": "表示変更",
             "show_book_accuracy": "Book精度",
             "show_value_when_ai_calculating": "AIの手番でも表示",
-            "show_hint_level": "レベル"
+            "show_hint_level": "レベル",
+            "hint_colorize": "色付きヒント"
         },
         "disc": {
             "display_on_disc": "石への表示",

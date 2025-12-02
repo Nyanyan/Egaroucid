@@ -192,7 +192,8 @@
             "next_move_change_view": "Change View",
             "show_book_accuracy": "Book Accuracy",
             "show_value_when_ai_calculating": "Display on AI's turn",
-            "show_hint_level": "Level"
+            "show_hint_level": "Level",
+            "hint_colorize": "Colorized Hint"
         },
         "disc": {
             "display_on_disc": "On Disc",

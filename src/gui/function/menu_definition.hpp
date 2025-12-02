@@ -101,6 +101,8 @@ Menu create_menu(Menu_elements* menu_elements, Resources *resources, Font font, 
                 side_menu.push(side_side_menu);
                 side_side_menu.init_check(language.get("display", "cell", "show_book_accuracy") + get_shortcut_key_info(U"show_book_accuracy"), &menu_elements->show_book_accuracy, menu_elements->show_book_accuracy);
                 side_menu.push(side_side_menu);
+                side_side_menu.init_check(language.get("display", "cell", "hint_colorize") + get_shortcut_key_info(U"hint_colorize"), &menu_elements->hint_colorize, menu_elements->hint_colorize);
+                side_menu.push(side_side_menu);
             menu_e.push(side_menu);
             side_menu.init_check(language.get("display", "cell", "umigame_value") + get_shortcut_key_info(U"show_umigame_value"), &menu_elements->use_umigame_value, menu_elements->use_umigame_value);
             side_side_menu.init_bar(language.get("display", "cell", "depth"), &menu_elements->umigame_value_depth, menu_elements->umigame_value_depth, 1, 60);

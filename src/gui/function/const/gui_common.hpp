@@ -402,6 +402,7 @@ struct Settings {
     int generate_random_board_score_range_max;
     bool show_hint_level;
     bool show_endgame_error;
+    bool hint_colorize;
 };
 
 struct Fonts {
@@ -513,6 +514,7 @@ struct Menu_elements {
     int pv_length;
     bool show_value_when_ai_calculating;
     bool show_endgame_error;
+    bool hint_colorize;
 
     // book
     bool book_start_deviate;
@@ -640,6 +642,7 @@ struct Menu_elements {
         pv_length = settings->pv_length;
         show_value_when_ai_calculating = settings->show_value_when_ai_calculating;
         show_endgame_error = settings->show_endgame_error;
+        hint_colorize = settings->hint_colorize;
 
         book_start_deviate = false;
         book_start_deviate_with_transcript = false;
