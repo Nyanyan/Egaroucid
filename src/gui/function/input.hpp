@@ -212,7 +212,7 @@ Game_import_t import_othello_quest_processing(std::string s, bool *failed) {
     History_elem start_board;
     start_board.board.reset();
     start_board.player = BLACK;
-    res.history.emplace_back(start_board);
+    res.history.emplace_back(start_board); // always initial board for Othello Quest format
     std::string transcript;
     int offset = 0;
     while (true) {
@@ -278,11 +278,11 @@ Game_import_t import_general_board_transcript_processing(std::string s, bool *fa
         }
     }
     History_elem history_elem;
-    if (transcript_str_start_idx != 0) {
-        history_elem.board.reset();
-        history_elem.player = BLACK;
-        res.history.emplace_back(history_elem);
-    }
+    // if (transcript_str_start_idx != 0) {
+    //     history_elem.board.reset();
+    //     history_elem.player = BLACK;
+    //     res.history.emplace_back(history_elem);
+    // }
     history_elem.board.from_str(board_str);
     history_elem.player = BLACK;
     if (is_white_like_char(board_str[64])) {
