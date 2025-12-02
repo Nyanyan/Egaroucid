@@ -199,7 +199,9 @@
             "display_on_disc": "顯示於棋子上",
             "last_move": "上一步",
             "stable": "穩定子",
-            "play_ordering": "下子順序"
+            "play_ordering": "下子順序",
+            "play_ordering_board_format": "棋盤格式",
+            "play_ordering_transcript_format": "棋譜格式"
         },
         "info": {
             "display_on_info_area": "顯示於資訊區",
