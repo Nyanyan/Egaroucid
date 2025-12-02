@@ -32,8 +32,7 @@ bin/appdata/forced_openings.txt
 bin/appdata/setting.json
 bin/appdata/shortcut_key.json
 bin/appdata/version.txt
-bin/appdata/forced_openings/*.csv
-bin/appdata/forced_openings/*/*
+bin/document/forced_openings/*.csv
 bin/document/games/*.json
 bin/document/games/summary.csv
 bin/document/games/*/*
