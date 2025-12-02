@@ -1554,12 +1554,10 @@ private:
                 //std::cerr << idx_to_coord(hint_infos[i].cell) << " " << hint_infos[i].value << std::endl;
                 int sx = BOARD_SX + (hint_infos[i].cell % HW) * BOARD_CELL_SIZE;
                 int sy = BOARD_SY + (hint_infos[i].cell / HW) * BOARD_CELL_SIZE;
-                Font font = getData().fonts.font_bold;
-                if (hint_infos[i].value == best_score) { // best move: heavy
-                    font = getData().fonts.font_heavy;
-                }
+                bool is_best_score = (hint_infos[i].value == best_score);
                 int value = (int)round(hint_infos[i].value);
-                Color color = get_hint_color(value, hint_infos[i].type);
+                Font font = get_hint_font(is_best_score);
+                Color color = get_hint_color(value, hint_infos[i].type, is_best_score);
                 if (simplified_hint_mode) {
                     // main value
                     font(value).draw(23, Arg::center(sx + BOARD_CELL_SIZE / 2, sy + BOARD_CELL_SIZE / 2), color);
@@ -2070,6 +2068,12 @@ private:
 
     void draw_book_n_lines(uint64_t legal_ignore) {
         uint64_t legal = getData().history_elem.board.get_legal();
+        double best_score = -SCORE_INF;
+        for (int cell = 0; cell < HW2; ++cell) {
+            if (ai_status.hint_use[HW2_M1 - cell] && -HW2 <= ai_status.hint_values[HW2_M1 - cell] && ai_status.hint_values[HW2_M1 - cell] <= (double)HW2 + HINT_PRIORITY + 0.009) {
+                best_score = std::max(best_score, ai_status.hint_values[HW2_M1 - cell]);
+            }
+        }
         for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)) {
             if (1 & (legal_ignore >> cell)) {
                 int sx = BOARD_SX + ((HW2_M1 - cell) % HW) * BOARD_CELL_SIZE;
@@ -2109,7 +2113,7 @@ private:
                             n_lines_str = Format(n_lines / 1000) + U"K";
                         }
                     }
-                    Color color = get_hint_color(-book_elem.value, AI_TYPE_BOOK);
+                    Color color = get_hint_color(-book_elem.value, AI_TYPE_BOOK, round(-book_elem.value) == round(best_score));
                     getData().fonts.font_bold(n_lines_str).draw(9.5, sx + 3, sy + 21, color);
                 }
             }
@@ -2157,6 +2161,12 @@ private:
     }
 
     void draw_book_accuracy(uint64_t legal_ignore) {
+        double best_score = -SCORE_INF;
+        for (int cell = 0; cell < HW2; ++cell) {
+            if (ai_status.hint_use[HW2_M1 - cell] && -HW2 <= ai_status.hint_values[HW2_M1 - cell] && ai_status.hint_values[HW2_M1 - cell] <= (double)HW2 + HINT_PRIORITY + 0.009) {
+                best_score = std::max(best_score, ai_status.hint_values[HW2_M1 - cell]);
+            }
+        }
         uint64_t legal = getData().history_elem.board.get_legal();
         for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)) {
             if (1 & (legal_ignore >> cell)) {
@@ -2182,7 +2192,7 @@ private:
                     if (book_level == LEVEL_HUMAN) {
                         book_level_info = U"S";
                     }
-                    Color color = get_hint_color(-book_elem.value, AI_TYPE_BOOK);
+                    Color color = get_hint_color(-book_elem.value, AI_TYPE_BOOK, round(-book_elem.value) == round(best_score));
                     getData().fonts.font_bold(Unicode::Widen(judge) + U" " + book_level_info).draw(9.5, sx + 3, sy + 33, color);
                 }
             }
@@ -2402,23 +2412,41 @@ private:
         }
     }
 
-    Color get_hint_color(int value, int hint_type) {
+    Color get_hint_color(int value, int hint_type, bool is_best_score) {
         Color color;
-        if (hint_type == 100 || hint_type == AI_TYPE_BOOK) { // 100% or book
-            if (value > 0) {
-                color = getData().colors.cyan;
-            } else if (value == 0) {
-                color = getData().colors.white;
-            } else {
-                color = getData().colors.yellow;
+        if (getData().menu_elements.hint_colorize) {
+            if (hint_type == 100 || hint_type == AI_TYPE_BOOK) { // 100% or book
+                if (value > 0) {
+                    color = getData().colors.cyan;
+                } else if (value == 0) {
+                    color = getData().colors.white;
+                } else {
+                    color = getData().colors.yellow;
+                }
+            } else { // midgame or endgame with MPC
+                if (value >= 0) {
+                    color = getData().colors.light_green;
+                } else {
+                    color = getData().colors.yellow;
+                }
             }
-        } else { // midgame or endgame with MPC
-            if (value >= 0) {
-                color = getData().colors.light_green;
+        } else {
+            if (is_best_score) {
+                color = getData().colors.cyan;
             } else {
-                color = getData().colors.yellow;
+                color = getData().colors.white;
             }
         }
         return color;
+    }
+
+    Font get_hint_font(bool is_best_score) {
+        Font font;
+        if (is_best_score) {
+            font = getData().fonts.font_heavy;
+        } else {
+            font = getData().fonts.font_bold;
+        }
+        return font;
     }
 };
