@@ -389,14 +389,14 @@ class Opening_setting : public App::Scene {
     
     private:
         void init_scroll_manager() {
-            int total_openings = 0;
+            const bool filtering_to_selected = has_selected_csv();
+            int total = filtering_to_selected ? 1 : (int)csv_files.size();
             if (const auto* csv = selected_csv()) {
-                total_openings = static_cast<int>(csv->openings.size());
+                total += static_cast<int>(csv->openings.size());
             }
-            int total = (int)csv_files.size() + total_openings;
             
-            // Add 1 for input area only if adding (not editing)
-            if (adding_elem) {
+            // Add 1 for input/edit area only when it is actually shown
+            if (adding_elem && filtering_to_selected) {
                 total += 1;
             }
             
@@ -636,12 +636,17 @@ class Opening_setting : public App::Scene {
         // Draw CSV files and openings list
         void draw_list() {
             int strt_idx_int = scroll_manager.get_strt_idx_int();
+            const bool filtering_to_selected = has_selected_csv();
             
             // First pass: determine if fixed header will be shown
             int row_index = 0;
             int csv_row_for_selected = -1;
             bool fixed_header_shown = false;
             for (int i = 0; i < (int)csv_files.size(); ++i) {
+                if (filtering_to_selected && i != selected_csv_index) {
+                    continue;
+                }
+                
                 if (i == selected_csv_index) {
                     csv_row_for_selected = row_index;
                     if (row_index < strt_idx_int) {
@@ -670,7 +675,7 @@ class Opening_setting : public App::Scene {
             }
             sy += 8;
             
-            int total_items = (int)csv_files.size();
+            int total_items = filtering_to_selected ? (has_selected_csv() ? 1 : 0) : (int)csv_files.size();
             if (const auto* csv = selected_csv()) {
                 total_items += static_cast<int>(csv->openings.size());
             }
@@ -686,6 +691,10 @@ class Opening_setting : public App::Scene {
             
             // Draw CSV files
             for (int i = 0; i < (int)csv_files.size(); ++i) {
+                if (filtering_to_selected && i != selected_csv_index) {
+                    continue;
+                }
+                
                 if (i == selected_csv_index) {
                     csv_row_for_selected = row_index;
                 }
@@ -757,7 +766,7 @@ class Opening_setting : public App::Scene {
                 }
             }
             
-            if (strt_idx_int + OPENING_SETTING_N_GAMES_ON_WINDOW < total_items + (adding_elem ? 1 : 0)) {
+            if (strt_idx_int + OPENING_SETTING_N_GAMES_ON_WINDOW < total_items + ((adding_elem && filtering_to_selected) ? 1 : 0)) {
                 getData().fonts.font(U"︙").draw(15, Arg::bottomCenter = Vec2{ X_CENTER, 395}, getData().colors.white);
             }
         }
@@ -1086,27 +1095,24 @@ class Opening_setting : public App::Scene {
                 
                 int sy = OPENING_SETTING_SY + 8;
                 int strt_idx_int = scroll_manager.get_strt_idx_int();
-                int row_index = 0;
+                int row_index = 1;  // Skip CSV row itself
+                if (adding_elem && !editing_elem) {
+                    row_index++;  // Skip inline input row when visible
+                }
                 
-                // Skip CSV file rows
-                for (int i = 0; i < (int)csv_files.size(); ++i) {
-                    row_index++;
-                    if (i == selected_csv_index) {
-                        // Check openings in selected CSV
-                        for (int j = 0; j < (int)csv_files[i].openings.size(); ++j) {
-                            if (row_index >= strt_idx_int && row_index < strt_idx_int + OPENING_SETTING_N_GAMES_ON_WINDOW) {
-                                int display_row = row_index - strt_idx_int;
-                                int item_sy = sy + display_row * OPENING_SETTING_HEIGHT;
-                                Rect rect(OPENING_SETTING_SX + 20, item_sy, OPENING_SETTING_WIDTH - 20, OPENING_SETTING_HEIGHT);
-                                
-                                if (rect.contains(drag_state.current_mouse_pos) && j != drag_state.dragged_opening_index) {
-                                    drag_state.drop_target_index = j;
-                                    break;
-                                }
+                if (const auto* csv = selected_csv()) {
+                    for (int j = 0; j < (int)csv->openings.size(); ++j) {
+                        if (row_index >= strt_idx_int && row_index < strt_idx_int + OPENING_SETTING_N_GAMES_ON_WINDOW) {
+                            int display_row = row_index - strt_idx_int;
+                            int item_sy = sy + display_row * OPENING_SETTING_HEIGHT;
+                            Rect rect(OPENING_SETTING_SX + 20, item_sy, OPENING_SETTING_WIDTH - 20, OPENING_SETTING_HEIGHT);
+                            
+                            if (rect.contains(drag_state.current_mouse_pos) && j != drag_state.dragged_opening_index) {
+                                drag_state.drop_target_index = j;
+                                break;
                             }
-                            row_index++;
                         }
-                        break;
+                        row_index++;
                     }
                 }
             }
