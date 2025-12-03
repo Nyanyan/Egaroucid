@@ -79,6 +79,53 @@ class Opening_setting : public App::Scene {
             }
         };
         DragState drag_state;
+
+        bool is_csv_index_valid(int idx) const {
+            return idx >= 0 && idx < static_cast<int>(csv_files.size());
+        }
+
+        bool has_selected_csv() const {
+            return is_csv_index_valid(selected_csv_index);
+        }
+
+        Opening_csv_file* selected_csv() {
+            return has_selected_csv() ? &csv_files[selected_csv_index] : nullptr;
+        }
+
+        const Opening_csv_file* selected_csv() const {
+            return has_selected_csv() ? &csv_files[selected_csv_index] : nullptr;
+        }
+
+        String to_display_filename(const String& filename) const {
+            return filename.ends_with(U".csv") ? filename.substr(0, filename.size() - 4) : filename;
+        }
+
+        bool is_modal_active() const {
+            return adding_elem || editing_elem || creating_csv || editing_csv_name;
+        }
+
+        bool is_opening_input_active() const {
+            return adding_elem || editing_elem;
+        }
+
+        void set_text_areas(const String& transcript, const String& weight) {
+            text_area[0].text = transcript;
+            text_area[1].text = weight;
+            for (auto& area : text_area) {
+                area.cursorPos = area.text.size();
+                area.rebuildGlyphs();
+            }
+            text_area[0].active = true;
+            text_area[1].active = false;
+        }
+
+        void reset_text_areas_for_new_entry() {
+            set_text_areas(U"", U"1");
+        }
+
+        void reset_text_areas_for_opening(const Opening_abstract& opening) {
+            set_text_areas(opening.transcript, Format(opening.weight));
+        }
     
     public:
         Opening_setting(const InitData& init) : IScene{ init } {
@@ -110,13 +157,8 @@ class Opening_setting : public App::Scene {
             
             // Current path label
             String path_label = U"forced_openings/";
-            if (selected_csv_index >= 0 && selected_csv_index < (int)csv_files.size()) {
-                String filename = csv_files[selected_csv_index].filename;
-                // Remove .csv extension
-                if (filename.ends_with(U".csv")) {
-                    filename = filename.substr(0, filename.size() - 4);
-                }
-                path_label += filename;
+            if (const auto* csv = selected_csv()) {
+                path_label += to_display_filename(csv->filename);
             }
             getData().fonts.font(path_label).draw(15, Arg::rightCenter(OPENING_SETTING_SX + OPENING_SETTING_WIDTH, 30), getData().colors.white);
             
@@ -201,9 +243,10 @@ class Opening_setting : public App::Scene {
                 }
                 update_button.draw();
                 if (update_button.clicked()) {
-                    if (editing_csv_index >= 0 && editing_csv_index < (int)csv_files.size()) {
+                    if (is_csv_index_valid(editing_csv_index)) {
+                        auto& csv_file = csv_files[editing_csv_index];
                         // Rename CSV file
-                        String old_path = get_base_dir() + csv_files[editing_csv_index].filename;
+                        String old_path = get_base_dir() + csv_file.filename;
                         String new_path = get_base_dir() + new_csv_filename;
                         
                         // Rename file on disk
@@ -212,7 +255,7 @@ class Opening_setting : public App::Scene {
                         }
                         
                         // Update filename in memory
-                        csv_files[editing_csv_index].filename = new_csv_filename;
+                        csv_file.filename = new_csv_filename;
                         
                         // Update settings file
                         save_all_csv_files();
@@ -257,10 +300,12 @@ class Opening_setting : public App::Scene {
                     }
                     update_button.draw();
                     if (update_button.clicked() || (can_be_registered && KeyEnter.down())) {
-                        if (selected_csv_index >= 0 && selected_csv_index < (int)csv_files.size()) {
-                            csv_files[selected_csv_index].openings[editing_index].transcript = Unicode::Widen(transcript);
-                            csv_files[selected_csv_index].openings[editing_index].weight = weight;
-                            save_csv_file(selected_csv_index);
+                        if (auto* csv = selected_csv()) {
+                            if (editing_index >= 0 && editing_index < static_cast<int>(csv->openings.size())) {
+                                csv->openings[editing_index].transcript = Unicode::Widen(transcript);
+                                csv->openings[editing_index].weight = weight;
+                                save_csv_file(selected_csv_index);
+                            }
                         }
                         editing_elem = false;
                         editing_index = -1;
@@ -283,7 +328,7 @@ class Opening_setting : public App::Scene {
                 }
             } else {
                 // Normal mode
-                bool can_add = (selected_csv_index >= 0 && selected_csv_index < (int)csv_files.size());
+                bool can_add = has_selected_csv();
                 if (can_add) {
                     add_button.enable();
                 } else {
@@ -292,16 +337,7 @@ class Opening_setting : public App::Scene {
                 add_button.draw();
                 if (can_add && add_button.clicked()) {
                     adding_elem = true;
-                    for (int i = 0; i < 2; ++i) {
-                        text_area[i].text = U"";
-                        if (i == 1) {
-                            text_area[i].text = U"1";
-                        }
-                        text_area[i].cursorPos = text_area[i].text.size();
-                        text_area[i].rebuildGlyphs();
-                    }
-                    text_area[0].active = true;
-                    text_area[1].active = false;
+                    reset_text_areas_for_new_entry();
                     init_scroll_manager();  // Update scroll manager for new row
                 }
                 
@@ -325,7 +361,7 @@ class Opening_setting : public App::Scene {
             }
             
             // Handle drag and drop for reordering openings within CSV
-            if (!adding_elem && !editing_elem && !creating_csv && !editing_csv_name && selected_csv_index >= 0) {
+            if (!is_modal_active() && has_selected_csv()) {
                 handle_drag_and_drop();
             }
             
@@ -339,7 +375,7 @@ class Opening_setting : public App::Scene {
                 }
             }
             
-            if (!(adding_elem || editing_elem || creating_csv || editing_csv_name)) {
+            if (!is_modal_active()) {
                 scroll_manager.draw();
                 scroll_manager.update();
             }
@@ -352,8 +388,8 @@ class Opening_setting : public App::Scene {
     private:
         void init_scroll_manager() {
             int total_openings = 0;
-            if (selected_csv_index >= 0 && selected_csv_index < (int)csv_files.size()) {
-                total_openings = (int)csv_files[selected_csv_index].openings.size();
+            if (const auto* csv = selected_csv()) {
+                total_openings = static_cast<int>(csv->openings.size());
             }
             int total = (int)csv_files.size() + total_openings;
             
@@ -509,10 +545,11 @@ class Opening_setting : public App::Scene {
         
         // Add new opening to currently selected CSV
         void add_opening(const String& transcript, double weight) {
-            if (selected_csv_index < 0 || selected_csv_index >= (int)csv_files.size()) return;
+            auto* csv = selected_csv();
+            if (!csv) return;
             
             Opening_abstract opening(transcript, weight);
-            csv_files[selected_csv_index].openings.emplace_back(opening);
+            csv->openings.emplace_back(opening);
             
             // Add buttons for new opening
             ImageButton delete_btn;
@@ -523,21 +560,26 @@ class Opening_setting : public App::Scene {
             edit_btn.init(0, 0, 15, getData().resources.pencil);
             edit_buttons.emplace_back(edit_btn);
             
-            save_csv_file(selected_csv_index);
+            if (has_selected_csv()) {
+                save_csv_file(selected_csv_index);
+            }
             init_scroll_manager();
         }
         
         // Delete opening from currently selected CSV
         void delete_opening(int idx) {
-            if (selected_csv_index < 0 || selected_csv_index >= (int)csv_files.size()) return;
-            if (idx < 0 || idx >= (int)csv_files[selected_csv_index].openings.size()) return;
+            auto* csv = selected_csv();
+            if (!csv) return;
+            if (idx < 0 || idx >= static_cast<int>(csv->openings.size())) return;
             
-            csv_files[selected_csv_index].openings.erase(csv_files[selected_csv_index].openings.begin() + idx);
+            csv->openings.erase(csv->openings.begin() + idx);
             
             // Rebuild buttons for this CSV's openings
             rebuild_opening_buttons();
             
-            save_csv_file(selected_csv_index);
+            if (has_selected_csv()) {
+                save_csv_file(selected_csv_index);
+            }
             
             double strt_idx_double = scroll_manager.get_strt_idx_double();
             init_scroll_manager();
@@ -553,12 +595,13 @@ class Opening_setting : public App::Scene {
             delete_buttons.clear();
             edit_buttons.clear();
             
-            if (selected_csv_index < 0 || selected_csv_index >= (int)csv_files.size()) return;
+            const auto* csv = selected_csv();
+            if (!csv) return;
             
             Texture cross_image = getData().resources.cross;
             Texture edit_image = getData().resources.pencil;
             
-            for (int i = 0; i < (int)csv_files[selected_csv_index].openings.size(); ++i) {
+            for (int i = 0; i < (int)csv->openings.size(); ++i) {
                 ImageButton delete_btn;
                 delete_btn.init(0, 0, 15, cross_image);
                 delete_buttons.emplace_back(delete_btn);
@@ -571,9 +614,10 @@ class Opening_setting : public App::Scene {
         
         // Move opening within CSV (for drag and drop)
         void move_opening(int from_idx, int to_idx) {
-            if (selected_csv_index < 0 || selected_csv_index >= (int)csv_files.size()) return;
+            auto* csv = selected_csv();
+            if (!csv) return;
             
-            auto& openings = csv_files[selected_csv_index].openings;
+            auto& openings = csv->openings;
             if (from_idx < 0 || from_idx >= (int)openings.size()) return;
             if (to_idx < 0 || to_idx >= (int)openings.size()) return;
             if (from_idx == to_idx) return;
@@ -582,7 +626,9 @@ class Opening_setting : public App::Scene {
             openings.erase(openings.begin() + from_idx);
             openings.insert(openings.begin() + to_idx, temp);
             
-            save_csv_file(selected_csv_index);
+            if (has_selected_csv()) {
+                save_csv_file(selected_csv_index);
+            }
         }
         
         // Draw CSV files and openings list
@@ -610,7 +656,7 @@ class Opening_setting : public App::Scene {
             }
             
             // Draw fixed header at top if scrolled (ABOVE OPENING_SETTING_SY)
-            if (fixed_header_shown) {
+            if (fixed_header_shown && has_selected_csv()) {
                 draw_csv_file_item_fixed_header(selected_csv_index, OPENING_SETTING_SY - OPENING_SETTING_HEADER_HEIGHT);
             }
             
@@ -623,8 +669,8 @@ class Opening_setting : public App::Scene {
             sy += 8;
             
             int total_items = (int)csv_files.size();
-            if (selected_csv_index >= 0 && selected_csv_index < (int)csv_files.size()) {
-                total_items += (int)csv_files[selected_csv_index].openings.size();
+            if (const auto* csv = selected_csv()) {
+                total_items += static_cast<int>(csv->openings.size());
             }
             
             if (!adding_elem && !editing_elem && !editing_csv_name && total_items == 0) {
@@ -756,10 +802,7 @@ class Opening_setting : public App::Scene {
                 SimpleGUI::TextArea(csv_rename_area, Vec2{OPENING_SETTING_SX + OPENING_SETTING_LEFT_MARGIN + 36, sy + OPENING_SETTING_HEIGHT / 2 - 17}, SizeF{400, 30}, SimpleGUI::PreferredTextAreaMaxChars);
             } else {
                 // Normal display mode
-                String display_filename = csv_file.filename;
-                if (display_filename.ends_with(U".csv")) {
-                    display_filename = display_filename.substr(0, display_filename.size() - 4);
-                }
+                String display_filename = to_display_filename(csv_file.filename);
                 
                 // Draw folder icon
                 int icon_x = OPENING_SETTING_SX + OPENING_SETTING_LEFT_MARGIN + 8;
@@ -819,10 +862,7 @@ class Opening_setting : public App::Scene {
             if (should_enter_edit_mode) {
                 editing_csv_name = true;
                 editing_csv_index = idx;
-                String display_filename = csv_file.filename;
-                if (display_filename.ends_with(U".csv")) {
-                    display_filename = display_filename.substr(0, display_filename.size() - 4);
-                }
+                String display_filename = to_display_filename(csv_file.filename);
                 csv_rename_area.text = display_filename;
                 csv_rename_area.cursorPos = csv_rename_area.text.size();
                 csv_rename_area.rebuildGlyphs();
@@ -844,10 +884,7 @@ class Opening_setting : public App::Scene {
             Color text_color = csv_file.enabled ? getData().colors.white : Color(128, 128, 128);
             
             // Display CSV filename (without .csv extension) - no editing
-            String display_filename = csv_file.filename;
-            if (display_filename.ends_with(U".csv")) {
-                display_filename = display_filename.substr(0, display_filename.size() - 4);
-            }
+            String display_filename = to_display_filename(csv_file.filename);
             
             // Draw folder icon (smaller)
             int icon_x = OPENING_SETTING_SX + OPENING_SETTING_LEFT_MARGIN + 4;
@@ -864,8 +901,10 @@ class Opening_setting : public App::Scene {
         
         // Draw opening item
         void draw_opening_item(int idx, int sy, int row_index) {
-            if (selected_csv_index < 0 || selected_csv_index >= (int)csv_files.size()) return;
-            const auto& opening = csv_files[selected_csv_index].openings[idx];
+            const auto* csv = selected_csv();
+            if (!csv) return;
+            if (idx < 0 || idx >= static_cast<int>(csv->openings.size())) return;
+            const auto& opening = csv->openings[idx];
             
             Rect rect(OPENING_SETTING_SX + 20, sy, OPENING_SETTING_WIDTH - 20, OPENING_SETTING_HEIGHT);
             
@@ -888,12 +927,12 @@ class Opening_setting : public App::Scene {
             bool mouse_was_down = drag_state.mouse_was_down;
             if (mouse_is_down && !mouse_was_down && rect.contains(Cursor::Pos()) && 
                 !drag_state.is_dragging &&
-                !(adding_elem || editing_elem)) {
+                !is_opening_input_active()) {
                 drag_state.dragged_opening_index = idx;
                 drag_state.drag_start_pos = Cursor::Pos();
             }
             
-            if (!(adding_elem || editing_elem)) {
+            if (!is_opening_input_active()) {
                 // Delete button
                 if (idx < (int)delete_buttons.size()) {
                     delete_buttons[idx].move(OPENING_SETTING_SX + 21, sy + 1);
@@ -914,14 +953,7 @@ class Opening_setting : public App::Scene {
                         
                         editing_elem = true;
                         editing_index = idx;
-                        text_area[0].text = opening.transcript;
-                        text_area[1].text = Format(opening.weight);
-                        text_area[0].cursorPos = text_area[0].text.size();
-                        text_area[1].cursorPos = text_area[1].text.size();
-                        text_area[0].rebuildGlyphs();
-                        text_area[1].rebuildGlyphs();
-                        text_area[0].active = true;
-                        text_area[1].active = false;
+                        reset_text_areas_for_opening(opening);
                         return;
                     }
                 }
@@ -1002,8 +1034,9 @@ class Opening_setting : public App::Scene {
         
         // Draw dragged item
         void draw_dragged_item() {
-            if (selected_csv_index < 0 || selected_csv_index >= (int)csv_files.size()) return;
-            if (drag_state.dragged_opening_index < 0 || drag_state.dragged_opening_index >= (int)csv_files[selected_csv_index].openings.size()) return;
+            const auto* csv = selected_csv();
+            if (!csv) return;
+            if (drag_state.dragged_opening_index < 0 || drag_state.dragged_opening_index >= static_cast<int>(csv->openings.size())) return;
             
             Vec2 draw_pos = drag_state.current_mouse_pos;
             draw_pos.x -= (OPENING_SETTING_WIDTH - 20) / 2;
@@ -1012,13 +1045,13 @@ class Opening_setting : public App::Scene {
             Rect drag_rect(draw_pos.x, draw_pos.y, OPENING_SETTING_WIDTH - 20, OPENING_SETTING_HEIGHT);
             drag_rect.draw(getData().colors.yellow.withAlpha(200)).drawFrame(2.0, getData().colors.white);
             
-            const auto& opening = csv_files[selected_csv_index].openings[drag_state.dragged_opening_index];
+            const auto& opening = csv->openings[drag_state.dragged_opening_index];
             getData().fonts.font(opening.transcript).draw(15, Arg::leftCenter(draw_pos.x + OPENING_SETTING_LEFT_MARGIN + 8, draw_pos.y + OPENING_SETTING_HEIGHT / 2), getData().colors.black);
         }
         
         // Handle drag and drop
         void handle_drag_and_drop() {
-            if (selected_csv_index < 0 || selected_csv_index >= (int)csv_files.size()) return;
+            if (!has_selected_csv()) return;
             
             // Update mouse state
             drag_state.current_mouse_pos = Cursor::Pos();
