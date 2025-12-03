@@ -344,8 +344,14 @@ public:
         }
         getData().fonts.font(language.get("in_out", "input_game")).draw(25, Arg::center(X_CENTER, 30), getData().colors.white);
         // Current path label
-        String path_label = U"games/" + Unicode::Widen(subfolder);
+        String path_label = build_path_label(U"games/", Unicode::Widen(subfolder));
         getData().fonts.font(path_label).draw(15, Arg::rightCenter(IMPORT_GAME_SX + IMPORT_GAME_WIDTH, 30), getData().colors.white);
+        bool can_go_up = !subfolder.empty();
+        if (draw_up_navigation_button(up_button, can_go_up)) {
+            if (navigate_to_parent_subfolder()) {
+                return;
+            }
+        }
         back_button.draw();
         if (back_button.clicked() || KeyEscape.pressed()) {
             getData().graph_resources.need_init = false;
@@ -359,15 +365,7 @@ public:
                 IMPORT_GAME_HEIGHT, IMPORT_GAME_N_GAMES_ON_WINDOW, has_parent, getData().fonts, getData().colors, getData().resources, language,
                 getData().directories.document_dir, subfolder);
             if (res.upButtonClicked || res.parentFolderDoubleClicked) {
-                if (!subfolder.empty()) {
-                    std::string s = subfolder;
-                    if (!s.empty() && s.back() == '/') s.pop_back();
-                    size_t pos = s.find_last_of('/');
-                    if (pos == std::string::npos) subfolder.clear();
-                    else subfolder = s.substr(0, pos);
-                    enumerate_current_dir();
-                    load_games();
-                    init_scroll_manager();
+                if (navigate_to_parent_subfolder()) {
                     return;
                 }
             }
@@ -402,6 +400,25 @@ private:
         int parent_offset = !subfolder.empty() ? 1 : 0;  // Add parent folder if not at root
         int total = parent_offset + (int)folders_display.size() + (int)games.size();
         scroll_manager.init(770, IMPORT_GAME_SY + 8, 10, IMPORT_GAME_HEIGHT * IMPORT_GAME_N_GAMES_ON_WINDOW, 20, total, IMPORT_GAME_N_GAMES_ON_WINDOW, IMPORT_GAME_SX, 73, IMPORT_GAME_WIDTH + 10, IMPORT_GAME_HEIGHT * IMPORT_GAME_N_GAMES_ON_WINDOW);
+    }
+
+    bool navigate_to_parent_subfolder() {
+        if (subfolder.empty()) {
+            return false;
+        }
+        if (!subfolder.empty() && subfolder.back() == '/') {
+            subfolder.pop_back();
+        }
+        size_t pos = subfolder.find_last_of('/');
+        if (pos == std::string::npos) {
+            subfolder.clear();
+        } else {
+            subfolder = subfolder.substr(0, pos);
+        }
+        enumerate_current_dir();
+        load_games();
+        init_scroll_manager();
+        return true;
     }
 
     void import_game(int idx) {

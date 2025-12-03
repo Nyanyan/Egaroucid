@@ -48,6 +48,7 @@ class Opening_setting : public App::Scene {
         Button add_csv_button;  // Button to create new CSV file
         Button ok_button;
         Button back_button;
+        Button up_button;
         Button register_button;
         Button update_button;
         Button create_csv_button;
@@ -94,6 +95,20 @@ class Opening_setting : public App::Scene {
 
         const Opening_csv_file* selected_csv() const {
             return has_selected_csv() ? &csv_files[selected_csv_index] : nullptr;
+        }
+
+        void deselect_current_csv() {
+            if (!has_selected_csv()) {
+                return;
+            }
+            selected_csv_index = -1;
+            adding_elem = false;
+            editing_elem = false;
+            editing_index = -1;
+            drag_state.reset();
+            delete_buttons.clear();
+            edit_buttons.clear();
+            init_scroll_manager();
         }
 
         String to_display_filename(const String& filename) const {
@@ -153,6 +168,7 @@ class Opening_setting : public App::Scene {
             add_csv_button.init(BUTTON3_2_SX, BUTTON3_SY, BUTTON3_WIDTH, BUTTON3_HEIGHT, BUTTON3_RADIUS, language.get("opening_setting", "new_category"), 20, getData().fonts.font, getData().colors.white, getData().colors.black);
             ok_button.init(BUTTON3_3_SX, BUTTON3_SY, BUTTON3_WIDTH, BUTTON3_HEIGHT, BUTTON3_RADIUS, language.get("common", "ok"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
             back_button.init(GO_BACK_BUTTON_BACK_SX, GO_BACK_BUTTON_SY, GO_BACK_BUTTON_WIDTH, GO_BACK_BUTTON_HEIGHT, GO_BACK_BUTTON_RADIUS, language.get("common", "back"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
+            up_button.init(OPENING_SETTING_SX, OPENING_SETTING_SY - 30, 28, 24, 4, U"↑", 16, getData().fonts.font, getData().colors.white, getData().colors.black);
             register_button.init(GO_BACK_BUTTON_GO_SX, GO_BACK_BUTTON_SY, GO_BACK_BUTTON_WIDTH, GO_BACK_BUTTON_HEIGHT, GO_BACK_BUTTON_RADIUS, language.get("opening_setting", "register"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
             update_button.init(GO_BACK_BUTTON_GO_SX, GO_BACK_BUTTON_SY, GO_BACK_BUTTON_WIDTH, GO_BACK_BUTTON_HEIGHT, GO_BACK_BUTTON_RADIUS, language.get("common", "ok"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
             create_csv_button.init(GO_BACK_BUTTON_GO_SX, GO_BACK_BUTTON_SY, GO_BACK_BUTTON_WIDTH, GO_BACK_BUTTON_HEIGHT, GO_BACK_BUTTON_RADIUS, language.get("in_out", "create"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
@@ -176,11 +192,19 @@ class Opening_setting : public App::Scene {
             getData().fonts.font(language.get("opening_setting", "opening_setting")).draw(25, Arg::center(X_CENTER, 30), getData().colors.white);
             
             // Current path label
-            String path_label = U"forced_openings/";
+            String suffix;
             if (const auto* csv = selected_csv()) {
-                path_label += to_display_filename(csv->filename);
+                suffix = to_display_filename(csv->filename);
             }
+            String path_label = build_path_label(U"forced_openings/", suffix);
             getData().fonts.font(path_label).draw(15, Arg::rightCenter(OPENING_SETTING_SX + OPENING_SETTING_WIDTH, 30), getData().colors.white);
+            if (!creating_csv) {
+                bool can_go_up = has_selected_csv() && !is_modal_active();
+                if (draw_up_navigation_button(up_button, can_go_up)) {
+                    deselect_current_csv();
+                    return;
+                }
+            }
             
             // Handle CSV creation mode
             if (creating_csv) {
@@ -839,12 +863,12 @@ class Opening_setting : public App::Scene {
                     if (current_time - last_click_time < DOUBLE_CLICK_TIME_MS && last_clicked_csv == idx) {
                         // Double-click: toggle selection
                         if (selected_csv_index == idx) {
-                            selected_csv_index = -1;  // Deselect
+                            deselect_current_csv();
                         } else {
                             selected_csv_index = idx;  // Select
                             rebuild_opening_buttons();
+                            init_scroll_manager();
                         }
-                        init_scroll_manager();
                     }
                     last_click_time = current_time;
                     last_clicked_csv = idx;

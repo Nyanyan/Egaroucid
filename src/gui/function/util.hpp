@@ -12,6 +12,7 @@
 #include <string>
 #include <vector>
 #include "const/gui_common.hpp"
+#include "button.hpp"
 
 std::string get_extension(std::string file) {
     std::string res;
@@ -219,3 +220,20 @@ bool move_folder(const String& source_path, const String& target_parent_path, co
         return false;
     }
 }
+
+inline String build_path_label(const String& root, const String& suffix) {
+    if (suffix.isEmpty()) {
+        return root;
+    }
+    return root + suffix;
+}
+
+inline bool draw_up_navigation_button(Button& button, bool can_go_up) {
+    if (!can_go_up) {
+        return false;
+    }
+    button.enable();
+    button.draw();
+    return button.clicked();
+}
+
