@@ -24,3 +24,4 @@
 #include "shortcut_key.hpp"
 #include "slidebar.hpp"
 #include "util.hpp"
+#include "explorer.hpp"

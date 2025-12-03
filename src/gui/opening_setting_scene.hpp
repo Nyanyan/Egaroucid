@@ -19,55 +19,46 @@
 struct Opening_abstract {
     String transcript;
     double weight;
+    bool enabled;
     
-    Opening_abstract() : transcript(U""), weight(1.0) {}
-    Opening_abstract(const String& t, double w) : transcript(t), weight(w) {}
-};
-
-// CSV file structure
-struct Opening_csv_file {
-    String filename;  // CSV filename without path (e.g., "default.csv")
-    bool enabled;     // Whether this CSV file is enabled
-    std::vector<Opening_abstract> openings;
-    
-    Opening_csv_file() : filename(U""), enabled(true) {}
-    Opening_csv_file(const String& f, bool e = true) : filename(f), enabled(e) {}
+    Opening_abstract() : transcript(U""), weight(1.0), enabled(true) {}
+    Opening_abstract(const String& t, double w, bool e = true) : transcript(t), weight(w), enabled(e) {}
 };
 
 
 class Opening_setting : public App::Scene {
     private:
-        std::vector<Opening_csv_file> csv_files;  // CSV files list
-        int selected_csv_index;  // Currently selected CSV file for editing (-1 if none)
+        std::vector<Opening_abstract> openings;
         std::vector<ImageButton> delete_buttons;
         std::vector<ImageButton> edit_buttons;
-        std::vector<ImageButton> csv_toggle_buttons;  // Toggle buttons for CSV files
-        ImageButton csv_edit_button;  // Edit button for CSV file name
+        std::vector<ImageButton> toggle_buttons;
+        std::vector<ImageButton> move_up_buttons;
+        std::vector<ImageButton> move_down_buttons;
+        std::vector<String> folders_display;
         Scroll_manager scroll_manager;
         Button add_button;
         Button add_csv_button;  // Button to create new CSV file
         Button ok_button;
         Button back_button;
-        Button up_button;
         Button register_button;
         Button update_button;
         Button create_csv_button;
+        bool has_parent;
+        std::string subfolder;
         bool adding_elem;
         bool editing_elem;
         bool creating_csv;
-        bool editing_csv_name;
         int editing_index;
-        int editing_csv_index;
-        int saved_scroll_position;  // Save scroll position when editing starts
         TextAreaEditState text_area[2];
         TextAreaEditState csv_name_area;
-        TextAreaEditState csv_rename_area;
         
         // Drag and drop state for openings within CSV
         struct DragState {
             bool is_dragging = false;
+            bool is_dragging_opening = false;
+            bool is_dragging_folder = false;
             int dragged_opening_index = -1;
-            int drop_target_index = -1;
+            String dragged_folder_name;
             Vec2 drag_start_pos;
             Vec2 current_mouse_pos;
             bool mouse_was_down = false;
@@ -75,114 +66,33 @@ class Opening_setting : public App::Scene {
             
             void reset() {
                 is_dragging = false;
+                is_dragging_opening = false;
+                is_dragging_folder = false;
                 dragged_opening_index = -1;
-                drop_target_index = -1;
+                dragged_folder_name.clear();
+                drag_start_pos = Vec2{ 0, 0 };
             }
         };
         DragState drag_state;
-
-        bool is_csv_index_valid(int idx) const {
-            return idx >= 0 && idx < static_cast<int>(csv_files.size());
-        }
-
-        bool has_selected_csv() const {
-            return is_csv_index_valid(selected_csv_index);
-        }
-
-        Opening_csv_file* selected_csv() {
-            return has_selected_csv() ? &csv_files[selected_csv_index] : nullptr;
-        }
-
-        const Opening_csv_file* selected_csv() const {
-            return has_selected_csv() ? &csv_files[selected_csv_index] : nullptr;
-        }
-
-        void deselect_current_csv() {
-            if (!has_selected_csv()) {
-                return;
-            }
-            selected_csv_index = -1;
-            adding_elem = false;
-            editing_elem = false;
-            editing_index = -1;
-            drag_state.reset();
-            delete_buttons.clear();
-            edit_buttons.clear();
-            init_scroll_manager();
-        }
-
-        String to_display_filename(const String& filename) const {
-            return filename.ends_with(U".csv") ? filename.substr(0, filename.size() - 4) : filename;
-        }
-
-        bool is_modal_active() const {
-            return adding_elem || editing_elem || creating_csv || editing_csv_name;
-        }
-
-        bool is_opening_input_active() const {
-            return adding_elem || editing_elem;
-        }
-
-        void set_text_areas(const String& transcript, const String& weight) {
-            text_area[0].text = transcript;
-            text_area[1].text = weight;
-            for (auto& area : text_area) {
-                area.cursorPos = area.text.size();
-                area.rebuildGlyphs();
-            }
-            text_area[0].active = true;
-            text_area[1].active = false;
-        }
-
-        void reset_text_areas_for_new_entry() {
-            set_text_areas(U"", U"1");
-        }
-
-        void reset_text_areas_for_opening(const Opening_abstract& opening) {
-            set_text_areas(opening.transcript, Format(opening.weight));
-        }
-
-        bool is_allowed_filename_char(char32 ch) const {
-            return !(ch == U'\n' || ch == U'\r' || ch == U'/' || ch == U'\\' ||
-                     ch == U':' || ch == U'*' || ch == U'?' || ch == U'"' ||
-                     ch == U'<' || ch == U'>' || ch == U'|');
-        }
-
-        void sanitize_filename_input(TextAreaEditState& state) const {
-            String filtered;
-            for (auto ch : state.text) {
-                if (is_allowed_filename_char(ch)) {
-                    filtered += ch;
-                }
-            }
-            if (state.text != filtered) {
-                state.text = filtered;
-                state.cursorPos = std::min(state.cursorPos, filtered.size());
-                state.rebuildGlyphs();
-            }
-        }
     
     public:
         Opening_setting(const InitData& init) : IScene{ init } {
             add_button.init(BUTTON3_1_SX, BUTTON3_SY, BUTTON3_WIDTH, BUTTON3_HEIGHT, BUTTON3_RADIUS, language.get("opening_setting", "add"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
-            add_csv_button.init(BUTTON3_2_SX, BUTTON3_SY, BUTTON3_WIDTH, BUTTON3_HEIGHT, BUTTON3_RADIUS, language.get("opening_setting", "new_category"), 20, getData().fonts.font, getData().colors.white, getData().colors.black);
+            add_csv_button.init(BUTTON3_2_SX, BUTTON3_SY, BUTTON3_WIDTH, BUTTON3_HEIGHT, BUTTON3_RADIUS, language.get("in_out", "new_folder"), 20, getData().fonts.font, getData().colors.white, getData().colors.black);
             ok_button.init(BUTTON3_3_SX, BUTTON3_SY, BUTTON3_WIDTH, BUTTON3_HEIGHT, BUTTON3_RADIUS, language.get("common", "ok"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
             back_button.init(GO_BACK_BUTTON_BACK_SX, GO_BACK_BUTTON_SY, GO_BACK_BUTTON_WIDTH, GO_BACK_BUTTON_HEIGHT, GO_BACK_BUTTON_RADIUS, language.get("common", "back"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
-            up_button.init(OPENING_SETTING_SX, OPENING_SETTING_SY - 30, 28, 24, 4, U"↑", 16, getData().fonts.font, getData().colors.white, getData().colors.black);
             register_button.init(GO_BACK_BUTTON_GO_SX, GO_BACK_BUTTON_SY, GO_BACK_BUTTON_WIDTH, GO_BACK_BUTTON_HEIGHT, GO_BACK_BUTTON_RADIUS, language.get("opening_setting", "register"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
-            update_button.init(GO_BACK_BUTTON_GO_SX, GO_BACK_BUTTON_SY, GO_BACK_BUTTON_WIDTH, GO_BACK_BUTTON_HEIGHT, GO_BACK_BUTTON_RADIUS, language.get("common", "ok"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
+            update_button.init(GO_BACK_BUTTON_GO_SX, GO_BACK_BUTTON_SY, GO_BACK_BUTTON_WIDTH, GO_BACK_BUTTON_HEIGHT, GO_BACK_BUTTON_RADIUS, language.get("common", "edit"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
             create_csv_button.init(GO_BACK_BUTTON_GO_SX, GO_BACK_BUTTON_SY, GO_BACK_BUTTON_WIDTH, GO_BACK_BUTTON_HEIGHT, GO_BACK_BUTTON_RADIUS, language.get("in_out", "create"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
-            csv_edit_button.init(0, 0, 15, getData().resources.pencil);
             
+            has_parent = false;
+            subfolder.clear();
             adding_elem = false;
             editing_elem = false;
             creating_csv = false;
-            editing_csv_name = false;
             editing_index = -1;
-            editing_csv_index = -1;
-            selected_csv_index = -1;
-            saved_scroll_position = 0;
-            load_csv_files();
+            enumerate_current_dir();
+            load_openings();
         }
     
         void update() override {
@@ -192,19 +102,11 @@ class Opening_setting : public App::Scene {
             getData().fonts.font(language.get("opening_setting", "opening_setting")).draw(25, Arg::center(X_CENTER, 30), getData().colors.white);
             
             // Current path label
-            String suffix;
-            if (const auto* csv = selected_csv()) {
-                suffix = to_display_filename(csv->filename);
+            String path_label = U"forced_openings/";
+            if (!subfolder.empty()) {
+                path_label += Unicode::Widen(subfolder) + U"/";
             }
-            String path_label = build_path_label(U"forced_openings/", suffix);
             getData().fonts.font(path_label).draw(15, Arg::rightCenter(OPENING_SETTING_SX + OPENING_SETTING_WIDTH, 30), getData().colors.white);
-            if (!creating_csv) {
-                bool can_go_up = has_selected_csv() && !is_modal_active();
-                if (draw_up_navigation_button(up_button, can_go_up)) {
-                    deselect_current_csv();
-                    return;
-                }
-            }
             
             // Handle CSV creation mode
             if (creating_csv) {
@@ -213,15 +115,11 @@ class Opening_setting : public App::Scene {
                     creating_csv = false;
                 }
                 
-                sanitize_filename_input(csv_name_area);
-                std::string csv_name_str = csv_name_area.text.narrow();
-                bool can_create = !csv_name_str.empty();
-                
-                // Add .csv extension if not present
-                String csv_filename = Unicode::Widen(csv_name_str);
-                if (!csv_filename.ends_with(U".csv")) {
-                    csv_filename += U".csv";
-                }
+                String folder_name = csv_name_area.text.trimmed();
+                std::string folder_name_str = folder_name.narrow();
+                bool can_create = !folder_name_str.empty() && 
+                                 folder_name_str.find("/") == std::string::npos && 
+                                 folder_name_str.find("\\") == std::string::npos;
                 
                 if (can_create) {
                     create_csv_button.enable();
@@ -229,10 +127,11 @@ class Opening_setting : public App::Scene {
                     create_csv_button.disable();
                 }
                 create_csv_button.draw();
-                if (create_csv_button.clicked()) {
-                    if (create_new_csv_file(csv_filename)) {
-                        load_csv_files();
+                if (create_csv_button.clicked() || (can_create && KeyEnter.down())) {
+                    if (create_new_folder(folder_name)) {
+                        enumerate_current_dir();
                     }
+                    load_openings();
                     creating_csv = false;
                     csv_name_area.text = U"";
                     csv_name_area.cursorPos = 0;
@@ -241,69 +140,15 @@ class Opening_setting : public App::Scene {
                 
                 // Draw CSV name input area
                 int sy = OPENING_SETTING_SY + 8;
-                getData().fonts.font(language.get("opening_setting", "category_name") + U":").draw(20, Arg::leftCenter(OPENING_SETTING_SX + OPENING_SETTING_LEFT_MARGIN + 8, sy + OPENING_SETTING_HEIGHT / 2), getData().colors.white);
+                getData().fonts.font(language.get("in_out", "new_folder") + U":").draw(20, Arg::leftCenter(OPENING_SETTING_SX + OPENING_SETTING_LEFT_MARGIN + 8, sy + OPENING_SETTING_HEIGHT / 2), getData().colors.white);
                 SimpleGUI::TextArea(csv_name_area, Vec2{OPENING_SETTING_SX + OPENING_SETTING_LEFT_MARGIN + 150, sy + OPENING_SETTING_HEIGHT / 2 - 17}, SizeF{400, 30}, SimpleGUI::PreferredTextAreaMaxChars);
-                
-            } else if (editing_csv_name) {
-                back_button.draw();
-                if (back_button.clicked() || KeyEscape.down()) {
-                    editing_csv_name = false;
-                    editing_csv_index = -1;
-                }
-                
-                sanitize_filename_input(csv_rename_area);
-                
-                std::string csv_name_str = csv_rename_area.text.narrow();
-                bool can_rename = !csv_name_str.empty();
-                
-                // Add .csv extension if not present
-                String new_csv_filename = Unicode::Widen(csv_name_str);
-                if (!new_csv_filename.ends_with(U".csv")) {
-                    new_csv_filename += U".csv";
-                }
-                
-                if (can_rename) {
-                    update_button.enable();
-                } else {
-                    update_button.disable();
-                }
-                update_button.draw();
-                if (update_button.clicked()) {
-                    if (is_csv_index_valid(editing_csv_index)) {
-                        auto& csv_file = csv_files[editing_csv_index];
-                        // Rename CSV file
-                        String old_path = get_base_dir() + csv_file.filename;
-                        String new_path = get_base_dir() + new_csv_filename;
-                        
-                        // Rename file on disk
-                        if (FileSystem::Exists(old_path)) {
-                            FileSystem::Rename(old_path, new_path);
-                        }
-                        
-                        // Update filename in memory
-                        csv_file.filename = new_csv_filename;
-                        
-                        // Update settings file
-                        save_all_csv_files();
-                    }
-                    editing_csv_name = false;
-                    editing_csv_index = -1;
-                }
-                
-                // Draw in the list (handled by draw_list function)
                 
             } else if (adding_elem || editing_elem) {
                 back_button.draw();
                 if (back_button.clicked() || KeyEscape.down()) {
-                    bool was_editing = editing_elem;  // Save state before clearing
                     adding_elem = false;
                     editing_elem = false;
                     editing_index = -1;
-                    init_scroll_manager();  // Update scroll manager when exiting edit mode
-                    if (was_editing) {
-                        // Restore scroll position when canceling edit (after init)
-                        scroll_manager.set_strt_idx((double)saved_scroll_position);
-                    }
                 }
                 
                 std::string transcript = text_area[0].text.narrow();
@@ -326,18 +171,13 @@ class Opening_setting : public App::Scene {
                     }
                     update_button.draw();
                     if (update_button.clicked() || (can_be_registered && KeyEnter.down())) {
-                        if (auto* csv = selected_csv()) {
-                            if (editing_index >= 0 && editing_index < static_cast<int>(csv->openings.size())) {
-                                csv->openings[editing_index].transcript = Unicode::Widen(transcript);
-                                csv->openings[editing_index].weight = weight;
-                                save_csv_file(selected_csv_index);
-                            }
+                        if (editing_index >= 0 && editing_index < (int)openings.size()) {
+                            openings[editing_index].transcript = Unicode::Widen(transcript);
+                            openings[editing_index].weight = weight;
+                            save_openings();
                         }
                         editing_elem = false;
                         editing_index = -1;
-                        init_scroll_manager();  // Update scroll manager after editing
-                        // Restore scroll position after update (after init)
-                        scroll_manager.set_strt_idx((double)saved_scroll_position);
                     }
                 } else {
                     if (can_be_registered) {
@@ -349,22 +189,25 @@ class Opening_setting : public App::Scene {
                     if (register_button.clicked() || (can_be_registered && KeyEnter.down())) {
                         add_opening(Unicode::Widen(transcript), weight);
                         adding_elem = false;
-                        init_scroll_manager();  // Update scroll manager after adding
                     }
                 }
             } else {
                 // Normal mode
-                bool can_add = has_selected_csv();
-                if (can_add) {
-                    add_button.enable();
-                } else {
-                    add_button.disable();
-                }
+                bool can_add = true;
+                add_button.enable();
                 add_button.draw();
                 if (can_add && add_button.clicked()) {
                     adding_elem = true;
-                    reset_text_areas_for_new_entry();
-                    init_scroll_manager();  // Update scroll manager for new row
+                    for (int i = 0; i < 2; ++i) {
+                        text_area[i].text = U"";
+                        if (i == 1) {
+                            text_area[i].text = U"1";
+                        }
+                        text_area[i].cursorPos = text_area[i].text.size();
+                        text_area[i].rebuildGlyphs();
+                    }
+                    text_area[0].active = true;
+                    text_area[1].active = false;
                 }
                 
                 add_csv_button.draw();
@@ -378,8 +221,8 @@ class Opening_setting : public App::Scene {
                 
                 ok_button.draw();
                 if (ok_button.clicked() || KeyEnter.down()) {
-                    // Save all CSV files and reload forced_openings
-                    save_all_csv_files();
+                    // Save all openings and reload forced_openings
+                    save_openings();
                     save_all_openings_to_forced_openings();
                     getData().graph_resources.need_init = false;
                     changeScene(U"Main_scene", SCENE_FADE_TIME);
@@ -387,7 +230,7 @@ class Opening_setting : public App::Scene {
             }
             
             // Handle drag and drop for reordering openings within CSV
-            if (!is_modal_active() && has_selected_csv()) {
+            if (!adding_elem && !editing_elem && !creating_csv) {
                 handle_drag_and_drop();
             }
             
@@ -401,7 +244,7 @@ class Opening_setting : public App::Scene {
                 }
             }
             
-            if (!is_modal_active()) {
+            if (!(adding_elem || editing_elem || creating_csv)) {
                 scroll_manager.draw();
                 scroll_manager.update();
             }
@@ -413,199 +256,143 @@ class Opening_setting : public App::Scene {
     
     private:
         void init_scroll_manager() {
-            const bool filtering_to_selected = has_selected_csv();
-            int total = filtering_to_selected ? 1 : (int)csv_files.size();
-            if (const auto* csv = selected_csv()) {
-                total += static_cast<int>(csv->openings.size());
-            }
-            
-            // Add 1 for input/edit area only when it is actually shown
-            if (adding_elem && filtering_to_selected) {
+            int total = (has_parent ? 1 : 0) + (int)folders_display.size() + (int)openings.size();
+            if (adding_elem || editing_elem) {
                 total += 1;
             }
-            
             scroll_manager.init(770, OPENING_SETTING_SY + 8, 10, OPENING_SETTING_HEIGHT * OPENING_SETTING_N_GAMES_ON_WINDOW, 20, total, OPENING_SETTING_N_GAMES_ON_WINDOW, OPENING_SETTING_SX, 73, OPENING_SETTING_WIDTH + 10, OPENING_SETTING_HEIGHT * OPENING_SETTING_N_GAMES_ON_WINDOW);
         }
         
-        // Get base directory for forced_openings
+        // Get base directory for current forced_openings folder
         String get_base_dir() const {
-            return Unicode::Widen(getData().directories.document_dir) + U"/forced_openings/";
+            String base = Unicode::Widen(getData().directories.document_dir) + U"/forced_openings/";
+            if (!subfolder.empty()) {
+                base += Unicode::Widen(subfolder) + U"/";
+            }
+            return base;
         }
         
-        // Enumerate CSV files in forced_openings directory
-        std::vector<String> enumerate_csv_files() {
-            std::vector<String> result;
-            String base_dir = get_base_dir();
-            
-            if (!FileSystem::Exists(base_dir)) {
-                FileSystem::CreateDirectories(base_dir);
-                return result;
+        bool create_new_folder(const String& folder_name) {
+            String trimmed = folder_name.trimmed();
+            if (trimmed.isEmpty()) {
+                return false;
             }
-            
-            Array<FilePath> list = FileSystem::DirectoryContents(base_dir);
-            for (const auto& path : list) {
-                if (FileSystem::IsFile(path) && path.ends_with(U".csv")) {
-                    String filename = FileSystem::FileName(path);
-                    result.emplace_back(filename);
-                }
+            String target_dir = get_base_dir() + trimmed + U"/";
+            if (FileSystem::Exists(target_dir)) {
+                return false;
             }
-            
-            std::sort(result.begin(), result.end());
-            return result;
+            if (!FileSystem::CreateDirectories(target_dir)) {
+                return false;
+            }
+            CSV csv;
+            csv.save(target_dir + U"summary.csv");
+            return true;
         }
         
-        // Load all CSV files and their enabled states
-        void load_csv_files() {
-            csv_files.clear();
+        // Load openings from current folder's summary.csv
+        void load_openings() {
+            openings.clear();
             delete_buttons.clear();
             edit_buttons.clear();
-            csv_toggle_buttons.clear();
+            toggle_buttons.clear();
+            move_up_buttons.clear();
+            move_down_buttons.clear();
             
-            // Load CSV file list and enabled states from settings file
-            String settings_path = get_base_dir() + U"settings.txt";
-            std::unordered_map<String, bool> enabled_map;
-            
-            if (FileSystem::Exists(settings_path)) {
-                TextReader reader(settings_path);
-                if (reader) {
-                    String line;
-                    while (reader.readLine(line)) {
-                        auto parts = line.split(U'\t');
-                        if (parts.size() >= 2) {
-                            String filename = parts[0];
-                            bool enabled = ParseOr<bool>(parts[1], true);
-                            enabled_map[filename] = enabled;
-                        }
-                    }
+            const String csv_path = get_base_dir() + U"summary.csv";
+            const CSV csv{ csv_path };
+            if (csv) {
+                for (size_t row = 0; row < csv.rows(); ++row) {
+                    Opening_abstract opening;
+                    opening.transcript = csv[row][0];
+                    opening.weight = ParseOr<double>(csv[row][1], 1.0);
+                    opening.enabled = ParseOr<bool>(csv[row][2], true);
+                    openings.emplace_back(opening);
                 }
             }
             
-            // Enumerate all CSV files
-            auto filenames = enumerate_csv_files();
-            for (const auto& filename : filenames) {
-                Opening_csv_file csv_file(filename);
-                csv_file.enabled = enabled_map.count(filename) ? enabled_map[filename] : true;
-                load_single_csv_file(csv_file);
-                csv_files.emplace_back(csv_file);
-            }
-            
-            // Initialize buttons
             Texture cross_image = getData().resources.cross;
-            Texture edit_image = getData().resources.pencil;
-            
-            for (int i = 0; i < (int)csv_files.size(); ++i) {
+            Texture edit_image = getData().resources.pencil;  // Use pencil icon for edit
+            // We'll use buttons for move up/down instead of image buttons
+            for (int i = 0; i < (int)openings.size(); ++i) {
+                ImageButton delete_btn;
+                delete_btn.init(0, 0, 15, cross_image);
+                delete_buttons.emplace_back(delete_btn);
+                
+                ImageButton edit_btn;
+                edit_btn.init(0, 0, 15, edit_image);
+                edit_buttons.emplace_back(edit_btn);
+                
                 ImageButton toggle_btn;
-                toggle_btn.init(0, 0, 15, cross_image);
-                csv_toggle_buttons.emplace_back(toggle_btn);
+                toggle_btn.init(0, 0, 15, cross_image);  // Will use different image based on state
+                toggle_buttons.emplace_back(toggle_btn);
+                
+                // Placeholder for move buttons (will be drawn differently)
+                ImageButton move_up_btn;
+                move_up_btn.init(0, 0, 15, cross_image);
+                move_up_buttons.emplace_back(move_up_btn);
+                
+                ImageButton move_down_btn;
+                move_down_btn.init(0, 0, 15, cross_image);
+                move_down_buttons.emplace_back(move_down_btn);
             }
             
             init_scroll_manager();
         }
         
-        // Load a single CSV file's contents
-        void load_single_csv_file(Opening_csv_file& csv_file) {
-            csv_file.openings.clear();
-            
-            String csv_path = get_base_dir() + csv_file.filename;
-            const CSV csv{ csv_path };
-            if (csv) {
-                for (size_t row = 0; row < csv.rows(); ++row) {
-                    if (csv[row].size() >= 2) {
-                        Opening_abstract opening;
-                        opening.transcript = csv[row][0];
-                        opening.weight = ParseOr<double>(csv[row][1], 1.0);
-                        csv_file.openings.emplace_back(opening);
-                    }
-                }
-            }
-        }
-        
-        // Save a specific CSV file
-        void save_csv_file(int csv_index) {
-            if (csv_index < 0 || csv_index >= (int)csv_files.size()) return;
-            
-            const auto& csv_file = csv_files[csv_index];
-            String csv_path = get_base_dir() + csv_file.filename;
-            
+        // Save openings to current folder's summary.csv
+        void save_openings() {
+            const String csv_path = get_base_dir() + U"summary.csv";
             CSV csv;
-            for (const auto& opening : csv_file.openings) {
+            for (const auto& opening : openings) {
                 csv.write(opening.transcript);
                 csv.write(Format(opening.weight));
+                csv.write(opening.enabled ? U"true" : U"false");
                 csv.newLine();
             }
             csv.save(csv_path);
         }
         
-        // Save all CSV files
-        void save_all_csv_files() {
-            for (int i = 0; i < (int)csv_files.size(); ++i) {
-                save_csv_file(i);
-            }
+        // Add new opening to current folder
+        void add_opening(const String& transcript, double weight, bool enabled = true) {
+            Opening_abstract opening(transcript, weight, enabled);
+            openings.emplace_back(opening);
             
-            // Save enabled states to settings file
-            String settings_path = get_base_dir() + U"settings.txt";
-            TextWriter writer(settings_path);
-            if (writer) {
-                for (const auto& csv_file : csv_files) {
-                    writer.writeln(csv_file.filename + U"\t" + (csv_file.enabled ? U"true" : U"false"));
-                }
-            }
-        }
-        
-        // Create a new CSV file
-        bool create_new_csv_file(const String& filename) {
-            String csv_path = get_base_dir() + filename;
-            
-            if (FileSystem::Exists(csv_path)) {
-                std::cerr << "CSV file already exists: " << filename.narrow() << std::endl;
-                return false;
-            }
-            
-            // Create empty CSV file
-            CSV csv;
-            csv.save(csv_path);
-            
-            std::cerr << "Created CSV file: " << filename.narrow() << std::endl;
-            return true;
-        }
-        
-        // Add new opening to currently selected CSV
-        void add_opening(const String& transcript, double weight) {
-            auto* csv = selected_csv();
-            if (!csv) return;
-            
-            Opening_abstract opening(transcript, weight);
-            csv->openings.emplace_back(opening);
-            
-            // Add buttons for new opening
             ImageButton delete_btn;
             delete_btn.init(0, 0, 15, getData().resources.cross);
             delete_buttons.emplace_back(delete_btn);
             
             ImageButton edit_btn;
-            edit_btn.init(0, 0, 15, getData().resources.pencil);
+            edit_btn.init(0, 0, 15, getData().resources.pencil);  // Use pencil icon for edit
             edit_buttons.emplace_back(edit_btn);
             
-            if (has_selected_csv()) {
-                save_csv_file(selected_csv_index);
-            }
+            ImageButton toggle_btn;
+            toggle_btn.init(0, 0, 15, getData().resources.cross);
+            toggle_buttons.emplace_back(toggle_btn);
+            
+            ImageButton move_up_btn;
+            move_up_btn.init(0, 0, 15, getData().resources.cross);
+            move_up_buttons.emplace_back(move_up_btn);
+            
+            ImageButton move_down_btn;
+            move_down_btn.init(0, 0, 15, getData().resources.cross);
+            move_down_buttons.emplace_back(move_down_btn);
+            
+            save_openings();
             init_scroll_manager();
         }
         
-        // Delete opening from currently selected CSV
+        // Delete opening
         void delete_opening(int idx) {
-            auto* csv = selected_csv();
-            if (!csv) return;
-            if (idx < 0 || idx >= static_cast<int>(csv->openings.size())) return;
+            if (idx < 0 || idx >= (int)openings.size()) return;
             
-            csv->openings.erase(csv->openings.begin() + idx);
+            openings.erase(openings.begin() + idx);
+            delete_buttons.erase(delete_buttons.begin() + idx);
+            edit_buttons.erase(edit_buttons.begin() + idx);
+            toggle_buttons.erase(toggle_buttons.begin() + idx);
+            move_up_buttons.erase(move_up_buttons.begin() + idx);
+            move_down_buttons.erase(move_down_buttons.begin() + idx);
             
-            // Rebuild buttons for this CSV's openings
-            rebuild_opening_buttons();
-            
-            if (has_selected_csv()) {
-                save_csv_file(selected_csv_index);
-            }
+            save_openings();
             
             double strt_idx_double = scroll_manager.get_strt_idx_double();
             init_scroll_manager();
@@ -616,344 +403,225 @@ class Opening_setting : public App::Scene {
             std::cerr << "deleted opening " << idx << std::endl;
         }
         
-        // Rebuild buttons for currently selected CSV's openings
-        void rebuild_opening_buttons() {
-            delete_buttons.clear();
-            edit_buttons.clear();
+        // Swap two openings (for reordering)
+        void swap_openings(int idx1, int idx2) {
+            if (idx1 < 0 || idx1 >= (int)openings.size() || idx2 < 0 || idx2 >= (int)openings.size()) return;
+            if (idx1 == idx2) return;
             
-            const auto* csv = selected_csv();
-            if (!csv) return;
+            std::swap(openings[idx1], openings[idx2]);
+            std::swap(delete_buttons[idx1], delete_buttons[idx2]);
+            std::swap(edit_buttons[idx1], edit_buttons[idx2]);
+            std::swap(toggle_buttons[idx1], toggle_buttons[idx2]);
+            std::swap(move_up_buttons[idx1], move_up_buttons[idx2]);
+            std::swap(move_down_buttons[idx1], move_down_buttons[idx2]);
             
-            Texture cross_image = getData().resources.cross;
-            Texture edit_image = getData().resources.pencil;
-            
-            for (int i = 0; i < (int)csv->openings.size(); ++i) {
-                ImageButton delete_btn;
-                delete_btn.init(0, 0, 15, cross_image);
-                delete_buttons.emplace_back(delete_btn);
-                
-                ImageButton edit_btn;
-                edit_btn.init(0, 0, 15, edit_image);
-                edit_buttons.emplace_back(edit_btn);
-            }
+            save_openings();
         }
         
-        // Move opening within CSV (for drag and drop)
-        void move_opening(int from_idx, int to_idx) {
-            auto* csv = selected_csv();
-            if (!csv) return;
+        // Enumerate current directory
+        void enumerate_current_dir() {
+            folders_display.clear();
+            has_parent = !subfolder.empty();
             
-            auto& openings = csv->openings;
-            if (from_idx < 0 || from_idx >= (int)openings.size()) return;
-            if (to_idx < 0 || to_idx >= (int)openings.size()) return;
-            if (from_idx == to_idx) return;
-            
-            Opening_abstract temp = openings[from_idx];
-            openings.erase(openings.begin() + from_idx);
-            openings.insert(openings.begin() + to_idx, temp);
-            
-            if (has_selected_csv()) {
-                save_csv_file(selected_csv_index);
+            std::string base_dir = getData().directories.document_dir + "/forced_openings";
+            std::vector<String> folders = enumerate_subdirectories_generic(base_dir, subfolder);
+            for (auto& folder : folders) {
+                folders_display.emplace_back(folder);
             }
+            
+            init_scroll_manager();
         }
         
-        // Draw CSV files and openings list
-        void draw_list() {
+        // Navigate to folder
+        void navigate_to_folder(const String& folder_name) {
+            if (subfolder.size()) subfolder += "/";
+            subfolder += folder_name.narrow();
+            enumerate_current_dir();
+            load_openings();
+            init_scroll_manager();
+        }
+        
+        // Navigate to parent folder
+        void navigate_to_parent() {
+            if (subfolder.empty()) return;
+            
+            std::string s = subfolder;
+            if (!s.empty() && s.back() == '/') s.pop_back();
+            size_t pos = s.find_last_of('/');
+            if (pos == std::string::npos) subfolder.clear();
+            else subfolder = s.substr(0, pos);
+            enumerate_current_dir();
+            load_openings();
+            init_scroll_manager();
+        }
+        
+        // Handle folder navigation clicks
+        void handle_folder_navigation() {
+            static uint64_t last_click_time = 0;
+            static String last_clicked_folder;
+            uint64_t current_time = Time::GetMillisec();
+            constexpr uint64_t DOUBLE_CLICK_TIME_MS = 400;
+            
+            int sy = OPENING_SETTING_SY + 8;
             int strt_idx_int = scroll_manager.get_strt_idx_int();
-            const bool filtering_to_selected = has_selected_csv();
-            
-            // First pass: determine if fixed header will be shown
             int row_index = 0;
-            int csv_row_for_selected = -1;
-            bool fixed_header_shown = false;
-            for (int i = 0; i < (int)csv_files.size(); ++i) {
-                if (filtering_to_selected && i != selected_csv_index) {
-                    continue;
-                }
-                
-                if (i == selected_csv_index) {
-                    csv_row_for_selected = row_index;
-                    if (row_index < strt_idx_int) {
-                        fixed_header_shown = true;
+            
+            // Parent folder
+            if (has_parent) {
+                if (row_index >= strt_idx_int && row_index < strt_idx_int + OPENING_SETTING_N_GAMES_ON_WINDOW) {
+                    int display_row = row_index - strt_idx_int;
+                    int item_sy = sy + display_row * OPENING_SETTING_HEIGHT;
+                    Rect rect(OPENING_SETTING_SX, item_sy, OPENING_SETTING_WIDTH, OPENING_SETTING_HEIGHT);
+                    if (rect.leftClicked()) {
+                        if (current_time - last_click_time < DOUBLE_CLICK_TIME_MS && last_clicked_folder == U"..") {
+                            navigate_to_parent();
+                            return;
+                        }
+                        last_click_time = current_time;
+                        last_clicked_folder = U"..";
                     }
                 }
                 row_index++;
-                if (i == selected_csv_index) {
-                    if (adding_elem && !editing_elem) {
-                        row_index++;
+            }
+            
+            // Folders
+            for (int i = 0; i < (int)folders_display.size(); ++i) {
+                if (row_index >= strt_idx_int && row_index < strt_idx_int + OPENING_SETTING_N_GAMES_ON_WINDOW) {
+                    int display_row = row_index - strt_idx_int;
+                    int item_sy = sy + display_row * OPENING_SETTING_HEIGHT;
+                    Rect rect(OPENING_SETTING_SX, item_sy, OPENING_SETTING_WIDTH, OPENING_SETTING_HEIGHT);
+                    if (rect.leftClicked()) {
+                        if (current_time - last_click_time < DOUBLE_CLICK_TIME_MS && last_clicked_folder == folders_display[i]) {
+                            navigate_to_folder(folders_display[i]);
+                            return;
+                        }
+                        last_click_time = current_time;
+                        last_clicked_folder = folders_display[i];
                     }
-                    row_index += (int)csv_files[i].openings.size();
+                }
+                row_index++;
+            }
+        }
+        
+        void draw_list() {
+            handle_folder_navigation();
+            draw_openings_list();
+        }
+        
+        // Draw openings list
+        void draw_openings_list() {
+            int sy = OPENING_SETTING_SY;
+            int strt_idx_int = scroll_manager.get_strt_idx_int();
+            
+            if (adding_elem || editing_elem) {
+                if (openings.size() >= OPENING_SETTING_N_GAMES_ON_WINDOW) {
+                    strt_idx_int = openings.size() - OPENING_SETTING_N_GAMES_ON_WINDOW + 1;
                 }
             }
             
-            // Draw fixed header at top if scrolled (ABOVE OPENING_SETTING_SY)
-            if (fixed_header_shown && has_selected_csv()) {
-                draw_csv_file_item_fixed_header(selected_csv_index, OPENING_SETTING_SY - OPENING_SETTING_HEADER_HEIGHT);
-            }
-            
-            // Normal elements always start from OPENING_SETTING_SY
-            int sy = OPENING_SETTING_SY;
-            
-            if (strt_idx_int > 0 && !fixed_header_shown) {
+            if (strt_idx_int > 0) {
                 getData().fonts.font(U"︙").draw(15, Arg::bottomCenter = Vec2{ X_CENTER, sy }, getData().colors.white);
             }
             sy += 8;
             
-            int total_items = filtering_to_selected ? (has_selected_csv() ? 1 : 0) : (int)csv_files.size();
-            if (const auto* csv = selected_csv()) {
-                total_items += static_cast<int>(csv->openings.size());
-            }
+            int parent_offset = has_parent ? 1 : 0;
+            int total_items = parent_offset + (int)folders_display.size() + (int)openings.size();
             
-            if (!adding_elem && !editing_elem && !editing_csv_name && total_items == 0) {
+            if (!adding_elem && !editing_elem && total_items == 0) {
                 getData().fonts.font(language.get("opening_setting", "no_opening_found")).draw(20, Arg::center(X_CENTER, Y_CENTER), getData().colors.white);
                 return;
             }
             
-            // Second pass: draw items
-            row_index = 0;
-            csv_row_for_selected = -1;
+            int row_index = 0;
             
-            // Draw CSV files
-            for (int i = 0; i < (int)csv_files.size(); ++i) {
-                if (filtering_to_selected && i != selected_csv_index) {
-                    continue;
-                }
-                
-                if (i == selected_csv_index) {
-                    csv_row_for_selected = row_index;
-                }
-                
-                // Draw CSV file item only if in visible range and not showing fixed header
+            // Draw parent folder if exists
+            if (has_parent) {
                 if (row_index >= strt_idx_int && row_index < strt_idx_int + OPENING_SETTING_N_GAMES_ON_WINDOW) {
-                    if (!(fixed_header_shown && i == selected_csv_index)) {
-                        // Don't draw the CSV file here if it will be shown as fixed header
-                        int display_row = row_index - strt_idx_int;
-                        int item_sy = sy + display_row * OPENING_SETTING_HEIGHT;
-                        draw_csv_file_item(i, item_sy, row_index);
-                    }
+                    int display_row = row_index - strt_idx_int;
+                    int item_sy = sy + display_row * OPENING_SETTING_HEIGHT;
+                    draw_parent_folder_item(item_sy);
                 }
                 row_index++;
-                
-                // Draw openings if this CSV is selected
-                if (i == selected_csv_index) {
-                    // Draw input area for adding right after CSV file if adding
-                    if (adding_elem && !editing_elem) {
-                        bool should_draw = false;
-                        int item_sy;
-                        
-                        if (fixed_header_shown && row_index <= strt_idx_int) {
-                            // Fixed header shown and this row is at or before scroll position
-                            // Draw at the top of scroll area (right after fixed header)
-                            should_draw = true;
-                            item_sy = sy;
-                        } else if (row_index >= strt_idx_int && row_index < strt_idx_int + OPENING_SETTING_N_GAMES_ON_WINDOW) {
-                            should_draw = true;
-                            int display_row = row_index - strt_idx_int;
-                            item_sy = sy + display_row * OPENING_SETTING_HEIGHT;
-                        }
-                        
-                        if (should_draw) {
-                            draw_input_area(item_sy, row_index);
-                        }
-                        row_index++;
-                    }
-                    
-                    for (int j = 0; j < (int)csv_files[i].openings.size(); ++j) {
-                        bool should_draw = false;
-                        int item_sy;
-                        
-                        if (fixed_header_shown && csv_row_for_selected < strt_idx_int) {
-                            // Fixed header is shown (CSV is scrolled out)
-                            // All children of the CSV should be drawn from the top
-                            int offset_from_csv = row_index - csv_row_for_selected - 1;  // -1 for CSV row itself
-                            if (offset_from_csv >= 0) {
-                                // Calculate which child is visible in the window
-                                int visible_start = strt_idx_int - csv_row_for_selected - 1;  // First visible child index
-                                int local_offset = offset_from_csv - visible_start;
-                                
-                                if (local_offset >= 0 && local_offset < OPENING_SETTING_N_GAMES_ON_WINDOW) {
-                                    should_draw = true;
-                                    item_sy = sy + local_offset * OPENING_SETTING_HEIGHT;
-                                }
-                            }
-                        } else if (row_index >= strt_idx_int && row_index < strt_idx_int + OPENING_SETTING_N_GAMES_ON_WINDOW) {
-                            should_draw = true;
-                            int display_row = row_index - strt_idx_int;
-                            item_sy = sy + display_row * OPENING_SETTING_HEIGHT;
-                        }
-                        
-                        if (should_draw) {
-                            draw_opening_item(j, item_sy, row_index);
-                        }
-                        row_index++;
-                    }
+            }
+            
+            // Draw folders
+            for (int i = 0; i < (int)folders_display.size(); ++i) {
+                if (row_index >= strt_idx_int && row_index < strt_idx_int + OPENING_SETTING_N_GAMES_ON_WINDOW) {
+                    int display_row = row_index - strt_idx_int;
+                    int item_sy = sy + display_row * OPENING_SETTING_HEIGHT;
+                    draw_folder_item(folders_display[i], item_sy, i);
+                }
+                row_index++;
+            }
+            
+            // Draw openings
+            for (int i = 0; i < (int)openings.size(); ++i) {
+                if (row_index >= strt_idx_int && row_index < strt_idx_int + OPENING_SETTING_N_GAMES_ON_WINDOW) {
+                    int display_row = row_index - strt_idx_int;
+                    int item_sy = sy + display_row * OPENING_SETTING_HEIGHT;
+                    draw_opening_item(i, item_sy, row_index);
+                }
+                row_index++;
+            }
+            
+            // Draw input area for adding/editing
+            if (adding_elem || editing_elem) {
+                int input_row = row_index;
+                if (input_row >= strt_idx_int && input_row < strt_idx_int + OPENING_SETTING_N_GAMES_ON_WINDOW) {
+                    int display_row = input_row - strt_idx_int;
+                    int item_sy = sy + display_row * OPENING_SETTING_HEIGHT;
+                    draw_input_area(item_sy, row_index);
                 }
             }
             
-            if (strt_idx_int + OPENING_SETTING_N_GAMES_ON_WINDOW < total_items + ((adding_elem && filtering_to_selected) ? 1 : 0)) {
-                getData().fonts.font(U"︙").draw(15, Arg::bottomCenter = Vec2{ X_CENTER, 395}, getData().colors.white);
+            if (strt_idx_int + OPENING_SETTING_N_GAMES_ON_WINDOW < total_items + (adding_elem || editing_elem ? 1 : 0)) {
+                getData().fonts.font(U"︙").draw(15, Arg::bottomCenter = Vec2{ X_CENTER, 415}, getData().colors.white);
             }
         }
         
-        // Draw CSV file item
-        void draw_csv_file_item(int idx, int sy, int row_index) {
-            const auto& csv_file = csv_files[idx];
+        // Draw parent folder item
+        void draw_parent_folder_item(int sy) {
+            Rect rect(OPENING_SETTING_SX, sy, OPENING_SETTING_WIDTH, OPENING_SETTING_HEIGHT);
+            rect.draw(getData().colors.dark_green).drawFrame(1.0, getData().colors.white);
+            getData().fonts.font(U"📁 ..").draw(20, Arg::leftCenter(OPENING_SETTING_SX + OPENING_SETTING_LEFT_MARGIN + 8, sy + OPENING_SETTING_HEIGHT / 2), getData().colors.white);
+        }
+        
+        // Draw folder item
+        void draw_folder_item(const String& folder_name, int sy, int idx) {
             Rect rect(OPENING_SETTING_SX, sy, OPENING_SETTING_WIDTH, OPENING_SETTING_HEIGHT);
             
-            bool is_selected = (idx == selected_csv_index);
-            Color bg_color;
-            if (is_selected) {
-                bg_color = getData().colors.darkblue;
-            } else if (!csv_file.enabled) {
-                // Grayed out for disabled categories
-                bg_color = (row_index % 2 ? Color(77, 77, 77) : Color(64, 64, 64));
-            } else {
-                bg_color = (row_index % 2 ? getData().colors.dark_green : getData().colors.green);
-            }
+            bool is_being_dragged = (drag_state.is_dragging_folder && drag_state.dragged_folder_name == folder_name);
+            Color bg_color = is_being_dragged ? getData().colors.yellow.withAlpha(64) : 
+                            (idx % 2 ? getData().colors.dark_green : getData().colors.green);
+            Color text_color = is_being_dragged ? getData().colors.white.withAlpha(128) : getData().colors.white;
             
             rect.draw(bg_color).drawFrame(1.0, getData().colors.white);
             
-            // Text color: dimmed for disabled categories
-            Color text_color = csv_file.enabled ? getData().colors.white : Color(128, 128, 128);
-            
-            // Edit button for CSV file name (top-left corner) - check click first
-            bool should_enter_edit_mode = false;
-            if (!(adding_elem || editing_elem || editing_csv_name)) {
-                // Draw edit button and check if it was clicked
-                // Must check click AFTER drawing with the correct position for this item
-                csv_edit_button.move(OPENING_SETTING_SX + 1, sy + 1);
-                csv_edit_button.draw();
-                
-                // Create a rect for this specific edit button to check clicks independently
-                Rect edit_button_rect(OPENING_SETTING_SX + 1, sy + 1, 15, 15);
-                if (edit_button_rect.leftClicked()) {
-                    should_enter_edit_mode = true;
-                }
+            // Handle drag preparation
+            bool mouse_is_down = MouseL.pressed();
+            bool mouse_was_down = drag_state.mouse_was_down;
+            if (mouse_is_down && !mouse_was_down && rect.contains(Cursor::Pos()) && 
+                !drag_state.is_dragging && drag_state.dragged_opening_index == -1 && drag_state.dragged_folder_name.isEmpty()) {
+                drag_state.dragged_folder_name = folder_name;
+                drag_state.drag_start_pos = Cursor::Pos();
             }
             
-            // Draw CSV filename (without .csv extension) or edit mode
-            if (editing_csv_name && editing_csv_index == idx) {
-                // Edit mode: show text input
-                SimpleGUI::TextArea(csv_rename_area, Vec2{OPENING_SETTING_SX + OPENING_SETTING_LEFT_MARGIN + 36, sy + OPENING_SETTING_HEIGHT / 2 - 17}, SizeF{400, 30}, SimpleGUI::PreferredTextAreaMaxChars);
-            } else {
-                // Normal display mode
-                String display_filename = to_display_filename(csv_file.filename);
-                
-                // Draw folder icon
-                int icon_x = OPENING_SETTING_SX + OPENING_SETTING_LEFT_MARGIN + 8;
-                int icon_y = sy + OPENING_SETTING_HEIGHT / 2 - 8;
-                getData().resources.folder.resized(16, 16).draw(icon_x, icon_y, text_color);
-                
-                getData().fonts.font(display_filename).draw(18, Arg::leftCenter(icon_x + 20, sy + OPENING_SETTING_HEIGHT / 2), text_color);
-            }
-            
-            // Handle double-click to select/deselect
-            // Only process rect clicks if edit button was NOT clicked
-            if (!editing_csv_name && !should_enter_edit_mode) {
-                // Check if mouse is on edit button area to exclude it from rect clicks
-                Rect edit_button_rect(OPENING_SETTING_SX + 1, sy + 1, 15, 15);
-                bool mouse_on_edit_button = edit_button_rect.leftPressed() || edit_button_rect.leftClicked();
-                
-                if (!mouse_on_edit_button && rect.leftClicked() && !(adding_elem || editing_elem)) {
-                    static uint64_t last_click_time = 0;
-                    static int last_clicked_csv = -1;
-                    uint64_t current_time = Time::GetMillisec();
-                    constexpr uint64_t DOUBLE_CLICK_TIME_MS = 400;
-                    
-                    if (current_time - last_click_time < DOUBLE_CLICK_TIME_MS && last_clicked_csv == idx) {
-                        // Double-click: toggle selection
-                        if (selected_csv_index == idx) {
-                            deselect_current_csv();
-                        } else {
-                            selected_csv_index = idx;  // Select
-                            rebuild_opening_buttons();
-                            init_scroll_manager();
-                        }
-                    }
-                    last_click_time = current_time;
-                    last_clicked_csv = idx;
-                }
-            }
-
-            // Toggle enabled/disabled with checkbox
-            if (!(adding_elem || editing_elem || editing_csv_name)) {
-                int checkbox_x = OPENING_SETTING_SX + OPENING_SETTING_WIDTH - 20;
-                int checkbox_y = sy + OPENING_SETTING_HEIGHT / 2 - 8;
-                Texture checkbox_icon = csv_file.enabled ? getData().resources.checkbox : getData().resources.unchecked;
-                checkbox_icon.resized(16, 16).draw(checkbox_x, checkbox_y);
-                
-                Rect checkbox_rect(checkbox_x, checkbox_y, 16, 16);
-                if (checkbox_rect.leftClicked()) {
-                    csv_files[idx].enabled = !csv_files[idx].enabled;
-                    save_all_csv_files();
-                }
-            }
-            
-            // Draw opening count
-            String count_text = U"(" + Format((int)csv_file.openings.size()) + U")";
-            getData().fonts.font(count_text).draw(15, Arg::rightCenter(OPENING_SETTING_SX + OPENING_SETTING_WIDTH - 30, sy + OPENING_SETTING_HEIGHT / 2), text_color);
-            
-            // Enter edit mode if button was clicked (at the end, after all drawing)
-            if (should_enter_edit_mode) {
-                editing_csv_name = true;
-                editing_csv_index = idx;
-                String display_filename = to_display_filename(csv_file.filename);
-                csv_rename_area.text = display_filename;
-                csv_rename_area.cursorPos = csv_rename_area.text.size();
-                csv_rename_area.rebuildGlyphs();
-                csv_rename_area.active = true;
-            }
-        }
-        
-        // Draw CSV file item as fixed header (when scrolled out of view)
-        // Display only version with smaller height - no editing or toggling
-        void draw_csv_file_item_fixed_header(int idx, int sy) {
-            const auto& csv_file = csv_files[idx];
-            Rect rect(OPENING_SETTING_SX, sy, OPENING_SETTING_WIDTH, OPENING_SETTING_HEADER_HEIGHT);
-            
-            // Always use selected color for fixed header
-            Color bg_color = getData().colors.darkblue;
-            rect.draw(bg_color).drawFrame(1.0, getData().colors.white);
-            
-            // Text color
-            Color text_color = csv_file.enabled ? getData().colors.white : Color(128, 128, 128);
-            
-            // Display CSV filename (without .csv extension) - no editing
-            String display_filename = to_display_filename(csv_file.filename);
-            
-            // Draw folder icon (smaller)
-            int icon_x = OPENING_SETTING_SX + OPENING_SETTING_LEFT_MARGIN + 4;
-            int icon_y = sy + OPENING_SETTING_HEADER_HEIGHT / 2 - 6;
-            getData().resources.folder.resized(12, 12).draw(icon_x, icon_y, text_color);
-            
-            // Draw filename (smaller font)
-            getData().fonts.font(display_filename).draw(14, Arg::leftCenter(icon_x + 16, sy + OPENING_SETTING_HEADER_HEIGHT / 2), text_color);
-            
-            // Draw opening count (smaller)
-            String count_text = U"(" + Format((int)csv_file.openings.size()) + U")";
-            getData().fonts.font(count_text).draw(12, Arg::rightCenter(OPENING_SETTING_SX + OPENING_SETTING_WIDTH - 10, sy + OPENING_SETTING_HEADER_HEIGHT / 2), text_color);
+            getData().fonts.font(U"📁 " + folder_name).draw(18, Arg::leftCenter(OPENING_SETTING_SX + OPENING_SETTING_LEFT_MARGIN + 8, sy + OPENING_SETTING_HEIGHT / 2), text_color);
         }
         
         // Draw opening item
         void draw_opening_item(int idx, int sy, int row_index) {
-            const auto* csv = selected_csv();
-            if (!csv) return;
-            if (idx < 0 || idx >= static_cast<int>(csv->openings.size())) return;
-            const auto& opening = csv->openings[idx];
+            const auto& opening = openings[idx];
+            Rect rect(OPENING_SETTING_SX, sy, OPENING_SETTING_WIDTH, OPENING_SETTING_HEIGHT);
             
-            Rect rect(OPENING_SETTING_SX + 20, sy, OPENING_SETTING_WIDTH - 20, OPENING_SETTING_HEIGHT);
-            
-            bool is_being_edited = (editing_elem && editing_index == idx);
-            bool is_being_dragged = (drag_state.is_dragging && drag_state.dragged_opening_index == idx);
-            
+            bool is_being_dragged = (drag_state.is_dragging_opening && drag_state.dragged_opening_index == idx);
             Color bg_color = is_being_dragged ? getData().colors.yellow.withAlpha(64) : 
                             (row_index % 2 ? getData().colors.dark_green : getData().colors.green);
             Color text_color = is_being_dragged ? getData().colors.white.withAlpha(128) : getData().colors.white;
             
             rect.draw(bg_color).drawFrame(1.0, getData().colors.white);
             
-            // Grayout if adding or editing other element
-            if ((adding_elem || (editing_elem && !is_being_edited))) {
+            if (adding_elem || editing_elem) {
                 rect.draw(ColorF{1.0, 1.0, 1.0, 0.5});
             }
             
@@ -961,85 +629,109 @@ class Opening_setting : public App::Scene {
             bool mouse_is_down = MouseL.pressed();
             bool mouse_was_down = drag_state.mouse_was_down;
             if (mouse_is_down && !mouse_was_down && rect.contains(Cursor::Pos()) && 
-                !drag_state.is_dragging &&
-                !is_opening_input_active()) {
+                !drag_state.is_dragging && drag_state.dragged_opening_index == -1 && drag_state.dragged_folder_name.isEmpty() &&
+                !(adding_elem || editing_elem)) {
                 drag_state.dragged_opening_index = idx;
                 drag_state.drag_start_pos = Cursor::Pos();
             }
             
-            if (!is_opening_input_active()) {
+            if (!(adding_elem || editing_elem)) {
                 // Delete button
-                if (idx < (int)delete_buttons.size()) {
-                    delete_buttons[idx].move(OPENING_SETTING_SX + 21, sy + 1);
-                    delete_buttons[idx].draw();
-                    if (delete_buttons[idx].clicked()) {
-                        delete_opening(idx);
+                delete_buttons[idx].move(OPENING_SETTING_SX + 1, sy + 1);
+                delete_buttons[idx].draw();
+                if (delete_buttons[idx].clicked()) {
+                    delete_opening(idx);
+                    return;
+                }
+                
+                // Edit button
+                edit_buttons[idx].move(OPENING_SETTING_SX + 20, sy + 1);
+                edit_buttons[idx].draw();
+                if (edit_buttons[idx].clicked()) {
+                    editing_elem = true;
+                    editing_index = idx;
+                    text_area[0].text = opening.transcript;
+                    text_area[1].text = Format(opening.weight);
+                    text_area[0].cursorPos = text_area[0].text.size();
+                    text_area[1].cursorPos = text_area[1].text.size();
+                    text_area[0].rebuildGlyphs();
+                    text_area[1].rebuildGlyphs();
+                    text_area[0].active = true;
+                    text_area[1].active = false;
+                    return;
+                }
+                
+                // Move up button (as text button)
+                if (idx > 0) {
+                    int btn_x = OPENING_SETTING_SX + 40;
+                    int btn_y = sy + 1;
+                    Rect up_rect(btn_x, btn_y, 15, 15);
+                    if (up_rect.mouseOver()) {
+                        up_rect.draw(ColorF(0.8, 0.8, 0.8));
+                    } else {
+                        up_rect.draw(ColorF(0.6, 0.6, 0.6));
+                    }
+                    getData().fonts.font(U"▲").draw(10, Arg::center(btn_x + 7.5, btn_y + 7.5), getData().colors.black);
+                    if (up_rect.leftClicked()) {
+                        swap_openings(idx, idx - 1);
                         return;
                     }
                 }
                 
-                // Edit button
-                if (idx < (int)edit_buttons.size()) {
-                    edit_buttons[idx].move(OPENING_SETTING_SX + 40, sy + 1);
-                    edit_buttons[idx].draw();
-                    if (edit_buttons[idx].clicked()) {
-                        // Save current scroll position
-                        saved_scroll_position = scroll_manager.get_strt_idx_int();
-                        
-                        editing_elem = true;
-                        editing_index = idx;
-                        reset_text_areas_for_opening(opening);
+                // Move down button (as text button)
+                if (idx < (int)openings.size() - 1) {
+                    int btn_x = OPENING_SETTING_SX + 58;
+                    int btn_y = sy + 1;
+                    Rect down_rect(btn_x, btn_y, 15, 15);
+                    if (down_rect.mouseOver()) {
+                        down_rect.draw(ColorF(0.8, 0.8, 0.8));
+                    } else {
+                        down_rect.draw(ColorF(0.6, 0.6, 0.6));
+                    }
+                    getData().fonts.font(U"▼").draw(10, Arg::center(btn_x + 7.5, btn_y + 7.5), getData().colors.black);
+                    if (down_rect.leftClicked()) {
+                        swap_openings(idx, idx + 1);
                         return;
                     }
+                }
+                
+                // Toggle enabled/disabled button
+                int toggle_x = OPENING_SETTING_SX + OPENING_SETTING_WIDTH - 20;
+                Circle toggle_circle(toggle_x, sy + OPENING_SETTING_HEIGHT / 2, 8);
+                if (opening.enabled) {
+                    toggle_circle.draw(getData().colors.white);
+                } else {
+                    toggle_circle.drawFrame(2.0, getData().colors.white);
+                }
+                if (toggle_circle.leftClicked()) {
+                    openings[idx].enabled = !openings[idx].enabled;
+                    save_openings();
+                    return;
                 }
             }
             
             // Draw transcript
-            getData().fonts.font(opening.transcript).draw(15, Arg::leftCenter(OPENING_SETTING_SX + OPENING_SETTING_LEFT_MARGIN + 78, sy + OPENING_SETTING_HEIGHT / 2), text_color);
+            String display_text = opening.transcript;
+            if (!opening.enabled) {
+                display_text = U"[OFF] " + display_text;
+            }
+            getData().fonts.font(display_text).draw(15, Arg::leftCenter(OPENING_SETTING_SX + OPENING_SETTING_LEFT_MARGIN + 78, sy + OPENING_SETTING_HEIGHT / 2), text_color);
             
             // Draw weight
             getData().fonts.font(language.get("opening_setting", "weight") + U": ").draw(15, Arg::rightCenter(OPENING_SETTING_SX + OPENING_SETTING_LEFT_MARGIN + OPENING_SETTING_WIDTH - 90, sy + OPENING_SETTING_HEIGHT / 2), text_color);
             getData().fonts.font(Format(std::round(opening.weight))).draw(15, Arg::leftCenter(OPENING_SETTING_SX + OPENING_SETTING_LEFT_MARGIN + OPENING_SETTING_WIDTH - 90, sy + OPENING_SETTING_HEIGHT / 2), text_color);
-            
-            // If this element is being edited, draw text boxes on top
-            if (is_being_edited) {
-                SimpleGUI::TextArea(text_area[0], Vec2{OPENING_SETTING_SX + OPENING_SETTING_LEFT_MARGIN + 78, sy + OPENING_SETTING_HEIGHT / 2 - 15}, SizeF{480, 30}, SimpleGUI::PreferredTextAreaMaxChars);
-                SimpleGUI::TextArea(text_area[1], Vec2{OPENING_SETTING_SX + OPENING_SETTING_LEFT_MARGIN + OPENING_SETTING_WIDTH - 70, sy + OPENING_SETTING_HEIGHT / 2 - 15}, SizeF{60, 30}, SimpleGUI::PreferredTextAreaMaxChars);
-                
-                // Handle tab key to switch between text areas
-                for (int i = 0; i < 2; ++i) {
-                    std::string str = text_area[i].text.narrow();
-                    if (str.find("\t") != std::string::npos) {
-                        text_area[i].active = false;
-                        text_area[(i + 1) % 2].active = true;
-                        int tab_place = str.find("\t");
-                        std::string txt0;
-                        for (int j = 0; j < tab_place; ++j) {
-                            txt0 += str[j];
-                        }
-                        std::string txt1;
-                        for (int j = tab_place + 1; j < (int)str.size(); ++j) {
-                            txt1 += str[j];
-                        }
-                        text_area[i].text = Unicode::Widen(txt0);
-                        text_area[(i + 1) % 2].text = Unicode::Widen(txt1);
-                        text_area[i].rebuildGlyphs();
-                        text_area[(i + 1) % 2].rebuildGlyphs();
-                    }
-                }
-            }
         }
         
         // Draw input area for adding/editing
         void draw_input_area(int sy, int row_index) {
-            Rect rect(OPENING_SETTING_SX + 20, sy, OPENING_SETTING_WIDTH - 20, OPENING_SETTING_HEIGHT);
+            Rect rect(OPENING_SETTING_SX, sy, OPENING_SETTING_WIDTH, OPENING_SETTING_HEIGHT);
             if (row_index % 2) {
                 rect.draw(getData().colors.dark_green).drawFrame(1.0, getData().colors.white);
             } else {
                 rect.draw(getData().colors.green).drawFrame(1.0, getData().colors.white);
             }
             
-            SimpleGUI::TextArea(text_area[0], Vec2{OPENING_SETTING_SX + OPENING_SETTING_LEFT_MARGIN + 28, sy + OPENING_SETTING_HEIGHT / 2 - 17}, SizeF{580, 30}, SimpleGUI::PreferredTextAreaMaxChars);
+            SimpleGUI::TextArea(text_area[0], Vec2{OPENING_SETTING_SX + OPENING_SETTING_LEFT_MARGIN + 8, sy + OPENING_SETTING_HEIGHT / 2 - 17}, SizeF{600, 30}, SimpleGUI::PreferredTextAreaMaxChars);
             getData().fonts.font(language.get("opening_setting", "weight") + U": ").draw(15, Arg::rightCenter(OPENING_SETTING_SX + OPENING_SETTING_LEFT_MARGIN + OPENING_SETTING_WIDTH - 70, sy + OPENING_SETTING_HEIGHT / 2), getData().colors.white);
             SimpleGUI::TextArea(text_area[1], Vec2{OPENING_SETTING_SX + OPENING_SETTING_LEFT_MARGIN + OPENING_SETTING_WIDTH - 70, sy + OPENING_SETTING_HEIGHT / 2 - 17}, SizeF{60, 30}, SimpleGUI::PreferredTextAreaMaxChars);
             
@@ -1069,100 +761,295 @@ class Opening_setting : public App::Scene {
         
         // Draw dragged item
         void draw_dragged_item() {
-            const auto* csv = selected_csv();
-            if (!csv) return;
-            if (drag_state.dragged_opening_index < 0 || drag_state.dragged_opening_index >= static_cast<int>(csv->openings.size())) return;
-            
             Vec2 draw_pos = drag_state.current_mouse_pos;
-            draw_pos.x -= (OPENING_SETTING_WIDTH - 20) / 2;
+            draw_pos.x -= OPENING_SETTING_WIDTH / 2;
             draw_pos.y -= OPENING_SETTING_HEIGHT / 2;
             
-            Rect drag_rect(draw_pos.x, draw_pos.y, OPENING_SETTING_WIDTH - 20, OPENING_SETTING_HEIGHT);
+            Rect drag_rect(draw_pos.x, draw_pos.y, OPENING_SETTING_WIDTH, OPENING_SETTING_HEIGHT);
             drag_rect.draw(getData().colors.yellow.withAlpha(200)).drawFrame(2.0, getData().colors.white);
             
-            const auto& opening = csv->openings[drag_state.dragged_opening_index];
-            getData().fonts.font(opening.transcript).draw(15, Arg::leftCenter(draw_pos.x + OPENING_SETTING_LEFT_MARGIN + 8, draw_pos.y + OPENING_SETTING_HEIGHT / 2), getData().colors.black);
+            if (drag_state.is_dragging_folder) {
+                getData().fonts.font(U"📁 " + drag_state.dragged_folder_name).draw(18, Arg::leftCenter(draw_pos.x + OPENING_SETTING_LEFT_MARGIN + 8, draw_pos.y + OPENING_SETTING_HEIGHT / 2), getData().colors.black);
+            } else if (drag_state.is_dragging_opening && drag_state.dragged_opening_index >= 0 && drag_state.dragged_opening_index < (int)openings.size()) {
+                const auto& opening = openings[drag_state.dragged_opening_index];
+                String display_text = opening.transcript;
+                if (!opening.enabled) {
+                    display_text = U"[OFF] " + display_text;
+                }
+                getData().fonts.font(display_text).draw(15, Arg::leftCenter(draw_pos.x + OPENING_SETTING_LEFT_MARGIN + 8, draw_pos.y + OPENING_SETTING_HEIGHT / 2), getData().colors.black);
+            }
+        }
+        
+        // Recursively load all openings from all subfolders and save to forced_openings
+        void save_all_openings_to_forced_openings() {
+            getData().forced_openings.openings.clear();
+            load_all_openings_recursive("");
+            getData().forced_openings.init();
+        }
+        
+        // Recursively load all enabled openings from a folder and its subfolders
+        void load_all_openings_recursive(const std::string& folder_path) {
+            String base = Unicode::Widen(getData().directories.document_dir) + U"/forced_openings/";
+            if (!folder_path.empty()) {
+                base += Unicode::Widen(folder_path) + U"/";
+            }
+            
+            // Load openings from current folder
+            const String csv_path = base + U"summary.csv";
+            const CSV csv{ csv_path };
+            if (csv) {
+                for (size_t row = 0; row < csv.rows(); ++row) {
+                    String transcript = csv[row][0];
+                    double weight = ParseOr<double>(csv[row][1], 1.0);
+                    bool enabled = ParseOr<bool>(csv[row][2], true);
+                    
+                    if (enabled) {  // Only add enabled openings
+                        getData().forced_openings.openings.emplace_back(std::make_pair(transcript.narrow(), weight));
+                    }
+                }
+            }
+            
+            // Recursively load from subfolders
+            std::string base_dir = getData().directories.document_dir + "/forced_openings";
+            std::vector<String> folders = enumerate_subdirectories_generic(base_dir, folder_path);
+            for (const auto& folder : folders) {
+                std::string next_path = folder_path;
+                if (!next_path.empty()) next_path += "/";
+                next_path += folder.narrow();
+                load_all_openings_recursive(next_path);
+            }
         }
         
         // Handle drag and drop
         void handle_drag_and_drop() {
-            if (!has_selected_csv()) return;
-            
-            // Update mouse state
             drag_state.current_mouse_pos = Cursor::Pos();
             bool mouse_is_down = MouseL.pressed();
             bool mouse_just_released = !mouse_is_down && drag_state.mouse_was_down;
             drag_state.mouse_was_down = mouse_is_down;
             
-            // Handle drag end
             if (drag_state.is_dragging && mouse_just_released) {
-                // Find drop target
-                if (drag_state.drop_target_index >= 0) {
-                    move_opening(drag_state.dragged_opening_index, drag_state.drop_target_index);
-                    rebuild_opening_buttons();
-                }
-                drag_state.reset();
-                return;
-            }
-            
-            // Check for drag start
-            if (mouse_is_down && !drag_state.is_dragging && drag_state.dragged_opening_index >= 0) {
-                double distance = drag_state.drag_start_pos.distanceFrom(drag_state.current_mouse_pos);
-                if (distance > DragState::DRAG_THRESHOLD) {
-                    drag_state.is_dragging = true;
-                }
-            }
-            
-            // Update drop target while dragging
-            if (drag_state.is_dragging) {
-                drag_state.drop_target_index = -1;
-                
                 int sy = OPENING_SETTING_SY + 8;
                 int strt_idx_int = scroll_manager.get_strt_idx_int();
-                int row_index = 1;  // Skip CSV row itself
-                if (adding_elem && !editing_elem) {
-                    row_index++;  // Skip inline input row when visible
+                bool handled = false;
+                
+                if (has_parent) {
+                    int parent_row = 0;
+                    if (parent_row >= strt_idx_int && parent_row < strt_idx_int + OPENING_SETTING_N_GAMES_ON_WINDOW) {
+                        int item_sy = sy + (parent_row - strt_idx_int) * OPENING_SETTING_HEIGHT;
+                        Rect parent_rect(OPENING_SETTING_SX, item_sy, OPENING_SETTING_WIDTH, OPENING_SETTING_HEIGHT);
+                        if (parent_rect.contains(drag_state.current_mouse_pos)) {
+                            if (drag_state.is_dragging_opening && drag_state.dragged_opening_index >= 0) {
+                                move_opening_to_parent(drag_state.dragged_opening_index);
+                            } else if (drag_state.is_dragging_folder && !drag_state.dragged_folder_name.isEmpty()) {
+                                move_folder_to_parent(drag_state.dragged_folder_name.narrow());
+                            }
+                            handled = true;
+                        }
+                    }
                 }
                 
-                if (const auto* csv = selected_csv()) {
-                    for (int j = 0; j < (int)csv->openings.size(); ++j) {
-                        if (row_index >= strt_idx_int && row_index < strt_idx_int + OPENING_SETTING_N_GAMES_ON_WINDOW) {
-                            int display_row = row_index - strt_idx_int;
-                            int item_sy = sy + display_row * OPENING_SETTING_HEIGHT;
-                            Rect rect(OPENING_SETTING_SX + 20, item_sy, OPENING_SETTING_WIDTH - 20, OPENING_SETTING_HEIGHT);
-                            
-                            if (rect.contains(drag_state.current_mouse_pos) && j != drag_state.dragged_opening_index) {
-                                drag_state.drop_target_index = j;
+                if (!handled) {
+                    int parent_offset = has_parent ? 1 : 0;
+                    for (int folder_idx = 0; folder_idx < (int)folders_display.size(); ++folder_idx) {
+                        int row = parent_offset + folder_idx;
+                        if (row >= strt_idx_int && row < strt_idx_int + OPENING_SETTING_N_GAMES_ON_WINDOW) {
+                            int item_sy = sy + (row - strt_idx_int) * OPENING_SETTING_HEIGHT;
+                            Rect folder_rect(OPENING_SETTING_SX, item_sy, OPENING_SETTING_WIDTH, OPENING_SETTING_HEIGHT);
+                            if (folder_rect.contains(drag_state.current_mouse_pos)) {
+                                String target_folder = folders_display[folder_idx];
+                                if (drag_state.is_dragging_folder && target_folder == drag_state.dragged_folder_name) {
+                                    continue;
+                                }
+                                if (drag_state.is_dragging_opening && drag_state.dragged_opening_index >= 0) {
+                                    move_opening_to_folder(drag_state.dragged_opening_index, target_folder.narrow());
+                                } else if (drag_state.is_dragging_folder && !drag_state.dragged_folder_name.isEmpty()) {
+                                    move_folder_to_folder_target(drag_state.dragged_folder_name.narrow(), target_folder.narrow());
+                                }
+                                handled = true;
                                 break;
                             }
                         }
-                        row_index++;
+                    }
+                }
+                
+                drag_state.reset();
+                if (handled) {
+                    return;
+                }
+            }
+            
+            if (mouse_is_down && !drag_state.is_dragging) {
+                if ((drag_state.dragged_opening_index >= 0 || !drag_state.dragged_folder_name.isEmpty())) {
+                    double distance = drag_state.drag_start_pos.distanceFrom(drag_state.current_mouse_pos);
+                    if (distance > DragState::DRAG_THRESHOLD) {
+                        drag_state.is_dragging = true;
+                        drag_state.is_dragging_opening = (drag_state.dragged_opening_index >= 0);
+                        drag_state.is_dragging_folder = !drag_state.dragged_folder_name.isEmpty();
                     }
                 }
             }
             
-            // Reset drag preparation on mouse release (but not when dragging)
             if (mouse_just_released && !drag_state.is_dragging) {
                 drag_state.dragged_opening_index = -1;
+                drag_state.dragged_folder_name.clear();
             }
         }
         
-        // Load all enabled openings from all enabled CSV files and save to forced_openings
-        void save_all_openings_to_forced_openings() {
-            getData().forced_openings.openings.clear();
+        // Move opening to a different folder (relative to current subfolder)
+        void move_opening_to_folder(int opening_index, const std::string& target_folder) {
+            if (opening_index < 0 || opening_index >= (int)openings.size()) return;
             
-            for (const auto& csv_file : csv_files) {
-                // std::cerr << csv_file.filename.narrow() << " " << csv_file.enabled << std::endl;
-                if (csv_file.enabled) {  // Only load from enabled CSV files
-                    for (const auto& opening : csv_file.openings) {
-                        getData().forced_openings.openings.emplace_back(std::make_pair(opening.transcript.narrow(), opening.weight));
+            const Opening_abstract& opening = openings[opening_index];
+            
+            // Build target path
+            String target_base = Unicode::Widen(getData().directories.document_dir) + U"/forced_openings/";
+            if (!subfolder.empty()) {
+                target_base += Unicode::Widen(subfolder) + U"/";
+            }
+            if (!target_folder.empty()) {
+                target_base += Unicode::Widen(target_folder) + U"/";
+            }
+            
+            // Ensure target directory exists
+            if (!FileSystem::Exists(target_base)) {
+                FileSystem::CreateDirectories(target_base);
+            }
+            
+            // Load target CSV
+            String target_csv_path = target_base + U"summary.csv";
+            CSV target_csv{ target_csv_path };
+            CSV new_target_csv;
+            
+            // Copy existing entries
+            for (int i = 0; i < (int)target_csv.rows(); ++i) {
+                if (target_csv[i].size() >= 3) {
+                    for (int j = 0; j < 3; ++j) {
+                        new_target_csv.write(target_csv[i][j]);
                     }
+                    new_target_csv.newLine();
                 }
             }
             
-            getData().forced_openings.init();
-            std::cerr << "Loaded " << getData().forced_openings.openings.size() << " openings from enabled CSV files" << std::endl;
+            // Add moved opening
+            new_target_csv.write(opening.transcript);
+            new_target_csv.write(Format(opening.weight));
+            new_target_csv.write(opening.enabled ? U"true" : U"false");
+            new_target_csv.newLine();
+            new_target_csv.save(target_csv_path);
+            
+            // Remove from current folder
+            delete_opening(opening_index);
+            
+            std::cerr << "Moved opening to " << target_folder << std::endl;
+        }
+        
+        // Move opening to parent folder
+        void move_opening_to_parent(int opening_index) {
+            if (subfolder.empty()) return;  // Already at root
+            
+            // Get parent folder path
+            std::string parent_folder = subfolder;
+            if (!parent_folder.empty() && parent_folder.back() == '/') parent_folder.pop_back();
+            size_t pos = parent_folder.find_last_of('/');
+            if (pos == std::string::npos) parent_folder.clear();
+            else parent_folder = parent_folder.substr(0, pos);
+            
+            move_opening_to_absolute_folder(opening_index, parent_folder);
+        }
+        
+        // Move opening to absolute folder path (from root)
+        void move_opening_to_absolute_folder(int opening_index, const std::string& target_folder) {
+            if (opening_index < 0 || opening_index >= (int)openings.size()) return;
+            
+            const Opening_abstract& opening = openings[opening_index];
+            
+            // Build target path
+            String target_base = Unicode::Widen(getData().directories.document_dir) + U"/forced_openings/";
+            if (!target_folder.empty()) {
+                target_base += Unicode::Widen(target_folder) + U"/";
+            }
+            
+            // Ensure target directory exists
+            if (!FileSystem::Exists(target_base)) {
+                FileSystem::CreateDirectories(target_base);
+            }
+            
+            // Load target CSV
+            String target_csv_path = target_base + U"summary.csv";
+            CSV target_csv{ target_csv_path };
+            CSV new_target_csv;
+            
+            // Copy existing entries
+            for (int i = 0; i < (int)target_csv.rows(); ++i) {
+                if (target_csv[i].size() >= 3) {
+                    for (int j = 0; j < 3; ++j) {
+                        new_target_csv.write(target_csv[i][j]);
+                    }
+                    new_target_csv.newLine();
+                }
+            }
+            
+            // Add moved opening
+            new_target_csv.write(opening.transcript);
+            new_target_csv.write(Format(opening.weight));
+            new_target_csv.write(opening.enabled ? U"true" : U"false");
+            new_target_csv.newLine();
+            new_target_csv.save(target_csv_path);
+            
+            // Remove from current folder
+            delete_opening(opening_index);
+            
+            std::cerr << "Moved opening to " << target_folder << std::endl;
+        }
+        
+        // Move folder to target folder (relative to current subfolder)
+        void move_folder_to_folder_target(const std::string& source_folder, const std::string& target_folder) {
+            // Build source path
+            String source_path = Unicode::Widen(getData().directories.document_dir) + U"/forced_openings/";
+            if (!subfolder.empty()) {
+                source_path += Unicode::Widen(subfolder) + U"/";
+            }
+            source_path += Unicode::Widen(source_folder);
+            
+            // Build target parent path
+            String target_parent = Unicode::Widen(getData().directories.document_dir) + U"/forced_openings/";
+            if (!subfolder.empty()) {
+                target_parent += Unicode::Widen(subfolder) + U"/";
+            }
+            if (!target_folder.empty()) {
+                target_parent += Unicode::Widen(target_folder) + U"/";
+            }
+            
+            if (move_folder(source_path, target_parent, Unicode::Widen(source_folder))) {
+                enumerate_current_dir();
+                load_openings();
+            }
+        }
+        
+        // Move folder to parent folder
+        void move_folder_to_parent(const std::string& folder_name) {
+            if (subfolder.empty()) return;  // Already at root
+            
+            // Build source path
+            String source_path = Unicode::Widen(getData().directories.document_dir) + U"/forced_openings/";
+            if (!subfolder.empty()) {
+                source_path += Unicode::Widen(subfolder) + U"/";
+            }
+            source_path += Unicode::Widen(folder_name);
+            
+            // Get parent folder path
+            String parent_path = Unicode::Widen(getData().directories.document_dir) + U"/forced_openings/";
+            std::string parent_folder = subfolder;
+            if (!parent_folder.empty() && parent_folder.back() == '/') parent_folder.pop_back();
+            size_t pos = parent_folder.find_last_of('/');
+            if (pos != std::string::npos) {
+                parent_path += Unicode::Widen(parent_folder.substr(0, pos)) + U"/";
+            }
+            
+            if (move_folder(source_path, parent_path, Unicode::Widen(folder_name))) {
+                enumerate_current_dir();
+                load_openings();
+            }
         }
 };
-
 

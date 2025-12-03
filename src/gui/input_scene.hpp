@@ -324,8 +324,7 @@ private:
     bool failed;
     // Explorer-like folder view
     std::vector<String> folders_display; // includes optional ".." at head
-    bool has_parent = false;
-    std::string subfolder; // current folder (narrow), may be ""
+    explorer::PathState explorer_state; // manages current subfolder
 
 public:
     Import_game(const InitData& init) : IScene{ init } {
@@ -333,7 +332,7 @@ public:
         up_button.init(IMPORT_GAME_SX, IMPORT_GAME_SY - 30, 28, 24, 4, U"↑", 16, getData().fonts.font, getData().colors.white, getData().colors.black);
         failed = false;
         // Initialize current dir and load games
-        subfolder.clear();
+        explorer_state.clear();
         enumerate_current_dir();
         load_games();
     }
@@ -344,9 +343,9 @@ public:
         }
         getData().fonts.font(language.get("in_out", "input_game")).draw(25, Arg::center(X_CENTER, 30), getData().colors.white);
         // Current path label
-        String path_label = build_path_label(U"games/", Unicode::Widen(subfolder));
+        String path_label = explorer::compose_path_label(U"games/", explorer_state);
         getData().fonts.font(path_label).draw(15, Arg::rightCenter(IMPORT_GAME_SX + IMPORT_GAME_WIDTH, 30), getData().colors.white);
-        bool can_go_up = !subfolder.empty();
+        bool can_go_up = explorer_state.has_parent();
         if (draw_up_navigation_button(up_button, can_go_up)) {
             if (navigate_to_parent_subfolder()) {
                 return;
@@ -362,17 +361,15 @@ public:
         } else {
             auto res = DrawExplorerList(
                 folders_display, games, delete_buttons, scroll_manager, up_button,
-                IMPORT_GAME_HEIGHT, IMPORT_GAME_N_GAMES_ON_WINDOW, has_parent, getData().fonts, getData().colors, getData().resources, language,
-                getData().directories.document_dir, subfolder);
+                IMPORT_GAME_HEIGHT, IMPORT_GAME_N_GAMES_ON_WINDOW, explorer_state.has_parent(), getData().fonts, getData().colors, getData().resources, language,
+                getData().directories.document_dir, explorer_state.subfolder);
             if (res.upButtonClicked || res.parentFolderDoubleClicked) {
                 if (navigate_to_parent_subfolder()) {
                     return;
                 }
             }
             if (res.folderDoubleClicked) {
-                String fname = res.clickedFolder;
-                if (subfolder.size()) subfolder += "/";
-                subfolder += fname.narrow();
+                explorer_state.navigate_to_child(res.clickedFolder);
                 enumerate_current_dir();
                 load_games();
                 init_scroll_manager();
@@ -397,23 +394,14 @@ public:
 
 private:
     void init_scroll_manager() {
-        int parent_offset = !subfolder.empty() ? 1 : 0;  // Add parent folder if not at root
+        int parent_offset = explorer_state.has_parent() ? 1 : 0;  // Add parent folder if not at root
         int total = parent_offset + (int)folders_display.size() + (int)games.size();
         scroll_manager.init(770, IMPORT_GAME_SY + 8, 10, IMPORT_GAME_HEIGHT * IMPORT_GAME_N_GAMES_ON_WINDOW, 20, total, IMPORT_GAME_N_GAMES_ON_WINDOW, IMPORT_GAME_SX, 73, IMPORT_GAME_WIDTH + 10, IMPORT_GAME_HEIGHT * IMPORT_GAME_N_GAMES_ON_WINDOW);
     }
 
     bool navigate_to_parent_subfolder() {
-        if (subfolder.empty()) {
+        if (!explorer_state.navigate_to_parent()) {
             return false;
-        }
-        if (!subfolder.empty() && subfolder.back() == '/') {
-            subfolder.pop_back();
-        }
-        size_t pos = subfolder.find_last_of('/');
-        if (pos == std::string::npos) {
-            subfolder.clear();
-        } else {
-            subfolder = subfolder.substr(0, pos);
         }
         enumerate_current_dir();
         load_games();
@@ -574,13 +562,13 @@ private:
         std::cerr << "deleted game " << idx << std::endl;
     }
 
+    std::string get_root_dir() const {
+        return explorer::build_root_dir_narrow(getData().directories.document_dir, "games");
+    }
+
     // Helper: current base dir (games/ + optional subfolder + '/')
     String get_base_dir() const {
-        String base = Unicode::Widen(getData().directories.document_dir) + U"games/";
-        if (subfolder.size()) {
-            base += Unicode::Widen(subfolder) + U"/";
-        }
-        return base;
+        return explorer::build_current_dir(get_root_dir(), explorer_state);
     }
 
     // Reload games list from summary.csv in current folder
@@ -620,10 +608,7 @@ private:
     // Enumerate current directory (folders_display only; parent is shown as a separate up icon)
     void enumerate_current_dir() {
         folders_display.clear();
-        has_parent = !subfolder.empty();
-        
-        // Use the shared utility function
-        std::vector<String> folders = enumerate_direct_subdirectories(getData().directories.document_dir, subfolder);
+        std::vector<String> folders = explorer::enumerate_subfolders(get_root_dir(), explorer_state);
         for (auto& folder : folders) {
             folders_display.emplace_back(folder);
         }
@@ -661,15 +646,15 @@ private:
         // Source and target paths
         String source_base = get_base_dir();
         String target_base = Unicode::Widen(getData().directories.document_dir) + U"games/";
-        if (!subfolder.empty()) {
-            target_base += Unicode::Widen(subfolder) + U"/";
+        if (!explorer_state.subfolder.empty()) {
+            target_base += Unicode::Widen(explorer_state.subfolder) + U"/";
         }
         if (!target_folder.empty()) {
             target_base += Unicode::Widen(target_folder) + U"/";
         }
         
         std::cerr << "Moving game (relative):" << std::endl;
-        std::cerr << "  Current subfolder: " << subfolder << std::endl;
+        std::cerr << "  Current subfolder: " << explorer_state.subfolder << std::endl;
         std::cerr << "  Target folder: " << target_folder << std::endl;
         std::cerr << "  Source base: " << source_base.narrow() << std::endl;
         std::cerr << "  Target base: " << target_base.narrow() << std::endl;
@@ -712,7 +697,7 @@ private:
         }
         
         std::cerr << "Moving game (absolute):" << std::endl;
-        std::cerr << "  Current subfolder: " << subfolder << std::endl;
+        std::cerr << "  Current subfolder: " << explorer_state.subfolder << std::endl;
         std::cerr << "  Target folder: " << target_folder << std::endl;
         std::cerr << "  Source base: " << source_base.narrow() << std::endl;
         std::cerr << "  Target base: " << target_base.narrow() << std::endl;
@@ -745,15 +730,15 @@ private:
     void move_folder_to_folder(const std::string& source_folder, const std::string& target_folder) {
         // Build source path: current subfolder + source_folder
         String source_path = Unicode::Widen(getData().directories.document_dir) + U"games/";
-        if (!subfolder.empty()) {
-            source_path += Unicode::Widen(subfolder) + U"/";
+        if (!explorer_state.subfolder.empty()) {
+            source_path += Unicode::Widen(explorer_state.subfolder) + U"/";
         }
         source_path += Unicode::Widen(source_folder);
         
         // Build target parent path: current subfolder + target_folder
         String target_parent = Unicode::Widen(getData().directories.document_dir) + U"games/";
-        if (!subfolder.empty()) {
-            target_parent += Unicode::Widen(subfolder) + U"/";
+        if (!explorer_state.subfolder.empty()) {
+            target_parent += Unicode::Widen(explorer_state.subfolder) + U"/";
         }
         if (!target_folder.empty()) {
             target_parent += Unicode::Widen(target_folder) + U"/";
@@ -761,7 +746,7 @@ private:
         String target_path = target_parent + Unicode::Widen(source_folder);
         
         std::cerr << "Moving folder (relative):" << std::endl;
-        std::cerr << "  Current subfolder: " << subfolder << std::endl;
+        std::cerr << "  Current subfolder: " << explorer_state.subfolder << std::endl;
         std::cerr << "  Source folder: " << source_folder << std::endl;
         std::cerr << "  Target folder: " << target_folder << std::endl;
         std::cerr << "  Source path: " << source_path.narrow() << std::endl;
@@ -815,8 +800,8 @@ private:
     void move_folder_to_absolute_folder(const std::string& source_folder, const std::string& target_folder) {
         // Build source path: current subfolder + source_folder
         String source_path = Unicode::Widen(getData().directories.document_dir) + U"games/";
-        if (!subfolder.empty()) {
-            source_path += Unicode::Widen(subfolder) + U"/";
+        if (!explorer_state.subfolder.empty()) {
+            source_path += Unicode::Widen(explorer_state.subfolder) + U"/";
         }
         source_path += Unicode::Widen(source_folder);
         
@@ -828,7 +813,7 @@ private:
         String target_path = target_parent + Unicode::Widen(source_folder);
         
         std::cerr << "Moving folder (absolute):" << std::endl;
-        std::cerr << "  Current subfolder: " << subfolder << std::endl;
+        std::cerr << "  Current subfolder: " << explorer_state.subfolder << std::endl;
         std::cerr << "  Source folder: " << source_folder << std::endl;
         std::cerr << "  Target folder: " << target_folder << std::endl;
         std::cerr << "  Source path: " << source_path.narrow() << std::endl;
@@ -880,10 +865,10 @@ private:
 
     // Move a game to parent folder
     void move_game_to_parent(int game_index) {
-        if (subfolder.empty()) return;  // Already at root
+        if (!explorer_state.has_parent()) return;  // Already at root
         
         // Get parent folder path
-        std::string parent_folder = subfolder;
+        std::string parent_folder = explorer_state.subfolder;
         if (!parent_folder.empty() && parent_folder.back() == '/') parent_folder.pop_back();
         size_t pos = parent_folder.find_last_of('/');
         if (pos == std::string::npos) parent_folder.clear();
@@ -894,10 +879,10 @@ private:
     
     // Move a folder to parent folder
     void move_folder_to_parent(const std::string& folder_name) {
-        if (subfolder.empty()) return;  // Already at root
+        if (!explorer_state.has_parent()) return;  // Already at root
         
         // Get parent folder path
-        std::string parent_folder = subfolder;
+        std::string parent_folder = explorer_state.subfolder;
         if (!parent_folder.empty() && parent_folder.back() == '/') parent_folder.pop_back();
         size_t pos = parent_folder.find_last_of('/');
         if (pos == std::string::npos) parent_folder.clear();

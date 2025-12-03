@@ -146,6 +146,86 @@ std::vector<std::pair<Board, int>> get_board_player_list(Graph_resources graph_r
     return res;
 }
 
+// Utility function to enumerate directories in a given path
+inline std::vector<String> enumerate_direct_subdirectories(const std::string& document_dir, const std::string& subfolder) {
+    std::vector<String> result;
+    
+    String base = Unicode::Widen(document_dir) + U"games/" + Unicode::Widen(subfolder);
+    if (base.size() && base.back() != U'/') base += U"/";
+    
+    // Convert to absolute path for comparison
+    String abs_base = FileSystem::FullPath(base);
+    if (abs_base.size() && abs_base.back() != U'/' && abs_base.back() != U'\\') abs_base += U"/";
+    
+    Array<FilePath> list = FileSystem::DirectoryContents(base);
+    Array<String> real_folders;
+    for (const auto& path : list) {
+        if (FileSystem::IsDirectory(path) && FileSystem::Exists(path)) {
+            String abs_path = FileSystem::FullPath(path);
+            if (abs_path.size() && abs_path.back() != U'/' && abs_path.back() != U'\\') abs_path += U"/";
+            
+            String name = path;
+            while (name.size() && (name.back() == U'/' || name.back() == U'\\')) name.pop_back();
+            size_t pos = name.lastIndexOf(U'/');
+            if (pos == String::npos) pos = name.lastIndexOf(U'\\');
+            if (pos != String::npos) name = name.substr(pos + 1);
+            
+            // Check if this is a direct child directory
+            String expected_abs_path = abs_base + name + U"/";
+            
+            if (name.size() && name != U"." && name != U".." && abs_path == expected_abs_path) {
+                real_folders.emplace_back(name);
+            }
+        }
+    }
+    std::sort(real_folders.begin(), real_folders.end());
+    for (auto& n : real_folders) result.emplace_back(n);
+    
+    return result;
+}
+
+// Generic directory enumeration function (not limited to games/)
+inline std::vector<String> enumerate_subdirectories_generic(const std::string& base_dir, const std::string& subfolder) {
+    std::vector<String> result;
+    
+    String base = Unicode::Widen(base_dir);
+    if (base.size() && base.back() != U'/') base += U"/";
+    if (!subfolder.empty()) {
+        base += Unicode::Widen(subfolder);
+        if (base.size() && base.back() != U'/') base += U"/";
+    }
+    
+    // Convert to absolute path for comparison
+    String abs_base = FileSystem::FullPath(base);
+    if (abs_base.size() && abs_base.back() != U'/' && abs_base.back() != U'\\') abs_base += U"/";
+    
+    Array<FilePath> list = FileSystem::DirectoryContents(base);
+    Array<String> real_folders;
+    for (const auto& path : list) {
+        if (FileSystem::IsDirectory(path) && FileSystem::Exists(path)) {
+            String abs_path = FileSystem::FullPath(path);
+            if (abs_path.size() && abs_path.back() != U'/' && abs_path.back() != U'\\') abs_path += U"/";
+            
+            String name = path;
+            while (name.size() && (name.back() == U'/' || name.back() == U'\\')) name.pop_back();
+            size_t pos = name.lastIndexOf(U'/');
+            if (pos == String::npos) pos = name.lastIndexOf(U'\\');
+            if (pos != String::npos) name = name.substr(pos + 1);
+            
+            // Check if this is a direct child directory
+            String expected_abs_path = abs_base + name + U"/";
+            
+            if (name.size() && name != U"." && name != U".." && abs_path == expected_abs_path) {
+                real_folders.emplace_back(name);
+            }
+        }
+    }
+    std::sort(real_folders.begin(), real_folders.end());
+    for (auto& n : real_folders) result.emplace_back(n);
+    
+    return result;
+}
+
 // Create a new folder in the specified directory
 bool create_folder_in_directory(const String& base_dir, const String& folder_name) {
     if (folder_name.empty() || folder_name.contains(U"/") || folder_name.contains(U"\\")) {
