@@ -126,6 +126,26 @@ class Opening_setting : public App::Scene {
         void reset_text_areas_for_opening(const Opening_abstract& opening) {
             set_text_areas(opening.transcript, Format(opening.weight));
         }
+
+        bool is_allowed_filename_char(char32 ch) const {
+            return !(ch == U'\n' || ch == U'\r' || ch == U'/' || ch == U'\\' ||
+                     ch == U':' || ch == U'*' || ch == U'?' || ch == U'"' ||
+                     ch == U'<' || ch == U'>' || ch == U'|');
+        }
+
+        void sanitize_filename_input(TextAreaEditState& state) const {
+            String filtered;
+            for (auto ch : state.text) {
+                if (is_allowed_filename_char(ch)) {
+                    filtered += ch;
+                }
+            }
+            if (state.text != filtered) {
+                state.text = filtered;
+                state.cursorPos = std::min(state.cursorPos, filtered.size());
+                state.rebuildGlyphs();
+            }
+        }
     
     public:
         Opening_setting(const InitData& init) : IScene{ init } {
@@ -169,10 +189,9 @@ class Opening_setting : public App::Scene {
                     creating_csv = false;
                 }
                 
+                sanitize_filename_input(csv_name_area);
                 std::string csv_name_str = csv_name_area.text.narrow();
-                bool can_create = !csv_name_str.empty() && 
-                                 csv_name_str.find("/") == std::string::npos && 
-                                 csv_name_str.find("\\") == std::string::npos;
+                bool can_create = !csv_name_str.empty();
                 
                 // Add .csv extension if not present
                 String csv_filename = Unicode::Widen(csv_name_str);
@@ -186,7 +205,7 @@ class Opening_setting : public App::Scene {
                     create_csv_button.disable();
                 }
                 create_csv_button.draw();
-                if (create_csv_button.clicked() || (can_create && KeyEnter.down())) {
+                if (create_csv_button.clicked()) {
                     if (create_new_csv_file(csv_filename)) {
                         load_csv_files();
                     }
@@ -208,24 +227,7 @@ class Opening_setting : public App::Scene {
                     editing_csv_index = -1;
                 }
                 
-                // Remove invalid characters from CSV filename
-                // Invalid characters: newline, /, \, :, *, ?, ", <, >, |
-                String filtered_text;
-                for (auto ch : csv_rename_area.text) {
-                    if (ch != U'\n' && ch != U'\r' && 
-                        ch != U'/' && ch != U'\\' && 
-                        ch != U':' && ch != U'*' && 
-                        ch != U'?' && ch != U'"' && 
-                        ch != U'<' && ch != U'>' && 
-                        ch != U'|') {
-                        filtered_text += ch;
-                    }
-                }
-                if (csv_rename_area.text != filtered_text) {
-                    csv_rename_area.text = filtered_text;
-                    csv_rename_area.cursorPos = std::min((size_t)csv_rename_area.cursorPos, filtered_text.size());
-                    csv_rename_area.rebuildGlyphs();
-                }
+                sanitize_filename_input(csv_rename_area);
                 
                 std::string csv_name_str = csv_rename_area.text.narrow();
                 bool can_rename = !csv_name_str.empty();
