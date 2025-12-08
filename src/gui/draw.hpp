@@ -687,7 +687,7 @@ inline ExplorerDrawResult draw_explorer_list_items(
     }
 
     if (strt_idx_int + n_games_on_window < total_rows) {
-        fonts.font(U"︙").draw(15, Arg::topCenter(X_CENTER, IMPORT_GAME_SY + item_height * n_games_on_window + 10), colors.white);
+        fonts.font(U"︙").draw(15, Arg::topCenter(X_CENTER, IMPORT_GAME_SY + item_height * n_games_on_window + 14), colors.white);
     }
     scroll_manager.draw();
     scroll_manager.update();
