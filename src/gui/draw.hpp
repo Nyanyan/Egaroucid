@@ -806,6 +806,11 @@ inline ExplorerDrawResult draw_folder_item(
     Color text_color = interactions_locked ? colors.white.withAlpha(96) : icon_alpha;
     fonts.font(fname).draw(15, Arg::leftCenter(text_x, sy + item_height / 2), text_color);
 
+    // Show yellow frame when dragging a game over this folder
+    if (drag_state.is_dragging_game && !drag_state.is_dragging_folder && rect.contains(drag_state.current_mouse_pos) && !inline_editing) {
+        rect.drawFrame(3.0, ColorF(colors.yellow));
+    }
+
     if (interactions_locked) {
         return res;
     }
@@ -822,22 +827,17 @@ inline ExplorerDrawResult draw_folder_item(
         double rename_icon_size = 18.0;
         RectF rename_rect(rect.x + rect.w - rename_icon_size - 40.0, sy + (item_height - rename_icon_size) / 2.0, rename_icon_size, rename_icon_size);
         const Texture& pencil_tex = resources.pencil;
-        std::cerr << "Drawing rename button for folder " << folder_index << " at (" << rename_rect.x << "," << rename_rect.y << ")" << std::endl;
         if (pencil_tex) {
             pencil_tex.resized(rename_icon_size).draw(rename_rect.pos, ColorF(1.0));
         } else {
             rename_rect.draw(colors.white);
-            std::cerr << "Warning: pencil texture not found, drawing white rect" << std::endl;
         }
         if (rename_rect.leftClicked()) {
-            std::cerr << "Rename button clicked for folder " << folder_index << std::endl;
             drag_state.reset_drag_preparation();
             res.folderRenameRequested = true;
             res.folderRenameIndex = folder_index;
             return res;
         }
-    } else {
-        std::cerr << "Not drawing rename button: inline_config=" << (inline_config != nullptr) << " is_inline_target=" << is_inline_target << std::endl;
     }
 
     if (rect.leftClicked() && !drag_state.is_dragging) {

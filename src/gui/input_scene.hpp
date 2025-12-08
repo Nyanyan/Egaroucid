@@ -389,7 +389,6 @@ public:
             ExplorerFolderInlineConfig inline_cfg{};
             inline_cfg.renaming = renaming_folder;
             inline_cfg.folder_index = renaming_folder ? renaming_folder_index : -1;
-            std::cerr << "update: renaming_folder=" << renaming_folder << " index=" << renaming_folder_index << std::endl;
             // Always set inline config to show rename buttons
             inline_cfg.text_area = &folder_rename_area;
             inline_cfg.back_button = &inline_edit_back_button;
@@ -400,9 +399,6 @@ public:
             inline_cfg.on_commit = [this](const String& trimmed) {
                 return confirm_folder_rename(trimmed);
             };
-            if (renaming_folder && renaming_folder_index >= 0) {
-                std::cerr << "update: setting inline config for editing" << std::endl;
-            }
             const ExplorerFolderInlineConfig* inline_ptr = &inline_cfg;
             auto res = DrawExplorerList(
                 folders_display, games, delete_buttons, scroll_manager, up_button,
@@ -427,7 +423,6 @@ public:
                 return;
             }
             if (res.folderRenameRequested && res.folderRenameIndex >= 0) {
-                std::cerr << "folderRenameRequested: index=" << res.folderRenameIndex << std::endl;
                 begin_folder_rename(res.folderRenameIndex);
             }
             if (res.deleteClicked && res.deleteIndex >= 0) {
@@ -774,7 +769,7 @@ private:
         }
         create_folder_button.draw();
 
-        if (can_create && (create_folder_button.clicked() || enter_pressed)) {
+        if (can_create && create_folder_button.clicked()) {
             if (handle_create_folder()) {
                 creating_folder = false;
                 new_folder_area.active = false;
@@ -812,10 +807,8 @@ private:
 
     void begin_folder_rename(int folder_idx) {
         if (folder_idx < 0 || folder_idx >= (int)folders_display.size()) {
-            std::cerr << "begin_folder_rename: invalid index " << folder_idx << std::endl;
             return;
         }
-        std::cerr << "begin_folder_rename: folder_idx=" << folder_idx << " name=" << folders_display[folder_idx].narrow() << std::endl;
         renaming_folder = true;
         renaming_folder_index = folder_idx;
         renaming_folder_original_name = folders_display[folder_idx];
@@ -825,7 +818,6 @@ private:
         folder_rename_area.active = true;
         selected_folder_index = folder_idx;
         selected_folder_name = folders_display[folder_idx];
-        std::cerr << "begin_folder_rename: renaming_folder=" << renaming_folder << " index=" << renaming_folder_index << std::endl;
     }
 
     void cancel_folder_rename() {
