@@ -817,9 +817,14 @@ public:
                 text_color = getData().colors.white.withAlpha(100);
             }
             rect.draw(bg_color).drawFrame(1.0, getData().colors.white);
-            if (drag_state.is_dragging_opening && drag_state.is_dragging && !drag_state.is_dragging_folder && rect.contains(drag_state.current_mouse_pos) && !editing_elem && !renaming_folder) {
+            
+            // Show yellow frame when dragging an opening or folder over this folder
+            bool is_dragging_something = (drag_state.is_dragging_opening && drag_state.is_dragging && !drag_state.is_dragging_folder) ||
+                                          (drag_state.is_dragging_folder && drag_state.dragged_folder_name != entry.name);
+            if (is_dragging_something && rect.contains(drag_state.current_mouse_pos) && !editing_elem && !renaming_folder) {
                 rect.drawFrame(gui_list::DragColors::DropTargetFrameThickness, gui_list::DragColors::DropTargetFrame);
             }
+            
             bool mouse_down_event = MouseL.down();
             const Texture& folder_icon = getData().resources.folder;
             double icon_scale = folder_icon ? (double)(OPENING_SETTING_HEIGHT - 20) / (double)folder_icon.height() : 1.0;

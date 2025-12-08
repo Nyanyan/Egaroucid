@@ -817,8 +817,10 @@ inline ExplorerDrawResult draw_folder_item(
     Color text_color = interactions_locked ? colors.white.withAlpha(96) : icon_alpha;
     fonts.font(fname).draw(15, Arg::leftCenter(text_x, sy + item_height / 2), text_color);
 
-    // Show yellow frame when dragging a game over this folder
-    if (drag_state.is_dragging_game && !drag_state.is_dragging_folder && rect.contains(drag_state.current_mouse_pos) && !inline_editing) {
+    // Show yellow frame when dragging a game or folder over this folder
+    bool is_dragging_something = (drag_state.is_dragging_game && !drag_state.is_dragging_folder) || 
+                                  (drag_state.is_dragging_folder && drag_state.dragged_folder_name != fname);
+    if (is_dragging_something && rect.contains(drag_state.current_mouse_pos) && !inline_editing) {
         rect.drawFrame(gui_list::DragColors::DropTargetFrameThickness, gui_list::DragColors::DropTargetFrame);
     }
 
