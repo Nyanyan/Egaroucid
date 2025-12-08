@@ -24,18 +24,20 @@ struct Opening_abstract {
     String transcript;
     double weight;
     bool enabled;
+    bool effective_enabled;
     
-    Opening_abstract() : transcript(U""), weight(1.0), enabled(true) {}
-    Opening_abstract(const String& t, double w, bool e = true) : transcript(t), weight(w), enabled(e) {}
+    Opening_abstract() : transcript(U""), weight(1.0), enabled(true), effective_enabled(true) {}
+    Opening_abstract(const String& t, double w, bool e = true, bool eff = true) : transcript(t), weight(w), enabled(e), effective_enabled(eff) {}
 };
 
 struct Folder_entry {
     String name;
     std::string relative_path;
     bool enabled;
+    bool effective_enabled;
     
-    Folder_entry() : name(U""), relative_path(""), enabled(true) {}
-    Folder_entry(const String& n, const std::string& path, bool e = true) : name(n), relative_path(path), enabled(e) {}
+    Folder_entry() : name(U""), relative_path(""), enabled(true), effective_enabled(true) {}
+    Folder_entry(const String& n, const std::string& path, bool e = true, bool eff = true) : name(n), relative_path(path), enabled(e), effective_enabled(eff) {}
 };
 
 
@@ -45,8 +47,6 @@ private:
     std::vector<ImageButton> delete_buttons;
     std::vector<ImageButton> edit_buttons;
     std::vector<ImageButton> toggle_buttons;
-    std::vector<ImageButton> move_up_buttons;
-    std::vector<ImageButton> move_down_buttons;
     std::vector<Folder_entry> folders_display;
     Scroll_manager scroll_manager;
     Button add_button;
@@ -611,8 +611,6 @@ public:
             delete_buttons.clear();
             edit_buttons.clear();
             toggle_buttons.clear();
-            move_up_buttons.clear();
-            move_down_buttons.clear();
             
             const String csv_path = get_base_dir() + U"summary.csv";
             const CSV csv{ csv_path };
@@ -622,6 +620,7 @@ public:
                     opening.transcript = csv[row][0];
                     opening.weight = ParseOr<double>(csv[row][1], 1.0);
                     opening.enabled = ParseOr<bool>(csv[row][2], true);
+                    opening.effective_enabled = opening.enabled && current_folder_effective_enabled;
                     openings.emplace_back(opening);
                 }
             }
@@ -641,15 +640,6 @@ public:
                 ImageButton toggle_btn;
                 toggle_btn.init(0, 0, 15, cross_image);  // Will use different image based on state
                 toggle_buttons.emplace_back(toggle_btn);
-                
-                // Placeholder for move buttons (will be drawn differently)
-                ImageButton move_up_btn;
-                move_up_btn.init(0, 0, 15, cross_image);
-                move_up_buttons.emplace_back(move_up_btn);
-                
-                ImageButton move_down_btn;
-                move_down_btn.init(0, 0, 15, cross_image);
-                move_down_buttons.emplace_back(move_down_btn);
             }
             
             init_scroll_manager();
@@ -671,6 +661,7 @@ public:
         // Add new opening to current folder
         void add_opening(const String& transcript, double weight, bool enabled = true) {
             Opening_abstract opening(transcript, weight, enabled);
+            opening.effective_enabled = enabled && current_folder_effective_enabled;
             openings.emplace_back(opening);
             
             ImageButton delete_btn;
@@ -685,14 +676,6 @@ public:
             toggle_btn.init(0, 0, 15, getData().resources.cross);
             toggle_buttons.emplace_back(toggle_btn);
             
-            ImageButton move_up_btn;
-            move_up_btn.init(0, 0, 15, getData().resources.cross);
-            move_up_buttons.emplace_back(move_up_btn);
-            
-            ImageButton move_down_btn;
-            move_down_btn.init(0, 0, 15, getData().resources.cross);
-            move_down_buttons.emplace_back(move_down_btn);
-            
             save_openings();
             init_scroll_manager();
         }
@@ -705,8 +688,6 @@ public:
             delete_buttons.erase(delete_buttons.begin() + idx);
             edit_buttons.erase(edit_buttons.begin() + idx);
             toggle_buttons.erase(toggle_buttons.begin() + idx);
-            move_up_buttons.erase(move_up_buttons.begin() + idx);
-            move_down_buttons.erase(move_down_buttons.begin() + idx);
             
             save_openings();
             
@@ -717,21 +698,6 @@ public:
             }
             scroll_manager.set_strt_idx(strt_idx_double);
             std::cerr << "deleted opening " << idx << std::endl;
-        }
-        
-        // Swap two openings (for reordering)
-        void swap_openings(int idx1, int idx2) {
-            if (idx1 < 0 || idx1 >= (int)openings.size() || idx2 < 0 || idx2 >= (int)openings.size()) return;
-            if (idx1 == idx2) return;
-            
-            std::swap(openings[idx1], openings[idx2]);
-            std::swap(delete_buttons[idx1], delete_buttons[idx2]);
-            std::swap(edit_buttons[idx1], edit_buttons[idx2]);
-            std::swap(toggle_buttons[idx1], toggle_buttons[idx2]);
-            std::swap(move_up_buttons[idx1], move_up_buttons[idx2]);
-            std::swap(move_down_buttons[idx1], move_down_buttons[idx2]);
-            
-            save_openings();
         }
         
         void reorder_opening_within_current(int from_idx, int insert_idx) {
@@ -751,14 +717,10 @@ public:
             auto del_btn = delete_buttons[from_idx];
             auto edit_btn = edit_buttons[from_idx];
             auto toggle_btn = toggle_buttons[from_idx];
-            auto move_up_btn = move_up_buttons[from_idx];
-            auto move_down_btn = move_down_buttons[from_idx];
             openings.erase(openings.begin() + from_idx);
             delete_buttons.erase(delete_buttons.begin() + from_idx);
             edit_buttons.erase(edit_buttons.begin() + from_idx);
             toggle_buttons.erase(toggle_buttons.begin() + from_idx);
-            move_up_buttons.erase(move_up_buttons.begin() + from_idx);
-            move_down_buttons.erase(move_down_buttons.begin() + from_idx);
             if (insert_idx > from_idx) {
                 insert_idx -= 1;
             }
@@ -766,8 +728,6 @@ public:
             delete_buttons.insert(delete_buttons.begin() + insert_idx, del_btn);
             edit_buttons.insert(edit_buttons.begin() + insert_idx, edit_btn);
             toggle_buttons.insert(toggle_buttons.begin() + insert_idx, toggle_btn);
-            move_up_buttons.insert(move_up_buttons.begin() + insert_idx, move_up_btn);
-            move_down_buttons.insert(move_down_buttons.begin() + insert_idx, move_down_btn);
             save_openings();
         }
         
@@ -786,7 +746,8 @@ public:
             for (auto& folder : folders) {
                 std::string rel_path = build_child_relative_path(folder.narrow());
                 bool is_enabled = load_folder_enabled_state(rel_path);
-                folders_display.emplace_back(Folder_entry{ folder, rel_path, is_enabled });
+                bool effective_enabled = is_folder_effectively_enabled(rel_path);
+                folders_display.emplace_back(Folder_entry{ folder, rel_path, is_enabled, effective_enabled });
             }
             
             init_scroll_manager();
@@ -955,6 +916,7 @@ public:
         // Draw parent folder item
         void draw_parent_folder_item(int sy) {
             Rect rect(OPENING_SETTING_SX, sy, OPENING_SETTING_WIDTH, OPENING_SETTING_HEIGHT);
+            bool folder_locked = is_current_folder_locked();
             rect.draw(getData().colors.dark_green).drawFrame(1.0, getData().colors.white);
             const Texture& folder_icon = getData().resources.folder;
             double icon_scale = folder_icon ? (double)(OPENING_SETTING_HEIGHT - 20) / (double)folder_icon.height() : 1.0;
@@ -964,10 +926,10 @@ public:
             }
             double text_offset = icon_x + (folder_icon ? folder_icon.width() * icon_scale + 10.0 : 0.0);
             getData().fonts.font(U"..").draw(20, Arg::leftCenter(text_offset, sy + OPENING_SETTING_HEIGHT / 2), getData().colors.white);
-            if (drag_state.is_dragging && rect.contains(drag_state.current_mouse_pos)) {
+            if (!folder_locked && drag_state.is_dragging && rect.contains(drag_state.current_mouse_pos)) {
                 rect.drawFrame(3.0, ColorF(getData().colors.yellow));
             }
-            if (editing_elem || renaming_folder) {
+            if (editing_elem || renaming_folder || folder_locked) {
                 rect.draw(ColorF(0.0, 0.0, 0.0, 0.45));
             }
         }
@@ -977,21 +939,22 @@ public:
             Rect rect(OPENING_SETTING_SX, sy, OPENING_SETTING_WIDTH, OPENING_SETTING_HEIGHT);
             bool is_being_dragged = (drag_state.is_dragging_folder && drag_state.dragged_folder_name == entry.name);
             bool is_enabled = entry.enabled;
+            bool is_effectively_enabled = entry.effective_enabled;
             bool folder_locked = is_current_folder_locked();
             ColorF bg_color = idx % 2 ? ColorF(getData().colors.dark_green) : ColorF(getData().colors.green);
             if (is_being_dragged) {
                 bg_color = ColorF(getData().colors.yellow);
                 bg_color.a = 0.25;
             }
-            if (!is_enabled) {
+            if (!is_effectively_enabled) {
                 bg_color = ColorF(0.25, 0.25, 0.25, 0.85);
             }
             Color text_color = is_being_dragged ? getData().colors.white.withAlpha(128) : getData().colors.white;
-            if (!is_enabled) {
+            if (!is_effectively_enabled) {
                 text_color = getData().colors.white.withAlpha(100);
             }
             rect.draw(bg_color).drawFrame(1.0, getData().colors.white);
-            if (drag_state.is_dragging_opening && drag_state.is_dragging && !drag_state.is_dragging_folder && rect.contains(drag_state.current_mouse_pos) && !editing_elem && !renaming_folder) {
+            if (!folder_locked && drag_state.is_dragging_opening && drag_state.is_dragging && !drag_state.is_dragging_folder && rect.contains(drag_state.current_mouse_pos) && !editing_elem && !renaming_folder) {
                 rect.drawFrame(3.0, ColorF(getData().colors.yellow));
             }
             bool mouse_down_event = MouseL.down();
@@ -999,7 +962,7 @@ public:
             double icon_scale = folder_icon ? (double)(OPENING_SETTING_HEIGHT - 20) / (double)folder_icon.height() : 1.0;
             double icon_x = OPENING_SETTING_SX + OPENING_SETTING_LEFT_MARGIN + 8;
             if (folder_icon) {
-                ColorF icon_color = is_enabled ? ColorF(1.0) : ColorF(1.0, 0.5);
+                ColorF icon_color = is_effectively_enabled ? ColorF(1.0) : ColorF(1.0, 0.5);
                 folder_icon.scaled(icon_scale).draw(Arg::leftCenter(icon_x, sy + OPENING_SETTING_HEIGHT / 2), icon_color);
             }
             double text_offset = icon_x + (folder_icon ? folder_icon.width() * icon_scale + 10.0 : 0.0);
@@ -1034,6 +997,7 @@ public:
                 }
                 if (folder_locked) {
                     rect.draw(ColorF(0.0, 0.0, 0.0, 0.45));
+                    return;
                 }
             }
             int toggle_x = OPENING_SETTING_SX + OPENING_SETTING_WIDTH - 30;
@@ -1056,6 +1020,7 @@ public:
                 bool new_state = !entry.enabled;
                 folders_display[idx].enabled = new_state;
                 save_folder_enabled_state(entry.relative_path, new_state);
+                folders_display[idx].effective_enabled = is_folder_effectively_enabled(entry.relative_path);
                 return;
             }
             double rename_icon_size = 16.0;
@@ -1089,16 +1054,17 @@ public:
             bool is_editing_this = editing_elem && editing_index == idx;
             bool folder_locked = is_current_folder_locked();
             bool overlay_noninteractive = adding_elem || renaming_folder || (editing_elem && !is_editing_this);
+            bool is_effectively_enabled = opening.effective_enabled;
             ColorF bg_color = row_index % 2 ? ColorF(getData().colors.dark_green) : ColorF(getData().colors.green);
             if (is_being_dragged) {
                 bg_color = ColorF(getData().colors.yellow);
                 bg_color.a = 0.25;
             }
-            if (!opening.enabled) {
+            if (!is_effectively_enabled) {
                 bg_color = ColorF(0.2, 0.2, 0.2, 0.85);
             }
             Color text_color = is_being_dragged ? getData().colors.white.withAlpha(128) : getData().colors.white;
-            if (!opening.enabled) {
+            if (!is_effectively_enabled) {
                 text_color = getData().colors.white.withAlpha(100);
             }
             
@@ -1106,54 +1072,20 @@ public:
             
             // Handle drag preparation
             bool mouse_down_event = MouseL.down();
-            if (mouse_down_event && rect.contains(Cursor::Pos()) && 
-                !drag_state.is_dragging && drag_state.dragged_opening_index == -1 && drag_state.dragged_folder_name.isEmpty() &&
-                !(adding_elem || editing_elem || renaming_folder)) {
+            bool allow_row_interactions = !(adding_elem || editing_elem || renaming_folder) && !folder_locked;
+            if (allow_row_interactions && mouse_down_event && rect.contains(Cursor::Pos()) && 
+                !drag_state.is_dragging && drag_state.dragged_opening_index == -1 && drag_state.dragged_folder_name.isEmpty()) {
                 drag_state.dragged_opening_index = idx;
                 drag_state.drag_start_pos = Cursor::Pos();
             }
             
-            if (!(adding_elem || editing_elem || renaming_folder)) {
+            if (allow_row_interactions) {
                 // Delete button
                 delete_buttons[idx].move(OPENING_SETTING_SX + 1, sy + 1);
                 delete_buttons[idx].draw();
                 if (delete_buttons[idx].clicked()) {
                     delete_opening(idx);
                     return;
-                }
-                
-                // Move up button (as text button)
-                if (idx > 0) {
-                    int btn_x = OPENING_SETTING_SX + 40;
-                    int btn_y = sy + 1;
-                    Rect up_rect(btn_x, btn_y, 15, 15);
-                    if (up_rect.mouseOver()) {
-                        up_rect.draw(ColorF(0.8, 0.8, 0.8));
-                    } else {
-                        up_rect.draw(ColorF(0.6, 0.6, 0.6));
-                    }
-                    getData().fonts.font(U"▲").draw(10, Arg::center(btn_x + 7.5, btn_y + 7.5), getData().colors.black);
-                    if (up_rect.leftClicked()) {
-                        swap_openings(idx, idx - 1);
-                        return;
-                    }
-                }
-                
-                // Move down button (as text button)
-                if (idx < (int)openings.size() - 1) {
-                    int btn_x = OPENING_SETTING_SX + 58;
-                    int btn_y = sy + 1;
-                    Rect down_rect(btn_x, btn_y, 15, 15);
-                    if (down_rect.mouseOver()) {
-                        down_rect.draw(ColorF(0.8, 0.8, 0.8));
-                    } else {
-                        down_rect.draw(ColorF(0.6, 0.6, 0.6));
-                    }
-                    getData().fonts.font(U"▼").draw(10, Arg::center(btn_x + 7.5, btn_y + 7.5), getData().colors.black);
-                    if (down_rect.leftClicked()) {
-                        swap_openings(idx, idx + 1);
-                        return;
-                    }
                 }
                 
                 // Toggle enabled/disabled button
@@ -1174,6 +1106,7 @@ public:
                 }
                 if (toggle_rect.leftClicked()) {
                     openings[idx].enabled = !openings[idx].enabled;
+                    openings[idx].effective_enabled = openings[idx].enabled && current_folder_effective_enabled;
                     save_openings();
                     return;
                 }
@@ -1233,7 +1166,7 @@ public:
                 getData().fonts.font(Format(std::round(opening.weight))).draw(15, Arg::leftCenter(OPENING_SETTING_SX + OPENING_SETTING_LEFT_MARGIN + OPENING_SETTING_WIDTH - 90, sy + OPENING_SETTING_HEIGHT / 2), text_color);
             }
 
-            if (drag_state.is_dragging_opening && drag_state.is_dragging && rect.contains(drag_state.current_mouse_pos) && !drag_state.is_dragging_folder) {
+            if (!overlay_noninteractive && !folder_locked && drag_state.is_dragging_opening && drag_state.is_dragging && rect.contains(drag_state.current_mouse_pos) && !drag_state.is_dragging_folder) {
                 double mid_y = sy + OPENING_SETTING_HEIGHT / 2.0;
                 bool draw_top = (drag_state.current_mouse_pos.y < mid_y);
                 double line_y = draw_top ? sy + 2.0 : sy + OPENING_SETTING_HEIGHT - 2.0;
@@ -1241,13 +1174,9 @@ public:
                 line_segment.draw(4.0, ColorF(getData().colors.yellow));
             }
 
-            if (overlay_noninteractive) {
+            if (overlay_noninteractive || folder_locked) {
                 rect.draw(ColorF(0.0, 0.0, 0.0, 0.45));
                 return;
-            }
-
-            if (folder_locked) {
-                rect.draw(ColorF(0.0, 0.0, 0.0, 0.45));
             }
         }
         
