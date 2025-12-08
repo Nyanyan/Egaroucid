@@ -220,6 +220,15 @@ public:
                         }
                         text_area[0].active = true;
                         text_area[1].active = false;
+                        
+                        // Adjust scroll to show the new text box at the bottom
+                        int total_items = (has_parent ? 1 : 0) + (int)folders_display.size() + (int)openings.size();
+                        int new_item_index = total_items;  // Index where the new item will appear
+                        if (new_item_index >= OPENING_SETTING_N_GAMES_ON_WINDOW) {
+                            // Scroll to show the new text box
+                            double target_scroll = new_item_index - OPENING_SETTING_N_GAMES_ON_WINDOW + 1;
+                            scroll_manager.set_strt_idx(target_scroll);
+                        }
                     }
 
                     add_csv_button.enable();
