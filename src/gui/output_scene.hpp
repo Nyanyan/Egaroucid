@@ -11,6 +11,7 @@
 #pragma once
 #include <iostream>
 #include <future>
+#include <algorithm>
 #include "./../engine/engine_all.hpp"
 #include "function/function_all.hpp"
 #include "draw.hpp"
@@ -211,6 +212,8 @@ public:
             }
             if (pickRes.drop_completed) {
                 handle_picker_drop(pickRes);
+            } else if (pickRes.reorderRequested) {
+                handle_picker_reorder(pickRes);
             }
 
             // New folder UI - horizontal layout
@@ -328,6 +331,21 @@ private:
                 move_picker_folder_to_folder(res.dragged_folder_name.narrow(), res.drop_target_folder.narrow());
             }
         }
+    }
+
+    void handle_picker_reorder(const ExplorerDrawResult& res) {
+        if (!res.reorderRequested || !res.is_dragging_game) {
+            return;
+        }
+        if (res.reorderFrom < 0 || res.reorderFrom >= (int)picker_games.size()) {
+            return;
+        }
+        int insert_idx = std::clamp(res.reorderTo, 0, (int)picker_games.size());
+        bool changed = gui_list::reorder_parallel(picker_games, res.reorderFrom, insert_idx);
+        if (!changed) {
+            return;
+        }
+        persist_picker_games_order_to_csv();
     }
     
     // Move a game to parent folder
@@ -479,6 +497,30 @@ private:
         new_csv.newLine();
         
         new_csv.save(target_csv);
+    }
+
+    void persist_picker_games_order_to_csv() {
+        const String csv_path = get_picker_base_dir() + U"summary.csv";
+        CSV new_csv;
+        for (int i = (int)picker_games.size() - 1; i >= 0; --i) {
+            const auto& game = picker_games[i];
+            new_csv.write(game.date);
+            new_csv.write(game.black_player);
+            new_csv.write(game.white_player);
+            new_csv.write(game.memo);
+            new_csv.write(game.black_score == GAME_DISCS_UNDEFINED ? U"" : ToString(game.black_score));
+            new_csv.write(game.white_score == GAME_DISCS_UNDEFINED ? U"" : ToString(game.white_score));
+            new_csv.newLine();
+        }
+        new_csv.save(csv_path);
+    }
+
+    String get_picker_base_dir() const {
+        String base = Unicode::Widen(getData().directories.document_dir) + U"games/";
+        if (!picker_subfolder.empty()) {
+            base += Unicode::Widen(picker_subfolder) + U"/";
+        }
+        return base;
     }
 
     void export_game(std::vector<History_elem> history) {
