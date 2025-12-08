@@ -186,6 +186,7 @@ public:
                 back_button.draw();
                 if (back_button.clicked() || KeyEscape.down()) {
                     adding_elem = false;
+                    init_scroll_manager();  // Reinitialize scroll manager when canceling
                 }
                 
                 String transcript_candidate;
@@ -220,15 +221,6 @@ public:
                         }
                         text_area[0].active = true;
                         text_area[1].active = false;
-                        
-                        // Adjust scroll to show the new text box at the bottom
-                        int total_items = (has_parent ? 1 : 0) + (int)folders_display.size() + (int)openings.size();
-                        int new_item_index = total_items;  // Index where the new item will appear
-                        if (new_item_index >= OPENING_SETTING_N_GAMES_ON_WINDOW) {
-                            // Scroll to show the new text box
-                            double target_scroll = new_item_index - OPENING_SETTING_N_GAMES_ON_WINDOW + 1;
-                            scroll_manager.set_strt_idx(target_scroll);
-                        }
                     }
 
                     add_csv_button.enable();
@@ -722,9 +714,16 @@ public:
             int sy = OPENING_SETTING_SY;
             int strt_idx_int = scroll_manager.get_strt_idx_int();
             
+            int parent_offset = has_parent ? 1 : 0;
+            int total_items = parent_offset + (int)folders_display.size() + (int)openings.size();
+            
             if (adding_elem || editing_elem) {
-                if (openings.size() >= OPENING_SETTING_N_GAMES_ON_WINDOW) {
-                    strt_idx_int = openings.size() - OPENING_SETTING_N_GAMES_ON_WINDOW + 1;
+                // When adding/editing, scroll to show the form at the bottom if needed
+                int total_with_form = total_items + 1;
+                if (total_with_form > OPENING_SETTING_N_GAMES_ON_WINDOW) {
+                    strt_idx_int = total_with_form - OPENING_SETTING_N_GAMES_ON_WINDOW;
+                } else {
+                    strt_idx_int = 0;
                 }
             }
             
@@ -732,9 +731,6 @@ public:
                 getData().fonts.font(U"︙").draw(15, Arg::bottomCenter = Vec2{ X_CENTER, sy }, getData().colors.white);
             }
             sy += 8;
-            
-            int parent_offset = has_parent ? 1 : 0;
-            int total_items = parent_offset + (int)folders_display.size() + (int)openings.size();
             
             if (!adding_elem && !editing_elem && total_items == 0) {
                 getData().fonts.font(language.get("opening_setting", "no_opening_found")).draw(20, Arg::center(X_CENTER, Y_CENTER), getData().colors.white);
