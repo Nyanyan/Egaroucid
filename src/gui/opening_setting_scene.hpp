@@ -159,8 +159,8 @@ public:
         back_button.init(GO_BACK_BUTTON_BACK_SX, GO_BACK_BUTTON_SY, GO_BACK_BUTTON_WIDTH, GO_BACK_BUTTON_HEIGHT, GO_BACK_BUTTON_RADIUS, language.get("common", "back"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
         register_button.init(GO_BACK_BUTTON_GO_SX, GO_BACK_BUTTON_SY, GO_BACK_BUTTON_WIDTH, GO_BACK_BUTTON_HEIGHT, GO_BACK_BUTTON_RADIUS, language.get("opening_setting", "register"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
         create_csv_button.init(GO_BACK_BUTTON_GO_SX, GO_BACK_BUTTON_SY, GO_BACK_BUTTON_WIDTH, GO_BACK_BUTTON_HEIGHT, GO_BACK_BUTTON_RADIUS, language.get("in_out", "create"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
-        inline_edit_back_button.init(0, 0, 80, 30, 5, language.get("common", "back"), 18, getData().fonts.font, getData().colors.white, getData().colors.black);
-        inline_edit_ok_button.init(0, 0, 70, 30, 5, language.get("common", "ok"), 18, getData().fonts.font, getData().colors.white, getData().colors.black);
+        inline_edit_back_button.init(0, 0, 80, 30, 10, language.get("common", "back"), 18, getData().fonts.font, getData().colors.white, getData().colors.black);
+        inline_edit_ok_button.init(0, 0, 70, 30, 10, language.get("common", "ok"), 18, getData().fonts.font, getData().colors.white, getData().colors.black);
 
         has_parent = false;
         subfolder.clear();
