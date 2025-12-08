@@ -891,7 +891,7 @@ struct Forced_openings {
             for (std::pair<int, double> &elem: selected_moves[unique_board]) {
                 s += elem.second;
                 if (s >= rnd) {
-                    selected_policy = convert_coord_from_representative_board(elem.first, symmetry_idx);
+                    selected_policy = convert_coord_to_representative_board(elem.first, symmetry_idx);
                     break;
                 }
             }
