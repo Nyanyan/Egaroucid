@@ -805,6 +805,7 @@ struct Window_state {
 struct Forced_openings {
     std::vector<std::pair<std::string, double>> openings;
     std::unordered_map<Board, std::vector<std::pair<int, double>>, Book_hash> selected_moves;
+    std::unordered_set<Board, Book_hash> forced_boards;
 
     // Forced_openings() {
     //     openings = {
@@ -819,6 +820,7 @@ struct Forced_openings {
         Flip flip;
         for (const std::pair<std::string, double> opening : openings) {
             board.reset();
+            forced_boards.emplace(board);
             std::string opening_str = opening.first;
             // std::cerr << opening_str << std::endl;
             double weight = opening.second;
@@ -829,6 +831,7 @@ struct Forced_openings {
                 selected_moves[board].emplace_back(std::make_pair(policy, weight));
                 calc_flip(&flip, &board, policy);
                 board.move_board(&flip);
+                forced_boards.emplace(board);
             }
         }
         std::cerr << "forced openings initialized " << selected_moves.size() << std::endl;
@@ -895,7 +898,7 @@ struct Forced_openings {
     }
 
     bool is_forced(Board board) {
-        return selected_moves.find(board) != selected_moves.end();
+        return forced_boards.find(board) != forced_boards.end();
     }
 };
 
