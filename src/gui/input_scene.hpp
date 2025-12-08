@@ -322,6 +322,7 @@ private:
     Scroll_manager scroll_manager;
     Button back_button;
     Button up_button;
+    Button add_folder_button;
     bool failed;
     // Explorer-like folder view
     std::vector<String> folders_display; // includes optional ".." at head
@@ -336,12 +337,14 @@ private:
     int selected_folder_index = -1;
     String selected_folder_name;
     String renaming_folder_original_name;
+    bool creating_folder = false;
 
 public:
     Import_game(const InitData& init) : IScene{ init } {
         back_button.init(BACK_BUTTON_SX, BACK_BUTTON_SY, BACK_BUTTON_WIDTH, BACK_BUTTON_HEIGHT, BACK_BUTTON_RADIUS, language.get("common", "back"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
         up_button.init(IMPORT_GAME_SX, IMPORT_GAME_SY - 30, 28, 24, 4, U"↑", 16, getData().fonts.font, getData().colors.white, getData().colors.black);
-    create_folder_button.init(IMPORT_GAME_SX + 420, IMPORT_GAME_SY - 55, 120, 30, 8, language.get("in_out", "create"), 15, getData().fonts.font, getData().colors.white, getData().colors.black);
+        add_folder_button.init(IMPORT_GAME_SX + 420, IMPORT_GAME_SY - 55, 120, 30, 8, language.get("in_out", "new_folder"), 15, getData().fonts.font, getData().colors.white, getData().colors.black);
+        create_folder_button.init(0, 0, 120, 30, 8, language.get("in_out", "create"), 15, getData().fonts.font, getData().colors.white, getData().colors.black);
     inline_edit_back_button.init(0, 0, 80, 30, 8, language.get("common", "back"), 18, getData().fonts.font, getData().colors.white, getData().colors.black);
     inline_edit_ok_button.init(0, 0, 70, 30, 8, language.get("common", "ok"), 18, getData().fonts.font, getData().colors.white, getData().colors.black);
         failed = false;
@@ -365,6 +368,13 @@ public:
                 return;
             }
         }
+        bool enter_pressed = KeyEnter.down();
+
+        if (creating_folder) {
+            draw_folder_creation_overlay(enter_pressed);
+            return;
+        }
+
         back_button.draw();
         if (back_button.clicked() || KeyEscape.pressed()) {
             getData().graph_resources.need_init = false;
@@ -702,16 +712,49 @@ private:
         auto& fonts = getData().fonts;
         auto& colors = getData().colors;
 
-        const double row_top = IMPORT_GAME_SY + 8.0;
-        const double row_height = IMPORT_GAME_HEIGHT;
-        const double row_center = row_top + row_height / 2.0;
-        const double label_x = IMPORT_GAME_SX + IMPORT_GAME_LEFT_MARGIN + 8.0;
+        const double label_y = IMPORT_GAME_SY - 70;
+        String selection_label = selected_folder_index >= 0 ? selected_folder_name : U"-";
+        fonts.font(language.get("common", "folder") + U": " + selection_label).draw(15, Arg::leftCenter(IMPORT_GAME_SX, label_y + 15), colors.white);
 
-        fonts.font(language.get("in_out", "new_folder") + U":").draw(20, Arg::leftCenter(label_x, row_center), colors.white);
+        if (renaming_folder) {
+            add_folder_button.disable_notransparent();
+        } else {
+            add_folder_button.enable();
+        }
+        add_folder_button.draw();
+        if (!renaming_folder && add_folder_button.clicked()) {
+            creating_folder = true;
+            cancel_folder_rename();
+            new_folder_area.text.clear();
+            new_folder_area.cursorPos = 0;
+            new_folder_area.rebuildGlyphs();
+            new_folder_area.active = true;
+        }
+    }
 
-        Vec2 field_pos{ label_x + 140.0, row_center - 17.0 };
-        SizeF field_size{ 400.0, 30.0 };
-        if (SimpleGUI::TextArea(new_folder_area, field_pos, field_size, SimpleGUI::PreferredTextAreaMaxChars)) {
+    void draw_folder_creation_overlay(bool enter_pressed) {
+        auto& fonts = getData().fonts;
+        auto& colors = getData().colors;
+
+        back_button.draw();
+        if (back_button.clicked() || KeyEscape.down()) {
+            creating_folder = false;
+            new_folder_area.text.clear();
+            new_folder_area.cursorPos = 0;
+            new_folder_area.rebuildGlyphs();
+            new_folder_area.active = false;
+            return;
+        }
+
+        const double panel_y = IMPORT_GAME_SY + 8;
+        const double label_x = IMPORT_GAME_SX + IMPORT_GAME_LEFT_MARGIN + 8;
+        const double center_y = panel_y + (IMPORT_GAME_HEIGHT * IMPORT_GAME_N_GAMES_ON_WINDOW) / 2;
+
+        fonts.font(language.get("in_out", "new_folder") + U":").draw(20, Arg::leftCenter(label_x, center_y), colors.white);
+
+        Vec2 text_pos{ label_x + 140, center_y - 17 };
+        SizeF text_size{ 400, 30 };
+        if (SimpleGUI::TextArea(new_folder_area, text_pos, text_size, SimpleGUI::PreferredTextAreaMaxChars)) {
             gui_list::sanitize_text_area(new_folder_area);
         }
         String sanitized = gui_list::sanitize_folder_text(new_folder_area.text);
@@ -723,33 +766,32 @@ private:
         }
 
         String folder_name = new_folder_area.text.trimmed();
-        bool can_create = !renaming_folder && gui_list::is_valid_folder_name(folder_name);
+        bool can_create = gui_list::is_valid_folder_name(folder_name);
 
-        double button_x = field_pos.x + field_size.x + 20.0;
-        double button_y = row_center - create_folder_button.rect.h / 2.0;
-        create_folder_button.move((int)button_x, (int)button_y);
+        create_folder_button.move(GO_BACK_BUTTON_GO_SX, GO_BACK_BUTTON_SY);
         if (can_create) {
             create_folder_button.enable();
         } else {
             create_folder_button.disable();
         }
         create_folder_button.draw();
-        if (can_create && create_folder_button.clicked()) {
-            handle_create_folder();
-        }
 
-        String selection_label = selected_folder_index >= 0 ? selected_folder_name : U"-";
-        fonts.font(language.get("common", "folder") + U": " + selection_label).draw(15, Arg::leftCenter(IMPORT_GAME_SX, row_top + row_height + 20.0), colors.white);
+        if (can_create && (create_folder_button.clicked() || enter_pressed)) {
+            if (handle_create_folder()) {
+                creating_folder = false;
+                new_folder_area.active = false;
+            }
+        }
     }
 
-    void handle_create_folder() {
+    bool handle_create_folder() {
         if (renaming_folder) {
-            return;
+            return false;
         }
         String input = gui_list::sanitize_folder_text(new_folder_area.text).trimmed();
         gui_list::sanitize_text_area(new_folder_area);
         if (!gui_list::is_valid_folder_name(input)) {
-            return;
+            return false;
         }
         bool created = gui_list::create_folder_with_initializer(
             get_base_dir(),
@@ -764,8 +806,10 @@ private:
             new_folder_area.cursorPos = 0;
             new_folder_area.rebuildGlyphs();
             enumerate_current_dir();
+            load_games();
             select_folder(input);
         }
+        return created;
     }
 
     void begin_folder_rename(int folder_idx) {

@@ -546,7 +546,7 @@ inline ExplorerDrawResult DrawExplorerList(
     ExplorerDrawResult list_result = draw_explorer_list_items<FontsT, ColorsT, ResourcesT, LanguageT>(
         folders_display, games, delete_buttons, scroll_manager, 
         item_height, n_games_on_window, has_parent, fonts, colors, resources, language,
-        drag_state, click_state, current_time, inline_config
+        drag_state, click_state, current_time, list_geom, inline_config
     );
     
     if (list_result.folderClicked || list_result.folderDoubleClicked || 
@@ -578,6 +578,7 @@ inline ExplorerDrawResult draw_explorer_list_items(
     ExplorerDragState& drag_state,
     ExplorerClickState& click_state,
     uint64_t current_time,
+    const gui_list::VerticalListGeometry& list_geom,
     const ExplorerFolderInlineConfig* inline_config
 ) {
     ExplorerDrawResult res;
@@ -593,6 +594,27 @@ inline ExplorerDrawResult draw_explorer_list_items(
     
     int parent_offset = has_parent ? 1 : 0;
     int total_rows = parent_offset + (int)folders_display.size() + (int)games.size();
+
+    bool show_reorder_line = false;
+    double reorder_line_y = 0.0;
+    if (!inline_editing && drag_state.is_dragging_game && !drag_state.is_dragging_folder) {
+        int first_item_row = parent_offset + static_cast<int>(folders_display.size());
+        int drop_index = gui_list::compute_drop_index_for_items(
+            drag_state.current_mouse_pos,
+            list_geom,
+            strt_idx_int,
+            first_item_row,
+            static_cast<int>(games.size())
+        );
+        if (drop_index >= 0) {
+            int target_row = first_item_row + drop_index;
+            int local_row = target_row - strt_idx_int;
+            if (local_row >= 0 && local_row <= list_geom.visible_row_count) {
+                show_reorder_line = true;
+                reorder_line_y = list_geom.list_top + local_row * list_geom.row_height;
+            }
+        }
+    }
     
     for (int row = strt_idx_int; row < std::min(total_rows, strt_idx_int + n_games_on_window); ++row) {
         if (row < 0 || row >= total_rows) {
@@ -645,6 +667,11 @@ inline ExplorerDrawResult draw_explorer_list_items(
         sy += item_height;
     }
     
+    if (show_reorder_line) {
+        RectF line_rect(list_geom.list_left + 4.0, reorder_line_y - 2.0, list_geom.list_width - 8.0, 4.0);
+        line_rect.draw(colors.yellow.withAlpha(0.85));
+    }
+
     if (strt_idx_int + n_games_on_window < total_rows) {
         fonts.font(U"︙").draw(15, Arg::topCenter(X_CENTER, IMPORT_GAME_SY + item_height * n_games_on_window + 10), colors.white);
     }
