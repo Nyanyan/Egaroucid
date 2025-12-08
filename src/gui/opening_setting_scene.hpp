@@ -12,6 +12,8 @@
 #include <iostream>
 #include <algorithm>
 #include <cctype>
+#include <string>
+#include <stdexcept>
 #include <Siv3D.hpp>
 #include "./../engine/engine_all.hpp"
 #include "function/function_all.hpp"
@@ -51,9 +53,10 @@ class Opening_setting : public App::Scene {
         Button add_csv_button;  // Button to create new CSV file
         Button ok_button;
         Button back_button;
-        Button register_button;
-        Button update_button;
-        Button create_csv_button;
+    Button register_button;
+    Button create_csv_button;
+    Button inline_edit_back_button;
+    Button inline_edit_ok_button;
         bool has_parent;
         std::string subfolder;
         bool adding_elem;
@@ -97,8 +100,9 @@ class Opening_setting : public App::Scene {
             ok_button.init(BUTTON3_3_SX, BUTTON3_SY, BUTTON3_WIDTH, BUTTON3_HEIGHT, BUTTON3_RADIUS, language.get("common", "ok"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
             back_button.init(GO_BACK_BUTTON_BACK_SX, GO_BACK_BUTTON_SY, GO_BACK_BUTTON_WIDTH, GO_BACK_BUTTON_HEIGHT, GO_BACK_BUTTON_RADIUS, language.get("common", "back"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
             register_button.init(GO_BACK_BUTTON_GO_SX, GO_BACK_BUTTON_SY, GO_BACK_BUTTON_WIDTH, GO_BACK_BUTTON_HEIGHT, GO_BACK_BUTTON_RADIUS, language.get("opening_setting", "register"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
-            update_button.init(GO_BACK_BUTTON_GO_SX, GO_BACK_BUTTON_SY, GO_BACK_BUTTON_WIDTH, GO_BACK_BUTTON_HEIGHT, GO_BACK_BUTTON_RADIUS, language.get("common", "edit"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
             create_csv_button.init(GO_BACK_BUTTON_GO_SX, GO_BACK_BUTTON_SY, GO_BACK_BUTTON_WIDTH, GO_BACK_BUTTON_HEIGHT, GO_BACK_BUTTON_RADIUS, language.get("in_out", "create"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
+            inline_edit_back_button.init(0, 0, 80, 30, 5, language.get("common", "back"), 18, getData().fonts.font, getData().colors.white, getData().colors.black);
+            inline_edit_ok_button.init(0, 0, 70, 30, 5, language.get("common", "ok"), 18, getData().fonts.font, getData().colors.white, getData().colors.black);
             
             has_parent = false;
             subfolder.clear();
@@ -125,6 +129,9 @@ class Opening_setting : public App::Scene {
             }
             getData().fonts.font(path_label).draw(15, Arg::rightCenter(OPENING_SETTING_SX + OPENING_SETTING_WIDTH, 30), getData().colors.white);
             
+            bool enter_pressed = KeyEnter.down();
+            bool rename_textbox_active = renaming_folder && folder_rename_area.active;
+
             // Handle CSV creation mode
             if (creating_csv) {
                 back_button.draw();
@@ -163,60 +170,35 @@ class Opening_setting : public App::Scene {
                     csv_name_area.rebuildGlyphs();
                 }
                 
-            } else if (adding_elem || editing_elem) {
+            } else if (adding_elem) {
                 back_button.draw();
                 if (back_button.clicked() || KeyEscape.down()) {
                     adding_elem = false;
-                    editing_elem = false;
-                    editing_index = -1;
                 }
                 
-                std::string transcript = text_area[0].text.narrow();
-                std::string weight_str = text_area[1].text.narrow();
-                bool can_be_registered = is_valid_transcript(transcript);
-                double weight;
-                try {
-                    weight = stoi(weight_str);
-                } catch (const std::invalid_argument& e) {
-                    can_be_registered = false;
-                } catch (const std::out_of_range& e) {
-                    can_be_registered = false;
-                }
-                
-                if (editing_elem) {
-                    if (can_be_registered) {
-                        update_button.enable();
-                    } else {
-                        update_button.disable();
-                    }
-                    update_button.draw();
-                    if (update_button.clicked() || (can_be_registered && KeyEnter.down())) {
-                        if (editing_index >= 0 && editing_index < (int)openings.size()) {
-                            openings[editing_index].transcript = Unicode::Widen(transcript);
-                            openings[editing_index].weight = weight;
-                            save_openings();
-                        }
-                        editing_elem = false;
-                        editing_index = -1;
-                    }
+                String transcript_candidate;
+                double weight_candidate = 0.0;
+                bool can_be_registered = collect_opening_form_payload(transcript_candidate, weight_candidate);
+                if (can_be_registered) {
+                    register_button.enable();
                 } else {
-                    if (can_be_registered) {
-                        register_button.enable();
-                    } else {
-                        register_button.disable();
-                    }
-                    register_button.draw();
-                    if (register_button.clicked() || (can_be_registered && KeyEnter.down())) {
-                        add_opening(Unicode::Widen(transcript), weight);
-                        adding_elem = false;
-                    }
+                    register_button.disable();
+                }
+                register_button.draw();
+                if (register_button.clicked() || (can_be_registered && enter_pressed)) {
+                    add_opening(transcript_candidate, weight_candidate);
+                    adding_elem = false;
                 }
             } else {
                 // Normal mode
-                bool can_add = true;
-                add_button.enable();
+                bool add_interactable = !editing_elem && !renaming_folder;
+                if (add_interactable) {
+                    add_button.enable();
+                } else {
+                    add_button.disable_notransparent();
+                }
                 add_button.draw();
-                if (can_add && add_button.clicked()) {
+                if (add_interactable && add_button.clicked()) {
                     adding_elem = true;
                     cancel_folder_rename();
                     for (int i = 0; i < 2; ++i) {
@@ -231,8 +213,14 @@ class Opening_setting : public App::Scene {
                     text_area[1].active = false;
                 }
                 
+                bool add_folder_interactable = !editing_elem && !renaming_folder;
+                if (add_folder_interactable) {
+                    add_csv_button.enable();
+                } else {
+                    add_csv_button.disable_notransparent();
+                }
                 add_csv_button.draw();
-                if (add_csv_button.clicked()) {
+                if (add_folder_interactable && add_csv_button.clicked()) {
                     creating_csv = true;
                     csv_name_area.text = U"";
                     csv_name_area.cursorPos = 0;
@@ -242,7 +230,7 @@ class Opening_setting : public App::Scene {
                 }
                 
                 ok_button.draw();
-                if (ok_button.clicked() || KeyEnter.down()) {
+                if (ok_button.clicked() || (enter_pressed && !rename_textbox_active)) {
                     // Save all openings and reload forced_openings
                     save_openings();
                     save_all_openings_to_forced_openings();
@@ -258,6 +246,9 @@ class Opening_setting : public App::Scene {
 
             if (renaming_folder && KeyEscape.down()) {
                 cancel_folder_rename();
+            }
+            if (editing_elem && KeyEscape.down()) {
+                cancel_opening_edit();
             }
             
             // Draw CSV files and openings list
@@ -471,6 +462,28 @@ class Opening_setting : public App::Scene {
                 }
             }
         }
+
+        bool collect_opening_form_payload(String& transcript_out, double& weight_out) {
+            std::string transcript = text_area[0].text.narrow();
+            std::string weight_str = text_area[1].text.narrow();
+            if (!is_valid_transcript(transcript)) {
+                return false;
+            }
+            try {
+                weight_out = std::stod(weight_str);
+            } catch (const std::invalid_argument&) {
+                return false;
+            } catch (const std::out_of_range&) {
+                return false;
+            }
+            transcript_out = Unicode::Widen(transcript);
+            return true;
+        }
+
+        void cancel_opening_edit() {
+            editing_elem = false;
+            editing_index = -1;
+        }
         
         // Get base directory for current forced_openings folder
         String get_base_dir() const {
@@ -637,7 +650,7 @@ class Opening_setting : public App::Scene {
             if (insert_idx > (int)openings.size()) {
                 insert_idx = (int)openings.size();
             }
-            if (insert_idx == from_idx || insert_idx == from_idx + 1) {
+            if (insert_idx == from_idx) {
                 return;
             }
             auto opening = openings[from_idx];
@@ -982,7 +995,7 @@ class Opening_setting : public App::Scene {
             
             rect.draw(bg_color).drawFrame(1.0, getData().colors.white);
             
-            if (adding_elem || (editing_elem && !is_editing_this)) {
+            if (adding_elem) {
                 rect.draw(ColorF{1.0, 1.0, 1.0, 0.5});
             }
             
@@ -996,30 +1009,12 @@ class Opening_setting : public App::Scene {
                 drag_state.drag_start_pos = Cursor::Pos();
             }
             
-            if (!(adding_elem || (editing_elem && !is_editing_this))) {
+            if (!adding_elem && !is_editing_this) {
                 // Delete button
                 delete_buttons[idx].move(OPENING_SETTING_SX + 1, sy + 1);
                 delete_buttons[idx].draw();
                 if (delete_buttons[idx].clicked()) {
                     delete_opening(idx);
-                    return;
-                }
-                
-                // Edit button
-                edit_buttons[idx].move(OPENING_SETTING_SX + 20, sy + 1);
-                edit_buttons[idx].draw();
-                if (edit_buttons[idx].clicked()) {
-                    editing_elem = true;
-                    cancel_folder_rename();
-                    editing_index = idx;
-                    text_area[0].text = opening.transcript;
-                    text_area[1].text = Format(opening.weight);
-                    text_area[0].cursorPos = text_area[0].text.size();
-                    text_area[1].cursorPos = text_area[1].text.size();
-                    text_area[0].rebuildGlyphs();
-                    text_area[1].rebuildGlyphs();
-                    text_area[0].active = true;
-                    text_area[1].active = false;
                     return;
                 }
                 
@@ -1078,16 +1073,75 @@ class Opening_setting : public App::Scene {
                     save_openings();
                     return;
                 }
+
+                double edit_icon_size = 16.0;
+                double edit_x = toggle_rect.x - edit_icon_size - 10.0;
+                RectF edit_rect(edit_x, sy + (OPENING_SETTING_HEIGHT - edit_icon_size) / 2.0, edit_icon_size, edit_icon_size);
+                const Texture& pencil_tex = getData().resources.pencil;
+                if (pencil_tex) {
+                    pencil_tex.resized(edit_icon_size).draw(edit_rect.pos, ColorF(1.0));
+                } else {
+                    edit_rect.draw(getData().colors.white);
+                }
+                if (edit_rect.leftClicked()) {
+                    editing_elem = true;
+                    cancel_folder_rename();
+                    editing_index = idx;
+                    text_area[0].text = opening.transcript;
+                    text_area[1].text = Format(opening.weight);
+                    text_area[0].cursorPos = text_area[0].text.size();
+                    text_area[1].cursorPos = text_area[1].text.size();
+                    text_area[0].rebuildGlyphs();
+                    text_area[1].rebuildGlyphs();
+                    text_area[0].active = true;
+                    text_area[1].active = false;
+                    return;
+                }
             }
             
             if (is_editing_this) {
-                double text_x = OPENING_SETTING_SX + OPENING_SETTING_LEFT_MARGIN + 78;
-                double text_y = sy + OPENING_SETTING_HEIGHT / 2 - 17;
-                SimpleGUI::TextArea(text_area[0], Vec2{ text_x, text_y }, SizeF{ 600, 30 }, SimpleGUI::PreferredTextAreaMaxChars);
-                double weight_label_anchor = OPENING_SETTING_SX + OPENING_SETTING_LEFT_MARGIN + OPENING_SETTING_WIDTH - 70;
-                getData().fonts.font(language.get("opening_setting", "weight") + U": ").draw(15, Arg::rightCenter(weight_label_anchor, sy + OPENING_SETTING_HEIGHT / 2), getData().colors.white);
-                SimpleGUI::TextArea(text_area[1], Vec2{ weight_label_anchor, text_y }, SizeF{ 60, 30 }, SimpleGUI::PreferredTextAreaMaxChars);
+                double control_margin = 10.0;
+                double field_height = 30.0;
+                double text_y = sy + OPENING_SETTING_HEIGHT / 2 - field_height / 2;
+                double ok_x = OPENING_SETTING_SX + OPENING_SETTING_WIDTH - inline_edit_ok_button.rect.w - control_margin;
+                double back_x = ok_x - inline_edit_back_button.rect.w - control_margin;
+                double weight_width = 70.0;
+                double weight_x = back_x - weight_width - control_margin;
+                double transcript_x = OPENING_SETTING_SX + OPENING_SETTING_LEFT_MARGIN + 8;
+                double transcript_width = weight_x - transcript_x - control_margin;
+                if (transcript_width < 120.0) {
+                    transcript_width = 120.0;
+                }
+
+                SimpleGUI::TextArea(text_area[0], Vec2{ transcript_x, text_y }, SizeF{ transcript_width, field_height }, SimpleGUI::PreferredTextAreaMaxChars);
+                SimpleGUI::TextArea(text_area[1], Vec2{ weight_x, text_y }, SizeF{ weight_width, field_height }, SimpleGUI::PreferredTextAreaMaxChars);
                 handle_textarea_tab_navigation();
+
+                inline_edit_back_button.move((int)back_x, (int)(sy + (OPENING_SETTING_HEIGHT - inline_edit_back_button.rect.h) / 2));
+                inline_edit_back_button.enable();
+                inline_edit_back_button.draw();
+                if (inline_edit_back_button.clicked()) {
+                    cancel_opening_edit();
+                    return;
+                }
+
+                inline_edit_ok_button.move((int)ok_x, (int)(sy + (OPENING_SETTING_HEIGHT - inline_edit_ok_button.rect.h) / 2));
+                String updated_transcript;
+                double updated_weight = 0.0;
+                bool can_commit = collect_opening_form_payload(updated_transcript, updated_weight);
+                if (can_commit) {
+                    inline_edit_ok_button.enable();
+                } else {
+                    inline_edit_ok_button.disable();
+                }
+                inline_edit_ok_button.draw();
+                if (can_commit && inline_edit_ok_button.clicked()) {
+                    openings[idx].transcript = updated_transcript;
+                    openings[idx].weight = updated_weight;
+                    save_openings();
+                    cancel_opening_edit();
+                    return;
+                }
             } else {
                 // Draw transcript
                 getData().fonts.font(opening.transcript).draw(15, Arg::leftCenter(OPENING_SETTING_SX + OPENING_SETTING_LEFT_MARGIN + 78, sy + OPENING_SETTING_HEIGHT / 2), text_color);
@@ -1276,7 +1330,12 @@ class Opening_setting : public App::Scene {
                     int item_sy = sy + (row_index - strt_idx_int) * OPENING_SETTING_HEIGHT;
                     Rect rect(OPENING_SETTING_SX, item_sy, OPENING_SETTING_WIDTH, OPENING_SETTING_HEIGHT);
                     if (rect.contains(drop_pos)) {
-                        return i;
+                        double mid_y = item_sy + OPENING_SETTING_HEIGHT / 2.0;
+                        if (drop_pos.y < mid_y) {
+                            return i;
+                        } else {
+                            return std::min(i + 1, (int)openings.size());
+                        }
                     }
                 }
                 row_index++;

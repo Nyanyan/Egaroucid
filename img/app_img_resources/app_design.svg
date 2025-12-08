@@ -37,9 +37,9 @@
      inkscape:snap-bbox-edge-midpoints="true"
      inkscape:bbox-nodes="true"
      inkscape:bbox-paths="true"
-     inkscape:zoom="0.64"
-     inkscape:cx="1741.4063"
-     inkscape:cy="825"
+     inkscape:zoom="0.45254834"
+     inkscape:cx="1704.7903"
+     inkscape:cy="492.76504"
      inkscape:window-width="2104"
      inkscape:window-height="2041"
      inkscape:window-x="764"
@@ -1432,19 +1432,27 @@
     <g
        id="g1-4"
        transform="matrix(0.23470793,0,0,0.23470793,323.96319,11.457171)">
-	<path
-   class="st0"
-   d="M 494.56,55.774 456.216,17.446 c -23.253,-23.262 -60.965,-23.253 -84.226,0 l -35.878,35.878 122.563,122.563 35.886,-35.878 c 23.253,-23.262 23.253,-60.965 -10e-4,-84.235 z"
-   style="fill:#ffffff"
-   id="path1-88" />
-
-	<polygon
-   class="st0"
-   points="0,511.998 122.571,511.998 425.246,209.314 302.691,86.751 0,389.435 "
-   style="fill:#ffffff"
-   id="polygon1-2" />
-
-</g>
+      <path
+         class="st0"
+         d="M 494.56,55.774 456.216,17.446 c -23.253,-23.262 -60.965,-23.253 -84.226,0 l -35.878,35.878 122.563,122.563 35.886,-35.878 c 23.253,-23.262 23.253,-60.965 -10e-4,-84.235 z"
+         style="fill:#ffffff"
+         id="path1-88" />
+      <polygon
+         class="st0"
+         points="0,511.998 122.571,511.998 425.246,209.314 302.691,86.751 0,389.435 "
+         style="fill:#ffffff"
+         id="polygon1-2" />
+    </g>
+    <rect
+       style="fill:#919191;fill-opacity:1;stroke-width:0.499999"
+       id="rect10405-0-0-9-9"
+       width="142.8866"
+       height="142.8866"
+       x="474.18292"
+       y="-0.016537348"
+       inkscape:export-filename="pencil.png"
+       inkscape:export-xdpi="35.549999"
+       inkscape:export-ydpi="35.549999" />
     <rect
        style="fill:#919191;fill-opacity:1;stroke-width:0.499999"
        id="rect10405-0-0-9-5"
@@ -1474,5 +1482,15 @@
        style="fill:#ffffff;fill-opacity:1;stroke:none;stroke-width:4.58884"
        d="m 545.50394,275.93372 58.61138,-87.08484 H 486.89256 Z"
        id="path6-5" />
+    <g
+       id="g1-2"
+       transform="matrix(0.25089285,0,0,0.25089285,481.39766,7.1981914)">
+	<path
+   class="st0"
+   d="M 512,230.431 283.498,44.621 v 94.807 C 60.776,141.244 -21.842,307.324 4.826,467.379 53.522,367.886 154.741,328.702 283.498,324.239 v 92.003 z"
+   style="fill:#ffffff"
+   id="path1-4" />
+
+</g>
   </g>
 </svg>
