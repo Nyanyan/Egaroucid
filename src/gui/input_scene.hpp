@@ -342,9 +342,9 @@ private:
 public:
     Import_game(const InitData& init) : IScene{ init } {
         back_button.init(GO_BACK_BUTTON_BACK_SX, GO_BACK_BUTTON_SY, GO_BACK_BUTTON_WIDTH, GO_BACK_BUTTON_HEIGHT, GO_BACK_BUTTON_RADIUS, language.get("common", "back"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
+        add_folder_button.init(GO_BACK_BUTTON_GO_SX, GO_BACK_BUTTON_SY, GO_BACK_BUTTON_WIDTH, GO_BACK_BUTTON_HEIGHT, GO_BACK_BUTTON_RADIUS, language.get("in_out", "new_folder"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
         create_folder_button.init(GO_BACK_BUTTON_GO_SX, GO_BACK_BUTTON_SY, GO_BACK_BUTTON_WIDTH, GO_BACK_BUTTON_HEIGHT, GO_BACK_BUTTON_RADIUS, language.get("in_out", "create"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
         up_button.init(IMPORT_GAME_SX, IMPORT_GAME_SY - 30, 28, 24, 4, U"↑", 16, getData().fonts.font, getData().colors.white, getData().colors.black);
-        add_folder_button.init(IMPORT_GAME_SX + 420, IMPORT_GAME_SY - 55, 120, 30, 8, language.get("in_out", "new_folder"), 15, getData().fonts.font, getData().colors.white, getData().colors.black);
         inline_edit_back_button.init(0, 0, 80, 30, 8, language.get("common", "back"), 18, getData().fonts.font, getData().colors.white, getData().colors.black);
         inline_edit_ok_button.init(0, 0, 70, 30, 8, language.get("common", "ok"), 18, getData().fonts.font, getData().colors.white, getData().colors.black);
         failed = false;
