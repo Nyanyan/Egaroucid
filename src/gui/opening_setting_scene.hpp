@@ -70,59 +70,6 @@ private:
     TextAreaEditState folder_rename_area;
     bool current_folder_effective_enabled;
 
-    struct InlineEditLayout {
-        double transcript_x;
-        double transcript_width;
-        double secondary_x;
-        double secondary_width;
-        double text_y;
-        double field_height;
-        double back_x;
-        double ok_x;
-        double buttons_y;
-    };
-
-    InlineEditLayout get_inline_edit_layout(double sy) const {
-        InlineEditLayout layout;
-        constexpr double control_margin = 10.0;
-        layout.field_height = 30.0;
-        double row_center = sy + OPENING_SETTING_HEIGHT / 2.0;
-        layout.text_y = row_center - layout.field_height / 2.0 - 2.0;
-        layout.transcript_x = OPENING_SETTING_SX + OPENING_SETTING_LEFT_MARGIN + 8;
-
-        double ok_width = inline_edit_ok_button.rect.w;
-        double back_width = inline_edit_back_button.rect.w;
-        layout.ok_x = OPENING_SETTING_SX + OPENING_SETTING_WIDTH - ok_width - control_margin;
-        layout.back_x = layout.ok_x - back_width - control_margin;
-
-        layout.secondary_width = 70.0;
-        layout.secondary_x = layout.back_x - layout.secondary_width - control_margin;
-        layout.transcript_width = layout.secondary_x - layout.transcript_x - control_margin;
-        if (layout.transcript_width < 120.0) {
-            layout.transcript_width = 120.0;
-        }
-        layout.buttons_y = sy + (OPENING_SETTING_HEIGHT - inline_edit_back_button.rect.h) / 2.0;
-        return layout;
-    }
-
-    bool draw_inline_back_button(const InlineEditLayout& layout) {
-        inline_edit_back_button.move((int)layout.back_x, (int)layout.buttons_y);
-        inline_edit_back_button.enable();
-        inline_edit_back_button.draw();
-        return inline_edit_back_button.clicked();
-    }
-
-    bool draw_inline_ok_button(const InlineEditLayout& layout, bool can_commit) {
-        inline_edit_ok_button.move((int)layout.ok_x, (int)layout.buttons_y);
-        if (can_commit) {
-            inline_edit_ok_button.enable();
-        } else {
-            inline_edit_ok_button.disable();
-        }
-        inline_edit_ok_button.draw();
-        return can_commit && inline_edit_ok_button.clicked();
-    }
-
     bool is_locking_bottom_buttons() const {
         return editing_elem || renaming_folder;
     }
@@ -887,23 +834,40 @@ public:
             double text_offset = icon_x + (folder_icon ? folder_icon.width() * icon_scale + 10.0 : 0.0);
             bool is_renaming_this = renaming_folder && renaming_folder_index == idx;
             if (is_renaming_this) {
-                InlineEditLayout layout = get_inline_edit_layout(sy);
-                SimpleGUI::TextArea(folder_rename_area, Vec2{ layout.transcript_x, layout.text_y }, SizeF{ layout.transcript_width, layout.field_height }, SimpleGUI::PreferredTextAreaMaxChars);
-                String sanitized = gui_list::sanitize_folder_text(folder_rename_area.text);
-                if (sanitized != folder_rename_area.text) {
-                    size_t old_cursor = folder_rename_area.cursorPos;
-                    folder_rename_area.text = sanitized;
-                    folder_rename_area.cursorPos = std::min(old_cursor, sanitized.size());
-                    folder_rename_area.rebuildGlyphs();
-                }
-                if (draw_inline_back_button(layout)) {
+                gui_list::InlineEditLayout layout = gui_list::compute_inline_edit_layout({
+                    .row_y = static_cast<double>(sy),
+                    .row_height = static_cast<double>(OPENING_SETTING_HEIGHT),
+                    .list_left = static_cast<double>(OPENING_SETTING_SX),
+                    .list_width = static_cast<double>(OPENING_SETTING_WIDTH),
+                    .left_margin = OPENING_SETTING_LEFT_MARGIN + 8.0,
+                    .control_margin = 10.0,
+                    .field_height = 30.0,
+                    .secondary_width = 70.0,
+                    .back_button_width = static_cast<double>(inline_edit_back_button.rect.w),
+                    .back_button_height = static_cast<double>(inline_edit_back_button.rect.h),
+                    .ok_button_width = static_cast<double>(inline_edit_ok_button.rect.w),
+                });
+                SimpleGUI::TextArea(folder_rename_area, Vec2{ layout.primary_x, layout.text_y }, SizeF{ layout.primary_width, layout.field_height }, SimpleGUI::PreferredTextAreaMaxChars);
+                gui_list::sanitize_text_area(folder_rename_area);
+
+                inline_edit_back_button.move((int)layout.back_x, (int)layout.buttons_y);
+                inline_edit_back_button.enable();
+                inline_edit_back_button.draw();
+                if (inline_edit_back_button.clicked()) {
                     cancel_folder_rename();
                     return;
                 }
 
                 String trimmed = folder_rename_area.text.trimmed();
                 bool can_commit = gui_list::is_valid_folder_name(trimmed);
-                if (draw_inline_ok_button(layout, can_commit)) {
+                inline_edit_ok_button.move((int)layout.ok_x, (int)layout.buttons_y);
+                if (can_commit) {
+                    inline_edit_ok_button.enable();
+                } else {
+                    inline_edit_ok_button.disable();
+                }
+                inline_edit_ok_button.draw();
+                if (can_commit && inline_edit_ok_button.clicked()) {
                     confirm_folder_rename();
                     return;
                 }
@@ -1051,12 +1015,27 @@ public:
             }
             
             if (is_editing_this) {
-                InlineEditLayout layout = get_inline_edit_layout(sy);
-                SimpleGUI::TextArea(text_area[0], Vec2{ layout.transcript_x, layout.text_y }, SizeF{ layout.transcript_width, layout.field_height }, SimpleGUI::PreferredTextAreaMaxChars);
+                gui_list::InlineEditLayout layout = gui_list::compute_inline_edit_layout({
+                    .row_y = static_cast<double>(sy),
+                    .row_height = static_cast<double>(OPENING_SETTING_HEIGHT),
+                    .list_left = static_cast<double>(OPENING_SETTING_SX),
+                    .list_width = static_cast<double>(OPENING_SETTING_WIDTH),
+                    .left_margin = OPENING_SETTING_LEFT_MARGIN + 8.0,
+                    .control_margin = 10.0,
+                    .field_height = 30.0,
+                    .secondary_width = 70.0,
+                    .back_button_width = static_cast<double>(inline_edit_back_button.rect.w),
+                    .back_button_height = static_cast<double>(inline_edit_back_button.rect.h),
+                    .ok_button_width = static_cast<double>(inline_edit_ok_button.rect.w),
+                });
+                SimpleGUI::TextArea(text_area[0], Vec2{ layout.primary_x, layout.text_y }, SizeF{ layout.primary_width, layout.field_height }, SimpleGUI::PreferredTextAreaMaxChars);
                 SimpleGUI::TextArea(text_area[1], Vec2{ layout.secondary_x, layout.text_y }, SizeF{ layout.secondary_width, layout.field_height }, SimpleGUI::PreferredTextAreaMaxChars);
                 handle_textarea_tab_navigation();
 
-                if (draw_inline_back_button(layout)) {
+                inline_edit_back_button.move((int)layout.back_x, (int)layout.buttons_y);
+                inline_edit_back_button.enable();
+                inline_edit_back_button.draw();
+                if (inline_edit_back_button.clicked()) {
                     cancel_opening_edit();
                     return;
                 }
@@ -1064,7 +1043,14 @@ public:
                 String updated_transcript;
                 double updated_weight = 0.0;
                 bool can_commit = collect_opening_form_payload(updated_transcript, updated_weight);
-                if (draw_inline_ok_button(layout, can_commit)) {
+                inline_edit_ok_button.move((int)layout.ok_x, (int)layout.buttons_y);
+                if (can_commit) {
+                    inline_edit_ok_button.enable();
+                } else {
+                    inline_edit_ok_button.disable();
+                }
+                inline_edit_ok_button.draw();
+                if (can_commit && inline_edit_ok_button.clicked()) {
                     openings[idx].transcript = updated_transcript;
                     openings[idx].weight = updated_weight;
                     save_openings();

@@ -11,6 +11,7 @@
 #pragma once
 #include <iostream>
 #include <future>
+#include <functional>
 #include "./../engine/engine_all.hpp"
 #include "function/function_all.hpp"
 
@@ -266,6 +267,8 @@ struct ExplorerDrawResult {
     int reorderTo = -1;
     bool is_dragging_folder = false;
     bool drop_on_parent = false;  // New: drop on parent folder
+    bool folderRenameRequested = false;
+    int folderRenameIndex = -1;
 };
 
 // Drag state management structure
@@ -314,6 +317,16 @@ struct ExplorerClickState {
     String last_clicked_folder;
     int last_clicked_game_index = -1;
     static constexpr uint64_t DOUBLE_CLICK_TIME_MS = 400;
+};
+
+struct ExplorerFolderInlineConfig {
+    bool renaming = false;
+    int folder_index = -1;
+    TextAreaEditState* text_area = nullptr;
+    Button* back_button = nullptr;
+    Button* ok_button = nullptr;
+    std::function<void()> on_cancel;
+    std::function<bool(const String&)> on_commit;
 };
 
 // Helper function to handle drag drop detection
@@ -427,9 +440,14 @@ inline ExplorerDrawResult handle_drag_drop(
 }
 
 // Helper function to update mouse state and handle drag start
-inline void update_mouse_state_and_drag_start(ExplorerDragState& drag_state, ExplorerDrawResult& res) {
+inline void update_mouse_state_and_drag_start(ExplorerDragState& drag_state, ExplorerDrawResult& res, bool allow_drag = true) {
     drag_state.update_mouse_state();
     
+    if (!allow_drag) {
+        drag_state.reset_drag_state();
+        return;
+    }
+
     // Reset drag state when mouse is released (but only if not dragging)
     if (drag_state.mouse_just_released && !drag_state.is_dragging) {
         drag_state.reset_drag_preparation();
@@ -476,7 +494,8 @@ inline ExplorerDrawResult DrawExplorerList(
     ResourcesT& resources,
     LanguageT& language,
     const std::string& document_dir,
-    const std::string& current_subfolder
+    const std::string& current_subfolder,
+    const ExplorerFolderInlineConfig* inline_config = nullptr
 ) {
     ExplorerDrawResult res;
     
@@ -486,8 +505,10 @@ inline ExplorerDrawResult DrawExplorerList(
     
     uint64_t current_time = Time::GetMillisec();
     
+    bool inline_editing = inline_config && inline_config->renaming;
+
     // Update mouse state and handle drag operations
-    update_mouse_state_and_drag_start(drag_state, res);
+    update_mouse_state_and_drag_start(drag_state, res, !inline_editing);
     
     gui_list::VerticalListGeometry list_geom;
     list_geom.list_left = IMPORT_GAME_SX;
@@ -495,12 +516,14 @@ inline ExplorerDrawResult DrawExplorerList(
     list_geom.list_width = IMPORT_GAME_WIDTH;
     list_geom.row_height = item_height;
     list_geom.visible_row_count = n_games_on_window;
-    // Handle drag drop detection
-    ExplorerDrawResult drag_result = handle_drag_drop<FontsT, ColorsT, ResourcesT, LanguageT>(
-        drag_state, folders_display, scroll_manager, item_height, n_games_on_window, has_parent,
-        static_cast<int>(games.size()), list_geom);
-    if (drag_result.drop_completed || drag_result.reorderRequested) {
-        return drag_result;
+    if (!inline_editing) {
+        // Handle drag drop detection
+        ExplorerDrawResult drag_result = handle_drag_drop<FontsT, ColorsT, ResourcesT, LanguageT>(
+            drag_state, folders_display, scroll_manager, item_height, n_games_on_window, has_parent,
+            static_cast<int>(games.size()), list_geom);
+        if (drag_result.drop_completed || drag_result.reorderRequested) {
+            return drag_result;
+        }
     }
     
     // Check if there are any items to display
@@ -523,7 +546,7 @@ inline ExplorerDrawResult DrawExplorerList(
     ExplorerDrawResult list_result = draw_explorer_list_items<FontsT, ColorsT, ResourcesT, LanguageT>(
         folders_display, games, delete_buttons, scroll_manager, 
         item_height, n_games_on_window, has_parent, fonts, colors, resources, language,
-        drag_state, click_state, current_time
+        drag_state, click_state, current_time, inline_config
     );
     
     if (list_result.folderClicked || list_result.folderDoubleClicked || 
@@ -554,9 +577,12 @@ inline ExplorerDrawResult draw_explorer_list_items(
     LanguageT& language,
     ExplorerDragState& drag_state,
     ExplorerClickState& click_state,
-    uint64_t current_time
+    uint64_t current_time,
+    const ExplorerFolderInlineConfig* inline_config
 ) {
     ExplorerDrawResult res;
+
+    bool inline_editing = inline_config && inline_config->renaming;
     
     int sy = IMPORT_GAME_SY;
     int strt_idx_int = scroll_manager.get_strt_idx_int();
@@ -582,7 +608,7 @@ inline ExplorerDrawResult draw_explorer_list_items(
 
         // Handle parent folder
         if (has_parent && (row - strt_idx_int) == 0 && row == 0) {
-            ExplorerDrawResult parent_result = draw_parent_folder<FontsT, ColorsT>(rect, drag_state, fonts, colors, sy, item_height, click_state, current_time);
+            ExplorerDrawResult parent_result = draw_parent_folder<FontsT, ColorsT>(rect, drag_state, fonts, colors, sy, item_height, click_state, current_time, inline_editing);
             if (parent_result.parentFolderDoubleClicked) {
                 return parent_result;
             }
@@ -592,10 +618,13 @@ inline ExplorerDrawResult draw_explorer_list_items(
             int folder_idx = row - parent_offset;
             if (folder_idx >= 0 && folder_idx < (int)folders_display.size()) {
                 ExplorerDrawResult folder_result = draw_folder_item<FontsT, ColorsT, ResourcesT>(
-                    folders_display[folder_idx], rect, row, drag_state, fonts, colors, resources,
-                    sy, item_height, click_state, current_time
+                    folders_display[folder_idx], rect, row, folder_idx, drag_state, fonts, colors, resources,
+                    sy, item_height, click_state, current_time, inline_config
                 );
                 if (folder_result.folderClicked || folder_result.folderDoubleClicked) {
+                    return folder_result;
+                }
+                if (folder_result.folderRenameRequested) {
                     return folder_result;
                 }
             }
@@ -606,7 +635,7 @@ inline ExplorerDrawResult draw_explorer_list_items(
             if (i >= 0 && i < (int)games.size()) {
                 ExplorerDrawResult game_result = draw_game_item<FontsT, ColorsT>(
                     games[i], i, rect, row, delete_buttons, drag_state, fonts, colors,
-                    sy, item_height, click_state, current_time
+                    sy, item_height, click_state, current_time, inline_editing
                 );
                 if (game_result.gameDoubleClicked || game_result.deleteClicked) {
                     return game_result;
@@ -635,7 +664,8 @@ inline ExplorerDrawResult draw_parent_folder(
     int sy,
     int item_height,
     ExplorerClickState& click_state,
-    uint64_t current_time
+    uint64_t current_time,
+    bool interactions_locked
 ) {
     ExplorerDrawResult res;
     
@@ -648,7 +678,7 @@ inline ExplorerDrawResult draw_parent_folder(
     fonts.font(U"↑..").draw(15, Arg::leftCenter(IMPORT_GAME_SX + IMPORT_GAME_LEFT_MARGIN + 10, sy + item_height / 2), colors.white);
     
     // Handle parent folder double-click
-    if (rect.leftClicked() && !drag_state.is_dragging) {
+    if (!interactions_locked && rect.leftClicked() && !drag_state.is_dragging) {
         static String last_clicked_parent;
         static uint64 last_parent_click_time = 0;
         
@@ -676,6 +706,7 @@ inline ExplorerDrawResult draw_folder_item(
     const String& fname,
     const Rect& rect,
     int row,
+    int folder_index,
     ExplorerDragState& drag_state,
     FontsT& fonts,
     ColorsT& colors,
@@ -683,36 +714,98 @@ inline ExplorerDrawResult draw_folder_item(
     int sy,
     int item_height,
     ExplorerClickState& click_state,
-    uint64_t current_time
+    uint64_t current_time,
+    const ExplorerFolderInlineConfig* inline_config
 ) {
     ExplorerDrawResult res;
-    
+
+    bool inline_editing = inline_config && inline_config->renaming;
+    bool is_inline_target = inline_editing && inline_config->folder_index == folder_index;
+    bool interactions_locked = inline_editing && !is_inline_target;
+
     double folder_icon_scale = (double)(rect.h - 2 * 10) / (double)resources.folder.height();
-    
-    // Drag and drop for folders
     bool is_being_dragged = (drag_state.is_dragging_folder && drag_state.dragged_folder_name == fname);
-    Color folder_bg_color = is_being_dragged ? colors.yellow.withAlpha(64) : // ドラッグ中は元の位置を半透明に
-                           (row % 2 ? colors.dark_green : colors.green);
-    
-    // Draw folder icon and name at original position (半透明でドラッグ中のアイテムを表示)
     Color icon_alpha = is_being_dragged ? colors.white.withAlpha(128) : colors.white;
     resources.folder.scaled(folder_icon_scale).draw(Arg::leftCenter(IMPORT_GAME_SX + IMPORT_GAME_LEFT_MARGIN + 10, sy + item_height / 2), icon_alpha);
-    fonts.font(fname).draw(15, Arg::leftCenter(IMPORT_GAME_SX + IMPORT_GAME_LEFT_MARGIN + 10 + 30, sy + item_height / 2), icon_alpha);
-    
-    // Handle folder drag preparation - only on initial press
+
+    double text_x = IMPORT_GAME_SX + IMPORT_GAME_LEFT_MARGIN + 10 + 30;
+
+    if (is_inline_target && inline_config && inline_config->text_area && inline_config->back_button && inline_config->ok_button) {
+        gui_list::InlineEditLayout layout = gui_list::compute_inline_edit_layout({
+            .row_y = static_cast<double>(rect.y),
+            .row_height = static_cast<double>(rect.h),
+            .list_left = static_cast<double>(rect.x),
+            .list_width = static_cast<double>(rect.w),
+            .left_margin = static_cast<double>(text_x - rect.x),
+            .control_margin = 10.0,
+            .field_height = 30.0,
+            .secondary_width = 70.0,
+            .back_button_width = static_cast<double>(inline_config->back_button->rect.w),
+            .back_button_height = static_cast<double>(inline_config->back_button->rect.h),
+            .ok_button_width = static_cast<double>(inline_config->ok_button->rect.w),
+        });
+
+        SimpleGUI::TextArea(*inline_config->text_area, Vec2{ layout.primary_x, layout.text_y }, SizeF{ layout.primary_width, layout.field_height }, SimpleGUI::PreferredTextAreaMaxChars);
+        gui_list::sanitize_text_area(*inline_config->text_area);
+
+        inline_config->back_button->move((int)layout.back_x, (int)layout.buttons_y);
+        inline_config->back_button->enable();
+        inline_config->back_button->draw();
+        if (inline_config->back_button->clicked() && inline_config->on_cancel) {
+            inline_config->on_cancel();
+            return res;
+        }
+
+        String trimmed = inline_config->text_area->text.trimmed();
+        bool can_commit = inline_config->on_commit && gui_list::is_valid_folder_name(trimmed);
+        inline_config->ok_button->move((int)layout.ok_x, (int)layout.buttons_y);
+        if (can_commit) {
+            inline_config->ok_button->enable();
+        } else {
+            inline_config->ok_button->disable();
+        }
+        inline_config->ok_button->draw();
+        if (can_commit && inline_config->ok_button->clicked()) {
+            if (inline_config->on_commit(trimmed)) {
+                return res;
+            }
+        }
+        return res;
+    }
+
+    Color text_color = interactions_locked ? colors.white.withAlpha(96) : icon_alpha;
+    fonts.font(fname).draw(15, Arg::leftCenter(text_x, sy + item_height / 2), text_color);
+
+    if (interactions_locked) {
+        return res;
+    }
+
     if (drag_state.mouse_just_pressed && rect.contains(drag_state.current_mouse_pos) && 
         !drag_state.is_dragging && drag_state.dragged_game_index == -1 && drag_state.dragged_folder_name.empty()) {
         drag_state.dragged_folder_name = fname;
         drag_state.drag_start_pos = drag_state.current_mouse_pos;
         drag_state.drag_offset = drag_state.current_mouse_pos - Vec2(rect.x, rect.y);
     }
-    
-    // Handle folder click and double-click
+
+    if (inline_config) {
+        double rename_icon_size = 18.0;
+        RectF rename_rect(rect.x + rect.w - rename_icon_size - 40.0, sy + (item_height - rename_icon_size) / 2.0, rename_icon_size, rename_icon_size);
+        const Texture& pencil_tex = resources.pencil;
+        if (pencil_tex) {
+            pencil_tex.resized(rename_icon_size).draw(rename_rect.pos, ColorF(1.0));
+        } else {
+            rename_rect.draw(colors.white);
+        }
+        if (rename_rect.leftClicked()) {
+            drag_state.reset_drag_preparation();
+            res.folderRenameRequested = true;
+            res.folderRenameIndex = folder_index;
+            return res;
+        }
+    }
+
     if (rect.leftClicked() && !drag_state.is_dragging) {
-        // Check for double-click first (regardless of drag preparation)
         if (click_state.last_clicked_folder == fname && current_time - click_state.last_click_time < ExplorerClickState::DOUBLE_CLICK_TIME_MS) {
-            // Double-click detected - clear drag preparation and execute double-click
-            std::cerr << "Navigating to folder: " << fname.narrow() << std::endl;
             drag_state.reset_drag_preparation();
             res.folderDoubleClicked = true;
             res.clickedFolder = fname;
@@ -720,7 +813,6 @@ inline ExplorerDrawResult draw_folder_item(
             click_state.last_click_time = 0;
             return res;
         } else {
-            // Single click - only process if no drag preparation exists
             if (drag_state.dragged_game_index == -1 && drag_state.dragged_folder_name.empty()) {
                 res.folderClicked = true;
                 res.clickedFolder = fname;
@@ -728,13 +820,12 @@ inline ExplorerDrawResult draw_folder_item(
                 click_state.last_click_time = current_time;
                 return res;
             } else {
-                // Update click state for potential double-click detection, but don't process single click
                 click_state.last_clicked_folder = fname;
                 click_state.last_click_time = current_time;
             }
         }
     }
-    
+
     return res;
 }
 // Helper function to draw game item
@@ -751,7 +842,8 @@ inline ExplorerDrawResult draw_game_item(
     int sy,
     int item_height,
     ExplorerClickState& click_state,
-    uint64_t current_time
+    uint64_t current_time,
+    bool interactions_locked
 ) {
     ExplorerDrawResult res;
     
@@ -764,7 +856,7 @@ inline ExplorerDrawResult draw_game_item(
     rect.draw(game_bg_color);
     
     // テキスト色をドラッグ状態に応じて調整
-    Color text_color = is_being_dragged ? colors.white.withAlpha(128) : colors.white;
+    Color text_color = interactions_locked ? colors.white.withAlpha(96) : (is_being_dragged ? colors.white.withAlpha(128) : colors.white);
     
     int winner = -1;
     if (game.black_score != GAME_DISCS_UNDEFINED && game.white_score != GAME_DISCS_UNDEFINED) {
@@ -778,7 +870,7 @@ inline ExplorerDrawResult draw_game_item(
     }
     
     // Handle game drag preparation - only on initial press
-    if (drag_state.mouse_just_pressed && rect.contains(drag_state.current_mouse_pos) && 
+    if (!interactions_locked && drag_state.mouse_just_pressed && rect.contains(drag_state.current_mouse_pos) && 
         !drag_state.is_dragging && drag_state.dragged_game_index == -1 && drag_state.dragged_folder_name.empty()) {
         drag_state.dragged_game_index = game_index;
         drag_state.drag_start_pos = drag_state.current_mouse_pos;
@@ -788,11 +880,17 @@ inline ExplorerDrawResult draw_game_item(
     // Show delete button only if delete_buttons vector has sufficient size
     if (game_index < (int)delete_buttons.size()) {
         delete_buttons[game_index].move(IMPORT_GAME_SX + 1, sy + 1);
-        delete_buttons[game_index].draw();
-        if (delete_buttons[game_index].clicked()) {
-            res.deleteClicked = true;
-            res.deleteIndex = game_index;
-            return res;
+        if (interactions_locked) {
+            delete_buttons[game_index].disable_notransparent();
+            delete_buttons[game_index].draw();
+        } else {
+            delete_buttons[game_index].enable();
+            delete_buttons[game_index].draw();
+            if (delete_buttons[game_index].clicked()) {
+                res.deleteClicked = true;
+                res.deleteIndex = game_index;
+                return res;
+            }
         }
     }
     
@@ -887,7 +985,7 @@ inline ExplorerDrawResult draw_game_item(
         game_click_area.w -= 20;
     }
     
-    if (game_click_area.leftClicked() && !drag_state.is_dragging) {
+    if (!interactions_locked && game_click_area.leftClicked() && !drag_state.is_dragging) {
         // Check for double-click first (regardless of drag preparation)
         if (click_state.last_clicked_game_index == game_index && current_time - click_state.last_click_time < ExplorerClickState::DOUBLE_CLICK_TIME_MS) {
             // Double-click detected - clear drag preparation and execute double-click
@@ -992,6 +1090,6 @@ inline ExplorerDrawResult DrawExplorerList(
         folders_display, games, delete_buttons, scroll_manager,
         up_button, item_height,
         n_games_on_window, has_parent, fonts, colors, resources, language,
-        "", ""
+        "", "", nullptr
     );
 }

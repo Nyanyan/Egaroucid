@@ -188,7 +188,7 @@ public:
                 save_folders_display, picker_games, dummyDeleteBtns,
                 folder_scroll_manager, up_button, EXPORT_GAME_FOLDER_AREA_HEIGHT, EXPORT_GAME_N_GAMES_ON_WINDOW, 
                 has_parent_folder, getData().fonts, getData().colors, getData().resources, language,
-                getData().directories.document_dir, picker_subfolder);
+                getData().directories.document_dir, picker_subfolder, nullptr);
             if (pickRes.upButtonClicked || pickRes.parentFolderDoubleClicked) {
                 std::string s = picker_subfolder;
                 if (!s.empty() && s.back() == '/') s.pop_back();

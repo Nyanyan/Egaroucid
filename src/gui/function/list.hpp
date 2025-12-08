@@ -11,8 +11,8 @@
 #pragma once
 #include <Siv3D.hpp>
 #include <algorithm>
-#include <vector>
 #include <functional>
+#include <vector>
 
 bool move_folder(const String& source_path, const String& target_parent_path, const String& folder_name);
 
@@ -226,6 +226,52 @@ inline bool rename_folder_in_directory(
         return false;
     }
     return move_folder(source_path, normalized_base, trimmed_new);
+}
+
+struct InlineEditLayout {
+    double primary_x = 0.0;
+    double primary_width = 0.0;
+    double secondary_x = 0.0;
+    double secondary_width = 0.0;
+    double text_y = 0.0;
+    double field_height = 0.0;
+    double back_x = 0.0;
+    double ok_x = 0.0;
+    double buttons_y = 0.0;
+};
+
+struct InlineEditLayoutParams {
+    double row_y = 0.0;
+    double row_height = 0.0;
+    double list_left = 0.0;
+    double list_width = 0.0;
+    double left_margin = 0.0;
+    double control_margin = 10.0;
+    double field_height = 30.0;
+    double secondary_width = 70.0;
+    double back_button_width = 80.0;
+    double back_button_height = 30.0;
+    double ok_button_width = 70.0;
+};
+
+inline InlineEditLayout compute_inline_edit_layout(const InlineEditLayoutParams& params) {
+    InlineEditLayout layout;
+    layout.field_height = params.field_height;
+    double row_center = params.row_y + params.row_height / 2.0;
+    layout.text_y = row_center - layout.field_height / 2.0 - 2.0;
+    layout.primary_x = params.list_left + params.left_margin;
+
+    layout.ok_x = params.list_left + params.list_width - params.control_margin - params.ok_button_width;
+    layout.back_x = layout.ok_x - params.control_margin - params.back_button_width;
+
+    layout.secondary_width = params.secondary_width;
+    layout.secondary_x = layout.back_x - params.control_margin - layout.secondary_width;
+    layout.primary_width = layout.secondary_x - layout.primary_x - params.control_margin;
+    if (layout.primary_width < 120.0) {
+        layout.primary_width = 120.0;
+    }
+    layout.buttons_y = row_center - params.back_button_height / 2.0;
+    return layout;
 }
 
 }  // namespace gui_list
