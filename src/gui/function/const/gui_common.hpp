@@ -820,7 +820,9 @@ struct Forced_openings {
         Flip flip;
         for (const std::pair<std::string, double> opening : openings) {
             board.reset();
-            forced_boards.emplace(board);
+            int symmetry_idx = 0;
+            Board unique_board = representative_board(board, &symmetry_idx);
+            forced_boards.emplace(unique_board);
             std::string opening_str = opening.first;
             // std::cerr << opening_str << std::endl;
             double weight = opening.second;
@@ -828,10 +830,13 @@ struct Forced_openings {
                 int policy = get_coord_from_chars(opening_str[i], opening_str[i + 1]);
                 // std::cerr << idx_to_coord(policy) << std::endl;
                 // board.print();
-                selected_moves[board].emplace_back(std::make_pair(policy, weight));
+                int symmetry_idx1 = 0;
+                Board unique_board1 = representative_board(board, &symmetry_idx1);
+                selected_moves[unique_board1].emplace_back(std::make_pair(convert_coord_from_representative_board(policy, symmetry_idx1), weight));
                 calc_flip(&flip, &board, policy);
                 board.move_board(&flip);
-                forced_boards.emplace(board);
+                Board unique_board2 = representative_board(board);
+                forced_boards.emplace(unique_board2);
             }
         }
         std::cerr << "forced openings initialized " << selected_moves.size() << std::endl;
@@ -873,18 +878,20 @@ struct Forced_openings {
     }
 
     int get_one(Board board) {
+        int symmetry_idx = 0;
+        Board unique_board = representative_board(board, &symmetry_idx);
         int selected_policy = MOVE_UNDEFINED;
-        if (selected_moves.find(board) != selected_moves.end()) {
+        if (selected_moves.find(unique_board) != selected_moves.end()) {
             double sum_weight = 0.0;
-            for (std::pair<int, double> &elem: selected_moves[board]) {
+            for (std::pair<int, double> &elem: selected_moves[unique_board]) {
                 sum_weight += elem.second;
             }
             double rnd = myrandom() * sum_weight;
             double s = 0.0;
-            for (std::pair<int, double> &elem: selected_moves[board]) {
+            for (std::pair<int, double> &elem: selected_moves[unique_board]) {
                 s += elem.second;
                 if (s >= rnd) {
-                    selected_policy = elem.first;
+                    selected_policy = convert_coord_from_representative_board(elem.first, symmetry_idx);
                     break;
                 }
             }
@@ -898,7 +905,8 @@ struct Forced_openings {
     }
 
     bool is_forced(Board board) {
-        return forced_boards.find(board) != forced_boards.end();
+        Board unique_board = representative_board(board);
+        return forced_boards.find(unique_board) != forced_boards.end();
     }
 };
 
