@@ -40,81 +40,116 @@ struct Folder_entry {
 
 
 class Opening_setting : public App::Scene {
-    private:
-        std::vector<Opening_abstract> openings;
-        std::vector<ImageButton> delete_buttons;
-        std::vector<ImageButton> edit_buttons;
-        std::vector<ImageButton> toggle_buttons;
-        std::vector<ImageButton> move_up_buttons;
-        std::vector<ImageButton> move_down_buttons;
+private:
+    std::vector<Opening_abstract> openings;
+    std::vector<ImageButton> delete_buttons;
+    std::vector<ImageButton> edit_buttons;
+    std::vector<ImageButton> toggle_buttons;
+    std::vector<ImageButton> move_up_buttons;
+    std::vector<ImageButton> move_down_buttons;
     std::vector<Folder_entry> folders_display;
-        Scroll_manager scroll_manager;
-        Button add_button;
-        Button add_csv_button;  // Button to create new CSV file
-        Button ok_button;
-        Button back_button;
+    Scroll_manager scroll_manager;
+    Button add_button;
+    Button add_csv_button;  // Button to create new CSV file
+    Button ok_button;
+    Button back_button;
     Button register_button;
     Button create_csv_button;
     Button inline_edit_back_button;
     Button inline_edit_ok_button;
-        bool has_parent;
-        std::string subfolder;
-        bool adding_elem;
-        bool editing_elem;
-        bool creating_csv;
-        int editing_index;
-        TextAreaEditState text_area[2];
-        TextAreaEditState csv_name_area;
+    bool has_parent;
+    std::string subfolder;
+    bool adding_elem;
+    bool editing_elem;
+    bool creating_csv;
+    int editing_index;
+    TextAreaEditState text_area[2];
+    TextAreaEditState csv_name_area;
     bool renaming_folder;
     int renaming_folder_index;
     TextAreaEditState folder_rename_area;
-        
-        // Drag and drop state for openings within CSV
-        struct DragState {
-            bool is_dragging = false;
-            bool is_dragging_opening = false;
-            bool is_dragging_folder = false;
-            int dragged_opening_index = -1;
-            String dragged_folder_name;
-            Vec2 drag_start_pos;
-            Vec2 current_mouse_pos;
-            bool mouse_was_down = false;
-            static constexpr double DRAG_THRESHOLD = 5.0;
-            
-            void reset() {
-                is_dragging = false;
-                is_dragging_opening = false;
-                is_dragging_folder = false;
-                dragged_opening_index = -1;
-                dragged_folder_name.clear();
-                drag_start_pos = Vec2{ 0, 0 };
-                mouse_was_down = false;
-            }
-        };
-        DragState drag_state;
-    
-    public:
-        Opening_setting(const InitData& init) : IScene{ init } {
-            add_button.init(BUTTON3_1_SX, BUTTON3_SY, BUTTON3_WIDTH, BUTTON3_HEIGHT, BUTTON3_RADIUS, language.get("opening_setting", "add"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
-            add_csv_button.init(BUTTON3_2_SX, BUTTON3_SY, BUTTON3_WIDTH, BUTTON3_HEIGHT, BUTTON3_RADIUS, language.get("in_out", "new_folder"), 20, getData().fonts.font, getData().colors.white, getData().colors.black);
-            ok_button.init(BUTTON3_3_SX, BUTTON3_SY, BUTTON3_WIDTH, BUTTON3_HEIGHT, BUTTON3_RADIUS, language.get("common", "ok"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
-            back_button.init(GO_BACK_BUTTON_BACK_SX, GO_BACK_BUTTON_SY, GO_BACK_BUTTON_WIDTH, GO_BACK_BUTTON_HEIGHT, GO_BACK_BUTTON_RADIUS, language.get("common", "back"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
-            register_button.init(GO_BACK_BUTTON_GO_SX, GO_BACK_BUTTON_SY, GO_BACK_BUTTON_WIDTH, GO_BACK_BUTTON_HEIGHT, GO_BACK_BUTTON_RADIUS, language.get("opening_setting", "register"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
-            create_csv_button.init(GO_BACK_BUTTON_GO_SX, GO_BACK_BUTTON_SY, GO_BACK_BUTTON_WIDTH, GO_BACK_BUTTON_HEIGHT, GO_BACK_BUTTON_RADIUS, language.get("in_out", "create"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
-            inline_edit_back_button.init(0, 0, 80, 30, 5, language.get("common", "back"), 18, getData().fonts.font, getData().colors.white, getData().colors.black);
-            inline_edit_ok_button.init(0, 0, 70, 30, 5, language.get("common", "ok"), 18, getData().fonts.font, getData().colors.white, getData().colors.black);
-            
-            has_parent = false;
-            subfolder.clear();
-            adding_elem = false;
-            editing_elem = false;
-            creating_csv = false;
-            editing_index = -1;
-            renaming_folder = false;
-            renaming_folder_index = -1;
-            enumerate_current_dir();
-            load_openings();
+
+    struct InlineEditLayout {
+        double transcript_x;
+        double transcript_width;
+        double secondary_x;
+        double secondary_width;
+        double text_y;
+        double field_height;
+        double back_x;
+        double ok_x;
+        double buttons_y;
+    };
+
+    InlineEditLayout get_inline_edit_layout(double sy) const {
+        InlineEditLayout layout;
+        constexpr double control_margin = 10.0;
+        layout.field_height = 30.0;
+        double row_center = sy + OPENING_SETTING_HEIGHT / 2.0;
+        layout.text_y = row_center - layout.field_height / 2.0 - 2.0;
+        layout.transcript_x = OPENING_SETTING_SX + OPENING_SETTING_LEFT_MARGIN + 8;
+
+        double ok_width = inline_edit_ok_button.rect.w;
+        double back_width = inline_edit_back_button.rect.w;
+        layout.ok_x = OPENING_SETTING_SX + OPENING_SETTING_WIDTH - ok_width - control_margin;
+        layout.back_x = layout.ok_x - back_width - control_margin;
+
+        layout.secondary_width = 70.0;
+        layout.secondary_x = layout.back_x - layout.secondary_width - control_margin;
+        layout.transcript_width = layout.secondary_x - layout.transcript_x - control_margin;
+        if (layout.transcript_width < 120.0) {
+            layout.transcript_width = 120.0;
         }
+        layout.buttons_y = sy + (OPENING_SETTING_HEIGHT - inline_edit_back_button.rect.h) / 2.0;
+        return layout;
+    }
+
+    // Drag and drop state for openings within CSV
+    struct DragState {
+        bool is_dragging = false;
+        bool is_dragging_opening = false;
+        bool is_dragging_folder = false;
+        int dragged_opening_index = -1;
+        String dragged_folder_name;
+        Vec2 drag_start_pos;
+        Vec2 current_mouse_pos;
+        bool mouse_was_down = false;
+        static constexpr double DRAG_THRESHOLD = 5.0;
+
+        void reset() {
+            is_dragging = false;
+            is_dragging_opening = false;
+            is_dragging_folder = false;
+            dragged_opening_index = -1;
+            dragged_folder_name.clear();
+            drag_start_pos = Vec2{ 0, 0 };
+            mouse_was_down = false;
+        }
+    };
+    DragState drag_state;
+
+public:
+    Opening_setting(const InitData& init) : IScene{ init } {
+        add_button.init(BUTTON3_1_SX, BUTTON3_SY, BUTTON3_WIDTH, BUTTON3_HEIGHT, BUTTON3_RADIUS, language.get("opening_setting", "add"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
+        add_csv_button.init(BUTTON3_2_SX, BUTTON3_SY, BUTTON3_WIDTH, BUTTON3_HEIGHT, BUTTON3_RADIUS, language.get("in_out", "new_folder"), 20, getData().fonts.font, getData().colors.white, getData().colors.black);
+        ok_button.init(BUTTON3_3_SX, BUTTON3_SY, BUTTON3_WIDTH, BUTTON3_HEIGHT, BUTTON3_RADIUS, language.get("common", "ok"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
+        back_button.init(GO_BACK_BUTTON_BACK_SX, GO_BACK_BUTTON_SY, GO_BACK_BUTTON_WIDTH, GO_BACK_BUTTON_HEIGHT, GO_BACK_BUTTON_RADIUS, language.get("common", "back"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
+        register_button.init(GO_BACK_BUTTON_GO_SX, GO_BACK_BUTTON_SY, GO_BACK_BUTTON_WIDTH, GO_BACK_BUTTON_HEIGHT, GO_BACK_BUTTON_RADIUS, language.get("opening_setting", "register"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
+        create_csv_button.init(GO_BACK_BUTTON_GO_SX, GO_BACK_BUTTON_SY, GO_BACK_BUTTON_WIDTH, GO_BACK_BUTTON_HEIGHT, GO_BACK_BUTTON_RADIUS, language.get("in_out", "create"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
+        inline_edit_back_button.init(0, 0, 80, 30, 5, language.get("common", "back"), 18, getData().fonts.font, getData().colors.white, getData().colors.black);
+        inline_edit_ok_button.init(0, 0, 70, 30, 5, language.get("common", "ok"), 18, getData().fonts.font, getData().colors.white, getData().colors.black);
+
+        has_parent = false;
+        subfolder.clear();
+        adding_elem = false;
+        editing_elem = false;
+        creating_csv = false;
+        editing_index = -1;
+        renaming_folder = false;
+        renaming_folder_index = -1;
+        enumerate_current_dir();
+        load_openings();
+    }
     
         void update() override {
             if (System::GetUserActions() & UserAction::CloseButtonClicked) {
@@ -781,7 +816,9 @@ class Opening_setting : public App::Scene {
         }
         
         void draw_list() {
-            handle_folder_navigation();
+            if (!editing_elem) {
+                handle_folder_navigation();
+            }
             draw_openings_list();
         }
         
@@ -868,6 +905,9 @@ class Opening_setting : public App::Scene {
             }
             double text_offset = icon_x + (folder_icon ? folder_icon.width() * icon_scale + 10.0 : 0.0);
             getData().fonts.font(U"..").draw(20, Arg::leftCenter(text_offset, sy + OPENING_SETTING_HEIGHT / 2), getData().colors.white);
+            if (editing_elem) {
+                rect.draw(ColorF(1.0, 1.0, 1.0, 0.35));
+            }
         }
         
         // Draw folder item
@@ -900,9 +940,8 @@ class Opening_setting : public App::Scene {
             double text_offset = icon_x + (folder_icon ? folder_icon.width() * icon_scale + 10.0 : 0.0);
             bool is_renaming_this = renaming_folder && renaming_folder_index == idx;
             if (is_renaming_this) {
-                RectF input_rect(text_offset, sy + OPENING_SETTING_HEIGHT / 2 - 17, 280, 34);
-                input_rect.draw(ColorF(getData().colors.black, 0.2));
-                SimpleGUI::TextArea(folder_rename_area, Vec2{ input_rect.x, input_rect.y }, SizeF{ input_rect.w, input_rect.h }, SimpleGUI::PreferredTextAreaMaxChars);
+                InlineEditLayout layout = get_inline_edit_layout(sy);
+                SimpleGUI::TextArea(folder_rename_area, Vec2{ layout.transcript_x, layout.text_y }, SizeF{ layout.transcript_width, layout.field_height }, SimpleGUI::PreferredTextAreaMaxChars);
                 String sanitized = sanitize_folder_text(folder_rename_area.text);
                 if (sanitized != folder_rename_area.text) {
                     size_t old_cursor = folder_rename_area.cursorPos;
@@ -910,24 +949,33 @@ class Opening_setting : public App::Scene {
                     folder_rename_area.cursorPos = std::min(old_cursor, sanitized.size());
                     folder_rename_area.rebuildGlyphs();
                 }
-                double button_width = 50;
-                double button_height = 26;
-                Rect ok_rect(input_rect.x + input_rect.w + 10, input_rect.y, button_width, button_height);
-                Rect cancel_rect(input_rect.x + input_rect.w + 10, input_rect.y + button_height + 4, button_width, button_height);
-                ok_rect.draw(ColorF(0.2, 0.5, 0.2)).drawFrame(1.0, getData().colors.white);
-                cancel_rect.draw(ColorF(0.5, 0.2, 0.2)).drawFrame(1.0, getData().colors.white);
-                getData().fonts.font(U"OK").draw(15, Arg::center(ok_rect.center()), getData().colors.white);
-                getData().fonts.font(U"×").draw(15, Arg::center(cancel_rect.center()), getData().colors.white);
-                if (ok_rect.leftClicked()) {
-                    confirm_folder_rename();
+                inline_edit_back_button.move((int)layout.back_x, (int)layout.buttons_y);
+                inline_edit_back_button.enable();
+                inline_edit_back_button.draw();
+                if (inline_edit_back_button.clicked()) {
+                    cancel_folder_rename();
                     return;
                 }
-                if (cancel_rect.leftClicked()) {
-                    cancel_folder_rename();
+
+                inline_edit_ok_button.move((int)layout.ok_x, (int)layout.buttons_y);
+                String trimmed = folder_rename_area.text.trimmed();
+                bool can_commit = is_valid_folder_name(trimmed);
+                if (can_commit) {
+                    inline_edit_ok_button.enable();
+                } else {
+                    inline_edit_ok_button.disable();
+                }
+                inline_edit_ok_button.draw();
+                if (can_commit && inline_edit_ok_button.clicked()) {
+                    confirm_folder_rename();
                     return;
                 }
             } else {
                 getData().fonts.font(entry.name).draw(18, Arg::leftCenter(text_offset, sy + OPENING_SETTING_HEIGHT / 2), text_color);
+                if (editing_elem) {
+                    rect.draw(ColorF(1.0, 1.0, 1.0, 0.35));
+                    return;
+                }
             }
             int toggle_x = OPENING_SETTING_SX + OPENING_SETTING_WIDTH - 30;
             double checkbox_size = 18.0;
@@ -980,6 +1028,7 @@ class Opening_setting : public App::Scene {
             
             bool is_being_dragged = (drag_state.is_dragging_opening && drag_state.dragged_opening_index == idx);
             bool is_editing_this = editing_elem && editing_index == idx;
+            bool overlay_noninteractive = adding_elem || (editing_elem && !is_editing_this);
             ColorF bg_color = row_index % 2 ? ColorF(getData().colors.dark_green) : ColorF(getData().colors.green);
             if (is_being_dragged) {
                 bg_color = ColorF(getData().colors.yellow);
@@ -995,10 +1044,6 @@ class Opening_setting : public App::Scene {
             
             rect.draw(bg_color).drawFrame(1.0, getData().colors.white);
             
-            if (adding_elem) {
-                rect.draw(ColorF{1.0, 1.0, 1.0, 0.5});
-            }
-            
             // Handle drag preparation
             bool mouse_is_down = MouseL.pressed();
             bool mouse_was_down = drag_state.mouse_was_down;
@@ -1009,7 +1054,7 @@ class Opening_setting : public App::Scene {
                 drag_state.drag_start_pos = Cursor::Pos();
             }
             
-            if (!adding_elem && !is_editing_this) {
+            if (!adding_elem && !editing_elem) {
                 // Delete button
                 delete_buttons[idx].move(OPENING_SETTING_SX + 1, sy + 1);
                 delete_buttons[idx].draw();
@@ -1100,24 +1145,12 @@ class Opening_setting : public App::Scene {
             }
             
             if (is_editing_this) {
-                double control_margin = 10.0;
-                double field_height = 30.0;
-                double text_y = sy + OPENING_SETTING_HEIGHT / 2 - field_height / 2;
-                double ok_x = OPENING_SETTING_SX + OPENING_SETTING_WIDTH - inline_edit_ok_button.rect.w - control_margin;
-                double back_x = ok_x - inline_edit_back_button.rect.w - control_margin;
-                double weight_width = 70.0;
-                double weight_x = back_x - weight_width - control_margin;
-                double transcript_x = OPENING_SETTING_SX + OPENING_SETTING_LEFT_MARGIN + 8;
-                double transcript_width = weight_x - transcript_x - control_margin;
-                if (transcript_width < 120.0) {
-                    transcript_width = 120.0;
-                }
-
-                SimpleGUI::TextArea(text_area[0], Vec2{ transcript_x, text_y }, SizeF{ transcript_width, field_height }, SimpleGUI::PreferredTextAreaMaxChars);
-                SimpleGUI::TextArea(text_area[1], Vec2{ weight_x, text_y }, SizeF{ weight_width, field_height }, SimpleGUI::PreferredTextAreaMaxChars);
+                InlineEditLayout layout = get_inline_edit_layout(sy);
+                SimpleGUI::TextArea(text_area[0], Vec2{ layout.transcript_x, layout.text_y }, SizeF{ layout.transcript_width, layout.field_height }, SimpleGUI::PreferredTextAreaMaxChars);
+                SimpleGUI::TextArea(text_area[1], Vec2{ layout.secondary_x, layout.text_y }, SizeF{ layout.secondary_width, layout.field_height }, SimpleGUI::PreferredTextAreaMaxChars);
                 handle_textarea_tab_navigation();
 
-                inline_edit_back_button.move((int)back_x, (int)(sy + (OPENING_SETTING_HEIGHT - inline_edit_back_button.rect.h) / 2));
+                inline_edit_back_button.move((int)layout.back_x, (int)layout.buttons_y);
                 inline_edit_back_button.enable();
                 inline_edit_back_button.draw();
                 if (inline_edit_back_button.clicked()) {
@@ -1125,7 +1158,7 @@ class Opening_setting : public App::Scene {
                     return;
                 }
 
-                inline_edit_ok_button.move((int)ok_x, (int)(sy + (OPENING_SETTING_HEIGHT - inline_edit_ok_button.rect.h) / 2));
+                inline_edit_ok_button.move((int)layout.ok_x, (int)layout.buttons_y);
                 String updated_transcript;
                 double updated_weight = 0.0;
                 bool can_commit = collect_opening_form_payload(updated_transcript, updated_weight);
@@ -1149,6 +1182,10 @@ class Opening_setting : public App::Scene {
                 // Draw weight
                 getData().fonts.font(language.get("opening_setting", "weight") + U": ").draw(15, Arg::rightCenter(OPENING_SETTING_SX + OPENING_SETTING_LEFT_MARGIN + OPENING_SETTING_WIDTH - 90, sy + OPENING_SETTING_HEIGHT / 2), text_color);
                 getData().fonts.font(Format(std::round(opening.weight))).draw(15, Arg::leftCenter(OPENING_SETTING_SX + OPENING_SETTING_LEFT_MARGIN + OPENING_SETTING_WIDTH - 90, sy + OPENING_SETTING_HEIGHT / 2), text_color);
+            }
+
+            if (overlay_noninteractive) {
+                rect.draw(ColorF(1.0, 1.0, 1.0, 0.5));
             }
         }
         
