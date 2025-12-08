@@ -916,7 +916,6 @@ public:
         // Draw parent folder item
         void draw_parent_folder_item(int sy) {
             Rect rect(OPENING_SETTING_SX, sy, OPENING_SETTING_WIDTH, OPENING_SETTING_HEIGHT);
-            bool folder_locked = is_current_folder_locked();
             rect.draw(getData().colors.dark_green).drawFrame(1.0, getData().colors.white);
             const Texture& folder_icon = getData().resources.folder;
             double icon_scale = folder_icon ? (double)(OPENING_SETTING_HEIGHT - 20) / (double)folder_icon.height() : 1.0;
@@ -926,10 +925,10 @@ public:
             }
             double text_offset = icon_x + (folder_icon ? folder_icon.width() * icon_scale + 10.0 : 0.0);
             getData().fonts.font(U"..").draw(20, Arg::leftCenter(text_offset, sy + OPENING_SETTING_HEIGHT / 2), getData().colors.white);
-            if (!folder_locked && drag_state.is_dragging && rect.contains(drag_state.current_mouse_pos)) {
+            if (drag_state.is_dragging && rect.contains(drag_state.current_mouse_pos)) {
                 rect.drawFrame(3.0, ColorF(getData().colors.yellow));
             }
-            if (editing_elem || renaming_folder || folder_locked) {
+            if (editing_elem || renaming_folder) {
                 rect.draw(ColorF(0.0, 0.0, 0.0, 0.45));
             }
         }
@@ -940,7 +939,6 @@ public:
             bool is_being_dragged = (drag_state.is_dragging_folder && drag_state.dragged_folder_name == entry.name);
             bool is_enabled = entry.enabled;
             bool is_effectively_enabled = entry.effective_enabled;
-            bool folder_locked = is_current_folder_locked();
             ColorF bg_color = idx % 2 ? ColorF(getData().colors.dark_green) : ColorF(getData().colors.green);
             if (is_being_dragged) {
                 bg_color = ColorF(getData().colors.yellow);
@@ -954,7 +952,7 @@ public:
                 text_color = getData().colors.white.withAlpha(100);
             }
             rect.draw(bg_color).drawFrame(1.0, getData().colors.white);
-            if (!folder_locked && drag_state.is_dragging_opening && drag_state.is_dragging && !drag_state.is_dragging_folder && rect.contains(drag_state.current_mouse_pos) && !editing_elem && !renaming_folder) {
+            if (drag_state.is_dragging_opening && drag_state.is_dragging && !drag_state.is_dragging_folder && rect.contains(drag_state.current_mouse_pos) && !editing_elem && !renaming_folder) {
                 rect.drawFrame(3.0, ColorF(getData().colors.yellow));
             }
             bool mouse_down_event = MouseL.down();
@@ -992,10 +990,6 @@ public:
             } else {
                 getData().fonts.font(entry.name).draw(18, Arg::leftCenter(text_offset, sy + OPENING_SETTING_HEIGHT / 2), text_color);
                 if (editing_elem || renaming_folder) {
-                    rect.draw(ColorF(0.0, 0.0, 0.0, 0.45));
-                    return;
-                }
-                if (folder_locked) {
                     rect.draw(ColorF(0.0, 0.0, 0.0, 0.45));
                     return;
                 }
@@ -1052,7 +1046,6 @@ public:
             
             bool is_being_dragged = (drag_state.is_dragging_opening && drag_state.dragged_opening_index == idx);
             bool is_editing_this = editing_elem && editing_index == idx;
-            bool folder_locked = is_current_folder_locked();
             bool overlay_noninteractive = adding_elem || renaming_folder || (editing_elem && !is_editing_this);
             bool is_effectively_enabled = opening.effective_enabled;
             ColorF bg_color = row_index % 2 ? ColorF(getData().colors.dark_green) : ColorF(getData().colors.green);
@@ -1072,14 +1065,14 @@ public:
             
             // Handle drag preparation
             bool mouse_down_event = MouseL.down();
-            bool allow_row_interactions = !(adding_elem || editing_elem || renaming_folder) && !folder_locked;
-            if (allow_row_interactions && mouse_down_event && rect.contains(Cursor::Pos()) && 
-                !drag_state.is_dragging && drag_state.dragged_opening_index == -1 && drag_state.dragged_folder_name.isEmpty()) {
+            if (mouse_down_event && rect.contains(Cursor::Pos()) && 
+                !drag_state.is_dragging && drag_state.dragged_opening_index == -1 && drag_state.dragged_folder_name.isEmpty() &&
+                !(adding_elem || editing_elem || renaming_folder)) {
                 drag_state.dragged_opening_index = idx;
                 drag_state.drag_start_pos = Cursor::Pos();
             }
             
-            if (allow_row_interactions) {
+            if (!(adding_elem || editing_elem || renaming_folder)) {
                 // Delete button
                 delete_buttons[idx].move(OPENING_SETTING_SX + 1, sy + 1);
                 delete_buttons[idx].draw();
@@ -1166,7 +1159,7 @@ public:
                 getData().fonts.font(Format(std::round(opening.weight))).draw(15, Arg::leftCenter(OPENING_SETTING_SX + OPENING_SETTING_LEFT_MARGIN + OPENING_SETTING_WIDTH - 90, sy + OPENING_SETTING_HEIGHT / 2), text_color);
             }
 
-            if (!overlay_noninteractive && !folder_locked && drag_state.is_dragging_opening && drag_state.is_dragging && rect.contains(drag_state.current_mouse_pos) && !drag_state.is_dragging_folder) {
+            if (drag_state.is_dragging_opening && drag_state.is_dragging && rect.contains(drag_state.current_mouse_pos) && !drag_state.is_dragging_folder) {
                 double mid_y = sy + OPENING_SETTING_HEIGHT / 2.0;
                 bool draw_top = (drag_state.current_mouse_pos.y < mid_y);
                 double line_y = draw_top ? sy + 2.0 : sy + OPENING_SETTING_HEIGHT - 2.0;
@@ -1174,7 +1167,7 @@ public:
                 line_segment.draw(4.0, ColorF(getData().colors.yellow));
             }
 
-            if (overlay_noninteractive || folder_locked) {
+            if (overlay_noninteractive) {
                 rect.draw(ColorF(0.0, 0.0, 0.0, 0.45));
                 return;
             }
