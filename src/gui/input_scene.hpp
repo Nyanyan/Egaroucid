@@ -369,14 +369,37 @@ public:
             }
         }
         bool enter_pressed = KeyEnter.down();
+        bool escape_pressed = KeyEscape.down();
+
+        if (renaming_folder) {
+            gui_list::sanitize_text_area(folder_rename_area);
+            if (escape_pressed) {
+                cancel_folder_rename();
+                escape_pressed = false;
+            } else if (folder_rename_area.active && enter_pressed) {
+                String trimmed = folder_rename_area.text.trimmed();
+                if (gui_list::is_valid_folder_name(trimmed)) {
+                    if (confirm_folder_rename(trimmed)) {
+                        return;
+                    }
+                }
+            }
+        }
 
         if (creating_folder) {
-            draw_folder_creation_overlay(enter_pressed);
+            draw_folder_creation_overlay(enter_pressed, escape_pressed);
             return;
         }
 
         back_button.draw();
-        if (back_button.clicked() || KeyEscape.pressed()) {
+        if (back_button.clicked()) {
+            if (renaming_folder) {
+                cancel_folder_rename();
+            } else {
+                getData().graph_resources.need_init = false;
+                changeScene(U"Main_scene", SCENE_FADE_TIME);
+            }
+        } else if (!renaming_folder && escape_pressed) {
             getData().graph_resources.need_init = false;
             changeScene(U"Main_scene", SCENE_FADE_TIME);
         }
@@ -709,13 +732,6 @@ private:
     }
 
     void draw_folder_management_ui() {
-        auto& fonts = getData().fonts;
-        auto& colors = getData().colors;
-
-        const double label_y = IMPORT_GAME_SY - 70;
-        String selection_label = selected_folder_index >= 0 ? selected_folder_name : U"-";
-        fonts.font(language.get("common", "folder") + U": " + selection_label).draw(15, Arg::leftCenter(IMPORT_GAME_SX, label_y + 15), colors.white);
-
         if (renaming_folder) {
             add_folder_button.disable_notransparent();
         } else {
@@ -732,12 +748,12 @@ private:
         }
     }
 
-    void draw_folder_creation_overlay(bool enter_pressed) {
+    void draw_folder_creation_overlay(bool enter_pressed, bool escape_pressed) {
         auto& fonts = getData().fonts;
         auto& colors = getData().colors;
 
         back_button.draw();
-        if (back_button.clicked() || KeyEscape.down()) {
+        if (back_button.clicked() || escape_pressed) {
             creating_folder = false;
             new_folder_area.text.clear();
             new_folder_area.cursorPos = 0;
@@ -747,23 +763,18 @@ private:
         }
 
         const double panel_y = IMPORT_GAME_SY + 8;
-        const double label_x = IMPORT_GAME_SX + IMPORT_GAME_LEFT_MARGIN + 8;
         const double center_y = panel_y + (IMPORT_GAME_HEIGHT * IMPORT_GAME_N_GAMES_ON_WINDOW) / 2;
+        const double label_x = IMPORT_GAME_SX + IMPORT_GAME_LEFT_MARGIN + NEW_FOLDER_LABEL_INNER_MARGIN;
 
         fonts.font(language.get("in_out", "new_folder") + U":").draw(20, Arg::leftCenter(label_x, center_y), colors.white);
 
-        Vec2 text_pos{ label_x + 140, center_y - 17 };
-        SizeF text_size{ 400, 30 };
-        if (SimpleGUI::TextArea(new_folder_area, text_pos, text_size, SimpleGUI::PreferredTextAreaMaxChars)) {
-            gui_list::sanitize_text_area(new_folder_area);
-        }
-        String sanitized = gui_list::sanitize_folder_text(new_folder_area.text);
-        if (sanitized != new_folder_area.text) {
-            size_t old_cursor = new_folder_area.cursorPos;
-            new_folder_area.text = sanitized;
-            new_folder_area.cursorPos = std::min(old_cursor, sanitized.size());
-            new_folder_area.rebuildGlyphs();
-        }
+        Vec2 text_pos{
+            IMPORT_GAME_SX + IMPORT_GAME_LEFT_MARGIN + NEW_FOLDER_TEXTBOX_OFFSET_X,
+            center_y + NEW_FOLDER_TEXTBOX_OFFSET_Y
+        };
+        SizeF text_size{ NEW_FOLDER_TEXTBOX_WIDTH, NEW_FOLDER_TEXTBOX_HEIGHT };
+        SimpleGUI::TextArea(new_folder_area, text_pos, text_size, SimpleGUI::PreferredTextAreaMaxChars);
+        gui_list::sanitize_text_area(new_folder_area);
 
         String folder_name = new_folder_area.text.trimmed();
         bool can_create = gui_list::is_valid_folder_name(folder_name);
