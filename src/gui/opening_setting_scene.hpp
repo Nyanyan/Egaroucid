@@ -807,8 +807,7 @@ public:
             bool is_effectively_enabled = entry.effective_enabled;
             ColorF bg_color = idx % 2 ? ColorF(getData().colors.dark_green) : ColorF(getData().colors.green);
             if (is_being_dragged) {
-                bg_color = ColorF(getData().colors.yellow);
-                bg_color.a = 0.25;
+                bg_color = gui_list::DragColors::DraggedItemBackground;
             }
             if (!is_effectively_enabled) {
                 bg_color = ColorF(0.25, 0.25, 0.25, 0.85);
@@ -819,7 +818,7 @@ public:
             }
             rect.draw(bg_color).drawFrame(1.0, getData().colors.white);
             if (drag_state.is_dragging_opening && drag_state.is_dragging && !drag_state.is_dragging_folder && rect.contains(drag_state.current_mouse_pos) && !editing_elem && !renaming_folder) {
-                rect.drawFrame(3.0, ColorF(getData().colors.yellow));
+                rect.drawFrame(gui_list::DragColors::DropTargetFrameThickness, gui_list::DragColors::DropTargetFrame);
             }
             bool mouse_down_event = MouseL.down();
             const Texture& folder_icon = getData().resources.folder;
@@ -933,8 +932,7 @@ public:
             bool is_effectively_enabled = opening.effective_enabled;
             ColorF bg_color = row_index % 2 ? ColorF(getData().colors.dark_green) : ColorF(getData().colors.green);
             if (is_being_dragged) {
-                bg_color = ColorF(getData().colors.yellow);
-                bg_color.a = 0.25;
+                bg_color = gui_list::DragColors::DraggedItemBackground;
             }
             if (!is_effectively_enabled) {
                 bg_color = ColorF(0.2, 0.2, 0.2, 0.85);
@@ -1100,7 +1098,7 @@ public:
             draw_pos.y -= OPENING_SETTING_HEIGHT / 2;
             
             Rect drag_rect(draw_pos.x, draw_pos.y, OPENING_SETTING_WIDTH, OPENING_SETTING_HEIGHT);
-            drag_rect.draw(getData().colors.yellow.withAlpha(200)).drawFrame(2.0, getData().colors.white);
+            drag_rect.draw(gui_list::DragColors::DraggedItemBackground.withAlpha(200)).drawFrame(2.0, getData().colors.white);
             
             if (drag_state.is_dragging_folder) {
                 const Texture& folder_icon = getData().resources.folder;
@@ -1169,6 +1167,22 @@ public:
             bool mouse_is_down = MouseL.pressed();
             bool mouse_just_released = !mouse_is_down && drag_state.mouse_was_down;
             drag_state.mouse_was_down = mouse_is_down;
+
+            // Auto-scroll when dragging near list edges
+            if (drag_state.is_dragging) {
+                gui_list::VerticalListGeometry geom;
+                geom.list_left = OPENING_SETTING_SX;
+                geom.list_top = OPENING_SETTING_SY + 8;
+                geom.list_width = OPENING_SETTING_WIDTH;
+                geom.row_height = OPENING_SETTING_HEIGHT;
+                geom.visible_row_count = OPENING_SETTING_N_GAMES_ON_WINDOW;
+                
+                int total = (has_parent ? 1 : 0) + (int)folders_display.size() + (int)openings.size();
+                double strt_idx_double = scroll_manager.get_strt_idx_double();
+                if (gui_list::update_drag_auto_scroll(drag_state.current_mouse_pos, geom, strt_idx_double, total)) {
+                    scroll_manager.set_strt_idx(strt_idx_double);
+                }
+            }
 
             if (drag_state.is_dragging && mouse_just_released) {
                 int sy = OPENING_SETTING_SY + 8;

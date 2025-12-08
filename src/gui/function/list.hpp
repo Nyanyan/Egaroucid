@@ -18,12 +18,52 @@ bool move_folder(const String& source_path, const String& target_parent_path, co
 
 namespace gui_list {
 
+// Drag and drop color constants
+namespace DragColors {
+    constexpr ColorF DraggedItemBackground = ColorF(1.0, 1.0, 0.0, 0.25);  // Yellow with 25% alpha for dragged item background
+    constexpr ColorF DropTargetFrame = ColorF(1.0, 1.0, 0.0);  // Yellow for drop target frame
+    constexpr ColorF DraggedItemAlpha = ColorF(1.0, 1.0, 1.0, 0.5);  // Semi-transparent white for dragged item
+    constexpr int DropTargetFrameThickness = 3;
+}
+
 struct VerticalListGeometry {
     int list_left = 0;
     int list_top = 0;
     int list_width = 0;
     int row_height = 0;
     int visible_row_count = 0;
+};
+
+// Auto-scroll when dragging near list edges
+inline bool update_drag_auto_scroll(
+    const Vec2& cursor_pos,
+    const VerticalListGeometry& geom,
+    double& scroll_position,
+    int total_items,
+    double scroll_speed = 0.5
+) {
+    constexpr double SCROLL_ZONE_HEIGHT = 30.0;
+    int list_bottom = geom.list_top + geom.row_height * geom.visible_row_count;
+    
+    bool scrolled = false;
+    
+    // Scroll up when cursor is near top
+    if (cursor_pos.y >= geom.list_top && cursor_pos.y < geom.list_top + SCROLL_ZONE_HEIGHT) {
+        if (scroll_position > 0) {
+            scroll_position = std::max(0.0, scroll_position - scroll_speed);
+            scrolled = true;
+        }
+    }
+    // Scroll down when cursor is near bottom
+    else if (cursor_pos.y > list_bottom - SCROLL_ZONE_HEIGHT && cursor_pos.y <= list_bottom) {
+        double max_scroll = std::max(0.0, static_cast<double>(total_items - geom.visible_row_count));
+        if (scroll_position < max_scroll) {
+            scroll_position = std::min(max_scroll, scroll_position + scroll_speed);
+            scrolled = true;
+        }
+    }
+    
+    return scrolled;
 };
 
 inline Rect make_row_rect(const VerticalListGeometry& geom, int row_offset) {

@@ -516,6 +516,17 @@ inline ExplorerDrawResult DrawExplorerList(
     list_geom.list_width = IMPORT_GAME_WIDTH;
     list_geom.row_height = item_height;
     list_geom.visible_row_count = n_games_on_window;
+    
+    // Auto-scroll when dragging near list edges
+    if (drag_state.is_dragging) {
+        int parent_offset = has_parent ? 1 : 0;
+        int total_items = parent_offset + (int)folders_display.size() + (int)games.size();
+        double strt_idx_double = scroll_manager.get_strt_idx_double();
+        if (gui_list::update_drag_auto_scroll(drag_state.current_mouse_pos, list_geom, strt_idx_double, total_items)) {
+            scroll_manager.set_strt_idx(strt_idx_double);
+        }
+    }
+    
     if (!inline_editing) {
         // Handle drag drop detection
         ExplorerDrawResult drag_result = handle_drag_drop<FontsT, ColorsT, ResourcesT, LanguageT>(
@@ -672,7 +683,7 @@ inline ExplorerDrawResult draw_explorer_list_items(
             Vec2{ list_geom.list_left + 5.0, reorder_line_y },
             Vec2{ list_geom.list_left + list_geom.list_width - 5.0, reorder_line_y }
         };
-        line_segment.draw(4.0, colors.yellow);
+        line_segment.draw(4.0, gui_list::DragColors::DropTargetFrame);
     }
 
     if (strt_idx_int + n_games_on_window < total_rows) {
@@ -701,7 +712,7 @@ inline ExplorerDrawResult draw_parent_folder(
     
     // Handle drop on parent folder (visual feedback)
     if (rect.contains(drag_state.current_mouse_pos) && (drag_state.is_dragging_game || drag_state.is_dragging_folder)) {
-        rect.draw(colors.yellow.withAlpha(64));
+        rect.draw(gui_list::DragColors::DropTargetFrame.withAlpha(64));
     }
     
     // Draw parent folder (..) 
@@ -808,7 +819,7 @@ inline ExplorerDrawResult draw_folder_item(
 
     // Show yellow frame when dragging a game over this folder
     if (drag_state.is_dragging_game && !drag_state.is_dragging_folder && rect.contains(drag_state.current_mouse_pos) && !inline_editing) {
-        rect.drawFrame(3.0, ColorF(colors.yellow));
+        rect.drawFrame(gui_list::DragColors::DropTargetFrameThickness, gui_list::DragColors::DropTargetFrame);
     }
 
     if (interactions_locked) {
@@ -1070,7 +1081,7 @@ inline void draw_dragged_items(
         Rect drag_rect(drag_pos.x, drag_pos.y, IMPORT_GAME_WIDTH, item_height);
         
         // Enhanced visual styling for dragged game - more prominent
-        drag_rect.draw(colors.yellow.withAlpha(220)).drawFrame(3.0, colors.white);
+        drag_rect.draw(gui_list::DragColors::DraggedItemBackground.withAlpha(220)).drawFrame(3.0, colors.white);
         
         // Draw simplified game info with better visibility
         const auto& game = games[drag_state.dragged_game_index];
@@ -1093,7 +1104,7 @@ inline void draw_dragged_items(
         shadow_rect.draw(colors.black.withAlpha(64));
         
         // Enhanced visual styling for dragged folder - more prominent
-        Color folder_bg_color = colors.blue.withAlpha(220);
+        Color folder_bg_color = gui_list::DragColors::DraggedItemBackground.withAlpha(220);
         drag_rect.draw(folder_bg_color).drawFrame(3.0, colors.white);
         
         // Draw folder icon and name
