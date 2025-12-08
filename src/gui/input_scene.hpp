@@ -362,44 +362,21 @@ public:
         // Current path label
         String path_label = explorer::compose_path_label(U"games/", explorer_state);
         getData().fonts.font(path_label).draw(15, Arg::rightCenter(IMPORT_GAME_SX + IMPORT_GAME_WIDTH, 30), getData().colors.white);
-        bool can_go_up = explorer_state.has_parent();
-        if (draw_up_navigation_button(up_button, can_go_up)) {
-            if (navigate_to_parent_subfolder()) {
-                return;
-            }
-        }
         bool enter_pressed = KeyEnter.down();
         bool escape_pressed = KeyEscape.down();
-
-        if (renaming_folder) {
-            gui_list::sanitize_text_area(folder_rename_area);
-            if (escape_pressed) {
-                cancel_folder_rename();
-                escape_pressed = false;
-            } else if (folder_rename_area.active && enter_pressed) {
-                String trimmed = folder_rename_area.text.trimmed();
-                if (gui_list::is_valid_folder_name(trimmed)) {
-                    if (confirm_folder_rename(trimmed)) {
-                        return;
-                    }
-                }
-            }
-        }
 
         if (creating_folder) {
             draw_folder_creation_overlay(enter_pressed, escape_pressed);
             return;
         }
 
+        if (renaming_folder) {
+            draw_folder_rename_overlay(enter_pressed, escape_pressed);
+            return;
+        }
+
         back_button.draw();
-        if (back_button.clicked()) {
-            if (renaming_folder) {
-                cancel_folder_rename();
-            } else {
-                getData().graph_resources.need_init = false;
-                changeScene(U"Main_scene", SCENE_FADE_TIME);
-            }
-        } else if (!renaming_folder && escape_pressed) {
+        if (back_button.clicked() || escape_pressed) {
             getData().graph_resources.need_init = false;
             changeScene(U"Main_scene", SCENE_FADE_TIME);
         }
@@ -407,18 +384,7 @@ public:
         if (failed) {
             getData().fonts.font(language.get("in_out", "import_failed")).draw(20, Arg::center(X_CENTER, Y_CENTER), getData().colors.white);
         } else {
-            ExplorerFolderInlineConfig inline_cfg;
-            inline_cfg.renaming = renaming_folder;
-            inline_cfg.folder_index = renaming_folder_index;
-            if (renaming_folder && renaming_folder_index >= 0) {
-                inline_cfg.text_area = &folder_rename_area;
-                inline_cfg.back_button = &inline_edit_back_button;
-                inline_cfg.ok_button = &inline_edit_ok_button;
-                inline_cfg.on_cancel = [this]() { cancel_folder_rename(); };
-                inline_cfg.on_commit = [this](const String& trimmed) {
-                    return confirm_folder_rename(trimmed);
-                };
-            }
+            ExplorerFolderInlineConfig inline_cfg{};
             const ExplorerFolderInlineConfig* inline_ptr = &inline_cfg;
             auto res = DrawExplorerList(
                 folders_display, games, delete_buttons, scroll_manager, up_button,
@@ -762,8 +728,7 @@ private:
             return;
         }
 
-        const double panel_y = IMPORT_GAME_SY + 8;
-        const double center_y = panel_y + (IMPORT_GAME_HEIGHT * IMPORT_GAME_N_GAMES_ON_WINDOW) / 2;
+        const double center_y = NEW_FOLDER_PANEL_SY + NEW_FOLDER_PANEL_HEIGHT / 2.0;
         const double label_x = IMPORT_GAME_SX + IMPORT_GAME_LEFT_MARGIN + NEW_FOLDER_LABEL_INNER_MARGIN;
 
         fonts.font(language.get("in_out", "new_folder") + U":").draw(20, Arg::leftCenter(label_x, center_y), colors.white);
@@ -792,6 +757,63 @@ private:
                 creating_folder = false;
                 new_folder_area.active = false;
             }
+        }
+    }
+
+    void draw_folder_rename_overlay(bool enter_pressed, bool escape_pressed) {
+        auto& fonts = getData().fonts;
+        auto& colors = getData().colors;
+
+        if (renaming_folder_index < 0 || renaming_folder_index >= (int)folders_display.size()) {
+            cancel_folder_rename();
+            return;
+        }
+
+        back_button.draw();
+        if (back_button.clicked()) {
+            cancel_folder_rename();
+            return;
+        }
+
+        if (escape_pressed) {
+            cancel_folder_rename();
+            return;
+        }
+
+        const double center_y = NEW_FOLDER_PANEL_SY + NEW_FOLDER_PANEL_HEIGHT / 2.0;
+        const double label_x = IMPORT_GAME_SX + IMPORT_GAME_LEFT_MARGIN + NEW_FOLDER_LABEL_INNER_MARGIN;
+        fonts.font(language.get("in_out", "rename_folder", "Rename folder") + U":").draw(20, Arg::leftCenter(label_x, center_y), colors.white);
+
+        Vec2 text_pos{
+            IMPORT_GAME_SX + IMPORT_GAME_LEFT_MARGIN + NEW_FOLDER_TEXTBOX_OFFSET_X,
+            center_y + NEW_FOLDER_TEXTBOX_OFFSET_Y
+        };
+        SizeF text_size{ NEW_FOLDER_TEXTBOX_WIDTH, NEW_FOLDER_TEXTBOX_HEIGHT };
+        SimpleGUI::TextArea(folder_rename_area, text_pos, text_size, SimpleGUI::PreferredTextAreaMaxChars);
+        gui_list::sanitize_text_area(folder_rename_area);
+
+        String trimmed = folder_rename_area.text.trimmed();
+        bool can_commit = gui_list::is_valid_folder_name(trimmed);
+
+        int button_y = static_cast<int>(center_y + NEW_FOLDER_TEXTBOX_HEIGHT + 10);
+        inline_edit_back_button.move(static_cast<int>(text_pos.x), button_y);
+        inline_edit_back_button.enable();
+        inline_edit_back_button.draw();
+        if (inline_edit_back_button.clicked()) {
+            cancel_folder_rename();
+            return;
+        }
+
+        int ok_x = inline_edit_back_button.rect.x + inline_edit_back_button.rect.w + 10;
+        inline_edit_ok_button.move(ok_x, button_y);
+        if (can_commit) {
+            inline_edit_ok_button.enable();
+        } else {
+            inline_edit_ok_button.disable();
+        }
+        inline_edit_ok_button.draw();
+        if (can_commit && (inline_edit_ok_button.clicked() || enter_pressed)) {
+            confirm_folder_rename(trimmed);
         }
     }
 

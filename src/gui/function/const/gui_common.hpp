@@ -177,13 +177,6 @@ constexpr int IMPORT_GAME_DATE_WIDTH = 120;
 constexpr int IMPORT_GAME_BUTTON_SY = (IMPORT_GAME_HEIGHT - IMPORT_GAME_BUTTON_HEIGHT) / 2;
 constexpr int IMPORT_GAME_WIDTH = WINDOW_SIZE_X - (IMPORT_GAME_SX + IMPORT_GAME_LEFT_MARGIN) * 2 + IMPORT_GAME_LEFT_MARGIN;
 
-// common folder creation ui
-constexpr int NEW_FOLDER_LABEL_INNER_MARGIN = 8;
-constexpr int NEW_FOLDER_TEXTBOX_OFFSET_X = 150;
-constexpr int NEW_FOLDER_TEXTBOX_OFFSET_Y = -17;
-constexpr int NEW_FOLDER_TEXTBOX_WIDTH = 400;
-constexpr int NEW_FOLDER_TEXTBOX_HEIGHT = 30;
-
 // opening setting
 constexpr int OPENING_SETTING_N_GAMES_ON_WINDOW = 7;
 constexpr int OPENING_SETTING_LEFT_MARGIN = 10;
@@ -192,6 +185,15 @@ constexpr int OPENING_SETTING_SY = 85;
 constexpr int OPENING_SETTING_HEIGHT = 40;  // Reduced from 45 to make room for fixed header
 constexpr int OPENING_SETTING_HEADER_HEIGHT = 30;  // Small height for fixed header display
 constexpr int OPENING_SETTING_WIDTH = WINDOW_SIZE_X - (OPENING_SETTING_SX + OPENING_SETTING_LEFT_MARGIN) * 2 + OPENING_SETTING_LEFT_MARGIN;
+
+// folder creation / rename shared layout
+constexpr int NEW_FOLDER_PANEL_SY = OPENING_SETTING_SY + 8;
+constexpr int NEW_FOLDER_PANEL_HEIGHT = OPENING_SETTING_HEIGHT;
+constexpr int NEW_FOLDER_LABEL_INNER_MARGIN = 8;
+constexpr int NEW_FOLDER_TEXTBOX_OFFSET_X = 150;
+constexpr int NEW_FOLDER_TEXTBOX_OFFSET_Y = -17;
+constexpr int NEW_FOLDER_TEXTBOX_WIDTH = 400;
+constexpr int NEW_FOLDER_TEXTBOX_HEIGHT = 30;
 
 // game saving constants
 #define GAME_DATE U"date"

@@ -146,9 +146,9 @@ public:
                 }
                 
                 // Draw CSV name input area
-                int sy = OPENING_SETTING_SY + 8;
+                int sy = NEW_FOLDER_PANEL_SY;
                 double label_base_x = OPENING_SETTING_SX + OPENING_SETTING_LEFT_MARGIN + NEW_FOLDER_LABEL_INNER_MARGIN;
-                double label_center_y = sy + OPENING_SETTING_HEIGHT / 2;
+                double label_center_y = sy + NEW_FOLDER_PANEL_HEIGHT / 2.0;
                 getData().fonts.font(language.get("in_out", "new_folder") + U":").draw(20, Arg::leftCenter(label_base_x, label_center_y), getData().colors.white);
                 Vec2 text_pos{ OPENING_SETTING_SX + OPENING_SETTING_LEFT_MARGIN + NEW_FOLDER_TEXTBOX_OFFSET_X, label_center_y + NEW_FOLDER_TEXTBOX_OFFSET_Y };
                 SizeF text_size{ NEW_FOLDER_TEXTBOX_WIDTH, NEW_FOLDER_TEXTBOX_HEIGHT };
