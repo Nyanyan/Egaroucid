@@ -10,6 +10,8 @@
 
 #pragma once
 #include <iostream>
+#include <algorithm>
+#include <cctype>
 #include <Siv3D.hpp>
 #include "./../engine/engine_all.hpp"
 #include "function/function_all.hpp"
@@ -25,6 +27,15 @@ struct Opening_abstract {
     Opening_abstract(const String& t, double w, bool e = true) : transcript(t), weight(w), enabled(e) {}
 };
 
+struct Folder_entry {
+    String name;
+    std::string relative_path;
+    bool enabled;
+    
+    Folder_entry() : name(U""), relative_path(""), enabled(true) {}
+    Folder_entry(const String& n, const std::string& path, bool e = true) : name(n), relative_path(path), enabled(e) {}
+};
+
 
 class Opening_setting : public App::Scene {
     private:
@@ -34,7 +45,7 @@ class Opening_setting : public App::Scene {
         std::vector<ImageButton> toggle_buttons;
         std::vector<ImageButton> move_up_buttons;
         std::vector<ImageButton> move_down_buttons;
-        std::vector<String> folders_display;
+    std::vector<Folder_entry> folders_display;
         Scroll_manager scroll_manager;
         Button add_button;
         Button add_csv_button;  // Button to create new CSV file
@@ -71,6 +82,7 @@ class Opening_setting : public App::Scene {
                 dragged_opening_index = -1;
                 dragged_folder_name.clear();
                 drag_start_pos = Vec2{ 0, 0 };
+                mouse_was_down = false;
             }
         };
         DragState drag_state;
@@ -263,6 +275,63 @@ class Opening_setting : public App::Scene {
             scroll_manager.init(770, OPENING_SETTING_SY + 8, 10, OPENING_SETTING_HEIGHT * OPENING_SETTING_N_GAMES_ON_WINDOW, 20, total, OPENING_SETTING_N_GAMES_ON_WINDOW, OPENING_SETTING_SX, 73, OPENING_SETTING_WIDTH + 10, OPENING_SETTING_HEIGHT * OPENING_SETTING_N_GAMES_ON_WINDOW);
         }
         
+        std::string build_child_relative_path(const std::string& child) const {
+            if (subfolder.empty()) {
+                return child;
+            }
+            if (!subfolder.empty() && subfolder.back() == '/') {
+                return subfolder + child;
+            }
+            return subfolder + "/" + child;
+        }
+        
+        String get_folder_state_path(const std::string& relative_path) const {
+            String base = Unicode::Widen(getData().directories.document_dir) + U"/forced_openings/";
+            if (!relative_path.empty()) {
+                base += Unicode::Widen(relative_path);
+                if (base.size() && base.back() != U'/') {
+                    base += U"/";
+                }
+            }
+            return base + U"folder_state.json";
+        }
+        
+        bool load_folder_enabled_state(const std::string& relative_path) const {
+            if (relative_path.empty()) {
+                return true;
+            }
+            String config_path = get_folder_state_path(relative_path);
+            if (!FileSystem::Exists(config_path)) {
+                return true;
+            }
+            TextReader reader(config_path);
+            if (!reader) {
+                return true;
+            }
+            String line;
+            if (!reader.readLine(line)) {
+                return true;
+            }
+            line = line.trimmed();
+            std::string lowered = line.narrow();
+            std::transform(lowered.begin(), lowered.end(), lowered.begin(), [](unsigned char c) {
+                return static_cast<char>(std::tolower(c));
+            });
+            return !(lowered == "false" || lowered == "0" || lowered == "off");
+        }
+        
+        void save_folder_enabled_state(const std::string& relative_path, bool enabled) {
+            if (relative_path.empty()) {
+                return;
+            }
+            String config_path = get_folder_state_path(relative_path);
+            TextWriter writer(config_path);
+            if (!writer) {
+                return;
+            }
+            writer.write(enabled ? U"true" : U"false");
+        }
+        
         // Get base directory for current forced_openings folder
         String get_base_dir() const {
             String base = Unicode::Widen(getData().directories.document_dir) + U"/forced_openings/";
@@ -418,6 +487,43 @@ class Opening_setting : public App::Scene {
             save_openings();
         }
         
+        void reorder_opening_within_current(int from_idx, int insert_idx) {
+            if (from_idx < 0 || from_idx >= (int)openings.size()) {
+                return;
+            }
+            if (insert_idx < 0) {
+                insert_idx = 0;
+            }
+            if (insert_idx > (int)openings.size()) {
+                insert_idx = (int)openings.size();
+            }
+            if (insert_idx == from_idx || insert_idx == from_idx + 1) {
+                return;
+            }
+            auto opening = openings[from_idx];
+            auto del_btn = delete_buttons[from_idx];
+            auto edit_btn = edit_buttons[from_idx];
+            auto toggle_btn = toggle_buttons[from_idx];
+            auto move_up_btn = move_up_buttons[from_idx];
+            auto move_down_btn = move_down_buttons[from_idx];
+            openings.erase(openings.begin() + from_idx);
+            delete_buttons.erase(delete_buttons.begin() + from_idx);
+            edit_buttons.erase(edit_buttons.begin() + from_idx);
+            toggle_buttons.erase(toggle_buttons.begin() + from_idx);
+            move_up_buttons.erase(move_up_buttons.begin() + from_idx);
+            move_down_buttons.erase(move_down_buttons.begin() + from_idx);
+            if (insert_idx > from_idx) {
+                insert_idx -= 1;
+            }
+            openings.insert(openings.begin() + insert_idx, opening);
+            delete_buttons.insert(delete_buttons.begin() + insert_idx, del_btn);
+            edit_buttons.insert(edit_buttons.begin() + insert_idx, edit_btn);
+            toggle_buttons.insert(toggle_buttons.begin() + insert_idx, toggle_btn);
+            move_up_buttons.insert(move_up_buttons.begin() + insert_idx, move_up_btn);
+            move_down_buttons.insert(move_down_buttons.begin() + insert_idx, move_down_btn);
+            save_openings();
+        }
+        
         // Enumerate current directory
         void enumerate_current_dir() {
             folders_display.clear();
@@ -426,7 +532,9 @@ class Opening_setting : public App::Scene {
             std::string base_dir = getData().directories.document_dir + "/forced_openings";
             std::vector<String> folders = enumerate_subdirectories_generic(base_dir, subfolder);
             for (auto& folder : folders) {
-                folders_display.emplace_back(folder);
+                std::string rel_path = build_child_relative_path(folder.narrow());
+                bool is_enabled = load_folder_enabled_state(rel_path);
+                folders_display.emplace_back(Folder_entry{ folder, rel_path, is_enabled });
             }
             
             init_scroll_manager();
@@ -490,13 +598,17 @@ class Opening_setting : public App::Scene {
                     int display_row = row_index - strt_idx_int;
                     int item_sy = sy + display_row * OPENING_SETTING_HEIGHT;
                     Rect rect(OPENING_SETTING_SX, item_sy, OPENING_SETTING_WIDTH, OPENING_SETTING_HEIGHT);
-                    if (rect.leftClicked()) {
-                        if (current_time - last_click_time < DOUBLE_CLICK_TIME_MS && last_clicked_folder == folders_display[i]) {
-                            navigate_to_folder(folders_display[i]);
+                    bool clicked_row = rect.leftClicked();
+                    int toggle_x = OPENING_SETTING_SX + OPENING_SETTING_WIDTH - 20;
+                    Circle toggle_circle(toggle_x, item_sy + OPENING_SETTING_HEIGHT / 2, 8);
+                    bool clicking_toggle = toggle_circle.contains(Cursor::Pos()) && MouseL.down();
+                    if (clicked_row && !clicking_toggle) {
+                        if (current_time - last_click_time < DOUBLE_CLICK_TIME_MS && last_clicked_folder == folders_display[i].name) {
+                            navigate_to_folder(folders_display[i].name);
                             return;
                         }
                         last_click_time = current_time;
-                        last_clicked_folder = folders_display[i];
+                        last_clicked_folder = folders_display[i].name;
                     }
                 }
                 row_index++;
@@ -583,30 +695,65 @@ class Opening_setting : public App::Scene {
         void draw_parent_folder_item(int sy) {
             Rect rect(OPENING_SETTING_SX, sy, OPENING_SETTING_WIDTH, OPENING_SETTING_HEIGHT);
             rect.draw(getData().colors.dark_green).drawFrame(1.0, getData().colors.white);
-            getData().fonts.font(U"📁 ..").draw(20, Arg::leftCenter(OPENING_SETTING_SX + OPENING_SETTING_LEFT_MARGIN + 8, sy + OPENING_SETTING_HEIGHT / 2), getData().colors.white);
+            const Texture& folder_icon = getData().resources.folder;
+            double icon_scale = folder_icon ? (double)(OPENING_SETTING_HEIGHT - 20) / (double)folder_icon.height() : 1.0;
+            double icon_x = OPENING_SETTING_SX + OPENING_SETTING_LEFT_MARGIN + 8;
+            if (folder_icon) {
+                folder_icon.scaled(icon_scale).draw(Arg::leftCenter(icon_x, sy + OPENING_SETTING_HEIGHT / 2), ColorF(1.0));
+            }
+            double text_offset = icon_x + (folder_icon ? folder_icon.width() * icon_scale + 10.0 : 0.0);
+            getData().fonts.font(U"..").draw(20, Arg::leftCenter(text_offset, sy + OPENING_SETTING_HEIGHT / 2), getData().colors.white);
         }
         
         // Draw folder item
-        void draw_folder_item(const String& folder_name, int sy, int idx) {
+        void draw_folder_item(const Folder_entry& entry, int sy, int idx) {
             Rect rect(OPENING_SETTING_SX, sy, OPENING_SETTING_WIDTH, OPENING_SETTING_HEIGHT);
-            
-            bool is_being_dragged = (drag_state.is_dragging_folder && drag_state.dragged_folder_name == folder_name);
-            Color bg_color = is_being_dragged ? getData().colors.yellow.withAlpha(64) : 
-                            (idx % 2 ? getData().colors.dark_green : getData().colors.green);
+            bool is_being_dragged = (drag_state.is_dragging_folder && drag_state.dragged_folder_name == entry.name);
+            bool is_enabled = entry.enabled;
+            ColorF bg_color = idx % 2 ? ColorF(getData().colors.dark_green) : ColorF(getData().colors.green);
+            if (is_being_dragged) {
+                bg_color = ColorF(getData().colors.yellow);
+                bg_color.a = 0.25;
+            }
+            if (!is_enabled) {
+                bg_color = ColorF(0.25, 0.25, 0.25, 0.85);
+            }
             Color text_color = is_being_dragged ? getData().colors.white.withAlpha(128) : getData().colors.white;
-            
+            if (!is_enabled) {
+                text_color = getData().colors.white.withAlpha(100);
+            }
             rect.draw(bg_color).drawFrame(1.0, getData().colors.white);
-            
-            // Handle drag preparation
             bool mouse_is_down = MouseL.pressed();
             bool mouse_was_down = drag_state.mouse_was_down;
+            const Texture& folder_icon = getData().resources.folder;
+            double icon_scale = folder_icon ? (double)(OPENING_SETTING_HEIGHT - 20) / (double)folder_icon.height() : 1.0;
+            double icon_x = OPENING_SETTING_SX + OPENING_SETTING_LEFT_MARGIN + 8;
+            if (folder_icon) {
+                ColorF icon_color = is_enabled ? ColorF(1.0) : ColorF(1.0, 0.5);
+                folder_icon.scaled(icon_scale).draw(Arg::leftCenter(icon_x, sy + OPENING_SETTING_HEIGHT / 2), icon_color);
+            }
+            double text_offset = icon_x + (folder_icon ? folder_icon.width() * icon_scale + 10.0 : 0.0);
+            getData().fonts.font(entry.name).draw(18, Arg::leftCenter(text_offset, sy + OPENING_SETTING_HEIGHT / 2), text_color);
+            int toggle_x = OPENING_SETTING_SX + OPENING_SETTING_WIDTH - 20;
+            Circle toggle_circle(toggle_x, sy + OPENING_SETTING_HEIGHT / 2, 8);
+            bool toggle_hovered = toggle_circle.mouseOver();
+            Color toggle_color = is_enabled ? getData().colors.white : getData().colors.white.withAlpha(90);
+            if (is_enabled) {
+                toggle_circle.draw(toggle_color);
+            } else {
+                toggle_circle.drawFrame(2.0, toggle_color);
+            }
+            if (toggle_circle.leftClicked()) {
+                bool new_state = !entry.enabled;
+                folders_display[idx].enabled = new_state;
+                save_folder_enabled_state(entry.relative_path, new_state);
+                return;
+            }
             if (mouse_is_down && !mouse_was_down && rect.contains(Cursor::Pos()) && 
-                !drag_state.is_dragging && drag_state.dragged_opening_index == -1 && drag_state.dragged_folder_name.isEmpty()) {
-                drag_state.dragged_folder_name = folder_name;
+                !drag_state.is_dragging && drag_state.dragged_opening_index == -1 && drag_state.dragged_folder_name.isEmpty() && !toggle_hovered) {
+                drag_state.dragged_folder_name = entry.name;
                 drag_state.drag_start_pos = Cursor::Pos();
             }
-            
-            getData().fonts.font(U"📁 " + folder_name).draw(18, Arg::leftCenter(OPENING_SETTING_SX + OPENING_SETTING_LEFT_MARGIN + 8, sy + OPENING_SETTING_HEIGHT / 2), text_color);
         }
         
         // Draw opening item
@@ -615,9 +762,18 @@ class Opening_setting : public App::Scene {
             Rect rect(OPENING_SETTING_SX, sy, OPENING_SETTING_WIDTH, OPENING_SETTING_HEIGHT);
             
             bool is_being_dragged = (drag_state.is_dragging_opening && drag_state.dragged_opening_index == idx);
-            Color bg_color = is_being_dragged ? getData().colors.yellow.withAlpha(64) : 
-                            (row_index % 2 ? getData().colors.dark_green : getData().colors.green);
+            ColorF bg_color = row_index % 2 ? ColorF(getData().colors.dark_green) : ColorF(getData().colors.green);
+            if (is_being_dragged) {
+                bg_color = ColorF(getData().colors.yellow);
+                bg_color.a = 0.25;
+            }
+            if (!opening.enabled) {
+                bg_color = ColorF(0.2, 0.2, 0.2, 0.85);
+            }
             Color text_color = is_being_dragged ? getData().colors.white.withAlpha(128) : getData().colors.white;
+            if (!opening.enabled) {
+                text_color = getData().colors.white.withAlpha(100);
+            }
             
             rect.draw(bg_color).drawFrame(1.0, getData().colors.white);
             
@@ -698,10 +854,11 @@ class Opening_setting : public App::Scene {
                 // Toggle enabled/disabled button
                 int toggle_x = OPENING_SETTING_SX + OPENING_SETTING_WIDTH - 20;
                 Circle toggle_circle(toggle_x, sy + OPENING_SETTING_HEIGHT / 2, 8);
+                Color toggle_color = opening.enabled ? getData().colors.white : getData().colors.white.withAlpha(90);
                 if (opening.enabled) {
-                    toggle_circle.draw(getData().colors.white);
+                    toggle_circle.draw(toggle_color);
                 } else {
-                    toggle_circle.drawFrame(2.0, getData().colors.white);
+                    toggle_circle.drawFrame(2.0, toggle_color);
                 }
                 if (toggle_circle.leftClicked()) {
                     openings[idx].enabled = !openings[idx].enabled;
@@ -769,7 +926,14 @@ class Opening_setting : public App::Scene {
             drag_rect.draw(getData().colors.yellow.withAlpha(200)).drawFrame(2.0, getData().colors.white);
             
             if (drag_state.is_dragging_folder) {
-                getData().fonts.font(U"📁 " + drag_state.dragged_folder_name).draw(18, Arg::leftCenter(draw_pos.x + OPENING_SETTING_LEFT_MARGIN + 8, draw_pos.y + OPENING_SETTING_HEIGHT / 2), getData().colors.black);
+                const Texture& folder_icon = getData().resources.folder;
+                double icon_scale = folder_icon ? (double)(OPENING_SETTING_HEIGHT - 20) / (double)folder_icon.height() : 1.0;
+                double icon_x = draw_pos.x + OPENING_SETTING_LEFT_MARGIN + 8;
+                if (folder_icon) {
+                    folder_icon.scaled(icon_scale).draw(Arg::leftCenter(icon_x, draw_pos.y + OPENING_SETTING_HEIGHT / 2), ColorF(0.2, 0.2, 0.2));
+                }
+                double text_offset = icon_x + (folder_icon ? folder_icon.width() * icon_scale + 10.0 : 0.0);
+                getData().fonts.font(drag_state.dragged_folder_name).draw(18, Arg::leftCenter(text_offset, draw_pos.y + OPENING_SETTING_HEIGHT / 2), getData().colors.black);
             } else if (drag_state.is_dragging_opening && drag_state.dragged_opening_index >= 0 && drag_state.dragged_opening_index < (int)openings.size()) {
                 const auto& opening = openings[drag_state.dragged_opening_index];
                 String display_text = opening.transcript;
@@ -789,6 +953,9 @@ class Opening_setting : public App::Scene {
         
         // Recursively load all enabled openings from a folder and its subfolders
         void load_all_openings_recursive(const std::string& folder_path) {
+            if (!folder_path.empty() && !load_folder_enabled_state(folder_path)) {
+                return;
+            }
             String base = Unicode::Widen(getData().directories.document_dir) + U"/forced_openings/";
             if (!folder_path.empty()) {
                 base += Unicode::Widen(folder_path) + U"/";
@@ -816,6 +983,9 @@ class Opening_setting : public App::Scene {
                 std::string next_path = folder_path;
                 if (!next_path.empty()) next_path += "/";
                 next_path += folder.narrow();
+                if (!load_folder_enabled_state(next_path)) {
+                    continue;
+                }
                 load_all_openings_recursive(next_path);
             }
         }
@@ -856,7 +1026,7 @@ class Opening_setting : public App::Scene {
                             int item_sy = sy + (row - strt_idx_int) * OPENING_SETTING_HEIGHT;
                             Rect folder_rect(OPENING_SETTING_SX, item_sy, OPENING_SETTING_WIDTH, OPENING_SETTING_HEIGHT);
                             if (folder_rect.contains(drag_state.current_mouse_pos)) {
-                                String target_folder = folders_display[folder_idx];
+                                String target_folder = folders_display[folder_idx].name;
                                 if (drag_state.is_dragging_folder && target_folder == drag_state.dragged_folder_name) {
                                     continue;
                                 }
@@ -869,6 +1039,14 @@ class Opening_setting : public App::Scene {
                                 break;
                             }
                         }
+                    }
+                }
+                
+                if (!handled && drag_state.is_dragging_opening && drag_state.dragged_opening_index >= 0) {
+                    int drop_index = get_drop_index_for_opening(drag_state.current_mouse_pos);
+                    if (drop_index != -1) {
+                        reorder_opening_within_current(drag_state.dragged_opening_index, drop_index);
+                        handled = true;
                     }
                 }
                 
@@ -893,6 +1071,31 @@ class Opening_setting : public App::Scene {
                 drag_state.dragged_opening_index = -1;
                 drag_state.dragged_folder_name.clear();
             }
+        }
+        
+    int get_drop_index_for_opening(const Vec2& drop_pos) {
+            int sy = OPENING_SETTING_SY + 8;
+            int strt_idx_int = scroll_manager.get_strt_idx_int();
+            int parent_offset = has_parent ? 1 : 0;
+            int row_index = parent_offset + (int)folders_display.size();
+            for (int i = 0; i < (int)openings.size(); ++i) {
+                if (row_index >= strt_idx_int && row_index < strt_idx_int + OPENING_SETTING_N_GAMES_ON_WINDOW) {
+                    int item_sy = sy + (row_index - strt_idx_int) * OPENING_SETTING_HEIGHT;
+                    Rect rect(OPENING_SETTING_SX, item_sy, OPENING_SETTING_WIDTH, OPENING_SETTING_HEIGHT);
+                    if (rect.contains(drop_pos)) {
+                        return i;
+                    }
+                }
+                row_index++;
+            }
+            double list_left = OPENING_SETTING_SX;
+            double list_right = OPENING_SETTING_SX + OPENING_SETTING_WIDTH;
+            double list_top = sy;
+            double list_bottom = sy + OPENING_SETTING_N_GAMES_ON_WINDOW * OPENING_SETTING_HEIGHT;
+            if (drop_pos.x >= list_left && drop_pos.x <= list_right && drop_pos.y >= list_top && drop_pos.y <= list_bottom) {
+                return (int)openings.size();
+            }
+            return -1;
         }
         
         // Move opening to a different folder (relative to current subfolder)
