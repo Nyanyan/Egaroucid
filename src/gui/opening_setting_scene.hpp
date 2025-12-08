@@ -968,7 +968,7 @@ public:
                 rect.drawFrame(3.0, ColorF(getData().colors.yellow));
             }
             if (editing_elem || renaming_folder) {
-                rect.draw(ColorF(1.0, 1.0, 1.0, 0.45));
+                rect.draw(ColorF(0.0, 0.0, 0.0, 0.45));
             }
         }
         
@@ -994,8 +994,7 @@ public:
             if (drag_state.is_dragging_opening && drag_state.is_dragging && !drag_state.is_dragging_folder && rect.contains(drag_state.current_mouse_pos) && !editing_elem && !renaming_folder) {
                 rect.drawFrame(3.0, ColorF(getData().colors.yellow));
             }
-            bool mouse_is_down = MouseL.pressed();
-            bool mouse_was_down = drag_state.mouse_was_down;
+            bool mouse_down_event = MouseL.down();
             const Texture& folder_icon = getData().resources.folder;
             double icon_scale = folder_icon ? (double)(OPENING_SETTING_HEIGHT - 20) / (double)folder_icon.height() : 1.0;
             double icon_x = OPENING_SETTING_SX + OPENING_SETTING_LEFT_MARGIN + 8;
@@ -1030,11 +1029,11 @@ public:
             } else {
                 getData().fonts.font(entry.name).draw(18, Arg::leftCenter(text_offset, sy + OPENING_SETTING_HEIGHT / 2), text_color);
                 if (editing_elem || renaming_folder) {
-                    rect.draw(ColorF(1.0, 1.0, 1.0, 0.45));
+                    rect.draw(ColorF(0.0, 0.0, 0.0, 0.45));
                     return;
                 }
                 if (folder_locked) {
-                    rect.draw(ColorF(1.0, 1.0, 1.0, 0.45));
+                    rect.draw(ColorF(0.0, 0.0, 0.0, 0.45));
                 }
             }
             int toggle_x = OPENING_SETTING_SX + OPENING_SETTING_WIDTH - 30;
@@ -1074,7 +1073,7 @@ public:
                     return;
                 }
             }
-            if (!is_renaming_this && mouse_is_down && !mouse_was_down && rect.contains(Cursor::Pos()) && 
+            if (!is_renaming_this && mouse_down_event && rect.contains(Cursor::Pos()) && 
                 !drag_state.is_dragging && drag_state.dragged_opening_index == -1 && drag_state.dragged_folder_name.isEmpty() && !toggle_hovered && !(rename_rect.mouseOver())) {
                 drag_state.dragged_folder_name = entry.name;
                 drag_state.drag_start_pos = Cursor::Pos();
@@ -1106,9 +1105,8 @@ public:
             rect.draw(bg_color).drawFrame(1.0, getData().colors.white);
             
             // Handle drag preparation
-            bool mouse_is_down = MouseL.pressed();
-            bool mouse_was_down = drag_state.mouse_was_down;
-            if (mouse_is_down && !mouse_was_down && rect.contains(Cursor::Pos()) && 
+            bool mouse_down_event = MouseL.down();
+            if (mouse_down_event && rect.contains(Cursor::Pos()) && 
                 !drag_state.is_dragging && drag_state.dragged_opening_index == -1 && drag_state.dragged_folder_name.isEmpty() &&
                 !(adding_elem || editing_elem || renaming_folder)) {
                 drag_state.dragged_opening_index = idx;
@@ -1244,12 +1242,12 @@ public:
             }
 
             if (overlay_noninteractive) {
-                rect.draw(ColorF(1.0, 1.0, 1.0, 0.45));
+                rect.draw(ColorF(0.0, 0.0, 0.0, 0.45));
                 return;
             }
 
             if (folder_locked) {
-                rect.draw(ColorF(1.0, 1.0, 1.0, 0.45));
+                rect.draw(ColorF(0.0, 0.0, 0.0, 0.45));
             }
         }
         
