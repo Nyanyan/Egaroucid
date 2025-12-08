@@ -62,6 +62,9 @@ class Opening_setting : public App::Scene {
         int editing_index;
         TextAreaEditState text_area[2];
         TextAreaEditState csv_name_area;
+    bool renaming_folder;
+    int renaming_folder_index;
+    TextAreaEditState folder_rename_area;
         
         // Drag and drop state for openings within CSV
         struct DragState {
@@ -103,6 +106,8 @@ class Opening_setting : public App::Scene {
             editing_elem = false;
             creating_csv = false;
             editing_index = -1;
+            renaming_folder = false;
+            renaming_folder_index = -1;
             enumerate_current_dir();
             load_openings();
         }
@@ -127,11 +132,19 @@ class Opening_setting : public App::Scene {
                     creating_csv = false;
                 }
                 
+                // Draw CSV name input area
+                int sy = OPENING_SETTING_SY + 8;
+                getData().fonts.font(language.get("in_out", "new_folder") + U":").draw(20, Arg::leftCenter(OPENING_SETTING_SX + OPENING_SETTING_LEFT_MARGIN + 8, sy + OPENING_SETTING_HEIGHT / 2), getData().colors.white);
+                SimpleGUI::TextArea(csv_name_area, Vec2{OPENING_SETTING_SX + OPENING_SETTING_LEFT_MARGIN + 150, sy + OPENING_SETTING_HEIGHT / 2 - 17}, SizeF{400, 30}, SimpleGUI::PreferredTextAreaMaxChars);
+                String sanitized = sanitize_folder_text(csv_name_area.text);
+                if (sanitized != csv_name_area.text) {
+                    size_t old_cursor = csv_name_area.cursorPos;
+                    csv_name_area.text = sanitized;
+                    csv_name_area.cursorPos = std::min(old_cursor, sanitized.size());
+                    csv_name_area.rebuildGlyphs();
+                }
                 String folder_name = csv_name_area.text.trimmed();
-                std::string folder_name_str = folder_name.narrow();
-                bool can_create = !folder_name_str.empty() && 
-                                 folder_name_str.find("/") == std::string::npos && 
-                                 folder_name_str.find("\\") == std::string::npos;
+                bool can_create = is_valid_folder_name(folder_name);
                 
                 if (can_create) {
                     create_csv_button.enable();
@@ -139,7 +152,7 @@ class Opening_setting : public App::Scene {
                     create_csv_button.disable();
                 }
                 create_csv_button.draw();
-                if (create_csv_button.clicked() || (can_create && KeyEnter.down())) {
+                if (create_csv_button.clicked()) {
                     if (create_new_folder(folder_name)) {
                         enumerate_current_dir();
                     }
@@ -149,11 +162,6 @@ class Opening_setting : public App::Scene {
                     csv_name_area.cursorPos = 0;
                     csv_name_area.rebuildGlyphs();
                 }
-                
-                // Draw CSV name input area
-                int sy = OPENING_SETTING_SY + 8;
-                getData().fonts.font(language.get("in_out", "new_folder") + U":").draw(20, Arg::leftCenter(OPENING_SETTING_SX + OPENING_SETTING_LEFT_MARGIN + 8, sy + OPENING_SETTING_HEIGHT / 2), getData().colors.white);
-                SimpleGUI::TextArea(csv_name_area, Vec2{OPENING_SETTING_SX + OPENING_SETTING_LEFT_MARGIN + 150, sy + OPENING_SETTING_HEIGHT / 2 - 17}, SizeF{400, 30}, SimpleGUI::PreferredTextAreaMaxChars);
                 
             } else if (adding_elem || editing_elem) {
                 back_button.draw();
@@ -210,6 +218,7 @@ class Opening_setting : public App::Scene {
                 add_button.draw();
                 if (can_add && add_button.clicked()) {
                     adding_elem = true;
+                    cancel_folder_rename();
                     for (int i = 0; i < 2; ++i) {
                         text_area[i].text = U"";
                         if (i == 1) {
@@ -229,6 +238,7 @@ class Opening_setting : public App::Scene {
                     csv_name_area.cursorPos = 0;
                     csv_name_area.rebuildGlyphs();
                     csv_name_area.active = true;
+                    cancel_folder_rename();
                 }
                 
                 ok_button.draw();
@@ -242,8 +252,12 @@ class Opening_setting : public App::Scene {
             }
             
             // Handle drag and drop for reordering openings within CSV
-            if (!adding_elem && !editing_elem && !creating_csv) {
+            if (!adding_elem && !editing_elem && !creating_csv && !renaming_folder) {
                 handle_drag_and_drop();
+            }
+
+            if (renaming_folder && KeyEscape.down()) {
+                cancel_folder_rename();
             }
             
             // Draw CSV files and openings list
@@ -330,6 +344,132 @@ class Opening_setting : public App::Scene {
                 return;
             }
             writer.write(enabled ? U"true" : U"false");
+        }
+        
+        bool is_forbidden_folder_char(char32 ch) const {
+            static constexpr char32 forbidden_chars[] = U"\\/:*?\"<>|";
+            if (ch < 0x20) {
+                return true;
+            }
+            for (char32 f : forbidden_chars) {
+                if (f == U'\0') {
+                    break;
+                }
+                if (ch == f) {
+                    return true;
+                }
+            }
+            return false;
+        }
+        
+        String sanitize_folder_text(const String& text) const {
+            String filtered;
+            filtered.reserve(text.size());
+            for (char32 ch : text) {
+                if (!is_forbidden_folder_char(ch)) {
+                    filtered.push_back(ch);
+                }
+            }
+            return filtered;
+        }
+        
+        bool is_valid_folder_name(const String& name) const {
+            String trimmed = name.trimmed();
+            if (trimmed.isEmpty()) {
+                return false;
+            }
+            if (trimmed == U"." || trimmed == U"..") {
+                return false;
+            }
+            return true;
+        }
+        
+        void begin_folder_rename(int idx) {
+            if (idx < 0 || idx >= (int)folders_display.size()) {
+                return;
+            }
+            renaming_folder = true;
+            renaming_folder_index = idx;
+            folder_rename_area.text = folders_display[idx].name;
+            folder_rename_area.cursorPos = folder_rename_area.text.size();
+            folder_rename_area.rebuildGlyphs();
+            folder_rename_area.active = true;
+        }
+        
+        void cancel_folder_rename() {
+            renaming_folder = false;
+            renaming_folder_index = -1;
+            folder_rename_area.text = U"";
+            folder_rename_area.cursorPos = 0;
+            folder_rename_area.rebuildGlyphs();
+            folder_rename_area.active = false;
+        }
+        
+        bool rename_folder_entry(int idx, const String& new_name) {
+            if (idx < 0 || idx >= (int)folders_display.size()) {
+                return false;
+            }
+            String trimmed = new_name.trimmed();
+            if (!is_valid_folder_name(trimmed)) {
+                return false;
+            }
+            String current_name = folders_display[idx].name;
+            if (trimmed == current_name) {
+                return true;
+            }
+            String parent_path = Unicode::Widen(getData().directories.document_dir) + U"/forced_openings/";
+            if (!subfolder.empty()) {
+                parent_path += Unicode::Widen(subfolder) + U"/";
+            }
+            String source_path = parent_path + current_name;
+            if (!FileSystem::Exists(source_path)) {
+                return false;
+            }
+            if (!move_folder(source_path, parent_path, trimmed)) {
+                return false;
+            }
+            return true;
+        }
+        
+        void confirm_folder_rename() {
+            if (!renaming_folder || renaming_folder_index < 0 || renaming_folder_index >= (int)folders_display.size()) {
+                return;
+            }
+            String sanitized = sanitize_folder_text(folder_rename_area.text);
+            if (sanitized != folder_rename_area.text) {
+                size_t old_cursor = folder_rename_area.cursorPos;
+                folder_rename_area.text = sanitized;
+                folder_rename_area.cursorPos = std::min(old_cursor, sanitized.size());
+                folder_rename_area.rebuildGlyphs();
+            }
+            String trimmed = folder_rename_area.text.trimmed();
+            if (!is_valid_folder_name(trimmed)) {
+                return;
+            }
+            if (rename_folder_entry(renaming_folder_index, trimmed)) {
+                cancel_folder_rename();
+                enumerate_current_dir();
+                load_openings();
+            }
+        }
+        
+        void handle_textarea_tab_navigation() {
+            for (int i = 0; i < 2; ++i) {
+                std::string str = text_area[i].text.narrow();
+                size_t tab_place = str.find('\t');
+                if (tab_place != std::string::npos) {
+                    text_area[i].active = false;
+                    text_area[(i + 1) % 2].active = true;
+                    std::string txt0 = str.substr(0, tab_place);
+                    std::string txt1 = str.substr(tab_place + 1);
+                    text_area[i].text = Unicode::Widen(txt0);
+                    text_area[i].cursorPos = text_area[i].text.size();
+                    text_area[i].rebuildGlyphs();
+                    text_area[(i + 1) % 2].text += Unicode::Widen(txt1);
+                    text_area[(i + 1) % 2].cursorPos = text_area[(i + 1) % 2].text.size();
+                    text_area[(i + 1) % 2].rebuildGlyphs();
+                }
+            }
         }
         
         // Get base directory for current forced_openings folder
@@ -528,6 +668,11 @@ class Opening_setting : public App::Scene {
         void enumerate_current_dir() {
             folders_display.clear();
             has_parent = !subfolder.empty();
+            renaming_folder = false;
+            renaming_folder_index = -1;
+            folder_rename_area.text = U"";
+            folder_rename_area.cursorPos = 0;
+            folder_rename_area.rebuildGlyphs();
             
             std::string base_dir = getData().directories.document_dir + "/forced_openings";
             std::vector<String> folders = enumerate_subdirectories_generic(base_dir, subfolder);
@@ -597,18 +742,25 @@ class Opening_setting : public App::Scene {
                 if (row_index >= strt_idx_int && row_index < strt_idx_int + OPENING_SETTING_N_GAMES_ON_WINDOW) {
                     int display_row = row_index - strt_idx_int;
                     int item_sy = sy + display_row * OPENING_SETTING_HEIGHT;
-                    Rect rect(OPENING_SETTING_SX, item_sy, OPENING_SETTING_WIDTH, OPENING_SETTING_HEIGHT);
-                    bool clicked_row = rect.leftClicked();
-                    int toggle_x = OPENING_SETTING_SX + OPENING_SETTING_WIDTH - 20;
-                    Circle toggle_circle(toggle_x, item_sy + OPENING_SETTING_HEIGHT / 2, 8);
-                    bool clicking_toggle = toggle_circle.contains(Cursor::Pos()) && MouseL.down();
-                    if (clicked_row && !clicking_toggle) {
-                        if (current_time - last_click_time < DOUBLE_CLICK_TIME_MS && last_clicked_folder == folders_display[i].name) {
-                            navigate_to_folder(folders_display[i].name);
-                            return;
+                    bool skip_navigation = renaming_folder && renaming_folder_index == i;
+                    if (!skip_navigation) {
+                        Rect rect(OPENING_SETTING_SX, item_sy, OPENING_SETTING_WIDTH, OPENING_SETTING_HEIGHT);
+                        bool clicked_row = rect.leftClicked();
+                        double checkbox_size = 18.0;
+                        double toggle_x = OPENING_SETTING_SX + OPENING_SETTING_WIDTH - 30;
+                        RectF toggle_rect(toggle_x, item_sy + (OPENING_SETTING_HEIGHT - checkbox_size) / 2.0, checkbox_size, checkbox_size);
+                        double rename_icon_size = 16.0;
+                        RectF rename_rect(toggle_rect.x - rename_icon_size - 10.0, item_sy + (OPENING_SETTING_HEIGHT - rename_icon_size) / 2.0, rename_icon_size, rename_icon_size);
+                        bool clicking_toggle = toggle_rect.contains(Cursor::Pos()) && MouseL.down();
+                        bool clicking_rename = rename_rect.contains(Cursor::Pos()) && MouseL.down();
+                        if (clicked_row && !clicking_toggle && !clicking_rename) {
+                            if (current_time - last_click_time < DOUBLE_CLICK_TIME_MS && last_clicked_folder == folders_display[i].name) {
+                                navigate_to_folder(folders_display[i].name);
+                                return;
+                            }
+                            last_click_time = current_time;
+                            last_clicked_folder = folders_display[i].name;
                         }
-                        last_click_time = current_time;
-                        last_clicked_folder = folders_display[i].name;
                     }
                 }
                 row_index++;
@@ -676,8 +828,8 @@ class Opening_setting : public App::Scene {
                 row_index++;
             }
             
-            // Draw input area for adding/editing
-            if (adding_elem || editing_elem) {
+            // Draw input area for adding
+            if (adding_elem) {
                 int input_row = row_index;
                 if (input_row >= strt_idx_int && input_row < strt_idx_int + OPENING_SETTING_N_GAMES_ON_WINDOW) {
                     int display_row = input_row - strt_idx_int;
@@ -733,24 +885,76 @@ class Opening_setting : public App::Scene {
                 folder_icon.scaled(icon_scale).draw(Arg::leftCenter(icon_x, sy + OPENING_SETTING_HEIGHT / 2), icon_color);
             }
             double text_offset = icon_x + (folder_icon ? folder_icon.width() * icon_scale + 10.0 : 0.0);
-            getData().fonts.font(entry.name).draw(18, Arg::leftCenter(text_offset, sy + OPENING_SETTING_HEIGHT / 2), text_color);
-            int toggle_x = OPENING_SETTING_SX + OPENING_SETTING_WIDTH - 20;
-            Circle toggle_circle(toggle_x, sy + OPENING_SETTING_HEIGHT / 2, 8);
-            bool toggle_hovered = toggle_circle.mouseOver();
-            Color toggle_color = is_enabled ? getData().colors.white : getData().colors.white.withAlpha(90);
-            if (is_enabled) {
-                toggle_circle.draw(toggle_color);
+            bool is_renaming_this = renaming_folder && renaming_folder_index == idx;
+            if (is_renaming_this) {
+                RectF input_rect(text_offset, sy + OPENING_SETTING_HEIGHT / 2 - 17, 280, 34);
+                input_rect.draw(ColorF(getData().colors.black, 0.2));
+                SimpleGUI::TextArea(folder_rename_area, Vec2{ input_rect.x, input_rect.y }, SizeF{ input_rect.w, input_rect.h }, SimpleGUI::PreferredTextAreaMaxChars);
+                String sanitized = sanitize_folder_text(folder_rename_area.text);
+                if (sanitized != folder_rename_area.text) {
+                    size_t old_cursor = folder_rename_area.cursorPos;
+                    folder_rename_area.text = sanitized;
+                    folder_rename_area.cursorPos = std::min(old_cursor, sanitized.size());
+                    folder_rename_area.rebuildGlyphs();
+                }
+                double button_width = 50;
+                double button_height = 26;
+                Rect ok_rect(input_rect.x + input_rect.w + 10, input_rect.y, button_width, button_height);
+                Rect cancel_rect(input_rect.x + input_rect.w + 10, input_rect.y + button_height + 4, button_width, button_height);
+                ok_rect.draw(ColorF(0.2, 0.5, 0.2)).drawFrame(1.0, getData().colors.white);
+                cancel_rect.draw(ColorF(0.5, 0.2, 0.2)).drawFrame(1.0, getData().colors.white);
+                getData().fonts.font(U"OK").draw(15, Arg::center(ok_rect.center()), getData().colors.white);
+                getData().fonts.font(U"×").draw(15, Arg::center(cancel_rect.center()), getData().colors.white);
+                if (ok_rect.leftClicked()) {
+                    confirm_folder_rename();
+                    return;
+                }
+                if (cancel_rect.leftClicked()) {
+                    cancel_folder_rename();
+                    return;
+                }
             } else {
-                toggle_circle.drawFrame(2.0, toggle_color);
+                getData().fonts.font(entry.name).draw(18, Arg::leftCenter(text_offset, sy + OPENING_SETTING_HEIGHT / 2), text_color);
             }
-            if (toggle_circle.leftClicked()) {
+            int toggle_x = OPENING_SETTING_SX + OPENING_SETTING_WIDTH - 30;
+            double checkbox_size = 18.0;
+            RectF toggle_rect(toggle_x, sy + (OPENING_SETTING_HEIGHT - checkbox_size) / 2.0, checkbox_size, checkbox_size);
+            bool toggle_hovered = toggle_rect.mouseOver();
+            const Texture& checked_tex = getData().resources.checkbox;
+            const Texture& unchecked_tex = getData().resources.unchecked;
+            const Texture& checkbox_tex = is_enabled ? checked_tex : unchecked_tex;
+            if (checkbox_tex) {
+                checkbox_tex.resized(checkbox_size).draw(toggle_rect.pos, is_enabled ? ColorF(1.0) : ColorF(1.0, 0.5));
+            } else {
+                if (is_enabled) {
+                    toggle_rect.draw(getData().colors.white);
+                } else {
+                    toggle_rect.drawFrame(2.0, getData().colors.white.withAlpha(90));
+                }
+            }
+            if (toggle_rect.leftClicked()) {
                 bool new_state = !entry.enabled;
                 folders_display[idx].enabled = new_state;
                 save_folder_enabled_state(entry.relative_path, new_state);
                 return;
             }
-            if (mouse_is_down && !mouse_was_down && rect.contains(Cursor::Pos()) && 
-                !drag_state.is_dragging && drag_state.dragged_opening_index == -1 && drag_state.dragged_folder_name.isEmpty() && !toggle_hovered) {
+            double rename_icon_size = 16.0;
+            double rename_x = toggle_rect.x - rename_icon_size - 10.0;
+            RectF rename_rect(rename_x, sy + (OPENING_SETTING_HEIGHT - rename_icon_size) / 2.0, rename_icon_size, rename_icon_size);
+            if (!is_renaming_this) {
+                const Texture& pencil_tex = getData().resources.pencil;
+                if (pencil_tex) {
+                    pencil_tex.resized(rename_icon_size).draw(rename_rect.pos, ColorF(1.0));
+                } else {
+                    rename_rect.draw(getData().colors.white);
+                }
+                if (rename_rect.leftClicked()) {
+                    begin_folder_rename(idx);
+                    return;
+                }
+            }
+            if (!is_renaming_this && mouse_is_down && !mouse_was_down && rect.contains(Cursor::Pos()) && 
+                !drag_state.is_dragging && drag_state.dragged_opening_index == -1 && drag_state.dragged_folder_name.isEmpty() && !toggle_hovered && !(rename_rect.mouseOver())) {
                 drag_state.dragged_folder_name = entry.name;
                 drag_state.drag_start_pos = Cursor::Pos();
             }
@@ -762,6 +966,7 @@ class Opening_setting : public App::Scene {
             Rect rect(OPENING_SETTING_SX, sy, OPENING_SETTING_WIDTH, OPENING_SETTING_HEIGHT);
             
             bool is_being_dragged = (drag_state.is_dragging_opening && drag_state.dragged_opening_index == idx);
+            bool is_editing_this = editing_elem && editing_index == idx;
             ColorF bg_color = row_index % 2 ? ColorF(getData().colors.dark_green) : ColorF(getData().colors.green);
             if (is_being_dragged) {
                 bg_color = ColorF(getData().colors.yellow);
@@ -777,7 +982,7 @@ class Opening_setting : public App::Scene {
             
             rect.draw(bg_color).drawFrame(1.0, getData().colors.white);
             
-            if (adding_elem || editing_elem) {
+            if (adding_elem || (editing_elem && !is_editing_this)) {
                 rect.draw(ColorF{1.0, 1.0, 1.0, 0.5});
             }
             
@@ -791,7 +996,7 @@ class Opening_setting : public App::Scene {
                 drag_state.drag_start_pos = Cursor::Pos();
             }
             
-            if (!(adding_elem || editing_elem)) {
+            if (!(adding_elem || (editing_elem && !is_editing_this))) {
                 // Delete button
                 delete_buttons[idx].move(OPENING_SETTING_SX + 1, sy + 1);
                 delete_buttons[idx].draw();
@@ -805,6 +1010,7 @@ class Opening_setting : public App::Scene {
                 edit_buttons[idx].draw();
                 if (edit_buttons[idx].clicked()) {
                     editing_elem = true;
+                    cancel_folder_rename();
                     editing_index = idx;
                     text_area[0].text = opening.transcript;
                     text_area[1].text = Format(opening.weight);
@@ -852,31 +1058,44 @@ class Opening_setting : public App::Scene {
                 }
                 
                 // Toggle enabled/disabled button
-                int toggle_x = OPENING_SETTING_SX + OPENING_SETTING_WIDTH - 20;
-                Circle toggle_circle(toggle_x, sy + OPENING_SETTING_HEIGHT / 2, 8);
-                Color toggle_color = opening.enabled ? getData().colors.white : getData().colors.white.withAlpha(90);
-                if (opening.enabled) {
-                    toggle_circle.draw(toggle_color);
+                int toggle_x = OPENING_SETTING_SX + OPENING_SETTING_WIDTH - 30;
+                double checkbox_size = 18.0;
+                RectF toggle_rect(toggle_x, sy + (OPENING_SETTING_HEIGHT - checkbox_size) / 2.0, checkbox_size, checkbox_size);
+                const Texture& checked_tex = getData().resources.checkbox;
+                const Texture& unchecked_tex = getData().resources.unchecked;
+                const Texture& checkbox_tex = opening.enabled ? checked_tex : unchecked_tex;
+                if (checkbox_tex) {
+                    checkbox_tex.resized(checkbox_size).draw(toggle_rect.pos, opening.enabled ? ColorF(1.0) : ColorF(1.0, 0.5));
                 } else {
-                    toggle_circle.drawFrame(2.0, toggle_color);
+                    if (opening.enabled) {
+                        toggle_rect.draw(getData().colors.white);
+                    } else {
+                        toggle_rect.drawFrame(2.0, getData().colors.white.withAlpha(90));
+                    }
                 }
-                if (toggle_circle.leftClicked()) {
+                if (toggle_rect.leftClicked()) {
                     openings[idx].enabled = !openings[idx].enabled;
                     save_openings();
                     return;
                 }
             }
             
-            // Draw transcript
-            String display_text = opening.transcript;
-            if (!opening.enabled) {
-                display_text = U"[OFF] " + display_text;
+            if (is_editing_this) {
+                double text_x = OPENING_SETTING_SX + OPENING_SETTING_LEFT_MARGIN + 78;
+                double text_y = sy + OPENING_SETTING_HEIGHT / 2 - 17;
+                SimpleGUI::TextArea(text_area[0], Vec2{ text_x, text_y }, SizeF{ 600, 30 }, SimpleGUI::PreferredTextAreaMaxChars);
+                double weight_label_anchor = OPENING_SETTING_SX + OPENING_SETTING_LEFT_MARGIN + OPENING_SETTING_WIDTH - 70;
+                getData().fonts.font(language.get("opening_setting", "weight") + U": ").draw(15, Arg::rightCenter(weight_label_anchor, sy + OPENING_SETTING_HEIGHT / 2), getData().colors.white);
+                SimpleGUI::TextArea(text_area[1], Vec2{ weight_label_anchor, text_y }, SizeF{ 60, 30 }, SimpleGUI::PreferredTextAreaMaxChars);
+                handle_textarea_tab_navigation();
+            } else {
+                // Draw transcript
+                getData().fonts.font(opening.transcript).draw(15, Arg::leftCenter(OPENING_SETTING_SX + OPENING_SETTING_LEFT_MARGIN + 78, sy + OPENING_SETTING_HEIGHT / 2), text_color);
+                
+                // Draw weight
+                getData().fonts.font(language.get("opening_setting", "weight") + U": ").draw(15, Arg::rightCenter(OPENING_SETTING_SX + OPENING_SETTING_LEFT_MARGIN + OPENING_SETTING_WIDTH - 90, sy + OPENING_SETTING_HEIGHT / 2), text_color);
+                getData().fonts.font(Format(std::round(opening.weight))).draw(15, Arg::leftCenter(OPENING_SETTING_SX + OPENING_SETTING_LEFT_MARGIN + OPENING_SETTING_WIDTH - 90, sy + OPENING_SETTING_HEIGHT / 2), text_color);
             }
-            getData().fonts.font(display_text).draw(15, Arg::leftCenter(OPENING_SETTING_SX + OPENING_SETTING_LEFT_MARGIN + 78, sy + OPENING_SETTING_HEIGHT / 2), text_color);
-            
-            // Draw weight
-            getData().fonts.font(language.get("opening_setting", "weight") + U": ").draw(15, Arg::rightCenter(OPENING_SETTING_SX + OPENING_SETTING_LEFT_MARGIN + OPENING_SETTING_WIDTH - 90, sy + OPENING_SETTING_HEIGHT / 2), text_color);
-            getData().fonts.font(Format(std::round(opening.weight))).draw(15, Arg::leftCenter(OPENING_SETTING_SX + OPENING_SETTING_LEFT_MARGIN + OPENING_SETTING_WIDTH - 90, sy + OPENING_SETTING_HEIGHT / 2), text_color);
         }
         
         // Draw input area for adding/editing
@@ -891,29 +1110,7 @@ class Opening_setting : public App::Scene {
             SimpleGUI::TextArea(text_area[0], Vec2{OPENING_SETTING_SX + OPENING_SETTING_LEFT_MARGIN + 8, sy + OPENING_SETTING_HEIGHT / 2 - 17}, SizeF{600, 30}, SimpleGUI::PreferredTextAreaMaxChars);
             getData().fonts.font(language.get("opening_setting", "weight") + U": ").draw(15, Arg::rightCenter(OPENING_SETTING_SX + OPENING_SETTING_LEFT_MARGIN + OPENING_SETTING_WIDTH - 70, sy + OPENING_SETTING_HEIGHT / 2), getData().colors.white);
             SimpleGUI::TextArea(text_area[1], Vec2{OPENING_SETTING_SX + OPENING_SETTING_LEFT_MARGIN + OPENING_SETTING_WIDTH - 70, sy + OPENING_SETTING_HEIGHT / 2 - 17}, SizeF{60, 30}, SimpleGUI::PreferredTextAreaMaxChars);
-            
-            for (int i = 0; i < 2; ++i) {
-                std::string str = text_area[i].text.narrow();
-                if (str.find("\t") != std::string::npos) {
-                    text_area[i].active = false;
-                    text_area[(i + 1) % 2].active = true;
-                    int tab_place = str.find("\t");
-                    std::string txt0;
-                    for (int j = 0; j < tab_place; ++j) {
-                        txt0 += str[j];
-                    }
-                    std::string txt1;
-                    for (int j = tab_place + 1; j < (int)str.size(); ++j) {
-                        txt1 += str[j];
-                    }
-                    text_area[i].text = Unicode::Widen(txt0);
-                    text_area[i].cursorPos = text_area[i].text.size();
-                    text_area[i].rebuildGlyphs();
-                    text_area[(i + 1) % 2].text += Unicode::Widen(txt1);
-                    text_area[(i + 1) % 2].cursorPos = text_area[(i + 1) % 2].text.size();
-                    text_area[(i + 1) % 2].rebuildGlyphs();
-                }
-            }
+            handle_textarea_tab_navigation();
         }
         
         // Draw dragged item
@@ -936,11 +1133,7 @@ class Opening_setting : public App::Scene {
                 getData().fonts.font(drag_state.dragged_folder_name).draw(18, Arg::leftCenter(text_offset, draw_pos.y + OPENING_SETTING_HEIGHT / 2), getData().colors.black);
             } else if (drag_state.is_dragging_opening && drag_state.dragged_opening_index >= 0 && drag_state.dragged_opening_index < (int)openings.size()) {
                 const auto& opening = openings[drag_state.dragged_opening_index];
-                String display_text = opening.transcript;
-                if (!opening.enabled) {
-                    display_text = U"[OFF] " + display_text;
-                }
-                getData().fonts.font(display_text).draw(15, Arg::leftCenter(draw_pos.x + OPENING_SETTING_LEFT_MARGIN + 8, draw_pos.y + OPENING_SETTING_HEIGHT / 2), getData().colors.black);
+                getData().fonts.font(opening.transcript).draw(15, Arg::leftCenter(draw_pos.x + OPENING_SETTING_LEFT_MARGIN + 8, draw_pos.y + OPENING_SETTING_HEIGHT / 2), getData().colors.black);
             }
         }
         
