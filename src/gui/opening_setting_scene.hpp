@@ -780,7 +780,7 @@ public:
             }
             
             if (strt_idx_int + OPENING_SETTING_N_GAMES_ON_WINDOW < total_items + (adding_elem || editing_elem ? 1 : 0)) {
-                getData().fonts.font(U"︙").draw(15, Arg::bottomCenter = Vec2{ X_CENTER, 415}, getData().colors.white);
+                getData().fonts.font(U"︙").draw(15, Arg::topCenter = Vec2{ X_CENTER, OPENING_SETTING_SY + OPENING_SETTING_HEIGHT * OPENING_SETTING_N_GAMES_ON_WINDOW + 16}, getData().colors.white);
             }
         }
         
