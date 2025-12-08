@@ -668,8 +668,11 @@ inline ExplorerDrawResult draw_explorer_list_items(
     }
     
     if (show_reorder_line) {
-        RectF line_rect(list_geom.list_left + 4.0, reorder_line_y - 2.0, list_geom.list_width - 8.0, 4.0);
-        line_rect.draw(colors.yellow.withAlpha(0.85));
+        Line line_segment{
+            Vec2{ list_geom.list_left + 5.0, reorder_line_y },
+            Vec2{ list_geom.list_left + list_geom.list_width - 5.0, reorder_line_y }
+        };
+        line_segment.draw(4.0, colors.yellow);
     }
 
     if (strt_idx_int + n_games_on_window < total_rows) {

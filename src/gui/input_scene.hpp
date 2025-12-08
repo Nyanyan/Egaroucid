@@ -403,7 +403,18 @@ public:
         } else {
             ExplorerFolderInlineConfig inline_cfg{};
             inline_cfg.renaming = renaming_folder;
-            inline_cfg.folder_index = -1;
+            inline_cfg.folder_index = renaming_folder ? renaming_folder_index : -1;
+            if (renaming_folder && renaming_folder_index >= 0) {
+                inline_cfg.text_area = &folder_rename_area;
+                inline_cfg.back_button = &inline_edit_back_button;
+                inline_cfg.ok_button = &inline_edit_ok_button;
+                inline_cfg.on_cancel = [this]() {
+                    cancel_folder_rename();
+                };
+                inline_cfg.on_commit = [this](const String& trimmed) {
+                    return confirm_folder_rename(trimmed);
+                };
+            }
             const ExplorerFolderInlineConfig* inline_ptr = &inline_cfg;
             auto res = DrawExplorerList(
                 folders_display, games, delete_buttons, scroll_manager, up_button,
@@ -442,9 +453,6 @@ public:
                 handle_drop(res);
             } else if (res.reorderRequested) {
                 handle_reorder(res);
-            }
-            if (renaming_folder) {
-                draw_folder_rename_inline_ui();
             }
         }
     }
@@ -848,7 +856,12 @@ private:
             cancel_folder_rename();
             return true;
         }
-        bool renamed = gui_list::rename_folder_in_directory(get_base_dir(), current_name, trimmed);
+        String base_dir = get_base_dir();
+        bool renamed = gui_list::rename_folder_in_directory(base_dir, current_name, trimmed);
+        if (!renamed) {
+            std::cerr << "rename_folder_in_directory failed: base='" << base_dir.narrow()
+                      << "' current='" << current_name.narrow() << "' target='" << trimmed.narrow() << "'" << std::endl;
+        }
         if (renamed) {
             cancel_folder_rename();
             enumerate_current_dir();
@@ -857,65 +870,6 @@ private:
         return renamed;
     }
 
-    void draw_folder_rename_inline_ui() {
-        if (!renaming_folder || renaming_folder_index < 0 || renaming_folder_index >= (int)folders_display.size()) {
-            cancel_folder_rename();
-            return;
-        }
-
-        int parent_offset = explorer_state.has_parent() ? 1 : 0;
-        int row_index = parent_offset + renaming_folder_index;
-        int strt_idx = scroll_manager.get_strt_idx_int();
-        if (row_index < strt_idx || row_index >= strt_idx + IMPORT_GAME_N_GAMES_ON_WINDOW) {
-            return;
-        }
-
-        int local_row = row_index - strt_idx;
-        int sy = IMPORT_GAME_SY + 8 + local_row * IMPORT_GAME_HEIGHT;
-        Rect row_rect(IMPORT_GAME_SX, sy, IMPORT_GAME_WIDTH, IMPORT_GAME_HEIGHT);
-        row_rect.draw(ColorF(0, 0, 0, 0.45));
-
-        double text_x = IMPORT_GAME_SX + IMPORT_GAME_LEFT_MARGIN + 10 + 30;
-        gui_list::InlineEditLayout layout = gui_list::compute_inline_edit_layout({
-            .row_y = static_cast<double>(row_rect.y),
-            .row_height = static_cast<double>(row_rect.h),
-            .list_left = static_cast<double>(row_rect.x),
-            .list_width = static_cast<double>(row_rect.w),
-            .left_margin = static_cast<double>(text_x - row_rect.x),
-            .control_margin = 10.0,
-            .field_height = 30.0,
-            .secondary_width = 70.0,
-            .back_button_width = static_cast<double>(inline_edit_back_button.rect.w),
-            .back_button_height = static_cast<double>(inline_edit_back_button.rect.h),
-            .ok_button_width = static_cast<double>(inline_edit_ok_button.rect.w),
-        });
-
-        if (SimpleGUI::TextArea(folder_rename_area, Vec2{ layout.primary_x, layout.text_y }, SizeF{ layout.primary_width, layout.field_height }, SimpleGUI::PreferredTextAreaMaxChars)) {
-            gui_list::sanitize_text_area(folder_rename_area);
-        }
-
-        inline_edit_back_button.move((int)layout.back_x, (int)layout.buttons_y);
-        inline_edit_back_button.enable();
-        inline_edit_back_button.draw();
-        if (inline_edit_back_button.clicked()) {
-            cancel_folder_rename();
-            return;
-        }
-
-        String trimmed = folder_rename_area.text.trimmed();
-        bool can_commit = gui_list::is_valid_folder_name(trimmed);
-        inline_edit_ok_button.move((int)layout.ok_x, (int)layout.buttons_y);
-        if (can_commit) {
-            inline_edit_ok_button.enable();
-        } else {
-            inline_edit_ok_button.disable();
-        }
-        inline_edit_ok_button.draw();
-        if (can_commit && inline_edit_ok_button.clicked()) {
-            confirm_folder_rename(trimmed);
-        }
-    }
-    
     // Handle drag and drop operations
     void handle_drop(const ExplorerDrawResult& res) {
         if (res.drop_on_parent) {

@@ -272,7 +272,14 @@ bool move_folder(const String& source_path, const String& target_parent_path, co
     // Check for circular reference
     String source_abs = FileSystem::FullPath(full_source);
     String target_abs = FileSystem::FullPath(full_target);
-    if (target_abs.starts_with(source_abs)) {
+    auto ensure_trailing_separator = [](String path) {
+        if (!path.ends_with(U"/") && !path.ends_with(U"\\")) {
+            path += U"/";
+        }
+        return path;
+    };
+    String source_abs_with_sep = ensure_trailing_separator(source_abs);
+    if (target_abs.starts_with(source_abs_with_sep)) {
         std::cerr << "Cannot move folder into its own subdirectory" << std::endl;
         return false;
     }
