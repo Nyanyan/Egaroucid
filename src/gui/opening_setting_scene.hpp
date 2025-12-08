@@ -68,6 +68,7 @@ private:
     bool renaming_folder;
     int renaming_folder_index;
     TextAreaEditState folder_rename_area;
+    bool current_folder_effective_enabled;
 
     struct InlineEditLayout {
         double transcript_x;
@@ -169,6 +170,7 @@ public:
         editing_index = -1;
         renaming_folder = false;
         renaming_folder_index = -1;
+        current_folder_effective_enabled = true;
         enumerate_current_dir();
         load_openings();
     }
@@ -188,6 +190,7 @@ public:
             
             bool enter_pressed = KeyEnter.down();
             bool rename_textbox_active = renaming_folder && folder_rename_area.active;
+            bool folder_locked = is_current_folder_locked();
 
             // Handle CSV creation mode
             if (creating_csv) {
@@ -248,7 +251,7 @@ public:
                 }
             } else {
                 // Normal mode
-                bool bottom_locked = is_locking_bottom_buttons();
+                bool bottom_locked = is_locking_bottom_buttons() || folder_locked;
                 if (!bottom_locked) {
                     add_button.enable();
                     add_button.draw();
@@ -293,8 +296,10 @@ public:
             }
             
             // Handle drag and drop for reordering openings within CSV
-            if (!adding_elem && !editing_elem && !creating_csv && !renaming_folder) {
+            if (!adding_elem && !editing_elem && !creating_csv && !renaming_folder && !folder_locked) {
                 handle_drag_and_drop();
+            } else if (folder_locked) {
+                drag_state.reset();
             }
 
             if (renaming_folder && KeyEscape.down()) {
@@ -388,6 +393,44 @@ public:
                 return;
             }
             writer.write(enabled ? U"true" : U"false");
+        }
+
+        bool is_current_folder_locked() const {
+            return !current_folder_effective_enabled;
+        }
+
+        void refresh_current_folder_effective_state() {
+            current_folder_effective_enabled = is_folder_effectively_enabled(subfolder);
+        }
+
+        bool is_folder_effectively_enabled(const std::string& relative_path) const {
+            if (relative_path.empty()) {
+                return true;
+            }
+            std::string prefix;
+            prefix.reserve(relative_path.size());
+            size_t start = 0;
+            while (start < relative_path.size()) {
+                if (!prefix.empty()) {
+                    prefix.push_back('/');
+                }
+                size_t slash = relative_path.find('/', start);
+                size_t len = (slash == std::string::npos ? relative_path.size() : slash) - start;
+                prefix.append(relative_path, start, len);
+                if (!prefix.empty() && !load_folder_enabled_state(prefix)) {
+                    return false;
+                }
+                if (slash == std::string::npos) {
+                    break;
+                }
+                start = slash + 1;
+            }
+            return true;
+        }
+
+        void refresh_directory_views() {
+            enumerate_current_dir();
+            load_openings();
         }
         
         bool is_forbidden_folder_char(char32 ch) const {
@@ -566,6 +609,7 @@ public:
         
         // Load openings from current folder's summary.csv
         void load_openings() {
+            refresh_current_folder_effective_state();
             openings.clear();
             delete_buttons.clear();
             edit_buttons.clear();
@@ -809,7 +853,7 @@ public:
                     int display_row = row_index - strt_idx_int;
                     int item_sy = sy + display_row * OPENING_SETTING_HEIGHT;
                     bool skip_navigation = renaming_folder && renaming_folder_index == i;
-                    if (!skip_navigation) {
+                    if (!skip_navigation && !is_current_folder_locked()) {
                         Rect rect(OPENING_SETTING_SX, item_sy, OPENING_SETTING_WIDTH, OPENING_SETTING_HEIGHT);
                         bool clicked_row = rect.leftClicked();
                         double checkbox_size = 18.0;
@@ -923,6 +967,9 @@ public:
             }
             double text_offset = icon_x + (folder_icon ? folder_icon.width() * icon_scale + 10.0 : 0.0);
             getData().fonts.font(U"..").draw(20, Arg::leftCenter(text_offset, sy + OPENING_SETTING_HEIGHT / 2), getData().colors.white);
+            if (drag_state.is_dragging && rect.contains(drag_state.current_mouse_pos)) {
+                rect.drawFrame(3.0, ColorF(getData().colors.yellow));
+            }
             if (editing_elem || renaming_folder) {
                 rect.draw(ColorF(1.0, 1.0, 1.0, 0.35));
             }
@@ -933,6 +980,7 @@ public:
             Rect rect(OPENING_SETTING_SX, sy, OPENING_SETTING_WIDTH, OPENING_SETTING_HEIGHT);
             bool is_being_dragged = (drag_state.is_dragging_folder && drag_state.dragged_folder_name == entry.name);
             bool is_enabled = entry.enabled;
+            bool folder_locked = is_current_folder_locked();
             ColorF bg_color = idx % 2 ? ColorF(getData().colors.dark_green) : ColorF(getData().colors.green);
             if (is_being_dragged) {
                 bg_color = ColorF(getData().colors.yellow);
@@ -941,11 +989,20 @@ public:
             if (!is_enabled) {
                 bg_color = ColorF(0.25, 0.25, 0.25, 0.85);
             }
+            if (folder_locked) {
+                bg_color = ColorF(0.18, 0.18, 0.18, 0.85);
+            }
             Color text_color = is_being_dragged ? getData().colors.white.withAlpha(128) : getData().colors.white;
             if (!is_enabled) {
                 text_color = getData().colors.white.withAlpha(100);
             }
+            if (folder_locked) {
+                text_color = getData().colors.white.withAlpha(80);
+            }
             rect.draw(bg_color).drawFrame(1.0, getData().colors.white);
+            if (drag_state.is_dragging_opening && drag_state.is_dragging && !drag_state.is_dragging_folder && rect.contains(drag_state.current_mouse_pos) && !folder_locked && !editing_elem && !renaming_folder) {
+                rect.drawFrame(3.0, ColorF(getData().colors.yellow));
+            }
             bool mouse_is_down = MouseL.pressed();
             bool mouse_was_down = drag_state.mouse_was_down;
             const Texture& folder_icon = getData().resources.folder;
@@ -981,8 +1038,9 @@ public:
                 return;
             } else {
                 getData().fonts.font(entry.name).draw(18, Arg::leftCenter(text_offset, sy + OPENING_SETTING_HEIGHT / 2), text_color);
-                if (editing_elem || renaming_folder) {
-                    rect.draw(ColorF(1.0, 1.0, 1.0, 0.35));
+                if (editing_elem || renaming_folder || folder_locked) {
+                    ColorF overlay = folder_locked ? ColorF(0.0, 0.0, 0.0, 0.45) : ColorF(1.0, 1.0, 1.0, 0.35);
+                    rect.draw(overlay);
                     return;
                 }
             }
@@ -1037,7 +1095,8 @@ public:
             
             bool is_being_dragged = (drag_state.is_dragging_opening && drag_state.dragged_opening_index == idx);
             bool is_editing_this = editing_elem && editing_index == idx;
-            bool overlay_noninteractive = adding_elem || renaming_folder || (editing_elem && !is_editing_this);
+            bool folder_locked = is_current_folder_locked();
+            bool overlay_noninteractive = adding_elem || renaming_folder || (editing_elem && !is_editing_this) || folder_locked;
             ColorF bg_color = row_index % 2 ? ColorF(getData().colors.dark_green) : ColorF(getData().colors.green);
             if (is_being_dragged) {
                 bg_color = ColorF(getData().colors.yellow);
@@ -1046,9 +1105,15 @@ public:
             if (!opening.enabled) {
                 bg_color = ColorF(0.2, 0.2, 0.2, 0.85);
             }
+            if (folder_locked) {
+                bg_color = ColorF(0.18, 0.18, 0.18, 0.85);
+            }
             Color text_color = is_being_dragged ? getData().colors.white.withAlpha(128) : getData().colors.white;
             if (!opening.enabled) {
                 text_color = getData().colors.white.withAlpha(100);
+            }
+            if (folder_locked) {
+                text_color = getData().colors.white.withAlpha(80);
             }
             
             rect.draw(bg_color).drawFrame(1.0, getData().colors.white);
@@ -1058,12 +1123,12 @@ public:
             bool mouse_was_down = drag_state.mouse_was_down;
             if (mouse_is_down && !mouse_was_down && rect.contains(Cursor::Pos()) && 
                 !drag_state.is_dragging && drag_state.dragged_opening_index == -1 && drag_state.dragged_folder_name.isEmpty() &&
-                !(adding_elem || editing_elem || renaming_folder)) {
+                !(adding_elem || editing_elem || renaming_folder) && !folder_locked) {
                 drag_state.dragged_opening_index = idx;
                 drag_state.drag_start_pos = Cursor::Pos();
             }
             
-            if (!(adding_elem || editing_elem || renaming_folder)) {
+            if (!(adding_elem || editing_elem || renaming_folder || folder_locked)) {
                 // Delete button
                 delete_buttons[idx].move(OPENING_SETTING_SX + 1, sy + 1);
                 delete_buttons[idx].draw();
@@ -1153,7 +1218,7 @@ public:
                 }
             }
             
-            if (is_editing_this) {
+            if (is_editing_this && !folder_locked) {
                 InlineEditLayout layout = get_inline_edit_layout(sy);
                 SimpleGUI::TextArea(text_area[0], Vec2{ layout.transcript_x, layout.text_y }, SizeF{ layout.transcript_width, layout.field_height }, SimpleGUI::PreferredTextAreaMaxChars);
                 SimpleGUI::TextArea(text_area[1], Vec2{ layout.secondary_x, layout.text_y }, SizeF{ layout.secondary_width, layout.field_height }, SimpleGUI::PreferredTextAreaMaxChars);
@@ -1183,8 +1248,17 @@ public:
                 getData().fonts.font(Format(std::round(opening.weight))).draw(15, Arg::leftCenter(OPENING_SETTING_SX + OPENING_SETTING_LEFT_MARGIN + OPENING_SETTING_WIDTH - 90, sy + OPENING_SETTING_HEIGHT / 2), text_color);
             }
 
+            if (drag_state.is_dragging_opening && drag_state.is_dragging && rect.contains(drag_state.current_mouse_pos) && !folder_locked && !drag_state.is_dragging_folder) {
+                double mid_y = sy + OPENING_SETTING_HEIGHT / 2.0;
+                bool draw_top = (drag_state.current_mouse_pos.y < mid_y);
+                double line_y = draw_top ? sy + 2.0 : sy + OPENING_SETTING_HEIGHT - 2.0;
+                Line line_segment{ Vec2{ OPENING_SETTING_SX + 5.0, line_y }, Vec2{ OPENING_SETTING_SX + OPENING_SETTING_WIDTH - 5.0, line_y } };
+                line_segment.draw(4.0, ColorF(getData().colors.yellow));
+            }
+
             if (overlay_noninteractive) {
-                rect.draw(ColorF(1.0, 1.0, 1.0, 0.5));
+                ColorF overlay = folder_locked ? ColorF(0.0, 0.0, 0.0, 0.45) : ColorF(1.0, 1.0, 1.0, 0.5);
+                rect.draw(overlay);
             }
         }
         
@@ -1279,6 +1353,13 @@ public:
             bool mouse_is_down = MouseL.pressed();
             bool mouse_just_released = !mouse_is_down && drag_state.mouse_was_down;
             drag_state.mouse_was_down = mouse_is_down;
+
+            if (is_current_folder_locked()) {
+                if (mouse_just_released) {
+                    drag_state.reset();
+                }
+                return;
+            }
             
             if (drag_state.is_dragging && mouse_just_released) {
                 int sy = OPENING_SETTING_SY + 8;
@@ -1430,6 +1511,7 @@ public:
             
             // Remove from current folder
             delete_opening(opening_index);
+            refresh_directory_views();
             
             std::cerr << "Moved opening to " << target_folder << std::endl;
         }
@@ -1489,6 +1571,7 @@ public:
             
             // Remove from current folder
             delete_opening(opening_index);
+            refresh_directory_views();
             
             std::cerr << "Moved opening to " << target_folder << std::endl;
         }
