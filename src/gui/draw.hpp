@@ -255,13 +255,15 @@ struct ExplorerDrawResult {
     bool upButtonClicked = false;
     bool parentFolderDoubleClicked = false;  // New: parent folder navigation
     
-    // Drag and drop functionality
-    bool drag_started = false;
     bool drop_completed = false;
+    bool drag_started = false;
     int dragged_game_index = -1;
     String dragged_folder_name;
     String drop_target_folder;
     bool is_dragging_game = false;
+    bool reorderRequested = false;
+    int reorderFrom = -1;
+    int reorderTo = -1;
     bool is_dragging_folder = false;
     bool drop_on_parent = false;  // New: drop on parent folder
 };
@@ -322,7 +324,9 @@ inline ExplorerDrawResult handle_drag_drop(
     Scroll_manager& scroll_manager,
     int item_height,
     int n_games_on_window,
-    bool has_parent
+    bool has_parent,
+    int games_count,
+    const gui_list::VerticalListGeometry& geom
 ) {
     ExplorerDrawResult res;
     
@@ -396,6 +400,23 @@ inline ExplorerDrawResult handle_drag_drop(
             res.is_dragging_folder = drag_state.is_dragging_folder;
             res.dragged_game_index = drag_state.dragged_game_index;
             res.dragged_folder_name = drag_state.dragged_folder_name;
+        } else if (drag_state.is_dragging_game && games_count > 0) {
+            int first_item_row = (has_parent ? 1 : 0) + static_cast<int>(folders_display.size());
+            int drop_index = gui_list::compute_drop_index_for_items(
+                drag_state.current_mouse_pos,
+                geom,
+                scroll_manager.get_strt_idx_int(),
+                first_item_row,
+                games_count
+            );
+            if (drop_index >= 0 && drag_state.dragged_game_index >= 0) {
+                res.reorderRequested = true;
+                res.is_dragging_game = true;
+                res.dragged_game_index = drag_state.dragged_game_index;
+                res.reorderFrom = drag_state.dragged_game_index;
+                res.reorderTo = drop_index;
+                std::cerr << "Reordering game " << drag_state.dragged_game_index << " -> " << drop_index << std::endl;
+            }
         }
         
         // Reset drag state
@@ -468,10 +489,17 @@ inline ExplorerDrawResult DrawExplorerList(
     // Update mouse state and handle drag operations
     update_mouse_state_and_drag_start(drag_state, res);
     
+    gui_list::VerticalListGeometry list_geom;
+    list_geom.list_left = IMPORT_GAME_SX;
+    list_geom.list_top = IMPORT_GAME_SY + 8;
+    list_geom.list_width = IMPORT_GAME_WIDTH;
+    list_geom.row_height = item_height;
+    list_geom.visible_row_count = n_games_on_window;
     // Handle drag drop detection
     ExplorerDrawResult drag_result = handle_drag_drop<FontsT, ColorsT, ResourcesT, LanguageT>(
-        drag_state, folders_display, scroll_manager, item_height, n_games_on_window, has_parent);
-    if (drag_result.drop_completed) {
+        drag_state, folders_display, scroll_manager, item_height, n_games_on_window, has_parent,
+        static_cast<int>(games.size()), list_geom);
+    if (drag_result.drop_completed || drag_result.reorderRequested) {
         return drag_result;
     }
     

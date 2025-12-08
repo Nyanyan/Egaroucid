@@ -701,34 +701,9 @@ public:
         }
         
         void reorder_opening_within_current(int from_idx, int insert_idx) {
-            if (from_idx < 0 || from_idx >= (int)openings.size()) {
-                return;
+            if (gui_list::reorder_parallel(openings, from_idx, insert_idx, delete_buttons, edit_buttons, toggle_buttons)) {
+                save_openings();
             }
-            if (insert_idx < 0) {
-                insert_idx = 0;
-            }
-            if (insert_idx > (int)openings.size()) {
-                insert_idx = (int)openings.size();
-            }
-            if (insert_idx == from_idx) {
-                return;
-            }
-            auto opening = openings[from_idx];
-            auto del_btn = delete_buttons[from_idx];
-            auto edit_btn = edit_buttons[from_idx];
-            auto toggle_btn = toggle_buttons[from_idx];
-            openings.erase(openings.begin() + from_idx);
-            delete_buttons.erase(delete_buttons.begin() + from_idx);
-            edit_buttons.erase(edit_buttons.begin() + from_idx);
-            toggle_buttons.erase(toggle_buttons.begin() + from_idx);
-            if (insert_idx > from_idx) {
-                insert_idx -= 1;
-            }
-            openings.insert(openings.begin() + insert_idx, opening);
-            delete_buttons.insert(delete_buttons.begin() + insert_idx, del_btn);
-            edit_buttons.insert(edit_buttons.begin() + insert_idx, edit_btn);
-            toggle_buttons.insert(toggle_buttons.begin() + insert_idx, toggle_btn);
-            save_openings();
         }
         
         // Enumerate current directory
@@ -1342,33 +1317,21 @@ public:
         }
         
     int get_drop_index_for_opening(const Vec2& drop_pos) {
-            int sy = OPENING_SETTING_SY + 8;
-            int strt_idx_int = scroll_manager.get_strt_idx_int();
-            int parent_offset = has_parent ? 1 : 0;
-            int row_index = parent_offset + (int)folders_display.size();
-            for (int i = 0; i < (int)openings.size(); ++i) {
-                if (row_index >= strt_idx_int && row_index < strt_idx_int + OPENING_SETTING_N_GAMES_ON_WINDOW) {
-                    int item_sy = sy + (row_index - strt_idx_int) * OPENING_SETTING_HEIGHT;
-                    Rect rect(OPENING_SETTING_SX, item_sy, OPENING_SETTING_WIDTH, OPENING_SETTING_HEIGHT);
-                    if (rect.contains(drop_pos)) {
-                        double mid_y = item_sy + OPENING_SETTING_HEIGHT / 2.0;
-                        if (drop_pos.y < mid_y) {
-                            return i;
-                        } else {
-                            return std::min(i + 1, (int)openings.size());
-                        }
-                    }
-                }
-                row_index++;
-            }
-            double list_left = OPENING_SETTING_SX;
-            double list_right = OPENING_SETTING_SX + OPENING_SETTING_WIDTH;
-            double list_top = sy;
-            double list_bottom = sy + OPENING_SETTING_N_GAMES_ON_WINDOW * OPENING_SETTING_HEIGHT;
-            if (drop_pos.x >= list_left && drop_pos.x <= list_right && drop_pos.y >= list_top && drop_pos.y <= list_bottom) {
-                return (int)openings.size();
-            }
-            return -1;
+            gui_list::VerticalListGeometry geom;
+            geom.list_left = OPENING_SETTING_SX;
+            geom.list_top = OPENING_SETTING_SY + 8;
+            geom.list_width = OPENING_SETTING_WIDTH;
+            geom.row_height = OPENING_SETTING_HEIGHT;
+            geom.visible_row_count = OPENING_SETTING_N_GAMES_ON_WINDOW;
+
+            int first_visible_row = scroll_manager.get_strt_idx_int();
+            int first_item_row = (has_parent ? 1 : 0) + static_cast<int>(folders_display.size());
+            return gui_list::compute_drop_index_for_items(
+                drop_pos,
+                geom,
+                first_visible_row,
+                first_item_row,
+                static_cast<int>(openings.size()));
         }
         
         // Move opening to a different folder (relative to current subfolder)

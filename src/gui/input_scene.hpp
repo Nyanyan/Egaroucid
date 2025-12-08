@@ -11,6 +11,7 @@
 #pragma once
 #include <iostream>
 #include <future>
+#include <algorithm>
 #include "./../engine/engine_all.hpp"
 #include "function/function_all.hpp"
 #include "draw.hpp"
@@ -384,6 +385,8 @@ public:
             }
             if (res.drop_completed) {
                 handle_drop(res);
+            } else if (res.reorderRequested) {
+                handle_reorder(res);
             }
         }
     }
@@ -635,6 +638,21 @@ private:
                 move_folder_to_folder(res.dragged_folder_name.narrow(), res.drop_target_folder.narrow());
             }
         }
+    }
+
+    void handle_reorder(const ExplorerDrawResult& res) {
+        if (!res.reorderRequested || !res.is_dragging_game) {
+            return;
+        }
+        if (res.reorderFrom < 0 || res.reorderFrom >= (int)games.size()) {
+            return;
+        }
+        int insert_idx = std::clamp(res.reorderTo, 0, (int)games.size());
+        bool changed = gui_list::reorder_parallel(games, res.reorderFrom, insert_idx, import_buttons, delete_buttons);
+        if (!changed) {
+            return;
+        }
+        persist_games_order_to_csv();
     }
     
     // Move a game to a different folder (relative to current subfolder)
@@ -936,6 +954,22 @@ private:
         new_csv.newLine();
         
         new_csv.save(target_csv);
+    }
+
+    void persist_games_order_to_csv() {
+        const String csv_path = get_base_dir() + U"summary.csv";
+        CSV new_csv;
+        for (int i = (int)games.size() - 1; i >= 0; --i) {
+            const auto& game = games[i];
+            new_csv.write(game.date);
+            new_csv.write(game.black_player);
+            new_csv.write(game.white_player);
+            new_csv.write(game.memo);
+            new_csv.write(game.black_score == GAME_DISCS_UNDEFINED ? U"" : ToString(game.black_score));
+            new_csv.write(game.white_score == GAME_DISCS_UNDEFINED ? U"" : ToString(game.white_score));
+            new_csv.newLine();
+        }
+        new_csv.save(csv_path);
     }
 };
 
