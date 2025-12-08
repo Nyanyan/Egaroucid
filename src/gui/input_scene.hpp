@@ -370,21 +370,6 @@ public:
             return;
         }
 
-        if (renaming_folder) {
-            gui_list::sanitize_text_area(folder_rename_area);
-            if (escape_pressed) {
-                cancel_folder_rename();
-                escape_pressed = false;
-            } else if (folder_rename_area.active && enter_pressed) {
-                String trimmed = folder_rename_area.text.trimmed();
-                if (gui_list::is_valid_folder_name(trimmed)) {
-                    if (confirm_folder_rename(trimmed)) {
-                        return;
-                    }
-                }
-            }
-        }
-
         back_button.draw();
         if (back_button.clicked()) {
             if (renaming_folder) {
@@ -404,16 +389,19 @@ public:
             ExplorerFolderInlineConfig inline_cfg{};
             inline_cfg.renaming = renaming_folder;
             inline_cfg.folder_index = renaming_folder ? renaming_folder_index : -1;
+            std::cerr << "update: renaming_folder=" << renaming_folder << " index=" << renaming_folder_index << std::endl;
+            // Always set inline config to show rename buttons
+            inline_cfg.text_area = &folder_rename_area;
+            inline_cfg.back_button = &inline_edit_back_button;
+            inline_cfg.ok_button = &inline_edit_ok_button;
+            inline_cfg.on_cancel = [this]() {
+                cancel_folder_rename();
+            };
+            inline_cfg.on_commit = [this](const String& trimmed) {
+                return confirm_folder_rename(trimmed);
+            };
             if (renaming_folder && renaming_folder_index >= 0) {
-                inline_cfg.text_area = &folder_rename_area;
-                inline_cfg.back_button = &inline_edit_back_button;
-                inline_cfg.ok_button = &inline_edit_ok_button;
-                inline_cfg.on_cancel = [this]() {
-                    cancel_folder_rename();
-                };
-                inline_cfg.on_commit = [this](const String& trimmed) {
-                    return confirm_folder_rename(trimmed);
-                };
+                std::cerr << "update: setting inline config for editing" << std::endl;
             }
             const ExplorerFolderInlineConfig* inline_ptr = &inline_cfg;
             auto res = DrawExplorerList(
@@ -439,8 +427,8 @@ public:
                 return;
             }
             if (res.folderRenameRequested && res.folderRenameIndex >= 0) {
+                std::cerr << "folderRenameRequested: index=" << res.folderRenameIndex << std::endl;
                 begin_folder_rename(res.folderRenameIndex);
-                return;
             }
             if (res.deleteClicked && res.deleteIndex >= 0) {
                 delete_game(res.deleteIndex);
@@ -454,6 +442,10 @@ public:
             } else if (res.reorderRequested) {
                 handle_reorder(res);
             }
+        }
+        
+        if (renaming_folder && escape_pressed) {
+            cancel_folder_rename();
         }
     }
 
@@ -820,8 +812,10 @@ private:
 
     void begin_folder_rename(int folder_idx) {
         if (folder_idx < 0 || folder_idx >= (int)folders_display.size()) {
+            std::cerr << "begin_folder_rename: invalid index " << folder_idx << std::endl;
             return;
         }
+        std::cerr << "begin_folder_rename: folder_idx=" << folder_idx << " name=" << folders_display[folder_idx].narrow() << std::endl;
         renaming_folder = true;
         renaming_folder_index = folder_idx;
         renaming_folder_original_name = folders_display[folder_idx];
@@ -831,6 +825,7 @@ private:
         folder_rename_area.active = true;
         selected_folder_index = folder_idx;
         selected_folder_name = folders_display[folder_idx];
+        std::cerr << "begin_folder_rename: renaming_folder=" << renaming_folder << " index=" << renaming_folder_index << std::endl;
     }
 
     void cancel_folder_rename() {
@@ -861,6 +856,7 @@ private:
         if (!renamed) {
             std::cerr << "rename_folder_in_directory failed: base='" << base_dir.narrow()
                       << "' current='" << current_name.narrow() << "' target='" << trimmed.narrow() << "'" << std::endl;
+            return false;
         }
         if (renamed) {
             cancel_folder_rename();

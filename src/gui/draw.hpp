@@ -551,7 +551,7 @@ inline ExplorerDrawResult DrawExplorerList(
     
     if (list_result.folderClicked || list_result.folderDoubleClicked || 
         list_result.gameDoubleClicked || list_result.deleteClicked || 
-        list_result.parentFolderDoubleClicked) {
+        list_result.parentFolderDoubleClicked || list_result.folderRenameRequested) {
         return list_result;
     }
     
@@ -817,21 +817,27 @@ inline ExplorerDrawResult draw_folder_item(
         drag_state.drag_offset = drag_state.current_mouse_pos - Vec2(rect.x, rect.y);
     }
 
-    if (inline_config) {
+    // Always show rename button if inline_config is provided (not just when inline_editing is true)
+    if (inline_config && !is_inline_target) {
         double rename_icon_size = 18.0;
         RectF rename_rect(rect.x + rect.w - rename_icon_size - 40.0, sy + (item_height - rename_icon_size) / 2.0, rename_icon_size, rename_icon_size);
         const Texture& pencil_tex = resources.pencil;
+        std::cerr << "Drawing rename button for folder " << folder_index << " at (" << rename_rect.x << "," << rename_rect.y << ")" << std::endl;
         if (pencil_tex) {
             pencil_tex.resized(rename_icon_size).draw(rename_rect.pos, ColorF(1.0));
         } else {
             rename_rect.draw(colors.white);
+            std::cerr << "Warning: pencil texture not found, drawing white rect" << std::endl;
         }
         if (rename_rect.leftClicked()) {
+            std::cerr << "Rename button clicked for folder " << folder_index << std::endl;
             drag_state.reset_drag_preparation();
             res.folderRenameRequested = true;
             res.folderRenameIndex = folder_index;
             return res;
         }
+    } else {
+        std::cerr << "Not drawing rename button: inline_config=" << (inline_config != nullptr) << " is_inline_target=" << is_inline_target << std::endl;
     }
 
     if (rect.leftClicked() && !drag_state.is_dragging) {
