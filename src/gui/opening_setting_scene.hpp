@@ -202,7 +202,7 @@ public:
                 int sy = OPENING_SETTING_SY + 8;
                 getData().fonts.font(language.get("in_out", "new_folder") + U":").draw(20, Arg::leftCenter(OPENING_SETTING_SX + OPENING_SETTING_LEFT_MARGIN + 8, sy + OPENING_SETTING_HEIGHT / 2), getData().colors.white);
                 SimpleGUI::TextArea(csv_name_area, Vec2{OPENING_SETTING_SX + OPENING_SETTING_LEFT_MARGIN + 150, sy + OPENING_SETTING_HEIGHT / 2 - 17}, SizeF{400, 30}, SimpleGUI::PreferredTextAreaMaxChars);
-                String sanitized = sanitize_folder_text(csv_name_area.text);
+                String sanitized = gui_list::sanitize_folder_text(csv_name_area.text);
                 if (sanitized != csv_name_area.text) {
                     size_t old_cursor = csv_name_area.cursorPos;
                     csv_name_area.text = sanitized;
@@ -210,7 +210,7 @@ public:
                     csv_name_area.rebuildGlyphs();
                 }
                 String folder_name = csv_name_area.text.trimmed();
-                bool can_create = is_valid_folder_name(folder_name);
+                bool can_create = gui_list::is_valid_folder_name(folder_name);
                 
                 if (can_create) {
                     create_csv_button.enable();
@@ -219,7 +219,15 @@ public:
                 }
                 create_csv_button.draw();
                 if (create_csv_button.clicked()) {
-                    if (create_new_folder(folder_name)) {
+                    bool created = gui_list::create_folder_with_initializer(
+                        get_base_dir(),
+                        folder_name,
+                        [](const String& dir) {
+                            CSV csv;
+                            csv.save(dir + U"summary.csv");
+                        }
+                    );
+                    if (created) {
                         enumerate_current_dir();
                     }
                     load_openings();
@@ -430,44 +438,6 @@ public:
             load_openings();
         }
         
-        bool is_forbidden_folder_char(char32 ch) const {
-            static constexpr char32 forbidden_chars[] = U"\\/:*?\"<>|";
-            if (ch < 0x20) {
-                return true;
-            }
-            for (char32 f : forbidden_chars) {
-                if (f == U'\0') {
-                    break;
-                }
-                if (ch == f) {
-                    return true;
-                }
-            }
-            return false;
-        }
-        
-        String sanitize_folder_text(const String& text) const {
-            String filtered;
-            filtered.reserve(text.size());
-            for (char32 ch : text) {
-                if (!is_forbidden_folder_char(ch)) {
-                    filtered.push_back(ch);
-                }
-            }
-            return filtered;
-        }
-        
-        bool is_valid_folder_name(const String& name) const {
-            String trimmed = name.trimmed();
-            if (trimmed.isEmpty()) {
-                return false;
-            }
-            if (trimmed == U"." || trimmed == U"..") {
-                return false;
-            }
-            return true;
-        }
-        
         void begin_folder_rename(int idx) {
             if (idx < 0 || idx >= (int)folders_display.size()) {
                 return;
@@ -494,32 +464,25 @@ public:
                 return false;
             }
             String trimmed = new_name.trimmed();
-            if (!is_valid_folder_name(trimmed)) {
+            if (!gui_list::is_valid_folder_name(trimmed)) {
                 return false;
             }
             String current_name = folders_display[idx].name;
             if (trimmed == current_name) {
                 return true;
             }
-            String parent_path = Unicode::Widen(getData().directories.document_dir) + U"/forced_openings/";
+            String base_dir = Unicode::Widen(getData().directories.document_dir) + U"/forced_openings/";
             if (!subfolder.empty()) {
-                parent_path += Unicode::Widen(subfolder) + U"/";
+                base_dir += Unicode::Widen(subfolder) + U"/";
             }
-            String source_path = parent_path + current_name;
-            if (!FileSystem::Exists(source_path)) {
-                return false;
-            }
-            if (!move_folder(source_path, parent_path, trimmed)) {
-                return false;
-            }
-            return true;
+            return gui_list::rename_folder_in_directory(base_dir, current_name, trimmed);
         }
         
         void confirm_folder_rename() {
             if (!renaming_folder || renaming_folder_index < 0 || renaming_folder_index >= (int)folders_display.size()) {
                 return;
             }
-            String sanitized = sanitize_folder_text(folder_rename_area.text);
+            String sanitized = gui_list::sanitize_folder_text(folder_rename_area.text);
             if (sanitized != folder_rename_area.text) {
                 size_t old_cursor = folder_rename_area.cursorPos;
                 folder_rename_area.text = sanitized;
@@ -527,7 +490,7 @@ public:
                 folder_rename_area.rebuildGlyphs();
             }
             String trimmed = folder_rename_area.text.trimmed();
-            if (!is_valid_folder_name(trimmed)) {
+            if (!gui_list::is_valid_folder_name(trimmed)) {
                 return;
             }
             if (rename_folder_entry(renaming_folder_index, trimmed)) {
@@ -585,23 +548,6 @@ public:
                 base += Unicode::Widen(subfolder) + U"/";
             }
             return base;
-        }
-        
-        bool create_new_folder(const String& folder_name) {
-            String trimmed = folder_name.trimmed();
-            if (trimmed.isEmpty()) {
-                return false;
-            }
-            String target_dir = get_base_dir() + trimmed + U"/";
-            if (FileSystem::Exists(target_dir)) {
-                return false;
-            }
-            if (!FileSystem::CreateDirectories(target_dir)) {
-                return false;
-            }
-            CSV csv;
-            csv.save(target_dir + U"summary.csv");
-            return true;
         }
         
         // Load openings from current folder's summary.csv
@@ -943,7 +889,7 @@ public:
             if (is_renaming_this) {
                 InlineEditLayout layout = get_inline_edit_layout(sy);
                 SimpleGUI::TextArea(folder_rename_area, Vec2{ layout.transcript_x, layout.text_y }, SizeF{ layout.transcript_width, layout.field_height }, SimpleGUI::PreferredTextAreaMaxChars);
-                String sanitized = sanitize_folder_text(folder_rename_area.text);
+                String sanitized = gui_list::sanitize_folder_text(folder_rename_area.text);
                 if (sanitized != folder_rename_area.text) {
                     size_t old_cursor = folder_rename_area.cursorPos;
                     folder_rename_area.text = sanitized;
@@ -956,7 +902,7 @@ public:
                 }
 
                 String trimmed = folder_rename_area.text.trimmed();
-                bool can_commit = is_valid_folder_name(trimmed);
+                bool can_commit = gui_list::is_valid_folder_name(trimmed);
                 if (draw_inline_ok_button(layout, can_commit)) {
                     confirm_folder_rename();
                     return;

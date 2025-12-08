@@ -12,6 +12,9 @@
 #include <Siv3D.hpp>
 #include <algorithm>
 #include <vector>
+#include <functional>
+
+bool move_folder(const String& source_path, const String& target_parent_path, const String& folder_name);
 
 namespace gui_list {
 
@@ -116,6 +119,113 @@ inline bool reorder_parallel(std::vector<T>& primary, int from_idx, int insert_i
 
     detail::reorder_aux_vectors(from_idx, target_after_removal, aux_vectors...);
     return true;
+}
+
+inline bool is_forbidden_folder_char(char32 ch) {
+    static constexpr char32 forbidden_chars[] = U"\\/:*?\"<>|";
+    if (ch < 0x20) {
+        return true;
+    }
+    for (char32 f : forbidden_chars) {
+        if (f == U'\0') {
+            break;
+        }
+        if (ch == f) {
+            return true;
+        }
+    }
+    return false;
+}
+
+inline String sanitize_folder_text(const String& text) {
+    String filtered;
+    filtered.reserve(text.size());
+    for (char32 ch : text) {
+        if (!is_forbidden_folder_char(ch)) {
+            filtered.push_back(ch);
+        }
+    }
+    return filtered;
+}
+
+inline bool is_valid_folder_name(const String& name) {
+    String trimmed = name.trimmed();
+    if (trimmed.isEmpty()) {
+        return false;
+    }
+    if (trimmed == U"." || trimmed == U"..") {
+        return false;
+    }
+    for (char32 ch : trimmed) {
+        if (is_forbidden_folder_char(ch)) {
+            return false;
+        }
+    }
+    return true;
+}
+
+inline void sanitize_text_area(TextAreaEditState& area) {
+    String sanitized = sanitize_folder_text(area.text);
+    if (sanitized != area.text) {
+        size_t old_cursor = area.cursorPos;
+        area.text = sanitized;
+        area.cursorPos = std::min<size_t>(old_cursor, sanitized.size());
+        area.rebuildGlyphs();
+    }
+}
+
+inline String normalize_directory_base(const String& base_dir) {
+    if (base_dir.isEmpty()) {
+        return base_dir;
+    }
+    if (base_dir.ends_with(U"/") || base_dir.ends_with(U"\\")) {
+        return base_dir;
+    }
+    return base_dir + U"/";
+}
+
+inline bool create_folder_with_initializer(
+    const String& base_dir,
+    const String& folder_name,
+    const std::function<void(const String&)>& after_create = nullptr
+) {
+    String trimmed = folder_name.trimmed();
+    if (!is_valid_folder_name(trimmed)) {
+        return false;
+    }
+    String normalized_base = normalize_directory_base(base_dir);
+    String target_dir = normalized_base + trimmed + U"/";
+    if (FileSystem::Exists(target_dir)) {
+        return false;
+    }
+    if (!FileSystem::CreateDirectories(target_dir)) {
+        return false;
+    }
+    if (after_create) {
+        after_create(target_dir);
+    }
+    return true;
+}
+
+inline bool rename_folder_in_directory(
+    const String& base_dir,
+    const String& current_name,
+    const String& new_name
+) {
+    String trimmed_new = new_name.trimmed();
+    if (!is_valid_folder_name(trimmed_new)) {
+        return false;
+    }
+    String trimmed_current = current_name.trimmed();
+    if (trimmed_current == trimmed_new) {
+        return true;
+    }
+    String normalized_base = normalize_directory_base(base_dir);
+    String source_path = normalized_base + trimmed_current;
+    if (!FileSystem::Exists(source_path)) {
+        return false;
+    }
+    return move_folder(source_path, normalized_base, trimmed_new);
 }
 
 }  // namespace gui_list
