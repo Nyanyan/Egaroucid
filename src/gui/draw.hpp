@@ -1110,7 +1110,7 @@ inline void draw_dragged_items(
         // Draw folder icon and name
         double folder_icon_scale = (double)(drag_rect.h - 2 * 10) / (double)resources.folder.height();
         resources.folder.scaled(folder_icon_scale).draw(Arg::leftCenter(drag_rect.x + IMPORT_GAME_LEFT_MARGIN + 10, drag_rect.y + item_height / 2));
-        fonts.font(drag_state.dragged_folder_name).draw(15, Arg::leftCenter(drag_rect.x + IMPORT_GAME_LEFT_MARGIN + 10 + 30, drag_rect.y + item_height / 2), colors.white);
+        fonts.font(drag_state.dragged_folder_name).draw(15, Arg::leftCenter(drag_rect.x + IMPORT_GAME_LEFT_MARGIN + 10 + 30, drag_rect.y + item_height / 2), colors.black);
     }
 }
 

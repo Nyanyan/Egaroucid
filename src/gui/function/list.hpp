@@ -40,7 +40,7 @@ inline bool update_drag_auto_scroll(
     const VerticalListGeometry& geom,
     double& scroll_position,
     int total_items,
-    double scroll_speed = 0.5
+    double scroll_speed = 0.15
 ) {
     constexpr double SCROLL_ZONE_HEIGHT = 30.0;
     int list_bottom = geom.list_top + geom.row_height * geom.visible_row_count;
