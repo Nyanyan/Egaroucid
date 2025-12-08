@@ -104,6 +104,28 @@ private:
         return layout;
     }
 
+    bool draw_inline_back_button(const InlineEditLayout& layout) {
+        inline_edit_back_button.move((int)layout.back_x, (int)layout.buttons_y);
+        inline_edit_back_button.enable();
+        inline_edit_back_button.draw();
+        return inline_edit_back_button.clicked();
+    }
+
+    bool draw_inline_ok_button(const InlineEditLayout& layout, bool can_commit) {
+        inline_edit_ok_button.move((int)layout.ok_x, (int)layout.buttons_y);
+        if (can_commit) {
+            inline_edit_ok_button.enable();
+        } else {
+            inline_edit_ok_button.disable();
+        }
+        inline_edit_ok_button.draw();
+        return can_commit && inline_edit_ok_button.clicked();
+    }
+
+    bool is_locking_bottom_buttons() const {
+        return editing_elem || renaming_folder;
+    }
+
     // Drag and drop state for openings within CSV
     struct DragState {
         bool is_dragging = false;
@@ -226,51 +248,47 @@ public:
                 }
             } else {
                 // Normal mode
-                bool add_interactable = !editing_elem && !renaming_folder;
-                if (add_interactable) {
+                bool bottom_locked = is_locking_bottom_buttons();
+                if (!bottom_locked) {
                     add_button.enable();
+                    add_button.draw();
+                    if (add_button.clicked()) {
+                        adding_elem = true;
+                        cancel_folder_rename();
+                        for (int i = 0; i < 2; ++i) {
+                            text_area[i].text = U"";
+                            if (i == 1) {
+                                text_area[i].text = U"1";
+                            }
+                            text_area[i].cursorPos = text_area[i].text.size();
+                            text_area[i].rebuildGlyphs();
+                        }
+                        text_area[0].active = true;
+                        text_area[1].active = false;
+                    }
+
+                    add_csv_button.enable();
+                    add_csv_button.draw();
+                    if (add_csv_button.clicked()) {
+                        creating_csv = true;
+                        csv_name_area.text = U"";
+                        csv_name_area.cursorPos = 0;
+                        csv_name_area.rebuildGlyphs();
+                        csv_name_area.active = true;
+                        cancel_folder_rename();
+                    }
+
+                    ok_button.draw();
+                    if (ok_button.clicked() || (enter_pressed && !rename_textbox_active)) {
+                        // Save all openings and reload forced_openings
+                        save_openings();
+                        save_all_openings_to_forced_openings();
+                        getData().graph_resources.need_init = false;
+                        changeScene(U"Main_scene", SCENE_FADE_TIME);
+                    }
                 } else {
                     add_button.disable_notransparent();
-                }
-                add_button.draw();
-                if (add_interactable && add_button.clicked()) {
-                    adding_elem = true;
-                    cancel_folder_rename();
-                    for (int i = 0; i < 2; ++i) {
-                        text_area[i].text = U"";
-                        if (i == 1) {
-                            text_area[i].text = U"1";
-                        }
-                        text_area[i].cursorPos = text_area[i].text.size();
-                        text_area[i].rebuildGlyphs();
-                    }
-                    text_area[0].active = true;
-                    text_area[1].active = false;
-                }
-                
-                bool add_folder_interactable = !editing_elem && !renaming_folder;
-                if (add_folder_interactable) {
-                    add_csv_button.enable();
-                } else {
                     add_csv_button.disable_notransparent();
-                }
-                add_csv_button.draw();
-                if (add_folder_interactable && add_csv_button.clicked()) {
-                    creating_csv = true;
-                    csv_name_area.text = U"";
-                    csv_name_area.cursorPos = 0;
-                    csv_name_area.rebuildGlyphs();
-                    csv_name_area.active = true;
-                    cancel_folder_rename();
-                }
-                
-                ok_button.draw();
-                if (ok_button.clicked() || (enter_pressed && !rename_textbox_active)) {
-                    // Save all openings and reload forced_openings
-                    save_openings();
-                    save_all_openings_to_forced_openings();
-                    getData().graph_resources.need_init = false;
-                    changeScene(U"Main_scene", SCENE_FADE_TIME);
                 }
             }
             
@@ -816,7 +834,7 @@ public:
         }
         
         void draw_list() {
-            if (!editing_elem) {
+            if (!(editing_elem || renaming_folder)) {
                 handle_folder_navigation();
             }
             draw_openings_list();
@@ -905,7 +923,7 @@ public:
             }
             double text_offset = icon_x + (folder_icon ? folder_icon.width() * icon_scale + 10.0 : 0.0);
             getData().fonts.font(U"..").draw(20, Arg::leftCenter(text_offset, sy + OPENING_SETTING_HEIGHT / 2), getData().colors.white);
-            if (editing_elem) {
+            if (editing_elem || renaming_folder) {
                 rect.draw(ColorF(1.0, 1.0, 1.0, 0.35));
             }
         }
@@ -949,30 +967,21 @@ public:
                     folder_rename_area.cursorPos = std::min(old_cursor, sanitized.size());
                     folder_rename_area.rebuildGlyphs();
                 }
-                inline_edit_back_button.move((int)layout.back_x, (int)layout.buttons_y);
-                inline_edit_back_button.enable();
-                inline_edit_back_button.draw();
-                if (inline_edit_back_button.clicked()) {
+                if (draw_inline_back_button(layout)) {
                     cancel_folder_rename();
                     return;
                 }
 
-                inline_edit_ok_button.move((int)layout.ok_x, (int)layout.buttons_y);
                 String trimmed = folder_rename_area.text.trimmed();
                 bool can_commit = is_valid_folder_name(trimmed);
-                if (can_commit) {
-                    inline_edit_ok_button.enable();
-                } else {
-                    inline_edit_ok_button.disable();
-                }
-                inline_edit_ok_button.draw();
-                if (can_commit && inline_edit_ok_button.clicked()) {
+                if (draw_inline_ok_button(layout, can_commit)) {
                     confirm_folder_rename();
                     return;
                 }
+                return;
             } else {
                 getData().fonts.font(entry.name).draw(18, Arg::leftCenter(text_offset, sy + OPENING_SETTING_HEIGHT / 2), text_color);
-                if (editing_elem) {
+                if (editing_elem || renaming_folder) {
                     rect.draw(ColorF(1.0, 1.0, 1.0, 0.35));
                     return;
                 }
@@ -1028,7 +1037,7 @@ public:
             
             bool is_being_dragged = (drag_state.is_dragging_opening && drag_state.dragged_opening_index == idx);
             bool is_editing_this = editing_elem && editing_index == idx;
-            bool overlay_noninteractive = adding_elem || (editing_elem && !is_editing_this);
+            bool overlay_noninteractive = adding_elem || renaming_folder || (editing_elem && !is_editing_this);
             ColorF bg_color = row_index % 2 ? ColorF(getData().colors.dark_green) : ColorF(getData().colors.green);
             if (is_being_dragged) {
                 bg_color = ColorF(getData().colors.yellow);
@@ -1049,12 +1058,12 @@ public:
             bool mouse_was_down = drag_state.mouse_was_down;
             if (mouse_is_down && !mouse_was_down && rect.contains(Cursor::Pos()) && 
                 !drag_state.is_dragging && drag_state.dragged_opening_index == -1 && drag_state.dragged_folder_name.isEmpty() &&
-                !(adding_elem || editing_elem)) {
+                !(adding_elem || editing_elem || renaming_folder)) {
                 drag_state.dragged_opening_index = idx;
                 drag_state.drag_start_pos = Cursor::Pos();
             }
             
-            if (!adding_elem && !editing_elem) {
+            if (!(adding_elem || editing_elem || renaming_folder)) {
                 // Delete button
                 delete_buttons[idx].move(OPENING_SETTING_SX + 1, sy + 1);
                 delete_buttons[idx].draw();
@@ -1150,25 +1159,15 @@ public:
                 SimpleGUI::TextArea(text_area[1], Vec2{ layout.secondary_x, layout.text_y }, SizeF{ layout.secondary_width, layout.field_height }, SimpleGUI::PreferredTextAreaMaxChars);
                 handle_textarea_tab_navigation();
 
-                inline_edit_back_button.move((int)layout.back_x, (int)layout.buttons_y);
-                inline_edit_back_button.enable();
-                inline_edit_back_button.draw();
-                if (inline_edit_back_button.clicked()) {
+                if (draw_inline_back_button(layout)) {
                     cancel_opening_edit();
                     return;
                 }
 
-                inline_edit_ok_button.move((int)layout.ok_x, (int)layout.buttons_y);
                 String updated_transcript;
                 double updated_weight = 0.0;
                 bool can_commit = collect_opening_form_payload(updated_transcript, updated_weight);
-                if (can_commit) {
-                    inline_edit_ok_button.enable();
-                } else {
-                    inline_edit_ok_button.disable();
-                }
-                inline_edit_ok_button.draw();
-                if (can_commit && inline_edit_ok_button.clicked()) {
+                if (draw_inline_ok_button(layout, can_commit)) {
                     openings[idx].transcript = updated_transcript;
                     openings[idx].weight = updated_weight;
                     save_openings();
