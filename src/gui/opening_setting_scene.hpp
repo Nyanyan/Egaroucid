@@ -236,9 +236,12 @@ public:
 
                     ok_button.draw();
                     if (ok_button.clicked() || (enter_pressed && !rename_textbox_active)) {
-                        // Save all openings and reload forced_openings
+                        // Save current folder's openings
                         save_openings();
+                        // Clear and reload all forced_openings from all folders
+                        getData().forced_openings.openings.clear();
                         save_all_openings_to_forced_openings();
+                        // forced_openings.init() is called in save_all_openings_to_forced_openings()
                         getData().graph_resources.need_init = false;
                         changeScene(U"Main_scene", SCENE_FADE_TIME);
                     }
@@ -358,23 +361,20 @@ public:
             if (relative_path.empty()) {
                 return true;
             }
-            std::string prefix;
-            prefix.reserve(relative_path.size());
-            size_t start = 0;
-            while (start < relative_path.size()) {
-                if (!prefix.empty()) {
-                    prefix.push_back('/');
+            // Check all parent folders from root to target
+            std::string path_check;
+            for (size_t i = 0; i < relative_path.size(); ++i) {
+                path_check += relative_path[i];
+                if (relative_path[i] == '/' || i == relative_path.size() - 1) {
+                    // Remove trailing slash for check
+                    std::string check_path = path_check;
+                    if (!check_path.empty() && check_path.back() == '/') {
+                        check_path.pop_back();
+                    }
+                    if (!load_folder_enabled_state(check_path)) {
+                        return false;
+                    }
                 }
-                size_t slash = relative_path.find('/', start);
-                size_t len = (slash == std::string::npos ? relative_path.size() : slash) - start;
-                prefix.append(relative_path, start, len);
-                if (!prefix.empty() && !load_folder_enabled_state(prefix)) {
-                    return false;
-                }
-                if (slash == std::string::npos) {
-                    break;
-                }
-                start = slash + 1;
             }
             return true;
         }
@@ -1134,9 +1134,11 @@ public:
         
         // Recursively load all enabled openings from a folder and its subfolders
         void load_all_openings_recursive(const std::string& folder_path) {
-            if (!folder_path.empty() && !load_folder_enabled_state(folder_path)) {
+            // Check if this folder path is effectively enabled (includes all parent checks)
+            if (!is_folder_effectively_enabled(folder_path)) {
                 return;
             }
+            
             String base = Unicode::Widen(getData().directories.document_dir) + U"/forced_openings/";
             if (!folder_path.empty()) {
                 base += Unicode::Widen(folder_path) + U"/";
@@ -1164,9 +1166,7 @@ public:
                 std::string next_path = folder_path;
                 if (!next_path.empty()) next_path += "/";
                 next_path += folder.narrow();
-                if (!load_folder_enabled_state(next_path)) {
-                    continue;
-                }
+                // Recursively check - is_folder_effectively_enabled will handle parent checks
                 load_all_openings_recursive(next_path);
             }
         }

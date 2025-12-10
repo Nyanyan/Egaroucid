@@ -816,6 +816,10 @@ struct Forced_openings {
     // }
 
     void init() {
+        // Clear existing data before rebuilding
+        selected_moves.clear();
+        forced_boards.clear();
+        
         Board board;
         Flip flip;
         for (const std::pair<std::string, double> opening : openings) {
