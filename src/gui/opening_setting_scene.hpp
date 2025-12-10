@@ -1000,8 +1000,7 @@ public:
                 getData().fonts.font(entry.name).draw(18, Arg::leftCenter(text_offset, sy + OPENING_SETTING_HEIGHT / 2), text_color);
                 // Draw weight
                 String weight_str = Format(U"×", entry.weight);
-                double weight_text_x = OPENING_SETTING_SX + OPENING_SETTING_WIDTH - 150;
-                getData().fonts.font(weight_str).draw(15, Arg::leftCenter(weight_text_x, sy + OPENING_SETTING_HEIGHT / 2), text_color);
+                getData().fonts.font(weight_str).draw(15, Arg::leftCenter(OPENING_SETTING_SX + OPENING_SETTING_WIDTH - 140, sy + OPENING_SETTING_HEIGHT / 2), text_color);
                 if (editing_elem || renaming_folder) {
                     rect.draw(ColorF(0.0, 0.0, 0.0, 0.45));
                     return;
@@ -1190,7 +1189,7 @@ public:
                 
                 // Draw weight with multiplication sign (unified with folder display)
                 String weight_str = Format(U"×", opening.weight);
-                getData().fonts.font(weight_str).draw(15, Arg::rightCenter(OPENING_SETTING_SX + OPENING_SETTING_WIDTH - 90, sy + OPENING_SETTING_HEIGHT / 2), text_color);
+                getData().fonts.font(weight_str).draw(15, Arg::leftCenter(OPENING_SETTING_SX + OPENING_SETTING_WIDTH - 140, sy + OPENING_SETTING_HEIGHT / 2), text_color);
             }
 
             if (drag_state.is_dragging_opening && drag_state.is_dragging && rect.contains(drag_state.current_mouse_pos) && !drag_state.is_dragging_folder) {
