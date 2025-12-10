@@ -242,7 +242,9 @@ public:
                         save_openings();
                         // Clear and reload all forced_openings from all folders
                         getData().forced_openings.openings.clear();
+                        std::cerr << "\n========== Loading Forced Openings ==========" << std::endl;
                         save_all_openings_to_forced_openings();
+                        std::cerr << "=============================================" << std::endl;
                         // Debug output all registered openings
                         debug_output_all_openings();
                         // forced_openings.init() is called in save_all_openings_to_forced_openings()
@@ -396,8 +398,11 @@ public:
             if (relative_path.empty()) {
                 return 1.0;
             }
+            
             double cumulative_weight = 1.0;
+            std::string current_parent;
             std::string path_check;
+            
             for (size_t i = 0; i < relative_path.size(); ++i) {
                 path_check += relative_path[i];
                 if (relative_path[i] == '/' || i == relative_path.size() - 1) {
@@ -405,7 +410,30 @@ public:
                     if (!check_path.empty() && check_path.back() == '/') {
                         check_path.pop_back();
                     }
-                    cumulative_weight *= load_folder_weight(check_path);
+                    
+                    // Get weight of this folder (a)
+                    double folder_weight = load_folder_weight(check_path);
+                    
+                    // Calculate sum of weights of all sibling folders (b)
+                    double siblings_weight_sum = 0.0;
+                    std::string base_dir = getData().directories.document_dir + "/forced_openings";
+                    std::vector<String> siblings = enumerate_subdirectories_generic(base_dir, current_parent);
+                    for (const auto& sibling : siblings) {
+                        std::string sibling_path = current_parent;
+                        if (!sibling_path.empty()) sibling_path += "/";
+                        sibling_path += sibling.narrow();
+                        siblings_weight_sum += load_folder_weight(sibling_path);
+                    }
+                    
+                    // Multiply by a/b
+                    if (siblings_weight_sum > 0.0) {
+                        cumulative_weight *= (folder_weight / siblings_weight_sum);
+                    }
+                    
+                    // Update current_parent for next iteration
+                    if (relative_path[i] == '/') {
+                        current_parent = check_path;
+                    }
                 }
             }
             return cumulative_weight;
@@ -942,7 +970,7 @@ public:
                 gui_list::sanitize_text_area(folder_rename_area);
                 
                 // Draw weight label and text area
-                getData().fonts.font(language.get("opening_setting", "weight") + U": ").draw(15, Arg::rightCenter(layout.secondary_x - 5, layout.text_y + layout.field_height / 2), getData().colors.white);
+                // getData().fonts.font(language.get("opening_setting", "weight") + U": ").draw(15, Arg::rightCenter(layout.secondary_x - 5, layout.text_y + layout.field_height / 2), getData().colors.white);
                 SimpleGUI::TextArea(folder_weight_area, Vec2{ layout.secondary_x, layout.text_y }, SizeF{ layout.secondary_width, layout.field_height }, SimpleGUI::PreferredTextAreaMaxChars);
 
                 inline_edit_back_button.move((int)layout.back_x, (int)layout.buttons_y);
@@ -1160,9 +1188,9 @@ public:
                 // Draw transcript
                 getData().fonts.font(opening.transcript).draw(15, Arg::leftCenter(OPENING_SETTING_SX + OPENING_SETTING_LEFT_MARGIN + 78, sy + OPENING_SETTING_HEIGHT / 2), text_color);
                 
-                // Draw weight
-                getData().fonts.font(language.get("opening_setting", "weight") + U": ").draw(15, Arg::rightCenter(OPENING_SETTING_SX + OPENING_SETTING_LEFT_MARGIN + OPENING_SETTING_WIDTH - 90, sy + OPENING_SETTING_HEIGHT / 2), text_color);
-                getData().fonts.font(Format(std::round(opening.weight))).draw(15, Arg::leftCenter(OPENING_SETTING_SX + OPENING_SETTING_LEFT_MARGIN + OPENING_SETTING_WIDTH - 90, sy + OPENING_SETTING_HEIGHT / 2), text_color);
+                // Draw weight with multiplication sign (unified with folder display)
+                String weight_str = Format(U"×", opening.weight);
+                getData().fonts.font(weight_str).draw(15, Arg::rightCenter(OPENING_SETTING_SX + OPENING_SETTING_WIDTH - 90, sy + OPENING_SETTING_HEIGHT / 2), text_color);
             }
 
             if (drag_state.is_dragging_opening && drag_state.is_dragging && rect.contains(drag_state.current_mouse_pos) && !drag_state.is_dragging_folder) {
@@ -1253,6 +1281,14 @@ public:
                         // Multiply opening weight by cumulative folder weight
                         double final_weight = opening_weight * cumulative_folder_weight;
                         getData().forced_openings.openings.emplace_back(std::make_pair(transcript.narrow(), final_weight));
+                        
+                        // Debug output for weight calculation
+                        std::string folder_display = folder_path.empty() ? "root" : folder_path;
+                        std::cerr << "  Added: " << transcript.narrow() 
+                                  << " from [" << folder_display << "]"
+                                  << " | opening_weight=" << opening_weight 
+                                  << " × folder_weight=" << cumulative_folder_weight 
+                                  << " = " << final_weight << std::endl;
                     }
                 }
             }
@@ -1271,12 +1307,15 @@ public:
         
         // Debug function to output all registered openings and their weights
         void debug_output_all_openings() const {
-            std::cerr << "=== Registered Forced Openings (" << getData().forced_openings.openings.size() << " total) ===" << std::endl;
+            std::cerr << "\n=== Registered Forced Openings (" << getData().forced_openings.openings.size() << " total) ===" << std::endl;
+            double total_weight = 0.0;
             for (size_t i = 0; i < getData().forced_openings.openings.size(); ++i) {
                 const auto& opening = getData().forced_openings.openings[i];
-                std::cerr << "[" << i << "] " << opening.first << " (weight: " << opening.second << ")" << std::endl;
+                std::cerr << "[" << i << "] " << opening.first << " (final weight: " << opening.second << ")" << std::endl;
+                total_weight += opening.second;
             }
-            std::cerr << "=== End of Forced Openings ==="<< std::endl;
+            std::cerr << "Total weight sum: " << total_weight << std::endl;
+            std::cerr << "=== End of Forced Openings ===\n" << std::endl;
         }
         
         // Handle drag and drop
