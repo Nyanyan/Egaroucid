@@ -35,9 +35,10 @@ struct Folder_entry {
     std::string relative_path;
     bool enabled;
     bool effective_enabled;
+    double weight;
     
-    Folder_entry() : name(U""), relative_path(""), enabled(true), effective_enabled(true) {}
-    Folder_entry(const String& n, const std::string& path, bool e = true, bool eff = true) : name(n), relative_path(path), enabled(e), effective_enabled(eff) {}
+    Folder_entry() : name(U""), relative_path(""), enabled(true), effective_enabled(true), weight(1.0) {}
+    Folder_entry(const String& n, const std::string& path, bool e = true, bool eff = true, double w = 1.0) : name(n), relative_path(path), enabled(e), effective_enabled(eff), weight(w) {}
 };
 
 
@@ -68,6 +69,7 @@ private:
     bool renaming_folder;
     int renaming_folder_index;
     TextAreaEditState folder_rename_area;
+    TextAreaEditState folder_weight_area;
     bool current_folder_effective_enabled;
 
     bool is_locking_bottom_buttons() const {
@@ -241,6 +243,8 @@ public:
                         // Clear and reload all forced_openings from all folders
                         getData().forced_openings.openings.clear();
                         save_all_openings_to_forced_openings();
+                        // Debug output all registered openings
+                        debug_output_all_openings();
                         // forced_openings.init() is called in save_all_openings_to_forced_openings()
                         getData().graph_resources.need_init = false;
                         changeScene(U"Main_scene", SCENE_FADE_TIME);
@@ -342,11 +346,69 @@ public:
                 return;
             }
             String config_path = get_folder_state_path(relative_path);
+            // Read existing weight if present
+            double weight = load_folder_weight(relative_path);
             TextWriter writer(config_path);
             if (!writer) {
                 return;
             }
-            writer.write(enabled ? U"true" : U"false");
+            writer.writeln(enabled ? U"true" : U"false");
+            writer.writeln(Format(weight));
+        }
+        
+        double load_folder_weight(const std::string& relative_path) const {
+            if (relative_path.empty()) {
+                return 1.0;
+            }
+            String config_path = get_folder_state_path(relative_path);
+            if (!FileSystem::Exists(config_path)) {
+                return 1.0;
+            }
+            TextReader reader(config_path);
+            if (!reader) {
+                return 1.0;
+            }
+            String line1, line2;
+            if (!reader.readLine(line1)) {
+                return 1.0;
+            }
+            if (!reader.readLine(line2)) {
+                return 1.0;
+            }
+            return ParseOr<double>(line2.trimmed(), 1.0);
+        }
+        
+        void save_folder_weight(const std::string& relative_path, double weight) {
+            if (relative_path.empty()) {
+                return;
+            }
+            String config_path = get_folder_state_path(relative_path);
+            bool enabled = load_folder_enabled_state(relative_path);
+            TextWriter writer(config_path);
+            if (!writer) {
+                return;
+            }
+            writer.writeln(enabled ? U"true" : U"false");
+            writer.writeln(Format(weight));
+        }
+        
+        double calculate_cumulative_folder_weight(const std::string& relative_path) const {
+            if (relative_path.empty()) {
+                return 1.0;
+            }
+            double cumulative_weight = 1.0;
+            std::string path_check;
+            for (size_t i = 0; i < relative_path.size(); ++i) {
+                path_check += relative_path[i];
+                if (relative_path[i] == '/' || i == relative_path.size() - 1) {
+                    std::string check_path = path_check;
+                    if (!check_path.empty() && check_path.back() == '/') {
+                        check_path.pop_back();
+                    }
+                    cumulative_weight *= load_folder_weight(check_path);
+                }
+            }
+            return cumulative_weight;
         }
 
         bool is_current_folder_locked() const {
@@ -394,6 +456,10 @@ public:
             folder_rename_area.cursorPos = folder_rename_area.text.size();
             folder_rename_area.rebuildGlyphs();
             folder_rename_area.active = true;
+            folder_weight_area.text = Format(folders_display[idx].weight);
+            folder_weight_area.cursorPos = folder_weight_area.text.size();
+            folder_weight_area.rebuildGlyphs();
+            folder_weight_area.active = false;
         }
         
         void cancel_folder_rename() {
@@ -403,6 +469,10 @@ public:
             folder_rename_area.cursorPos = 0;
             folder_rename_area.rebuildGlyphs();
             folder_rename_area.active = false;
+            folder_weight_area.text = U"";
+            folder_weight_area.cursorPos = 0;
+            folder_weight_area.rebuildGlyphs();
+            folder_weight_area.active = false;
         }
         
         bool rename_folder_entry(int idx, const String& new_name) {
@@ -439,6 +509,19 @@ public:
             if (!gui_list::is_valid_folder_name(trimmed)) {
                 return;
             }
+            // Save weight
+            double new_weight = 1.0;
+            try {
+                new_weight = std::stod(folder_weight_area.text.narrow());
+                if (new_weight < 0.0) new_weight = 1.0;
+            } catch (...) {
+                new_weight = 1.0;
+            }
+            std::string rel_path = folders_display[renaming_folder_index].relative_path;
+            save_folder_weight(rel_path, new_weight);
+            folders_display[renaming_folder_index].weight = new_weight;
+            
+            // Rename folder if name changed
             if (rename_folder_entry(renaming_folder_index, trimmed)) {
                 cancel_folder_rename();
                 enumerate_current_dir();
@@ -614,7 +697,8 @@ public:
                 std::string rel_path = build_child_relative_path(folder.narrow());
                 bool is_enabled = load_folder_enabled_state(rel_path);
                 bool effective_enabled = is_folder_effectively_enabled(rel_path);
-                folders_display.emplace_back(Folder_entry{ folder, rel_path, is_enabled, effective_enabled });
+                double weight = load_folder_weight(rel_path);
+                folders_display.emplace_back(Folder_entry{ folder, rel_path, is_enabled, effective_enabled, weight });
             }
             
             init_scroll_manager();
@@ -856,6 +940,10 @@ public:
                 });
                 SimpleGUI::TextArea(folder_rename_area, Vec2{ layout.primary_x, layout.text_y }, SizeF{ layout.primary_width, layout.field_height }, SimpleGUI::PreferredTextAreaMaxChars);
                 gui_list::sanitize_text_area(folder_rename_area);
+                
+                // Draw weight label and text area
+                getData().fonts.font(language.get("opening_setting", "weight") + U": ").draw(15, Arg::rightCenter(layout.secondary_x - 5, layout.text_y + layout.field_height / 2), getData().colors.white);
+                SimpleGUI::TextArea(folder_weight_area, Vec2{ layout.secondary_x, layout.text_y }, SizeF{ layout.secondary_width, layout.field_height }, SimpleGUI::PreferredTextAreaMaxChars);
 
                 inline_edit_back_button.move((int)layout.back_x, (int)layout.buttons_y);
                 inline_edit_back_button.enable();
@@ -880,7 +968,12 @@ public:
                 }
                 return;
             } else {
+                // Draw folder name
                 getData().fonts.font(entry.name).draw(18, Arg::leftCenter(text_offset, sy + OPENING_SETTING_HEIGHT / 2), text_color);
+                // Draw weight
+                String weight_str = Format(U"×", entry.weight);
+                double weight_text_x = OPENING_SETTING_SX + OPENING_SETTING_WIDTH - 150;
+                getData().fonts.font(weight_str).draw(15, Arg::leftCenter(weight_text_x, sy + OPENING_SETTING_HEIGHT / 2), text_color);
                 if (editing_elem || renaming_folder) {
                     rect.draw(ColorF(0.0, 0.0, 0.0, 0.45));
                     return;
@@ -1139,6 +1232,9 @@ public:
                 return;
             }
             
+            // Calculate cumulative weight from all parent folders
+            double cumulative_folder_weight = calculate_cumulative_folder_weight(folder_path);
+            
             String base = Unicode::Widen(getData().directories.document_dir) + U"/forced_openings/";
             if (!folder_path.empty()) {
                 base += Unicode::Widen(folder_path) + U"/";
@@ -1150,11 +1246,13 @@ public:
             if (csv) {
                 for (size_t row = 0; row < csv.rows(); ++row) {
                     String transcript = csv[row][0];
-                    double weight = ParseOr<double>(csv[row][1], 1.0);
+                    double opening_weight = ParseOr<double>(csv[row][1], 1.0);
                     bool enabled = ParseOr<bool>(csv[row][2], true);
                     
                     if (enabled) {  // Only add enabled openings
-                        getData().forced_openings.openings.emplace_back(std::make_pair(transcript.narrow(), weight));
+                        // Multiply opening weight by cumulative folder weight
+                        double final_weight = opening_weight * cumulative_folder_weight;
+                        getData().forced_openings.openings.emplace_back(std::make_pair(transcript.narrow(), final_weight));
                     }
                 }
             }
@@ -1169,6 +1267,16 @@ public:
                 // Recursively check - is_folder_effectively_enabled will handle parent checks
                 load_all_openings_recursive(next_path);
             }
+        }
+        
+        // Debug function to output all registered openings and their weights
+        void debug_output_all_openings() const {
+            std::cerr << "=== Registered Forced Openings (" << getData().forced_openings.openings.size() << " total) ===" << std::endl;
+            for (size_t i = 0; i < getData().forced_openings.openings.size(); ++i) {
+                const auto& opening = getData().forced_openings.openings[i];
+                std::cerr << "[" << i << "] " << opening.first << " (weight: " << opening.second << ")" << std::endl;
+            }
+            std::cerr << "=== End of Forced Openings ==="<< std::endl;
         }
         
         // Handle drag and drop
