@@ -211,7 +211,10 @@ public:
             changeScene(return_scene, SCENE_FADE_TIME);
         }
         
-        if (ok_button.clicked() || KeyEnter.pressed()) {
+        // Only allow Enter to submit if memo field is not active (to allow newlines in memo)
+        bool can_submit_with_enter = KeyEnter.pressed() && !text_area[MEMO_IDX].active;
+        
+        if (ok_button.clicked() || can_submit_with_enter) {
             if (is_editing_mode) {
                 // Update existing game
                 save_edited_game();
@@ -293,17 +296,33 @@ private:
             }
         }
         
-        // Save with updated information
-        game_save_helper::save_game_to_file(
-            base_dir,
-            existing_game_date,
-            getData().game_information.black_player_name,
-            getData().game_information.white_player_name,
-            getData().game_information.memo,
-            history
-        );
+        // Save updated JSON only (do not call save_game_to_file to avoid CSV duplication)
+        JSON updated_json;
+        updated_json[U"black_player_name"] = getData().game_information.black_player_name;
+        updated_json[U"white_player_name"] = getData().game_information.white_player_name;
+        updated_json[U"memo"] = getData().game_information.memo;
         
-        // Update CSV
+        // Add history data
+        for (const History_elem& elem : history) {
+            int n_discs = elem.board.n_discs();
+            String n_discs_str = Format(n_discs);
+            updated_json[n_discs_str][GAME_BOARD_PLAYER] = elem.board.player;
+            updated_json[n_discs_str][GAME_BOARD_OPPONENT] = elem.board.opponent;
+            updated_json[n_discs_str][GAME_PLAYER] = elem.player;
+            updated_json[n_discs_str][GAME_VALUE] = elem.v;
+            updated_json[n_discs_str][GAME_LEVEL] = elem.level;
+            updated_json[n_discs_str][GAME_POLICY] = elem.policy;
+            if (n_discs < HW2) {
+                updated_json[n_discs_str][GAME_NEXT_POLICY] = elem.next_policy;
+            }
+        }
+        
+        if (!updated_json.save(json_path)) {
+            std::cerr << "Failed to save updated game JSON: " << json_path.narrow() << std::endl;
+            return;
+        }
+        
+        // Update CSV only (do not append)
         int black_discs = GAME_DISCS_UNDEFINED;
         int white_discs = GAME_DISCS_UNDEFINED;
         Board last_board = history.back().board;

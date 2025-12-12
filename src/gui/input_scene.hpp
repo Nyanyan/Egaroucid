@@ -699,7 +699,7 @@ private:
             delete_buttons.emplace_back(delete_button);
             
             ImageButton edit_button;
-            edit_button.init(0, 0, 15, edit_button_image);
+            edit_button.init(0, 0, 18, edit_button_image);
             edit_buttons.emplace_back(edit_button);
         }
         init_scroll_manager();
