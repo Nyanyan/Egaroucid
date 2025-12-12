@@ -25,4 +25,3 @@
 #include "slidebar.hpp"
 #include "util.hpp"
 #include "explorer.hpp"
-#include "list.hpp"
