@@ -132,6 +132,7 @@
         "output_transcript": "复制棋谱到剪切板",
         "output_board": "复制棋盘为字符串",
         "output_game": "保存对局",
+        "edit_game": "编辑对局",
         "input_from_clipboard": "从剪贴板输入任何格式",
         "input_text": "输入任意格式的文本",
         "format": {

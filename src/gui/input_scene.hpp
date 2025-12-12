@@ -319,6 +319,7 @@ private:
     std::vector<Game_abstract> games;
     std::vector<Button> import_buttons;
     std::vector<ImageButton> delete_buttons;
+    std::vector<ImageButton> edit_buttons;
     Scroll_manager scroll_manager;
     Button back_button;
     Button up_button;
@@ -401,7 +402,7 @@ public:
             };
             const ExplorerFolderInlineConfig* inline_ptr = &inline_cfg;
             auto res = DrawExplorerList(
-                folders_display, games, delete_buttons, scroll_manager, up_button,
+                folders_display, games, delete_buttons, edit_buttons, scroll_manager, up_button,
                 IMPORT_GAME_HEIGHT, IMPORT_GAME_N_GAMES_ON_WINDOW, explorer_state.has_parent(), getData().fonts, getData().colors, getData().resources, language,
                 getData().directories.document_dir, explorer_state.subfolder, inline_ptr);
             if (res.upButtonClicked || res.parentFolderDoubleClicked) {
@@ -427,6 +428,10 @@ public:
             }
             if (res.deleteClicked && res.deleteIndex >= 0) {
                 delete_game(res.deleteIndex);
+            }
+            if (res.editClicked && res.editIndex >= 0) {
+                edit_game(res.editIndex);
+                return;
             }
             if (res.gameDoubleClicked && res.importIndex >= 0) {
                 import_game(res.importIndex);
@@ -466,6 +471,36 @@ private:
         load_games();
         init_scroll_manager();
         return true;
+    }
+
+    void edit_game(int idx) {
+        const String json_path = get_base_dir() + games[idx].date + U".json";
+        JSON game_json = JSON::Load(json_path);
+        if (not game_json) {
+            std::cerr << "can't open game" << std::endl;
+            failed = true;
+            return;
+        }
+        
+        // Load game information
+        if (game_json[GAME_BLACK_PLAYER].getType() == JSONValueType::String) {
+            getData().game_information.black_player_name = game_json[GAME_BLACK_PLAYER].getString();
+        }
+        if (game_json[GAME_WHITE_PLAYER].getType() == JSONValueType::String) {
+            getData().game_information.white_player_name = game_json[GAME_WHITE_PLAYER].getString();
+        }
+        if (game_json[GAME_MEMO].getType() == JSONValueType::String) {
+            getData().game_information.memo = game_json[GAME_MEMO].getString();
+        }
+        
+        // Set game editor info for editing mode
+        getData().game_editor_info.return_scene = U"Import_game";
+        getData().game_editor_info.is_editing_mode = true;
+        getData().game_editor_info.game_date = games[idx].date;
+        getData().game_editor_info.subfolder = explorer_state.subfolder;
+        getData().game_editor_info.game_info_updated = false;
+        
+        changeScene(U"Game_editor", SCENE_FADE_TIME);
     }
 
     void import_game(int idx) {
@@ -635,6 +670,7 @@ private:
         games.clear();
         import_buttons.clear();
         delete_buttons.clear();
+        edit_buttons.clear();
         const String csv_path = get_base_dir() + U"summary.csv";
         const CSV csv{ csv_path };
         if (csv) {
@@ -656,10 +692,15 @@ private:
             import_buttons.emplace_back(button);
         }
         Texture delete_button_image = getData().resources.cross;
+        Texture edit_button_image = getData().resources.pencil;
         for (int i = 0; i < (int)games.size(); ++i) {
-            ImageButton button;
-            button.init(0, 0, 15, delete_button_image);
-            delete_buttons.emplace_back(button);
+            ImageButton delete_button;
+            delete_button.init(0, 0, 15, delete_button_image);
+            delete_buttons.emplace_back(delete_button);
+            
+            ImageButton edit_button;
+            edit_button.init(0, 0, 15, edit_button_image);
+            edit_buttons.emplace_back(edit_button);
         }
         init_scroll_manager();
     }
@@ -887,7 +928,7 @@ private:
             return;
         }
         int insert_idx = std::clamp(res.reorderTo, 0, (int)games.size());
-        bool changed = gui_list::reorder_parallel(games, res.reorderFrom, insert_idx, import_buttons, delete_buttons);
+        bool changed = gui_list::reorder_parallel(games, res.reorderFrom, insert_idx, import_buttons, delete_buttons, edit_buttons);
         if (!changed) {
             return;
         }

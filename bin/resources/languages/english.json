@@ -132,6 +132,7 @@
         "output_transcript": "Copy Transcript",
         "output_board": "Copy Board as String",
         "output_game": "Save Game",
+        "edit_game": "Edit Game",
         "input_from_clipboard": "Input any Format from Clipboard",
         "input_text": "Input Text with any format",
         "format": {

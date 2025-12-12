@@ -131,7 +131,8 @@
         "import_failed": "匯入失敗",
         "output_transcript": "複製棋譜",
         "output_board": "複製棋譜為字串",
-        "output_game": "儲存對局",
+        "output_game": "保存對局",
+        "edit_game": "編輯對局",
         "input_from_clipboard": "從剪貼簿匯入任意格式",
         "input_text": "輸入任意格式的文本",
         "format": {

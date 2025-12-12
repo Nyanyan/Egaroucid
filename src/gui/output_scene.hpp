@@ -63,6 +63,19 @@ public:
         save_here_button.init(BUTTON3_3_SX, BUTTON3_SY, BUTTON3_WIDTH, BUTTON3_HEIGHT, BUTTON3_RADIUS, language.get("in_out", "save_here"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
         cancel_picker_button.init(BUTTON3_1_SX, BUTTON3_SY, BUTTON3_WIDTH, BUTTON3_HEIGHT, BUTTON3_RADIUS, language.get("common", "back"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
         up_button.init(IMPORT_GAME_SX, IMPORT_GAME_SY - 30, 28, 24, 4, U"↑", 16, getData().fonts.font, getData().colors.white, getData().colors.black);
+        
+        // Check if coming back from Game_editor
+        if (getData().game_editor_info.game_info_updated) {
+            // Show folder picker to save the game
+            picker_subfolder.clear();
+            enumerate_save_dir();
+            init_folder_scroll_manager();
+            new_folder_area.text.clear();
+            new_folder_area.cursorPos = 0;
+            new_folder_area.rebuildGlyphs();
+            show_folder_picker = true;
+            getData().game_editor_info.game_info_updated = false;
+        }
     }
 
     void update() override {
@@ -85,41 +98,6 @@ public:
         }
 
         if (!show_folder_picker) {
-            getData().fonts.font(language.get("in_out", "output_game")).draw(25, Arg::topCenter(X_CENTER, 10), getData().colors.white);
-            getData().fonts.font(language.get("in_out", "player_name")).draw(15, Arg::topCenter(X_CENTER, 47), getData().colors.white);
-            SimpleGUI::TextArea(text_area[BLACK_PLAYER_IDX], Vec2{X_CENTER - EXPORT_GAME_PLAYER_WIDTH, 70}, SizeF{EXPORT_GAME_PLAYER_WIDTH, EXPORT_GAME_PLAYER_HEIGHT}, SimpleGUI::PreferredTextAreaMaxChars);
-            SimpleGUI::TextArea(text_area[WHITE_PLAYER_IDX], Vec2{X_CENTER, 70}, SizeF{EXPORT_GAME_PLAYER_WIDTH, EXPORT_GAME_PLAYER_HEIGHT}, SimpleGUI::PreferredTextAreaMaxChars);
-            Circle(X_CENTER - EXPORT_GAME_PLAYER_WIDTH - EXPORT_GAME_RADIUS - 20, 70 + EXPORT_GAME_RADIUS, EXPORT_GAME_RADIUS).draw(getData().colors.black);
-            Circle(X_CENTER + EXPORT_GAME_PLAYER_WIDTH + EXPORT_GAME_RADIUS + 20, 70 + EXPORT_GAME_RADIUS, EXPORT_GAME_RADIUS).draw(getData().colors.white);
-            // Memo label / counter / textbox (slightly higher and smaller)
-            const int memo_label_y = 110;
-            const int memo_box_y = 130;
-            getData().fonts.font(language.get("in_out", "memo")).draw(15, Arg::topCenter(X_CENTER, memo_label_y), getData().colors.white);
-            getData().fonts.font(Format(text_area[MEMO_IDX].text.size()) + U"/" + Format(TEXTBOX_MAX_CHARS) + U" " + language.get("common", "characters")).draw(15, Arg::topRight(X_CENTER + EXPORT_GAME_MEMO_WIDTH / 2, memo_label_y), getData().colors.white);
-            SimpleGUI::TextArea(text_area[MEMO_IDX], Vec2{X_CENTER - EXPORT_GAME_MEMO_WIDTH / 2, memo_box_y}, SizeF{EXPORT_GAME_MEMO_WIDTH, EXPORT_GAME_MEMO_HEIGHT}, TEXTBOX_MAX_CHARS);
-            // Tab移動: black -> white -> memo -> black（フォルダ入力は使わない）
-            auto focus_next_from = [&](int idx) {
-                // deactivate current
-                text_area[idx].active = false;
-                text_area[(idx + 1) % 3].active = true;
-            };
-            for (int i = 0; i < 3; ++i) {
-                std::string str = text_area[i].text.narrow();
-                if (str.find('\t') != std::string::npos) {
-                    text_area[i].text.replace(U"\t", U"");
-                    text_area[i].cursorPos = text_area[i].text.size();
-                    text_area[i].rebuildGlyphs();
-                    focus_next_from(i);
-                }
-                if ((str.find('\n') != std::string::npos || str.find('\r') != std::string::npos) && i != MEMO_IDX) {
-                    text_area[i].text.replace(U"\r", U"").replace(U"\n", U" ");
-                    text_area[i].cursorPos = text_area[i].text.size();
-                    text_area[i].rebuildGlyphs();
-                }
-            }
-            getData().game_information.black_player_name = text_area[BLACK_PLAYER_IDX].text;
-            getData().game_information.white_player_name = text_area[WHITE_PLAYER_IDX].text;
-            getData().game_information.memo = text_area[MEMO_IDX].text;
             back_button.draw();
             export_main_button.draw();
             export_this_board_button.draw();
@@ -127,16 +105,15 @@ public:
                 getData().graph_resources.need_init = false;
                 changeScene(U"Main_scene", SCENE_FADE_TIME);
             }
-            // Open folder picker after clicking save buttons
-            if ( export_main_button.clicked()) {
+            // Open game editor to input game information
+            if (export_main_button.clicked()) {
                 pending_history = getData().graph_resources.nodes[0];
-                picker_subfolder.clear();
-                enumerate_save_dir();
-                init_folder_scroll_manager();
-                new_folder_area.text.clear();
-                new_folder_area.cursorPos = 0;
-                new_folder_area.rebuildGlyphs();
-                show_folder_picker = true;
+                getData().game_editor_info.return_scene = U"Export_game";
+                getData().game_editor_info.is_editing_mode = false;
+                getData().game_editor_info.game_date.clear();
+                getData().game_editor_info.subfolder.clear();
+                getData().game_editor_info.game_info_updated = false;
+                changeScene(U"Game_editor", SCENE_FADE_TIME);
             }
             if (export_this_board_button.clicked()) {
                 std::vector<History_elem> history;
@@ -183,9 +160,10 @@ public:
             // List via shared helper (folders only)
             // Dummy variables for unused buttons in folder picker
             std::vector<ImageButton> dummyDeleteBtns; // not used in folder picker
+            std::vector<ImageButton> dummyEditBtns; // not used in folder picker
             bool has_parent_folder = !picker_subfolder.empty();
             auto pickRes = DrawExplorerList(
-                save_folders_display, picker_games, dummyDeleteBtns,
+                save_folders_display, picker_games, dummyDeleteBtns, dummyEditBtns,
                 folder_scroll_manager, up_button, EXPORT_GAME_FOLDER_AREA_HEIGHT, EXPORT_GAME_N_GAMES_ON_WINDOW, 
                 has_parent_folder, getData().fonts, getData().colors, getData().resources, language,
                 getData().directories.document_dir, picker_subfolder, nullptr);
@@ -525,57 +503,21 @@ private:
 
     void export_game(std::vector<History_elem> history) {
         String date = Unicode::Widen(calc_date());
-        JSON json;
-        json[GAME_DATE] = date;
-        json[GAME_BLACK_PLAYER] = getData().game_information.black_player_name;
-        json[GAME_WHITE_PLAYER] = getData().game_information.white_player_name;
-        json[GAME_MEMO] = getData().game_information.memo;
-        int black_discs = GAME_DISCS_UNDEFINED;
-        int white_discs = GAME_DISCS_UNDEFINED;
-        if (history.back().board.is_end()) {
-            if (history.back().player == BLACK) {
-                black_discs = history.back().board.count_player();
-                white_discs = history.back().board.count_opponent();
-            } else {
-                black_discs = history.back().board.count_opponent();
-                white_discs = history.back().board.count_player();
-            }
-        }
-        json[GAME_BLACK_DISCS] = black_discs;
-        json[GAME_WHITE_DISCS] = white_discs;
-        for (History_elem history_elem : history) {
-            String n_discs = Format(history_elem.board.n_discs());
-            json[n_discs][GAME_BOARD_PLAYER] = history_elem.board.player;
-            json[n_discs][GAME_BOARD_OPPONENT] = history_elem.board.opponent;
-            json[n_discs][GAME_PLAYER] = history_elem.player;
-            json[n_discs][GAME_VALUE] = history_elem.v;
-            json[n_discs][GAME_LEVEL] = history_elem.level;
-            json[n_discs][GAME_POLICY] = history_elem.policy;
-            if (history_elem.board.n_discs() < history.back().board.n_discs()) {
-                json[n_discs][GAME_NEXT_POLICY] = history_elem.next_policy;
-            } else {
-                json[n_discs][GAME_NEXT_POLICY] = -1;
-            }
-        }
         // Build directory path: appdata/games/(subfolder)/
         String base_dir = Unicode::Widen(getData().directories.document_dir) + U"games/";
         String folder = Unicode::Widen(subfolder);
         if (folder.size()) {
             base_dir += folder + U"/";
         }
-        FileSystem::CreateDirectories(base_dir);
-        const String save_path = base_dir + date + U".json";
-        json.save(save_path);
-
-        const String csv_path = base_dir + U"summary.csv";
-        CSV csv{ csv_path };
-        String memo_summary_all = getData().game_information.memo.replaced(U"\r", U"").replaced(U"\n", U" ");
-        String memo_summary;
-        for (int i = 0; i < std::min((int)memo_summary_all.size(), GAME_MEMO_SUMMARY_SIZE); ++i) {
-            memo_summary += memo_summary_all[i];
-        }
-        csv.writeRow(date, getData().game_information.black_player_name, getData().game_information.white_player_name, memo_summary, black_discs, white_discs);
-        csv.save(csv_path);
+        
+        game_save_helper::save_game_to_file(
+            base_dir,
+            date,
+            getData().game_information.black_player_name,
+            getData().game_information.white_player_name,
+            getData().game_information.memo,
+            history
+        );
     }
 };
 

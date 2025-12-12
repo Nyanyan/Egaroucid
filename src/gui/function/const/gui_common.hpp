@@ -783,6 +783,22 @@ struct Game_information {
     }
 };
 
+struct Game_editor_info {
+    String return_scene;
+    bool is_editing_mode;
+    String game_date;
+    std::string subfolder;
+    bool game_info_updated;
+
+    void init() {
+        return_scene.clear();
+        is_editing_mode = false;
+        game_date.clear();
+        subfolder.clear();
+        game_info_updated = false;
+    }
+};
+
 struct Book_information {
     bool changed{ false };
     uint_fast8_t changing{ BOOK_CHANGE_NO_CELL };
@@ -925,6 +941,7 @@ struct Common_resources {
     History_elem history_elem;
     Graph_resources graph_resources;
     Game_information game_information;
+    Game_editor_info game_editor_info;
     Book_information book_information;
     User_settings user_settings;
     Forced_openings forced_openings;

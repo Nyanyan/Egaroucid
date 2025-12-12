@@ -132,6 +132,7 @@
         "output_transcript": "現局面までの棋譜をコピー",
         "output_board": "盤面を文字列でコピー",
         "output_game": "対局保存",
+        "edit_game": "対局編集",
         "input_from_clipboard": "クリップボードから形式を指定せず入力",
         "input_text": "テキストで形式を指定せず入力",
         "format": {

@@ -253,6 +253,8 @@ struct ExplorerDrawResult {
     int importIndex = -1;
     bool deleteClicked = false;
     int deleteIndex = -1;
+    bool editClicked = false;
+    int editIndex = -1;
     bool upButtonClicked = false;
     bool parentFolderDoubleClicked = false;  // New: parent folder navigation
     
@@ -484,6 +486,7 @@ inline ExplorerDrawResult DrawExplorerList(
     const std::vector<String>& folders_display,
     const std::vector<Game_abstract>& games,
     std::vector<ImageButton>& delete_buttons,
+    std::vector<ImageButton>& edit_buttons,
     Scroll_manager& scroll_manager,
     Button& up_button,
     int item_height,
@@ -555,13 +558,13 @@ inline ExplorerDrawResult DrawExplorerList(
     
     // Draw list items
     ExplorerDrawResult list_result = draw_explorer_list_items<FontsT, ColorsT, ResourcesT, LanguageT>(
-        folders_display, games, delete_buttons, scroll_manager, 
+        folders_display, games, delete_buttons, edit_buttons, scroll_manager, 
         item_height, n_games_on_window, has_parent, fonts, colors, resources, language,
         drag_state, click_state, current_time, list_geom, inline_config
     );
     
     if (list_result.folderClicked || list_result.folderDoubleClicked || 
-        list_result.gameDoubleClicked || list_result.deleteClicked || 
+        list_result.gameDoubleClicked || list_result.deleteClicked || list_result.editClicked ||
         list_result.parentFolderDoubleClicked || list_result.folderRenameRequested) {
         return list_result;
     }
@@ -578,6 +581,7 @@ inline ExplorerDrawResult draw_explorer_list_items(
     const std::vector<String>& folders_display,
     const std::vector<Game_abstract>& games,
     std::vector<ImageButton>& delete_buttons,
+    std::vector<ImageButton>& edit_buttons,
     Scroll_manager& scroll_manager,
     int item_height,
     int n_games_on_window,
@@ -667,10 +671,10 @@ inline ExplorerDrawResult draw_explorer_list_items(
             int i = row - parent_offset - (int)folders_display.size();
             if (i >= 0 && i < (int)games.size()) {
                 ExplorerDrawResult game_result = draw_game_item<FontsT, ColorsT>(
-                    games[i], i, rect, row, delete_buttons, drag_state, fonts, colors,
+                    games[i], i, rect, row, delete_buttons, edit_buttons, drag_state, fonts, colors,
                     sy, item_height, click_state, current_time, inline_editing
                 );
-                if (game_result.gameDoubleClicked || game_result.deleteClicked) {
+                if (game_result.gameDoubleClicked || game_result.deleteClicked || game_result.editClicked) {
                     return game_result;
                 }
             }
@@ -885,6 +889,7 @@ inline ExplorerDrawResult draw_game_item(
     const Rect& rect,
     int row,
     std::vector<ImageButton>& delete_buttons,
+    std::vector<ImageButton>& edit_buttons,
     ExplorerDragState& drag_state,
     FontsT& fonts,
     ColorsT& colors,
@@ -938,6 +943,23 @@ inline ExplorerDrawResult draw_game_item(
             if (delete_buttons[game_index].clicked()) {
                 res.deleteClicked = true;
                 res.deleteIndex = game_index;
+                return res;
+            }
+        }
+    }
+    
+    // Show edit button (pencil) next to delete button
+    if (game_index < (int)edit_buttons.size()) {
+        edit_buttons[game_index].move(IMPORT_GAME_SX + 1 + 20, sy + 1);
+        if (interactions_locked) {
+            edit_buttons[game_index].disable_notransparent();
+            edit_buttons[game_index].draw();
+        } else {
+            edit_buttons[game_index].enable();
+            edit_buttons[game_index].draw();
+            if (edit_buttons[game_index].clicked()) {
+                res.editClicked = true;
+                res.editIndex = game_index;
                 return res;
             }
         }
@@ -1123,6 +1145,7 @@ inline ExplorerDrawResult DrawExplorerList(
     const std::vector<Game_abstract>& games,
     std::vector<Button>& import_buttons,
     std::vector<ImageButton>& delete_buttons,
+    std::vector<ImageButton>& edit_buttons,
     Scroll_manager& scroll_manager,
     Button& up_button,
     bool showImportButtons,
@@ -1136,7 +1159,7 @@ inline ExplorerDrawResult DrawExplorerList(
 ) {
     // Call the main function with empty document_dir and current_subfolder
     return DrawExplorerList(
-        folders_display, games, delete_buttons, scroll_manager,
+        folders_display, games, delete_buttons, edit_buttons, scroll_manager,
         up_button, item_height,
         n_games_on_window, has_parent, fonts, colors, resources, language,
         "", "", nullptr
