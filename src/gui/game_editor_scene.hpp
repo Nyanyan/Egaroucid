@@ -142,8 +142,8 @@ private:
 
 public:
     Game_editor(const InitData& init) : IScene{ init } {
-        back_button.init(GO_BACK_BUTTON_BACK_SX, GO_BACK_BUTTON_SY, GO_BACK_BUTTON_WIDTH, GO_BACK_BUTTON_HEIGHT, GO_BACK_BUTTON_RADIUS, language.get("common", "back"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
-        ok_button.init(GO_BACK_BUTTON_GO_SX, GO_BACK_BUTTON_SY, GO_BACK_BUTTON_WIDTH, GO_BACK_BUTTON_HEIGHT, GO_BACK_BUTTON_RADIUS, language.get("common", "ok"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
+        back_button.init(BUTTON2_1_SX, BUTTON2_SY, BUTTON2_WIDTH, BUTTON2_HEIGHT, BUTTON2_RADIUS, language.get("common", "back"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
+        ok_button.init(BUTTON2_2_SX, BUTTON2_SY, BUTTON2_WIDTH, BUTTON2_HEIGHT, BUTTON2_RADIUS, language.get("common", "ok"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
         
         text_area[BLACK_PLAYER_IDX].active = true;
         text_area[BLACK_PLAYER_IDX].text = getData().game_information.black_player_name;
@@ -248,14 +248,42 @@ private:
             String n_discs_str = Format(n_discs);
             if (game_json[n_discs_str]) {
                 History_elem history_elem;
-                history_elem.board.player = game_json[n_discs_str][GAME_BOARD_PLAYER].get<uint64_t>();
-                history_elem.board.opponent = game_json[n_discs_str][GAME_BOARD_OPPONENT].get<uint64_t>();
-                history_elem.player = game_json[n_discs_str][GAME_PLAYER].get<int>();
-                history_elem.v = game_json[n_discs_str][GAME_VALUE].get<int>();
-                history_elem.level = game_json[n_discs_str][GAME_LEVEL].get<int>();
-                history_elem.policy = game_json[n_discs_str][GAME_POLICY].get<int>();
+                if (game_json[n_discs_str][GAME_BOARD_PLAYER].getType() == JSONValueType::Number) {
+                    history_elem.board.player = game_json[n_discs_str][GAME_BOARD_PLAYER].get<uint64_t>();
+                } else {
+                    break;
+                }
+                if (game_json[n_discs_str][GAME_BOARD_OPPONENT].getType() == JSONValueType::Number) {
+                    history_elem.board.opponent = game_json[n_discs_str][GAME_BOARD_OPPONENT].get<uint64_t>();
+                } else {
+                    break;
+                }
+                if (game_json[n_discs_str][GAME_PLAYER].getType() == JSONValueType::Number) {
+                    history_elem.player = game_json[n_discs_str][GAME_PLAYER].get<int>();
+                } else {
+                    break;
+                }
+                if (game_json[n_discs_str][GAME_VALUE].getType() == JSONValueType::Number) {
+                    history_elem.v = game_json[n_discs_str][GAME_VALUE].get<int>();
+                } else {
+                    break;
+                }
+                if (game_json[n_discs_str][GAME_LEVEL].getType() == JSONValueType::Number) {
+                    history_elem.level = game_json[n_discs_str][GAME_LEVEL].get<int>();
+                } else {
+                    break;
+                }
+                if (game_json[n_discs_str][GAME_POLICY].getType() == JSONValueType::Number) {
+                    history_elem.policy = game_json[n_discs_str][GAME_POLICY].get<int>();
+                } else {
+                    break;
+                }
                 if (n_discs < HW2) {
-                    history_elem.next_policy = game_json[n_discs_str][GAME_NEXT_POLICY].get<int>();
+                    if (game_json[n_discs_str][GAME_NEXT_POLICY].getType() == JSONValueType::Number) {
+                        history_elem.next_policy = game_json[n_discs_str][GAME_NEXT_POLICY].get<int>();
+                    } else {
+                        history_elem.next_policy = -1;
+                    }
                 } else {
                     history_elem.next_policy = -1;
                 }

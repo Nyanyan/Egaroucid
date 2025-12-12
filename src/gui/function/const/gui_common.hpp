@@ -233,6 +233,14 @@ constexpr int GO_BACK_BUTTON_RADIUS = 20;
 constexpr int GO_BACK_BUTTON_GO_SX = X_CENTER + 10;
 constexpr int GO_BACK_BUTTON_BACK_SX = X_CENTER - GO_BACK_BUTTON_WIDTH - 10;
 
+// 2 buttons constants
+constexpr int BUTTON2_WIDTH = 200;
+constexpr int BUTTON2_HEIGHT = 50;
+constexpr int BUTTON2_SY = 420;
+constexpr int BUTTON2_RADIUS = 20;
+constexpr int BUTTON2_1_SX = X_CENTER - BUTTON2_WIDTH - 10;
+constexpr int BUTTON2_2_SX = X_CENTER + 10;
+
 // 3 buttons constants
 constexpr int BUTTON3_WIDTH = 200;
 constexpr int BUTTON3_HEIGHT = 50;

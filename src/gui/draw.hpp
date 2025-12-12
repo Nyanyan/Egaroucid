@@ -948,9 +948,11 @@ inline ExplorerDrawResult draw_game_item(
         }
     }
     
-    // Show edit button (pencil) next to delete button
+    // Show edit button (pencil) at right side (same position as folder rename button)
     if (game_index < (int)edit_buttons.size()) {
-        edit_buttons[game_index].move(IMPORT_GAME_SX + 1 + 20, sy + 1);
+        int edit_btn_x = IMPORT_GAME_SX + IMPORT_GAME_WIDTH - 18 - 40;
+        int edit_btn_y = sy + (item_height - 18) / 2;
+        edit_buttons[game_index].move(edit_btn_x, edit_btn_y);
         if (interactions_locked) {
             edit_buttons[game_index].disable_notransparent();
             edit_buttons[game_index].draw();
