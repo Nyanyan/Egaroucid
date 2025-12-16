@@ -326,6 +326,7 @@ private:
     std::vector<Button> import_buttons;
     std::vector<ImageButton> delete_buttons;
     std::vector<ImageButton> edit_buttons;
+    std::vector<ImageButton> folder_delete_buttons;
     Scroll_manager scroll_manager;
     Button back_button;
     Button up_button;
@@ -411,6 +412,31 @@ public:
                 folders_display, games, delete_buttons, edit_buttons, scroll_manager, up_button,
                 IMPORT_GAME_HEIGHT, IMPORT_GAME_N_GAMES_ON_WINDOW, explorer_state.has_parent(), getData().fonts, getData().colors, getData().resources, language,
                 getData().directories.document_dir, explorer_state.subfolder, inline_ptr);
+            
+            // Draw delete buttons for empty folders
+            if (!renaming_folder) {
+                int sy = IMPORT_GAME_SY + 8;
+                int strt_idx_int = scroll_manager.get_strt_idx_int();
+                int parent_offset = explorer_state.has_parent() ? 1 : 0;
+                int row_index = parent_offset;  // Start after parent folder row
+                
+                for (int i = 0; i < (int)folders_display.size(); ++i) {
+                    if (row_index >= strt_idx_int && row_index < strt_idx_int + IMPORT_GAME_N_GAMES_ON_WINDOW) {
+                        if (is_folder_empty(folders_display[i])) {
+                            int display_row = row_index - strt_idx_int;
+                            int item_sy = sy + display_row * IMPORT_GAME_HEIGHT;
+                            folder_delete_buttons[i].move(IMPORT_GAME_SX + 1, item_sy + 1);
+                            folder_delete_buttons[i].draw();
+                            if (folder_delete_buttons[i].clicked()) {
+                                delete_folder(i);
+                                return;
+                            }
+                        }
+                    }
+                    row_index++;
+                }
+            }
+            
             if (res.upButtonClicked || res.parentFolderDoubleClicked) {
                 if (navigate_to_parent_subfolder()) {
                     return;
@@ -464,6 +490,56 @@ private:
         int parent_offset = explorer_state.has_parent() ? 1 : 0;  // Add parent folder if not at root
         int total = parent_offset + (int)folders_display.size() + (int)games.size();
         scroll_manager.init(770, IMPORT_GAME_SY + 8, 10, IMPORT_GAME_HEIGHT * IMPORT_GAME_N_GAMES_ON_WINDOW, 20, total, IMPORT_GAME_N_GAMES_ON_WINDOW, IMPORT_GAME_SX, 73, IMPORT_GAME_WIDTH + 10, IMPORT_GAME_HEIGHT * IMPORT_GAME_N_GAMES_ON_WINDOW);
+    }
+    
+    // Check if folder is empty (no subfolders and no games)
+    bool is_folder_empty(const String& folder_name) const {
+        std::string base_dir = get_root_dir();
+        std::string rel_path = explorer_state.subfolder;
+        if (!rel_path.empty()) {
+            rel_path += "/";
+        }
+        rel_path += folder_name.narrow();
+        
+        // Check for subfolders
+        std::vector<String> subfolders = explorer::enumerate_subfolders(base_dir, explorer::PathState{rel_path});
+        if (!subfolders.empty()) {
+            return false;
+        }
+        
+        // Check for games in summary.csv
+        String folder_dir = Unicode::Widen(base_dir);
+        if (!rel_path.empty()) {
+            folder_dir += U"/" + Unicode::Widen(rel_path);
+        }
+        String csv_path = folder_dir + U"/summary.csv";
+        if (FileSystem::Exists(csv_path)) {
+            CSV csv{ csv_path };
+            if (csv.rows() > 0) {
+                return false;
+            }
+        }
+        return true;
+    }
+    
+    // Delete folder (only if empty)
+    void delete_folder(int idx) {
+        if (idx < 0 || idx >= (int)folders_display.size()) return;
+        
+        const String& folder_name = folders_display[idx];
+        if (!is_folder_empty(folder_name)) {
+            return;  // Don't delete non-empty folders
+        }
+        
+        String folder_path = get_base_dir() + folder_name;
+        
+        // Delete the folder
+        if (FileSystem::IsDirectory(folder_path)) {
+            FileSystem::Remove(folder_path, AllowUndo::No);
+            enumerate_current_dir();
+            load_games();
+            std::cerr << "Deleted empty folder: " << folder_name << std::endl;
+        }
     }
 
     bool navigate_to_parent_subfolder() {
@@ -662,9 +738,16 @@ private:
     // Enumerate current directory (folders_display only; parent is shown as a separate up icon)
     void enumerate_current_dir() {
         folders_display.clear();
+        folder_delete_buttons.clear();
         std::vector<String> folders = explorer::enumerate_subfolders(get_root_dir(), explorer_state);
+        Texture cross_image = getData().resources.cross;
         for (auto& folder : folders) {
             folders_display.emplace_back(folder);
+            
+            // Add delete button for each folder
+            ImageButton delete_btn;
+            delete_btn.init(0, 0, 15, cross_image);
+            folder_delete_buttons.emplace_back(delete_btn);
         }
         
         if (!selected_folder_name.isEmpty()) {
