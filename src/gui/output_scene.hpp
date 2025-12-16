@@ -274,7 +274,11 @@ public:
             // Action buttons
             cancel_picker_button.draw();
             if (cancel_picker_button.clicked()) {
+                // Return to Game_editor to modify game information
                 show_folder_picker = false;
+                getData().game_editor_info.game_info_updated = false;
+                changeScene(U"Game_editor", SCENE_FADE_TIME);
+                return;
             }
             save_here_button.draw();
             if (save_here_button.clicked()) {

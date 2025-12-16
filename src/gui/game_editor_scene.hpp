@@ -258,7 +258,8 @@ public:
             export_main_button.draw();
             export_this_board_button.draw();
             if (back_button3.clicked() || KeyEscape.pressed()) {
-                changeScene(return_scene, SCENE_FADE_TIME);
+                getData().graph_resources.need_init = false;
+                changeScene(U"Main_scene", SCENE_FADE_TIME);
             }
         }
         
