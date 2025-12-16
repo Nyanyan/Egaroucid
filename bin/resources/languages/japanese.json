@@ -161,6 +161,7 @@
         "export_until_this_board": "設定局面までを保存",
         "player_name": "プレイヤー名",
         "memo": "メモ",
+        "date": "日付",
         "screen_shot": "スクリーンショット",
         "change_screenshot_saving_dir": "保存場所変更",
         "input_screenshot_saving_dir": "スクリーンショット保存ディレクトリを入力してください",
