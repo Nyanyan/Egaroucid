@@ -55,8 +55,9 @@ struct Book_elem {
     uint32_t n_lines;
     bool seen;
     std::vector<Book_link> links;
+    int trans_idx; // transformation index used to get representative board
     
-    Book_elem() : value(SCORE_UNDEFINED), level(LEVEL_UNDEFINED), n_lines(0), seen(false) {}
+    Book_elem() : value(SCORE_UNDEFINED), level(LEVEL_UNDEFINED), n_lines(0), seen(false), trans_idx(0) {}
 };
 
 // Board structure
@@ -234,6 +235,97 @@ Board representative_board(const Board& b) {
     return res;
 }
 
+// Get representative board with transformation index - following util.hpp implementation
+Board representative_board(const Board& b, int* idx) {
+    Board res = b;                                                                  *idx = 0; // default
+    Board bt = b;   bt = board_black_line_mirror(bt);          if (compare_representative_board(&res, bt))     *idx = 2; // black line
+    Board bv =      board_vertical_mirror(b);                  if (compare_representative_board(&res, bv))     *idx = 1; // vertical
+    Board btv =     board_vertical_mirror(bt);                 if (compare_representative_board(&res, btv))    *idx = 3; // black line + vertical
+    Board b_h =     board_horizontal_mirror(b);                if (compare_representative_board(&res, b_h))    *idx = 6; // horizontal
+    Board bt_h =    board_horizontal_mirror(bt);               if (compare_representative_board(&res, bt_h))   *idx = 4; // black line + horizontal
+    Board b_hv =    board_vertical_mirror(b_h);                if (compare_representative_board(&res, b_hv))   *idx = 7; // horizontal + vertical
+    Board bt_hv =   board_vertical_mirror(bt_h);               if (compare_representative_board(&res, bt_hv))  *idx = 5; // black line + horizontal + vertical
+    return res;
+}
+
+// Convert coordinate to representative board - following util.hpp implementation
+int convert_coord_to_representative_board(int cell, int idx) {
+    if (cell < 0 || cell >= HW2) return cell;
+    int y = cell / HW;
+    int x = cell % HW;
+    int res;
+    switch (idx) {
+        case 0:
+            res = cell; // original
+            break;
+        case 1:
+            res = (HW - 1 - y) * HW + x; // vertical
+            break;
+        case 2:
+            res = x * HW + y; // black line (transpose)
+            break;
+        case 3:
+            res = (HW - 1 - y) * HW + (HW - 1 - x); // black line + vertical (rotate 180)
+            break;
+        case 4:
+            res = (HW - 1 - x) * HW + (HW - 1 - y); // black line + horizontal (white line transpose)
+            break;
+        case 5:
+            res = (HW - 1 - x) * HW + y; // black line + horizontal + vertical (rotate 90 counterclockwise)
+            break;
+        case 6:
+            res = y * HW + (HW - 1 - x); // horizontal
+            break;
+        case 7:
+            res = x * HW + (HW - 1 - y); // horizontal + vertical (rotate 90 clockwise)
+            break;
+        default:
+            res = cell;
+            std::cerr << "converting coord error" << std::endl;
+            break;
+    }
+    return res;
+}
+
+// Convert coordinate from representative board (inverse transformation)
+int convert_coord_from_representative_board(int cell, int idx) {
+    if (cell < 0 || cell >= HW2) return cell;
+    int y = cell / HW;
+    int x = cell % HW;
+    int res;
+    switch (idx) {
+        case 0:
+            res = cell; // original
+            break;
+        case 1:
+            res = (HW - 1 - y) * HW + x; // vertical (self-inverse)
+            break;
+        case 2:
+            res = x * HW + y; // black line (transpose, self-inverse)
+            break;
+        case 3:
+            res = (HW - 1 - y) * HW + (HW - 1 - x); // black line + vertical (rotate 180, self-inverse)
+            break;
+        case 4:
+            res = (HW - 1 - x) * HW + (HW - 1 - y); // black line + horizontal (self-inverse)
+            break;
+        case 5:
+            res = y * HW + (HW - 1 - x); // black line + horizontal + vertical (rotate 90 clockwise, inverse of counterclockwise)
+            break;
+        case 6:
+            res = y * HW + (HW - 1 - x); // horizontal (self-inverse)
+            break;
+        case 7:
+            res = x * HW + (HW - 1 - y); // horizontal + vertical (rotate 90 counterclockwise, inverse of clockwise)
+            break;
+        default:
+            res = cell;
+            std::cerr << "converting coord error" << std::endl;
+            break;
+    }
+    return res;
+}
+
 // Hash function for Board
 struct Book_hash {
     size_t operator()(const Board& b) const {
@@ -269,6 +361,28 @@ std::string cell_to_move_string(int cell) {
     result += ('a' + col);
     result += ('1' + row);
     return result;
+}
+
+// Print board state
+void print_board(const Board& b, const std::string& title) {
+    std::cout << "  " << title << ":" << std::endl;
+    std::cout << "    a b c d e f g h" << std::endl;
+    for (int i = 0; i < HW; ++i) {
+        std::cout << "  " << (i + 1) << " ";
+        for (int j = 0; j < HW; ++j) {
+            int cell = i * HW + j;
+            if (b.player & (1ULL << cell)) {
+                std::cout << "X ";
+            } else if (b.opponent & (1ULL << cell)) {
+                std::cout << "O ";
+            } else {
+                std::cout << ". ";
+            }
+        }
+        std::cout << std::endl;
+    }
+    std::cout << "  Player: 0x" << std::hex << b.player << std::dec << std::endl;
+    std::cout << "  Opponent: 0x" << std::hex << b.opponent << std::dec << std::endl;
 }
 
 // Book class
@@ -377,16 +491,24 @@ public:
                 board.player = player;
                 board.opponent = opponent;
                 
-                Board repr = representative_board(board);
+                int trans_idx;
+                Board repr = representative_board(board, &trans_idx);
                 
                 Book_elem elem;
                 elem.value = (int8_t)value;
                 elem.level = level;
                 elem.n_lines = n_lines;
+                elem.trans_idx = trans_idx; // Store transformation index
+                
+                // Store leaf move as-is (do not transform)
                 elem.leaf.value = leaf_value;
                 elem.leaf.move = leaf_move;
                 elem.leaf.level = level;
-                elem.links = links;
+                
+                // Store link moves as-is (do not transform)
+                for (const auto& link : links) {
+                    elem.links.push_back(link);
+                }
                 
                 book[repr] = elem;
             }
@@ -405,10 +527,14 @@ public:
     }
     
     Book_elem get(const Board& b) const {
-        Board repr = representative_board(b);
+        int current_trans_idx;
+        Board repr = representative_board(b, &current_trans_idx);
         auto it = book.find(repr);
         if (it != book.end()) {
-            return it->second;
+            Book_elem elem = it->second;
+            // Store the transformation index for current board
+            elem.trans_idx = current_trans_idx;
+            return elem;
         }
         return Book_elem();
     }
@@ -450,19 +576,63 @@ bool check_single_line(Book& test_book, const std::string& line_str) {
 
     // Initial board
     std::cout << "Initial board (move 0):" << std::endl;
+    print_board(board, "  Current board");
     if (test_book.contain(&board)) {
+        int trans_idx;
+        Board repr = representative_board(board, &trans_idx);
+        print_board(repr, "  Representative board (trans=" + std::to_string(trans_idx) + ")");
         Book_elem elem = test_book.get(board);
         std::cout << "  [FOUND] Value: " << (int)elem.value 
                   << ", Level: " << (int)elem.level 
                   << ", N_lines: " << elem.n_lines << std::endl;
+        
+        // Check if next move exists in links/leaf
+        int next_cell = -1;
+        if (!moves.empty()) {
+            next_cell = move_string_to_cell(moves[0]);
+        }
+        
+        // Display leaf in original orientation
+        int orig_leaf_move = elem.leaf.move;
+        if (elem.leaf.move >= 0 && elem.leaf.move < HW2) {
+            orig_leaf_move = convert_coord_from_representative_board(elem.leaf.move, elem.trans_idx);
+        }
+        std::cout << "  Leaf: " << cell_to_move_string(orig_leaf_move);
+        if (elem.leaf.move >= 0 && elem.leaf.move < HW2) {
+            std::cout << " [repr: " << cell_to_move_string(elem.leaf.move) << "]";
+        }
+        std::cout << " (value: " << (int)elem.leaf.value 
+                  << ", level: " << (int)elem.leaf.level << ")";
+        if (elem.leaf.move != MOVE_UNDEFINED && next_cell == orig_leaf_move) {
+            std::cout << " *** NEXT MOVE IS LEAF ***";
+        }
+        std::cout << std::endl;
+        
+        // Display links in original orientation
         if (!elem.links.empty()) {
             std::cout << "  Links (" << elem.links.size() << "):";
+            bool next_found_in_links = false;
             for (size_t j = 0; j < elem.links.size(); ++j) {
                 if (j > 0) std::cout << ",";
-                std::cout << " " << cell_to_move_string(elem.links[j].move) 
-                          << "(" << (int)elem.links[j].value << ")";
+                int stored_link_move = elem.links[j].move;
+                int orig_link_move = stored_link_move;
+                if (stored_link_move >= 0 && stored_link_move < HW2) {
+                    orig_link_move = convert_coord_from_representative_board(stored_link_move, elem.trans_idx);
+                }
+                std::cout << " " << cell_to_move_string(orig_link_move);
+                if (stored_link_move >= 0 && stored_link_move < HW2) {
+                    std::cout << "[repr:" << cell_to_move_string(stored_link_move) << "]";
+                }
+                std::cout << "(" << (int)elem.links[j].value << ")";
+                if (next_cell == orig_link_move) {
+                    std::cout << "***";
+                    next_found_in_links = true;
+                }
             }
             std::cout << std::endl;
+            if (next_found_in_links) {
+                std::cout << "  *** NEXT MOVE FOUND IN LINKS ***" << std::endl;
+            }
         }
     } else {
         std::cout << "  [NOT FOUND]" << std::endl;
@@ -499,25 +669,63 @@ bool check_single_line(Book& test_book, const std::string& line_str) {
 
         // Check if in book
         std::cout << "After move " << (i + 1) << " (" << move_str << "):" << std::endl;
+        print_board(board, "  Current board");
         if (test_book.contain(&board)) {
+            int trans_idx;
+            Board repr = representative_board(board, &trans_idx);
+            print_board(repr, "  Representative board (trans=" + std::to_string(trans_idx) + ")");
             Book_elem elem = test_book.get(board);
             std::cout << "  [FOUND] Value: " << (int)elem.value 
                       << ", Level: " << (int)elem.level 
-                      << ", N_lines: " << elem.n_lines;
-            if (elem.leaf.move != MOVE_UNDEFINED) {
-                std::cout << ", Leaf: " << cell_to_move_string(elem.leaf.move) 
-                          << " (value: " << (int)elem.leaf.value 
-                          << ", level: " << (int)elem.leaf.level << ")";
+                      << ", N_lines: " << elem.n_lines << std::endl;
+            
+            // Check if next move exists in links/leaf
+            int next_cell = -1;
+            if (i + 1 < moves.size()) {
+                next_cell = move_string_to_cell(moves[i + 1]);
+            }
+            
+            // Display leaf in original orientation
+            int orig_leaf_move = elem.leaf.move;
+            if (elem.leaf.move >= 0 && elem.leaf.move < HW2) {
+                orig_leaf_move = convert_coord_from_representative_board(elem.leaf.move, elem.trans_idx);
+            }
+            std::cout << "  Leaf: " << cell_to_move_string(orig_leaf_move);
+            if (elem.leaf.move >= 0 && elem.leaf.move < HW2) {
+                std::cout << " [repr: " << cell_to_move_string(elem.leaf.move) << "]";
+            }
+            std::cout << " (value: " << (int)elem.leaf.value 
+                      << ", level: " << (int)elem.leaf.level << ")";
+            if (elem.leaf.move != MOVE_UNDEFINED && next_cell == orig_leaf_move) {
+                std::cout << " *** NEXT MOVE IS LEAF ***";
             }
             std::cout << std::endl;
+            
+            // Display links in original orientation
             if (!elem.links.empty()) {
                 std::cout << "  Links (" << elem.links.size() << "):";
+                bool next_found_in_links = false;
                 for (size_t j = 0; j < elem.links.size(); ++j) {
                     if (j > 0) std::cout << ",";
-                    std::cout << " " << cell_to_move_string(elem.links[j].move) 
-                              << "(" << (int)elem.links[j].value << ")";
+                    int stored_link_move = elem.links[j].move; // This is in representative board coordinates
+                    int orig_link_move = stored_link_move;
+                    if (stored_link_move >= 0 && stored_link_move < HW2) {
+                        orig_link_move = convert_coord_from_representative_board(stored_link_move, elem.trans_idx);
+                    }
+                    std::cout << " " << cell_to_move_string(orig_link_move);
+                    if (stored_link_move >= 0 && stored_link_move < HW2) {
+                        std::cout << "[repr:" << cell_to_move_string(stored_link_move) << "]";
+                    }
+                    std::cout << "(" << (int)elem.links[j].value << ")";
+                    if (next_cell == orig_link_move) {
+                        std::cout << "***";
+                        next_found_in_links = true;
+                    }
                 }
                 std::cout << std::endl;
+                if (next_found_in_links) {
+                    std::cout << "  *** NEXT MOVE FOUND IN LINKS ***" << std::endl;
+                }
             }
         } else {
             std::cout << "  [NOT FOUND]" << std::endl;
