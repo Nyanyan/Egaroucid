@@ -49,6 +49,7 @@ private:
     std::vector<ImageButton> edit_buttons;
     std::vector<ImageButton> toggle_buttons;
     std::vector<Folder_entry> folders_display;
+    std::vector<ImageButton> folder_delete_buttons;
     Scroll_manager scroll_manager;
     Button add_button;
     Button add_csv_button;  // Button to create new CSV file
@@ -709,9 +710,57 @@ public:
             }
         }
         
+        // Check if folder is empty (no subfolders and no openings)
+        bool is_folder_empty(const std::string& relative_path) const {
+            std::string base_dir = getData().directories.document_dir + "/forced_openings";
+            // Check for subfolders
+            std::vector<String> subfolders = enumerate_subdirectories_generic(base_dir, relative_path);
+            if (!subfolders.empty()) {
+                return false;
+            }
+            // Check for openings in summary.csv
+            String folder_dir = Unicode::Widen(base_dir);
+            if (!relative_path.empty()) {
+                folder_dir += U"/" + Unicode::Widen(relative_path);
+            }
+            String csv_path = folder_dir + U"/summary.csv";
+            if (FileSystem::Exists(csv_path)) {
+                CSV csv{ csv_path };
+                if (csv.rows() > 0) {
+                    return false;
+                }
+            }
+            return true;
+        }
+        
+        // Delete folder (only if empty)
+        void delete_folder(int idx) {
+            if (idx < 0 || idx >= (int)folders_display.size()) return;
+            
+            const auto& folder = folders_display[idx];
+            if (!is_folder_empty(folder.relative_path)) {
+                return;  // Don't delete non-empty folders
+            }
+            
+            String folder_path = Unicode::Widen(getData().directories.document_dir) + U"/forced_openings/";
+            if (!subfolder.empty()) {
+                folder_path += Unicode::Widen(subfolder) + U"/";
+            }
+            folder_path += folder.name;
+            
+            // Delete the folder
+            if (FileSystem::IsDirectory(folder_path)) {
+                FileSystem::Remove(folder_path, AllowUndo::No);
+                enumerate_current_dir();
+                load_openings();
+                std::cerr << "Deleted empty folder: " << folder.name << std::endl;
+            }
+        }
+        
         // Enumerate current directory
         void enumerate_current_dir() {
             folders_display.clear();
+            folder_delete_buttons.clear();
             has_parent = !subfolder.empty();
             renaming_folder = false;
             renaming_folder_index = -1;
@@ -721,12 +770,18 @@ public:
             
             std::string base_dir = getData().directories.document_dir + "/forced_openings";
             std::vector<String> folders = enumerate_subdirectories_generic(base_dir, subfolder);
+            Texture cross_image = getData().resources.cross;
             for (auto& folder : folders) {
                 std::string rel_path = build_child_relative_path(folder.narrow());
                 bool is_enabled = load_folder_enabled_state(rel_path);
                 bool effective_enabled = is_folder_effectively_enabled(rel_path);
                 double weight = load_folder_weight(rel_path);
                 folders_display.emplace_back(Folder_entry{ folder, rel_path, is_enabled, effective_enabled, weight });
+                
+                // Add delete button for each folder
+                ImageButton delete_btn;
+                delete_btn.init(0, 0, 15, cross_image);
+                folder_delete_buttons.emplace_back(delete_btn);
             }
             
             init_scroll_manager();
@@ -952,6 +1007,17 @@ public:
             }
             double text_offset = icon_x + (folder_icon ? folder_icon.width() * icon_scale + 10.0 : 0.0);
             bool is_renaming_this = renaming_folder && renaming_folder_index == idx;
+            
+            // Draw delete button only for empty folders
+            if (!is_renaming_this && !(editing_elem || renaming_folder) && is_folder_empty(entry.relative_path)) {
+                folder_delete_buttons[idx].move(OPENING_SETTING_SX + 1, sy + 1);
+                folder_delete_buttons[idx].draw();
+                if (folder_delete_buttons[idx].clicked()) {
+                    delete_folder(idx);
+                    return;
+                }
+            }
+            
             if (is_renaming_this) {
                 gui_list::InlineEditLayout layout = gui_list::compute_inline_edit_layout({
                     .row_y = static_cast<double>(sy),
