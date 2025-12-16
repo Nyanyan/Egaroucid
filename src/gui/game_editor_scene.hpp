@@ -200,7 +200,7 @@ public:
         // Date label / textbox (below player names)
         const int date_box_y = 47;
         getData().fonts.font(language.get("in_out", "date") + U": ").draw(15, Arg::rightCenter(X_CENTER, date_box_y + EXPORT_GAME_DATE_HEIGHT / 2), getData().colors.white);
-        SimpleGUI::TextArea(text_area[DATE_IDX], Vec2{X_CENTER, date_box_y}, SizeF{EXPORT_GAME_DATE_WIDTH, EXPORT_GAME_DATE_HEIGHT}, SimpleGUI::PreferredTextAreaMaxChars);
+        SimpleGUI::TextArea(text_area[DATE_IDX], Vec2{X_CENTER, date_box_y}, SizeF{EXPORT_GAME_DATE_WIDTH, EXPORT_GAME_DATE_HEIGHT}, 30);
 
         // Player name label / textboxes
         const int player_label_y = 85;
