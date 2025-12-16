@@ -786,12 +786,14 @@ struct Game_information {
     String white_player_name;
     String memo;
     String date;  // YYYY-MM-DD format
+    bool is_game_loaded;  // true if a specific game is loaded from Import_game
 
     void init() {
         black_player_name.clear();
         white_player_name.clear();
         memo.clear();
         date.clear();
+        is_game_loaded = false;
     }
 };
 

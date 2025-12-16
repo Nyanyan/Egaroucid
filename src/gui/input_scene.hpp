@@ -527,6 +527,14 @@ private:
         if (game_json[GAME_MEMO].getType() == JSONValueType::String) {
             getData().game_information.memo = game_json[GAME_MEMO].getString();
         }
+        // Load date field
+        if (game_json[U"date"].getType() == JSONValueType::String) {
+            getData().game_information.date = game_json[U"date"].getString();
+        } else {
+            getData().game_information.date = games[idx].filename_date.substr(0, 10).replaced(U"_", U"-");
+        }
+        // Mark that a specific game has been loaded
+        getData().game_information.is_game_loaded = true;
         getData().graph_resources.nodes[GRAPH_MODE_NORMAL].clear();
         getData().graph_resources.nodes[GRAPH_MODE_INSPECT].clear();
         for (int n_discs = 4; n_discs <= HW2; ++n_discs) {

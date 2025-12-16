@@ -63,6 +63,8 @@ public:
         scroll_manager_white.update();
         String white_player_display = get_substr(getData().game_information.white_player_name, scroll_manager_white.get_strt_idx_int(), 300 - 14);
         getData().fonts.font(white_player_display).draw(15, Arg::leftCenter(X_CENTER + 10 + 2, 80 + 15), getData().colors.white);
+        // date
+        getData().fonts.font(language.get("in_out", "date") + U": " + getData().game_information.date).draw(15, Arg::topCenter(X_CENTER, 112), getData().colors.white);
         // memo
         getData().fonts.font(language.get("in_out", "memo")).draw(15, Arg::topCenter(X_CENTER, 127), getData().colors.white);
         Rect memo_rect{X_CENTER - 300, 150, 600, 250};
@@ -80,7 +82,7 @@ public:
         if (edit_button.clicked()) {
             // Transition to Game_editor to edit current game information
             getData().game_editor_info.return_scene = U"Game_information_scene";
-            getData().game_editor_info.is_editing_mode = false; // This is for editing current game info, not saved game
+            getData().game_editor_info.is_editing_mode = getData().game_information.is_game_loaded;
             getData().game_editor_info.game_date.clear();
             getData().game_editor_info.subfolder.clear();
             getData().game_editor_info.game_info_updated = false;
