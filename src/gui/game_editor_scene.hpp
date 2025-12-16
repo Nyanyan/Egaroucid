@@ -138,7 +138,8 @@ namespace game_save_helper {
 
 class Game_editor : public App::Scene {
 private:
-    Button back_button;
+    Button back_button2;
+    Button back_button3;
     Button ok_button;
     Button export_main_button;     // For new game save: save main line
     Button export_this_board_button; // For new game save: save until this board
@@ -158,7 +159,8 @@ private:
 
 public:
     Game_editor(const InitData& init) : IScene{ init } {
-        back_button.init(BUTTON2_1_SX, BUTTON2_SY, BUTTON2_WIDTH, BUTTON2_HEIGHT, BUTTON2_RADIUS, language.get("common", "back"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
+        back_button2.init(BUTTON2_1_SX, BUTTON2_SY, BUTTON2_WIDTH, BUTTON2_HEIGHT, BUTTON2_RADIUS, language.get("common", "back"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
+        back_button3.init(BUTTON3_1_SX, BUTTON3_SY, BUTTON3_WIDTH, BUTTON3_HEIGHT, BUTTON3_RADIUS, language.get("common", "back"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
         ok_button.init(BUTTON2_2_SX, BUTTON2_SY, BUTTON2_WIDTH, BUTTON2_HEIGHT, BUTTON2_RADIUS, language.get("common", "ok"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
         export_main_button.init(BUTTON3_2_SX, BUTTON3_SY, BUTTON3_WIDTH, BUTTON3_HEIGHT, BUTTON3_RADIUS, language.get("in_out", "export_main"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
         export_this_board_button.init(BUTTON3_3_SX, BUTTON3_SY, BUTTON3_WIDTH, BUTTON3_HEIGHT, BUTTON3_RADIUS, language.get("in_out", "export_until_this_board"), 15, getData().fonts.font, getData().colors.white, getData().colors.black);
@@ -242,19 +244,22 @@ public:
         getData().game_information.memo = text_area[MEMO_IDX].text;
         getData().game_information.date = text_area[DATE_IDX].text;
         
-        back_button.draw();
         
         if (is_editing_mode) {
+            back_button2.draw();
             // Editing existing game: show OK button
             ok_button.draw();
+            if (back_button2.clicked() || KeyEscape.pressed()) {
+                changeScene(return_scene, SCENE_FADE_TIME);
+            }
         } else {
             // New game save: show two export buttons
+            back_button3.draw();
             export_main_button.draw();
             export_this_board_button.draw();
-        }
-        
-        if (back_button.clicked() || KeyEscape.pressed()) {
-            changeScene(return_scene, SCENE_FADE_TIME);
+            if (back_button3.clicked() || KeyEscape.pressed()) {
+                changeScene(return_scene, SCENE_FADE_TIME);
+            }
         }
         
         if (is_editing_mode) {
