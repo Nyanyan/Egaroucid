@@ -1353,7 +1353,35 @@ Search_result ai_accept_loss(Board board, int level, int acceptable_loss) {
     return res;
 }
 
+std::vector<std::pair<int, Board>> get_legal_moves_and_representative_board(Board board) {
+    std::vector<std::pair<int, Board>> legal_moves_and_representative_board;
+    uint64_t legal = board.get_legal();
+    Flip flip;
+    for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)) {
+        calc_flip(&flip, &board, cell);
+        board.move_board(&flip);
+            Board unique_board = representative_board(board);
+            legal_moves_and_representative_board.emplace_back(std::make_pair((int)cell, unique_board));
+        board.undo_board(&flip);
+    }
+    return legal_moves_and_representative_board;
+}
+
+std::vector<int> get_symmetry_moves_including_self(std::vector<std::pair<int, Board>> legal_moves_and_representative_board, Board board, int policy) {
+    Flip flip;
+    calc_flip(&flip, &board, policy);
+    Board moved_unique_board = representative_board(board.move_copy(&flip));
+    std::vector<int> res;
+    for (std::pair<int, Board> &elem: legal_moves_and_representative_board) {
+        if (elem.second == moved_unique_board) {
+            res.emplace_back(elem.first);
+        }
+    }
+    return res;
+}
+
 void ai_hint(Board board, int level, bool use_book, int book_acc_level, bool use_multi_thread, bool show_log, int n_display, double values[], int hint_types[]) {
+    std::vector<std::pair<int, Board>> legal_moves_and_representative_board = get_legal_moves_and_representative_board(board);
     uint64_t legal = board.get_legal();
     if (use_book) {
         std::vector<Book_value> links = book.get_all_moves_with_value(&board);
@@ -1379,6 +1407,30 @@ void ai_hint(Board board, int level, bool use_book, int book_acc_level, bool use
                     hint_types[elem.policy] = elem.probability;
                 } else{
                     hint_types[elem.policy] = search_level;
+                }
+            }
+        }
+        for (std::pair<int, Board> &elem: legal_moves_and_representative_board) {
+            int cell = elem.first;
+            std::vector<int> symmetry_moves = get_symmetry_moves_including_self(legal_moves_and_representative_board, board, cell);
+            if (symmetry_moves.size() > 1) {
+                double avg = 0.0;
+                std::vector<int> symmetry_same_level_moves;
+                for (int symmetry_move: symmetry_moves) {
+                    if (hint_types[symmetry_move] == hint_types[cell]) {
+                        symmetry_same_level_moves.emplace_back(symmetry_move);
+                        avg += values[symmetry_move];
+                    }
+                }
+                avg /= symmetry_same_level_moves.size();
+                if (symmetry_same_level_moves.size() > 1) {
+                    std::cerr << "symmetry found avg=" << avg << std::endl;
+                    for (int symmetry_move: symmetry_same_level_moves) {
+                        std::cerr << idx_to_coord(symmetry_move) << " " << values[symmetry_move] << std::endl;
+                    }
+                    for (int symmetry_move: symmetry_same_level_moves) {
+                        values[symmetry_move] = avg;
+                    }
                 }
             }
         }
