@@ -246,8 +246,10 @@ public:
             // Editing existing game: show OK button
             ok_button.draw();
             if (back_button.clicked() || KeyEscape.pressed()) {
-                // Clear game information when returning from edit mode
-                getData().game_information.init();
+                // Clear game information only when not returning to Game_information_scene
+                if (return_scene != U"Game_information_scene") {
+                    getData().game_information.init();
+                }
                 changeScene(return_scene, SCENE_FADE_TIME);
             }
         } else {
