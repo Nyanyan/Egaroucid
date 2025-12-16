@@ -335,29 +335,15 @@ private:
             }
         }
         
-        // Save updated JSON only (do not call save_game_to_file to avoid CSV duplication)
-        JSON updated_json;
-        updated_json[U"black_player_name"] = getData().game_information.black_player_name;
-        updated_json[U"white_player_name"] = getData().game_information.white_player_name;
-        updated_json[U"memo"] = getData().game_information.memo;
-        updated_json[U"date"] = getData().game_information.date;
+        // Update only player names, memo, and date in the existing JSON
+        game_json[GAME_BLACK_PLAYER] = getData().game_information.black_player_name;
+        game_json[GAME_WHITE_PLAYER] = getData().game_information.white_player_name;
+        game_json[GAME_MEMO] = getData().game_information.memo;
+        game_json[U"date"] = getData().game_information.date;
         
-        // Add history data
-        for (const History_elem& elem : history) {
-            int n_discs = elem.board.n_discs();
-            String n_discs_str = Format(n_discs);
-            updated_json[n_discs_str][GAME_BOARD_PLAYER] = elem.board.player;
-            updated_json[n_discs_str][GAME_BOARD_OPPONENT] = elem.board.opponent;
-            updated_json[n_discs_str][GAME_PLAYER] = elem.player;
-            updated_json[n_discs_str][GAME_VALUE] = elem.v;
-            updated_json[n_discs_str][GAME_LEVEL] = elem.level;
-            updated_json[n_discs_str][GAME_POLICY] = elem.policy;
-            if (n_discs < HW2) {
-                updated_json[n_discs_str][GAME_NEXT_POLICY] = elem.next_policy;
-            }
-        }
+        // Keep all other fields (history, scores, etc.) unchanged
         
-        if (!updated_json.save(json_path)) {
+        if (!game_json.save(json_path)) {
             std::cerr << "Failed to save updated game JSON: " << json_path.narrow() << std::endl;
             return;
         }

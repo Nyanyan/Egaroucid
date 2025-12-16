@@ -108,7 +108,8 @@ public:
             // Open game editor to input game information
             if (export_main_button.clicked()) {
                 pending_history = getData().graph_resources.nodes[0];
-                getData().game_information.date.clear(); // Reset date field for new game
+                // Keep existing player names and memo, only reset date for new game
+                getData().game_information.date.clear();
                 getData().game_editor_info.return_scene = U"Export_game";
                 getData().game_editor_info.is_editing_mode = false;
                 getData().game_editor_info.game_date.clear();

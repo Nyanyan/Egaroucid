@@ -78,7 +78,13 @@ public:
             changeScene(U"Main_scene", SCENE_FADE_TIME);
         }
         if (edit_button.clicked()) {
-            changeScene(U"Export_game", SCENE_FADE_TIME);
+            // Transition to Game_editor to edit current game information
+            getData().game_editor_info.return_scene = U"Game_information_scene";
+            getData().game_editor_info.is_editing_mode = false; // This is for editing current game info, not saved game
+            getData().game_editor_info.game_date.clear();
+            getData().game_editor_info.subfolder.clear();
+            getData().game_editor_info.game_info_updated = false;
+            changeScene(U"Game_editor", SCENE_FADE_TIME);
         }
     }
 
