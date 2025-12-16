@@ -248,15 +248,15 @@ Board representative_board(const Board& b, int* idx) {
     return res;
 }
 
-// Convert coordinate to representative board - following util.hpp implementation
+// Convert coordinate to representative board - copied from util.hpp
 int convert_coord_to_representative_board(int cell, int idx) {
     if (cell < 0 || cell >= HW2) return cell;
+    int res;
     int y = cell / HW;
     int x = cell % HW;
-    int res;
     switch (idx) {
         case 0:
-            res = cell; // original
+            res = cell;
             break;
         case 1:
             res = (HW - 1 - y) * HW + x; // vertical
@@ -265,19 +265,19 @@ int convert_coord_to_representative_board(int cell, int idx) {
             res = x * HW + y; // black line (transpose)
             break;
         case 3:
-            res = (HW - 1 - y) * HW + (HW - 1 - x); // black line + vertical (rotate 180)
+            res = (HW - 1 - x) * HW + y; // black line + vertical ( = rotate 90 counterclockwise)
             break;
         case 4:
-            res = (HW - 1 - x) * HW + (HW - 1 - y); // black line + horizontal (white line transpose)
+            res = x * HW + (HW - 1 - y); // black line + horizontal ( = rotate 90 clockwise)
             break;
         case 5:
-            res = (HW - 1 - x) * HW + y; // black line + horizontal + vertical (rotate 90 counterclockwise)
+            res = (HW - 1 - x) * HW + (HW - 1 - y); // black line + horizontal + vertical ( = white line)
             break;
         case 6:
             res = y * HW + (HW - 1 - x); // horizontal
             break;
         case 7:
-            res = x * HW + (HW - 1 - y); // horizontal + vertical (rotate 90 clockwise)
+            res = (HW - 1 - y) * HW + (HW - 1 - x); // horizontal + vertical ( = rotate180)
             break;
         default:
             res = cell;
@@ -287,36 +287,36 @@ int convert_coord_to_representative_board(int cell, int idx) {
     return res;
 }
 
-// Convert coordinate from representative board (inverse transformation)
+// Convert coordinate from representative board - copied from util.hpp
 int convert_coord_from_representative_board(int cell, int idx) {
     if (cell < 0 || cell >= HW2) return cell;
+    int res;
     int y = cell / HW;
     int x = cell % HW;
-    int res;
     switch (idx) {
         case 0:
-            res = cell; // original
+            res = cell;
             break;
         case 1:
-            res = (HW - 1 - y) * HW + x; // vertical (self-inverse)
+            res = (HW - 1 - y) * HW + x; // vertical
             break;
         case 2:
             res = x * HW + y; // black line (transpose, self-inverse)
             break;
         case 3:
-            res = (HW - 1 - y) * HW + (HW - 1 - x); // black line + vertical (rotate 180, self-inverse)
+            res = x * HW + (HW - 1 - y); // black line + vertical ( = rotate 90 counterclockwise)
             break;
         case 4:
-            res = (HW - 1 - x) * HW + (HW - 1 - y); // black line + horizontal (self-inverse)
+            res = (HW - 1 - x) * HW + y; // black line + horizontal ( = rotate 90 clockwise)
             break;
         case 5:
-            res = y * HW + (HW - 1 - x); // black line + horizontal + vertical (rotate 90 clockwise, inverse of counterclockwise)
+            res = (HW - 1 - x) * HW + (HW - 1 - y); // black line + horizontal + vertical ( = white line, self-inverse)
             break;
         case 6:
-            res = y * HW + (HW - 1 - x); // horizontal (self-inverse)
+            res = y * HW + (HW - 1 - x); // horizontal
             break;
         case 7:
-            res = x * HW + (HW - 1 - y); // horizontal + vertical (rotate 90 counterclockwise, inverse of clockwise)
+            res = (HW - 1 - y) * HW + (HW - 1 - x); // horizontal + vertical ( = rotate180)
             break;
         default:
             res = cell;
@@ -500,14 +500,25 @@ public:
                 elem.n_lines = n_lines;
                 elem.trans_idx = trans_idx; // Store transformation index
                 
-                // Store leaf move as-is (do not transform)
+                // Transform leaf move to representative board coordinates
                 elem.leaf.value = leaf_value;
-                elem.leaf.move = leaf_move;
+                if (leaf_move >= 0 && leaf_move < HW2) {
+                    elem.leaf.move = convert_coord_to_representative_board(leaf_move, trans_idx);
+                } else {
+                    elem.leaf.move = leaf_move;
+                }
                 elem.leaf.level = level;
                 
-                // Store link moves as-is (do not transform)
+                // Transform link moves to representative board coordinates
                 for (const auto& link : links) {
-                    elem.links.push_back(link);
+                    Book_link transformed_link;
+                    transformed_link.value = link.value;
+                    if (link.move >= 0 && link.move < HW2) {
+                        transformed_link.move = convert_coord_to_representative_board(link.move, trans_idx);
+                    } else {
+                        transformed_link.move = link.move;
+                    }
+                    elem.links.push_back(transformed_link);
                 }
                 
                 book[repr] = elem;
