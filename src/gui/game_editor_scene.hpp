@@ -282,9 +282,38 @@ public:
         } else {
             // New game save mode
             if (export_main_button.clicked()) {
-                getData().game_editor_info.game_info_updated = true;
-                getData().game_editor_info.export_mode = 0; // main line
-                changeScene(return_scene, SCENE_FADE_TIME);
+                // Prepare history for save location picker
+                if (getData().game_editor_info.export_mode == 0) {
+                    // Main line
+                    getData().save_location_picker_info.pending_history = getData().graph_resources.nodes[0];
+                } else {
+                    // Until this board
+                    std::vector<History_elem> history;
+                    int inspect_switch_n_discs = INF;
+                    if (getData().graph_resources.branch == 1) {
+                        if (getData().graph_resources.nodes[GRAPH_MODE_INSPECT].size()) {
+                            inspect_switch_n_discs = getData().graph_resources.nodes[GRAPH_MODE_INSPECT][0].board.n_discs();
+                        }
+                    }
+                    for (History_elem& history_elem : getData().graph_resources.nodes[GRAPH_MODE_NORMAL]) {
+                        if (history_elem.board.n_discs() >= inspect_switch_n_discs || history_elem.board.n_discs() > getData().history_elem.board.n_discs()) {
+                            break;
+                        }
+                        history.emplace_back(history_elem);
+                    }
+                    if (inspect_switch_n_discs != INF) {
+                        for (History_elem& history_elem : getData().graph_resources.nodes[GRAPH_MODE_INSPECT]) {
+                            if (history_elem.board.n_discs() > getData().history_elem.board.n_discs()) {
+                                break;
+                            }
+                            history.emplace_back(history_elem);
+                        }
+                    }
+                    getData().save_location_picker_info.pending_history.swap(history);
+                }
+                // Transition to Save_location_picker scene
+                getData().game_editor_info.return_scene = U"Game_editor";
+                changeScene(U"Save_location_picker", SCENE_FADE_TIME);
             }
         }
     }

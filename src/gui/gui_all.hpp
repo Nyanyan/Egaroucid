@@ -16,6 +16,7 @@
 #include "close_scene.hpp"
 #include "game_information.hpp"
 #include "game_editor_scene.hpp"
+#include "save_location_picker_scene.hpp"
 #include "input_scene.hpp"
 #include "load_scene.hpp"
 #include "main_scene.hpp"

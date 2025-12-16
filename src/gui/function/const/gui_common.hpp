@@ -815,6 +815,16 @@ struct Game_editor_info {
     }
 };
 
+struct Save_location_picker_info {
+    std::vector<History_elem> pending_history;
+    std::string selected_subfolder;
+
+    void init() {
+        pending_history.clear();
+        selected_subfolder.clear();
+    }
+};
+
 struct Book_information {
     bool changed{ false };
     uint_fast8_t changing{ BOOK_CHANGE_NO_CELL };
@@ -958,6 +968,7 @@ struct Common_resources {
     Graph_resources graph_resources;
     Game_information game_information;
     Game_editor_info game_editor_info;
+    Save_location_picker_info save_location_picker_info;
     Book_information book_information;
     User_settings user_settings;
     Forced_openings forced_openings;
