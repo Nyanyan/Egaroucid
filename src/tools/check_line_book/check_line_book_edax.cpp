@@ -589,9 +589,9 @@ bool check_single_line(Book& test_book, const std::string& line_str) {
     std::cout << "Initial board (move 0):" << std::endl;
     print_board(board, "  Current board");
     if (test_book.contain(&board)) {
-        int trans_idx;
-        Board repr = representative_board(board, &trans_idx);
-        print_board(repr, "  Representative board (trans=" + std::to_string(trans_idx) + ")");
+        // int trans_idx;
+        // Board repr = representative_board(board, &trans_idx);
+        // print_board(repr, "  Representative board (trans=" + std::to_string(trans_idx) + ")");
         Book_elem elem = test_book.get(board);
         std::cout << "  [FOUND] Value: " << (int)elem.value 
                   << ", Level: " << (int)elem.level 
@@ -609,9 +609,9 @@ bool check_single_line(Book& test_book, const std::string& line_str) {
             orig_leaf_move = convert_coord_from_representative_board(elem.leaf.move, elem.trans_idx);
         }
         std::cout << "  Leaf: " << cell_to_move_string(orig_leaf_move);
-        if (elem.leaf.move >= 0 && elem.leaf.move < HW2) {
-            std::cout << " [repr: " << cell_to_move_string(elem.leaf.move) << "]";
-        }
+        // if (elem.leaf.move >= 0 && elem.leaf.move < HW2) {
+        //     std::cout << " [repr: " << cell_to_move_string(elem.leaf.move) << "]";
+        // }
         std::cout << " (value: " << (int)elem.leaf.value 
                   << ", level: " << (int)elem.leaf.level << ")";
         if (elem.leaf.move != MOVE_UNDEFINED && next_cell == orig_leaf_move) {
@@ -631,9 +631,9 @@ bool check_single_line(Book& test_book, const std::string& line_str) {
                     orig_link_move = convert_coord_from_representative_board(stored_link_move, elem.trans_idx);
                 }
                 std::cout << " " << cell_to_move_string(orig_link_move);
-                if (stored_link_move >= 0 && stored_link_move < HW2) {
-                    std::cout << "[repr:" << cell_to_move_string(stored_link_move) << "]";
-                }
+                // if (stored_link_move >= 0 && stored_link_move < HW2) {
+                //     std::cout << "[repr:" << cell_to_move_string(stored_link_move) << "]";
+                // }
                 std::cout << "(" << (int)elem.links[j].value << ")";
                 if (next_cell == orig_link_move) {
                     std::cout << "***";
@@ -682,9 +682,9 @@ bool check_single_line(Book& test_book, const std::string& line_str) {
         std::cout << "After move " << (i + 1) << " (" << move_str << "):" << std::endl;
         print_board(board, "  Current board");
         if (test_book.contain(&board)) {
-            int trans_idx;
-            Board repr = representative_board(board, &trans_idx);
-            print_board(repr, "  Representative board (trans=" + std::to_string(trans_idx) + ")");
+            // int trans_idx;
+            // Board repr = representative_board(board, &trans_idx);
+            // print_board(repr, "  Representative board (trans=" + std::to_string(trans_idx) + ")");
             Book_elem elem = test_book.get(board);
             std::cout << "  [FOUND] Value: " << (int)elem.value 
                       << ", Level: " << (int)elem.level 
@@ -702,9 +702,9 @@ bool check_single_line(Book& test_book, const std::string& line_str) {
                 orig_leaf_move = convert_coord_from_representative_board(elem.leaf.move, elem.trans_idx);
             }
             std::cout << "  Leaf: " << cell_to_move_string(orig_leaf_move);
-            if (elem.leaf.move >= 0 && elem.leaf.move < HW2) {
-                std::cout << " [repr: " << cell_to_move_string(elem.leaf.move) << "]";
-            }
+            // if (elem.leaf.move >= 0 && elem.leaf.move < HW2) {
+            //     std::cout << " [repr: " << cell_to_move_string(elem.leaf.move) << "]";
+            // }
             std::cout << " (value: " << (int)elem.leaf.value 
                       << ", level: " << (int)elem.leaf.level << ")";
             if (elem.leaf.move != MOVE_UNDEFINED && next_cell == orig_leaf_move) {
@@ -724,9 +724,9 @@ bool check_single_line(Book& test_book, const std::string& line_str) {
                         orig_link_move = convert_coord_from_representative_board(stored_link_move, elem.trans_idx);
                     }
                     std::cout << " " << cell_to_move_string(orig_link_move);
-                    if (stored_link_move >= 0 && stored_link_move < HW2) {
-                        std::cout << "[repr:" << cell_to_move_string(stored_link_move) << "]";
-                    }
+                    // if (stored_link_move >= 0 && stored_link_move < HW2) {
+                    //     std::cout << "[repr:" << cell_to_move_string(stored_link_move) << "]";
+                    // }
                     std::cout << "(" << (int)elem.links[j].value << ")";
                     if (next_cell == orig_link_move) {
                         std::cout << "***";
