@@ -138,11 +138,9 @@ namespace game_save_helper {
 
 class Game_editor : public App::Scene {
 private:
-    Button back_button2;
-    Button back_button3;
+    Button back_button;
     Button ok_button;
     Button export_main_button;     // For new game save: save main line
-    Button export_this_board_button; // For new game save: save until this board
     TextAreaEditState text_area[4]; // black player, white player, memo, date
     static constexpr int BLACK_PLAYER_IDX = 0;
     static constexpr int WHITE_PLAYER_IDX = 1;
@@ -159,11 +157,9 @@ private:
 
 public:
     Game_editor(const InitData& init) : IScene{ init } {
-        back_button2.init(BUTTON2_1_SX, BUTTON2_SY, BUTTON2_WIDTH, BUTTON2_HEIGHT, BUTTON2_RADIUS, language.get("common", "back"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
-        back_button3.init(BUTTON3_1_SX, BUTTON3_SY, BUTTON3_WIDTH, BUTTON3_HEIGHT, BUTTON3_RADIUS, language.get("common", "back"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
+        back_button.init(BUTTON2_1_SX, BUTTON2_SY, BUTTON2_WIDTH, BUTTON2_HEIGHT, BUTTON2_RADIUS, language.get("common", "back"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
         ok_button.init(BUTTON2_2_SX, BUTTON2_SY, BUTTON2_WIDTH, BUTTON2_HEIGHT, BUTTON2_RADIUS, language.get("common", "ok"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
-        export_main_button.init(BUTTON3_2_SX, BUTTON3_SY, BUTTON3_WIDTH, BUTTON3_HEIGHT, BUTTON3_RADIUS, language.get("in_out", "export_main"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
-        export_this_board_button.init(BUTTON3_3_SX, BUTTON3_SY, BUTTON3_WIDTH, BUTTON3_HEIGHT, BUTTON3_RADIUS, language.get("in_out", "export_until_this_board"), 15, getData().fonts.font, getData().colors.white, getData().colors.black);
+        export_main_button.init(BUTTON2_2_SX, BUTTON2_SY, BUTTON2_WIDTH, BUTTON2_HEIGHT, BUTTON2_RADIUS, language.get("in_out", "export_main"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
         
         text_area[BLACK_PLAYER_IDX].active = true;
         text_area[BLACK_PLAYER_IDX].text = getData().game_information.black_player_name;
@@ -246,20 +242,19 @@ public:
         
         
         if (is_editing_mode) {
-            back_button2.draw();
+            back_button.draw();
             // Editing existing game: show OK button
             ok_button.draw();
-            if (back_button2.clicked() || KeyEscape.pressed()) {
+            if (back_button.clicked() || KeyEscape.pressed()) {
                 // Clear game information when returning from edit mode
                 getData().game_information.init();
                 changeScene(return_scene, SCENE_FADE_TIME);
             }
         } else {
             // New game save: show two export buttons
-            back_button3.draw();
+            back_button.draw();
             export_main_button.draw();
-            export_this_board_button.draw();
-            if (back_button3.clicked() || KeyEscape.pressed()) {
+            if (back_button.clicked() || KeyEscape.pressed()) {
                 if (return_scene == U"Game_information_scene") {
                     // Returning to Game_information_scene
                     changeScene(return_scene, SCENE_FADE_TIME);
@@ -289,11 +284,6 @@ public:
             if (export_main_button.clicked()) {
                 getData().game_editor_info.game_info_updated = true;
                 getData().game_editor_info.export_mode = 0; // main line
-                changeScene(return_scene, SCENE_FADE_TIME);
-            }
-            if (export_this_board_button.clicked()) {
-                getData().game_editor_info.game_info_updated = true;
-                getData().game_editor_info.export_mode = 1; // until this board
                 changeScene(return_scene, SCENE_FADE_TIME);
             }
         }
