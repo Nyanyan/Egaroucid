@@ -195,28 +195,23 @@ public:
 
         getData().fonts.font(language.get("in_out", is_editing_mode ? "edit_game" : "output_game")).draw(25, Arg::topCenter(X_CENTER, 10), getData().colors.white);
         
+        // Date label / textbox (below player names)
+        const int date_box_y = 47;
+        getData().fonts.font(language.get("in_out", "date") + U": ").draw(15, Arg::rightCenter(X_CENTER, date_box_y + EXPORT_GAME_DATE_HEIGHT / 2), getData().colors.white);
+        SimpleGUI::TextArea(text_area[DATE_IDX], Vec2{X_CENTER, date_box_y}, SizeF{EXPORT_GAME_DATE_WIDTH, EXPORT_GAME_DATE_HEIGHT}, SimpleGUI::PreferredTextAreaMaxChars);
+
         // Player name label / textboxes
-        const int player_label_y = 47;
-        const int player_box_y = 70;
+        const int player_label_y = 85;
+        const int player_box_y = 108;
         getData().fonts.font(language.get("in_out", "player_name")).draw(15, Arg::topCenter(X_CENTER, player_label_y), getData().colors.white);
         SimpleGUI::TextArea(text_area[BLACK_PLAYER_IDX], Vec2{X_CENTER - EXPORT_GAME_PLAYER_WIDTH, player_box_y}, SizeF{EXPORT_GAME_PLAYER_WIDTH, EXPORT_GAME_PLAYER_HEIGHT}, SimpleGUI::PreferredTextAreaMaxChars);
         SimpleGUI::TextArea(text_area[WHITE_PLAYER_IDX], Vec2{X_CENTER, player_box_y}, SizeF{EXPORT_GAME_PLAYER_WIDTH, EXPORT_GAME_PLAYER_HEIGHT}, SimpleGUI::PreferredTextAreaMaxChars);
         Circle(X_CENTER - EXPORT_GAME_PLAYER_WIDTH - EXPORT_GAME_RADIUS - 20, player_box_y + EXPORT_GAME_RADIUS, EXPORT_GAME_RADIUS).draw(getData().colors.black);
         Circle(X_CENTER + EXPORT_GAME_PLAYER_WIDTH + EXPORT_GAME_RADIUS + 20, player_box_y + EXPORT_GAME_RADIUS, EXPORT_GAME_RADIUS).draw(getData().colors.white);
         
-        // Date label / textbox (below player names)
-        const int date_label_y = 100;
-        const int date_box_y = 123;
-        String date_label = language.get("in_out", "date");
-        if (date_label.isEmpty()) {
-            date_label = U"Date"; // Fallback in case language file is not updated
-        }
-        getData().fonts.font(date_label + U" (YYYY-MM-DD): ").draw(15, Arg::topLeft(X_CENTER - EXPORT_GAME_PLAYER_WIDTH, date_label_y), getData().colors.white);
-        SimpleGUI::TextArea(text_area[DATE_IDX], Vec2{X_CENTER - EXPORT_GAME_PLAYER_WIDTH, date_box_y}, SizeF{250, EXPORT_GAME_PLAYER_HEIGHT}, 10);
-        
         // Memo label / counter / textbox
-        const int memo_label_y = 153;
-        const int memo_box_y = 173;
+        const int memo_label_y = 143;
+        const int memo_box_y = 163;
         getData().fonts.font(language.get("in_out", "memo")).draw(15, Arg::topCenter(X_CENTER, memo_label_y), getData().colors.white);
         getData().fonts.font(Format(text_area[MEMO_IDX].text.size()) + U"/" + Format(TEXTBOX_MAX_CHARS) + U" " + language.get("common", "characters")).draw(15, Arg::topRight(X_CENTER + EXPORT_GAME_MEMO_WIDTH / 2, memo_label_y), getData().colors.white);
         SimpleGUI::TextArea(text_area[MEMO_IDX], Vec2{X_CENTER - EXPORT_GAME_MEMO_WIDTH / 2, memo_box_y}, SizeF{EXPORT_GAME_MEMO_WIDTH, EXPORT_GAME_MEMO_HEIGHT}, TEXTBOX_MAX_CHARS);
