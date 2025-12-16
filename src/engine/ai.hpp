@@ -1424,10 +1424,10 @@ void ai_hint(Board board, int level, bool use_book, int book_acc_level, bool use
                 }
                 avg /= symmetry_same_level_moves.size();
                 if (symmetry_same_level_moves.size() > 1) {
-                    std::cerr << "symmetry found avg=" << avg << std::endl;
-                    for (int symmetry_move: symmetry_same_level_moves) {
-                        std::cerr << idx_to_coord(symmetry_move) << " " << values[symmetry_move] << std::endl;
-                    }
+                    // std::cerr << "symmetry found avg=" << avg << std::endl;
+                    // for (int symmetry_move: symmetry_same_level_moves) {
+                    //     std::cerr << idx_to_coord(symmetry_move) << " " << values[symmetry_move] << std::endl;
+                    // }
                     for (int symmetry_move: symmetry_same_level_moves) {
                         values[symmetry_move] = avg;
                     }
