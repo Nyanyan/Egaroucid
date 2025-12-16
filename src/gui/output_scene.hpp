@@ -44,6 +44,7 @@ private:
     // Saving state
     bool is_saving = false;
     bool saving_started = false;
+    bool first_display = true; // Flag to transition to Game_editor on first frame
 
 
 public:
@@ -66,6 +67,35 @@ public:
         
         // Check if coming back from Game_editor
         if (getData().game_editor_info.game_info_updated) {
+            // Prepare history based on export mode
+            if (getData().game_editor_info.export_mode == 0) {
+                // Main line
+                pending_history = getData().graph_resources.nodes[0];
+            } else {
+                // Until this board
+                std::vector<History_elem> history;
+                int inspect_switch_n_discs = INF;
+                if (getData().graph_resources.branch == 1) {
+                    if (getData().graph_resources.nodes[GRAPH_MODE_INSPECT].size()) {
+                        inspect_switch_n_discs = getData().graph_resources.nodes[GRAPH_MODE_INSPECT][0].board.n_discs();
+                    }
+                }
+                for (History_elem& history_elem : getData().graph_resources.nodes[GRAPH_MODE_NORMAL]) {
+                    if (history_elem.board.n_discs() >= inspect_switch_n_discs || history_elem.board.n_discs() > getData().history_elem.board.n_discs()) {
+                        break;
+                    }
+                    history.emplace_back(history_elem);
+                }
+                if (inspect_switch_n_discs != INF) {
+                    for (History_elem& history_elem : getData().graph_resources.nodes[GRAPH_MODE_INSPECT]) {
+                        if (history_elem.board.n_discs() > getData().history_elem.board.n_discs()) {
+                            break;
+                        }
+                        history.emplace_back(history_elem);
+                    }
+                }
+                pending_history.swap(history);
+            }
             // Show folder picker to save the game
             picker_subfolder.clear();
             enumerate_save_dir();
@@ -75,6 +105,7 @@ public:
             new_folder_area.rebuildGlyphs();
             show_folder_picker = true;
             getData().game_editor_info.game_info_updated = false;
+            first_display = false; // Not first display
         }
     }
 
@@ -83,6 +114,20 @@ public:
             changeScene(U"Close", SCENE_FADE_TIME);
         }
         Scene::SetBackground(getData().colors.green);
+
+        // First display: immediately go to Game_editor
+        if (first_display) {
+            first_display = false;
+            getData().game_information.date.clear();
+            getData().game_editor_info.return_scene = U"Export_game";
+            getData().game_editor_info.is_editing_mode = false;
+            getData().game_editor_info.game_date.clear();
+            getData().game_editor_info.subfolder.clear();
+            getData().game_editor_info.game_info_updated = false;
+            getData().game_editor_info.export_mode = 0;
+            changeScene(U"Game_editor", 0);
+            return;
+        }
 
         // Saving mode: handled first
         if (is_saving) {

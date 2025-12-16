@@ -799,6 +799,7 @@ struct Game_editor_info {
     String game_date;
     std::string subfolder;
     bool game_info_updated;
+    int export_mode; // 0 = main line, 1 = until this board
 
     void init() {
         return_scene.clear();
@@ -806,6 +807,7 @@ struct Game_editor_info {
         game_date.clear();
         subfolder.clear();
         game_info_updated = false;
+        export_mode = 0;
     }
 };
 

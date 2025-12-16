@@ -140,6 +140,8 @@ class Game_editor : public App::Scene {
 private:
     Button back_button;
     Button ok_button;
+    Button export_main_button;     // For new game save: save main line
+    Button export_this_board_button; // For new game save: save until this board
     TextAreaEditState text_area[4]; // black player, white player, memo, date
     static constexpr int BLACK_PLAYER_IDX = 0;
     static constexpr int WHITE_PLAYER_IDX = 1;
@@ -158,6 +160,8 @@ public:
     Game_editor(const InitData& init) : IScene{ init } {
         back_button.init(BUTTON2_1_SX, BUTTON2_SY, BUTTON2_WIDTH, BUTTON2_HEIGHT, BUTTON2_RADIUS, language.get("common", "back"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
         ok_button.init(BUTTON2_2_SX, BUTTON2_SY, BUTTON2_WIDTH, BUTTON2_HEIGHT, BUTTON2_RADIUS, language.get("common", "ok"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
+        export_main_button.init(BUTTON3_2_SX, BUTTON3_SY, BUTTON3_WIDTH, BUTTON3_HEIGHT, BUTTON3_RADIUS, language.get("in_out", "export_main"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
+        export_this_board_button.init(BUTTON3_3_SX, BUTTON3_SY, BUTTON3_WIDTH, BUTTON3_HEIGHT, BUTTON3_RADIUS, language.get("in_out", "export_until_this_board"), 15, getData().fonts.font, getData().colors.white, getData().colors.black);
         
         text_area[BLACK_PLAYER_IDX].active = true;
         text_area[BLACK_PLAYER_IDX].text = getData().game_information.black_player_name;
@@ -191,20 +195,24 @@ public:
 
         getData().fonts.font(language.get("in_out", is_editing_mode ? "edit_game" : "output_game")).draw(25, Arg::topCenter(X_CENTER, 10), getData().colors.white);
         
-        // Date label / textbox
-        const int date_label_y = 47;
-        const int date_box_y = 70;
-        getData().fonts.font(language.get("in_out", "date") + U": ").draw(15, Arg::topLeft(X_CENTER - EXPORT_GAME_PLAYER_WIDTH - 80, date_label_y), getData().colors.white);
-        SimpleGUI::TextArea(text_area[DATE_IDX], Vec2{X_CENTER - EXPORT_GAME_PLAYER_WIDTH, date_box_y}, SizeF{200, EXPORT_GAME_PLAYER_HEIGHT}, 10);
-        
         // Player name label / textboxes
-        const int player_label_y = 100;
-        const int player_box_y = 123;
+        const int player_label_y = 47;
+        const int player_box_y = 70;
         getData().fonts.font(language.get("in_out", "player_name")).draw(15, Arg::topCenter(X_CENTER, player_label_y), getData().colors.white);
         SimpleGUI::TextArea(text_area[BLACK_PLAYER_IDX], Vec2{X_CENTER - EXPORT_GAME_PLAYER_WIDTH, player_box_y}, SizeF{EXPORT_GAME_PLAYER_WIDTH, EXPORT_GAME_PLAYER_HEIGHT}, SimpleGUI::PreferredTextAreaMaxChars);
         SimpleGUI::TextArea(text_area[WHITE_PLAYER_IDX], Vec2{X_CENTER, player_box_y}, SizeF{EXPORT_GAME_PLAYER_WIDTH, EXPORT_GAME_PLAYER_HEIGHT}, SimpleGUI::PreferredTextAreaMaxChars);
         Circle(X_CENTER - EXPORT_GAME_PLAYER_WIDTH - EXPORT_GAME_RADIUS - 20, player_box_y + EXPORT_GAME_RADIUS, EXPORT_GAME_RADIUS).draw(getData().colors.black);
         Circle(X_CENTER + EXPORT_GAME_PLAYER_WIDTH + EXPORT_GAME_RADIUS + 20, player_box_y + EXPORT_GAME_RADIUS, EXPORT_GAME_RADIUS).draw(getData().colors.white);
+        
+        // Date label / textbox (below player names)
+        const int date_label_y = 100;
+        const int date_box_y = 123;
+        String date_label = language.get("in_out", "date");
+        if (date_label.isEmpty()) {
+            date_label = U"Date"; // Fallback in case language file is not updated
+        }
+        getData().fonts.font(date_label + U" (YYYY-MM-DD): ").draw(15, Arg::topLeft(X_CENTER - EXPORT_GAME_PLAYER_WIDTH, date_label_y), getData().colors.white);
+        SimpleGUI::TextArea(text_area[DATE_IDX], Vec2{X_CENTER - EXPORT_GAME_PLAYER_WIDTH, date_box_y}, SizeF{250, EXPORT_GAME_PLAYER_HEIGHT}, 10);
         
         // Memo label / counter / textbox
         const int memo_label_y = 153;
@@ -240,28 +248,45 @@ public:
         getData().game_information.date = text_area[DATE_IDX].text;
         
         back_button.draw();
-        ok_button.draw();
+        
+        if (is_editing_mode) {
+            // Editing existing game: show OK button
+            ok_button.draw();
+        } else {
+            // New game save: show two export buttons
+            export_main_button.draw();
+            export_this_board_button.draw();
+        }
         
         if (back_button.clicked() || KeyEscape.pressed()) {
             changeScene(return_scene, SCENE_FADE_TIME);
         }
         
-        // Only allow Enter to submit if no text field is active (to allow newlines in memo and proper editing in other fields)
-        bool can_submit_with_enter = KeyEnter.pressed() && 
-            !text_area[BLACK_PLAYER_IDX].active && 
-            !text_area[WHITE_PLAYER_IDX].active && 
-            !text_area[DATE_IDX].active && 
-            !text_area[MEMO_IDX].active;
-        
-        if (ok_button.clicked() || can_submit_with_enter) {
-            if (is_editing_mode) {
+        if (is_editing_mode) {
+            // Only allow Enter to submit if no text field is active
+            bool can_submit_with_enter = KeyEnter.pressed() && 
+                !text_area[BLACK_PLAYER_IDX].active && 
+                !text_area[WHITE_PLAYER_IDX].active && 
+                !text_area[DATE_IDX].active && 
+                !text_area[MEMO_IDX].active;
+            
+            if (ok_button.clicked() || can_submit_with_enter) {
                 // Update existing game
                 save_edited_game();
-            } else {
-                // New game from Export_game - need folder picker
-                getData().game_editor_info.game_info_updated = true;
+                changeScene(return_scene, SCENE_FADE_TIME);
             }
-            changeScene(return_scene, SCENE_FADE_TIME);
+        } else {
+            // New game save mode
+            if (export_main_button.clicked()) {
+                getData().game_editor_info.game_info_updated = true;
+                getData().game_editor_info.export_mode = 0; // main line
+                changeScene(return_scene, SCENE_FADE_TIME);
+            }
+            if (export_this_board_button.clicked()) {
+                getData().game_editor_info.game_info_updated = true;
+                getData().game_editor_info.export_mode = 1; // until this board
+                changeScene(return_scene, SCENE_FADE_TIME);
+            }
         }
     }
 
