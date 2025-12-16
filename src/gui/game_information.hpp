@@ -44,7 +44,11 @@ public:
         if (System::GetUserActions() & UserAction::CloseButtonClicked) {
             changeScene(U"Close", SCENE_FADE_TIME);
         }
-        getData().fonts.font(language.get("play", "game_information")).draw(25, Arg::topCenter(X_CENTER, 10), getData().colors.white);
+        getData().fonts.font(language.get("play", "game_information")).draw(25, Arg::bottomCenter(X_CENTER, 45), getData().colors.white);
+        if (getData().game_information.date.size()) {
+            // date
+            getData().fonts.font(language.get("in_out", "date") + U": " + getData().game_information.date).draw(15, Arg::bottomRight(X_CENTER + 300, 45), getData().colors.white);
+        }
         int sy = 78;
         getData().fonts.font(language.get("in_out", "player_name")).draw(15, Arg::topCenter(X_CENTER, 57), getData().colors.white);
         Circle(X_CENTER - 300 - 15 - 20, 80 + 15, 15).draw(getData().colors.black);
@@ -63,8 +67,6 @@ public:
         scroll_manager_white.update();
         String white_player_display = get_substr(getData().game_information.white_player_name, scroll_manager_white.get_strt_idx_int(), 300 - 14);
         getData().fonts.font(white_player_display).draw(15, Arg::leftCenter(X_CENTER + 10 + 2, 80 + 15), getData().colors.white);
-        // date
-        getData().fonts.font(language.get("in_out", "date") + U": " + getData().game_information.date).draw(15, Arg::topCenter(X_CENTER, 112), getData().colors.white);
         // memo
         getData().fonts.font(language.get("in_out", "memo")).draw(15, Arg::topCenter(X_CENTER, 127), getData().colors.white);
         Rect memo_rect{X_CENTER - 300, 150, 600, 250};
