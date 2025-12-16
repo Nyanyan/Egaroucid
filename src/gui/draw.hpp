@@ -967,8 +967,8 @@ inline ExplorerDrawResult draw_game_item(
         }
     }
     
-    String date = game.date.substr(0, 10).replace(U"_", U"/");
-    fonts.font(date).draw(15, IMPORT_GAME_SX + IMPORT_GAME_LEFT_MARGIN + 10, sy + 2, text_color);
+    // game_date is already in YYYY-MM-DD format
+    fonts.font(game.game_date).draw(15, IMPORT_GAME_SX + IMPORT_GAME_LEFT_MARGIN + 10, sy + 2, text_color);
     
     // Draw player rectangles and scores
     Rect black_player_rect;
@@ -1111,7 +1111,8 @@ inline void draw_dragged_items(
         
         // Draw simplified game info with better visibility
         const auto& game = games[drag_state.dragged_game_index];
-        String date = game.date.substr(0, 10).replace(U"_", U"/");
+        // game_date is already in YYYY-MM-DD format
+        String date = game.game_date;
         fonts.font(date).draw(12, drag_rect.x + 10, drag_rect.y + 2, colors.black);
         fonts.font(game.black_player + U" vs " + game.white_player).draw(10, drag_rect.x + 10, drag_rect.y + 15, colors.black);
         

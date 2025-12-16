@@ -783,11 +783,13 @@ struct Game_information {
     String black_player_name;
     String white_player_name;
     String memo;
+    String date;  // YYYY-MM-DD format
 
     void init() {
         black_player_name.clear();
         white_player_name.clear();
         memo.clear();
+        date.clear();
     }
 };
 
@@ -1018,7 +1020,8 @@ struct Game_abstract {
     int black_score;
     int white_score;
     String memo;
-    String date;
+    String filename_date;  // YYYY_MM_DD_hh_mm_ss format (used for file identification)
+    String game_date;      // YYYY-MM-DD format (user-specified game date)
 };
 
 struct Umigame_status {

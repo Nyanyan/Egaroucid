@@ -272,12 +272,18 @@ private:
         if (csv) {
             for (size_t row = 0; row < csv.rows(); ++row) {
                 Game_abstract game_abstract;
-                game_abstract.date = csv[row][0];
+                game_abstract.filename_date = csv[row][0];
                 game_abstract.black_player = csv[row][1];
                 game_abstract.white_player = csv[row][2];
                 game_abstract.memo = csv[row][3];
                 game_abstract.black_score = ParseOr<int32>(csv[row][4], GAME_DISCS_UNDEFINED);
                 game_abstract.white_score = ParseOr<int32>(csv[row][5], GAME_DISCS_UNDEFINED);
+                // Read game_date from column 6 (7th column), or generate from filename if missing
+                if (csv[row].size() >= 7 && !csv[row][6].isEmpty()) {
+                    game_abstract.game_date = csv[row][6];
+                } else {
+                    game_abstract.game_date = game_abstract.filename_date.substr(0, 10).replaced(U"_", U"-");
+                }
                 picker_games.emplace_back(game_abstract);
             }
         }
@@ -376,8 +382,8 @@ private:
         }
         
         // Move JSON file
-        String source_json = source_base + game.date + U".json";
-        String target_json = target_base + game.date + U".json";
+        String source_json = source_base + game.filename_date + U".json";
+        String target_json = target_base + game.filename_date + U".json";
         if (FileSystem::Exists(source_json)) {
             FileSystem::Copy(source_json, target_json);
             FileSystem::Remove(source_json);
@@ -391,7 +397,7 @@ private:
         enumerate_save_dir();
         init_folder_scroll_manager();
         
-        std::cerr << "Moved game " << game.date.narrow() << " to " << target_folder << std::endl;
+        std::cerr << "Moved game " << game.filename_date.narrow() << " to " << target_folder << std::endl;
     }
     
     // Move a folder to a different folder
@@ -457,21 +463,30 @@ private:
         // Create new CSV with existing data plus new game
         CSV new_csv;
         for (int i = 0; i < (int)csv.rows(); ++i) {
-            if (csv[i].size() >= 6) {
-                for (int j = 0; j < 6; ++j) {
+            if (csv[i].size() >= 1) {
+                size_t cols = std::min(csv[i].size(), size_t(6));
+                for (size_t j = 0; j < cols; ++j) {
                     new_csv.write(csv[i][j]);
+                }
+                // Add 7th column (game_date) if missing
+                if (csv[i].size() < 7) {
+                    String old_date = csv[i][0].substr(0, 10).replaced(U"_", U"-");
+                    new_csv.write(old_date);
+                } else {
+                    new_csv.write(csv[i][6]);
                 }
                 new_csv.newLine();
             }
         }
         
         // Add new game entry
-        new_csv.write(game.date);
+        new_csv.write(game.filename_date);
         new_csv.write(game.black_player);
         new_csv.write(game.white_player);
         new_csv.write(game.memo);
         new_csv.write(game.black_score == GAME_DISCS_UNDEFINED ? U"" : ToString(game.black_score));
         new_csv.write(game.white_score == GAME_DISCS_UNDEFINED ? U"" : ToString(game.white_score));
+        new_csv.write(game.game_date);
         new_csv.newLine();
         
         new_csv.save(target_csv);
@@ -482,12 +497,13 @@ private:
         CSV new_csv;
         for (int i = (int)picker_games.size() - 1; i >= 0; --i) {
             const auto& game = picker_games[i];
-            new_csv.write(game.date);
+            new_csv.write(game.filename_date);
             new_csv.write(game.black_player);
             new_csv.write(game.white_player);
             new_csv.write(game.memo);
             new_csv.write(game.black_score == GAME_DISCS_UNDEFINED ? U"" : ToString(game.black_score));
             new_csv.write(game.white_score == GAME_DISCS_UNDEFINED ? U"" : ToString(game.white_score));
+            new_csv.write(game.game_date);
             new_csv.newLine();
         }
         new_csv.save(csv_path);
@@ -516,7 +532,8 @@ private:
             getData().game_information.black_player_name,
             getData().game_information.white_player_name,
             getData().game_information.memo,
-            history
+            history,
+            getData().game_information.date
         );
     }
 };

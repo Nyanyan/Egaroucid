@@ -21,17 +21,19 @@ namespace game_save_helper {
     // Save game to JSON file and update CSV summary
     inline void save_game_to_file(
         const String& base_dir,
-        const String& date,
+        const String& filename_date,
         const String& black_player_name,
         const String& white_player_name,
         const String& memo,
-        const std::vector<History_elem>& history
+        const std::vector<History_elem>& history,
+        const String& game_date = U""
     ) {
         JSON json;
-        json[GAME_DATE] = date;
+        json[GAME_DATE] = filename_date;
         json[GAME_BLACK_PLAYER] = black_player_name;
         json[GAME_WHITE_PLAYER] = white_player_name;
         json[GAME_MEMO] = memo;
+        json[U"date"] = game_date.isEmpty() ? filename_date.substr(0, 10).replaced(U"_", U"-") : game_date;
         
         int black_discs = GAME_DISCS_UNDEFINED;
         int white_discs = GAME_DISCS_UNDEFINED;
@@ -64,7 +66,7 @@ namespace game_save_helper {
         }
         
         FileSystem::CreateDirectories(base_dir);
-        const String save_path = base_dir + date + U".json";
+        const String save_path = base_dir + filename_date + U".json";
         json.save(save_path);
 
         const String csv_path = base_dir + U"summary.csv";
@@ -74,45 +76,56 @@ namespace game_save_helper {
         for (int i = 0; i < std::min((int)memo_summary_all.size(), GAME_MEMO_SUMMARY_SIZE); ++i) {
             memo_summary += memo_summary_all[i];
         }
-        csv.writeRow(date, black_player_name, white_player_name, memo_summary, black_discs, white_discs);
+        String date_for_csv = game_date.isEmpty() ? filename_date.substr(0, 10).replaced(U"_", U"-") : game_date;
+        csv.writeRow(filename_date, black_player_name, white_player_name, memo_summary, black_discs, white_discs, date_for_csv);
         csv.save(csv_path);
     }
 
     // Update existing game in CSV (for editing existing games)
     inline void update_game_in_csv(
         const String& csv_path,
-        const String& date,
+        const String& filename_date,
         const String& black_player_name,
         const String& white_player_name,
         const String& memo,
         int black_discs,
-        int white_discs
+        int white_discs,
+        const String& game_date
     ) {
         CSV csv{ csv_path };
         CSV new_csv;
         
         bool found = false;
         for (size_t i = 0; i < csv.rows(); ++i) {
-            if (csv[i].size() >= 6) {
-                if (csv[i][0] == date) {
+            if (csv[i].size() >= 1) {
+                if (csv[i][0] == filename_date) {
                     // Update this row
                     String memo_summary_all = memo.replaced(U"\r", U"").replaced(U"\n", U" ");
                     String memo_summary;
                     for (int j = 0; j < std::min((int)memo_summary_all.size(), GAME_MEMO_SUMMARY_SIZE); ++j) {
                         memo_summary += memo_summary_all[j];
                     }
-                    new_csv.write(date);
+                    new_csv.write(filename_date);
                     new_csv.write(black_player_name);
                     new_csv.write(white_player_name);
                     new_csv.write(memo_summary);
                     new_csv.write(black_discs == GAME_DISCS_UNDEFINED ? U"" : ToString(black_discs));
                     new_csv.write(white_discs == GAME_DISCS_UNDEFINED ? U"" : ToString(white_discs));
+                    new_csv.write(game_date);
                     new_csv.newLine();
                     found = true;
                 } else {
-                    // Keep existing row
-                    for (int j = 0; j < 6; ++j) {
+                    // Keep existing row - copy up to 6 columns, and add date column if missing
+                    size_t cols = std::min(csv[i].size(), size_t(6));
+                    for (size_t j = 0; j < cols; ++j) {
                         new_csv.write(csv[i][j]);
+                    }
+                    // If 7th column (date) doesn't exist, generate from filename
+                    if (csv[i].size() < 7) {
+                        String old_date = csv[i][0].substr(0, 10).replaced(U"_", U"-");
+                        new_csv.write(old_date);
+                    } else {
+                        new_csv.write(csv[i][6]);
                     }
                     new_csv.newLine();
                 }
@@ -127,10 +140,11 @@ class Game_editor : public App::Scene {
 private:
     Button back_button;
     Button ok_button;
-    TextAreaEditState text_area[3]; // black player, white player, memo
+    TextAreaEditState text_area[4]; // black player, white player, memo, date
     static constexpr int BLACK_PLAYER_IDX = 0;
     static constexpr int WHITE_PLAYER_IDX = 1;
     static constexpr int MEMO_IDX = 2;
+    static constexpr int DATE_IDX = 3;
     
     // Return scene info
     String return_scene;
@@ -149,7 +163,16 @@ public:
         text_area[BLACK_PLAYER_IDX].text = getData().game_information.black_player_name;
         text_area[WHITE_PLAYER_IDX].text = getData().game_information.white_player_name;
         text_area[MEMO_IDX].text = getData().game_information.memo;
-        for (int i = 0; i < 3; ++i) {
+        
+        // Initialize date field: use existing date or current date in YYYY-MM-DD format
+        if (getData().game_information.date.isEmpty()) {
+            const DateTime now = DateTime::Now();
+            text_area[DATE_IDX].text = Format(now.year, U"-", Pad(now.month, { 2, U'0' }), U"-", Pad(now.day, { 2, U'0' }));
+        } else {
+            text_area[DATE_IDX].text = getData().game_information.date;
+        }
+        
+        for (int i = 0; i < 4; ++i) {
             text_area[i].rebuildGlyphs();
         }
         
@@ -173,19 +196,25 @@ public:
         Circle(X_CENTER - EXPORT_GAME_PLAYER_WIDTH - EXPORT_GAME_RADIUS - 20, 70 + EXPORT_GAME_RADIUS, EXPORT_GAME_RADIUS).draw(getData().colors.black);
         Circle(X_CENTER + EXPORT_GAME_PLAYER_WIDTH + EXPORT_GAME_RADIUS + 20, 70 + EXPORT_GAME_RADIUS, EXPORT_GAME_RADIUS).draw(getData().colors.white);
         
+        // Date label / textbox (YYYY-MM-DD format)
+        const int date_label_y = 110;
+        const int date_box_y = 130;
+        getData().fonts.font(U"Date (YYYY-MM-DD)").draw(15, Arg::topLeft(X_CENTER - EXPORT_GAME_PLAYER_WIDTH, date_label_y), getData().colors.white);
+        SimpleGUI::TextArea(text_area[DATE_IDX], Vec2{X_CENTER - EXPORT_GAME_PLAYER_WIDTH, date_box_y}, SizeF{200, EXPORT_GAME_PLAYER_HEIGHT}, 10);
+        
         // Memo label / counter / textbox
-        const int memo_label_y = 110;
-        const int memo_box_y = 130;
+        const int memo_label_y = 160;
+        const int memo_box_y = 180;
         getData().fonts.font(language.get("in_out", "memo")).draw(15, Arg::topCenter(X_CENTER, memo_label_y), getData().colors.white);
         getData().fonts.font(Format(text_area[MEMO_IDX].text.size()) + U"/" + Format(TEXTBOX_MAX_CHARS) + U" " + language.get("common", "characters")).draw(15, Arg::topRight(X_CENTER + EXPORT_GAME_MEMO_WIDTH / 2, memo_label_y), getData().colors.white);
         SimpleGUI::TextArea(text_area[MEMO_IDX], Vec2{X_CENTER - EXPORT_GAME_MEMO_WIDTH / 2, memo_box_y}, SizeF{EXPORT_GAME_MEMO_WIDTH, EXPORT_GAME_MEMO_HEIGHT}, TEXTBOX_MAX_CHARS);
         
-        // Tab移動: black -> white -> memo -> black
+        // Tab移動: black -> white -> date -> memo -> black
         auto focus_next_from = [&](int idx) {
             text_area[idx].active = false;
-            text_area[(idx + 1) % 3].active = true;
+            text_area[(idx + 1) % 4].active = true;
         };
-        for (int i = 0; i < 3; ++i) {
+        for (int i = 0; i < 4; ++i) {
             std::string str = text_area[i].text.narrow();
             if (str.find('\t') != std::string::npos) {
                 text_area[i].text.replace(U"\t", U"");
@@ -193,6 +222,7 @@ public:
                 text_area[i].rebuildGlyphs();
                 focus_next_from(i);
             }
+            // Remove newlines from all fields except memo
             if ((str.find('\n') != std::string::npos || str.find('\r') != std::string::npos) && i != MEMO_IDX) {
                 text_area[i].text.replace(U"\r", U"").replace(U"\n", U" ");
                 text_area[i].cursorPos = text_area[i].text.size();
@@ -203,6 +233,7 @@ public:
         getData().game_information.black_player_name = text_area[BLACK_PLAYER_IDX].text;
         getData().game_information.white_player_name = text_area[WHITE_PLAYER_IDX].text;
         getData().game_information.memo = text_area[MEMO_IDX].text;
+        getData().game_information.date = text_area[DATE_IDX].text;
         
         back_button.draw();
         ok_button.draw();
@@ -211,8 +242,12 @@ public:
             changeScene(return_scene, SCENE_FADE_TIME);
         }
         
-        // Only allow Enter to submit if memo field is not active (to allow newlines in memo)
-        bool can_submit_with_enter = KeyEnter.pressed() && !text_area[MEMO_IDX].active;
+        // Only allow Enter to submit if no text field is active (to allow newlines in memo and proper editing in other fields)
+        bool can_submit_with_enter = KeyEnter.pressed() && 
+            !text_area[BLACK_PLAYER_IDX].active && 
+            !text_area[WHITE_PLAYER_IDX].active && 
+            !text_area[DATE_IDX].active && 
+            !text_area[MEMO_IDX].active;
         
         if (ok_button.clicked() || can_submit_with_enter) {
             if (is_editing_mode) {
@@ -301,6 +336,7 @@ private:
         updated_json[U"black_player_name"] = getData().game_information.black_player_name;
         updated_json[U"white_player_name"] = getData().game_information.white_player_name;
         updated_json[U"memo"] = getData().game_information.memo;
+        updated_json[U"date"] = getData().game_information.date;
         
         // Add history data
         for (const History_elem& elem : history) {
@@ -343,7 +379,8 @@ private:
             getData().game_information.white_player_name,
             getData().game_information.memo,
             black_discs,
-            white_discs
+            white_discs,
+            getData().game_information.date
         );
         
         std::cerr << "Game edited and saved: " << existing_game_date.narrow() << std::endl;
