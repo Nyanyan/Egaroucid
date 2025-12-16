@@ -16,8 +16,14 @@
 #include "function/function_all.hpp"
 #include "draw.hpp"
 
-
-
+// Forward declaration
+inline bool load_game_from_json(
+    Common_resources& data,
+    Opening& opening,
+    const String& json_path,
+    const String& game_date,
+    const std::string& subfolder
+);
 
 class Import_text : public App::Scene {
 private:
@@ -515,88 +521,10 @@ private:
 
     void import_game(int idx) {
         const String json_path = get_base_dir() + games[idx].filename_date + U".json";
-        JSON game_json = JSON::Load(json_path);
-        if (not game_json) {
-            std::cerr << "can't open game" << std::endl;
+        if (!load_game_from_json(getData(), opening, json_path, games[idx].filename_date, explorer_state.subfolder)) {
             failed = true;
             return;
         }
-        if (game_json[GAME_BLACK_PLAYER].getType() == JSONValueType::String) {
-            getData().game_information.black_player_name = game_json[GAME_BLACK_PLAYER].getString();
-        }
-        if (game_json[GAME_WHITE_PLAYER].getType() == JSONValueType::String) {
-            getData().game_information.white_player_name = game_json[GAME_WHITE_PLAYER].getString();
-        }
-        if (game_json[GAME_MEMO].getType() == JSONValueType::String) {
-            getData().game_information.memo = game_json[GAME_MEMO].getString();
-        }
-        // Load date field
-        if (game_json[U"date"].getType() == JSONValueType::String) {
-            getData().game_information.date = game_json[U"date"].getString();
-        } else {
-            getData().game_information.date = games[idx].filename_date.substr(0, 10).replaced(U"_", U"-");
-        }
-        // Mark that a specific game has been loaded and store its location
-        getData().game_information.is_game_loaded = true;
-        getData().game_editor_info.game_date = games[idx].filename_date;
-        getData().game_editor_info.subfolder = explorer_state.subfolder;
-        getData().graph_resources.nodes[GRAPH_MODE_NORMAL].clear();
-        getData().graph_resources.nodes[GRAPH_MODE_INSPECT].clear();
-        for (int n_discs = 4; n_discs <= HW2; ++n_discs) {
-            String n_discs_str = Format(n_discs);
-            History_elem history_elem;
-            bool error_found = false;
-            if (game_json[n_discs_str][GAME_BOARD_PLAYER].getType() == JSONValueType::Number) {
-                history_elem.board.player = game_json[n_discs_str][GAME_BOARD_PLAYER].get<uint64_t>();
-            } else {
-                error_found = true;
-            }
-            if (game_json[n_discs_str][GAME_BOARD_OPPONENT].getType() == JSONValueType::Number) {
-                history_elem.board.opponent = game_json[n_discs_str][GAME_BOARD_OPPONENT].get<uint64_t>();
-            } else {
-                error_found = true;
-            }
-            if (game_json[n_discs_str][GAME_LEVEL].getType() == JSONValueType::Number) {
-                history_elem.level = game_json[n_discs_str][GAME_LEVEL].get<int>();
-            } else {
-                error_found = true;
-            }
-            if (game_json[n_discs_str][GAME_PLAYER].getType() == JSONValueType::Number) {
-                history_elem.player = game_json[n_discs_str][GAME_PLAYER].get<int>();
-            } else {
-                error_found = true;
-            }
-            if (game_json[n_discs_str][GAME_POLICY].getType() == JSONValueType::Number) {
-                history_elem.policy = game_json[n_discs_str][GAME_POLICY].get<int>();
-            } else {
-                error_found = true;
-            }
-            if (game_json[n_discs_str][GAME_NEXT_POLICY].getType() == JSONValueType::Number) {
-                history_elem.next_policy = game_json[n_discs_str][GAME_NEXT_POLICY].get<int>();
-            } else {
-                error_found = true;
-            }
-            if (game_json[n_discs_str][GAME_VALUE].getType() == JSONValueType::Number) {
-                history_elem.v = game_json[n_discs_str][GAME_VALUE].get<int>();
-            } else {
-                error_found = true;
-            }
-            if (!error_found) {
-                getData().graph_resources.nodes[GRAPH_MODE_NORMAL].emplace_back(history_elem);
-            }
-        }
-        std::string opening_name, n_opening_name;
-        for (int i = 0; i < (int)getData().graph_resources.nodes[GRAPH_MODE_NORMAL].size(); ++i) {
-            n_opening_name.clear();
-            n_opening_name = opening.get(getData().graph_resources.nodes[GRAPH_MODE_NORMAL][i].board, getData().graph_resources.nodes[GRAPH_MODE_NORMAL][i].player ^ 1);
-            if (n_opening_name.size()) {
-                opening_name = n_opening_name;
-            }
-            getData().graph_resources.nodes[GRAPH_MODE_NORMAL][i].opening_name = opening_name;
-        }
-        getData().graph_resources.n_discs = getData().graph_resources.nodes[GRAPH_MODE_NORMAL].back().board.n_discs();
-        getData().graph_resources.need_init = false;
-        getData().history_elem = getData().graph_resources.nodes[GRAPH_MODE_NORMAL].back();
         changeScene(U"Main_scene", SCENE_FADE_TIME);
     }
 
@@ -1461,3 +1389,106 @@ private:
         return false;
     }
 };
+
+// Load game from JSON and prepare for display
+// Returns true on success, false on failure
+inline bool load_game_from_json(
+    Common_resources& data,
+    Opening& opening,
+    const String& json_path,
+    const String& game_date,
+    const std::string& subfolder
+) {
+    JSON game_json = JSON::Load(json_path);
+    if (!game_json) {
+        std::cerr << "Failed to load game JSON: " << json_path.narrow() << std::endl;
+        return false;
+    }
+    
+    // Load game information
+    if (game_json[GAME_BLACK_PLAYER].getType() == JSONValueType::String) {
+        data.game_information.black_player_name = game_json[GAME_BLACK_PLAYER].getString();
+    }
+    if (game_json[GAME_WHITE_PLAYER].getType() == JSONValueType::String) {
+        data.game_information.white_player_name = game_json[GAME_WHITE_PLAYER].getString();
+    }
+    if (game_json[GAME_MEMO].getType() == JSONValueType::String) {
+        data.game_information.memo = game_json[GAME_MEMO].getString();
+    }
+    // Load date field
+    if (game_json[U"date"].getType() == JSONValueType::String) {
+        data.game_information.date = game_json[U"date"].getString();
+    } else {
+        data.game_information.date = game_date.substr(0, 10).replaced(U"_", U"-");
+    }
+    
+    // Mark that a specific game has been loaded and store its location
+    data.game_information.is_game_loaded = true;
+    data.game_editor_info.game_date = game_date;
+    data.game_editor_info.subfolder = subfolder;
+    
+    // Load history
+    data.graph_resources.nodes[GRAPH_MODE_NORMAL].clear();
+    data.graph_resources.nodes[GRAPH_MODE_INSPECT].clear();
+    for (int n_discs = 4; n_discs <= HW2; ++n_discs) {
+        String n_discs_str = Format(n_discs);
+        History_elem history_elem;
+        bool error_found = false;
+        if (game_json[n_discs_str][GAME_BOARD_PLAYER].getType() == JSONValueType::Number) {
+            history_elem.board.player = game_json[n_discs_str][GAME_BOARD_PLAYER].get<uint64_t>();
+        } else {
+            error_found = true;
+        }
+        if (game_json[n_discs_str][GAME_BOARD_OPPONENT].getType() == JSONValueType::Number) {
+            history_elem.board.opponent = game_json[n_discs_str][GAME_BOARD_OPPONENT].get<uint64_t>();
+        } else {
+            error_found = true;
+        }
+        if (game_json[n_discs_str][GAME_LEVEL].getType() == JSONValueType::Number) {
+            history_elem.level = game_json[n_discs_str][GAME_LEVEL].get<int>();
+        } else {
+            error_found = true;
+        }
+        if (game_json[n_discs_str][GAME_PLAYER].getType() == JSONValueType::Number) {
+            history_elem.player = game_json[n_discs_str][GAME_PLAYER].get<int>();
+        } else {
+            error_found = true;
+        }
+        if (game_json[n_discs_str][GAME_POLICY].getType() == JSONValueType::Number) {
+            history_elem.policy = game_json[n_discs_str][GAME_POLICY].get<int>();
+        } else {
+            error_found = true;
+        }
+        if (game_json[n_discs_str][GAME_NEXT_POLICY].getType() == JSONValueType::Number) {
+            history_elem.next_policy = game_json[n_discs_str][GAME_NEXT_POLICY].get<int>();
+        } else {
+            error_found = true;
+        }
+        if (game_json[n_discs_str][GAME_VALUE].getType() == JSONValueType::Number) {
+            history_elem.v = game_json[n_discs_str][GAME_VALUE].get<int>();
+        } else {
+            error_found = true;
+        }
+        if (!error_found) {
+            data.graph_resources.nodes[GRAPH_MODE_NORMAL].emplace_back(history_elem);
+        }
+    }
+    
+    // Add opening names
+    std::string opening_name, n_opening_name;
+    for (int i = 0; i < (int)data.graph_resources.nodes[GRAPH_MODE_NORMAL].size(); ++i) {
+        n_opening_name.clear();
+        n_opening_name = opening.get(data.graph_resources.nodes[GRAPH_MODE_NORMAL][i].board, data.graph_resources.nodes[GRAPH_MODE_NORMAL][i].player ^ 1);
+        if (n_opening_name.size()) {
+            opening_name = n_opening_name;
+        }
+        data.graph_resources.nodes[GRAPH_MODE_NORMAL][i].opening_name = opening_name;
+    }
+    
+    // Set up final state
+    data.graph_resources.n_discs = data.graph_resources.nodes[GRAPH_MODE_NORMAL].back().board.n_discs();
+    data.graph_resources.need_init = false;
+    data.history_elem = data.graph_resources.nodes[GRAPH_MODE_NORMAL].back();
+    
+    return true;
+}

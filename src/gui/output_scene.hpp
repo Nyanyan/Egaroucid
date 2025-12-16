@@ -586,6 +586,10 @@ private:
             history,
             getData().game_information.date
         );
+        
+        // Load the saved game (same as Import_game)
+        String json_path = base_dir + date + U".json";
+        load_game_from_json(getData(), opening, json_path, date, subfolder);
     }
 };
 
