@@ -500,6 +500,9 @@ private:
             getData().game_information.date = games[idx].filename_date.substr(0, 10).replaced(U"_", U"-");
         }
         
+        // Mark that a specific game has been loaded and store its location
+        getData().game_information.is_game_loaded = true;
+        
         // Set game editor info for editing mode
         getData().game_editor_info.return_scene = U"Import_game";
         getData().game_editor_info.is_editing_mode = true;
@@ -533,8 +536,10 @@ private:
         } else {
             getData().game_information.date = games[idx].filename_date.substr(0, 10).replaced(U"_", U"-");
         }
-        // Mark that a specific game has been loaded
+        // Mark that a specific game has been loaded and store its location
         getData().game_information.is_game_loaded = true;
+        getData().game_editor_info.game_date = games[idx].filename_date;
+        getData().game_editor_info.subfolder = explorer_state.subfolder;
         getData().graph_resources.nodes[GRAPH_MODE_NORMAL].clear();
         getData().graph_resources.nodes[GRAPH_MODE_INSPECT].clear();
         for (int n_discs = 4; n_discs <= HW2; ++n_discs) {

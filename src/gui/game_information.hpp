@@ -83,8 +83,12 @@ public:
             // Transition to Game_editor to edit current game information
             getData().game_editor_info.return_scene = U"Game_information_scene";
             getData().game_editor_info.is_editing_mode = getData().game_information.is_game_loaded;
-            getData().game_editor_info.game_date.clear();
-            getData().game_editor_info.subfolder.clear();
+            // Keep game_date and subfolder if a game is loaded (for editing saved game)
+            // They are already set in Import_game::import_game()
+            if (!getData().game_information.is_game_loaded) {
+                getData().game_editor_info.game_date.clear();
+                getData().game_editor_info.subfolder.clear();
+            }
             getData().game_editor_info.game_info_updated = false;
             changeScene(U"Game_editor", SCENE_FADE_TIME);
         }
