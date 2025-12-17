@@ -202,7 +202,6 @@ inline int_fast8_t count_last_flip(uint64_t player, const uint_fast8_t place) {
     return
         N_LAST_FLIP[join_h_line(player, y)][x] + 
         N_LAST_FLIP[join_v_line(player, x)][y] + 
-        // N_LAST_FLIP[join_d7_line(player, x + y)][std::min(y, 7 - x)] + 
         N_LAST_FLIP[join_d7_line(player, x + y)][std::min(7 - y, x)] + 
         N_LAST_FLIP[join_d9_line(player, x + 7 - y)][std::min(y, x)];
 }
