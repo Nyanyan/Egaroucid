@@ -63,6 +63,27 @@ int main(int argc, char* argv[]) {
     execute_special_commandline_tasks(commandline_options, &options, &state); // solve problems etc.
     Board_info board;
     init_board(&board, &options, &state);
+
+    // while (true) {
+    //     Board b;
+    //     b.player = myrand_ull();
+    //     b.opponent = ~b.player;
+    //     uint_fast8_t empty_cell = myrand_uint() & 63;
+    //     b.player &= ~(1ULL << empty_cell);
+    //     b.opponent &= ~(1ULL << empty_cell);
+    //     Flip flip;
+    //     calc_flip(&flip, &b, empty_cell);
+    //     int n_flipped_correct = pop_count_ull(flip.flip);
+    //     int n_flipped_last = count_last_flip(b.player, empty_cell);
+    //     std::cerr << n_flipped_correct << " " << n_flipped_last << std::endl;
+    //     b.print();
+    //     if (n_flipped_correct != n_flipped_last) {
+    //         std::cerr << "ERROR" << std::endl;
+    //         std::cerr << n_flipped_correct << " " << n_flipped_last << std::endl;
+    //         b.print();
+    //     }
+    // }
+
     while (true) {
         if (options.gtp) {
             if (options.ponder) {

@@ -50,10 +50,14 @@ inline int last1(Search *search, uint64_t player, int alpha, uint_fast8_t p0) {
 #if LAST_FLIP_PASS_OPT
         const int x = p0 & 7;
         const int y = p0 >> 3;
-        const int d7t = std::min(7 - y, x);
-        const int d9t = std::min(y, x);
+        const int d7t = x;
+        const int d9t = x;
         uint_fast8_t d7 = join_d7_line(player, x + y);
         uint_fast8_t d9 = join_d9_line(player, x + 7 - y);
+        // std::cerr << idx_to_coord(p0) << " " << (int)p0 << " / " << x << " " << y << " / " << d7t << std::endl;
+        // bit_print_uchar(d7);
+        // std::cerr << (int)d7 << " " << (int)(N_LAST_FLIP[d7][d7t] & 0xff) << std::endl;
+        // search->board.print();
         int n_flip_both = 
             N_LAST_FLIP_BOTH[join_h_line(player, y)][x] + // both h
             N_LAST_FLIP_BOTH[join_v_line(player, x)][y] + // both v
@@ -76,8 +80,10 @@ inline int last1(Search *search, uint64_t player, int alpha, uint_fast8_t p0) {
 #if LAST_FLIP_PASS_OPT
                 n_flip = 
                     (n_flip_both >> 8) + // hv (calculated)
-                    N_LAST_FLIP[(0xff >> -std::min((x + y) - 7, 7 - (x + y))) ^ d7][d7t] + // d7
-                    N_LAST_FLIP[(0xff >> -std::min(x - y, y - x)) ^ d9][d9t]; // d9
+                    N_LAST_FLIP[((0xff << std::max(0, y + x - 7)) & (0xff >> std::max(0, 7 - y - x))) ^ d7][d7t] + // d7
+                    // N_LAST_FLIP[(0xff >> -std::min((x + y) - 7, 7 - (x + y))) ^ d7][d7t] + // d7
+                    N_LAST_FLIP[((0xff << std::max(0, x - y)) & (0xff >> std::max(0, y - x))) ^ d9][d9t]; // d9
+                    // N_LAST_FLIP[(0xff >> -std::min(x - y, y - x)) ^ d9][d9t]; // d9
 #else
                 n_flip = count_last_flip(~player, p0);
 #endif

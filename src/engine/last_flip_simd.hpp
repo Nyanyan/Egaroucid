@@ -17,7 +17,8 @@
     @brief constant of number of flipping discs
 */
 #if LAST_FLIP_PASS_OPT
-// N_LAST_FLIP_BOTH[player_8bit][place] = n_flip_opponent << 8 | n_flip_player
+// N_LAST_FLIP_BOTH[player_8bit][place] = (n_flip_opponent << 8) | n_flip_player = (passed << 8) | not passed
+// place: MSB<- 76543210 ->LSB
 // opponent_8bit = 0xff ^ player_8bit ^ (1 << place)
 constexpr uint16_t N_LAST_FLIP_BOTH[N_8BIT][HW] = {
     {0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000}, {0x0000, 0x0000, 0x0001, 0x0002, 0x0003, 0x0004, 0x0005, 0x0006}, 

@@ -227,7 +227,7 @@ constexpr uint64_t join_d7_line_mask[15] = {
 
     to
 
-    0b 000abcde
+    0b abcde000 ?
 
     t = x + y
      14 13 12 11 10  9  8  7
@@ -250,7 +250,7 @@ inline int join_d7_line(uint64_t x, const int t) {
 }
 
 inline uint64_t split_d7_line(uint8_t x, const int t) {
-    return (((uint64_t)x) * 0x0101010101010101ULL & join_d7_line_mask[t]);
+    return (((uint64_t)x * 0x0101010101010101ULL) & join_d7_line_mask[t]);
 }
 
 constexpr uint64_t join_d9_line_mask[15] = {
@@ -281,6 +281,22 @@ constexpr uint8_t join_d9_line_rightshift[15] = {
 
     to
 
+    0b abcde000
+    // 0b 000abcde
+
+
+
+    . . . a . . . .
+    . . . . b . . .
+    . . . . . c . .
+    . . . . . . d .
+    . . . . . . . e
+    . . . . . . . .
+    . . . . . . . .
+    . . . . . . . .
+
+    to
+
     0b 000abcde
 
     t = x + 7 - y
@@ -299,11 +315,13 @@ constexpr uint8_t join_d9_line_rightshift[15] = {
     <- x
 */
 inline int join_d9_line(uint64_t x, int t) {
-    return ((x & join_d9_line_mask[t]) * 0x0101010101010101ULL)  >> (56 + join_d9_line_rightshift[t]);
+    return ((x & join_d9_line_mask[t]) * 0x0101010101010101ULL)  >> 56;
+    // return ((x & join_d9_line_mask[t]) * 0x0101010101010101ULL)  >> (56 + join_d9_line_rightshift[t]);
 }
 
 inline uint64_t split_d9_line(uint8_t x, int t) {
-    return (((uint64_t)x << join_d9_line_rightshift[t]) * 0x0101010101010101) & join_d9_line_mask[t];
+    return ((uint64_t)x * 0x0101010101010101ULL) & join_d9_line_mask[t];
+    // return (((uint64_t)x << join_d9_line_rightshift[t]) * 0x0101010101010101ULL) & join_d9_line_mask[t];
 }
 
 
