@@ -261,13 +261,6 @@ constexpr uint64_t join_d9_line_mask[15] = {
     0x0000000000804020ULL, 0ULL, 0ULL
 };
 
-// constexpr uint8_t join_d9_line_rightshift[15] = {
-//     0, 0, 40, 32, 
-//     24, 16, 8, 0, 
-//     1, 2, 3, 4, 
-//     5, 0, 0
-// };
-
 constexpr uint8_t join_d9_line_rightshift[15] = {
     0, 0, 0, 
     0, 0, 0, 
@@ -312,7 +305,6 @@ inline int join_d9_line(uint64_t x, int t) {
 
 inline uint64_t split_d9_line(uint8_t x, int t) {
     return (((uint64_t)x << join_d9_line_rightshift[t]) * 0x0101010101010101) & join_d9_line_mask[t];
-    // return (((uint64_t)x * 0x0101010101010101ULL) & 0x8040201008040201ULL) << join_d9_line_rightshift[t];
 }
 
 
