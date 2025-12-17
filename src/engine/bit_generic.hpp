@@ -220,14 +220,14 @@ constexpr uint64_t join_d7_line_mask[15] = {
     . . . d . . . .
     . . c . . . . .
     . b . . . . . .
-    a . . . . . . .
-    . . . . . . . .
-    . . . . . . . .
-    . . . . . . . .
-
+    a . . . . . . D
+    . . . . . . C .
+    . . . . . B . .
+    . . . . A . . .
     to
+    0b abcde000
+    0b 0000ABCD
 
-    0b abcde000 ?
 
     t = x + y
      14 13 12 11 10  9  8  7
@@ -261,43 +261,18 @@ constexpr uint64_t join_d9_line_mask[15] = {
     0x0000000000804020ULL, 0ULL, 0ULL
 };
 
-constexpr uint8_t join_d9_line_rightshift[15] = {
-    0, 0, 0, 
-    0, 0, 0, 
-    0, 0, 1, 
-    2, 3, 4, 
-    5, 0, 0
-};
-
 /*
-    . . . . . . . .
-    . . . . . . . .
-    . . . . . . . .
-    a . . . . . . .
+    . . . . A . . .
+    . . . . . B . .
+    . . . . . . C .
+    a . . . . . . D
     . b . . . . . .
     . . c . . . . .
     . . . d . . . .
     . . . . e . . .
-
     to
-
     0b abcde000
-    // 0b 000abcde
-
-
-
-    . . . a . . . .
-    . . . . b . . .
-    . . . . . c . .
-    . . . . . . d .
-    . . . . . . . e
-    . . . . . . . .
-    . . . . . . . .
-    . . . . . . . .
-
-    to
-
-    0b 000abcde
+    0b 0000ABCD
 
     t = x + 7 - y
 
@@ -316,12 +291,10 @@ constexpr uint8_t join_d9_line_rightshift[15] = {
 */
 inline int join_d9_line(uint64_t x, int t) {
     return ((x & join_d9_line_mask[t]) * 0x0101010101010101ULL)  >> 56;
-    // return ((x & join_d9_line_mask[t]) * 0x0101010101010101ULL)  >> (56 + join_d9_line_rightshift[t]);
 }
 
 inline uint64_t split_d9_line(uint8_t x, int t) {
     return ((uint64_t)x * 0x0101010101010101ULL) & join_d9_line_mask[t];
-    // return (((uint64_t)x << join_d9_line_rightshift[t]) * 0x0101010101010101ULL) & join_d9_line_mask[t];
 }
 
 
