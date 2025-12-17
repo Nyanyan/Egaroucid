@@ -225,11 +225,25 @@ constexpr uint64_t join_d7_line_mask[15] = {
     . . . . . . . .
     . . . . . . . .
 
-    t = x + y
-
     to
 
     0b 000abcde
+
+    t = x + y
+     14 13 12 11 10  9  8  7
+     13 12 11 10  9  8  7  6
+     12 11 10  9  8  7  6  5
+     11 10  9  8  7  6  5  4
+     10  9  8  7  6  5  4  3
+      9  8  7  6  5  4  3  2  
+      8  7  6  5  4  3  2  1
+      7  6  5  4  3  2  1  0
+    
+       ^
+       |
+       y
+    <- x
+
 */
 inline int join_d7_line(uint64_t x, const int t) {
     return ((x & join_d7_line_mask[t]) * 0x0101010101010101ULL) >> 56;
@@ -247,10 +261,18 @@ constexpr uint64_t join_d9_line_mask[15] = {
     0x0000000000804020ULL, 0ULL, 0ULL
 };
 
+// constexpr uint8_t join_d9_line_rightshift[15] = {
+//     0, 0, 40, 32, 
+//     24, 16, 8, 0, 
+//     1, 2, 3, 4, 
+//     5, 0, 0
+// };
+
 constexpr uint8_t join_d9_line_rightshift[15] = {
-    0, 0, 40, 32, 
-    24, 16, 8, 0, 
-    1, 2, 3, 4, 
+    0, 0, 0, 
+    0, 0, 0, 
+    0, 0, 1, 
+    2, 3, 4, 
     5, 0, 0
 };
 
@@ -264,18 +286,33 @@ constexpr uint8_t join_d9_line_rightshift[15] = {
     . . . d . . . .
     . . . . e . . .
 
-    t = x + 7 - y
-
     to
 
     0b 000abcde
+
+    t = x + 7 - y
+
+      7  6  5  4  3  2  1  0
+      8  7  6  5  4  3  2  1
+      9  8  7  6  5  4  3  2
+     10  9  8  7  6  5  4  3
+     11 10  9  8  7  6  5  4
+     12 11 10  9  8  7  6  5
+     13 12 11 10  9  8  7  6
+     14 13 12 11 10  9  8  7
+       ^
+       |
+       y
+    <- x
 */
 inline int join_d9_line(uint64_t x, int t) {
-    return (((x & join_d9_line_mask[t]) >> join_d9_line_rightshift[t]) * 0x0101010101010101ULL) >> 56;
+    return ((x & join_d9_line_mask[t]) * 0x0101010101010101ULL)  >> (56 + join_d9_line_rightshift[t]);
+    // return (((x & join_d9_line_mask[t]) >> join_d9_line_rightshift[t]) * 0x0101010101010101ULL) >> 56;
 }
 
 inline uint64_t split_d9_line(uint8_t x, int t) {
-    return (((uint64_t)x * 0x0101010101010101ULL) & 0x8040201008040201ULL) << join_d9_line_rightshift[t];
+    return (((uint64_t)x << join_d9_line_rightshift[t]) * 0x0101010101010101) & join_d9_line_mask[t];
+    // return (((uint64_t)x * 0x0101010101010101ULL) & 0x8040201008040201ULL) << join_d9_line_rightshift[t];
 }
 
 
