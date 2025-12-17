@@ -12,6 +12,50 @@
 #include "search.hpp"
 #include "endsearch_common.hpp"
 
+constexpr uint_fast8_t d7_n_right_zeros_arr[HW2] = {
+    0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 1,
+    0, 0, 0, 0, 0, 0, 1, 2,
+    0, 0, 0, 0, 0, 1, 2, 3,
+    0, 0, 0, 0, 1, 2, 3, 4,
+    0, 0, 0, 1, 2, 3, 4, 5,
+    0, 0, 1, 2, 3, 4, 5, 6,
+    0, 1, 2, 3, 4, 5, 6, 7
+};
+
+constexpr uint_fast8_t d7_n_left_zeros_arr[HW2] = {
+    7, 6, 5, 4, 3, 2, 1, 0,
+    6, 5, 4, 3, 2, 1, 0, 0,
+    5, 4, 3, 2, 1, 0, 0, 0,
+    4, 3, 2, 1, 0, 0, 0, 0,
+    3, 2, 1, 0, 0, 0, 0, 0,
+    2, 1, 0, 0, 0, 0, 0, 0,
+    1, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0
+};
+
+constexpr uint_fast8_t d9_n_right_zeros_arr[HW2] = {
+    0, 1, 2, 3, 4, 5, 6, 7,
+    0, 0, 1, 2, 3, 4, 5, 6,
+    0, 0, 0, 1, 2, 3, 4, 5,
+    0, 0, 0, 0, 1, 2, 3, 4,
+    0, 0, 0, 0, 0, 1, 2, 3,
+    0, 0, 0, 0, 0, 0, 1, 2,
+    0, 0, 0, 0, 0, 0, 0, 1,
+    0, 0, 0, 0, 0, 0, 0, 0
+};
+
+constexpr uint_fast8_t d9_n_left_zeros_arr[HW2] = {
+    0, 0, 0, 0, 0, 0, 0, 0,
+    1, 0, 0, 0, 0, 0, 0, 0,
+    2, 1, 0, 0, 0, 0, 0, 0,
+    3, 2, 1, 0, 0, 0, 0, 0,
+    4, 3, 2, 1, 0, 0, 0, 0,
+    5, 4, 3, 2, 1, 0, 0, 0,
+    6, 5, 4, 3, 2, 1, 0, 0,
+    7, 6, 5, 4, 3, 2, 1, 0
+};
+
 /*
     @brief Get a final score from bitboard with last 1 empty
 
@@ -72,12 +116,14 @@ inline int last1(Search *search, uint64_t player, int alpha, uint_fast8_t p0) {
                 score = score2;
             if (score > alpha) {
 #if LAST_FLIP_PASS_OPT
-                int d7_n_right_zeros = y + x - 7;
-                int d9_n_right_zeros = x - y;
+                // int d7_n_right_zeros = y + x - 7;
+                // int d9_n_right_zeros = x - y;
                 n_flip = 
                     (n_flip_both >> 8) + // hv (calculated)
-                    N_LAST_FLIP[((0xff << std::max(0, d7_n_right_zeros)) & (0xff >> std::max(0, -d7_n_right_zeros))) ^ d7][x] + // d7
-                    N_LAST_FLIP[((0xff << std::max(0, d9_n_right_zeros)) & (0xff >> std::max(0, -d9_n_right_zeros))) ^ d9][x]; // d9
+                    // N_LAST_FLIP[((0xff << std::max(0, d7_n_right_zeros)) & (0xff >> std::max(0, -d7_n_right_zeros))) ^ d7][x] + // d7
+                    // N_LAST_FLIP[((0xff << std::max(0, d9_n_right_zeros)) & (0xff >> std::max(0, -d9_n_right_zeros))) ^ d9][x]; // d9
+                    N_LAST_FLIP[((0xff << d7_n_right_zeros_arr[p0]) & (0xff >> d7_n_left_zeros_arr[p0])) ^ d7][x] + // d7
+                    N_LAST_FLIP[((0xff << d9_n_right_zeros_arr[p0]) & (0xff >> d9_n_left_zeros_arr[p0])) ^ d9][x]; // d9
 #else
                 n_flip = count_last_flip(~player, p0);
 #endif
