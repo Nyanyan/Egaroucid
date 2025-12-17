@@ -300,7 +300,6 @@ constexpr uint8_t join_d9_line_rightshift[15] = {
 */
 inline int join_d9_line(uint64_t x, int t) {
     return ((x & join_d9_line_mask[t]) * 0x0101010101010101ULL)  >> (56 + join_d9_line_rightshift[t]);
-    // return (((x & join_d9_line_mask[t]) >> join_d9_line_rightshift[t]) * 0x0101010101010101ULL) >> 56;
 }
 
 inline uint64_t split_d9_line(uint8_t x, int t) {
