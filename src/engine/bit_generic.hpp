@@ -198,13 +198,11 @@ inline uint64_t split_h_line(uint_fast8_t x, int_fast8_t t) {
 }
 
 inline uint_fast8_t join_v_line(uint64_t x, int c) {
-    x = (x >> c) & 0x0101010101010101ULL;
-    return (x * 0x0102040810204080ULL) >> 56;
+    return (((x >> c) & 0x0101010101010101ULL) * 0x0102040810204080ULL) >> 56;
 }
 
 inline uint64_t split_v_line(uint8_t x, int c) {
-    uint64_t res = ((uint64_t)x * 0x0002040810204081ULL) & 0x0101010101010101ULL;
-    return res << c;
+    return (((uint64_t)x * 0x0002040810204081ULL) & 0x0101010101010101ULL) << c;
 }
 
 constexpr uint64_t join_d7_line_mask[15] = {
