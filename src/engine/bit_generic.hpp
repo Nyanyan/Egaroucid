@@ -208,9 +208,10 @@ inline uint64_t split_v_line(uint8_t x, int c) {
 }
 
 constexpr uint64_t join_d7_line_mask[15] = {
-    0ULL, 0ULL, 0x0000000000010204ULL, 0x0000000001020408ULL, 
-    0x0000000102040810ULL, 0x0000010204081020ULL, 0x0001020408102040ULL, 0x0102040810204080ULL, 
-    0x0204081020408000ULL, 0x0408102040800000ULL, 0x0810204080000000ULL, 0x1020408000000000ULL, 
+    0ULL, 0ULL, 0x0000000000010204ULL, 
+    0x0000000001020408ULL, 0x0000000102040810ULL, 0x0000010204081020ULL, 
+    0x0001020408102040ULL, 0x0102040810204080ULL, 0x0204081020408000ULL, 
+    0x0408102040800000ULL, 0x0810204080000000ULL, 0x1020408000000000ULL, 
     0x2040800000000000ULL, 0ULL, 0ULL
 };
 
@@ -261,9 +262,10 @@ inline uint64_t split_d7_line(uint8_t x, const int t) {
 }
 
 constexpr uint64_t join_d9_line_mask[15] = {
-    0ULL, 0ULL, 0x0402010000000000ULL, 0x0804020100000000ULL, 
-    0x1008040201000000ULL, 0x2010080402010000ULL, 0x4020100804020100ULL, 0x8040201008040201ULL, 
-    0x0080402010080402ULL, 0x0000804020100804ULL, 0x0000008040201008ULL, 0x0000000080402010ULL, 
+    0ULL, 0ULL, 0x0402010000000000ULL, 
+    0x0804020100000000ULL, 0x1008040201000000ULL, 0x2010080402010000ULL, 
+    0x4020100804020100ULL, 0x8040201008040201ULL, 0x0080402010080402ULL, 
+    0x0000804020100804ULL, 0x0000008040201008ULL, 0x0000000080402010ULL, 
     0x0000000000804020ULL, 0ULL, 0ULL
 };
 
@@ -291,15 +293,17 @@ constexpr uint8_t join_d9_line_rightshift[15] = {
     0b 000abcde
 */
 inline int join_d9_line(uint64_t x, int t) {
-    x = x & join_d9_line_mask[t];
-    x >>= join_d9_line_rightshift[t];
-    return (x * 0x0101010101010101ULL) >> 56;
+    return (((x & join_d9_line_mask[t]) >> join_d9_line_rightshift[t]) * 0x0101010101010101ULL) >> 56;
+    // x = x & join_d9_line_mask[t];
+    // x >>= join_d9_line_rightshift[t];
+    // return (x * 0x0101010101010101ULL) >> 56;
 }
 
 inline uint64_t split_d9_line(uint8_t x, int t) {
-    uint64_t res = ((uint64_t)x * 0x0101010101010101ULL) & 0x8040201008040201ULL;
-    res <<= join_d9_line_rightshift[t];
-    return res;
+    return (((uint64_t)x * 0x0101010101010101ULL) & 0x8040201008040201ULL) << join_d9_line_rightshift[t];
+    // uint64_t res = ((uint64_t)x * 0x0101010101010101ULL) & 0x8040201008040201ULL;
+    // res <<= join_d9_line_rightshift[t];
+    // return res;
 }
 
 

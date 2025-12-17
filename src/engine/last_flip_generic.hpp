@@ -153,6 +153,7 @@ constexpr uint16_t N_LAST_FLIP_BOTH[N_8BIT][HW] = {
 #endif
 
 // if (i & (1 << j))  N_LAST_FLIP[i][j] = N_LAST_FLIP[i ^ (1 << j)][j];	// to use ~player instead of opponent
+// N_LAST_FLIP[line bits][where to put]; where to put: MSB<- 01234567 ->LSB
 constexpr uint8_t N_LAST_FLIP[N_8BIT][HW] = {
     {0, 0, 0, 0, 0, 0, 0, 0}, {0, 0, 1, 2, 3, 4, 5, 6}, {0, 0, 0, 1, 2, 3, 4, 5}, {0, 0, 0, 1, 2, 3, 4, 5}, {1, 0, 0, 0, 1, 2, 3, 4}, {1, 0, 1, 0, 1, 2, 3, 4}, {0, 0, 0, 0, 1, 2, 3, 4}, {0, 0, 0, 0, 1, 2, 3, 4},
     {2, 1, 0, 0, 0, 1, 2, 3}, {2, 1, 1, 2, 0, 1, 2, 3}, {0, 1, 0, 1, 0, 1, 2, 3}, {0, 1, 0, 1, 0, 1, 2, 3}, {1, 0, 0, 0, 0, 1, 2, 3}, {1, 0, 1, 0, 0, 1, 2, 3}, {0, 0, 0, 0, 0, 1, 2, 3}, {0, 0, 0, 0, 0, 1, 2, 3},
@@ -202,6 +203,7 @@ inline int_fast8_t count_last_flip(uint64_t player, const uint_fast8_t place) {
         N_LAST_FLIP[join_h_line(player, y)][x] + 
         N_LAST_FLIP[join_v_line(player, x)][y] + 
         N_LAST_FLIP[join_d7_line(player, x + y)][std::min(y, 7 - x)] + 
+        // N_LAST_FLIP[join_d7_line(player, x + y)][std::min(7 - y, x)] + 
         N_LAST_FLIP[join_d9_line(player, x + 7 - y)][std::min(y, x)];
 }
 
