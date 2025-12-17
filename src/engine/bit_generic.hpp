@@ -215,50 +215,52 @@ constexpr uint64_t join_d7_line_mask[15] = {
     0x2040800000000000ULL, 0ULL, 0ULL
 };
 
-constexpr uint8_t join_d7_line_leftshift[15] = {
-    0, 0, 5, 4, 
-    3, 2, 1, 0, 
-    0, 0, 0, 0, 
-    0, 0, 0
-};
+// constexpr uint8_t join_d7_line_leftshift[15] = {
+//     0, 0, 5, 4, 
+//     3, 2, 1, 0, 
+//     0, 0, 0, 0, 
+//     0, 0, 0
+// };
 
-constexpr uint8_t join_d7_line_rightshift[15] = {
-    0, 0, 0, 0, 
-    0, 0, 0, 0, 
-    8, 16, 24, 32, 
-    40, 0, 0
-};
+// constexpr uint8_t join_d7_line_rightshift[15] = {
+//     0, 0, 0, 0, 
+//     0, 0, 0, 0, 
+//     8, 16, 24, 32, 
+//     40, 0, 0
+// };
 
 /*
-    . . . . a . . .
-    . . . b . . . .
+    . . . . e . . .
+    . . . d . . . .
     . . c . . . . .
-    . d . . . . . .
-    e . . . . . . .
+    . b . . . . . .
+    a . . . . . . .
     . . . . . . . .
     . . . . . . . .
     . . . . . . . .
 
-    t = x + y = 10
+    t = x + y
 
     to
 
     0b 000abcde
 */
 inline int join_d7_line(uint64_t x, const int t) {
-    x = (x & join_d7_line_mask[t]);
-    x <<= join_d7_line_leftshift[t];
-    x >>= join_d7_line_rightshift[t];
-    uint64_t res = ((x * 0x0002082080000000ULL) & 0x0F00000000000000ULL) | ((x * 0x0000000002082080ULL) & 0xF000000000000000ULL);
-    return res >> 56;
+    return ((x & join_d7_line_mask[t]) * 0x0101010101010101ULL) >> 56;
+    // x = (x & join_d7_line_mask[t]);
+    // x <<= join_d7_line_leftshift[t];
+    // x >>= join_d7_line_rightshift[t];
+    // uint64_t res = ((x * 0x0002082080000000ULL) & 0x0F00000000000000ULL) | ((x * 0x0000000002082080ULL) & 0xF000000000000000ULL);
+    // return res >> 56;
 }
 
 inline uint64_t split_d7_line(uint8_t x, const int t) {
-    uint64_t res = ((uint64_t)(x & 0b00001111) * 0x0000000002082080ULL) & 0x0000000010204080ULL;
-    res |= ((uint64_t)(x & 0b11110000) * 0x0002082080000000ULL) & 0x0102040800000000ULL;
-    res >>= join_d7_line_leftshift[t];
-    res <<= join_d7_line_rightshift[t];
-    return res;
+    return (((uint64_t)x) * 0x0101010101010101ULL & join_d7_line_mask[t]);
+    // uint64_t res = ((uint64_t)(x & 0b00001111) * 0x0000000002082080ULL) & 0x0000000010204080ULL;
+    // res |= ((uint64_t)(x & 0b11110000) * 0x0002082080000000ULL) & 0x0102040800000000ULL;
+    // res >>= join_d7_line_leftshift[t];
+    // res <<= join_d7_line_rightshift[t];
+    // return res;
 }
 
 constexpr uint64_t join_d9_line_mask[15] = {
@@ -286,7 +288,7 @@ constexpr uint8_t join_d9_line_rightshift[15] = {
     . . . d . . . .
     . . . . e . . .
 
-    t = x + 7 - y = 10
+    t = x + 7 - y
 
     to
 
