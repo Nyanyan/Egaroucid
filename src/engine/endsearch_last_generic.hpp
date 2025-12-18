@@ -144,8 +144,10 @@ inline int last1(Search *search, uint64_t player, int alpha, uint_fast8_t p0) {
 #if LAST_FLIP_PASS_OPT
                 n_flip = 
                     (n_flip_both >> 8) + // hv (calculated)
-                    N_LAST_FLIP[((0xff << d7_n_right_zeros[p0]) & (0xff >> d7_n_left_zeros[p0])) ^ d7][x] + // d7
-                    N_LAST_FLIP[((0xff << d9_n_right_zeros[p0]) & (0xff >> d9_n_left_zeros[p0])) ^ d9][x]; // d9
+                    N_LAST_FLIP[D7_LINE_MASK[p0] ^ d7][x] + // d7
+                    N_LAST_FLIP[D9_LINE_MASK[p0] ^ d9][x]; // d9
+                    // N_LAST_FLIP[((0xff << d7_n_right_zeros[p0]) & (0xff >> d7_n_left_zeros[p0])) ^ d7][x] + // d7
+                    // N_LAST_FLIP[((0xff << d9_n_right_zeros[p0]) & (0xff >> d9_n_left_zeros[p0])) ^ d9][x]; // d9
 #else
                 n_flip = count_last_flip(~player, p0);
 #endif
