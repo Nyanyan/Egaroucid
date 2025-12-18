@@ -1122,7 +1122,7 @@ class Book {
                 if (is_valid_score(leaf_value) && is_valid_policy(leaf_move)) {
                     board.player = player;
                     board.opponent = opponent;
-                    calc_flip(&flip, *board, leaf_move);
+                    calc_flip(&flip, &board, leaf_move);
                     board.move_board(&flip);
                     leaf_value = -leaf_value;
                     if (board.get_legal() == 0 && !board.is_end()) {
