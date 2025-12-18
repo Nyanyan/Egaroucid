@@ -1102,25 +1102,39 @@ class Book {
                     fclose(fp);
                     return false;
                 }
-                // read leaf move
-                if (fread(&leaf_move, 1, 1, fp) < 1) {
-                    std::cerr << "[ERROR] file broken" << std::endl;
-                    fclose(fp);
-                    return false;
-                }
-                if (leaf_value < -HW2 || HW2 < leaf_value || leaf_move < 0 || HW2 <= leaf_move) {
-                    leaf_value = SCORE_UNDEFINED;
-                    leaf_move = MOVE_UNDEFINED;
-                }
                 if (value != SCORE_UNDEFINED && (player & opponent) == 0ULL && calc_legal(player, opponent)) {
                     board.player = player;
                     board.opponent = opponent;
                     book_elem.value = value;
                     book_elem.level = level;
-                    book_elem.leaf.value = leaf_value;
-                    book_elem.leaf.move = leaf_move;
+                    book_elem.leaf.value = SCORE_UNDEFINED;
+                    book_elem.leaf.move = MOVE_UNDEFINED;
                     book_elem.leaf.level = level;
                     book_elem.n_lines = n_lines;
+                    merge(board, book_elem);
+                }
+                // read leaf move (imported as position in Egaroucid book)
+                if (fread(&leaf_move, 1, 1, fp) < 1) {
+                    std::cerr << "[ERROR] file broken" << std::endl;
+                    fclose(fp);
+                    return false;
+                }
+                if (is_valid_score(leaf_value) && is_valid_policy(leaf_move)) {
+                    board.player = player;
+                    board.opponent = opponent;
+                    calc_flip(&flip, *board, leaf_move);
+                    board.move_board(&flip);
+                    leaf_value = -leaf_value;
+                    if (board.get_legal() == 0 && !board.is_end()) {
+                        board.pass();
+                        leaf_value = -leaf_value;
+                    }
+                    book_elem.value = leaf_value;
+                    book_elem.level = level;
+                    book_elem.leaf.value = SCORE_UNDEFINED;
+                    book_elem.leaf.move = MOVE_UNDEFINED;
+                    book_elem.leaf.level = level;
+                    book_elem.n_lines = 1;
                     merge(board, book_elem);
                 }
             }
