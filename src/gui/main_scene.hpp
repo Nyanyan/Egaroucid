@@ -2457,7 +2457,7 @@ private:
         if (is_best_score) {
             font = getData().fonts.font_heavy;
         } else {
-            font = getData().fonts.font_bold;
+            font = getData().fonts.font;
         }
         return font;
     }
