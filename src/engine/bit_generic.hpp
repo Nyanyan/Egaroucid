@@ -205,13 +205,6 @@ inline uint64_t split_v_line(uint8_t x, int c) {
     return (((uint64_t)x * 0x0002040810204081ULL) & 0x0101010101010101ULL) << c;
 }
 
-constexpr uint64_t join_d7_line_mask[15] = {
-    0ULL, 0ULL, 0x0000000000010204ULL, 
-    0x0000000001020408ULL, 0x0000000102040810ULL, 0x0000010204081020ULL, 
-    0x0001020408102040ULL, 0x0102040810204080ULL, 0x0204081020408000ULL, 
-    0x0408102040800000ULL, 0x0810204080000000ULL, 0x1020408000000000ULL, 
-    0x2040800000000000ULL, 0ULL, 0ULL
-};
 
 /*
     . . . . e . . .
@@ -236,13 +229,33 @@ constexpr uint64_t join_d7_line_mask[15] = {
       9  8  7  6  5  4  3  2  
       8  7  6  5  4  3  2  1
       7  6  5  4  3  2  1  0
-    
+
        ^
        |
        y
     <- x
 
 */
+
+constexpr uint64_t join_d7_line_mask[15] = {
+    0ULL, 0ULL, 0x0000000000010204ULL, 
+    0x0000000001020408ULL, 0x0000000102040810ULL, 0x0000010204081020ULL, 
+    0x0001020408102040ULL, 0x0102040810204080ULL, 0x0204081020408000ULL, 
+    0x0408102040800000ULL, 0x0810204080000000ULL, 0x1020408000000000ULL, 
+    0x2040800000000000ULL, 0ULL, 0ULL
+};
+
+constexpr uint_fast8_t D7_LINE_MASK[HW2] = {
+    0x01, 0x03, 0x07, 0x0F, 0x1F, 0x3F, 0x7F, 0xFF,
+    0x03, 0x07, 0x0F, 0x1F, 0x3F, 0x7F, 0xFF, 0xFE,
+    0x07, 0x0F, 0x1F, 0x3F, 0x7F, 0xFF, 0xFE, 0xFC,
+    0x0F, 0x1F, 0x3F, 0x7F, 0xFF, 0xFE, 0xFC, 0xF8,
+    0x1F, 0x3F, 0x7F, 0xFF, 0xFE, 0xFC, 0xF8, 0xF0,
+    0x3F, 0x7F, 0xFF, 0xFE, 0xFC, 0xF8, 0xF0, 0xE0,
+    0x7F, 0xFF, 0xFE, 0xFC, 0xF8, 0xF0, 0xE0, 0xC0,
+    0xFF, 0xFE, 0xFC, 0xF8, 0xF0, 0xE0, 0xC0, 0x80
+};
+
 inline int join_d7_line(uint64_t x, const int t) {
     return ((x & join_d7_line_mask[t]) * 0x0101010101010101ULL) >> 56;
 }
@@ -251,13 +264,6 @@ inline uint64_t split_d7_line(uint8_t x, const int t) {
     return (((uint64_t)x * 0x0101010101010101ULL) & join_d7_line_mask[t]);
 }
 
-constexpr uint64_t join_d9_line_mask[15] = {
-    0ULL, 0ULL, 0x0402010000000000ULL, 
-    0x0804020100000000ULL, 0x1008040201000000ULL, 0x2010080402010000ULL, 
-    0x4020100804020100ULL, 0x8040201008040201ULL, 0x0080402010080402ULL, 
-    0x0000804020100804ULL, 0x0000008040201008ULL, 0x0000000080402010ULL, 
-    0x0000000000804020ULL, 0ULL, 0ULL
-};
 
 /*
     . . . . A . . .
@@ -273,7 +279,6 @@ constexpr uint64_t join_d9_line_mask[15] = {
     0b 0000ABCD
 
     t = x + 7 - y
-
       7  6  5  4  3  2  1  0
       8  7  6  5  4  3  2  1
       9  8  7  6  5  4  3  2
@@ -282,11 +287,32 @@ constexpr uint64_t join_d9_line_mask[15] = {
      12 11 10  9  8  7  6  5
      13 12 11 10  9  8  7  6
      14 13 12 11 10  9  8  7
+
        ^
        |
        y
     <- x
 */
+
+constexpr uint64_t join_d9_line_mask[15] = {
+    0ULL, 0ULL, 0x0402010000000000ULL, 
+    0x0804020100000000ULL, 0x1008040201000000ULL, 0x2010080402010000ULL, 
+    0x4020100804020100ULL, 0x8040201008040201ULL, 0x0080402010080402ULL, 
+    0x0000804020100804ULL, 0x0000008040201008ULL, 0x0000000080402010ULL, 
+    0x0000000000804020ULL, 0ULL, 0ULL
+};
+
+constexpr uint_fast8_t D9_LINE_MASK[HW2] = {
+    0xFF, 0xFE, 0xFC, 0xF8, 0xF0, 0xE0, 0xC0, 0x80,
+    0x7F, 0xFF, 0xFE, 0xFC, 0xF8, 0xF0, 0xE0, 0xC0,
+    0x3F, 0x7F, 0xFF, 0xFE, 0xFC, 0xF8, 0xF0, 0xE0,
+    0x1F, 0x3F, 0x7F, 0xFF, 0xFE, 0xFC, 0xF8, 0xF0,
+    0x0F, 0x1F, 0x3F, 0x7F, 0xFF, 0xFE, 0xFC, 0xF8,
+    0x07, 0x0F, 0x1F, 0x3F, 0x7F, 0xFF, 0xFE, 0xFC,
+    0x03, 0x07, 0x0F, 0x1F, 0x3F, 0x7F, 0xFF, 0xFE,
+    0x01, 0x03, 0x07, 0x0F, 0x1F, 0x3F, 0x7F, 0xFF
+};
+
 inline int join_d9_line(uint64_t x, int t) {
     return ((x & join_d9_line_mask[t]) * 0x0101010101010101ULL)  >> 56;
 }
@@ -294,6 +320,14 @@ inline int join_d9_line(uint64_t x, int t) {
 inline uint64_t split_d9_line(uint8_t x, int t) {
     return ((uint64_t)x * 0x0101010101010101ULL) & join_d9_line_mask[t];
 }
+
+constexpr uint_fast8_t DIAGONAL_LINE_MASK_T[15] = {
+    0x01, 0x03, 0x07, 
+    0x0F, 0x1F, 0x3F, 
+    0x7F, 0xFF, 0xFE,
+    0xFC, 0xF8, 0xF0,
+    0xE0, 0xC0, 0x80
+};
 
 
 /*
