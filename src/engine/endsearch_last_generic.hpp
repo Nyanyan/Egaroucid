@@ -12,54 +12,6 @@
 #include "search.hpp"
 #include "endsearch_common.hpp"
 
-// max(0, x + y - 7)
-constexpr uint_fast8_t d7_n_right_zeros[HW2] = {
-    0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 1,
-    0, 0, 0, 0, 0, 0, 1, 2,
-    0, 0, 0, 0, 0, 1, 2, 3,
-    0, 0, 0, 0, 1, 2, 3, 4,
-    0, 0, 0, 1, 2, 3, 4, 5,
-    0, 0, 1, 2, 3, 4, 5, 6,
-    0, 1, 2, 3, 4, 5, 6, 7
-};
-
-// max(0, -(x + y - 7))
-constexpr uint_fast8_t d7_n_left_zeros[HW2] = {
-    7, 6, 5, 4, 3, 2, 1, 0,
-    6, 5, 4, 3, 2, 1, 0, 0,
-    5, 4, 3, 2, 1, 0, 0, 0,
-    4, 3, 2, 1, 0, 0, 0, 0,
-    3, 2, 1, 0, 0, 0, 0, 0,
-    2, 1, 0, 0, 0, 0, 0, 0,
-    1, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0
-};
-
-// max(0, x - y)
-constexpr uint_fast8_t d9_n_right_zeros[HW2] = {
-    0, 1, 2, 3, 4, 5, 6, 7,
-    0, 0, 1, 2, 3, 4, 5, 6,
-    0, 0, 0, 1, 2, 3, 4, 5,
-    0, 0, 0, 0, 1, 2, 3, 4,
-    0, 0, 0, 0, 0, 1, 2, 3,
-    0, 0, 0, 0, 0, 0, 1, 2,
-    0, 0, 0, 0, 0, 0, 0, 1,
-    0, 0, 0, 0, 0, 0, 0, 0
-};
-
-// max(0, -(x - y))
-constexpr uint_fast8_t d9_n_left_zeros[HW2] = {
-    0, 0, 0, 0, 0, 0, 0, 0,
-    1, 0, 0, 0, 0, 0, 0, 0,
-    2, 1, 0, 0, 0, 0, 0, 0,
-    3, 2, 1, 0, 0, 0, 0, 0,
-    4, 3, 2, 1, 0, 0, 0, 0,
-    5, 4, 3, 2, 1, 0, 0, 0,
-    6, 5, 4, 3, 2, 1, 0, 0,
-    7, 6, 5, 4, 3, 2, 1, 0
-};
-
 /*
     @brief Get a final score from bitboard with last 1 empty
 
@@ -124,10 +76,6 @@ inline int last1(Search *search, uint64_t player, int alpha, uint_fast8_t p0) {
                     (n_flip_both >> 8) + // hv (calculated)
                     N_LAST_FLIP[DIAGONAL_LINE_MASK_T[x + y] ^ d7][x] + // d7
                     N_LAST_FLIP[DIAGONAL_LINE_MASK_T[x + 7 - y] ^ d9][x]; // d9
-                    // N_LAST_FLIP[D7_LINE_MASK[p0] ^ d7][x] + // d7
-                    // N_LAST_FLIP[D9_LINE_MASK[p0] ^ d9][x]; // d9
-                    // N_LAST_FLIP[((0xff << d7_n_right_zeros[p0]) & (0xff >> d7_n_left_zeros[p0])) ^ d7][x] + // d7
-                    // N_LAST_FLIP[((0xff << d9_n_right_zeros[p0]) & (0xff >> d9_n_left_zeros[p0])) ^ d9][x]; // d9
 #else
                 n_flip = count_last_flip(~player, p0);
 #endif
