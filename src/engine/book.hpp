@@ -1359,9 +1359,10 @@ class Book {
                 //short_val_min = book_elem.value;
                 //short_val_max = book_elem.value;
                 board = itr->first;
-                std::vector<Book_value> links = get_edax_links(&board);
-                Leaf leaf = get_edax_leaf(&board, links);
-                n_link = (char)links.size();
+                std::vector<Book_value> edax_links = get_edax_links(&board);
+                Leaf leaf = get_edax_leaf(&board, edax_links);
+                std::cerr << idx_to_coord(leaf.value) << " " << 
+                n_link = (char)edax_links.size();
                 if (n_link > 0) {
                     if (!is_valid_score(leaf.value) || !is_valid_policy(leaf.move)) {
                         leaf.value = SCORE_UNDEFINED;
@@ -1385,7 +1386,7 @@ class Book {
                     fout.write((char*)&short_val_max, 2);
                     fout.write((char*)&n_link, 1);
                     fout.write((char*)&char_level, 1);
-                    for (Book_value &book_value: links) {
+                    for (Book_value &book_value: edax_links) {
                         link_value = (char)book_value.value;
                         link_move = (char)book_value.policy;
                         fout.write((char*)&link_value, 1);
@@ -1581,7 +1582,7 @@ class Book {
         }
 
         inline std::vector<Book_value> get_edax_links(Board *b) {
-            std::lock_guard<std::mutex> lock(mtx);
+            // std::lock_guard<std::mutex> lock(mtx); // avoid deadlock
             std::vector<Book_value> policies;
             uint64_t legal = b->get_legal();
             Flip flip;
