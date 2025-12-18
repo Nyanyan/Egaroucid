@@ -1361,8 +1361,9 @@ class Book {
                 board = itr->first;
                 std::vector<Book_value> edax_links = get_edax_links(&board);
                 Leaf leaf = get_edax_leaf(&board, edax_links);
-                std::cerr << idx_to_coord(leaf.value) << " " << 
                 n_link = (char)edax_links.size();
+                std::cerr << (int)n_link << " / " << idx_to_coord(leaf.move) << " " << (int)leaf.value << std::endl;
+                board.print();
                 if (n_link > 0) {
                     if (!is_valid_score(leaf.value) || !is_valid_policy(leaf.move)) {
                         leaf.value = SCORE_UNDEFINED;
@@ -1657,7 +1658,7 @@ class Book {
                         } else {
                             b->pass();
                                 if (contain(b)) {
-                                    int v = -get(b).value;
+                                    int v = get(b).value;
                                     if (leaf.value < v) {
                                         leaf.value = v;
                                         leaf.move = cell;
@@ -1668,7 +1669,7 @@ class Book {
                     } else if (b->get_legal() == 0) { // pass
                         b->pass();
                             if (contain(b)) {
-                                int v = -get(b).value;
+                                int v = get(b).value;
                                 if (leaf.value < v) {
                                     leaf.value = v;
                                     leaf.move = cell;
