@@ -1364,9 +1364,10 @@ class Book {
                 std::vector<Book_value> edax_links = get_edax_links(&board);
                 Leaf leaf = get_edax_leaf(&board, edax_links);
                 n_link = (char)edax_links.size();
-                // std::cerr << (int)n_link << " / " << idx_to_coord(leaf.move) << " " << (int)leaf.value << std::endl;
-                // board.print();
                 if (n_link > 0 || (is_valid_score(leaf.value) && is_valid_policy(leaf.move))) {
+                    std::cerr << "register " << (int)n_link << " / " << idx_to_coord(leaf.move) << " " << (int)leaf.value << std::endl;
+                    board.print();
+                    std::cerr << std::endl;
                     if (!is_valid_score(leaf.value) || !is_valid_policy(leaf.move)) {
                         leaf.value = SCORE_UNDEFINED;
                         leaf.move = MOVE_NOMOVE;
@@ -1405,6 +1406,9 @@ class Book {
                     fout.write((char*)&leaf_move, 1);
                 } else {
                     ++n_ignored_positions;
+                    std::cerr << "ignore " << (int)n_link << " / " << idx_to_coord(leaf.move) << " " << (int)leaf.value << std::endl;
+                    board.print();
+                    std::cerr << std::endl;
                 }
             }
             fout.close();
@@ -1647,11 +1651,14 @@ class Book {
         inline Leaf get_edax_leaf(Board *b, std::vector<Book_value> &edax_links) {
             std::lock_guard<std::mutex> lock(mtx);
             Leaf leaf;
-            leaf.value = -INF;
+            leaf.value = -127;
             uint64_t legal = b->get_legal();
             for (Book_value &link: edax_links) {
                 legal ^= 1ULL << link.policy;
             }
+            // if (b->player == 0x0000000018080000ULL && b->opponent == 0x0000001c04040000ULL) {
+                std::cerr << "link size " << edax_links.size() << " n_other_legal " << pop_count_ull(legal) << std::endl;
+            // }
             Flip flip;
             for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)) {
                 calc_flip(&flip, b, cell);
@@ -1695,6 +1702,9 @@ class Book {
                     }
                 b->undo_board(&flip);
             }
+            // if (b->player == 0x0000000018080000ULL && b->opponent == 0x0000001c04040000ULL) {
+                std::cerr << idx_to_coord(leaf.move) << " " << (int)leaf.move << " " << (int)leaf.value << std::endl;
+            // }
             return leaf;
         }
 
