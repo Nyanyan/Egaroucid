@@ -849,6 +849,10 @@ inline ExplorerDrawResult draw_folder_item(
         } else {
             rename_rect.draw(colors.white);
         }
+        // Change cursor to hand when hovering over rename button
+        if (rename_rect.mouseOver()) {
+            Cursor::RequestStyle(CursorStyle::Hand);
+        }
         if (rename_rect.leftClicked()) {
             drag_state.reset_drag_preparation();
             res.folderRenameRequested = true;

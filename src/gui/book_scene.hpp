@@ -297,15 +297,17 @@ public:
             getData().fonts.font(book_format_str).draw(18, Arg::topCenter(X_CENTER, sy + 142), getData().colors.white);
 
             level_bar.draw();
-
-            if (level_bar.is_changeable()) {
-                back_button.disable_notransparent();
-                go_with_level_button.disable_notransparent();
-                go_button.disable_notransparent();
-            } else {
-                back_button.enable();
-                go_with_level_button.enable();
-                go_button.enable();
+            
+            if (button_enabled) {
+                if (level_bar.is_changeable()) {
+                    back_button.disable_notransparent();
+                    go_with_level_button.disable_notransparent();
+                    go_button.disable_notransparent();
+                } else {
+                    back_button.enable();
+                    go_with_level_button.enable();
+                    go_button.enable();
+                }
             }
             back_button.draw();
             go_with_level_button.draw();
