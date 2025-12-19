@@ -1279,6 +1279,12 @@ class Book {
             fout.write((char*)&second, 1);
             char dummy = 0;
             fout.write((char*)&dummy, 1);
+            if (level < 1) {
+                for (auto itr = book.begin(); itr != book.end(); ++itr) {
+                    level = std::max(level, (int)itr->second.level);
+                }
+            }
+            std::cerr << "level " << level << std::endl;
             fout.write((char*)&level, 4);
             int n_empties = HW2;
             for (auto itr = book.begin(); itr != book.end(); ++itr) {
@@ -1316,7 +1322,7 @@ class Book {
                 Board passed_board = pass_board.copy();
                 passed_board.pass();
                 Book_elem passed_elem = get(passed_board);
-                n_lines = passed_elem.n_lines;
+                n_lines = 0; //passed_elem.n_lines;
                 short_val = (short)passed_elem.value;
                 if (level == LEVEL_UNDEFINED) {
                     Board b = pass_board.copy();
@@ -1374,7 +1380,7 @@ class Book {
                     } else {
                         ++n_registered_leaves;
                     }
-                    n_lines = 0; //itr->second.n_lines; // if non-0, there will be errors in edax's "book info" command
+                    n_lines = 0; //itr->second.n_lines;
                     if (level == LEVEL_UNDEFINED) {
                         char_level = itr->second.level;
                     }
