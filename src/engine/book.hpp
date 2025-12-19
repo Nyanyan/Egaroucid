@@ -1347,7 +1347,12 @@ class Book {
                 fout.write((char*)&leaf_val, 1);
                 fout.write((char*)&leaf_move, 1);
             }
+            uint64_t n_registered_positions = 0;
+            uint64_t n_registered_links = 0;
+            uint64_t n_registered_leaves = 0;
+            uint64_t n_ignored_positions = 0;
             for (auto itr = book.begin(); itr != book.end(); ++itr) {
+                board = itr->first;
                 book_elem = itr->second;
                 int n_percent = (double)t / n_boards * 100;
                 if (n_percent > percent) {
@@ -1356,18 +1361,17 @@ class Book {
                 }
                 ++t;
                 short_val = book_elem.value;
-                //short_val_min = book_elem.value;
-                //short_val_max = book_elem.value;
-                board = itr->first;
                 std::vector<Book_value> edax_links = get_edax_links(&board);
                 Leaf leaf = get_edax_leaf(&board, edax_links);
                 n_link = (char)edax_links.size();
-                std::cerr << (int)n_link << " / " << idx_to_coord(leaf.move) << " " << (int)leaf.value << std::endl;
-                board.print();
-                if (n_link > 0) {
+                // std::cerr << (int)n_link << " / " << idx_to_coord(leaf.move) << " " << (int)leaf.value << std::endl;
+                // board.print();
+                if (n_link > 0 || (is_valid_score(leaf.value) && is_valid_policy(leaf.move))) {
                     if (!is_valid_score(leaf.value) || !is_valid_policy(leaf.move)) {
                         leaf.value = SCORE_UNDEFINED;
                         leaf.move = MOVE_NOMOVE;
+                    } else {
+                        ++n_registered_leaves;
                     }
                     n_lines = itr->second.n_lines;
                     if (level == LEVEL_UNDEFINED) {
@@ -1393,14 +1397,18 @@ class Book {
                         fout.write((char*)&link_value, 1);
                         fout.write((char*)&link_move, 1);
                     }
+                    n_registered_links += n_link;
+                    ++n_registered_positions;
                     leaf_val = leaf.value;
                     leaf_move = leaf.move;
                     fout.write((char*)&leaf_val, 1);
                     fout.write((char*)&leaf_move, 1);
+                } else {
+                    ++n_ignored_positions;
                 }
             }
             fout.close();
-            std::cerr << "saved " << t << " boards as a edax-formatted book " << n_position << " " << book.size() << std::endl;
+            std::cerr << "saved " << t << " boards as a edax-formatted book, book_size+pass_boards: " << n_position << " book_size: " << book.size() << " positions: " << n_registered_positions << " links: " << n_registered_links << " leaves: " << n_registered_leaves << " ignored: " << n_ignored_positions << std::endl;
         }
 
         /*
