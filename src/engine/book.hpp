@@ -1365,16 +1365,16 @@ class Book {
                 Leaf leaf = get_edax_leaf(&board, edax_links);
                 n_link = (char)edax_links.size();
                 if (n_link > 0 || (is_valid_score(leaf.value) && is_valid_policy(leaf.move))) {
-                    std::cerr << "register " << (int)n_link << " / " << idx_to_coord(leaf.move) << " " << (int)leaf.value << std::endl;
-                    board.print();
-                    std::cerr << std::endl;
+                    // std::cerr << "register " << (int)n_link << " / " << idx_to_coord(leaf.move) << " " << (int)leaf.value << std::endl;
+                    // board.print();
+                    // std::cerr << std::endl;
                     if (!is_valid_score(leaf.value) || !is_valid_policy(leaf.move)) {
                         leaf.value = SCORE_UNDEFINED;
                         leaf.move = MOVE_NOMOVE;
                     } else {
                         ++n_registered_leaves;
                     }
-                    n_lines = itr->second.n_lines;
+                    n_lines = 0; //itr->second.n_lines; // if non-0, there will be errors in edax's "book info" command
                     if (level == LEVEL_UNDEFINED) {
                         char_level = itr->second.level;
                     }
@@ -1406,9 +1406,9 @@ class Book {
                     fout.write((char*)&leaf_move, 1);
                 } else {
                     ++n_ignored_positions;
-                    std::cerr << "ignore " << (int)n_link << " / " << idx_to_coord(leaf.move) << " " << (int)leaf.value << std::endl;
-                    board.print();
-                    std::cerr << std::endl;
+                    // std::cerr << "ignore " << (int)n_link << " / " << idx_to_coord(leaf.move) << " " << (int)leaf.value << std::endl;
+                    // board.print();
+                    // std::cerr << std::endl;
                 }
             }
             fout.close();
@@ -1656,9 +1656,6 @@ class Book {
             for (Book_value &link: edax_links) {
                 legal ^= 1ULL << link.policy;
             }
-            // if (b->player == 0x0000000018080000ULL && b->opponent == 0x0000001c04040000ULL) {
-                std::cerr << "link size " << edax_links.size() << " n_other_legal " << pop_count_ull(legal) << std::endl;
-            // }
             Flip flip;
             for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)) {
                 calc_flip(&flip, b, cell);
@@ -1702,9 +1699,6 @@ class Book {
                     }
                 b->undo_board(&flip);
             }
-            // if (b->player == 0x0000000018080000ULL && b->opponent == 0x0000001c04040000ULL) {
-                std::cerr << idx_to_coord(leaf.move) << " " << (int)leaf.move << " " << (int)leaf.value << std::endl;
-            // }
             return leaf;
         }
 
