@@ -1282,7 +1282,7 @@ class Book {
             fout.write((char*)&level, 4);
             int n_empties = HW2;
             for (auto itr = book.begin(); itr != book.end(); ++itr) {
-                n_empties = std::min(n_empties, HW2 + 1 - itr->first.n_discs());
+                n_empties = std::min(n_empties, HW2 + 2 - itr->first.n_discs());
             }
             fout.write((char*)&n_empties, 4);
             int err_mid = 0;
@@ -1291,8 +1291,9 @@ class Book {
             fout.write((char*)&err_end, 4);
             int verb = 0;
             fout.write((char*)&verb, 4);
-            int n_position = book.size() + pass_boards.size();
-            fout.write((char*)&n_position, 4);
+            std::streampos n_positions_pos = fout.tellp(); // memorize n_positions position
+            int n_positions = 0;
+            fout.write((char*)&n_positions, 4);
             int n_win = 0, n_draw = 0, n_lose = 0;
             uint32_t n_lines;
             short short_val, short_val_min = -HW2, short_val_max = HW2;
@@ -1307,7 +1308,10 @@ class Book {
             bool searching = true;
             int percent = -1;
             int n_boards = (int)book.size();
-            int t = 0;
+            uint64_t n_registered_positions = 0;
+            uint64_t n_registered_links = 0;
+            uint64_t n_registered_leaves = 0;
+            uint64_t n_ignored_positions = 0;
             for (Board pass_board: pass_boards) {
                 Board passed_board = pass_board.copy();
                 passed_board.pass();
@@ -1346,11 +1350,10 @@ class Book {
                 fout.write((char*)&link_move, 1);
                 fout.write((char*)&leaf_val, 1);
                 fout.write((char*)&leaf_move, 1);
+                ++n_registered_positions;
+                ++n_registered_links;
             }
-            uint64_t n_registered_positions = 0;
-            uint64_t n_registered_links = 0;
-            uint64_t n_registered_leaves = 0;
-            uint64_t n_ignored_positions = 0;
+            uint64_t t = 0;
             for (auto itr = book.begin(); itr != book.end(); ++itr) {
                 board = itr->first;
                 book_elem = itr->second;
@@ -1365,9 +1368,6 @@ class Book {
                 Leaf leaf = get_edax_leaf(&board, edax_links);
                 n_link = (char)edax_links.size();
                 if (n_link > 0 || (is_valid_score(leaf.value) && is_valid_policy(leaf.move))) {
-                    // std::cerr << "register " << (int)n_link << " / " << idx_to_coord(leaf.move) << " " << (int)leaf.value << std::endl;
-                    // board.print();
-                    // std::cerr << std::endl;
                     if (!is_valid_score(leaf.value) || !is_valid_policy(leaf.move)) {
                         leaf.value = SCORE_UNDEFINED;
                         leaf.move = MOVE_NOMOVE;
@@ -1406,13 +1406,14 @@ class Book {
                     fout.write((char*)&leaf_move, 1);
                 } else {
                     ++n_ignored_positions;
-                    // std::cerr << "ignore " << (int)n_link << " / " << idx_to_coord(leaf.move) << " " << (int)leaf.value << std::endl;
-                    // board.print();
-                    // std::cerr << std::endl;
                 }
             }
+            // update n_positions
+            int n_positions_updated = (int)n_registered_positions;
+            fout.seekp(n_positions_pos, std::ios::beg);
+            fout.write((char*)&n_positions_updated, 4);
             fout.close();
-            std::cerr << "saved " << t << " boards as a edax-formatted book, book_size+pass_boards: " << n_position << " book_size: " << book.size() << " positions: " << n_registered_positions << " links: " << n_registered_links << " leaves: " << n_registered_leaves << " ignored: " << n_ignored_positions << std::endl;
+            std::cerr << "saved positions=" << n_registered_positions << " links=" << n_registered_links << " leaves=" << n_registered_leaves << " ignored=" << n_ignored_positions << std::endl;
         }
 
         /*
