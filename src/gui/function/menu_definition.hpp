@@ -261,8 +261,6 @@ Menu create_menu(Menu_elements* menu_elements, Resources *resources, Font font, 
             menu_e.push(side_menu);
             side_menu.init_button(language.get("book", "book_fix") + get_shortcut_key_info(U"book_start_fix"), &menu_elements->book_start_fix);
             menu_e.push(side_menu);
-            side_menu.init_button(language.get("book", "book_fix_edax") + get_shortcut_key_info(U"book_start_fix_edax"), &menu_elements->book_start_fix_edax);
-            menu_e.push(side_menu);
             side_menu.init_button(language.get("book", "book_reduce") + get_shortcut_key_info(U"book_start_reducing"), &menu_elements->book_start_reducing);
             menu_e.push(side_menu);
             side_menu.init_button(language.get("book", "book_recalculate_leaf") + get_shortcut_key_info(U"book_start_recalculate_leaf"), &menu_elements->book_start_recalculate_leaf);

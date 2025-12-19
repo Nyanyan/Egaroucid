@@ -1133,13 +1133,6 @@ private:
             changeScene(U"Fix_book", SCENE_FADE_TIME);
             return;
         }
-        if (getData().menu_elements.book_start_fix_edax || shortcut_key == U"book_start_fix_edax") {
-            changing_scene = true;
-            stop_calculating();
-            resume_calculating();
-            changeScene(U"Fix_book_edax", SCENE_FADE_TIME);
-            return;
-        }
         if (getData().menu_elements.book_start_reducing || shortcut_key == U"book_start_reducing") {
             changing_scene = true;
             stop_calculating();
