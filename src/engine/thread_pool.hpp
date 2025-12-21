@@ -40,7 +40,6 @@ class Thread_pool {
         mutable std::mutex mtx;
         bool running;
         int n_thread;
-        //std::atomic<int> n_idle;
         int n_idle;
         std::atomic<int> n_canbe_used;
         int n_set_threads;
@@ -50,9 +49,6 @@ class Thread_pool {
 
         int max_thread_size[THREAD_ID_SIZE];
         std::atomic<int> n_using_thread[THREAD_ID_SIZE];
-        //std::unordered_map<thread_id_t, int> max_thread_size;
-        //std::unordered_map<thread_id_t, std::atomic<int>> n_using_thread;
-        //std::atomic<int> n_using_tasks;
 
     public:
         void set_thread(int new_n_thread) {
@@ -123,12 +119,10 @@ class Thread_pool {
         }
 
         int size() const {
-            // return n_thread;
             return n_set_threads;
         }
 
         int get_n_idle() const {
-            // return n_idle;
             int n_running = n_thread - n_idle;
             return n_canbe_used - n_running;
         }
@@ -140,32 +134,6 @@ class Thread_pool {
         int get_n_using_thread(thread_id_t id) {
             return n_using_thread[id];
         }
-
-        /*
-        void reset_unavailable() {
-            if (n_idle == n_thread && n_using_tasks.load() == 0) {
-                bool start_flag = false;
-                std::vector<std::future<void>> futures;
-                bool need_to_reset = false;
-                for (int i = 0; i < n_thread; ++i) {
-                    bool pushed;
-                    futures.emplace_back(push(&pushed, std::bind(reset_unavailable_task, &start_flag)));
-                    if (!pushed) {
-                        futures.pop_back();
-                        need_to_reset = true;
-                    }
-                }
-                start_flag = true;
-                for (std::future<void> &f: futures) {
-                    f.get();
-                }
-                if (need_to_reset) {
-                    std::cerr << "reset unavailable threads" << std::endl;
-                    resize(n_thread);
-                }
-            }
-        }
-        */
 
 #if ((defined(_MSVC_LANG) && _MSVC_LANG >= 201703L) || __cplusplus >= 201703L)
         template<typename F, typename... Args, typename R = std::invoke_result_t<std::decay_t<F>, std::decay_t<Args>...>>
@@ -200,16 +168,6 @@ class Thread_pool {
         *pushed = push_task(id, [task]() {(*task)();});
         return future;
     }
-
-        /*
-        void tell_start_using() {
-            n_using_tasks.fetch_add(1);
-        }
-
-        void tell_finish_using() {
-            n_using_tasks.fetch_sub(1);
-        }
-        */
 
         void start_idling() {
             if (n_canbe_used < n_thread) {
