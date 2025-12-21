@@ -157,6 +157,7 @@ inline void ybwc_search_young_brothers_nws(Search *search, int alpha, int *v, in
             }
         }
     }
+    thread_pool.start_idling();
     Parallel_task task_result;
 #if USE_YBWC_SPLITTED_TASK_TERMINATION
     if (is_searching(searchings) && *v <= alpha && running_count >= 2 && ((is_end_search && depth >= 28) || (!is_end_search && depth >= 24))) {
@@ -193,7 +194,6 @@ inline void ybwc_search_young_brothers_nws(Search *search, int alpha, int *v, in
         }
     }
 #endif
-    thread_pool.start_idling();
     for (std::future<Parallel_task> &task: parallel_tasks) {
         if (task.valid()) {
             task_result = task.get();
@@ -259,6 +259,7 @@ inline void ybwc_search_young_brothers_nws(Search *search, int alpha, int *v, in
             }
         }
     }
+    thread_pool.start_idling();
     Parallel_task task_result;
 #if USE_YBWC_SPLITTED_TASK_TERMINATION
     if (is_searching(searchings) && *v <= alpha && running_count >= 2 && ((is_end_search && depth >= 28) || (!is_end_search && depth >= 24))) {
@@ -289,13 +290,12 @@ inline void ybwc_search_young_brothers_nws(Search *search, int alpha, int *v, in
             }
             searchings.pop_back(); // pop n_searching
             if (is_searching(searchings)) {
-                ybwc_search_young_brothers_nws(search, alpha, v, best_move, n_moves_seen - n_searched, hash_code, depth, is_end_search, move_list, searchings);
+                ybwc_search_young_brothers_nws(search, alpha, v, best_move, n_moves_seen - n_searched, hash_code, depth, is_end_search, move_list, canput, searchings);
             }
             return;
         }
     }
 #endif
-    thread_pool.start_idling();
     for (std::future<Parallel_task> &task: parallel_tasks) {
         if (task.valid()) {
             task_result = task.get();
