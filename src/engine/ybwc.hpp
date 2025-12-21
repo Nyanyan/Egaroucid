@@ -157,7 +157,7 @@ inline void ybwc_search_young_brothers_nws(Search *search, int alpha, int *v, in
             }
         }
     }
-    thread_pool.start_idling();
+    // thread_pool.start_idling();
     Parallel_task task_result;
 #if USE_YBWC_SPLITTED_TASK_TERMINATION
     if (is_searching(searchings) && *v <= alpha && running_count >= 2 && ((is_end_search && depth >= 28) || (!is_end_search && depth >= 24))) {
@@ -209,7 +209,7 @@ inline void ybwc_search_young_brothers_nws(Search *search, int alpha, int *v, in
             }
         }
     }
-    thread_pool.finish_idling();
+    // thread_pool.finish_idling();
     searchings.pop_back();
 }
 
@@ -259,7 +259,7 @@ inline void ybwc_search_young_brothers_nws(Search *search, int alpha, int *v, in
             }
         }
     }
-    thread_pool.start_idling();
+    // thread_pool.start_idling();
     Parallel_task task_result;
 #if USE_YBWC_SPLITTED_TASK_TERMINATION
     if (is_searching(searchings) && *v <= alpha && running_count >= 2 && ((is_end_search && depth >= 28) || (!is_end_search && depth >= 24))) {
@@ -311,7 +311,7 @@ inline void ybwc_search_young_brothers_nws(Search *search, int alpha, int *v, in
             }
         }
     }
-    thread_pool.finish_idling();
+    // thread_pool.finish_idling();
     // while (!parallel_tasks.empty()) {
     //     bool progress = false;
     //     for (auto it = parallel_tasks.begin(); it != parallel_tasks.end();) {
@@ -388,7 +388,7 @@ void ybwc_search_young_brothers(Search *search, int *alpha, int *beta, int *v, i
         }
     }
     if (running_count) {
-        thread_pool.start_idling();
+        // thread_pool.start_idling();
         Parallel_task task_result;
         for (std::future<Parallel_task> &task: parallel_tasks) {
             if (task.valid()) {
@@ -410,7 +410,7 @@ void ybwc_search_young_brothers(Search *search, int *alpha, int *beta, int *v, i
                 }
             }
         }
-        thread_pool.finish_idling();
+        // thread_pool.finish_idling();
     }
     if (research_idxes.size() && next_alpha < *beta && *searching) {
         int prev_alpha = *alpha;
@@ -490,7 +490,7 @@ void ybwc_search_young_brothers(Search *search, int *alpha, int *beta, int *v, i
         }
     }
     if (running_count) {
-        thread_pool.start_idling();
+        // thread_pool.start_idling();
         Parallel_task task_result;
         for (std::future<Parallel_task> &task: parallel_tasks) {
             if (task.valid()) {
@@ -512,7 +512,7 @@ void ybwc_search_young_brothers(Search *search, int *alpha, int *beta, int *v, i
                 }
             }
         }
-        thread_pool.finish_idling();
+        // thread_pool.finish_idling();
     }
     if (research_idxes.size() && next_alpha < *beta && *searching) {
         int prev_alpha = *alpha;

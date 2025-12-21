@@ -1,8 +1,8 @@
 /*
     Egaroucid Project
 
-    @file thread_pool.hpp
-        Thread pool for Egaroucid
+    @file thread_pool_with_idling_manager.hpp
+        Thread pool for Egaroucid (with idling manager)
     @date 2021-2025
     @author Takuto Yamana
     @license GPL-3.0-or-later
@@ -40,17 +40,15 @@ class Thread_pool {
         mutable std::mutex mtx;
         bool running;
         int n_thread;
-        //std::atomic<int> n_idle;
         int n_idle;
+        std::atomic<int> n_canbe_used;
+        int n_set_threads;
         std::queue<std::pair<thread_id_t, std::function<void()>>> tasks{};
         std::unique_ptr<std::thread[]> threads;
         std::condition_variable condition;
 
         int max_thread_size[THREAD_ID_SIZE];
         std::atomic<int> n_using_thread[THREAD_ID_SIZE];
-        //std::unordered_map<thread_id_t, int> max_thread_size;
-        //std::unordered_map<thread_id_t, std::atomic<int>> n_using_thread;
-        //std::atomic<int> n_using_tasks;
 
     public:
         void set_thread(int new_n_thread) {
@@ -60,13 +58,15 @@ class Thread_pool {
                 if (new_n_thread < 0) {
                     new_n_thread = 0;
                 }
-                n_thread = new_n_thread;
+                n_thread = new_n_thread * 3;
                 threads.reset(new std::thread[n_thread]);
                 for (int i = 0; i < n_thread; ++i) {
                     threads[i] = std::thread(&Thread_pool::worker, this);
                 }
                 running = true;
                 n_idle = 0;
+                n_canbe_used = new_n_thread;
+                n_set_threads = new_n_thread;
                 for (int i = 0; i < THREAD_ID_SIZE; ++i) {
                     max_thread_size[i] = THREAD_SIZE_DEFAULT;
                     n_using_thread[i] = THREAD_SIZE_DEFAULT;
@@ -119,11 +119,12 @@ class Thread_pool {
         }
 
         int size() const {
-            return n_thread;
+            return n_set_threads;
         }
 
         int get_n_idle() const {
-            return n_idle;
+            int n_running = n_thread - n_idle;
+            return n_canbe_used - n_running;
         }
 
         int get_max_thread_size(thread_id_t id) {
@@ -133,32 +134,6 @@ class Thread_pool {
         int get_n_using_thread(thread_id_t id) {
             return n_using_thread[id];
         }
-
-        /*
-        void reset_unavailable() {
-            if (n_idle == n_thread && n_using_tasks.load() == 0) {
-                bool start_flag = false;
-                std::vector<std::future<void>> futures;
-                bool need_to_reset = false;
-                for (int i = 0; i < n_thread; ++i) {
-                    bool pushed;
-                    futures.emplace_back(push(&pushed, std::bind(reset_unavailable_task, &start_flag)));
-                    if (!pushed) {
-                        futures.pop_back();
-                        need_to_reset = true;
-                    }
-                }
-                start_flag = true;
-                for (std::future<void> &f: futures) {
-                    f.get();
-                }
-                if (need_to_reset) {
-                    std::cerr << "reset unavailable threads" << std::endl;
-                    resize(n_thread);
-                }
-            }
-        }
-        */
 
 #if ((defined(_MSVC_LANG) && _MSVC_LANG >= 201703L) || __cplusplus >= 201703L)
         template<typename F, typename... Args, typename R = std::invoke_result_t<std::decay_t<F>, std::decay_t<Args>...>>
@@ -194,15 +169,22 @@ class Thread_pool {
         return future;
     }
 
-        /*
-        void tell_start_using() {
-            n_using_tasks.fetch_add(1);
+        void start_idling() {
+            std::unique_lock<std::mutex> lock(mtx);
+            if (n_canbe_used < n_thread) {
+                n_canbe_used.fetch_add(1);
+            }
+            // int expected = n_canbe_used.load();
+            // while (expected < n_thread) {
+            //     if (n_canbe_used.compare_exchange_weak(expected, expected + 1)) {
+            //         break;
+            //     }
+            // }
         }
 
-        void tell_finish_using() {
-            n_using_tasks.fetch_sub(1);
+        void finish_idling() {
+            n_canbe_used.fetch_sub(1);
         }
-        */
 
     private:
 
@@ -215,7 +197,8 @@ class Thread_pool {
             if (n_idle > 0 && n_using_thread[id] < max_thread_size[id]) {
                 {
                     std::unique_lock<std::mutex> lock(mtx);
-                    if (n_idle > 0 && n_using_thread[id] < max_thread_size[id]) {
+                    int n_running = n_thread - n_idle;
+                    if (n_idle > 0 && n_using_thread[id] < max_thread_size[id] && n_running < n_canbe_used) {
                         pushed = true;
                         tasks.push(std::make_pair(id, std::function<void()>(task)));
                         --n_idle;
