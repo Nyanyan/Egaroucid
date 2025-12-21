@@ -42,9 +42,7 @@ class Thread_pool {
         int n_thread;
         //std::atomic<int> n_idle;
         int n_idle;
-        std::atomic<int> n_running;
         std::atomic<int> n_canbe_used;
-        int max_n_canbe_used;
         int n_set_threads;
         std::queue<std::pair<thread_id_t, std::function<void()>>> tasks{};
         std::unique_ptr<std::thread[]> threads;
@@ -64,16 +62,14 @@ class Thread_pool {
                 if (new_n_thread < 0) {
                     new_n_thread = 0;
                 }
-                n_thread = new_n_thread * 1.5;
+                n_thread = new_n_thread * 3;
                 threads.reset(new std::thread[n_thread]);
                 for (int i = 0; i < n_thread; ++i) {
                     threads[i] = std::thread(&Thread_pool::worker, this);
                 }
                 running = true;
                 n_idle = 0;
-                n_running = 0;
                 n_canbe_used = new_n_thread;
-                max_n_canbe_used = n_thread;
                 n_set_threads = new_n_thread;
                 for (int i = 0; i < THREAD_ID_SIZE; ++i) {
                     max_thread_size[i] = THREAD_SIZE_DEFAULT;
@@ -133,6 +129,7 @@ class Thread_pool {
 
         int get_n_idle() const {
             // return n_idle;
+            int n_running = n_thread - n_idle;
             return n_canbe_used - n_running;
         }
 
@@ -215,7 +212,7 @@ class Thread_pool {
         */
 
         void start_idling() {
-            if (n_canbe_used < max_n_canbe_used) {
+            if (n_canbe_used < n_thread) {
                 n_canbe_used.fetch_add(1);
             }
         }
@@ -235,6 +232,7 @@ class Thread_pool {
             if (n_idle > 0 && n_using_thread[id] < max_thread_size[id]) {
                 {
                     std::unique_lock<std::mutex> lock(mtx);
+                    int n_running = n_thread - n_idle;
                     if (n_idle > 0 && n_using_thread[id] < max_thread_size[id] && n_running < n_canbe_used) {
                         pushed = true;
                         tasks.push(std::make_pair(id, std::function<void()>(task)));
@@ -265,11 +263,9 @@ class Thread_pool {
                         task = std::move(tasks.front().second);
                         tasks.pop();
                     }
-                    n_running.fetch_add(1);
                 }
                 if (task) {
                     task();
-                    n_running.fetch_sub(1);
                     if (id != THREAD_ID_NONE) {
                         n_using_thread[id].fetch_sub(1);
                     }
