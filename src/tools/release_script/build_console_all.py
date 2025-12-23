@@ -16,7 +16,7 @@ CONFIGURATIONS = ["SIMD", "Generic", "AVX512"]
 
 # 出力先ディレクトリ
 SCRIPT_DIR = Path(__file__).parent
-OUTPUT_DIR = SCRIPT_DIR / "format_files" / "console_exes"
+OUTPUT_DIR = SCRIPT_DIR / "format_files" / "1_console_exes"
 
 
 def ensure_output_dir():

@@ -12,17 +12,23 @@ from build_gui import build_project, find_msbuild, PROJECT_ROOT
 VERSION = "7_8_0"
 
 # ビルド構成
-CONFIGURATIONS = ["SIMD", "Generic", "AVX512"]
+CONFIGURATIONS = [
+    ["SIMD", "2_GUI_Installer_exes"],
+    ["Generic", "2_GUI_Installer_exes"], 
+    ["AVX512", "2_GUI_Installer_exes"],
+    ["SIMD_Portable", "3_GUI_Portable_exes"],
+    ["Generic_Portable", "3_GUI_Portable_exes"],
+    ["AVX512_Portable", "3_GUI_Portable_exes"],
+]
 
 # 出力先ディレクトリ
 SCRIPT_DIR = Path(__file__).parent
-OUTPUT_DIR = SCRIPT_DIR / "format_files" / "gui_exes"
 
 
-def ensure_output_dir():
+def ensure_output_dir(output_dir):
     """出力ディレクトリを作成"""
-    OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
-    print(f"出力ディレクトリ: {OUTPUT_DIR}")
+    output_dir.mkdir(parents=True, exist_ok=True)
+    print(f"出力ディレクトリ: {output_dir}")
 
 
 def get_build_output_path(configuration, platform="x64"):
@@ -32,7 +38,7 @@ def get_build_output_path(configuration, platform="x64"):
     return output_dir / "Egaroucid.exe"
 
 
-def rename_and_move(configuration, platform="x64"):
+def rename_and_move(configuration, output_dir, platform="x64"):
     """ビルド成果物をリネームして移動"""
     source_path = get_build_output_path(configuration, platform)
     
@@ -42,7 +48,7 @@ def rename_and_move(configuration, platform="x64"):
     
     # 新しいファイル名を生成
     new_filename = f"Egaroucid_{VERSION}_{configuration}.exe"
-    dest_path = OUTPUT_DIR / new_filename
+    dest_path = output_dir / new_filename
     
     # ファイルをコピー
     try:
@@ -66,31 +72,36 @@ def build_all():
     
     print(f"MSBuild: {msbuild_path}")
     print(f"バージョン: {VERSION}")
-    print(f"ビルド構成: {', '.join(CONFIGURATIONS)}")
+    print(f"ビルド構成: {', '.join([c[0] for c in CONFIGURATIONS])}")
     print("=" * 60)
-    
-    # 出力ディレクトリを作成
-    ensure_output_dir()
     
     # 各構成でビルド
     success_count = 0
     failed_configs = []
     
     for i, config in enumerate(CONFIGURATIONS, 1):
-        print(f"\n[{i}/{len(CONFIGURATIONS)}] {config} のビルド開始")
+        configuration_name = config[0]
+        output_dir_name = config[1]
+        output_dir = SCRIPT_DIR / "format_files" / output_dir_name
+        
+        print(f"\n[{i}/{len(CONFIGURATIONS)}] {configuration_name} のビルド開始")
+        print(f"出力先: {output_dir}")
         print("-" * 60)
         
+        # 出力ディレクトリを作成
+        ensure_output_dir(output_dir)
+        
         # ビルド実行
-        success = build_project(configuration=config, platform="x64", clean=False, verbose=False)
+        success = build_project(configuration=configuration_name, platform="x64", clean=False, verbose=False)
         
         if success:
             # リネームして移動
-            if rename_and_move(config, platform="x64"):
+            if rename_and_move(configuration_name, output_dir, platform="x64"):
                 success_count += 1
             else:
-                failed_configs.append(f"{config} (移動失敗)")
+                failed_configs.append(f"{configuration_name} (移動失敗)")
         else:
-            failed_configs.append(f"{config} (ビルド失敗)")
+            failed_configs.append(f"{configuration_name} (ビルド失敗)")
         
         print("-" * 60)
     
@@ -107,13 +118,15 @@ def build_all():
         return False
     else:
         print("\nすべてのビルドが成功しました！")
-        print(f"出力先: {OUTPUT_DIR}")
         print("\n生成されたファイル:")
         for config in CONFIGURATIONS:
-            filename = f"Egaroucid_{VERSION}_{config}.exe"
-            filepath = OUTPUT_DIR / filename
+            configuration_name = config[0]
+            output_dir_name = config[1]
+            output_dir = SCRIPT_DIR / "format_files" / output_dir_name
+            filename = f"Egaroucid_{VERSION}_{configuration_name}.exe"
+            filepath = output_dir / filename
             if filepath.exists():
-                print(f"  - {filename} ({filepath.stat().st_size:,} bytes)")
+                print(f"  - {filename} ({filepath.stat().st_size:,} bytes) -> {output_dir}")
         return True
 
 
