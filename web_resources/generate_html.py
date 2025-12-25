@@ -30,34 +30,41 @@ MAX_IMG_SIZE = 600
 
 
 
-# GitHubのリリースタグを取得（全ページ）
-all_tags = []
+# GitHubのリリース情報を取得（全ページ）
+all_releases = []
 page = 1
-per_page = 1000
+per_page = 100
 while True:
-    response = requests.get(f'https://api.github.com/repos/Nyanyan/Egaroucid/tags?per_page={per_page}&page={page}')
+    response = requests.get(f'https://api.github.com/repos/Nyanyan/Egaroucid/releases?per_page={per_page}&page={page}')
     response_data = response.json()
     if not response_data:
         break
-    all_tags.extend(response_data)
+    all_releases.extend(response_data)
     page += 1
     if len(response_data) < per_page:
         break
 
 print(f"API Response Status: {response.status_code}")
-print(f"Total number of tags received: {len(all_tags)}")
+print(f"Total number of releases received: {len(all_releases)}")
 
-tags = [tag['name'] for tag in all_tags]
+# タグ名とリリース日のマッピングを作成
+tag_to_date = {}
+for release in all_releases:
+    tag_name = release['tag_name']
+    published_at = release['published_at']
+    # ISO 8601形式をYYYY/MM/DD形式に変換
+    date_str = published_at.split('T')[0].replace('-', '/')
+    tag_to_date[tag_name] = date_str
 
 # console_vX.Y.Z形式とvX.Y.Z形式に分類
 console_tags = []
 gui_tags = []
 
-for tag in tags:
-    if tag.startswith('console_v'):
-        console_tags.append(tag)
-    elif tag.startswith('v'):
-        gui_tags.append(tag)
+for tag_name in tag_to_date.keys():
+    if tag_name.startswith('console_v'):
+        console_tags.append(tag_name)
+    elif tag_name.startswith('v'):
+        gui_tags.append(tag_name)
 
 # バージョン順にソート
 console_tags.sort(key=lambda x: version.parse(x.replace('console_v', '')), reverse=True)
@@ -70,7 +77,9 @@ console_all_version_links = '<ul>\n'
 for tag in console_tags:
     version_num = tag.replace('console_v', '')
     link_url = f'https://github.com/Nyanyan/Egaroucid/releases/tag/{tag}'
-    console_all_version_links += f'<li><a href="{link_url}" target="_blank" rel="noopener noreferrer">Egaroucid for Console {version_num}</a></li>\n'
+    release_date = tag_to_date.get(tag)
+    date_suffix = f' ({release_date})' if release_date else ''
+    console_all_version_links += f'<li><a href="{link_url}" target="_blank" rel="noopener noreferrer">Egaroucid for Console {version_num}</a>{date_suffix}</li>\n'
 console_all_version_links += '</ul>'
 
 # GUI版の全バージョンリンクを生成
@@ -78,7 +87,9 @@ gui_all_version_links = '<ul>\n'
 for tag in gui_tags:
     version_num = tag.replace('v', '')
     link_url = f'https://github.com/Nyanyan/Egaroucid/releases/tag/{tag}'
-    gui_all_version_links += f'<li><a href="{link_url}" target="_blank" rel="noopener noreferrer">Egaroucid {version_num}</a></li>\n'
+    release_date = tag_to_date.get(tag)
+    date_suffix = f' ({release_date})' if release_date else ''
+    gui_all_version_links += f'<li><a href="{link_url}" target="_blank" rel="noopener noreferrer">Egaroucid {version_num}</a>{date_suffix}</li>\n'
 gui_all_version_links += '</ul>'
 
 
