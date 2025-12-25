@@ -112,5 +112,5 @@ for portable_dir_name, portable_exe in zip(portable_dir_names, portable_exes):
     shutil.copy2(portable_exe, portable_dir) # copy main executable
     shutil.copytree(PORTABLE_IN_FILES_DIR, portable_dir, dirs_exist_ok=True) # copy other resources
     copy_common_files('portable', portable_dir) # copy common special files
-    shutil.make_archive(portable_dir, format='zip', root_dir = portable_dir) # zip archive
+    shutil.make_archive(portable_dir, format='zip', root_dir = PORTABLE_DST_DIR, base_dir = portable_dir_name) # zip archive with folder inside
 #'''
