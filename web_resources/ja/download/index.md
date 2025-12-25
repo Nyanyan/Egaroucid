@@ -92,3 +92,9 @@ Egaroucidのソースコードは<code>src/engine</code>内のもの(AI部分)�
 ### Linux
 
 そのうち追記します
+
+
+
+## リリースノート・旧版のダウンロード
+
+REPLACE_CONSOLE_ALL_VERSION_HERE

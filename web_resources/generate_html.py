@@ -4,6 +4,8 @@ import shutil
 import sys
 import re
 from PIL import Image
+import requests
+from packaging import version
 
 
 GUI_VERSION_DOT = '7.8.0'
@@ -17,13 +19,70 @@ CONSOLE_VERSION_UNDERBAR = CONSOLE_VERSION_DOT.replace('.', '_')
 
 GUI_RELEASE_IDENTIFIER = 'GUI_DOWNLOAD_TABLE_HERE'
 GUI_SOURCE_RELEASE_IDENTIFIER = 'GUI_SOURCE_TABLE_HERE'
+GUI_ALL_VERSION_IDENTIFIER = 'REPLACE_GUI_ALL_VERSION_HERE'
 CONSOLE_RELEASE_IDENTIFIER = 'CONSOLE_DOWNLOAD_TABLE_HERE'
 CONSOLE_SOURCE_RELEASE_IDENTIFIER = 'CONSOLE_SOURCE_TABLE_HERE'
+CONSOLE_ALL_VERSION_IDENTIFIER = 'REPLACE_CONSOLE_ALL_VERSION_HERE'
 
 DOWNLOAD_BUTTON_URL = 'https://github.com/Nyanyan/Egaroucid/releases/download/v' + GUI_VERSION_DOT + '/Egaroucid_' + GUI_VERSION_UNDERBAR + '_Installer.exe'
 
-
 MAX_IMG_SIZE = 600
+
+
+
+# GitHubのリリースタグを取得（全ページ）
+all_tags = []
+page = 1
+per_page = 1000
+while True:
+    response = requests.get(f'https://api.github.com/repos/Nyanyan/Egaroucid/tags?per_page={per_page}&page={page}')
+    response_data = response.json()
+    if not response_data:
+        break
+    all_tags.extend(response_data)
+    page += 1
+    if len(response_data) < per_page:
+        break
+
+print(f"API Response Status: {response.status_code}")
+print(f"Total number of tags received: {len(all_tags)}")
+
+tags = [tag['name'] for tag in all_tags]
+
+# console_vX.Y.Z形式とvX.Y.Z形式に分類
+console_tags = []
+gui_tags = []
+
+for tag in tags:
+    if tag.startswith('console_v'):
+        console_tags.append(tag)
+    elif tag.startswith('v'):
+        gui_tags.append(tag)
+
+# バージョン順にソート
+console_tags.sort(key=lambda x: version.parse(x.replace('console_v', '')), reverse=True)
+gui_tags.sort(key=lambda x: version.parse(x.replace('v', '')), reverse=True)
+print(f"Console tags found: {len(console_tags)}")
+print(f"GUI tags found: {len(gui_tags)}")
+
+# Console版の全バージョンリンクを生成
+console_all_version_links = '<ul>\n'
+for tag in console_tags:
+    version_num = tag.replace('console_v', '')
+    link_url = f'https://github.com/Nyanyan/Egaroucid/releases/tag/{tag}'
+    console_all_version_links += f'<li><a href="{link_url}" target="_blank" rel="noopener noreferrer">Egaroucid for Console {version_num}</a></li>\n'
+console_all_version_links += '</ul>'
+
+# GUI版の全バージョンリンクを生成
+gui_all_version_links = '<ul>\n'
+for tag in gui_tags:
+    version_num = tag.replace('v', '')
+    link_url = f'https://github.com/Nyanyan/Egaroucid/releases/tag/{tag}'
+    gui_all_version_links += f'<li><a href="{link_url}" target="_blank" rel="noopener noreferrer">Egaroucid {version_num}</a></li>\n'
+gui_all_version_links += '</ul>'
+
+
+
 
 def convert_img(file):
     img = Image.open(file)
@@ -232,6 +291,10 @@ def create_html(dr):
             elem = elem.replace(CONSOLE_RELEASE_IDENTIFIER, release_console_zip_html)
         if CONSOLE_SOURCE_RELEASE_IDENTIFIER in elem:
             elem = elem.replace(CONSOLE_SOURCE_RELEASE_IDENTIFIER, release_console_source_html)
+        if GUI_ALL_VERSION_IDENTIFIER in elem:
+            elem = elem.replace(GUI_ALL_VERSION_IDENTIFIER, gui_all_version_links)
+        if CONSOLE_ALL_VERSION_IDENTIFIER in elem:
+            elem = elem.replace(CONSOLE_ALL_VERSION_IDENTIFIER, console_all_version_links)
         # section tags
         if elem[:2] == '# ':
             elem = '<h1>' + elem[2:] + '</h1>'

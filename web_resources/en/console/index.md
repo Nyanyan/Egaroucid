@@ -318,3 +318,8 @@ Then start game to run Egaroucid.
 </div>
 
 
+
+
+## Release Notes & Download Old Version
+
+REPLACE_CONSOLE_ALL_VERSION_HERE

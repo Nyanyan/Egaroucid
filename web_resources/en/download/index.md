@@ -93,3 +93,9 @@ To Be Done
 ### Linux
 
 To Be Done
+
+
+
+## Release Notes & Download Old Version
+
+REPLACE_GUI_ALL_VERSION_HERE
