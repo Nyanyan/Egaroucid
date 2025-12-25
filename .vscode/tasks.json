@@ -54,6 +54,82 @@
             "runOptions": {
                 "runOn": "folderOpen"
             }
+        },
+        {
+            "label": "Tools 1",
+            "type": "shell",
+            "command": "${env:COMSPEC}",
+            "options": {
+                "cwd": "${workspaceFolder}\\bin\\tools"
+            },
+            "presentation": {
+                "echo": false,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared",
+                "group": "tools",
+                "close": false
+            },
+            "runOptions": {
+                "runOn": "folderOpen"
+            }
+        },
+        {
+            "label": "Tools 2",
+            "type": "shell",
+            "command": "${env:COMSPEC}",
+            "options": {
+                "cwd": "${workspaceFolder}\\bin\\tools"
+            },
+            "presentation": {
+                "echo": false,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared",
+                "group": "tools",
+                "close": false
+            },
+            "runOptions": {
+                "runOn": "folderOpen"
+            }
+        },
+        {
+            "label": "Tools 3",
+            "type": "shell",
+            "command": "${env:COMSPEC}",
+            "options": {
+                "cwd": "${workspaceFolder}\\bin\\tools"
+            },
+            "presentation": {
+                "echo": false,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared",
+                "group": "tools",
+                "close": false
+            },
+            "runOptions": {
+                "runOn": "folderOpen"
+            }
+        },
+        {
+            "label": "Tools 4",
+            "type": "shell",
+            "command": "${env:COMSPEC}",
+            "options": {
+                "cwd": "${workspaceFolder}\\bin\\tools"
+            },
+            "presentation": {
+                "echo": false,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared",
+                "group": "tools",
+                "close": false
+            },
+            "runOptions": {
+                "runOn": "folderOpen"
+            }
         }
     ]
 }
