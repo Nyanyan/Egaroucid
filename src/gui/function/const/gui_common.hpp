@@ -320,7 +320,7 @@ struct History_elem {
 struct Colors {
     Color green{ Color(36, 153, 114) };
     Color dark_green{ Color(42, 114, 83) };
-    Color light_green{ Color(165, 255, 190) };
+    Color light_green{ Color(190, 255, 215) };
     Color black{ Palette::Black };
     Color white{ Palette::White };
     Color dark_gray{ Color(51, 51, 51) };
