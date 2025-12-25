@@ -4,7 +4,7 @@
 
 ## Technology Explanation
 
-I wrote [Technology Explanation](https://www.egaroucid.nyanyan.dev/ja/technology/explanation/) only in Japanese. I'm afraid but please translate by yourself.
+I wrote [Technology Explanation](/explanation/). This article is machine-translated and the original version is in Japanese.
 
 
 
