@@ -315,45 +315,42 @@ int load_app(Directories* directories, Resources* resources, Settings* settings,
         // Migrate from old forced_openings.txt in appdata to default.csv in document directory
         std::string old_forced_openings_file = directories->appdata_dir + "/forced_openings.txt";
         String old_file_wide = Unicode::Widen(old_forced_openings_file);
-        String new_csv_path = forced_openings_dir_wide + U"/default.csv";
+        String new_csv_path = forced_openings_dir_wide + U"/summary.csv";
         
         if (FileSystem::Exists(old_file_wide)) {
-            // Migrate old format to new CSV format (default.csv) in document directory
-            if (!FileSystem::Exists(new_csv_path)) {
-                std::ifstream ifs(old_forced_openings_file);
-                if (ifs) {
-                    CSV csv;
-                    std::string line;
-                    while (std::getline(ifs, line)) {
-                        std::istringstream iss(line);
-                        std::string transcript, weight_str;
-                        iss >> transcript >> weight_str;
-                        double weight;
-                        try {
-                            weight = stoi(weight_str);
-                            if (is_valid_transcript(transcript)) {
-                                csv.write(Unicode::Widen(transcript));
-                                csv.write(Format(weight));
-                                csv.newLine();
-                            }
-                        } catch (const std::exception& e) {
-                            // Skip invalid lines
+            // Migrate old format to new CSV format (summary.csv) in document directory
+            std::ifstream ifs(old_forced_openings_file);
+            if (ifs) {
+                CSV csv;
+                // Load existing CSV if it exists (append mode)
+                if (FileSystem::Exists(new_csv_path)) {
+                    csv = CSV(new_csv_path);
+                }
+                
+                std::string line;
+                while (std::getline(ifs, line)) {
+                    std::istringstream iss(line);
+                    std::string transcript, weight_str;
+                    iss >> transcript >> weight_str;
+                    double weight;
+                    try {
+                        weight = stoi(weight_str);
+                        if (is_valid_transcript(transcript)) {
+                            csv.write(Unicode::Widen(transcript));
+                            csv.write(Format(weight));
+                            csv.write(Format(true));
+                            csv.newLine();
                         }
-                    }
-                    csv.save(new_csv_path);
-                    ifs.close();
-                    
-                    // Create settings.txt with default.csv enabled
-                    String settings_path = forced_openings_dir_wide + U"/settings.txt";
-                    TextWriter writer(settings_path);
-                    if (writer) {
-                        writer.writeln(U"default.csv\ttrue");
+                    } catch (const std::exception& e) {
+                        // Skip invalid lines
                     }
                 }
+                csv.save(new_csv_path);
+                ifs.close();
             }
             // Delete old file after migration
             FileSystem::Remove(old_file_wide);
-            std::cerr << "Migrated forced_openings.txt from appdata to default.csv in document directory" << std::endl;
+            std::cerr << "Migrated forced_openings.txt from appdata to summary.csv in document directory" << std::endl;
         }
         
         // Load openings from CSV files
