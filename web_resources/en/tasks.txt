@@ -1,4 +1,5 @@
 download
+usage
 web
 console
 benchmarks

@@ -233,6 +233,8 @@ tex_js = ''' <link rel="stylesheet"
 
 '''
 
+TABLE_OF_CONTENTS_STR = '目次' if elements_dir == 'ja' else 'Table of Contents'
+
 
 
 # '''
@@ -400,7 +402,7 @@ def create_html(dr):
         md_split[i] = elem
     # table of contents
     if need_table_of_contents:
-        table_of_contents_html = '<details><summary>目次</summary><ol class="table_of_contents_ol">'
+        table_of_contents_html = '<details><summary>' + TABLE_OF_CONTENTS_STR + '</summary><ol class="table_of_contents_ol">'
         for name1, id1, children1 in table_of_contents:
             table_of_contents_html += '<span class="table_of_contents_li"><li><a href="#' + id1 + '">' + name1 + '</a>'
             if children1:
