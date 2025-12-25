@@ -12,7 +12,7 @@ from build_console import build_project, find_msbuild, PROJECT_ROOT
 VERSION = "7_8_0"
 
 # ビルド構成
-CONFIGURATIONS = ["SIMD", "Generic", "AVX512"]
+CONFIGURATIONS = ["SIMD", "SIMD_AMD", "Generic", "AVX512", "AVX512_AMD"]
 
 # 出力先ディレクトリ
 SCRIPT_DIR = Path(__file__).parent

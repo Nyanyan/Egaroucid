@@ -14,11 +14,15 @@ VERSION = "7_8_0"
 # ビルド構成
 CONFIGURATIONS = [
     ["SIMD", "2_GUI_Installer_exes"],
+    ["SIMD_AMD", "2_GUI_Installer_exes"],
     ["Generic", "2_GUI_Installer_exes"], 
     ["AVX512", "2_GUI_Installer_exes"],
+    ["AVX512_AMD", "2_GUI_Installer_exes"],
     ["SIMD_Portable", "3_GUI_Portable_exes"],
+    ["SIMD_Portable_AMD", "3_GUI_Portable_exes"],
     ["Generic_Portable", "3_GUI_Portable_exes"],
     ["AVX512_Portable", "3_GUI_Portable_exes"],
+    ["AVX512_Portable_AMD", "3_GUI_Portable_exes"],
 ]
 
 # 出力先ディレクトリ
