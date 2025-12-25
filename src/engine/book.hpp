@@ -385,7 +385,9 @@ class Book {
                     return false;
                 }
             }
-            std::cerr << "parallelized with " << n_threads << " threads" << std::endl;
+            if (show_log) {
+                std::cerr << "book import parallelized with " << n_threads << " threads" << std::endl;
+            }
             
             // Reserve capacity for the book to avoid rehashing
             // Add some overhead (1.5x) to account for symmetric positions
@@ -707,8 +709,8 @@ class Book {
             }
             if (show_log) {
                 std::cerr << "imported " << book.size() << " boards to book" << std::endl;
+                std::cerr << "elapsed " << tim() - strt << " ms" << std::endl;
             }
-            std::cerr << "elapsed " << tim() - strt << " ms" << std::endl;
             fclose(fp);
             return true;
         }
