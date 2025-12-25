@@ -1,6 +1,6 @@
 # Egaroucid Technical Explanation
 
-**This page is a machine translation of the Japanese version. Please refer to the Japanese version for the official content.**
+**This page is a machine translation of [the Japanese version](../../../ja/technology/explanation/). Please refer to [the Japanese version](../../../ja/technology/explanation/) for the official content.**
 
 **The content written here is not for beginners. Beginner-friendly articles on Othello AI are written [here](https://note.com/nyanyan_cubetech/m/m54104c8d2f12).**
 

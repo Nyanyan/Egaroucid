@@ -1,6 +1,6 @@
 # How to use Egaroucid
 
-**This page is a machine translation of the Japanese version. Please refer to the Japanese version for the official content.**
+**This page is a machine translation of [the Japanese version](../../ja/usage/). Please refer to [the Japanese version](../../ja/usage/) for the official content.**
 
 This is the official documentation for the Othello AI Egaroucid. It briefly introduces how to use each feature. The content of this page is aligned with the latest version, but updates may not always be up to date.
 

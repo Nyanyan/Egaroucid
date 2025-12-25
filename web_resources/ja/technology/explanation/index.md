@@ -1,7 +1,5 @@
 # Egaroucid 技術解説
 
-<b>This page is only in Japanese. Translation by Google Translator is [here](https://www-egaroucid-nyanyan-dev.translate.goog/ja/technology/explanation/?_x_tr_sl=ja&_x_tr_tl=en&_x_tr_hl=ja&_x_tr_pto=wapp).</b>
-
 **ここに書いた内容は初心者向きではありません。オセロAI初心者向け記事は[こちら](https://note.com/nyanyan_cubetech/m/m54104c8d2f12)に書きました。**
 
 このページは雑多なオセロAI関連の技術文書です。のんびりと気が向いたときに書き足していきます。章立ての順番に意味はありません。読みたいところだけをぜひお読みください！

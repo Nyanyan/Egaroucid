@@ -1,6 +1,6 @@
 # Egaroucid Book Detailed Explanation
 
-**This page is a machine translation of the Japanese version. Please refer to the Japanese version for the official content.**
+**This page is a machine translation of [the Japanese version](../../../ja/usage/book/). Please refer to [the Japanese version](../../../ja/usage/book/) for the official content.**
 
 This page explains how to use the Book-related features in the Othello AI Egaroucid (author's usage). This is strictly the author's personal usage, but Egaroucid is designed to use the Book with the methods described here.
 
