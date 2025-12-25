@@ -25,35 +25,35 @@ EgaroucidのBookでは、各ボードについて以下の情報が記録され�
 <div class="table_wrapper">
 <table>
     <tr>
-    	<th>名前</th>
-       	<th>内容</th>
+        <th>名前</th>
+        <th>内容</th>
     </tr>
     <tr>
-    	<td>ボード</td>
+        <td>ボード</td>
         <td>手番のプレイヤの石の配置、および相手の石の配置</td>
     </tr>
     <tr>
-    	<td>評価値</td>
+        <td>評価値</td>
         <td>手番側の目線での評価値(「この盤面で最善手を打てばX石勝ちになる」という意味)</td>
     </tr>
     <tr>
-    	<td>レベル</td>
+        <td>レベル</td>
         <td>評価値計算に使ったAIのレベル(先読み手数などがわかるように記録)</td>
     </tr>
     <tr>
-    	<td>ライン数</td>
+        <td>ライン数</td>
         <td>この局面から終局まででいくつの局面がBookに登録されているか(Book精度に関係)</td>
     </tr>
     <tr>
-    	<td>リーフの評価値</td>
+        <td>リーフの評価値</td>
         <td>合法手でBookに登録されていない局面に繋がる手のうちの多分最善手の評価値(Book学習に使用)</td>
     </tr>
     <tr>
-    	<td>リーフの手</td>
+        <td>リーフの手</td>
         <td>合法手でBookに登録されていない局面に繋がる手のうちの多分最善手</td>
     </tr>
     <tr>
-    	<td>リーフのレベル</td>
+        <td>リーフのレベル</td>
         <td>リーフの評価値と手を計算したAIのレベル</td>
     </tr>
 </table>
@@ -167,15 +167,15 @@ Egaroucidでは、Book学習を開始する局面を自由に設定できます�
 <div class="table_wrapper">
 <table>
     <tr>
-    	<th>レベル</th>
-       	<th>深さ</th>
+        <th>レベル</th>
+           <th>深さ</th>
         <th>1手あたり誤差</th>
         <th>積算誤差</th>
         <th>リーフ誤差</th>
-       	<th>備考</th>
+           <th>備考</th>
     </tr>
     <tr>
-    	<td>19</td>
+        <td>19</td>
         <td>31</td>
         <td>4</td>
         <td>4</td>
@@ -183,7 +183,7 @@ Egaroucidでは、Book学習を開始する局面を自由に設定できます�
         <td>深さ31だけ読み切り</td>
     </tr>
     <tr>
-    	<td>19</td>
+        <td>19</td>
         <td>31</td>
         <td>4</td>
         <td>4</td>
@@ -191,7 +191,7 @@ Egaroucidでは、Book学習を開始する局面を自由に設定できます�
         <td>値が怪しい局面だけもう少し読む</td>
     </tr>
     <tr>
-    	<td>27</td>
+        <td>27</td>
         <td>32</td>
         <td>0</td>
         <td>0</td>
@@ -207,15 +207,15 @@ Egaroucidでは、Book学習を開始する局面を自由に設定できます�
 <div class="table_wrapper">
 <table>
     <tr>
-    	<th>レベル</th>
-       	<th>深さ</th>
+        <th>レベル</th>
+           <th>深さ</th>
         <th>1手あたり誤差</th>
         <th>積算誤差</th>
         <th>リーフ誤差</th>
-       	<th>備考</th>
+           <th>備考</th>
     </tr>
     <tr>
-    	<td>17</td>
+        <td>17</td>
         <td>31</td>
         <td>4</td>
         <td>4</td>
@@ -223,7 +223,7 @@ Egaroucidでは、Book学習を開始する局面を自由に設定できます�
         <td>深さ31まで中盤読みで浅く広くBookを作ってしまう(不正確)</td>
     </tr>
     <tr>
-    	<td>21</td>
+        <td>21</td>
         <td>32</td>
         <td>1</td>
         <td>1</td>
@@ -244,15 +244,15 @@ Egaroucidでは、Book学習を開始する局面を自由に設定できます�
 <div class="table_wrapper">
 <table>
     <tr>
-    	<th>レベル</th>
-       	<th>深さ</th>
+        <th>レベル</th>
+           <th>深さ</th>
         <th>1手あたり誤差</th>
         <th>積算誤差</th>
         <th>リーフ誤差</th>
-       	<th>備考</th>
+           <th>備考</th>
     </tr>
     <tr>
-    	<td>8</td>
+        <td>8</td>
         <td>30</td>
         <td>3</td>
         <td>3</td>
@@ -260,7 +260,7 @@ Egaroucidでは、Book学習を開始する局面を自由に設定できます�
         <td>深さ35まで中盤読みで浅く広くBookを作ってしまう(不正確)</td>
     </tr>
     <tr>
-    	<td>9</td>
+        <td>9</td>
         <td>36</td>
         <td>2</td>
         <td>2</td>
@@ -268,7 +268,7 @@ Egaroucidでは、Book学習を開始する局面を自由に設定できます�
         <td>深さ38まで中盤読みで浅く広くBookを作ってしまう(不正確)</td>
     </tr>
     <tr>
-    	<td>21</td>
+        <td>21</td>
         <td>40</td>
         <td>1</td>
         <td>1</td>
@@ -325,27 +325,27 @@ Egaroucidのbookは独自フォーマットのバイナリファイル(リトル
 <div class="table_wrapper">
 <table>
     <tr>
-    	<th>項目</th>
-       	<th>データ量(バイト)</th>
-       	<th>内容</th>
+        <th>項目</th>
+           <th>データ量(バイト)</th>
+           <th>内容</th>
     </tr>
     <tr>
-    	<td>"EGAROUCID"</td>
+        <td>"EGAROUCID"</td>
         <td>9</td>
         <td>固定の文字列"EGAROUCID"</td>
     </tr>
     <tr>
-    	<td>Bookのバージョン</td>
+        <td>Bookのバージョン</td>
         <td>1</td>
         <td>egbk3フォーマットの場合は3で固定</td>
     </tr>
     <tr>
-    	<td>登録局面数</td>
+        <td>登録局面数</td>
         <td>4</td>
         <td>bookに登録された局面の数</td>
     </tr>
     <tr>
-    	<td>局面情報</td>
+        <td>局面情報</td>
         <td>25*登録局面数</td>
         <td>登録されている局面のデータ(下記参照)</td>
     </tr>
@@ -357,47 +357,47 @@ Egaroucidのbookは独自フォーマットのバイナリファイル(リトル
 <div class="table_wrapper">
 <table>
     <tr>
-    	<th>項目</th>
-       	<th>データ量(バイト)</th>
-       	<th>内容</th>
+        <th>項目</th>
+           <th>データ量(バイト)</th>
+           <th>内容</th>
     </tr>
     <tr>
-    	<td>手番の石の配置</td>
+        <td>手番の石の配置</td>
         <td>8</td>
         <td>64bitを使って64マスのそれぞれに手番の石があるかを格納します(MSBがa1)</td>
     </tr>
     <tr>
-    	<td>相手の石の配置</td>
+        <td>相手の石の配置</td>
         <td>8</td>
         <td>64bitを使って64マスのそれぞれに手番の石があるかを格納します(MSBがa1)</td>
     </tr>
     <tr>
-    	<td>評価値</td>
+        <td>評価値</td>
         <td>1</td>
         <td>その局面の評価値</td>
     </tr>
     <tr>
-    	<td>レベル</td>
+        <td>レベル</td>
         <td>1</td>
         <td>局面の評価値を計算したAIのレベル</td>
     </tr>
     <tr>
-    	<td>ライン数</td>
+        <td>ライン数</td>
         <td>4</td>
         <td>その局面の先にいくつの局面がbookに登録されているかを示す値</td>
     </tr>
     <tr>
-    	<td>リーフの評価値</td>
+        <td>リーフの評価値</td>
         <td>1</td>
         <td>bookに未登録の手のうち、一番良さそうな手の評価値</td>
     </tr>
     <tr>
-    	<td>リーフの手</td>
+        <td>リーフの手</td>
         <td>1</td>
         <td>bookに未登録の手のうち、一番良さそうな手</td>
     </tr>
     <tr>
-    	<td>リーフのレベル</td>
+        <td>リーフのレベル</td>
         <td>1</td>
         <td>リーフ計算に用いたAIのレベル</td>
     </tr>
@@ -411,27 +411,27 @@ Egaroucidのbookは独自フォーマットのバイナリファイル(リトル
 <div class="table_wrapper">
 <table>
     <tr>
-    	<th>項目</th>
-       	<th>データ量(バイト)</th>
-       	<th>内容</th>
+        <th>項目</th>
+           <th>データ量(バイト)</th>
+           <th>内容</th>
     </tr>
     <tr>
-    	<td>"EGAROUCID"</td>
+        <td>"EGAROUCID"</td>
         <td>9</td>
         <td>固定の文字列"EGAROUCID"</td>
     </tr>
     <tr>
-    	<td>Bookのバージョン</td>
+        <td>Bookのバージョン</td>
         <td>1</td>
         <td>egbk2フォーマットの場合は2で固定</td>
     </tr>
     <tr>
-    	<td>登録局面数</td>
+        <td>登録局面数</td>
         <td>4</td>
         <td>bookに登録された局面の数</td>
     </tr>
     <tr>
-    	<td>局面情報</td>
+        <td>局面情報</td>
         <td>(22+2*リンク数)*登録局面数</td>
         <td>登録されている局面のデータ(下記参照)</td>
     </tr>
@@ -443,37 +443,37 @@ Egaroucidのbookは独自フォーマットのバイナリファイル(リトル
 <div class="table_wrapper">
 <table>
     <tr>
-    	<th>項目</th>
-       	<th>データ量(バイト)</th>
-       	<th>内容</th>
+        <th>項目</th>
+           <th>データ量(バイト)</th>
+           <th>内容</th>
     </tr>
     <tr>
-    	<td>手番の石の配置</td>
+        <td>手番の石の配置</td>
         <td>8</td>
         <td>64bitを使って64マスのそれぞれに手番の石があるかを格納します(MSBがa1)</td>
     </tr>
     <tr>
-    	<td>相手の石の配置</td>
+        <td>相手の石の配置</td>
         <td>8</td>
         <td>64bitを使って64マスのそれぞれに手番の石があるかを格納します(MSBがa1)</td>
     </tr>
     <tr>
-    	<td>評価値</td>
+        <td>評価値</td>
         <td>1</td>
         <td>その局面の評価値</td>
     </tr>
     <tr>
-    	<td>レベル</td>
+        <td>レベル</td>
         <td>1</td>
         <td>局面の評価値を計算したAIのレベル</td>
     </tr>
     <tr>
-    	<td>リンク数</td>
+        <td>リンク数</td>
         <td>4</td>
         <td>その局面の合法手のうちbookに登録されている局面の数</td>
     </tr>
     <tr>
-    	<td>リーフ情報</td>
+        <td>リーフ情報</td>
         <td>2*リンク数</td>
         <td>登録されているリンクのデータ</td>
     </tr>
@@ -485,17 +485,17 @@ Egaroucidのbookは独自フォーマットのバイナリファイル(リトル
 <div class="table_wrapper">
 <table>
     <tr>
-    	<th>項目</th>
-       	<th>データ量(バイト)</th>
-       	<th>内容</th>
+        <th>項目</th>
+           <th>データ量(バイト)</th>
+           <th>内容</th>
     </tr>
     <tr>
-    	<td>リンクの評価値</td>
+        <td>リンクの評価値</td>
         <td>1</td>
         <td>合法手の評価値</td>
     </tr>
     <tr>
-    	<td>リンクの手</td>
+        <td>リンクの手</td>
         <td>1</td>
         <td>登録されている合法手</td>
     </tr>
@@ -509,17 +509,17 @@ Egaroucidのbookは独自フォーマットのバイナリファイル(リトル
 <div class="table_wrapper">
 <table>
     <tr>
-    	<th>項目</th>
-       	<th>データ量(バイト)</th>
-       	<th>内容</th>
+        <th>項目</th>
+           <th>データ量(バイト)</th>
+           <th>内容</th>
     </tr>
     <tr>
-    	<td>登録局面数</td>
+        <td>登録局面数</td>
         <td>4</td>
         <td>bookに登録された局面の数</td>
     </tr>
     <tr>
-    	<td>局面情報</td>
+        <td>局面情報</td>
         <td>17*登録局面数</td>
         <td>登録されている局面のデータ(下記参照)</td>
     </tr>
@@ -531,22 +531,22 @@ Egaroucidのbookは独自フォーマットのバイナリファイル(リトル
 <div class="table_wrapper">
 <table>
     <tr>
-    	<th>項目</th>
-       	<th>データ量(バイト)</th>
-       	<th>内容</th>
+        <th>項目</th>
+           <th>データ量(バイト)</th>
+           <th>内容</th>
     </tr>
     <tr>
-    	<td>手番の石の配置</td>
+        <td>手番の石の配置</td>
         <td>8</td>
         <td>64bitを使って64マスのそれぞれに手番の石があるかを格納します(MSBがa1)</td>
     </tr>
     <tr>
-    	<td>相手の石の配置</td>
+        <td>相手の石の配置</td>
         <td>8</td>
         <td>64bitを使って64マスのそれぞれに手番の石があるかを格納します(MSBがa1)</td>
     </tr>
     <tr>
-    	<td>評価値</td>
+        <td>評価値</td>
         <td>1</td>
         <td>その局面の評価値に64を足したもの</td>
     </tr>
