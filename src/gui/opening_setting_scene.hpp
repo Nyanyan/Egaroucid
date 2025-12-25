@@ -620,10 +620,14 @@ public:
             const CSV csv{ csv_path };
             if (csv) {
                 for (size_t row = 0; row < csv.rows(); ++row) {
+                    // Skip rows with insufficient columns (transcript is required)
+                    if (csv.columns(row) < 1) {
+                        continue;
+                    }
                     Opening_abstract opening;
                     opening.transcript = csv[row][0];
-                    opening.weight = ParseOr<double>(csv[row][1], 1.0);
-                    opening.enabled = ParseOr<bool>(csv[row][2], true);
+                    opening.weight = (csv.columns(row) >= 2) ? ParseOr<double>(csv[row][1], 1.0) : 1.0;
+                    opening.enabled = (csv.columns(row) >= 3) ? ParseOr<bool>(csv[row][2], true) : true;
                     opening.effective_enabled = opening.enabled && current_folder_effective_enabled;
                     openings.emplace_back(opening);
                 }
