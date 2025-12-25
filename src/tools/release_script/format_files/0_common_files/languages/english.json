@@ -132,6 +132,7 @@
         "output_transcript": "Copy Transcript",
         "output_board": "Copy Board as String",
         "output_game": "Save Game",
+        "edit_game": "Edit Game",
         "input_from_clipboard": "Input any Format from Clipboard",
         "input_text": "Input Text with any format",
         "format": {
@@ -159,8 +160,7 @@
         "export_main": "Save main line",
         "export_until_this_board": "Save till set position",
         "player_name": "Player Name",
-        "memo": "Memo",
-        "screen_shot": "Screen Shot",
+        "memo": "Memo",        "date": "Date",        "screen_shot": "Screen Shot",
         "change_screenshot_saving_dir": "Change Saving Place",
         "input_screenshot_saving_dir": "Enter screenshot saving directory",
         "directory_not_found": "Directory not found",
@@ -174,7 +174,9 @@
         "create": "Create",
         "save_here": "Save here",
         "saving": "Saving...",
-        "open_explorer": "Open in Explorer"
+        "open_explorer": "Open in Explorer",
+        "import_as_black": "Import as Black's Turn",
+        "import_as_white": "Import as White's Turn"
     },
     "display": {
         "display": "Display",
@@ -190,13 +192,16 @@
             "next_move_change_view": "Change View",
             "show_book_accuracy": "Book Accuracy",
             "show_value_when_ai_calculating": "Display on AI's turn",
-            "show_hint_level": "Level"
+            "show_hint_level": "Level",
+            "hint_colorize": "Colorized Hint"
         },
         "disc": {
             "display_on_disc": "On Disc",
             "last_move": "Last Move",
             "stable": "Stable",
-            "play_ordering": "Play Ordering"
+            "play_ordering": "Play Ordering",
+            "play_ordering_board_format": "Board Format",
+            "play_ordering_transcript_format": "Transcript Format"
         },
         "info": {
             "display_on_info_area": "On Info Area",
@@ -204,9 +209,11 @@
             "principal_variation": "Best Line"
         },
         "graph": {
+            "display_on_graph_area": "On Graph Area",
             "graph": "Graph",
             "value": "Evaluation",
-            "sum_of_loss": "Sum of Loss"
+            "sum_of_loss": "Sum of Loss",
+            "endgame_error": "Endgame Error"
         },
         "ai_focus": "AI's Focus",
         "laser_pointer": "Laser Pointer",
@@ -224,7 +231,7 @@
             "generate_random_board": "Generate Random Board",
             "generate": "Generate",
             "generate_n_moves": "Moves",
-            "score_range": "Score Range ±"
+            "score_range": "Score Range"
         },
         "convert": {
             "convert": "Convert",
@@ -264,7 +271,8 @@
         "white_advantage": "White's Ad.",
         "good_point": "Good Point",
         "bad_point": "Bad Point",
-        "probability": "Probability"
+        "probability": "Probability",
+        "forced": "Forced"
     },
     "edit_board": {
         "player": "Player",
@@ -304,7 +312,10 @@
         "add": "Add",
         "weight": "Weight",
         "register": "Register",
-        "no_opening_found": "No Opening Registered"
+        "no_opening_found": "No Opening Registered",
+        "update": "Update",
+        "new_category": "New Category",
+        "category_name": "Category Name"
     },
     "tips": {
         "do_you_know": "Do you know?",

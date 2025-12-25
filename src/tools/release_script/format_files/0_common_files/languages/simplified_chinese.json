@@ -132,6 +132,7 @@
         "output_transcript": "复制棋谱到剪切板",
         "output_board": "复制棋盘为字符串",
         "output_game": "保存对局",
+        "edit_game": "编辑对局",
         "input_from_clipboard": "从剪贴板输入任何格式",
         "input_text": "输入任意格式的文本",
         "format": {
@@ -160,6 +161,7 @@
         "export_until_this_board": "保存到设定位置",
         "player_name": "棋手名称",
         "memo": "备注",
+        "date": "日期",
         "screen_shot": "截图",
         "change_screenshot_saving_dir": "更改保存位置",
         "input_screenshot_saving_dir": "进入截图保存目录",
@@ -174,7 +176,9 @@
         "create": "建立",
         "save_here": "儲存於此",
         "saving": "正在儲存...",
-        "open_explorer": "在文件管理器中打开"
+        "open_explorer": "在文件管理器中打开",
+        "import_as_black": "导入为黑方回合",
+        "import_as_white": "导入为白方回合"
     },
     "display": {
         "display": "显示",
@@ -190,13 +194,16 @@
             "next_move_change_view": "改变视图",
             "show_book_accuracy": "开局库评级",
             "show_value_when_ai_calculating": "在AI回合中显示",
-            "show_hint_level": "等级"
+            "show_hint_level": "等级",
+            "hint_colorize": "彩色提示"
         },
         "disc": {
             "display_on_disc": "棋盘显示",
             "last_move": "上次落点",
             "stable": "稳定子",
-            "play_ordering": "落子顺序"
+            "play_ordering": "落子顺序",
+            "play_ordering_board_format": "棋盘格式",
+            "play_ordering_transcript_format": "棋谱格式"
         },
         "info": {
             "display_on_info_area": "情报显示",
@@ -204,9 +211,11 @@
             "principal_variation": "AI推荐变化"
         },
         "graph": {
+            "display_on_graph_area": "图像显示",
             "graph": "图像",
             "value": "双方估值变化",
-            "sum_of_loss": "双方累计损子数"
+            "sum_of_loss": "双方累计损子数",
+            "endgame_error": "终局错误"
         },
         "ai_focus": "AI聚焦的领域",
         "laser_pointer": "激光笔",
@@ -224,7 +233,7 @@
             "generate_random_board": "生成随机局面",
             "generate": "生成",
             "generate_n_moves": "生成的局面步数",
-            "score_range": "分数范围 ±"
+            "score_range": "分数范围"
         },
         "convert": {
             "convert": "转换视角",
@@ -264,7 +273,8 @@
         "white_advantage": "白有优势",
         "good_point": "优点",
         "bad_point": "缺点",
-        "probability": "确定度"
+        "probability": "确定度",
+        "forced": "强制"
     },
     "edit_board": {
         "player": "玩家",
@@ -304,7 +314,10 @@
         "add": "添加",
         "weight": "重量",
         "register": "登记",
-        "no_opening_found": "沒有登记開放"
+        "no_opening_found": "沒有登记開放",
+        "update": "更新",
+        "new_category": "新类别",
+        "category_name": "类别名称"
     },
     "tips": {
         "do_you_know": "你知道吗?",

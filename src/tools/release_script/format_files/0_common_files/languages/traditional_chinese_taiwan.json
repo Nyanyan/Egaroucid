@@ -131,7 +131,8 @@
         "import_failed": "匯入失敗",
         "output_transcript": "複製棋譜",
         "output_board": "複製棋譜為字串",
-        "output_game": "儲存對局",
+        "output_game": "保存對局",
+        "edit_game": "編輯對局",
         "input_from_clipboard": "從剪貼簿匯入任意格式",
         "input_text": "輸入任意格式的文本",
         "format": {
@@ -159,8 +160,7 @@
         "export_main": "儲存主線變化",
         "export_until_this_board": "儲存至當前局面",
         "player_name": "玩家名稱",
-        "memo": "備註",
-        "screen_shot": "螢幕截圖",
+        "memo": "備註",        "date": "日期",        "screen_shot": "螢幕截圖",
         "change_screenshot_saving_dir": "變更截圖儲存位置",
         "input_screenshot_saving_dir": "輸入截圖儲存資料夾",
         "directory_not_found": "找不到資料夾",
@@ -174,7 +174,9 @@
         "create": "建立",
         "save_here": "儲存到這裡",
         "saving": "正在儲存...",
-        "open_explorer": "在檔案總管中開啟"
+        "open_explorer": "在檔案總管中開啟",
+        "import_as_black": "導入為黑方回合",
+        "import_as_white": "導入為白方回合"
     },
     "display": {
         "display": "顯示",
@@ -190,13 +192,16 @@
             "next_move_change_view": "切換顯示方式",
             "show_book_accuracy": "開局庫準確度",
             "show_value_when_ai_calculating": "在AI回合中顯示",
-            "show_hint_level": "等級"
+            "show_hint_level": "等級",
+            "hint_colorize": "彩色提示"
         },
         "disc": {
             "display_on_disc": "顯示於棋子上",
             "last_move": "上一步",
             "stable": "穩定子",
-            "play_ordering": "下子順序"
+            "play_ordering": "下子順序",
+            "play_ordering_board_format": "棋盤格式",
+            "play_ordering_transcript_format": "棋譜格式"
         },
         "info": {
             "display_on_info_area": "顯示於資訊區",
@@ -204,9 +209,11 @@
             "principal_variation": "最佳變化路線"
         },
         "graph": {
+            "display_on_graph_area": "顯示於圖表區",
             "graph": "圖表",
             "value": "評分值",
-            "sum_of_loss": "總損失值"
+            "sum_of_loss": "總損失值",
+            "endgame_error": "終局錯誤"
         },
         "ai_focus": "AI的注視點",
         "laser_pointer": "雷射筆",
@@ -224,7 +231,7 @@
             "generate_random_board": "生成隨機棋盤",
             "generate": "生成",
             "generate_n_moves": "步數",
-            "score_range": "分數範圍 ±"
+            "score_range": "分數範圍"
         },
         "convert": {
             "convert": "轉換視角",
@@ -264,7 +271,8 @@
         "white_advantage": "白方優勢",
         "good_point": "優勢點",
         "bad_point": "劣勢點",
-        "probability": "機率"
+        "probability": "機率",
+        "forced": "強制"
     },
     "edit_board": {
         "player": "玩家",
@@ -304,7 +312,10 @@
         "add": "新增",
         "weight": "權重",
         "register": "註冊",
-        "no_opening_found": "尚無開局設定"
+        "no_opening_found": "尚無開局設定",
+        "update": "更新",
+        "new_category": "新類別",
+        "category_name": "類別名稱"
     },
     "tips": {
         "do_you_know": "你知道嗎？",

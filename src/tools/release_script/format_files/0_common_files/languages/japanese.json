@@ -132,6 +132,7 @@
         "output_transcript": "現局面までの棋譜をコピー",
         "output_board": "盤面を文字列でコピー",
         "output_game": "対局保存",
+        "edit_game": "対局編集",
         "input_from_clipboard": "クリップボードから形式を指定せず入力",
         "input_text": "テキストで形式を指定せず入力",
         "format": {
@@ -160,6 +161,7 @@
         "export_until_this_board": "設定局面までを保存",
         "player_name": "プレイヤー名",
         "memo": "メモ",
+        "date": "日付",
         "screen_shot": "スクリーンショット",
         "change_screenshot_saving_dir": "保存場所変更",
         "input_screenshot_saving_dir": "スクリーンショット保存ディレクトリを入力してください",
@@ -174,7 +176,9 @@
         "create": "作成",
         "save_here": "ここに保存",
         "saving": "保存中...",
-        "open_explorer": "エクスプローラで開く"
+        "open_explorer": "エクスプローラで開く",
+        "import_as_black": "黒番で取り込み",
+        "import_as_white": "白番で取り込み"
     },
     "display": {
         "display": "表示",
@@ -190,13 +194,16 @@
             "next_move_change_view": "表示変更",
             "show_book_accuracy": "Book精度",
             "show_value_when_ai_calculating": "AIの手番でも表示",
-            "show_hint_level": "レベル"
+            "show_hint_level": "レベル",
+            "hint_colorize": "色付きヒント"
         },
         "disc": {
             "display_on_disc": "石への表示",
             "last_move": "直前の手",
             "stable": "確定石",
-            "play_ordering": "着手順"
+            "play_ordering": "着手順",
+            "play_ordering_board_format": "盤面形式",
+            "play_ordering_transcript_format": "棋譜形式"
         },
         "info": {
             "display_on_info_area": "情報エリアへの表示",
@@ -204,9 +211,11 @@
             "principal_variation": "最善筋"
         },
         "graph": {
+            "display_on_graph_area": "グラフエリアへの表示",
             "graph": "グラフ",
             "value": "評価値",
-            "sum_of_loss": "累積石損"
+            "sum_of_loss": "累積石損",
+            "endgame_error": "終盤石損"
         },
         "ai_focus": "AIの注目する場所",
         "laser_pointer": "レーザーポインタ",
@@ -224,7 +233,7 @@
             "generate_random_board": "ランダム局面を生成",
             "generate": "生成",
             "generate_n_moves": "生成手数",
-            "score_range": "スコア範囲 ±"
+            "score_range": "スコア範囲"
         },
         "convert": {
             "convert": "変換",
@@ -264,7 +273,8 @@
         "white_advantage": "白有利",
         "good_point": "良いところ",
         "bad_point": "悪いところ",
-        "probability": "探索確率"
+        "probability": "探索確率",
+        "forced": "強制中"
     },
     "edit_board": {
         "player": "手番",
@@ -304,7 +314,10 @@
         "add": "追加",
         "weight": "重み",
         "register": "登録",
-        "no_opening_found": "登録されている進行はありません"
+        "no_opening_found": "登録されている進行はありません",
+        "update": "更新",
+        "new_category": "新しいカテゴリ",
+        "category_name": "カテゴリ名"
     },
     "tips": {
         "do_you_know": "ご存知ですか？",
