@@ -8,14 +8,12 @@ import requests
 from packaging import version
 
 
-GUI_VERSION_DOT = '7.8.0'
-GUI_DATE_STR = '2025/12/25'
+# 手動でバージョンを指定する場合はここで設定（Noneの場合は最新版を自動取得）
+GUI_VERSION_DOT = None
+GUI_DATE_STR = None
 
-CONSOLE_VERSION_DOT = '7.8.0'
-CONSOLE_DATE_STR = '2025/12/25'
-
-GUI_VERSION_UNDERBAR = GUI_VERSION_DOT.replace('.', '_')
-CONSOLE_VERSION_UNDERBAR = CONSOLE_VERSION_DOT.replace('.', '_')
+CONSOLE_VERSION_DOT = None
+CONSOLE_DATE_STR = None
 
 GUI_RELEASE_IDENTIFIER = 'GUI_DOWNLOAD_TABLE_HERE'
 GUI_SOURCE_RELEASE_IDENTIFIER = 'GUI_SOURCE_TABLE_HERE'
@@ -23,8 +21,6 @@ GUI_ALL_VERSION_IDENTIFIER = 'REPLACE_GUI_ALL_VERSION_HERE'
 CONSOLE_RELEASE_IDENTIFIER = 'CONSOLE_DOWNLOAD_TABLE_HERE'
 CONSOLE_SOURCE_RELEASE_IDENTIFIER = 'CONSOLE_SOURCE_TABLE_HERE'
 CONSOLE_ALL_VERSION_IDENTIFIER = 'REPLACE_CONSOLE_ALL_VERSION_HERE'
-
-DOWNLOAD_BUTTON_URL = 'https://github.com/Nyanyan/Egaroucid/releases/download/v' + GUI_VERSION_DOT + '/Egaroucid_' + GUI_VERSION_UNDERBAR + '_Installer.exe'
 
 MAX_IMG_SIZE = 600
 
@@ -71,6 +67,34 @@ console_tags.sort(key=lambda x: version.parse(x.replace('console_v', '')), rever
 gui_tags.sort(key=lambda x: version.parse(x.replace('v', '')), reverse=True)
 print(f"Console tags found: {len(console_tags)}")
 print(f"GUI tags found: {len(gui_tags)}")
+
+# 最新バージョンの情報を自動取得（既に設定されている場合は上書きしない）
+if GUI_VERSION_DOT is None:
+    if gui_tags:
+        latest_gui_tag = gui_tags[0]
+        GUI_VERSION_DOT = latest_gui_tag.replace('v', '')
+        GUI_DATE_STR = tag_to_date.get(latest_gui_tag, '不明')
+    else:
+        print('[ERROR] gui version not found')
+        exit(1)
+
+if CONSOLE_VERSION_DOT is None:
+    if console_tags:
+        latest_console_tag = console_tags[0]
+        CONSOLE_VERSION_DOT = latest_console_tag.replace('console_v', '')
+        CONSOLE_DATE_STR = tag_to_date.get(latest_console_tag, '不明')
+    else:
+        print('[ERROR] console version not found')
+        exit(1)
+
+GUI_VERSION_UNDERBAR = GUI_VERSION_DOT.replace('.', '_')
+CONSOLE_VERSION_UNDERBAR = CONSOLE_VERSION_DOT.replace('.', '_')
+
+DOWNLOAD_BUTTON_URL = 'https://github.com/Nyanyan/Egaroucid/releases/download/v' + GUI_VERSION_DOT + '/Egaroucid_' + GUI_VERSION_UNDERBAR + '_Installer.exe'
+
+print(f"Using GUI version: {GUI_VERSION_DOT} ({GUI_DATE_STR})")
+print(f"Using Console version: {CONSOLE_VERSION_DOT} ({CONSOLE_DATE_STR})")
+
 
 # Console版の全バージョンリンクを生成
 console_all_version_links = '<ul>\n'
