@@ -58,7 +58,7 @@ for console_dir_name, console_exe in zip(console_dir_names, console_exes):
     shutil.copy2(console_exe, console_dir) # copy main executable
     shutil.copytree(CONSOLE_IN_FILES_DIR, console_dir, dirs_exist_ok=True) # copy other resources
     copy_common_files('console', console_dir) # copy common special files
-    shutil.make_archive(console_dir, format='zip', root_dir = console_dir) # zip archive
+    shutil.make_archive(console_dir, format='zip', root_dir = CONSOLE_DST_DIR, base_dir = console_dir_name) # zip archive with folder inside
 #'''
 
 
