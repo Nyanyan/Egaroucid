@@ -60,6 +60,7 @@ In Egaroucid's Book, the following information is recorded for each board:
     </tr>
 </table>
 </div>
+
 The Book stores evaluation values and other information linked to board information. Among these pieces of information, the evaluation value is what users see most often. This is simply a value indicating how favorable a position is to one side, and it is the most important information. Various other pieces of information are stored to accurately and efficiently calculate this value (Book learning).
 
 Information about leaves is used in Book learning, which will be described later.
@@ -124,6 +125,7 @@ These two indicators are easy to understand, but Egaroucid, inspired by the func
     </tr>
 </table>
 </div>
+
 In Egaroucid 7.3.0 and later, accuracy A is further evaluated in detail from AA to AF. AA to AF are determined by the state of the Book leaf nodes when continuing to play moves with 2 stone loss or less.
 
 The three Book accuracy information introduced here can be displayed on the screen. Please check "Display > Display on legal moves > Book Accuracy".
@@ -170,11 +172,11 @@ If you have a PC that can easily perform a 28-move full search, the following se
 <table>
     <tr>
         <th>Level</th>
-           <th>Depth</th>
+        <th>Depth</th>
         <th>Error per move</th>
         <th>Cumulative error</th>
         <th>Leaf error</th>
-           <th>Remarks</th>
+        <th>Remarks</th>
     </tr>
     <tr>
         <td>19</td>
@@ -209,11 +211,11 @@ If you want to speed up calculations a bit more, you can use settings like the f
 <table>
     <tr>
         <th>Level</th>
-           <th>Depth</th>
+        <th>Depth</th>
         <th>Error per move</th>
         <th>Cumulative error</th>
         <th>Leaf error</th>
-           <th>Remarks</th>
+        <th>Remarks</th>
     </tr>
     <tr>
         <td>17</td>
@@ -244,11 +246,11 @@ The following settings perform a full search for the last 24 moves of the endgam
 <table>
     <tr>
         <th>Level</th>
-           <th>Depth</th>
+        <th>Depth</th>
         <th>Error per move</th>
         <th>Cumulative error</th>
         <th>Leaf error</th>
-           <th>Remarks</th>
+        <th>Remarks</th>
     </tr>
     <tr>
         <td>8</td>
@@ -321,8 +323,8 @@ This is the latest format.
 <table>
     <tr>
         <th>Item</th>
-           <th>Data Size (bytes)</th>
-           <th>Content</th>
+        <th>Data Size (bytes)</th>
+        <th>Content</th>
     </tr>
     <tr>
         <td>"EGAROUCID"</td>
@@ -353,8 +355,8 @@ The following data is stored for each registered position:
 <table>
     <tr>
         <th>Item</th>
-           <th>Data Size (bytes)</th>
-           <th>Content</th>
+        <th>Data Size (bytes)</th>
+        <th>Content</th>
     </tr>
     <tr>
         <td>Player's Stone Arrangement</td>
@@ -407,8 +409,8 @@ The extension is <code>.egbk2</code>. This was used until Egaroucid 6.5.0.
 <table>
     <tr>
         <th>Item</th>
-           <th>Data Size (bytes)</th>
-           <th>Content</th>
+        <th>Data Size (bytes)</th>
+        <th>Content</th>
     </tr>
     <tr>
         <td>"EGAROUCID"</td>
@@ -439,8 +441,8 @@ The following data is stored for each registered position:
 <table>
     <tr>
         <th>Item</th>
-           <th>Data Size (bytes)</th>
-           <th>Content</th>
+        <th>Data Size (bytes)</th>
+        <th>Content</th>
     </tr>
     <tr>
         <td>Player's Stone Arrangement</td>
@@ -481,8 +483,8 @@ The following data is stored for each link:
 <table>
     <tr>
         <th>Item</th>
-           <th>Data Size (bytes)</th>
-           <th>Content</th>
+        <th>Data Size (bytes)</th>
+        <th>Content</th>
     </tr>
     <tr>
         <td>Link Evaluation Value</td>
@@ -505,8 +507,8 @@ The extension is <code>.egbk</code>. This was used until Egaroucid 6.2.0.
 <table>
     <tr>
         <th>Item</th>
-           <th>Data Size (bytes)</th>
-           <th>Content</th>
+        <th>Data Size (bytes)</th>
+        <th>Content</th>
     </tr>
     <tr>
         <td>Number of Registered Positions</td>
@@ -527,8 +529,8 @@ The following data is stored for each registered position:
 <table>
     <tr>
         <th>Item</th>
-           <th>Data Size (bytes)</th>
-           <th>Content</th>
+        <th>Data Size (bytes)</th>
+        <th>Content</th>
     </tr>
     <tr>
         <td>Player's Stone Arrangement</td>
