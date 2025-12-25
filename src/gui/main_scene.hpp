@@ -1202,7 +1202,11 @@ private:
     void menu_help() {
         if (getData().menu_elements.usage || shortcut_key == U"open_usage") {
             shortcut_key = SHORTCUT_KEY_UNDEFINED;
-            System::LaunchBrowser(U"https://www.egaroucid.nyanyan.dev/ja/usage/");
+            if (language.get("lang_name") == U"日本語") {
+                System::LaunchBrowser(U"https://www.egaroucid.nyanyan.dev/ja/usage/");
+            } else {
+                System::LaunchBrowser(U"https://www.egaroucid.nyanyan.dev/en/usage/");
+            }
         }
         if (getData().menu_elements.website || shortcut_key == U"open_website") {
             shortcut_key = SHORTCUT_KEY_UNDEFINED;
