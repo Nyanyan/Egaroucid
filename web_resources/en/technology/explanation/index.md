@@ -110,7 +110,7 @@ However, in 2024, a method for handling games that maximize scores with MCTS was
 
 References
 
-- (Mikoshima, Sakaji, Noda 2024): Kazuya Mikoshima, Taiki Sakaji, Itsuki Noda: [Proposal of a Score Distribution Prediction Model in Deep Reinforcement Learning Using Self-Play](http://id.nii.ac.jp/1001/00232803/), IEICE Technical Report, Vol. 2024-GI-51, No. 29, pp. 1-8
+- (Mikoshima, Sakaji, Noda 2024): Kazuya Mikoshima, Taiki Sakaji, Itsuki Noda: [A Score Distribution Prediction Model in Deep Reinforcement Learning Using Self-Play](http://id.nii.ac.jp/1001/00232803/), IEICE Technical Report, Vol. 2024-GI-51, No. 29, pp. 1-8
 
 Last updated: 2025/11/29
 
@@ -254,7 +254,7 @@ References
 
 - (Buro 1997): Michael Buro: [Experiments with Multi-ProbCut and a new high-quality eval-uation function for Othello](https://skatgame.net/mburo/ps/improve.pdf), NECI Tech. Rep. 96 (1997)
 - (Buro 1999): Michael Buro: [From simple features to sophisticated evaluation functions](https://doi.org/10.1007/3-540-48957-6_8), in Proc. 1st Int. Comput. Games (Lecture Notes in Computer Science), 1999, pp. 126–145, [PDF](https://skatgame.net/mburo/ps/pattern.pdf)
-- (Seal Software 2005): Seal Software: [Optimization of Reversi Evaluation Function](https://sealsoft.jp/thell/learning.pdf) (2005)
+- (Seal Software 2005): Seal Software: [Reversi Evaluation Function Optimization](https://sealsoft.jp/thell/learning.pdf) (2005)
 
 Last updated: 2025/11/29
 
@@ -300,7 +300,7 @@ References
 
 - (Yamana, Hoshino 2025): Takuto Yamana, and Junichi Hoshino: [Compressing the Evaluation Function With Small-Scale Deep Learning on Othello](https://doi.org/10.1109/TG.2025.3624825), IEEE Transactions on Games (2025)
 - (Yamana, Hoshino 2024): Takuto Yamana, Junichi Hoshino: [Development and Evaluation of a Strong Othello AI Using Compression with Small-Scale Deep Learning](https://doi.org/10.20729/00239899), IPSJ Transactions on Computer Games, Vol.65, No.10, pp.1545-1553 (2024)
-- (Yamana 2022): Takuto Yamana: [Creation of a Strong Othello AI Using Compression with Deep Learning](https://ipsj.ixsq.nii.ac.jp/records/218735), IEICE Technical Report, Vol. 2022-GI-48, No. 5, pp. 1-5 (2022)
+- (Yamana 2022): Takuto Yamana: [Developing a Powerful Othello AI Using Deep Learning Compression](https://ipsj.ixsq.nii.ac.jp/records/218735), IEICE Technical Report, Vol. 2022-GI-48, No. 5, pp. 1-5 (2022)
 - Takuto Yamana: [Othello AI Textbook 7 [Evaluation] Pattern evaluation, etc.](https://note.com/nyanyan_cubetech/n/nb6067ce73ccd)
 
 Last updated: 2025/11/29
@@ -678,7 +678,7 @@ In the example above, the number of problems was fixed, but I also conducted an 
 
 References
 
-- (Yamana 2024): Takuto Yamana: [Fast Othello Search Method Using GPGPU and αβ Algorithm](https://ipsj.ixsq.nii.ac.jp/records/232914), IEICE Technical Report, Vol. 2024-GI-51, No. 26, pp. 1-9 (2024)
+- (Yamana 2024): Takuto Yamana: [Fast Othello Search Method Using αβ Pruning with GPGPU](https://ipsj.ixsq.nii.ac.jp/records/232914), IEICE Technical Report, Vol. 2024-GI-51, No. 26, pp. 1-9 (2024)
 
 Last updated: 2025/11/29
 
@@ -692,7 +692,7 @@ Related code is publicly available on GitHub [(Sōsu-Poyo 2024)](https://github.
 
 References
 
-- (Sōsu-Poyo 2016-2018): Sōsu-Poyo: [Solving Othello Super Fast with GPGPU](https://primenumber.hatenadiary.jp/entry/2016/12/20/003746) (2016-2018)
+- (Sōsu-Poyo 2016-2018): Sōsu-Poyo: [Solving Othello at Blazing Speed with GPGPU](https://primenumber.hatenadiary.jp/entry/2016/12/20/003746) (2016-2018)
 - (Sōsu-Poyo 2024): Sōsu-Poyo, primenumber/GPUOthello2: [GPUOthello2](https://github.com/primenumber/GPUOthello2)
 
 Last updated: 2025/11/29
@@ -705,7 +705,7 @@ With this approach, the result was ultimately an order of magnitude slower than 
 
 References
 
-- (Okuhara 20XX): Toshihiko Okuhara: [Experiments on bitboard implementation using GPU computing](http://www.amy.hi-ho.ne.jp/okuhara/flipcuda.htm)
+- (Okuhara 20XX): Toshihiko Okuhara: [Experiment on Bitboard Implementation with GPU Computing](http://www.amy.hi-ho.ne.jp/okuhara/flipcuda.htm)
 
 Last updated: 2025/11/29
 
@@ -817,7 +817,7 @@ In this research, symmetrical (line symmetry, rotational symmetry) board positio
 
 References:
 
-- (Ishii, Tanaka 2025): Sotaro Ishii, Tetsuro Tanaka: [Estimation of the Number of Reachable Positions in Othello](https://ipsj.ixsq.nii.ac.jp/records/2005522), Game Programming Workshop 2025 Proceedings, Vol. 2025, pp.171-178 (2025)
+- (Ishii, Tanaka 2025): Sotaro Ishii, Tetsuro Tanaka: [Estimation of Possible Othello Game States](https://ipsj.ixsq.nii.ac.jp/records/2005522), Game Programming Workshop 2025 Proceedings, Vol. 2025, pp.171-178 (2025)
 - (Ishii, Tanaka 2025 Presentation Slides): Sotaro Ishii, Tetsuro Tanaka. u-tokyo-gps-tanaka-lab/othello_complexity_rs: [Estimation of the Number of Reachable Positions in Othello](https://github.com/u-tokyo-gps-tanaka-lab/othello_complexity_rs/blob/master/conference-slide-ja.pdf)
 - (Ishii, Tanaka 2025 GitHub): Sotaro Ishii, Tetsuro Tanaka. [u-tokyo-gps-tanaka-lab/othello_complexity_rs](https://github.com/u-tokyo-gps-tanaka-lab/othello_complexity_rs)
 
@@ -833,8 +833,8 @@ Note that this number does not seem to consider the symmetry of playable moves. 
 
 References:
 
-- (@WIKI 2005-2006): [How many Othello game results are there? @Wiki](https://w.atwiki.jp/othello/pages/35.html) (2005-2006)
-- (@WIKI's Memo 2006): [Memo 05 Average of Product of Moves](https://w.atwiki.jp/othello/pages/32.html), How many Othello game results are there? @Wiki (2006)
+- (@WIKI 2005-2006): [How many Othello game outcomes are there? @Wiki](https://w.atwiki.jp/othello/pages/35.html) (2005-2006)
+- (@WIKI's Memo 2006): [Memo 05 Average of the Product of Moves](https://w.atwiki.jp/othello/pages/32.html), How many Othello game outcomes are there? @Wiki (2006)
 - (Brobecker et al. 2006-2021): Alain Brobecker, Paul Byrne, Charles R Greathouse IV, and Dominic Hofer: [Number of possible Reversi games at the end of the n-th ply.](https://oeis.org/A124004) (2006-2021)
 
 Last updated: 2025/11/30
