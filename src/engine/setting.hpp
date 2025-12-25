@@ -37,7 +37,7 @@
 #endif
 
 // optimize for AMD processors
-#if HAS_AMD_PROCESSOR
+#ifdef HAS_AMD_PROCESSOR
     #define USE_AMD true
 #endif
 
