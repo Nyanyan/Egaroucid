@@ -1,8 +1,6 @@
-This page is a machine translation of the Japanese version. Please refer to the Japanese version for the official content.
-
 # Egaroucid Technical Explanation
 
-<b>This page is only in Japanese. Translation by Google Translator is [here](https://www-egaroucid-nyanyan-dev.translate.goog/ja/technology/explanation/?_x_tr_sl=ja&_x_tr_tl=en&_x_tr_hl=ja&_x_tr_pto=wapp).</b>
+**This page is a machine translation of the Japanese version. Please refer to the Japanese version for the official content.**
 
 **The content written here is not for beginners. Beginner-friendly articles on Othello AI are written [here](https://note.com/nyanyan_cubetech/m/m54104c8d2f12).**
 
