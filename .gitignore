@@ -86,7 +86,7 @@ enc_temp_folder
 src/tools/evaluation/dl_test
 
 # .github
-.github
+# .github
 
 # workspace
 # *.code-workspace
