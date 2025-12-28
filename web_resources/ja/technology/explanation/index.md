@@ -793,9 +793,9 @@ GPUを使って5マス空きの完全読みを行った取り組み[(奥原 20XX
 
 オセロというゲームの"複雑さ"について考えてみます。ゲームの複雑さを考えるときには、そのゲームで実現可能な局面数(合法局面数)や、そのゲームで実現可能な棋譜の数(ゲーム木サイズ)を使うことが多いです。この2つの値は非常に紛らわしいので、まずはこれらの数値の違いについて解説し、その後、各数値に関する最新研究を(私が知る限りで)紹介します。
 
-合法局面数は[英語版Wikipedia](https://en.wikipedia.org/wiki/Game_complexity)などで$10^{28}$という値がよく知られていますが、2025年現在では$10^{26}$と見積もった最新研究があります。また、ゲーム木サイズについては俗説として$10^{58\sim60}$という値がよく知られていますが、匿名の議論で$10^{54}$という見積もりがあります。
+合法局面数は[英語版Wikipedia](https://en.wikipedia.org/wiki/Game_complexity)などで$10^{28}$という値がよく知られていますが、2025年現在では$10^{25\sim26}$と見積もった最新研究があります。また、ゲーム木サイズについては俗説として$10^{58\sim60}$という値がよく知られていますが、匿名の議論で$10^{54}$という見積もりがあります。
 
-最終更新: 2025/11/30
+最終更新: 2025/12/28 石井・田中の正誤表の内容を追加
 
 #### 合法局面数とゲーム木サイズの違い
 
@@ -816,7 +816,7 @@ GPUを使って5マス空きの完全読みを行った取り組み[(奥原 20XX
 
 #### 合法局面数 - 石井・田中による2025年の研究
 
-[(石井・田中 2025)](https://ipsj.ixsq.nii.ac.jp/records/2005522)および[(石井・田中 2025 発表スライド)](https://github.com/u-tokyo-gps-tanaka-lab/othello_complexity_rs/blob/master/conference-slide-ja.pdf)では、オセロの合法局面数を推定しています。その結果、オセロでは有意水準99.5%で$1.675\times 10^{26}$から$3.765\times 10^{26}$の合法局面が存在することがわかったとのことです。
+[(石井・田中 2025)](https://ipsj.ixsq.nii.ac.jp/records/2005522)および[(石井・田中 2025 発表スライド)](https://github.com/u-tokyo-gps-tanaka-lab/othello_complexity_rs/blob/master/conference-slide-ja.pdf)、[(石井・田中 2025 正誤表)](https://github.com/u-tokyo-gps-tanaka-lab/othello_complexity_rs/blob/master/%E3%82%AA%E3%82%BB%E3%83%AD%E3%81%AE%E5%AE%9F%E7%8F%BE%E5%8F%AF%E8%83%BD%E5%B1%80%E9%9D%A2%E6%95%B0%E3%81%AE%E6%8E%A8%E8%A8%88_%E6%AD%A3%E8%AA%A4%E8%A1%A8.pdf)では、オセロの合法局面数を推定しています。その結果、オセロでは有意水準99.5%で$4.488\times 10^{25}$から$1.127\times 10^{26}$の合法局面が存在することがわかったとのことです。
 
 この研究では、盤面にランダムに石を配置した局面を100万個ランダムに生成し、その中で合法局面がいくつあったかを数えることで、オセロの合法局面数を推定しています。ランダム局面の合法性を確かめる手法は非常によく考えられており、面白い(がゆえに私も全部を把握しきれていない)ので、論文・コードをぜひお読みください。合法性の判定は論文内での説明だけでなく、公開されているコード[(石井・田中 2025 GitHub)](https://github.com/u-tokyo-gps-tanaka-lab/othello_complexity_rs)を見ると非常に詳しく理解できるようで、私も勉強中です。また、この研究では合法性が不明になった局面も存在しますが、それもうまく統計的に考慮していて、非常に興味深いです。
 
@@ -826,9 +826,10 @@ GPUを使って5マス空きの完全読みを行った取り組み[(奥原 20XX
 
 - (石井・田中 2025): 石井颯太郎, 田中哲朗: [オセロの実現可能局面数の推計](https://ipsj.ixsq.nii.ac.jp/records/2005522), ゲームプログラミングワークショップ2025論文集, Vol. 2025, pp.171-178 (2025)
 - (石井・田中 2025 発表スライド): 石井颯太郎, 田中哲朗. u-tokyo-gps-tanaka-lab/othello_complexity_rs: [オセロの実現可能局⾯数の推計](https://github.com/u-tokyo-gps-tanaka-lab/othello_complexity_rs/blob/master/conference-slide-ja.pdf)
+- (石井・田中 2025 正誤表): 石井颯太郎, 田中哲朗. u-tokyo-gps-tanaka-lab/othello_complexity_rs: [オセロの実現可能局面数の推計 正誤表](https://github.com/u-tokyo-gps-tanaka-lab/othello_complexity_rs/blob/master/%E3%82%AA%E3%82%BB%E3%83%AD%E3%81%AE%E5%AE%9F%E7%8F%BE%E5%8F%AF%E8%83%BD%E5%B1%80%E9%9D%A2%E6%95%B0%E3%81%AE%E6%8E%A8%E8%A8%88_%E6%AD%A3%E8%AA%A4%E8%A1%A8.pdf)
 - (石井・田中 2025 GitHub): 石井颯太郎, 田中哲朗. [u-tokyo-gps-tanaka-lab/othello_complexity_rs](https://github.com/u-tokyo-gps-tanaka-lab/othello_complexity_rs)
 
-最終更新: 2025/11/29
+最終更新: 2025/12/28 石井・田中の正誤表の内容を追加
 
 #### ゲーム木サイズ - 匿名の議論の結果
 
