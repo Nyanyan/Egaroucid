@@ -784,9 +784,9 @@ By the way, previous researchers have done similar calculations, such as [counti
 
 Let's consider the "complexity" of the game of Othello. When considering the complexity of a game, it is often common to use the number of reachable positions (legal positions) or the number of possible game records (game tree size) in that game. These two values are very confusing, so first, I will explain the difference between these numbers, and then I will introduce the latest research (to my knowledge) regarding each number.
 
-The number of legal positions is well-known as $10^{28}$ in [English Wikipedia](https://en.wikipedia.org/wiki/Game_complexity), etc., but as of 2025, there is recent research estimating it to be $10^{26}$. Also, for the game tree size, the value of $10^{58\sim60}$ is well-known as a common belief, but there is an anonymous discussion estimating it to be $10^{54}$.
+The number of legal positions is well-known as $10^{28}$ in [English Wikipedia](https://en.wikipedia.org/wiki/Game_complexity), etc., but as of 2025, there is recent research estimating it to be $10^{25\sim26}$. Also, for the game tree size, the value of $10^{58\sim60}$ is well-known as a common belief, but there is an anonymous discussion around 2006 and a 2019 study estimating it to be $10^{54}$.
 
-Last updated: 2025/11/30
+Last updated: 2025/12/28 (Yong et al. 2019) section added
 
 <h4>Difference between Legal Positions and Game Tree Size</h4>
 
@@ -807,7 +807,7 @@ Last updated: 2025/11/30
 
 <h4>Number of Legal Positions - Research by Ishii and Tanaka in 2025</h4>
 
-[(Ishii, Tanaka 2025)](https://ipsj.ixsq.nii.ac.jp/records/2005522) and [(Ishii, Tanaka 2025 Presentation Slides)](https://github.com/u-tokyo-gps-tanaka-lab/othello_complexity_rs/blob/master/conference-slide-ja.pdf) estimate the number of legal positions in Othello. As a result, it was found that in Othello, there are between $1.675 \times 10^{26}$ and $3.765 \times 10^{26}$ legal positions with a significance level of 99.5%.
+[(Ishii, Tanaka 2025)](https://ipsj.ixsq.nii.ac.jp/records/2005522), [(Ishii, Tanaka 2025 Presentation Slides)](https://github.com/u-tokyo-gps-tanaka-lab/othello_complexity_rs/blob/master/conference-slide-ja.pdf), and [(Ishii, Tanaka 2025 Errata)](https://github.com/u-tokyo-gps-tanaka-lab/othello_complexity_rs/blob/master/%E3%82%AA%E3%82%BB%E3%83%AD%E3%81%AE%E5%AE%9F%E7%8F%BE%E5%8F%AF%E8%83%BD%E5%B1%80%E9%9D%A2%E6%95%B0%E3%81%AE%E6%8E%A8%E8%A8%88_%E6%AD%A3%E8%AA%A4%E8%A1%A8.pdf) estimate the number of legal positions in Othello. As a result, it was found that in Othello, there are between $4.488\times 10^{25}$ and $1.127\times 10^{26}$ legal positions with a significance level of 99.5%.
 
 This research estimates the number of legal positions in Othello by randomly generating one million positions with stones randomly placed on the board and counting how many of them were legal positions. The method for checking the legality of random positions is very well thought out and interesting (which is why I haven't fully grasped it myself), so please read the paper and code. The legality determination is explained not only in the paper but also in detail in the publicly available code [(Ishii, Tanaka 2025 GitHub)](https://github.com/u-tokyo-gps-tanaka-lab/othello_complexity_rs), and I am currently studying it. Also, this research includes positions whose legality is unknown, but it cleverly takes them into statistical consideration, which is very interesting.
 
@@ -817,9 +817,10 @@ References:
 
 - (Ishii, Tanaka 2025): Sotaro Ishii, Tetsuro Tanaka: [Estimation of Possible Othello Game States](https://ipsj.ixsq.nii.ac.jp/records/2005522), Game Programming Workshop 2025 Proceedings, Vol. 2025, pp.171-178 (2025)
 - (Ishii, Tanaka 2025 Presentation Slides): Sotaro Ishii, Tetsuro Tanaka. u-tokyo-gps-tanaka-lab/othello_complexity_rs: [Estimation of the Number of Reachable Positions in Othello](https://github.com/u-tokyo-gps-tanaka-lab/othello_complexity_rs/blob/master/conference-slide-ja.pdf)
+- (Ishii, Tanaka 2025 Errata): Sotaro Ishii, Tetsuro Tanaka. u-tokyo-gps-tanaka-lab/othello_complexity_rs: [Errata for Estimation of the Number of Reachable Positions in Othello](https://github.com/u-tokyo-gps-tanaka-lab/othello_complexity_rs/blob/master/%E3%82%AA%E3%82%BB%E3%83%AD%E3%81%AE%E5%AE%9F%E7%8F%BE%E5%8F%AF%E8%83%BD%E5%B1%80%E9%9D%A2%E6%95%B0%E3%81%AE%E6%8E%A8%E8%A8%88_%E6%AD%A3%E8%AA%A4%E8%A1%A8.pdf)
 - (Ishii, Tanaka 2025 GitHub): Sotaro Ishii, Tetsuro Tanaka. [u-tokyo-gps-tanaka-lab/othello_complexity_rs](https://github.com/u-tokyo-gps-tanaka-lab/othello_complexity_rs)
 
-Last updated: 2025/11/29
+Last updated: 2025/12/28 (added content from Ishii and Tanaka's errata)
 
 <h4>Game Tree Size - Result of Anonymous Discussion</h4>
 
@@ -836,6 +837,20 @@ References:
 - (Brobecker et al. 2006-2021): Alain Brobecker, Paul Byrne, Charles R Greathouse IV, and Dominic Hofer: [Number of possible Reversi games at the end of the n-th ply.](https://oeis.org/A124004) (2006-2021)
 
 Last updated: 2025/11/30
+
+<h4>Game Tree Size - A 2019 study by Alexander Yong and David Yong</h4>
+
+[(Yong et al. 2019)](https://arxiv.org/abs/1901.11161) estimates the game tree size of Othello to be $6.47(\pm0.19)\times10^{54}$. This study uses almost the same method as the anonymous discussion from 2005 to 2006 and obtains almost the same numerical value.
+
+This study estimates the game tree size by taking the product of the total number of legal moves at each position that appears in Othello game records. In practice, they prepared $2\times10^6$ Othello game records from random play and obtained a game tree size of $6.47(\pm0.19)\times10^{54}$. Note that the $(\pm0.19)$ part is the standard deviation.
+
+This study also estimates the game tree sizes for Tic-Tac-Toe and Connect Four in addition to Othello.
+
+References:
+
+- (Yong et al. 2019): Alexander Yong, David Yong: [An estimation method for game complexity](https://arxiv.org/abs/1901.11161). arXiv preprint arXiv:1901.11161 (2019)
+
+Last updated: 2025/12/28 (added content from Yong et al. 2019)
 
 <h4>Number of Legal Positions - My Rough Estimate</h4>
 
