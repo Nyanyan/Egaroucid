@@ -10,8 +10,10 @@
 #define MyAppURL "https://www.egaroucid.nyanyan.dev/"
 #define EGAROUCID_RELEASE_DIR "./../"
 #define EGAROUCID_SIMD_EXE "Egaroucid_" + version_dir + "_SIMD.exe"
-#define EGAROUCID_GENERIC_EXE "Egaroucid_" + version_dir + "_Generic.exe"
+#define EGAROUCID_SIMD_AMD_EXE "Egaroucid_" + version_dir + "_SIMD_AMD.exe"
 #define EGAROUCID_AVX512_EXE "Egaroucid_" + version_dir + "_AVX512.exe"
+#define EGAROUCID_AVX512_AMDEXE "Egaroucid_" + version_dir + "_AVX512_AMD.exe"
+#define EGAROUCID_GENERIC_EXE "Egaroucid_" + version_dir + "_Generic.exe"
 
 [Setup]
 PrivilegesRequired=none
@@ -46,8 +48,10 @@ Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{
 
 [Files]
 Source: "{#EGAROUCID_RELEASE_DIR}\installer\{#EGAROUCID_SIMD_EXE}"; DestDir: "{app}"; Flags: ignoreversion; Check: ShouldInstall_SIMD
-Source: "{#EGAROUCID_RELEASE_DIR}\installer\{#EGAROUCID_GENERIC_EXE}"; DestDir: "{app}"; Flags: ignoreversion; Check: ShouldInstall_GENERIC
+Source: "{#EGAROUCID_RELEASE_DIR}\installer\{#EGAROUCID_SIMD_AMD_EXE}"; DestDir: "{app}"; Flags: ignoreversion; Check: ShouldInstall_SIMD_AMD
 Source: "{#EGAROUCID_RELEASE_DIR}\installer\{#EGAROUCID_AVX512_EXE}"; DestDir: "{app}"; Flags: ignoreversion; Check: ShouldInstall_AVX512
+Source: "{#EGAROUCID_RELEASE_DIR}\installer\{#EGAROUCID_AVX512_AMD_EXE}"; DestDir: "{app}"; Flags: ignoreversion; Check: ShouldInstall_AVX512_AMD
+Source: "{#EGAROUCID_RELEASE_DIR}\installer\{#EGAROUCID_GENERIC_EXE}"; DestDir: "{app}"; Flags: ignoreversion; Check: ShouldInstall_GENERIC
 Source: "{#EGAROUCID_RELEASE_DIR}\files\LICENSE"; DestDir: "{app}";
 Source: "{#EGAROUCID_RELEASE_DIR}\files\resources\*"; DestDir: "{app}\resources"; Flags: recursesubdirs;
 Source: "{#EGAROUCID_RELEASE_DIR}\files\AppData\Egaroucid\*"; DestDir: "{userappdata}\Local\Egaroucid"; Flags: recursesubdirs;
@@ -56,35 +60,71 @@ Source: "{#EGAROUCID_RELEASE_DIR}\files\Documents\Egaroucid\*"; DestDir: "{userd
 
 [Icons]
 Name: "{autoprograms}\{#MyAppName}"; Filename: "{app}\{#EGAROUCID_SIMD_EXE}"; Check: ShouldInstall_SIMD
-Name: "{autoprograms}\{#MyAppName}"; Filename: "{app}\{#EGAROUCID_GENERIC_EXE}"; Check: ShouldInstall_GENERIC
+Name: "{autoprograms}\{#MyAppName}"; Filename: "{app}\{#EGAROUCID_SIMD_AMD_EXE}"; Check: ShouldInstall_SIMD_AMD
 Name: "{autoprograms}\{#MyAppName}"; Filename: "{app}\{#EGAROUCID_AVX512_EXE}"; Check: ShouldInstall_AVX512
+Name: "{autoprograms}\{#MyAppName}"; Filename: "{app}\{#EGAROUCID_AVX512_AMD_EXE}"; Check: ShouldInstall_AVX512_AMD
+Name: "{autoprograms}\{#MyAppName}"; Filename: "{app}\{#EGAROUCID_GENERIC_EXE}"; Check: ShouldInstall_GENERIC
 Name: "{autodesktop}\{#MyAppName}"; Filename: "{app}\{#EGAROUCID_SIMD_EXE}"; Check: ShouldInstall_SIMD; Tasks: desktopicon
-Name: "{autodesktop}\{#MyAppName}"; Filename: "{app}\{#EGAROUCID_GENERIC_EXE}"; Check: ShouldInstall_GENERIC; Tasks: desktopicon
+Name: "{autodesktop}\{#MyAppName}"; Filename: "{app}\{#EGAROUCID_SIMD_AMD_EXE}"; Check: ShouldInstall_SIMD_AMD; Tasks: desktopicon
 Name: "{autodesktop}\{#MyAppName}"; Filename: "{app}\{#EGAROUCID_AVX512_EXE}"; Check: ShouldInstall_AVX512; Tasks: desktopicon
+Name: "{autodesktop}\{#MyAppName}"; Filename: "{app}\{#EGAROUCID_AVX512_AMD_EXE}"; Check: ShouldInstall_AVX512_AMD; Tasks: desktopicon
+Name: "{autodesktop}\{#MyAppName}"; Filename: "{app}\{#EGAROUCID_GENERIC_EXE}"; Check: ShouldInstall_GENERIC; Tasks: desktopicon
 
 [Run]
 Filename: "{app}\{#EGAROUCID_SIMD_EXE}"; Check: ShouldInstall_SIMD; Description: "{cm:LaunchProgram,{#StringChange(MyAppName, '&', '&&')}}"; Flags: nowait postinstall skipifsilent
-Filename: "{app}\{#EGAROUCID_GENERIC_EXE}"; Check: ShouldInstall_GENERIC; Description: "{cm:LaunchProgram,{#StringChange(MyAppName, '&', '&&')}}"; Flags: nowait postinstall skipifsilent
+Filename: "{app}\{#EGAROUCID_SIMD_AMD_EXE}"; Check: ShouldInstall_SIMD_AMD; Description: "{cm:LaunchProgram,{#StringChange(MyAppName, '&', '&&')}}"; Flags: nowait postinstall skipifsilent
 Filename: "{app}\{#EGAROUCID_AVX512_EXE}"; Check: ShouldInstall_AVX512; Description: "{cm:LaunchProgram,{#StringChange(MyAppName, '&', '&&')}}"; Flags: nowait postinstall skipifsilent
-Filename: "https://www.egaroucid.nyanyan.dev/ja/usage/"; Flags: shellexec postinstall runmaximized; Description: "使い方を表示"; Languages: japanese
+Filename: "{app}\{#EGAROUCID_AVX512_AMD_EXE}"; Check: ShouldInstall_AVX512_AMD; Description: "{cm:LaunchProgram,{#StringChange(MyAppName, '&', '&&')}}"; Flags: nowait postinstall skipifsilent
+Filename: "{app}\{#EGAROUCID_GENERIC_EXE}"; Check: ShouldInstall_GENERIC; Description: "{cm:LaunchProgram,{#StringChange(MyAppName, '&', '&&')}}"; Flags: nowait postinstall skipifsilent
+Filename: "https://www.egaroucid.nyanyan.dev/ja/usage/"; Flags: shellexec postinstall runmaximized; Description: "使ぁE��を表示"; Languages: japanese
 Filename: "https://www.egaroucid.nyanyan.dev/en/usage/"; Flags: shellexec postinstall runmaximized; Description: "Show Usage"; Languages: english
 
 [Code]
 function IsProcessorFeaturePresent(Feature: Integer): Boolean;
 external 'IsProcessorFeaturePresent@kernel32.dll stdcall';
 
-function ShouldInstall_SIMD: Boolean;
+function IsAMDProcessor(): Boolean;
+var
+  i: Integer;
+  Vendor: string;
 begin
-  Result := IsProcessorFeaturePresent(40) and (not IsProcessorFeaturePresent(41)); {AVX2 & !AVX512}
+  Result := False;
+  i := 0;
+
+  while RegQueryStringValue(HKLM,
+    Format('HARDWARE\DESCRIPTION\System\CentralProcessor\%d', [i]),
+    'VendorIdentifier', Vendor) do
+  begin
+    if Pos('AuthenticAMD', Vendor) > 0 then
+    begin
+      Result := True;
+      Exit;
+    end;
+    Inc(i);
+  end;
 end;
 
-
-function ShouldInstall_GENERIC: Boolean;
+function ShouldInstall_SIMD: Boolean;
 begin
-  Result := not IsProcessorFeaturePresent(40); {!AVX2}
+  Result := IsProcessorFeaturePresent(40) and (not IsProcessorFeaturePresent(41)) and (not IsAMDProcessor()); {AVX2 & !AVX512 & !AMD}
+end;
+
+function ShouldInstall_SIMD_AMD: Boolean;
+begin
+  Result := IsProcessorFeaturePresent(40) and (not IsProcessorFeaturePresent(41)) and IsAMDProcessor(); {AVX2 & !AVX512 & AMD}
 end;
 
 function ShouldInstall_AVX512: Boolean;
 begin
-  Result := IsProcessorFeaturePresent(40) and IsProcessorFeaturePresent(41); {AVX2 & AVX512}
+  Result := IsProcessorFeaturePresent(40) and IsProcessorFeaturePresent(41) and (not IsAMDProcessor()); {AVX2 & AVX512 & !AMD}
+end;
+
+function ShouldInstall_AVX512_AMD: Boolean;
+begin
+  Result := IsProcessorFeaturePresent(40) and IsProcessorFeaturePresent(41) and IsAMDProcessor(); {AVX2 & AVX512 & AMD}
+end;
+
+function ShouldInstall_GENERIC: Boolean;
+begin
+  Result := not IsProcessorFeaturePresent(40); {!AVX2}
 end;
