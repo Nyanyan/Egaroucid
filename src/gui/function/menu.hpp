@@ -27,7 +27,7 @@ constexpr int menu_offset_x = 10;
 constexpr int menu_offset_y = 1;
 constexpr int menu_image_offset_y = 3;
 constexpr int menu_child_offset = 2;
-constexpr int bar_additional_offset = 20;
+constexpr int bar_additional_offset = 6;
 constexpr double radio_ratio = 0.2;
 
 constexpr int MENU_MODE_BUTTON = 0;
@@ -38,9 +38,9 @@ constexpr int MENU_MODE_RADIO = 4;
 constexpr int MENU_MODE_BAR_CHECK = 5;
 
 constexpr int MENU_BAR_SIZE = 150;
-constexpr int MENU_BAR_MARGIN_H = 6;
 constexpr int MENU_BAR_HEIGHT = 14;
 constexpr int MENU_BAR_RADIUS = 6;
+constexpr int MENU_BAR_MARGIN_H = 7;
 
 
 // text width size ratio
