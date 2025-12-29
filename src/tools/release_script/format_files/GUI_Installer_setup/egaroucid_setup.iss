@@ -76,7 +76,7 @@ Filename: "{app}\{#EGAROUCID_SIMD_AMD_EXE}"; Check: ShouldInstall_SIMD_AMD; Desc
 Filename: "{app}\{#EGAROUCID_AVX512_EXE}"; Check: ShouldInstall_AVX512; Description: "{cm:LaunchProgram,{#StringChange(MyAppName, '&', '&&')}}"; Flags: nowait postinstall skipifsilent
 Filename: "{app}\{#EGAROUCID_AVX512_AMD_EXE}"; Check: ShouldInstall_AVX512_AMD; Description: "{cm:LaunchProgram,{#StringChange(MyAppName, '&', '&&')}}"; Flags: nowait postinstall skipifsilent
 Filename: "{app}\{#EGAROUCID_GENERIC_EXE}"; Check: ShouldInstall_GENERIC; Description: "{cm:LaunchProgram,{#StringChange(MyAppName, '&', '&&')}}"; Flags: nowait postinstall skipifsilent
-Filename: "https://www.egaroucid.nyanyan.dev/ja/usage/"; Flags: shellexec postinstall runmaximized; Description: "‰Ωø„ÅÅEñπ„ÇíË°®Á§∫"; Languages: japanese
+Filename: "https://www.egaroucid.nyanyan.dev/ja/usage/"; Flags: shellexec postinstall runmaximized; Description: "égÇ¢ï˚Çï\é¶"; Languages: japanese
 Filename: "https://www.egaroucid.nyanyan.dev/en/usage/"; Flags: shellexec postinstall runmaximized; Description: "Show Usage"; Languages: english
 
 [Code]
