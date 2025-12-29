@@ -357,7 +357,7 @@ public:
 
         // info drawing
         int playing_mode = PLAYING_MODE_NONE;
-        if (getData().menu_elements.ai_put_black || getData().menu_elements.ai_put_white) {
+        if ((getData().menu_elements.ai_put_black || getData().menu_elements.ai_put_white) && !need_start_game_button) {
             if (getData().history_elem == getData().graph_resources.nodes[0].back()) {
                 playing_mode = PLAYING_MODE_PLAYING;
             } else {
