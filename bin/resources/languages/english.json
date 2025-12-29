@@ -206,9 +206,7 @@
         "info": {
             "display_on_info_area": "On Info Area",
             "opening_name": "Opening",
-            "principal_variation": "Best Line",
-            "playing": "Playing",
-            "analyzing": "Analyzing"
+            "principal_variation": "Best Line"
         },
         "graph": {
             "display_on_graph_area": "On Graph Area",
@@ -274,7 +272,9 @@
         "good_point": "Good Point",
         "bad_point": "Bad Point",
         "probability": "Probability",
-        "forced": "Forced"
+        "forced": "Forced",
+        "playing": "Playing",
+        "analyzing": "Analyzing"
     },
     "edit_board": {
         "player": "Player",

@@ -315,6 +315,10 @@ struct History_elem {
         next_policy = npl;
         opening_name = o;
     }
+
+    bool operator==(const History_elem& other) const {
+        return board == other.board && player == other.player && player == other.player;
+    }
 };
 
 struct Colors {

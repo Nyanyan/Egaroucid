@@ -206,9 +206,7 @@
         "info": {
             "display_on_info_area": "顯示於資訊區",
             "opening_name": "定石名",
-            "principal_variation": "最佳變化路線",
-            "playing": "對局中",
-            "analyzing": "分析中"
+            "principal_variation": "最佳變化路線"
         },
         "graph": {
             "display_on_graph_area": "顯示於圖表區",
@@ -274,7 +272,9 @@
         "good_point": "優勢點",
         "bad_point": "劣勢點",
         "probability": "機率",
-        "forced": "強制"
+        "forced": "強制",
+        "playing": "對局中",
+        "analyzing": "分析中"
     },
     "edit_board": {
         "player": "玩家",

@@ -208,9 +208,7 @@
         "info": {
             "display_on_info_area": "情报显示",
             "opening_name": "定式名",
-            "principal_variation": "AI推荐变化",
-            "playing": "对局中",
-            "analyzing": "分析中"
+            "principal_variation": "AI推荐变化"
         },
         "graph": {
             "display_on_graph_area": "图像显示",
@@ -276,7 +274,9 @@
         "good_point": "优点",
         "bad_point": "缺点",
         "probability": "确定度",
-        "forced": "强制"
+        "forced": "强制",
+        "playing": "对局中",
+        "analyzing": "分析中"
     },
     "edit_board": {
         "player": "玩家",

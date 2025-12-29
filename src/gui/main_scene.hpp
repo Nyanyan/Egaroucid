@@ -359,7 +359,7 @@ public:
         int playing_mode = PLAYING_MODE_NONE;
         if (getData().history_elem == getData().graph_resources.nodes[0].back()) {
             playing_mode = PLAYING_MODE_PLAYING;
-        } else if (ai_status.analyzing) {
+        } else {
             playing_mode = PLAYING_MODE_ANALYZING;
         }
         draw_info(getData().colors, getData().history_elem, getData().fonts, getData().menu_elements, pausing_in_pass, principal_variation, getData().forced_openings.is_forced(getData().history_elem.board), playing_mode);
