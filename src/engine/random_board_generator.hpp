@@ -11,13 +11,19 @@
 #include "ai.hpp"
 
 std::vector<int> random_board_generator(int score_range_min, int score_range_max, int n_moves, int light_level, int adjustment_level, bool *searching) {
+    uint64_t strt = tim();
     int light_n_moves = std::max(0, n_moves - 2);
     int adjustment_n_moves = n_moves - light_n_moves;
     bool success = false;
     std::vector<int> res;
     constexpr int MAX_N_TRY = 40;
     for (int try_count = 0; try_count < MAX_N_TRY && !success && *searching; ++try_count) {
-        std::cerr << "try " << try_count << std::endl;
+        std::string ms_per_itr_str = "-";
+        if (try_count > 0) {
+            uint64_t ms_per_itr = (tim() - strt) / try_count;
+            ms_per_itr_str = std::to_string(ms_per_itr);
+        }
+        std::cerr << "try " << try_count << " start at " << tim() - strt << " ms " << ms_per_itr_str << " ms/itr" << std::endl;
         bool failed = false;
 
         Board board;
@@ -92,7 +98,7 @@ std::vector<int> random_board_generator(int score_range_min, int score_range_max
         }
         if (!failed) {
             success = true;
-            std::cerr << "random board generated" << std::endl;
+            std::cerr << "random board generated in " << tim() - strt << " ms" << std::endl;
         }
     }
     if (res.size() != n_moves) {
