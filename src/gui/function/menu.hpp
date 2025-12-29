@@ -126,6 +126,7 @@ private:
     int *bar_elem2;
     Texture arrow_left;
     int bar_active_circle = 0;
+    int min_bar_gap = 2;
 
     // button mode
     bool *is_clicked_p;
@@ -199,7 +200,7 @@ public:
         image = t;
     }
 
-    void init_2bars(String s, int *c1, int *c2, int d1, int d2, int mn, int mx, Texture al) {
+    void init_2bars(String s, int *c1, int *c2, int d1, int d2, int mn, int mx, int mgap, Texture al) {
         clear();
         click_supporter.init();
         mode = MENU_MODE_2BARS;
@@ -215,6 +216,7 @@ public:
         bar_active_circle = 0;
         min_elem = mn;
         max_elem = mx;
+        min_bar_gap = mgap;
         is_clicked = false;
         use_image = false;
         arrow_left = al;
@@ -389,27 +391,24 @@ public:
                 const int circle2_x = handle2_x;
                 const int cursor_value = cursor_to_bar_value(cursor_x);
 
-                // enforce minimum gap of 3 between bars and update only the active handle
-                const int MIN_BAR_GAP = 3;
-
                 if (bar_active_circle == 1) {
                     // Move only the first handle, never modify bar_elem2 here
-                    int newv = std::clamp(cursor_value, min_elem, *bar_elem2 - MIN_BAR_GAP);
+                    int newv = std::clamp(cursor_value, min_elem, *bar_elem2 - min_bar_gap);
                     *bar_elem1 = newv;
                 } else if (bar_active_circle == 2) {
                     // Move only the second handle, never modify bar_elem1 here
-                    int newv = std::clamp(cursor_value, *bar_elem1 + MIN_BAR_GAP, max_elem);
+                    int newv = std::clamp(cursor_value, *bar_elem1 + min_bar_gap, max_elem);
                     *bar_elem2 = newv;
                 } else {
                     // No specific handle active: pick the nearer handle and move only it
                     int dist1 = cursor_x - circle1_x; if (dist1 < 0) dist1 = -dist1;
                     int dist2 = cursor_x - circle2_x; if (dist2 < 0) dist2 = -dist2;
                     if (dist1 <= dist2) {
-                        int newv = std::clamp(cursor_value, min_elem, *bar_elem2 - MIN_BAR_GAP);
+                        int newv = std::clamp(cursor_value, min_elem, *bar_elem2 - min_bar_gap);
                         *bar_elem1 = newv;
                         bar_active_circle = 1;
                     } else {
-                        int newv = std::clamp(cursor_value, *bar_elem1 + MIN_BAR_GAP, max_elem);
+                        int newv = std::clamp(cursor_value, *bar_elem1 + min_bar_gap, max_elem);
                         *bar_elem2 = newv;
                         bar_active_circle = 2;
                     }
