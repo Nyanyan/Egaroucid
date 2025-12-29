@@ -15,6 +15,10 @@
 #include "./../engine/engine_all.hpp"
 #include "function/function_all.hpp"
 
+constexpr int PLAYING_MODE_NONE = -1;
+constexpr int PLAYING_MODE_PLAYING = 0;
+constexpr int PLAYING_MODE_ANALYZING = 1;
+
 void draw_empty_board(Fonts fonts, Colors colors, bool monochrome) {
     String coord_x = U"abcdefgh";
     Color dark_gray_color = colors.dark_gray;
@@ -98,7 +102,7 @@ void draw_transcript_board(Fonts fonts, Colors colors, History_elem history_elem
     }
 }
 
-void draw_info(Colors colors, History_elem history_elem, Fonts fonts, Menu_elements menu_elements, bool pausing_in_pass, std::string principal_variation, bool forced_opening_found) {
+void draw_info(Colors colors, History_elem history_elem, Fonts fonts, Menu_elements menu_elements, bool pausing_in_pass, std::string principal_variation, bool forced_opening_found, int playing_mode) {
     s3d::RoundRect round_rect{ INFO_SX, INFO_SY, INFO_WIDTH, INFO_HEIGHT, INFO_RECT_RADIUS };
     round_rect.drawFrame(INFO_RECT_THICKNESS, colors.white);
     // 1st line
@@ -117,6 +121,11 @@ void draw_info(Colors colors, History_elem history_elem, Fonts fonts, Menu_eleme
             moves_line += U" (" + language.get("info", "ai") + U")";
         } else {
             moves_line += U" (" + language.get("info", "human") + U")";
+        }
+        if (playing_mode == PLAYING_MODE_PLAYING) {
+            moves_line += U" (" + language.get("info", "playing") + U")";
+        } else if (playing_mode == PLAYING_MODE_ANALYZING) {
+            moves_line += U" (" + language.get("info", "analyzing") + U")";
         }
     } else {
         moves_line = language.get("info", "game_end");

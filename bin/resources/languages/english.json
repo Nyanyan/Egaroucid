@@ -206,7 +206,9 @@
         "info": {
             "display_on_info_area": "On Info Area",
             "opening_name": "Opening",
-            "principal_variation": "Best Line"
+            "principal_variation": "Best Line",
+            "playing": "Playing",
+            "analyzing": "Analyzing"
         },
         "graph": {
             "display_on_graph_area": "On Graph Area",

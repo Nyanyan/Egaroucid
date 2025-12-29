@@ -208,7 +208,9 @@
         "info": {
             "display_on_info_area": "情報エリアへの表示",
             "opening_name": "定石",
-            "principal_variation": "最善筋"
+            "principal_variation": "最善筋",
+            "playing": "対局中",
+            "analyzing": "分析中"
         },
         "graph": {
             "display_on_graph_area": "グラフエリアへの表示",

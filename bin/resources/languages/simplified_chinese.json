@@ -208,7 +208,9 @@
         "info": {
             "display_on_info_area": "情报显示",
             "opening_name": "定式名",
-            "principal_variation": "AI推荐变化"
+            "principal_variation": "AI推荐变化",
+            "playing": "对局中",
+            "analyzing": "分析中"
         },
         "graph": {
             "display_on_graph_area": "图像显示",
