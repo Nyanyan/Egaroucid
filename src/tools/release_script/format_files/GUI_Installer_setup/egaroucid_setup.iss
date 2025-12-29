@@ -12,7 +12,7 @@
 #define EGAROUCID_SIMD_EXE "Egaroucid_" + version_dir + "_SIMD.exe"
 #define EGAROUCID_SIMD_AMD_EXE "Egaroucid_" + version_dir + "_SIMD_AMD.exe"
 #define EGAROUCID_AVX512_EXE "Egaroucid_" + version_dir + "_AVX512.exe"
-#define EGAROUCID_AVX512_AMDEXE "Egaroucid_" + version_dir + "_AVX512_AMD.exe"
+#define EGAROUCID_AVX512_AMD_EXE "Egaroucid_" + version_dir + "_AVX512_AMD.exe"
 #define EGAROUCID_GENERIC_EXE "Egaroucid_" + version_dir + "_Generic.exe"
 
 [Setup]
@@ -47,11 +47,11 @@ Name: "japanese"; MessagesFile: "compiler:Languages\Japanese.isl"
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}";
 
 [Files]
-Source: "{#EGAROUCID_RELEASE_DIR}\installer\{#EGAROUCID_SIMD_EXE}"; DestDir: "{app}"; Flags: ignoreversion; Check: ShouldInstall_SIMD
-Source: "{#EGAROUCID_RELEASE_DIR}\installer\{#EGAROUCID_SIMD_AMD_EXE}"; DestDir: "{app}"; Flags: ignoreversion; Check: ShouldInstall_SIMD_AMD
-Source: "{#EGAROUCID_RELEASE_DIR}\installer\{#EGAROUCID_AVX512_EXE}"; DestDir: "{app}"; Flags: ignoreversion; Check: ShouldInstall_AVX512
-Source: "{#EGAROUCID_RELEASE_DIR}\installer\{#EGAROUCID_AVX512_AMD_EXE}"; DestDir: "{app}"; Flags: ignoreversion; Check: ShouldInstall_AVX512_AMD
-Source: "{#EGAROUCID_RELEASE_DIR}\installer\{#EGAROUCID_GENERIC_EXE}"; DestDir: "{app}"; Flags: ignoreversion; Check: ShouldInstall_GENERIC
+Source: "{#EGAROUCID_SIMD_EXE}"; DestDir: "{app}"; Flags: ignoreversion; Check: ShouldInstall_SIMD
+Source: "{#EGAROUCID_SIMD_AMD_EXE}"; DestDir: "{app}"; Flags: ignoreversion; Check: ShouldInstall_SIMD_AMD
+Source: "{#EGAROUCID_AVX512_EXE}"; DestDir: "{app}"; Flags: ignoreversion; Check: ShouldInstall_AVX512
+Source: "{#EGAROUCID_AVX512_AMD_EXE}"; DestDir: "{app}"; Flags: ignoreversion; Check: ShouldInstall_AVX512_AMD
+Source: "{#EGAROUCID_GENERIC_EXE}"; DestDir: "{app}"; Flags: ignoreversion; Check: ShouldInstall_GENERIC
 Source: "{#EGAROUCID_RELEASE_DIR}\files\LICENSE"; DestDir: "{app}";
 Source: "{#EGAROUCID_RELEASE_DIR}\files\resources\*"; DestDir: "{app}\resources"; Flags: recursesubdirs;
 Source: "{#EGAROUCID_RELEASE_DIR}\files\AppData\Egaroucid\*"; DestDir: "{userappdata}\Local\Egaroucid"; Flags: recursesubdirs;
@@ -76,7 +76,7 @@ Filename: "{app}\{#EGAROUCID_SIMD_AMD_EXE}"; Check: ShouldInstall_SIMD_AMD; Desc
 Filename: "{app}\{#EGAROUCID_AVX512_EXE}"; Check: ShouldInstall_AVX512; Description: "{cm:LaunchProgram,{#StringChange(MyAppName, '&', '&&')}}"; Flags: nowait postinstall skipifsilent
 Filename: "{app}\{#EGAROUCID_AVX512_AMD_EXE}"; Check: ShouldInstall_AVX512_AMD; Description: "{cm:LaunchProgram,{#StringChange(MyAppName, '&', '&&')}}"; Flags: nowait postinstall skipifsilent
 Filename: "{app}\{#EGAROUCID_GENERIC_EXE}"; Check: ShouldInstall_GENERIC; Description: "{cm:LaunchProgram,{#StringChange(MyAppName, '&', '&&')}}"; Flags: nowait postinstall skipifsilent
-Filename: "https://www.egaroucid.nyanyan.dev/ja/usage/"; Flags: shellexec postinstall runmaximized; Description: "Žg‚¢•û‚ð•\Ž¦"; Languages: japanese
+Filename: "https://www.egaroucid.nyanyan.dev/ja/usage/"; Flags: shellexec postinstall runmaximized; Description: "ï¿½gï¿½ï¿½ï¿½ï¿½ï¿½ï¿½\ï¿½ï¿½"; Languages: japanese
 Filename: "https://www.egaroucid.nyanyan.dev/en/usage/"; Flags: shellexec postinstall runmaximized; Description: "Show Usage"; Languages: english
 
 [Code]
