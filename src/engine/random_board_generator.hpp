@@ -28,7 +28,7 @@ std::vector<int> random_board_generator(int score_range_min, int score_range_max
 
         std::random_device seed_gen;
         std::default_random_engine engine(seed_gen());
-        std::normal_distribution<> dist(0.0, 4.0); // acceptable loss avg = 0.0, sd = 4.0 discs
+        std::normal_distribution<> dist(0.0, 6.0); // acceptable loss avg = 0.0, sd = 6.0 discs
         for (int i = 0; i < light_n_moves; ++i) {
             if (board.is_end()) {
                 failed = true;
