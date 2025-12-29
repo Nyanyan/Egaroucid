@@ -23,7 +23,7 @@ std::vector<int> random_board_generator(int score_range_min, int score_range_max
             uint64_t ms_per_itr = (tim() - strt) / try_count;
             ms_per_itr_str = std::to_string(ms_per_itr);
         }
-        std::cerr << "try " << try_count << " start at " << tim() - strt << " ms " << ms_per_itr_str << " ms/itr" << std::endl;
+        std::cerr << "try " << try_count << " start at " << tim() - strt << " ms " << ms_per_itr_str << " ms/it" << std::endl;
         bool failed = false;
 
         Board board;
@@ -71,7 +71,8 @@ std::vector<int> random_board_generator(int score_range_min, int score_range_max
                     alpha = -score_range_max;
                     beta = -score_range_min;
                 }
-                Search_result search_result = ai_range(board, adjustment_level, alpha, beta, searching);
+                int adjustment_level_now = (adjustment_level * (i + 1) + light_level * (adjustment_n_moves - 1 - i)) / adjustment_n_moves;
+                Search_result search_result = ai_range(board, adjustment_level_now, alpha, beta, searching);
                 if (search_result.value == SCORE_UNDEFINED) { // adjust failed
                     if (i == adjustment_n_moves - 1) { // last move
                         failed = true;
