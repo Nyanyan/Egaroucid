@@ -384,7 +384,6 @@ public:
                 bar_active_circle = 0;
             }
             if (bar_changeable) {
-                std::cerr << "a" << std::endl;
                 Cursor::RequestStyle(CursorStyle::ResizeLeftRight);
                 const int cursor_x = Cursor::Pos().x;
                 const int circle1_x = handle1_x;
