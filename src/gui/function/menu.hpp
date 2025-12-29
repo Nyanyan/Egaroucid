@@ -37,11 +37,10 @@ constexpr int MENU_MODE_CHECK = 3;
 constexpr int MENU_MODE_RADIO = 4;
 constexpr int MENU_MODE_BAR_CHECK = 5;
 
-constexpr int MENU_BAR_SIZE = 140;
+constexpr int MENU_BAR_SIZE = 150;
+constexpr int MENU_BAR_MARGIN_H = 6;
 constexpr int MENU_BAR_HEIGHT = 14;
 constexpr int MENU_BAR_RADIUS = 6;
-
-constexpr double MENU_WSIZE_ROUGH_MARGIN = 0.9;
 
 
 // text width size ratio
@@ -145,7 +144,7 @@ private:
         if (max_elem == min_elem) {
             return min_elem;
         }
-        double ratio = (double)(cursor_x - (bar_sx + 10)) / (double)(MENU_BAR_SIZE - 20);
+        double ratio = (double)(cursor_x - (bar_sx + MENU_BAR_MARGIN_H)) / (double)(MENU_BAR_SIZE - MENU_BAR_MARGIN_H * 2);
         ratio = std::clamp(ratio, 0.0, 1.0);
         int value = (int)round(ratio * (max_elem - min_elem)) + min_elem;
         return std::clamp(value, min_elem, max_elem);
@@ -157,7 +156,7 @@ private:
         }
         double ratio = (double)(value - min_elem) / (double)(max_elem - min_elem);
         ratio = std::clamp(ratio, 0.0, 1.0);
-        return (int)round(bar_sx + 10.0 + (double)(MENU_BAR_SIZE - 20) * ratio);
+        return (int)round(bar_sx + MENU_BAR_MARGIN_H + (double)(MENU_BAR_SIZE - MENU_BAR_MARGIN_H * 2) * ratio);
     }
 
     void refresh_bar_circles() {
