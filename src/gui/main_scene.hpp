@@ -801,7 +801,7 @@ private:
                 need_start_game_button_calculation();
             }
             if (getData().menu_elements.generate_random_board || shortcut_key == U"generate_random_board") {
-                int light_level = 2;
+                int light_level = 1;
                 int adjustment_level = 15;
                 stop_calculating();
                 getData().history_elem.reset();
