@@ -80,10 +80,10 @@ for installer_exe in installer_exes:
     print(installer_exe)
     shutil.copy2(installer_exe, INSTALLER_DST_INSTALLER_DIR) # copy main executable
 shutil.copy2(INSTALLER_IN_SETUP_FILE, INSTALLER_DST_INSTALLER_DIR) # copy setup file
-with open(INSTALLER_DST_INSTALLER_DIR + '/egaroucid_setup.iss', 'r') as f:
+with open(INSTALLER_DST_INSTALLER_DIR + '/egaroucid_setup.iss', 'r', encoding='cp932') as f:
     installer_setup = f.read()
 installer_setup = installer_setup.replace('REPLACE_VERSION_DOT', VERSION_DOT).replace('REPLACE_VERSION_UNDERBAR', VERSION_UNDERBAR) # replace version information
-with open(INSTALLER_DST_INSTALLER_DIR + '/egaroucid_setup.iss', 'w') as f:
+with open(INSTALLER_DST_INSTALLER_DIR + '/egaroucid_setup.iss', 'w', encoding='cp932') as f:
     f.write(installer_setup) # rewrite setup file
 shutil.copytree(INSTALLER_IN_FILES_DIR, INSTALLER_DST_FILES_DIR, dirs_exist_ok=True) # copy files
 copy_common_files('installer', INSTALLER_DST_FILES_DIR) # copy common special files
