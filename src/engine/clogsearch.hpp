@@ -5,7 +5,7 @@
         Clog search
         MPC (Multi-ProbCut) might cut a very bad move as a very good move.
         For example, with MPC, Egaroucid might be wiped out without clog search.
-    @date 2021-2025
+    @date 2021-2026
     @author Takuto Yamana
     @license GPL-3.0-or-later
 */

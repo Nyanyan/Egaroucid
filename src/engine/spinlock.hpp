@@ -3,7 +3,7 @@
 
     @file spinlock.hpp
         Spinlock
-    @date 2021-2025
+    @date 2021-2026
     @author Takuto Yamana
     @license GPL-3.0-or-later
     @notice I referred to codes written by others

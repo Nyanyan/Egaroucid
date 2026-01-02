@@ -3,7 +3,7 @@
 
     @file last_flip.hpp
         calculate number of flipped discs in the last move
-    @date 2021-2025
+    @date 2021-2026
     @author Takuto Yamana
     @license GPL-3.0-or-later
 */

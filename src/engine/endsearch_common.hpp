@@ -3,7 +3,7 @@
 
     @file endsearch_common.hpp
         Common things for endgame search
-    @date 2021-2025
+    @date 2021-2026
     @author Takuto Yamana
     @author Toshihiko Okuhara
     @license GPL-3.0-or-later

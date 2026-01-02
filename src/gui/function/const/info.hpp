@@ -3,7 +3,7 @@
 
     @file info.hpp
         Egaroucid's software information
-    @date 2021-2025
+    @date 2021-2026
     @author Takuto Yamana
     @license GPL-3.0-or-later
 */
@@ -30,5 +30,5 @@
 
 const String EGAROUCID_NUM_VERSION = Unicode::Widen(EGAROUCID_ENGINE_VERSION + (std::string)"." + EGAROUCID_GUI_VERSION);
 
-#define EGAROUCID_DATE "2021-2025"
+#define EGAROUCID_DATE "2021-2026"
 #define EGAROUCID_AUTHOR "Takuto Yamana"

@@ -3,7 +3,7 @@
 
     @file engine_all.hpp
         Include all things about Egaroucid's engine
-    @date 2021-2025
+    @date 2021-2026
     @author Takuto Yamana
     @license GPL-3.0-or-later
 */

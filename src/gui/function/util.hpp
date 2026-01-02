@@ -3,7 +3,7 @@
 
     @file util.hpp
         GUI Utility
-    @date 2021-2025
+    @date 2021-2026
     @author Takuto Yamana
     @license GPL-3.0-or-later
 */
@@ -323,4 +323,3 @@ inline bool draw_up_navigation_button(Button& button, bool can_go_up) {
     button.draw();
     return button.clicked();
 }
-

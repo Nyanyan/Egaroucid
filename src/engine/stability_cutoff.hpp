@@ -3,7 +3,7 @@
 
     @file stability_cutoff.hpp
         Cutoff using stable discs
-    @date 2021-2025
+    @date 2021-2026
     @author Takuto Yamana
     @license GPL-3.0-or-later
 */
