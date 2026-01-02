@@ -41,6 +41,7 @@ constexpr int MENU_BAR_SIZE = 150;
 constexpr int MENU_BAR_HEIGHT = 14;
 constexpr int MENU_BAR_RADIUS = 6;
 constexpr int MENU_BAR_MARGIN_H = 7;
+constexpr int MENU_2BARS_MARGIN_H = 14;
 
 
 // text width size ratio
@@ -151,7 +152,11 @@ private:
         if (mode == MENU_MODE_2BARS) {
             effective_x = is_right_elem ? (cursor_x - MENU_BAR_RADIUS) : (cursor_x + MENU_BAR_RADIUS);
         }
-        double ratio = (double)(effective_x - (bar_sx + MENU_BAR_MARGIN_H)) / (double)(MENU_BAR_SIZE - MENU_BAR_MARGIN_H * 2);
+        double margin = MENU_BAR_MARGIN_H;
+        if (mode == MENU_MODE_2BARS) {
+            margin = MENU_2BARS_MARGIN_H;
+        }
+        double ratio = (double)(effective_x - (bar_sx + margin)) / (double)(MENU_BAR_SIZE - margin * 2);
         ratio = std::clamp(ratio, 0.0, 1.0);
         int value = (int)round(ratio * (max_elem - min_elem)) + min_elem;
         return std::clamp(value, min_elem, max_elem);
@@ -163,7 +168,11 @@ private:
         }
         double ratio = (double)(value - min_elem) / (double)(max_elem - min_elem);
         ratio = std::clamp(ratio, 0.0, 1.0);
-        int x = (int)round(bar_sx + MENU_BAR_MARGIN_H + (double)(MENU_BAR_SIZE - MENU_BAR_MARGIN_H * 2) * ratio);
+        double margin = MENU_BAR_MARGIN_H;
+        if (mode == MENU_MODE_2BARS) {
+            margin = MENU_2BARS_MARGIN_H;
+        }
+        int x = (int)round(bar_sx + margin + (double)(MENU_BAR_SIZE - margin * 2) * ratio);
         // For MENU_MODE_2BARS:
         // - Left element (bar_elem1, is_right_elem=false): value represents right edge, so subtract radius
         // - Right element (bar_elem2, is_right_elem=true): value represents left edge, so add radius
