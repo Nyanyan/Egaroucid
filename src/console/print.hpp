@@ -51,16 +51,11 @@ struct Analyze_summary {
 
 void print_version() {
     std::cout << EGAROUCID_NAME << " " << EGAROUCID_VERSION << std::endl;
-    std::cout << COUT_TAB << std::left << std::setw(VERSION_TAB_SIZE) << "@date ";
-    std::cout << EGAROUCID_DATE << std::endl;
-    std::cout << COUT_TAB << std::left << std::setw(VERSION_TAB_SIZE) << "@build ";
-    std::cout << __DATE__ << " " << __TIME__ << " JST" << std::endl;
-    std::cout << COUT_TAB << std::left << std::setw(VERSION_TAB_SIZE) << "@author ";
-    std::cout << EGAROUCID_AUTHOR << std::endl;
-    std::cout << COUT_TAB << std::left << std::setw(VERSION_TAB_SIZE) << "@license ";
-    std::cout << EGAROUCID_LICENSE << std::endl;
-    std::cout << COUT_TAB << std::left << std::setw(VERSION_TAB_SIZE) << "@website ";
-    std::cout << EGAROUCID_URL << std::endl;
+    std::cout << COUT_TAB << std::left << std::setw(VERSION_TAB_SIZE) << "@date " << EGAROUCID_DATE << std::endl;
+    std::cout << COUT_TAB << std::left << std::setw(VERSION_TAB_SIZE) << "@build " << EGAROUCID_BUILD_DATETIME << std::endl;
+    std::cout << COUT_TAB << std::left << std::setw(VERSION_TAB_SIZE) << "@author " << EGAROUCID_AUTHOR << std::endl;
+    std::cout << COUT_TAB << std::left << std::setw(VERSION_TAB_SIZE) << "@license " << EGAROUCID_LICENSE << std::endl;
+    std::cout << COUT_TAB << std::left << std::setw(VERSION_TAB_SIZE) << "@website " << EGAROUCID_URL << std::endl;
     std::cout << std::endl;
 }
 

@@ -75,3 +75,9 @@
 #endif
 
 #define EGAROUCID_ENGINE_ENV_VERSION (EGAROUCID_OS + " " + EGAROUCID_CPU + " " + EGAROUCID_REVISION + " (" + EGAROUCID_COMPILER + ")")
+
+#ifdef BUILD_TZ_OFFSET
+    #define EGAROUCID_BUILD_DATETIME ((std::string)__DATE__ + " " + (std::string)__TIME__ + " UTC" + BUILD_TZ_OFFSET)
+#else
+    #define EGAROUCID_BUILD_DATETIME ((std::string)__DATE__ + " " + (std::string)__TIME__)
+#endif
