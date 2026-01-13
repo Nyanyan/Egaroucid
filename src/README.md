@@ -128,7 +128,7 @@ $ Egaroucid_for_console.exe -help
 
 [遊べるページ](https://www.egaroucid.nyanyan.dev/ja/web/)で公開しています。
 
-各関数の説明は以下の通りです。
+公開APIとして用意した各関数の説明は以下の通りです。
 
 * ```int _init_ai()```
   * initialize Egaroucid for Web.
