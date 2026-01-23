@@ -108,24 +108,9 @@ There are some official documents of Egaroucid written in Japanese. Please trans
 
 
 
-## Third-party articles related to Egaroucid
-
+## Articles that introduce Egaroucid
 <ul>
-    <li>[Egaroucid: An Othello app review](https://www.worldothello.org/news/354/egaroucid-an-othello-app-review)
-        <ul>
-            <li>Review of Egaroucid by World Othello Federation</li>
-        </ul>
-    </li>
-    <li>[Distribution of books in Egaroucid format (Japanese)](https://hasera.net/othello/Egaroucid-book.html)
-        <ul>
-            <li>High-precision books that can be used directly with Egaroucid are being made available to the public.</li>
-        </ul>
-    </li>
-    <li>[Reversi Web](https://reversi.yuki-lab.com/en/)
-        <ul>
-            <li>The Egaroucid for Web engine is used as the top-level AI that you can play against by registering an account.</li>
-        </ul>
-    </li>
+    <li>[Egaroucid: An Othello app review](https://www.worldothello.org/news/354/egaroucid-an-othello-app-review): Review of Egaroucid by World Othello Federation</li>
 </ul>
 
 
@@ -240,9 +225,19 @@ I would like to thank these people for great contributions.
 
 
 ## Third-Party Links
+Below is a list of Egaroucid-related links provided by third parties. The author of Egaroucid assumes no responsibility for the content of these links.
 
 <ul>
-    <li>[Egaroucid-formatted book (Japanese)](https://hasera.net/othello/Egaroucid-book.html)</li>
+    <li>[Distribution of books in Egaroucid format (Japanese)](https://hasera.net/othello/Egaroucid-book.html)
+        <ul>
+            <li>High-precision books that can be used directly with Egaroucid are being made available to the public.</li>
+        </ul>
+    </li>
+    <li>[Reversi Web](https://reversi.yuki-lab.com/en/)
+        <ul>
+            <li>The Egaroucid for Web engine is used as the top-level AI that you can play against by registering an account.</li>
+        </ul>
+    </li>
 </ul>
 
 

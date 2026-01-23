@@ -260,11 +260,6 @@ GPL-3.0ライセンスの下で自由に使っていただいて構いません�
 以下は第三者によるEgaroucid関連リンクの紹介です。Egaroucidの作者はこれらのリンクに対して責任を負いません。
 
 <ul>
-    <li>[Egaroucid: An Othello app review](https://www.worldothello.org/news/354/egaroucid-an-othello-app-review)
-        <ul>
-            <li>世界オセロ連盟(World Othello Federation)によるEgaroucidの紹介記事です。</li>
-        </ul>
-    </li>
     <li>[Egaroucid形式のbook配布](https://hasera.net/othello/Egaroucid-book.html)
         <ul>
             <li>Egaroucidでそのまま使える高精度なbookを公開してくださっています。</li>
