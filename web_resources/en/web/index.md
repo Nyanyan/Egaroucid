@@ -28,7 +28,7 @@
         </tr>
         <tr class="settings_table">
             <td class="settings_table"><label><input type="checkbox" id="show_legal" checked><span class="setting">Moves</span></label></td>
-            <td class="settings_table"><label><input type="checkbox" id="auto_pass" checked><span class="setting">Auto-Pass</span></label></td>
+            <td class="settings_table"><label><input type="checkbox" id="auto_pass" unchecked><span class="setting">Auto-Pass</span></label></td>
         </tr>
     </table>
 </div>
