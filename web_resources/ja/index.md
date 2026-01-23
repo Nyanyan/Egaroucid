@@ -255,10 +255,21 @@ GPL-3.0ライセンスの下で自由に使っていただいて構いません�
 </ul>
 
 
-## 第三者による関連資料
+## 第三者による関連リンク
+
+以下は第三者によるEgaroucid関連リンクの紹介です。Egaroucidの作者はこれらのリンクに対して責任を負いません。
 
 <ul>
-    <li>[Egaroucid形式のbook配布](https://hasera.net/othello/Egaroucid-book.html)</li>
+    <li>[Egaroucid形式のbook配布](https://hasera.net/othello/Egaroucid-book.html)
+        <ul>
+            <li>Egaroucidでそのまま使える高精度なbookを公開してくださっています。</li>
+        </ul>
+    </li>
+    <li>[リバーシWeb](https://reversi.yuki-lab.com/)
+        <ul>
+            <li>アカウント登録すると対戦できる最上級AIとして、Egaroucid for Webの思考エンジンが使われています。</li>
+        </ul>
+    </li>
 </ul>
 
 
