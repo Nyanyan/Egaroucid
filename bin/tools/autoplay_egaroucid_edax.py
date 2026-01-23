@@ -13,7 +13,8 @@ LEVEL = 11
 N_GAMES_PER_FILE = 10000
 N_THREAD = 31
 
-exe_egaroucid = './../versions/Egaroucid_for_Console_7_7_0_Windows_SIMD/Egaroucid_for_Console_7_7_0_SIMD.exe'
+# exe_egaroucid = './../versions/Egaroucid_for_Console_7_7_0_Windows_SIMD/Egaroucid_for_Console_7_7_0_SIMD.exe'
+exe_egaroucid = './../versions/Egaroucid_for_Console_7_8_0_Windows_SIMD/Egaroucid_for_Console_7_8_0_SIMD.exe'
 # exe_egaroucid = './../Egaroucid_for_Console.exe'
 exe_edax = './../versions/edax_4_5_5/bin/wEdax-x86-64-v3.exe'
 
