@@ -141,14 +141,14 @@ private:
     bool use_image;
     Texture image;
 
-    int cursor_to_bar_value(int cursor_x, bool is_right_elem = false) const {
+    int cursor_to_bar_value(double cursor_x, bool is_right_elem = false) const {
         if (max_elem == min_elem) {
             return min_elem;
         }
         // For MENU_MODE_2BARS:
         // - Left element (bar_elem1, is_right_elem=false): use right edge (cursor_x + MENU_BAR_RADIUS)
         // - Right element (bar_elem2, is_right_elem=true): use left edge (cursor_x - MENU_BAR_RADIUS)
-        int effective_x = cursor_x;
+        double effective_x = cursor_x;
         if (mode == MENU_MODE_2BARS) {
             effective_x = is_right_elem ? (cursor_x - MENU_BAR_RADIUS) : (cursor_x + MENU_BAR_RADIUS);
         }
@@ -407,7 +407,7 @@ public:
             }
             if (bar_changeable) {
                 Cursor::RequestStyle(CursorStyle::ResizeLeftRight);
-                const int cursor_x = Cursor::PosF().x;
+                const double cursor_x = Cursor::PosF().x;
                 const int circle1_x = handle1_x;
                 const int circle2_x = handle2_x;
 
