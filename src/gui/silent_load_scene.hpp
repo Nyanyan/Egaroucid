@@ -84,7 +84,7 @@ void init_default_settings(const Directories* directories, const Resources* reso
     settings->generate_random_board_score_range_max = 64;
     settings->show_hint_level = true;
     settings->show_endgame_error = false;
-    settings->hint_colorize = true;
+    settings->hint_colorize = false;
     settings->play_ordering_board_format = true;
     settings->play_ordering_transcript_format = false;
 }
