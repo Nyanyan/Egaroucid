@@ -407,7 +407,7 @@ public:
             }
             if (bar_changeable) {
                 Cursor::RequestStyle(CursorStyle::ResizeLeftRight);
-                const int cursor_x = Cursor::Pos().x;
+                const int cursor_x = Cursor::PosF().x;
                 const int circle1_x = handle1_x;
                 const int circle2_x = handle2_x;
 
@@ -452,7 +452,7 @@ public:
             }
             if (bar_changeable) {
                 Cursor::RequestStyle(CursorStyle::ResizeLeftRight);
-                *bar_elem = cursor_to_bar_value(Cursor::Pos().x);
+                *bar_elem = cursor_to_bar_value(Cursor::PosF().x);
             }
             is_active |= bar_changeable;
         } else if (!MouseL.pressed()) {
