@@ -227,18 +227,16 @@ I would like to thank these people for great contributions.
 ## Third-Party Links
 Below is a list of Egaroucid-related links provided by third parties. The author of Egaroucid assumes no responsibility for the content of these links.
 
-<ul>
-    <li>[Distribution of books in Egaroucid format (Japanese)](https://hasera.net/othello/Egaroucid-book.html)
-        <ul>
-            <li>High-precision books that can be used directly with Egaroucid are being made available to the public.</li>
-        </ul>
-    </li>
-    <li>[Reversi Web](https://reversi.yuki-lab.com/en/)
-        <ul>
-            <li>The Egaroucid for Web engine is used as the top-level AI that you can play against by registering an account.</li>
-        </ul>
-    </li>
-</ul>
+- [Distribution of books in Egaroucid format (Japanese)](https://hasera.net/othello/Egaroucid-book.html): High-precision books that can be used directly with Egaroucid are being made available to the public.
+
+
+
+## Works by third parties using Egaroucid-related materials
+
+These are works developed by third parties using Egaroucid or Egaroucid's training data, etc.
+
+- [Reversi Web](https://reversi.yuki-lab.com/en/): Othello AI that can be played on the website. The Egaroucid for Web engine is used as the top-level AI that you can play against by registering an account.
+- [Reversi Nexus](https://reversi.nexus/): Othello AI that can be played on websites, desktops, and mobiles. It seems they referred to Egaroucid's [training data](./technology/train-data/) and [technical explanation](./technology/explanation/).
 
 
 
