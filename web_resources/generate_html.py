@@ -377,10 +377,13 @@ def create_html(dr):
                 next_is_li = orig_lines[i+1].lstrip().startswith('- ')
             if not prev_is_li:
                 elem = '<ul>\n<li>' + elem[2:] + '</li>'
+                raw_html += 1
             else:
                 elem = '<li>' + elem[2:] + '</li>'
+                raw_html += 1
             if not next_is_li:
                 elem += '\n</ul>'
+                raw_html -= 1
         # paragraph
         if raw_html == 0 and len(elem):
             elem = '<p>' + elem + '</p>'
