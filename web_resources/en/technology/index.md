@@ -4,7 +4,7 @@
 
 ## Technology Explanation
 
-I wrote [Technology Explanation](/explanation/). This article is machine-translated and the original version is in Japanese.
+I wrote [Technology Explanation](./explanation/). This article is machine-translated and the original version is in Japanese.
 
 
 

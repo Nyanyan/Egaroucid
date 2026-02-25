@@ -241,10 +241,6 @@ GPL-3.0ライセンスの下で自由に使っていただいて構いません�
 
 
 
-
-
-
-
 ## Egaroucid関連リンク
 
 <ul>
@@ -259,18 +255,17 @@ GPL-3.0ライセンスの下で自由に使っていただいて構いません�
 
 以下は第三者によるEgaroucid関連リンクの紹介です。Egaroucidの作者はこれらのリンクに対して責任を負いません。
 
-<ul>
-    <li>[Egaroucid形式のbook配布](https://hasera.net/othello/Egaroucid-book.html)
-        <ul>
-            <li>Egaroucidでそのまま使える高精度なbookを公開してくださっています。</li>
-        </ul>
-    </li>
-    <li>[リバーシWeb](https://reversi.yuki-lab.com/)
-        <ul>
-            <li>アカウント登録すると対戦できる最上級AIとして、Egaroucid for Webの思考エンジンが使われています。</li>
-        </ul>
-    </li>
-</ul>
+- [Egaroucid形式のbook配布](https://hasera.net/othello/Egaroucid-book.html): Egaroucidでそのまま使える高精度なbookを公開してくださっています。
+
+
+
+## Egaroucid関連資料を使用した第三者の作品
+
+EgaroucidやEgaroucidの学習データ等を使用した、第三者によって開発された作品です。
+
+- [リバーシWeb](https://reversi.yuki-lab.com/): Webサイトで遊べるオセロAIです。アカウント登録すると対戦できる最上級AIとして、Egaroucid for Webの思考エンジンが使われています。
+- [Reversi Nexus](https://reversi.nexus/): Webサイトやデスクトップ、モバイルで遊べるオセロAIです。Egaroucidの[学習データ](./technology/train-data/)や[技術資料](./technology/explanation/)を参考にしていただいたようです。
+
 
 
 
@@ -279,16 +274,13 @@ GPL-3.0ライセンスの下で自由に使っていただいて構いません�
 
 近年のオセロAIを紹介します。
 
-<ul>
-    <li>[Edax 4.4](https://github.com/abulmo/edax-reversi) 強豪かつ有名なオセロAIです。EgaroucidはEdaxのアイデアを多く参考にしています。</li>
-	<li>[Edax 4.5](https://github.com/okuhara/edax-reversi-AVX) Edax 4.4をAVXに最適化したものです。とても速く、Egaroucidでも一部の工夫を参考にしています。</li>
-	<li>[Master Reversi](http://t-ishii.la.coocan.jp/hp/mr/) 強豪かつ高速なオセロAIです。</li>
-	<li>[FOREST](https://lapagedolivier.fr/forest.htm) 深層学習を利用した評価関数でαβ法を行うオセロAIです。評価関数の精度が非常に良いです。</li>
-    <li>[dekunobou](https://dekunobou.jj1guj.net/) 遺伝的アルゴリズムで評価関数を調整したユニークなオセロAIです。dekunobouの開発者は将棋AIの開発でも有名です。</li>
-    <li>[WZebra](http://www.radagast.se/othello/download.html) 2005年頃まで開発されていたオセロAIです。Egaroucidでは作者の許可の下、WZebraのbookを元に値を修正して標準付属bookを作っています。すでに開発は止まっていますが敬意を表して紹介します。</li>
-    <li>[Logistello](https://skatgame.net/mburo/log.html) 1997年に当時の世界チャンピオン村上健氏に勝利したオセロAIです。Logistelloで考案された技術はEgaroucidでも基礎的なところで使用しています。すでに開発は止まっていますが敬意を表して紹介します。</li>
-</ul>
-
+- [Edax 4.6](https://github.com/abulmo/edax-reversi):  強豪かつ有名なオセロAIです。EgaroucidはEdaxのアイデアを多く参考にしています。
+- [Edax 4.5](https://github.com/okuhara/edax-reversi-AVX): Edax 4.4をAVXに最適化したものです。とても速く、Egaroucidでも一部の工夫を参考にしています。
+- [Master Reversi](http://t-ishii.la.coocan.jp/hp/mr/): 強豪かつ高速なオセロAIです。
+- [FOREST](https://lapagedolivier.fr/forest.htm): 深層学習を利用した評価関数でαβ法を行うオセロAIです。評価関数の精度が非常に良いです。
+- [dekunobou](https://dekunobou.jj1guj.net/): 遺伝的アルゴリズムで評価関数を調整したユニークなオセロAIです。dekunobouの開発者は将棋AIの開発でも有名です。
+- [WZebra](http://www.radagast.se/othello/download.html): 2005年頃まで開発されていたオセロAIです。Egaroucidの旧バージョンでは、作者の許可の下でWZebraのbookを元に値を修正して標準付属bookを作っていました。すでに開発は止まっていますが敬意を表して紹介します。
+- [Logistello](https://skatgame.net/mburo/log.html): 1997年に当時の世界チャンピオン村上健氏に勝利したオセロAIです。Logistelloで考案された技術はEgaroucidでも基礎的なところで使用しています。すでに開発は止まっていますが敬意を表して紹介します。
 
 
 
