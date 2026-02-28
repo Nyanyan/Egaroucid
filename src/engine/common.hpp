@@ -348,6 +348,10 @@ inline bool is_valid_policy(int policy) {
     return 0 <= policy && policy < HW2;
 }
 
+inline bool is_valid_policy(int y, int x) {
+    return 0 <= x && x < HW && 0 <= y && y < HW;
+}
+
 inline bool is_valid_score(int score) {
     return -SCORE_MAX <= score && score <= SCORE_MAX;
 }
