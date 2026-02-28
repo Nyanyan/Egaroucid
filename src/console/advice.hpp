@@ -92,6 +92,12 @@ uint64_t get_flip_inside_places(Board board) {
     return flip_inside_places;
 }
 
+void advice_get_next_to_popped_disc(Board board, Advice_Move &move) {
+    move.next_popped_disc = COORD_NO;
+    // 飛び出した石を5マス以上の空きマスに接するマスと定義して、飛び出した石につける手かを判定し、結果をmove.is_next_to_popped_discに格納
+    // move.is_next_to_popped_discがtrueであるなら、飛び出した石を1つmove.next_popped_discに格納する
+}
+
 void print_advice(Board_info *board_info) {
     nlohmann::json res;
 
@@ -364,6 +370,11 @@ void print_advice(Board_info *board_info) {
         board.move_board(&flip);
             move.n_increased_stable_discs = pop_count_ull(calc_stability(board.opponent, board.player)) - n_stable;
         board.undo_board(&flip);
+    }
+
+
+    for (Advice_Move &move: moves) {
+        advice_get_next_to_popped_disc(board, move);
     }
 
     {
