@@ -49,6 +49,7 @@ struct Advice_Move {
     int n_increased_stable_discs;
     bool is_next_to_opponent_popped_disc;
     int next_opponent_popped_disc;
+    bool is_force_opponent_take_edge;
 };
 
 bool is_flip_inside(Board board, uint_fast8_t cell) {
@@ -127,6 +128,30 @@ void advice_get_next_to_popped_disc(Board board, Advice_Move *move) {
             }
         }
     }
+}
+
+bool is_next_to_opponent_edge_disc(Board board, Advice_Move move) {
+    uint64_t edge_mask = 0xFF818181818181FFULL;
+    if (((1ULL << move.policy) & edge_mask) == 0) {
+        return false;
+    }
+    int move_y = move.policy / HW;
+    int move_x = move.policy % HW;
+    constexpr int dy[4] = {-1, 1, 0,  0};
+    constexpr int dx[4] = {0,  0, -1, 1};
+    int count = 0;
+    for (int d = 0; d < 4; ++d) {
+        int y = move_y + dy[d];
+        int x = move_x + dx[d];
+        if (is_valid_policy(y, x)) {
+            int cell = y * HW + x;
+            uint64_t bit = 1ULL << cell;
+            if (edge_mask & board.opponent & bit) {
+                ++count;
+            }
+        }
+    }
+    return count == 1;
 }
 
 void print_advice(Board_info *board_info) {
@@ -408,6 +433,13 @@ void print_advice(Board_info *board_info) {
         advice_get_next_to_popped_disc(board, &move);
     }
 
+    for (Advice_Move &move: moves) {
+        move.is_force_opponent_take_edge = is_next_to_opponent_edge_disc(board, move) && move.is_offer_corner;
+        if (move.is_force_opponent_take_edge) {
+            std::cerr << idx_to_coord(move.policy) << std::endl;
+        }
+    }
+
     {
         bool has_c = false;
         bool has_x = false;
@@ -451,7 +483,8 @@ void print_advice(Board_info *board_info) {
             {"op_canput", move.op_canput},
             {"n_increased_stable_discs", move.n_increased_stable_discs},
             {"is_next_to_opponent_popped_disc", move.is_next_to_opponent_popped_disc},
-            {"next_opponent_popped_disc", move.next_opponent_popped_disc},
+            {"next_opponent_popped_disc", idx_to_coord(move.next_opponent_popped_disc)},
+            {"is_force_opponent_take_edge", move.is_force_opponent_take_edge},
         };
         res["moves"].push_back(j);
     }
