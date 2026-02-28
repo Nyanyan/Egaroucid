@@ -115,12 +115,14 @@ void advice_get_next_to_popped_disc(Board board, Advice_Move *move) {
                     int x2 = x + dy[d2];
                     if (is_valid_policy(y2, x2)) {
                         int cell2 = y2 * HW + x2;
-                        empty_count += (1 & (empties >> cell));
+                        empty_count += (1 & (empties >> cell2));
                     }
                 }
-                if (empty_count >= 5) {
+                if (empty_count >= 6) {
                     move->is_next_to_popped_disc = true;
                     move->next_popped_disc = cell;
+                    board.print();
+                    std::cerr << idx_to_coord(move->policy) << " " << empty_count << " " << idx_to_coord(cell) << std::endl;
                     return;
                 }
             }
