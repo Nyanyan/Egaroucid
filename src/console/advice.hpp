@@ -104,10 +104,12 @@ void advice_get_next_to_popped_disc(Board board, Advice_Move *move) {
     int move_x = move->policy % HW;
     constexpr int dy[8] = {-1, -1, -1, 0,  0,  1, 1, 1};
     constexpr int dx[8] = {-1,  0,  1, 1, -1, -1, 0, 1};
+    constexpr int dy4[4] = {-1, 1, 0,  0};
+    constexpr int dx4[4] = {0,  0, -1, 1};
 
-    for (int d = 0; d < 8; ++d) {
-        int y = move_y + dy[d];
-        int x = move_x + dx[d];
+    for (int d = 0; d < 4; ++d) {
+        int y = move_y + dy4[d];
+        int x = move_x + dx4[d];
         if (is_valid_policy(y, x)) {
             int cell = y * HW + x;
             if (1 & (board.opponent >> cell)) {
