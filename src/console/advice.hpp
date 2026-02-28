@@ -92,10 +92,40 @@ uint64_t get_flip_inside_places(Board board) {
     return flip_inside_places;
 }
 
-void advice_get_next_to_popped_disc(Board board, Advice_Move &move) {
-    move.next_popped_disc = COORD_NO;
-    // 飛び出した石を5マス以上の空きマスに接するマスと定義して、飛び出した石につける手かを判定し、結果をmove.is_next_to_popped_discに格納
-    // move.is_next_to_popped_discがtrueであるなら、飛び出した石を1つmove.next_popped_discに格納する
+void advice_get_next_to_popped_disc(Board board, Advice_Move *move) {
+    move->is_next_to_popped_disc = false;
+    move->next_popped_disc = COORD_NO;
+    uint64_t discs = board.player | board.opponent;
+    uint64_t empties = ~discs;
+
+    int move_y = move->policy / HW;
+    int move_x = move->policy % HW;
+    constexpr int dy[8] = {-1, -1, -1, 0,  0,  1, 1, 1};
+    constexpr int dx[8] = {-1,  0,  1, 1, -1, -1, 0, 1};
+
+    for (int d = 0; d < 8; ++d) {
+        int y = move_y + dy[d];
+        int x = move_x + dx[d];
+        if (is_valid_policy(y, x)) {
+            int cell = y * HW + x;
+            if (1 & (discs >> cell)) {
+                int empty_count = 0;
+                for (int d2 = 0; d2 < 8; ++d2) {
+                    int y2 = y + dy[d2];
+                    int x2 = x + dy[d2];
+                    if (is_valid_policy(y2, x2)) {
+                        int cell2 = y2 * HW + x2;
+                        empty_count += (1 & (empties >> cell));
+                    }
+                }
+                if (empty_count >= 5) {
+                    move->is_next_to_popped_disc = true;
+                    move->next_popped_disc = cell;
+                    return;
+                }
+            }
+        }
+    }
 }
 
 void print_advice(Board_info *board_info) {
@@ -374,7 +404,7 @@ void print_advice(Board_info *board_info) {
 
 
     for (Advice_Move &move: moves) {
-        advice_get_next_to_popped_disc(board, move);
+        advice_get_next_to_popped_disc(board, &move);
     }
 
     {
