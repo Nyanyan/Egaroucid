@@ -47,6 +47,8 @@ struct Advice_Move {
     int n_connected_empty_squares;
     bool op_canput;
     int n_increased_stable_discs;
+    bool is_next_to_popped_disc;
+    int next_popped_disc;
 };
 
 bool is_flip_inside(Board board, uint_fast8_t cell) {
@@ -406,6 +408,8 @@ void print_advice(Board_info *board_info) {
             {"n_connected_empty_squares", move.n_connected_empty_squares},
             {"op_canput", move.op_canput},
             {"n_increased_stable_discs", move.n_increased_stable_discs},
+            {"is_next_to_popped_disc", move.is_next_to_popped_disc},
+            {"next_popped_disc", move.next_popped_disc},
         };
         res["moves"].push_back(j);
     }
