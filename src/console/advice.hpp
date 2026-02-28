@@ -47,8 +47,8 @@ struct Advice_Move {
     int n_connected_empty_squares;
     bool op_canput;
     int n_increased_stable_discs;
-    bool is_next_to_popped_disc;
-    int next_popped_disc;
+    bool is_next_to_opponent_popped_disc;
+    int next_opponent_popped_disc;
 };
 
 bool is_flip_inside(Board board, uint_fast8_t cell) {
@@ -93,8 +93,8 @@ uint64_t get_flip_inside_places(Board board) {
 }
 
 void advice_get_next_to_popped_disc(Board board, Advice_Move *move) {
-    move->is_next_to_popped_disc = false;
-    move->next_popped_disc = COORD_NO;
+    move->is_next_to_opponent_popped_disc = false;
+    move->next_opponent_popped_disc = COORD_NO;
     uint64_t discs = board.player | board.opponent;
     uint64_t empties = ~discs;
 
@@ -108,21 +108,20 @@ void advice_get_next_to_popped_disc(Board board, Advice_Move *move) {
         int x = move_x + dx[d];
         if (is_valid_policy(y, x)) {
             int cell = y * HW + x;
-            if (1 & (discs >> cell)) {
+            if (1 & (board.opponent >> cell)) {
                 int empty_count = 0;
                 for (int d2 = 0; d2 < 8; ++d2) {
                     int y2 = y + dy[d2];
-                    int x2 = x + dy[d2];
+                    int x2 = x + dx[d2];
                     if (is_valid_policy(y2, x2)) {
                         int cell2 = y2 * HW + x2;
                         empty_count += (1 & (empties >> cell2));
                     }
                 }
-                if (empty_count >= 6) {
-                    move->is_next_to_popped_disc = true;
-                    move->next_popped_disc = cell;
-                    board.print();
-                    std::cerr << idx_to_coord(move->policy) << " " << empty_count << " " << idx_to_coord(cell) << std::endl;
+                // std::cerr << idx_to_coord(move->policy) << " " << idx_to_coord(cell) << " " << empty_count << std::endl;
+                if (empty_count >= 7) {
+                    move->is_next_to_opponent_popped_disc = true;
+                    move->next_opponent_popped_disc = cell;
                     return;
                 }
             }
@@ -451,8 +450,8 @@ void print_advice(Board_info *board_info) {
             {"n_connected_empty_squares", move.n_connected_empty_squares},
             {"op_canput", move.op_canput},
             {"n_increased_stable_discs", move.n_increased_stable_discs},
-            {"is_next_to_popped_disc", move.is_next_to_popped_disc},
-            {"next_popped_disc", move.next_popped_disc},
+            {"is_next_to_opponent_popped_disc", move.is_next_to_opponent_popped_disc},
+            {"next_opponent_popped_disc", move.next_opponent_popped_disc},
         };
         res["moves"].push_back(j);
     }
