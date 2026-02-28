@@ -434,10 +434,7 @@ void print_advice(Board_info *board_info) {
     }
 
     for (Advice_Move &move: moves) {
-        move.is_force_opponent_take_edge = is_next_to_opponent_edge_disc(board, move) && move.is_offer_corner;
-        if (move.is_force_opponent_take_edge) {
-            std::cerr << idx_to_coord(move.policy) << std::endl;
-        }
+        move.is_force_opponent_take_edge = is_next_to_opponent_edge_disc(board, move) && !move.is_offer_corner;
     }
 
     {
