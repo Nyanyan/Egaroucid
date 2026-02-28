@@ -50,6 +50,7 @@ struct Advice_Move {
     bool is_next_to_opponent_popped_disc;
     int next_opponent_popped_disc;
     bool is_force_opponent_take_edge;
+    int opponent_take_edge_move;
 };
 
 bool is_flip_inside(Board board, uint_fast8_t cell) {
@@ -435,6 +436,23 @@ void print_advice(Board_info *board_info) {
 
     for (Advice_Move &move: moves) {
         move.is_force_opponent_take_edge = is_next_to_opponent_edge_disc(board, move) && !move.is_offer_corner;
+        move.opponent_take_edge_move = COORD_NO;
+        if (move.is_force_opponent_take_edge) {
+            uint64_t policy_bit = 1ULL << move.policy;
+            Flip flip;
+            calc_flip(&flip, &board, move.policy);
+            board.move_board(&flip);
+                uint64_t after_legal = board.get_legal();
+                for (uint_fast8_t cell = first_bit(&after_legal); after_legal; cell = next_bit(&after_legal)) {
+                    Flip flip2;
+                    calc_flip(&flip2, &board, cell);
+                    if (flip2.flip & policy_bit) {
+                        move.opponent_take_edge_move = cell;
+                        break;
+                    }
+                }
+            board.undo_board(&flip);
+        }
     }
 
     {
@@ -482,6 +500,7 @@ void print_advice(Board_info *board_info) {
             {"is_next_to_opponent_popped_disc", move.is_next_to_opponent_popped_disc},
             {"next_opponent_popped_disc", idx_to_coord(move.next_opponent_popped_disc)},
             {"is_force_opponent_take_edge", move.is_force_opponent_take_edge},
+            {"opponent_take_edge_move", idx_to_coord(move.opponent_take_edge_move)},
         };
         res["moves"].push_back(j);
     }
