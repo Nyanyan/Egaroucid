@@ -31,7 +31,7 @@ We welcome the use of this training data in papers and other publications.
 
 When citing this data, please use the following format as a reference, or adjust it to fit the citation format of your publication.
 
-Yamana, Takuto.: Egaroucid Free Training Data, https://www.egaroucid.nyanyan.dev/en/technology/train-data/
+```Yamana, Takuto.: Egaroucid Free Training Data, https://www.egaroucid.nyanyan.dev/en/technology/train-data/```
 
 
 ## Training Data by Egaroucid 7.4.0 lv.17 & 7.5.1 lv.17

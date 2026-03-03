@@ -31,7 +31,7 @@ GitHubレポジトリ: [https://github.com/Nyanyan/Egaroucid](https://github.com
 
 引用する際は、以下のような形式を参考に、論文の引用フォーマットに合わせていただけると幸いです(英語版の引用方法を例示します)。
 
-Yamana, Takuto.: Egaroucid Free Training Data, https://www.egaroucid.nyanyan.dev/en/technology/train-data/
+```Yamana, Takuto.: Egaroucid Free Training Data, https://www.egaroucid.nyanyan.dev/en/technology/train-data/```
 
 
 

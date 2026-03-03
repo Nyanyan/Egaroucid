@@ -163,7 +163,7 @@ We welcome the use of Egaroucid in papers and other publications.
 
 When citing Egaroucid, please use the following format as a reference, or adjust it to fit the citation format of your publication.
 
-Yamana, Takuto.: Egaroucid, https://www.egaroucid.nyanyan.dev/
+```Yamana, Takuto.: Egaroucid, https://www.egaroucid.nyanyan.dev/```
 
 
 ## Acknowledgements
