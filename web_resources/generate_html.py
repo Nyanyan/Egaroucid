@@ -310,6 +310,7 @@ def create_html(dr):
     md_split = md.splitlines()
     raw_html = 0
     last_h3_title = ''
+    in_bullet_list = False
     for i, elem in enumerate(md_split):
         while elem and (elem[0] == ' ' or elem[0] == '\t'):
             elem = elem[1:]
@@ -367,22 +368,16 @@ def create_html(dr):
             elem = elem.replace(code, html_code)
         # bullet list
         if elem[:2] == '- ':
-            # use the original markdown lines to decide list boundaries
-            orig_lines = md.splitlines()
-            prev_is_li = False
-            next_is_li = False
-            if i > 0:
-                prev_is_li = orig_lines[i-1].lstrip().startswith('- ')
-            if i < len(orig_lines) - 1:
-                next_is_li = orig_lines[i+1].lstrip().startswith('- ')
-            if not prev_is_li:
+            if not in_bullet_list:
                 elem = '<ul>\n<li>' + elem[2:] + '</li>'
+                in_bullet_list = True
                 raw_html += 1
             else:
                 elem = '<li>' + elem[2:] + '</li>'
-                raw_html += 1
-            if not next_is_li:
-                elem += '\n</ul>'
+        else:
+            if in_bullet_list and i > 0:
+                md_split[i - 1] += '\n</ul>'
+                in_bullet_list = False
                 raw_html -= 1
         # paragraph
         if raw_html == 0 and len(elem):
@@ -403,6 +398,9 @@ def create_html(dr):
                 elem = '<img width="' + str(img_width) + '" height="' + str(img_height) + '"' + elem[4:]
         # modify data
         md_split[i] = elem
+    if in_bullet_list and md_split:
+        md_split[-1] += '\n</ul>'
+        raw_html -= 1
     # table of contents
     if need_table_of_contents:
         table_of_contents_html = '<details><summary>' + TABLE_OF_CONTENTS_STR + '</summary><ol class="table_of_contents_ol">'

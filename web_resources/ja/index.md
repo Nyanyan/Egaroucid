@@ -49,8 +49,6 @@ REPLACE_DOWNLOAD_BUTTON_HERE
 - [CodinGame Othello](https://www.codingame.com/multiplayer/bot-programming/othello-1) 世界1位 (2021/11/22、2023/09/08、2025/02/01)
 
 
-
-
 ## 特徴
 
 <ul>
