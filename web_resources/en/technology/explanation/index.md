@@ -1,10 +1,16 @@
 # Egaroucid Technical Explanation
 
-**This page is a machine translation of [the Japanese version](../../../ja/technology/explanation/). Please refer to [the Japanese version](../../../ja/technology/explanation/) for the official content.**
+**This page is a machine translation of the [Japanese version](https://www.egaroucid.nyanyan.dev/ja/technology/explanation/). Please refer to the Japanese version for the official content.**
 
 **The content written here is not for beginners. Beginner-friendly articles on Othello AI are written [here](https://note.com/nyanyan_cubetech/m/m54104c8d2f12).**
 
 This page contains various technical documents related to Othello AI. I will add to it slowly when I feel like it. The order of the chapters has no particular meaning. Please read only the parts you are interested in!
+
+I welcome the use of this technical explanation in papers and other publications. When citing, please refer to the following format and match it to your paper's citation format.
+
+```Yamana, Takuto.: Egaroucid Technology Explanation, https://www.egaroucid.nyanyan.dev/en/technology/explanation/```
+
+
 
 Last updated: After 2025/11/29, listed at the end of each section
 
