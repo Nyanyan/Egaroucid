@@ -241,12 +241,10 @@ Yamana, Takuto.: Egaroucid, https://www.egaroucid.nyanyan.dev/
 
 ## Egaroucid関連リンク
 
-<ul>
-    <li>[Egaroucid GitHub レポジトリ](https://github.com/Nyanyan/Egaroucid)</li>
-	<li>[自作最弱オセロAI](https://www.egaroucen.nyanyan.dev/)</li>
-    <li>[作者Webサイト](https://nyanyan.dev/ja/)</li>
-    <li>[作者Twitter](https://twitter.com/takuto_yamana)</li>
-</ul>
+- [Egaroucid GitHub レポジトリ](https://github.com/Nyanyan/Egaroucid)
+- [自作最弱オセロAI](https://www.egaroucen.nyanyan.dev/)
+- [作者Webサイト](https://nyanyan.dev/ja/)
+- [作者Twitter](https://twitter.com/takuto_yamana)
 
 
 ## 第三者による関連リンク
