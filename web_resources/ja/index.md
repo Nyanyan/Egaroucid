@@ -44,10 +44,10 @@ REPLACE_DOWNLOAD_BUTTON_HERE
 
 ## 対戦実績
 
-<ul>
-    <li>オセロAI大会 優勝 @[Generic Game Server](https://skatgame.net/mburo/ggs/) (2024/12/08)</li>
-    <li>[CodinGame Othello](https://www.codingame.com/multiplayer/bot-programming/othello-1) 世界1位 (2021/11/22、2023/09/08、2025/02/01)</li>
-</ul>
+- オセロAI大会 準優勝 @[Generic Game Server](https://skatgame.net/mburo/ggs/) (2024/11/01)
+- オセロAI大会 優勝 @[Generic Game Server](https://skatgame.net/mburo/ggs/) (2024/12/08)
+- [CodinGame Othello](https://www.codingame.com/multiplayer/bot-programming/othello-1) 世界1位 (2021/11/22、2023/09/08、2025/02/01)</li>
+
 
 
 
