@@ -8,7 +8,7 @@ This page contains various technical documents related to Othello AI. I will add
 
 I welcome the use of this technical explanation in papers and other publications. When citing, please refer to the following format and match it to your paper's citation format.
 
-```Yamana, Takuto.: Egaroucid Technology Explanation, https://www.egaroucid.nyanyan.dev/en/technology/explanation/```
+```Yamana, Takuto.: Egaroucid Technology Explanation, https://www.egaroucid.nyanyan.dev/ja/technology/explanation/```
 
 
 
