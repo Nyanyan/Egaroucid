@@ -33,6 +33,16 @@ GitHubレポジトリ: [https://github.com/Nyanyan/Egaroucid](https://github.com
 </ul>
 
 
+## 引用
+
+論文などでこの学習データを利用することを歓迎します。
+
+引用する際は、以下のような形式を参考に、論文の引用フォーマットに合わせていただけると幸いです(英語版の引用方法を例示します)。
+
+Yamana, Takuto.: Egaroucid Free Training Data, https://www.egaroucid.nyanyan.dev/en/technology/train-data/
+
+
+
 ## Egaroucid 7.4.0 lv.17 & 7.5.1 lv.17 によるデータ
 
 [Egaroucid_Train_Data.zip](https://github.com/Nyanyan/Egaroucid/releases/download/training_data/Egaroucid_Train_Data.zip)をダウンロードし、解凍してください。
