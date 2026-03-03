@@ -51,7 +51,6 @@ REPLACE_DOWNLOAD_BUTTON_HERE
 
 
 
-
 ## 特徴
 
 <ul>
@@ -98,21 +97,17 @@ REPLACE_DOWNLOAD_BUTTON_HERE
 
 Egaroucid公式として公開している色々な資料です。日本語のみで書いてあります。
 
-<ul>
-    <li>[使い方](./usage/): ソフトの使い方を機能一つ一つ解説しています</li>
-    <li>[Book詳説](./usage/book/): Bookの使い方を詳しく解説しています</li>
-    <li>[技術解説](./technology/explanation/): オセロAI制作の役に立ちそうな専門的な話を解説しています</li>
-</ul>
+- [使い方](./usage/): ソフトの使い方を機能一つ一つ解説しています
+- [Book詳説](./usage/book/): Bookの使い方を詳しく解説しています
+- [技術解説](./technology/explanation/): オセロAI制作の役に立ちそうな専門的な話を解説しています
 
 
 ## 紹介記事
 
 Egaroucidを紹介していただいた記事です
 
-<ul>
-    <li>[世界最強の「オセロAI」を作った大学生　創作の原点は「1冊の絵本」](https://web.quizknock.com/othello-ai): QuizKnock Webメディアで丁寧に紹介していただきました</li>
-    <li>[Egaroucid: An Othello app review](https://www.worldothello.org/news/354/egaroucid-an-othello-app-review): 世界オセロ連盟のニュースで紹介していただきました</li>
-</ul>
+- [世界最強の「オセロAI」を作った大学生　創作の原点は「1冊の絵本」](https://web.quizknock.com/othello-ai): QuizKnock Webメディアで丁寧に紹介していただきました
+- [Egaroucid: An Othello app review](https://www.worldothello.org/news/354/egaroucid-an-othello-app-review): 世界オセロ連盟のニュースで紹介していただきました
 
 
 
@@ -120,25 +115,22 @@ Egaroucidを紹介していただいた記事です
 
 Egaroucidに関連するその他の資料です。読み物が多めです。
 
-<ul>
-    <li>[オセロAI世界1位になってオセロAIをｶﾝｾﾞﾝﾆﾘｶｲｼﾀ話](https://qiita.com/Nyanyan_Cube/items/195bdc47bb1d7c6f8b24): オセロAI制作の初期にコンテストで1位になった話です</li>
-    <li>[オセロAI世界大会で優勝した話](https://qiita.com/Nyanyan_Cube/items/e104595c48e6ac67475b): コンテスト側による制約の少ないオセロAI大会で優勝した話です。ｶﾝｾﾞﾝﾆﾘｶｲｼﾀ話で「真の世界最強」と書いたオセロAIに、3年かけてほぼたどり着きました</li>
-    <li>[みんな、とにかくオセロAIを作るんだ](https://qiita.com/Nyanyan_Cube/items/1839732d7bdf74caff21): オセロAIを作ると何が良いのかを解説しています</li>
-    <li>[オセロAIの教科書](https://note.com/nyanyan_cubetech/m/m54104c8d2f12): オセロAI制作を初歩から解説したマガジンです。全編無料です。サンプルコードもあります。ちょっと古い記事なので、近々更新したいです…</li>
-	<li>[オセロAI世界1位が最弱オセロAIを作った話(読み物編)](https://note.com/nyanyan_cubetech/n/n2674dd6f5973): 負けオセロAI [Egaroucen](https://www.egaroucen.nyanyan.dev/)(自分調べで世界最弱)制作の物語です</li>
-    <li>[オセロAI世界1位が最弱オセロAIを作った話(技術編)](https://qiita.com/Nyanyan_Cube/items/43d8627539c73459635c): 負けオセロAI [Egaroucen](https://www.egaroucen.nyanyan.dev/)(自分調べで世界最弱)の技術解説です</li>
-    <li>[世界1位のオセロAIをSiv3Dで人生初アプリ化した話](https://qiita.com/Nyanyan_Cube/items/bfb2bc3ba7a93c83f2d1): オセロAIを実際に画面上で動くソフトウェアとして公開した話です</li>
-</ul>
+- [オセロAI世界1位になってオセロAIをｶﾝｾﾞﾝﾆﾘｶｲｼﾀ話](https://qiita.com/Nyanyan_Cube/items/195bdc47bb1d7c6f8b24): オセロAI制作の初期にコンテストで1位になった話です
+- [オセロAI世界大会で優勝した話](https://qiita.com/Nyanyan_Cube/items/e104595c48e6ac67475b): コンテスト側による制約の少ないオセロAI大会で優勝した話です。ｶﾝｾﾞﾝﾆﾘｶｲｼﾀ話で「真の世界最強」と書いたオセロAIに、3年かけてほぼたどり着きました
+- [みんな、とにかくオセロAIを作るんだ](https://qiita.com/Nyanyan_Cube/items/1839732d7bdf74caff21): オセロAIを作ると何が良いのかを解説しています
+- [オセロAIの教科書](https://note.com/nyanyan_cubetech/m/m54104c8d2f12): オセロAI制作を初歩から解説したマガジンです。全編無料です。サンプルコードもあります。ちょっと古い記事なので、近々更新したいです…
+- [オセロAI世界1位が最弱オセロAIを作った話(読み物編)](https://note.com/nyanyan_cubetech/n/n2674dd6f5973): 負けオセロAI [Egaroucen](https://www.egaroucen.nyanyan.dev/)(自分調べで世界最弱)制作の物語です
+- [オセロAI世界1位が最弱オセロAIを作った話(技術編)](https://qiita.com/Nyanyan_Cube/items/43d8627539c73459635c): 負けオセロAI [Egaroucen](https://www.egaroucen.nyanyan.dev/)(自分調べで世界最弱)の技術解説です
+- [世界1位のオセロAIをSiv3Dで人生初アプリ化した話](https://qiita.com/Nyanyan_Cube/items/bfb2bc3ba7a93c83f2d1): オセロAIを実際に画面上で動くソフトウェアとして公開した話です
+
 
 ### Othello is Solvedに関する資料
 
 2023年10月30日付で、[Othello is Solved](https://doi.org/10.48550/arXiv.2310.19387)という論文がarXivに投稿されました。私はこの論文の著者ではありませんが、専門ど真ん中なこともあり、この論文を読んで勝手に解説を書きました。Egaroucidに直接関係するものではありませんが、論文の読解にはEgaroucid開発の経験が役立ちましたのでここで紹介します。おそらく日本語でアクセスできる解説の中では一番正確かつ詳しいと思います。
 
-<ul>
-    <li>[Othello is Solved (Hiroki Takizawa)](https://doi.org/10.48550/arXiv.2310.19387): 原文(英語)です。</li>
-    <li>[「オセロが解けた」を白黒ハッキリさせようじゃないか](https://note.com/ipsj/n/n86f6dbfbfc7a): 情報処理学会の学会誌に特別解説として執筆した記事です。論文解説として短くまとめました。</li>
-    <li>[Othello is Solved 論文解説 (私見)](https://qiita.com/Nyanyan_Cube/items/a373da3157cdd117afcc): 1万7千字という長大な文章ですが、論文について詳しく解説しています。</li>
-</ul>
+- [Othello is Solved (Hiroki Takizawa)](https://doi.org/10.48550/arXiv.2310.19387): 原文(英語)です。
+- [「オセロが解けた」を白黒ハッキリさせようじゃないか](https://note.com/ipsj/n/n86f6dbfbfc7a): 情報処理学会の学会誌に特別解説として執筆した記事です。論文解説として短くまとめました。
+- [Othello is Solved 論文解説 (私見)](https://qiita.com/Nyanyan_Cube/items/a373da3157cdd117afcc): 1万7千字という長大な文章ですが、論文について詳しく解説しています。
 
 
 
@@ -147,13 +139,11 @@ Egaroucidに関連するその他の資料です。読み物が多めです。
 
 [こちらのGoogleフォーム](https://docs.google.com/forms/d/e/1FAIpQLSd6ML1T1fc707luPEefBXuImMnlM9cQP8j-YHKiSyFoS-8rmQ/viewform)より意見を受け付けています。
 
-<ul>
-    <li>不具合を発見した</li>
-    <li>Egaroucidの翻訳をしたい</li>
-    <li>こんな機能が欲しい</li>
-    <li>こうしたらもっと良くなりそう</li>
-    <li>ユーザテストに参加したい</li>
-</ul>
+- 不具合を発見した
+- Egaroucidの翻訳をしたい
+- こんな機能が欲しい
+- こうしたらもっと良くなりそう
+- ユーザテストに参加したい
 
 など、様々な意見をお待ちしております。
 
