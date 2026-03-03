@@ -51,28 +51,20 @@ REPLACE_DOWNLOAD_BUTTON_HERE
 
 ## 特徴
 
-<ul>
-    <li>正確で高速な独自の評価関数</li>
-    <li>高速な探索</li>
-    <li>AIとの対局
-        <ul>
-            <li>独自GUIでの対局</li>
-            <li>Go Text Protocol (GTP)対応GUIを用いた対局(Egaroucid for Console)
-				<ul>
-                    <li>GoGui</li>
-                    <li>Quarry</li>
-                </ul>
-            </li>
-        </ul>
-    </li>
-    <li>対局解析</li>
-    <li>評価値・うみがめ数の表示</li>
-    <li>各種入出力</li>
-    <li>bookを自動/手動で作成/修正</li>
-    <li>Egaroucid/Edax形式bookの追加・統合</li>
-    <li>定石名の表示</li>
-    <li>[Siv3D](https://siv3d.github.io/)による綺麗なGUI</li>
-</ul>
+- 正確で高速な独自の評価関数
+- 高速な探索
+- AIとの対局
+  - 独自GUIでの対局
+  - Go Text Protocol (GTP)対応GUIを用いた対局(Egaroucid for Console)
+    - GoGui
+    - Quarry
+- 対局解析
+- 評価値・うみがめ数の表示
+- 各種入出力
+- bookを自動/手動で作成/修正
+- Egaroucid/Edax形式bookの追加・統合
+- 定石名の表示
+- [Siv3D](https://siv3d.github.io/)による綺麗なGUI
 
 
 ## 導入する
@@ -177,64 +169,41 @@ Yamana, Takuto.: Egaroucid, https://www.egaroucid.nyanyan.dev/
 
 開発に多大なる貢献をしていただいた方々に感謝します(順不同、敬称略)。
 
-<ul>
-    <li>UIデザイン
-        <ul>
-            <li>金子映像</li>
-        </ul>
-    </li>
-    <li>技術提供・[GitHubコントリビュータ](https://github.com/Nyanyan/Egaroucid/graphs/contributors)
-        <ul>
-            <li>奥原俊彦</li>
-            <li>笹倉颯人</li>
-            <li>acepck</li>
-            <li>HiraokaTakuya</li>
-            <li>Ben Stokmans</li>
-            <li>seigot</li>
-        </ul>
-    </li>
-    <li>翻訳
-        <ul>
-            <li>ZhangHengge (簡体字)</li>
-            <li>YuYutw123 (繁体字(台湾))</li>
-        </ul>
-    </li>
-    <li>技術的アドバイス
-        <ul>
-            <li>Jon Marc Hornstein</li>
-        </ul>
-    </li>
-    <li>定石名整理・提供
-        <ul>
-            <li>Kyrin</li>
-            <li>わんりゅー</li>
-            <li>うえのん</li>
-            <li>Matthias Berg</li>
-        </ul>
-    </li>
-    <li>Book提供
-        <ul>
-            <li>Gunnar Andersson</li>
-        </ul>
-    </li>
-    <li>ユーザテスト
-        <ul>
-            <li>Ben Seeley</li>
-            <li>わんりゅー</li>
-            <li>大賀菜央</li>
-            <li>倉橋哲史</li>
-            <li>出本大起</li>
-            <li>まてぃか</li>
-            <li>Nettle蕁麻</li>
-            <li>okojoMK</li>
-            <li>高田征吾</li>
-            <li>まだらぬこ</li>
-            <li>長野泰志</li>
-            <li>trineutron</li>
-            <li>クルトン</li>
-        </ul>
-    </li>
-</ul>
+- UIデザイン
+  - 金子映像
+- 技術提供・[GitHubコントリビュータ](https://github.com/Nyanyan/Egaroucid/graphs/contributors)
+  - 奥原俊彦
+  - 笹倉颯人
+  - acepck
+  - HiraokaTakuya
+  - Ben Stokmans
+  - seigot
+- 翻訳
+  - ZhangHengge (簡体字)
+  - YuYutw123 (繁体字(台湾))
+- 技術的アドバイス
+  - Jon Marc Hornstein
+- 定石名整理・提供
+  - Kyrin
+  - わんりゅー
+  - うえのん
+  - Matthias Berg
+- Book提供
+  - Gunnar Andersson
+- ユーザテスト
+  - Ben Seeley
+  - わんりゅー
+  - 大賀菜央
+  - 倉橋哲史
+  - 出本大起
+  - まてぃか
+  - Nettle蕁麻
+  - okojoMK
+  - 高田征吾
+  - まだらぬこ
+  - 長野泰志
+  - trineutron
+  - クルトン
 
 
 
