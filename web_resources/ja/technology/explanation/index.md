@@ -6,7 +6,9 @@
 
 論文などでこの技術解説を利用することを歓迎します。引用する際は、以下のような形式を参考に、論文の引用フォーマットに合わせていただけると幸いです。
 
-```Yamana, Takuto.: Egaroucid Technology Explanation, https://www.egaroucid.nyanyan.dev/ja/technology/explanation/```
+日本語の場合: ```山名琢翔: Egaroucid 技術解説, https://www.egaroucid.nyanyan.dev/ja/technology/explanation/```
+
+英語の場合: ```Yamana, Takuto.: Egaroucid Technology Explanation, https://www.egaroucid.nyanyan.dev/ja/technology/explanation/```
 
 
 
