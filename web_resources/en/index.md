@@ -57,10 +57,10 @@ Completely free software. Egaroucid and Egaroucid for Console use the same (stro
 - Accurate and fast evaluation function
 - Fast search
 - Play against AI
-    - on Egaroucid's GUI
-    - on other GUI with Go Text Protocol (GTP) (Egaroucid for Console)
-        - GoGui
-        - Quarry
+  - on Egaroucid's GUI
+  - on other GUI with Go Text Protocol (GTP) (Egaroucid for Console)
+    - GoGui
+    - Quarry
 - Analyze a game
 - See evaluation values
 - Input and Output in several formats
