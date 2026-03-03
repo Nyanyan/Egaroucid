@@ -47,6 +47,10 @@ struct Advice_Move {
     int n_connected_empty_squares;
     bool op_canput;
     int n_increased_stable_discs;
+    bool is_next_to_opponent_popped_disc;
+    int next_opponent_popped_disc;
+    bool is_force_opponent_take_edge;
+    int opponent_take_edge_move;
 };
 
 bool is_flip_inside(Board board, uint_fast8_t cell) {
@@ -88,6 +92,69 @@ uint64_t get_flip_inside_places(Board board) {
         }
     }
     return flip_inside_places;
+}
+
+void advice_get_next_to_popped_disc(Board board, Advice_Move *move) {
+    move->is_next_to_opponent_popped_disc = false;
+    move->next_opponent_popped_disc = COORD_NO;
+    uint64_t discs = board.player | board.opponent;
+    uint64_t empties = ~discs;
+
+    int move_y = move->policy / HW;
+    int move_x = move->policy % HW;
+    constexpr int dy[8] = {-1, -1, -1, 0,  0,  1, 1, 1};
+    constexpr int dx[8] = {-1,  0,  1, 1, -1, -1, 0, 1};
+    constexpr int dy4[4] = {-1, 1, 0,  0};
+    constexpr int dx4[4] = {0,  0, -1, 1};
+
+    for (int d = 0; d < 4; ++d) {
+        int y = move_y + dy4[d];
+        int x = move_x + dx4[d];
+        if (is_valid_policy(y, x)) {
+            int cell = y * HW + x;
+            if (1 & (board.opponent >> cell)) {
+                int empty_count = 0;
+                for (int d2 = 0; d2 < 8; ++d2) {
+                    int y2 = y + dy[d2];
+                    int x2 = x + dx[d2];
+                    if (is_valid_policy(y2, x2)) {
+                        int cell2 = y2 * HW + x2;
+                        empty_count += (1 & (empties >> cell2));
+                    }
+                }
+                // std::cerr << idx_to_coord(move->policy) << " " << idx_to_coord(cell) << " " << empty_count << std::endl;
+                if (empty_count >= 7) {
+                    move->is_next_to_opponent_popped_disc = true;
+                    move->next_opponent_popped_disc = cell;
+                    return;
+                }
+            }
+        }
+    }
+}
+
+bool is_next_to_opponent_edge_disc(Board board, Advice_Move move) {
+    uint64_t edge_mask = 0xFF818181818181FFULL;
+    if (((1ULL << move.policy) & edge_mask) == 0) {
+        return false;
+    }
+    int move_y = move.policy / HW;
+    int move_x = move.policy % HW;
+    constexpr int dy[4] = {-1, 1, 0,  0};
+    constexpr int dx[4] = {0,  0, -1, 1};
+    int count = 0;
+    for (int d = 0; d < 4; ++d) {
+        int y = move_y + dy[d];
+        int x = move_x + dx[d];
+        if (is_valid_policy(y, x)) {
+            int cell = y * HW + x;
+            uint64_t bit = 1ULL << cell;
+            if (edge_mask & board.opponent & bit) {
+                ++count;
+            }
+        }
+    }
+    return count == 1;
 }
 
 void print_advice(Board_info *board_info) {
@@ -364,6 +431,32 @@ void print_advice(Board_info *board_info) {
         board.undo_board(&flip);
     }
 
+
+    for (Advice_Move &move: moves) {
+        advice_get_next_to_popped_disc(board, &move);
+    }
+
+    for (Advice_Move &move: moves) {
+        move.is_force_opponent_take_edge = is_next_to_opponent_edge_disc(board, move) && !move.is_offer_corner;
+        move.opponent_take_edge_move = COORD_NO;
+        if (move.is_force_opponent_take_edge) {
+            uint64_t policy_bit = 1ULL << move.policy;
+            Flip flip;
+            calc_flip(&flip, &board, move.policy);
+            board.move_board(&flip);
+                uint64_t after_legal = board.get_legal();
+                for (uint_fast8_t cell = first_bit(&after_legal); after_legal; cell = next_bit(&after_legal)) {
+                    Flip flip2;
+                    calc_flip(&flip2, &board, cell);
+                    if (flip2.flip & policy_bit) {
+                        move.opponent_take_edge_move = cell;
+                        break;
+                    }
+                }
+            board.undo_board(&flip);
+        }
+    }
+
     {
         bool has_c = false;
         bool has_x = false;
@@ -406,6 +499,10 @@ void print_advice(Board_info *board_info) {
             {"n_connected_empty_squares", move.n_connected_empty_squares},
             {"op_canput", move.op_canput},
             {"n_increased_stable_discs", move.n_increased_stable_discs},
+            {"is_next_to_opponent_popped_disc", move.is_next_to_opponent_popped_disc},
+            {"next_opponent_popped_disc", idx_to_coord(move.next_opponent_popped_disc)},
+            {"is_force_opponent_take_edge", move.is_force_opponent_take_edge},
+            {"opponent_take_edge_move", idx_to_coord(move.opponent_take_edge_move)},
         };
         res["moves"].push_back(j);
     }

@@ -5,6 +5,7 @@
             "label": "Root", // タブに表示される名前
             "type": "shell",
             "command": "${env:COMSPEC}", // Windowsのコマンドプロンプトを起動して常駐させる
+            "isBackground": true, // タスクが終了しなくても「開始成功」とみなす
             "options": {
                 "cwd": "${workspaceFolder}" // ★ここで起動パスを指定
             },
@@ -23,6 +24,7 @@
             "label": "Bin",
             "type": "shell",
             "command": "${env:COMSPEC}",
+            "isBackground": true,
             "options": {
                 "cwd": "${workspaceFolder}\\bin"
             },
@@ -41,6 +43,7 @@
             "label": "Web Resources",
             "type": "shell",
             "command": "${env:COMSPEC}",
+            "isBackground": true,
             "options": {
                 "cwd": "${workspaceFolder}\\web_resources"
             },
@@ -59,6 +62,7 @@
             "label": "Tools 1",
             "type": "shell",
             "command": "${env:COMSPEC}",
+            "isBackground": true,
             "options": {
                 "cwd": "${workspaceFolder}\\bin\\tools"
             },
@@ -78,6 +82,7 @@
             "label": "Tools 2",
             "type": "shell",
             "command": "${env:COMSPEC}",
+            "isBackground": true,
             "options": {
                 "cwd": "${workspaceFolder}\\bin\\tools"
             },
@@ -97,6 +102,7 @@
             "label": "Tools 3",
             "type": "shell",
             "command": "${env:COMSPEC}",
+            "isBackground": true,
             "options": {
                 "cwd": "${workspaceFolder}\\bin\\tools"
             },
@@ -116,6 +122,7 @@
             "label": "Tools 4",
             "type": "shell",
             "command": "${env:COMSPEC}",
+            "isBackground": true,
             "options": {
                 "cwd": "${workspaceFolder}\\bin\\tools"
             },

@@ -1,3 +1,5 @@
 {
-  "terminal.integrated.cwd": "${workspaceFolder}"
+  "terminal.integrated.cwd": "${workspaceFolder}",
+  "cmake.configureOnOpen": false,
+  "cmake.configureOnEdit": false
 }
