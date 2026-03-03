@@ -171,40 +171,40 @@ Yamana, Takuto.: Egaroucid, https://www.egaroucid.nyanyan.dev/
 I would like to thank these people for great contributions (in no particular order, titles omitted).
 
 - UI Design
-    - Kaneko Eizo
+  - Kaneko Eizo
 - Technical Contribution / [GitHub Contribution](https://github.com/Nyanyan/Egaroucid/graphs/contributors)
-    - Toshihiko Okuhara
-    - Hayato Sasakura
-    - acepck
-    - HiraokaTakuya
-    - Ben Stokmans
-    - seigot
+  - Toshihiko Okuhara
+  - Hayato Sasakura
+  - acepck
+  - HiraokaTakuya
+  - Ben Stokmans
+  - seigot
 - Translation
-    - ZhangHengge (Simplified Chinese)
-    - YuYutw123 (Traditional Chinese (Taiwan))
+  - ZhangHengge (Simplified Chinese)
+  - YuYutw123 (Traditional Chinese (Taiwan))
 - Technical Advice
-    - Jon Marc Hornstein
+  - Jon Marc Hornstein
 - Opening names Organize / Provision
-    - Kyrin
-    - Wanryu
-    - Uenon
-    - Matthias Berg
+  - Kyrin
+  - Wanryu
+  - Uenon
+  - Matthias Berg
 - Book Provision
-    - Gunnar Andersson
+  - Gunnar Andersson
 - User Test
-    - Ben Seeley
-    - Wanryu
-    - OGA NAO
-    - Satoshi Kurahashi
-    - Taiki Demoto
-    - Mathica
-    - Nettle
-    - okojoMK
-    - Takada Seigo
-    - madaranuko
-    - Nagano Yasushi
-    - trineutron
-    - Kuruton
+  - Ben Seeley
+  - Wanryu
+  - OGA NAO
+  - Satoshi Kurahashi
+  - Taiki Demoto
+  - Mathica
+  - Nettle
+  - okojoMK
+  - Takada Seigo
+  - madaranuko
+  - Nagano Yasushi
+  - trineutron
+  - Kuruton
 
 
 

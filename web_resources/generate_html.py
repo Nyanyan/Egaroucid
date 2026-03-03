@@ -310,8 +310,10 @@ def create_html(dr):
     md_split = md.splitlines()
     raw_html = 0
     last_h3_title = ''
-    in_bullet_list = False
+    bullet_list_depth = 0
     for i, elem in enumerate(md_split):
+        original_elem = elem
+        leading_spaces = len(original_elem) - len(original_elem.lstrip(' '))
         while elem and (elem[0] == ' ' or elem[0] == '\t'):
             elem = elem[1:]
         html_elems = re.findall('\<.+?\>', elem)
@@ -368,17 +370,22 @@ def create_html(dr):
             elem = elem.replace(code, html_code)
         # bullet list
         if elem[:2] == '- ':
-            if not in_bullet_list:
-                elem = '<ul>\n<li>' + elem[2:] + '</li>'
-                in_bullet_list = True
+            target_depth = leading_spaces // 2 + 1
+            prefix = ''
+            while bullet_list_depth < target_depth:
+                prefix += '<ul>\n'
+                bullet_list_depth += 1
                 raw_html += 1
-            else:
-                elem = '<li>' + elem[2:] + '</li>'
-        else:
-            if in_bullet_list and i > 0:
-                md_split[i - 1] += '\n</ul>'
-                in_bullet_list = False
+            while bullet_list_depth > target_depth:
+                prefix += '</ul>\n'
+                bullet_list_depth -= 1
                 raw_html -= 1
+            elem = prefix + '<li>' + elem[2:] + '</li>'
+        else:
+            if bullet_list_depth > 0 and i > 0:
+                md_split[i - 1] += ''.join('\n</ul>' for _ in range(bullet_list_depth))
+                raw_html -= bullet_list_depth
+                bullet_list_depth = 0
         # paragraph
         if raw_html == 0 and len(elem):
             elem = '<p>' + elem + '</p>'
@@ -398,9 +405,9 @@ def create_html(dr):
                 elem = '<img width="' + str(img_width) + '" height="' + str(img_height) + '"' + elem[4:]
         # modify data
         md_split[i] = elem
-    if in_bullet_list and md_split:
-        md_split[-1] += '\n</ul>'
-        raw_html -= 1
+    if bullet_list_depth > 0 and md_split:
+        md_split[-1] += ''.join('\n</ul>' for _ in range(bullet_list_depth))
+        raw_html -= bullet_list_depth
     # table of contents
     if need_table_of_contents:
         table_of_contents_html = '<details><summary>' + TABLE_OF_CONTENTS_STR + '</summary><ol class="table_of_contents_ol">'
