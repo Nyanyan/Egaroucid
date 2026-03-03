@@ -45,13 +45,9 @@ Completely free software. Egaroucid and Egaroucid for Console use the same (stro
 
 ## Competitive Results
 
-<ul>
-    <li>Othello AI Tournament Champion @[Generic Game Server](https://skatgame.net/mburo/ggs/) (2024/12/08)</li>
-    <li>[CodinGame Othello](https://www.codingame.com/multiplayer/bot-programming/othello-1) World Champion (2021/11/22, 2023/09/08, 2025/02/01)</li>
-</ul>
-
-
-
+- Runner-up in Othello AI Tournament @[Generic Game Server](https://skatgame.net/mburo/ggs/) (2025/11/01)
+- Othello AI Tournament Champion @[Generic Game Server](https://skatgame.net/mburo/ggs/) (2024/12/08)
+- [CodinGame Othello](https://www.codingame.com/multiplayer/bot-programming/othello-1) World Champion (2021/11/22, 2023/09/08, 2025/02/01)
 
 
 ## Features
@@ -142,6 +138,14 @@ Egaroucid is an open source software under GPL-3.0 license. All source codes are
 
 You can use Egaroucid freely under GPL-3.0 license. If you worry about GPL-infection, please ask me.
 
+
+## Citation
+
+We welcome the use of Egaroucid in papers and other publications.
+
+When citing Egaroucid, please use the following format as a reference, or adjust it to fit the citation format of your publication.
+
+Yamana, Takuto.: Egaroucid, https://www.egaroucid.nyanyan.dev/
 
 
 ## Acknowledgements
