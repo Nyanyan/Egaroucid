@@ -26,6 +26,9 @@
     * 学習時間や学習率、学習に使うデータはここで設定する
     * ```eval_optimizer_cuda.cu```をラップしてある
       * ```evaluation_definition.hpp```でインデックスの定義をしてある
+* FM版は```eval_optimizer_cuda_fm.cu```で学習できる
+  * 出力は```trained/[phase]_fm.txt```（先頭に線形項、続いてFM因子）
+  * 出現回数は```trained/weight_[phase]_fm.txt```に出力される
 * 学習済みモデルは```trained```フォルダに保存される
 
 
