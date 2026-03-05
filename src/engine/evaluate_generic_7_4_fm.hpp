@@ -12,6 +12,8 @@
 #include <iostream>
 #include <fstream>
 #include <cstring>
+#include <vector>
+#include <cmath>
 #include "setting.hpp"
 #include "common.hpp"
 #include "board.hpp"
@@ -23,6 +25,9 @@
 #define EVAL_IDX_END_MOVE_ORDERING_END 48
 #define EVAL_FEATURE_START_MOVE_ORDERING_END 8
 #define MAX_CELL_PATTERNS_MOVE_ORDERING_END 6
+
+#define EVAL_FM_DIM 16
+#define N_PATTERN_PARAMS_RAW_FM 573966
 
 constexpr Feature_to_coord feature_to_coord[N_SYMMETRY_PATTERNS] = {
     // 0 hv2
@@ -285,6 +290,33 @@ int16_t pattern_arr[2][N_PHASES][N_PATTERNS][MAX_EVALUATE_IDX];
 int16_t eval_sur0_sur1_arr[N_PHASES][MAX_SURROUND][MAX_SURROUND];
 int16_t eval_num_arr[N_PHASES][MAX_STONE_NUM];
 int16_t pattern_arr_move_ordering_end[2][N_PATTERNS][MAX_EVALUATE_IDX];
+bool eval_fm_loaded = false;
+std::vector<float> pattern_fm_linear_arr;
+std::vector<float> pattern_fm_factor_arr;
+
+constexpr int pattern_sizes_fm[N_PATTERNS] = {
+    8, 8, 8, 9,
+    5, 6, 7, 10,
+    10, 10, 10, 10,
+    10, 10, 10, 10
+};
+
+constexpr int pattern_starts_fm[N_PATTERNS] = {
+    0, 6561, 13122, 19683,
+    39366, 39609, 40338, 42525,
+    101574, 160623, 219672, 278721,
+    337770, 396819, 455868, 514917
+};
+
+struct FM_eval_header {
+    char magic[4];
+    int version;
+    int n_phases;
+    int n_linear_params;
+    int fm_dim;
+};
+
+constexpr int FM_TIMESTAMP_SIZE = 14;
 
 /*
     @brief used for unzipping the evaluation function
@@ -375,6 +407,65 @@ inline bool load_eval_file(const char* file, bool show_log) {
     return true;
 }
 
+inline bool load_eval_fm_file(const char* file, bool show_log) {
+    FILE* fp;
+    if (!file_open(&fp, file, "rb")) {
+        if (show_log) {
+            std::cerr << "[INFO] FM eval file not found " << file << std::endl;
+        }
+        return false;
+    }
+
+    char created_at[FM_TIMESTAMP_SIZE + 1];
+    if (fread(created_at, 1, FM_TIMESTAMP_SIZE, fp) < FM_TIMESTAMP_SIZE) {
+        std::cerr << "[WARN] FM eval timestamp broken " << file << std::endl;
+        fclose(fp);
+        return false;
+    }
+    created_at[FM_TIMESTAMP_SIZE] = '\0';
+    FM_eval_header header;
+    if (fread(&header, sizeof(FM_eval_header), 1, fp) < 1) {
+        std::cerr << "[WARN] FM eval header broken " << file << std::endl;
+        fclose(fp);
+        return false;
+    }
+    if (!(header.magic[0] == 'E' && header.magic[1] == 'G' && header.magic[2] == 'F' && header.magic[3] == 'M')) {
+        std::cerr << "[WARN] invalid FM eval magic " << file << std::endl;
+        fclose(fp);
+        return false;
+    }
+    if (header.n_phases != N_PHASES || header.n_linear_params != N_PATTERN_PARAMS_RAW_FM || header.fm_dim != EVAL_FM_DIM) {
+        std::cerr << "[WARN] FM eval shape mismatch "
+                  << " file(phases=" << header.n_phases
+                  << " linear=" << header.n_linear_params
+                  << " dim=" << header.fm_dim
+                  << ") expected(phases=" << N_PHASES
+                  << " linear=" << N_PATTERN_PARAMS_RAW_FM
+                  << " dim=" << EVAL_FM_DIM << ")" << std::endl;
+        fclose(fp);
+        return false;
+    }
+
+    pattern_fm_linear_arr.resize((size_t)N_PHASES * (size_t)N_PATTERN_PARAMS_RAW_FM);
+    pattern_fm_factor_arr.resize((size_t)N_PHASES * (size_t)N_PATTERN_PARAMS_RAW_FM * (size_t)EVAL_FM_DIM);
+
+    if (fread(pattern_fm_linear_arr.data(), sizeof(float), pattern_fm_linear_arr.size(), fp) < pattern_fm_linear_arr.size()) {
+        std::cerr << "[WARN] FM eval linear data broken " << file << std::endl;
+        fclose(fp);
+        return false;
+    }
+    if (fread(pattern_fm_factor_arr.data(), sizeof(float), pattern_fm_factor_arr.size(), fp) < pattern_fm_factor_arr.size()) {
+        std::cerr << "[WARN] FM eval factor data broken " << file << std::endl;
+        fclose(fp);
+        return false;
+    }
+    fclose(fp);
+    if (show_log) {
+        std::cerr << "FM eval loaded " << file << " created_at " << created_at << std::endl;
+    }
+    return true;
+}
+
 inline bool load_eval_move_ordering_end_file(const char* file, bool show_log) {
     if (show_log)
         std::cerr << "evaluation for move ordering end file " << file << std::endl;
@@ -417,6 +508,10 @@ inline bool evaluate_init(const char* file, const char* mo_end_nws_file, bool sh
     if (!eval_move_ordering_end_nws_loaded) {
         std::cerr << "[ERROR] [FATAL] evaluation file for move ordering end not loaded" << std::endl;
         return false;
+    }
+    eval_fm_loaded = load_eval_fm_file((EXE_DIRECTORY_PATH + "resources/eval_fm.egev3").c_str(), show_log);
+    if (!eval_fm_loaded && show_log) {
+        std::cerr << "[INFO] FM term disabled" << std::endl;
     }
     if (show_log)
         std::cerr << "evaluation function initialized" << std::endl;
@@ -473,6 +568,32 @@ inline int calc_pattern(const int phase_idx, Eval_search *eval) {
     int res = 0;
     for (int i = 0; i < N_SYMMETRY_PATTERNS; ++i)
         res += pattern_arr[eval->reversed[eval->feature_idx]][phase_idx][feature_to_pattern[i]][eval->features[eval->feature_idx][i]];
+    if (eval_fm_loaded) {
+        const size_t phase_linear_offset = (size_t)phase_idx * (size_t)N_PATTERN_PARAMS_RAW_FM;
+        const size_t phase_factor_offset = (size_t)phase_idx * (size_t)N_PATTERN_PARAMS_RAW_FM * (size_t)EVAL_FM_DIM;
+        int global_idx[N_SYMMETRY_PATTERNS];
+        for (int i = 0; i < N_SYMMETRY_PATTERNS; ++i) {
+            const int pattern_idx = feature_to_pattern[i];
+            int feature_idx = eval->features[eval->feature_idx][i];
+            if (eval->reversed[eval->feature_idx]) {
+                feature_idx = swap_player_idx(feature_idx, pattern_sizes_fm[pattern_idx]);
+            }
+            global_idx[i] = pattern_starts_fm[pattern_idx] + feature_idx;
+        }
+        double fm_res = 0.0;
+        for (int f = 0; f < EVAL_FM_DIM; ++f) {
+            double sum_vx = 0.0;
+            double sum_vx2 = 0.0;
+            for (int i = 0; i < N_SYMMETRY_PATTERNS; ++i) {
+                const size_t idx = phase_factor_offset + (size_t)global_idx[i] * (size_t)EVAL_FM_DIM + (size_t)f;
+                const double vx = pattern_fm_factor_arr[idx];
+                sum_vx += vx;
+                sum_vx2 += vx * vx;
+            }
+            fm_res += 0.5 * (sum_vx * sum_vx - sum_vx2);
+        }
+        res += (int)std::round(fm_res);
+    }
     return res;
 }
 
