@@ -59,6 +59,9 @@ bin/ggs/log
 bin/ggs/etc
 bin/egaroucid_vs_edax_time_log
 
+# bin directory (for Linux)
+bin/resources/engine
+
 # img
 img/demo
 
