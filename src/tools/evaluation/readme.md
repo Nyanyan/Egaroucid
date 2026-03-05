@@ -36,31 +36,29 @@
 
 ## 更新式メモ（非FM / FM）
 
-* 損失はどちらもサンプルごとに ```L=(y-ŷ)^2```、残差 ```e=y-ŷ```
+
+* 損失はいずれもサンプルごとに $L = (y - \hat{y})^2$、残差 $e = y - \hat{y}$
 
 ### 非FM（線形和）
 
-* 予測:
-  * ```ŷ = Σ_i w_i x_i```
-* 勾配:
-  * ```∂L/∂w_i = -2 e x_i```
-* 実装上は「足し込み更新」に合わせて ```g_i = 2 e x_i``` を集計し、Adamで
-  * ```m_i ← β1 m_i + (1-β1) g_i```
-  * ```v_i ← β2 v_i + (1-β2) g_i^2```
-  * ```w_i ← w_i + lr_t * m_i / (sqrt(v_i)+ε)```
+
+* 予測: $\hat{y} = \sum_i w_i x_i$
+* 勾配: $\frac{\partial L}{\partial w_i} = -2 e x_i$
+* 実装上は「足し込み更新」に合わせて $g_i = 2 e x_i$ を集計し、Adamで
+  $m_i \leftarrow \beta_1 m_i + (1-\beta_1) g_i$
+  $v_i \leftarrow \beta_2 v_i + (1-\beta_2) g_i^2$
+  $w_i \leftarrow w_i + \mathrm{lr}_t \cdot \frac{m_i}{\sqrt{v_i}+\varepsilon}$
 
 ### FM（2次相互作用あり）
 
-* 予測:
-  * ```ŷ = Σ_i w_i x_i + 1/2 Σ_f [ (Σ_i v_{i,f}x_i)^2 - Σ_i (v_{i,f}x_i)^2 ]```
-* 勾配:
-  * ```∂L/∂w_i = -2 e x_i```
-  * ```∂ŷ/∂v_{i,f} = x_i (Σ_j v_{j,f}x_j - v_{i,f}x_i)```
-  * ```∂L/∂v_{i,f} = -2 e x_i (Σ_j v_{j,f}x_j - v_{i,f}x_i)```
-* 実装上の更新方向:
-  * ```g_i = 2 e x_i```
-  * ```g_{i,f} = 2 e x_i (Σ_j v_{j,f}x_j - v_{i,f}x_i)```
-* Adamは線形項とFM因子で別々の ```m```, ```v``` を持って同様に更新
+
+* 予測: $\hat{y} = \sum_i w_i x_i + \frac{1}{2} \sum_f \left[ \left( \sum_i v_{i,f} x_i \right)^2 - \sum_i (v_{i,f} x_i)^2 \right ]$
+* 勾配: $\frac{\partial L}{\partial w_i} = -2 e x_i$
+  $\frac{\partial \hat{y}}{\partial v_{i,f}} = x_i \left( \sum_j v_{j,f} x_j - v_{i,f} x_i \right)$
+  $\frac{\partial L}{\partial v_{i,f}} = -2 e x_i \left( \sum_j v_{j,f} x_j - v_{i,f} x_i \right)$
+* 実装上の更新方向: $g_i = 2 e x_i$
+  $g_{i,f} = 2 e x_i \left( \sum_j v_{j,f} x_j - v_{i,f} x_i \right)$
+* Adamは線形項とFM因子で別々の $m$, $v$ を持って同様に更新
 
 
 
