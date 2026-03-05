@@ -292,7 +292,7 @@ inline bool load_eval_fm_file(const char* file, bool show_log) {
         fclose(fp);
         return false;
     }
-    if (!(header.magic[0] == 'E' && header.magic[1] == 'G' && header.magic[2] == 'F' && header.magic[3] == 'M')) {
+    if (!(header.magic[0] == 'E' && header.magic[1] == 'G' && header.magic[2] == 'E' && header.magic[3] == 'V')) {
         std::cerr << "[WARN] invalid FM eval magic " << file << std::endl;
         fclose(fp);
         return false;

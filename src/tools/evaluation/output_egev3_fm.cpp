@@ -122,7 +122,7 @@ int main(int argc, char* argv[]) {
         std::cerr << "[ERROR] failed to create timestamp" << std::endl;
         return 1;
     }
-    FMHeader header = {{'E', 'G', 'F', 'M'}, 1, n_phases, n_linear_params, fm_dim};
+    FMHeader header = {{'E', 'G', 'E', 'V'}, 3, n_phases, n_linear_params, fm_dim};
     fout.write(created_at.data(), TIMESTAMP_SIZE);
     fout.write((char*)&header, sizeof(FMHeader));
     std::cerr << "created_at " << created_at << std::endl;
