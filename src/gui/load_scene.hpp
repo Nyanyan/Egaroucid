@@ -51,9 +51,95 @@ struct MacMemoryStatusEx {
         }
     }
 };
-#else // Windows
+#elif defined(_WIN32)
 #include <windows.h>
 #include <shlwapi.h>
+#else // Linux
+#include <cstdint>
+#include <fstream>
+#include <sstream>
+#include <string>
+#include <sys/sysinfo.h>
+
+struct LinuxMemoryStatusEx {
+    uint64_t totalPhysicalMemory;
+    uint64_t freeMemory;
+    uint64_t usedMemory;
+    uint64_t buffersMemory;
+    uint64_t cachedMemory;
+
+    LinuxMemoryStatusEx() {
+        totalPhysicalMemory = 0;
+        freeMemory = 0;
+        usedMemory = 0;
+        buffersMemory = 0;
+        cachedMemory = 0;
+    }
+
+    bool updateMemoryStatus() {
+        totalPhysicalMemory = 0;
+        freeMemory = 0;
+        usedMemory = 0;
+        buffersMemory = 0;
+        cachedMemory = 0;
+
+        bool has_total = false;
+        bool has_free = false;
+        bool has_available = false;
+        uint64_t available_memory = 0;
+
+        std::ifstream meminfo("/proc/meminfo");
+        if (meminfo) {
+            std::string line;
+            while (std::getline(meminfo, line)) {
+                std::istringstream iss(line);
+                std::string key;
+                std::string unit;
+                uint64_t value_kb = 0;
+                if (!(iss >> key >> value_kb >> unit) || unit != "kB") {
+                    continue;
+                }
+                const uint64_t value_bytes = value_kb * 1024ULL;
+                if (key == "MemTotal:") {
+                    totalPhysicalMemory = value_bytes;
+                    has_total = true;
+                } else if (key == "MemFree:") {
+                    freeMemory = value_bytes;
+                    has_free = true;
+                } else if (key == "MemAvailable:") {
+                    available_memory = value_bytes;
+                    has_available = true;
+                } else if (key == "Buffers:") {
+                    buffersMemory = value_bytes;
+                } else if (key == "Cached:") {
+                    cachedMemory = value_bytes;
+                }
+            }
+            if (has_total && (has_free || has_available)) {
+                if (has_available) {
+                    freeMemory = available_memory;
+                }
+                if (totalPhysicalMemory > freeMemory) {
+                    usedMemory = totalPhysicalMemory - freeMemory;
+                }
+                return true;
+            }
+        }
+
+        struct sysinfo info {};
+        if (sysinfo(&info) == 0) {
+            const uint64_t mem_unit = static_cast<uint64_t>(info.mem_unit);
+            totalPhysicalMemory = static_cast<uint64_t>(info.totalram) * mem_unit;
+            freeMemory = static_cast<uint64_t>(info.freeram) * mem_unit;
+            if (totalPhysicalMemory > freeMemory) {
+                usedMemory = totalPhysicalMemory - freeMemory;
+            }
+            return (totalPhysicalMemory > 0);
+        }
+
+        return false;
+    }
+};
 #endif
 
 
@@ -98,7 +184,7 @@ int init_resources_load(Resources* resources, Settings* settings, bool *stop_loa
     Texture flip_vertical(Unicode::Widen(EXE_DIRECTORY_PATH + "resources/img/flip_vertical.png"), TextureDesc::Mipped);
     Texture rotate_cw(Unicode::Widen(EXE_DIRECTORY_PATH + "resources/img/rotate_cw.png"), TextureDesc::Mipped);
     Texture rotate_ccw(Unicode::Widen(EXE_DIRECTORY_PATH + "resources/img/rotate_ccw.png"), TextureDesc::Mipped);
-    Texture rotate_180(Unicode::Widen(EXE_DIRECTORY_PATH + "resources/img/rotate_180.png"), TextureDesc::Mipped);
+    Texture rotate_180_tex(Unicode::Widen(EXE_DIRECTORY_PATH + "resources/img/rotate_180.png"), TextureDesc::Mipped);
     Texture mirror_white_line(Unicode::Widen(EXE_DIRECTORY_PATH + "resources/img/mirror_white_line.png"), TextureDesc::Mipped);
     Texture mirror_black_line(Unicode::Widen(EXE_DIRECTORY_PATH + "resources/img/mirror_black_line.png"), TextureDesc::Mipped);
     Texture check(Unicode::Widen(EXE_DIRECTORY_PATH + "resources/img/check.png"), TextureDesc::Mipped);
@@ -107,7 +193,7 @@ int init_resources_load(Resources* resources, Settings* settings, bool *stop_loa
     Texture pencil(Unicode::Widen(EXE_DIRECTORY_PATH + "resources/img/pencil.png"), TextureDesc::Mipped);
     if (checkbox.isEmpty() || unchecked.isEmpty() || laser_pointer.isEmpty() || cross.isEmpty() ||
         flip_horizontal.isEmpty() || flip_vertical.isEmpty() || rotate_cw.isEmpty() || rotate_ccw.isEmpty() ||
-        rotate_180.isEmpty() || mirror_white_line.isEmpty() || mirror_black_line.isEmpty() ||
+        rotate_180_tex.isEmpty() || mirror_white_line.isEmpty() || mirror_black_line.isEmpty() ||
         check.isEmpty() || folder.isEmpty() || arrow_left.isEmpty() || pencil.isEmpty()
     ) {
         return ERR_LOAD_TEXTURE_NOT_LOADED;
@@ -120,7 +206,7 @@ int init_resources_load(Resources* resources, Settings* settings, bool *stop_loa
     resources->flip_vertical = flip_vertical;
     resources->rotate_cw = rotate_cw;
     resources->rotate_ccw = rotate_ccw;
-    resources->rotate_180 = rotate_180;
+    resources->rotate_180 = rotate_180_tex;
     resources->mirror_white_line = mirror_white_line;
     resources->mirror_black_line = mirror_black_line;
     resources->check = check;
@@ -192,20 +278,29 @@ int init_ai(Settings* settings, const Directories* directories, bool *stop_loadi
     mpc_init();
 #endif
     move_ordering_init();
-#ifndef __APPLE__
+    bool has_memory_info = true;
+#if defined(_WIN32)
     MEMORYSTATUSEX msex = { sizeof(MEMORYSTATUSEX) };
     GlobalMemoryStatusEx( &msex );
     double free_mb = (double)msex.ullAvailPhys / 1024 / 1024;
-#else // Windows
+#elif defined(__APPLE__)
     MacMemoryStatusEx msex;
     msex.updateMemoryStatus();
     double free_mb = static_cast<double>(msex.freeMemory) / 1024 / 1024;
+#else // Linux
+    LinuxMemoryStatusEx msex;
+    has_memory_info = msex.updateMemoryStatus();
+    double free_mb = static_cast<double>(msex.freeMemory) / 1024 / 1024;
 #endif
     double size_mb = (double)sizeof(Hash_node) / 1024 / 1024 * hash_sizes[MAX_HASH_LEVEL];
-    std::cerr << "memory " << free_mb << " " << size_mb << std::endl;
-    while (free_mb <= size_mb && MAX_HASH_LEVEL > 26) {
-        --MAX_HASH_LEVEL;
-        size_mb = (double)sizeof(Hash_node) / 1024 / 1024 * hash_sizes[MAX_HASH_LEVEL];
+    if (has_memory_info) {
+        std::cerr << "memory " << free_mb << " " << size_mb << std::endl;
+        while (free_mb <= size_mb && MAX_HASH_LEVEL > 26) {
+            --MAX_HASH_LEVEL;
+            size_mb = (double)sizeof(Hash_node) / 1024 / 1024 * hash_sizes[MAX_HASH_LEVEL];
+        }
+    } else {
+        std::cerr << "memory info unavailable on Linux. skip hash-level auto clamp" << std::endl;
     }
     settings->hash_level = std::min(settings->hash_level, MAX_HASH_LEVEL);
     std::cerr << "max hash level " << MAX_HASH_LEVEL << std::endl;
