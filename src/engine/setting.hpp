@@ -220,6 +220,21 @@
     #else
         const std::string EXE_DIRECTORY_PATH = "./";
     #endif
+#elif __linux__
+    #include <filesystem>
+    #include <linux/limits.h>
+    #include <unistd.h>
+    inline std::string get_exe_directory_path_linux() {
+        char raw_path[PATH_MAX + 1] = {};
+        const ssize_t len = readlink("/proc/self/exe", raw_path, PATH_MAX);
+        if (len <= 0) {
+            return "./";
+        }
+        raw_path[len] = '\0';
+        std::filesystem::path binary_path(raw_path);
+        return binary_path.parent_path().string() + "/";
+    }
+    const std::string EXE_DIRECTORY_PATH = get_exe_directory_path_linux();
 #else // Windows
     const std::string EXE_DIRECTORY_PATH = "./";
 #endif
