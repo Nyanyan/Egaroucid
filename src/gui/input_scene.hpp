@@ -1109,7 +1109,11 @@ private:
         // Move the entire folder
         if (FileSystem::Exists(source_path) && !FileSystem::Exists(target_path)) {
             // Use system command for folder move (more reliable)
+#ifdef _WIN32
             std::string cmd = "move \"" + source_path.narrow() + "\" \"" + target_path.narrow() + "\"";
+#else
+            std::string cmd = "mv \"" + source_path.narrow() + "\" \"" + target_path.narrow() + "\"";
+#endif
             int result = system(cmd.c_str());
             
             if (result == 0) {
@@ -1176,7 +1180,11 @@ private:
         // Move the entire folder
         if (FileSystem::Exists(source_path) && !FileSystem::Exists(target_path)) {
             // Use system command for folder move (more reliable)
+#ifdef _WIN32
             std::string cmd = "move \"" + source_path.narrow() + "\" \"" + target_path.narrow() + "\"";
+#else
+            std::string cmd = "mv \"" + source_path.narrow() + "\" \"" + target_path.narrow() + "\"";
+#endif
             int result = system(cmd.c_str());
             
             if (result == 0) {
