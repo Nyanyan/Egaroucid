@@ -296,7 +296,11 @@ bool move_folder(const String& source_path, const String& target_parent_path, co
     }
     
     // Use system command for folder move
+#ifdef _WIN32
     std::string cmd = "move \"" + full_source.narrow() + "\" \"" + full_target.narrow() + "\"";
+#else
+    std::string cmd = "mv \"" + full_source.narrow() + "\" \"" + full_target.narrow() + "\"";
+#endif
     int result = system(cmd.c_str());
     
     if (result == 0) {

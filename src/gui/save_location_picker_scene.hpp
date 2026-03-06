@@ -315,7 +315,11 @@ private:
         }
         
         if (FileSystem::Exists(source_folder) && !FileSystem::Exists(target_full)) {
+#ifdef _WIN32
             std::string cmd = "move \"" + source_folder.narrow() + "\" \"" + target_full.narrow() + "\"";
+#else
+            std::string cmd = "mv \"" + source_folder.narrow() + "\" \"" + target_full.narrow() + "\"";
+#endif
             std::system(cmd.c_str());
             
             enumerate_save_dir();
