@@ -566,8 +566,9 @@ inline int calc_surround(uint64_t discs, uint64_t empties) {
 */
 inline int calc_pattern(const int phase_idx, Eval_search *eval) {
     int res = 0;
-    for (int i = 0; i < N_SYMMETRY_PATTERNS; ++i)
+    for (int i = 0; i < N_SYMMETRY_PATTERNS; ++i) {
         res += pattern_arr[eval->reversed[eval->feature_idx]][phase_idx][feature_to_pattern[i]][eval->features[eval->feature_idx][i]];
+    }
     if (eval_fm_loaded) {
         const size_t phase_linear_offset = (size_t)phase_idx * (size_t)N_PATTERN_PARAMS_RAW_FM;
         const size_t phase_factor_offset = (size_t)phase_idx * (size_t)N_PATTERN_PARAMS_RAW_FM * (size_t)EVAL_FM_DIM;
