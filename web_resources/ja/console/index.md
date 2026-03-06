@@ -43,30 +43,25 @@ CONSOLE_SOURCE_TABLE_HERE
 
 Macの場合、拡張属性によって実行できない不具合が発生することがあるので、Egaroucidフォルダ内すべての拡張属性を削除しておきます。このとき、フォルダの名前はバージョンによって変わります。
 
-
-
 <code>xattr -cr ./Egaroucid-console_vX.Y.Z</code>
-
-
 
 ディレクトリを移動します。
 
-
-
 <code>$ cd Egaroucid-console_vX.Y.Z</code>
 
+<code>cmake</code>でビルドします。まずは以下のコマンドを実行してください。
 
+<code>$ cmake -S . -B build -DCMAKE_CXX_COMPILER=clang++ [options]</code>
 
-<code>cmake</code>でビルドします。
-
-<code>$ cmake -S . -B build -DCMAKE_CXX_COMPILER=clang++　[options]</code>
-
-EgaroucidはClangでコンパイルした方が高速に動く場合が多いため、Clangでのコンパイルをおすすめします。GCCを使いたい場合は以下を入力してください。
+EgaroucidはClangでコンパイルした方が高速に動く場合が多いため、Clang++を指定しています。デフォルトのコンパイラを使いたい場合は以下を入力してください。
 
 <code>$ cmake -S . -B build [options]</code>
 
+Windows環境では<code>-DCMAKE_CXX_COMPILER</code>オプションが無視されることがあります。特にデフォルトのコンパイラとしてMSVCが選択されるとエラーが出るため、以下のコマンドでClang++を使うように強制してください。
 
-このとき、<code>[options]</code>には以下のオプションを入れられます。
+<code>$ cmake -S . -B build -G "MinGW Makefiles" -DCMAKE_CXX_COMPILER=clang++ [options]</code>
+
+なお、<code>[options]</code>には以下のオプションを入れられます。
 
 
 
