@@ -3,7 +3,6 @@ cmake_minimum_required(VERSION 3.25)
 
 # GUI build option for Linux (requires Siv3D to be installed)
 option(BUILD_GUI "Build GUI version (requires Siv3D)" OFF)
-
 if(BUILD_GUI)
     project(Egaroucid CXX)
 else()
