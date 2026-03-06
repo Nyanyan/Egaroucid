@@ -1,5 +1,7 @@
 # Egaroucid Download
 
+**This page is a machine translation of the [Japanese version](https://www.egaroucid.nyanyan.dev/ja/download/) for official content. Please refer to the Japanese version for the official content.**
+
 There are Install version and Portable version. With Install version, you should just download the installer and execute it to install. Installer automatically selects the optimal revision for your environment. With Portable version, you should download a zip file and unzip it.
 
 
@@ -68,10 +70,9 @@ Egaroucid can be built by yourself. You can use detailed optimization options to
 
 You need:
 
-<ul>
-    <li>[Visual Studio](https://visualstudio.microsoft.com/en/vs/community/)</li>
-    <li>[Siv3D](https://siv3d.github.io/en-us/)</li>
-</ul>
+- [Visual Studio](https://visualstudio.microsoft.com/en/vs/community/)
+- [Siv3D](https://siv3d.github.io/en-us/)
+
 
 Download the source code of Egaroucid below
 
@@ -88,11 +89,22 @@ Egaroucid's source codes are in <code>src/engine</code> (for AI calculation) and
 
 ### Mac
 
-To Be Done
+Compilation of the Mac version is now possible thanks to a GitHub contributor. Detailed steps will be added later.
 
 ### Linux
 
-To Be Done
+Compilation of the Linux version is now possible thanks to a GitHub contributor.
+
+You can build with the `cmake` command by adding the `-DBUILD_GUI=ON` option. It has been confirmed to work on ArchLinux with g++ 15.2.1 and clang 17.0.6.
+
+- Users build and install OpenSiv3D by themselves. Refer to the description on the [Siv3D official website](https://siv3d.github.io/en-us/download/ubuntu/) for the method.
+- git clone Egaroucid
+- ```cmake -S . -B build -DBUILD_GUI=ON```
+- ```cmake --build build```
+
+For other cmake options, please refer to the [Console version build method](./../console/).
+
+
 
 
 
