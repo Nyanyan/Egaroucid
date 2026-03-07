@@ -1,5 +1,7 @@
 # Egaroucid for Console
 
+**This page is a machine translation of the [Japanese version](https://www.egaroucid.nyanyan.dev/ja/console/) for official content. Please refer to the Japanese version for the official content.**
+
 Operations differ depending on your OS. This software is for Windows, Linux and MacOS.
 
 
@@ -14,7 +16,7 @@ Please download a zip file that is suitable to your environment, and unzip where
 
 
 
-Egaroucid is optimized to SIMD version, which requires AVX2  instructions, but old CPUs (created in 2013 or older) might not be able  to run it. If so, please install Generic version. If you have a CPU that have AVX-512 extensions, AVX512 edition may be faster.
+Egaroucid is optimized to SIMD version, which requires AVX2 instructions, but old CPUs (created in 2013 or older) might not be able to run it. If so, please install Generic version. If you have a CPU that have AVX-512 extensions, AVX512 edition may be faster.
 
 
 
@@ -56,15 +58,27 @@ Change directory.
 
 
 
-Then use <code>cmake</code> command to build.
+Then use <code>cmake</code> command to build. First, please execute the command below.
 
 
 
-<code>$ cmake -S . -B build -DCMAKE_CXX_COMPILER=clang++　[options]</code>
+<code>$ cmake -S . -B build -DCMAKE_CXX_COMPILER=clang++ [options]</code>
 
-Egaroucid is faster when compiled with Clang, so I recommend you to use it. If you want to use GCC, please build with:
+
+
+Egaroucid is often faster when compiled with Clang, so Clang++ is specified. If you want to use the default compiler, please type:
+
+
 
 <code>$ cmake -S . -B build [options]</code>
+
+
+
+In Windows environment, the <code>-DCMAKE_CXX_COMPILER</code> option might be ignored. Especially if MSVC is selected as the default compiler, an error will occur, so please use the following command to force Clang++.
+
+
+
+<code>$ cmake -S . -B build -G "MinGW Makefiles" -DCMAKE_CXX_COMPILER=clang++ [options]</code>
 
 
 
@@ -248,7 +262,7 @@ Egaroucid for Console uses some external files. If you've got a trouble, please 
 
 ## About Changing Book Format
 
-Book format is changed in Egaroucid for Console 6.3.0. The new book's filename extension is ```.egbk2``` and it uses ```resources/book.egbk2``` as default book, but you can also use old book, which extension is ```.egbk```. If you want to use another book or old book, you can execute like this: ```Egaroucid_for_Console.exe -book [Book File]```.
+Egaroucid for Console has changed the book format since version 7.0.0. The extension of the new book is ```.egbk3```, and it loads ```resources/book.egbk3``` by default, but it can also load old ```.egbk``` and ```.egbk2``` format books. If you want to use a book other than the standard one or an old book, please start it with ```Egaroucid_for_Console.exe -book [book file name]```.
 
 
 

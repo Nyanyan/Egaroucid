@@ -29,7 +29,9 @@ Egaroucidのソースコードです
 
 ### Egaroucid
 
-Windowsでのビルドを想定しています。
+Windows、MaxOS、Linuxでビルドできます。
+
+#### Windows
 
 * 必要なものを準備する
 
@@ -43,6 +45,21 @@ Windowsでのビルドを想定しています。
     * ```engine```
     * ```gui```
   * C++17以上でビルドする必要がある
+
+#### MacOS
+
+GitHubコントリビューターによってMac版のコンパイルが可能になりました。詳細な手順はそのうち追記します。
+
+#### Linux
+
+GitHubコントリビューターによってLinux版のコンパイルが可能になりました。
+
+cmakeコマンドで、```-DBUILD_GUI=ON```オプションをつけてビルドことができます。ArchLinux環境にて、g++ 15.2.1,  clang 17.0.6で動作を確認済みとのことです。
+
+- ユーザが自分でOpenSiv3Dをビルドしてインストールする。方法は[Siv3D公式サイト](https://siv3d.github.io/ja-jp/download/ubuntu/)の記述を参照のこと
+- Egaroucidをgit cloneする
+- ```cmake -S . -B build -DBUILD_GUI=ON```
+- ```cmake --build build```
 
 ### Egaroucid for Console
 

@@ -1248,10 +1248,10 @@ private:
         for (int i = 0; i < (int)getData().resources.language_names.size(); ++i) {
             if (getData().menu_elements.languages[i]) {
                 if (getData().settings.lang_name != getData().resources.language_names[i]) {
-                    std::string lang_file = "resources/languages/" + getData().resources.language_names[i] + ".json";
+                    std::string lang_file = EXE_DIRECTORY_PATH + "resources/languages/" + getData().resources.language_names[i] + ".json";
                     if (!language.init(lang_file)) {
                         std::cerr << "language setting error" << std::endl;
-                        lang_file = "resources/languages/" + getData().settings.lang_name + ".json";
+                        lang_file = EXE_DIRECTORY_PATH + "resources/languages/" + getData().settings.lang_name + ".json";
                         language.init(lang_file);
                     }
                     if (!opening_init(getData().resources.language_names[i])) {

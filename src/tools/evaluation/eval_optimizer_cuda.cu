@@ -362,12 +362,12 @@ __global__ void adam(const int phase, const int eval_size, double *device_eval_a
         device_m_arr[eval_idx] += (1.0 - beta1) * (grad - device_m_arr[eval_idx]);
         device_v_arr[eval_idx] += (1.0 - beta2) * (grad * grad - device_v_arr[eval_idx]);
         device_eval_arr[eval_idx] += lrt * device_m_arr[eval_idx] / (sqrt(device_v_arr[eval_idx]) + epsilon);
-        if (device_eval_arr[eval_idx] > ADJ_EVAL_PARAM_MAX) {
-            device_eval_arr[eval_idx] = ADJ_EVAL_PARAM_MAX;
-        }
-        if (device_eval_arr[eval_idx] < -ADJ_EVAL_PARAM_MAX) {
-            device_eval_arr[eval_idx] = -ADJ_EVAL_PARAM_MAX;
-        }
+        // if (device_eval_arr[eval_idx] > ADJ_EVAL_PARAM_MAX) {
+        //     device_eval_arr[eval_idx] = ADJ_EVAL_PARAM_MAX;
+        // }
+        // if (device_eval_arr[eval_idx] < -ADJ_EVAL_PARAM_MAX) {
+        //     device_eval_arr[eval_idx] = -ADJ_EVAL_PARAM_MAX;
+        // }
     }
     device_residual_arr[eval_idx] = 0.0;
 }

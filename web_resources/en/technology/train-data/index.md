@@ -18,19 +18,20 @@ Author: Takuto Yamana ( [https://nyanyan.dev/en/](https://nyanyan.dev/en/) )
 
 ## Terms of Service
 
-<ul>
-    <li>You can use this data freely in your activities, such as creating an evaluation function of Othello.
-        <ul>
-            <li>If you used this data and you thought very useful, I, Takuto Yamana, would be very pleased if you told me that, or you wrote something like "I used Egaroucid's self-play data for training my Othello AI".</li>
-        </ul>
-    </li>
-    <li>I am not responsible for any damage caused by using this data. Please use at your own risk.</li>
-    <li>Redistribution of this data is prohibited.
-        <ul>
-            <li>Please advertise Egaroucid's website or GitHub if you would like to promote.</li>
-        </ul>
-    </li>
-</ul>
+- You can use this data freely in your activities, such as creating an evaluation function of Othello.
+  - If you used this data and you thought very useful, I, Takuto Yamana, would be very pleased if you told me that, or you wrote something like "I used Egaroucid's self-play data for training my Othello AI".
+- I am not responsible for any damage caused by using this data. Please use at your own risk.
+- Redistribution of this data is prohibited.
+  - Please advertise Egaroucid's website or GitHub if you would like to promote.
+
+
+## Citation
+
+We welcome the use of this training data in papers and other publications.
+
+When citing this data, please use the following format as a reference, or adjust it to fit the citation format of your publication.
+
+```Yamana, Takuto.: Egaroucid Free Training Data, https://www.egaroucid.nyanyan.dev/en/technology/train-data/```
 
 
 ## Training Data by Egaroucid 7.4.0 lv.17 & 7.5.1 lv.17

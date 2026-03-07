@@ -1,5 +1,7 @@
 # Othello AI Egaroucid
 
+**This page is a machine translation of the [Japanese version](https://www.egaroucid.nyanyan.dev/ja/). Please refer to the Japanese version for the official content.**
+
 <div style="text-align:center">Othello Application with one of the strongest AI in the world</div>
 
 
@@ -45,39 +47,27 @@ Completely free software. Egaroucid and Egaroucid for Console use the same (stro
 
 ## Competitive Results
 
-<ul>
-    <li>Othello AI Tournament Champion @[Generic Game Server](https://skatgame.net/mburo/ggs/) (2024/12/08)</li>
-    <li>[CodinGame Othello](https://www.codingame.com/multiplayer/bot-programming/othello-1) World Champion (2021/11/22, 2023/09/08, 2025/02/01)</li>
-</ul>
-
-
-
+- Runner-up in Othello AI Tournament @[Generic Game Server](https://skatgame.net/mburo/ggs/) (2025/11/01)
+- Othello AI Tournament Champion @[Generic Game Server](https://skatgame.net/mburo/ggs/) (2024/12/08)
+- [CodinGame Othello](https://www.codingame.com/multiplayer/bot-programming/othello-1) World Champion (2021/11/22, 2023/09/08, 2025/02/01)
 
 
 ## Features
 
-<ul>
-    <li>Accurate and fast evaluation function</li>
-    <li>Fast search</li>
-    <li>Play against AI
-        <ul>
-            <li>on Egaroucid's GUI</li>
-            <li>on other GUI with Go Text Protocol (GTP) (Egaroucid for Console)
-				<ul>
-                    <li>GoGui</li>
-                    <li>Quarry</li>
-                </ul>
-            </li>
-        </ul>
-    </li>
-    <li>Analyze a game</li>
-    <li>See evaluation values</li>
-    <li>Input and Output in several formats</li>
-    <li>Create / Modify book automatically / manually</li>
-    <li>Add Egaroucid's / Edax's book</li>
-    <li>Show opening name</li>
-    <li>Beautiful GUI powered by [Siv3D](https://siv3d.github.io/)</li>
-</ul>
+- Accurate and fast evaluation function
+- Fast search
+- Play against AI
+  - on Egaroucid's GUI
+  - on other GUI with Go Text Protocol (GTP) (Egaroucid for Console)
+    - GoGui
+    - Quarry
+- Analyze a game
+- See evaluation values
+- Input and Output in several formats
+- Create / Modify book automatically / manually
+- Add Egaroucid's / Edax's book
+- Show opening name
+- Beautiful GUI powered by [Siv3D](https://siv3d.github.io/)
 
 
 ## How to Install Egaroucid
@@ -100,18 +90,39 @@ You don't need to do anything special. Please just visit [Egaroucid for Web page
 
 There are some official documents of Egaroucid written in Japanese. Please translate it by yourself.
 
-<ul>
-    <li>[How to Use Egaroucid](./usage/): Explains how to use the software one by one</li>
-    <li>[Book Usage](./usage/book/): Explains how to use Egaroucid's book</li>
-    <li>[Technology Explanation](./technology/explanation/): Technical explanation for Othello AI programmers</li>
-</ul>
+- [How to Use Egaroucid](./usage/): Explains how to use the software one by one
+- [Book Usage](./usage/book/): Explains how to use Egaroucid's book
+- [Technology Explanation](./technology/explanation/): Technical explanation for Othello AI programmers
 
 
 
 ## Articles that introduce Egaroucid
-<ul>
-    <li>[Egaroucid: An Othello app review](https://www.worldothello.org/news/354/egaroucid-an-othello-app-review): Review of Egaroucid by World Othello Federation</li>
-</ul>
+
+- [The university student who created the world's strongest "Othello AI" - The starting point of creation was "a single picture book"](https://web.quizknock.com/othello-ai): Detailed introduction by QuizKnock Web media
+- [Egaroucid: An Othello app review](https://www.worldothello.org/news/354/egaroucid-an-othello-app-review): Review of Egaroucid by World Othello Federation
+
+
+
+## Other Documents
+
+Other materials related to Egaroucid. Mostly for reading. (Available in Japanese only)
+
+- [How I became World No. 1 in Othello AI and completely understood Othello AI](https://qiita.com/Nyanyan_Cube/items/195bdc47bb1d7c6f8b24): The story of how I reached No. 1 in a contest at the beginning of Othello AI development
+- [How I won the Othello AI World Championship](https://qiita.com/Nyanyan_Cube/items/e104595c48e6ac67475b): The story of how I won an Othello AI tournament with few restrictions. After 3 years, I have almost reached the "true world's strongest" Othello AI I wrote about in my previous post.
+- [Everyone, just build an Othello AI](https://qiita.com/Nyanyan_Cube/items/1839732d7bdf74caff21): Explains the benefits of building an Othello AI
+- [Othello AI Textbook](https://note.com/nyanyan_cubetech/m/m54104c8d2f12): A magazine explaining Othello AI production from scratch. Completely free. Sample code is also available. These are somewhat old articles, so I hope to update them soon...
+- [How the World No. 1 Othello AI creator made the weakest Othello AI (Story)](https://note.com/nyanyan_cubetech/n/n2674dd6f5973): The story of creating the weakest Othello AI, [Egaroucen](https://www.egaroucen.nyanyan.dev/) (the weakest in the world according to my own research)
+- [How the World No. 1 Othello AI creator made the weakest Othello AI (Technical)](https://qiita.com/Nyanyan_Cube/items/43d8627539c73459635c): Technical explanation of the weakest Othello AI, [Egaroucen](https://www.egaroucen.nyanyan.dev/)
+- [How I made my first app by turning the World No. 1 Othello AI into software with Siv3D](https://qiita.com/Nyanyan_Cube/items/bfb2bc3ba7a93c83f2d1): The story of releasing the Othello AI as a software that actually works on the screen
+
+
+### Materials about Othello is Solved
+
+On October 30, 2023, a paper titled [Othello is Solved](https://doi.org/10.48550/arXiv.2310.19387) was posted to arXiv. I am not the author of this paper, but since it is in my specialty, I read it and wrote a commentary on it. It is not directly related to Egaroucid, but my experience in developing Egaroucid was helpful in understanding the paper, so I will introduce it here. It is probably the most accurate and detailed explanation available in Japanese.
+
+- [Othello is Solved (Hiroki Takizawa)](https://doi.org/10.48550/arXiv.2310.19387): Original paper (English).
+- [Let's make it clear whether "Othello is Solved" or not](https://note.com/ipsj/n/n86f6dbfbfc7a): An article written as a special commentary in the journal of the Information Processing Society of Japan (IPSJ). I summarized the paper's commentary briefly.
+- [Commentary on the Othello is Solved Paper (Personal View)](https://qiita.com/Nyanyan_Cube/items/a373da3157cdd117afcc): A long text of 17,000 characters, explaining the paper in detail.
 
 
 
@@ -120,13 +131,11 @@ There are some official documents of Egaroucid written in Japanese. Please trans
 
 Via this [Google form](https://docs.google.com/forms/d/e/1FAIpQLSd6ML1T1fc707luPEefBXuImMnlM9cQP8j-YHKiSyFoS-8rmQ/viewform), you can send me messages such as:
 
-<ul>
-    <li>I found a bug!</li>
-    <li>I want to use Egaroucid in my language!</li>
-    <li>I want some new functions!</li>
-    <li>I have a good idea to improve!</li>
-    <li>I want to participate in user tests!</li>
-</ul>
+- I found a bug!
+- I want to use Egaroucid in my language!
+- I want some new functions!
+- I have a good idea to improve!
+- I want to participate in user tests!
 
 I would like to hear your voice! Please contact me freely!
 
@@ -144,84 +153,69 @@ You can use Egaroucid freely under GPL-3.0 license. If you worry about GPL-infec
 
 
 
+If you use Egaroucid, I would be happy to receive a report (not mandatory).
+
+
+
+## Citation
+
+We welcome the use of Egaroucid in papers and other publications.
+
+When citing Egaroucid, please use the following format as a reference, or adjust it to fit the citation format of your publication.
+
+```Yamana, Takuto.: Egaroucid, https://www.egaroucid.nyanyan.dev/```
+
+
 ## Acknowledgements
 
-I would like to thank these people for great contributions.
+I would like to thank these people for great contributions (in no particular order, titles omitted).
 
-<ul>
-    <li>UI Design
-        <ul>
-            <li>Kaneko Eizo</li>
-        </ul>
-    </li>
-    <li>Technical Contribution / [GitHub Contribution](https://github.com/Nyanyan/Egaroucid/graphs/contributors)
-        <ul>
-            <li>Toshihiko Okuhara</li>
-            <li>Hayato Sasakura</li>
-            <li>acepck</li>
-            <li>HiraokaTakuya</li>
-            <li>Ben Stokmans</li>
-            <li>seigot</li>
-        </ul>
-    </li>
-    <li>Translation
-        <ul>
-            <li>ZhangHengge (Simplified Chinese)</li>
-            <li>YuYutw123 (Traditional Chinese (Taiwan))</li>
-        </ul>
-    </li>
-    <li>Technical Advice
-        <ul>
-            <li>Jon Marc Hornstein</li>
-        </ul>
-    </li>
-    <li>Opening names Organize / Provision
-        <ul>
-            <li>Kyrin</li>
-            <li>Wanryu</li>
-            <li>Uenon</li>
-            <li>Matthias Berg</li>
-        </ul>
-    </li>
-    <li>Book Provision
-        <ul>
-            <li>Gunnar Andersson</li>
-        </ul>
-    </li>
-    <li>User Test
-        <ul>
-            <li>Ben Seeley</li>
-            <li>Wanryu</li>
-            <li>OGA NAO</li>
-            <li>Satoshi Kurahashi</li>
-            <li>Taiki Demoto</li>
-            <li>Mathica</li>
-            <li>Nettle</li>
-            <li>okojoMK</li>
-            <li>Takada Seigo</li>
-            <li>madaranuko</li>
-            <li>Nagano Yasushi</li>
-            <li>trineutron</li>
-            <li>Kuruton</li>
-        </ul>
-    </li>
-</ul>
-
-
-
-
+- UI Design
+  - Kaneko Eizo
+- Technical Contribution / [GitHub Contribution](https://github.com/Nyanyan/Egaroucid/graphs/contributors)
+  - Toshihiko Okuhara
+  - Hayato Sasakura
+  - acepck
+  - Sotaro Ishii
+  - HiraokaTakuya
+  - Ben Stokmans
+  - seigot
+- Translation
+  - ZhangHengge (Simplified Chinese)
+  - YuYutw123 (Traditional Chinese (Taiwan))
+- Technical Advice
+  - Jon Marc Hornstein
+- Opening names Organize / Provision
+  - Kyrin
+  - Wanryu
+  - Uenon
+  - Matthias Berg
+- Book Provision
+  - Gunnar Andersson
+- User Test
+  - Ben Seeley
+  - Wanryu
+  - OGA NAO
+  - Satoshi Kurahashi
+  - Taiki Demoto
+  - Mathica
+  - Nettle
+  - okojoMK
+  - Takada Seigo
+  - madaranuko
+  - Nagano Yasushi
+  - trineutron
+  - Kuruton
 
 
 
 
 ## Links
 
-<ul>
-    <li>[Egaroucid GitHub Repository](https://github.com/Nyanyan/Egaroucid)</li>
-	<li>[The Weakest Othello AI](https://www.egaroucen.nyanyan.dev/)</li>
-    <li>[My Website](https://nyanyan.dev/en/)</li>
-    <li>[My Twitter](https://twitter.com/takuto_yamana)</li>
-</ul>
+- [Egaroucid GitHub Repository](https://github.com/Nyanyan/Egaroucid)
+- [The Weakest Othello AI](https://www.egaroucen.nyanyan.dev/)
+- [My Website](https://nyanyan.dev/en/)
+- [My Twitter](https://twitter.com/takuto_yamana)
 
 
 ## Third-Party Links
@@ -240,6 +234,8 @@ These are works developed by third parties using Egaroucid or Egaroucid's traini
 
 
 
+
+
 ## Other Othello AIs
 
 Recent great Othello AIs:
@@ -254,13 +250,6 @@ Recent great Othello AIs:
 
 
 
-
-
 ## Creator
 
 [Takuto Yamana](https://nyanyan.dev/en/)
-
-
-
-
-
