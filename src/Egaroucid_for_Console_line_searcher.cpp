@@ -173,7 +173,7 @@ int main(int argc, char* argv[]) {
 
     
     std::string initial_line = "f5d6c3d3c4f4f6"; // stephenson
-    int n_max_moves = 19;
+    int n_max_moves = 21;
     int search_level = 15;
     int black_score_min = -6;
     int black_score_max = 0;
