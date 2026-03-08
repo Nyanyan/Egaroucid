@@ -9,6 +9,7 @@
 */
 #include <iostream>
 #include <fstream>
+#include <algorithm>
 #include "engine/engine_all.hpp"
 #include "console/console_all.hpp"
 
@@ -43,16 +44,47 @@ void init_console(Options options, std::string binary_path) {
         std::cerr << "initialized" << std::endl;
 }
 
-void search_lines(Board &board, int depth, int player, int black_score_min, int black_score_max, std::vector<int> &line, int last_move_player, std::vector<int> &last_move_cells) {
-    // TBD:
-    // 0. depth <= 0ならreturn
-    // 1. boardから打てる手を列挙し、全部打ってみる
-    //   a. 打てる手がなかったらパスし、player ^= 1
-    // 2. 各局面での評価値が黒目線で見た時[black_score_min, black_score_max]に収まるかを判定し、収まる手だけを残す
-    // 3. 各条件に合致した局面に対して、以下を行う:
-    //   a. line.emplace_back(その手)
-    //   b. もし、条件に合致した手がlast_move_cellsの中に存在し、player == last_move_playerであれば、lineを棋譜形式にしたものをstd::coutする
-    //   c. そうでなければ、search_lines(その手を打ったあとのボード、depth - 1, hogehoge...)
+void search_lines(Board &board, int player, int depth, int black_score_min, int black_score_max, std::vector<int> &line, int last_move_player, std::vector<int> &last_move_cells, int level = 21) {
+    if (depth <= 0) {
+        return;
+    }
+
+    Board root = board.copy();
+    int root_player = player;
+    uint64_t legal = root.get_legal();
+    if (legal == 0ULL) {
+        root.pass();
+        root_player ^= 1;
+        legal = root.get_legal();
+        if (legal == 0ULL) {
+            return;
+        }
+    }
+
+    for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)) {
+        Flip flip;
+        calc_flip(&flip, &root, cell);
+        Board next_board = root.move_copy(&flip);
+        int next_player = root_player ^ 1;
+
+        int value = ai(next_board, level, false, 0, false, false).value;
+        int black_value = (next_player == BLACK) ? value : -value;
+        if (black_value < black_score_min || black_score_max < black_value) {
+            continue;
+        }
+
+        line.emplace_back(cell);
+        if (root_player == last_move_player && std::find(last_move_cells.begin(), last_move_cells.end(), cell) != last_move_cells.end()) {
+            std::string transcript;
+            for (const int &coord: line) {
+                transcript += idx_to_coord(coord);
+            }
+            std::cout << transcript << std::endl;
+        } else {
+            search_lines(next_board, next_player, depth - 1, black_score_min, black_score_max, line, last_move_player, last_move_cells, level);
+        }
+        line.pop_back();
+    }
 }
 
 int main(int argc, char* argv[]) {
@@ -99,6 +131,7 @@ int main(int argc, char* argv[]) {
     
     std::string initial_line = "f5d6";
     int n_max_moves = 10;
+    int search_level = 21;
     int black_score_min = -6;
     int black_score_max = 0;
     int last_move_player = BLACK;
@@ -108,13 +141,32 @@ int main(int argc, char* argv[]) {
     for (int i = 0; i < initial_line.size(); i += 2) {
         initial_line_vec.emplace_back(get_coord_from_chars(initial_line[i], initial_line[i + 1]));
     }
-    Board board;
-    board.reset();
+    Board search_board;
+    search_board.reset();
     int player = BLACK;
-    // TBD: initial lineを打ったあとの局面を生成する
-    // 打つごとに(パスがあればパスでも)player ^= 1する。
+    Flip flip;
+    for (const int &coord: initial_line_vec) {
+        uint64_t legal = search_board.get_legal();
+        if (legal == 0ULL) {
+            search_board.pass();
+            player ^= 1;
+            legal = search_board.get_legal();
+            if (legal == 0ULL) {
+                std::cerr << "[ERROR] game over before initial line is fully applied" << std::endl;
+                std::exit(1);
+            }
+        }
+        if ((legal & (1ULL << coord)) == 0ULL) {
+            std::cerr << "[ERROR] illegal move in initial line: " << idx_to_coord(coord) << std::endl;
+            std::exit(1);
+        }
+        calc_flip(&flip, &search_board, coord);
+        search_board.move_board(&flip);
+        player ^= 1;
+    }
+
     int n_initial_moves = initial_line_vec.size();
-    search_lines(board, player, n_max_moves - n_initial_moves, black_score_min, black_score_max, initial_line_vec, last_move_player, last_move_cells);
+    search_lines(search_board, player, n_max_moves - n_initial_moves, black_score_min, black_score_max, initial_line_vec, last_move_player, last_move_cells, search_level);
 
 
     while (true) {
