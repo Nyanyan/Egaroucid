@@ -10,7 +10,7 @@
 #include <iostream>
 #include <fstream>
 #include <algorithm>
-#include <unordered_set>
+#include <unordered_map>
 #include "engine/engine_all.hpp"
 #include "console/console_all.hpp"
 
@@ -45,7 +45,7 @@ void init_console(Options options, std::string binary_path) {
         std::cerr << "initialized" << std::endl;
 }
 
-void search_lines(Board &board, int player, int depth, int black_score_min, int black_score_max, std::vector<int> &line, int last_move_player, std::vector<int> &last_move_cells, std::unordered_set<Board, Book_hash> &ok_board_memo, int level = 21) {
+void search_lines(Board &board, int player, int depth, int black_score_min, int black_score_max, std::vector<int> &line, int last_move_player, std::vector<int> &last_move_cells, std::unordered_map<Board, uint64_t, Book_hash> &ok_board_memo, int level = 21) {
     if (depth <= 0) {
         return;
     }
@@ -77,16 +77,35 @@ void search_lines(Board &board, int player, int depth, int black_score_min, int 
         }
     }
 
-    for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)) {
-        Flip flip;
-        calc_flip(&flip, &board, cell);
-        board.move_board(&flip);
-        int next_player = player ^ 1;
-
-            bool is_ok = false;
-            if (ok_board_memo.find(board) != ok_board_memo.end()) {
-                is_ok = true;
-            } else {
+    auto memo = ok_board_memo.find(board);
+    if (memo != ok_board_memo.end()) {
+        uint64_t ok_bits = memo->second;
+        for (uint_fast8_t cell = first_bit(&ok_bits); ok_bits; cell = next_bit(&ok_bits)) {
+            Flip flip;
+            calc_flip(&flip, &board, cell);
+            board.move_board(&flip);
+            int next_player = player ^ 1;
+            line.emplace_back(cell);
+                if (player == last_move_player && std::find(last_move_cells.begin(), last_move_cells.end(), cell) != last_move_cells.end()) {
+                    std::string transcript;
+                    for (const int &coord: line) {
+                        transcript += idx_to_coord(coord);
+                    }
+                    std::cout << transcript << std::endl;
+                    std::cerr << transcript << std::endl;
+                } else {
+                    search_lines(board, next_player, depth - 1, black_score_min, black_score_max, line, last_move_player, last_move_cells, ok_board_memo, level);
+                }
+            line.pop_back();
+            board.undo_board(&flip);
+        }
+    } else {
+        uint64_t ok_bits = 0;
+        for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)) {
+            Flip flip;
+            calc_flip(&flip, &board, cell);
+            board.move_board(&flip);
+            int next_player = player ^ 1;
                 int alpha = black_score_min - 1;
                 int beta = black_score_max + 1;
                 if (next_player != BLACK) {
@@ -98,41 +117,28 @@ void search_lines(Board &board, int player, int depth, int black_score_min, int 
                 // int value = ai_window_legal(board, alpha, beta, level, true, 0, true, false, board.get_legal()).value;
                 int value = ai_window(board, alpha, beta, level, true, 0, true, false).value;
                 // int value = ai(board, level, true, 0, true, false).value;
-                is_ok = alpha < value && value < beta;
+                bool is_ok = alpha < value && value < beta;
                 if (is_ok) {
-                    ok_board_memo.insert(board.copy());
-                }
-            }
-            
-            // std::string transcript;
-            // for (const int &coord: line) {
-            //     transcript += idx_to_coord(coord);
-            // }
-            // transcript += idx_to_coord(cell);
-            // std::cout << transcript << " ok?:" << is_ok << " [" << alpha << ", " << beta << "] " << value << std::endl;
-            
-            if (is_ok) {
-                line.emplace_back(cell);
-                    // std::string transcript;
-                    // for (const int &coord: line) {
-                    //     transcript += idx_to_coord(coord);
-                    // }
-                    // std::cout << transcript << std::endl;
-                    if (player == last_move_player && std::find(last_move_cells.begin(), last_move_cells.end(), cell) != last_move_cells.end()) {
-                        std::string transcript;
-                        for (const int &coord: line) {
-                            transcript += idx_to_coord(coord);
+                    ok_bits |= 1ULL << cell;
+                    line.emplace_back(cell);
+                        if (player == last_move_player && std::find(last_move_cells.begin(), last_move_cells.end(), cell) != last_move_cells.end()) {
+                            std::string transcript;
+                            for (const int &coord: line) {
+                                transcript += idx_to_coord(coord);
+                            }
+                            std::cout << transcript << std::endl;
+                            std::cerr << transcript << std::endl;
+                        } else {
+                            search_lines(board, next_player, depth - 1, black_score_min, black_score_max, line, last_move_player, last_move_cells, ok_board_memo, level);
                         }
-                        std::cout << transcript << std::endl;
-                        std::cerr << transcript << std::endl;
-                    } else {
-                        search_lines(board, next_player, depth - 1, black_score_min, black_score_max, line, last_move_player, last_move_cells, ok_board_memo, level);
-                    }
-                line.pop_back();
-            }
-
-        board.undo_board(&flip);
+                    line.pop_back();
+                }
+            board.undo_board(&flip);
+        }
+        ok_board_memo[board] = ok_bits;
     }
+
+    
 
     if (passed) {
         board.pass();
@@ -239,7 +245,7 @@ int main(int argc, char* argv[]) {
     }
     std::cout << std::endl;
 
-    std::unordered_set<Board, Book_hash> ok_board_memo;
+    std::unordered_map<Board, uint64_t, Book_hash> ok_board_memo;
     for (int n_max_moves_itr = n_max_moves % 2; n_max_moves_itr <= n_max_moves; n_max_moves_itr += 2) {
         std::cout << "search until move " << n_max_moves_itr << std::endl;
         std::cerr << "search until move " << n_max_moves_itr << std::endl;
