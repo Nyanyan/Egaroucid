@@ -66,7 +66,7 @@ void search_lines(Board &board, int player, int depth, int black_score_min, int 
         }
     }
 
-    if (depth == 1) {
+    if (depth <= 1 && player == last_move_player) {
         uint64_t last_move_bits = 0;
         for (const int &cell: last_move_cells) {
             last_move_bits |= 1ULL << cell;
