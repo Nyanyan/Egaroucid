@@ -209,6 +209,25 @@ int main(int argc, char* argv[]) {
     }
 
     int n_initial_moves = initial_line_vec.size();
+
+
+    std::cout << "[search params]" << std::endl;
+    std::cout << "initial_line=" << initial_line << std::endl;
+    std::cout << "initial_line_moves=" << n_initial_moves << std::endl;
+    std::cout << "n_max_moves=" << n_max_moves << std::endl;
+    std::cout << "search_level=" << search_level << std::endl;
+    std::cout << "black_score_range=[" << black_score_min << ", " << black_score_max << "]" << std::endl;
+    std::cout << "last_move_player=" << (last_move_player == BLACK ? "BLACK" : "WHITE") << std::endl;
+    std::cout << "search_start_player=" << (player == BLACK ? "BLACK" : "WHITE") << std::endl;
+    std::cout << "last_move_cells=";
+    for (int i = 0; i < (int)last_move_cells.size(); ++i) {
+        if (i) {
+            std::cout << ",";
+        }
+        std::cout << idx_to_coord(last_move_cells[i]);
+    }
+    std::cout << std::endl;
+
     for (int n_max_moves_itr = n_max_moves % 2; n_max_moves_itr <= n_max_moves; n_max_moves_itr += 2) {
         std::cout << "search until move " << n_max_moves_itr << std::endl;
         uint64_t strt = tim();
