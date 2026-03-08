@@ -124,6 +124,7 @@ void search_lines(Board &board, int player, int depth, int black_score_min, int 
                             transcript += idx_to_coord(coord);
                         }
                         std::cout << transcript << std::endl;
+                        std::cerr << transcript << std::endl;
                     } else {
                         search_lines(board, next_player, depth - 1, black_score_min, black_score_max, line, last_move_player, last_move_cells, ok_board_memo, level);
                     }
@@ -181,7 +182,8 @@ int main(int argc, char* argv[]) {
     // }
 
     
-    std::string initial_line = "f5d6c3d3c4f4f6"; // stephenson
+    // std::string initial_line = "f5d6c3d3c4f4f6"; // stephenson
+    std::string initial_line = "f5f6e6d6e7"; // tobidashi
     int n_max_moves = 20;
     int search_level = 11;
     int black_score_min = -6;
@@ -240,12 +242,14 @@ int main(int argc, char* argv[]) {
     std::unordered_set<Board, Book_hash> ok_board_memo;
     for (int n_max_moves_itr = n_max_moves % 2; n_max_moves_itr <= n_max_moves; n_max_moves_itr += 2) {
         std::cout << "search until move " << n_max_moves_itr << std::endl;
+        std::cerr << "search until move " << n_max_moves_itr << std::endl;
         uint64_t strt = tim();
         search_lines(search_board, player, n_max_moves_itr - n_initial_moves, black_score_min, black_score_max, initial_line_vec, last_move_player, last_move_cells, ok_board_memo, search_level);
-        std::cout << "searched until move " << n_max_moves_itr << " elapsed " << tim() - strt << " ms"
-                  << " memo_size=" << ok_board_memo.size() << std::endl;
+        std::cout << "searched until move " << n_max_moves_itr << " elapsed " << tim() - strt << " ms" << " memo_size=" << ok_board_memo.size() << std::endl;
+        std::cerr << "searched until move " << n_max_moves_itr << " elapsed " << tim() - strt << " ms" << " memo_size=" << ok_board_memo.size() << std::endl;
     }
     std::cout << "done!" << std::endl;
+    std::cerr << "done!" << std::endl;
     return 0;
 
 
