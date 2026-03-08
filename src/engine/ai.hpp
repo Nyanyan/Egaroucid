@@ -691,6 +691,7 @@ Search_result ai_common(Board board, int alpha, int beta, int level, bool use_bo
             res.probability = 100;
         }
     } else { // no move in book
+        std::cerr << "AAAAAAAAAAAAAAA" << std::endl;
         res = tree_search_legal(board, alpha, beta, depth, mpc_level, show_log, use_legal, use_multi_thread, time_limit, thread_id, searching);
         res.level = level;
     }

@@ -76,7 +76,7 @@ void search_lines(Board &board, int player, int depth, int black_score_min, int 
             }
             board.print();
             // int value = ai_window_legal(board, alpha, beta, level, true, 0, true, false, board.get_legal()).value;
-            int value = ai_window(board, alpha, beta, level, true, 0, true, false).value;
+            int value = ai_window(board, alpha, beta, level, true, 0, true, true).value;
             // int value = ai(board, level, true, 0, true, false).value;
             std::string transcript;
             for (const int &coord: line) {
@@ -156,7 +156,7 @@ int main(int argc, char* argv[]) {
 
     
     std::string initial_line = "f5d6c3d3c4f4f6"; // stephenson
-    int n_max_moves = 10;
+    int n_max_moves = 9;
     int search_level = 21;
     int black_score_min = -6;
     int black_score_max = 0;
@@ -192,7 +192,7 @@ int main(int argc, char* argv[]) {
     }
 
     int n_initial_moves = initial_line_vec.size();
-    for (int n_max_moves_itr = n_initial_moves + 1; n_max_moves_itr < n_max_moves; ++n_max_moves_itr) {
+    for (int n_max_moves_itr = n_initial_moves + 1; n_max_moves_itr <= n_max_moves; ++n_max_moves_itr) {
         std::cout << "search until move " << n_max_moves_itr << std::endl;
         search_lines(search_board, player, n_max_moves_itr - n_initial_moves, black_score_min, black_score_max, initial_line_vec, last_move_player, last_move_cells, search_level);
     }
