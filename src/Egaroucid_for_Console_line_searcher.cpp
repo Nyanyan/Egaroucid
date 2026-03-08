@@ -201,12 +201,13 @@ int main(int argc, char* argv[]) {
     
     std::string initial_line = "f5d6c3d3c4f4f6"; // stephenson
     // std::string initial_line = "f5f6e6d6e7"; // tobidashi
+    // std::string initial_line = "f5d6c3d3c4f4f6g5e3f3g6e2h5c5g4g3f2e1"; // 1993
     int n_max_moves = 20;
     int search_level = 11;
     int black_score_min = -6;
     int black_score_max = 1;
     int black_max_loss = 6;
-    int white_max_loss = 1;
+    int white_max_loss = 2;
     int last_move_player = BLACK;
     std::vector<int> last_move_cells = {get_coord_from_chars('b', '2'), get_coord_from_chars('b', '7'), get_coord_from_chars('g', '2'), get_coord_from_chars('g', '7')};
 
