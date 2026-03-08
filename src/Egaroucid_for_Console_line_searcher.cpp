@@ -74,21 +74,24 @@ void search_lines(Board &board, int player, int depth, int black_score_min, int 
             if (next_player != BLACK) {
                 std::swap(alpha, beta);
             }
-            int value = ai_window_legal(board, alpha, beta, level, true, 0, true, false, board.get_legal()).value;
-            // std::string transcript;
-            // for (const int &coord: line) {
-            //     transcript += idx_to_coord(coord);
-            // }
-            // std::cout << transcript << " " << alpha << " " << beta << " " << value << std::endl;
-            // int value = ai(next_board, level, false, 0, false, false).value;
-            int black_value = (next_player == BLACK) ? value : -value;
-            if (black_score_min <= black_value && black_value <= black_score_max) {
+            board.print();
+            // int value = ai_window_legal(board, alpha, beta, level, true, 0, true, false, board.get_legal()).value;
+            int value = ai_window(board, alpha, beta, level, true, 0, true, false).value;
+            // int value = ai(board, level, true, 0, true, false).value;
+            std::string transcript;
+            for (const int &coord: line) {
+                transcript += idx_to_coord(coord);
+            }
+            transcript += idx_to_coord(cell);
+            bool is_ok = alpha < value && value < beta;
+            std::cout << transcript << " ok?:" << is_ok << " [" << alpha << ", " << beta << "] " << value << std::endl;
+            if (is_ok) {
                 line.emplace_back(cell);
-                    std::string transcript;
-                    for (const int &coord: line) {
-                        transcript += idx_to_coord(coord);
-                    }
-                    std::cout << transcript << std::endl;
+                    // std::string transcript;
+                    // for (const int &coord: line) {
+                    //     transcript += idx_to_coord(coord);
+                    // }
+                    // std::cout << transcript << std::endl;
                     if (player == last_move_player && std::find(last_move_cells.begin(), last_move_cells.end(), cell) != last_move_cells.end()) {
                         std::string transcript;
                         for (const int &coord: line) {
@@ -152,7 +155,7 @@ int main(int argc, char* argv[]) {
     // }
 
     
-    std::string initial_line = "f5d6c3d3c4f4f6";
+    std::string initial_line = "f5d6c3d3c4f4f6"; // stephenson
     int n_max_moves = 10;
     int search_level = 21;
     int black_score_min = -6;
@@ -189,7 +192,11 @@ int main(int argc, char* argv[]) {
     }
 
     int n_initial_moves = initial_line_vec.size();
-    search_lines(search_board, player, n_max_moves - n_initial_moves, black_score_min, black_score_max, initial_line_vec, last_move_player, last_move_cells, search_level);
+    for (int n_max_moves_itr = n_initial_moves + 1; n_max_moves_itr < n_max_moves; ++n_max_moves_itr) {
+        std::cout << "search until move " << n_max_moves_itr << std::endl;
+        search_lines(search_board, player, n_max_moves_itr - n_initial_moves, black_score_min, black_score_max, initial_line_vec, last_move_player, last_move_cells, search_level);
+    }
+    std::cout << "done!" << std::endl;
     return 0;
 
 
