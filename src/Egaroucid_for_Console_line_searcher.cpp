@@ -73,18 +73,22 @@ void search_lines(Board &board, int player, int depth, int black_score_min, int 
             int beta = black_score_max + 1;
             if (next_player != BLACK) {
                 std::swap(alpha, beta);
+                alpha = -alpha;
+                beta = -beta;
             }
-            board.print();
+            // board.print();
             // int value = ai_window_legal(board, alpha, beta, level, true, 0, true, false, board.get_legal()).value;
-            int value = ai_window(board, alpha, beta, level, true, 0, true, true).value;
+            int value = ai_window(board, alpha, beta, level, true, 0, true, false).value;
             // int value = ai(board, level, true, 0, true, false).value;
-            std::string transcript;
-            for (const int &coord: line) {
-                transcript += idx_to_coord(coord);
-            }
-            transcript += idx_to_coord(cell);
             bool is_ok = alpha < value && value < beta;
-            std::cout << transcript << " ok?:" << is_ok << " [" << alpha << ", " << beta << "] " << value << std::endl;
+            
+            // std::string transcript;
+            // for (const int &coord: line) {
+            //     transcript += idx_to_coord(coord);
+            // }
+            // transcript += idx_to_coord(cell);
+            // std::cout << transcript << " ok?:" << is_ok << " [" << alpha << ", " << beta << "] " << value << std::endl;
+            
             if (is_ok) {
                 line.emplace_back(cell);
                     // std::string transcript;
@@ -156,7 +160,7 @@ int main(int argc, char* argv[]) {
 
     
     std::string initial_line = "f5d6c3d3c4f4f6"; // stephenson
-    int n_max_moves = 9;
+    int n_max_moves = 20;
     int search_level = 21;
     int black_score_min = -6;
     int black_score_max = 0;
