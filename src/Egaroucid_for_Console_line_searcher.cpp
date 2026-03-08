@@ -66,6 +66,16 @@ void search_lines(Board &board, int player, int depth, int black_score_min, int 
         }
     }
 
+    if (depth == 1) {
+        uint64_t last_move_bits = 0;
+        for (const int &cell: last_move_cells) {
+            last_move_bits |= 1ULL << cell;
+        }
+        if ((legal & last_move_bits) == 0) {
+            return;
+        }
+    }
+
     for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)) {
         Flip flip;
         calc_flip(&flip, &board, cell);
@@ -162,12 +172,12 @@ int main(int argc, char* argv[]) {
     // }
 
     
-    std::string initial_line = "f5d6c3d3c4f4f6"; // stephenson
+    std::string initial_line = "f5d6c3d3c4f4f6g5e3f3g6e2h5c5g4"; // stephenson
     int n_max_moves = 20;
     int search_level = 15;
     int black_score_min = -6;
     int black_score_max = 0;
-    int last_move_player = BLACK;
+    int last_move_player = WHITE;
     std::vector<int> last_move_cells = {get_coord_from_chars('b', '2'), get_coord_from_chars('b', '7'), get_coord_from_chars('g', '2'), get_coord_from_chars('g', '7')};
 
     std::vector<int> initial_line_vec;
@@ -199,7 +209,7 @@ int main(int argc, char* argv[]) {
     }
 
     int n_initial_moves = initial_line_vec.size();
-    for (int n_max_moves_itr = n_initial_moves + 1; n_max_moves_itr <= n_max_moves; ++n_max_moves_itr) {
+    for (int n_max_moves_itr = n_max_moves % 2; n_max_moves_itr <= n_max_moves; n_max_moves_itr += 2) {
         std::cout << "search until move " << n_max_moves_itr << std::endl;
         uint64_t strt = tim();
         search_lines(search_board, player, n_max_moves_itr - n_initial_moves, black_score_min, black_score_max, initial_line_vec, last_move_player, last_move_cells, search_level);
