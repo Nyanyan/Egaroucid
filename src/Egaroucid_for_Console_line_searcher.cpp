@@ -49,41 +49,64 @@ void search_lines(Board &board, int player, int depth, int black_score_min, int 
         return;
     }
 
-    Board root = board.copy();
-    int root_player = player;
-    uint64_t legal = root.get_legal();
+    uint64_t legal = board.get_legal();
+    bool passed = false;
     if (legal == 0ULL) {
-        root.pass();
-        root_player ^= 1;
-        legal = root.get_legal();
+        passed = true;
+        board.pass();
+        player ^= 1;
+        legal = board.get_legal();
         if (legal == 0ULL) {
+            board.pass();
+            player ^= 1;
             return;
         }
     }
 
     for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)) {
         Flip flip;
-        calc_flip(&flip, &root, cell);
-        Board next_board = root.move_copy(&flip);
-        int next_player = root_player ^ 1;
+        calc_flip(&flip, &board, cell);
+        board.move_board(&flip);
+        int next_player = player ^ 1;
 
-        int value = ai(next_board, level, false, 0, false, false).value;
-        int black_value = (next_player == BLACK) ? value : -value;
-        if (black_value < black_score_min || black_score_max < black_value) {
-            continue;
-        }
-
-        line.emplace_back(cell);
-        if (root_player == last_move_player && std::find(last_move_cells.begin(), last_move_cells.end(), cell) != last_move_cells.end()) {
-            std::string transcript;
-            for (const int &coord: line) {
-                transcript += idx_to_coord(coord);
+            int alpha = black_score_min - 1;
+            int beta = black_score_max + 1;
+            if (next_player != BLACK) {
+                std::swap(alpha, beta);
             }
-            std::cout << transcript << std::endl;
-        } else {
-            search_lines(next_board, next_player, depth - 1, black_score_min, black_score_max, line, last_move_player, last_move_cells, level);
-        }
-        line.pop_back();
+            int value = ai_window_legal(board, alpha, beta, level, true, 0, true, false, board.get_legal()).value;
+            // std::string transcript;
+            // for (const int &coord: line) {
+            //     transcript += idx_to_coord(coord);
+            // }
+            // std::cout << transcript << " " << alpha << " " << beta << " " << value << std::endl;
+            // int value = ai(next_board, level, false, 0, false, false).value;
+            int black_value = (next_player == BLACK) ? value : -value;
+            if (black_score_min <= black_value && black_value <= black_score_max) {
+                line.emplace_back(cell);
+                    std::string transcript;
+                    for (const int &coord: line) {
+                        transcript += idx_to_coord(coord);
+                    }
+                    std::cout << transcript << std::endl;
+                    if (player == last_move_player && std::find(last_move_cells.begin(), last_move_cells.end(), cell) != last_move_cells.end()) {
+                        std::string transcript;
+                        for (const int &coord: line) {
+                            transcript += idx_to_coord(coord);
+                        }
+                        std::cout << transcript << std::endl;
+                    } else {
+                        search_lines(board, next_player, depth - 1, black_score_min, black_score_max, line, last_move_player, last_move_cells, level);
+                    }
+                line.pop_back();
+            }
+
+        board.undo_board(&flip);
+    }
+
+    if (passed) {
+        board.pass();
+        player ^= 1;
     }
 }
 
@@ -129,7 +152,7 @@ int main(int argc, char* argv[]) {
     // }
 
     
-    std::string initial_line = "f5d6";
+    std::string initial_line = "f5d6c3d3c4f4f6";
     int n_max_moves = 10;
     int search_level = 21;
     int black_score_min = -6;
@@ -167,6 +190,7 @@ int main(int argc, char* argv[]) {
 
     int n_initial_moves = initial_line_vec.size();
     search_lines(search_board, player, n_max_moves - n_initial_moves, black_score_min, black_score_max, initial_line_vec, last_move_player, last_move_cells, search_level);
+    return 0;
 
 
     while (true) {
