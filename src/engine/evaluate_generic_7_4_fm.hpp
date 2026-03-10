@@ -14,6 +14,7 @@
 #include <cstring>
 #include <vector>
 #include <cmath>
+#include <cstdint>
 #include "setting.hpp"
 #include "common.hpp"
 #include "board.hpp"
@@ -26,7 +27,7 @@
 #define EVAL_FEATURE_START_MOVE_ORDERING_END 8
 #define MAX_CELL_PATTERNS_MOVE_ORDERING_END 6
 
-#define EVAL_FM_DIM 16
+#define EVAL_FM_DIM 4
 #define N_PATTERN_PARAMS_RAW_FM 573966
 
 constexpr Feature_to_coord feature_to_coord[N_SYMMETRY_PATTERNS] = {
@@ -291,8 +292,8 @@ int16_t eval_sur0_sur1_arr[N_PHASES][MAX_SURROUND][MAX_SURROUND];
 int16_t eval_num_arr[N_PHASES][MAX_STONE_NUM];
 int16_t pattern_arr_move_ordering_end[2][N_PATTERNS][MAX_EVALUATE_IDX];
 bool eval_fm_loaded = false;
-std::vector<float> pattern_fm_linear_arr;
-std::vector<float> pattern_fm_factor_arr;
+int8_t pattern_fm_factor_arr[N_PHASES][N_PATTERN_PARAMS_RAW_FM][EVAL_FM_DIM];
+float pattern_fm_factor_scale = 1.0f;
 
 constexpr int pattern_sizes_fm[N_PATTERNS] = {
     8, 8, 8, 9,
@@ -312,8 +313,9 @@ struct FM_eval_header {
     char magic[4];
     int version;
     int n_phases;
-    int n_linear_params;
+    int n_params;
     int fm_dim;
+    float factor_scale;
 };
 
 constexpr int FM_TIMESTAMP_SIZE = 14;
@@ -434,34 +436,34 @@ inline bool load_eval_fm_file(const char* file, bool show_log) {
         fclose(fp);
         return false;
     }
-    if (header.n_phases != N_PHASES || header.n_linear_params != N_PATTERN_PARAMS_RAW_FM || header.fm_dim != EVAL_FM_DIM) {
+    if (header.n_phases != N_PHASES || header.n_params != N_PATTERN_PARAMS_RAW_FM || header.fm_dim != EVAL_FM_DIM) {
         std::cerr << "[WARN] FM eval shape mismatch "
                   << " file(phases=" << header.n_phases
-                  << " linear=" << header.n_linear_params
+                  << " params=" << header.n_params
                   << " dim=" << header.fm_dim
                   << ") expected(phases=" << N_PHASES
-                  << " linear=" << N_PATTERN_PARAMS_RAW_FM
+                  << " params=" << N_PATTERN_PARAMS_RAW_FM
                   << " dim=" << EVAL_FM_DIM << ")" << std::endl;
         fclose(fp);
         return false;
     }
-
-    pattern_fm_linear_arr.resize((size_t)N_PHASES * (size_t)N_PATTERN_PARAMS_RAW_FM);
-    pattern_fm_factor_arr.resize((size_t)N_PHASES * (size_t)N_PATTERN_PARAMS_RAW_FM * (size_t)EVAL_FM_DIM);
-
-    if (fread(pattern_fm_linear_arr.data(), sizeof(float), pattern_fm_linear_arr.size(), fp) < pattern_fm_linear_arr.size()) {
-        std::cerr << "[WARN] FM eval linear data broken " << file << std::endl;
+    if (header.factor_scale <= 0.0f) {
+        std::cerr << "[WARN] FM eval scale broken " << file << std::endl;
         fclose(fp);
         return false;
     }
-    if (fread(pattern_fm_factor_arr.data(), sizeof(float), pattern_fm_factor_arr.size(), fp) < pattern_fm_factor_arr.size()) {
+
+    const size_t factor_count = (size_t)N_PHASES * (size_t)N_PATTERN_PARAMS_RAW_FM * (size_t)EVAL_FM_DIM;
+    pattern_fm_factor_scale = header.factor_scale;
+
+    if (fread(pattern_fm_factor_arr, sizeof(int8_t), factor_count, fp) < factor_count) {
         std::cerr << "[WARN] FM eval factor data broken " << file << std::endl;
         fclose(fp);
         return false;
     }
     fclose(fp);
     if (show_log) {
-        std::cerr << "FM eval loaded " << file << " created_at " << created_at << std::endl;
+        std::cerr << "FM eval loaded " << file << " created_at " << created_at << " scale " << pattern_fm_factor_scale << std::endl;
     }
     return true;
 }
@@ -565,37 +567,30 @@ inline int calc_surround(uint64_t discs, uint64_t empties) {
     @return pattern evaluation value
 */
 inline int calc_pattern(const int phase_idx, Eval_search *eval) {
-    int res = 0;
+    if (!eval_fm_loaded) {
+        return 0;
+    }
+    int global_idx[N_SYMMETRY_PATTERNS];
     for (int i = 0; i < N_SYMMETRY_PATTERNS; ++i) {
-        res += pattern_arr[eval->reversed[eval->feature_idx]][phase_idx][feature_to_pattern[i]][eval->features[eval->feature_idx][i]];
+        const int pattern_idx = feature_to_pattern[i];
+        int feature_idx = eval->features[eval->feature_idx][i];
+        if (eval->reversed[eval->feature_idx]) {
+            feature_idx = swap_player_idx(feature_idx, pattern_sizes_fm[pattern_idx]);
+        }
+        global_idx[i] = pattern_starts_fm[pattern_idx] + feature_idx;
     }
-    if (eval_fm_loaded) {
-        const size_t phase_linear_offset = (size_t)phase_idx * (size_t)N_PATTERN_PARAMS_RAW_FM;
-        const size_t phase_factor_offset = (size_t)phase_idx * (size_t)N_PATTERN_PARAMS_RAW_FM * (size_t)EVAL_FM_DIM;
-        int global_idx[N_SYMMETRY_PATTERNS];
+    double fm_res = 0.0;
+    for (int f = 0; f < EVAL_FM_DIM; ++f) {
+        double sum_vx = 0.0;
+        double sum_vx2 = 0.0;
         for (int i = 0; i < N_SYMMETRY_PATTERNS; ++i) {
-            const int pattern_idx = feature_to_pattern[i];
-            int feature_idx = eval->features[eval->feature_idx][i];
-            if (eval->reversed[eval->feature_idx]) {
-                feature_idx = swap_player_idx(feature_idx, pattern_sizes_fm[pattern_idx]);
-            }
-            global_idx[i] = pattern_starts_fm[pattern_idx] + feature_idx;
+            const double vx = (double)pattern_fm_factor_arr[phase_idx][global_idx[i]][f] * (double)pattern_fm_factor_scale;
+            sum_vx += vx;
+            sum_vx2 += vx * vx;
         }
-        double fm_res = 0.0;
-        for (int f = 0; f < EVAL_FM_DIM; ++f) {
-            double sum_vx = 0.0;
-            double sum_vx2 = 0.0;
-            for (int i = 0; i < N_SYMMETRY_PATTERNS; ++i) {
-                const size_t idx = phase_factor_offset + (size_t)global_idx[i] * (size_t)EVAL_FM_DIM + (size_t)f;
-                const double vx = pattern_fm_factor_arr[idx];
-                sum_vx += vx;
-                sum_vx2 += vx * vx;
-            }
-            fm_res += 0.5 * (sum_vx * sum_vx - sum_vx2);
-        }
-        res += (int)std::round(fm_res);
+        fm_res += 0.5 * (sum_vx * sum_vx - sum_vx2);
     }
-    return res;
+    return (int)std::round(fm_res);
 }
 
 /*
@@ -630,8 +625,8 @@ inline int mid_evaluate(Board *board) {
     sur0 = calc_surround(search.board.player, empties);
     sur1 = calc_surround(search.board.opponent, empties);
     num0 = pop_count_ull(search.board.player);
-    int res = calc_pattern(phase_idx, &search.eval) + 
-        eval_num_arr[phase_idx][num0] + 
+    int res = calc_pattern(phase_idx, &search.eval) +
+        eval_num_arr[phase_idx][num0] +
         eval_sur0_sur1_arr[phase_idx][sur0][sur1];
     res += res >= 0 ? STEP_2 : -STEP_2;
     res /= STEP;
@@ -653,8 +648,8 @@ inline int mid_evaluate_diff(Search *search) {
     sur0 = calc_surround(search->board.player, empties);
     sur1 = calc_surround(search->board.opponent, empties);
     num0 = pop_count_ull(search->board.player);
-    int res = calc_pattern(phase_idx, &search->eval) + 
-        eval_num_arr[phase_idx][num0] + 
+    int res = calc_pattern(phase_idx, &search->eval) +
+        eval_num_arr[phase_idx][num0] +
         eval_sur0_sur1_arr[phase_idx][sur0][sur1];
     res += res >= 0 ? STEP_2 : -STEP_2;
     res /= STEP;

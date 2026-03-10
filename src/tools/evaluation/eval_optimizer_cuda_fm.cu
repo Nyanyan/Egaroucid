@@ -34,7 +34,7 @@
 #endif
 
 // FM constants
-#define ADJ_FM_DIM 16
+#define ADJ_FM_DIM 4
 #define ADJ_FM_INIT_STDDEV 0.01
 
 // training constant

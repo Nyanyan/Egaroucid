@@ -19,6 +19,7 @@
 #include <cstring>
 #include <vector>
 #include <cmath>
+#include <cstdint>
 #include "setting.hpp"
 #include "common.hpp"
 #include "board.hpp"
@@ -33,7 +34,7 @@
 #define N_PATTERN_PARAMS_RAW 573966
 #define N_PATTERN_PARAMS (N_PATTERN_PARAMS_RAW + 1) // +1 for byte bound
 #define FEATURE1_START_IDX 39366            // feature1 special case
-#define EVAL_FM_DIM 16
+#define EVAL_FM_DIM 4
 #define SIMD_EVAL_MAX_VALUE 4092            // evaluate range [-4092, 4092]
 #define N_SIMD_EVAL_FEATURES_SIMPLE 2
 #define N_SIMD_EVAL_FEATURES_COMP 2
@@ -243,8 +244,8 @@ int16_t eval_sur0_sur1_arr[N_PHASES][MAX_SURROUND][MAX_SURROUND];
 // move ordering evaluation
 int16_t pattern_move_ordering_end_arr[N_PATTERN_PARAMS_MO_END];
 bool eval_fm_loaded = false;
-std::vector<float> pattern_fm_linear_arr;
-std::vector<float> pattern_fm_factor_arr;
+int8_t pattern_fm_factor_arr[N_PHASES][N_PATTERN_PARAMS_RAW][EVAL_FM_DIM];
+float pattern_fm_factor_scale = 1.0f;
 
 constexpr int pattern_sizes_fm[N_PATTERNS] = {
     8, 8, 8, 9,
@@ -264,8 +265,9 @@ struct FM_eval_header {
     char magic[4];
     int version;
     int n_phases;
-    int n_linear_params;
+    int n_params;
     int fm_dim;
+    float factor_scale;
 };
 
 constexpr int FM_TIMESTAMP_SIZE = 14;
@@ -297,34 +299,34 @@ inline bool load_eval_fm_file(const char* file, bool show_log) {
         fclose(fp);
         return false;
     }
-    if (header.n_phases != N_PHASES || header.n_linear_params != N_PATTERN_PARAMS_RAW || header.fm_dim != EVAL_FM_DIM) {
+    if (header.n_phases != N_PHASES || header.n_params != N_PATTERN_PARAMS_RAW || header.fm_dim != EVAL_FM_DIM) {
         std::cerr << "[WARN] FM eval shape mismatch "
                   << " file(phases=" << header.n_phases
-                  << " linear=" << header.n_linear_params
+                  << " params=" << header.n_params
                   << " dim=" << header.fm_dim
                   << ") expected(phases=" << N_PHASES
-                  << " linear=" << N_PATTERN_PARAMS_RAW
+                  << " params=" << N_PATTERN_PARAMS_RAW
                   << " dim=" << EVAL_FM_DIM << ")" << std::endl;
         fclose(fp);
         return false;
     }
-
-    pattern_fm_linear_arr.resize((size_t)N_PHASES * (size_t)N_PATTERN_PARAMS_RAW);
-    pattern_fm_factor_arr.resize((size_t)N_PHASES * (size_t)N_PATTERN_PARAMS_RAW * (size_t)EVAL_FM_DIM);
-
-    if (fread(pattern_fm_linear_arr.data(), sizeof(float), pattern_fm_linear_arr.size(), fp) < pattern_fm_linear_arr.size()) {
-        std::cerr << "[WARN] FM eval linear data broken " << file << std::endl;
+    if (header.factor_scale <= 0.0f) {
+        std::cerr << "[WARN] FM eval scale broken " << file << std::endl;
         fclose(fp);
         return false;
     }
-    if (fread(pattern_fm_factor_arr.data(), sizeof(float), pattern_fm_factor_arr.size(), fp) < pattern_fm_factor_arr.size()) {
+
+    const size_t factor_count = (size_t)N_PHASES * (size_t)N_PATTERN_PARAMS_RAW * (size_t)EVAL_FM_DIM;
+    pattern_fm_factor_scale = header.factor_scale;
+
+    if (fread(pattern_fm_factor_arr, sizeof(int8_t), factor_count, fp) < factor_count) {
         std::cerr << "[WARN] FM eval factor data broken " << file << std::endl;
         fclose(fp);
         return false;
     }
     fclose(fp);
     if (show_log) {
-        std::cerr << "FM eval loaded " << file << " created_at " << created_at << std::endl;
+        std::cerr << "FM eval loaded " << file << " created_at " << created_at << " scale " << pattern_fm_factor_scale << std::endl;
     }
     return true;
 }
@@ -584,21 +586,91 @@ inline __m256i gather_eval(const int *start_addr, const __m256i idx8) {
     // return _mm256_and_si256(_mm256_i32gather_epi32(start_addr, idx8, 2), eval_lower_mask);
 }
 
+inline __m256i gather_eval_fm(const int *start_addr, const __m256i idx8) {
+    return _mm256_i32gather_epi32(start_addr, idx8, 4); // stride is 4 byte (packed int8x4)
+}
+
+inline int hsum_epi32_256(__m256i v) {
+    __m128i lo = _mm256_castsi256_si128(v);
+    __m128i hi = _mm256_extracti128_si256(v, 1);
+    __m128i s = _mm_add_epi32(lo, hi);
+    s = _mm_hadd_epi32(s, s);
+    s = _mm_hadd_epi32(s, s);
+    return _mm_cvtsi128_si32(s);
+}
+
+inline void fm_accumulate_packed8(
+    const __m256i packed,
+    __m256i &sum0,
+    __m256i &sum1,
+    __m256i &sum2,
+    __m256i &sum3,
+    __m256i &sq0,
+    __m256i &sq1,
+    __m256i &sq2,
+    __m256i &sq3) {
+    const __m256i d0 = _mm256_srai_epi32(_mm256_slli_epi32(packed, 24), 24);
+    const __m256i d1 = _mm256_srai_epi32(_mm256_slli_epi32(packed, 16), 24);
+    const __m256i d2 = _mm256_srai_epi32(_mm256_slli_epi32(packed, 8), 24);
+    const __m256i d3 = _mm256_srai_epi32(packed, 24);
+
+    sum0 = _mm256_add_epi32(sum0, d0);
+    sum1 = _mm256_add_epi32(sum1, d1);
+    sum2 = _mm256_add_epi32(sum2, d2);
+    sum3 = _mm256_add_epi32(sum3, d3);
+
+    sq0 = _mm256_add_epi32(sq0, _mm256_mullo_epi32(d0, d0));
+    sq1 = _mm256_add_epi32(sq1, _mm256_mullo_epi32(d1, d1));
+    sq2 = _mm256_add_epi32(sq2, _mm256_mullo_epi32(d2, d2));
+    sq3 = _mm256_add_epi32(sq3, _mm256_mullo_epi32(d3, d3));
+}
+
 inline int calc_pattern(const int phase_idx, Eval_features *features) {
-    const int *start_addr = (int*)pattern_arr[phase_idx];
-    const int *start_addr2 = (int*)&pattern_arr[phase_idx][FEATURE1_START_IDX];
-    __m256i res256 =                  gather_eval(start_addr, _mm256_cvtepu16_epi32(features->f128[0]));    // hv4 corner9
-    res256 = _mm256_add_epi32(res256, gather_eval(start_addr, _mm256_cvtepu16_epi32(features->f128[1])));   // hv2 hv3
-    res256 = _mm256_add_epi32(res256, gather_eval(start_addr2, _mm256_cvtepu16_epi32(features->f128[2])));  // d7 d8+2C
-    res256 = _mm256_add_epi32(res256, gather_eval(start_addr2, _mm256_cvtepu16_epi32(features->f128[3])));  // d5 d6
-    res256 = _mm256_add_epi32(res256, gather_eval(start_addr, calc_idx8_comp(features->f128[4], 0)));       // corner+block cross
-    res256 = _mm256_add_epi32(res256, gather_eval(start_addr, calc_idx8_comp(features->f128[5], 1)));       // edge+2X triangle
-    res256 = _mm256_add_epi32(res256, gather_eval(start_addr, calc_idx8_comp(features->f128[6], 2)));       // fish kite
-    res256 = _mm256_add_epi32(res256, gather_eval(start_addr, calc_idx8_comp(features->f128[7], 3)));       // edge+2Y narrow_triangle
-    res256 = _mm256_and_si256(res256, eval_lower_mask);
-    __m128i res128 = _mm_add_epi32(_mm256_castsi256_si128(res256), _mm256_extracti128_si256(res256, 1));
-    res128 = _mm_hadd_epi32(res128, res128);
-    return _mm_cvtsi128_si32(res128) + _mm_extract_epi32(res128, 1) - SIMD_EVAL_MAX_VALUE * N_SYMMETRY_PATTERNS;
+    if (!eval_fm_loaded) {
+        return 0;
+    }
+    const int *start_addr = (const int*)pattern_fm_factor_arr[phase_idx];
+    const __m256i one = _mm256_set1_epi32(1);
+
+    const __m256i g0 = gather_eval_fm(start_addr, _mm256_sub_epi32(_mm256_cvtepu16_epi32(features->f128[0]), one));
+    const __m256i g1 = gather_eval_fm(start_addr, _mm256_sub_epi32(_mm256_cvtepu16_epi32(features->f128[1]), one));
+    const __m256i g2 = gather_eval_fm(start_addr, _mm256_sub_epi32(_mm256_cvtepu16_epi32(features->f128[2]), one));
+    const __m256i g3 = gather_eval_fm(start_addr, _mm256_sub_epi32(_mm256_cvtepu16_epi32(features->f128[3]), one));
+    const __m256i g4 = gather_eval_fm(start_addr, _mm256_sub_epi32(calc_idx8_comp(features->f128[4], 0), one));
+    const __m256i g5 = gather_eval_fm(start_addr, _mm256_sub_epi32(calc_idx8_comp(features->f128[5], 1), one));
+    const __m256i g6 = gather_eval_fm(start_addr, _mm256_sub_epi32(calc_idx8_comp(features->f128[6], 2), one));
+    const __m256i g7 = gather_eval_fm(start_addr, _mm256_sub_epi32(calc_idx8_comp(features->f128[7], 3), one));
+
+    __m256i sum0 = _mm256_setzero_si256();
+    __m256i sum1 = _mm256_setzero_si256();
+    __m256i sum2 = _mm256_setzero_si256();
+    __m256i sum3 = _mm256_setzero_si256();
+    __m256i sq0 = _mm256_setzero_si256();
+    __m256i sq1 = _mm256_setzero_si256();
+    __m256i sq2 = _mm256_setzero_si256();
+    __m256i sq3 = _mm256_setzero_si256();
+
+    fm_accumulate_packed8(g0, sum0, sum1, sum2, sum3, sq0, sq1, sq2, sq3);
+    fm_accumulate_packed8(g1, sum0, sum1, sum2, sum3, sq0, sq1, sq2, sq3);
+    fm_accumulate_packed8(g2, sum0, sum1, sum2, sum3, sq0, sq1, sq2, sq3);
+    fm_accumulate_packed8(g3, sum0, sum1, sum2, sum3, sq0, sq1, sq2, sq3);
+    fm_accumulate_packed8(g4, sum0, sum1, sum2, sum3, sq0, sq1, sq2, sq3);
+    fm_accumulate_packed8(g5, sum0, sum1, sum2, sum3, sq0, sq1, sq2, sq3);
+    fm_accumulate_packed8(g6, sum0, sum1, sum2, sum3, sq0, sq1, sq2, sq3);
+    fm_accumulate_packed8(g7, sum0, sum1, sum2, sum3, sq0, sq1, sq2, sq3);
+
+    const double s0 = (double)hsum_epi32_256(sum0);
+    const double s1 = (double)hsum_epi32_256(sum1);
+    const double s2 = (double)hsum_epi32_256(sum2);
+    const double s3 = (double)hsum_epi32_256(sum3);
+    const double q0 = (double)hsum_epi32_256(sq0);
+    const double q1 = (double)hsum_epi32_256(sq1);
+    const double q2 = (double)hsum_epi32_256(sq2);
+    const double q3 = (double)hsum_epi32_256(sq3);
+
+    const double scale2 = (double)pattern_fm_factor_scale * (double)pattern_fm_factor_scale;
+    const double fm_q = 0.5 * ((s0 * s0 - q0) + (s1 * s1 - q1) + (s2 * s2 - q2) + (s3 * s3 - q3));
+    return (int)std::round(fm_q * scale2);
 }
 
 inline int calc_pattern_move_ordering_end(Eval_features *features) {
@@ -620,36 +692,6 @@ inline uint_fast16_t pick_pattern_idx_fm(const uint_fast8_t b_arr[], const Featu
     return res;
 }
 
-inline int calc_pattern_fm_from_board(const int phase_idx, Board *board) {
-    if (!eval_fm_loaded) {
-        return 0;
-    }
-    uint_fast8_t b_arr[HW2];
-    board->translate_to_arr_player(b_arr);
-
-    int global_idx[N_PATTERN_FEATURES];
-    for (int i = 0; i < N_PATTERN_FEATURES; ++i) {
-        const int pattern_idx = i / 4;
-        const int local_idx = (int)pick_pattern_idx_fm(b_arr, &feature_to_coord[i]);
-        global_idx[i] = pattern_starts_fm[pattern_idx] + local_idx;
-    }
-
-    const size_t phase_factor_offset = (size_t)phase_idx * (size_t)N_PATTERN_PARAMS_RAW * (size_t)EVAL_FM_DIM;
-    double fm_res = 0.0;
-    for (int f = 0; f < EVAL_FM_DIM; ++f) {
-        double sum_vx = 0.0;
-        double sum_vx2 = 0.0;
-        for (int i = 0; i < N_PATTERN_FEATURES; ++i) {
-            const size_t idx = phase_factor_offset + (size_t)global_idx[i] * (size_t)EVAL_FM_DIM + (size_t)f;
-            const double vx = pattern_fm_factor_arr[idx];
-            sum_vx += vx;
-            sum_vx2 += vx * vx;
-        }
-        fm_res += 0.5 * (sum_vx * sum_vx - sum_vx2);
-    }
-    return (int)std::round(fm_res);
-}
-
 inline void calc_eval_features(Board *board, Eval_search *eval);
 
 /*
@@ -668,10 +710,9 @@ inline int mid_evaluate(Board *board) {
     sur0 = calc_surround(search.board.player, empties);
     sur1 = calc_surround(search.board.opponent, empties);
     num0 = pop_count_ull(search.board.player);
-    int res = calc_pattern(phase_idx, &search.eval.features[search.eval.feature_idx]) + 
-        eval_num_arr[phase_idx][num0] + 
+    int res = calc_pattern(phase_idx, &search.eval.features[search.eval.feature_idx]) +
+        eval_num_arr[phase_idx][num0] +
         eval_sur0_sur1_arr[phase_idx][sur0][sur1];
-    res += calc_pattern_fm_from_board(phase_idx, &search.board);
     res += res >= 0 ? STEP_2 : -STEP_2;
     res /= STEP;
     res = std::clamp(res, -SCORE_MAX, SCORE_MAX);
@@ -692,10 +733,9 @@ inline int mid_evaluate_diff(Search *search) {
     sur0 = calc_surround(search->board.player, empties);
     sur1 = calc_surround(search->board.opponent, empties);
     num0 = pop_count_ull(search->board.player);
-    int res = calc_pattern(phase_idx, &search->eval.features[search->eval.feature_idx]) + 
-        eval_num_arr[phase_idx][num0] + 
+    int res = calc_pattern(phase_idx, &search->eval.features[search->eval.feature_idx]) +
+        eval_num_arr[phase_idx][num0] +
         eval_sur0_sur1_arr[phase_idx][sur0][sur1];
-    res += calc_pattern_fm_from_board(phase_idx, &search->board);
     res += res >= 0 ? STEP_2 : -STEP_2;
     res /= STEP;
     res = std::clamp(res, -SCORE_MAX, SCORE_MAX);
