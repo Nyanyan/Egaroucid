@@ -447,20 +447,6 @@ inline bool load_eval_fm_file(const char* file, bool show_log) {
         fclose(fp);
         return false;
     }
-
-    if (show_log) {
-        std::cerr << "FM eval header"
-                  << " created_at=" << created_at
-                  << " magic=" << header.magic[0] << header.magic[1] << header.magic[2] << header.magic[3]
-                  << " version=" << header.version
-                  << " n_phases=" << header.n_phases
-                  << " n_params=" << header.n_params
-                  << " fm_dim=" << header.fm_dim
-                  << " factor_scale=" << header.factor_scale
-                  << std::endl;
-    }
-
-
     
     if (header.factor_scale <= 0.0f) {
         std::cerr << "[WARN] FM eval scale broken " << file << std::endl;
@@ -478,7 +464,15 @@ inline bool load_eval_fm_file(const char* file, bool show_log) {
     }
     fclose(fp);
     if (show_log) {
-        std::cerr << "FM eval loaded " << file << " created_at " << created_at << " scale " << pattern_fm_factor_scale << std::endl;
+        std::cerr << "FM eval loaded"
+                  << " created_at=" << created_at
+                  << " magic=" << header.magic[0] << header.magic[1] << header.magic[2] << header.magic[3]
+                  << " version=" << header.version
+                  << " n_phases=" << header.n_phases
+                  << " n_params=" << header.n_params
+                  << " fm_dim=" << header.fm_dim
+                  << " factor_scale=" << header.factor_scale
+                  << std::endl;
     }
     return true;
 }
