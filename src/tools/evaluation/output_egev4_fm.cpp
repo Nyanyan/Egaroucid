@@ -88,14 +88,14 @@ static bool read_phase_file(
 int main(int argc, char* argv[]) {
     if (argc < 3) {
         std::cerr << "input [n_phases] [n_params] [fm_dim=" << DEFAULT_FM_DIM
-                  << "] [out_file=trained/eval_fm.egev3] [model_dir=trained]" << std::endl;
+                  << "] [out_file=trained/eval_fm.egev4] [model_dir=trained]" << std::endl;
         return 1;
     }
 
     const int n_phases = atoi(argv[1]);
     const int n_params = atoi(argv[2]);
     const int fm_dim = (argc >= 4) ? atoi(argv[3]) : DEFAULT_FM_DIM;
-    const std::string out_file = (argc >= 5) ? argv[4] : "trained/eval_fm.egev3";
+    const std::string out_file = (argc >= 5) ? argv[4] : "trained/eval_fm.egev4";
     const std::string model_dir = (argc >= 6) ? argv[5] : "trained";
 
     if (n_phases <= 0 || n_params <= 0 || fm_dim <= 0) {
