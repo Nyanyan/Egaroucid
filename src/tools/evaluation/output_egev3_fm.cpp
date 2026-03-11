@@ -144,7 +144,7 @@ int main(int argc, char* argv[]) {
     }
 
     const float factor_scale = (max_abs > 0.0f) ? (max_abs / 127.0f) : 1.0f;
-    FMHeader header = {{'E', 'G', 'E', 'V'}, 4, n_phases, n_params, fm_dim, factor_scale};
+    FMHeader header = {{'E', 'G', 'E', 'V'}, 3, n_phases, n_params, fm_dim, factor_scale};
     fout.write(created_at.data(), TIMESTAMP_SIZE);
     fout.write((char*)&header, sizeof(FMHeader));
     std::cerr << "created_at " << created_at << " factor_scale " << factor_scale << std::endl;
