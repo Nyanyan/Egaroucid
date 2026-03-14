@@ -46,7 +46,8 @@ board_sub_dir_nums = [
     223, 224, 225, 226, 234,
 ]
 '''
-board_sub_dir_nums = list(range(259, 311))
+# board_sub_dir_nums = list(range(259, 311))
+board_sub_dir_nums = [263]
 
 
 FILE_INTERVAL = 100
