@@ -43,9 +43,10 @@ board_sub_dir_nums = [
     #166, 
     167, # test data
     
+    223, 224, 225, 226, 234,
 ]
 '''
-board_sub_dir_nums = [223, 224, 225, 226, 234]
+board_sub_dir_nums = list(range(259, 311))
 
 
 FILE_INTERVAL = 100
