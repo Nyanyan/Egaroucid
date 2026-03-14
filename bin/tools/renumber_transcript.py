@@ -22,16 +22,14 @@ def fill0(n, d):
     return res
 
 for dr in drs:
-    files = glob.glob(dr)
 
     after_dir = dr.replace(read_parent_dir.rstrip('/*'), '').lstrip('/')
-
     out_dir = write_parent_dir + after_dir
-
     print(dr, out_dir)
-
     if not os.path.exists(out_dir):
         os.makedirs(out_dir)
+
+    files = glob.glob(dr + '/*.txt')
 
     all_data = []
     for file in files:
@@ -42,7 +40,7 @@ for dr in drs:
     print(len_data)
 
     for i in trange((len_data + 9999) // 10000):
-        with open(out_dir + fill0(i, 7) + '.txt', 'w') as f:
+        with open(out_dir + '/' + fill0(i, 7) + '.txt', 'w') as f:
             for j in range(10000):
                 if i * 10000 + j >= len_data:
                     break
