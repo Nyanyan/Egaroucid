@@ -4,9 +4,11 @@ import os
 import sys
 
 line_dr = './../problem/etc/first11_all'
-out_dr = './../transcript/first11_all_values_lv17'
+out_dr = './../transcript/first11_all_values_lv23'
 
-exe = './../versions/Egaroucid_for_Console_beta/Egaroucid_for_Console.exe'
+# exe = './../versions/Egaroucid_for_Console_beta/Egaroucid_for_Console.exe'
+
+exe = './../versions/Egaroucid_for_Console_7_8_0_Windows_SIMD_updated_book/Egaroucid_for_Console_7_8_0_SIMD.exe'
 
 
 IDX_START = int(sys.argv[1])
@@ -18,9 +20,9 @@ IDX_END = int(sys.argv[2])
 print(IDX_START, IDX_END)
 
 
-LEVEL = 17
+LEVEL = 23
 N_GAMES_PER_FILE = 10000
-N_THREAD = 15
+N_THREAD = 42
 
 def fill0(n, r):
     res = str(n)
