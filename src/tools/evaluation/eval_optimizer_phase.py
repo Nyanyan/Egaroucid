@@ -15,6 +15,16 @@ reduce_lr_ratio = '0.7'
 
 model_dir = './../../../model/nomodel/'
 
+def reduce_traindata_nums(nums):
+    res = []
+    for num in nums:
+        mn = board_n_moves[str(num)][0]
+        mx = board_n_moves[str(num)][1]
+        phase_int = int(phase)
+        if mn <= phase_int <= mx and phase_int <= mn + 15:
+            res.append(num)
+    return res
+
 
 '''
 # cell weight
@@ -120,6 +130,7 @@ if int(phase) >= 12:
     train_data_nums.extend([65, 66]) # random 10 & 11
     train_data_nums.extend([214]) # random 11 (first11_all)
     train_data_nums.extend(list(range(259, 310 + 1))) # Egaroucid vs Edax lv.11 random8-59
+train_data_nums = reduce_traindata_nums(train_data_nums)
 train_data_nums.sort()
 #print(train_data_nums, file=sys.stderr)
 train_root_dir = os.environ['EGAROUCID_DATA'] + '/train_data/bin_data/20241125_1/'
@@ -202,6 +213,7 @@ cmd = executable + ' ' + phase + ' ' + hour + ' ' + minute + ' ' + second + ' ' 
 #print(cmd, file=sys.stderr)
 p = subprocess.Popen(cmd.split(), stdout=subprocess.PIPE)
 result = p.stdout.readline().decode().replace('\r\n', '\n').replace('\n', '')
+result += ' train_data_nums=' + str(train_data_nums)
 print(result)
 # param = p.stdout.read().decode().replace('\r\n', '\n')
 # with open('trained/' + phase + '.txt', 'w') as f:
