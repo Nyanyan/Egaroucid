@@ -109,7 +109,7 @@ void adj_import_eval(std::string file, int eval_size, double *host_eval_arr) {
 /*
     @brief import train data
 */
-int adj_import_data(int n_files, char* files[], Adj_Data* host_train_data, int *host_rev_idx_arr, int *host_n_appear_arr) {
+std::pair<int, double> adj_import_data(int n_files, char* files[], Adj_Data* host_train_data, int *host_rev_idx_arr, int *host_n_appear_arr) {
     int n_data = 0;
     FILE* fp;
     int16_t n_discs, score, player;
@@ -152,7 +152,7 @@ int adj_import_data(int n_files, char* files[], Adj_Data* host_train_data, int *
     //std::cerr << std::endl;
     //std::cerr << n_data << " data loaded" << std::endl;
     std::cerr << "score avg " << score_avg << std::endl;
-    return n_data;
+    return std::make_pair(n_data, score_avg);
 }
 
 /*
@@ -450,7 +450,9 @@ int main(int argc, char* argv[]) {
     }
     adj_init_arr(eval_size, host_eval_arr, host_rev_idx_arr, host_n_appear_arr);
     adj_import_eval(in_file, eval_size, host_eval_arr);
-    int n_all_data = adj_import_data(n_train_data_file, train_files, host_train_data, host_rev_idx_arr, host_n_appear_arr);
+    std::pair<int, double> import_result = adj_import_data(n_train_data_file, train_files, host_train_data, host_rev_idx_arr, host_n_appear_arr);
+    int n_all_data = import_result.first;
+    double score_avg = import_result.second;
     std::cerr << n_all_data << " data loaded" << std::endl;
     // shuffle data
     std::random_device seed_gen;
@@ -694,8 +696,8 @@ int main(int argc, char* argv[]) {
     adj_output_param(phase, eval_size, host_eval_arr);
     adj_output_weight(phase, eval_size, weight_arr);
 
-    std::cerr << "phase " << phase << " time " << (tim() - strt) << " ms n_train_data " << n_train_data << " n_val_data " << n_val_data << " n_loop " << n_loop << " MSE " << host_error_monitor_arr[0] << " MAE " << host_error_monitor_arr[1] << " val_MSE " << host_val_error_monitor_arr[0] << " val_MAE " << host_val_error_monitor_arr[1] << " (with int) alpha " << alpha_in << " n_patience " << n_patience << " reduce_lr_patience " << reduce_lr_patience << " reduce_lr_ratio " << reduce_lr_ratio << std::endl;
-    std::cout << "phase " << phase << " time " << (tim() - strt) << " ms n_train_data " << n_train_data << " n_val_data " << n_val_data << " n_loop " << n_loop << " MSE " << host_error_monitor_arr[0] << " MAE " << host_error_monitor_arr[1] << " val_MSE " << host_val_error_monitor_arr[0] << " val_MAE " << host_val_error_monitor_arr[1] << " (with int) alpha " << alpha_in << " n_patience " << n_patience << " reduce_lr_patience " << reduce_lr_patience << " reduce_lr_ratio " << reduce_lr_ratio << std::endl;
+    std::cerr << "phase " << phase << " time " << (tim() - strt) << " ms n_train_data " << n_train_data << " n_val_data " << n_val_data << " score_avg " << score_avg << " n_loop " << n_loop << " MSE " << host_error_monitor_arr[0] << " MAE " << host_error_monitor_arr[1] << " val_MSE " << host_val_error_monitor_arr[0] << " val_MAE " << host_val_error_monitor_arr[1] << " (with int) alpha " << alpha_in << " n_patience " << n_patience << " reduce_lr_patience " << reduce_lr_patience << " reduce_lr_ratio " << reduce_lr_ratio << std::endl;
+    std::cout << "phase " << phase << " time " << (tim() - strt) << " ms n_train_data " << n_train_data << " n_val_data " << n_val_data << " score_avg " << score_avg << " n_loop " << n_loop << " MSE " << host_error_monitor_arr[0] << " MAE " << host_error_monitor_arr[1] << " val_MSE " << host_val_error_monitor_arr[0] << " val_MAE " << host_val_error_monitor_arr[1] << " (with int) alpha " << alpha_in << " n_patience " << n_patience << " reduce_lr_patience " << reduce_lr_patience << " reduce_lr_ratio " << reduce_lr_ratio << std::endl;
 
     return 0;
 }

@@ -21,7 +21,7 @@ def reduce_traindata_nums(nums):
         mn = board_n_moves[str(num)][0]
         mx = board_n_moves[str(num)][1]
         phase_int = int(phase)
-        if mn <= phase_int <= mx and phase_int <= mn + 15:
+        if mn <= phase_int <= mx and phase_int <= mn + 20:
             res.append(num)
     return res
 
