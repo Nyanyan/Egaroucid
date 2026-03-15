@@ -116,17 +116,19 @@ train_data_nums = [
     223, 224, 225, 226, 227, 228, 229, 230, 231, 232, 233, 234, # random12-23 level 15
 ]
 if int(phase) >= 12:
-    train_data_nums.extend([18, 19, 20, 21, 24, 25, 28, 29, 30, 31]) # old data (without records27)
-    train_data_nums.extend([65, 66])
+    # train_data_nums.extend([18, 19, 20, 21, 24, 25, 28, 29, 30, 31]) # old data (without records27)
+    train_data_nums.extend([65, 66]) # random 10 & 11
     train_data_nums.extend([214]) # random 11 (first11_all)
+    train_data_nums.extend(list(range(259, 310 + 1))) # Egaroucid vs Edax lv.11 random8-59
 train_data_nums.sort()
 #print(train_data_nums, file=sys.stderr)
 train_root_dir = os.environ['EGAROUCID_DATA'] + '/train_data/bin_data/20241125_1/'
 # executable = 'eval_optimizer_cuda_12_2_0_20241125_1_7_5.exe'
 # executable = 'eval_optimizer_cuda_12_2_0_20241125_1_7_5_ignore_rare.exe'
 # executable = 'eval_optimizer_cuda_12_2_0_20241125_1_7_5_20250914.exe'
-executable = 'eval_optimizer_cuda_12_2_0_20241125_1_7_5_roundminmax.exe'
+# executable = 'eval_optimizer_cuda_12_2_0_20241125_1_7_5_roundminmax.exe'
 # executable = 'eval_optimizer_cuda_12_2_0_20241125_1_7_5_new_alpha.exe'
+executable = 'eval_optimizer_cuda_12_2_0_20241125_1_7_5_20250315.exe'
 #'''
 
 
