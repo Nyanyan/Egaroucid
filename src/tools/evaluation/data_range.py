@@ -1,4 +1,5 @@
 board_n_moves = {}
+use_all_depth_data = set([36, 37, 80, 83, 97])
 '''
 board_n_moves['6'] = [20, 60]
 board_n_moves['7'] = [20, 60]
