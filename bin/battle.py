@@ -16,7 +16,7 @@ shuffle(openings)
 
 # name, cmd
 player_info = [
-    # ['beta', 'versions/Egaroucid_for_Console_beta/Egaroucid_for_Console.exe -quiet -nobook'],
+    ['beta', 'versions/Egaroucid_for_Console_beta/Egaroucid_for_Console.exe -quiet -nobook'],
     # ['latest',  'Egaroucid_for_Console.exe -quiet -nobook'],
     # ['clang',  'Egaroucid_for_Console_clang.exe -quiet -nobook'],
     ['7.8.0', 'versions/Egaroucid_for_Console_7_8_0_Windows_SIMD/Egaroucid_for_Console_7_8_0_SIMD.exe -quiet -nobook'],
