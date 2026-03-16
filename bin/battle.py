@@ -190,13 +190,16 @@ def print_result():
 '''
 
 def print_all_result():
+    estimated_ratings = get_estimated_elo_from_history()
+
     print('Win Rate')
     print('vs >', end='\t')
     for i in range(len(players)):
         name = players[i][NAME_IDX]
         print(name, end='\t')
     print('all', end='\t')
-    print('rate')
+    print('r_rate', end='\t')
+    print('e_rate')
     for i in range(len(players)):
         name = players[i][NAME_IDX]
         result = players[i][RESULT_IDX]
@@ -221,7 +224,13 @@ def print_all_result():
         r = (w + d * 0.5) / max(1, w + d + l)
         print("{:.4f}".format(r), end='\t')
         # rating
-        print("{:.1f}".format(rating.get_rating()))
+        print("{:.1f}".format(rating.get_rating()), end='\t')
+        # estimated rating
+        estimated_rating = estimated_ratings.get(name)
+        if estimated_rating is None:
+            print('-')
+        else:
+            print("{:.1f}".format(estimated_rating))
 
     print('Average Disc Difference')
     print('vs >', end='\t')
@@ -229,7 +238,8 @@ def print_all_result():
         name = players[i][NAME_IDX]
         print(name, end='\t')
     print('all', end='\t')
-    print('rate')
+    print('r_rate', end='\t')
+    print('e_rate')
     for i in range(len(players)):
         name = players[i][NAME_IDX]
         result = players[i][RESULT_DISC_IDX]
@@ -253,10 +263,16 @@ def print_all_result():
             s = '+' + s
         print(s, end='\t')
         # rating
-        print("{:.1f}".format(rating.get_rating()))
+        print("{:.1f}".format(rating.get_rating()), end='\t')
+        # estimated rating
+        estimated_rating = estimated_ratings.get(name)
+        if estimated_rating is None:
+            print('-')
+        else:
+            print("{:.1f}".format(estimated_rating))
 
 
-def print_estimated_elo_from_history():
+def get_estimated_elo_from_history():
     names = [players[i][NAME_IDX] for i in range(len(players))]
     n_players = len(players)
     win_rates = np.full((n_players, n_players), np.nan, dtype=float)
@@ -275,12 +291,9 @@ def print_estimated_elo_from_history():
     try:
         ratings = fit_elo_from_winrates(win_rates, games=games, names=names)
     except ValueError as e:
-        print('Estimated Elo (from win rates): skipped -', e)
-        return
+        return {}
 
-    print('Estimated Elo (from win rates)')
-    for name, rating in sorted(ratings.items(), key=lambda x: x[1], reverse=True):
-        print(f'{name}\t{rating:.1f}')
+    return ratings
 
 
 plot_data = [[] for _ in range(len(players))]
@@ -330,12 +343,10 @@ for i in range(N_SET_GAMES):
     print(i, 'level', LEVEL, 'threads', N_THREADS)
     #print_result()
     print_all_result()
-    print_estimated_elo_from_history()
     #output_plt()
 
 print(N_SET_GAMES, 'matches played for each win rate at level', LEVEL, N_THREADS, 'threads')
 print_all_result()
-print_estimated_elo_from_history()
 
 
 for i in range(len(players)):
