@@ -2,6 +2,7 @@ import subprocess
 from tqdm import trange
 from random import shuffle
 import matplotlib.pyplot as plt
+import numpy as np
 import sys
 from othello_py import *
 from elo_rating import Elo_player, update_rating, update_rating_draw
@@ -255,6 +256,33 @@ def print_all_result():
         print("{:.1f}".format(rating.get_rating()))
 
 
+def print_estimated_elo_from_history():
+    names = [players[i][NAME_IDX] for i in range(len(players))]
+    n_players = len(players)
+    win_rates = np.full((n_players, n_players), np.nan, dtype=float)
+    games = np.zeros((n_players, n_players), dtype=float)
+
+    for i in range(n_players):
+        for j in range(n_players):
+            if i == j:
+                continue
+            w, d, l = players[i][RESULT_IDX][j]
+            n = players[i][N_PLAYED_IDX][j]
+            games[i, j] = float(n)
+            if n > 0:
+                win_rates[i, j] = (w + 0.5 * d) / n
+
+    try:
+        ratings = fit_elo_from_winrates(win_rates, games=games, names=names)
+    except ValueError as e:
+        print('Estimated Elo (from win rates): skipped -', e)
+        return
+
+    print('Estimated Elo (from win rates)')
+    for name, rating in sorted(ratings.items(), key=lambda x: x[1], reverse=True):
+        print(f'{name}\t{rating:.1f}')
+
+
 plot_data = [[] for _ in range(len(players))]
 
 def output_plt():
@@ -302,10 +330,12 @@ for i in range(N_SET_GAMES):
     print(i, 'level', LEVEL, 'threads', N_THREADS)
     #print_result()
     print_all_result()
+    print_estimated_elo_from_history()
     #output_plt()
 
 print(N_SET_GAMES, 'matches played for each win rate at level', LEVEL, N_THREADS, 'threads')
 print_all_result()
+print_estimated_elo_from_history()
 
 
 for i in range(len(players)):
