@@ -20,11 +20,19 @@ for test_file in test_files:
     with open(test_file, 'r') as f:
         tests.append(f.read().splitlines())
 
+# for before 202503
+# PHASE_IDX = 1
+# MSE_IDX = 12
+# MAE_IDX = 14
+# VAL_MSE_IDX = 16
+# VAL_MAE_IDX = 18
+
 PHASE_IDX = 1
-MSE_IDX = 12
-MAE_IDX = 14
-VAL_MSE_IDX = 16
-VAL_MAE_IDX = 18
+SCORE_AVG_IDX = 10
+MSE_IDX = 14
+MAE_IDX = 16
+VAL_MSE_IDX = 18
+VAL_MAE_IDX = 20
 
 TEST_PHASE_IDX = 1
 TEST_MSE_IDX = 5
