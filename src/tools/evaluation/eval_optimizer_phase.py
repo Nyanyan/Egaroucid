@@ -126,7 +126,7 @@ train_data_nums = [
     223, 224, 225, 226, 227, 228, 229, 230, 231, 232, 233, 234, # random12-23 level 15
 ]
 if int(phase) >= 12:
-    # train_data_nums.extend([18, 19, 20, 21, 24, 25, 28, 29, 30, 31]) # old data (without records27)
+    train_data_nums.extend([18, 19, 20, 21, 24, 25, 28, 29, 30, 31]) # old data (without records27)
     train_data_nums.extend([65, 66]) # random 10 & 11
     train_data_nums.extend([214]) # random 11 (first11_all)
     train_data_nums.extend(list(range(259, 310 + 1))) # Egaroucid vs Edax lv.11 random8-59
