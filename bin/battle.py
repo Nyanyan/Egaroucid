@@ -4,7 +4,10 @@ from random import shuffle
 import matplotlib.pyplot as plt
 import sys
 from othello_py import *
+import elo
 
+rating = elo.Elo()
+ELO_K = 16
 
 LEVEL = int(sys.argv[1])
 N_SET_GAMES = int(sys.argv[2])
@@ -48,6 +51,7 @@ SUBPROCESS_IDX = 1
 RESULT_IDX = 2
 RESULT_DISC_IDX = 3
 N_PLAYED_IDX = 4
+RATING_IDX = 5
 
 players = []
 for name, cmd in player_info:
@@ -70,7 +74,9 @@ for name, cmd in player_info:
         # sum of disc differences (vs other players)
         [0 for _ in range(len(player_info))],
         # n_played
-        [0 for _ in range(len(player_info))]
+        [0 for _ in range(len(player_info))],
+        # rating
+        1500
     ])
 
 def play_battle(p0_idx, p1_idx, opening_idx):
@@ -146,15 +152,24 @@ def play_battle(p0_idx, p1_idx, opening_idx):
             sum_disc_diff_p0 += o.n_stones[player] - o.n_stones[1 - player] - (64 - (o.n_stones[player] + o.n_stones[1 - player]))
         else:
             sum_disc_diff_p0 += 0
+    # update win/draw/loss result and rating
+    p0_rating = players[p0_idx][RATING_IDX]
+    p1_rating = players[p1_idx][RATING_IDX]
     if sum_disc_diff_p0 > 0: # p0 win
         players[p0_idx][RESULT_IDX][p1_idx][0] += 1 # win
         players[p1_idx][RESULT_IDX][p0_idx][2] += 1 # loss
+        players[p0_idx][RATING_IDX] = rating.win(p0_rating, p1_rating, k=ELO_K)
+        players[p1_idx][RATING_IDX] = rating.lose(p1_rating, p0_rating, k=ELO_K)
     elif sum_disc_diff_p0 < 0: # p0 lose
         players[p1_idx][RESULT_IDX][p0_idx][0] += 1 # win
         players[p0_idx][RESULT_IDX][p1_idx][2] += 1 # loss
+        players[p0_idx][RATING_IDX] = rating.lose(p0_rating, p1_rating, k=ELO_K)
+        players[p1_idx][RATING_IDX] = rating.win(p1_rating, p0_rating, k=ELO_K)
     else:
         players[p0_idx][RESULT_IDX][p1_idx][1] += 1 # draw
         players[p1_idx][RESULT_IDX][p0_idx][1] += 1 # draw
+        players[p0_idx][RATING_IDX] = rating.tie(p0_rating, p1_rating, k=ELO_K)
+        players[p1_idx][RATING_IDX] = rating.tie(p1_rating, p0_rating, k=ELO_K)
     # update disc difference
     players[p0_idx][RESULT_DISC_IDX][p1_idx] += sum_disc_diff_p0 / 2
     players[p1_idx][RESULT_DISC_IDX][p0_idx] -= sum_disc_diff_p0 / 2
@@ -210,11 +225,13 @@ def print_all_result():
     for i in range(len(players)):
         name = players[i][NAME_IDX]
         print(name, end='\t')
-    print('all')
+    print('all', end='\t')
+    print('rate')
     for i in range(len(players)):
         name = players[i][NAME_IDX]
         result = players[i][RESULT_DISC_IDX]
         n_played = players[i][N_PLAYED_IDX]
+        rating = players[i][RATING_IDX]
         print(name, end='\t')
         # each
         for j in range(len(players)):
@@ -231,7 +248,9 @@ def print_all_result():
         s = "{:.2f}".format(avg_discs_all)
         if avg_discs_all >= 0:
             s = '+' + s
-        print(s)
+        print(s, end='\t')
+        # rating
+        print(rating)
 
 
 plot_data = [[] for _ in range(len(players))]
