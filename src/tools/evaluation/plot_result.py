@@ -40,6 +40,7 @@ VAL_MAE_IDX = 20
 TEST_PHASE_IDX = 1
 TEST_MSE_IDX = 5
 TEST_MAE_IDX = 7
+N_LOOP_PLOT_MAX = 10000
 
 phase_arr = []
 n_train_data_arr = []
@@ -149,7 +150,14 @@ plt.savefig('./trained/score_avg.png')
 print('saved')
 
 plt.clf()
-plt.plot(phase_arr, n_loop_arr, label='n_loop', color='darkgoldenrod', marker='x', linewidth=2)
+n_loop_plot_phase_arr = []
+n_loop_plot_arr = []
+for phase, n_loop in zip(phase_arr, n_loop_arr):
+    if n_loop <= N_LOOP_PLOT_MAX:
+        n_loop_plot_phase_arr.append(phase)
+        n_loop_plot_arr.append(n_loop)
+
+plt.plot(n_loop_plot_phase_arr, n_loop_plot_arr, label='n_loop', color='darkgoldenrod', marker='x', linewidth=2)
 plt.xlabel('phase')
 plt.ylabel('n_loop')
 plt.xlim(-1, 60)
