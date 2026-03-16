@@ -2,7 +2,7 @@
 # modified by Takuto Yamana
 
 # レーティングが更新される大きさを表す K ファクター
-ELO_K_FACTOR = 32
+ELO_K_FACTOR = 16
 
 
 class Elo_player:
