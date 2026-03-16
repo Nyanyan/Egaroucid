@@ -198,6 +198,7 @@ def print_all_result():
     for i in range(len(players)):
         name = players[i][NAME_IDX]
         result = players[i][RESULT_IDX]
+        rating = players[i][RATING_IDX]
         print(name, end='\t')
         # each
         for j in range(len(players)):
