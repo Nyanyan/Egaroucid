@@ -1,4 +1,5 @@
 import matplotlib.pyplot as plt
+import math
 
 opt_log_file = 'trained/opt_log.txt'
 test_files = ['trained/test_random.txt', 'trained/test_drawline.txt']
@@ -40,7 +41,7 @@ VAL_MAE_IDX = 20
 TEST_PHASE_IDX = 1
 TEST_MSE_IDX = 5
 TEST_MAE_IDX = 7
-N_LOOP_PLOT_MAX = 10000
+N_LOOP_PLOT_MAX = 5000
 
 phase_arr = []
 n_train_data_arr = []
@@ -150,17 +151,33 @@ plt.savefig('./trained/score_avg.png')
 print('saved')
 
 plt.clf()
-n_loop_plot_phase_arr = []
-n_loop_plot_arr = []
-for phase, n_loop in zip(phase_arr, n_loop_arr):
-    if n_loop <= N_LOOP_PLOT_MAX:
-        n_loop_plot_phase_arr.append(phase)
-        n_loop_plot_arr.append(n_loop)
+n_loop_wave_y = N_LOOP_PLOT_MAX * 0.985
+n_loop_wave_amp = N_LOOP_PLOT_MAX * 0.008
+n_loop_over_y = N_LOOP_PLOT_MAX * 1.03
+n_loop_ylim_top = N_LOOP_PLOT_MAX * 1.08
 
-plt.plot(n_loop_plot_phase_arr, n_loop_plot_arr, label='n_loop', color='darkgoldenrod', marker='x', linewidth=2)
+n_loop_plot_arr = []
+for n_loop in n_loop_arr:
+    if n_loop <= N_LOOP_PLOT_MAX:
+        n_loop_plot_arr.append(n_loop)
+    else:
+        n_loop_plot_arr.append(n_loop_over_y)
+
+wave_x_min = -1.0
+wave_x_max = 60.0
+wave_n = 320
+wave_x = [wave_x_min + (wave_x_max - wave_x_min) * i / (wave_n - 1) for i in range(wave_n)]
+wave_y = [
+    n_loop_wave_y + n_loop_wave_amp * math.sin((x - wave_x_min) * 2.3)
+    for x in wave_x
+]
+
+plt.plot(phase_arr, n_loop_plot_arr, label='n_loop', color='darkgoldenrod', marker='x', linewidth=2)
+plt.plot(wave_x, wave_y, color='black', linewidth=1.5)
 plt.xlabel('phase')
 plt.ylabel('n_loop')
 plt.xlim(-1, 60)
+plt.ylim(0, n_loop_ylim_top)
 plt.grid(True)
 plt.legend()
 plt.savefig('./trained/n_loop.png')
