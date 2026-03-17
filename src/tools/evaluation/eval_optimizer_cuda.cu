@@ -36,6 +36,11 @@
 #define ADJ_MAX_N_TEST_DATA 100000
 
 
+// settings
+#define RESIDUAL_USE_CLIP false
+#define ROUND_USE_CLIP true
+
+
 // training constant
 #define ADJ_IGNORE_N_APPEAR 0 // ignore features that appeared only 3 or less times
 
@@ -180,11 +185,13 @@ __global__ void adj_calculate_residual(const double *device_eval_arr, const int 
             predicted_value += device_eval_arr[device_start_idx_arr[i] + (int)device_train_data[data_idx].features[i]];
         #endif
     }
+#if RESIDUAL_USE_CLIP
     if (predicted_value > HW2 * ADJ_STEP) {
         predicted_value = HW2 * ADJ_STEP;
     } else if (predicted_value < -HW2 * ADJ_STEP) {
         predicted_value = -HW2 * ADJ_STEP;
     }
+#endif
     double residual_error = device_train_data[data_idx].score - predicted_value;
     for (int i = 0; i < ADJ_N_FEATURES; ++i){
         #if ADJ_CELL_WEIGHT
@@ -231,11 +238,13 @@ __global__ void adj_calculate_val_loss(const double *device_eval_arr, const int 
             predicted_value += device_eval_arr[device_start_idx_arr[i] + (int)device_val_data[data_idx].features[i]];
         #endif
     }
+#if RESIDUAL_USE_CLIP
     if (predicted_value > HW2 * ADJ_STEP) {
         predicted_value = HW2 * ADJ_STEP;
     } else if (predicted_value < -HW2 * ADJ_STEP) {
         predicted_value = -HW2 * ADJ_STEP;
     }
+#endif
     double residual_error = device_val_data[data_idx].score - predicted_value;
     atomicAdd(&device_val_error_monitor_arr[0], (residual_error / ADJ_STEP) * (residual_error / ADJ_STEP) / n_val_data);
     atomicAdd(&device_val_error_monitor_arr[1], fabs(residual_error / ADJ_STEP) / n_val_data);
@@ -281,11 +290,13 @@ __global__ void adj_calculate_loss_round(const int change_idx, const int rev_cha
     }
     predicted_value += predicted_value >= 0 ? ADJ_STEP_2 : -ADJ_STEP_2;
     predicted_value /= ADJ_STEP;
+#if ROUND_USE_CLIP
     if (predicted_value > HW2) {
         predicted_value = HW2;
     } else if (predicted_value < -HW2) {
         predicted_value = -HW2;
     }
+#endif
     double residual_error = device_train_data[data_idx].score / ADJ_STEP - predicted_value;
     atomicAdd(&device_error_monitor_arr[0], residual_error * residual_error / n_train_data);
     atomicAdd(&device_error_monitor_arr[1], fabs(residual_error) / n_train_data);
