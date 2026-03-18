@@ -39,6 +39,7 @@
 // settings
 #define RESIDUAL_USE_CLIP false
 #define ROUND_USE_CLIP true
+#define USE_PARAM_LIMIT true
 
 
 // training constant
@@ -314,6 +315,14 @@ __global__ void gradient_descent(const int eval_size, double *device_eval_arr, i
     double grad = 2.0 * device_residual_arr[eval_idx];
     if (grad != 0.0){
         device_eval_arr[eval_idx] += lr * grad;
+#if USE_PARAM_LIMIT
+        if (device_eval_arr[eval_idx] > ADJ_EVAL_PARAM_MAX) {
+            device_eval_arr[eval_idx] = ADJ_EVAL_PARAM_MAX;
+        }
+        if (device_eval_arr[eval_idx] < -ADJ_EVAL_PARAM_MAX) {
+            device_eval_arr[eval_idx] = -ADJ_EVAL_PARAM_MAX;
+        }
+#endif
     }
     device_residual_arr[eval_idx] = 0.0;
 }
@@ -332,6 +341,14 @@ __global__ void momentum(const int eval_size, double *device_eval_arr, int *devi
         constexpr double beta1 = 0.9;
         device_m_arr[eval_idx] = beta1 * device_m_arr[eval_idx] + lr * grad;
         device_eval_arr[eval_idx] += device_m_arr[eval_idx];
+#if USE_PARAM_LIMIT
+        if (device_eval_arr[eval_idx] > ADJ_EVAL_PARAM_MAX) {
+            device_eval_arr[eval_idx] = ADJ_EVAL_PARAM_MAX;
+        }
+        if (device_eval_arr[eval_idx] < -ADJ_EVAL_PARAM_MAX) {
+            device_eval_arr[eval_idx] = -ADJ_EVAL_PARAM_MAX;
+        }
+#endif
     }
     device_residual_arr[eval_idx] = 0.0;
 }
@@ -351,6 +368,14 @@ __global__ void adagrad(const int eval_size, double *device_eval_arr, int *devic
         constexpr double epsilon = 1e-7;
         device_v_arr[eval_idx] += grad * grad;
         device_eval_arr[eval_idx] += lr * grad / (sqrt(device_v_arr[eval_idx]) + epsilon);
+#if USE_PARAM_LIMIT
+        if (device_eval_arr[eval_idx] > ADJ_EVAL_PARAM_MAX) {
+            device_eval_arr[eval_idx] = ADJ_EVAL_PARAM_MAX;
+        }
+        if (device_eval_arr[eval_idx] < -ADJ_EVAL_PARAM_MAX) {
+            device_eval_arr[eval_idx] = -ADJ_EVAL_PARAM_MAX;
+        }
+#endif
     }
     device_residual_arr[eval_idx] = 0.0;
 }
@@ -373,12 +398,14 @@ __global__ void adam(const int phase, const int eval_size, double *device_eval_a
         device_m_arr[eval_idx] += (1.0 - beta1) * (grad - device_m_arr[eval_idx]);
         device_v_arr[eval_idx] += (1.0 - beta2) * (grad * grad - device_v_arr[eval_idx]);
         device_eval_arr[eval_idx] += lrt * device_m_arr[eval_idx] / (sqrt(device_v_arr[eval_idx]) + epsilon);
-        // if (device_eval_arr[eval_idx] > ADJ_EVAL_PARAM_MAX) {
-        //     device_eval_arr[eval_idx] = ADJ_EVAL_PARAM_MAX;
-        // }
-        // if (device_eval_arr[eval_idx] < -ADJ_EVAL_PARAM_MAX) {
-        //     device_eval_arr[eval_idx] = -ADJ_EVAL_PARAM_MAX;
-        // }
+#if USE_PARAM_LIMIT
+        if (device_eval_arr[eval_idx] > ADJ_EVAL_PARAM_MAX) {
+            device_eval_arr[eval_idx] = ADJ_EVAL_PARAM_MAX;
+        }
+        if (device_eval_arr[eval_idx] < -ADJ_EVAL_PARAM_MAX) {
+            device_eval_arr[eval_idx] = -ADJ_EVAL_PARAM_MAX;
+        }
+#endif
     }
     device_residual_arr[eval_idx] = 0.0;
 }
