@@ -10,7 +10,7 @@ from elo_rating_backcal import fit_elo_from_winrates
 
 LEVEL = int(sys.argv[1])
 N_SET_GAMES = int(sys.argv[2])
-N_THREADS = 32
+N_THREADS = 1
 
 with open('problem/xot/openingslarge.txt', 'r') as f:
     openings = [elem for elem in f.read().splitlines()]
