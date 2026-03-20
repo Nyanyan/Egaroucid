@@ -15,7 +15,7 @@ LEVEL = int(sys.argv[1])
 N_SET_GAMES = int(sys.argv[2])
 N_THREADS = 1
 N_PARALLEL_MATCHES = 8  # 同時並列対戦数
-N_TOTAL_PROCESSES = 8 #int(sys.argv[3]) if len(sys.argv) >= 4 else 2  # 各プレイヤーの総プロセス数(2の倍数)
+N_TOTAL_PROCESSES = 10 #int(sys.argv[3]) if len(sys.argv) >= 4 else 2  # 各プレイヤーの総プロセス数(2の倍数)
 
 if N_TOTAL_PROCESSES < 2 or N_TOTAL_PROCESSES % 2 != 0:
     print('N_TOTAL_PROCESSES must be an even number >= 2')

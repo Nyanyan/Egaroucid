@@ -40,6 +40,7 @@
 #define RESIDUAL_USE_CLIP false
 #define ROUND_USE_CLIP true
 #define USE_PARAM_LIMIT true
+#define USE_WARMUP false
 
 
 // training constant
@@ -598,7 +599,11 @@ int main(int argc, char* argv[]) {
     double min_val_mse = 100000000.0, min_val_mae = 100000000.0;
     int n_val_loss_increase = 0;
     int n_val_loss_increase_reduce_lr = 0;
+#if USE_WARMUP
     double alpha_stab = alpha / 5.0; // warming up for Adam
+#else
+    double alpha_stab = alpha;
+#endif
     while (tim() - strt < msecond) {
         ++n_loop;
 
@@ -628,16 +633,22 @@ int main(int argc, char* argv[]) {
         // momentum <<<n_blocks_next_step, N_THREADS_PER_BLOCK_NEXT_STEP>>> (eval_size, device_eval_arr, device_n_appear_arr, device_residual_arr, alpha_stab, device_m_arr, n_loop);
         // adagrad <<<n_blocks_next_step, N_THREADS_PER_BLOCK_NEXT_STEP>>> (eval_size, device_eval_arr, device_n_appear_arr, device_residual_arr, alpha_stab, device_v_arr, n_loop);
         adam <<<n_blocks_next_step, N_THREADS_PER_BLOCK_NEXT_STEP>>> (phase, eval_size, device_eval_arr, device_n_appear_arr, device_residual_arr, alpha_stab, device_m_arr, device_v_arr, n_loop);
+#if USE_WARMUP
         if (alpha_stab < alpha) {
             alpha_stab += alpha / 50.0;
         }
+#endif
         if (n_val_loss_increase_reduce_lr >= reduce_lr_patience) {
             alpha *= reduce_lr_ratio;
             n_val_loss_increase_reduce_lr = 0;
         }
+#if USE_WARMUP
         if (alpha_stab > alpha) {
             alpha_stab = alpha;
         }
+#else
+        alpha_stab = alpha;
+#endif
     }
     std::cerr << std::endl;
 
