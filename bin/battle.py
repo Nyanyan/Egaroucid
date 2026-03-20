@@ -1,6 +1,6 @@
 import subprocess
 from tqdm import trange
-from random import shuffle
+import random
 import matplotlib.pyplot as plt
 import numpy as np
 import sys
@@ -12,9 +12,11 @@ LEVEL = int(sys.argv[1])
 N_SET_GAMES = int(sys.argv[2])
 N_THREADS = 1
 
+random.seed(57)
+
 with open('problem/xot/openingslarge.txt', 'r') as f:
     openings = [elem for elem in f.read().splitlines()]
-shuffle(openings)
+random.shuffle(openings)
 
 # name, cmd
 player_info = [
@@ -82,7 +84,7 @@ def play_battle(p0_idx, p1_idx, opening_idx):
     player_idxes = [p0_idx, p1_idx]
     opening = openings[opening_idx]
     shuffled_range2 = [0, 1]
-    shuffle(shuffled_range2)
+    random.shuffle(shuffled_range2)
     sum_disc_diff_p0 = 0
     for player in shuffled_range2: # which plays black. p0 plays `player`, p1 plays `1 - player`
         record = ''
@@ -335,7 +337,7 @@ for p1 in range(p0 + 1, len(players)):
 
 problem_idx = 0
 for i in range(N_SET_GAMES):
-    shuffle(matches)
+    random.shuffle(matches)
     for p0, p1 in matches:
         play_battle(p0, p1, problem_idx)
         problem_idx += 1
