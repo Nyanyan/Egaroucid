@@ -4,6 +4,7 @@ import random
 import matplotlib.pyplot as plt
 import numpy as np
 import sys
+import queue
 from othello_py import *
 from elo_rating import Elo_player, update_rating, update_rating_draw
 from elo_rating_backcal import fit_elo_from_winrates
@@ -14,6 +15,11 @@ LEVEL = int(sys.argv[1])
 N_SET_GAMES = int(sys.argv[2])
 N_THREADS = 1
 N_PARALLEL_MATCHES = 8  # 同時並列対戦数
+N_TOTAL_PROCESSES = 8 #int(sys.argv[3]) if len(sys.argv) >= 4 else 2  # 各プレイヤーの総プロセス数(2の倍数)
+
+if N_TOTAL_PROCESSES < 2 or N_TOTAL_PROCESSES % 2 != 0:
+    print('N_TOTAL_PROCESSES must be an even number >= 2')
+    exit(1)
 
 random.seed(57)
 
@@ -56,9 +62,9 @@ RESULT_IDX = 2
 RESULT_DISC_IDX = 3
 N_PLAYED_IDX = 4
 RATING_IDX = 5
+PROC_POOL_IDX = 6
 
 players = []
-subprocess_lock = threading.Lock()  # サブプロセスアクセスの同期化
 results_lock = threading.Lock()  # 結果更新の同期化
 
 for name, cmd in player_info:
@@ -70,13 +76,20 @@ for name, cmd in player_info:
     else:
         cmd_with_options += ' -t ' + str(N_THREADS)
     print(name, cmd_with_options)
-    # 2個のプロセスペアをのみ用意
+    # 総プロセス数を 2 の倍数で用意し、前半/後半をそれぞれ色別に利用する
+    subprocesses = [
+        subprocess.Popen(cmd_with_options.split(), stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
+        for _ in range(N_TOTAL_PROCESSES)
+    ]
+    proc_pool = [queue.Queue(), queue.Queue()]
+    half = N_TOTAL_PROCESSES // 2
+    for proc_idx in range(half):
+        proc_pool[0].put(proc_idx)
+        proc_pool[1].put(proc_idx + half)
+
     players.append([
         name,
-        [
-            subprocess.Popen(cmd_with_options.split(), stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL),
-            subprocess.Popen(cmd_with_options.split(), stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
-        ],
+        subprocesses,
         # W D L (vs other players)
         [[0, 0, 0] for _ in range(len(player_info))],
         # sum of disc differences (vs other players)
@@ -84,7 +97,9 @@ for name, cmd in player_info:
         # n_played
         [0 for _ in range(len(player_info))],
         # rating
-        Elo_player(1500)
+        Elo_player(1500),
+        # color-based process pool
+        proc_pool
     ])
 
 def play_single_game(p0_idx, p1_idx, opening_idx, p0_is_black):
@@ -92,40 +107,43 @@ def play_single_game(p0_idx, p1_idx, opening_idx, p0_is_black):
     player_idxes = [p0_idx, p1_idx]
     opening = openings[opening_idx]
     player = 1 if p0_is_black else 0
+    p0_proc_idx = players[p0_idx][PROC_POOL_IDX][player].get()
+    p1_proc_idx = players[p1_idx][PROC_POOL_IDX][player].get()
     record = ''
     o = othello()
-    # play opening
-    for i in range(0, len(opening), 2):
-        if not o.check_legal():
-            o.player = 1 - o.player
-            o.check_legal()
-        x = ord(opening[i].lower()) - ord('a')
-        y = int(opening[i + 1]) - 1
-        record += opening[i] + opening[i + 1]
-        o.move(y, x)
-    # play with ai
-    while True:
-        if not o.check_legal():
-            o.player = 1 - o.player
+    try:
+        # play opening
+        for i in range(0, len(opening), 2):
             if not o.check_legal():
-                break
-        grid_str = 'setboard '
-        for yy in range(hw):
-            for xx in range(hw):
-                if o.grid[yy][xx] == black:
-                    grid_str += 'X'
-                elif o.grid[yy][xx] == white:
-                    grid_str += 'O'
-                else:
-                    grid_str += '-'
-        if o.player == black:
-            grid_str += ' X\n'
-        else:
-            grid_str += ' O\n'
-        player_idx = player_idxes[o.player ^ player]
-        
-        with subprocess_lock:
-            proc = players[player_idx][SUBPROCESS_IDX][player]
+                o.player = 1 - o.player
+                o.check_legal()
+            x = ord(opening[i].lower()) - ord('a')
+            y = int(opening[i + 1]) - 1
+            record += opening[i] + opening[i + 1]
+            o.move(y, x)
+        # play with ai
+        while True:
+            if not o.check_legal():
+                o.player = 1 - o.player
+                if not o.check_legal():
+                    break
+            grid_str = 'setboard '
+            for yy in range(hw):
+                for xx in range(hw):
+                    if o.grid[yy][xx] == black:
+                        grid_str += 'X'
+                    elif o.grid[yy][xx] == white:
+                        grid_str += 'O'
+                    else:
+                        grid_str += '-'
+            if o.player == black:
+                grid_str += ' X\n'
+            else:
+                grid_str += ' O\n'
+            player_idx = player_idxes[o.player ^ player]
+
+            proc_idx = p0_proc_idx if player_idx == p0_idx else p1_proc_idx
+            proc = players[player_idx][SUBPROCESS_IDX][proc_idx]
             proc.stdin.write(grid_str.encode('utf-8'))
             proc.stdin.flush()
             proc.stdin.write('go\n'.encode('utf-8'))
@@ -133,35 +151,38 @@ def play_single_game(p0_idx, p1_idx, opening_idx, p0_is_black):
             line = ''
             while line == '' or line == '>':
                 line = proc.stdout.readline().decode().replace('\r', '').replace('\n', '')
-        
-        coord = line[-2:].lower()
-        try:
-            y = int(coord[1]) - 1
-            x = ord(coord[0]) - ord('a')
-        except:
-            print('error')
-            print(grid_str[:-1])
-            print(o.player, player)
-            print(coord)
-            for i in range(len(players)):
-                for j in range(2):
-                    players[i][SUBPROCESS_IDX][j].stdin.write('quit\n'.encode('utf-8'))
-                    players[i][SUBPROCESS_IDX][j].stdin.flush()
-            exit()
-        record += chr(ord('a') + x) + str(y + 1)
-        if not o.move(y, x):
-            o.print_info()
-            print(grid_str[:-1])
-            print(o.player, player)
-            print(coord)
-            print(y, x)
-    # calculate disc difference
-    if o.n_stones[player] > o.n_stones[1 - player]:
-        return o.n_stones[player] - o.n_stones[1 - player] + (64 - (o.n_stones[player] + o.n_stones[1 - player]))
-    elif o.n_stones[player] < o.n_stones[1 - player]:
-        return o.n_stones[player] - o.n_stones[1 - player] - (64 - (o.n_stones[player] + o.n_stones[1 - player]))
-    else:
+
+            coord = line[-2:].lower()
+            try:
+                y = int(coord[1]) - 1
+                x = ord(coord[0]) - ord('a')
+            except:
+                print('error')
+                print(grid_str[:-1])
+                print(o.player, player)
+                print(coord)
+                for i in range(len(players)):
+                    for j in range(N_TOTAL_PROCESSES):
+                        players[i][SUBPROCESS_IDX][j].stdin.write('quit\n'.encode('utf-8'))
+                        players[i][SUBPROCESS_IDX][j].stdin.flush()
+                exit()
+            record += chr(ord('a') + x) + str(y + 1)
+            if not o.move(y, x):
+                o.print_info()
+                print(grid_str[:-1])
+                print(o.player, player)
+                print(coord)
+                print(y, x)
+
+        # calculate disc difference
+        if o.n_stones[player] > o.n_stones[1 - player]:
+            return o.n_stones[player] - o.n_stones[1 - player] + (64 - (o.n_stones[player] + o.n_stones[1 - player]))
+        elif o.n_stones[player] < o.n_stones[1 - player]:
+            return o.n_stones[player] - o.n_stones[1 - player] - (64 - (o.n_stones[player] + o.n_stones[1 - player]))
         return 0
+    finally:
+        players[p0_idx][PROC_POOL_IDX][player].put(p0_proc_idx)
+        players[p1_idx][PROC_POOL_IDX][player].put(p1_proc_idx)
 
 def play_battle(p0_idx, p1_idx, opening_idx):
     """対戦をプレイ（黒番と白番を並列実行）"""
@@ -341,6 +362,7 @@ def output_plt():
 print('n_players', len(players))
 print('level', LEVEL)
 print('parallel matches:', N_PARALLEL_MATCHES)
+print('total processes per player:', N_TOTAL_PROCESSES)
 
 
 matches = []
@@ -382,10 +404,10 @@ print_all_result()
 
 
 for i in range(len(players)):
-    for j in range(2):
+    for j in range(N_TOTAL_PROCESSES):
         players[i][SUBPROCESS_IDX][j].stdin.write('quit\n'.encode('utf-8'))
         players[i][SUBPROCESS_IDX][j].stdin.flush()
 
 for i in range(len(players)):
-    for j in range(2):
+    for j in range(N_TOTAL_PROCESSES):
         players[i][SUBPROCESS_IDX][j].kill()
