@@ -87,83 +87,90 @@ for name, cmd in player_info:
         Elo_player(1500)
     ])
 
-def play_battle(p0_idx, p1_idx, opening_idx):
+def play_single_game(p0_idx, p1_idx, opening_idx, p0_is_black):
+    """1ゲーム分をプレイして、p0の得点差を返す"""
     player_idxes = [p0_idx, p1_idx]
     opening = openings[opening_idx]
-    shuffled_range2 = [0, 1]
-    random.shuffle(shuffled_range2)
-    sum_disc_diff_p0 = 0
-    for player in shuffled_range2: # which plays black. p0 plays `player`, p1 plays `1 - player`
-        record = ''
-        o = othello()
-        # play opening
-        for i in range(0, len(opening), 2):
+    player = 1 if p0_is_black else 0
+    record = ''
+    o = othello()
+    # play opening
+    for i in range(0, len(opening), 2):
+        if not o.check_legal():
+            o.player = 1 - o.player
+            o.check_legal()
+        x = ord(opening[i].lower()) - ord('a')
+        y = int(opening[i + 1]) - 1
+        record += opening[i] + opening[i + 1]
+        o.move(y, x)
+    # play with ai
+    while True:
+        if not o.check_legal():
+            o.player = 1 - o.player
             if not o.check_legal():
-                o.player = 1 - o.player
-                o.check_legal()
-            x = ord(opening[i].lower()) - ord('a')
-            y = int(opening[i + 1]) - 1
-            record += opening[i] + opening[i + 1]
-            o.move(y, x)
-        # play with ai
-        while True:
-            if not o.check_legal():
-                o.player = 1 - o.player
-                if not o.check_legal():
-                    break
-            grid_str = 'setboard '
-            for yy in range(hw):
-                for xx in range(hw):
-                    if o.grid[yy][xx] == black:
-                        grid_str += 'X'
-                    elif o.grid[yy][xx] == white:
-                        grid_str += 'O'
-                    else:
-                        grid_str += '-'
-            if o.player == black:
-                grid_str += ' X\n'
-            else:
-                grid_str += ' O\n'
-            player_idx = player_idxes[o.player ^ player]
-            
-            with subprocess_lock:
-                proc = players[player_idx][SUBPROCESS_IDX][player]
-                proc.stdin.write(grid_str.encode('utf-8'))
-                proc.stdin.flush()
-                proc.stdin.write('go\n'.encode('utf-8'))
-                proc.stdin.flush()
-                line = ''
-                while line == '' or line == '>':
-                    line = proc.stdout.readline().decode().replace('\r', '').replace('\n', '')
-            
-            coord = line[-2:].lower()
-            try:
-                y = int(coord[1]) - 1
-                x = ord(coord[0]) - ord('a')
-            except:
-                print('error')
-                print(grid_str[:-1])
-                print(o.player, player)
-                print(coord)
-                for i in range(len(players)):
-                    for j in range(2):
-                        players[i][SUBPROCESS_IDX][j].stdin.write('quit\n'.encode('utf-8'))
-                        players[i][SUBPROCESS_IDX][j].stdin.flush()
-                exit()
-            record += chr(ord('a') + x) + str(y + 1)
-            if not o.move(y, x):
-                o.print_info()
-                print(grid_str[:-1])
-                print(o.player, player)
-                print(coord)
-                print(y, x)
-        # update win/draw/loss
-        if o.n_stones[player] > o.n_stones[1 - player]: # p0 win
-            sum_disc_diff_p0 += o.n_stones[player] - o.n_stones[1 - player] + (64 - (o.n_stones[player] + o.n_stones[1 - player]))
-        elif o.n_stones[player] < o.n_stones[1 - player]: # p0 lose
-            sum_disc_diff_p0 += o.n_stones[player] - o.n_stones[1 - player] - (64 - (o.n_stones[player] + o.n_stones[1 - player]))
+                break
+        grid_str = 'setboard '
+        for yy in range(hw):
+            for xx in range(hw):
+                if o.grid[yy][xx] == black:
+                    grid_str += 'X'
+                elif o.grid[yy][xx] == white:
+                    grid_str += 'O'
+                else:
+                    grid_str += '-'
+        if o.player == black:
+            grid_str += ' X\n'
         else:
-            sum_disc_diff_p0 += 0
+            grid_str += ' O\n'
+        player_idx = player_idxes[o.player ^ player]
+        
+        with subprocess_lock:
+            proc = players[player_idx][SUBPROCESS_IDX][player]
+            proc.stdin.write(grid_str.encode('utf-8'))
+            proc.stdin.flush()
+            proc.stdin.write('go\n'.encode('utf-8'))
+            proc.stdin.flush()
+            line = ''
+            while line == '' or line == '>':
+                line = proc.stdout.readline().decode().replace('\r', '').replace('\n', '')
+        
+        coord = line[-2:].lower()
+        try:
+            y = int(coord[1]) - 1
+            x = ord(coord[0]) - ord('a')
+        except:
+            print('error')
+            print(grid_str[:-1])
+            print(o.player, player)
+            print(coord)
+            for i in range(len(players)):
+                for j in range(2):
+                    players[i][SUBPROCESS_IDX][j].stdin.write('quit\n'.encode('utf-8'))
+                    players[i][SUBPROCESS_IDX][j].stdin.flush()
+            exit()
+        record += chr(ord('a') + x) + str(y + 1)
+        if not o.move(y, x):
+            o.print_info()
+            print(grid_str[:-1])
+            print(o.player, player)
+            print(coord)
+            print(y, x)
+    # calculate disc difference
+    if o.n_stones[player] > o.n_stones[1 - player]:
+        return o.n_stones[player] - o.n_stones[1 - player] + (64 - (o.n_stones[player] + o.n_stones[1 - player]))
+    elif o.n_stones[player] < o.n_stones[1 - player]:
+        return o.n_stones[player] - o.n_stones[1 - player] - (64 - (o.n_stones[player] + o.n_stones[1 - player]))
+    else:
+        return 0
+
+def play_battle(p0_idx, p1_idx, opening_idx):
+    """対戦をプレイ（黒番と白番を並列実行）"""
+    # 黒番と白番を並列実行
+    with ThreadPoolExecutor(max_workers=2) as executor:
+        future_black = executor.submit(play_single_game, p0_idx, p1_idx, opening_idx, True)
+        future_white = executor.submit(play_single_game, p0_idx, p1_idx, opening_idx, False)
+        sum_disc_diff_p0 = future_black.result() + future_white.result()
+    
     # update win/draw/loss result and rating (ロック付き)
     with results_lock:
         p0_rating = players[p0_idx][RATING_IDX]
@@ -352,7 +359,7 @@ problem_idx = 0
 for i in range(N_SET_GAMES):
     random.shuffle(matches)
     
-    # 並列対戦の実行
+    # 異なるマッチを並列実行
     with ThreadPoolExecutor(max_workers=N_PARALLEL_MATCHES) as executor:
         futures = []
         for p0, p1 in matches:
@@ -361,7 +368,7 @@ for i in range(N_SET_GAMES):
             problem_idx += 1
             problem_idx %= len(openings)
         
-        # 全ての対戦が完了するまで待機
+        # 全ての対戦が完了するまで待機（進捗表示付き）
         for _ in tqdm(as_completed(futures), total=len(futures), desc=f"Round {i+1}/{N_SET_GAMES}"):
             pass
     
