@@ -10,7 +10,7 @@ from elo_rating_backcal import fit_elo_from_winrates
 
 LEVEL = int(sys.argv[1])
 N_SET_GAMES = int(sys.argv[2])
-N_THREADS = 1
+N_THREADS = 32
 
 random.seed(57)
 

@@ -37,7 +37,7 @@
 
 
 // settings
-#define RESIDUAL_USE_CLIP false
+#define RESIDUAL_USE_CLIP true
 #define ROUND_USE_CLIP true
 #define USE_PARAM_LIMIT true
 #define USE_WARMUP false
