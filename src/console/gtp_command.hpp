@@ -380,6 +380,17 @@ void gtp_list_games(int id) {
     std::cout << gtp_head(id) << " " << GTP_RULE_ID << GTP_ENDL;
 }
 
+void gtp_final_score(int id, Board_info *board) {
+    int black_score = board->board.count_player();
+    int white_score = board->board.count_opponent();
+    if (black_score > white_score)
+        std::cout << gtp_head(id) << " B" << black_score - white_score << GTP_ENDL;
+    else if (black_score < white_score)
+        std::cout << gtp_head(id) << " W" << black_score - white_score << GTP_ENDL;
+    else
+        std::cout << gtp_head(id) << " 0" << GTP_ENDL;
+}
+
 void gtp_check_command(Board_info *board, State *state, Options *options) {
     std::string cmd_line = gtp_get_command_line();
     if (options->ponder) {
@@ -456,6 +467,9 @@ void gtp_check_command(Board_info *board, State *state, Options *options) {
             break;
         case GTP_CMD_ID_LIST_GAMES:
             gtp_list_games(id);
+            break;
+        case GTP_CMD_ID_FINAL_SCORE:
+            gtp_final_score(id, board);
             break;
         default:
             break;
