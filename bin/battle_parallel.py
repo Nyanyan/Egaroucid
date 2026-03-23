@@ -29,6 +29,7 @@ random.shuffle(openings)
 
 # name, cmd
 player_info = [
+    ['0323', 'versions/Egaroucid_for_Console_beta/Egaroucid_for_Console.exe -quiet -nobook -eval ./../model/20260323_1/eval.egev2'],
     ['0322', 'versions/Egaroucid_for_Console_beta/Egaroucid_for_Console.exe -quiet -nobook -eval ./../model/20260322_1/eval.egev2'],
     ['0321', 'versions/Egaroucid_for_Console_beta/Egaroucid_for_Console.exe -quiet -nobook -eval ./../model/20260321_1/eval.egev2'],
     ['0320', 'versions/Egaroucid_for_Console_beta/Egaroucid_for_Console.exe -quiet -nobook -eval ./../model/20260320_1/eval.egev2'],
