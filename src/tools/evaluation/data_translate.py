@@ -79,7 +79,16 @@ N_PHASES = 60
 # ]
 # board_sub_dir_nums = [166, 167] # test data
 # board_sub_dir_nums = [213] # random boards 58
-board_sub_dir_nums = list(range(263, 311))
+# board_sub_dir_nums = list(range(263, 311))
+board_sub_dir_nums = [
+              98,  99, 100, 101, 102, 103, 104, 105, # random boards 12-19
+    106, 107, 108, 109, 110, 111, 112, 113, 114, 115, # random boards 20-29
+    116, 117, 118, 119, 120, 121, 122, 123,           # random boards 30-37
+                                           124, 125, # random boards 38-39
+                  168, 169, 170, 171, 172, 173, 174, # random boards 13-19
+    175, 176, 177, 178, 179, 180, 181, 182, 183, 184, # random boards 20-29
+    185,                          191, 192, 193, 194, # random boards 30-39
+]
 board_sub_dir_nums.sort()
 #'''
 
