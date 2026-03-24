@@ -29,19 +29,39 @@ random.shuffle(openings)
 
 # name, cmd
 player_info = [
+    ['0324', 'versions/Egaroucid_for_Console_beta/Egaroucid_for_Console.exe -quiet -nobook -eval ./../model/20260324_1/eval.egev2'],
     ['0323', 'versions/Egaroucid_for_Console_beta/Egaroucid_for_Console.exe -quiet -nobook -eval ./../model/20260323_1/eval.egev2'],
     ['0322', 'versions/Egaroucid_for_Console_beta/Egaroucid_for_Console.exe -quiet -nobook -eval ./../model/20260322_1/eval.egev2'],
     ['0321', 'versions/Egaroucid_for_Console_beta/Egaroucid_for_Console.exe -quiet -nobook -eval ./../model/20260321_1/eval.egev2'],
     ['0320', 'versions/Egaroucid_for_Console_beta/Egaroucid_for_Console.exe -quiet -nobook -eval ./../model/20260320_1/eval.egev2'],
     ['0318', 'versions/Egaroucid_for_Console_beta/Egaroucid_for_Console.exe -quiet -nobook -eval ./../model/20260318_1/eval.egev2'],
     ['0317', 'versions/Egaroucid_for_Console_beta/Egaroucid_for_Console.exe -quiet -nobook -eval ./../model/20260317_1/eval.egev2'],
+    ['7.8.0', 'versions/Egaroucid_for_Console_7_8_0_Windows_SIMD/Egaroucid_for_Console_7_8_0_SIMD.exe -quiet -nobook'],
+    ['7.6.0', 'versions/Egaroucid_for_Console_7_6_0_Windows_SIMD/Egaroucid_for_Console_7_6_0_SIMD.exe -quiet -nobook'],
+    ['7.5.0', 'versions/Egaroucid_for_Console_7_5_0_Windows_SIMD/Egaroucid_for_Console_7_5_0_SIMD.exe -quiet -nobook'],
+    ['Edax4.6', 'versions/edax_4_6/wEdax-x86-64-v3.exe -q'],
+
+
+
+    # ['beta', 'versions/Egaroucid_for_Console_beta/Egaroucid_for_Console.exe -quiet -nobook'],
+    # ['7.8.0', 'versions/Egaroucid_for_Console_7_8_0_Windows_SIMD/Egaroucid_for_Console_7_8_0_SIMD.exe -quiet -nobook'],
+    # ['7.7.0', 'versions/Egaroucid_for_Console_7_7_0_Windows_SIMD/Egaroucid_for_Console_7_7_0_SIMD.exe -quiet -nobook'],
+    # ['7.6.0', 'versions/Egaroucid_for_Console_7_6_0_Windows_SIMD/Egaroucid_for_Console_7_6_0_SIMD.exe -quiet -nobook'],
+    # ['7.5.0', 'versions/Egaroucid_for_Console_7_5_0_Windows_SIMD/Egaroucid_for_Console_7_5_0_SIMD.exe -quiet -nobook'],
+    # ['7.4.0', 'versions/Egaroucid_for_Console_7_4_0_Windows_x64_SIMD/Egaroucid_for_Console_7_4_0_x64_SIMD.exe -quiet -nobook'],
+    # ['7.3.0', 'versions/Egaroucid_for_Console_7_3_0_Windows_x64_SIMD/Egaroucid_for_Console_7_3_0_x64_SIMD.exe -quiet -nobook'],
+    # ['7.2.0', 'versions/Egaroucid_for_Console_7_2_0_Windows_x64_SIMD/Egaroucid_for_Console_7_2_0_x64_SIMD.exe -quiet -nobook'],
+    # ['7.1.0', 'versions/Egaroucid_for_Console_7_1_0_Windows_x64_SIMD/Egaroucid_for_Console_7_1_0_x64_SIMD.exe -quiet -nobook'],
+    # ['7.0.0', 'versions/Egaroucid_for_Console_7_0_0_Windows_x64_SIMD/Egaroucid_for_Console_7_0_0_x64_SIMD.exe -quiet -nobook'],
+    # ['Edax4.6', 'versions/edax_4_6/wEdax-x86-64-v3.exe -q'],
+
     # ['beta', 'versions/Egaroucid_for_Console_beta/Egaroucid_for_Console.exe -quiet -nobook'],
     # ['latest',  'Egaroucid_for_Console.exe -quiet -nobook'],
     # ['clang',  'Egaroucid_for_Console_clang.exe -quiet -nobook'],
-    ['7.8.0', 'versions/Egaroucid_for_Console_7_8_0_Windows_SIMD/Egaroucid_for_Console_7_8_0_SIMD.exe -quiet -nobook'],
+    # ['7.8.0', 'versions/Egaroucid_for_Console_7_8_0_Windows_SIMD/Egaroucid_for_Console_7_8_0_SIMD.exe -quiet -nobook'],
     # ['7.7.0', 'versions/Egaroucid_for_Console_7_7_0_Windows_SIMD/Egaroucid_for_Console_7_7_0_SIMD.exe -quiet -nobook'],
-    ['7.6.0', 'versions/Egaroucid_for_Console_7_6_0_Windows_SIMD/Egaroucid_for_Console_7_6_0_SIMD.exe -quiet -nobook'],
-    ['7.5.0', 'versions/Egaroucid_for_Console_7_5_0_Windows_SIMD/Egaroucid_for_Console_7_5_0_SIMD.exe -quiet -nobook'],
+    # ['7.6.0', 'versions/Egaroucid_for_Console_7_6_0_Windows_SIMD/Egaroucid_for_Console_7_6_0_SIMD.exe -quiet -nobook'],
+    # ['7.5.0', 'versions/Egaroucid_for_Console_7_5_0_Windows_SIMD/Egaroucid_for_Console_7_5_0_SIMD.exe -quiet -nobook'],
     # ['7.4.0', 'versions/Egaroucid_for_Console_7_4_0_Windows_x64_SIMD/Egaroucid_for_Console_7_4_0_x64_SIMD.exe -quiet -nobook'],
     # ['7.3.0', 'versions/Egaroucid_for_Console_7_3_0_Windows_x64_SIMD/Egaroucid_for_Console_7_3_0_x64_SIMD.exe -quiet -nobook'],
     # ['7.2.0', 'versions/Egaroucid_for_Console_7_2_0_Windows_x64_SIMD/Egaroucid_for_Console_7_2_0_x64_SIMD.exe -quiet -nobook'],
@@ -59,7 +79,7 @@ player_info = [
         #['6.1.0', 'versions/Egaroucid_for_Console_6_1_0_Windows_x64_SIMD/Egaroucid_for_Console.exe -quiet -nobook'],
     #['6.0.X', 'versions/Egaroucid_for_Console_6_0_X/Egaroucid_for_Console_test.exe q'],
     #['Edax4.4', 'versions/edax_4_4/edax-4.4 -q'],
-    ['Edax4.6', 'versions/edax_4_6/wEdax-x86-64-v3.exe -q'],
+    # ['Edax4.6', 'versions/edax_4_6/wEdax-x86-64-v3.exe -q'],
 ]
 
 NAME_IDX = 0
