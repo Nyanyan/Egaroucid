@@ -161,7 +161,6 @@ def play_battle(p0_idx, p1_idx, opening_idx):
     shuffled_range2 = [0, 1]
     random.shuffle(shuffled_range2)
     sum_disc_diff_p0 = 0
-    print(opening)
     for player in shuffled_range2: # which plays black. p0 plays `player`, p1 plays `1 - player`
         record = ''
         o = othello()
@@ -177,7 +176,6 @@ def play_battle(p0_idx, p1_idx, opening_idx):
                 o.player = 1 - o.player
                 o.check_legal()
             cmd_play = 'play ' + ('b' if o.player == black else 'w') + ' ' + opening[i] + opening[i + 1] + '\n'
-            print(cmd_play)
             for player_idx in [p0_idx, p1_idx]:
                 send_command(player_idx, player, cmd_play)
             x = ord(opening[i].lower()) - ord('a')
@@ -195,11 +193,8 @@ def play_battle(p0_idx, p1_idx, opening_idx):
                     break
             player_idx = player_idxes[o.player ^ player]
             cmd_genmove = 'genmove ' + ('b' if o.player == black else 'w') + '\n'
-            print(record)
-            print(cmd_genmove)
             line = send_command(player_idx, player, cmd_genmove)
             coord = line[-2:].lower()
-            print(line, coord)
             try:
                 y = int(coord[1]) - 1
                 x = ord(coord[0]) - ord('a')
@@ -217,6 +212,7 @@ def play_battle(p0_idx, p1_idx, opening_idx):
             o_player = o.player
             if not o.move(y, x):
                 o.print_info()
+                print('error')
                 print(record)
                 print(o.player, player)
                 print(coord)
