@@ -7,7 +7,7 @@ import sys
 import queue
 from othello_py import *
 from elo_rating import Elo_player, update_rating, update_rating_draw
-from elo_rating_backcal import fit_elo_from_winrates
+from elo_rating_backcal import fit_elo_from_winrates_with_interval
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import threading
 
@@ -268,7 +268,7 @@ def print_all_result():
         print(name, end='\t')
     print('all', end='\t')
     print('r_rate', end='\t')
-    print('e_rate')
+    print('e_rate95')
     for i in range(len(players)):
         name = players[i][NAME_IDX]
         result = players[i][RESULT_IDX]
@@ -299,7 +299,8 @@ def print_all_result():
         if estimated_rating is None:
             print('-')
         else:
-            print("{:.1f}".format(estimated_rating))
+            est, ci = estimated_rating
+            print("{:.1f}+-{:.1f}".format(est, ci))
 
     print('Average Disc Difference')
     print('vs >', end='\t')
@@ -308,7 +309,7 @@ def print_all_result():
         print(name, end='\t')
     print('all', end='\t')
     print('r_rate', end='\t')
-    print('e_rate')
+    print('e_rate95')
     for i in range(len(players)):
         name = players[i][NAME_IDX]
         result = players[i][RESULT_DISC_IDX]
@@ -338,7 +339,8 @@ def print_all_result():
         if estimated_rating is None:
             print('-')
         else:
-            print("{:.1f}".format(estimated_rating))
+            est, ci = estimated_rating
+            print("{:.1f}+-{:.1f}".format(est, ci))
 
 
 def get_estimated_elo_from_history():
@@ -358,11 +360,11 @@ def get_estimated_elo_from_history():
                 win_rates[i, j] = (w + 0.5 * d) / n
 
     try:
-        ratings = fit_elo_from_winrates(win_rates, games=games, names=names)
-    except ValueError as e:
+        ratings, intervals = fit_elo_from_winrates_with_interval(win_rates, games=games, names=names, confidence=0.95)
+    except ValueError:
         return {}
 
-    return ratings
+    return {name: (float(ratings[name]), float(intervals[name])) for name in names}
 
 
 plot_data = [[] for _ in range(len(players))]
