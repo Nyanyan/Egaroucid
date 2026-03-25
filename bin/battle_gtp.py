@@ -81,6 +81,11 @@ RESULT_IDX = 2
 RESULT_DISC_IDX = 3
 N_PLAYED_IDX = 4
 RATING_IDX = 5
+CMD_IDX = 6
+
+
+def start_engine(cmd):
+    return subprocess.Popen(cmd.split(), stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
 
 players = []
 for name, cmd in player_info:
@@ -89,14 +94,16 @@ for name, cmd in player_info:
         cmd_with_options = cmd + ' ' + str(LEVEL)
     if 'Edax' in name:
         cmd_with_options += ' -n ' + str(N_THREADS)
+    elif 'Neural' in name:
+        cmd_with_options += ' --threads ' + str(N_THREADS)
     else:
         cmd_with_options += ' -t ' + str(N_THREADS)
     print(name, cmd_with_options)
     players.append([
         name,
         [
-            subprocess.Popen(cmd_with_options.split(), stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL),
-            subprocess.Popen(cmd_with_options.split(), stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
+            start_engine(cmd_with_options),
+            start_engine(cmd_with_options)
         ],
         # W D L (vs other players)
         [[0, 0, 0] for _ in range(len(player_info))],
@@ -105,8 +112,48 @@ for name, cmd in player_info:
         # n_played
         [0 for _ in range(len(player_info))],
         # rating
-        Elo_player(1500)
+        Elo_player(1500),
+        # command used to start subprocesses
+        cmd_with_options
     ])
+
+
+def restart_process(player_idx, side_idx):
+    cmd = players[player_idx][CMD_IDX]
+    proc = players[player_idx][SUBPROCESS_IDX][side_idx]
+    try:
+        proc.kill()
+    except Exception:
+        pass
+    new_proc = start_engine(cmd)
+    players[player_idx][SUBPROCESS_IDX][side_idx] = new_proc
+    print('restart', players[player_idx][NAME_IDX], 'side', side_idx)
+    return new_proc
+
+
+def send_command(player_idx, side_idx, cmd):
+    proc = players[player_idx][SUBPROCESS_IDX][side_idx]
+    for _ in range(2):
+        if proc.poll() is not None:
+            proc = restart_process(player_idx, side_idx)
+        try:
+            proc.stdin.write(cmd.encode('utf-8'))
+            proc.stdin.flush()
+        except (BrokenPipeError, OSError):
+            proc = restart_process(player_idx, side_idx)
+            continue
+
+        line = ''
+        while line == '':
+            raw = proc.stdout.readline()
+            if raw == b'':
+                proc = restart_process(player_idx, side_idx)
+                break
+            line = raw.decode(errors='replace').replace('\r', '').replace('\n', '')
+        if line != '':
+            return line
+
+    raise RuntimeError('failed to communicate with engine: ' + players[player_idx][NAME_IDX] + ' cmd=' + cmd.strip())
 
 def play_battle(p0_idx, p1_idx, opening_idx):
     player_idxes = [p0_idx, p1_idx]
@@ -120,34 +167,19 @@ def play_battle(p0_idx, p1_idx, opening_idx):
         o = othello()
         cmd_clear_board = 'clear_board\n'
         for player_idx in [p0_idx, p1_idx]:
-            proc = players[player_idx][SUBPROCESS_IDX][player]
-            proc.stdin.write(cmd_clear_board.encode('utf-8'))
-            proc.stdin.flush()
-            line = ''
-            while line == '':
-                line = proc.stdout.readline().decode().replace('\r', '').replace('\n', '')
+            send_command(player_idx, player, cmd_clear_board)
         # play opening
         for i in range(0, len(opening), 2):
             if not o.check_legal():
-                cmd_pass = 'play ' + ('b' if o.player == black else 'w') + 'pass' + '\n'
+                cmd_pass = 'play ' + ('b' if o.player == black else 'w') + ' pass\n'
                 for player_idx in [p0_idx, p1_idx]:
-                    proc = players[player_idx][SUBPROCESS_IDX][player]
-                    proc.stdin.write(cmd_pass.encode('utf-8'))
-                    proc.stdin.flush()
-                    line = ''
-                    while line == '':
-                        line = proc.stdout.readline().decode().replace('\r', '').replace('\n', '')
+                    send_command(player_idx, player, cmd_pass)
                 o.player = 1 - o.player
                 o.check_legal()
             cmd_play = 'play ' + ('b' if o.player == black else 'w') + ' ' + opening[i] + opening[i + 1] + '\n'
             print(cmd_play)
             for player_idx in [p0_idx, p1_idx]:
-                proc = players[player_idx][SUBPROCESS_IDX][player]
-                proc.stdin.write(cmd_play.encode('utf-8'))
-                proc.stdin.flush()
-                line = ''
-                while line == '':
-                    line = proc.stdout.readline().decode().replace('\r', '').replace('\n', '')
+                send_command(player_idx, player, cmd_play)
             x = ord(opening[i].lower()) - ord('a')
             y = int(opening[i + 1]) - 1
             record += opening[i] + opening[i + 1]
@@ -155,27 +187,17 @@ def play_battle(p0_idx, p1_idx, opening_idx):
         # play with ai
         while True:
             if not o.check_legal():
-                cmd_pass = 'play ' + ('b' if o.player == black else 'w') + 'pass' + '\n'
+                cmd_pass = 'play ' + ('b' if o.player == black else 'w') + ' pass\n'
                 for player_idx in [p0_idx, p1_idx]:
-                    proc = players[player_idx][SUBPROCESS_IDX][player]
-                    proc.stdin.write(cmd_pass.encode('utf-8'))
-                    proc.stdin.flush()
-                    line = ''
-                    while line == '':
-                        line = proc.stdout.readline().decode().replace('\r', '').replace('\n', '')
+                    send_command(player_idx, player, cmd_pass)
                 o.player = 1 - o.player
                 if not o.check_legal():
                     break
             player_idx = player_idxes[o.player ^ player]
-            proc = players[player_idx][SUBPROCESS_IDX][player]
             cmd_genmove = 'genmove ' + ('b' if o.player == black else 'w') + '\n'
             print(record)
             print(cmd_genmove)
-            proc.stdin.write(cmd_genmove.encode('utf-8'))
-            proc.stdin.flush()
-            line = ''
-            while line == '':
-                line = proc.stdout.readline().decode().replace('\r', '').replace('\n', '')
+            line = send_command(player_idx, player, cmd_genmove)
             coord = line[-2:].lower()
             print(line, coord)
             try:
@@ -200,13 +222,8 @@ def play_battle(p0_idx, p1_idx, opening_idx):
                 print(coord)
                 print(y, x)
             n_player_idx = player_idxes[o_player ^ 1 ^ player]
-            n_proc = players[n_player_idx][SUBPROCESS_IDX][player]
             cmd_play = 'play ' + ('b' if o_player == black else 'w') + ' ' + chr(ord('a') + x) + str(y + 1) + '\n'
-            n_proc.stdin.write(cmd_play.encode('utf-8'))
-            n_proc.stdin.flush()
-            line = ''
-            while line == '':
-                line = n_proc.stdout.readline().decode().replace('\r', '').replace('\n', '')
+            send_command(n_player_idx, player, cmd_play)
         # update win/draw/loss
         if o.n_stones[player] > o.n_stones[1 - player]: # p0 win
             sum_disc_diff_p0 += o.n_stones[player] - o.n_stones[1 - player] + (64 - (o.n_stones[player] + o.n_stones[1 - player]))
