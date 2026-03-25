@@ -14,8 +14,8 @@ import threading
 LEVEL = int(sys.argv[1])
 N_SET_GAMES = int(sys.argv[2])
 N_THREADS = 1
-N_PARALLEL_MATCHES = 1 #8  # 同時並列対戦数
-N_TOTAL_PROCESSES = 2 #10 #int(sys.argv[3]) if len(sys.argv) >= 4 else 2  # 各プレイヤーの総プロセス数(2の倍数)
+N_PARALLEL_MATCHES = 8  # 同時並列対戦数
+N_TOTAL_PROCESSES = 10 #int(sys.argv[3]) if len(sys.argv) >= 4 else 2  # 各プレイヤーの総プロセス数(2の倍数)
 
 if N_TOTAL_PROCESSES < 2 or N_TOTAL_PROCESSES % 2 != 0:
     print('N_TOTAL_PROCESSES must be an even number >= 2')
@@ -38,11 +38,10 @@ player_info = [
     # ['0318', 'versions/Egaroucid_for_Console_beta/Egaroucid_for_Console.exe -gtp -quiet -nobook -eval ./../model/20260318_1/eval.egev2'],
     # ['0317', 'versions/Egaroucid_for_Console_beta/Egaroucid_for_Console.exe -gtp -quiet -nobook -eval ./../model/20260317_1/eval.egev2'],
     ['7.8.0', 'versions/Egaroucid_for_Console_7_8_0_Windows_SIMD/Egaroucid_for_Console_7_8_0_SIMD.exe -gtp -quiet -nobook'],
-    ['7.8.0', 'versions/Egaroucid_for_Console_7_8_0_Windows_SIMD/Egaroucid_for_Console_7_8_0_SIMD.exe -gtp -quiet -nobook'],
     # ['7.6.0', 'versions/Egaroucid_for_Console_7_6_0_Windows_SIMD/Egaroucid_for_Console_7_6_0_SIMD.exe -gtp -quiet -nobook'],
     # ['7.5.0', 'versions/Egaroucid_for_Console_7_5_0_Windows_SIMD/Egaroucid_for_Console_7_5_0_SIMD.exe -gtp -quiet -nobook'],
-    # ['Edax4.6', 'versions/edax_4_6/wEdax-x86-64-v3.exe -gtp -q'],
-    # ['Neural5', 'versions/neural-reversi-cli-5.0.0-windows-x86_64-v3.exe gtp']
+    ['Edax4.6', 'versions/edax_4_6/wEdax-x86-64-v3.exe -gtp -q'],
+    ['Neural5', 'versions/neural-reversi-cli-5.0.0-windows-x86_64-v3.exe gtp']
 
 
 
@@ -92,6 +91,49 @@ RESULT_DISC_IDX = 3
 N_PLAYED_IDX = 4
 RATING_IDX = 5
 PROC_POOL_IDX = 6
+CMD_IDX = 7
+
+
+def start_engine(cmd):
+    return subprocess.Popen(cmd.split(), stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
+
+
+def restart_process(player_idx, proc_idx):
+    cmd = players[player_idx][CMD_IDX]
+    proc = players[player_idx][SUBPROCESS_IDX][proc_idx]
+    try:
+        proc.kill()
+    except Exception:
+        pass
+    new_proc = start_engine(cmd)
+    players[player_idx][SUBPROCESS_IDX][proc_idx] = new_proc
+    print('restart', players[player_idx][NAME_IDX], 'proc', proc_idx)
+    return new_proc
+
+
+def send_command(player_idx, proc_idx, cmd):
+    proc = players[player_idx][SUBPROCESS_IDX][proc_idx]
+    for _ in range(2):
+        if proc.poll() is not None:
+            proc = restart_process(player_idx, proc_idx)
+        try:
+            proc.stdin.write(cmd.encode('utf-8'))
+            proc.stdin.flush()
+        except (BrokenPipeError, OSError):
+            proc = restart_process(player_idx, proc_idx)
+            continue
+
+        line = ''
+        while line == '':
+            raw = proc.stdout.readline()
+            if raw == b'':
+                proc = restart_process(player_idx, proc_idx)
+                break
+            line = raw.decode(errors='replace').replace('\r', '').replace('\n', '')
+        if line != '':
+            return line
+
+    raise RuntimeError('failed to communicate with engine: ' + players[player_idx][NAME_IDX] + ' cmd=' + cmd.strip())
 
 players = []
 results_lock = threading.Lock()  # 結果更新の同期化
@@ -106,13 +148,13 @@ for name, cmd in player_info:
     if 'Edax' in name:
         cmd_with_options += ' -n ' + str(N_THREADS)
     elif 'Neural' in name:
-        cmd_with_options += ' -threads ' + str(N_THREADS)
+        cmd_with_options += ' --threads ' + str(N_THREADS)
     else:
         cmd_with_options += ' -t ' + str(N_THREADS)
     print(name, cmd_with_options)
     # 総プロセス数を 2 の倍数で用意し、前半/後半をそれぞれ色別に利用する
     subprocesses = [
-        subprocess.Popen(cmd_with_options.split(), stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
+        start_engine(cmd_with_options)
         for _ in range(N_TOTAL_PROCESSES)
     ]
     proc_pool = [queue.Queue(), queue.Queue()]
@@ -133,7 +175,9 @@ for name, cmd in player_info:
         # rating
         Elo_player(1500),
         # color-based process pool
-        proc_pool
+        proc_pool,
+        # command used to start subprocesses
+        cmd_with_options
     ])
 
 def play_single_game(p0_idx, p1_idx, opening_idx, p0_is_black):
@@ -145,31 +189,24 @@ def play_single_game(p0_idx, p1_idx, opening_idx, p0_is_black):
     p1_proc_idx = players[p1_idx][PROC_POOL_IDX][player].get()
     record = ''
     o = othello()
-    print(opening)
     try:
+        cmd_clear_board = 'clear_board\n'
+        send_command(p0_idx, p0_proc_idx, cmd_clear_board)
+        send_command(p1_idx, p1_proc_idx, cmd_clear_board)
+
         # play opening
         for i in range(0, len(opening), 2):
             if not o.check_legal():
-                cmd_pass = 'play ' + ('b' if o.player == black else 'w') + 'pass' + '\n'
+                cmd_pass = 'play ' + ('b' if o.player == black else 'w') + ' pass\n'
                 for player_idx in [p0_idx, p1_idx]:
                     proc_idx = p0_proc_idx if player_idx == p0_idx else p1_proc_idx
-                    proc = players[player_idx][SUBPROCESS_IDX][proc_idx]
-                    proc.stdin.write(cmd_pass.encode('utf-8'))
-                    proc.stdin.flush()
-                    line = ''
-                    while line == '':
-                        line = proc.stdout.readline().decode().replace('\r', '').replace('\n', '')
+                    send_command(player_idx, proc_idx, cmd_pass)
                 o.player = 1 - o.player
                 o.check_legal()
             cmd_play = 'play ' + ('b' if o.player == black else 'w') + ' ' + opening[i] + opening[i + 1] + '\n'
             for player_idx in [p0_idx, p1_idx]:
                 proc_idx = p0_proc_idx if player_idx == p0_idx else p1_proc_idx
-                proc = players[player_idx][SUBPROCESS_IDX][proc_idx]
-                proc.stdin.write(cmd_play.encode('utf-8'))
-                proc.stdin.flush()
-                line = ''
-                while line == '':
-                    line = proc.stdout.readline().decode().replace('\r', '').replace('\n', '')
+                send_command(player_idx, proc_idx, cmd_play)
             x = ord(opening[i].lower()) - ord('a')
             y = int(opening[i + 1]) - 1
             record += opening[i] + opening[i + 1]
@@ -177,28 +214,18 @@ def play_single_game(p0_idx, p1_idx, opening_idx, p0_is_black):
         # play with ai
         while True:
             if not o.check_legal():
-                cmd_pass = 'play ' + ('b' if o.player == black else 'w') + ' ' + 'pass' + '\n'
+                cmd_pass = 'play ' + ('b' if o.player == black else 'w') + ' pass\n'
                 for player_idx in [p0_idx, p1_idx]:
                     proc_idx = p0_proc_idx if player_idx == p0_idx else p1_proc_idx
-                    proc = players[player_idx][SUBPROCESS_IDX][proc_idx]
-                    proc.stdin.write(cmd_pass.encode('utf-8'))
-                    proc.stdin.flush()
-                    line = ''
-                    while line == '':
-                        line = proc.stdout.readline().decode().replace('\r', '').replace('\n', '')
+                    send_command(player_idx, proc_idx, cmd_pass)
                 o.player = 1 - o.player
                 if not o.check_legal():
                     break
 
             player_idx = player_idxes[o.player ^ player]
             proc_idx = p0_proc_idx if player_idx == p0_idx else p1_proc_idx
-            proc = players[player_idx][SUBPROCESS_IDX][proc_idx]
             cmd_genmove = 'genmove ' + ('b' if o.player == black else 'w') + '\n'
-            proc.stdin.write(cmd_genmove.encode('utf-8'))
-            proc.stdin.flush()
-            line = ''
-            while line == '':
-                line = proc.stdout.readline().decode().replace('\r', '').replace('\n', '')
+            line = send_command(player_idx, proc_idx, cmd_genmove)
             coord = line[-2:].lower()
             try:
                 y = int(coord[1]) - 1
@@ -225,11 +252,8 @@ def play_single_game(p0_idx, p1_idx, opening_idx, p0_is_black):
                 print(y, x)
             n_player_idx = player_idxes[o_player ^ 1 ^ player]
             n_proc_idx = p0_proc_idx if n_player_idx == p0_idx else p1_proc_idx
-            n_proc = players[n_player_idx][SUBPROCESS_IDX][n_proc_idx]
-            cmd_play = 'play ' + ('b' if o.player == black else 'w') + ' ' + chr(ord('a') + x) + str(y + 1)
-            n_proc.stdin.write(cmd_play.encode('utf-8'))
-            n_proc.stdin.flush()
-            n_proc.stdout.readline() # wait '='
+            cmd_play = 'play ' + ('b' if o_player == black else 'w') + ' ' + chr(ord('a') + x) + str(y + 1) + '\n'
+            send_command(n_player_idx, n_proc_idx, cmd_play)
 
         # calculate disc difference
         if o.n_stones[player] > o.n_stones[1 - player]:
