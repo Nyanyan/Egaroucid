@@ -200,12 +200,10 @@ def print_all_result():
         name = players[i][NAME_IDX]
         print(name, end='\t')
     print('all', end='\t')
-    print('r_rate', end='\t')
     print('e_rate95')
     for i in range(len(players)):
         name = players[i][NAME_IDX]
         result = players[i][RESULT_IDX]
-        rating = players[i][RATING_IDX]
         print(name, end='\t')
         # each
         for j in range(len(players)):
@@ -225,8 +223,6 @@ def print_all_result():
             l += ll
         r = (w + d * 0.5) / max(1, w + d + l)
         print("{:.4f}".format(r), end='\t')
-        # rating
-        print("{:.1f}".format(rating.get_rating()), end='\t')
         # estimated rating
         estimated_rating = estimated_ratings.get(name)
         if estimated_rating is None:
@@ -241,13 +237,11 @@ def print_all_result():
         name = players[i][NAME_IDX]
         print(name, end='\t')
     print('all', end='\t')
-    print('r_rate', end='\t')
     print('e_rate95')
     for i in range(len(players)):
         name = players[i][NAME_IDX]
         result = players[i][RESULT_DISC_IDX]
         n_played = players[i][N_PLAYED_IDX]
-        rating = players[i][RATING_IDX]
         print(name, end='\t')
         # each
         for j in range(len(players)):
@@ -265,8 +259,6 @@ def print_all_result():
         if avg_discs_all >= 0:
             s = '+' + s
         print(s, end='\t')
-        # rating
-        print("{:.1f}".format(rating.get_rating()), end='\t')
         # estimated rating
         estimated_rating = estimated_ratings.get(name)
         if estimated_rating is None:
