@@ -131,7 +131,7 @@ public:
         }
         draw_board(getData().fonts, getData().colors, getData().history_elem, color_radio.checked == BOARD_IMAGE_COLOR_MONOCHROME);
         if (color_radio.checked == BOARD_IMAGE_COLOR_MONOCHROME) {
-            RoundRect(BOARD_SX, BOARD_SY, BOARD_CELL_SIZE * HW, BOARD_CELL_SIZE * HW, BOARD_ROUND_DIAMETER).drawFrame(0, BOARD_ROUND_FRAME_WIDTH, getData().colors.black);
+            s3d::RoundRect(BOARD_SX, BOARD_SY, BOARD_CELL_SIZE * HW, BOARD_CELL_SIZE * HW, BOARD_ROUND_DIAMETER).drawFrame(0, BOARD_ROUND_FRAME_WIDTH, getData().colors.black);
         }
 
         int board_arr[HW2];

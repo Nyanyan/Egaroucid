@@ -229,10 +229,10 @@ public:
         
         // 手番に応じてボタンの周りを白線で囲う
         if (is_black_turn) {
-            RoundRect(BUTTON3_VERTICAL_SX - 6, BUTTON3_VERTICAL_1_SY - 6, BUTTON3_VERTICAL_WIDTH + 12, BUTTON3_VERTICAL_HEIGHT + 12, BUTTON3_VERTICAL_RADIUS + 6)
+            s3d::RoundRect(BUTTON3_VERTICAL_SX - 6, BUTTON3_VERTICAL_1_SY - 6, BUTTON3_VERTICAL_WIDTH + 12, BUTTON3_VERTICAL_HEIGHT + 12, BUTTON3_VERTICAL_RADIUS + 6)
                 .drawFrame(2, 0, getData().colors.black);
         } else {
-            RoundRect(BUTTON3_VERTICAL_SX - 6, BUTTON3_VERTICAL_2_SY - 6, BUTTON3_VERTICAL_WIDTH + 12, BUTTON3_VERTICAL_HEIGHT + 12, BUTTON3_VERTICAL_RADIUS + 6)
+            s3d::RoundRect(BUTTON3_VERTICAL_SX - 6, BUTTON3_VERTICAL_2_SY - 6, BUTTON3_VERTICAL_WIDTH + 12, BUTTON3_VERTICAL_HEIGHT + 12, BUTTON3_VERTICAL_RADIUS + 6)
                 .drawFrame(2, 0, getData().colors.white);
         }
         
