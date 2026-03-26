@@ -149,7 +149,18 @@ void take_board_image_screen_shot(double window_scale, std::string screenshot_di
     const Rect clip_rect(clip_sx * window_scale, clip_sy * window_scale, clip_size_x * window_scale, clip_size_y * window_scale);
     Image image_clip = image.clipped(clip_rect);
 
-    const int coord_offset = include_coordinate ? static_cast<int>(BOARD_COORD_SIZE * window_scale) : 0;
+    if (include_coordinate) {
+        if (!set_image_to_clipboard_preserve_alpha(image_clip)) {
+            Clipboard::SetImage(image_clip);
+        }
+        String img_date = Unicode::Widen(calc_date());
+        String save_path = Unicode::Widen(screenshot_dir) + img_date + U"_" + Unicode::Widen(transcript) + U".png";
+        image_clip.save(save_path);
+        std::cerr << "screen shot saved to " << save_path.narrow() << " and copied to clipboard" << std::endl;
+        return;
+    }
+
+    const int coord_offset = 0;
     const int outer_size = static_cast<int>(board_outer_size * window_scale);
     const int outer_left = coord_offset;
     const int outer_top = coord_offset;
@@ -204,13 +215,7 @@ void take_board_image_screen_shot(double window_scale, std::string screenshot_di
     for (int y = 0; y < image_clip.height(); ++y) {
         for (int x = 0; x < image_clip.width(); ++x) {
             const bool in_board_outer = is_in_rounded_rect(x, y);
-            bool keep_pixel = in_board_outer;
-
-            if (include_coordinate) {
-                const bool in_left_coord_band = (x < outer_left && y >= outer_top && y < outer_top + outer_size);
-                const bool in_top_coord_band = (y < outer_top && x >= outer_left && x < outer_left + outer_size);
-                keep_pixel = keep_pixel || in_left_coord_band || in_top_coord_band;
-            }
+            const bool keep_pixel = in_board_outer;
 
             if (!keep_pixel) {
                 image_clip[y][x] = Color{ 0, 0, 0, 0 };
