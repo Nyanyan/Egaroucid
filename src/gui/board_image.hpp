@@ -19,6 +19,9 @@
 constexpr int BOARD_IMAGE_COLOR_DEFAULT = 0;
 constexpr int BOARD_IMAGE_COLOR_MONOCHROME = 1;
 
+constexpr int BOARD_IMAGE_COORDINATE_INCLUDE = 0;
+constexpr int BOARD_IMAGE_COORDINATE_EXCLUDE = 1;
+
 constexpr int BOARD_IMAGE_BRECT = 0;
 constexpr int BOARD_IMAGE_BSTAR = 1;
 constexpr int BOARD_IMAGE_WRECT = 2;
@@ -37,6 +40,7 @@ private:
     Button save_image_button;
     Radio_button mark_radio;
     Radio_button color_radio;
+    Radio_button coordinate_radio;
     int marks[HW2];
     int last_marked[HW2];
     bool taking_screen_shot;
@@ -65,6 +69,12 @@ public:
         radio_button_elem.init(480, 300, getData().fonts.font, 15, language.get("board_image", "monochrome"), false);
         color_radio.push(radio_button_elem);
 
+        coordinate_radio.init();
+        radio_button_elem.init(480, 380, getData().fonts.font, 15, language.get("board_image", "include_coordinate"), true);
+        coordinate_radio.push(radio_button_elem);
+        radio_button_elem.init(480, 400, getData().fonts.font, 15, language.get("board_image", "exclude_coordinate"), false);
+        coordinate_radio.push(radio_button_elem);
+
         for (int i = 0; i < HW2; ++i) {
             marks[i] = BOARD_IMAGE_NOMARK;
             last_marked[i] = BOARD_IMAGE_NOT_CLICKED;
@@ -75,7 +85,12 @@ public:
     void update() override {
         if (taking_screen_shot) {
             std::string transcript = get_transcript(getData().graph_resources, getData().history_elem);
-            take_screen_shot(getData().window_state.window_scale, getData().user_settings.screenshot_saving_dir, transcript);
+            take_board_image_screen_shot(
+                getData().window_state.window_scale,
+                getData().user_settings.screenshot_saving_dir,
+                transcript,
+                coordinate_radio.checked == BOARD_IMAGE_COORDINATE_INCLUDE
+            );
             taking_screen_shot = false;
         }
 
@@ -103,8 +118,10 @@ public:
         getData().fonts.font(language.get("in_out", "board_image")).draw(25, 480, 20, getData().colors.white);
         getData().fonts.font(language.get("board_image", "mark")).draw(20, 480, 80, getData().colors.white);
         getData().fonts.font(language.get("board_image", "color")).draw(20, 480, 240, getData().colors.white);
+        getData().fonts.font(language.get("board_image", "coordinate")).draw(20, 480, 340, getData().colors.white);
         mark_radio.draw();
         color_radio.draw();
+        coordinate_radio.draw();
         if (color_radio.checked == BOARD_IMAGE_COLOR_MONOCHROME) {
             const int clip_sx = BOARD_SX - BOARD_ROUND_FRAME_WIDTH - BOARD_COORD_SIZE - 1;
             const int clip_sy = BOARD_SY - BOARD_ROUND_FRAME_WIDTH - BOARD_COORD_SIZE - 1;

@@ -309,7 +309,10 @@
         "default": "デフォルト",
         "monochrome": "モノクロ",
         "mark": "マーク",
-        "color": "色"
+        "color": "色",
+        "coordinate": "座標",
+        "include_coordinate": "含む",
+        "exclude_coordinate": "含まない"
     },
     "opening_setting": {
         "opening_setting": "強制する進行の設定",

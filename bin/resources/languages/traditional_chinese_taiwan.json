@@ -307,7 +307,10 @@
         "default": "預設",
         "monochrome": "單色",
         "mark": "標記",
-        "color": "顏色"
+        "color": "顏色",
+        "coordinate": "座標",
+        "include_coordinate": "包含",
+        "exclude_coordinate": "不包含"
     },
     "opening_setting": {
         "opening_setting": "固定開局設定",

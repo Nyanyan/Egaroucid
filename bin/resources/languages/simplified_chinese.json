@@ -309,7 +309,10 @@
         "default": "默认",
         "monochrome": "单色",
         "mark": "标记",
-        "color": "颜色"
+        "color": "颜色",
+        "coordinate": "坐标",
+        "include_coordinate": "包含",
+        "exclude_coordinate": "不包含"
     },
     "opening_setting": {
         "opening_setting": "强制开局设置",

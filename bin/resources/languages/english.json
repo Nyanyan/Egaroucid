@@ -307,7 +307,10 @@
         "default": "Default",
         "monochrome": "Monochrome",
         "mark": "Mark",
-        "color": "Color"
+        "color": "Color",
+        "coordinate": "Coordinates",
+        "include_coordinate": "Include",
+        "exclude_coordinate": "Exclude"
     },
     "opening_setting": {
         "opening_setting": "Forced Opening Settings",
