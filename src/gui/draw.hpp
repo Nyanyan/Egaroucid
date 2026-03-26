@@ -19,15 +19,17 @@ constexpr int PLAYING_MODE_NONE = -1;
 constexpr int PLAYING_MODE_PLAYING = 0;
 constexpr int PLAYING_MODE_ANALYZING = 1;
 
-void draw_empty_board(Fonts fonts, Colors colors, bool monochrome) {
+void draw_empty_board(Fonts fonts, Colors colors, bool monochrome, bool show_coordinate = true) {
     String coord_x = U"abcdefgh";
     Color dark_gray_color = colors.dark_gray;
     if (monochrome) {
         dark_gray_color = colors.black;
     }
-    for (int i = 0; i < HW; ++i) {
-        fonts.font_bold(i + 1).draw(15, Arg::center(BOARD_SX - BOARD_COORD_SIZE, BOARD_SY + BOARD_CELL_SIZE * i + BOARD_CELL_SIZE / 2), dark_gray_color);
-        fonts.font_bold(coord_x[i]).draw(15, Arg::center(BOARD_SX + BOARD_CELL_SIZE * i + BOARD_CELL_SIZE / 2, BOARD_SY - BOARD_COORD_SIZE - 2), dark_gray_color);
+    if (show_coordinate) {
+        for (int i = 0; i < HW; ++i) {
+            fonts.font_bold(i + 1).draw(15, Arg::center(BOARD_SX - BOARD_COORD_SIZE, BOARD_SY + BOARD_CELL_SIZE * i + BOARD_CELL_SIZE / 2), dark_gray_color);
+            fonts.font_bold(coord_x[i]).draw(15, Arg::center(BOARD_SX + BOARD_CELL_SIZE * i + BOARD_CELL_SIZE / 2, BOARD_SY - BOARD_COORD_SIZE - 2), dark_gray_color);
+        }
     }
     for (int i = 0; i < HW_M1; ++i) {
         Line(BOARD_SX + BOARD_CELL_SIZE * (i + 1), BOARD_SY, BOARD_SX + BOARD_CELL_SIZE * (i + 1), BOARD_SY + BOARD_CELL_SIZE * HW).draw(BOARD_CELL_FRAME_WIDTH, dark_gray_color);
@@ -40,8 +42,8 @@ void draw_empty_board(Fonts fonts, Colors colors, bool monochrome) {
     s3d::RoundRect(BOARD_SX, BOARD_SY, BOARD_CELL_SIZE * HW, BOARD_CELL_SIZE * HW, BOARD_ROUND_DIAMETER).drawFrame(0, BOARD_ROUND_FRAME_WIDTH, colors.white);
 }
 
-void draw_board(Fonts fonts, Colors colors, History_elem history_elem, bool monochrome) {
-    draw_empty_board(fonts, colors, monochrome);
+void draw_board(Fonts fonts, Colors colors, History_elem history_elem, bool monochrome, bool show_coordinate = true) {
+    draw_empty_board(fonts, colors, monochrome, show_coordinate);
     Flip flip;
     int board_arr[HW2];
     history_elem.board.translate_to_arr(board_arr, history_elem.player);

@@ -308,6 +308,9 @@
         "monochrome": "Monochrome",
         "mark": "Mark",
         "color": "Color",
+        "outer_frame_color": "Outer Frame",
+        "white": "White",
+        "dark_gray": "Dark Gray",
         "coordinate": "Coordinates",
         "include_coordinate": "Include",
         "exclude_coordinate": "Exclude"

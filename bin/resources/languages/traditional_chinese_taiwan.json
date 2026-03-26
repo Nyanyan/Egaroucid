@@ -308,6 +308,9 @@
         "monochrome": "單色",
         "mark": "標記",
         "color": "顏色",
+        "outer_frame_color": "外框顏色",
+        "white": "白色",
+        "dark_gray": "深灰",
         "coordinate": "座標",
         "include_coordinate": "包含",
         "exclude_coordinate": "不包含"
