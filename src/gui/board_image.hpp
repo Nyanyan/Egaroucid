@@ -52,27 +52,27 @@ public:
         Radio_button_element radio_button_elem;
 
         mark_radio.init();
-        radio_button_elem.init(480, 120, getData().fonts.font, 15, language.get("board_image", "rect"), true, getData().colors.black);
+        radio_button_elem.init(480, 100, getData().fonts.font, 15, language.get("board_image", "rect"), true, getData().colors.black);
         mark_radio.push(radio_button_elem);
-        radio_button_elem.init(480, 140, getData().fonts.font, 15, language.get("board_image", "star"), false, getData().colors.black);
+        radio_button_elem.init(480, 120, getData().fonts.font, 15, language.get("board_image", "star"), false, getData().colors.black);
         mark_radio.push(radio_button_elem);
-        radio_button_elem.init(480, 160, getData().fonts.font, 15, language.get("board_image", "rect"), false, getData().colors.white);
+        radio_button_elem.init(480, 140, getData().fonts.font, 15, language.get("board_image", "rect"), false, getData().colors.white);
         mark_radio.push(radio_button_elem);
-        radio_button_elem.init(480, 180, getData().fonts.font, 15, language.get("board_image", "star"), false, getData().colors.white);
+        radio_button_elem.init(480, 160, getData().fonts.font, 15, language.get("board_image", "star"), false, getData().colors.white);
         mark_radio.push(radio_button_elem);
-        radio_button_elem.init(480, 200, getData().fonts.font, 15, language.get("board_image", "nomark"), false, getData().colors.white);
+        radio_button_elem.init(480, 180, getData().fonts.font, 15, language.get("board_image", "nomark"), false, getData().colors.white);
         mark_radio.push(radio_button_elem);
 
         color_radio.init();
-        radio_button_elem.init(480, 280, getData().fonts.font, 15, language.get("board_image", "default"), true);
+        radio_button_elem.init(480, 230, getData().fonts.font, 15, language.get("board_image", "default"), true);
         color_radio.push(radio_button_elem);
-        radio_button_elem.init(480, 300, getData().fonts.font, 15, language.get("board_image", "monochrome"), false);
+        radio_button_elem.init(480, 250, getData().fonts.font, 15, language.get("board_image", "monochrome"), false);
         color_radio.push(radio_button_elem);
 
         coordinate_radio.init();
-        radio_button_elem.init(480, 380, getData().fonts.font, 15, language.get("board_image", "include_coordinate"), true);
+        radio_button_elem.init(480, 300, getData().fonts.font, 15, language.get("board_image", "include_coordinate"), true);
         coordinate_radio.push(radio_button_elem);
-        radio_button_elem.init(480, 400, getData().fonts.font, 15, language.get("board_image", "exclude_coordinate"), false);
+        radio_button_elem.init(480, 320, getData().fonts.font, 15, language.get("board_image", "exclude_coordinate"), false);
         coordinate_radio.push(radio_button_elem);
 
         for (int i = 0; i < HW2; ++i) {
@@ -116,9 +116,9 @@ public:
 
         Scene::SetBackground(getData().colors.green);
         getData().fonts.font(language.get("in_out", "board_image")).draw(25, 480, 20, getData().colors.white);
-        getData().fonts.font(language.get("board_image", "mark")).draw(20, 480, 80, getData().colors.white);
-        getData().fonts.font(language.get("board_image", "color")).draw(20, 480, 240, getData().colors.white);
-        getData().fonts.font(language.get("board_image", "coordinate")).draw(20, 480, 340, getData().colors.white);
+        getData().fonts.font(language.get("board_image", "mark")).draw(15, 480, 70, getData().colors.white);
+        getData().fonts.font(language.get("board_image", "color")).draw(15, 480, 200, getData().colors.white);
+        getData().fonts.font(language.get("board_image", "coordinate")).draw(15, 480, 270, getData().colors.white);
         mark_radio.draw();
         color_radio.draw();
         coordinate_radio.draw();
