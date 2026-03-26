@@ -128,11 +128,15 @@ public:
         getData().fonts.font(language.get("in_out", "board_image")).draw(25, 480, 20, getData().colors.white);
         getData().fonts.font(language.get("board_image", "mark")).draw(15, 480, 70, getData().colors.white);
         getData().fonts.font(language.get("board_image", "color")).draw(15, 480, 200, getData().colors.white);
-        getData().fonts.font(language.get("board_image", "outer_frame_color")).draw(15, 600, 200, getData().colors.white);
+        if (color_radio.checked == BOARD_IMAGE_COLOR_DEFAULT) {
+            getData().fonts.font(language.get("board_image", "outer_frame_color")).draw(15, 600, 200, getData().colors.white);
+        }
         getData().fonts.font(language.get("board_image", "coordinate")).draw(15, 480, 270, getData().colors.white);
         mark_radio.draw();
         color_radio.draw();
-        outer_frame_color_radio.draw();
+        if (color_radio.checked == BOARD_IMAGE_COLOR_DEFAULT) {
+            outer_frame_color_radio.draw();
+        }
         coordinate_radio.draw();
         if (color_radio.checked == BOARD_IMAGE_COLOR_MONOCHROME) {
             const int clip_sx = BOARD_SX - BOARD_ROUND_FRAME_WIDTH - BOARD_COORD_SIZE - 1;
@@ -144,9 +148,8 @@ public:
         const bool monochrome = color_radio.checked == BOARD_IMAGE_COLOR_MONOCHROME;
         const bool include_coordinate = coordinate_radio.checked == BOARD_IMAGE_COORDINATE_INCLUDE;
         draw_board(getData().fonts, getData().colors, getData().history_elem, monochrome, include_coordinate);
-        const Color outer_frame_color = (outer_frame_color_radio.checked == BOARD_IMAGE_OUTER_FRAME_WHITE)
-            ? getData().colors.white
-            : (monochrome ? getData().colors.black : getData().colors.dark_gray);
+        const Color outer_frame_color = monochrome ? getData().colors.black : 
+            ((outer_frame_color_radio.checked == BOARD_IMAGE_OUTER_FRAME_WHITE) ? getData().colors.white : getData().colors.dark_gray);
         s3d::RoundRect(BOARD_SX, BOARD_SY, BOARD_CELL_SIZE * HW, BOARD_CELL_SIZE * HW, BOARD_ROUND_DIAMETER).drawFrame(0, BOARD_ROUND_FRAME_WIDTH, outer_frame_color);
 
         int board_arr[HW2];
