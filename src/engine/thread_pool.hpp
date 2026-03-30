@@ -11,8 +11,8 @@
 
 #pragma once
 #include <iostream>
+#include <deque>
 #include <future>
-#include <queue>
 #include <thread>
 #include <atomic>
 #include <functional>
@@ -42,7 +42,7 @@ class Thread_pool {
         int n_thread;
         //std::atomic<int> n_idle;
         int n_idle;
-        std::queue<std::pair<thread_id_t, std::function<void()>>> tasks{};
+        std::deque<std::pair<thread_id_t, std::function<void()>>> tasks{};
         std::unique_ptr<std::thread[]> threads;
         std::condition_variable condition;
 
@@ -134,6 +134,42 @@ class Thread_pool {
             return n_using_thread[id];
         }
 
+        bool try_execute_one(thread_id_t preferred_id) {
+            std::pair<thread_id_t, std::function<void()>> task_pair;
+            {
+                std::unique_lock<std::mutex> lock(mtx);
+                if (tasks.empty()) {
+                    return false;
+                }
+                auto it = tasks.end();
+                if (preferred_id != THREAD_ID_NONE) {
+                    for (auto itr = tasks.begin(); itr != tasks.end(); ++itr) {
+                        if (itr->first == preferred_id) {
+                            it = itr;
+                            break;
+                        }
+                    }
+                }
+                if (it == tasks.end()) {
+                    if (preferred_id != THREAD_ID_NONE) {
+                        return false;
+                    }
+                    it = tasks.begin();
+                }
+                task_pair = std::move(*it);
+                tasks.erase(it);
+                ++n_idle;
+            }
+            if (task_pair.second) {
+                task_pair.second();
+                if (task_pair.first != THREAD_ID_NONE) {
+                    n_using_thread[task_pair.first].fetch_sub(1);
+                }
+                return true;
+            }
+            return false;
+        }
+
         /*
         void reset_unavailable() {
             if (n_idle == n_thread && n_using_tasks.load() == 0) {
@@ -217,7 +253,7 @@ class Thread_pool {
                     std::unique_lock<std::mutex> lock(mtx);
                     if (n_idle > 0 && n_using_thread[id] < max_thread_size[id]) {
                         pushed = true;
-                        tasks.push(std::make_pair(id, std::function<void()>(task)));
+                        tasks.emplace_back(id, std::function<void()>(task));
                         --n_idle;
                         condition.notify_one();
                         if (id != THREAD_ID_NONE) {
@@ -243,7 +279,7 @@ class Thread_pool {
                     if (!tasks.empty()) {
                         id = tasks.front().first;
                         task = std::move(tasks.front().second);
-                        tasks.pop();
+                        tasks.pop_front();
                     }
                 }
                 if (task) {
