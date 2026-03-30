@@ -33,7 +33,7 @@ player_info = [
     # ['7.5.0', 'versions/Egaroucid_for_Console_7_5_0_Windows_SIMD/Egaroucid_for_Console_7_5_0_SIMD.exe -gtp -quiet -nobook'],
     ['Edax4.6', 'versions/edax_4_6/wEdax-x86-64-v3.exe -gtp -q'],
     ['Neural5', 'versions/neural-reversi-cli-5.0.0-windows-x86_64-v3.exe gtp'],
-    ['Ntest', 'versions/ntest/ntest.exe --gtp'],
+    # ['Ntest', 'versions/ntest/ntest.exe --gtp'],
 
 
 
@@ -200,9 +200,10 @@ def play_battle(p0_idx, p1_idx, opening_idx):
                 y = int(coord[1]) - 1
                 x = ord(coord[0]) - ord('a')
             except:
-                print('error')
+                print('error1')
                 print(record)
                 print(o.player, player)
+                print(line)
                 print(coord)
                 for i in range(len(players)):
                     for j in range(2):
@@ -213,9 +214,10 @@ def play_battle(p0_idx, p1_idx, opening_idx):
             o_player = o.player
             if not o.move(y, x):
                 o.print_info()
-                print('error')
+                print('error2')
                 print(record)
                 print(o.player, player)
+                print(line)
                 print(coord)
                 print(y, x)
             n_player_idx = player_idxes[o_player ^ 1 ^ player]

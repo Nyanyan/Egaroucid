@@ -42,7 +42,7 @@ player_info = [
     # ['7.5.0', 'versions/Egaroucid_for_Console_7_5_0_Windows_SIMD/Egaroucid_for_Console_7_5_0_SIMD.exe -gtp -quiet -nobook'],
     ['Edax4.6', 'versions/edax_4_6/wEdax-x86-64-v3.exe -gtp -q'],
     ['Neural5', 'versions/neural-reversi-cli-5.0.0-windows-x86_64-v3.exe gtp'],
-    ['Ntest', 'versions/ntest/ntest.exe --gtp'],
+    # ['Ntest', 'versions/ntest/ntest.exe --gtp'],
 
 
 
