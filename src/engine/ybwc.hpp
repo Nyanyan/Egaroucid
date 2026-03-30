@@ -35,6 +35,37 @@ constexpr int YBWC_PUSHED = 124;
 int nega_alpha_ordering_nws(Search *search, int alpha, const int depth, const bool skipped, uint64_t legal, const bool is_end_search, std::vector<bool*> &searchings);
 inline bool is_searching(std::vector<bool*> &searchings);
 
+inline bool ybwc_get_finished_task(std::vector<std::future<Parallel_task>> &parallel_tasks, Parallel_task *task_result) {
+    for (std::future<Parallel_task> &task: parallel_tasks) {
+        if (task.valid() && task.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
+            *task_result = task.get();
+            return true;
+        }
+    }
+    return false;
+}
+
+inline bool ybwc_wait_task_with_help(std::vector<std::future<Parallel_task>> &parallel_tasks, thread_id_t thread_id, bool use_help, Parallel_task *task_result) {
+    while (true) {
+        if (ybwc_get_finished_task(parallel_tasks, task_result)) {
+            return true;
+        }
+        bool has_valid_task = false;
+        for (std::future<Parallel_task> &task: parallel_tasks) {
+            if (task.valid()) {
+                has_valid_task = true;
+                break;
+            }
+        }
+        if (!has_valid_task) {
+            return false;
+        }
+        if (!use_help || !thread_pool.try_execute_one(thread_id)) {
+            std::this_thread::yield();
+        }
+    }
+}
+
 /*
     @brief Wrapper for parallel NWS (Null Window Search)
 
@@ -161,30 +192,23 @@ inline void ybwc_search_young_brothers_nws(Search *search, int alpha, int *v, in
     Parallel_task task_result;
 #if USE_YBWC_SPLITTED_TASK_TERMINATION
     if (is_searching(searchings) && *v <= alpha && running_count >= 2 && ((is_end_search && depth >= 28) || (!is_end_search && depth >= 24))) {
-        for (std::future<Parallel_task> &task: parallel_tasks) {
-            if (task.valid()) {
-                if (task.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
-                    task_result = task.get();
-                    --running_count;
-                    search->n_nodes += task_result.n_nodes;
-                    if (task_result.value != SCORE_UNDEFINED) {
-                        if (*v < task_result.value) {
-                            *v = task_result.value;
-                            *best_move = move_list[task_result.move_idx].flip.pos;
-                        }
-                        move_list[task_result.move_idx].flip.flip = 0;
-                        ++n_searched;
-                    }
+        while (ybwc_get_finished_task(parallel_tasks, &task_result)) {
+            --running_count;
+            search->n_nodes += task_result.n_nodes;
+            if (task_result.value != SCORE_UNDEFINED) {
+                if (*v < task_result.value) {
+                    *v = task_result.value;
+                    *best_move = move_list[task_result.move_idx].flip.pos;
                 }
+                move_list[task_result.move_idx].flip.flip = 0;
+                ++n_searched;
             }
         }
         if (is_searching(searchings) && *v <= alpha && running_count >= 2) {
             n_searching = false; // terminate splitted tasks
-            for (std::future<Parallel_task> &task: parallel_tasks) {
-                if (task.valid()) {
-                    task_result = task.get();
-                    search->n_nodes += task_result.n_nodes;
-                }
+            while (running_count > 0 && ybwc_wait_task_with_help(parallel_tasks, search->thread_id, !is_end_search, &task_result)) {
+                --running_count;
+                search->n_nodes += task_result.n_nodes;
             }
             searchings.pop_back(); // pop n_searching
             if (is_searching(searchings)) {
@@ -194,18 +218,16 @@ inline void ybwc_search_young_brothers_nws(Search *search, int alpha, int *v, in
         }
     }
 #endif
-    for (std::future<Parallel_task> &task: parallel_tasks) {
-        if (task.valid()) {
-            task_result = task.get();
-            search->n_nodes += task_result.n_nodes;
-            if (task_result.value != SCORE_UNDEFINED) {
-                if (*v < task_result.value) {
-                    *v = task_result.value;
-                    *best_move = move_list[task_result.move_idx].flip.pos;
-                    // if (alpha < task_result.value) {
-                    //     n_searching = false;
-                    // }
-                }
+    while (running_count > 0 && ybwc_wait_task_with_help(parallel_tasks, search->thread_id, !is_end_search, &task_result)) {
+        --running_count;
+        search->n_nodes += task_result.n_nodes;
+        if (task_result.value != SCORE_UNDEFINED) {
+            if (*v < task_result.value) {
+                *v = task_result.value;
+                *best_move = move_list[task_result.move_idx].flip.pos;
+                // if (alpha < task_result.value) {
+                //     n_searching = false;
+                // }
             }
         }
     }
@@ -263,30 +285,23 @@ inline void ybwc_search_young_brothers_nws(Search *search, int alpha, int *v, in
     Parallel_task task_result;
 #if USE_YBWC_SPLITTED_TASK_TERMINATION
     if (is_searching(searchings) && *v <= alpha && running_count >= 2 && ((is_end_search && depth >= 28) || (!is_end_search && depth >= 24))) {
-        for (std::future<Parallel_task> &task: parallel_tasks) {
-            if (task.valid()) {
-                if (task.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
-                    task_result = task.get();
-                    --running_count;
-                    search->n_nodes += task_result.n_nodes;
-                    if (task_result.value != SCORE_UNDEFINED) {
-                        if (*v < task_result.value) {
-                            *v = task_result.value;
-                            *best_move = move_list[task_result.move_idx].flip.pos;
-                        }
-                        move_list[task_result.move_idx].flip.flip = 0;
-                        ++n_searched;
-                    }
+        while (ybwc_get_finished_task(parallel_tasks, &task_result)) {
+            --running_count;
+            search->n_nodes += task_result.n_nodes;
+            if (task_result.value != SCORE_UNDEFINED) {
+                if (*v < task_result.value) {
+                    *v = task_result.value;
+                    *best_move = move_list[task_result.move_idx].flip.pos;
                 }
+                move_list[task_result.move_idx].flip.flip = 0;
+                ++n_searched;
             }
         }
         if (is_searching(searchings) && *v <= alpha && running_count >= 2) {
             n_searching = false; // terminate splitted tasks
-            for (std::future<Parallel_task> &task: parallel_tasks) {
-                if (task.valid()) {
-                    task_result = task.get();
-                    search->n_nodes += task_result.n_nodes;
-                }
+            while (running_count > 0 && ybwc_wait_task_with_help(parallel_tasks, search->thread_id, !is_end_search, &task_result)) {
+                --running_count;
+                search->n_nodes += task_result.n_nodes;
             }
             searchings.pop_back(); // pop n_searching
             if (is_searching(searchings)) {
@@ -296,18 +311,16 @@ inline void ybwc_search_young_brothers_nws(Search *search, int alpha, int *v, in
         }
     }
 #endif
-    for (std::future<Parallel_task> &task: parallel_tasks) {
-        if (task.valid()) {
-            task_result = task.get();
-            search->n_nodes += task_result.n_nodes;
-            if (task_result.value != SCORE_UNDEFINED) {
-                if (*v < task_result.value) {
-                    *v = task_result.value;
-                    *best_move = move_list[task_result.move_idx].flip.pos;
-                    // if (alpha < task_result.value) {
-                    //     n_searching = false;
-                    // }
-                }
+    while (running_count > 0 && ybwc_wait_task_with_help(parallel_tasks, search->thread_id, !is_end_search, &task_result)) {
+        --running_count;
+        search->n_nodes += task_result.n_nodes;
+        if (task_result.value != SCORE_UNDEFINED) {
+            if (*v < task_result.value) {
+                *v = task_result.value;
+                *best_move = move_list[task_result.move_idx].flip.pos;
+                // if (alpha < task_result.value) {
+                //     n_searching = false;
+                // }
             }
         }
     }
@@ -390,23 +403,20 @@ void ybwc_search_young_brothers(Search *search, int *alpha, int *beta, int *v, i
     if (running_count) {
         // thread_pool.start_idling();
         Parallel_task task_result;
-        for (std::future<Parallel_task> &task: parallel_tasks) {
-            if (task.valid()) {
-                task_result = task.get();
-                --running_count;
-                search->n_nodes += task_result.n_nodes;
-                if (task_result.value != SCORE_UNDEFINED) {
-                    if (*v < task_result.value) {
-                        *v = task_result.value;
-                        *best_move = move_list[task_result.move_idx].flip.pos;
-                    }
-                    if (*alpha < task_result.value) {
-                        next_alpha = std::max(next_alpha, task_result.value);
-                        research_idxes.emplace_back(task_result.move_idx);
-                    } else {
-                        move_list[task_result.move_idx].flip.flip = 0;
-                        ++n_searched;
-                    }
+        while (running_count > 0 && ybwc_wait_task_with_help(parallel_tasks, search->thread_id, !is_end_search, &task_result)) {
+            --running_count;
+            search->n_nodes += task_result.n_nodes;
+            if (task_result.value != SCORE_UNDEFINED) {
+                if (*v < task_result.value) {
+                    *v = task_result.value;
+                    *best_move = move_list[task_result.move_idx].flip.pos;
+                }
+                if (*alpha < task_result.value) {
+                    next_alpha = std::max(next_alpha, task_result.value);
+                    research_idxes.emplace_back(task_result.move_idx);
+                } else {
+                    move_list[task_result.move_idx].flip.flip = 0;
+                    ++n_searched;
                 }
             }
         }
@@ -492,23 +502,20 @@ void ybwc_search_young_brothers(Search *search, int *alpha, int *beta, int *v, i
     if (running_count) {
         // thread_pool.start_idling();
         Parallel_task task_result;
-        for (std::future<Parallel_task> &task: parallel_tasks) {
-            if (task.valid()) {
-                task_result = task.get();
-                --running_count;
-                search->n_nodes += task_result.n_nodes;
-                if (task_result.value != SCORE_UNDEFINED) {
-                    if (*v < task_result.value) {
-                        *v = task_result.value;
-                        *best_move = move_list[task_result.move_idx].flip.pos;
-                    }
-                    if (*alpha < task_result.value) {
-                        next_alpha = std::max(next_alpha, task_result.value);
-                        research_idxes.emplace_back(task_result.move_idx);
-                    } else {
-                        move_list[task_result.move_idx].flip.flip = 0;
-                        ++n_searched;
-                    }
+        while (running_count > 0 && ybwc_wait_task_with_help(parallel_tasks, search->thread_id, !is_end_search, &task_result)) {
+            --running_count;
+            search->n_nodes += task_result.n_nodes;
+            if (task_result.value != SCORE_UNDEFINED) {
+                if (*v < task_result.value) {
+                    *v = task_result.value;
+                    *best_move = move_list[task_result.move_idx].flip.pos;
+                }
+                if (*alpha < task_result.value) {
+                    next_alpha = std::max(next_alpha, task_result.value);
+                    research_idxes.emplace_back(task_result.move_idx);
+                } else {
+                    move_list[task_result.move_idx].flip.flip = 0;
+                    ++n_searched;
                 }
             }
         }
