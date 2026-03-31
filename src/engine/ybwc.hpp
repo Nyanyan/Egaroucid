@@ -202,7 +202,6 @@ inline int ybwc_split_nws(Search *search, int parent_alpha, const int depth, uin
     if (
             idle_ok &&                                  // There is an idle thread
             n_remaining_moves >= YBWC_N_YOUNGER_CHILD    // This node is not the (some) youngest brother
-            //running_count < YBWC_MAX_RUNNING_COUNT     // Do not split too many nodes
     ) {
         // int v;
         // if (transposition_cutoff_nws(search, search->board.hash(), depth, -parent_alpha - 1, &v)) {
