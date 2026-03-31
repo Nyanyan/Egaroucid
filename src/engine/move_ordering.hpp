@@ -110,6 +110,8 @@ constexpr int MOVE_ORDERING_NWS_VALUE_OFFSET_ALPHA = 16;
 constexpr int MOVE_ORDERING_NWS_VALUE_OFFSET_BETA = 6;
 
 constexpr int MOVE_ORDERING_MPC_LEVEL = MPC_74_LEVEL;
+constexpr int MOVE_ORDERING_TT_REUSE_MIN_DEPTH = 1;
+constexpr int MOVE_ORDERING_NWS_TT_REUSE_MIN_DEPTH = 2;
 
 int nega_alpha_eval1(Search *search, int alpha, int beta, bool skipped);
 int nega_scout(Search *search, int alpha, int beta, const int depth, const bool skipped, uint64_t legal, const bool is_end_search, bool *searching);
@@ -254,7 +256,7 @@ inline void move_evaluate(Search *search, Flip_value *flip_value, int alpha, int
         flip_value->value += (MO_OFFSET_L_PM - get_weighted_n_moves(flip_value->n_legal)) * W_MOBILITY;
         flip_value->value += (MO_OFFSET_L_PM - get_potential_mobility(search->board.opponent, ~(search->board.player | search->board.opponent))) * W_POTENTIAL_MOBILITY;
         int child_value = SCORE_UNDEFINED;
-        const bool has_tt_value = depth > 0 && get_move_ordering_tt_value(search, search->board.hash(), depth, alpha, beta, &child_value);
+        const bool has_tt_value = depth >= MOVE_ORDERING_TT_REUSE_MIN_DEPTH && get_move_ordering_tt_value(search, search->board.hash(), depth, alpha, beta, &child_value);
         switch (depth) {
             case 0:
                 flip_value->value += (SCORE_MAX - mid_evaluate_diff(search)) * W_VALUE;
@@ -305,7 +307,7 @@ inline void move_evaluate_nws(Search *search, Flip_value *flip_value, int alpha,
         flip_value->n_legal = search->board.get_legal();
         flip_value->value += (MO_OFFSET_L_PM - get_weighted_n_moves(flip_value->n_legal)) * W_NWS_MOBILITY;
         int child_value = SCORE_UNDEFINED;
-        const bool has_tt_value = depth > 0 && get_move_ordering_tt_value(search, search->board.hash(), depth, alpha, beta, &child_value);
+        const bool has_tt_value = depth >= MOVE_ORDERING_NWS_TT_REUSE_MIN_DEPTH && get_move_ordering_tt_value(search, search->board.hash(), depth, alpha, beta, &child_value);
         switch (depth) {
             case 0:
                 flip_value->value += (SCORE_MAX - mid_evaluate_diff(search)) * W_NWS_VALUE;
