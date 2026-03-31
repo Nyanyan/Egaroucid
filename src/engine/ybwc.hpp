@@ -34,11 +34,24 @@ constexpr int YBWC_PUSHED = 124;
 
 #if USE_YBWC_SPLIT_STATISTICS
 constexpr int YBWC_STATS_DEPTH_SIZE = HW2 + 1;
+constexpr int YBWC_STATS_MOVE_BUCKET_SIZE = 3;
 inline std::atomic<uint64_t> ybwc_split_attempt[YBWC_STATS_DEPTH_SIZE];
 inline std::atomic<uint64_t> ybwc_split_idle_ok[YBWC_STATS_DEPTH_SIZE];
 inline std::atomic<uint64_t> ybwc_split_move_ok[YBWC_STATS_DEPTH_SIZE];
 inline std::atomic<uint64_t> ybwc_split_pushed[YBWC_STATS_DEPTH_SIZE];
 inline std::atomic<uint64_t> ybwc_split_push_failed[YBWC_STATS_DEPTH_SIZE];
+inline std::atomic<uint64_t> ybwc_split_attempt_by_move[YBWC_STATS_DEPTH_SIZE][YBWC_STATS_MOVE_BUCKET_SIZE];
+inline std::atomic<uint64_t> ybwc_split_pushed_by_move[YBWC_STATS_DEPTH_SIZE][YBWC_STATS_MOVE_BUCKET_SIZE];
+
+inline int ybwc_stats_move_bucket(const int n_remaining_moves) {
+    if (n_remaining_moves <= 1) {
+        return 0;
+    }
+    if (n_remaining_moves == 2) {
+        return 1;
+    }
+    return 2;
+}
 
 inline void ybwc_split_stats_reset() {
     for (int i = 0; i < YBWC_STATS_DEPTH_SIZE; ++i) {
@@ -47,6 +60,10 @@ inline void ybwc_split_stats_reset() {
         ybwc_split_move_ok[i] = 0;
         ybwc_split_pushed[i] = 0;
         ybwc_split_push_failed[i] = 0;
+        for (int j = 0; j < YBWC_STATS_MOVE_BUCKET_SIZE; ++j) {
+            ybwc_split_attempt_by_move[i][j] = 0;
+            ybwc_split_pushed_by_move[i][j] = 0;
+        }
     }
 }
 
@@ -63,6 +80,23 @@ inline void ybwc_split_stats_print() {
                   << ybwc_split_move_ok[depth].load() << " "
                   << ybwc_split_pushed[depth].load() << " "
                   << ybwc_split_push_failed[depth].load()
+                  << std::endl;
+    }
+    std::cerr << "ybwc split stats by_move depth rem1 rem2 rem3plus pushed1 pushed2 pushed3plus" << std::endl;
+    for (int depth = 0; depth < YBWC_STATS_DEPTH_SIZE; ++depth) {
+        uint64_t rem1 = ybwc_split_attempt_by_move[depth][0].load();
+        uint64_t rem2 = ybwc_split_attempt_by_move[depth][1].load();
+        uint64_t rem3 = ybwc_split_attempt_by_move[depth][2].load();
+        if (rem1 + rem2 + rem3 == 0) {
+            continue;
+        }
+        std::cerr << depth << " "
+                  << rem1 << " "
+                  << rem2 << " "
+                  << rem3 << " "
+                  << ybwc_split_pushed_by_move[depth][0].load() << " "
+                  << ybwc_split_pushed_by_move[depth][1].load() << " "
+                  << ybwc_split_pushed_by_move[depth][2].load()
                   << std::endl;
     }
 }
@@ -152,6 +186,8 @@ Parallel_task ybwc_do_task_nws(uint64_t player, uint64_t opponent, int_fast8_t n
 inline int ybwc_split_nws(Search *search, int parent_alpha, const int depth, uint64_t legal, const bool is_end_search, std::vector<bool*> &searchings, bool *n_searching, uint_fast8_t policy, const int n_remaining_moves, const int move_idx, const int running_count, std::vector<std::future<Parallel_task>> &parallel_tasks) {
     #if USE_YBWC_SPLIT_STATISTICS
         ++ybwc_split_attempt[depth];
+        int move_bucket = ybwc_stats_move_bucket(n_remaining_moves);
+        ++ybwc_split_attempt_by_move[depth][move_bucket];
     #endif
     bool idle_ok = thread_pool.get_n_idle() > 0;
     bool move_ok = n_remaining_moves >= YBWC_N_YOUNGER_CHILD;
@@ -183,6 +219,7 @@ inline int ybwc_split_nws(Search *search, int parent_alpha, const int depth, uin
             if (pushed) {
                 #if USE_YBWC_SPLIT_STATISTICS
                     ++ybwc_split_pushed[depth];
+                    ++ybwc_split_pushed_by_move[depth][move_bucket];
                 #endif
                 return YBWC_PUSHED;
             } else {
