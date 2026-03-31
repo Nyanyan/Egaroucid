@@ -67,10 +67,14 @@ egaroucid = subprocess.Popen(cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
 
 line = strip_newlines(egaroucid.stdout.readline().decode())
 print('#   ' + line)
-for i in range(32):
+i = 0
+while True:
     line = strip_newlines(egaroucid.stdout.readline().decode())
-    line = '#' + fill0(i, 2) + ' ' + line
-    print(line)
-line = strip_newlines(egaroucid.stdout.readline().decode())
-print(line)
+    if line == '':
+        break
+    if line.startswith('total '):
+        print(line)
+        break
+    print('#' + fill0(i, 2) + ' ' + line)
+    i += 1
 egaroucid.kill()
