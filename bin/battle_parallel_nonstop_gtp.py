@@ -451,5 +451,5 @@ finally:
     shutdown_all_processes()
 
 print('\nAll battles finished.')
-print_status(completed_battles, total_battles, N_SET_GAMES)
 print(str(N_SET_GAMES) + ' matches played for each win rate at level ' + str(LEVEL) + ' ' + str(N_THREADS) + ' threads')
+print_status(completed_battles, total_battles, N_SET_GAMES)
