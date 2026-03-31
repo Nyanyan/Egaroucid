@@ -44,7 +44,7 @@ player_info = [
     ['Neural5', 'versions/neural-reversi-cli-5.0.0-windows-x86_64-v3.exe gtp'],
 ]
 
-N_BATTLES_PER_ROUND = (1 + len(player_info)) * len(player_info) // 2
+N_BATTLES_PER_ROUND = len(player_info) * (len(player_info) - 1) // 2
 
 NAME_IDX = 0
 SUBPROCESS_IDX = 1
