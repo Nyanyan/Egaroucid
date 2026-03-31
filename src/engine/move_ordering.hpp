@@ -117,6 +117,27 @@ inline bool transposition_table_get_value(Search *search, uint32_t hash, int *l,
 inline int mid_evaluate_diff(Search *search);
 inline int mid_evaluate_move_ordering_end(Search *search);
 
+inline bool get_move_ordering_tt_value(Search *search, uint32_t hash, int depth, int alpha, int beta, int *value) {
+    int lower = -SCORE_INF;
+    int upper = SCORE_INF;
+    if (!transposition_table.get_bounds(search, hash, depth, &lower, &upper)) {
+        return false;
+    }
+    if (lower == upper) {
+        *value = lower;
+        return true;
+    }
+    if (upper <= alpha) {
+        *value = upper;
+        return true;
+    }
+    if (beta <= lower) {
+        *value = lower;
+        return true;
+    }
+    return false;
+}
+
 
 #if USE_SIMD
 __m256i eval_surround_mask;
@@ -232,21 +253,30 @@ inline void move_evaluate(Search *search, Flip_value *flip_value, int alpha, int
         flip_value->n_legal = search->board.get_legal();
         flip_value->value += (MO_OFFSET_L_PM - get_weighted_n_moves(flip_value->n_legal)) * W_MOBILITY;
         flip_value->value += (MO_OFFSET_L_PM - get_potential_mobility(search->board.opponent, ~(search->board.player | search->board.opponent))) * W_POTENTIAL_MOBILITY;
+        int child_value = SCORE_UNDEFINED;
+        const bool has_tt_value = depth > 0 && get_move_ordering_tt_value(search, search->board.hash(), depth, alpha, beta, &child_value);
         switch (depth) {
             case 0:
                 flip_value->value += (SCORE_MAX - mid_evaluate_diff(search)) * W_VALUE;
                 break;
             case 1:
-                flip_value->value += (SCORE_MAX - nega_alpha_eval1(search, alpha, beta, false)) * (W_VALUE + W_VALUE_DEEP_ADDITIONAL);
+                if (has_tt_value) {
+                    flip_value->value += W_TT_BONUS;
+                    flip_value->value += (SCORE_MAX - child_value) * (W_VALUE + W_VALUE_DEEP_ADDITIONAL);
+                } else {
+                    flip_value->value += (SCORE_MAX - nega_alpha_eval1(search, alpha, beta, false)) * (W_VALUE + W_VALUE_DEEP_ADDITIONAL);
+                }
                 break;
             default:
-                //if (transposition_table.has_node_any_level(search, search->board.hash())) {
-                //    flip_value->value += W_TT_BONUS;
-                //}
-                uint_fast8_t mpc_level = search->mpc_level;
-                search->mpc_level = MOVE_ORDERING_MPC_LEVEL;
-                    flip_value->value += (SCORE_MAX - nega_scout(search, alpha, beta, depth, false, flip_value->n_legal, false, searching)) * (W_VALUE + depth * W_VALUE_DEEP_ADDITIONAL);
-                search->mpc_level = mpc_level;
+                if (has_tt_value) {
+                    flip_value->value += W_TT_BONUS;
+                    flip_value->value += (SCORE_MAX - child_value) * (W_VALUE + depth * W_VALUE_DEEP_ADDITIONAL);
+                } else {
+                    uint_fast8_t mpc_level = search->mpc_level;
+                    search->mpc_level = MOVE_ORDERING_MPC_LEVEL;
+                        flip_value->value += (SCORE_MAX - nega_scout(search, alpha, beta, depth, false, flip_value->n_legal, false, searching)) * (W_VALUE + depth * W_VALUE_DEEP_ADDITIONAL);
+                    search->mpc_level = mpc_level;
+                }
                 break;
         }
     search->undo(&flip_value->flip);
@@ -274,21 +304,30 @@ inline void move_evaluate_nws(Search *search, Flip_value *flip_value, int alpha,
     search->move(&flip_value->flip);
         flip_value->n_legal = search->board.get_legal();
         flip_value->value += (MO_OFFSET_L_PM - get_weighted_n_moves(flip_value->n_legal)) * W_NWS_MOBILITY;
+        int child_value = SCORE_UNDEFINED;
+        const bool has_tt_value = depth > 0 && get_move_ordering_tt_value(search, search->board.hash(), depth, alpha, beta, &child_value);
         switch (depth) {
             case 0:
                 flip_value->value += (SCORE_MAX - mid_evaluate_diff(search)) * W_NWS_VALUE;
                 break;
             case 1:
-                flip_value->value += (SCORE_MAX - nega_alpha_eval1(search, alpha, beta, false)) * (W_NWS_VALUE + W_NWS_VALUE_DEEP_ADDITIONAL);
+                if (has_tt_value) {
+                    flip_value->value += W_NWS_TT_BONUS;
+                    flip_value->value += (SCORE_MAX - child_value) * (W_NWS_VALUE + W_NWS_VALUE_DEEP_ADDITIONAL);
+                } else {
+                    flip_value->value += (SCORE_MAX - nega_alpha_eval1(search, alpha, beta, false)) * (W_NWS_VALUE + W_NWS_VALUE_DEEP_ADDITIONAL);
+                }
                 break;
             default:
-                //if (transposition_table.has_node_any_level(search, search->board.hash())) {
-                //    flip_value->value += W_NWS_TT_BONUS;
-                //}
-                uint_fast8_t mpc_level = search->mpc_level;
-                search->mpc_level = MOVE_ORDERING_MPC_LEVEL;
-                    flip_value->value += (SCORE_MAX - nega_scout(search, alpha, beta, depth, false, flip_value->n_legal, false, searching)) * (W_NWS_VALUE + depth * W_NWS_VALUE_DEEP_ADDITIONAL);
-                search->mpc_level = mpc_level;
+                if (has_tt_value) {
+                    flip_value->value += W_NWS_TT_BONUS;
+                    flip_value->value += (SCORE_MAX - child_value) * (W_NWS_VALUE + depth * W_NWS_VALUE_DEEP_ADDITIONAL);
+                } else {
+                    uint_fast8_t mpc_level = search->mpc_level;
+                    search->mpc_level = MOVE_ORDERING_MPC_LEVEL;
+                        flip_value->value += (SCORE_MAX - nega_scout(search, alpha, beta, depth, false, flip_value->n_legal, false, searching)) * (W_NWS_VALUE + depth * W_NWS_VALUE_DEEP_ADDITIONAL);
+                    search->mpc_level = mpc_level;
+                }
                 break;
         }
     search->undo(&flip_value->flip);
