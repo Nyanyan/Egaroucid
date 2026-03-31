@@ -371,6 +371,7 @@ def print_status(completed, total, target_per_pair):
     percent = 100.0 * completed / max(1, total)
     print('\n' + '=' * 80)
     print('Progress: {}/{} ({:.2f}%)'.format(completed, total, percent))
+    print(str(completed) + ' matches played for each win rate at level ' + str(LEVEL) + ' ' + str(N_THREADS) + ' threads')
     with results_lock:
         print_all_result_locked()
         print_games_progress_locked(target_per_pair)
@@ -451,5 +452,4 @@ finally:
     shutdown_all_processes()
 
 print('\nAll battles finished.')
-print(str(N_SET_GAMES) + ' matches played for each win rate at level ' + str(LEVEL) + ' ' + str(N_THREADS) + ' threads')
 print_status(completed_battles, total_battles, N_SET_GAMES)
