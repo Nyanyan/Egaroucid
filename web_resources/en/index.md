@@ -230,7 +230,7 @@ Below is a list of Egaroucid-related links provided by third parties. The author
 
 These are works developed by third parties using Egaroucid or Egaroucid's training data, etc.
 
-- [Reversi Web](https://reversi.yuki-lab.com/en/): Othello AI that can be played on the website. The Egaroucid for Web engine is used as the top-level AI that you can play against by registering an account.
+- [Reversi Web](https://reversi.yuki-lab.com/en/): Othello AI that can be played on the website. The Egaroucid for Web engine is used as the top-level AI that you can play against by winning and advancing.
 - [Reversi Nexus](https://reversi.nexus/): Othello AI that can be played on websites, desktops, and mobiles. It seems they referred to Egaroucid's [training data](./technology/train-data/) and [technical explanation](./technology/explanation/).
 
 
