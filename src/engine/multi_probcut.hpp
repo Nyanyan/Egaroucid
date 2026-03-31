@@ -110,20 +110,22 @@ inline bool mpc(Search* search, int alpha, int beta, int depth, uint64_t legal, 
         double mpct = SELECTIVITY_MPCT[search->mpc_level];
         int error = ceil(mpct * probcut_sigma(search->n_discs, 0, depth));
 #endif
-        int d0value = mid_evaluate_diff(search);
-        if (d0value >= beta + error) {
-            *v = beta;
-            if (is_end_search) {
-                *v += beta & 1;
+        if (alpha - error >= -SCORE_MAX && beta + error < SCORE_MAX) {
+            int d0value = mid_evaluate_diff(search);
+            if (d0value >= beta + error) {
+                *v = beta;
+                if (is_end_search) {
+                    *v += beta & 1;
+                }
+                return true;
             }
-            return true;
-        }
-        if (d0value <= alpha - error) {
-            *v = alpha;
-            if (is_end_search) {
-                *v -= alpha & 1;
+            if (d0value <= alpha - error) {
+                *v = alpha;
+                if (is_end_search) {
+                    *v -= alpha & 1;
+                }
+                return true;
             }
-            return true;
         }
     } else {
         uint_fast8_t mpc_level = search->mpc_level;
