@@ -1,5 +1,4 @@
 import subprocess
-from tqdm import tqdm
 import random
 import numpy as np
 import sys
@@ -385,25 +384,23 @@ try:
             future = executor.submit(play_battle, p0, p1, opening_idx)
             futures[future] = (p0, p1)
 
-        with tqdm(total=total_battles, desc='Total battles') as pbar:
-            while futures:
-                for future in as_completed(list(futures.keys())):
-                    futures.pop(future)
-                    future.result()
-                    completed_battles += 1
-                    pbar.update(1)
+        while futures:
+            for future in as_completed(list(futures.keys())):
+                futures.pop(future)
+                future.result()
+                completed_battles += 1
 
-                    if completed_battles % STATUS_EVERY == 0 or completed_battles == total_battles:
-                        print_status(completed_battles, total_battles, N_SET_GAMES)
+                if completed_battles % STATUS_EVERY == 0 or completed_battles == total_battles:
+                    print_status(completed_battles, total_battles, N_SET_GAMES)
 
-                    try:
-                        p0, p1, opening_idx = next(iterator)
-                    except StopIteration:
-                        pass
-                    else:
-                        nf = executor.submit(play_battle, p0, p1, opening_idx)
-                        futures[nf] = (p0, p1)
-                    break
+                try:
+                    p0, p1, opening_idx = next(iterator)
+                except StopIteration:
+                    pass
+                else:
+                    nf = executor.submit(play_battle, p0, p1, opening_idx)
+                    futures[nf] = (p0, p1)
+                break
 finally:
     shutdown_all_processes()
 
