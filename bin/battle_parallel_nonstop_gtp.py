@@ -44,6 +44,8 @@ player_info = [
     ['Neural5', 'versions/neural-reversi-cli-5.0.0-windows-x86_64-v3.exe gtp'],
 ]
 
+N_BATTLES_PER_ROUND = (1 + len(player_info)) * len(player_info) // 2
+
 NAME_IDX = 0
 SUBPROCESS_IDX = 1
 RESULT_IDX = 2
@@ -371,7 +373,7 @@ def print_status(completed, total, target_per_pair):
     percent = 100.0 * completed / max(1, total)
     print('\n' + '=' * 80)
     print('Progress: {}/{} ({:.2f}%)'.format(completed, total, percent))
-    print(str(completed) + ' matches played for each win rate at level ' + str(LEVEL) + ' ' + str(N_THREADS) + ' threads')
+    print(str(completed // N_BATTLES_PER_ROUND) + ' matches played for each win rate at level ' + str(LEVEL) + ' ' + str(N_THREADS) + ' threads')
     with results_lock:
         print_all_result_locked()
         print_games_progress_locked(target_per_pair)
