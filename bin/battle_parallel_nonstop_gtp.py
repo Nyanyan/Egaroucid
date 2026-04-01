@@ -14,7 +14,7 @@ N_SET_GAMES = int(sys.argv[2])
 N_THREADS = 1
 N_PARALLEL_MATCHES = int(sys.argv[3]) if len(sys.argv) >= 4 else 20
 N_TOTAL_PROCESSES = int(sys.argv[4]) if len(sys.argv) >= 5 else 16
-STATUS_EVERY = int(sys.argv[5]) if len(sys.argv) >= 6 else 1
+STATUS_EVERY = int(sys.argv[5]) if len(sys.argv) >= 6 else 10
 
 if N_TOTAL_PROCESSES < 2 or N_TOTAL_PROCESSES % 2 != 0:
     print('N_TOTAL_PROCESSES must be an even number >= 2')
