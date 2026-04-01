@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.6.33829.357
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "eval_optimizer_fm_cuda_12_2_0", "eval_optimizer_fm_cuda_12_2_0.vcxproj", "{3C220CE3-4D33-4688-BC3A-EA8EB3B197B2}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|x64 = Debug|x64
+		Release|x64 = Release|x64
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{3C220CE3-4D33-4688-BC3A-EA8EB3B197B2}.Debug|x64.ActiveCfg = Debug|x64
+		{3C220CE3-4D33-4688-BC3A-EA8EB3B197B2}.Debug|x64.Build.0 = Debug|x64
+		{3C220CE3-4D33-4688-BC3A-EA8EB3B197B2}.Release|x64.ActiveCfg = Release|x64
+		{3C220CE3-4D33-4688-BC3A-EA8EB3B197B2}.Release|x64.Build.0 = Release|x64
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {210847B8-7AEB-4DCC-B46B-1E6AB9BF828E}
+	EndGlobalSection
+EndGlobal

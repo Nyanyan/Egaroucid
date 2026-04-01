@@ -27,6 +27,7 @@ Intermediate
 *.vcxproj.user
 enc_temp_folde
 src/tools/evaluation/eval_optimizer_cuda_build
+src/tools/evaluation/eval_optimizer_fm_cuda_build
 
 # Egaroucid user resources
 bin/appdata/forced_openings.txt
