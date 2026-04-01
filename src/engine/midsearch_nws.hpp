@@ -278,7 +278,7 @@ int nega_alpha_ordering_nws_simple(Search *search, int alpha, const int depth, c
     //     move_list[tt_moves_idx1].value = -INF;
     // }
     if (v <= alpha) {
-        move_list_evaluate_nws(search, move_list, canput, moves, depth, alpha, searching);
+        move_list_evaluate_nws(search, move_list, canput, moves, depth, alpha, false, searching);
 #if USE_MID_ETC && MID_ETC_DEPTH_NWS <= MID_SIMPLE_ORDERING_DEPTH
         for (int move_idx = 0; move_idx < canput - n_etc_done && *searching; ++move_idx) {
 #else
@@ -416,7 +416,7 @@ int nega_alpha_ordering_nws(Search *search, int alpha, const int depth, const bo
         move_list[tt_moves_idx0].value = -INF;
     }
     if (v <= alpha) {
-        move_list_evaluate_nws(search, move_list, canput, moves, depth, alpha, searchings.back());
+        move_list_evaluate_nws(search, move_list, canput, moves, depth, alpha, false, searchings.back());
 #if USE_YBWC_NWS
         if (
             search->use_multi_thread && 

@@ -237,7 +237,7 @@ struct Analyze_result {
 class Search {
     public:
         Board board;
-        //int_fast8_t strt_n_discs;
+        int_fast8_t root_n_discs;
         int_fast8_t n_discs;
         uint_fast8_t parity;
         uint_fast8_t mpc_level;
@@ -271,7 +271,7 @@ class Search {
         Search() {};
 
         Search(const Board *board_, uint_fast8_t mpc_level_, bool use_multi_thread_, bool is_presearch_)
-            : board(board_->copy()), n_discs(board_->n_discs()), mpc_level(mpc_level_), use_multi_thread(use_multi_thread_), n_nodes(0), is_presearch(is_presearch_), thread_id(THREAD_ID_NONE) {
+            : board(board_->copy()), root_n_discs(board_->n_discs()), n_discs(board_->n_discs()), mpc_level(mpc_level_), use_multi_thread(use_multi_thread_), n_nodes(0), is_presearch(is_presearch_), thread_id(THREAD_ID_NONE) {
             uint64_t empty = ~(board.player | board.opponent);
             parity = 1 & pop_count_ull(empty & 0x000000000F0F0F0FULL);
             parity |= (1 & pop_count_ull(empty & 0x00000000F0F0F0F0ULL)) << 1;
@@ -280,11 +280,14 @@ class Search {
             calc_eval_features(&board, &eval);
 #if USE_KILLER_MOVE_MO
             clear_killers();
+            clear_history();
+            clear_counter_moves();
+            clear_move_history();
 #endif
         }
 
         Search(uint64_t board_player, uint64_t board_opponent, uint_fast8_t mpc_level_, bool use_multi_thread_, bool is_presearch_)
-            : board(Board{board_player, board_opponent}), n_discs(pop_count_ull(board_player | board_opponent)), mpc_level(mpc_level_), use_multi_thread(use_multi_thread_), n_nodes(0), is_presearch(is_presearch_), thread_id(THREAD_ID_NONE) {
+            : board(Board{board_player, board_opponent}), root_n_discs(pop_count_ull(board_player | board_opponent)), n_discs(pop_count_ull(board_player | board_opponent)), mpc_level(mpc_level_), use_multi_thread(use_multi_thread_), n_nodes(0), is_presearch(is_presearch_), thread_id(THREAD_ID_NONE) {
             uint64_t empty = ~(board.player | board.opponent);
             parity = 1 & pop_count_ull(empty & 0x000000000F0F0F0FULL);
             parity |= (1 & pop_count_ull(empty & 0x00000000F0F0F0F0ULL)) << 1;
@@ -300,7 +303,7 @@ class Search {
         }
 
         Search(uint64_t board_player, uint64_t board_opponent, int_fast8_t n_discs_, uint_fast8_t parity_, uint_fast8_t mpc_level_, bool use_multi_thread_, bool is_presearch_, thread_id_t thread_id_)
-            : board(Board(board_player, board_opponent)), n_discs(n_discs_), parity(parity_), mpc_level(mpc_level_), use_multi_thread(use_multi_thread_), n_nodes(0), is_presearch(is_presearch_), thread_id(thread_id_) {
+            : board(Board(board_player, board_opponent)), root_n_discs(n_discs_), n_discs(n_discs_), parity(parity_), mpc_level(mpc_level_), use_multi_thread(use_multi_thread_), n_nodes(0), is_presearch(is_presearch_), thread_id(thread_id_) {
             calc_eval_features(&board, &eval);
 #if USE_KILLER_MOVE_MO
             clear_killers();
@@ -316,7 +319,7 @@ class Search {
             @param init_board           a board to set
         */
         Search(const Board *board_)
-            : board(board_->copy()), n_discs(board_->n_discs()), thread_id(THREAD_ID_NONE) {
+            : board(board_->copy()), root_n_discs(board_->n_discs()), n_discs(board_->n_discs()), thread_id(THREAD_ID_NONE) {
             uint64_t empty = ~(board.player | board.opponent);
             parity = 1 & pop_count_ull(empty & 0x000000000F0F0F0FULL);
             parity |= (1 & pop_count_ull(empty & 0x00000000F0F0F0F0ULL)) << 1;
@@ -325,6 +328,9 @@ class Search {
             calc_eval_features(&board, &eval);
 #if USE_KILLER_MOVE_MO
             clear_killers();
+            clear_history();
+            clear_counter_moves();
+            clear_move_history();
 #endif
         }
         
@@ -474,6 +480,13 @@ class Search {
             //return std::min(N_PHASES - 1, (n_discs - 4) / PHASE_N_DISCS);
         }
 
+        /*
+            @brief Get current ply (search depth from root)
+        */
+        inline int get_ply() const {
+            return n_discs - root_n_discs;
+        }
+
 #if USE_KILLER_MOVE_MO
         /*
             @brief Clear killer moves table
@@ -483,13 +496,6 @@ class Search {
                 killer1[i] = -1;
                 killer2[i] = -1;
             }
-        }
-
-        /*
-            @brief Get current ply (search depth from root)
-        */
-        inline int get_ply() const {
-            return n_discs - 4;
         }
 
         /*

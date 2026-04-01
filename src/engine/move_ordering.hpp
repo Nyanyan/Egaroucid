@@ -108,6 +108,8 @@ constexpr int MOVE_ORDERING_VALUE_OFFSET_ALPHA = 12;
 constexpr int MOVE_ORDERING_VALUE_OFFSET_BETA = 8;
 constexpr int MOVE_ORDERING_NWS_VALUE_OFFSET_ALPHA = 16;
 constexpr int MOVE_ORDERING_NWS_VALUE_OFFSET_BETA = 6;
+constexpr int MOVE_ORDERING_ROOT_PLY_EXTENDED = 0;
+constexpr int MOVE_ORDERING_ROOT_BRANCH_LIMIT = 10;
 
 constexpr int MOVE_ORDERING_MPC_LEVEL = MPC_74_LEVEL;
 constexpr int MOVE_ORDERING_TT_REUSE_MIN_DEPTH = 1;
@@ -477,13 +479,16 @@ inline bool move_list_tt_check(Search *search, std::vector<Flip_value> &move_lis
     @param beta                 beta value
     @param searching            flag for terminating this search
 */
-inline bool move_list_evaluate(Search *search, std::vector<Flip_value> &move_list, uint_fast8_t moves[], int depth, int alpha, int beta, bool *searching) {
+inline bool move_list_evaluate(Search *search, std::vector<Flip_value> &move_list, uint_fast8_t moves[], int depth, int alpha, int beta, bool is_end_search, bool *searching) {
     if (move_list.size() == 1) {
         return false;
     }
     int eval_alpha = -std::min(SCORE_MAX, beta + MOVE_ORDERING_VALUE_OFFSET_BETA);
     int eval_beta = -std::max(-SCORE_MAX, alpha - MOVE_ORDERING_VALUE_OFFSET_ALPHA);
     int eval_depth = depth >> 3;
+    if (!is_end_search && search->get_ply() <= MOVE_ORDERING_ROOT_PLY_EXTENDED && move_list.size() <= MOVE_ORDERING_ROOT_BRANCH_LIMIT) {
+        eval_depth = std::max(eval_depth, depth >> 2);
+    }
     if (depth >= 25 && search->mpc_level < MPC_100_LEVEL) {
         eval_depth = ((depth / 3) & 0b11111110) + (depth & 1); // depth / 3 + parity
     }
@@ -516,13 +521,16 @@ inline bool move_list_evaluate(Search *search, std::vector<Flip_value> &move_lis
     @param beta                 beta value
     @param searching            flag for terminating this search
 */
-inline bool move_list_evaluate(Search *search, Flip_value move_list[], int canput, uint_fast8_t moves[], int depth, int alpha, int beta, bool *searching) {
+inline bool move_list_evaluate(Search *search, Flip_value move_list[], int canput, uint_fast8_t moves[], int depth, int alpha, int beta, bool is_end_search, bool *searching) {
     if (canput == 1) {
         return false;
     }
     int eval_alpha = -std::min(SCORE_MAX, beta + MOVE_ORDERING_VALUE_OFFSET_BETA);
     int eval_beta = -std::max(-SCORE_MAX, alpha - MOVE_ORDERING_VALUE_OFFSET_ALPHA);
     int eval_depth = depth >> 3;
+    if (!is_end_search && search->get_ply() <= MOVE_ORDERING_ROOT_PLY_EXTENDED && canput <= MOVE_ORDERING_ROOT_BRANCH_LIMIT) {
+        eval_depth = std::max(eval_depth, depth >> 2);
+    }
     if (depth >= 25 && search->mpc_level < MPC_100_LEVEL) {
         eval_depth = ((depth / 3) & 0b11111110) + (depth & 1); // depth / 3 + parity
     }
@@ -554,7 +562,7 @@ inline bool move_list_evaluate(Search *search, Flip_value move_list[], int canpu
     @param alpha                alpha value (beta = alpha + 1)
     @param searching            flag for terminating this search
 */
-inline bool move_list_evaluate_nws(Search *search, std::vector<Flip_value> &move_list, uint_fast8_t moves[], int depth, int alpha, bool *searching) {
+inline bool move_list_evaluate_nws(Search *search, std::vector<Flip_value> &move_list, uint_fast8_t moves[], int depth, int alpha, bool is_end_search, bool *searching) {
     if (move_list.size() <= 1) {
         return false;
     }
@@ -585,7 +593,7 @@ inline bool move_list_evaluate_nws(Search *search, std::vector<Flip_value> &move
     @param alpha                alpha value (beta = alpha + 1)
     @param searching            flag for terminating this search
 */
-inline bool move_list_evaluate_nws(Search *search, Flip_value move_list[], int canput, uint_fast8_t moves[], int depth, int alpha, bool *searching) {
+inline bool move_list_evaluate_nws(Search *search, Flip_value move_list[], int canput, uint_fast8_t moves[], int depth, int alpha, bool is_end_search, bool *searching) {
     if (canput <= 1) {
         return false;
     }
