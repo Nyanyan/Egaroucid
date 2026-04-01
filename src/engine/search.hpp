@@ -122,6 +122,8 @@ constexpr int MAX_PLY = 65;
 */
 constexpr int HISTORY_MAX = 16384;  // Maximum history value
 constexpr int HISTORY_SCALE = 16;   // History aging factor
+constexpr int HISTORY_ORDERING_SHIFT = 5;
+constexpr int HISTORY_ORDERING_MAX_BONUS = 128;
 #endif
 
 
@@ -235,7 +237,7 @@ struct Analyze_result {
 class Search {
     public:
         Board board;
-        //int_fast8_t strt_n_discs;
+        int_fast8_t root_n_discs;
         int_fast8_t n_discs;
         uint_fast8_t parity;
         uint_fast8_t mpc_level;
@@ -255,7 +257,7 @@ class Search {
         
         // History heuristic (move ordering based on past performance)
         // Use smaller history table to avoid stack overflow
-        int history[HW2];  // Simplified history for move positions only
+        int history[HW2][HW2];  // Continuation history indexed by previous move and current move
         
         // Counter move heuristic (response to previous move)
         int counter_moves[HW2];  // counter_moves[prev_move] = best_response
@@ -269,7 +271,7 @@ class Search {
         Search() {};
 
         Search(const Board *board_, uint_fast8_t mpc_level_, bool use_multi_thread_, bool is_presearch_)
-            : board(board_->copy()), n_discs(board_->n_discs()), mpc_level(mpc_level_), use_multi_thread(use_multi_thread_), n_nodes(0), is_presearch(is_presearch_), thread_id(THREAD_ID_NONE) {
+            : board(board_->copy()), root_n_discs(board_->n_discs()), n_discs(board_->n_discs()), mpc_level(mpc_level_), use_multi_thread(use_multi_thread_), n_nodes(0), is_presearch(is_presearch_), thread_id(THREAD_ID_NONE) {
             uint64_t empty = ~(board.player | board.opponent);
             parity = 1 & pop_count_ull(empty & 0x000000000F0F0F0FULL);
             parity |= (1 & pop_count_ull(empty & 0x00000000F0F0F0F0ULL)) << 1;
@@ -278,11 +280,14 @@ class Search {
             calc_eval_features(&board, &eval);
 #if USE_KILLER_MOVE_MO
             clear_killers();
+            clear_history();
+            clear_counter_moves();
+            clear_move_history();
 #endif
         }
 
         Search(uint64_t board_player, uint64_t board_opponent, uint_fast8_t mpc_level_, bool use_multi_thread_, bool is_presearch_)
-            : board(Board{board_player, board_opponent}), n_discs(pop_count_ull(board_player | board_opponent)), mpc_level(mpc_level_), use_multi_thread(use_multi_thread_), n_nodes(0), is_presearch(is_presearch_), thread_id(THREAD_ID_NONE) {
+            : board(Board{board_player, board_opponent}), root_n_discs(pop_count_ull(board_player | board_opponent)), n_discs(pop_count_ull(board_player | board_opponent)), mpc_level(mpc_level_), use_multi_thread(use_multi_thread_), n_nodes(0), is_presearch(is_presearch_), thread_id(THREAD_ID_NONE) {
             uint64_t empty = ~(board.player | board.opponent);
             parity = 1 & pop_count_ull(empty & 0x000000000F0F0F0FULL);
             parity |= (1 & pop_count_ull(empty & 0x00000000F0F0F0F0ULL)) << 1;
@@ -298,7 +303,7 @@ class Search {
         }
 
         Search(uint64_t board_player, uint64_t board_opponent, int_fast8_t n_discs_, uint_fast8_t parity_, uint_fast8_t mpc_level_, bool use_multi_thread_, bool is_presearch_, thread_id_t thread_id_)
-            : board(Board(board_player, board_opponent)), n_discs(n_discs_), parity(parity_), mpc_level(mpc_level_), use_multi_thread(use_multi_thread_), n_nodes(0), is_presearch(is_presearch_), thread_id(thread_id_) {
+            : board(Board(board_player, board_opponent)), root_n_discs(n_discs_), n_discs(n_discs_), parity(parity_), mpc_level(mpc_level_), use_multi_thread(use_multi_thread_), n_nodes(0), is_presearch(is_presearch_), thread_id(thread_id_) {
             calc_eval_features(&board, &eval);
 #if USE_KILLER_MOVE_MO
             clear_killers();
@@ -314,7 +319,7 @@ class Search {
             @param init_board           a board to set
         */
         Search(const Board *board_)
-            : board(board_->copy()), n_discs(board_->n_discs()), thread_id(THREAD_ID_NONE) {
+            : board(board_->copy()), root_n_discs(board_->n_discs()), n_discs(board_->n_discs()), thread_id(THREAD_ID_NONE) {
             uint64_t empty = ~(board.player | board.opponent);
             parity = 1 & pop_count_ull(empty & 0x000000000F0F0F0FULL);
             parity |= (1 & pop_count_ull(empty & 0x00000000F0F0F0F0ULL)) << 1;
@@ -323,6 +328,9 @@ class Search {
             calc_eval_features(&board, &eval);
 #if USE_KILLER_MOVE_MO
             clear_killers();
+            clear_history();
+            clear_counter_moves();
+            clear_move_history();
 #endif
         }
         
@@ -472,6 +480,13 @@ class Search {
             //return std::min(N_PHASES - 1, (n_discs - 4) / PHASE_N_DISCS);
         }
 
+        /*
+            @brief Get current ply (search depth from root)
+        */
+        inline int get_ply() const {
+            return n_discs - root_n_discs;
+        }
+
 #if USE_KILLER_MOVE_MO
         /*
             @brief Clear killer moves table
@@ -481,13 +496,6 @@ class Search {
                 killer1[i] = -1;
                 killer2[i] = -1;
             }
-        }
-
-        /*
-            @brief Get current ply (search depth from root)
-        */
-        inline int get_ply() const {
-            return n_discs - 4;
         }
 
         /*
@@ -518,7 +526,9 @@ class Search {
         */
         inline void clear_history() {
             for (int i = 0; i < HW2; ++i) {
-                history[i] = 0;
+                for (int j = 0; j < HW2; ++j) {
+                    history[i][j] = 0;
+                }
             }
         }
 
@@ -544,14 +554,13 @@ class Search {
             @brief Update history heuristic
         */
         inline void update_history(int from_pos, int to_pos, int depth) {
-            // Simplified: use only destination position for history
-            if (to_pos < 0 || to_pos >= HW2) {
+            if (from_pos < 0 || from_pos >= HW2 || to_pos < 0 || to_pos >= HW2) {
                 return;
             }
             int bonus = depth * depth;
-            history[to_pos] += bonus;
+            history[from_pos][to_pos] += bonus;
             // Prevent overflow
-            if (history[to_pos] > HISTORY_MAX) {
+            if (history[from_pos][to_pos] > HISTORY_MAX) {
                 age_history();
             }
         }
@@ -561,7 +570,9 @@ class Search {
         */
         inline void age_history() {
             for (int i = 0; i < HW2; ++i) {
-                history[i] /= HISTORY_SCALE;
+                for (int j = 0; j < HW2; ++j) {
+                    history[i][j] /= HISTORY_SCALE;
+                }
             }
         }
 
@@ -578,9 +589,8 @@ class Search {
             @brief Get history bonus for move ordering
         */
         inline int get_history_bonus(int from_pos, int to_pos) const {
-            // Simplified: use only destination position
-            if (to_pos < 0 || to_pos >= HW2) return 0;
-            return history[to_pos] / (HISTORY_MAX + 1);
+            if (from_pos < 0 || from_pos >= HW2 || to_pos < 0 || to_pos >= HW2) return 0;
+            return std::min(HISTORY_ORDERING_MAX_BONUS, history[from_pos][to_pos] >> HISTORY_ORDERING_SHIFT);
         }
 
         /*

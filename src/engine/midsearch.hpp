@@ -270,7 +270,7 @@ int nega_scout(Search *search, int alpha, int beta, const int depth, const bool 
         move_list[tt_moves_idx0].value = -INF;
     }
     if (alpha < beta) {
-        move_list_evaluate(search, move_list, canput, moves, depth, alpha, beta, searching);
+        move_list_evaluate(search, move_list, canput, moves, depth, alpha, beta, is_end_search, searching);
 #if USE_YBWC_NEGASCOUT
         if (search->use_multi_thread && ((!is_end_search && depth - 1 >= YBWC_MID_SPLIT_MIN_DEPTH) || (is_end_search && depth - 1 >= YBWC_END_SPLIT_MIN_DEPTH))) {
             move_list_sort(move_list, canput);
@@ -566,7 +566,7 @@ std::pair<int, int> first_nega_scout_legal(Search *search, int alpha, int beta, 
         }
         uint_fast8_t moves[N_TRANSPOSITION_MOVES] = {MOVE_UNDEFINED, MOVE_UNDEFINED};
         transposition_table.get_moves_any_level(&search->board, hash_code, moves);
-        move_list_evaluate(search, move_list, canput, moves, depth, alpha, beta, searching);
+        move_list_evaluate(search, move_list, canput, moves, depth, alpha, beta, is_end_search, searching);
 #if USE_YBWC_NEGASCOUT
         if (
             search->use_multi_thread && 
@@ -704,7 +704,7 @@ Analyze_result first_nega_scout_analyze(Search *search, int alpha, int beta, con
         }
         uint_fast8_t moves[N_TRANSPOSITION_MOVES] = {MOVE_UNDEFINED, MOVE_UNDEFINED};
         transposition_table.get_moves_any_level(&search->board, hash_code, moves);
-        move_list_evaluate(search, move_list, canput, moves, depth, alpha, beta, searching);
+        move_list_evaluate(search, move_list, canput, moves, depth, alpha, beta, is_end_search, searching);
 #if USE_YBWC_NEGASCOUT_ANALYZE
         if (search->use_multi_thread && depth - 1 >= YBWC_MID_SPLIT_MIN_DEPTH) {
             move_list_sort(move_list);
