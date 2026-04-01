@@ -578,7 +578,7 @@ inline bool move_list_evaluate_nws(Search *search, std::vector<Flip_value> &move
     const int eval_beta = -std::max(-SCORE_MAX, alpha - MOVE_ORDERING_NWS_VALUE_OFFSET_ALPHA);
     int eval_depth = depth >> 4;
     if (use_root_move_ordering_extension(search, static_cast<int>(move_list.size()), is_end_search)) {
-        eval_depth = std::max(eval_depth, depth >> 3);
+        eval_depth = std::max(eval_depth, depth >> 2);
     }
     for (Flip_value &flip_value: move_list) {
         if (flip_value.flip.flip) {
@@ -612,7 +612,7 @@ inline bool move_list_evaluate_nws(Search *search, Flip_value move_list[], int c
     const int eval_beta = -std::max(-SCORE_MAX, alpha - MOVE_ORDERING_NWS_VALUE_OFFSET_ALPHA);
     int eval_depth = depth >> 4;
     if (use_root_move_ordering_extension(search, canput, is_end_search)) {
-        eval_depth = std::max(eval_depth, depth >> 3);
+        eval_depth = std::max(eval_depth, depth >> 2);
     }
     for (int i = 0; i < canput; ++i) {
         if (move_list[i].flip.flip) {
