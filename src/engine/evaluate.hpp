@@ -11,7 +11,9 @@
 #pragma once
 #include "setting.hpp"
 #if USE_SIMD_EVALUATION
-#include "evaluate_simd.hpp"
+// #include "evaluate_simd.hpp"
+#include "evaluate_simd_fm.hpp"
 #else
-#include "evaluate_generic.hpp"
+// #include "evaluate_generic.hpp"
+#include "evaluate_generic_fm.hpp"
 #endif
