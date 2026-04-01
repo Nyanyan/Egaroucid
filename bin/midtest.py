@@ -44,7 +44,7 @@ def strip_newlines(s):
 version = strip_newlines(version)
 print(version)
 
-cmd = exe + ' -l ' + str(level) + ' -nobook -thread ' + str(n_threads) + '-hash ' + str(hash_level) + ' -solve ' + os.path.join(script_dir, 'problem/midgame_test.txt')
+cmd = exe + ' -l ' + str(level) + ' -nobook -thread ' + str(n_threads) + ' -hash ' + str(hash_level) + ' -solve ' + os.path.join(script_dir, 'problem/midgame_test.txt')
 
 print(cmd.replace(script_dir, 'script_dir'))
 egaroucid = subprocess.Popen((cmd).split(), stdin=subprocess.PIPE, stdout=subprocess.PIPE)
