@@ -1,4 +1,5 @@
 board_n_moves = {}
+use_all_depth_data = set([36, 37, 80, 83, 97])
 '''
 board_n_moves['6'] = [20, 60]
 board_n_moves['7'] = [20, 60]
@@ -280,3 +281,67 @@ board_n_moves['232'] = [21, 59] # random 21
 board_n_moves['233'] = [22, 59] # random 22
 board_n_moves['234'] = [23, 59] # random 23
 
+
+
+
+
+board_n_moves['251'] = [0, 59] # random 0
+board_n_moves['252'] = [1, 59] # random 1
+board_n_moves['253'] = [2, 59] # random 2
+board_n_moves['254'] = [3, 59] # random 3
+board_n_moves['255'] = [4, 59] # random 4
+board_n_moves['256'] = [5, 59] # random 5
+board_n_moves['257'] = [6, 59] # random 6
+board_n_moves['258'] = [7, 59] # random 7
+board_n_moves['259'] = [8, 59] # random 8
+board_n_moves['260'] = [9, 59] # random 9
+board_n_moves['261'] = [10, 59] # random 10
+board_n_moves['262'] = [11, 59] # random 11
+board_n_moves['263'] = [12, 59] # random 12
+board_n_moves['264'] = [13, 59] # random 13
+board_n_moves['265'] = [14, 59] # random 14
+board_n_moves['266'] = [15, 59] # random 15
+board_n_moves['267'] = [16, 59] # random 16
+board_n_moves['268'] = [17, 59] # random 17
+board_n_moves['269'] = [18, 59] # random 18
+board_n_moves['270'] = [19, 59] # random 19
+board_n_moves['271'] = [20, 59] # random 20
+board_n_moves['272'] = [21, 59] # random 21
+board_n_moves['273'] = [22, 59] # random 22
+board_n_moves['274'] = [23, 59] # random 23
+board_n_moves['275'] = [24, 59] # random 24
+board_n_moves['276'] = [25, 59] # random 25
+board_n_moves['277'] = [26, 59] # random 26
+board_n_moves['278'] = [27, 59] # random 27
+board_n_moves['279'] = [28, 59] # random 28
+board_n_moves['280'] = [29, 59] # random 29
+board_n_moves['281'] = [30, 59] # random 30
+board_n_moves['282'] = [31, 59] # random 31
+board_n_moves['283'] = [32, 59] # random 32
+board_n_moves['284'] = [33, 59] # random 33
+board_n_moves['285'] = [34, 59] # random 34
+board_n_moves['286'] = [35, 59] # random 35
+board_n_moves['287'] = [36, 59] # random 36
+board_n_moves['288'] = [37, 59] # random 37
+board_n_moves['289'] = [38, 59] # random 38
+board_n_moves['290'] = [39, 59] # random 39
+board_n_moves['291'] = [40, 59] # random 40
+board_n_moves['292'] = [41, 59] # random 41
+board_n_moves['293'] = [42, 59] # random 42
+board_n_moves['294'] = [43, 59] # random 43
+board_n_moves['295'] = [44, 59] # random 44
+board_n_moves['296'] = [45, 59] # random 45
+board_n_moves['297'] = [46, 59] # random 46
+board_n_moves['298'] = [47, 59] # random 47
+board_n_moves['299'] = [48, 59] # random 48
+board_n_moves['300'] = [49, 59] # random 49
+board_n_moves['301'] = [50, 59] # random 50
+board_n_moves['302'] = [51, 59] # random 51
+board_n_moves['303'] = [52, 59] # random 52
+board_n_moves['304'] = [53, 59] # random 53
+board_n_moves['305'] = [54, 59] # random 54
+board_n_moves['306'] = [55, 59] # random 55
+board_n_moves['307'] = [56, 59] # random 56
+board_n_moves['308'] = [57, 59] # random 57
+board_n_moves['309'] = [58, 59] # random 58
+board_n_moves['310'] = [59, 59] # random 59

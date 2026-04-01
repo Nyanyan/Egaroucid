@@ -1,6 +1,14 @@
 # Common
 cmake_minimum_required(VERSION 3.25)
-project(Egaroucid_for_Console CXX)
+
+# GUI build option for Linux (requires Siv3D to be installed)
+option(BUILD_GUI "Build GUI version (requires Siv3D)" OFF)
+if(BUILD_GUI)
+    project(Egaroucid CXX)
+else()
+    project(Egaroucid_for_Console CXX)
+endif()
+
 if(APPLE)
     #add_compile_options(-O2 -mtune=native -pthread -std=c++17 -Wall -Wextra)
     add_compile_options(-O2 -mtune=native -pthread -std=c++20)
@@ -39,6 +47,24 @@ if (HAS_AVX512)
     add_compile_options(-DHAS_AVX512)
 endif(HAS_AVX512)
 
-#Executable
+# Executable
 set(EXECUTABLE_OUTPUT_PATH ${CMAKE_CURRENT_SOURCE_DIR}/bin)
-add_executable(Egaroucid_for_Console.out ./src/Egaroucid_for_Console.cpp)
+
+# GUI build for Linux
+if(BUILD_GUI)
+    find_package(Siv3D REQUIRED)
+    add_compile_definitions(GUI_BUILD=1)
+    add_executable(Egaroucid.out ./src/Egaroucid.cpp)
+    target_link_libraries(Egaroucid.out PRIVATE Siv3D::Siv3D)
+    add_custom_command(TARGET Egaroucid.out POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E make_directory $<TARGET_FILE_DIR:Egaroucid.out>/resources/engine
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+            ${CMAKE_CURRENT_SOURCE_DIR}/app_resources/engine
+            $<TARGET_FILE_DIR:Egaroucid.out>/resources/engine
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            ${CMAKE_CURRENT_SOURCE_DIR}/LICENSE
+            $<TARGET_FILE_DIR:Egaroucid.out>/LICENSE
+    )
+else()
+    add_executable(Egaroucid_for_Console.out ./src/Egaroucid_for_Console.cpp)
+endif()

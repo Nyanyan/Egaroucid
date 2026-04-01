@@ -20,31 +20,60 @@ random.shuffle(openings)
 
 # name, cmd
 player_info = [
-    ['beta', 'versions/Egaroucid_for_Console_beta/Egaroucid_for_Console.exe -quiet -nobook'],
-    # ['latest',  'Egaroucid_for_Console.exe -quiet -nobook'],
-    # ['clang',  'Egaroucid_for_Console_clang.exe -quiet -nobook'],
-    ['7.8.0', 'versions/Egaroucid_for_Console_7_8_0_Windows_SIMD/Egaroucid_for_Console_7_8_0_SIMD.exe -quiet -nobook'],
-    ['7.7.0', 'versions/Egaroucid_for_Console_7_7_0_Windows_SIMD/Egaroucid_for_Console_7_7_0_SIMD.exe -quiet -nobook'],
-    ['7.6.0', 'versions/Egaroucid_for_Console_7_6_0_Windows_SIMD/Egaroucid_for_Console_7_6_0_SIMD.exe -quiet -nobook'],
-    ['7.5.0', 'versions/Egaroucid_for_Console_7_5_0_Windows_SIMD/Egaroucid_for_Console_7_5_0_SIMD.exe -quiet -nobook'],
-    ['7.4.0', 'versions/Egaroucid_for_Console_7_4_0_Windows_x64_SIMD/Egaroucid_for_Console_7_4_0_x64_SIMD.exe -quiet -nobook'],
-    ['7.3.0', 'versions/Egaroucid_for_Console_7_3_0_Windows_x64_SIMD/Egaroucid_for_Console_7_3_0_x64_SIMD.exe -quiet -nobook'],
-    ['7.2.0', 'versions/Egaroucid_for_Console_7_2_0_Windows_x64_SIMD/Egaroucid_for_Console_7_2_0_x64_SIMD.exe -quiet -nobook'],
-    ['7.1.0', 'versions/Egaroucid_for_Console_7_1_0_Windows_x64_SIMD/Egaroucid_for_Console_7_1_0_x64_SIMD.exe -quiet -nobook'],
-    ['7.0.0', 'versions/Egaroucid_for_Console_7_0_0_Windows_x64_SIMD/Egaroucid_for_Console_7_0_0_x64_SIMD.exe -quiet -nobook'],
-    #['6.5.X', 'versions/Egaroucid_for_Console_6_5_X/Egaroucid_for_Console.exe -quiet -nobook'],
-        #['6.5.0', 'versions/Egaroucid_for_Console_6_5_0_Windows_x64_SIMD/Egaroucid_for_Console_6_5_0_x64_SIMD.exe -quiet -nobook'],
-    #['6.4.X', 'versions/Egaroucid_for_Console_6_4_X/Egaroucid_for_Console.exe -quiet -nobook'],
-        #['6.4.0', 'versions/Egaroucid_for_Console_6_4_0_Windows_x64_SIMD/Egaroucid_for_Console_6_4_0_x64_SIMD.exe -quiet -nobook'],
-    #['6.3.X', 'versions/Egaroucid_for_Console_6_3_X/Egaroucid_for_Console.exe -quiet -nobook'],
-        #['6.3.0', 'versions/Egaroucid_for_Console_6_3_0_Windows_x64_SIMD/Egaroucid_for_Console_6_3_0_x64_SIMD.exe -quiet -nobook'],
-        #['6.2.X', 'versions/Egaroucid_for_Console_6_2_X/Egaroucid_for_Console.exe -quiet -nobook'],
-        #['6.2.0', 'versions/Egaroucid_for_Console_6_2_0_Windows_x64_SIMD/Egaroucid_for_Console.exe -quiet -nobook'], # same as 6.3.0
-    #['6.1.X', 'versions/Egaroucid_for_Console_6_1_X/Egaroucid_for_Console.exe -quiet -nobook'],
-        #['6.1.0', 'versions/Egaroucid_for_Console_6_1_0_Windows_x64_SIMD/Egaroucid_for_Console.exe -quiet -nobook'],
+    # ['0325', 'versions/Egaroucid_for_Console_beta/Egaroucid_for_Console.exe -gtp -quiet -nobook -eval ./../model/20260325_1/eval.egev2'],
+    # ['0324', 'versions/Egaroucid_for_Console_beta/Egaroucid_for_Console.exe -gtp -quiet -nobook -eval ./../model/20260324_1/eval.egev2'],
+    # ['0323', 'versions/Egaroucid_for_Console_beta/Egaroucid_for_Console.exe -gtp -quiet -nobook -eval ./../model/20260323_1/eval.egev2'],
+    # ['0322', 'versions/Egaroucid_for_Console_beta/Egaroucid_for_Console.exe -gtp -quiet -nobook -eval ./../model/20260322_1/eval.egev2'],
+    # ['0321', 'versions/Egaroucid_for_Console_beta/Egaroucid_for_Console.exe -gtp -quiet -nobook -eval ./../model/20260321_1/eval.egev2'],
+    # ['0320', 'versions/Egaroucid_for_Console_beta/Egaroucid_for_Console.exe -gtp -quiet -nobook -eval ./../model/20260320_1/eval.egev2'],
+    # ['0318', 'versions/Egaroucid_for_Console_beta/Egaroucid_for_Console.exe -gtp -quiet -nobook -eval ./../model/20260318_1/eval.egev2'],
+    # ['0317', 'versions/Egaroucid_for_Console_beta/Egaroucid_for_Console.exe -gtp -quiet -nobook -eval ./../model/20260317_1/eval.egev2'],
+    ['7.8.0', 'versions/Egaroucid_for_Console_7_8_0_Windows_SIMD/Egaroucid_for_Console_7_8_0_SIMD.exe -gtp -quiet -nobook'],
+    # ['7.6.0', 'versions/Egaroucid_for_Console_7_6_0_Windows_SIMD/Egaroucid_for_Console_7_6_0_SIMD.exe -gtp -quiet -nobook'],
+    # ['7.5.0', 'versions/Egaroucid_for_Console_7_5_0_Windows_SIMD/Egaroucid_for_Console_7_5_0_SIMD.exe -gtp -quiet -nobook'],
+    ['Edax4.6', 'versions/edax_4_6/wEdax-x86-64-v3.exe -gtp -q'],
+    ['Neural5', 'versions/neural-reversi-cli-5.0.0-windows-x86_64-v3.exe gtp'],
+    # ['Ntest', 'versions/ntest/ntest.exe --gtp'],
+
+
+
+    # ['beta', 'versions/Egaroucid_for_Console_beta/Egaroucid_for_Console.exe -gtp -quiet -nobook'],
+    # ['7.8.0', 'versions/Egaroucid_for_Console_7_8_0_Windows_SIMD/Egaroucid_for_Console_7_8_0_SIMD.exe -gtp -quiet -nobook'],
+    # ['7.7.0', 'versions/Egaroucid_for_Console_7_7_0_Windows_SIMD/Egaroucid_for_Console_7_7_0_SIMD.exe -gtp -quiet -nobook'],
+    # ['7.6.0', 'versions/Egaroucid_for_Console_7_6_0_Windows_SIMD/Egaroucid_for_Console_7_6_0_SIMD.exe -gtp -quiet -nobook'],
+    # ['7.5.0', 'versions/Egaroucid_for_Console_7_5_0_Windows_SIMD/Egaroucid_for_Console_7_5_0_SIMD.exe -gtp -quiet -nobook'],
+    # ['7.4.0', 'versions/Egaroucid_for_Console_7_4_0_Windows_x64_SIMD/Egaroucid_for_Console_7_4_0_x64_SIMD.exe -gtp -quiet -nobook'],
+    # ['7.3.0', 'versions/Egaroucid_for_Console_7_3_0_Windows_x64_SIMD/Egaroucid_for_Console_7_3_0_x64_SIMD.exe -gtp -quiet -nobook'],
+    # ['7.2.0', 'versions/Egaroucid_for_Console_7_2_0_Windows_x64_SIMD/Egaroucid_for_Console_7_2_0_x64_SIMD.exe -gtp -quiet -nobook'],
+    # ['7.1.0', 'versions/Egaroucid_for_Console_7_1_0_Windows_x64_SIMD/Egaroucid_for_Console_7_1_0_x64_SIMD.exe -gtp -quiet -nobook'],
+    # ['7.0.0', 'versions/Egaroucid_for_Console_7_0_0_Windows_x64_SIMD/Egaroucid_for_Console_7_0_0_x64_SIMD.exe -gtp -quiet -nobook'],
+    # ['Edax4.6', 'versions/edax_4_6/wEdax-x86-64-v3.exe -gtp -q'],
+
+    # ['beta', 'versions/Egaroucid_for_Console_beta/Egaroucid_for_Console.exe -gtp -quiet -nobook'],
+    # ['latest',  'Egaroucid_for_Console.exe -gtp -quiet -nobook'],
+    # ['clang',  'Egaroucid_for_Console_clang.exe -gtp -quiet -nobook'],
+    # ['7.8.0', 'versions/Egaroucid_for_Console_7_8_0_Windows_SIMD/Egaroucid_for_Console_7_8_0_SIMD.exe -gtp -quiet -nobook'],
+    # ['7.7.0', 'versions/Egaroucid_for_Console_7_7_0_Windows_SIMD/Egaroucid_for_Console_7_7_0_SIMD.exe -gtp -quiet -nobook'],
+    # ['7.6.0', 'versions/Egaroucid_for_Console_7_6_0_Windows_SIMD/Egaroucid_for_Console_7_6_0_SIMD.exe -gtp -quiet -nobook'],
+    # ['7.5.0', 'versions/Egaroucid_for_Console_7_5_0_Windows_SIMD/Egaroucid_for_Console_7_5_0_SIMD.exe -gtp -quiet -nobook'],
+    # ['7.4.0', 'versions/Egaroucid_for_Console_7_4_0_Windows_x64_SIMD/Egaroucid_for_Console_7_4_0_x64_SIMD.exe -gtp -quiet -nobook'],
+    # ['7.3.0', 'versions/Egaroucid_for_Console_7_3_0_Windows_x64_SIMD/Egaroucid_for_Console_7_3_0_x64_SIMD.exe -gtp -quiet -nobook'],
+    # ['7.2.0', 'versions/Egaroucid_for_Console_7_2_0_Windows_x64_SIMD/Egaroucid_for_Console_7_2_0_x64_SIMD.exe -gtp -quiet -nobook'],
+    # ['7.1.0', 'versions/Egaroucid_for_Console_7_1_0_Windows_x64_SIMD/Egaroucid_for_Console_7_1_0_x64_SIMD.exe -gtp -quiet -nobook'],
+    # ['7.0.0', 'versions/Egaroucid_for_Console_7_0_0_Windows_x64_SIMD/Egaroucid_for_Console_7_0_0_x64_SIMD.exe -gtp -quiet -nobook'],
+    #['6.5.X', 'versions/Egaroucid_for_Console_6_5_X/Egaroucid_for_Console.exe -gtp -quiet -nobook'],
+        #['6.5.0', 'versions/Egaroucid_for_Console_6_5_0_Windows_x64_SIMD/Egaroucid_for_Console_6_5_0_x64_SIMD.exe -gtp -quiet -nobook'],
+    #['6.4.X', 'versions/Egaroucid_for_Console_6_4_X/Egaroucid_for_Console.exe -gtp -quiet -nobook'],
+        #['6.4.0', 'versions/Egaroucid_for_Console_6_4_0_Windows_x64_SIMD/Egaroucid_for_Console_6_4_0_x64_SIMD.exe -gtp -quiet -nobook'],
+    #['6.3.X', 'versions/Egaroucid_for_Console_6_3_X/Egaroucid_for_Console.exe -gtp -quiet -nobook'],
+        #['6.3.0', 'versions/Egaroucid_for_Console_6_3_0_Windows_x64_SIMD/Egaroucid_for_Console_6_3_0_x64_SIMD.exe -gtp -quiet -nobook'],
+        #['6.2.X', 'versions/Egaroucid_for_Console_6_2_X/Egaroucid_for_Console.exe -gtp -quiet -nobook'],
+        #['6.2.0', 'versions/Egaroucid_for_Console_6_2_0_Windows_x64_SIMD/Egaroucid_for_Console.exe -gtp -quiet -nobook'], # same as 6.3.0
+    #['6.1.X', 'versions/Egaroucid_for_Console_6_1_X/Egaroucid_for_Console.exe -gtp -quiet -nobook'],
+        #['6.1.0', 'versions/Egaroucid_for_Console_6_1_0_Windows_x64_SIMD/Egaroucid_for_Console.exe -gtp -quiet -nobook'],
     #['6.0.X', 'versions/Egaroucid_for_Console_6_0_X/Egaroucid_for_Console_test.exe q'],
-    #['Edax4.4', 'versions/edax_4_4/edax-4.4 -q'],
-    ['Edax4.6', 'versions/edax_4_6/wEdax-x86-64-v3.exe -q'],
+    #['Edax4.4', 'versions/edax_4_4/edax-4.4 -gtp -q'],
+    # ['Edax4.6', 'versions/edax_4_6/wEdax-x86-64-v3.exe -gtp -q'],
 ]
 
 NAME_IDX = 0
@@ -53,6 +82,11 @@ RESULT_IDX = 2
 RESULT_DISC_IDX = 3
 N_PLAYED_IDX = 4
 RATING_IDX = 5
+CMD_IDX = 6
+
+
+def start_engine(cmd):
+    return subprocess.Popen(cmd.split(), stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
 
 players = []
 for name, cmd in player_info:
@@ -61,14 +95,16 @@ for name, cmd in player_info:
         cmd_with_options = cmd + ' ' + str(LEVEL)
     if 'Edax' in name:
         cmd_with_options += ' -n ' + str(N_THREADS)
+    elif 'Neural' in name:
+        cmd_with_options += ' --threads ' + str(N_THREADS)
     else:
         cmd_with_options += ' -t ' + str(N_THREADS)
     print(name, cmd_with_options)
     players.append([
         name,
         [
-            subprocess.Popen(cmd_with_options.split(), stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL),
-            subprocess.Popen(cmd_with_options.split(), stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
+            start_engine(cmd_with_options),
+            start_engine(cmd_with_options)
         ],
         # W D L (vs other players)
         [[0, 0, 0] for _ in range(len(player_info))],
@@ -77,8 +113,48 @@ for name, cmd in player_info:
         # n_played
         [0 for _ in range(len(player_info))],
         # rating
-        Elo_player(1500)
+        Elo_player(1500),
+        # command used to start subprocesses
+        cmd_with_options
     ])
+
+
+def restart_process(player_idx, side_idx):
+    cmd = players[player_idx][CMD_IDX]
+    proc = players[player_idx][SUBPROCESS_IDX][side_idx]
+    try:
+        proc.kill()
+    except Exception:
+        pass
+    new_proc = start_engine(cmd)
+    players[player_idx][SUBPROCESS_IDX][side_idx] = new_proc
+    print('restart', players[player_idx][NAME_IDX], 'side', side_idx)
+    return new_proc
+
+
+def send_command(player_idx, side_idx, cmd):
+    proc = players[player_idx][SUBPROCESS_IDX][side_idx]
+    for _ in range(2):
+        if proc.poll() is not None:
+            proc = restart_process(player_idx, side_idx)
+        try:
+            proc.stdin.write(cmd.encode('utf-8'))
+            proc.stdin.flush()
+        except (BrokenPipeError, OSError):
+            proc = restart_process(player_idx, side_idx)
+            continue
+
+        line = ''
+        while line == '':
+            raw = proc.stdout.readline()
+            if raw == b'':
+                proc = restart_process(player_idx, side_idx)
+                break
+            line = raw.decode(errors='replace').replace('\r', '').replace('\n', '')
+        if line != '':
+            return line
+
+    raise RuntimeError('failed to communicate with engine: ' + players[player_idx][NAME_IDX] + ' cmd=' + cmd.strip())
 
 def play_battle(p0_idx, p1_idx, opening_idx):
     player_idxes = [p0_idx, p1_idx]
@@ -89,11 +165,20 @@ def play_battle(p0_idx, p1_idx, opening_idx):
     for player in shuffled_range2: # which plays black. p0 plays `player`, p1 plays `1 - player`
         record = ''
         o = othello()
+        cmd_clear_board = 'clear_board\n'
+        for player_idx in [p0_idx, p1_idx]:
+            send_command(player_idx, player, cmd_clear_board)
         # play opening
         for i in range(0, len(opening), 2):
             if not o.check_legal():
+                cmd_pass = 'play ' + ('b' if o.player == black else 'w') + ' pass\n'
+                for player_idx in [p0_idx, p1_idx]:
+                    send_command(player_idx, player, cmd_pass)
                 o.player = 1 - o.player
                 o.check_legal()
+            cmd_play = 'play ' + ('b' if o.player == black else 'w') + ' ' + opening[i] + opening[i + 1] + '\n'
+            for player_idx in [p0_idx, p1_idx]:
+                send_command(player_idx, player, cmd_play)
             x = ord(opening[i].lower()) - ord('a')
             y = int(opening[i + 1]) - 1
             record += opening[i] + opening[i + 1]
@@ -101,38 +186,24 @@ def play_battle(p0_idx, p1_idx, opening_idx):
         # play with ai
         while True:
             if not o.check_legal():
+                cmd_pass = 'play ' + ('b' if o.player == black else 'w') + ' pass\n'
+                for player_idx in [p0_idx, p1_idx]:
+                    send_command(player_idx, player, cmd_pass)
                 o.player = 1 - o.player
                 if not o.check_legal():
                     break
-            grid_str = 'setboard '
-            for yy in range(hw):
-                for xx in range(hw):
-                    if o.grid[yy][xx] == black:
-                        grid_str += 'X'
-                    elif o.grid[yy][xx] == white:
-                        grid_str += 'O'
-                    else:
-                        grid_str += '-'
-            if o.player == black:
-                grid_str += ' X\n'
-            else:
-                grid_str += ' O\n'
             player_idx = player_idxes[o.player ^ player]
-            players[player_idx][SUBPROCESS_IDX][player].stdin.write(grid_str.encode('utf-8'))
-            players[player_idx][SUBPROCESS_IDX][player].stdin.flush()
-            players[player_idx][SUBPROCESS_IDX][player].stdin.write('go\n'.encode('utf-8'))
-            players[player_idx][SUBPROCESS_IDX][player].stdin.flush()
-            line = ''
-            while line == '' or line == '>':
-                line = players[player_idx][SUBPROCESS_IDX][player].stdout.readline().decode().replace('\r', '').replace('\n', '')
+            cmd_genmove = 'genmove ' + ('b' if o.player == black else 'w') + '\n'
+            line = send_command(player_idx, player, cmd_genmove)
             coord = line[-2:].lower()
             try:
                 y = int(coord[1]) - 1
                 x = ord(coord[0]) - ord('a')
             except:
-                print('error')
-                print(grid_str[:-1])
+                print('error1')
+                print(record)
                 print(o.player, player)
+                print(line)
                 print(coord)
                 for i in range(len(players)):
                     for j in range(2):
@@ -140,12 +211,18 @@ def play_battle(p0_idx, p1_idx, opening_idx):
                         players[i][SUBPROCESS_IDX][j].stdin.flush()
                 exit()
             record += chr(ord('a') + x) + str(y + 1)
+            o_player = o.player
             if not o.move(y, x):
                 o.print_info()
-                print(grid_str[:-1])
+                print('error2')
+                print(record)
                 print(o.player, player)
+                print(line)
                 print(coord)
                 print(y, x)
+            n_player_idx = player_idxes[o_player ^ 1 ^ player]
+            cmd_play = 'play ' + ('b' if o_player == black else 'w') + ' ' + chr(ord('a') + x) + str(y + 1) + '\n'
+            send_command(n_player_idx, player, cmd_play)
         # update win/draw/loss
         if o.n_stones[player] > o.n_stones[1 - player]: # p0 win
             sum_disc_diff_p0 += o.n_stones[player] - o.n_stones[1 - player] + (64 - (o.n_stones[player] + o.n_stones[1 - player]))

@@ -176,6 +176,8 @@ I would like to thank these people for great contributions (in no particular ord
   - Toshihiko Okuhara
   - Hayato Sasakura
   - acepck
+  - Sotaro Ishii
+  - Folkert van Heusden
   - HiraokaTakuya
   - Ben Stokmans
   - seigot

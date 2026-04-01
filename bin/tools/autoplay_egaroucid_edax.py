@@ -139,3 +139,5 @@ for idx in range(IDX_START, IDX_END + 1):
         with open(dr + '/' + fill0(idx, 7) + '.txt', 'a') as f:
             f.write(record + '\n')
 
+egaroucid.kill()
+edax.kill()

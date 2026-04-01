@@ -19,6 +19,12 @@
 constexpr int BOARD_IMAGE_COLOR_DEFAULT = 0;
 constexpr int BOARD_IMAGE_COLOR_MONOCHROME = 1;
 
+constexpr int BOARD_IMAGE_OUTER_FRAME_WHITE = 0;
+constexpr int BOARD_IMAGE_OUTER_FRAME_DARK = 1;
+
+constexpr int BOARD_IMAGE_COORDINATE_INCLUDE = 0;
+constexpr int BOARD_IMAGE_COORDINATE_EXCLUDE = 1;
+
 constexpr int BOARD_IMAGE_BRECT = 0;
 constexpr int BOARD_IMAGE_BSTAR = 1;
 constexpr int BOARD_IMAGE_WRECT = 2;
@@ -37,6 +43,8 @@ private:
     Button save_image_button;
     Radio_button mark_radio;
     Radio_button color_radio;
+    Radio_button outer_frame_color_radio;
+    Radio_button coordinate_radio;
     int marks[HW2];
     int last_marked[HW2];
     bool taking_screen_shot;
@@ -48,22 +56,34 @@ public:
         Radio_button_element radio_button_elem;
 
         mark_radio.init();
-        radio_button_elem.init(480, 120, getData().fonts.font, 15, language.get("board_image", "rect"), true, getData().colors.black);
+        radio_button_elem.init(480, 100, getData().fonts.font, 15, language.get("board_image", "rect"), true, getData().colors.black);
         mark_radio.push(radio_button_elem);
-        radio_button_elem.init(480, 140, getData().fonts.font, 15, language.get("board_image", "star"), false, getData().colors.black);
+        radio_button_elem.init(480, 120, getData().fonts.font, 15, language.get("board_image", "star"), false, getData().colors.black);
         mark_radio.push(radio_button_elem);
-        radio_button_elem.init(480, 160, getData().fonts.font, 15, language.get("board_image", "rect"), false, getData().colors.white);
+        radio_button_elem.init(480, 140, getData().fonts.font, 15, language.get("board_image", "rect"), false, getData().colors.white);
         mark_radio.push(radio_button_elem);
-        radio_button_elem.init(480, 180, getData().fonts.font, 15, language.get("board_image", "star"), false, getData().colors.white);
+        radio_button_elem.init(480, 160, getData().fonts.font, 15, language.get("board_image", "star"), false, getData().colors.white);
         mark_radio.push(radio_button_elem);
-        radio_button_elem.init(480, 200, getData().fonts.font, 15, language.get("board_image", "nomark"), false, getData().colors.white);
+        radio_button_elem.init(480, 180, getData().fonts.font, 15, language.get("board_image", "nomark"), false, getData().colors.white);
         mark_radio.push(radio_button_elem);
 
         color_radio.init();
-        radio_button_elem.init(480, 280, getData().fonts.font, 15, language.get("board_image", "default"), true);
+        radio_button_elem.init(480, 230, getData().fonts.font, 15, language.get("board_image", "default"), true);
         color_radio.push(radio_button_elem);
-        radio_button_elem.init(480, 300, getData().fonts.font, 15, language.get("board_image", "monochrome"), false);
+        radio_button_elem.init(480, 250, getData().fonts.font, 15, language.get("board_image", "monochrome"), false);
         color_radio.push(radio_button_elem);
+
+        outer_frame_color_radio.init();
+        radio_button_elem.init(600, 230, getData().fonts.font, 15, language.get("board_image", "white"), true);
+        outer_frame_color_radio.push(radio_button_elem);
+        radio_button_elem.init(600, 250, getData().fonts.font, 15, language.get("board_image", "dark_gray"), false);
+        outer_frame_color_radio.push(radio_button_elem);
+
+        coordinate_radio.init();
+        radio_button_elem.init(480, 300, getData().fonts.font, 15, language.get("board_image", "include_coordinate"), true);
+        coordinate_radio.push(radio_button_elem);
+        radio_button_elem.init(480, 320, getData().fonts.font, 15, language.get("board_image", "exclude_coordinate"), false);
+        coordinate_radio.push(radio_button_elem);
 
         for (int i = 0; i < HW2; ++i) {
             marks[i] = BOARD_IMAGE_NOMARK;
@@ -75,7 +95,12 @@ public:
     void update() override {
         if (taking_screen_shot) {
             std::string transcript = get_transcript(getData().graph_resources, getData().history_elem);
-            take_screen_shot(getData().window_state.window_scale, getData().user_settings.screenshot_saving_dir, transcript);
+            take_board_image_screen_shot(
+                getData().window_state.window_scale,
+                getData().user_settings.screenshot_saving_dir,
+                transcript,
+                coordinate_radio.checked == BOARD_IMAGE_COORDINATE_INCLUDE
+            );
             taking_screen_shot = false;
         }
 
@@ -101,10 +126,18 @@ public:
 
         Scene::SetBackground(getData().colors.green);
         getData().fonts.font(language.get("in_out", "board_image")).draw(25, 480, 20, getData().colors.white);
-        getData().fonts.font(language.get("board_image", "mark")).draw(20, 480, 80, getData().colors.white);
-        getData().fonts.font(language.get("board_image", "color")).draw(20, 480, 240, getData().colors.white);
+        getData().fonts.font(language.get("board_image", "mark")).draw(15, 480, 70, getData().colors.white);
+        getData().fonts.font(language.get("board_image", "color")).draw(15, 480, 200, getData().colors.white);
+        if (color_radio.checked == BOARD_IMAGE_COLOR_DEFAULT) {
+            getData().fonts.font(language.get("board_image", "outer_frame_color")).draw(15, 600, 200, getData().colors.white);
+        }
+        getData().fonts.font(language.get("board_image", "coordinate")).draw(15, 480, 270, getData().colors.white);
         mark_radio.draw();
         color_radio.draw();
+        if (color_radio.checked == BOARD_IMAGE_COLOR_DEFAULT) {
+            outer_frame_color_radio.draw();
+        }
+        coordinate_radio.draw();
         if (color_radio.checked == BOARD_IMAGE_COLOR_MONOCHROME) {
             const int clip_sx = BOARD_SX - BOARD_ROUND_FRAME_WIDTH - BOARD_COORD_SIZE - 1;
             const int clip_sy = BOARD_SY - BOARD_ROUND_FRAME_WIDTH - BOARD_COORD_SIZE - 1;
@@ -112,10 +145,12 @@ public:
             const int clip_size_y = BOARD_CELL_SIZE * HW + BOARD_ROUND_FRAME_WIDTH * 2 + BOARD_COORD_SIZE + 7 + 2;
             Rect(clip_sx, clip_sy, clip_size_x, clip_size_y).draw(getData().colors.white);
         }
-        draw_board(getData().fonts, getData().colors, getData().history_elem, color_radio.checked == BOARD_IMAGE_COLOR_MONOCHROME);
-        if (color_radio.checked == BOARD_IMAGE_COLOR_MONOCHROME) {
-            RoundRect(BOARD_SX, BOARD_SY, BOARD_CELL_SIZE * HW, BOARD_CELL_SIZE * HW, BOARD_ROUND_DIAMETER).drawFrame(0, BOARD_ROUND_FRAME_WIDTH, getData().colors.black);
-        }
+        const bool monochrome = color_radio.checked == BOARD_IMAGE_COLOR_MONOCHROME;
+        const bool include_coordinate = coordinate_radio.checked == BOARD_IMAGE_COORDINATE_INCLUDE;
+        draw_board(getData().fonts, getData().colors, getData().history_elem, monochrome, include_coordinate);
+        const Color outer_frame_color = monochrome ? getData().colors.black : 
+            ((outer_frame_color_radio.checked == BOARD_IMAGE_OUTER_FRAME_WHITE) ? getData().colors.white : getData().colors.dark_gray);
+        s3d::RoundRect(BOARD_SX, BOARD_SY, BOARD_CELL_SIZE * HW, BOARD_CELL_SIZE * HW, BOARD_ROUND_DIAMETER).drawFrame(0, BOARD_ROUND_FRAME_WIDTH, outer_frame_color);
 
         int board_arr[HW2];
         getData().history_elem.board.translate_to_arr(board_arr, getData().history_elem.player);

@@ -15,6 +15,16 @@ reduce_lr_ratio = '0.7'
 
 model_dir = './../../../model/nomodel/'
 
+def reduce_traindata_nums(nums):
+    res = []
+    for num in nums:
+        mn = board_n_moves[str(num)][0]
+        mx = board_n_moves[str(num)][1]
+        phase_int = int(phase)
+        if (mn <= phase_int <= mx and phase_int <= mn + 40) or (num in use_all_depth_data):
+            res.append(num)
+    return res
+
 
 '''
 # cell weight
@@ -98,17 +108,17 @@ train_data_nums = [
     #84, 85, 86, 87, 88, 89, # non-regular random starting position
     97, # public data
     #           98,  99, 100, 101, 102, 103, 104, 105, # random boards 12-19
-    #106, 107, 108, 109, 110, 111, 112, 113, 114, 115, # random boards 20-29
-    #116, 117, 118, 119, 120, 121, 122, 123,           # random boards 30-37
+    # 106, 107, 108, 109, 110, 111, 112, 113, 114, 115, # random boards 20-29
+    # 116, 117, 118, 119, 120, 121, 122, 123,           # random boards 30-37
     #                                        124, 125, # random boards 38-39
-    #     127, 128, 129, 130, 131, 132, 133, 134, 135, # random boards 41-49
+        # 127, 128, 129, 130, 131, 132, 133, 134, 135, # random boards 41-49
     #136, 137, 138, 139, 140, 141, 142, 143,           # random boards 50-57
     144, 145, 146, 147, 148, 149, 150, 151, 152, 153, 154, 155, 156, # 157, # random N selfplay
     158, 159, 160, 161, 162, 163, 164, 165, # random N selfplay
     #               168, 169, 170, 171, 172, 173, 174, # random boards 13-19
-    #175, 176, 177, 178, 179, 180, 181, 182, 183, 184, # random boards 20-29
-    #185,                          191, 192, 193, 194, # random boards 30-39
-    #195, 196, 197, 198, 199, 200, 201, 202, 203, 204, # random boards 40-49
+    # 175, 176, 177, 178, 179, 180, 181, 182, 183, 184, # random boards 20-29
+    # 185,                          191, 192, 193, 194, # random boards 30-39
+    # 195, 196, 197, 198, 199, 200, 201, 202, 203, 204, # random boards 40-49
     #205, 206, 207, 208, 209, 210, 211, 212, 213, # random boards 50-58
     # 214, # random 11 (first11_all)
     216, 217, 218, 219, 220, # random39-35
@@ -117,16 +127,24 @@ train_data_nums = [
 ]
 if int(phase) >= 12:
     train_data_nums.extend([18, 19, 20, 21, 24, 25, 28, 29, 30, 31]) # old data (without records27)
-    train_data_nums.extend([65, 66])
+    train_data_nums.extend([65, 66]) # random 10 & 11
     train_data_nums.extend([214]) # random 11 (first11_all)
+    train_data_nums.extend(list(range(259, 310 + 1))) # Egaroucid vs Edax lv.11 random8-59
+train_data_nums = reduce_traindata_nums(train_data_nums)
 train_data_nums.sort()
 #print(train_data_nums, file=sys.stderr)
 train_root_dir = os.environ['EGAROUCID_DATA'] + '/train_data/bin_data/20241125_1/'
 # executable = 'eval_optimizer_cuda_12_2_0_20241125_1_7_5.exe'
 # executable = 'eval_optimizer_cuda_12_2_0_20241125_1_7_5_ignore_rare.exe'
 # executable = 'eval_optimizer_cuda_12_2_0_20241125_1_7_5_20250914.exe'
-executable = 'eval_optimizer_cuda_12_2_0_20241125_1_7_5_roundminmax.exe'
+# executable = 'eval_optimizer_cuda_12_2_0_20241125_1_7_5_roundminmax.exe'
 # executable = 'eval_optimizer_cuda_12_2_0_20241125_1_7_5_new_alpha.exe'
+# executable = 'eval_optimizer_cuda_12_2_0_20241125_1_7_5_20260315.exe'
+# executable = 'eval_optimizer_cuda_12_2_0_20241125_1_7_5_20260317.exe' # no clipping while learning
+# executable = 'eval_optimizer_cuda_12_2_0_20241125_1_7_5_20260318.exe' # no clipping while learning, use param max
+executable = 'eval_optimizer_cuda_12_2_0_20241125_1_7_5_20260320.exe' # no clipping while learning, use param max, no warmup
+# executable = 'eval_optimizer_cuda_12_2_0_20241125_1_7_5_20260321.exe' # with clipping while learning, use param max, no warmup
+
 #'''
 
 
@@ -200,6 +218,7 @@ cmd = executable + ' ' + phase + ' ' + hour + ' ' + minute + ' ' + second + ' ' 
 #print(cmd, file=sys.stderr)
 p = subprocess.Popen(cmd.split(), stdout=subprocess.PIPE)
 result = p.stdout.readline().decode().replace('\r\n', '\n').replace('\n', '')
+result += ' train_data_nums=' + str(train_data_nums)
 print(result)
 # param = p.stdout.read().decode().replace('\r\n', '\n')
 # with open('trained/' + phase + '.txt', 'w') as f:

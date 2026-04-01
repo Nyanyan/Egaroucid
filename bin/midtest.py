@@ -9,10 +9,23 @@ def fill0(n, r):
         n = '0' + n
     return n
 
+level = 23
+n_threads = 32
+hash_level = 25
 exe = 'Egaroucid_for_Console.exe'
-# exe = 'Egaroucid_for_Console_20250717_before.exe'
-# exe = 'versions/Egaroucid_for_Console_7_5_1_Windows_SIMD/Egaroucid_for_Console_7_5_1_SIMD.exe'
-# exe = 'versions/Egaroucid_for_Console_7_6_0_Windows_SIMD/Egaroucid_for_Console_7_6_0_SIMD.exe'
+
+try:
+    if len(sys.argv) >= 2:
+        level = int(sys.argv[1])
+    if len(sys.argv) >= 3:
+        n_threads = int(sys.argv[2])
+    if len(sys.argv) >= 4:
+        hash_level = int(sys.argv[3])
+    if len(sys.argv) >= 5:
+        exe = sys.argv[5]
+except:
+    print('usage: python midtest.py [level=23] [n_threads=32] [hash_level=25] [exe=Egaroucid_for_Console.exe]')
+    exit()
 
 
 script_dir = os.path.dirname(os.path.abspath(__file__))
@@ -31,7 +44,7 @@ def strip_newlines(s):
 version = strip_newlines(version)
 print(version)
 
-cmd = exe + ' -l 23 -nobook -thread 32 -solve ' + os.path.join(script_dir, 'problem/midgame_test.txt')
+cmd = exe + ' -l ' + str(level) + ' -nobook -thread ' + str(n_threads) + ' -hash ' + str(hash_level) + ' -solve ' + os.path.join(script_dir, 'problem/midgame_test.txt')
 
 print(cmd.replace(script_dir, 'script_dir'))
 egaroucid = subprocess.Popen((cmd).split(), stdin=subprocess.PIPE, stdout=subprocess.PIPE)

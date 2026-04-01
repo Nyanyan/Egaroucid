@@ -36,6 +36,13 @@
 #define ADJ_MAX_N_TEST_DATA 100000
 
 
+// settings
+#define RESIDUAL_USE_CLIP true
+#define ROUND_USE_CLIP true
+#define USE_PARAM_LIMIT true
+#define USE_WARMUP false
+
+
 // training constant
 #define ADJ_IGNORE_N_APPEAR 0 // ignore features that appeared only 3 or less times
 
@@ -109,7 +116,7 @@ void adj_import_eval(std::string file, int eval_size, double *host_eval_arr) {
 /*
     @brief import train data
 */
-int adj_import_data(int n_files, char* files[], Adj_Data* host_train_data, int *host_rev_idx_arr, int *host_n_appear_arr) {
+std::pair<int, double> adj_import_data(int n_files, char* files[], Adj_Data* host_train_data, int *host_rev_idx_arr, int *host_n_appear_arr) {
     int n_data = 0;
     FILE* fp;
     int16_t n_discs, score, player;
@@ -152,7 +159,7 @@ int adj_import_data(int n_files, char* files[], Adj_Data* host_train_data, int *
     //std::cerr << std::endl;
     //std::cerr << n_data << " data loaded" << std::endl;
     std::cerr << "score avg " << score_avg << std::endl;
-    return n_data;
+    return std::make_pair(n_data, score_avg);
 }
 
 /*
@@ -180,11 +187,13 @@ __global__ void adj_calculate_residual(const double *device_eval_arr, const int 
             predicted_value += device_eval_arr[device_start_idx_arr[i] + (int)device_train_data[data_idx].features[i]];
         #endif
     }
+#if RESIDUAL_USE_CLIP
     if (predicted_value > HW2 * ADJ_STEP) {
         predicted_value = HW2 * ADJ_STEP;
     } else if (predicted_value < -HW2 * ADJ_STEP) {
         predicted_value = -HW2 * ADJ_STEP;
     }
+#endif
     double residual_error = device_train_data[data_idx].score - predicted_value;
     for (int i = 0; i < ADJ_N_FEATURES; ++i){
         #if ADJ_CELL_WEIGHT
@@ -231,11 +240,13 @@ __global__ void adj_calculate_val_loss(const double *device_eval_arr, const int 
             predicted_value += device_eval_arr[device_start_idx_arr[i] + (int)device_val_data[data_idx].features[i]];
         #endif
     }
+#if RESIDUAL_USE_CLIP
     if (predicted_value > HW2 * ADJ_STEP) {
         predicted_value = HW2 * ADJ_STEP;
     } else if (predicted_value < -HW2 * ADJ_STEP) {
         predicted_value = -HW2 * ADJ_STEP;
     }
+#endif
     double residual_error = device_val_data[data_idx].score - predicted_value;
     atomicAdd(&device_val_error_monitor_arr[0], (residual_error / ADJ_STEP) * (residual_error / ADJ_STEP) / n_val_data);
     atomicAdd(&device_val_error_monitor_arr[1], fabs(residual_error / ADJ_STEP) / n_val_data);
@@ -281,11 +292,13 @@ __global__ void adj_calculate_loss_round(const int change_idx, const int rev_cha
     }
     predicted_value += predicted_value >= 0 ? ADJ_STEP_2 : -ADJ_STEP_2;
     predicted_value /= ADJ_STEP;
+#if ROUND_USE_CLIP
     if (predicted_value > HW2) {
         predicted_value = HW2;
     } else if (predicted_value < -HW2) {
         predicted_value = -HW2;
     }
+#endif
     double residual_error = device_train_data[data_idx].score / ADJ_STEP - predicted_value;
     atomicAdd(&device_error_monitor_arr[0], residual_error * residual_error / n_train_data);
     atomicAdd(&device_error_monitor_arr[1], fabs(residual_error) / n_train_data);
@@ -303,6 +316,14 @@ __global__ void gradient_descent(const int eval_size, double *device_eval_arr, i
     double grad = 2.0 * device_residual_arr[eval_idx];
     if (grad != 0.0){
         device_eval_arr[eval_idx] += lr * grad;
+#if USE_PARAM_LIMIT
+        if (device_eval_arr[eval_idx] > ADJ_EVAL_PARAM_MAX) {
+            device_eval_arr[eval_idx] = ADJ_EVAL_PARAM_MAX;
+        }
+        if (device_eval_arr[eval_idx] < -ADJ_EVAL_PARAM_MAX) {
+            device_eval_arr[eval_idx] = -ADJ_EVAL_PARAM_MAX;
+        }
+#endif
     }
     device_residual_arr[eval_idx] = 0.0;
 }
@@ -321,6 +342,14 @@ __global__ void momentum(const int eval_size, double *device_eval_arr, int *devi
         constexpr double beta1 = 0.9;
         device_m_arr[eval_idx] = beta1 * device_m_arr[eval_idx] + lr * grad;
         device_eval_arr[eval_idx] += device_m_arr[eval_idx];
+#if USE_PARAM_LIMIT
+        if (device_eval_arr[eval_idx] > ADJ_EVAL_PARAM_MAX) {
+            device_eval_arr[eval_idx] = ADJ_EVAL_PARAM_MAX;
+        }
+        if (device_eval_arr[eval_idx] < -ADJ_EVAL_PARAM_MAX) {
+            device_eval_arr[eval_idx] = -ADJ_EVAL_PARAM_MAX;
+        }
+#endif
     }
     device_residual_arr[eval_idx] = 0.0;
 }
@@ -340,6 +369,14 @@ __global__ void adagrad(const int eval_size, double *device_eval_arr, int *devic
         constexpr double epsilon = 1e-7;
         device_v_arr[eval_idx] += grad * grad;
         device_eval_arr[eval_idx] += lr * grad / (sqrt(device_v_arr[eval_idx]) + epsilon);
+#if USE_PARAM_LIMIT
+        if (device_eval_arr[eval_idx] > ADJ_EVAL_PARAM_MAX) {
+            device_eval_arr[eval_idx] = ADJ_EVAL_PARAM_MAX;
+        }
+        if (device_eval_arr[eval_idx] < -ADJ_EVAL_PARAM_MAX) {
+            device_eval_arr[eval_idx] = -ADJ_EVAL_PARAM_MAX;
+        }
+#endif
     }
     device_residual_arr[eval_idx] = 0.0;
 }
@@ -362,12 +399,14 @@ __global__ void adam(const int phase, const int eval_size, double *device_eval_a
         device_m_arr[eval_idx] += (1.0 - beta1) * (grad - device_m_arr[eval_idx]);
         device_v_arr[eval_idx] += (1.0 - beta2) * (grad * grad - device_v_arr[eval_idx]);
         device_eval_arr[eval_idx] += lrt * device_m_arr[eval_idx] / (sqrt(device_v_arr[eval_idx]) + epsilon);
-        // if (device_eval_arr[eval_idx] > ADJ_EVAL_PARAM_MAX) {
-        //     device_eval_arr[eval_idx] = ADJ_EVAL_PARAM_MAX;
-        // }
-        // if (device_eval_arr[eval_idx] < -ADJ_EVAL_PARAM_MAX) {
-        //     device_eval_arr[eval_idx] = -ADJ_EVAL_PARAM_MAX;
-        // }
+#if USE_PARAM_LIMIT
+        if (device_eval_arr[eval_idx] > ADJ_EVAL_PARAM_MAX) {
+            device_eval_arr[eval_idx] = ADJ_EVAL_PARAM_MAX;
+        }
+        if (device_eval_arr[eval_idx] < -ADJ_EVAL_PARAM_MAX) {
+            device_eval_arr[eval_idx] = -ADJ_EVAL_PARAM_MAX;
+        }
+#endif
     }
     device_residual_arr[eval_idx] = 0.0;
 }
@@ -450,7 +489,9 @@ int main(int argc, char* argv[]) {
     }
     adj_init_arr(eval_size, host_eval_arr, host_rev_idx_arr, host_n_appear_arr);
     adj_import_eval(in_file, eval_size, host_eval_arr);
-    int n_all_data = adj_import_data(n_train_data_file, train_files, host_train_data, host_rev_idx_arr, host_n_appear_arr);
+    std::pair<int, double> import_result = adj_import_data(n_train_data_file, train_files, host_train_data, host_rev_idx_arr, host_n_appear_arr);
+    int n_all_data = import_result.first;
+    double score_avg = import_result.second;
     std::cerr << n_all_data << " data loaded" << std::endl;
     // shuffle data
     std::random_device seed_gen;
@@ -558,7 +599,11 @@ int main(int argc, char* argv[]) {
     double min_val_mse = 100000000.0, min_val_mae = 100000000.0;
     int n_val_loss_increase = 0;
     int n_val_loss_increase_reduce_lr = 0;
+#if USE_WARMUP
     double alpha_stab = alpha / 5.0; // warming up for Adam
+#else
+    double alpha_stab = alpha;
+#endif
     while (tim() - strt < msecond) {
         ++n_loop;
 
@@ -588,16 +633,22 @@ int main(int argc, char* argv[]) {
         // momentum <<<n_blocks_next_step, N_THREADS_PER_BLOCK_NEXT_STEP>>> (eval_size, device_eval_arr, device_n_appear_arr, device_residual_arr, alpha_stab, device_m_arr, n_loop);
         // adagrad <<<n_blocks_next_step, N_THREADS_PER_BLOCK_NEXT_STEP>>> (eval_size, device_eval_arr, device_n_appear_arr, device_residual_arr, alpha_stab, device_v_arr, n_loop);
         adam <<<n_blocks_next_step, N_THREADS_PER_BLOCK_NEXT_STEP>>> (phase, eval_size, device_eval_arr, device_n_appear_arr, device_residual_arr, alpha_stab, device_m_arr, device_v_arr, n_loop);
+#if USE_WARMUP
         if (alpha_stab < alpha) {
             alpha_stab += alpha / 50.0;
         }
+#endif
         if (n_val_loss_increase_reduce_lr >= reduce_lr_patience) {
             alpha *= reduce_lr_ratio;
             n_val_loss_increase_reduce_lr = 0;
         }
+#if USE_WARMUP
         if (alpha_stab > alpha) {
             alpha_stab = alpha;
         }
+#else
+        alpha_stab = alpha;
+#endif
     }
     std::cerr << std::endl;
 
@@ -694,8 +745,8 @@ int main(int argc, char* argv[]) {
     adj_output_param(phase, eval_size, host_eval_arr);
     adj_output_weight(phase, eval_size, weight_arr);
 
-    std::cerr << "phase " << phase << " time " << (tim() - strt) << " ms n_train_data " << n_train_data << " n_val_data " << n_val_data << " n_loop " << n_loop << " MSE " << host_error_monitor_arr[0] << " MAE " << host_error_monitor_arr[1] << " val_MSE " << host_val_error_monitor_arr[0] << " val_MAE " << host_val_error_monitor_arr[1] << " (with int) alpha " << alpha_in << " n_patience " << n_patience << " reduce_lr_patience " << reduce_lr_patience << " reduce_lr_ratio " << reduce_lr_ratio << std::endl;
-    std::cout << "phase " << phase << " time " << (tim() - strt) << " ms n_train_data " << n_train_data << " n_val_data " << n_val_data << " n_loop " << n_loop << " MSE " << host_error_monitor_arr[0] << " MAE " << host_error_monitor_arr[1] << " val_MSE " << host_val_error_monitor_arr[0] << " val_MAE " << host_val_error_monitor_arr[1] << " (with int) alpha " << alpha_in << " n_patience " << n_patience << " reduce_lr_patience " << reduce_lr_patience << " reduce_lr_ratio " << reduce_lr_ratio << std::endl;
+    std::cerr << "phase " << phase << " time " << (tim() - strt) << " ms n_train_data " << n_train_data << " n_val_data " << n_val_data << " score_avg " << score_avg << " n_loop " << n_loop << " MSE " << host_error_monitor_arr[0] << " MAE " << host_error_monitor_arr[1] << " val_MSE " << host_val_error_monitor_arr[0] << " val_MAE " << host_val_error_monitor_arr[1] << " (with int) alpha " << alpha_in << " n_patience " << n_patience << " reduce_lr_patience " << reduce_lr_patience << " reduce_lr_ratio " << reduce_lr_ratio << std::endl;
+    std::cout << "phase " << phase << " time " << (tim() - strt) << " ms n_train_data " << n_train_data << " n_val_data " << n_val_data << " score_avg " << score_avg << " n_loop " << n_loop << " MSE " << host_error_monitor_arr[0] << " MAE " << host_error_monitor_arr[1] << " val_MSE " << host_val_error_monitor_arr[0] << " val_MAE " << host_val_error_monitor_arr[1] << " (with int) alpha " << alpha_in << " n_patience " << n_patience << " reduce_lr_patience " << reduce_lr_patience << " reduce_lr_ratio " << reduce_lr_ratio << std::endl;
 
     return 0;
 }
