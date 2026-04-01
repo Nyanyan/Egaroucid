@@ -28,7 +28,7 @@ constexpr int YBWC_END_SPLIT_MIN_DEPTH = 16;
 //constexpr int YBWC_END_SPLIT_MAX_DEPTH = 29;
 // constexpr int YBWC_N_ELDER_CHILD = 1;
 constexpr int YBWC_N_YOUNGER_CHILD = 1;
-constexpr int YBWC_MAX_RUNNING_COUNT = 8;
+// constexpr int YBWC_MAX_RUNNING_COUNT = 5;
 constexpr int YBWC_NOT_PUSHED = -124;
 constexpr int YBWC_PUSHED = 124;
 
@@ -201,7 +201,6 @@ inline int ybwc_split_nws(Search *search, int parent_alpha, const int depth, uin
     #endif
     if (
             idle_ok &&                                  // There is an idle thread
-            running_count < YBWC_MAX_RUNNING_COUNT &&
             n_remaining_moves >= YBWC_N_YOUNGER_CHILD    // This node is not the (some) youngest brother
     ) {
         // int v;
@@ -504,7 +503,6 @@ void ybwc_search_young_brothers(Search *search, int *alpha, int *beta, int *v, i
                 }
                 if (*alpha < task_result.value) {
                     next_alpha = std::max(next_alpha, task_result.value);
-                    n_searching = false;
                     research_idxes.emplace_back(task_result.move_idx);
                 } else {
                     move_list[task_result.move_idx].flip.flip = 0;
@@ -604,7 +602,6 @@ void ybwc_search_young_brothers(Search *search, int *alpha, int *beta, int *v, i
                 }
                 if (*alpha < task_result.value) {
                     next_alpha = std::max(next_alpha, task_result.value);
-                    n_searching = false;
                     research_idxes.emplace_back(task_result.move_idx);
                 } else {
                     move_list[task_result.move_idx].flip.flip = 0;
