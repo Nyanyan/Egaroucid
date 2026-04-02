@@ -10,8 +10,13 @@
 #include <cmath>
 
 constexpr int DEFAULT_FM_DIM = 4;
+constexpr int DEFAULT_QUANT_BITS = 16;
 constexpr int MAGIC_SIZE = 4;
 constexpr int TIMESTAMP_SIZE = 14;
+constexpr int FM_EVAL_VERSION_INT8 = 4;
+constexpr int FM_EVAL_VERSION_INT16 = 5;
+constexpr int FM_INT8_MAX_ABS = 127;
+constexpr int FM_INT16_MAX_ABS = 32767;
 
 struct FMHeader {
     char magic[MAGIC_SIZE]; // EGEV
@@ -88,7 +93,7 @@ static bool read_phase_file(
 int main(int argc, char* argv[]) {
     if (argc < 3) {
         std::cerr << "input [n_phases] [n_params] [fm_dim=" << DEFAULT_FM_DIM
-                  << "] [out_file=trained/eval_fm.egev4] [model_dir=trained]" << std::endl;
+                  << "] [out_file=trained/eval_fm.egev4] [model_dir=trained] [quant_bits=" << DEFAULT_QUANT_BITS << "]" << std::endl;
         return 1;
     }
 
@@ -97,9 +102,10 @@ int main(int argc, char* argv[]) {
     const int fm_dim = (argc >= 4) ? atoi(argv[3]) : DEFAULT_FM_DIM;
     const std::string out_file = (argc >= 5) ? argv[4] : "trained/eval_fm.egev4";
     const std::string model_dir = (argc >= 6) ? argv[5] : "trained";
+    const int quant_bits = (argc >= 7) ? atoi(argv[6]) : DEFAULT_QUANT_BITS;
 
-    if (n_phases <= 0 || n_params <= 0 || fm_dim <= 0) {
-        std::cerr << "[ERROR] invalid args. n_phases, n_params, fm_dim must be > 0" << std::endl;
+    if (n_phases <= 0 || n_params <= 0 || fm_dim <= 0 || (quant_bits != 8 && quant_bits != 16)) {
+        std::cerr << "[ERROR] invalid args. n_phases/n_params/fm_dim must be > 0 and quant_bits must be 8 or 16" << std::endl;
         return 1;
     }
 
@@ -108,6 +114,7 @@ int main(int argc, char* argv[]) {
               << " fm_dim " << fm_dim
               << " out_file " << out_file
               << " model_dir " << model_dir
+              << " quant_bits " << quant_bits
               << std::endl;
 
     std::ofstream fout(out_file, std::ios::out | std::ios::binary | std::ios::trunc);
@@ -122,7 +129,8 @@ int main(int argc, char* argv[]) {
         return 1;
     }
     std::vector<float> factor((size_t)n_params * (size_t)fm_dim, 0.0f);
-    std::vector<int8_t> factor_q((size_t)n_params * (size_t)fm_dim, 0);
+    std::vector<int8_t> factor_q8((size_t)n_params * (size_t)fm_dim, 0);
+    std::vector<int16_t> factor_q16((size_t)n_params * (size_t)fm_dim, 0);
 
     int loaded = 0;
     int missing = 0;
@@ -143,18 +151,23 @@ int main(int argc, char* argv[]) {
         }
     }
 
-    const float factor_scale = (max_abs > 0.0f) ? (max_abs / 127.0f) : 1.0f;
-    FMHeader header = {{'E', 'G', 'E', 'V'}, 4, n_phases, n_params, fm_dim, factor_scale};
+    const int quant_max_abs = (quant_bits == 8) ? FM_INT8_MAX_ABS : FM_INT16_MAX_ABS;
+    const float factor_scale = (max_abs > 0.0f) ? (max_abs / (float)quant_max_abs) : 1.0f;
+    const int version = (quant_bits == 8) ? FM_EVAL_VERSION_INT8 : FM_EVAL_VERSION_INT16;
+    FMHeader header = {{'E', 'G', 'E', 'V'}, version, n_phases, n_params, fm_dim, factor_scale};
     fout.write(created_at.data(), TIMESTAMP_SIZE);
     fout.write((char*)&header, sizeof(FMHeader));
-    std::cerr << "created_at " << created_at << " factor_scale " << factor_scale << std::endl;
+    std::cerr << "created_at " << created_at
+              << " version " << version
+              << " factor_scale " << factor_scale << std::endl;
 
     loaded = 0;
     missing = 0;
 
     for (int phase = 0; phase < n_phases; ++phase) {
         std::fill(factor.begin(), factor.end(), 0.0f);
-        std::fill(factor_q.begin(), factor_q.end(), 0);
+        std::fill(factor_q8.begin(), factor_q8.end(), 0);
+        std::fill(factor_q16.begin(), factor_q16.end(), 0);
 
         const std::string fm_path = model_dir + "/" + std::to_string(phase) + "_fm.txt";
 
@@ -167,12 +180,21 @@ int main(int argc, char* argv[]) {
             for (size_t i = 0; i < factor.size(); ++i) {
                 const float scaled = factor[i] / factor_scale;
                 const int q = (int)std::round(scaled);
-                const int q_clamped = std::clamp(q, -127, 127);
-                factor_q[i] = (int8_t)q_clamped;
+                if (quant_bits == 8) {
+                    const int q_clamped = std::clamp(q, -FM_INT8_MAX_ABS, FM_INT8_MAX_ABS);
+                    factor_q8[i] = (int8_t)q_clamped;
+                } else {
+                    const int q_clamped = std::clamp(q, -FM_INT16_MAX_ABS, FM_INT16_MAX_ABS);
+                    factor_q16[i] = (int16_t)q_clamped;
+                }
             }
         }
 
-        fout.write((char*)factor_q.data(), sizeof(int8_t) * factor_q.size());
+        if (quant_bits == 8) {
+            fout.write((char*)factor_q8.data(), sizeof(int8_t) * factor_q8.size());
+        } else {
+            fout.write((char*)factor_q16.data(), sizeof(int16_t) * factor_q16.size());
+        }
     }
 
     std::cerr << "loaded " << loaded

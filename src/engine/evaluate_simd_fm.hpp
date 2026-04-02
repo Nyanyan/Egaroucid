@@ -19,6 +19,7 @@
 #include <cstring>
 #include <cmath>
 #include <cstdint>
+#include <vector>
 #include "setting.hpp"
 #include "common.hpp"
 #include "board.hpp"
@@ -240,8 +241,11 @@ __m256i eval_simd_offsets_comp[N_EVAL_VECTORS_COMP * 2]; // 32bit * 8 * N
 // move ordering evaluation
 int16_t pattern_move_ordering_end_arr[N_PATTERN_PARAMS_MO_END];
 bool eval_fm_loaded = false;
-int8_t pattern_fm_factor_arr[N_PHASES][N_FM_PARAMS][EVAL_FM_DIM];
+int16_t pattern_fm_factor_arr[N_PHASES][N_FM_PARAMS][EVAL_FM_DIM];
 float pattern_fm_factor_scale = 1.0f;
+
+constexpr int FM_EVAL_VERSION_INT8 = 4;
+constexpr int FM_EVAL_VERSION_INT16 = 5;
 
 struct FM_eval_header {
     char magic[4];
@@ -302,8 +306,25 @@ inline bool load_eval_fm_file(const char* file, bool show_log) {
 
     const size_t factor_count = (size_t)N_PHASES * (size_t)N_FM_PARAMS * (size_t)EVAL_FM_DIM;
     pattern_fm_factor_scale = header.factor_scale;
-    if (fread(pattern_fm_factor_arr, sizeof(int8_t), factor_count, fp) < factor_count) {
-        std::cerr << "[WARN] FM eval factor data broken " << file << std::endl;
+    if (header.version == FM_EVAL_VERSION_INT8) {
+        std::vector<int8_t> factor_tmp(factor_count);
+        if (fread(factor_tmp.data(), sizeof(int8_t), factor_count, fp) < factor_count) {
+            std::cerr << "[WARN] FM eval factor data broken " << file << std::endl;
+            fclose(fp);
+            return false;
+        }
+        int16_t* factor_dst = reinterpret_cast<int16_t*>(pattern_fm_factor_arr);
+        for (size_t i = 0; i < factor_count; ++i) {
+            factor_dst[i] = (int16_t)factor_tmp[i];
+        }
+    } else if (header.version >= FM_EVAL_VERSION_INT16) {
+        if (fread(pattern_fm_factor_arr, sizeof(int16_t), factor_count, fp) < factor_count) {
+            std::cerr << "[WARN] FM eval factor data broken " << file << std::endl;
+            fclose(fp);
+            return false;
+        }
+    } else {
+        std::cerr << "[WARN] unsupported FM eval version " << header.version << " in " << file << std::endl;
         fclose(fp);
         return false;
     }
@@ -566,61 +587,40 @@ inline int calc_pattern(const int phase_idx, Eval_features *features, const int 
         return 0;
     }
 
-    const int *start_addr_fm = (const int*)pattern_fm_factor_arr[phase_idx];
+    int global_idx[N_PATTERN_FEATURES + 1];
+    int idx_ptr = 0;
+    alignas(32) int idx8[8];
     const __m256i one = _mm256_set1_epi32(1);
-    const __m256i g0 = gather_eval_fm(start_addr_fm, _mm256_sub_epi32(_mm256_cvtepu16_epi32(features->f128[0]), one));
-    const __m256i g1 = gather_eval_fm(start_addr_fm, _mm256_sub_epi32(_mm256_cvtepu16_epi32(features->f128[1]), one));
-    const __m256i g2 = gather_eval_fm(start_addr_fm, _mm256_sub_epi32(_mm256_cvtepu16_epi32(features->f128[2]), one));
-    const __m256i g3 = gather_eval_fm(start_addr_fm, _mm256_sub_epi32(_mm256_cvtepu16_epi32(features->f128[3]), one));
-    const __m256i g4 = gather_eval_fm(start_addr_fm, _mm256_sub_epi32(calc_idx8_comp(features->f128[4], 0), one));
-    const __m256i g5 = gather_eval_fm(start_addr_fm, _mm256_sub_epi32(calc_idx8_comp(features->f128[5], 1), one));
-    const __m256i g6 = gather_eval_fm(start_addr_fm, _mm256_sub_epi32(calc_idx8_comp(features->f128[6], 2), one));
-    const __m256i g7 = gather_eval_fm(start_addr_fm, _mm256_sub_epi32(calc_idx8_comp(features->f128[7], 3), one));
 
-    __m256i sum0 = _mm256_setzero_si256();
-    __m256i sum1 = _mm256_setzero_si256();
-    __m256i sum2 = _mm256_setzero_si256();
-    __m256i sum3 = _mm256_setzero_si256();
-    __m256i sq0 = _mm256_setzero_si256();
-    __m256i sq1 = _mm256_setzero_si256();
-    __m256i sq2 = _mm256_setzero_si256();
-    __m256i sq3 = _mm256_setzero_si256();
+    for (int i = 0; i < 4; ++i) {
+        const __m256i g = _mm256_sub_epi32(_mm256_cvtepu16_epi32(features->f128[i]), one);
+        _mm256_store_si256((__m256i*)idx8, g);
+        for (int j = 0; j < 8; ++j) {
+            global_idx[idx_ptr++] = idx8[j];
+        }
+    }
+    for (int i = 0; i < 4; ++i) {
+        const __m256i g = _mm256_sub_epi32(calc_idx8_comp(features->f128[4 + i], i), one);
+        _mm256_store_si256((__m256i*)idx8, g);
+        for (int j = 0; j < 8; ++j) {
+            global_idx[idx_ptr++] = idx8[j];
+        }
+    }
+    global_idx[N_PATTERN_FEATURES] = FM_STONE_OFFSET + num0;
 
-    fm_accumulate_packed8(g0, sum0, sum1, sum2, sum3, sq0, sq1, sq2, sq3);
-    fm_accumulate_packed8(g1, sum0, sum1, sum2, sum3, sq0, sq1, sq2, sq3);
-    fm_accumulate_packed8(g2, sum0, sum1, sum2, sum3, sq0, sq1, sq2, sq3);
-    fm_accumulate_packed8(g3, sum0, sum1, sum2, sum3, sq0, sq1, sq2, sq3);
-    fm_accumulate_packed8(g4, sum0, sum1, sum2, sum3, sq0, sq1, sq2, sq3);
-    fm_accumulate_packed8(g5, sum0, sum1, sum2, sum3, sq0, sq1, sq2, sq3);
-    fm_accumulate_packed8(g6, sum0, sum1, sum2, sum3, sq0, sq1, sq2, sq3);
-    fm_accumulate_packed8(g7, sum0, sum1, sum2, sum3, sq0, sq1, sq2, sq3);
+    double fm_res = 0.0;
+    for (int f = 0; f < EVAL_FM_DIM; ++f) {
+        double sum_vx = 0.0;
+        double sum_vx2 = 0.0;
+        for (int i = 0; i < N_PATTERN_FEATURES + 1; ++i) {
+            const double vx = (double)pattern_fm_factor_arr[phase_idx][global_idx[i]][f] * (double)pattern_fm_factor_scale;
+            sum_vx += vx;
+            sum_vx2 += vx * vx;
+        }
+        fm_res += 0.5 * (sum_vx * sum_vx - sum_vx2);
+    }
 
-    const double s0 = (double)hsum_epi32_256(sum0);
-    const double s1 = (double)hsum_epi32_256(sum1);
-    const double s2 = (double)hsum_epi32_256(sum2);
-    const double s3 = (double)hsum_epi32_256(sum3);
-    const double q0 = (double)hsum_epi32_256(sq0);
-    const double q1 = (double)hsum_epi32_256(sq1);
-    const double q2 = (double)hsum_epi32_256(sq2);
-    const double q3 = (double)hsum_epi32_256(sq3);
-
-    const int stone_idx = FM_STONE_OFFSET + num0;
-    const double t0 = (double)pattern_fm_factor_arr[phase_idx][stone_idx][0];
-    const double t1 = (double)pattern_fm_factor_arr[phase_idx][stone_idx][1];
-    const double t2 = (double)pattern_fm_factor_arr[phase_idx][stone_idx][2];
-    const double t3 = (double)pattern_fm_factor_arr[phase_idx][stone_idx][3];
-    const double ss0 = s0 + t0;
-    const double ss1 = s1 + t1;
-    const double ss2 = s2 + t2;
-    const double ss3 = s3 + t3;
-    const double qq0 = q0 + t0 * t0;
-    const double qq1 = q1 + t1 * t1;
-    const double qq2 = q2 + t2 * t2;
-    const double qq3 = q3 + t3 * t3;
-
-    const double scale2 = (double)pattern_fm_factor_scale * (double)pattern_fm_factor_scale;
-    const double fm_res = 0.5 * ((ss0 * ss0 - qq0) + (ss1 * ss1 - qq1) + (ss2 * ss2 - qq2) + (ss3 * ss3 - qq3));
-    return (int)std::round(fm_res * scale2);
+    return (int)std::round(fm_res);
 }
 
 inline int calc_pattern_move_ordering_end(Eval_features *features) {

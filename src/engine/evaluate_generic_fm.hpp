@@ -11,6 +11,7 @@
 #pragma once
 #include <iostream>
 #include <fstream>
+#include <vector>
 #include <cstring>
 #include <cmath>
 #include <cstdint>
@@ -304,8 +305,11 @@ constexpr int feature_to_pattern[N_PATTERN_FEATURES] = {
 */
 int16_t pattern_arr_move_ordering_end[2][N_PATTERNS][MAX_EVALUATE_IDX];
 bool eval_fm_loaded = false;
-int8_t pattern_fm_factor_arr[N_PHASES][N_FM_PARAMS][EVAL_FM_DIM];
+int16_t pattern_fm_factor_arr[N_PHASES][N_FM_PARAMS][EVAL_FM_DIM];
 float pattern_fm_factor_scale = 1.0f;
+
+constexpr int FM_EVAL_VERSION_INT8 = 4;
+constexpr int FM_EVAL_VERSION_INT16 = 5;
 
 struct FM_eval_header {
     char magic[4];
@@ -387,8 +391,25 @@ inline bool load_eval_fm_file(const char* file, bool show_log) {
 
     const size_t factor_count = (size_t)N_PHASES * (size_t)N_FM_PARAMS * (size_t)EVAL_FM_DIM;
     pattern_fm_factor_scale = header.factor_scale;
-    if (fread(pattern_fm_factor_arr, sizeof(int8_t), factor_count, fp) < factor_count) {
-        std::cerr << "[WARN] FM eval factor data broken " << file << std::endl;
+    if (header.version == FM_EVAL_VERSION_INT8) {
+        std::vector<int8_t> factor_tmp(factor_count);
+        if (fread(factor_tmp.data(), sizeof(int8_t), factor_count, fp) < factor_count) {
+            std::cerr << "[WARN] FM eval factor data broken " << file << std::endl;
+            fclose(fp);
+            return false;
+        }
+        int16_t* factor_dst = reinterpret_cast<int16_t*>(pattern_fm_factor_arr);
+        for (size_t i = 0; i < factor_count; ++i) {
+            factor_dst[i] = (int16_t)factor_tmp[i];
+        }
+    } else if (header.version >= FM_EVAL_VERSION_INT16) {
+        if (fread(pattern_fm_factor_arr, sizeof(int16_t), factor_count, fp) < factor_count) {
+            std::cerr << "[WARN] FM eval factor data broken " << file << std::endl;
+            fclose(fp);
+            return false;
+        }
+    } else {
+        std::cerr << "[WARN] unsupported FM eval version " << header.version << " in " << file << std::endl;
         fclose(fp);
         return false;
     }
