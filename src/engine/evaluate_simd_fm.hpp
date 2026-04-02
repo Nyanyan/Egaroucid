@@ -31,12 +31,9 @@
 */
 constexpr int CEIL_N_PATTERN_FEATURES = 64;     // ceil2^n(N_PATTERN_FEATURES)
 constexpr int N_PATTERN_PARAMS_RAW = 612360;    // sum of pattern parameters for 1 phase
-constexpr int N_PATTERN_PARAMS = N_PATTERN_PARAMS_RAW + 1; // +1 for byte bound
 constexpr int N_FM_PARAMS = N_PATTERN_PARAMS_RAW + MAX_STONE_NUM;
 constexpr int FM_STONE_OFFSET = N_PATTERN_PARAMS_RAW;
 constexpr int EVAL_FM_DIM = 4;
-constexpr int PATTERN4_START_IDX = 52488;       // special case
-constexpr int PATTERN6_START_IDX = 78732;       // special case
 constexpr int SIMD_EVAL_MAX_VALUE = 4092;       // evaluate range [-4092, 4092]
 constexpr int N_EVAL_VECTORS_SIMPLE = 2;
 constexpr int N_EVAL_VECTORS_COMP = 2;
@@ -240,9 +237,6 @@ __m256i eval_simd_offsets_comp[N_EVAL_VECTORS_COMP * 2]; // 32bit * 8 * N
 /*
     @brief evaluation parameters
 */
-// normal
-int16_t pattern_arr[N_PHASES][N_PATTERN_PARAMS];
-int16_t eval_num_arr[N_PHASES][MAX_STONE_NUM];
 // move ordering evaluation
 int16_t pattern_move_ordering_end_arr[N_PATTERN_PARAMS_MO_END];
 bool eval_fm_loaded = false;
@@ -325,40 +319,6 @@ inline bool load_eval_fm_file(const char* file, bool show_log) {
                   << " fm_dim=" << header.fm_dim
                   << " factor_scale=" << header.factor_scale
                   << std::endl;
-    }
-    return true;
-}
-
-inline bool load_eval_file(const char* file, bool show_log) {
-    if (show_log) {
-        std::cerr << "evaluation file " << file << std::endl;
-    }
-    bool failed = false;
-    std::vector<int16_t> unzipped_params = load_unzip_egev2(file, show_log, &failed);
-    if (failed) {
-        return false;
-    }
-    size_t param_idx = 0;
-    for (int phase_idx = 0; phase_idx < N_PHASES; ++phase_idx) {
-        pattern_arr[phase_idx][0] = 0; // memory bound
-        std::memcpy(pattern_arr[phase_idx] + 1, &unzipped_params[param_idx], sizeof(short) * N_PATTERN_PARAMS_RAW);
-        param_idx += N_PATTERN_PARAMS_RAW;
-        std::memcpy(eval_num_arr[phase_idx], &unzipped_params[param_idx], sizeof(short) * MAX_STONE_NUM);
-        param_idx += MAX_STONE_NUM;
-    }
-    // check max value
-    for (int phase_idx = 0; phase_idx < N_PHASES; ++phase_idx) {
-        for (int i = 1; i < N_PATTERN_PARAMS; ++i) {
-            if (pattern_arr[phase_idx][i] < -SIMD_EVAL_MAX_VALUE) {
-                std::cerr << "[ERROR] evaluation value too low. you can ignore this error. phase " << phase_idx << " index " << i << " found " << pattern_arr[phase_idx][i] << std::endl;
-                pattern_arr[phase_idx][i] = -SIMD_EVAL_MAX_VALUE;
-            }
-            if (pattern_arr[phase_idx][i] > SIMD_EVAL_MAX_VALUE) {
-                std::cerr << "[ERROR] evaluation value too high. you can ignore this error. phase " << phase_idx << " index " << i << " found " << pattern_arr[phase_idx][i] << std::endl;
-                pattern_arr[phase_idx][i] = SIMD_EVAL_MAX_VALUE;
-            }
-            pattern_arr[phase_idx][i] += SIMD_EVAL_MAX_VALUE;
-        }
     }
     return true;
 }
@@ -507,10 +467,8 @@ inline void pre_calculate_eval_constant() {
     @return evaluation function conpletely initialized?
 */
 inline bool evaluate_init(const char* file, const char* mo_end_nws_file, bool show_log) {
-    bool eval_loaded = load_eval_file(file, show_log);
-    if (!eval_loaded) {
-        std::cerr << "[ERROR] [FATAL] evaluation file not loaded" << std::endl;
-        return false;
+    if (show_log && file != nullptr && file[0] != '\0') {
+        std::cerr << "[INFO] base eval file is ignored in FM-only mode " << file << std::endl;
     }
     bool eval_move_ordering_end_nws_loaded = load_eval_move_ordering_end_file(mo_end_nws_file, show_log);
     if (!eval_move_ordering_end_nws_loaded) {
@@ -518,8 +476,9 @@ inline bool evaluate_init(const char* file, const char* mo_end_nws_file, bool sh
         return false;
     }
     eval_fm_loaded = load_eval_fm_file((EXE_DIRECTORY_PATH + "resources/eval_fm.egev4").c_str(), show_log);
-    if (!eval_fm_loaded && show_log) {
-        std::cerr << "[INFO] FM term disabled" << std::endl;
+    if (!eval_fm_loaded) {
+        std::cerr << "[ERROR] [FATAL] FM eval file not loaded" << std::endl;
+        return false;
     }
     pre_calculate_eval_constant();
     if (show_log) {
@@ -544,7 +503,7 @@ bool evaluate_init(const std::string file, std::string mo_end_nws_file, bool sho
     @return evaluation function conpletely initialized?
 */
 bool evaluate_init(bool show_log) {
-    return evaluate_init(EXE_DIRECTORY_PATH + "resources/eval.egev2", EXE_DIRECTORY_PATH + "resources/eval_move_ordering_end.egev", show_log);
+    return evaluate_init("", EXE_DIRECTORY_PATH + "resources/eval_move_ordering_end.egev", show_log);
 }
 
 /*
@@ -603,24 +562,8 @@ inline void fm_accumulate_packed8(
 }
 
 inline int calc_pattern(const int phase_idx, Eval_features *features, const int num0) {
-    const int *start_addr0 = (int*)pattern_arr[phase_idx];
-    const int *start_addr4 = (int*)&pattern_arr[phase_idx][PATTERN4_START_IDX];
-    const int *start_addr6 = (int*)&pattern_arr[phase_idx][PATTERN6_START_IDX];
-    __m256i res256 =                  gather_eval(start_addr0, _mm256_cvtepu16_epi32(features->f128[0]));   // hv3 d7+2Corner
-    res256 = _mm256_add_epi32(res256, gather_eval(start_addr0, _mm256_cvtepu16_epi32(features->f128[1])));  // hv2 d6+2C+X
-    res256 = _mm256_add_epi32(res256, gather_eval(start_addr6, _mm256_cvtepu16_epi32(features->f128[2])));  // d5+2X d8+wC
-    res256 = _mm256_add_epi32(res256, gather_eval(start_addr4, _mm256_cvtepu16_epi32(features->f128[3])));  // hv4 corner9
-    res256 = _mm256_add_epi32(res256, gather_eval(start_addr0, calc_idx8_comp(features->f128[4], 0)));      // corner+block cross
-    res256 = _mm256_add_epi32(res256, gather_eval(start_addr0, calc_idx8_comp(features->f128[5], 1)));      // edge+2X triangle
-    res256 = _mm256_add_epi32(res256, gather_eval(start_addr0, calc_idx8_comp(features->f128[6], 2)));      // fish kite
-    res256 = _mm256_add_epi32(res256, gather_eval(start_addr0, calc_idx8_comp(features->f128[7], 3)));      // edge+2Y narrow_triangle
-    res256 = _mm256_and_si256(res256, eval_lower_mask);
-    __m128i res128 = _mm_add_epi32(_mm256_castsi256_si128(res256), _mm256_extracti128_si256(res256, 1));
-    res128 = _mm_hadd_epi32(res128, res128);
-    int res = _mm_cvtsi128_si32(res128) + _mm_extract_epi32(res128, 1) - SIMD_EVAL_MAX_VALUE * N_PATTERN_FEATURES;
-
     if (!eval_fm_loaded) {
-        return res;
+        return 0;
     }
 
     const int *start_addr_fm = (const int*)pattern_fm_factor_arr[phase_idx];
@@ -677,7 +620,7 @@ inline int calc_pattern(const int phase_idx, Eval_features *features, const int 
 
     const double scale2 = (double)pattern_fm_factor_scale * (double)pattern_fm_factor_scale;
     const double fm_res = 0.5 * ((ss0 * ss0 - qq0) + (ss1 * ss1 - qq1) + (ss2 * ss2 - qq2) + (ss3 * ss3 - qq3));
-    return res + (int)std::round(fm_res * scale2);
+    return (int)std::round(fm_res * scale2);
 }
 
 inline int calc_pattern_move_ordering_end(Eval_features *features) {
@@ -704,7 +647,7 @@ inline int mid_evaluate(Board *board) {
     int phase_idx, num0;
     phase_idx = search.phase();
     num0 = pop_count_ull(search.board.player);
-    int res = calc_pattern(phase_idx, &search.eval.features[search.eval.feature_idx], num0) + eval_num_arr[phase_idx][num0];
+    int res = calc_pattern(phase_idx, &search.eval.features[search.eval.feature_idx], num0);
     res += res >= 0 ? STEP_2 : -STEP_2;
     res /= STEP;
     res = std::clamp(res, -SCORE_MAX, SCORE_MAX);
@@ -721,7 +664,7 @@ inline int mid_evaluate_diff(Search *search) {
     int phase_idx, num0;
     phase_idx = search->phase();
     num0 = pop_count_ull(search->board.player);
-    int res = calc_pattern(phase_idx, &search->eval.features[search->eval.feature_idx], num0) + eval_num_arr[phase_idx][num0];
+    int res = calc_pattern(phase_idx, &search->eval.features[search->eval.feature_idx], num0);
     res += res >= 0 ? STEP_2 : -STEP_2;
     res /= STEP;
     res = std::clamp(res, -SCORE_MAX, SCORE_MAX);

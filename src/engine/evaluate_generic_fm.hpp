@@ -302,8 +302,6 @@ constexpr int feature_to_pattern[N_PATTERN_FEATURES] = {
 /*
     @brief evaluation parameters
 */
-int16_t pattern_arr[2][N_PHASES][N_PATTERNS][MAX_EVALUATE_IDX];
-int16_t eval_num_arr[N_PHASES][MAX_STONE_NUM];
 int16_t pattern_arr_move_ordering_end[2][N_PATTERNS][MAX_EVALUATE_IDX];
 bool eval_fm_loaded = false;
 int8_t pattern_fm_factor_arr[N_PHASES][N_FM_PARAMS][EVAL_FM_DIM];
@@ -339,69 +337,6 @@ inline int swap_player_idx(int i, int pattern_size) {
         }
     }
     return ri;
-}
-
-/*
-    @brief used for unzipping the evaluation function
-
-    @param phase_idx            evaluation phase
-    @param pattern_idx          evaluation pattern's index
-    @param siz                  size of the pattern
-*/
-void init_pattern_arr_rev(int phase_idx, int pattern_idx, int siz) {
-    for (int i = 0; i < (int)pow3[siz]; ++i) {
-        int ri = swap_player_idx(i, siz);
-        pattern_arr[1][phase_idx][pattern_idx][ri] = pattern_arr[0][phase_idx][pattern_idx][i];
-    }
-}
-
-/*
-    @brief initialize the evaluation function
-
-    @param file                 evaluation file name
-    @return evaluation function conpletely initialized?
-*/
-inline bool load_eval_file(const char* file, bool show_log) {
-    if (show_log) {
-        std::cerr << "evaluation file " << file << std::endl;
-    }
-    bool failed = false;
-    std::vector<int16_t> unzipped_params = load_unzip_egev2(file, show_log, &failed);
-    if (failed) {
-        return false;
-    }
-    size_t param_idx = 0;
-    for (int phase_idx = 0; phase_idx < N_PHASES; ++phase_idx) {
-        for (int pattern_idx = 0; pattern_idx < N_PATTERNS; ++pattern_idx) {
-            std::memcpy(pattern_arr[0][phase_idx][pattern_idx], &unzipped_params[param_idx], sizeof(short) * pow3[pattern_sizes[pattern_idx]]);
-            param_idx += pow3[pattern_sizes[pattern_idx]];
-        }
-        std::memcpy(eval_num_arr[phase_idx], &unzipped_params[param_idx], sizeof(short) * MAX_STONE_NUM);
-        param_idx += MAX_STONE_NUM;
-    }
-    if (thread_pool.size() >= 2) {
-        std::future<void> tasks[N_PHASES * N_PATTERNS];
-        int i = 0;
-        for (int phase_idx = 0; phase_idx < N_PHASES; ++phase_idx) {
-            for (int pattern_idx = 0; pattern_idx < N_PATTERNS; ++pattern_idx) {
-                bool pushed = false;
-                while (!pushed) {
-                    tasks[i] = thread_pool.push(&pushed, std::bind(init_pattern_arr_rev, phase_idx, pattern_idx, pattern_sizes[pattern_idx]));
-                }
-                ++i;
-            }
-        }
-        for (std::future<void> &task: tasks) {
-            task.get();
-        }
-    } else{
-        for (int phase_idx = 0; phase_idx < N_PHASES; ++phase_idx) {
-            for (int pattern_idx = 0; pattern_idx < N_PATTERNS; ++pattern_idx) {
-                init_pattern_arr_rev(phase_idx, pattern_idx, pattern_sizes[pattern_idx]);
-            }
-        }
-    }
-    return true;
 }
 
 inline bool load_eval_fm_file(const char* file, bool show_log) {
@@ -507,10 +442,8 @@ inline bool load_eval_move_ordering_end_file(const char* file, bool show_log) {
     @return evaluation function conpletely initialized?
 */
 inline bool evaluate_init(const char* file, const char* mo_end_nws_file, bool show_log) {
-    bool eval_loaded = load_eval_file(file, show_log);
-    if (!eval_loaded) {
-        std::cerr << "[ERROR] [FATAL] evaluation file not loaded" << std::endl;
-        return false;
+    if (show_log && file != nullptr && file[0] != '\0') {
+        std::cerr << "[INFO] base eval file is ignored in FM-only mode " << file << std::endl;
     }
     bool eval_move_ordering_end_nws_loaded = load_eval_move_ordering_end_file(mo_end_nws_file, show_log);
     if (!eval_move_ordering_end_nws_loaded) {
@@ -518,8 +451,9 @@ inline bool evaluate_init(const char* file, const char* mo_end_nws_file, bool sh
         return false;
     }
     eval_fm_loaded = load_eval_fm_file((EXE_DIRECTORY_PATH + "resources/eval_fm.egev4").c_str(), show_log);
-    if (!eval_fm_loaded && show_log) {
-        std::cerr << "[INFO] FM term disabled" << std::endl;
+    if (!eval_fm_loaded) {
+        std::cerr << "[ERROR] [FATAL] FM eval file not loaded" << std::endl;
+        return false;
     }
     if (show_log) {
         std::cerr << "evaluation function initialized" << std::endl;
@@ -543,7 +477,7 @@ bool evaluate_init(const std::string file, std::string mo_end_nws_file, bool sho
     @return evaluation function conpletely initialized?
 */
 bool evaluate_init(bool show_log) {
-    return evaluate_init(EXE_DIRECTORY_PATH + "resources/eval.egev2", EXE_DIRECTORY_PATH + "resources/eval_move_ordering_end.egev", show_log);
+    return evaluate_init("", EXE_DIRECTORY_PATH + "resources/eval_move_ordering_end.egev", show_log);
 }
 
 /*
@@ -554,13 +488,8 @@ bool evaluate_init(bool show_log) {
     @return pattern evaluation value
 */
 inline int calc_pattern(const int phase_idx, Eval_search *eval, const int num0) {
-    int res = 0;
-    for (int i = 0; i < N_PATTERN_FEATURES; ++i) {
-        res += pattern_arr[eval->reversed[eval->feature_idx]][phase_idx][feature_to_pattern[i]][eval->features[eval->feature_idx][i]];
-    }
-
     if (!eval_fm_loaded) {
-        return res;
+        return 0;
     }
 
     constexpr int N_FM_FEATURES = N_PATTERN_FEATURES + 1;
@@ -587,7 +516,7 @@ inline int calc_pattern(const int phase_idx, Eval_search *eval, const int num0) 
         fm_res += 0.5 * (sum_vx * sum_vx - sum_vx2);
     }
 
-    return res + (int)std::round(fm_res);
+    return (int)std::round(fm_res);
 }
 
 /*
@@ -619,7 +548,7 @@ inline int mid_evaluate(Board *board) {
     int phase_idx, num0;
     phase_idx = search.phase();
     num0 = pop_count_ull(search.board.player);
-    int res = calc_pattern(phase_idx, &search.eval, num0) + eval_num_arr[phase_idx][num0];
+    int res = calc_pattern(phase_idx, &search.eval, num0);
     res += res >= 0 ? STEP_2 : -STEP_2;
     res /= STEP;
     res = std::clamp(res, -SCORE_MAX, SCORE_MAX);
@@ -636,7 +565,7 @@ inline int mid_evaluate_diff(Search *search) {
     int phase_idx, num0;
     phase_idx = search->phase();
     num0 = pop_count_ull(search->board.player);
-    int res = calc_pattern(phase_idx, &search->eval, num0) + eval_num_arr[phase_idx][num0];
+    int res = calc_pattern(phase_idx, &search->eval, num0);
     res += res >= 0 ? STEP_2 : -STEP_2;
     res /= STEP;
     res = std::clamp(res, -SCORE_MAX, SCORE_MAX);
