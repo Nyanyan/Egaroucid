@@ -22,6 +22,10 @@
 #include <chrono>
 #include <cmath>
 
+// settings
+#define RESIDUAL_USE_CLIP false
+#define USE_WARMUP false
+
 #define OPTIMIZER_INCLUDE
 #include "evaluation_definition.hpp"
 
@@ -144,7 +148,7 @@ void adj_import_eval_fm(
               << ", factor " << imported_factor << " / " << fm_size << std::endl;
 }
 
-int adj_import_data(int n_files, char* files[], Adj_Data* host_train_data) {
+int adj_import_data(int n_files, char* files[], Adj_Data* host_train_data, double* score_avg_out) {
     int n_data = 0;
     FILE* fp;
     int16_t n_discs, score, player;
@@ -174,6 +178,9 @@ int adj_import_data(int n_files, char* files[], Adj_Data* host_train_data) {
     }
     if (n_data > 0) {
         score_avg /= n_data;
+    }
+    if (score_avg_out != nullptr) {
+        *score_avg_out = score_avg;
     }
     std::cerr << "score avg " << score_avg << std::endl;
     return n_data;
@@ -235,11 +242,13 @@ __global__ void adj_calculate_residual_fm(
         predicted_value += 0.5 * (sum_vx[f] * sum_vx[f] - sum_vx2[f]);
     }
 
+#if RESIDUAL_USE_CLIP
     if (predicted_value > HW2 * ADJ_STEP) {
         predicted_value = HW2 * ADJ_STEP;
     } else if (predicted_value < -HW2 * ADJ_STEP) {
         predicted_value = -HW2 * ADJ_STEP;
     }
+#endif
 
     const double residual_error = device_train_data[data_idx].score - predicted_value;
 
@@ -308,11 +317,13 @@ __global__ void adj_calculate_val_loss_fm(
         predicted_value += 0.5 * (sum_vx * sum_vx - sum_vx2);
     }
 
+#if RESIDUAL_USE_CLIP
     if (predicted_value > HW2 * ADJ_STEP) {
         predicted_value = HW2 * ADJ_STEP;
     } else if (predicted_value < -HW2 * ADJ_STEP) {
         predicted_value = -HW2 * ADJ_STEP;
     }
+#endif
 
     const double residual_error = device_val_data[data_idx].score - predicted_value;
     atomicAdd(&device_val_error_monitor_arr[0], (residual_error / ADJ_STEP) * (residual_error / ADJ_STEP) / n_val_data);
@@ -475,7 +486,8 @@ int main(int argc, char* argv[]) {
     adj_init_arr(eval_size, host_linear_arr, host_factor_arr, host_rev_idx_arr, host_n_appear_arr);
     adj_import_eval_fm(in_file, eval_size, host_linear_arr, host_factor_arr);
 
-    const int n_all_data = adj_import_data(n_train_data_file, train_files, host_train_data);
+    double score_avg = 0.0;
+    const int n_all_data = adj_import_data(n_train_data_file, train_files, host_train_data, &score_avg);
     if (n_all_data <= 0) {
         std::cerr << "no training data" << std::endl;
         return 1;
@@ -606,7 +618,11 @@ int main(int argc, char* argv[]) {
     double min_val_mse = 100000000.0;
     int n_val_loss_increase = 0;
     int n_val_loss_increase_reduce_lr = 0;
+#if USE_WARMUP
     double alpha_stab = alpha / 5.0;
+#else
+    double alpha_stab = alpha;
+#endif
 
     while (tim() - strt < msecond) {
         ++n_loop;
@@ -645,14 +661,14 @@ int main(int argc, char* argv[]) {
         cudaMemcpy(host_error_monitor_arr, device_error_monitor_arr, sizeof(double) * N_ERROR_MONITOR, cudaMemcpyDeviceToHost);
 
         std::cerr << "\rn_loop " << n_loop
-                  << " progress " << (tim() - strt) * 100 / msecond << "%"
-                  << " MSE " << host_error_monitor_arr[0]
-                  << " MAE " << host_error_monitor_arr[1]
-                  << " val_MSE " << host_val_error_monitor_arr[0]
-                  << " val_MAE " << host_val_error_monitor_arr[1]
-                  << " val_loss_inc " << n_val_loss_increase
-                  << " alpha " << alpha_stab
-                  << "                    ";
+              << " progress " << (tim() - strt) * 100 / msecond << "%"
+              << " MSE " << host_error_monitor_arr[0]
+              << " MAE " << host_error_monitor_arr[1]
+              << "  val_MSE " << host_val_error_monitor_arr[0]
+              << " val_MAE " << host_val_error_monitor_arr[1]
+              << " val_loss_inc " << n_val_loss_increase
+              << " alpha " << alpha_stab
+              << "                    ";
 
         adam_linear<<<n_blocks_next_linear, N_THREADS_PER_BLOCK_NEXT_STEP>>>(
             phase,
@@ -675,16 +691,22 @@ int main(int argc, char* argv[]) {
             device_v_factor_arr,
             n_loop);
 
+#if USE_WARMUP
         if (alpha_stab < alpha) {
             alpha_stab += alpha / 50.0;
         }
+#endif
         if (n_val_loss_increase_reduce_lr >= reduce_lr_patience) {
             alpha *= reduce_lr_ratio;
             n_val_loss_increase_reduce_lr = 0;
         }
+#if USE_WARMUP
         if (alpha_stab > alpha) {
             alpha_stab = alpha;
         }
+#else
+        alpha_stab = alpha;
+#endif
     }
     std::cerr << std::endl;
 
@@ -719,6 +741,7 @@ int main(int argc, char* argv[]) {
               << " time " << (tim() - strt) << " ms"
               << " n_train_data " << n_train_data
               << " n_val_data " << n_val_data
+              << " score_avg " << score_avg
               << " n_loop " << n_loop
               << " MSE " << host_error_monitor_arr[0]
               << " MAE " << host_error_monitor_arr[1]
@@ -733,6 +756,7 @@ int main(int argc, char* argv[]) {
               << " time " << (tim() - strt) << " ms"
               << " n_train_data " << n_train_data
               << " n_val_data " << n_val_data
+              << " score_avg " << score_avg
               << " n_loop " << n_loop
               << " MSE " << host_error_monitor_arr[0]
               << " MAE " << host_error_monitor_arr[1]
