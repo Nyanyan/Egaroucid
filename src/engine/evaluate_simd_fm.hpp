@@ -249,6 +249,7 @@ constexpr int FM_EVAL_VERSION_INT8 = 4;
 constexpr int FM_EVAL_VERSION_INT16 = 5;
 constexpr int FM_EVAL_VERSION_PACKED64 = 6;
 constexpr int FM_EVAL_VERSION_PACKED64_PHASE_SCALE = 7;
+constexpr int FM_EVAL_VERSION_PACKED32_PHASE_SCALE = 8;
 
 struct FM_eval_header_common {
     char magic[4];
@@ -326,7 +327,30 @@ inline bool load_eval_fm_file(const char* file, bool show_log) {
         pattern_fm_factor_scale_arr[phase] = 1.0f;
     }
     const size_t packed_count = (size_t)N_PHASES * (size_t)N_FM_PARAMS;
-    if (header.version >= FM_EVAL_VERSION_PACKED64_PHASE_SCALE) {
+    if (header.version == FM_EVAL_VERSION_PACKED32_PHASE_SCALE) {
+        if (fread(pattern_fm_linear_scale_arr, sizeof(float), N_PHASES, fp) < N_PHASES ||
+            fread(pattern_fm_factor_scale_arr, sizeof(float), N_PHASES, fp) < N_PHASES) {
+            std::cerr << "[WARN] FM eval phase scales broken " << file << std::endl;
+            fclose(fp);
+            return false;
+        }
+        for (int phase = 0; phase < N_PHASES; ++phase) {
+            if (pattern_fm_linear_scale_arr[phase] <= 0.0f || pattern_fm_factor_scale_arr[phase] <= 0.0f) {
+                std::cerr << "[WARN] FM eval phase scale invalid " << file << " phase=" << phase << std::endl;
+                fclose(fp);
+                return false;
+            }
+        }
+        std::vector<uint32_t> packed32(packed_count, 0u);
+        if (fread(packed32.data(), sizeof(uint32_t), packed_count, fp) < packed_count) {
+            std::cerr << "[WARN] FM eval packed32 data broken " << file << std::endl;
+            fclose(fp);
+            return false;
+        }
+        for (size_t p = 0; p < packed_count; ++p) {
+            pattern_fm_packed_arr[p / N_FM_PARAMS][p % N_FM_PARAMS] = (uint64_t)packed32[p];
+        }
+    } else if (header.version >= FM_EVAL_VERSION_PACKED64_PHASE_SCALE) {
         if (fread(pattern_fm_linear_scale_arr, sizeof(float), N_PHASES, fp) < N_PHASES ||
             fread(pattern_fm_factor_scale_arr, sizeof(float), N_PHASES, fp) < N_PHASES) {
             std::cerr << "[WARN] FM eval phase scales broken " << file << std::endl;

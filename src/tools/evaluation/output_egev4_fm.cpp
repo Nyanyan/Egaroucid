@@ -13,6 +13,7 @@ constexpr int DEFAULT_FM_DIM = 2;
 constexpr int MAGIC_SIZE = 4;
 constexpr int TIMESTAMP_SIZE = 14;
 constexpr int FM_EVAL_VERSION_PACKED64 = 7;
+constexpr int FM_EVAL_VERSION_PACKED32 = 8;
 constexpr int FM_INT8_MAX_ABS = 127;
 constexpr int LINEAR_INT16_MAX_ABS = 32767;
 
@@ -97,10 +98,10 @@ static bool read_phase_file(
     return false;
 }
 
-static uint64_t pack_param(int16_t linear_q, const int8_t* factor_q) {
-    uint64_t packed = (uint16_t)linear_q;
+static uint32_t pack_param32(int16_t linear_q, const int8_t* factor_q) {
+    uint32_t packed = (uint16_t)linear_q;
     for (int f = 0; f < DEFAULT_FM_DIM; ++f) {
-        packed |= (uint64_t)(uint8_t)factor_q[f] << (16 + f * 8);
+        packed |= (uint32_t)(uint8_t)factor_q[f] << (16 + f * 8);
     }
     return packed;
 }
@@ -177,24 +178,25 @@ int main(int argc, char* argv[]) {
         max_abs_factor_global = std::max(max_abs_factor_global, max_abs_factor);
     }
 
-    FMHeaderCommon header_common = {{'E', 'G', 'E', 'V'}, FM_EVAL_VERSION_PACKED64, n_phases, n_params, fm_dim};
+    const int format_version = (fm_dim == 2) ? FM_EVAL_VERSION_PACKED32 : FM_EVAL_VERSION_PACKED64;
+    FMHeaderCommon header_common = {{'E', 'G', 'E', 'V'}, format_version, n_phases, n_params, fm_dim};
     fout.write(created_at.data(), TIMESTAMP_SIZE);
     fout.write((char*)&header_common, sizeof(FMHeaderCommon));
     fout.write((char*)linear_scales.data(), sizeof(float) * linear_scales.size());
     fout.write((char*)factor_scales.data(), sizeof(float) * factor_scales.size());
     std::cerr << "created_at " << created_at
-              << " version " << FM_EVAL_VERSION_PACKED64
+              << " version " << format_version
               << " global_max_linear " << max_abs_linear_global
               << " global_max_factor " << max_abs_factor_global << std::endl;
 
     loaded = 0;
     missing = 0;
-    std::vector<uint64_t> packed((size_t)n_params, 0ULL);
+    std::vector<uint32_t> packed((size_t)n_params, 0u);
 
     for (int phase = 0; phase < n_phases; ++phase) {
         std::fill(linear.begin(), linear.end(), 0.0f);
         std::fill(factor.begin(), factor.end(), 0.0f);
-        std::fill(packed.begin(), packed.end(), 0ULL);
+        std::fill(packed.begin(), packed.end(), 0u);
 
         const std::string fm_path = model_dir + "/" + std::to_string(phase) + "_fm.txt";
 
@@ -215,11 +217,11 @@ int main(int argc, char* argv[]) {
                     const int q = (int)std::round(fv / factor_scale);
                     q_factor[f] = (int8_t)std::clamp(q, -FM_INT8_MAX_ABS, FM_INT8_MAX_ABS);
                 }
-                packed[(size_t)p] = pack_param(q_linear_clamped, q_factor);
+                packed[(size_t)p] = pack_param32(q_linear_clamped, q_factor);
             }
         }
 
-        fout.write((char*)packed.data(), sizeof(uint64_t) * packed.size());
+        fout.write((char*)packed.data(), sizeof(uint32_t) * packed.size());
     }
 
     std::cerr << "loaded " << loaded
