@@ -27,6 +27,8 @@ constexpr int EVAL_FEATURE_START_MOVE_ORDERING_END = 8;
 constexpr int MAX_CELL_PATTERNS_MOVE_ORDERING_END = 6;
 constexpr int EVAL_FM_DIM = 4;
 constexpr int N_PATTERN_PARAMS_RAW_FM = 612360;
+constexpr int N_FM_PARAMS = N_PATTERN_PARAMS_RAW_FM + MAX_STONE_NUM;
+constexpr int FM_STONE_OFFSET = N_PATTERN_PARAMS_RAW_FM;
 
 
 constexpr Feature_to_coord feature_to_coord[N_PATTERN_FEATURES] = {
@@ -304,7 +306,7 @@ int16_t pattern_arr[2][N_PHASES][N_PATTERNS][MAX_EVALUATE_IDX];
 int16_t eval_num_arr[N_PHASES][MAX_STONE_NUM];
 int16_t pattern_arr_move_ordering_end[2][N_PATTERNS][MAX_EVALUATE_IDX];
 bool eval_fm_loaded = false;
-int8_t pattern_fm_factor_arr[N_PHASES][N_PATTERN_PARAMS_RAW_FM][EVAL_FM_DIM];
+int8_t pattern_fm_factor_arr[N_PHASES][N_FM_PARAMS][EVAL_FM_DIM];
 float pattern_fm_factor_scale = 1.0f;
 
 struct FM_eval_header {
@@ -431,13 +433,13 @@ inline bool load_eval_fm_file(const char* file, bool show_log) {
         fclose(fp);
         return false;
     }
-    if (header.n_phases != N_PHASES || header.n_params != N_PATTERN_PARAMS_RAW_FM || header.fm_dim != EVAL_FM_DIM) {
+    if (header.n_phases != N_PHASES || header.n_params != N_FM_PARAMS || header.fm_dim != EVAL_FM_DIM) {
         std::cerr << "[WARN] FM eval shape mismatch "
                   << " file(phases=" << header.n_phases
                   << " params=" << header.n_params
                   << " dim=" << header.fm_dim
                   << ") expected(phases=" << N_PHASES
-                  << " params=" << N_PATTERN_PARAMS_RAW_FM
+                  << " params=" << N_FM_PARAMS
                   << " dim=" << EVAL_FM_DIM << ")" << std::endl;
         fclose(fp);
         return false;
@@ -448,7 +450,7 @@ inline bool load_eval_fm_file(const char* file, bool show_log) {
         return false;
     }
 
-    const size_t factor_count = (size_t)N_PHASES * (size_t)N_PATTERN_PARAMS_RAW_FM * (size_t)EVAL_FM_DIM;
+    const size_t factor_count = (size_t)N_PHASES * (size_t)N_FM_PARAMS * (size_t)EVAL_FM_DIM;
     pattern_fm_factor_scale = header.factor_scale;
     if (fread(pattern_fm_factor_arr, sizeof(int8_t), factor_count, fp) < factor_count) {
         std::cerr << "[WARN] FM eval factor data broken " << file << std::endl;
@@ -551,7 +553,7 @@ bool evaluate_init(bool show_log) {
     @param search               search information
     @return pattern evaluation value
 */
-inline int calc_pattern(const int phase_idx, Eval_search *eval) {
+inline int calc_pattern(const int phase_idx, Eval_search *eval, const int num0) {
     int res = 0;
     for (int i = 0; i < N_PATTERN_FEATURES; ++i) {
         res += pattern_arr[eval->reversed[eval->feature_idx]][phase_idx][feature_to_pattern[i]][eval->features[eval->feature_idx][i]];
@@ -561,7 +563,8 @@ inline int calc_pattern(const int phase_idx, Eval_search *eval) {
         return res;
     }
 
-    int global_idx[N_PATTERN_FEATURES];
+    constexpr int N_FM_FEATURES = N_PATTERN_FEATURES + 1;
+    int global_idx[N_FM_FEATURES];
     for (int i = 0; i < N_PATTERN_FEATURES; ++i) {
         const int pattern_idx = feature_to_pattern[i];
         int idx = eval->features[eval->feature_idx][i];
@@ -570,12 +573,13 @@ inline int calc_pattern(const int phase_idx, Eval_search *eval) {
         }
         global_idx[i] = pattern_starts_fm[pattern_idx] + idx;
     }
+    global_idx[N_PATTERN_FEATURES] = FM_STONE_OFFSET + num0;
 
     double fm_res = 0.0;
     for (int f = 0; f < EVAL_FM_DIM; ++f) {
         double sum_vx = 0.0;
         double sum_vx2 = 0.0;
-        for (int i = 0; i < N_PATTERN_FEATURES; ++i) {
+        for (int i = 0; i < N_FM_FEATURES; ++i) {
             const double vx = (double)pattern_fm_factor_arr[phase_idx][global_idx[i]][f] * (double)pattern_fm_factor_scale;
             sum_vx += vx;
             sum_vx2 += vx * vx;
@@ -615,7 +619,7 @@ inline int mid_evaluate(Board *board) {
     int phase_idx, num0;
     phase_idx = search.phase();
     num0 = pop_count_ull(search.board.player);
-    int res = calc_pattern(phase_idx, &search.eval) + eval_num_arr[phase_idx][num0];
+    int res = calc_pattern(phase_idx, &search.eval, num0) + eval_num_arr[phase_idx][num0];
     res += res >= 0 ? STEP_2 : -STEP_2;
     res /= STEP;
     res = std::clamp(res, -SCORE_MAX, SCORE_MAX);
@@ -632,7 +636,7 @@ inline int mid_evaluate_diff(Search *search) {
     int phase_idx, num0;
     phase_idx = search->phase();
     num0 = pop_count_ull(search->board.player);
-    int res = calc_pattern(phase_idx, &search->eval) + eval_num_arr[phase_idx][num0];
+    int res = calc_pattern(phase_idx, &search->eval, num0) + eval_num_arr[phase_idx][num0];
     res += res >= 0 ? STEP_2 : -STEP_2;
     res /= STEP;
     res = std::clamp(res, -SCORE_MAX, SCORE_MAX);
