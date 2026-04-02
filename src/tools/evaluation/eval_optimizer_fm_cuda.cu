@@ -93,7 +93,6 @@ __host__ __device__ inline bool get_feature_index_and_value(
 
 void adj_init_arr(
     int eval_size,
-    double* host_linear_arr,
     double* host_factor_arr,
     int* host_rev_idx_arr,
     int* host_n_appear_arr) {
@@ -102,7 +101,6 @@ void adj_init_arr(
     std::normal_distribution<double> normal_dist(0.0, ADJ_FM_INIT_STDDEV);
 
     for (int i = 0; i < eval_size; ++i) {
-        host_linear_arr[i] = 0.0;
         host_n_appear_arr[i] = 0;
     }
     for (int i = 0; i < eval_size * ADJ_FM_DIM; ++i) {
@@ -121,7 +119,6 @@ void adj_init_arr(
 void adj_import_eval_fm(
     const std::string& file,
     int eval_size,
-    double* host_linear_arr,
     double* host_factor_arr) {
     std::ifstream ifs(file);
     if (ifs.fail()) {
@@ -130,22 +127,34 @@ void adj_import_eval_fm(
     }
     std::cerr << "importing fm params " << file << std::endl;
 
-    int imported_linear = 0;
-    for (; imported_linear < eval_size; ++imported_linear) {
-        if (!(ifs >> host_linear_arr[imported_linear])) {
-            break;
-        }
+    std::vector<double> raw;
+    raw.reserve((size_t)eval_size * (size_t)(ADJ_FM_DIM + 1));
+    double value;
+    while (ifs >> value) {
+        raw.emplace_back(value);
     }
-    int imported_factor = 0;
     const int fm_size = eval_size * ADJ_FM_DIM;
-    for (; imported_factor < fm_size; ++imported_factor) {
-        if (!(ifs >> host_factor_arr[imported_factor])) {
-            break;
+    const size_t expected_full = (size_t)eval_size + (size_t)fm_size;
+    const size_t expected_factor_only = (size_t)fm_size;
+
+    if (raw.size() == expected_full) {
+        for (int i = 0; i < fm_size; ++i) {
+            host_factor_arr[i] = raw[(size_t)eval_size + (size_t)i];
         }
+        std::cerr << "imported legacy linear+factor format, factor " << fm_size << " / " << fm_size << std::endl;
+        return;
+    }
+    if (raw.size() == expected_factor_only) {
+        for (int i = 0; i < fm_size; ++i) {
+            host_factor_arr[i] = raw[(size_t)i];
+        }
+        std::cerr << "imported factor-only format, factor " << fm_size << " / " << fm_size << std::endl;
+        return;
     }
 
-    std::cerr << "imported linear " << imported_linear << " / " << eval_size
-              << ", factor " << imported_factor << " / " << fm_size << std::endl;
+    std::cerr << "[ERROR] invalid fm param length found=" << raw.size()
+              << " expected=" << expected_full
+              << " or " << expected_factor_only << std::endl;
 }
 
 int adj_import_data(int n_files, char* files[], Adj_Data* host_train_data, double* score_avg_out) {
@@ -187,23 +196,16 @@ int adj_import_data(int n_files, char* files[], Adj_Data* host_train_data, doubl
 }
 
 __global__ void adj_calculate_residual_fm(
-    const double* device_linear_arr,
     const double* device_factor_arr,
     const int n_data,
     const int* device_start_idx_arr,
     const Adj_Data* device_train_data,
     const int* device_rev_idx_arr,
-    double* device_residual_linear_arr,
     double* device_residual_factor_arr,
     double* device_error_monitor_arr) {
     const int data_idx = blockIdx.x * blockDim.x + threadIdx.x;
     if (data_idx >= n_data) {
         return;
-    }
-    if (data_idx == 0) {
-        for (int i = 0; i < N_ERROR_MONITOR; ++i) {
-            device_error_monitor_arr[i] = 0.0;
-        }
     }
 
     int idx_arr[ADJ_N_FEATURES];
@@ -217,7 +219,6 @@ __global__ void adj_calculate_residual_fm(
         if (get_feature_index_and_value(device_train_data[data_idx], device_start_idx_arr, i, idx, x_val)) {
             idx_arr[used_n] = idx;
             x_arr[used_n] = x_val;
-            predicted_value += device_linear_arr[idx] * x_val;
             ++used_n;
         }
     }
@@ -257,10 +258,6 @@ __global__ void adj_calculate_residual_fm(
         const int rev_idx = device_rev_idx_arr[idx];
         const double x_val = x_arr[i];
 
-        const double linear_contrib = residual_error * x_val;
-        atomicAdd(&device_residual_linear_arr[idx], linear_contrib);
-        atomicAdd(&device_residual_linear_arr[rev_idx], linear_contrib);
-
         for (int f = 0; f < ADJ_FM_DIM; ++f) {
             const double vif = device_factor_arr[idx * ADJ_FM_DIM + f];
             const double grad_coef = residual_error * x_val * (sum_vx[f] - vif * x_val);
@@ -274,7 +271,6 @@ __global__ void adj_calculate_residual_fm(
 }
 
 __global__ void adj_calculate_val_loss_fm(
-    const double* device_linear_arr,
     const double* device_factor_arr,
     const int n_val_data,
     const int* device_start_idx_arr,
@@ -283,11 +279,6 @@ __global__ void adj_calculate_val_loss_fm(
     const int data_idx = blockIdx.x * blockDim.x + threadIdx.x;
     if (data_idx >= n_val_data) {
         return;
-    }
-    if (data_idx == 0) {
-        for (int i = 0; i < N_TEST_ERROR_MONITOR; ++i) {
-            device_val_error_monitor_arr[i] = 0.0;
-        }
     }
 
     int idx_arr[ADJ_N_FEATURES];
@@ -301,7 +292,6 @@ __global__ void adj_calculate_val_loss_fm(
         if (get_feature_index_and_value(device_val_data[data_idx], device_start_idx_arr, i, idx, x_val)) {
             idx_arr[used_n] = idx;
             x_arr[used_n] = x_val;
-            predicted_value += device_linear_arr[idx] * x_val;
             ++used_n;
         }
     }
@@ -328,35 +318,6 @@ __global__ void adj_calculate_val_loss_fm(
     const double residual_error = device_val_data[data_idx].score - predicted_value;
     atomicAdd(&device_val_error_monitor_arr[0], (residual_error / ADJ_STEP) * (residual_error / ADJ_STEP) / n_val_data);
     atomicAdd(&device_val_error_monitor_arr[1], fabs(residual_error / ADJ_STEP) / n_val_data);
-}
-
-__global__ void adam_linear(
-    const int phase,
-    const int eval_size,
-    double* device_linear_arr,
-    const int* device_n_appear_arr,
-    double* device_residual_linear_arr,
-    const double alpha_stab,
-    double* device_m_linear_arr,
-    double* device_v_linear_arr,
-    const int n_loop) {
-    const int eval_idx = blockIdx.x * blockDim.x + threadIdx.x;
-    if (eval_idx >= eval_size) {
-        return;
-    }
-
-    if (device_n_appear_arr[eval_idx] > ADJ_IGNORE_N_APPEAR || (phase <= 11 && device_n_appear_arr[eval_idx] > 0)) {
-        const double lr = alpha_stab / (double)device_n_appear_arr[eval_idx];
-        const double grad = 2.0 * device_residual_linear_arr[eval_idx];
-        constexpr double beta1 = 0.9;
-        constexpr double beta2 = 0.999;
-        constexpr double epsilon = 1e-7;
-        const double lrt = lr * sqrt(1.0 - pow(beta2, n_loop)) / (1.0 - pow(beta1, n_loop));
-        device_m_linear_arr[eval_idx] += (1.0 - beta1) * (grad - device_m_linear_arr[eval_idx]);
-        device_v_linear_arr[eval_idx] += (1.0 - beta2) * (grad * grad - device_v_linear_arr[eval_idx]);
-        device_linear_arr[eval_idx] += lrt * device_m_linear_arr[eval_idx] / (sqrt(device_v_linear_arr[eval_idx]) + epsilon);
-    }
-    device_residual_linear_arr[eval_idx] = 0.0;
 }
 
 __global__ void adam_factor(
@@ -393,7 +354,6 @@ __global__ void adam_factor(
 void adj_output_param_fm(
     int phase,
     int eval_size,
-    const double* host_linear_arr,
     const double* host_factor_arr) {
     const std::string filename = std::string("trained/") + std::to_string(phase) + "_fm.txt";
     std::ofstream ofs(filename);
@@ -403,9 +363,6 @@ void adj_output_param_fm(
     }
     ofs.setf(std::ios::fixed);
     ofs.precision(10);
-    for (int i = 0; i < eval_size; ++i) {
-        ofs << host_linear_arr[i] << '\n';
-    }
     for (int i = 0; i < eval_size * ADJ_FM_DIM; ++i) {
         ofs << host_factor_arr[i] << '\n';
     }
@@ -468,7 +425,6 @@ int main(int argc, char* argv[]) {
     const int fm_size = eval_size * ADJ_FM_DIM;
     std::cerr << "eval_size " << eval_size << " fm_size " << fm_size << std::endl;
 
-    double* host_linear_arr = (double*)malloc(sizeof(double) * eval_size);
     double* host_factor_arr = (double*)malloc(sizeof(double) * fm_size);
     int* host_rev_idx_arr = (int*)malloc(sizeof(int) * eval_size);
     Adj_Data* host_train_data = (Adj_Data*)malloc(sizeof(Adj_Data) * ADJ_MAX_N_DATA);
@@ -476,15 +432,15 @@ int main(int argc, char* argv[]) {
     int* weight_arr = (int*)malloc(sizeof(int) * eval_size);
     double* host_error_monitor_arr = (double*)malloc(sizeof(double) * N_ERROR_MONITOR);
     double* host_val_error_monitor_arr = (double*)malloc(sizeof(double) * N_TEST_ERROR_MONITOR);
-    if (host_linear_arr == nullptr || host_factor_arr == nullptr || host_rev_idx_arr == nullptr ||
+    if (host_factor_arr == nullptr || host_rev_idx_arr == nullptr ||
         host_train_data == nullptr || host_n_appear_arr == nullptr || host_error_monitor_arr == nullptr ||
         host_val_error_monitor_arr == nullptr) {
         std::cerr << "cannot allocate memory" << std::endl;
         return 1;
     }
 
-    adj_init_arr(eval_size, host_linear_arr, host_factor_arr, host_rev_idx_arr, host_n_appear_arr);
-    adj_import_eval_fm(in_file, eval_size, host_linear_arr, host_factor_arr);
+    adj_init_arr(eval_size, host_factor_arr, host_rev_idx_arr, host_n_appear_arr);
+    adj_import_eval_fm(in_file, eval_size, host_factor_arr);
 
     double score_avg = 0.0;
     const int n_all_data = adj_import_data(n_train_data_file, train_files, host_train_data, &score_avg);
@@ -542,72 +498,57 @@ int main(int argc, char* argv[]) {
     }
     std::cerr << "train data appearance calculated" << std::endl;
 
-    double* device_linear_arr;
     double* device_factor_arr;
     int* device_rev_idx_arr;
     Adj_Data* device_train_data;
     Adj_Data* device_val_data;
     int* device_n_appear_arr;
-    double* device_residual_linear_arr;
     double* device_residual_factor_arr;
     double* device_error_monitor_arr;
     double* device_val_error_monitor_arr;
     int* device_start_idx_arr;
 
-    cudaMalloc(&device_linear_arr, sizeof(double) * eval_size);
     cudaMalloc(&device_factor_arr, sizeof(double) * fm_size);
     cudaMalloc(&device_rev_idx_arr, sizeof(int) * eval_size);
     cudaMalloc(&device_train_data, sizeof(Adj_Data) * n_train_data);
     cudaMalloc(&device_val_data, sizeof(Adj_Data) * n_val_data);
     cudaMalloc(&device_n_appear_arr, sizeof(int) * eval_size);
-    cudaMalloc(&device_residual_linear_arr, sizeof(double) * eval_size);
     cudaMalloc(&device_residual_factor_arr, sizeof(double) * fm_size);
     cudaMalloc(&device_error_monitor_arr, sizeof(double) * N_ERROR_MONITOR);
     cudaMalloc(&device_val_error_monitor_arr, sizeof(double) * N_TEST_ERROR_MONITOR);
     cudaMalloc(&device_start_idx_arr, sizeof(int) * ADJ_N_FEATURES);
 
-    cudaMemcpy(device_linear_arr, host_linear_arr, sizeof(double) * eval_size, cudaMemcpyHostToDevice);
     cudaMemcpy(device_factor_arr, host_factor_arr, sizeof(double) * fm_size, cudaMemcpyHostToDevice);
     cudaMemcpy(device_rev_idx_arr, host_rev_idx_arr, sizeof(int) * eval_size, cudaMemcpyHostToDevice);
     cudaMemcpy(device_train_data, host_train_data, sizeof(Adj_Data) * n_train_data, cudaMemcpyHostToDevice);
     cudaMemcpy(device_val_data, host_val_data, sizeof(Adj_Data) * n_val_data, cudaMemcpyHostToDevice);
     cudaMemcpy(device_n_appear_arr, host_n_appear_arr, sizeof(int) * eval_size, cudaMemcpyHostToDevice);
-    cudaMemset(device_residual_linear_arr, 0, sizeof(double) * eval_size);
     cudaMemset(device_residual_factor_arr, 0, sizeof(double) * fm_size);
     cudaMemcpy(device_start_idx_arr, host_start_idx_arr, sizeof(int) * ADJ_N_FEATURES, cudaMemcpyHostToDevice);
 
-    double* device_m_linear_arr;
-    double* device_v_linear_arr;
     double* device_m_factor_arr;
     double* device_v_factor_arr;
-    cudaMalloc(&device_m_linear_arr, sizeof(double) * eval_size);
-    cudaMalloc(&device_v_linear_arr, sizeof(double) * eval_size);
     cudaMalloc(&device_m_factor_arr, sizeof(double) * fm_size);
     cudaMalloc(&device_v_factor_arr, sizeof(double) * fm_size);
-    cudaMemset(device_m_linear_arr, 0, sizeof(double) * eval_size);
-    cudaMemset(device_v_linear_arr, 0, sizeof(double) * eval_size);
     cudaMemset(device_m_factor_arr, 0, sizeof(double) * fm_size);
     cudaMemset(device_v_factor_arr, 0, sizeof(double) * fm_size);
 
     const int n_blocks_val = (n_val_data + N_THREADS_PER_BLOCK_TEST - 1) / N_THREADS_PER_BLOCK_TEST;
     const int n_blocks_residual = (n_train_data + N_THREADS_PER_BLOCK_RESIDUAL - 1) / N_THREADS_PER_BLOCK_RESIDUAL;
-    const int n_blocks_next_linear = (eval_size + N_THREADS_PER_BLOCK_NEXT_STEP - 1) / N_THREADS_PER_BLOCK_NEXT_STEP;
     const int n_blocks_next_factor = (fm_size + N_THREADS_PER_BLOCK_NEXT_STEP - 1) / N_THREADS_PER_BLOCK_NEXT_STEP;
 
     std::cerr << "n_blocks_val " << n_blocks_val
               << " n_blocks_residual " << n_blocks_residual
-              << " n_blocks_next_linear " << n_blocks_next_linear
               << " n_blocks_next_factor " << n_blocks_next_factor << std::endl;
 
     std::cerr << "phase " << phase << std::endl;
+    cudaMemset(device_error_monitor_arr, 0, sizeof(double) * N_ERROR_MONITOR);
     adj_calculate_residual_fm<<<n_blocks_residual, N_THREADS_PER_BLOCK_RESIDUAL>>>(
-        device_linear_arr,
         device_factor_arr,
         n_train_data,
         device_start_idx_arr,
         device_train_data,
         device_rev_idx_arr,
-        device_residual_linear_arr,
         device_residual_factor_arr,
         device_error_monitor_arr);
     cudaMemcpy(host_error_monitor_arr, device_error_monitor_arr, sizeof(double) * N_ERROR_MONITOR, cudaMemcpyDeviceToHost);
@@ -627,8 +568,8 @@ int main(int argc, char* argv[]) {
     while (tim() - strt < msecond) {
         ++n_loop;
 
+        cudaMemset(device_val_error_monitor_arr, 0, sizeof(double) * N_TEST_ERROR_MONITOR);
         adj_calculate_val_loss_fm<<<n_blocks_val, N_THREADS_PER_BLOCK_TEST>>>(
-            device_linear_arr,
             device_factor_arr,
             n_val_data,
             device_start_idx_arr,
@@ -648,14 +589,13 @@ int main(int argc, char* argv[]) {
             }
         }
 
+        cudaMemset(device_error_monitor_arr, 0, sizeof(double) * N_ERROR_MONITOR);
         adj_calculate_residual_fm<<<n_blocks_residual, N_THREADS_PER_BLOCK_RESIDUAL>>>(
-            device_linear_arr,
             device_factor_arr,
             n_train_data,
             device_start_idx_arr,
             device_train_data,
             device_rev_idx_arr,
-            device_residual_linear_arr,
             device_residual_factor_arr,
             device_error_monitor_arr);
         cudaMemcpy(host_error_monitor_arr, device_error_monitor_arr, sizeof(double) * N_ERROR_MONITOR, cudaMemcpyDeviceToHost);
@@ -670,16 +610,6 @@ int main(int argc, char* argv[]) {
               << " alpha " << alpha_stab
               << "                    ";
 
-        adam_linear<<<n_blocks_next_linear, N_THREADS_PER_BLOCK_NEXT_STEP>>>(
-            phase,
-            eval_size,
-            device_linear_arr,
-            device_n_appear_arr,
-            device_residual_linear_arr,
-            alpha_stab,
-            device_m_linear_arr,
-            device_v_linear_arr,
-            n_loop);
         adam_factor<<<n_blocks_next_factor, N_THREADS_PER_BLOCK_NEXT_STEP>>>(
             phase,
             eval_size,
@@ -710,23 +640,21 @@ int main(int argc, char* argv[]) {
     }
     std::cerr << std::endl;
 
-    cudaMemcpy(host_linear_arr, device_linear_arr, sizeof(double) * eval_size, cudaMemcpyDeviceToHost);
     cudaMemcpy(host_factor_arr, device_factor_arr, sizeof(double) * fm_size, cudaMemcpyDeviceToHost);
 
+    cudaMemset(device_error_monitor_arr, 0, sizeof(double) * N_ERROR_MONITOR);
     adj_calculate_residual_fm<<<n_blocks_residual, N_THREADS_PER_BLOCK_RESIDUAL>>>(
-        device_linear_arr,
         device_factor_arr,
         n_train_data,
         device_start_idx_arr,
         device_train_data,
         device_rev_idx_arr,
-        device_residual_linear_arr,
         device_residual_factor_arr,
         device_error_monitor_arr);
     cudaMemcpy(host_error_monitor_arr, device_error_monitor_arr, sizeof(double) * N_ERROR_MONITOR, cudaMemcpyDeviceToHost);
 
+    cudaMemset(device_val_error_monitor_arr, 0, sizeof(double) * N_TEST_ERROR_MONITOR);
     adj_calculate_val_loss_fm<<<n_blocks_val, N_THREADS_PER_BLOCK_TEST>>>(
-        device_linear_arr,
         device_factor_arr,
         n_val_data,
         device_start_idx_arr,
@@ -734,7 +662,7 @@ int main(int argc, char* argv[]) {
         device_val_error_monitor_arr);
     cudaMemcpy(host_val_error_monitor_arr, device_val_error_monitor_arr, sizeof(double) * N_TEST_ERROR_MONITOR, cudaMemcpyDeviceToHost);
 
-    adj_output_param_fm(phase, eval_size, host_linear_arr, host_factor_arr);
+    adj_output_param_fm(phase, eval_size, host_factor_arr);
     adj_output_weight(phase, eval_size, weight_arr);
 
     std::cerr << "phase " << phase
