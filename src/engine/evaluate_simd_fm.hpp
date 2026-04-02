@@ -515,7 +515,7 @@ inline bool evaluate_init(const char* file, const char* mo_end_nws_file, bool sh
         std::cerr << "[ERROR] [FATAL] evaluation file for move ordering end not loaded" << std::endl;
         return false;
     }
-    eval_fm_loaded = load_eval_fm_file((EXE_DIRECTORY_PATH + "resources/eval_fm.egev3").c_str(), show_log);
+    eval_fm_loaded = load_eval_fm_file((EXE_DIRECTORY_PATH + "resources/eval_fm.egev4").c_str(), show_log);
     if (!eval_fm_loaded && show_log) {
         std::cerr << "[INFO] FM term disabled" << std::endl;
     }
