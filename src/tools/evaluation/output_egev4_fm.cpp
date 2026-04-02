@@ -9,21 +9,23 @@
 #include <algorithm>
 #include <cmath>
 
-constexpr int DEFAULT_FM_DIM = 4;
-constexpr int DEFAULT_QUANT_BITS = 16;
+constexpr int DEFAULT_FM_DIM = 6;
 constexpr int MAGIC_SIZE = 4;
 constexpr int TIMESTAMP_SIZE = 14;
-constexpr int FM_EVAL_VERSION_INT8 = 4;
-constexpr int FM_EVAL_VERSION_INT16 = 5;
+constexpr int FM_EVAL_VERSION_PACKED64 = 7;
 constexpr int FM_INT8_MAX_ABS = 127;
-constexpr int FM_INT16_MAX_ABS = 32767;
+constexpr int LINEAR_INT16_MAX_ABS = 32767;
 
-struct FMHeader {
+struct FMHeaderCommon {
     char magic[MAGIC_SIZE]; // EGEV
     int version;
     int n_phases;
     int n_params;
     int fm_dim;
+};
+
+struct FMHeaderScales {
+    float linear_scale;
     float factor_scale;
 };
 
@@ -55,6 +57,7 @@ static bool read_phase_file(
     const std::string& path,
     int n_params,
     int fm_dim,
+    std::vector<float>& linear,
     std::vector<float>& factor) {
     std::ifstream ifs(path);
     if (!ifs.is_open()) {
@@ -70,6 +73,9 @@ static bool read_phase_file(
     const size_t expected_full = (size_t)n_params * (size_t)(fm_dim + 1);
     const size_t expected_factor_only = (size_t)n_params * (size_t)fm_dim;
     if (raw.size() == expected_full) {
+        for (int i = 0; i < n_params; ++i) {
+            linear[(size_t)i] = (float)raw[(size_t)i];
+        }
         size_t offset = (size_t)n_params;
         for (int i = 0; i < n_params * fm_dim; ++i) {
             factor[(size_t)i] = (float)raw[offset + (size_t)i];
@@ -77,6 +83,7 @@ static bool read_phase_file(
         return true;
     }
     if (raw.size() == expected_factor_only) {
+        std::fill(linear.begin(), linear.end(), 0.0f);
         for (int i = 0; i < n_params * fm_dim; ++i) {
             factor[(size_t)i] = (float)raw[(size_t)i];
         }
@@ -90,10 +97,18 @@ static bool read_phase_file(
     return false;
 }
 
+static uint64_t pack_param(int16_t linear_q, const int8_t* factor_q6) {
+    uint64_t packed = (uint16_t)linear_q;
+    for (int f = 0; f < DEFAULT_FM_DIM; ++f) {
+        packed |= (uint64_t)(uint8_t)factor_q6[f] << (16 + f * 8);
+    }
+    return packed;
+}
+
 int main(int argc, char* argv[]) {
     if (argc < 3) {
         std::cerr << "input [n_phases] [n_params] [fm_dim=" << DEFAULT_FM_DIM
-                  << "] [out_file=trained/eval_fm.egev4] [model_dir=trained] [quant_bits=" << DEFAULT_QUANT_BITS << "]" << std::endl;
+                  << "] [out_file=trained/eval_fm.egev4] [model_dir=trained]" << std::endl;
         return 1;
     }
 
@@ -102,10 +117,9 @@ int main(int argc, char* argv[]) {
     const int fm_dim = (argc >= 4) ? atoi(argv[3]) : DEFAULT_FM_DIM;
     const std::string out_file = (argc >= 5) ? argv[4] : "trained/eval_fm.egev4";
     const std::string model_dir = (argc >= 6) ? argv[5] : "trained";
-    const int quant_bits = (argc >= 7) ? atoi(argv[6]) : DEFAULT_QUANT_BITS;
 
-    if (n_phases <= 0 || n_params <= 0 || fm_dim <= 0 || (quant_bits != 8 && quant_bits != 16)) {
-        std::cerr << "[ERROR] invalid args. n_phases/n_params/fm_dim must be > 0 and quant_bits must be 8 or 16" << std::endl;
+    if (n_phases <= 0 || n_params <= 0 || fm_dim != DEFAULT_FM_DIM) {
+        std::cerr << "[ERROR] invalid args. n_phases/n_params must be > 0 and fm_dim must be " << DEFAULT_FM_DIM << std::endl;
         return 1;
     }
 
@@ -114,7 +128,6 @@ int main(int argc, char* argv[]) {
               << " fm_dim " << fm_dim
               << " out_file " << out_file
               << " model_dir " << model_dir
-              << " quant_bits " << quant_bits
               << std::endl;
 
     std::ofstream fout(out_file, std::ios::out | std::ios::binary | std::ios::trunc);
@@ -128,73 +141,85 @@ int main(int argc, char* argv[]) {
         std::cerr << "[ERROR] failed to create timestamp" << std::endl;
         return 1;
     }
+
+    std::vector<float> linear((size_t)n_params, 0.0f);
     std::vector<float> factor((size_t)n_params * (size_t)fm_dim, 0.0f);
-    std::vector<int8_t> factor_q8((size_t)n_params * (size_t)fm_dim, 0);
-    std::vector<int16_t> factor_q16((size_t)n_params * (size_t)fm_dim, 0);
+    std::vector<float> linear_scales((size_t)n_phases, 1.0f);
+    std::vector<float> factor_scales((size_t)n_phases, 1.0f);
 
     int loaded = 0;
     int missing = 0;
-    float max_abs = 0.0f;
+    float max_abs_linear_global = 0.0f;
+    float max_abs_factor_global = 0.0f;
 
     for (int phase = 0; phase < n_phases; ++phase) {
+        std::fill(linear.begin(), linear.end(), 0.0f);
         std::fill(factor.begin(), factor.end(), 0.0f);
 
         const std::string fm_path = model_dir + "/" + std::to_string(phase) + "_fm.txt";
-        if (!read_phase_file(fm_path, n_params, fm_dim, factor)) {
+        if (!read_phase_file(fm_path, n_params, fm_dim, linear, factor)) {
             ++missing;
             std::cerr << "phase " << phase << " missing -> zero fill" << std::endl;
             continue;
         }
         ++loaded;
-        for (float v : factor) {
-            max_abs = std::max(max_abs, std::fabs(v));
+        float max_abs_linear = 0.0f;
+        float max_abs_factor = 0.0f;
+        for (float v : linear) {
+            max_abs_linear = std::max(max_abs_linear, std::fabs(v));
         }
+        for (float v : factor) {
+            max_abs_factor = std::max(max_abs_factor, std::fabs(v));
+        }
+        linear_scales[(size_t)phase] = (max_abs_linear > 0.0f) ? (max_abs_linear / (float)LINEAR_INT16_MAX_ABS) : 1.0f;
+        factor_scales[(size_t)phase] = (max_abs_factor > 0.0f) ? (max_abs_factor / (float)FM_INT8_MAX_ABS) : 1.0f;
+        max_abs_linear_global = std::max(max_abs_linear_global, max_abs_linear);
+        max_abs_factor_global = std::max(max_abs_factor_global, max_abs_factor);
     }
 
-    const int quant_max_abs = (quant_bits == 8) ? FM_INT8_MAX_ABS : FM_INT16_MAX_ABS;
-    const float factor_scale = (max_abs > 0.0f) ? (max_abs / (float)quant_max_abs) : 1.0f;
-    const int version = (quant_bits == 8) ? FM_EVAL_VERSION_INT8 : FM_EVAL_VERSION_INT16;
-    FMHeader header = {{'E', 'G', 'E', 'V'}, version, n_phases, n_params, fm_dim, factor_scale};
+    FMHeaderCommon header_common = {{'E', 'G', 'E', 'V'}, FM_EVAL_VERSION_PACKED64, n_phases, n_params, fm_dim};
     fout.write(created_at.data(), TIMESTAMP_SIZE);
-    fout.write((char*)&header, sizeof(FMHeader));
+    fout.write((char*)&header_common, sizeof(FMHeaderCommon));
+    fout.write((char*)linear_scales.data(), sizeof(float) * linear_scales.size());
+    fout.write((char*)factor_scales.data(), sizeof(float) * factor_scales.size());
     std::cerr << "created_at " << created_at
-              << " version " << version
-              << " factor_scale " << factor_scale << std::endl;
+              << " version " << FM_EVAL_VERSION_PACKED64
+              << " global_max_linear " << max_abs_linear_global
+              << " global_max_factor " << max_abs_factor_global << std::endl;
 
     loaded = 0;
     missing = 0;
+    std::vector<uint64_t> packed((size_t)n_params, 0ULL);
 
     for (int phase = 0; phase < n_phases; ++phase) {
+        std::fill(linear.begin(), linear.end(), 0.0f);
         std::fill(factor.begin(), factor.end(), 0.0f);
-        std::fill(factor_q8.begin(), factor_q8.end(), 0);
-        std::fill(factor_q16.begin(), factor_q16.end(), 0);
+        std::fill(packed.begin(), packed.end(), 0ULL);
 
         const std::string fm_path = model_dir + "/" + std::to_string(phase) + "_fm.txt";
 
-        if (!read_phase_file(fm_path, n_params, fm_dim, factor)) {
+        if (!read_phase_file(fm_path, n_params, fm_dim, linear, factor)) {
             ++missing;
             std::cerr << "phase " << phase << " missing -> zero fill" << std::endl;
         } else {
             ++loaded;
-            std::cerr << "phase " << phase << " loaded FM" << std::endl;
-            for (size_t i = 0; i < factor.size(); ++i) {
-                const float scaled = factor[i] / factor_scale;
-                const int q = (int)std::round(scaled);
-                if (quant_bits == 8) {
-                    const int q_clamped = std::clamp(q, -FM_INT8_MAX_ABS, FM_INT8_MAX_ABS);
-                    factor_q8[i] = (int8_t)q_clamped;
-                } else {
-                    const int q_clamped = std::clamp(q, -FM_INT16_MAX_ABS, FM_INT16_MAX_ABS);
-                    factor_q16[i] = (int16_t)q_clamped;
+            std::cerr << "phase " << phase << " loaded linear+FM" << std::endl;
+            const float linear_scale = linear_scales[(size_t)phase];
+            const float factor_scale = factor_scales[(size_t)phase];
+            for (int p = 0; p < n_params; ++p) {
+                const int q_linear = (int)std::round(linear[(size_t)p] / linear_scale);
+                const int16_t q_linear_clamped = (int16_t)std::clamp(q_linear, -LINEAR_INT16_MAX_ABS, LINEAR_INT16_MAX_ABS);
+                int8_t q_factor[DEFAULT_FM_DIM];
+                for (int f = 0; f < DEFAULT_FM_DIM; ++f) {
+                    const float fv = factor[(size_t)p * (size_t)fm_dim + (size_t)f];
+                    const int q = (int)std::round(fv / factor_scale);
+                    q_factor[f] = (int8_t)std::clamp(q, -FM_INT8_MAX_ABS, FM_INT8_MAX_ABS);
                 }
+                packed[(size_t)p] = pack_param(q_linear_clamped, q_factor);
             }
         }
 
-        if (quant_bits == 8) {
-            fout.write((char*)factor_q8.data(), sizeof(int8_t) * factor_q8.size());
-        } else {
-            fout.write((char*)factor_q16.data(), sizeof(int16_t) * factor_q16.size());
-        }
+        fout.write((char*)packed.data(), sizeof(uint64_t) * packed.size());
     }
 
     std::cerr << "loaded " << loaded

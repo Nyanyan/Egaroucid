@@ -34,7 +34,7 @@ constexpr int CEIL_N_PATTERN_FEATURES = 64;     // ceil2^n(N_PATTERN_FEATURES)
 constexpr int N_PATTERN_PARAMS_RAW = 612360;    // sum of pattern parameters for 1 phase
 constexpr int N_FM_PARAMS = N_PATTERN_PARAMS_RAW + MAX_STONE_NUM;
 constexpr int FM_STONE_OFFSET = N_PATTERN_PARAMS_RAW;
-constexpr int EVAL_FM_DIM = 4;
+constexpr int EVAL_FM_DIM = 6;
 constexpr int SIMD_EVAL_MAX_VALUE = 4092;       // evaluate range [-4092, 4092]
 constexpr int N_EVAL_VECTORS_SIMPLE = 2;
 constexpr int N_EVAL_VECTORS_COMP = 2;
@@ -241,22 +241,45 @@ __m256i eval_simd_offsets_comp[N_EVAL_VECTORS_COMP * 2]; // 32bit * 8 * N
 // move ordering evaluation
 int16_t pattern_move_ordering_end_arr[N_PATTERN_PARAMS_MO_END];
 bool eval_fm_loaded = false;
-int16_t pattern_fm_factor_arr[N_PHASES][N_FM_PARAMS][EVAL_FM_DIM];
-float pattern_fm_factor_scale = 1.0f;
+uint64_t pattern_fm_packed_arr[N_PHASES][N_FM_PARAMS];
+float pattern_fm_linear_scale_arr[N_PHASES];
+float pattern_fm_factor_scale_arr[N_PHASES];
 
 constexpr int FM_EVAL_VERSION_INT8 = 4;
 constexpr int FM_EVAL_VERSION_INT16 = 5;
+constexpr int FM_EVAL_VERSION_PACKED64 = 6;
+constexpr int FM_EVAL_VERSION_PACKED64_PHASE_SCALE = 7;
 
-struct FM_eval_header {
+struct FM_eval_header_common {
     char magic[4];
     int version;
     int n_phases;
     int n_params;
     int fm_dim;
+};
+
+struct FM_eval_header_scales {
+    float linear_scale;
     float factor_scale;
 };
 
 constexpr int FM_TIMESTAMP_SIZE = 14;
+
+inline uint64_t pack_linear_fm_entry(int16_t linear_q, const int8_t factors[EVAL_FM_DIM]) {
+    uint64_t packed = (uint16_t)linear_q;
+    for (int f = 0; f < EVAL_FM_DIM; ++f) {
+        packed |= (uint64_t)(uint8_t)factors[f] << (16 + 8 * f);
+    }
+    return packed;
+}
+
+inline int16_t unpack_linear_q(uint64_t packed) {
+    return (int16_t)(packed & 0xFFFFu);
+}
+
+inline int8_t unpack_factor_q(uint64_t packed, int f) {
+    return (int8_t)((packed >> (16 + 8 * f)) & 0xFFu);
+}
 
 inline bool load_eval_fm_file(const char* file, bool show_log) {
     FILE* fp;
@@ -275,8 +298,8 @@ inline bool load_eval_fm_file(const char* file, bool show_log) {
     }
     created_at[FM_TIMESTAMP_SIZE] = '\0';
 
-    FM_eval_header header;
-    if (fread(&header, sizeof(FM_eval_header), 1, fp) < 1) {
+    FM_eval_header_common header;
+    if (fread(&header, sizeof(FM_eval_header_common), 1, fp) < 1) {
         std::cerr << "[WARN] FM eval header broken " << file << std::endl;
         fclose(fp);
         return false;
@@ -287,7 +310,7 @@ inline bool load_eval_fm_file(const char* file, bool show_log) {
         fclose(fp);
         return false;
     }
-    if (header.n_phases != N_PHASES || header.n_params != N_FM_PARAMS || header.fm_dim != EVAL_FM_DIM) {
+    if (header.n_phases != N_PHASES || header.n_params != N_FM_PARAMS || header.fm_dim <= 0 || header.fm_dim > EVAL_FM_DIM) {
         std::cerr << "[WARN] FM eval shape mismatch "
                   << " file(phases=" << header.n_phases
                   << " params=" << header.n_params
@@ -298,30 +321,97 @@ inline bool load_eval_fm_file(const char* file, bool show_log) {
         fclose(fp);
         return false;
     }
-    if (header.factor_scale <= 0.0f) {
-        std::cerr << "[WARN] FM eval scale broken " << file << std::endl;
-        fclose(fp);
-        return false;
+    for (int phase = 0; phase < N_PHASES; ++phase) {
+        pattern_fm_linear_scale_arr[phase] = 0.0f;
+        pattern_fm_factor_scale_arr[phase] = 1.0f;
     }
-
-    const size_t factor_count = (size_t)N_PHASES * (size_t)N_FM_PARAMS * (size_t)EVAL_FM_DIM;
-    pattern_fm_factor_scale = header.factor_scale;
-    if (header.version == FM_EVAL_VERSION_INT8) {
-        std::vector<int8_t> factor_tmp(factor_count);
-        if (fread(factor_tmp.data(), sizeof(int8_t), factor_count, fp) < factor_count) {
+    const size_t packed_count = (size_t)N_PHASES * (size_t)N_FM_PARAMS;
+    if (header.version >= FM_EVAL_VERSION_PACKED64_PHASE_SCALE) {
+        if (fread(pattern_fm_linear_scale_arr, sizeof(float), N_PHASES, fp) < N_PHASES ||
+            fread(pattern_fm_factor_scale_arr, sizeof(float), N_PHASES, fp) < N_PHASES) {
+            std::cerr << "[WARN] FM eval phase scales broken " << file << std::endl;
+            fclose(fp);
+            return false;
+        }
+        for (int phase = 0; phase < N_PHASES; ++phase) {
+            if (pattern_fm_linear_scale_arr[phase] <= 0.0f || pattern_fm_factor_scale_arr[phase] <= 0.0f) {
+                std::cerr << "[WARN] FM eval phase scale invalid " << file << " phase=" << phase << std::endl;
+                fclose(fp);
+                return false;
+            }
+        }
+        if (fread(pattern_fm_packed_arr, sizeof(uint64_t), packed_count, fp) < packed_count) {
+            std::cerr << "[WARN] FM eval packed data broken " << file << std::endl;
+            fclose(fp);
+            return false;
+        }
+    } else if (header.version >= FM_EVAL_VERSION_PACKED64) {
+        FM_eval_header_scales scales;
+        if (fread(&scales, sizeof(FM_eval_header_scales), 1, fp) < 1) {
+            std::cerr << "[WARN] FM eval scales broken " << file << std::endl;
+            fclose(fp);
+            return false;
+        }
+        if (scales.factor_scale <= 0.0f || scales.linear_scale <= 0.0f) {
+            std::cerr << "[WARN] FM eval scales invalid " << file << std::endl;
+            fclose(fp);
+            return false;
+        }
+        for (int phase = 0; phase < N_PHASES; ++phase) {
+            pattern_fm_linear_scale_arr[phase] = scales.linear_scale;
+            pattern_fm_factor_scale_arr[phase] = scales.factor_scale;
+        }
+        if (fread(pattern_fm_packed_arr, sizeof(uint64_t), packed_count, fp) < packed_count) {
+            std::cerr << "[WARN] FM eval packed data broken " << file << std::endl;
+            fclose(fp);
+            return false;
+        }
+    } else if (header.version == FM_EVAL_VERSION_INT16) {
+        float factor_scale_legacy = 1.0f;
+        if (fread(&factor_scale_legacy, sizeof(float), 1, fp) < 1 || factor_scale_legacy <= 0.0f) {
+            std::cerr << "[WARN] FM eval scale broken " << file << std::endl;
+            fclose(fp);
+            return false;
+        }
+        for (int phase = 0; phase < N_PHASES; ++phase) {
+            pattern_fm_factor_scale_arr[phase] = factor_scale_legacy;
+        }
+        std::vector<int16_t> factor_tmp(packed_count * (size_t)header.fm_dim);
+        if (fread(factor_tmp.data(), sizeof(int16_t), factor_tmp.size(), fp) < factor_tmp.size()) {
             std::cerr << "[WARN] FM eval factor data broken " << file << std::endl;
             fclose(fp);
             return false;
         }
-        int16_t* factor_dst = reinterpret_cast<int16_t*>(pattern_fm_factor_arr);
-        for (size_t i = 0; i < factor_count; ++i) {
-            factor_dst[i] = (int16_t)factor_tmp[i];
+        for (size_t p = 0; p < packed_count; ++p) {
+            int8_t factors[EVAL_FM_DIM] = {0};
+            for (int f = 0; f < header.fm_dim; ++f) {
+                const int16_t v = factor_tmp[p * (size_t)header.fm_dim + (size_t)f];
+                factors[f] = (int8_t)std::clamp((int)v, -127, 127);
+            }
+            pattern_fm_packed_arr[p / N_FM_PARAMS][p % N_FM_PARAMS] = pack_linear_fm_entry(0, factors);
         }
-    } else if (header.version >= FM_EVAL_VERSION_INT16) {
-        if (fread(pattern_fm_factor_arr, sizeof(int16_t), factor_count, fp) < factor_count) {
+    } else if (header.version == FM_EVAL_VERSION_INT8) {
+        float factor_scale_legacy = 1.0f;
+        if (fread(&factor_scale_legacy, sizeof(float), 1, fp) < 1 || factor_scale_legacy <= 0.0f) {
+            std::cerr << "[WARN] FM eval scale broken " << file << std::endl;
+            fclose(fp);
+            return false;
+        }
+        for (int phase = 0; phase < N_PHASES; ++phase) {
+            pattern_fm_factor_scale_arr[phase] = factor_scale_legacy;
+        }
+        std::vector<int8_t> factor_tmp(packed_count * (size_t)header.fm_dim);
+        if (fread(factor_tmp.data(), sizeof(int8_t), factor_tmp.size(), fp) < factor_tmp.size()) {
             std::cerr << "[WARN] FM eval factor data broken " << file << std::endl;
             fclose(fp);
             return false;
+        }
+        for (size_t p = 0; p < packed_count; ++p) {
+            int8_t factors[EVAL_FM_DIM] = {0};
+            for (int f = 0; f < header.fm_dim; ++f) {
+                factors[f] = factor_tmp[p * (size_t)header.fm_dim + (size_t)f];
+            }
+            pattern_fm_packed_arr[p / N_FM_PARAMS][p % N_FM_PARAMS] = pack_linear_fm_entry(0, factors);
         }
     } else {
         std::cerr << "[WARN] unsupported FM eval version " << header.version << " in " << file << std::endl;
@@ -338,7 +428,8 @@ inline bool load_eval_fm_file(const char* file, bool show_log) {
                   << " n_phases=" << header.n_phases
                   << " n_params=" << header.n_params
                   << " fm_dim=" << header.fm_dim
-                  << " factor_scale=" << header.factor_scale
+                  << " linear_scale[0]=" << pattern_fm_linear_scale_arr[0]
+                  << " factor_scale[0]=" << pattern_fm_factor_scale_arr[0]
                   << std::endl;
     }
     return true;
@@ -608,19 +699,26 @@ inline int calc_pattern(const int phase_idx, Eval_features *features, const int 
     }
     global_idx[N_PATTERN_FEATURES] = FM_STONE_OFFSET + num0;
 
+    double linear_res = 0.0;
     double fm_res = 0.0;
+    const double linear_scale = (double)pattern_fm_linear_scale_arr[phase_idx];
+    const double factor_scale = (double)pattern_fm_factor_scale_arr[phase_idx];
     for (int f = 0; f < EVAL_FM_DIM; ++f) {
         double sum_vx = 0.0;
         double sum_vx2 = 0.0;
         for (int i = 0; i < N_PATTERN_FEATURES + 1; ++i) {
-            const double vx = (double)pattern_fm_factor_arr[phase_idx][global_idx[i]][f] * (double)pattern_fm_factor_scale;
+            const uint64_t packed = pattern_fm_packed_arr[phase_idx][global_idx[i]];
+            if (f == 0) {
+                linear_res += (double)unpack_linear_q(packed) * linear_scale;
+            }
+            const double vx = (double)unpack_factor_q(packed, f) * factor_scale;
             sum_vx += vx;
             sum_vx2 += vx * vx;
         }
         fm_res += 0.5 * (sum_vx * sum_vx - sum_vx2);
     }
 
-    return (int)std::round(fm_res);
+    return (int)std::round(linear_res + fm_res);
 }
 
 inline int calc_pattern_move_ordering_end(Eval_features *features) {
