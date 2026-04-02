@@ -9,7 +9,7 @@
 #include <algorithm>
 #include <cmath>
 
-constexpr int DEFAULT_FM_DIM = 6;
+constexpr int DEFAULT_FM_DIM = 2;
 constexpr int MAGIC_SIZE = 4;
 constexpr int TIMESTAMP_SIZE = 14;
 constexpr int FM_EVAL_VERSION_PACKED64 = 7;
@@ -97,10 +97,10 @@ static bool read_phase_file(
     return false;
 }
 
-static uint64_t pack_param(int16_t linear_q, const int8_t* factor_q6) {
+static uint64_t pack_param(int16_t linear_q, const int8_t* factor_q) {
     uint64_t packed = (uint16_t)linear_q;
     for (int f = 0; f < DEFAULT_FM_DIM; ++f) {
-        packed |= (uint64_t)(uint8_t)factor_q6[f] << (16 + f * 8);
+        packed |= (uint64_t)(uint8_t)factor_q[f] << (16 + f * 8);
     }
     return packed;
 }

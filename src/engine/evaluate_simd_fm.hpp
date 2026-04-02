@@ -34,7 +34,7 @@ constexpr int CEIL_N_PATTERN_FEATURES = 64;     // ceil2^n(N_PATTERN_FEATURES)
 constexpr int N_PATTERN_PARAMS_RAW = 612360;    // sum of pattern parameters for 1 phase
 constexpr int N_FM_PARAMS = N_PATTERN_PARAMS_RAW + MAX_STONE_NUM;
 constexpr int FM_STONE_OFFSET = N_PATTERN_PARAMS_RAW;
-constexpr int EVAL_FM_DIM = 6;
+constexpr int EVAL_FM_DIM = 2;
 constexpr int SIMD_EVAL_MAX_VALUE = 4092;       // evaluate range [-4092, 4092]
 constexpr int N_EVAL_VECTORS_SIMPLE = 2;
 constexpr int N_EVAL_VECTORS_COMP = 2;
@@ -310,7 +310,7 @@ inline bool load_eval_fm_file(const char* file, bool show_log) {
         fclose(fp);
         return false;
     }
-    if (header.n_phases != N_PHASES || header.n_params != N_FM_PARAMS || header.fm_dim <= 0 || header.fm_dim > EVAL_FM_DIM) {
+    if (header.n_phases != N_PHASES || header.n_params != N_FM_PARAMS || header.fm_dim != EVAL_FM_DIM) {
         std::cerr << "[WARN] FM eval shape mismatch "
                   << " file(phases=" << header.n_phases
                   << " params=" << header.n_params

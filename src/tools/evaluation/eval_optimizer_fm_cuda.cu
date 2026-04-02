@@ -55,7 +55,7 @@
 #endif
 
 // FM constants
-#define ADJ_FM_DIM 6
+#define ADJ_FM_DIM 2
 #define ADJ_FM_INIT_STDDEV 0.003
 #define ADJ_FM_FACTOR_LR_RATIO 0.25
 #define ADJ_FM_FACTOR_L2 1.0e-5

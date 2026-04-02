@@ -28,7 +28,7 @@ constexpr int EVAL_IDX_START_MOVE_ORDERING_END = 32;
 constexpr int EVAL_IDX_END_MOVE_ORDERING_END = 48;
 constexpr int EVAL_FEATURE_START_MOVE_ORDERING_END = 8;
 constexpr int MAX_CELL_PATTERNS_MOVE_ORDERING_END = 6;
-constexpr int EVAL_FM_DIM = 6;
+constexpr int EVAL_FM_DIM = 2;
 constexpr int N_PATTERN_PARAMS_RAW_FM = 612360;
 constexpr int N_FM_PARAMS = N_PATTERN_PARAMS_RAW_FM + MAX_STONE_NUM;
 constexpr int FM_STONE_OFFSET = N_PATTERN_PARAMS_RAW_FM;
@@ -397,7 +397,7 @@ inline bool load_eval_fm_file(const char* file, bool show_log) {
         fclose(fp);
         return false;
     }
-    if (header.n_phases != N_PHASES || header.n_params != N_FM_PARAMS || header.fm_dim <= 0 || header.fm_dim > EVAL_FM_DIM) {
+    if (header.n_phases != N_PHASES || header.n_params != N_FM_PARAMS || header.fm_dim != EVAL_FM_DIM) {
         std::cerr << "[WARN] FM eval shape mismatch "
                   << " file(phases=" << header.n_phases
                   << " params=" << header.n_params
