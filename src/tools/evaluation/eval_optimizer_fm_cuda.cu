@@ -22,6 +22,22 @@
 #include <chrono>
 #include <cmath>
 
+#define CUDA_CHECK(call) do { \
+    cudaError_t err__ = (call); \
+    if (err__ != cudaSuccess) { \
+        std::cerr << "[CUDA ERROR] " << __FILE__ << ":" << __LINE__ << " " << cudaGetErrorString(err__) << std::endl; \
+        return 1; \
+    } \
+} while (0)
+
+#define CUDA_CHECK_LAUNCH() do { \
+    cudaError_t err__ = cudaGetLastError(); \
+    if (err__ != cudaSuccess) { \
+        std::cerr << "[CUDA KERNEL ERROR] " << __FILE__ << ":" << __LINE__ << " " << cudaGetErrorString(err__) << std::endl; \
+        return 1; \
+    } \
+} while (0)
+
 // settings
 #define RESIDUAL_USE_CLIP false
 #define USE_WARMUP false
@@ -45,8 +61,8 @@
 #define ADJ_IGNORE_N_APPEAR 0
 
 // GPU constant
-#define N_THREADS_PER_BLOCK_TEST 1024
-#define N_THREADS_PER_BLOCK_RESIDUAL 1024
+#define N_THREADS_PER_BLOCK_TEST 256
+#define N_THREADS_PER_BLOCK_RESIDUAL 256
 #define N_THREADS_PER_BLOCK_NEXT_STEP 1024
 
 // monitor constant
@@ -459,7 +475,7 @@ int main(int argc, char* argv[]) {
     int n_train_data;
     Adj_Data* host_val_data;
     if (phase > 11) {
-        n_val_data = n_all_data * 0.05;
+        n_val_data = (int)(n_all_data * 0.05);
         if (n_val_data <= 0) {
             n_val_data = 1;
         }
@@ -508,30 +524,30 @@ int main(int argc, char* argv[]) {
     double* device_val_error_monitor_arr;
     int* device_start_idx_arr;
 
-    cudaMalloc(&device_factor_arr, sizeof(double) * fm_size);
-    cudaMalloc(&device_rev_idx_arr, sizeof(int) * eval_size);
-    cudaMalloc(&device_train_data, sizeof(Adj_Data) * n_train_data);
-    cudaMalloc(&device_val_data, sizeof(Adj_Data) * n_val_data);
-    cudaMalloc(&device_n_appear_arr, sizeof(int) * eval_size);
-    cudaMalloc(&device_residual_factor_arr, sizeof(double) * fm_size);
-    cudaMalloc(&device_error_monitor_arr, sizeof(double) * N_ERROR_MONITOR);
-    cudaMalloc(&device_val_error_monitor_arr, sizeof(double) * N_TEST_ERROR_MONITOR);
-    cudaMalloc(&device_start_idx_arr, sizeof(int) * ADJ_N_FEATURES);
+    CUDA_CHECK(cudaMalloc(&device_factor_arr, sizeof(double) * fm_size));
+    CUDA_CHECK(cudaMalloc(&device_rev_idx_arr, sizeof(int) * eval_size));
+    CUDA_CHECK(cudaMalloc(&device_train_data, sizeof(Adj_Data) * n_train_data));
+    CUDA_CHECK(cudaMalloc(&device_val_data, sizeof(Adj_Data) * n_val_data));
+    CUDA_CHECK(cudaMalloc(&device_n_appear_arr, sizeof(int) * eval_size));
+    CUDA_CHECK(cudaMalloc(&device_residual_factor_arr, sizeof(double) * fm_size));
+    CUDA_CHECK(cudaMalloc(&device_error_monitor_arr, sizeof(double) * N_ERROR_MONITOR));
+    CUDA_CHECK(cudaMalloc(&device_val_error_monitor_arr, sizeof(double) * N_TEST_ERROR_MONITOR));
+    CUDA_CHECK(cudaMalloc(&device_start_idx_arr, sizeof(int) * ADJ_N_FEATURES));
 
-    cudaMemcpy(device_factor_arr, host_factor_arr, sizeof(double) * fm_size, cudaMemcpyHostToDevice);
-    cudaMemcpy(device_rev_idx_arr, host_rev_idx_arr, sizeof(int) * eval_size, cudaMemcpyHostToDevice);
-    cudaMemcpy(device_train_data, host_train_data, sizeof(Adj_Data) * n_train_data, cudaMemcpyHostToDevice);
-    cudaMemcpy(device_val_data, host_val_data, sizeof(Adj_Data) * n_val_data, cudaMemcpyHostToDevice);
-    cudaMemcpy(device_n_appear_arr, host_n_appear_arr, sizeof(int) * eval_size, cudaMemcpyHostToDevice);
-    cudaMemset(device_residual_factor_arr, 0, sizeof(double) * fm_size);
-    cudaMemcpy(device_start_idx_arr, host_start_idx_arr, sizeof(int) * ADJ_N_FEATURES, cudaMemcpyHostToDevice);
+    CUDA_CHECK(cudaMemcpy(device_factor_arr, host_factor_arr, sizeof(double) * fm_size, cudaMemcpyHostToDevice));
+    CUDA_CHECK(cudaMemcpy(device_rev_idx_arr, host_rev_idx_arr, sizeof(int) * eval_size, cudaMemcpyHostToDevice));
+    CUDA_CHECK(cudaMemcpy(device_train_data, host_train_data, sizeof(Adj_Data) * n_train_data, cudaMemcpyHostToDevice));
+    CUDA_CHECK(cudaMemcpy(device_val_data, host_val_data, sizeof(Adj_Data) * n_val_data, cudaMemcpyHostToDevice));
+    CUDA_CHECK(cudaMemcpy(device_n_appear_arr, host_n_appear_arr, sizeof(int) * eval_size, cudaMemcpyHostToDevice));
+    CUDA_CHECK(cudaMemset(device_residual_factor_arr, 0, sizeof(double) * fm_size));
+    CUDA_CHECK(cudaMemcpy(device_start_idx_arr, host_start_idx_arr, sizeof(int) * ADJ_N_FEATURES, cudaMemcpyHostToDevice));
 
     double* device_m_factor_arr;
     double* device_v_factor_arr;
-    cudaMalloc(&device_m_factor_arr, sizeof(double) * fm_size);
-    cudaMalloc(&device_v_factor_arr, sizeof(double) * fm_size);
-    cudaMemset(device_m_factor_arr, 0, sizeof(double) * fm_size);
-    cudaMemset(device_v_factor_arr, 0, sizeof(double) * fm_size);
+    CUDA_CHECK(cudaMalloc(&device_m_factor_arr, sizeof(double) * fm_size));
+    CUDA_CHECK(cudaMalloc(&device_v_factor_arr, sizeof(double) * fm_size));
+    CUDA_CHECK(cudaMemset(device_m_factor_arr, 0, sizeof(double) * fm_size));
+    CUDA_CHECK(cudaMemset(device_v_factor_arr, 0, sizeof(double) * fm_size));
 
     const int n_blocks_val = (n_val_data + N_THREADS_PER_BLOCK_TEST - 1) / N_THREADS_PER_BLOCK_TEST;
     const int n_blocks_residual = (n_train_data + N_THREADS_PER_BLOCK_RESIDUAL - 1) / N_THREADS_PER_BLOCK_RESIDUAL;
@@ -542,7 +558,7 @@ int main(int argc, char* argv[]) {
               << " n_blocks_next_factor " << n_blocks_next_factor << std::endl;
 
     std::cerr << "phase " << phase << std::endl;
-    cudaMemset(device_error_monitor_arr, 0, sizeof(double) * N_ERROR_MONITOR);
+    CUDA_CHECK(cudaMemset(device_error_monitor_arr, 0, sizeof(double) * N_ERROR_MONITOR));
     adj_calculate_residual_fm<<<n_blocks_residual, N_THREADS_PER_BLOCK_RESIDUAL>>>(
         device_factor_arr,
         n_train_data,
@@ -551,7 +567,8 @@ int main(int argc, char* argv[]) {
         device_rev_idx_arr,
         device_residual_factor_arr,
         device_error_monitor_arr);
-    cudaMemcpy(host_error_monitor_arr, device_error_monitor_arr, sizeof(double) * N_ERROR_MONITOR, cudaMemcpyDeviceToHost);
+    CUDA_CHECK_LAUNCH();
+    CUDA_CHECK(cudaMemcpy(host_error_monitor_arr, device_error_monitor_arr, sizeof(double) * N_ERROR_MONITOR, cudaMemcpyDeviceToHost));
     std::cerr << "before MSE " << host_error_monitor_arr[0] << " MAE " << host_error_monitor_arr[1] << std::endl;
 
     const uint64_t strt = tim();
@@ -568,14 +585,15 @@ int main(int argc, char* argv[]) {
     while (tim() - strt < msecond) {
         ++n_loop;
 
-        cudaMemset(device_val_error_monitor_arr, 0, sizeof(double) * N_TEST_ERROR_MONITOR);
+        CUDA_CHECK(cudaMemset(device_val_error_monitor_arr, 0, sizeof(double) * N_TEST_ERROR_MONITOR));
         adj_calculate_val_loss_fm<<<n_blocks_val, N_THREADS_PER_BLOCK_TEST>>>(
             device_factor_arr,
             n_val_data,
             device_start_idx_arr,
             device_val_data,
             device_val_error_monitor_arr);
-        cudaMemcpy(host_val_error_monitor_arr, device_val_error_monitor_arr, sizeof(double) * N_TEST_ERROR_MONITOR, cudaMemcpyDeviceToHost);
+        CUDA_CHECK_LAUNCH();
+        CUDA_CHECK(cudaMemcpy(host_val_error_monitor_arr, device_val_error_monitor_arr, sizeof(double) * N_TEST_ERROR_MONITOR, cudaMemcpyDeviceToHost));
 
         if (host_val_error_monitor_arr[0] <= min_val_mse) {
             min_val_mse = host_val_error_monitor_arr[0];
@@ -589,7 +607,7 @@ int main(int argc, char* argv[]) {
             }
         }
 
-        cudaMemset(device_error_monitor_arr, 0, sizeof(double) * N_ERROR_MONITOR);
+        CUDA_CHECK(cudaMemset(device_error_monitor_arr, 0, sizeof(double) * N_ERROR_MONITOR));
         adj_calculate_residual_fm<<<n_blocks_residual, N_THREADS_PER_BLOCK_RESIDUAL>>>(
             device_factor_arr,
             n_train_data,
@@ -598,7 +616,8 @@ int main(int argc, char* argv[]) {
             device_rev_idx_arr,
             device_residual_factor_arr,
             device_error_monitor_arr);
-        cudaMemcpy(host_error_monitor_arr, device_error_monitor_arr, sizeof(double) * N_ERROR_MONITOR, cudaMemcpyDeviceToHost);
+        CUDA_CHECK_LAUNCH();
+        CUDA_CHECK(cudaMemcpy(host_error_monitor_arr, device_error_monitor_arr, sizeof(double) * N_ERROR_MONITOR, cudaMemcpyDeviceToHost));
 
         std::cerr << "\rn_loop " << n_loop
               << " progress " << (tim() - strt) * 100 / msecond << "%"
@@ -620,6 +639,7 @@ int main(int argc, char* argv[]) {
             device_m_factor_arr,
             device_v_factor_arr,
             n_loop);
+        CUDA_CHECK_LAUNCH();
 
 #if USE_WARMUP
         if (alpha_stab < alpha) {
@@ -640,9 +660,9 @@ int main(int argc, char* argv[]) {
     }
     std::cerr << std::endl;
 
-    cudaMemcpy(host_factor_arr, device_factor_arr, sizeof(double) * fm_size, cudaMemcpyDeviceToHost);
+    CUDA_CHECK(cudaMemcpy(host_factor_arr, device_factor_arr, sizeof(double) * fm_size, cudaMemcpyDeviceToHost));
 
-    cudaMemset(device_error_monitor_arr, 0, sizeof(double) * N_ERROR_MONITOR);
+    CUDA_CHECK(cudaMemset(device_error_monitor_arr, 0, sizeof(double) * N_ERROR_MONITOR));
     adj_calculate_residual_fm<<<n_blocks_residual, N_THREADS_PER_BLOCK_RESIDUAL>>>(
         device_factor_arr,
         n_train_data,
@@ -651,16 +671,18 @@ int main(int argc, char* argv[]) {
         device_rev_idx_arr,
         device_residual_factor_arr,
         device_error_monitor_arr);
-    cudaMemcpy(host_error_monitor_arr, device_error_monitor_arr, sizeof(double) * N_ERROR_MONITOR, cudaMemcpyDeviceToHost);
+    CUDA_CHECK_LAUNCH();
+    CUDA_CHECK(cudaMemcpy(host_error_monitor_arr, device_error_monitor_arr, sizeof(double) * N_ERROR_MONITOR, cudaMemcpyDeviceToHost));
 
-    cudaMemset(device_val_error_monitor_arr, 0, sizeof(double) * N_TEST_ERROR_MONITOR);
+    CUDA_CHECK(cudaMemset(device_val_error_monitor_arr, 0, sizeof(double) * N_TEST_ERROR_MONITOR));
     adj_calculate_val_loss_fm<<<n_blocks_val, N_THREADS_PER_BLOCK_TEST>>>(
         device_factor_arr,
         n_val_data,
         device_start_idx_arr,
         device_val_data,
         device_val_error_monitor_arr);
-    cudaMemcpy(host_val_error_monitor_arr, device_val_error_monitor_arr, sizeof(double) * N_TEST_ERROR_MONITOR, cudaMemcpyDeviceToHost);
+    CUDA_CHECK_LAUNCH();
+    CUDA_CHECK(cudaMemcpy(host_val_error_monitor_arr, device_val_error_monitor_arr, sizeof(double) * N_TEST_ERROR_MONITOR, cudaMemcpyDeviceToHost));
 
     adj_output_param_fm(phase, eval_size, host_factor_arr);
     adj_output_weight(phase, eval_size, weight_arr);
