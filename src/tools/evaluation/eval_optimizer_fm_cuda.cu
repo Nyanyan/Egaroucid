@@ -39,7 +39,7 @@
 } while (0)
 
 // settings
-#define RESIDUAL_USE_CLIP false
+#define RESIDUAL_USE_CLIP true
 #define ROUND_USE_CLIP true
 #define USE_WARMUP false
 
@@ -56,7 +56,9 @@
 
 // FM constants
 #define ADJ_FM_DIM 6
-#define ADJ_FM_INIT_STDDEV 0.01
+#define ADJ_FM_INIT_STDDEV 0.003
+#define ADJ_FM_FACTOR_LR_RATIO 0.25
+#define ADJ_FM_FACTOR_L2 1.0e-5
 
 // training constant
 #define ADJ_IGNORE_N_APPEAR 0
@@ -194,11 +196,12 @@ void adj_import_eval_fm(
               << " or " << expected_factor_only << std::endl;
 }
 
-int adj_import_data(int n_files, char* files[], Adj_Data* host_train_data, double* score_avg_out) {
+int adj_import_data(int n_files, char* files[], Adj_Data* host_train_data, double* score_avg_out, bool* all_zero_score_out) {
     int n_data = 0;
     FILE* fp;
     int16_t n_discs, score, player;
     double score_avg = 0.0;
+    bool all_zero_score = true;
 
     for (int file_idx = 0; file_idx < n_files; ++file_idx) {
         if (fopen_s(&fp, files[file_idx], "rb") != 0) {
@@ -214,6 +217,9 @@ int adj_import_data(int n_files, char* files[], Adj_Data* host_train_data, doubl
             fread(host_train_data[n_data].features, 2, ADJ_N_FEATURES, fp);
             fread(&score, 2, 1, fp);
             host_train_data[n_data].score = (double)score * ADJ_STEP;
+            if (score != 0) {
+                all_zero_score = false;
+            }
             score_avg += score;
             ++n_data;
         }
@@ -227,6 +233,9 @@ int adj_import_data(int n_files, char* files[], Adj_Data* host_train_data, doubl
     }
     if (score_avg_out != nullptr) {
         *score_avg_out = score_avg;
+    }
+    if (all_zero_score_out != nullptr) {
+        *all_zero_score_out = all_zero_score;
     }
     std::cerr << "score avg " << score_avg << std::endl;
     return n_data;
@@ -451,8 +460,8 @@ __global__ void adam_factor(
 
     const int eval_idx = factor_idx / ADJ_FM_DIM;
     if (device_n_appear_arr[eval_idx] > ADJ_IGNORE_N_APPEAR || (phase <= 11 && device_n_appear_arr[eval_idx] > 0)) {
-        const double lr = alpha_stab / (double)device_n_appear_arr[eval_idx];
-        const double grad = 2.0 * device_residual_factor_arr[factor_idx];
+        const double lr = (alpha_stab * ADJ_FM_FACTOR_LR_RATIO) / (double)device_n_appear_arr[eval_idx];
+        const double grad = 2.0 * device_residual_factor_arr[factor_idx] - 2.0 * ADJ_FM_FACTOR_L2 * device_factor_arr[factor_idx];
         constexpr double beta1 = 0.9;
         constexpr double beta2 = 0.999;
         constexpr double epsilon = 1e-7;
@@ -596,7 +605,8 @@ int main(int argc, char* argv[]) {
     adj_import_eval_fm(in_file, eval_size, host_linear_arr, host_factor_arr);
 
     double score_avg = 0.0;
-    const int n_all_data = adj_import_data(n_train_data_file, train_files, host_train_data, &score_avg);
+    bool all_zero_score = false;
+    const int n_all_data = adj_import_data(n_train_data_file, train_files, host_train_data, &score_avg, &all_zero_score);
     if (n_all_data <= 0) {
         std::cerr << "no training data" << std::endl;
         return 1;
@@ -650,6 +660,27 @@ int main(int argc, char* argv[]) {
         host_n_appear_arr[i] = std::min(50, host_n_appear_arr[i]);
     }
     std::cerr << "train data appearance calculated" << std::endl;
+
+    if (all_zero_score) {
+        for (int i = 0; i < eval_size; ++i) {
+            host_linear_arr[i] = 0.0;
+        }
+        for (int i = 0; i < fm_size; ++i) {
+            host_factor_arr[i] = 0.0;
+        }
+        adj_output_param_fm(phase, eval_size, host_linear_arr, host_factor_arr);
+        adj_output_weight(phase, eval_size, weight_arr);
+        std::cerr << "all training scores are 0 -> output exact zero linear/factor params and skip CUDA optimization" << std::endl;
+        std::cout << "phase " << phase
+                  << " n_train_data " << n_train_data
+                  << " n_val_data " << n_val_data
+                  << " score_avg " << score_avg
+                  << " all_zero_target 1"
+                  << " MSE 0 MAE 0 val_MSE 0 val_MAE 0"
+                  << " (Linear+FM exact zero output)"
+                  << std::endl;
+        return 0;
+    }
 
     double* device_linear_arr;
     double* device_factor_arr;
