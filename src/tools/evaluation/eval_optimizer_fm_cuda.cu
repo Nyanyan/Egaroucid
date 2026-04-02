@@ -40,6 +40,7 @@
 
 // settings
 #define RESIDUAL_USE_CLIP false
+#define ROUND_USE_CLIP true
 #define USE_WARMUP false
 
 #define OPTIMIZER_INCLUDE
@@ -56,7 +57,6 @@
 // FM constants
 #define ADJ_FM_DIM 6
 #define ADJ_FM_INIT_STDDEV 0.01
-#define ADJ_LINEAR_INT16_MAX_ABS 32767
 
 // training constant
 #define ADJ_IGNORE_N_APPEAR 0
@@ -117,17 +117,6 @@ __device__ inline void atomic_add_fp64(double* address, double val) {
         const double next = __longlong_as_double(assumed) + val;
         old = atomicCAS(address_as_ull, assumed, __double_as_longlong(next));
     } while (assumed != old);
-}
-
-inline double clamp_round_linear_int16(double v) {
-    v = std::round(v);
-    if (v > (double)ADJ_LINEAR_INT16_MAX_ABS) {
-        return (double)ADJ_LINEAR_INT16_MAX_ABS;
-    }
-    if (v < (double)-ADJ_LINEAR_INT16_MAX_ABS) {
-        return (double)-ADJ_LINEAR_INT16_MAX_ABS;
-    }
-    return v;
 }
 
 void adj_init_arr(
@@ -379,6 +368,71 @@ __global__ void adj_calculate_val_loss_fm(
     atomic_add_fp64(&device_val_error_monitor_arr[1], fabs(residual_error / ADJ_STEP) / n_val_data);
 }
 
+__global__ void adj_calculate_loss_round_linear_fm(
+    const int change_idx,
+    const int rev_change_idx,
+    const int* device_linear_arr_roundup,
+    const int* device_linear_arr_rounddown,
+    const bool* device_round_arr,
+    const double* device_factor_arr,
+    const int n_data,
+    const int* device_start_idx_arr,
+    const Adj_Data* device_train_data,
+    double* device_error_monitor_arr) {
+    const int data_idx = blockIdx.x * blockDim.x + threadIdx.x;
+    if (data_idx >= n_data) {
+        return;
+    }
+
+    int idx_arr[ADJ_N_FEATURES];
+    double x_arr[ADJ_N_FEATURES];
+    int used_n = 0;
+    double predicted_value = 0.0;
+
+    for (int i = 0; i < ADJ_N_FEATURES; ++i) {
+        int idx;
+        double x_val;
+        if (!get_feature_index_and_value(device_train_data[data_idx], device_start_idx_arr, i, idx, x_val)) {
+            continue;
+        }
+        idx_arr[used_n] = idx;
+        x_arr[used_n] = x_val;
+        ++used_n;
+
+        bool round_down = device_round_arr[idx];
+        if (idx == change_idx || idx == rev_change_idx) {
+            round_down = !round_down;
+        }
+        const int linear_i = round_down ? device_linear_arr_rounddown[idx] : device_linear_arr_roundup[idx];
+        predicted_value += (double)linear_i * x_val;
+    }
+
+    for (int f = 0; f < ADJ_FM_DIM; ++f) {
+        double sum_vx = 0.0;
+        double sum_vx2 = 0.0;
+        for (int i = 0; i < used_n; ++i) {
+            const double vx = device_factor_arr[idx_arr[i] * ADJ_FM_DIM + f] * x_arr[i];
+            sum_vx += vx;
+            sum_vx2 += vx * vx;
+        }
+        predicted_value += 0.5 * (sum_vx * sum_vx - sum_vx2);
+    }
+
+    predicted_value += predicted_value >= 0.0 ? ADJ_STEP_2 : -ADJ_STEP_2;
+    predicted_value /= ADJ_STEP;
+#if ROUND_USE_CLIP
+    if (predicted_value > HW2) {
+        predicted_value = HW2;
+    } else if (predicted_value < -HW2) {
+        predicted_value = -HW2;
+    }
+#endif
+
+    const double residual_error = device_train_data[data_idx].score / ADJ_STEP - predicted_value;
+    atomic_add_fp64(&device_error_monitor_arr[0], residual_error * residual_error / n_data);
+    atomic_add_fp64(&device_error_monitor_arr[1], fabs(residual_error) / n_data);
+}
+
 __global__ void adam_factor(
     const int phase,
     const int eval_size,
@@ -435,14 +489,6 @@ __global__ void adam_linear(
         device_m_linear_arr[eval_idx] += (1.0 - beta1) * (grad - device_m_linear_arr[eval_idx]);
         device_v_linear_arr[eval_idx] += (1.0 - beta2) * (grad * grad - device_v_linear_arr[eval_idx]);
         device_linear_arr[eval_idx] += lrt * device_m_linear_arr[eval_idx] / (sqrt(device_v_linear_arr[eval_idx]) + epsilon);
-        // Keep linear term on int16 grid during optimization (same intent as non-FM rounded optimizer).
-        device_linear_arr[eval_idx] = nearbyint(device_linear_arr[eval_idx]);
-        if (device_linear_arr[eval_idx] > (double)ADJ_LINEAR_INT16_MAX_ABS) {
-            device_linear_arr[eval_idx] = (double)ADJ_LINEAR_INT16_MAX_ABS;
-        }
-        if (device_linear_arr[eval_idx] < (double)-ADJ_LINEAR_INT16_MAX_ABS) {
-            device_linear_arr[eval_idx] = (double)-ADJ_LINEAR_INT16_MAX_ABS;
-        }
     }
     device_residual_linear_arr[eval_idx] = 0.0;
 }
@@ -461,7 +507,13 @@ void adj_output_param_fm(
     ofs.setf(std::ios::fixed);
     ofs.precision(10);
     for (int i = 0; i < eval_size; ++i) {
-        ofs << host_linear_arr[i] << '\n';
+        int linear_i = (int)std::llround(host_linear_arr[i]);
+        if (linear_i > 32767) {
+            linear_i = 32767;
+        } else if (linear_i < -32767) {
+            linear_i = -32767;
+        }
+        ofs << linear_i << '\n';
     }
     for (int i = 0; i < eval_size * ADJ_FM_DIM; ++i) {
         ofs << host_factor_arr[i] << '\n';
@@ -542,9 +594,6 @@ int main(int argc, char* argv[]) {
 
     adj_init_arr(eval_size, host_linear_arr, host_factor_arr, host_rev_idx_arr, host_n_appear_arr);
     adj_import_eval_fm(in_file, eval_size, host_linear_arr, host_factor_arr);
-    for (int i = 0; i < eval_size; ++i) {
-        host_linear_arr[i] = clamp_round_linear_int16(host_linear_arr[i]);
-    }
 
     double score_avg = 0.0;
     const int n_all_data = adj_import_data(n_train_data_file, train_files, host_train_data, &score_avg);
@@ -781,9 +830,139 @@ int main(int argc, char* argv[]) {
 
     CUDA_CHECK(cudaMemcpy(host_linear_arr, device_linear_arr, sizeof(double) * eval_size, cudaMemcpyDeviceToHost));
     CUDA_CHECK(cudaMemcpy(host_factor_arr, device_factor_arr, sizeof(double) * fm_size, cudaMemcpyDeviceToHost));
-    for (int i = 0; i < eval_size; ++i) {
-        host_linear_arr[i] = clamp_round_linear_int16(host_linear_arr[i]);
+
+    int* host_linear_arr_roundup = (int*)malloc(sizeof(int) * eval_size);
+    int* host_linear_arr_rounddown = (int*)malloc(sizeof(int) * eval_size);
+    bool* host_round_arr = (bool*)malloc(sizeof(bool) * eval_size);
+    if (host_linear_arr_roundup == nullptr || host_linear_arr_rounddown == nullptr || host_round_arr == nullptr) {
+        std::cerr << "cannot allocate memory for rounding" << std::endl;
+        return 1;
     }
+
+    int n_roundup = 0;
+    int n_rounddown = 0;
+    for (int i = 0; i < eval_size; ++i) {
+        int roundup = (int)std::ceil(host_linear_arr[i]);
+        int rounddown = (int)std::floor(host_linear_arr[i]);
+        if (roundup > 32767) {
+            roundup = 32767;
+        }
+        if (roundup < -32767) {
+            roundup = -32767;
+        }
+        if (rounddown > 32767) {
+            rounddown = 32767;
+        }
+        if (rounddown < -32767) {
+            rounddown = -32767;
+        }
+        host_linear_arr_roundup[i] = roundup;
+        host_linear_arr_rounddown[i] = rounddown;
+        host_round_arr[i] = ((int)std::llround(host_linear_arr[i]) == rounddown); // false: round-up, true: round-down
+        if (roundup != rounddown) {
+            if (!host_round_arr[i]) {
+                ++n_roundup;
+            } else {
+                ++n_rounddown;
+            }
+        }
+    }
+    std::cerr << "linear init round-up " << n_roundup << " round-down " << n_rounddown << std::endl;
+
+    int* device_linear_arr_roundup;
+    int* device_linear_arr_rounddown;
+    bool* device_round_arr;
+    CUDA_CHECK(cudaMalloc(&device_linear_arr_roundup, sizeof(int) * eval_size));
+    CUDA_CHECK(cudaMalloc(&device_linear_arr_rounddown, sizeof(int) * eval_size));
+    CUDA_CHECK(cudaMalloc(&device_round_arr, sizeof(bool) * eval_size));
+    CUDA_CHECK(cudaMemcpy(device_linear_arr_roundup, host_linear_arr_roundup, sizeof(int) * eval_size, cudaMemcpyHostToDevice));
+    CUDA_CHECK(cudaMemcpy(device_linear_arr_rounddown, host_linear_arr_rounddown, sizeof(int) * eval_size, cudaMemcpyHostToDevice));
+    CUDA_CHECK(cudaMemcpy(device_round_arr, host_round_arr, sizeof(bool) * eval_size, cudaMemcpyHostToDevice));
+
+    CUDA_CHECK(cudaMemset(device_error_monitor_arr, 0, sizeof(double) * N_ERROR_MONITOR));
+    adj_calculate_loss_round_linear_fm<<<n_blocks_residual, N_THREADS_PER_BLOCK_RESIDUAL>>>(
+        -1,
+        -1,
+        device_linear_arr_roundup,
+        device_linear_arr_rounddown,
+        device_round_arr,
+        device_factor_arr,
+        n_train_data,
+        device_start_idx_arr,
+        device_train_data,
+        device_error_monitor_arr);
+    CUDA_CHECK_LAUNCH();
+    CUDA_CHECK(cudaMemcpy(host_error_monitor_arr, device_error_monitor_arr, sizeof(double) * N_ERROR_MONITOR, cudaMemcpyDeviceToHost));
+
+    double min_mse = host_error_monitor_arr[0];
+    double min_mae = host_error_monitor_arr[1];
+    std::cerr << "before linear rounding MSE " << min_mse << " MAE " << min_mae << std::endl;
+
+    std::uniform_int_distribution<int> randint_eval(0, eval_size - 1);
+    uint64_t round_n_loop = 0;
+    uint64_t round_n_updated = 0;
+    uint64_t round_n_improve = 0;
+    const uint64_t round_strt = tim();
+    const uint64_t round_tl = 60000;
+    while (tim() - round_strt < round_tl && ((round_n_loop < 100) || ((double)round_n_improve * 100.0 / (double)round_n_loop > 0.01))) {
+        const int change_idx = randint_eval(engine);
+        if (host_linear_arr_roundup[change_idx] == host_linear_arr_rounddown[change_idx]) {
+            continue;
+        }
+        const int rev_change_idx = host_rev_idx_arr[change_idx];
+        CUDA_CHECK(cudaMemset(device_error_monitor_arr, 0, sizeof(double) * N_ERROR_MONITOR));
+        adj_calculate_loss_round_linear_fm<<<n_blocks_residual, N_THREADS_PER_BLOCK_RESIDUAL>>>(
+            change_idx,
+            rev_change_idx,
+            device_linear_arr_roundup,
+            device_linear_arr_rounddown,
+            device_round_arr,
+            device_factor_arr,
+            n_train_data,
+            device_start_idx_arr,
+            device_train_data,
+            device_error_monitor_arr);
+        CUDA_CHECK_LAUNCH();
+        CUDA_CHECK(cudaMemcpy(host_error_monitor_arr, device_error_monitor_arr, sizeof(double) * N_ERROR_MONITOR, cudaMemcpyDeviceToHost));
+        if (host_error_monitor_arr[0] <= min_mse) {
+            ++round_n_updated;
+            if (host_error_monitor_arr[0] < min_mse) {
+                ++round_n_improve;
+            }
+            min_mse = host_error_monitor_arr[0];
+            min_mae = host_error_monitor_arr[1];
+            host_round_arr[change_idx] = !host_round_arr[change_idx];
+            if (change_idx != rev_change_idx) {
+                host_round_arr[rev_change_idx] = !host_round_arr[rev_change_idx];
+            }
+            CUDA_CHECK(cudaMemcpy(device_round_arr, host_round_arr, sizeof(bool) * eval_size, cudaMemcpyHostToDevice));
+        }
+        ++round_n_loop;
+        const int percent = (int)((tim() - round_strt) * 100 / round_tl);
+        std::cerr << "\rlinear rounding " << percent << "%"
+                  << " n_loop " << round_n_loop
+                  << " n_updated " << round_n_updated
+                  << " n_improve " << round_n_improve
+                  << " MSE " << min_mse
+                  << " MAE " << min_mae
+                  << "                        ";
+    }
+    std::cerr << std::endl;
+
+    n_roundup = 0;
+    n_rounddown = 0;
+    for (int i = 0; i < eval_size; ++i) {
+        host_linear_arr[i] = host_round_arr[i] ? (double)host_linear_arr_rounddown[i] : (double)host_linear_arr_roundup[i];
+        if (host_linear_arr_roundup[i] != host_linear_arr_rounddown[i]) {
+            if (!host_round_arr[i]) {
+                ++n_roundup;
+            } else {
+                ++n_rounddown;
+            }
+        }
+    }
+    std::cerr << "linear final round-up " << n_roundup << " round-down " << n_rounddown << std::endl;
+
     CUDA_CHECK(cudaMemcpy(device_linear_arr, host_linear_arr, sizeof(double) * eval_size, cudaMemcpyHostToDevice));
 
     CUDA_CHECK(cudaMemset(device_error_monitor_arr, 0, sizeof(double) * N_ERROR_MONITOR));
