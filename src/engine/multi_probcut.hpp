@@ -35,7 +35,8 @@ constexpr double probcut_c = 1.096319765006055;
 constexpr double probcut_d = -0.8362251801219095;
 constexpr double probcut_e = 4.610017383697701;
 constexpr double probcut_f = 3.818582623595395;
-constexpr double probcut_g = 1.7775013664098447;
+// constexpr double probcut_g = 1.7775013664098447;
+constexpr double probcut_g = 2.2775013664098447;
 
 
 #if USE_MPC_PRE_CALCULATION
@@ -74,7 +75,7 @@ int nega_alpha_ordering_nws(Search *search, int alpha, int depth, bool skipped, 
 inline bool mpc(Search* search, int alpha, int beta, int depth, uint64_t legal, const bool is_end_search, int* v, std::vector<bool*> &searchings) {
     int search_depth;
     if (is_end_search) {
-        search_depth = ((depth / 4) & 0b11111110) + (depth & 1); // depth / 3 + parity
+        search_depth = ((depth / 2) & 0b11111110) + (depth & 1); // depth / 3 + parity
     } else {
         search_depth = ((depth / 2) & 0b11111110) + (depth & 1); // depth / 2 + parity
     }
