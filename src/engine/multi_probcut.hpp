@@ -35,9 +35,9 @@ constexpr double probcut_c = 1.096319765006055;
 constexpr double probcut_d = -0.8362251801219095;
 constexpr double probcut_e = 4.610017383697701;
 constexpr double probcut_f = 3.818582623595395;
-// constexpr double probcut_g = 1.7775013664098447;
+constexpr double probcut_g = 1.7775013664098447;
 // constexpr double probcut_g = 2.7775013664098447;
-constexpr double probcut_g = 3.5775013664098447;
+// constexpr double probcut_g = 3.5775013664098447;
 
 
 #if USE_MPC_PRE_CALCULATION
@@ -141,7 +141,7 @@ inline bool mpc(Search* search, int alpha, int beta, int depth, uint64_t legal, 
         //     error_search += 1.5;
         // }
         // int error_0 = std::max(1, error_search - MPC_ERROR0_OFFSET);
-        // search->mpc_level = MPC_100_LEVEL;
+        search->mpc_level = MPC_100_LEVEL;
         // if (d0value >= beta + error_0) {
             int pc_beta = beta + error_search;
             if (pc_beta <= SCORE_MAX) {
@@ -168,7 +168,7 @@ inline bool mpc(Search* search, int alpha, int beta, int depth, uint64_t legal, 
                 }
             }
         // }
-        // search->mpc_level = mpc_level;
+        search->mpc_level = mpc_level;
     }
     return false;
 }
