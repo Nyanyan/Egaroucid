@@ -36,8 +36,6 @@ constexpr double probcut_d = -0.8362251801219095;
 constexpr double probcut_e = 4.610017383697701;
 constexpr double probcut_f = 3.818582623595395;
 constexpr double probcut_g = 1.7775013664098447;
-// constexpr double probcut_g = 2.7775013664098447;
-// constexpr double probcut_g = 3.5775013664098447;
 
 
 #if USE_MPC_PRE_CALCULATION
@@ -81,7 +79,7 @@ inline bool mpc(Search* search, int alpha, int beta, int depth, uint64_t legal, 
         search_depth = ((depth / 2) & 0b11111110) + (depth & 1); // depth / 2 + parity
     }
     // int search_depth = ((depth / 2) & 0b11111110) + (depth & 1); // depth / 3 + parity
-    // int d0value = mid_evaluate_diff(search);
+    int d0value = mid_evaluate_diff(search);
     /*
     if (alpha - MPC_ADD_DEPTH_VALUE_THRESHOLD < d0value && d0value < beta + MPC_ADD_DEPTH_VALUE_THRESHOLD && depth >= 20 && search_depth < depth - 2) {
         search_depth += 2; // if value is near [alpha, beta], increase search_depth
@@ -112,22 +110,19 @@ inline bool mpc(Search* search, int alpha, int beta, int depth, uint64_t legal, 
         double mpct = SELECTIVITY_MPCT[search->mpc_level];
         int error = ceil(mpct * probcut_sigma(search->n_discs, 0, depth));
 #endif
-        if (alpha - error >= -SCORE_MAX && beta + error < SCORE_MAX) {
-            int d0value = mid_evaluate_diff(search);
-            if (d0value >= beta + error) {
-                *v = beta;
-                if (is_end_search) {
-                    *v += beta & 1;
-                }
-                return true;
+        if (d0value >= beta + error) {
+            *v = beta;
+            if (is_end_search) {
+                *v += beta & 1;
             }
-            if (d0value <= alpha - error) {
-                *v = alpha;
-                if (is_end_search) {
-                    *v -= alpha & 1;
-                }
-                return true;
+            return true;
+        }
+        if (d0value <= alpha - error) {
+            *v = alpha;
+            if (is_end_search) {
+                *v -= alpha & 1;
             }
+            return true;
         }
     } else {
         uint_fast8_t mpc_level = search->mpc_level;
@@ -140,9 +135,9 @@ inline bool mpc(Search* search, int alpha, int beta, int depth, uint64_t legal, 
         // if (is_end_search) {
         //     error_search += 1.5;
         // }
-        // int error_0 = std::max(1, error_search - MPC_ERROR0_OFFSET);
+        int error_0 = std::max(1, error_search - MPC_ERROR0_OFFSET);
         search->mpc_level = MPC_100_LEVEL;
-        // if (d0value >= beta + error_0) {
+        if (d0value >= beta + error_0) {
             int pc_beta = beta + error_search;
             if (pc_beta <= SCORE_MAX) {
                 if (nega_alpha_ordering_nws(search, pc_beta - 1, search_depth, false, legal, false, searchings) >= pc_beta) {
@@ -154,8 +149,8 @@ inline bool mpc(Search* search, int alpha, int beta, int depth, uint64_t legal, 
                     return true;
                 }
             }
-        // }
-        // if (d0value <= alpha - error_0) {
+        }
+        if (d0value <= alpha - error_0) {
             int pc_alpha = alpha - error_search;
             if (pc_alpha >= -SCORE_MAX) {
                 if (nega_alpha_ordering_nws(search, pc_alpha, search_depth, false, legal, false, searchings) <= pc_alpha) {
@@ -167,7 +162,7 @@ inline bool mpc(Search* search, int alpha, int beta, int depth, uint64_t legal, 
                     return true;
                 }
             }
-        // }
+        }
         search->mpc_level = mpc_level;
     }
     return false;
