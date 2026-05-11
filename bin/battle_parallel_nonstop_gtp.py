@@ -3,11 +3,15 @@ import random
 import numpy as np
 import sys
 import queue
+import time
 from othello_py import *
 from elo_rating import Elo_player, update_rating, update_rating_draw
 from elo_rating_backcal import fit_elo_from_winrates_with_interval
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import threading
+
+QUIT_TIMEOUT_SEC = 2.0
+KILL_TIMEOUT_SEC = 5.0
 
 LEVEL = int(sys.argv[1])
 N_SET_GAMES = int(sys.argv[2])
@@ -60,13 +64,61 @@ def start_engine(cmd):
     return subprocess.Popen(cmd.split(), stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
 
 
+def close_process(proc, send_quit=True):
+    if proc is None:
+        return
+
+    try:
+        if send_quit and proc.poll() is None and proc.stdin is not None:
+            proc.stdin.write('quit\n'.encode('utf-8'))
+            proc.stdin.flush()
+    except Exception:
+        pass
+
+    if not send_quit:
+        try:
+            if proc.poll() is None:
+                proc.kill()
+        except Exception:
+            pass
+        try:
+            proc.wait(timeout=KILL_TIMEOUT_SEC)
+        except Exception:
+            pass
+        close_process_pipes(proc)
+        return
+
+    try:
+        if proc.poll() is None:
+            proc.wait(timeout=QUIT_TIMEOUT_SEC)
+    except subprocess.TimeoutExpired:
+        try:
+            proc.kill()
+        except Exception:
+            pass
+        try:
+            proc.wait(timeout=KILL_TIMEOUT_SEC)
+        except Exception:
+            pass
+    except Exception:
+        pass
+
+    close_process_pipes(proc)
+
+
+def close_process_pipes(proc):
+    for pipe in (proc.stdin, proc.stdout, proc.stderr):
+        try:
+            if pipe is not None:
+                pipe.close()
+        except Exception:
+            pass
+
+
 def restart_process(player_idx, proc_idx):
     cmd = players[player_idx][CMD_IDX]
     proc = players[player_idx][SUBPROCESS_IDX][proc_idx]
-    try:
-        proc.kill()
-    except Exception:
-        pass
+    close_process(proc, send_quit=False)
     new_proc = start_engine(cmd)
     players[player_idx][SUBPROCESS_IDX][proc_idx] = new_proc
     print('restart', players[player_idx][NAME_IDX], 'proc', proc_idx)
@@ -380,9 +432,11 @@ def print_status(completed, total, target_per_pair):
 
 
 def shutdown_all_processes():
+    all_procs = []
     for i in range(len(players)):
         for j in range(N_TOTAL_PROCESSES):
             proc = players[i][SUBPROCESS_IDX][j]
+            all_procs.append(proc)
             try:
                 if proc.poll() is None and proc.stdin is not None:
                     proc.stdin.write('quit\n'.encode('utf-8'))
@@ -390,13 +444,19 @@ def shutdown_all_processes():
             except Exception:
                 pass
 
-    for i in range(len(players)):
-        for j in range(N_TOTAL_PROCESSES):
-            proc = players[i][SUBPROCESS_IDX][j]
+    time.sleep(QUIT_TIMEOUT_SEC)
+
+    for proc in all_procs:
+        if proc.poll() is None:
             try:
                 proc.kill()
             except Exception:
                 pass
+        try:
+            proc.wait(timeout=KILL_TIMEOUT_SEC)
+        except Exception:
+            pass
+        close_process_pipes(proc)
 
 
 print('n_players', len(players))
