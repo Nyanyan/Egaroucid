@@ -56,6 +56,9 @@
 #define N_ERROR_MONITOR 2 // 0 for MSE, 1 for MAE
 #define N_TEST_ERROR_MONITOR 2 // 0 for MSE, 1 for MAE
 
+// train param
+#define N_APPEAR_MIN_VAL 100
+
 
 struct Adj_Data {
     uint16_t features[ADJ_N_FEATURES];
@@ -547,8 +550,8 @@ int main(int argc, char* argv[]) {
         weight_arr[i] = host_n_appear_arr[i];
     }
     for (int i = 0; i < eval_size; ++i) {
-        host_n_appear_arr[i] = std::min(50, host_n_appear_arr[i]);
-        // host_n_appear_arr[i] = std::max(100, host_n_appear_arr[i]);
+        // host_n_appear_arr[i] = std::min(50, host_n_appear_arr[i]);
+        host_n_appear_arr[i] = std::max(N_APPEAR_MIN_VAL, host_n_appear_arr[i]);
     }
     std::cerr << "train data appearance calculated" << std::endl;
 

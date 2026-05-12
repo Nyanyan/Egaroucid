@@ -9,21 +9,13 @@ hour = '0'
 minute = str(sys.argv[2]) #'7'
 second = '0'
 alpha = str(sys.argv[3]) #'300.0'
-n_patience = '100'
-reduce_lr_patience = '10'
+n_patience = '300'
+reduce_lr_patience = '30'
 reduce_lr_ratio = '0.7'
 
 model_dir = './../../../model/nomodel/'
 
-def reduce_traindata_nums(nums):
-    res = []
-    for num in nums:
-        mn = board_n_moves[str(num)][0]
-        mx = board_n_moves[str(num)][1]
-        phase_int = int(phase)
-        if (mn <= phase_int <= mx and phase_int <= mn + 40) or (num in use_all_depth_data):
-            res.append(num)
-    return res
+
 
 
 '''
@@ -89,6 +81,15 @@ for elem in train_data_nums_all:
 #     train_data_nums = [37, 80] # use only book with phase <= 11
 
 #'''
+def reduce_traindata_nums(nums):
+    res = []
+    for num in nums:
+        mn = board_n_moves[str(num)][0]
+        mx = board_n_moves[str(num)][1]
+        phase_int = int(phase)
+        if (mn <= phase_int <= mx and phase_int <= mn + 40) or (num in use_all_depth_data):
+            res.append(num)
+    return res
 # 7.5
 train_data_nums = [
     # 18, 19, 20, 21, 24, 25, 28, 29, 30, 31] # old data (without records27)
@@ -142,8 +143,9 @@ train_root_dir = os.environ['EGAROUCID_DATA'] + '/train_data/bin_data/20241125_1
 # executable = 'eval_optimizer_cuda_12_2_0_20241125_1_7_5_20260315.exe'
 # executable = 'eval_optimizer_cuda_12_2_0_20241125_1_7_5_20260317.exe' # no clipping while learning
 # executable = 'eval_optimizer_cuda_12_2_0_20241125_1_7_5_20260318.exe' # no clipping while learning, use param max
-executable = 'eval_optimizer_cuda_12_2_0_20241125_1_7_5_20260320.exe' # no clipping while learning, use param max, no warmup
+# executable = 'eval_optimizer_cuda_12_2_0_20241125_1_7_5_20260320.exe' # no clipping while learning, use param max, no warmup
 # executable = 'eval_optimizer_cuda_12_2_0_20241125_1_7_5_20260321.exe' # with clipping while learning, use param max, no warmup
+executable = 'eval_optimizer_cuda_12_2_0_0_20241125_1_7_5_20260508_N_APPEAR_MIN_VAL.exe'
 
 #'''
 
