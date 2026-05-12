@@ -550,8 +550,8 @@ int main(int argc, char* argv[]) {
         weight_arr[i] = host_n_appear_arr[i];
     }
     for (int i = 0; i < eval_size; ++i) {
-        // host_n_appear_arr[i] = std::min(50, host_n_appear_arr[i]);
-        host_n_appear_arr[i] = std::max(N_APPEAR_MIN_VAL, host_n_appear_arr[i]);
+        host_n_appear_arr[i] = std::min(50, host_n_appear_arr[i]);
+        // host_n_appear_arr[i] = std::max(N_APPEAR_MIN_VAL, host_n_appear_arr[i]);
     }
     std::cerr << "train data appearance calculated" << std::endl;
 
