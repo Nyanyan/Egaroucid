@@ -18,6 +18,10 @@ N_SET_GAMES = int(sys.argv[2])
 N_THREADS = 1
 N_PARALLEL_MATCHES = int(sys.argv[3]) if len(sys.argv) >= 4 else 20
 N_TOTAL_PROCESSES = int(sys.argv[4]) if len(sys.argv) >= 5 else 16
+
+# N_PARALLEL_MATCHES = int(sys.argv[3]) if len(sys.argv) >= 4 else 10
+# N_TOTAL_PROCESSES = int(sys.argv[4]) if len(sys.argv) >= 5 else 8
+
 STATUS_EVERY = int(sys.argv[5]) if len(sys.argv) >= 6 else 10
 
 if N_TOTAL_PROCESSES < 2 or N_TOTAL_PROCESSES % 2 != 0:
@@ -40,6 +44,7 @@ random.shuffle(openings)
 
 # name, cmd
 player_info = [
+    # ['latest',  'Egaroucid_for_Console.exe -gtp -quiet -nobook'],
     ['beta', 'versions/Egaroucid_for_Console_beta/Egaroucid_for_Console.exe -gtp -quiet -nobook'],
     ['7.8.0', 'versions/Egaroucid_for_Console_7_8_0_Windows_SIMD/Egaroucid_for_Console_7_8_0_SIMD.exe -gtp -quiet -nobook'],
     ['7.6.0', 'versions/Egaroucid_for_Console_7_6_0_Windows_SIMD/Egaroucid_for_Console_7_6_0_SIMD.exe -gtp -quiet -nobook'],
