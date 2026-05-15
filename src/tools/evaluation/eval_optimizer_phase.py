@@ -10,7 +10,7 @@ minute = str(sys.argv[2]) #'7'
 second = '0'
 alpha = str(sys.argv[3]) #'300.0'
 n_patience = '100' # '300'
-reduce_lr_patience = '50' #'10' # '30'
+reduce_lr_patience = '10000' #'10' # '30'
 reduce_lr_ratio = '0.8'
 
 model_dir = './../../../model/nomodel/'
