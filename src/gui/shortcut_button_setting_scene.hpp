@@ -113,10 +113,13 @@ private:
         int sy = SHORTCUT_SETTINGS_LIST_SY;
         int strt_idx_int = function_scroll_manager.get_strt_idx_int();
         draw_shortcut_settings_scroll_head(getData().fonts, getData().colors, strt_idx_int, sy);
+        Rect selected_rect;
+        bool selected_rect_found = false;
         for (int i = strt_idx_int; i < std::min((int)shortcut_keys.shortcut_keys.size(), strt_idx_int + SHORTCUT_BUTTON_SETTINGS_N_FUNCTIONS_ON_WINDOW); ++i) {
             Rect rect = draw_shortcut_settings_row_background(getData().colors, i, sy);
             if (selected_function_idx == i) {
-                rect.drawFrame(4.0, getData().colors.cyan);
+                selected_rect = rect;
+                selected_rect_found = true;
             }
             String function_description = get_shortcut_function_description(shortcut_keys.shortcut_keys[i].name);
             getData().fonts.font(function_description).draw(12, Arg::leftCenter(rect.x + 10, sy + rect.h / 2), getData().colors.white);
@@ -124,6 +127,9 @@ private:
                 selected_function_idx = i;
             }
             sy += rect.h;
+        }
+        if (selected_rect_found) {
+            selected_rect.drawFrame(4.0, getData().colors.cyan);
         }
         draw_shortcut_settings_scroll_tail(getData().fonts, getData().colors, strt_idx_int + SHORTCUT_BUTTON_SETTINGS_N_FUNCTIONS_ON_WINDOW, (int)shortcut_keys.shortcut_keys.size(), sy);
 
