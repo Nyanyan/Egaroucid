@@ -67,6 +67,8 @@ public:
         new_folder_area.text.clear();
         new_folder_area.cursorPos = 0;
         new_folder_area.rebuildGlyphs();
+        new_folder_area.active = false;
+        gui_list::discard_pending_text_input();
     }
 
     void update() override {
@@ -74,6 +76,10 @@ public:
             changeScene(U"Close", SCENE_FADE_TIME);
         }
         Scene::SetBackground(getData().colors.green);
+
+        if (!new_folder_area.active) {
+            gui_list::discard_pending_text_input();
+        }
 
         // Title
         getData().fonts.font(language.get("in_out", "save_subfolder")).draw(25, Arg::center(X_CENTER, 30), getData().colors.white);

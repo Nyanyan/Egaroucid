@@ -130,6 +130,10 @@ public:
                 changeScene(U"Close", SCENE_FADE_TIME);
             }
             getData().fonts.font(language.get("opening_setting", "opening_setting")).draw(25, Arg::center(X_CENTER, 30), getData().colors.white);
+
+            if (!(creating_csv || adding_elem || editing_elem || renaming_folder)) {
+                gui_list::discard_pending_text_input();
+            }
             
             // Current path label
             String path_label = U"forced_openings/";

@@ -317,6 +317,12 @@ inline void sanitize_text_area(TextAreaEditState& area) {
     }
 }
 
+inline void discard_pending_text_input() {
+    // Drain IME/text input events so they do not leak into later TextArea activation.
+    String discarded;
+    TextInput::UpdateText(discarded);
+}
+
 inline String normalize_directory_base(const String& base_dir) {
     if (base_dir.isEmpty()) {
         return base_dir;
