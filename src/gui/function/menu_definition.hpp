@@ -56,8 +56,6 @@ Menu create_menu(Menu_elements* menu_elements, Resources *resources, Font font, 
         menu_e.init_button(language.get("settings", "profile", "profile"), &menu_elements->dummy);
             side_menu.init_button(language.get("settings", "profile", "load"), &menu_elements->ai_profile_load);
             menu_e.push(side_menu);
-            side_menu.init_button(language.get("settings", "profile", "new_save"), &menu_elements->ai_profile_save);
-            menu_e.push(side_menu);
         title.push(menu_e);
         menu_e.init_check(language.get("ai_settings", "use_book") + get_shortcut_key_info(U"use_book"), &menu_elements->use_book, menu_elements->use_book);
         title.push(menu_e);

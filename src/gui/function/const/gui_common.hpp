@@ -854,6 +854,18 @@ struct Save_location_picker_info {
     }
 };
 
+struct AI_profile_editor_info {
+    bool rename_mode{ false };
+    std::string target_file_name;
+    String initial_name;
+
+    void init() {
+        rename_mode = false;
+        target_file_name.clear();
+        initial_name.clear();
+    }
+};
+
 struct Book_information {
     bool changed{ false };
     uint_fast8_t changing{ BOOK_CHANGE_NO_CELL };
@@ -998,6 +1010,7 @@ struct Common_resources {
     Game_information game_information;
     Game_editor_info game_editor_info;
     Save_location_picker_info save_location_picker_info;
+    AI_profile_editor_info ai_profile_editor_info;
     Book_information book_information;
     User_settings user_settings;
     Forced_openings forced_openings;
