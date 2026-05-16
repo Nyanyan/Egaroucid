@@ -50,7 +50,7 @@ public:
             changeScene(U"Close", SCENE_FADE_TIME);
         }
 
-        getData().fonts.font(language.get("settings", "profile", "load")).draw(25, Arg::topCenter(X_CENTER, 10), getData().colors.white);
+        getData().fonts.font(language.get("settings", "profile", "profile") + U" " + language.get("settings", "profile", "load")).draw(25, Arg::topCenter(X_CENTER, 10), getData().colors.white);
         getData().fonts.font(language.get("settings", "profile", "double_click_to_load")).draw(14, Arg::topCenter(X_CENTER, 45), getData().colors.white);
 
         draw_profile_list();
@@ -200,7 +200,7 @@ public:
             changeScene(U"Close", SCENE_FADE_TIME);
         }
 
-        getData().fonts.font(language.get("settings", "profile", "new_save")).draw(25, Arg::topCenter(X_CENTER, 10), getData().colors.white);
+        getData().fonts.font(language.get("settings", "profile", "profile") + U" " + language.get("settings", "profile", "new_save")).draw(25, Arg::topCenter(X_CENTER, 10), getData().colors.white);
         getData().fonts.font(language.get("settings", "profile", "name")).draw(18, Arg::leftCenter(100, 130), getData().colors.white);
         SimpleGUI::TextArea(name_area, Vec2{ 100, 150 }, SizeF{ 600, 36 }, SimpleGUI::PreferredTextAreaMaxChars);
 
