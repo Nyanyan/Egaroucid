@@ -81,15 +81,26 @@ for elem in train_data_nums_all:
 #     train_data_nums = [37, 80] # use only book with phase <= 11
 
 #'''
+# def reduce_traindata_nums(nums):
+#     res = []
+#     for num in nums:
+#         mn = board_n_moves[str(num)][0]
+#         mx = board_n_moves[str(num)][1]
+#         phase_int = int(phase)
+#         if (mn <= phase_int <= mx and phase_int <= mn + 40) or (num in use_all_depth_data): # ランダム打ちから40手までのデータに制限
+#             res.append(num)
+#     return res
+
 def reduce_traindata_nums(nums):
     res = []
     for num in nums:
         mn = board_n_moves[str(num)][0]
         mx = board_n_moves[str(num)][1]
         phase_int = int(phase)
-        if (mn <= phase_int <= mx and phase_int <= mn + 40) or (num in use_all_depth_data):
+        if (mn + 4 <= phase_int <= mx) or (num in use_all_depth_data) or (phase_int <= 12 + 4): # ランダム打ちから4手以上打ったデータのみ使う (phase 16以前は確保できるデータ数が少ないので全部使う)
             res.append(num)
     return res
+
 # 7.5
 train_data_nums = [
     # 18, 19, 20, 21, 24, 25, 28, 29, 30, 31] # old data (without records27)
