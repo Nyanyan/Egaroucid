@@ -82,7 +82,7 @@ constexpr int BOARD_SX = LEFT_LEFT + BOARD_COORD_SIZE;
 constexpr int BOARD_CELL_SIZE = BOARD_SIZE / HW;
 
 // main scene start game button constants
-constexpr int START_GAME_BUTTON_SX = 700;
+constexpr int START_GAME_BUTTON_SX = 550;
 constexpr int START_GAME_BUTTON_SY = 11;
 constexpr int START_GAME_BUTTON_WIDTH = 90;
 constexpr int START_GAME_BUTTON_HEIGHT = 30;
@@ -96,10 +96,10 @@ constexpr int PASS_BUTTON_HEIGHT = 30;
 constexpr int PASS_BUTTON_RADIUS = 10;
 
 // main scene shortcut button grid constants
-constexpr int SHORTCUT_BUTTON_GRID_AREA_SX = 600;
+constexpr int SHORTCUT_BUTTON_GRID_AREA_SX = 700;
 constexpr int SHORTCUT_BUTTON_GRID_AREA_SY = 5;
 constexpr int SHORTCUT_BUTTON_GRID_AREA_WIDTH = 100;
-constexpr int SHORTCUT_BUTTON_GRID_AREA_HEIGHT = 45;
+constexpr int SHORTCUT_BUTTON_GRID_AREA_HEIGHT = 35;
 constexpr int SHORTCUT_BUTTON_GRID_COLS = 3;
 constexpr int SHORTCUT_BUTTON_GRID_ROWS = 2;
 constexpr int SHORTCUT_BUTTON_GRID_COUNT = SHORTCUT_BUTTON_GRID_COLS * SHORTCUT_BUTTON_GRID_ROWS;

@@ -649,18 +649,25 @@ private:
             int x = SHORTCUT_BUTTON_GRID_ORIGIN_SX + (i % SHORTCUT_BUTTON_GRID_COLS) * (SHORTCUT_BUTTON_GRID_BUTTON_SIZE + SHORTCUT_BUTTON_GRID_GAP_X);
             int y = SHORTCUT_BUTTON_GRID_ORIGIN_SY + (i / SHORTCUT_BUTTON_GRID_COLS) * (SHORTCUT_BUTTON_GRID_BUTTON_SIZE + SHORTCUT_BUTTON_GRID_GAP_Y);
             shortcut_buttons_grid[i].move(x, y);
-            if (getData().menu.active()) {
-                shortcut_buttons_grid[i].disable_notransparent();
+            String function_name = shortcut_buttons.get_function(i);
+            bool assigned = function_name != U"";
+            if (assigned) {
+                shortcut_buttons_grid[i].button_color = getData().colors.white;
+                shortcut_buttons_grid[i].font_color = getData().colors.black;
+                if (getData().menu.active()) {
+                    shortcut_buttons_grid[i].disable_notransparent();
+                } else {
+                    shortcut_buttons_grid[i].enable();
+                }
             } else {
-                shortcut_buttons_grid[i].enable();
+                shortcut_buttons_grid[i].button_color = getData().colors.dark_gray;
+                shortcut_buttons_grid[i].font_color = getData().colors.white;
+                shortcut_buttons_grid[i].disable_notransparent();
             }
             shortcut_buttons_grid[i].draw();
-            if (allow_trigger && !getData().menu.active() && shortcut_buttons_grid[i].clicked()) {
-                String function_name = shortcut_buttons.get_function(i);
-                if (function_name != U"") {
-                    shortcut_key = function_name;
-                    shortcut_key_pressed = function_name;
-                }
+            if (allow_trigger && assigned && !getData().menu.active() && shortcut_buttons_grid[i].clicked()) {
+                shortcut_key = function_name;
+                shortcut_key_pressed = function_name;
             }
         }
     }

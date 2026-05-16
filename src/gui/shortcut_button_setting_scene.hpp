@@ -19,7 +19,6 @@ constexpr int SHORTCUT_BUTTON_SETTINGS_IDX_NOT_CHANGING = -1;
 
 class Shortcut_button_setting : public App::Scene {
 private:
-    Button default_button;
     Button ok_button;
     std::vector<Button> change_buttons;
     std::vector<Button> delete_buttons;
@@ -33,8 +32,7 @@ public:
     Shortcut_button_setting(const InitData& init) : IScene{ init } {
         changing_button_idx = SHORTCUT_BUTTON_SETTINGS_IDX_NOT_CHANGING;
         selected_function_idx = -1;
-        default_button.init(GO_BACK_BUTTON_BACK_SX, GO_BACK_BUTTON_SY, GO_BACK_BUTTON_WIDTH, GO_BACK_BUTTON_HEIGHT, GO_BACK_BUTTON_RADIUS, language.get("common", "use_default"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
-        ok_button.init(GO_BACK_BUTTON_GO_SX, GO_BACK_BUTTON_SY, GO_BACK_BUTTON_WIDTH, GO_BACK_BUTTON_HEIGHT, GO_BACK_BUTTON_RADIUS, language.get("common", "ok"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
+        ok_button.init(BACK_BUTTON_SX, BACK_BUTTON_SY, BACK_BUTTON_WIDTH, BACK_BUTTON_HEIGHT, BACK_BUTTON_RADIUS, language.get("common", "ok"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
         for (int i = 0; i < SHORTCUT_BUTTON_COUNT; ++i) {
             Button change_button;
             change_button.init(0, 0, 80, 22, 7, language.get("settings", "shortcut_keys", "change"), 12, getData().fonts.font, getData().colors.white, getData().colors.black);
@@ -43,7 +41,7 @@ public:
             delete_button.init(0, 0, 80, 22, 7, language.get("settings", "shortcut_keys", "delete"), 12, getData().fonts.font, getData().colors.white, getData().colors.black);
             delete_buttons.emplace_back(delete_button);
         }
-        assign_button.init(680, 440, 80, 22, 7, language.get("settings", "shortcut_keys", "assign"), 12, getData().fonts.font, getData().colors.white, getData().colors.black);
+        assign_button.init(630, 430, 130, 34, 9, language.get("settings", "shortcut_keys", "assign"), 16, getData().fonts.font, getData().colors.white, getData().colors.black);
         function_scroll_manager.init(770, SHORTCUT_SETTINGS_LIST_SY, 10, 300, 20, (int)shortcut_keys.shortcut_keys.size(), SHORTCUT_BUTTON_SETTINGS_N_FUNCTIONS_ON_WINDOW, SHORTCUT_SETTINGS_LIST_SX, SHORTCUT_SETTINGS_LIST_SY, SHORTCUT_SETTINGS_LIST_WIDTH + 10, 300);
     }
 
@@ -60,10 +58,6 @@ public:
             if (ok_button.clicked() || KeyEnter.down()) {
                 getData().graph_resources.need_init = false;
                 changeScene(U"Main_scene", SCENE_FADE_TIME);
-            }
-            default_button.draw();
-            if (default_button.clicked()) {
-                shortcut_buttons.set_default();
             }
         } else {
             draw_function_selection_rows();
@@ -122,7 +116,7 @@ private:
         for (int i = strt_idx_int; i < std::min((int)shortcut_keys.shortcut_keys.size(), strt_idx_int + SHORTCUT_BUTTON_SETTINGS_N_FUNCTIONS_ON_WINDOW); ++i) {
             Rect rect = draw_shortcut_settings_row_background(getData().colors, i, sy);
             if (selected_function_idx == i) {
-                rect.drawFrame(2.0, getData().colors.cyan);
+                rect.drawFrame(4.0, getData().colors.cyan);
             }
             String function_description = get_shortcut_function_description(shortcut_keys.shortcut_keys[i].name);
             getData().fonts.font(function_description).draw(12, Arg::leftCenter(rect.x + 10, sy + rect.h / 2), getData().colors.white);
@@ -139,9 +133,9 @@ private:
         bool has_valid_selection = false;
         if (selected_function_idx != -1) {
             assign_button.enable();
-            message = language.get("settings", "shortcut_buttons", "changing_message");
             selected_function_name = shortcut_keys.shortcut_keys[selected_function_idx].name;
             has_valid_selection = true;
+            message = get_shortcut_function_description(selected_function_name);
             int duplicate_button_idx = shortcut_buttons.find_assigned_button(selected_function_name, changing_button_idx);
             if (duplicate_button_idx != -1) {
                 assign_button.disable();
