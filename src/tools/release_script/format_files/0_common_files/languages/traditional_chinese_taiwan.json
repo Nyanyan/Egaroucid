@@ -62,6 +62,20 @@
             "choose_function_message": "請選擇要指派的功能 (Esc 返回)",
             "changing_message": "指派所選功能",
             "function_duplicate_message": "此功能已指派給以下按鈕:"
+        },
+        "profile": {
+            "profile": "設定檔",
+            "load": "讀取",
+            "new_save": "新規儲存",
+            "save": "儲存",
+            "name": "設定檔名稱",
+            "name_required": "請先輸入名稱",
+            "saved": "已儲存",
+            "save_failed": "儲存失敗",
+            "load_failed": "讀取失敗",
+            "no_profile": "沒有可用設定檔",
+            "double_click_to_load": "雙擊即可讀取",
+            "current": "目前"
         }
     },
     "ai_settings": {

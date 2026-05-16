@@ -16,6 +16,7 @@
 #include "graph.hpp"
 #include "input.hpp"
 #include "language.hpp"
+#include "ai_profile.hpp"
 #include "menu.hpp"
 #include "menu_definition.hpp"
 #include "opening_manager.hpp"

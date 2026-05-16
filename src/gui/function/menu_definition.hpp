@@ -81,6 +81,12 @@ Menu create_menu(Menu_elements* menu_elements, Resources *resources, Font font, 
             side_menu.init_button(language.get("settings", "play", "opening_setting") + get_shortcut_key_info(U"opening_setting"), &menu_elements->opening_setting);
             menu_e.push(side_menu);
         title.push(menu_e);
+        menu_e.init_button(language.get("settings", "profile", "profile"), &menu_elements->dummy);
+            side_menu.init_button(language.get("settings", "profile", "load"), &menu_elements->ai_profile_load);
+            menu_e.push(side_menu);
+            side_menu.init_button(language.get("settings", "profile", "new_save"), &menu_elements->ai_profile_save);
+            menu_e.push(side_menu);
+        title.push(menu_e);
         menu_e.init_button(language.get("settings", "shortcut_keys", "settings") + get_shortcut_key_info(U"shortcut_key_setting"), &menu_elements->shortcut_key_setting);
         title.push(menu_e);
         menu_e.init_button(language.get("settings", "shortcut_buttons", "settings") + get_shortcut_key_info(U"shortcut_button_setting"), &menu_elements->shortcut_button_setting);

@@ -62,6 +62,20 @@
             "choose_function_message": "请选择要分配的功能 (Esc 返回)",
             "changing_message": "分配所选功能",
             "function_duplicate_message": "该功能已分配给以下按钮:"
+        },
+        "profile": {
+            "profile": "配置方案",
+            "load": "读取",
+            "new_save": "新建保存",
+            "save": "保存",
+            "name": "配置名称",
+            "name_required": "请先输入名称",
+            "saved": "已保存",
+            "save_failed": "保存失败",
+            "load_failed": "读取失败",
+            "no_profile": "没有可用配置",
+            "double_click_to_load": "双击即可读取",
+            "current": "当前"
         }
     },
     "ai_settings": {

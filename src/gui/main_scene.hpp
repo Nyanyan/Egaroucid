@@ -625,6 +625,20 @@ private:
             changeScene(U"Opening_setting", SCENE_FADE_TIME);
             return;
         }
+        if (getData().menu_elements.ai_profile_load) {
+            changing_scene = true;
+            stop_calculating();
+            resume_calculating();
+            changeScene(U"AI_profile_load", SCENE_FADE_TIME);
+            return;
+        }
+        if (getData().menu_elements.ai_profile_save) {
+            changing_scene = true;
+            stop_calculating();
+            resume_calculating();
+            changeScene(U"AI_profile_save", SCENE_FADE_TIME);
+            return;
+        }
         if (getData().menu_elements.shortcut_key_setting || shortcut_key == U"shortcut_key_setting") {
             changing_scene = true;
             stop_calculating();

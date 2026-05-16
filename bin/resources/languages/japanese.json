@@ -62,6 +62,20 @@
             "choose_function_message": "割り当てる機能を選んでください (Escで戻る)",
             "changing_message": "選択した機能を割り当て",
             "function_duplicate_message": "この機能はすでに次のボタンに割り当て済みです:"
+        },
+        "profile": {
+            "profile": "プロファイル",
+            "load": "読み込み",
+            "new_save": "新規保存",
+            "save": "保存",
+            "name": "プロファイル名",
+            "name_required": "名前をつけてください",
+            "saved": "保存しました",
+            "save_failed": "保存に失敗しました",
+            "load_failed": "読み込みに失敗しました",
+            "no_profile": "プロファイルがありません",
+            "double_click_to_load": "ダブルクリックで読み込み",
+            "current": "現在"
         }
     },
     "ai_settings": {

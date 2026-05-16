@@ -447,6 +447,8 @@ struct Settings {
     bool hint_colorize;
     bool play_ordering_board_format;
     bool play_ordering_transcript_format;
+    std::string ai_profile_file;
+    std::string ai_profile_name;
 };
 
 struct Fonts {
@@ -530,6 +532,8 @@ struct Menu_elements {
     bool pause_when_pass;
     bool force_specified_openings;
     bool opening_setting;
+    bool ai_profile_load;
+    bool ai_profile_save;
     bool shortcut_key_setting;
     bool shortcut_button_setting;
 
@@ -662,6 +666,8 @@ struct Menu_elements {
         pause_when_pass = settings->pause_when_pass;
         force_specified_openings = settings->force_specified_openings;
         opening_setting = false;
+        ai_profile_load = false;
+        ai_profile_save = false;
         shortcut_key_setting = false;
         shortcut_button_setting = false;
 

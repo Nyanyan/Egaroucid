@@ -14,6 +14,7 @@
 #include "board_image.hpp"
 #include "book_scene.hpp"
 #include "close_scene.hpp"
+#include "ai_profile_scene.hpp"
 #include "game_information.hpp"
 #include "game_editor_scene.hpp"
 #include "save_location_picker_scene.hpp"

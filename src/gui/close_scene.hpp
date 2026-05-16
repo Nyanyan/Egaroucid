@@ -74,6 +74,8 @@ void save_settings(Menu_elements menu_elements, Settings settings, Directories d
     setting_json[U"hint_colorize"] = menu_elements.hint_colorize;
     setting_json[U"play_ordering_board_format"] = menu_elements.play_ordering_board_format;
     setting_json[U"play_ordering_transcript_format"] = menu_elements.play_ordering_transcript_format;
+    setting_json[U"ai_profile_file"] = Unicode::Widen(settings.ai_profile_file);
+    setting_json[U"ai_profile_name"] = Unicode::Widen(settings.ai_profile_name);
     setting_json.save(U"{}setting.json"_fmt(Unicode::Widen(directories.appdata_dir)));
 }
 

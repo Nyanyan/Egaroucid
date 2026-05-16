@@ -96,6 +96,8 @@ void Main() {
     scene_manager.add <Import_bitboard>(U"Import_bitboard");
     scene_manager.add <Change_screenshot_saving_dir>(U"Change_screenshot_saving_dir");
     scene_manager.add <Opening_setting>(U"Opening_setting");
+    scene_manager.add <AI_profile_load>(U"AI_profile_load");
+    scene_manager.add <AI_profile_save>(U"AI_profile_save");
     scene_manager.add <Update_check>(U"Update_check");
     scene_manager.add <Close>(U"Close");
     scene_manager.setFadeColor(Color(36, 153, 114));

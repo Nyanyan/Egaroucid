@@ -1,0 +1,244 @@
+/*
+    Egaroucid Project
+
+    @file ai_profile_scene.hpp
+        AI profile scenes
+    @date 2021-2026
+    @author Takuto Yamana
+    @license GPL-3.0-or-later
+*/
+
+#pragma once
+
+#include <algorithm>
+#include <vector>
+#include "function/function_all.hpp"
+
+constexpr int AI_PROFILE_LIST_SX = 40;
+constexpr int AI_PROFILE_LIST_SY = 70;
+constexpr int AI_PROFILE_LIST_WIDTH = 720;
+constexpr int AI_PROFILE_ROW_HEIGHT = 60;
+constexpr int AI_PROFILE_LIST_N_ON_WINDOW = 5;
+constexpr int AI_PROFILE_DOUBLE_CLICK_MS = 350;
+
+struct AI_profile_list_item {
+    String file_name;
+    String profile_name;
+    String path;
+};
+
+class AI_profile_load : public App::Scene {
+private:
+    Button back_button;
+    Scroll_manager scroll_manager;
+    std::vector<AI_profile_list_item> profiles;
+    std::vector<ImageButton> delete_buttons;
+    String message;
+    int last_clicked_idx;
+    uint64_t last_clicked_time;
+
+public:
+    AI_profile_load(const InitData& init) : IScene{ init } {
+        back_button.init(BACK_BUTTON_SX, BACK_BUTTON_SY, BACK_BUTTON_WIDTH, BACK_BUTTON_HEIGHT, BACK_BUTTON_RADIUS, language.get("common", "back"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
+        last_clicked_idx = -1;
+        last_clicked_time = 0;
+        refresh_profiles();
+    }
+
+    void update() override {
+        if (System::GetUserActions() & UserAction::CloseButtonClicked) {
+            changeScene(U"Close", SCENE_FADE_TIME);
+        }
+
+        getData().fonts.font(language.get("settings", "profile", "load")).draw(25, Arg::topCenter(X_CENTER, 10), getData().colors.white);
+        getData().fonts.font(language.get("settings", "profile", "double_click_to_load")).draw(14, Arg::topCenter(X_CENTER, 45), getData().colors.white);
+
+        draw_profile_list();
+
+        scroll_manager.draw();
+        scroll_manager.update();
+
+        back_button.draw();
+        if (back_button.clicked() || KeyEscape.down()) {
+            getData().graph_resources.need_init = false;
+            changeScene(U"Main_scene", SCENE_FADE_TIME);
+        }
+        if (!message.isEmpty()) {
+            getData().fonts.font(message).draw(14, Arg::topCenter(X_CENTER, 395), getData().colors.white);
+        }
+    }
+
+    void draw() const override {
+    }
+
+private:
+    void refresh_profiles() {
+        profiles.clear();
+        delete_buttons.clear();
+        Array<FilePath> files = enumerate_ai_profile_files(getData().directories);
+        for (const auto& path : files) {
+            AI_profile_values values = to_ai_profile_values(getData().menu_elements);
+            String profile_name;
+            load_ai_profile_values(path, &values, &profile_name);
+            AI_profile_list_item item;
+            item.path = path;
+            item.file_name = FileSystem::FileName(path);
+            item.profile_name = profile_name;
+            profiles.emplace_back(item);
+
+            ImageButton delete_button;
+            delete_button.init(0, 0, 16, getData().resources.cross);
+            delete_buttons.emplace_back(delete_button);
+        }
+        scroll_manager.init(
+            770,
+            AI_PROFILE_LIST_SY,
+            10,
+            AI_PROFILE_ROW_HEIGHT * AI_PROFILE_LIST_N_ON_WINDOW,
+            20,
+            static_cast<int>(profiles.size()),
+            AI_PROFILE_LIST_N_ON_WINDOW,
+            AI_PROFILE_LIST_SX,
+            AI_PROFILE_LIST_SY,
+            AI_PROFILE_LIST_WIDTH + 10,
+            AI_PROFILE_ROW_HEIGHT * AI_PROFILE_LIST_N_ON_WINDOW);
+    }
+
+    void draw_profile_list() {
+        if (profiles.empty()) {
+            getData().fonts.font(language.get("settings", "profile", "no_profile")).draw(16, Arg::topCenter(X_CENTER, AI_PROFILE_LIST_SY + 30), getData().colors.white);
+            return;
+        }
+
+        int sy = AI_PROFILE_LIST_SY;
+        int strt_idx = scroll_manager.get_strt_idx_int();
+        const int end_idx = std::min(static_cast<int>(profiles.size()), strt_idx + AI_PROFILE_LIST_N_ON_WINDOW);
+        for (int i = strt_idx; i < end_idx; ++i) {
+            Rect rect(AI_PROFILE_LIST_SX, sy, AI_PROFILE_LIST_WIDTH, AI_PROFILE_ROW_HEIGHT - 2);
+            rect.draw(ColorF(getData().colors.dark_green, 0.8)).drawFrame(1.0, getData().colors.white);
+            delete_buttons[i].move(rect.x + 6, rect.y + 6);
+            delete_buttons[i].draw();
+
+            const bool is_current_profile = (profiles[i].file_name.narrow() == getData().settings.ai_profile_file);
+            if (is_current_profile) {
+                rect.drawFrame(3.0, getData().colors.cyan);
+            }
+
+            getData().fonts.font(profiles[i].profile_name).draw(18, Arg::leftCenter(rect.x + 30, rect.y + 18), getData().colors.white);
+            getData().fonts.font(profiles[i].file_name).draw(12, Arg::leftCenter(rect.x + 30, rect.y + 43), getData().colors.light_green);
+            if (is_current_profile) {
+                getData().fonts.font(language.get("settings", "profile", "current")).draw(12, Arg::rightCenter(rect.x + rect.w - 10, rect.y + rect.h / 2), getData().colors.cyan);
+            }
+
+            if (delete_buttons[i].clicked()) {
+                FileSystem::Remove(profiles[i].path);
+                message.clear();
+                refresh_profiles();
+                return;
+            }
+
+            if (rect.leftClicked()) {
+                const uint64_t now = tim();
+                if (last_clicked_idx == i && (now - last_clicked_time) <= AI_PROFILE_DOUBLE_CLICK_MS) {
+                    if (load_profile(i)) {
+                        getData().graph_resources.need_init = false;
+                        changeScene(U"Main_scene", SCENE_FADE_TIME);
+                        return;
+                    }
+                }
+                last_clicked_idx = i;
+                last_clicked_time = now;
+            }
+            sy += AI_PROFILE_ROW_HEIGHT;
+        }
+    }
+
+    bool load_profile(int idx) {
+        if (idx < 0 || idx >= static_cast<int>(profiles.size())) {
+            return false;
+        }
+        AI_profile_values values = to_ai_profile_values(getData().menu_elements);
+        String profile_name;
+        if (!load_ai_profile_values(profiles[idx].path, &values, &profile_name)) {
+            message = language.get("settings", "profile", "load_failed");
+            return false;
+        }
+        apply_ai_profile_values(values, &getData().menu_elements);
+        apply_ai_profile_values(values, &getData().settings);
+        getData().settings.ai_profile_file = profiles[idx].file_name.narrow();
+        getData().settings.ai_profile_name = profile_name.narrow();
+        message.clear();
+        return true;
+    }
+};
+
+class AI_profile_save : public App::Scene {
+private:
+    Button back_button;
+    Button save_button;
+    TextAreaEditState name_area;
+    String validation_message;
+    String status_message;
+
+public:
+    AI_profile_save(const InitData& init) : IScene{ init } {
+        back_button.init(GO_BACK_BUTTON_BACK_SX, GO_BACK_BUTTON_SY, GO_BACK_BUTTON_WIDTH, GO_BACK_BUTTON_HEIGHT, GO_BACK_BUTTON_RADIUS, language.get("common", "back"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
+        save_button.init(GO_BACK_BUTTON_GO_SX, GO_BACK_BUTTON_SY, GO_BACK_BUTTON_WIDTH, GO_BACK_BUTTON_HEIGHT, GO_BACK_BUTTON_RADIUS, language.get("settings", "profile", "save"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
+        name_area.text.clear();
+        name_area.cursorPos = 0;
+        name_area.rebuildGlyphs();
+        name_area.active = true;
+    }
+
+    void update() override {
+        if (System::GetUserActions() & UserAction::CloseButtonClicked) {
+            changeScene(U"Close", SCENE_FADE_TIME);
+        }
+
+        getData().fonts.font(language.get("settings", "profile", "new_save")).draw(25, Arg::topCenter(X_CENTER, 10), getData().colors.white);
+        getData().fonts.font(language.get("settings", "profile", "name")).draw(18, Arg::leftCenter(100, 130), getData().colors.white);
+        SimpleGUI::TextArea(name_area, Vec2{ 100, 150 }, SizeF{ 600, 36 }, SimpleGUI::PreferredTextAreaMaxChars);
+
+        const String profile_name = name_area.text.trimmed();
+        if (profile_name.isEmpty()) {
+            save_button.disable();
+            validation_message = language.get("settings", "profile", "name_required");
+        } else {
+            save_button.enable();
+            validation_message.clear();
+        }
+
+        save_button.draw();
+        if (save_button.is_enabled() && (save_button.clicked() || KeyEnter.down())) {
+            save_profile(profile_name);
+        }
+
+        back_button.draw();
+        if (back_button.clicked() || KeyEscape.down()) {
+            getData().graph_resources.need_init = false;
+            changeScene(U"Main_scene", SCENE_FADE_TIME);
+        }
+
+        if (!validation_message.isEmpty()) {
+            getData().fonts.font(validation_message).draw(16, Arg::topCenter(X_CENTER, 210), getData().colors.white);
+        } else if (!status_message.isEmpty()) {
+            getData().fonts.font(status_message).draw(16, Arg::topCenter(X_CENTER, 210), getData().colors.white);
+        }
+    }
+
+    void draw() const override {
+    }
+
+private:
+    void save_profile(const String& profile_name) {
+        const String path = generate_unique_ai_profile_filepath(getData().directories);
+        const AI_profile_values values = to_ai_profile_values(getData().menu_elements);
+        if (save_ai_profile_values(path, values, profile_name)) {
+            getData().settings.ai_profile_file = FileSystem::FileName(path).narrow();
+            getData().settings.ai_profile_name = profile_name.narrow();
+            status_message = language.get("settings", "profile", "saved");
+            return;
+        }
+        status_message = language.get("settings", "profile", "save_failed");
+    }
+};

@@ -87,6 +87,8 @@ void init_default_settings(const Directories* directories, const Resources* reso
     settings->hint_colorize = false;
     settings->play_ordering_board_format = true;
     settings->play_ordering_transcript_format = false;
+    settings->ai_profile_file = "default.json";
+    settings->ai_profile_name = "default";
 }
 
 int init_settings_import_int(JSON &json, String key, int* res) {
@@ -292,196 +294,204 @@ void import_text_settings(const Directories* directories, const Resources* resou
 void init_settings(const Directories* directories, const Resources* resources, Settings* settings) {
     init_default_settings(directories, resources, settings);
     JSON setting_json = JSON::Load(U"{}setting.json"_fmt(Unicode::Widen(directories->appdata_dir)));
-    if (setting_json.size() == 0) {
+    const bool setting_json_exists = (setting_json.size() != 0);
+    if (!setting_json_exists) {
         std::cerr << "json not found, try legacy txt settings" << std::endl;
         import_text_settings(directories, resources, settings);
-        return;
-    }
-    if (init_settings_import_int(setting_json, U"n_threads", &settings->n_threads) != ERR_OK) {
-        std::cerr << "err0" << std::endl;
-    }
-    if (init_settings_import_bool(setting_json, U"auto_update_check", &settings->auto_update_check) != ERR_OK) {
-        std::cerr << "err1" << std::endl;
-    }
-    if (init_settings_import_str(setting_json, U"lang_name", &settings->lang_name) != ERR_OK) {
-        std::cerr << "err2" << std::endl;
-    }
-    if (init_settings_import_str(setting_json, U"book_file", &settings->book_file) != ERR_OK) {
-        std::cerr << "err3" << std::endl;
-    }
-    if (init_settings_import_bool(setting_json, U"use_book", &settings->use_book) != ERR_OK) {
-        std::cerr << "err4" << std::endl;
-    }
-    if (init_settings_import_int(setting_json, U"level", &settings->level) != ERR_OK) {
-        std::cerr << "err5" << std::endl;
-    }
-    if (init_settings_import_bool(setting_json, U"ai_put_black", &settings->ai_put_black) != ERR_OK) {
-        std::cerr << "err6" << std::endl;
-    }
-    if (init_settings_import_bool(setting_json, U"ai_put_white", &settings->ai_put_white) != ERR_OK) {
-        std::cerr << "err7" << std::endl;
-    }
-    if (init_settings_import_bool(setting_json, U"use_disc_hint", &settings->use_disc_hint) != ERR_OK) {
-        std::cerr << "err8" << std::endl;
-    }
-    if (init_settings_import_bool(setting_json, U"use_umigame_value", &settings->use_umigame_value) != ERR_OK) {
-        std::cerr << "err9" << std::endl;
-    }
-    if (init_settings_import_int(setting_json, U"n_disc_hint", &settings->n_disc_hint) != ERR_OK) {
-        std::cerr << "err10" << std::endl;
-    }
-    if (init_settings_import_bool(setting_json, U"show_legal", &settings->show_legal) != ERR_OK) {
-        std::cerr << "err11" << std::endl;
-    }
-    if (init_settings_import_bool(setting_json, U"show_graph", &settings->show_graph) != ERR_OK) {
-        std::cerr << "err12" << std::endl;
-    }
-    if (init_settings_import_bool(setting_json, U"show_opening_on_cell", &settings->show_opening_on_cell) != ERR_OK) {
-        std::cerr << "err13" << std::endl;
-    }
-    if (init_settings_import_bool(setting_json, U"show_log", &settings->show_log) != ERR_OK) {
-        std::cerr << "err14" << std::endl;
-    }
-    if (init_settings_import_int(setting_json, U"book_learn_depth", &settings->book_learn_depth) != ERR_OK) {
-        std::cerr << "err15" << std::endl;
-    }
-    if (init_settings_import_int(setting_json, U"book_learn_error_per_move", &settings->book_learn_error_per_move) != ERR_OK) {
-        std::cerr << "err16" << std::endl;
-    }
-    if (init_settings_import_bool(setting_json, U"show_stable_discs", &settings->show_stable_discs) != ERR_OK) {
-        std::cerr << "err17" << std::endl;
-    }
-    if (init_settings_import_bool(setting_json, U"change_book_by_right_click", &settings->change_book_by_right_click) != ERR_OK) {
-        std::cerr << "err18" << std::endl;
-    }
-    if (init_settings_import_bool(setting_json, U"show_last_move", &settings->show_last_move) != ERR_OK) {
-        std::cerr << "err20" << std::endl;
-    }
-    if (init_settings_import_bool(setting_json, U"show_next_move", &settings->show_next_move) != ERR_OK) {
-        std::cerr << "err21" << std::endl;
-    }
-#if USE_CHANGEABLE_HASH_LEVEL
-    if (init_settings_import_int(setting_json, U"hash_level", &settings->hash_level) != ERR_OK) {
-        std::cerr << "err22" << std::endl;
     } else {
-        settings->hash_level = std::max(settings->hash_level, DEFAULT_HASH_LEVEL);
-    }
+        if (init_settings_import_int(setting_json, U"n_threads", &settings->n_threads) != ERR_OK) {
+            std::cerr << "err0" << std::endl;
+        }
+        if (init_settings_import_bool(setting_json, U"auto_update_check", &settings->auto_update_check) != ERR_OK) {
+            std::cerr << "err1" << std::endl;
+        }
+        if (init_settings_import_str(setting_json, U"lang_name", &settings->lang_name) != ERR_OK) {
+            std::cerr << "err2" << std::endl;
+        }
+        if (init_settings_import_str(setting_json, U"book_file", &settings->book_file) != ERR_OK) {
+            std::cerr << "err3" << std::endl;
+        }
+        if (init_settings_import_bool(setting_json, U"use_book", &settings->use_book) != ERR_OK) {
+            std::cerr << "err4" << std::endl;
+        }
+        if (init_settings_import_int(setting_json, U"level", &settings->level) != ERR_OK) {
+            std::cerr << "err5" << std::endl;
+        }
+        if (init_settings_import_bool(setting_json, U"ai_put_black", &settings->ai_put_black) != ERR_OK) {
+            std::cerr << "err6" << std::endl;
+        }
+        if (init_settings_import_bool(setting_json, U"ai_put_white", &settings->ai_put_white) != ERR_OK) {
+            std::cerr << "err7" << std::endl;
+        }
+        if (init_settings_import_bool(setting_json, U"use_disc_hint", &settings->use_disc_hint) != ERR_OK) {
+            std::cerr << "err8" << std::endl;
+        }
+        if (init_settings_import_bool(setting_json, U"use_umigame_value", &settings->use_umigame_value) != ERR_OK) {
+            std::cerr << "err9" << std::endl;
+        }
+        if (init_settings_import_int(setting_json, U"n_disc_hint", &settings->n_disc_hint) != ERR_OK) {
+            std::cerr << "err10" << std::endl;
+        }
+        if (init_settings_import_bool(setting_json, U"show_legal", &settings->show_legal) != ERR_OK) {
+            std::cerr << "err11" << std::endl;
+        }
+        if (init_settings_import_bool(setting_json, U"show_graph", &settings->show_graph) != ERR_OK) {
+            std::cerr << "err12" << std::endl;
+        }
+        if (init_settings_import_bool(setting_json, U"show_opening_on_cell", &settings->show_opening_on_cell) != ERR_OK) {
+            std::cerr << "err13" << std::endl;
+        }
+        if (init_settings_import_bool(setting_json, U"show_log", &settings->show_log) != ERR_OK) {
+            std::cerr << "err14" << std::endl;
+        }
+        if (init_settings_import_int(setting_json, U"book_learn_depth", &settings->book_learn_depth) != ERR_OK) {
+            std::cerr << "err15" << std::endl;
+        }
+        if (init_settings_import_int(setting_json, U"book_learn_error_per_move", &settings->book_learn_error_per_move) != ERR_OK) {
+            std::cerr << "err16" << std::endl;
+        }
+        if (init_settings_import_bool(setting_json, U"show_stable_discs", &settings->show_stable_discs) != ERR_OK) {
+            std::cerr << "err17" << std::endl;
+        }
+        if (init_settings_import_bool(setting_json, U"change_book_by_right_click", &settings->change_book_by_right_click) != ERR_OK) {
+            std::cerr << "err18" << std::endl;
+        }
+        if (init_settings_import_bool(setting_json, U"show_last_move", &settings->show_last_move) != ERR_OK) {
+            std::cerr << "err20" << std::endl;
+        }
+        if (init_settings_import_bool(setting_json, U"show_next_move", &settings->show_next_move) != ERR_OK) {
+            std::cerr << "err21" << std::endl;
+        }
+#if USE_CHANGEABLE_HASH_LEVEL
+        if (init_settings_import_int(setting_json, U"hash_level", &settings->hash_level) != ERR_OK) {
+            std::cerr << "err22" << std::endl;
+        } else {
+            settings->hash_level = std::max(settings->hash_level, DEFAULT_HASH_LEVEL);
+        }
 #endif
-    // if (init_settings_import_int(setting_json, U"book_acc_level", &settings->book_acc_level) != ERR_OK) {
-    //     std::cerr << "err23" << std::endl;
-    // }
-    if (init_settings_import_bool(setting_json, U"pause_when_pass", &settings->pause_when_pass) != ERR_OK) {
-        std::cerr << "err24" << std::endl;
+        // if (init_settings_import_int(setting_json, U"book_acc_level", &settings->book_acc_level) != ERR_OK) {
+        //     std::cerr << "err23" << std::endl;
+        // }
+        if (init_settings_import_bool(setting_json, U"pause_when_pass", &settings->pause_when_pass) != ERR_OK) {
+            std::cerr << "err24" << std::endl;
+        }
+        if (init_settings_import_int(setting_json, U"book_learn_error_sum", &settings->book_learn_error_sum) != ERR_OK) {
+            std::cerr << "err25" << std::endl;
+        }
+        if (init_settings_import_bool(setting_json, U"show_next_move_change_view", &settings->show_next_move_change_view) != ERR_OK) {
+            std::cerr << "err26" << std::endl;
+        }
+        if (init_settings_import_bool(setting_json, U"change_color_type", &settings->change_color_type) != ERR_OK) {
+            std::cerr << "err27" << std::endl;
+        }
+        if (init_settings_import_bool(setting_json, U"show_play_ordering", &settings->show_play_ordering) != ERR_OK) {
+            std::cerr << "err28" << std::endl;
+        }
+        if (init_settings_import_int(setting_json, U"generate_random_board_moves", &settings->generate_random_board_moves) != ERR_OK) {
+            std::cerr << "err29" << std::endl;
+        }
+        if (init_settings_import_bool(setting_json, U"show_book_accuracy", &settings->show_book_accuracy) != ERR_OK) {
+            std::cerr << "err30" << std::endl;
+        }
+        if (init_settings_import_bool(setting_json, U"use_book_learn_depth", &settings->use_book_learn_depth) != ERR_OK) {
+            std::cerr << "err31" << std::endl;
+        }
+        if (init_settings_import_bool(setting_json, U"use_book_learn_error_per_move", &settings->use_book_learn_error_per_move) != ERR_OK) {
+            std::cerr << "err32" << std::endl;
+        }
+        if (init_settings_import_bool(setting_json, U"use_book_learn_error_sum", &settings->use_book_learn_error_sum) != ERR_OK) {
+            std::cerr << "err33" << std::endl;
+        }
+        if (init_settings_import_int(setting_json, U"umigame_value_depth", &settings->umigame_value_depth) != ERR_OK) {
+            std::cerr << "err34" << std::endl;
+        }
+        if (init_settings_import_bool(setting_json, U"show_graph_value", &settings->show_graph_value) != ERR_OK) {
+            std::cerr << "err35" << std::endl;
+        }
+        if (init_settings_import_bool(setting_json, U"show_graph_sum_of_loss", &settings->show_graph_sum_of_loss) != ERR_OK) {
+            std::cerr << "err36" << std::endl;
+        }
+        if (init_settings_import_int(setting_json, U"book_learn_error_leaf", &settings->book_learn_error_leaf) != ERR_OK) {
+            std::cerr << "err37" << std::endl;
+        }
+        if (init_settings_import_bool(setting_json, U"use_book_learn_error_leaf", &settings->use_book_learn_error_leaf) != ERR_OK) {
+            std::cerr << "err38" << std::endl;
+        }
+        if (init_settings_import_bool(setting_json, U"show_opening_name", &settings->show_opening_name) != ERR_OK) {
+            std::cerr << "err39" << std::endl;
+        }
+        if (init_settings_import_bool(setting_json, U"show_principal_variation", &settings->show_principal_variation) != ERR_OK) {
+            std::cerr << "err40" << std::endl;
+        }
+        if (init_settings_import_bool(setting_json, U"show_laser_pointer", &settings->show_laser_pointer) != ERR_OK) {
+            std::cerr << "err41" << std::endl;
+        }
+        if (init_settings_import_bool(setting_json, U"show_ai_focus", &settings->show_ai_focus) != ERR_OK) {
+            std::cerr << "err42" << std::endl;
+        }
+        if (init_settings_import_int(setting_json, U"pv_length", &settings->pv_length) != ERR_OK) {
+            std::cerr << "err43" << std::endl;
+        }
+        if (init_settings_import_str(setting_json, U"screenshot_saving_dir", &settings->screenshot_saving_dir) != ERR_OK) {
+            std::cerr << "err44" << std::endl;
+        }
+        if (init_settings_import_bool(setting_json, U"accept_ai_loss", &settings->accept_ai_loss) != ERR_OK) {
+            std::cerr << "err45" << std::endl;
+        }
+        if (init_settings_import_int(setting_json, U"max_loss", &settings->max_loss) != ERR_OK) {
+            std::cerr << "err46" << std::endl;
+        }
+        if (init_settings_import_int(setting_json, U"loss_percentage", &settings->loss_percentage) != ERR_OK) {
+            std::cerr << "err47" << std::endl;
+        }
+        if (init_settings_import_bool(setting_json, U"force_specified_openings", &settings->force_specified_openings) != ERR_OK) {
+            std::cerr << "err48" << std::endl;
+        }
+        if (init_settings_import_bool(setting_json, U"show_value_when_ai_calculating", &settings->show_value_when_ai_calculating) != ERR_OK) {
+            std::cerr << "err49" << std::endl;
+        }
+        // not used
+        // if (init_settings_import_int(setting_json, U"generate_random_board_score_range", &settings->generate_random_board_score_range) != ERR_OK) {
+        //     std::cerr << "err50" << std::endl;
+        // }
+        if (init_settings_import_bool(setting_json, U"show_hint_level", &settings->show_hint_level) != ERR_OK) {
+            std::cerr << "err51" << std::endl;
+        }
+        int n_random_board_range_failed = 0;
+        if (init_settings_import_int(setting_json, U"generate_random_board_score_range_min", &settings->generate_random_board_score_range_min) != ERR_OK) {
+            std::cerr << "err52" << std::endl;
+            ++n_random_board_range_failed;
+        }
+        if (init_settings_import_int(setting_json, U"generate_random_board_score_range_max", &settings->generate_random_board_score_range_max) != ERR_OK) {
+            std::cerr << "err53" << std::endl;
+            ++n_random_board_range_failed;
+        }
+        int generate_random_board_score_range;
+        if (n_random_board_range_failed == 2 && init_settings_import_int(setting_json, U"generate_random_board_score_range", &generate_random_board_score_range) == ERR_OK) {
+            settings->generate_random_board_score_range_min = -generate_random_board_score_range;
+            settings->generate_random_board_score_range_max = generate_random_board_score_range;
+            std::cerr << "use abs generate_random_board_score_range" << std::endl;
+        }
+        if (init_settings_import_bool(setting_json, U"show_endgame_error", &settings->show_endgame_error) != ERR_OK) {
+            std::cerr << "err54" << std::endl;
+        }
+        if (init_settings_import_bool(setting_json, U"hint_colorize", &settings->hint_colorize) != ERR_OK) {
+            std::cerr << "err55" << std::endl;
+        }
+        if (init_settings_import_bool(setting_json, U"play_ordering_board_format", &settings->play_ordering_board_format) != ERR_OK) {
+            std::cerr << "err56" << std::endl;
+        }
+        if (init_settings_import_bool(setting_json, U"play_ordering_transcript_format", &settings->play_ordering_transcript_format) != ERR_OK) {
+            std::cerr << "err57" << std::endl;
+        }
+        if (init_settings_import_str(setting_json, U"ai_profile_file", &settings->ai_profile_file) != ERR_OK) {
+            settings->ai_profile_file = "default.json";
+        }
+        init_settings_import_str(setting_json, U"ai_profile_name", &settings->ai_profile_name);
     }
-    if (init_settings_import_int(setting_json, U"book_learn_error_sum", &settings->book_learn_error_sum) != ERR_OK) {
-        std::cerr << "err25" << std::endl;
-    }
-    if (init_settings_import_bool(setting_json, U"show_next_move_change_view", &settings->show_next_move_change_view) != ERR_OK) {
-        std::cerr << "err26" << std::endl;
-    }
-    if (init_settings_import_bool(setting_json, U"change_color_type", &settings->change_color_type) != ERR_OK) {
-        std::cerr << "err27" << std::endl;
-    }
-    if (init_settings_import_bool(setting_json, U"show_play_ordering", &settings->show_play_ordering) != ERR_OK) {
-        std::cerr << "err28" << std::endl;
-    }
-    if (init_settings_import_int(setting_json, U"generate_random_board_moves", &settings->generate_random_board_moves) != ERR_OK) {
-        std::cerr << "err29" << std::endl;
-    }
-    if (init_settings_import_bool(setting_json, U"show_book_accuracy", &settings->show_book_accuracy) != ERR_OK) {
-        std::cerr << "err30" << std::endl;
-    }
-    if (init_settings_import_bool(setting_json, U"use_book_learn_depth", &settings->use_book_learn_depth) != ERR_OK) {
-        std::cerr << "err31" << std::endl;
-    }
-    if (init_settings_import_bool(setting_json, U"use_book_learn_error_per_move", &settings->use_book_learn_error_per_move) != ERR_OK) {
-        std::cerr << "err32" << std::endl;
-    }
-    if (init_settings_import_bool(setting_json, U"use_book_learn_error_sum", &settings->use_book_learn_error_sum) != ERR_OK) {
-        std::cerr << "err33" << std::endl;
-    }
-    if (init_settings_import_int(setting_json, U"umigame_value_depth", &settings->umigame_value_depth) != ERR_OK) {
-        std::cerr << "err34" << std::endl;
-    }
-    if (init_settings_import_bool(setting_json, U"show_graph_value", &settings->show_graph_value) != ERR_OK) {
-        std::cerr << "err35" << std::endl;
-    }
-    if (init_settings_import_bool(setting_json, U"show_graph_sum_of_loss", &settings->show_graph_sum_of_loss) != ERR_OK) {
-        std::cerr << "err36" << std::endl;
-    }
-    if (init_settings_import_int(setting_json, U"book_learn_error_leaf", &settings->book_learn_error_leaf) != ERR_OK) {
-        std::cerr << "err37" << std::endl;
-    }
-    if (init_settings_import_bool(setting_json, U"use_book_learn_error_leaf", &settings->use_book_learn_error_leaf) != ERR_OK) {
-        std::cerr << "err38" << std::endl;
-    }
-    if (init_settings_import_bool(setting_json, U"show_opening_name", &settings->show_opening_name) != ERR_OK) {
-        std::cerr << "err39" << std::endl;
-    }
-    if (init_settings_import_bool(setting_json, U"show_principal_variation", &settings->show_principal_variation) != ERR_OK) {
-        std::cerr << "err40" << std::endl;
-    }
-    if (init_settings_import_bool(setting_json, U"show_laser_pointer", &settings->show_laser_pointer) != ERR_OK) {
-        std::cerr << "err41" << std::endl;
-    }
-    if (init_settings_import_bool(setting_json, U"show_ai_focus", &settings->show_ai_focus) != ERR_OK) {
-        std::cerr << "err42" << std::endl;
-    }
-    if (init_settings_import_int(setting_json, U"pv_length", &settings->pv_length) != ERR_OK) {
-        std::cerr << "err43" << std::endl;
-    }
-    if (init_settings_import_str(setting_json, U"screenshot_saving_dir", &settings->screenshot_saving_dir) != ERR_OK) {
-        std::cerr << "err44" << std::endl;
-    }
-    if (init_settings_import_bool(setting_json, U"accept_ai_loss", &settings->accept_ai_loss) != ERR_OK) {
-        std::cerr << "err45" << std::endl;
-    }
-    if (init_settings_import_int(setting_json, U"max_loss", &settings->max_loss) != ERR_OK) {
-        std::cerr << "err46" << std::endl;
-    }
-    if (init_settings_import_int(setting_json, U"loss_percentage", &settings->loss_percentage) != ERR_OK) {
-        std::cerr << "err47" << std::endl;
-    }
-    if (init_settings_import_bool(setting_json, U"force_specified_openings", &settings->force_specified_openings) != ERR_OK) {
-        std::cerr << "err48" << std::endl;
-    }
-    if (init_settings_import_bool(setting_json, U"show_value_when_ai_calculating", &settings->show_value_when_ai_calculating) != ERR_OK) {
-        std::cerr << "err49" << std::endl;
-    }
-    // not used
-    // if (init_settings_import_int(setting_json, U"generate_random_board_score_range", &settings->generate_random_board_score_range) != ERR_OK) {
-    //     std::cerr << "err50" << std::endl;
-    // }
-    if (init_settings_import_bool(setting_json, U"show_hint_level", &settings->show_hint_level) != ERR_OK) {
-        std::cerr << "err51" << std::endl;
-    }
-    int n_random_board_range_failed = 0;
-    if (init_settings_import_int(setting_json, U"generate_random_board_score_range_min", &settings->generate_random_board_score_range_min) != ERR_OK) {
-        std::cerr << "err52" << std::endl;
-        ++n_random_board_range_failed;
-    }
-    if (init_settings_import_int(setting_json, U"generate_random_board_score_range_max", &settings->generate_random_board_score_range_max) != ERR_OK) {
-        std::cerr << "err53" << std::endl;
-        ++n_random_board_range_failed;
-    }
-    int generate_random_board_score_range;
-    if (n_random_board_range_failed == 2 && init_settings_import_int(setting_json, U"generate_random_board_score_range", &generate_random_board_score_range) == ERR_OK) {
-        settings->generate_random_board_score_range_min = -generate_random_board_score_range;
-        settings->generate_random_board_score_range_max = generate_random_board_score_range;
-        std::cerr << "use abs generate_random_board_score_range" << std::endl;
-    }
-    if (init_settings_import_bool(setting_json, U"show_endgame_error", &settings->show_endgame_error) != ERR_OK) {
-        std::cerr << "err54" << std::endl;
-    }
-    if (init_settings_import_bool(setting_json, U"hint_colorize", &settings->hint_colorize) != ERR_OK) {
-        std::cerr << "err55" << std::endl;
-    }
-    if (init_settings_import_bool(setting_json, U"play_ordering_board_format", &settings->play_ordering_board_format) != ERR_OK) {
-        std::cerr << "err56" << std::endl;
-    }
-    if (init_settings_import_bool(setting_json, U"play_ordering_transcript_format", &settings->play_ordering_transcript_format) != ERR_OK) {
-        std::cerr << "err57" << std::endl;
-    }
+
+    ensure_default_ai_profile(*directories, *settings, setting_json_exists);
+    load_ai_profile_into_settings(*directories, settings);
 }
 
 void init_directories(Directories* directories) {
