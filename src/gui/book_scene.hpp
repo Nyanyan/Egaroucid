@@ -170,7 +170,7 @@ public:
                 back_button.enable();
             }
             back_button.draw();
-            if (back_button.clicked() || KeyEscape.pressed()) {
+            if (back_button.clicked() || gui_textarea_ime::escape_pressed_for_scene_change()) {
                 reset_book_additional_information();
                 getData().graph_resources.need_init = false;
                 changeScene(U"Main_scene", SCENE_FADE_TIME);
@@ -211,7 +211,7 @@ public:
             if (failed) {
                 getData().fonts.font(language.get("book", "import_failed")).draw(25, Arg::topCenter(X_CENTER, sy), getData().colors.white);
                 single_back_button.draw();
-                if (single_back_button.clicked() || KeyEscape.pressed()) {
+                if (single_back_button.clicked() || gui_textarea_ime::escape_pressed_for_scene_change()) {
                     reset_book_additional_information();
                     getData().graph_resources.need_init = false;
                     changeScene(U"Main_scene", SCENE_FADE_TIME);
@@ -312,7 +312,7 @@ public:
             back_button.draw();
             go_with_level_button.draw();
             go_button.draw();
-            if (back_button.clicked() || KeyEscape.pressed()) {
+            if (back_button.clicked() || gui_textarea_ime::escape_pressed_for_scene_change()) {
                 getData().graph_resources.need_init = false;
                 changeScene(U"Main_scene", SCENE_FADE_TIME);
             }
@@ -406,7 +406,7 @@ public:
                 getData().fonts.font(language.get("book", "wrong_extension") + U" " + language.get("book", "legal_extension2")).draw(15, Arg::topCenter(X_CENTER, sy + 190), getData().colors.white);
             }
             back_button.draw();
-            if (back_button.clicked() || KeyEscape.pressed()) {
+            if (back_button.clicked() || gui_textarea_ime::escape_pressed_for_scene_change()) {
                 reset_book_additional_information();
                 getData().graph_resources.need_init = false;
                 changeScene(U"Main_scene", SCENE_FADE_TIME);
@@ -426,7 +426,7 @@ public:
             if (failed) {
                 getData().fonts.font(language.get("book", "import_failed")).draw(25, Arg::topCenter(X_CENTER, sy), getData().colors.white);
                 back_button.draw();
-                if (back_button.clicked() || KeyEscape.pressed()) {
+                if (back_button.clicked() || gui_textarea_ime::escape_pressed_for_scene_change()) {
                     reset_book_additional_information();
                     getData().graph_resources.need_init = false;
                     changeScene(U"Main_scene", SCENE_FADE_TIME);
@@ -514,7 +514,7 @@ public:
                 getData().fonts.font(language.get("book", "wrong_extension") + U" " + language.get("book", "legal_extension1")).draw(15, Arg::topCenter(X_CENTER, sy + 190), getData().colors.white);
             }
             back_button.draw();
-            if (back_button.clicked() || KeyEscape.pressed()) {
+            if (back_button.clicked() || gui_textarea_ime::escape_pressed_for_scene_change()) {
                 reset_book_additional_information();
                 getData().graph_resources.need_init = false;
                 changeScene(U"Main_scene", SCENE_FADE_TIME);
@@ -556,7 +556,7 @@ public:
             if (failed) {
                 getData().fonts.font(language.get("book", "import_failed")).draw(25, Arg::topCenter(X_CENTER, sy), getData().colors.white);
                 single_back_button.draw();
-                if (single_back_button.clicked() || KeyEscape.pressed()) {
+                if (single_back_button.clicked() || gui_textarea_ime::escape_pressed_for_scene_change()) {
                     reset_book_additional_information();
                     getData().graph_resources.need_init = false;
                     changeScene(U"Main_scene", SCENE_FADE_TIME);
@@ -691,7 +691,7 @@ public:
                 book_learn_future = std::async(std::launch::async, book_deviate, root_board, getData().menu_elements.level, depth, error_per_move, error_sum, error_leaf, BOOK_DEVIATE_MAX_N_LOOPS_INF, &history_elem.board, &history_elem.player, getData().settings.book_file, getData().settings.book_file + ".bak", &book_learning);
             }
             back_button.draw();
-            if (back_button.clicked() || KeyEscape.pressed()) {
+            if (back_button.clicked() || gui_textarea_ime::escape_pressed_for_scene_change()) {
                 getData().graph_resources.need_init = false;
                 changeScene(U"Main_scene", SCENE_FADE_TIME);
             }
@@ -860,7 +860,7 @@ public:
             back_button.draw();
             start_button.draw();
             start_with_max_n_loops_button.draw();
-            if (back_button.clicked() || KeyEscape.pressed()) {
+            if (back_button.clicked() || gui_textarea_ime::escape_pressed_for_scene_change()) {
                 changeScene(U"Main_scene", SCENE_FADE_TIME);
             }
             if ((start_button.clicked() || start_with_max_n_loops_button.clicked()) && raw_transcripts.size() && !n_loops_bar.is_changeable()) {
@@ -1136,7 +1136,7 @@ public:
                 book_learn_future = std::async(std::launch::async, book_store, tasks, getData().menu_elements.level, depth, &history_elem.board, &history_elem.player, getData().settings.book_file, getData().settings.book_file + ".bak", &book_learning);
             }
             back_button.draw();
-            if (back_button.clicked() || KeyEscape.pressed()) {
+            if (back_button.clicked() || gui_textarea_ime::escape_pressed_for_scene_change()) {
                 getData().graph_resources.need_init = false;
                 changeScene(U"Main_scene", SCENE_FADE_TIME);
             }
@@ -1202,7 +1202,7 @@ public:
                 task_future = std::async(std::launch::async, book_fix, &stop);
             }
             back_button.draw();
-            if (back_button.clicked() || KeyEscape.pressed()) {
+            if (back_button.clicked() || gui_textarea_ime::escape_pressed_for_scene_change()) {
                 getData().graph_resources.need_init = false;
                 changeScene(U"Main_scene", SCENE_FADE_TIME);
             }
@@ -1296,7 +1296,7 @@ public:
                 book_learn_future = std::async(std::launch::async, book_reduce, root_board, depth, error_per_move, error_sum, &book_learning);
             }
             back_button.draw();
-            if (back_button.clicked() || KeyEscape.pressed()) {
+            if (back_button.clicked() || gui_textarea_ime::escape_pressed_for_scene_change()) {
                 getData().graph_resources.need_init = false;
                 changeScene(U"Main_scene", SCENE_FADE_TIME);
             }
@@ -1389,7 +1389,7 @@ public:
                 book_learn_future = std::async(std::launch::async, book_recalculate_leaf, root_board, getData().menu_elements.level, depth, error_per_move, error_sum, &history_elem.board, &history_elem.player, &book_learning, false, tim());
             }
             back_button.draw();
-            if (back_button.clicked() || KeyEscape.pressed()) {
+            if (back_button.clicked() || gui_textarea_ime::escape_pressed_for_scene_change()) {
                 getData().graph_resources.need_init = false;
                 changeScene(U"Main_scene", SCENE_FADE_TIME);
             }
@@ -1455,7 +1455,7 @@ public:
                 task_future = std::async(std::launch::async, book_recalculate_n_lines_all, &stop);
             }
             back_button.draw();
-            if (back_button.clicked() || KeyEscape.pressed()) {
+            if (back_button.clicked() || gui_textarea_ime::escape_pressed_for_scene_change()) {
                 getData().graph_resources.need_init = false;
                 changeScene(U"Main_scene", SCENE_FADE_TIME);
             }
@@ -1518,7 +1518,7 @@ public:
                 task_future = std::async(std::launch::async, book_upgrade_better_leaves_all, &stop);
             }
             back_button.draw();
-            if (back_button.clicked() || KeyEscape.pressed()) {
+            if (back_button.clicked() || gui_textarea_ime::escape_pressed_for_scene_change()) {
                 getData().graph_resources.need_init = false;
                 changeScene(U"Main_scene", SCENE_FADE_TIME);
             }
@@ -1609,7 +1609,7 @@ public:
             }
         }
         back_button.draw();
-        if (back_button.clicked() || KeyEscape.pressed()) {
+        if (back_button.clicked() || gui_textarea_ime::escape_pressed_for_scene_change()) {
             if (book_info_calculating) {
                 book_info_calculating = false;
                 book_info_future.get();

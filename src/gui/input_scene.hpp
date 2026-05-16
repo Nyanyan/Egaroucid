@@ -111,7 +111,7 @@ public:
         getData().fonts.font(format_str).draw(13, Arg::topCenter(X_CENTER, sy + 210), getData().colors.white);
         back_button.draw();
         import_button.draw();
-        if (back_button.clicked() || KeyEscape.pressed()) {
+        if (back_button.clicked() || gui_textarea_ime::escape_pressed_for_scene_change()) {
             changeScene(U"Main_scene", SCENE_FADE_TIME);
         }
         if (imported_game.format != TEXT_INPUT_FORMAT_NONE && text.size()) {
@@ -236,7 +236,7 @@ public:
                 .drawFrame(2, 0, getData().colors.white);
         }
         
-        if (back_button.clicked() || KeyEscape.pressed()) {
+        if (back_button.clicked() || gui_textarea_ime::escape_pressed_for_scene_change()) {
             getData().graph_resources.need_init = false;
             changeScene(U"Main_scene", SCENE_FADE_TIME);
         }
@@ -371,7 +371,7 @@ public:
         String path_label = explorer::compose_path_label(U"games/", explorer_state);
         getData().fonts.font(path_label).draw(15, Arg::rightCenter(IMPORT_GAME_SX + IMPORT_GAME_WIDTH, 30), getData().colors.white);
         bool enter_pressed = KeyEnter.down();
-        bool escape_pressed = KeyEscape.down();
+        bool escape_pressed = gui_textarea_ime::escape_down_for_scene_change();
 
         if (creating_folder) {
             draw_folder_creation_overlay(enter_pressed, escape_pressed);
@@ -1399,7 +1399,7 @@ public:
             opponent_string = text_area[1].text.replaced(U"\r", U"").replaced(U"\n", U"").replaced(U" ", U"").replace(U"\t", U"").narrow();
             back_button.draw();
             import_button.draw();
-            if (back_button.clicked() || KeyEscape.pressed()) {
+            if (back_button.clicked() || gui_textarea_ime::escape_pressed_for_scene_change()) {
                 changeScene(U"Main_scene", SCENE_FADE_TIME);
             }
             if (import_button.clicked() || KeyEnter.pressed()) {
@@ -1422,7 +1422,7 @@ public:
             } else {
                 getData().fonts.font(language.get("in_out", "import_failed")).draw(25, Arg::topCenter(X_CENTER, sy), getData().colors.white);
                 single_back_button.draw();
-                if (single_back_button.clicked() || KeyEscape.pressed()) {
+                if (single_back_button.clicked() || gui_textarea_ime::escape_pressed_for_scene_change()) {
                     changeScene(U"Main_scene", SCENE_FADE_TIME);
                 }
             }

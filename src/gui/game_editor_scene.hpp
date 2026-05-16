@@ -245,7 +245,7 @@ public:
             back_button.draw();
             // Editing existing game: show OK button
             ok_button.draw();
-            if (back_button.clicked() || KeyEscape.pressed()) {
+            if (back_button.clicked() || gui_textarea_ime::escape_pressed_for_scene_change()) {
                 // Clear game information only when not returning to Game_information_scene
                 if (return_scene != U"Game_information_scene") {
                     getData().game_information.init();
@@ -256,7 +256,7 @@ public:
             // New game save: show two export buttons
             back_button.draw();
             export_main_button.draw();
-            if (back_button.clicked() || KeyEscape.pressed()) {
+            if (back_button.clicked() || gui_textarea_ime::escape_pressed_for_scene_change()) {
                 if (return_scene == U"Game_information_scene") {
                     // Returning to Game_information_scene
                     changeScene(return_scene, SCENE_FADE_TIME);

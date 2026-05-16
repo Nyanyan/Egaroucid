@@ -148,7 +148,7 @@ public:
             // Handle CSV creation mode
             if (creating_csv) {
                 back_button.draw();
-                if (back_button.clicked() || KeyEscape.down()) {
+                if (back_button.clicked() || gui_textarea_ime::escape_down_for_scene_change()) {
                     creating_csv = false;
                 }
                 
@@ -191,7 +191,7 @@ public:
                 
             } else if (adding_elem) {
                 back_button.draw();
-                if (back_button.clicked() || KeyEscape.down()) {
+                if (back_button.clicked() || gui_textarea_ime::escape_down_for_scene_change()) {
                     adding_elem = false;
                     init_scroll_manager();  // Reinitialize scroll manager when canceling
                 }
@@ -267,10 +267,10 @@ public:
                 handle_drag_and_drop();
             }
 
-            if (renaming_folder && KeyEscape.down()) {
+            if (renaming_folder && gui_textarea_ime::escape_down_for_scene_change()) {
                 cancel_folder_rename();
             }
-            if (editing_elem && KeyEscape.down()) {
+            if (editing_elem && gui_textarea_ime::escape_down_for_scene_change()) {
                 cancel_opening_edit();
             }
             

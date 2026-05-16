@@ -10,6 +10,13 @@
 
 #pragma once
 #include "const/gui_common.hpp"
+#if SIV3D_PLATFORM(WINDOWS)
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
+#include <Windows.h>
+#include <imm.h>
+#endif
 
 constexpr int INPUT_STR_MAX_SIZE = 100000;
 
@@ -30,6 +37,60 @@ struct Deferred_ime_candidate_window_state {
 };
 
 inline Deferred_ime_candidate_window_state deferred_state;
+inline bool escape_suppressed_until_release{ false };
+
+[[nodiscard]]
+inline bool has_visible_ime_candidates() {
+#if SIV3D_PLATFORM(WINDOWS)
+    return (not Platform::Windows::TextInput::GetCandidateState().candidates.isEmpty());
+#else
+    return false;
+#endif
+}
+
+inline void close_ime_candidate_window() {
+#if SIV3D_PLATFORM(WINDOWS)
+    const auto hwnd = static_cast<HWND>(Platform::Windows::Window::GetHWND());
+    if (not hwnd) {
+        return;
+    }
+    if (const auto himc = ImmGetContext(hwnd)) {
+        ImmNotifyIME(himc, NI_CLOSECANDIDATE, 0, 0);
+        ImmReleaseContext(hwnd, himc);
+    }
+#endif
+}
+
+[[nodiscard]]
+inline bool consume_escape_for_ime_candidate_window() {
+    if (escape_suppressed_until_release) {
+        if (not KeyEscape.pressed()) {
+            escape_suppressed_until_release = false;
+        }
+        return true;
+    }
+
+#if SIV3D_PLATFORM(WINDOWS)
+    if (has_visible_ime_candidates() && KeyEscape.down()) {
+        close_ime_candidate_window();
+        deferred_state.requested = false;
+        escape_suppressed_until_release = true;
+        return true;
+    }
+#endif
+
+    return false;
+}
+
+[[nodiscard]]
+inline bool escape_down_for_scene_change() {
+    return (not consume_escape_for_ime_candidate_window()) && KeyEscape.down();
+}
+
+[[nodiscard]]
+inline bool escape_pressed_for_scene_change() {
+    return (not consume_escape_for_ime_candidate_window()) && KeyEscape.pressed();
+}
 
 inline Vec2 calculate_editing_text_pos(
     const TextAreaEditState& text,
@@ -78,9 +139,83 @@ inline void request_textarea_ime_candidate_window(
 }
 
 inline void flush_deferred_ime_candidate_window() {
+    (void)consume_escape_for_ime_candidate_window();
     if (deferred_state.requested) {
-        // On Windows 11, draw candidate window at the requested position.
-        SimpleGUI::IMECandidateWindow(deferred_state.pos);
+#if SIV3D_PLATFORM(WINDOWS)
+        const auto& candidate_state = Platform::Windows::TextInput::GetCandidateState();
+        if (candidate_state.candidates) {
+            const Font& font = SimpleGUI::GetFont();
+            constexpr ColorF CANDIDATE_WINDOW_COLOR{ 0.98 };
+            constexpr ColorF CANDIDATE_WINDOW_FRAME_COLOR{ 0.75 };
+            constexpr ColorF CANDIDATE_SELECTED_BACKGROUND_COLOR{ 0.55, 0.85, 1.0 };
+            constexpr ColorF CANDIDATE_TEXT_COLOR{ 0.11 };
+            constexpr ColorF CANDIDATE_MINIMAP_COLOR{ 0.67 };
+            constexpr double CANDIDATE_MARGIN = 4.0;
+            constexpr double CANDIDATE_PADDING = 12.0;
+            constexpr double CANDIDATE_MINIMAP_WIDTH = 20.0;
+
+            const double candidate_item_height = (font.height() + CANDIDATE_MARGIN);
+            const double available_height = (Scene::Size().y - deferred_state.pos.y - 2.0);
+            int32 visible_count = 0;
+            if (0.0 < candidate_item_height) {
+                visible_count = static_cast<int32>(available_height / candidate_item_height);
+            }
+            visible_count = Clamp(visible_count, 0, static_cast<int32>(candidate_state.candidates.size()));
+
+            if (0 < visible_count) {
+                double box_width = 0.0;
+                for (const auto& candidate : candidate_state.candidates) {
+                    box_width = Max<double>(box_width, font(candidate).region().w);
+                }
+                box_width += (CANDIDATE_PADDING * 2 + CANDIDATE_MINIMAP_WIDTH);
+
+                const RectF box_rect{ deferred_state.pos, box_width, (candidate_item_height * visible_count) };
+                box_rect
+                    .drawShadow(Vec2{ 0, 2 }, 8)
+                    .draw(CANDIDATE_WINDOW_COLOR)
+                    .drawFrame(1, 0, CANDIDATE_WINDOW_FRAME_COLOR);
+
+                int32 current_index = candidate_state.pageStartIndex;
+                for (int32 i = 0; i < visible_count; ++i) {
+                    const bool selected = (candidate_state.selectedIndex && (current_index == *candidate_state.selectedIndex));
+                    const Vec2 item_pos{ deferred_state.pos.x, (deferred_state.pos.y + i * candidate_item_height) };
+                    if (selected) {
+                        RectF{ item_pos, (box_width - CANDIDATE_MINIMAP_WIDTH), candidate_item_height }
+                            .stretched(-1, 0)
+                            .draw(CANDIDATE_SELECTED_BACKGROUND_COLOR);
+                    }
+                    if (candidate_state.candidates[i]) {
+                        font(candidate_state.candidates[i]).draw(
+                            item_pos.movedBy(CANDIDATE_PADDING, (CANDIDATE_MARGIN * 0.5 - 1.0)),
+                            CANDIDATE_TEXT_COLOR
+                        );
+                    }
+                    ++current_index;
+                }
+
+                const bool has_prev = (candidate_state.pageStartIndex != 0);
+                const bool has_next = ((candidate_state.pageStartIndex + visible_count) < candidate_state.count);
+                if (has_prev) {
+                    const Vec2 scroll_pos{
+                        (deferred_state.pos.x + box_width - CANDIDATE_MINIMAP_WIDTH * 0.5 - 1),
+                        (deferred_state.pos.y + 11)
+                    };
+                    scroll_pos.asCircle(3.5).draw(CANDIDATE_MINIMAP_COLOR);
+                    scroll_pos.movedBy(0, 8).asCircle(2.8).draw(CANDIDATE_MINIMAP_COLOR);
+                    scroll_pos.movedBy(0, 15).asCircle(2.25).draw(CANDIDATE_MINIMAP_COLOR);
+                }
+                if (has_next) {
+                    const Vec2 scroll_pos{
+                        (deferred_state.pos.x + box_width - CANDIDATE_MINIMAP_WIDTH * 0.5 - 1),
+                        (deferred_state.pos.y + visible_count * candidate_item_height - 9)
+                    };
+                    scroll_pos.asCircle(3.5).draw(CANDIDATE_MINIMAP_COLOR);
+                    scroll_pos.movedBy(0, -8).asCircle(2.8).draw(CANDIDATE_MINIMAP_COLOR);
+                    scroll_pos.movedBy(0, -15).asCircle(2.25).draw(CANDIDATE_MINIMAP_COLOR);
+                }
+            }
+        }
+#endif
         deferred_state.requested = false;
     }
 }

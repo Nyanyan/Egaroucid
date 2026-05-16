@@ -107,7 +107,7 @@ class Opening_setting : public App::Scene {
             // Handle CSV creation mode
             if (creating_csv) {
                 back_button.draw();
-                if (back_button.clicked() || KeyEscape.down()) {
+                if (back_button.clicked() || gui_textarea_ime::escape_down_for_scene_change()) {
                     creating_csv = false;
                 }
                 
@@ -145,7 +145,7 @@ class Opening_setting : public App::Scene {
                 
             } else if (adding_elem || editing_elem) {
                 back_button.draw();
-                if (back_button.clicked() || KeyEscape.down()) {
+                if (back_button.clicked() || gui_textarea_ime::escape_down_for_scene_change()) {
                     adding_elem = false;
                     editing_elem = false;
                     editing_index = -1;

@@ -149,7 +149,7 @@ public:
 
         // Action buttons
         back_button.draw();
-        if (back_button.clicked() || KeyEscape.pressed()) {
+        if (back_button.clicked() || gui_textarea_ime::escape_pressed_for_scene_change()) {
             // Return to Game_editor to modify game information
             changeScene(U"Game_editor", SCENE_FADE_TIME);
             return;

@@ -64,7 +64,7 @@ public:
         scroll_manager.update();
 
         back_button.draw();
-        if (back_button.clicked() || KeyEscape.down()) {
+        if (back_button.clicked() || gui_textarea_ime::escape_down_for_scene_change()) {
             getData().graph_resources.need_init = false;
             changeScene(U"Main_scene", SCENE_FADE_TIME);
         }
@@ -302,7 +302,7 @@ public:
         }
 
         back_button.draw();
-        if (back_button.clicked() || KeyEscape.down()) {
+        if (back_button.clicked() || gui_textarea_ime::escape_down_for_scene_change()) {
             getData().graph_resources.need_init = false;
             changeScene(U"AI_profile_load", SCENE_FADE_TIME);
         }

@@ -53,7 +53,7 @@ public:
         back_button.draw();
         export_main_button.draw();
         export_this_board_button.draw();
-        if (back_button.clicked() || KeyEscape.pressed()) {
+        if (back_button.clicked() || gui_textarea_ime::escape_pressed_for_scene_change()) {
             getData().graph_resources.need_init = false;
             changeScene(U"Main_scene", SCENE_FADE_TIME);
         }
@@ -149,7 +149,7 @@ public:
             go_button.disable();
         }
         back_button.draw();
-        if (back_button.clicked() || KeyEscape.pressed()) {
+        if (back_button.clicked() || gui_textarea_ime::escape_pressed_for_scene_change()) {
             changeScene(U"Main_scene", SCENE_FADE_TIME);
         }
         default_button.draw();

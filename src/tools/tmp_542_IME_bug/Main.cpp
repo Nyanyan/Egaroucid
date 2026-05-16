@@ -87,6 +87,99 @@ namespace
 		return Vec2{ editingPos.x, (editingPos.y + SimpleGUI::GetFont().height() + 2.0) };
 	}
 
+	void DrawIMECandidateWindowLimited(const Vec2& pos)
+	{
+# if SIV3D_PLATFORM(WINDOWS)
+		const auto& candidateState = Platform::Windows::TextInput::GetCandidateState();
+		if (candidateState.candidates.isEmpty())
+		{
+			return;
+		}
+
+		const Font& font = SimpleGUI::GetFont();
+		constexpr ColorF CANDIDATE_WINDOW_COLOR{ 0.98 };
+		constexpr ColorF CANDIDATE_WINDOW_FRAME_COLOR{ 0.75 };
+		constexpr ColorF CANDIDATE_SELECTED_BACKGROUND_COLOR{ 0.55, 0.85, 1.0 };
+		constexpr ColorF CANDIDATE_TEXT_COLOR{ 0.11 };
+		constexpr ColorF CANDIDATE_MINIMAP_COLOR{ 0.67 };
+		constexpr double CANDIDATE_MARGIN = 4.0;
+		constexpr double CANDIDATE_PADDING = 12.0;
+		constexpr double CANDIDATE_MINIMAP_WIDTH = 20.0;
+
+		const double candidateItemHeight = (font.height() + CANDIDATE_MARGIN);
+		const double availableHeight = (Scene::Size().y - pos.y - 2.0);
+		int32 visibleCount = 0;
+		if (0.0 < candidateItemHeight)
+		{
+			visibleCount = static_cast<int32>(availableHeight / candidateItemHeight);
+		}
+		visibleCount = Clamp(visibleCount, 0, static_cast<int32>(candidateState.candidates.size()));
+		if (visibleCount <= 0)
+		{
+			return;
+		}
+
+		double boxWidth = 0.0;
+		for (const auto& candidate : candidateState.candidates)
+		{
+			boxWidth = Max<double>(boxWidth, font(candidate).region().w);
+		}
+		boxWidth += (CANDIDATE_PADDING * 2 + CANDIDATE_MINIMAP_WIDTH);
+
+		const RectF boxRect{ pos, boxWidth, (candidateItemHeight * visibleCount) };
+		boxRect
+			.drawShadow(Vec2{ 0, 2 }, 8)
+			.draw(CANDIDATE_WINDOW_COLOR)
+			.drawFrame(1, 0, CANDIDATE_WINDOW_FRAME_COLOR);
+
+		int32 currentIndex = candidateState.pageStartIndex;
+		for (int32 i = 0; i < visibleCount; ++i)
+		{
+			const bool selected = (candidateState.selectedIndex && (currentIndex == *candidateState.selectedIndex));
+			const Vec2 itemPos{ pos.x, (pos.y + i * candidateItemHeight) };
+			if (selected)
+			{
+				RectF{ itemPos, (boxWidth - CANDIDATE_MINIMAP_WIDTH), candidateItemHeight }
+					.stretched(-1, 0)
+					.draw(CANDIDATE_SELECTED_BACKGROUND_COLOR);
+			}
+			if (candidateState.candidates[i])
+			{
+				font(candidateState.candidates[i]).draw(
+					itemPos.movedBy(CANDIDATE_PADDING, (CANDIDATE_MARGIN * 0.5 - 1.0)),
+					CANDIDATE_TEXT_COLOR
+				);
+			}
+			++currentIndex;
+		}
+
+		const bool hasPrev = (candidateState.pageStartIndex != 0);
+		const bool hasNext = ((candidateState.pageStartIndex + visibleCount) < candidateState.count);
+		if (hasPrev)
+		{
+			const Vec2 scrollPos{
+				(pos.x + boxWidth - CANDIDATE_MINIMAP_WIDTH * 0.5 - 1),
+				(pos.y + 11)
+			};
+			scrollPos.asCircle(3.5).draw(CANDIDATE_MINIMAP_COLOR);
+			scrollPos.movedBy(0, 8).asCircle(2.8).draw(CANDIDATE_MINIMAP_COLOR);
+			scrollPos.movedBy(0, 15).asCircle(2.25).draw(CANDIDATE_MINIMAP_COLOR);
+		}
+		if (hasNext)
+		{
+			const Vec2 scrollPos{
+				(pos.x + boxWidth - CANDIDATE_MINIMAP_WIDTH * 0.5 - 1),
+				(pos.y + visibleCount * candidateItemHeight - 9)
+			};
+			scrollPos.asCircle(3.5).draw(CANDIDATE_MINIMAP_COLOR);
+			scrollPos.movedBy(0, -8).asCircle(2.8).draw(CANDIDATE_MINIMAP_COLOR);
+			scrollPos.movedBy(0, -15).asCircle(2.25).draw(CANDIDATE_MINIMAP_COLOR);
+		}
+# else
+		SimpleGUI::IMECandidateWindow(pos);
+# endif
+	}
+
 # if SIV3D_PLATFORM(WINDOWS)
 	template <class T>
 	void SafeRelease(T*& p) noexcept
@@ -506,7 +599,7 @@ void Main()
 
 		if (g_deferredImeCandidateWindow.requested)
 		{
-			SimpleGUI::IMECandidateWindow(g_deferredImeCandidateWindow.pos);
+			DrawIMECandidateWindowLimited(g_deferredImeCandidateWindow.pos);
 			g_deferredImeCandidateWindow.requested = false;
 		}
 	}
