@@ -284,7 +284,7 @@ public:
             : language.get("settings", "profile", "profile") + U" " + language.get("settings", "profile", "new_save");
         getData().fonts.font(title).draw(25, Arg::topCenter(X_CENTER, 10), getData().colors.white);
         getData().fonts.font(language.get("settings", "profile", "name")).draw(18, Arg::leftCenter(100, 130), getData().colors.white);
-        SimpleGUI::TextArea(name_area, Vec2{ 100, 150 }, SizeF{ 600, 36 }, SimpleGUI::PreferredTextAreaMaxChars);
+        text_area_with_ime_candidate_window(name_area, Vec2{ 100, 150 }, SizeF{ 600, 36 }, SimpleGUI::PreferredTextAreaMaxChars);
         sanitize_profile_name_text();
 
         const String profile_name = name_area.text.trimmed();

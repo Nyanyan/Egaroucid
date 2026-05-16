@@ -124,7 +124,7 @@ public:
 
         // New folder UI - horizontal layout
         getData().fonts.font(language.get("in_out", "new_folder")).draw(15, Arg::rightCenter(200, EXPORT_GAME_CREATE_FOLDER_Y_CENTER), getData().colors.white);
-        SimpleGUI::TextArea(new_folder_area, Vec2{210, EXPORT_GAME_CREATE_FOLDER_Y_CENTER - 30 / 2 - 2}, SizeF{400, 30}, 64);
+        text_area_with_ime_candidate_window(new_folder_area, Vec2{210, EXPORT_GAME_CREATE_FOLDER_Y_CENTER - 30 / 2 - 2}, SizeF{400, 30}, 64);
         
         create_folder_button.draw();
         if (create_folder_button.clicked()) {

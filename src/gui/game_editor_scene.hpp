@@ -196,14 +196,14 @@ public:
         // Date label / textbox (below player names)
         const int date_box_y = 47;
         getData().fonts.font(language.get("in_out", "date") + U": ").draw(15, Arg::rightCenter(X_CENTER, date_box_y + EXPORT_GAME_DATE_HEIGHT / 2), getData().colors.white);
-        SimpleGUI::TextArea(text_area[DATE_IDX], Vec2{X_CENTER, date_box_y}, SizeF{EXPORT_GAME_DATE_WIDTH, EXPORT_GAME_DATE_HEIGHT}, 30);
+        text_area_with_ime_candidate_window(text_area[DATE_IDX], Vec2{X_CENTER, date_box_y}, SizeF{EXPORT_GAME_DATE_WIDTH, EXPORT_GAME_DATE_HEIGHT}, 30);
 
         // Player name label / textboxes
         const int player_label_y = 85;
         const int player_box_y = 108;
         getData().fonts.font(language.get("in_out", "player_name")).draw(15, Arg::topCenter(X_CENTER, player_label_y), getData().colors.white);
-        SimpleGUI::TextArea(text_area[BLACK_PLAYER_IDX], Vec2{X_CENTER - EXPORT_GAME_PLAYER_WIDTH, player_box_y}, SizeF{EXPORT_GAME_PLAYER_WIDTH, EXPORT_GAME_PLAYER_HEIGHT}, SimpleGUI::PreferredTextAreaMaxChars);
-        SimpleGUI::TextArea(text_area[WHITE_PLAYER_IDX], Vec2{X_CENTER, player_box_y}, SizeF{EXPORT_GAME_PLAYER_WIDTH, EXPORT_GAME_PLAYER_HEIGHT}, SimpleGUI::PreferredTextAreaMaxChars);
+        text_area_with_ime_candidate_window(text_area[BLACK_PLAYER_IDX], Vec2{X_CENTER - EXPORT_GAME_PLAYER_WIDTH, player_box_y}, SizeF{EXPORT_GAME_PLAYER_WIDTH, EXPORT_GAME_PLAYER_HEIGHT}, SimpleGUI::PreferredTextAreaMaxChars);
+        text_area_with_ime_candidate_window(text_area[WHITE_PLAYER_IDX], Vec2{X_CENTER, player_box_y}, SizeF{EXPORT_GAME_PLAYER_WIDTH, EXPORT_GAME_PLAYER_HEIGHT}, SimpleGUI::PreferredTextAreaMaxChars);
         Circle(X_CENTER - EXPORT_GAME_PLAYER_WIDTH - EXPORT_GAME_RADIUS - 20, player_box_y + EXPORT_GAME_RADIUS, EXPORT_GAME_RADIUS).draw(getData().colors.black);
         Circle(X_CENTER + EXPORT_GAME_PLAYER_WIDTH + EXPORT_GAME_RADIUS + 20, player_box_y + EXPORT_GAME_RADIUS, EXPORT_GAME_RADIUS).draw(getData().colors.white);
         
@@ -212,7 +212,7 @@ public:
         const int memo_box_y = 163;
         getData().fonts.font(language.get("in_out", "memo")).draw(15, Arg::topCenter(X_CENTER, memo_label_y), getData().colors.white);
         getData().fonts.font(Format(text_area[MEMO_IDX].text.size()) + U"/" + Format(TEXTBOX_MAX_CHARS) + U" " + language.get("common", "characters")).draw(15, Arg::topRight(X_CENTER + EXPORT_GAME_MEMO_WIDTH / 2, memo_label_y), getData().colors.white);
-        SimpleGUI::TextArea(text_area[MEMO_IDX], Vec2{X_CENTER - EXPORT_GAME_MEMO_WIDTH / 2, memo_box_y}, SizeF{EXPORT_GAME_MEMO_WIDTH, EXPORT_GAME_MEMO_HEIGHT}, TEXTBOX_MAX_CHARS);
+        text_area_with_ime_candidate_window(text_area[MEMO_IDX], Vec2{X_CENTER - EXPORT_GAME_MEMO_WIDTH / 2, memo_box_y}, SizeF{EXPORT_GAME_MEMO_WIDTH, EXPORT_GAME_MEMO_HEIGHT}, TEXTBOX_MAX_CHARS);
         
         // Tab移動: black -> white -> date -> memo -> black
         auto focus_next_from = [&](int idx) {

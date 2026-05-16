@@ -22,6 +22,21 @@ constexpr int TEXT_INPUT_FORMAT_TRANSCRIPT_FROM_THIS_POSITION = 3;
 constexpr int TEXT_INPUT_FORMAT_BOARD = 4;
 constexpr int TEXT_INPUT_FORMAT_GENERAL_BOARD_TRANSCRIPT = 5;
 
+inline bool text_area_with_ime_candidate_window(
+    TextAreaEditState& text,
+    const Vec2& pos,
+    const SizeF& size = SizeF{ 200, 100 },
+    size_t maxChars = SimpleGUI::PreferredTextAreaMaxChars,
+    bool enabled = true
+) {
+    const bool changed = SimpleGUI::TextArea(text, pos, size, maxChars, enabled);
+    if (enabled && text.active) {
+        // Windows 11 shows the IME candidate window here. Other platforms are no-op.
+        SimpleGUI::IMECandidateWindow(Vec2{ pos.x, pos.y + size.y });
+    }
+    return changed;
+}
+
 std::vector<History_elem> import_transcript_processing(std::vector<History_elem> n_history, History_elem strt_elem, std::string transcript, bool *failed) {
     *failed = false;
     Board h_bd = strt_elem.board;

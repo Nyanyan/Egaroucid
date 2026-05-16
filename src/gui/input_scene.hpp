@@ -64,7 +64,7 @@ public:
         int sy = 20 + icon_width + 30;
         getData().fonts.font(language.get("in_out", "input_text")).draw(25, Arg::topCenter(X_CENTER, sy), getData().colors.white);
         text_area.active = true;
-        bool text_changed = SimpleGUI::TextArea(text_area, Vec2{X_CENTER - 300, sy + 40}, SizeF{600, 150}, INPUT_STR_MAX_SIZE);
+        bool text_changed = text_area_with_ime_candidate_window(text_area, Vec2{X_CENTER - 300, sy + 40}, SizeF{600, 150}, INPUT_STR_MAX_SIZE);
         getData().fonts.font(language.get("in_out", "you_can_paste_with_ctrl_v") + U" / " + language.get("in_out", "you_can_drag_and_drop_game_file")).draw(13, Arg::topCenter(X_CENTER, sy + 195), getData().colors.white);
         bool return_pressed = false;
         if (text_area.text.size()) {
@@ -833,7 +833,7 @@ private:
             center_y + NEW_FOLDER_TEXTBOX_OFFSET_Y
         };
         SizeF text_size{ NEW_FOLDER_TEXTBOX_WIDTH, NEW_FOLDER_TEXTBOX_HEIGHT };
-        SimpleGUI::TextArea(new_folder_area, text_pos, text_size, SimpleGUI::PreferredTextAreaMaxChars);
+        text_area_with_ime_candidate_window(new_folder_area, text_pos, text_size, SimpleGUI::PreferredTextAreaMaxChars);
         gui_list::sanitize_text_area(new_folder_area);
 
         String folder_name = new_folder_area.text.trimmed();
@@ -1353,7 +1353,7 @@ public:
             constexpr int text_area_h = 40;
             constexpr int circle_radius = 15;
             for (int i = 0; i < 2; ++i) {
-                SimpleGUI::TextArea(text_area[i], Vec2{X_CENTER - 300, text_area_y[i]}, SizeF{600, text_area_h}, SimpleGUI::PreferredTextAreaMaxChars);
+                text_area_with_ime_candidate_window(text_area[i], Vec2{X_CENTER - 300, text_area_y[i]}, SizeF{600, text_area_h}, SimpleGUI::PreferredTextAreaMaxChars);
                 if (player_radio.checked == i) {
                     Circle(X_CENTER + 330, text_area_y[i] + text_area_h / 2, circle_radius).draw(getData().colors.black);
                 } else {

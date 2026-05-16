@@ -159,7 +159,7 @@ public:
                 getData().fonts.font(language.get("in_out", "new_folder") + U":").draw(20, Arg::leftCenter(label_base_x, label_center_y), getData().colors.white);
                 Vec2 text_pos{ OPENING_SETTING_SX + OPENING_SETTING_LEFT_MARGIN + NEW_FOLDER_TEXTBOX_OFFSET_X, label_center_y + NEW_FOLDER_TEXTBOX_OFFSET_Y };
                 SizeF text_size{ NEW_FOLDER_TEXTBOX_WIDTH, NEW_FOLDER_TEXTBOX_HEIGHT };
-                SimpleGUI::TextArea(csv_name_area, text_pos, text_size, SimpleGUI::PreferredTextAreaMaxChars);
+                text_area_with_ime_candidate_window(csv_name_area, text_pos, text_size, SimpleGUI::PreferredTextAreaMaxChars);
                 gui_list::sanitize_text_area(csv_name_area);
                 String folder_name = csv_name_area.text.trimmed();
                 bool can_create = gui_list::is_valid_folder_name(folder_name);
@@ -1040,12 +1040,12 @@ public:
                     .back_button_height = static_cast<double>(inline_edit_back_button.rect.h),
                     .ok_button_width = static_cast<double>(inline_edit_ok_button.rect.w),
                 });
-                SimpleGUI::TextArea(folder_rename_area, Vec2{ layout.primary_x, layout.text_y }, SizeF{ layout.primary_width, layout.field_height }, SimpleGUI::PreferredTextAreaMaxChars);
+                text_area_with_ime_candidate_window(folder_rename_area, Vec2{ layout.primary_x, layout.text_y }, SizeF{ layout.primary_width, layout.field_height }, SimpleGUI::PreferredTextAreaMaxChars);
                 gui_list::sanitize_text_area(folder_rename_area);
                 
                 // Draw weight label and text area
                 // getData().fonts.font(language.get("opening_setting", "weight") + U": ").draw(15, Arg::rightCenter(layout.secondary_x - 5, layout.text_y + layout.field_height / 2), getData().colors.white);
-                SimpleGUI::TextArea(folder_weight_area, Vec2{ layout.secondary_x, layout.text_y }, SizeF{ layout.secondary_width, layout.field_height }, SimpleGUI::PreferredTextAreaMaxChars);
+                text_area_with_ime_candidate_window(folder_weight_area, Vec2{ layout.secondary_x, layout.text_y }, SizeF{ layout.secondary_width, layout.field_height }, SimpleGUI::PreferredTextAreaMaxChars);
 
                 inline_edit_back_button.move((int)layout.back_x, (int)layout.buttons_y);
                 inline_edit_back_button.enable();
@@ -1228,8 +1228,8 @@ public:
                     .back_button_height = static_cast<double>(inline_edit_back_button.rect.h),
                     .ok_button_width = static_cast<double>(inline_edit_ok_button.rect.w),
                 });
-                SimpleGUI::TextArea(text_area[0], Vec2{ layout.primary_x, layout.text_y }, SizeF{ layout.primary_width, layout.field_height }, SimpleGUI::PreferredTextAreaMaxChars);
-                SimpleGUI::TextArea(text_area[1], Vec2{ layout.secondary_x, layout.text_y }, SizeF{ layout.secondary_width, layout.field_height }, SimpleGUI::PreferredTextAreaMaxChars);
+                text_area_with_ime_candidate_window(text_area[0], Vec2{ layout.primary_x, layout.text_y }, SizeF{ layout.primary_width, layout.field_height }, SimpleGUI::PreferredTextAreaMaxChars);
+                text_area_with_ime_candidate_window(text_area[1], Vec2{ layout.secondary_x, layout.text_y }, SizeF{ layout.secondary_width, layout.field_height }, SimpleGUI::PreferredTextAreaMaxChars);
                 handle_textarea_tab_navigation();
 
                 inline_edit_back_button.move((int)layout.back_x, (int)layout.buttons_y);
@@ -1289,9 +1289,9 @@ public:
                 rect.draw(getData().colors.green).drawFrame(1.0, getData().colors.white);
             }
             
-            SimpleGUI::TextArea(text_area[0], Vec2{OPENING_SETTING_SX + OPENING_SETTING_LEFT_MARGIN + 8, sy + OPENING_SETTING_HEIGHT / 2 - 17}, SizeF{600, 30}, SimpleGUI::PreferredTextAreaMaxChars);
+            text_area_with_ime_candidate_window(text_area[0], Vec2{OPENING_SETTING_SX + OPENING_SETTING_LEFT_MARGIN + 8, sy + OPENING_SETTING_HEIGHT / 2 - 17}, SizeF{600, 30}, SimpleGUI::PreferredTextAreaMaxChars);
             getData().fonts.font(language.get("opening_setting", "weight") + U": ").draw(15, Arg::rightCenter(OPENING_SETTING_SX + OPENING_SETTING_LEFT_MARGIN + OPENING_SETTING_WIDTH - 70, sy + OPENING_SETTING_HEIGHT / 2), getData().colors.white);
-            SimpleGUI::TextArea(text_area[1], Vec2{OPENING_SETTING_SX + OPENING_SETTING_LEFT_MARGIN + OPENING_SETTING_WIDTH - 70, sy + OPENING_SETTING_HEIGHT / 2 - 17}, SizeF{60, 30}, SimpleGUI::PreferredTextAreaMaxChars);
+            text_area_with_ime_candidate_window(text_area[1], Vec2{OPENING_SETTING_SX + OPENING_SETTING_LEFT_MARGIN + OPENING_SETTING_WIDTH - 70, sy + OPENING_SETTING_HEIGHT / 2 - 17}, SizeF{60, 30}, SimpleGUI::PreferredTextAreaMaxChars);
             handle_textarea_tab_navigation();
         }
         

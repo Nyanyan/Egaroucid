@@ -801,7 +801,7 @@ inline ExplorerDrawResult draw_folder_item(
             .ok_button_width = static_cast<double>(inline_config->ok_button->rect.w),
         });
 
-        SimpleGUI::TextArea(*inline_config->text_area, Vec2{ layout.primary_x, layout.text_y }, SizeF{ layout.primary_width, layout.field_height }, SimpleGUI::PreferredTextAreaMaxChars);
+        text_area_with_ime_candidate_window(*inline_config->text_area, Vec2{ layout.primary_x, layout.text_y }, SizeF{ layout.primary_width, layout.field_height }, SimpleGUI::PreferredTextAreaMaxChars);
         gui_list::sanitize_text_area(*inline_config->text_area);
 
         inline_config->back_button->move((int)layout.back_x, (int)layout.buttons_y);

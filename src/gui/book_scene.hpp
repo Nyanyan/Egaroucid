@@ -135,7 +135,7 @@ public:
             getData().fonts.font(language.get("book", "import_book")).draw(25, Arg::topCenter(X_CENTER, sy), getData().colors.white);
             getData().fonts.font(language.get("book", "input_book_path")).draw(14, Arg::topCenter(X_CENTER, sy + 38), getData().colors.white);
             text_area.active = true;
-            SimpleGUI::TextArea(text_area, Vec2{X_CENTER - 300, sy + 60}, SizeF{600, 100}, TEXTBOX_MAX_CHARS);
+            text_area_with_ime_candidate_window(text_area, Vec2{X_CENTER - 300, sy + 60}, SizeF{600, 100}, TEXTBOX_MAX_CHARS);
             bool return_pressed = false;
             if (text_area.text.size()) {
                 if (text_area.text[text_area.text.size() - 1] == '\n') {
@@ -268,7 +268,7 @@ public:
         if (!book_exporting) {
             getData().fonts.font(language.get("book", "export_book")).draw(25, Arg::topCenter(X_CENTER, sy), getData().colors.white);
             text_area.active = true;
-            SimpleGUI::TextArea(text_area, Vec2{X_CENTER - 300, sy + 40}, SizeF{600, 100}, TEXTBOX_MAX_CHARS);
+            text_area_with_ime_candidate_window(text_area, Vec2{X_CENTER - 300, sy + 40}, SizeF{600, 100}, TEXTBOX_MAX_CHARS);
             bool return_pressed = false;
             if (text_area.text.size()) {
                 if (text_area.text[text_area.text.size() - 1] == '\n') {
@@ -380,7 +380,7 @@ public:
             getData().fonts.font(language.get("book", "book_merge")).draw(25, Arg::topCenter(X_CENTER, sy), getData().colors.white);
             getData().fonts.font(language.get("book", "input_book_path")).draw(15, Arg::topCenter(X_CENTER, sy + 50), getData().colors.white);
             text_area.active = true;
-            SimpleGUI::TextArea(text_area, Vec2{X_CENTER - 300, sy + 80}, SizeF{600, 100}, TEXTBOX_MAX_CHARS);
+            text_area_with_ime_candidate_window(text_area, Vec2{X_CENTER - 300, sy + 80}, SizeF{600, 100}, TEXTBOX_MAX_CHARS);
             bool return_pressed = false;
             if (text_area.text.size()) {
                 if (text_area.text[text_area.text.size() - 1] == '\n') {
@@ -488,7 +488,7 @@ public:
             getData().fonts.font(language.get("book", "book_reference")).draw(25, Arg::topCenter(X_CENTER, sy), getData().colors.white);
             getData().fonts.font(language.get("book", "input_book_path")).draw(15, Arg::topCenter(X_CENTER, sy + 50), getData().colors.white);
             text_area.active = true;
-            SimpleGUI::TextArea(text_area, Vec2{X_CENTER - 300, sy + 80}, SizeF{600, 100}, TEXTBOX_MAX_CHARS);
+            text_area_with_ime_candidate_window(text_area, Vec2{X_CENTER - 300, sy + 80}, SizeF{600, 100}, TEXTBOX_MAX_CHARS);
             bool return_pressed = false;
             if (text_area.text.size()) {
                 if (text_area.text[text_area.text.size() - 1] == '\n') {
@@ -837,7 +837,7 @@ public:
                 getData().fonts.font(Unicode::Widen(preview)).draw(15, X_CENTER - 350, sy, getData().colors.white);
             } else {
                 text_area.active = true;
-                SimpleGUI::TextArea(text_area, Vec2{X_CENTER - 350, sy}, SizeF{700, 270}, TEXTBOX_MAX_CHARS);
+                text_area_with_ime_candidate_window(text_area, Vec2{X_CENTER - 350, sy}, SizeF{700, 270}, TEXTBOX_MAX_CHARS);
                 raw_transcripts = text_area.text.narrow();
             }
             n_loops_bar.draw();

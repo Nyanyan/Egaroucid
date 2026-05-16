@@ -345,6 +345,10 @@ public:
 		if (m_textArea.active)
 		{
 			SimpleGUI::TextArea(m_textArea, Vec2{ 100, 240 }, SizeF{ 800, 46 }, 128);
+			if (m_textArea.active)
+			{
+				SimpleGUI::IMECandidateWindow(Vec2{ 100, 286 });
+			}
 		}
 		else
 		{
