@@ -29,7 +29,8 @@ constexpr int BOARD_IMAGE_BRECT = 0;
 constexpr int BOARD_IMAGE_BSTAR = 1;
 constexpr int BOARD_IMAGE_WRECT = 2;
 constexpr int BOARD_IMAGE_WSTAR = 3;
-constexpr int BOARD_IMAGE_NOMARK = 4;
+constexpr int BOARD_IMAGE_VALUE = 4;
+constexpr int BOARD_IMAGE_NOMARK = 5;
 
 constexpr int BOARD_IMAGE_MARK_DELETED = -1;
 constexpr int BOARD_IMAGE_NOT_CLICKED = 2;
@@ -47,6 +48,9 @@ private:
     Radio_button coordinate_radio;
     int marks[HW2];
     int last_marked[HW2];
+    int eval_values[HW2];
+    bool eval_calculating[HW2];
+    std::future<int> eval_futures[HW2];
     bool taking_screen_shot;
 
 public:
@@ -64,7 +68,9 @@ public:
         mark_radio.push(radio_button_elem);
         radio_button_elem.init(480, 160, getData().fonts.font, 15, language.get("board_image", "star"), false, getData().colors.white);
         mark_radio.push(radio_button_elem);
-        radio_button_elem.init(480, 180, getData().fonts.font, 15, language.get("board_image", "nomark"), false, getData().colors.white);
+        radio_button_elem.init(480, 180, getData().fonts.font, 15, language.get("board_image", "value"), false, getData().colors.white);
+        mark_radio.push(radio_button_elem);
+        radio_button_elem.init(480, 200, getData().fonts.font, 15, language.get("board_image", "nomark"), false, getData().colors.white);
         mark_radio.push(radio_button_elem);
 
         color_radio.init();
@@ -88,6 +94,8 @@ public:
         for (int i = 0; i < HW2; ++i) {
             marks[i] = BOARD_IMAGE_NOMARK;
             last_marked[i] = BOARD_IMAGE_NOT_CLICKED;
+            eval_values[i] = SCORE_INF;
+            eval_calculating[i] = false;
         }
         taking_screen_shot = false;
     }
@@ -107,17 +115,46 @@ public:
         if (System::GetUserActions() & UserAction::CloseButtonClicked) {
             changeScene(U"Close", SCENE_FADE_TIME);
         }
+        uint64_t legal = getData().history_elem.board.get_legal();
+        for (int cell = 0; cell < HW2; ++cell) {
+            if (eval_calculating[cell] && eval_futures[cell].valid()) {
+                if (eval_futures[cell].wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
+                    eval_values[cell] = eval_futures[cell].get();
+                    eval_calculating[cell] = false;
+                }
+            }
+        }
         for (int cell = 0; cell < HW2; ++cell) {
             int x = BOARD_SX + (cell % HW) * BOARD_CELL_SIZE;
             int y = BOARD_SY + (cell / HW) * BOARD_CELL_SIZE;
             Rect cell_region(x, y, BOARD_CELL_SIZE, BOARD_CELL_SIZE);
             if (cell_region.leftPressed()) {
+                const int policy = HW2_M1 - cell;
+                const bool is_legal = (legal >> policy) & 1ULL;
+                if (mark_radio.checked == BOARD_IMAGE_VALUE && !is_legal) {
+                    continue;
+                }
                 if (marks[cell] == mark_radio.checked && last_marked[cell] != mark_radio.checked) {
                     marks[cell] = BOARD_IMAGE_NOMARK;
                     last_marked[cell] = BOARD_IMAGE_MARK_DELETED;
                 } else if (last_marked[cell] != BOARD_IMAGE_MARK_DELETED) {
                     marks[cell] = mark_radio.checked;
                     last_marked[cell] = mark_radio.checked;
+                    if (mark_radio.checked == BOARD_IMAGE_VALUE) {
+                        eval_values[cell] = SCORE_INF;
+                        if (!eval_calculating[cell]) {
+                            Board board = getData().history_elem.board;
+                            const int level = getData().menu_elements.level;
+                            eval_calculating[cell] = true;
+                            eval_futures[cell] = std::async(std::launch::async, [board, level, policy]() {
+                                Board b = board;
+                                Flip flip;
+                                calc_flip(&flip, &b, policy);
+                                b.move_board(&flip);
+                                return -ai(b, level, true, 0, false, false).value;
+                            });
+                        }
+                    }
                 }
             } else {
                 last_marked[cell] = BOARD_IMAGE_NOT_CLICKED;
@@ -182,6 +219,9 @@ public:
                         Shape2D::Star(BOARD_IMAGE_STAR_SIZE, Vec2{ x_center, y_center }).drawFrame(BOARD_IMAGE_FRAME_WIDTH, getData().colors.black);
                     }
                 }
+            } else if (marks[cell] == BOARD_IMAGE_VALUE) {
+                const String value_str = eval_calculating[cell] ? U"…" : Format(eval_values[cell]);
+                getData().fonts.font_bold(value_str).drawAt(15, x_center, y_center, getData().colors.white);
             }
         }
 

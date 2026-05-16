@@ -307,6 +307,7 @@
         "default": "デフォルト",
         "monochrome": "モノクロ",
         "mark": "マーク",
+        "value": "評価値",
         "color": "色"
     },
     "opening_setting": {

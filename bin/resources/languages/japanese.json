@@ -309,6 +309,7 @@
         "default": "デフォルト",
         "monochrome": "モノクロ",
         "mark": "マーク",
+        "value": "評価値",
         "color": "色",
         "outer_frame_color": "外枠の色",
         "white": "白",

@@ -309,6 +309,7 @@
         "default": "默认",
         "monochrome": "单色",
         "mark": "标记",
+        "value": "估值",
         "color": "颜色",
         "outer_frame_color": "外框颜色",
         "white": "白色",

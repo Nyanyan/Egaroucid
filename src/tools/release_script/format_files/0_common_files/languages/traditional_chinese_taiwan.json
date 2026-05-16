@@ -305,6 +305,7 @@
         "default": "預設",
         "monochrome": "單色",
         "mark": "標記",
+        "value": "評估值",
         "color": "顏色"
     },
     "opening_setting": {

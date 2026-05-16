@@ -307,6 +307,7 @@
         "default": "默认",
         "monochrome": "单色",
         "mark": "标记",
+        "value": "估值",
         "color": "颜色"
     },
     "opening_setting": {

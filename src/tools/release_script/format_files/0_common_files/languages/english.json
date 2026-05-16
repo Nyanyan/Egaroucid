@@ -305,6 +305,7 @@
         "default": "Default",
         "monochrome": "Monochrome",
         "mark": "Mark",
+        "value": "Value",
         "color": "Color"
     },
     "opening_setting": {

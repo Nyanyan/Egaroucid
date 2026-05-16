@@ -307,6 +307,7 @@
         "default": "Default",
         "monochrome": "Monochrome",
         "mark": "Mark",
+        "value": "Value",
         "color": "Color",
         "outer_frame_color": "Outer Frame",
         "white": "White",
