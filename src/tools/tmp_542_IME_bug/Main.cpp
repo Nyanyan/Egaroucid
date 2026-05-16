@@ -1,8 +1,9 @@
-﻿# include <Siv3D.hpp>
+# include <Siv3D.hpp>
 
 # if SIV3D_PLATFORM(WINDOWS)
 # include <Windows.h>
 # include <imm.h>
+# include <msctf.h>
 # endif
 
 namespace
@@ -28,70 +29,107 @@ namespace
 	}
 
 # if SIV3D_PLATFORM(WINDOWS)
-	[[nodiscard]]
-	int32 DrainMessageRange(const UINT first, const UINT last)
+	template <class T>
+	void SafeRelease(T*& p) noexcept
 	{
-		int32 count = 0;
-		MSG msg{};
-		while (PeekMessageW(&msg, nullptr, first, last, PM_REMOVE))
+		if (p)
 		{
-			++count;
+			p->Release();
+			p = nullptr;
 		}
-		return count;
+	}
+
+	void PostEscapeKeyToWindow(const HWND hwnd)
+	{
+		if (not hwnd)
+		{
+			return;
+		}
+
+		PostMessageW(hwnd, WM_KEYDOWN, VK_ESCAPE, 0x00010001);
+		PostMessageW(hwnd, WM_KEYUP, VK_ESCAPE, 0xC0010001);
 	}
 
 	[[nodiscard]]
-	int32 DrainPendingInputMessages()
+	bool CancelTSFComposition()
 	{
-		int32 total = 0;
-		total += DrainMessageRange(WM_KEYFIRST, WM_KEYLAST);
-		total += DrainMessageRange(WM_CHAR, WM_DEADCHAR);
-		total += DrainMessageRange(WM_SYSKEYDOWN, WM_SYSDEADCHAR);
-		total += DrainMessageRange(WM_IME_STARTCOMPOSITION, WM_IME_COMPOSITION);
-		total += DrainMessageRange(WM_IME_SETCONTEXT, WM_IME_KEYUP);
-		return total;
-	}
+		using TFGetThreadMgrFn = HRESULT(WINAPI*)(ITfThreadMgr**);
 
-	void ResetIMEContextAssociation()
-	{
-		if (const auto hwnd = static_cast<HWND>(Platform::Windows::Window::GetHWND()))
+		HMODULE hMsctf = LoadLibraryW(L"msctf.dll");
+		if (not hMsctf)
 		{
-			if (HIMC oldContext = ImmAssociateContext(hwnd, nullptr))
+			return false;
+		}
+
+		const auto tfGetThreadMgr = reinterpret_cast<TFGetThreadMgrFn>(GetProcAddress(hMsctf, "TF_GetThreadMgr"));
+		if (not tfGetThreadMgr)
+		{
+			FreeLibrary(hMsctf);
+			return false;
+		}
+
+		ITfThreadMgr* threadMgr = nullptr;
+		const HRESULT hrGetMgr = tfGetThreadMgr(&threadMgr);
+		FreeLibrary(hMsctf);
+		if (FAILED(hrGetMgr) || (not threadMgr))
+		{
+			return false;
+		}
+
+		ITfDocumentMgr* docMgr = nullptr;
+		ITfContext* context = nullptr;
+		ITfContextOwnerCompositionServices* compositionServices = nullptr;
+		bool cancelled = false;
+
+		if (SUCCEEDED(threadMgr->GetFocus(&docMgr)) && docMgr)
+		{
+			if (SUCCEEDED(docMgr->GetTop(&context)) && context)
 			{
-				ImmAssociateContext(hwnd, oldContext);
+				if (SUCCEEDED(context->QueryInterface(IID_ITfContextOwnerCompositionServices,
+					reinterpret_cast<void**>(&compositionServices))) && compositionServices)
+				{
+					// null = terminate all active compositions in this context
+					cancelled = SUCCEEDED(compositionServices->TerminateComposition(nullptr));
+				}
 			}
-
-			ImmAssociateContextEx(hwnd, nullptr, IACE_DEFAULT);
 		}
+
+		SafeRelease(compositionServices);
+		SafeRelease(context);
+		SafeRelease(docMgr);
+		SafeRelease(threadMgr);
+		return cancelled;
 	}
 
 	void CancelIMEComposition()
 	{
-		if (const auto hwnd = static_cast<HWND>(Platform::Windows::Window::GetHWND()))
+		const auto hwnd = static_cast<HWND>(Platform::Windows::Window::GetHWND());
+		if (not hwnd)
 		{
-			if (const auto himc = ImmGetContext(hwnd))
-			{
-				const BOOL wasOpen = ImmGetOpenStatus(himc);
-
-				// Clear current composition and candidate UI.
-				ImmNotifyIME(himc, NI_COMPOSITIONSTR, CPS_COMPLETE, 0);
-				ImmNotifyIME(himc, NI_COMPOSITIONSTR, CPS_CANCEL, 0);
-				ImmNotifyIME(himc, NI_CLOSECANDIDATE, 0, 0);
-
-				// Some IME implementations keep the comp string after CPS_CANCEL.
-				// Force the composition string to empty.
-				wchar_t empty[] = L"";
-				ImmSetCompositionStringW(himc, SCS_SETSTR, empty, sizeof(wchar_t), empty, sizeof(wchar_t));
-
-				// Re-open state is restored immediately to keep IME usability.
-				ImmSetOpenStatus(himc, FALSE);
-				ImmSetOpenStatus(himc, wasOpen);
-
-				ImmReleaseContext(hwnd, himc);
-			}
+			return;
 		}
 
-		ResetIMEContextAssociation();
+		if (const auto himc = ImmGetContext(hwnd))
+		{
+			const BOOL wasOpen = ImmGetOpenStatus(himc);
+
+			ImmNotifyIME(himc, NI_COMPOSITIONSTR, CPS_COMPLETE, 0);
+			ImmNotifyIME(himc, NI_COMPOSITIONSTR, CPS_CANCEL, 0);
+			ImmNotifyIME(himc, NI_CLOSECANDIDATE, 0, 0);
+
+			wchar_t empty[] = L"";
+			ImmSetCompositionStringW(himc, SCS_SETSTR, empty, sizeof(wchar_t), empty, sizeof(wchar_t));
+
+			ImmSetOpenStatus(himc, FALSE);
+			ImmSetOpenStatus(himc, wasOpen);
+
+			ImmReleaseContext(hwnd, himc);
+		}
+
+		(void)CancelTSFComposition();
+		SendMessageW(hwnd, WM_IME_ENDCOMPOSITION, 0, 0);
+		PostMessageW(hwnd, WM_IME_ENDCOMPOSITION, 0, 0);
+		PostEscapeKeyToWindow(hwnd);
 	}
 # endif
 }
@@ -117,15 +155,12 @@ private:
 	int32 m_aCount = 0;
 	int32 m_dCount = 0;
 	int32 m_eCount = 0;
-	int32 m_lastDrainCount = 0;
 
 public:
 	using App::Scene::Scene;
 
 	void update() override
 	{
-		// Intentionally avoid TextInput::UpdateText() in this scene.
-		// IME committed text can remain pending and appear when a TextArea becomes active later.
 		if (KeyA.down())
 		{
 			++m_aCount;
@@ -143,9 +178,8 @@ public:
 		{
 # if SIV3D_PLATFORM(WINDOWS)
 			CancelIMEComposition();
-			m_lastDrainCount = DrainPendingInputMessages();
 # endif
-			FlushTextInputBuffer();
+			(void)FlushTextInputBuffer();
 			getData().sanitizeTextInputSceneOnEnter = true;
 			changeScene(SceneName::TextInput, 0s);
 		}
@@ -175,8 +209,7 @@ public:
 
 		const String editingText = TextInput::GetEditingText();
 		m_bodyFont(U"IME editing text: [{}]"_fmt(editingText)).draw(40, 430, Palette::White);
-		m_bodyFont(U"(Open Sub Scene now transitions even while IME composition is active)").draw(40, 460, Palette::Orange);
-		m_bodyFont(U"Drained pending Win32 input messages: {}"_fmt(m_lastDrainCount)).draw(40, 490, Palette::White);
+		m_bodyFont(U"(Transition requests IME cancel, then moves to sub scene)").draw(40, 460, Palette::Orange);
 	}
 };
 
@@ -186,17 +219,59 @@ private:
 	Font m_titleFont{ 32, Typeface::Bold };
 	Font m_bodyFont{ 18 };
 	TextAreaEditState m_textArea;
-	TextEditState m_probeTextBox;
-	bool m_enterSanitizing = true;
-	int32 m_enterSanitizeFrames = 0;
-	int32 m_enterStableFrames = 0;
-	bool m_enterSanitizeForced = false;
-	int32 m_lastEnterDrainCount = 0;
-	String m_lastProbeText;
-	bool m_pendingClear = false;
-	int32 m_pendingClearFrames = 0;
-	int32 m_pendingClearStableFrames = 0;
-	int32 m_lastClearDrainCount = 0;
+	bool m_waitingForCleanIME = true;
+	int32 m_sanitizeFrames = 0;
+	int32 m_cleanStableFrames = 0;
+	bool m_sanitizeTimedOut = false;
+	String m_lastDiscarded;
+
+	void restartSanitize()
+	{
+		m_waitingForCleanIME = true;
+		m_sanitizeFrames = 0;
+		m_cleanStableFrames = 0;
+		m_sanitizeTimedOut = false;
+		m_lastDiscarded.clear();
+		ClearTextAreaState(m_textArea);
+		m_textArea.active = false;
+	}
+
+	void runSanitizeStep()
+	{
+		++m_sanitizeFrames;
+
+# if SIV3D_PLATFORM(WINDOWS)
+		CancelIMEComposition();
+# endif
+		m_lastDiscarded = FlushTextInputBuffer();
+
+		if (HasIMEEditingText() || (not m_lastDiscarded.isEmpty()))
+		{
+			m_cleanStableFrames = 0;
+		}
+		else
+		{
+			++m_cleanStableFrames;
+		}
+
+		if (2 <= m_cleanStableFrames)
+		{
+			m_waitingForCleanIME = false;
+			m_sanitizeTimedOut = false;
+			ClearTextAreaState(m_textArea);
+			m_textArea.active = true;
+			return;
+		}
+
+		// Avoid "freeze-looking" behavior.
+		// If IME still remains, keep TextArea inactive and ask for manual retry.
+		if (60 <= m_sanitizeFrames)
+		{
+			m_waitingForCleanIME = false;
+			m_sanitizeTimedOut = true;
+			m_textArea.active = false;
+		}
+	}
 
 public:
 	TextInputScene(const InitData& init)
@@ -211,68 +286,29 @@ public:
 		if (getData().sanitizeTextInputSceneOnEnter)
 		{
 			getData().sanitizeTextInputSceneOnEnter = false;
-			m_enterSanitizing = true;
-			m_enterSanitizeFrames = 0;
-			m_enterStableFrames = 0;
-			m_enterSanitizeForced = false;
-			m_lastProbeText.clear();
-			m_probeTextBox.text.clear();
-			m_probeTextBox.cursorPos = 0;
-			m_probeTextBox.active = true;
-			m_pendingClear = false;
-			m_textArea.active = false;
+			restartSanitize();
 		}
 
-		if (m_enterSanitizing)
+		if (m_waitingForCleanIME)
 		{
-			++m_enterSanitizeFrames;
-
-			// Keep a hidden text box active during the first few frames only.
-			// Keeping it active forever can itself keep IME composition alive.
-			if (m_enterSanitizeFrames <= 3)
-			{
-				m_probeTextBox.active = true;
-			}
-			else
-			{
-				m_probeTextBox.active = false;
-			}
-			SimpleGUI::TextBox(m_probeTextBox, Vec2{ -10000, -10000 }, 80, 64);
-
-# if SIV3D_PLATFORM(WINDOWS)
-			CancelIMEComposition();
-			m_lastEnterDrainCount = DrainPendingInputMessages();
-# endif
-			const String discarded = FlushTextInputBuffer();
-			m_lastProbeText = m_probeTextBox.text;
-
-			if (HasIMEEditingText() || (not discarded.isEmpty()) || (not m_probeTextBox.text.isEmpty()))
-			{
-				m_enterStableFrames = 0;
-				ClearTextAreaState(m_textArea);
-				m_textArea.active = false;
-				m_probeTextBox.text.clear();
-				m_probeTextBox.cursorPos = 0;
-			}
-			else
-			{
-				++m_enterStableFrames;
-			}
-
-			if ((2 <= m_enterStableFrames) || (20 <= m_enterSanitizeFrames))
-			{
-				m_enterSanitizeForced = (20 <= m_enterSanitizeFrames);
-				m_enterSanitizing = false;
-				m_probeTextBox.active = false;
-				m_probeTextBox.text.clear();
-				m_probeTextBox.cursorPos = 0;
-				ClearTextAreaState(m_textArea);
-			}
+			runSanitizeStep();
 		}
 
-		if (not m_enterSanitizing)
+		if (m_textArea.active)
 		{
 			SimpleGUI::TextArea(m_textArea, Vec2{ 100, 240 }, SizeF{ 800, 46 }, 128);
+		}
+		else
+		{
+			RectF{ 100, 240, 800, 46 }.draw(ColorF{ 0.16 });
+			if (m_waitingForCleanIME)
+			{
+				m_bodyFont(U"Sanitizing IME composition before TextArea activation...").draw(120, 252, Palette::Orange);
+			}
+			else
+			{
+				m_bodyFont(U"TextArea is inactive (IME composition is still pending).").draw(120, 252, Palette::Orange);
+			}
 		}
 
 		if (SimpleGUI::Button(U"Back To Main", Vec2{ 100, 320 }, 180))
@@ -280,50 +316,34 @@ public:
 # if SIV3D_PLATFORM(WINDOWS)
 			CancelIMEComposition();
 # endif
-			FlushTextInputBuffer();
+			(void)FlushTextInputBuffer();
 			changeScene(SceneName::Main, 0s);
 		}
 
 		if (SimpleGUI::Button(U"Clear TextArea", Vec2{ 300, 320 }, 180))
 		{
-			m_pendingClear = true;
-			m_pendingClearFrames = 0;
-			m_pendingClearStableFrames = 0;
-			m_textArea.active = false;
-		}
-
-		if (m_pendingClear)
-		{
-			++m_pendingClearFrames;
 # if SIV3D_PLATFORM(WINDOWS)
 			CancelIMEComposition();
-			m_lastClearDrainCount = DrainPendingInputMessages();
 # endif
-			const String discarded = FlushTextInputBuffer();
-
-			if (HasIMEEditingText() || (not discarded.isEmpty()))
-			{
-				m_pendingClearStableFrames = 0;
-			}
-			else
-			{
-				++m_pendingClearStableFrames;
-			}
-
-			if ((2 <= m_pendingClearStableFrames) || (120 <= m_pendingClearFrames))
-			{
-				m_pendingClear = false;
-				ClearTextAreaState(m_textArea);
-			}
+			(void)FlushTextInputBuffer();
+			ClearTextAreaState(m_textArea);
+			m_textArea.active = (not HasIMEEditingText());
 		}
 
 # if SIV3D_PLATFORM(WINDOWS)
 		if (SimpleGUI::Button(U"Cancel IME Composition", Vec2{ 500, 320 }, 220))
 		{
-			CancelIMEComposition();
-			ClearTextAreaState(m_textArea);
+			restartSanitize();
 		}
 # endif
+
+		if ((not m_textArea.active) && (not m_waitingForCleanIME))
+		{
+			if (SimpleGUI::Button(U"Retry Activate TextArea", Vec2{ 740, 320 }, 220))
+			{
+				restartSanitize();
+			}
+		}
 	}
 
 	void draw() const override
@@ -333,15 +353,9 @@ public:
 		m_bodyFont(U"If IME text leaked from MainScene, it appears in the TextArea on entry.").draw(100, 140, Palette::White);
 		m_bodyFont(U"Try repeating the flow with Microsoft IME / Google Japanese Input.").draw(100, 170, Palette::White);
 		m_bodyFont(U"Current IME editing text: [{}]"_fmt(TextInput::GetEditingText())).draw(100, 200, Palette::White);
-		m_bodyFont(U"Probe TextBox text: [{}]"_fmt(m_lastProbeText)).draw(100, 230, Palette::White);
-		m_bodyFont(U"Sanitize forced exit: {}"_fmt(m_enterSanitizeForced)).draw(100, 260, Palette::White);
-		m_bodyFont(U"Enter sanitize drained messages: {}"_fmt(m_lastEnterDrainCount)).draw(100, 360, Palette::White);
-		m_bodyFont(U"Clear-action drained messages: {}"_fmt(m_lastClearDrainCount)).draw(100, 390, Palette::White);
-		if (m_enterSanitizing)
-		{
-			RectF{ 100, 240, 800, 46 }.draw(ColorF{ 0.15 });
-			m_bodyFont(U"Sanitizing IME composition before TextArea activation...").draw(120, 252, Palette::Orange);
-		}
+		m_bodyFont(U"Last discarded by UpdateText: [{}]"_fmt(m_lastDiscarded)).draw(100, 230, Palette::White);
+		m_bodyFont(U"Sanitize frames: {} / stable: {}"_fmt(m_sanitizeFrames, m_cleanStableFrames)).draw(100, 360, Palette::White);
+		m_bodyFont(U"Sanitize timed out: {}"_fmt(m_sanitizeTimedOut)).draw(100, 390, Palette::White);
 	}
 };
 
@@ -359,10 +373,9 @@ void Main()
 
 	while (System::Update())
 	{
-		if (!manager.update())
+		if (not manager.update())
 		{
 			break;
 		}
 	}
 }
-
