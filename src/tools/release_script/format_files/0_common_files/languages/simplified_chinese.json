@@ -239,7 +239,9 @@
             "graph": "图像",
             "value": "双方估值变化",
             "sum_of_loss": "双方累计损子数",
-            "endgame_error": "终局错误"
+            "endgame_error": "终局错误",
+            "endgame_error_40_to_60": "40~60手",
+            "endgame_error_41_to_60": "41~60手"
         },
         "ai_focus": "AI聚焦的领域",
         "laser_pointer": "激光笔",

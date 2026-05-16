@@ -361,7 +361,7 @@ public:
         }
 
         // graph drawing
-        graph.draw(getData().graph_resources.nodes[0], getData().graph_resources.nodes[1], getData().graph_resources.n_discs, getData().menu_elements.show_graph, getData().menu_elements.level, getData().fonts.font, getData().menu_elements.change_color_type, getData().menu_elements.show_graph_sum_of_loss, getData().menu_elements.show_endgame_error);
+        graph.draw(getData().graph_resources.nodes[0], getData().graph_resources.nodes[1], getData().graph_resources.n_discs, getData().menu_elements.show_graph, getData().menu_elements.level, getData().fonts.font, getData().menu_elements.change_color_type, getData().menu_elements.show_graph_sum_of_loss, getData().menu_elements.show_endgame_error, getData().menu_elements.show_endgame_error_40_to_60);
 
         // info drawing
         int playing_mode = PLAYING_MODE_NONE;

@@ -239,7 +239,9 @@
             "graph": "グラフ",
             "value": "評価値",
             "sum_of_loss": "累積石損",
-            "endgame_error": "終盤石損"
+            "endgame_error": "終盤石損",
+            "endgame_error_40_to_60": "40~60手目",
+            "endgame_error_41_to_60": "41~60手目"
         },
         "ai_focus": "AIの注目する場所",
         "laser_pointer": "レーザーポインタ",

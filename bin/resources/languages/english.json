@@ -237,7 +237,9 @@
             "graph": "Graph",
             "value": "Evaluation",
             "sum_of_loss": "Sum of Loss",
-            "endgame_error": "Endgame Error"
+            "endgame_error": "Endgame Error",
+            "endgame_error_40_to_60": "Move 40-60",
+            "endgame_error_41_to_60": "Move 41-60"
         },
         "ai_focus": "AI's Focus",
         "laser_pointer": "Laser Pointer",

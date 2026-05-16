@@ -237,7 +237,9 @@
             "graph": "圖表",
             "value": "評分值",
             "sum_of_loss": "總損失值",
-            "endgame_error": "終局錯誤"
+            "endgame_error": "終局錯誤",
+            "endgame_error_40_to_60": "40~60手",
+            "endgame_error_41_to_60": "41~60手"
         },
         "ai_focus": "AI的注視點",
         "laser_pointer": "雷射筆",

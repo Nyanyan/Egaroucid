@@ -74,7 +74,7 @@ private:
     double dx;
 
 public:
-    void draw(std::vector<History_elem> nodes1, std::vector<History_elem> nodes2, int n_discs, bool show_graph, int level, Font font, int color_type, bool show_graph_sum_of_loss, bool show_endgame_error) {
+    void draw(std::vector<History_elem> nodes1, std::vector<History_elem> nodes2, int n_discs, bool show_graph, int level, Font font, int color_type, bool show_graph_sum_of_loss, bool show_endgame_error, bool show_endgame_error_40_to_60) {
         std::vector<std::vector<Graph_loss_elem>> sum_of_loss_nodes1(2);
         std::vector<std::vector<Graph_loss_elem>> sum_of_loss_nodes2(2);
         resolution = GRAPH_RESOLUTION;
@@ -130,7 +130,7 @@ public:
             }
         } else { // endgame error
             int endgame_error_black = 0, endgame_error_white = 0;
-            bool endgame_error_calculated = calc_endgame_error(nodes1, nodes2, &endgame_error_black, &endgame_error_white);
+            bool endgame_error_calculated = calc_endgame_error(nodes1, nodes2, &endgame_error_black, &endgame_error_white, show_endgame_error_40_to_60);
             int endgame_error_cy = sy - 48;
             int endgame_error_cx = sx + GRAPH_RECT_DX + GRAPH_RECT_WIDTH / 2;
             constexpr int ENDGAME_ERROR_DISC_RADIUS = 7;
@@ -354,8 +354,11 @@ private:
         }
     }
 
-    bool calc_endgame_error(std::vector<History_elem> nodes1, std::vector<History_elem> nodes2, int *endgame_error_black, int *endgame_error_white) {
+    bool calc_endgame_error(std::vector<History_elem> nodes1, std::vector<History_elem> nodes2, int *endgame_error_black, int *endgame_error_white, bool show_endgame_error_40_to_60) {
         constexpr int N_EMPTIES_ENDGAME_ERROR = 20; // last 20 empties
+        constexpr int ENDGAME_ERROR_START_DISC_INCLUDING_MOVE_40 = HW2 - N_EMPTIES_ENDGAME_ERROR;
+        constexpr int ENDGAME_ERROR_START_DISC_EXCLUDING_MOVE_40 = ENDGAME_ERROR_START_DISC_INCLUDING_MOVE_40 + 1;
+        const int endgame_error_start_disc = show_endgame_error_40_to_60 ? ENDGAME_ERROR_START_DISC_INCLUDING_MOVE_40 : ENDGAME_ERROR_START_DISC_EXCLUDING_MOVE_40;
         *endgame_error_black = 0;
         *endgame_error_white = 0;
         bool endgame_error_calculated = false;
@@ -365,7 +368,7 @@ private:
                     break;
                 }
             }
-            if (nodes1[i].board.n_discs() >= HW2 - N_EMPTIES_ENDGAME_ERROR) {
+            if (nodes1[i].board.n_discs() >= endgame_error_start_disc) {
                 if (nodes1[i].board.n_discs() - nodes1[i - 1].board.n_discs() != 1) {
                     return false;
                 }
@@ -380,7 +383,7 @@ private:
             }
         }
         for (int i = 0; i < (int)nodes2.size(); ++i) {
-            if (nodes2[i].board.n_discs() >= HW2 - N_EMPTIES_ENDGAME_ERROR) {
+            if (nodes2[i].board.n_discs() >= endgame_error_start_disc) {
                 if (i == 0) {
                     for (int j = (int)nodes1.size() - 1; j >= 0; --j) {
                         if (nodes1[j].board.n_discs() < nodes2[i].board.n_discs()) {

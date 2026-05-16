@@ -84,6 +84,8 @@ void init_default_settings(const Directories* directories, const Resources* reso
     settings->generate_random_board_score_range_max = 64;
     settings->show_hint_level = true;
     settings->show_endgame_error = false;
+    settings->show_endgame_error_40_to_60 = true;
+    settings->show_endgame_error_41_to_60 = false;
     settings->hint_colorize = false;
     settings->play_ordering_board_format = true;
     settings->play_ordering_transcript_format = false;
@@ -474,6 +476,16 @@ void init_settings(const Directories* directories, const Resources* resources, S
         }
         if (init_settings_import_bool(setting_json, U"show_endgame_error", &settings->show_endgame_error) != ERR_OK) {
             std::cerr << "err54" << std::endl;
+        }
+        if (init_settings_import_bool(setting_json, U"show_endgame_error_40_to_60", &settings->show_endgame_error_40_to_60) != ERR_OK) {
+            std::cerr << "err54-1" << std::endl;
+        }
+        if (init_settings_import_bool(setting_json, U"show_endgame_error_41_to_60", &settings->show_endgame_error_41_to_60) != ERR_OK) {
+            settings->show_endgame_error_41_to_60 = !settings->show_endgame_error_40_to_60;
+        }
+        if (settings->show_endgame_error_40_to_60 == settings->show_endgame_error_41_to_60) {
+            settings->show_endgame_error_40_to_60 = true;
+            settings->show_endgame_error_41_to_60 = false;
         }
         if (init_settings_import_bool(setting_json, U"hint_colorize", &settings->hint_colorize) != ERR_OK) {
             std::cerr << "err55" << std::endl;

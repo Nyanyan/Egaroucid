@@ -147,6 +147,10 @@ Menu create_menu(Menu_elements* menu_elements, Resources *resources, Font font, 
                 side_menu.push(side_side_menu);
             menu_e.push(side_menu);
             side_menu.init_check(language.get("display", "graph", "endgame_error") + get_shortcut_key_info(U"show_endgame_error"), &menu_elements->show_endgame_error, menu_elements->show_endgame_error);
+                side_side_menu.init_radio(language.get("display", "graph", "endgame_error_40_to_60"), &menu_elements->show_endgame_error_40_to_60, menu_elements->show_endgame_error_40_to_60);
+                side_menu.push(side_side_menu);
+                side_side_menu.init_radio(language.get("display", "graph", "endgame_error_41_to_60"), &menu_elements->show_endgame_error_41_to_60, menu_elements->show_endgame_error_41_to_60);
+                side_menu.push(side_side_menu);
             menu_e.push(side_menu);
         title.push(menu_e);
         menu_e.init_check(language.get("display", "ai_focus") + get_shortcut_key_info(U"show_ai_focus"), &menu_elements->show_ai_focus, menu_elements->show_ai_focus);
