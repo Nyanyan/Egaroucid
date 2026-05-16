@@ -33,13 +33,13 @@ inline Rect draw_shortcut_settings_row_background(const Colors& colors, int row_
 
 inline void draw_shortcut_settings_scroll_head(const Fonts& fonts, const Colors& colors, int strt_idx, int sy) {
     if (strt_idx > 0) {
-        fonts.font(U"...").draw(15, Arg::bottomCenter(X_CENTER, sy - 6), colors.white);
+        fonts.font(U"︙").draw(15, Arg::bottomCenter(X_CENTER, sy - 6), colors.white);
     }
 }
 
 inline void draw_shortcut_settings_scroll_tail(const Fonts& fonts, const Colors& colors, int next_idx, int total, int sy) {
     if (next_idx < total) {
-        fonts.font(U"...").draw(15, Arg::topCenter(X_CENTER, sy + 6), colors.white);
+        fonts.font(U"︙").draw(15, Arg::topCenter(X_CENTER, sy + 6), colors.white);
     }
 }
 
