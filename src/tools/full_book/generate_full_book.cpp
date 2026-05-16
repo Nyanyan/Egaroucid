@@ -35,7 +35,7 @@ void load_data(std::string data_dir) {
         while (getline(ifs, line)) {
             board_str = line.substr(0, 66);
             board.from_str(board_str);
-            board = get_representative_board(board);
+            board = representative_board(board);
             val_str = line.substr(67);
             val = stoi(val_str);
             data[board] = val;
@@ -75,7 +75,7 @@ void generate_full_book(Board board, int depth, int level, bool passed) {
         }
     }
     if (depth == 0) { // leaf
-        Board unique_board = get_representative_board(board);
+        Board unique_board = representative_board(board);
         if (data.find(unique_board) == data.end()) { // no data found
             std::cerr << "[ERROR] " << board.to_str() << std::endl;
         } else {
