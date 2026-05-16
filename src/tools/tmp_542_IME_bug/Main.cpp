@@ -1,5 +1,27 @@
 ﻿# include <Siv3D.hpp>
 
+namespace
+{
+	[[nodiscard]]
+	bool HasIMEEditingText()
+	{
+		return (not TextInput::GetEditingText().isEmpty());
+	}
+
+	void ClearTextAreaState(TextAreaEditState& state)
+	{
+		state.clear();
+		state.active = true;
+	}
+
+# if SIV3D_PLATFORM(WINDOWS)
+	void CancelIMEComposition()
+	{
+		Platform::Windows::TextInput::DisableIME();
+	}
+# endif
+}
+
 enum class SceneName
 {
 	Main,
@@ -20,6 +42,7 @@ private:
 	int32 m_aCount = 0;
 	int32 m_dCount = 0;
 	int32 m_eCount = 0;
+	String m_blockedEditingText;
 
 public:
 	using App::Scene::Scene;
@@ -43,8 +66,23 @@ public:
 
 		if (SimpleGUI::Button(U"Open Sub Scene (TextArea)", Vec2{ 320, 500 }, 320))
 		{
-			changeScene(SceneName::TextInput, 0s);
+			if (HasIMEEditingText())
+			{
+				m_blockedEditingText = TextInput::GetEditingText();
+			}
+			else
+			{
+				m_blockedEditingText.clear();
+				changeScene(SceneName::TextInput, 0s);
+			}
 		}
+
+# if SIV3D_PLATFORM(WINDOWS)
+		if (SimpleGUI::Button(U"Cancel IME Composition", Vec2{ 320, 540 }, 320))
+		{
+			CancelIMEComposition();
+		}
+# endif
 	}
 
 	void draw() const override
@@ -61,6 +99,14 @@ public:
 		m_bodyFont(U"A: {}"_fmt(m_aCount)).draw(80, 320, Palette::Skyblue);
 		m_bodyFont(U"D: {}"_fmt(m_dCount)).draw(80, 350, Palette::Skyblue);
 		m_bodyFont(U"E: {}"_fmt(m_eCount)).draw(80, 380, Palette::Skyblue);
+
+		const String editingText = TextInput::GetEditingText();
+		m_bodyFont(U"IME editing text: [{}]"_fmt(editingText)).draw(40, 430, Palette::White);
+		if (not m_blockedEditingText.isEmpty())
+		{
+			m_bodyFont(U"Transition blocked (IME editing was pending): [{}]"_fmt(m_blockedEditingText))
+				.draw(40, 460, Palette::Orange);
+		}
 	}
 };
 
@@ -75,10 +121,7 @@ public:
 	TextInputScene(const InitData& init)
 		: IScene{ init }
 	{
-		m_textArea.text.clear();
-		m_textArea.cursorPos = 0;
-		m_textArea.rebuildGlyphs();
-		m_textArea.active = true;
+		ClearTextAreaState(m_textArea);
 	}
 
 	void update() override
@@ -90,12 +133,19 @@ public:
 			changeScene(SceneName::Main, 0s);
 		}
 
-		if (SimpleGUI::Button(U"Clear TextArea", Vec2{ 300, 320 }, 180))
+		const bool canClear = TextInput::GetEditingText().isEmpty();
+		if (SimpleGUI::Button(U"Clear TextArea", Vec2{ 300, 320 }, 180, canClear))
 		{
-			m_textArea.text.clear();
-			m_textArea.cursorPos = 0;
-			m_textArea.rebuildGlyphs();
+			ClearTextAreaState(m_textArea);
 		}
+
+# if SIV3D_PLATFORM(WINDOWS)
+		if (SimpleGUI::Button(U"Cancel IME Composition", Vec2{ 500, 320 }, 220))
+		{
+			CancelIMEComposition();
+			ClearTextAreaState(m_textArea);
+		}
+# endif
 	}
 
 	void draw() const override
@@ -104,6 +154,7 @@ public:
 		m_titleFont(U"Sub Scene (TextArea)").draw(Arg::topCenter(500, 30), ColorF{ 0.95 });
 		m_bodyFont(U"If IME text leaked from MainScene, it appears in the TextArea on entry.").draw(100, 140, Palette::White);
 		m_bodyFont(U"Try repeating the flow with Microsoft IME / Google Japanese Input.").draw(100, 170, Palette::White);
+		m_bodyFont(U"Current IME editing text: [{}]"_fmt(TextInput::GetEditingText())).draw(100, 200, Palette::White);
 	}
 };
 
