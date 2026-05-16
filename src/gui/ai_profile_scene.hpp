@@ -55,7 +55,7 @@ public:
             changeScene(U"Close", SCENE_FADE_TIME);
         }
 
-        getData().fonts.font(language.get("settings", "profile", "profile") + U" " + language.get("settings", "profile", "load")).draw(25, Arg::topCenter(X_CENTER, 10), getData().colors.white);
+        getData().fonts.font(language.get("settings", "profile", "profile")).draw(25, Arg::topCenter(X_CENTER, 10), getData().colors.white);
         getData().fonts.font(language.get("settings", "profile", "double_click_to_load")).draw(14, Arg::topCenter(X_CENTER, 45), getData().colors.white);
 
         draw_profile_list();
@@ -143,14 +143,16 @@ private:
                 rect.drawFrame(3.0, getData().colors.cyan);
             }
 
-            getData().fonts.font(profiles[i].profile_name).draw(18, Arg::leftCenter(rect.x + 30, rect.y + 18), getData().colors.white);
-            getData().fonts.font(profiles[i].file_name).draw(12, Arg::leftCenter(rect.x + 30, rect.y + 43), getData().colors.light_green);
+            getData().fonts.font(profiles[i].profile_name).draw(18, Arg::leftCenter(rect.x + 50, rect.y + 18), getData().colors.white);
+            getData().fonts.font(profiles[i].file_name).draw(12, Arg::leftCenter(rect.x + 50, rect.y + 43), getData().colors.light_green);
             if (is_current_profile) {
-                const String label = is_modified_profile
-                    ? language.get("settings", "profile", "modified_from_profile")
-                    : language.get("settings", "profile", "current");
-                const Color label_color = is_modified_profile ? getData().colors.yellow : getData().colors.cyan;
-                getData().fonts.font(label).draw(12, Arg::rightCenter(rect.x + rect.w - 10, rect.y + rect.h / 2), label_color);
+                if (is_modified_profile) {
+                    const String label = language.get("settings", "profile", "modified_from_profile");
+                    getData().fonts.font(label).draw(12, Arg::bottomRight (rect.x + rect.w - 15, rect.y + rect.h - 5), getData().colors.cyan);
+                } else {
+                    const String label = language.get("settings", "profile", "current");
+                    getData().fonts.font(label).draw(12, Arg::rightCenter(rect.x + rect.w - 15, rect.y + rect.h / 2), getData().colors.cyan);
+                }
             }
 
             if (delete_buttons[i].clicked()) {
