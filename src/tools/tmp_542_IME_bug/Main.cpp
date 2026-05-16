@@ -43,6 +43,7 @@ private:
 	int32 m_dCount = 0;
 	int32 m_eCount = 0;
 	String m_blockedEditingText;
+	bool m_pendingSceneTransition = false;
 
 public:
 	using App::Scene::Scene;
@@ -66,12 +67,21 @@ public:
 
 		if (SimpleGUI::Button(U"Open Sub Scene (TextArea)", Vec2{ 320, 500 }, 320))
 		{
+			m_pendingSceneTransition = true;
+		}
+
+		if (m_pendingSceneTransition)
+		{
 			if (HasIMEEditingText())
 			{
 				m_blockedEditingText = TextInput::GetEditingText();
+# if SIV3D_PLATFORM(WINDOWS)
+				CancelIMEComposition();
+# endif
 			}
 			else
 			{
+				m_pendingSceneTransition = false;
 				m_blockedEditingText.clear();
 				changeScene(SceneName::TextInput, 0s);
 			}
@@ -92,7 +102,7 @@ public:
 		m_titleFont(U"IME Pending Text Repro").draw(Arg::topCenter(500, 30), ColorF{ 0.95 });
 		m_bodyFont(U"1) Turn IME ON in Japanese kana mode").draw(40, 120, Palette::White);
 		m_bodyFont(U"2) Press A twice, D twice, E once on this scene").draw(40, 150, Palette::White);
-		m_bodyFont(U"3) Click the button below to open the TextArea scene").draw(40, 180, Palette::White);
+		m_bodyFont(U"3) Click the button below (auto-cancel IME composition before transition)").draw(40, 180, Palette::White);
 		m_bodyFont(U"Expected repro: TextArea may already contain committed IME text.").draw(40, 210, Palette::Orange);
 
 		m_bodyFont(U"Key counts in this scene").draw(40, 280, Palette::White);
@@ -116,6 +126,7 @@ private:
 	Font m_titleFont{ 32, Typeface::Bold };
 	Font m_bodyFont{ 18 };
 	TextAreaEditState m_textArea;
+	bool m_pendingClear = false;
 
 public:
 	TextInputScene(const InitData& init)
@@ -130,13 +141,30 @@ public:
 
 		if (SimpleGUI::Button(U"Back To Main", Vec2{ 100, 320 }, 180))
 		{
+# if SIV3D_PLATFORM(WINDOWS)
+			CancelIMEComposition();
+# endif
 			changeScene(SceneName::Main, 0s);
 		}
 
-		const bool canClear = TextInput::GetEditingText().isEmpty();
-		if (SimpleGUI::Button(U"Clear TextArea", Vec2{ 300, 320 }, 180, canClear))
+		if (SimpleGUI::Button(U"Clear TextArea", Vec2{ 300, 320 }, 180))
 		{
-			ClearTextAreaState(m_textArea);
+			m_pendingClear = true;
+		}
+
+		if (m_pendingClear)
+		{
+			if (HasIMEEditingText())
+			{
+# if SIV3D_PLATFORM(WINDOWS)
+				CancelIMEComposition();
+# endif
+			}
+			else
+			{
+				m_pendingClear = false;
+				ClearTextAreaState(m_textArea);
+			}
 		}
 
 # if SIV3D_PLATFORM(WINDOWS)
