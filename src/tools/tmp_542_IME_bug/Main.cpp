@@ -143,6 +143,7 @@ enum class SceneName
 struct SharedData
 {
 	bool sanitizeTextInputSceneOnEnter = false;
+	String transitionEditingText;
 };
 
 using App = SceneManager<SceneName, SharedData>;
@@ -176,6 +177,7 @@ public:
 
 		if (SimpleGUI::Button(U"Open Sub Scene (TextArea)", Vec2{ 320, 500 }, 320))
 		{
+			getData().transitionEditingText = TextInput::GetEditingText();
 # if SIV3D_PLATFORM(WINDOWS)
 			CancelIMEComposition();
 # endif
@@ -224,6 +226,10 @@ private:
 	int32 m_cleanStableFrames = 0;
 	bool m_sanitizeTimedOut = false;
 	String m_lastDiscarded;
+	String m_staleEditingText;
+	bool m_staleGuardEnabled = false;
+	int32 m_staleGuardStableFrames = 0;
+	int32 m_staleReappearCount = 0;
 
 	void restartSanitize()
 	{
@@ -234,6 +240,18 @@ private:
 		m_lastDiscarded.clear();
 		ClearTextAreaState(m_textArea);
 		m_textArea.active = false;
+	}
+
+	[[nodiscard]]
+	bool IsStaleCompositionReappeared() const
+	{
+		if (not m_staleGuardEnabled)
+		{
+			return false;
+		}
+
+		const String editing = TextInput::GetEditingText();
+		return (not editing.isEmpty()) && (editing == m_staleEditingText);
 	}
 
 	void runSanitizeStep()
@@ -286,12 +304,42 @@ public:
 		if (getData().sanitizeTextInputSceneOnEnter)
 		{
 			getData().sanitizeTextInputSceneOnEnter = false;
+			m_staleEditingText = getData().transitionEditingText;
+			m_staleGuardEnabled = (not m_staleEditingText.isEmpty());
+			m_staleGuardStableFrames = 0;
+			m_staleReappearCount = 0;
 			restartSanitize();
 		}
 
 		if (m_waitingForCleanIME)
 		{
 			runSanitizeStep();
+		}
+		else if (IsStaleCompositionReappeared())
+		{
+			++m_staleReappearCount;
+			restartSanitize();
+		}
+		else if (m_staleGuardEnabled)
+		{
+			const String editing = TextInput::GetEditingText();
+			if (editing.isEmpty())
+			{
+				++m_staleGuardStableFrames;
+				if (2 <= m_staleGuardStableFrames)
+				{
+					m_staleGuardEnabled = false;
+				}
+			}
+			else if (editing != m_staleEditingText)
+			{
+				// New user composition has started; stop stale-string guard.
+				m_staleGuardEnabled = false;
+			}
+			else
+			{
+				m_staleGuardStableFrames = 0;
+			}
 		}
 
 		if (m_textArea.active)
@@ -354,6 +402,9 @@ public:
 		m_bodyFont(U"Try repeating the flow with Microsoft IME / Google Japanese Input.").draw(100, 170, Palette::White);
 		m_bodyFont(U"Current IME editing text: [{}]"_fmt(TextInput::GetEditingText())).draw(100, 200, Palette::White);
 		m_bodyFont(U"Last discarded by UpdateText: [{}]"_fmt(m_lastDiscarded)).draw(100, 230, Palette::White);
+		m_bodyFont(U"Stale guard text: [{}]"_fmt(m_staleEditingText)).draw(100, 260, Palette::White);
+		m_bodyFont(U"Stale guard enabled: {}"_fmt(m_staleGuardEnabled)).draw(100, 290, Palette::White);
+		m_bodyFont(U"Stale reappear count: {}"_fmt(m_staleReappearCount)).draw(100, 320, Palette::White);
 		m_bodyFont(U"Sanitize frames: {} / stable: {}"_fmt(m_sanitizeFrames, m_cleanStableFrames)).draw(100, 360, Palette::White);
 		m_bodyFont(U"Sanitize timed out: {}"_fmt(m_sanitizeTimedOut)).draw(100, 390, Palette::White);
 	}
