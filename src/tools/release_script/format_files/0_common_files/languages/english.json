@@ -55,6 +55,13 @@
             "special_key_error_message": "Ctrl/Shift/Alt keys alone cannot be assigned",
             "multi_input_error_message_mac": "Only Ctrl/Shift/Alt/Command are supported for simultaneous input",
             "special_key_error_message_mac": "Ctrl/Shift/Alt/Command keys alone cannot be assigned"
+        },
+        "shortcut_buttons": {
+            "settings": "Shortcut Button Settings",
+            "button": "Button",
+            "choose_function_message": "Select a function to assign (Esc to go back)",
+            "changing_message": "Assign selected function",
+            "function_duplicate_message": "This function is already assigned to button"
         }
     },
     "ai_settings": {

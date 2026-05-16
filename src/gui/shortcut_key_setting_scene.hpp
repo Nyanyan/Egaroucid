@@ -51,7 +51,7 @@ public:
             delete_buttons.emplace_back(delete_button);
         }
         assign_button.init(0, 0, 80, 22, 7, language.get("settings", "shortcut_keys", "assign"), 12, getData().fonts.font, getData().colors.white, getData().colors.black);
-        scroll_manager.init(770, 78, 10, 300, 20, (int)shortcut_keys.shortcut_keys.size(), SHORTCUT_KEY_SETTINGS_N_ON_WINDOW, 30, 78, 740 + 10, 300);
+        scroll_manager.init(770, SHORTCUT_SETTINGS_LIST_SY, 10, 300, 20, (int)shortcut_keys.shortcut_keys.size(), SHORTCUT_KEY_SETTINGS_N_ON_WINDOW, SHORTCUT_SETTINGS_LIST_SX, SHORTCUT_SETTINGS_LIST_SY, SHORTCUT_SETTINGS_LIST_WIDTH + 10, 300);
     }
 
     void update() override {
@@ -59,25 +59,14 @@ public:
             changeScene(U"Close", SCENE_FADE_TIME);
         }
         getData().fonts.font(language.get("settings", "shortcut_keys", "settings")).draw(25, Arg::topCenter(X_CENTER, 10), getData().colors.white);
-        int sy = 78;
+        int sy = SHORTCUT_SETTINGS_LIST_SY;
         int strt_idx_int = scroll_manager.get_strt_idx_int();
-        if (strt_idx_int > 0) {
-            getData().fonts.font(U"︙").draw(15, Arg::bottomCenter(X_CENTER, sy - 6), getData().colors.white);
-        }
+        draw_shortcut_settings_scroll_head(getData().fonts, getData().colors, strt_idx_int, sy);
         bool reset_changing_idx = false;
         for (int i = strt_idx_int; i < std::min((int)shortcut_keys.shortcut_keys.size(), strt_idx_int + SHORTCUT_KEY_SETTINGS_N_ON_WINDOW); ++i) {
-            Rect rect;
-            rect.y = sy;
-            rect.x = 30;
-            rect.w = 740;
-            rect.h = 30;
-            if (i % 2) {
-                rect.draw(getData().colors.dark_green).drawFrame(1.0, getData().colors.white);
-            } else {
-                rect.draw(getData().colors.green).drawFrame(1.0, getData().colors.white);
-            }
+            Rect rect = draw_shortcut_settings_row_background(getData().colors, i, sy);
             String function_name = shortcut_keys.shortcut_keys[i].name;
-            String function_description = shortcut_keys.get_shortcut_key_description(function_name);
+            String function_description = get_shortcut_function_description(function_name);
             getData().fonts.font(function_description).draw(12, Arg::leftCenter(rect.x + 10, sy + rect.h / 2), getData().colors.white);
             String shortcut_key_str;
             if (changing_idx != i) {
@@ -115,21 +104,20 @@ public:
                     if (changed_keys.size()) {
                         assign_button.enable();
                         message = language.get("settings", "shortcut_keys", "changing_message");
-                        // key valid?
                         int n_other_keys = 0;
                         for (String &key: changed_keys) {
                             if (std::find(allow_multi_input_keys.begin(), allow_multi_input_keys.end(), key) == allow_multi_input_keys.end()) {
                                 ++n_other_keys;
                             }
                         }
-                        if (n_other_keys == 0) { // Ctrl/Shift/Alt only
+                        if (n_other_keys == 0) {
                             assign_button.disable();
 #ifdef __APPLE__
                             message = language.get("settings", "shortcut_keys", "special_key_error_message_mac");
 #else
                             message = language.get("settings", "shortcut_keys", "special_key_error_message");
 #endif
-                        } else if (n_other_keys > 1) { // too many keys
+                        } else if (n_other_keys > 1) {
                             assign_button.disable();
 #ifdef __APPLE__
                             message = language.get("settings", "shortcut_keys", "multi_input_error_message_mac");
@@ -137,7 +125,6 @@ public:
                             message = language.get("settings", "shortcut_keys", "multi_input_error_message");
 #endif
                         }
-                        // key duplicate?
                         if (check_duplicate()) {
                             assign_button.disable();
                             message = language.get("settings", "shortcut_keys", "key_duplicate_message") + U": " + get_duplicate_function();
@@ -148,7 +135,7 @@ public:
                             changed_keys.clear();
                             reset_changing_idx = true;
                         }
-                    } else { // no keys
+                    } else {
                         assign_button.disable();
                         message = language.get("settings", "shortcut_keys", "changing_message");
                     }
@@ -156,9 +143,7 @@ public:
             }
             sy += rect.h;
         }
-        if (strt_idx_int + SHORTCUT_KEY_SETTINGS_N_ON_WINDOW < (int)shortcut_keys.shortcut_keys.size()) {
-            getData().fonts.font(U"︙").draw(15, Arg::topCenter(X_CENTER, sy + 6), getData().colors.white);
-        }
+        draw_shortcut_settings_scroll_tail(getData().fonts, getData().colors, strt_idx_int + SHORTCUT_KEY_SETTINGS_N_ON_WINDOW, (int)shortcut_keys.shortcut_keys.size(), sy);
         if (changing_idx == SHORTCUT_KEY_SETTINGS_IDX_NOT_CHANGING) {
             ok_button.draw();
             if (ok_button.clicked() || KeyEnter.down()) {
@@ -246,10 +231,11 @@ private:
                 }
                 if (duplicate) {
                     String function_name = shortcut_keys.shortcut_keys[i].name;
-                    return shortcut_keys.get_shortcut_key_description(function_name);
+                    return get_shortcut_function_description(function_name);
                 }
             }
         }
         return U"?";
     }
 };
+

@@ -44,6 +44,7 @@ private:
     AI_status ai_status;
     Button start_game_button;
     Button pass_button;
+    std::vector<Button> shortcut_buttons_grid;
     bool need_start_game_button;
     Umigame_status umigame_status;
     Book_accuracy_status book_accuracy_status;
@@ -84,6 +85,12 @@ public:
         }
         start_game_button.init(START_GAME_BUTTON_SX, START_GAME_BUTTON_SY, START_GAME_BUTTON_WIDTH, START_GAME_BUTTON_HEIGHT, START_GAME_BUTTON_RADIUS, language.get("play", "start_game"), 15, getData().fonts.font, getData().colors.white, getData().colors.black);
         pass_button.init(PASS_BUTTON_SX, PASS_BUTTON_SY, PASS_BUTTON_WIDTH, PASS_BUTTON_HEIGHT, PASS_BUTTON_RADIUS, language.get("play", "pass"), 15, getData().fonts.font, getData().colors.white, getData().colors.black);
+        shortcut_buttons_grid.clear();
+        for (int i = 0; i < SHORTCUT_BUTTON_GRID_COUNT; ++i) {
+            Button button;
+            button.init(0, 0, SHORTCUT_BUTTON_GRID_BUTTON_SIZE, SHORTCUT_BUTTON_GRID_BUTTON_SIZE, 5, Format(i + 1), 12, getData().fonts.font, getData().colors.white, getData().colors.black);
+            shortcut_buttons_grid.emplace_back(button);
+        }
         need_start_game_button_calculation();
         changing_scene = false;
         taking_screen_shot_state = 0;
@@ -142,6 +149,7 @@ public:
 
         // shortcut
         shortcut_keys.check_shortcut_key(&shortcut_key, &shortcut_key_pressed);
+        update_shortcut_buttons(true);
         // if (shortcut_key != SHORTCUT_KEY_UNDEFINED) {
         //     std::cerr << "shortcut key found: " << shortcut_key.narrow() << std::endl;
         // }
@@ -375,6 +383,7 @@ public:
         if (getData().menu_elements.show_opening_on_cell && !getData().menu.active()) {
             draw_opening_on_cell();
         }
+        update_shortcut_buttons(false);
 
         // menu
         bool draw_menu_flag = (taking_screen_shot_state == 0) && !changing_book_by_right_click;
@@ -622,6 +631,37 @@ private:
             resume_calculating();
             changeScene(U"Shortcut_key_setting", SCENE_FADE_TIME);
             return;
+        }
+        if (getData().menu_elements.shortcut_button_setting || shortcut_key == U"shortcut_button_setting") {
+            changing_scene = true;
+            stop_calculating();
+            resume_calculating();
+            changeScene(U"Shortcut_button_setting", SCENE_FADE_TIME);
+            return;
+        }
+    }
+
+    void update_shortcut_buttons(bool allow_trigger) {
+        if ((int)shortcut_buttons_grid.size() != SHORTCUT_BUTTON_GRID_COUNT) {
+            return;
+        }
+        for (int i = 0; i < SHORTCUT_BUTTON_GRID_COUNT; ++i) {
+            int x = SHORTCUT_BUTTON_GRID_ORIGIN_SX + (i % SHORTCUT_BUTTON_GRID_COLS) * (SHORTCUT_BUTTON_GRID_BUTTON_SIZE + SHORTCUT_BUTTON_GRID_GAP_X);
+            int y = SHORTCUT_BUTTON_GRID_ORIGIN_SY + (i / SHORTCUT_BUTTON_GRID_COLS) * (SHORTCUT_BUTTON_GRID_BUTTON_SIZE + SHORTCUT_BUTTON_GRID_GAP_Y);
+            shortcut_buttons_grid[i].move(x, y);
+            if (getData().menu.active()) {
+                shortcut_buttons_grid[i].disable_notransparent();
+            } else {
+                shortcut_buttons_grid[i].enable();
+            }
+            shortcut_buttons_grid[i].draw();
+            if (allow_trigger && !getData().menu.active() && shortcut_buttons_grid[i].clicked()) {
+                String function_name = shortcut_buttons.get_function(i);
+                if (function_name != U"") {
+                    shortcut_key = function_name;
+                    shortcut_key_pressed = function_name;
+                }
+            }
         }
     }
 

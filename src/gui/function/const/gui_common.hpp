@@ -95,6 +95,22 @@ constexpr int PASS_BUTTON_WIDTH = 90;
 constexpr int PASS_BUTTON_HEIGHT = 30;
 constexpr int PASS_BUTTON_RADIUS = 10;
 
+// main scene shortcut button grid constants
+constexpr int SHORTCUT_BUTTON_GRID_AREA_SX = 600;
+constexpr int SHORTCUT_BUTTON_GRID_AREA_SY = 5;
+constexpr int SHORTCUT_BUTTON_GRID_AREA_WIDTH = 100;
+constexpr int SHORTCUT_BUTTON_GRID_AREA_HEIGHT = 45;
+constexpr int SHORTCUT_BUTTON_GRID_COLS = 3;
+constexpr int SHORTCUT_BUTTON_GRID_ROWS = 2;
+constexpr int SHORTCUT_BUTTON_GRID_COUNT = SHORTCUT_BUTTON_GRID_COLS * SHORTCUT_BUTTON_GRID_ROWS;
+constexpr int SHORTCUT_BUTTON_GRID_GAP_X = 2;
+constexpr int SHORTCUT_BUTTON_GRID_GAP_Y = 1;
+constexpr int SHORTCUT_BUTTON_GRID_BUTTON_SIZE_X = (SHORTCUT_BUTTON_GRID_AREA_WIDTH - SHORTCUT_BUTTON_GRID_GAP_X * (SHORTCUT_BUTTON_GRID_COLS - 1)) / SHORTCUT_BUTTON_GRID_COLS;
+constexpr int SHORTCUT_BUTTON_GRID_BUTTON_SIZE_Y = (SHORTCUT_BUTTON_GRID_AREA_HEIGHT - SHORTCUT_BUTTON_GRID_GAP_Y * (SHORTCUT_BUTTON_GRID_ROWS - 1)) / SHORTCUT_BUTTON_GRID_ROWS;
+constexpr int SHORTCUT_BUTTON_GRID_BUTTON_SIZE = (SHORTCUT_BUTTON_GRID_BUTTON_SIZE_X < SHORTCUT_BUTTON_GRID_BUTTON_SIZE_Y ? SHORTCUT_BUTTON_GRID_BUTTON_SIZE_X : SHORTCUT_BUTTON_GRID_BUTTON_SIZE_Y);
+constexpr int SHORTCUT_BUTTON_GRID_ORIGIN_SX = SHORTCUT_BUTTON_GRID_AREA_SX + (SHORTCUT_BUTTON_GRID_AREA_WIDTH - (SHORTCUT_BUTTON_GRID_BUTTON_SIZE * SHORTCUT_BUTTON_GRID_COLS + SHORTCUT_BUTTON_GRID_GAP_X * (SHORTCUT_BUTTON_GRID_COLS - 1))) / 2;
+constexpr int SHORTCUT_BUTTON_GRID_ORIGIN_SY = SHORTCUT_BUTTON_GRID_AREA_SY + (SHORTCUT_BUTTON_GRID_AREA_HEIGHT - (SHORTCUT_BUTTON_GRID_BUTTON_SIZE * SHORTCUT_BUTTON_GRID_ROWS + SHORTCUT_BUTTON_GRID_GAP_Y * (SHORTCUT_BUTTON_GRID_ROWS - 1))) / 2;
+
 // graph drawing constants
 constexpr int GRAPH_RESOLUTION = 4;
 constexpr int GRAPH_SX = BOARD_SX + BOARD_SIZE + 65;
@@ -514,6 +530,7 @@ struct Menu_elements {
     bool force_specified_openings;
     bool opening_setting;
     bool shortcut_key_setting;
+    bool shortcut_button_setting;
 
     // display
     bool use_disc_hint;
@@ -645,6 +662,7 @@ struct Menu_elements {
         force_specified_openings = settings->force_specified_openings;
         opening_setting = false;
         shortcut_key_setting = false;
+        shortcut_button_setting = false;
 
         use_disc_hint = settings->use_disc_hint;
         n_disc_hint = settings->n_disc_hint;

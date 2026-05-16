@@ -55,6 +55,13 @@
             "special_key_error_message": "無法單獨指派 Ctrl/Shift/Alt 鍵",
             "multi_input_error_message_mac": "僅支援 Ctrl/Shift/Alt/Command 同時輸入",
             "special_key_error_message_mac": "無法單獨指派 Ctrl/Shift/Alt/Command 鍵"
+        },
+        "shortcut_buttons": {
+            "settings": "快捷按鈕設定",
+            "button": "按鈕",
+            "choose_function_message": "請選擇要指派的功能 (Esc 返回)",
+            "changing_message": "指派所選功能",
+            "function_duplicate_message": "此功能已指派給以下按鈕:"
         }
     },
     "ai_settings": {

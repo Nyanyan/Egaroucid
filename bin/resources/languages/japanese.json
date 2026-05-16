@@ -55,6 +55,13 @@
             "special_key_error_message": "Ctrl/Shift/Altのみのキーは登録できません",
             "multi_input_error_message_mac": "同時押しに対応しているのはCtrl/Shift/Alt/Commandのみです",
             "special_key_error_message_mac": "Ctrl/Shift/Alt/Commandのみのキーは登録できません"
+        },
+        "shortcut_buttons": {
+            "settings": "ショートカットボタン設定",
+            "button": "ボタン",
+            "choose_function_message": "割り当てる機能を選んでください (Escで戻る)",
+            "changing_message": "選択した機能を割り当て",
+            "function_duplicate_message": "この機能はすでに次のボタンに割り当て済みです:"
         }
     },
     "ai_settings": {

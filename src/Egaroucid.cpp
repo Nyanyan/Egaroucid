@@ -74,6 +74,7 @@ void Main() {
     scene_manager.add <Game_editor>(U"Game_editor");
     scene_manager.add <Save_location_picker>(U"Save_location_picker");
     scene_manager.add <Shortcut_key_setting>(U"Shortcut_key_setting");
+    scene_manager.add <Shortcut_button_setting>(U"Shortcut_button_setting");
     scene_manager.add <Merge_book>(U"Merge_book");
     scene_manager.add <Refer_book>(U"Refer_book");
     scene_manager.add <Enhance_book>(U"Enhance_book");

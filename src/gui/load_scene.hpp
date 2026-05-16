@@ -148,6 +148,11 @@ void init_shortcut_keys(const Directories* directories) {
     shortcut_keys.init(file);
 }
 
+void init_shortcut_buttons(const Directories* directories) {
+    String file = U"{}shortcut_button.json"_fmt(Unicode::Widen(directories->appdata_dir));
+    shortcut_buttons.init(file);
+}
+
 int check_update(const Directories* directories, String *new_version) {
     const FilePath version_save_path = U"{}version.txt"_fmt(Unicode::Widen(directories->appdata_dir));
     AsyncHTTPTask task = SimpleHTTP::SaveAsync(VERSION_URL, version_save_path);
@@ -394,6 +399,8 @@ int load_app(Directories* directories, Resources* resources, Settings* settings,
     if (code == ERR_OK) { // when resources initialized
         // shortcut keys
         init_shortcut_keys(directories);
+        // shortcut buttons
+        init_shortcut_buttons(directories);
         // settings -> menu elements
         menu_elements->init(settings, resources);
         // AI

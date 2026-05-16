@@ -82,6 +82,8 @@ void close_app(Menu_elements menu_elements, Settings settings, Directories direc
         save_settings(menu_elements, settings, directories, user_settings);
         String shortcut_key_file = U"{}shortcut_key.json"_fmt(Unicode::Widen(directories.appdata_dir));
         shortcut_keys.save_settings(shortcut_key_file);
+        String shortcut_button_file = U"{}shortcut_button.json"_fmt(Unicode::Widen(directories.appdata_dir));
+        shortcut_buttons.save_settings(shortcut_button_file);
         // Note: forced_openings are now saved via the opening_setting scene to the folder structure
         // No need to save here as the folder structure is already saved when OK is clicked
     }
