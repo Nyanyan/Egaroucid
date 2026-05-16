@@ -14,6 +14,24 @@
 #include "./../engine/engine_all.hpp"
 #include "function/function_all.hpp"
 
+void save_modified_ai_profile_if_needed(Menu_elements menu_elements, Settings* settings, Directories directories) {
+    if (!is_ai_profile_modified(directories, *settings, menu_elements)) {
+        return;
+    }
+
+    String base_profile_name = Unicode::Widen(settings->ai_profile_name);
+    if (base_profile_name.isEmpty()) {
+        base_profile_name = U"default";
+    }
+    const String memo_name = base_profile_name + U" " + DateTime::Now().format(U"yyyy-MM-dd");
+    const String profile_path = generate_unique_ai_profile_filepath(directories);
+    const AI_profile_values values = to_ai_profile_values(menu_elements);
+    if (save_ai_profile_values(profile_path, values, memo_name)) {
+        settings->ai_profile_file = FileSystem::FileName(profile_path).narrow();
+        settings->ai_profile_name = memo_name.narrow();
+    }
+}
+
 void save_settings(Menu_elements menu_elements, Settings settings, Directories directories, User_settings user_settings) {
     JSON setting_json;
     setting_json[U"auto_update_check"] = menu_elements.auto_update_check;
@@ -68,6 +86,7 @@ void save_settings(Menu_elements menu_elements, Settings settings, Directories d
 
 void close_app(Menu_elements menu_elements, Settings settings, Directories directories, User_settings user_settings, Book_information book_information, Forced_openings forced_openings, Window_state window_state) {
     if (!window_state.loading) {
+        save_modified_ai_profile_if_needed(menu_elements, &settings, directories);
         save_settings(menu_elements, settings, directories, user_settings);
         String shortcut_key_file = U"{}shortcut_key.json"_fmt(Unicode::Widen(directories.appdata_dir));
         shortcut_keys.save_settings(shortcut_key_file);

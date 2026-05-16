@@ -53,10 +53,6 @@ Menu create_menu(Menu_elements* menu_elements, Resources *resources, Font font, 
 
 
     title.init(language.get("settings", "settings"));
-        menu_e.init_button(language.get("settings", "profile", "profile"), &menu_elements->dummy);
-            side_menu.init_button(language.get("settings", "profile", "load"), &menu_elements->ai_profile_load);
-            menu_e.push(side_menu);
-        title.push(menu_e);
         menu_e.init_check(language.get("ai_settings", "use_book") + get_shortcut_key_info(U"use_book"), &menu_elements->use_book, menu_elements->use_book);
         title.push(menu_e);
         //menu_e.init_bar(language.get("ai_settings", "book_accuracy_level"), &menu_elements->book_acc_level, menu_elements->book_acc_level, 0, BOOK_ACCURACY_LEVEL_INF);
@@ -84,6 +80,10 @@ Menu create_menu(Menu_elements* menu_elements, Resources *resources, Font font, 
         menu_e.init_check(language.get("settings", "play", "force_specified_openings") + get_shortcut_key_info(U"force_specified_openings"), &menu_elements->force_specified_openings, menu_elements->force_specified_openings);
             side_menu.init_button(language.get("settings", "play", "opening_setting") + get_shortcut_key_info(U"opening_setting"), &menu_elements->opening_setting);
             menu_e.push(side_menu);
+        title.push(menu_e);
+        menu_e.init_button(language.get("settings", "profile", "profile"), &menu_elements->ai_profile_load);
+        title.push(menu_e);
+        menu_e.init_separator();
         title.push(menu_e);
         menu_e.init_button(language.get("settings", "shortcut_keys", "settings") + get_shortcut_key_info(U"shortcut_key_setting"), &menu_elements->shortcut_key_setting);
         title.push(menu_e);

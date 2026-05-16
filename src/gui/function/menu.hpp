@@ -36,6 +36,7 @@ constexpr int MENU_MODE_2BARS = 2;
 constexpr int MENU_MODE_CHECK = 3;
 constexpr int MENU_MODE_RADIO = 4;
 constexpr int MENU_MODE_BAR_CHECK = 5;
+constexpr int MENU_MODE_SEPARATOR = 6;
 
 constexpr int MENU_BAR_SIZE = 150;
 constexpr int MENU_BAR_HEIGHT = 14;
@@ -373,6 +374,13 @@ public:
     }
 
     void update() {
+        if (mode == MENU_MODE_SEPARATOR) {
+            was_active = is_active;
+            is_active = rect.mouseOver();
+            bar_changeable = false;
+            is_clicked = false;
+            return;
+        }
         was_active = is_active;
         is_active = rect.mouseOver();
         if (mode == MENU_MODE_BAR || mode == MENU_MODE_2BARS || mode == MENU_MODE_BAR_CHECK) {
@@ -503,6 +511,16 @@ public:
     }
 
     void draw_noupdate() {
+        if (mode == MENU_MODE_SEPARATOR) {
+            if (is_active) {
+                rect.draw(menu_active_color);
+            } else {
+                rect.draw(menu_select_color);
+            }
+            const int y = rect.y + rect.h / 2;
+            Line(rect.x + menu_offset_x, y, rect.x + rect.w - menu_offset_x, y).draw(1.5, Palette::Gray);
+            return;
+        }
         if (mode == MENU_MODE_BUTTON) {
             *is_clicked_p = is_clicked;
         }
@@ -614,6 +632,11 @@ public:
     }
 
     std::pair<int, int> size(std::string lang_name) {
+        if (mode == MENU_MODE_SEPARATOR) {
+            int h = font_size;
+            int w = h + menu_offset_x * 2;
+            return std::make_pair(h, w);
+        }
         int h, w;
         if (use_image) {
             h = rect.h - 2 * menu_image_offset_y;
@@ -665,6 +688,19 @@ public:
 
     bool checked() {
         return *is_checked;
+    }
+
+    void init_separator() {
+        clear();
+        click_supporter.init();
+        mode = MENU_MODE_SEPARATOR;
+        has_child = false;
+        is_active = false;
+        was_active = false;
+        str.clear();
+        bar_changeable = false;
+        is_clicked = false;
+        use_image = false;
     }
 
 };
