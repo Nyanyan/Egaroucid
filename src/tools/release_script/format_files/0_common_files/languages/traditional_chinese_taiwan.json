@@ -64,7 +64,7 @@
             "function_duplicate_message": "此功能已指派給以下按鈕:"
         },
         "profile": {
-            "profile": "設定檔",
+            "profile": "AI設定檔",
             "load": "讀取",
             "new_save": "新規儲存",
             "save": "儲存",

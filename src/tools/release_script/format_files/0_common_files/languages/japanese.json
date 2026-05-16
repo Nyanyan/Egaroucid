@@ -64,7 +64,7 @@
             "function_duplicate_message": "この機能はすでに次のボタンに割り当て済みです:"
         },
         "profile": {
-            "profile": "プロファイル",
+            "profile": "AIプロファイル",
             "load": "読み込み",
             "new_save": "新規保存",
             "save": "保存",

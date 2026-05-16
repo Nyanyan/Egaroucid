@@ -64,7 +64,7 @@
             "function_duplicate_message": "该功能已分配给以下按钮:"
         },
         "profile": {
-            "profile": "配置方案",
+            "profile": "AI配置方案",
             "load": "读取",
             "new_save": "新建保存",
             "save": "保存",

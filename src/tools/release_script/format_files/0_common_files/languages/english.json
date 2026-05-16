@@ -64,7 +64,7 @@
             "function_duplicate_message": "This function is already assigned to button"
         },
         "profile": {
-            "profile": "Profile",
+            "profile": "AI Profile",
             "load": "Load",
             "new_save": "New Save",
             "save": "Save",
