@@ -75,7 +75,8 @@
             "load_failed": "读取失败",
             "no_profile": "没有可用配置",
             "double_click_to_load": "双击即可读取",
-            "current": "当前"
+            "current": "当前",
+            "modified_from_profile": "已从此配置修改"
         }
     },
     "ai_settings": {

@@ -187,6 +187,23 @@ inline bool save_ai_profile_values(const FilePath& path, const AI_profile_values
     return json.save(path);
 }
 
+inline bool equals_ai_profile_values(const AI_profile_values& lhs, const AI_profile_values& rhs) {
+    if (lhs.use_book != rhs.use_book) return false;
+    if (lhs.accept_ai_loss != rhs.accept_ai_loss) return false;
+    if (lhs.max_loss != rhs.max_loss) return false;
+    if (lhs.loss_percentage != rhs.loss_percentage) return false;
+    if (lhs.level != rhs.level) return false;
+    if (lhs.n_threads != rhs.n_threads) return false;
+#if USE_CHANGEABLE_HASH_LEVEL
+    if (lhs.hash_level != rhs.hash_level) return false;
+#endif
+    if (lhs.ai_put_black != rhs.ai_put_black) return false;
+    if (lhs.ai_put_white != rhs.ai_put_white) return false;
+    if (lhs.pause_when_pass != rhs.pause_when_pass) return false;
+    if (lhs.force_specified_openings != rhs.force_specified_openings) return false;
+    return true;
+}
+
 inline Array<FilePath> enumerate_ai_profile_files(const Directories& directories) {
     ensure_ai_settings_dir(directories);
     Array<FilePath> files;
@@ -257,4 +274,19 @@ inline bool load_ai_profile_into_settings(const Directories& directories, Settin
     settings->ai_profile_file = profile_file.narrow();
     settings->ai_profile_name = "default";
     return false;
+}
+
+inline bool is_ai_profile_modified(const Directories& directories, const Settings& settings, const Menu_elements& menu_elements) {
+    String profile_file = Unicode::Widen(settings.ai_profile_file);
+    if (profile_file.isEmpty()) {
+        profile_file = U"default.json";
+    }
+    const String path = get_ai_settings_file_path(directories, profile_file);
+    AI_profile_values loaded_values;
+    String profile_name;
+    if (!load_ai_profile_values(path, &loaded_values, &profile_name)) {
+        return false;
+    }
+    const AI_profile_values current_values = to_ai_profile_values(menu_elements);
+    return !equals_ai_profile_values(loaded_values, current_values);
 }

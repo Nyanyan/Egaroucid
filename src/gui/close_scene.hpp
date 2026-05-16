@@ -16,14 +16,9 @@
 
 void save_settings(Menu_elements menu_elements, Settings settings, Directories directories, User_settings user_settings) {
     JSON setting_json;
-    setting_json[U"n_threads"] = menu_elements.n_threads;
     setting_json[U"auto_update_check"] = menu_elements.auto_update_check;
     setting_json[U"lang_name"] = Unicode::Widen(settings.lang_name);
     setting_json[U"book_file"] = Unicode::Widen(settings.book_file);
-    setting_json[U"use_book"] = menu_elements.use_book;
-    setting_json[U"level"] = menu_elements.level;
-    setting_json[U"ai_put_black"] = menu_elements.ai_put_black;
-    setting_json[U"ai_put_white"] = menu_elements.ai_put_white;
     setting_json[U"use_disc_hint"] = menu_elements.use_disc_hint;
     setting_json[U"use_umigame_value"] = menu_elements.use_umigame_value;
     setting_json[U"n_disc_hint"] = menu_elements.n_disc_hint;
@@ -37,11 +32,7 @@ void save_settings(Menu_elements menu_elements, Settings settings, Directories d
     setting_json[U"change_book_by_right_click"] = menu_elements.change_book_by_right_click;
     setting_json[U"show_last_move"] = menu_elements.show_last_move;
     setting_json[U"show_next_move"] = menu_elements.show_next_move;
-#if USE_CHANGEABLE_HASH_LEVEL
-    setting_json[U"hash_level"] = menu_elements.hash_level;
-#endif
     //setting_json[U"book_acc_level"] = menu_elements.book_acc_level;
-    setting_json[U"pause_when_pass"] = menu_elements.pause_when_pass;
     setting_json[U"book_learn_error_sum"] = menu_elements.book_learn_error_sum;
     setting_json[U"show_next_move_change_view"] = menu_elements.show_next_move_change_view;
     setting_json[U"change_color_type"] = menu_elements.change_color_type;
@@ -62,10 +53,6 @@ void save_settings(Menu_elements menu_elements, Settings settings, Directories d
     setting_json[U"show_ai_focus"] = menu_elements.show_ai_focus;
     setting_json[U"pv_length"] = menu_elements.pv_length;
     setting_json[U"screenshot_saving_dir"] = Unicode::Widen(user_settings.screenshot_saving_dir);
-    setting_json[U"accept_ai_loss"] = menu_elements.accept_ai_loss;
-    setting_json[U"max_loss"] = menu_elements.max_loss;
-    setting_json[U"loss_percentage"] = menu_elements.loss_percentage;
-    setting_json[U"force_specified_openings"] = menu_elements.force_specified_openings;
     setting_json[U"show_value_when_ai_calculating"] = menu_elements.show_value_when_ai_calculating;
     setting_json[U"generate_random_board_score_range_min"] = menu_elements.generate_random_board_score_range_min;
     setting_json[U"generate_random_board_score_range_max"] = menu_elements.generate_random_board_score_range_max;

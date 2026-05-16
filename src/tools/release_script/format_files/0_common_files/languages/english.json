@@ -75,7 +75,8 @@
             "load_failed": "Failed to load",
             "no_profile": "No profile found",
             "double_click_to_load": "Double click a profile to load",
-            "current": "Current"
+            "current": "Current",
+            "modified_from_profile": "Modified from this profile"
         }
     },
     "ai_settings": {

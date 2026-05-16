@@ -75,7 +75,8 @@
             "load_failed": "読み込みに失敗しました",
             "no_profile": "プロファイルがありません",
             "double_click_to_load": "ダブルクリックで読み込み",
-            "current": "現在"
+            "current": "現在",
+            "modified_from_profile": "このプロファイルから変更済み"
         }
     },
     "ai_settings": {

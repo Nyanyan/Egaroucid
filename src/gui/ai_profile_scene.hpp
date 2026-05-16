@@ -120,6 +120,7 @@ private:
             delete_buttons[i].draw();
 
             const bool is_current_profile = (profiles[i].file_name.narrow() == getData().settings.ai_profile_file);
+            const bool is_modified_profile = is_current_profile && is_ai_profile_modified(getData().directories, getData().settings, getData().menu_elements);
             if (is_current_profile) {
                 rect.drawFrame(3.0, getData().colors.cyan);
             }
@@ -127,7 +128,11 @@ private:
             getData().fonts.font(profiles[i].profile_name).draw(18, Arg::leftCenter(rect.x + 30, rect.y + 18), getData().colors.white);
             getData().fonts.font(profiles[i].file_name).draw(12, Arg::leftCenter(rect.x + 30, rect.y + 43), getData().colors.light_green);
             if (is_current_profile) {
-                getData().fonts.font(language.get("settings", "profile", "current")).draw(12, Arg::rightCenter(rect.x + rect.w - 10, rect.y + rect.h / 2), getData().colors.cyan);
+                const String label = is_modified_profile
+                    ? language.get("settings", "profile", "modified_from_profile")
+                    : language.get("settings", "profile", "current");
+                const Color label_color = is_modified_profile ? getData().colors.yellow : getData().colors.cyan;
+                getData().fonts.font(label).draw(12, Arg::rightCenter(rect.x + rect.w - 10, rect.y + rect.h / 2), label_color);
             }
 
             if (delete_buttons[i].clicked()) {
@@ -209,7 +214,7 @@ public:
         }
 
         save_button.draw();
-        if (save_button.is_enabled() && (save_button.clicked() || KeyEnter.down())) {
+        if (save_button.is_enabled() && save_button.clicked()) {
             save_profile(profile_name);
         }
 
@@ -237,6 +242,8 @@ private:
             getData().settings.ai_profile_file = FileSystem::FileName(path).narrow();
             getData().settings.ai_profile_name = profile_name.narrow();
             status_message = language.get("settings", "profile", "saved");
+            getData().graph_resources.need_init = false;
+            changeScene(U"Main_scene", SCENE_FADE_TIME);
             return;
         }
         status_message = language.get("settings", "profile", "save_failed");
