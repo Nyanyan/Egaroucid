@@ -660,7 +660,7 @@ private:
                     shortcut_buttons_grid[i].enable();
                 }
             } else {
-                shortcut_buttons_grid[i].button_color = getData().colors.dark_gray;
+                shortcut_buttons_grid[i].button_color = getData().colors.gray;
                 shortcut_buttons_grid[i].font_color = getData().colors.white;
                 shortcut_buttons_grid[i].disable_notransparent();
             }

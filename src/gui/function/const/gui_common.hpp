@@ -82,7 +82,7 @@ constexpr int BOARD_SX = LEFT_LEFT + BOARD_COORD_SIZE;
 constexpr int BOARD_CELL_SIZE = BOARD_SIZE / HW;
 
 // main scene start game button constants
-constexpr int START_GAME_BUTTON_SX = 550;
+constexpr int START_GAME_BUTTON_SX = 620;
 constexpr int START_GAME_BUTTON_SY = 11;
 constexpr int START_GAME_BUTTON_WIDTH = 90;
 constexpr int START_GAME_BUTTON_HEIGHT = 30;
@@ -96,15 +96,15 @@ constexpr int PASS_BUTTON_HEIGHT = 30;
 constexpr int PASS_BUTTON_RADIUS = 10;
 
 // main scene shortcut button grid constants
-constexpr int SHORTCUT_BUTTON_GRID_AREA_SX = 700;
+constexpr int SHORTCUT_BUTTON_GRID_AREA_SX = 715;
 constexpr int SHORTCUT_BUTTON_GRID_AREA_SY = 5;
 constexpr int SHORTCUT_BUTTON_GRID_AREA_WIDTH = 100;
-constexpr int SHORTCUT_BUTTON_GRID_AREA_HEIGHT = 35;
+constexpr int SHORTCUT_BUTTON_GRID_AREA_HEIGHT = 40;
 constexpr int SHORTCUT_BUTTON_GRID_COLS = 3;
 constexpr int SHORTCUT_BUTTON_GRID_ROWS = 2;
 constexpr int SHORTCUT_BUTTON_GRID_COUNT = SHORTCUT_BUTTON_GRID_COLS * SHORTCUT_BUTTON_GRID_ROWS;
 constexpr int SHORTCUT_BUTTON_GRID_GAP_X = 2;
-constexpr int SHORTCUT_BUTTON_GRID_GAP_Y = 1;
+constexpr int SHORTCUT_BUTTON_GRID_GAP_Y = 2;
 constexpr int SHORTCUT_BUTTON_GRID_BUTTON_SIZE_X = (SHORTCUT_BUTTON_GRID_AREA_WIDTH - SHORTCUT_BUTTON_GRID_GAP_X * (SHORTCUT_BUTTON_GRID_COLS - 1)) / SHORTCUT_BUTTON_GRID_COLS;
 constexpr int SHORTCUT_BUTTON_GRID_BUTTON_SIZE_Y = (SHORTCUT_BUTTON_GRID_AREA_HEIGHT - SHORTCUT_BUTTON_GRID_GAP_Y * (SHORTCUT_BUTTON_GRID_ROWS - 1)) / SHORTCUT_BUTTON_GRID_ROWS;
 constexpr int SHORTCUT_BUTTON_GRID_BUTTON_SIZE = (SHORTCUT_BUTTON_GRID_BUTTON_SIZE_X < SHORTCUT_BUTTON_GRID_BUTTON_SIZE_Y ? SHORTCUT_BUTTON_GRID_BUTTON_SIZE_X : SHORTCUT_BUTTON_GRID_BUTTON_SIZE_Y);
@@ -344,6 +344,7 @@ struct Colors {
     Color black{ Palette::Black };
     Color white{ Palette::White };
     Color dark_gray{ Color(51, 51, 51) };
+    Color gray{ Color(170, 170, 170) };
     Color cyan{ Color(110, 255, 255) };
     Color purple{ Color(142, 68, 173) };
     Color red{ Palette::Red };
