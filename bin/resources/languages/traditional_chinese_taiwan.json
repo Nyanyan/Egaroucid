@@ -303,7 +303,7 @@
         "save_image": "儲存圖片",
         "rect": "■",
         "star": "★",
-        "nomark": "刪除（點擊相同標記也可刪除）",
+        "nomark": "刪除",
         "default": "預設",
         "monochrome": "單色",
         "mark": "標記",

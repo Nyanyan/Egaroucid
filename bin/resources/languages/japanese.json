@@ -305,7 +305,7 @@
         "save_image": "画像を保存",
         "rect": "■",
         "star": "★",
-        "nomark": "削除 (同じマークでクリックでも可)",
+        "nomark": "削除",
         "default": "デフォルト",
         "monochrome": "モノクロ",
         "mark": "マーク",

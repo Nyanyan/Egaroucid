@@ -73,23 +73,25 @@ public:
         radio_button_elem.init(480, 200, getData().fonts.font, 15, language.get("board_image", "nomark"), false, getData().colors.white);
         mark_radio.push(radio_button_elem);
 
+        coordinate_radio.init();
+        radio_button_elem.init(600, 100, getData().fonts.font, 15, language.get("board_image", "include_coordinate"), true);
+        coordinate_radio.push(radio_button_elem);
+        radio_button_elem.init(600, 120, getData().fonts.font, 15, language.get("board_image", "exclude_coordinate"), false);
+        coordinate_radio.push(radio_button_elem);
+        
         color_radio.init();
-        radio_button_elem.init(480, 230, getData().fonts.font, 15, language.get("board_image", "default"), true);
+        radio_button_elem.init(600, 180, getData().fonts.font, 15, language.get("board_image", "default"), true);
         color_radio.push(radio_button_elem);
-        radio_button_elem.init(480, 250, getData().fonts.font, 15, language.get("board_image", "monochrome"), false);
+        radio_button_elem.init(600, 200, getData().fonts.font, 15, language.get("board_image", "monochrome"), false);
         color_radio.push(radio_button_elem);
 
         outer_frame_color_radio.init();
-        radio_button_elem.init(600, 230, getData().fonts.font, 15, language.get("board_image", "white"), true);
+        radio_button_elem.init(600, 260, getData().fonts.font, 15, language.get("board_image", "white"), true);
         outer_frame_color_radio.push(radio_button_elem);
-        radio_button_elem.init(600, 250, getData().fonts.font, 15, language.get("board_image", "dark_gray"), false);
+        radio_button_elem.init(600, 280, getData().fonts.font, 15, language.get("board_image", "dark_gray"), false);
         outer_frame_color_radio.push(radio_button_elem);
 
-        coordinate_radio.init();
-        radio_button_elem.init(480, 300, getData().fonts.font, 15, language.get("board_image", "include_coordinate"), true);
-        coordinate_radio.push(radio_button_elem);
-        radio_button_elem.init(480, 320, getData().fonts.font, 15, language.get("board_image", "exclude_coordinate"), false);
-        coordinate_radio.push(radio_button_elem);
+        
 
         for (int i = 0; i < HW2; ++i) {
             marks[i] = BOARD_IMAGE_NOMARK;
@@ -164,11 +166,11 @@ public:
         Scene::SetBackground(getData().colors.green);
         getData().fonts.font(language.get("in_out", "board_image")).draw(25, 480, 20, getData().colors.white);
         getData().fonts.font(language.get("board_image", "mark")).draw(15, 480, 70, getData().colors.white);
-        getData().fonts.font(language.get("board_image", "color")).draw(15, 480, 200, getData().colors.white);
+        getData().fonts.font(language.get("board_image", "coordinate")).draw(15, 600, 70, getData().colors.white);
+        getData().fonts.font(language.get("board_image", "color")).draw(15, 600, 150, getData().colors.white);
         if (color_radio.checked == BOARD_IMAGE_COLOR_DEFAULT) {
-            getData().fonts.font(language.get("board_image", "outer_frame_color")).draw(15, 600, 200, getData().colors.white);
+            getData().fonts.font(language.get("board_image", "outer_frame_color")).draw(15, 600, 230, getData().colors.white);
         }
-        getData().fonts.font(language.get("board_image", "coordinate")).draw(15, 480, 270, getData().colors.white);
         mark_radio.draw();
         color_radio.draw();
         if (color_radio.checked == BOARD_IMAGE_COLOR_DEFAULT) {
@@ -221,7 +223,11 @@ public:
                 }
             } else if (marks[cell] == BOARD_IMAGE_VALUE) {
                 const String value_str = eval_calculating[cell] ? U"…" : Format(eval_values[cell]);
-                getData().fonts.font_bold(value_str).drawAt(15, x_center, y_center, getData().colors.white);
+                Color color = getData().colors.white;
+                if (monochrome) {
+                    color = getData().colors.black;
+                }
+                getData().fonts.font_bold(value_str).drawAt(22, x_center, y_center, color);
             }
         }
 

@@ -303,7 +303,7 @@
         "save_image": "Save Image",
         "rect": "■",
         "star": "★",
-        "nomark": "Delete (Clicking same mark also works)",
+        "nomark": "Delete",
         "default": "Default",
         "monochrome": "Monochrome",
         "mark": "Mark",
