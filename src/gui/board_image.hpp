@@ -143,8 +143,7 @@ public:
                     marks[cell] = mark_radio.checked;
                     last_marked[cell] = mark_radio.checked;
                     if (mark_radio.checked == BOARD_IMAGE_VALUE) {
-                        eval_values[cell] = SCORE_INF;
-                        if (!eval_calculating[cell]) {
+                        if (eval_values[cell] == SCORE_INF && !eval_calculating[cell]) {
                             Board board = getData().history_elem.board;
                             const int level = getData().menu_elements.level;
                             eval_calculating[cell] = true;
@@ -227,7 +226,8 @@ public:
                 if (monochrome) {
                     color = getData().colors.black;
                 }
-                getData().fonts.font_bold(value_str).drawAt(22, x_center, y_center, color);
+                const String display_value_str = eval_calculating[cell] ? U"..." : Format(eval_values[cell]);
+                getData().fonts.font_bold(display_value_str).drawAt(22, x_center, y_center, color);
             }
         }
 
