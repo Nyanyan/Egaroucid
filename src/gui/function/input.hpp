@@ -38,6 +38,7 @@ struct Deferred_ime_candidate_window_state {
 
 inline Deferred_ime_candidate_window_state deferred_state;
 inline bool escape_suppressed_until_release{ false };
+inline int32 candidate_scroll_offset{ 0 };
 
 [[nodiscard]]
 inline bool has_visible_ime_candidates() {
@@ -59,6 +60,7 @@ inline void close_ime_candidate_window() {
         ImmReleaseContext(hwnd, himc);
     }
 #endif
+    candidate_scroll_offset = 0;
 }
 
 [[nodiscard]]
@@ -160,9 +162,24 @@ inline void flush_deferred_ime_candidate_window() {
             if (0.0 < candidate_item_height) {
                 visible_count = static_cast<int32>(available_height / candidate_item_height);
             }
-            visible_count = Clamp(visible_count, 0, static_cast<int32>(candidate_state.candidates.size()));
+            const int32 candidate_count = static_cast<int32>(candidate_state.candidates.size());
+            visible_count = Clamp(visible_count, 0, candidate_count);
 
             if (0 < visible_count) {
+                const int32 max_scroll_offset = Max(0, candidate_count - visible_count);
+                candidate_scroll_offset = Clamp(candidate_scroll_offset, 0, max_scroll_offset);
+                if (candidate_state.selectedIndex) {
+                    const int32 selected_in_page = (*candidate_state.selectedIndex - candidate_state.pageStartIndex);
+                    if ((0 <= selected_in_page) && (selected_in_page < candidate_count)) {
+                        if (selected_in_page < candidate_scroll_offset) {
+                            candidate_scroll_offset = selected_in_page;
+                        } else if ((candidate_scroll_offset + visible_count) <= selected_in_page) {
+                            candidate_scroll_offset = (selected_in_page - visible_count + 1);
+                        }
+                        candidate_scroll_offset = Clamp(candidate_scroll_offset, 0, max_scroll_offset);
+                    }
+                }
+
                 double box_width = 0.0;
                 for (const auto& candidate : candidate_state.candidates) {
                     box_width = Max<double>(box_width, font(candidate).region().w);
@@ -175,8 +192,9 @@ inline void flush_deferred_ime_candidate_window() {
                     .draw(CANDIDATE_WINDOW_COLOR)
                     .drawFrame(1, 0, CANDIDATE_WINDOW_FRAME_COLOR);
 
-                int32 current_index = candidate_state.pageStartIndex;
+                int32 current_index = (candidate_state.pageStartIndex + candidate_scroll_offset);
                 for (int32 i = 0; i < visible_count; ++i) {
+                    const int32 candidate_index = (candidate_scroll_offset + i);
                     const bool selected = (candidate_state.selectedIndex && (current_index == *candidate_state.selectedIndex));
                     const Vec2 item_pos{ deferred_state.pos.x, (deferred_state.pos.y + i * candidate_item_height) };
                     if (selected) {
@@ -184,8 +202,8 @@ inline void flush_deferred_ime_candidate_window() {
                             .stretched(-1, 0)
                             .draw(CANDIDATE_SELECTED_BACKGROUND_COLOR);
                     }
-                    if (candidate_state.candidates[i]) {
-                        font(candidate_state.candidates[i]).draw(
+                    if (candidate_state.candidates[candidate_index]) {
+                        font(candidate_state.candidates[candidate_index]).draw(
                             item_pos.movedBy(CANDIDATE_PADDING, (CANDIDATE_MARGIN * 0.5 - 1.0)),
                             CANDIDATE_TEXT_COLOR
                         );
@@ -193,8 +211,8 @@ inline void flush_deferred_ime_candidate_window() {
                     ++current_index;
                 }
 
-                const bool has_prev = (candidate_state.pageStartIndex != 0);
-                const bool has_next = ((candidate_state.pageStartIndex + visible_count) < candidate_state.count);
+                const bool has_prev = ((candidate_state.pageStartIndex + candidate_scroll_offset) != 0);
+                const bool has_next = ((candidate_state.pageStartIndex + candidate_scroll_offset + visible_count) < candidate_state.count);
                 if (has_prev) {
                     const Vec2 scroll_pos{
                         (deferred_state.pos.x + box_width - CANDIDATE_MINIMAP_WIDTH * 0.5 - 1),
@@ -214,6 +232,8 @@ inline void flush_deferred_ime_candidate_window() {
                     scroll_pos.movedBy(0, -15).asCircle(2.25).draw(CANDIDATE_MINIMAP_COLOR);
                 }
             }
+        } else {
+            candidate_scroll_offset = 0;
         }
 #endif
         deferred_state.requested = false;

@@ -90,9 +90,11 @@ namespace
 	void DrawIMECandidateWindowLimited(const Vec2& pos)
 	{
 # if SIV3D_PLATFORM(WINDOWS)
+		static int32 s_candidateScrollOffset = 0;
 		const auto& candidateState = Platform::Windows::TextInput::GetCandidateState();
 		if (candidateState.candidates.isEmpty())
 		{
+			s_candidateScrollOffset = 0;
 			return;
 		}
 
@@ -113,10 +115,29 @@ namespace
 		{
 			visibleCount = static_cast<int32>(availableHeight / candidateItemHeight);
 		}
-		visibleCount = Clamp(visibleCount, 0, static_cast<int32>(candidateState.candidates.size()));
+		const int32 candidateCount = static_cast<int32>(candidateState.candidates.size());
+		visibleCount = Clamp(visibleCount, 0, candidateCount);
 		if (visibleCount <= 0)
 		{
 			return;
+		}
+		const int32 maxScrollOffset = Max(0, candidateCount - visibleCount);
+		s_candidateScrollOffset = Clamp(s_candidateScrollOffset, 0, maxScrollOffset);
+		if (candidateState.selectedIndex)
+		{
+			const int32 selectedInPage = (*candidateState.selectedIndex - candidateState.pageStartIndex);
+			if ((0 <= selectedInPage) && (selectedInPage < candidateCount))
+			{
+				if (selectedInPage < s_candidateScrollOffset)
+				{
+					s_candidateScrollOffset = selectedInPage;
+				}
+				else if ((s_candidateScrollOffset + visibleCount) <= selectedInPage)
+				{
+					s_candidateScrollOffset = (selectedInPage - visibleCount + 1);
+				}
+				s_candidateScrollOffset = Clamp(s_candidateScrollOffset, 0, maxScrollOffset);
+			}
 		}
 
 		double boxWidth = 0.0;
@@ -132,9 +153,10 @@ namespace
 			.draw(CANDIDATE_WINDOW_COLOR)
 			.drawFrame(1, 0, CANDIDATE_WINDOW_FRAME_COLOR);
 
-		int32 currentIndex = candidateState.pageStartIndex;
+		int32 currentIndex = (candidateState.pageStartIndex + s_candidateScrollOffset);
 		for (int32 i = 0; i < visibleCount; ++i)
 		{
+			const int32 candidateIndex = (s_candidateScrollOffset + i);
 			const bool selected = (candidateState.selectedIndex && (currentIndex == *candidateState.selectedIndex));
 			const Vec2 itemPos{ pos.x, (pos.y + i * candidateItemHeight) };
 			if (selected)
@@ -143,9 +165,9 @@ namespace
 					.stretched(-1, 0)
 					.draw(CANDIDATE_SELECTED_BACKGROUND_COLOR);
 			}
-			if (candidateState.candidates[i])
+			if (candidateState.candidates[candidateIndex])
 			{
-				font(candidateState.candidates[i]).draw(
+				font(candidateState.candidates[candidateIndex]).draw(
 					itemPos.movedBy(CANDIDATE_PADDING, (CANDIDATE_MARGIN * 0.5 - 1.0)),
 					CANDIDATE_TEXT_COLOR
 				);
@@ -153,8 +175,8 @@ namespace
 			++currentIndex;
 		}
 
-		const bool hasPrev = (candidateState.pageStartIndex != 0);
-		const bool hasNext = ((candidateState.pageStartIndex + visibleCount) < candidateState.count);
+		const bool hasPrev = ((candidateState.pageStartIndex + s_candidateScrollOffset) != 0);
+		const bool hasNext = ((candidateState.pageStartIndex + s_candidateScrollOffset + visibleCount) < candidateState.count);
 		if (hasPrev)
 		{
 			const Vec2 scrollPos{
