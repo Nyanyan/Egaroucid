@@ -120,5 +120,8 @@ void Main() {
                 scene_manager.get()->fonts.font(logger_String).draw(12, Arg::bottomLeft(8, WINDOW_SIZE_Y - 5), scene_manager.get()->colors.white);
             }
         #endif
+
+        // Draw IME candidate window last so it stays on top of GUI elements.
+        gui_textarea_ime::flush_deferred_ime_candidate_window();
     }
 }

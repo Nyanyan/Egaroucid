@@ -22,6 +22,71 @@ constexpr int TEXT_INPUT_FORMAT_TRANSCRIPT_FROM_THIS_POSITION = 3;
 constexpr int TEXT_INPUT_FORMAT_BOARD = 4;
 constexpr int TEXT_INPUT_FORMAT_GENERAL_BOARD_TRANSCRIPT = 5;
 
+namespace gui_textarea_ime {
+
+struct Deferred_ime_candidate_window_state {
+    bool requested{ false };
+    Vec2 pos{ 0.0, 0.0 };
+};
+
+inline Deferred_ime_candidate_window_state deferred_state;
+
+inline Vec2 calculate_editing_text_pos(
+    const TextAreaEditState& text,
+    const Vec2& pos,
+    const SizeF& size
+) {
+    // Match SimpleGUI::TextArea internal text render region (Siv3D 0.6.x).
+    constexpr double TEXTAREA_SCROLLBAR_WIDTH = 3.0;
+    const RectF region = SimpleGUI::TextAreaRegion(pos, size);
+    const RectF text_render_region = region.stretched(-2.0, -(6.0 + TEXTAREA_SCROLLBAR_WIDTH), -2.0, -8.0);
+    const Vec2 default_pos = text_render_region.pos.movedBy(0.0, text.scrollY);
+
+    if ((text.cursorPos == 0) || text.glyphs.isEmpty()) {
+        return default_pos;
+    }
+
+    const size_t target_index = (text.cursorPos - 1);
+    if (target_index >= text.glyphs.size()) {
+        return default_pos;
+    }
+
+    for (const auto& clip_info : text.clipInfos) {
+        if (clip_info.index != target_index) {
+            continue;
+        }
+
+        const Glyph& glyph = text.glyphs[target_index];
+        const bool is_line_feed = (glyph.codePoint == U'\n');
+        const double caret_x = (clip_info.pos.x + (is_line_feed ? 0.0 : clip_info.clipRect.w));
+        const double caret_y = (clip_info.pos.y - glyph.getOffset().y);
+        return Vec2{ caret_x, caret_y };
+    }
+
+    return default_pos;
+}
+
+inline void request_textarea_ime_candidate_window(
+    const TextAreaEditState& text,
+    const Vec2& pos,
+    const SizeF& size
+) {
+    const Vec2 editing_text_pos = calculate_editing_text_pos(text, pos, size);
+    const double candidate_y = (editing_text_pos.y + SimpleGUI::GetFont().height() + 2.0);
+    deferred_state.requested = true;
+    deferred_state.pos = Vec2{ editing_text_pos.x, candidate_y };
+}
+
+inline void flush_deferred_ime_candidate_window() {
+    if (deferred_state.requested) {
+        // On Windows 11, draw candidate window at the requested position.
+        SimpleGUI::IMECandidateWindow(deferred_state.pos);
+        deferred_state.requested = false;
+    }
+}
+
+} // namespace gui_textarea_ime
+
 inline bool text_area_with_ime_candidate_window(
     TextAreaEditState& text,
     const Vec2& pos,
@@ -31,8 +96,7 @@ inline bool text_area_with_ime_candidate_window(
 ) {
     const bool changed = SimpleGUI::TextArea(text, pos, size, maxChars, enabled);
     if (enabled && text.active) {
-        // Windows 11 shows the IME candidate window here. Other platforms are no-op.
-        SimpleGUI::IMECandidateWindow(Vec2{ pos.x, pos.y + size.y });
+        gui_textarea_ime::request_textarea_ime_candidate_window(text, pos, size);
     }
     return changed;
 }

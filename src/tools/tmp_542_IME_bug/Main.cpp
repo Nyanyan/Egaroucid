@@ -8,6 +8,14 @@
 
 namespace
 {
+	struct DeferredImeCandidateWindowState
+	{
+		bool requested{ false };
+		Vec2 pos{ 0.0, 0.0 };
+	};
+
+	DeferredImeCandidateWindowState g_deferredImeCandidateWindow;
+
 	[[nodiscard]]
 	bool HasIMEEditingText()
 	{
@@ -26,6 +34,57 @@ namespace
 		String discarded;
 		TextInput::UpdateText(discarded, TextInputMode::DenyControl);
 		return discarded;
+	}
+
+	[[nodiscard]]
+	Vec2 CalculateTextAreaEditingTextPos(
+		const TextAreaEditState& text,
+		const Vec2& pos,
+		const SizeF& size
+	)
+	{
+		// Match SimpleGUI::TextArea internal text render region (Siv3D 0.6.x).
+		const RectF region = SimpleGUI::TextAreaRegion(pos, size);
+		const RectF textRenderRegion = region.stretched(-2.0, -(6.0 + 3.0), -2.0, -8.0);
+		const Vec2 defaultPos = textRenderRegion.pos.movedBy(0.0, text.scrollY);
+
+		if ((text.cursorPos == 0) || text.glyphs.isEmpty())
+		{
+			return defaultPos;
+		}
+
+		const size_t targetIndex = (text.cursorPos - 1);
+		if (targetIndex >= text.glyphs.size())
+		{
+			return defaultPos;
+		}
+
+		for (const auto& clipInfo : text.clipInfos)
+		{
+			if (clipInfo.index != targetIndex)
+			{
+				continue;
+			}
+
+			const Glyph& glyph = text.glyphs[targetIndex];
+			const bool isLineFeed = (glyph.codePoint == U'\n');
+			const double caretX = (clipInfo.pos.x + (isLineFeed ? 0.0 : clipInfo.clipRect.w));
+			const double caretY = (clipInfo.pos.y - glyph.getOffset().y);
+			return Vec2{ caretX, caretY };
+		}
+
+		return defaultPos;
+	}
+
+	[[nodiscard]]
+	Vec2 CalculateTextAreaIMECandidatePos(
+		const TextAreaEditState& text,
+		const Vec2& pos,
+		const SizeF& size
+	)
+	{
+		const Vec2 editingPos = CalculateTextAreaEditingTextPos(text, pos, size);
+		return Vec2{ editingPos.x, (editingPos.y + SimpleGUI::GetFont().height() + 2.0) };
 	}
 
 # if SIV3D_PLATFORM(WINDOWS)
@@ -342,12 +401,18 @@ public:
 			}
 		}
 
+		const Vec2 textAreaPos{ 100, 240 };
+		const SizeF textAreaSize{ 800, 46 };
+		bool requestImeCandidateWindow = false;
+		Vec2 imeCandidatePos{ 0.0, 0.0 };
+
 		if (m_textArea.active)
 		{
-			SimpleGUI::TextArea(m_textArea, Vec2{ 100, 240 }, SizeF{ 800, 46 }, 128);
+			SimpleGUI::TextArea(m_textArea, textAreaPos, textAreaSize, 128);
 			if (m_textArea.active)
 			{
-				SimpleGUI::IMECandidateWindow(Vec2{ 100, 286 });
+				requestImeCandidateWindow = true;
+				imeCandidatePos = CalculateTextAreaIMECandidatePos(m_textArea, textAreaPos, textAreaSize);
 			}
 		}
 		else
@@ -396,6 +461,12 @@ public:
 				restartSanitize();
 			}
 		}
+
+		if (requestImeCandidateWindow)
+		{
+			g_deferredImeCandidateWindow.requested = true;
+			g_deferredImeCandidateWindow.pos = imeCandidatePos;
+		}
 	}
 
 	void draw() const override
@@ -431,6 +502,12 @@ void Main()
 		if (not manager.update())
 		{
 			break;
+		}
+
+		if (g_deferredImeCandidateWindow.requested)
+		{
+			SimpleGUI::IMECandidateWindow(g_deferredImeCandidateWindow.pos);
+			g_deferredImeCandidateWindow.requested = false;
 		}
 	}
 }
