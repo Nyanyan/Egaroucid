@@ -20,6 +20,8 @@ constexpr int AI_LOSS_GRAPH_SCENE_GRAPH_WIDTH = WINDOW_SIZE_X - AI_LOSS_GRAPH_SC
 constexpr int AI_LOSS_GRAPH_SCENE_GRAPH_HEIGHT = 130;
 constexpr int AI_LOSS_GRAPH_SCENE_GRAPH1_SY = 90;
 constexpr int AI_LOSS_GRAPH_SCENE_GRAPH2_SY = 270;
+constexpr int AI_LOSS_GRAPH_SCENE_LABEL_FONT_SIZE = 20;
+constexpr int AI_LOSS_GRAPH_SCENE_AXIS_FONT_SIZE = 10;
 constexpr double AI_LOSS_GRAPH_SCENE_POINT_RADIUS = 3.0;
 constexpr int AI_LOSS_GRAPH_DEFAULT_MAX_LOSS = 2;
 constexpr int AI_LOSS_GRAPH_DEFAULT_LOSS_PERCENTAGE = 30;
@@ -157,14 +159,14 @@ private:
     void update_graph(int graph_idx, AI_loss_graph_values* values, const String& label, int min_value, int max_value, const Color& line_color, bool is_percentage_graph) {
         RectF rect = get_graph_rect(graph_idx);
         rect.rounded(8).draw(ColorF(getData().colors.dark_green, 0.75)).drawFrame(1, getData().colors.white);
-        getData().fonts.font(label).draw(16, Arg::topLeft(rect.x + 2, rect.y - 26), getData().colors.white);
+        getData().fonts.font(label).draw(AI_LOSS_GRAPH_SCENE_LABEL_FONT_SIZE, Arg::topLeft(rect.x + 6, rect.y - 28), getData().colors.white);
 
         if (is_percentage_graph) {
             for (int i = 0; i <= 4; ++i) {
                 const double y = rect.y + rect.h * i / 4.0;
                 const int value = static_cast<int>(std::round(max_value - (max_value - min_value) * (i / 4.0)));
                 Line(rect.x, y, rect.x + rect.w, y).draw(1.0, ColorF(getData().colors.white, (i == 4) ? 0.35 : 0.18));
-                getData().fonts.font(Format(value)).draw(9, Arg::rightCenter(rect.x - 6, y), getData().colors.white);
+                getData().fonts.font(Format(value)).draw(AI_LOSS_GRAPH_SCENE_AXIS_FONT_SIZE, Arg::rightCenter(rect.x - 6, y), getData().colors.white);
             }
         } else {
             const int n_levels = static_cast<int>(AI_MAX_LOSS_SNAP_VALUES.size());
@@ -173,7 +175,7 @@ private:
                 const int value = AI_MAX_LOSS_SNAP_VALUES[value_idx];
                 const double y = rect.y + rect.h * i / static_cast<double>(n_levels - 1);
                 Line(rect.x, y, rect.x + rect.w, y).draw(1.0, ColorF(getData().colors.white, (value == 0) ? 0.35 : 0.18));
-                getData().fonts.font(Format(value)).draw(9, Arg::rightCenter(rect.x - 6, y), getData().colors.white);
+                getData().fonts.font(Format(value)).draw(AI_LOSS_GRAPH_SCENE_AXIS_FONT_SIZE, Arg::rightCenter(rect.x - 6, y), getData().colors.white);
             }
         }
         for (int i = 0; i < AI_LOSS_GRAPH_POINT_COUNT; ++i) {
@@ -182,7 +184,7 @@ private:
             const double x = idx_to_x(rect, i);
             Line(x, rect.y, x, rect.y + rect.h).draw(1.0, ColorF(getData().colors.white, 0.10));
             const String range_label = Format(start_move) + U"~" + Format(end_move);
-            getData().fonts.font(range_label).draw(8, Arg::topCenter(x, rect.y + rect.h + 2), getData().colors.white);
+            getData().fonts.font(range_label).draw(AI_LOSS_GRAPH_SCENE_AXIS_FONT_SIZE, Arg::topCenter(x, rect.y + rect.h + 2), getData().colors.white);
         }
 
         if (dragging_graph_idx == -1 && MouseL.down()) {
@@ -222,7 +224,13 @@ private:
             Circle(x, y, radius).draw(line_color);
             if (is_active) {
                 Circle(x, y, radius + 2.0).drawFrame(2.0, getData().colors.white);
-                getData().fonts.font(Format((*values)[i])).draw(14, Arg::bottomCenter(x, y - 10), getData().colors.white);
+                const double info_x = std::clamp(x, rect.x + 20.0, rect.x + rect.w - 20.0);
+                const bool place_below = (y < rect.y + rect.h * 0.5);
+                if (place_below) {
+                    getData().fonts.font(Format((*values)[i])).draw(14, Arg::topCenter(info_x, y + 10), getData().colors.white);
+                } else {
+                    getData().fonts.font(Format((*values)[i])).draw(14, Arg::bottomCenter(info_x, y - 10), getData().colors.white);
+                }
             }
         }
 
