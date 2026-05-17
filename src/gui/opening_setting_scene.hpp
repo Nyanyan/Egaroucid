@@ -316,7 +316,8 @@ public:
     private:
         void init_scroll_manager() {
             int total = (has_parent ? 1 : 0) + (int)folders_display.size() + (int)openings.size();
-            if (adding_elem || editing_elem) {
+            // Editing is inline, so only "add" mode needs an extra synthetic row.
+            if (adding_elem) {
                 total += 1;
             }
             scroll_manager.init(770, OPENING_SETTING_SY + 8, 10, OPENING_SETTING_HEIGHT * OPENING_SETTING_N_GAMES_ON_WINDOW, 20, total, OPENING_SETTING_N_GAMES_ON_WINDOW, OPENING_SETTING_SX, 73, OPENING_SETTING_WIDTH + 10, OPENING_SETTING_HEIGHT * OPENING_SETTING_N_GAMES_ON_WINDOW);
@@ -913,8 +914,8 @@ public:
             int parent_offset = has_parent ? 1 : 0;
             int total_items = parent_offset + (int)folders_display.size() + (int)openings.size();
             
-            if (adding_elem || editing_elem) {
-                // When adding/editing, scroll to show the form at the bottom if needed
+            if (adding_elem) {
+                // When adding, scroll to show the input form at the bottom if needed
                 int total_with_form = total_items + 1;
                 if (total_with_form > OPENING_SETTING_N_GAMES_ON_WINDOW) {
                     strt_idx_int = total_with_form - OPENING_SETTING_N_GAMES_ON_WINDOW;
@@ -975,7 +976,7 @@ public:
                 }
             }
             
-            if (strt_idx_int + OPENING_SETTING_N_GAMES_ON_WINDOW < total_items + (adding_elem || editing_elem ? 1 : 0)) {
+            if (strt_idx_int + OPENING_SETTING_N_GAMES_ON_WINDOW < total_items + (adding_elem ? 1 : 0)) {
                 getData().fonts.font(U"︙").draw(15, Arg::topCenter = Vec2{ X_CENTER, OPENING_SETTING_SY + OPENING_SETTING_HEIGHT * OPENING_SETTING_N_GAMES_ON_WINDOW + 16}, getData().colors.white);
             }
         }
