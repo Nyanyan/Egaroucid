@@ -311,7 +311,9 @@
         "probability": "确定度",
         "forced": "强制",
         "forced_out": "强制进行外",
-        "forced_finished": "强制进行结束"
+        "forced_finished": "强制进行结束",
+        "playing": "对局中",
+        "analyzing": "分析中"
     },
     "edit_board": {
         "player": "玩家",
@@ -340,12 +342,18 @@
         "save_image": "保存图片",
         "rect": "■",
         "star": "★",
-        "nomark": "删除 (点击同一标记亦有效)",
+        "nomark": "删除",
         "default": "默认",
         "monochrome": "单色",
         "mark": "标记",
         "value": "估值",
-        "color": "颜色"
+        "color": "颜色",
+        "outer_frame_color": "外框颜色",
+        "white": "白色",
+        "dark_gray": "深灰",
+        "coordinate": "坐标",
+        "include_coordinate": "包含",
+        "exclude_coordinate": "不包含"
     },
     "opening_setting": {
         "opening_setting": "强制开局设置",

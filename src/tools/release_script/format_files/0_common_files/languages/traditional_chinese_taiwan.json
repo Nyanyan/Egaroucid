@@ -309,7 +309,9 @@
         "probability": "機率",
         "forced": "強制",
         "forced_out": "強制進行外",
-        "forced_finished": "強制進行結束"
+        "forced_finished": "強制進行結束",
+        "playing": "對局中",
+        "analyzing": "分析中"
     },
     "edit_board": {
         "player": "玩家",
@@ -338,12 +340,18 @@
         "save_image": "儲存圖片",
         "rect": "■",
         "star": "★",
-        "nomark": "刪除（點擊相同標記也可刪除）",
+        "nomark": "刪除",
         "default": "預設",
         "monochrome": "單色",
         "mark": "標記",
         "value": "評估值",
-        "color": "顏色"
+        "color": "顏色",
+        "outer_frame_color": "外框顏色",
+        "white": "白色",
+        "dark_gray": "深灰",
+        "coordinate": "座標",
+        "include_coordinate": "包含",
+        "exclude_coordinate": "不包含"
     },
     "opening_setting": {
         "opening_setting": "固定開局設定",
