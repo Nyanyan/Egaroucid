@@ -340,12 +340,194 @@ int init_ai(Settings* settings, const Directories* directories, bool *stop_loadi
     return ERR_OK;
 }
 
-// Helper function to load openings from CSV files in forced_openings directory
-void load_openings_from_csv_files(Forced_openings* forced_openings, const std::string& forced_openings_dir) {
+String get_forced_openings_folder_state_path(const std::string& forced_openings_dir, const std::string& relative_path) {
+    String base = Unicode::Widen(forced_openings_dir) + U"/";
+    if (!relative_path.empty()) {
+        base += Unicode::Widen(relative_path);
+        if (base.size() && base.back() != U'/') {
+            base += U"/";
+        }
+    }
+    return base + U"folder_state.json";
+}
+
+bool load_forced_openings_folder_enabled_state(const std::string& forced_openings_dir, const std::string& relative_path) {
+    if (relative_path.empty()) {
+        return true;
+    }
+    String config_path = get_forced_openings_folder_state_path(forced_openings_dir, relative_path);
+    if (!FileSystem::Exists(config_path)) {
+        return true;
+    }
+    TextReader reader(config_path);
+    if (!reader) {
+        return true;
+    }
+    String line;
+    if (!reader.readLine(line)) {
+        return true;
+    }
+    line = line.trimmed();
+    if (line == U"0") {
+        return false;
+    }
+    return ParseOr<bool>(line, true);
+}
+
+double load_forced_openings_folder_weight(const std::string& forced_openings_dir, const std::string& relative_path) {
+    if (relative_path.empty()) {
+        return 1.0;
+    }
+    String config_path = get_forced_openings_folder_state_path(forced_openings_dir, relative_path);
+    if (!FileSystem::Exists(config_path)) {
+        return 1.0;
+    }
+    TextReader reader(config_path);
+    if (!reader) {
+        return 1.0;
+    }
+    String line1, line2;
+    if (!reader.readLine(line1)) {
+        return 1.0;
+    }
+    if (!reader.readLine(line2)) {
+        return 1.0;
+    }
+    return ParseOr<double>(line2.trimmed(), 1.0);
+}
+
+bool is_forced_openings_folder_effectively_enabled(const std::string& forced_openings_dir, const std::string& relative_path) {
+    if (relative_path.empty()) {
+        return true;
+    }
+    std::string path_check;
+    for (size_t i = 0; i < relative_path.size(); ++i) {
+        path_check += relative_path[i];
+        if (relative_path[i] == '/' || i == relative_path.size() - 1) {
+            std::string check_path = path_check;
+            if (!check_path.empty() && check_path.back() == '/') {
+                check_path.pop_back();
+            }
+            if (!load_forced_openings_folder_enabled_state(forced_openings_dir, check_path)) {
+                return false;
+            }
+        }
+    }
+    return true;
+}
+
+double calculate_forced_openings_cumulative_folder_weight(const std::string& forced_openings_dir, const std::string& relative_path) {
+    if (relative_path.empty()) {
+        return 1.0;
+    }
+    double cumulative_weight = 1.0;
+    std::string current_parent;
+    std::string path_check;
+    for (size_t i = 0; i < relative_path.size(); ++i) {
+        path_check += relative_path[i];
+        if (relative_path[i] == '/' || i == relative_path.size() - 1) {
+            std::string check_path = path_check;
+            if (!check_path.empty() && check_path.back() == '/') {
+                check_path.pop_back();
+            }
+            double folder_weight = load_forced_openings_folder_weight(forced_openings_dir, check_path);
+            double siblings_weight_sum = 0.0;
+            std::vector<String> siblings = enumerate_subdirectories_generic(forced_openings_dir, current_parent);
+            for (const auto& sibling : siblings) {
+                std::string sibling_path = current_parent;
+                if (!sibling_path.empty()) {
+                    sibling_path += "/";
+                }
+                sibling_path += sibling.narrow();
+                siblings_weight_sum += load_forced_openings_folder_weight(forced_openings_dir, sibling_path);
+            }
+            if (siblings_weight_sum > 0.0) {
+                cumulative_weight *= (folder_weight / siblings_weight_sum);
+            }
+            if (relative_path[i] == '/') {
+                current_parent = check_path;
+            }
+        }
+    }
+    return cumulative_weight;
+}
+
+void load_openings_recursive_from_summary(
+    Forced_openings* forced_openings,
+    const std::string& forced_openings_dir,
+    const std::string& folder_path
+) {
+    if (!is_forced_openings_folder_effectively_enabled(forced_openings_dir, folder_path)) {
+        return;
+    }
+    double cumulative_folder_weight = calculate_forced_openings_cumulative_folder_weight(forced_openings_dir, folder_path);
+
+    String base = Unicode::Widen(forced_openings_dir) + U"/";
+    if (!folder_path.empty()) {
+        base += Unicode::Widen(folder_path) + U"/";
+    }
+    const CSV csv{ base + U"summary.csv" };
+    if (csv) {
+        for (size_t row = 0; row < csv.rows(); ++row) {
+            if (csv[row].size() >= 2) {
+                String transcript = csv[row][0];
+                double opening_weight = ParseOr<double>(csv[row][1], 1.0);
+                bool enabled = (csv[row].size() >= 3) ? ParseOr<bool>(csv[row][2], true) : true;
+                if (enabled) {
+                    double final_weight = opening_weight * cumulative_folder_weight;
+                    forced_openings->openings.emplace_back(std::make_pair(transcript.narrow(), final_weight));
+                }
+            }
+        }
+    }
+
+    std::vector<String> folders = enumerate_subdirectories_generic(forced_openings_dir, folder_path);
+    for (const auto& folder : folders) {
+        std::string next_path = folder_path;
+        if (!next_path.empty()) {
+            next_path += "/";
+        }
+        next_path += folder.narrow();
+        load_openings_recursive_from_summary(forced_openings, forced_openings_dir, next_path);
+    }
+}
+
+bool has_hierarchical_forced_opening_files(const std::string& forced_openings_dir) {
+    String base = Unicode::Widen(forced_openings_dir) + U"/";
+    if (FileSystem::Exists(base + U"summary.csv")) {
+        return true;
+    }
+
+    std::vector<std::string> stack{ "" };
+    while (!stack.empty()) {
+        std::string folder_path = stack.back();
+        stack.pop_back();
+
+        String folder_base = Unicode::Widen(forced_openings_dir) + U"/";
+        if (!folder_path.empty()) {
+            folder_base += Unicode::Widen(folder_path) + U"/";
+        }
+        if (FileSystem::Exists(folder_base + U"summary.csv") || FileSystem::Exists(folder_base + U"folder_state.json")) {
+            return true;
+        }
+
+        std::vector<String> subfolders = enumerate_subdirectories_generic(forced_openings_dir, folder_path);
+        for (const auto& subfolder : subfolders) {
+            std::string next_path = folder_path;
+            if (!next_path.empty()) {
+                next_path += "/";
+            }
+            next_path += subfolder.narrow();
+            stack.emplace_back(next_path);
+        }
+    }
+    return false;
+}
+
+void load_openings_from_legacy_csv_files(Forced_openings* forced_openings, const std::string& forced_openings_dir) {
     String base_dir = Unicode::Widen(forced_openings_dir);
     String settings_path = base_dir + U"/settings.txt";
-    
-    // Load enabled states from settings file
+
     std::unordered_map<String, bool> enabled_map;
     if (FileSystem::Exists(settings_path)) {
         TextReader reader(settings_path);
@@ -361,8 +543,7 @@ void load_openings_from_csv_files(Forced_openings* forced_openings, const std::s
             }
         }
     }
-    
-    // Enumerate all CSV files
+
     Array<FilePath> list = FileSystem::DirectoryContents(base_dir);
     std::vector<String> csv_filenames;
     for (const auto& path : list) {
@@ -372,8 +553,7 @@ void load_openings_from_csv_files(Forced_openings* forced_openings, const std::s
         }
     }
     std::sort(csv_filenames.begin(), csv_filenames.end());
-    
-    // Load openings from enabled CSV files
+
     for (const auto& filename : csv_filenames) {
         bool enabled = enabled_map.count(filename) ? enabled_map[filename] : true;
         if (enabled) {
@@ -389,6 +569,15 @@ void load_openings_from_csv_files(Forced_openings* forced_openings, const std::s
                 }
             }
         }
+    }
+}
+
+// Helper function to load openings from forced_openings directory
+void load_openings_from_csv_files(Forced_openings* forced_openings, const std::string& forced_openings_dir) {
+    if (has_hierarchical_forced_opening_files(forced_openings_dir)) {
+        load_openings_recursive_from_summary(forced_openings, forced_openings_dir, "");
+    } else {
+        load_openings_from_legacy_csv_files(forced_openings, forced_openings_dir);
     }
 }
 

@@ -487,6 +487,10 @@ private:
         if (!getData().menu_elements.force_specified_openings) {
             return FORCED_OPENING_STATUS_NONE;
         }
+        // Before the game starts (start button visible), do not show out/finished states yet.
+        if (need_start_game_button) {
+            return FORCED_OPENING_STATUS_NONE;
+        }
         Board board = getData().history_elem.board;
         if (getData().forced_openings.has_forced_move(board)) {
             return FORCED_OPENING_STATUS_ACTIVE;
