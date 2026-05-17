@@ -56,8 +56,8 @@ private:
     int umigame_value_depth_before;
     String shortcut_key;
     String shortcut_key_pressed;
-    std::vector<int> random_generated_moves;
-    bool random_generated_moves_available;
+    int random_generated_n_discs;
+    bool random_generated_n_discs_available;
     uint64_t turn_timer_start_msec;
     Board turn_timer_anchor_board;
     int turn_timer_anchor_player;
@@ -106,8 +106,8 @@ public:
         umigame_value_depth_before = 0;
         shortcut_key = SHORTCUT_KEY_UNDEFINED;
         shortcut_key_pressed = SHORTCUT_KEY_UNDEFINED;
-        random_generated_moves.clear();
-        random_generated_moves_available = false;
+        random_generated_n_discs = 4;
+        random_generated_n_discs_available = false;
         reset_turn_timer_anchor();
         std::cerr << "main scene loaded" << std::endl;
         // std::cerr << tim() - strt << " ms" << std::endl;
@@ -623,6 +623,7 @@ private:
             getData().graph_resources.init();
             getData().graph_resources.nodes[getData().graph_resources.branch].emplace_back(getData().history_elem);
             getData().game_information.init();
+            random_generated_n_discs_available = false;
             reset_turn_timer_anchor();
             getData().menu_elements.ai_put_black = false;
             getData().menu_elements.ai_put_white = false;
@@ -636,6 +637,7 @@ private:
             getData().graph_resources.init();
             getData().graph_resources.nodes[getData().graph_resources.branch].emplace_back(getData().history_elem);
             getData().game_information.init();
+            random_generated_n_discs_available = false;
             reset_turn_timer_anchor();
             getData().menu_elements.ai_put_black = false;
             getData().menu_elements.ai_put_white = true;
@@ -649,6 +651,7 @@ private:
             getData().graph_resources.init();
             getData().graph_resources.nodes[getData().graph_resources.branch].emplace_back(getData().history_elem);
             getData().game_information.init();
+            random_generated_n_discs_available = false;
             reset_turn_timer_anchor();
             getData().menu_elements.ai_put_black = true;
             getData().menu_elements.ai_put_white = false;
@@ -662,6 +665,7 @@ private:
             getData().graph_resources.init();
             getData().graph_resources.nodes[getData().graph_resources.branch].emplace_back(getData().history_elem);
             getData().game_information.init();
+            random_generated_n_discs_available = false;
             reset_turn_timer_anchor();
             getData().menu_elements.ai_put_black = true;
             getData().menu_elements.ai_put_white = true;
@@ -956,9 +960,9 @@ private:
                 resume_calculating();
             }
             if ((getData().menu_elements.go_to_random_generated_position || shortcut_key == U"go_to_random_generated_position") &&
-                random_generated_moves_available &&
+                random_generated_n_discs_available &&
                 !ai_status.random_board_generator_calculating) {
-                restore_random_generated_position();
+                move_to_random_generated_position();
             }
             if (getData().menu_elements.save_this_branch || shortcut_key == U"save_this_branch") {
                 stop_calculating();
@@ -1002,6 +1006,7 @@ private:
                 getData().graph_resources.init();
                 getData().graph_resources.nodes[getData().graph_resources.branch].emplace_back(getData().history_elem);
                 getData().game_information.init();
+                random_generated_n_discs_available = false;
                 pausing_in_pass = false;
                 resume_calculating();
                 ai_status.random_board_generator_calculating = true;
@@ -2610,18 +2615,19 @@ private:
         return res;
     }
 
-    void restore_random_generated_position() {
-        stop_calculating();
-        getData().history_elem.reset();
-        getData().graph_resources.init();
-        getData().graph_resources.nodes[getData().graph_resources.branch].emplace_back(getData().history_elem);
-        getData().game_information.init();
-        pausing_in_pass = false;
-        resume_calculating();
-        for (int policy : random_generated_moves) {
-            move_processing(HW2_M1 - policy);
+    void move_to_random_generated_position() {
+        if (!random_generated_n_discs_available) {
+            return;
         }
-        need_start_game_button_calculation();
+        int random_generated_node_idx = getData().graph_resources.node_find(GRAPH_MODE_NORMAL, random_generated_n_discs);
+        if (random_generated_node_idx == -1) {
+            return;
+        }
+        stop_calculating();
+        getData().graph_resources.branch = GRAPH_MODE_NORMAL;
+        getData().graph_resources.n_discs = random_generated_n_discs;
+        getData().graph_resources.delta = 0;
+        resume_calculating();
     }
 
     void check_random_board_generater() {
@@ -2630,9 +2636,19 @@ private:
                 std::vector<int> moves = ai_status.random_board_generator_future.get();
                 ai_status.random_board_generator_calculating = false;
                 std::cerr << "finish random board generation" << std::endl;
-                random_generated_moves = moves;
-                random_generated_moves_available = true;
-                restore_random_generated_position();
+                stop_calculating();
+                getData().history_elem.reset();
+                getData().graph_resources.init();
+                getData().graph_resources.nodes[getData().graph_resources.branch].emplace_back(getData().history_elem);
+                getData().game_information.init();
+                pausing_in_pass = false;
+                resume_calculating();
+                for (int policy : moves) {
+                    move_processing(HW2_M1 - policy);
+                }
+                random_generated_n_discs = getData().history_elem.board.n_discs();
+                random_generated_n_discs_available = true;
+                need_start_game_button_calculation();
             }
         }
     }

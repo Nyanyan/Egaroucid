@@ -257,7 +257,7 @@
         "backward": "Backward",
         "undo": "Undo",
         "go_to_first_position": "Go to First Position",
-        "go_to_last_position": "Go to Last Position",
+        "go_to_last_position": "Go Forward to Last Position",
         "go_to_random_generated_position": "Go to Random Generated Position",
         "save_this_branch": "Save this Branch",
         "generate_random_board": {

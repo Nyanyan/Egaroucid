@@ -229,6 +229,7 @@ public:
             set_default();
         } else {
             std::unordered_set<String> name_list;
+            std::unordered_set<String> loaded_name_list;
             for (Shortcut_key_elem &elem: shortcut_keys_default) {
                 name_list.emplace(elem.name);
             }
@@ -237,6 +238,7 @@ public:
                     std::cerr << "ERR shortcut key name not found " << object.key.narrow() << std::endl;
                     continue;
                 }
+                loaded_name_list.emplace(object.key);
                 for (int i = 0; i < (int)shortcut_keys.size(); ++i) {
                     if (shortcut_keys[i].name == object.key) {
                         shortcut_keys[i].keys.clear();
@@ -262,6 +264,39 @@ public:
                             }
                         }
                     }
+                }
+            }
+            auto shortcut_conflicts = [&](const std::vector<String>& lhs, const std::vector<String>& rhs) {
+                if (lhs.size() != rhs.size()) {
+                    return false;
+                }
+                for (const String& key : lhs) {
+                    if (std::find(rhs.begin(), rhs.end(), key) == rhs.end()) {
+                        return false;
+                    }
+                }
+                return true;
+            };
+            for (int i = 0; i < (int)shortcut_keys.size(); ++i) {
+                if (loaded_name_list.find(shortcut_keys[i].name) != loaded_name_list.end()) {
+                    continue;
+                }
+                const std::vector<String>& default_keys = shortcut_keys_default[i].keys;
+                if (default_keys.empty()) {
+                    continue;
+                }
+                bool conflicted = false;
+                for (int j = 0; j < (int)shortcut_keys.size(); ++j) {
+                    if (i == j || shortcut_keys[j].keys.empty()) {
+                        continue;
+                    }
+                    if (shortcut_conflicts(default_keys, shortcut_keys[j].keys)) {
+                        conflicted = true;
+                        break;
+                    }
+                }
+                if (!conflicted) {
+                    shortcut_keys[i].keys = default_keys;
                 }
             }
         }
