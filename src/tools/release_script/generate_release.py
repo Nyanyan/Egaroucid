@@ -22,6 +22,9 @@ DST_ROOT = './../../../release'
 with open(COMMON_FILES_IN_DIR + '/tasks.txt', 'r') as f:
     common_files_tasks = [list(elem.split()) for elem in f.read().splitlines()] # [[type, file, dst], [type, file, dst], ...]
 
+for elem in common_files_tasks:
+    print(elem)
+
 # main directory
 os.mkdir(DST_ROOT + '/' + VERSION_UNDERBAR)
 
@@ -37,9 +40,10 @@ def copy_common_files(correct_task_type, dst_dir_root):
             shutil.copy2(common_file_in_dir, common_file_dst_dir) # copy common special files
         else:
             shutil.copytree(common_file_in_dir, common_file_dst_dir, dirs_exist_ok=True) # copy common special files
+            print(common_file_in_dir, common_file_dst_dir)
     
 
-#'''
+'''
 # Egaroucid for Console
 print('\n')
 print('<<<<<<<< Egaroucid for Console >>>>>>>>')

@@ -6,7 +6,7 @@ console hash resources/hash
 installer book.egbk3 Documents/Egaroucid
 installer empty_book.egbk3 Documents/Egaroucid
 installer version.txt AppData/Egaroucid
-installer ai_settings AppData/Egaroucid
+installer ai_settings AppData/Egaroucid/ai_settings
 installer img resources/img
 installer languages resources/languages
 installer eval.egev2 resources
@@ -15,7 +15,7 @@ installer hash resources/hash
 installer openings resources/openings
 portable book.egbk3 document
 portable empty_book.egbk3 document
-portable ai_settings appdata
+portable ai_settings appdata/ai_settings
 portable version.txt appdata
 portable img resources/img
 portable languages resources/languages
