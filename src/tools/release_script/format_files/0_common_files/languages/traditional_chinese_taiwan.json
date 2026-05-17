@@ -63,6 +63,9 @@
             "changing_message": "指派所選功能",
             "function_duplicate_message": "此功能已指派給以下按鈕:"
         },
+        "mouse_additional_buttons": {
+            "settings": "\u6ed1\u9f20\u9644\u52a0\u6309\u9215\u8a2d\u5b9a"
+        },
         "profile": {
             "profile": "AI設定檔",
             "load": "讀取",

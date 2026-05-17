@@ -571,6 +571,7 @@ struct Menu_elements {
     bool ai_profile_save;
     bool shortcut_key_setting;
     bool shortcut_button_setting;
+    bool mouse_additional_button_setting;
 
     // display
     bool use_disc_hint;
@@ -711,6 +712,7 @@ struct Menu_elements {
         ai_profile_save = false;
         shortcut_key_setting = false;
         shortcut_button_setting = false;
+        mouse_additional_button_setting = false;
 
         use_disc_hint = settings->use_disc_hint;
         n_disc_hint = settings->n_disc_hint;

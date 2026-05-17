@@ -63,6 +63,9 @@
             "changing_message": "Assign selected function",
             "function_duplicate_message": "This function is already assigned to button"
         },
+        "mouse_additional_buttons": {
+            "settings": "Mouse Additional Button Settings"
+        },
         "profile": {
             "profile": "AI Profile",
             "load": "Load",

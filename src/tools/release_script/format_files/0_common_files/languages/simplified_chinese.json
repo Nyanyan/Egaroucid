@@ -63,6 +63,9 @@
             "changing_message": "分配所选功能",
             "function_duplicate_message": "该功能已分配给以下按钮:"
         },
+        "mouse_additional_buttons": {
+            "settings": "\u9f20\u6807\u9644\u52a0\u6309\u94ae\u8bbe\u7f6e"
+        },
         "profile": {
             "profile": "AI配置方案",
             "load": "读取",

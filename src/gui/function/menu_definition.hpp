@@ -84,6 +84,8 @@ Menu create_menu(Menu_elements* menu_elements, Resources *resources, Font font, 
         title.push(menu_e);
         menu_e.init_button(language.get("settings", "shortcut_buttons", "settings") + get_shortcut_key_info(U"shortcut_button_setting"), &menu_elements->shortcut_button_setting);
         title.push(menu_e);
+        menu_e.init_button(language.get("settings", "mouse_additional_buttons", "settings") + get_shortcut_key_info(U"mouse_additional_button_setting"), &menu_elements->mouse_additional_button_setting);
+        title.push(menu_e);
     menu.push(title);
 
 

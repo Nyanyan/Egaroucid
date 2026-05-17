@@ -153,6 +153,11 @@ void init_shortcut_buttons(const Directories* directories) {
     shortcut_buttons.init(file);
 }
 
+void init_mouse_additional_buttons(const Directories* directories) {
+    String file = U"{}mouse_additional_button.json"_fmt(Unicode::Widen(directories->appdata_dir));
+    mouse_additional_buttons.init(file);
+}
+
 int check_update(const Directories* directories, String *new_version) {
     const FilePath version_save_path = U"{}version.txt"_fmt(Unicode::Widen(directories->appdata_dir));
     AsyncHTTPTask task = SimpleHTTP::SaveAsync(VERSION_URL, version_save_path);
@@ -401,6 +406,8 @@ int load_app(Directories* directories, Resources* resources, Settings* settings,
         init_shortcut_keys(directories);
         // shortcut buttons
         init_shortcut_buttons(directories);
+        // mouse additional buttons
+        init_mouse_additional_buttons(directories);
         // settings -> menu elements
         menu_elements->init(settings, resources);
         // AI

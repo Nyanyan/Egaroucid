@@ -158,6 +158,7 @@ public:
         // shortcut
         shortcut_keys.check_shortcut_key(&shortcut_key, &shortcut_key_pressed);
         update_shortcut_buttons(true);
+        update_mouse_additional_buttons();
         // if (shortcut_key != SHORTCUT_KEY_UNDEFINED) {
         //     std::cerr << "shortcut key found: " << shortcut_key.narrow() << std::endl;
         // }
@@ -732,6 +733,13 @@ private:
             changeScene(U"Shortcut_button_setting", SCENE_FADE_TIME);
             return;
         }
+        if (getData().menu_elements.mouse_additional_button_setting || shortcut_key == U"mouse_additional_button_setting") {
+            changing_scene = true;
+            stop_calculating();
+            resume_calculating();
+            changeScene(U"Mouse_additional_button_setting", SCENE_FADE_TIME);
+            return;
+        }
     }
 
     void update_shortcut_buttons(bool allow_trigger) {
@@ -761,6 +769,20 @@ private:
             if (allow_trigger && assigned && !getData().menu.active() && shortcut_buttons_grid[i].clicked()) {
                 shortcut_key = function_name;
                 shortcut_key_pressed = function_name;
+            }
+        }
+    }
+
+    void update_mouse_additional_buttons() {
+        for (int i = 0; i < MOUSE_ADDITIONAL_BUTTON_COUNT; ++i) {
+            String function_name = mouse_additional_buttons.get_function(i);
+            if (function_name == U"") {
+                continue;
+            }
+            if (mouse_additional_buttons.is_button_down(i)) {
+                shortcut_key = function_name;
+                shortcut_key_pressed = function_name;
+                return;
             }
         }
     }
@@ -1421,7 +1443,7 @@ private:
             move_board_button_status.right_pushed = BUTTON_NOT_PUSHED;
         }
 
-        if (MouseX1.down() || shortcut_key == U"backward" || (move_board_button_status.left_pushed != BUTTON_NOT_PUSHED && tim() - move_board_button_status.left_pushed >= BUTTON_LONG_PRESS_THRESHOLD)) {
+        if (shortcut_key == U"backward" || (move_board_button_status.left_pushed != BUTTON_NOT_PUSHED && tim() - move_board_button_status.left_pushed >= BUTTON_LONG_PRESS_THRESHOLD)) {
             stop_calculating();
             --getData().graph_resources.n_discs;
             getData().graph_resources.delta = -1;
@@ -1430,7 +1452,7 @@ private:
                 move_board_button_status.left_pushed = tim();
             }
         }
-        else if (MouseX2.down() || shortcut_key == U"forward" || (move_board_button_status.right_pushed != BUTTON_NOT_PUSHED && tim() - move_board_button_status.right_pushed >= BUTTON_LONG_PRESS_THRESHOLD)) {
+        else if (shortcut_key == U"forward" || (move_board_button_status.right_pushed != BUTTON_NOT_PUSHED && tim() - move_board_button_status.right_pushed >= BUTTON_LONG_PRESS_THRESHOLD)) {
             stop_calculating();
             ++getData().graph_resources.n_discs;
             getData().graph_resources.delta = 1;

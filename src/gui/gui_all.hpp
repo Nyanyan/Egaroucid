@@ -22,6 +22,7 @@
 #include "input_scene.hpp"
 #include "load_scene.hpp"
 #include "main_scene.hpp"
+#include "mouse_additional_button_setting_scene.hpp"
 #include "opening_setting_scene.hpp"
 #include "output_scene.hpp"
 #include "screen_shot.hpp"

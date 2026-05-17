@@ -63,6 +63,9 @@
             "changing_message": "選択した機能を割り当て",
             "function_duplicate_message": "この機能はすでに次のボタンに割り当て済みです:"
         },
+        "mouse_additional_buttons": {
+            "settings": "\u30de\u30a6\u30b9\u8ffd\u52a0\u30dc\u30bf\u30f3\u8a2d\u5b9a"
+        },
         "profile": {
             "profile": "AIプロファイル",
             "load": "読み込み",

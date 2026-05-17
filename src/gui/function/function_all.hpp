@@ -22,6 +22,7 @@
 #include "opening_manager.hpp"
 #include "radio_button.hpp"
 #include "scroll.hpp"
+#include "mouse_additional_button.hpp"
 #include "shortcut_button.hpp"
 #include "shortcut_key.hpp"
 #include "shortcut_setting_common.hpp"

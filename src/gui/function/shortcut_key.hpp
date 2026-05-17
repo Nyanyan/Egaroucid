@@ -46,6 +46,7 @@ std::vector<Shortcut_key_elem> shortcut_keys_default = {
     {U"opening_setting",        {},                     {{"settings", "settings"}, {"settings", "play", "opening_setting"}}},
     {U"shortcut_key_setting",   {},                     {{"settings", "settings"}, {"settings", "shortcut_keys", "settings"}}},
     {U"shortcut_button_setting",{},                     {{"settings", "settings"}, {"settings", "shortcut_buttons", "settings"}}},
+    {U"mouse_additional_button_setting",{},             {{"settings", "settings"}, {"settings", "mouse_additional_buttons", "settings"}}},
 
     // display
     // on cell
