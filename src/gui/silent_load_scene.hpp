@@ -26,6 +26,15 @@ std::string get_default_language() {
     return res;
 }
 
+void sync_ai_loss_curves_from_scalar(Settings* settings) {
+    int max_loss = std::clamp(settings->max_loss, 0, AI_MAX_LOSS_INF);
+    int loss_percentage = std::clamp(settings->loss_percentage, 0, AI_LOSS_PERCENTAGE_INF);
+    settings->max_loss = max_loss;
+    settings->loss_percentage = loss_percentage;
+    settings->max_loss_by_move.fill(max_loss);
+    settings->loss_percentage_by_move.fill(loss_percentage);
+}
+
 void init_default_settings(const Directories* directories, const Resources* resources, Settings* settings) {
     //std::cerr << "use default settings" << std::endl;
     settings->n_threads = std::min(32, (int)std::thread::hardware_concurrency());
@@ -57,6 +66,7 @@ void init_default_settings(const Directories* directories, const Resources* reso
     settings->accept_ai_loss = false;
     settings->max_loss = 2;
     settings->loss_percentage = 30;
+    sync_ai_loss_curves_from_scalar(settings);
     settings->pause_when_pass = true;
     settings->force_specified_openings = false;
     settings->show_next_move_change_view = false;
@@ -501,6 +511,9 @@ void init_settings(const Directories* directories, const Resources* resources, S
         }
         init_settings_import_str(setting_json, U"ai_profile_name", &settings->ai_profile_name);
     }
+
+    // Keep compatibility with legacy scalar settings when profiles or curves are absent.
+    sync_ai_loss_curves_from_scalar(settings);
 
     ensure_default_ai_profile(*directories, *settings, setting_json_exists);
     load_ai_profile_into_settings(*directories, settings);

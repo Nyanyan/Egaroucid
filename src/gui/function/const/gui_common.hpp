@@ -9,6 +9,7 @@
 */
 
 #pragma once
+#include <array>
 #include <iostream>
 #include <Siv3D.hpp>
 #include "./../../../engine/engine_all.hpp"
@@ -65,6 +66,10 @@ constexpr int UPDATE_CHECK_ALREADY_UPDATED = 0;
 constexpr int UPDATE_CHECK_UPDATE_FOUND = 1;
 constexpr int UPDATE_CHECK_FAILED = 2;
 constexpr int SHOW_ALL_HINT = 35;
+constexpr int AI_MAX_LOSS_INF = 129;
+constexpr int AI_LOSS_PERCENTAGE_INF = 100;
+constexpr int AI_LOSS_GRAPH_POINT_COUNT = HW2 - 4;
+using AI_loss_graph_values = std::array<int, AI_LOSS_GRAPH_POINT_COUNT>;
 
 // board drawing constants
 constexpr int BOARD_SIZE = 400;
@@ -437,6 +442,8 @@ struct Settings {
     bool accept_ai_loss;
     int max_loss;
     int loss_percentage;
+    AI_loss_graph_values max_loss_by_move;
+    AI_loss_graph_values loss_percentage_by_move;
     bool pause_when_pass;
     bool force_specified_openings;
     bool show_next_move_change_view;
@@ -535,6 +542,8 @@ struct Menu_elements {
     bool accept_ai_loss;
     int max_loss;
     int loss_percentage;
+    AI_loss_graph_values max_loss_by_move;
+    AI_loss_graph_values loss_percentage_by_move;
     int level;
     int n_threads;
 #if USE_CHANGEABLE_HASH_LEVEL
@@ -546,6 +555,7 @@ struct Menu_elements {
     bool pause_when_pass;
     bool force_specified_openings;
     bool opening_setting;
+    bool ai_loss_graph_setting;
     bool ai_profile_load;
     bool ai_profile_save;
     bool shortcut_key_setting;
@@ -672,6 +682,8 @@ struct Menu_elements {
         accept_ai_loss = settings->accept_ai_loss;
         max_loss = settings->max_loss;
         loss_percentage = settings->loss_percentage;
+        max_loss_by_move = settings->max_loss_by_move;
+        loss_percentage_by_move = settings->loss_percentage_by_move;
         level = settings->level;
         n_threads = settings->n_threads;
 #if USE_CHANGEABLE_HASH_LEVEL
@@ -682,6 +694,7 @@ struct Menu_elements {
         pause_when_pass = settings->pause_when_pass;
         force_specified_openings = settings->force_specified_openings;
         opening_setting = false;
+        ai_loss_graph_setting = false;
         ai_profile_load = false;
         ai_profile_save = false;
         shortcut_key_setting = false;

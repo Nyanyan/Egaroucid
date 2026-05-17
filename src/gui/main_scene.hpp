@@ -9,6 +9,7 @@
 */
 
 #pragma once
+#include <algorithm>
 #include <iostream>
 #include <future>
 #include "./../engine/engine_all.hpp"
@@ -624,6 +625,13 @@ private:
             stop_calculating();
             resume_calculating();
             changeScene(U"Opening_setting", SCENE_FADE_TIME);
+            return;
+        }
+        if (getData().menu_elements.ai_loss_graph_setting) {
+            changing_scene = true;
+            stop_calculating();
+            resume_calculating();
+            changeScene(U"AI_loss_graph_setting", SCENE_FADE_TIME);
             return;
         }
         if (getData().menu_elements.ai_profile_load) {
@@ -1480,9 +1488,12 @@ private:
                     }
                     if (!specified_opening_moved) {
                         if (getData().menu_elements.accept_ai_loss) {
-                            double loss_ratio = 0.01 * getData().menu_elements.loss_percentage;
-                            if (myrandom() <= loss_ratio) {
-                                ai_status.ai_future = std::async(std::launch::async, ai_loss, getData().history_elem.board, getData().menu_elements.level, getData().menu_elements.use_book, 0, true, true, getData().menu_elements.max_loss);
+                            const int move_number = std::clamp(getData().history_elem.board.n_discs() - 3, 1, AI_LOSS_GRAPH_POINT_COUNT);
+                            const int curve_max_loss = get_ai_loss_graph_value(getData().menu_elements.max_loss_by_move, move_number);
+                            const int curve_loss_percentage = get_ai_loss_graph_value(getData().menu_elements.loss_percentage_by_move, move_number);
+                            double loss_ratio = 0.01 * curve_loss_percentage;
+                            if (curve_max_loss > 0 && myrandom() <= loss_ratio) {
+                                ai_status.ai_future = std::async(std::launch::async, ai_loss, getData().history_elem.board, getData().menu_elements.level, getData().menu_elements.use_book, 0, true, true, curve_max_loss);
                             } else {
                                 ai_status.ai_future = std::async(std::launch::async, ai, getData().history_elem.board, getData().menu_elements.level, getData().menu_elements.use_book, 0, true, true);
                             }
