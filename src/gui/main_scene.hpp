@@ -1974,10 +1974,6 @@ private:
                 continue;
             }
 
-            const int seed_draw_x = BOARD_SX + x * BOARD_CELL_SIZE + BOARD_CELL_SIZE / 2;
-            const int seed_draw_y = BOARD_SY + y * BOARD_CELL_SIZE + BOARD_CELL_SIZE / 2;
-            Circle(seed_draw_x, seed_draw_y, DISC_SIZE).drawFrame(3, 0, mark_color);
-
             for (const Point& flipped_cell : flipped_cells) {
                 const int flipped_draw_x = BOARD_SX + flipped_cell.x * BOARD_CELL_SIZE + BOARD_CELL_SIZE / 2;
                 const int flipped_draw_y = BOARD_SY + flipped_cell.y * BOARD_CELL_SIZE + BOARD_CELL_SIZE / 2;
