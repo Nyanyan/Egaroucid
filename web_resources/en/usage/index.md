@@ -4,7 +4,7 @@
 
 This is the official documentation for the Othello AI Egaroucid. It briefly introduces how to use each feature. The content of this page is aligned with the latest version, but updates may not always be up to date.
 
-Last updated: 2025/12/25 Egaroucid 7.8.0
+Last updated: 2026/05/17 Egaroucid 7.8.1
 
 INSERT_TABLE_OF_CONTENTS_HERE
 
@@ -44,7 +44,9 @@ This is the Othello board. You can display legal moves (where you can play), eva
 
 This area displays information related to the board and the AI.
 
-It shows the move number, whose turn it is, the current number of discs, the <a href="#Display_Display in Information Area > Opening">opening name</a>, the <a href="#Settings_Level">AI's level</a>, and the <a href="#Display_Display in Information Area > Best Line">best line of play the AI is considering</a>.
+It shows the move number, whose turn it is, the current number of discs, the <a href="#Display_Display in Information Area > Opening">opening name</a>, the <a href="#Settings_Level">AI's level</a>, and the <a href="#Display_Display in Information Area > Best Line">best line of play the AI is considering</a>, and the elapsed time since the start of the game.
+
+When the AI is set not to make moves for either Black or White, the turn display shows that it is in analysis mode.
 
 <div class="centering_box">
     <img class="pic2" src="img/game_info.png">
@@ -201,10 +203,13 @@ A book is a pre-calculated evaluation value for a position.
 
 This is a setting that makes the AI play bad moves probabilistically. By turning the checkbox on and off, you can quickly switch between the setting where only the best move is played and the setting where disc loss is allowed.
 
-The setting can be changed with two parameters: "Max Disc Loss per Move" and "Disc Loss Rate". Of the moves made by the AI, disc loss is allowed for Disc Loss Rate% of the moves. At that time, "Max Disc Loss per Move" represents how many disc losses are allowed from the best move. One move is randomly selected from the best move up to the set maximum disc loss.
+The setting allows you to adjust how much disc loss the AI is allowed to make. From version 7.8.1, it is possible to finely adjust how much disc loss is allowed according to the progress of the game. For example, you can set it to make small disc losses in the opening to create variation, play almost perfectly in the mid-game, and occasionally make larger disc losses in the endgame.
+
+The settings can be saved as profiles. You can switch settings for each purpose, such as for practice, for weaker games, or for games with increased randomness.
 
 <div class="centering_box">
     <img class="pic2" src="img/accept_ai_loss.png">
+    <img class="pic2" src="img/ai_loss_profile.png">
 </div>
 
 
@@ -355,7 +360,9 @@ In other words, in the example of the image below, if the probability of choosin
     <img class="pic2" src="img/force_ai_opening_setting5.png">
 </div>
 
-When tracing a forced opening, "Forcing" is displayed in the information area.
+When tracing a forced opening, "Forcing" is displayed in the information area. From version 7.8.1, the state of tracing a registered opening, the state where the user has deviated from the opening, and the state where the registered opening has finished to the end are displayed more clearly.
+
+Note that if both the <a href="#Settings_Make AI Lose Discs">Make AI Lose Discs</a> setting and Force AI Opening are on, Force AI Opening takes precedence.
 
 <div class="centering_box">
     <img class="pic2" src="img/force_ai_opening_setting6.png">
@@ -441,6 +448,24 @@ Pressing the initial settings button allows you to batch change to the default s
 
 
 In addition, as a basic operation, for all functions, buttons with nuances such as "Import," "Output," "Start," and "OK" can be operated with the Enter key. Buttons with nuances such as "Back" and "Exit this screen" can be operated with the Esc key.
+
+
+
+### Shortcut Button Settings
+
+Six buttons have been placed in the space at the upper right of the screen. You can freely assign functions to these buttons. This is useful when there are functions you want to use without opening the menu, or when you want to quickly use functions whose shortcut keys are difficult to remember.
+
+<div class="centering_box">
+    <img class="pic2" src="img/custom_buttons.png">
+    <img class="pic2" src="img/custom_button_setting1.png">
+    <img class="pic2" src="img/custom_button_setting2.png">
+</div>
+
+
+
+### Mouse Extra Button Settings
+
+From version 7.8.1, it is now possible to assign shortcuts to mouse buttons as well as the keyboard. By using the side buttons of the mouse, you can perform operations such as moving forward/backward or having the AI play one move at hand.
 
 
 
@@ -552,6 +577,25 @@ Default color scheme:
 <div class="table_wrapper">
 <table>
 <tr>
+<th>Value</th>
+<th>Color</th>
+</tr>
+<tr>
+<td>Best</td>
+<td>Cyan</td>
+</tr>
+<tr>
+<td>Other than best</td>
+<td>White</td>
+</tr>
+</table>
+</div>
+
+Colored hints:
+
+<div class="table_wrapper">
+<table>
+<tr>
 <th>Accuracy</th>
 <th>Value</th>
 <th>Color</th>
@@ -589,28 +633,9 @@ Default color scheme:
 </table>
 </div>
 
-Color scheme up to 7.7.0
-
-<div class="table_wrapper">
-<table>
-<tr>
-<th>Value</th>
-<th>Color</th>
-</tr>
-<tr>
-<td>Best</td>
-<td>Cyan</td>
-</tr>
-<tr>
-<td>Other than best</td>
-<td>White</td>
-</tr>
-</table>
-</div>
-
 <div class="centering_box">
     <img class="pic2" src="img/default_color.png">
-    <img class="pic2" src="img/traditional_color.png">
+    <img class="pic2" src="img/colorful_color.png">
 </div>
 
 #### Simple Hint Display
@@ -672,6 +697,21 @@ You can display the last move made with a small red circle.
     <img class="pic2" src="img/last_move.png">
 </div>
 
+### Display on Discs > Flipped Discs (Previous)
+
+You can display the discs flipped by the previous move. This is useful when you want to look back at which discs were flipped or when displaying the board for commentary.
+
+<div class="centering_box">
+    <img class="pic2" src="img/flipped_discs_previous.png">
+</div>
+
+### Display on Discs > Flipped Discs (Next)
+
+Clearly displays the discs that will be flipped when a move is made on a hovered square.
+
+<div class="centering_box">
+    <img class="pic2" src="img/flipped_discs_next.png">
+</div>
 
 ### Display on Discs > Stable Discs
 
@@ -867,7 +907,7 @@ Automatically generates a random mid-game position. I implemented it for the pur
 
 Pressing the generate button will automatically generate a mid-game position. By changing the number of generation moves, you can select what move number of the position to generate. You can also set the score range of the generated position. In the image below, it is set to generate a position in the range of +21 to +38 for White, that is, -38 to -21 for Black, after 18 moves have been played. However, since the board is generated so that it is roughly within the score range in the mid-game search, it cannot be guaranteed that the generated board will be strictly within the score range.
 
-Ctrl+R is assigned as a shortcut key for random position generation.
+Ctrl+R is assigned as a shortcut key for random position generation. From version 7.8.1, it is now possible to narrow the width of the score range down to a minimum of 2 discs.
 
 <div class="centering_box">
     <img class="pic2" src="img/generate_random_board.png">
@@ -1012,6 +1052,8 @@ If there are many games, you can scroll. In addition to the mouse wheel, you can
 
 If the player name or memo is long, it will be omitted as appropriate. Also, the name of the winning player is displayed in red, and the name of the losing player is displayed in blue. A draw is orange. For games that are not saved to the end, the score is displayed as ??-??, and the background color of the name is not applied.
 
+From version 7.8.1, the folder that was open just before is remembered. When you reopen the Load Game screen, you can search from the folder you were looking at last time.
+
 <div class="centering_box">
     <img class="pic2" src="img/import_game.png">
     <img class="pic2" src="img/import_game_dd.png">
@@ -1091,6 +1133,8 @@ Select a mark and freely click on stones and squares.
 You cannot change the placement of stones on this screen, so please create the stone placement by <a href="#Input/Output_Input > Input Game Record">inputting a game record</a> or <a href="#Input/Output_Input > Edit Board">editing the board</a> before using this function.
 
 You can also convert to a monochrome image so that it looks beautiful when printed in black and white.
+
+From version 7.8.1, you can now add evaluation values to the board image, choose whether or not to display coordinates, and select the color of the outer frame of the board.
 
 "Save Image" copies the image to the clipboard and saves the image. The default save destination is the Egaroucid/screenshots folder in the Documents folder, and the file name is the date and time + game record. If you want to change the save location, please change it from "Output > Screenshot > Change Save Location".
 
