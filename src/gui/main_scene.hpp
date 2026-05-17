@@ -386,7 +386,8 @@ public:
         int64_t display_black_time_msec;
         int64_t display_white_time_msec;
         get_display_timer_values(&display_black_time_msec, &display_white_time_msec);
-        draw_info(getData().colors, getData().history_elem, getData().fonts, getData().menu_elements, pausing_in_pass, principal_variation, getData().forced_openings.is_forced(getData().history_elem.board), playing_mode, display_black_time_msec, display_white_time_msec);
+        int forced_opening_status = get_forced_opening_status_for_display();
+        draw_info(getData().colors, getData().history_elem, getData().fonts, getData().menu_elements, pausing_in_pass, principal_variation, forced_opening_status, playing_mode, display_black_time_msec, display_white_time_msec);
 
         // draw local strategy policy
         if (ai_status.local_strategy_policy_done_level > 0 && getData().menu_elements.show_ai_focus && !local_strategy_ignore && !getData().menu.active()) {
@@ -480,6 +481,20 @@ private:
                 *white_time_msec += elapsed;
             }
         }
+    }
+
+    int get_forced_opening_status_for_display() {
+        if (!getData().menu_elements.force_specified_openings) {
+            return FORCED_OPENING_STATUS_NONE;
+        }
+        Board board = getData().history_elem.board;
+        if (getData().forced_openings.has_forced_move(board)) {
+            return FORCED_OPENING_STATUS_ACTIVE;
+        }
+        if (getData().forced_openings.is_forced(board)) {
+            return FORCED_OPENING_STATUS_FINISHED;
+        }
+        return FORCED_OPENING_STATUS_OUT;
     }
 
     void add_elapsed_time_to_current_player(int node_idx) {

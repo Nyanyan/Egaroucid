@@ -21,6 +21,11 @@ constexpr int PLAYING_MODE_NONE = -1;
 constexpr int PLAYING_MODE_PLAYING = 0;
 constexpr int PLAYING_MODE_ANALYZING = 1;
 
+constexpr int FORCED_OPENING_STATUS_NONE = 0;
+constexpr int FORCED_OPENING_STATUS_ACTIVE = 1;
+constexpr int FORCED_OPENING_STATUS_OUT = 2;
+constexpr int FORCED_OPENING_STATUS_FINISHED = 3;
+
 void draw_empty_board(Fonts fonts, Colors colors, bool monochrome, bool show_coordinate = true) {
     String coord_x = U"abcdefgh";
     Color dark_gray_color = colors.dark_gray;
@@ -130,7 +135,20 @@ void draw_elapsed_time_pair(const Fonts& fonts, const int font_size, const int y
     fonts.font(white_time).draw(font_size, Arg::center(INFO_SX + INFO_WIDTH / 2 + TIMER_RIGHT_OFFSET, y));
 }
 
-void draw_info(Colors colors, History_elem history_elem, Fonts fonts, Menu_elements menu_elements, bool pausing_in_pass, std::string principal_variation, bool forced_opening_found, int playing_mode, int64_t black_time_msec = -1, int64_t white_time_msec = -1) {
+String get_forced_opening_status_text(int forced_opening_status) {
+    switch (forced_opening_status) {
+    case FORCED_OPENING_STATUS_ACTIVE:
+        return language.get("info", "forced");
+    case FORCED_OPENING_STATUS_OUT:
+        return language.get("info", "forced_out");
+    case FORCED_OPENING_STATUS_FINISHED:
+        return language.get("info", "forced_finished");
+    default:
+        return U"";
+    }
+}
+
+void draw_info(Colors colors, History_elem history_elem, Fonts fonts, Menu_elements menu_elements, bool pausing_in_pass, std::string principal_variation, int forced_opening_status, int playing_mode, int64_t black_time_msec = -1, int64_t white_time_msec = -1) {
     s3d::RoundRect round_rect{ INFO_SX, INFO_SY, INFO_WIDTH, INFO_HEIGHT, INFO_RECT_RADIUS };
     round_rect.drawFrame(INFO_RECT_THICKNESS, colors.white);
     // 1st line
@@ -170,6 +188,8 @@ void draw_info(Colors colors, History_elem history_elem, Fonts fonts, Menu_eleme
     const bool show_pv = menu_elements.show_principal_variation;
     const bool show_timer_on_line4 = show_timer;
     const bool show_level_on_line4 = !show_timer_on_line4;
+    const String forced_status_text = get_forced_opening_status_text(forced_opening_status);
+    const bool has_forced_status_text = !forced_status_text.isEmpty();
     // 2nd line
     if (menu_elements.show_opening_name) {
         String opening_info = language.get("info", "opening_name") + U": " + Unicode::FromUTF8(history_elem.opening_name);
@@ -232,15 +252,17 @@ void draw_info(Colors colors, History_elem history_elem, Fonts fonts, Menu_eleme
         fonts.font(language.get("info", "bad_point")).draw(12, Arg::center(rright - width / 2, up + height / 2));
         if (show_level_on_line4) {
             String level_info = language.get("common", "level") + U" " + Format(menu_elements.level);
-            bool is_forced = menu_elements.force_specified_openings && forced_opening_found;
-            if (is_forced) {
+            if (has_forced_status_text) {
                 fonts.font(level_info).draw(11, Arg::center(INFO_SX + INFO_WIDTH / 2, up + height / 4));
-                fonts.font(language.get("info", "forced")).draw(11, Arg::center(INFO_SX + INFO_WIDTH / 2, up + height * 3 / 4));
+                fonts.font(forced_status_text).draw(11, Arg::center(INFO_SX + INFO_WIDTH / 2, up + height * 3 / 4));
             } else {
                 fonts.font(level_info).draw(12, Arg::center(INFO_SX + INFO_WIDTH / 2, up + height / 2));
             }
         } else {
             draw_elapsed_time_pair(fonts, 11, static_cast<int>(up + height / 2), black_time_msec, white_time_msec);
+            if (has_forced_status_text) {
+                fonts.font(forced_status_text).draw(11, Arg::center(INFO_SX + INFO_WIDTH / 2, up + height / 2));
+            }
         }
         dy += 23;
     } else {
@@ -259,13 +281,15 @@ void draw_info(Colors colors, History_elem history_elem, Fonts fonts, Menu_eleme
                 level_info += language.get("info", "danger");
             }
             level_info += U")";
-            bool is_forced = menu_elements.force_specified_openings && forced_opening_found;
-            if (is_forced) {
-                level_info += U" " + language.get("info", "forced");
+            if (has_forced_status_text) {
+                level_info += U" " + forced_status_text;
             }
             fonts.font(level_info).draw(12, Arg::topCenter(INFO_SX + INFO_WIDTH / 2, INFO_SY + dy));
         } else {
             draw_elapsed_time_pair(fonts, 12, INFO_SY + dy + 8, black_time_msec, white_time_msec);
+            if (has_forced_status_text) {
+                fonts.font(forced_status_text).draw(11, Arg::center(INFO_SX + INFO_WIDTH / 2, INFO_SY + dy + 8));
+            }
         }
         dy += 18;
     }
@@ -297,10 +321,6 @@ void draw_info(Colors colors, History_elem history_elem, Fonts fonts, Menu_eleme
         String level_info;
         if (menu_elements.show_ai_focus) {
             level_info = language.get("common", "level") + U" " + Format(menu_elements.level);
-            bool is_forced = menu_elements.force_specified_openings && forced_opening_found;
-            if (is_forced) {
-                level_info += U" (" + language.get("info", "forced") + U")";
-            }
         } else {
             level_info = language.get("common", "level") + U" " + Format(menu_elements.level) + U" (";
             if (menu_elements.level <= LIGHT_LEVEL) {
@@ -315,10 +335,6 @@ void draw_info(Colors colors, History_elem history_elem, Fonts fonts, Menu_eleme
                 level_info += language.get("info", "danger");
             }
             level_info += U")";
-            bool is_forced = menu_elements.force_specified_openings && forced_opening_found;
-            if (is_forced) {
-                level_info += U" " + language.get("info", "forced");
-            }
         }
         fonts.font(level_info).draw(13, Arg::center(INFO_SX + INFO_WIDTH / 2, ((INFO_SY + dy) + (INFO_SY + INFO_HEIGHT - INFO_RECT_THICKNESS / 2)) / 2));
     }

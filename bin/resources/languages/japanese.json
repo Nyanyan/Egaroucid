@@ -308,6 +308,8 @@
         "bad_point": "悪いところ",
         "probability": "探索確率",
         "forced": "強制中",
+        "forced_out": "強制進行外",
+        "forced_finished": "強制進行終了",
         "playing": "対局中",
         "analyzing": "分析中"
     },

@@ -1046,6 +1046,12 @@ struct Forced_openings {
         return selected_policy;
     }
 
+    bool has_forced_move(Board board) {
+        Board unique_board = representative_board(board);
+        auto itr = selected_moves.find(unique_board);
+        return itr != selected_moves.end() && !itr->second.empty();
+    }
+
     void add(std::string str, double weight) {
         openings.emplace_back(std::make_pair(str, weight));
         init();

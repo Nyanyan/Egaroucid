@@ -306,6 +306,8 @@
         "bad_point": "劣勢點",
         "probability": "機率",
         "forced": "強制",
+        "forced_out": "強制進行外",
+        "forced_finished": "強制進行結束",
         "playing": "對局中",
         "analyzing": "分析中"
     },

@@ -305,7 +305,9 @@
         "good_point": "Good Point",
         "bad_point": "Bad Point",
         "probability": "Probability",
-        "forced": "Forced"
+        "forced": "Forced",
+        "forced_out": "Forced Line Out",
+        "forced_finished": "Forced Line Ended"
     },
     "edit_board": {
         "player": "Player",

@@ -308,6 +308,8 @@
         "bad_point": "缺点",
         "probability": "确定度",
         "forced": "强制",
+        "forced_out": "强制进行外",
+        "forced_finished": "强制进行结束",
         "playing": "对局中",
         "analyzing": "分析中"
     },

@@ -306,6 +306,8 @@
         "bad_point": "Bad Point",
         "probability": "Probability",
         "forced": "Forced",
+        "forced_out": "Forced Line Out",
+        "forced_finished": "Forced Line Ended",
         "playing": "Playing",
         "analyzing": "Analyzing"
     },
