@@ -618,6 +618,7 @@ private:
             getData().graph_resources.init();
             getData().graph_resources.nodes[getData().graph_resources.branch].emplace_back(getData().history_elem);
             getData().game_information.init();
+            reset_turn_timer_anchor();
             getData().menu_elements.ai_put_black = false;
             getData().menu_elements.ai_put_white = false;
             resume_calculating();
@@ -630,6 +631,7 @@ private:
             getData().graph_resources.init();
             getData().graph_resources.nodes[getData().graph_resources.branch].emplace_back(getData().history_elem);
             getData().game_information.init();
+            reset_turn_timer_anchor();
             getData().menu_elements.ai_put_black = false;
             getData().menu_elements.ai_put_white = true;
             resume_calculating();
@@ -642,6 +644,7 @@ private:
             getData().graph_resources.init();
             getData().graph_resources.nodes[getData().graph_resources.branch].emplace_back(getData().history_elem);
             getData().game_information.init();
+            reset_turn_timer_anchor();
             getData().menu_elements.ai_put_black = true;
             getData().menu_elements.ai_put_white = false;
             resume_calculating();
@@ -654,6 +657,7 @@ private:
             getData().graph_resources.init();
             getData().graph_resources.nodes[getData().graph_resources.branch].emplace_back(getData().history_elem);
             getData().game_information.init();
+            reset_turn_timer_anchor();
             getData().menu_elements.ai_put_black = true;
             getData().menu_elements.ai_put_white = true;
             resume_calculating();
