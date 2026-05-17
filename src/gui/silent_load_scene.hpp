@@ -89,6 +89,8 @@ void init_default_settings(const Directories* directories, const Resources* reso
     settings->show_ai_focus = false;
     settings->pv_length = 7;
     settings->screenshot_saving_dir = directories->document_dir + "screenshots/";
+    settings->input_game_last_subfolder.clear();
+    settings->opening_setting_last_subfolder.clear();
     settings->show_value_when_ai_calculating = false;
     // settings->generate_random_board_score_range = 64;
     settings->generate_random_board_score_range_min = -64;
@@ -514,6 +516,8 @@ void init_settings(const Directories* directories, const Resources* resources, S
             settings->ai_profile_file = "default.json";
         }
         init_settings_import_str(setting_json, U"ai_profile_name", &settings->ai_profile_name);
+        init_settings_import_str(setting_json, U"input_game_last_subfolder", &settings->input_game_last_subfolder);
+        init_settings_import_str(setting_json, U"opening_setting_last_subfolder", &settings->opening_setting_last_subfolder);
     }
 
     // Keep compatibility with legacy scalar settings when profiles or curves are absent.
@@ -594,6 +598,8 @@ int init_resources_silent_load(Resources* resources, Settings* settings, Fonts *
 
 void init_user_settings(Settings* settings, User_settings *user_settings) {
     user_settings->screenshot_saving_dir = settings->screenshot_saving_dir;
+    user_settings->input_game_last_subfolder = settings->input_game_last_subfolder;
+    user_settings->opening_setting_last_subfolder = settings->opening_setting_last_subfolder;
 }
 
 int silent_load(Directories* directories, Resources* resources, Settings* settings, User_settings *user_settings, Fonts *fonts, bool *stop_loading) {

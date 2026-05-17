@@ -72,6 +72,8 @@ void save_settings(Menu_elements menu_elements, Settings settings, Directories d
     setting_json[U"show_ai_focus"] = menu_elements.show_ai_focus;
     setting_json[U"pv_length"] = menu_elements.pv_length;
     setting_json[U"screenshot_saving_dir"] = Unicode::Widen(user_settings.screenshot_saving_dir);
+    setting_json[U"input_game_last_subfolder"] = Unicode::Widen(user_settings.input_game_last_subfolder);
+    setting_json[U"opening_setting_last_subfolder"] = Unicode::Widen(user_settings.opening_setting_last_subfolder);
     setting_json[U"show_value_when_ai_calculating"] = menu_elements.show_value_when_ai_calculating;
     setting_json[U"generate_random_board_score_range_min"] = menu_elements.generate_random_board_score_range_min;
     setting_json[U"generate_random_board_score_range_max"] = menu_elements.generate_random_board_score_range_max;

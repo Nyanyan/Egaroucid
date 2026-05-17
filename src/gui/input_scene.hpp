@@ -349,6 +349,24 @@ private:
     String renaming_folder_original_name;
     bool creating_folder = false;
 
+    void sync_last_opened_subfolder() {
+        getData().user_settings.input_game_last_subfolder = explorer_state.subfolder;
+    }
+
+    void restore_last_opened_subfolder() {
+        explorer_state.clear();
+        explorer_state.subfolder = getData().user_settings.input_game_last_subfolder;
+        if (explorer_state.subfolder.empty()) {
+            return;
+        }
+        String root_dir = explorer::build_root_dir(getData().directories.document_dir, "games");
+        String current_dir = explorer::build_current_dir(root_dir, explorer_state);
+        if (!FileSystem::IsDirectory(current_dir)) {
+            explorer_state.clear();
+            getData().user_settings.input_game_last_subfolder.clear();
+        }
+    }
+
 public:
     Import_game(const InitData& init) : IScene{ init } {
         set_scene_ime_enabled(true);
@@ -360,7 +378,8 @@ public:
         inline_edit_ok_button.init(0, 0, 70, 30, 8, language.get("common", "ok"), 18, getData().fonts.font, getData().colors.white, getData().colors.black);
         failed = false;
         // Initialize current dir and load games
-        explorer_state.clear();
+        restore_last_opened_subfolder();
+        sync_last_opened_subfolder();
         enumerate_current_dir();
         load_games();
     }
@@ -453,6 +472,7 @@ public:
                     cancel_folder_rename();
                 }
                 explorer_state.navigate_to_child(res.clickedFolder);
+                sync_last_opened_subfolder();
                 enumerate_current_dir();
                 load_games();
                 init_scroll_manager();
@@ -549,6 +569,7 @@ private:
         if (!explorer_state.navigate_to_parent()) {
             return false;
         }
+        sync_last_opened_subfolder();
         if (renaming_folder) {
             cancel_folder_rename();
         }

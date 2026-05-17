@@ -77,6 +77,23 @@ private:
         return editing_elem || renaming_folder;
     }
 
+    void sync_last_opened_subfolder() {
+        getData().user_settings.opening_setting_last_subfolder = subfolder;
+    }
+
+    void restore_last_opened_subfolder() {
+        subfolder = getData().user_settings.opening_setting_last_subfolder;
+        if (subfolder.empty()) {
+            return;
+        }
+        String base_dir = Unicode::Widen(getData().directories.document_dir) + U"/forced_openings/";
+        String current_dir = base_dir + Unicode::Widen(subfolder);
+        if (!FileSystem::IsDirectory(current_dir)) {
+            subfolder.clear();
+            getData().user_settings.opening_setting_last_subfolder.clear();
+        }
+    }
+
     // Drag and drop state for openings within CSV
     struct DragState {
         bool is_dragging = false;
@@ -114,7 +131,8 @@ public:
         inline_edit_ok_button.init(0, 0, 70, 30, 10, language.get("common", "ok"), 18, getData().fonts.font, getData().colors.white, getData().colors.black);
 
         has_parent = false;
-        subfolder.clear();
+        restore_last_opened_subfolder();
+        sync_last_opened_subfolder();
         adding_elem = false;
         editing_elem = false;
         creating_csv = false;
@@ -800,6 +818,7 @@ public:
         void navigate_to_folder(const String& folder_name) {
             if (subfolder.size()) subfolder += "/";
             subfolder += folder_name.narrow();
+            sync_last_opened_subfolder();
             enumerate_current_dir();
             load_openings();
             init_scroll_manager();
@@ -814,6 +833,7 @@ public:
             size_t pos = s.find_last_of('/');
             if (pos == std::string::npos) subfolder.clear();
             else subfolder = s.substr(0, pos);
+            sync_last_opened_subfolder();
             enumerate_current_dir();
             load_openings();
             init_scroll_manager();

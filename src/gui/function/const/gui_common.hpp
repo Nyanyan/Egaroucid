@@ -473,6 +473,8 @@ struct Settings {
     bool show_ai_focus;
     int pv_length;
     std::string screenshot_saving_dir;
+    std::string input_game_last_subfolder;
+    std::string opening_setting_last_subfolder;
     bool show_value_when_ai_calculating;
     int generate_random_board_score_range_min;
     int generate_random_board_score_range_max;
@@ -930,6 +932,8 @@ struct Book_information {
 
 struct User_settings {
     std::string screenshot_saving_dir;
+    std::string input_game_last_subfolder;
+    std::string opening_setting_last_subfolder;
 };
 
 struct Window_state {
