@@ -56,8 +56,6 @@ private:
     int umigame_value_depth_before;
     String shortcut_key;
     String shortcut_key_pressed;
-    int random_generated_n_discs;
-    bool random_generated_n_discs_available;
     uint64_t turn_timer_start_msec;
     Board turn_timer_anchor_board;
     int turn_timer_anchor_player;
@@ -106,8 +104,6 @@ public:
         umigame_value_depth_before = 0;
         shortcut_key = SHORTCUT_KEY_UNDEFINED;
         shortcut_key_pressed = SHORTCUT_KEY_UNDEFINED;
-        random_generated_n_discs = 4;
-        random_generated_n_discs_available = false;
         reset_turn_timer_anchor();
         std::cerr << "main scene loaded" << std::endl;
         // std::cerr << tim() - strt << " ms" << std::endl;
@@ -623,7 +619,6 @@ private:
             getData().graph_resources.init();
             getData().graph_resources.nodes[getData().graph_resources.branch].emplace_back(getData().history_elem);
             getData().game_information.init();
-            random_generated_n_discs_available = false;
             reset_turn_timer_anchor();
             getData().menu_elements.ai_put_black = false;
             getData().menu_elements.ai_put_white = false;
@@ -637,7 +632,6 @@ private:
             getData().graph_resources.init();
             getData().graph_resources.nodes[getData().graph_resources.branch].emplace_back(getData().history_elem);
             getData().game_information.init();
-            random_generated_n_discs_available = false;
             reset_turn_timer_anchor();
             getData().menu_elements.ai_put_black = false;
             getData().menu_elements.ai_put_white = true;
@@ -651,7 +645,6 @@ private:
             getData().graph_resources.init();
             getData().graph_resources.nodes[getData().graph_resources.branch].emplace_back(getData().history_elem);
             getData().game_information.init();
-            random_generated_n_discs_available = false;
             reset_turn_timer_anchor();
             getData().menu_elements.ai_put_black = true;
             getData().menu_elements.ai_put_white = false;
@@ -665,7 +658,6 @@ private:
             getData().graph_resources.init();
             getData().graph_resources.nodes[getData().graph_resources.branch].emplace_back(getData().history_elem);
             getData().game_information.init();
-            random_generated_n_discs_available = false;
             reset_turn_timer_anchor();
             getData().menu_elements.ai_put_black = true;
             getData().menu_elements.ai_put_white = true;
@@ -960,7 +952,6 @@ private:
                 resume_calculating();
             }
             if ((getData().menu_elements.go_to_random_generated_position || shortcut_key == U"go_to_random_generated_position") &&
-                random_generated_n_discs_available &&
                 !ai_status.random_board_generator_calculating) {
                 move_to_random_generated_position();
             }
@@ -1006,7 +997,6 @@ private:
                 getData().graph_resources.init();
                 getData().graph_resources.nodes[getData().graph_resources.branch].emplace_back(getData().history_elem);
                 getData().game_information.init();
-                random_generated_n_discs_available = false;
                 pausing_in_pass = false;
                 resume_calculating();
                 ai_status.random_board_generator_calculating = true;
@@ -1559,6 +1549,7 @@ private:
         getData().history_elem.v = GRAPH_IGNORE_VALUE;
         getData().history_elem.level = -1;
         getData().history_elem.player ^= 1;
+        getData().history_elem.is_random_generated_position = false;
         if (getData().history_elem.board.get_legal() == 0ULL) {
             getData().history_elem.board.pass();
             getData().history_elem.player ^= 1;
@@ -2615,12 +2606,35 @@ private:
         return res;
     }
 
-    void move_to_random_generated_position() {
-        if (!random_generated_n_discs_available) {
+    int get_random_generated_position_n_discs() {
+        int random_generated_n_discs = -1;
+        for (const History_elem& history_elem : getData().graph_resources.nodes[GRAPH_MODE_NORMAL]) {
+            if (history_elem.is_random_generated_position) {
+                random_generated_n_discs = history_elem.board.n_discs();
+            }
+        }
+        return random_generated_n_discs;
+    }
+
+    void clear_random_generated_position_flags() {
+        for (History_elem& history_elem : getData().graph_resources.nodes[GRAPH_MODE_NORMAL]) {
+            history_elem.is_random_generated_position = false;
+        }
+    }
+
+    void mark_current_position_as_random_generated() {
+        clear_random_generated_position_flags();
+        int current_node_idx = getData().graph_resources.node_find(GRAPH_MODE_NORMAL, getData().history_elem.board.n_discs());
+        if (current_node_idx == -1) {
             return;
         }
-        int random_generated_node_idx = getData().graph_resources.node_find(GRAPH_MODE_NORMAL, random_generated_n_discs);
-        if (random_generated_node_idx == -1) {
+        getData().graph_resources.nodes[GRAPH_MODE_NORMAL][current_node_idx].is_random_generated_position = true;
+        getData().history_elem.is_random_generated_position = true;
+    }
+
+    void move_to_random_generated_position() {
+        int random_generated_n_discs = get_random_generated_position_n_discs();
+        if (random_generated_n_discs == -1) {
             return;
         }
         stop_calculating();
@@ -2646,8 +2660,7 @@ private:
                 for (int policy : moves) {
                     move_processing(HW2_M1 - policy);
                 }
-                random_generated_n_discs = getData().history_elem.board.n_discs();
-                random_generated_n_discs_available = true;
+                mark_current_position_as_random_generated();
                 need_start_game_button_calculation();
             }
         }

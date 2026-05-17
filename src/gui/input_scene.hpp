@@ -1574,6 +1574,11 @@ inline bool load_game_from_json(
         } else {
             history_elem.white_time_msec = 0;
         }
+        if (game_json[n_discs_str][GAME_IS_RANDOM_GENERATED_POSITION].getType() == JSONValueType::Bool) {
+            history_elem.is_random_generated_position = game_json[n_discs_str][GAME_IS_RANDOM_GENERATED_POSITION].get<bool>();
+        } else {
+            history_elem.is_random_generated_position = false;
+        }
         if (!error_found) {
             data.graph_resources.nodes[GRAPH_MODE_NORMAL].emplace_back(history_elem);
         }

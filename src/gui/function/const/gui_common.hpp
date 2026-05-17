@@ -236,6 +236,7 @@ constexpr int NEW_FOLDER_TEXTBOX_HEIGHT = 30;
 #define GAME_NEXT_POLICY U"next_policy"
 #define GAME_BLACK_TIME_MSEC U"black_time_msec"
 #define GAME_WHITE_TIME_MSEC U"white_time_msec"
+#define GAME_IS_RANDOM_GENERATED_POSITION U"is_random_generated_position"
 constexpr int GAME_DISCS_UNDEFINED = -1;
 constexpr int GAME_MEMO_SUMMARY_SIZE = 40;
 
@@ -330,6 +331,7 @@ struct History_elem {
     std::string opening_name;
     int64_t black_time_msec;
     int64_t white_time_msec;
+    bool is_random_generated_position;
 
     History_elem() {
         reset();
@@ -345,9 +347,10 @@ struct History_elem {
         opening_name.clear();
         black_time_msec = 0;
         white_time_msec = 0;
+        is_random_generated_position = false;
     }
 
-    void set(Board b, int p, int vv, int l, int pl, int npl, std::string o, int64_t black_time = 0, int64_t white_time = 0) {
+    void set(Board b, int p, int vv, int l, int pl, int npl, std::string o, int64_t black_time = 0, int64_t white_time = 0, bool random_generated_position = false) {
         board = b;
         player = p;
         v = vv;
@@ -357,6 +360,7 @@ struct History_elem {
         opening_name = o;
         black_time_msec = black_time;
         white_time_msec = white_time;
+        is_random_generated_position = random_generated_position;
     }
 
     bool operator==(const History_elem& other) const {

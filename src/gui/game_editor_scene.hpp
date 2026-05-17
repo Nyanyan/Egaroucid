@@ -60,6 +60,7 @@ namespace game_save_helper {
             json[n_discs][GAME_POLICY] = history_elem.policy;
             json[n_discs][GAME_BLACK_TIME_MSEC] = history_elem.black_time_msec;
             json[n_discs][GAME_WHITE_TIME_MSEC] = history_elem.white_time_msec;
+            json[n_discs][GAME_IS_RANDOM_GENERATED_POSITION] = history_elem.is_random_generated_position;
             if (history_elem.board.n_discs() < history.back().board.n_discs()) {
                 json[n_discs][GAME_NEXT_POLICY] = history_elem.next_policy;
             } else {
