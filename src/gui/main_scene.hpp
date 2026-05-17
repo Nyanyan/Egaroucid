@@ -382,7 +382,10 @@ public:
                 playing_mode = PLAYING_MODE_ANALYZING;
             }
         }
-        draw_info(getData().colors, getData().history_elem, getData().fonts, getData().menu_elements, pausing_in_pass, principal_variation, getData().forced_openings.is_forced(getData().history_elem.board), playing_mode);
+        int64_t display_black_time_msec;
+        int64_t display_white_time_msec;
+        get_display_timer_values(&display_black_time_msec, &display_white_time_msec);
+        draw_info(getData().colors, getData().history_elem, getData().fonts, getData().menu_elements, pausing_in_pass, principal_variation, getData().forced_openings.is_forced(getData().history_elem.board), playing_mode, display_black_time_msec, display_white_time_msec);
 
         // draw local strategy policy
         if (ai_status.local_strategy_policy_done_level > 0 && getData().menu_elements.show_ai_focus && !local_strategy_ignore && !getData().menu.active()) {
@@ -447,6 +450,34 @@ private:
             turn_timer_anchor_branch != getData().graph_resources.branch
         ) {
             reset_turn_timer_anchor();
+        }
+    }
+
+    void get_display_timer_values(int64_t* black_time_msec, int64_t* white_time_msec) {
+        *black_time_msec = getData().history_elem.black_time_msec;
+        *white_time_msec = getData().history_elem.white_time_msec;
+        bool latest_normal_position =
+            getData().graph_resources.branch == GRAPH_MODE_NORMAL &&
+            getData().graph_resources.nodes[GRAPH_MODE_NORMAL].size() &&
+            getData().history_elem.board == getData().graph_resources.nodes[GRAPH_MODE_NORMAL].back().board;
+        bool timer_running =
+            latest_normal_position &&
+            !need_start_game_button &&
+            !pausing_in_pass &&
+            !changing_scene &&
+            !getData().history_elem.board.is_end();
+        if (timer_running) {
+            sync_turn_timer_anchor_if_needed();
+            int64_t elapsed = static_cast<int64_t>(Time::GetMillisec()) - static_cast<int64_t>(turn_timer_start_msec);
+            if (elapsed < 0) {
+                elapsed = 0;
+            }
+            elapsed = (elapsed / 1000) * 1000;
+            if (getData().history_elem.player == BLACK) {
+                *black_time_msec += elapsed;
+            } else {
+                *white_time_msec += elapsed;
+            }
         }
     }
 
@@ -783,6 +814,9 @@ private:
         }
         if (shortcut_key == U"show_principal_variation") {
             getData().menu_elements.show_principal_variation = !getData().menu_elements.show_principal_variation;
+        }
+        if (shortcut_key == U"show_timer") {
+            getData().menu_elements.show_timer = !getData().menu_elements.show_timer;
         }
         // graph area
         if (shortcut_key == U"show_graph") {

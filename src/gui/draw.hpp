@@ -121,13 +121,16 @@ String format_elapsed_time_msec(int64_t msec) {
     return Unicode::Widen(oss.str());
 }
 
-String get_elapsed_time_line(const History_elem& history_elem) {
-    String black_time = language.get("info", "black") + U" " + format_elapsed_time_msec(history_elem.black_time_msec);
-    String white_time = language.get("info", "white") + U" " + format_elapsed_time_msec(history_elem.white_time_msec);
-    return black_time + U" / " + white_time;
+void draw_elapsed_time_pair(const Fonts& fonts, const int font_size, const int y, const int64_t black_time_msec, const int64_t white_time_msec) {
+    constexpr int TIMER_LEFT_OFFSET = 95;
+    constexpr int TIMER_RIGHT_OFFSET = 95;
+    String black_time = format_elapsed_time_msec(black_time_msec);
+    String white_time = format_elapsed_time_msec(white_time_msec);
+    fonts.font(black_time).draw(font_size, Arg::center(INFO_SX + INFO_WIDTH / 2 - TIMER_LEFT_OFFSET, y));
+    fonts.font(white_time).draw(font_size, Arg::center(INFO_SX + INFO_WIDTH / 2 + TIMER_RIGHT_OFFSET, y));
 }
 
-void draw_info(Colors colors, History_elem history_elem, Fonts fonts, Menu_elements menu_elements, bool pausing_in_pass, std::string principal_variation, bool forced_opening_found, int playing_mode) {
+void draw_info(Colors colors, History_elem history_elem, Fonts fonts, Menu_elements menu_elements, bool pausing_in_pass, std::string principal_variation, bool forced_opening_found, int playing_mode, int64_t black_time_msec = -1, int64_t white_time_msec = -1) {
     s3d::RoundRect round_rect{ INFO_SX, INFO_SY, INFO_WIDTH, INFO_HEIGHT, INFO_RECT_RADIUS };
     round_rect.drawFrame(INFO_RECT_THICKNESS, colors.white);
     // 1st line
@@ -157,11 +160,16 @@ void draw_info(Colors colors, History_elem history_elem, Fonts fonts, Menu_eleme
     }
     fonts.font(moves_line).draw(15, Arg::topCenter(INFO_SX + INFO_WIDTH / 2, INFO_SY + dy));
     dy += 23;
-    const bool show_timer = true;
+    if (black_time_msec < 0) {
+        black_time_msec = history_elem.black_time_msec;
+    }
+    if (white_time_msec < 0) {
+        white_time_msec = history_elem.white_time_msec;
+    }
+    const bool show_timer = menu_elements.show_timer;
     const bool show_timer_on_line4 = show_timer && menu_elements.show_principal_variation;
     const bool show_timer_on_line5 = show_timer && !menu_elements.show_principal_variation;
     const bool show_level_on_line4 = !show_timer_on_line4;
-    String timer_info = get_elapsed_time_line(history_elem);
     // 2nd line
     if (menu_elements.show_opening_name) {
         String opening_info = language.get("info", "opening_name") + U": " + Unicode::FromUTF8(history_elem.opening_name);
@@ -232,7 +240,7 @@ void draw_info(Colors colors, History_elem history_elem, Fonts fonts, Menu_eleme
                 fonts.font(level_info).draw(12, Arg::center(INFO_SX + INFO_WIDTH / 2, up + height / 2));
             }
         } else {
-            fonts.font(timer_info).draw(11, Arg::center(INFO_SX + INFO_WIDTH / 2, up + height / 2));
+            draw_elapsed_time_pair(fonts, 11, static_cast<int>(up + height / 2), black_time_msec, white_time_msec);
         }
         dy += 23;
     } else {
@@ -257,7 +265,7 @@ void draw_info(Colors colors, History_elem history_elem, Fonts fonts, Menu_eleme
             }
             fonts.font(level_info).draw(12, Arg::topCenter(INFO_SX + INFO_WIDTH / 2, INFO_SY + dy));
         } else {
-            fonts.font(timer_info).draw(12, Arg::topCenter(INFO_SX + INFO_WIDTH / 2, INFO_SY + dy));
+            draw_elapsed_time_pair(fonts, 12, INFO_SY + dy + 8, black_time_msec, white_time_msec);
         }
         dy += 18;
     }
@@ -286,7 +294,7 @@ void draw_info(Colors colors, History_elem history_elem, Fonts fonts, Menu_eleme
             fonts.font(pv_info).draw(13, Arg::center(INFO_SX + INFO_WIDTH / 2, ((INFO_SY + dy) + (INFO_SY + INFO_HEIGHT - INFO_RECT_THICKNESS / 2)) / 2));
         }
     } else if (show_timer_on_line5) {
-        fonts.font(timer_info).draw(13, Arg::center(INFO_SX + INFO_WIDTH / 2, ((INFO_SY + dy) + (INFO_SY + INFO_HEIGHT - INFO_RECT_THICKNESS / 2)) / 2));
+        draw_elapsed_time_pair(fonts, 13, ((INFO_SY + dy) + (INFO_SY + INFO_HEIGHT - INFO_RECT_THICKNESS / 2)) / 2, black_time_msec, white_time_msec);
     }
 }
 
