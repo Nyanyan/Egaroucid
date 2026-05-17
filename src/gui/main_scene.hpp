@@ -56,6 +56,10 @@ private:
     int umigame_value_depth_before;
     String shortcut_key;
     String shortcut_key_pressed;
+    uint64_t turn_timer_start_msec;
+    Board turn_timer_anchor_board;
+    int turn_timer_anchor_player;
+    int turn_timer_anchor_branch;
 public:
     std::string principal_variation;
 
@@ -100,6 +104,7 @@ public:
         umigame_value_depth_before = 0;
         shortcut_key = SHORTCUT_KEY_UNDEFINED;
         shortcut_key_pressed = SHORTCUT_KEY_UNDEFINED;
+        reset_turn_timer_anchor();
         std::cerr << "main scene loaded" << std::endl;
         // std::cerr << tim() - strt << " ms" << std::endl;
     }
@@ -148,6 +153,7 @@ public:
 
         // init
         getData().graph_resources.delta = 0;
+        sync_turn_timer_anchor_if_needed();
 
         // shortcut
         shortcut_keys.check_shortcut_key(&shortcut_key, &shortcut_key_pressed);
@@ -194,6 +200,7 @@ public:
             start_game_button.draw();
             if (!getData().menu.active() && (start_game_button.clicked() || shortcut_key == U"start_game")) {
                 need_start_game_button = false;
+                reset_turn_timer_anchor();
                 stop_calculating();
                 resume_calculating();
             }
@@ -213,6 +220,7 @@ public:
                 pass_button.draw();
                 if (!getData().menu.active() && (pass_button.clicked() || (pass_button.is_enabled() && shortcut_key == U"pass"))) {
                     pausing_in_pass = false;
+                    reset_turn_timer_anchor();
                 }
             }
         }
@@ -425,6 +433,40 @@ public:
     }
 
 private:
+    void reset_turn_timer_anchor() {
+        turn_timer_start_msec = Time::GetMillisec();
+        turn_timer_anchor_board = getData().history_elem.board;
+        turn_timer_anchor_player = getData().history_elem.player;
+        turn_timer_anchor_branch = getData().graph_resources.branch;
+    }
+
+    void sync_turn_timer_anchor_if_needed() {
+        if (
+            turn_timer_anchor_board != getData().history_elem.board ||
+            turn_timer_anchor_player != getData().history_elem.player ||
+            turn_timer_anchor_branch != getData().graph_resources.branch
+        ) {
+            reset_turn_timer_anchor();
+        }
+    }
+
+    void add_elapsed_time_to_current_player(int node_idx) {
+        sync_turn_timer_anchor_if_needed();
+        int64_t elapsed = static_cast<int64_t>(Time::GetMillisec()) - static_cast<int64_t>(turn_timer_start_msec);
+        if (elapsed < 0) {
+            elapsed = 0;
+        }
+        if (getData().history_elem.player == BLACK) {
+            getData().history_elem.black_time_msec += elapsed;
+        } else {
+            getData().history_elem.white_time_msec += elapsed;
+        }
+        if (node_idx != -1) {
+            getData().graph_resources.nodes[getData().graph_resources.branch][node_idx].black_time_msec = getData().history_elem.black_time_msec;
+            getData().graph_resources.nodes[getData().graph_resources.branch][node_idx].white_time_msec = getData().history_elem.white_time_msec;
+        }
+    }
+
     void reset_ai() {
         ai_status.ai_thinking = false;
         if (ai_status.ai_future.valid()) {
@@ -1391,11 +1433,20 @@ private:
             getData().graph_resources.n_discs += getData().graph_resources.delta;
             node_idx = getData().graph_resources.node_find(GRAPH_MODE_NORMAL, getData().graph_resources.n_discs);
         }
+        const History_elem next_history_elem = getData().graph_resources.nodes[getData().graph_resources.branch][node_idx];
+        bool history_changed =
+            (getData().history_elem.board != next_history_elem.board) ||
+            (getData().history_elem.player != next_history_elem.player) ||
+            (getData().history_elem.black_time_msec != next_history_elem.black_time_msec) ||
+            (getData().history_elem.white_time_msec != next_history_elem.white_time_msec);
         if (getData().history_elem.board != getData().graph_resources.nodes[getData().graph_resources.branch][node_idx].board) {
             stop_calculating();
             resume_calculating();
         }
-        getData().history_elem = getData().graph_resources.nodes[getData().graph_resources.branch][node_idx];
+        getData().history_elem = next_history_elem;
+        if (history_changed) {
+            reset_turn_timer_anchor();
+        }
     }
 
     void move_processing(int_fast8_t cell) {
@@ -1406,10 +1457,13 @@ private:
                 ++getData().graph_resources.n_discs;
                 return;
             }
+            add_elapsed_time_to_current_player(parent_idx);
             getData().graph_resources.nodes[getData().graph_resources.branch][parent_idx].next_policy = HW2_M1 - cell;
             while (getData().graph_resources.nodes[getData().graph_resources.branch].size() > parent_idx + 1) {
                 getData().graph_resources.nodes[getData().graph_resources.branch].pop_back();
             }
+        } else {
+            add_elapsed_time_to_current_player(-1);
         }
         Flip flip;
         calc_flip(&flip, &getData().history_elem.board, HW2_M1 - cell);
@@ -1430,6 +1484,7 @@ private:
             getData().graph_resources.nodes[getData().graph_resources.branch].back().v = sgn * getData().history_elem.board.score_player();
             getData().graph_resources.nodes[getData().graph_resources.branch].back().level = 100; // 100% search
         }
+        reset_turn_timer_anchor();
         resume_calculating();
     }
 

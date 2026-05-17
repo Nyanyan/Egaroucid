@@ -84,6 +84,7 @@ void init_default_settings(const Directories* directories, const Resources* reso
     settings->use_book_learn_error_leaf = true;
     settings->show_opening_name = true;
     settings->show_principal_variation = true;
+    settings->show_timer = false;
     settings->show_laser_pointer = false;
     settings->show_ai_focus = false;
     settings->pv_length = 7;
@@ -434,6 +435,9 @@ void init_settings(const Directories* directories, const Resources* resources, S
         }
         if (init_settings_import_bool(setting_json, U"show_principal_variation", &settings->show_principal_variation) != ERR_OK) {
             std::cerr << "err40" << std::endl;
+        }
+        if (init_settings_import_bool(setting_json, U"show_timer", &settings->show_timer) != ERR_OK) {
+            std::cerr << "err40-1" << std::endl;
         }
         if (init_settings_import_bool(setting_json, U"show_laser_pointer", &settings->show_laser_pointer) != ERR_OK) {
             std::cerr << "err41" << std::endl;

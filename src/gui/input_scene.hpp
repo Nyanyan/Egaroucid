@@ -1564,6 +1564,16 @@ inline bool load_game_from_json(
         } else {
             error_found = true;
         }
+        if (game_json[n_discs_str][GAME_BLACK_TIME_MSEC].getType() == JSONValueType::Number) {
+            history_elem.black_time_msec = game_json[n_discs_str][GAME_BLACK_TIME_MSEC].get<int64_t>();
+        } else {
+            history_elem.black_time_msec = 0;
+        }
+        if (game_json[n_discs_str][GAME_WHITE_TIME_MSEC].getType() == JSONValueType::Number) {
+            history_elem.white_time_msec = game_json[n_discs_str][GAME_WHITE_TIME_MSEC].get<int64_t>();
+        } else {
+            history_elem.white_time_msec = 0;
+        }
         if (!error_found) {
             data.graph_resources.nodes[GRAPH_MODE_NORMAL].emplace_back(history_elem);
         }

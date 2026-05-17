@@ -234,6 +234,8 @@ constexpr int NEW_FOLDER_TEXTBOX_HEIGHT = 30;
 #define GAME_LEVEL U"level"
 #define GAME_POLICY U"policy"
 #define GAME_NEXT_POLICY U"next_policy"
+#define GAME_BLACK_TIME_MSEC U"black_time_msec"
+#define GAME_WHITE_TIME_MSEC U"white_time_msec"
 constexpr int GAME_DISCS_UNDEFINED = -1;
 constexpr int GAME_MEMO_SUMMARY_SIZE = 40;
 
@@ -326,6 +328,8 @@ struct History_elem {
     int policy;
     int next_policy;
     std::string opening_name;
+    int64_t black_time_msec;
+    int64_t white_time_msec;
 
     History_elem() {
         reset();
@@ -339,9 +343,11 @@ struct History_elem {
         next_policy = -1;
         level = -1;
         opening_name.clear();
+        black_time_msec = 0;
+        white_time_msec = 0;
     }
 
-    void set(Board b, int p, int vv, int l, int pl, int npl, std::string o) {
+    void set(Board b, int p, int vv, int l, int pl, int npl, std::string o, int64_t black_time = 0, int64_t white_time = 0) {
         board = b;
         player = p;
         v = vv;
@@ -349,6 +355,8 @@ struct History_elem {
         policy = pl;
         next_policy = npl;
         opening_name = o;
+        black_time_msec = black_time;
+        white_time_msec = white_time;
     }
 
     bool operator==(const History_elem& other) const {
@@ -457,6 +465,7 @@ struct Settings {
     bool show_graph_sum_of_loss;
     bool show_opening_name;
     bool show_principal_variation;
+    bool show_timer;
     bool show_ai_focus;
     int pv_length;
     std::string screenshot_saving_dir;
@@ -587,6 +596,7 @@ struct Menu_elements {
     bool show_graph_sum_of_loss;
     bool show_opening_name;
     bool show_principal_variation;
+    bool show_timer;
     bool show_ai_focus;
     int pv_length;
     bool show_value_when_ai_calculating;
@@ -725,6 +735,7 @@ struct Menu_elements {
         show_graph_sum_of_loss = settings->show_graph_sum_of_loss;
         show_opening_name = settings->show_opening_name;
         show_principal_variation = settings->show_principal_variation;
+        show_timer = settings->show_timer;
         show_ai_focus = settings->show_ai_focus;
         pv_length = settings->pv_length;
         show_value_when_ai_calculating = settings->show_value_when_ai_calculating;

@@ -12,6 +12,8 @@
 #include <iostream>
 #include <future>
 #include <functional>
+#include <iomanip>
+#include <sstream>
 #include "./../engine/engine_all.hpp"
 #include "function/function_all.hpp"
 
@@ -104,6 +106,27 @@ void draw_transcript_board(Fonts fonts, Colors colors, History_elem history_elem
     }
 }
 
+String format_elapsed_time_msec(int64_t msec) {
+    if (msec < 0) {
+        msec = 0;
+    }
+    int64_t total_seconds = msec / 1000;
+    int64_t hours = total_seconds / 3600;
+    int64_t minutes = (total_seconds % 3600) / 60;
+    int64_t seconds = total_seconds % 60;
+    std::ostringstream oss;
+    oss << std::setfill('0') << std::setw(2) << hours
+        << ":" << std::setw(2) << minutes
+        << ":" << std::setw(2) << seconds;
+    return Unicode::Widen(oss.str());
+}
+
+String get_elapsed_time_line(const History_elem& history_elem) {
+    String black_time = language.get("info", "black") + U" " + format_elapsed_time_msec(history_elem.black_time_msec);
+    String white_time = language.get("info", "white") + U" " + format_elapsed_time_msec(history_elem.white_time_msec);
+    return black_time + U" / " + white_time;
+}
+
 void draw_info(Colors colors, History_elem history_elem, Fonts fonts, Menu_elements menu_elements, bool pausing_in_pass, std::string principal_variation, bool forced_opening_found, int playing_mode) {
     s3d::RoundRect round_rect{ INFO_SX, INFO_SY, INFO_WIDTH, INFO_HEIGHT, INFO_RECT_RADIUS };
     round_rect.drawFrame(INFO_RECT_THICKNESS, colors.white);
@@ -134,12 +157,16 @@ void draw_info(Colors colors, History_elem history_elem, Fonts fonts, Menu_eleme
     }
     fonts.font(moves_line).draw(15, Arg::topCenter(INFO_SX + INFO_WIDTH / 2, INFO_SY + dy));
     dy += 23;
+    const bool show_timer = true;
+    const bool show_timer_on_line4 = show_timer && menu_elements.show_principal_variation;
+    const bool show_timer_on_line5 = show_timer && !menu_elements.show_principal_variation;
+    const bool show_level_on_line4 = !show_timer_on_line4;
+    String timer_info = get_elapsed_time_line(history_elem);
     // 2nd line
-    String opening_info = language.get("info", "opening_name") + U": ";
     if (menu_elements.show_opening_name) {
-        opening_info += Unicode::FromUTF8(history_elem.opening_name);
+        String opening_info = language.get("info", "opening_name") + U": " + Unicode::FromUTF8(history_elem.opening_name);
+        fonts.font(opening_info).draw(12, Arg::topCenter(INFO_SX + INFO_WIDTH / 2, INFO_SY + dy));
     }
-    fonts.font(opening_info).draw(12, Arg::topCenter(INFO_SX + INFO_WIDTH / 2, INFO_SY + dy));
     if (menu_elements.show_ai_focus) {
         dy += 24;
     } else {
@@ -195,42 +222,50 @@ void draw_info(Colors colors, History_elem history_elem, Fonts fonts, Menu_eleme
         Line{ rright - width / 2, up, rright - width, up }.draw(linewidth, colors.red);
         Line{ rright - width / 2, up + height, rright - width, up + height }.draw(linewidth, colors.red);
         fonts.font(language.get("info", "bad_point")).draw(12, Arg::center(rright - width / 2, up + height / 2));
-        String level_info = language.get("common", "level") + U" " + Format(menu_elements.level);
-        bool is_forced = menu_elements.force_specified_openings && forced_opening_found;
-        if (is_forced) {
-            fonts.font(level_info).draw(11, Arg::center(INFO_SX + INFO_WIDTH / 2, up + height / 4));
-            fonts.font(language.get("info", "forced")).draw(11, Arg::center(INFO_SX + INFO_WIDTH / 2, up + height * 3 / 4));
+        if (show_level_on_line4) {
+            String level_info = language.get("common", "level") + U" " + Format(menu_elements.level);
+            bool is_forced = menu_elements.force_specified_openings && forced_opening_found;
+            if (is_forced) {
+                fonts.font(level_info).draw(11, Arg::center(INFO_SX + INFO_WIDTH / 2, up + height / 4));
+                fonts.font(language.get("info", "forced")).draw(11, Arg::center(INFO_SX + INFO_WIDTH / 2, up + height * 3 / 4));
+            } else {
+                fonts.font(level_info).draw(12, Arg::center(INFO_SX + INFO_WIDTH / 2, up + height / 2));
+            }
         } else {
-            fonts.font(level_info).draw(12, Arg::center(INFO_SX + INFO_WIDTH / 2, up + height / 2));
+            fonts.font(timer_info).draw(11, Arg::center(INFO_SX + INFO_WIDTH / 2, up + height / 2));
         }
         dy += 23;
     } else {
         // Normal Mode
-        String level_info = language.get("common", "level") + U" " + Format(menu_elements.level) + U" (";
-        if (menu_elements.level <= LIGHT_LEVEL) {
-            level_info += language.get("info", "light");
-        } else if (menu_elements.level <= STANDARD_MAX_LEVEL) {
-            level_info += language.get("info", "standard");
-        } else if (menu_elements.level <= PRAGMATIC_MAX_LEVEL) {
-            level_info += language.get("info", "pragmatic");
-        } else if (menu_elements.level <= ACCURATE_MAX_LEVEL) {
-            level_info += language.get("info", "accurate");
+        if (show_level_on_line4) {
+            String level_info = language.get("common", "level") + U" " + Format(menu_elements.level) + U" (";
+            if (menu_elements.level <= LIGHT_LEVEL) {
+                level_info += language.get("info", "light");
+            } else if (menu_elements.level <= STANDARD_MAX_LEVEL) {
+                level_info += language.get("info", "standard");
+            } else if (menu_elements.level <= PRAGMATIC_MAX_LEVEL) {
+                level_info += language.get("info", "pragmatic");
+            } else if (menu_elements.level <= ACCURATE_MAX_LEVEL) {
+                level_info += language.get("info", "accurate");
+            } else {
+                level_info += language.get("info", "danger");
+            }
+            level_info += U")";
+            bool is_forced = menu_elements.force_specified_openings && forced_opening_found;
+            if (is_forced) {
+                level_info += U" " + language.get("info", "forced");
+            }
+            fonts.font(level_info).draw(12, Arg::topCenter(INFO_SX + INFO_WIDTH / 2, INFO_SY + dy));
         } else {
-            level_info += language.get("info", "danger");
+            fonts.font(timer_info).draw(12, Arg::topCenter(INFO_SX + INFO_WIDTH / 2, INFO_SY + dy));
         }
-        level_info += U")";
-        bool is_forced = menu_elements.force_specified_openings && forced_opening_found;
-        if (is_forced) {
-            level_info += U" " + language.get("info", "forced");
-        }
-        fonts.font(level_info).draw(12, Arg::topCenter(INFO_SX + INFO_WIDTH / 2, INFO_SY + dy));
         dy += 18;
     }
     // 5th line
-    String pv_info = language.get("info", "principal_variation") + U": ";
-    String pv_info2 = U"";
-    bool use_second_line = false;
     if (menu_elements.show_principal_variation) {
+        String pv_info = language.get("info", "principal_variation") + U": ";
+        String pv_info2 = U"";
+        bool use_second_line = false;
         if (principal_variation.size() > 15 * 2) { // 15 moves and more?
             int center = principal_variation.size() / 2 / 2 * 2;
             if (center > 18 * 2) {
@@ -244,12 +279,14 @@ void draw_info(Colors colors, History_elem history_elem, Fonts fonts, Menu_eleme
         } else {
             pv_info += Unicode::Widen(principal_variation);
         }
-    }
-    if (use_second_line) {
-        fonts.font(pv_info).draw(11, Arg::topCenter(INFO_SX + INFO_WIDTH / 2, INFO_SY + dy));
-        fonts.font(pv_info2).draw(11, Arg::topCenter(INFO_SX + INFO_WIDTH / 2, INFO_SY + dy + 12));
-    } else {
-        fonts.font(pv_info).draw(13, Arg::center(INFO_SX + INFO_WIDTH / 2, ((INFO_SY + dy) + (INFO_SY + INFO_HEIGHT - INFO_RECT_THICKNESS / 2)) / 2));
+        if (use_second_line) {
+            fonts.font(pv_info).draw(11, Arg::topCenter(INFO_SX + INFO_WIDTH / 2, INFO_SY + dy));
+            fonts.font(pv_info2).draw(11, Arg::topCenter(INFO_SX + INFO_WIDTH / 2, INFO_SY + dy + 12));
+        } else {
+            fonts.font(pv_info).draw(13, Arg::center(INFO_SX + INFO_WIDTH / 2, ((INFO_SY + dy) + (INFO_SY + INFO_HEIGHT - INFO_RECT_THICKNESS / 2)) / 2));
+        }
+    } else if (show_timer_on_line5) {
+        fonts.font(timer_info).draw(13, Arg::center(INFO_SX + INFO_WIDTH / 2, ((INFO_SY + dy) + (INFO_SY + INFO_HEIGHT - INFO_RECT_THICKNESS / 2)) / 2));
     }
 }
 
