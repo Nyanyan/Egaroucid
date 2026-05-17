@@ -167,8 +167,8 @@ void draw_info(Colors colors, History_elem history_elem, Fonts fonts, Menu_eleme
         white_time_msec = history_elem.white_time_msec;
     }
     const bool show_timer = menu_elements.show_timer;
-    const bool show_timer_on_line4 = show_timer && menu_elements.show_principal_variation;
-    const bool show_timer_on_line5 = show_timer && !menu_elements.show_principal_variation;
+    const bool show_pv = menu_elements.show_principal_variation;
+    const bool show_timer_on_line4 = show_timer;
     const bool show_level_on_line4 = !show_timer_on_line4;
     // 2nd line
     if (menu_elements.show_opening_name) {
@@ -270,7 +270,7 @@ void draw_info(Colors colors, History_elem history_elem, Fonts fonts, Menu_eleme
         dy += 18;
     }
     // 5th line
-    if (menu_elements.show_principal_variation) {
+    if (show_pv) {
         String pv_info = language.get("info", "principal_variation") + U": ";
         String pv_info2 = U"";
         bool use_second_line = false;
@@ -293,8 +293,34 @@ void draw_info(Colors colors, History_elem history_elem, Fonts fonts, Menu_eleme
         } else {
             fonts.font(pv_info).draw(13, Arg::center(INFO_SX + INFO_WIDTH / 2, ((INFO_SY + dy) + (INFO_SY + INFO_HEIGHT - INFO_RECT_THICKNESS / 2)) / 2));
         }
-    } else if (show_timer_on_line5) {
-        draw_elapsed_time_pair(fonts, 13, ((INFO_SY + dy) + (INFO_SY + INFO_HEIGHT - INFO_RECT_THICKNESS / 2)) / 2, black_time_msec, white_time_msec);
+    } else if (show_timer) {
+        String level_info;
+        if (menu_elements.show_ai_focus) {
+            level_info = language.get("common", "level") + U" " + Format(menu_elements.level);
+            bool is_forced = menu_elements.force_specified_openings && forced_opening_found;
+            if (is_forced) {
+                level_info += U" (" + language.get("info", "forced") + U")";
+            }
+        } else {
+            level_info = language.get("common", "level") + U" " + Format(menu_elements.level) + U" (";
+            if (menu_elements.level <= LIGHT_LEVEL) {
+                level_info += language.get("info", "light");
+            } else if (menu_elements.level <= STANDARD_MAX_LEVEL) {
+                level_info += language.get("info", "standard");
+            } else if (menu_elements.level <= PRAGMATIC_MAX_LEVEL) {
+                level_info += language.get("info", "pragmatic");
+            } else if (menu_elements.level <= ACCURATE_MAX_LEVEL) {
+                level_info += language.get("info", "accurate");
+            } else {
+                level_info += language.get("info", "danger");
+            }
+            level_info += U")";
+            bool is_forced = menu_elements.force_specified_openings && forced_opening_found;
+            if (is_forced) {
+                level_info += U" " + language.get("info", "forced");
+            }
+        }
+        fonts.font(level_info).draw(13, Arg::center(INFO_SX + INFO_WIDTH / 2, ((INFO_SY + dy) + (INFO_SY + INFO_HEIGHT - INFO_RECT_THICKNESS / 2)) / 2));
     }
 }
 
