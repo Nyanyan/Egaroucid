@@ -45,6 +45,7 @@ constexpr int LEAF_CALCULATE_LEVEL = 5;
 #define BOOK_EXTENSION_NODOT "egbk3"
 
 constexpr int ADD_LEAF_SPECIAL_LEVEL = -1;
+constexpr int ADD_LEAF_SPECIAL_LEVEL_SEARCH_LEVEL = 5;
 
 constexpr uint64_t MAX_N_LINES = 4000000000; // < 2^32
 
@@ -2893,7 +2894,7 @@ void search_new_leaf(Board board, int level, int book_elem_value, bool use_multi
     if (legal) {
         int use_level = level;
         if (level == ADD_LEAF_SPECIAL_LEVEL) {
-            use_level = 1;
+            use_level = ADD_LEAF_SPECIAL_LEVEL_SEARCH_LEVEL;
         }
         Search_result ai_result = ai_legal(board, use_level, false, 0, use_multi_thread, false, legal);
         if (ai_result.value != SCORE_UNDEFINED) {
