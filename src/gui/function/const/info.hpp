@@ -29,6 +29,7 @@
 #endif
 
 const String EGAROUCID_NUM_VERSION = Unicode::Widen(EGAROUCID_ENGINE_VERSION + (std::string)"." + EGAROUCID_GUI_VERSION);
+const String AUTO_UPDATE_CHECK_SETTING_KEY = U"auto_update_check_" + EGAROUCID_NUM_VERSION;
 
 #define EGAROUCID_DATE "2021-2026"
 #define EGAROUCID_AUTHOR "Takuto Yamana"

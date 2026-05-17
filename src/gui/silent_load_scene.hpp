@@ -315,7 +315,7 @@ void init_settings(const Directories* directories, const Resources* resources, S
         if (init_settings_import_int(setting_json, U"n_threads", &settings->n_threads) != ERR_OK) {
             std::cerr << "err0" << std::endl;
         }
-        if (init_settings_import_bool(setting_json, U"auto_update_check", &settings->auto_update_check) != ERR_OK) {
+        if (init_settings_import_bool(setting_json, AUTO_UPDATE_CHECK_SETTING_KEY, &settings->auto_update_check) != ERR_OK) {
             std::cerr << "err1" << std::endl;
         }
         if (init_settings_import_str(setting_json, U"lang_name", &settings->lang_name) != ERR_OK) {

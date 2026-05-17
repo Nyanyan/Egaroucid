@@ -34,7 +34,7 @@ void save_modified_ai_profile_if_needed(Menu_elements menu_elements, Settings* s
 
 void save_settings(Menu_elements menu_elements, Settings settings, Directories directories, User_settings user_settings) {
     JSON setting_json;
-    setting_json[U"auto_update_check"] = menu_elements.auto_update_check;
+    setting_json[AUTO_UPDATE_CHECK_SETTING_KEY] = menu_elements.auto_update_check;
     setting_json[U"lang_name"] = Unicode::Widen(settings.lang_name);
     setting_json[U"book_file"] = Unicode::Widen(settings.book_file);
     setting_json[U"use_disc_hint"] = menu_elements.use_disc_hint;
