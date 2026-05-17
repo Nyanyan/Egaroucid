@@ -158,7 +158,7 @@ private:
 
     void update_graph(int graph_idx, AI_loss_graph_values* values, const String& label, int min_value, int max_value, const Color& line_color, bool is_percentage_graph) {
         RectF rect = get_graph_rect(graph_idx);
-        rect.rounded(8).draw(ColorF(getData().colors.dark_green, 0.75)).drawFrame(1, getData().colors.white);
+        rect.draw(ColorF(getData().colors.dark_green, 0.75)).drawFrame(1, getData().colors.white);
         getData().fonts.font(label).draw(AI_LOSS_GRAPH_SCENE_LABEL_FONT_SIZE, Arg::topLeft(rect.x + 6, rect.y - 28), getData().colors.white);
 
         if (is_percentage_graph) {
