@@ -121,6 +121,8 @@ Menu create_menu(Menu_elements* menu_elements, Resources *resources, Font font, 
         menu_e.init_button(language.get("display", "disc", "display_on_disc"), &menu_elements->dummy);
             side_menu.init_check(language.get("display", "disc", "last_move") + get_shortcut_key_info(U"show_last_move"), &menu_elements->show_last_move, menu_elements->show_last_move);
             menu_e.push(side_menu);
+            side_menu.init_check(language.get("display", "disc", "last_flipped_discs"), &menu_elements->show_last_flipped_discs, menu_elements->show_last_flipped_discs);
+            menu_e.push(side_menu);
             side_menu.init_check(language.get("display", "disc", "stable") + get_shortcut_key_info(U"show_stable_discs"), &menu_elements->show_stable_discs, menu_elements->show_stable_discs);
             menu_e.push(side_menu);
             side_menu.init_check(language.get("display", "disc", "to_be_flipped_discs"), &menu_elements->show_to_be_flipped_discs, menu_elements->show_to_be_flipped_discs);

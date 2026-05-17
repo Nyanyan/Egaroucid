@@ -265,7 +265,8 @@ public:
 
         // draw on discs
         // last move drawing
-        if (getData().menu_elements.show_last_move) {
+        const bool force_show_last_move = getData().menu_elements.show_last_flipped_discs;
+        if (getData().menu_elements.show_last_move || force_show_last_move) {
             draw_last_move();
         }
 
@@ -280,6 +281,9 @@ public:
         }
         if (getData().menu_elements.show_to_be_flipped_discs && !pausing_in_pass) {
             draw_to_be_flipped_discs();
+        }
+        if (getData().menu_elements.show_last_flipped_discs) {
+            draw_last_flipped_discs();
         }
 
         // draw on cells
@@ -1722,6 +1726,77 @@ private:
             int x = BOARD_SX + (HW_M1 - getData().history_elem.policy % HW) * BOARD_CELL_SIZE + BOARD_CELL_SIZE / 2;
             int y = BOARD_SY + (HW_M1 - getData().history_elem.policy / HW) * BOARD_CELL_SIZE + BOARD_CELL_SIZE / 2;
             Circle(x, y, LEGAL_SIZE).draw(getData().colors.red);
+        }
+    }
+
+    void draw_last_flipped_discs() {
+        const int policy = getData().history_elem.policy;
+        if (policy < 0 || HW2 <= policy) {
+            return;
+        }
+
+        const int branch = getData().graph_resources.branch;
+        const std::vector<History_elem>& nodes = getData().graph_resources.nodes[branch];
+        if (nodes.size() < 2) {
+            return;
+        }
+
+        int current_node_idx = getData().graph_resources.node_find(branch, getData().history_elem.board.n_discs());
+        if (current_node_idx < 0 || current_node_idx >= (int)nodes.size() ||
+            nodes[current_node_idx].board != getData().history_elem.board ||
+            nodes[current_node_idx].player != getData().history_elem.player) {
+            current_node_idx = -1;
+            for (int i = 0; i < (int)nodes.size(); ++i) {
+                if (nodes[i].board == getData().history_elem.board &&
+                    nodes[i].player == getData().history_elem.player &&
+                    nodes[i].policy == getData().history_elem.policy) {
+                    current_node_idx = i;
+                    break;
+                }
+            }
+        }
+        if (current_node_idx <= 0) {
+            return;
+        }
+
+        const History_elem& previous_history_elem = nodes[current_node_idx - 1];
+        if ((previous_history_elem.board.get_legal() & (1ULL << policy)) == 0ULL) {
+            return;
+        }
+
+        const int move_cell = HW2_M1 - policy;
+        const int move_x = move_cell % HW;
+        const int move_y = move_cell / HW;
+        const int move_draw_x = BOARD_SX + move_x * BOARD_CELL_SIZE + BOARD_CELL_SIZE / 2;
+        const int move_draw_y = BOARD_SY + move_y * BOARD_CELL_SIZE + BOARD_CELL_SIZE / 2;
+
+        int board_arr[HW2];
+        Board previous_board = previous_history_elem.board;
+        previous_board.translate_to_arr(board_arr, previous_history_elem.player);
+        const int self_color = previous_history_elem.player;
+        const int opponent_color = self_color ^ 1;
+
+        constexpr int dir_x[8] = { -1, 0, 1, -1, 1, -1, 0, 1 };
+        constexpr int dir_y[8] = { -1, -1, -1, 0, 0, 1, 1, 1 };
+        for (int dir = 0; dir < 8; ++dir) {
+            int x = move_x + dir_x[dir];
+            int y = move_y + dir_y[dir];
+            bool has_flipped_discs_in_direction = false;
+            while (0 <= x && x < HW && 0 <= y && y < HW && board_arr[y * HW + x] == opponent_color) {
+                has_flipped_discs_in_direction = true;
+                x += dir_x[dir];
+                y += dir_y[dir];
+            }
+            if (!has_flipped_discs_in_direction) {
+                continue;
+            }
+            if (!(0 <= x && x < HW && 0 <= y && y < HW) || board_arr[y * HW + x] != self_color) {
+                continue;
+            }
+
+            const int seed_draw_x = BOARD_SX + x * BOARD_CELL_SIZE + BOARD_CELL_SIZE / 2;
+            const int seed_draw_y = BOARD_SY + y * BOARD_CELL_SIZE + BOARD_CELL_SIZE / 2;
+            Line(move_draw_x, move_draw_y, seed_draw_x, seed_draw_y).draw(4, getData().colors.red);
         }
     }
 

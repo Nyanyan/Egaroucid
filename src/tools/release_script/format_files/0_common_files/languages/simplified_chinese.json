@@ -227,6 +227,7 @@
         "disc": {
             "display_on_disc": "棋盘显示",
             "last_move": "上次落点",
+            "last_flipped_discs": "上一步翻转棋子",
             "stable": "稳定子",
             "to_be_flipped_discs": "翻转棋子",
             "play_ordering": "落子顺序",

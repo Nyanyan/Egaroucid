@@ -227,6 +227,7 @@
         "disc": {
             "display_on_disc": "石への表示",
             "last_move": "直前の手",
+            "last_flipped_discs": "直前に返った石",
             "stable": "確定石",
             "to_be_flipped_discs": "返る石",
             "play_ordering": "着手順",

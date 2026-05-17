@@ -447,6 +447,7 @@ struct Settings {
     bool use_book_learn_error_leaf;
     bool show_stable_discs;
     bool show_to_be_flipped_discs;
+    bool show_last_flipped_discs;
     bool change_book_by_right_click;
     bool show_last_move;
     bool show_next_move;
@@ -591,6 +592,7 @@ struct Menu_elements {
     bool show_opening_on_cell;
     bool show_stable_discs;
     bool show_to_be_flipped_discs;
+    bool show_last_flipped_discs;
     bool show_play_ordering;
     bool play_ordering_board_format;
     bool play_ordering_transcript_format;
@@ -735,6 +737,7 @@ struct Menu_elements {
         show_opening_on_cell = settings->show_opening_on_cell;
         show_stable_discs = settings->show_stable_discs;
         show_to_be_flipped_discs = settings->show_to_be_flipped_discs;
+        show_last_flipped_discs = settings->show_last_flipped_discs;
         show_play_ordering = settings->show_play_ordering;
         play_ordering_board_format = settings->play_ordering_board_format;
         play_ordering_transcript_format = settings->play_ordering_transcript_format;
