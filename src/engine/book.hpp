@@ -1322,15 +1322,7 @@ class Book {
                 Book_elem passed_elem = get(passed_board);
                 n_lines = passed_elem.n_lines;
                 short_val = (short)passed_elem.value;
-                if (level == LEVEL_UNDEFINED) {
-                    Board b = pass_board.copy();
-                    b.pass();
-                    if (contain(b)) {
-                        char_level = get(b).level;
-                    } else {
-                        char_level = 1;
-                    }
-                }
+                char_level = (char)edax_level;
                 if (char_level < 1) {
                     char_level = 1;
                 }
@@ -1415,9 +1407,7 @@ class Book {
                     }
                 }
                 n_lines = itr->second.n_lines;
-                if (level == LEVEL_UNDEFINED) {
-                    char_level = itr->second.level;
-                }
+                char_level = (char)edax_level;
                 if (char_level < 1) {
                     char_level = 1;
                 }
