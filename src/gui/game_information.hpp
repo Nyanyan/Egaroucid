@@ -24,6 +24,7 @@ private:
 
 public:
     Game_information_scene(const InitData& init) : IScene{ init } {
+        set_scene_ime_enabled(false);
         back_button.init(GO_BACK_BUTTON_BACK_SX, GO_BACK_BUTTON_SY, GO_BACK_BUTTON_WIDTH, GO_BACK_BUTTON_HEIGHT, GO_BACK_BUTTON_RADIUS, language.get("common", "back"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
         edit_button.init(GO_BACK_BUTTON_GO_SX, GO_BACK_BUTTON_SY, GO_BACK_BUTTON_WIDTH, GO_BACK_BUTTON_HEIGHT, GO_BACK_BUTTON_RADIUS, language.get("common", "edit"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
         scroll_manager_black.init(X_CENTER - 300, 80 + 15 * 2, 300 - 10, 10, 20, getData().game_information.black_player_name.size(), 1, X_CENTER - 300, 80, 300 - 10, 15 * 2 + 10);

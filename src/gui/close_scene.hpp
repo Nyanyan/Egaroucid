@@ -108,6 +108,7 @@ private:
 
 public:
     Close(const InitData& init) : IScene{ init } {
+        set_scene_ime_enabled(false);
         close_future = std::async(std::launch::async, close_app, getData().menu_elements, getData().settings, getData().directories, getData().user_settings, getData().book_information, getData().forced_openings, getData().window_state);
     }
 

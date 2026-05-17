@@ -295,6 +295,18 @@ constexpr int FONT_DEFAULT_SIZE = 48;
 // textbox constant
 constexpr int TEXTBOX_MAX_CHARS = 10000;
 
+inline void set_scene_ime_enabled(const bool enabled) {
+#if SIV3D_PLATFORM(WINDOWS)
+    if (enabled) {
+        Platform::Windows::TextInput::EnableIME();
+    } else {
+        Platform::Windows::TextInput::DisableIME();
+    }
+#else
+    (void)enabled;
+#endif
+}
+
 
 
 

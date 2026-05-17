@@ -104,6 +104,7 @@ public:
     }
 
     Main_scene(const InitData& init) : IScene{ init } {
+        set_scene_ime_enabled(false);
         init_main_scene();
     }
 

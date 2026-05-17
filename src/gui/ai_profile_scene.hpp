@@ -42,6 +42,7 @@ private:
 
 public:
     AI_profile_load(const InitData& init) : IScene{ init } {
+        set_scene_ime_enabled(false);
         back_button.init(BUTTON2_1_SX, BUTTON2_SY, BUTTON2_WIDTH, BUTTON2_HEIGHT, BUTTON2_RADIUS, language.get("common", "back"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
         new_save_button.init(BUTTON2_2_SX, BUTTON2_SY, BUTTON2_WIDTH, BUTTON2_HEIGHT, BUTTON2_RADIUS, language.get("settings", "profile", "new_save"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
         overwrite_button.init(0, 0, 110, 24, 8, language.get("settings", "profile", "overwrite"), 12, getData().fonts.font, getData().colors.white, getData().colors.black);
@@ -260,6 +261,7 @@ private:
 
 public:
     AI_profile_save(const InitData& init) : IScene{ init } {
+        set_scene_ime_enabled(true);
         rename_mode = getData().ai_profile_editor_info.rename_mode;
         target_file_name = getData().ai_profile_editor_info.target_file_name;
         back_button.init(GO_BACK_BUTTON_BACK_SX, GO_BACK_BUTTON_SY, GO_BACK_BUTTON_WIDTH, GO_BACK_BUTTON_HEIGHT, GO_BACK_BUTTON_RADIUS, language.get("common", "back"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);

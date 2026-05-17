@@ -40,6 +40,7 @@ private:
 
 public:
     Import_text(const InitData& init) : IScene{ init } {
+        set_scene_ime_enabled(true);
         back_button.init(GO_BACK_BUTTON_BACK_SX, GO_BACK_BUTTON_SY, GO_BACK_BUTTON_WIDTH, GO_BACK_BUTTON_HEIGHT, GO_BACK_BUTTON_RADIUS, language.get("common", "back"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
         import_button.init(GO_BACK_BUTTON_GO_SX, GO_BACK_BUTTON_SY, GO_BACK_BUTTON_WIDTH, GO_BACK_BUTTON_HEIGHT, GO_BACK_BUTTON_RADIUS, language.get("in_out", "import"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);done = false;
         import_button.disable();
@@ -171,6 +172,7 @@ private:
 
 public:
     Edit_board(const InitData& init) : IScene{ init } {
+        set_scene_ime_enabled(false);
         set_black_button.init(BUTTON3_VERTICAL_SX, BUTTON3_VERTICAL_1_SY, BUTTON3_VERTICAL_WIDTH, BUTTON3_VERTICAL_HEIGHT, BUTTON3_VERTICAL_RADIUS, language.get("in_out", "import_as_black"), 25, getData().fonts.font, getData().colors.black, getData().colors.white);
         set_white_button.init(BUTTON3_VERTICAL_SX, BUTTON3_VERTICAL_2_SY, BUTTON3_VERTICAL_WIDTH, BUTTON3_VERTICAL_HEIGHT, BUTTON3_VERTICAL_RADIUS, language.get("in_out", "import_as_white"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
         back_button.init(BUTTON3_VERTICAL_SX, BUTTON3_VERTICAL_3_SY, BUTTON3_VERTICAL_WIDTH, BUTTON3_VERTICAL_HEIGHT, BUTTON3_VERTICAL_RADIUS, language.get("common", "back"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
@@ -349,6 +351,7 @@ private:
 
 public:
     Import_game(const InitData& init) : IScene{ init } {
+        set_scene_ime_enabled(true);
         back_button.init(GO_BACK_BUTTON_BACK_SX, GO_BACK_BUTTON_SY, GO_BACK_BUTTON_WIDTH, GO_BACK_BUTTON_HEIGHT, GO_BACK_BUTTON_RADIUS, language.get("common", "back"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
         add_folder_button.init(GO_BACK_BUTTON_GO_SX, GO_BACK_BUTTON_SY, GO_BACK_BUTTON_WIDTH, GO_BACK_BUTTON_HEIGHT, GO_BACK_BUTTON_RADIUS, language.get("in_out", "new_folder"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
         create_folder_button.init(GO_BACK_BUTTON_GO_SX, GO_BACK_BUTTON_SY, GO_BACK_BUTTON_WIDTH, GO_BACK_BUTTON_HEIGHT, GO_BACK_BUTTON_RADIUS, language.get("in_out", "create"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
@@ -1324,6 +1327,7 @@ private:
 
 public:
     Import_bitboard(const InitData& init) : IScene{ init } {
+        set_scene_ime_enabled(true);
         single_back_button.init(BACK_BUTTON_SX, BACK_BUTTON_SY, BACK_BUTTON_WIDTH, BACK_BUTTON_HEIGHT, BACK_BUTTON_RADIUS, language.get("common", "back"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
         back_button.init(GO_BACK_BUTTON_BACK_SX, GO_BACK_BUTTON_SY, GO_BACK_BUTTON_WIDTH, GO_BACK_BUTTON_HEIGHT, GO_BACK_BUTTON_RADIUS, language.get("common", "back"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
         import_button.init(GO_BACK_BUTTON_GO_SX, GO_BACK_BUTTON_SY, GO_BACK_BUTTON_WIDTH, GO_BACK_BUTTON_HEIGHT, GO_BACK_BUTTON_RADIUS, language.get("in_out", "import"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);

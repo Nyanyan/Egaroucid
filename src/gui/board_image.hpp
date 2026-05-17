@@ -55,6 +55,7 @@ private:
 
 public:
     Board_image(const InitData& init) : IScene{ init } {
+        set_scene_ime_enabled(false);
         back_button.init(BUTTON2_VERTICAL_SX, BUTTON2_VERTICAL_1_SY, BUTTON2_VERTICAL_WIDTH, BUTTON2_VERTICAL_HEIGHT, BUTTON2_VERTICAL_RADIUS, language.get("common", "back"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
         save_image_button.init(BUTTON2_VERTICAL_SX, BUTTON2_VERTICAL_2_SY, BUTTON2_VERTICAL_WIDTH, BUTTON2_VERTICAL_HEIGHT, BUTTON2_VERTICAL_RADIUS, language.get("board_image", "save_image"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
         Radio_button_element radio_button_elem;
