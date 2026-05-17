@@ -9,7 +9,7 @@ from pathlib import Path
 from build_gui import build_project, find_msbuild, PROJECT_ROOT
 
 # バージョン情報
-VERSION = "7_8_0"
+VERSION = "7_8_1"
 
 # ビルド構成
 CONFIGURATIONS = [
