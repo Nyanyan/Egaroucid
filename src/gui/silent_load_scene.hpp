@@ -56,6 +56,7 @@ void init_default_settings(const Directories* directories, const Resources* reso
     settings->book_learn_error_per_move = 2;
     settings->book_learn_error_sum = 2;
     settings->show_stable_discs = false;
+    settings->show_to_be_flipped_discs = false;
     settings->change_book_by_right_click = false;
     settings->show_last_move = true;
     settings->show_next_move = true;
@@ -367,6 +368,9 @@ void init_settings(const Directories* directories, const Resources* resources, S
         }
         if (init_settings_import_bool(setting_json, U"show_stable_discs", &settings->show_stable_discs) != ERR_OK) {
             std::cerr << "err17" << std::endl;
+        }
+        if (init_settings_import_bool(setting_json, U"show_to_be_flipped_discs", &settings->show_to_be_flipped_discs) != ERR_OK) {
+            std::cerr << "err19" << std::endl;
         }
         if (init_settings_import_bool(setting_json, U"change_book_by_right_click", &settings->change_book_by_right_click) != ERR_OK) {
             std::cerr << "err18" << std::endl;

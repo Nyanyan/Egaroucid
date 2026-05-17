@@ -278,6 +278,9 @@ public:
         if (getData().menu_elements.show_play_ordering) {
             draw_play_ordering();
         }
+        if (getData().menu_elements.show_to_be_flipped_discs && !pausing_in_pass) {
+            draw_to_be_flipped_discs();
+        }
 
         // draw on cells
         // next move drawing
@@ -1926,6 +1929,40 @@ private:
             if (1 & (stable >> (HW2_M1 - cell))) {
                 Circle(x, y, STABLE_SIZE).draw(getData().colors.burlywood);
             }
+        }
+    }
+
+    void draw_to_be_flipped_discs() {
+        if (getData().menu.active()) {
+            return;
+        }
+        const Point cursor_pos = Cursor::Pos();
+        if (cursor_pos.x < BOARD_SX || cursor_pos.x >= BOARD_SX + BOARD_SIZE || cursor_pos.y < BOARD_SY || cursor_pos.y >= BOARD_SY + BOARD_SIZE) {
+            return;
+        }
+
+        const int cell_x = (cursor_pos.x - BOARD_SX) / BOARD_CELL_SIZE;
+        const int cell_y = (cursor_pos.y - BOARD_SY) / BOARD_CELL_SIZE;
+        const int hovered_cell = cell_y * HW + cell_x;
+        const uint64_t legal = getData().history_elem.board.get_legal();
+        if ((legal & (1ULL << (HW2_M1 - hovered_cell))) == 0ULL) {
+            return;
+        }
+
+        Flip flip;
+        calc_flip(&flip, &getData().history_elem.board, HW2_M1 - hovered_cell);
+
+        const int seed_x = BOARD_SX + cell_x * BOARD_CELL_SIZE + BOARD_CELL_SIZE / 2;
+        const int seed_y = BOARD_SY + cell_y * BOARD_CELL_SIZE + BOARD_CELL_SIZE / 2;
+        const Color seed_disc_color = (getData().history_elem.player == BLACK) ? getData().colors.black : getData().colors.white;
+        Circle(seed_x, seed_y, DISC_SIZE).draw(ColorF(seed_disc_color, 0.2)).drawFrame(3, 0, getData().colors.yellow);
+
+        uint64_t flipped = flip.flip;
+        for (uint_fast8_t board_cell = first_bit(&flipped); flipped; board_cell = next_bit(&flipped)) {
+            const int display_cell = HW2_M1 - board_cell;
+            const int x = BOARD_SX + (display_cell % HW) * BOARD_CELL_SIZE + BOARD_CELL_SIZE / 2;
+            const int y = BOARD_SY + (display_cell / HW) * BOARD_CELL_SIZE + BOARD_CELL_SIZE / 2;
+            Circle(x, y, DISC_SIZE - 2).drawFrame(3, 0, getData().colors.yellow);
         }
     }
 

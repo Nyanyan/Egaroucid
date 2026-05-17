@@ -47,6 +47,7 @@ void save_settings(Menu_elements menu_elements, Settings settings, Directories d
     setting_json[U"book_learn_depth"] = menu_elements.book_learn_depth;
     setting_json[U"book_learn_error_per_move"] = menu_elements.book_learn_error_per_move;
     setting_json[U"show_stable_discs"] = menu_elements.show_stable_discs;
+    setting_json[U"show_to_be_flipped_discs"] = menu_elements.show_to_be_flipped_discs;
     setting_json[U"change_book_by_right_click"] = menu_elements.change_book_by_right_click;
     setting_json[U"show_last_move"] = menu_elements.show_last_move;
     setting_json[U"show_next_move"] = menu_elements.show_next_move;

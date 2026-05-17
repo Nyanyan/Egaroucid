@@ -228,6 +228,7 @@
             "display_on_disc": "棋盘显示",
             "last_move": "上次落点",
             "stable": "稳定子",
+            "to_be_flipped_discs": "翻转棋子",
             "play_ordering": "落子顺序",
             "play_ordering_board_format": "棋盘格式",
             "play_ordering_transcript_format": "棋谱格式"

@@ -123,6 +123,8 @@ Menu create_menu(Menu_elements* menu_elements, Resources *resources, Font font, 
             menu_e.push(side_menu);
             side_menu.init_check(language.get("display", "disc", "stable") + get_shortcut_key_info(U"show_stable_discs"), &menu_elements->show_stable_discs, menu_elements->show_stable_discs);
             menu_e.push(side_menu);
+            side_menu.init_check(language.get("display", "disc", "to_be_flipped_discs"), &menu_elements->show_to_be_flipped_discs, menu_elements->show_to_be_flipped_discs);
+            menu_e.push(side_menu);
             side_menu.init_check(language.get("display", "disc", "play_ordering") + get_shortcut_key_info(U"show_play_ordering"), &menu_elements->show_play_ordering, menu_elements->show_play_ordering);
                 side_side_menu.init_radio(language.get("display", "disc", "play_ordering_board_format") + get_shortcut_key_info(U"play_ordering_board_format"), &menu_elements->play_ordering_board_format, menu_elements->play_ordering_board_format);
                 side_menu.push(side_side_menu);

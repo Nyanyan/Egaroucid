@@ -226,6 +226,7 @@
             "display_on_disc": "On Disc",
             "last_move": "Last Move",
             "stable": "Stable",
+            "to_be_flipped_discs": "Flipped Discs",
             "play_ordering": "Play Ordering",
             "play_ordering_board_format": "Board Format",
             "play_ordering_transcript_format": "Transcript Format"
