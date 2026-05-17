@@ -1281,7 +1281,16 @@ class Book {
             fout.write((char*)&second, 1);
             char dummy = 0;
             fout.write((char*)&dummy, 1);
-            fout.write((char*)&level, 4);
+            int edax_level = level;
+            if (edax_level < 1) {
+                for (auto itr = book.begin(); itr != book.end(); ++itr) {
+                    edax_level = std::max(edax_level, (int)itr->second.level);
+                }
+                if (edax_level < 1) {
+                    edax_level = 1;
+                }
+            }
+            fout.write((char*)&edax_level, 4);
             int n_empties = HW2;
             for (auto itr = book.begin(); itr != book.end(); ++itr) {
                 n_empties = std::min(n_empties, HW2 + 1 - itr->first.n_discs());
@@ -1298,15 +1307,12 @@ class Book {
             int n_win = 0, n_draw = 0, n_lose = 0;
             uint32_t n_lines;
             short short_val, short_val_min = -HW2, short_val_max = HW2;
-            char char_level = (char)level;
+            char char_level = (char)edax_level;
             Book_elem book_elem;
             char link_value, link_move;
-            int max_link_value, min_link_value;
             char leaf_val, leaf_move;
             char n_link;
-            Flip flip;
             Board b;
-            bool searching = true;
             int percent = -1;
             int n_boards = (int)book.size();
             int t = 0;
@@ -1324,6 +1330,9 @@ class Book {
                     } else {
                         char_level = 1;
                     }
+                }
+                if (char_level < 1) {
+                    char_level = 1;
                 }
                 if (char_level > 60) {
                     char_level = 60;
@@ -1361,17 +1370,56 @@ class Book {
                 //short_val_min = book_elem.value;
                 //short_val_max = book_elem.value;
                 b = itr->first;
+                uint64_t legal = b.get_legal();
                 std::vector<Book_value> links = get_all_moves_with_value(&b);
                 n_link = (char)links.size();
                 leaf_val = itr->second.leaf.value;
                 leaf_move = itr->second.leaf.move;
-                if (leaf_val < -HW2 || HW2 < leaf_val || leaf_move < 0 || HW2 <= leaf_move) {
+                bool leaf_ok = is_valid_score(leaf_val) && is_valid_policy(leaf_move) && ((legal & (1ULL << leaf_move)) != 0ULL);
+                if (leaf_ok) {
+                    for (const Book_value &link: links) {
+                        if (link.policy == leaf_move) {
+                            leaf_ok = false;
+                            break;
+                        }
+                    }
+                }
+                if (!leaf_ok) {
                     leaf_val = SCORE_UNDEFINED;
                     leaf_move = MOVE_NOMOVE;
+                }
+                int mobility = pop_count_ull(legal);
+                if (leaf_move == MOVE_NOMOVE && (int)n_link != mobility) {
+                    Leaf edax_leaf = get_edax_leaf(&b, links);
+                    bool edax_leaf_ok = is_valid_score(edax_leaf.value) && is_valid_policy(edax_leaf.move) && ((legal & (1ULL << edax_leaf.move)) != 0ULL);
+                    if (edax_leaf_ok) {
+                        for (const Book_value &link: links) {
+                            if (link.policy == edax_leaf.move) {
+                                edax_leaf_ok = false;
+                                break;
+                            }
+                        }
+                    }
+                    if (edax_leaf_ok) {
+                        leaf_val = edax_leaf.value;
+                        leaf_move = edax_leaf.move;
+                    } else {
+                        uint64_t missing = legal;
+                        for (const Book_value &link: links) {
+                            missing &= ~(1ULL << link.policy);
+                        }
+                        if (missing) {
+                            leaf_move = first_bit(&missing);
+                            leaf_val = is_valid_score(short_val) ? short_val : 0;
+                        }
+                    }
                 }
                 n_lines = itr->second.n_lines;
                 if (level == LEVEL_UNDEFINED) {
                     char_level = itr->second.level;
+                }
+                if (char_level < 1) {
+                    char_level = 1;
                 }
                 if (char_level > 60) {
                     char_level = 60;
