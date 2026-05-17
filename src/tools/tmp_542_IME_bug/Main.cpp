@@ -1,5 +1,12 @@
 # include <Siv3D.hpp>
 
+# if SIV3D_PLATFORM(WINDOWS)
+namespace s3d::Platform::Windows::TextInput
+{
+	void EnableIME();
+}
+# endif
+
 enum class SceneName
 {
 	Main,
@@ -22,10 +29,20 @@ private:
 	int32 m_eCount = 0;
 
 public:
-	using App::Scene::Scene;
+	MainScene(const InitData& init)
+		: IScene{ init }
+	{
+# if SIV3D_PLATFORM(WINDOWS)
+		Platform::Windows::TextInput::DisableIME();
+# endif
+	}
 
 	void update() override
 	{
+# if SIV3D_PLATFORM(WINDOWS)
+		Platform::Windows::TextInput::DisableIME();
+# endif
+
 		// Intentionally avoid TextInput::UpdateText() in this scene.
 		// IME committed text can remain pending and appear when a TextArea becomes active later.
 		if (KeyA.down())
@@ -43,6 +60,9 @@ public:
 
 		if (SimpleGUI::Button(U"Open Sub Scene (TextArea)", Vec2{ 320, 500 }, 320))
 		{
+# if SIV3D_PLATFORM(WINDOWS)
+			Platform::Windows::TextInput::EnableIME();
+# endif
 			changeScene(SceneName::TextInput, 0s);
 		}
 	}
@@ -75,6 +95,9 @@ public:
 	TextInputScene(const InitData& init)
 		: IScene{ init }
 	{
+# if SIV3D_PLATFORM(WINDOWS)
+		Platform::Windows::TextInput::EnableIME();
+# endif
 		m_textArea.text.clear();
 		m_textArea.cursorPos = 0;
 		m_textArea.rebuildGlyphs();
@@ -83,10 +106,17 @@ public:
 
 	void update() override
 	{
+# if SIV3D_PLATFORM(WINDOWS)
+		Platform::Windows::TextInput::EnableIME();
+# endif
+
 		SimpleGUI::TextArea(m_textArea, Vec2{ 100, 240 }, SizeF{ 800, 46 }, 128);
 
 		if (SimpleGUI::Button(U"Back To Main", Vec2{ 100, 320 }, 180))
 		{
+# if SIV3D_PLATFORM(WINDOWS)
+			Platform::Windows::TextInput::DisableIME();
+# endif
 			changeScene(SceneName::Main, 0s);
 		}
 
