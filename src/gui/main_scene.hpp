@@ -1847,10 +1847,13 @@ private:
     uint64_t draw_hint(bool ignore_book_info) {
         uint64_t res = 0ULL;
         if (ai_status.hint_calculating || ai_status.hint_calculated) {
+            auto is_hint_value_valid = [&](int idx) {
+                return -HW2 <= ai_status.hint_values[idx] && ai_status.hint_values[idx] <= (double)HW2 + HINT_PRIORITY + 0.009;
+            };
             bool simplified_hint_mode = !getData().menu_elements.show_hint_level && !getData().menu_elements.show_book_accuracy && !getData().menu_elements.use_umigame_value;
             std::vector<Hint_info> hint_infos;
             for (int cell = 0; cell < HW2; ++cell) {
-                if (ai_status.hint_use[HW2_M1 - cell] && -HW2 <= ai_status.hint_values[HW2_M1 - cell] && ai_status.hint_values[HW2_M1 - cell] <= (double)HW2 + HINT_PRIORITY + 0.009) {
+                if (ai_status.hint_use[HW2_M1 - cell] && is_hint_value_valid(HW2_M1 - cell)) {
                     Hint_info hint_info;
                     hint_info.value = ai_status.hint_values[HW2_M1 - cell];
                     hint_info.cell = cell;
@@ -1860,13 +1863,30 @@ private:
             }
             if (hint_infos.size()) {
                 sort(hint_infos.begin(), hint_infos.end(), compare_hint_info);
+                double best_completed_score = -SCORE_INF;
+                int lowest_completed_level = AI_TYPE_BOOK;
+                bool has_non_book_hint = false;
+                for (const Hint_info& hint_info : hint_infos) {
+                    best_completed_score = std::max(best_completed_score, hint_info.value);
+                    if (hint_info.type != AI_TYPE_BOOK) {
+                        lowest_completed_level = std::min(lowest_completed_level, hint_info.type);
+                        has_non_book_hint = true;
+                    }
+                }
+                bool all_hint_completed = true;
+                for (int cell = 0; cell < HW2; ++cell) {
+                    if (ai_status.hint_use[cell] && !is_hint_value_valid(cell)) {
+                        all_hint_completed = false;
+                        break;
+                    }
+                }
                 int sgn = getData().history_elem.player == BLACK ? 1 : -1;
                 int node_idx = getData().graph_resources.node_find(getData().graph_resources.branch, getData().graph_resources.n_discs);
-                if (node_idx != -1) {
-                    int value_signed = sgn * (int)round(hint_infos[0].value);
-                    if (getData().graph_resources.nodes[getData().graph_resources.branch][node_idx].level < hint_infos[0].type) {
+                if (node_idx != -1 && (has_non_book_hint || all_hint_completed)) {
+                    int value_signed = sgn * (int)round(best_completed_score);
+                    if (getData().graph_resources.nodes[getData().graph_resources.branch][node_idx].level < lowest_completed_level) {
                         getData().graph_resources.nodes[getData().graph_resources.branch][node_idx].v = value_signed;
-                        getData().graph_resources.nodes[getData().graph_resources.branch][node_idx].level = hint_infos[0].type;
+                        getData().graph_resources.nodes[getData().graph_resources.branch][node_idx].level = lowest_completed_level;
                     }
                 }
             }
