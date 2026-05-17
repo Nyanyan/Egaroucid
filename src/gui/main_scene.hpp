@@ -60,6 +60,7 @@ private:
     Board turn_timer_anchor_board;
     int turn_timer_anchor_player;
     int turn_timer_anchor_branch;
+    bool forced_opening_finished_latched;
 public:
     std::string principal_variation;
 
@@ -104,6 +105,7 @@ public:
         umigame_value_depth_before = 0;
         shortcut_key = SHORTCUT_KEY_UNDEFINED;
         shortcut_key_pressed = SHORTCUT_KEY_UNDEFINED;
+        forced_opening_finished_latched = false;
         reset_turn_timer_anchor();
         std::cerr << "main scene loaded" << std::endl;
         // std::cerr << tim() - strt << " ms" << std::endl;
@@ -485,17 +487,24 @@ private:
 
     int get_forced_opening_status_for_display() {
         if (!getData().menu_elements.force_specified_openings) {
+            forced_opening_finished_latched = false;
             return FORCED_OPENING_STATUS_NONE;
         }
         // Before the game starts (start button visible), do not show out/finished states yet.
         if (need_start_game_button) {
+            forced_opening_finished_latched = false;
             return FORCED_OPENING_STATUS_NONE;
         }
         Board board = getData().history_elem.board;
         if (getData().forced_openings.has_forced_move(board)) {
+            forced_opening_finished_latched = false;
             return FORCED_OPENING_STATUS_ACTIVE;
         }
         if (getData().forced_openings.is_forced(board)) {
+            forced_opening_finished_latched = true;
+            return FORCED_OPENING_STATUS_FINISHED;
+        }
+        if (forced_opening_finished_latched) {
             return FORCED_OPENING_STATUS_FINISHED;
         }
         return FORCED_OPENING_STATUS_OUT;
@@ -638,6 +647,7 @@ private:
             getData().graph_resources.init();
             getData().graph_resources.nodes[getData().graph_resources.branch].emplace_back(getData().history_elem);
             getData().game_information.init();
+            forced_opening_finished_latched = false;
             reset_turn_timer_anchor();
             getData().menu_elements.ai_put_black = false;
             getData().menu_elements.ai_put_white = false;
@@ -651,6 +661,7 @@ private:
             getData().graph_resources.init();
             getData().graph_resources.nodes[getData().graph_resources.branch].emplace_back(getData().history_elem);
             getData().game_information.init();
+            forced_opening_finished_latched = false;
             reset_turn_timer_anchor();
             getData().menu_elements.ai_put_black = false;
             getData().menu_elements.ai_put_white = true;
@@ -664,6 +675,7 @@ private:
             getData().graph_resources.init();
             getData().graph_resources.nodes[getData().graph_resources.branch].emplace_back(getData().history_elem);
             getData().game_information.init();
+            forced_opening_finished_latched = false;
             reset_turn_timer_anchor();
             getData().menu_elements.ai_put_black = true;
             getData().menu_elements.ai_put_white = false;
@@ -677,6 +689,7 @@ private:
             getData().graph_resources.init();
             getData().graph_resources.nodes[getData().graph_resources.branch].emplace_back(getData().history_elem);
             getData().game_information.init();
+            forced_opening_finished_latched = false;
             reset_turn_timer_anchor();
             getData().menu_elements.ai_put_black = true;
             getData().menu_elements.ai_put_white = true;
