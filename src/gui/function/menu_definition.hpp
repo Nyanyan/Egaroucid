@@ -174,6 +174,12 @@ Menu create_menu(Menu_elements* menu_elements, Resources *resources, Font font, 
         title.push(menu_e);
         menu_e.init_button(language.get("operation", "undo") + get_shortcut_key_info(U"undo"), &menu_elements->undo);
         title.push(menu_e);
+        menu_e.init_button(language.get("operation", "go_to_first_position") + get_shortcut_key_info(U"go_to_first_position"), &menu_elements->go_to_first_position);
+        title.push(menu_e);
+        menu_e.init_button(language.get("operation", "go_to_last_position") + get_shortcut_key_info(U"go_to_last_position"), &menu_elements->go_to_last_position);
+        title.push(menu_e);
+        menu_e.init_button(language.get("operation", "go_to_random_generated_position") + get_shortcut_key_info(U"go_to_random_generated_position"), &menu_elements->go_to_random_generated_position);
+        title.push(menu_e);
         menu_e.init_button(language.get("operation", "save_this_branch") + get_shortcut_key_info(U"save_this_branch"), &menu_elements->save_this_branch);
         title.push(menu_e);
         menu_e.init_button(language.get("operation", "generate_random_board", "generate_random_board"), &menu_elements->dummy);

@@ -654,6 +654,9 @@ struct Menu_elements {
     bool forward;
     bool backward;
     bool undo;
+    bool go_to_first_position;
+    bool go_to_last_position;
+    bool go_to_random_generated_position;
     bool save_this_branch;
     bool generate_random_board;
     int generate_random_board_moves;
@@ -789,6 +792,9 @@ struct Menu_elements {
         forward = false;
         backward = false;
         undo = false;
+        go_to_first_position = false;
+        go_to_last_position = false;
+        go_to_random_generated_position = false;
         save_this_branch = false;
         generate_random_board = false;
         generate_random_board_moves = settings->generate_random_board_moves;

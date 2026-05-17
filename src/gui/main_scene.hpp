@@ -56,6 +56,8 @@ private:
     int umigame_value_depth_before;
     String shortcut_key;
     String shortcut_key_pressed;
+    std::vector<int> random_generated_moves;
+    bool random_generated_moves_available;
     uint64_t turn_timer_start_msec;
     Board turn_timer_anchor_board;
     int turn_timer_anchor_player;
@@ -104,6 +106,8 @@ public:
         umigame_value_depth_before = 0;
         shortcut_key = SHORTCUT_KEY_UNDEFINED;
         shortcut_key_pressed = SHORTCUT_KEY_UNDEFINED;
+        random_generated_moves.clear();
+        random_generated_moves_available = false;
         reset_turn_timer_anchor();
         std::cerr << "main scene loaded" << std::endl;
         // std::cerr << tim() - strt << " ms" << std::endl;
@@ -938,6 +942,23 @@ private:
                     resume_calculating();
                 }
                 need_start_game_button_calculation();
+            }
+            if (getData().menu_elements.go_to_first_position || shortcut_key == U"go_to_first_position") {
+                stop_calculating();
+                getData().graph_resources.n_discs = getData().graph_resources.nodes[GRAPH_MODE_NORMAL][0].board.n_discs();
+                getData().graph_resources.delta = 1;
+                resume_calculating();
+            }
+            if (getData().menu_elements.go_to_last_position || shortcut_key == U"go_to_last_position") {
+                stop_calculating();
+                getData().graph_resources.n_discs = getData().graph_resources.nodes[getData().graph_resources.branch].back().board.n_discs();
+                getData().graph_resources.delta = -1;
+                resume_calculating();
+            }
+            if ((getData().menu_elements.go_to_random_generated_position || shortcut_key == U"go_to_random_generated_position") &&
+                random_generated_moves_available &&
+                !ai_status.random_board_generator_calculating) {
+                restore_random_generated_position();
             }
             if (getData().menu_elements.save_this_branch || shortcut_key == U"save_this_branch") {
                 stop_calculating();
@@ -2589,23 +2610,29 @@ private:
         return res;
     }
 
+    void restore_random_generated_position() {
+        stop_calculating();
+        getData().history_elem.reset();
+        getData().graph_resources.init();
+        getData().graph_resources.nodes[getData().graph_resources.branch].emplace_back(getData().history_elem);
+        getData().game_information.init();
+        pausing_in_pass = false;
+        resume_calculating();
+        for (int policy : random_generated_moves) {
+            move_processing(HW2_M1 - policy);
+        }
+        need_start_game_button_calculation();
+    }
+
     void check_random_board_generater() {
         if (ai_status.random_board_generator_future.valid() && ai_status.random_board_generator_calculating) {
             if (ai_status.random_board_generator_future.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
                 std::vector<int> moves = ai_status.random_board_generator_future.get();
                 ai_status.random_board_generator_calculating = false;
                 std::cerr << "finish random board generation" << std::endl;
-                stop_calculating();
-                getData().history_elem.reset();
-                getData().graph_resources.init();
-                getData().graph_resources.nodes[getData().graph_resources.branch].emplace_back(getData().history_elem);
-                getData().game_information.init();
-                pausing_in_pass = false;
-                resume_calculating();
-                for (int policy : moves) {
-                    move_processing(HW2_M1 - policy);
-                }
-                need_start_game_button_calculation();
+                random_generated_moves = moves;
+                random_generated_moves_available = true;
+                restore_random_generated_position();
             }
         }
     }
