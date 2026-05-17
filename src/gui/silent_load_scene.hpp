@@ -596,7 +596,7 @@ private:
     Font err_font{ FontMethod::MSDF, FONT_DEFAULT_SIZE };
 public:
     Silent_load(const InitData& init) : IScene{ init } {
-        // set_scene_ime_enabled(false);
+        // set_scene_ime_enabled(false); // important for enabling IME after loading
         stop_loading = false;
         silent_load_future = std::async(std::launch::async, silent_load, &getData().directories, &getData().resources, &getData().settings, &getData().user_settings, &getData().fonts, &stop_loading);
         loading = true;
