@@ -68,7 +68,9 @@ constexpr int UPDATE_CHECK_FAILED = 2;
 constexpr int SHOW_ALL_HINT = 35;
 constexpr int AI_MAX_LOSS_INF = 129;
 constexpr int AI_LOSS_PERCENTAGE_INF = 100;
-constexpr int AI_LOSS_GRAPH_POINT_COUNT = HW2 - 4;
+constexpr int AI_LOSS_GRAPH_INTERVAL = 4;
+constexpr int AI_LOSS_GRAPH_POINT_COUNT = (HW2 - 4 + AI_LOSS_GRAPH_INTERVAL - 1) / AI_LOSS_GRAPH_INTERVAL;
+constexpr std::array<int, 9> AI_MAX_LOSS_SNAP_VALUES = { 0, 1, 2, 4, 8, 16, 32, 64, 129 };
 using AI_loss_graph_values = std::array<int, AI_LOSS_GRAPH_POINT_COUNT>;
 
 // board drawing constants

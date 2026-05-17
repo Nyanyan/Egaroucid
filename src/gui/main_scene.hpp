@@ -1488,7 +1488,7 @@ private:
                     }
                     if (!specified_opening_moved) {
                         if (getData().menu_elements.accept_ai_loss) {
-                            const int move_number = std::clamp(getData().history_elem.board.n_discs() - 3, 1, AI_LOSS_GRAPH_POINT_COUNT);
+                            const int move_number = std::clamp(getData().history_elem.board.n_discs() - 3, 1, HW2 - 4);
                             const int curve_max_loss = get_ai_loss_graph_value(getData().menu_elements.max_loss_by_move, move_number);
                             const int curve_loss_percentage = get_ai_loss_graph_value(getData().menu_elements.loss_percentage_by_move, move_number);
                             double loss_ratio = 0.01 * curve_loss_percentage;

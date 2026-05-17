@@ -11,6 +11,7 @@
 #pragma once
 
 #include <algorithm>
+#include <cmath>
 #include <functional>
 #include "const/gui_common.hpp"
 
@@ -63,26 +64,57 @@ inline int clamp_ai_loss_percentage_value(int value) {
     return std::clamp(value, 0, AI_LOSS_PERCENTAGE_INF);
 }
 
+inline int snap_ai_max_loss_value(int value) {
+    int clamped_value = clamp_ai_max_loss_value(value);
+    int best = AI_MAX_LOSS_SNAP_VALUES[0];
+    int best_diff = std::abs(clamped_value - best);
+    for (int candidate : AI_MAX_LOSS_SNAP_VALUES) {
+        int diff = std::abs(clamped_value - candidate);
+        if (diff < best_diff) {
+            best = candidate;
+            best_diff = diff;
+        }
+    }
+    return best;
+}
+
+inline int snap_ai_loss_percentage_value(int value) {
+    int clamped_value = clamp_ai_loss_percentage_value(value);
+    int snapped = static_cast<int>(std::round(clamped_value / 5.0)) * 5;
+    return std::clamp(snapped, 0, AI_LOSS_PERCENTAGE_INF);
+}
+
 inline void fill_ai_loss_graph_values(AI_loss_graph_values* values, int value, bool is_percentage) {
     if (is_percentage) {
-        values->fill(clamp_ai_loss_percentage_value(value));
+        values->fill(snap_ai_loss_percentage_value(value));
     } else {
-        values->fill(clamp_ai_max_loss_value(value));
+        values->fill(snap_ai_max_loss_value(value));
     }
 }
 
 inline void clamp_ai_loss_graph_values(AI_loss_graph_values* values, bool is_percentage) {
     for (int& value : *values) {
         if (is_percentage) {
-            value = clamp_ai_loss_percentage_value(value);
+            value = snap_ai_loss_percentage_value(value);
         } else {
-            value = clamp_ai_max_loss_value(value);
+            value = snap_ai_max_loss_value(value);
         }
     }
 }
 
+inline int move_number_to_ai_loss_graph_idx(int move_number) {
+    const int clamped_move_number = std::clamp(move_number, 1, HW2 - 4);
+    const int idx = (clamped_move_number - 1) / AI_LOSS_GRAPH_INTERVAL;
+    return std::clamp(idx, 0, AI_LOSS_GRAPH_POINT_COUNT - 1);
+}
+
+inline int ai_loss_graph_idx_to_move_number(int idx) {
+    const int clamped_idx = std::clamp(idx, 0, AI_LOSS_GRAPH_POINT_COUNT - 1);
+    return std::min(HW2 - 4, (clamped_idx + 1) * AI_LOSS_GRAPH_INTERVAL);
+}
+
 inline int get_ai_loss_graph_value(const AI_loss_graph_values& values, int move_number) {
-    const int idx = std::clamp(move_number, 1, AI_LOSS_GRAPH_POINT_COUNT) - 1;
+    const int idx = move_number_to_ai_loss_graph_idx(move_number);
     return values[idx];
 }
 
@@ -198,7 +230,7 @@ inline bool import_ai_profile_int_graph(JSON& json, const String& key, AI_loss_g
         return false;
     }
     for (int i = 0; i < AI_LOSS_GRAPH_POINT_COUNT; ++i) {
-        const String move_key = Format(i + 1);
+        const String move_key = Format(ai_loss_graph_idx_to_move_number(i));
         if (json[key][move_key].getType() != JSONValueType::Number) {
             return false;
         }
@@ -210,7 +242,7 @@ inline bool import_ai_profile_int_graph(JSON& json, const String& key, AI_loss_g
 
 inline void export_ai_profile_int_graph(JSON& json, const String& key, const AI_loss_graph_values& values) {
     for (int i = 0; i < AI_LOSS_GRAPH_POINT_COUNT; ++i) {
-        json[key][Format(i + 1)] = values[i];
+        json[key][Format(ai_loss_graph_idx_to_move_number(i))] = values[i];
     }
 }
 

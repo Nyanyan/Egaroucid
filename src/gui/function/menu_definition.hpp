@@ -55,7 +55,7 @@ Menu create_menu(Menu_elements* menu_elements, Resources *resources, Font font, 
         //menu_e.init_bar(language.get("ai_settings", "book_accuracy_level"), &menu_elements->book_acc_level, menu_elements->book_acc_level, 0, BOOK_ACCURACY_LEVEL_INF);
         //title.push(menu_e);
         menu_e.init_check(language.get("ai_settings", "accept_ai_loss") + get_shortcut_key_info(U"accept_ai_loss"), &menu_elements->accept_ai_loss, menu_elements->accept_ai_loss);
-            side_menu.init_button(language.get("ai_settings", "max_loss") + U" / " + language.get("ai_settings", "loss_percentage"), &menu_elements->ai_loss_graph_setting);
+            side_menu.init_button(language.get("settings", "settings"), &menu_elements->ai_loss_graph_setting);
             menu_e.push(side_menu);
         title.push(menu_e);
         menu_e.init_bar(language.get("ai_settings", "level"), &menu_elements->level, menu_elements->level, 1, 60);

@@ -12,6 +12,7 @@
 
 #include <algorithm>
 #include <array>
+#include <cmath>
 #include "function/function_all.hpp"
 
 constexpr int AI_LOSS_GRAPH_SCENE_GRAPH_SX = 50;
@@ -48,8 +49,8 @@ public:
         Scene::SetBackground(getData().colors.green);
         getData().fonts.font(language.get("ai_settings", "accept_ai_loss") + U" / " + language.get("settings", "settings")).draw(24, Arg::topCenter(X_CENTER, 12), getData().colors.white);
 
-        update_graph(0, &getData().menu_elements.max_loss_by_move, language.get("ai_settings", "max_loss"), 0, AI_MAX_LOSS_INF, getData().colors.yellow);
-        update_graph(1, &getData().menu_elements.loss_percentage_by_move, language.get("ai_settings", "loss_percentage"), 0, AI_LOSS_PERCENTAGE_INF, getData().colors.cyan);
+        update_graph(0, &getData().menu_elements.max_loss_by_move, language.get("ai_settings", "max_loss"), 0, AI_MAX_LOSS_INF, getData().colors.yellow, false);
+        update_graph(1, &getData().menu_elements.loss_percentage_by_move, language.get("ai_settings", "loss_percentage"), 0, AI_LOSS_PERCENTAGE_INF, getData().colors.cyan, true);
         sync_legacy_scalar_values();
 
         if (!MouseL.pressed()) {
@@ -95,7 +96,23 @@ private:
         return std::clamp(idx, 0, AI_LOSS_GRAPH_POINT_COUNT - 1);
     }
 
-    double value_to_y(const RectF& rect, int value, int min_value, int max_value) const {
+    double value_to_y(const RectF& rect, int value, int min_value, int max_value, bool is_percentage_graph) const {
+        if (!is_percentage_graph) {
+            int snapped_value = snap_ai_max_loss_value(value);
+            int value_idx = 0;
+            for (int i = 0; i < static_cast<int>(AI_MAX_LOSS_SNAP_VALUES.size()); ++i) {
+                if (AI_MAX_LOSS_SNAP_VALUES[i] == snapped_value) {
+                    value_idx = i;
+                    break;
+                }
+            }
+            int index_from_top = static_cast<int>(AI_MAX_LOSS_SNAP_VALUES.size()) - 1 - value_idx;
+            if (AI_MAX_LOSS_SNAP_VALUES.size() <= 1) {
+                return rect.y + rect.h;
+            }
+            double ratio = static_cast<double>(index_from_top) / static_cast<double>(AI_MAX_LOSS_SNAP_VALUES.size() - 1);
+            return rect.y + rect.h * ratio;
+        }
         if (max_value <= min_value) {
             return rect.y + rect.h;
         }
@@ -103,7 +120,17 @@ private:
         return rect.y + rect.h * (1.0 - ratio);
     }
 
-    int y_to_value(const RectF& rect, double y, int min_value, int max_value) const {
+    int y_to_value(const RectF& rect, double y, int min_value, int max_value, bool is_percentage_graph) const {
+        if (!is_percentage_graph) {
+            if (AI_MAX_LOSS_SNAP_VALUES.size() <= 1) {
+                return AI_MAX_LOSS_SNAP_VALUES[0];
+            }
+            double top_to_bottom_ratio = std::clamp((y - rect.y) / rect.h, 0.0, 1.0);
+            int index_from_top = static_cast<int>(std::round(top_to_bottom_ratio * static_cast<double>(AI_MAX_LOSS_SNAP_VALUES.size() - 1)));
+            int value_idx = static_cast<int>(AI_MAX_LOSS_SNAP_VALUES.size()) - 1 - index_from_top;
+            value_idx = std::clamp(value_idx, 0, static_cast<int>(AI_MAX_LOSS_SNAP_VALUES.size()) - 1);
+            return AI_MAX_LOSS_SNAP_VALUES[value_idx];
+        }
         if (max_value <= min_value) {
             return min_value;
         }
@@ -111,10 +138,10 @@ private:
         return static_cast<int>(std::round(min_value + ratio * (max_value - min_value)));
     }
 
-    int find_point_idx(const RectF& rect, const AI_loss_graph_values& values, int min_value, int max_value) const {
+    int find_point_idx(const RectF& rect, const AI_loss_graph_values& values, int min_value, int max_value, bool is_percentage_graph) const {
         for (int i = 0; i < AI_LOSS_GRAPH_POINT_COUNT; ++i) {
             const double px = idx_to_x(rect, i);
-            const double py = value_to_y(rect, values[i], min_value, max_value);
+            const double py = value_to_y(rect, values[i], min_value, max_value, is_percentage_graph);
             if (Circle(px, py, AI_LOSS_GRAPH_SCENE_POINT_RADIUS + 5.0).mouseOver()) {
                 return i;
             }
@@ -127,27 +154,39 @@ private:
         getData().menu_elements.loss_percentage = getData().menu_elements.loss_percentage_by_move[0];
     }
 
-    void update_graph(int graph_idx, AI_loss_graph_values* values, const String& label, int min_value, int max_value, const Color& line_color) {
+    void update_graph(int graph_idx, AI_loss_graph_values* values, const String& label, int min_value, int max_value, const Color& line_color, bool is_percentage_graph) {
         RectF rect = get_graph_rect(graph_idx);
         rect.rounded(8).draw(ColorF(getData().colors.dark_green, 0.75)).drawFrame(1, getData().colors.white);
         getData().fonts.font(label).draw(16, Arg::topLeft(rect.x + 2, rect.y - 26), getData().colors.white);
 
-        for (int i = 0; i <= 4; ++i) {
-            const double y = rect.y + rect.h * i / 4.0;
-            const int value = static_cast<int>(std::round(max_value - (max_value - min_value) * (i / 4.0)));
-            Line(rect.x, y, rect.x + rect.w, y).draw(1.0, ColorF(getData().colors.white, (i == 4) ? 0.35 : 0.18));
-            getData().fonts.font(Format(value)).draw(9, Arg::rightCenter(rect.x - 6, y), getData().colors.white);
+        if (is_percentage_graph) {
+            for (int i = 0; i <= 4; ++i) {
+                const double y = rect.y + rect.h * i / 4.0;
+                const int value = static_cast<int>(std::round(max_value - (max_value - min_value) * (i / 4.0)));
+                Line(rect.x, y, rect.x + rect.w, y).draw(1.0, ColorF(getData().colors.white, (i == 4) ? 0.35 : 0.18));
+                getData().fonts.font(Format(value)).draw(9, Arg::rightCenter(rect.x - 6, y), getData().colors.white);
+            }
+        } else {
+            const int n_levels = static_cast<int>(AI_MAX_LOSS_SNAP_VALUES.size());
+            for (int i = 0; i < n_levels; ++i) {
+                const int value_idx = n_levels - 1 - i;
+                const int value = AI_MAX_LOSS_SNAP_VALUES[value_idx];
+                const double y = rect.y + rect.h * i / static_cast<double>(n_levels - 1);
+                Line(rect.x, y, rect.x + rect.w, y).draw(1.0, ColorF(getData().colors.white, (value == 0) ? 0.35 : 0.18));
+                getData().fonts.font(Format(value)).draw(9, Arg::rightCenter(rect.x - 6, y), getData().colors.white);
+            }
         }
-        const std::array<int, 7> move_ticks = { 1, 10, 20, 30, 40, 50, 60 };
-        for (int move : move_ticks) {
-            const int idx = std::clamp(move, 1, AI_LOSS_GRAPH_POINT_COUNT) - 1;
-            const double x = idx_to_x(rect, idx);
-            Line(x, rect.y, x, rect.y + rect.h).draw(1.0, ColorF(getData().colors.white, 0.14));
-            getData().fonts.font(Format(move)).draw(9, Arg::topCenter(x, rect.y + rect.h + 2), getData().colors.white);
+        for (int i = 0; i < AI_LOSS_GRAPH_POINT_COUNT; ++i) {
+            const int start_move = i * AI_LOSS_GRAPH_INTERVAL + 1;
+            const int end_move = std::min(HW2 - 4, (i + 1) * AI_LOSS_GRAPH_INTERVAL);
+            const double x = idx_to_x(rect, i);
+            Line(x, rect.y, x, rect.y + rect.h).draw(1.0, ColorF(getData().colors.white, 0.10));
+            const String range_label = Format(start_move) + U"~" + Format(end_move);
+            getData().fonts.font(range_label).draw(8, Arg::topCenter(x, rect.y + rect.h + 2), getData().colors.white);
         }
 
         if (dragging_graph_idx == -1 && MouseL.down()) {
-            int target_point_idx = find_point_idx(rect, *values, min_value, max_value);
+            int target_point_idx = find_point_idx(rect, *values, min_value, max_value, is_percentage_graph);
             if (target_point_idx == -1 && rect.mouseOver()) {
                 target_point_idx = x_to_idx(rect, Cursor::PosF().x);
             }
@@ -158,22 +197,28 @@ private:
         }
 
         if (dragging_graph_idx == graph_idx && dragging_point_idx != -1 && MouseL.pressed()) {
-            int value = y_to_value(rect, Cursor::PosF().y, min_value, max_value);
-            (*values)[dragging_point_idx] = std::clamp(value, min_value, max_value);
+            int value = y_to_value(rect, Cursor::PosF().y, min_value, max_value, is_percentage_graph);
+            value = std::clamp(value, min_value, max_value);
+            if (is_percentage_graph) {
+                value = snap_ai_loss_percentage_value(value);
+            } else {
+                value = snap_ai_max_loss_value(value);
+            }
+            (*values)[dragging_point_idx] = value;
             Cursor::RequestStyle(CursorStyle::ResizeUpDown);
         }
 
         LineString curve;
         for (int i = 0; i < AI_LOSS_GRAPH_POINT_COUNT; ++i) {
-            curve << Vec2(idx_to_x(rect, i), value_to_y(rect, (*values)[i], min_value, max_value));
+            curve << Vec2(idx_to_x(rect, i), value_to_y(rect, (*values)[i], min_value, max_value, is_percentage_graph));
         }
         curve.draw(2.0, line_color);
 
         for (int i = 0; i < AI_LOSS_GRAPH_POINT_COUNT; ++i) {
             const double x = idx_to_x(rect, i);
-            const double y = value_to_y(rect, (*values)[i], min_value, max_value);
+            const double y = value_to_y(rect, (*values)[i], min_value, max_value, is_percentage_graph);
             const bool is_active = (dragging_graph_idx == graph_idx && dragging_point_idx == i);
-            const double radius = is_active ? 5.0 : ((i % 10 == 9 || i == 0 || i + 1 == AI_LOSS_GRAPH_POINT_COUNT) ? 3.5 : AI_LOSS_GRAPH_SCENE_POINT_RADIUS);
+            const double radius = is_active ? 5.0 : 3.5;
             Circle(x, y, radius).draw(line_color);
             if (is_active) {
                 Circle(x, y, radius + 2.0).drawFrame(2.0, getData().colors.white);
