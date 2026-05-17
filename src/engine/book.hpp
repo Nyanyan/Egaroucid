@@ -2911,7 +2911,11 @@ void search_new_leaf(Board board, int level, int book_elem_value, bool use_multi
     } else {
         new_leaf_move = MOVE_NOMOVE;
     }
-    book.add_leaf(&board, new_leaf_value, new_leaf_move, level);
+    if (level == ADD_LEAF_SPECIAL_LEVEL) {
+        book.add_leaf(&board, new_leaf_value, new_leaf_move, ADD_LEAF_SPECIAL_LEVEL_SEARCH_LEVEL);
+    } else {
+        book.add_leaf(&board, new_leaf_value, new_leaf_move, level);
+    }
 }
 
 Book_info calculate_book_info(bool *calculating) {
