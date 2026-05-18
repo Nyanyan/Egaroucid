@@ -1,7 +1,8 @@
 import subprocess
 import random
 import numpy as np
-import sys
+import argparse
+import os
 import queue
 import time
 from othello_py import *
@@ -13,16 +14,44 @@ import threading
 QUIT_TIMEOUT_SEC = 2.0
 KILL_TIMEOUT_SEC = 5.0
 
-LEVEL = int(sys.argv[1])
-N_SET_GAMES = int(sys.argv[2])
+
+def parse_args():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('level', type=int)
+    parser.add_argument('n_set_games', type=int)
+    parser.add_argument('n_parallel_matches', type=int, nargs='?', default=20)
+    parser.add_argument('n_total_processes', type=int, nargs='?', default=16)
+    parser.add_argument('status_every', type=int, nargs='?', default=10)
+    parser.add_argument(
+        '--save-kifu',
+        '--save-all-kifu',
+        dest='save_kifu',
+        nargs='?',
+        const=True,
+        default=None,
+        metavar='PATH',
+        help='save every game record as TSV. If PATH is omitted, a timestamped file is created.'
+    )
+    return parser.parse_args()
+
+
+args = parse_args()
+
+LEVEL = args.level
+N_SET_GAMES = args.n_set_games
 N_THREADS = 1
-N_PARALLEL_MATCHES = int(sys.argv[3]) if len(sys.argv) >= 4 else 20
-N_TOTAL_PROCESSES = int(sys.argv[4]) if len(sys.argv) >= 5 else 16
+N_PARALLEL_MATCHES = args.n_parallel_matches
+N_TOTAL_PROCESSES = args.n_total_processes
 
 # N_PARALLEL_MATCHES = int(sys.argv[3]) if len(sys.argv) >= 4 else 10
 # N_TOTAL_PROCESSES = int(sys.argv[4]) if len(sys.argv) >= 5 else 8
 
-STATUS_EVERY = int(sys.argv[5]) if len(sys.argv) >= 6 else 10
+STATUS_EVERY = args.status_every
+SAVE_KIFU_PATH = args.save_kifu
+if SAVE_KIFU_PATH is True:
+    SAVE_KIFU_PATH = 'battle_parallel_nonstop_gtp_kifu_{}.tsv'.format(time.strftime('%Y%m%d_%H%M%S'))
+
+SCRIPT_START_TIME = time.time()
 
 if N_TOTAL_PROCESSES < 2 or N_TOTAL_PROCESSES % 2 != 0:
     print('N_TOTAL_PROCESSES must be an even number >= 2')
@@ -35,6 +64,69 @@ if N_PARALLEL_MATCHES < 1:
 if STATUS_EVERY < 1:
     print('STATUS_EVERY must be >= 1')
     exit(1)
+
+
+def format_elapsed(seconds):
+    seconds = int(max(0, seconds))
+    hours = seconds // 3600
+    minutes = (seconds % 3600) // 60
+    seconds %= 60
+    if hours > 0:
+        return '{}:{:02d}:{:02d}'.format(hours, minutes, seconds)
+    return '{}:{:02d}'.format(minutes, seconds)
+
+
+def get_elapsed_text():
+    return format_elapsed(time.time() - SCRIPT_START_TIME)
+
+
+def get_eta_text(completed, total):
+    elapsed = time.time() - SCRIPT_START_TIME
+    if completed <= 0 or elapsed <= 0:
+        return '-'
+    remaining = max(0, total - completed)
+    return format_elapsed(remaining * elapsed / completed)
+
+
+def get_battles_per_minute(completed):
+    elapsed = time.time() - SCRIPT_START_TIME
+    if elapsed <= 0:
+        return 0.0
+    return 60.0 * completed / elapsed
+
+
+def init_kifu_file():
+    if SAVE_KIFU_PATH is None:
+        return
+
+    parent = os.path.dirname(SAVE_KIFU_PATH)
+    if parent != '':
+        os.makedirs(parent, exist_ok=True)
+
+    with open(SAVE_KIFU_PATH, 'w', encoding='utf-8', newline='') as f:
+        f.write('battle\tgame\topening_idx\tp0\tp1\tblack\twhite\tp0_disc_diff\tblack_stones\twhite_stones\trecord\n')
+
+
+def save_kifu_results(battle_no, opening_idx, game_results):
+    if SAVE_KIFU_PATH is None:
+        return
+
+    with open(SAVE_KIFU_PATH, 'a', encoding='utf-8', newline='') as f:
+        for result in game_results:
+            f.write('{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\n'.format(
+                battle_no,
+                result['game'],
+                opening_idx,
+                players[result['p0_idx']][NAME_IDX],
+                players[result['p1_idx']][NAME_IDX],
+                players[result['black_idx']][NAME_IDX],
+                players[result['white_idx']][NAME_IDX],
+                result['p0_disc_diff'],
+                result['black_stones'],
+                result['white_stones'],
+                result['record'],
+            ))
+
 
 random.seed(57)
 
@@ -267,11 +359,24 @@ def play_single_game(p0_idx, p1_idx, opening_idx, p0_is_black):
             cmd_play = 'play ' + ('b' if o_player == black else 'w') + ' ' + chr(ord('a') + x) + str(y + 1) + '\n'
             send_command(n_player_idx, n_proc_idx, cmd_play)
 
-        if o.n_stones[player] > o.n_stones[1 - player]:
-            return o.n_stones[player] - o.n_stones[1 - player] + (64 - (o.n_stones[player] + o.n_stones[1 - player]))
-        if o.n_stones[player] < o.n_stones[1 - player]:
-            return o.n_stones[player] - o.n_stones[1 - player] - (64 - (o.n_stones[player] + o.n_stones[1 - player]))
-        return 0
+        p0_disc_diff = o.n_stones[player] - o.n_stones[1 - player]
+        empty = 64 - (o.n_stones[player] + o.n_stones[1 - player])
+        if p0_disc_diff > 0:
+            p0_disc_diff += empty
+        elif p0_disc_diff < 0:
+            p0_disc_diff -= empty
+
+        return {
+            'game': 'p0_black' if player == black else 'p0_white',
+            'p0_idx': p0_idx,
+            'p1_idx': p1_idx,
+            'black_idx': p0_idx if player == black else p1_idx,
+            'white_idx': p0_idx if player == white else p1_idx,
+            'p0_disc_diff': p0_disc_diff,
+            'black_stones': o.n_stones[black],
+            'white_stones': o.n_stones[1 - black],
+            'record': record,
+        }
     finally:
         players[p0_idx][PROC_POOL_IDX][player].put(p0_proc_idx)
         players[p1_idx][PROC_POOL_IDX][player].put(p1_proc_idx)
@@ -281,7 +386,8 @@ def play_battle(p0_idx, p1_idx, opening_idx):
     with ThreadPoolExecutor(max_workers=2) as executor:
         future_black = executor.submit(play_single_game, p0_idx, p1_idx, opening_idx, True)
         future_white = executor.submit(play_single_game, p0_idx, p1_idx, opening_idx, False)
-        sum_disc_diff_p0 = future_black.result() + future_white.result()
+        game_results = [future_black.result(), future_white.result()]
+        sum_disc_diff_p0 = sum(result['p0_disc_diff'] for result in game_results)
 
     with results_lock:
         p0_rating = players[p0_idx][RATING_IDX]
@@ -305,6 +411,8 @@ def play_battle(p0_idx, p1_idx, opening_idx):
         players[p1_idx][RESULT_DISC_IDX][p0_idx] -= sum_disc_diff_p0 / 2
         players[p0_idx][N_PLAYED_IDX][p1_idx] += 1
         players[p1_idx][N_PLAYED_IDX][p0_idx] += 1
+
+    return game_results
 
 
 def get_estimated_elo_from_history():
@@ -430,10 +538,30 @@ def print_status(completed, total, target_per_pair):
     percent = 100.0 * completed / max(1, total)
     print('\n' + '=' * 80)
     print('Progress: {}/{} ({:.2f}%)'.format(completed, total, percent))
+    print('Elapsed: {}  ETA: {}  Speed: {:.2f} battles/min'.format(
+        get_elapsed_text(),
+        get_eta_text(completed, total),
+        get_battles_per_minute(completed),
+    ))
     print(str(completed // N_BATTLES_PER_ROUND) + ' matches played for each win rate at level ' + str(LEVEL) + ' ' + str(N_THREADS) + ' threads')
     with results_lock:
         print_all_result_locked()
         print_games_progress_locked(target_per_pair)
+
+
+def print_collect_progress(completed, total):
+    percent = 100.0 * completed / max(1, total)
+    print(
+        'Collected battle {}/{} ({:.2f}%) elapsed {} eta {} speed {:.2f} battles/min'.format(
+            completed,
+            total,
+            percent,
+            get_elapsed_text(),
+            get_eta_text(completed, total),
+            get_battles_per_minute(completed),
+        ),
+        flush=True,
+    )
 
 
 def shutdown_all_processes():
@@ -469,6 +597,9 @@ print('level', LEVEL)
 print('parallel matches:', N_PARALLEL_MATCHES)
 print('total processes per player:', N_TOTAL_PROCESSES)
 print('status interval (battles):', STATUS_EVERY)
+if SAVE_KIFU_PATH is not None:
+    init_kifu_file()
+    print('save kifu:', SAVE_KIFU_PATH)
 
 matches = []
 for p0 in range(len(players)):
@@ -496,13 +627,15 @@ try:
         for _ in range(min(N_PARALLEL_MATCHES, total_battles)):
             p0, p1, opening_idx = next(iterator)
             future = executor.submit(play_battle, p0, p1, opening_idx)
-            futures[future] = (p0, p1)
+            futures[future] = (p0, p1, opening_idx)
 
         while futures:
             for future in as_completed(list(futures.keys())):
-                futures.pop(future)
-                future.result()
+                p0, p1, opening_idx = futures.pop(future)
+                game_results = future.result()
                 completed_battles += 1
+                save_kifu_results(completed_battles, opening_idx, game_results)
+                print_collect_progress(completed_battles, total_battles)
 
                 if completed_battles % STATUS_EVERY == 0 or completed_battles == total_battles:
                     print_status(completed_battles, total_battles, N_SET_GAMES)
@@ -513,7 +646,7 @@ try:
                     pass
                 else:
                     nf = executor.submit(play_battle, p0, p1, opening_idx)
-                    futures[nf] = (p0, p1)
+                    futures[nf] = (p0, p1, opening_idx)
                 break
 finally:
     shutdown_all_processes()
