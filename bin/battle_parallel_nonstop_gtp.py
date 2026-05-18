@@ -49,7 +49,7 @@ N_TOTAL_PROCESSES = args.n_total_processes
 STATUS_EVERY = args.status_every
 SAVE_KIFU_PATH = args.save_kifu
 if SAVE_KIFU_PATH is True:
-    SAVE_KIFU_PATH = 'battle_parallel_nonstop_gtp_kifu_{}.tsv'.format(time.strftime('%Y%m%d_%H%M%S'))
+    SAVE_KIFU_PATH = 'transcript/battle_parallel_nonstop_gtp_kifu_{}.tsv'.format(time.strftime('%Y%m%d_%H%M%S'))
 
 SCRIPT_START_TIME = time.time()
 
@@ -635,7 +635,7 @@ try:
                 game_results = future.result()
                 completed_battles += 1
                 save_kifu_results(completed_battles, opening_idx, game_results)
-                print_collect_progress(completed_battles, total_battles)
+                # print_collect_progress(completed_battles, total_battles)
 
                 if completed_battles % STATUS_EVERY == 0 or completed_battles == total_battles:
                     print_status(completed_battles, total_battles, N_SET_GAMES)
