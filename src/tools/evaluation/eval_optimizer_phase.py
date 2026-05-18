@@ -97,7 +97,7 @@ def reduce_traindata_nums(nums):
         mn = board_n_moves[str(num)][0]
         mx = board_n_moves[str(num)][1]
         phase_int = int(phase)
-        if (mn + 2 <= phase_int <= mx) or (num in use_all_depth_data) or (phase_int <= 12 + 2): # ランダム打ちから2手以上打ったデータのみ使う (phase 14以前は確保できるデータ数が少ないので全部使う)
+        if (mn + 6 <= phase_int <= mx) or (num in use_all_depth_data) or (phase_int <= 12 + 6): # ランダム打ちからN手以上打ったデータのみ使う (phase 12+N以前は確保できるデータ数が少ないので全部使う)
             res.append(num)
     return res
 
