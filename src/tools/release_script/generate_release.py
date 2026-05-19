@@ -43,7 +43,7 @@ def copy_common_files(correct_task_type, dst_dir_root):
             print(common_file_in_dir, common_file_dst_dir)
     
 
-'''
+#'''
 # Egaroucid for Console
 print('\n')
 print('<<<<<<<< Egaroucid for Console >>>>>>>>')
