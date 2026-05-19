@@ -9,7 +9,7 @@ from pathlib import Path
 from build_console import build_project, find_msbuild, PROJECT_ROOT
 
 # バージョン情報
-VERSION = "7_8_0"
+VERSION = "7_8_1"
 
 # ビルド構成
 CONFIGURATIONS = ["SIMD", "SIMD_AMD", "Generic", "AVX512", "AVX512_AMD"]
@@ -81,7 +81,8 @@ def build_all():
         print("-" * 60)
         
         # ビルド実行
-        success = build_project(configuration=config, platform="x64", clean=False, verbose=False)
+        # 構成切り替え時のキャッシュ残りを避けるため、毎回 Clean + Build を実行する
+        success = build_project(configuration=config, platform="x64", clean=True, verbose=False)
         
         if success:
             # リネームして移動
