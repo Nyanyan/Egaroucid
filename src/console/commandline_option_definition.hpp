@@ -12,7 +12,7 @@
 #include <string>
 #include <vector>
 
-#define N_COMMANDLINE_OPTIONS_BASE 32
+#define N_COMMANDLINE_OPTIONS_BASE 33
 
 #ifdef INCLUDE_GGS
     #define N_COMMANDLINE_OPTIONS (N_COMMANDLINE_OPTIONS_BASE + 6)
@@ -55,6 +55,7 @@
 #define ID_SOLVE_RANDOM 29
 #define ID_LOGDIR 30
 #define ID_SELF_PLAY_RANDOM_BOARD 31
+#define ID_GENERATE_RANDOM_BOARD 32
 
 #ifdef INCLUDE_GGS
     #define ID_GGS N_COMMANDLINE_OPTIONS_BASE
@@ -109,7 +110,8 @@ const Commandline_option_info commandline_option_data[N_COMMANDLINE_OPTIONS] = {
     {ID_PLAY_LOSS,          {"-playloss"},                                      2, "<ratio> <max_loss>","Play with loss till <max_loss> with occurance ratio <ratio> (0.0 to 1.0) can't use with time allocated"},
     {ID_SOLVE_RANDOM,       {"-sr", "-solverandom"},                            2, "<n> <m>",           "Solve <n> boards (play randomly first <m> moves)"},
     {ID_LOGDIR,             {"-logdir"},                                        1, "<dir>",             "Save search log to file in <dir> (-logfile is prioritized)"},
-    {ID_SELF_PLAY_RANDOM_BOARD, {"-sfr", "-selfplayrandomboard"},               4, "<n> <score_min> <score_max> <n_moves>", "Self play <n> games from random boards generated in score range [<score_min>, <score_max>] at <n_moves> moves"},
+    {ID_SELF_PLAY_RANDOM_BOARD, {"-sfr", "-selfplayrandomboard"},               4, "<n> <black_score_min> <black_score_max> <n_moves>", "Self play <n> games from random boards generated in score range [<black_score_min>, <black_score_max>] at <n_moves> moves"},
+    {ID_GENERATE_RANDOM_BOARD, {"-grb", "-genrandboard"},                       4, "<n> <black_score_min> <black_score_max> <n_moves>", "Generate <n> random boards in score range [<black_score_min>, <black_score_max>] at <n_moves> moves and output transcripts"},
 #ifdef INCLUDE_GGS
     {ID_GGS,                {"-ggs"},                                           2, "<username> <password>", "Use GGS (Generic Game Server) mode"},
     {ID_GGS_LOGFILE,        {"-ggslogfile"},                                    1, "<file>",            "file for GGS client log"},

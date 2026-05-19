@@ -68,5 +68,5 @@ const Command_info command_data[N_COMMANDS] = {
     {CMD_ID_TRANSCRIPT, {"transcript"},                                     "",                         "Show transcript of the game"},
     {CMD_ID_SETTIME,    {"settime"},                                        "<color> <time>",           "Set <color> (X / B / O / W) player's remaining time to <time> (seconds)"},
     {CMD_ID_ADVISE,     {"advise", "advice"},                               "",                         "Output information for advising"},
-    {CMD_ID_RANDBOARD,  {"randboard", "genrandboard"},                      "<score_min> <score_max> <n_moves>", "Generate random board by score range and set current position"},
+    {CMD_ID_RANDBOARD,  {"randboard", "genrandboard"},                      "<black_score_min> <black_score_max> <n_moves>", "Generate random board by score range and set current position"},
 };

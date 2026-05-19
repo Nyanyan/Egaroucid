@@ -285,7 +285,7 @@ void setboard(Board_info *board, Options *options, State *state, std::string boa
 void randboard(Board_info *board, Options *options, State *state, std::string arg) {
     std::vector<std::string> args = split_by_space(arg);
     if (args.size() < 3) {
-        std::cerr << "[ERROR] please input <score_min> <score_max> <n_moves>" << std::endl;
+        std::cerr << "[ERROR] please input <black_score_min> <black_score_max> <n_moves>" << std::endl;
         return;
     }
     int score_min, score_max, n_moves;

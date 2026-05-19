@@ -750,7 +750,7 @@ void self_play_random_board(std::vector<std::string> arg, Options *options, Stat
         std::exit(1);
     }
     if (score_min < -HW2 || score_max > HW2 || score_min > score_max) {
-        std::cout << "score range must be in [-" << HW2 << ", " << HW2 << "] and score_min <= score_max" << std::endl;
+        std::cout << "score range must be in [-" << HW2 << ", " << HW2 << "] and black_score_min <= black_score_max" << std::endl;
         std::exit(1);
     }
     if (n_moves < 0 || n_moves > HW2 - 4) {
@@ -770,6 +770,54 @@ void self_play_random_board(std::vector<std::string> arg, Options *options, Stat
         std::cout << transcript << std::endl;
     }
     global_searching = false;
+    std::cerr << "done in " << tim() - strt << " ms" << std::endl;
+}
+
+void generate_random_board(std::vector<std::string> arg, Options *options, State *state) {
+    int n_boards, score_min, score_max, n_moves;
+    if (arg.size() < 4) {
+        std::cerr << "[ERROR] [FATAL] please input arguments" << std::endl;
+        std::exit(1);
+    }
+    std::string str_n_boards = arg[0];
+    std::string str_score_min = arg[1];
+    std::string str_score_max = arg[2];
+    std::string str_n_moves = arg[3];
+    try {
+        n_boards = std::stoi(str_n_boards);
+        score_min = std::stoi(str_score_min);
+        score_max = std::stoi(str_score_max);
+        n_moves = std::stoi(str_n_moves);
+    } catch (const std::invalid_argument& e) {
+        std::cout << str_n_boards << " " << str_score_min << " " << str_score_max << " " << str_n_moves << " invalid argument" << std::endl;
+        std::exit(1);
+    } catch (const std::out_of_range& e) {
+        std::cout << str_n_boards << " " << str_score_min << " " << str_score_max << " " << str_n_moves << " out of range" << std::endl;
+        std::exit(1);
+    }
+    if (n_boards <= 0) {
+        std::cout << "n_boards must be positive" << std::endl;
+        std::exit(1);
+    }
+    if (score_min < -HW2 || score_max > HW2 || score_min > score_max) {
+        std::cout << "score range must be in [-" << HW2 << ", " << HW2 << "] and black_score_min <= black_score_max" << std::endl;
+        std::exit(1);
+    }
+    if (n_moves < 0 || n_moves > HW2 - 4) {
+        std::cout << "n_moves must be in [0, " << HW2 - 4 << "]" << std::endl;
+        std::exit(1);
+    }
+    std::cerr << n_boards << " random boards with score range [" << score_min << ", " << score_max << "] at " << n_moves << " moves" << std::endl;
+    uint64_t strt = tim();
+    for (int i = 0; i < n_boards; ++i) {
+        Board board;
+        std::string opening_transcript;
+        if (!get_random_board_by_score_range(score_min, score_max, n_moves, &board, &opening_transcript)) {
+            std::cerr << "[ERROR] failed to generate random board in score range" << std::endl;
+            std::exit(1);
+        }
+        std::cout << opening_transcript << std::endl;
+    }
     std::cerr << "done in " << tim() - strt << " ms" << std::endl;
 }
 
