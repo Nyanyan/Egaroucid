@@ -692,35 +692,49 @@ bool get_random_board_by_score_range(int score_min, int score_max, int n_moves, 
     };
     constexpr int LIGHT_LEVEL = 1;
     constexpr int ADJUSTMENT_LEVEL = 15;
-    bool searching = true;
-    // Suppress random board generator progress logs for commandline self-play.
-    std::ostringstream random_board_generator_log_sink;
-    Cerr_redirect_guard cerr_redirect_guard(random_board_generator_log_sink.rdbuf());
-    std::vector<int> random_moves = random_board_generator(score_min, score_max, n_moves, LIGHT_LEVEL, ADJUSTMENT_LEVEL, &searching);
-    if ((int)random_moves.size() != n_moves) {
-        return false;
-    }
-    opening_transcript->clear();
-    board->reset();
-    Flip flip;
-    for (int policy : random_moves) {
-        *opening_transcript += idx_to_coord(policy);
-        calc_flip(&flip, board, policy);
-        if (flip.flip == 0ULL) {
-            if (board->get_legal() == 0ULL && !board->is_end()) {
-                board->pass();
+    int n_tries = 0;
+    for (;;) {
+        ++n_tries;
+        bool searching = true;
+        std::vector<int> random_moves;
+        {
+            // Suppress random board generator progress logs for commandline usage.
+            std::ostringstream random_board_generator_log_sink;
+            Cerr_redirect_guard cerr_redirect_guard(random_board_generator_log_sink.rdbuf());
+            random_moves = random_board_generator(score_min, score_max, n_moves, LIGHT_LEVEL, ADJUSTMENT_LEVEL, &searching);
+        }
+        bool success = (int)random_moves.size() == n_moves;
+        if (success) {
+            opening_transcript->clear();
+            board->reset();
+            Flip flip;
+            for (int policy : random_moves) {
+                *opening_transcript += idx_to_coord(policy);
                 calc_flip(&flip, board, policy);
+                if (flip.flip == 0ULL) {
+                    if (board->get_legal() == 0ULL && !board->is_end()) {
+                        board->pass();
+                        calc_flip(&flip, board, policy);
+                    }
+                }
+                if (flip.flip == 0ULL) {
+                    success = false;
+                    break;
+                }
+                board->move_board(&flip);
+                if (board->get_legal() == 0ULL && !board->is_end()) {
+                    board->pass();
+                }
             }
         }
-        if (flip.flip == 0ULL) {
-            return false;
+        if (success) {
+            return true;
         }
-        board->move_board(&flip);
-        if (board->get_legal() == 0ULL && !board->is_end()) {
-            board->pass();
+        if (n_tries % 50 == 0) {
+            std::cerr << "[WARNING] random board generation retry count reached " << n_tries
+                      << " (score range [" << score_min << ", " << score_max << "], n_moves " << n_moves << ")" << std::endl;
         }
     }
-    return true;
 }
 
 void self_play_random_board(std::vector<std::string> arg, Options *options, State *state) {
@@ -750,7 +764,7 @@ void self_play_random_board(std::vector<std::string> arg, Options *options, Stat
         std::exit(1);
     }
     if (score_min < -HW2 || score_max > HW2 || score_min > score_max) {
-        std::cout << "score range must be in [-" << HW2 << ", " << HW2 << "] and black_score_min <= black_score_max" << std::endl;
+        std::cout << "score range must be in [-" << HW2 << ", " << HW2 << "] and score_min <= score_max" << std::endl;
         std::exit(1);
     }
     if (n_moves < 0 || n_moves > HW2 - 4) {
@@ -762,10 +776,7 @@ void self_play_random_board(std::vector<std::string> arg, Options *options, Stat
     for (int i = 0; i < n_games; ++i) {
         Board board_start;
         std::string opening_transcript;
-        if (!get_random_board_by_score_range(score_min, score_max, n_moves, &board_start, &opening_transcript)) {
-            std::cerr << "[ERROR] failed to generate random board in score range" << std::endl;
-            std::exit(1);
-        }
+        get_random_board_by_score_range(score_min, score_max, n_moves, &board_start, &opening_transcript);
         std::string transcript = self_play_task(board_start, opening_transcript, options, true, 0, SELF_PLAY_N_TRY);
         std::cout << transcript << std::endl;
     }
@@ -800,7 +811,7 @@ void generate_random_board(std::vector<std::string> arg, Options *options, State
         std::exit(1);
     }
     if (score_min < -HW2 || score_max > HW2 || score_min > score_max) {
-        std::cout << "score range must be in [-" << HW2 << ", " << HW2 << "] and black_score_min <= black_score_max" << std::endl;
+        std::cout << "score range must be in [-" << HW2 << ", " << HW2 << "] and score_min <= score_max" << std::endl;
         std::exit(1);
     }
     if (n_moves < 0 || n_moves > HW2 - 4) {
@@ -812,10 +823,7 @@ void generate_random_board(std::vector<std::string> arg, Options *options, State
     for (int i = 0; i < n_boards; ++i) {
         Board board;
         std::string opening_transcript;
-        if (!get_random_board_by_score_range(score_min, score_max, n_moves, &board, &opening_transcript)) {
-            std::cerr << "[ERROR] failed to generate random board in score range" << std::endl;
-            std::exit(1);
-        }
+        get_random_board_by_score_range(score_min, score_max, n_moves, &board, &opening_transcript);
         std::cout << opening_transcript << std::endl;
     }
     std::cerr << "done in " << tim() - strt << " ms" << std::endl;
