@@ -13,7 +13,7 @@
 #include <vector>
 #include "console_common.hpp"
 
-#define N_COMMANDS 20
+#define N_COMMANDS 21
 
 #define CMD_ID_NONE -1
 #define CMD_ID_HELP 0
@@ -36,6 +36,7 @@
 #define CMD_ID_TRANSCRIPT 17
 #define CMD_ID_SETTIME 18
 #define CMD_ID_ADVISE 19
+#define CMD_ID_RANDBOARD 20
 
 #define COMMAND_NOT_FOUND -1
 
@@ -67,4 +68,5 @@ const Command_info command_data[N_COMMANDS] = {
     {CMD_ID_TRANSCRIPT, {"transcript"},                                     "",                         "Show transcript of the game"},
     {CMD_ID_SETTIME,    {"settime"},                                        "<color> <time>",           "Set <color> (X / B / O / W) player's remaining time to <time> (seconds)"},
     {CMD_ID_ADVISE,     {"advise", "advice"},                               "",                         "Output information for advising"},
+    {CMD_ID_RANDBOARD,  {"randboard", "genrandboard"},                      "<score_min> <score_max> <n_moves>", "Generate random board by score range and set current position"},
 };

@@ -282,6 +282,70 @@ void setboard(Board_info *board, Options *options, State *state, std::string boa
     allocate_time(options, state);
 }
 
+void randboard(Board_info *board, Options *options, State *state, std::string arg) {
+    std::vector<std::string> args = split_by_space(arg);
+    if (args.size() < 3) {
+        std::cerr << "[ERROR] please input <score_min> <score_max> <n_moves>" << std::endl;
+        return;
+    }
+    int score_min, score_max, n_moves;
+    try {
+        score_min = std::stoi(args[0]);
+        score_max = std::stoi(args[1]);
+        n_moves = std::stoi(args[2]);
+    } catch (const std::invalid_argument& e) {
+        std::cerr << "[ERROR] invalid argument" << std::endl;
+        return;
+    } catch (const std::out_of_range& e) {
+        std::cerr << "[ERROR] out of range" << std::endl;
+        return;
+    }
+    if (score_min < -HW2 || score_max > HW2 || score_min > score_max) {
+        std::cerr << "[ERROR] invalid score range" << std::endl;
+        return;
+    }
+    if (n_moves < 0 || n_moves > HW2 - 4) {
+        std::cerr << "[ERROR] n_moves out of range" << std::endl;
+        return;
+    }
+    constexpr int LIGHT_LEVEL = 1;
+    constexpr int ADJUSTMENT_LEVEL = 15;
+    bool searching = true;
+    std::vector<int> random_moves = random_board_generator(score_min, score_max, n_moves, LIGHT_LEVEL, ADJUSTMENT_LEVEL, &searching);
+    if ((int)random_moves.size() != n_moves) {
+        std::cerr << "[ERROR] random board generation failed" << std::endl;
+        return;
+    }
+    board->reset();
+    Flip flip;
+    for (int policy : random_moves) {
+        calc_flip(&flip, &board->board, policy);
+        if (flip.flip == 0ULL) {
+            if (board->board.get_legal() == 0ULL && !board->board.is_end()) {
+                board->board.pass();
+                board->player ^= 1;
+                calc_flip(&flip, &board->board, policy);
+            }
+        }
+        if (flip.flip == 0ULL) {
+            std::cerr << "[ERROR] random board application failed" << std::endl;
+            board->reset();
+            allocate_time(options, state);
+            return;
+        }
+        board->board.move_board(&flip);
+        board->player ^= 1;
+        if (board->board.get_legal() == 0ULL && !board->board.is_end()) {
+            board->board.pass();
+            board->player ^= 1;
+        }
+        board->boards.emplace_back(board->board);
+        board->players.emplace_back(board->player);
+        ++board->ply_vec;
+    }
+    allocate_time(options, state);
+}
+
 void set_level(Options *options, std::string level_str) {
     try {
         int level = std::stoi(level_str);
@@ -505,6 +569,9 @@ void check_command(Board_info *board, State *state, Options *options) {
             break;
         case CMD_ID_ADVISE:
             print_advice(board);
+            break;
+        case CMD_ID_RANDBOARD:
+            randboard(board, options, state, arg);
             break;
         default:
             break;
