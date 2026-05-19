@@ -11,6 +11,7 @@
 #pragma once
 #include <iostream>
 #include <fstream>
+#include <sstream>
 #include <vector>
 #include <string>
 #include "./../engine/engine_all.hpp"
@@ -679,17 +680,31 @@ Board get_random_board(int n_random_moves) {
     return board; // error
 }
 
-bool get_random_board_by_score_range(int score_min, int score_max, int n_moves, Board *board) {
+bool get_random_board_by_score_range(int score_min, int score_max, int n_moves, Board *board, std::string *opening_transcript) {
+    struct Cerr_redirect_guard {
+        std::streambuf *backup;
+        explicit Cerr_redirect_guard(std::streambuf *new_buffer) {
+            backup = std::cerr.rdbuf(new_buffer);
+        }
+        ~Cerr_redirect_guard() {
+            std::cerr.rdbuf(backup);
+        }
+    };
     constexpr int LIGHT_LEVEL = 1;
     constexpr int ADJUSTMENT_LEVEL = 15;
     bool searching = true;
+    // Suppress random board generator progress logs for commandline self-play.
+    std::ostringstream random_board_generator_log_sink;
+    Cerr_redirect_guard cerr_redirect_guard(random_board_generator_log_sink.rdbuf());
     std::vector<int> random_moves = random_board_generator(score_min, score_max, n_moves, LIGHT_LEVEL, ADJUSTMENT_LEVEL, &searching);
     if ((int)random_moves.size() != n_moves) {
         return false;
     }
+    opening_transcript->clear();
     board->reset();
     Flip flip;
     for (int policy : random_moves) {
+        *opening_transcript += idx_to_coord(policy);
         calc_flip(&flip, board, policy);
         if (flip.flip == 0ULL) {
             if (board->get_legal() == 0ULL && !board->is_end()) {
@@ -746,12 +761,13 @@ void self_play_random_board(std::vector<std::string> arg, Options *options, Stat
     uint64_t strt = tim();
     for (int i = 0; i < n_games; ++i) {
         Board board_start;
-        if (!get_random_board_by_score_range(score_min, score_max, n_moves, &board_start)) {
+        std::string opening_transcript;
+        if (!get_random_board_by_score_range(score_min, score_max, n_moves, &board_start, &opening_transcript)) {
             std::cerr << "[ERROR] failed to generate random board in score range" << std::endl;
             std::exit(1);
         }
-        std::string transcript = self_play_task(board_start, "", options, true, 0, SELF_PLAY_N_TRY);
-        std::cout << board_start.to_str() << " " << transcript << std::endl;
+        std::string transcript = self_play_task(board_start, opening_transcript, options, true, 0, SELF_PLAY_N_TRY);
+        std::cout << transcript << std::endl;
     }
     global_searching = false;
     std::cerr << "done in " << tim() - strt << " ms" << std::endl;
