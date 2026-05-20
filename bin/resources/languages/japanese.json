@@ -64,7 +64,8 @@
             "function_duplicate_message": "この機能はすでに次のボタンに割り当て済みです:"
         },
         "mouse_additional_buttons": {
-            "settings": "\u30de\u30a6\u30b9\u8ffd\u52a0\u30dc\u30bf\u30f3\u8a2d\u5b9a"
+            "settings": "\u30de\u30a6\u30b9\u8ffd\u52a0\u30dc\u30bf\u30f3\u8a2d\u5b9a",
+            "press_to_highlight_message": "\u30de\u30a6\u30b9\u8ffd\u52a0\u30dc\u30bf\u30f3\u3092\u62bc\u3059\u3068\u5bfe\u5fdc\u3059\u308b\u884c\u304c\u30cf\u30a4\u30e9\u30a4\u30c8\u3055\u308c\u307e\u3059"
         },
         "profile": {
             "profile": "AIプロファイル",

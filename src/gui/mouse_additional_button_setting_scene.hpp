@@ -54,6 +54,7 @@ public:
         getData().fonts.font(language.get("settings", "mouse_additional_buttons", "settings")).draw(25, Arg::topCenter(X_CENTER, 10), getData().colors.white);
 
         if (changing_button_idx == MOUSE_ADDITIONAL_BUTTON_SETTINGS_IDX_NOT_CHANGING) {
+            getData().fonts.font(language.get("settings", "mouse_additional_buttons", "press_to_highlight_message")).draw(13, Arg::topCenter(X_CENTER, 48), getData().colors.white);
             draw_button_assignment_rows();
             ok_button.draw();
             if (ok_button.clicked() || KeyEnter.down()) {
@@ -73,6 +74,10 @@ private:
         int sy = SHORTCUT_SETTINGS_LIST_SY;
         for (int i = 0; i < MOUSE_ADDITIONAL_BUTTON_COUNT; ++i) {
             Rect rect = draw_shortcut_settings_row_background(getData().colors, i, sy);
+            if (mouse_additional_buttons.is_button_pressed(i)) {
+                rect.draw(ColorF(getData().colors.yellow, 0.35));
+                rect.drawFrame(4.0, getData().colors.yellow);
+            }
             String button_label = language.get("settings", "shortcut_buttons", "button") + U" " + mouse_additional_buttons.get_button_name(i);
             getData().fonts.font(button_label).draw(12, Arg::leftCenter(rect.x + 10, sy + rect.h / 2), getData().colors.white);
 

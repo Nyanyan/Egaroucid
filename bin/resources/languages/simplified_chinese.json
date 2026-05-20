@@ -64,7 +64,8 @@
             "function_duplicate_message": "该功能已分配给以下按钮:"
         },
         "mouse_additional_buttons": {
-            "settings": "\u9f20\u6807\u9644\u52a0\u6309\u94ae\u8bbe\u7f6e"
+            "settings": "\u9f20\u6807\u9644\u52a0\u6309\u94ae\u8bbe\u7f6e",
+            "press_to_highlight_message": "\u6309\u4e0b\u9f20\u6807\u9644\u52a0\u6309\u94ae\u65f6\uff0c\u5bf9\u5e94\u884c\u4f1a\u9ad8\u4eae\u663e\u793a"
         },
         "profile": {
             "profile": "AI配置方案",

@@ -64,7 +64,8 @@
             "function_duplicate_message": "此功能已指派給以下按鈕:"
         },
         "mouse_additional_buttons": {
-            "settings": "\u6ed1\u9f20\u9644\u52a0\u6309\u9215\u8a2d\u5b9a"
+            "settings": "\u6ed1\u9f20\u9644\u52a0\u6309\u9215\u8a2d\u5b9a",
+            "press_to_highlight_message": "\u6309\u4e0b\u6ed1\u9f20\u9644\u52a0\u6309\u9215\u6642\uff0c\u5c0d\u61c9\u5217\u6703\u9ad8\u4eae\u986f\u793a"
         },
         "profile": {
             "profile": "AI設定檔",

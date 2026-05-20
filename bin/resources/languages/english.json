@@ -64,7 +64,8 @@
             "function_duplicate_message": "This function is already assigned to button"
         },
         "mouse_additional_buttons": {
-            "settings": "Mouse Additional Button Settings"
+            "settings": "Mouse Additional Button Settings",
+            "press_to_highlight_message": "Press a mouse additional button to highlight its row"
         },
         "profile": {
             "profile": "AI Profile",
