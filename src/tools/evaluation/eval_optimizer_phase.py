@@ -13,6 +13,8 @@ n_patience = '100' # '300'
 reduce_lr_patience = '30' #'10' # '30'
 reduce_lr_ratio = '0.8'
 
+phase_int = int(phase)
+
 model_dir = './../../../model/nomodel/'
 
 
@@ -97,7 +99,13 @@ def reduce_traindata_nums(nums):
         mn = board_n_moves[str(num)][0]
         mx = board_n_moves[str(num)][1]
         phase_int = int(phase)
-        if (mn + 10 <= phase_int <= mx) or (num in use_all_depth_data) or (phase_int <= 12 + 10): # ランダム打ちからN手以上打ったデータのみ使う (phase 12+N以前は確保できるデータ数が少ないので全部使う)
+        # if (mn + 10 <= phase_int <= mx) or (num in use_all_depth_data) or (phase_int <= 12 + 10): # ランダム打ちからN手以上打ったデータのみ使う (phase 12+N以前は確保できるデータ数が少ないので全部使う)
+        #     res.append(num)
+        n_after_rand = 0
+        if phase_int >= 14:
+            n_after_rand = min(16, phase_int - 13)
+        # print('n_after_rand', n_after_rand)
+        if (mn + n_after_rand <= phase_int <= mx) or (num in use_all_depth_data): # ランダム打ちからN手以上打ったデータのみ使う
             res.append(num)
     return res
 
