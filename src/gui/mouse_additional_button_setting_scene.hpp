@@ -72,11 +72,11 @@ public:
 private:
     void draw_button_assignment_rows() {
         int sy = SHORTCUT_SETTINGS_LIST_SY;
+        std::vector<Rect> pressed_rects;
         for (int i = 0; i < MOUSE_ADDITIONAL_BUTTON_COUNT; ++i) {
             Rect rect = draw_shortcut_settings_row_background(getData().colors, i, sy);
             if (mouse_additional_buttons.is_button_pressed(i)) {
-                rect.draw(ColorF(getData().colors.yellow, 0.35));
-                rect.drawFrame(4.0, getData().colors.yellow);
+                pressed_rects.emplace_back(rect);
             }
             String button_label = language.get("settings", "shortcut_buttons", "button") + U" " + mouse_additional_buttons.get_button_name(i);
             getData().fonts.font(button_label).draw(12, Arg::leftCenter(rect.x + 10, sy + rect.h / 2), getData().colors.white);
@@ -105,6 +105,10 @@ private:
             }
 
             sy += rect.h;
+        }
+        for (const Rect& rect : pressed_rects) {
+            rect.draw(ColorF(getData().colors.yellow, 0.35));
+            rect.drawFrame(4.0, getData().colors.yellow);
         }
     }
 
