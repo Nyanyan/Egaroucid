@@ -19,6 +19,7 @@
 #include "util.hpp"
 
 #define TIME_NOT_ALLOCATED -1
+constexpr int LEVEL_TYPE_CUSTOM = 1001;
 
 struct Depth_prob_range_setting {
     int move_start;
@@ -108,7 +109,9 @@ inline Search_result ai_with_settings(Board board, const Options *options, bool 
     Depth_prob_range_setting setting;
     if (get_depth_prob_range_setting(options, board, &setting)) {
         bool searching = true;
-        return tree_search_legal(board, -SCORE_MAX, SCORE_MAX, setting.depth, setting.mpc_level, show_log, board.get_legal(), use_multi_thread, TIME_LIMIT_INF, THREAD_ID_NONE, &searching);
+        Search_result res = tree_search_legal(board, -SCORE_MAX, SCORE_MAX, setting.depth, setting.mpc_level, show_log, board.get_legal(), use_multi_thread, TIME_LIMIT_INF, THREAD_ID_NONE, &searching);
+        res.level = LEVEL_TYPE_CUSTOM;
+        return res;
     }
     return ai(board, options->level, true, 0, use_multi_thread, show_log);
 }
@@ -117,7 +120,9 @@ inline Search_result ai_legal_with_settings(Board board, const Options *options,
     Depth_prob_range_setting setting;
     if (get_depth_prob_range_setting(options, board, &setting)) {
         bool searching = true;
-        return tree_search_legal(board, -SCORE_MAX, SCORE_MAX, setting.depth, setting.mpc_level, show_log, legal, use_multi_thread, TIME_LIMIT_INF, THREAD_ID_NONE, &searching);
+        Search_result res = tree_search_legal(board, -SCORE_MAX, SCORE_MAX, setting.depth, setting.mpc_level, show_log, legal, use_multi_thread, TIME_LIMIT_INF, THREAD_ID_NONE, &searching);
+        res.level = LEVEL_TYPE_CUSTOM;
+        return res;
     }
     return ai_legal(board, options->level, true, 0, use_multi_thread, show_log, legal);
 }
@@ -126,7 +131,9 @@ inline Search_result ai_legal_window_with_settings(Board board, int alpha, int b
     Depth_prob_range_setting setting;
     if (get_depth_prob_range_setting(options, board, &setting)) {
         bool searching = true;
-        return tree_search_legal(board, alpha, beta, setting.depth, setting.mpc_level, show_log, legal, use_multi_thread, TIME_LIMIT_INF, THREAD_ID_NONE, &searching);
+        Search_result res = tree_search_legal(board, alpha, beta, setting.depth, setting.mpc_level, show_log, legal, use_multi_thread, TIME_LIMIT_INF, THREAD_ID_NONE, &searching);
+        res.level = LEVEL_TYPE_CUSTOM;
+        return res;
     }
     return ai_legal_window(board, alpha, beta, options->level, true, 0, use_multi_thread, show_log, legal);
 }
@@ -153,10 +160,6 @@ Options get_options(std::vector<Commandline_option> commandline_options, std::st
     res.use_depth_prob_ranges = false;
     res.depth_prob_ranges.clear();
     if (find_commandline_option(commandline_options, ID_DEPTH_PROB_RANGE)) {
-        if (find_commandline_option(commandline_options, ID_LEVEL)) {
-            std::cerr << "[ERROR] -level and -depthprobrange can't be used together" << std::endl;
-            std::exit(1);
-        }
         std::vector<std::vector<std::string>> range_args_list = get_commandline_option_args(commandline_options, ID_DEPTH_PROB_RANGE);
         for (const std::vector<std::string> &range_args: range_args_list) {
             if (range_args.size() != 4) {

@@ -49,6 +49,19 @@ struct Analyze_summary {
     }
 };
 
+inline std::string get_search_level_str(const Search_result &result, const Options *options) {
+    if (result.depth == SEARCH_BOOK) {
+        return "Book";
+    }
+    if (options->time_allocated_seconds != TIME_NOT_ALLOCATED) {
+        return "-";
+    }
+    if (result.level == LEVEL_TYPE_CUSTOM) {
+        return "custom";
+    }
+    return std::to_string(result.level);
+}
+
 void print_version() {
     std::cout << EGAROUCID_NAME << " " << EGAROUCID_VERSION << std::endl;
     std::cout << COUT_TAB << std::left << std::setw(VERSION_TAB_SIZE) << "@date " << EGAROUCID_DATE << std::endl;
@@ -234,12 +247,7 @@ inline void print_search_result_body(Search_result result, const Options *option
         std::cout << "|";
     } else {
         std::string s;
-        std::string level_str = "-";
-        if (result.depth == SEARCH_BOOK) {
-            level_str = "Book";
-        } else if (options->time_allocated_seconds == TIME_NOT_ALLOCATED) {
-            level_str = std::to_string(result.level);
-        }
+        std::string level_str = get_search_level_str(result, options);
         std::string depth_str = "-";
         if (result.depth != SEARCH_BOOK) {
             depth_str = std::to_string(result.depth) + "@" + std::to_string(result.probability) + "%";
@@ -292,12 +300,7 @@ inline void print_search_result_debug(Search_result result, const Options *optio
         std::cerr << "Pass";
     } else {
         std::string s;
-        std::string level_str = "-";
-        if (result.depth == SEARCH_BOOK) {
-            level_str = "Book";
-        } else if (options->time_allocated_seconds == TIME_NOT_ALLOCATED) {
-            level_str = std::to_string(result.level);
-        }
+        std::string level_str = get_search_level_str(result, options);
         std::string depth_str = "-";
         if (result.depth != SEARCH_BOOK) {
             depth_str = std::to_string(result.depth) + "@" + std::to_string(result.probability) + "%";

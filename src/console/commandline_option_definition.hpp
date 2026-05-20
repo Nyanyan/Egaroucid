@@ -113,7 +113,7 @@ const Commandline_option_info commandline_option_data[N_COMMANDLINE_OPTIONS] = {
     {ID_LOGDIR,             {"-logdir"},                                        1, "<dir>",             "Save search log to file in <dir> (-logfile is prioritized)"},
     {ID_SELF_PLAY_RANDOM_BOARD, {"-sfr", "-selfplayrandomboard"},               4, "<n> <black_score_min> <black_score_max> <n_moves>", "Self play <n> games from random boards generated in score range [<black_score_min>, <black_score_max>] at <n_moves> moves"},
     {ID_GENERATE_RANDOM_BOARD, {"-grb", "-genrandboard"},                       4, "<n> <black_score_min> <black_score_max> <n_moves>", "Generate <n> random boards in score range [<black_score_min>, <black_score_max>] at <n_moves> moves and output transcripts"},
-    {ID_DEPTH_PROB_RANGE,   {"-dpr", "-depthprobrange"},                        4, "<m> <M> <depth> <prob>", "Set search depth/probability for move range [m, M] (prob: 74, 88, 93, 98, 99, 99.9, 100). Can be used multiple times without overlap"},
+    {ID_DEPTH_PROB_RANGE,   {"-dpr", "-depthprobrange"},                        4, "<m> <M> <depth> <prob>", "Set search depth/probability for move range [m, M] (prob: 74, 88, 93, 98, 99, 99.9, 100). Can be used multiple times without overlap. Outside specified ranges, -level is used"},
 #ifdef INCLUDE_GGS
     {ID_GGS,                {"-ggs"},                                           2, "<username> <password>", "Use GGS (Generic Game Server) mode"},
     {ID_GGS_LOGFILE,        {"-ggslogfile"},                                    1, "<file>",            "file for GGS client log"},
