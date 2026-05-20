@@ -213,10 +213,12 @@ Search_result go_noprint(Board_info *board, Options *options, State *state) {
     }
     Search_result result;
     if (options->time_allocated_seconds == TIME_NOT_ALLOCATED) {
-        if (options->play_loss && myrandom() < options->play_loss_ratio) { // play with loss
+        Depth_prob_range_setting setting;
+        bool has_custom_setting = get_depth_prob_range_setting(options, board->board, &setting);
+        if (!has_custom_setting && options->play_loss && myrandom() < options->play_loss_ratio) { // play with loss
             result = ai_loss(board->board, options->level, true, 0, true, options->show_log, options->play_loss_max);
         } else { // normal search
-            result = ai(board->board, options->level, true, 0, true, options->show_log);
+            result = ai_with_settings(board->board, options, true, options->show_log);
         }
     } else {
         uint64_t remaining_time_msec = 10;
@@ -401,7 +403,7 @@ void hint(Board_info *board, Options *options, State *state, std::string arg) {
             legal ^= 1ULL << elem.policy;
         int n_show_ai = n_show - (int)result.size();
         for (int i = 0; i < n_show_ai; ++i) {
-            Search_result elem = ai_legal(board->board, options->level, true, 0, true, false, legal);
+            Search_result elem = ai_legal_with_settings(board->board, options, true, false, legal);
             result.emplace_back(elem);
             legal ^= 1ULL << elem.policy;
         }

@@ -102,7 +102,7 @@ void solve_problems_transcript_parallel(std::vector<std::string> arg, Options *o
     Search_result result;
     if (thread_pool.size() == 0) {
         for (int i = 0; i < (int)board_list.size(); ++i) {
-            result = ai(board_list[i], options->level, true, 0, false, options->show_log);
+            result = ai_with_settings(board_list[i], options, false, options->show_log);
             std::cout << board_list[i].to_str() << " " << result.value << std::endl;
         }
     } else {
@@ -113,7 +113,7 @@ void solve_problems_transcript_parallel(std::vector<std::string> arg, Options *o
             while (!go_to_next_task) {
                 if (thread_pool.get_n_idle() && tasks.size() < board_list.size()) {
                     bool pushed = false;
-                    tasks.emplace_back(thread_pool.push(&pushed, std::bind(&ai, board, options->level, true, 0, false, options->show_log)));
+                    tasks.emplace_back(thread_pool.push(&pushed, std::bind(&ai_with_settings, board, options, false, options->show_log)));
                     if (pushed) {
                         go_to_next_task = true;
                     } else {
@@ -223,7 +223,7 @@ std::string self_play_task(Board board_start, std::string pre_moves_transcript, 
         Board board = board_start.copy();
         std::vector<int> transcript;
         while (board.check_pass()) {
-            result = ai(board, options->level, true, 0, use_multi_thread, options->show_log);
+            result = ai_with_settings(board, options, use_multi_thread, options->show_log);
             if (global_searching && is_valid_policy(result.policy)) {
                 transcript.emplace_back(result.policy);
                 calc_flip(&flip, &board, result.policy);
@@ -576,7 +576,7 @@ void self_play_lossless_lines_task(Board board, const std::string starting_board
         legal = board.get_legal();
     }
     Flip flip;
-    Search_result search_result = ai(board, options->level, true, 0, true, false);
+    Search_result search_result = ai_with_settings(board, options, true, false);
     calc_flip(&flip, &board, search_result.policy);
     board.move_board(&flip);
     transcript.emplace_back(search_result.policy);
@@ -589,7 +589,7 @@ void self_play_lossless_lines_task(Board board, const std::string starting_board
     int alpha = best_score - 2; // accept best - 1
     int beta = best_score;
     while (legal) {
-        search_result = ai_legal_window(board, alpha, beta, options->level, true, 0, true, false, legal);
+        search_result = ai_legal_window_with_settings(board, alpha, beta, options, true, false, legal);
         if (search_result.value <= alpha) {
             break;
         }
@@ -853,7 +853,7 @@ void solve_random(std::vector<std::string> arg, Options *options, State *state) 
     if (thread_pool.size() == 0) {
         for (int i = 0; i < n_boards; ++i) {
             Board board = get_random_board(n_random_moves);
-            Search_result result = ai(board, options->level, true, 0, false, options->show_log);
+            Search_result result = ai_with_settings(board, options, false, options->show_log);
             std::cout << board.to_str().substr(0, 64) << " " << result.value << std::endl;
         }
     } else {
@@ -863,7 +863,7 @@ void solve_random(std::vector<std::string> arg, Options *options, State *state) 
             if (thread_pool.get_n_idle() && (int)tasks.size() < n_boards) {
                 bool pushed = false;
                 Board board = get_random_board(n_random_moves);
-                tasks.emplace_back(std::make_pair(board, thread_pool.push(&pushed, std::bind(&ai, board, options->level, true, 0, false, options->show_log))));
+                tasks.emplace_back(std::make_pair(board, thread_pool.push(&pushed, std::bind(&ai_with_settings, board, options, false, options->show_log))));
                 if (!pushed) {
                     tasks.pop_back();
                 }
@@ -888,7 +888,7 @@ void solve_random(std::vector<std::string> arg, Options *options, State *state) 
                     }
                 global_searching = true;
                 for (Board &board: boards_mid) {
-                    Search_result result = ai(board, options->level, true, 0, true, options->show_log);
+                    Search_result result = ai_with_settings(board, options, true, options->show_log);
                     std::cout << board.to_str().substr(0, 64) << " " << result.value << std::endl;
                     ++n_boards_done;
                 }

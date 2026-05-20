@@ -9,6 +9,9 @@
 */
 
 #pragma once
+#include <algorithm>
+#include <cmath>
+#include <cstdlib>
 #include <iostream>
 #include "./../engine/engine_all.hpp"
 #include "commandline_option.hpp"
@@ -16,6 +19,14 @@
 #include "util.hpp"
 
 #define TIME_NOT_ALLOCATED -1
+
+struct Depth_prob_range_setting {
+    int move_start;
+    int move_end;
+    int depth;
+    uint_fast8_t mpc_level;
+    double probability;
+};
 
 struct Options {
     std::string binary_path;
@@ -41,6 +52,8 @@ struct Options {
     bool play_loss;
     double play_loss_ratio;
     int play_loss_max;
+    bool use_depth_prob_ranges;
+    std::vector<Depth_prob_range_setting> depth_prob_ranges;
 #ifdef INCLUDE_GGS
     bool ggs;
     std::string ggs_username;
@@ -53,6 +66,70 @@ struct Options {
     bool ggs_route_join_tournament;
 #endif
 };
+
+inline bool parse_selectivity_probability(const std::string &probability_str, uint_fast8_t *mpc_level, double *probability) {
+    double probability_in;
+    try {
+        probability_in = std::stod(probability_str);
+    } catch (const std::invalid_argument& e) {
+        return false;
+    } catch (const std::out_of_range& e) {
+        return false;
+    }
+    constexpr double eps = 1e-4;
+    for (int level = 0; level < N_SELECTIVITY_LEVEL; ++level) {
+        if (std::abs(SELECTIVITY_PERCENTAGE[level] - probability_in) < eps) {
+            *mpc_level = level;
+            *probability = SELECTIVITY_PERCENTAGE[level];
+            return true;
+        }
+    }
+    return false;
+}
+
+inline bool get_depth_prob_range_setting(const Options *options, const Board &board, Depth_prob_range_setting *setting) {
+    if (!options->use_depth_prob_ranges) {
+        return false;
+    }
+    int move = board.n_discs() - 3;
+    for (const Depth_prob_range_setting &elem: options->depth_prob_ranges) {
+        if (move < elem.move_start) {
+            break;
+        }
+        if (elem.move_start <= move && move <= elem.move_end) {
+            *setting = elem;
+            return true;
+        }
+    }
+    return false;
+}
+
+inline Search_result ai_with_settings(Board board, const Options *options, bool use_multi_thread, bool show_log) {
+    Depth_prob_range_setting setting;
+    if (get_depth_prob_range_setting(options, board, &setting)) {
+        bool searching = true;
+        return tree_search_legal(board, -SCORE_MAX, SCORE_MAX, setting.depth, setting.mpc_level, show_log, board.get_legal(), use_multi_thread, TIME_LIMIT_INF, THREAD_ID_NONE, &searching);
+    }
+    return ai(board, options->level, true, 0, use_multi_thread, show_log);
+}
+
+inline Search_result ai_legal_with_settings(Board board, const Options *options, bool use_multi_thread, bool show_log, uint64_t legal) {
+    Depth_prob_range_setting setting;
+    if (get_depth_prob_range_setting(options, board, &setting)) {
+        bool searching = true;
+        return tree_search_legal(board, -SCORE_MAX, SCORE_MAX, setting.depth, setting.mpc_level, show_log, legal, use_multi_thread, TIME_LIMIT_INF, THREAD_ID_NONE, &searching);
+    }
+    return ai_legal(board, options->level, true, 0, use_multi_thread, show_log, legal);
+}
+
+inline Search_result ai_legal_window_with_settings(Board board, int alpha, int beta, const Options *options, bool use_multi_thread, bool show_log, uint64_t legal) {
+    Depth_prob_range_setting setting;
+    if (get_depth_prob_range_setting(options, board, &setting)) {
+        bool searching = true;
+        return tree_search_legal(board, alpha, beta, setting.depth, setting.mpc_level, show_log, legal, use_multi_thread, TIME_LIMIT_INF, THREAD_ID_NONE, &searching);
+    }
+    return ai_legal_window(board, alpha, beta, options->level, true, 0, use_multi_thread, show_log, legal);
+}
 
 Options get_options(std::vector<Commandline_option> commandline_options, std::string binary_path) {
     Options res;
@@ -72,6 +149,58 @@ Options get_options(std::vector<Commandline_option> commandline_options, std::st
         } catch (const std::out_of_range& e) {
             std::cerr << "[ERROR] level argument out of range" << std::endl;
         }
+    }
+    res.use_depth_prob_ranges = false;
+    res.depth_prob_ranges.clear();
+    if (find_commandline_option(commandline_options, ID_DEPTH_PROB_RANGE)) {
+        if (find_commandline_option(commandline_options, ID_LEVEL)) {
+            std::cerr << "[ERROR] -level and -depthprobrange can't be used together" << std::endl;
+            std::exit(1);
+        }
+        std::vector<std::vector<std::string>> range_args_list = get_commandline_option_args(commandline_options, ID_DEPTH_PROB_RANGE);
+        for (const std::vector<std::string> &range_args: range_args_list) {
+            if (range_args.size() != 4) {
+                std::cerr << "[ERROR] -depthprobrange requires 4 arguments: <m> <M> <depth> <prob>" << std::endl;
+                std::exit(1);
+            }
+            int move_start, move_end, depth;
+            try {
+                move_start = std::stoi(range_args[0]);
+                move_end = std::stoi(range_args[1]);
+                depth = std::stoi(range_args[2]);
+            } catch (const std::invalid_argument& e) {
+                std::cerr << "[ERROR] invalid -depthprobrange argument" << std::endl;
+                std::exit(1);
+            } catch (const std::out_of_range& e) {
+                std::cerr << "[ERROR] -depthprobrange argument out of range" << std::endl;
+                std::exit(1);
+            }
+            if (!(1 <= move_start && move_start <= move_end && move_end <= 60)) {
+                std::cerr << "[ERROR] -depthprobrange move range must satisfy 1 <= m <= M <= 60" << std::endl;
+                std::exit(1);
+            }
+            if (depth < 1 || 60 < depth) {
+                std::cerr << "[ERROR] -depthprobrange depth out of range (1 to 60)" << std::endl;
+                std::exit(1);
+            }
+            uint_fast8_t mpc_level;
+            double probability;
+            if (!parse_selectivity_probability(range_args[3], &mpc_level, &probability)) {
+                std::cerr << "[ERROR] -depthprobrange prob must be one of: 74, 88, 93, 98, 99, 99.9, 100" << std::endl;
+                std::exit(1);
+            }
+            for (const Depth_prob_range_setting &setting: res.depth_prob_ranges) {
+                if (!(move_end < setting.move_start || setting.move_end < move_start)) {
+                    std::cerr << "[ERROR] overlapping -depthprobrange: [" << move_start << ", " << move_end << "] overlaps [" << setting.move_start << ", " << setting.move_end << "]" << std::endl;
+                    std::exit(1);
+                }
+            }
+            res.depth_prob_ranges.emplace_back(Depth_prob_range_setting{move_start, move_end, depth, mpc_level, probability});
+        }
+        std::sort(res.depth_prob_ranges.begin(), res.depth_prob_ranges.end(), [](const Depth_prob_range_setting &a, const Depth_prob_range_setting &b) {
+            return a.move_start < b.move_start;
+        });
+        res.use_depth_prob_ranges = !res.depth_prob_ranges.empty();
     }
     res.n_threads = std::min(48, (int)std::thread::hardware_concurrency());
     if (find_commandline_option(commandline_options, ID_THREAD)) {
