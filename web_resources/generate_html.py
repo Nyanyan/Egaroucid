@@ -519,13 +519,25 @@ def create_html(dr):
     with open(out_dr + '/index.html', 'w', encoding='utf-8') as f:
         f.write(head + alternate + og_image + additional_head + head_title + head2 + menu + html + foot)
     shutil.copy(css_file, out_dr + '/style.css')
-    if os.path.exists(dr + '/img'):
-        img_files = glob.glob(dr + '/img/**')
-        os.mkdir(out_dr + '/img')
-        for file in img_files:
-            resized_img = convert_img(file)
-            file_name = file.split('\\')[-1]
-            resized_img.save(out_dr + '/img/' + file_name)
+    src_img_dir = os.path.join(dr, 'img')
+    if os.path.isdir(src_img_dir):
+        dst_img_dir = os.path.join(out_dr, 'img')
+        os.makedirs(dst_img_dir, exist_ok=True)
+        for root, _, files in os.walk(src_img_dir):
+            relative_root = os.path.relpath(root, src_img_dir)
+            if relative_root == '.':
+                dst_root = dst_img_dir
+            else:
+                dst_root = os.path.join(dst_img_dir, relative_root)
+                os.makedirs(dst_root, exist_ok=True)
+            for file_name in files:
+                src_file = os.path.join(root, file_name)
+                dst_file = os.path.join(dst_root, file_name)
+                try:
+                    resized_img = convert_img(src_file)
+                    resized_img.save(dst_file)
+                except OSError:
+                    shutil.copy(src_file, dst_file)
     try:
         with open(dr + '/additional_files.txt', 'r', encoding='utf-8') as f:
             additional_files_file_str = f.read().splitlines()
