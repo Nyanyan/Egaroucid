@@ -132,6 +132,7 @@ code.code_block {
     margin: 1em 0;
     line-height: 1.5;
     white-space: pre-wrap;
+    white-space: break-spaces;
     word-break: normal;
     overflow-x: auto;
     tab-size: 4;

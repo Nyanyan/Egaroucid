@@ -309,16 +309,22 @@ def create_html(dr):
     table_of_contents = []
     md_split = md.splitlines()
     raw_html = 0
+    code_block_depth = 0
     last_h3_title = ''
     bullet_list_depth = 0
     for i, elem in enumerate(md_split):
         original_elem = elem
+        in_code_block = code_block_depth > 0
         leading_spaces = len(original_elem) - len(original_elem.lstrip(' '))
-        while elem and (elem[0] == ' ' or elem[0] == '\t'):
-            elem = elem[1:]
+        if not in_code_block:
+            while elem and (elem[0] == ' ' or elem[0] == '\t'):
+                elem = elem[1:]
         html_elems = re.findall('\<.+?\>', elem)
         for html_elem in html_elems:
             raw_html += judge_raw_html(html_elem)
+        code_block_depth += len(re.findall(r'<code\b[^>]*class=["\'][^"\']*\bcode_block\b[^"\']*["\'][^>]*>', original_elem))
+        code_block_depth -= len(re.findall(r'</code>', original_elem))
+        code_block_depth = max(0, code_block_depth)
         # download button
         if 'REPLACE_DOWNLOAD_BUTTON_HERE' in elem:
             elem = elem.replace('REPLACE_DOWNLOAD_BUTTON_HERE', download_button)
@@ -387,7 +393,7 @@ def create_html(dr):
                 raw_html -= bullet_list_depth
                 bullet_list_depth = 0
         # paragraph
-        if raw_html == 0 and len(elem):
+        if raw_html == 0 and len(elem) and not in_code_block:
             elem = '<p>' + elem + '</p>'
         # img
         if elem[:4] == '<img':
