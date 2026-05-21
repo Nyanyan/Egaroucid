@@ -152,7 +152,10 @@ with open(elements_dir + '/head.html', 'r', encoding='utf-8') as f:
 with open(elements_dir + '/head2.html', 'r', encoding='utf-8') as f:
     head2 = f.read()
 
-menu = '<div class="menu_bar">\n'
+menu = '<nav class="menu_bar">\n'
+menu += '<input id="menu_toggle" class="menu_toggle" type="checkbox" aria-label="Toggle navigation menu">\n'
+menu += '<label class="menu_toggle_button" for="menu_toggle">&#9776;</label>\n'
+menu += '<div class="menu_items">\n'
 #menu += '<a class="menu_a" href="' + main_page_url + elements_dir + '"><img class="bar_icon" src="https://raw.githubusercontent.com/Nyanyan/Nyanyan.github.io/master/img/favicon.jpg"></a>\n'
 with open(elements_dir + '/menu_elements.txt', encoding='utf-8') as f:
     menu_elems = f.read().splitlines()
@@ -169,6 +172,42 @@ for text, link in menu_elems:
     else:
         menu += '<div class="menu_button"><a class="menu_a" href="' + link + '" target="_blank" el=”noopener noreferrer”>' + text + '</div></a>\n'
 menu += '</div>\n'
+menu += '</nav>\n'
+menu += '''<script>
+(function() {
+    function updateMenuLayout() {
+        var menuBars = document.querySelectorAll('.menu_bar');
+        for (var i = 0; i < menuBars.length; ++i) {
+            var menuBar = menuBars[i];
+            var menuItems = menuBar.querySelector('.menu_items');
+            var menuToggle = menuBar.querySelector('.menu_toggle');
+            if (!menuItems || !menuToggle) {
+                continue;
+            }
+            menuBar.classList.remove('menu_compact');
+            menuItems.style.display = 'flex';
+            var needCompact = menuItems.scrollWidth > menuBar.clientWidth;
+            menuItems.style.display = '';
+            if (needCompact) {
+                menuBar.classList.add('menu_compact');
+            } else {
+                menuToggle.checked = false;
+            }
+        }
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', updateMenuLayout);
+    } else {
+        updateMenuLayout();
+    }
+    window.addEventListener('resize', updateMenuLayout);
+    window.addEventListener('load', updateMenuLayout);
+    if (document.fonts && document.fonts.ready) {
+        document.fonts.ready.then(updateMenuLayout);
+    }
+})();
+</script>\n'''
 
 with open(elements_dir + '/tweet.html', 'r', encoding='utf-8') as f:
     tweet = f.read()
@@ -304,21 +343,30 @@ def create_html(dr):
         page_title = f.readline()
     with open(dr + '/index.md', 'r', encoding='utf-8') as f:
         md = f.read()
+    # Some editors may save UTF-8 with BOM. Remove it so heading parsing works.
+    if md.startswith('\ufeff'):
+        md = md[1:]
     #page_title = ''
     need_table_of_contents = md.find('INSERT_TABLE_OF_CONTENTS_HERE') != -1
     table_of_contents = []
     md_split = md.splitlines()
     raw_html = 0
+    code_block_depth = 0
     last_h3_title = ''
     bullet_list_depth = 0
     for i, elem in enumerate(md_split):
         original_elem = elem
+        in_code_block = code_block_depth > 0
         leading_spaces = len(original_elem) - len(original_elem.lstrip(' '))
-        while elem and (elem[0] == ' ' or elem[0] == '\t'):
-            elem = elem[1:]
+        if not in_code_block:
+            while elem and (elem[0] == ' ' or elem[0] == '\t'):
+                elem = elem[1:]
         html_elems = re.findall('\<.+?\>', elem)
         for html_elem in html_elems:
             raw_html += judge_raw_html(html_elem)
+        code_block_depth += len(re.findall(r'<code\b[^>]*class=["\'][^"\']*\bcode_block\b[^"\']*["\'][^>]*>', original_elem))
+        code_block_depth -= len(re.findall(r'</code>', original_elem))
+        code_block_depth = max(0, code_block_depth)
         # download button
         if 'REPLACE_DOWNLOAD_BUTTON_HERE' in elem:
             elem = elem.replace('REPLACE_DOWNLOAD_BUTTON_HERE', download_button)
@@ -387,7 +435,7 @@ def create_html(dr):
                 raw_html -= bullet_list_depth
                 bullet_list_depth = 0
         # paragraph
-        if raw_html == 0 and len(elem):
+        if raw_html == 0 and len(elem) and not in_code_block:
             elem = '<p>' + elem + '</p>'
         # img
         if elem[:4] == '<img':
