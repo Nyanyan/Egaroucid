@@ -1191,7 +1191,7 @@ AI_TL_Array ai_tl_array;
 
 
 
-constexpr uint64_t AI_TL_MAIN_SEARCH_RESERVED_TIME = 2000ULL;
+constexpr uint64_t AI_TL_MAIN_SEARCH_RESERVED_TIME = 1000ULL;
 constexpr int AI_TL_PRESEARCH_LEVEL = 21;
 
 inline uint64_t get_ai_time_limit_presearch_remaining(uint64_t time_limit, uint64_t strt) {
@@ -1202,22 +1202,7 @@ inline uint64_t get_ai_time_limit_presearch_remaining(uint64_t time_limit, uint6
     return time_limit - elapsed;
 }
 
-inline bool move_ai_time_limit_presearch_child(Board board, int policy, Board *child) {
-    uint64_t legal = board.get_legal();
-    if (!is_valid_policy(policy) || (legal & (1ULL << policy)) == 0) {
-        return false;
-    }
-    Flip flip;
-    calc_flip(&flip, &board, policy);
-    board.move_copy(&flip, child);
-    return true;
-}
-
-inline bool ai_time_limit_presearch_once(Board board, bool use_multi_thread, uint64_t time_limit, uint64_t strt, thread_id_t thread_id, bool *searching, Search_result *result) {
-    uint64_t remaining = get_ai_time_limit_presearch_remaining(time_limit, strt);
-    if (remaining == 0 || !global_searching || !(*searching)) {
-        return false;
-    }
+inline bool move_ai_time_limit_presearch_child(Board board, int policy, Board *child, std::vector<int> *child_line) {
     uint64_t legal = board.get_legal();
     if (legal == 0) {
         board.pass();
@@ -1225,9 +1210,90 @@ inline bool ai_time_limit_presearch_once(Board board, bool use_multi_thread, uin
         if (legal == 0) {
             return false;
         }
+        if (child_line != nullptr) {
+            child_line->emplace_back(MOVE_NOMOVE);
+        }
     }
+    if (!is_valid_policy(policy) || (legal & (1ULL << policy)) == 0) {
+        return false;
+    }
+    Flip flip;
+    calc_flip(&flip, &board, policy);
+    board.move_copy(&flip, child);
+    if (child_line != nullptr) {
+        child_line->emplace_back(policy);
+    }
+    return true;
+}
+
+inline std::string ai_time_limit_presearch_line_str(const std::vector<int> &line, bool passed) {
+    std::string res;
+    bool last_pass = false;
+    for (int policy: line) {
+        if (policy == MOVE_NOMOVE) {
+            if (!res.empty()) {
+                res += " ";
+            }
+            res += "pass";
+            last_pass = true;
+        } else {
+            if (last_pass) {
+                res += " ";
+            }
+            res += idx_to_coord(policy);
+            last_pass = false;
+        }
+    }
+    if (passed) {
+        if (!res.empty()) {
+            res += " ";
+        }
+        res += "pass";
+    }
+    if (res.empty()) {
+        res = "root";
+    }
+    return res;
+}
+
+inline void print_ai_time_limit_presearch_result(const std::vector<int> &line, bool passed, const Search_result &result, uint64_t elapsed, bool succeeded) {
+    std::cerr << "ai_time_limit presearch line " << ai_time_limit_presearch_line_str(line, passed);
+    if (succeeded) {
+        std::cerr << " result " << idx_to_coord(result.policy)
+                  << " value " << result.value
+                  << " depth " << result.depth << "@" << result.probability << "%"
+                  << " time " << elapsed << " ms"
+                  << " nodes " << result.nodes
+                  << std::endl;
+    } else {
+        std::cerr << " result failed"
+                  << " time " << elapsed << " ms"
+                  << std::endl;
+    }
+}
+
+inline bool ai_time_limit_presearch_once(Board board, const std::vector<int> &line, bool use_multi_thread, bool show_log, uint64_t time_limit, uint64_t strt, thread_id_t thread_id, bool *searching, Search_result *result) {
+    uint64_t remaining = get_ai_time_limit_presearch_remaining(time_limit, strt);
+    if (remaining == 0 || !global_searching || !(*searching)) {
+        return false;
+    }
+    uint64_t legal = board.get_legal();
+    bool passed = false;
+    if (legal == 0) {
+        board.pass();
+        passed = true;
+        legal = board.get_legal();
+        if (legal == 0) {
+            return false;
+        }
+    }
+    uint64_t strt_search = tim();
     *result = ai_common(board, -SCORE_MAX, SCORE_MAX, AI_TL_PRESEARCH_LEVEL, false, 0, use_multi_thread, false, legal, false, remaining, thread_id, searching);
-    return global_searching && *searching && is_valid_policy(result->policy) && (legal & (1ULL << result->policy));
+    bool succeeded = global_searching && *searching && is_valid_policy(result->policy) && (legal & (1ULL << result->policy));
+    if (show_log) {
+        print_ai_time_limit_presearch_result(line, passed, *result, tim() - strt_search, succeeded);
+    }
+    return succeeded;
 }
 
 inline void ai_time_limit_presearch(Board board, bool use_multi_thread, bool show_log, uint64_t time_limit, thread_id_t thread_id, bool *searching) {
@@ -1237,45 +1303,50 @@ inline void ai_time_limit_presearch(Board board, bool use_multi_thread, bool sho
         std::cerr << "ai_time_limit presearch tl " << time_limit << " level " << AI_TL_PRESEARCH_LEVEL << std::endl;
     }
     while (get_ai_time_limit_presearch_remaining(time_limit, strt) > 0 && global_searching && *searching) {
+        std::vector<int> line_a;
         Search_result res_a1;
-        if (!ai_time_limit_presearch_once(board, use_multi_thread, time_limit, strt, thread_id, searching, &res_a1)) {
+        if (!ai_time_limit_presearch_once(board, line_a, use_multi_thread, show_log, time_limit, strt, thread_id, searching, &res_a1)) {
             break;
         }
         Board board_b;
-        if (!move_ai_time_limit_presearch_child(board, res_a1.policy, &board_b)) {
+        std::vector<int> line_b = line_a;
+        if (!move_ai_time_limit_presearch_child(board, res_a1.policy, &board_b, &line_b)) {
             break;
         }
         Search_result res_b;
-        ai_time_limit_presearch_once(board_b, use_multi_thread, time_limit, strt, thread_id, searching, &res_b);
+        ai_time_limit_presearch_once(board_b, line_b, use_multi_thread, show_log, time_limit, strt, thread_id, searching, &res_b);
 
         Search_result res_a2;
-        if (!ai_time_limit_presearch_once(board, use_multi_thread, time_limit, strt, thread_id, searching, &res_a2)) {
+        if (!ai_time_limit_presearch_once(board, line_a, use_multi_thread, show_log, time_limit, strt, thread_id, searching, &res_a2)) {
             break;
         }
         Board board_c;
-        if (!move_ai_time_limit_presearch_child(board, res_a2.policy, &board_c)) {
+        std::vector<int> line_c = line_a;
+        if (!move_ai_time_limit_presearch_child(board, res_a2.policy, &board_c, &line_c)) {
             break;
         }
         Search_result res_c;
-        bool searched_c = ai_time_limit_presearch_once(board_c, use_multi_thread, time_limit, strt, thread_id, searching, &res_c);
+        bool searched_c = ai_time_limit_presearch_once(board_c, line_c, use_multi_thread, show_log, time_limit, strt, thread_id, searching, &res_c);
         if (searched_c && board_b == board_c) {
             Board board_d;
-            if (move_ai_time_limit_presearch_child(board_c, res_c.policy, &board_d)) {
+            std::vector<int> line_d = line_c;
+            if (move_ai_time_limit_presearch_child(board_c, res_c.policy, &board_d, &line_d)) {
                 Search_result res_d;
-                ai_time_limit_presearch_once(board_d, use_multi_thread, time_limit, strt, thread_id, searching, &res_d);
+                ai_time_limit_presearch_once(board_d, line_d, use_multi_thread, show_log, time_limit, strt, thread_id, searching, &res_d);
             }
         }
 
         Search_result res_a3;
-        if (!ai_time_limit_presearch_once(board, use_multi_thread, time_limit, strt, thread_id, searching, &res_a3)) {
+        if (!ai_time_limit_presearch_once(board, line_a, use_multi_thread, show_log, time_limit, strt, thread_id, searching, &res_a3)) {
             break;
         }
         Board board_d;
-        if (!move_ai_time_limit_presearch_child(board, res_a3.policy, &board_d)) {
+        std::vector<int> line_d = line_a;
+        if (!move_ai_time_limit_presearch_child(board, res_a3.policy, &board_d, &line_d)) {
             break;
         }
         Search_result res_d;
-        ai_time_limit_presearch_once(board_d, use_multi_thread, time_limit, strt, thread_id, searching, &res_d);
+        ai_time_limit_presearch_once(board_d, line_d, use_multi_thread, show_log, time_limit, strt, thread_id, searching, &res_d);
         ++n_loop;
     }
     if (show_log) {
@@ -1368,7 +1439,7 @@ Search_result ai_time_limit(Board board, bool use_book, int book_acc_level, bool
     //         }
     //     }
     // }
-    if (n_empties >= 37 && time_limit >= 3000ULL) {
+    if (n_empties >= 37 && time_limit >= 2000ULL) {
         uint64_t presearch_time_limit = time_limit - AI_TL_MAIN_SEARCH_RESERVED_TIME;
         uint64_t strt_presearch = tim();
         ai_time_limit_presearch(board, use_multi_thread, show_log, presearch_time_limit, thread_id, searching);
