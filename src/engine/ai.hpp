@@ -1349,45 +1349,6 @@ inline void ai_time_limit_presearch(Board board, bool use_multi_thread, bool sho
         if (!ai_time_limit_presearch_once(board, line_a, use_multi_thread, show_log, time_limit, strt, thread_id, searching, &res_a1, &searched_boards)) {
             break;
         }
-        Board board_b;
-        std::vector<int> line_b = line_a;
-        if (!move_ai_time_limit_presearch_child(board, res_a1.policy, &board_b, &line_b)) {
-            break;
-        }
-        Search_result res_b;
-        ai_time_limit_presearch_once(board_b, line_b, use_multi_thread, show_log, time_limit, strt, thread_id, searching, &res_b, &searched_boards);
-
-        Search_result res_a2;
-        if (!ai_time_limit_presearch_once(board, line_a, use_multi_thread, show_log, time_limit, strt, thread_id, searching, &res_a2, &searched_boards)) {
-            break;
-        }
-        Board board_c;
-        std::vector<int> line_c = line_a;
-        if (!move_ai_time_limit_presearch_child(board, res_a2.policy, &board_c, &line_c)) {
-            break;
-        }
-        Search_result res_c;
-        bool searched_c = ai_time_limit_presearch_once(board_c, line_c, use_multi_thread, show_log, time_limit, strt, thread_id, searching, &res_c, &searched_boards);
-        if (searched_c && board_b == board_c) {
-            Board board_d;
-            std::vector<int> line_d = line_c;
-            if (move_ai_time_limit_presearch_child(board_c, res_c.policy, &board_d, &line_d)) {
-                Search_result res_d;
-                ai_time_limit_presearch_once(board_d, line_d, use_multi_thread, show_log, time_limit, strt, thread_id, searching, &res_d, &searched_boards);
-            }
-        }
-
-        Search_result res_a3;
-        if (!ai_time_limit_presearch_once(board, line_a, use_multi_thread, show_log, time_limit, strt, thread_id, searching, &res_a3, &searched_boards)) {
-            break;
-        }
-        Board board_d;
-        std::vector<int> line_d = line_a;
-        if (!move_ai_time_limit_presearch_child(board, res_a3.policy, &board_d, &line_d)) {
-            break;
-        }
-        Search_result res_d;
-        ai_time_limit_presearch_once(board_d, line_d, use_multi_thread, show_log, time_limit, strt, thread_id, searching, &res_d, &searched_boards);
         ++n_loop;
     }
     if (show_log) {
