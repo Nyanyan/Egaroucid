@@ -187,8 +187,6 @@ $ Egaroucid_for_console.exe -help
 
 ## Egaroucid Engine Library (Experimental)
 
-`libegaroucid` is an experimental C ABI wrapper for the engine.
-
 ### Build (CMake)
 
 ```bash

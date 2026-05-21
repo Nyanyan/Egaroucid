@@ -32,7 +32,7 @@ Totally free application
   * Use Egaroucid engine from external applications (C/C++/FFI)
   * Search API + legal move / flipped disc API
   * Public API: [`include/egaroucid/egaroucid.h`](include/egaroucid/egaroucid.h)
-  * Detail: [`docs/library.md`](docs/library.md)
+  * Detail: https://www.egaroucid.nyanyan.dev/en/library/
   
   
 
