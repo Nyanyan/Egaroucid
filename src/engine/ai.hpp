@@ -1312,7 +1312,7 @@ inline bool ai_time_limit_presearch_once(Board board, const std::vector<int> &li
     uint64_t search_legal = legal;
     if (
         record_idx != -1 && 
-        searched_boards->at(record_idx).n_visits >= 3 && 
+        searched_boards->at(record_idx).n_visits >= 4 && 
         is_valid_policy(searched_boards->at(record_idx).previous_policy)
     ) {
         uint64_t legal_without_previous_best = legal & ~(1ULL << searched_boards->at(record_idx).previous_policy);
@@ -1490,7 +1490,7 @@ Search_result ai_time_limit(Board board, bool use_book, int book_acc_level, bool
     //         }
     //     }
     // }
-    if (n_empties >= 33 && time_limit >= 2000ULL) {
+    if (n_empties >= 31 && time_limit >= 2000ULL) {
         uint64_t presearch_time_limit = time_limit - AI_TL_MAIN_SEARCH_RESERVED_TIME;
         uint64_t strt_presearch = tim();
         ai_time_limit_presearch(board, use_multi_thread, show_log, presearch_time_limit, thread_id, searching);
