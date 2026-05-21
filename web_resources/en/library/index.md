@@ -1,66 +1,67 @@
-# Egaroucid ライブラリ機能 (実験的)
+# Egaroucid Library Feature (Experimental)
 
-Egaroucid の探索エンジンを、GUI / Console とは独立したライブラリとして利用できます。  
-この API は実験的機能です。将来のバージョンで変更される可能性があります。
+You can use Egaroucid's search engine as a standalone library independent from GUI / Console.  
+This API is experimental and may change in future versions.
 
-## 紹介
-Egaroucidライブラリでは以下の機能を提供しています。
+## Introduction
+The Egaroucid library provides the following features:
 
-- 最善手探索 API (<code>egaroucid_search_array</code>)
-- 合法手生成 API (<code>egaroucid_get_legal_moves</code>)
-- 返る石計算 API (<code>egaroucid_get_flipped_discs</code>)
+- Best-move search API (<code>egaroucid_search_array</code>)
+- Legal move generation API (<code>egaroucid_get_legal_moves</code>)
+- Flipped-disc calculation API (<code>egaroucid_get_flipped_discs</code>)
 
-公開ヘッダは <code>#include &lt;egaroucid/egaroucid.h&gt;</code>です。
+The public header is <code>#include &lt;egaroucid/egaroucid.h&gt;</code>.
 
-## 使い方
+## How to Use
 
-まず、コードを入手してください。
+First, get the source code.
 
 <code class="code_block">git clone https://github.com/Nyanyan/Egaroucid.git<br>
 cd Egaroucid</code>
 
-ライブラリ利用サンプルは <code>examples/cpp/simple.cpp</code> にあります。  
-公開ヘッダは <code>include/egaroucid/egaroucid.h</code> です。
+The library sample code is in <code>examples/cpp/simple.cpp</code>.  
+The public header is <code>include/egaroucid/egaroucid.h</code>.
 
-以下のコマンドをリポジトリルートで順に実行してください。  
-（GUI / Console はビルドせず、ライブラリ機能のみを有効化します）
+Run the following commands in the repository root in order.  
+(GUI / Console are not built, and only the library feature is enabled.)
 
 <code class="code_block">cmake -S . -B build_lib -DBUILD_ENGINE_LIB=ON -DBUILD_CONSOLE=OFF -DBUILD_GUI=OFF</code>
 
-ライブラリだけをビルドする場合:
+If you only want to build the library:
 <code class="code_block">cmake --build build_lib --config Release --target egaroucid</code>
 
-サンプルコードを実行したい場合（サンプル実行ファイルもビルド）:
+If you want to run the sample code (build the sample executable too):
 <code class="code_block">cmake --build build_lib --config Release --target egaroucid_cpp_example</code>
 
-<code>--target egaroucid</code> だけではサンプル実行ファイルは生成されません。  
-<code>--target egaroucid_cpp_example</code> を指定すると、依存する <code>egaroucid</code> ライブラリもあわせてビルドされます。
+Using only <code>--target egaroucid</code> does not generate the sample executable.  
+If you specify <code>--target egaroucid_cpp_example</code>, the dependent <code>egaroucid</code> library is also built.
 
-Windows (Visual Studio) の場合、以下のコマンドでサンプルコードを実行できます:
+For Windows (Visual Studio), run the sample with:
 <code class="code_block">.\build_lib\examples\Release\egaroucid_cpp_example.exe</code>
 
-Linux / macOS (Ninja / Makefiles) の場合、以下のコマンドでサンプルコードを実行できます:
+For Linux / macOS (Ninja / Makefiles), run the sample with:
 <code class="code_block">./build_lib/examples/egaroucid_cpp_example</code>
 
-このサンプルはEgaroucidレポジトリ内の<code>bin/resources</code>にあるリソースファイルを参照します。そのため、リポジトリのルートで実行してください。
+This sample refers to resource files in <code>bin/resources</code> inside the Egaroucid repository.  
+So please run it from the repository root.
 
-## ライブラリの使い方
+## Library Usage
 
-### 盤面の表現
+### Board Representation
 
-- <code>board[64]</code> のインデックスは <code>0=a1, 1=b1, ..., 63=h8</code>
-- マス値は <code>-1=空き</code>, <code>0=黒</code>, <code>1=白</code>
-- 手番は <code>0=黒番</code>, <code>1=白番</code>
+- The index of <code>board[64]</code> is <code>0=a1, 1=b1, ..., 63=h8</code>
+- Cell value is <code>-1=empty</code>, <code>0=black</code>, <code>1=white</code>
+- Player value is <code>0=black to move</code>, <code>1=white to move</code>
 
-### 大まかな使い方
+### High-Level Usage
 
 1. <code>egaroucid_global_init(resource_dir)</code>
 2. <code>egaroucid_create()</code>
 3. <code>egaroucid_search_array(...)</code>
-4. 必要なら <code>egaroucid_get_legal_moves(...)</code> と <code>egaroucid_get_flipped_discs(...)</code>
+4. If needed, <code>egaroucid_get_legal_moves(...)</code> and <code>egaroucid_get_flipped_discs(...)</code>
 5. <code>egaroucid_destroy()</code>
 
-### サンプルコード
+### Sample Code
 
 <code class="code_block">#include &lt;stdio.h&gt;<br>
 #include &lt;string.h&gt;<br>
@@ -185,8 +186,8 @@ int main(void) {<br>
     return 0;<br>
 }</code>
 
-## 注意
+## Notes
 
-- この API は実験的です。
-- <code>time_limit_ms</code> は現在は受け付けるだけで未使用です。
-- ライセンスは Egaroucid 本体と同じ GPL-3.0-or-later です。
+- This API is experimental.
+- <code>time_limit_ms</code> is currently accepted but unused.
+- The license is GPL-3.0-or-later, same as Egaroucid itself.
