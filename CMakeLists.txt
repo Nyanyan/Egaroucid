@@ -1,10 +1,11 @@
 # Common
 cmake_minimum_required(VERSION 3.25)
-project(Egaroucid CXX)
+project(Egaroucid LANGUAGES CXX VERSION 7.8.1)
 
 option(BUILD_ENGINE_LIB "Build Egaroucid engine library" OFF)
 option(BUILD_CONSOLE "Build Egaroucid console executable" ON)
 option(BUILD_GUI "Build Egaroucid GUI executable (requires Siv3D)" OFF)
+option(BUILD_SHARED_LIBS "Build shared not static engine library" OFF)
 
 if(NOT BUILD_ENGINE_LIB AND NOT BUILD_CONSOLE AND NOT BUILD_GUI)
     message(FATAL_ERROR "At least one of BUILD_ENGINE_LIB, BUILD_CONSOLE, or BUILD_GUI must be ON.")
@@ -126,6 +127,12 @@ if(BUILD_ENGINE_LIB)
     target_compile_definitions(egaroucid PRIVATE EGAROUCID_BUILDING_DLL)
     if(NOT BUILD_SHARED_LIBS)
         target_compile_definitions(egaroucid PUBLIC EGAROUCID_STATIC)
+    else()
+        target_compile_definitions(egaroucid PUBLIC EGAROUCID_SHARED)
+        set_target_properties(egaroucid PROPERTIES
+                VERSION ${PROJECT_VERSION}
+                SOVERSION ${PROJECT_VERSION_MAJOR}
+        )        
     endif()
 
     add_executable(egaroucid_cpp_example EXCLUDE_FROM_ALL ./examples/cpp/simple.cpp)
