@@ -1198,6 +1198,11 @@ struct AI_TL_Presearch_Record {
     Board board;
 };
 
+struct AI_TL_Presearch_Path {
+    Board board;
+    std::vector<int> line;
+};
+
 inline uint64_t get_ai_time_limit_presearch_remaining(uint64_t time_limit, uint64_t strt) {
     uint64_t elapsed = tim() - strt;
     if (elapsed >= time_limit) {
@@ -1285,7 +1290,7 @@ inline bool ai_time_limit_presearch_board_already_searched(const Board &board, c
     return false;
 }
 
-inline bool ai_time_limit_presearch_once(Board board, const std::vector<int> &line, bool use_multi_thread, bool show_log, uint64_t time_limit, uint64_t strt, thread_id_t thread_id, bool *searching, Search_result *result, std::vector<AI_TL_Presearch_Record> *searched_boards) {
+inline bool ai_time_limit_presearch_once(Board board, const std::vector<int> &line, bool use_multi_thread, bool show_log, uint64_t time_limit, uint64_t strt, thread_id_t thread_id, bool *searching, Search_result *result, std::vector<AI_TL_Presearch_Record> *searched_boards, bool *already_searched) {
     uint64_t remaining = get_ai_time_limit_presearch_remaining(time_limit, strt);
     if (remaining == 0 || !global_searching || !(*searching)) {
         return false;
@@ -1300,7 +1305,7 @@ inline bool ai_time_limit_presearch_once(Board board, const std::vector<int> &li
             return false;
         }
     }
-    bool already_searched = ai_time_limit_presearch_board_already_searched(board, *searched_boards);
+    *already_searched = ai_time_limit_presearch_board_already_searched(board, *searched_boards);
     uint64_t strt_search = tim();
     bool presearch_searching = true;
     bool search_finished = false;
@@ -1321,17 +1326,6 @@ inline bool ai_time_limit_presearch_once(Board board, const std::vector<int> &li
     }
     if (succeeded) {
         searched_boards->push_back(AI_TL_Presearch_Record{board});
-        if (already_searched) {
-            Board child;
-            std::vector<int> child_line = line;
-            if (passed) {
-                child_line.emplace_back(MOVE_NOMOVE);
-            }
-            if (move_ai_time_limit_presearch_child(board, result->policy, &child, &child_line)) {
-                Search_result child_result;
-                ai_time_limit_presearch_once(child, child_line, use_multi_thread, show_log, time_limit, strt, thread_id, searching, &child_result, searched_boards);
-            }
-        }
     }
     return succeeded;
 }
@@ -1343,11 +1337,37 @@ inline void ai_time_limit_presearch(Board board, bool use_multi_thread, bool sho
         std::cerr << "ai_time_limit presearch tl " << time_limit << " level " << AI_TL_PRESEARCH_LEVEL << std::endl;
     }
     std::vector<AI_TL_Presearch_Record> searched_boards;
+    std::vector<AI_TL_Presearch_Path> path;
+    path.push_back(AI_TL_Presearch_Path{board, std::vector<int>()});
+    bool going_down = true;
     while (get_ai_time_limit_presearch_remaining(time_limit, strt) > 0 && global_searching && *searching) {
-        std::vector<int> line_a;
-        Search_result res_a1;
-        if (!ai_time_limit_presearch_once(board, line_a, use_multi_thread, show_log, time_limit, strt, thread_id, searching, &res_a1, &searched_boards)) {
+        Search_result result;
+        bool already_searched = false;
+        if (!ai_time_limit_presearch_once(path.back().board, path.back().line, use_multi_thread, show_log, time_limit, strt, thread_id, searching, &result, &searched_boards, &already_searched)) {
             break;
+        }
+        if (going_down) {
+            if (already_searched) {
+                AI_TL_Presearch_Path child = path.back();
+                if (!move_ai_time_limit_presearch_child(path.back().board, result.policy, &child.board, &child.line)) {
+                    break;
+                }
+                path.push_back(child);
+            } else if (path.size() > 1) {
+                path.pop_back();
+                going_down = false;
+            }
+        } else {
+            if (path.size() > 1) {
+                path.pop_back();
+            } else {
+                AI_TL_Presearch_Path child = path.back();
+                if (!move_ai_time_limit_presearch_child(path.back().board, result.policy, &child.board, &child.line)) {
+                    break;
+                }
+                path.push_back(child);
+                going_down = true;
+            }
         }
         ++n_loop;
     }
