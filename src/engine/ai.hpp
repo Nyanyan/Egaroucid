@@ -1198,84 +1198,84 @@ Search_result ai_time_limit(Board board, bool use_book, int book_acc_level, bool
     }
     uint64_t strt = tim();
     int n_empties = HW2 - board.n_discs();
-    if (n_empties >= 38 /*35*/ && time_limit >= 2000ULL) {
-        bool get_values_searching = true;
-        uint64_t get_values_tl = 600ULL;
-        if (show_log) {
-            std::cerr << "getting values tl " << get_values_tl << std::endl;
-        }
-        uint64_t strt_get_values = tim();
-            std::vector<Ponder_elem> get_values_move_list = ai_get_values(board, show_log, get_values_tl, thread_id);
-        uint64_t elapsed_get_values = tim() - strt_get_values;
-        if (time_limit > elapsed_get_values) {
-            time_limit -= elapsed_get_values;
-        } else {
-            time_limit = 10;
-        }
-        if (remaining_time_msec > elapsed_get_values) {
-            remaining_time_msec -= elapsed_get_values;
-        } else {
-            remaining_time_msec = 0;
-        }
+    // if (n_empties >= 38 /*35*/ && time_limit >= 2000ULL) {
+    //     bool get_values_searching = true;
+    //     uint64_t get_values_tl = 600ULL;
+    //     if (show_log) {
+    //         std::cerr << "getting values tl " << get_values_tl << std::endl;
+    //     }
+    //     uint64_t strt_get_values = tim();
+    //         std::vector<Ponder_elem> get_values_move_list = ai_get_values(board, show_log, get_values_tl, thread_id);
+    //     uint64_t elapsed_get_values = tim() - strt_get_values;
+    //     if (time_limit > elapsed_get_values) {
+    //         time_limit -= elapsed_get_values;
+    //     } else {
+    //         time_limit = 10;
+    //     }
+    //     if (remaining_time_msec > elapsed_get_values) {
+    //         remaining_time_msec -= elapsed_get_values;
+    //     } else {
+    //         remaining_time_msec = 0;
+    //     }
 
-        if (time_limit > 5000ULL && get_values_move_list.size() >= 2) {
-            double best_value = get_values_move_list[0].value;
-            int n_good_moves = 0;
-            if (show_log) {
-                std::cerr << "good moves (1):";
-            }
-            for (const Ponder_elem &elem: get_values_move_list) {
-                if (elem.value >= best_value - AI_TL_ADDITIONAL_SEARCH_THRESHOLD * 2.0) {
-                    ++n_good_moves;
-                    if (show_log) {
-                        std::cerr << " " << idx_to_coord(elem.flip.pos);
-                    }
-                }
-            }
-            if (show_log) {
-                std::cerr << std::endl;
-            }
-            if (n_good_moves >= 2) {
-                uint64_t align_moves_tl = 0;
-                if (remaining_time_msec > 40000) {
-                    align_moves_tl = std::min<uint64_t>(10000ULL, time_limit * 0.8);
-                }
-                uint64_t strt_align_move_levels = tim();
-                    std::vector<Ponder_elem> after_move_list = ai_align_move_levels(board, show_log, get_values_move_list, n_good_moves, align_moves_tl, thread_id, 29);
-                uint64_t elapsed_align_move_levels = tim() - strt_align_move_levels;
-                if (time_limit > elapsed_align_move_levels) {
-                    time_limit -= elapsed_align_move_levels;
-                } else {
-                    time_limit = 10;
-                }
-                if (remaining_time_msec > elapsed_align_move_levels) {
-                    remaining_time_msec -= elapsed_align_move_levels;
-                } else {
-                    remaining_time_msec = 0;
-                }
+    //     if (time_limit > 5000ULL && get_values_move_list.size() >= 2) {
+    //         double best_value = get_values_move_list[0].value;
+    //         int n_good_moves = 0;
+    //         if (show_log) {
+    //             std::cerr << "good moves (1):";
+    //         }
+    //         for (const Ponder_elem &elem: get_values_move_list) {
+    //             if (elem.value >= best_value - AI_TL_ADDITIONAL_SEARCH_THRESHOLD * 2.0) {
+    //                 ++n_good_moves;
+    //                 if (show_log) {
+    //                     std::cerr << " " << idx_to_coord(elem.flip.pos);
+    //                 }
+    //             }
+    //         }
+    //         if (show_log) {
+    //             std::cerr << std::endl;
+    //         }
+    //         if (n_good_moves >= 2) {
+    //             uint64_t align_moves_tl = 0;
+    //             if (remaining_time_msec > 40000) {
+    //                 align_moves_tl = std::min<uint64_t>(10000ULL, time_limit * 0.8);
+    //             }
+    //             uint64_t strt_align_move_levels = tim();
+    //                 std::vector<Ponder_elem> after_move_list = ai_align_move_levels(board, show_log, get_values_move_list, n_good_moves, align_moves_tl, thread_id, 29);
+    //             uint64_t elapsed_align_move_levels = tim() - strt_align_move_levels;
+    //             if (time_limit > elapsed_align_move_levels) {
+    //                 time_limit -= elapsed_align_move_levels;
+    //             } else {
+    //                 time_limit = 10;
+    //             }
+    //             if (remaining_time_msec > elapsed_align_move_levels) {
+    //                 remaining_time_msec -= elapsed_align_move_levels;
+    //             } else {
+    //                 remaining_time_msec = 0;
+    //             }
 
-                double new_best_value = after_move_list[0].value;
-                int new_n_good_moves = 0;
-                if (show_log) {
-                    std::cerr << "good moves (2):";
-                }
-                for (const Ponder_elem &elem: after_move_list) {
-                    if (elem.value >= new_best_value - AI_TL_ADDITIONAL_SEARCH_THRESHOLD) {
-                        ++new_n_good_moves;
-                        if (show_log) {
-                            std::cerr << " " << idx_to_coord(elem.flip.pos);
-                        }
-                    }
-                }
-                if (show_log) {
-                    std::cerr << std::endl;
-                }
-                if (new_n_good_moves >= 2) {
-                    time_limit = request_more_time(board, remaining_time_msec, time_limit, show_log);
-                }
-            }
-        }
-    }
+    //             double new_best_value = after_move_list[0].value;
+    //             int new_n_good_moves = 0;
+    //             if (show_log) {
+    //                 std::cerr << "good moves (2):";
+    //             }
+    //             for (const Ponder_elem &elem: after_move_list) {
+    //                 if (elem.value >= new_best_value - AI_TL_ADDITIONAL_SEARCH_THRESHOLD) {
+    //                     ++new_n_good_moves;
+    //                     if (show_log) {
+    //                         std::cerr << " " << idx_to_coord(elem.flip.pos);
+    //                     }
+    //                 }
+    //             }
+    //             if (show_log) {
+    //                 std::cerr << std::endl;
+    //             }
+    //             if (new_n_good_moves >= 2) {
+    //                 time_limit = request_more_time(board, remaining_time_msec, time_limit, show_log);
+    //             }
+    //         }
+    //     }
+    // }
     if (show_log) {
         std::cerr << "ai_common main search tl " << time_limit << std::endl;
     }
