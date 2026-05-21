@@ -1288,8 +1288,20 @@ inline bool ai_time_limit_presearch_once(Board board, const std::vector<int> &li
         }
     }
     uint64_t strt_search = tim();
-    *result = ai_common(board, -SCORE_MAX, SCORE_MAX, AI_TL_PRESEARCH_LEVEL, false, 0, use_multi_thread, false, legal, false, remaining, thread_id, searching);
-    bool succeeded = global_searching && *searching && is_valid_policy(result->policy) && (legal & (1ULL << result->policy));
+    bool presearch_searching = true;
+    bool search_finished = false;
+    std::future<Search_result> search_future = std::async(std::launch::async, ai_common, board, -SCORE_MAX, SCORE_MAX, AI_TL_PRESEARCH_LEVEL, false, 0, use_multi_thread, false, legal, false, TIME_LIMIT_INF, thread_id, &presearch_searching);
+    if (search_future.wait_for(std::chrono::milliseconds(remaining)) == std::future_status::ready) {
+        *result = search_future.get();
+        search_finished = true;
+    } else {
+        presearch_searching = false;
+        try {
+            *result = search_future.get();
+        } catch (const std::exception &e) {
+        }
+    }
+    bool succeeded = search_finished && global_searching && *searching && is_valid_policy(result->policy) && (legal & (1ULL << result->policy));
     if (show_log) {
         print_ai_time_limit_presearch_result(line, passed, *result, tim() - strt_search, succeeded);
     }
