@@ -1322,7 +1322,7 @@ inline bool ai_time_limit_presearch_search(Board board, int alpha, int beta, uin
     return search_finished && global_searching && *searching && is_valid_policy(result->policy) && (use_legal & (1ULL << result->policy));
 }
 
-inline bool ai_time_limit_presearch_once(Board board, const std::vector<int> &line, bool use_multi_thread, uint64_t time_limit, uint64_t strt, thread_id_t thread_id, bool *searching, Search_result *result, std::vector<AI_TL_Presearch_Record> *searched_boards, bool *already_searched, bool *passed) {
+inline bool ai_time_limit_presearch_once(Board board, const std::vector<int> &line, bool use_multi_thread, uint64_t time_limit, uint64_t strt, thread_id_t thread_id, bool *searching, Search_result *result, std::vector<AI_TL_Presearch_Record> *searched_boards, bool *already_searched, bool *passed, bool allow_mask_search) {
     uint64_t remaining = get_ai_time_limit_presearch_remaining(time_limit, strt);
     if (remaining == 0 || !global_searching || !(*searching)) {
         return false;
@@ -1342,8 +1342,9 @@ inline bool ai_time_limit_presearch_once(Board board, const std::vector<int> &li
     bool succeeded = false;
     bool should_not_fallback_to_normal_search = false;
     if (
+        allow_mask_search && 
         record_idx != -1 && 
-        searched_boards->at(record_idx).n_visits >= 6 && 
+        searched_boards->at(record_idx).n_visits >= 3 && 
         is_valid_policy(searched_boards->at(record_idx).previous_policy) && 
         is_valid_score(searched_boards->at(record_idx).previous_value)
     ) {
@@ -1397,7 +1398,7 @@ inline void ai_time_limit_presearch(Board board, bool use_multi_thread, bool sho
         bool already_searched = false;
         bool passed = false;
         uint64_t strt_search = tim();
-        bool succeeded = ai_time_limit_presearch_once(path.back().board, path.back().line, use_multi_thread, time_limit, strt, thread_id, searching, &result, &searched_boards, &already_searched, &passed);
+        bool succeeded = ai_time_limit_presearch_once(path.back().board, path.back().line, use_multi_thread, time_limit, strt, thread_id, searching, &result, &searched_boards, &already_searched, &passed, going_down);
         if (!succeeded) {
             if (show_log && going_down) {
                 print_ai_time_limit_presearch_result(path.back().line, passed, result, tim() - strt_search, false);
