@@ -13,7 +13,7 @@ Egaroucidライブラリでは以下の機能を提供しています。
 
 公開ヘッダは <code>#include &lt;egaroucid/egaroucid.h&gt;</code>です。
 
-## サンプルコードの実行方法
+## 使い方
 
 まず、コードを入手してください。
 
@@ -24,10 +24,18 @@ cd Egaroucid</code>
 公開ヘッダは <code>include/egaroucid/egaroucid.h</code> です。
 
 以下のコマンドをリポジトリルートで順に実行してください。  
-（GUI / Console はビルドせず、ライブラリとサンプルのみをビルドします）
+（GUI / Console はビルドせず、ライブラリ機能のみを有効化します）
 
-<code class="code_block">cmake -S . -B build_lib -DBUILD_ENGINE_LIB=ON -DBUILD_CONSOLE=OFF -DBUILD_GUI=OFF<br>
-cmake --build build_lib --config Release --target egaroucid_cpp_example</code>
+<code class="code_block">cmake -S . -B build_lib -DBUILD_ENGINE_LIB=ON -DBUILD_CONSOLE=OFF -DBUILD_GUI=OFF</code>
+
+ライブラリだけをビルドする場合:
+<code class="code_block">cmake --build build_lib --config Release --target egaroucid</code>
+
+サンプルコードを実行したい場合（サンプル実行ファイルもビルド）:
+<code class="code_block">cmake --build build_lib --config Release --target egaroucid_cpp_example</code>
+
+<code>--target egaroucid</code> だけではサンプル実行ファイルは生成されません。  
+<code>--target egaroucid_cpp_example</code> を指定すると、依存する <code>egaroucid</code> ライブラリもあわせてビルドされます。
 
 Windows (Visual Studio) の場合、以下のコマンドでサンプルコードを実行できます:
 <code class="code_block">.\build_lib\examples\Release\egaroucid_cpp_example.exe</code>
