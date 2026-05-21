@@ -75,7 +75,7 @@ private:
         std::vector<Rect> pressed_rects;
         for (int i = 0; i < MOUSE_ADDITIONAL_BUTTON_COUNT; ++i) {
             Rect rect = draw_shortcut_settings_row_background(getData().colors, i, sy);
-            if (mouse_additional_buttons.is_button_pressed(i)) {
+            if (mouse_additional_buttons.is_button_down(i)) {
                 pressed_rects.emplace_back(rect);
             }
             String button_label = language.get("settings", "shortcut_buttons", "button") + U" " + mouse_additional_buttons.get_button_name(i);
