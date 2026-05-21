@@ -1196,6 +1196,8 @@ constexpr int AI_TL_PRESEARCH_LEVEL = 21;
 
 struct AI_TL_Presearch_Record {
     Board board;
+    int n_visits;
+    int previous_policy;
 };
 
 struct AI_TL_Presearch_Path {
@@ -1281,13 +1283,13 @@ inline void print_ai_time_limit_presearch_result(const std::vector<int> &line, b
     }
 }
 
-inline bool ai_time_limit_presearch_board_already_searched(const Board &board, const std::vector<AI_TL_Presearch_Record> &searched_boards) {
-    for (const AI_TL_Presearch_Record &record: searched_boards) {
-        if (record.board == board) {
-            return true;
+inline int ai_time_limit_presearch_find_record(const Board &board, const std::vector<AI_TL_Presearch_Record> &searched_boards) {
+    for (int i = 0; i < (int)searched_boards.size(); ++i) {
+        if (searched_boards[i].board == board) {
+            return i;
         }
     }
-    return false;
+    return -1;
 }
 
 inline bool ai_time_limit_presearch_once(Board board, const std::vector<int> &line, bool use_multi_thread, uint64_t time_limit, uint64_t strt, thread_id_t thread_id, bool *searching, Search_result *result, std::vector<AI_TL_Presearch_Record> *searched_boards, bool *already_searched, bool *passed) {
@@ -1305,10 +1307,22 @@ inline bool ai_time_limit_presearch_once(Board board, const std::vector<int> &li
             return false;
         }
     }
-    *already_searched = ai_time_limit_presearch_board_already_searched(board, *searched_boards);
+    int record_idx = ai_time_limit_presearch_find_record(board, *searched_boards);
+    *already_searched = record_idx != -1;
+    uint64_t search_legal = legal;
+    if (
+        record_idx != -1 && 
+        searched_boards->at(record_idx).n_visits >= 3 && 
+        is_valid_policy(searched_boards->at(record_idx).previous_policy)
+    ) {
+        uint64_t legal_without_previous_best = legal & ~(1ULL << searched_boards->at(record_idx).previous_policy);
+        if (legal_without_previous_best != 0) {
+            search_legal = legal_without_previous_best;
+        }
+    }
     bool presearch_searching = true;
     bool search_finished = false;
-    std::future<Search_result> search_future = std::async(std::launch::async, ai_common, board, -SCORE_MAX, SCORE_MAX, AI_TL_PRESEARCH_LEVEL, false, 0, use_multi_thread, false, legal, false, TIME_LIMIT_INF, thread_id, &presearch_searching);
+    std::future<Search_result> search_future = std::async(std::launch::async, ai_common, board, -SCORE_MAX, SCORE_MAX, AI_TL_PRESEARCH_LEVEL, false, 0, use_multi_thread, false, search_legal, false, TIME_LIMIT_INF, thread_id, &presearch_searching);
     if (search_future.wait_for(std::chrono::milliseconds(remaining)) == std::future_status::ready) {
         *result = search_future.get();
         search_finished = true;
@@ -1319,9 +1333,14 @@ inline bool ai_time_limit_presearch_once(Board board, const std::vector<int> &li
         } catch (const std::exception &e) {
         }
     }
-    bool succeeded = search_finished && global_searching && *searching && is_valid_policy(result->policy) && (legal & (1ULL << result->policy));
+    bool succeeded = search_finished && global_searching && *searching && is_valid_policy(result->policy) && (search_legal & (1ULL << result->policy));
     if (succeeded) {
-        searched_boards->push_back(AI_TL_Presearch_Record{board});
+        if (record_idx == -1) {
+            searched_boards->push_back(AI_TL_Presearch_Record{board, 1, result->policy});
+        } else {
+            ++searched_boards->at(record_idx).n_visits;
+            searched_boards->at(record_idx).previous_policy = result->policy;
+        }
     }
     return succeeded;
 }
