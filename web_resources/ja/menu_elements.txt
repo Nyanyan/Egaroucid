@@ -2,6 +2,6 @@
 ダウンロード /download/
 使い方 /usage/
 コンソール版 /console/
-ライブラリ /library/
 Web版 /web/
 技術 /technology/
+ライブラリ /library/
