@@ -14,6 +14,13 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
+# Build-type policy:
+# - Single-config generators (Ninja/Makefiles): default to Release when unspecified.
+# - Multi-config generators (Visual Studio/Xcode): configuration is selected at build time.
+if(NOT CMAKE_CONFIGURATION_TYPES AND NOT CMAKE_BUILD_TYPE)
+    set(CMAKE_BUILD_TYPE Release CACHE STRING "Build type" FORCE)
+endif()
+
 # No AVX2 option
 option(HAS_NO_AVX2 "turn on Generic build" OFF)
 if(HAS_NO_AVX2)
@@ -44,12 +51,30 @@ if(HAS_AVX512)
     add_compile_definitions(HAS_AVX512)
 endif()
 
+if(HAS_NO_AVX2 AND HAS_AVX512)
+    message(FATAL_ERROR "HAS_AVX512=ON requires SIMD build. Set HAS_NO_AVX2=OFF.")
+endif()
+
+if(HAS_NO_AVX2)
+    set(EGAROUCID_ENGINE_VARIANT "Generic")
+elseif(HAS_AVX512)
+    set(EGAROUCID_ENGINE_VARIANT "AVX512")
+else()
+    set(EGAROUCID_ENGINE_VARIANT "SIMD")
+endif()
+message(STATUS "Egaroucid engine variant: ${EGAROUCID_ENGINE_VARIANT}")
+
 if(MSVC)
-    add_compile_options(/O2 /EHsc)
+    # Do not force /O2 for all configurations.
+    # Visual Studio Debug uses /RTC1 and conflicts with /O2.
+    add_compile_options(/EHsc)
     if(HAS_AVX512)
         add_compile_options(/arch:AVX512)
     elseif(NOT HAS_NO_AVX2 AND NOT HAS_ARM_PROCESSOR)
         add_compile_options(/arch:AVX2)
+    endif()
+    if(CMAKE_CONFIGURATION_TYPES)
+        message(STATUS "Multi-config generator detected. Use '--config Release' to avoid Debug builds.")
     endif()
 elseif(APPLE)
     # Keep the historical local optimization defaults for non-MSVC builds.
@@ -105,4 +130,10 @@ if(BUILD_ENGINE_LIB)
 
     add_executable(egaroucid_cpp_example EXCLUDE_FROM_ALL ./examples/cpp/simple.cpp)
     target_link_libraries(egaroucid_cpp_example PRIVATE egaroucid)
+    # Keep the sample binary in the build tree so it can be built/run even when
+    # source-tree output directories are read-only.
+    set_target_properties(egaroucid_cpp_example PROPERTIES
+        RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/examples"
+        ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/examples"
+    )
 endif()

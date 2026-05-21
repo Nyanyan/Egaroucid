@@ -13,8 +13,8 @@ This API is intended for external frontends and language bindings (Python/Rust/C
 Library-only build:
 
 ```bash
-cmake -S . -B build-lib -DBUILD_ENGINE_LIB=ON -DBUILD_CONSOLE=OFF -DBUILD_GUI=OFF
-cmake --build build-lib
+cmake -S . -B build_lib -DBUILD_ENGINE_LIB=ON -DBUILD_CONSOLE=OFF -DBUILD_GUI=OFF
+cmake --build build_lib --config Release
 ```
 
 Default console build remains available (for example, `BUILD_CONSOLE=ON`).
@@ -79,6 +79,24 @@ See:
 - `examples/cpp/simple.cpp`
 
 This example initializes the library, creates an engine, searches from the initial position, prints the selected move/value, and destroys the engine.
+
+Build and run the example:
+
+```bash
+cmake --build build_lib --config Release --target egaroucid_cpp_example
+./build_lib/examples/Release/egaroucid_cpp_example bin/resources 12
+```
+
+On Windows (PowerShell):
+
+```powershell
+.\build_lib\examples\Release\egaroucid_cpp_example.exe bin/resources 12
+```
+
+Arguments:
+
+- 1st argument: resource directory (default: `bin/resources`)
+- 2nd argument: number of plies to play from the initial position (default: `10`)
 
 ## Current Limitations
 
