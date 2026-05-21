@@ -1535,7 +1535,7 @@ Search_result ai_time_limit(Board board, bool use_book, int book_acc_level, bool
     //         }
     //     }
     // }
-    if (n_empties >= 35 && time_limit >= 1ULL) {
+    if (n_empties >= 33 && time_limit >= 1ULL) {
         Search_result presearch_result;
         ai_time_limit_presearch(board, use_multi_thread, show_log, time_limit, thread_id, searching, &presearch_result);
         if (is_valid_policy(presearch_result.policy)) {
