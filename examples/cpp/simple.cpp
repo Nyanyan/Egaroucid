@@ -11,22 +11,12 @@ namespace {
 constexpr int kBoardSize = 8;
 constexpr int kBoardCells = 64;
 
-constexpr int kDirections[8][2] = {
-    {-1, -1}, {-1, 0}, {-1, 1},
-    {0, -1},           {0, 1},
-    {1, -1},  {1, 0},  {1, 1}
-};
-
 inline int opponent_of(int player) {
     return (player == EGAROUCID_BLACK) ? EGAROUCID_WHITE : EGAROUCID_BLACK;
 }
 
 inline int index_of(int row, int col) {
     return row * kBoardSize + col;
-}
-
-inline bool in_bounds(int row, int col) {
-    return 0 <= row && row < kBoardSize && 0 <= col && col < kBoardSize;
 }
 
 char cell_to_char(int cell) {
@@ -60,63 +50,6 @@ void print_board(const int board[kBoardCells]) {
         }
         std::printf("\n");
     }
-}
-
-int collect_flips(const int board[kBoardCells], int player, int move, int flipped[kBoardCells]) {
-    if (move < 0 || move >= kBoardCells || board[move] != EGAROUCID_EMPTY) {
-        return 0;
-    }
-    const int opponent = opponent_of(player);
-    const int move_row = move / kBoardSize;
-    const int move_col = move % kBoardSize;
-    int n_flipped = 0;
-
-    for (const auto &dir : kDirections) {
-        int row = move_row + dir[0];
-        int col = move_col + dir[1];
-        int candidate[kBoardCells];
-        int n_candidate = 0;
-
-        while (in_bounds(row, col)) {
-            const int idx = index_of(row, col);
-            if (board[idx] == opponent) {
-                candidate[n_candidate++] = idx;
-                row += dir[0];
-                col += dir[1];
-                continue;
-            }
-            if (board[idx] == player && n_candidate > 0) {
-                for (int i = 0; i < n_candidate; ++i) {
-                    flipped[n_flipped++] = candidate[i];
-                }
-            }
-            break;
-        }
-    }
-    return n_flipped;
-}
-
-bool has_legal_move(const int board[kBoardCells], int player) {
-    int flipped[kBoardCells];
-    for (int move = 0; move < kBoardCells; ++move) {
-        if (collect_flips(board, player, move, flipped) > 0) {
-            return true;
-        }
-    }
-    return false;
-}
-
-bool apply_move(int board[kBoardCells], int player, int move) {
-    int flipped[kBoardCells];
-    const int n_flipped = collect_flips(board, player, move, flipped);
-    if (n_flipped <= 0) {
-        return false;
-    }
-    board[move] = player;
-    for (int i = 0; i < n_flipped; ++i) {
-        board[flipped[i]] = player;
-    }
-    return true;
 }
 
 const char *player_name(int player) {
@@ -164,10 +97,26 @@ int main(int argc, char **argv) {
         std::printf("\nPly %d (to move: %s)\n", ply, player_name(player));
         print_board(board);
 
-        const bool can_move = has_legal_move(board, player);
-        if (!can_move) {
-            const bool opponent_can_move = has_legal_move(board, opponent_of(player));
-            if (!opponent_can_move) {
+        int legal_moves[kBoardCells];
+        int n_legal_moves = 0;
+        uint64_t legal_mask = 0ULL;
+        status = egaroucid_get_legal_moves(board, player, legal_moves, &n_legal_moves, &legal_mask);
+        if (status != EGAROUCID_OK) {
+            std::printf("egaroucid_get_legal_moves failed: %d\n", status);
+            egaroucid_destroy(engine);
+            return 1;
+        }
+        std::printf("legal moves=%d legal_mask=0x%016" PRIx64 "\n", n_legal_moves, legal_mask);
+
+        if (n_legal_moves == 0) {
+            int opponent_legal_count = 0;
+            status = egaroucid_get_legal_moves(board, opponent_of(player), nullptr, &opponent_legal_count, nullptr);
+            if (status != EGAROUCID_OK) {
+                std::printf("egaroucid_get_legal_moves(opponent) failed: %d\n", status);
+                egaroucid_destroy(engine);
+                return 1;
+            }
+            if (opponent_legal_count == 0) {
                 std::printf("Both players cannot move. Game over.\n");
                 break;
             }
@@ -185,10 +134,22 @@ int main(int argc, char **argv) {
             return 1;
         }
 
+        int flipped[kBoardCells];
+        int n_flipped = 0;
+        uint64_t flipped_mask = 0ULL;
+        status = egaroucid_get_flipped_discs(board, player, result.move, flipped, &n_flipped, &flipped_mask);
+        if (status != EGAROUCID_OK) {
+            std::printf("egaroucid_get_flipped_discs failed: %d\n", status);
+            egaroucid_destroy(engine);
+            return 1;
+        }
+
         std::printf(
-            "engine move=%s (%d) value=%d depth=%d nodes=%" PRIu64 " nps=%.0f end=%d\n",
+            "engine move=%s (%d) flips=%d flip_mask=0x%016" PRIx64 " value=%d depth=%d nodes=%" PRIu64 " nps=%.0f end=%d\n",
             move_to_coord(result.move).c_str(),
             result.move,
+            n_flipped,
+            flipped_mask,
             result.value,
             result.depth,
             result.nodes,
@@ -196,10 +157,15 @@ int main(int argc, char **argv) {
             result.is_end_search
         );
 
-        if (!apply_move(board, player, result.move)) {
-            std::printf("sample-side move application failed for move=%d\n", result.move);
+        if (result.move < 0 || result.move >= kBoardCells || n_flipped <= 0) {
+            std::printf("library returned an illegal/non-playable move: %d\n", result.move);
             egaroucid_destroy(engine);
             return 1;
+        }
+
+        board[result.move] = player;
+        for (int i = 0; i < n_flipped; ++i) {
+            board[flipped[i]] = player;
         }
         player = opponent_of(player);
     }

@@ -69,6 +69,23 @@ EGAROUCID_API egaroucid_status egaroucid_search_array(
     egaroucid_search_result *result
 );
 
+EGAROUCID_API egaroucid_status egaroucid_get_legal_moves(
+    const int board[64],
+    int player,
+    int legal_moves_out[64],
+    int *n_legal_moves_out,
+    uint64_t *legal_moves_mask_out
+);
+
+EGAROUCID_API egaroucid_status egaroucid_get_flipped_discs(
+    const int board[64],
+    int player,
+    int move,
+    int flipped_out[64],
+    int *n_flipped_out,
+    uint64_t *flipped_mask_out
+);
+
 EGAROUCID_API void egaroucid_stop(egaroucid_engine *engine);
 
 #ifdef __cplusplus

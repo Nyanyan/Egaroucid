@@ -33,6 +33,8 @@ Main functions:
 - `egaroucid_global_init(resource_dir)`
 - `egaroucid_create()` / `egaroucid_destroy()`
 - `egaroucid_search_array(...)`
+- `egaroucid_get_legal_moves(...)`
+- `egaroucid_get_flipped_discs(...)`
 - `egaroucid_stop(...)`
 
 ## Resource Directory
@@ -72,13 +74,34 @@ Index mapping is:
 Returned `result.move` uses the same index mapping.
 `-1` means pass / no move.
 
+## Legal Moves / Flips API
+
+`egaroucid_get_legal_moves(...)`:
+
+- Input: `board[64]`, `player`
+- Output:
+  - `legal_moves_out[64]`: legal move indices (ascending, optional)
+  - `n_legal_moves_out`: number of legal moves (required)
+  - `legal_moves_mask_out`: bit `i` corresponds to board index `i` (optional)
+
+`egaroucid_get_flipped_discs(...)`:
+
+- Input: `board[64]`, `player`, `move`
+- Output:
+  - `flipped_out[64]`: flipped disc indices (ascending, optional)
+  - `n_flipped_out`: number of flipped discs (required)
+  - `flipped_mask_out`: bit `i` corresponds to board index `i` (optional)
+- If `move` is illegal, the function returns `EGAROUCID_OK` with `n_flipped_out = 0`.
+
+These two APIs do not require an engine instance (`egaroucid_create()` is not needed).
+
 ## Minimal Usage
 
 See:
 
 - `examples/cpp/simple.cpp`
 
-This example initializes the library, creates an engine, searches from the initial position, prints the selected move/value, and destroys the engine.
+This example initializes the library, creates an engine, queries legal moves/flipped discs via the C API, searches from the initial position, and prints the selected move/value.
 
 Build and run the example:
 

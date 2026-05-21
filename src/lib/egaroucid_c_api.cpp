@@ -18,6 +18,7 @@ namespace {
 std::mutex g_init_mutex;
 bool g_initialized = false;
 bool g_book_available = false;
+bool g_core_initialized = false;
 
 struct ResourceLayout {
     std::filesystem::path resource_dir;
@@ -71,6 +72,27 @@ void init_default_thread_pool() {
     thread_pool.resize(worker_threads);
 }
 
+void init_core_modules_locked() {
+    if (g_core_initialized) {
+        return;
+    }
+    bit_init();
+    mobility_init();
+    flip_init();
+    g_core_initialized = true;
+}
+
+bool ensure_core_modules_initialized() {
+    std::lock_guard<std::mutex> lock(g_init_mutex);
+    try {
+        init_core_modules_locked();
+        return true;
+    } catch (...) {
+        g_core_initialized = false;
+        return false;
+    }
+}
+
 bool board_from_array(const int board[HW2], int player, Board *board_out) {
     int arr[HW2];
     for (int i = 0; i < HW2; ++i) {
@@ -95,6 +117,46 @@ int to_public_move(int internal_policy) {
     return -1;
 }
 
+int to_internal_move(int public_move) {
+    if (is_valid_policy(public_move)) {
+        return HW2_M1 - public_move;
+    }
+    return -1;
+}
+
+void set_default_move_outputs(int moves_out[HW2], int *n_moves_out, uint64_t *moves_mask_out) {
+    if (moves_out != nullptr) {
+        for (int i = 0; i < HW2; ++i) {
+            moves_out[i] = -1;
+        }
+    }
+    if (n_moves_out != nullptr) {
+        *n_moves_out = 0;
+    }
+    if (moves_mask_out != nullptr) {
+        *moves_mask_out = 0ULL;
+    }
+}
+
+int fill_public_moves_from_internal_mask(uint64_t internal_mask, int moves_out[HW2], uint64_t *moves_mask_out) {
+    int count = 0;
+    uint64_t public_mask = 0ULL;
+    for (int public_move = 0; public_move < HW2; ++public_move) {
+        const int internal_move = to_internal_move(public_move);
+        if (1ULL & (internal_mask >> internal_move)) {
+            if (moves_out != nullptr) {
+                moves_out[count] = public_move;
+            }
+            public_mask |= (1ULL << public_move);
+            ++count;
+        }
+    }
+    if (moves_mask_out != nullptr) {
+        *moves_mask_out = public_mask;
+    }
+    return count;
+}
+
 }  // namespace
 
 extern "C" {
@@ -113,9 +175,7 @@ egaroucid_status egaroucid_global_init(const char *resource_dir) {
 
         init_default_thread_pool();
         global_searching = true;
-        bit_init();
-        mobility_init();
-        flip_init();
+        init_core_modules_locked();
         last_flip_init();
         endsearch_init();
 #if USE_MPC_PRE_CALCULATION
@@ -228,6 +288,93 @@ egaroucid_status egaroucid_search_array(
         return EGAROUCID_OK;
     } catch (...) {
         return EGAROUCID_ERROR_SEARCH_FAILED;
+    }
+}
+
+egaroucid_status egaroucid_get_legal_moves(
+    const int board[64],
+    int player,
+    int legal_moves_out[64],
+    int *n_legal_moves_out,
+    uint64_t *legal_moves_mask_out
+) {
+    if (board == nullptr || n_legal_moves_out == nullptr) {
+        return EGAROUCID_ERROR_INVALID_ARGUMENT;
+    }
+    if (player != EGAROUCID_BLACK && player != EGAROUCID_WHITE) {
+        return EGAROUCID_ERROR_INVALID_ARGUMENT;
+    }
+
+    set_default_move_outputs(legal_moves_out, n_legal_moves_out, legal_moves_mask_out);
+    if (!ensure_core_modules_initialized()) {
+        return EGAROUCID_ERROR_NOT_INITIALIZED;
+    }
+
+    Board internal_board;
+    if (!board_from_array(board, player, &internal_board)) {
+        return EGAROUCID_ERROR_INVALID_ARGUMENT;
+    }
+
+    try {
+        const uint64_t legal_internal_mask = internal_board.get_legal();
+        *n_legal_moves_out = fill_public_moves_from_internal_mask(
+            legal_internal_mask,
+            legal_moves_out,
+            legal_moves_mask_out
+        );
+        return EGAROUCID_OK;
+    } catch (...) {
+        return EGAROUCID_ERROR_UNSUPPORTED;
+    }
+}
+
+egaroucid_status egaroucid_get_flipped_discs(
+    const int board[64],
+    int player,
+    int move,
+    int flipped_out[64],
+    int *n_flipped_out,
+    uint64_t *flipped_mask_out
+) {
+    if (board == nullptr || n_flipped_out == nullptr) {
+        return EGAROUCID_ERROR_INVALID_ARGUMENT;
+    }
+    if (player != EGAROUCID_BLACK && player != EGAROUCID_WHITE) {
+        return EGAROUCID_ERROR_INVALID_ARGUMENT;
+    }
+    if (move != -1 && !is_valid_policy(move)) {
+        return EGAROUCID_ERROR_INVALID_ARGUMENT;
+    }
+
+    set_default_move_outputs(flipped_out, n_flipped_out, flipped_mask_out);
+    if (move == -1) {
+        return EGAROUCID_OK;
+    }
+    if (!ensure_core_modules_initialized()) {
+        return EGAROUCID_ERROR_NOT_INITIALIZED;
+    }
+
+    Board internal_board;
+    if (!board_from_array(board, player, &internal_board)) {
+        return EGAROUCID_ERROR_INVALID_ARGUMENT;
+    }
+
+    try {
+        const int internal_move = to_internal_move(move);
+        const uint64_t legal_internal_mask = internal_board.get_legal();
+        if ((legal_internal_mask & (1ULL << internal_move)) == 0ULL) {
+            return EGAROUCID_OK;
+        }
+        Flip flip;
+        const uint64_t flipped_internal_mask = calc_flip(&flip, &internal_board, static_cast<uint_fast8_t>(internal_move));
+        *n_flipped_out = fill_public_moves_from_internal_mask(
+            flipped_internal_mask,
+            flipped_out,
+            flipped_mask_out
+        );
+        return EGAROUCID_OK;
+    } catch (...) {
+        return EGAROUCID_ERROR_UNSUPPORTED;
     }
 }
 
