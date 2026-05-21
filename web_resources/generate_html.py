@@ -304,6 +304,9 @@ def create_html(dr):
         page_title = f.readline()
     with open(dr + '/index.md', 'r', encoding='utf-8') as f:
         md = f.read()
+    # Some editors may save UTF-8 with BOM. Remove it so heading parsing works.
+    if md.startswith('\ufeff'):
+        md = md[1:]
     #page_title = ''
     need_table_of_contents = md.find('INSERT_TABLE_OF_CONTENTS_HERE') != -1
     table_of_contents = []
