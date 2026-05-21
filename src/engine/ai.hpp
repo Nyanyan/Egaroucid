@@ -1194,6 +1194,10 @@ AI_TL_Array ai_tl_array;
 constexpr uint64_t AI_TL_MAIN_SEARCH_RESERVED_TIME = 1000ULL;
 constexpr int AI_TL_PRESEARCH_LEVEL = 21;
 
+struct AI_TL_Presearch_Record {
+    Board board;
+};
+
 inline uint64_t get_ai_time_limit_presearch_remaining(uint64_t time_limit, uint64_t strt) {
     uint64_t elapsed = tim() - strt;
     if (elapsed >= time_limit) {
@@ -1272,7 +1276,16 @@ inline void print_ai_time_limit_presearch_result(const std::vector<int> &line, b
     }
 }
 
-inline bool ai_time_limit_presearch_once(Board board, const std::vector<int> &line, bool use_multi_thread, bool show_log, uint64_t time_limit, uint64_t strt, thread_id_t thread_id, bool *searching, Search_result *result) {
+inline bool ai_time_limit_presearch_board_already_searched(const Board &board, const std::vector<AI_TL_Presearch_Record> &searched_boards) {
+    for (const AI_TL_Presearch_Record &record: searched_boards) {
+        if (record.board == board) {
+            return true;
+        }
+    }
+    return false;
+}
+
+inline bool ai_time_limit_presearch_once(Board board, const std::vector<int> &line, bool use_multi_thread, bool show_log, uint64_t time_limit, uint64_t strt, thread_id_t thread_id, bool *searching, Search_result *result, std::vector<AI_TL_Presearch_Record> *searched_boards) {
     uint64_t remaining = get_ai_time_limit_presearch_remaining(time_limit, strt);
     if (remaining == 0 || !global_searching || !(*searching)) {
         return false;
@@ -1287,6 +1300,7 @@ inline bool ai_time_limit_presearch_once(Board board, const std::vector<int> &li
             return false;
         }
     }
+    bool already_searched = ai_time_limit_presearch_board_already_searched(board, *searched_boards);
     uint64_t strt_search = tim();
     bool presearch_searching = true;
     bool search_finished = false;
@@ -1305,6 +1319,20 @@ inline bool ai_time_limit_presearch_once(Board board, const std::vector<int> &li
     if (show_log) {
         print_ai_time_limit_presearch_result(line, passed, *result, tim() - strt_search, succeeded);
     }
+    if (succeeded) {
+        searched_boards->push_back(AI_TL_Presearch_Record{board});
+        if (already_searched) {
+            Board child;
+            std::vector<int> child_line = line;
+            if (passed) {
+                child_line.emplace_back(MOVE_NOMOVE);
+            }
+            if (move_ai_time_limit_presearch_child(board, result->policy, &child, &child_line)) {
+                Search_result child_result;
+                ai_time_limit_presearch_once(child, child_line, use_multi_thread, show_log, time_limit, strt, thread_id, searching, &child_result, searched_boards);
+            }
+        }
+    }
     return succeeded;
 }
 
@@ -1314,10 +1342,11 @@ inline void ai_time_limit_presearch(Board board, bool use_multi_thread, bool sho
     if (show_log) {
         std::cerr << "ai_time_limit presearch tl " << time_limit << " level " << AI_TL_PRESEARCH_LEVEL << std::endl;
     }
+    std::vector<AI_TL_Presearch_Record> searched_boards;
     while (get_ai_time_limit_presearch_remaining(time_limit, strt) > 0 && global_searching && *searching) {
         std::vector<int> line_a;
         Search_result res_a1;
-        if (!ai_time_limit_presearch_once(board, line_a, use_multi_thread, show_log, time_limit, strt, thread_id, searching, &res_a1)) {
+        if (!ai_time_limit_presearch_once(board, line_a, use_multi_thread, show_log, time_limit, strt, thread_id, searching, &res_a1, &searched_boards)) {
             break;
         }
         Board board_b;
@@ -1326,10 +1355,10 @@ inline void ai_time_limit_presearch(Board board, bool use_multi_thread, bool sho
             break;
         }
         Search_result res_b;
-        ai_time_limit_presearch_once(board_b, line_b, use_multi_thread, show_log, time_limit, strt, thread_id, searching, &res_b);
+        ai_time_limit_presearch_once(board_b, line_b, use_multi_thread, show_log, time_limit, strt, thread_id, searching, &res_b, &searched_boards);
 
         Search_result res_a2;
-        if (!ai_time_limit_presearch_once(board, line_a, use_multi_thread, show_log, time_limit, strt, thread_id, searching, &res_a2)) {
+        if (!ai_time_limit_presearch_once(board, line_a, use_multi_thread, show_log, time_limit, strt, thread_id, searching, &res_a2, &searched_boards)) {
             break;
         }
         Board board_c;
@@ -1338,18 +1367,18 @@ inline void ai_time_limit_presearch(Board board, bool use_multi_thread, bool sho
             break;
         }
         Search_result res_c;
-        bool searched_c = ai_time_limit_presearch_once(board_c, line_c, use_multi_thread, show_log, time_limit, strt, thread_id, searching, &res_c);
+        bool searched_c = ai_time_limit_presearch_once(board_c, line_c, use_multi_thread, show_log, time_limit, strt, thread_id, searching, &res_c, &searched_boards);
         if (searched_c && board_b == board_c) {
             Board board_d;
             std::vector<int> line_d = line_c;
             if (move_ai_time_limit_presearch_child(board_c, res_c.policy, &board_d, &line_d)) {
                 Search_result res_d;
-                ai_time_limit_presearch_once(board_d, line_d, use_multi_thread, show_log, time_limit, strt, thread_id, searching, &res_d);
+                ai_time_limit_presearch_once(board_d, line_d, use_multi_thread, show_log, time_limit, strt, thread_id, searching, &res_d, &searched_boards);
             }
         }
 
         Search_result res_a3;
-        if (!ai_time_limit_presearch_once(board, line_a, use_multi_thread, show_log, time_limit, strt, thread_id, searching, &res_a3)) {
+        if (!ai_time_limit_presearch_once(board, line_a, use_multi_thread, show_log, time_limit, strt, thread_id, searching, &res_a3, &searched_boards)) {
             break;
         }
         Board board_d;
@@ -1358,7 +1387,7 @@ inline void ai_time_limit_presearch(Board board, bool use_multi_thread, bool sho
             break;
         }
         Search_result res_d;
-        ai_time_limit_presearch_once(board_d, line_d, use_multi_thread, show_log, time_limit, strt, thread_id, searching, &res_d);
+        ai_time_limit_presearch_once(board_d, line_d, use_multi_thread, show_log, time_limit, strt, thread_id, searching, &res_d, &searched_boards);
         ++n_loop;
     }
     if (show_log) {
