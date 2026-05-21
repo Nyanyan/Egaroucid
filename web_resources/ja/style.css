@@ -126,6 +126,18 @@ code {
     word-break: break-all;
 }
 
+code.code_block {
+    display: block;
+    padding: 0.8em 1em;
+    margin: 1em 0;
+    line-height: 1.5;
+    white-space: pre-wrap;
+    word-break: normal;
+    overflow-x: auto;
+    tab-size: 4;
+    -moz-tab-size: 4;
+}
+
 .footer{
     background-color:  #2a7253;
     color: white;

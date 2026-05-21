@@ -36,75 +36,7 @@ Egaroucid の探索エンジンを、GUI / Console とは独立したライブ�
 
 ### 呼び出し例
 
-<code>#include &lt;stdio.h&gt;<br>
-#include &lt;string.h&gt;<br>
-#include &lt;egaroucid/egaroucid.h&gt;<br>
-<br>
-int main(void) {<br>
-    egaroucid_status st = egaroucid_global_init("bin/resources");<br>
-    if (st != EGAROUCID_OK) {<br>
-        printf("egaroucid_global_init failed: %d\n", st);<br>
-        return 1;<br>
-    }<br>
-<br>
-    egaroucid_engine* engine = egaroucid_create();<br>
-    if (engine == NULL) {<br>
-        printf("egaroucid_create failed\n");<br>
-        return 1;<br>
-    }<br>
-<br>
-    int board[64];<br>
-    for (int i = 0; i &lt; 64; ++i) {<br>
-        board[i] = EGAROUCID_EMPTY;<br>
-    }<br>
-    board[27] = EGAROUCID_WHITE; /* d4 */<br>
-    board[28] = EGAROUCID_BLACK; /* e4 */<br>
-    board[35] = EGAROUCID_BLACK; /* d5 */<br>
-    board[36] = EGAROUCID_WHITE; /* e5 */<br>
-<br>
-    egaroucid_search_options opt;<br>
-    memset(&opt, 0, sizeof(opt));<br>
-    opt.size = sizeof(opt);<br>
-    opt.level = 21;<br>
-    opt.use_book = 1;<br>
-    opt.book_accuracy_level = 0;<br>
-    opt.use_multi_thread = 1;<br>
-    opt.show_log = 0;<br>
-    opt.time_limit_ms = -1; /* 現在は未使用 */<br>
-<br>
-    egaroucid_search_result res;<br>
-    memset(&res, 0, sizeof(res));<br>
-    res.size = sizeof(res);<br>
-<br>
-    st = egaroucid_search_array(engine, board, EGAROUCID_BLACK, &opt, &res);<br>
-    if (st != EGAROUCID_OK) {<br>
-        printf("egaroucid_search_array failed: %d\n", st);<br>
-        egaroucid_destroy(engine);<br>
-        return 1;<br>
-    }<br>
-<br>
-    printf("best move=%d value=%d depth=%d nodes=%llu\n",<br>
-           res.move, res.value, res.depth, (unsigned long long)res.nodes);<br>
-<br>
-    int legal[64];<br>
-    int n_legal = 0;<br>
-    st = egaroucid_get_legal_moves(board, EGAROUCID_BLACK, legal, &n_legal, NULL);<br>
-    if (st == EGAROUCID_OK) {<br>
-        printf("n_legal=%d\n", n_legal);<br>
-    }<br>
-<br>
-    if (res.move &gt;= 0) {<br>
-        int flipped[64];<br>
-        int n_flipped = 0;<br>
-        st = egaroucid_get_flipped_discs(board, EGAROUCID_BLACK, res.move, flipped, &n_flipped, NULL);<br>
-        if (st == EGAROUCID_OK) {<br>
-            printf("n_flipped=%d\n", n_flipped);<br>
-        }<br>
-    }<br>
-<br>
-    egaroucid_destroy(engine);<br>
-    return 0;<br>
-}</code>
+<code class="code_block">#include &lt;stdio.h&gt;<br>#include &lt;string.h&gt;<br>#include &lt;egaroucid/egaroucid.h&gt;<br><br>int main(void) {<br>    egaroucid_status st = egaroucid_global_init("bin/resources");<br>    if (st != EGAROUCID_OK) {<br>        printf("egaroucid_global_init failed: %d\n", st);<br>        return 1;<br>    }<br><br>    egaroucid_engine* engine = egaroucid_create();<br>    if (engine == NULL) {<br>        printf("egaroucid_create failed\n");<br>        return 1;<br>    }<br><br>    int board[64];<br>    for (int i = 0; i &lt; 64; ++i) {<br>        board[i] = EGAROUCID_EMPTY;<br>    }<br>    board[27] = EGAROUCID_WHITE; /* d4 */<br>    board[28] = EGAROUCID_BLACK; /* e4 */<br>    board[35] = EGAROUCID_BLACK; /* d5 */<br>    board[36] = EGAROUCID_WHITE; /* e5 */<br><br>    egaroucid_search_options opt;<br>    memset(&opt, 0, sizeof(opt));<br>    opt.size = sizeof(opt);<br>    opt.level = 21;<br>    opt.use_book = 1;<br>    opt.book_accuracy_level = 0;<br>    opt.use_multi_thread = 1;<br>    opt.show_log = 0;<br>    opt.time_limit_ms = -1; /* 現在は未使用 */<br><br>    egaroucid_search_result res;<br>    memset(&res, 0, sizeof(res));<br>    res.size = sizeof(res);<br><br>    st = egaroucid_search_array(engine, board, EGAROUCID_BLACK, &opt, &res);<br>    if (st != EGAROUCID_OK) {<br>        printf("egaroucid_search_array failed: %d\n", st);<br>        egaroucid_destroy(engine);<br>        return 1;<br>    }<br><br>    printf("best move=%d value=%d depth=%d nodes=%llu\n",<br>           res.move, res.value, res.depth, (unsigned long long)res.nodes);<br><br>    int legal[64];<br>    int n_legal = 0;<br>    st = egaroucid_get_legal_moves(board, EGAROUCID_BLACK, legal, &n_legal, NULL);<br>    if (st == EGAROUCID_OK) {<br>        printf("n_legal=%d\n", n_legal);<br>    }<br><br>    if (res.move &gt;= 0) {<br>        int flipped[64];<br>        int n_flipped = 0;<br>        st = egaroucid_get_flipped_discs(board, EGAROUCID_BLACK, res.move, flipped, &n_flipped, NULL);<br>        if (st == EGAROUCID_OK) {<br>            printf("n_flipped=%d\n", n_flipped);<br>        }<br>    }<br><br>    egaroucid_destroy(engine);<br>    return 0;<br>}</code>
 
 ## 注意
 
