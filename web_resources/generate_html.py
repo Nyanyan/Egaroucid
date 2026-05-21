@@ -152,7 +152,10 @@ with open(elements_dir + '/head.html', 'r', encoding='utf-8') as f:
 with open(elements_dir + '/head2.html', 'r', encoding='utf-8') as f:
     head2 = f.read()
 
-menu = '<div class="menu_bar">\n'
+menu = '<nav class="menu_bar">\n'
+menu += '<input id="menu_toggle" class="menu_toggle" type="checkbox" aria-label="Toggle navigation menu">\n'
+menu += '<label class="menu_toggle_button" for="menu_toggle">&#9776;</label>\n'
+menu += '<div class="menu_items">\n'
 #menu += '<a class="menu_a" href="' + main_page_url + elements_dir + '"><img class="bar_icon" src="https://raw.githubusercontent.com/Nyanyan/Nyanyan.github.io/master/img/favicon.jpg"></a>\n'
 with open(elements_dir + '/menu_elements.txt', encoding='utf-8') as f:
     menu_elems = f.read().splitlines()
@@ -169,6 +172,42 @@ for text, link in menu_elems:
     else:
         menu += '<div class="menu_button"><a class="menu_a" href="' + link + '" target="_blank" el=”noopener noreferrer”>' + text + '</div></a>\n'
 menu += '</div>\n'
+menu += '</nav>\n'
+menu += '''<script>
+(function() {
+    function updateMenuLayout() {
+        var menuBars = document.querySelectorAll('.menu_bar');
+        for (var i = 0; i < menuBars.length; ++i) {
+            var menuBar = menuBars[i];
+            var menuItems = menuBar.querySelector('.menu_items');
+            var menuToggle = menuBar.querySelector('.menu_toggle');
+            if (!menuItems || !menuToggle) {
+                continue;
+            }
+            menuBar.classList.remove('menu_compact');
+            menuItems.style.display = 'flex';
+            var needCompact = menuItems.scrollWidth > menuBar.clientWidth;
+            menuItems.style.display = '';
+            if (needCompact) {
+                menuBar.classList.add('menu_compact');
+            } else {
+                menuToggle.checked = false;
+            }
+        }
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', updateMenuLayout);
+    } else {
+        updateMenuLayout();
+    }
+    window.addEventListener('resize', updateMenuLayout);
+    window.addEventListener('load', updateMenuLayout);
+    if (document.fonts && document.fonts.ready) {
+        document.fonts.ready.then(updateMenuLayout);
+    }
+})();
+</script>\n'''
 
 with open(elements_dir + '/tweet.html', 'r', encoding='utf-8') as f:
     tweet = f.read()
