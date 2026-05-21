@@ -1322,7 +1322,7 @@ inline bool ai_time_limit_presearch_search(Board board, int alpha, int beta, uin
     return search_finished && global_searching && *searching && is_valid_policy(result->policy) && (use_legal & (1ULL << result->policy));
 }
 
-inline bool ai_time_limit_presearch_once(Board board, const std::vector<int> &line, bool use_multi_thread, uint64_t time_limit, uint64_t strt, thread_id_t thread_id, bool *searching, Search_result *result, std::vector<AI_TL_Presearch_Record> *searched_boards, bool *already_searched, bool *passed, bool allow_mask_search) {
+inline bool ai_time_limit_presearch_once(Board board, const std::vector<int> &line, bool use_multi_thread, uint64_t time_limit, uint64_t strt, thread_id_t thread_id, bool *searching, Search_result *result, std::vector<AI_TL_Presearch_Record> *searched_boards, bool *already_searched, bool *passed, bool allow_mask_search, bool *used_mask_search) {
     uint64_t remaining = get_ai_time_limit_presearch_remaining(time_limit, strt);
     if (remaining == 0 || !global_searching || !(*searching)) {
         return false;
@@ -1339,6 +1339,7 @@ inline bool ai_time_limit_presearch_once(Board board, const std::vector<int> &li
     }
     int record_idx = ai_time_limit_presearch_find_record(board, *searched_boards);
     *already_searched = record_idx != -1;
+    *used_mask_search = false;
     bool succeeded = false;
     bool should_not_fallback_to_normal_search = false;
     if (
@@ -1359,6 +1360,7 @@ inline bool ai_time_limit_presearch_once(Board board, const std::vector<int> &li
             }
             if (nws_result.value >= previous_value) {
                 succeeded = ai_time_limit_presearch_search(board, previous_value, SCORE_MAX, legal_without_previous_best, use_multi_thread, time_limit, strt, thread_id, searching, result);
+                *used_mask_search = succeeded;
                 should_not_fallback_to_normal_search = true;
             } else {
                 succeeded = ai_time_limit_presearch_search(board, -SCORE_MAX, SCORE_MAX, legal, use_multi_thread, time_limit, strt, thread_id, searching, result);
@@ -1383,7 +1385,7 @@ inline bool ai_time_limit_presearch_once(Board board, const std::vector<int> &li
     return succeeded;
 }
 
-inline void ai_time_limit_presearch(Board board, bool use_multi_thread, bool show_log, uint64_t time_limit, thread_id_t thread_id, bool *searching) {
+inline bool ai_time_limit_presearch(Board board, bool use_multi_thread, bool show_log, uint64_t time_limit, thread_id_t thread_id, bool *searching, Search_result *last_unmasked_root_result) {
     uint64_t strt = tim();
     int n_loop = 0;
     if (show_log) {
@@ -1397,13 +1399,17 @@ inline void ai_time_limit_presearch(Board board, bool use_multi_thread, bool sho
         Search_result result;
         bool already_searched = false;
         bool passed = false;
+        bool used_mask_search = false;
         uint64_t strt_search = tim();
-        bool succeeded = ai_time_limit_presearch_once(path.back().board, path.back().line, use_multi_thread, time_limit, strt, thread_id, searching, &result, &searched_boards, &already_searched, &passed, going_down);
+        bool succeeded = ai_time_limit_presearch_once(path.back().board, path.back().line, use_multi_thread, time_limit, strt, thread_id, searching, &result, &searched_boards, &already_searched, &passed, going_down, &used_mask_search);
         if (!succeeded) {
             if (show_log && going_down) {
                 print_ai_time_limit_presearch_result(path.back().line, passed, result, tim() - strt_search, false);
             }
             break;
+        }
+        if (path.back().line.empty() && !passed && !used_mask_search) {
+            *last_unmasked_root_result = result;
         }
         if (going_down) {
             if (already_searched) {
@@ -1441,6 +1447,7 @@ inline void ai_time_limit_presearch(Board board, bool use_multi_thread, bool sho
     if (show_log) {
         std::cerr << "ai_time_limit presearch finished loops " << n_loop << " time " << tim() - strt << " ms" << std::endl;
     }
+    return is_valid_policy(last_unmasked_root_result->policy);
 }
 
 Search_result ai_time_limit(Board board, bool use_book, int book_acc_level, bool use_multi_thread, bool show_log, uint64_t remaining_time_msec, thread_id_t thread_id, bool *searching) {
@@ -1528,10 +1535,23 @@ Search_result ai_time_limit(Board board, bool use_book, int book_acc_level, bool
     //         }
     //     }
     // }
-    if (n_empties >= 31 && time_limit >= 2000ULL) {
+    if (n_empties >= 35 && time_limit >= 1ULL) {
+        Search_result presearch_result;
+        ai_time_limit_presearch(board, use_multi_thread, show_log, time_limit, thread_id, searching, &presearch_result);
+        if (is_valid_policy(presearch_result.policy)) {
+            presearch_result.time = tim() - strt;
+            presearch_result.nps = calc_nps(presearch_result.nodes, presearch_result.time);
+            if (show_log) {
+                std::cerr << "ai_time_limit selected by presearch " << idx_to_coord(presearch_result.policy) << " value " << presearch_result.value << " depth " << presearch_result.depth << "@" << presearch_result.probability << "%" << " time " << presearch_result.time << " " << board.to_str() << std::endl << std::endl;
+            }
+            return presearch_result;
+        }
+        time_limit = 1;
+    } else if (n_empties >= 31 && time_limit >= 2000ULL) {
         uint64_t presearch_time_limit = time_limit - AI_TL_MAIN_SEARCH_RESERVED_TIME;
         uint64_t strt_presearch = tim();
-        ai_time_limit_presearch(board, use_multi_thread, show_log, presearch_time_limit, thread_id, searching);
+        Search_result presearch_result;
+        ai_time_limit_presearch(board, use_multi_thread, show_log, presearch_time_limit, thread_id, searching, &presearch_result);
         uint64_t elapsed_presearch = tim() - strt_presearch;
         if (time_limit > elapsed_presearch) {
             time_limit -= elapsed_presearch;
