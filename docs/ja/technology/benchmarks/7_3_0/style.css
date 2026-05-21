@@ -88,26 +88,92 @@ h4{
     background-color:  #2a7253;
     display: flex;
     align-items: center;
+    position: relative;
+}
+
+.menu_toggle{
+    display: none;
+}
+
+.menu_toggle_button{
+    display: none;
+}
+
+.menu_items{
+    display: flex;
+    align-items: center;
 }
 
 .menu_a{
     text-decoration: none;
     height: 100%;
     color: white;
-    display: table-cell;
-    vertical-align: middle;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .menu_button{
     width: min(20vw, 130px);
     height: min(9vw, 60px);
     background-color:  #2a7253;
-    display: inline-block; 
     text-align: center;
-    display: table;
-    vertical-align: middle;
+    display: flex;
+    align-items: stretch;
+    justify-content: center;
     font-size: min(2.5vw, 12pt);
     line-height: 1.0em;
+}
+
+.menu_bar.menu_compact {
+    height: 52px;
+    justify-content: flex-end;
+}
+
+.menu_bar.menu_compact .menu_toggle_button {
+    width: 52px;
+    height: 52px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 4px;
+    color: white;
+    font-size: 30px;
+    line-height: 1;
+    cursor: pointer;
+    user-select: none;
+}
+
+.menu_bar.menu_compact .menu_items {
+    display: none;
+    position: absolute;
+    top: 52px;
+    left: 0;
+    width: 100%;
+    flex-direction: column;
+    align-items: stretch;
+    background-color: #2a7253;
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+    z-index: 1000;
+}
+
+.menu_bar.menu_compact .menu_toggle:checked + .menu_toggle_button + .menu_items {
+    display: flex;
+}
+
+.menu_bar.menu_compact .menu_button {
+    width: 100%;
+    height: auto;
+    min-height: 48px;
+    border-top: 1px solid rgba(255, 255, 255, 0.18);
+    font-size: 12pt;
+}
+
+.menu_bar.menu_compact .menu_a {
+    width: 100%;
+    padding: 0.8em 1.2em;
+    box-sizing: border-box;
+    justify-content: flex-start;
 }
 
 .centering_box{
@@ -124,6 +190,19 @@ code {
     border: solid 1px #d6dde4;
     font-family: Consolas, Menlo, Monaco, -apple-system, BlinkMacSystemFont, "Segoe UI", Meiryo, monospace;
     word-break: break-all;
+}
+
+code.code_block {
+    display: block;
+    padding: 0.8em 1em;
+    margin: 1em 0;
+    line-height: 1.5;
+    white-space: pre-wrap;
+    white-space: break-spaces;
+    word-break: normal;
+    overflow-x: auto;
+    tab-size: 4;
+    -moz-tab-size: 4;
 }
 
 .footer{

@@ -18,8 +18,47 @@
 <title>ベンチマーク Egaroucid 7.1.0</title>
 </head>
 <body>
-<div class="menu_bar">
-<div class="menu_button"><a class="menu_a" href="https://www.egaroucid.nyanyan.dev/ja/">ホーム</a></div><div class="menu_button"><a class="menu_a" href="https://www.egaroucid.nyanyan.dev/ja/download/">ダウンロード</a></div><div class="menu_button"><a class="menu_a" href="https://www.egaroucid.nyanyan.dev/ja/usage/">使い方</a></div><div class="menu_button"><a class="menu_a" href="https://www.egaroucid.nyanyan.dev/ja/console/">コンソール版</a></div><div class="menu_button"><a class="menu_a" href="https://www.egaroucid.nyanyan.dev/ja/web/">Web版</a></div><div class="menu_button"><a class="menu_a" href="https://www.egaroucid.nyanyan.dev/ja/technology/">技術</a></div></div>
+<nav class="menu_bar">
+<input id="menu_toggle" class="menu_toggle" type="checkbox" aria-label="Toggle navigation menu">
+<label class="menu_toggle_button" for="menu_toggle">&#9776;</label>
+<div class="menu_items">
+<div class="menu_button"><a class="menu_a" href="https://www.egaroucid.nyanyan.dev/ja/">﻿ホーム</a></div><div class="menu_button"><a class="menu_a" href="https://www.egaroucid.nyanyan.dev/ja/download/">ダウンロード</a></div><div class="menu_button"><a class="menu_a" href="https://www.egaroucid.nyanyan.dev/ja/usage/">使い方</a></div><div class="menu_button"><a class="menu_a" href="https://www.egaroucid.nyanyan.dev/ja/console/">コンソール版</a></div><div class="menu_button"><a class="menu_a" href="https://www.egaroucid.nyanyan.dev/ja/web/">Web版</a></div><div class="menu_button"><a class="menu_a" href="https://www.egaroucid.nyanyan.dev/ja/technology/">技術</a></div><div class="menu_button"><a class="menu_a" href="https://www.egaroucid.nyanyan.dev/ja/library/">ライブラリ</a></div></div>
+</nav>
+<script>
+(function() {
+    function updateMenuLayout() {
+        var menuBars = document.querySelectorAll('.menu_bar');
+        for (var i = 0; i < menuBars.length; ++i) {
+            var menuBar = menuBars[i];
+            var menuItems = menuBar.querySelector('.menu_items');
+            var menuToggle = menuBar.querySelector('.menu_toggle');
+            if (!menuItems || !menuToggle) {
+                continue;
+            }
+            menuBar.classList.remove('menu_compact');
+            menuItems.style.display = 'flex';
+            var needCompact = menuItems.scrollWidth > menuBar.clientWidth;
+            menuItems.style.display = '';
+            if (needCompact) {
+                menuBar.classList.add('menu_compact');
+            } else {
+                menuToggle.checked = false;
+            }
+        }
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', updateMenuLayout);
+    } else {
+        updateMenuLayout();
+    }
+    window.addEventListener('resize', updateMenuLayout);
+    window.addEventListener('load', updateMenuLayout);
+    if (document.fonts && document.fonts.ready) {
+        document.fonts.ready.then(updateMenuLayout);
+    }
+})();
+</script>
 <div class="box">
 <p></p>
 <div class="util_wrapper"><a href="https://twitter.com/share?ref_src=twsrc%5Etfw" class="twitter-share-button" data-text="ベンチマーク Egaroucid 7.1.0 - 最強レベルオセロAI" data-url="https://www.egaroucid.nyanyan.dev/ja/technology/benchmarks/7_1_0" data-hashtags="egaroucid" data-related="takuto_yamana" data-show-count="false">Tweet</a><script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script> 
