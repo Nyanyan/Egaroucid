@@ -183,3 +183,89 @@ $ Egaroucid_for_console.exe -help
 * ```void _resume()```
   * restart all calculation
 
+
+
+## Egaroucid Engine Library (Experimental)
+
+`libegaroucid` is an experimental C ABI wrapper for the engine.
+
+### Build (CMake)
+
+```bash
+cmake -S . -B build_lib -DBUILD_ENGINE_LIB=ON -DBUILD_CONSOLE=OFF -DBUILD_GUI=OFF
+cmake --build build_lib --config Release
+```
+
+### Public Header
+
+```c
+#include <egaroucid/egaroucid.h>
+```
+
+### Board Convention
+
+- `board[64]`: `0=a1`, `1=b1`, ..., `63=h8`
+- cell value: `-1` empty, `0` black, `1` white
+- player: `0` black to move, `1` white to move
+
+### Minimal Usage (C)
+
+```c
+#include <stdio.h>
+#include <string.h>
+#include <egaroucid/egaroucid.h>
+
+int main(void) {
+    if (egaroucid_global_init("bin/resources") != EGAROUCID_OK) {
+        return 1;
+    }
+
+    egaroucid_engine* engine = egaroucid_create();
+    if (!engine) {
+        return 1;
+    }
+
+    int board[64];
+    for (int i = 0; i < 64; ++i) {
+        board[i] = EGAROUCID_EMPTY;
+    }
+    board[27] = EGAROUCID_WHITE; /* d4 */
+    board[28] = EGAROUCID_BLACK; /* e4 */
+    board[35] = EGAROUCID_BLACK; /* d5 */
+    board[36] = EGAROUCID_WHITE; /* e5 */
+
+    egaroucid_search_options opt;
+    memset(&opt, 0, sizeof(opt));
+    opt.size = sizeof(opt);
+    opt.level = 21;
+    opt.use_book = 1;
+    opt.use_multi_thread = 1;
+    opt.time_limit_ms = -1; /* currently ignored */
+
+    egaroucid_search_result res;
+    memset(&res, 0, sizeof(res));
+    res.size = sizeof(res);
+
+    if (egaroucid_search_array(engine, board, EGAROUCID_BLACK, &opt, &res) == EGAROUCID_OK) {
+        printf("best move=%d value=%d\n", res.move, res.value);
+    }
+
+    int legal_moves[64];
+    int n_legal = 0;
+    if (egaroucid_get_legal_moves(board, EGAROUCID_BLACK, legal_moves, &n_legal, NULL) == EGAROUCID_OK) {
+        printf("n_legal=%d\n", n_legal);
+    }
+
+    if (res.move >= 0) {
+        int flipped[64];
+        int n_flipped = 0;
+        if (egaroucid_get_flipped_discs(board, EGAROUCID_BLACK, res.move, flipped, &n_flipped, NULL) == EGAROUCID_OK) {
+            printf("n_flipped=%d\n", n_flipped);
+        }
+    }
+
+    egaroucid_destroy(engine);
+    return 0;
+}
+```
+

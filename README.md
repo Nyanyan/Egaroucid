@@ -27,6 +27,13 @@ Totally free application
   * Play on your browser
   * Japanese / English
   
+* **Egaroucid Engine Library (experimental C ABI)**
+  
+  * Use Egaroucid engine from external applications (C/C++/FFI)
+  * Search API + legal move / flipped disc API
+  * Public API: [`include/egaroucid/egaroucid.h`](include/egaroucid/egaroucid.h)
+  * Detail: [`docs/library.md`](docs/library.md)
+  
   
 
 ![app_en](img/screen_shots/app_en.png)
