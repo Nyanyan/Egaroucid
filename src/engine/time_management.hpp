@@ -11,9 +11,9 @@
 #pragma once
 #include "ai.hpp"
 
-// #if IS_GGS_TOURNAMENT
-// constexpr int TIME_MANAGEMENT_INITIAL_N_EMPTIES = 50; // 64 - 14 (s8r14)
-// #endif
+#if IS_GGS_TOURNAMENT
+constexpr int TIME_MANAGEMENT_INITIAL_N_EMPTIES = 50; // 64 - 14 (s8r14)
+#endif
 
 #define TIME_MANAGEMENT_REMAINING_TIME_OFFSET 400 // ms / move
 #define TIME_MANAGEMENT_REMAINING_TIME_OFFSET_BASE 5000 // ms
@@ -39,15 +39,15 @@ uint64_t calc_time_limit_ply(const Board board, uint64_t remaining_time_msec, bo
         }
     }
 
-// #if IS_GGS_TOURNAMENT
-//     // first move
-//     if (n_empties == TIME_MANAGEMENT_INITIAL_N_EMPTIES) {
-//         if (show_log) {
-//             std::cerr << "first move time limit" << std::endl;
-//         }
-//         return remaining_time_msec_margin * 0.15;
-//     }
-// #endif
+#if IS_GGS_TOURNAMENT
+    // first move
+    if (n_empties == TIME_MANAGEMENT_INITIAL_N_EMPTIES) {
+        if (show_log) {
+            std::cerr << "first move time limit" << std::endl;
+        }
+        return remaining_time_msec_margin * 0.15;
+    }
+#endif
 
     // try complete search
     // Nodes(depth) = a * exp(b * depth)
