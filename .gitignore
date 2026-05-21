@@ -22,6 +22,7 @@ train_data
 # build, VS Project
 build
 build_Egaroucid_for_Console
+build_lib
 Intermediate
 .vs
 *.vcxproj.user
