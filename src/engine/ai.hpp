@@ -1198,6 +1198,7 @@ struct AI_TL_Presearch_Record {
     Board board;
     int n_visits;
     int previous_policy;
+    int previous_value;
 };
 
 struct AI_TL_Presearch_Path {
@@ -1206,6 +1207,9 @@ struct AI_TL_Presearch_Path {
 };
 
 inline uint64_t get_ai_time_limit_presearch_remaining(uint64_t time_limit, uint64_t strt) {
+    if (time_limit == TIME_LIMIT_INF) {
+        return TIME_LIMIT_INF;
+    }
     uint64_t elapsed = tim() - strt;
     if (elapsed >= time_limit) {
         return 0;
@@ -1292,6 +1296,32 @@ inline int ai_time_limit_presearch_find_record(const Board &board, const std::ve
     return -1;
 }
 
+inline bool ai_time_limit_presearch_search(Board board, int alpha, int beta, uint64_t use_legal, bool use_multi_thread, uint64_t time_limit, uint64_t strt, thread_id_t thread_id, bool *searching, Search_result *result) {
+    uint64_t remaining = get_ai_time_limit_presearch_remaining(time_limit, strt);
+    if (remaining == 0 || !global_searching || !(*searching)) {
+        return false;
+    }
+    bool search_finished = false;
+    if (time_limit == TIME_LIMIT_INF) {
+        *result = ai_common(board, alpha, beta, AI_TL_PRESEARCH_LEVEL, false, 0, use_multi_thread, false, use_legal, false, TIME_LIMIT_INF, thread_id, searching);
+        search_finished = true;
+    } else {
+        bool presearch_searching = true;
+        std::future<Search_result> search_future = std::async(std::launch::async, ai_common, board, alpha, beta, AI_TL_PRESEARCH_LEVEL, false, 0, use_multi_thread, false, use_legal, false, TIME_LIMIT_INF, thread_id, &presearch_searching);
+        if (search_future.wait_for(std::chrono::milliseconds(remaining)) == std::future_status::ready) {
+            *result = search_future.get();
+            search_finished = true;
+        } else {
+            presearch_searching = false;
+            try {
+                *result = search_future.get();
+            } catch (const std::exception &e) {
+            }
+        }
+    }
+    return search_finished && global_searching && *searching && is_valid_policy(result->policy) && (use_legal & (1ULL << result->policy));
+}
+
 inline bool ai_time_limit_presearch_once(Board board, const std::vector<int> &line, bool use_multi_thread, uint64_t time_limit, uint64_t strt, thread_id_t thread_id, bool *searching, Search_result *result, std::vector<AI_TL_Presearch_Record> *searched_boards, bool *already_searched, bool *passed) {
     uint64_t remaining = get_ai_time_limit_presearch_remaining(time_limit, strt);
     if (remaining == 0 || !global_searching || !(*searching)) {
@@ -1309,37 +1339,44 @@ inline bool ai_time_limit_presearch_once(Board board, const std::vector<int> &li
     }
     int record_idx = ai_time_limit_presearch_find_record(board, *searched_boards);
     *already_searched = record_idx != -1;
-    uint64_t search_legal = legal;
+    bool succeeded = false;
+    bool should_not_fallback_to_normal_search = false;
     if (
         record_idx != -1 && 
-        searched_boards->at(record_idx).n_visits >= 4 && 
-        is_valid_policy(searched_boards->at(record_idx).previous_policy)
+        searched_boards->at(record_idx).n_visits >= 6 && 
+        is_valid_policy(searched_boards->at(record_idx).previous_policy) && 
+        is_valid_score(searched_boards->at(record_idx).previous_value)
     ) {
         uint64_t legal_without_previous_best = legal & ~(1ULL << searched_boards->at(record_idx).previous_policy);
         if (legal_without_previous_best != 0) {
-            search_legal = legal_without_previous_best;
+            int previous_value = searched_boards->at(record_idx).previous_value;
+            Search_result nws_result;
+            int nws_alpha = std::max(-SCORE_MAX, previous_value - 1);
+            bool nws_succeeded = ai_time_limit_presearch_search(board, nws_alpha, previous_value, legal_without_previous_best, use_multi_thread, time_limit, strt, thread_id, searching, &nws_result);
+            if (!nws_succeeded) {
+                return false;
+            }
+            if (nws_result.value >= previous_value) {
+                succeeded = ai_time_limit_presearch_search(board, previous_value, SCORE_MAX, legal_without_previous_best, use_multi_thread, time_limit, strt, thread_id, searching, result);
+                should_not_fallback_to_normal_search = true;
+            } else {
+                succeeded = ai_time_limit_presearch_search(board, -SCORE_MAX, SCORE_MAX, legal, use_multi_thread, time_limit, strt, thread_id, searching, result);
+            }
         }
     }
-    bool presearch_searching = true;
-    bool search_finished = false;
-    std::future<Search_result> search_future = std::async(std::launch::async, ai_common, board, -SCORE_MAX, SCORE_MAX, AI_TL_PRESEARCH_LEVEL, false, 0, use_multi_thread, false, search_legal, false, TIME_LIMIT_INF, thread_id, &presearch_searching);
-    if (search_future.wait_for(std::chrono::milliseconds(remaining)) == std::future_status::ready) {
-        *result = search_future.get();
-        search_finished = true;
-    } else {
-        presearch_searching = false;
-        try {
-            *result = search_future.get();
-        } catch (const std::exception &e) {
-        }
+    if (!succeeded && should_not_fallback_to_normal_search) {
+        return false;
     }
-    bool succeeded = search_finished && global_searching && *searching && is_valid_policy(result->policy) && (search_legal & (1ULL << result->policy));
+    if (!succeeded) {
+        succeeded = ai_time_limit_presearch_search(board, -SCORE_MAX, SCORE_MAX, legal, use_multi_thread, time_limit, strt, thread_id, searching, result);
+    }
     if (succeeded) {
         if (record_idx == -1) {
-            searched_boards->push_back(AI_TL_Presearch_Record{board, 1, result->policy});
+            searched_boards->push_back(AI_TL_Presearch_Record{board, 1, result->policy, result->value});
         } else {
             ++searched_boards->at(record_idx).n_visits;
             searched_boards->at(record_idx).previous_policy = result->policy;
+            searched_boards->at(record_idx).previous_value = result->value;
         }
     }
     return succeeded;
