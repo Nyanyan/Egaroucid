@@ -1721,18 +1721,18 @@ Search_result ai_time_limit(Board board, bool use_book, int book_acc_level, bool
     //         time_limit = 1;
     //     }
     // }
-    if (n_empties >= 31 && time_limit >= 2000ULL) {
-        uint64_t presearch_time_limit = time_limit - AI_TL_MAIN_SEARCH_RESERVED_TIME;
-        uint64_t strt_presearch = tim();
-        Search_result presearch_result;
-        ai_time_limit_presearch(board, use_multi_thread, show_log, presearch_time_limit, thread_id, searching, &presearch_result);
-        uint64_t elapsed_presearch = tim() - strt_presearch;
-        if (time_limit > elapsed_presearch) {
-            time_limit -= elapsed_presearch;
-        } else {
-            time_limit = 1;
-        }
-    }
+    // if (n_empties >= 31 && time_limit >= 2000ULL) {
+    //     uint64_t presearch_time_limit = time_limit - AI_TL_MAIN_SEARCH_RESERVED_TIME;
+    //     uint64_t strt_presearch = tim();
+    //     Search_result presearch_result;
+    //     ai_time_limit_presearch(board, use_multi_thread, show_log, presearch_time_limit, thread_id, searching, &presearch_result);
+    //     uint64_t elapsed_presearch = tim() - strt_presearch;
+    //     if (time_limit > elapsed_presearch) {
+    //         time_limit -= elapsed_presearch;
+    //     } else {
+    //         time_limit = 1;
+    //     }
+    // }
     if (show_log) {
         std::cerr << "ai_common main search tl " << time_limit << std::endl;
     }
