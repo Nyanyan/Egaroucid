@@ -16,9 +16,7 @@
 #include <thread>
 #include <atomic>
 #include <functional>
-#include <memory>
 #include <unordered_map>
-#include <utility>
 
 #define THREAD_ID_SIZE 100
 #define THREAD_ID_NONE 99 // reserved
@@ -42,7 +40,8 @@ class Thread_pool {
         mutable std::mutex mtx;
         bool running;
         int n_thread;
-        std::atomic<int> n_idle;
+        //std::atomic<int> n_idle;
+        int n_idle;
         std::deque<std::pair<thread_id_t, std::function<void()>>> tasks{};
         std::unique_ptr<std::thread[]> threads;
         std::condition_variable condition;
@@ -62,18 +61,18 @@ class Thread_pool {
                     new_n_thread = 0;
                 }
                 n_thread = new_n_thread;
+                threads.reset(new std::thread[n_thread]);
+                for (int i = 0; i < n_thread; ++i) {
+                    threads[i] = std::thread(&Thread_pool::worker, this);
+                }
                 running = true;
-                n_idle.store(0, std::memory_order_relaxed);
+                n_idle = 0;
                 for (int i = 0; i < THREAD_ID_SIZE; ++i) {
                     max_thread_size[i] = THREAD_SIZE_DEFAULT;
                     n_using_thread[i] = THREAD_SIZE_DEFAULT;
                 }
                 max_thread_size[THREAD_ID_NONE] = THREAD_SIZE_INF;
                 n_using_thread[THREAD_ID_NONE] = 0;
-                threads.reset(new std::thread[n_thread]);
-                for (int i = 0; i < n_thread; ++i) {
-                    threads[i] = std::thread(&Thread_pool::worker, this);
-                }
             }
         }
 
@@ -89,7 +88,7 @@ class Thread_pool {
                 }
             }
             n_thread = 0;
-            n_idle.store(0, std::memory_order_relaxed);
+            n_idle = 0;
         }
 
         void set_max_thread_size(uint64_t id, int new_max_thread_size) {
@@ -124,7 +123,7 @@ class Thread_pool {
         }
 
         int get_n_idle() const {
-            return n_idle.load(std::memory_order_relaxed);
+            return n_idle;
         }
 
         int get_max_thread_size(thread_id_t id) {
@@ -159,7 +158,7 @@ class Thread_pool {
                 }
                 task_pair = std::move(*it);
                 tasks.erase(it);
-                n_idle.fetch_add(1, std::memory_order_relaxed);
+                ++n_idle;
             }
             if (task_pair.second) {
                 task_pair.second();
@@ -249,13 +248,13 @@ class Thread_pool {
                 throw std::runtime_error("Cannot schedule new task after shutdown.");
             }
             bool pushed = false;
-            if (n_idle.load(std::memory_order_relaxed) > 0 && n_using_thread[id] < max_thread_size[id]) {
+            if (n_idle > 0 && n_using_thread[id] < max_thread_size[id]) {
                 {
                     std::unique_lock<std::mutex> lock(mtx);
-                    if (n_idle.load(std::memory_order_relaxed) > 0 && n_using_thread[id] < max_thread_size[id]) {
+                    if (n_idle > 0 && n_using_thread[id] < max_thread_size[id]) {
                         pushed = true;
                         tasks.emplace_back(id, std::function<void()>(task));
-                        n_idle.fetch_sub(1, std::memory_order_relaxed);
+                        --n_idle;
                         condition.notify_one();
                         if (id != THREAD_ID_NONE) {
                             n_using_thread[id].fetch_add(1);
@@ -272,7 +271,7 @@ class Thread_pool {
             for (;;) {
                 {
                     std::unique_lock<std::mutex> lock(mtx);
-                    n_idle.fetch_add(1, std::memory_order_relaxed);
+                    ++n_idle;
                     condition.wait(lock, [&] { return !tasks.empty() || !running; });
                     if (!running && tasks.empty()) {
                         return;

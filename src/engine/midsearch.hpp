@@ -29,7 +29,7 @@
 #include "midsearch_nws.hpp"
 #include "book.hpp"
 
-inline int aspiration_search(Search *search, int alpha, int beta, int predicted_value, const int depth, const bool skipped, uint64_t legal, const bool is_end_search, Search_Stop *searching);
+inline int aspiration_search(Search *search, int alpha, int beta, int predicted_value, const int depth, const bool skipped, uint64_t legal, const bool is_end_search, bool *searching);
 
 /*
     @brief Get a value with last move with Nega-Alpha algorithm
@@ -157,8 +157,8 @@ inline int nega_alpha_eval1(Search *search, int alpha, int beta, const bool skip
     @param searching            flag for terminating this search
     @return the value
 */
-int nega_scout(Search *search, int alpha, int beta, const int depth, const bool skipped, uint64_t legal, const bool is_end_search, Search_Stop *searching) {
-    if (!global_searching || !search_stop_is_running(searching)) {
+int nega_scout(Search *search, int alpha, int beta, const int depth, const bool skipped, uint64_t legal, const bool is_end_search, bool *searching) {
+    if (!global_searching || !(*searching)) {
         return SCORE_UNDEFINED;
     }
     if (alpha + 1 == beta) {
@@ -294,7 +294,7 @@ int nega_scout(Search *search, int alpha, int beta, const int depth, const bool 
             }
         } else{
 #endif
-            for (int move_idx = 0; move_idx < canput - n_etc_done && search_stop_is_running(searching); ++move_idx) {
+            for (int move_idx = 0; move_idx < canput - n_etc_done && *searching; ++move_idx) {
                 swap_next_best_move(move_list, move_idx, canput);
 #if USE_MID_ETC
                 if (move_list[move_idx].flip.flip == 0) {
@@ -330,17 +330,10 @@ int nega_scout(Search *search, int alpha, int beta, const int depth, const bool 
         }
 #endif
     }
-    if (search_stop_is_running(searching) && global_searching) {
+    if (*searching && global_searching) {
         transposition_table.reg(search, hash_code, depth, first_alpha, first_beta, v, best_move);
     }
     return v;
-}
-
-inline int nega_scout(Search *search, int alpha, int beta, const int depth, const bool skipped, uint64_t legal, const bool is_end_search, bool *searching) {
-    Search_Stop stop(searching);
-    int result = nega_scout(search, alpha, beta, depth, skipped, legal, is_end_search, &stop);
-    stop.export_to(searching);
-    return result;
 }
 
 
@@ -496,7 +489,7 @@ inline int nega_scout(Search *search, int alpha, int beta, const int depth, cons
     @param legal                legal moves in bitboard
     @return pair of value and best move
 */
-inline int aspiration_search(Search *search, int alpha, int beta, int predicted_value, const int depth, const bool skipped, uint64_t legal, const bool is_end_search, Search_Stop *searching) {
+inline int aspiration_search(Search *search, int alpha, int beta, int predicted_value, const int depth, const bool skipped, uint64_t legal, const bool is_end_search, bool *searching) {
     int pred_alpha = predicted_value - 1;
     int pred_beta = predicted_value + 1;
     int g = nega_scout(search, pred_alpha, pred_beta, depth, false, LEGAL_UNDEFINED, is_end_search, searching);
@@ -533,8 +526,7 @@ inline int aspiration_search(Search *search, int alpha, int beta, int predicted_
     @param legal                legal moves in bitboard
     @return pair of value and best move
 */
-std::pair<int, int> first_nega_scout_legal_stop(Search *search, int alpha, int beta, const int depth, const bool is_end_search, const std::vector<Clog_result> clogs, uint64_t legal, uint64_t strt, Search_Stop *searching) {
-    Search_Stop *search_stop = searching;
+std::pair<int, int> first_nega_scout_legal(Search *search, int alpha, int beta, const int depth, const bool is_end_search, const std::vector<Clog_result> clogs, uint64_t legal, uint64_t strt, bool *searching) {
     ++search->n_nodes;
 #if USE_SEARCH_STATISTICS
     ++search->n_nodes_discs[search->n_discs];
@@ -574,7 +566,7 @@ std::pair<int, int> first_nega_scout_legal_stop(Search *search, int alpha, int b
         }
         uint_fast8_t moves[N_TRANSPOSITION_MOVES] = {MOVE_UNDEFINED, MOVE_UNDEFINED};
         transposition_table.get_moves_any_level(&search->board, hash_code, moves);
-        move_list_evaluate(search, move_list, canput, moves, depth, alpha, beta, is_end_search, search_stop);
+        move_list_evaluate(search, move_list, canput, moves, depth, alpha, beta, is_end_search, searching);
 #if USE_YBWC_NEGASCOUT
         if (
             search->use_multi_thread && 
@@ -584,7 +576,7 @@ std::pair<int, int> first_nega_scout_legal_stop(Search *search, int alpha, int b
             move_list_sort(move_list, canput);
             if (move_list[0].flip.flip) {
                 search->move(&move_list[0].flip);
-                    g = -nega_scout(search, -beta, -alpha, depth - 1, false, move_list[0].n_legal, is_end_search, search_stop);
+                    g = -nega_scout(search, -beta, -alpha, depth - 1, false, move_list[0].n_legal, is_end_search, searching);
                 search->undo(&move_list[0].flip);
                 move_list[0].flip.flip = 0;
                 if (v < g) {
@@ -594,21 +586,21 @@ std::pair<int, int> first_nega_scout_legal_stop(Search *search, int alpha, int b
                         alpha = v;
                     }
                 }
-                if (alpha < beta && search_stop_is_running(search_stop)) {
-                    ybwc_search_young_brothers(search, &alpha, &beta, &v, &best_move, canput - 1, hash_code, depth, is_end_search, move_list, canput, true, search_stop);
+                if (alpha < beta && *searching) {
+                    ybwc_search_young_brothers(search, &alpha, &beta, &v, &best_move, canput - 1, hash_code, depth, is_end_search, move_list, canput, true, searching);
                 }
             }
         } else{
 #endif
-            for (int move_idx = 0; move_idx < canput && search_stop_is_running(search_stop); ++move_idx) {
+            for (int move_idx = 0; move_idx < canput && *searching; ++move_idx) {
                 swap_next_best_move(move_list, move_idx, canput);
                 search->move(&move_list[move_idx].flip);
                     if (v == -SCORE_INF) {
-                        g = -nega_scout(search, -beta, -alpha, depth - 1, false, move_list[move_idx].n_legal, is_end_search, search_stop);
+                        g = -nega_scout(search, -beta, -alpha, depth - 1, false, move_list[move_idx].n_legal, is_end_search, searching);
                     } else{
-                        g = -nega_alpha_ordering_nws(search, -alpha - 1, depth - 1, false, move_list[move_idx].n_legal, is_end_search, search_stop);
+                        g = -nega_alpha_ordering_nws(search, -alpha - 1, depth - 1, false, move_list[move_idx].n_legal, is_end_search, searching);
                         if (alpha < g && g < beta) {
-                            g = -nega_scout(search, -beta, -g, depth - 1, false, move_list[move_idx].n_legal, is_end_search, search_stop);
+                            g = -nega_scout(search, -beta, -g, depth - 1, false, move_list[move_idx].n_legal, is_end_search, searching);
                         }
                     }
                 search->undo(&move_list[move_idx].flip);
@@ -631,17 +623,10 @@ std::pair<int, int> first_nega_scout_legal_stop(Search *search, int alpha, int b
         }
 #endif
     }
-    if (search_stop_is_running(search_stop) && global_searching && is_all_legal) {
+    if (*searching && global_searching && is_all_legal) {
         transposition_table.reg(search, hash_code, depth, first_alpha, beta, v, best_move);
     }
     return std::make_pair(v, best_move);
-}
-
-inline std::pair<int, int> first_nega_scout_legal(Search *search, int alpha, int beta, const int depth, const bool is_end_search, const std::vector<Clog_result> clogs, uint64_t legal, uint64_t strt, bool *searching) {
-    Search_Stop stop(searching);
-    std::pair<int, int> result = first_nega_scout_legal_stop(search, alpha, beta, depth, is_end_search, clogs, legal, strt, &stop);
-    stop.export_to(searching);
-    return result;
 }
 
 /*
@@ -663,8 +648,7 @@ std::pair<int, int> first_nega_scout(Search *search, int alpha, int beta, const 
     return first_nega_scout_legal(search, alpha, beta, depth, is_end_search, clogs, search->board.get_legal(), strt, searching);
 }
 
-Analyze_result first_nega_scout_analyze_stop(Search *search, int alpha, int beta, const int depth, const bool is_end_search, const std::vector<Clog_result> clogs, int clog_depth, uint_fast8_t played_move, uint64_t strt, Search_Stop *searching) {
-    Search_Stop *search_stop = searching;
+Analyze_result first_nega_scout_analyze(Search *search, int alpha, int beta, const int depth, const bool is_end_search, const std::vector<Clog_result> clogs, int clog_depth, uint_fast8_t played_move, uint64_t strt, bool *searching) {
     ++search->n_nodes;
 #if USE_SEARCH_STATISTICS
     ++search->n_nodes_discs[search->n_discs];
@@ -703,7 +687,7 @@ Analyze_result first_nega_scout_analyze_stop(Search *search, int alpha, int beta
             } else{
                 res.played_depth = depth;
                 res.played_probability = SELECTIVITY_PERCENTAGE[search->mpc_level];
-                res.played_score = -nega_scout(search, -SCORE_MAX, SCORE_MAX, depth - 1, false, LEGAL_UNDEFINED, is_end_search, search_stop);
+                res.played_score = -nega_scout(search, -SCORE_MAX, SCORE_MAX, depth - 1, false, LEGAL_UNDEFINED, is_end_search, searching);
             }
         search->undo(&flip);
         legal ^= 1ULL << played_move;
@@ -720,7 +704,7 @@ Analyze_result first_nega_scout_analyze_stop(Search *search, int alpha, int beta
         }
         uint_fast8_t moves[N_TRANSPOSITION_MOVES] = {MOVE_UNDEFINED, MOVE_UNDEFINED};
         transposition_table.get_moves_any_level(&search->board, hash_code, moves);
-        move_list_evaluate(search, move_list, canput, moves, depth, alpha, beta, is_end_search, search_stop);
+        move_list_evaluate(search, move_list, canput, moves, depth, alpha, beta, is_end_search, searching);
 #if USE_YBWC_NEGASCOUT_ANALYZE
         if (search->use_multi_thread && depth - 1 >= YBWC_MID_SPLIT_MIN_DEPTH) {
             move_list_sort(move_list);
@@ -730,7 +714,7 @@ Analyze_result first_nega_scout_analyze_stop(Search *search, int alpha, int beta
                     book_used = true;
                     g = -book.get(search->board).value;
                 } else {
-                    g = -nega_scout(search, -beta, -alpha, depth - 1, false, move_list[0].n_legal, is_end_search, search_stop);
+                    g = -nega_scout(search, -beta, -alpha, depth - 1, false, move_list[0].n_legal, is_end_search, searching);
                 }
             search->undo(&move_list[0].flip);
             move_list[0].flip.flip = 0;
@@ -748,11 +732,11 @@ Analyze_result first_nega_scout_analyze_stop(Search *search, int alpha, int beta
                 }
             }
             if (alpha < beta) {
-                ybwc_search_young_brothers(search, &alpha, &beta, &res.alt_score, &res.alt_move, hash_code, depth, is_end_search, move_list, true, search_stop);
+                ybwc_search_young_brothers(search, &alpha, &beta, &res.alt_score, &res.alt_move, hash_code, depth, is_end_search, move_list, true, searching);
             }
         } else{
 #endif
-            for (int move_idx = 0; move_idx < canput && search_stop_is_running(search_stop); ++move_idx) {
+            for (int move_idx = 0; move_idx < canput && *searching; ++move_idx) {
                 swap_next_best_move(move_list, move_idx, canput);
                 bool book_used = false;
                 search->move(&move_list[move_idx].flip);
@@ -761,11 +745,11 @@ Analyze_result first_nega_scout_analyze_stop(Search *search, int alpha, int beta
                         g = -book.get(search->board).value;
                     } else{
                         if (res.alt_score == -SCORE_INF) {
-                            g = -nega_scout(search, -beta, -alpha, depth - 1, false, move_list[move_idx].n_legal, is_end_search, search_stop);
+                            g = -nega_scout(search, -beta, -alpha, depth - 1, false, move_list[move_idx].n_legal, is_end_search, searching);
                         } else{
-                            g = -nega_alpha_ordering_nws(search, -alpha - 1, depth - 1, false, move_list[move_idx].n_legal, is_end_search, search_stop);
+                            g = -nega_alpha_ordering_nws(search, -alpha - 1, depth - 1, false, move_list[move_idx].n_legal, is_end_search, searching);
                             if (alpha < g && g < beta) {
-                                g = -nega_scout(search, -beta, -g, depth - 1, false, move_list[move_idx].n_legal, is_end_search, search_stop);
+                                g = -nega_scout(search, -beta, -g, depth - 1, false, move_list[move_idx].n_legal, is_end_search, searching);
                             }
                         }
                     }
@@ -797,7 +781,7 @@ Analyze_result first_nega_scout_analyze_stop(Search *search, int alpha, int beta
         res.alt_depth = -1;
         res.alt_probability = 0;
     }
-    if (search_stop_is_running(search_stop) && global_searching) {
+    if (*searching && global_searching) {
         int v, best_move;
         if (res.played_score >= res.alt_score) {
             v = res.played_score;
@@ -809,11 +793,4 @@ Analyze_result first_nega_scout_analyze_stop(Search *search, int alpha, int beta
         transposition_table.reg(search, hash_code, depth, first_alpha, beta, v, best_move);
     }
     return res;
-}
-
-inline Analyze_result first_nega_scout_analyze(Search *search, int alpha, int beta, const int depth, const bool is_end_search, const std::vector<Clog_result> clogs, int clog_depth, uint_fast8_t played_move, uint64_t strt, bool *searching) {
-    Search_Stop stop(searching);
-    Analyze_result result = first_nega_scout_analyze_stop(search, alpha, beta, depth, is_end_search, clogs, clog_depth, played_move, strt, &stop);
-    stop.export_to(searching);
-    return result;
 }

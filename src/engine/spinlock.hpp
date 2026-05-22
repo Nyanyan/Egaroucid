@@ -13,9 +13,6 @@
 #include <atomic>
 #include <thread>
 #include <mutex>
-#if defined(_M_X64) || defined(_M_IX86) || defined(__x86_64__) || defined(__i386__)
-    #include <immintrin.h>
-#endif
 
 // original: https://rigtorp.se/spinlock/
 // modified by Nyanyan
@@ -27,13 +24,9 @@ struct Spinlock {
             if (!lock_.exchange(true, std::memory_order_acquire)) {
                 return;
             }
-            while (lock_.load(std::memory_order_relaxed)) {
-#if defined(_M_X64) || defined(_M_IX86) || defined(__x86_64__) || defined(__i386__)
-                _mm_pause();
-#else
-                std::this_thread::yield();
-#endif
-            }
+            //while (lock_.load(std::memory_order_relaxed)) {
+            //    __builtin_ia32_pause();
+            //}
         }
     }
 

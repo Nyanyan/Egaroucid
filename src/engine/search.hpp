@@ -13,8 +13,6 @@
 #include <iostream>
 #include <fstream>
 #include <algorithm>
-#include <atomic>
-#include <vector>
 #include "setting.hpp"
 #include "common.hpp"
 #include "board.hpp"
@@ -47,48 +45,6 @@ constexpr int MOVE_NOMOVE = 65;
 constexpr int MOVE_PASS = 64;
 constexpr int SEARCH_BOOK = -1;
 constexpr int MAX_N_BRANCHES = 35;
-
-class Search_Stop {
-    private:
-        std::atomic_bool shared_searching;
-        bool raw_searching;
-
-    public:
-        explicit Search_Stop(bool initial_searching = true)
-            : shared_searching(initial_searching), raw_searching(initial_searching) {}
-
-        explicit Search_Stop(bool *legacy_searching_)
-            : shared_searching(legacy_searching_ == nullptr || *legacy_searching_), raw_searching(legacy_searching_ == nullptr || *legacy_searching_) {}
-
-        bool running() const {
-            return raw_searching;
-        }
-
-        bool shared_running() const {
-            return shared_searching.load(std::memory_order_relaxed);
-        }
-
-        void stop() {
-            raw_searching = false;
-            shared_searching.store(false, std::memory_order_relaxed);
-        }
-
-        void export_to(bool *legacy_searching) const {
-            if (legacy_searching != nullptr && !running()) {
-                *legacy_searching = false;
-            }
-        }
-};
-
-using Searchings = std::vector<Search_Stop*>;
-
-inline bool search_stop_is_running(Search_Stop *searching) {
-    return searching == nullptr || searching->running();
-}
-
-inline bool search_stop_is_shared_running(Search_Stop *searching) {
-    return searching == nullptr || searching->shared_running();
-}
 
 /*
     @brief Stability cutoff threshold
