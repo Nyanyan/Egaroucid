@@ -1625,30 +1625,30 @@ Search_result ai_time_limit(Board board, bool use_book, int book_acc_level, bool
     //         }
     //     }
     // }
-    if (n_empties >= 33 && time_limit >= 1ULL) {
-        Search_result presearch_result;
-        ai_time_limit_presearch(board, use_multi_thread, show_log, time_limit, thread_id, searching, &presearch_result);
-        if (is_valid_policy(presearch_result.policy)) {
-            presearch_result.time = tim() - strt;
-            presearch_result.nps = calc_nps(presearch_result.nodes, presearch_result.time);
-            if (show_log) {
-                std::cerr << "ai_time_limit selected by presearch " << idx_to_coord(presearch_result.policy) << " value " << presearch_result.value << " depth " << presearch_result.depth << "@" << presearch_result.probability << "%" << " time " << presearch_result.time << " " << board.to_str() << std::endl << std::endl;
-            }
-            return presearch_result;
-        }
-        time_limit = 1;
-    } else if (n_empties >= 31 && time_limit >= 2000ULL) {
-        uint64_t presearch_time_limit = time_limit - AI_TL_MAIN_SEARCH_RESERVED_TIME;
-        uint64_t strt_presearch = tim();
-        Search_result presearch_result;
-        ai_time_limit_presearch(board, use_multi_thread, show_log, presearch_time_limit, thread_id, searching, &presearch_result);
-        uint64_t elapsed_presearch = tim() - strt_presearch;
-        if (time_limit > elapsed_presearch) {
-            time_limit -= elapsed_presearch;
-        } else {
-            time_limit = 1;
-        }
-    }
+    // if (n_empties >= 33 && time_limit >= 1ULL) {
+    //     Search_result presearch_result;
+    //     ai_time_limit_presearch(board, use_multi_thread, show_log, time_limit, thread_id, searching, &presearch_result);
+    //     if (is_valid_policy(presearch_result.policy)) {
+    //         presearch_result.time = tim() - strt;
+    //         presearch_result.nps = calc_nps(presearch_result.nodes, presearch_result.time);
+    //         if (show_log) {
+    //             std::cerr << "ai_time_limit selected by presearch " << idx_to_coord(presearch_result.policy) << " value " << presearch_result.value << " depth " << presearch_result.depth << "@" << presearch_result.probability << "%" << " time " << presearch_result.time << " " << board.to_str() << std::endl << std::endl;
+    //         }
+    //         return presearch_result;
+    //     }
+    //     time_limit = 1;
+    // } else if (n_empties >= 31 && time_limit >= 2000ULL) {
+    //     uint64_t presearch_time_limit = time_limit - AI_TL_MAIN_SEARCH_RESERVED_TIME;
+    //     uint64_t strt_presearch = tim();
+    //     Search_result presearch_result;
+    //     ai_time_limit_presearch(board, use_multi_thread, show_log, presearch_time_limit, thread_id, searching, &presearch_result);
+    //     uint64_t elapsed_presearch = tim() - strt_presearch;
+    //     if (time_limit > elapsed_presearch) {
+    //         time_limit -= elapsed_presearch;
+    //     } else {
+    //         time_limit = 1;
+    //     }
+    // }
     if (show_log) {
         std::cerr << "ai_common main search tl " << time_limit << std::endl;
     }
