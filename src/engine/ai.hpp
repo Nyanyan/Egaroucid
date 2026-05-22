@@ -24,14 +24,15 @@
 constexpr int AI_TYPE_BOOK = 1000;
 
 constexpr int IDSEARCH_ENDSEARCH_PRESEARCH_OFFSET = 10;
-constexpr int IDSEARCH_ENDSEARCH_PRESEARCH_OFFSET_TIMELIMIT = 10;
+constexpr int IDSEARCH_ENDSEARCH_PRESEARCH_OFFSET_TIMELIMIT = 6;
 constexpr int PONDER_ENDSEARCH_PRESEARCH_OFFSET_TIMELIMIT = 4;
 
 constexpr int PONDER_START_SELFPLAY_DEPTH = 17;
 
 constexpr int AI_TL_EARLY_BREAK_THRESHOLD = 5;
 constexpr bool AI_TL_USE_EARLY_BREAK = true;
-constexpr int AI_TL_MID_VERIFY_MIN_DEPTH = 28;
+constexpr int AI_TL_MID_VERIFY_MIN_DEPTH = 31;
+constexpr int AI_TL_EARLY_BREAK_VERIFY_MIN_DEPTH = 29;
 
 constexpr double AI_TL_ADDITIONAL_SEARCH_THRESHOLD = 1.5;
 
@@ -70,6 +71,13 @@ inline int get_ai_tl_mid_verify_mpc_level(int depth) {
         return MPC_74_LEVEL;
     }
     return depth >= 31 ? MPC_93_LEVEL : MPC_88_LEVEL;
+}
+
+inline int get_ai_tl_early_break_mpc_level(int depth) {
+    if (depth < AI_TL_EARLY_BREAK_VERIFY_MIN_DEPTH) {
+        return MPC_74_LEVEL;
+    }
+    return MPC_88_LEVEL;
 }
 
 #if USE_LAZY_SMP2
@@ -399,7 +407,7 @@ void iterative_deepening_search_time_limit(Board board, int alpha, int beta, boo
             ) {
                 int nws_alpha = result->value - AI_TL_EARLY_BREAK_THRESHOLD;
                 if (nws_alpha >= -SCORE_MAX) {
-                    uint_fast8_t early_break_mpc_level = std::max<uint_fast8_t>(main_mpc_level, (uint_fast8_t)get_ai_tl_mid_verify_mpc_level(main_depth));
+                    uint_fast8_t early_break_mpc_level = std::max<uint_fast8_t>(main_mpc_level, (uint_fast8_t)get_ai_tl_early_break_mpc_level(main_depth));
                     Search nws_search(&board, early_break_mpc_level, use_multi_thread, false);
                     nws_search.thread_id = thread_id;
                     bool nws_searching = true;
