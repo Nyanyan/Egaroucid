@@ -1194,6 +1194,7 @@ AI_TL_Array ai_tl_array;
 constexpr uint64_t AI_TL_MAIN_SEARCH_RESERVED_TIME = 1000ULL;
 constexpr int AI_TL_PRESEARCH_LEVEL = 21;
 constexpr int AI_TL_PRESEARCH_MASK_NWS_VALUE_OFFSET = 1;
+constexpr int AI_TL_PRESEARCH_ROOT_MASK_NWS_VALUE_OFFSET = 3;
 
 struct AI_TL_Presearch_Record {
     Board board;
@@ -1354,7 +1355,8 @@ inline bool ai_time_limit_presearch_once(Board board, const std::vector<int> &li
         if (legal_without_previous_best != 0) {
             int previous_value = searched_boards->at(record_idx).previous_value;
             Search_result nws_result;
-            int nws_beta = previous_value - AI_TL_PRESEARCH_MASK_NWS_VALUE_OFFSET;
+            int nws_value_offset = line.empty() ? AI_TL_PRESEARCH_ROOT_MASK_NWS_VALUE_OFFSET : AI_TL_PRESEARCH_MASK_NWS_VALUE_OFFSET;
+            int nws_beta = previous_value - nws_value_offset;
             int nws_alpha = std::max(-SCORE_MAX, nws_beta - 1);
             bool nws_succeeded = ai_time_limit_presearch_search(board, nws_alpha, nws_beta, legal_without_previous_best, use_multi_thread, time_limit, strt, thread_id, searching, &nws_result);
             if (!nws_succeeded) {
