@@ -1193,6 +1193,7 @@ AI_TL_Array ai_tl_array;
 
 constexpr uint64_t AI_TL_MAIN_SEARCH_RESERVED_TIME = 1000ULL;
 constexpr int AI_TL_PRESEARCH_LEVEL = 21;
+constexpr int AI_TL_PRESEARCH_MASK_NWS_VALUE_OFFSET = 1;
 
 struct AI_TL_Presearch_Record {
     Board board;
@@ -1345,7 +1346,7 @@ inline bool ai_time_limit_presearch_once(Board board, const std::vector<int> &li
     if (
         allow_mask_search && 
         record_idx != -1 && 
-        searched_boards->at(record_idx).n_visits >= 3 && 
+        searched_boards->at(record_idx).n_visits >= 4 && 
         is_valid_policy(searched_boards->at(record_idx).previous_policy) && 
         is_valid_score(searched_boards->at(record_idx).previous_value)
     ) {
@@ -1353,12 +1354,13 @@ inline bool ai_time_limit_presearch_once(Board board, const std::vector<int> &li
         if (legal_without_previous_best != 0) {
             int previous_value = searched_boards->at(record_idx).previous_value;
             Search_result nws_result;
-            int nws_alpha = std::max(-SCORE_MAX, previous_value - 1);
-            bool nws_succeeded = ai_time_limit_presearch_search(board, nws_alpha, previous_value, legal_without_previous_best, use_multi_thread, time_limit, strt, thread_id, searching, &nws_result);
+            int nws_beta = previous_value - AI_TL_PRESEARCH_MASK_NWS_VALUE_OFFSET;
+            int nws_alpha = std::max(-SCORE_MAX, nws_beta - 1);
+            bool nws_succeeded = ai_time_limit_presearch_search(board, nws_alpha, nws_beta, legal_without_previous_best, use_multi_thread, time_limit, strt, thread_id, searching, &nws_result);
             if (!nws_succeeded) {
                 return false;
             }
-            if (nws_result.value >= previous_value) {
+            if (nws_result.value >= nws_beta) {
                 succeeded = ai_time_limit_presearch_search(board, previous_value, SCORE_MAX, legal_without_previous_best, use_multi_thread, time_limit, strt, thread_id, searching, result);
                 *used_mask_search = succeeded;
                 should_not_fallback_to_normal_search = true;
