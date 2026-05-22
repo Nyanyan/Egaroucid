@@ -143,7 +143,7 @@ for i in range(start, end + 1):
         line += ' WRONG POLICY'
     score = line.split()[4][:-1]
     correct_score = answers[i][0]
-    if int(score) != int(correct_score):
+    if float(score) != float(correct_score):
         line += ' WRONG SCORE'
     line = '#' + str(i) + ' ' + line
     print(line, flush=True)
