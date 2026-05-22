@@ -13,6 +13,8 @@
 #include <iostream>
 #include <fstream>
 #include <algorithm>
+#include <atomic>
+#include <vector>
 #include "setting.hpp"
 #include "common.hpp"
 #include "board.hpp"
@@ -45,6 +47,33 @@ constexpr int MOVE_NOMOVE = 65;
 constexpr int MOVE_PASS = 64;
 constexpr int SEARCH_BOOK = -1;
 constexpr int MAX_N_BRANCHES = 35;
+
+struct Search_Stop_Token {
+    bool *raw;
+    const std::atomic_bool *atomic;
+
+    Search_Stop_Token()
+        : raw(nullptr), atomic(nullptr) {}
+
+    Search_Stop_Token(bool *raw_)
+        : raw(raw_), atomic(nullptr) {}
+
+    Search_Stop_Token(const std::atomic_bool *atomic_, bool *raw_)
+        : raw(raw_), atomic(atomic_) {}
+
+    operator bool*() const {
+        return raw;
+    }
+};
+
+using Searchings = std::vector<Search_Stop_Token>;
+
+inline bool search_stop_token_is_searching(const Search_Stop_Token &searching) {
+    if (searching.atomic != nullptr && !searching.atomic->load(std::memory_order_relaxed)) {
+        return false;
+    }
+    return searching.raw == nullptr || *searching.raw;
+}
 
 /*
     @brief Stability cutoff threshold

@@ -56,7 +56,7 @@ inline double probcut_sigma(int n_discs, int depth1, int depth2) {
     return res;
 }
 
-int nega_alpha_ordering_nws(Search *search, int alpha, int depth, bool skipped, uint64_t legal, const bool is_end_search, std::vector<bool*> &searchings);
+int nega_alpha_ordering_nws(Search *search, int alpha, int depth, bool skipped, uint64_t legal, const bool is_end_search, Searchings &searchings);
 
 /*
     @brief Multi-ProbCut for normal search
@@ -71,7 +71,7 @@ int nega_alpha_ordering_nws(Search *search, int alpha, int depth, bool skipped, 
     @param searching            flag for terminating this search
     @return cutoff occurred?
 */
-inline bool mpc(Search* search, int alpha, int beta, int depth, uint64_t legal, const bool is_end_search, int* v, std::vector<bool*> &searchings) {
+inline bool mpc(Search* search, int alpha, int beta, int depth, uint64_t legal, const bool is_end_search, int* v, Searchings &searchings) {
     int search_depth;
     if (is_end_search) {
         search_depth = ((depth * 2 / 5) & 0b11111110) + (depth & 1); // depth / 3 + parity
@@ -157,7 +157,12 @@ inline bool mpc(Search* search, int alpha, int beta, int depth, uint64_t legal, 
 }
 
 inline bool mpc(Search* search, int alpha, int beta, int depth, uint64_t legal, const bool is_end_search, int* v, bool *searching) {
-    std::vector<bool*> searchings = {searching};
+    Searchings searchings = {searching};
+    return mpc(search, alpha, beta, depth, legal, is_end_search, v, searchings);
+}
+
+inline bool mpc(Search* search, int alpha, int beta, int depth, uint64_t legal, const bool is_end_search, int* v, Search_Stop_Token searching) {
+    Searchings searchings = {searching};
     return mpc(search, alpha, beta, depth, legal, is_end_search, v, searchings);
 }
 

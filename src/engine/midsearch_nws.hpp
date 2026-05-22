@@ -28,8 +28,8 @@
 #include "util.hpp"
 #include "stability_cutoff.hpp"
 
-inline bool mpc(Search* search, int alpha, int beta, int depth, uint64_t legal, const bool is_end_search, int* v, std::vector<bool*> &searchings);
-inline bool mpc(Search* search, int alpha, int beta, const int depth, uint64_t legal, const bool is_end_search, int* v, const bool* searching);
+inline bool mpc(Search* search, int alpha, int beta, int depth, uint64_t legal, const bool is_end_search, int* v, Searchings &searchings);
+inline bool mpc(Search* search, int alpha, int beta, const int depth, uint64_t legal, const bool is_end_search, int* v, Search_Stop_Token searching);
 
 /*
     @brief Get a value with last move with Nega-Alpha algorithm (NWS)
@@ -94,8 +94,8 @@ inline int nega_alpha_eval1_nws(Search *search, int alpha, const bool skipped) {
 
 
 
-int nega_alpha_eval2_nws(Search *search, int alpha, const bool skipped, uint64_t legal, bool *searching) {
-    if (!global_searching || !(*searching)) {
+int nega_alpha_eval2_nws(Search *search, int alpha, const bool skipped, uint64_t legal, Search_Stop_Token searching) {
+    if (!global_searching || !ybwc_searching_flag(searching)) {
         return SCORE_UNDEFINED;
     }
     ++search->n_nodes;
@@ -130,7 +130,7 @@ int nega_alpha_eval2_nws(Search *search, int alpha, const bool skipped, uint64_t
             search->move(&flip);
                 g = -nega_alpha_eval1_nws(search, -alpha - 1, false);
             search->undo(&flip);
-            if (!(*searching)) {
+            if (!ybwc_searching_flag(searching)) {
                 return SCORE_UNDEFINED;
             }
             legal ^= 1ULL << moves[i];
@@ -150,7 +150,7 @@ int nega_alpha_eval2_nws(Search *search, int alpha, const bool skipped, uint64_t
             search->move(&flip);
                 g = -nega_alpha_eval1_nws(search, -alpha - 1, false);
             search->undo(&flip);
-            if (!(*searching)) {
+            if (!ybwc_searching_flag(searching)) {
                 return SCORE_UNDEFINED;
             }
             if (v < g) {
@@ -182,8 +182,8 @@ int nega_alpha_eval2_nws(Search *search, int alpha, const bool skipped, uint64_t
     @param searching            flag for terminating this search
     @return the value
 */
-int nega_alpha_ordering_nws_simple(Search *search, int alpha, const int depth, const bool skipped, uint64_t legal, bool *searching) {
-    if (!global_searching || !(*searching)) {
+int nega_alpha_ordering_nws_simple(Search *search, int alpha, const int depth, const bool skipped, uint64_t legal, Search_Stop_Token searching) {
+    if (!global_searching || !ybwc_searching_flag(searching)) {
         return SCORE_UNDEFINED;
     }
     if (depth == 2) {
@@ -280,9 +280,9 @@ int nega_alpha_ordering_nws_simple(Search *search, int alpha, const int depth, c
     if (v <= alpha) {
         move_list_evaluate_nws(search, move_list, canput, moves, depth, alpha, false, searching);
 #if USE_MID_ETC && MID_ETC_DEPTH_NWS <= MID_SIMPLE_ORDERING_DEPTH
-        for (int move_idx = 0; move_idx < canput - n_etc_done && *searching; ++move_idx) {
+        for (int move_idx = 0; move_idx < canput - n_etc_done && ybwc_searching_flag(searching); ++move_idx) {
 #else
-        for (int move_idx = 0; move_idx < canput && *searching; ++move_idx) {
+        for (int move_idx = 0; move_idx < canput && ybwc_searching_flag(searching); ++move_idx) {
 #endif
             swap_next_best_move(move_list, move_idx, canput);
 #if USE_MID_ETC && MID_ETC_DEPTH_NWS <= MID_SIMPLE_ORDERING_DEPTH
@@ -305,16 +305,16 @@ int nega_alpha_ordering_nws_simple(Search *search, int alpha, const int depth, c
             }
         }
     }
-    if (*searching && global_searching) {
+    if (ybwc_searching_flag(searching) && global_searching) {
         transposition_table.reg(search, hash_code, depth, alpha, alpha + 1, v, best_move);
     }
     return v;
 }
 
 
-inline bool is_searching(std::vector<bool*> &searchings) {
+inline bool is_searching(Searchings &searchings) {
     return std::all_of(searchings.begin(), searchings.end(), 
-                       [](bool* elem) { return *elem; });
+                       [](const Search_Stop_Token &elem) { return search_stop_token_is_searching(elem); });
 }
 
 
@@ -334,7 +334,7 @@ inline bool is_searching(std::vector<bool*> &searchings) {
     @param searching            flag for terminating this search
     @return the value
 */
-int nega_alpha_ordering_nws(Search *search, int alpha, const int depth, const bool skipped, uint64_t legal, const bool is_end_search, std::vector<bool*> &searchings) {
+int nega_alpha_ordering_nws(Search *search, int alpha, const int depth, const bool skipped, uint64_t legal, const bool is_end_search, Searchings &searchings) {
     if (!global_searching || !is_searching(searchings)) {
         return SCORE_UNDEFINED;
     }
@@ -474,6 +474,6 @@ int nega_alpha_ordering_nws(Search *search, int alpha, const int depth, const bo
 }
 
 inline int nega_alpha_ordering_nws(Search *search, int alpha, const int depth, const bool skipped, uint64_t legal, const bool is_end_search, bool *searching) {
-    std::vector<bool*> searchings = {searching};
+    Searchings searchings = {searching};
     return nega_alpha_ordering_nws(search, alpha, depth, skipped, legal, is_end_search, searchings);
 }
