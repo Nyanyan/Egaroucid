@@ -1338,6 +1338,57 @@ inline bool ai_time_limit_presearch_search(Board board, int alpha, int beta, uin
     return search_finished && global_searching && *searching && is_valid_policy(result->policy) && (use_legal & (1ULL << result->policy));
 }
 
+inline Search_result ai_time_limit_presearch_raw_search_body(Board board, int alpha, int beta, uint64_t use_legal, bool use_multi_thread, thread_id_t thread_id, bool *searching) {
+    uint64_t strt = tim();
+    Search_result result;
+    bool is_mid_search;
+    int depth;
+    uint_fast8_t mpc_level;
+    get_level(AI_TL_PRESEARCH_LEVEL, board.n_discs() - 4, &is_mid_search, &depth, &mpc_level);
+    int max_depth = HW2 - board.n_discs();
+    depth = std::min(depth, max_depth);
+    bool is_end_search = (depth == max_depth);
+    Search search(&board, mpc_level, use_multi_thread, false);
+    search.thread_id = thread_id;
+    std::pair<int, int> raw_result = first_nega_scout_legal(&search, alpha, beta, depth, is_end_search, std::vector<Clog_result>(), use_legal, strt, searching);
+    result.level = AI_TL_PRESEARCH_LEVEL;
+    result.policy = raw_result.second;
+    result.value = raw_result.first;
+    result.depth = depth;
+    result.nodes = search.n_nodes;
+    result.time = tim() - strt;
+    result.nps = calc_nps(result.nodes, result.time);
+    result.is_end_search = is_end_search;
+    result.probability = SELECTIVITY_PERCENTAGE[mpc_level];
+    return result;
+}
+
+inline bool ai_time_limit_presearch_raw_search(Board board, int alpha, int beta, uint64_t use_legal, bool use_multi_thread, uint64_t time_limit, uint64_t strt, thread_id_t thread_id, bool *searching, Search_result *result) {
+    uint64_t remaining = get_ai_time_limit_presearch_remaining(time_limit, strt);
+    if (remaining == 0 || !global_searching || !(*searching)) {
+        return false;
+    }
+    bool search_finished = false;
+    if (time_limit == TIME_LIMIT_INF) {
+        *result = ai_time_limit_presearch_raw_search_body(board, alpha, beta, use_legal, use_multi_thread, thread_id, searching);
+        search_finished = true;
+    } else {
+        bool presearch_searching = true;
+        std::future<Search_result> search_future = std::async(std::launch::async, ai_time_limit_presearch_raw_search_body, board, alpha, beta, use_legal, use_multi_thread, thread_id, &presearch_searching);
+        if (search_future.wait_for(std::chrono::milliseconds(remaining)) == std::future_status::ready) {
+            *result = search_future.get();
+            search_finished = true;
+        } else {
+            presearch_searching = false;
+            try {
+                *result = search_future.get();
+            } catch (const std::exception &e) {
+            }
+        }
+    }
+    return search_finished && global_searching && *searching && is_valid_policy(result->policy) && (use_legal & (1ULL << result->policy));
+}
+
 inline bool ai_time_limit_presearch_once(Board board, const std::vector<int> &line, bool use_multi_thread, uint64_t time_limit, uint64_t strt, thread_id_t thread_id, bool *searching, Search_result *result, std::vector<AI_TL_Presearch_Record> *searched_boards, bool *already_searched, bool *passed, bool allow_mask_search, bool *used_mask_search) {
     uint64_t remaining = get_ai_time_limit_presearch_remaining(time_limit, strt);
     if (remaining == 0 || !global_searching || !(*searching)) {
@@ -1373,15 +1424,23 @@ inline bool ai_time_limit_presearch_once(Board board, const std::vector<int> &li
             int nws_value_offset = line.empty() ? AI_TL_PRESEARCH_ROOT_MASK_NWS_VALUE_OFFSET : AI_TL_PRESEARCH_MASK_NWS_VALUE_OFFSET;
             int nws_beta = previous_value - nws_value_offset;
             int nws_alpha = std::max(-SCORE_MAX, nws_beta - 1);
-            bool nws_succeeded = ai_time_limit_presearch_search(board, nws_alpha, nws_beta, legal_without_previous_best, use_multi_thread, time_limit, strt, thread_id, searching, &nws_result);
+            bool nws_succeeded = ai_time_limit_presearch_raw_search(board, nws_alpha, nws_beta, legal_without_previous_best, use_multi_thread, time_limit, strt, thread_id, searching, &nws_result);
             if (!nws_succeeded) {
                 return false;
             }
             if (nws_result.value >= nws_beta) {
                 Search_result masked_result;
-                bool masked_succeeded = ai_time_limit_presearch_search(board, previous_value, SCORE_MAX, legal_without_previous_best, use_multi_thread, time_limit, strt, thread_id, searching, &masked_result);
+                bool masked_succeeded = ai_time_limit_presearch_raw_search(board, previous_value, SCORE_MAX, legal_without_previous_best, use_multi_thread, time_limit, strt, thread_id, searching, &masked_result);
                 if (!masked_succeeded) {
                     return false;
+                }
+                if (masked_result.value == previous_value) {
+                    Search_result exact_masked_result;
+                    bool exact_masked_succeeded = ai_time_limit_presearch_raw_search(board, -SCORE_MAX, SCORE_MAX, legal_without_previous_best, use_multi_thread, time_limit, strt, thread_id, searching, &exact_masked_result);
+                    if (!exact_masked_succeeded) {
+                        return false;
+                    }
+                    masked_result = exact_masked_result;
                 }
                 if (masked_result.value >= previous_value) {
                     *result = masked_result;
