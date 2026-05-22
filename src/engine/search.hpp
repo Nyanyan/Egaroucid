@@ -39,7 +39,7 @@ constexpr uint64_t TIME_LIMIT_INF = 18446744073709551615ULL;
 /*
     @brief Search constant
 */
-constexpr int SCORE_UNDEFINED = -126;
+constexpr int SCORE_UNDEFINED = -SCORE_INF + 1;
 constexpr int MOVE_UNDEFINED = 125;
 constexpr int MOVE_NOMOVE = 65;
 constexpr int MOVE_PASS = 64;

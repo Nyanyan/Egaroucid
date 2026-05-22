@@ -246,9 +246,9 @@ int nega_scout(Search *search, int alpha, int beta, const int depth, const bool 
     int g;
 #if USE_ASPIRATION_NEGASCOUT
     if (beta - alpha >= 4 && depth >= 5) {
-        int l = -HW2, u = HW2;
+        int l = -SCORE_MAX, u = SCORE_MAX;
         transposition_table.get_bounds(search, hash_code, depth - 5, &l, &u);
-        if (l == u && alpha < l && l < beta && !((l % 2) && is_end_search)) {
+        if (l == u && alpha < l && l < beta && !(is_end_search && l % SCORE_FINAL_STEP)) {
             return aspiration_search(search, alpha, beta, l, depth, skipped, legal, is_end_search, searching);
         }
     }

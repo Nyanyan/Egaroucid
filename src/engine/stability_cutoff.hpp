@@ -24,8 +24,8 @@
     @return SCORE_UNDEFINED if no cutoff found else the score
 */
 inline int stability_cut(Search *search, int *alpha, int *beta) {
-    if (*beta >= stability_threshold[search->n_discs]) {
-        int n_beta = HW2 - 2 * pop_count_ull(calc_stability(search->board.opponent, search->board.player));
+    if (*beta >= score_from_disc(stability_threshold[search->n_discs])) {
+        int n_beta = score_from_disc(HW2 - 2 * pop_count_ull(calc_stability(search->board.opponent, search->board.player)));
         if (n_beta <= *alpha) {
             return n_beta;
         } else if (n_beta < *beta) {
@@ -37,8 +37,8 @@ inline int stability_cut(Search *search, int *alpha, int *beta) {
 
 // last4 (min stage)
 inline int stability_cut_last4(Search *search, int *alpha, int beta) {
-    if (*alpha <= -stability_threshold[60]) {
-        int n_alpha = 2 * pop_count_ull(calc_stability(search->board.opponent, search->board.player)) - HW2;
+    if (*alpha <= -score_from_disc(stability_threshold[60])) {
+        int n_alpha = score_from_disc(2 * pop_count_ull(calc_stability(search->board.opponent, search->board.player)) - HW2);
         if (n_alpha >= beta) {
             return n_alpha;
         } else if (n_alpha > *alpha) {
@@ -60,8 +60,8 @@ inline int stability_cut_last4(Search *search, int *alpha, int beta) {
     @return SCORE_UNDEFINED if no cutoff found else the score
 */
 inline int stability_cut_nws(Search *search, int alpha) {
-    if (alpha >= stability_threshold_nws[search->n_discs]) {
-        int n_beta = HW2 - 2 * pop_count_ull(calc_stability(search->board.opponent, search->board.player));
+    if (alpha >= score_from_disc(stability_threshold_nws[search->n_discs])) {
+        int n_beta = score_from_disc(HW2 - 2 * pop_count_ull(calc_stability(search->board.opponent, search->board.player)));
         if (n_beta <= alpha) {
             return n_beta;
         }
@@ -71,8 +71,8 @@ inline int stability_cut_nws(Search *search, int alpha) {
 
 // last4 (min stage)
 inline int stability_cut_last4_nws(Search *search, int alpha) {
-    if (alpha < -stability_threshold_nws[60]) {
-        int n_alpha = 2 * pop_count_ull(calc_stability(search->board.opponent, search->board.player)) - HW2;
+    if (alpha < -score_from_disc(stability_threshold_nws[60])) {
+        int n_alpha = score_from_disc(2 * pop_count_ull(calc_stability(search->board.opponent, search->board.player)) - HW2);
         if (n_alpha > alpha) {
             return n_alpha;
         }

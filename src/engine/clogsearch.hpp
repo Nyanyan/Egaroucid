@@ -27,7 +27,7 @@
 #include "transposition_table.hpp"
 #include "move_ordering.hpp"
 
-constexpr int CLOG_NOT_FOUND = -127;
+constexpr int CLOG_NOT_FOUND = SCORE_UNDEFINED;
 
 constexpr int CLOG_SEARCH_MAX_DEPTH = 5;
 
@@ -105,7 +105,7 @@ int clog_search(Search *search, int depth, bool *searching) {
     ++search->n_nodes;
     if (depth == 0) {
         if (search->board.is_end()) {
-            return search->board.score_player();
+            return score_from_disc(search->board.score_player());
         }
         return CLOG_NOT_FOUND;
     }
@@ -114,7 +114,7 @@ int clog_search(Search *search, int depth, bool *searching) {
     if (legal == 0ULL) {
         search->pass();
             if (search->board.get_legal() == 0ULL) {
-                res = search->board.score_player();
+                res = score_from_disc(search->board.score_player());
             } else{
                 res = clog_search(search, depth, searching);
             }
@@ -139,7 +139,7 @@ int clog_search(Search *search, int depth, bool *searching) {
     move_list_evaluate(search, move_list, moves, depth, -SCORE_MAX, SCORE_MAX, false, searching);
     int g;
     bool uncertain_value_found = false;
-    int beta = HW2 - 2 * pop_count_ull(calc_stability(search->board.opponent, search->board.player));
+    int beta = score_from_disc(HW2 - 2 * pop_count_ull(calc_stability(search->board.opponent, search->board.player)));
 #if USE_PARALLEL_CLOG_SEARCH
     std::vector<std::future<Parallel_clog_task>> parallel_tasks;
     bool n_searching = true;

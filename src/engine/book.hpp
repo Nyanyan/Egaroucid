@@ -38,7 +38,7 @@ constexpr int BOOK_LEAF_LEVEL = 5;
 
 constexpr int LEVEL_UNDEFINED = -1;
 constexpr int LEVEL_HUMAN = 70;
-constexpr int BOOK_LOSS_IGNORE_THRESHOLD = 8;
+constexpr int BOOK_LOSS_IGNORE_THRESHOLD = score_from_disc(8);
 constexpr int LEAF_CALCULATE_LEVEL = 5;
 
 #define BOOK_EXTENSION ".egbk3"
@@ -74,8 +74,33 @@ struct Book_value {
     }
 };
 
+constexpr int BOOK_SCORE_UNDEFINED_8 = -126;
+
+inline int book_score_from_i8(char value) {
+    int v = (int)(int8_t)value;
+    return v == BOOK_SCORE_UNDEFINED_8 ? SCORE_UNDEFINED : score_from_disc(v);
+}
+
+inline int book_score_from_i16(short value) {
+    return value == BOOK_SCORE_UNDEFINED_8 ? SCORE_UNDEFINED : score_from_disc((int)value);
+}
+
+inline char book_score_to_i8(int value) {
+    if (value == SCORE_UNDEFINED) {
+        return (char)BOOK_SCORE_UNDEFINED_8;
+    }
+    return (char)std::clamp(disc_from_score_rounded(value), -HW2, HW2);
+}
+
+inline short book_score_to_i16(int value) {
+    if (value == SCORE_UNDEFINED) {
+        return (short)BOOK_SCORE_UNDEFINED_8;
+    }
+    return (short)std::clamp(disc_from_score_rounded(value), -HW2, HW2);
+}
+
 struct Leaf {
-    int8_t value;
+    int value;
     int8_t move;
     int8_t level;
 
@@ -91,7 +116,7 @@ struct Leaf {
     @param moves                each moves and values
 */
 struct Book_elem {
-    int8_t value;
+    int value;
     int8_t level;
     Leaf leaf;
     uint32_t n_lines;
@@ -455,7 +480,8 @@ class Book {
                 Board local_board;
                 Book_elem local_book_elem;
                 uint64_t local_p, local_o;
-                char local_value, local_level, local_leaf_value, local_leaf_move, local_leaf_level;
+                char local_value_raw, local_level, local_leaf_value_raw, local_leaf_move, local_leaf_level;
+                int local_value, local_leaf_value;
                 uint32_t local_n_lines;
                 
                 for (int j = 0; j < n_boards_in_chunk; ++j) {
@@ -477,14 +503,16 @@ class Book {
                     char *datum = &data_chunks[thread_idx][j * n_bytes_per_board];
                     memcpy(&local_p, datum, 8);
                     memcpy(&local_o, datum + 8, 8);
-                    local_value = datum[16];
+                    local_value_raw = datum[16];
                     local_level = datum[17];
                     memcpy(&local_n_lines, datum + 18, 4);
-                    local_leaf_value = datum[22];
+                    local_leaf_value_raw = datum[22];
                     local_leaf_move = datum[23];
                     local_leaf_level = datum[24];
+                    local_value = book_score_from_i8(local_value_raw);
+                    local_leaf_value = book_score_from_i8(local_leaf_value_raw);
                     
-                    if (-HW2 <= local_value && local_value <= HW2 && (local_p & local_o) == 0) {
+                    if (is_valid_score(local_value) && (local_p & local_o) == 0) {
                         local_board.player = local_p;
                         local_board.opponent = local_o;
 #if FORCE_BOOK_DEPTH
@@ -738,7 +766,8 @@ class Book {
             Board board;
             Book_elem book_elem;
             int n_boards;
-            char value;
+            char value_raw;
+            int value;
             uint64_t p, o;
             char level, n_moves, val, mov;
             char egaroucid_str[10];
@@ -800,12 +829,13 @@ class Book {
                     return false;
                 }
                 // read value
-                if (fread(&value, 1, 1, fp) < 1) {
+                if (fread(&value_raw, 1, 1, fp) < 1) {
                     std::cerr << "[ERROR] book NOT FULLY imported " << book.size() << " boards" << std::endl;
                     fclose(fp);
                     return false;
                 }
-                if (value < -HW2 || HW2 < value) {
+                value = book_score_from_i8(value_raw);
+                if (!is_valid_score(value)) {
                     std::cerr << "[ERROR] book NOT FULLY imported got value " << (int)value << " " << book.size() << " boards" << std::endl;
                     fclose(fp);
                     return false;
@@ -890,7 +920,7 @@ class Book {
             Board board;
             Book_elem book_elem;
             int n_boards;
-            char value;
+            int value;
             uint64_t p, o;
             uint8_t value_raw;
             // Book Information
@@ -931,8 +961,8 @@ class Book {
                     fclose(fp);
                     return false;
                 }
-                value = -((int8_t)value_raw - HW2);
-                if (value < -HW2 || HW2 < value) {
+                value = score_from_disc(-((int8_t)value_raw - HW2));
+                if (!is_valid_score(value)) {
                     std::cerr << "[ERROR] book NOT FULLY imported got value " << (int)value << " " << book.size() << " boards" << std::endl;
                     fclose(fp);
                     return false;
@@ -1010,9 +1040,11 @@ class Book {
             int n_boards = elem_int;
             std::cerr << n_boards << " boards found" << std::endl;
             uint64_t player, opponent;
-            int16_t value;
+            int16_t value_raw;
+            int value;
             uint32_t n_lines;
-            char link = 0, link_value, link_move, level, leaf_value, leaf_move;
+            char link = 0, link_value, link_move, level, leaf_value_raw, leaf_move;
+            int leaf_value;
             Board board;
             Flip flip;
             Book_elem book_elem;
@@ -1053,17 +1085,19 @@ class Book {
                     return false;
                 }
                 // read value
-                if (fread(&value, 2, 1, fp) < 1) {
+                if (fread(&value_raw, 2, 1, fp) < 1) {
                     std::cerr << "[ERROR] file broken" << std::endl;
                     fclose(fp);
                     return false;
                 }
-                if (value < -HW2 || HW2 < value) {
+                if (value_raw < -HW2 || HW2 < value_raw) {
                     //std::cerr << "[ERROR] book NOT FULLY imported got value " << (int)value << " " << book.size() << " boards" << std::endl;
                     //fclose(fp);
                     //return false;
                     //std::cerr << "[WARNING] value error found " << (int)value << " " << book.size() << " boards" << std::endl;
                     value = SCORE_UNDEFINED;
+                } else {
+                    value = book_score_from_i16(value_raw);
                 }
                 // read additional data
                 for (int j = 0; j < 2; ++j) {
@@ -1099,11 +1133,12 @@ class Book {
                     }
                 }
                 // read leaf value
-                if (fread(&leaf_value, 1, 1, fp) < 1) {
+                if (fread(&leaf_value_raw, 1, 1, fp) < 1) {
                     std::cerr << "[ERROR] file broken" << std::endl;
                     fclose(fp);
                     return false;
                 }
+                leaf_value = book_score_from_i8(leaf_value_raw);
                 if (value != SCORE_UNDEFINED && (player & opponent) == 0ULL && calc_legal(player, opponent)) {
                     board.player = player;
                     board.opponent = opponent;
@@ -1188,10 +1223,12 @@ class Book {
                 }
                 fout.write((char*)&itr->first.player, 8);
                 fout.write((char*)&itr->first.opponent, 8);
-                fout.write((char*)&itr->second.value, 1);
+                char value = book_score_to_i8(itr->second.value);
+                fout.write((char*)&value, 1);
                 fout.write((char*)&char_level, 1);
                 fout.write((char*)&itr->second.n_lines, 4);
-                fout.write((char*)&itr->second.leaf.value, 1);
+                char leaf_value = book_score_to_i8(itr->second.leaf.value);
+                fout.write((char*)&leaf_value, 1);
                 fout.write((char*)&itr->second.leaf.move, 1);
                 fout.write((char*)&char_leaf_level, 1);
             }
@@ -1325,7 +1362,7 @@ class Book {
                 passed_board.pass();
                 Book_elem passed_elem = get(passed_board);
                 n_lines = 0; //passed_elem.n_lines;
-                short_val = (short)passed_elem.value;
+                short_val = book_score_to_i16(passed_elem.value);
                 if (level == LEVEL_UNDEFINED) {
                     Board b = pass_board.copy();
                     b.pass();
@@ -1339,9 +1376,9 @@ class Book {
                     char_level = 60;
                 }
                 n_link = 1;
-                link_value = (char)passed_elem.value;
+                link_value = book_score_to_i8(passed_elem.value);
                 link_move = MOVE_PASS;
-                leaf_val = SCORE_UNDEFINED;
+                leaf_val = book_score_to_i8(SCORE_UNDEFINED);
                 leaf_move = MOVE_NOMOVE;
                 fout.write((char*)&pass_board.player, 8);
                 fout.write((char*)&pass_board.opponent, 8);
@@ -1371,7 +1408,7 @@ class Book {
                     std::cerr << "converting book " << percent << "%" << std::endl;
                 }
                 ++t;
-                short_val = book_elem.value;
+                short_val = book_score_to_i16(book_elem.value);
                 std::vector<Book_value> edax_links = get_edax_links(&board);
                 Leaf leaf = get_edax_leaf(&board, edax_links);
                 n_link = (char)edax_links.size();
@@ -1401,14 +1438,14 @@ class Book {
                     fout.write((char*)&n_link, 1);
                     fout.write((char*)&char_level, 1);
                     for (Book_value &book_value: edax_links) {
-                        link_value = (char)book_value.value;
+                        link_value = book_score_to_i8(book_value.value);
                         link_move = (char)book_value.policy;
                         fout.write((char*)&link_value, 1);
                         fout.write((char*)&link_move, 1);
                     }
                     n_registered_links += n_link;
                     ++n_registered_positions;
-                    leaf_val = leaf.value;
+                    leaf_val = book_score_to_i8(leaf.value);
                     leaf_move = leaf.move;
                     fout.write((char*)&leaf_val, 1);
                     fout.write((char*)&leaf_move, 1);
@@ -1660,7 +1697,7 @@ class Book {
         inline Leaf get_edax_leaf(Board *b, std::vector<Book_value> &edax_links) {
             std::lock_guard<std::mutex> lock(mtx);
             Leaf leaf;
-            leaf.value = -127;
+            leaf.value = -SCORE_INF;
             uint64_t legal = b->get_legal();
             for (Book_value &link: edax_links) {
                 legal ^= 1ULL << link.policy;
@@ -1749,13 +1786,13 @@ class Book {
                 res.value = -INF;
                 return res;
             }
-            double acceptable_min_value = best_score - 2.0 * acc_level - 0.5; // acc_level: 0 is best
+            double acceptable_min_value = best_score - (2.0 * acc_level + 0.5) * SCORE_STONE_STEP; // acc_level: 0 is best
             double sum_exp_values = 0.0;
             for (std::pair<double, int> &elem: value_policies) {
                 if (elem.first < acceptable_min_value) {
                     elem.first = 0.0;
                 } else {
-                    double exp_val = (exp(elem.first - best_score) + 1.5) / 3.0;
+                    double exp_val = (exp((elem.first - best_score) / (double)SCORE_STONE_STEP) + 1.5) / 3.0;
                     elem.first = pow(exp_val, BOOK_ACCURACY_LEVEL_INF - acc_level);
                 }
                 sum_exp_values += elem.first;
@@ -1846,7 +1883,7 @@ class Book {
         */
         inline void change(Board b, int value, int level) {
             std::lock_guard<std::mutex> lock(mtx);
-            if (-HW2 <= value && value <= HW2) {
+            if (is_valid_score(value)) {
                 if (b.is_end()) { // game over
                     if (contain(b)) {
                         Board bb = representative_board(b);
@@ -1904,7 +1941,7 @@ class Book {
 
         inline void change(Board b, int value, int level, int leaf_move, int leaf_value, int leaf_level) {
             std::lock_guard<std::mutex> lock(mtx);
-            if (-HW2 <= value && value <= HW2) {
+            if (is_valid_score(value)) {
                 if (b.is_end()) { // game over
                     if (contain(b)) {
                         Board bb = representative_board(b);
@@ -2038,7 +2075,7 @@ class Book {
             }
             res.seen = true;
             book[board].seen = true;
-            if (res.value < -HW2 || HW2 < res.value) {
+            if (!is_valid_score(res.value)) {
                 //std::cerr << "value error found " << (int)res.value << std::endl;
                 //board.print();
                 Book_elem stop_res;
@@ -2540,11 +2577,11 @@ class Book {
             book[representative_board(board)].seen = true;
         }
 
-        void add_leaf(Board *board, int8_t value, int8_t policy, int8_t level) {
+        void add_leaf(Board *board, int value, int policy, int level) {
             std::lock_guard<std::mutex> lock(mtx);
             int rotate_idx;
             Board representive_board = representative_board(board, &rotate_idx);
-            int8_t rotated_policy = policy;
+            int rotated_policy = policy;
             if (is_valid_policy(policy)) {
                 rotated_policy = convert_coord_from_representative_board((int)policy, rotate_idx);
             }
@@ -2559,7 +2596,7 @@ class Book {
             mtx.lock();
                 Book_elem book_elem = book[board];
             mtx.unlock();
-            int8_t new_leaf_value = SCORE_UNDEFINED, new_leaf_move = MOVE_UNDEFINED;
+            int new_leaf_value = SCORE_UNDEFINED, new_leaf_move = MOVE_UNDEFINED;
             std::vector<Book_value> links = get_all_moves_with_value(&board);
             uint64_t remaining_legal = board.get_legal();
             for (Book_value &link: links)
@@ -2599,7 +2636,7 @@ class Book {
                     board.undo_board(&flip);
                 }
                 if (need_to_rewrite_leaf) {
-                    int8_t new_leaf_value = SCORE_UNDEFINED, new_leaf_move = MOVE_UNDEFINED;
+                    int new_leaf_value = SCORE_UNDEFINED, new_leaf_move = MOVE_UNDEFINED;
                     add_leaf(&board, new_leaf_value, new_leaf_move, LEVEL_UNDEFINED);
                 }
             }
@@ -2742,11 +2779,11 @@ class Book {
         */
         inline bool register_representative(Board b, Book_elem elem) {
             /*
-            if (elem.value < -HW2 && HW2 < elem.value)
+            if (!is_valid_score(elem.value))
                 return false;
             std::vector<Book_value> moves;
             for (Book_value &move: elem.moves) {
-                if (-HW2 <= move.value && move.value <= HW2)
+                if (is_valid_score(move.value))
                     moves.emplace_back(move);
             }
             elem.moves = moves;
@@ -2870,7 +2907,7 @@ void book_upgrade_better_leaves_all(bool *stop) {
 }
 
 void search_new_leaf(Board board, int level, int book_elem_value, bool use_multi_thread) {
-    int8_t new_leaf_value = SCORE_UNDEFINED, new_leaf_move = MOVE_UNDEFINED;
+    int new_leaf_value = SCORE_UNDEFINED, new_leaf_move = MOVE_UNDEFINED;
     std::vector<Book_value> links = book.get_all_moves_with_value(&board);
     uint64_t legal = board.get_legal();
     for (Book_value &link: links) {

@@ -105,9 +105,9 @@ class Book_accuracy {
             bool is_end = true;
             uint32_t identifier = 0;
             Flip flip;
-            int accept_loss = 1;
+            int accept_loss = score_from_disc(1);
             if (is_high_level) {
-                accept_loss = 2;
+                accept_loss = score_from_disc(2);
             }
             for (Book_value &link: links) {
                 if (link.value >= best_score - accept_loss) {

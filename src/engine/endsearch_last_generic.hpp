@@ -36,14 +36,14 @@ inline int last1(Search *search, uint64_t player, int alpha, uint_fast8_t p0) {
 #if USE_SEARCH_STATISTICS
         ++search->n_nodes_discs[63];
 #endif
-        score = 2 * (pop_count_ull(player) + 1) - HW2;	// (P + n_flip + 1) - (HW2 - 1 - P - n_flip)
-        int score2 = score - 2;	// empty for opponent
+        score = score_from_disc(2 * (pop_count_ull(player) + 1) - HW2);	// (P + n_flip + 1) - (HW2 - 1 - P - n_flip)
+        int score2 = score - score_from_disc(2);	// empty for opponent
         if (score <= 0)
             score = score2;
         if (score > alpha) {
             n_flip = count_last_flip(~player, p0);
             if (n_flip)
-                score = score2 - 2 * n_flip;
+                score = score2 - score_from_disc(2 * n_flip);
         }
     } else {
 #endif
@@ -61,13 +61,13 @@ inline int last1(Search *search, uint64_t player, int alpha, uint_fast8_t p0) {
 #else
         n_flip = count_last_flip(player, p0);
 #endif
-        score = 2 * (pop_count_ull(player) + n_flip + 1) - HW2;	// (P + n_flip + 1) - (HW2 - 1 - P - n_flip)
+        score = score_from_disc(2 * (pop_count_ull(player) + n_flip + 1) - HW2);	// (P + n_flip + 1) - (HW2 - 1 - P - n_flip)
         if (n_flip == 0) {
             ++search->n_nodes;
 #if USE_SEARCH_STATISTICS
             ++search->n_nodes_discs[63];
 #endif
-            int score2 = score - 2;	// empty for opponent
+            int score2 = score - score_from_disc(2);	// empty for opponent
             if (score <= 0)
                 score = score2;
             if (score > alpha) {
@@ -80,7 +80,7 @@ inline int last1(Search *search, uint64_t player, int alpha, uint_fast8_t p0) {
                 n_flip = count_last_flip(~player, p0);
 #endif
                 if (n_flip)
-                    score = score2 - 2 * n_flip;
+                    score = score2 - score_from_disc(2 * n_flip);
             }
         }
 #if LAST1_OBVIOUS_PASS_OPT

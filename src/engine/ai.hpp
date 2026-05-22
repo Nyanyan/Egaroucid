@@ -30,14 +30,14 @@ constexpr int PONDER_ENDSEARCH_PRESEARCH_OFFSET_TIMELIMIT = 4;
 
 constexpr int PONDER_START_SELFPLAY_DEPTH = 17;
 
-constexpr int AI_TL_EARLY_BREAK_THRESHOLD = 5;
+constexpr int AI_TL_EARLY_BREAK_THRESHOLD = score_from_disc(5);
 constexpr bool AI_TL_USE_EARLY_BREAK = true;
 constexpr int AI_TL_MID_VERIFY_MIN_DEPTH = 26;
 constexpr int AI_TL_EARLY_BREAK_VERIFY_MIN_DEPTH = 29;
 constexpr int AI_TL_POLICY_CHANGE_VERIFY_MIN_DEPTH = 24;
 constexpr uint_fast8_t AI_TL_POLICY_CHANGE_VERIFY_MPC_LEVEL = MPC_93_LEVEL;
 
-constexpr double AI_TL_ADDITIONAL_SEARCH_THRESHOLD = 1.5;
+constexpr double AI_TL_ADDITIONAL_SEARCH_THRESHOLD = 1.5 * SCORE_STONE_STEP;
 
 #if USE_LAZY_SMP2
 constexpr int N_MAIN_SEARCH_THREADS = 25;
@@ -701,7 +701,7 @@ Search_result ai_common(Board board, int alpha, int beta, int level, bool use_bo
         if (board.get_legal() == 0ULL) {
             res.level = MAX_LEVEL;
             res.policy = 64;
-            res.value = -board.score_player();
+            res.value = -score_from_disc(board.score_player());
             res.depth = 0;
             res.nps = 0;
             res.is_end_search = true;
@@ -884,14 +884,15 @@ std::vector<Search_result> ai_best_moves_loss_searching(Board board, int level, 
     Search_result best = ai_searching(board, level, true, 0, true, show_log, searching);
     std::vector<Search_result> search_results;
     search_results.emplace_back(best);
-    int alpha = best.value - loss_max - 1;
+    int loss_max_score = score_from_disc(loss_max);
+    int alpha = best.value - loss_max_score - 1;
     int beta = best.value;
     uint64_t legal = board.get_legal() ^ (1ULL << best.policy);
     while (legal && (*searching)) {
         Search_result result_loss = ai_window_legal_searching(board, alpha, beta, level, true, 0, true, show_log, legal, searching);
         legal ^= 1ULL << result_loss.policy;
         if (*searching) {
-            if (result_loss.value >= best.value - loss_max) {
+            if (result_loss.value >= best.value - loss_max_score) {
                 search_results.emplace_back(result_loss);
             } else {
                 break;
@@ -1291,8 +1292,8 @@ AI_TL_Array ai_tl_array;
 
 constexpr uint64_t AI_TL_MAIN_SEARCH_RESERVED_TIME = 1000ULL;
 constexpr int AI_TL_PRESEARCH_LEVEL = 21;
-constexpr int AI_TL_PRESEARCH_MASK_NWS_VALUE_OFFSET = 2;
-constexpr int AI_TL_PRESEARCH_ROOT_MASK_NWS_VALUE_OFFSET = 4;
+constexpr int AI_TL_PRESEARCH_MASK_NWS_VALUE_OFFSET = score_from_disc(2);
+constexpr int AI_TL_PRESEARCH_ROOT_MASK_NWS_VALUE_OFFSET = score_from_disc(4);
 constexpr int AI_TL_PRESEARCH_MASK_INTERVAL = 4;
 
 struct AI_TL_Presearch_Record {
@@ -1807,6 +1808,7 @@ Analyze_result ai_analyze(Board board, int level, bool use_multi_thread, uint_fa
 
 Search_result ai_accept_loss(Board board, int level, int acceptable_loss) {
     uint64_t strt = tim();
+    int acceptable_loss_score = score_from_disc(acceptable_loss);
     Flip flip;
     int v = SCORE_UNDEFINED;
     uint64_t legal = board.get_legal();
@@ -1823,7 +1825,7 @@ Search_result ai_accept_loss(Board board, int level, int acceptable_loss) {
     //thread_pool.tell_finish_using();
     std::vector<std::pair<int, int>> acceptable_moves;
     for (std::pair<int, int> move: moves) {
-        if (move.first >= v - acceptable_loss)
+        if (move.first >= v - acceptable_loss_score)
             acceptable_moves.emplace_back(move);
     }
     int rnd_idx = myrandrange(0, (int)acceptable_moves.size());
@@ -1934,7 +1936,7 @@ double selfplay_and_analyze(Board board, int level, bool show_log, thread_id_t t
             score_sgn *= -1;
             if (board.get_legal() == 0ULL) {
                 if (show_log) {
-                    std::cerr << " result " << score_sgn * board.score_player();
+                    std::cerr << " result " << score_sgn * score_from_disc(board.score_player());
                 }
                 break;
             }
@@ -2016,7 +2018,7 @@ Search_result selfplay_and_analyze_search_result(Board board, int level, bool sh
             score_sgn *= -1;
             if (board.get_legal() == 0ULL) {
                 if (show_log) {
-                    std::cerr << " result " << score_sgn * board.score_player();
+                    std::cerr << " result " << score_sgn * score_from_disc(board.score_player());
                 }
                 break;
             }

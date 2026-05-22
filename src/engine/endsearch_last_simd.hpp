@@ -54,14 +54,14 @@ static inline int vectorcall last1(Search *search, __m128i PO, int alpha, int pl
     n_flip += N_LAST_FLIP[t >> 8][y];
     n_flip += N_LAST_FLIP[t & 0xFF][y];
 #endif
-    int score = 2 * (pop_count_ull(_mm_cvtsi128_si64(PP)) + n_flip + 1) - HW2;	// (n_P + n_flip + 1) - (HW2 - 1 - n_P - n_flip)
+    int score = score_from_disc(2 * (pop_count_ull(_mm_cvtsi128_si64(PP)) + n_flip + 1) - HW2);	// (n_P + n_flip + 1) - (HW2 - 1 - n_P - n_flip)
 
     if (n_flip == 0) {
         ++search->n_nodes;
         #if USE_SEARCH_STATISTICS
             ++search->n_nodes_discs[63];
         #endif
-        int score2 = score - 2;	// empty for player
+        int score2 = score - score_from_disc(2);	// empty for player
         if (score <= 0) {
             score = score2;
         }
@@ -80,7 +80,7 @@ static inline int vectorcall last1(Search *search, __m128i PO, int alpha, int pl
             n_flip += N_LAST_FLIP[t & 0xFF][y];
 #endif
             if (n_flip != 0) {
-                score = score2 - 2 * n_flip;
+                score = score2 - score_from_disc(2 * n_flip);
             }
         }
     }

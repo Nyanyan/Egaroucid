@@ -45,10 +45,15 @@
 /*
     @brief value definition
 
-    Raw score is STEP times larger than the real score.
+    Evaluation files store raw scores with 32 raw points per disc. STEP is the
+    raw divisor for one internal score point.
 */
-#define STEP 32
-#define STEP_2 16
+constexpr int RAW_SCORE_STONE_STEP = 32;
+static_assert(RAW_SCORE_STONE_STEP % SCORE_STONE_STEP == 0);
+#define STEP (RAW_SCORE_STONE_STEP / SCORE_STONE_STEP)
+#define STEP_2 (STEP / 2)
+#define STEP_MO_END STEP
+#define STEP_2_MO_END STEP_2
 
 /*
     @brief 3 ^ N definition
@@ -214,7 +219,7 @@ constexpr uint_fast16_t pow3[11] = {1, P31, P32, P33, P34, P35, P36, P37, P38, P
     @return final score
 */
 inline int end_evaluate(Board *b) {
-    return b->score_player();
+    return score_from_disc(b->score_player());
 }
 
 /*
@@ -227,7 +232,7 @@ inline int end_evaluate(Board *b) {
 inline int end_evaluate(Board *b, int e) {
     int score = b->count_player() * 2 + e;
     score += (((score >> 6) & 1) + (((score + HW2_M1) >> 7) & 1) - 1) * e;
-    return score - HW2;
+    return score_from_disc(score - HW2);
 }
 
 /*
@@ -240,7 +245,7 @@ inline int end_evaluate(Board *b, int e) {
 inline int end_evaluate_odd(Board *b, int e) {
     int score = b->count_player() * 2 + e;
     score += (((score >> 5) & 2) - 1) * e;
-    return score - HW2;
+    return score_from_disc(score - HW2);
 }
 
 inline std::vector<int16_t> load_unzip_egev2(const char* file, bool show_log, bool *failed) {

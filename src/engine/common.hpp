@@ -36,8 +36,48 @@ constexpr int VACANT = 2;
 constexpr int N_8BIT = 256; // 2 ^ 8
 constexpr int N_16BIT = 65536; // 2 ^ 16
 constexpr int INF = 100000000;
-constexpr int SCORE_INF = 127;
-constexpr int SCORE_MAX = 64;
+
+// Search score granularity. 2 means one internal score point is a half disc.
+// Change this to 4 for quarter-disc evaluation, keeping evaluation data in
+// the same raw units.
+constexpr int SCORE_STONE_STEP = 2;
+constexpr int SCORE_MAX = HW2 * SCORE_STONE_STEP;
+constexpr int SCORE_FINAL_STEP = 2 * SCORE_STONE_STEP;
+constexpr int SCORE_INF = 32767;
+
+constexpr int score_from_disc(int disc_score) {
+    return disc_score * SCORE_STONE_STEP;
+}
+
+constexpr int disc_from_score_rounded(int score) {
+    return score >= 0 ? (score + SCORE_STONE_STEP / 2) / SCORE_STONE_STEP : -((-score + SCORE_STONE_STEP / 2) / SCORE_STONE_STEP);
+}
+
+constexpr int score_floor_to_final_step(int score) {
+    int rem = score % SCORE_FINAL_STEP;
+    return rem < 0 ? score - rem - SCORE_FINAL_STEP : score - rem;
+}
+
+constexpr int score_ceil_to_final_step(int score) {
+    int floor = score_floor_to_final_step(score);
+    return floor == score ? score : floor + SCORE_FINAL_STEP;
+}
+
+constexpr int end_mpc_alpha_threshold(int alpha) {
+    return score_floor_to_final_step(alpha) + 1;
+}
+
+constexpr int end_mpc_alpha_value(int alpha) {
+    return score_floor_to_final_step(alpha);
+}
+
+constexpr int end_mpc_beta_threshold(int beta) {
+    return score_ceil_to_final_step(beta) - 1;
+}
+
+constexpr int end_mpc_beta_value(int beta) {
+    return score_ceil_to_final_step(beta);
+}
 
 // undefined legal bitboard: set bit on d4, d5, e4, and e5
 constexpr uint64_t LEGAL_UNDEFINED = 0x0000001818000000ULL;

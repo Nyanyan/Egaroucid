@@ -39,7 +39,7 @@ static inline int vectorcall last1_nws(Search *search, __m128i PO, int alpha, in
     __m128i P2 = _mm_unpackhi_epi64(PO, PO);
     __m256i P4 = _mm256_broadcastq_epi64(P2);
     uint64_t P = _mm_cvtsi128_si64(P2);
-    int score = 2 * pop_count_ull(P) - HW2 + 2;    // = (pop_count_ull(P) + 1) - (SCORE_MAX - 1 - pop_count_ull(P))
+    int score = score_from_disc(2 * pop_count_ull(P) - HW2 + 2);    // = (pop_count_ull(P) + 1) - (SCORE_MAX - 1 - pop_count_ull(P))
         // if player can move, final score > this score.
         // if player pass then opponent play, final score < score - 1 (cancel P) - 1 (last O).
         // if both pass, score - 1 (cancel P) - 1 (empty for O) <= final score <= score (empty for P).
@@ -78,8 +78,8 @@ static inline int vectorcall last1_nws(Search *search, __m128i PO, int alpha, in
             F2 = _mm_or_si128(_mm256_castsi256_si128(F4), _mm256_extracti128_si256(F4, 1));
             n_flip = -pop_count_ull(_mm_cvtsi128_si64(_mm_or_si128(F2, _mm_unpackhi_epi64(F2, F2))));
                 // last square for O if O can move or score <= 0
-            score += (n_flip - (int)((n_flip | (score - 1)) < 0)) * 2;
-        } else  score += 2;    // lazy high cut-off, return min flip
+            score += score_from_disc((n_flip - (int)((n_flip | (score - 1)) < 0)) * 2);
+        } else  score += score_from_disc(2);    // lazy high cut-off, return min flip
 
     } else {    // if player cannot move, low cut-off will occur whether opponent can move.
             // left: set below LS1B if P is in lM
@@ -94,7 +94,7 @@ static inline int vectorcall last1_nws(Search *search, __m128i PO, int alpha, in
 
         F2 = _mm_or_si128(_mm256_castsi256_si128(F4), _mm256_extracti128_si256(F4, 1));
         n_flip = pop_count_ull(_mm_cvtsi128_si64(_mm_or_si128(F2, _mm_unpackhi_epi64(F2, F2))));
-        score += n_flip * 2;
+        score += score_from_disc(n_flip * 2);
             // if n_flip == 0, score <= alpha so lazy low cut-off
     }
     return score;
@@ -110,7 +110,7 @@ static inline int vectorcall last1_nws(Search *search, __m128i PO, int alpha, in
     uint32_t t;
     uint64_t P = _mm_extract_epi64(PO, 1);
     __m256i PP = _mm256_permute4x64_epi64(_mm256_castsi128_si256(PO), 0x55);
-    int score = 2 * pop_count_ull(P) - HW2 + 2;    // = (pop_count_ull(P) + 1) - (HW2 - 1 - pop_count_ull(P))
+    int score = score_from_disc(2 * pop_count_ull(P) - HW2 + 2);    // = (pop_count_ull(P) + 1) - (HW2 - 1 - pop_count_ull(P))
         // if player can move, final score > score.
         // if player pass then opponent play, final score < score - 1 (cancel P) - 1 (last O).
         // if both pass, score - 1 (cancel P) - 1 (empty for O) <= final score <= score (empty for P).
@@ -138,9 +138,9 @@ static inline int vectorcall last1_nws(Search *search, __m128i PO, int alpha, in
             n_flip += N_LAST_FLIP[(t >> 8) & 0xFF][y];    // v (both)
             n_flip += N_LAST_FLIP[(t >> 16) & 0xFF][y];    // d
             n_flip += N_LAST_FLIP[t >> 24][y];    // d
-            score -= (n_flip + (int)((n_flip > 0) | (score <= 0))) * 2;
+            score -= score_from_disc((n_flip + (int)((n_flip > 0) | (score <= 0))) * 2);
         } else { // player can move (need only min flip because already score > alpha)
-            score += 2;    // min flip
+            score += score_from_disc(2);    // min flip
         }
     } else {    // if player cannot move, low cut-off will occur whether opponent can move.
             // n_flip = count_last_flip(P, place);
@@ -150,7 +150,7 @@ static inline int vectorcall last1_nws(Search *search, __m128i PO, int alpha, in
         n_flip += N_LAST_FLIP[t & 0xFF][y];    // d
         n_flip += N_LAST_FLIP[(t >> 16) & 0xFF][y];    // v
         n_flip += N_LAST_FLIP[t >> 24][y];    // d
-        score += n_flip * 2;
+        score += score_from_disc(n_flip * 2);
             // if n_flip == 0, score <= alpha so lazy low cut-off
     }
     return score;

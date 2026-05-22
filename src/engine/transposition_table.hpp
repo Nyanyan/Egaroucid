@@ -58,8 +58,8 @@ class Hash_data {
         uint8_t mpc_level;
         uint8_t depth;
         uint8_t importance;
-        int8_t lower;
-        int8_t upper;
+        int16_t lower;
+        int16_t upper;
         uint8_t moves[N_TRANSPOSITION_MOVES];
 
     public:
@@ -90,13 +90,13 @@ class Hash_data {
         */
         inline void reg_same_level(const int alpha, const int beta, const int value, const int policy) {
             if (value < beta && value < upper) {
-                upper = (int8_t)value;
+                upper = (int16_t)value;
                 if (alpha < value && value < lower) {
                     lower = value;
                 }
             }
             if (alpha < value && lower < value) {
-                lower = (int8_t)value;
+                lower = (int16_t)value;
                 if (value < beta && upper < value) {
                     upper = value;
                 }
@@ -123,12 +123,12 @@ class Hash_data {
         */
         inline void reg_new_level(const int d, const uint_fast8_t ml, const int alpha, const int beta, const int value, const int policy) {
             if (value < beta) {
-                upper = (int8_t)value;
+                upper = (int16_t)value;
             } else {
                 upper = SCORE_MAX;
             }
             if (alpha < value) {
-                lower = (int8_t)value;
+                lower = (int16_t)value;
             } else {
                 lower = -SCORE_MAX;
             }
@@ -156,12 +156,12 @@ class Hash_data {
         */
         inline void reg_new_data(const int d, const uint_fast8_t ml, const int alpha, const int beta, const int value, const int policy) {
             if (value < beta) {
-                upper = (int8_t)value;
+                upper = (int16_t)value;
             } else {
                 upper = SCORE_MAX;
             }
             if (alpha < value) {
-                lower = (int8_t)value;
+                lower = (int16_t)value;
             } else {
                 lower = -SCORE_MAX;
             }

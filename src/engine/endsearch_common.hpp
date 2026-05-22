@@ -140,7 +140,7 @@ static inline int end_evaluate(uint64_t b, int e) {
     } else if (diff > 0) {
         score = diff + e;
     }
-    return score;
+    return score_from_disc(score);
 }
 
 /**

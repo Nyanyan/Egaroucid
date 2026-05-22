@@ -104,10 +104,10 @@ constexpr int MO_OFFSET_L_PM = 38;
     constexpr int W_END_NWS_SIMPLE_TT_BONUS = 300;
 #endif
 
-constexpr int MOVE_ORDERING_VALUE_OFFSET_ALPHA = 12;
-constexpr int MOVE_ORDERING_VALUE_OFFSET_BETA = 8;
-constexpr int MOVE_ORDERING_NWS_VALUE_OFFSET_ALPHA = 16;
-constexpr int MOVE_ORDERING_NWS_VALUE_OFFSET_BETA = 6;
+constexpr int MOVE_ORDERING_VALUE_OFFSET_ALPHA = score_from_disc(12);
+constexpr int MOVE_ORDERING_VALUE_OFFSET_BETA = score_from_disc(8);
+constexpr int MOVE_ORDERING_NWS_VALUE_OFFSET_ALPHA = score_from_disc(16);
+constexpr int MOVE_ORDERING_NWS_VALUE_OFFSET_BETA = score_from_disc(6);
 constexpr int MOVE_ORDERING_ROOT_PLY_EXTENDED = 2;
 constexpr int MOVE_ORDERING_ROOT_BRANCH_LIMIT = 10;
 constexpr int MOVE_ORDERING_ROOT_MAX_N_DISCS = 28;

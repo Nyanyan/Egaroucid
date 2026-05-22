@@ -381,7 +381,7 @@ uint64_t expand_leaf(Book_deviate_todo_elem todo_elem, int book_depth, int level
         todo_elem.board.pass();
         if (todo_elem.board.get_legal() == 0) {
             todo_elem.board.pass();
-            book.change(todo_elem.board, todo_elem.board.score_player(), 60);
+            book.change(todo_elem.board, score_from_disc(todo_elem.board.score_player()), 60);
             return 1;
         }
     }
@@ -389,7 +389,7 @@ uint64_t expand_leaf(Book_deviate_todo_elem todo_elem, int book_depth, int level
     int prev_value = book_elem.value;
     while (todo_elem.board.n_discs() <= book_depth + 4 && !book.contain(&todo_elem.board) && (*book_learning) && todo_elem.remaining_error >= 0) {
         Search_result search_result = ai(todo_elem.board, level, true, 0, use_multi_thread, false);
-        if (-HW2 <= search_result.value && search_result.value <= HW2) {
+        if (is_valid_score(search_result.value)) {
             book.change(todo_elem.board, search_result.value, level);
             ++n_add;
             if (is_valid_policy(search_result.policy) && (todo_elem.board.get_legal() & (1ULL << search_result.policy))) {
@@ -410,7 +410,7 @@ uint64_t expand_leaf(Book_deviate_todo_elem todo_elem, int book_depth, int level
                         prev_value *= -1;
                         if (todo_elem.board.get_legal() == 0) { // game over
                             todo_elem.board.pass();
-                            book.change(todo_elem.board, todo_elem.board.score_player(), 60);
+                            book.change(todo_elem.board, score_from_disc(todo_elem.board.score_player()), 60);
                             ++n_add;
                             break;
                         }

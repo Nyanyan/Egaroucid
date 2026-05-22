@@ -246,11 +246,11 @@ int nega_alpha_end_simple_nws(Search *search, int alpha, const bool skipped, uin
                     if (v < g) {
                         v = g;
                         if (alpha < v) {
-                            tt->set_score(&nboard, v, 64);
+                            tt->set_score(&nboard, v, SCORE_MAX);
                             return v;
                         }
                     }
-                    tt->set_score(&nboard, -64, g);
+                    tt->set_score(&nboard, -SCORE_MAX, g);
                     done |= (1ULL << flip_value->flip.pos);
                     continue;
                 }
@@ -272,11 +272,11 @@ int nega_alpha_end_simple_nws(Search *search, int alpha, const bool skipped, uin
         if (v < g) {
             v = g;
             if (alpha < v) {
-                tt->set_score(&nboard, v, 64);
+                tt->set_score(&nboard, v, SCORE_MAX);
                 break;
             }
         }
-        tt->set_score(&nboard, -64, g);
+        tt->set_score(&nboard, -SCORE_MAX, g);
     }
     return v;
 }
@@ -366,11 +366,11 @@ int nega_alpha_end_nws(Search *search, int alpha, const bool skipped, uint64_t l
                         v = g;
                         best_move = flip_value->flip.pos;
                         if (alpha < v) {
-                            tt->set_score(&nboard, v, 64);
+                            tt->set_score(&nboard, v, SCORE_MAX);
                             return v;
                         }
                     }
-                    tt->set_score(&nboard, -64, g);
+                    tt->set_score(&nboard, -SCORE_MAX, g);
                     done |= (1ULL << flip_value->flip.pos);
                     continue;
                 }
@@ -393,11 +393,11 @@ int nega_alpha_end_nws(Search *search, int alpha, const bool skipped, uint64_t l
             v = g;
             best_move = move_list[move_idx].flip.pos;
             if (alpha < v) {
-                tt->set_score(&nboard, v, 64);
+                tt->set_score(&nboard, v, SCORE_MAX);
                 break;
             }
         }
-        tt->set_score(&nboard, -64, g);
+        tt->set_score(&nboard, -SCORE_MAX, g);
     }
     return v;
 }

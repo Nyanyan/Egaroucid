@@ -19,7 +19,7 @@ int negamax(Search *search, int depth, bool passed) {
     uint64_t legal = search->board.get_legal();
     if (legal == 0) {
         if (passed) {
-            return search->board.score_player(); // game over
+            return score_from_disc(search->board.score_player()); // game over
         }
         search->pass();
             v = -negamax(search, depth, true); // pass NOT counted as 1 move
