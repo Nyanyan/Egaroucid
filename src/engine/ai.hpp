@@ -13,6 +13,7 @@
 #include <future>
 #include <unordered_set>
 #include <iomanip>
+#include <sstream>
 #include "level.hpp"
 #include "setting.hpp"
 #include "midsearch.hpp"
@@ -33,6 +34,8 @@ constexpr int AI_TL_EARLY_BREAK_THRESHOLD = 5;
 constexpr bool AI_TL_USE_EARLY_BREAK = true;
 constexpr int AI_TL_MID_VERIFY_MIN_DEPTH = 26;
 constexpr int AI_TL_EARLY_BREAK_VERIFY_MIN_DEPTH = 29;
+constexpr int AI_TL_POLICY_CHANGE_VERIFY_MIN_DEPTH = 24;
+constexpr uint_fast8_t AI_TL_POLICY_CHANGE_VERIFY_MPC_LEVEL = MPC_93_LEVEL;
 
 constexpr double AI_TL_ADDITIONAL_SEARCH_THRESHOLD = 1.5;
 
@@ -78,6 +81,13 @@ inline int get_ai_tl_early_break_mpc_level(int depth) {
         return MPC_74_LEVEL;
     }
     return MPC_88_LEVEL;
+}
+
+inline uint_fast8_t get_ai_tl_policy_change_verify_mpc_level(int depth, uint_fast8_t mpc_level) {
+    if (depth < AI_TL_POLICY_CHANGE_VERIFY_MIN_DEPTH) {
+        return mpc_level;
+    }
+    return std::max<uint_fast8_t>(mpc_level, AI_TL_POLICY_CHANGE_VERIFY_MPC_LEVEL);
 }
 
 #if USE_LAZY_SMP2
@@ -381,6 +391,51 @@ void iterative_deepening_search_time_limit(Board board, int alpha, int beta, boo
         result->time = tim() - strt;
         result->nps = calc_nps(result->nodes, result->time);
         if (search_success) {
+            bool verify_timeout = false;
+            std::string verify_log;
+            if (
+                !main_is_complete_search &&
+                main_depth >= AI_TL_POLICY_CHANGE_VERIFY_MIN_DEPTH &&
+                main_mpc_level < MPC_100_LEVEL &&
+                is_valid_policy(result->policy) &&
+                is_valid_policy(id_result.second) &&
+                result->policy != id_result.second &&
+                (use_legal & (1ULL << result->policy)) &&
+                (use_legal & (1ULL << id_result.second))
+            ) {
+                uint_fast8_t verify_mpc_level = get_ai_tl_policy_change_verify_mpc_level(main_depth, main_mpc_level);
+                uint64_t verify_legal = (1ULL << result->policy) | (1ULL << id_result.second);
+                Search verify_search(&board, verify_mpc_level, use_multi_thread, false);
+                verify_search.thread_id = thread_id;
+                bool verify_searching = true;
+                uint64_t time_limit_verify = get_this_search_time_limit(time_limit, tim() - strt);
+                std::future<std::pair<int, int>> verify_f = std::async(std::launch::async, first_nega_scout_legal, &verify_search, alpha, beta, main_depth, main_is_end_search, clogs, verify_legal, strt, &verify_searching);
+                if (verify_f.wait_for(std::chrono::milliseconds(time_limit_verify)) == std::future_status::ready) {
+                    std::pair<int, int> verify_result = verify_f.get();
+                    if (is_valid_policy(verify_result.second)) {
+                        std::ostringstream ss;
+                        ss << " verify@" << SELECTIVITY_PERCENTAGE[verify_mpc_level] << "% " << idx_to_coord(result->policy) << "/" << idx_to_coord(id_result.second) << "->" << idx_to_coord(verify_result.second);
+                        verify_log = ss.str();
+                        id_result = verify_result;
+                    }
+                } else {
+                    verify_searching = false;
+                    try {
+                        verify_f.get();
+                    } catch (const std::exception &e) {
+                    }
+                    verify_timeout = true;
+                    if (show_log) {
+                        std::cerr << "policy-change verify@" << SELECTIVITY_PERCENTAGE[verify_mpc_level] << "% terminated " << tim() - strt << " ms" << std::endl;
+                    }
+                }
+                result->nodes += verify_search.n_nodes;
+                result->time = tim() - strt;
+                result->nps = calc_nps(result->nodes, result->time);
+            }
+            if (verify_timeout) {
+                break;
+            }
             if (result->value != SCORE_UNDEFINED && !main_is_end_search) {
                 double n_value = (0.9 * result->value + 1.1 * id_result.first) / 2.0;
                 result->value = round(n_value);
@@ -393,7 +448,7 @@ void iterative_deepening_search_time_limit(Board board, int alpha, int beta, boo
             result->is_end_search = main_is_end_search;
             result->probability = SELECTIVITY_PERCENTAGE[main_mpc_level];
             if (show_log) {
-                std::cerr << "value " << result->value << " (raw " << id_result.first << ") policy " << idx_to_coord(id_result.second) << " n_nodes " << result->nodes << " time " << result->time << " NPS " << result->nps << std::endl;
+                std::cerr << "value " << result->value << " (raw " << id_result.first << ") policy " << idx_to_coord(id_result.second) << verify_log << " n_nodes " << result->nodes << " time " << result->time << " NPS " << result->nps << std::endl;
             }
             uint64_t legal_without_bestmove = use_legal ^ (1ULL << result->policy);
             if (
