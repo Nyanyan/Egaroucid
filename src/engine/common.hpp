@@ -18,6 +18,7 @@
 #include <cmath>
 #include <random>
 #include <string>
+#include <type_traits>
 #include "setting.hpp"
 
 // board size definition
@@ -48,6 +49,19 @@ constexpr int SCORE_INF = 32767;
 
 constexpr int score_from_disc(int disc_score) {
     return disc_score * SCORE_STONE_STEP;
+}
+
+template <
+    typename T,
+    std::enable_if_t<
+        std::is_integral_v<std::decay_t<T>> &&
+        !std::is_same_v<std::decay_t<T>, int> &&
+        !std::is_same_v<std::decay_t<T>, bool>,
+        int
+    > = 0
+>
+constexpr int score_from_disc(T disc_score) {
+    return static_cast<int>(disc_score) * SCORE_STONE_STEP;
 }
 
 inline int score_from_disc(double disc_score) {
