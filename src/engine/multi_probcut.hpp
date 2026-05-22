@@ -35,7 +35,7 @@ constexpr double probcut_c = 1.096319765006055;
 constexpr double probcut_d = -0.8362251801219095;
 constexpr double probcut_e = 4.610017383697701;
 constexpr double probcut_f = 3.818582623595395;
-constexpr double probcut_g = 2.3775013664098447;
+constexpr double probcut_g = 2.0775013664098447;
 
 
 #if USE_MPC_PRE_CALCULATION
