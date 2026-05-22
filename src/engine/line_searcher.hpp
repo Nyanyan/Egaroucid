@@ -130,10 +130,10 @@ void search_lines_demo() {
     // std::string initial_line = "f5d6c3d3c4f4f6g5e3f3g6e2h5c5g4g3f2e1"; // 1993
     int n_max_moves = 20;
     int search_level = 21;
-    int black_score_min = score_from_disc(-6);
-    int black_score_max = score_from_disc(1);
-    int black_max_loss = score_from_disc(6);
-    int white_max_loss = score_from_disc(1);
+    int black_score_min = -6;
+    int black_score_max = 1;
+    int black_max_loss = 6;
+    int white_max_loss = 1;
     int last_move_player = BLACK;
     std::vector<int> last_move_cells = {get_coord_from_chars('b', '2'), get_coord_from_chars('b', '7'), get_coord_from_chars('g', '2'), get_coord_from_chars('g', '7')};
 

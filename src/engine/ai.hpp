@@ -693,7 +693,14 @@ inline Search_result tree_search_legal(Board board, int alpha, int beta, int dep
     @param show_log             show log?
     @return the result in Search_result structure
 */
-Search_result ai_common(Board board, int alpha, int beta, int level, bool use_book, int book_acc_level, bool use_multi_thread, bool show_log, uint64_t use_legal, bool use_specified_move_book, uint64_t time_limit, thread_id_t thread_id, bool *searching) {
+inline Search_result search_result_to_disc_score(Search_result res) {
+    if (is_valid_score(res.value)) {
+        res.value = disc_from_score_rounded(res.value);
+    }
+    return res;
+}
+
+Search_result ai_common_internal(Board board, int alpha, int beta, int level, bool use_book, int book_acc_level, bool use_multi_thread, bool show_log, uint64_t use_legal, bool use_specified_move_book, uint64_t time_limit, thread_id_t thread_id, bool *searching) {
     Search_result res;
     int value_sign = 1;
     if (board.get_legal() == 0ULL) {
@@ -796,6 +803,10 @@ Search_result ai_common(Board board, int alpha, int beta, int level, bool use_bo
     return res;
 }
 
+Search_result ai_common(Board board, int alpha, int beta, int level, bool use_book, int book_acc_level, bool use_multi_thread, bool show_log, uint64_t use_legal, bool use_specified_move_book, uint64_t time_limit, thread_id_t thread_id, bool *searching) {
+    return search_result_to_disc_score(ai_common_internal(board, score_from_disc(alpha), score_from_disc(beta), level, use_book, book_acc_level, use_multi_thread, show_log, use_legal, use_specified_move_book, time_limit, thread_id, searching));
+}
+
 /*
     @brief Get a result of a search with book or search
 
@@ -813,20 +824,20 @@ Search_result ai_common(Board board, int alpha, int beta, int level, bool use_bo
 Search_result ai(Board board, int level, bool use_book, int book_acc_level, bool use_multi_thread, bool show_log) {
     // std::cerr << "ai " << (HW2 - board.n_discs()) << " empties level " << level << std::endl;
     bool searching = true;
-    return ai_common(board, -SCORE_MAX, SCORE_MAX, level, use_book, book_acc_level, use_multi_thread, show_log, board.get_legal(), false, TIME_LIMIT_INF, THREAD_ID_NONE, &searching);
+    return ai_common(board, -HW2, HW2, level, use_book, book_acc_level, use_multi_thread, show_log, board.get_legal(), false, TIME_LIMIT_INF, THREAD_ID_NONE, &searching);
 }
 
 Search_result ai_searching(Board board, int level, bool use_book, int book_acc_level, bool use_multi_thread, bool show_log, bool *searching) {
-    return ai_common(board, -SCORE_MAX, SCORE_MAX, level, use_book, book_acc_level, use_multi_thread, show_log, board.get_legal(), false, TIME_LIMIT_INF, THREAD_ID_NONE, searching);
+    return ai_common(board, -HW2, HW2, level, use_book, book_acc_level, use_multi_thread, show_log, board.get_legal(), false, TIME_LIMIT_INF, THREAD_ID_NONE, searching);
 }
 
 Search_result ai_searching_thread_id(Board board, int level, bool use_book, int book_acc_level, bool use_multi_thread, bool show_log, thread_id_t thread_id, bool *searching) {
-    return ai_common(board, -SCORE_MAX, SCORE_MAX, level, use_book, book_acc_level, use_multi_thread, show_log, board.get_legal(), false, TIME_LIMIT_INF, thread_id, searching);
+    return ai_common(board, -HW2, HW2, level, use_book, book_acc_level, use_multi_thread, show_log, board.get_legal(), false, TIME_LIMIT_INF, thread_id, searching);
 }
 
 Search_result ai_legal(Board board, int level, bool use_book, int book_acc_level, bool use_multi_thread, bool show_log, uint64_t use_legal) {
     bool searching = true;
-    return ai_common(board, -SCORE_MAX, SCORE_MAX, level, use_book, book_acc_level, use_multi_thread, show_log, use_legal, false, TIME_LIMIT_INF, THREAD_ID_NONE, &searching);
+    return ai_common(board, -HW2, HW2, level, use_book, book_acc_level, use_multi_thread, show_log, use_legal, false, TIME_LIMIT_INF, THREAD_ID_NONE, &searching);
 }
 
 Search_result ai_legal_window(Board board, int alpha, int beta, int level, bool use_book, int book_acc_level, bool use_multi_thread, bool show_log, uint64_t use_legal) {
@@ -835,11 +846,11 @@ Search_result ai_legal_window(Board board, int alpha, int beta, int level, bool 
 }
 
 Search_result ai_legal_searching(Board board, int level, bool use_book, int book_acc_level, bool use_multi_thread, bool show_log, uint64_t use_legal, bool *searching) {
-    return ai_common(board, -SCORE_MAX, SCORE_MAX, level, use_book, book_acc_level, use_multi_thread, show_log, use_legal, false, TIME_LIMIT_INF, THREAD_ID_NONE, searching);
+    return ai_common(board, -HW2, HW2, level, use_book, book_acc_level, use_multi_thread, show_log, use_legal, false, TIME_LIMIT_INF, THREAD_ID_NONE, searching);
 }
 
 Search_result ai_legal_searching_thread_id(Board board, int level, bool use_book, int book_acc_level, bool use_multi_thread, bool show_log, uint64_t use_legal, thread_id_t thread_id, bool *searching) {
-    return ai_common(board, -SCORE_MAX, SCORE_MAX, level, use_book, book_acc_level, use_multi_thread, show_log, use_legal, false, TIME_LIMIT_INF, thread_id, searching);
+    return ai_common(board, -HW2, HW2, level, use_book, book_acc_level, use_multi_thread, show_log, use_legal, false, TIME_LIMIT_INF, thread_id, searching);
 }
 
 Search_result ai_window(Board board, int alpha, int beta, int level, bool use_book, int book_acc_level, bool use_multi_thread, bool show_log) {
@@ -862,7 +873,7 @@ Search_result ai_window_searching(Board board, int alpha, int beta, int level, b
 
 Search_result ai_specified(Board board, int level, bool use_book, int book_acc_level, bool use_multi_thread, bool show_log) {
     bool searching = true;
-    return ai_common(board, -SCORE_MAX, SCORE_MAX, level, use_book, book_acc_level, use_multi_thread, show_log, board.get_legal(), true, TIME_LIMIT_INF, THREAD_ID_NONE, &searching);
+    return ai_common(board, -HW2, HW2, level, use_book, book_acc_level, use_multi_thread, show_log, board.get_legal(), true, TIME_LIMIT_INF, THREAD_ID_NONE, &searching);
 }
 
 std::vector<Search_result> ai_best_n_moves_searching(Board board, int level, bool use_book, int book_acc_level, bool use_multi_thread, bool show_log, int n_moves, bool *searching) {
@@ -884,15 +895,14 @@ std::vector<Search_result> ai_best_moves_loss_searching(Board board, int level, 
     Search_result best = ai_searching(board, level, true, 0, true, show_log, searching);
     std::vector<Search_result> search_results;
     search_results.emplace_back(best);
-    int loss_max_score = score_from_disc(loss_max);
-    int alpha = best.value - loss_max_score - 1;
+    int alpha = best.value - loss_max - 1;
     int beta = best.value;
     uint64_t legal = board.get_legal() ^ (1ULL << best.policy);
     while (legal && (*searching)) {
         Search_result result_loss = ai_window_legal_searching(board, alpha, beta, level, true, 0, true, show_log, legal, searching);
         legal ^= 1ULL << result_loss.policy;
         if (*searching) {
-            if (result_loss.value >= best.value - loss_max_score) {
+            if (result_loss.value >= best.value - loss_max) {
                 search_results.emplace_back(result_loss);
             } else {
                 break;
@@ -1418,11 +1428,11 @@ inline bool ai_time_limit_presearch_search(Board board, int alpha, int beta, uin
     }
     bool search_finished = false;
     if (time_limit == TIME_LIMIT_INF) {
-        *result = ai_common(board, alpha, beta, AI_TL_PRESEARCH_LEVEL, false, 0, use_multi_thread, false, use_legal, false, TIME_LIMIT_INF, thread_id, searching);
+        *result = ai_common_internal(board, alpha, beta, AI_TL_PRESEARCH_LEVEL, false, 0, use_multi_thread, false, use_legal, false, TIME_LIMIT_INF, thread_id, searching);
         search_finished = true;
     } else {
         bool presearch_searching = true;
-        std::future<Search_result> search_future = std::async(std::launch::async, ai_common, board, alpha, beta, AI_TL_PRESEARCH_LEVEL, false, 0, use_multi_thread, false, use_legal, false, TIME_LIMIT_INF, thread_id, &presearch_searching);
+        std::future<Search_result> search_future = std::async(std::launch::async, ai_common_internal, board, alpha, beta, AI_TL_PRESEARCH_LEVEL, false, 0, use_multi_thread, false, use_legal, false, TIME_LIMIT_INF, thread_id, &presearch_searching);
         if (search_future.wait_for(std::chrono::milliseconds(remaining)) == std::future_status::ready) {
             *result = search_future.get();
             search_finished = true;
@@ -1763,7 +1773,7 @@ Search_result ai_time_limit(Board board, bool use_book, int book_acc_level, bool
     if (show_log) {
         std::cerr << "ai_common main search tl " << time_limit << std::endl;
     }
-    Search_result search_result = ai_common(board, -SCORE_MAX, SCORE_MAX, MAX_LEVEL, use_book, book_acc_level, use_multi_thread, show_log, board.get_legal(), false, time_limit, thread_id, searching);
+    Search_result search_result = ai_common(board, -HW2, HW2, MAX_LEVEL, use_book, book_acc_level, use_multi_thread, show_log, board.get_legal(), false, time_limit, thread_id, searching);
     if (show_log) {
         std::cerr << "ai_time_limit selected " << idx_to_coord(search_result.policy) << " value " << search_result.value << " depth " << search_result.depth << "@" << search_result.probability << "%" << " time " << tim() - strt << " " << board.to_str() << std::endl << std::endl;
     }
@@ -1808,7 +1818,6 @@ Analyze_result ai_analyze(Board board, int level, bool use_multi_thread, uint_fa
 
 Search_result ai_accept_loss(Board board, int level, int acceptable_loss) {
     uint64_t strt = tim();
-    int acceptable_loss_score = score_from_disc(acceptable_loss);
     Flip flip;
     int v = SCORE_UNDEFINED;
     uint64_t legal = board.get_legal();
@@ -1825,7 +1834,7 @@ Search_result ai_accept_loss(Board board, int level, int acceptable_loss) {
     //thread_pool.tell_finish_using();
     std::vector<std::pair<int, int>> acceptable_moves;
     for (std::pair<int, int> move: moves) {
-        if (move.first >= v - acceptable_loss_score)
+        if (move.first >= v - acceptable_loss)
             acceptable_moves.emplace_back(move);
     }
     int rnd_idx = myrandrange(0, (int)acceptable_moves.size());
@@ -2604,8 +2613,8 @@ Search_result ai_range(Board board, int level, int score_min, int score_max, boo
             }
             int alpha = passed ? score_min : -score_max;
             int beta = passed ? score_max : -score_min;
-            alpha = std::min(-SCORE_MAX, alpha - 1);
-            beta = std::max(SCORE_MAX, beta + 1);
+            alpha = std::max(-HW2, alpha - 1);
+            beta = std::min(HW2, beta + 1);
             Search_result res = ai_window_legal_searching(board, alpha, beta, level, true, 0, true, false, board.get_legal(), searching);
             if (res.value >= score_min && res.value <= score_max) {
                 Search_result move_res = res;

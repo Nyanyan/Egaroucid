@@ -242,7 +242,7 @@ inline void book_recalculate_leaf(Board root_board, int level, int book_depth, i
     Book_elem book_elem = book.get(root_board);
     if (book_elem.value == SCORE_UNDEFINED) {
         std::cerr << "board not registered, searching..." << std::endl;
-        book_elem.value = ai(root_board, level, true, 0, true, false).value;
+        book_elem.value = score_from_disc(ai(root_board, level, true, 0, true, false).value);
     }
 
     bool stop = false;
@@ -389,15 +389,16 @@ uint64_t expand_leaf(Book_deviate_todo_elem todo_elem, int book_depth, int level
     int prev_value = book_elem.value;
     while (todo_elem.board.n_discs() <= book_depth + 4 && !book.contain(&todo_elem.board) && (*book_learning) && todo_elem.remaining_error >= 0) {
         Search_result search_result = ai(todo_elem.board, level, true, 0, use_multi_thread, false);
-        if (is_valid_score(search_result.value)) {
-            book.change(todo_elem.board, search_result.value, level);
+        int search_value = score_from_disc(search_result.value);
+        if (is_valid_score(search_value)) {
+            book.change(todo_elem.board, search_value, level);
             ++n_add;
             if (is_valid_policy(search_result.policy) && (todo_elem.board.get_legal() & (1ULL << search_result.policy))) {
                 int error = 0;
                 if (prev_value != SCORE_UNDEFINED) {
-                    error = -prev_value - search_result.value;
+                    error = -prev_value - search_value;
                 }
-                prev_value = search_result.value;
+                prev_value = search_value;
                 if (
                     todo_elem.board.n_discs() < book_depth + 4 && 
                     error <= todo_elem.max_error_per_move && 
@@ -416,7 +417,7 @@ uint64_t expand_leaf(Book_deviate_todo_elem todo_elem, int book_depth, int level
                         }
                     }
                 } else{
-                    book.add_leaf(&todo_elem.board, search_result.value, search_result.policy, level);
+                    book.add_leaf(&todo_elem.board, search_value, search_result.policy, level);
                     break;
                 }
             } else
@@ -546,7 +547,7 @@ inline void book_deviate(Board root_board, int level, int book_depth, int max_er
         Book_elem book_elem = book.get(root_board);
         if (book_elem.value == SCORE_UNDEFINED) {
             std::cerr << "board not registered, searching..." << std::endl;
-            book_elem.value = ai(root_board, level, true, 0, true, false).value;
+            book_elem.value = score_from_disc(ai(root_board, level, true, 0, true, false).value);
             book.change(&root_board, book_elem.value, level);
         }
         bool book_recalculating = true;
@@ -595,11 +596,12 @@ inline void book_store(std::vector<std::pair<Board, int>> tasks, int level, int 
         board.copy(board_copy);
         *player = task.second;
         Search_result search_result = ai_searching(board, level, true, 0, true, false, book_learning);
-        if (is_valid_policy(search_result.policy) && (board.get_legal() & (1ULL << search_result.policy)) && is_valid_score(search_result.value)) {
+        int search_value = score_from_disc(search_result.value);
+        if (is_valid_policy(search_result.policy) && (board.get_legal() & (1ULL << search_result.policy)) && is_valid_score(search_value)) {
             std::cerr << idx_to_coord(search_result.policy) << " " << search_result.value << std::endl;
             board.print();
             std::cerr << std::endl;
-            book.change(board, search_result.value, level);
+            book.change(board, search_value, level);
             calc_flip(&flip, &board, search_result.policy);
             board.move_board(&flip);
                 bool passed = board.get_legal() == 0;
@@ -610,7 +612,7 @@ inline void book_store(std::vector<std::pair<Board, int>> tasks, int level, int 
                 std::cerr << "child " << child_search_result.value << std::endl;
                 board.print();
                 std::cerr << std::endl;
-                book.change(board, child_search_result.value, level);
+                book.change(board, score_from_disc(child_search_result.value), level);
                 if (passed) {
                     board.pass();
                 }

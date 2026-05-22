@@ -2604,7 +2604,7 @@ class Book {
             if (remaining_legal) {
                 Search_result ai_result = ai_legal(board, level, false, 0, use_multi_thread, false, remaining_legal);
                 if (ai_result.value != SCORE_UNDEFINED) {
-                    new_leaf_value = ai_result.value;
+                    new_leaf_value = score_from_disc(ai_result.value);
                     if (level == ADD_LEAF_SPECIAL_LEVEL)
                         new_leaf_value = book_elem.value;
                     new_leaf_move = ai_result.policy;
@@ -2920,7 +2920,7 @@ void search_new_leaf(Board board, int level, int book_elem_value, bool use_multi
         }
         Search_result ai_result = ai_legal(board, use_level, false, 0, use_multi_thread, false, legal);
         if (ai_result.value != SCORE_UNDEFINED) {
-            new_leaf_value = ai_result.value;
+            new_leaf_value = score_from_disc(ai_result.value);
             if (level == ADD_LEAF_SPECIAL_LEVEL) {
                 new_leaf_value = book_elem_value;
             }
