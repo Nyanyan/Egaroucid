@@ -1347,7 +1347,7 @@ inline bool ai_time_limit_presearch_once(Board board, const std::vector<int> &li
     if (
         allow_mask_search && 
         record_idx != -1 && 
-        searched_boards->at(record_idx).n_visits >= 4 && 
+        searched_boards->at(record_idx).n_visits >= 3 && 
         is_valid_policy(searched_boards->at(record_idx).previous_policy) && 
         is_valid_score(searched_boards->at(record_idx).previous_value)
     ) {
@@ -1406,8 +1406,12 @@ inline bool ai_time_limit_presearch(Board board, bool use_multi_thread, bool sho
         bool used_mask_search = false;
         uint64_t strt_search = tim();
         bool succeeded = ai_time_limit_presearch_once(path.back().board, path.back().line, use_multi_thread, time_limit, strt, thread_id, searching, &result, &searched_boards, &already_searched, &passed, going_down, &used_mask_search);
+        bool is_root_search = path.back().line.empty();
+        if (show_log && is_root_search) {
+            print_ai_time_limit_presearch_result(path.back().line, passed, result, tim() - strt_search, succeeded);
+        }
         if (!succeeded) {
-            if (show_log && going_down) {
+            if (show_log && going_down && !is_root_search) {
                 print_ai_time_limit_presearch_result(path.back().line, passed, result, tim() - strt_search, false);
             }
             break;
@@ -1419,7 +1423,7 @@ inline bool ai_time_limit_presearch(Board board, bool use_multi_thread, bool sho
             if (already_searched) {
                 AI_TL_Presearch_Path child = path.back();
                 if (!move_ai_time_limit_presearch_child(path.back().board, result.policy, &child.board, &child.line)) {
-                    if (show_log) {
+                    if (show_log && !is_root_search) {
                         print_ai_time_limit_presearch_result(path.back().line, passed, result, tim() - strt_search, true);
                     }
                     break;
@@ -1431,7 +1435,7 @@ inline bool ai_time_limit_presearch(Board board, bool use_multi_thread, bool sho
                 }
                 path.pop_back();
                 going_down = false;
-            } else if (show_log) {
+            } else if (show_log && !is_root_search) {
                 print_ai_time_limit_presearch_result(path.back().line, passed, result, tim() - strt_search, true);
             }
         } else {
