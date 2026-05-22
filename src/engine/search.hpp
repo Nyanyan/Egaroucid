@@ -48,31 +48,46 @@ constexpr int MOVE_PASS = 64;
 constexpr int SEARCH_BOOK = -1;
 constexpr int MAX_N_BRANCHES = 35;
 
-struct Search_Stop_Token {
-    bool *raw;
-    const std::atomic_bool *atomic;
+class Search_Stop {
+    private:
+        std::atomic_bool shared_searching;
+        bool raw_searching;
 
-    Search_Stop_Token()
-        : raw(nullptr), atomic(nullptr) {}
+    public:
+        explicit Search_Stop(bool initial_searching = true)
+            : shared_searching(initial_searching), raw_searching(initial_searching) {}
 
-    Search_Stop_Token(bool *raw_)
-        : raw(raw_), atomic(nullptr) {}
+        explicit Search_Stop(bool *legacy_searching_)
+            : shared_searching(legacy_searching_ == nullptr || *legacy_searching_), raw_searching(legacy_searching_ == nullptr || *legacy_searching_) {}
 
-    Search_Stop_Token(const std::atomic_bool *atomic_, bool *raw_)
-        : raw(raw_), atomic(atomic_) {}
+        bool running() const {
+            return raw_searching;
+        }
 
-    operator bool*() const {
-        return raw;
-    }
+        bool shared_running() const {
+            return shared_searching.load(std::memory_order_relaxed);
+        }
+
+        void stop() {
+            raw_searching = false;
+            shared_searching.store(false, std::memory_order_relaxed);
+        }
+
+        void export_to(bool *legacy_searching) const {
+            if (legacy_searching != nullptr && !running()) {
+                *legacy_searching = false;
+            }
+        }
 };
 
-using Searchings = std::vector<Search_Stop_Token>;
+using Searchings = std::vector<Search_Stop*>;
 
-inline bool search_stop_token_is_searching(const Search_Stop_Token &searching) {
-    if (searching.atomic != nullptr && !searching.atomic->load(std::memory_order_relaxed)) {
-        return false;
-    }
-    return searching.raw == nullptr || *searching.raw;
+inline bool search_stop_is_running(Search_Stop *searching) {
+    return searching == nullptr || searching->running();
+}
+
+inline bool search_stop_is_shared_running(Search_Stop *searching) {
+    return searching == nullptr || searching->shared_running();
 }
 
 /*

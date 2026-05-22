@@ -16,7 +16,9 @@
 #include <thread>
 #include <atomic>
 #include <functional>
+#include <memory>
 #include <unordered_map>
+#include <utility>
 
 #define THREAD_ID_SIZE 100
 #define THREAD_ID_NONE 99 // reserved

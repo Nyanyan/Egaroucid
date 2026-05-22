@@ -117,7 +117,7 @@ constexpr int MOVE_ORDERING_TT_REUSE_MIN_DEPTH = 1;
 constexpr int MOVE_ORDERING_NWS_TT_REUSE_MIN_DEPTH = 2;
 
 int nega_alpha_eval1(Search *search, int alpha, int beta, bool skipped);
-int nega_scout(Search *search, int alpha, int beta, const int depth, const bool skipped, uint64_t legal, const bool is_end_search, bool *searching);
+int nega_scout(Search *search, int alpha, int beta, const int depth, const bool skipped, uint64_t legal, const bool is_end_search, Search_Stop *searching);
 inline bool transposition_table_get_value(Search *search, uint32_t hash, int *l, int *u);
 inline int mid_evaluate_diff(Search *search);
 inline int mid_evaluate_move_ordering_end(Search *search);
@@ -253,7 +253,7 @@ inline int get_potential_mobility(uint64_t discs, uint64_t empties) {
     @param searching            flag for terminating this search
     @return true if wipeout found else false
 */
-inline void move_evaluate(Search *search, Flip_value *flip_value, int alpha, int beta, int depth, bool *searching) {
+inline void move_evaluate(Search *search, Flip_value *flip_value, int alpha, int beta, int depth, Search_Stop *searching) {
     flip_value->value = 0;
 #if USE_KILLER_MOVE_MO
     flip_value->value += search->get_killer_bonus(flip_value->flip.pos) * W_KILLER;
@@ -296,6 +296,12 @@ inline void move_evaluate(Search *search, Flip_value *flip_value, int alpha, int
     search->undo(&flip_value->flip);
 }
 
+inline void move_evaluate(Search *search, Flip_value *flip_value, int alpha, int beta, int depth, bool *searching) {
+    Search_Stop stop(searching);
+    move_evaluate(search, flip_value, alpha, beta, depth, &stop);
+    stop.export_to(searching);
+}
+
 /*
     @brief Evaluate a move in midgame for NWS
 
@@ -307,7 +313,7 @@ inline void move_evaluate(Search *search, Flip_value *flip_value, int alpha, int
     @param searching            flag for terminating this search
     @return true if wipeout found else false
 */
-inline void move_evaluate_nws(Search *search, Flip_value *flip_value, int alpha, int beta, int depth, bool *searching) {
+inline void move_evaluate_nws(Search *search, Flip_value *flip_value, int alpha, int beta, int depth, Search_Stop *searching) {
     flip_value->value = 0;
 #if USE_KILLER_MOVE_MO && USE_KILLER_MOVE_NWS_MO
     flip_value->value += search->get_killer_bonus(flip_value->flip.pos) * W_NWS_KILLER;
@@ -345,6 +351,12 @@ inline void move_evaluate_nws(Search *search, Flip_value *flip_value, int alpha,
                 break;
         }
     search->undo(&flip_value->flip);
+}
+
+inline void move_evaluate_nws(Search *search, Flip_value *flip_value, int alpha, int beta, int depth, bool *searching) {
+    Search_Stop stop(searching);
+    move_evaluate_nws(search, flip_value, alpha, beta, depth, &stop);
+    stop.export_to(searching);
 }
 
 // /*
@@ -487,7 +499,7 @@ inline bool move_list_tt_check(Search *search, std::vector<Flip_value> &move_lis
     @param beta                 beta value
     @param searching            flag for terminating this search
 */
-inline bool move_list_evaluate(Search *search, std::vector<Flip_value> &move_list, uint_fast8_t moves[], int depth, int alpha, int beta, bool is_end_search, bool *searching) {
+inline bool move_list_evaluate(Search *search, std::vector<Flip_value> &move_list, uint_fast8_t moves[], int depth, int alpha, int beta, bool is_end_search, Search_Stop *searching) {
     if (move_list.size() == 1) {
         return false;
     }
@@ -518,6 +530,13 @@ inline bool move_list_evaluate(Search *search, std::vector<Flip_value> &move_lis
     return false;
 }
 
+inline bool move_list_evaluate(Search *search, std::vector<Flip_value> &move_list, uint_fast8_t moves[], int depth, int alpha, int beta, bool is_end_search, bool *searching) {
+    Search_Stop stop(searching);
+    bool result = move_list_evaluate(search, move_list, moves, depth, alpha, beta, is_end_search, &stop);
+    stop.export_to(searching);
+    return result;
+}
+
 /*
     @brief Evaluate all legal moves for midgame
 
@@ -529,7 +548,7 @@ inline bool move_list_evaluate(Search *search, std::vector<Flip_value> &move_lis
     @param beta                 beta value
     @param searching            flag for terminating this search
 */
-inline bool move_list_evaluate(Search *search, Flip_value move_list[], int canput, uint_fast8_t moves[], int depth, int alpha, int beta, bool is_end_search, bool *searching) {
+inline bool move_list_evaluate(Search *search, Flip_value move_list[], int canput, uint_fast8_t moves[], int depth, int alpha, int beta, bool is_end_search, Search_Stop *searching) {
     if (canput == 1) {
         return false;
     }
@@ -560,6 +579,13 @@ inline bool move_list_evaluate(Search *search, Flip_value move_list[], int canpu
     return false;
 }
 
+inline bool move_list_evaluate(Search *search, Flip_value move_list[], int canput, uint_fast8_t moves[], int depth, int alpha, int beta, bool is_end_search, bool *searching) {
+    Search_Stop stop(searching);
+    bool result = move_list_evaluate(search, move_list, canput, moves, depth, alpha, beta, is_end_search, &stop);
+    stop.export_to(searching);
+    return result;
+}
+
 /*
     @brief Evaluate all legal moves for midgame NWS
 
@@ -570,7 +596,7 @@ inline bool move_list_evaluate(Search *search, Flip_value move_list[], int canpu
     @param alpha                alpha value (beta = alpha + 1)
     @param searching            flag for terminating this search
 */
-inline bool move_list_evaluate_nws(Search *search, std::vector<Flip_value> &move_list, uint_fast8_t moves[], int depth, int alpha, bool is_end_search, bool *searching) {
+inline bool move_list_evaluate_nws(Search *search, std::vector<Flip_value> &move_list, uint_fast8_t moves[], int depth, int alpha, bool is_end_search, Search_Stop *searching) {
     if (move_list.size() <= 1) {
         return false;
     }
@@ -594,6 +620,13 @@ inline bool move_list_evaluate_nws(Search *search, std::vector<Flip_value> &move
     return false;
 }
 
+inline bool move_list_evaluate_nws(Search *search, std::vector<Flip_value> &move_list, uint_fast8_t moves[], int depth, int alpha, bool is_end_search, bool *searching) {
+    Search_Stop stop(searching);
+    bool result = move_list_evaluate_nws(search, move_list, moves, depth, alpha, is_end_search, &stop);
+    stop.export_to(searching);
+    return result;
+}
+
 /*
     @brief Evaluate all legal moves for midgame NWS
 
@@ -604,7 +637,7 @@ inline bool move_list_evaluate_nws(Search *search, std::vector<Flip_value> &move
     @param alpha                alpha value (beta = alpha + 1)
     @param searching            flag for terminating this search
 */
-inline bool move_list_evaluate_nws(Search *search, Flip_value move_list[], int canput, uint_fast8_t moves[], int depth, int alpha, bool is_end_search, bool *searching) {
+inline bool move_list_evaluate_nws(Search *search, Flip_value move_list[], int canput, uint_fast8_t moves[], int depth, int alpha, bool is_end_search, Search_Stop *searching) {
     if (canput <= 1) {
         return false;
     }
@@ -626,6 +659,13 @@ inline bool move_list_evaluate_nws(Search *search, Flip_value move_list[], int c
         }
     }
     return false;
+}
+
+inline bool move_list_evaluate_nws(Search *search, Flip_value move_list[], int canput, uint_fast8_t moves[], int depth, int alpha, bool is_end_search, bool *searching) {
+    Search_Stop stop(searching);
+    bool result = move_list_evaluate_nws(search, move_list, canput, moves, depth, alpha, is_end_search, &stop);
+    stop.export_to(searching);
+    return result;
 }
 
 // /*

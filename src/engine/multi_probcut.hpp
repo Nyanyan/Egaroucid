@@ -157,11 +157,14 @@ inline bool mpc(Search* search, int alpha, int beta, int depth, uint64_t legal, 
 }
 
 inline bool mpc(Search* search, int alpha, int beta, int depth, uint64_t legal, const bool is_end_search, int* v, bool *searching) {
-    Searchings searchings = {searching};
-    return mpc(search, alpha, beta, depth, legal, is_end_search, v, searchings);
+    Search_Stop stop(searching);
+    Searchings searchings = {&stop};
+    bool result = mpc(search, alpha, beta, depth, legal, is_end_search, v, searchings);
+    stop.export_to(searching);
+    return result;
 }
 
-inline bool mpc(Search* search, int alpha, int beta, int depth, uint64_t legal, const bool is_end_search, int* v, Search_Stop_Token searching) {
+inline bool mpc(Search* search, int alpha, int beta, int depth, uint64_t legal, const bool is_end_search, int* v, Search_Stop *searching) {
     Searchings searchings = {searching};
     return mpc(search, alpha, beta, depth, legal, is_end_search, v, searchings);
 }
