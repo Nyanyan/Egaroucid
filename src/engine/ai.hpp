@@ -404,30 +404,56 @@ void iterative_deepening_search_time_limit(Board board, int alpha, int beta, boo
                 (use_legal & (1ULL << id_result.second))
             ) {
                 uint_fast8_t verify_mpc_level = get_ai_tl_policy_change_verify_mpc_level(main_depth, main_mpc_level);
-                uint64_t verify_legal = (1ULL << result->policy) | (1ULL << id_result.second);
+                int previous_policy = result->policy;
+                int new_policy = id_result.second;
+                int previous_value = SCORE_UNDEFINED;
+                int new_value = SCORE_UNDEFINED;
                 Search verify_search(&board, verify_mpc_level, use_multi_thread, false);
                 verify_search.thread_id = thread_id;
                 bool verify_searching = true;
                 uint64_t time_limit_verify = get_this_search_time_limit(time_limit, tim() - strt);
-                std::future<std::pair<int, int>> verify_f = std::async(std::launch::async, first_nega_scout_legal, &verify_search, alpha, beta, main_depth, main_is_end_search, clogs, verify_legal, strt, &verify_searching);
-                if (verify_f.wait_for(std::chrono::milliseconds(time_limit_verify)) == std::future_status::ready) {
-                    std::pair<int, int> verify_result = verify_f.get();
-                    if (is_valid_policy(verify_result.second)) {
-                        std::ostringstream ss;
-                        ss << " verify@" << SELECTIVITY_PERCENTAGE[verify_mpc_level] << "% " << idx_to_coord(result->policy) << "/" << idx_to_coord(id_result.second) << "->" << idx_to_coord(verify_result.second);
-                        verify_log = ss.str();
-                        id_result = verify_result;
-                    }
+                std::future<std::pair<int, int>> previous_verify_f = std::async(std::launch::async, first_nega_scout_legal, &verify_search, alpha, beta, main_depth, main_is_end_search, clogs, 1ULL << previous_policy, strt, &verify_searching);
+                if (previous_verify_f.wait_for(std::chrono::milliseconds(time_limit_verify)) == std::future_status::ready) {
+                    std::pair<int, int> previous_verify_result = previous_verify_f.get();
+                    previous_value = previous_verify_result.first;
                 } else {
                     verify_searching = false;
                     try {
-                        verify_f.get();
+                        previous_verify_f.get();
                     } catch (const std::exception &e) {
                     }
                     verify_timeout = true;
+                }
+                if (!verify_timeout) {
+                    time_limit_verify = get_this_search_time_limit(time_limit, tim() - strt);
+                    std::future<std::pair<int, int>> new_verify_f = std::async(std::launch::async, first_nega_scout_legal, &verify_search, alpha, beta, main_depth, main_is_end_search, clogs, 1ULL << new_policy, strt, &verify_searching);
+                    if (new_verify_f.wait_for(std::chrono::milliseconds(time_limit_verify)) == std::future_status::ready) {
+                        std::pair<int, int> new_verify_result = new_verify_f.get();
+                        new_value = new_verify_result.first;
+                    } else {
+                        verify_searching = false;
+                        try {
+                            new_verify_f.get();
+                        } catch (const std::exception &e) {
+                        }
+                        verify_timeout = true;
+                    }
+                }
+                if (verify_timeout) {
                     if (show_log) {
                         std::cerr << "policy-change verify@" << SELECTIVITY_PERCENTAGE[verify_mpc_level] << "% terminated " << tim() - strt << " ms" << std::endl;
                     }
+                } else {
+                    std::ostringstream ss;
+                    ss << " verify@" << SELECTIVITY_PERCENTAGE[verify_mpc_level] << "% " << idx_to_coord(previous_policy) << "=" << previous_value << " " << idx_to_coord(new_policy) << "=" << new_value;
+                    if (new_value > previous_value) {
+                        id_result = std::make_pair(new_value, new_policy);
+                        ss << "->" << idx_to_coord(new_policy);
+                    } else {
+                        id_result = std::make_pair(previous_value, previous_policy);
+                        ss << "->" << idx_to_coord(previous_policy);
+                    }
+                    verify_log = ss.str();
                 }
                 result->nodes += verify_search.n_nodes;
                 result->time = tim() - strt;
