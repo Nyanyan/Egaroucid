@@ -30,6 +30,8 @@ constexpr int PONDER_ENDSEARCH_PRESEARCH_OFFSET_TIMELIMIT = 4;
 constexpr int PONDER_START_SELFPLAY_DEPTH = 17;
 
 constexpr int AI_TL_EARLY_BREAK_THRESHOLD = 5;
+constexpr bool AI_TL_USE_EARLY_BREAK = true;
+constexpr int AI_TL_MID_VERIFY_MIN_DEPTH = 28;
 
 constexpr double AI_TL_ADDITIONAL_SEARCH_THRESHOLD = 1.5;
 
@@ -61,6 +63,13 @@ inline uint64_t get_this_search_time_limit(uint64_t time_limit, uint64_t elapsed
         return 0;
     }
     return time_limit - elapsed;
+}
+
+inline int get_ai_tl_mid_verify_mpc_level(int depth) {
+    if (depth < AI_TL_MID_VERIFY_MIN_DEPTH) {
+        return MPC_74_LEVEL;
+    }
+    return depth >= 31 ? MPC_93_LEVEL : MPC_88_LEVEL;
 }
 
 #if USE_LAZY_SMP2
@@ -380,20 +389,22 @@ void iterative_deepening_search_time_limit(Board board, int alpha, int beta, boo
             }
             uint64_t legal_without_bestmove = use_legal ^ (1ULL << result->policy);
             if (
-                (!main_is_end_search && main_depth >= 29 && main_depth <= 30) && 
-                max_depth >= 44 && 
-                !policy_changed && 
-                !policy_changed_before && 
-                main_mpc_level == MPC_74_LEVEL && 
+                AI_TL_USE_EARLY_BREAK &&
+                (!main_is_end_search && main_depth >= 29 && main_depth <= 30) &&
+                max_depth >= 44 &&
+                !policy_changed &&
+                !policy_changed_before &&
+                main_mpc_level == MPC_74_LEVEL &&
                 legal_without_bestmove != 0
             ) {
                 int nws_alpha = result->value - AI_TL_EARLY_BREAK_THRESHOLD;
                 if (nws_alpha >= -SCORE_MAX) {
-                    Search nws_search(&board, main_mpc_level, use_multi_thread, false);
+                    uint_fast8_t early_break_mpc_level = std::max<uint_fast8_t>(main_mpc_level, (uint_fast8_t)get_ai_tl_mid_verify_mpc_level(main_depth));
+                    Search nws_search(&board, early_break_mpc_level, use_multi_thread, false);
                     nws_search.thread_id = thread_id;
                     bool nws_searching = true;
                     if (show_log) {
-                        std::cerr << "trying early break [" << nws_alpha << ", " << nws_alpha + 1 << "] ";
+                        std::cerr << "trying early break@" << SELECTIVITY_PERCENTAGE[early_break_mpc_level] << "% [" << nws_alpha << ", " << nws_alpha + 1 << "] ";
                     }
                     uint64_t time_limit_nws = get_this_search_time_limit(time_limit, tim() - strt);
                     std::future<std::pair<int, int>> nws_f = std::async(std::launch::async, first_nega_scout_legal, &nws_search, nws_alpha, nws_alpha + 1, main_depth, main_is_end_search, clogs, legal_without_bestmove, strt, &nws_searching);
@@ -472,15 +483,13 @@ void iterative_deepening_search_time_limit(Board board, int alpha, int beta, boo
                         main_mpc_level = MPC_74_LEVEL;
                     }
                 } else {
-                    ++main_depth;
-                    /*
-                    if (main_mpc_level < MPC_88_LEVEL) {
+                    int verify_mpc_level = get_ai_tl_mid_verify_mpc_level(main_depth);
+                    if (main_mpc_level < verify_mpc_level) {
                         ++main_mpc_level;
                     } else {
                         ++main_depth;
                         main_mpc_level = MPC_74_LEVEL;
                     }
-                    */
                 }
             }
         } else { // next: endgame search
