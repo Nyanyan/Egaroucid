@@ -470,15 +470,22 @@ void ybwc_search_young_brothers(Search *search, int *alpha, int *beta, int *v, i
                         ++search->n_nodes;
                     }
                     if (*searching && n_searching) {
-                        if (*v < g) {
-                            *v = g;
-                            *best_move = move_list[move_idx].flip.pos;
-                        }
                         if (*alpha < g) {
                             next_alpha = std::max(next_alpha, g);
+                            if (g >= *beta) {
+                                if (*v < g) {
+                                    *v = g;
+                                    *best_move = move_list[move_idx].flip.pos;
+                                }
+                            } else {
+                                research_idxes.emplace_back(move_idx);
+                            }
                             n_searching = false;
-                            research_idxes.emplace_back(move_idx);
                         } else{
+                            if (*v < g) {
+                                *v = g;
+                                *best_move = move_list[move_idx].flip.pos;
+                            }
                             move_done = true;
                         }
                     }
@@ -497,14 +504,21 @@ void ybwc_search_young_brothers(Search *search, int *alpha, int *beta, int *v, i
             --running_count;
             search->n_nodes += task_result.n_nodes;
             if (task_result.value != SCORE_UNDEFINED) {
-                if (*v < task_result.value) {
-                    *v = task_result.value;
-                    *best_move = move_list[task_result.move_idx].flip.pos;
-                }
                 if (*alpha < task_result.value) {
                     next_alpha = std::max(next_alpha, task_result.value);
-                    research_idxes.emplace_back(task_result.move_idx);
+                    if (task_result.value >= *beta) {
+                        if (*v < task_result.value) {
+                            *v = task_result.value;
+                            *best_move = move_list[task_result.move_idx].flip.pos;
+                        }
+                    } else {
+                        research_idxes.emplace_back(task_result.move_idx);
+                    }
                 } else {
+                    if (*v < task_result.value) {
+                        *v = task_result.value;
+                        *best_move = move_list[task_result.move_idx].flip.pos;
+                    }
                     move_list[task_result.move_idx].flip.flip = 0;
                     ++n_searched;
                 }
@@ -569,15 +583,22 @@ void ybwc_search_young_brothers(Search *search, int *alpha, int *beta, int *v, i
                         ++search->n_nodes;
                     }
                     if (*searching && n_searching) {
-                        if (*v < g) {
-                            *v = g;
-                            *best_move = move_list[move_idx].flip.pos;
-                        }
                         if (*alpha < g) {
                             next_alpha = std::max(next_alpha, g);
+                            if (g >= *beta) {
+                                if (*v < g) {
+                                    *v = g;
+                                    *best_move = move_list[move_idx].flip.pos;
+                                }
+                            } else {
+                                research_idxes.emplace_back(move_idx);
+                            }
                             n_searching = false;
-                            research_idxes.emplace_back(move_idx);
                         } else{
+                            if (*v < g) {
+                                *v = g;
+                                *best_move = move_list[move_idx].flip.pos;
+                            }
                             move_done = true;
                         }
                     }
@@ -596,14 +617,21 @@ void ybwc_search_young_brothers(Search *search, int *alpha, int *beta, int *v, i
             --running_count;
             search->n_nodes += task_result.n_nodes;
             if (task_result.value != SCORE_UNDEFINED) {
-                if (*v < task_result.value) {
-                    *v = task_result.value;
-                    *best_move = move_list[task_result.move_idx].flip.pos;
-                }
                 if (*alpha < task_result.value) {
                     next_alpha = std::max(next_alpha, task_result.value);
-                    research_idxes.emplace_back(task_result.move_idx);
+                    if (task_result.value >= *beta) {
+                        if (*v < task_result.value) {
+                            *v = task_result.value;
+                            *best_move = move_list[task_result.move_idx].flip.pos;
+                        }
+                    } else {
+                        research_idxes.emplace_back(task_result.move_idx);
+                    }
                 } else {
+                    if (*v < task_result.value) {
+                        *v = task_result.value;
+                        *best_move = move_list[task_result.move_idx].flip.pos;
+                    }
                     move_list[task_result.move_idx].flip.flip = 0;
                     ++n_searched;
                 }
