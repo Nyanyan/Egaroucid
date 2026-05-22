@@ -1195,6 +1195,7 @@ constexpr uint64_t AI_TL_MAIN_SEARCH_RESERVED_TIME = 1000ULL;
 constexpr int AI_TL_PRESEARCH_LEVEL = 21;
 constexpr int AI_TL_PRESEARCH_MASK_NWS_VALUE_OFFSET = 1;
 constexpr int AI_TL_PRESEARCH_ROOT_MASK_NWS_VALUE_OFFSET = 2;
+constexpr int AI_TL_PRESEARCH_MASK_INTERVAL = 4;
 
 struct AI_TL_Presearch_Record {
     Board board;
@@ -1360,7 +1361,8 @@ inline bool ai_time_limit_presearch_once(Board board, const std::vector<int> &li
     if (
         allow_mask_search && 
         record_idx != -1 && 
-        searched_boards->at(record_idx).n_visits >= 4 && 
+        searched_boards->at(record_idx).n_visits > 0 && 
+        searched_boards->at(record_idx).n_visits % AI_TL_PRESEARCH_MASK_INTERVAL == AI_TL_PRESEARCH_MASK_INTERVAL - 1 && 
         is_valid_policy(searched_boards->at(record_idx).previous_policy) && 
         is_valid_score(searched_boards->at(record_idx).previous_value)
     ) {
@@ -1376,9 +1378,19 @@ inline bool ai_time_limit_presearch_once(Board board, const std::vector<int> &li
                 return false;
             }
             if (nws_result.value >= nws_beta) {
-                succeeded = ai_time_limit_presearch_search(board, previous_value, SCORE_MAX, legal_without_previous_best, use_multi_thread, time_limit, strt, thread_id, searching, result);
-                *used_mask_search = succeeded;
-                should_not_fallback_to_normal_search = true;
+                Search_result masked_result;
+                bool masked_succeeded = ai_time_limit_presearch_search(board, previous_value, SCORE_MAX, legal_without_previous_best, use_multi_thread, time_limit, strt, thread_id, searching, &masked_result);
+                if (!masked_succeeded) {
+                    return false;
+                }
+                if (masked_result.value >= previous_value) {
+                    *result = masked_result;
+                    succeeded = true;
+                    *used_mask_search = true;
+                    should_not_fallback_to_normal_search = true;
+                } else {
+                    succeeded = ai_time_limit_presearch_search(board, -SCORE_MAX, SCORE_MAX, legal, use_multi_thread, time_limit, strt, thread_id, searching, result);
+                }
             } else {
                 succeeded = ai_time_limit_presearch_search(board, -SCORE_MAX, SCORE_MAX, legal, use_multi_thread, time_limit, strt, thread_id, searching, result);
             }
