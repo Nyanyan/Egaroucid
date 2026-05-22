@@ -19,7 +19,7 @@ constexpr uint64_t flip_inside_exclude_mask = 0xFFC381818181C3FFULL; //0xC3C3000
 
 struct Advice_Move {
     int policy;
-    int value;
+    double value;
     int n_flipped_discs;
     int n_flipped_discs_except_edge;
     int n_flipped_direction;
@@ -171,7 +171,7 @@ void print_advice(Board_info *board_info) {
 
     std::vector<Advice_Move> moves;
     {
-        int best_value = -100;
+        double best_value = -100.0;
         uint64_t legal_cpy = legal;
         while (legal_cpy) {
             Search_result search_result = ai_legal(board, ADVICE_VALUE_LEVEL, true, 0, true, false, legal_cpy);

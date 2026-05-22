@@ -163,7 +163,7 @@ inline void eval_pass_endsearch(Eval_search *eval);
 struct Search_result {
     int level;
     int_fast8_t policy;
-    int value;
+    double value;
     int depth;
     uint64_t time;
     uint64_t nodes;

@@ -15,6 +15,7 @@
 #include <fstream>
 #include <time.h>
 #include <chrono>
+#include <cmath>
 #include <random>
 #include <string>
 #include "setting.hpp"
@@ -47,6 +48,27 @@ constexpr int SCORE_INF = 32767;
 
 constexpr int score_from_disc(int disc_score) {
     return disc_score * SCORE_STONE_STEP;
+}
+
+inline int score_from_disc(double disc_score) {
+    return (int)std::round(disc_score * SCORE_STONE_STEP);
+}
+
+constexpr double score_to_disc_double(int score) {
+    return (double)score / SCORE_STONE_STEP;
+}
+
+inline std::string score_to_string(double score, bool show_plus = false, int precision = 1) {
+    std::ostringstream ss;
+    if (show_plus && score >= 0.0) {
+        ss << "+";
+    }
+    ss << std::fixed << std::setprecision(precision) << score;
+    return ss.str();
+}
+
+inline std::string internal_score_to_string(int score, bool show_plus = false, int precision = 1) {
+    return score_to_string(score_to_disc_double(score), show_plus, precision);
 }
 
 constexpr int disc_from_score_rounded(int score) {
@@ -393,6 +415,10 @@ inline bool is_valid_policy(int y, int x) {
 }
 
 inline bool is_valid_score(int score) {
+    return -SCORE_MAX <= score && score <= SCORE_MAX;
+}
+
+inline bool is_valid_score(double score) {
     return -SCORE_MAX <= score && score <= SCORE_MAX;
 }
 

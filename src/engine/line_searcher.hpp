@@ -11,7 +11,7 @@
 #pragma once
 #include "ai.hpp"
 
-void search_lines(Board &board, int player, int depth, int score, int black_score_min, int black_score_max, int black_max_loss, int white_max_loss, std::vector<int> &line, int last_move_player, std::vector<int> &last_move_cells, std::unordered_map<Board, std::vector<std::pair<int, int>>, Book_hash> &ok_board_memo, int level = 21) {
+void search_lines(Board &board, int player, int depth, double score, double black_score_min, double black_score_max, double black_max_loss, double white_max_loss, std::vector<int> &line, int last_move_player, std::vector<int> &last_move_cells, std::unordered_map<Board, std::vector<std::pair<int, double>>, Book_hash> &ok_board_memo, int level = 21) {
     if (depth <= 0) {
         return;
     }
@@ -45,10 +45,10 @@ void search_lines(Board &board, int player, int depth, int score, int black_scor
 
     auto memo = ok_board_memo.find(board);
     if (memo != ok_board_memo.end()) {
-        std::vector<std::pair<int, int>> ok_moves = memo->second; // move, score
-        for (std::pair<int, int> &m: ok_moves) {
+        std::vector<std::pair<int, double>> ok_moves = memo->second; // move, score
+        for (std::pair<int, double> &m: ok_moves) {
             int cell = m.first;
-            int value = m.second;
+            double value = m.second;
             Flip flip;
             calc_flip(&flip, &board, cell);
             board.move_board(&flip);
@@ -68,9 +68,9 @@ void search_lines(Board &board, int player, int depth, int score, int black_scor
             board.undo_board(&flip);
         }
     } else {
-        std::vector<std::pair<int, int>> ok_moves; // move, score
-        int black_score_min_p = black_score_min;
-        int black_score_max_p = black_score_max;
+        std::vector<std::pair<int, double>> ok_moves; // move, score
+        double black_score_min_p = black_score_min;
+        double black_score_max_p = black_score_max;
         if (player == BLACK) {
             black_score_min_p = std::max(black_score_min_p, score - black_max_loss);
         } else {
@@ -82,8 +82,8 @@ void search_lines(Board &board, int player, int depth, int score, int black_scor
                 calc_flip(&flip, &board, cell);
                 board.move_board(&flip);
                 int next_player = player ^ 1;
-                    int alpha = black_score_min_p - 1;
-                    int beta = black_score_max_p + 1;
+                    double alpha = black_score_min_p - 1;
+                    double beta = black_score_max_p + 1;
                     if (next_player != BLACK) {
                         std::swap(alpha, beta);
                         alpha = -alpha;
@@ -91,7 +91,7 @@ void search_lines(Board &board, int player, int depth, int score, int black_scor
                     }
                     // board.print();
                     // int value = ai_window_legal(board, alpha, beta, level, true, 0, true, false, board.get_legal()).value;
-                    int value = ai_window(board, alpha, beta, level, true, 0, true, false).value;
+                    double value = ai_window(board, alpha, beta, level, true, 0, true, false).value;
                     // int value = ai(board, level, true, 0, true, false).value;
                     bool is_ok = alpha < value && value < beta;
                     if (is_ok) {
@@ -130,10 +130,10 @@ void search_lines_demo() {
     // std::string initial_line = "f5d6c3d3c4f4f6g5e3f3g6e2h5c5g4g3f2e1"; // 1993
     int n_max_moves = 20;
     int search_level = 21;
-    int black_score_min = -6;
-    int black_score_max = 1;
-    int black_max_loss = 6;
-    int white_max_loss = 1;
+    double black_score_min = -6.0;
+    double black_score_max = 1.0;
+    double black_max_loss = 6.0;
+    double white_max_loss = 1.0;
     int last_move_player = BLACK;
     std::vector<int> last_move_cells = {get_coord_from_chars('b', '2'), get_coord_from_chars('b', '7'), get_coord_from_chars('g', '2'), get_coord_from_chars('g', '7')};
 
@@ -187,8 +187,8 @@ void search_lines_demo() {
     }
     std::cout << std::endl;
 
-    std::unordered_map<Board, std::vector<std::pair<int, int>>, Book_hash> ok_board_memo;
-    int root_score = ai(search_board, search_level, true, 0, true, false).value;
+    std::unordered_map<Board, std::vector<std::pair<int, double>>, Book_hash> ok_board_memo;
+    double root_score = ai(search_board, search_level, true, 0, true, false).value;
     for (int n_max_moves_itr = n_max_moves % 2; n_max_moves_itr <= n_max_moves; n_max_moves_itr += 2) {
         std::cout << "search until move " << n_max_moves_itr << std::endl;
         std::cerr << "search until move " << n_max_moves_itr << std::endl;

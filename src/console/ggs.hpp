@@ -478,7 +478,7 @@ void ggs_send_move(GGS_Board &ggs_board, SOCKET &sock, Search_result search_resu
     if (search_result.policy == MOVE_PASS) {
         ggs_move_cmd = "t /os play " + ggs_board.game_id + " pa";
     } else {
-        ggs_move_cmd = "t /os play " + ggs_board.game_id + " " + idx_to_coord(search_result.policy) + "/" + std::to_string(search_result.value);
+        ggs_move_cmd = "t /os play " + ggs_board.game_id + " " + idx_to_coord(search_result.policy) + "/" + score_to_string(search_result.value);
     }
     ggs_send_message(sock, ggs_move_cmd + "\n", options);
 }

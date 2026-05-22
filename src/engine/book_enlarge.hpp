@@ -598,7 +598,7 @@ inline void book_store(std::vector<std::pair<Board, int>> tasks, int level, int 
         Search_result search_result = ai_searching(board, level, true, 0, true, false, book_learning);
         int search_value = score_from_disc(search_result.value);
         if (is_valid_policy(search_result.policy) && (board.get_legal() & (1ULL << search_result.policy)) && is_valid_score(search_value)) {
-            std::cerr << idx_to_coord(search_result.policy) << " " << search_result.value << std::endl;
+            std::cerr << idx_to_coord(search_result.policy) << " " << score_to_string(search_result.value) << std::endl;
             board.print();
             std::cerr << std::endl;
             book.change(board, search_value, level);
@@ -609,7 +609,7 @@ inline void book_store(std::vector<std::pair<Board, int>> tasks, int level, int 
                     board.pass();
                 }
                 Search_result child_search_result = ai_searching(board, level, true, 0, true, false, book_learning);
-                std::cerr << "child " << child_search_result.value << std::endl;
+                std::cerr << "child " << score_to_string(child_search_result.value) << std::endl;
                 board.print();
                 std::cerr << std::endl;
                 book.change(board, score_from_disc(child_search_result.value), level);

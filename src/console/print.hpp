@@ -36,16 +36,16 @@
 struct Analyze_summary {
     int n_ply;
     int n_disagree;
-    int sum_disagree;
+    double sum_disagree;
     int n_mistake;
-    int sum_mistake;
+    double sum_mistake;
 
     Analyze_summary() {
         n_ply = 0;
         n_disagree = 0;
-        sum_disagree = 0;
+        sum_disagree = 0.0;
         n_mistake = 0;
-        sum_mistake = 0;
+        sum_mistake = 0.0;
     }
 };
 
@@ -251,11 +251,7 @@ inline void print_search_result_body(Search_result result, const Options *option
         std::cout << "|";
         std::cout << std::right << std::setw(SEARCH_RESULT_TAB_SIZE) << idx_to_coord(result.policy);
         std::cout << "|";
-        if (result.value >= 0) {
-            s = "+" + std::to_string(result.value);
-        } else {
-            s = std::to_string(result.value);
-        }
+        s = score_to_string(result.value, true);
         std::cout << std::right << std::setw(SEARCH_RESULT_TAB_SIZE) << s;
         std::cout << "|";
     }
@@ -302,7 +298,7 @@ inline void print_search_result_debug(Search_result result, const Options *optio
         if (result.depth != SEARCH_BOOK) {
             depth_str = std::to_string(result.depth) + "@" + std::to_string(result.probability) + "%";
         }
-        std::cerr << "level " << level_str << " depth " << depth_str << " " << idx_to_coord(result.policy) << " " << result.value;
+        std::cerr << "level " << level_str << " depth " << depth_str << " " << idx_to_coord(result.policy) << " " << score_to_string(result.value, true);
     }
     std::cerr << " elapsed " << ms_to_time(result.time) << " nodes " << result.nodes << " nps " << result.nps;
     std::cerr << " remaining time " << ms_to_time(state->remaining_time_msec_black) << " / " << ms_to_time(state->remaining_time_msec_white);
@@ -321,7 +317,7 @@ void print_search_result_quiet(Search_result result, const Options *options) {
         std::cout << idx_to_coord(result.policy);
     }
     if (options->show_value) {
-        std::cout << " " << result.value;
+        std::cout << " " << score_to_string(result.value, true);
     }
     std::cout << std::endl;
 }
@@ -345,10 +341,7 @@ inline void print_analyze_body(Analyze_result result, int ply, int player, std::
         std::cout << std::right << std::setw(ANALYZE_TAB_SIZE) << s;
     }
     std::cout << "|";
-    if (result.played_score >= 0)
-        s = "+" + std::to_string(result.played_score);
-    else
-        s = std::to_string(result.played_score);
+    s = internal_score_to_string(result.played_score, true);
     std::cout << std::right << std::setw(ANALYZE_TAB_SIZE) << s;
     std::cout << "|";
     if (result.alt_move != -1) {
@@ -361,10 +354,7 @@ inline void print_analyze_body(Analyze_result result, int ply, int player, std::
             std::cout << std::right << std::setw(ANALYZE_TAB_SIZE) << s;
         }
         std::cout << "|";
-        if (result.alt_score >= 0)
-            s = "+" + std::to_string(result.alt_score);
-        else
-            s = std::to_string(result.alt_score);
+        s = internal_score_to_string(result.alt_score, true);
         std::cout << std::right << std::setw(ANALYZE_TAB_SIZE) << s;
         std::cout << "|";
     } else{
@@ -437,7 +427,7 @@ inline void print_analyze_foot(Analyze_summary summary[]) {
         ss_disagree << std::right << std::setw(2) << summary[i].n_ply;
         std::cout << std::right << std::setw(ANALYZE_SUMMARY_TAB_SIZE) << ss_disagree.str();
         std::cout << "|";
-        std::cout << std::right << std::setw(ANALYZE_SUMMARY_TAB_SIZE) << summary[i].sum_disagree;
+        std::cout << std::right << std::setw(ANALYZE_SUMMARY_TAB_SIZE) << score_to_string(summary[i].sum_disagree);
         std::cout << "|";
         std::cout << std::right << std::setw(ANALYZE_SUMMARY_TAB_SIZE) << std::fixed << std::setprecision(3) << ((double)summary[i].n_disagree / summary[i].n_ply);
         std::cout << "|";
@@ -447,7 +437,7 @@ inline void print_analyze_foot(Analyze_summary summary[]) {
         ss_mistake << std::right << std::setw(2) << summary[i].n_ply;
         std::cout << std::right << std::setw(ANALYZE_SUMMARY_TAB_SIZE) << ss_mistake.str();
         std::cout << "|";
-        std::cout << std::right << std::setw(ANALYZE_SUMMARY_TAB_SIZE) << summary[i].sum_mistake;
+        std::cout << std::right << std::setw(ANALYZE_SUMMARY_TAB_SIZE) << score_to_string(summary[i].sum_mistake);
         std::cout << "|";
         std::cout << std::right << std::setw(ANALYZE_SUMMARY_TAB_SIZE) << std::fixed << std::setprecision(3) << ((double)summary[i].n_mistake / summary[i].n_ply);
         std::cout << "|";

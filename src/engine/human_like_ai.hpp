@@ -123,7 +123,7 @@ Search_result nega_alpha_human_like_root(Search *search, int alpha, int beta, in
         search->move(&move_list[move_idx].flip);
             g = -nega_alpha_human_like(search, -beta, -alpha, depth - 1, false, is_end_search, searching);
         search->undo(&move_list[move_idx].flip);
-        std::cerr << "human like ai move " << move_idx + 1 << "/" << canput << " value " << g << " policy " << idx_to_coord(move_list[move_idx].flip.pos) << " window " << "[" << alpha << "," << beta << "] " << std::endl;
+        std::cerr << "human like ai move " << move_idx + 1 << "/" << canput << " value " << internal_score_to_string(g) << " policy " << idx_to_coord(move_list[move_idx].flip.pos) << " window " << "[" << internal_score_to_string(alpha) << "," << internal_score_to_string(beta) << "] " << std::endl;
         if (res.value < g) {
             res.value = g;
             res.policy = move_list[move_idx].flip.pos;
@@ -145,7 +145,7 @@ Search_result human_like_ai(Board board, int level, bool show_log) {
         board.pass();
         if (board.get_legal() == 0ULL) {
             res.policy = 64;
-            res.value = -score_from_disc(board.score_player());
+            res.value = -(double)board.score_player();
             res.depth = 0;
             res.nps = 0;
             res.is_end_search = true;
@@ -171,8 +171,9 @@ Search_result human_like_ai(Board board, int level, bool show_log) {
     res.probability = 100;
     res.clog_nodes = 0;
     res.clog_time = 0;
+    res.value = score_to_disc_double((int)std::round(res.value));
     if (show_log) {
-        std::cerr << "human like ai value " << res.value << " policy " << idx_to_coord(res.policy) << std::endl;
+        std::cerr << "human like ai value " << score_to_string(res.value) << " policy " << idx_to_coord(res.policy) << std::endl;
     }
     return res;
 }

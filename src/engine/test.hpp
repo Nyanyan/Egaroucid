@@ -45,12 +45,12 @@ void endgame_accuracy_test() {
             std::cerr << "input file format error at idx " << n << " " << line << std::endl;
             return;
         }
-        int v = ai(board, 60, false, 0, true, false).value;
-        int v_ans;
+        double v = ai(board, 60, false, 0, true, false).value;
+        double v_ans;
         ans >> v_ans;
         if (v != v_ans) {
             ++n_error;
-            std::cerr << "\r[ERROR] endgame value wrong idx " << n << " " << line << " got " << v << " expected " << v_ans << std::endl;
+            std::cerr << "\r[ERROR] endgame value wrong idx " << n << " " << line << " got " << score_to_string(v) << " expected " << score_to_string(v_ans) << std::endl;
         }
         ++n;
     }

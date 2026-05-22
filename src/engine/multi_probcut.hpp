@@ -253,8 +253,9 @@ void get_data_probcut_mid() {
                     }
                     long_ans = tree_search_legal(board, -SCORE_MAX, SCORE_MAX, depth, MPC_100_LEVEL, false, board.get_legal(), true, TIME_LIMIT_INF, THREAD_ID_NONE, &searching);
                     // n_discs short_depth long_depth error
-                    std::cerr << i << " " << n_discs << " " << short_depth << " " << depth << " " << long_ans.value - short_ans.value << std::endl;
-                    ofs << n_discs << " " << short_depth << " " << depth << " " << long_ans.value - short_ans.value << std::endl;
+                    double error = score_to_disc_double((int)std::round(long_ans.value - short_ans.value));
+                    std::cerr << i << " " << n_discs << " " << short_depth << " " << depth << " " << score_to_string(error) << std::endl;
+                    ofs << n_discs << " " << short_depth << " " << depth << " " << score_to_string(error) << std::endl;
                 }
             }
         }
@@ -298,8 +299,9 @@ void get_data_probcut_end() {
                 }
                 long_ans = tree_search_legal(board, -SCORE_MAX, SCORE_MAX, depth, MPC_100_LEVEL, false, board.get_legal(), true, TIME_LIMIT_INF, THREAD_ID_NONE, &searching);
                 // n_discs short_depth error
-                std::cerr << i << " " << HW2 - depth << " " << short_depth << " " << long_ans.value - short_ans.value << std::endl;
-                ofs << HW2 - depth << " " << short_depth << " " << long_ans.value - short_ans.value << std::endl;
+                double error = score_to_disc_double((int)std::round(long_ans.value - short_ans.value));
+                std::cerr << i << " " << HW2 - depth << " " << short_depth << " " << score_to_string(error) << std::endl;
+                ofs << HW2 - depth << " " << short_depth << " " << score_to_string(error) << std::endl;
             }
         }
     }

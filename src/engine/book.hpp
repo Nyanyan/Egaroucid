@@ -61,7 +61,7 @@ struct Book_value {
     Search_result to_search_result() {
         Search_result res;
         res.policy = policy;
-        res.value = value;
+        res.value = score_to_disc_double(value);
         res.depth = SEARCH_BOOK;
         res.time = 0;
         res.nodes = 0;

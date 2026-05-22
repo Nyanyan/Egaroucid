@@ -127,7 +127,7 @@ void calc_local_strategy_player(Board board, int max_level, double res[], int pl
     for (int level = 1; level < max_level && *searching && global_searching; ++level) {
         Search_result actual_result = ai_searching(board, level, true, 0, true, false, searching);
         if (show_log) {
-            std::cerr << "level " << level << " result " << actual_result.value << std::endl;
+            std::cerr << "level " << level << " result " << score_to_string(actual_result.value) << std::endl;
         }
         for (int cell = 0; cell < HW2; ++cell) {
             value_diffs[cell] = 0;
@@ -451,7 +451,7 @@ void calc_local_strategy_policy(Board board, int max_level, int policy_res[HW2][
                 if (can_be_flipped_1dir) {
                     flip.flip ^= can_be_flipped_1dir;
                     board.move_board(&flip);
-                        int g = -ai_searching(board, level, true, 0, true, false, searching).value;
+                        double g = -ai_searching(board, level, true, 0, true, false, searching).value;
                     board.undo_board(&flip);
                     flip.flip ^= can_be_flipped_1dir;
                     int n_flipped = pop_count_ull(can_be_flipped_1dir);
@@ -509,7 +509,7 @@ void calc_local_strategy_policy(Board board, int max_level, int policy_res[HW2][
                 uint64_t bit = 1ULL << cell;
                 flip.flip ^= bit;
                 board.move_board(&flip);
-                    int g = -ai_searching(board, level, true, 0, true, false, searching).value;
+                    double g = -ai_searching(board, level, true, 0, true, false, searching).value;
                 board.undo_board(&flip);
                 flip.flip ^= bit;
                 if (g >= actual_results[0].value - 1) { // now policy becomes a good move

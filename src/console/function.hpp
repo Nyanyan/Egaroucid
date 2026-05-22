@@ -108,7 +108,7 @@ void solve_problems_transcript_parallel(std::vector<std::string> arg, Options *o
     if (thread_pool.size() == 0) {
         for (int i = 0; i < (int)board_list.size(); ++i) {
             result = ai(board_list[i], options->level, true, 0, false, options->show_log);
-            std::cout << board_list[i].to_str() << " " << result.value << std::endl;
+            std::cout << board_list[i].to_str() << " " << score_to_string(result.value) << std::endl;
         }
     } else {
         int print_task_idx = 0;
@@ -129,7 +129,7 @@ void solve_problems_transcript_parallel(std::vector<std::string> arg, Options *o
                     if (tasks[print_task_idx].valid()) {
                         if (tasks[print_task_idx].wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
                             result = tasks[print_task_idx].get();
-                            std::cout << board_list[print_task_idx].to_str() << " " << result.value << std::endl;
+                            std::cout << board_list[print_task_idx].to_str() << " " << score_to_string(result.value) << std::endl;
                             ++print_task_idx;
                         }
                     } else {
@@ -142,7 +142,7 @@ void solve_problems_transcript_parallel(std::vector<std::string> arg, Options *o
         while (print_task_idx < tasks.size()) {
             if (tasks[print_task_idx].valid()) {
                 result = tasks[print_task_idx].get();
-                std::cout << board_list[print_task_idx].to_str() << " " << result.value << std::endl;
+                std::cout << board_list[print_task_idx].to_str() << " " << score_to_string(result.value) << std::endl;
                 ++print_task_idx;
             } else {
                 std::cerr << "[ERROR] task not valid" << std::endl;
@@ -589,10 +589,10 @@ void self_play_lossless_lines_task(Board board, const std::string starting_board
     transcript.pop_back();
     board.undo_board(&flip);
     legal ^= 1ULL << search_result.policy;
-    int best_score = search_result.value;
+    double best_score = search_result.value;
     //int best_move = search_result.policy;
-    int alpha = best_score - 2; // accept best - 1
-    int beta = best_score;
+    double alpha = best_score - 2; // accept best - 1
+    double beta = best_score;
     while (legal) {
         search_result = ai_legal_window(board, alpha, beta, options->level, true, 0, true, false, legal);
         if (search_result.value <= alpha) {
@@ -710,7 +710,7 @@ void solve_random(std::vector<std::string> arg, Options *options, State *state) 
         for (int i = 0; i < n_boards; ++i) {
             Board board = get_random_board(n_random_moves);
             Search_result result = ai(board, options->level, true, 0, false, options->show_log);
-            std::cout << board.to_str().substr(0, 64) << " " << result.value << std::endl;
+            std::cout << board.to_str().substr(0, 64) << " " << score_to_string(result.value) << std::endl;
         }
     } else {
         int n_boards_done = 0;
@@ -728,7 +728,7 @@ void solve_random(std::vector<std::string> arg, Options *options, State *state) 
                 if (task.second.valid()) {
                     if (task.second.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
                         Search_result result = task.second.get();
-                        std::cout << task.first.to_str().substr(0, 64) << " " << result.value << std::endl;
+                        std::cout << task.first.to_str().substr(0, 64) << " " << score_to_string(result.value) << std::endl;
                         ++n_boards_done;
                     }
                 }
@@ -745,7 +745,7 @@ void solve_random(std::vector<std::string> arg, Options *options, State *state) 
                 global_searching = true;
                 for (Board &board: boards_mid) {
                     Search_result result = ai(board, options->level, true, 0, true, options->show_log);
-                    std::cout << board.to_str().substr(0, 64) << " " << result.value << std::endl;
+                    std::cout << board.to_str().substr(0, 64) << " " << score_to_string(result.value) << std::endl;
                     ++n_boards_done;
                 }
             }
@@ -818,5 +818,5 @@ void minimax_commandline(std::vector<std::string> arg) {
     board.reset();
     uint64_t strt = tim();
     int res = minimax(&board, depth);
-    std::cout << "minimax depth " << depth << " value " << res << " in " << tim() - strt << " ms" << std::endl;
+    std::cout << "minimax depth " << depth << " value " << internal_score_to_string(res) << " in " << tim() - strt << " ms" << std::endl;
 }

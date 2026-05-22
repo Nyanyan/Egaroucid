@@ -23,7 +23,7 @@
 #include "command_definition.hpp"
 #include "advice.hpp"
 
-#define ANALYZE_MISTAKE_THRESHOLD 4
+constexpr int ANALYZE_MISTAKE_THRESHOLD = score_from_disc(4);
 
 std::string get_command_line() {
     std::cerr << "> ";
@@ -363,11 +363,11 @@ inline void analyze(Board_info *board, Options *options, State *state) {
             if (result.alt_score > result.played_score) {
                 if (result.alt_score - result.played_score >= ANALYZE_MISTAKE_THRESHOLD) {
                     ++summary[board->players[i]].n_mistake;
-                    summary[board->players[i]].sum_mistake += result.alt_score - result.played_score;
+                    summary[board->players[i]].sum_mistake += score_to_disc_double(result.alt_score - result.played_score);
                     judge = "Mistake";
                 } else{
                     ++summary[board->players[i]].n_disagree;
-                    summary[board->players[i]].sum_disagree += result.alt_score - result.played_score;
+                    summary[board->players[i]].sum_disagree += score_to_disc_double(result.alt_score - result.played_score);
                     judge = "Disagree";
                 }
             }

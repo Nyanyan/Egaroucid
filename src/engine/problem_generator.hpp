@@ -48,7 +48,7 @@ void problem_generator(int n_empties, int n_problems, int level) {
             }
             prob_ofs << "X" << std::endl;
             Search_result res = ai(board, level, false, 0, true, false);
-            ans_ofs << res.value << std::endl;
+            ans_ofs << score_to_string(res.value) << std::endl;
             uint64_t legal = board.get_legal();
             for (int i = 0; i < HW2; ++i) {
                 if (i == res.policy) {
