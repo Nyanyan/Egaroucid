@@ -1194,7 +1194,7 @@ AI_TL_Array ai_tl_array;
 constexpr uint64_t AI_TL_MAIN_SEARCH_RESERVED_TIME = 1000ULL;
 constexpr int AI_TL_PRESEARCH_LEVEL = 21;
 constexpr int AI_TL_PRESEARCH_MASK_NWS_VALUE_OFFSET = 1;
-constexpr int AI_TL_PRESEARCH_ROOT_MASK_NWS_VALUE_OFFSET = 2;
+constexpr int AI_TL_PRESEARCH_ROOT_MASK_NWS_VALUE_OFFSET = 3;
 constexpr int AI_TL_PRESEARCH_MASK_INTERVAL = 4;
 
 struct AI_TL_Presearch_Record {
