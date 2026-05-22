@@ -1194,7 +1194,7 @@ AI_TL_Array ai_tl_array;
 constexpr uint64_t AI_TL_MAIN_SEARCH_RESERVED_TIME = 1000ULL;
 constexpr int AI_TL_PRESEARCH_LEVEL = 21;
 constexpr int AI_TL_PRESEARCH_MASK_NWS_VALUE_OFFSET = 1;
-constexpr int AI_TL_PRESEARCH_ROOT_MASK_NWS_VALUE_OFFSET = 3;
+constexpr int AI_TL_PRESEARCH_ROOT_MASK_NWS_VALUE_OFFSET = 2;
 
 struct AI_TL_Presearch_Record {
     Board board;
@@ -1289,6 +1289,19 @@ inline void print_ai_time_limit_presearch_result(const std::vector<int> &line, b
     }
 }
 
+inline void print_ai_time_limit_presearch_root_result(const Search_result &result, bool succeeded, bool used_mask_search) {
+    std::cerr << "root ";
+    if (succeeded) {
+        std::cerr << idx_to_coord(result.policy) << " " << result.value;
+        if (used_mask_search) {
+            std::cerr << " (masked)";
+        }
+    } else {
+        std::cerr << "failed";
+    }
+    std::cerr << std::endl;
+}
+
 inline int ai_time_limit_presearch_find_record(const Board &board, const std::vector<AI_TL_Presearch_Record> &searched_boards) {
     for (int i = 0; i < (int)searched_boards.size(); ++i) {
         if (searched_boards[i].board == board) {
@@ -1347,7 +1360,7 @@ inline bool ai_time_limit_presearch_once(Board board, const std::vector<int> &li
     if (
         allow_mask_search && 
         record_idx != -1 && 
-        searched_boards->at(record_idx).n_visits >= 3 && 
+        searched_boards->at(record_idx).n_visits >= 4 && 
         is_valid_policy(searched_boards->at(record_idx).previous_policy) && 
         is_valid_score(searched_boards->at(record_idx).previous_value)
     ) {
@@ -1408,7 +1421,7 @@ inline bool ai_time_limit_presearch(Board board, bool use_multi_thread, bool sho
         bool succeeded = ai_time_limit_presearch_once(path.back().board, path.back().line, use_multi_thread, time_limit, strt, thread_id, searching, &result, &searched_boards, &already_searched, &passed, going_down, &used_mask_search);
         bool is_root_search = path.back().line.empty();
         if (show_log && is_root_search) {
-            print_ai_time_limit_presearch_result(path.back().line, passed, result, tim() - strt_search, succeeded);
+            print_ai_time_limit_presearch_root_result(result, succeeded, used_mask_search);
         }
         if (!succeeded) {
             if (show_log && going_down && !is_root_search) {
@@ -1442,11 +1455,6 @@ inline bool ai_time_limit_presearch(Board board, bool use_multi_thread, bool sho
             if (path.size() > 1) {
                 path.pop_back();
             } else {
-                AI_TL_Presearch_Path child = path.back();
-                if (!move_ai_time_limit_presearch_child(path.back().board, result.policy, &child.board, &child.line)) {
-                    break;
-                }
-                path.push_back(child);
                 going_down = true;
             }
         }
