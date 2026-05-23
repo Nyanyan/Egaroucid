@@ -2,7 +2,9 @@
 
 GGS Othello のランダム開始局面生成が作り得る盤面を列挙するツール。
 
-出力は 1 行 1 局面で、64 マスの `X/O/-` と手番文字を空白区切りで書く。盤面は点対称・線対称な形を同一視して代表形だけを出力する。
+出力は 1 行 1 局面で、64 マスの `X/O/-` と手番文字を空白区切りで書く。
+
+`random_setup.cpp` と `random_setup_2.cpp` は点対称・線対称な形を同一視して代表形だけを列挙する。`random_setup_2_random.cpp` はGGSのランダム生成に近いサンプルを作るため、対称同一視はしない。
 
 ## random_setup.cpp
 
@@ -54,6 +56,25 @@ g++ -std=c++20 -O2 -march=native random_setup_2.cpp -o random_setup_2.out
 
 ```txt
 output/<n_discs>_random_setup_2/0000000.txt
+```
+
+## random_setup_2_random.cpp
+
+GGS の `random_setup_2` アルゴリズムで、指定した数だけランダムに局面を生成する。
+
+全列挙ではなく、`random_setup(5)` から合法手をランダムに進める試行を繰り返し、途中合法手なしまたは石数片寄りで失敗した試行は捨てる。GGS 本体の 5 回失敗後の `random_setup` フォールバックは使わず、`random_setup_2` として成功した局面だけを出力する。
+
+使い方:
+
+```sh
+g++ -std=c++20 -O2 -march=native random_setup_2_random.cpp -o random_setup_2_random.out
+./random_setup_2_random.out <n_discs> <n_boards> [seed]
+```
+
+出力先は実行ファイルと同じディレクトリにある `output` フォルダ内:
+
+```txt
+output/<n_discs>_random_setup_2_random/0000000.txt
 ```
 
 ## GGS での混合割合
