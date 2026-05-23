@@ -27,7 +27,8 @@ def parse_args():
     parser.add_argument('level', type=int)
     parser.add_argument('n_set_games', type=int)
     parser.add_argument('n_parallel_matches', type=int, nargs='?', default=20)
-    parser.add_argument('n_total_processes', type=int, nargs='?', default=16)
+    # parser.add_argument('n_total_processes', type=int, nargs='?', default=16)
+    parser.add_argument('n_total_processes', type=int, nargs='?', default=8)
     parser.add_argument('status_every', type=int, nargs='?', default=10)
     parser.add_argument(
         '--save-kifu',
@@ -145,11 +146,11 @@ random.shuffle(openings)
 player_info = [
     # ['latest',  'Egaroucid_for_Console.exe -gtp -quiet -nobook'],
     # ['beta', 'versions/Egaroucid_for_Console_beta/Egaroucid_for_Console.exe -gtp -quiet -nobook'],
-    ['aft-rnd16', 'versions/Egaroucid_for_Console_7_8_1_Windows_SIMD/Egaroucid_for_Console_7_8_1_SIMD.exe -gtp -quiet -nobook -eval ./../model/20260520_1_afterrand16/eval.egev2'],
-    ['aft-rnd10', 'versions/Egaroucid_for_Console_7_8_1_Windows_SIMD/Egaroucid_for_Console_7_8_1_SIMD.exe -gtp -quiet -nobook -eval ./../model/20260519_1_afterrand10/eval.egev2'],
-    ['aft-rnd6', 'versions/Egaroucid_for_Console_7_8_1_Windows_SIMD/Egaroucid_for_Console_7_8_1_SIMD.exe -gtp -quiet -nobook -eval ./../model/20260518_1_afterrand6/eval.egev2'],
-    ['aft-rnd4', 'versions/Egaroucid_for_Console_7_8_1_Windows_SIMD/Egaroucid_for_Console_7_8_1_SIMD.exe -gtp -quiet -nobook -eval ./../model/20260516_2_afterrand4/eval.egev2'],
-    ['aft-rnd2', 'versions/Egaroucid_for_Console_7_8_1_Windows_SIMD/Egaroucid_for_Console_7_8_1_SIMD.exe -gtp -quiet -nobook -eval ./../model/20260517_1_afterrand2/eval.egev2'],
+    ['aft-r16', 'versions/Egaroucid_for_Console_7_8_1_Windows_SIMD/Egaroucid_for_Console_7_8_1_SIMD.exe -gtp -quiet -nobook -eval ./../model/20260520_1_afterrand16/eval.egev2'],
+    ['aft-r10', 'versions/Egaroucid_for_Console_7_8_1_Windows_SIMD/Egaroucid_for_Console_7_8_1_SIMD.exe -gtp -quiet -nobook -eval ./../model/20260519_1_afterrand10/eval.egev2'],
+    ['aft-r6', 'versions/Egaroucid_for_Console_7_8_1_Windows_SIMD/Egaroucid_for_Console_7_8_1_SIMD.exe -gtp -quiet -nobook -eval ./../model/20260518_1_afterrand6/eval.egev2'],
+    ['aft-r4', 'versions/Egaroucid_for_Console_7_8_1_Windows_SIMD/Egaroucid_for_Console_7_8_1_SIMD.exe -gtp -quiet -nobook -eval ./../model/20260516_2_afterrand4/eval.egev2'],
+    ['aft-r2', 'versions/Egaroucid_for_Console_7_8_1_Windows_SIMD/Egaroucid_for_Console_7_8_1_SIMD.exe -gtp -quiet -nobook -eval ./../model/20260517_1_afterrand2/eval.egev2'],
     ['7.8.1', 'versions/Egaroucid_for_Console_7_8_1_Windows_SIMD/Egaroucid_for_Console_7_8_1_SIMD.exe -gtp -quiet -nobook'],
     ['Edax4.6', 'versions/edax_4_6/wEdax-x86-64-v3.exe -gtp -q'],
     ['Neural5', 'versions/neural-reversi-cli-5.0.0-windows-x86_64-v3.exe gtp'],
