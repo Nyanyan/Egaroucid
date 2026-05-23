@@ -34,6 +34,7 @@ constexpr int MID_SIMPLE_ORDERING_DEPTH = 4;
 
 
 constexpr uint64_t TIME_LIMIT_INF = 18446744073709551615ULL;
+constexpr uint32_t SEARCH_TIMEOUT_CHECK_NODE_MASK = 0x7FFFU;
 
 
 /*
@@ -245,6 +246,8 @@ class Search {
         Eval_search eval;
         bool use_multi_thread;
         thread_id_t thread_id;
+        uint64_t time_limit_time;
+        uint32_t time_check_counter;
 #if USE_SEARCH_STATISTICS
         uint64_t n_nodes_discs[HW2];
 #endif
@@ -268,10 +271,10 @@ class Search {
 
     public:
 
-        Search() {};
+        Search() : n_nodes(0), use_multi_thread(false), thread_id(THREAD_ID_NONE), time_limit_time(TIME_LIMIT_INF), time_check_counter(0), is_presearch(false) {};
 
         Search(const Board *board_, uint_fast8_t mpc_level_, bool use_multi_thread_, bool is_presearch_)
-            : board(board_->copy()), root_n_discs(board_->n_discs()), n_discs(board_->n_discs()), mpc_level(mpc_level_), use_multi_thread(use_multi_thread_), n_nodes(0), is_presearch(is_presearch_), thread_id(THREAD_ID_NONE) {
+            : board(board_->copy()), root_n_discs(board_->n_discs()), n_discs(board_->n_discs()), mpc_level(mpc_level_), n_nodes(0), use_multi_thread(use_multi_thread_), thread_id(THREAD_ID_NONE), time_limit_time(TIME_LIMIT_INF), time_check_counter(0), is_presearch(is_presearch_) {
             uint64_t empty = ~(board.player | board.opponent);
             parity = 1 & pop_count_ull(empty & 0x000000000F0F0F0FULL);
             parity |= (1 & pop_count_ull(empty & 0x00000000F0F0F0F0ULL)) << 1;
@@ -287,7 +290,7 @@ class Search {
         }
 
         Search(uint64_t board_player, uint64_t board_opponent, uint_fast8_t mpc_level_, bool use_multi_thread_, bool is_presearch_)
-            : board(Board{board_player, board_opponent}), root_n_discs(pop_count_ull(board_player | board_opponent)), n_discs(pop_count_ull(board_player | board_opponent)), mpc_level(mpc_level_), use_multi_thread(use_multi_thread_), n_nodes(0), is_presearch(is_presearch_), thread_id(THREAD_ID_NONE) {
+            : board(Board{board_player, board_opponent}), root_n_discs(pop_count_ull(board_player | board_opponent)), n_discs(pop_count_ull(board_player | board_opponent)), mpc_level(mpc_level_), n_nodes(0), use_multi_thread(use_multi_thread_), thread_id(THREAD_ID_NONE), time_limit_time(TIME_LIMIT_INF), time_check_counter(0), is_presearch(is_presearch_) {
             uint64_t empty = ~(board.player | board.opponent);
             parity = 1 & pop_count_ull(empty & 0x000000000F0F0F0FULL);
             parity |= (1 & pop_count_ull(empty & 0x00000000F0F0F0F0ULL)) << 1;
@@ -303,7 +306,7 @@ class Search {
         }
 
         Search(uint64_t board_player, uint64_t board_opponent, int_fast8_t n_discs_, uint_fast8_t parity_, uint_fast8_t mpc_level_, bool use_multi_thread_, bool is_presearch_, thread_id_t thread_id_)
-            : board(Board(board_player, board_opponent)), root_n_discs(n_discs_), n_discs(n_discs_), parity(parity_), mpc_level(mpc_level_), use_multi_thread(use_multi_thread_), n_nodes(0), is_presearch(is_presearch_), thread_id(thread_id_) {
+            : board(Board(board_player, board_opponent)), root_n_discs(n_discs_), n_discs(n_discs_), parity(parity_), mpc_level(mpc_level_), n_nodes(0), use_multi_thread(use_multi_thread_), thread_id(thread_id_), time_limit_time(TIME_LIMIT_INF), time_check_counter(0), is_presearch(is_presearch_) {
             calc_eval_features(&board, &eval);
 #if USE_KILLER_MOVE_MO
             clear_killers();
@@ -319,7 +322,7 @@ class Search {
             @param init_board           a board to set
         */
         Search(const Board *board_)
-            : board(board_->copy()), root_n_discs(board_->n_discs()), n_discs(board_->n_discs()), thread_id(THREAD_ID_NONE) {
+            : board(board_->copy()), root_n_discs(board_->n_discs()), n_discs(board_->n_discs()), n_nodes(0), use_multi_thread(false), thread_id(THREAD_ID_NONE), time_limit_time(TIME_LIMIT_INF), time_check_counter(0), is_presearch(false) {
             uint64_t empty = ~(board.player | board.opponent);
             parity = 1 & pop_count_ull(empty & 0x000000000F0F0F0FULL);
             parity |= (1 & pop_count_ull(empty & 0x00000000F0F0F0F0ULL)) << 1;
@@ -332,6 +335,26 @@ class Search {
             clear_counter_moves();
             clear_move_history();
 #endif
+        }
+
+        inline void set_time_limit_time(uint64_t time_limit_time_) {
+            time_limit_time = time_limit_time_;
+            time_check_counter = 0;
+        }
+
+        inline bool should_stop(bool *searching) {
+            if (!global_searching || !(*searching)) {
+                return true;
+            }
+            if (
+                time_limit_time != TIME_LIMIT_INF &&
+                ((++time_check_counter & SEARCH_TIMEOUT_CHECK_NODE_MASK) == 0) &&
+                tim() >= time_limit_time
+            ) {
+                *searching = false;
+                return true;
+            }
+            return false;
         }
         
 

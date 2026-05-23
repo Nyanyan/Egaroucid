@@ -158,7 +158,7 @@ inline int nega_alpha_eval1(Search *search, int alpha, int beta, const bool skip
     @return the value
 */
 int nega_scout(Search *search, int alpha, int beta, const int depth, const bool skipped, uint64_t legal, const bool is_end_search, bool *searching) {
-    if (!global_searching || !(*searching)) {
+    if (search->should_stop(searching)) {
         return SCORE_UNDEFINED;
     }
     if (alpha + 1 == beta) {
@@ -527,6 +527,9 @@ inline int aspiration_search(Search *search, int alpha, int beta, int predicted_
     @return pair of value and best move
 */
 std::pair<int, int> first_nega_scout_legal(Search *search, int alpha, int beta, const int depth, const bool is_end_search, const std::vector<Clog_result> clogs, uint64_t legal, uint64_t strt, bool *searching) {
+    if (search->should_stop(searching)) {
+        return std::make_pair(SCORE_UNDEFINED, MOVE_UNDEFINED);
+    }
     ++search->n_nodes;
 #if USE_SEARCH_STATISTICS
     ++search->n_nodes_discs[search->n_discs];

@@ -95,7 +95,7 @@ inline int nega_alpha_eval1_nws(Search *search, int alpha, const bool skipped) {
 
 
 int nega_alpha_eval2_nws(Search *search, int alpha, const bool skipped, uint64_t legal, bool *searching) {
-    if (!global_searching || !(*searching)) {
+    if (search->should_stop(searching)) {
         return SCORE_UNDEFINED;
     }
     ++search->n_nodes;
@@ -183,7 +183,7 @@ int nega_alpha_eval2_nws(Search *search, int alpha, const bool skipped, uint64_t
     @return the value
 */
 int nega_alpha_ordering_nws_simple(Search *search, int alpha, const int depth, const bool skipped, uint64_t legal, bool *searching) {
-    if (!global_searching || !(*searching)) {
+    if (search->should_stop(searching)) {
         return SCORE_UNDEFINED;
     }
     if (depth == 2) {
@@ -335,7 +335,7 @@ inline bool is_searching(std::vector<bool*> &searchings) {
     @return the value
 */
 int nega_alpha_ordering_nws(Search *search, int alpha, const int depth, const bool skipped, uint64_t legal, const bool is_end_search, std::vector<bool*> &searchings) {
-    if (!global_searching || !is_searching(searchings)) {
+    if (!is_searching(searchings) || search->should_stop(searchings.front())) {
         return SCORE_UNDEFINED;
     }
     if (is_end_search) {

@@ -57,8 +57,9 @@ int clog_search(Search *search, int depth, bool *searching);
     @param depth                remaining depth
     @return search result in Parallel_clog_task structure
 */
-Parallel_clog_task clog_do_task(uint64_t player, uint64_t opponent, int depth, bool *searching) {
+Parallel_clog_task clog_do_task(uint64_t player, uint64_t opponent, int depth, uint64_t time_limit_time, bool *searching) {
     Search search(player, opponent, MPC_100_LEVEL, true, false);
+    search.set_time_limit_time(time_limit_time);
     Parallel_clog_task task;
     task.val = clog_search(&search, depth, searching);
     task.n_nodes = search.n_nodes;
@@ -81,7 +82,7 @@ inline bool clog_split(const Search *search, const int canput, const int pv_idx,
         pv_idx < canput - 1 && 
         depth >= CLOG_SEARCH_SPLIT_DEPTH) {
             bool pushed;
-            parallel_tasks.emplace_back(thread_pool.push(&pushed, std::bind(&clog_do_task, search->board.player, search->board.opponent, depth, searching)));
+            parallel_tasks.emplace_back(thread_pool.push(&pushed, std::bind(&clog_do_task, search->board.player, search->board.opponent, depth, search->time_limit_time, searching)));
             if (!pushed) {
                 parallel_tasks.pop_back();
             }
@@ -99,7 +100,7 @@ inline bool clog_split(const Search *search, const int canput, const int pv_idx,
     @return best score
 */
 int clog_search(Search *search, int depth, bool *searching) {
-    if (!global_searching) {
+    if (search->should_stop(searching)) {
         return CLOG_NOT_FOUND;
     }
     ++search->n_nodes;
@@ -199,8 +200,9 @@ int clog_search(Search *search, int depth, bool *searching) {
     @param n_nodes              number of nodes visited
     @return vector of all moves and scores that leads early game over
 */
-std::vector<Clog_result> first_clog_search(Board board, uint64_t *n_nodes, int depth, uint64_t legal, bool *searching) {
+std::vector<Clog_result> first_clog_search(Board board, uint64_t *n_nodes, int depth, uint64_t legal, bool *searching, uint64_t time_limit_time = TIME_LIMIT_INF) {
     Search search(&board, MPC_100_LEVEL, true, false);
+    search.set_time_limit_time(time_limit_time);
     std::vector<Clog_result> res;
     Flip flip;
     int g;
