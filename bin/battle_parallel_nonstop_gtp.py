@@ -38,7 +38,7 @@ def parse_args():
     parser.add_argument('n_parallel_matches', type=int, nargs='?', default=20)
     # parser.add_argument('n_total_processes', type=int, nargs='?', default=16)
     parser.add_argument('n_total_processes', type=int, nargs='?', default=12)
-    parser.add_argument('status_every', type=int, nargs='?', default=10)
+    parser.add_argument('status_every', type=int, nargs='?', default=20)
     parser.add_argument(
         '--save-kifu',
         '--save-all-kifu',
