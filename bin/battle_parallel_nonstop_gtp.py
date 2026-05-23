@@ -629,18 +629,32 @@ def format_estimated_rating_value(estimated_rating):
     return '{:.1f}'.format(est)
 
 
-def print_estimated_ratings_tsv(estimated_ratings):
+def build_estimated_ratings_excel_text(estimated_ratings):
     names = [players[i][NAME_IDX] for i in range(len(players))]
-
-    print('Estimated Rating TSV')
-    print('\t'.join(names))
-    print('\t'.join(
+    values = [
         format_estimated_rating_value(estimated_ratings.get(name))
         for name in names
-    ))
+    ]
+
+    return '\n'.join(values)
 
 
-def print_all_result_locked():
+def print_estimated_ratings_for_excel(estimated_ratings):
+    print(build_estimated_ratings_excel_text(estimated_ratings))
+
+
+def copy_estimated_ratings_excel_text_to_clipboard(estimated_ratings):
+    try:
+        import pyperclip
+        pyperclip.copy(build_estimated_ratings_excel_text(estimated_ratings))
+        print('Estimated ratings copied to clipboard.')
+    except ImportError:
+        print('Clipboard copy skipped: pyperclip is not installed.')
+    except Exception as e:
+        print('Clipboard copy failed: {}'.format(e))
+
+
+def print_all_result_locked(copy_estimated_ratings_to_clipboard=False):
     estimated_ratings = get_estimated_elo_from_history()
 
     print('Win Rate')
@@ -714,7 +728,9 @@ def print_all_result_locked():
             est, ci = estimated_rating
             print('{:.1f}+-{:.1f}'.format(est, ci))
 
-    print_estimated_ratings_tsv(estimated_ratings)
+    print_estimated_ratings_for_excel(estimated_ratings)
+    if copy_estimated_ratings_to_clipboard:
+        copy_estimated_ratings_excel_text_to_clipboard(estimated_ratings)
 
 
 def print_games_progress_locked(target_per_pair):
@@ -737,7 +753,7 @@ def print_games_progress_locked(target_per_pair):
         print(str(sum(n_played)) + '/' + str(target_per_player))
 
 
-def print_status(completed, total, target_per_pair):
+def print_status(completed, total, target_per_pair, copy_estimated_ratings_to_clipboard=False):
     percent = 100.0 * completed / max(1, total)
     print('\n' + '=' * 80)
     print('Progress: {}/{} ({:.2f}%)'.format(completed, total, percent))
@@ -748,7 +764,7 @@ def print_status(completed, total, target_per_pair):
     ))
     print(str(completed // N_BATTLES_PER_ROUND) + ' matches played for each win rate at level ' + str(LEVEL) + ' ' + str(N_THREADS) + ' threads')
     with results_lock:
-        print_all_result_locked()
+        print_all_result_locked(copy_estimated_ratings_to_clipboard)
         print_games_progress_locked(target_per_pair)
 
 
@@ -833,4 +849,4 @@ finally:
             executor.shutdown(wait=True)
 
 print('\nAll battles finished.')
-print_status(completed_battles, total_battles, N_SET_GAMES)
+print_status(completed_battles, total_battles, N_SET_GAMES, copy_estimated_ratings_to_clipboard=True)
