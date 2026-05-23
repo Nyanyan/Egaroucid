@@ -5,6 +5,8 @@ import argparse
 import os
 import queue
 import time
+import atexit
+import signal
 from othello_py import *
 from elo_rating import Elo_player, update_rating, update_rating_draw
 from elo_rating_backcal import fit_elo_from_winrates_with_interval
@@ -20,6 +22,13 @@ PROBLEM_FILE = 'problem/xot/openingslarge.txt' # XOT (8 moves)
 
 QUIT_TIMEOUT_SEC = 2.0
 KILL_TIMEOUT_SEC = 5.0
+PROCESS_POOL_GET_TIMEOUT_SEC = 0.2
+
+process_registry = set()
+process_registry_lock = threading.Lock()
+shutdown_lock = threading.Lock()
+shutdown_event = threading.Event()
+shutdown_started = False
 
 
 def parse_args():
@@ -177,7 +186,57 @@ CMD_IDX = 7
 
 
 def start_engine(cmd):
-    return subprocess.Popen(cmd.split(), stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
+    popen_kwargs = {
+        'stdin': subprocess.PIPE,
+        'stdout': subprocess.PIPE,
+        'stderr': subprocess.DEVNULL,
+    }
+    if os.name == 'nt':
+        popen_kwargs['creationflags'] = subprocess.CREATE_NEW_PROCESS_GROUP
+    else:
+        popen_kwargs['start_new_session'] = True
+
+    with process_registry_lock:
+        if shutdown_event.is_set():
+            raise RuntimeError('shutdown in progress')
+        proc = subprocess.Popen(cmd.split(), **popen_kwargs)
+        process_registry.add(proc)
+        return proc
+
+
+def unregister_process(proc):
+    with process_registry_lock:
+        process_registry.discard(proc)
+
+
+def kill_process_tree(proc):
+    if proc is None or proc.poll() is not None:
+        return
+
+    if os.name == 'nt':
+        try:
+            result = subprocess.run(
+                ['taskkill', '/F', '/T', '/PID', str(proc.pid)],
+                stdin=subprocess.DEVNULL,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+                timeout=KILL_TIMEOUT_SEC,
+            )
+            if result.returncode == 0 or proc.poll() is not None:
+                return
+        except Exception:
+            pass
+    else:
+        try:
+            os.killpg(proc.pid, signal.SIGKILL)
+            return
+        except Exception:
+            pass
+
+    try:
+        proc.kill()
+    except Exception:
+        pass
 
 
 def close_process(proc, send_quit=True):
@@ -185,41 +244,38 @@ def close_process(proc, send_quit=True):
         return
 
     try:
-        if send_quit and proc.poll() is None and proc.stdin is not None:
-            proc.stdin.write('quit\n'.encode('utf-8'))
-            proc.stdin.flush()
-    except Exception:
-        pass
+        try:
+            if send_quit and proc.poll() is None and proc.stdin is not None:
+                proc.stdin.write('quit\n'.encode('utf-8'))
+                proc.stdin.flush()
+        except Exception:
+            pass
 
-    if not send_quit:
+        if send_quit:
+            try:
+                if proc.poll() is None:
+                    proc.wait(timeout=QUIT_TIMEOUT_SEC)
+            except subprocess.TimeoutExpired:
+                kill_process_tree(proc)
+            except Exception:
+                pass
+        else:
+            kill_process_tree(proc)
+
         try:
             if proc.poll() is None:
-                proc.kill()
+                proc.wait(timeout=KILL_TIMEOUT_SEC)
+        except subprocess.TimeoutExpired:
+            kill_process_tree(proc)
+            try:
+                proc.wait(timeout=KILL_TIMEOUT_SEC)
+            except Exception:
+                pass
         except Exception:
             pass
-        try:
-            proc.wait(timeout=KILL_TIMEOUT_SEC)
-        except Exception:
-            pass
+    finally:
         close_process_pipes(proc)
-        return
-
-    try:
-        if proc.poll() is None:
-            proc.wait(timeout=QUIT_TIMEOUT_SEC)
-    except subprocess.TimeoutExpired:
-        try:
-            proc.kill()
-        except Exception:
-            pass
-        try:
-            proc.wait(timeout=KILL_TIMEOUT_SEC)
-        except Exception:
-            pass
-    except Exception:
-        pass
-
-    close_process_pipes(proc)
+        unregister_process(proc)
 
 
 def close_process_pipes(proc):
@@ -231,10 +287,82 @@ def close_process_pipes(proc):
             pass
 
 
+def shutdown_all_processes():
+    global shutdown_started
+
+    with shutdown_lock:
+        if shutdown_started:
+            return
+        shutdown_started = True
+        shutdown_event.set()
+
+    with process_registry_lock:
+        all_procs = list(process_registry)
+
+    for proc in all_procs:
+        try:
+            if proc.poll() is None and proc.stdin is not None:
+                proc.stdin.write('quit\n'.encode('utf-8'))
+                proc.stdin.flush()
+        except Exception:
+            pass
+
+    quit_deadline = time.time() + QUIT_TIMEOUT_SEC
+    for proc in all_procs:
+        try:
+            if proc.poll() is None:
+                proc.wait(timeout=max(0.0, quit_deadline - time.time()))
+        except subprocess.TimeoutExpired:
+            pass
+        except Exception:
+            pass
+
+    for proc in all_procs:
+        if proc.poll() is None:
+            kill_process_tree(proc)
+
+    for proc in all_procs:
+        try:
+            if proc.poll() is None:
+                proc.wait(timeout=KILL_TIMEOUT_SEC)
+        except Exception:
+            pass
+        close_process_pipes(proc)
+        unregister_process(proc)
+
+
+def handle_shutdown_signal(signum, frame):
+    shutdown_event.set()
+    if shutdown_started:
+        return
+    raise KeyboardInterrupt
+
+
+def install_shutdown_handlers():
+    for sig in (signal.SIGINT, signal.SIGTERM):
+        try:
+            signal.signal(sig, handle_shutdown_signal)
+        except Exception:
+            pass
+    if hasattr(signal, 'SIGBREAK'):
+        try:
+            signal.signal(signal.SIGBREAK, handle_shutdown_signal)
+        except Exception:
+            pass
+
+
+atexit.register(shutdown_all_processes)
+install_shutdown_handlers()
+
+
 def restart_process(player_idx, proc_idx):
+    if shutdown_event.is_set():
+        raise RuntimeError('shutdown in progress')
     cmd = players[player_idx][CMD_IDX]
     proc = players[player_idx][SUBPROCESS_IDX][proc_idx]
     close_process(proc, send_quit=False)
+    if shutdown_event.is_set():
+        raise RuntimeError('shutdown in progress')
     new_proc = start_engine(cmd)
     players[player_idx][SUBPROCESS_IDX][proc_idx] = new_proc
     print('restart', players[player_idx][NAME_IDX], 'proc', proc_idx)
@@ -242,8 +370,13 @@ def restart_process(player_idx, proc_idx):
 
 
 def send_command(player_idx, proc_idx, cmd):
+    if shutdown_event.is_set():
+        raise RuntimeError('shutdown in progress')
+
     proc = players[player_idx][SUBPROCESS_IDX][proc_idx]
     for _ in range(2):
+        if shutdown_event.is_set():
+            raise RuntimeError('shutdown in progress')
         if proc.poll() is not None:
             proc = restart_process(player_idx, proc_idx)
         try:
@@ -264,6 +397,17 @@ def send_command(player_idx, proc_idx, cmd):
             return line
 
     raise RuntimeError('failed to communicate with engine: ' + players[player_idx][NAME_IDX] + ' cmd=' + cmd.strip())
+
+
+def acquire_process_idx(player_idx, player):
+    proc_pool = players[player_idx][PROC_POOL_IDX][player]
+    while True:
+        if shutdown_event.is_set():
+            raise RuntimeError('shutdown in progress')
+        try:
+            return proc_pool.get(timeout=PROCESS_POOL_GET_TIMEOUT_SEC)
+        except queue.Empty:
+            pass
 
 
 players = []
@@ -310,11 +454,14 @@ def play_single_game(p0_idx, p1_idx, opening_idx, p0_is_black):
     player_idxes = [p0_idx, p1_idx]
     opening = openings[opening_idx]
     player = 1 if p0_is_black else 0
-    p0_proc_idx = players[p0_idx][PROC_POOL_IDX][player].get()
-    p1_proc_idx = players[p1_idx][PROC_POOL_IDX][player].get()
+    p0_proc_idx = None
+    p1_proc_idx = None
     record = ''
     o = othello()
     try:
+        p0_proc_idx = acquire_process_idx(p0_idx, player)
+        p1_proc_idx = acquire_process_idx(p1_idx, player)
+
         cmd_clear_board = 'clear_board\n'
         send_command(p0_idx, p0_proc_idx, cmd_clear_board)
         send_command(p1_idx, p1_proc_idx, cmd_clear_board)
@@ -397,16 +544,33 @@ def play_single_game(p0_idx, p1_idx, opening_idx, p0_is_black):
             'record': record,
         }
     finally:
-        players[p0_idx][PROC_POOL_IDX][player].put(p0_proc_idx)
-        players[p1_idx][PROC_POOL_IDX][player].put(p1_proc_idx)
+        if p0_proc_idx is not None:
+            players[p0_idx][PROC_POOL_IDX][player].put(p0_proc_idx)
+        if p1_proc_idx is not None:
+            players[p1_idx][PROC_POOL_IDX][player].put(p1_proc_idx)
 
 
 def play_battle(p0_idx, p1_idx, opening_idx):
-    with ThreadPoolExecutor(max_workers=2) as executor:
+    executor = ThreadPoolExecutor(max_workers=2)
+    try:
         future_black = executor.submit(play_single_game, p0_idx, p1_idx, opening_idx, True)
         future_white = executor.submit(play_single_game, p0_idx, p1_idx, opening_idx, False)
-        game_results = [future_black.result(), future_white.result()]
+        future_results = {}
+
+        for future in as_completed([future_black, future_white]):
+            try:
+                future_results[future] = future.result()
+            except Exception:
+                shutdown_all_processes()
+                raise
+
+        game_results = [future_results[future_black], future_results[future_white]]
         sum_disc_diff_p0 = sum(result['p0_disc_diff'] for result in game_results)
+    finally:
+        try:
+            executor.shutdown(wait=True, cancel_futures=True)
+        except TypeError:
+            executor.shutdown(wait=True)
 
     with results_lock:
         p0_rating = players[p0_idx][RATING_IDX]
@@ -583,34 +747,6 @@ def print_collect_progress(completed, total):
     )
 
 
-def shutdown_all_processes():
-    all_procs = []
-    for i in range(len(players)):
-        for j in range(N_TOTAL_PROCESSES):
-            proc = players[i][SUBPROCESS_IDX][j]
-            all_procs.append(proc)
-            try:
-                if proc.poll() is None and proc.stdin is not None:
-                    proc.stdin.write('quit\n'.encode('utf-8'))
-                    proc.stdin.flush()
-            except Exception:
-                pass
-
-    time.sleep(QUIT_TIMEOUT_SEC)
-
-    for proc in all_procs:
-        if proc.poll() is None:
-            try:
-                proc.kill()
-            except Exception:
-                pass
-        try:
-            proc.wait(timeout=KILL_TIMEOUT_SEC)
-        except Exception:
-            pass
-        close_process_pipes(proc)
-
-
 print('n_players', len(players))
 print('level', LEVEL)
 print('parallel matches:', N_PARALLEL_MATCHES)
@@ -638,37 +774,43 @@ for _ in range(N_SET_GAMES):
 total_battles = len(all_battles)
 completed_battles = 0
 
+executor = None
 try:
-    with ThreadPoolExecutor(max_workers=N_PARALLEL_MATCHES) as executor:
-        iterator = iter(all_battles)
-        futures = {}
+    executor = ThreadPoolExecutor(max_workers=N_PARALLEL_MATCHES)
+    iterator = iter(all_battles)
+    futures = {}
 
-        for _ in range(min(N_PARALLEL_MATCHES, total_battles)):
-            p0, p1, opening_idx = next(iterator)
-            future = executor.submit(play_battle, p0, p1, opening_idx)
-            futures[future] = (p0, p1, opening_idx)
+    for _ in range(min(N_PARALLEL_MATCHES, total_battles)):
+        p0, p1, opening_idx = next(iterator)
+        future = executor.submit(play_battle, p0, p1, opening_idx)
+        futures[future] = (p0, p1, opening_idx)
 
-        while futures:
-            for future in as_completed(list(futures.keys())):
-                p0, p1, opening_idx = futures.pop(future)
-                game_results = future.result()
-                completed_battles += 1
-                save_kifu_results(completed_battles, opening_idx, game_results)
-                # print_collect_progress(completed_battles, total_battles)
+    while futures:
+        for future in as_completed(list(futures.keys())):
+            p0, p1, opening_idx = futures.pop(future)
+            game_results = future.result()
+            completed_battles += 1
+            save_kifu_results(completed_battles, opening_idx, game_results)
+            # print_collect_progress(completed_battles, total_battles)
 
-                if completed_battles % STATUS_EVERY == 0 or completed_battles == total_battles:
-                    print_status(completed_battles, total_battles, N_SET_GAMES)
+            if completed_battles % STATUS_EVERY == 0 or completed_battles == total_battles:
+                print_status(completed_battles, total_battles, N_SET_GAMES)
 
-                try:
-                    p0, p1, opening_idx = next(iterator)
-                except StopIteration:
-                    pass
-                else:
-                    nf = executor.submit(play_battle, p0, p1, opening_idx)
-                    futures[nf] = (p0, p1, opening_idx)
-                break
+            try:
+                p0, p1, opening_idx = next(iterator)
+            except StopIteration:
+                pass
+            else:
+                nf = executor.submit(play_battle, p0, p1, opening_idx)
+                futures[nf] = (p0, p1, opening_idx)
+            break
 finally:
     shutdown_all_processes()
+    if executor is not None:
+        try:
+            executor.shutdown(wait=True, cancel_futures=True)
+        except TypeError:
+            executor.shutdown(wait=True)
 
 print('\nAll battles finished.')
 print_status(completed_battles, total_battles, N_SET_GAMES)
