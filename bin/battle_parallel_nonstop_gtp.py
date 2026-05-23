@@ -143,13 +143,24 @@ random.shuffle(openings)
 
 # name, cmd
 player_info = [
-    ['latest',  'Egaroucid_for_Console.exe -gtp -quiet -nobook'],
+    # ['latest',  'Egaroucid_for_Console.exe -gtp -quiet -nobook'],
     # ['beta', 'versions/Egaroucid_for_Console_beta/Egaroucid_for_Console.exe -gtp -quiet -nobook'],
-    ['7.8.0', 'versions/Egaroucid_for_Console_7_8_0_Windows_SIMD/Egaroucid_for_Console_7_8_0_SIMD.exe -gtp -quiet -nobook'],
-    ['7.6.0', 'versions/Egaroucid_for_Console_7_6_0_Windows_SIMD/Egaroucid_for_Console_7_6_0_SIMD.exe -gtp -quiet -nobook'],
-    ['7.5.0', 'versions/Egaroucid_for_Console_7_5_0_Windows_SIMD/Egaroucid_for_Console_7_5_0_SIMD.exe -gtp -quiet -nobook'],
+    ['aft-rnd16', 'versions/Egaroucid_for_Console_7_8_1_Windows_SIMD/Egaroucid_for_Console_7_8_1_SIMD.exe -gtp -quiet -nobook -eval ./../model/20260520_1_afterrand16/eval.egev2'],
+    ['aft-rnd10', 'versions/Egaroucid_for_Console_7_8_1_Windows_SIMD/Egaroucid_for_Console_7_8_1_SIMD.exe -gtp -quiet -nobook -eval ./../model/20260519_1_afterrand10/eval.egev2'],
+    ['aft-rnd6', 'versions/Egaroucid_for_Console_7_8_1_Windows_SIMD/Egaroucid_for_Console_7_8_1_SIMD.exe -gtp -quiet -nobook -eval ./../model/20260518_1_afterrand6/eval.egev2'],
+    ['aft-rnd4', 'versions/Egaroucid_for_Console_7_8_1_Windows_SIMD/Egaroucid_for_Console_7_8_1_SIMD.exe -gtp -quiet -nobook -eval ./../model/20260516_2_afterrand4/eval.egev2'],
+    ['aft-rnd2', 'versions/Egaroucid_for_Console_7_8_1_Windows_SIMD/Egaroucid_for_Console_7_8_1_SIMD.exe -gtp -quiet -nobook -eval ./../model/20260517_1_afterrand2/eval.egev2'],
+    ['7.8.1', 'versions/Egaroucid_for_Console_7_8_1_Windows_SIMD/Egaroucid_for_Console_7_8_1_SIMD.exe -gtp -quiet -nobook'],
     ['Edax4.6', 'versions/edax_4_6/wEdax-x86-64-v3.exe -gtp -q'],
     ['Neural5', 'versions/neural-reversi-cli-5.0.0-windows-x86_64-v3.exe gtp'],
+
+    # ['latest',  'Egaroucid_for_Console.exe -gtp -quiet -nobook'],
+    # # ['beta', 'versions/Egaroucid_for_Console_beta/Egaroucid_for_Console.exe -gtp -quiet -nobook'],
+    # ['7.8.0', 'versions/Egaroucid_for_Console_7_8_0_Windows_SIMD/Egaroucid_for_Console_7_8_0_SIMD.exe -gtp -quiet -nobook'],
+    # ['7.6.0', 'versions/Egaroucid_for_Console_7_6_0_Windows_SIMD/Egaroucid_for_Console_7_6_0_SIMD.exe -gtp -quiet -nobook'],
+    # ['7.5.0', 'versions/Egaroucid_for_Console_7_5_0_Windows_SIMD/Egaroucid_for_Console_7_5_0_SIMD.exe -gtp -quiet -nobook'],
+    # ['Edax4.6', 'versions/edax_4_6/wEdax-x86-64-v3.exe -gtp -q'],
+    # ['Neural5', 'versions/neural-reversi-cli-5.0.0-windows-x86_64-v3.exe gtp'],
 ]
 
 N_BATTLES_PER_ROUND = len(player_info) * (len(player_info) - 1) // 2
