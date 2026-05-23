@@ -7,6 +7,7 @@
 #include <algorithm>
 #include <ios>
 #include <iomanip>
+#include <filesystem>
 #include "./../../engine/board.hpp"
 
 size_t hash_rand_player_enumerate[4][65536];
@@ -121,10 +122,11 @@ void fill_silhouette(uint64_t silhouette, const std::vector<int> &cell_list, int
     if (n_filled == 0) { // silhouette filled
         //all_silhouettes.emplace(silhouette);
         all_silhouettes.emplace(get_representative_silhouette(silhouette));
+        return;
     }
     for (int i = cell_list_strt_idx; i < (int)cell_list.size(); ++i) {
         silhouette ^= 1ULL << cell_list[i];
-            fill_silhouette(silhouette, cell_list, i + 1, n_filled - 1);
+        fill_silhouette(silhouette, cell_list, i + 1, n_filled - 1);
         silhouette ^= 1ULL << cell_list[i];
     }
 }
@@ -290,13 +292,24 @@ int main(int argc, char *argv[]){
     std::mt19937 engine(seed_gen());
     std::shuffle(all_boards_vector.begin(), all_boards_vector.end(), engine);
 
+    std::filesystem::path output_root = std::filesystem::path(argv[0]).parent_path();
+    if (output_root.empty()) {
+        output_root = ".";
+    }
+    const std::string output_dir = (output_root / "output" / (std::to_string(n_discs) + "_random_setup")).string();
+    std::filesystem::create_directories(output_dir);
+
     int n_files = (all_boards.size() + N_BOARDS_PER_FILE - 1) / N_BOARDS_PER_FILE;
     std::cerr << "n_files " << n_files << std::endl;
     int global_idx = 0;
     for (int file_idx = 0; file_idx < n_files; ++file_idx) {
-        std::string file = "output/" + std::to_string(n_discs) + "/" + fill0(file_idx, 7) + ".txt";
+        std::string file = output_dir + "/" + fill0(file_idx, 7) + ".txt";
         std::cerr << "output file " << file << std::endl;
         std::ofstream ofs(file);
+        if (!ofs) {
+            std::cerr << "can't open " << file << std::endl;
+            return 1;
+        }
         for (int i = 0; i < N_BOARDS_PER_FILE && global_idx < (int)all_boards_vector.size(); ++i) {
             std::string board_str = get_str(all_boards_vector[global_idx], turn_color);
             ofs << board_str << std::endl;

@@ -23,10 +23,10 @@ g++ -std=c++20 -O2 -march=native random_setup.cpp -o random_setup.out
 ./random_setup.out <n_discs>
 ```
 
-出力先:
+出力先は実行ファイルと同じディレクトリにある `output` フォルダ内:
 
 ```txt
-output/<n_discs>/0000000.txt
+output/<n_discs>_random_setup/0000000.txt
 ```
 
 ## random_setup_2.cpp
@@ -50,10 +50,10 @@ g++ -std=c++20 -O2 -march=native random_setup_2.cpp -o random_setup_2.out
 ./random_setup_2.out <n_discs>
 ```
 
-出力先:
+出力先は実行ファイルと同じディレクトリにある `output` フォルダ内:
 
 ```txt
-output/<n_discs>_autoplay/0000000.txt
+output/<n_discs>_random_setup_2/0000000.txt
 ```
 
 ## GGS での混合割合

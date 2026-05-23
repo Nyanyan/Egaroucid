@@ -336,7 +336,11 @@ int main(int argc, char *argv[]){
     std::mt19937 engine(seed_gen());
     std::shuffle(all_boards_vector.begin(), all_boards_vector.end(), engine);
 
-    const std::string output_dir = "output/" + std::to_string(target_n_discs) + "_autoplay";
+    std::filesystem::path output_root = std::filesystem::path(argv[0]).parent_path();
+    if (output_root.empty()) {
+        output_root = ".";
+    }
+    const std::string output_dir = (output_root / "output" / (std::to_string(target_n_discs) + "_random_setup_2")).string();
     std::filesystem::create_directories(output_dir);
 
     int n_files = (all_boards.size() + N_BOARDS_PER_FILE - 1) / N_BOARDS_PER_FILE;
@@ -346,6 +350,10 @@ int main(int argc, char *argv[]){
         std::string file = output_dir + "/" + fill0(file_idx, 7) + ".txt";
         std::cerr << "output file " << file << std::endl;
         std::ofstream ofs(file);
+        if (!ofs) {
+            std::cerr << "can't open " << file << std::endl;
+            return 1;
+        }
         for (int i = 0; i < N_BOARDS_PER_FILE && global_idx < (int)all_boards_vector.size(); ++i) {
             std::string board_str = get_str(all_boards_vector[global_idx], turn_color);
             ofs << board_str << std::endl;
