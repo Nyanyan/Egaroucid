@@ -7,8 +7,7 @@
 #include <algorithm>
 #include <ios>
 #include <iomanip>
-#include "./../../engine/engine_all.hpp"
-//#include "./../../engine/util.hpp"
+#include "./../../engine/board.hpp"
 
 size_t hash_rand_player_enumerate[4][65536];
 size_t hash_rand_opponent_enumerate[4][65536];
@@ -263,7 +262,7 @@ int main(int argc, char *argv[]){
         ++d2_n_discs;
         imb = d2_n_discs / 3;
         n_white_min_discs = std::min(n_white_min_discs, d2_n_discs - imb);
-        n_white_max_discs = std::min(n_white_max_discs, d2_n_discs + imb);
+        n_white_max_discs = std::max(n_white_max_discs, d2_n_discs + imb);
     }
     std::cerr << "white min_discs " << n_white_min_discs << " max_discs " << n_white_max_discs << std::endl;
     for (uint64_t sil: all_silhouettes) {
