@@ -11,6 +11,12 @@ from elo_rating_backcal import fit_elo_from_winrates_with_interval
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import threading
 
+
+# PROBLEM_FILE = 'problem/xot/openingslarge.txt' # XOT
+PROBLEM_FILE = 'problem/random_openings/8_moves/0000000.txt' # 8 random moves
+PROBLEM_FILE = 'problem/ggs_random_openings/14_random_setup2/0000000.txt' # GGS random openings (random_setup_2)
+
+
 QUIT_TIMEOUT_SEC = 2.0
 KILL_TIMEOUT_SEC = 5.0
 
@@ -130,7 +136,7 @@ def save_kifu_results(battle_no, opening_idx, game_results):
 
 random.seed(57)
 
-with open('problem/xot/openingslarge.txt', 'r') as f:
+with open(PROBLEM_FILE, 'r') as f:
     openings = [elem for elem in f.read().splitlines()]
 random.shuffle(openings)
 
