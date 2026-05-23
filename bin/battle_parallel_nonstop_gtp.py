@@ -622,6 +622,24 @@ def get_estimated_elo_from_history():
     return {name: (float(ratings[name]), float(intervals[name])) for name in names}
 
 
+def format_estimated_rating_value(estimated_rating):
+    if estimated_rating is None:
+        return '-'
+    est, _ = estimated_rating
+    return '{:.1f}'.format(est)
+
+
+def print_estimated_ratings_tsv(estimated_ratings):
+    names = [players[i][NAME_IDX] for i in range(len(players))]
+
+    print('Estimated Rating TSV')
+    print('\t'.join(names))
+    print('\t'.join(
+        format_estimated_rating_value(estimated_ratings.get(name))
+        for name in names
+    ))
+
+
 def print_all_result_locked():
     estimated_ratings = get_estimated_elo_from_history()
 
@@ -695,6 +713,8 @@ def print_all_result_locked():
         else:
             est, ci = estimated_rating
             print('{:.1f}+-{:.1f}'.format(est, ci))
+
+    print_estimated_ratings_tsv(estimated_ratings)
 
 
 def print_games_progress_locked(target_per_pair):
