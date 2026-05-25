@@ -27,6 +27,10 @@ Run the following commands in the repository root in order.
 
 <code class="code_block">cmake -S . -B build_lib -DBUILD_ENGINE_LIB=ON -DBUILD_CONSOLE=OFF -DBUILD_GUI=OFF</code>
 
+By default, this builds a static library. If you need a shared library with SONAME for Linux packaging, add <code>-DBUILD_SHARED_LIBS=ON</code>. For shared libraries, CMake sets <code>VERSION</code> from the Egaroucid version and <code>SOVERSION</code> from the major version.
+
+<code class="code_block">cmake -S . -B build_lib -DBUILD_ENGINE_LIB=ON -DBUILD_SHARED_LIBS=ON -DBUILD_CONSOLE=OFF -DBUILD_GUI=OFF</code>
+
 If you only want to build the library:
 <code class="code_block">cmake --build build_lib --config Release --target egaroucid</code>
 

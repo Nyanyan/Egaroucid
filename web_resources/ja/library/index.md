@@ -27,6 +27,10 @@ cd Egaroucid</code>
 
 <code class="code_block">cmake -S . -B build_lib -DBUILD_ENGINE_LIB=ON -DBUILD_CONSOLE=OFF -DBUILD_GUI=OFF</code>
 
+デフォルトでは静的ライブラリをビルドします。Linux パッケージングなどで SONAME 付きの共有ライブラリが必要な場合は、<code>-DBUILD_SHARED_LIBS=ON</code> を追加してください。共有ライブラリでは、Egaroucid のバージョンに基づいた <code>VERSION</code> とメジャーバージョンの <code>SOVERSION</code> が設定されます。
+
+<code class="code_block">cmake -S . -B build_lib -DBUILD_ENGINE_LIB=ON -DBUILD_SHARED_LIBS=ON -DBUILD_CONSOLE=OFF -DBUILD_GUI=OFF</code>
+
 ライブラリだけをビルドする場合:
 <code class="code_block">cmake --build build_lib --config Release --target egaroucid</code>
 
