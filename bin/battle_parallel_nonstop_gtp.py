@@ -49,12 +49,23 @@ def parse_args():
         metavar='PATH',
         help='save every game record as TSV. If PATH is omitted, a timestamped file is created.'
     )
+    parser.add_argument(
+        '--depth',
+        '-depth',
+        '--depthprobrange',
+        '-depthprobrange',
+        dest='depth',
+        type=int,
+        default=None,
+        help='set Egaroucid search depth with -depthprobrange 1 60 <depth> 100'
+    )
     return parser.parse_args()
 
 
 args = parse_args()
 
 LEVEL = args.level
+DEPTH = args.depth
 N_SET_GAMES = args.n_set_games
 N_THREADS = 1
 N_PARALLEL_MATCHES = args.n_parallel_matches
@@ -80,6 +91,10 @@ if N_PARALLEL_MATCHES < 1:
 
 if STATUS_EVERY < 1:
     print('STATUS_EVERY must be >= 1')
+    exit(1)
+
+if DEPTH is not None and not (1 <= DEPTH <= 60):
+    print('DEPTH must be in [1, 60]')
     exit(1)
 
 
@@ -161,8 +176,8 @@ player_info = [
     ['aft-r4', 'versions/Egaroucid_for_Console_7_8_1_Windows_SIMD/Egaroucid_for_Console_7_8_1_SIMD.exe -gtp -quiet -nobook -eval ./../model/20260516_2_afterrand4/eval.egev2'],
     ['aft-r2', 'versions/Egaroucid_for_Console_7_8_1_Windows_SIMD/Egaroucid_for_Console_7_8_1_SIMD.exe -gtp -quiet -nobook -eval ./../model/20260517_1_afterrand2/eval.egev2'],
     ['7.8.1', 'versions/Egaroucid_for_Console_7_8_1_Windows_SIMD/Egaroucid_for_Console_7_8_1_SIMD.exe -gtp -quiet -nobook'],
-    ['Edax4.6', 'versions/edax_4_6/wEdax-x86-64-v3.exe -gtp -q'],
-    ['Neural5', 'versions/neural-reversi-cli-5.0.0-windows-x86_64-v3.exe gtp'],
+    # ['Edax4.6', 'versions/edax_4_6/wEdax-x86-64-v3.exe -gtp -q'],
+    # ['Neural5', 'versions/neural-reversi-cli-5.0.0-windows-x86_64-v3.exe gtp'],
 
     # ['latest',  'Egaroucid_for_Console.exe -gtp -quiet -nobook'],
     # # ['beta', 'versions/Egaroucid_for_Console_beta/Egaroucid_for_Console.exe -gtp -quiet -nobook'],
@@ -410,6 +425,10 @@ def acquire_process_idx(player_idx, player):
             pass
 
 
+def supports_depthprobrange(cmd):
+    return 'Egaroucid_for_Console' in cmd
+
+
 players = []
 results_lock = threading.Lock()
 
@@ -419,6 +438,9 @@ for name, cmd in player_info:
         cmd_with_options = cmd + ' ' + str(LEVEL)
     else:
         cmd_with_options = cmd + ' -l ' + str(LEVEL)
+    # depth option
+    if DEPTH is not None and supports_depthprobrange(cmd):
+        cmd_with_options += ' -depthprobrange 1 60 ' + str(DEPTH) + ' 100'
     # thread option
     if 'Edax' in name:
         cmd_with_options += ' -n ' + str(N_THREADS)
@@ -762,7 +784,10 @@ def print_status(completed, total, target_per_pair, copy_estimated_ratings_to_cl
         get_eta_text(completed, total),
         get_battles_per_minute(completed),
     ))
-    print(str(completed // N_BATTLES_PER_ROUND) + ' matches played for each win rate at level ' + str(LEVEL) + ' ' + str(N_THREADS) + ' threads')
+    depth_text = ''
+    if DEPTH is not None:
+        depth_text = ' depth ' + str(DEPTH)
+    print(str(completed // N_BATTLES_PER_ROUND) + ' matches played for each win rate at level ' + str(LEVEL) + depth_text + ' ' + str(N_THREADS) + ' threads')
     with results_lock:
         print_all_result_locked(copy_estimated_ratings_to_clipboard)
         print_games_progress_locked(target_per_pair)
@@ -785,6 +810,8 @@ def print_collect_progress(completed, total):
 
 print('n_players', len(players))
 print('level', LEVEL)
+if DEPTH is not None:
+    print('depthprobrange:', 0, 60, DEPTH, 100)
 print('parallel matches:', N_PARALLEL_MATCHES)
 print('total processes per player:', N_TOTAL_PROCESSES)
 print('status interval (battles):', STATUS_EVERY)
