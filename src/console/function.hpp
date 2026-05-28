@@ -680,7 +680,7 @@ Board get_random_board(int n_random_moves) {
     return board; // error
 }
 
-bool get_random_board_by_score_range(int score_min, int score_max, int n_moves, Board *board, std::string *opening_transcript) {
+bool get_random_board_by_score_range(int score_min, int score_max, int n_moves, int adjustment_level, Board *board, std::string *opening_transcript) {
     struct Cerr_redirect_guard {
         std::streambuf *backup;
         explicit Cerr_redirect_guard(std::streambuf *new_buffer) {
@@ -691,7 +691,7 @@ bool get_random_board_by_score_range(int score_min, int score_max, int n_moves, 
         }
     };
     constexpr int LIGHT_LEVEL = 1;
-    constexpr int ADJUSTMENT_LEVEL = 15;
+    constexpr int MID_LEVEL = 15;
     int n_tries = 0;
     for (;;) {
         ++n_tries;
@@ -701,7 +701,7 @@ bool get_random_board_by_score_range(int score_min, int score_max, int n_moves, 
             // Suppress random board generator progress logs for commandline usage.
             std::ostringstream random_board_generator_log_sink;
             Cerr_redirect_guard cerr_redirect_guard(random_board_generator_log_sink.rdbuf());
-            random_moves = random_board_generator(score_min, score_max, n_moves, LIGHT_LEVEL, ADJUSTMENT_LEVEL, &searching);
+            random_moves = random_board_generator(score_min, score_max, n_moves, LIGHT_LEVEL, MID_LEVEL, adjustment_level, &searching);
         }
         bool success = (int)random_moves.size() == n_moves;
         if (success) {
@@ -776,7 +776,7 @@ void self_play_random_board(std::vector<std::string> arg, Options *options, Stat
     for (int i = 0; i < n_games; ++i) {
         Board board_start;
         std::string opening_transcript;
-        get_random_board_by_score_range(score_min, score_max, n_moves, &board_start, &opening_transcript);
+        get_random_board_by_score_range(score_min, score_max, n_moves, options->level, &board_start, &opening_transcript);
         std::string transcript = self_play_task(board_start, opening_transcript, options, true, 0, SELF_PLAY_N_TRY);
         std::cout << transcript << std::endl;
     }
@@ -823,7 +823,7 @@ void generate_random_board(std::vector<std::string> arg, Options *options, State
     for (int i = 0; i < n_boards; ++i) {
         Board board;
         std::string opening_transcript;
-        get_random_board_by_score_range(score_min, score_max, n_moves, &board, &opening_transcript);
+        get_random_board_by_score_range(score_min, score_max, n_moves, options->level, &board, &opening_transcript);
         std::cout << opening_transcript << std::endl;
     }
     std::cerr << "done in " << tim() - strt << " ms" << std::endl;

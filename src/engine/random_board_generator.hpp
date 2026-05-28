@@ -10,8 +10,10 @@
 #pragma once
 #include "ai.hpp"
 
-std::vector<int> random_board_generator(int score_range_min, int score_range_max, int n_moves, int light_level, int adjustment_level, bool *searching) {
+std::vector<int> random_board_generator(int score_range_min, int score_range_max, int n_moves, int light_level, int mid_level, int adjustment_level, bool *searching) {
     uint64_t strt = tim();
+    light_level = std::min(light_level, adjustment_level);
+    mid_level = std::min(mid_level, adjustment_level);
     int light_n_moves = std::max(0, n_moves - 2);
     int adjustment_n_moves = n_moves - light_n_moves;
     bool success = false;
@@ -71,7 +73,7 @@ std::vector<int> random_board_generator(int score_range_min, int score_range_max
                     alpha = -score_range_max;
                     beta = -score_range_min;
                 }
-                int adjustment_level_now = (adjustment_level * (i + 1) + light_level * (adjustment_n_moves - 1 - i)) / adjustment_n_moves;
+                int adjustment_level_now = (i == adjustment_n_moves - 1) ? adjustment_level : mid_level;
                 Search_result search_result = ai_range(board, adjustment_level_now, alpha, beta, searching);
                 if (search_result.value == SCORE_UNDEFINED) { // adjust failed
                     if (i == adjustment_n_moves - 1) { // last move
@@ -80,7 +82,7 @@ std::vector<int> random_board_generator(int score_range_min, int score_range_max
                     } else {
                         // use accept_loss search
                         int acceptable_loss = std::abs(std::round(dist(engine)));
-                        Search_result search_result2 = ai_accept_loss(board, light_level, acceptable_loss);
+                        Search_result search_result2 = ai_accept_loss(board, adjustment_level_now, acceptable_loss);
                         int policy2 = search_result2.policy;
                         res.emplace_back(policy2);
                         calc_flip(&flip, &board, policy2);

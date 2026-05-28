@@ -311,9 +311,10 @@ void randboard(Board_info *board, Options *options, State *state, std::string ar
         return;
     }
     constexpr int LIGHT_LEVEL = 1;
-    constexpr int ADJUSTMENT_LEVEL = 15;
+    constexpr int MID_LEVEL = 15;
+    const int adjustment_level = options->level;
     bool searching = true;
-    std::vector<int> random_moves = random_board_generator(score_min, score_max, n_moves, LIGHT_LEVEL, ADJUSTMENT_LEVEL, &searching);
+    std::vector<int> random_moves = random_board_generator(score_min, score_max, n_moves, LIGHT_LEVEL, MID_LEVEL, adjustment_level, &searching);
     if ((int)random_moves.size() != n_moves) {
         std::cerr << "[ERROR] random board generation failed" << std::endl;
         return;

@@ -1029,8 +1029,9 @@ private:
                 need_start_game_button_calculation();
             }
             if (getData().menu_elements.generate_random_board || shortcut_key == U"generate_random_board") {
-                int light_level = 1;
-                int adjustment_level = 15;
+                const int light_level = 1;
+                const int mid_level = 15;
+                const int adjustment_level = getData().menu_elements.level;
                 stop_calculating();
                 getData().history_elem.reset();
                 getData().graph_resources.init();
@@ -1039,7 +1040,7 @@ private:
                 pausing_in_pass = false;
                 resume_calculating();
                 ai_status.random_board_generator_calculating = true;
-                ai_status.random_board_generator_future = std::async(std::launch::async, random_board_generator, getData().menu_elements.generate_random_board_score_range_min, getData().menu_elements.generate_random_board_score_range_max, getData().menu_elements.generate_random_board_moves, light_level, adjustment_level, &ai_status.random_board_generator_calculating);
+                ai_status.random_board_generator_future = std::async(std::launch::async, random_board_generator, getData().menu_elements.generate_random_board_score_range_min, getData().menu_elements.generate_random_board_score_range_max, getData().menu_elements.generate_random_board_moves, light_level, mid_level, adjustment_level, &ai_status.random_board_generator_calculating);
             }
         }
         if (getData().menu_elements.convert_180 || shortcut_key == U"convert_180") {
