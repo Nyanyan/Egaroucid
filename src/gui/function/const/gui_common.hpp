@@ -96,8 +96,8 @@ constexpr int START_GAME_BUTTON_HEIGHT = 30;
 constexpr int START_GAME_BUTTON_RADIUS = 10;
 
 // main scene pass button constants
-constexpr int PASS_BUTTON_SX = 700;
-constexpr int PASS_BUTTON_SY = 11;
+constexpr int PASS_BUTTON_SX = START_GAME_BUTTON_SX;
+constexpr int PASS_BUTTON_SY = START_GAME_BUTTON_SY;
 constexpr int PASS_BUTTON_WIDTH = 90;
 constexpr int PASS_BUTTON_HEIGHT = 30;
 constexpr int PASS_BUTTON_RADIUS = 10;
