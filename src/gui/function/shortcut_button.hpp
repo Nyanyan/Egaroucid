@@ -102,6 +102,14 @@ public:
         return -1;
     }
 
+    void clear_invalid_functions() {
+        for (String& function_name : functions) {
+            if (function_name != U"" && !is_valid_function(function_name)) {
+                function_name.clear();
+            }
+        }
+    }
+
 private:
     bool is_valid_button_idx(int button_idx) const {
         return 0 <= button_idx && button_idx < SHORTCUT_BUTTON_COUNT;

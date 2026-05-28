@@ -10,18 +10,61 @@
 
 #pragma once
 #include <Siv3D.hpp>
+#include <algorithm>
 #include <vector>
 #include <unordered_set>
 #include <unordered_map>
+#include "const/gui_common.hpp"
+#include "ai_profile.hpp"
 #include "language.hpp"
 
 #define SHORTCUT_KEY_UNDEFINED U"undefined"
+#define SHORTCUT_KEY_AI_PROFILE_PREFIX U"ai_profile:"
 
 struct Shortcut_key_elem {
     String name;
     std::vector<String> keys;
     std::vector<std::vector<std::string>> description_keys;
+    String description_suffix;
 };
+
+inline String get_ai_profile_shortcut_name(const String& profile_file_name) {
+    return String(SHORTCUT_KEY_AI_PROFILE_PREFIX) + profile_file_name;
+}
+
+inline bool is_ai_profile_shortcut_name(const String& shortcut_name) {
+    return shortcut_name.starts_with(String(SHORTCUT_KEY_AI_PROFILE_PREFIX));
+}
+
+inline String get_ai_profile_file_name_from_shortcut_name(const String& shortcut_name) {
+    if (!is_ai_profile_shortcut_name(shortcut_name)) {
+        return U"";
+    }
+    return shortcut_name.substr(String(SHORTCUT_KEY_AI_PROFILE_PREFIX).size());
+}
+
+inline Shortcut_key_elem create_ai_profile_shortcut_key_elem(const FilePath& path) {
+    String profile_name;
+    AI_profile_values values;
+    if (!load_ai_profile_values(path, &values, &profile_name) || profile_name.trimmed().isEmpty()) {
+        profile_name = FileSystem::FileName(path);
+    }
+
+    Shortcut_key_elem elem;
+    elem.name = get_ai_profile_shortcut_name(FileSystem::FileName(path));
+    elem.description_keys = {{"settings", "settings"}, {"settings", "profile", "profile"}};
+    elem.description_suffix = profile_name;
+    return elem;
+}
+
+inline void append_ai_profile_shortcut_key_elems(std::vector<Shortcut_key_elem>* shortcut_key_elems, const Directories* directories) {
+    if (directories == nullptr) {
+        return;
+    }
+    for (const auto& path : enumerate_ai_profile_files(*directories)) {
+        shortcut_key_elems->emplace_back(create_ai_profile_shortcut_key_elem(path));
+    }
+}
 
 std::vector<Shortcut_key_elem> shortcut_keys_default = {
     // buttons
@@ -44,6 +87,7 @@ std::vector<Shortcut_key_elem> shortcut_keys_default = {
     {U"pause_when_pass",        {},                     {{"settings", "settings"}, {"settings", "play", "pause_when_pass"}}},
     {U"force_specified_openings", {},                   {{"settings", "settings"}, {"settings", "play", "force_specified_openings"}}},
     {U"opening_setting",        {},                     {{"settings", "settings"}, {"settings", "play", "opening_setting"}}},
+    {U"ai_profile_load",        {},                     {{"settings", "settings"}, {"settings", "profile", "profile"}}},
     {U"shortcut_key_setting",   {},                     {{"settings", "settings"}, {"settings", "shortcut_keys", "settings"}}},
     {U"shortcut_button_setting",{},                     {{"settings", "settings"}, {"settings", "shortcut_buttons", "settings"}}},
     {U"mouse_additional_button_setting",{},             {{"settings", "settings"}, {"settings", "mouse_additional_buttons", "settings"}}},
@@ -210,19 +254,25 @@ std::vector<String> get_all_inputs(bool *down_found) {
 class Shortcut_keys {
 public:
     std::vector<Shortcut_key_elem> shortcut_keys;
+private:
+    const Directories* directories = nullptr;
+    std::vector<Shortcut_key_elem> current_default_shortcut_keys;
 public:
     void set_default() {
-        shortcut_keys = shortcut_keys_default;
+        refresh_default_shortcut_keys();
+        shortcut_keys = current_default_shortcut_keys;
     }
 
     void set_empty() {
-        shortcut_keys = shortcut_keys_default;
+        refresh_default_shortcut_keys();
+        shortcut_keys = current_default_shortcut_keys;
         for (Shortcut_key_elem &elem: shortcut_keys) {
             elem.keys.clear();
         }
     }
 
-    void init(String file) {
+    void init(String file, const Directories* directories_) {
+        directories = directories_;
         set_empty();
         JSON json = JSON::Load(file);
         if (not json) {
@@ -230,7 +280,7 @@ public:
         } else {
             std::unordered_set<String> name_list;
             std::unordered_set<String> loaded_name_list;
-            for (Shortcut_key_elem &elem: shortcut_keys_default) {
+            for (Shortcut_key_elem &elem: current_default_shortcut_keys) {
                 name_list.emplace(elem.name);
             }
             for (const auto& object: json) {
@@ -281,7 +331,7 @@ public:
                 if (loaded_name_list.find(shortcut_keys[i].name) != loaded_name_list.end()) {
                     continue;
                 }
-                const std::vector<String>& default_keys = shortcut_keys_default[i].keys;
+                const std::vector<String>& default_keys = current_default_shortcut_keys[i].keys;
                 if (default_keys.empty()) {
                     continue;
                 }
@@ -298,6 +348,27 @@ public:
                 if (!conflicted) {
                     shortcut_keys[i].keys = default_keys;
                 }
+            }
+        }
+    }
+
+    void init(String file) {
+        init(file, directories);
+    }
+
+    void sync_dynamic_shortcut_keys(const Directories* directories_) {
+        directories = directories_;
+        std::unordered_map<String, std::vector<String>> current_keys;
+        for (const Shortcut_key_elem& elem : shortcut_keys) {
+            current_keys[elem.name] = elem.keys;
+        }
+
+        refresh_default_shortcut_keys();
+        shortcut_keys = current_default_shortcut_keys;
+        for (Shortcut_key_elem& elem : shortcut_keys) {
+            auto it = current_keys.find(elem.name);
+            if (it != current_keys.end()) {
+                elem.keys = it->second;
             }
         }
     }
@@ -358,6 +429,12 @@ public:
                         res += U"> ";
                     }
                 }
+                if (!elem.description_suffix.isEmpty()) {
+                    if (!res.isEmpty()) {
+                        res += U"> ";
+                    }
+                    res += elem.description_suffix;
+                }
                 return res;
             }
         }
@@ -373,6 +450,21 @@ public:
 
     void del(int idx) {
         shortcut_keys[idx].keys.clear();
+    }
+
+private:
+    void refresh_default_shortcut_keys() {
+        current_default_shortcut_keys = shortcut_keys_default;
+        std::vector<Shortcut_key_elem> ai_profile_shortcut_keys;
+        append_ai_profile_shortcut_key_elems(&ai_profile_shortcut_keys, directories);
+        auto insert_pos = std::find_if(
+            current_default_shortcut_keys.begin(),
+            current_default_shortcut_keys.end(),
+            [](const Shortcut_key_elem& elem) { return elem.name == U"ai_profile_load"; });
+        if (insert_pos != current_default_shortcut_keys.end()) {
+            ++insert_pos;
+        }
+        current_default_shortcut_keys.insert(insert_pos, ai_profile_shortcut_keys.begin(), ai_profile_shortcut_keys.end());
     }
 };
 

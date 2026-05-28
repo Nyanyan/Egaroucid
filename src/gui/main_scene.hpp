@@ -79,6 +79,9 @@ public:
         // std::cerr << std::endl;
         // uint64_t strt = tim();
         std::cerr << "main scene loading" << std::endl;
+        shortcut_keys.sync_dynamic_shortcut_keys(&getData().directories);
+        shortcut_buttons.clear_invalid_functions();
+        mouse_additional_buttons.clear_invalid_functions();
         getData().menu = create_menu(&getData().menu_elements, &getData().resources, getData().fonts.font, getData().settings.lang_name);
         graph.sx = GRAPH_SX;
         graph.sy = GRAPH_SY;
@@ -647,6 +650,29 @@ private:
         global_searching = true;
     }
 
+    bool load_ai_profile_shortcut(const String& shortcut_name) {
+        if (!is_ai_profile_shortcut_name(shortcut_name)) {
+            return false;
+        }
+
+        const String profile_file = get_ai_profile_file_name_from_shortcut_name(shortcut_name);
+        const String profile_path = get_ai_settings_file_path(getData().directories, profile_file);
+        AI_profile_values values = to_ai_profile_values(getData().menu_elements);
+        String profile_name;
+        if (!load_ai_profile_values(profile_path, &values, &profile_name)) {
+            std::cerr << "failed to load AI profile shortcut: " << profile_file.narrow() << std::endl;
+            return false;
+        }
+
+        stop_calculating();
+        apply_ai_profile_values(values, &getData().menu_elements);
+        apply_ai_profile_values(values, &getData().settings);
+        getData().settings.ai_profile_file = profile_file.narrow();
+        getData().settings.ai_profile_name = profile_name.narrow();
+        resume_calculating();
+        return true;
+    }
+
     void menu_game() {
         if (getData().menu_elements.start_game || shortcut_key == U"new_game") {
             stop_calculating();
@@ -719,6 +745,9 @@ private:
     }
 
     void menu_setting() {
+        if (load_ai_profile_shortcut(shortcut_key)) {
+            return;
+        }
         if (shortcut_key == U"use_book") {
             getData().menu_elements.use_book = !getData().menu_elements.use_book;
         }
@@ -751,7 +780,7 @@ private:
             changeScene(U"AI_loss_graph_setting", SCENE_FADE_TIME);
             return;
         }
-        if (getData().menu_elements.ai_profile_load) {
+        if (getData().menu_elements.ai_profile_load || shortcut_key == U"ai_profile_load") {
             changing_scene = true;
             stop_calculating();
             resume_calculating();

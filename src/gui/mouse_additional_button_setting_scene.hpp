@@ -31,6 +31,9 @@ private:
 public:
     Mouse_additional_button_setting(const InitData& init) : IScene{ init } {
         set_scene_ime_enabled(false);
+        shortcut_keys.sync_dynamic_shortcut_keys(&getData().directories);
+        shortcut_buttons.clear_invalid_functions();
+        mouse_additional_buttons.clear_invalid_functions();
         changing_button_idx = MOUSE_ADDITIONAL_BUTTON_SETTINGS_IDX_NOT_CHANGING;
         selected_function_idx = -1;
         ok_button.init(BACK_BUTTON_SX, BACK_BUTTON_SY, BACK_BUTTON_WIDTH, BACK_BUTTON_HEIGHT, BACK_BUTTON_RADIUS, language.get("common", "ok"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);

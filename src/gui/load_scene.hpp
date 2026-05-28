@@ -145,7 +145,7 @@ struct LinuxMemoryStatusEx {
 
 void init_shortcut_keys(const Directories* directories) {
     String file = U"{}shortcut_key.json"_fmt(Unicode::Widen(directories->appdata_dir));
-    shortcut_keys.init(file);
+    shortcut_keys.init(file, directories);
 }
 
 void init_shortcut_buttons(const Directories* directories) {

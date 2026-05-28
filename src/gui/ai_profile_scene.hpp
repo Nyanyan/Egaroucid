@@ -119,6 +119,9 @@ private:
             AI_PROFILE_LIST_SY,
             AI_PROFILE_LIST_WIDTH + 10,
             AI_PROFILE_ROW_HEIGHT * AI_PROFILE_LIST_N_ON_WINDOW);
+        shortcut_keys.sync_dynamic_shortcut_keys(&getData().directories);
+        shortcut_buttons.clear_invalid_functions();
+        mouse_additional_buttons.clear_invalid_functions();
     }
 
     void draw_profile_list() {

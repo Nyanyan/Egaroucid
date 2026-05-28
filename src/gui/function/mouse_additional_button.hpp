@@ -109,6 +109,14 @@ public:
         return -1;
     }
 
+    void clear_invalid_functions() {
+        for (String& function_name : functions) {
+            if (function_name != U"" && !is_valid_function(function_name)) {
+                function_name.clear();
+            }
+        }
+    }
+
     String get_button_name(int button_idx) const {
         if (!is_valid_button_idx(button_idx)) {
             return U"?";

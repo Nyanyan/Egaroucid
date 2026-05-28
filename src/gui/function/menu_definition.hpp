@@ -72,7 +72,7 @@ Menu create_menu(Menu_elements* menu_elements, Resources *resources, Font font, 
         title.push(menu_e);
         menu_e.init_check(language.get("settings", "play", "pause_when_pass") + get_shortcut_key_info(U"pause_when_pass"), &menu_elements->pause_when_pass, menu_elements->pause_when_pass);
         title.push(menu_e);
-        menu_e.init_button(language.get("settings", "profile", "profile"), &menu_elements->ai_profile_load);
+        menu_e.init_button(language.get("settings", "profile", "profile") + get_shortcut_key_info(U"ai_profile_load"), &menu_elements->ai_profile_load);
         title.push(menu_e);
         menu_e.init_separator();
         title.push(menu_e);
