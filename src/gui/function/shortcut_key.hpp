@@ -142,6 +142,7 @@ std::vector<Shortcut_key_elem> shortcut_keys_default = {
     {U"convert_horizontal",     {},                     {{"operation", "operation"}, {"operation", "convert", "convert"}, {"operation", "convert", "horizontal"}}},
     {U"convert_vertical",       {},                     {{"operation", "operation"}, {"operation", "convert", "convert"}, {"operation", "convert", "vertical"}}},
     {U"stop_calculating",       {U"Q"},                 {{"operation", "operation"}, {"operation", "ai_operation", "ai_operation"}, {"operation", "ai_operation", "stop_calculating"}}},
+    {U"resume_calculating",     {},                     {{"operation", "operation"}, {"operation", "ai_operation", "ai_operation"}, {"operation", "ai_operation", "resume_calculating"}}},
     {U"cache_clear",            {},                     {{"operation", "operation"}, {"operation", "ai_operation", "ai_operation"}, {"operation", "ai_operation", "cache_clear"}}},
 
     // input / output

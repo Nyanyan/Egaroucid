@@ -284,6 +284,7 @@
         "ai_operation": {
             "ai_operation": "AI操作",
             "stop_calculating": "計算停止",
+            "resume_calculating": "計算再開",
             "cache_clear": "キャッシュクリア"
         }
     },
@@ -314,7 +315,8 @@
         "forced_out": "強制進行外",
         "forced_finished": "強制進行終了",
         "playing": "対局中",
-        "analyzing": "分析中"
+        "analyzing": "分析中",
+        "calculation_stopped": "計算停止中"
     },
     "edit_board": {
         "player": "手番",

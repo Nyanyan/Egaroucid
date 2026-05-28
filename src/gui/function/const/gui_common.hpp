@@ -713,6 +713,7 @@ struct Menu_elements {
 
     // manipulation
     bool stop_calculating;
+    bool resume_calculating;
     bool put_1_move_by_ai;
     bool forward;
     bool backward;
@@ -853,6 +854,7 @@ struct Menu_elements {
         output_bitboard_black_white = false;
 
         stop_calculating = false;
+        resume_calculating = false;
         put_1_move_by_ai = false;
         forward = false;
         backward = false;

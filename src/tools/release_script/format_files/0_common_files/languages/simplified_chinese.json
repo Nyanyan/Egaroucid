@@ -284,6 +284,7 @@
         "ai_operation": {
             "ai_operation": "AI操作",
             "stop_calculating": "停止计算",
+            "resume_calculating": "继续计算",
             "cache_clear": "清理缓存"
         }
     },
@@ -314,7 +315,8 @@
         "forced_out": "强制进行外",
         "forced_finished": "强制进行结束",
         "playing": "对局中",
-        "analyzing": "分析中"
+        "analyzing": "分析中",
+        "calculation_stopped": "计算已停止"
     },
     "edit_board": {
         "player": "玩家",

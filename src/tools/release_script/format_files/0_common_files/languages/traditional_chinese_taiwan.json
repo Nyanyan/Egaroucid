@@ -282,6 +282,7 @@
         "ai_operation": {
             "ai_operation": "AI操作",
             "stop_calculating": "停止計算",
+            "resume_calculating": "繼續計算",
             "cache_clear": "清除快取"
         }
     },
@@ -312,7 +313,8 @@
         "forced_out": "強制進行外",
         "forced_finished": "強制進行結束",
         "playing": "對局中",
-        "analyzing": "分析中"
+        "analyzing": "分析中",
+        "calculation_stopped": "計算已停止"
     },
     "edit_board": {
         "player": "玩家",

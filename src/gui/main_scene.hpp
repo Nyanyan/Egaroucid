@@ -650,6 +650,10 @@ private:
         global_searching = true;
     }
 
+    void pause_calculating() {
+        global_searching = false;
+    }
+
     bool load_ai_profile_shortcut(const String& shortcut_name) {
         if (!is_ai_profile_shortcut_name(shortcut_name)) {
             return false;
@@ -944,24 +948,9 @@ private:
 
     void menu_manipulate() {
         if (getData().menu_elements.stop_calculating || shortcut_key == U"stop_calculating") {
-            stop_calculating();
-            
-            // ignore recalculate hint
-            ai_status.hint_calculated = true;
-
-            // stop pv calculation
-            ai_status.pv_calculated = true;
-
-            // stop local strategy
-            ai_status.local_strategy_calculated = true;
-            
-            // If it's AI's turn, stop AI
-            if (
-                (getData().history_elem.player == BLACK && getData().menu_elements.ai_put_black) || 
-                (getData().history_elem.player == WHITE && getData().menu_elements.ai_put_white)
-            ) {
-                need_start_game_button_calculation();
-            }
+            pause_calculating();
+        }
+        if (getData().menu_elements.resume_calculating || shortcut_key == U"resume_calculating") {
             resume_calculating();
         }
         if (!ai_status.analyzing) {
@@ -1666,6 +1655,9 @@ private:
 
     void ai_move() {
         if (!changing_scene) {
+            if (!global_searching) {
+                return;
+            }
             uint64_t legal = getData().history_elem.board.get_legal();
             if (!ai_status.ai_thinking) {
                 if (legal) {
@@ -2145,6 +2137,9 @@ private:
     }
 
     void hint_calculate() {
+        if (!global_searching) {
+            return;
+        }
         ai_status.hint_calculating = true;
         ai_status.hint_calculated = false;
         for (int i = 0; i < HW2; ++i) {
@@ -2165,13 +2160,16 @@ private:
             if (ai_status.hint_future.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
                 ai_status.hint_future.get();
                 ai_status.hint_calculating = false;
-                ai_status.hint_calculated = true;
+                ai_status.hint_calculated = global_searching;
                 std::cerr << "finish hint calculation" << std::endl;
             }
         }
     }
 
     void pv_calculate() {
+        if (!global_searching) {
+            return;
+        }
         ai_status.pv_calculating = true;
         ai_status.pv_calculated = false;
         std::cerr << "start pv calculation" << std::endl;
@@ -2183,13 +2181,16 @@ private:
             if (ai_status.pv_future.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
                 ai_status.pv_future.get();
                 ai_status.pv_calculating = false;
-                ai_status.pv_calculated = true;
+                ai_status.pv_calculated = global_searching;
                 std::cerr << "finish pv calculation" << std::endl;
             }
         }
     }
 
     void local_strategy_calculate() {
+        if (!global_searching) {
+            return;
+        }
         ai_status.local_strategy_calculating = true;
         ai_status.local_strategy_calculated = false;
         ai_status.local_strategy_done_level = 0;
@@ -2198,6 +2199,9 @@ private:
     }
 
     void local_strategy_policy_calculate() {
+        if (!global_searching) {
+            return;
+        }
         ai_status.local_strategy_policy_calculating = true;
         ai_status.local_strategy_policy_calculated = false;
         ai_status.local_strategy_policy_done_level = 0;
@@ -2210,7 +2214,7 @@ private:
             if (ai_status.local_strategy_future.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
                 ai_status.local_strategy_future.get();
                 ai_status.local_strategy_calculating = false;
-                ai_status.local_strategy_calculated = true;
+                ai_status.local_strategy_calculated = global_searching;
                 std::cerr << "finish local strategy calculation" << std::endl;
             }
         }
@@ -2221,7 +2225,7 @@ private:
             if (ai_status.local_strategy_policy_future.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
                 ai_status.local_strategy_policy_future.get();
                 ai_status.local_strategy_policy_calculating = false;
-                ai_status.local_strategy_policy_calculated = true;
+                ai_status.local_strategy_policy_calculated = global_searching;
                 std::cerr << "finish local strategy policy calculation" << std::endl;
             }
         }
@@ -2327,6 +2331,9 @@ private:
 
     void analyze_do_task() {
         if (!changing_scene) {
+            if (!global_searching) {
+                return;
+            }
             if (ai_status.analyze_task_stack.size() == 0) {
                 ai_status.analyzing = false;
                 getData().history_elem = getData().graph_resources.nodes[getData().graph_resources.branch].back();
@@ -2346,6 +2353,9 @@ private:
     }
 
     void analyze_get_task() {
+        if (!global_searching) {
+            return;
+        }
         bool task_finished = false;
         for (int i = 0; i < ANALYZE_SIZE; ++i) {
             if (ai_status.analyze_future[i].valid()) {
@@ -2440,6 +2450,9 @@ private:
         if (!changing_scene) {
             uint64_t legal = getData().history_elem.board.get_legal();
             if (!umigame_status.umigame_calculating) {
+                if (!global_searching) {
+                    return;
+                }
                 Board board = getData().history_elem.board;
                 int n_player = getData().history_elem.player ^ 1;
                 Flip flip;
@@ -2470,7 +2483,7 @@ private:
                     }
                 }
                 if (all_done) {
-                    umigame_status.umigame_calculated = all_done;
+                    umigame_status.umigame_calculated = global_searching;
                     std::cerr << "finish umigame calculation" << std::endl;
                 }
             }
@@ -2549,6 +2562,9 @@ private:
         if (!changing_scene) {
             uint64_t legal = getData().history_elem.board.get_legal();
             if (!book_accuracy_status.book_accuracy_calculating) {
+                if (!global_searching) {
+                    return;
+                }
                 Board board = getData().history_elem.board;
                 Flip flip;
                 for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)) {
@@ -2578,7 +2594,7 @@ private:
                     }
                 }
                 if (all_done) {
-                    book_accuracy_status.book_accuracy_calculated = true;
+                    book_accuracy_status.book_accuracy_calculated = global_searching;
                     std::cerr << "finish book accuracy calculation" << std::endl;
                 }
             }
