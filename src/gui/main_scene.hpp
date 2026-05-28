@@ -2160,7 +2160,7 @@ private:
             if (ai_status.hint_future.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
                 ai_status.hint_future.get();
                 ai_status.hint_calculating = false;
-                ai_status.hint_calculated = global_searching;
+                ai_status.hint_calculated = true;
                 std::cerr << "finish hint calculation" << std::endl;
             }
         }
@@ -2181,7 +2181,7 @@ private:
             if (ai_status.pv_future.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
                 ai_status.pv_future.get();
                 ai_status.pv_calculating = false;
-                ai_status.pv_calculated = global_searching;
+                ai_status.pv_calculated = true;
                 std::cerr << "finish pv calculation" << std::endl;
             }
         }
@@ -2214,7 +2214,7 @@ private:
             if (ai_status.local_strategy_future.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
                 ai_status.local_strategy_future.get();
                 ai_status.local_strategy_calculating = false;
-                ai_status.local_strategy_calculated = global_searching;
+                ai_status.local_strategy_calculated = true;
                 std::cerr << "finish local strategy calculation" << std::endl;
             }
         }
@@ -2225,7 +2225,7 @@ private:
             if (ai_status.local_strategy_policy_future.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
                 ai_status.local_strategy_policy_future.get();
                 ai_status.local_strategy_policy_calculating = false;
-                ai_status.local_strategy_policy_calculated = global_searching;
+                ai_status.local_strategy_policy_calculated = true;
                 std::cerr << "finish local strategy policy calculation" << std::endl;
             }
         }
@@ -2483,7 +2483,7 @@ private:
                     }
                 }
                 if (all_done) {
-                    umigame_status.umigame_calculated = global_searching;
+                    umigame_status.umigame_calculated = true;
                     std::cerr << "finish umigame calculation" << std::endl;
                 }
             }
@@ -2594,7 +2594,7 @@ private:
                     }
                 }
                 if (all_done) {
-                    book_accuracy_status.book_accuracy_calculated = global_searching;
+                    book_accuracy_status.book_accuracy_calculated = true;
                     std::cerr << "finish book accuracy calculation" << std::endl;
                 }
             }
