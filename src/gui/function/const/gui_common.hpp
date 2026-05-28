@@ -28,6 +28,8 @@ constexpr int WINDOW_SIZE_X = 800;
 constexpr int WINDOW_SIZE_Y = 500;
 constexpr int WINDOW_SIZE_X_MIN = 8;
 constexpr int WINDOW_SIZE_Y_MIN = 5;
+constexpr double WINDOW_SCALE_MIN = 0.5;
+constexpr double WINDOW_SCALE_MAX = 4.0;
 constexpr int PADDING = 20;
 constexpr int LEFT_LEFT = PADDING;
 constexpr int LEFT_RIGHT = WINDOW_SIZE_X / 2 - PADDING;
@@ -530,6 +532,7 @@ struct Settings {
     std::string screenshot_saving_dir;
     std::string input_game_last_subfolder;
     std::string opening_setting_last_subfolder;
+    double window_scale;
     bool show_value_when_ai_calculating;
     int generate_random_board_score_range_min;
     int generate_random_board_score_range_max;

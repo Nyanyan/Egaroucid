@@ -93,6 +93,7 @@ void init_default_settings(const Directories* directories, const Resources* reso
     settings->screenshot_saving_dir = directories->document_dir + "screenshots/";
     settings->input_game_last_subfolder.clear();
     settings->opening_setting_last_subfolder.clear();
+    settings->window_scale = 1.0;
     settings->show_value_when_ai_calculating = false;
     // settings->generate_random_board_score_range = 64;
     settings->generate_random_board_score_range_min = -64;
@@ -129,6 +130,14 @@ int init_settings_import_str(JSON &json, String key, std::string* res) {
         return ERR_IMPORT_SETTINGS;
     }
     *res = json[key].getString().narrow();
+    return ERR_OK;
+}
+
+int init_settings_import_double(JSON &json, String key, double* res) {
+    if (json[key].getType() != JSONValueType::Number) {
+        return ERR_IMPORT_SETTINGS;
+    }
+    *res = json[key].get<double>();
     return ERR_OK;
 }
 
@@ -526,7 +535,9 @@ void init_settings(const Directories* directories, const Resources* resources, S
         init_settings_import_str(setting_json, U"ai_profile_name", &settings->ai_profile_name);
         init_settings_import_str(setting_json, U"input_game_last_subfolder", &settings->input_game_last_subfolder);
         init_settings_import_str(setting_json, U"opening_setting_last_subfolder", &settings->opening_setting_last_subfolder);
+        init_settings_import_double(setting_json, U"window_scale", &settings->window_scale);
     }
+    settings->window_scale = std::clamp(settings->window_scale, WINDOW_SCALE_MIN, WINDOW_SCALE_MAX);
 
     // Keep compatibility with legacy scalar settings when profiles or curves are absent.
     sync_ai_loss_curves_from_scalar(settings);
@@ -617,6 +628,16 @@ int silent_load(Directories* directories, Resources* resources, Settings* settin
     return init_resources_silent_load(resources, settings, fonts, stop_loading);
 }
 
+void apply_saved_window_scale(double window_scale, Window_state* window_state) {
+    window_scale = std::clamp(window_scale, WINDOW_SCALE_MIN, WINDOW_SCALE_MAX);
+    const Size saved_window_size{
+        static_cast<int>(std::round(WINDOW_SIZE_X * window_scale)),
+        static_cast<int>(std::round(WINDOW_SIZE_Y * window_scale))
+    };
+    Window::Resize(saved_window_size);
+    window_state->window_scale = window_scale;
+}
+
 class Silent_load : public App::Scene {
 private:
     bool loading;
@@ -646,6 +667,9 @@ public:
             if (silent_load_future.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
                 load_code = silent_load_future.get();
                 loaded = load_code == ERR_OK;
+                if (loaded) {
+                    apply_saved_window_scale(getData().settings.window_scale, &getData().window_state);
+                }
                 loading = false;
             }
         } else {

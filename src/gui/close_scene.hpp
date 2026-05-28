@@ -32,7 +32,7 @@ void save_modified_ai_profile_if_needed(Menu_elements menu_elements, Settings* s
     }
 }
 
-void save_settings(Menu_elements menu_elements, Settings settings, Directories directories, User_settings user_settings) {
+void save_settings(Menu_elements menu_elements, Settings settings, Directories directories, User_settings user_settings, Window_state window_state) {
     JSON setting_json;
     setting_json[AUTO_UPDATE_CHECK_SETTING_KEY] = menu_elements.auto_update_check;
     setting_json[U"lang_name"] = Unicode::Widen(settings.lang_name);
@@ -76,6 +76,7 @@ void save_settings(Menu_elements menu_elements, Settings settings, Directories d
     setting_json[U"screenshot_saving_dir"] = Unicode::Widen(user_settings.screenshot_saving_dir);
     setting_json[U"input_game_last_subfolder"] = Unicode::Widen(user_settings.input_game_last_subfolder);
     setting_json[U"opening_setting_last_subfolder"] = Unicode::Widen(user_settings.opening_setting_last_subfolder);
+    setting_json[U"window_scale"] = std::clamp(window_state.window_scale, WINDOW_SCALE_MIN, WINDOW_SCALE_MAX);
     setting_json[U"show_value_when_ai_calculating"] = menu_elements.show_value_when_ai_calculating;
     setting_json[U"generate_random_board_score_range_min"] = menu_elements.generate_random_board_score_range_min;
     setting_json[U"generate_random_board_score_range_max"] = menu_elements.generate_random_board_score_range_max;
@@ -94,7 +95,7 @@ void save_settings(Menu_elements menu_elements, Settings settings, Directories d
 void close_app(Menu_elements menu_elements, Settings settings, Directories directories, User_settings user_settings, Book_information book_information, Forced_openings forced_openings, Window_state window_state) {
     if (!window_state.loading) {
         save_modified_ai_profile_if_needed(menu_elements, &settings, directories);
-        save_settings(menu_elements, settings, directories, user_settings);
+        save_settings(menu_elements, settings, directories, user_settings, window_state);
         String shortcut_key_file = U"{}shortcut_key.json"_fmt(Unicode::Widen(directories.appdata_dir));
         shortcut_keys.save_settings(shortcut_key_file);
         String shortcut_button_file = U"{}shortcut_button.json"_fmt(Unicode::Widen(directories.appdata_dir));

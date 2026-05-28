@@ -111,10 +111,10 @@ void Main() {
         // scale
         double scale = CalculateScale(window_size, Scene::Size());
         const Transformer2D screenScaling{ Mat3x2::Scale(scale), TransformCursor::Yes };
+        scene_manager.get()->window_state.window_scale = scale;
 
         // scene
         scene_manager.update();
-        scene_manager.get()->window_state.window_scale = scale;
 
         // log
         #if !GUI_OPEN_CONSOLE
