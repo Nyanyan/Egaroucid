@@ -61,6 +61,14 @@ private:
     int turn_timer_anchor_player;
     int turn_timer_anchor_branch;
     bool forced_opening_finished_latched;
+    bool ai_calculation_interrupted;
+    bool hint_calculation_interrupted;
+    bool analyze_calculation_interrupted;
+    bool pv_calculation_interrupted;
+    bool local_strategy_calculation_interrupted;
+    bool local_strategy_policy_calculation_interrupted;
+    bool umigame_calculation_interrupted;
+    bool book_accuracy_calculation_interrupted;
 public:
     std::string principal_variation;
 
@@ -109,6 +117,14 @@ public:
         shortcut_key = SHORTCUT_KEY_UNDEFINED;
         shortcut_key_pressed = SHORTCUT_KEY_UNDEFINED;
         forced_opening_finished_latched = false;
+        ai_calculation_interrupted = false;
+        hint_calculation_interrupted = false;
+        analyze_calculation_interrupted = false;
+        pv_calculation_interrupted = false;
+        local_strategy_calculation_interrupted = false;
+        local_strategy_policy_calculation_interrupted = false;
+        umigame_calculation_interrupted = false;
+        book_accuracy_calculation_interrupted = false;
         reset_turn_timer_anchor();
         std::cerr << "main scene loaded" << std::endl;
         // std::cerr << tim() - strt << " ms" << std::endl;
@@ -604,6 +620,7 @@ private:
     void stop_calculating() {
         std::cerr << "terminating calculation" << std::endl;
         global_searching = false;
+        clear_interrupted_calculation_flags();
         if (ai_status.ai_future.valid()) {
             std::cerr << "terminating AI" << std::endl;
             ai_status.ai_future.get();
@@ -648,10 +665,57 @@ private:
 
     void resume_calculating() {
         global_searching = true;
+        restart_interrupted_calculations();
     }
 
     void pause_calculating() {
+        ai_calculation_interrupted |= ai_status.ai_thinking;
+        hint_calculation_interrupted |= ai_status.hint_calculating;
+        analyze_calculation_interrupted |= ai_status.analyzing;
+        pv_calculation_interrupted |= ai_status.pv_calculating;
+        local_strategy_calculation_interrupted |= ai_status.local_strategy_calculating;
+        local_strategy_policy_calculation_interrupted |= ai_status.local_strategy_policy_calculating;
+        umigame_calculation_interrupted |= umigame_status.umigame_calculating;
+        book_accuracy_calculation_interrupted |= book_accuracy_status.book_accuracy_calculating;
         global_searching = false;
+    }
+
+    void clear_interrupted_calculation_flags() {
+        ai_calculation_interrupted = false;
+        hint_calculation_interrupted = false;
+        analyze_calculation_interrupted = false;
+        pv_calculation_interrupted = false;
+        local_strategy_calculation_interrupted = false;
+        local_strategy_policy_calculation_interrupted = false;
+        umigame_calculation_interrupted = false;
+        book_accuracy_calculation_interrupted = false;
+    }
+
+    void restart_interrupted_calculations() {
+        if (hint_calculation_interrupted && !ai_status.hint_calculating) {
+            ai_status.hint_calculated = false;
+            hint_calculation_interrupted = false;
+        }
+        if (pv_calculation_interrupted && !ai_status.pv_calculating) {
+            ai_status.pv_calculated = false;
+            pv_calculation_interrupted = false;
+        }
+        if (local_strategy_calculation_interrupted && !ai_status.local_strategy_calculating) {
+            ai_status.local_strategy_calculated = false;
+            local_strategy_calculation_interrupted = false;
+        }
+        if (local_strategy_policy_calculation_interrupted && !ai_status.local_strategy_policy_calculating) {
+            ai_status.local_strategy_policy_calculated = false;
+            local_strategy_policy_calculation_interrupted = false;
+        }
+        if (umigame_calculation_interrupted && !umigame_status.umigame_calculating) {
+            umigame_status.umigame_calculated = false;
+            umigame_calculation_interrupted = false;
+        }
+        if (book_accuracy_calculation_interrupted && !book_accuracy_status.book_accuracy_calculating) {
+            book_accuracy_status.book_accuracy_calculated = false;
+            book_accuracy_calculation_interrupted = false;
+        }
     }
 
     bool load_ai_profile_shortcut(const String& shortcut_name) {
@@ -1700,6 +1764,11 @@ private:
             else if (ai_status.ai_future.valid()) {
                 if (ai_status.ai_future.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
                     Search_result search_result = ai_status.ai_future.get();
+                    if (ai_calculation_interrupted) {
+                        ai_status.ai_thinking = false;
+                        ai_calculation_interrupted = false;
+                        return;
+                    }
                     if (1 & (legal >> search_result.policy)) {
                         int player_bef = getData().history_elem.player;
                         int sgn = getData().history_elem.player == BLACK ? 1 : -1;
@@ -2160,7 +2229,10 @@ private:
             if (ai_status.hint_future.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
                 ai_status.hint_future.get();
                 ai_status.hint_calculating = false;
-                ai_status.hint_calculated = true;
+                ai_status.hint_calculated = !(hint_calculation_interrupted && global_searching);
+                if (global_searching) {
+                    hint_calculation_interrupted = false;
+                }
                 std::cerr << "finish hint calculation" << std::endl;
             }
         }
@@ -2181,7 +2253,10 @@ private:
             if (ai_status.pv_future.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
                 ai_status.pv_future.get();
                 ai_status.pv_calculating = false;
-                ai_status.pv_calculated = true;
+                ai_status.pv_calculated = !(pv_calculation_interrupted && global_searching);
+                if (global_searching) {
+                    pv_calculation_interrupted = false;
+                }
                 std::cerr << "finish pv calculation" << std::endl;
             }
         }
@@ -2214,7 +2289,10 @@ private:
             if (ai_status.local_strategy_future.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
                 ai_status.local_strategy_future.get();
                 ai_status.local_strategy_calculating = false;
-                ai_status.local_strategy_calculated = true;
+                ai_status.local_strategy_calculated = !(local_strategy_calculation_interrupted && global_searching);
+                if (global_searching) {
+                    local_strategy_calculation_interrupted = false;
+                }
                 std::cerr << "finish local strategy calculation" << std::endl;
             }
         }
@@ -2225,7 +2303,10 @@ private:
             if (ai_status.local_strategy_policy_future.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
                 ai_status.local_strategy_policy_future.get();
                 ai_status.local_strategy_policy_calculating = false;
-                ai_status.local_strategy_policy_calculated = true;
+                ai_status.local_strategy_policy_calculated = !(local_strategy_policy_calculation_interrupted && global_searching);
+                if (global_searching) {
+                    local_strategy_policy_calculation_interrupted = false;
+                }
                 std::cerr << "finish local strategy policy calculation" << std::endl;
             }
         }
@@ -2357,16 +2438,33 @@ private:
             return;
         }
         bool task_finished = false;
+        bool interrupted_task_pending = false;
         for (int i = 0; i < ANALYZE_SIZE; ++i) {
             if (ai_status.analyze_future[i].valid()) {
                 if (ai_status.analyze_future[i].wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
                     Search_result search_result = ai_status.analyze_future[i].get();
-                    int value = ai_status.analyze_sgn[i] * search_result.value;
-                    getData().graph_resources.nodes[getData().graph_resources.branch][i].v = value;
-                    getData().graph_resources.nodes[getData().graph_resources.branch][i].level = calc_ai_type(search_result);
+                    if (analyze_calculation_interrupted) {
+                        if (i < (int)getData().graph_resources.nodes[getData().graph_resources.branch].size()) {
+                            History_elem& node = getData().graph_resources.nodes[getData().graph_resources.branch][i];
+                            Analyze_info analyze_info;
+                            analyze_info.idx = i;
+                            analyze_info.sgn = node.player ? -1 : 1;
+                            analyze_info.board = node.board;
+                            ai_status.analyze_task_stack.emplace_back(std::make_pair(analyze_info, std::bind(ai, node.board, getData().menu_elements.level, getData().menu_elements.use_book, 0, true, true)));
+                        }
+                    } else {
+                        int value = ai_status.analyze_sgn[i] * search_result.value;
+                        getData().graph_resources.nodes[getData().graph_resources.branch][i].v = value;
+                        getData().graph_resources.nodes[getData().graph_resources.branch][i].level = calc_ai_type(search_result);
+                    }
                     task_finished = true;
+                } else if (analyze_calculation_interrupted) {
+                    interrupted_task_pending = true;
                 }
             }
+        }
+        if (task_finished && !interrupted_task_pending) {
+            analyze_calculation_interrupted = false;
         }
         if (task_finished) {
             analyze_do_task();
@@ -2483,7 +2581,11 @@ private:
                     }
                 }
                 if (all_done) {
-                    umigame_status.umigame_calculated = true;
+                    umigame_status.umigame_calculating = false;
+                    umigame_status.umigame_calculated = !(umigame_calculation_interrupted && global_searching);
+                    if (global_searching) {
+                        umigame_calculation_interrupted = false;
+                    }
                     std::cerr << "finish umigame calculation" << std::endl;
                 }
             }
@@ -2594,7 +2696,11 @@ private:
                     }
                 }
                 if (all_done) {
-                    book_accuracy_status.book_accuracy_calculated = true;
+                    book_accuracy_status.book_accuracy_calculating = false;
+                    book_accuracy_status.book_accuracy_calculated = !(book_accuracy_calculation_interrupted && global_searching);
+                    if (global_searching) {
+                        book_accuracy_calculation_interrupted = false;
+                    }
                     std::cerr << "finish book accuracy calculation" << std::endl;
                 }
             }
