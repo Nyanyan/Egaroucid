@@ -106,6 +106,7 @@ void Main() {
     scene_manager.init(U"Silent_load", SCENE_FADE_TIME);
 
     while (System::Update()) {
+        update_scene_ime_focus_state();
 
         // scale
         double scale = CalculateScale(window_size, Scene::Size());

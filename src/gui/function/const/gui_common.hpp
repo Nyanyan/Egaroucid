@@ -305,7 +305,13 @@ constexpr int FONT_DEFAULT_SIZE = 48;
 // textbox constant
 constexpr int TEXTBOX_MAX_CHARS = 10000;
 
-inline void set_scene_ime_enabled(const bool enabled) {
+namespace gui_scene_ime {
+
+inline bool desired_enabled = true;
+inline bool focus_state_initialized = false;
+inline bool last_window_focused = true;
+
+inline void apply_enabled_state(const bool enabled) {
 #if SIV3D_PLATFORM(WINDOWS)
     if (enabled) {
         Platform::Windows::TextInput::EnableIME();
@@ -315,6 +321,53 @@ inline void set_scene_ime_enabled(const bool enabled) {
 #else
     (void)enabled;
 #endif
+}
+
+inline void set_enabled(const bool enabled) {
+    desired_enabled = enabled;
+#if SIV3D_PLATFORM(WINDOWS)
+    if (Window::GetState().focused || enabled) {
+        apply_enabled_state(enabled);
+    } else {
+        apply_enabled_state(true);
+    }
+#else
+    (void)enabled;
+#endif
+}
+
+inline void update_focus_state() {
+#if SIV3D_PLATFORM(WINDOWS)
+    const bool window_focused = Window::GetState().focused;
+    if (!focus_state_initialized) {
+        focus_state_initialized = true;
+        last_window_focused = window_focused;
+        return;
+    }
+    if (last_window_focused == window_focused) {
+        return;
+    }
+
+    if (!window_focused) {
+        if (!desired_enabled) {
+            // Avoid leaving this HWND's IME context in the disabled (X) state while inactive.
+            apply_enabled_state(true);
+        }
+    } else {
+        apply_enabled_state(desired_enabled);
+    }
+    last_window_focused = window_focused;
+#endif
+}
+
+} // namespace gui_scene_ime
+
+inline void set_scene_ime_enabled(const bool enabled) {
+    gui_scene_ime::set_enabled(enabled);
+}
+
+inline void update_scene_ime_focus_state() {
+    gui_scene_ime::update_focus_state();
 }
 
 
