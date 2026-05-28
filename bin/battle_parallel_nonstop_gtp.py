@@ -14,8 +14,8 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 import threading
 
 
-# PROBLEM_FILE = 'problem/xot/openingslarge.txt' # XOT (8 moves)
-PROBLEM_FILE = 'problem/random_openings/8_moves/0000000.txt' # 8 random moves
+PROBLEM_FILE = 'problem/xot/openingslarge.txt' # XOT (8 moves)
+# PROBLEM_FILE = 'problem/random_openings/8_moves/0000000.txt' # 8 random moves
 
 # PROBLEM_FILE = 'problem/ggs_random_openings/14_random_setup2/0000000.txt' # GGS random openings (random_setup_2) under construction
 
