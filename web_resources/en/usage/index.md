@@ -915,15 +915,15 @@ Ctrl+R is assigned as a shortcut key for random position generation. From versio
 
 #### How to Choose Moves
 
-In this function, for each move, a move with a disc loss of 4 or less is chosen with a probability of 68%, and a move with a disc loss of 8 or less is chosen with a probability of 95%, so that unexpected positions are unlikely to appear.
+In this function, for each move, a move with a disc loss of 6 or less is chosen with a probability of 68%, and a move with a disc loss of 12 or less is chosen with a probability of 95%, so that unexpected positions are unlikely to appear.
 
 The specific way of choosing a move is as follows.
 
 First, for each move up to the specified number of moves - 2, a move is chosen by the following calculation.
 
-Let $\mathrm{randdst_{0,4}()}$ be a function that randomly outputs a number according to a normal distribution with a mean of 0 and a standard deviation of 4.
+Let $\mathrm{randdst_{0,6}()}$ be a function that randomly outputs a number according to a normal distribution with a mean of 0 and a standard deviation of 6.
 
-$E=\mathrm{round\left(\mathrm{randdst_{0,4}()}\right)}$
+$E=\mathrm{round\left(\mathrm{randdst_{0,6}()}\right)}$
 
 to determine the allowable error $E$ as an integer.
 
@@ -935,9 +935,9 @@ Create $B$ defined by and select moves with a disc loss of $E$ or less. Note tha
 
 A move is randomly selected from this $B$.
 
-Note that since there is no need to choose a strong move here, the evaluation value of the move is the book registered value or the evaluation value of a 2-ply search.
+Note that since there is no need to choose a strong move here, level 1 search is used. If a Book value is registered, that Book value is used; otherwise, the level-1 equivalent 2-ply evaluation value is used.
 
-For the last two moves up to the specified number of moves, if there is a move that falls within the specified score range, that move is chosen, and if not, a move close to the score range is chosen.
+For the last two moves up to the specified number of moves, if there is a move that falls within the specified score range, that move is chosen, and if not, a move close to the score range is chosen. This score-range adjustment uses the AI level set in <a href="#Settings_Level">Settings > Level</a>. The second-to-last move is searched at level 15, and the final move is searched at the configured AI level. However, if the configured AI level is below 15, the second-to-last move is also lowered to the configured AI level. The level 1 used for the earlier moves is also capped so that it does not exceed the configured AI level.
 
 
 
