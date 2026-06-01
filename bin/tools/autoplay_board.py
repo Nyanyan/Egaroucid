@@ -8,6 +8,7 @@ import sys
 
 line_dr = sys.argv[1] #'./../problem/etc/random_board/5'
 out_dr = sys.argv[2] #'./../transcript/random_board/5'
+os.makedirs(out_dr, exist_ok=True)
 
 # exe = './../Egaroucid_for_Console_clang.exe'
 #exe = './../versions/Egaroucid_for_Console_7_5_1_Windows_SIMD/Egaroucid_for_Console_7_5_1_SIMD.exe'
