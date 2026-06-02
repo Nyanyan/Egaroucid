@@ -34,6 +34,22 @@ When citing this data, please use the following format as a reference, or adjust
 ```Yamana, Takuto.: Egaroucid Free Training Data, https://www.egaroucid.nyanyan.dev/en/technology/train-data/```
 
 
+
+## Battle Transcript by Egaroucid 7.8.0 lv.11 and Edax 4.5.5 lv.11
+
+Please download and unzip [Egaroucid_Train_Data_v0002_0.zip](https://github.com/Nyanyan/Egaroucid/releases/download/training_data_v0002/Egaroucid_Train_Data_v0002_0.zip) and [Egaroucid_Train_Data_v0002_1.zip](https://github.com/Nyanyan/Egaroucid/releases/download/training_data_v0002/Egaroucid_Train_Data_v0002_1.zip).
+
+Each folder contains text files named `XXXXXXX.txt`. These files contain Othello game transcripts in `f5d6` format. Each text file contains 10,000 games.
+
+The folder names are numeric. All transcripts within a folder represent games where the first $N$ moves (indicated by the folder name) were played randomly, followed by a match between Othello AIs. This approach was used to ensure a diverse set of match outcomes. This dataset includes 1 million game transcripts for each starting condition, ranging from 8 random opening moves to 59 random opening moves (totaling 52 million games). It is recommended to exclude the positions occurring during the initial random moves from your training data.
+
+The matches were played between [Egaroucid for Console 7.8.0](https://github.com/Nyanyan/Egaroucid/releases/tag/console_v7.8.0) level 11 and [Edax 4.5.5](https://github.com/okuhara/edax-reversi-AVX/releases/tag/v4.5.5) level 11. In each transcript, one side is always played by Egaroucid for Console and the other by Edax, with both AIs playing as black 50% of the time.
+
+Due to the large number of games, the zip file has been split into two. One contains game records with 8 to 33 moves played randomly, and the other contains game records with 34 to 59 moves played randomly.
+
+
+
+
 ## Training Data by Egaroucid 7.4.0 lv.17 & 7.5.1 lv.17
 
 Please download [Egaroucid_Train_Data.zip](https://github.com/Nyanyan/Egaroucid/releases/download/training_data/Egaroucid_Train_Data.zip) and unzip it.

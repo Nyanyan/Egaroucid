@@ -37,6 +37,22 @@ GitHubレポジトリ: [https://github.com/Nyanyan/Egaroucid](https://github.com
 
 
 
+## Egaroucid 7.8.0 lv.11とEdax 4.5.5 lv.11の対戦棋譜
+
+[Egaroucid_Train_Data_v0002_0.zip](https://github.com/Nyanyan/Egaroucid/releases/download/training_data_v0002/Egaroucid_Train_Data_v0002_0.zip)および[Egaroucid_Train_Data_v0002_1.zip](https://github.com/Nyanyan/Egaroucid/releases/download/training_data_v0002/Egaroucid_Train_Data_v0002_1.zip)をダウンロードし、解凍してください。
+
+各フォルダ内に```XXXXXXX.txt```というテキストファイルが入っています。これを開くと```f5d6```形式でオセロの棋譜が収録されています。テキストファイルには1万局ずつ収録してあります。
+
+各フォルダ名は数字となっています。フォルダ内のすべての棋譜は、開始局面からそのフォルダ名の数字だけランダム打ちし、その後オセロAIによって対戦したことを示しています。これにより、対戦結果をばらつかせました。本学習データでは、序盤8手ランダム打ちから59手ランダム打ちまで、各100万局の棋譜(合計5200万局)を収録してあります。ランダム打ち最中の局面は学習データから除外することを推奨します。
+
+対戦は[Egaroucid for Console 7.8.0](https://github.com/Nyanyan/Egaroucid/releases/tag/console_v7.8.0)レベル11と[Edax 4.5.5](https://github.com/okuhara/edax-reversi-AVX/releases/tag/v4.5.5)レベル11によって行いました。各棋譜は常にどちらかの手番がEgaroucid for Console、もう一方がEdaxで、どちらも黒番を持った割合は50%です。
+
+対局数が多いため、zipファイルを2つに分割しました。8手～33手ランダム打ちの棋譜を収めたものと34手～59手ランダム打ちの棋譜を収めたものに分かれています。
+
+2026/06/02 公開
+
+
+
 ## Egaroucid 7.4.0 lv.17 & 7.5.1 lv.17 によるデータ
 
 [Egaroucid_Train_Data.zip](https://github.com/Nyanyan/Egaroucid/releases/download/training_data/Egaroucid_Train_Data.zip)をダウンロードし、解凍してください。
