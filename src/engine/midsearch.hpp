@@ -510,6 +510,8 @@ inline int aspiration_search(Search *search, int alpha, int beta, int predicted_
 }
 #endif
 
+inline Parallel_task root_lazy_smp_nws_task(uint64_t player, uint64_t opponent, uint_fast8_t mpc_level, bool is_presearch, thread_id_t thread_id, int alpha, int depth, uint64_t legal, bool is_end_search, uint_fast8_t policy, int move_idx, bool *searching);
+
 /*
     @brief Wrapper of nega_scout
 
@@ -567,6 +569,95 @@ std::pair<int, int> first_nega_scout_legal(Search *search, int alpha, int beta, 
         uint_fast8_t moves[N_TRANSPOSITION_MOVES] = {MOVE_UNDEFINED, MOVE_UNDEFINED};
         transposition_table.get_moves_any_level(&search->board, hash_code, moves);
         move_list_evaluate(search, move_list, canput, moves, depth, alpha, beta, is_end_search, searching);
+#if USE_LAZY_SMP
+        if (!USE_YBWC_NEGASCOUT && search->use_multi_thread && canput >= 2 && depth >= 2 && thread_pool.get_n_idle() > 0) {
+            move_list_sort(move_list, canput);
+            bool root_parallel_searching = true;
+            std::vector<std::future<Parallel_task>> parallel_tasks;
+            std::vector<int> research_idxes;
+            if (move_list[0].flip.flip) {
+                search->move(&move_list[0].flip);
+                    g = -nega_scout(search, -beta, -alpha, depth - 1, false, move_list[0].n_legal, is_end_search, searching);
+                search->undo(&move_list[0].flip);
+                if (v < g) {
+                    v = g;
+                    best_move = move_list[0].flip.pos;
+                    if (alpha < v) {
+                        alpha = v;
+                    }
+                }
+                move_list[0].flip.flip = 0;
+            }
+            for (int move_idx = 1; move_idx < canput && alpha < beta && *searching; ++move_idx) {
+                if (!move_list[move_idx].flip.flip) {
+                    continue;
+                }
+                search->move(&move_list[move_idx].flip);
+                    const uint64_t child_player = search->board.player;
+                    const uint64_t child_opponent = search->board.opponent;
+                    const uint64_t child_legal = move_list[move_idx].n_legal;
+                    const uint_fast8_t policy = move_list[move_idx].flip.pos;
+                search->undo(&move_list[move_idx].flip);
+                bool pushed = false;
+                parallel_tasks.emplace_back(thread_pool.push(search->thread_id, &pushed, std::bind(
+                    &root_lazy_smp_nws_task,
+                    child_player, child_opponent, search->mpc_level, search->is_presearch, search->thread_id,
+                    alpha, depth - 1, child_legal, is_end_search, policy, move_idx, &root_parallel_searching
+                )));
+                if (!pushed) {
+                    parallel_tasks.pop_back();
+                    search->move(&move_list[move_idx].flip);
+                        g = -nega_alpha_ordering_nws(search, -alpha - 1, depth - 1, false, move_list[move_idx].n_legal, is_end_search, searching);
+                        if (alpha < g && g < beta) {
+                            g = -nega_scout(search, -beta, -g, depth - 1, false, move_list[move_idx].n_legal, is_end_search, searching);
+                        }
+                    search->undo(&move_list[move_idx].flip);
+                    if (v < g) {
+                        v = g;
+                        best_move = move_list[move_idx].flip.pos;
+                        if (alpha < v) {
+                            alpha = v;
+                        }
+                    }
+                }
+            }
+            for (std::future<Parallel_task> &task: parallel_tasks) {
+                Parallel_task task_result = task.get();
+                search->n_nodes += task_result.n_nodes;
+                if (task_result.value == SCORE_UNDEFINED) {
+                    continue;
+                }
+                if (task_result.value >= beta) {
+                    v = task_result.value;
+                    best_move = task_result.cell;
+                    alpha = task_result.value;
+                    root_parallel_searching = false;
+                } else if (alpha < task_result.value) {
+                    research_idxes.emplace_back(task_result.move_idx);
+                }
+            }
+            if (alpha < beta && *searching) {
+                for (int move_idx: research_idxes) {
+                    if (!move_list[move_idx].flip.flip) {
+                        continue;
+                    }
+                    search->move(&move_list[move_idx].flip);
+                        g = -nega_scout(search, -beta, -alpha, depth - 1, false, move_list[move_idx].n_legal, is_end_search, searching);
+                    search->undo(&move_list[move_idx].flip);
+                    if (v < g) {
+                        v = g;
+                        best_move = move_list[move_idx].flip.pos;
+                        if (alpha < v) {
+                            alpha = v;
+                            if (beta <= alpha) {
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+        } else {
+#endif
 #if USE_YBWC_NEGASCOUT
         if (
             search->use_multi_thread && 
@@ -622,11 +713,28 @@ std::pair<int, int> first_nega_scout_legal(Search *search, int alpha, int beta, 
 #if USE_YBWC_NEGASCOUT
         }
 #endif
+#if USE_LAZY_SMP
+        }
+#endif
     }
     if (*searching && global_searching && is_all_legal) {
         transposition_table.reg(search, hash_code, depth, first_alpha, beta, v, best_move);
     }
     return std::make_pair(v, best_move);
+}
+
+inline Parallel_task root_lazy_smp_nws_task(uint64_t player, uint64_t opponent, uint_fast8_t mpc_level, bool is_presearch, thread_id_t thread_id, int alpha, int depth, uint64_t legal, bool is_end_search, uint_fast8_t policy, int move_idx, bool *searching) {
+    Search search(player, opponent, mpc_level, false, is_presearch);
+    search.thread_id = thread_id;
+    Parallel_task task;
+    task.value = -nega_alpha_ordering_nws(&search, -alpha - 1, depth, false, legal, is_end_search, searching);
+    if (!global_searching || !*searching) {
+        task.value = SCORE_UNDEFINED;
+    }
+    task.n_nodes = search.n_nodes;
+    task.cell = policy;
+    task.move_idx = move_idx;
+    return task;
 }
 
 /*

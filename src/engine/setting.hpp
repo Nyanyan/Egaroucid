@@ -159,9 +159,8 @@
 // flip SIMD / AVX512 optimization for each compiler
 #define AUTO_FLIP_OPT_BY_COMPILER true
 
-// Lazy-SMP-like search
+// Root Lazy SMP search
 #define USE_LAZY_SMP true
-#define USE_LAZY_SMP2 false
 
 // YBWC splitted task termination (less idoling, more nodes)
 #define USE_YBWC_SPLITTED_TASK_TERMINATION false
