@@ -253,13 +253,15 @@ inline int get_potential_mobility(uint64_t discs, uint64_t empties) {
     @param searching            flag for terminating this search
     @return true if wipeout found else false
 */
-inline void move_evaluate(Search *search, Flip_value *flip_value, int alpha, int beta, int depth, bool *searching) {
+inline void move_evaluate(Search *search, Flip_value *flip_value, int alpha, int beta, int depth, bool use_dynamic_ordering, bool *searching) {
     flip_value->value = 0;
 #if USE_KILLER_MOVE_MO
-    flip_value->value += search->get_killer_bonus(flip_value->flip.pos) * W_KILLER;
-    int prev_pos = search->get_prev_move();
-    flip_value->value += search->get_history_bonus(prev_pos, flip_value->flip.pos) * W_HISTORY_MOVE;
-    flip_value->value += search->get_counter_move_bonus(prev_pos, flip_value->flip.pos) * W_COUNTER_MOVE;
+    if (use_dynamic_ordering) {
+        flip_value->value += search->get_killer_bonus(flip_value->flip.pos) * W_KILLER;
+        int prev_pos = search->get_prev_move();
+        flip_value->value += search->get_history_bonus(prev_pos, flip_value->flip.pos) * W_HISTORY_MOVE;
+        flip_value->value += search->get_counter_move_bonus(prev_pos, flip_value->flip.pos) * W_COUNTER_MOVE;
+    }
 #endif
     search->move(&flip_value->flip);
         flip_value->n_legal = search->board.get_legal();
@@ -307,13 +309,15 @@ inline void move_evaluate(Search *search, Flip_value *flip_value, int alpha, int
     @param searching            flag for terminating this search
     @return true if wipeout found else false
 */
-inline void move_evaluate_nws(Search *search, Flip_value *flip_value, int alpha, int beta, int depth, bool *searching) {
+inline void move_evaluate_nws(Search *search, Flip_value *flip_value, int alpha, int beta, int depth, bool use_dynamic_ordering, bool *searching) {
     flip_value->value = 0;
 #if USE_KILLER_MOVE_MO && USE_KILLER_MOVE_NWS_MO
-    flip_value->value += search->get_killer_bonus(flip_value->flip.pos) * W_NWS_KILLER;
-    int prev_pos = search->get_prev_move();
-    flip_value->value += search->get_history_bonus(prev_pos, flip_value->flip.pos) * W_NWS_HISTORY_MOVE;
-    flip_value->value += search->get_counter_move_bonus(prev_pos, flip_value->flip.pos) * W_NWS_COUNTER_MOVE;
+    if (use_dynamic_ordering) {
+        flip_value->value += search->get_killer_bonus(flip_value->flip.pos) * W_NWS_KILLER;
+        int prev_pos = search->get_prev_move();
+        flip_value->value += search->get_history_bonus(prev_pos, flip_value->flip.pos) * W_NWS_HISTORY_MOVE;
+        flip_value->value += search->get_counter_move_bonus(prev_pos, flip_value->flip.pos) * W_NWS_COUNTER_MOVE;
+    }
 #endif
     search->move(&flip_value->flip);
         flip_value->n_legal = search->board.get_legal();
@@ -493,7 +497,7 @@ inline bool move_list_evaluate(Search *search, std::vector<Flip_value> &move_lis
     }
     int eval_alpha = -std::min(SCORE_MAX, beta + MOVE_ORDERING_VALUE_OFFSET_BETA);
     int eval_beta = -std::max(-SCORE_MAX, alpha - MOVE_ORDERING_VALUE_OFFSET_ALPHA);
-    int eval_depth = depth >> 3;
+    int eval_depth = is_end_search ? (depth >> 4) : (depth >> 3);
     if (use_root_move_ordering_extension(search, static_cast<int>(move_list.size()), is_end_search)) {
         eval_depth = std::max(eval_depth, depth >> 2);
     }
@@ -509,7 +513,7 @@ inline bool move_list_evaluate(Search *search, std::vector<Flip_value> &move_lis
             } else if (flip_value.flip.pos == moves[1]) {
                 flip_value.value = W_2ND_MOVE;
             } else {
-                move_evaluate(search, &flip_value, eval_alpha, eval_beta, eval_depth, searching);
+                move_evaluate(search, &flip_value, eval_alpha, eval_beta, eval_depth, !is_end_search, searching);
             }
 #if USE_MID_ETC
         }
@@ -535,7 +539,7 @@ inline bool move_list_evaluate(Search *search, Flip_value move_list[], int canpu
     }
     int eval_alpha = -std::min(SCORE_MAX, beta + MOVE_ORDERING_VALUE_OFFSET_BETA);
     int eval_beta = -std::max(-SCORE_MAX, alpha - MOVE_ORDERING_VALUE_OFFSET_ALPHA);
-    int eval_depth = depth >> 3;
+    int eval_depth = is_end_search ? (depth >> 4) : (depth >> 3);
     if (use_root_move_ordering_extension(search, canput, is_end_search)) {
         eval_depth = std::max(eval_depth, depth >> 2);
     }
@@ -551,7 +555,7 @@ inline bool move_list_evaluate(Search *search, Flip_value move_list[], int canpu
             } else if (move_list[i].flip.pos == moves[1]) {
                 move_list[i].value = W_2ND_MOVE;
             } else {
-                move_evaluate(search, &move_list[i], eval_alpha, eval_beta, eval_depth, searching);
+                move_evaluate(search, &move_list[i], eval_alpha, eval_beta, eval_depth, !is_end_search, searching);
             }
 #if USE_MID_ETC
         }
@@ -576,7 +580,7 @@ inline bool move_list_evaluate_nws(Search *search, std::vector<Flip_value> &move
     }
     const int eval_alpha = -std::min(SCORE_MAX, alpha + MOVE_ORDERING_NWS_VALUE_OFFSET_BETA);
     const int eval_beta = -std::max(-SCORE_MAX, alpha - MOVE_ORDERING_NWS_VALUE_OFFSET_ALPHA);
-    int eval_depth = depth >> 4;
+    int eval_depth = is_end_search ? (depth >> 4) : (depth >> 3);
     if (use_root_move_ordering_extension(search, static_cast<int>(move_list.size()), is_end_search)) {
         eval_depth = std::max(eval_depth, depth >> 2);
     }
@@ -587,7 +591,7 @@ inline bool move_list_evaluate_nws(Search *search, std::vector<Flip_value> &move
             } else if (flip_value.flip.pos == moves[1]) {
                 flip_value.value = W_2ND_MOVE;
             } else{
-                move_evaluate_nws(search, &flip_value, eval_alpha, eval_beta, eval_depth, searching);
+                move_evaluate_nws(search, &flip_value, eval_alpha, eval_beta, eval_depth, !is_end_search, searching);
             }
         }
     }
@@ -610,7 +614,7 @@ inline bool move_list_evaluate_nws(Search *search, Flip_value move_list[], int c
     }
     const int eval_alpha = -std::min(SCORE_MAX, alpha + MOVE_ORDERING_NWS_VALUE_OFFSET_BETA);
     const int eval_beta = -std::max(-SCORE_MAX, alpha - MOVE_ORDERING_NWS_VALUE_OFFSET_ALPHA);
-    int eval_depth = depth >> 4;
+    int eval_depth = is_end_search ? (depth >> 4) : (depth >> 3);
     if (use_root_move_ordering_extension(search, canput, is_end_search)) {
         eval_depth = std::max(eval_depth, depth >> 2);
     }
@@ -621,7 +625,7 @@ inline bool move_list_evaluate_nws(Search *search, Flip_value move_list[], int c
             } else if (move_list[i].flip.pos == moves[1]) {
                 move_list[i].value = W_2ND_MOVE;
             } else{
-                move_evaluate_nws(search, &move_list[i], eval_alpha, eval_beta, eval_depth, searching);
+                move_evaluate_nws(search, &move_list[i], eval_alpha, eval_beta, eval_depth, !is_end_search, searching);
             }
         }
     }

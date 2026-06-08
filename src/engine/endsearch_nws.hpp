@@ -34,8 +34,6 @@
 
 constexpr int LOCAL_TT_SIZE = 1024;
 constexpr int LOCAL_TT_SIZE_BIT = 10;
-//constexpr int LOCAL_TT_SIZE = 2048;
-//constexpr int LOCAL_TT_SIZE_BIT = 11;
 
 /*
     @brief Get a final score with few empties (NWS)
@@ -142,6 +140,7 @@ struct LocalTTEntry {
         lower = l;
         upper = u;
     }
+
 };
 
 static thread_local LocalTTEntry lttable[MID_TO_END_DEPTH - END_FAST_DEPTH][LOCAL_TT_SIZE];
@@ -321,10 +320,9 @@ int nega_alpha_end_nws(Search *search, int alpha, const bool skipped, uint64_t l
         search->pass_endsearch();
         return v;
     }
-    int best_move = MOVE_UNDEFINED;
     int g;
     const int canput = pop_count_ull(legal);
-    std::vector<Flip_value> move_list(canput);
+    Flip_value move_list[MID_TO_END_DEPTH];
     int idx = 0;
     for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)) {
         calc_flip(&move_list[idx].flip, &search->board, cell);
@@ -334,16 +332,15 @@ int nega_alpha_end_nws(Search *search, int alpha, const bool skipped, uint64_t l
         ++idx;
     }
     uint64_t done = 0;
-    if (move_list.size() > 1) {
+    if (canput > 1) {
         for (int i = 0; i < canput; ++i) {
-            Flip_value *flip_value = &move_list[i];
+            Flip_value *flip_value = move_list + i;
             flip_value->value = 0;
             search->move_endsearch(&flip_value->flip);
                 Board nboard = search->board;
                 LocalTTEntry *tt = get_ltt(&nboard, search->n_discs);
                 if (tt->cmp(&nboard)) {
                     if (alpha < tt->lower) {
-                        best_move = flip_value->flip.pos;
                         v = tt->lower;
                         search->undo_endsearch(&flip_value->flip);
                         return v;
@@ -364,7 +361,6 @@ int nega_alpha_end_nws(Search *search, int alpha, const bool skipped, uint64_t l
                     search->undo_endsearch(&flip_value->flip);
                     if (v < g) {
                         v = g;
-                        best_move = flip_value->flip.pos;
                         if (alpha < v) {
                             tt->set_score(&nboard, v, 64);
                             return v;
@@ -391,7 +387,6 @@ int nega_alpha_end_nws(Search *search, int alpha, const bool skipped, uint64_t l
         search->undo_endsearch(&move_list[move_idx].flip);
         if (v < g) {
             v = g;
-            best_move = move_list[move_idx].flip.pos;
             if (alpha < v) {
                 tt->set_score(&nboard, v, 64);
                 break;

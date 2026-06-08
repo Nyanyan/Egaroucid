@@ -24,7 +24,7 @@
 
 constexpr int AI_TYPE_BOOK = 1000;
 
-constexpr int IDSEARCH_ENDSEARCH_PRESEARCH_OFFSET = 10;
+constexpr int IDSEARCH_ENDSEARCH_PRESEARCH_OFFSET = 8;
 constexpr int IDSEARCH_ENDSEARCH_PRESEARCH_OFFSET_TIMELIMIT = 8;
 constexpr int PONDER_ENDSEARCH_PRESEARCH_OFFSET_TIMELIMIT = 4;
 
@@ -96,6 +96,13 @@ struct Lazy_smp_worker_result {
         : worker_idx(0), nodes(0), completed_target(false) {}
 };
 
+constexpr int LAZY_SMP_MIN_MID_DEPTH = 23;
+constexpr int LAZY_SMP_MIN_END_DEPTH = 30;
+constexpr int LAZY_SMP_MAX_MID_HELPER_THREADS = THREAD_SIZE_DEFAULT;
+constexpr int LAZY_SMP_MAX_END_HELPER_THREADS = 2;
+constexpr int LAZY_SMP_END_HELPER_MAX_ROOT_MOVES = 8;
+constexpr int LAZY_SMP_MIN_PURE_MID_THREADS = 12;
+
 inline int lazy_smp_depth_bias(int worker_idx) {
     if (worker_idx <= 0) {
         return 0;
@@ -111,6 +118,71 @@ inline uint_fast8_t lazy_smp_worker_mpc(uint_fast8_t mpc_level, int worker_idx, 
         return mpc_level + 1;
     }
     return mpc_level;
+}
+
+inline bool lazy_smp_has_target_result(const Lazy_smp_worker_result &worker_result) {
+    return worker_result.completed_target && worker_result.result.value != SCORE_UNDEFINED && 0 <= worker_result.result.policy && worker_result.result.policy <= MOVE_PASS;
+}
+
+inline int get_root_wipeout_move(Board *board, uint64_t legal) {
+    if (legal == 0ULL) {
+        return MOVE_UNDEFINED;
+    }
+    Flip flip;
+    for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)) {
+        calc_flip(&flip, board, cell);
+        if (flip.flip == board->opponent) {
+            return (int)cell;
+        }
+    }
+    return MOVE_UNDEFINED;
+}
+
+inline Search_result lazy_smp_select_result(const std::vector<Lazy_smp_worker_result> &worker_results, const Search_result &fallback_result) {
+    int min_value = SCORE_INF;
+    bool has_target = false;
+    for (const Lazy_smp_worker_result &worker_result: worker_results) {
+        if (lazy_smp_has_target_result(worker_result)) {
+            min_value = std::min(min_value, worker_result.result.value);
+            has_target = true;
+        }
+    }
+    if (!has_target) {
+        return fallback_result;
+    }
+
+    int64_t policy_votes[MOVE_PASS + 1] = {};
+    for (const Lazy_smp_worker_result &worker_result: worker_results) {
+        if (!lazy_smp_has_target_result(worker_result)) {
+            continue;
+        }
+        const Search_result &candidate = worker_result.result;
+        policy_votes[candidate.policy] += (int64_t)(candidate.value - min_value + HW2 + 1) * std::max(1, candidate.depth);
+    }
+
+    const Lazy_smp_worker_result *best_worker = nullptr;
+    for (const Lazy_smp_worker_result &worker_result: worker_results) {
+        if (!lazy_smp_has_target_result(worker_result)) {
+            continue;
+        }
+        if (best_worker == nullptr) {
+            best_worker = &worker_result;
+            continue;
+        }
+        const Search_result &candidate = worker_result.result;
+        const Search_result &best = best_worker->result;
+        const int64_t candidate_votes = policy_votes[candidate.policy];
+        const int64_t best_votes = policy_votes[best.policy];
+        if (
+            candidate_votes > best_votes ||
+            (candidate_votes == best_votes && candidate.depth > best.depth) ||
+            (candidate_votes == best_votes && candidate.depth == best.depth && candidate.probability > best.probability) ||
+            (candidate_votes == best_votes && candidate.depth == best.depth && candidate.probability == best.probability && candidate.value > best.value)
+        ) {
+            best_worker = &worker_result;
+        }
+    }
+    return best_worker == nullptr ? fallback_result : best_worker->result;
 }
 
 inline void lazy_smp_advance_depth(int *main_depth, int *main_mpc_level, int depth, uint_fast8_t target_mpc_level, bool is_end_search) {
@@ -159,7 +231,9 @@ inline Lazy_smp_worker_result lazy_smp_worker(
     thread_id_t thread_id,
     uint64_t strt,
     bool *searching,
-    bool show_log
+    bool show_log,
+    bool use_tree_parallel,
+    bool preserve_main_presearch_importance
 ) {
     Lazy_smp_worker_result worker_result;
     worker_result.worker_idx = worker_idx;
@@ -179,6 +253,9 @@ inline Lazy_smp_worker_result lazy_smp_worker(
     while (main_depth <= depth && main_mpc_level <= mpc_level && global_searching && *searching) {
         int worker_depth = main_depth;
         bool target_iteration = (main_depth == depth) && (main_mpc_level == mpc_level);
+        if (worker_idx > 0 && target_iteration && is_end_search) {
+            break;
+        }
         if (worker_idx > 0 && !target_iteration) {
             worker_depth = std::min(depth, main_depth + depth_bias);
         }
@@ -190,40 +267,10 @@ inline Lazy_smp_worker_result lazy_smp_worker(
         uint_fast8_t worker_mpc_level = lazy_smp_worker_mpc((uint_fast8_t)main_mpc_level, worker_idx, worker_is_end_search, target_iteration);
         bool worker_is_target = (worker_depth == depth) && (worker_mpc_level == mpc_level);
 
-        const bool use_tree_parallel = worker_idx == 0;
-        std::vector<Search> helper_searches;
-        std::vector<std::future<int>> helper_tasks;
-        bool helper_probe_searching = true;
-        if (use_tree_parallel && !worker_is_target && worker_depth <= 10 && !is_end_search && thread_pool.get_n_idle() > 0) {
-            const int n_probe_helpers = std::min(thread_pool.get_n_idle(), thread_pool.get_max_thread_size(thread_id));
-            helper_searches.resize(n_probe_helpers);
-            for (int helper_idx = 0; helper_idx < n_probe_helpers && global_searching && *searching; ++helper_idx) {
-                const int helper_depth = std::min(depth, worker_depth + lazy_smp_depth_bias(helper_idx + 1));
-                const bool helper_is_end_search = helper_depth >= max_depth;
-                const uint_fast8_t helper_mpc_level = lazy_smp_worker_mpc(worker_mpc_level, helper_idx + 1, helper_is_end_search, false);
-                helper_searches[helper_idx] = Search{&board, helper_mpc_level, false, true};
-                helper_searches[helper_idx].thread_id = thread_id;
-                bool pushed = false;
-                helper_tasks.emplace_back(thread_pool.push(thread_id, &pushed, std::bind(
-                    &nega_scout,
-                    &helper_searches[helper_idx], alpha, beta, helper_depth, false, use_legal, helper_is_end_search, &helper_probe_searching
-                )));
-                if (!pushed) {
-                    helper_tasks.pop_back();
-                    break;
-                }
-            }
-        }
         Search main_search(&board, worker_mpc_level, use_tree_parallel, !worker_is_target);
         main_search.thread_id = thread_id;
+        main_search.lazy_smp_worker_idx = use_tree_parallel ? ((worker_idx == 0 && preserve_main_presearch_importance) ? -1 : worker_idx) : 0;
         std::pair<int, int> id_result = first_nega_scout_legal(&main_search, alpha, beta, worker_depth, worker_is_end_search, clogs, use_legal, strt, searching);
-        helper_probe_searching = false;
-        for (std::future<int> &task: helper_tasks) {
-            task.get();
-        }
-        for (Search &helper_search: helper_searches) {
-            result->nodes += helper_search.n_nodes;
-        }
         result->nodes += main_search.n_nodes;
 
         if (*searching) {
@@ -278,22 +325,57 @@ void iterative_deepening_search(Board board, int alpha, int beta, int depth, uin
     if (show_log) {
         std::cerr << "thread pool size " << thread_pool.size() << " n_idle " << thread_pool.get_n_idle() << std::endl;
     }
-#if USE_LAZY_SMP
+
+    const int max_depth = HW2 - board.n_discs();
+    const bool is_end_search = depth >= max_depth;
+#if USE_YBWC_SPLIT_STATISTICS
+    if (is_end_search) {
+        ybwc_split_stats_reset();
+    }
+#endif
+    const uint64_t root_legal = use_legal == LEGAL_UNDEFINED ? board.get_legal() : use_legal;
+    const int wipeout_move = get_root_wipeout_move(&board, root_legal);
+    if (wipeout_move != MOVE_UNDEFINED) {
+        *result = Search_result();
+        result->value = SCORE_MAX;
+        result->policy = wipeout_move;
+        result->depth = std::min(depth, max_depth);
+        result->is_end_search = is_end_search;
+        result->probability = SELECTIVITY_PERCENTAGE[mpc_level];
+        result->nodes = 1;
+        result->time = tim() - strt;
+        result->nps = calc_nps(result->nodes, result->time);
+        return;
+    }
+    const int root_legal_count = pop_count_ull(root_legal);
+    const int max_lazy_helpers = is_end_search ? LAZY_SMP_MAX_END_HELPER_THREADS : std::min(LAZY_SMP_MAX_MID_HELPER_THREADS, n_usable_threads - 1);
+    const int n_lazy_workers = use_multi_thread ? std::min(n_usable_threads, max_lazy_helpers + 1) : 1;
+    const bool use_pure_mid_lazy_smp = !is_end_search && depth >= LAZY_SMP_MIN_MID_DEPTH && n_lazy_workers >= LAZY_SMP_MIN_PURE_MID_THREADS;
+    const bool use_root_lazy_smp = USE_LAZY_SMP && n_lazy_workers >= 2 && (
+        use_pure_mid_lazy_smp ||
+        (is_end_search && depth >= LAZY_SMP_MIN_END_DEPTH && root_legal_count <= LAZY_SMP_END_HELPER_MAX_ROOT_MOVES)
+    );
+    const bool use_tree_parallel = use_multi_thread && !use_pure_mid_lazy_smp;
+
     std::vector<std::future<Lazy_smp_worker_result>> helper_tasks;
     bool helper_searching = true;
-    const int n_helpers = 0;
-    for (int worker_idx = 1; worker_idx <= n_helpers && global_searching && *searching; ++worker_idx) {
-        bool pushed = false;
-        helper_tasks.emplace_back(thread_pool.push(thread_id, &pushed, std::bind(
-            lazy_smp_worker, board, alpha, beta, depth, mpc_level, clogs, use_legal, worker_idx, thread_id, strt, &helper_searching, false
-        )));
-        if (!pushed) {
-            helper_tasks.pop_back();
-            break;
+    if (use_root_lazy_smp) {
+        for (int worker_idx = 1; worker_idx < n_lazy_workers && global_searching && *searching; ++worker_idx) {
+            bool pushed = false;
+            helper_tasks.emplace_back(thread_pool.push(thread_id, &pushed, std::bind(
+                lazy_smp_worker, board, alpha, beta, depth, mpc_level, clogs, use_legal, worker_idx, thread_id, strt, &helper_searching, false, false, false
+            )));
+            if (!pushed) {
+                helper_tasks.pop_back();
+                break;
+            }
         }
     }
-    Lazy_smp_worker_result main_worker_result = lazy_smp_worker(board, alpha, beta, depth, mpc_level, clogs, use_legal, 0, thread_id, strt, searching, show_log);
+
+    Lazy_smp_worker_result main_worker_result = lazy_smp_worker(board, alpha, beta, depth, mpc_level, clogs, use_legal, 0, thread_id, strt, searching, show_log, use_tree_parallel, use_root_lazy_smp && is_end_search);
     helper_searching = false;
+    std::vector<Lazy_smp_worker_result> worker_results;
+    worker_results.emplace_back(main_worker_result);
     *result = main_worker_result.result;
     uint64_t helper_nodes = 0;
     int completed_helpers = 0;
@@ -301,21 +383,29 @@ void iterative_deepening_search(Board board, int alpha, int beta, int depth, uin
         Lazy_smp_worker_result helper_result = task.get();
         helper_nodes += helper_result.nodes;
         completed_helpers += helper_result.completed_target;
+        worker_results.emplace_back(helper_result);
         if (!main_worker_result.completed_target && helper_result.completed_target) {
             *result = helper_result.result;
         }
     }
+    if (use_root_lazy_smp) {
+        *result = lazy_smp_select_result(worker_results, *result);
+    }
     result->nodes += helper_nodes;
     result->time = tim() - strt;
     result->nps = calc_nps(result->nodes, result->time);
-    if (show_log && helper_tasks.size()) {
-        std::cerr << "lazy smp helpers " << helper_tasks.size() << " completed " << completed_helpers
-                  << " helper_n_nodes " << helper_nodes << " whole_n_nodes " << result->nodes
-                  << " whole_time " << result->time << " whole_NPS " << result->nps << std::endl;
+    if (show_log && use_root_lazy_smp) {
+        std::cerr << "lazy smp workers " << (helper_tasks.size() + 1)
+                  << " completed_helpers " << completed_helpers
+                  << " helper_n_nodes " << helper_nodes
+                  << " whole_n_nodes " << result->nodes
+                  << " whole_time " << result->time
+                  << " whole_NPS " << result->nps << std::endl;
     }
-#else
-    Lazy_smp_worker_result main_worker_result = lazy_smp_worker(board, alpha, beta, depth, mpc_level, clogs, use_legal, 0, thread_id, strt, searching, show_log);
-    *result = main_worker_result.result;
+#if USE_YBWC_SPLIT_STATISTICS
+    if (is_end_search) {
+        ybwc_split_stats_print();
+    }
 #endif
 }
 

@@ -27,7 +27,10 @@ constexpr int YBWC_MID_SPLIT_MIN_DEPTH = 6;
 constexpr int YBWC_END_SPLIT_MIN_DEPTH = 15;
 //constexpr int YBWC_END_SPLIT_MAX_DEPTH = 29;
 // constexpr int YBWC_N_ELDER_CHILD = 1;
-constexpr int YBWC_N_YOUNGER_CHILD = 1;
+constexpr int YBWC_MID_N_YOUNGER_CHILD = 1;
+constexpr int YBWC_END_N_YOUNGER_CHILD = 1;
+constexpr int YBWC_END_LOW_DEPTH_N_YOUNGER_CHILD = 6;
+constexpr int YBWC_END_LOW_DEPTH_N_YOUNGER_CHILD_MAX_DEPTH = 16;
 // constexpr int YBWC_MAX_RUNNING_COUNT = 5;
 constexpr int YBWC_NOT_PUSHED = -124;
 constexpr int YBWC_PUSHED = 124;
@@ -190,7 +193,8 @@ inline int ybwc_split_nws(Search *search, int parent_alpha, const int depth, uin
         ++ybwc_split_attempt_by_move[depth][move_bucket];
     #endif
     bool idle_ok = thread_pool.get_n_idle() > 0;
-    bool move_ok = n_remaining_moves >= YBWC_N_YOUNGER_CHILD;
+    const int n_younger_child = is_end_search && depth <= YBWC_END_LOW_DEPTH_N_YOUNGER_CHILD_MAX_DEPTH ? YBWC_END_LOW_DEPTH_N_YOUNGER_CHILD : (is_end_search ? YBWC_END_N_YOUNGER_CHILD : YBWC_MID_N_YOUNGER_CHILD);
+    bool move_ok = n_remaining_moves >= n_younger_child;
     #if USE_YBWC_SPLIT_STATISTICS
         if (idle_ok) {
             ++ybwc_split_idle_ok[depth];
@@ -201,7 +205,7 @@ inline int ybwc_split_nws(Search *search, int parent_alpha, const int depth, uin
     #endif
     if (
             idle_ok &&                                  // There is an idle thread
-            n_remaining_moves >= YBWC_N_YOUNGER_CHILD    // This node is not the (some) youngest brother
+            n_remaining_moves >= n_younger_child         // This node is not the (some) youngest brother
     ) {
         // int v;
         // if (transposition_cutoff_nws(search, search->board.hash(), depth, -parent_alpha - 1, &v)) {
@@ -231,6 +235,7 @@ inline int ybwc_split_nws(Search *search, int parent_alpha, const int depth, uin
     }
     return YBWC_NOT_PUSHED;
 }
+
 
 
 #if USE_YBWC_NWS

@@ -416,7 +416,7 @@ int nega_alpha_ordering_nws(Search *search, int alpha, const int depth, const bo
         move_list[tt_moves_idx0].value = -INF;
     }
     if (v <= alpha) {
-        move_list_evaluate_nws(search, move_list, canput, moves, depth, alpha, false, searchings.back());
+        move_list_evaluate_nws(search, move_list, canput, moves, depth, alpha, is_end_search, searchings.back());
 #if USE_YBWC_NWS
         if (
             search->use_multi_thread && 
@@ -457,7 +457,9 @@ int nega_alpha_ordering_nws(Search *search, int alpha, const int depth, const bo
                     best_move = move_list[move_idx].flip.pos;
                     if (alpha < v) {
 #if USE_KILLER_MOVE_MO && USE_KILLER_MOVE_NWS_MO
-                        search->update_heuristics_on_cutoff(move_list[move_idx].flip.pos, depth);
+                        if (!is_end_search) {
+                            search->update_heuristics_on_cutoff(move_list[move_idx].flip.pos, depth);
+                        }
 #endif
                         break;
                     }
