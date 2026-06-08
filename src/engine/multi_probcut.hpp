@@ -76,7 +76,7 @@ inline bool mpc(Search* search, int alpha, int beta, int depth, uint64_t legal, 
     if (is_end_search) {
         search_depth = ((depth * 2 / 5) & 0b11111110) + (depth & 1); // depth / 3 + parity
     } else {
-        search_depth = ((depth / 2) & 0b11111110) + (depth & 1); // depth / 2 + parity
+        search_depth = ((depth * 2 / 5) & 0b11111110) + (depth & 1);
     }
     // int search_depth = ((depth / 2) & 0b11111110) + (depth & 1); // depth / 2 + parity
     int d0value = mid_evaluate_diff(search);
@@ -105,19 +105,19 @@ inline bool mpc(Search* search, int alpha, int beta, int depth, uint64_t legal, 
     
     if (search_depth == 0) {
 #if USE_MPC_PRE_CALCULATION
-        int error = mpc_error[search->mpc_level][search->n_discs][0][depth];
+        int static_error = mpc_error[search->mpc_level][search->n_discs][0][depth];
 #else
         double mpct = SELECTIVITY_MPCT[search->mpc_level];
-        int error = ceil(mpct * probcut_sigma(search->n_discs, 0, depth));
+        int static_error = ceil(mpct * probcut_sigma(search->n_discs, 0, depth));
 #endif
-        if (d0value >= beta + error) {
+        if (d0value >= beta + static_error) {
             *v = beta;
             if (is_end_search) {
                 *v += beta & 1;
             }
             return true;
         }
-        if (d0value <= alpha - error) {
+        if (d0value <= alpha - static_error) {
             *v = alpha;
             if (is_end_search) {
                 *v -= alpha & 1;

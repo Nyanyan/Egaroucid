@@ -98,10 +98,12 @@ struct Lazy_smp_worker_result {
 
 constexpr int LAZY_SMP_MIN_MID_DEPTH = 23;
 constexpr int LAZY_SMP_MIN_END_DEPTH = 30;
+constexpr bool USE_MID_ROOT_LAZY_SMP = false;
 constexpr int LAZY_SMP_MAX_MID_HELPER_THREADS = THREAD_SIZE_DEFAULT;
 constexpr int LAZY_SMP_MAX_END_HELPER_THREADS = 2;
 constexpr int LAZY_SMP_END_HELPER_MAX_ROOT_MOVES = 8;
 constexpr int LAZY_SMP_MIN_PURE_MID_THREADS = 12;
+constexpr int LAZY_SMP_MAX_PURE_MID_DEPTH = 23;
 
 inline int lazy_smp_depth_bias(int worker_idx) {
     if (worker_idx <= 0) {
@@ -348,9 +350,10 @@ void iterative_deepening_search(Board board, int alpha, int beta, int depth, uin
         return;
     }
     const int root_legal_count = pop_count_ull(root_legal);
-    const int max_lazy_helpers = is_end_search ? LAZY_SMP_MAX_END_HELPER_THREADS : std::min(LAZY_SMP_MAX_MID_HELPER_THREADS, n_usable_threads - 1);
+    const bool candidate_pure_mid_lazy_smp = USE_MID_ROOT_LAZY_SMP && !is_end_search && depth >= LAZY_SMP_MIN_MID_DEPTH && depth <= LAZY_SMP_MAX_PURE_MID_DEPTH && n_usable_threads >= LAZY_SMP_MIN_PURE_MID_THREADS;
+    const int max_lazy_helpers = is_end_search ? LAZY_SMP_MAX_END_HELPER_THREADS : std::min(candidate_pure_mid_lazy_smp ? LAZY_SMP_MAX_MID_HELPER_THREADS : 0, n_usable_threads - 1);
     const int n_lazy_workers = use_multi_thread ? std::min(n_usable_threads, max_lazy_helpers + 1) : 1;
-    const bool use_pure_mid_lazy_smp = !is_end_search && depth >= LAZY_SMP_MIN_MID_DEPTH && n_lazy_workers >= LAZY_SMP_MIN_PURE_MID_THREADS;
+    const bool use_pure_mid_lazy_smp = candidate_pure_mid_lazy_smp && n_lazy_workers >= LAZY_SMP_MIN_PURE_MID_THREADS;
     const bool use_root_lazy_smp = USE_LAZY_SMP && n_lazy_workers >= 2 && (
         use_pure_mid_lazy_smp ||
         (is_end_search && depth >= LAZY_SMP_MIN_END_DEPTH && root_legal_count <= LAZY_SMP_END_HELPER_MAX_ROOT_MOVES)

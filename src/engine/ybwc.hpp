@@ -27,7 +27,9 @@ constexpr int YBWC_MID_SPLIT_MIN_DEPTH = 6;
 constexpr int YBWC_END_SPLIT_MIN_DEPTH = 15;
 //constexpr int YBWC_END_SPLIT_MAX_DEPTH = 29;
 // constexpr int YBWC_N_ELDER_CHILD = 1;
-constexpr int YBWC_MID_N_YOUNGER_CHILD = 1;
+constexpr int YBWC_MID_N_YOUNGER_CHILD = 2;
+constexpr int YBWC_MID_LOW_DEPTH_N_YOUNGER_CHILD = 3;
+constexpr int YBWC_MID_LOW_DEPTH_N_YOUNGER_CHILD_MAX_DEPTH = 23;
 constexpr int YBWC_END_N_YOUNGER_CHILD = 1;
 constexpr int YBWC_END_LOW_DEPTH_N_YOUNGER_CHILD = 6;
 constexpr int YBWC_END_LOW_DEPTH_N_YOUNGER_CHILD_MAX_DEPTH = 16;
@@ -193,7 +195,9 @@ inline int ybwc_split_nws(Search *search, int parent_alpha, const int depth, uin
         ++ybwc_split_attempt_by_move[depth][move_bucket];
     #endif
     bool idle_ok = thread_pool.get_n_idle() > 0;
-    const int n_younger_child = is_end_search && depth <= YBWC_END_LOW_DEPTH_N_YOUNGER_CHILD_MAX_DEPTH ? YBWC_END_LOW_DEPTH_N_YOUNGER_CHILD : (is_end_search ? YBWC_END_N_YOUNGER_CHILD : YBWC_MID_N_YOUNGER_CHILD);
+    const int n_younger_child = is_end_search
+        ? (depth <= YBWC_END_LOW_DEPTH_N_YOUNGER_CHILD_MAX_DEPTH ? YBWC_END_LOW_DEPTH_N_YOUNGER_CHILD : YBWC_END_N_YOUNGER_CHILD)
+        : (depth <= YBWC_MID_LOW_DEPTH_N_YOUNGER_CHILD_MAX_DEPTH ? YBWC_MID_LOW_DEPTH_N_YOUNGER_CHILD : YBWC_MID_N_YOUNGER_CHILD);
     bool move_ok = n_remaining_moves >= n_younger_child;
     #if USE_YBWC_SPLIT_STATISTICS
         if (idle_ok) {
