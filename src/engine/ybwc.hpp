@@ -37,6 +37,15 @@ constexpr int YBWC_END_LOW_DEPTH_N_YOUNGER_CHILD_MAX_DEPTH = 16;
 constexpr int YBWC_NOT_PUSHED = -124;
 constexpr int YBWC_PUSHED = 124;
 
+constexpr int MID_NWS_LMR_MIN_DEPTH = 8;
+constexpr int MID_NWS_LMR_MIN_MOVE = 4;
+inline int mid_nws_lmr_reduction(Search *search, const int depth, const int move_count, const bool is_end_search) {
+    if (is_end_search || search->mpc_level >= MPC_100_LEVEL || depth < MID_NWS_LMR_MIN_DEPTH || move_count < MID_NWS_LMR_MIN_MOVE) {
+        return 0;
+    }
+    return 1;
+}
+
 #if USE_YBWC_SPLIT_STATISTICS
 constexpr int YBWC_STATS_DEPTH_SIZE = HW2 + 1;
 constexpr int YBWC_STATS_MOVE_BUCKET_SIZE = 3;
@@ -264,7 +273,15 @@ inline void ybwc_search_young_brothers_nws(Search *search, int alpha, int *v, in
                     ++running_count;
                 } else {
                     if (ybwc_split_state == YBWC_NOT_PUSHED) {
-                        g = -nega_alpha_ordering_nws(search, -alpha - 1, depth - 1, false, move_list[move_idx].n_legal, is_end_search, searchings);
+                        const int lmr_reduction = mid_nws_lmr_reduction(search, depth, n_moves_seen, is_end_search);
+                        if (lmr_reduction > 0) {
+                            g = -nega_alpha_ordering_nws(search, -alpha - 1, depth - 1 - lmr_reduction, false, move_list[move_idx].n_legal, is_end_search, searchings);
+                            if (alpha < g && is_searching(searchings)) {
+                                g = -nega_alpha_ordering_nws(search, -alpha - 1, depth - 1, false, move_list[move_idx].n_legal, is_end_search, searchings);
+                            }
+                        } else {
+                            g = -nega_alpha_ordering_nws(search, -alpha - 1, depth - 1, false, move_list[move_idx].n_legal, is_end_search, searchings);
+                        }
                     } else{
                         g = ybwc_split_state;
                         ++search->n_nodes;
@@ -357,7 +374,15 @@ inline void ybwc_search_young_brothers_nws(Search *search, int alpha, int *v, in
                     ++running_count;
                 } else {
                     if (ybwc_split_state == YBWC_NOT_PUSHED) {
-                        g = -nega_alpha_ordering_nws(search, -alpha - 1, depth - 1, false, move_list[move_idx].n_legal, is_end_search, searchings);
+                        const int lmr_reduction = mid_nws_lmr_reduction(search, depth, n_moves_seen, is_end_search);
+                        if (lmr_reduction > 0) {
+                            g = -nega_alpha_ordering_nws(search, -alpha - 1, depth - 1 - lmr_reduction, false, move_list[move_idx].n_legal, is_end_search, searchings);
+                            if (alpha < g && is_searching(searchings)) {
+                                g = -nega_alpha_ordering_nws(search, -alpha - 1, depth - 1, false, move_list[move_idx].n_legal, is_end_search, searchings);
+                            }
+                        } else {
+                            g = -nega_alpha_ordering_nws(search, -alpha - 1, depth - 1, false, move_list[move_idx].n_legal, is_end_search, searchings);
+                        }
                     } else{
                         g = ybwc_split_state;
                         ++search->n_nodes;
