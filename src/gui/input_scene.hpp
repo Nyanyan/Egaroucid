@@ -236,6 +236,7 @@ private:
     Button save_button;
     Button search_button;
     Button select_all_button;
+    Button refresh_button;
     TextAreaEditState username_area;
     Radio_button mode_radio;
     AsyncHTTPTask list_task;
@@ -261,6 +262,7 @@ public:
         save_button.disable();
         search_button.init(X_CENTER + 245, 70, 105, 34, 10, U"Search", 17, getData().fonts.font, getData().colors.white, getData().colors.black);
         select_all_button.init(22, 18, 120, 30, 8, U"Select all", 14, getData().fonts.font, getData().colors.white, getData().colors.black);
+        refresh_button.init(156, 18, 100, 30, 8, U"Refresh", 14, getData().fonts.font, getData().colors.white, getData().colors.black);
 
         username_area.active = true;
         current_page = 0;
@@ -307,7 +309,7 @@ public:
         const int input_x = X_CENTER - 132;
         const int input_w = 335;
         const int username_y = 178;
-        const int mode_y = result_page ? 28 : 250;
+        const int mode_y = result_page ? 18 : 250;
         if (!result_page) {
             getData().fonts.font(language.get("in_out", "input_othello_quest")).draw(27, Arg::topCenter(X_CENTER, 82), getData().colors.white);
             getData().fonts.font(language.get("in_out", "othello_quest_username")).draw(20, Arg::rightCenter(label_x, username_y + 22), getData().colors.white);
@@ -328,7 +330,7 @@ public:
         }
 
         draw_games(result_page);
-        draw_select_all_button(result_page);
+        draw_result_buttons(result_page);
 
         back_button.draw();
         save_button.enable();
@@ -362,7 +364,7 @@ private:
         status_message = message;
     }
 
-    void start_search() {
+    void start_search(bool force_refresh = false) {
         String account_text = remove_oq_account_whitespace(username_area.text);
         if (account_text.empty()) {
             set_user_status(U"Input an Othello Quest user name.");
@@ -389,7 +391,9 @@ private:
         getData().user_settings.othello_quest_username = searched_username;
         getData().user_settings.othello_quest_mode = searched_mode;
         user_status_message = false;
-        if (restore_cached_result(searched_username, searched_mode)) {
+        if (force_refresh) {
+            clear_cached_result(searched_username, searched_mode);
+        } else if (restore_cached_result(searched_username, searched_mode)) {
             return;
         }
         games.clear();
@@ -401,7 +405,7 @@ private:
         last_click_time = 0;
         next_prefetch_idx = 0;
         list_loading = true;
-        set_system_status(U"Loading game list...");
+        set_system_status(force_refresh ? U"Refreshing game list..." : U"Loading game list...");
         list_task = SimpleHTTP::GetAsync(Unicode::Widen(build_list_url()), oq_headers());
     }
 
@@ -726,11 +730,12 @@ private:
         getData().fonts.font(arrow).draw(16, Arg::center(rect.center()), enabled ? ColorF(getData().colors.white) : ColorF(getData().colors.white, 0.35));
     }
 
-    void draw_select_all_button(bool result_page) {
+    void draw_result_buttons(bool result_page) {
         if (!result_page || games.empty()) {
             return;
         }
-        const bool all_selected = !games.empty() && (int)selected_indices.size() == (int)games.size();
+
+        const bool all_selected = (int)selected_indices.size() == (int)games.size();
         select_all_button.str = all_selected ? U"Deselect all" : U"Select all";
         select_all_button.font_size = update_font_size_overfull(select_all_button.font, select_all_button.str, 14, select_all_button.rect.h, select_all_button.rect.w);
         select_all_button.draw();
@@ -743,9 +748,20 @@ private:
                 for (int i = 0; i < (int)games.size(); ++i) {
                     selected_indices.insert(i);
                 }
-                selected_idx = games.empty() ? -1 : 0;
+                selected_idx = 0;
             }
             write_cache();
+        }
+
+        refresh_button.font_size = update_font_size_overfull(refresh_button.font, refresh_button.str, 14, refresh_button.rect.h, refresh_button.rect.w);
+        if (list_loading) {
+            refresh_button.disable();
+        } else {
+            refresh_button.enable();
+        }
+        refresh_button.draw();
+        if (refresh_button.clicked()) {
+            start_search(true);
         }
     }
 
@@ -1159,6 +1175,14 @@ private:
             start_next_detail_batch();
         }
         return true;
+    }
+
+    void clear_cached_result(const std::string& username, int mode) {
+        const int cache_mode = std::clamp(mode, 0, 2);
+        Oq_cache& cache = oq_caches[cache_mode];
+        if (cache.has_result && cache.username == username && cache.mode == cache_mode) {
+            cache = Oq_cache{};
+        }
     }
 
     void write_cache() {

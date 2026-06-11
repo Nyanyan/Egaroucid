@@ -1,6 +1,6 @@
 # Common
 cmake_minimum_required(VERSION 3.25)
-project(Egaroucid LANGUAGES CXX VERSION 7.8.1)
+project(Egaroucid LANGUAGES CXX VERSION 7.9.0)
 
 option(BUILD_ENGINE_LIB "Build Egaroucid engine library" OFF)
 option(BUILD_CONSOLE "Build Egaroucid console executable" ON)
