@@ -1335,6 +1335,9 @@ private:
     }
 
     void menu_in_out() {
+        if (shortcut_key == U"enable_recycle_bin") {
+            getData().menu_elements.enable_recycle_bin = !getData().menu_elements.enable_recycle_bin;
+        }
         if (getData().menu_elements.input_from_clipboard || shortcut_key == U"input_from_clipboard") {
             changing_scene = true;
             stop_calculating();
@@ -1349,6 +1352,13 @@ private:
             changeScene(U"Import_text", SCENE_FADE_TIME);
             return;
         }
+        if (getData().menu_elements.input_othello_quest || shortcut_key == U"input_othello_quest") {
+            changing_scene = true;
+            stop_calculating();
+            resume_calculating();
+            changeScene(U"Import_othello_quest", SCENE_FADE_TIME);
+            return;
+        }
         if (getData().menu_elements.edit_board || shortcut_key == U"edit_board") {
             changing_scene = true;
             stop_calculating();
@@ -1356,11 +1366,11 @@ private:
             changeScene(U"Edit_board", SCENE_FADE_TIME);
             return;
         }
-        if (getData().menu_elements.input_game || shortcut_key == U"input_game") {
+        if (getData().menu_elements.game_library || shortcut_key == U"game_library") {
             changing_scene = true;
             stop_calculating();
             resume_calculating();
-            changeScene(U"Import_game", SCENE_FADE_TIME);
+            changeScene(U"Game_library", SCENE_FADE_TIME);
             return;
         }
         if (getData().menu_elements.input_bitboard || shortcut_key == U"input_bitboard") {

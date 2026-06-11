@@ -14,6 +14,7 @@
 #include <functional>
 #include <iomanip>
 #include <sstream>
+#include <unordered_set>
 #include "./../engine/engine_all.hpp"
 #include "function/function_all.hpp"
 
@@ -359,6 +360,8 @@ struct ExplorerDrawResult {
     bool folderDoubleClicked = false;
     String clickedFolder;
     bool importClicked = false;
+    bool gameClicked = false;
+    int clickedGameIndex = -1;
     bool gameDoubleClicked = false;
     int importIndex = -1;
     bool deleteClicked = false;
@@ -608,7 +611,10 @@ inline ExplorerDrawResult DrawExplorerList(
     LanguageT& language,
     const std::string& document_dir,
     const std::string& current_subfolder,
-    const ExplorerFolderInlineConfig* inline_config = nullptr
+    const ExplorerFolderInlineConfig* inline_config = nullptr,
+    const std::unordered_set<int>* selected_folder_indices = nullptr,
+    const std::unordered_set<int>* selected_game_indices = nullptr,
+    const String& current_path_label = U""
 ) {
     ExplorerDrawResult res;
     
@@ -670,11 +676,12 @@ inline ExplorerDrawResult DrawExplorerList(
     ExplorerDrawResult list_result = draw_explorer_list_items<FontsT, ColorsT, ResourcesT, LanguageT>(
         folders_display, games, delete_buttons, edit_buttons, scroll_manager, 
         item_height, n_games_on_window, has_parent, fonts, colors, resources, language,
-        drag_state, click_state, current_time, list_geom, inline_config
+        drag_state, click_state, current_time, list_geom, inline_config, selected_folder_indices, selected_game_indices,
+        current_path_label
     );
     
     if (list_result.folderClicked || list_result.folderDoubleClicked || 
-        list_result.gameDoubleClicked || list_result.deleteClicked || list_result.editClicked ||
+        list_result.gameClicked || list_result.gameDoubleClicked || list_result.deleteClicked || list_result.editClicked ||
         list_result.parentFolderDoubleClicked || list_result.folderRenameRequested) {
         return list_result;
     }
@@ -704,7 +711,10 @@ inline ExplorerDrawResult draw_explorer_list_items(
     ExplorerClickState& click_state,
     uint64_t current_time,
     const gui_list::VerticalListGeometry& list_geom,
-    const ExplorerFolderInlineConfig* inline_config
+    const ExplorerFolderInlineConfig* inline_config,
+    const std::unordered_set<int>* selected_folder_indices,
+    const std::unordered_set<int>* selected_game_indices,
+    const String& current_path_label
 ) {
     ExplorerDrawResult res;
 
@@ -756,6 +766,9 @@ inline ExplorerDrawResult draw_explorer_list_items(
         // Handle parent folder
         if (has_parent && (row - strt_idx_int) == 0 && row == 0) {
             ExplorerDrawResult parent_result = draw_parent_folder<FontsT, ColorsT>(rect, drag_state, fonts, colors, sy, item_height, click_state, current_time, inline_editing);
+            if (!current_path_label.empty()) {
+                fonts.font(current_path_label).draw(15, Arg::leftCenter(IMPORT_GAME_SX + IMPORT_GAME_LEFT_MARGIN + 58, sy + item_height / 2), colors.white);
+            }
             if (parent_result.parentFolderDoubleClicked) {
                 return parent_result;
             }
@@ -764,9 +777,10 @@ inline ExplorerDrawResult draw_explorer_list_items(
         else if (row - parent_offset < (int)folders_display.size()) {
             int folder_idx = row - parent_offset;
             if (folder_idx >= 0 && folder_idx < (int)folders_display.size()) {
+                const bool folder_selected = selected_folder_indices && selected_folder_indices->find(folder_idx) != selected_folder_indices->end();
                 ExplorerDrawResult folder_result = draw_folder_item<FontsT, ColorsT, ResourcesT>(
                     folders_display[folder_idx], rect, row, folder_idx, drag_state, fonts, colors, resources,
-                    sy, item_height, click_state, current_time, inline_config
+                    sy, item_height, click_state, current_time, inline_config, folder_selected
                 );
                 if (folder_result.folderClicked || folder_result.folderDoubleClicked) {
                     return folder_result;
@@ -780,11 +794,12 @@ inline ExplorerDrawResult draw_explorer_list_items(
         else {
             int i = row - parent_offset - (int)folders_display.size();
             if (i >= 0 && i < (int)games.size()) {
+                const bool game_selected = selected_game_indices && selected_game_indices->find(i) != selected_game_indices->end();
                 ExplorerDrawResult game_result = draw_game_item<FontsT, ColorsT>(
                     games[i], i, rect, row, delete_buttons, edit_buttons, drag_state, fonts, colors,
-                    sy, item_height, click_state, current_time, inline_editing
+                    sy, item_height, click_state, current_time, inline_editing, game_selected
                 );
-                if (game_result.gameDoubleClicked || game_result.deleteClicked || game_result.editClicked) {
+                if (game_result.gameClicked || game_result.gameDoubleClicked || game_result.deleteClicked || game_result.editClicked) {
                     return game_result;
                 }
             }
@@ -870,13 +885,18 @@ inline ExplorerDrawResult draw_folder_item(
     int item_height,
     ExplorerClickState& click_state,
     uint64_t current_time,
-    const ExplorerFolderInlineConfig* inline_config
+    const ExplorerFolderInlineConfig* inline_config,
+    bool selected = false
 ) {
     ExplorerDrawResult res;
 
     bool inline_editing = inline_config && inline_config->renaming;
     bool is_inline_target = inline_editing && inline_config->folder_index == folder_index;
     bool interactions_locked = inline_editing && !is_inline_target;
+
+    if (selected) {
+        rect.draw(ColorF(colors.white, 0.18)).drawFrame(2, Palette::Cyan);
+    }
 
     double folder_icon_scale = (double)(rect.h - 2 * 10) / (double)resources.folder.height();
     bool is_being_dragged = (drag_state.is_dragging_folder && drag_state.dragged_folder_name == fname);
@@ -980,11 +1000,16 @@ inline ExplorerDrawResult draw_folder_item(
             click_state.last_click_time = 0;
             return res;
         } else {
-            if (drag_state.dragged_game_index == -1 && drag_state.dragged_folder_name.empty()) {
+            const bool click_belongs_to_this_folder =
+                drag_state.dragged_game_index == -1 &&
+                (drag_state.dragged_folder_name.empty() || drag_state.dragged_folder_name == fname);
+            if (click_belongs_to_this_folder) {
                 res.folderClicked = true;
                 res.clickedFolder = fname;
+                res.folderRenameIndex = folder_index;
                 click_state.last_clicked_folder = fname;
                 click_state.last_click_time = current_time;
+                drag_state.reset_drag_preparation();
                 return res;
             } else {
                 click_state.last_clicked_folder = fname;
@@ -1011,7 +1036,8 @@ inline ExplorerDrawResult draw_game_item(
     int item_height,
     ExplorerClickState& click_state,
     uint64_t current_time,
-    bool interactions_locked
+    bool interactions_locked,
+    bool selected = false
 ) {
     ExplorerDrawResult res;
     
@@ -1022,6 +1048,9 @@ inline ExplorerDrawResult draw_game_item(
     
     // Always draw background, but make it more transparent when being dragged
     rect.draw(game_bg_color);
+    if (selected) {
+        rect.draw(ColorF(colors.white, 0.18)).drawFrame(2, Palette::Cyan);
+    }
     
     // テキスト色をドラッグ状態に応じて調整
     Color text_color = interactions_locked ? colors.white.withAlpha(96) : (is_being_dragged ? colors.white.withAlpha(128) : colors.white);
@@ -1184,12 +1213,17 @@ inline ExplorerDrawResult draw_game_item(
             click_state.last_click_time = 0;
             return res;
         } else {
-            // Single click - only process if no drag preparation exists
-            if (drag_state.dragged_game_index == -1 && drag_state.dragged_folder_name.empty()) {
+            const bool click_belongs_to_this_game =
+                drag_state.dragged_folder_name.empty() &&
+                (drag_state.dragged_game_index == -1 || drag_state.dragged_game_index == game_index);
+            if (click_belongs_to_this_game) {
+                res.gameClicked = true;
+                res.clickedGameIndex = game_index;
                 click_state.last_clicked_game_index = game_index;
                 click_state.last_click_time = current_time;
                 // Clear folder click state when clicking on game
                 click_state.last_clicked_folder.clear();
+                drag_state.reset_drag_preparation();
             } else {
                 // Update click state for potential double-click detection, but don't process single click
                 click_state.last_clicked_game_index = game_index;
@@ -1279,6 +1313,6 @@ inline ExplorerDrawResult DrawExplorerList(
         folders_display, games, delete_buttons, edit_buttons, scroll_manager,
         up_button, item_height,
         n_games_on_window, has_parent, fonts, colors, resources, language,
-        "", "", nullptr
+        "", "", nullptr, nullptr, nullptr, U""
     );
 }

@@ -12,6 +12,13 @@
 #include <iostream>
 #include <future>
 #include <algorithm>
+#include <cctype>
+#include <cmath>
+#include <ctime>
+#include <unordered_set>
+#ifdef _WIN32
+#include <Windows.h>
+#endif
 #include "./../engine/engine_all.hpp"
 #include "function/function_all.hpp"
 #include "draw.hpp"
@@ -158,6 +165,1325 @@ public:
 
 
 
+
+
+class Import_othello_quest : public App::Scene {
+private:
+    static constexpr int GAMES_PER_PAGE = 5;
+    static constexpr int OQ_TABLE_X = 24;
+    static constexpr int OQ_TABLE_Y = 112;
+    static constexpr int OQ_TABLE_W = WINDOW_SIZE_X - OQ_TABLE_X * 2;
+    static constexpr int OQ_TABLE_HEADER_H = 24;
+    static constexpr int OQ_TABLE_ROW_H = 55;
+    static constexpr int OQ_DATE_W = 128;
+    static constexpr int OQ_PLAYER_W = 225;
+    static constexpr int OQ_SCORE_W = 66;
+    static constexpr int OQ_PLAYER_H = 24;
+    static constexpr const char* OQ_BASE_URL = "http://questgames.net";
+
+    enum class Detail_state {
+        None,
+        Loading,
+        Ready,
+        Failed
+    };
+
+    struct Oq_game {
+        String id;
+        String created;
+        String black_name;
+        String white_name;
+        String black_id;
+        String white_id;
+        String black_rating;
+        String white_rating;
+        String black_rank;
+        String white_rank;
+        String list_status;
+        int length = 0;
+        Detail_state detail_state = Detail_state::None;
+        String status_raw;
+        String result_label;
+        String score_label;
+        String error;
+        int black_score = GAME_DISCS_UNDEFINED;
+        int white_score = GAME_DISCS_UNDEFINED;
+        bool friend_match = false;
+        std::string transcript;
+        std::vector<History_elem> history;
+    };
+
+    struct Detail_task {
+        int game_idx = -1;
+        AsyncHTTPTask task;
+    };
+
+    struct Oq_cache {
+        bool has_result = false;
+        std::string username;
+        int mode = 0;
+        std::vector<Oq_game> games;
+        int current_page = 0;
+        int selected_idx = -1;
+        std::unordered_set<int> selected_indices;
+        int next_prefetch_idx = 0;
+        String status_message;
+    };
+
+    inline static std::array<Oq_cache, 3> oq_caches;
+
+    Button back_button;
+    Button save_button;
+    Button search_button;
+    Button select_all_button;
+    TextAreaEditState username_area;
+    Radio_button mode_radio;
+    AsyncHTTPTask list_task;
+    std::vector<Detail_task> detail_tasks;
+    std::vector<Oq_game> games;
+    int current_page;
+    int selected_idx;
+    std::unordered_set<int> selected_indices;
+    int next_prefetch_idx;
+    int last_clicked_idx;
+    uint64_t last_click_time;
+    bool list_loading;
+    bool user_status_message;
+    String status_message;
+    std::string searched_username;
+    int searched_mode;
+
+public:
+    Import_othello_quest(const InitData& init) : IScene{ init } {
+        set_scene_ime_enabled(true);
+        back_button.init(GO_BACK_BUTTON_BACK_SX, GO_BACK_BUTTON_SY, GO_BACK_BUTTON_WIDTH, GO_BACK_BUTTON_HEIGHT, GO_BACK_BUTTON_RADIUS, language.get("common", "back"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
+        save_button.init(GO_BACK_BUTTON_GO_SX, GO_BACK_BUTTON_SY, GO_BACK_BUTTON_WIDTH, GO_BACK_BUTTON_HEIGHT, GO_BACK_BUTTON_RADIUS, language.get("in_out", "save_to_game_library"), 23, getData().fonts.font, getData().colors.white, getData().colors.black);
+        save_button.disable();
+        search_button.init(X_CENTER + 245, 70, 105, 34, 10, U"Search", 17, getData().fonts.font, getData().colors.white, getData().colors.black);
+        select_all_button.init(22, 18, 120, 30, 8, U"Select all", 14, getData().fonts.font, getData().colors.white, getData().colors.black);
+
+        username_area.active = true;
+        current_page = 0;
+        selected_idx = -1;
+        selected_indices.clear();
+        next_prefetch_idx = 0;
+        last_clicked_idx = -1;
+        last_click_time = 0;
+        list_loading = false;
+        user_status_message = false;
+        searched_mode = getData().user_settings.othello_quest_mode;
+        status_message.clear();
+
+        Radio_button_element radio_button_elem;
+        mode_radio.init();
+        radio_button_elem.init(X_CENTER - 125, 132, getData().fonts.font, 17, U"5 min", true);
+        mode_radio.push(radio_button_elem);
+        radio_button_elem.init(X_CENTER - 25, 132, getData().fonts.font, 17, U"1 min", false);
+        mode_radio.push(radio_button_elem);
+        radio_button_elem.init(X_CENTER + 75, 132, getData().fonts.font, 17, U"XOT", false);
+        mode_radio.push(radio_button_elem);
+        mode_radio.checked = std::clamp(searched_mode, 0, 2);
+
+        if (!getData().user_settings.othello_quest_username.empty()) {
+            username_area.text = Unicode::Widen(getData().user_settings.othello_quest_username);
+            username_area.cursorPos = username_area.text.size();
+            username_area.rebuildGlyphs();
+            if (!restore_cached_result(getData().user_settings.othello_quest_username, mode_radio.checked)) {
+                start_search();
+            }
+        }
+    }
+
+    void update() override {
+        if (System::GetUserActions() & UserAction::CloseButtonClicked) {
+            changeScene(U"Close", SCENE_FADE_TIME);
+        }
+
+        update_http_tasks();
+
+        Scene::SetBackground(getData().colors.green);
+        const bool result_page = !searched_username.empty();
+        const int label_x = X_CENTER - 158;
+        const int input_x = X_CENTER - 132;
+        const int input_w = 335;
+        const int username_y = 178;
+        const int mode_y = result_page ? 28 : 250;
+        if (!result_page) {
+            getData().fonts.font(language.get("in_out", "input_othello_quest")).draw(27, Arg::topCenter(X_CENTER, 82), getData().colors.white);
+            getData().fonts.font(language.get("in_out", "othello_quest_username")).draw(20, Arg::rightCenter(label_x, username_y + 22), getData().colors.white);
+            text_area_with_ime_candidate_window(username_area, Vec2{input_x, username_y}, SizeF{input_w, 46}, 40);
+            search_button.rect.x = input_x + input_w + 18;
+            search_button.rect.y = username_y + 2;
+            search_button.rect.w = 112;
+            search_button.rect.h = 42;
+            search_button.draw();
+            if (search_button.clicked() || (KeyEnter.pressed() && username_area.active)) {
+                start_search();
+            }
+        }
+        const int previous_mode = mode_radio.checked;
+        draw_mode_buttons(result_page, mode_y);
+        if (result_page && previous_mode != mode_radio.checked) {
+            start_search();
+        }
+
+        draw_games(result_page);
+        draw_select_all_button(result_page);
+
+        back_button.draw();
+        save_button.enable();
+        save_button.draw();
+        if (back_button.clicked() || gui_textarea_ime::escape_pressed_for_scene_change()) {
+            write_cache();
+            if (result_page) {
+                return_to_search_form();
+            } else {
+                changeScene(U"Main_scene", SCENE_FADE_TIME);
+            }
+        }
+        if (save_button.clicked()) {
+            save_selected_game_to_library();
+        }
+    }
+
+    void draw() const override {
+
+    }
+
+private:
+    void set_system_status(const String& message) {
+        if (!user_status_message) {
+            status_message = message;
+        }
+    }
+
+    void set_user_status(const String& message) {
+        user_status_message = true;
+        status_message = message;
+    }
+
+    void start_search() {
+        String account_text = remove_oq_account_whitespace(username_area.text);
+        if (account_text.empty()) {
+            set_user_status(U"Input an Othello Quest user name.");
+            return;
+        }
+
+        const String invalid_char = first_invalid_oq_account_char(account_text);
+        if (!invalid_char.empty()) {
+            set_user_status(U"Invalid character \"" + invalid_char + U"\". Please correct it.");
+            return;
+        }
+
+        if (username_area.text != account_text) {
+            username_area.text = account_text;
+            username_area.cursorPos = username_area.text.size();
+            username_area.rebuildGlyphs();
+        }
+
+        searched_username = account_text.narrow();
+        for (char& c : searched_username) {
+            c = (char)std::tolower((unsigned char)c);
+        }
+        searched_mode = mode_radio.checked;
+        getData().user_settings.othello_quest_username = searched_username;
+        getData().user_settings.othello_quest_mode = searched_mode;
+        user_status_message = false;
+        if (restore_cached_result(searched_username, searched_mode)) {
+            return;
+        }
+        games.clear();
+        detail_tasks.clear();
+        current_page = 0;
+        selected_idx = -1;
+        selected_indices.clear();
+        last_clicked_idx = -1;
+        last_click_time = 0;
+        next_prefetch_idx = 0;
+        list_loading = true;
+        set_system_status(U"Loading game list...");
+        list_task = SimpleHTTP::GetAsync(Unicode::Widen(build_list_url()), oq_headers());
+    }
+
+    void update_http_tasks() {
+        if (list_loading && list_task && list_task.isReady()) {
+            list_loading = false;
+            if (!list_task.getResponse().isOK()) {
+                set_user_status(U"Failed to load game list.");
+            } else {
+                JSON json = list_task.getAsJSON();
+                if (!parse_game_list(json)) {
+                    set_user_status(U"Failed to parse game list.");
+                } else if (games.empty()) {
+                    set_user_status(U"No games found.");
+                } else {
+                    set_system_status(U"Loading details 1-" + Format(std::min(GAMES_PER_PAGE, (int)games.size())) + U"...");
+                    start_next_detail_batch();
+                }
+            }
+            write_cache();
+        }
+
+        for (int i = 0; i < (int)detail_tasks.size();) {
+            Detail_task& detail_task = detail_tasks[i];
+            if (!detail_task.task.isReady()) {
+                ++i;
+                continue;
+            }
+            const int game_idx = detail_task.game_idx;
+            if (0 <= game_idx && game_idx < (int)games.size()) {
+                if (!detail_task.task.getResponse().isOK()) {
+                    games[game_idx].detail_state = Detail_state::Failed;
+                    games[game_idx].error = U"HTTP " + Format(detail_task.task.getResponse().getStatusCodeInt());
+                } else {
+                    JSON detail_json = detail_task.task.getAsJSON();
+                    parse_game_detail(game_idx, detail_json);
+                }
+                write_cache();
+            }
+            detail_tasks.erase(detail_tasks.begin() + i);
+        }
+
+        if (!list_loading && detail_tasks.empty()) {
+            if (next_prefetch_idx < (int)games.size()) {
+                start_next_detail_batch();
+            } else if (!games.empty()) {
+                if (!user_status_message) {
+                    status_message = U"All details loaded.";
+                }
+                write_cache();
+            }
+        }
+    }
+
+    void start_next_detail_batch() {
+        if (next_prefetch_idx >= (int)games.size()) {
+            set_system_status(U"All details loaded.");
+            return;
+        }
+        const int batch_start = next_prefetch_idx;
+        const int batch_end = std::min(batch_start + GAMES_PER_PAGE, (int)games.size());
+        for (int idx = batch_start; idx < batch_end; ++idx) {
+            if (games[idx].id.empty() || games[idx].detail_state != Detail_state::None) {
+                continue;
+            }
+            games[idx].detail_state = Detail_state::Loading;
+            Detail_task detail_task;
+            detail_task.game_idx = idx;
+            detail_task.task = SimpleHTTP::GetAsync(Unicode::Widen(build_detail_url(games[idx].id.narrow())), oq_headers());
+            detail_tasks.emplace_back(std::move(detail_task));
+        }
+        next_prefetch_idx = batch_end;
+        set_system_status(U"Loading details " + Format(batch_start + 1) + U"-" + Format(batch_end) + U"...");
+        write_cache();
+    }
+
+    bool parse_game_list(JSON json) {
+        JSON game_array = json[U"games"];
+        if (!game_array.isArray() && json.isArray()) {
+            game_array = json;
+        }
+        if (!game_array.isArray()) {
+            return false;
+        }
+        for (size_t i = 0; i < game_array.size(); ++i) {
+            JSON item = game_array[i];
+            if (!item.isObject()) {
+                continue;
+            }
+            Oq_game game;
+            game.id = json_string(item[U"id"]);
+            game.created = json_string(item[U"created"]);
+            game.list_status = json_string(item[U"finalStatus"]);
+            game.length = json_int(item[U"length"]);
+            JSON players = item[U"players"];
+            if (players.isArray() && players.size() >= 2) {
+                fill_player_summary(players[0], &game.black_name, &game.black_rating, &game.black_rank, &game.black_id);
+                fill_player_summary(players[1], &game.white_name, &game.white_rating, &game.white_rank, &game.white_id);
+                game.friend_match = both_ratings_unchanged(players[0], players[1]);
+            }
+            if (!game.id.empty()) {
+                games.emplace_back(game);
+            }
+        }
+        return true;
+    }
+
+    void parse_game_detail(int game_idx, JSON detail_json) {
+        if (game_idx < 0 || game_idx >= (int)games.size() || !detail_json.isObject()) {
+            return;
+        }
+        Oq_game& game = games[game_idx];
+        JSON players = detail_json[U"players"];
+        if (players.isArray() && players.size() >= 2) {
+            fill_player_summary(players[0], &game.black_name, &game.black_rating, &game.black_rank, &game.black_id);
+            fill_player_summary(players[1], &game.white_name, &game.white_rating, &game.white_rank, &game.white_id);
+            game.friend_match = both_ratings_unchanged(players[0], players[1]);
+        }
+
+        std::string transcript = extract_start_pos(detail_json[U"position"][U"startPos"]);
+        String terminal_status;
+        JSON moves = detail_json[U"position"][U"moves"];
+        if (moves.isArray()) {
+            for (size_t i = 0; i < moves.size(); ++i) {
+                JSON move = moves[i];
+                const String move_text = json_string(move[U"m"]);
+                if (is_coord(move_text)) {
+                    transcript += normalized_coord(move_text);
+                }
+                const String status = json_string(move[U"s"]);
+                if (!status.empty()) {
+                    terminal_status = status;
+                }
+            }
+        }
+        if (terminal_status.empty()) {
+            terminal_status = game.list_status;
+        }
+        game.status_raw = terminal_status;
+        game.transcript = transcript;
+
+        History_elem start_history_elem;
+        start_history_elem.reset();
+        std::vector<History_elem> history;
+        history.emplace_back(start_history_elem);
+        bool failed = false;
+        history = import_transcript_processing(history, start_history_elem, transcript, &failed);
+        if (failed || history.empty()) {
+            game.detail_state = Detail_state::Failed;
+            game.error = U"Transcript replay failed.";
+            return;
+        }
+        game.history = history;
+        game.detail_state = Detail_state::Ready;
+        fill_result_from_history(&game);
+    }
+
+    void fill_result_from_history(Oq_game* game) {
+        const String raw_upper = game->status_raw.uppercased();
+        String ending = U"Score";
+        if (raw_upper.includes(U"RESIGN")) {
+            ending = U"Resign";
+        } else if (raw_upper.includes(U"TIMEUP") || raw_upper.includes(U"TIMEOUT")) {
+            ending = U"Timeout";
+        } else if (raw_upper.includes(U"DISCONNECT")) {
+            ending = U"Disconnect";
+        } else if (raw_upper.substr(0, 5) != U"SCORE") {
+            ending = U"Unknown";
+        }
+
+        const History_elem& last = game->history.back();
+        int black_count = last.player == BLACK ? last.board.count_player() : last.board.count_opponent();
+        int white_count = last.player == WHITE ? last.board.count_player() : last.board.count_opponent();
+        int black_score = black_count;
+        int white_score = white_count;
+
+        if (ending != U"Score") {
+            const int terminal_player = last.player;
+            int loser = -1;
+            if (raw_upper.substr(0, 5) == U"LOSE:") {
+                loser = terminal_player;
+            } else if (raw_upper.substr(0, 4) == U"WIN:") {
+                loser = terminal_player ^ 1;
+            }
+            if (loser == BLACK) {
+                black_score = 0;
+                white_score = HW2;
+            } else if (loser == WHITE) {
+                black_score = HW2;
+                white_score = 0;
+            }
+            game->black_score = black_score;
+            game->white_score = white_score;
+            game->score_label = Format(black_score) + U"-" + Format(white_score);
+            game->result_label = ending + U" (" + game->status_raw + U")";
+            return;
+        }
+
+        if (black_count > white_count) {
+            black_score = HW2 - white_count;
+        } else if (white_count > black_count) {
+            white_score = HW2 - black_count;
+        } else if (black_count + white_count < HW2) {
+            black_score = HW2 / 2;
+            white_score = HW2 / 2;
+        }
+        game->black_score = black_score;
+        game->white_score = white_score;
+        game->score_label = Format(black_score) + U"-" + Format(white_score);
+        game->result_label = U"Score (" + game->status_raw + U")";
+    }
+
+    void draw_games(bool result_page) {
+        const int table_x = OQ_TABLE_X;
+        const int table_y = result_page ? 74 : OQ_TABLE_Y;
+        const int table_w = OQ_TABLE_W;
+        const int row_h = OQ_TABLE_ROW_H;
+        const int header_h = OQ_TABLE_HEADER_H;
+        auto fit_text = [&](String text, int font_size, double width) {
+            if (getData().fonts.font(text).region(font_size, 0, 0).w <= width) {
+                return text;
+            }
+            while (text.size() > 3 && getData().fonts.font(text + U"...").region(font_size, 0, 0).w > width) {
+                text.pop_back();
+            }
+            return text + U"...";
+        };
+        const int n_pages = games.empty() ? 1 : ((int)games.size() + GAMES_PER_PAGE - 1) / GAMES_PER_PAGE;
+        current_page = std::clamp(current_page, 0, n_pages - 1);
+
+        if (games.empty()) {
+            if (!status_message.empty()) {
+                getData().fonts.font(status_message).draw(15, Arg::topCenter(X_CENTER, result_page ? 118 : 320), getData().colors.white);
+            }
+            return;
+        }
+
+        const Rect header_rect(table_x, table_y, table_w, header_h);
+        header_rect.draw(getData().colors.dark_green).drawFrame(1.0, getData().colors.white);
+
+        const Rect prev_rect(table_x + 2, table_y + 2, 34, header_h - 4);
+        const Rect next_rect(table_x + table_w - 36, table_y + 2, 34, header_h - 4);
+        const bool can_prev = current_page > 0;
+        const bool can_next = current_page + 1 < n_pages;
+        draw_page_arrow(prev_rect, U"◀", can_prev);
+        draw_page_arrow(next_rect, U"▶", can_next);
+        if (can_prev && prev_rect.leftClicked()) {
+            --current_page;
+            write_cache();
+        }
+        if (can_next && next_rect.leftClicked()) {
+            ++current_page;
+            write_cache();
+        }
+
+        getData().fonts.font(U"Page " + Format(current_page + 1) + U" / " + Format(n_pages) + U"   " + Format(games.size()) + U" games").draw(12, Arg::center(X_CENTER, table_y + header_h / 2), getData().colors.white);
+        getData().fonts.font(status_message).draw(11, table_x, table_y - 17, ColorF(getData().colors.white, 0.85));
+
+        const int start_idx = current_page * GAMES_PER_PAGE;
+        for (int row = 0; row < GAMES_PER_PAGE; ++row) {
+            const int idx = start_idx + row;
+            const int y = table_y + header_h + row * row_h;
+            Rect row_rect(table_x, y, table_w, row_h);
+            Color row_color = row % 2 ? getData().colors.dark_green : getData().colors.green;
+            row_rect.draw(row_color).drawFrame(1.0, getData().colors.white);
+            if (idx >= (int)games.size()) {
+                continue;
+            }
+            if (selected_indices.count(idx)) {
+                row_rect.draw(ColorF(getData().colors.white, 0.18)).drawFrame(2, Palette::Cyan);
+            }
+            if (row_rect.mouseOver()) {
+                Cursor::RequestStyle(CursorStyle::Hand);
+                row_rect.drawFrame(2, Palette::Cyan);
+            }
+            if (row_rect.leftClicked()) {
+                const uint64_t now = tim();
+                if (last_clicked_idx == idx && now - last_click_time < 500) {
+                    selected_idx = idx;
+                    selected_indices.insert(idx);
+                    write_cache();
+                    import_selected_game();
+                    return;
+                }
+                if (selected_indices.count(idx)) {
+                    selected_indices.erase(idx);
+                    if (selected_idx == idx) {
+                        selected_idx = selected_indices.empty() ? -1 : *selected_indices.begin();
+                    }
+                } else {
+                    selected_indices.insert(idx);
+                    selected_idx = idx;
+                }
+                write_cache();
+                last_clicked_idx = idx;
+                last_click_time = now;
+            }
+            const Oq_game& game = games[idx];
+            const int date_w = OQ_DATE_W;
+            const int player_w = OQ_PLAYER_W;
+            const int score_w = OQ_SCORE_W;
+            const int date_x = table_x + 12;
+            const int black_x = table_x + date_w;
+            const int score_x = black_x + player_w;
+            const int white_x = score_x + score_w;
+            const int upper_center_y = y + OQ_PLAYER_H / 2 + 3;
+
+            getData().fonts.font(fit_text(display_date(game.created), 13, date_w - 18)).draw(13, date_x, y + 7, getData().colors.white);
+            draw_player_box(Rect(black_x, y + 3, player_w, OQ_PLAYER_H), fit_text(player_label(game.black_name, game.black_rating, game.black_rank), 15, player_w - 6), game, BLACK, upper_center_y);
+            draw_score_label(score_x, score_w, upper_center_y, game);
+            draw_player_box(Rect(white_x, y + 3, player_w, OQ_PLAYER_H), fit_text(player_label(game.white_name, game.white_rating, game.white_rank), 15, player_w - 6), game, WHITE, upper_center_y);
+
+            getData().fonts.font(fit_text(user_result_summary(game), 11, table_x + table_w - black_x - 12)).draw(11, black_x, y + 34, ColorF(getData().colors.white, 0.78));
+        }
+    }
+
+    void draw_page_arrow(const Rect& rect, const String& arrow, bool enabled) {
+        if (enabled && rect.mouseOver()) {
+            Cursor::RequestStyle(CursorStyle::Hand);
+            rect.draw(ColorF(getData().colors.white, 0.16));
+        }
+        getData().fonts.font(arrow).draw(16, Arg::center(rect.center()), enabled ? ColorF(getData().colors.white) : ColorF(getData().colors.white, 0.35));
+    }
+
+    void draw_select_all_button(bool result_page) {
+        if (!result_page || games.empty()) {
+            return;
+        }
+        const bool all_selected = !games.empty() && (int)selected_indices.size() == (int)games.size();
+        select_all_button.str = all_selected ? U"Deselect all" : U"Select all";
+        select_all_button.font_size = update_font_size_overfull(select_all_button.font, select_all_button.str, 14, select_all_button.rect.h, select_all_button.rect.w);
+        select_all_button.draw();
+        if (select_all_button.clicked()) {
+            if (all_selected) {
+                selected_indices.clear();
+                selected_idx = -1;
+            } else {
+                selected_indices.clear();
+                for (int i = 0; i < (int)games.size(); ++i) {
+                    selected_indices.insert(i);
+                }
+                selected_idx = games.empty() ? -1 : 0;
+            }
+            write_cache();
+        }
+    }
+
+    void draw_mode_buttons(bool compact, int y) {
+        const Array<String> labels = { U"5 min", U"1 min", U"XOT" };
+        const int button_w = compact ? 86 : 105;
+        const int button_h = compact ? 30 : 34;
+        const int button_gap = compact ? 8 : 10;
+        const int total_w = button_w * 3 + button_gap * 2;
+        const int base_x = compact ? X_CENTER - total_w / 2 : X_CENTER - 132;
+        const int fs = compact ? 15 : 17;
+
+        if (!compact) {
+            getData().fonts.font(language.get("in_out", "othello_quest_mode")).draw(18, Arg::rightCenter(base_x - 26, y + button_h / 2), getData().colors.white);
+        }
+
+        for (int i = 0; i < 3; ++i) {
+            s3d::RoundRect rect;
+            rect.x = base_x + i * (button_w + button_gap);
+            rect.y = y;
+            rect.w = button_w;
+            rect.h = button_h;
+            rect.r = 8;
+            const bool selected = mode_radio.checked == i;
+            const bool hovered = rect.mouseOver();
+            if (hovered) {
+                Cursor::RequestStyle(CursorStyle::Hand);
+            }
+
+            if (selected) {
+                rect.draw(getData().colors.white);
+                getData().fonts.font(labels[i]).drawAt(fs, rect.x + rect.w / 2, rect.y + rect.h / 2, getData().colors.black);
+            } else {
+                rect.draw(ColorF(getData().colors.dark_green, hovered ? 0.95 : 0.78)).drawFrame(1.0, ColorF(getData().colors.white, hovered ? 0.95 : 0.65));
+                getData().fonts.font(labels[i]).drawAt(fs, rect.x + rect.w / 2, rect.y + rect.h / 2, getData().colors.white);
+            }
+
+            if (rect.leftClicked()) {
+                mode_radio.checked = i;
+            }
+        }
+    }
+
+    void return_to_search_form() {
+        write_cache();
+        searched_username.clear();
+        searched_mode = mode_radio.checked;
+        games.clear();
+        detail_tasks.clear();
+        current_page = 0;
+        selected_idx = -1;
+        selected_indices.clear();
+        last_clicked_idx = -1;
+        last_click_time = 0;
+        next_prefetch_idx = 0;
+        list_loading = false;
+        status_message.clear();
+        username_area.active = true;
+    }
+
+    int winner_of(const Oq_game& game) const {
+        if (game.black_score == GAME_DISCS_UNDEFINED || game.white_score == GAME_DISCS_UNDEFINED) {
+            return -1;
+        }
+        if (game.black_score > game.white_score) {
+            return IMPORT_GAME_WINNER_BLACK;
+        }
+        if (game.black_score < game.white_score) {
+            return IMPORT_GAME_WINNER_WHITE;
+        }
+        return IMPORT_GAME_WINNER_DRAW;
+    }
+
+    void draw_player_box(const Rect& rect, const String& player, const Oq_game& game, int player_color, int center_y) {
+        const int winner = winner_of(game);
+        if (winner == IMPORT_GAME_WINNER_DRAW) {
+            rect.draw(getData().colors.chocolate);
+        } else if ((winner == IMPORT_GAME_WINNER_BLACK && player_color == BLACK) || (winner == IMPORT_GAME_WINNER_WHITE && player_color == WHITE)) {
+            rect.draw(getData().colors.darkred);
+        } else if ((winner == IMPORT_GAME_WINNER_BLACK && player_color == WHITE) || (winner == IMPORT_GAME_WINNER_WHITE && player_color == BLACK)) {
+            rect.draw(getData().colors.darkblue);
+        }
+        if (player_color == BLACK) {
+            getData().fonts.font(player).draw(15, Arg::rightCenter(rect.x + rect.w - 2, center_y), getData().colors.white);
+        } else {
+            getData().fonts.font(player).draw(15, Arg::leftCenter(rect.x + 2, center_y), getData().colors.white);
+        }
+    }
+
+    void draw_score_label(int x, int width, int center_y, const Oq_game& game) {
+        String black_score = U"??";
+        String white_score = U"??";
+        if (game.black_score != GAME_DISCS_UNDEFINED && game.white_score != GAME_DISCS_UNDEFINED) {
+            black_score = Format(game.black_score);
+            white_score = Format(game.white_score);
+        }
+        const double hyphen_w = getData().fonts.font(U"-").region(15, Vec2{0, 0}).w;
+        getData().fonts.font(black_score).draw(15, Arg::rightCenter(x + width / 2 - hyphen_w / 2 - 1, center_y), getData().colors.white);
+        getData().fonts.font(U"-").draw(15, Arg::center(x + width / 2, center_y), getData().colors.white);
+        getData().fonts.font(white_score).draw(15, Arg::leftCenter(x + width / 2 + hyphen_w / 2 + 1, center_y), getData().colors.white);
+    }
+
+    String user_result_summary(const Oq_game& game) const {
+        String user = searched_user_label(game);
+        String summary;
+        if (game.detail_state == Detail_state::Loading) {
+            summary = user + U" loading";
+        } else if (game.detail_state == Detail_state::Failed) {
+            summary = user + U" failed to load";
+        } else if (game.detail_state != Detail_state::Ready || game.black_score == GAME_DISCS_UNDEFINED || game.white_score == GAME_DISCS_UNDEFINED) {
+            summary = user + U" queued";
+        } else {
+            int user_score = 0;
+            int opponent_score = 0;
+            if (searched_user_is_black(game)) {
+                user_score = game.black_score;
+                opponent_score = game.white_score;
+            } else {
+                user_score = game.white_score;
+                opponent_score = game.black_score;
+            }
+            if (user_score == opponent_score) {
+                summary = user + U" draw";
+            } else {
+                const bool user_won = user_score > opponent_score;
+                const String reason = result_reason(game);
+                if (reason.empty()) {
+                    summary = user + (user_won ? U" won by " : U" loss by ") + Format(std::abs(user_score - opponent_score));
+                } else {
+                    summary = user + (user_won ? U" won by " : U" loss by ") + reason;
+                }
+            }
+        }
+        if (game.friend_match) {
+            summary += U"   friend match";
+        }
+        return summary;
+    }
+
+    String searched_user_label(const Oq_game& game) const {
+        if (searched_user_is_black(game) && !game.black_name.empty()) {
+            return game.black_name;
+        }
+        if (searched_user_is_white(game) && !game.white_name.empty()) {
+            return game.white_name;
+        }
+        return Unicode::Widen(searched_username);
+    }
+
+    bool searched_user_is_black(const Oq_game& game) const {
+        return player_matches_search(game.black_id) || player_matches_search(game.black_name);
+    }
+
+    bool searched_user_is_white(const Oq_game& game) const {
+        return player_matches_search(game.white_id) || player_matches_search(game.white_name);
+    }
+
+    bool player_matches_search(const String& value) const {
+        return !value.empty() && value.lowercased().narrow() == searched_username;
+    }
+
+    static String result_reason(const Oq_game& game) {
+        const String raw_upper = game.status_raw.uppercased();
+        if (raw_upper.includes(U"RESIGN")) {
+            return U"resign";
+        }
+        if (raw_upper.includes(U"TIMEUP") || raw_upper.includes(U"TIMEOUT")) {
+            return U"timeout";
+        }
+        if (raw_upper.includes(U"DISCONNECT")) {
+            return U"disconnect";
+        }
+        return U"";
+    }
+
+    bool can_use_selected() const {
+        return 0 <= selected_idx && selected_idx < (int)games.size() && games[selected_idx].detail_state == Detail_state::Ready && !games[selected_idx].transcript.empty();
+    }
+
+    bool can_save_any_selected() const {
+        for (int idx : selected_indices) {
+            if (0 <= idx && idx < (int)games.size() && games[idx].detail_state == Detail_state::Ready && !games[idx].transcript.empty()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    int selected_count() const {
+        int count = 0;
+        for (int idx : selected_indices) {
+            if (0 <= idx && idx < (int)games.size()) {
+                ++count;
+            }
+        }
+        return count;
+    }
+
+    void import_selected_game() {
+        if (!can_use_selected()) {
+            return;
+        }
+        write_cache();
+        Oq_game& game = games[selected_idx];
+        apply_selected_game_information(game);
+        getData().graph_resources.init();
+        getData().graph_resources.nodes[GRAPH_MODE_NORMAL] = game.history;
+        getData().graph_resources.n_discs = game.history.back().board.n_discs();
+        std::string opening_name, n_opening_name;
+        for (int i = 0; i < (int)getData().graph_resources.nodes[GRAPH_MODE_NORMAL].size(); ++i) {
+            n_opening_name.clear();
+            n_opening_name = opening.get(getData().graph_resources.nodes[GRAPH_MODE_NORMAL][i].board, getData().graph_resources.nodes[GRAPH_MODE_NORMAL][i].player ^ 1);
+            if (n_opening_name.size()) {
+                opening_name = n_opening_name;
+            }
+            getData().graph_resources.nodes[GRAPH_MODE_NORMAL][i].opening_name = opening_name;
+        }
+        getData().graph_resources.need_init = false;
+        getData().history_elem = getData().graph_resources.nodes[GRAPH_MODE_NORMAL].back();
+        changeScene(U"Main_scene", SCENE_FADE_TIME);
+    }
+
+    void save_selected_game_to_library() {
+        if (!can_save_any_selected()) {
+            if (selected_count() == 0) {
+                set_user_status(U"Select a game to save.");
+            } else {
+                set_user_status(U"Selected game details are still loading.");
+            }
+            write_cache();
+            return;
+        }
+        write_cache();
+        std::vector<int> indices(selected_indices.begin(), selected_indices.end());
+        std::sort(indices.begin(), indices.end());
+        int saved = 0;
+        int skipped = 0;
+        for (int idx : indices) {
+            if (0 <= idx && idx < (int)games.size() && games[idx].detail_state == Detail_state::Ready && !games[idx].transcript.empty()) {
+                if (save_game_to_oq_library(games[idx])) {
+                    ++saved;
+                } else {
+                    ++skipped;
+                }
+            }
+        }
+        if (saved > 0) {
+            set_user_status(U"Saved " + Format(saved) + U" game" + (saved == 1 ? U"" : U"s") + U" to Game Library.");
+        } else {
+            set_user_status(U"No new games to save.");
+        }
+        write_cache();
+    }
+
+    void apply_selected_game_information(const Oq_game& game) {
+        getData().game_information.init();
+        getData().game_information.black_player_name = game.black_name;
+        getData().game_information.white_player_name = game.white_name;
+        getData().game_information.date = display_date(game.created).substr(0, 10);
+        getData().game_information.memo = U"Othello Quest\nmode: " + mode_label(searched_mode) + U"\nid: " + game.id + U"\nstatus: " + game.status_raw + U"\nresult: " + game.result_label + U"\nscore: " + game.score_label;
+    }
+
+    bool save_game_to_oq_library(Oq_game& game) {
+        const String base_dir = oq_library_base_dir();
+        if (oq_library_has_duplicate_history(base_dir, game.history)) {
+            return false;
+        }
+        apply_selected_game_information(game);
+        const String memo = user_result_summary(game);
+        getData().game_information.memo = memo;
+        game_save_helper::save_game_to_file(
+            base_dir,
+            make_oq_filename_date(game),
+            game.black_name,
+            game.white_name,
+            memo,
+            game.history,
+            display_date(game.created).substr(0, 10),
+            game.black_score,
+            game.white_score
+        );
+        return true;
+    }
+
+    String oq_library_base_dir() const {
+        String base = Unicode::Widen(getData().directories.document_dir) + U"games/othello_quest/" + oq_mode_folder(searched_mode) + U"/";
+        FileSystem::CreateDirectories(base);
+        return base;
+    }
+
+    String make_oq_filename_date(const Oq_game& game) const {
+        String stem = display_date(game.created).replaced(U"-", U"_").replaced(U":", U"_").replaced(U" ", U"_");
+        if (!game.id.empty()) {
+            stem += U"_" + game.id;
+        }
+        const String base = oq_library_base_dir();
+        String candidate = stem;
+        for (int suffix = 1; FileSystem::Exists(base + candidate + U".json") && suffix < 1000; ++suffix) {
+            candidate = stem + U"_" + Format(suffix);
+        }
+        return candidate;
+    }
+
+    bool oq_library_has_duplicate_history(const String& base_dir, const std::vector<History_elem>& history) const {
+        if (history.empty() || !FileSystem::IsDirectory(base_dir)) {
+            return false;
+        }
+        const String signature = history_signature(history);
+        for (const auto& path : FileSystem::DirectoryContents(base_dir)) {
+            if (FileSystem::IsDirectory(path) || FileSystem::Extension(path).lowercased() != U"json") {
+                continue;
+            }
+            JSON json = JSON::Load(path);
+            if (!json) {
+                continue;
+            }
+            if (json_history_signature(json) == signature) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    static String history_signature(const std::vector<History_elem>& history) {
+        String signature;
+        for (const History_elem& elem : history) {
+            signature += Format(elem.board.n_discs()) + U":";
+            signature += Format(elem.board.player) + U":";
+            signature += Format(elem.board.opponent) + U":";
+            signature += Format(elem.player) + U";";
+        }
+        return signature;
+    }
+
+    static String json_history_signature(JSON json) {
+        String signature;
+        for (int n_discs = 4; n_discs <= HW2; ++n_discs) {
+            const String key = Format(n_discs);
+            if (!json[key].isObject()) {
+                continue;
+            }
+            if (json[key][GAME_BOARD_PLAYER].getType() != JSONValueType::Number ||
+                json[key][GAME_BOARD_OPPONENT].getType() != JSONValueType::Number ||
+                json[key][GAME_PLAYER].getType() != JSONValueType::Number) {
+                continue;
+            }
+            signature += key + U":";
+            signature += Format(json[key][GAME_BOARD_PLAYER].get<uint64_t>()) + U":";
+            signature += Format(json[key][GAME_BOARD_OPPONENT].get<uint64_t>()) + U":";
+            signature += Format(json[key][GAME_PLAYER].get<int>()) + U";";
+        }
+        return signature;
+    }
+
+    static String oq_mode_folder(int mode) {
+        if (mode == 1) {
+            return U"1min";
+        }
+        if (mode == 2) {
+            return U"xot";
+        }
+        return U"5min";
+    }
+
+    bool restore_cached_result(const std::string& username, int mode) {
+        const int cache_mode = std::clamp(mode, 0, 2);
+        Oq_cache& cache = oq_caches[cache_mode];
+        if (!cache.has_result || cache.username != username || cache.mode != cache_mode) {
+            return false;
+        }
+
+        searched_username = cache.username;
+        searched_mode = cache.mode;
+        mode_radio.checked = searched_mode;
+        username_area.text = Unicode::Widen(searched_username);
+        username_area.cursorPos = username_area.text.size();
+        username_area.rebuildGlyphs();
+        games = cache.games;
+        current_page = cache.current_page;
+        selected_idx = cache.selected_idx;
+        selected_indices = cache.selected_indices;
+        next_prefetch_idx = cache.next_prefetch_idx;
+        status_message = cache.status_message;
+        detail_tasks.clear();
+        list_loading = false;
+        last_clicked_idx = -1;
+        last_click_time = 0;
+
+        normalize_restored_detail_state();
+        const int n_pages = games.empty() ? 1 : ((int)games.size() + GAMES_PER_PAGE - 1) / GAMES_PER_PAGE;
+        current_page = std::clamp(current_page, 0, n_pages - 1);
+        if (selected_idx >= (int)games.size()) {
+            selected_idx = -1;
+        }
+        for (auto it = selected_indices.begin(); it != selected_indices.end();) {
+            if (*it < 0 || *it >= (int)games.size()) {
+                it = selected_indices.erase(it);
+            } else {
+                ++it;
+            }
+        }
+        if (selected_idx == -1 && !selected_indices.empty()) {
+            selected_idx = *selected_indices.begin();
+        }
+        if (status_message.empty()) {
+            status_message = games.empty() ? U"No games found." : U"Loaded from cache.";
+        }
+        getData().user_settings.othello_quest_username = searched_username;
+        getData().user_settings.othello_quest_mode = searched_mode;
+        if (!games.empty() && next_prefetch_idx < (int)games.size()) {
+            start_next_detail_batch();
+        }
+        return true;
+    }
+
+    void write_cache() {
+        if (searched_username.empty() || list_loading || searched_mode < 0 || searched_mode > 2) {
+            return;
+        }
+
+        Oq_cache& cache = oq_caches[searched_mode];
+        cache.has_result = true;
+        cache.username = searched_username;
+        cache.mode = searched_mode;
+        cache.games = games;
+        int retry_from = (int)cache.games.size();
+        for (int i = 0; i < (int)cache.games.size(); ++i) {
+            if (cache.games[i].detail_state == Detail_state::Loading) {
+                cache.games[i].detail_state = Detail_state::None;
+                cache.games[i].error.clear();
+                retry_from = std::min(retry_from, i);
+            } else if (cache.games[i].detail_state == Detail_state::None) {
+                retry_from = std::min(retry_from, i);
+            }
+        }
+        cache.current_page = current_page;
+        cache.selected_idx = selected_idx;
+        cache.selected_indices = selected_indices;
+        cache.next_prefetch_idx = std::clamp(next_prefetch_idx, 0, (int)cache.games.size());
+        if (retry_from < (int)cache.games.size()) {
+            cache.next_prefetch_idx = std::min(cache.next_prefetch_idx, retry_from);
+        }
+        cache.status_message = status_message;
+    }
+
+    void normalize_restored_detail_state() {
+        int retry_from = (int)games.size();
+        for (int i = 0; i < (int)games.size(); ++i) {
+            if (games[i].detail_state == Detail_state::Loading) {
+                games[i].detail_state = Detail_state::None;
+                games[i].error.clear();
+                retry_from = std::min(retry_from, i);
+            } else if (games[i].detail_state == Detail_state::None) {
+                retry_from = std::min(retry_from, i);
+            }
+        }
+        next_prefetch_idx = std::clamp(next_prefetch_idx, 0, (int)games.size());
+        if (retry_from < (int)games.size()) {
+            next_prefetch_idx = std::min(next_prefetch_idx, retry_from);
+        }
+    }
+
+    static HashTable<String, String> oq_headers() {
+        return HashTable<String, String>{{U"User-Agent", U"egaroucid-othello-quest-import/1.0"}};
+    }
+
+    std::string build_list_url() const {
+        return std::string(OQ_BASE_URL) + "/games/" + mode_endpoint(searched_mode) + "/" + searched_username + ".json";
+    }
+
+    static std::string build_detail_url(const std::string& game_id) {
+        return std::string(OQ_BASE_URL) + "/game/" + game_id + ".json";
+    }
+
+    static const char* mode_endpoint(int mode) {
+        if (mode == 1) {
+            return "reversi1";
+        }
+        if (mode == 2) {
+            return "reversix";
+        }
+        return "reversi";
+    }
+
+    static String mode_label(int mode) {
+        if (mode == 1) {
+            return U"1 min";
+        }
+        if (mode == 2) {
+            return U"XOT";
+        }
+        return U"5 min";
+    }
+
+    static void fill_player_summary(JSON player, String* name, String* rating, String* rank, String* id = nullptr) {
+        const String player_id = json_string(player[U"id"]);
+        if (id != nullptr) {
+            *id = player_id;
+        }
+        String player_name = json_string(player[U"name"]);
+        if (player_name.empty()) {
+            player_name = player_id;
+        }
+        *name = player_name;
+        if (player[U"newR"].isNumber()) {
+            *rating = Format((int)std::round(player[U"newR"].get<double>()));
+        } else if (player[U"oldR"].isNumber()) {
+            *rating = Format((int)std::round(player[U"oldR"].get<double>()));
+        }
+        if (player[U"newD"].isNumber()) {
+            *rank = rank_label(player[U"newD"].get<int>());
+        } else if (player[U"oldD"].isNumber()) {
+            *rank = rank_label(player[U"oldD"].get<int>());
+        }
+    }
+
+    static bool both_ratings_unchanged(JSON black, JSON white) {
+        double black_delta = 0.0;
+        double white_delta = 0.0;
+        return rating_delta(black, &black_delta) && rating_delta(white, &white_delta) && std::abs(black_delta) < 0.0001 && std::abs(white_delta) < 0.0001;
+    }
+
+    static bool rating_delta(JSON player, double* delta) {
+        if (!player[U"oldR"].isNumber() || !player[U"newR"].isNumber()) {
+            return false;
+        }
+        *delta = player[U"newR"].get<double>() - player[U"oldR"].get<double>();
+        return true;
+    }
+
+    static String rank_label(int rank) {
+        if (rank >= 0) {
+            return Format(rank + 1) + U"D";
+        }
+        return Format(-rank) + U"K";
+    }
+
+    static String player_label(const String& name, const String& rating, const String& rank) {
+        String res = name;
+        if (!rating.empty() || !rank.empty()) {
+            res += U" ";
+            if (!rating.empty()) {
+                res += rating;
+            }
+            if (!rank.empty()) {
+                res += U" " + rank;
+            }
+        }
+        return res;
+    }
+
+    static String detail_result_text(const Oq_game& game) {
+        if (game.detail_state == Detail_state::Ready) {
+            return game.score_label;
+        }
+        if (game.detail_state == Detail_state::Loading) {
+            return U"Loading...";
+        }
+        if (game.detail_state == Detail_state::Failed) {
+            return U"Failed";
+        }
+        return U"Queued";
+    }
+
+    static String detail_status_text(const Oq_game& game) {
+        if (game.detail_state == Detail_state::Ready) {
+            return game.result_label;
+        }
+        if (game.detail_state == Detail_state::Failed) {
+            return game.error;
+        }
+        if (!game.list_status.empty()) {
+            return U"list: " + game.list_status;
+        }
+        return U"";
+    }
+
+    static String display_date(const String& created) {
+        std::tm utc_tm{};
+        if (parse_oq_created_utc(created, &utc_tm)) {
+#if defined(_WIN32)
+            std::time_t utc_time = _mkgmtime(&utc_tm);
+#else
+            std::time_t utc_time = timegm(&utc_tm);
+#endif
+            if (utc_time != (std::time_t)-1) {
+                std::tm local_tm{};
+#if defined(_WIN32)
+                if (localtime_s(&local_tm, &utc_time) == 0) {
+#else
+                if (localtime_r(&utc_time, &local_tm) != nullptr) {
+#endif
+                    return Format(local_tm.tm_year + 1900) + U"-" + two_digits(local_tm.tm_mon + 1) + U"-" + two_digits(local_tm.tm_mday);
+                }
+            }
+        }
+        if (created.size() >= 10) {
+            return created.substr(0, 10);
+        }
+        return created;
+    }
+
+    static bool parse_oq_created_utc(const String& created, std::tm* utc_tm) {
+        if (created.size() < 20 || created[4] != U'-' || created[7] != U'-' || created[10] != U'T' || created[13] != U':' || created[16] != U':') {
+            return false;
+        }
+        int year = 0;
+        int month = 0;
+        int day = 0;
+        int hour = 0;
+        int minute = 0;
+        int second = 0;
+        if (!parse_fixed_int(created, 0, 4, &year) || !parse_fixed_int(created, 5, 2, &month) || !parse_fixed_int(created, 8, 2, &day) ||
+            !parse_fixed_int(created, 11, 2, &hour) || !parse_fixed_int(created, 14, 2, &minute) || !parse_fixed_int(created, 17, 2, &second)) {
+            return false;
+        }
+        bool utc_mark = false;
+        for (size_t i = 19; i < created.size(); ++i) {
+            if (created[i] == U'Z') {
+                utc_mark = true;
+                break;
+            }
+        }
+        if (!utc_mark) {
+            return false;
+        }
+        utc_tm->tm_year = year - 1900;
+        utc_tm->tm_mon = month - 1;
+        utc_tm->tm_mday = day;
+        utc_tm->tm_hour = hour;
+        utc_tm->tm_min = minute;
+        utc_tm->tm_sec = second;
+        utc_tm->tm_isdst = 0;
+        return true;
+    }
+
+    static bool parse_fixed_int(const String& text, size_t start, size_t length, int* value) {
+        if (start + length > text.size()) {
+            return false;
+        }
+        int res = 0;
+        for (size_t i = start; i < start + length; ++i) {
+            if (text[i] < U'0' || U'9' < text[i]) {
+                return false;
+            }
+            res = res * 10 + (int)(text[i] - U'0');
+        }
+        *value = res;
+        return true;
+    }
+
+    static String two_digits(int value) {
+        return (value < 10 ? U"0" : U"") + Format(value);
+    }
+
+    static bool is_coord(const String& move_text) {
+        if (move_text.size() != 2) {
+            return false;
+        }
+        const char32 x = std::tolower((char)move_text[0]);
+        const char32 y = move_text[1];
+        return U'a' <= x && x <= U'h' && U'1' <= y && y <= U'8';
+    }
+
+    static std::string extract_start_pos(JSON start_pos_json) {
+        String start_pos = json_string(start_pos_json);
+        std::string res;
+        for (int i = 0; i + 1 < (int)start_pos.size(); ++i) {
+            String maybe = start_pos.substr(i, 2);
+            if (is_coord(maybe)) {
+                res += normalized_coord(maybe);
+                ++i;
+            }
+        }
+        return res;
+    }
+
+    static std::string normalized_coord(const String& move_text) {
+        std::string res = move_text.narrow();
+        if (!res.empty()) {
+            res[0] = (char)std::tolower((unsigned char)res[0]);
+        }
+        return res;
+    }
+
+    static String json_string(JSON json) {
+        if (json.isString()) {
+            return json.getString();
+        }
+        return U"";
+    }
+
+    static int json_int(JSON json) {
+        if (json.isNumber()) {
+            return json.get<int>();
+        }
+        return 0;
+    }
+
+    static bool is_oq_account_whitespace(char32 ch) {
+        return ch == U' ' || ch == U'\t' || ch == U'\r' || ch == U'\n' || ch == U'　';
+    }
+
+    static bool is_oq_account_char(char32 ch) {
+        return (U'a' <= ch && ch <= U'z') || (U'A' <= ch && ch <= U'Z') || (U'0' <= ch && ch <= U'9') || ch == U'_';
+    }
+
+    static String remove_oq_account_whitespace(const String& text) {
+        String res;
+        for (const char32 ch : text) {
+            if (!is_oq_account_whitespace(ch)) {
+                res.push_back(ch);
+            }
+        }
+        return res;
+    }
+
+    static String first_invalid_oq_account_char(const String& text) {
+        for (const char32 ch : text) {
+            if (!is_oq_account_char(ch)) {
+                String res;
+                res.push_back(ch);
+                return res;
+            }
+        }
+        return U"";
+    }
+
+    static std::string trim_copy(std::string s) {
+        while (!s.empty() && std::isspace((unsigned char)s.front())) {
+            s.erase(s.begin());
+        }
+        while (!s.empty() && std::isspace((unsigned char)s.back())) {
+            s.pop_back();
+        }
+        return s;
+    }
+};
 
 
 class Edit_board : public App::Scene {
@@ -322,7 +1648,7 @@ private:
     }
 };
 
-class Import_game : public App::Scene {
+class Game_library : public App::Scene {
 private:
     std::vector<Game_abstract> games;
     std::vector<Button> import_buttons;
@@ -333,6 +1659,11 @@ private:
     Button back_button;
     Button up_button;
     Button add_folder_button;
+    Button select_all_button;
+    Button copy_button;
+    Button cut_button;
+    Button paste_button;
+    Button delete_selected_button;
     bool failed;
     // Explorer-like folder view
     std::vector<String> folders_display; // includes optional ".." at head
@@ -348,14 +1679,67 @@ private:
     String selected_folder_name;
     String renaming_folder_original_name;
     bool creating_folder = false;
+    std::unordered_set<int> selected_folder_indices;
+    std::unordered_set<int> selected_game_indices;
+    bool clipboard_cut = false;
+
+    struct Clipboard_item {
+        bool folder = false;
+        String source_path;
+        Game_abstract game;
+        String name;
+    };
+    std::vector<Clipboard_item> clipboard_items;
 
     void sync_last_opened_subfolder() {
         getData().user_settings.input_game_last_subfolder = explorer_state.subfolder;
     }
 
+    void ensure_game_library_system_folders() const {
+        const String games_root = Unicode::Widen(getData().directories.document_dir) + U"games/";
+        ensure_summary_folder(games_root);
+        ensure_summary_folder(games_root + U"othello_quest/");
+        ensure_summary_folder(games_root + U"othello_quest/5min/");
+        ensure_summary_folder(games_root + U"othello_quest/1min/");
+        ensure_summary_folder(games_root + U"othello_quest/xot/");
+        ensure_summary_folder(games_root + U"recycle_bin/");
+    }
+
+    static void ensure_summary_folder(const String& dir) {
+        FileSystem::CreateDirectories(dir);
+        const String csv_path = dir + U"summary.csv";
+        if (!FileSystem::Exists(csv_path)) {
+            CSV csv;
+            csv.save(csv_path);
+        }
+    }
+
+    bool in_recycle_bin() const {
+        return explorer_state.subfolder == "recycle_bin" || explorer_state.subfolder.starts_with("recycle_bin/");
+    }
+
+    bool recycle_bin_visible() const {
+        return getData().menu_elements.enable_recycle_bin;
+    }
+
+    bool is_protected_system_folder(const String& folder_name) const {
+        if (explorer_state.subfolder.empty()) {
+            return folder_name == U"othello_quest" || folder_name == U"recycle_bin";
+        }
+        if (explorer_state.subfolder == "othello_quest") {
+            return folder_name == U"5min" || folder_name == U"1min" || folder_name == U"xot";
+        }
+        return false;
+    }
+
     void restore_last_opened_subfolder() {
         explorer_state.clear();
         explorer_state.subfolder = getData().user_settings.input_game_last_subfolder;
+        if (!recycle_bin_visible() && in_recycle_bin()) {
+            explorer_state.clear();
+            getData().user_settings.input_game_last_subfolder.clear();
+            return;
+        }
         if (explorer_state.subfolder.empty()) {
             return;
         }
@@ -368,15 +1752,21 @@ private:
     }
 
 public:
-    Import_game(const InitData& init) : IScene{ init } {
+    Game_library(const InitData& init) : IScene{ init } {
         set_scene_ime_enabled(true);
         back_button.init(GO_BACK_BUTTON_BACK_SX, GO_BACK_BUTTON_SY, GO_BACK_BUTTON_WIDTH, GO_BACK_BUTTON_HEIGHT, GO_BACK_BUTTON_RADIUS, language.get("common", "back"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
         add_folder_button.init(GO_BACK_BUTTON_GO_SX, GO_BACK_BUTTON_SY, GO_BACK_BUTTON_WIDTH, GO_BACK_BUTTON_HEIGHT, GO_BACK_BUTTON_RADIUS, language.get("in_out", "new_folder"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
         create_folder_button.init(GO_BACK_BUTTON_GO_SX, GO_BACK_BUTTON_SY, GO_BACK_BUTTON_WIDTH, GO_BACK_BUTTON_HEIGHT, GO_BACK_BUTTON_RADIUS, language.get("in_out", "create"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
         up_button.init(IMPORT_GAME_SX, IMPORT_GAME_SY - 30, 28, 24, 4, U"↑", 16, getData().fonts.font, getData().colors.white, getData().colors.black);
+        select_all_button.init(24, 36, 100, 28, 8, U"Select all", 12, getData().fonts.font, getData().colors.white, getData().colors.black);
+        delete_selected_button.init(132, 36, 136, 28, 8, U"Delete", 12, getData().fonts.font, getData().colors.white, getData().colors.black);
+        copy_button.init(WINDOW_SIZE_X - 260, 36, 70, 28, 8, U"Copy", 12, getData().fonts.font, getData().colors.white, getData().colors.black);
+        cut_button.init(WINDOW_SIZE_X - 182, 36, 60, 28, 8, U"Cut", 12, getData().fonts.font, getData().colors.white, getData().colors.black);
+        paste_button.init(WINDOW_SIZE_X - 114, 36, 90, 28, 8, U"Paste", 12, getData().fonts.font, getData().colors.white, getData().colors.black);
         inline_edit_back_button.init(0, 0, 80, 30, 8, language.get("common", "back"), 18, getData().fonts.font, getData().colors.white, getData().colors.black);
         inline_edit_ok_button.init(0, 0, 70, 30, 8, language.get("common", "ok"), 18, getData().fonts.font, getData().colors.white, getData().colors.black);
         failed = false;
+        ensure_game_library_system_folders();
         // Initialize current dir and load games
         restore_last_opened_subfolder();
         sync_last_opened_subfolder();
@@ -388,10 +1778,11 @@ public:
         if (System::GetUserActions() & UserAction::CloseButtonClicked) {
             changeScene(U"Close", SCENE_FADE_TIME);
         }
-        getData().fonts.font(language.get("in_out", "input_game")).draw(25, Arg::center(X_CENTER, 30), getData().colors.white);
-        // Current path label
-        String path_label = explorer::compose_path_label(U"games/", explorer_state);
-        getData().fonts.font(path_label).draw(15, Arg::rightCenter(IMPORT_GAME_SX + IMPORT_GAME_WIDTH, 30), getData().colors.white);
+        getData().fonts.font(language.get("in_out", "game_library")).draw(25, Arg::center(X_CENTER, 30), getData().colors.white);
+        String path_label;
+        if (explorer_state.has_parent()) {
+            path_label = explorer::compose_path_label(U"games/", explorer_state);
+        }
         bool enter_pressed = KeyEnter.down();
         bool escape_pressed = gui_textarea_ime::escape_down_for_scene_change();
 
@@ -412,6 +1803,7 @@ public:
             getData().graph_resources.need_init = false;
             changeScene(U"Main_scene", SCENE_FADE_TIME);
         }
+        draw_batch_action_buttons();
         draw_folder_management_ui();
         if (failed) {
             getData().fonts.font(language.get("in_out", "import_failed")).draw(20, Arg::center(X_CENTER, Y_CENTER), getData().colors.white);
@@ -433,7 +1825,7 @@ public:
             auto res = DrawExplorerList(
                 folders_display, games, delete_buttons, edit_buttons, scroll_manager, up_button,
                 IMPORT_GAME_HEIGHT, IMPORT_GAME_N_GAMES_ON_WINDOW, explorer_state.has_parent(), getData().fonts, getData().colors, getData().resources, language,
-                getData().directories.document_dir, explorer_state.subfolder, inline_ptr);
+                getData().directories.document_dir, explorer_state.subfolder, inline_ptr, &selected_folder_indices, &selected_game_indices, path_label);
             
             // Draw delete buttons for empty folders
             if (!renaming_folder) {
@@ -444,7 +1836,7 @@ public:
                 
                 for (int i = 0; i < (int)folders_display.size(); ++i) {
                     if (row_index >= strt_idx_int && row_index < strt_idx_int + IMPORT_GAME_N_GAMES_ON_WINDOW) {
-                        if (is_folder_empty(folders_display[i])) {
+                        if (!is_protected_system_folder(folders_display[i]) && is_folder_empty(folders_display[i])) {
                             int display_row = row_index - strt_idx_int;
                             int item_sy = sy + display_row * IMPORT_GAME_HEIGHT;
                             folder_delete_buttons[i].move(IMPORT_GAME_SX + 1, item_sy + 1);
@@ -465,7 +1857,7 @@ public:
                 }
             }
             if (res.folderClicked) {
-                select_folder(res.clickedFolder);
+                toggle_folder_selection(res.folderRenameIndex);
             }
             if (res.folderDoubleClicked) {
                 if (renaming_folder) {
@@ -483,6 +1875,9 @@ public:
             }
             if (res.deleteClicked && res.deleteIndex >= 0) {
                 delete_game(res.deleteIndex);
+            }
+            if (res.gameClicked && res.clickedGameIndex >= 0) {
+                toggle_game_selection(res.clickedGameIndex);
             }
             if (res.editClicked && res.editIndex >= 0) {
                 edit_game(res.editIndex);
@@ -513,6 +1908,125 @@ private:
         int parent_offset = explorer_state.has_parent() ? 1 : 0;  // Add parent folder if not at root
         int total = parent_offset + (int)folders_display.size() + (int)games.size();
         scroll_manager.init(770, IMPORT_GAME_SY + 8, 10, IMPORT_GAME_HEIGHT * IMPORT_GAME_N_GAMES_ON_WINDOW, 20, total, IMPORT_GAME_N_GAMES_ON_WINDOW, IMPORT_GAME_SX, 73, IMPORT_GAME_WIDTH + 10, IMPORT_GAME_HEIGHT * IMPORT_GAME_N_GAMES_ON_WINDOW);
+    }
+
+    void clear_selection() {
+        selected_folder_indices.clear();
+        selected_game_indices.clear();
+        selected_folder_index = -1;
+        selected_folder_name.clear();
+    }
+
+    void prune_selection() {
+        for (auto it = selected_folder_indices.begin(); it != selected_folder_indices.end();) {
+            if (*it < 0 || *it >= (int)folders_display.size()) {
+                it = selected_folder_indices.erase(it);
+            } else {
+                ++it;
+            }
+        }
+        for (auto it = selected_game_indices.begin(); it != selected_game_indices.end();) {
+            if (*it < 0 || *it >= (int)games.size()) {
+                it = selected_game_indices.erase(it);
+            } else {
+                ++it;
+            }
+        }
+    }
+
+    bool has_selection() const {
+        return !selected_folder_indices.empty() || !selected_game_indices.empty();
+    }
+
+    bool all_items_selected() const {
+        const int total = (int)folders_display.size() + (int)games.size();
+        return total > 0 && (int)(selected_folder_indices.size() + selected_game_indices.size()) == total;
+    }
+
+    void toggle_folder_selection(int idx) {
+        if (idx < 0 || idx >= (int)folders_display.size()) {
+            return;
+        }
+        if (selected_folder_indices.count(idx)) {
+            selected_folder_indices.erase(idx);
+        } else {
+            selected_folder_indices.insert(idx);
+        }
+        selected_folder_index = idx;
+        selected_folder_name = folders_display[idx];
+    }
+
+    void toggle_game_selection(int idx) {
+        if (idx < 0 || idx >= (int)games.size()) {
+            return;
+        }
+        if (selected_game_indices.count(idx)) {
+            selected_game_indices.erase(idx);
+        } else {
+            selected_game_indices.insert(idx);
+        }
+    }
+
+    void select_all_items() {
+        selected_folder_indices.clear();
+        selected_game_indices.clear();
+        for (int i = 0; i < (int)folders_display.size(); ++i) {
+            selected_folder_indices.insert(i);
+        }
+        for (int i = 0; i < (int)games.size(); ++i) {
+            selected_game_indices.insert(i);
+        }
+    }
+
+    void draw_batch_action_buttons() {
+        prune_selection();
+        const bool all_selected = all_items_selected();
+        select_all_button.str = all_selected ? U"Deselect all" : U"Select all";
+        select_all_button.font_size = update_font_size_overfull(select_all_button.font, select_all_button.str, 12, select_all_button.rect.h, select_all_button.rect.w);
+        select_all_button.draw();
+        if (select_all_button.clicked()) {
+            if (all_selected) {
+                clear_selection();
+            } else {
+                select_all_items();
+            }
+        }
+
+        delete_selected_button.str = in_recycle_bin() ? U"Permanently Delete" : U"Delete";
+        delete_selected_button.font_size = update_font_size_overfull(delete_selected_button.font, delete_selected_button.str, 12, delete_selected_button.rect.h, delete_selected_button.rect.w);
+
+        const bool any_selected = has_selection();
+        if (any_selected) {
+            copy_button.enable();
+            cut_button.enable();
+            delete_selected_button.enable();
+        } else {
+            copy_button.disable();
+            cut_button.disable();
+            delete_selected_button.disable();
+        }
+        if (clipboard_items.empty()) {
+            paste_button.disable();
+        } else {
+            paste_button.enable();
+        }
+
+        copy_button.draw();
+        cut_button.draw();
+        paste_button.draw();
+        delete_selected_button.draw();
+        if (copy_button.clicked()) {
+            set_clipboard(false);
+        }
+        if (cut_button.clicked()) {
+            set_clipboard(true);
+        }
+        if (paste_button.clicked()) {
+            paste_clipboard();
+        }
+        if (delete_selected_button.clicked()) {
+            delete_selected_items();
+        }
     }
     
     // Check if folder is empty (no subfolders and no games)
@@ -550,19 +2064,17 @@ private:
         if (idx < 0 || idx >= (int)folders_display.size()) return;
         
         const String& folder_name = folders_display[idx];
+        if (is_protected_system_folder(folder_name)) {
+            return;
+        }
         if (!is_folder_empty(folder_name)) {
             return;  // Don't delete non-empty folders
         }
         
-        String folder_path = get_base_dir() + folder_name;
-        
-        // Delete the folder
-        if (FileSystem::IsDirectory(folder_path)) {
-            FileSystem::Remove(folder_path, AllowUndo::No);
-            enumerate_current_dir();
-            load_games();
-            std::cerr << "Deleted empty folder: " << folder_name << std::endl;
-        }
+        selected_folder_indices.clear();
+        selected_game_indices.clear();
+        selected_folder_indices.insert(idx);
+        delete_selected_items();
     }
 
     bool navigate_to_parent_subfolder() {
@@ -576,6 +2088,7 @@ private:
         enumerate_current_dir();
         load_games();
         init_scroll_manager();
+        clear_selection();
         return true;
     }
 
@@ -610,7 +2123,7 @@ private:
         getData().game_information.is_game_loaded = true;
         
         // Set game editor info for editing mode
-        getData().game_editor_info.return_scene = U"Import_game";
+        getData().game_editor_info.return_scene = U"Game_library";
         getData().game_editor_info.is_editing_mode = true;
         getData().game_editor_info.game_date = games[idx].filename_date;
         getData().game_editor_info.subfolder = explorer_state.subfolder;
@@ -633,75 +2146,10 @@ private:
             std::cerr << "delete_game: invalid index " << idx << std::endl;
             return;
         }
-        
-        const String json_path = get_base_dir() + games[idx].filename_date + U".json";
-        FileSystem::Remove(json_path);
-
-        const String csv_path = get_base_dir() + U"summary.csv";
-        
-        // CSVファイルの存在確認
-        if (!FileSystem::Exists(csv_path)) {
-            std::cerr << "CSV file not found: " << csv_path << std::endl;
-            return;
-        }
-        
-        CSV csv{ csv_path };
-        
-        // CSVの読み込み確認
-        if (csv.rows() == 0) {
-            std::cerr << "Warning: CSV file is empty" << std::endl;
-            return;
-        }
-        
-        CSV new_csv;
-        
-        // games配列はreverseされているので、CSV行インデックスを正しく計算
-        int csv_row_to_delete = (int)games.size() - 1 - idx;
-        
-        for (int i = 0; i < (int)csv.rows(); ++i) {
-            if (i != csv_row_to_delete) {
-                // CSVの列数をチェックしてから書き込み
-                if (csv[i].size() >= 6) {
-                    for (int j = 0; j < 6; ++j) {
-                        // 文字列の長さをチェックして制限する
-                        String data = csv[i][j];
-                        if (data.size() > 1000) { // 1000文字制限
-                            data = data.substr(0, 1000) + U"...";
-                            std::cerr << "Warning: Truncated long string in CSV row " << i << " column " << j << std::endl;
-                        }
-                        new_csv.write(data);
-                    }
-                    new_csv.newLine();
-                } else {
-                    std::cerr << "Warning: CSV row " << i << " has insufficient columns (" << csv[i].size() << ")" << std::endl;
-                }
-            }
-        }
-        
-        // 一時ファイルに保存してから元ファイルを置き換える
-        String temp_csv_path = csv_path + U".tmp";
-        new_csv.save(temp_csv_path);
-        
-        // 一時ファイルの保存が成功したら元ファイルを置き換え
-        if (FileSystem::Exists(temp_csv_path)) {
-            FileSystem::Remove(csv_path);
-            FileSystem::Copy(temp_csv_path, csv_path);
-            FileSystem::Remove(temp_csv_path);
-        } else {
-            std::cerr << "Failed to save temporary CSV file" << std::endl;
-            return;
-        }
-
-        games.erase(games.begin() + idx);
-        import_buttons.erase(import_buttons.begin() + idx);
-        delete_buttons.erase(delete_buttons.begin() + idx);
-        double strt_idx_double = scroll_manager.get_strt_idx_double();
-        init_scroll_manager();
-        if ((int)strt_idx_double >= idx) {
-            strt_idx_double -= 1.0;
-        }
-        scroll_manager.set_strt_idx(strt_idx_double);
-        std::cerr << "deleted game " << idx << std::endl;
+        selected_folder_indices.clear();
+        selected_game_indices.clear();
+        selected_game_indices.insert(idx);
+        delete_selected_items();
     }
 
     std::string get_root_dir() const {
@@ -766,6 +2214,9 @@ private:
         std::vector<String> folders = explorer::enumerate_subfolders(get_root_dir(), explorer_state);
         Texture cross_image = getData().resources.cross;
         for (auto& folder : folders) {
+            if (explorer_state.subfolder.empty() && folder == U"recycle_bin" && !recycle_bin_visible()) {
+                continue;
+            }
             folders_display.emplace_back(folder);
             
             // Add delete button for each folder
@@ -903,12 +2354,16 @@ private:
             enumerate_current_dir();
             load_games();
             select_folder(input);
+            selected_folder_indices.insert(find_folder_index(input));
         }
         return created;
     }
 
     void begin_folder_rename(int folder_idx) {
         if (folder_idx < 0 || folder_idx >= (int)folders_display.size()) {
+            return;
+        }
+        if (is_protected_system_folder(folders_display[folder_idx])) {
             return;
         }
         renaming_folder = true;
@@ -956,6 +2411,8 @@ private:
             cancel_folder_rename();
             enumerate_current_dir();
             select_folder(trimmed);
+            clear_selection();
+            selected_folder_indices.insert(find_folder_index(trimmed));
         }
         return renamed;
     }
@@ -994,6 +2451,277 @@ private:
             return;
         }
         persist_games_order_to_csv();
+    }
+
+    String make_unique_child_path(const String& target_dir, const String& name, bool folder) const {
+        String candidate = target_dir + name + (folder ? U"/" : U".json");
+        if (!FileSystem::Exists(candidate)) {
+            return candidate;
+        }
+        for (int i = 1; i < 1000; ++i) {
+            String suffix = U" (" + Format(i) + U")";
+            candidate = target_dir + name + suffix + (folder ? U"/" : U".json");
+            if (!FileSystem::Exists(candidate)) {
+                return candidate;
+            }
+        }
+        return U"";
+    }
+
+    Game_abstract game_with_filename(const Game_abstract& game, const String& filename_date) const {
+        Game_abstract copied = game;
+        copied.filename_date = filename_date;
+        return copied;
+    }
+
+    void set_clipboard(bool cut) {
+        clipboard_items.clear();
+        clipboard_cut = cut;
+        std::vector<int> folders(selected_folder_indices.begin(), selected_folder_indices.end());
+        std::sort(folders.begin(), folders.end());
+        for (int idx : folders) {
+            if (idx < 0 || idx >= (int)folders_display.size()) {
+                continue;
+            }
+            if (cut && is_protected_system_folder(folders_display[idx])) {
+                continue;
+            }
+            Clipboard_item item;
+            item.folder = true;
+            item.name = folders_display[idx];
+            item.source_path = get_base_dir() + item.name;
+            clipboard_items.emplace_back(item);
+        }
+
+        std::vector<int> game_indices(selected_game_indices.begin(), selected_game_indices.end());
+        std::sort(game_indices.begin(), game_indices.end());
+        for (int idx : game_indices) {
+            if (idx < 0 || idx >= (int)games.size()) {
+                continue;
+            }
+            Clipboard_item item;
+            item.folder = false;
+            item.game = games[idx];
+            item.name = games[idx].filename_date;
+            item.source_path = get_base_dir() + games[idx].filename_date + U".json";
+            clipboard_items.emplace_back(item);
+        }
+    }
+
+    void paste_clipboard() {
+        if (clipboard_items.empty()) {
+            return;
+        }
+        const String target_base = get_base_dir();
+        for (const Clipboard_item& item : clipboard_items) {
+            if (item.folder) {
+                paste_folder_item(item, target_base);
+            } else {
+                paste_game_item(item, target_base);
+            }
+        }
+        if (clipboard_cut) {
+            clipboard_items.clear();
+            clipboard_cut = false;
+        }
+        enumerate_current_dir();
+        load_games();
+        clear_selection();
+    }
+
+    void paste_folder_item(const Clipboard_item& item, const String& target_base) {
+        if (item.source_path.empty() || item.name.empty()) {
+            return;
+        }
+        String source = item.source_path;
+        String target = target_base + item.name;
+        if (FileSystem::FullPath(source) == FileSystem::FullPath(target)) {
+            return;
+        }
+        if (clipboard_cut) {
+            if (!FileSystem::Exists(target)) {
+                FileSystem::Copy(source, target);
+                FileSystem::Remove(source, AllowUndo::No);
+            }
+        } else {
+            String unique_target = make_unique_child_path(target_base, item.name, true);
+            if (!unique_target.empty()) {
+                FileSystem::Copy(source, unique_target);
+            }
+        }
+    }
+
+    void paste_game_item(const Clipboard_item& item, const String& target_base) {
+        if (item.source_path.empty() || item.name.empty()) {
+            return;
+        }
+        String target_name = item.game.filename_date;
+        String target_json = target_base + target_name + U".json";
+        if (!clipboard_cut && FileSystem::Exists(target_json)) {
+            target_json = make_unique_child_path(target_base, target_name, false);
+            if (target_json.empty()) {
+                return;
+            }
+            target_name = FileSystem::BaseName(target_json).replaced(U".json", U"");
+        }
+        if (FileSystem::FullPath(item.source_path) == FileSystem::FullPath(target_json)) {
+            return;
+        }
+        if (FileSystem::Copy(item.source_path, target_json)) {
+            add_game_to_target_csv(game_with_filename(item.game, target_name), target_base);
+            if (clipboard_cut) {
+                remove_game_record_by_filename(item.game.filename_date, item.source_path);
+                FileSystem::Remove(item.source_path);
+            }
+        }
+    }
+
+    void remove_game_record_by_filename(const String& filename_date, const String& source_json_path) {
+        String source_base = FileSystem::ParentPath(source_json_path);
+        if (!source_base.ends_with(U"/") && !source_base.ends_with(U"\\")) {
+            source_base += U"/";
+        }
+        const String csv_path = source_base + U"summary.csv";
+        CSV csv{ csv_path };
+        CSV new_csv;
+        for (int i = 0; i < (int)csv.rows(); ++i) {
+            if (csv[i].size() >= 1 && csv[i][0] == filename_date) {
+                continue;
+            }
+            for (size_t j = 0; j < csv[i].size(); ++j) {
+                new_csv.write(csv[i][j]);
+            }
+            new_csv.newLine();
+        }
+        new_csv.save(csv_path);
+    }
+
+    String recycle_session_dir() const {
+        const String root = Unicode::Widen(getData().directories.document_dir) + U"games/recycle_bin/";
+        FileSystem::CreateDirectories(root);
+        DateTime now = DateTime::Now();
+        String stem = U"{:04}-{:02}-{:02} {:02}：{:02}"_fmt(now.year, now.month, now.day, now.hour, now.minute);
+        String dir = root + stem + U"/";
+        for (int suffix = 1; FileSystem::Exists(dir) && suffix < 1000; ++suffix) {
+            dir = root + stem + U" (" + Format(suffix) + U")/";
+        }
+        ensure_summary_folder(dir);
+        return dir;
+    }
+
+    bool recycle_bin_enabled() const {
+        return getData().menu_elements.enable_recycle_bin;
+    }
+
+    bool should_permanently_delete() const {
+        return in_recycle_bin() || !recycle_bin_enabled();
+    }
+
+    static bool move_path_fast(const String& source, const String& target) {
+        if (source.empty() || target.empty() || !FileSystem::Exists(source) || FileSystem::Exists(target)) {
+            return false;
+        }
+#ifdef _WIN32
+        return MoveFileExW(source.toWstr().c_str(), target.toWstr().c_str(), MOVEFILE_COPY_ALLOWED) != 0;
+#else
+        std::string cmd = "mv \"" + source.narrow() + "\" \"" + target.narrow() + "\" >/dev/null";
+        return system(cmd.c_str()) == 0;
+#endif
+    }
+
+    void move_game_to_recycle(int idx, const String& recycle_dir) {
+        if (idx < 0 || idx >= (int)games.size()) {
+            return;
+        }
+        const Game_abstract game = games[idx];
+        const String source_json = get_base_dir() + game.filename_date + U".json";
+        String target_json = recycle_dir + game.filename_date + U".json";
+        String target_name = game.filename_date;
+        if (FileSystem::Exists(target_json)) {
+            target_json = make_unique_child_path(recycle_dir, game.filename_date, false);
+            if (target_json.empty()) {
+                return;
+            }
+            target_name = FileSystem::BaseName(target_json).replaced(U".json", U"");
+        }
+        if (move_path_fast(source_json, target_json) || FileSystem::Copy(source_json, target_json)) {
+            add_game_to_target_csv(game_with_filename(game, target_name), recycle_dir);
+            remove_game_record_by_filename(game.filename_date, source_json);
+            if (FileSystem::Exists(source_json)) {
+                FileSystem::Remove(source_json);
+            }
+        }
+    }
+
+    void move_folder_to_recycle(int idx, const String& recycle_dir) {
+        if (idx < 0 || idx >= (int)folders_display.size()) {
+            return;
+        }
+        if (is_protected_system_folder(folders_display[idx])) {
+            return;
+        }
+        const String source = get_base_dir() + folders_display[idx];
+        String target = recycle_dir + folders_display[idx];
+        if (FileSystem::FullPath(source) == FileSystem::FullPath(target)) {
+            return;
+        }
+        if (FileSystem::Exists(target)) {
+            target = make_unique_child_path(recycle_dir, folders_display[idx], true);
+            if (target.empty()) {
+                return;
+            }
+        }
+        if (FileSystem::IsDirectory(source)) {
+            if (move_path_fast(source, target)) {
+                return;
+            }
+            if (FileSystem::Copy(source, target)) {
+                FileSystem::Remove(source, AllowUndo::No);
+            }
+        }
+    }
+
+    void delete_selected_items() {
+        const bool permanent = should_permanently_delete();
+        String recycle_dir;
+        if (!permanent) {
+            recycle_dir = recycle_session_dir();
+        }
+
+        std::vector<int> game_indices(selected_game_indices.begin(), selected_game_indices.end());
+        std::sort(game_indices.rbegin(), game_indices.rend());
+        for (int idx : game_indices) {
+            if (idx >= 0 && idx < (int)games.size()) {
+                if (permanent) {
+                    String json_path = get_base_dir() + games[idx].filename_date + U".json";
+                    FileSystem::Remove(json_path);
+                    remove_game_record_by_filename(games[idx].filename_date, json_path);
+                } else {
+                    move_game_to_recycle(idx, recycle_dir);
+                }
+            }
+        }
+
+        std::vector<int> folder_indices(selected_folder_indices.begin(), selected_folder_indices.end());
+        std::sort(folder_indices.rbegin(), folder_indices.rend());
+        for (int idx : folder_indices) {
+            if (idx >= 0 && idx < (int)folders_display.size()) {
+                if (is_protected_system_folder(folders_display[idx])) {
+                    continue;
+                }
+                if (permanent) {
+                    String folder_path = get_base_dir() + folders_display[idx];
+                    if (FileSystem::IsDirectory(folder_path)) {
+                        FileSystem::Remove(folder_path, AllowUndo::No);
+                    }
+                } else {
+                    move_folder_to_recycle(idx, recycle_dir);
+                }
+            }
+        }
+        enumerate_current_dir();
+        load_games();
+        clear_selection();
     }
     
     // Move a game to a different folder (relative to current subfolder)

@@ -47,6 +47,8 @@ private:
     // Return scene info
     String return_scene;
     std::vector<History_elem> pending_history;
+    int black_score;
+    int white_score;
 
 public:
     Save_location_picker(const InitData& init) : IScene{ init } {
@@ -59,6 +61,8 @@ public:
         // Get return scene and history from getData
         return_scene = getData().game_editor_info.return_scene;
         pending_history = getData().save_location_picker_info.pending_history;
+        black_score = getData().save_location_picker_info.black_score;
+        white_score = getData().save_location_picker_info.white_score;
         
         // Initialize folder picker state
         picker_subfolder.clear();
@@ -151,8 +155,7 @@ public:
         // Action buttons
         back_button.draw();
         if (back_button.clicked() || gui_textarea_ime::escape_pressed_for_scene_change()) {
-            // Return to Game_editor to modify game information
-            changeScene(U"Game_editor", SCENE_FADE_TIME);
+            changeScene(return_scene.empty() ? U"Game_editor" : return_scene, SCENE_FADE_TIME);
             return;
         }
         
@@ -429,7 +432,9 @@ private:
             getData().game_information.white_player_name,
             getData().game_information.memo,
             pending_history,
-            getData().game_information.date
+            getData().game_information.date,
+            black_score,
+            white_score
         );
         
         String json_path = base_dir + date + U".json";

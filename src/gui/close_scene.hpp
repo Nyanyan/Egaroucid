@@ -76,6 +76,9 @@ void save_settings(Menu_elements menu_elements, Settings settings, Directories d
     setting_json[U"screenshot_saving_dir"] = Unicode::Widen(user_settings.screenshot_saving_dir);
     setting_json[U"input_game_last_subfolder"] = Unicode::Widen(user_settings.input_game_last_subfolder);
     setting_json[U"opening_setting_last_subfolder"] = Unicode::Widen(user_settings.opening_setting_last_subfolder);
+    setting_json[U"othello_quest_username"] = Unicode::Widen(user_settings.othello_quest_username);
+    setting_json[U"othello_quest_mode"] = user_settings.othello_quest_mode;
+    setting_json[U"enable_recycle_bin"] = menu_elements.enable_recycle_bin;
     setting_json[U"window_scale"] = std::clamp(window_state.window_scale, WINDOW_SCALE_MIN, WINDOW_SCALE_MAX);
     setting_json[U"show_value_when_ai_calculating"] = menu_elements.show_value_when_ai_calculating;
     setting_json[U"generate_random_board_score_range_min"] = menu_elements.generate_random_board_score_range_min;

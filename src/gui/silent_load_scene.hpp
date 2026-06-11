@@ -93,6 +93,9 @@ void init_default_settings(const Directories* directories, const Resources* reso
     settings->screenshot_saving_dir = directories->document_dir + "screenshots/";
     settings->input_game_last_subfolder.clear();
     settings->opening_setting_last_subfolder.clear();
+    settings->othello_quest_username.clear();
+    settings->othello_quest_mode = 0;
+    settings->enable_recycle_bin = true;
     settings->window_scale = 1.0;
     settings->show_value_when_ai_calculating = false;
     // settings->generate_random_board_score_range = 64;
@@ -535,9 +538,13 @@ void init_settings(const Directories* directories, const Resources* resources, S
         init_settings_import_str(setting_json, U"ai_profile_name", &settings->ai_profile_name);
         init_settings_import_str(setting_json, U"input_game_last_subfolder", &settings->input_game_last_subfolder);
         init_settings_import_str(setting_json, U"opening_setting_last_subfolder", &settings->opening_setting_last_subfolder);
+        init_settings_import_str(setting_json, U"othello_quest_username", &settings->othello_quest_username);
+        init_settings_import_int(setting_json, U"othello_quest_mode", &settings->othello_quest_mode);
+        init_settings_import_bool(setting_json, U"enable_recycle_bin", &settings->enable_recycle_bin);
         init_settings_import_double(setting_json, U"window_scale", &settings->window_scale);
     }
     settings->window_scale = std::clamp(settings->window_scale, WINDOW_SCALE_MIN, WINDOW_SCALE_MAX);
+    settings->othello_quest_mode = std::clamp(settings->othello_quest_mode, 0, 2);
 
     // Keep compatibility with legacy scalar settings when profiles or curves are absent.
     sync_ai_loss_curves_from_scalar(settings);
@@ -619,6 +626,9 @@ void init_user_settings(Settings* settings, User_settings *user_settings) {
     user_settings->screenshot_saving_dir = settings->screenshot_saving_dir;
     user_settings->input_game_last_subfolder = settings->input_game_last_subfolder;
     user_settings->opening_setting_last_subfolder = settings->opening_setting_last_subfolder;
+    user_settings->othello_quest_username = settings->othello_quest_username;
+    user_settings->othello_quest_mode = settings->othello_quest_mode;
+    user_settings->enable_recycle_bin = settings->enable_recycle_bin;
 }
 
 int silent_load(Directories* directories, Resources* resources, Settings* settings, User_settings *user_settings, Fonts *fonts, bool *stop_loading) {

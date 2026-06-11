@@ -90,8 +90,9 @@ void Main() {
     scene_manager.add <Export_book>(U"Export_book");
     scene_manager.add <Show_book_info>(U"Show_book_info");
     scene_manager.add <Import_text>(U"Import_text");
+    scene_manager.add <Import_othello_quest>(U"Import_othello_quest");
     scene_manager.add <Edit_board>(U"Edit_board");
-    scene_manager.add <Import_game>(U"Import_game");
+    scene_manager.add <Game_library>(U"Game_library");
     scene_manager.add <Export_game>(U"Export_game");
     scene_manager.add <Board_image>(U"Board_image");
     scene_manager.add <Import_bitboard>(U"Import_bitboard");

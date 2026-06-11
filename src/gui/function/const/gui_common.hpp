@@ -12,6 +12,11 @@
 #include <array>
 #include <iostream>
 #include <Siv3D.hpp>
+#if SIV3D_PLATFORM(WINDOWS)
+struct HWND__;
+struct HIMC__;
+extern "C" __declspec(dllimport) HIMC__* __stdcall ImmAssociateContext(HWND__* unnamedParam1, HIMC__* unnamedParam2);
+#endif
 #include "./../../../engine/engine_all.hpp"
 #include "./../menu.hpp"
 #include "info.hpp"
@@ -312,13 +317,29 @@ namespace gui_scene_ime {
 inline bool desired_enabled = true;
 inline bool focus_state_initialized = false;
 inline bool last_window_focused = true;
+#if SIV3D_PLATFORM(WINDOWS)
+inline HIMC__* disabled_previous_context = nullptr;
+inline bool disabled_context_saved = false;
+#endif
 
 inline void apply_enabled_state(const bool enabled) {
 #if SIV3D_PLATFORM(WINDOWS)
+    const auto hwnd = static_cast<HWND__*>(Platform::Windows::Window::GetHWND());
+    if (not hwnd) {
+        return;
+    }
+
     if (enabled) {
-        Platform::Windows::TextInput::EnableIME();
+        if (disabled_context_saved) {
+            ImmAssociateContext(hwnd, disabled_previous_context);
+            disabled_previous_context = nullptr;
+            disabled_context_saved = false;
+        }
     } else {
-        Platform::Windows::TextInput::DisableIME();
+        if (not disabled_context_saved) {
+            disabled_previous_context = ImmAssociateContext(hwnd, nullptr);
+            disabled_context_saved = true;
+        }
     }
 #else
     (void)enabled;
@@ -532,6 +553,9 @@ struct Settings {
     std::string screenshot_saving_dir;
     std::string input_game_last_subfolder;
     std::string opening_setting_last_subfolder;
+    std::string othello_quest_username;
+    int othello_quest_mode;
+    bool enable_recycle_bin;
     double window_scale;
     bool show_value_when_ai_calculating;
     int generate_random_board_score_range_min;
@@ -701,8 +725,10 @@ struct Menu_elements {
     // input
     bool input_from_clipboard;
     bool input_text;
+    bool input_othello_quest;
     bool edit_board;
-    bool input_game;
+    bool game_library;
+    bool enable_recycle_bin;
     // output
     bool copy_transcript;
     bool copy_board;
@@ -844,8 +870,10 @@ struct Menu_elements {
 
         input_from_clipboard = false;
         input_text = false;
+        input_othello_quest = false;
         edit_board = false;
-        input_game = false;
+        game_library = false;
+        enable_recycle_bin = settings->enable_recycle_bin;
         copy_transcript = false;
         copy_board = false;
         input_bitboard = false;
@@ -937,7 +965,7 @@ struct Game_information {
     String white_player_name;
     String memo;
     String date;  // YYYY-MM-DD format
-    bool is_game_loaded;  // true if a specific game is loaded from Import_game
+    bool is_game_loaded;  // true if a specific game is loaded from Game_library
 
     void init() {
         black_player_name.clear();
@@ -969,10 +997,14 @@ struct Game_editor_info {
 struct Save_location_picker_info {
     std::vector<History_elem> pending_history;
     std::string selected_subfolder;
+    int black_score;
+    int white_score;
 
     void init() {
         pending_history.clear();
         selected_subfolder.clear();
+        black_score = GAME_DISCS_UNDEFINED;
+        white_score = GAME_DISCS_UNDEFINED;
     }
 };
 
@@ -998,6 +1030,9 @@ struct User_settings {
     std::string screenshot_saving_dir;
     std::string input_game_last_subfolder;
     std::string opening_setting_last_subfolder;
+    std::string othello_quest_username;
+    int othello_quest_mode;
+    bool enable_recycle_bin;
 };
 
 struct Window_state {
