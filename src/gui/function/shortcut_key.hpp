@@ -17,6 +17,12 @@
 #include "const/gui_common.hpp"
 #include "ai_profile.hpp"
 #include "language.hpp"
+#if SIV3D_PLATFORM(WINDOWS)
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
+#include <Windows.h>
+#endif
 
 #define SHORTCUT_KEY_UNDEFINED U"undefined"
 #define SHORTCUT_KEY_AI_PROFILE_PREFIX U"ai_profile:"
@@ -252,6 +258,138 @@ std::vector<String> get_all_inputs(bool *down_found) {
     return res;
 }
 
+#if SIV3D_PLATFORM(WINDOWS)
+inline bool shortcut_key_name_to_windows_vk(const String& key_name, int* vk) {
+    if (key_name.size() == 1) {
+        const char32 ch = key_name[0];
+        if (U'A' <= ch && ch <= U'Z') {
+            *vk = static_cast<int>('A' + (ch - U'A'));
+            return true;
+        }
+        if (U'a' <= ch && ch <= U'z') {
+            *vk = static_cast<int>('A' + (ch - U'a'));
+            return true;
+        }
+        if (U'0' <= ch && ch <= U'9') {
+            *vk = static_cast<int>('0' + (ch - U'0'));
+            return true;
+        }
+    }
+
+    static const std::unordered_map<String, int> key_map = {
+        {U"Ctrl", VK_CONTROL},
+        {U"Left Ctrl", VK_LCONTROL},
+        {U"Right Ctrl", VK_RCONTROL},
+        {U"Shift", VK_SHIFT},
+        {U"Left Shift", VK_LSHIFT},
+        {U"Right Shift", VK_RSHIFT},
+        {U"Alt", VK_MENU},
+        {U"Left Alt", VK_LMENU},
+        {U"Right Alt", VK_RMENU},
+        {U"Space", VK_SPACE},
+        {U"Backspace", VK_BACK},
+        {U"Tab", VK_TAB},
+        {U"Enter", VK_RETURN},
+        {U"Escape", VK_ESCAPE},
+        {U"Left", VK_LEFT},
+        {U"Right", VK_RIGHT},
+        {U"Up", VK_UP},
+        {U"Down", VK_DOWN},
+        {U"Home", VK_HOME},
+        {U"End", VK_END},
+        {U"PageUp", VK_PRIOR},
+        {U"PageDown", VK_NEXT},
+        {U"Insert", VK_INSERT},
+        {U"Delete", VK_DELETE},
+        {U"0x5b", VK_LWIN},
+    };
+
+    const auto it = key_map.find(key_name);
+    if (it == key_map.end()) {
+        return false;
+    }
+    *vk = it->second;
+    return true;
+}
+
+inline bool windows_vk_pressed(int vk) {
+    return (GetAsyncKeyState(vk) & 0x8000) != 0;
+}
+
+inline bool windows_shortcut_modifier_state_matches(const std::vector<String>& keys) {
+    const bool needs_ctrl = (std::find(keys.begin(), keys.end(), U"Ctrl") != keys.end()) ||
+        (std::find(keys.begin(), keys.end(), U"Left Ctrl") != keys.end()) ||
+        (std::find(keys.begin(), keys.end(), U"Right Ctrl") != keys.end());
+    const bool needs_shift = (std::find(keys.begin(), keys.end(), U"Shift") != keys.end()) ||
+        (std::find(keys.begin(), keys.end(), U"Left Shift") != keys.end()) ||
+        (std::find(keys.begin(), keys.end(), U"Right Shift") != keys.end());
+    const bool needs_alt = (std::find(keys.begin(), keys.end(), U"Alt") != keys.end()) ||
+        (std::find(keys.begin(), keys.end(), U"Left Alt") != keys.end()) ||
+        (std::find(keys.begin(), keys.end(), U"Right Alt") != keys.end());
+
+    return windows_vk_pressed(VK_CONTROL) == needs_ctrl &&
+        windows_vk_pressed(VK_SHIFT) == needs_shift &&
+        windows_vk_pressed(VK_MENU) == needs_alt;
+}
+
+inline bool windows_shortcut_non_modifier_state_matches(const std::unordered_set<int>& expected_vks) {
+    static const int non_modifier_vks[] = {
+        VK_SPACE, VK_BACK, VK_TAB, VK_RETURN, VK_ESCAPE,
+        VK_LEFT, VK_RIGHT, VK_UP, VK_DOWN,
+        VK_HOME, VK_END, VK_PRIOR, VK_NEXT, VK_INSERT, VK_DELETE,
+        VK_LWIN,
+        '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
+        'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M',
+        'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z',
+    };
+
+    for (const int vk : non_modifier_vks) {
+        if (windows_vk_pressed(vk) && expected_vks.find(vk) == expected_vks.end()) {
+            return false;
+        }
+    }
+    return true;
+}
+
+inline bool check_windows_shortcut_key_state(const Shortcut_key_elem& elem, bool* down_found, bool* pressed_found) {
+    *down_found = false;
+    *pressed_found = false;
+    if (elem.keys.empty()) {
+        return false;
+    }
+
+    std::unordered_set<int> expected_vks;
+    for (const String& key : elem.keys) {
+        int vk = 0;
+        if (!shortcut_key_name_to_windows_vk(key, &vk)) {
+            return false;
+        }
+        expected_vks.emplace(vk);
+    }
+
+    static std::unordered_map<String, bool> previous_pressed;
+    if (!Window::GetState().focused) {
+        previous_pressed[elem.name] = false;
+        return true;
+    }
+
+    bool pressed = windows_shortcut_modifier_state_matches(elem.keys) &&
+        windows_shortcut_non_modifier_state_matches(expected_vks);
+    for (const String& key : elem.keys) {
+        int vk = 0;
+        shortcut_key_name_to_windows_vk(key, &vk);
+        pressed &= windows_vk_pressed(vk);
+    }
+
+    const bool previous = previous_pressed[elem.name];
+    previous_pressed[elem.name] = pressed;
+
+    *pressed_found = pressed;
+    *down_found = pressed && !previous;
+    return true;
+}
+#endif
+
 class Shortcut_keys {
 public:
     std::vector<Shortcut_key_elem> shortcut_keys;
@@ -392,6 +530,20 @@ public:
         *shortcut_name_down = SHORTCUT_KEY_UNDEFINED;
         *shortcut_name_pressed = SHORTCUT_KEY_UNDEFINED;
         for (const Shortcut_key_elem &elem: shortcut_keys) {
+#if SIV3D_PLATFORM(WINDOWS)
+            bool windows_down_found = false;
+            bool windows_pressed_found = false;
+            if (check_windows_shortcut_key_state(elem, &windows_down_found, &windows_pressed_found)) {
+                if (windows_pressed_found) {
+                    if (windows_down_found) {
+                        *shortcut_name_down = elem.name;
+                    }
+                    *shortcut_name_pressed = elem.name;
+                    return;
+                }
+                continue;
+            }
+#endif
             if (keys.size() && keys.size() == elem.keys.size()) {
                 bool matched = true;
                 for (const String& key : keys) {
