@@ -21,6 +21,7 @@
 #include "random_board_generator.hpp"
 #include "umigame.hpp"
 #include "version.hpp"
+#include "xot.hpp"
 #if TEST_ENDGAME_ACCURACY
 #include "test.hpp"
 #endif

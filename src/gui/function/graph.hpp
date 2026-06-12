@@ -10,6 +10,7 @@
 
 #pragma once
 #include <Siv3D.hpp>
+#include <algorithm>
 #include <vector>
 #include "./../../engine/board.hpp"
 #include "language.hpp"
@@ -74,7 +75,14 @@ private:
     double dx;
 
 public:
-    void draw(std::vector<History_elem> nodes1, std::vector<History_elem> nodes2, int n_discs, bool show_graph, int level, Font font, int color_type, bool show_graph_sum_of_loss, bool show_endgame_error, bool show_endgame_error_40_to_60) {
+    void draw(std::vector<History_elem> nodes1, std::vector<History_elem> nodes2, int n_discs, bool show_graph, int level, Font font, int color_type, bool show_graph_sum_of_loss, bool show_endgame_error, bool show_endgame_error_40_to_60, int xot_start_n_discs) {
+        if (xot_start_n_discs != -1) {
+            filter_before_xot_start(&nodes1, xot_start_n_discs);
+            filter_before_xot_start(&nodes2, xot_start_n_discs);
+            if (nodes1.empty()) {
+                xot_start_n_discs = -1;
+            }
+        }
         std::vector<std::vector<Graph_loss_elem>> sum_of_loss_nodes1(2);
         std::vector<std::vector<Graph_loss_elem>> sum_of_loss_nodes2(2);
         resolution = GRAPH_RESOLUTION;
@@ -225,6 +233,9 @@ public:
             draw_graph_not_calculated(nodes1, graph_history_not_calculated_color);
             draw_graph_not_calculated(nodes2, graph_fork_not_calculated_color);
         }
+        if (xot_start_n_discs != -1) {
+            draw_xot_start_marker(nodes1, nodes2, show_graph_sum_of_loss, xot_start_n_discs);
+        }
         if (show_graph && !show_graph_sum_of_loss) {
             Circle(sx, sy, 6).draw(Palette::Black);
             Circle(sx, sy + size_y, 6).draw(Palette::White);
@@ -238,7 +249,11 @@ public:
         }
     }
 
-    int update_n_discs(std::vector<History_elem> nodes1, std::vector<History_elem> nodes2, int n_discs) {
+    int update_n_discs(std::vector<History_elem> nodes1, std::vector<History_elem> nodes2, int n_discs, int xot_start_n_discs) {
+        if (xot_start_n_discs != -1) {
+            filter_before_xot_start(&nodes1, xot_start_n_discs);
+            filter_before_xot_start(&nodes2, xot_start_n_discs);
+        }
         if (Rect(sx - 30, sy, size_x + 40, size_y + 10).leftPressed()) {
             int cursor_x = Cursor::Pos().x;
             int min_err = INF;
@@ -269,6 +284,46 @@ public:
     }
 
 private:
+    void filter_before_xot_start(std::vector<History_elem>* nodes, int xot_start_n_discs) {
+        nodes->erase(
+            std::remove_if(nodes->begin(), nodes->end(), [xot_start_n_discs](const History_elem& node) {
+                return node.board.n_discs() < xot_start_n_discs;
+            }),
+            nodes->end()
+        );
+    }
+
+    void draw_xot_start_marker(const std::vector<History_elem>& nodes1, const std::vector<History_elem>& nodes2, bool show_graph_sum_of_loss, int xot_start_n_discs) {
+        const History_elem* marker_node = nullptr;
+        for (const History_elem& node : nodes1) {
+            if (node.board.n_discs() == xot_start_n_discs) {
+                marker_node = &node;
+                break;
+            }
+        }
+        if (marker_node == nullptr) {
+            for (const History_elem& node : nodes2) {
+                if (node.board.n_discs() == xot_start_n_discs) {
+                    marker_node = &node;
+                    break;
+                }
+            }
+        }
+        if (marker_node == nullptr) {
+            return;
+        }
+        const int xx = sx + dx * (xot_start_n_discs - 4);
+        int yy;
+        if (show_graph_sum_of_loss) {
+            yy = sy + dy * y_max;
+        } else if (std::abs(marker_node->v) <= HW2) {
+            yy = sy + dy * (y_max - marker_node->v);
+        } else {
+            yy = sy + dy * y_max;
+        }
+        Circle(xx, yy, 5.5).drawFrame(2, 0, Color(220, 220, 220));
+    }
+
     void calc_sum_of_loss_nodes(std::vector<History_elem> nodes1, std::vector<History_elem> nodes2, std::vector<std::vector<Graph_loss_elem>> &sum_of_loss_nodes1, std::vector<std::vector<Graph_loss_elem>> &sum_of_loss_nodes2) {
         Graph_loss_elem elem;
         elem.ply = nodes1[0].board.n_discs() - 4;

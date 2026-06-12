@@ -501,6 +501,7 @@ struct Settings {
     std::string lang_name;
     std::string book_file;
     bool use_book;
+    bool xot_identification;
     int level;
     bool ai_put_black;
     bool ai_put_white;
@@ -637,6 +638,7 @@ struct Menu_elements {
     // settings
     // AI settings
     bool use_book;
+    bool xot_identification;
     //int book_acc_level;
     bool accept_ai_loss;
     int max_loss;
@@ -787,6 +789,7 @@ struct Menu_elements {
         game_information = false;
 
         use_book = settings->use_book;
+        xot_identification = settings->xot_identification;
         //book_acc_level = settings->book_acc_level;
         accept_ai_loss = settings->accept_ai_loss;
         max_loss = settings->max_loss;
@@ -935,6 +938,7 @@ struct Graph_resources {
     int n_discs;
     int delta;
     int branch;
+    int xot_start_n_discs;
     bool need_init;
 
     Graph_resources() {
@@ -947,6 +951,7 @@ struct Graph_resources {
         n_discs = 4;
         delta = 0;
         branch = 0;
+        xot_start_n_discs = -1;
         need_init = true;
     }
 
@@ -1005,6 +1010,33 @@ struct Save_location_picker_info {
         selected_subfolder.clear();
         black_score = GAME_DISCS_UNDEFINED;
         white_score = GAME_DISCS_UNDEFINED;
+    }
+};
+
+struct Game_library_pending_save {
+    String filename_stem;
+    String black_player_name;
+    String white_player_name;
+    String memo;
+    std::vector<History_elem> history;
+    String game_date;
+    int black_score = GAME_DISCS_UNDEFINED;
+    int white_score = GAME_DISCS_UNDEFINED;
+};
+
+struct Game_library_save_request_info {
+    bool active = false;
+    String return_scene;
+    std::string initial_subfolder;
+    std::vector<Game_library_pending_save> pending_games;
+    String result_message;
+
+    void init() {
+        active = false;
+        return_scene.clear();
+        initial_subfolder.clear();
+        pending_games.clear();
+        result_message.clear();
     }
 };
 
@@ -1175,6 +1207,7 @@ struct Common_resources {
     Game_information game_information;
     Game_editor_info game_editor_info;
     Save_location_picker_info save_location_picker_info;
+    Game_library_save_request_info game_library_save_request_info;
     AI_profile_editor_info ai_profile_editor_info;
     Book_information book_information;
     User_settings user_settings;

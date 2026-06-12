@@ -87,6 +87,7 @@
     },
     "ai_settings": {
         "use_book": "Book Use",
+        "xot_identification": "XOT identification",
         "book_accuracy_level": "Book Loss Level",
         "level": "Level",
         "accept_ai_loss": "Accept AI's Loss",
