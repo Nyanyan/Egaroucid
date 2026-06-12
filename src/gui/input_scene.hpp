@@ -12,6 +12,7 @@
 #include <iostream>
 #include <future>
 #include <algorithm>
+#include <array>
 #include <cctype>
 #include <cmath>
 #include <ctime>
@@ -155,6 +156,7 @@ public:
             }
             getData().graph_resources.nodes[getData().graph_resources.branch][i].opening_name = opening_name;
         }
+        update_xot_identification(&getData().graph_resources);
         getData().graph_resources.n_discs = getData().graph_resources.nodes[getData().graph_resources.branch].back().board.n_discs();
         getData().graph_resources.need_init = false;
         getData().history_elem = getData().graph_resources.nodes[getData().graph_resources.branch].back();
@@ -302,6 +304,7 @@ public:
         }
 
         update_http_tasks();
+        consume_game_library_save_result();
 
         Scene::SetBackground(getData().colors.green);
         const bool result_page = !searched_username.empty();
@@ -333,8 +336,14 @@ public:
         draw_result_buttons(result_page);
 
         back_button.draw();
-        save_button.enable();
-        save_button.draw();
+        if (result_page) {
+            if (can_save_any_selected()) {
+                save_button.enable();
+            } else {
+                save_button.disable();
+            }
+            save_button.draw();
+        }
         if (back_button.clicked() || gui_textarea_ime::escape_pressed_for_scene_change()) {
             write_cache();
             if (result_page) {
@@ -343,7 +352,7 @@ public:
                 changeScene(U"Main_scene", SCENE_FADE_TIME);
             }
         }
-        if (save_button.clicked()) {
+        if (result_page && save_button.clicked()) {
             save_selected_game_to_library();
         }
     }
@@ -362,6 +371,16 @@ private:
     void set_user_status(const String& message) {
         user_status_message = true;
         status_message = message;
+    }
+
+    void consume_game_library_save_result() {
+        String& result_message = getData().game_library_save_request_info.result_message;
+        if (result_message.empty()) {
+            return;
+        }
+        set_user_status(result_message);
+        result_message.clear();
+        write_cache();
     }
 
     void start_search(bool force_refresh = false) {
@@ -979,6 +998,7 @@ private:
             }
             getData().graph_resources.nodes[GRAPH_MODE_NORMAL][i].opening_name = opening_name;
         }
+        update_xot_identification(&getData().graph_resources);
         getData().graph_resources.need_init = false;
         getData().history_elem = getData().graph_resources.nodes[GRAPH_MODE_NORMAL].back();
         changeScene(U"Main_scene", SCENE_FADE_TIME);
@@ -997,23 +1017,33 @@ private:
         write_cache();
         std::vector<int> indices(selected_indices.begin(), selected_indices.end());
         std::sort(indices.begin(), indices.end());
-        int saved = 0;
-        int skipped = 0;
+        Game_library_save_request_info& save_request = getData().game_library_save_request_info;
+        save_request.init();
+        save_request.active = true;
+        save_request.return_scene = U"Import_othello_quest";
+        save_request.initial_subfolder = "othello_quest/" + oq_mode_folder(searched_mode).narrow();
         for (int idx : indices) {
             if (0 <= idx && idx < (int)games.size() && games[idx].detail_state == Detail_state::Ready && !games[idx].transcript.empty()) {
-                if (save_game_to_oq_library(games[idx])) {
-                    ++saved;
-                } else {
-                    ++skipped;
-                }
+                Oq_game& game = games[idx];
+                Game_library_pending_save pending;
+                pending.filename_stem = make_oq_filename_stem(game);
+                pending.black_player_name = game.black_name;
+                pending.white_player_name = game.white_name;
+                pending.memo = user_result_summary(game);
+                pending.history = game.history;
+                pending.game_date = display_date(game.created).substr(0, 10);
+                pending.black_score = game.black_score;
+                pending.white_score = game.white_score;
+                save_request.pending_games.emplace_back(std::move(pending));
             }
         }
-        if (saved > 0) {
-            set_user_status(U"Saved " + Format(saved) + U" game" + (saved == 1 ? U"" : U"s") + U" to Game Library.");
-        } else {
-            set_user_status(U"No new games to save.");
+        if (save_request.pending_games.empty()) {
+            save_request.init();
+            set_user_status(U"Selected game details are still loading.");
+            write_cache();
+            return;
         }
-        write_cache();
+        changeScene(U"Game_library", SCENE_FADE_TIME);
     }
 
     void apply_selected_game_information(const Oq_game& game) {
@@ -1053,16 +1083,21 @@ private:
     }
 
     String make_oq_filename_date(const Oq_game& game) const {
-        String stem = display_date(game.created).replaced(U"-", U"_").replaced(U":", U"_").replaced(U" ", U"_");
-        if (!game.id.empty()) {
-            stem += U"_" + game.id;
-        }
+        const String stem = make_oq_filename_stem(game);
         const String base = oq_library_base_dir();
         String candidate = stem;
         for (int suffix = 1; FileSystem::Exists(base + candidate + U".json") && suffix < 1000; ++suffix) {
             candidate = stem + U"_" + Format(suffix);
         }
         return candidate;
+    }
+
+    String make_oq_filename_stem(const Oq_game& game) const {
+        String stem = display_date(game.created).replaced(U"-", U"_").replaced(U":", U"_").replaced(U" ", U"_");
+        if (!game.id.empty()) {
+            stem += U"_" + game.id;
+        }
+        return stem;
     }
 
     bool oq_library_has_duplicate_history(const String& base_dir, const std::vector<History_elem>& history) const {
@@ -1666,6 +1701,7 @@ private:
             getData().graph_resources.nodes[getData().graph_resources.branch].insert(getData().graph_resources.nodes[getData().graph_resources.branch].begin() + insert_place, history_elem);
         }
         getData().graph_resources.n_discs = n_discs;
+        update_xot_identification(&getData().graph_resources);
         getData().graph_resources.need_init = false;
         getData().history_elem = getData().graph_resources.nodes[getData().graph_resources.branch].back();
         changeScene(U"Main_scene", SCENE_FADE_TIME);
@@ -1683,6 +1719,7 @@ private:
     Button back_button;
     Button up_button;
     Button add_folder_button;
+    Button save_here_button;
     Button select_all_button;
     Button copy_button;
     Button cut_button;
@@ -1716,7 +1753,15 @@ private:
     std::vector<Clipboard_item> clipboard_items;
 
     void sync_last_opened_subfolder() {
+        if (is_save_request_active()) {
+            return;
+        }
         getData().user_settings.input_game_last_subfolder = explorer_state.subfolder;
+    }
+
+    bool is_save_request_active() const {
+        const Game_library_save_request_info& request = getData().game_library_save_request_info;
+        return request.active && !request.pending_games.empty();
     }
 
     void ensure_game_library_system_folders() const {
@@ -1780,6 +1825,7 @@ public:
         set_scene_ime_enabled(true);
         back_button.init(GO_BACK_BUTTON_BACK_SX, GO_BACK_BUTTON_SY, GO_BACK_BUTTON_WIDTH, GO_BACK_BUTTON_HEIGHT, GO_BACK_BUTTON_RADIUS, language.get("common", "back"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
         add_folder_button.init(GO_BACK_BUTTON_GO_SX, GO_BACK_BUTTON_SY, GO_BACK_BUTTON_WIDTH, GO_BACK_BUTTON_HEIGHT, GO_BACK_BUTTON_RADIUS, language.get("in_out", "new_folder"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
+        save_here_button.init(BUTTON3_2_SX, BUTTON3_SY, BUTTON3_WIDTH, BUTTON3_HEIGHT, BUTTON3_RADIUS, language.get("in_out", "save_here"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
         create_folder_button.init(GO_BACK_BUTTON_GO_SX, GO_BACK_BUTTON_SY, GO_BACK_BUTTON_WIDTH, GO_BACK_BUTTON_HEIGHT, GO_BACK_BUTTON_RADIUS, language.get("in_out", "create"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
         up_button.init(IMPORT_GAME_SX, IMPORT_GAME_SY - 30, 28, 24, 4, U"↑", 16, getData().fonts.font, getData().colors.white, getData().colors.black);
         select_all_button.init(24, 36, 100, 28, 8, U"Select all", 12, getData().fonts.font, getData().colors.white, getData().colors.black);
@@ -1791,8 +1837,17 @@ public:
         inline_edit_ok_button.init(0, 0, 70, 30, 8, language.get("common", "ok"), 18, getData().fonts.font, getData().colors.white, getData().colors.black);
         failed = false;
         ensure_game_library_system_folders();
-        // Initialize current dir and load games
-        restore_last_opened_subfolder();
+        if (is_save_request_active()) {
+            explorer_state.clear();
+            explorer_state.subfolder = getData().game_library_save_request_info.initial_subfolder;
+            String root_dir = explorer::build_root_dir(getData().directories.document_dir, "games");
+            String current_dir = explorer::build_current_dir(root_dir, explorer_state);
+            if (!FileSystem::IsDirectory(current_dir)) {
+                explorer_state.clear();
+            }
+        } else {
+            restore_last_opened_subfolder();
+        }
         sync_last_opened_subfolder();
         enumerate_current_dir();
         load_games();
@@ -1815,15 +1870,22 @@ public:
             return;
         }
 
+        update_bottom_button_layout();
         back_button.draw();
         if (back_button.clicked()) {
             if (renaming_folder) {
                 cancel_folder_rename();
+            } else if (is_save_request_active()) {
+                cancel_save_request_and_return();
             } else {
                 getData().graph_resources.need_init = false;
                 changeScene(U"Main_scene", SCENE_FADE_TIME);
             }
         } else if (!renaming_folder && escape_pressed) {
+            if (is_save_request_active()) {
+                cancel_save_request_and_return();
+                return;
+            }
             getData().graph_resources.need_init = false;
             changeScene(U"Main_scene", SCENE_FADE_TIME);
         }
@@ -1928,6 +1990,23 @@ public:
     }
 
 private:
+    void update_bottom_button_layout() {
+        if (is_save_request_active()) {
+            back_button.move(BUTTON3_1_SX, BUTTON3_SY);
+            save_here_button.move(BUTTON3_2_SX, BUTTON3_SY);
+            add_folder_button.move(BUTTON3_3_SX, BUTTON3_SY);
+        } else {
+            back_button.move(GO_BACK_BUTTON_BACK_SX, GO_BACK_BUTTON_SY);
+            add_folder_button.move(GO_BACK_BUTTON_GO_SX, GO_BACK_BUTTON_SY);
+        }
+    }
+
+    void cancel_save_request_and_return() {
+        String return_scene = getData().game_library_save_request_info.return_scene;
+        getData().game_library_save_request_info.init();
+        changeScene(return_scene.empty() ? U"Import_othello_quest" : return_scene, SCENE_FADE_TIME);
+    }
+
     void init_scroll_manager() {
         int parent_offset = explorer_state.has_parent() ? 1 : 0;  // Add parent folder if not at root
         int total = parent_offset + (int)folders_display.size() + (int)games.size();
@@ -2195,6 +2274,9 @@ private:
         const CSV csv{ csv_path };
         if (csv) {
             for (size_t row = 0; row < csv.rows(); ++row) {
+                if (csv[row].size() < 6) {
+                    continue;
+                }
                 Game_abstract game_abstract;
                 game_abstract.filename_date = csv[row][0];
                 game_abstract.black_player = csv[row][1];
@@ -2292,6 +2374,19 @@ private:
     }
 
     void draw_folder_management_ui() {
+        if (is_save_request_active()) {
+            if (renaming_folder) {
+                save_here_button.disable_notransparent();
+            } else {
+                save_here_button.enable();
+            }
+            save_here_button.draw();
+            if (!renaming_folder && save_here_button.clicked()) {
+                save_pending_games_here();
+                return;
+            }
+        }
+
         if (renaming_folder) {
             add_folder_button.disable_notransparent();
         } else {
@@ -2751,10 +2846,8 @@ private:
     // Move a game to a different folder (relative to current subfolder)
     void move_game_to_folder(int game_index, const std::string& target_folder) {
         if (game_index < 0 || game_index >= (int)games.size()) return;
-        
-        const Game_abstract& game = games[game_index];
-        
-        // Source and target paths
+
+        const Game_abstract game = games[game_index];
         String source_base = get_base_dir();
         String target_base = Unicode::Widen(getData().directories.document_dir) + U"games/";
         if (!explorer_state.subfolder.empty()) {
@@ -2763,78 +2856,74 @@ private:
         if (!target_folder.empty()) {
             target_base += Unicode::Widen(target_folder) + U"/";
         }
-        
-        std::cerr << "Moving game (relative):" << std::endl;
-        std::cerr << "  Current subfolder: " << explorer_state.subfolder << std::endl;
-        std::cerr << "  Target folder: " << target_folder << std::endl;
-        std::cerr << "  Source base: " << source_base.narrow() << std::endl;
-        std::cerr << "  Target base: " << target_base.narrow() << std::endl;
-        
-        // Ensure target directory exists
+
         if (!FileSystem::Exists(target_base)) {
             FileSystem::CreateDirectories(target_base);
         }
-        
-        // Move JSON file
-        String source_json = source_base + game.filename_date + U".json";
-        String target_json = target_base + game.filename_date + U".json";
-        if (FileSystem::Exists(source_json)) {
-            FileSystem::Copy(source_json, target_json);
-            FileSystem::Remove(source_json);
+
+        const String source_json = source_base + game.filename_date + U".json";
+        String target_name = game.filename_date;
+        String target_json = target_base + target_name + U".json";
+        if (FileSystem::Exists(target_json)) {
+            target_json = make_unique_child_path(target_base, target_name, false);
+            if (target_json.empty()) {
+                return;
+            }
+            target_name = FileSystem::BaseName(target_json).replaced(U".json", U"");
         }
-        
-        // Update CSV files
+        if (FileSystem::FullPath(source_json) == FileSystem::FullPath(target_json)) {
+            return;
+        }
+        if (!FileSystem::Exists(source_json) || !FileSystem::Copy(source_json, target_json)) {
+            return;
+        }
+        FileSystem::Remove(source_json);
+
         remove_game_from_csv(game_index);
-        add_game_to_target_csv(game, target_base);
-        
-        // Refresh current view
+        add_game_to_target_csv(game_with_filename(game, target_name), target_base);
+
         load_games();
         init_scroll_manager();
-        
-        std::cerr << "Moved game " << game.filename_date.narrow() << " to " << target_folder << std::endl;
     }
 
     // Move a game to an absolute folder path (from root)
     void move_game_to_absolute_folder(int game_index, const std::string& target_folder) {
         if (game_index < 0 || game_index >= (int)games.size()) return;
-        
-        const Game_abstract& game = games[game_index];
-        
-        // Source and target paths
+
+        const Game_abstract game = games[game_index];
         String source_base = get_base_dir();
         String target_base = Unicode::Widen(getData().directories.document_dir) + U"games/";
         if (!target_folder.empty()) {
             target_base += Unicode::Widen(target_folder) + U"/";
         }
-        
-        std::cerr << "Moving game (absolute):" << std::endl;
-        std::cerr << "  Current subfolder: " << explorer_state.subfolder << std::endl;
-        std::cerr << "  Target folder: " << target_folder << std::endl;
-        std::cerr << "  Source base: " << source_base.narrow() << std::endl;
-        std::cerr << "  Target base: " << target_base.narrow() << std::endl;
-        
-        // Ensure target directory exists
+
         if (!FileSystem::Exists(target_base)) {
             FileSystem::CreateDirectories(target_base);
         }
-        
-        // Move JSON file
-        String source_json = source_base + game.filename_date + U".json";
-        String target_json = target_base + game.filename_date + U".json";
-        if (FileSystem::Exists(source_json)) {
-            FileSystem::Copy(source_json, target_json);
-            FileSystem::Remove(source_json);
+
+        const String source_json = source_base + game.filename_date + U".json";
+        String target_name = game.filename_date;
+        String target_json = target_base + target_name + U".json";
+        if (FileSystem::Exists(target_json)) {
+            target_json = make_unique_child_path(target_base, target_name, false);
+            if (target_json.empty()) {
+                return;
+            }
+            target_name = FileSystem::BaseName(target_json).replaced(U".json", U"");
         }
-        
-        // Update CSV files
+        if (FileSystem::FullPath(source_json) == FileSystem::FullPath(target_json)) {
+            return;
+        }
+        if (!FileSystem::Exists(source_json) || !FileSystem::Copy(source_json, target_json)) {
+            return;
+        }
+        FileSystem::Remove(source_json);
+
         remove_game_from_csv(game_index);
-        add_game_to_target_csv(game, target_base);
-        
-        // Refresh current view
+        add_game_to_target_csv(game_with_filename(game, target_name), target_base);
+
         load_games();
         init_scroll_manager();
-        
-        std::cerr << "Moved game " << game.filename_date.narrow() << " to " << target_folder << std::endl;
     }
     
     // Move a folder to a different folder (relative to current subfolder)
@@ -3019,16 +3108,123 @@ private:
         int csv_row_to_remove = (int)games.size() - 1 - game_index;
         
         for (int i = 0; i < (int)csv.rows(); ++i) {
-            if (i != csv_row_to_remove && csv[i].size() >= 6) {
-                for (int j = 0; j < 6; ++j) {
-                    new_csv.write(csv[i][j]);
-                }
-                new_csv.newLine();
+            if (i == csv_row_to_remove || csv[i].size() < 1) {
+                continue;
             }
+            for (size_t j = 0; j < csv[i].size(); ++j) {
+                new_csv.write(csv[i][j]);
+            }
+            new_csv.newLine();
         }
         new_csv.save(csv_path);
     }
     
+    void save_pending_games_here() {
+        Game_library_save_request_info& request = getData().game_library_save_request_info;
+        if (!is_save_request_active()) {
+            return;
+        }
+        const String target_base = get_base_dir();
+        ensure_summary_folder(target_base);
+
+        int saved = 0;
+        int skipped = 0;
+        for (const Game_library_pending_save& pending : request.pending_games) {
+            if (pending.history.empty() || current_dir_has_duplicate_history(target_base, pending.history)) {
+                ++skipped;
+                continue;
+            }
+            const String filename = make_unique_pending_filename(target_base, pending.filename_stem);
+            game_save_helper::save_game_to_file(
+                target_base,
+                filename,
+                pending.black_player_name,
+                pending.white_player_name,
+                pending.memo,
+                pending.history,
+                pending.game_date,
+                pending.black_score,
+                pending.white_score
+            );
+            ++saved;
+        }
+
+        String message;
+        if (saved > 0) {
+            message = U"Saved " + Format(saved) + U" game" + (saved == 1 ? U"" : U"s") + U" to Game Library.";
+            if (skipped > 0) {
+                message += U" Skipped " + Format(skipped) + U" duplicate" + (skipped == 1 ? U"" : U"s") + U".";
+            }
+        } else {
+            message = U"No new games to save here.";
+        }
+
+        const String return_scene = request.return_scene.empty() ? U"Import_othello_quest" : request.return_scene;
+        request.init();
+        request.result_message = message;
+        changeScene(return_scene, SCENE_FADE_TIME);
+    }
+
+    String make_unique_pending_filename(const String& target_base, const String& filename_stem) const {
+        const String stem = filename_stem.empty() ? U"othello_quest_game" : filename_stem;
+        String candidate = stem;
+        for (int suffix = 1; FileSystem::Exists(target_base + candidate + U".json") && suffix < 1000; ++suffix) {
+            candidate = stem + U"_" + Format(suffix);
+        }
+        return candidate;
+    }
+
+    bool current_dir_has_duplicate_history(const String& base_dir, const std::vector<History_elem>& history) const {
+        if (history.empty() || !FileSystem::IsDirectory(base_dir)) {
+            return false;
+        }
+        const String signature = game_library_history_signature(history);
+        for (const auto& path : FileSystem::DirectoryContents(base_dir)) {
+            if (FileSystem::IsDirectory(path) || FileSystem::Extension(path).lowercased() != U"json") {
+                continue;
+            }
+            JSON json = JSON::Load(path);
+            if (!json) {
+                continue;
+            }
+            if (json_game_library_history_signature(json) == signature) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    static String game_library_history_signature(const std::vector<History_elem>& history) {
+        String signature;
+        for (const History_elem& elem : history) {
+            signature += Format(elem.board.n_discs()) + U":";
+            signature += Format(elem.board.player) + U":";
+            signature += Format(elem.board.opponent) + U":";
+            signature += Format(elem.player) + U";";
+        }
+        return signature;
+    }
+
+    static String json_game_library_history_signature(JSON json) {
+        String signature;
+        for (int n_discs = 4; n_discs <= HW2; ++n_discs) {
+            const String key = Format(n_discs);
+            if (!json[key].isObject()) {
+                continue;
+            }
+            if (json[key][GAME_BOARD_PLAYER].getType() != JSONValueType::Number ||
+                json[key][GAME_BOARD_OPPONENT].getType() != JSONValueType::Number ||
+                json[key][GAME_PLAYER].getType() != JSONValueType::Number) {
+                continue;
+            }
+            signature += key + U":";
+            signature += Format(json[key][GAME_BOARD_PLAYER].get<uint64_t>()) + U":";
+            signature += Format(json[key][GAME_BOARD_OPPONENT].get<uint64_t>()) + U":";
+            signature += Format(json[key][GAME_PLAYER].get<int>()) + U";";
+        }
+        return signature;
+    }
+
     // Add game to target folder's CSV
     void add_game_to_target_csv(const Game_abstract& game, const String& target_base) {
         String target_csv = target_base + U"summary.csv";
@@ -3193,6 +3389,7 @@ public:
                 getData().graph_resources.nodes[0].emplace_back(history_elem);
                 getData().graph_resources.n_discs = board.n_discs();
                 getData().game_information.init();
+                update_xot_identification(&getData().graph_resources);
                 getData().graph_resources.need_init = false;
                 getData().history_elem = getData().graph_resources.nodes[0].back();
                 changeScene(U"Main_scene", SCENE_FADE_TIME);
@@ -3368,8 +3565,14 @@ inline bool load_game_from_json(
         data.graph_resources.nodes[GRAPH_MODE_NORMAL][i].opening_name = opening_name;
     }
     
+    if (data.graph_resources.nodes[GRAPH_MODE_NORMAL].empty()) {
+        std::cerr << "Game JSON contains no valid history nodes: " << json_path.narrow() << std::endl;
+        return false;
+    }
+
     // Set up final state
     data.graph_resources.n_discs = data.graph_resources.nodes[GRAPH_MODE_NORMAL].back().board.n_discs();
+    update_xot_identification(&data.graph_resources);
     data.graph_resources.need_init = false;
     data.history_elem = data.graph_resources.nodes[GRAPH_MODE_NORMAL].back();
     

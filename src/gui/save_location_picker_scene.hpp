@@ -196,6 +196,9 @@ private:
         const CSV csv{ csv_path };
         if (csv) {
             for (size_t row = 0; row < csv.rows(); ++row) {
+                if (csv[row].size() < 6) {
+                    continue;
+                }
                 Game_abstract game_abstract;
                 game_abstract.filename_date = csv[row][0];
                 game_abstract.black_player = csv[row][1];
@@ -250,7 +253,28 @@ private:
         }
         persist_picker_games_order_to_csv();
     }
-    
+
+    String make_unique_picker_child_path(const String& target_dir, const String& name, bool folder) const {
+        String candidate = target_dir + name + (folder ? U"/" : U".json");
+        if (!FileSystem::Exists(candidate)) {
+            return candidate;
+        }
+        for (int i = 1; i < 1000; ++i) {
+            String suffix = U" (" + Format(i) + U")";
+            candidate = target_dir + name + suffix + (folder ? U"/" : U".json");
+            if (!FileSystem::Exists(candidate)) {
+                return candidate;
+            }
+        }
+        return U"";
+    }
+
+    Game_abstract picker_game_with_filename(const Game_abstract& game, const String& filename_date) const {
+        Game_abstract copied = game;
+        copied.filename_date = filename_date;
+        return copied;
+    }
+
     void move_picker_game_to_parent(int game_index) {
         if (picker_subfolder.empty()) return;
         
@@ -277,9 +301,9 @@ private:
     
     void move_picker_game_to_folder(int game_index, const std::string& target_folder) {
         if (game_index < 0 || game_index >= (int)picker_games.size()) return;
-        
-        const Game_abstract& game = picker_games[game_index];
-        
+
+        const Game_abstract game = picker_games[game_index];
+
         String source_base = Unicode::Widen(getData().directories.document_dir) + U"games/";
         if (!picker_subfolder.empty()) {
             source_base += Unicode::Widen(picker_subfolder) + U"/";
@@ -288,21 +312,32 @@ private:
         if (!target_folder.empty()) {
             target_base += Unicode::Widen(target_folder) + U"/";
         }
-        
+
         if (!FileSystem::Exists(target_base)) {
             FileSystem::CreateDirectories(target_base);
         }
-        
-        String source_json = source_base + game.filename_date + U".json";
-        String target_json = target_base + game.filename_date + U".json";
-        if (FileSystem::Exists(source_json)) {
-            FileSystem::Copy(source_json, target_json);
-            FileSystem::Remove(source_json);
+
+        const String source_json = source_base + game.filename_date + U".json";
+        String target_name = game.filename_date;
+        String target_json = target_base + target_name + U".json";
+        if (FileSystem::Exists(target_json)) {
+            target_json = make_unique_picker_child_path(target_base, target_name, false);
+            if (target_json.empty()) {
+                return;
+            }
+            target_name = FileSystem::BaseName(target_json).replaced(U".json", U"");
         }
-        
+        if (FileSystem::FullPath(source_json) == FileSystem::FullPath(target_json)) {
+            return;
+        }
+        if (!FileSystem::Exists(source_json) || !FileSystem::Copy(source_json, target_json)) {
+            return;
+        }
+        FileSystem::Remove(source_json);
+
         remove_picker_game_from_csv(game_index);
-        add_picker_game_to_target_csv(game, target_base);
-        
+        add_picker_game_to_target_csv(picker_game_with_filename(game, target_name), target_base);
+
         enumerate_save_dir();
         init_folder_scroll_manager();
     }
@@ -349,12 +384,13 @@ private:
         int csv_row_to_remove = (int)picker_games.size() - 1 - game_index;
         
         for (int i = 0; i < (int)csv.rows(); ++i) {
-            if (i != csv_row_to_remove && csv[i].size() >= 6) {
-                for (int j = 0; j < 6; ++j) {
-                    new_csv.write(csv[i][j]);
-                }
-                new_csv.newLine();
+            if (i == csv_row_to_remove || csv[i].size() < 1) {
+                continue;
             }
+            for (size_t j = 0; j < csv[i].size(); ++j) {
+                new_csv.write(csv[i][j]);
+            }
+            new_csv.newLine();
         }
         new_csv.save(csv_path);
     }
