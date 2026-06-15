@@ -226,8 +226,6 @@ Menu create_menu(Menu_elements* menu_elements, Resources *resources, Font font, 
 
     title.init(language.get("in_out", "in_out"));
         menu_e.init_button(language.get("in_out", "game_library") + get_shortcut_key_info(U"game_library"), &menu_elements->game_library);
-            side_menu.init_check(language.get("in_out", "enable_recycle_bin"), &menu_elements->enable_recycle_bin, menu_elements->enable_recycle_bin);
-            menu_e.push(side_menu);
         title.push(menu_e);
         menu_e.init_button(language.get("in_out", "in"), &menu_elements->dummy);
             side_menu.init_button(language.get("in_out", "input_from_clipboard") + get_shortcut_key_info(U"input_from_clipboard"), &menu_elements->input_from_clipboard);

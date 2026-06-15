@@ -1338,9 +1338,6 @@ private:
     }
 
     void menu_in_out() {
-        if (shortcut_key == U"enable_recycle_bin") {
-            getData().menu_elements.enable_recycle_bin = !getData().menu_elements.enable_recycle_bin;
-        }
         if (getData().menu_elements.input_from_clipboard || shortcut_key == U"input_from_clipboard") {
             changing_scene = true;
             stop_calculating();

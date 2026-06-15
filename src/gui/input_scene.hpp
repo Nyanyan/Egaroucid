@@ -1861,6 +1861,55 @@ private:
         return getData().menu_elements.enable_recycle_bin;
     }
 
+    void refresh_after_recycle_bin_visibility_change() {
+        clear_selection();
+        if (!recycle_bin_visible() && in_recycle_bin()) {
+            explorer_state.clear();
+        }
+        sync_last_opened_subfolder();
+        enumerate_current_dir();
+        load_games();
+        init_scroll_manager();
+    }
+
+    void draw_recycle_bin_checkbox() {
+        const String label = language.get("in_out", "enable_recycle_bin");
+        constexpr int checkbox_size = 18;
+        int font_size = 13;
+        double label_width = getData().fonts.font(label).region(font_size, Vec2{ 0, 0 }).w;
+        while (font_size > 10 && label_width > 220.0) {
+            --font_size;
+            label_width = getData().fonts.font(label).region(font_size, Vec2{ 0, 0 }).w;
+        }
+
+        const double gap = 8.0;
+        const double total_width = checkbox_size + gap + label_width;
+        const double x = WINDOW_SIZE_X - 24.0 - total_width;
+        const double y = 9.0;
+        const RectF checkbox_rect(x, y, checkbox_size, checkbox_size);
+        const RectF hit_rect(x, y - 4.0, total_width, checkbox_size + 8.0);
+
+        if (hit_rect.mouseOver()) {
+            Cursor::RequestStyle(CursorStyle::Hand);
+        }
+
+        const bool enabled = recycle_bin_visible();
+        const Texture& checkbox_tex = enabled ? getData().resources.checkbox : getData().resources.unchecked;
+        if (checkbox_tex) {
+            checkbox_tex.resized(checkbox_size).draw(checkbox_rect.pos);
+        } else if (enabled) {
+            checkbox_rect.draw(getData().colors.white);
+        } else {
+            checkbox_rect.drawFrame(2.0, getData().colors.white.withAlpha(120));
+        }
+        getData().fonts.font(label).draw(font_size, Arg::leftCenter(x + checkbox_size + gap, y + checkbox_size / 2.0), getData().colors.white);
+
+        if (hit_rect.leftClicked()) {
+            getData().menu_elements.enable_recycle_bin = !enabled;
+            refresh_after_recycle_bin_visibility_change();
+        }
+    }
+
     bool is_protected_system_folder(const String& folder_name) const {
         if (explorer_state.subfolder.empty()) {
             return folder_name == U"othello_quest" || folder_name == U"recycle_bin";
@@ -1939,6 +1988,8 @@ public:
             draw_folder_creation_overlay(enter_pressed, escape_pressed);
             return;
         }
+
+        draw_recycle_bin_checkbox();
 
         update_bottom_button_layout();
         back_button.draw();

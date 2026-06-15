@@ -162,7 +162,6 @@ std::vector<Shortcut_key_elem> shortcut_keys_default = {
     {U"edit_board",             {U"Ctrl", U"E"},        {{"in_out", "in_out"}, {"in_out", "in"}, {"in_out", "edit_board"}}},
     {U"input_bitboard",         {},                     {{"in_out", "in_out"}, {"in_out", "in"}, {"in_out", "input_bitboard"}}},
     {U"game_library",           {},                     {{"in_out", "in_out"}, {"in_out", "game_library"}}},
-    {U"enable_recycle_bin",      {},                     {{"in_out", "in_out"}, {"in_out", "enable_recycle_bin"}}},
     // output
     {U"output_transcript",      {U"Ctrl", U"C"},        {{"in_out", "in_out"}, {"in_out", "out"}, {"in_out", "output_transcript"}}},
     {U"output_board",           {},                     {{"in_out", "in_out"}, {"in_out", "out"}, {"in_out", "output_board"}}},
