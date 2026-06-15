@@ -14,9 +14,11 @@
 #include <cctype>
 #include <string>
 #include <stdexcept>
+#include <unordered_set>
 #include <Siv3D.hpp>
 #include "./../engine/engine_all.hpp"
 #include "function/function_all.hpp"
+#include "draw.hpp"
 
 
 // Opening abstract structure for list display
@@ -72,6 +74,9 @@ private:
     TextAreaEditState folder_rename_area;
     TextAreaEditState folder_weight_area;
     bool current_folder_effective_enabled;
+    std::unordered_set<int> selected_folder_indices;
+    std::unordered_set<int> selected_opening_indices;
+    int selection_anchor_row = -1;
 
     bool is_locking_bottom_buttons() const {
         return editing_elem || renaming_folder;
@@ -322,7 +327,60 @@ public:
             }
             scroll_manager.init(770, OPENING_SETTING_SY + 8, 10, OPENING_SETTING_HEIGHT * OPENING_SETTING_N_GAMES_ON_WINDOW, 20, total, OPENING_SETTING_N_GAMES_ON_WINDOW, OPENING_SETTING_SX, 73, OPENING_SETTING_WIDTH + 10, OPENING_SETTING_HEIGHT * OPENING_SETTING_N_GAMES_ON_WINDOW);
         }
-        
+
+        int selection_row_for_folder(int idx) const {
+            return explorer::selection_row_for_folder(idx, (int)folders_display.size());
+        }
+
+        int selection_row_for_opening(int idx) const {
+            return explorer::selection_row_for_item(idx, (int)folders_display.size(), (int)openings.size());
+        }
+
+        void clear_selection() {
+            explorer::clear_selection(selected_folder_indices, selected_opening_indices, selection_anchor_row);
+        }
+
+        void prune_selection() {
+            explorer::prune_selection(
+                selected_folder_indices,
+                selected_opening_indices,
+                selection_anchor_row,
+                (int)folders_display.size(),
+                (int)openings.size()
+            );
+        }
+
+        void handle_selection_click(int row, bool ctrl_pressed, bool shift_pressed) {
+            explorer::handle_selection_click(
+                selected_folder_indices,
+                selected_opening_indices,
+                selection_anchor_row,
+                row,
+                (int)folders_display.size(),
+                (int)openings.size(),
+                ctrl_pressed,
+                shift_pressed
+            );
+        }
+
+        void draw_selection_highlights_foreground() {
+            prune_selection();
+            draw_explorer_selection_highlights_foreground(
+                scroll_manager,
+                has_parent,
+                (int)folders_display.size(),
+                (int)openings.size(),
+                selected_folder_indices,
+                selected_opening_indices,
+                OPENING_SETTING_SX,
+                OPENING_SETTING_SY + 8,
+                OPENING_SETTING_WIDTH,
+                OPENING_SETTING_HEIGHT,
+                OPENING_SETTING_N_GAMES_ON_WINDOW,
+                getData().colors.white
+            );
+        }
+         
         std::string build_child_relative_path(const std::string& child) const {
             if (subfolder.empty()) {
                 return child;
@@ -817,6 +875,7 @@ public:
         
         // Navigate to folder
         void navigate_to_folder(const String& folder_name) {
+            clear_selection();
             if (subfolder.size()) subfolder += "/";
             subfolder += folder_name.narrow();
             sync_last_opened_subfolder();
@@ -828,7 +887,8 @@ public:
         // Navigate to parent folder
         void navigate_to_parent() {
             if (subfolder.empty()) return;
-            
+            clear_selection();
+             
             std::string s = subfolder;
             if (!s.empty() && s.back() == '/') s.pop_back();
             size_t pos = s.find_last_of('/');
@@ -890,6 +950,7 @@ public:
                                 navigate_to_folder(folders_display[i].name);
                                 return;
                             }
+                            handle_selection_click(selection_row_for_folder(i), KeyControl.pressed(), KeyShift.pressed());
                             last_click_time = current_time;
                             last_clicked_folder = folders_display[i].name;
                         }
@@ -904,6 +965,9 @@ public:
                 handle_folder_navigation();
             }
             draw_openings_list();
+            if (!(adding_elem || editing_elem || renaming_folder)) {
+                draw_selection_highlights_foreground();
+            }
         }
         
         // Draw openings list
@@ -1286,6 +1350,9 @@ public:
                 // Draw weight with multiplication sign (unified with folder display)
                 String weight_str = Format(U"×", opening.weight);
                 getData().fonts.font(weight_str).draw(15, Arg::leftCenter(OPENING_SETTING_SX + OPENING_SETTING_WIDTH - 140, sy + OPENING_SETTING_HEIGHT / 2), text_color);
+                if (rect.leftClicked() && !drag_state.is_dragging) {
+                    handle_selection_click(selection_row_for_opening(idx), KeyControl.pressed(), KeyShift.pressed());
+                }
             }
 
             if (drag_state.is_dragging_opening && drag_state.is_dragging && rect.contains(drag_state.current_mouse_pos) && !drag_state.is_dragging_folder) {
@@ -1412,7 +1479,77 @@ public:
             std::cerr << "Total weight sum: " << total_weight << std::endl;
             std::cerr << "=== End of Forced Openings ===\n" << std::endl;
         }
-        
+
+        bool dragged_item_is_selected() const {
+            if (drag_state.is_dragging_opening && drag_state.dragged_opening_index >= 0) {
+                return selected_opening_indices.count(drag_state.dragged_opening_index) != 0;
+            }
+            if (drag_state.is_dragging_folder && !drag_state.dragged_folder_name.isEmpty()) {
+                for (int folder_index : selected_folder_indices) {
+                    if (folder_index >= 0 && folder_index < (int)folders_display.size() && folders_display[folder_index].name == drag_state.dragged_folder_name) {
+                        return true;
+                    }
+                }
+            }
+            return false;
+        }
+
+        std::string parent_subfolder() const {
+            std::string parent_folder = subfolder;
+            if (!parent_folder.empty() && parent_folder.back() == '/') {
+                parent_folder.pop_back();
+            }
+            size_t pos = parent_folder.find_last_of('/');
+            if (pos == std::string::npos) {
+                return "";
+            }
+            return parent_folder.substr(0, pos);
+        }
+
+        void move_folder_to_absolute_folder(const std::string& folder_name, const std::string& target_folder) {
+            String source_path = Unicode::Widen(getData().directories.document_dir) + U"/forced_openings/";
+            if (!subfolder.empty()) {
+                source_path += Unicode::Widen(subfolder) + U"/";
+            }
+            source_path += Unicode::Widen(folder_name);
+
+            String target_parent = Unicode::Widen(getData().directories.document_dir) + U"/forced_openings/";
+            if (!target_folder.empty()) {
+                target_parent += Unicode::Widen(target_folder) + U"/";
+            }
+
+            if (move_folder(source_path, target_parent, Unicode::Widen(folder_name))) {
+                enumerate_current_dir();
+                load_openings();
+            }
+        }
+
+        void move_selected_items_to_absolute_folder(const std::string& target_folder) {
+            std::vector<std::string> folder_names;
+            folder_names.reserve(selected_folder_indices.size());
+            for (int folder_index : selected_folder_indices) {
+                if (folder_index >= 0 && folder_index < (int)folders_display.size()) {
+                    folder_names.emplace_back(folders_display[folder_index].name.narrow());
+                }
+            }
+
+            std::vector<int> opening_indices(selected_opening_indices.begin(), selected_opening_indices.end());
+            std::sort(opening_indices.rbegin(), opening_indices.rend());
+            for (int opening_index : opening_indices) {
+                if (opening_index >= 0 && opening_index < (int)openings.size()) {
+                    move_opening_to_absolute_folder(opening_index, target_folder);
+                }
+            }
+
+            for (const std::string& folder_name : folder_names) {
+                move_folder_to_absolute_folder(folder_name, target_folder);
+            }
+
+            clear_selection();
+            enumerate_current_dir();
+            load_openings();
+        }
+         
         // Handle drag and drop
         void handle_drag_and_drop() {
             drag_state.current_mouse_pos = Cursor::Pos();
@@ -1447,10 +1584,13 @@ public:
                         int item_sy = sy + (parent_row - strt_idx_int) * OPENING_SETTING_HEIGHT;
                         Rect parent_rect(OPENING_SETTING_SX, item_sy, OPENING_SETTING_WIDTH, OPENING_SETTING_HEIGHT);
                         if (parent_rect.contains(drag_state.current_mouse_pos)) {
-                            if (drag_state.is_dragging_opening && drag_state.dragged_opening_index >= 0) {
-                                move_opening_to_parent(drag_state.dragged_opening_index);
+                            const std::string target_folder = parent_subfolder();
+                            if (dragged_item_is_selected()) {
+                                move_selected_items_to_absolute_folder(target_folder);
+                            } else if (drag_state.is_dragging_opening && drag_state.dragged_opening_index >= 0) {
+                                move_opening_to_absolute_folder(drag_state.dragged_opening_index, target_folder);
                             } else if (drag_state.is_dragging_folder && !drag_state.dragged_folder_name.isEmpty()) {
-                                move_folder_to_parent(drag_state.dragged_folder_name.narrow());
+                                move_folder_to_absolute_folder(drag_state.dragged_folder_name.narrow(), target_folder);
                             }
                             handled = true;
                         }
@@ -1469,10 +1609,13 @@ public:
                                 if (drag_state.is_dragging_folder && target_folder == drag_state.dragged_folder_name) {
                                     continue;
                                 }
-                                if (drag_state.is_dragging_opening && drag_state.dragged_opening_index >= 0) {
-                                    move_opening_to_folder(drag_state.dragged_opening_index, target_folder.narrow());
+                                const std::string target_relative_folder = build_child_relative_path(target_folder.narrow());
+                                if (dragged_item_is_selected()) {
+                                    move_selected_items_to_absolute_folder(target_relative_folder);
+                                } else if (drag_state.is_dragging_opening && drag_state.dragged_opening_index >= 0) {
+                                    move_opening_to_absolute_folder(drag_state.dragged_opening_index, target_relative_folder);
                                 } else if (drag_state.is_dragging_folder && !drag_state.dragged_folder_name.isEmpty()) {
-                                    move_folder_to_folder_target(drag_state.dragged_folder_name.narrow(), target_folder.narrow());
+                                    move_folder_to_absolute_folder(drag_state.dragged_folder_name.narrow(), target_relative_folder);
                                 }
                                 handled = true;
                                 break;

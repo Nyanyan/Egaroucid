@@ -12,6 +12,7 @@
 #include <iostream>
 #include <future>
 #include <algorithm>
+#include <unordered_set>
 #include "./../engine/engine_all.hpp"
 #include "function/function_all.hpp"
 #include "draw.hpp"
@@ -39,6 +40,9 @@ private:
     std::vector<String> save_folders_display;
     std::vector<Game_abstract> picker_games;
     bool picker_has_parent = false;
+    std::unordered_set<int> selected_folder_indices;
+    std::unordered_set<int> selected_game_indices;
+    int selection_anchor_row = -1;
     
     // Scroll and UI state
     Scroll_manager folder_scroll_manager;
@@ -101,9 +105,12 @@ public:
             save_folders_display, picker_games, dummyDeleteBtns, dummyEditBtns,
             folder_scroll_manager, up_button, EXPORT_GAME_FOLDER_AREA_HEIGHT, EXPORT_GAME_N_GAMES_ON_WINDOW, 
             has_parent_folder, getData().fonts, getData().colors, getData().resources, language,
-            getData().directories.document_dir, picker_subfolder, nullptr);
+            getData().directories.document_dir, picker_subfolder, nullptr, &selected_folder_indices, &selected_game_indices);
+
+        draw_selection_highlights_foreground(has_parent_folder);
         
         if (pickRes.upButtonClicked || pickRes.parentFolderDoubleClicked) {
+            clear_selection();
             std::string s = picker_subfolder;
             if (!s.empty() && s.back() == '/') s.pop_back();
             size_t pos = s.find_last_of('/');
@@ -113,7 +120,11 @@ public:
             init_folder_scroll_manager();
             return;
         }
+        if (pickRes.folderClicked) {
+            handle_selection_click(explorer::selection_row_for_folder(pickRes.folderRenameIndex, (int)save_folders_display.size()), KeyControl.pressed(), KeyShift.pressed());
+        }
         if (pickRes.folderDoubleClicked) {
+            clear_selection();
             String fname = pickRes.clickedFolder;
             if (!picker_subfolder.empty()) picker_subfolder += "/";
             picker_subfolder += fname.narrow();
@@ -125,6 +136,9 @@ public:
             handle_picker_drop(pickRes);
         } else if (pickRes.reorderRequested) {
             handle_picker_reorder(pickRes);
+        }
+        if (pickRes.gameClicked && pickRes.clickedGameIndex >= 0) {
+            handle_selection_click(explorer::selection_row_for_item(pickRes.clickedGameIndex, (int)save_folders_display.size(), (int)picker_games.size()), KeyControl.pressed(), KeyShift.pressed());
         }
 
         // New folder UI - horizontal layout
@@ -222,20 +236,130 @@ private:
         int total = parent_offset + (int)save_folders_display.size() + (int)picker_games.size();
         folder_scroll_manager.init(770, IMPORT_GAME_SY + 8, 10, EXPORT_GAME_FOLDER_AREA_HEIGHT * EXPORT_GAME_N_GAMES_ON_WINDOW, 20, total, EXPORT_GAME_N_GAMES_ON_WINDOW, IMPORT_GAME_SX, 73, IMPORT_GAME_WIDTH + 10, EXPORT_GAME_FOLDER_AREA_HEIGHT * EXPORT_GAME_N_GAMES_ON_WINDOW);
     }
-    
-    void handle_picker_drop(const ExplorerDrawResult& res) {
+
+    void clear_selection() {
+        explorer::clear_selection(selected_folder_indices, selected_game_indices, selection_anchor_row);
+    }
+
+    void prune_selection() {
+        explorer::prune_selection(
+            selected_folder_indices,
+            selected_game_indices,
+            selection_anchor_row,
+            (int)save_folders_display.size(),
+            (int)picker_games.size()
+        );
+    }
+
+    void handle_selection_click(int row, bool ctrl_pressed, bool shift_pressed) {
+        explorer::handle_selection_click(
+            selected_folder_indices,
+            selected_game_indices,
+            selection_anchor_row,
+            row,
+            (int)save_folders_display.size(),
+            (int)picker_games.size(),
+            ctrl_pressed,
+            shift_pressed
+        );
+    }
+
+    bool dragged_item_is_selected(const ExplorerDrawResult& res) const {
+        if (res.is_dragging_game && res.dragged_game_index >= 0) {
+            return selected_game_indices.count(res.dragged_game_index) != 0;
+        }
+        if (res.is_dragging_folder && !res.dragged_folder_name.empty()) {
+            for (int idx : selected_folder_indices) {
+                if (idx >= 0 && idx < (int)save_folders_display.size() && save_folders_display[idx] == res.dragged_folder_name) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    void draw_selection_highlights_foreground(bool has_parent_folder) {
+        prune_selection();
+        draw_explorer_selection_highlights_foreground(
+            folder_scroll_manager,
+            has_parent_folder,
+            (int)save_folders_display.size(),
+            (int)picker_games.size(),
+            selected_folder_indices,
+            selected_game_indices,
+            IMPORT_GAME_SX,
+            IMPORT_GAME_SY + 8,
+            IMPORT_GAME_WIDTH,
+            EXPORT_GAME_FOLDER_AREA_HEIGHT,
+            EXPORT_GAME_N_GAMES_ON_WINDOW,
+            getData().colors.white
+        );
+    }
+
+    std::string parent_picker_subfolder() const {
+        if (picker_subfolder.empty()) {
+            return "";
+        }
+        std::string parent_folder = picker_subfolder;
+        if (!parent_folder.empty() && parent_folder.back() == '/') {
+            parent_folder.pop_back();
+        }
+        size_t pos = parent_folder.find_last_of('/');
+        if (pos == std::string::npos) {
+            return "";
+        }
+        return parent_folder.substr(0, pos);
+    }
+
+    std::string child_picker_subfolder(const std::string& folder_name) const {
+        if (picker_subfolder.empty()) {
+            return folder_name;
+        }
+        return picker_subfolder + "/" + folder_name;
+    }
+
+    std::string drop_target_picker_subfolder(const ExplorerDrawResult& res) const {
         if (res.drop_on_parent) {
-            if (res.is_dragging_game && res.dragged_game_index >= 0 && res.dragged_game_index < (int)picker_games.size()) {
-                move_picker_game_to_parent(res.dragged_game_index);
-            } else if (res.is_dragging_folder && !res.dragged_folder_name.empty()) {
-                move_picker_folder_to_parent(res.dragged_folder_name.narrow());
+            return parent_picker_subfolder();
+        }
+        return child_picker_subfolder(res.drop_target_folder.narrow());
+    }
+
+    void move_selected_items_to_folder(const std::string& target_folder) {
+        std::vector<int> game_indices(selected_game_indices.begin(), selected_game_indices.end());
+        std::sort(game_indices.rbegin(), game_indices.rend());
+        for (int game_index : game_indices) {
+            if (game_index >= 0 && game_index < (int)picker_games.size()) {
+                move_picker_game_to_folder(game_index, target_folder);
             }
-        } else {
-            if (res.is_dragging_game && res.dragged_game_index >= 0 && res.dragged_game_index < (int)picker_games.size()) {
-                move_picker_game_to_folder(res.dragged_game_index, res.drop_target_folder.narrow());
-            } else if (res.is_dragging_folder && !res.dragged_folder_name.empty()) {
-                move_picker_folder_to_folder(res.dragged_folder_name.narrow(), res.drop_target_folder.narrow());
+        }
+
+        std::vector<std::string> folder_names;
+        folder_names.reserve(selected_folder_indices.size());
+        for (int folder_index : selected_folder_indices) {
+            if (folder_index >= 0 && folder_index < (int)save_folders_display.size()) {
+                folder_names.emplace_back(save_folders_display[folder_index].narrow());
             }
+        }
+        for (const std::string& folder_name : folder_names) {
+            move_picker_folder_to_folder(folder_name, target_folder);
+        }
+
+        clear_selection();
+        enumerate_save_dir();
+        init_folder_scroll_manager();
+    }
+     
+    void handle_picker_drop(const ExplorerDrawResult& res) {
+        const std::string target_folder = drop_target_picker_subfolder(res);
+        if (dragged_item_is_selected(res)) {
+            move_selected_items_to_folder(target_folder);
+            return;
+        }
+        if (res.is_dragging_game && res.dragged_game_index >= 0 && res.dragged_game_index < (int)picker_games.size()) {
+            move_picker_game_to_folder(res.dragged_game_index, target_folder);
+        } else if (res.is_dragging_folder && !res.dragged_folder_name.empty()) {
+            move_picker_folder_to_folder(res.dragged_folder_name.narrow(), target_folder);
         }
     }
 
@@ -341,7 +465,7 @@ private:
         enumerate_save_dir();
         init_folder_scroll_manager();
     }
-    
+     
     void move_picker_folder_to_folder(const std::string& folder_name, const std::string& target_folder) {
         String source_folder = Unicode::Widen(getData().directories.document_dir) + U"games/";
         if (!picker_subfolder.empty()) {
@@ -360,13 +484,9 @@ private:
         }
         
         if (FileSystem::Exists(source_folder) && !FileSystem::Exists(target_full)) {
-#ifdef _WIN32
-            std::string cmd = "move \"" + source_folder.narrow() + "\" \"" + target_full.narrow() + "\"";
-#else
-            std::string cmd = "mv \"" + source_folder.narrow() + "\" \"" + target_full.narrow() + "\"";
-#endif
-            std::system(cmd.c_str());
-            
+            if (!move_folder(source_folder, target_parent, Unicode::Widen(folder_name))) {
+                return;
+            }
             enumerate_save_dir();
             init_folder_scroll_manager();
         }
