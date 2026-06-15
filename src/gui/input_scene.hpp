@@ -228,6 +228,7 @@ private:
         int current_page = 0;
         int selected_idx = -1;
         std::unordered_set<int> selected_indices;
+        int selection_anchor_idx = -1;
         int next_prefetch_idx = 0;
         String status_message;
     };
@@ -247,6 +248,7 @@ private:
     int current_page;
     int selected_idx;
     std::unordered_set<int> selected_indices;
+    int selection_anchor_idx;
     int next_prefetch_idx;
     int last_clicked_idx;
     uint64_t last_click_time;
@@ -270,6 +272,7 @@ public:
         current_page = 0;
         selected_idx = -1;
         selected_indices.clear();
+        selection_anchor_idx = -1;
         next_prefetch_idx = 0;
         last_clicked_idx = -1;
         last_click_time = 0;
@@ -334,8 +337,9 @@ public:
 
         draw_games(result_page);
         draw_result_buttons(result_page);
+        handle_result_list_shortcuts(result_page);
 
-        if (!result_page && mode_radio.checked == 2) {
+        if (!result_page) {
             back_button.move((WINDOW_SIZE_X - GO_BACK_BUTTON_WIDTH) / 2, GO_BACK_BUTTON_SY);
         } else {
             back_button.move(GO_BACK_BUTTON_BACK_SX, GO_BACK_BUTTON_SY);
@@ -425,6 +429,7 @@ private:
         current_page = 0;
         selected_idx = -1;
         selected_indices.clear();
+        selection_anchor_idx = -1;
         last_clicked_idx = -1;
         last_click_time = 0;
         next_prefetch_idx = 0;
@@ -708,21 +713,15 @@ private:
             if (row_rect.leftClicked()) {
                 const uint64_t now = tim();
                 if (last_clicked_idx == idx && now - last_click_time < 500) {
+                    selected_indices.clear();
                     selected_idx = idx;
                     selected_indices.insert(idx);
+                    selection_anchor_idx = idx;
                     write_cache();
                     import_selected_game();
                     return;
                 }
-                if (selected_indices.count(idx)) {
-                    selected_indices.erase(idx);
-                    if (selected_idx == idx) {
-                        selected_idx = selected_indices.empty() ? -1 : *selected_indices.begin();
-                    }
-                } else {
-                    selected_indices.insert(idx);
-                    selected_idx = idx;
-                }
+                handle_result_selection_click(idx, KeyControl.pressed(), KeyShift.pressed());
                 write_cache();
                 last_clicked_idx = idx;
                 last_click_time = now;
@@ -746,6 +745,44 @@ private:
         }
     }
 
+    void handle_result_selection_click(int idx, bool ctrl_pressed, bool shift_pressed) {
+        if (idx < 0 || idx >= (int)games.size()) {
+            return;
+        }
+
+        if (shift_pressed && 0 <= selection_anchor_idx && selection_anchor_idx < (int)games.size()) {
+            if (!ctrl_pressed) {
+                selected_indices.clear();
+            }
+            const int first = std::min(selection_anchor_idx, idx);
+            const int last = std::max(selection_anchor_idx, idx);
+            for (int selection_idx = first; selection_idx <= last; ++selection_idx) {
+                selected_indices.insert(selection_idx);
+            }
+            selected_idx = idx;
+            return;
+        }
+
+        if (ctrl_pressed) {
+            if (selected_indices.count(idx)) {
+                selected_indices.erase(idx);
+                if (selected_idx == idx) {
+                    selected_idx = selected_indices.empty() ? -1 : *selected_indices.begin();
+                }
+            } else {
+                selected_indices.insert(idx);
+                selected_idx = idx;
+            }
+            selection_anchor_idx = idx;
+            return;
+        }
+
+        selected_indices.clear();
+        selected_indices.insert(idx);
+        selected_idx = idx;
+        selection_anchor_idx = idx;
+    }
+
     void draw_page_arrow(const Rect& rect, const String& arrow, bool enabled) {
         if (enabled && rect.mouseOver()) {
             Cursor::RequestStyle(CursorStyle::Hand);
@@ -767,12 +804,14 @@ private:
             if (all_selected) {
                 selected_indices.clear();
                 selected_idx = -1;
+                selection_anchor_idx = -1;
             } else {
                 selected_indices.clear();
                 for (int i = 0; i < (int)games.size(); ++i) {
                     selected_indices.insert(i);
                 }
                 selected_idx = 0;
+                selection_anchor_idx = 0;
             }
             write_cache();
         }
@@ -786,6 +825,21 @@ private:
         refresh_button.draw();
         if (refresh_button.clicked()) {
             start_search(true);
+        }
+    }
+
+    void handle_result_list_shortcuts(bool result_page) {
+        if (!result_page || games.empty() || !KeyControl.pressed()) {
+            return;
+        }
+        if (KeyA.down()) {
+            selected_indices.clear();
+            for (int i = 0; i < (int)games.size(); ++i) {
+                selected_indices.insert(i);
+            }
+            selected_idx = 0;
+            selection_anchor_idx = 0;
+            write_cache();
         }
     }
 
@@ -838,6 +892,7 @@ private:
         current_page = 0;
         selected_idx = -1;
         selected_indices.clear();
+        selection_anchor_idx = -1;
         last_clicked_idx = -1;
         last_click_time = 0;
         next_prefetch_idx = 0;
@@ -1183,6 +1238,7 @@ private:
         current_page = cache.current_page;
         selected_idx = cache.selected_idx;
         selected_indices = cache.selected_indices;
+        selection_anchor_idx = cache.selection_anchor_idx;
         next_prefetch_idx = cache.next_prefetch_idx;
         status_message = cache.status_message;
         detail_tasks.clear();
@@ -1205,6 +1261,9 @@ private:
         }
         if (selected_idx == -1 && !selected_indices.empty()) {
             selected_idx = *selected_indices.begin();
+        }
+        if (selection_anchor_idx < 0 || selection_anchor_idx >= (int)games.size()) {
+            selection_anchor_idx = selected_idx;
         }
         if (status_message.empty()) {
             status_message = games.empty() ? U"No games found." : U"Loaded from cache.";
@@ -1248,6 +1307,7 @@ private:
         cache.current_page = current_page;
         cache.selected_idx = selected_idx;
         cache.selected_indices = selected_indices;
+        cache.selection_anchor_idx = selection_anchor_idx;
         cache.next_prefetch_idx = std::clamp(next_prefetch_idx, 0, (int)cache.games.size());
         if (retry_from < (int)cache.games.size()) {
             cache.next_prefetch_idx = std::min(cache.next_prefetch_idx, retry_from);
