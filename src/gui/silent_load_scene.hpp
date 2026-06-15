@@ -115,6 +115,9 @@ void init_default_settings(const Directories* directories, const Resources* reso
     settings->auto_save_ai_profile = false;
     settings->ai_profile_file = "default.json";
     settings->ai_profile_name = "default";
+    settings->auto_save_display_profile = false;
+    settings->display_profile_file = "default.json";
+    settings->display_profile_name = "default";
 }
 
 int init_settings_import_int(JSON &json, String key, int* res) {
@@ -543,6 +546,11 @@ void init_settings(const Directories* directories, const Resources* resources, S
         }
         init_settings_import_bool(setting_json, U"auto_save_ai_profile", &settings->auto_save_ai_profile);
         init_settings_import_str(setting_json, U"ai_profile_name", &settings->ai_profile_name);
+        if (init_settings_import_str(setting_json, U"display_profile_file", &settings->display_profile_file) != ERR_OK) {
+            settings->display_profile_file = "default.json";
+        }
+        init_settings_import_bool(setting_json, U"auto_save_display_profile", &settings->auto_save_display_profile);
+        init_settings_import_str(setting_json, U"display_profile_name", &settings->display_profile_name);
         init_settings_import_str(setting_json, U"input_game_last_subfolder", &settings->input_game_last_subfolder);
         init_settings_import_str(setting_json, U"opening_setting_last_subfolder", &settings->opening_setting_last_subfolder);
         init_settings_import_str(setting_json, U"othello_quest_username", &settings->othello_quest_username);
@@ -558,6 +566,8 @@ void init_settings(const Directories* directories, const Resources* resources, S
 
     ensure_default_ai_profile(*directories, *settings, setting_json_exists);
     load_ai_profile_into_settings(*directories, settings);
+    ensure_default_display_profile(*directories, *settings, setting_json_exists);
+    load_display_profile_into_settings(*directories, settings);
 }
 
 void init_directories(Directories* directories) {

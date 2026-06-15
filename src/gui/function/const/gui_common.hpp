@@ -571,6 +571,9 @@ struct Settings {
     bool auto_save_ai_profile;
     std::string ai_profile_file;
     std::string ai_profile_name;
+    bool auto_save_display_profile;
+    std::string display_profile_file;
+    std::string display_profile_name;
 };
 
 struct Fonts {
@@ -699,6 +702,9 @@ struct Menu_elements {
     bool show_endgame_error_40_to_60;
     bool show_endgame_error_41_to_60;
     bool hint_colorize;
+    bool display_profile_load;
+    bool display_profile_save;
+    bool auto_save_display_profile;
 
     // book
     bool book_start_deviate;
@@ -850,6 +856,9 @@ struct Menu_elements {
         show_endgame_error_40_to_60 = settings->show_endgame_error_40_to_60;
         show_endgame_error_41_to_60 = settings->show_endgame_error_41_to_60;
         hint_colorize = settings->hint_colorize;
+        display_profile_load = false;
+        display_profile_save = false;
+        auto_save_display_profile = settings->auto_save_display_profile;
 
         book_start_deviate = false;
         book_start_deviate_with_transcript = false;
@@ -1057,6 +1066,18 @@ struct AI_profile_editor_info {
     }
 };
 
+struct Display_profile_editor_info {
+    bool rename_mode{ false };
+    std::string target_file_name;
+    String initial_name;
+
+    void init() {
+        rename_mode = false;
+        target_file_name.clear();
+        initial_name.clear();
+    }
+};
+
 struct Book_information {
     bool changed{ false };
     uint_fast8_t changing{ BOOK_CHANGE_NO_CELL };
@@ -1214,6 +1235,7 @@ struct Common_resources {
     Save_location_picker_info save_location_picker_info;
     Game_library_save_request_info game_library_save_request_info;
     AI_profile_editor_info ai_profile_editor_info;
+    Display_profile_editor_info display_profile_editor_info;
     Book_information book_information;
     User_settings user_settings;
     Forced_openings forced_openings;
