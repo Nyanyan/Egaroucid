@@ -370,6 +370,7 @@ struct ExplorerDrawResult {
     int editIndex = -1;
     bool upButtonClicked = false;
     bool parentFolderDoubleClicked = false;  // New: parent folder navigation
+    bool backgroundClicked = false;
     
     bool drop_completed = false;
     bool drag_started = false;
@@ -718,7 +719,7 @@ inline ExplorerDrawResult DrawExplorerList(
     
     if (list_result.folderClicked || list_result.folderDoubleClicked || 
         list_result.gameClicked || list_result.gameDoubleClicked || list_result.deleteClicked || list_result.editClicked ||
-        list_result.parentFolderDoubleClicked || list_result.folderRenameRequested) {
+        list_result.parentFolderDoubleClicked || list_result.folderRenameRequested || list_result.backgroundClicked) {
         return list_result;
     }
     
@@ -855,6 +856,26 @@ inline ExplorerDrawResult draw_explorer_list_items(
         line_segment.draw(4.0, gui_list::DragColors::DropTargetFrame);
     }
 
+    if (!inline_editing && drag_state.mouse_just_released && !drag_state.is_dragging) {
+        const Rect list_bounds{
+            list_geom.list_left,
+            list_geom.list_top,
+            list_geom.list_width,
+            list_geom.row_height * list_geom.visible_row_count
+        };
+        if (list_bounds.contains(drag_state.current_mouse_pos)) {
+            const int local_row = static_cast<int>((drag_state.current_mouse_pos.y - list_geom.list_top) / list_geom.row_height);
+            const int clicked_row = strt_idx_int + local_row;
+            if (clicked_row < 0 || clicked_row >= total_rows) {
+                click_state.last_clicked_folder.clear();
+                click_state.last_clicked_game_index = -1;
+                drag_state.reset_drag_preparation();
+                res.backgroundClicked = true;
+                return res;
+            }
+        }
+    }
+
     if (strt_idx_int + n_games_on_window < total_rows) {
         fonts.font(U"︙").draw(15, Arg::topCenter(X_CENTER, IMPORT_GAME_SY + item_height * n_games_on_window + 14), colors.white);
     }
@@ -888,20 +909,21 @@ inline ExplorerDrawResult draw_parent_folder(
     fonts.font(U"↑..").draw(15, Arg::leftCenter(IMPORT_GAME_SX + IMPORT_GAME_LEFT_MARGIN + 10, sy + item_height / 2), colors.white);
     
     // Handle parent folder double-click
-    if (!interactions_locked && rect.leftClicked() && !drag_state.is_dragging) {
+    if (!interactions_locked && drag_state.mouse_just_released && rect.contains(drag_state.current_mouse_pos) && !drag_state.is_dragging) {
         static String last_clicked_parent;
         static uint64 last_parent_click_time = 0;
         
         // Check for double-click first (regardless of drag preparation)
         if (last_clicked_parent == U"parent" && current_time - last_parent_click_time < ExplorerClickState::DOUBLE_CLICK_TIME_MS) {
             // Double-click detected - clear any drag preparation and execute double-click
-            std::cerr << "Navigating to parent folder" << std::endl;
             drag_state.reset_drag_preparation();
             res.parentFolderDoubleClicked = true;
             last_clicked_parent.clear();
             last_parent_click_time = 0;
         } else {
             // Single click - always update click state for potential double-click detection
+            click_state.last_clicked_folder.clear();
+            click_state.last_clicked_game_index = -1;
             last_clicked_parent = U"parent";
             last_parent_click_time = current_time;
         }

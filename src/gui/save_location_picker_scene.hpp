@@ -120,6 +120,9 @@ public:
             init_folder_scroll_manager();
             return;
         }
+        if (pickRes.backgroundClicked) {
+            clear_selection();
+        }
         if (pickRes.folderClicked) {
             handle_selection_click(explorer::selection_row_for_folder(pickRes.folderRenameIndex, (int)save_folders_display.size()), KeyControl.pressed(), KeyShift.pressed());
         }

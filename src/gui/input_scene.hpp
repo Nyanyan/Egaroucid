@@ -2248,6 +2248,9 @@ public:
                     return;
                 }
             }
+            if (res.backgroundClicked) {
+                clear_selection();
+            }
             if (res.folderClicked) {
                 handle_selection_click(selection_row_for_folder(res.folderRenameIndex), KeyControl.pressed(), KeyShift.pressed());
             }
