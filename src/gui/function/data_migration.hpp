@@ -10,7 +10,6 @@
 
 #pragma once
 #include <Siv3D.hpp>
-#include <algorithm>
 #include "const/gui_common.hpp"
 
 enum class Data_migration_error {
@@ -44,18 +43,6 @@ inline String data_migration_join_path(String dir, const String& name) {
     return data_migration_with_trailing_separator(dir) + name;
 }
 
-inline String data_migration_path_leaf(String path) {
-    path = data_migration_slash_path(path);
-    while (path.size() && path[path.size() - 1] == U'/') {
-        path.pop_back();
-    }
-    const size_t pos = path.lastIndexOf(U'/');
-    if (pos == String::npos) {
-        return path;
-    }
-    return path.substr(pos + 1);
-}
-
 inline String data_migration_normalized_full_dir(String path) {
     path = data_migration_with_trailing_separator(FileSystem::FullPath(path));
     return path.lowercased();
@@ -70,63 +57,14 @@ inline bool data_migration_is_same_or_inside_dir(const String& path, const Strin
     return normalized_path == normalized_dir || normalized_path.starts_with(normalized_dir);
 }
 
-inline bool data_migration_ensure_parent_dir(const String& path) {
-    const String parent = FileSystem::ParentPath(path);
-    if (parent.isEmpty() || FileSystem::Exists(parent)) {
-        return true;
-    }
-    return FileSystem::CreateDirectories(parent) || FileSystem::Exists(parent);
-}
-
-inline bool data_migration_copy_file_overwrite(const String& source, const String& target) {
-    if (!data_migration_ensure_parent_dir(target)) {
+inline bool data_migration_copy_directory_as_is(const String& source, const String& target) {
+    if (!FileSystem::IsDirectory(source)) {
         return false;
     }
     if (FileSystem::Exists(target) && !FileSystem::Remove(target, AllowUndo::No)) {
         return false;
     }
     return FileSystem::Copy(source, target);
-}
-
-inline bool data_migration_copy_tree_overwrite(
-    const String& source,
-    const String& target,
-    const String& skip_source_dir = U""
-) {
-    if (!FileSystem::Exists(source)) {
-        return FileSystem::CreateDirectories(target) || FileSystem::Exists(target);
-    }
-
-    if (!skip_source_dir.isEmpty() && data_migration_is_same_or_inside_dir(source, skip_source_dir)) {
-        return true;
-    }
-
-    if (FileSystem::IsDirectory(source)) {
-        if (FileSystem::Exists(target) && !FileSystem::IsDirectory(target)) {
-            if (!FileSystem::Remove(target, AllowUndo::No)) {
-                return false;
-            }
-        }
-        if (!FileSystem::CreateDirectories(target) && !FileSystem::Exists(target)) {
-            return false;
-        }
-        for (const auto& child : FileSystem::DirectoryContents(source)) {
-            const String child_name = data_migration_path_leaf(child);
-            if (child_name.isEmpty()) {
-                continue;
-            }
-            if (!data_migration_copy_tree_overwrite(
-                    child,
-                    data_migration_join_path(target, child_name),
-                    skip_source_dir
-                )) {
-                return false;
-            }
-        }
-        return true;
-    }
-
-    return data_migration_copy_file_overwrite(source, target);
 }
 
 inline bool data_migration_save_manifest(const String& root, const Directories& directories) {
@@ -155,6 +93,14 @@ inline String data_migration_make_unique_export_root(const String& destination_d
     return base;
 }
 
+inline bool data_migration_export_destination_forbidden(const String& destination_dir, const Directories& directories) {
+    if (!FileSystem::IsDirectory(destination_dir)) {
+        return false;
+    }
+    return data_migration_is_same_or_inside_dir(destination_dir, Unicode::Widen(directories.document_dir)) ||
+        data_migration_is_same_or_inside_dir(destination_dir, Unicode::Widen(directories.appdata_dir));
+}
+
 inline Data_migration_result export_egaroucid_settings_data(
     const Directories& directories,
     const String& destination_dir
@@ -162,6 +108,10 @@ inline Data_migration_result export_egaroucid_settings_data(
     Data_migration_result result;
     if (!FileSystem::IsDirectory(destination_dir)) {
         result.error = Data_migration_error::invalid_destination;
+        return result;
+    }
+    if (data_migration_export_destination_forbidden(destination_dir, directories)) {
+        result.error = Data_migration_error::unsafe_source;
         return result;
     }
 
@@ -178,15 +128,13 @@ inline Data_migration_result export_egaroucid_settings_data(
 
     const String appdata_source = Unicode::Widen(directories.appdata_dir);
     const String document_source = Unicode::Widen(directories.document_dir);
-    const bool appdata_ok = data_migration_copy_tree_overwrite(
+    const bool appdata_ok = data_migration_copy_directory_as_is(
         appdata_source,
-        data_migration_join_path(root, U"appdata"),
-        root
+        data_migration_join_path(root, U"appdata")
     );
-    const bool document_ok = data_migration_copy_tree_overwrite(
+    const bool document_ok = data_migration_copy_directory_as_is(
         document_source,
-        data_migration_join_path(root, U"document"),
-        root
+        data_migration_join_path(root, U"document")
     );
 
     result.succeeded = appdata_ok && document_ok;
@@ -259,22 +207,19 @@ inline Data_migration_result import_egaroucid_settings_data(
 
     const String target_appdata = Unicode::Widen(directories.appdata_dir);
     const String target_document = Unicode::Widen(directories.document_dir);
-    if (data_migration_is_same_or_inside_dir(source_appdata, target_appdata)) {
+    if (data_migration_is_same_or_inside_dir(source_appdata, target_appdata) ||
+        data_migration_is_same_or_inside_dir(source_document, target_document)) {
         result.error = Data_migration_error::unsafe_source;
         return result;
     }
 
-    if (FileSystem::Exists(target_appdata) && !FileSystem::Remove(target_appdata, AllowUndo::No)) {
-        result.error = Data_migration_error::copy_failed;
-        return result;
-    }
-    if (!data_migration_copy_tree_overwrite(source_appdata, target_appdata)) {
+    if (!data_migration_copy_directory_as_is(source_appdata, target_appdata)) {
         result.error = Data_migration_error::copy_failed;
         return result;
     }
     data_migration_rewrite_imported_setting_paths(backup_root, directories);
 
-    if (!data_migration_copy_tree_overwrite(source_document, target_document)) {
+    if (!data_migration_copy_directory_as_is(source_document, target_document)) {
         result.error = Data_migration_error::copy_failed;
         return result;
     }

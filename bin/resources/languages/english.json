@@ -375,9 +375,10 @@
         "complete": "Completed",
         "failed": "Failed",
         "directory_not_found": "Directory not found",
+        "export_destination_forbidden": "Cannot export into Egaroucid's Document or AppData folder",
         "invalid_backup": "Invalid migration folder",
         "zip_not_supported": "Zip files are not supported. Select the exported folder.",
-        "unsafe_source": "Cannot import a backup inside AppData.",
+        "unsafe_source": "Cannot import a backup inside Egaroucid's Document or AppData folder.",
         "restart_recommended": "Some data, including Book, will be fully applied after restart.",
         "open_folder": "Open Folder"
     },

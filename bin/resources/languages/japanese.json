@@ -377,9 +377,10 @@
         "complete": "完了しました",
         "failed": "失敗しました",
         "directory_not_found": "ディレクトリが見つかりません",
+        "export_destination_forbidden": "EgaroucidのDocument/AppData内には書き出せません",
         "invalid_backup": "有効なデータ移行フォルダではありません",
         "zip_not_supported": "zipファイルは未対応です。書き出されたフォルダを指定してください",
-        "unsafe_source": "AppData内のバックアップは読み込めません",
+        "unsafe_source": "EgaroucidのDocument/AppData内のバックアップは読み込めません",
         "restart_recommended": "Bookなど一部のデータは再起動後に反映されます",
         "open_folder": "フォルダを開く"
     },

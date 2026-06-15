@@ -55,6 +55,10 @@ inline bool data_migration_backup_folder_valid(const String& path) {
         FileSystem::IsDirectory(data_migration_join_path(path, U"document"));
 }
 
+inline String data_migration_default_export_destination() {
+    return data_migration_slash_path(FileSystem::GetFolderPath(SpecialFolder::Desktop));
+}
+
 inline void data_migration_open_folder(const String& path) {
 #if SIV3D_PLATFORM(WINDOWS)
     ShellExecuteW(nullptr, L"open", path.toWstr().c_str(), nullptr, nullptr, SW_SHOWNORMAL);
@@ -111,7 +115,7 @@ public:
     Export_settings_data(const InitData& init) : IScene{ init } {
         set_scene_ime_enabled(true);
         init_buttons();
-        text_area.text = Unicode::Widen(getData().directories.document_dir);
+        text_area.text = data_migration_default_export_destination();
         text_area.cursorPos = text_area.text.size();
         text_area.rebuildGlyphs();
     }
@@ -140,6 +144,8 @@ public:
             if (!result.path.isEmpty()) {
                 getData().fonts.font(result.path).draw(14, Arg::topCenter(X_CENTER, sy + 45), getData().colors.white);
             }
+            back_button.move(GO_BACK_BUTTON_BACK_SX, GO_BACK_BUTTON_SY);
+            open_folder_button.move(GO_BACK_BUTTON_GO_SX, GO_BACK_BUTTON_SY);
             back_button.draw();
             if (result.succeeded && FileSystem::IsDirectory(result.path)) {
                 open_folder_button.draw();
@@ -165,11 +171,13 @@ public:
 
             const String destination_dir = data_migration_input_path(text_area);
             const bool valid_dir = FileSystem::IsDirectory(destination_dir);
-            if (valid_dir) {
+            const bool forbidden_dir = valid_dir && data_migration_export_destination_forbidden(destination_dir, getData().directories);
+            if (valid_dir && !forbidden_dir) {
                 export_button.enable();
             } else {
                 export_button.disable();
-                getData().fonts.font(language.get("data_migration", "directory_not_found")).draw(15, Arg::topCenter(X_CENTER, sy + 180), getData().colors.white);
+                const String message = forbidden_dir ? language.get("data_migration", "export_destination_forbidden") : language.get("data_migration", "directory_not_found");
+                getData().fonts.font(message).draw(15, Arg::topCenter(X_CENTER, sy + 180), getData().colors.white);
             }
 
             back_button.draw();
@@ -178,13 +186,13 @@ public:
             }
             default_button.draw();
             if (default_button.clicked()) {
-                text_area.text = Unicode::Widen(getData().directories.document_dir);
+                text_area.text = data_migration_default_export_destination();
                 text_area.cursorPos = text_area.text.size();
                 text_area.scrollY = 0.0;
                 text_area.rebuildGlyphs();
             }
             export_button.draw();
-            if (valid_dir && (export_button.clicked() || data_migration_return_pressed(text_area))) {
+            if (valid_dir && !forbidden_dir && (export_button.clicked() || data_migration_return_pressed(text_area))) {
                 export_future = std::async(std::launch::async, export_egaroucid_settings_data, getData().directories, destination_dir);
                 exporting = true;
             }
