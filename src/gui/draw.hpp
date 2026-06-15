@@ -501,10 +501,20 @@ inline ExplorerDrawResult handle_drag_drop(
 ) {
     ExplorerDrawResult res;
     
+    const bool has_drag_candidate = drag_state.dragged_game_index >= 0 || !drag_state.dragged_folder_name.empty();
+    const bool released_after_drag_candidate =
+        drag_state.mouse_just_released &&
+        has_drag_candidate &&
+        (drag_state.drag_start_pos.x != 0 || drag_state.drag_start_pos.y != 0) &&
+        drag_state.drag_start_pos.distanceFrom(drag_state.current_mouse_pos) > ExplorerDragState::DRAG_THRESHOLD;
+    const bool completing_drag = drag_state.mouse_just_released && (drag_state.is_dragging || released_after_drag_candidate);
+
     // Handle drag end (mouse release)
-    if (drag_state.is_dragging && !MouseL.pressed()) {
+    if (completing_drag) {
+        const bool dropping_game = drag_state.is_dragging_game || drag_state.dragged_game_index >= 0;
+        const bool dropping_folder = drag_state.is_dragging_folder || (!drag_state.dragged_folder_name.empty() && drag_state.dragged_game_index < 0);
         drag_state.is_dragging = false;
-        
+         
         // Check if we're dropping on parent folder first
         bool dropped_on_parent = false;
         if (has_parent) {
@@ -536,7 +546,7 @@ inline ExplorerDrawResult handle_drag_drop(
                     if (folder_rect.contains(drag_state.current_mouse_pos)) {
                         String candidate_target = folders_display[folder_idx];
                         // Don't allow dropping a folder on itself
-                        if (drag_state.is_dragging_folder && drag_state.dragged_folder_name == candidate_target) {
+                        if (dropping_folder && drag_state.dragged_folder_name == candidate_target) {
                             continue;
                         }
                         dropped_on_folder = true;
@@ -548,30 +558,30 @@ inline ExplorerDrawResult handle_drag_drop(
         }
         
         if (dropped_on_parent) {
-            if (drag_state.is_dragging_game) {
+            if (dropping_game) {
                 std::cerr << "Moving game " << drag_state.dragged_game_index << " to parent folder" << std::endl;
-            } else if (drag_state.is_dragging_folder) {
+            } else if (dropping_folder) {
                 std::cerr << "Moving folder '" << drag_state.dragged_folder_name.narrow() << "' to parent folder" << std::endl;
             }
             res.drop_completed = true;
             res.drop_on_parent = true;
-            res.is_dragging_game = drag_state.is_dragging_game;
-            res.is_dragging_folder = drag_state.is_dragging_folder;
+            res.is_dragging_game = dropping_game;
+            res.is_dragging_folder = dropping_folder;
             res.dragged_game_index = drag_state.dragged_game_index;
             res.dragged_folder_name = drag_state.dragged_folder_name;
         } else if (dropped_on_folder) {
-            if (drag_state.is_dragging_game) {
+            if (dropping_game) {
                 std::cerr << "Moving game " << drag_state.dragged_game_index << " to folder '" << target_folder.narrow() << "'" << std::endl;
-            } else if (drag_state.is_dragging_folder) {
+            } else if (dropping_folder) {
                 std::cerr << "Moving folder '" << drag_state.dragged_folder_name.narrow() << "' to folder '" << target_folder.narrow() << "'" << std::endl;
             }
             res.drop_completed = true;
             res.drop_target_folder = target_folder;
-            res.is_dragging_game = drag_state.is_dragging_game;
-            res.is_dragging_folder = drag_state.is_dragging_folder;
+            res.is_dragging_game = dropping_game;
+            res.is_dragging_folder = dropping_folder;
             res.dragged_game_index = drag_state.dragged_game_index;
             res.dragged_folder_name = drag_state.dragged_folder_name;
-        } else if (drag_state.is_dragging_game && games_count > 0) {
+        } else if (dropping_game && games_count > 0) {
             int first_item_row = (has_parent ? 1 : 0) + static_cast<int>(folders_display.size());
             int drop_index = gui_list::compute_drop_index_for_items(
                 drag_state.current_mouse_pos,
