@@ -340,7 +340,8 @@
         "stone": "颜色",
         "black": "黑棋 (B)",
         "white": "白棋 (W)",
-        "empty": "空处 (E)"
+        "empty": "空处 (E)",
+        "update_following_positions": "\u4e5f\u4fee\u6b63\u540e\u7eed\u5c40\u9762"
     },
     "help": {
         "help": "帮助",

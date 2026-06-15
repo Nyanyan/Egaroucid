@@ -338,7 +338,8 @@
         "stone": "Disc Color",
         "black": "Black (B)",
         "white": "White (W)",
-        "empty": "Empty (E)"
+        "empty": "Empty (E)",
+        "update_following_positions": "Update following positions"
     },
     "help": {
         "help": "Help",

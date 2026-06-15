@@ -1618,7 +1618,18 @@ private:
     Radio_button disc_radio;
     bool done;
     bool failed;
+    bool update_future_positions;
     History_elem history_elem;
+
+    struct Import_place {
+        int insert_place;
+        int replace_place;
+    };
+
+    struct Future_move {
+        int policy;
+        int destination_idx;
+    };
 
 public:
     Edit_board(const InitData& init) : IScene{ init } {
@@ -1628,6 +1639,7 @@ public:
         back_button.init(BUTTON3_VERTICAL_SX, BUTTON3_VERTICAL_3_SY, BUTTON3_VERTICAL_WIDTH, BUTTON3_VERTICAL_HEIGHT, BUTTON3_VERTICAL_RADIUS, language.get("common", "back"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
         done = false;
         failed = false;
+        update_future_positions = false;
         history_elem = getData().history_elem;
         Radio_button_element radio_button_elem;
         disc_radio.init();
@@ -1669,6 +1681,8 @@ public:
         getData().fonts.font(language.get("in_out", "color")).draw(20, 480, 80, getData().colors.white);
         draw_board(getData().fonts, getData().colors, history_elem);
         disc_radio.draw();
+        const bool future_update_available = can_update_following_positions(BLACK) || can_update_following_positions(WHITE);
+        draw_future_update_checkbox(future_update_available);
         
         // 盤上の石数を計算(偶数なら黒番、奇数なら白番)
         int n_discs = history_elem.board.n_discs();
@@ -1705,65 +1719,259 @@ public:
     }
 
 private:
-    void process_import(int player) {
-        if (history_elem.player != player) {
-            history_elem.board.pass();
+    void draw_future_update_checkbox(bool enabled) {
+        constexpr int checkbox_x = 480;
+        constexpr int checkbox_y = 195;
+        constexpr int checkbox_size = 18;
+        constexpr int font_size = 15;
+        constexpr double gap = 8.0;
+        const String label = language.get("edit_board", "update_following_positions");
+        const double label_width = getData().fonts.font(label).region(font_size, Vec2{0, 0}).w;
+        const RectF checkbox_rect(checkbox_x, checkbox_y, checkbox_size, checkbox_size);
+        const RectF hit_rect(checkbox_x, checkbox_y - 4.0, checkbox_size + gap + label_width, checkbox_size + 8.0);
+        if (!enabled) {
+            update_future_positions = false;
+        } else if (hit_rect.mouseOver()) {
+            Cursor::RequestStyle(CursorStyle::Hand);
         }
-        history_elem.player = player;
-        history_elem.v = GRAPH_IGNORE_VALUE;
-        history_elem.level = -1;
-        if (!history_elem.board.is_end() && history_elem.board.get_legal() == 0) {
-            history_elem.board.pass();
-            history_elem.player ^= 1;
+        const double alpha = enabled ? 1.0 : 0.35;
+        const Texture& checkbox_tex = update_future_positions ? getData().resources.checkbox : getData().resources.unchecked;
+        if (checkbox_tex) {
+            checkbox_tex.resized(checkbox_size).draw(checkbox_x, checkbox_y, ColorF{1.0, alpha});
+        } else if (update_future_positions) {
+            checkbox_rect.draw(ColorF(getData().colors.white, alpha));
+        } else {
+            checkbox_rect.drawFrame(2.0, ColorF(getData().colors.white, alpha));
         }
-        int n_discs = history_elem.board.n_discs();
-        int insert_place = (int)getData().graph_resources.nodes[getData().graph_resources.branch].size();
-        int replace_place = -1;
+        getData().fonts.font(label).draw(font_size, Arg::leftCenter(checkbox_x + checkbox_size + gap, checkbox_y + checkbox_size / 2.0), ColorF(getData().colors.white, enabled ? 1.0 : 0.45));
+        if (enabled && hit_rect.leftClicked()) {
+            update_future_positions = !update_future_positions;
+        }
+    }
+
+    History_elem make_import_history_elem(int player) {
+        History_elem elem = history_elem;
+        if (elem.player != player) {
+            elem.board.pass();
+        }
+        elem.player = player;
+        elem.v = GRAPH_IGNORE_VALUE;
+        elem.level = -1;
+        if (!elem.board.is_end() && elem.board.get_legal() == 0) {
+            elem.board.pass();
+            elem.player ^= 1;
+        }
+        return elem;
+    }
+
+    Import_place find_import_place(int n_discs) {
+        Import_place place;
+        place.insert_place = (int)getData().graph_resources.nodes[getData().graph_resources.branch].size();
+        place.replace_place = -1;
         for (int i = 0; i < (int)getData().graph_resources.nodes[getData().graph_resources.branch].size(); ++i) {
             int node_n_discs = getData().graph_resources.nodes[getData().graph_resources.branch][i].board.n_discs();
             if (node_n_discs == n_discs) {
-                replace_place = i;
-                insert_place = -1;
+                place.replace_place = i;
+                place.insert_place = -1;
                 break;
             } else if (node_n_discs > n_discs) {
-                insert_place = i;
+                place.insert_place = i;
                 break;
             }
         }
-        history_elem.policy = -1; // reset last policy
-        if (replace_place - 1 >= 0) {
-            uint64_t f_discs = getData().graph_resources.nodes[getData().graph_resources.branch][replace_place - 1].board.player | getData().graph_resources.nodes[getData().graph_resources.branch][replace_place - 1].board.opponent;
-            uint64_t discs = history_elem.board.player | history_elem.board.opponent;
+        return place;
+    }
+
+    int infer_last_policy(const History_elem& elem, const Import_place& place) {
+        const int branch = getData().graph_resources.branch;
+        const std::vector<History_elem>& nodes = getData().graph_resources.nodes[branch];
+        int previous_idx = -1;
+        if (place.replace_place - 1 >= 0) {
+            previous_idx = place.replace_place - 1;
+        } else if (place.insert_place - 1 >= 0 && place.insert_place - 1 < (int)nodes.size()) {
+            previous_idx = place.insert_place - 1;
+        }
+        if (previous_idx != -1) {
+            uint64_t f_discs = nodes[previous_idx].board.player | nodes[previous_idx].board.opponent;
+            uint64_t discs = elem.board.player | elem.board.opponent;
             if (pop_count_ull(discs ^ f_discs) == 1) {
-                int last_policy = ctz(discs ^ f_discs);
-                history_elem.policy = last_policy;
+                return ctz(discs ^ f_discs);
             }
-        } else if (insert_place - 1 >= 0 && insert_place - 1 < getData().graph_resources.nodes[getData().graph_resources.branch].size()) {
-            uint64_t f_discs = getData().graph_resources.nodes[getData().graph_resources.branch][insert_place - 1].board.player | getData().graph_resources.nodes[getData().graph_resources.branch][insert_place - 1].board.opponent;
-            uint64_t discs = history_elem.board.player | history_elem.board.opponent;
-            if (pop_count_ull(discs ^ f_discs) == 1) {
-                int last_policy = ctz(discs ^ f_discs);
-                history_elem.policy = last_policy;
-            }
-        } else {
-            for (int i = 0; i < (int)getData().graph_resources.nodes[0].size(); ++i) {
-                int node_n_discs = getData().graph_resources.nodes[0][i].board.n_discs();
-                if (node_n_discs + 1 == n_discs) {
-                    uint64_t f_discs = getData().graph_resources.nodes[0][i].board.player | getData().graph_resources.nodes[0][i].board.opponent;
-                    uint64_t discs = history_elem.board.player | history_elem.board.opponent;
-                    if (pop_count_ull(discs ^ f_discs) == 1) {
-                        int last_policy = ctz(discs ^ f_discs);
-                        history_elem.policy = last_policy;
-                    }
+            return -1;
+        }
+        for (int i = 0; i < (int)getData().graph_resources.nodes[GRAPH_MODE_NORMAL].size(); ++i) {
+            int node_n_discs = getData().graph_resources.nodes[GRAPH_MODE_NORMAL][i].board.n_discs();
+            if (node_n_discs + 1 == elem.board.n_discs()) {
+                uint64_t f_discs = getData().graph_resources.nodes[GRAPH_MODE_NORMAL][i].board.player | getData().graph_resources.nodes[GRAPH_MODE_NORMAL][i].board.opponent;
+                uint64_t discs = elem.board.player | elem.board.opponent;
+                if (pop_count_ull(discs ^ f_discs) == 1) {
+                    return ctz(discs ^ f_discs);
                 }
             }
         }
-        if (replace_place != -1) {
+        return -1;
+    }
+
+    int previous_node_idx(const Import_place& place) {
+        if (place.replace_place - 1 >= 0) {
+            return place.replace_place - 1;
+        }
+        if (place.insert_place - 1 >= 0 && place.insert_place - 1 < (int)getData().graph_resources.nodes[getData().graph_resources.branch].size()) {
+            return place.insert_place - 1;
+        }
+        return -1;
+    }
+
+    bool apply_history_move(Board* board, int* player, int policy) {
+        if (!is_valid_policy(policy) || board->is_end()) {
+            return false;
+        }
+        if (board->get_legal() == 0ULL) {
+            board->pass();
+            *player ^= 1;
+            if (board->get_legal() == 0ULL) {
+                return false;
+            }
+        }
+        if ((board->get_legal() & (1ULL << policy)) == 0ULL) {
+            return false;
+        }
+        Flip flip;
+        calc_flip(&flip, board, policy);
+        board->move_board(&flip);
+        *player ^= 1;
+        if (board->get_legal() == 0ULL) {
+            board->pass();
+            *player ^= 1;
+        }
+        return true;
+    }
+
+    bool previous_transition_matches(const History_elem& elem, const Import_place& place) {
+        const int previous_idx = previous_node_idx(place);
+        if (previous_idx == -1) {
+            return true;
+        }
+        Board board = getData().graph_resources.nodes[getData().graph_resources.branch][previous_idx].board.copy();
+        int player = getData().graph_resources.nodes[getData().graph_resources.branch][previous_idx].player;
+        if (!apply_history_move(&board, &player, elem.policy)) {
+            return false;
+        }
+        return board == elem.board && player == elem.player;
+    }
+
+    bool collect_following_moves(int start_n_discs, std::vector<Future_move>* moves) {
+        moves->clear();
+        const int branch = getData().graph_resources.branch;
+        const std::vector<History_elem>& nodes = getData().graph_resources.nodes[branch];
+        int idx = 0;
+        while (idx < (int)nodes.size() && nodes[idx].board.n_discs() < start_n_discs) {
+            ++idx;
+        }
+        if (idx >= (int)nodes.size()) {
+            return true;
+        }
+        int current_idx = idx;
+        if (nodes[idx].board.n_discs() == start_n_discs + 1) {
+            if (!is_valid_policy(nodes[idx].policy)) {
+                return false;
+            }
+            moves->emplace_back(Future_move{nodes[idx].policy, idx});
+        } else if (nodes[idx].board.n_discs() != start_n_discs) {
+            return false;
+        }
+        while (current_idx < (int)nodes.size()) {
+            int destination_idx = current_idx + 1;
+            int policy = nodes[current_idx].next_policy;
+            if (!is_valid_policy(policy)) {
+                if (destination_idx < (int)nodes.size() &&
+                    nodes[destination_idx].board.n_discs() == nodes[current_idx].board.n_discs() + 1 &&
+                    is_valid_policy(nodes[destination_idx].policy)) {
+                    policy = nodes[destination_idx].policy;
+                } else {
+                    break;
+                }
+            }
+            if (destination_idx >= (int)nodes.size() || nodes[destination_idx].board.n_discs() != nodes[current_idx].board.n_discs() + 1) {
+                return false;
+            }
+            moves->emplace_back(Future_move{policy, destination_idx});
+            current_idx = destination_idx;
+        }
+        return true;
+    }
+
+    bool build_following_positions(const History_elem& start_elem, std::vector<History_elem>* rebuilt_nodes) {
+        std::vector<Future_move> following_moves;
+        if (!collect_following_moves(start_elem.board.n_discs(), &following_moves) || following_moves.empty()) {
+            return false;
+        }
+        std::vector<History_elem> rebuilt;
+        rebuilt.emplace_back(start_elem);
+        Board board = start_elem.board.copy();
+        int player = start_elem.player;
+        for (const Future_move& move : following_moves) {
+            if (!apply_history_move(&board, &player, move.policy)) {
+                return false;
+            }
+            rebuilt.back().next_policy = move.policy;
+            History_elem next_elem = getData().graph_resources.nodes[getData().graph_resources.branch][move.destination_idx];
+            next_elem.board = board;
+            next_elem.player = player;
+            next_elem.policy = move.policy;
+            next_elem.next_policy = -1;
+            next_elem.v = GRAPH_IGNORE_VALUE;
+            next_elem.level = -1;
+            next_elem.opening_name.clear();
+            rebuilt.emplace_back(next_elem);
+            board = next_elem.board.copy();
+            player = next_elem.player;
+        }
+        rebuilt.back().next_policy = -1;
+        if (rebuilt_nodes != nullptr) {
+            *rebuilt_nodes = rebuilt;
+        }
+        return true;
+    }
+
+    bool can_update_following_positions(int player) {
+        History_elem elem = make_import_history_elem(player);
+        Import_place place = find_import_place(elem.board.n_discs());
+        elem.policy = infer_last_policy(elem, place);
+        if (!previous_transition_matches(elem, place)) {
+            return false;
+        }
+        return build_following_positions(elem, nullptr);
+    }
+
+    void replace_or_insert_single_node(const History_elem& elem, const Import_place& place) {
+        if (place.replace_place != -1) {
             std::cerr << "replace" << std::endl;
-            getData().graph_resources.nodes[getData().graph_resources.branch][replace_place] = history_elem;
+            getData().graph_resources.nodes[getData().graph_resources.branch][place.replace_place] = elem;
         } else {
             std::cerr << "insert" << std::endl;
-            getData().graph_resources.nodes[getData().graph_resources.branch].insert(getData().graph_resources.nodes[getData().graph_resources.branch].begin() + insert_place, history_elem);
+            getData().graph_resources.nodes[getData().graph_resources.branch].insert(getData().graph_resources.nodes[getData().graph_resources.branch].begin() + place.insert_place, elem);
+        }
+    }
+
+    void replace_or_insert_rebuilt_nodes(const std::vector<History_elem>& rebuilt_nodes, const Import_place& place) {
+        std::vector<History_elem>& nodes = getData().graph_resources.nodes[getData().graph_resources.branch];
+        int start_idx = place.replace_place != -1 ? place.replace_place : place.insert_place;
+        nodes.erase(nodes.begin() + start_idx, nodes.end());
+        nodes.insert(nodes.end(), rebuilt_nodes.begin(), rebuilt_nodes.end());
+    }
+
+    void process_import(int player) {
+        history_elem = make_import_history_elem(player);
+        int n_discs = history_elem.board.n_discs();
+        Import_place place = find_import_place(n_discs);
+        history_elem.policy = infer_last_policy(history_elem, place);
+        std::vector<History_elem> rebuilt_nodes;
+        bool update_future = update_future_positions && previous_transition_matches(history_elem, place) && build_following_positions(history_elem, &rebuilt_nodes);
+        if (update_future) {
+            replace_or_insert_rebuilt_nodes(rebuilt_nodes, place);
+        } else {
+            replace_or_insert_single_node(history_elem, place);
         }
         getData().graph_resources.n_discs = n_discs;
         update_xot_identification(&getData().graph_resources);

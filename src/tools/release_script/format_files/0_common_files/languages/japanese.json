@@ -340,7 +340,8 @@
         "stone": "石の色",
         "black": "黒(B)",
         "white": "白(W)",
-        "empty": "空(E)"
+        "empty": "空(E)",
+        "update_following_positions": "\u4ee5\u5f8c\u306e\u5c40\u9762\u3082\u4fee\u6b63"
     },
     "help": {
         "help": "ヘルプ",
