@@ -1928,18 +1928,13 @@ public:
                 
                 for (int i = 0; i < (int)folders_display.size(); ++i) {
                     if (row_index >= strt_idx_int && row_index < strt_idx_int + IMPORT_GAME_N_GAMES_ON_WINDOW) {
-                        if (i < (int)folder_delete_buttons.size()) {
-                            const bool can_delete_folder = !is_protected_system_folder(folders_display[i]) && is_folder_empty(folders_display[i]);
+                        if (i < (int)folder_delete_buttons.size() && !is_protected_system_folder(folders_display[i]) && is_folder_empty(folders_display[i])) {
                             int display_row = row_index - strt_idx_int;
                             int item_sy = sy + display_row * IMPORT_GAME_HEIGHT;
                             folder_delete_buttons[i].move(IMPORT_GAME_SX + 1, item_sy + 1);
-                            if (can_delete_folder) {
-                                folder_delete_buttons[i].enable();
-                            } else {
-                                folder_delete_buttons[i].disable();
-                            }
+                            folder_delete_buttons[i].enable();
                             folder_delete_buttons[i].draw();
-                            if (can_delete_folder && folder_delete_buttons[i].clicked()) {
+                            if (folder_delete_buttons[i].clicked()) {
                                 delete_folder(i);
                                 return;
                             }
