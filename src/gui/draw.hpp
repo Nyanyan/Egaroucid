@@ -514,14 +514,7 @@ inline ExplorerDrawResult handle_drag_drop(
         const bool dropping_game = drag_state.is_dragging_game || drag_state.dragged_game_index >= 0;
         const bool dropping_folder = drag_state.is_dragging_folder || (!drag_state.dragged_folder_name.empty() && drag_state.dragged_game_index < 0);
         drag_state.is_dragging = false;
-        std::cerr << "[ExplorerDnd] release completing=true game=" << dropping_game
-                  << " game_index=" << drag_state.dragged_game_index
-                  << " folder=" << dropping_folder
-                  << " folder_name='" << drag_state.dragged_folder_name.narrow() << "'"
-                  << " pos=(" << drag_state.current_mouse_pos.x << "," << drag_state.current_mouse_pos.y << ")"
-                  << " scroll=" << scroll_manager.get_strt_idx_int()
-                  << std::endl;
-         
+
         // Check if we're dropping on parent folder first
         bool dropped_on_parent = false;
         if (has_parent) {
@@ -565,11 +558,6 @@ inline ExplorerDrawResult handle_drag_drop(
         }
         
         if (dropped_on_parent) {
-            if (dropping_game) {
-                std::cerr << "[ExplorerDnd] drop target=parent game index=" << drag_state.dragged_game_index << std::endl;
-            } else if (dropping_folder) {
-                std::cerr << "[ExplorerDnd] drop target=parent folder name='" << drag_state.dragged_folder_name.narrow() << "'" << std::endl;
-            }
             res.drop_completed = true;
             res.drop_on_parent = true;
             res.is_dragging_game = dropping_game;
@@ -577,13 +565,6 @@ inline ExplorerDrawResult handle_drag_drop(
             res.dragged_game_index = drag_state.dragged_game_index;
             res.dragged_folder_name = drag_state.dragged_folder_name;
         } else if (dropped_on_folder) {
-            if (dropping_game) {
-                std::cerr << "[ExplorerDnd] drop target=folder '" << target_folder.narrow()
-                          << "' game index=" << drag_state.dragged_game_index << std::endl;
-            } else if (dropping_folder) {
-                std::cerr << "[ExplorerDnd] drop target=folder '" << target_folder.narrow()
-                          << "' folder name='" << drag_state.dragged_folder_name.narrow() << "'" << std::endl;
-            }
             res.drop_completed = true;
             res.drop_target_folder = target_folder;
             res.is_dragging_game = dropping_game;
@@ -605,10 +586,7 @@ inline ExplorerDrawResult handle_drag_drop(
                 res.dragged_game_index = drag_state.dragged_game_index;
                 res.reorderFrom = drag_state.dragged_game_index;
                 res.reorderTo = drop_index;
-                std::cerr << "[ExplorerDnd] reorder game " << drag_state.dragged_game_index << " -> " << drop_index << std::endl;
             }
-        } else {
-            std::cerr << "[ExplorerDnd] drop target=none" << std::endl;
         }
         
         // Reset drag state
@@ -640,20 +618,12 @@ inline void update_mouse_state_and_drag_start(ExplorerDragState& drag_state, Exp
                     res.drag_started = true;
                     res.is_dragging_game = true;
                     res.dragged_game_index = drag_state.dragged_game_index;
-                    std::cerr << "[ExplorerDnd] start game index=" << drag_state.dragged_game_index
-                              << " distance=" << distance
-                              << " pos=(" << drag_state.current_mouse_pos.x << "," << drag_state.current_mouse_pos.y << ")"
-                              << std::endl;
                 } else if (!drag_state.dragged_folder_name.empty()) {
                     drag_state.is_dragging = true;
                     drag_state.is_dragging_folder = true;
                     res.drag_started = true;
                     res.is_dragging_folder = true;
                     res.dragged_folder_name = drag_state.dragged_folder_name;
-                    std::cerr << "[ExplorerDnd] start folder name='" << drag_state.dragged_folder_name.narrow()
-                              << "' distance=" << distance
-                              << " pos=(" << drag_state.current_mouse_pos.x << "," << drag_state.current_mouse_pos.y << ")"
-                              << std::endl;
                 }
             }
         }
@@ -755,11 +725,6 @@ inline ExplorerDrawResult DrawExplorerList(
     // Draw dragged items on top (最前面に描画)
     if (drag_state.mouse_just_released && !drag_state.is_dragging &&
         (drag_state.dragged_game_index >= 0 || !drag_state.dragged_folder_name.empty())) {
-        std::cerr << "[ExplorerDnd] release without click/drop; clearing candidate game_index="
-                  << drag_state.dragged_game_index
-                  << " folder_name='" << drag_state.dragged_folder_name.narrow() << "'"
-                  << " pos=(" << drag_state.current_mouse_pos.x << "," << drag_state.current_mouse_pos.y << ")"
-                  << std::endl;
         drag_state.reset_drag_preparation();
     }
     draw_dragged_items<FontsT, ColorsT, ResourcesT>(drag_state, games, folders_display, item_height, fonts, colors, resources);
@@ -1039,10 +1004,6 @@ inline ExplorerDrawResult draw_folder_item(
         drag_state.dragged_folder_name = fname;
         drag_state.drag_start_pos = drag_state.current_mouse_pos;
         drag_state.drag_offset = drag_state.current_mouse_pos - Vec2(rect.x, rect.y);
-        std::cerr << "[ExplorerDnd] prepare folder name='" << fname.narrow()
-                  << "' row=" << row
-                  << " pos=(" << drag_state.current_mouse_pos.x << "," << drag_state.current_mouse_pos.y << ")"
-                  << std::endl;
     }
 
     // Always show rename button if inline_config is provided (not just when inline_editing is true)
@@ -1086,7 +1047,6 @@ inline ExplorerDrawResult draw_folder_item(
                 click_state.last_clicked_folder = fname;
                 click_state.last_click_time = current_time;
                 drag_state.reset_drag_preparation();
-                std::cerr << "[ExplorerDnd] click folder name='" << fname.narrow() << "'" << std::endl;
                 return res;
             } else {
                 click_state.last_clicked_folder = fname;
@@ -1147,9 +1107,6 @@ inline ExplorerDrawResult draw_game_item(
         drag_state.dragged_game_index = game_index;
         drag_state.drag_start_pos = drag_state.current_mouse_pos;
         drag_state.drag_offset = drag_state.current_mouse_pos - Vec2(rect.x, rect.y);
-        std::cerr << "[ExplorerDnd] prepare game index=" << game_index
-                  << " pos=(" << drag_state.current_mouse_pos.x << "," << drag_state.current_mouse_pos.y << ")"
-                  << std::endl;
     }
     
     // Show delete button only if delete_buttons vector has sufficient size
@@ -1304,7 +1261,6 @@ inline ExplorerDrawResult draw_game_item(
                 // Clear folder click state when clicking on game
                 click_state.last_clicked_folder.clear();
                 drag_state.reset_drag_preparation();
-                std::cerr << "[ExplorerDnd] click game index=" << game_index << std::endl;
             } else {
                 // Update click state for potential double-click detection, but don't process single click
                 click_state.last_clicked_game_index = game_index;

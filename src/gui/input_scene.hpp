@@ -2741,19 +2741,7 @@ private:
     void handle_drop(const ExplorerDrawResult& res) {
         const String target_base = drop_target_base_dir(res);
         const bool selected_drag = dragged_item_is_selected(res);
-        std::cerr << "[GameLibraryDnd] handle_drop current_base='" << get_base_dir().narrow()
-                  << "' target_base='" << target_base.narrow()
-                  << "' drop_on_parent=" << res.drop_on_parent
-                  << " is_game=" << res.is_dragging_game
-                  << " game_index=" << res.dragged_game_index
-                  << " is_folder=" << res.is_dragging_folder
-                  << " folder_name='" << res.dragged_folder_name.narrow() << "'"
-                  << " selected_drag=" << selected_drag
-                  << " selected_games=" << selected_game_indices.size()
-                  << " selected_folders=" << selected_folder_indices.size()
-                  << std::endl;
         if (target_base.empty()) {
-            std::cerr << "[GameLibraryDnd] abort: empty target_base" << std::endl;
             return;
         }
 
@@ -2763,8 +2751,6 @@ private:
             move_single_game_to_base(res.dragged_game_index, target_base);
         } else if (res.is_dragging_folder && !res.dragged_folder_name.empty()) {
             move_single_folder_to_base(res.dragged_folder_name, target_base);
-        } else {
-            std::cerr << "[GameLibraryDnd] abort: no valid dragged item" << std::endl;
         }
     }
 
@@ -2818,10 +2804,6 @@ private:
 
     void move_selected_items_to_base(const String& target_base) {
         bool changed = false;
-        std::cerr << "[GameLibraryDnd] move_selected begin target_base='" << target_base.narrow()
-                  << "' games=" << selected_game_indices.size()
-                  << " folders=" << selected_folder_indices.size()
-                  << std::endl;
 
         std::vector<int> game_indices(selected_game_indices.begin(), selected_game_indices.end());
         std::sort(game_indices.begin(), game_indices.end());
@@ -2838,38 +2820,24 @@ private:
         }
 
         if (changed) {
-            std::cerr << "[GameLibraryDnd] move_selected changed=true; refreshing" << std::endl;
             refresh_after_library_moves();
-        } else {
-            std::cerr << "[GameLibraryDnd] move_selected changed=false" << std::endl;
         }
     }
 
     void move_single_game_to_base(int game_index, const String& target_base) {
-        std::cerr << "[GameLibraryDnd] move_single_game index=" << game_index
-                  << " target_base='" << target_base.narrow() << "'" << std::endl;
         if (move_game_to_base(game_index, target_base)) {
             refresh_after_library_moves();
-        } else {
-            std::cerr << "[GameLibraryDnd] move_single_game failed index=" << game_index << std::endl;
         }
     }
 
     void move_single_folder_to_base(const String& folder_name, const String& target_base) {
-        std::cerr << "[GameLibraryDnd] move_single_folder name='" << folder_name.narrow()
-                  << "' target_base='" << target_base.narrow() << "'" << std::endl;
         if (move_folder_to_base(folder_name, target_base)) {
             refresh_after_library_moves();
-        } else {
-            std::cerr << "[GameLibraryDnd] move_single_folder failed name='" << folder_name.narrow() << "'" << std::endl;
         }
     }
 
     bool move_game_to_base(int game_index, const String& target_base) {
         if (game_index < 0 || game_index >= (int)games.size() || target_base.empty()) {
-            std::cerr << "[GameLibraryDnd] move_game abort: invalid index/target index=" << game_index
-                      << " games=" << games.size()
-                      << " target_base='" << target_base.narrow() << "'" << std::endl;
             return false;
         }
 
@@ -2881,20 +2849,14 @@ private:
         if (FileSystem::Exists(target_json)) {
             target_json = make_unique_child_path(target_base, target_name, false);
             if (target_json.empty()) {
-                std::cerr << "[GameLibraryDnd] move_game abort: unique target failed source='"
-                          << source_json.narrow() << "'" << std::endl;
                 return false;
             }
             target_name = FileSystem::BaseName(target_json).replaced(U".json", U"");
         }
         if (FileSystem::FullPath(source_json) == FileSystem::FullPath(target_json)) {
-            std::cerr << "[GameLibraryDnd] move_game abort: same source/target '"
-                      << source_json.narrow() << "'" << std::endl;
             return false;
         }
         if (!FileSystem::Exists(source_json)) {
-            std::cerr << "[GameLibraryDnd] move_game abort: source missing '"
-                      << source_json.narrow() << "'" << std::endl;
             return false;
         }
         if (move_path_fast(source_json, target_json) || FileSystem::Copy(source_json, target_json)) {
@@ -2903,19 +2865,13 @@ private:
             if (FileSystem::Exists(source_json)) {
                 FileSystem::Remove(source_json);
             }
-            std::cerr << "[GameLibraryDnd] move_game success source='" << source_json.narrow()
-                      << "' target='" << target_json.narrow() << "'" << std::endl;
             return true;
         }
-        std::cerr << "[GameLibraryDnd] move_game failed source='" << source_json.narrow()
-                  << "' target='" << target_json.narrow() << "'" << std::endl;
         return false;
     }
 
     bool move_folder_to_base(const String& folder_name, const String& target_base) {
         if (folder_name.empty() || target_base.empty() || is_protected_system_folder(folder_name)) {
-            std::cerr << "[GameLibraryDnd] move_folder abort: invalid/protected name='"
-                      << folder_name.narrow() << "' target_base='" << target_base.narrow() << "'" << std::endl;
             return false;
         }
 
@@ -2923,13 +2879,9 @@ private:
         const String normalized_target_base = gui_list::normalize_directory_base(target_base);
         const String target = normalized_target_base + folder_name;
         if (!FileSystem::IsDirectory(source) || FileSystem::Exists(target)) {
-            std::cerr << "[GameLibraryDnd] move_folder abort: source missing or target exists source='"
-                      << source.narrow() << "' target='" << target.narrow() << "'" << std::endl;
             return false;
         }
         if (FileSystem::FullPath(source) == FileSystem::FullPath(target)) {
-            std::cerr << "[GameLibraryDnd] move_folder abort: same source/target '"
-                      << source.narrow() << "'" << std::endl;
             return false;
         }
 
@@ -2942,25 +2894,17 @@ private:
         const String source_abs = with_trailing_separator(FileSystem::FullPath(source));
         const String target_base_abs = with_trailing_separator(FileSystem::FullPath(normalized_target_base));
         if (target_base_abs.starts_with(source_abs)) {
-            std::cerr << "[GameLibraryDnd] move_folder abort: circular source='"
-                      << source.narrow() << "' target_base='" << normalized_target_base.narrow() << "'" << std::endl;
             return false;
         }
 
         FileSystem::CreateDirectories(normalized_target_base);
         if (move_path_fast(source, target)) {
-            std::cerr << "[GameLibraryDnd] move_folder success source='" << source.narrow()
-                      << "' target='" << target.narrow() << "'" << std::endl;
             return true;
         }
         if (FileSystem::Copy(source, target)) {
             FileSystem::Remove(source, AllowUndo::No);
-            std::cerr << "[GameLibraryDnd] move_folder copied source='" << source.narrow()
-                      << "' target='" << target.narrow() << "'" << std::endl;
             return true;
         }
-        std::cerr << "[GameLibraryDnd] move_folder failed source='" << source.narrow()
-                  << "' target='" << target.narrow() << "'" << std::endl;
         return false;
     }
 
@@ -3355,16 +3299,8 @@ private:
         }
         String target_path = target_parent + Unicode::Widen(source_folder);
         
-        std::cerr << "Moving folder (relative):" << std::endl;
-        std::cerr << "  Current subfolder: " << explorer_state.subfolder << std::endl;
-        std::cerr << "  Source folder: " << source_folder << std::endl;
-        std::cerr << "  Target folder: " << target_folder << std::endl;
-        std::cerr << "  Source path: " << source_path.narrow() << std::endl;
-        std::cerr << "  Target path: " << target_path.narrow() << std::endl;
-        
         // Check if source and target are different
         if (source_path == target_path) {
-            std::cerr << "  Source and target are the same, skipping move" << std::endl;
             return;
         }
         
@@ -3372,7 +3308,6 @@ private:
         String source_abs = FileSystem::FullPath(source_path);
         String target_abs = FileSystem::FullPath(target_parent);
         if (target_abs.starts_with(source_abs)) {
-            std::cerr << "  Cannot move folder into its own subdirectory" << std::endl;
             return;
         }
         
@@ -3389,24 +3324,12 @@ private:
 #else
             std::string cmd = "mv \"" + source_path.narrow() + "\" \"" + target_path.narrow() + "\"";
 #endif
-            int result = system(cmd.c_str());
-            
-            if (result == 0) {
-                std::cerr << "  Successfully moved folder " << source_folder << " to " << target_folder << std::endl;
-            } else {
-                std::cerr << "  Failed to move folder (error code: " << result << ")" << std::endl;
-            }
+            system(cmd.c_str());
             
             // Refresh current view
             enumerate_current_dir();
             load_games();
             init_scroll_manager();
-        } else {
-            if (!FileSystem::Exists(source_path)) {
-                std::cerr << "  Source folder does not exist" << std::endl;
-            } else if (FileSystem::Exists(target_path)) {
-                std::cerr << "  Target folder already exists" << std::endl;
-            }
         }
     }
 
@@ -3426,16 +3349,8 @@ private:
         }
         String target_path = target_parent + Unicode::Widen(source_folder);
         
-        std::cerr << "Moving folder (absolute):" << std::endl;
-        std::cerr << "  Current subfolder: " << explorer_state.subfolder << std::endl;
-        std::cerr << "  Source folder: " << source_folder << std::endl;
-        std::cerr << "  Target folder: " << target_folder << std::endl;
-        std::cerr << "  Source path: " << source_path.narrow() << std::endl;
-        std::cerr << "  Target path: " << target_path.narrow() << std::endl;
-        
         // Check if source and target are different
         if (source_path == target_path) {
-            std::cerr << "  Source and target are the same, skipping move" << std::endl;
             return;
         }
         
@@ -3443,7 +3358,6 @@ private:
         String source_abs = FileSystem::FullPath(source_path);
         String target_abs = FileSystem::FullPath(target_parent);
         if (target_abs.starts_with(source_abs)) {
-            std::cerr << "  Cannot move folder into its own subdirectory" << std::endl;
             return;
         }
         
@@ -3460,24 +3374,12 @@ private:
 #else
             std::string cmd = "mv \"" + source_path.narrow() + "\" \"" + target_path.narrow() + "\"";
 #endif
-            int result = system(cmd.c_str());
-            
-            if (result == 0) {
-                std::cerr << "  Successfully moved folder " << source_folder << " to " << target_folder << std::endl;
-            } else {
-                std::cerr << "  Failed to move folder (error code: " << result << ")" << std::endl;
-            }
+            system(cmd.c_str());
             
             // Refresh current view
             enumerate_current_dir();
             load_games();
             init_scroll_manager();
-        } else {
-            if (!FileSystem::Exists(source_path)) {
-                std::cerr << "  Source folder does not exist" << std::endl;
-            } else if (FileSystem::Exists(target_path)) {
-                std::cerr << "  Target folder already exists" << std::endl;
-            }
         }
     }
 
