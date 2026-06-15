@@ -335,6 +335,11 @@ public:
         draw_games(result_page);
         draw_result_buttons(result_page);
 
+        if (!result_page && mode_radio.checked == 2) {
+            back_button.move((WINDOW_SIZE_X - GO_BACK_BUTTON_WIDTH) / 2, GO_BACK_BUTTON_SY);
+        } else {
+            back_button.move(GO_BACK_BUTTON_BACK_SX, GO_BACK_BUTTON_SY);
+        }
         back_button.draw();
         if (result_page) {
             if (can_save_any_selected()) {
