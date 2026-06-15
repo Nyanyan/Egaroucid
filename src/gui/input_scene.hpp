@@ -1862,7 +1862,7 @@ public:
         if (System::GetUserActions() & UserAction::CloseButtonClicked) {
             changeScene(U"Close", SCENE_FADE_TIME);
         }
-        getData().fonts.font(language.get("in_out", "game_library")).draw(25, Arg::center(X_CENTER, 30), getData().colors.white);
+        getData().fonts.font(language.get("in_out", "game_library")).draw(22, Arg::center(X_CENTER, 22), getData().colors.white);
         String path_label;
         if (explorer_state.has_parent()) {
             path_label = explorer::compose_path_label(U"games/", explorer_state);
