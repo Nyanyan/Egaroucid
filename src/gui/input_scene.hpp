@@ -3120,6 +3120,30 @@ private:
         return U"";
     }
 
+    static String strip_trailing_separator(String path) {
+        while (!path.isEmpty() && (path.ends_with(U"/") || path.ends_with(U"\\"))) {
+            path.pop_back();
+        }
+        return path;
+    }
+
+    static String normalized_directory_compare_path(String path) {
+        path = strip_trailing_separator(FileSystem::FullPath(path)).replaced(U"\\", U"/").lowercased();
+        if (!path.ends_with(U"/")) {
+            path += U"/";
+        }
+        return path;
+    }
+
+    static bool is_same_or_inside_directory(const String& path, const String& directory) {
+        if (path.isEmpty() || directory.isEmpty()) {
+            return false;
+        }
+        const String normalized_path = normalized_directory_compare_path(path);
+        const String normalized_directory = normalized_directory_compare_path(directory);
+        return normalized_path == normalized_directory || normalized_path.starts_with(normalized_directory);
+    }
+
     Game_abstract game_with_filename(const Game_abstract& game, const String& filename_date) const {
         Game_abstract copied = game;
         copied.filename_date = filename_date;
@@ -3185,21 +3209,39 @@ private:
         if (item.source_path.empty() || item.name.empty()) {
             return;
         }
-        String source = item.source_path;
-        String target = target_base + item.name;
-        if (FileSystem::FullPath(source) == FileSystem::FullPath(target)) {
+        const String source = strip_trailing_separator(item.source_path);
+        if (!FileSystem::IsDirectory(source)) {
             return;
         }
+
+        FileSystem::CreateDirectories(target_base);
+        String target = strip_trailing_separator(target_base + item.name);
         if (clipboard_cut) {
-            if (!FileSystem::Exists(target)) {
-                FileSystem::Copy(source, target);
-                FileSystem::Remove(source, AllowUndo::No);
+            if (FileSystem::FullPath(source) == FileSystem::FullPath(target)) {
+                return;
+            }
+            if (FileSystem::Exists(target)) {
+                target = strip_trailing_separator(make_unique_child_path(target_base, item.name, true));
+                if (target.empty()) {
+                    return;
+                }
+            }
+            if (is_same_or_inside_directory(target, source)) {
+                return;
+            }
+            if (move_path_fast(source, target) || FileSystem::Copy(source, target)) {
+                if (FileSystem::Exists(source)) {
+                    FileSystem::Remove(source, AllowUndo::No);
+                }
             }
         } else {
-            String unique_target = make_unique_child_path(target_base, item.name, true);
-            if (!unique_target.empty()) {
-                FileSystem::Copy(source, unique_target);
+            if (FileSystem::Exists(target) || FileSystem::FullPath(source) == FileSystem::FullPath(target)) {
+                target = strip_trailing_separator(make_unique_child_path(target_base, item.name, true));
             }
+            if (target.empty() || is_same_or_inside_directory(target, source)) {
+                return;
+            }
+            FileSystem::Copy(source, target);
         }
     }
 
