@@ -1812,16 +1812,6 @@ private:
         return -1;
     }
 
-    int previous_node_idx(const Import_place& place) {
-        if (place.replace_place - 1 >= 0) {
-            return place.replace_place - 1;
-        }
-        if (place.insert_place - 1 >= 0 && place.insert_place - 1 < (int)getData().graph_resources.nodes[getData().graph_resources.branch].size()) {
-            return place.insert_place - 1;
-        }
-        return -1;
-    }
-
     bool apply_history_move(Board* board, int* player, int policy) {
         if (!is_valid_policy(policy) || board->is_end()) {
             return false;
@@ -1845,19 +1835,6 @@ private:
             *player ^= 1;
         }
         return true;
-    }
-
-    bool previous_transition_matches(const History_elem& elem, const Import_place& place) {
-        const int previous_idx = previous_node_idx(place);
-        if (previous_idx == -1) {
-            return true;
-        }
-        Board board = getData().graph_resources.nodes[getData().graph_resources.branch][previous_idx].board.copy();
-        int player = getData().graph_resources.nodes[getData().graph_resources.branch][previous_idx].player;
-        if (!apply_history_move(&board, &player, elem.policy)) {
-            return false;
-        }
-        return board == elem.board && player == elem.player;
     }
 
     bool collect_following_moves(int start_n_discs, std::vector<Future_move>* moves) {
@@ -1938,9 +1915,6 @@ private:
         History_elem elem = make_import_history_elem(player);
         Import_place place = find_import_place(elem.board.n_discs());
         elem.policy = infer_last_policy(elem, place);
-        if (!previous_transition_matches(elem, place)) {
-            return false;
-        }
         return build_following_positions(elem, nullptr);
     }
 
@@ -1967,7 +1941,7 @@ private:
         Import_place place = find_import_place(n_discs);
         history_elem.policy = infer_last_policy(history_elem, place);
         std::vector<History_elem> rebuilt_nodes;
-        bool update_future = update_future_positions && previous_transition_matches(history_elem, place) && build_following_positions(history_elem, &rebuilt_nodes);
+        bool update_future = update_future_positions && build_following_positions(history_elem, &rebuilt_nodes);
         if (update_future) {
             replace_or_insert_rebuilt_nodes(rebuilt_nodes, place);
         } else {
