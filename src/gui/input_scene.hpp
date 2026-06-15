@@ -1928,12 +1928,18 @@ public:
                 
                 for (int i = 0; i < (int)folders_display.size(); ++i) {
                     if (row_index >= strt_idx_int && row_index < strt_idx_int + IMPORT_GAME_N_GAMES_ON_WINDOW) {
-                        if (!is_protected_system_folder(folders_display[i]) && is_folder_empty(folders_display[i])) {
+                        if (i < (int)folder_delete_buttons.size()) {
+                            const bool can_delete_folder = !is_protected_system_folder(folders_display[i]) && is_folder_empty(folders_display[i]);
                             int display_row = row_index - strt_idx_int;
                             int item_sy = sy + display_row * IMPORT_GAME_HEIGHT;
                             folder_delete_buttons[i].move(IMPORT_GAME_SX + 1, item_sy + 1);
+                            if (can_delete_folder) {
+                                folder_delete_buttons[i].enable();
+                            } else {
+                                folder_delete_buttons[i].disable();
+                            }
                             folder_delete_buttons[i].draw();
-                            if (folder_delete_buttons[i].clicked()) {
+                            if (can_delete_folder && folder_delete_buttons[i].clicked()) {
                                 delete_folder(i);
                                 return;
                             }
@@ -2051,6 +2057,26 @@ private:
 
     bool has_selection() const {
         return !selected_folder_indices.empty() || !selected_game_indices.empty();
+    }
+
+    bool can_delete_selected_items() const {
+        if (!has_selection()) {
+            return false;
+        }
+        for (int idx : selected_folder_indices) {
+            if (idx < 0 || idx >= (int)folders_display.size()) {
+                return false;
+            }
+            if (is_protected_system_folder(folders_display[idx]) || !is_folder_empty(folders_display[idx])) {
+                return false;
+            }
+        }
+        for (int idx : selected_game_indices) {
+            if (idx < 0 || idx >= (int)games.size()) {
+                return false;
+            }
+        }
+        return true;
     }
 
     bool all_items_selected() const {
@@ -2234,13 +2260,17 @@ private:
         paste_button.font_size = update_font_size_overfull(paste_button.font, paste_button.str, 12, paste_button.rect.h, paste_button.rect.w);
 
         const bool any_selected = has_selection();
+        const bool can_delete_selected = can_delete_selected_items();
         if (any_selected) {
             copy_button.enable();
             cut_button.enable();
-            delete_selected_button.enable();
         } else {
             copy_button.disable();
             cut_button.disable();
+        }
+        if (can_delete_selected) {
+            delete_selected_button.enable();
+        } else {
             delete_selected_button.disable();
         }
         if (clipboard_items.empty()) {
@@ -2262,7 +2292,7 @@ private:
         if (paste_button.clicked()) {
             paste_clipboard();
         }
-        if (delete_selected_button.clicked()) {
+        if (can_delete_selected && delete_selected_button.clicked()) {
             delete_selected_items();
         }
     }
@@ -2933,6 +2963,9 @@ private:
     }
 
     void delete_selected_items() {
+        if (!can_delete_selected_items()) {
+            return;
+        }
         const bool permanent = should_permanently_delete();
         String recycle_dir;
         if (!permanent) {
