@@ -150,6 +150,8 @@ Menu create_menu(Menu_elements* menu_elements, Resources *resources, Font font, 
                 side_menu.push(side_side_menu);
                 side_side_menu.init_radio(language.get("display", "graph", "sum_of_loss") + get_shortcut_key_info(U"show_graph_sum_of_loss"), &menu_elements->show_graph_sum_of_loss, menu_elements->show_graph_sum_of_loss);
                 side_menu.push(side_side_menu);
+                side_side_menu.init_check(language.get("display", "graph", "show_random_board_graph") + get_shortcut_key_info(U"show_random_board_graph"), &menu_elements->show_random_board_graph, menu_elements->show_random_board_graph);
+                side_menu.push(side_side_menu);
             menu_e.push(side_menu);
             side_menu.init_check(language.get("display", "graph", "endgame_error") + get_shortcut_key_info(U"show_endgame_error"), &menu_elements->show_endgame_error, menu_elements->show_endgame_error);
                 side_side_menu.init_radio(language.get("display", "graph", "endgame_error_40_to_60"), &menu_elements->show_endgame_error_40_to_60, menu_elements->show_endgame_error_40_to_60);

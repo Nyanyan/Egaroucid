@@ -86,6 +86,7 @@ void init_default_settings(const Directories* directories, const Resources* reso
     settings->umigame_value_depth = 60;
     settings->show_graph_value = true;
     settings->show_graph_sum_of_loss = false;
+    settings->show_random_board_graph = false;
     settings->book_learn_error_leaf = 2;
     settings->use_book_learn_error_leaf = true;
     settings->show_opening_name = true;
@@ -450,6 +451,7 @@ void init_settings(const Directories* directories, const Resources* resources, S
         if (init_settings_import_bool(setting_json, U"show_graph_sum_of_loss", &settings->show_graph_sum_of_loss) != ERR_OK) {
             std::cerr << "err36" << std::endl;
         }
+        init_settings_import_bool(setting_json, U"show_random_board_graph", &settings->show_random_board_graph);
         init_settings_import_bool(setting_json, U"xot_identification", &settings->xot_identification);
         if (init_settings_import_int(setting_json, U"book_learn_error_leaf", &settings->book_learn_error_leaf) != ERR_OK) {
             std::cerr << "err37" << std::endl;

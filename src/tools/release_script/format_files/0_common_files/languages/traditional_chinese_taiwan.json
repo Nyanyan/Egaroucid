@@ -259,6 +259,7 @@
             "graph": "圖表",
             "value": "評分值",
             "sum_of_loss": "總損失值",
+            "show_random_board_graph": "顯示隨機局面圖表",
             "endgame_error": "終局錯誤",
             "endgame_error_40_to_60": "40~60手",
             "endgame_error_41_to_60": "41~60手"
@@ -278,7 +279,7 @@
         "go_to_first_position": "\u8fd4\u56de\u5230\u6700\u521d\u5c40\u9762",
         "go_to_last_position": "\u524d\u9032\u5230\u6700\u5f8c\u5c40\u9762",
         "go_to_random_generated_position": "\u8fd4\u56de\u5230\u96a8\u6a5f\u751f\u6210\u5c40\u9762",
-        "generate_xot_board": "XOT對局",
+        "generate_xot_board": "生成XOT局面",
         "generate_random_board": {
             "generate_random_board": "生成隨機棋盤",
             "generate": "生成",

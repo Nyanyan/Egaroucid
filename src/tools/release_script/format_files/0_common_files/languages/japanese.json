@@ -261,6 +261,7 @@
             "graph": "グラフ",
             "value": "評価値",
             "sum_of_loss": "累積石損",
+            "show_random_board_graph": "ランダム局面のグラフを表示",
             "endgame_error": "終盤石損",
             "endgame_error_40_to_60": "40~60手目",
             "endgame_error_41_to_60": "41~60手目"
@@ -280,7 +281,7 @@
         "go_to_first_position": "\u6700\u521d\u306e\u5c40\u9762\u306b\u623b\u308b",
         "go_to_last_position": "\u6700\u5f8c\u306e\u5c40\u9762\u306b\u9032\u3080",
         "go_to_random_generated_position": "\u30e9\u30f3\u30c0\u30e0\u751f\u6210\u5c40\u9762\u306b\u623b\u308b",
-        "generate_xot_board": "XOT対局",
+        "generate_xot_board": "XOT局面を生成",
         "generate_random_board": {
             "generate_random_board": "ランダム局面を生成",
             "generate": "生成",

@@ -261,6 +261,7 @@
             "graph": "图像",
             "value": "双方估值变化",
             "sum_of_loss": "双方累计损子数",
+            "show_random_board_graph": "显示随机局面图像",
             "endgame_error": "终局错误",
             "endgame_error_40_to_60": "40~60手",
             "endgame_error_41_to_60": "41~60手"
@@ -280,7 +281,7 @@
         "go_to_first_position": "\u8fd4\u56de\u5230\u6700\u521d\u5c40\u9762",
         "go_to_last_position": "\u524d\u8fdb\u5230\u6700\u540e\u5c40\u9762",
         "go_to_random_generated_position": "\u8fd4\u56de\u5230\u968f\u673a\u751f\u6210\u5c40\u9762",
-        "generate_xot_board": "XOT对局",
+        "generate_xot_board": "生成XOT局面",
         "generate_random_board": {
             "generate_random_board": "生成随机局面",
             "generate": "生成",

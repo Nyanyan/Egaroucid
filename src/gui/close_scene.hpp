@@ -66,6 +66,7 @@ void save_settings(Menu_elements menu_elements, Settings settings, Directories d
     setting_json[U"umigame_value_depth"] = menu_elements.umigame_value_depth;
     setting_json[U"show_graph_value"] = menu_elements.show_graph_value;
     setting_json[U"show_graph_sum_of_loss"] = menu_elements.show_graph_sum_of_loss;
+    setting_json[U"show_random_board_graph"] = menu_elements.show_random_board_graph;
     setting_json[U"book_learn_error_leaf"] = menu_elements.book_learn_error_leaf;
     setting_json[U"use_book_learn_error_leaf"] = menu_elements.use_book_learn_error_leaf;
     setting_json[U"show_opening_name"] = menu_elements.show_opening_name;

@@ -400,8 +400,9 @@ public:
         }
 
         // graph drawing
-        const int graph_xot_start_n_discs = getData().menu_elements.xot_identification ? getData().graph_resources.xot_start_n_discs : -1;
-        graph.draw(getData().graph_resources.nodes[0], getData().graph_resources.nodes[1], getData().graph_resources.n_discs, getData().menu_elements.show_graph, getData().menu_elements.level, getData().fonts.font, getData().menu_elements.change_color_type, getData().menu_elements.show_graph_sum_of_loss, getData().menu_elements.show_endgame_error, getData().menu_elements.show_endgame_error_40_to_60, graph_xot_start_n_discs);
+        const int graph_xot_start_n_discs = get_graph_xot_start_n_discs();
+        const int graph_value_start_n_discs = get_graph_value_start_n_discs();
+        graph.draw(getData().graph_resources.nodes[0], getData().graph_resources.nodes[1], getData().graph_resources.n_discs, getData().menu_elements.show_graph, getData().menu_elements.level, getData().fonts.font, getData().menu_elements.change_color_type, getData().menu_elements.show_graph_sum_of_loss, getData().menu_elements.show_endgame_error, getData().menu_elements.show_endgame_error_40_to_60, graph_xot_start_n_discs, graph_value_start_n_discs);
 
         // info drawing
         int playing_mode = PLAYING_MODE_NONE;
@@ -992,6 +993,9 @@ private:
         if (shortcut_key == U"show_graph_sum_of_loss") {
             getData().menu_elements.show_graph_value = false;
             getData().menu_elements.show_graph_sum_of_loss = true;
+        }
+        if (shortcut_key == U"show_random_board_graph") {
+            getData().menu_elements.show_random_board_graph = !getData().menu_elements.show_random_board_graph;
         }
         if (shortcut_key == U"show_endgame_error") {
             getData().menu_elements.show_endgame_error = !getData().menu_elements.show_endgame_error;
@@ -1586,8 +1590,7 @@ private:
     }
 
     void interact_graph() {
-        const int graph_xot_start_n_discs = getData().menu_elements.xot_identification ? getData().graph_resources.xot_start_n_discs : -1;
-        getData().graph_resources.n_discs = graph.update_n_discs(getData().graph_resources.nodes[0], getData().graph_resources.nodes[1], getData().graph_resources.n_discs, graph_xot_start_n_discs);
+        getData().graph_resources.n_discs = graph.update_n_discs(getData().graph_resources.nodes[0], getData().graph_resources.nodes[1], getData().graph_resources.n_discs);
         if (shortcut_key_pressed != U"backward") {
             move_board_button_status.left_pushed = BUTTON_NOT_PUSHED;
         }
@@ -2412,10 +2415,10 @@ private:
 
     void init_analyze() {
         ai_status.analyze_task_stack.clear();
-        const int xot_start_n_discs = getData().menu_elements.xot_identification ? getData().graph_resources.xot_start_n_discs : -1;
+        const int graph_value_start_n_discs = get_graph_value_start_n_discs();
         for (int idx = 0; idx < (int)getData().graph_resources.nodes[getData().graph_resources.branch].size(); ++idx) {
             History_elem& node = getData().graph_resources.nodes[getData().graph_resources.branch][idx];
-            if (xot_start_n_discs != -1 && node.board.n_discs() < xot_start_n_discs) {
+            if (graph_value_start_n_discs != -1 && node.board.n_discs() < graph_value_start_n_discs) {
                 continue;
             }
             Analyze_info analyze_info;
@@ -2959,16 +2962,43 @@ private:
     }
 
     int get_random_generated_position_n_discs() {
+        int random_generated_n_discs = get_marked_random_generated_position_n_discs();
+        if (random_generated_n_discs == -1 && getData().menu_elements.xot_identification) {
+            random_generated_n_discs = getData().graph_resources.xot_start_n_discs;
+        }
+        return random_generated_n_discs;
+    }
+
+    int get_marked_random_generated_position_n_discs() {
         int random_generated_n_discs = -1;
         for (const History_elem& history_elem : getData().graph_resources.nodes[GRAPH_MODE_NORMAL]) {
             if (history_elem.is_random_generated_position) {
                 random_generated_n_discs = history_elem.board.n_discs();
             }
         }
-        if (random_generated_n_discs == -1 && getData().menu_elements.xot_identification) {
-            random_generated_n_discs = getData().graph_resources.xot_start_n_discs;
-        }
         return random_generated_n_discs;
+    }
+
+    int get_random_board_graph_value_start_n_discs() {
+        if (getData().menu_elements.show_random_board_graph) {
+            return -1;
+        }
+        const int random_generated_n_discs = get_marked_random_generated_position_n_discs();
+        if (random_generated_n_discs != -1) {
+            return random_generated_n_discs;
+        }
+        return get_graph_xot_start_n_discs();
+    }
+
+    int get_graph_xot_start_n_discs() {
+        if (!getData().menu_elements.xot_identification) {
+            return -1;
+        }
+        return getData().graph_resources.xot_start_n_discs;
+    }
+
+    int get_graph_value_start_n_discs() {
+        return get_random_board_graph_value_start_n_discs();
     }
 
     void clear_random_generated_position_flags() {

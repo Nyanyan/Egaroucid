@@ -546,6 +546,7 @@ struct Settings {
     bool show_book_accuracy;
     bool show_graph_value;
     bool show_graph_sum_of_loss;
+    bool show_random_board_graph;
     bool show_opening_name;
     bool show_principal_variation;
     bool show_timer;
@@ -687,6 +688,7 @@ struct Menu_elements {
     bool show_book_accuracy;
     bool show_graph_value;
     bool show_graph_sum_of_loss;
+    bool show_random_board_graph;
     bool show_opening_name;
     bool show_principal_variation;
     bool show_timer;
@@ -837,6 +839,7 @@ struct Menu_elements {
         show_book_accuracy = settings->show_book_accuracy;
         show_graph_value = settings->show_graph_value;
         show_graph_sum_of_loss = settings->show_graph_sum_of_loss;
+        show_random_board_graph = settings->show_random_board_graph;
         show_opening_name = settings->show_opening_name;
         show_principal_variation = settings->show_principal_variation;
         show_timer = settings->show_timer;

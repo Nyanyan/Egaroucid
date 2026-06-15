@@ -75,23 +75,22 @@ private:
     double dx;
 
 public:
-    void draw(std::vector<History_elem> nodes1, std::vector<History_elem> nodes2, int n_discs, bool show_graph, int level, Font font, int color_type, bool show_graph_sum_of_loss, bool show_endgame_error, bool show_endgame_error_40_to_60, int xot_start_n_discs) {
-        if (xot_start_n_discs != -1) {
-            filter_before_xot_start(&nodes1, xot_start_n_discs);
-            filter_before_xot_start(&nodes2, xot_start_n_discs);
-            if (nodes1.empty()) {
-                xot_start_n_discs = -1;
-            }
+    void draw(std::vector<History_elem> nodes1, std::vector<History_elem> nodes2, int n_discs, bool show_graph, int level, Font font, int color_type, bool show_graph_sum_of_loss, bool show_endgame_error, bool show_endgame_error_40_to_60, int xot_start_n_discs, int graph_value_start_n_discs) {
+        std::vector<History_elem> graph_nodes1 = nodes1;
+        std::vector<History_elem> graph_nodes2 = nodes2;
+        if (graph_value_start_n_discs != -1) {
+            filter_before_n_discs(&graph_nodes1, graph_value_start_n_discs);
+            filter_before_n_discs(&graph_nodes2, graph_value_start_n_discs);
         }
         std::vector<std::vector<Graph_loss_elem>> sum_of_loss_nodes1(2);
         std::vector<std::vector<Graph_loss_elem>> sum_of_loss_nodes2(2);
         resolution = GRAPH_RESOLUTION;
         if (show_graph) {
-            if (show_graph_sum_of_loss) {
-                calc_sum_of_loss_nodes(nodes1, nodes2, sum_of_loss_nodes1, sum_of_loss_nodes2);
+            if (show_graph_sum_of_loss && graph_nodes1.size()) {
+                calc_sum_of_loss_nodes(graph_nodes1, graph_nodes2, sum_of_loss_nodes1, sum_of_loss_nodes2);
                 calc_range_sum_of_loss(sum_of_loss_nodes1, sum_of_loss_nodes2);
             } else {
-                calc_range(nodes1, nodes2);
+                calc_range(graph_nodes1, graph_nodes2);
             }
             while ((y_max - y_min) / resolution > 8) { // when range is too wide
                 resolution *= 2;
@@ -138,7 +137,7 @@ public:
             }
         } else { // endgame error
             int endgame_error_black = 0, endgame_error_white = 0;
-            bool endgame_error_calculated = calc_endgame_error(nodes1, nodes2, &endgame_error_black, &endgame_error_white, show_endgame_error_40_to_60);
+            bool endgame_error_calculated = calc_endgame_error(graph_nodes1, graph_nodes2, &endgame_error_black, &endgame_error_white, show_endgame_error_40_to_60);
             int endgame_error_cy = sy - 48;
             int endgame_error_cx = sx + GRAPH_RECT_DX + GRAPH_RECT_WIDTH / 2;
             constexpr int ENDGAME_ERROR_DISC_RADIUS = 7;
@@ -215,26 +214,30 @@ public:
             Line{ sx + dx * x, sy, sx + dx * x, sy + size_y }.draw(1, graph_color);
         }
         if (show_graph) {
+            if (graph_value_start_n_discs != -1) {
+                draw_graph_not_calculated_before(nodes1, graph_history_not_calculated_color, graph_value_start_n_discs);
+                draw_graph_not_calculated_before(nodes2, graph_fork_not_calculated_color, graph_value_start_n_discs);
+            }
             if (show_graph_sum_of_loss) {
-                int max_ply1 = nodes1.back().board.n_discs() - 4;
+                int max_ply1 = graph_nodes1.size() ? graph_nodes1.back().board.n_discs() - 4 : 0;
                 int max_ply2 = 0;
-                if (nodes2.size()) {
-                    max_ply2 = nodes2.back().board.n_discs() - 4;
+                if (graph_nodes2.size()) {
+                    max_ply2 = graph_nodes2.back().board.n_discs() - 4;
                 }
                 draw_graph_sum_of_loss(sum_of_loss_nodes1[0], Palette::Black, graph_history_not_calculated_color, max_ply1);
                 draw_graph_sum_of_loss(sum_of_loss_nodes1[1], Palette::White, graph_history_not_calculated_color, max_ply1);
                 draw_graph_sum_of_loss(sum_of_loss_nodes2[0], Palette::Dimgray, graph_fork_not_calculated_color, max_ply2);
                 draw_graph_sum_of_loss(sum_of_loss_nodes2[1], Palette::Silver, graph_fork_not_calculated_color, max_ply2);
             } else {
-                draw_graph(nodes1, graph_history_color, graph_history_not_calculated_color);
-                draw_graph(nodes2, graph_fork_color, graph_fork_not_calculated_color);
+                draw_graph(graph_nodes1, graph_history_color, graph_history_not_calculated_color);
+                draw_graph(graph_nodes2, graph_fork_color, graph_fork_not_calculated_color);
             }
         } else {
             draw_graph_not_calculated(nodes1, graph_history_not_calculated_color);
             draw_graph_not_calculated(nodes2, graph_fork_not_calculated_color);
         }
-        if (xot_start_n_discs != -1) {
-            draw_xot_start_marker(nodes1, nodes2, show_graph_sum_of_loss, xot_start_n_discs);
+        if (xot_start_n_discs != -1 && (graph_value_start_n_discs == -1 || xot_start_n_discs >= graph_value_start_n_discs)) {
+            draw_xot_start_marker(graph_nodes1, graph_nodes2, show_graph_sum_of_loss, xot_start_n_discs);
         }
         if (show_graph && !show_graph_sum_of_loss) {
             Circle(sx, sy, 6).draw(Palette::Black);
@@ -249,11 +252,7 @@ public:
         }
     }
 
-    int update_n_discs(std::vector<History_elem> nodes1, std::vector<History_elem> nodes2, int n_discs, int xot_start_n_discs) {
-        if (xot_start_n_discs != -1) {
-            filter_before_xot_start(&nodes1, xot_start_n_discs);
-            filter_before_xot_start(&nodes2, xot_start_n_discs);
-        }
+    int update_n_discs(std::vector<History_elem> nodes1, std::vector<History_elem> nodes2, int n_discs) {
         if (Rect(sx - 30, sy, size_x + 40, size_y + 10).leftPressed()) {
             int cursor_x = Cursor::Pos().x;
             int min_err = INF;
@@ -284,10 +283,10 @@ public:
     }
 
 private:
-    void filter_before_xot_start(std::vector<History_elem>* nodes, int xot_start_n_discs) {
+    void filter_before_n_discs(std::vector<History_elem>* nodes, int n_discs) {
         nodes->erase(
-            std::remove_if(nodes->begin(), nodes->end(), [xot_start_n_discs](const History_elem& node) {
-                return node.board.n_discs() < xot_start_n_discs;
+            std::remove_if(nodes->begin(), nodes->end(), [n_discs](const History_elem& node) {
+                return node.board.n_discs() < n_discs;
             }),
             nodes->end()
         );
@@ -558,6 +557,15 @@ private:
         std::vector<std::pair<int, int>> values;
         for (const History_elem& b : nodes) {
             if (b.board.n_discs() >= 4) {
+                int yy = sy + dy * y_max;
+                Circle{ sx + dx * (b.board.n_discs() - 4), yy, 2.5 }.draw(color);
+            }
+        }
+    }
+
+    void draw_graph_not_calculated_before(std::vector<History_elem> nodes, Color color, int n_discs) {
+        for (const History_elem& b : nodes) {
+            if (b.board.n_discs() >= 4 && b.board.n_discs() < n_discs) {
                 int yy = sy + dy * y_max;
                 Circle{ sx + dx * (b.board.n_discs() - 4), yy, 2.5 }.draw(color);
             }
