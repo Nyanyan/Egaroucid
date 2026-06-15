@@ -1753,6 +1753,10 @@ private:
     };
     std::vector<Clipboard_item> clipboard_items;
 
+    String shortcut_label(const String& label, const String& shortcut) const {
+        return label + U" (" + shortcut + U")";
+    }
+
     void sync_last_opened_subfolder() {
         if (is_save_request_active()) {
             return;
@@ -1829,11 +1833,11 @@ public:
         save_here_button.init(BUTTON3_2_SX, BUTTON3_SY, BUTTON3_WIDTH, BUTTON3_HEIGHT, BUTTON3_RADIUS, language.get("in_out", "save_here"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
         create_folder_button.init(GO_BACK_BUTTON_GO_SX, GO_BACK_BUTTON_SY, GO_BACK_BUTTON_WIDTH, GO_BACK_BUTTON_HEIGHT, GO_BACK_BUTTON_RADIUS, language.get("in_out", "create"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
         up_button.init(IMPORT_GAME_SX, IMPORT_GAME_SY - 30, 28, 24, 4, U"↑", 16, getData().fonts.font, getData().colors.white, getData().colors.black);
-        select_all_button.init(24, 36, 100, 28, 8, U"Select all", 12, getData().fonts.font, getData().colors.white, getData().colors.black);
-        delete_selected_button.init(132, 36, 136, 28, 8, U"Delete", 12, getData().fonts.font, getData().colors.white, getData().colors.black);
-        copy_button.init(WINDOW_SIZE_X - 260, 36, 70, 28, 8, U"Copy", 12, getData().fonts.font, getData().colors.white, getData().colors.black);
-        cut_button.init(WINDOW_SIZE_X - 182, 36, 60, 28, 8, U"Cut", 12, getData().fonts.font, getData().colors.white, getData().colors.black);
-        paste_button.init(WINDOW_SIZE_X - 114, 36, 90, 28, 8, U"Paste", 12, getData().fonts.font, getData().colors.white, getData().colors.black);
+        select_all_button.init(24, 36, 150, 28, 8, shortcut_label(language.get("in_out", "game_library_select_all"), U"Ctrl+A"), 12, getData().fonts.font, getData().colors.white, getData().colors.black);
+        delete_selected_button.init(182, 36, 160, 28, 8, language.get("in_out", "game_library_delete"), 12, getData().fonts.font, getData().colors.white, getData().colors.black);
+        copy_button.init(WINDOW_SIZE_X - 330, 36, 100, 28, 8, shortcut_label(language.get("in_out", "game_library_copy"), U"Ctrl+C"), 12, getData().fonts.font, getData().colors.white, getData().colors.black);
+        cut_button.init(WINDOW_SIZE_X - 222, 36, 100, 28, 8, shortcut_label(language.get("in_out", "game_library_cut"), U"Ctrl+X"), 12, getData().fonts.font, getData().colors.white, getData().colors.black);
+        paste_button.init(WINDOW_SIZE_X - 114, 36, 90, 28, 8, shortcut_label(language.get("in_out", "game_library_paste"), U"Ctrl+V"), 12, getData().fonts.font, getData().colors.white, getData().colors.black);
         inline_edit_back_button.init(0, 0, 80, 30, 8, language.get("common", "back"), 18, getData().fonts.font, getData().colors.white, getData().colors.black);
         inline_edit_ok_button.init(0, 0, 70, 30, 8, language.get("common", "ok"), 18, getData().fonts.font, getData().colors.white, getData().colors.black);
         failed = false;
@@ -1890,6 +1894,7 @@ public:
             getData().graph_resources.need_init = false;
             changeScene(U"Main_scene", SCENE_FADE_TIME);
         }
+        handle_batch_action_shortcuts();
         draw_batch_action_buttons();
         draw_folder_management_ui();
         if (failed) {
@@ -1936,6 +1941,7 @@ public:
                     }
                     row_index++;
                 }
+                draw_selection_highlights_foreground();
             }
             
             if (res.upButtonClicked || res.parentFolderDoubleClicked) {
@@ -2158,10 +2164,56 @@ private:
         }
     }
 
+    void handle_batch_action_shortcuts() {
+        if (renaming_folder || creating_folder || !KeyControl.pressed()) {
+            return;
+        }
+        if (KeyA.down()) {
+            select_all_items();
+            return;
+        }
+        if (KeyC.down() && has_selection()) {
+            set_clipboard(false);
+            return;
+        }
+        if (KeyX.down() && has_selection()) {
+            set_clipboard(true);
+            return;
+        }
+        if (KeyV.down() && !clipboard_items.empty()) {
+            paste_clipboard();
+        }
+    }
+
+    void draw_selection_highlights_foreground() {
+        const int strt_idx_int = scroll_manager.get_strt_idx_int();
+        const int parent_offset = explorer_state.has_parent() ? 1 : 0;
+        const int total_rows = parent_offset + (int)folders_display.size() + (int)games.size();
+        const int visible_end = std::min(total_rows, strt_idx_int + IMPORT_GAME_N_GAMES_ON_WINDOW);
+        for (int row = strt_idx_int; row < visible_end; ++row) {
+            if (row < parent_offset) {
+                continue;
+            }
+            bool selected = false;
+            const int item_idx = row - parent_offset;
+            if (item_idx < (int)folders_display.size()) {
+                selected = selected_folder_indices.count(item_idx) != 0;
+            } else {
+                const int game_idx = item_idx - (int)folders_display.size();
+                selected = selected_game_indices.count(game_idx) != 0;
+            }
+            if (selected) {
+                const int display_row = row - strt_idx_int;
+                const int y = IMPORT_GAME_SY + 8 + display_row * IMPORT_GAME_HEIGHT;
+                draw_explorer_selection_highlight(Rect(IMPORT_GAME_SX, y, IMPORT_GAME_WIDTH, IMPORT_GAME_HEIGHT), getData().colors.white);
+            }
+        }
+    }
+
     void draw_batch_action_buttons() {
         prune_selection();
         const bool all_selected = all_items_selected();
-        select_all_button.str = all_selected ? U"Deselect all" : U"Select all";
+        select_all_button.str = shortcut_label(language.get("in_out", all_selected ? "game_library_deselect_all" : "game_library_select_all"), U"Ctrl+A");
         select_all_button.font_size = update_font_size_overfull(select_all_button.font, select_all_button.str, 12, select_all_button.rect.h, select_all_button.rect.w);
         select_all_button.draw();
         if (select_all_button.clicked()) {
@@ -2172,8 +2224,14 @@ private:
             }
         }
 
-        delete_selected_button.str = in_recycle_bin() ? U"Permanently Delete" : U"Delete";
+        delete_selected_button.str = language.get("in_out", in_recycle_bin() ? "game_library_permanently_delete" : "game_library_delete");
         delete_selected_button.font_size = update_font_size_overfull(delete_selected_button.font, delete_selected_button.str, 12, delete_selected_button.rect.h, delete_selected_button.rect.w);
+        copy_button.str = shortcut_label(language.get("in_out", "game_library_copy"), U"Ctrl+C");
+        copy_button.font_size = update_font_size_overfull(copy_button.font, copy_button.str, 12, copy_button.rect.h, copy_button.rect.w);
+        cut_button.str = shortcut_label(language.get("in_out", "game_library_cut"), U"Ctrl+X");
+        cut_button.font_size = update_font_size_overfull(cut_button.font, cut_button.str, 12, cut_button.rect.h, cut_button.rect.w);
+        paste_button.str = shortcut_label(language.get("in_out", "game_library_paste"), U"Ctrl+V");
+        paste_button.font_size = update_font_size_overfull(paste_button.font, paste_button.str, 12, paste_button.rect.h, paste_button.rect.w);
 
         const bool any_selected = has_selection();
         if (any_selected) {

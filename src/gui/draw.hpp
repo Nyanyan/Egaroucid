@@ -893,6 +893,7 @@ inline ExplorerDrawResult draw_folder_item(
     bool selected = false
 ) {
     ExplorerDrawResult res;
+    (void)selected;
 
     bool inline_editing = inline_config && inline_config->renaming;
     bool is_inline_target = inline_editing && inline_config->folder_index == folder_index;
@@ -956,10 +957,6 @@ inline ExplorerDrawResult draw_folder_item(
                                   (drag_state.is_dragging_folder && drag_state.dragged_folder_name != fname);
     if (is_dragging_something && rect.contains(drag_state.current_mouse_pos) && !inline_editing) {
         rect.drawFrame(gui_list::DragColors::DropTargetFrameThickness, gui_list::DragColors::DropTargetFrame);
-    }
-
-    if (selected) {
-        draw_explorer_selection_highlight(rect, colors.white);
     }
 
     if (interactions_locked) {
@@ -1044,6 +1041,7 @@ inline ExplorerDrawResult draw_game_item(
     bool selected = false
 ) {
     ExplorerDrawResult res;
+    (void)selected;
     
     // Drag and drop for games
     bool is_being_dragged = (drag_state.is_dragging_game && drag_state.dragged_game_index == game_index);
@@ -1194,10 +1192,6 @@ inline ExplorerDrawResult draw_game_item(
     
     fonts.font(game.memo).draw(12, IMPORT_GAME_SX + IMPORT_GAME_LEFT_MARGIN + 10, black_player_rect.y + black_player_rect.h, colors.white);
 
-    if (selected) {
-        draw_explorer_selection_highlight(rect, colors.white);
-    }
-    
     // Handle game double-click for importing (avoiding delete button area)
     Rect game_click_area = rect;
     if (game_index < (int)delete_buttons.size()) {
