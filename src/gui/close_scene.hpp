@@ -15,9 +15,6 @@
 #include "function/function_all.hpp"
 
 void save_modified_ai_profile_if_needed(Menu_elements menu_elements, Settings* settings, Directories directories) {
-    if (!menu_elements.auto_save_ai_profile) {
-        return;
-    }
     if (!is_ai_profile_modified(directories, *settings, menu_elements)) {
         return;
     }
@@ -50,9 +47,6 @@ void save_modified_ai_profile_if_needed(Menu_elements menu_elements, Settings* s
 }
 
 void save_modified_display_profile_if_needed(Menu_elements menu_elements, Settings* settings, Directories directories) {
-    if (!menu_elements.auto_save_display_profile) {
-        return;
-    }
     if (!is_display_profile_modified(directories, *settings, menu_elements)) {
         return;
     }
@@ -147,11 +141,9 @@ void save_settings(Menu_elements menu_elements, Settings settings, Directories d
     setting_json[U"hint_colorize"] = menu_elements.hint_colorize;
     setting_json[U"play_ordering_board_format"] = menu_elements.play_ordering_board_format;
     setting_json[U"play_ordering_transcript_format"] = menu_elements.play_ordering_transcript_format;
-    setting_json[U"auto_save_ai_profile"] = menu_elements.auto_save_ai_profile;
     setting_json[U"auto_save_ai_profile_mode"] = menu_elements.auto_save_ai_profile_overwrite ? PROFILE_AUTO_SAVE_MODE_OVERWRITE : PROFILE_AUTO_SAVE_MODE_NEW;
     setting_json[U"ai_profile_file"] = Unicode::Widen(settings.ai_profile_file);
     setting_json[U"ai_profile_name"] = Unicode::Widen(settings.ai_profile_name);
-    setting_json[U"auto_save_display_profile"] = menu_elements.auto_save_display_profile;
     setting_json[U"auto_save_display_profile_mode"] = menu_elements.auto_save_display_profile_overwrite ? PROFILE_AUTO_SAVE_MODE_OVERWRITE : PROFILE_AUTO_SAVE_MODE_NEW;
     setting_json[U"display_profile_file"] = Unicode::Widen(settings.display_profile_file);
     setting_json[U"display_profile_name"] = Unicode::Widen(settings.display_profile_name);

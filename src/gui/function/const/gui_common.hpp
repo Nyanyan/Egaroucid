@@ -573,11 +573,9 @@ struct Settings {
     bool hint_colorize;
     bool play_ordering_board_format;
     bool play_ordering_transcript_format;
-    bool auto_save_ai_profile;
     int auto_save_ai_profile_mode;
     std::string ai_profile_file;
     std::string ai_profile_name;
-    bool auto_save_display_profile;
     int auto_save_display_profile_mode;
     std::string display_profile_file;
     std::string display_profile_name;
@@ -669,7 +667,6 @@ struct Menu_elements {
     bool ai_loss_graph_setting;
     bool ai_profile_load;
     bool ai_profile_save;
-    bool auto_save_ai_profile;
     bool auto_save_ai_profile_overwrite;
     bool auto_save_ai_profile_new;
     bool shortcut_key_setting;
@@ -713,7 +710,6 @@ struct Menu_elements {
     bool hint_colorize;
     bool display_profile_load;
     bool display_profile_save;
-    bool auto_save_display_profile;
     bool auto_save_display_profile_overwrite;
     bool auto_save_display_profile_new;
 
@@ -830,7 +826,6 @@ struct Menu_elements {
         ai_loss_graph_setting = false;
         ai_profile_load = false;
         ai_profile_save = false;
-        auto_save_ai_profile = settings->auto_save_ai_profile;
         auto_save_ai_profile_overwrite = settings->auto_save_ai_profile_mode == PROFILE_AUTO_SAVE_MODE_OVERWRITE;
         auto_save_ai_profile_new = !auto_save_ai_profile_overwrite;
         shortcut_key_setting = false;
@@ -873,7 +868,6 @@ struct Menu_elements {
         hint_colorize = settings->hint_colorize;
         display_profile_load = false;
         display_profile_save = false;
-        auto_save_display_profile = settings->auto_save_display_profile;
         auto_save_display_profile_overwrite = settings->auto_save_display_profile_mode == PROFILE_AUTO_SAVE_MODE_OVERWRITE;
         auto_save_display_profile_new = !auto_save_display_profile_overwrite;
 

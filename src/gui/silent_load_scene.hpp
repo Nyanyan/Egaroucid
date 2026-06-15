@@ -115,11 +115,9 @@ void init_default_settings(const Directories* directories, const Resources* reso
     settings->hint_colorize = false;
     settings->play_ordering_board_format = true;
     settings->play_ordering_transcript_format = false;
-    settings->auto_save_ai_profile = false;
     settings->auto_save_ai_profile_mode = PROFILE_AUTO_SAVE_MODE_OVERWRITE;
     settings->ai_profile_file = "default.json";
     settings->ai_profile_name = "default";
-    settings->auto_save_display_profile = false;
     settings->auto_save_display_profile_mode = PROFILE_AUTO_SAVE_MODE_OVERWRITE;
     settings->display_profile_file = "default.json";
     settings->display_profile_name = "default";
@@ -549,13 +547,11 @@ void init_settings(const Directories* directories, const Resources* resources, S
         if (init_settings_import_str(setting_json, U"ai_profile_file", &settings->ai_profile_file) != ERR_OK) {
             settings->ai_profile_file = "default.json";
         }
-        init_settings_import_bool(setting_json, U"auto_save_ai_profile", &settings->auto_save_ai_profile);
         init_settings_import_int(setting_json, U"auto_save_ai_profile_mode", &settings->auto_save_ai_profile_mode);
         init_settings_import_str(setting_json, U"ai_profile_name", &settings->ai_profile_name);
         if (init_settings_import_str(setting_json, U"display_profile_file", &settings->display_profile_file) != ERR_OK) {
             settings->display_profile_file = "default.json";
         }
-        init_settings_import_bool(setting_json, U"auto_save_display_profile", &settings->auto_save_display_profile);
         init_settings_import_int(setting_json, U"auto_save_display_profile_mode", &settings->auto_save_display_profile_mode);
         init_settings_import_str(setting_json, U"display_profile_name", &settings->display_profile_name);
         init_settings_import_str(setting_json, U"input_game_last_subfolder", &settings->input_game_last_subfolder);
