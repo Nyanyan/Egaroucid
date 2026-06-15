@@ -12,6 +12,7 @@
 #include <Siv3D.hpp>
 #include <algorithm>
 #include <functional>
+#include <unordered_set>
 #include <vector>
 #include "util.hpp"
 
@@ -115,6 +116,203 @@ inline std::string make_child_subfolder(const PathState& state, const std::strin
         return child;
     }
     return state.subfolder + "/" + child;
+}
+
+inline bool is_valid_selection_row(int row, int folder_count, int item_count) {
+    return 0 <= row && row < folder_count + item_count;
+}
+
+inline int selection_row_for_folder(int idx, int folder_count) {
+    if (idx < 0 || idx >= folder_count) {
+        return -1;
+    }
+    return idx;
+}
+
+inline int selection_row_for_item(int idx, int folder_count, int item_count) {
+    if (idx < 0 || idx >= item_count) {
+        return -1;
+    }
+    return folder_count + idx;
+}
+
+inline bool has_selection(
+    const std::unordered_set<int>& folder_indices,
+    const std::unordered_set<int>& item_indices
+) {
+    return !folder_indices.empty() || !item_indices.empty();
+}
+
+inline int selection_count(
+    const std::unordered_set<int>& folder_indices,
+    const std::unordered_set<int>& item_indices
+) {
+    return static_cast<int>(folder_indices.size() + item_indices.size());
+}
+
+inline bool all_items_selected(
+    const std::unordered_set<int>& folder_indices,
+    const std::unordered_set<int>& item_indices,
+    int folder_count,
+    int item_count
+) {
+    const int total = folder_count + item_count;
+    return total > 0 && selection_count(folder_indices, item_indices) == total;
+}
+
+inline void clear_selection(
+    std::unordered_set<int>& folder_indices,
+    std::unordered_set<int>& item_indices,
+    int& anchor_row
+) {
+    folder_indices.clear();
+    item_indices.clear();
+    anchor_row = -1;
+}
+
+inline void prune_selection(
+    std::unordered_set<int>& folder_indices,
+    std::unordered_set<int>& item_indices,
+    int& anchor_row,
+    int folder_count,
+    int item_count
+) {
+    for (auto it = folder_indices.begin(); it != folder_indices.end();) {
+        if (*it < 0 || *it >= folder_count) {
+            it = folder_indices.erase(it);
+        } else {
+            ++it;
+        }
+    }
+    for (auto it = item_indices.begin(); it != item_indices.end();) {
+        if (*it < 0 || *it >= item_count) {
+            it = item_indices.erase(it);
+        } else {
+            ++it;
+        }
+    }
+    if (!is_valid_selection_row(anchor_row, folder_count, item_count)) {
+        anchor_row = -1;
+    }
+}
+
+inline void add_selection_row(
+    std::unordered_set<int>& folder_indices,
+    std::unordered_set<int>& item_indices,
+    int row,
+    int folder_count,
+    int item_count
+) {
+    if (!is_valid_selection_row(row, folder_count, item_count)) {
+        return;
+    }
+    if (row < folder_count) {
+        folder_indices.insert(row);
+    } else {
+        item_indices.insert(row - folder_count);
+    }
+}
+
+inline void remove_selection_row(
+    std::unordered_set<int>& folder_indices,
+    std::unordered_set<int>& item_indices,
+    int row,
+    int folder_count,
+    int item_count
+) {
+    if (!is_valid_selection_row(row, folder_count, item_count)) {
+        return;
+    }
+    if (row < folder_count) {
+        folder_indices.erase(row);
+    } else {
+        item_indices.erase(row - folder_count);
+    }
+}
+
+inline bool selection_row_selected(
+    const std::unordered_set<int>& folder_indices,
+    const std::unordered_set<int>& item_indices,
+    int row,
+    int folder_count,
+    int item_count
+) {
+    if (!is_valid_selection_row(row, folder_count, item_count)) {
+        return false;
+    }
+    if (row < folder_count) {
+        return folder_indices.count(row) != 0;
+    }
+    return item_indices.count(row - folder_count) != 0;
+}
+
+inline void select_all_items(
+    std::unordered_set<int>& folder_indices,
+    std::unordered_set<int>& item_indices,
+    int& anchor_row,
+    int folder_count,
+    int item_count
+) {
+    folder_indices.clear();
+    item_indices.clear();
+    anchor_row = -1;
+    for (int i = 0; i < folder_count; ++i) {
+        folder_indices.insert(i);
+    }
+    for (int i = 0; i < item_count; ++i) {
+        item_indices.insert(i);
+    }
+}
+
+inline void handle_selection_click(
+    std::unordered_set<int>& folder_indices,
+    std::unordered_set<int>& item_indices,
+    int& anchor_row,
+    int row,
+    int folder_count,
+    int item_count,
+    bool ctrl_pressed,
+    bool shift_pressed,
+    bool preserve_plain_click_on_selected = true
+) {
+    if (!is_valid_selection_row(row, folder_count, item_count)) {
+        return;
+    }
+
+    if (shift_pressed && is_valid_selection_row(anchor_row, folder_count, item_count)) {
+        if (!ctrl_pressed) {
+            folder_indices.clear();
+            item_indices.clear();
+        }
+        const int first = std::min(anchor_row, row);
+        const int last = std::max(anchor_row, row);
+        for (int selection_row = first; selection_row <= last; ++selection_row) {
+            add_selection_row(folder_indices, item_indices, selection_row, folder_count, item_count);
+        }
+        return;
+    }
+
+    if (ctrl_pressed) {
+        if (selection_row_selected(folder_indices, item_indices, row, folder_count, item_count)) {
+            remove_selection_row(folder_indices, item_indices, row, folder_count, item_count);
+        } else {
+            add_selection_row(folder_indices, item_indices, row, folder_count, item_count);
+        }
+        anchor_row = row;
+        return;
+    }
+
+    if (preserve_plain_click_on_selected &&
+        selection_count(folder_indices, item_indices) > 1 &&
+        selection_row_selected(folder_indices, item_indices, row, folder_count, item_count)) {
+        anchor_row = row;
+        return;
+    }
+
+    folder_indices.clear();
+    item_indices.clear();
+    add_selection_row(folder_indices, item_indices, row, folder_count, item_count);
+    anchor_row = row;
 }
 
 }  // namespace explorer

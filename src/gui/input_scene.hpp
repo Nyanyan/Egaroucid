@@ -2023,35 +2023,17 @@ private:
     }
 
     void clear_selection() {
-        selected_folder_indices.clear();
-        selected_game_indices.clear();
+        explorer::clear_selection(selected_folder_indices, selected_game_indices, selection_anchor_row);
         selected_folder_index = -1;
         selected_folder_name.clear();
-        selection_anchor_row = -1;
     }
 
     void prune_selection() {
-        for (auto it = selected_folder_indices.begin(); it != selected_folder_indices.end();) {
-            if (*it < 0 || *it >= (int)folders_display.size()) {
-                it = selected_folder_indices.erase(it);
-            } else {
-                ++it;
-            }
-        }
-        for (auto it = selected_game_indices.begin(); it != selected_game_indices.end();) {
-            if (*it < 0 || *it >= (int)games.size()) {
-                it = selected_game_indices.erase(it);
-            } else {
-                ++it;
-            }
-        }
-        if (!is_valid_selection_row(selection_anchor_row)) {
-            selection_anchor_row = -1;
-        }
+        explorer::prune_selection(selected_folder_indices, selected_game_indices, selection_anchor_row, (int)folders_display.size(), (int)games.size());
     }
 
     bool has_selection() const {
-        return !selected_folder_indices.empty() || !selected_game_indices.empty();
+        return explorer::has_selection(selected_folder_indices, selected_game_indices);
     }
 
     bool can_delete_selected_items() const {
@@ -2075,26 +2057,19 @@ private:
     }
 
     bool all_items_selected() const {
-        const int total = (int)folders_display.size() + (int)games.size();
-        return total > 0 && (int)(selected_folder_indices.size() + selected_game_indices.size()) == total;
+        return explorer::all_items_selected(selected_folder_indices, selected_game_indices, (int)folders_display.size(), (int)games.size());
     }
 
     int selection_row_for_folder(int idx) const {
-        if (idx < 0 || idx >= (int)folders_display.size()) {
-            return -1;
-        }
-        return idx;
+        return explorer::selection_row_for_folder(idx, (int)folders_display.size());
     }
 
     int selection_row_for_game(int idx) const {
-        if (idx < 0 || idx >= (int)games.size()) {
-            return -1;
-        }
-        return (int)folders_display.size() + idx;
+        return explorer::selection_row_for_item(idx, (int)folders_display.size(), (int)games.size());
     }
 
     bool is_valid_selection_row(int row) const {
-        return 0 <= row && row < (int)folders_display.size() + (int)games.size();
+        return explorer::is_valid_selection_row(row, (int)folders_display.size(), (int)games.size());
     }
 
     void clear_selection_sets() {
@@ -2103,35 +2078,15 @@ private:
     }
 
     void add_selection_row(int row) {
-        if (!is_valid_selection_row(row)) {
-            return;
-        }
-        if (row < (int)folders_display.size()) {
-            selected_folder_indices.insert(row);
-        } else {
-            selected_game_indices.insert(row - (int)folders_display.size());
-        }
+        explorer::add_selection_row(selected_folder_indices, selected_game_indices, row, (int)folders_display.size(), (int)games.size());
     }
 
     void remove_selection_row(int row) {
-        if (!is_valid_selection_row(row)) {
-            return;
-        }
-        if (row < (int)folders_display.size()) {
-            selected_folder_indices.erase(row);
-        } else {
-            selected_game_indices.erase(row - (int)folders_display.size());
-        }
+        explorer::remove_selection_row(selected_folder_indices, selected_game_indices, row, (int)folders_display.size(), (int)games.size());
     }
 
     bool selection_row_selected(int row) const {
-        if (!is_valid_selection_row(row)) {
-            return false;
-        }
-        if (row < (int)folders_display.size()) {
-            return selected_folder_indices.count(row) != 0;
-        }
-        return selected_game_indices.count(row - (int)folders_display.size()) != 0;
+        return explorer::selection_row_selected(selected_folder_indices, selected_game_indices, row, (int)folders_display.size(), (int)games.size());
     }
 
     void update_focused_selection_row(int row) {
@@ -2149,40 +2104,21 @@ private:
             return;
         }
 
-        if (shift_pressed && is_valid_selection_row(selection_anchor_row)) {
-            if (!ctrl_pressed) {
-                clear_selection_sets();
-            }
-            const int first = std::min(selection_anchor_row, row);
-            const int last = std::max(selection_anchor_row, row);
-            for (int selection_row = first; selection_row <= last; ++selection_row) {
-                add_selection_row(selection_row);
-            }
-        } else if (ctrl_pressed) {
-            if (selection_row_selected(row)) {
-                remove_selection_row(row);
-            } else {
-                add_selection_row(row);
-            }
-            selection_anchor_row = row;
-        } else {
-            clear_selection_sets();
-            add_selection_row(row);
-            selection_anchor_row = row;
-        }
+        explorer::handle_selection_click(
+            selected_folder_indices,
+            selected_game_indices,
+            selection_anchor_row,
+            row,
+            (int)folders_display.size(),
+            (int)games.size(),
+            ctrl_pressed,
+            shift_pressed
+        );
         update_focused_selection_row(row);
     }
 
     void select_all_items() {
-        selected_folder_indices.clear();
-        selected_game_indices.clear();
-        selection_anchor_row = -1;
-        for (int i = 0; i < (int)folders_display.size(); ++i) {
-            selected_folder_indices.insert(i);
-        }
-        for (int i = 0; i < (int)games.size(); ++i) {
-            selected_game_indices.insert(i);
-        }
+        explorer::select_all_items(selected_folder_indices, selected_game_indices, selection_anchor_row, (int)folders_display.size(), (int)games.size());
     }
 
     void handle_batch_action_shortcuts() {
@@ -2207,28 +2143,20 @@ private:
     }
 
     void draw_selection_highlights_foreground() {
-        const int strt_idx_int = scroll_manager.get_strt_idx_int();
-        const int parent_offset = explorer_state.has_parent() ? 1 : 0;
-        const int total_rows = parent_offset + (int)folders_display.size() + (int)games.size();
-        const int visible_end = std::min(total_rows, strt_idx_int + IMPORT_GAME_N_GAMES_ON_WINDOW);
-        for (int row = strt_idx_int; row < visible_end; ++row) {
-            if (row < parent_offset) {
-                continue;
-            }
-            bool selected = false;
-            const int item_idx = row - parent_offset;
-            if (item_idx < (int)folders_display.size()) {
-                selected = selected_folder_indices.count(item_idx) != 0;
-            } else {
-                const int game_idx = item_idx - (int)folders_display.size();
-                selected = selected_game_indices.count(game_idx) != 0;
-            }
-            if (selected) {
-                const int display_row = row - strt_idx_int;
-                const int y = IMPORT_GAME_SY + 8 + display_row * IMPORT_GAME_HEIGHT;
-                draw_explorer_selection_highlight(Rect(IMPORT_GAME_SX, y, IMPORT_GAME_WIDTH, IMPORT_GAME_HEIGHT), getData().colors.white);
-            }
-        }
+        draw_explorer_selection_highlights_foreground(
+            scroll_manager,
+            explorer_state.has_parent(),
+            (int)folders_display.size(),
+            (int)games.size(),
+            selected_folder_indices,
+            selected_game_indices,
+            IMPORT_GAME_SX,
+            IMPORT_GAME_SY + 8,
+            IMPORT_GAME_WIDTH,
+            IMPORT_GAME_HEIGHT,
+            IMPORT_GAME_N_GAMES_ON_WINDOW,
+            getData().colors.white
+        );
     }
 
     void draw_batch_action_buttons() {

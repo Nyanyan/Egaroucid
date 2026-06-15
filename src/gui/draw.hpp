@@ -448,6 +448,45 @@ inline void draw_explorer_selection_highlight(const Rect& rect, const Color& bas
     rect.draw(ColorF(base_color, 0.18)).drawFrame(2, Palette::Cyan);
 }
 
+inline void draw_explorer_selection_highlights_foreground(
+    Scroll_manager& scroll_manager,
+    bool has_parent,
+    int folder_count,
+    int item_count,
+    const std::unordered_set<int>& selected_folder_indices,
+    const std::unordered_set<int>& selected_item_indices,
+    int list_x,
+    int list_top,
+    int list_width,
+    int item_height,
+    int visible_row_count,
+    const Color& base_color
+) {
+    const int strt_idx_int = scroll_manager.get_strt_idx_int();
+    const int parent_offset = has_parent ? 1 : 0;
+    const int total_rows = parent_offset + folder_count + item_count;
+    const int visible_end = std::min(total_rows, strt_idx_int + visible_row_count);
+    for (int row = strt_idx_int; row < visible_end; ++row) {
+        if (row < parent_offset) {
+            continue;
+        }
+        const int item_idx = row - parent_offset;
+        bool selected = false;
+        if (item_idx < folder_count) {
+            selected = selected_folder_indices.count(item_idx) != 0;
+        } else {
+            selected = selected_item_indices.count(item_idx - folder_count) != 0;
+        }
+        if (selected) {
+            const int display_row = row - strt_idx_int;
+            draw_explorer_selection_highlight(
+                Rect(list_x, list_top + display_row * item_height, list_width, item_height),
+                base_color
+            );
+        }
+    }
+}
+
 // Helper function to handle drag drop detection
 template <class FontsT, class ColorsT, class ResourcesT, class LanguageT>
 inline ExplorerDrawResult handle_drag_drop(
