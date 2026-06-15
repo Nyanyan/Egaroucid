@@ -194,7 +194,7 @@ inline bool data_migration_copy_tree_preserve_conflicts(const String& source, co
 inline bool data_migration_save_manifest(const String& root, const Directories& directories) {
     JSON manifest;
     manifest[U"format"] = U"Egaroucid_Settings_Folder";
-    manifest[U"version"] = Unicode::Widen(EGAROUCID_VERSION);
+    manifest[U"version"] = EGAROUCID_VERSION;
     manifest[U"exported_at"] = DateTime::Now().format(U"yyyy-MM-dd HH:mm:ss");
     manifest[U"source_document_dir"] = Unicode::Widen(directories.document_dir);
     manifest[U"source_appdata_dir"] = Unicode::Widen(directories.appdata_dir);
