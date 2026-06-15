@@ -1742,6 +1742,7 @@ private:
     bool creating_folder = false;
     std::unordered_set<int> selected_folder_indices;
     std::unordered_set<int> selected_game_indices;
+    int selection_anchor_row = -1;
     bool clipboard_cut = false;
 
     struct Clipboard_item {
@@ -1943,12 +1944,13 @@ public:
                 }
             }
             if (res.folderClicked) {
-                toggle_folder_selection(res.folderRenameIndex);
+                handle_selection_click(selection_row_for_folder(res.folderRenameIndex), KeyControl.pressed(), KeyShift.pressed());
             }
             if (res.folderDoubleClicked) {
                 if (renaming_folder) {
                     cancel_folder_rename();
                 }
+                clear_selection();
                 explorer_state.navigate_to_child(res.clickedFolder);
                 sync_last_opened_subfolder();
                 enumerate_current_dir();
@@ -1963,7 +1965,7 @@ public:
                 delete_game(res.deleteIndex);
             }
             if (res.gameClicked && res.clickedGameIndex >= 0) {
-                toggle_game_selection(res.clickedGameIndex);
+                handle_selection_click(selection_row_for_game(res.clickedGameIndex), KeyControl.pressed(), KeyShift.pressed());
             }
             if (res.editClicked && res.editIndex >= 0) {
                 edit_game(res.editIndex);
@@ -2018,6 +2020,7 @@ private:
         selected_game_indices.clear();
         selected_folder_index = -1;
         selected_folder_name.clear();
+        selection_anchor_row = -1;
     }
 
     void prune_selection() {
@@ -2035,6 +2038,9 @@ private:
                 ++it;
             }
         }
+        if (!is_valid_selection_row(selection_anchor_row)) {
+            selection_anchor_row = -1;
+        }
     }
 
     bool has_selection() const {
@@ -2046,33 +2052,104 @@ private:
         return total > 0 && (int)(selected_folder_indices.size() + selected_game_indices.size()) == total;
     }
 
-    void toggle_folder_selection(int idx) {
+    int selection_row_for_folder(int idx) const {
         if (idx < 0 || idx >= (int)folders_display.size()) {
-            return;
+            return -1;
         }
-        if (selected_folder_indices.count(idx)) {
-            selected_folder_indices.erase(idx);
-        } else {
-            selected_folder_indices.insert(idx);
-        }
-        selected_folder_index = idx;
-        selected_folder_name = folders_display[idx];
+        return idx;
     }
 
-    void toggle_game_selection(int idx) {
+    int selection_row_for_game(int idx) const {
         if (idx < 0 || idx >= (int)games.size()) {
+            return -1;
+        }
+        return (int)folders_display.size() + idx;
+    }
+
+    bool is_valid_selection_row(int row) const {
+        return 0 <= row && row < (int)folders_display.size() + (int)games.size();
+    }
+
+    void clear_selection_sets() {
+        selected_folder_indices.clear();
+        selected_game_indices.clear();
+    }
+
+    void add_selection_row(int row) {
+        if (!is_valid_selection_row(row)) {
             return;
         }
-        if (selected_game_indices.count(idx)) {
-            selected_game_indices.erase(idx);
+        if (row < (int)folders_display.size()) {
+            selected_folder_indices.insert(row);
         } else {
-            selected_game_indices.insert(idx);
+            selected_game_indices.insert(row - (int)folders_display.size());
         }
+    }
+
+    void remove_selection_row(int row) {
+        if (!is_valid_selection_row(row)) {
+            return;
+        }
+        if (row < (int)folders_display.size()) {
+            selected_folder_indices.erase(row);
+        } else {
+            selected_game_indices.erase(row - (int)folders_display.size());
+        }
+    }
+
+    bool selection_row_selected(int row) const {
+        if (!is_valid_selection_row(row)) {
+            return false;
+        }
+        if (row < (int)folders_display.size()) {
+            return selected_folder_indices.count(row) != 0;
+        }
+        return selected_game_indices.count(row - (int)folders_display.size()) != 0;
+    }
+
+    void update_focused_selection_row(int row) {
+        if (row >= 0 && row < (int)folders_display.size()) {
+            selected_folder_index = row;
+            selected_folder_name = folders_display[row];
+        } else {
+            selected_folder_index = -1;
+            selected_folder_name.clear();
+        }
+    }
+
+    void handle_selection_click(int row, bool ctrl_pressed, bool shift_pressed) {
+        if (!is_valid_selection_row(row)) {
+            return;
+        }
+
+        if (shift_pressed && is_valid_selection_row(selection_anchor_row)) {
+            if (!ctrl_pressed) {
+                clear_selection_sets();
+            }
+            const int first = std::min(selection_anchor_row, row);
+            const int last = std::max(selection_anchor_row, row);
+            for (int selection_row = first; selection_row <= last; ++selection_row) {
+                add_selection_row(selection_row);
+            }
+        } else if (ctrl_pressed) {
+            if (selection_row_selected(row)) {
+                remove_selection_row(row);
+            } else {
+                add_selection_row(row);
+            }
+            selection_anchor_row = row;
+        } else {
+            clear_selection_sets();
+            add_selection_row(row);
+            selection_anchor_row = row;
+        }
+        update_focused_selection_row(row);
     }
 
     void select_all_items() {
         selected_folder_indices.clear();
         selected_game_indices.clear();
+        selection_anchor_row = -1;
         for (int i = 0; i < (int)folders_display.size(); ++i) {
             selected_folder_indices.insert(i);
         }
@@ -2472,8 +2549,7 @@ private:
             new_folder_area.rebuildGlyphs();
             enumerate_current_dir();
             load_games();
-            select_folder(input);
-            selected_folder_indices.insert(find_folder_index(input));
+            handle_selection_click(selection_row_for_folder(find_folder_index(input)), false, false);
         }
         return created;
     }
@@ -2529,9 +2605,7 @@ private:
         if (renamed) {
             cancel_folder_rename();
             enumerate_current_dir();
-            select_folder(trimmed);
-            clear_selection();
-            selected_folder_indices.insert(find_folder_index(trimmed));
+            handle_selection_click(selection_row_for_folder(find_folder_index(trimmed)), false, false);
         }
         return renamed;
     }

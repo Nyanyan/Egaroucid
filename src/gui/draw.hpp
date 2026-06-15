@@ -444,6 +444,10 @@ struct ExplorerFolderInlineConfig {
     std::function<bool(const String&)> on_commit;
 };
 
+inline void draw_explorer_selection_highlight(const Rect& rect, const Color& base_color) {
+    rect.draw(ColorF(base_color, 0.18)).drawFrame(2, Palette::Cyan);
+}
+
 // Helper function to handle drag drop detection
 template <class FontsT, class ColorsT, class ResourcesT, class LanguageT>
 inline ExplorerDrawResult handle_drag_drop(
@@ -894,10 +898,6 @@ inline ExplorerDrawResult draw_folder_item(
     bool is_inline_target = inline_editing && inline_config->folder_index == folder_index;
     bool interactions_locked = inline_editing && !is_inline_target;
 
-    if (selected) {
-        rect.draw(ColorF(colors.white, 0.18)).drawFrame(2, Palette::Cyan);
-    }
-
     double folder_icon_scale = (double)(rect.h - 2 * 10) / (double)resources.folder.height();
     bool is_being_dragged = (drag_state.is_dragging_folder && drag_state.dragged_folder_name == fname);
     Color icon_alpha = is_being_dragged ? colors.white.withAlpha(128) : colors.white;
@@ -956,6 +956,10 @@ inline ExplorerDrawResult draw_folder_item(
                                   (drag_state.is_dragging_folder && drag_state.dragged_folder_name != fname);
     if (is_dragging_something && rect.contains(drag_state.current_mouse_pos) && !inline_editing) {
         rect.drawFrame(gui_list::DragColors::DropTargetFrameThickness, gui_list::DragColors::DropTargetFrame);
+    }
+
+    if (selected) {
+        draw_explorer_selection_highlight(rect, colors.white);
     }
 
     if (interactions_locked) {
@@ -1048,9 +1052,6 @@ inline ExplorerDrawResult draw_game_item(
     
     // Always draw background, but make it more transparent when being dragged
     rect.draw(game_bg_color);
-    if (selected) {
-        rect.draw(ColorF(colors.white, 0.18)).drawFrame(2, Palette::Cyan);
-    }
     
     // テキスト色をドラッグ状態に応じて調整
     Color text_color = interactions_locked ? colors.white.withAlpha(96) : (is_being_dragged ? colors.white.withAlpha(128) : colors.white);
@@ -1192,6 +1193,10 @@ inline ExplorerDrawResult draw_game_item(
     }
     
     fonts.font(game.memo).draw(12, IMPORT_GAME_SX + IMPORT_GAME_LEFT_MARGIN + 10, black_player_rect.y + black_player_rect.h, colors.white);
+
+    if (selected) {
+        draw_explorer_selection_highlight(rect, colors.white);
+    }
     
     // Handle game double-click for importing (avoiding delete button area)
     Rect game_click_area = rect;
