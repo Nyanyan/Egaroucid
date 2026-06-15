@@ -113,6 +113,7 @@ void init_default_settings(const Directories* directories, const Resources* reso
     settings->hint_colorize = false;
     settings->play_ordering_board_format = true;
     settings->play_ordering_transcript_format = false;
+    settings->auto_save_ai_profile = false;
     settings->ai_profile_file = "default.json";
     settings->ai_profile_name = "default";
 }
@@ -542,6 +543,7 @@ void init_settings(const Directories* directories, const Resources* resources, S
         if (init_settings_import_str(setting_json, U"ai_profile_file", &settings->ai_profile_file) != ERR_OK) {
             settings->ai_profile_file = "default.json";
         }
+        init_settings_import_bool(setting_json, U"auto_save_ai_profile", &settings->auto_save_ai_profile);
         init_settings_import_str(setting_json, U"ai_profile_name", &settings->ai_profile_name);
         init_settings_import_str(setting_json, U"input_game_last_subfolder", &settings->input_game_last_subfolder);
         init_settings_import_str(setting_json, U"opening_setting_last_subfolder", &settings->opening_setting_last_subfolder);

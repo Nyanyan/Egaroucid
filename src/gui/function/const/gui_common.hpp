@@ -569,6 +569,7 @@ struct Settings {
     bool hint_colorize;
     bool play_ordering_board_format;
     bool play_ordering_transcript_format;
+    bool auto_save_ai_profile;
     std::string ai_profile_file;
     std::string ai_profile_name;
 };
@@ -660,6 +661,7 @@ struct Menu_elements {
     bool ai_loss_graph_setting;
     bool ai_profile_load;
     bool ai_profile_save;
+    bool auto_save_ai_profile;
     bool shortcut_key_setting;
     bool shortcut_button_setting;
     bool mouse_additional_button_setting;
@@ -812,6 +814,7 @@ struct Menu_elements {
         ai_loss_graph_setting = false;
         ai_profile_load = false;
         ai_profile_save = false;
+        auto_save_ai_profile = settings->auto_save_ai_profile;
         shortcut_key_setting = false;
         shortcut_button_setting = false;
         mouse_additional_button_setting = false;

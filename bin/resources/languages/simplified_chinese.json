@@ -82,7 +82,8 @@
             "no_profile": "没有可用配置",
             "double_click_to_load": "双击即可读取",
             "current": "当前",
-            "modified_from_profile": "已从此配置修改"
+            "modified_from_profile": "已从此配置修改",
+            "auto_save": "自动保存AI配置"
         }
     },
     "ai_settings": {

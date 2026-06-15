@@ -82,7 +82,8 @@
             "no_profile": "沒有可用設定檔",
             "double_click_to_load": "雙擊即可讀取",
             "current": "目前",
-            "modified_from_profile": "已從此設定檔修改"
+            "modified_from_profile": "已從此設定檔修改",
+            "auto_save": "自動儲存AI設定檔"
         }
     },
     "ai_settings": {

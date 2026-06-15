@@ -82,7 +82,8 @@
             "no_profile": "プロファイルがありません",
             "double_click_to_load": "ダブルクリックで読み込み",
             "current": "現在",
-            "modified_from_profile": "このプロファイルから変更済み"
+            "modified_from_profile": "このプロファイルから変更済み",
+            "auto_save": "AIプロファイルを自動保存"
         }
     },
     "ai_settings": {
