@@ -175,6 +175,7 @@ I would like to thank these people for great contributions (in no particular ord
 - Technical Contribution / [GitHub Contribution](https://github.com/Nyanyan/Egaroucid/graphs/contributors)
   - Toshihiko Okuhara
   - Hayato Sasakura
+  - RuiRui
   - acepck
   - Sotaro Ishii
   - Benson Muite
