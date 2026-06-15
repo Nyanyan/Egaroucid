@@ -743,6 +743,29 @@ private:
         return true;
     }
 
+    bool load_display_profile_shortcut(const String& shortcut_name) {
+        if (!is_display_profile_shortcut_name(shortcut_name)) {
+            return false;
+        }
+
+        const String profile_file = get_display_profile_file_name_from_shortcut_name(shortcut_name);
+        const String profile_path = get_display_settings_file_path(getData().directories, profile_file);
+        Display_profile_values values = to_display_profile_values(getData().menu_elements);
+        String profile_name;
+        if (!load_display_profile_values(profile_path, &values, &profile_name)) {
+            std::cerr << "failed to load display profile shortcut: " << profile_file.narrow() << std::endl;
+            return false;
+        }
+
+        stop_calculating();
+        apply_display_profile_values(values, &getData().menu_elements);
+        apply_display_profile_values(values, &getData().settings);
+        getData().settings.display_profile_file = profile_file.narrow();
+        getData().settings.display_profile_name = profile_name.narrow();
+        resume_calculating();
+        return true;
+    }
+
     void menu_game() {
         if (getData().menu_elements.start_game || shortcut_key == U"new_game") {
             stop_calculating();
@@ -926,6 +949,16 @@ private:
     }
 
     void menu_display() {
+        if (load_display_profile_shortcut(shortcut_key)) {
+            return;
+        }
+        if (getData().menu_elements.display_profile_load || shortcut_key == U"display_profile_load") {
+            changing_scene = true;
+            stop_calculating();
+            resume_calculating();
+            changeScene(U"Display_profile_load", SCENE_FADE_TIME);
+            return;
+        }
         // on cells
         if (shortcut_key == U"show_legal") {
             getData().menu_elements.show_legal = !getData().menu_elements.show_legal;

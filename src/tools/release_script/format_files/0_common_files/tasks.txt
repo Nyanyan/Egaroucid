@@ -7,6 +7,7 @@ installer book.egbk3 Documents/Egaroucid
 installer empty_book.egbk3 Documents/Egaroucid
 installer version.txt AppData/Egaroucid
 installer ai_settings AppData/Egaroucid/ai_settings
+installer display_settings AppData/Egaroucid/display_settings
 installer img resources/img
 installer languages resources/languages
 installer eval.egev2 resources
@@ -17,6 +18,7 @@ installer xot resources/xot
 portable book.egbk3 document
 portable empty_book.egbk3 document
 portable ai_settings appdata/ai_settings
+portable display_settings appdata/display_settings
 portable version.txt appdata
 portable img resources/img
 portable languages resources/languages

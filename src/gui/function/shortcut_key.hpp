@@ -19,6 +19,7 @@
 #include <unordered_map>
 #include "const/gui_common.hpp"
 #include "ai_profile.hpp"
+#include "display_profile.hpp"
 #include "language.hpp"
 #if SIV3D_PLATFORM(WINDOWS)
 #ifndef NOMINMAX
@@ -29,6 +30,7 @@
 
 #define SHORTCUT_KEY_UNDEFINED U"undefined"
 #define SHORTCUT_KEY_AI_PROFILE_PREFIX U"ai_profile:"
+#define SHORTCUT_KEY_DISPLAY_PROFILE_PREFIX U"display_profile:"
 
 struct Shortcut_key_elem {
     String name;
@@ -52,6 +54,21 @@ inline String get_ai_profile_file_name_from_shortcut_name(const String& shortcut
     return shortcut_name.substr(String(SHORTCUT_KEY_AI_PROFILE_PREFIX).size());
 }
 
+inline String get_display_profile_shortcut_name(const String& profile_file_name) {
+    return String(SHORTCUT_KEY_DISPLAY_PROFILE_PREFIX) + profile_file_name;
+}
+
+inline bool is_display_profile_shortcut_name(const String& shortcut_name) {
+    return shortcut_name.starts_with(String(SHORTCUT_KEY_DISPLAY_PROFILE_PREFIX));
+}
+
+inline String get_display_profile_file_name_from_shortcut_name(const String& shortcut_name) {
+    if (!is_display_profile_shortcut_name(shortcut_name)) {
+        return U"";
+    }
+    return shortcut_name.substr(String(SHORTCUT_KEY_DISPLAY_PROFILE_PREFIX).size());
+}
+
 inline Shortcut_key_elem create_ai_profile_shortcut_key_elem(const FilePath& path) {
     String profile_name;
     AI_profile_values values;
@@ -66,12 +83,35 @@ inline Shortcut_key_elem create_ai_profile_shortcut_key_elem(const FilePath& pat
     return elem;
 }
 
+inline Shortcut_key_elem create_display_profile_shortcut_key_elem(const FilePath& path) {
+    String profile_name;
+    Display_profile_values values;
+    if (!load_display_profile_values(path, &values, &profile_name) || profile_name.trimmed().isEmpty()) {
+        profile_name = FileSystem::FileName(path);
+    }
+
+    Shortcut_key_elem elem;
+    elem.name = get_display_profile_shortcut_name(FileSystem::FileName(path));
+    elem.description_keys = {{"display", "display"}, {"display", "profile", "profile"}};
+    elem.description_suffix = profile_name;
+    return elem;
+}
+
 inline void append_ai_profile_shortcut_key_elems(std::vector<Shortcut_key_elem>* shortcut_key_elems, const Directories* directories) {
     if (directories == nullptr) {
         return;
     }
     for (const auto& path : enumerate_ai_profile_files(*directories)) {
         shortcut_key_elems->emplace_back(create_ai_profile_shortcut_key_elem(path));
+    }
+}
+
+inline void append_display_profile_shortcut_key_elems(std::vector<Shortcut_key_elem>* shortcut_key_elems, const Directories* directories) {
+    if (directories == nullptr) {
+        return;
+    }
+    for (const auto& path : enumerate_display_profile_files(*directories)) {
+        shortcut_key_elems->emplace_back(create_display_profile_shortcut_key_elem(path));
     }
 }
 
@@ -102,6 +142,7 @@ std::vector<Shortcut_key_elem> shortcut_keys_default = {
     {U"mouse_additional_button_setting",{},             {{"settings", "settings"}, {"settings", "mouse_additional_buttons", "settings"}}},
 
     // display
+    {U"display_profile_load",  {},                      {{"display", "display"}, {"display", "profile", "profile"}}},
     // on cell
     {U"show_legal",             {},                     {{"display", "display"}, {"display", "cell", "display_on_cell"}, {"display", "cell", "legal"}}},
     {U"show_disc_hint",         {U"V"},                 {{"display", "display"}, {"display", "cell", "display_on_cell"}, {"display", "cell", "disc_value"}}},
@@ -1346,6 +1387,17 @@ private:
             ++insert_pos;
         }
         current_default_shortcut_keys.insert(insert_pos, ai_profile_shortcut_keys.begin(), ai_profile_shortcut_keys.end());
+
+        std::vector<Shortcut_key_elem> display_profile_shortcut_keys;
+        append_display_profile_shortcut_key_elems(&display_profile_shortcut_keys, directories);
+        auto display_insert_pos = std::find_if(
+            current_default_shortcut_keys.begin(),
+            current_default_shortcut_keys.end(),
+            [](const Shortcut_key_elem& elem) { return elem.name == U"display_profile_load"; });
+        if (display_insert_pos != current_default_shortcut_keys.end()) {
+            ++display_insert_pos;
+        }
+        current_default_shortcut_keys.insert(display_insert_pos, display_profile_shortcut_keys.begin(), display_profile_shortcut_keys.end());
     }
 };
 

@@ -35,6 +35,27 @@ void save_modified_ai_profile_if_needed(Menu_elements menu_elements, Settings* s
     }
 }
 
+void save_modified_display_profile_if_needed(Menu_elements menu_elements, Settings* settings, Directories directories) {
+    if (!menu_elements.auto_save_display_profile) {
+        return;
+    }
+    if (!is_display_profile_modified(directories, *settings, menu_elements)) {
+        return;
+    }
+
+    String base_profile_name = Unicode::Widen(settings->display_profile_name);
+    if (base_profile_name.isEmpty()) {
+        base_profile_name = U"default";
+    }
+    const String memo_name = base_profile_name + U" " + DateTime::Now().format(U"yyyy-MM-dd");
+    const String profile_path = generate_unique_display_profile_filepath(directories);
+    const Display_profile_values values = to_display_profile_values(menu_elements);
+    if (save_display_profile_values(profile_path, values, memo_name)) {
+        settings->display_profile_file = FileSystem::FileName(profile_path).narrow();
+        settings->display_profile_name = memo_name.narrow();
+    }
+}
+
 void save_settings(Menu_elements menu_elements, Settings settings, Directories directories, User_settings user_settings, Window_state window_state) {
     JSON setting_json;
     setting_json[AUTO_UPDATE_CHECK_SETTING_KEY] = menu_elements.auto_update_check;
@@ -97,12 +118,16 @@ void save_settings(Menu_elements menu_elements, Settings settings, Directories d
     setting_json[U"auto_save_ai_profile"] = menu_elements.auto_save_ai_profile;
     setting_json[U"ai_profile_file"] = Unicode::Widen(settings.ai_profile_file);
     setting_json[U"ai_profile_name"] = Unicode::Widen(settings.ai_profile_name);
+    setting_json[U"auto_save_display_profile"] = menu_elements.auto_save_display_profile;
+    setting_json[U"display_profile_file"] = Unicode::Widen(settings.display_profile_file);
+    setting_json[U"display_profile_name"] = Unicode::Widen(settings.display_profile_name);
     setting_json.save(U"{}setting.json"_fmt(Unicode::Widen(directories.appdata_dir)));
 }
 
 void close_app(Menu_elements menu_elements, Settings settings, Directories directories, User_settings user_settings, Book_information book_information, Forced_openings forced_openings, Window_state window_state) {
     if (!window_state.loading) {
         save_modified_ai_profile_if_needed(menu_elements, &settings, directories);
+        save_modified_display_profile_if_needed(menu_elements, &settings, directories);
         save_settings(menu_elements, settings, directories, user_settings, window_state);
         String shortcut_key_file = U"{}shortcut_key.json"_fmt(Unicode::Widen(directories.appdata_dir));
         shortcut_keys.save_settings(shortcut_key_file);
