@@ -116,11 +116,11 @@ void init_default_settings(const Directories* directories, const Resources* reso
     settings->play_ordering_board_format = true;
     settings->play_ordering_transcript_format = false;
     settings->auto_save_ai_profile = false;
-    settings->auto_save_ai_profile_mode = PROFILE_AUTO_SAVE_MODE_NEW;
+    settings->auto_save_ai_profile_mode = PROFILE_AUTO_SAVE_MODE_OVERWRITE;
     settings->ai_profile_file = "default.json";
     settings->ai_profile_name = "default";
     settings->auto_save_display_profile = false;
-    settings->auto_save_display_profile_mode = PROFILE_AUTO_SAVE_MODE_NEW;
+    settings->auto_save_display_profile_mode = PROFILE_AUTO_SAVE_MODE_OVERWRITE;
     settings->display_profile_file = "default.json";
     settings->display_profile_name = "default";
 }
