@@ -7,12 +7,19 @@ import os
 import sys
 import glob
 import shutil
+import argparse
 
 # common
-if len(sys.argv) != 2:
-    print('[ERROR] please execute `python generate_release.py X.Y.Z`')
-    exit(1)
-VERSION_DOT = sys.argv[1]
+parser = argparse.ArgumentParser(description='Generate Egaroucid release files.')
+parser.add_argument('version', metavar='X.Y.Z')
+parser.add_argument('--console', action='store_true', help='generate console release')
+parser.add_argument('--gui', action='store_true', help='generate GUI installer and portable releases')
+args = parser.parse_args()
+if not args.console and not args.gui:
+    args.console = True
+    args.gui = True
+
+VERSION_DOT = args.version
 VERSION_UNDERBAR = VERSION_DOT.replace('.', '_')
 FORMAT_FILES_DIR = 'format_files'
 COMMON_FILES_IN_DIR = FORMAT_FILES_DIR + '/0_common_files'
@@ -43,79 +50,96 @@ def copy_common_files(correct_task_type, dst_dir_root):
             print(common_file_in_dir, common_file_dst_dir)
     
 
-#'''
-# Egaroucid for Console
-print('\n')
-print('<<<<<<<< Egaroucid for Console >>>>>>>>')
-CONSOLE_DST_DIR = DST_ROOT + '/' + VERSION_UNDERBAR + '/console'
-CONSOLE_IN_EXES_DIR = FORMAT_FILES_DIR + '/1_console_exes'
-CONSOLE_IN_FILES_DIR = FORMAT_FILES_DIR + '/console_files'
-os.mkdir(CONSOLE_DST_DIR)
-console_exes = glob.glob(CONSOLE_IN_EXES_DIR + '/*.exe')
-console_dir_names = ['.'.join(elem.replace('\\', '/').split('/')[-1].split('.')[:-1]) for elem in console_exes]
-for i in range(len(console_dir_names)):
-    separated = console_dir_names[i].split(VERSION_UNDERBAR)
-    console_dir_names[i] = separated[0] + VERSION_UNDERBAR + '_Windows' + separated[1] # add 'Windows'
-for console_dir_name, console_exe in zip(console_dir_names, console_exes):
-    print(console_dir_name)
-    console_dir = CONSOLE_DST_DIR + '/' + console_dir_name
-    os.mkdir(console_dir)
-    shutil.copy2(console_exe, console_dir) # copy main executable
-    shutil.copytree(CONSOLE_IN_FILES_DIR, console_dir, dirs_exist_ok=True) # copy other resources
-    copy_common_files('console', console_dir) # copy common special files
-    shutil.make_archive(console_dir, format='zip', root_dir = CONSOLE_DST_DIR, base_dir = console_dir_name) # zip archive with folder inside
-#'''
+def versioned_exes(exes_dir):
+    all_exes = sorted(glob.glob(exes_dir + '/*.exe'))
+    filtered_exes = sorted(glob.glob(exes_dir + '/*_' + VERSION_UNDERBAR + '_*.exe'))
+    skipped_exes = [elem for elem in all_exes if elem not in filtered_exes]
+    for skipped_exe in skipped_exes:
+        print('[SKIP] version mismatch: ' + skipped_exe)
+    if len(filtered_exes) == 0:
+        print('[ERROR] no executables for version ' + VERSION_UNDERBAR + ' in ' + exes_dir)
+        sys.exit(1)
+    return filtered_exes
 
 
-
-#'''
-# Egaroucid Installer
-print('\n')
-print('<<<<<<<< Egaroucid Installer >>>>>>>>')
-INSTALLER_DST_DIR = DST_ROOT + '/' + VERSION_UNDERBAR + '/GUI_Installer'
-INSTALLER_DST_FILES_DIR = INSTALLER_DST_DIR + '/files'
-INSTALLER_DST_INSTALLER_DIR = INSTALLER_DST_DIR + '/installer'
-INSTALLER_IN_EXES_DIR = FORMAT_FILES_DIR + '/2_GUI_Installer_exes'
-INSTALLER_IN_FILES_DIR = FORMAT_FILES_DIR + '/GUI_Installer_files'
-INSTALLER_IN_SETUP_FILE = FORMAT_FILES_DIR + '/GUI_Installer_setup/egaroucid_setup.iss'
-os.mkdir(INSTALLER_DST_DIR)
-installer_exes = glob.glob(INSTALLER_IN_EXES_DIR + '/*.exe')
-os.mkdir(INSTALLER_DST_INSTALLER_DIR)
-for installer_exe in installer_exes:
-    print(installer_exe)
-    shutil.copy2(installer_exe, INSTALLER_DST_INSTALLER_DIR) # copy main executable
-shutil.copy2(INSTALLER_IN_SETUP_FILE, INSTALLER_DST_INSTALLER_DIR) # copy setup file
-with open(INSTALLER_DST_INSTALLER_DIR + '/egaroucid_setup.iss', 'r', encoding='utf-8') as f:
-    installer_setup = f.read()
-installer_setup = installer_setup.replace('REPLACE_VERSION_DOT', VERSION_DOT).replace('REPLACE_VERSION_UNDERBAR', VERSION_UNDERBAR) # replace version information
-with open(INSTALLER_DST_INSTALLER_DIR + '/egaroucid_setup.iss', 'w', encoding='utf-8') as f:
-    f.write(installer_setup) # rewrite setup file
-shutil.copytree(INSTALLER_IN_FILES_DIR, INSTALLER_DST_FILES_DIR, dirs_exist_ok=True) # copy files
-copy_common_files('installer', INSTALLER_DST_FILES_DIR) # copy common special files
-#'''
+def windows_dir_name(exe_path):
+    exe_name = os.path.splitext(os.path.basename(exe_path))[0]
+    separated = exe_name.split(VERSION_UNDERBAR, 1)
+    if len(separated) != 2:
+        print('[ERROR] invalid executable name for version ' + VERSION_UNDERBAR + ': ' + exe_path)
+        sys.exit(1)
+    return separated[0] + VERSION_UNDERBAR + '_Windows' + separated[1] # add 'Windows'
 
 
+def generate_console_release():
+    # Egaroucid for Console
+    print('\n')
+    print('<<<<<<<< Egaroucid for Console >>>>>>>>')
+    CONSOLE_DST_DIR = DST_ROOT + '/' + VERSION_UNDERBAR + '/console'
+    CONSOLE_IN_EXES_DIR = FORMAT_FILES_DIR + '/1_console_exes'
+    CONSOLE_IN_FILES_DIR = FORMAT_FILES_DIR + '/console_files'
+    os.mkdir(CONSOLE_DST_DIR)
+    console_exes = versioned_exes(CONSOLE_IN_EXES_DIR)
+    for console_exe in console_exes:
+        console_dir_name = windows_dir_name(console_exe)
+        print(console_dir_name)
+        console_dir = CONSOLE_DST_DIR + '/' + console_dir_name
+        os.mkdir(console_dir)
+        shutil.copy2(console_exe, console_dir) # copy main executable
+        shutil.copytree(CONSOLE_IN_FILES_DIR, console_dir, dirs_exist_ok=True) # copy other resources
+        copy_common_files('console', console_dir) # copy common special files
+        shutil.make_archive(console_dir, format='zip', root_dir = CONSOLE_DST_DIR, base_dir = console_dir_name) # zip archive with folder inside
 
 
-#'''
-# Egaroucid Portable
-print('\n')
-print('<<<<<<<< Egaroucid Portable >>>>>>>>')
-PORTABLE_DST_DIR = DST_ROOT + '/' + VERSION_UNDERBAR + '/GUI_Portable'
-PORTABLE_IN_EXES_DIR = FORMAT_FILES_DIR + '/3_GUI_Portable_exes'
-PORTABLE_IN_FILES_DIR = FORMAT_FILES_DIR + '/GUI_Portable_files'
-os.mkdir(PORTABLE_DST_DIR)
-portable_exes = glob.glob(PORTABLE_IN_EXES_DIR + '/*.exe')
-portable_dir_names = ['.'.join(elem.replace('\\', '/').split('/')[-1].split('.')[:-1]) for elem in portable_exes]
-for i in range(len(portable_dir_names)):
-    separated = portable_dir_names[i].split(VERSION_UNDERBAR)
-    portable_dir_names[i] = separated[0] + VERSION_UNDERBAR + '_Windows' + separated[1] # add 'Windows'
-for portable_dir_name, portable_exe in zip(portable_dir_names, portable_exes):
-    print(portable_dir_name)
-    portable_dir = PORTABLE_DST_DIR + '/' + portable_dir_name
-    os.mkdir(portable_dir)
-    shutil.copy2(portable_exe, portable_dir) # copy main executable
-    shutil.copytree(PORTABLE_IN_FILES_DIR, portable_dir, dirs_exist_ok=True) # copy other resources
-    copy_common_files('portable', portable_dir) # copy common special files
-    shutil.make_archive(portable_dir, format='zip', root_dir = PORTABLE_DST_DIR, base_dir = portable_dir_name) # zip archive with folder inside
-#'''
+def generate_gui_installer_release():
+    # Egaroucid Installer
+    print('\n')
+    print('<<<<<<<< Egaroucid Installer >>>>>>>>')
+    INSTALLER_DST_DIR = DST_ROOT + '/' + VERSION_UNDERBAR + '/GUI_Installer'
+    INSTALLER_DST_FILES_DIR = INSTALLER_DST_DIR + '/files'
+    INSTALLER_DST_INSTALLER_DIR = INSTALLER_DST_DIR + '/installer'
+    INSTALLER_IN_EXES_DIR = FORMAT_FILES_DIR + '/2_GUI_Installer_exes'
+    INSTALLER_IN_FILES_DIR = FORMAT_FILES_DIR + '/GUI_Installer_files'
+    INSTALLER_IN_SETUP_FILE = FORMAT_FILES_DIR + '/GUI_Installer_setup/egaroucid_setup.iss'
+    os.mkdir(INSTALLER_DST_DIR)
+    installer_exes = versioned_exes(INSTALLER_IN_EXES_DIR)
+    os.mkdir(INSTALLER_DST_INSTALLER_DIR)
+    for installer_exe in installer_exes:
+        print(installer_exe)
+        shutil.copy2(installer_exe, INSTALLER_DST_INSTALLER_DIR) # copy main executable
+    shutil.copy2(INSTALLER_IN_SETUP_FILE, INSTALLER_DST_INSTALLER_DIR) # copy setup file
+    with open(INSTALLER_DST_INSTALLER_DIR + '/egaroucid_setup.iss', 'r', encoding='utf-8') as f:
+        installer_setup = f.read()
+    installer_setup = installer_setup.replace('REPLACE_VERSION_DOT', VERSION_DOT).replace('REPLACE_VERSION_UNDERBAR', VERSION_UNDERBAR) # replace version information
+    with open(INSTALLER_DST_INSTALLER_DIR + '/egaroucid_setup.iss', 'w', encoding='utf-8') as f:
+        f.write(installer_setup) # rewrite setup file
+    shutil.copytree(INSTALLER_IN_FILES_DIR, INSTALLER_DST_FILES_DIR, dirs_exist_ok=True) # copy files
+    copy_common_files('installer', INSTALLER_DST_FILES_DIR) # copy common special files
+
+
+def generate_gui_portable_release():
+    # Egaroucid Portable
+    print('\n')
+    print('<<<<<<<< Egaroucid Portable >>>>>>>>')
+    PORTABLE_DST_DIR = DST_ROOT + '/' + VERSION_UNDERBAR + '/GUI_Portable'
+    PORTABLE_IN_EXES_DIR = FORMAT_FILES_DIR + '/3_GUI_Portable_exes'
+    PORTABLE_IN_FILES_DIR = FORMAT_FILES_DIR + '/GUI_Portable_files'
+    os.mkdir(PORTABLE_DST_DIR)
+    portable_exes = versioned_exes(PORTABLE_IN_EXES_DIR)
+    for portable_exe in portable_exes:
+        portable_dir_name = windows_dir_name(portable_exe)
+        print(portable_dir_name)
+        portable_dir = PORTABLE_DST_DIR + '/' + portable_dir_name
+        os.mkdir(portable_dir)
+        shutil.copy2(portable_exe, portable_dir) # copy main executable
+        shutil.copytree(PORTABLE_IN_FILES_DIR, portable_dir, dirs_exist_ok=True) # copy other resources
+        copy_common_files('portable', portable_dir) # copy common special files
+        shutil.make_archive(portable_dir, format='zip', root_dir = PORTABLE_DST_DIR, base_dir = portable_dir_name) # zip archive with folder inside
+
+
+if args.console:
+    generate_console_release()
+
+if args.gui:
+    generate_gui_installer_release()
+    generate_gui_portable_release()

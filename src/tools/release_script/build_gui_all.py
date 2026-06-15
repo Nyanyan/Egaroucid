@@ -9,7 +9,12 @@ from pathlib import Path
 from build_gui import build_project, find_msbuild, PROJECT_ROOT
 
 # バージョン情報
-VERSION = "7_8_1"
+# VERSION = "7_8_2"
+if len(sys.argv) != 2:
+    print('[ERROR] please execute `python generate_release.py X.Y.Z`')
+    exit(1)
+VERSION_DOT = sys.argv[1]
+VERSION = VERSION_DOT.replace('.', '_')
 
 # ビルド構成
 CONFIGURATIONS = [
