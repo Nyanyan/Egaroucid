@@ -30,7 +30,7 @@ std::string get_extension(std::string file) {
     return "";
 }
 
-inline void update_xot_identification(Graph_resources* graph_resources) {
+inline void update_xot_start_n_discs(Graph_resources* graph_resources) {
     graph_resources->xot_start_n_discs = -1;
     for (const History_elem& history_elem : graph_resources->nodes[GRAPH_MODE_NORMAL]) {
         if (history_elem.board.n_discs() == XOT_START_N_DISCS) {

@@ -88,7 +88,6 @@
     },
     "ai_settings": {
         "use_book": "开局库使用",
-        "xot_identification": "XOT识别",
         "book_accuracy_level": "开局库丢失等级",
         "level": "级别",
         "accept_ai_loss": "接受AI的损失",

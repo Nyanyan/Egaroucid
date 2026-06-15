@@ -501,7 +501,6 @@ struct Settings {
     std::string lang_name;
     std::string book_file;
     bool use_book;
-    bool xot_identification;
     int level;
     bool ai_put_black;
     bool ai_put_white;
@@ -640,7 +639,6 @@ struct Menu_elements {
     // settings
     // AI settings
     bool use_book;
-    bool xot_identification;
     //int book_acc_level;
     bool accept_ai_loss;
     int max_loss;
@@ -794,7 +792,6 @@ struct Menu_elements {
         game_information = false;
 
         use_book = settings->use_book;
-        xot_identification = settings->xot_identification;
         //book_acc_level = settings->book_acc_level;
         accept_ai_loss = settings->accept_ai_loss;
         max_loss = settings->max_loss;

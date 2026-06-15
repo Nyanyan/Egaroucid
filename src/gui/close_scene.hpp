@@ -40,7 +40,6 @@ void save_settings(Menu_elements menu_elements, Settings settings, Directories d
     setting_json[AUTO_UPDATE_CHECK_SETTING_KEY] = menu_elements.auto_update_check;
     setting_json[U"lang_name"] = Unicode::Widen(settings.lang_name);
     setting_json[U"book_file"] = Unicode::Widen(settings.book_file);
-    setting_json[U"xot_identification"] = menu_elements.xot_identification;
     setting_json[U"use_disc_hint"] = menu_elements.use_disc_hint;
     setting_json[U"use_umigame_value"] = menu_elements.use_umigame_value;
     setting_json[U"n_disc_hint"] = menu_elements.n_disc_hint;

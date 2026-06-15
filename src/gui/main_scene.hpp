@@ -400,7 +400,7 @@ public:
         }
 
         // graph drawing
-        const int graph_xot_start_n_discs = get_graph_xot_start_n_discs();
+        const int graph_xot_start_n_discs = getData().graph_resources.xot_start_n_discs;
         const int graph_value_start_n_discs = get_graph_value_start_n_discs();
         graph.draw(getData().graph_resources.nodes[0], getData().graph_resources.nodes[1], getData().graph_resources.n_discs, getData().menu_elements.show_graph, getData().menu_elements.level, getData().fonts.font, getData().menu_elements.change_color_type, getData().menu_elements.show_graph_sum_of_loss, getData().menu_elements.show_endgame_error, getData().menu_elements.show_endgame_error_40_to_60, graph_xot_start_n_discs, graph_value_start_n_discs);
 
@@ -1063,7 +1063,7 @@ private:
                     stop_calculating();
                     resume_calculating();
                 }
-                update_xot_identification(&getData().graph_resources);
+                update_xot_start_n_discs(&getData().graph_resources);
                 need_start_game_button_calculation();
             }
             if (getData().menu_elements.go_to_first_position || shortcut_key == U"go_to_first_position") {
@@ -1113,7 +1113,7 @@ private:
                         getData().graph_resources.n_discs = getData().history_elem.board.n_discs();
                     }
                 }
-                update_xot_identification(&getData().graph_resources);
+                update_xot_start_n_discs(&getData().graph_resources);
                 resume_calculating();
                 need_start_game_button_calculation();
             }
@@ -1700,7 +1700,7 @@ private:
             getData().graph_resources.nodes[getData().graph_resources.branch].back().v = sgn * getData().history_elem.board.score_player();
             getData().graph_resources.nodes[getData().graph_resources.branch].back().level = 100; // 100% search
         }
-        update_xot_identification(&getData().graph_resources);
+        update_xot_start_n_discs(&getData().graph_resources);
         reset_turn_timer_anchor();
         resume_calculating();
     }
@@ -2950,7 +2950,7 @@ private:
                     }
                     getData().graph_resources.nodes[getData().graph_resources.branch][i].opening_name = opening_name;
                 }
-                update_xot_identification(&getData().graph_resources);
+                update_xot_start_n_discs(&getData().graph_resources);
                 getData().graph_resources.n_discs = getData().graph_resources.nodes[getData().graph_resources.branch].back().board.n_discs();
                 getData().graph_resources.need_init = false;
                 getData().history_elem = getData().graph_resources.nodes[getData().graph_resources.branch].back();
@@ -2963,7 +2963,7 @@ private:
 
     int get_random_generated_position_n_discs() {
         int random_generated_n_discs = get_marked_random_generated_position_n_discs();
-        if (random_generated_n_discs == -1 && getData().menu_elements.xot_identification) {
+        if (random_generated_n_discs == -1) {
             random_generated_n_discs = getData().graph_resources.xot_start_n_discs;
         }
         return random_generated_n_discs;
@@ -2986,13 +2986,6 @@ private:
         const int random_generated_n_discs = get_marked_random_generated_position_n_discs();
         if (random_generated_n_discs != -1) {
             return random_generated_n_discs;
-        }
-        return get_graph_xot_start_n_discs();
-    }
-
-    int get_graph_xot_start_n_discs() {
-        if (!getData().menu_elements.xot_identification) {
-            return -1;
         }
         return getData().graph_resources.xot_start_n_discs;
     }

@@ -156,7 +156,7 @@ public:
             }
             getData().graph_resources.nodes[getData().graph_resources.branch][i].opening_name = opening_name;
         }
-        update_xot_identification(&getData().graph_resources);
+        update_xot_start_n_discs(&getData().graph_resources);
         getData().graph_resources.n_discs = getData().graph_resources.nodes[getData().graph_resources.branch].back().board.n_discs();
         getData().graph_resources.need_init = false;
         getData().history_elem = getData().graph_resources.nodes[getData().graph_resources.branch].back();
@@ -1058,7 +1058,7 @@ private:
             }
             getData().graph_resources.nodes[GRAPH_MODE_NORMAL][i].opening_name = opening_name;
         }
-        update_xot_identification(&getData().graph_resources);
+        update_xot_start_n_discs(&getData().graph_resources);
         getData().graph_resources.need_init = false;
         getData().history_elem = getData().graph_resources.nodes[GRAPH_MODE_NORMAL].back();
         changeScene(U"Main_scene", SCENE_FADE_TIME);
@@ -1948,7 +1948,7 @@ private:
             replace_or_insert_single_node(history_elem, place);
         }
         getData().graph_resources.n_discs = n_discs;
-        update_xot_identification(&getData().graph_resources);
+        update_xot_start_n_discs(&getData().graph_resources);
         getData().graph_resources.need_init = false;
         getData().history_elem = getData().graph_resources.nodes[getData().graph_resources.branch].back();
         changeScene(U"Main_scene", SCENE_FADE_TIME);
@@ -3883,7 +3883,7 @@ public:
                 getData().graph_resources.nodes[0].emplace_back(history_elem);
                 getData().graph_resources.n_discs = board.n_discs();
                 getData().game_information.init();
-                update_xot_identification(&getData().graph_resources);
+                update_xot_start_n_discs(&getData().graph_resources);
                 getData().graph_resources.need_init = false;
                 getData().history_elem = getData().graph_resources.nodes[0].back();
                 changeScene(U"Main_scene", SCENE_FADE_TIME);
@@ -4066,7 +4066,7 @@ inline bool load_game_from_json(
 
     // Set up final state
     data.graph_resources.n_discs = data.graph_resources.nodes[GRAPH_MODE_NORMAL].back().board.n_discs();
-    update_xot_identification(&data.graph_resources);
+    update_xot_start_n_discs(&data.graph_resources);
     data.graph_resources.need_init = false;
     data.history_elem = data.graph_resources.nodes[GRAPH_MODE_NORMAL].back();
     

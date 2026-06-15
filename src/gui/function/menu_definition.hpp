@@ -52,8 +52,6 @@ Menu create_menu(Menu_elements* menu_elements, Resources *resources, Font font, 
     title.init(language.get("settings", "settings"));
         menu_e.init_check(language.get("ai_settings", "use_book") + get_shortcut_key_info(U"use_book"), &menu_elements->use_book, menu_elements->use_book);
         title.push(menu_e);
-        menu_e.init_check(language.get("ai_settings", "xot_identification"), &menu_elements->xot_identification, menu_elements->xot_identification);
-        title.push(menu_e);
         //menu_e.init_bar(language.get("ai_settings", "book_accuracy_level"), &menu_elements->book_acc_level, menu_elements->book_acc_level, 0, BOOK_ACCURACY_LEVEL_INF);
         //title.push(menu_e);
         menu_e.init_check(language.get("ai_settings", "accept_ai_loss") + get_shortcut_key_info(U"accept_ai_loss"), &menu_elements->accept_ai_loss, menu_elements->accept_ai_loss);

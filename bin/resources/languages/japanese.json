@@ -88,7 +88,6 @@
     },
     "ai_settings": {
         "use_book": "book使用",
-        "xot_identification": "XOT識別",
         "book_accuracy_level": "book変化レベル",
         "level": "レベル",
         "accept_ai_loss": "AIに石損させる",

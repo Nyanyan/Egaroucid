@@ -45,7 +45,6 @@ void init_default_settings(const Directories* directories, const Resources* reso
     settings->lang_name = get_default_language();
     settings->book_file = directories->document_dir + "book" + BOOK_EXTENSION;
     settings->use_book = true;
-    settings->xot_identification = true;
     settings->level = DEFAULT_LEVEL;
     settings->ai_put_black = false;
     settings->ai_put_white = false;
@@ -453,7 +452,6 @@ void init_settings(const Directories* directories, const Resources* resources, S
             std::cerr << "err36" << std::endl;
         }
         init_settings_import_bool(setting_json, U"show_random_board_graph", &settings->show_random_board_graph);
-        init_settings_import_bool(setting_json, U"xot_identification", &settings->xot_identification);
         if (init_settings_import_int(setting_json, U"book_learn_error_leaf", &settings->book_learn_error_leaf) != ERR_OK) {
             std::cerr << "err37" << std::endl;
         }
