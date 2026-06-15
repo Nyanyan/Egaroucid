@@ -1595,6 +1595,22 @@ private:
             shortcut_key = SHORTCUT_KEY_UNDEFINED;
             LicenseManager::ShowInBrowser();
         }
+        if (getData().menu_elements.export_settings_data || shortcut_key == U"export_settings_data") {
+            shortcut_key = SHORTCUT_KEY_UNDEFINED;
+            changing_scene = true;
+            stop_calculating();
+            resume_calculating();
+            changeScene(U"Export_settings_data", SCENE_FADE_TIME);
+            return;
+        }
+        if (getData().menu_elements.import_settings_data || shortcut_key == U"import_settings_data") {
+            shortcut_key = SHORTCUT_KEY_UNDEFINED;
+            changing_scene = true;
+            stop_calculating();
+            resume_calculating();
+            changeScene(U"Import_settings_data", SCENE_FADE_TIME);
+            return;
+        }
     }
 
     void menu_language() {

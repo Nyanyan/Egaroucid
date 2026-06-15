@@ -243,6 +243,8 @@ std::vector<Shortcut_key_elem> shortcut_keys_default = {
     {U"update_check",           {},                     {{"help", "help"}, {"help", "update_check"}}},
     {U"auto_update_check",      {},                     {{"help", "help"}, {"help", "auto_update_check"}}},
     {U"license",                {},                     {{"help", "help"}, {"help", "license"}}},
+    {U"export_settings_data",   {},                     {{"help", "help"}, {"data_migration", "data_migration"}, {"data_migration", "export"}}},
+    {U"import_settings_data",   {},                     {{"help", "help"}, {"data_migration", "data_migration"}, {"data_migration", "import"}}},
 };
 
 // Enter and Left / Right keys are ignored

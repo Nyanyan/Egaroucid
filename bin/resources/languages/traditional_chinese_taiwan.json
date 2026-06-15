@@ -361,6 +361,25 @@
         "skip": "跳過",
         "license": "授權條款"
     },
+    "data_migration": {
+        "data_migration": "Data Migration",
+        "export": "Export Data",
+        "import": "Import Data",
+        "export_title": "Export Data for Migration",
+        "export_description": "Enter destination folder / Drag & Drop",
+        "import_title": "Import Migration Data",
+        "import_description": "Enter Egaroucid_Settings_... folder / Drag & Drop",
+        "import_warning": "Settings will be overwritten. Saved games will be merged.",
+        "exporting": "Exporting...",
+        "importing": "Importing...",
+        "complete": "Completed",
+        "failed": "Failed",
+        "directory_not_found": "Directory not found",
+        "invalid_backup": "Invalid migration folder",
+        "zip_not_supported": "Zip files are not supported. Select the exported folder.",
+        "unsafe_source": "Cannot import a backup inside AppData.",
+        "restart_recommended": "Some data, including Book, will be fully applied after restart."
+    },
     "board_image": {
         "save_image": "儲存圖片",
         "rect": "■",

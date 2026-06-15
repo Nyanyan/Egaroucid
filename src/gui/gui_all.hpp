@@ -30,4 +30,5 @@
 #include "shortcut_button_setting_scene.hpp"
 #include "shortcut_key_setting_scene.hpp"
 #include "silent_load_scene.hpp"
+#include "data_migration_scene.hpp"
 #include "update_check_scene.hpp"

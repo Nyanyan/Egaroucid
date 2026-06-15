@@ -34,7 +34,7 @@ inline String data_migration_slash_path(String path) {
 
 inline String data_migration_with_trailing_separator(String path) {
     path = data_migration_slash_path(path);
-    if (path.size() && path.back() != U'/') {
+    if (path.size() && path[path.size() - 1] != U'/') {
         path += U"/";
     }
     return path;
@@ -46,7 +46,7 @@ inline String data_migration_join_path(String dir, const String& name) {
 
 inline String data_migration_path_leaf(String path) {
     path = data_migration_slash_path(path);
-    while (path.size() && path.back() == U'/') {
+    while (path.size() && path[path.size() - 1] == U'/') {
         path.pop_back();
     }
     const size_t pos = path.lastIndexOf(U'/');

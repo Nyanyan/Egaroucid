@@ -786,6 +786,8 @@ struct Menu_elements {
     bool update_check;
     bool auto_update_check;
     bool license;
+    bool export_settings_data;
+    bool import_settings_data;
 
     // language
     bool languages[200];
@@ -933,6 +935,8 @@ struct Menu_elements {
         update_check = false;
         auto_update_check = settings->auto_update_check;
         license = false;
+        export_settings_data = false;
+        import_settings_data = false;
 
         bool lang_found = false;
         for (int i = 0; i < resources->language_names.size(); ++i) {

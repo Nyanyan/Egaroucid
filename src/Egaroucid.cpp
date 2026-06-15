@@ -103,6 +103,8 @@ void Main() {
     scene_manager.add <AI_profile_save>(U"AI_profile_save");
     scene_manager.add <Display_profile_load>(U"Display_profile_load");
     scene_manager.add <Display_profile_save>(U"Display_profile_save");
+    scene_manager.add <Export_settings_data>(U"Export_settings_data");
+    scene_manager.add <Import_settings_data>(U"Import_settings_data");
     scene_manager.add <Update_check>(U"Update_check");
     scene_manager.add <Close>(U"Close");
     scene_manager.setFadeColor(Color(36, 153, 114));
