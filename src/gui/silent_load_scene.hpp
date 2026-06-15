@@ -101,6 +101,9 @@ void init_default_settings(const Directories* directories, const Resources* reso
     settings->othello_quest_mode = 0;
     settings->enable_recycle_bin = true;
     settings->window_scale = 1.0;
+    settings->window_pos_x = 0;
+    settings->window_pos_y = 0;
+    settings->has_window_pos = false;
     settings->show_value_when_ai_calculating = false;
     // settings->generate_random_board_score_range = 64;
     settings->generate_random_board_score_range_min = -64;
@@ -557,6 +560,9 @@ void init_settings(const Directories* directories, const Resources* resources, S
         init_settings_import_int(setting_json, U"othello_quest_mode", &settings->othello_quest_mode);
         init_settings_import_bool(setting_json, U"enable_recycle_bin", &settings->enable_recycle_bin);
         init_settings_import_double(setting_json, U"window_scale", &settings->window_scale);
+        const bool has_window_pos_x = init_settings_import_int(setting_json, U"window_pos_x", &settings->window_pos_x) == ERR_OK;
+        const bool has_window_pos_y = init_settings_import_int(setting_json, U"window_pos_y", &settings->window_pos_y) == ERR_OK;
+        settings->has_window_pos = has_window_pos_x && has_window_pos_y;
     }
     settings->window_scale = std::clamp(settings->window_scale, WINDOW_SCALE_MIN, WINDOW_SCALE_MAX);
     settings->othello_quest_mode = std::clamp(settings->othello_quest_mode, 0, 2);
@@ -661,8 +667,18 @@ void apply_saved_window_scale(double window_scale, Window_state* window_state) {
         static_cast<int>(std::round(WINDOW_SIZE_X * window_scale)),
         static_cast<int>(std::round(WINDOW_SIZE_Y * window_scale))
     };
-    Window::Resize(saved_window_size);
+    Window::Resize(saved_window_size, Centering::No);
     window_state->window_scale = window_scale;
+}
+
+void apply_saved_window_position(const Settings& settings, Window_state* window_state) {
+    if (!settings.has_window_pos) {
+        return;
+    }
+    Window::SetPos(Point{ settings.window_pos_x, settings.window_pos_y });
+    window_state->window_pos_x = settings.window_pos_x;
+    window_state->window_pos_y = settings.window_pos_y;
+    window_state->has_window_pos = true;
 }
 
 class Silent_load : public App::Scene {
@@ -696,6 +712,7 @@ public:
                 loaded = load_code == ERR_OK;
                 if (loaded) {
                     apply_saved_window_scale(getData().settings.window_scale, &getData().window_state);
+                    apply_saved_window_position(getData().settings, &getData().window_state);
                 }
                 loading = false;
             }

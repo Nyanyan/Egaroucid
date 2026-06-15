@@ -105,6 +105,10 @@ void save_settings(Menu_elements menu_elements, Settings settings, Directories d
     setting_json[U"othello_quest_mode"] = user_settings.othello_quest_mode;
     setting_json[U"enable_recycle_bin"] = menu_elements.enable_recycle_bin;
     setting_json[U"window_scale"] = std::clamp(window_state.window_scale, WINDOW_SCALE_MIN, WINDOW_SCALE_MAX);
+    if (window_state.has_window_pos) {
+        setting_json[U"window_pos_x"] = window_state.window_pos_x;
+        setting_json[U"window_pos_y"] = window_state.window_pos_y;
+    }
     setting_json[U"show_value_when_ai_calculating"] = menu_elements.show_value_when_ai_calculating;
     setting_json[U"generate_random_board_score_range_min"] = menu_elements.generate_random_board_score_range_min;
     setting_json[U"generate_random_board_score_range_max"] = menu_elements.generate_random_board_score_range_max;
@@ -143,6 +147,13 @@ void close_app(Menu_elements menu_elements, Settings settings, Directories direc
     }
 }
 
+void update_current_window_position(Window_state* window_state) {
+    const Point window_pos = Window::GetPos();
+    window_state->window_pos_x = window_pos.x;
+    window_state->window_pos_y = window_pos.y;
+    window_state->has_window_pos = true;
+}
+
 class Close : public App::Scene {
 private:
     std::future<void> close_future;
@@ -150,6 +161,7 @@ private:
 public:
     Close(const InitData& init) : IScene{ init } {
         set_scene_ime_enabled(false);
+        update_current_window_position(&getData().window_state);
         close_future = std::async(std::launch::async, close_app, getData().menu_elements, getData().settings, getData().directories, getData().user_settings, getData().book_information, getData().forced_openings, getData().window_state);
     }
 

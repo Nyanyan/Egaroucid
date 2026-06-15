@@ -558,6 +558,9 @@ struct Settings {
     int othello_quest_mode;
     bool enable_recycle_bin;
     double window_scale;
+    int window_pos_x;
+    int window_pos_y;
+    bool has_window_pos;
     bool show_value_when_ai_calculating;
     int generate_random_board_score_range_min;
     int generate_random_board_score_range_max;
@@ -1095,9 +1098,15 @@ struct User_settings {
 
 struct Window_state {
     double window_scale;
+    int window_pos_x;
+    int window_pos_y;
+    bool has_window_pos;
     bool loading;
     Window_state() {
         window_scale = 1.0;
+        window_pos_x = 0;
+        window_pos_y = 0;
+        has_window_pos = false;
         loading = true;
     }
 };
