@@ -13,6 +13,7 @@ installer eval.egev2 resources
 installer eval_move_ordering_end.egev resources
 installer hash resources/hash
 installer openings resources/openings
+installer xot resources/xot
 portable book.egbk3 document
 portable empty_book.egbk3 document
 portable ai_settings appdata/ai_settings
@@ -23,3 +24,4 @@ portable eval.egev2 resources
 portable eval_move_ordering_end.egev resources
 portable hash resources/hash
 portable openings resources/openings
+portable xot resources/xot

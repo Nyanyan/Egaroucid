@@ -326,6 +326,7 @@ int init_ai(Settings* settings, const Directories* directories, bool *stop_loadi
     if (!evaluate_init(directories->eval_file, directories->eval_mo_end_file, true)) {
         return ERR_LOAD_EVAL_FILE_NOT_IMPORTED;
     }
+    xot_init(EXE_DIRECTORY_PATH + "resources/xot", true);
     if (!book_init(settings->book_file, true, stop_loading)) {
         return ERR_LOAD_BOOK_FILE_NOT_IMPORTED;
     }

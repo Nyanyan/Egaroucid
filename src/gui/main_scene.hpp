@@ -2965,6 +2965,9 @@ private:
                 random_generated_n_discs = history_elem.board.n_discs();
             }
         }
+        if (random_generated_n_discs == -1 && getData().menu_elements.xot_identification) {
+            random_generated_n_discs = getData().graph_resources.xot_start_n_discs;
+        }
         return random_generated_n_discs;
     }
 
