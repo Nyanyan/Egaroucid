@@ -223,6 +223,10 @@
     },
     "display": {
         "display": "Display",
+        "profile": {
+            "profile": "Display Profile",
+            "auto_save": "Auto Save Display Profile"
+        },
         "cell": {
             "display_on_cell": "On Cell",
             "legal": "Legal",

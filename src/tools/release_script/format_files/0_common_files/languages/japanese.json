@@ -225,6 +225,10 @@
     },
     "display": {
         "display": "表示",
+        "profile": {
+            "profile": "表示プロファイル",
+            "auto_save": "表示プロファイルの自動保存"
+        },
         "cell": {
             "display_on_cell": "合法手への表示",
             "legal": "合法手",

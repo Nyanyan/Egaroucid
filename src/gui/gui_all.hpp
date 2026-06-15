@@ -15,6 +15,7 @@
 #include "book_scene.hpp"
 #include "close_scene.hpp"
 #include "ai_profile_scene.hpp"
+#include "display_profile_scene.hpp"
 #include "ai_loss_graph_setting_scene.hpp"
 #include "game_information.hpp"
 #include "game_editor_scene.hpp"

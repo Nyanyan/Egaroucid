@@ -225,6 +225,10 @@
     },
     "display": {
         "display": "显示",
+        "profile": {
+            "profile": "显示配置方案",
+            "auto_save": "自动保存显示配置"
+        },
         "cell": {
             "display_on_cell": "棋子显示",
             "legal": "可行步",

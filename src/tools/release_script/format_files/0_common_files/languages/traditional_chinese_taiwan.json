@@ -223,6 +223,10 @@
     },
     "display": {
         "display": "顯示",
+        "profile": {
+            "profile": "顯示設定檔",
+            "auto_save": "自動儲存顯示設定檔"
+        },
         "cell": {
             "display_on_cell": "顯示於格子中",
             "legal": "合法落子",

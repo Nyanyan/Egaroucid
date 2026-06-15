@@ -101,6 +101,8 @@ void Main() {
     scene_manager.add <AI_loss_graph_setting>(U"AI_loss_graph_setting");
     scene_manager.add <AI_profile_load>(U"AI_profile_load");
     scene_manager.add <AI_profile_save>(U"AI_profile_save");
+    scene_manager.add <Display_profile_load>(U"Display_profile_load");
+    scene_manager.add <Display_profile_save>(U"Display_profile_save");
     scene_manager.add <Update_check>(U"Update_check");
     scene_manager.add <Close>(U"Close");
     scene_manager.setFadeColor(Color(36, 153, 114));
